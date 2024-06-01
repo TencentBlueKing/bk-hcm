@@ -29,7 +29,7 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// BillSummaryDailyCreateReq ...
+// BillSummaryDailyCreateReq create request
 type BillSummaryDailyCreateReq struct {
 	FirstAccountID  string          `json:"first_account_id" validate:"required"`
 	SecondAccountID string          `json:"second_account_id" validate:"required"`
@@ -45,12 +45,12 @@ type BillSummaryDailyCreateReq struct {
 	RMBCost         decimal.Decimal `json:"rmb_cost" validate:"required"`
 }
 
-// Validate BillSummaryDailyCreateReq.
+// Validate ...
 func (c *BillSummaryDailyCreateReq) Validate() error {
 	return validator.Validate.Struct(c)
 }
 
-// BillSummaryDailyListReq ...
+// BillSummaryDailyListReq list request
 type BillSummaryDailyListReq struct {
 	Filter *filter.Expression `json:"filter" validate:"required"`
 	Page   *core.BasePage     `json:"page" validate:"required"`
@@ -62,13 +62,13 @@ func (req *BillSummaryDailyListReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// BillSummaryDailyListResult ...
+// BillSummaryDailyListResult list result
 type BillSummaryDailyListResult struct {
 	Count   *uint64                   `json:"count,omitempty"`
 	Details []*BillSummaryDailyResult `json:"details"`
 }
 
-// BillSummaryDailyResult ...
+// BillSummaryDailyResult result
 type BillSummaryDailyResult struct {
 	ID              string          `json:"id,omitempty"`
 	FirstAccountID  string          `json:"first_account_id" validate:"required"`
@@ -87,7 +87,7 @@ type BillSummaryDailyResult struct {
 	UpdatedAt       types.Time      `json:"updated_at,omitempty"`
 }
 
-// BillSummaryDailyUpdateReq ...
+// BillSummaryDailyUpdateReq update request
 type BillSummaryDailyUpdateReq struct {
 	ID              string          `json:"id,omitempty" validate:"required"`
 	FirstAccountID  string          `json:"first_account_id" validate:"required"`

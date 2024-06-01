@@ -34,7 +34,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// DeleteBillItem account with options
+// DeleteBillItem delete bill item with options
 func (svc *service) DeleteBillItem(cts *rest.Contexts) (interface{}, error) {
 	req := new(dataservice.BatchDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {

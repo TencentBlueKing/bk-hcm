@@ -48,7 +48,7 @@ type AccountBillAdjustmentItem interface {
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error
 }
 
-// AccountBillAdjustmentItemDao account bill summary dao
+// AccountBillAdjustmentItemDao account bill adjustment item dao
 type AccountBillAdjustmentItemDao struct {
 	Orm   orm.Interface
 	IDGen idgenerator.IDGenInterface
@@ -87,12 +87,12 @@ func (a AccountBillAdjustmentItemDao) CreateWithTx(
 	return ids, nil
 }
 
-// List get account bill summary list.
+// List get account bill adjustment item list.
 func (a AccountBillAdjustmentItemDao) List(kt *kit.Kit, opt *types.ListOption) (
 	*typesbill.ListAccountBillAdjustmentItemDetails, error) {
 
 	if opt == nil {
-		return nil, errf.New(errf.InvalidParameter, "list account bill summary version options is nil")
+		return nil, errf.New(errf.InvalidParameter, "list account bill adjustment item options is nil")
 	}
 
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tablebill.AccountBillSummaryColumns.ColumnTypes())),
@@ -109,7 +109,7 @@ func (a AccountBillAdjustmentItemDao) List(kt *kit.Kit, opt *types.ListOption) (
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.AccountBillAdjustmentItemTable, whereExpr)
 		count, err := a.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
-			logs.ErrorJson("count account bill summary version failed, err: %v, filter: %s, rid: %s",
+			logs.ErrorJson("count account bill adjustment item failed, err: %v, filter: %s, rid: %s",
 				err, opt.Filter, kt.Rid)
 			return nil, err
 		}
@@ -132,7 +132,7 @@ func (a AccountBillAdjustmentItemDao) List(kt *kit.Kit, opt *types.ListOption) (
 	return &typesbill.ListAccountBillAdjustmentItemDetails{Details: details}, nil
 }
 
-// Update update account bill summary.
+// Update update account bill adjustment item.
 func (a AccountBillAdjustmentItemDao) UpdateByIDWithTx(
 	kt *kit.Kit,
 	tx *sqlx.Tx,
@@ -154,14 +154,14 @@ func (a AccountBillAdjustmentItemDao) UpdateByIDWithTx(
 	toUpdate["id"] = id
 	_, err = a.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
 	if err != nil {
-		logs.ErrorJson("update account bill summary failed, err: %v, id: %s, rid: %v", err, id, kt.Rid)
+		logs.ErrorJson("update account bill adjustment item failed, err: %v, id: %s, rid: %v", err, id, kt.Rid)
 		return err
 	}
 
 	return nil
 }
 
-// DeleteWithTx delete account bill summary with tx.
+// DeleteWithTx delete account bill adjustment item with tx.
 func (a AccountBillAdjustmentItemDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")
@@ -175,7 +175,7 @@ func (a AccountBillAdjustmentItemDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, exp
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.AccountBillAdjustmentItemTable, whereExpr)
 
 	if _, err = a.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
-		logs.ErrorJson("delete account bill summary version failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
+		logs.ErrorJson("delete account bill adjustment item failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
 		return err
 	}
 

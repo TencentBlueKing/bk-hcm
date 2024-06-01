@@ -28,16 +28,16 @@ import (
 	"hcm/pkg/rest"
 )
 
-// InitService initialize the bill summary service
+// InitService initialize the bill summary version service
 func InitService(cap *capability.Capability) {
 	svc := &service{
 		dao: cap.Dao,
 	}
 	h := rest.NewHandler()
-	h.Add("CreateBillSummaryVersion", http.MethodPost, "/billsummaryversions", svc.CreateBillSummaryVersion)
-	h.Add("DeleteBillSummaryVersion", http.MethodDelete, "/billsummaryversions", svc.DeleteBillSummaryVersion)
-	h.Add("UpdateBillSummaryVersion", http.MethodPut, "/billsummaryversions", svc.UpdateBillSummaryVersion)
-	h.Add("ListBillSummaryVersion", http.MethodGet, "/billsummaryversions", svc.ListBillSummaryVersion)
+	h.Add("CreateBillSummaryVersion", http.MethodPost, "/bills/summaryversions", svc.CreateBillSummaryVersion)
+	h.Add("DeleteBillSummaryVersion", http.MethodDelete, "/bills/summaryversions", svc.DeleteBillSummaryVersion)
+	h.Add("UpdateBillSummaryVersion", http.MethodPut, "/bills/summaryversions", svc.UpdateBillSummaryVersion)
+	h.Add("ListBillSummaryVersion", http.MethodGet, "/bills/summaryversions", svc.ListBillSummaryVersion)
 
 	h.Load(cap.WebService)
 }

@@ -31,7 +31,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// UpdateBillSummary account with options
+// UpdateBillSummary update account bill summary with options
 func (svc *service) UpdateBillSummary(cts *rest.Contexts) (interface{}, error) {
 	req := new(dataservice.BillSummaryUpdateReq)
 

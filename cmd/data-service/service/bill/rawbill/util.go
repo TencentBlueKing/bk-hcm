@@ -47,7 +47,7 @@ func generateCSV(items []dsbill.RawBillItem) (*bytes.Buffer, error) {
 			item.BillCost.String(),
 			item.ResAmount.String(),
 			item.ResAmountUnit,
-			item.Extension,
+			string(item.Extension),
 		}
 		err := csvWriter.Write(record)
 		if err != nil {

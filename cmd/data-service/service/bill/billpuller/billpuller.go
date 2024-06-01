@@ -34,10 +34,10 @@ func InitService(cap *capability.Capability) {
 		dao: cap.Dao,
 	}
 	h := rest.NewHandler()
-	h.Add("BatchCreateBillPuller", http.MethodPost, "/billpullers", svc.BatchCreateBillPuller)
-	h.Add("DeleteBillPuller", http.MethodDelete, "/billpullers", svc.DeleteBillPuller)
-	h.Add("UpdateBillPuller", http.MethodPut, "/billpullers", svc.UpdateBillPuller)
-	h.Add("ListBillPuller", http.MethodGet, "/billpullers", svc.ListBillPuller)
+	h.Add("BatchCreateBillPuller", http.MethodPost, "/bills/pullers", svc.BatchCreateBillPuller)
+	h.Add("DeleteBillPuller", http.MethodDelete, "/bills/pullers", svc.DeleteBillPuller)
+	h.Add("UpdateBillPuller", http.MethodPut, "/bills/pullers", svc.UpdateBillPuller)
+	h.Add("ListBillPuller", http.MethodGet, "/bills/pullers", svc.ListBillPuller)
 
 	h.Load(cap.WebService)
 }

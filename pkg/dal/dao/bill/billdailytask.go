@@ -50,16 +50,17 @@ type AccountBillDailyPullTask interface {
 
 var _ AccountBillDailyPullTask = new(AccountBillDailyPullTaskDao)
 
+// AccountBillDailyPullTaskDao dao for AccountBillDailyPullTask
 type AccountBillDailyPullTaskDao struct {
 	Orm   orm.Interface
 	IDGen idgenerator.IDGenInterface
 }
 
-// BatchCreateWithTx ...
+// BatchCreateWithTx batch create bill daily pull task
 func (abpDao AccountBillDailyPullTaskDao) BatchCreateWithTx(
 	kt *kit.Kit, tx *sqlx.Tx, abPullers []*tablebill.AccountBillDailyPullTask) ([]string, error) {
 	if len(abPullers) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "AccountBillDailyPullTask model data is required")
+		return nil, errf.New(errf.InvalidParameter, "account bill daily pull task model data is required")
 	}
 	for _, i := range abPullers {
 		if err := i.InsertValidate(); err != nil {
@@ -88,11 +89,11 @@ func (abpDao AccountBillDailyPullTaskDao) BatchCreateWithTx(
 	return ids, nil
 }
 
-// List ...
+// List list account bill daily pull task
 func (abpDao AccountBillDailyPullTaskDao) List(kt *kit.Kit, opt *types.ListOption) (
 	*typesbill.ListAccountBillDailyPullTaskDetails, error) {
 	if opt == nil {
-		return nil, errf.New(errf.InvalidParameter, "list AccountBillDailyPullTask options is nil")
+		return nil, errf.New(errf.InvalidParameter, "list account bill daily pull task options is nil")
 	}
 
 	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tablebill.AccountBillDailyPullTaskColumns.ColumnTypes())),
@@ -109,7 +110,7 @@ func (abpDao AccountBillDailyPullTaskDao) List(kt *kit.Kit, opt *types.ListOptio
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.AccountBillDailyPullTaskTable, whereExpr)
 		count, err := abpDao.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
-			logs.ErrorJson("count AccountBillDailyPullTask failed, err: %v, filter: %s, rid: %s",
+			logs.ErrorJson("count account bill daily pull task failed, err: %v, filter: %s, rid: %s",
 				err, opt.Filter, kt.Rid)
 			return nil, err
 		}
@@ -132,7 +133,7 @@ func (abpDao AccountBillDailyPullTaskDao) List(kt *kit.Kit, opt *types.ListOptio
 	return &typesbill.ListAccountBillDailyPullTaskDetails{Details: details}, nil
 }
 
-// UpdateByIDWithTx ...
+// UpdateByIDWithTx update account bill daily pull task
 func (abpDao AccountBillDailyPullTaskDao) UpdateByIDWithTx(
 	kt *kit.Kit, tx *sqlx.Tx, pullerID string, updateData *tablebill.AccountBillDailyPullTask) error {
 
@@ -151,14 +152,14 @@ func (abpDao AccountBillDailyPullTaskDao) UpdateByIDWithTx(
 	toUpdate["id"] = pullerID
 	_, err = abpDao.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
 	if err != nil {
-		logs.ErrorJson("update AccountBillDailyPullTask failed, err: %v, id: %s, rid: %v", err, pullerID, kt.Rid)
+		logs.ErrorJson("update account bill daily pull task failed, err: %v, id: %s, rid: %v", err, pullerID, kt.Rid)
 		return err
 	}
 
 	return nil
 }
 
-// DeleteWithTx ...
+// DeleteWithTx delete account bill daily pull task
 func (abpDao AccountBillDailyPullTaskDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error {
 	if filterExpr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")
@@ -172,7 +173,7 @@ func (abpDao AccountBillDailyPullTaskDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx,
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.AccountBillDailyPullTaskTable, whereExpr)
 
 	if _, err = abpDao.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
-		logs.ErrorJson("delete AccountBillDailyPullTask failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
+		logs.ErrorJson("delete account bill daily pull task failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
 		return err
 	}
 

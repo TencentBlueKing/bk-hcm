@@ -48,13 +48,13 @@ type AccountBillItem interface {
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error
 }
 
-// AccountBillItemDao account bill summary dao
+// AccountBillItemDao account bill item dao
 type AccountBillItemDao struct {
 	Orm   orm.Interface
 	IDGen idgenerator.IDGenInterface
 }
 
-// CreateWithTx create account bill summary with tx.
+// CreateWithTx create account bill item with tx.
 func (a AccountBillItemDao) CreateWithTx(
 	kt *kit.Kit, tx *sqlx.Tx, models []tablebill.AccountBillItem) (
 	[]string, error) {
@@ -87,7 +87,7 @@ func (a AccountBillItemDao) CreateWithTx(
 	return ids, nil
 }
 
-// List get account bill summary list.
+// List get account bill item list.
 func (a AccountBillItemDao) List(kt *kit.Kit, opt *types.ListOption) (
 	*typesbill.ListAccountBillItemDetails, error) {
 
@@ -132,7 +132,7 @@ func (a AccountBillItemDao) List(kt *kit.Kit, opt *types.ListOption) (
 	return &typesbill.ListAccountBillItemDetails{Details: details}, nil
 }
 
-// Update update account bill summary.
+// Update update account bill item.
 func (a AccountBillItemDao) UpdateByIDWithTx(
 	kt *kit.Kit,
 	tx *sqlx.Tx,
@@ -161,7 +161,7 @@ func (a AccountBillItemDao) UpdateByIDWithTx(
 	return nil
 }
 
-// DeleteWithTx delete account bill summary with tx.
+// DeleteWithTx delete account bill item with tx.
 func (a AccountBillItemDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")

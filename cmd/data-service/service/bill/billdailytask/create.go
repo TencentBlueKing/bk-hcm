@@ -33,7 +33,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// CreateBillDailyPullTask account with options
+// CreateBillDailyPullTask create account bill daily pull task with options
 func (svc *service) CreateBillDailyPullTask(cts *rest.Contexts) (interface{}, error) {
 	req := new(dsbill.BillDailyPullTaskCreateReq)
 	if err := cts.DecodeInto(req); err != nil {

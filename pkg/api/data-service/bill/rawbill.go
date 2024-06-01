@@ -22,10 +22,12 @@ package bill
 import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/dal/table/types"
 
 	"github.com/shopspring/decimal"
 )
 
+// RawBillItem raw bill item
 type RawBillItem struct {
 	Region        string          `json:"region,omitempty" validate:"required"`
 	HcProductCode string          `json:"hcProductCode,omitempty"`                    // 云服务代号
@@ -34,10 +36,10 @@ type RawBillItem struct {
 	BillCost      decimal.Decimal `json:"billCost,omitempty" validate:"required"`     // 原币种消费（元）
 	ResAmount     decimal.Decimal `json:"resAmount,omitempty"`                        // 用量，部分云账单可能没有
 	ResAmountUnit string          `json:"resAmountUnit,omitempty"`                    // 用量单位
-	Extension     string          `json:"extension" validate:"required"`              // 存储云原始账单信息
+	Extension     types.JsonField `json:"extension" validate:"required"`              // 存储云原始账单信息
 }
 
-// RawBillCreateReq ...
+// RawBillCreateReq create request
 type RawBillCreateReq struct {
 	Vendor         enumor.Vendor `json:"vendor" vaildate:"required"`
 	FirstAccountID string        `json:"first_account_id" validate:"required"`

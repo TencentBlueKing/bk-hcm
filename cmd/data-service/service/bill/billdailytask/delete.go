@@ -34,7 +34,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// DeleteBillDailyPullTask account with options
+// DeleteBillDailyPullTask delete account bill daily pull task with options
 func (svc *service) DeleteBillDailyPullTask(cts *rest.Contexts) (interface{}, error) {
 	req := new(dataservice.BatchDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {

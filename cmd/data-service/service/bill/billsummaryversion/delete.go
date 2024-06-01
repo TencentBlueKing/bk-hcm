@@ -34,7 +34,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// DeleteBillSummaryVersion account with options
+// DeleteBillSummaryVersion delete bill summary version with options
 func (svc *service) DeleteBillSummaryVersion(cts *rest.Contexts) (interface{}, error) {
 	req := new(dataservice.BatchDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {

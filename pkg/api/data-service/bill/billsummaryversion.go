@@ -29,7 +29,7 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// BillSummaryVersionCreateReq ...
+// BillSummaryVersionCreateReq create request
 type BillSummaryVersionCreateReq struct {
 	FirstAccountID  string          `json:"first_account_id" validate:"required"`
 	SecondAccountID string          `json:"second_account_id" validate:"required"`
@@ -44,12 +44,12 @@ type BillSummaryVersionCreateReq struct {
 	RMBCost         decimal.Decimal `json:"rmb_cost" validate:"required"`
 }
 
-// Validate BillSummaryVersionCreateReq.
+// Validate ...
 func (c *BillSummaryVersionCreateReq) Validate() error {
 	return validator.Validate.Struct(c)
 }
 
-// BillSummaryVersionListReq ...
+// BillSummaryVersionListReq list request
 type BillSummaryVersionListReq struct {
 	Filter *filter.Expression `json:"filter" validate:"required"`
 	Page   *core.BasePage     `json:"page" validate:"required"`
@@ -61,13 +61,13 @@ func (req *BillSummaryVersionListReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// BillSummaryVersionListResult ...
+// BillSummaryVersionListResult list result
 type BillSummaryVersionListResult struct {
 	Count   *uint64                     `json:"count,omitempty"`
 	Details []*BillSummaryVersionResult `json:"details"`
 }
 
-// BillSummaryVersionResult ...
+// BillSummaryVersionResult result
 type BillSummaryVersionResult struct {
 	ID              string          `json:"id,omitempty"`
 	FirstAccountID  string          `json:"first_account_id" validate:"required"`
@@ -85,7 +85,7 @@ type BillSummaryVersionResult struct {
 	UpdatedAt       types.Time      `json:"updated_at,omitempty"`
 }
 
-// BillSummaryVersionUpdateReq ...
+// BillSummaryVersionUpdateReq update request
 type BillSummaryVersionUpdateReq struct {
 	ID              string          `json:"id,omitempty" validate:"required"`
 	FirstAccountID  string          `json:"first_account_id" validate:"required"`

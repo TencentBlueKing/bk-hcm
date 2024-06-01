@@ -33,7 +33,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// BatchCreateBillSummary account with options
+// BatchCreateBillSummary create account bill summary with options
 func (svc *service) BatchCreateBillSummary(cts *rest.Contexts) (interface{}, error) {
 	req := new(dsbill.BillSummaryCreateReq)
 	if err := cts.DecodeInto(req); err != nil {

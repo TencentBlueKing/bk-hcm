@@ -48,13 +48,13 @@ type AccountBillSummaryVersion interface {
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error
 }
 
-// AccountBillSummaryVersionDao account bill summary dao
+// AccountBillSummaryVersionDao account bill summary version dao
 type AccountBillSummaryVersionDao struct {
 	Orm   orm.Interface
 	IDGen idgenerator.IDGenInterface
 }
 
-// CreateWithTx create account bill summary with tx.
+// CreateWithTx create account bill summary version with tx.
 func (a AccountBillSummaryVersionDao) CreateWithTx(
 	kt *kit.Kit, tx *sqlx.Tx, models []tablebill.AccountBillSummaryVersion) (
 	[]string, error) {
@@ -77,7 +77,8 @@ func (a AccountBillSummaryVersionDao) CreateWithTx(
 	}
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, models[0].TableName(),
-		tablebill.AccountBillSummaryVersionColumns.ColumnExpr(), tablebill.AccountBillSummaryVersionColumns.ColonNameExpr())
+		tablebill.AccountBillSummaryVersionColumns.ColumnExpr(),
+		tablebill.AccountBillSummaryVersionColumns.ColonNameExpr())
 
 	if err = a.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, models); err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", models[0].TableName(), err, kt.Rid)
@@ -87,7 +88,7 @@ func (a AccountBillSummaryVersionDao) CreateWithTx(
 	return ids, nil
 }
 
-// List get account bill summary list.
+// List get account bill summary version list.
 func (a AccountBillSummaryVersionDao) List(kt *kit.Kit, opt *types.ListOption) (
 	*typesbill.ListAccountBillSummaryVersionDetails, error) {
 
@@ -122,7 +123,8 @@ func (a AccountBillSummaryVersionDao) List(kt *kit.Kit, opt *types.ListOption) (
 		return nil, err
 	}
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tablebill.AccountBillSummaryVersionColumns.FieldsNamedExpr(opt.Fields),
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`,
+		tablebill.AccountBillSummaryVersionColumns.FieldsNamedExpr(opt.Fields),
 		table.AccountBillSummaryVersionTable, whereExpr, pageExpr)
 
 	details := make([]tablebill.AccountBillSummaryVersion, 0)
@@ -132,7 +134,7 @@ func (a AccountBillSummaryVersionDao) List(kt *kit.Kit, opt *types.ListOption) (
 	return &typesbill.ListAccountBillSummaryVersionDetails{Details: details}, nil
 }
 
-// Update update account bill summary.
+// Update update account bill summary version.
 func (a AccountBillSummaryVersionDao) UpdateByIDWithTx(
 	kt *kit.Kit,
 	tx *sqlx.Tx,
@@ -154,14 +156,14 @@ func (a AccountBillSummaryVersionDao) UpdateByIDWithTx(
 	toUpdate["id"] = id
 	_, err = a.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
 	if err != nil {
-		logs.ErrorJson("update account bill summary failed, err: %v, id: %s, rid: %v", err, id, kt.Rid)
+		logs.ErrorJson("update account bill summary version failed, err: %v, id: %s, rid: %v", err, id, kt.Rid)
 		return err
 	}
 
 	return nil
 }
 
-// DeleteWithTx delete account bill summary with tx.
+// DeleteWithTx delete account bill summary version with tx.
 func (a AccountBillSummaryVersionDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")

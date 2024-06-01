@@ -27,7 +27,7 @@ import (
 	"hcm/pkg/rest"
 )
 
-// ListBillItem account with options
+// ListBillItem list bill item with options
 func (svc *service) ListBillItem(cts *rest.Contexts) (interface{}, error) {
 	req := new(dataproto.BillItemListReq)
 	if err := cts.DecodeInto(req); err != nil {

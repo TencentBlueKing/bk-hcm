@@ -48,13 +48,13 @@ type AccountBillSummaryDaily interface {
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error
 }
 
-// AccountBillSummaryDailyDao account bill summary dao
+// AccountBillSummaryDailyDao account bill summary daliy dao
 type AccountBillSummaryDailyDao struct {
 	Orm   orm.Interface
 	IDGen idgenerator.IDGenInterface
 }
 
-// CreateWithTx create account bill summary with tx.
+// CreateWithTx create account bill summary daliy with tx.
 func (a AccountBillSummaryDailyDao) CreateWithTx(
 	kt *kit.Kit, tx *sqlx.Tx, models []tablebill.AccountBillSummaryDaily) (
 	[]string, error) {
@@ -87,7 +87,7 @@ func (a AccountBillSummaryDailyDao) CreateWithTx(
 	return ids, nil
 }
 
-// List get account bill summary list.
+// List get account bill summary daliy list.
 func (a AccountBillSummaryDailyDao) List(kt *kit.Kit, opt *types.ListOption) (
 	*typesbill.ListAccountBillSummaryDailyDetails, error) {
 
@@ -132,7 +132,7 @@ func (a AccountBillSummaryDailyDao) List(kt *kit.Kit, opt *types.ListOption) (
 	return &typesbill.ListAccountBillSummaryDailyDetails{Details: details}, nil
 }
 
-// Update update account bill summary.
+// Update update account bill summary daliy.
 func (a AccountBillSummaryDailyDao) UpdateByIDWithTx(
 	kt *kit.Kit,
 	tx *sqlx.Tx,
@@ -161,7 +161,7 @@ func (a AccountBillSummaryDailyDao) UpdateByIDWithTx(
 	return nil
 }
 
-// DeleteWithTx delete account bill summary with tx.
+// DeleteWithTx delete account bill summary daliy with tx.
 func (a AccountBillSummaryDailyDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")

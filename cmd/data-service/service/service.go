@@ -249,6 +249,10 @@ func (s *Service) apiSet() *restful.Container {
 	if capability.ObjectStore != nil {
 		rawbill.InitService(capability)
 	}
+	cert.InitService(capability)
+	loadbalancer.InitService(capability)
+	sgcomrel.InitService(capability)
+
 	return restful.NewContainer().Add(capability.WebService)
 }
 
