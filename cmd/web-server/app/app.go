@@ -73,7 +73,7 @@ func (s *webService) prepare(opt *options.Option) error {
 	metrics.InitMetrics(net.JoinHostPort(network.BindIP, strconv.Itoa(int(network.Port))))
 
 	// new api server discovery client.
-	discOpt := serviced.DiscoveryOption{Services: []cc.Name{cc.CloudServerName, cc.AuthServerName}}
+	discOpt := serviced.DiscoveryOption{Services: []cc.Name{cc.CloudServerName, cc.AuthServerName, cc.AccountServerName}}
 	dis, err := serviced.NewDiscovery(cc.WebServer().Service, discOpt)
 	if err != nil {
 		return fmt.Errorf("new service discovery faield, err: %v", err)

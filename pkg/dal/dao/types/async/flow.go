@@ -37,7 +37,7 @@ type UpdateFlowInfo struct {
 	Source enumor.FlowState   `json:"source" validate:"required"`
 	Target enumor.FlowState   `json:"target" validate:"required"`
 	Reason *tableasync.Reason `json:"reason" validate:"omitempty"`
-	Worker string             `json:"worker" validate:"omitempty"`
+	Worker *string            `json:"worker" validate:"omitempty"`
 }
 
 // Validate UpdateFlowInfo.

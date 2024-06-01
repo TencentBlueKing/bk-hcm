@@ -1,17 +1,9 @@
 <script lang="ts" setup>
-import {
-  ref,
-  watch,
-  PropType,
-} from 'vue';
-import type {
-  FilterType,
-} from '@/typings/resource';
+import { ref, watch, PropType } from 'vue';
+import type { FilterType } from '@/typings/resource';
 import useQueryList from '@/views/resource/resource-manage/hooks/use-query-list';
 
-import {
-  useI18n,
-} from 'vue-i18n';
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps({
   filter: {
@@ -19,9 +11,7 @@ const props = defineProps({
   },
 });
 
-const {
-  t,
-} = useI18n();
+const { t } = useI18n();
 
 const cvmColumns = [
   {
@@ -79,14 +69,10 @@ const types = [
 const activeType = ref('cvm');
 
 const fetchList = (fetchType: string) => {
-  const {
-    datas,
-    pagination,
-    isLoading,
-    handlePageChange,
-    handlePageSizeChange,
-    handleSort,
-  } = useQueryList(props, fetchType);
+  const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort } = useQueryList(
+    props,
+    fetchType,
+  );
   return {
     datas,
     pagination,
@@ -114,15 +100,8 @@ watch(
 </script>
 
 <template>
-  <bk-radio-group
-    class="mt20"
-    v-model="activeType"
-  >
-    <bk-radio-button
-      v-for="item in types"
-      :key="item.name"
-      :label="item.name"
-    >
+  <bk-radio-group class="mt20" v-model="activeType">
+    <bk-radio-button v-for="item in types" :key="item.name" :label="item.name">
       {{ item.label }}
     </bk-radio-button>
   </bk-radio-group>
@@ -147,8 +126,8 @@ watch(
 </template>
 
 <style lang="scss" scoped>
-  .info-title {
-    font-size: 14px;
-    margin-bottom: 8px;
-  }
+.info-title {
+  font-size: 14px;
+  margin-bottom: 8px;
+}
 </style>

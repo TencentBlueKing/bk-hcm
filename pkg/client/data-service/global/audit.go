@@ -26,7 +26,9 @@ import (
 	"hcm/pkg/api/core"
 	coreaudit "hcm/pkg/api/core/audit"
 	protoaudit "hcm/pkg/api/data-service/audit"
+	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -207,4 +209,12 @@ func (a *AuditClient) GetAudit(ctx context.Context, h http.Header, id uint64) (
 	}
 
 	return resp.Data, nil
+}
+
+// GetAuditRaw  get audit with raw detail
+func (a *AuditClient) GetAuditRaw(kt *kit.Kit, id uint64) (
+	*coreaudit.RawAudit, error) {
+
+	return common.Request[common.Empty, coreaudit.RawAudit](a.client, rest.GET, kt, nil,
+		"/audits/%d", id)
 }

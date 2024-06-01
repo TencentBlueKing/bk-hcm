@@ -33,4 +33,12 @@ const (
 
 	// BatchCreateCvmFromCloudMaxLimit 批量创建主机从公有云上的最大限制数量
 	BatchCreateCvmFromCloudMaxLimit = 100
+	// BatchAddRSCloudMaxLimit 公有云上批量添加RS的最大限制数量
+	BatchAddRSCloudMaxLimit = 100
+	// BatchRemoveRSCloudMaxLimit 公有云上批量移除RS的最大限制数量
+	BatchRemoveRSCloudMaxLimit = 100
+	// BatchModifyTargetPortCloudMaxLimit 公有云上批量修改RS端口的最大限制数量
+	BatchModifyTargetPortCloudMaxLimit = 20
+	// BatchModifyTargetWeightCloudMaxLimit 公有云上批量修改RS权重的最大限制数量
+	BatchModifyTargetWeightCloudMaxLimit = 100
 )

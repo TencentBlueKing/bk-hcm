@@ -27,7 +27,7 @@ import (
 	"hcm/pkg/rest"
 )
 
-// ListBillSummaryDaily account with options
+// ListBillSummaryDaily list bill summary daily with options
 func (svc *service) ListBillSummaryDaily(cts *rest.Contexts) (interface{}, error) {
 	req := new(dataproto.BillSummaryDailyListReq)
 	if err := cts.DecodeInto(req); err != nil {

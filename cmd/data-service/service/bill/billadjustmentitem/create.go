@@ -33,9 +33,9 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// CreateBillAdjustmentItem account with options
+// CreateBillAdjustmentItem account bill adjustment item with options
 func (svc *service) CreateBillAdjustmentItem(cts *rest.Contexts) (interface{}, error) {
-	req := make([]dsbill.BillAdjustmentItemCreateReq, 0)
+	req := make(dsbill.BatchBillAdjustmentItemCreateReq, 0)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}

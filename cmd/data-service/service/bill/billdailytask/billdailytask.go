@@ -34,10 +34,10 @@ func InitService(cap *capability.Capability) {
 		dao: cap.Dao,
 	}
 	h := rest.NewHandler()
-	h.Add("CreateBillDailyPullTask", http.MethodPost, "/billdailypulltasks", svc.CreateBillDailyPullTask)
-	h.Add("DeleteBillDailyPullTask", http.MethodDelete, "/billdailypulltasks", svc.DeleteBillDailyPullTask)
-	h.Add("UpdateBillDailyPullTask", http.MethodPut, "/billdailypulltasks", svc.UpdateBillDailyPullTask)
-	h.Add("ListBillDailyPullTask", http.MethodGet, "/billdailypulltasks", svc.ListBillDailyPullTask)
+	h.Add("CreateBillDailyPullTask", http.MethodPost, "/bills/dailypulltasks", svc.CreateBillDailyPullTask)
+	h.Add("DeleteBillDailyPullTask", http.MethodDelete, "/bills/dailypulltasks", svc.DeleteBillDailyPullTask)
+	h.Add("UpdateBillDailyPullTask", http.MethodPut, "/bills/dailypulltasks", svc.UpdateBillDailyPullTask)
+	h.Add("ListBillDailyPullTask", http.MethodGet, "/bills/dailypulltasks", svc.ListBillDailyPullTask)
 
 	h.Load(cap.WebService)
 }

@@ -58,7 +58,7 @@ type AccountBillPuller struct {
 	// SecondAccountID 账号ID
 	SecondAccountID string `db:"second_account_id" json:"second_account_id"`
 	// Vendor 云厂商
-	Vendor string `db:"vendor" json:"vendor"`
+	Vendor enumor.Vendor `db:"vendor" json:"vendor"`
 	// ProductID 运营产品ID
 	ProductID int64 `db:"product_id" json:"product_id"`
 	// BkBizID 业务ID

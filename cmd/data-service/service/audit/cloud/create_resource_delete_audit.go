@@ -97,9 +97,21 @@ func (ad Audit) buildDeleteAuditInfo(kt *kit.Kit, resType enumor.AuditResourceTy
 		audits, err = ad.diskDeleteAuditBuild(kt, deletes)
 	case enumor.ArgumentTemplateAuditResType:
 		audits, err = ad.argsTplDeleteAuditBuild(kt, deletes)
+	case enumor.SslCertAuditResType:
+		audits, err = ad.certDeleteAuditBuild(kt, deletes)
+	case enumor.TargetGroupAuditResType:
+		audits, err = ad.targetGroupDeleteAuditBuild(kt, deletes)
+	case enumor.UrlRuleAuditResType:
+		audits, err = ad.loadBalancer.UrlRuleDeleteAuditBuild(kt, parentID, deletes)
+	case enumor.UrlRuleDomainAuditResType:
+		audits, err = ad.loadBalancer.UrlRuleDeleteByDomainAuditBuild(kt, parentID, deletes)
+	case enumor.ListenerAuditResType:
+		audits, err = ad.listenerDeleteAuditBuild(kt, deletes)
+	case enumor.LoadBalancerAuditResType:
+		audits, err = ad.loadBalancer.LoadBalancerDeleteAuditBuild(kt, deletes)
 
 	default:
-		return nil, fmt.Errorf("cloud resource type: %s not support", resType)
+		return nil, fmt.Errorf("build delete audit cloud resource type: %s not support", resType)
 	}
 	if err != nil {
 		return nil, err

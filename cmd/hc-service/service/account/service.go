@@ -73,6 +73,10 @@ func InitAccountService(cap *capability.Capability) {
 	h.Add("ListTCloudAuthPolicies", http.MethodPost, "/vendors/tcloud/accounts/auth_policies/list",
 		svc.ListTCloudAuthPolicies)
 
+	// 获取腾讯云账号用户网络类型
+	h.Add("GetTCloudNetworkAccountType", http.MethodGet, "/vendors/tcloud/accounts/{account_id}/network_type",
+		svc.GetTCloudNetworkAccountType)
+
 	initAccountServiceHooks(svc, h)
 
 	h.Load(cap.WebService)

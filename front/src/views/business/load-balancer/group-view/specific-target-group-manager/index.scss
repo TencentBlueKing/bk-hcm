@@ -1,0 +1,66 @@
+.manager-tab-wrap {
+  height: 100%;
+
+  // 覆盖组件默认样式
+  .bk-tab-header .bk-tab-header-item {
+    padding: 0 24px;
+  }
+  .bk-tab-content {
+    padding: 0;
+    overflow-y: auto;
+  }
+
+  .fixed-operate-btn {
+    position: fixed;
+    top: 192px;
+    right: 51px;
+    min-width: 64px;
+  }
+
+  .detail-info-container {
+    .info-title {
+      margin-bottom: 12px;
+      font-weight: 700;
+      font-size: 14px;
+      color: #313238;
+    }
+
+    .info-content {
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    .info-item {
+      display: flex;
+      width: 50%;
+      padding: 0 20px;
+      line-height: 40px;
+
+      .info-item-label {
+        margin-right: 5px;
+        width: 100px;
+        text-align: right;
+      }
+
+      .info-item-value {
+        margin-left: 10px;
+        color: #313238;
+
+        &.multiline {
+          padding-top: 0.7em;
+          line-height: normal;
+        }
+      }
+    }
+    .detail-info-wrap:first-child {
+      margin-bottom: 32px;
+    }
+    &:not(:last-child) {
+      margin-bottom: 32px;
+    }
+  }
+}
+
+.specific-target-group-manager {
+  height: 100%;
+}

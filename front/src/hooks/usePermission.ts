@@ -1,5 +1,5 @@
 import { usePermissionStore } from '@/stores';
-import {  Permission, PermissionType, Role } from '@/typings';
+import { Permission, PermissionType, Role } from '@/typings';
 import { Message } from 'bkui-vue';
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -13,36 +13,41 @@ export function usePermission() {
   const permissionModel = ref(initPermission());
   const isSaving = ref(false);
 
-  watch(() => [
-    ...permissionStore.permissions,
-  ], (permissions) => {
-    permissionModel.value = initPermission(permissions);
-  });
+  watch(
+    () => [...permissionStore.permissions],
+    (permissions) => {
+      permissionModel.value = initPermission(permissions);
+    },
+  );
 
-  watch(() => route.params.projectId, (pid) => {
-    permissionStore.fetchPermission(pid as string);
-  }, { immediate: true });
+  watch(
+    () => route.params.projectId,
+    (pid) => {
+      permissionStore.fetchPermission(pid as string);
+    },
+    { immediate: true },
+  );
 
   function initPermission(permissions = permissionStore.permissions) {
-    return permissions.reduce((
-      acc: any,
-      item: Permission,
-    ) => {
-      acc[item.role][item.type] = {
-        ...item,
-        members: [...item.members],
-      };
-      return acc;
-    }, {
-      [Role.ADMIN]: {
-        [PermissionType.USER]: {},
-        [PermissionType.ORG]: {},
+    return permissions.reduce(
+      (acc: any, item: Permission) => {
+        acc[item.role][item.type] = {
+          ...item,
+          members: [...item.members],
+        };
+        return acc;
       },
-      [Role.MEMBER]: {
-        [PermissionType.USER]: {},
-        [PermissionType.ORG]: {},
+      {
+        [Role.ADMIN]: {
+          [PermissionType.USER]: {},
+          [PermissionType.ORG]: {},
+        },
+        [Role.MEMBER]: {
+          [PermissionType.USER]: {},
+          [PermissionType.ORG]: {},
+        },
       },
-    });
+    );
   }
 
   async function savePermissions() {
@@ -75,5 +80,3 @@ export function usePermission() {
     isSaving,
   };
 }
-
-

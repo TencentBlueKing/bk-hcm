@@ -8,9 +8,9 @@ export interface IProp {
   isValidate?: boolean,
 }
 export interface IExtensionItem {
-  label: string,
-  value: string,
-  placeholder?: string,
+  label: string;
+  value: string;
+  placeholder?: string;
 }
 export enum ValidateStatus {
   YES,
@@ -18,10 +18,10 @@ export enum ValidateStatus {
   UNKOWN,
 }
 export interface IExtension {
-  input: Record<string, IExtensionItem>, // 输入
-  output1: Record<string, IExtensionItem>, // 需要显眼的输出
-  output2: Record<string, IExtensionItem>, // 不需要显眼的输出
-  validatedStatus: ValidateStatus, // 是否校验通过
+  input: Record<string, IExtensionItem>; // 输入
+  output1: Record<string, IExtensionItem>; // 需要显眼的输出
+  output2: Record<string, IExtensionItem>; // 不需要显眼的输出
+  validatedStatus: ValidateStatus; // 是否校验通过
   validateFailedReason?: string, // 不通过的理由
 }
 export const useSecretExtension = (props: IProp) => {
@@ -226,7 +226,7 @@ export const useSecretExtension = (props: IProp) => {
           curExtension.value = azureExtension;
           break;
         }
-      };
+      }
     },
     {
       immediate: true,

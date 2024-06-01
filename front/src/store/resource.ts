@@ -39,7 +39,9 @@ export const useResourceStore = defineStore({
     },
     detail(type: string, id: number | string, vendor?: string) {
       if (vendor) {
-        return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}vendors/${vendor}/${type}/${id}`);
+        return http.get(
+          `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}vendors/${vendor}/${type}/${id}`,
+        );
       }
       return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/${id}`);
     },
@@ -62,7 +64,12 @@ export const useResourceStore = defineStore({
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/cloud_areas/list`, data);
     },
     getRouteList(type: string, id: string, data: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}vendors/${type}/route_tables/${id}/routes/list`, data);
+      return http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(
+          type,
+        )}vendors/${type}/route_tables/${id}/routes/list`,
+        data,
+      );
     },
     // 分配到业务下
     assignBusiness(type: string, data: any) {
@@ -81,32 +88,44 @@ export const useResourceStore = defineStore({
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}subnets/${id}/ips/count`);
     },
     getEipListByCvmId(vendor: string, id: string) {
-      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/eips/cvms/${id}`);
+      return http.get(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/eips/cvms/${id}`,
+      );
     },
     getDiskListByCvmId(vendor: string, id: string) {
-      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/disks/cvms/${id}`);
+      return http.get(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/disks/cvms/${id}`,
+      );
     },
     // 获取根据主机安全组列表
     getSecurityGroupsListByCvmId(id: string) {
       return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}security_groups/cvms/${id}`);
     },
     // 操作主机相关
-    cvmOperate(type: string, data: {ids: string[]}) {
+    cvmOperate(type: string, data: { ids: string[] }) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}cvms/batch/${type}`, data);
     },
     // 主机分配
-    cvmAssignBizs(data: {cvm_ids: string[], bk_biz_id: string}) {
+    cvmAssignBizs(data: { cvm_ids: string[]; bk_biz_id: string }) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}cvms/assign/bizs`, data);
     },
     // 网络接口
     cvmNetwork(type: string, id: string) {
-      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}vendors/${type}/network_interfaces/cvms/${id}`);
+      return http.get(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(
+          type,
+        )}vendors/${type}/network_interfaces/cvms/${id}`,
+      );
     },
     getCommonList(data: any, url: string) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${url}`, data);
     },
     getNetworkList(type: string, id: string) {
-      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}vendors/${type}/network_interfaces/cvms/${id}`);
+      return http.get(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(
+          type,
+        )}vendors/${type}/network_interfaces/cvms/${id}`,
+      );
     },
     attachDisk(data: any) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath('disks')}disks/attach`, data);
@@ -125,7 +144,9 @@ export const useResourceStore = defineStore({
     },
     // 销毁
     deleteRecycledData(type: string, data: any) {
-      return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}recycled/${type}/batch`, { data });
+      return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}recycled/${type}/batch`, {
+        data,
+      });
     },
     // 回收
     recoverRecycledData(type: string, data: any) {
@@ -159,32 +180,50 @@ export const useResourceStore = defineStore({
 
     // 绑定主机安全组信息
     bindSecurityInfo(type: string, data: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}security_groups/associate/${type}`, data);
+      return http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}security_groups/associate/${type}`,
+        data,
+      );
     },
 
     // 解绑主机安全组信息
     unBindSecurityInfo(type: string, data: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}security_groups/disassociate/${type}`, data);
+      return http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}security_groups/disassociate/${type}`,
+        data,
+      );
     },
 
     // 获取未绑定eip的网络接口列表
     getUnbindEipNetworkList(data: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}network_interfaces/associate/list`, data);
+      return http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}network_interfaces/associate/list`,
+        data,
+      );
     },
 
     // 获取未绑定disk的主机列表
     getUnbindDiskCvms(data: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}disk_cvm_rels/with/cvms/list`, data);
+      return http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}disk_cvm_rels/with/cvms/list`,
+        data,
+      );
     },
 
     // 获取未绑定主机的disk列表
     getUnbindCvmDisks(data: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}disk_cvm_rels/with/disks/without/cvm/list`, data);
+      return http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}disk_cvm_rels/with/disks/without/cvm/list`,
+        data,
+      );
     },
 
     // 获取未绑定主机的eips列表
     getUnbindCvmEips(data: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}eip_cvm_rels/with/eips/without/cvm/list`, data);
+      return http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}eip_cvm_rels/with/eips/without/cvm/list`,
+        data,
+      );
     },
     // 创建
     create(type: string, data: any) {

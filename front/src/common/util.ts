@@ -1,10 +1,10 @@
-import dayjs from 'dayjs';
+import dayjs, { OpUnitType, QUnitType } from 'dayjs';
 // 获取 cookie object
 export function getCookies(strCookie = document.cookie): any {
   if (!strCookie) {
     return {};
   }
-  const arrCookie = strCookie.split('; ');// 分割
+  const arrCookie = strCookie.split('; '); // 分割
   const cookiesObj = {};
   arrCookie.forEach((cookieStr) => {
     const arr = cookieStr.split('=');
@@ -22,9 +22,8 @@ export function getCookies(strCookie = document.cookie): any {
  * @returns {boolean}
  */
 export function isObject(item: any) {
-  return (item && Object.prototype.toString.apply(item) === '[object Object]');
+  return item && Object.prototype.toString.apply(item) === '[object Object]';
 }
-
 
 /**
  * 深度合并多个对象
@@ -58,12 +57,34 @@ export function timeFormatter(val: any, format = 'YYYY-MM-DD HH:mm:ss') {
   return val ? dayjs(val).format(format) : '--';
 }
 
+/**
+ * 相对当前的时间
+ * @param val 待比较的时间
+ * @returns 相对的时间字符串
+ */
+export function timeFromNow(val: string, unit: QUnitType | OpUnitType = 'minute') {
+  return dayjs().diff(val, unit);
+}
+
+/**
+ * 为表格设置new标识(配合useTable使用)
+ * @returns 'row-class': ({ created_at }: { created_at: string }) => string
+ */
+export function getTableNewRowClass() {
+  return ({ created_at }: { created_at: string }) => {
+    if (timeFromNow(created_at) <= 5) {
+      return 'table-new-row';
+    }
+  };
+}
+
 export function classes(dynamicCls: object, constCls = ''): string {
-  return Object.entries(dynamicCls).filter(entry => entry[1])
-    .map(entry => entry[0])
+  return Object.entries(dynamicCls)
+    .filter((entry) => entry[1])
+    .map((entry) => entry[0])
     .join(' ')
     .concat(constCls ? ` ${constCls}` : '');
-};
+}
 
 /**
  * 获取Cookie
@@ -99,12 +120,12 @@ export function json2Query(param: any, key?: any) {
   const separator = '&';
   let paramStr = '';
   if (
-    param instanceof String
-      || typeof param === 'string'
-      || param instanceof Number
-      || typeof param === 'number'
-      || param instanceof Boolean
-      || typeof param === 'boolean'
+    param instanceof String ||
+    typeof param === 'string' ||
+    param instanceof Number ||
+    typeof param === 'number' ||
+    param instanceof Boolean ||
+    typeof param === 'boolean'
   ) {
     // @ts-ignore
     paramStr += separator + key + mappingOperator + encodeURIComponent(param);
@@ -112,9 +133,8 @@ export function json2Query(param: any, key?: any) {
     if (param) {
       Object.keys(param).forEach((p) => {
         const value = param[p];
-        const k = key === null || key === '' || key === undefined
-          ? p
-          : key + (param instanceof Array ? `[${p}]` : `.${p}`);
+        const k =
+          key === null || key === '' || key === undefined ? p : key + (param instanceof Array ? `[${p}]` : `.${p}`);
         paramStr += separator + json2Query(value, k);
       });
     }
@@ -128,9 +148,8 @@ export function json2Query(param: any, key?: any) {
  * @return {number} 浏览器视口的高度
  */
 export function getWindowHeight() {
-  const windowHeight = document.compatMode === 'CSS1Compat'
-    ? document.documentElement.clientHeight
-    : document.body.clientHeight;
+  const windowHeight =
+    document.compatMode === 'CSS1Compat' ? document.documentElement.clientHeight : document.body.clientHeight;
 
   return windowHeight;
 }
@@ -144,7 +163,7 @@ export function getWindowHeight() {
 export function formatStorageSize(value: number, digits = 0) {
   const uints = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
   const index = Math.floor(Math.log(value) / Math.log(1024));
-  const size = value / (1024 ** index);
+  const size = value / 1024 ** index;
   return `${size.toFixed(digits)}${uints[index]}`;
 }
 
@@ -155,9 +174,11 @@ export function formatStorageSize(value: number, digits = 0) {
 export function getScoreColor(score: number) {
   if (score > 0 && score < 180) {
     return '#00A62B';
-  } if (score >= 180 && score <= 360) {
+  }
+  if (score >= 180 && score <= 360) {
     return '#FF9D00';
-  } if (score > 360) {
+  }
+  if (score > 360) {
     return '#EA3636';
   }
   return '#63656E';
@@ -184,4 +205,55 @@ export function getDifferenceSet(origin: Array<string>, compare: Array<string>) 
     }
   });
   return Array.from(set);
+}
+
+// localStorage 操作类
+export const localStorageActions = {
+  set(key: string, value: any) {
+    if (typeof value === 'object') {
+      value = JSON.stringify(value);
+    }
+    localStorage.setItem(key, value);
+  },
+  get(key: string) {
+    const value = localStorage.getItem(key);
+    if (value) {
+      return JSON.parse(value);
+    }
+    return null;
+  },
+  remove(key: string) {
+    localStorage.removeItem(key);
+  },
+  clear() {
+    localStorage.clear();
+  },
+};
+
+/**
+ * 获取指定的 URL 查询参数值
+ * @param {string} param 要获取的查询参数名
+ * @param {string} url 可选，指定的 URL，默认为当前浏览器地址
+ * @returns {string | null} 查询参数值，如果不存在则返回 null
+ */
+export const getQueryStringParams = (param: string, url = window.location.href) => {
+  let queryParams;
+
+  if (url.includes('#')) {
+    // 如果 URL 包含 #，假定是 hash 路由，需要从 hash 中解析查询参数
+    const hash = url.split('#')[1]; // 获取 hash 部分
+    if (hash.includes('?')) {
+      const search = hash.split('?')[1]; // 从 hash 中分离查询字符串
+      queryParams = new URLSearchParams(search);
+    } else {
+      // 如果 hash 中没有查询字符串，提前返回 null
+      return null;
+    }
+  } else {
+    // 如果是常规路由，直接从 URL 对象解析查询字符串
+    const urlObj = new URL(url);
+    queryParams = new URLSearchParams(urlObj.search);
+  }
+
+  return queryParams.get(param);
 };

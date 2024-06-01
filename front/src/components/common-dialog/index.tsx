@@ -1,5 +1,6 @@
 import { defineComponent } from 'vue';
 import { Dialog } from 'bkui-vue';
+import { useI18n } from 'vue-i18n';
 import './index.scss';
 
 export default defineComponent({
@@ -14,6 +15,7 @@ export default defineComponent({
   },
   emits: ['update:isShow', 'handleConfirm'],
   setup(props, { emit, slots }) {
+    const { t } = useI18n();
     const triggerShow = (isShow: boolean) => {
       emit('update:isShow', isShow);
     };
@@ -25,13 +27,14 @@ export default defineComponent({
       <Dialog
         class='common-dialog'
         isShow={props.isShow}
-        title={props.title}
+        title={t(props.title)}
         width={props.width}
         onConfirm={handleConfirm}
         onClosed={() => triggerShow(false)}>
         {{
           default: () => slots.default?.(),
           tools: () => slots.tools?.(),
+          footer: slots.footer ? () => slots.footer?.() : undefined,
         }}
       </Dialog>
     );

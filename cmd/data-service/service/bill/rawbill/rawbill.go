@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package rawbill
+// Package rawbill ...
 package rawbill
 
 import (
@@ -34,7 +34,7 @@ func InitService(cap *capability.Capability) {
 		ostore: cap.ObjectStore,
 	}
 	h := rest.NewHandler()
-	h.Add("CreateRawBill", http.MethodPost, "/rawbills", svc.CreateRawBill)
+	h.Add("CreateRawBill", http.MethodPost, "bills/rawbills", svc.CreateRawBill)
 
 	h.Load(cap.WebService)
 }

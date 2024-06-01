@@ -27,7 +27,7 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
-// ListBizAuthRes 业务下 查询校验
+// ListBizAuthRes 校验用户是否有业务下对应资源查看权限, 如果有传入filter, 给filter 加上业务id 过滤条件
 func ListBizAuthRes(cts *rest.Contexts, opt *ListAuthResOption) (*filter.Expression, bool, error) {
 	bizID, err := cts.PathParameter("bk_biz_id").Int64()
 	if err != nil {

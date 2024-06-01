@@ -53,6 +53,9 @@ type Backend interface {
 	UpdateTaskStateByCAS(kt *kit.Kit, info *UpdateTaskInfo) error
 	// ListTask 查询任务
 	ListTask(kt *kit.Kit, input *ListInput) ([]model.Task, error)
+
+	// RetryTask 重试任务 将flow置为running, task 置为pending
+	RetryTask(kt *kit.Kit, flowID, taskID string) error
 }
 
 // ListInput 查询输入参数

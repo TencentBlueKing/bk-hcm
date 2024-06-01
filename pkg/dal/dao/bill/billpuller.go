@@ -50,16 +50,17 @@ type AccountBillPuller interface {
 
 var _ AccountBillPuller = new(AccountBillPullerDao)
 
+// AccountBillPullerDao account bill puller dao
 type AccountBillPullerDao struct {
 	Orm   orm.Interface
 	IDGen idgenerator.IDGenInterface
 }
 
-// BatchCreateWithTx ...
+// BatchCreateWithTx batch create account bill puller
 func (abpDao AccountBillPullerDao) BatchCreateWithTx(
 	kt *kit.Kit, tx *sqlx.Tx, abPullers []*tablebill.AccountBillPuller) ([]string, error) {
 	if len(abPullers) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "accountbillpuller model data is required")
+		return nil, errf.New(errf.InvalidParameter, "account bill puller model data is required")
 	}
 
 	ids, err := abpDao.IDGen.Batch(kt, table.AccountBillPullerTable, len(abPullers))
@@ -88,7 +89,7 @@ func (abpDao AccountBillPullerDao) BatchCreateWithTx(
 	return ids, nil
 }
 
-// List ...
+// List list account bill puller
 func (abpDao AccountBillPullerDao) List(kt *kit.Kit, opt *types.ListOption) (
 	*typesbill.ListAccountBillPullerDetails, error) {
 	if opt == nil {
@@ -132,7 +133,7 @@ func (abpDao AccountBillPullerDao) List(kt *kit.Kit, opt *types.ListOption) (
 	return &typesbill.ListAccountBillPullerDetails{Details: details}, nil
 }
 
-// UpdateByIDWithTx ...
+// UpdateByIDWithTx update account bill puller
 func (abpDao AccountBillPullerDao) UpdateByIDWithTx(
 	kt *kit.Kit, tx *sqlx.Tx, pullerID string, updateData *tablebill.AccountBillPuller) error {
 
@@ -158,7 +159,7 @@ func (abpDao AccountBillPullerDao) UpdateByIDWithTx(
 	return nil
 }
 
-// DeleteWithTx ...
+// DeleteWithTx delete account bill puller
 func (abpDao AccountBillPullerDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error {
 	if filterExpr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")

@@ -42,9 +42,13 @@ export default defineComponent({
     const staffStore = useStaffStore();
     const searchKey = ['username'];
     const userList: any = ref(props.defaultUserlist);
-    const maxData = computed(() => (!props.multiple ? {
-      maxData: 1,
-    } : {}));
+    const maxData = computed(() =>
+      !props.multiple
+        ? {
+            maxData: 1,
+          }
+        : {},
+    );
     const popoverProps = {
       boundary: document.body,
       fixOnBoundary: true,
@@ -57,15 +61,10 @@ export default defineComponent({
     });
 
     function tpl(node: Staff) {
-      return (
-        <Tpl
-          englishName={node.username}
-          chineseName={node.display_name}
-        />
-      );
+      return <Tpl englishName={node.username} chineseName={node.display_name} />;
     }
     function handleChange(val: Staff[]) {
-      userList.value = val.map(name => ({
+      userList.value = val.map((name) => ({
         username: name,
         display_name: name,
       }));
@@ -93,7 +92,7 @@ export default defineComponent({
           nextTick(() => {
             const arr = [...userList.value, ...list];
             const set = new Set(arr.map(({ username }) => username));
-            userList.value = Array.from(set).map(name => ({
+            userList.value = Array.from(set).map((name) => ({
               username: name,
               display_name: name,
             }));
@@ -111,8 +110,8 @@ export default defineComponent({
         // disabled={props.disabled || staffStore.fetching}
         list={userList}
         ref={tagInputRef}
-        displayKey="display_name"
-        saveKey="username"
+        displayKey='display_name'
+        saveKey='username'
         is-async-list
         searchKey={searchKey}
         // filterCallback={handleSearch}
@@ -124,19 +123,11 @@ export default defineComponent({
         tagTpl={tpl}
         clearable={props.clearable}
         allowCreate={props.allowCreate}
-        popoverProps={popoverProps}
-      >
-          {{
-            suffix: () => staffStore.fetching && (
-              <Loading
-                class="mr8"
-                loading={staffStore.fetching}
-                mode="spin"
-                size="mini"
-
-              />
-            ),
-          }}
+        popoverProps={popoverProps}>
+        {{
+          suffix: () =>
+            staffStore.fetching && <Loading class='mr8' loading={staffStore.fetching} mode='spin' size='mini' />,
+        }}
       </TagInput>
     );
   },

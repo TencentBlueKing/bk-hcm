@@ -29,7 +29,7 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// BillDailyPullTaskCreateReq ...
+// BillDailyPullTaskCreateReq BillDailyPullTask create request
 type BillDailyPullTaskCreateReq struct {
 	FirstAccountID  string          `json:"first_account_id" validate:"required"`
 	SecondAccountID string          `json:"second_account_id" validate:"required"`
@@ -47,30 +47,30 @@ type BillDailyPullTaskCreateReq struct {
 	Cost            decimal.Decimal `json:"cost" validate:"required"`
 }
 
-// Validate BillDailyPullTaskCreateReq.
+// Validate validates BillDailyPullTaskCreateReq
 func (c *BillDailyPullTaskCreateReq) Validate() error {
 	return validator.Validate.Struct(c)
 }
 
-// BillDailyPullTaskListReq ...
+// BillDailyPullTaskListReq BillDailyPullTask list request
 type BillDailyPullTaskListReq struct {
 	Filter *filter.Expression `json:"filter" validate:"required"`
 	Page   *core.BasePage     `json:"page" validate:"required"`
 	Fields []string           `json:"fields" validate:"omitempty"`
 }
 
-// Validate ...
+// Validate validates BillDailyPullTaskListReq
 func (req *BillDailyPullTaskListReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// BillDailyPullTaskListResult ...
+// BillDailyPullTaskListResult BillDailyPullTask list response
 type BillDailyPullTaskListResult struct {
 	Count   *uint64                    `json:"count,omitempty"`
 	Details []*BillDailyPullTaskResult `json:"details"`
 }
 
-// BillDailyPullTaskResult ...
+// BillDailyPullTaskResult BillDailyPullTask result
 type BillDailyPullTaskResult struct {
 	ID              string          `json:"id,omitempty"`
 	FirstAccountID  string          `json:"first_account_id" validate:"required"`
@@ -110,7 +110,7 @@ type BillDailyPullTaskUpdateReq struct {
 	Cost            decimal.Decimal `json:"cost" validate:"required"`
 }
 
-// Validate ...
+// Validate validates BillDailyPullTaskUpdateReq
 func (req *BillDailyPullTaskUpdateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }

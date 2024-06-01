@@ -27,7 +27,7 @@ import (
 	"hcm/pkg/rest"
 )
 
-// ListBillDailyPullTask account with options
+// ListBillDailyPullTask list account bill daily pull task with options
 func (svc *service) ListBillDailyPullTask(cts *rest.Contexts) (interface{}, error) {
 	req := new(dataproto.BillDailyPullTaskListReq)
 	if err := cts.DecodeInto(req); err != nil {

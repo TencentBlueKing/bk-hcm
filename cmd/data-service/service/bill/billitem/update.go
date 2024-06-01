@@ -31,7 +31,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// UpdateBillItem account with options
+// UpdateBillItem update bill item with options
 func (svc *service) UpdateBillItem(cts *rest.Contexts) (interface{}, error) {
 	req := new(dataservice.BillItemUpdateReq)
 

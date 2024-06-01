@@ -27,7 +27,7 @@ import (
 	"hcm/pkg/rest"
 )
 
-// ListBillSummaryVersion account with options
+// ListBillSummaryVersion list bill summary version with options
 func (svc *service) ListBillSummaryVersion(cts *rest.Contexts) (interface{}, error) {
 	req := new(dataproto.BillSummaryVersionListReq)
 	if err := cts.DecodeInto(req); err != nil {

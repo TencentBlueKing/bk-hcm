@@ -1,9 +1,7 @@
 /**
  * 关机相关事件和状态
  */
-import {
-  ref,
-} from 'vue';
+import { ref } from 'vue';
 
 import HostShutdown from '../children/dialog/shutdown/host-shutdown';
 

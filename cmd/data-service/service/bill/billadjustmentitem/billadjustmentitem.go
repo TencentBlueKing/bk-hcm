@@ -28,16 +28,16 @@ import (
 	"hcm/pkg/rest"
 )
 
-// InitService initialize the bill item service
+// InitService initialize the bill adjustment item service
 func InitService(cap *capability.Capability) {
 	svc := &service{
 		dao: cap.Dao,
 	}
 	h := rest.NewHandler()
-	h.Add("CreateBillAdjustmentItem", http.MethodPost, "/billadjustmentitems", svc.CreateBillAdjustmentItem)
-	h.Add("DeleteBillAdjustmentItem", http.MethodDelete, "/billadjustmentitems", svc.DeleteBillAdjustmentItem)
-	h.Add("UpdateBillAdjustmentItem", http.MethodPut, "/billadjustmentitems", svc.UpdateBillAdjustmentItem)
-	h.Add("ListBillAdjustmentItem", http.MethodGet, "/billadjustmentitems", svc.ListBillAdjustmentItem)
+	h.Add("CreateBillAdjustmentItem", http.MethodPost, "/bills/adjustmentitems", svc.CreateBillAdjustmentItem)
+	h.Add("DeleteBillAdjustmentItem", http.MethodDelete, "/bills/adjustmentitems", svc.DeleteBillAdjustmentItem)
+	h.Add("UpdateBillAdjustmentItem", http.MethodPut, "/bills/adjustmentitems", svc.UpdateBillAdjustmentItem)
+	h.Add("ListBillAdjustmentItem", http.MethodGet, "/bills/adjustmentitems", svc.ListBillAdjustmentItem)
 
 	h.Load(cap.WebService)
 }

@@ -28,8 +28,7 @@ const rules = {
   eip_name: [
     {
       validator: (value: string) => /^(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?)$/.test(value),
-      message:
-        '名称需要符合如下正则表达式: /(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?)/',
+      message: '名称需要符合如下正则表达式: /(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?)/',
       trigger: 'blur',
     },
   ],
@@ -73,23 +72,13 @@ defineExpose([validate]);
     </bk-form-item>
     <bk-form-item label="IP版本" required>
       <bk-radio v-model="formData.ip_version" label="IPV4">IPv4</bk-radio>
-      <bk-radio
-        v-model="formData.ip_version"
-        label="IPV6"
-        :disabled="formData.network_tier === 'STANDARD'"
-      >
+      <bk-radio v-model="formData.ip_version" label="IPV6" :disabled="formData.network_tier === 'STANDARD'">
         IPv6
       </bk-radio>
     </bk-form-item>
     <bk-form-item label="类型">
       <bk-radio v-model="type" label="area">区域级</bk-radio>
-      <bk-radio
-        v-model="type"
-        label="global"
-        :disabled="formData.network_tier === 'STANDARD'"
-      >
-        全球
-      </bk-radio>
+      <bk-radio v-model="type" label="global" :disabled="formData.network_tier === 'STANDARD'">全球</bk-radio>
     </bk-form-item>
     <bk-form-item v-if="type === 'area'" label="区域">
       {{ region }}

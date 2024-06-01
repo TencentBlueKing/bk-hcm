@@ -28,7 +28,7 @@ import (
 
 // ListVpcWithSubnetCountReq 查询vpc列表带有子网数量的请求
 type ListVpcWithSubnetCountReq struct {
-	Zone   string             `json:"zone" validate:"required"`
+	Zone   string             `json:"zone" validate:"omitempty"`
 	Filter *filter.Expression `json:"filter" validate:"required"`
 	Page   *core.BasePage     `json:"page" validate:"required"`
 }

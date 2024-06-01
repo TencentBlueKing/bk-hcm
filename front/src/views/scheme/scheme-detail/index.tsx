@@ -1,20 +1,9 @@
-import {
-  defineComponent,
-  ref,
-  computed,
-  watch,
-  onMounted,
-} from 'vue';
+import { defineComponent, ref, computed, watch, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { InfoBox, Message } from 'bkui-vue';
 import { useSchemeStore } from '@/store';
 import { QueryFilterType, QueryRuleOPEnum } from '@/typings/common';
-import {
-  IIdcInfo,
-  ISchemeListItem,
-  ISchemeEditingData,
-  ISchemeSelectorItem,
-} from '@/typings/scheme';
+import { IIdcInfo, ISchemeListItem, ISchemeEditingData, ISchemeSelectorItem } from '@/typings/scheme';
 import DetailHeader from './components/detail-header';
 import SchemeInfoCard from './components/scheme-info-card';
 import IdcMapDisplay from './components/idc-map-display';
@@ -105,16 +94,8 @@ export default defineComponent({
 
     const headerData = computed((): ISchemeSelectorItem => {
       if (schemeDetail.value) {
-        const {
-          id,
-          name,
-          bk_biz_id,
-          deployment_architecture,
-          vendors,
-          composite_score,
-          net_score,
-          cost_score,
-        } = schemeDetail.value;
+        const { id, name, bk_biz_id, deployment_architecture, vendors, composite_score, net_score, cost_score } =
+          schemeDetail.value;
         return {
           id,
           name,
@@ -131,7 +112,7 @@ export default defineComponent({
 
     const handleUpdate = (data: ISchemeEditingData) => {
       schemeDetail.value = Object.assign({}, schemeDetail.value, data);
-      const crtScheme = schemeList.value.find(item => item.id === schemeDetail.value.id);
+      const crtScheme = schemeList.value.find((item) => item.id === schemeDetail.value.id);
       if (crtScheme) {
         crtScheme.name = data.name;
         crtScheme.bk_biz_id = data.bk_biz_id;
@@ -146,15 +127,13 @@ export default defineComponent({
         footerAlign: 'center',
         contentAlign: 'center',
         onConfirm() {
-          schemeStore
-            .deleteCloudSelectionScheme([schemeDetail.value.id])
-            .then(() => {
-              Message({
-                theme: 'success',
-                message: '删除成功',
-              });
-              router.push({ name: 'scheme-list' });
+          schemeStore.deleteCloudSelectionScheme([schemeDetail.value.id]).then(() => {
+            Message({
+              theme: 'success',
+              message: '删除成功',
             });
+            router.push({ name: 'scheme-list' });
+          });
         },
       });
     };
@@ -182,17 +161,11 @@ export default defineComponent({
                   operate: () => (
                     <bk-button
                       onClick={() => {
-                        if (
-                          authVerifyData.value.permissionAction
-                            .cloud_selection_delete
-                        ) handleDel();
+                        if (authVerifyData.value.permissionAction.cloud_selection_delete) handleDel();
                         else handleAuth('cloud_selection_delete');
                       }}
                       class={`del-btn ${
-                        !authVerifyData.value.permissionAction
-                          .cloud_selection_delete
-                          ? 'hcm-no-permision-btn'
-                          : ''
+                        !authVerifyData.value.permissionAction.cloud_selection_delete ? 'hcm-no-permision-btn' : ''
                       }`}>
                       删除
                     </bk-button>
@@ -203,10 +176,7 @@ export default defineComponent({
                 <SchemeInfoCard schemeDetail={schemeDetail.value} />
                 <section class='chart-content-wrapper'>
                   <IdcMapDisplay list={idcList.value} />
-                  <NetworkHeatMap
-                    idcList={idcList.value}
-                    areaTopo={schemeDetail.value.user_distribution}
-                  />
+                  <NetworkHeatMap idcList={idcList.value} areaTopo={schemeDetail.value.user_distribution} />
                 </section>
               </section>
             </>

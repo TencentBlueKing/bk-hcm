@@ -33,7 +33,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// BatchCreateBillPuller account with options
+// BatchCreateBillPuller create bill puller with options
 func (svc *service) BatchCreateBillPuller(cts *rest.Contexts) (interface{}, error) {
 	req := new(dsbill.BillPullerCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -44,9 +44,9 @@ func (svc *service) BatchCreateBillPuller(cts *rest.Contexts) (interface{}, erro
 	}
 	pullerID, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		puller := &tablebill.AccountBillPuller{
-			FirstAccountID:        string(req.FirstAccountID),
-			SecondAccountID:       string(req.SecondAccountID),
-			Vendor:                string(req.Vendor),
+			FirstAccountID:        req.FirstAccountID,
+			SecondAccountID:       req.SecondAccountID,
+			Vendor:                req.Vendor,
 			ProductID:             req.ProductID,
 			BkBizID:               req.BkBizID,
 			PullMode:              string(req.PullMode),
@@ -70,7 +70,7 @@ func (svc *service) BatchCreateBillPuller(cts *rest.Contexts) (interface{}, erro
 	}
 	id, ok := pullerID.(string)
 	if !ok {
-		return nil, fmt.Errorf("create account but return id type not string, id type: %v",
+		return nil, fmt.Errorf("create account bill puller but return id type not string, id type: %v",
 			reflect.TypeOf(pullerID).String())
 	}
 

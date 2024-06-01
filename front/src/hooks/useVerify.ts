@@ -1,23 +1,21 @@
 import { useCommonStore } from '@/store';
 import usePagePermissionStore from '@/store/usePagePermissionStore';
 // import { Verify } from '@/typings';
-import {
-  ref,
-} from 'vue';
+import { ref } from 'vue';
 
 type paramsType = {
-  action: string
-  resource_type: string
-  bk_biz_id?: number
+  action: string;
+  resource_type: string;
+  bk_biz_id?: number;
 };
 const showPermissionDialog = ref(false);
 const authVerifyData = ref<any>({ permissionAction: {}, urlParams: {} });
 const permissionParams = ref({ system_id: '', actions: [] });
 
-export enum  IAM_CODE {
+export enum IAM_CODE {
   Success = 0,
   NoPermission = 2000009,
-};
+}
 
 // 权限hook
 export function useVerify() {
@@ -28,17 +26,21 @@ export function useVerify() {
   const getAuthVerifyData = async (authData: any[]) => {
     if (!authData) return;
     // 格式化参数
-    const params = authData?.reduce((p, v) => {
-      const resourceData: paramsType = {
-        action: v.action,
-        resource_type: v.type,
-      };
-      if (v.bk_biz_id) {  // 业务需要传业务id
-        resourceData.bk_biz_id = v.bk_biz_id;
-      }
-      p.resources.push(resourceData);
-      return p;
-    }, { resources: [] });
+    const params = authData?.reduce(
+      (p, v) => {
+        const resourceData: paramsType = {
+          action: v.action,
+          resource_type: v.type,
+        };
+        if (v.bk_biz_id) {
+          // 业务需要传业务id
+          resourceData.bk_biz_id = v.bk_biz_id;
+        }
+        p.resources.push(resourceData);
+        return p;
+      },
+      { resources: [] },
+    );
     let res;
     try {
       res = await commonStore.authVerify(params);
@@ -53,7 +55,8 @@ export function useVerify() {
       }
     }
 
-    if (res?.data?.permission) {    // 没有权限才需要获取跳转链接参数
+    if (res?.data?.permission) {
+      // 没有权限才需要获取跳转链接参数
       // 每个操作对应的参数
       const systemId = res.data.permission.system_id;
       const urlParams = res.data.permission.actions.reduce((p: any, e: any) => {
@@ -66,12 +69,13 @@ export function useVerify() {
       authVerifyData.value.urlParams = urlParams;
     }
     // permissionAction 用于判断按钮状态 仅针对操作按钮有用
-    const permissionAction = res?.data?.results.reduce((p: any, e: any, i: number) => {    // 将数组转成对象
+    const permissionAction = res?.data?.results.reduce((p: any, e: any, i: number) => {
+      // 将数组转成对象
       p[`${authData[i].id}`] = e.authorized;
       return p;
     }, {});
-    authVerifyData.value.permissionAction  = permissionAction;
-    commonStore.addAuthVerifyData(authVerifyData);    // 全局变量管理
+    authVerifyData.value.permissionAction = permissionAction;
+    commonStore.addAuthVerifyData(authVerifyData); // 全局变量管理
     return res?.data;
   };
 

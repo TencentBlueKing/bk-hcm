@@ -1,21 +1,13 @@
 /**
  * 删除相关事件和状态
  */
-import {
-  Ref,
-  ref,
-  h,
-  watch,
-} from 'vue';
+import { Ref, ref, h, watch } from 'vue';
 
 import DeleteResource from '../children/dialog/delete-resource/delete-resource';
 import i18n from '@/language/i18n';
-import {
-  Message } from 'bkui-vue';
+import { Message } from 'bkui-vue';
 
-import {
-  useResourceStore,
-} from '@/store/resource';
+import { useResourceStore } from '@/store/resource';
 
 export default (
   columns: any[],
@@ -48,9 +40,9 @@ export default (
   watch(
     () => isShow.value,
     () => {
-      data.value = data.value.filter((selection: {
-        id: number
-      }) => (deleteIds.value as unknown as Array<number>).includes(selection.id));
+      data.value = data.value.filter((selection: { id: number }) =>
+        (deleteIds.value as unknown as Array<number>).includes(selection.id),
+      );
     },
   );
 
@@ -61,14 +53,14 @@ export default (
     switch (operationType) {
       case 'recycle':
         promise = resourceStore.recycled(type, {
-          infos: (deleteIds.value as unknown as Array<number>).map(id => ({ id })),
+          infos: (deleteIds.value as unknown as Array<number>).map((id) => ({ id })),
         });
         break;
       case 'delete':
       default:
         promise = isBatch
           ? resourceStore.deleteBatch(type, { ids: deleteIds.value })
-          : resourceStore.delete(type, deleteIds.value as unknown as number|string);
+          : resourceStore.delete(type, deleteIds.value as unknown as number | string);
     }
     promise
       .then(() => {

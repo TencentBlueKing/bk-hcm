@@ -1,9 +1,7 @@
 /**
  * 添加规则事件和状态
  */
-import {
-  ref,
-} from 'vue';
+import { ref } from 'vue';
 
 import SecurityRule from '../children/dialog/security-rule/add-rule';
 
@@ -20,4 +18,3 @@ export default () => {
     SecurityRule,
   };
 };
-

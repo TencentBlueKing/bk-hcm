@@ -21,7 +21,7 @@ export default class RequestQueue {
     if (typeof id === 'undefined') {
       return this.queue;
     }
-    return this.queue.filter(request => request.requestId === id);
+    return this.queue.filter((request) => request.requestId === id);
   }
 
   /**
@@ -47,7 +47,7 @@ export default class RequestQueue {
     //     const index = this.queue.indexOf(target)
     //     this.queue.splice(index, 1)
     // }
-    this.queue = [...this.queue.filter(request => request.requestId !== id)];
+    this.queue = [...this.queue.filter((request) => request.requestId !== id)];
   }
 
   /**

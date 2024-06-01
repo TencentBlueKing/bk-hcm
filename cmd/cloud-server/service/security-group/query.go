@@ -351,3 +351,55 @@ func (svc *securityGroupSvc) listSGByCvmIDForAzure(kt *kit.Kit, cvmID string) (i
 
 	return sgs, nil
 }
+
+// ListSecurityGroupsByResID list security groups by res_id.
+func (svc *securityGroupSvc) ListSecurityGroupsByResID(cts *rest.Contexts) (interface{}, error) {
+	return svc.listSGByResID(cts, handler.ResOperateAuth)
+}
+
+// ListBizSecurityGroupsByResID list biz security groups by res_id.
+func (svc *securityGroupSvc) ListBizSecurityGroupsByResID(cts *rest.Contexts) (interface{}, error) {
+	return svc.listSGByResID(cts, handler.BizOperateAuth)
+}
+
+func (svc *securityGroupSvc) listSGByResID(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+	interface{}, error) {
+
+	resID := cts.PathParameter("res_id").String()
+	if len(resID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "res_id is required")
+	}
+
+	resType := enumor.CloudResourceType(cts.PathParameter("res_type").String())
+	if len(resType) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "res_type is required")
+	}
+
+	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, resType, resID)
+	if err != nil {
+		logs.Errorf("get resource vendor failed, err: %s, resID: %s, resType: %s, rid: %s",
+			err, resID, resType, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
+		Action: meta.Find, BasicInfo: baseInfo})
+	if err != nil {
+		logs.Errorf("list security group by resID failed, id: %s, err: %v, rid: %s", resID, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	listReq := &dataproto.SGCommonRelWithSecurityGroupListReq{
+		ResIDs:  []string{resID},
+		ResType: resType,
+	}
+	result, err := svc.client.DataService().Global.SGCommonRel.ListWithSecurityGroup(cts.Kit, listReq)
+	if err != nil {
+		logs.Errorf("list security group by res_id failed, resID: %s, err: %v, req: %v, rid: %s",
+			resID, err, cts.Kit.Rid, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return result, nil
+}

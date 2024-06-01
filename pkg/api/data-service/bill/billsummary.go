@@ -27,7 +27,7 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
-// BillSummaryCreateReq ...
+// BillSummaryCreateReq create request
 type BillSummaryCreateReq struct {
 	FirstAccountID  string        `json:"first_account_id" validate:"required"`
 	SecondAccountID string        `json:"second_account_id" validate:"required"`
@@ -39,12 +39,12 @@ type BillSummaryCreateReq struct {
 	CurrentVersion  string        `json:"current_version" validate:"required"`
 }
 
-// Validate AccountBillConfigBatchCreateReq.
+// Validate ...
 func (c *BillSummaryCreateReq) Validate() error {
 	return validator.Validate.Struct(c)
 }
 
-// BillSummaryListReq ...
+// BillSummaryListReq list request
 type BillSummaryListReq struct {
 	Filter *filter.Expression `json:"filter" validate:"required"`
 	Page   *core.BasePage     `json:"page" validate:"required"`
@@ -56,13 +56,13 @@ func (req *BillSummaryListReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// BillSummaryListResult ...
+// BillSummaryListResult list result
 type BillSummaryListResult struct {
 	Count   *uint64              `json:"count,omitempty"`
 	Details []*BillSummaryResult `json:"details"`
 }
 
-// BillSummaryResult ...
+// BillSummaryResult result
 type BillSummaryResult struct {
 	ID              string        `json:"id,omitempty"`
 	FirstAccountID  string        `json:"first_account_id" validate:"required"`

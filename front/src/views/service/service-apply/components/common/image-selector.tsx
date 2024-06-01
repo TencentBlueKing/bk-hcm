@@ -71,9 +71,8 @@ export default defineComponent({
                   if (props.vendor === VendorEnum.HUAWEI) {
                     props.changeOpSystemType(data.os_type === 'Linux' ? 'linux' : 'win');
                   }
-                }}
-                >
-                { cell }
+                }}>
+                {cell}
               </Radio>
             </div>
           );
@@ -117,7 +116,8 @@ export default defineComponent({
         () => props.machineType,
         () => selectedPlatform.value,
         () => searchVal.value,
-      ], async ([vendor, region, machineType]) => {
+      ],
+      async ([vendor, region, machineType]) => {
         if (!vendor || !region || (vendor === VendorEnum.AZURE && !machineType?.architecture)) {
           list.value = [];
           return;
@@ -148,19 +148,23 @@ export default defineComponent({
 
         switch (vendor) {
           case VendorEnum.AWS:
-            filter.rules.push({
-              field: 'extension.region',
-              op: QueryRuleOPEnum.JSON_EQ,
-              value: region,
-            }, {
-              field: 'state',
-              op: QueryRuleOPEnum.EQ,
-              value: 'available',
-            }, {
-              field: 'architecture',
-              op: QueryRuleOPEnum.EQ,
-              value: machineType.architecture,
-            });
+            filter.rules.push(
+              {
+                field: 'extension.region',
+                op: QueryRuleOPEnum.JSON_EQ,
+                value: region,
+              },
+              {
+                field: 'state',
+                op: QueryRuleOPEnum.EQ,
+                value: 'available',
+              },
+              {
+                field: 'architecture',
+                op: QueryRuleOPEnum.EQ,
+                value: machineType.architecture,
+              },
+            );
             break;
           case VendorEnum.HUAWEI:
             filter.rules.push({
@@ -211,10 +215,7 @@ export default defineComponent({
         const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/images/list`, {
           filter: {
             op: filter.op,
-            rules: [
-              ...filter.rules,
-              ...searchFilterRules,
-            ],
+            rules: [...filter.rules, ...searchFilterRules],
           },
           page: {
             count: false,
@@ -252,9 +253,10 @@ export default defineComponent({
     // );
 
     const bkTooltipsOptions = computed(() => {
-      if (checkedImageId.value) return {
-        content: `${checkedImageName.value} (${checkedImageId.value} | ${checkedImageArchitecture.value})`,
-      };
+      if (checkedImageId.value)
+        return {
+          content: `${checkedImageName.value} (${checkedImageId.value} | ${checkedImageArchitecture.value})`,
+        };
       return {
         content: '--',
       };
@@ -269,16 +271,9 @@ export default defineComponent({
             </div>
           ) : null}
           {selected.value ? (
-            <EditLine
-              fill='#3A84FF'
-              width={13.5}
-              height={13.5}
-              onClick={() => (isDialogShow.value = true)}
-            />
+            <EditLine fill='#3A84FF' width={13.5} height={13.5} onClick={() => (isDialogShow.value = true)} />
           ) : (
-            <Button
-              onClick={() => (isDialogShow.value = true)}
-              disabled={computedDisabled.value}>
+            <Button onClick={() => (isDialogShow.value = true)} disabled={computedDisabled.value}>
               <Plus class='f20' />
               选择镜像
             </Button>
@@ -312,7 +307,7 @@ export default defineComponent({
                 <Button
                   onClick={() => (selectedPlatform.value = 'Windows')}
                   selected={selectedPlatform.value === 'Windows'}>
-                    Windows
+                  Windows
                 </Button>
                 <Button
                   onClick={() => (selectedPlatform.value = 'Other')}
@@ -325,18 +320,12 @@ export default defineComponent({
               <div class={'instance-type-search-seletor-container'}>
                 <div class={'selected-block-container'}>
                   <div class={'selected-block'} v-BkTooltips={bkTooltipsOptions.value}>
-                    {
-                      checkedImageId.value
-                        ? `${checkedImageName.value}  (${checkedImageId.value}  |  ${checkedImageArchitecture.value})`
-                        : '--'
-                    }
+                    {checkedImageId.value
+                      ? `${checkedImageName.value}  (${checkedImageId.value}  |  ${checkedImageArchitecture.value})`
+                      : '--'}
                   </div>
                 </div>
-                <SearchSelect
-                  class='w500 instance-type-search-seletor'
-                  v-model={searchVal.value}
-                  data={searchData}
-                />
+                <SearchSelect class='w500 instance-type-search-seletor' v-model={searchVal.value} data={searchData} />
               </div>
             </FormItem>
           </Form>

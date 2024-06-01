@@ -27,7 +27,7 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
-// BillPullerCreateReq ...
+// BillPullerCreateReq create request
 type BillPullerCreateReq struct {
 	FirstAccountID        string                    `json:"first_account_id" validate:"required"`
 	SecondAccountID       string                    `json:"second_account_id" validate:"required"`
@@ -45,7 +45,7 @@ func (c *BillPullerCreateReq) Validate() error {
 	return validator.Validate.Struct(c)
 }
 
-// BillPullerListReq ...
+// BillPullerListReq list request
 type BillPullerListReq struct {
 	Filter *filter.Expression `json:"filter" validate:"required"`
 	Page   *core.BasePage     `json:"page" validate:"required"`
@@ -57,40 +57,40 @@ func (req *BillPullerListReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// BillPullerListResult ...
+// BillPullerListResult list result
 type BillPullerListResult struct {
 	Count   *uint64             `json:"count,omitempty"`
 	Details []*BillPullerResult `json:"details"`
 }
 
-// BillPullerResult ...
+// BillPullerResult result
 type BillPullerResult struct {
-	ID                    string     `json:"id,omitempty"`
-	FirstAccountID        string     `json:"first_account_id,omitempty"`
-	SecondAccountID       string     `json:"second_account_id,omitempty"`
-	Vendor                string     `json:"vendor,omitempty"`
-	ProductID             int64      `json:"product_id,omitempty"`
-	BkBizID               int64      `json:"bk_biz_id,omitempty"`
-	PullMode              string     `json:"pull_mode,omitempty"`
-	SyncPeriod            string     `json:"sync_period,omitempty"`
-	BillDelay             string     `json:"bill_delay,omitempty"`
-	FinalBillCalendarDate int        `json:"final_bill_calendar_date,omitempty"`
-	CreatedAt             types.Time `json:"created_at,omitempty"`
-	UpdatedAt             types.Time `json:"updated_at,omitempty"`
+	ID                    string        `json:"id,omitempty"`
+	FirstAccountID        string        `json:"first_account_id,omitempty"`
+	SecondAccountID       string        `json:"second_account_id,omitempty"`
+	Vendor                enumor.Vendor `json:"vendor,omitempty"`
+	ProductID             int64         `json:"product_id,omitempty"`
+	BkBizID               int64         `json:"bk_biz_id,omitempty"`
+	PullMode              string        `json:"pull_mode,omitempty"`
+	SyncPeriod            string        `json:"sync_period,omitempty"`
+	BillDelay             string        `json:"bill_delay,omitempty"`
+	FinalBillCalendarDate int           `json:"final_bill_calendar_date,omitempty"`
+	CreatedAt             types.Time    `json:"created_at,omitempty"`
+	UpdatedAt             types.Time    `json:"updated_at,omitempty"`
 }
 
-// BillPullerUpdateReq ...
+// BillPullerUpdateReq update request
 type BillPullerUpdateReq struct {
-	ID                    string `json:"id,omitempty" validate:"required"`
-	FirstAccountID        string `json:"first_account_id,omitempty" validate:"required"`
-	SecondAccountID       string `json:"second_account_id,omitempty" validate:"required"`
-	Vendor                string `json:"vendor,omitempty" validate:"required"`
-	ProductID             int64  `json:"product_id,omitempty"`
-	BkBizID               int64  `json:"bk_biz_id,omitempty"`
-	PullMode              string `json:"pull_mode,omitempty" validate:"required"`
-	SyncPeriod            string `json:"sync_period,omitempty" validate:"required"`
-	BillDelay             string `json:"bill_delay,omitempty" validate:"required"`
-	FinalBillCalendarDate int    `json:"final_bill_calendar_date,omitempty"`
+	ID                    string        `json:"id,omitempty" validate:"required"`
+	FirstAccountID        string        `json:"first_account_id,omitempty" validate:"required"`
+	SecondAccountID       string        `json:"second_account_id,omitempty" validate:"required"`
+	Vendor                enumor.Vendor `json:"vendor,omitempty" validate:"required"`
+	ProductID             int64         `json:"product_id,omitempty"`
+	BkBizID               int64         `json:"bk_biz_id,omitempty"`
+	PullMode              string        `json:"pull_mode,omitempty" validate:"required"`
+	SyncPeriod            string        `json:"sync_period,omitempty" validate:"required"`
+	BillDelay             string        `json:"bill_delay,omitempty" validate:"required"`
+	FinalBillCalendarDate int           `json:"final_bill_calendar_date,omitempty"`
 }
 
 // Validate ...

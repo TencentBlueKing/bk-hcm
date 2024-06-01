@@ -9,34 +9,23 @@ import NetworkInterfaceIpconfigHuawei from '../components/network-interface/netw
 import NetworkInterfaceDnssvr from '../components/network-interface/network-interface-dnssvr.vue';
 import NetworkInterfaceNetsecgroup from '../components/network-interface/network-interface-netsecgroup.vue';
 
-import {
-  useRoute,
-} from 'vue-router';
-import {
-  useI18n,
-} from 'vue-i18n';
+import { useRoute } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import useDetail from '../../hooks/use-detail';
 import { computed } from '@vue/runtime-core';
 
-import {
-  inject,
-} from 'vue';
+import { inject } from 'vue';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 
 const route = useRoute();
-const {
-  t,
-} = useI18n();
+const { t } = useI18n();
 
 const isResourcePage: any = inject('isResourcePage');
 const { whereAmI } = useWhereAmI();
 
 console.log('isResourcePage', isResourcePage.value);
 
-const {
-  loading,
-  detail,
-} = useDetail('network_interfaces', route.query.id as string, (data: any) => {
+const { loading, detail } = useDetail('network_interfaces', route.query.id as string, (data: any) => {
   data.virtualNetworkSubnetId = `${data.cloud_vpc_id || '--'}/${data.cloud_subnet_id || '--'}`;
   switch (data.vendor) {
     case 'azure':
@@ -59,7 +48,6 @@ const {
       break;
   }
 });
-
 
 const tabs = computed(() => {
   const list = [
@@ -93,14 +81,11 @@ const tabs = computed(() => {
 
   return list;
 });
-
 </script>
 
 <template>
   <bk-loading :loading="loading">
-    <detail-header>
-      {{ t('网络接口') }}：ID（{{ detail.id }}）
-    </detail-header>
+    <detail-header>{{ t('网络接口') }}：ID（{{ detail.id }}）</detail-header>
 
     <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
       <detail-tab :tabs="tabs">
@@ -109,18 +94,24 @@ const tabs = computed(() => {
             <network-interface-info :detail="detail" v-if="type === 'basic'"></network-interface-info>
             <network-interface-ipconfig :detail="detail" v-if="type === 'ipconfig'"></network-interface-ipconfig>
             <network-interface-dnssvr :detail="detail" v-if="type === 'dnssvr'"></network-interface-dnssvr>
-            <network-interface-netsecgroup :detail="detail" v-if="type === 'netsecgroup'">
-            </network-interface-netsecgroup>
+            <network-interface-netsecgroup
+              :detail="detail"
+              v-if="type === 'netsecgroup'"
+            ></network-interface-netsecgroup>
           </template>
           <template v-else-if="detail.vendor === 'gcp'">
-            <network-interface-info-gcp :detail="detail" :is-resource-page="isResourcePage"
-                                        v-if="type === 'basic'"></network-interface-info-gcp>
+            <network-interface-info-gcp
+              :detail="detail"
+              :is-resource-page="isResourcePage"
+              v-if="type === 'basic'"
+            ></network-interface-info-gcp>
           </template>
           <template v-else-if="detail.vendor === 'huawei'">
-            <network-interface-info-huawei :detail="detail" v-if="type === 'basic'">
-            </network-interface-info-huawei>
-            <network-interface-ipconfig-huawei :detail="detail" v-if="type === 'ipconfig'">
-            </network-interface-ipconfig-huawei>
+            <network-interface-info-huawei :detail="detail" v-if="type === 'basic'"></network-interface-info-huawei>
+            <network-interface-ipconfig-huawei
+              :detail="detail"
+              v-if="type === 'ipconfig'"
+            ></network-interface-ipconfig-huawei>
           </template>
         </template>
       </detail-tab>

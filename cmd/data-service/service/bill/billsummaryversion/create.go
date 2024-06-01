@@ -33,7 +33,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// CreateBillSummaryVersion account with options
+// CreateBillSummaryVersion create bill summary version with options
 func (svc *service) CreateBillSummaryVersion(cts *rest.Contexts) (interface{}, error) {
 	req := new(dsbill.BillSummaryVersionCreateReq)
 	if err := cts.DecodeInto(req); err != nil {

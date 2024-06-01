@@ -1,6 +1,6 @@
 interface ILoginData {
-  login_url?: string,
-  target?: string
+  login_url?: string;
+  target?: string;
 }
 
 const getLoginUrl = () => {
@@ -38,7 +38,10 @@ class AuthModel {
     const width = 700;
     const height = 510;
     const { availHeight, availWidth } = window.screen;
-    this.loginWindow = window.open(url, '_blank', `
+    this.loginWindow = window.open(
+      url,
+      '_blank',
+      `
       width=${width},
       height=${height},
       left=${(availWidth - width) / 2},
@@ -54,7 +57,8 @@ class AuthModel {
       titlebar=0,
       toolbar=0,
       close=0
-    `);
+    `,
+    );
     this.checkWinClose();
   }
   checkWinClose() {

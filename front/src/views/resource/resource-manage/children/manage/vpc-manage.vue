@@ -8,10 +8,7 @@ import useColumns from '../../hooks/use-columns';
 import useQueryList from '../../hooks/use-query-list';
 import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 import useSelection from '../../hooks/use-selection';
-import {
-  BatchDistribution,
-  DResourceType,
-} from '@/views/resource/resource-manage/children/dialog/batch-distribution';
+import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 
 const props = defineProps({
@@ -38,15 +35,10 @@ const { whereAmI } = useWhereAmI();
 const resourceStore = useResourceStore();
 const { columns, settings } = useColumns('vpc');
 const { searchData, searchValue, filter } = useFilter(props);
-const {
-  datas,
-  pagination,
-  isLoading,
-  handlePageChange,
-  handlePageSizeChange,
-  handleSort,
-  triggerApi,
-} = useQueryList({ filter: filter.value }, 'vpcs');
+const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort, triggerApi } = useQueryList(
+  { filter: filter.value },
+  'vpcs',
+);
 
 // 抛出请求数据的方法，新增成功使用
 const fetchComponentsData = () => {
@@ -201,26 +193,27 @@ const renderColumns = [
   {
     label: '操作',
     render({ data }: any) {
-      return h(h(
-        'span',
-        [
+      return h(
+        h('span', [
           whereAmI.value === Senarios.resource
             ? h(
-              Button,
-              {
-                text: true,
-                theme: 'primary',
-                class: `mr16 ${props.authVerifyData?.permissionAction.iaas_resource_operate ? '' : 'hcm-no-permision-text-btn'}`,
-                disabled: data.bk_cloud_id !== -1,
-                onClick() {
-                  if (props.authVerifyData?.permissionAction.iaas_resource_operate) handleBindRegion(data);
-                  else {
-                    emit('auth', 'iaas_resource_operate');
-                  }
+                Button,
+                {
+                  text: true,
+                  theme: 'primary',
+                  class: `mr16 ${
+                    props.authVerifyData?.permissionAction.iaas_resource_operate ? '' : 'hcm-no-permision-text-btn'
+                  }`,
+                  disabled: data.bk_cloud_id !== -1,
+                  onClick() {
+                    if (props.authVerifyData?.permissionAction.iaas_resource_operate) handleBindRegion(data);
+                    else {
+                      emit('auth', 'iaas_resource_operate');
+                    }
+                  },
                 },
-              },
-              ['绑定管控区'],
-            )
+                ['绑定管控区'],
+              )
             : null,
           // h(
           //   Popover,
@@ -248,8 +241,8 @@ const renderColumns = [
           //     ),
           //   ],
           // ),
-        ],
-      ));
+        ]),
+      );
     },
   },
 ];
@@ -259,9 +252,7 @@ const renderColumns = [
   <bk-loading :loading="isLoading">
     <section
       class="flex-row align-items-center"
-      :class="
-        isResourcePage ? 'justify-content-end' : 'justify-content-between'
-      "
+      :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'"
     >
       <slot></slot>
       <BatchDistribution
@@ -321,12 +312,7 @@ const renderColumns = [
       </bk-form-item>
       <bk-form-item label="管控区名称">
         <bk-select v-model="curCloudArea" :input-search="false" filterable>
-          <bk-option
-            v-for="(item, index) in cloudAreaList"
-            :key="index"
-            :value="item.id"
-            :label="item.name"
-          />
+          <bk-option v-for="(item, index) in cloudAreaList" :key="index" :value="item.id" :label="item.name" />
         </bk-select>
       </bk-form-item>
     </bk-form>

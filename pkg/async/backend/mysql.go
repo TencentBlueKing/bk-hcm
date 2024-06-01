@@ -20,22 +20,26 @@
 package backend
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 
-	"github.com/jmoiron/sqlx"
-
+	"hcm/pkg/api/core"
 	"hcm/pkg/async/action"
 	"hcm/pkg/async/backend/model"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/orm"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/dao/types/async"
 	tableasync "hcm/pkg/dal/table/async"
 	tabletypes "hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
+
+	"github.com/jmoiron/sqlx"
 )
 
 // NewMysql create mysql instance
@@ -82,6 +86,87 @@ func (db *mysql) BatchUpdateFlowStateByCAS(kt *kit.Kit, infos []UpdateFlowInfo) 
 	return nil
 }
 
+// RetryTask 重试任务
+func (db *mysql) RetryTask(kt *kit.Kit, flowID, taskID string) error {
+
+	if err := db.checkFlowTaskForRetry(kt, flowID, taskID); err != nil {
+		return err
+	}
+
+	flowUpdate := &typesasync.UpdateFlowInfo{
+		ID:     flowID,
+		Source: enumor.FlowFailed,
+		Target: enumor.FlowPending,
+		Reason: &tableasync.Reason{Message: "retry task " + taskID},
+	}
+	taskUpdate := &typesasync.UpdateTaskInfo{
+		ID:     taskID,
+		Source: enumor.TaskFailed,
+		Target: enumor.TaskPending,
+		Reason: &tableasync.Reason{Message: "retry task " + taskID},
+	}
+
+	_, err := db.dao.Txn().AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
+
+		if err := db.dao.AsyncFlowTask().UpdateStateByCAS(kt, txn, taskUpdate); err != nil {
+			logs.Errorf("fail to update task status for retry, err: %v, task id: %s, rid: %s",
+				err, taskID, kt.Rid)
+			return nil, err
+		}
+		if err := db.dao.AsyncFlow().UpdateStateByCAS(kt, txn, flowUpdate); err != nil {
+			logs.Errorf("fail to update flow status for retry, err: %v, flow id: %s, rid: %s",
+				err, flowID, kt.Rid)
+			return nil, err
+		}
+		return nil, nil
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (db *mysql) checkFlowTaskForRetry(kt *kit.Kit, flowID string, taskID string) error {
+	if len(flowID) == 0 || len(taskID) == 0 {
+		return errors.New("empty flow id or task id")
+	}
+
+	listOpt := &types.ListOption{
+		Filter: tools.EqualExpression("id", flowID),
+		Page:   core.NewDefaultBasePage(),
+	}
+	flowResp, err := db.dao.AsyncFlow().List(kt, listOpt)
+	if err != nil {
+		return err
+	}
+	if len(flowResp.Details) == 0 {
+		return fmt.Errorf("flow %s not found", flowID)
+	}
+	if flowResp.Details[0].State != enumor.FlowFailed {
+		return fmt.Errorf("flow(%s) state(%s) wrong, only `failed` allowed for retry",
+			flowID, flowResp.Details[0].State)
+	}
+
+	listOpt = &types.ListOption{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("id", taskID),
+			tools.RuleEqual("flow_id", flowID)),
+		Page: core.NewDefaultBasePage(),
+	}
+	taskResp, err := db.dao.AsyncFlowTask().List(kt, listOpt)
+	if err != nil {
+		return err
+	}
+	if len(taskResp.Details) == 0 {
+		return fmt.Errorf("task(%s) of flow(%s) not found", taskID, flowID)
+	}
+	if taskResp.Details[0].State != enumor.TaskFailed {
+		return fmt.Errorf("task(%s) state(%s) wrong, only `failed` allowed for retry",
+			taskID, taskResp.Details[0].State)
+	}
+	return nil
+}
+
 // UpdateTaskStateByCAS CAS更新任务状态
 func (db *mysql) UpdateTaskStateByCAS(kt *kit.Kit, info *UpdateTaskInfo) error {
 	update := &typesasync.UpdateTaskInfo{
@@ -90,7 +175,14 @@ func (db *mysql) UpdateTaskStateByCAS(kt *kit.Kit, info *UpdateTaskInfo) error {
 		Target: info.Target,
 		Reason: info.Reason,
 	}
-	return db.dao.AsyncFlowTask().UpdateStateByCAS(kt, update)
+	_, err := db.dao.Txn().AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		err := db.dao.AsyncFlowTask().UpdateStateByCAS(kt, txn, update)
+		if err != nil {
+			logs.Errorf("fail to update task state cas, err: %v, info: %+v, rid: %s", err, info, kt.Rid)
+		}
+		return nil, err
+	})
+	return err
 }
 
 var _ Backend = new(mysql)
@@ -98,11 +190,16 @@ var _ Backend = new(mysql)
 // CreateFlow 创建任务流
 func (db *mysql) CreateFlow(kt *kit.Kit, flow *model.Flow) (string, error) {
 
+	flowState := enumor.FlowPending
+	if flow.State == enumor.FlowInit {
+		flowState = flow.State
+	}
+
 	result, err := db.dao.Txn().AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		// 创建任务流
 		md := &tableasync.AsyncFlowTable{
 			Name:      flow.Name,
-			State:     enumor.FlowPending,
+			State:     flowState,
 			Reason:    new(tableasync.Reason),
 			ShareData: flow.ShareData,
 			Memo:      flow.Memo,
@@ -119,6 +216,11 @@ func (db *mysql) CreateFlow(kt *kit.Kit, flow *model.Flow) (string, error) {
 		tasks := flow.Tasks
 		mds := make([]tableasync.AsyncFlowTaskTable, 0, len(tasks))
 		for _, one := range tasks {
+			taskState := enumor.TaskPending
+			if one.State == enumor.TaskInit {
+				taskState = one.State
+			}
+
 			mds = append(mds, tableasync.AsyncFlowTaskTable{
 				FlowID:     flowID,
 				FlowName:   one.FlowName,
@@ -127,7 +229,7 @@ func (db *mysql) CreateFlow(kt *kit.Kit, flow *model.Flow) (string, error) {
 				Params:     one.Params,
 				Retry:      one.Retry,
 				DependOn:   dependOnToStringArray(one.DependOn),
-				State:      enumor.TaskPending,
+				State:      taskState,
 				Reason:     new(tableasync.Reason),
 				Creator:    kt.User,
 				Reviser:    kt.User,
@@ -239,12 +341,11 @@ func (db *mysql) BatchCreateTask(kt *kit.Kit, tasks []model.Task) ([]string, err
 func (db *mysql) UpdateTask(kt *kit.Kit, task *model.Task) error {
 
 	md := &tableasync.AsyncFlowTaskTable{
-		Retry:    task.Retry,
-		DependOn: dependOnToStringArray(task.DependOn),
-		State:    task.State,
-		Result:   task.Result,
-		Reason:   task.Reason,
-		Reviser:  kt.User,
+		Retry:   task.Retry,
+		State:   task.State,
+		Result:  task.Result,
+		Reason:  task.Reason,
+		Reviser: kt.User,
 	}
 
 	return db.dao.AsyncFlowTask().UpdateByID(kt, task.ID, md)

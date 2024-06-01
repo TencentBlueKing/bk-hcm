@@ -83,7 +83,7 @@ func (a *service) ListWithAccount(cts *rest.Contexts) (interface{}, error) {
 
 	details, err := a.dao.AccountBizRel().ListJoinAccount(cts.Kit, req.BkBizIDs)
 	if err != nil {
-		logs.Errorf("list account biz rels join account failed, err: %v, cvmIDs: %v, rid: %s", err,
+		logs.Errorf("list account biz rels join account failed, err: %v, bkBizIds: %v, rid: %s", err,
 			req.BkBizIDs, cts.Kit.Rid)
 		return nil, err
 	}

@@ -1,13 +1,7 @@
 <script setup lang="ts">
-import type {
-  FilterType,
-} from '@/typings/resource';
+import type { FilterType } from '@/typings/resource';
 
-import {
-  PropType,
-  watch,
-  computed,
-} from 'vue';
+import { PropType, watch, computed } from 'vue';
 import useQueryList from '../../hooks/use-query-list';
 import useColumns from '../../hooks/use-columns';
 import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
@@ -23,22 +17,14 @@ const props = defineProps({
 
 const { columns, settings } = useColumns('image');
 
-const {
-  searchData,
-  searchValue,
-  filter,
-} = useFilter(props);
+const { searchData, searchValue, filter } = useFilter(props);
 
-const {
-  datas,
-  pagination,
-  isLoading,
-  handlePageChange,
-  handlePageSizeChange,
-  handleSort,
-} = useQueryList({
-  filter: filter.value,
-}, 'images');
+const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort } = useQueryList(
+  {
+    filter: filter.value,
+  },
+  'images',
+);
 
 const selectSearchData = computed(() => {
   return [
@@ -58,7 +44,7 @@ const selectSearchData = computed(() => {
 });
 
 // 字段列表
-const fieldList: string[] = columns.map(item => item.field);
+const fieldList: string[] = columns.map((item) => item.field);
 let dataList: any = datas;
 // 接口缺失字段填充默认值
 watch(datas, (list) => {
@@ -75,15 +61,8 @@ watch(datas, (list) => {
 
 <template>
   <bk-loading :loading="isLoading">
-    <section
-      class="flex-row align-items-center mb20 justify-content-end">
-      <bk-search-select
-        class="w500 ml10"
-        clearable
-        :conditions="[]"
-        :data="selectSearchData"
-        v-model="searchValue"
-      />
+    <section class="flex-row align-items-center mb20 justify-content-end">
+      <bk-search-select class="w500 ml10" clearable :conditions="[]" :data="selectSearchData" v-model="searchValue" />
     </section>
     <bk-table
       :settings="settings"
@@ -100,5 +79,4 @@ watch(datas, (list) => {
   </bk-loading>
 </template>
 
-<style lang="scss" scoped>
-</style>
+<style lang="scss" scoped></style>

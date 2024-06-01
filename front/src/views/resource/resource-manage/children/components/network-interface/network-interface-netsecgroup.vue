@@ -22,12 +22,8 @@ const data = reactive({
 watchEffect(() => {
   data.cloud_security_group_id = props.detail?.cloud_security_group_id;
 });
-
 </script>
 
 <template>
-  <detail-info
-    :detail="data"
-    :fields="fields"
-  />
+  <detail-info :detail="data" :fields="fields" />
 </template>

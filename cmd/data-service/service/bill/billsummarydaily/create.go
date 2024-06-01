@@ -33,7 +33,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// CreateBillSummaryDaily account with options
+// CreateBillSummaryDaily create bill summary daily with options
 func (svc *service) CreateBillSummaryDaily(cts *rest.Contexts) (interface{}, error) {
 	req := new(dsbill.BillSummaryDailyCreateReq)
 	if err := cts.DecodeInto(req); err != nil {

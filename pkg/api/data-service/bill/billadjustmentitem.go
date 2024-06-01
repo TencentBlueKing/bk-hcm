@@ -28,7 +28,10 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// BillAdjustmentItemCreateReq ...
+// BatchBillAdjustmentItemCreateReq batch create request
+type BatchBillAdjustmentItemCreateReq []BillAdjustmentItemCreateReq
+
+// BillAdjustmentItemCreateReq create request
 type BillAdjustmentItemCreateReq struct {
 	FirstAccountID  string          `json:"first_account_id" validate:"required"`
 	SecondAccountID string          `json:"second_account_id" validate:"required"`
@@ -46,12 +49,12 @@ type BillAdjustmentItemCreateReq struct {
 	State           string          `json:"state" validate:"required"`
 }
 
-// Validate AccountBillConfigBatchCreateReq.
+// Validate ...
 func (c *BillAdjustmentItemCreateReq) Validate() error {
 	return validator.Validate.Struct(c)
 }
 
-// BillAdjustmentItemListReq ...
+// BillAdjustmentItemListReq list request
 type BillAdjustmentItemListReq struct {
 	Filter *filter.Expression `json:"filter" validate:"required"`
 	Page   *core.BasePage     `json:"page" validate:"required"`
@@ -63,13 +66,13 @@ func (req *BillAdjustmentItemListReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// BillAdjustmentItemListResult ...
+// BillAdjustmentItemListResult list result
 type BillAdjustmentItemListResult struct {
 	Count   *uint64                     `json:"count,omitempty"`
 	Details []*BillAdjustmentItemResult `json:"details"`
 }
 
-// BillAdjustmentItemResult ...
+// BillAdjustmentItemResult result
 type BillAdjustmentItemResult struct {
 	ID              string          `json:"id,omitempty"`
 	FirstAccountID  string          `json:"first_account_id" validate:"required"`
@@ -90,7 +93,7 @@ type BillAdjustmentItemResult struct {
 	UpdatedAt       types.Time      `json:"updated_at,omitempty"`
 }
 
-// BillAdjustmentItemUpdateReq ...
+// BillAdjustmentItemUpdateReq update request
 type BillAdjustmentItemUpdateReq struct {
 	ID              string          `json:"id,omitempty" validate:"required"`
 	FirstAccountID  string          `json:"first_account_id" validate:"required"`

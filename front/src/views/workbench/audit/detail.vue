@@ -11,22 +11,18 @@ import { timeFormatter } from '@/common/util';
 import { AUDIT_SOURCE_MAP, AUDIT_ACTION_MAP } from './constants';
 
 const props = defineProps<{
-  id: number,
-  bizId: number,
-  type: string,
+  id: number;
+  bizId: number;
+  type: string;
 }>();
 
 const { details, isLoading } = useDetail(props);
 
-const isJsonDisplay = computed(() => [
-  'security_group',
-  'eip',
-  'disk',
-  'route_table',
-  'image',
-  'network_interface',
-  'subnet',
-].includes(details.value.res_type));
+const isJsonDisplay = computed(() =>
+  ['security_group', 'eip', 'disk', 'route_table', 'image', 'network_interface', 'subnet'].includes(
+    details.value.res_type,
+  ),
+);
 
 const diffCompMap = {
   account: DetailDiffAccount,
@@ -87,7 +83,7 @@ const diffCompMap = {
       </div>
       <div class="details-item">
         <div class="item-label">来源</div>
-        <div class="item-content">{{ AUDIT_SOURCE_MAP[details.source]}}</div>
+        <div class="item-content">{{ AUDIT_SOURCE_MAP[details.source] }}</div>
       </div>
     </div>
     <div class="details-json" v-if="isJsonDisplay">
@@ -99,8 +95,8 @@ const diffCompMap = {
         :action="details?.action"
         :detail="details?.detail"
         :audit-type="props.type"
-        :business-list="businessList">
-      </component>
+        :business-list="businessList"
+      ></component>
     </div>
   </bk-loading>
 </template>

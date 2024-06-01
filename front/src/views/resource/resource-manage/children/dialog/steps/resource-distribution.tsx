@@ -105,8 +105,7 @@ export default defineComponent({
                   },
                   name: 'accountDetail',
                 });
-              }}
-            >
+              }}>
               {cell}
             </bk-button>
           );
@@ -146,7 +145,7 @@ export default defineComponent({
               errorList.value.push(data.id);
               return false;
             }
-            const index = errorList.value.findIndex(item => item === data.id);
+            const index = errorList.value.findIndex((item) => item === data.id);
             errorList.value.splice(index, 1);
             return true;
           };
@@ -166,19 +165,12 @@ export default defineComponent({
               onChange={(val) => {
                 data.temp_bk_cloud_id = val;
                 validate();
-              }}
-              >
-                {
-                  searchedAreas.value.map(item => (
-                    <Option
-                      key={item.id}
-                      value={item.id}
-                      label={item.name}
-                    >
-                      {item.name}
-                    </Option>
-                  ))
-                }
+              }}>
+              {searchedAreas.value.map((item) => (
+                <Option key={item.id} value={item.id} label={item.name}>
+                  {item.name}
+                </Option>
+              ))}
             </Select>
           );
         },
@@ -479,9 +471,8 @@ export default defineComponent({
                           ml10: true,
                           'resource-is-error': this.isBusinessError,
                         }}
-                        onChange={(val: any) => (this.isBusinessError = !val)}
-                      >
-                        {this.businessList.map(business => (
+                        onChange={(val: any) => (this.isBusinessError = !val)}>
+                        {this.businessList.map((business) => (
                           <bk-option value={business.id} label={business.name} />
                         ))}
                       </bk-select>
@@ -526,8 +517,7 @@ export default defineComponent({
                   class='mr10'
                   loading={this.isBingdingVPC}
                   disabled={!this.isBindVPC}
-                  onClick={this.handleBindVPC}
-                >
+                  onClick={this.handleBindVPC}>
                   VPC 绑定云区域
                 </bk-button>
               </>
@@ -563,7 +553,7 @@ export default defineComponent({
             <section>
               <span class='resource-types-label'>{this.t('分配资源类型')}</span>
               <bk-checkbox-group class='resource-types' v-model={this.resourceTypes}>
-                {RESOURCE_TYPES.filter(item => item.type !== 'image').map((type) => {
+                {RESOURCE_TYPES.filter((item) => item.type !== 'image').map((type) => {
                   return (
                     <bk-checkbox disabled={true} label={type.type}>
                       {this.t(type.name)}
@@ -588,8 +578,7 @@ export default defineComponent({
           onConfirm={this.handleConfirm}
           onCancel={this.handleClose}
           onNext={this.handleNext}
-          dialogWidth={1200}
-        ></step-dialog>
+          dialogWidth={1200}></step-dialog>
       </>
     );
   },

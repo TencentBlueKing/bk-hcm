@@ -1,26 +1,11 @@
-import {
-  Table,
-  Loading,
-  Radio,
-  Message,
-} from 'bkui-vue';
-import {
-  defineComponent,
-  h,
-  ref,
-} from 'vue';
-import {
-  useI18n,
-} from 'vue-i18n';
-import {
-  InfoLine,
-} from 'bkui-vue/lib/icon';
+import { Table, Loading, Radio, Message } from 'bkui-vue';
+import { defineComponent, h, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { InfoLine } from 'bkui-vue/lib/icon';
 import StepDialog from '@/components/step-dialog/step-dialog';
-import useQueryList  from '../../../hooks/use-query-list';
+import useQueryList from '../../../hooks/use-query-list';
 import useColumns from '../../../hooks/use-columns';
-import {
-  useResourceStore,
-} from '@/store/resource';
+import { useResourceStore } from '@/store/resource';
 
 // 主机选硬盘挂载
 export default defineComponent({
@@ -44,18 +29,12 @@ export default defineComponent({
   emits: ['update:isShow', 'success'],
 
   setup(props, { emit }) {
-    const {
-      t,
-    } = useI18n();
+    const { t } = useI18n();
 
     const deviceName = ref();
     const cachingType = ref();
 
-    const cacheTypes = [
-      'None',
-      'ReadOnly',
-      'ReadWrite',
-    ];
+    const cacheTypes = ['None', 'ReadOnly', 'ReadWrite'];
 
     const rules = [
       {
@@ -88,14 +67,7 @@ export default defineComponent({
     //   })
     // }
 
-    const {
-      datas,
-      pagination,
-      isLoading,
-      handlePageChange,
-      handlePageSizeChange,
-      handleSort,
-    } = useQueryList(
+    const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort } = useQueryList(
       {
         filter: {
           op: 'and',
@@ -120,18 +92,15 @@ export default defineComponent({
         label: '硬盘ID',
         field: 'id',
         render({ data }: any) {
-          return h(
-            Radio,
-            {
-              'model-value': selection.value.id,
-              label: data.cloud_id,
-              key: data.id,
-              onChange() {
-                console.log('啦啦啦', data);
-                selection.value = data;
-              },
+          return h(Radio, {
+            'model-value': selection.value.id,
+            label: data.cloud_id,
+            key: data.id,
+            onChange() {
+              console.log('啦啦啦', data);
+              selection.value = data;
             },
-          );
+          });
         },
       },
       ...columns.filter((column: any) => ['资源 ID', '云硬盘名称', '类型', '容量(GB)', '状态'].includes(column.label)),
@@ -175,10 +144,12 @@ export default defineComponent({
         }
         postData.caching_type = cachingType.value;
       }
-      resourceStore.attachDisk(postData).then(() => {
-        emit('success');
-        handleClose();
-      })
+      resourceStore
+        .attachDisk(postData)
+        .then(() => {
+          emit('success');
+          handleClose();
+        })
         .catch((err: any) => {
           Message({
             theme: 'error',
@@ -210,45 +181,45 @@ export default defineComponent({
 
   render() {
     const tooltipSlot = {
-      content: () => <>Linux设备名称参考：https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/UserGuide/device_naming.html<br />windows设备名称参考：https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/WindowsGuide/device_naming.html</>,
+      content: () => (
+        <>
+          Linux设备名称参考：https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/UserGuide/device_naming.html
+          <br />
+          windows设备名称参考：https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/WindowsGuide/device_naming.html
+        </>
+      ),
     };
     const steps = [
       {
         isConfirmLoading: this.isConfirmLoading,
-        component: () => <Loading loading={this.isLoading}>
-            {
-              this.detail.vendor === 'aws'
-                ? <>
-                <span class="mr10">设备名称:</span>
-                <bk-input v-model={this.deviceName} style="width: 200px;"></bk-input>
-                <bk-popover
-                  placement="top"
-                  v-slots={tooltipSlot}
-                >
+        component: () => (
+          <Loading loading={this.isLoading}>
+            {this.detail.vendor === 'aws' ? (
+              <>
+                <span class='mr10'>设备名称:</span>
+                <bk-input v-model={this.deviceName} style='width: 200px;'></bk-input>
+                <bk-popover placement='top' v-slots={tooltipSlot}>
                   <InfoLine />
                 </bk-popover>
-                </>
-                : ''
-            }
-            {
-              this.detail.vendor === 'azure'
-                ? <>
-                <span class="mr10">缓存类型:</span>
-                <bk-select v-model={this.cachingType} style="width: 200px;display: inline-block;">
-                  {
-                    this.cacheTypes.map(type => <bk-option
-                      key={type}
-                      value={type}
-                      label={type}
-                  />)
-                  }
+              </>
+            ) : (
+              ''
+            )}
+            {this.detail.vendor === 'azure' ? (
+              <>
+                <span class='mr10'>缓存类型:</span>
+                <bk-select v-model={this.cachingType} style='width: 200px;display: inline-block;'>
+                  {this.cacheTypes.map((type) => (
+                    <bk-option key={type} value={type} label={type} />
+                  ))}
                 </bk-select>
               </>
-                : ''
-            }
+            ) : (
+              ''
+            )}
             <Table
-              class="mt20"
-              row-hover="auto"
+              class='mt20'
+              row-hover='auto'
               remote-pagination
               pagination={this.pagination}
               columns={this.renderColumns}
@@ -257,19 +228,20 @@ export default defineComponent({
               onPageValueChange={this.handlePageChange}
               onColumnSort={this.handleSort}
             />
-          </Loading>,
+          </Loading>
+        ),
       },
     ];
 
-    return <>
-      <step-dialog
-        title={this.t('挂载云硬盘')}
-        isShow={this.isShow}
-        steps={steps}
-        onConfirm={this.handleConfirm}
-        onCancel={this.handleClose}
-      >
-      </step-dialog>
-    </>;
+    return (
+      <>
+        <step-dialog
+          title={this.t('挂载云硬盘')}
+          isShow={this.isShow}
+          steps={steps}
+          onConfirm={this.handleConfirm}
+          onCancel={this.handleClose}></step-dialog>
+      </>
+    );
   },
 });

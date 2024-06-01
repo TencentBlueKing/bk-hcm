@@ -90,6 +90,17 @@ func AdaptAuthOptions(a *meta.ResourceAttribute) (client.ActionID, []client.Reso
 		return sys.CloudSelectionRecommend, make([]client.Resource, 0), nil
 	case meta.ArgumentTemplate:
 		return genArgumentTemplateResource(a)
+	case meta.Cert:
+		return genCertResource(a)
+	case meta.LoadBalancer:
+		return genLoadBalancerResource(a)
+	case meta.Listener:
+		return genListenerResource(a)
+	case meta.TargetGroup:
+		return genTargetGroupResource(a)
+	case meta.UrlRuleAuditResType:
+		return genUrlRuleResource(a)
+
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm auth type: %s", a.Basic.Type)
 	}

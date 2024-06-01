@@ -61,7 +61,8 @@ func (svc *service) UpdateBillAdjustmentItem(cts *rest.Contexts) (interface{}, e
 		State:           req.State,
 	}
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		if err := svc.dao.AccountBillAdjustmentItem().UpdateByIDWithTx(cts.Kit, txn, BillAdjustmentItem.ID, BillAdjustmentItem); err != nil {
+		if err := svc.dao.AccountBillAdjustmentItem().UpdateByIDWithTx(
+			cts.Kit, txn, BillAdjustmentItem.ID, BillAdjustmentItem); err != nil {
 			return nil, fmt.Errorf("update bill adjustment item failed, err: %v", err)
 		}
 		return nil, nil

@@ -21,6 +21,7 @@
 package core
 
 import (
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
@@ -154,4 +155,10 @@ type CountResp struct {
 type CountResult struct {
 	ID    string `json:"id"`
 	Count uint64 `json:"count"`
+}
+
+// FlowStateResult is a standard flow state result.
+type FlowStateResult struct {
+	FlowID string           `json:"flow_id"`
+	State  enumor.FlowState `json:"state,omitempty"`
 }

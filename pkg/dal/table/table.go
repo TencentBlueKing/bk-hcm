@@ -163,6 +163,27 @@ const (
 	AccountBillPullerTable = "account_bill_puller"
 	// AccountBillDailyPullTaskTable 日账单拉取任务表
 	AccountBillDailyPullTaskTable = "account_bill_daily_pull_task"
+	// SslCertTable is ssl cert table's name.
+	SslCertTable Name = "ssl_cert"
+
+	// LoadBalancerTable is load_balancer table's name.
+	LoadBalancerTable Name = "load_balancer"
+	// SecurityGroupCommonRelTable is security group common rel table's name.
+	SecurityGroupCommonRelTable Name = "security_group_common_rel"
+	// LoadBalancerListenerTable is load_balancer_listener table's name.
+	LoadBalancerListenerTable Name = "load_balancer_listener"
+	// TCloudLbUrlRuleTable is tcloud_lb_url_rule table's name.
+	TCloudLbUrlRuleTable Name = "tcloud_lb_url_rule"
+	// LoadBalancerTargetTable is load_balancer_target table's name.
+	LoadBalancerTargetTable Name = "load_balancer_target"
+	// LoadBalancerTargetGroupTable is load_balancer_target_group table's name.
+	LoadBalancerTargetGroupTable Name = "load_balancer_target_group"
+	// TargetGroupListenerRuleRelTable is target_group_listener_rule_rel table's name.
+	TargetGroupListenerRuleRelTable Name = "target_group_listener_rule_rel"
+	// ResourceFlowRelTable is resource_flow_rel table's name.
+	ResourceFlowRelTable Name = "resource_flow_rel"
+	// ResourceFlowLockTable is resource_flow_lock table's name.
+	ResourceFlowLockTable Name = "resource_flow_lock"
 )
 
 // Validate whether the table name is valid or not.
@@ -229,6 +250,7 @@ var TableMap = map[Name]struct{}{
 	CloudSelectionSchemeTable:    {},
 	CloudSelectionBizTypeTable:   {},
 	CloudSelectionIdcTable:       {},
+	SslCertTable:                 {},
 
 	// TODO: 临时方案
 	RecycleRecordTableTaskID: {},
@@ -238,13 +260,22 @@ var TableMap = map[Name]struct{}{
 
 	ArgumentTemplateTable: {},
 
-	AccountBillPullerTable:         {},
-	AccountBillDailyPullTaskTable:  {},
-	AccountBillSummaryTable:        {},
-	AccountBillSummaryVersionTable: {},
-	AccountBillSummaryDailyTable:   {},
-	AccountBillItemTable:           {},
-	AccountBillAdjustmentItemTable: {},
+	AccountBillPullerTable:          {},
+	AccountBillDailyPullTaskTable:   {},
+	AccountBillSummaryTable:         {},
+	AccountBillSummaryVersionTable:  {},
+	AccountBillSummaryDailyTable:    {},
+	AccountBillItemTable:            {},
+	AccountBillAdjustmentItemTable:  {},
+	LoadBalancerTable:               {},
+	SecurityGroupCommonRelTable:     {},
+	LoadBalancerListenerTable:       {},
+	TCloudLbUrlRuleTable:            {},
+	LoadBalancerTargetTable:         {},
+	LoadBalancerTargetGroupTable:    {},
+	TargetGroupListenerRuleRelTable: {},
+	ResourceFlowRelTable:            {},
+	ResourceFlowLockTable:           {},
 }
 
 // Register 注册表名

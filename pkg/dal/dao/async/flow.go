@@ -170,7 +170,7 @@ func (dao *AsyncFlowDao) UpdateStateByCAS(kt *kit.Kit, tx *sqlx.Tx, info *typesa
 	}
 
 	setSql := "set state = :target"
-	if len(info.Worker) != 0 {
+	if info.Worker != nil {
 		setSql += ", worker = :worker"
 	}
 
@@ -194,7 +194,7 @@ func (dao *AsyncFlowDao) UpdateStateByCAS(kt *kit.Kit, tx *sqlx.Tx, info *typesa
 	}
 
 	if effected == 0 {
-		return errf.Newf(errf.RecordNotUpdate, "flow[%s: %s] update state: %s, worker: %s failed",
+		return errf.Newf(errf.RecordNotUpdate, "flow[%s] update state: `%s`->`%s`, worker: %+v failed",
 			info.ID, info.Source, info.Target, info.Worker)
 	}
 

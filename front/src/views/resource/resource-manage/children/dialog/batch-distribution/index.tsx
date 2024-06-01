@@ -16,6 +16,8 @@ export enum DResourceType {
   subnets = 'subnets',
   vpcs = 'vpcs',
   templates = 'argument_templates',
+  load_balancers = 'load_balancers',
+  certs = 'certs',
 }
 
 export const DResourceTypeMap = {
@@ -59,6 +61,14 @@ export const DResourceTypeMap = {
     key: 'template_ids',
     name: '参数模板',
   },
+  [DResourceType.load_balancers]: {
+    key: 'lb_ids',
+    name: '负载均衡',
+  },
+  [DResourceType.certs]: {
+    key: 'cert_ids',
+    name: '证书',
+  },
 };
 
 export const BatchDistribution = defineComponent({
@@ -86,8 +96,7 @@ export const BatchDistribution = defineComponent({
       isLoading.value = true;
       try {
         await resourceStore.assignBusiness(props.type, {
-          [DResourceTypeMap[props.type].key]:
-            props.selections?.map(v => v.id) || [],
+          [DResourceTypeMap[props.type].key]: props.selections?.map((v) => v.id) || [],
           bk_biz_id: selectedBizId.value,
         });
         Message({
@@ -125,12 +134,11 @@ export const BatchDistribution = defineComponent({
           quickClose
           onClosed={() => (isShow.value = false)}
           onConfirm={handleConfirm}
-          isLoading={isLoading.value}
-          >
+          isLoading={isLoading.value}>
           <p class='selected-host-count-tip'>
             已选择
-            <span class='selected-host-count'>{props.selections.length}</span>个
-            {DResourceTypeMap[props.type].name}，可选择所需分配的目标业务
+            <span class='selected-host-count'>{props.selections.length}</span>个{DResourceTypeMap[props.type].name}
+            ，可选择所需分配的目标业务
           </p>
           <p class='mb6'>目标业务</p>
           <BusinessSelector

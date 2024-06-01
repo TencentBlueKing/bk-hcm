@@ -12,16 +12,48 @@
 .status-column-cell {
   display: flex;
   align-items: center;
-  padding-top: 10px;
-  line-height: 20px;
 
   .status-icon {
     margin-right: 7px;
     width: 14px;
     height: 14px;
   }
-  
+
   .partial-success-status-text {
     border-bottom: 1px dashed rgb(151, 155, 165);
+  }
+}
+
+.port-status-col {
+  display: flex;
+  align-items: center;
+
+  span {
+    width: 14px;
+    height: 16px;
+    line-height: 16px;
+    border-radius: 2px;
+    text-align: center;
+  }
+
+  .un-health,
+  .health {
+    margin-right: 3px;
+    height: 16px;
+    font-size: 10px;
+  }
+
+  .un-health {
+    background-color: #ffeeee;
+    color: #ea3536;
+  }
+
+  .health {
+    background-color: #e4faf0;
+    color: #14a568;
+  }
+  .special-health {
+    background-color: #e4faf0;
+    color: #63656e;
   }
 }

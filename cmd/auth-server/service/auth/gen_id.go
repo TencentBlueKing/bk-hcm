@@ -529,3 +529,113 @@ func genCostManageResource(a *meta.ResourceAttribute) (client.ActionID, []client
 func genArgumentTemplateResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
 	return genIaaSResourceResource(a)
 }
+
+// genCertResource generate cert related iam resource.
+func genCertResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	res := client.Resource{
+		System: sys.SystemIDHCM,
+		Type:   sys.Account,
+	}
+
+	// compatible for authorize any
+	if len(a.ResourceID) > 0 {
+		res.ID = a.ResourceID
+	}
+
+	bizRes := client.Resource{
+		System: sys.SystemIDCMDB,
+		Type:   sys.Biz,
+		ID:     strconv.FormatInt(a.BizID, 10),
+	}
+
+	switch a.Basic.Action {
+	case meta.Find, meta.Assign:
+		return genIaaSResourceResource(a)
+	case meta.Create:
+		if a.BizID > 0 {
+			return sys.BizCertResCreate, []client.Resource{bizRes}, nil
+		}
+		return sys.CertResCreate, []client.Resource{res}, nil
+	case meta.Update:
+		// update resource is related to hcm account resource
+		if a.BizID > 0 {
+			return sys.BizIaaSResOperate, []client.Resource{bizRes}, nil
+		}
+		return sys.IaaSResOperate, []client.Resource{res}, nil
+	case meta.Delete:
+		if a.BizID > 0 {
+			return sys.BizCertResDelete, []client.Resource{bizRes}, nil
+		}
+		return sys.CertResDelete, []client.Resource{res}, nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+}
+
+// genLoadBalancerResource generate load balancer related iam resource.
+func genLoadBalancerResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	res := client.Resource{
+		System: sys.SystemIDHCM,
+		Type:   sys.Account,
+	}
+
+	// compatible for authorize any
+	if len(a.ResourceID) > 0 {
+		res.ID = a.ResourceID
+	}
+
+	bizRes := client.Resource{
+		System: sys.SystemIDCMDB,
+		Type:   sys.Biz,
+		ID:     strconv.FormatInt(a.BizID, 10),
+	}
+
+	switch a.Basic.Action {
+	case meta.Associate, meta.Disassociate:
+		if a.BizID > 0 {
+			return sys.BizIaaSResOperate, []client.Resource{bizRes}, nil
+		}
+		return sys.IaaSResOperate, []client.Resource{res}, nil
+	default:
+		return genIaaSResourceResource(a)
+	}
+}
+
+// genListenerResource generate clb listener related iam resource.
+func genListenerResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	return genIaaSResourceResource(a)
+}
+
+// genTargetGroupResource generate target group related iam resource.
+func genTargetGroupResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	res := client.Resource{
+		System: sys.SystemIDHCM,
+		Type:   sys.Account,
+	}
+
+	// compatible for authorize any
+	if len(a.ResourceID) > 0 {
+		res.ID = a.ResourceID
+	}
+
+	bizRes := client.Resource{
+		System: sys.SystemIDCMDB,
+		Type:   sys.Biz,
+		ID:     strconv.FormatInt(a.BizID, 10),
+	}
+
+	switch a.Basic.Action {
+	case meta.Associate, meta.Disassociate:
+		if a.BizID > 0 {
+			return sys.BizIaaSResOperate, []client.Resource{bizRes}, nil
+		}
+		return sys.IaaSResOperate, []client.Resource{res}, nil
+	default:
+		return genIaaSResourceResource(a)
+	}
+}
+
+// genUrlRuleResource generate clb listener related iam resource.
+func genUrlRuleResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	return genIaaSResourceResource(a)
+}

@@ -57,7 +57,7 @@ func Assign(kt *kit.Kit, cli *dataservice.Client, ids []string, bizID int64) err
 	}
 
 	// 校验主机关联资源信息
-	if err := ValidateCvmRelResBeforeAssign(kt, cli, eipIDs, diskIDs, niIDs); err != nil {
+	if err := ValidateCvmRelResBeforeAssign(kt, cli, bizID, eipIDs, diskIDs, niIDs); err != nil {
 		return err
 	}
 
@@ -158,23 +158,23 @@ func GetCvmRelResIDs(kt *kit.Kit, cli *dataservice.Client, ids []string) (
 }
 
 // ValidateCvmRelResBeforeAssign 校验主机关联资源在分配前
-func ValidateCvmRelResBeforeAssign(kt *kit.Kit, cli *dataservice.Client, eipIDs []string,
+func ValidateCvmRelResBeforeAssign(kt *kit.Kit, cli *dataservice.Client, targetBizId int64, eipIDs []string,
 	diskIDs []string, niIDs []string) error {
 
 	if len(eipIDs) != 0 {
-		if err := eip.ValidateBeforeAssign(kt, cli, eipIDs, true); err != nil {
+		if err := eip.ValidateBeforeAssign(kt, cli, targetBizId, eipIDs, true); err != nil {
 			return err
 		}
 	}
 
 	if len(diskIDs) != 0 {
-		if err := disk.ValidateBeforeAssign(kt, cli, diskIDs, true); err != nil {
+		if err := disk.ValidateBeforeAssign(kt, cli, targetBizId, diskIDs, true); err != nil {
 			return err
 		}
 	}
 
 	if len(niIDs) != 0 {
-		if err := logicsni.ValidateBeforeAssign(kt, cli, niIDs, true); err != nil {
+		if err := logicsni.ValidateBeforeAssign(kt, cli, targetBizId, niIDs, true); err != nil {
 			return err
 		}
 	}

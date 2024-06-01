@@ -93,6 +93,12 @@ func InitSecurityGroupService(cap *capability.Capability) {
 	h.Add("DeleteAzureSGRule", "DELETE", "/vendors/azure/security_groups/{security_group_id}/rules/{id}",
 		sg.DeleteAzureSGRule)
 
+	// CLB负载均衡
+	h.Add("TCloudSecurityGroupAssociateLoadBalancer", "POST",
+		"/vendors/tcloud/security_groups/associate/load_balancers", sg.TCloudSecurityGroupAssociateLoadBalancer)
+	h.Add("TCloudSecurityGroupDisassociateLoadBalancer", "POST",
+		"/vendors/tcloud/security_groups/disassociate/load_balancers", sg.TCloudSecurityGroupDisassociateLoadBalancer)
+
 	initSecurityGroupServiceHooks(sg, h)
 
 	h.Load(cap.WebService)

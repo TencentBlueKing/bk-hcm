@@ -57,6 +57,7 @@ func init() {
 	opFactory[ContainsInsensitive.Factory()] = ContainsInsensitiveOp(ContainsInsensitive)
 
 	opFactory[JSONEqual.Factory()] = JSONEqualOp(JSONEqual)
+	opFactory[JSONNotEqual.Factory()] = JSONNotEqualOp(JSONEqual)
 	opFactory[JSONIn.Factory()] = JSONInOp(JSONIn)
 	opFactory[JSONContains.Factory()] = JSONContainsOp(JSONContains)
 	opFactory[JSONOverlaps.Factory()] = JSONOverlapsOp(JSONOverlaps)
@@ -140,6 +141,8 @@ const (
 const (
 	// JSONEqual is json field equal operator.
 	JSONEqual OpType = "json_eq"
+	// JSONNotEqual is json field not equal operator.
+	JSONNotEqual OpType = "json_neq"
 	// JSONIn is json field in operator.
 	JSONIn OpType = "json_in"
 	// JSONContains json array field contain operator.
@@ -166,7 +169,7 @@ func (op OpType) Validate() error {
 		In, NotIn,
 		ContainsSensitive, ContainsInsensitive:
 
-	case JSONEqual, JSONIn, JSONContains, JSONOverlaps,
+	case JSONEqual, JSONNotEqual, JSONIn, JSONContains, JSONOverlaps,
 		JSONContainsPath, JSONNotContainsPath, JSONLength:
 
 	default:
@@ -705,6 +708,37 @@ func (op JSONEqualOp) SQLExprAndValue(field string, value interface{}) (string, 
 
 	placeholder := fieldPlaceholderName(strings.ReplaceAll(field, ".", ""))
 	return fmt.Sprintf(`%s = %s%s`, jsonFiledSqlFormat(field), SqlPlaceholder, placeholder),
+		map[string]interface{}{placeholder: value}, nil
+}
+
+// JSONNotEqualOp is json field equal operator
+type JSONNotEqualOp OpType
+
+// Name is json field equal operator
+func (op JSONNotEqualOp) Name() OpType {
+	return JSONNotEqual
+}
+
+// ValidateValue validate json field equal's value
+func (op JSONNotEqualOp) ValidateValue(v interface{}, opt *ExprOption) error {
+	if !assert.IsBasicValue(v) {
+		return errors.New("invalid value field")
+	}
+	return nil
+}
+
+// SQLExprAndValue convert this operator's field and value to a mysql's sub query expression.
+func (op JSONNotEqualOp) SQLExprAndValue(field string, value interface{}) (string, map[string]interface{}, error) {
+	if len(field) == 0 {
+		return "", nil, errors.New("field is empty")
+	}
+
+	if !assert.IsBasicValue(value) {
+		return "", nil, errors.New("invalid value field")
+	}
+
+	placeholder := fieldPlaceholderName(strings.ReplaceAll(field, ".", ""))
+	return fmt.Sprintf(`%s != %s%s`, jsonFiledSqlFormat(field), SqlPlaceholder, placeholder),
 		map[string]interface{}{placeholder: value}, nil
 }
 

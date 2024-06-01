@@ -13,7 +13,7 @@ export default defineComponent({
   },
   setup(props) {
     return () => (
-      <div class="bk-metrics-staff-li flex-row align-items-center flex-1 ph10">
+      <div class='bk-metrics-staff-li flex-row align-items-center flex-1 ph10'>
         {/* {props.englishName} ({props.chineseName}) */}
         {props.englishName}
       </div>

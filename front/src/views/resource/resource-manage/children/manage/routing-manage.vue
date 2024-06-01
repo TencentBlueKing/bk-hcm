@@ -1,11 +1,6 @@
 <script setup lang="ts">
-import type {
-  FilterType,
-} from '@/typings/resource';
-import {
-  computed,
-  PropType,
-} from 'vue';
+import type { FilterType } from '@/typings/resource';
+import { computed, PropType } from 'vue';
 // import {
 //   useI18n,
 // } from 'vue-i18n';
@@ -23,24 +18,16 @@ const props = defineProps({
   },
 });
 
-const {
-  searchData,
-  searchValue,
-  filter,
-} = useFilter(props);
+const { searchData, searchValue, filter } = useFilter(props);
 
 // use hooks
 // const {
 //   t,
 // } = useI18n();
-const {
-  datas,
-  pagination,
-  isLoading,
-  handlePageChange,
-  handlePageSizeChange,
-  handleSort,
-} = useQueryList({ filter: filter.value }, 'route_tables');
+const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort } = useQueryList(
+  { filter: filter.value },
+  'route_tables',
+);
 
 const selectSearchData = computed(() => {
   return [
@@ -56,18 +43,9 @@ const { columns, settings } = useColumns('route');
 </script>
 
 <template>
-  <bk-loading
-    :loading="isLoading"
-  >
-    <section
-      class="flex-row align-items-center justify-content-end">
-      <bk-search-select
-        class="w500 ml10"
-        clearable
-        :conditions="[]"
-        :data="selectSearchData"
-        v-model="searchValue"
-      />
+  <bk-loading :loading="isLoading">
+    <section class="flex-row align-items-center justify-content-end">
+      <bk-search-select class="w500 ml10" clearable :conditions="[]" :data="selectSearchData" v-model="searchValue" />
     </section>
     <bk-table
       :settings="settings"

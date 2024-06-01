@@ -42,8 +42,8 @@ func InitVpcService(c *capability.Capability) {
 		"/bizs/{bk_biz_id}/vendors/{vendor}/vpcs/with/subnet_count/list", svc.ListVpcWithSubnetCountInBiz)
 
 	// 资源下
-	h.Add("ListVpcWithSubnetCountInRes", http.MethodPost, "/vendors/{vendor}/vpcs/with/subnet_count/list",
-		svc.ListVpcWithSubnetCountInRes)
+	h.Add("ListVpcWithSubnetCountInRes", http.MethodPost,
+		"/vendors/{vendor}/vpcs/with/subnet_count/list", svc.ListVpcWithSubnetCountInRes)
 
 	h.Load(c.WebService)
 }

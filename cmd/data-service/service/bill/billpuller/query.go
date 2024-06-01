@@ -27,7 +27,7 @@ import (
 	"hcm/pkg/rest"
 )
 
-// ListBillPuller account with options
+// ListBillPuller list bill puller with options
 func (svc *service) ListBillPuller(cts *rest.Contexts) (interface{}, error) {
 	req := new(dataproto.BillPullerListReq)
 	if err := cts.DecodeInto(req); err != nil {

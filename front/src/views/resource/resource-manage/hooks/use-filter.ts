@@ -1,17 +1,11 @@
 /* eslint-disable no-nested-ternary */
-import {
-  onMounted,
-  ref,
-  watch,
-} from 'vue';
+import { onMounted, ref, watch } from 'vue';
 
 import type { FilterType } from '@/typings/resource';
 import { FILTER_DATA, SEARCH_VALUE_IDS, VendorEnum } from '@/common/constant';
-import cloneDeep  from 'lodash/cloneDeep';
+import cloneDeep from 'lodash/cloneDeep';
 
-import {
-  useAccountStore,
-} from '@/store';
+import { useAccountStore } from '@/store';
 import { QueryFilterType, QueryRuleOPEnum, RulesItem } from '@/typings';
 import { useRoute } from 'vue-router';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
@@ -19,8 +13,8 @@ import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { useRegionsStore } from '@/store/useRegionsStore';
 
 type PropsType = {
-  filter?: FilterType,
-  whereAmI?: string
+  filter?: FilterType;
+  whereAmI?: string;
 };
 
 export const imageInitialCondition = {
@@ -38,8 +32,8 @@ export enum ResourceManageSenario {
   interface = 'interface',
   ip = 'ip',
   routing = 'routing',
-  image = 'image'
-};
+  image = 'image',
+}
 
 const useFilter = (props: PropsType) => {
   const searchData = ref([]);
@@ -57,15 +51,17 @@ const useFilter = (props: PropsType) => {
     Object.entries(route.query).forEach(([queryName, queryValue]) => {
       if (!!queryName && SEARCH_VALUE_IDS.includes(queryName)) {
         if (Array.isArray(queryValue)) {
-          params = params.concat(queryValue.map(queryValueItem => ({
-            id: queryName,
-            values: [
-              {
-                id: queryValueItem,
-                name: queryValueItem,
-              },
-            ],
-          })));
+          params = params.concat(
+            queryValue.map((queryValueItem) => ({
+              id: queryName,
+              values: [
+                {
+                  id: queryValueItem,
+                  name: queryValueItem,
+                },
+              ],
+            })),
+          );
         } else {
           params.push({
             id: queryName,
@@ -89,8 +85,12 @@ const useFilter = (props: PropsType) => {
   watch(
     () => route.query,
     () => {
-      if (Object.entries(route.query).map(([queryName]) => queryName)
-        .includes('cloud_id')) saveQueryInSearch();
+      if (
+        Object.entries(route.query)
+          .map(([queryName]) => queryName)
+          .includes('cloud_id')
+      )
+        saveQueryInSearch();
     },
     {
       deep: true,
@@ -99,16 +99,16 @@ const useFilter = (props: PropsType) => {
   );
 
   watch(
-    () => accountStore.accountList,   // 设置云账号筛选所需数据
+    () => accountStore.accountList, // 设置云账号筛选所需数据
     (val) => {
       if (!val) return;
-      val.length && FILTER_DATA.forEach((e) => {
-        if (e.id === 'account_id') {
-          e.children = val;
-        }
-      });
+      val.length &&
+        FILTER_DATA.forEach((e) => {
+          if (e.id === 'account_id') {
+            e.children = val;
+          }
+        });
       searchData.value = FILTER_DATA;
-      console.log('searchData.value', searchData.value);
     },
     {
       deep: true,
@@ -136,7 +136,11 @@ const useFilter = (props: PropsType) => {
           field,
           op: field === 'cloud_vpc_ids' ? 'json_contains' : QueryRuleOPEnum.CS,
           value:
-            field === 'bk_cloud_id' ? Number(values[0].id) : field === 'region' ? regionStore.getRegionNameEN(values[0].id) : values[0].id,
+            field === 'bk_cloud_id'
+              ? Number(values[0].id)
+              : field === 'region'
+              ? regionStore.getRegionNameEN(values[0].id)
+              : values[0].id,
         };
 
         if (!map.has(field)) {

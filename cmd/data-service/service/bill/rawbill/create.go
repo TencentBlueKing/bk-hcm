@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/rest"
 )
 
+// CreateRawBill create cloud raw bill
 func (s *service) CreateRawBill(cts *rest.Contexts) (interface{}, error) {
 	req := new(dsbill.RawBillCreateReq)
 	if err := cts.DecodeInto(req); err != nil {

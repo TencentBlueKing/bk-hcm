@@ -1,14 +1,10 @@
 .batch-operation-dialog {
-  .bk-modal-header .bk-dialog-header {
-    padding: 16px 24px;
-    .bk-dialog-title {
-      color: #313238;
-    }
-  }
   .bk-modal-content .batch-operation-dialog-content {
     .tips {
       margin-bottom: 12px;
+      font-size: 14px;
       span {
+        margin: 0 4px;
         font-weight: 700;
         &.blue {
           color: #3a84ff;
@@ -25,6 +21,10 @@
   .bk-modal-footer {
     .bk-button {
       min-width: 64px;
+    }
+
+    .dialog-cancel {
+      margin-left: 8px;
     }
   }
   .bk-modal-close {

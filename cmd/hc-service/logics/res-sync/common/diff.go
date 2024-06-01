@@ -23,11 +23,13 @@ import (
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/account"
 	typeargstpl "hcm/pkg/adaptor/types/argument-template"
+	"hcm/pkg/adaptor/types/cert"
 	typescvm "hcm/pkg/adaptor/types/cvm"
 	typesdisk "hcm/pkg/adaptor/types/disk"
 	typeseip "hcm/pkg/adaptor/types/eip"
 	firewallrule "hcm/pkg/adaptor/types/firewall-rule"
 	typesimage "hcm/pkg/adaptor/types/image"
+	typeslb "hcm/pkg/adaptor/types/load-balancer"
 	typesni "hcm/pkg/adaptor/types/network-interface"
 	typesregion "hcm/pkg/adaptor/types/region"
 	typesresourcegroup "hcm/pkg/adaptor/types/resource-group"
@@ -38,9 +40,11 @@ import (
 	typeszone "hcm/pkg/adaptor/types/zone"
 	cloudcore "hcm/pkg/api/core/cloud"
 	coreargstpl "hcm/pkg/api/core/cloud/argument-template"
+	corecert "hcm/pkg/api/core/cloud/cert"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	coredisk "hcm/pkg/api/core/cloud/disk"
 	coreimage "hcm/pkg/api/core/cloud/image"
+	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	corecloudni "hcm/pkg/api/core/cloud/network-interface"
 	coreregion "hcm/pkg/api/core/cloud/region"
 	coreresourcegroup "hcm/pkg/api/core/cloud/resource-group"
@@ -51,6 +55,7 @@ import (
 	dataeip "hcm/pkg/api/data-service/cloud/eip"
 )
 
+// CloudResType 云资源类型
 type CloudResType interface {
 	GetCloudID() string
 
@@ -141,9 +146,16 @@ type CloudResType interface {
 		typeargstpl.TCloudArgsTplAddress |
 		typeargstpl.TCloudArgsTplAddressGroup |
 		typeargstpl.TCloudArgsTplService |
-		typeargstpl.TCloudArgsTplServiceGroup
+		typeargstpl.TCloudArgsTplServiceGroup |
+
+		cert.TCloudCert |
+		typeslb.TCloudClb |
+		typeslb.TCloudListener |
+		typeslb.TCloudUrlRule |
+		typeslb.Backend
 }
 
+// DBResType 本地资源类型
 type DBResType interface {
 	GetID() string
 	GetCloudID() string
@@ -229,7 +241,14 @@ type DBResType interface {
 		corerecyclerecord.EipBindInfo |
 		corerecyclerecord.DiskAttachInfo |
 
-		*coreargstpl.ArgsTpl[coreargstpl.TCloudArgsTplExtension]
+		*coreargstpl.ArgsTpl[coreargstpl.TCloudArgsTplExtension] |
+
+		*corecert.Cert[corecert.TCloudCertExtension] |
+
+		corelb.TCloudLoadBalancer |
+		corelb.TCloudLbUrlRule |
+		corelb.TCloudListener |
+		corelb.BaseTarget
 }
 
 // Diff 对比云和db资源，划分出新增数据，更新数据，删除数据。

@@ -1,7 +1,4 @@
-import {
-  defineComponent,
-  PropType,
-} from 'vue';
+import { defineComponent, PropType } from 'vue';
 
 import StepDialog from '@/components/step-dialog/step-dialog';
 
@@ -50,33 +47,31 @@ export default defineComponent({
   render() {
     const steps = [
       {
-        component: () => <>
-          <bk-table
-            class="mb20"
-            row-hover="auto"
-            columns={this.columns.filter(column => !column.onlyShowOnList)}
-            data={this.data}
-            show-overflow-tooltip
-          />
-          <h3 class="g-resource-tips">
-            {
-              this.$slots.tips ?? this.$slots?.default?.()
-            }
-          </h3>
-        </>,
+        component: () => (
+          <>
+            <bk-table
+              class='mb20'
+              row-hover='auto'
+              columns={this.columns.filter((column) => !column.onlyShowOnList)}
+              data={this.data}
+              show-overflow-tooltip
+            />
+            <h3 class='g-resource-tips'>{this.$slots.tips ?? this.$slots?.default?.()}</h3>
+          </>
+        ),
         isConfirmLoading: this.isDeleting,
       },
     ];
 
-    return <>
-      <step-dialog
-        title={this.title}
-        isShow={this.isShow}
-        steps={steps}
-        onConfirm={this.handleConfirm}
-        onCancel={this.handleClose}
-      >
-      </step-dialog>
-    </>;
+    return (
+      <>
+        <step-dialog
+          title={this.title}
+          isShow={this.isShow}
+          steps={steps}
+          onConfirm={this.handleConfirm}
+          onCancel={this.handleClose}></step-dialog>
+      </>
+    );
   },
 });

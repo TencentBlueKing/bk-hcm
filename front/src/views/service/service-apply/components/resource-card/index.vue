@@ -2,17 +2,25 @@
   <div class="resource-list">
     <div class="resource-item" v-for="item in list" :key="item?.id">
       <div class="resource-title">
-        <img src="@/assets/image/serviceCard.png" alt="">
+        <img src="@/assets/image/serviceCard.png" alt="" />
         <span class="resource-name pl20">{{ item.name }}</span>
       </div>
       <div class="sub-resource-title">申请 {{ item.name }}</div>
       <div
         class="bottom-btn"
-        @click="handleAuthClick(item.routeName === 'applyAccount' ? 'account_import' : 'biz_iaas_resource_create')">
+        @click="handleAuthClick(item.routeName === 'applyAccount' ? 'account_import' : 'biz_iaas_resource_create')"
+      >
         <bk-button
-          theme="primary" :disabled="!authVerifyData?.
-            permissionAction[item.routeName === 'applyAccount' ? 'account_import' : 'biz_iaas_resource_create']"
-          outline size="small" @click="handleApply(item.routeName)">
+          theme="primary"
+          :disabled="
+            !authVerifyData?.permissionAction[
+              item.routeName === 'applyAccount' ? 'account_import' : 'biz_iaas_resource_create'
+            ]
+          "
+          outline
+          size="small"
+          @click="handleApply(item.routeName)"
+        >
           {{ item.btnText }}
         </bk-button>
       </div>
@@ -84,12 +92,12 @@ export default defineComponent({
       overflow: hidden;
       white-space: nowrap;
       text-overflow: ellipsis;
-      .resource-name{
+      .resource-name {
         font-size: 16px;
         font-weight: bold;
       }
     }
-    .sub-resource-title{
+    .sub-resource-title {
       color: #63656e;
       font-size: 12px;
       overflow: hidden;
@@ -98,14 +106,14 @@ export default defineComponent({
       padding: 28px 30px;
     }
   }
-  .resource-item:hover{
+  .resource-item:hover {
     box-shadow: 4px 4px 8px 2px rgb(0 0 0 / 15%);
   }
   .bottom-btn {
     text-align: right;
     height: 40px;
     line-height: 40px;
-    background-color:#fafbfd;
+    background-color: #fafbfd;
     border-radius: 0 0 10px 10px;
     padding: 0 15px;
   }

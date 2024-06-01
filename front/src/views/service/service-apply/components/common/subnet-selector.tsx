@@ -97,72 +97,78 @@ export default defineComponent({
       //   });
       // }
 
-      const result = await http.post(isResourcePage
-        ? `${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/subnets/with/ip_count/list`
-        : `${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/bizs/${bizId}/subnets/with/ip_count/list`, {
-        // const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/subnets/list`, {
-        filter,
-        page: {
-          count: false,
-          start: 0,
-          limit: 50,
+      const result = await http.post(
+        isResourcePage
+          ? `${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/subnets/with/ip_count/list`
+          : `${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/bizs/${bizId}/subnets/with/ip_count/list`,
+        {
+          // const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/subnets/list`, {
+          filter,
+          page: {
+            count: false,
+            start: 0,
+            limit: 50,
+          },
         },
-      });
+      );
       list.value = result?.data?.details ?? [];
       loading.value = false;
     };
 
-    watch([
-      () => props.bizId,
-      () => props.region,
-      () => props.vendor,
-      () => props.vpcId,
-      () => props.accountId,
-      () => props.zone,
-      () => props.resourceGroup,
-    ], async ([bizId, region, vendor, vpcId, accountId, zone]) => {
-      await getSubnetsData(bizId, region, vendor, vpcId, accountId, zone);
-    });
+    watch(
+      [
+        () => props.bizId,
+        () => props.region,
+        () => props.vendor,
+        () => props.vpcId,
+        () => props.accountId,
+        () => props.zone,
+        () => props.resourceGroup,
+      ],
+      async ([bizId, region, vendor, vpcId, accountId, zone]) => {
+        await getSubnetsData(bizId, region, vendor, vpcId, accountId, zone);
+      },
+    );
 
     return () => (
       <div>
         <Select
           filterable={true}
           modelValue={selected.value}
-          onUpdate:modelValue={val => selected.value = val}
+          onUpdate:modelValue={(val) => (selected.value = val)}
           loading={loading.value}
           clearable={props.clearable}
           {...{ attrs }}
           onChange={(cloud_id: string) => {
             console.log(cloud_id);
-            const data = list.value.find(item => item.cloud_id === cloud_id);
+            const data = list.value.find((item) => item.cloud_id === cloud_id);
             props.handleChange(data);
-          }}
-        >
-          {
-            list.value.map(({ cloud_id, name, ipv4_cidr, available_ip_count }) => (
-              <Option key={cloud_id} value={cloud_id} label={`${name} ${ipv4_cidr} ${props.vendor !== VendorEnum.GCP ? `剩余IP ${available_ip_count}` : ''}`}></Option>
-            ))
-          }
+          }}>
+          {list.value.map(({ cloud_id, name, ipv4_cidr, available_ip_count }) => (
+            <Option
+              key={cloud_id}
+              value={cloud_id}
+              label={`${name} ${ipv4_cidr} ${
+                props.vendor !== VendorEnum.GCP ? `剩余IP ${available_ip_count}` : ''
+              }`}></Option>
+          ))}
         </Select>
         {props.vpcId && !list.value.length ? (
           <div class={'subnet-selector-tips'}>
             {/* {whereAmI.value === Senarios.resource ? ( */}
-              <>
-                <span class={'subnet-create-tips'}>
-                  {'所选的VPC，在当前区无可用的子网，可切换VPC或'}
-                </span>
-                <Button
-                  text
-                  theme='primary'
-                  class={'mr6'}
-                  onClick={() => {
-                    const url = '/#/resource/resource?type=subnet';
-                    window.open(url, '_blank');
-                  }}>
-                  新建子网
-                </Button>
-              </>
+            <>
+              <span class={'subnet-create-tips'}>{'所选的VPC，在当前区无可用的子网，可切换VPC或'}</span>
+              <Button
+                text
+                theme='primary'
+                class={'mr6'}
+                onClick={() => {
+                  const url = '/#/resource/resource?type=subnet';
+                  window.open(url, '_blank');
+                }}>
+                新建子网
+              </Button>
+            </>
             {/* ) : (
               <>
                 <span class={'subnet-create-tips mr6'}>
@@ -183,14 +189,7 @@ export default defineComponent({
             <Button
               text
               onClick={() => {
-                getSubnetsData(
-                  props.bizId,
-                  props.region,
-                  props.vendor,
-                  props.vpcId,
-                  props.accountId,
-                  props.zone,
-                );
+                getSubnetsData(props.bizId, props.region, props.vendor, props.vpcId, props.accountId, props.zone);
               }}>
               <RightTurnLine fill='#3A84FF' />
             </Button>

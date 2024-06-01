@@ -29,7 +29,10 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// BillItemCreateReq ...
+// BatchBillItemCreateReq batch bill item create request
+type BatchBillItemCreateReq []BillItemCreateReq
+
+// BillItemCreateReq create request
 type BillItemCreateReq struct {
 	FirstAccountID  string          `json:"first_account_id" validate:"required"`
 	SecondAccountID string          `json:"second_account_id" validate:"required"`
@@ -50,12 +53,12 @@ type BillItemCreateReq struct {
 	Extension       types.JsonField `json:"extension"`
 }
 
-// Validate AccountBillConfigBatchCreateReq.
+// Validate ...
 func (c *BillItemCreateReq) Validate() error {
 	return validator.Validate.Struct(c)
 }
 
-// BillItemListReq ...
+// BillItemListReq list request
 type BillItemListReq struct {
 	Filter *filter.Expression `json:"filter" validate:"required"`
 	Page   *core.BasePage     `json:"page" validate:"required"`
@@ -67,13 +70,13 @@ func (req *BillItemListReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// BillItemListResult ...
+// BillItemListResult list result
 type BillItemListResult struct {
 	Count   *uint64           `json:"count,omitempty"`
 	Details []*BillItemResult `json:"details"`
 }
 
-// BillItemResult ...
+// BillItemResult result
 type BillItemResult struct {
 	ID              string          `json:"id,omitempty"`
 	FirstAccountID  string          `json:"first_account_id" validate:"required"`
@@ -97,7 +100,7 @@ type BillItemResult struct {
 	UpdatedAt       types.Time      `json:"updated_at,omitempty"`
 }
 
-// BillItemUpdateReq ...
+// BillItemUpdateReq update request
 type BillItemUpdateReq struct {
 	ID              string          `json:"id,omitempty" validate:"required"`
 	FirstAccountID  string          `json:"first_account_id" validate:"required"`

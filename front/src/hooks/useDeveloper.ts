@@ -23,17 +23,15 @@ export function useMappingDeveloper(isMap = false) {
       wework: 'demo',
     },
   ]);
-  const {
-    pagination,
-    handleTotalChange,
-    handlePageValueChange,
-    handlePageLimitChange,
-  } = usePagination();
+  const { pagination, handleTotalChange, handlePageValueChange, handlePageLimitChange } = usePagination();
 
-
-  watch(() => ({ ...pagination }),  (newPagination) => {
-    getDeveloperMap(newPagination);
-  }, { immediate: true });
+  watch(
+    () => ({ ...pagination }),
+    (newPagination) => {
+      getDeveloperMap(newPagination);
+    },
+    { immediate: true },
+  );
 
   async function getDeveloperMap(paginationConf: typeof pagination) {
     const data = await developerStore.fetchDeveloperMap({
