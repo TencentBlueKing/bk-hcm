@@ -30,10 +30,11 @@ import (
 	daoasync "hcm/pkg/dal/dao/async"
 	"hcm/pkg/dal/dao/audit"
 	"hcm/pkg/dal/dao/auth"
+	"hcm/pkg/dal/dao/bill"
 	"hcm/pkg/dal/dao/cloud"
 	daoselection "hcm/pkg/dal/dao/cloud-selection"
 	argstpl "hcm/pkg/dal/dao/cloud/argument-template"
-	"hcm/pkg/dal/dao/cloud/bill"
+	cloudbill "hcm/pkg/dal/dao/cloud/bill"
 	"hcm/pkg/dal/dao/cloud/cvm"
 	"hcm/pkg/dal/dao/cloud/disk"
 	diskcvmrel "hcm/pkg/dal/dao/cloud/disk-cvm-rel"
@@ -99,7 +100,14 @@ type Set interface {
 	Image() cimage.Image
 	DiskCvmRel() diskcvmrel.DiskCvmRel
 	EipCvmRel() eipcvmrel.EipCvmRel
-	AccountBillConfig() bill.Interface
+	AccountBillConfig() cloudbill.Interface
+	AccountBillDailyPullTask() bill.AccountBillDailyPullTask
+	AccountBillPuller() bill.AccountBillPuller
+	AccountBillSummary() bill.AccountBillSummary
+	AccountBillSummaryDaily() bill.AccountBillSummaryDaily
+	AccountBillSummaryVersion() bill.AccountBillSummaryVersion
+	AccountBillItem() bill.AccountBillItem
+	AccountBillAdjustmentItem() bill.AccountBillAdjustmentItem
 	AsyncFlow() daoasync.AsyncFlow
 	AsyncFlowTask() daoasync.AsyncFlowTask
 	UserCollection() daouser.Interface
@@ -460,11 +468,67 @@ func (s *set) Txn() *Txn {
 }
 
 // AccountBillConfig returns account bill config dao.
-func (s *set) AccountBillConfig() bill.Interface {
-	return &bill.AccountBillConfigDao{
+func (s *set) AccountBillConfig() cloudbill.Interface {
+	return &cloudbill.AccountBillConfigDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 		Audit: s.audit,
+	}
+}
+
+// AccountBillDailyPullTask returns AccountBillDailyPullTask dao.
+func (s *set) AccountBillDailyPullTask() bill.AccountBillDailyPullTask {
+	return &bill.AccountBillDailyPullTaskDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+	}
+}
+
+// AccountBillPuller returns AccountBillPuller dao.
+func (s *set) AccountBillPuller() bill.AccountBillPuller {
+	return &bill.AccountBillPullerDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+	}
+}
+
+// AccountBillSummary returns AccountBillSummary dao.
+func (s *set) AccountBillSummary() bill.AccountBillSummary {
+	return &bill.AccountBillSummaryDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+	}
+}
+
+// AccountBillSummaryVersion returns AccountBillSummaryVersion dao.
+func (s *set) AccountBillSummaryVersion() bill.AccountBillSummaryVersion {
+	return &bill.AccountBillSummaryVersionDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+	}
+}
+
+// AccountBillSummaryDaily returns AccountBillSummaryDaily dao.
+func (s *set) AccountBillSummaryDaily() bill.AccountBillSummaryDaily {
+	return &bill.AccountBillSummaryDailyDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+	}
+}
+
+// AccountBillItem returns AccountBillItem dao.
+func (s *set) AccountBillItem() bill.AccountBillItem {
+	return &bill.AccountBillItemDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+	}
+}
+
+// AccountBillAdjustmentItem returns AccountBillAdjustmentItem dao.
+func (s *set) AccountBillAdjustmentItem() bill.AccountBillAdjustmentItem {
+	return &bill.AccountBillAdjustmentItemDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
 	}
 }
 
