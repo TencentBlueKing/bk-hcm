@@ -17,23 +17,37 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package capability ...
-package capability
+package objectstore
 
 import (
-	"hcm/pkg/cryptography"
-	"hcm/pkg/dal/dao"
-	"hcm/pkg/dal/objectstore"
-	"hcm/pkg/thirdparty/esb"
-
-	"github.com/emicklei/go-restful/v3"
+	"context"
+	"fmt"
+	"io"
+	"os"
 )
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService  *restful.WebService
-	Dao         dao.Set
-	Cipher      cryptography.Crypto
-	EsbClient   esb.Client
-	ObjectStore objectstore.Storage
+const (
+	envObjectStorageType = "OBJECT_STORE_TYPE"
+
+	objectStorageTCloud = "TCLOUD"
+)
+
+// GetObjectStoreFromEnv get object store from env
+func GetObjectStoreFromEnv() (Storage, error) {
+	t := os.Getenv(envObjectStorageType)
+	switch t {
+	case "":
+		return nil, nil
+	case objectStorageTCloud:
+		return NewTCloudCOS()
+	default:
+		return nil, fmt.Errorf("invalid object store type %s", t)
+	}
+}
+
+// Storage the interface of storage
+type Storage interface {
+	Upload(ctx context.Context, uploadPath string, r io.Reader) error
+	Download(ctx context.Context, downloadPath string, w io.Writer) error
+	ListItems(ctx context.Context, folderPath string) ([]string, error)
 }

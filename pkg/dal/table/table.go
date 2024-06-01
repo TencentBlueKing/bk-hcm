@@ -149,6 +149,7 @@ const (
 	// ArgumentTemplateTable is argument template table's name.
 	ArgumentTemplateTable Name = "argument_template"
 
+<<<<<<< HEAD
 	// SslCertTable is ssl cert table's name.
 	SslCertTable Name = "ssl_cert"
 
@@ -170,6 +171,22 @@ const (
 	ResourceFlowRelTable Name = "resource_flow_rel"
 	// ResourceFlowLockTable is resource_flow_lock table's name.
 	ResourceFlowLockTable Name = "resource_flow_lock"
+=======
+	// AccountBillSummaryTable 月度汇总账单
+	AccountBillSummaryTable = "account_bill_summary"
+	// AccountBillSummaryVersionTable 月度汇总账单版本
+	AccountBillSummaryVersionTable = "account_bill_summary_version"
+	// AccountBillSummaryDailyTable 每天汇总账单版本
+	AccountBillSummaryDailyTable = "account_bill_summary_daily"
+	// AccountBillItemTable 分账后的账单明细
+	AccountBillItemTable = "account_bill_item"
+	// AccountBillAdjustmentItemTable 手动调账表
+	AccountBillAdjustmentItemTable = "account_bill_adjustment_item"
+	// AccountBillPullerTable 账单拉取器表
+	AccountBillPullerTable = "account_bill_puller"
+	// AccountBillDailyPullTaskTable 日账单拉取任务表
+	AccountBillDailyPullTaskTable = "account_bill_daily_pull_task"
+>>>>>>> 135fb625 (feat: add bill tables in data-service; --story=117767179)
 )
 
 // Validate whether the table name is valid or not.
@@ -255,6 +272,13 @@ var TableMap = map[Name]struct{}{
 	TargetGroupListenerRuleRelTable: {},
 	ResourceFlowRelTable:            {},
 	ResourceFlowLockTable:           {},
+	AccountBillPullerTable:         {},
+	AccountBillDailyPullTaskTable:  {},
+	AccountBillSummaryTable:        {},
+	AccountBillSummaryVersionTable: {},
+	AccountBillSummaryDailyTable:   {},
+	AccountBillItemTable:           {},
+	AccountBillAdjustmentItemTable: {},
 }
 
 // Register 注册表名
