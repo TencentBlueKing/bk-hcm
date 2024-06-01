@@ -36,7 +36,7 @@ import (
 )
 
 // LoadBalancerRule 规则同步
-func (cli *client) loadBalancerRule(kt *kit.Kit, opt *SyncListenerOfSingleLBOption,
+func (cli *client) loadBalancerRule(kt *kit.Kit, opt *SyncListenerOption,
 	cloudListeners []typeslb.TCloudListener) (any, error) {
 
 	var l4Listeners, l7Listeners []typeslb.TCloudListener
@@ -57,7 +57,11 @@ func (cli *client) loadBalancerRule(kt *kit.Kit, opt *SyncListenerOfSingleLBOpti
 		ListenerID:      "",
 		CloudListenerID: "",
 	}
-	dbListeners, err := cli.listListenerFromDB(kt, opt)
+	lblCloudIDs := make([]string, len(cloudListeners))
+	for i, cloudListener := range cloudListeners {
+		lblCloudIDs[i] = cvt.PtrToVal(cloudListener.ListenerId)
+	}
+	dbListeners, err := cli.listListenerFromDB(kt, opt.LBID, lblCloudIDs, core.NewDefaultBasePage())
 	if err != nil {
 		return nil, err
 	}

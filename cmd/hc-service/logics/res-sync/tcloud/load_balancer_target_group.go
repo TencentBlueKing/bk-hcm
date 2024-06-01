@@ -44,7 +44,7 @@ import (
 )
 
 // LocalTargetGroup 同步本地目标组
-func (cli *client) LocalTargetGroup(kt *kit.Kit, param *SyncBaseParams, opt *SyncListenerOfSingleLBOption,
+func (cli *client) LocalTargetGroup(kt *kit.Kit, param *SyncBaseParams, opt *SyncListenerOption,
 	cloudListeners []typeslb.TCloudListener) error {
 	// 目前主要是同步健康检查
 	healthMap := make(map[string]*tclb.HealthCheck, len(cloudListeners))
@@ -127,7 +127,7 @@ func (cli *client) getTargetGruop(kt *kit.Kit, lbId string, cloudIDs []string,
 
 // ListenerTargets 监听器下的target，用来更新目标组.
 // SyncBaseParams 中的CloudID作为监听器id筛选，不传的话就是同步当前LB下的全部监听器
-func (cli *client) ListenerTargets(kt *kit.Kit, param *SyncBaseParams, opt *SyncListenerOfSingleLBOption) error {
+func (cli *client) ListenerTargets(kt *kit.Kit, param *SyncBaseParams, opt *SyncListenerOption) error {
 
 	cloudListenerTargets, relMap, tgRsMap, lb, err := cli.listTargetRelated(kt, param, opt)
 	if err != nil {
@@ -146,7 +146,7 @@ func (cli *client) ListenerTargets(kt *kit.Kit, param *SyncBaseParams, opt *Sync
 		}
 
 		// 存在则比较
-		return cli.compareTargetsChange(kt, opt.AccountID, tgId, cloudTargets, tgRsMap[tgId])
+		return cli.compareTargetsChange(kt, param.AccountID, tgId, cloudTargets, tgRsMap[tgId])
 	}
 	// 遍历云上的监听器、规则
 	for _, listener := range cloudListenerTargets {
@@ -191,7 +191,7 @@ func (cli *client) ListenerTargets(kt *kit.Kit, param *SyncBaseParams, opt *Sync
 }
 
 // 获取同步rs所需关联资源
-func (cli *client) listTargetRelated(kt *kit.Kit, param *SyncBaseParams, opt *SyncListenerOfSingleLBOption) (
+func (cli *client) listTargetRelated(kt *kit.Kit, param *SyncBaseParams, opt *SyncListenerOption) (
 	[]typeslb.TCloudListenerTarget, map[string]*corelb.BaseTargetListenerRuleRel,
 	map[string][]corelb.BaseTarget, *corelb.TCloudLoadBalancer, error) {
 
@@ -210,8 +210,8 @@ func (cli *client) listTargetRelated(kt *kit.Kit, param *SyncBaseParams, opt *Sy
 	}
 
 	lbResp, err := cli.listLBFromDB(kt, &SyncBaseParams{
-		AccountID: opt.AccountID,
-		Region:    opt.Region,
+		AccountID: param.AccountID,
+		Region:    param.Region,
 		CloudIDs:  []string{opt.CloudLBID},
 	})
 	if err != nil {
@@ -250,7 +250,7 @@ func (cli *client) compareTargetsChange(kt *kit.Kit, accountID, tgID string, clo
 }
 
 // 为rs创建目标组不跳过没有rs的规则
-func (cli *client) createLocalTargetGroupL7(kt *kit.Kit, opt *SyncListenerOfSingleLBOption,
+func (cli *client) createLocalTargetGroupL7(kt *kit.Kit, opt *SyncListenerOption,
 	lb *corelb.TCloudLoadBalancer, listener typeslb.TCloudListenerTarget, cloudRule *tclb.RuleTargets) error {
 
 	// 获取数据库中的规则
@@ -282,9 +282,9 @@ func (cli *client) createLocalTargetGroupL7(kt *kit.Kit, opt *SyncListenerOfSing
 		TargetGroup: dataproto.TargetGroupBatchCreate[corelb.TCloudTargetGroupExtension]{
 			Name:            genTargetGroupNameL7(dbRule),
 			Vendor:          enumor.TCloud,
-			AccountID:       opt.AccountID,
+			AccountID:       lb.AccountID,
 			BkBizID:         opt.BizID,
-			Region:          opt.Region,
+			Region:          lb.Region,
 			Protocol:        listener.GetProtocol(),
 			Port:            cvt.PtrToVal(listener.Port),
 			VpcID:           lb.VpcID,
@@ -293,7 +293,7 @@ func (cli *client) createLocalTargetGroupL7(kt *kit.Kit, opt *SyncListenerOfSing
 			Weight:          0,
 			HealthCheck:     types.JsonField(healthcheck),
 			Memo:            cvt.ValToPtr("auto created for rule " + cvt.PtrToVal(cloudRule.LocationId)),
-			RsList:          slice.Map(cloudRule.Targets, convTarget(opt.AccountID)),
+			RsList:          slice.Map(cloudRule.Targets, convTarget(lb.AccountID)),
 		},
 		ListenerRuleID:      dbRule.ID,
 		CloudListenerRuleID: dbRule.CloudID,
@@ -340,7 +340,7 @@ func convTarget(accountID string) func(cloudTarget *tclb.Backend) *dataproto.Tar
 }
 
 // 创建本地目标组以及关系，不会跳过没有rs的监听器
-func (cli *client) createLocalTargetGroupL4(kt *kit.Kit, opt *SyncListenerOfSingleLBOption,
+func (cli *client) createLocalTargetGroupL4(kt *kit.Kit, opt *SyncListenerOption,
 	lb *corelb.TCloudLoadBalancer, listener typeslb.TCloudListenerTarget) error {
 
 	lbl, rule, err := cli.listListenerWithRule(kt, cvt.PtrToVal(listener.ListenerId))
@@ -360,7 +360,7 @@ func (cli *client) createLocalTargetGroupL4(kt *kit.Kit, opt *SyncListenerOfSing
 			Vendor:          enumor.TCloud,
 			AccountID:       lbl.AccountID,
 			BkBizID:         lbl.BkBizID,
-			Region:          opt.Region,
+			Region:          lb.Region,
 			Protocol:        lbl.Protocol,
 			Port:            lbl.Port,
 			VpcID:           lb.VpcID,
@@ -369,7 +369,7 @@ func (cli *client) createLocalTargetGroupL4(kt *kit.Kit, opt *SyncListenerOfSing
 			Weight:          0,
 			HealthCheck:     types.JsonField(healthcheck),
 			Memo:            cvt.ValToPtr("auto created for listener " + cvt.PtrToVal(listener.ListenerId)),
-			RsList:          slice.Map(listener.Targets, convTarget(opt.AccountID)),
+			RsList:          slice.Map(listener.Targets, convTarget(lb.AccountID)),
 		},
 		// 需要用4层对应的规则id
 		ListenerRuleID:      rule.ID,
@@ -498,10 +498,10 @@ func (cli *client) createRs(kt *kit.Kit, accountID, tgId string, addSlice []type
 
 // 获取云上监听器列表
 func (cli *client) listTargetsFromCloud(kt *kit.Kit, param *SyncBaseParams,
-	opt *SyncListenerOfSingleLBOption) ([]typeslb.TCloudListenerTarget, error) {
+	opt *SyncListenerOption) ([]typeslb.TCloudListenerTarget, error) {
 
 	listOpt := &typeslb.TCloudListTargetsOption{
-		Region:         opt.Region,
+		Region:         param.Region,
 		LoadBalancerId: opt.CloudLBID,
 		ListenerIds:    param.CloudIDs,
 	}
@@ -509,7 +509,7 @@ func (cli *client) listTargetsFromCloud(kt *kit.Kit, param *SyncBaseParams,
 }
 
 // 获取云上监听器列表
-func (cli *client) listTargetsFromDB(kt *kit.Kit, param *SyncBaseParams, opt *SyncListenerOfSingleLBOption) (
+func (cli *client) listTargetsFromDB(kt *kit.Kit, param *SyncBaseParams, opt *SyncListenerOption) (
 	relMap map[string]*corelb.BaseTargetListenerRuleRel, tgRsMap map[string][]corelb.BaseTarget, err error) {
 
 	listReq := &core.ListReq{

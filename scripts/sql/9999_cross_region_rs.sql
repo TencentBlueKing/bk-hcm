@@ -28,8 +28,12 @@
 
 START TRANSACTION;
 
+/* first use default value from private_ip_address*/
 alter table load_balancer_target
-    add ip varchar(255) not null after inst_type;
+    add ip varchar(255) not null default (private_ip_address->>'$[0]') not null after inst_type;
+/* second remove default value definition */
+alter table load_balancer_target modify ip varchar(255) not null default '';
+
 
 alter table load_balancer_target
     drop key idx_uk_cloud_target_group_id_cloud_inst_id_port;
