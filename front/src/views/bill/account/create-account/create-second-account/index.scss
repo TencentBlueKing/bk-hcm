@@ -1,5 +1,4 @@
 .create-second-account-wrapper {
-  width: calc(100% - 239px);
 
   .header-title {
     font-family: MicrosoftYaHei;
@@ -12,16 +11,24 @@
     align-items: center;
   }
 
-  .info-card {
-    margin: 12px 24px;
-    width: calc(83.5vw);
+  .left-container {
+    height: calc(100vh - 52px);
+    padding-right: 48px;
+    .info-card {
+      margin: 12px 24px;
 
-    &:first-of-type {
-      margin-top: 76px;
-    }
+      &:first-of-type {
+        margin-top: 76px;
+      }
 
-    &:last-of-type {
-      margin-bottom: 16px;
+      &:last-of-type {
+        margin-bottom: 16px;
+      }
     }
   }
+
+  .right-container {
+    margin-top: 52px;
+  }
+
 }
