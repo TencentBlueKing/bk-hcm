@@ -18,6 +18,7 @@ import StatusNormal from '@/assets/image/Status-normal.png';
 import StatusUnknown from '@/assets/image/Status-unknown.png';
 import StatusSuccess from '@/assets/image/success-account.png';
 import StatusLoading from '@/assets/image/status_loading.png';
+import StatusFailure from '@/assets/image/failed-account.png';
 
 import { HOST_RUNNING_STATUS, HOST_SHUTDOWN_STATUS } from '../common/table/HostOperations';
 import './use-columns.scss';
@@ -26,6 +27,7 @@ import { timeFormatter } from '@/common/util';
 import { IP_VERSION_MAP, LBRouteName, LB_NETWORK_TYPE_MAP, SCHEDULER_MAP } from '@/constants/clb';
 import { getInstVip } from '@/utils';
 import dayjs from 'dayjs';
+import { Spinner } from 'bkui-vue/lib/icon';
 
 interface LinkFieldOptions {
   type: string; // 资源类型
@@ -1856,6 +1858,84 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
   ];
 
+  const myApplyColumns = [
+    // {
+    //   label: '申请ID',
+    //   field: 'id',
+    // },
+    // {
+    //   label: '来源',
+    //   field: 'source',
+    // },
+    {
+      label: '申请类型',
+      field: 'type',
+    },
+    {
+      label: '单据状态',
+      field: 'status',
+      render({ data }: any) {
+        let icon = StatusAbnormal;
+        let txt = '审批拒绝';
+        switch (data.status) {
+          case 'pending':
+          case 'delivering':
+            icon = StatusLoading;
+            txt = '审批中';
+            break;
+          case 'pass':
+          case 'completed':
+          case 'deliver_partial':
+            icon = StatusSuccess;
+            txt = '审批通过';
+            break;
+          case 'rejected':
+          case 'cancelled':
+          case 'deliver_error':
+            icon = StatusFailure;
+            txt = '审批拒绝';
+            break;
+        }
+        return (
+          <div class={'cvm-status-container'}>
+            {txt === '审批中' ? (
+              <Spinner fill='#3A84FF' class={'mr6'} width={14} height={14} />
+            ) : (
+              <img src={icon} class={'mr6'} width={14} height={14} />
+            )}
+
+            {txt}
+          </div>
+        );
+      },
+    },
+    {
+      label: '申请人',
+      field: 'applicant',
+    },
+    {
+      label: '创建时间',
+      field: 'created_at',
+      render({ cell }: any) {
+        return timeFormatter(cell);
+      },
+    },
+    {
+      label: '更新时间',
+      field: 'updated_at',
+      render({ cell }: any) {
+        return timeFormatter(cell);
+      },
+    },
+    {
+      label: '备注',
+      field: 'memo',
+      render({ cell }: any) {
+        return cell || '--';
+      },
+    },
+  ];
+
   const columnsMap = {
     vpc: vpcColumns,
     subnet: subnetColumns,
@@ -1879,6 +1959,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     cert: certColumns,
     firstAccount: firstAccountColumns,
     secondaryAccount: secondaryAccountColumns,
+    myApply: myApplyColumns,
   };
 
   let columns = (columnsMap[type] || []).filter((column: any) => !isSimpleShow || !column.onlyShowOnList);
