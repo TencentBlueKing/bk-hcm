@@ -58,9 +58,7 @@ values ('account', '0'),
        ('application', '0'),
        ('approval_process', '0'),
        ('network_interface', '0'),
-       ('recycle_record', '0'),
-       ('main_account', '0'),
-       ('root_account', '0');
+       ('recycle_record', '0');
 
 create table if not exists `audit`
 (
@@ -877,54 +875,5 @@ create table if not exists `recycle_record`
     primary key (`id`),
     unique key `idx_res_type_res_id` (`res_type`, `res_id`),
     unique key `idx_res_type_vendor_cloud_res_id` (`res_type`, `vendor`, `cloud_res_id`)
-) engine = innodb
-  default charset = utf8mb4;
-
-create table if not exists `main_account`
-(
-    `id`                    varchar(64)     not null,
-    `vendor`                varchar(16)     not null,
-    `cloud_id`              varchar(64)     not null,
-    `email`                 varchar(255)    not null,
-    `managers`              json            not null,
-    `bak_managers`          json            not null,
-    `site`                  varchar(32)     not null,
-    `business_type`         varchar(64)     not null,
-    `status`                varchar(32)     not null,
-    `parent_account_name`   varchar(255)    not null,
-    `parent_account_id`     varchar(64)     not null,
-    `dept_id`               bigint(1)       not null,
-    `bk_biz_id`             bigint(1)       not null,
-    `op_product_id`         bigint(1)       not null,
-    `memo`                  varchar(512)            default '',
-    `extension`             json            not null,
-    `creator`        varchar(64) not null,
-    `reviser`        varchar(64) not null,
-    `created_at`     timestamp   not null default current_timestamp,
-    `updated_at`     timestamp   not null default current_timestamp on update current_timestamp,
-    primary key(`id`),
-    unique key `idx_uk_cloud_id_vendor` (`cloud_id`, `vendor`)
-) engine = innodb
-  default charset = utf8mb4;
-
-create table if not exists `root_account`
-(
-    `id`                    varchar(64)     not null,
-    `name`                  varchar(64)     not null,
-    `vendor`                varchar(16)     not null,
-    `cloud_id`              varchar(64)     not null,
-    `email`                 varchar(255)    not null,
-    `managers`              json            not null,
-    `bak_managers`          json            not null,
-    `site`                  varchar(32)     not null,
-    `dept_id`               bigint(1)       not null,
-    `memo`                  varchar(512)            default '',
-    `extension`             json            not null,
-    `creator`        varchar(64) not null,
-    `reviser`        varchar(64) not null,
-    `created_at`     timestamp   not null default current_timestamp,
-    `updated_at`     timestamp   not null default current_timestamp on update current_timestamp,
-    primary key(`id`),
-    unique key `idx_uk_cloud_id_vendor` (`cloud_id`, `vendor`)
 ) engine = innodb
   default charset = utf8mb4;
