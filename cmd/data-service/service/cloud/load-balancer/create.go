@@ -635,7 +635,7 @@ func (svc *lbSvc) batchCreateTCloudListenerWithRule(cts *rest.Contexts) (any, er
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	ids, err := svc.insertListenerWithRule(cts.Kit, req)
+	ids, err := svc.insertListenerWithRule(cts.Kit, enumor.TCloud, req)
 	if err != nil {
 		return nil, err
 	}
@@ -643,7 +643,9 @@ func (svc *lbSvc) batchCreateTCloudListenerWithRule(cts *rest.Contexts) (any, er
 	return &core.BatchCreateResult{IDs: ids}, nil
 }
 
-func (svc *lbSvc) insertListenerWithRule(kt *kit.Kit, req *dataproto.ListenerWithRuleBatchCreateReq) ([]string, error) {
+func (svc *lbSvc) insertListenerWithRule(kt *kit.Kit, vendor enumor.Vendor,
+	req *dataproto.ListenerWithRuleBatchCreateReq) ([]string, error) {
+
 	result, err := svc.dao.Txn().AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
 		lblIDs := make([]string, 0, len(req.ListenerWithRules))
 		for _, item := range req.ListenerWithRules {
@@ -673,7 +675,7 @@ func (svc *lbSvc) insertListenerWithRule(kt *kit.Kit, req *dataproto.ListenerWit
 			}
 
 			ruleRelModels := []*tablelb.TargetGroupListenerRuleRelTable{{
-				Vendor:              enumor.TCloud,
+				Vendor:              vendor,
 				ListenerRuleID:      ruleID,
 				CloudListenerRuleID: item.CloudRuleID,
 				ListenerRuleType:    item.RuleType,

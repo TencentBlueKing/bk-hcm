@@ -177,8 +177,8 @@ func (cli *client) deleteRemovedListener(kt *kit.Kit, lbID string, cloudLblList 
 
 	for _, cloudIds := range slice.Split(removedLblCloudIds, constant.BatchOperationMaxLimit) {
 		if err := cli.deleteListener(kt, cloudIds); err != nil {
-			logs.Errorf("fail to delete removed listener for sync, err: %v,cloud_ids: %v, lbID: %s, rid: %s",
-				err, lbID, cloudIds, kt.Rid)
+			logs.Errorf("fail to delete removed listener for sync, err: %v, listener_cloud_ids: %v, lbID: %s, rid: %s",
+				err, cloudIds, lbID, kt.Rid)
 			return err
 		}
 
