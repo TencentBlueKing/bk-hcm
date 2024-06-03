@@ -275,6 +275,7 @@ type TargetListenerRuleRelListResult = core.ListResultT[corelb.BaseTargetListene
 
 // TargetGroupListenerRelCreateReq target group listener rel create req.
 type TargetGroupListenerRelCreateReq struct {
+	Vendor              enumor.Vendor        `json:"vendor" validate:"required"`
 	ListenerRuleID      string               `json:"listener_rule_id" validate:"required"`
 	CloudListenerRuleID string               `json:"cloud_listener_rule_id" validate:"required"`
 	ListenerRuleType    enumor.RuleType      `json:"listener_rule_type" validate:"required"`

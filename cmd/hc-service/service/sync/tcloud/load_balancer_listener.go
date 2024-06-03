@@ -34,7 +34,7 @@ import (
 )
 
 // SyncLoadBalancerListener 同步负载均衡监听器接口
-func (svc *service) SyncLoadBalancerListener(cts *rest.Contexts) (interface{}, error) {
+func (svc *service) SyncLoadBalancerListener(cts *rest.Contexts) (any, error) {
 	return nil, handler.ResourceSync(cts, &lblHandler{cli: svc.syncCli})
 }
 
@@ -102,14 +102,17 @@ func (hd *lblHandler) Next(kt *kit.Kit) ([]string, error) {
 
 // Sync ...
 func (hd *lblHandler) Sync(kt *kit.Kit, cloudIDs []string) error {
-	params := &tcloud.SyncListenerOfSingleLBOption{
+	params := &tcloud.SyncBaseParams{
 		AccountID: hd.request.AccountID,
 		Region:    hd.request.Region,
+		CloudIDs:  cloudIDs,
+	}
+	opt := &tcloud.SyncListenerOption{
 		BizID:     0,
 		LBID:      "",
-		CloudLBID: "",
+		CloudLBID: hd.request.LoadBalancerCloudID,
 	}
-	if _, err := hd.syncCli.Listener(kt, params); err != nil {
+	if _, err := hd.syncCli.Listener(kt, params, opt); err != nil {
 		logs.Errorf("sync tcloud load balancer with rel failed, err: %v, opt: %v, rid: %s", err, params, kt.Rid)
 		return err
 	}

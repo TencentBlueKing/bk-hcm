@@ -294,30 +294,34 @@ func (svc *lbSvc) batchCreateTargetWithGroupID(kt *kit.Kit, txn *sqlx.Tx, accoun
 
 	for _, item := range rsList {
 		tmpRs := &tablelb.LoadBalancerTargetTable{
-			AccountID:        item.AccountID,
-			IP:               item.IP,
-			InstType:         item.InstType,
-			CloudInstID:      item.CloudInstID,
-			TargetGroupID:    item.TargetGroupID,
-			PrivateIPAddress: item.PrivateIPAddress,
-			PublicIPAddress:  item.PublicIPAddress,
+			AccountID:     item.AccountID,
+			TargetGroupID: item.TargetGroupID,
 			// for local target group its cloud id is same as local id
 			CloudTargetGroupID: item.TargetGroupID,
+			IP:                 item.IP,
 			Port:               item.Port,
 			Weight:             item.Weight,
+			InstType:           item.InstType,
+			InstID:             "",
+			CloudInstID:        item.CloudInstID,
+			InstName:           item.InstName,
+			PrivateIPAddress:   item.PrivateIPAddress,
+			PublicIPAddress:    item.PublicIPAddress,
+			CloudVpcIDs:        item.CloudVpcIDs,
+			Zone:               item.Zone,
 			Memo:               nil,
 			Creator:            kt.User,
 			Reviser:            kt.User,
 		}
 		// 实例类型-CVM
-		if item.InstType == enumor.CvmInstType {
-			tmpRs.InstID = cvmMap[item.CloudInstID].ID
-			tmpRs.InstName = cvmMap[item.CloudInstID].Name
-			tmpRs.PrivateIPAddress = cvmMap[item.CloudInstID].PrivateIPv4Addresses
-			tmpRs.PublicIPAddress = cvmMap[item.CloudInstID].PublicIPv4Addresses
-			tmpRs.Zone = cvmMap[item.CloudInstID].Zone
-			tmpRs.AccountID = cvmMap[item.CloudInstID].AccountID
-			tmpRs.CloudVpcIDs = cvmMap[item.CloudInstID].CloudVpcIDs
+		if dbCvm, exists := cvmMap[item.CloudInstID]; exists && item.InstType == enumor.CvmInstType {
+			tmpRs.InstID = dbCvm.ID
+			tmpRs.InstName = dbCvm.Name
+			tmpRs.PrivateIPAddress = dbCvm.PrivateIPv4Addresses
+			tmpRs.PublicIPAddress = dbCvm.PublicIPv4Addresses
+			tmpRs.Zone = dbCvm.Zone
+			tmpRs.AccountID = dbCvm.AccountID
+			tmpRs.CloudVpcIDs = dbCvm.CloudVpcIDs
 		}
 		if item.InstType == enumor.CcnInstType {
 			tmpRs.InstID = tmpRs.CloudInstID
@@ -377,6 +381,7 @@ func (svc *lbSvc) CreateTargetGroupListenerRel(cts *rest.Contexts) (any, error) 
 
 		models := make([]*tablelb.TargetGroupListenerRuleRelTable, 0)
 		models = append(models, &tablelb.TargetGroupListenerRuleRelTable{
+			Vendor:              req.Vendor,
 			ListenerRuleID:      req.ListenerRuleID,
 			CloudListenerRuleID: req.CloudListenerRuleID,
 			ListenerRuleType:    req.ListenerRuleType,
@@ -478,6 +483,7 @@ func (svc *lbSvc) convRuleRel(kt *kit.Kit, listenerRuleID string, rule dataproto
 	bindingStatus enumor.BindingStatus) *tablelb.TargetGroupListenerRuleRelTable {
 
 	return &tablelb.TargetGroupListenerRuleRelTable{
+		Vendor:              rule.Vendor,
 		ListenerRuleID:      listenerRuleID,
 		CloudListenerRuleID: rule.CloudID,
 		ListenerRuleType:    enumor.Layer7RuleType,
@@ -629,7 +635,7 @@ func (svc *lbSvc) batchCreateTCloudListenerWithRule(cts *rest.Contexts) (any, er
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	ids, err := svc.insertListenerWithRule(cts.Kit, req)
+	ids, err := svc.insertListenerWithRule(cts.Kit, enumor.TCloud, req)
 	if err != nil {
 		return nil, err
 	}
@@ -637,7 +643,9 @@ func (svc *lbSvc) batchCreateTCloudListenerWithRule(cts *rest.Contexts) (any, er
 	return &core.BatchCreateResult{IDs: ids}, nil
 }
 
-func (svc *lbSvc) insertListenerWithRule(kt *kit.Kit, req *dataproto.ListenerWithRuleBatchCreateReq) ([]string, error) {
+func (svc *lbSvc) insertListenerWithRule(kt *kit.Kit, vendor enumor.Vendor,
+	req *dataproto.ListenerWithRuleBatchCreateReq) ([]string, error) {
+
 	result, err := svc.dao.Txn().AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
 		lblIDs := make([]string, 0, len(req.ListenerWithRules))
 		for _, item := range req.ListenerWithRules {
@@ -667,6 +675,7 @@ func (svc *lbSvc) insertListenerWithRule(kt *kit.Kit, req *dataproto.ListenerWit
 			}
 
 			ruleRelModels := []*tablelb.TargetGroupListenerRuleRelTable{{
+				Vendor:              vendor,
 				ListenerRuleID:      ruleID,
 				CloudListenerRuleID: item.CloudRuleID,
 				ListenerRuleType:    item.RuleType,

@@ -28,8 +28,12 @@
 
 START TRANSACTION;
 
+/* first use default value from private_ip_address*/
 alter table load_balancer_target
-    add ip varchar(255) not null after inst_type;
+    add ip varchar(255) not null default (private_ip_address->>'$[0]') not null after inst_type;
+/* second remove default value definition */
+alter table load_balancer_target modify ip varchar(255) not null default '';
+
 
 alter table load_balancer_target
     drop key idx_uk_cloud_target_group_id_cloud_inst_id_port;
@@ -37,6 +41,9 @@ alter table load_balancer_target
 alter table load_balancer_target
     add constraint idx_uk_cloud_target_group_id_ip_port_cloud_inst_id
         unique (cloud_target_group_id, ip, port, cloud_inst_id);
+
+alter table target_group_listener_rule_rel add vendor varchar(16)  default 'tcloud' not null after id;
+alter table target_group_listener_rule_rel modify vendor varchar(16) not null default '';
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
 SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;

@@ -62,7 +62,7 @@ func (cli *client) LoadBalancerWithListener(kt *kit.Kit, params *SyncBaseParams,
 	params.CloudIDs = nil
 	lbList, err := cli.listLBFromDB(kt, params)
 	if err != nil {
-		logs.Errorf("fail to get lb from db after lb layer sync, before Listener sync, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("fail to get lb from db after lb layer sync, before listener sync, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
@@ -77,14 +77,14 @@ func (cli *client) LoadBalancerWithListener(kt *kit.Kit, params *SyncBaseParams,
 		return new(SyncResult), nil
 	}
 
-	lblParams := &SyncListenerOption{
+	lblParams := &SyncListenerBatchOption{
 		AccountID: params.AccountID,
 		Region:    params.Region,
 		LbInfos:   lbList,
 	}
 
 	if _, err = cli.listenerByLbBatch(kt, lblParams); err != nil {
-		logs.Errorf("fail to sync Listener of lbs(ids: %v), err: %v, rid: %s", requiredLBCloudIds, err, kt.Rid)
+		logs.Errorf("fail to sync listener of lbs(ids: %v), err: %v, rid: %s", requiredLBCloudIds, err, kt.Rid)
 		return nil, err
 	}
 
@@ -140,7 +140,7 @@ func (cli *client) RemoveLoadBalancerDeleteFromCloud(kt *kit.Kit, accountID stri
 		),
 		Page: &core.BasePage{
 			Start: 0,
-			Limit: constant.BatchOperationMaxLimit,
+			Limit: constant.TCLBDescribeMax,
 		},
 	}
 	for {
@@ -333,20 +333,26 @@ func (cli *client) deleteLoadBalancer(kt *kit.Kit, accountID string, region stri
 }
 
 // listLBFromCloud list load balancer from cloud vendor
-func (cli *client) listLBFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]typeslb.TCloudClb, error) {
+func (cli *client) listLBFromCloud(kt *kit.Kit, params *SyncBaseParams) (result []typeslb.TCloudClb, err error) {
+
 	opt := &typeslb.TCloudListOption{
 		Region:   params.Region,
 		CloudIDs: params.CloudIDs,
 		Page: &typecore.TCloudPage{
 			Offset: 0,
-			Limit:  typecore.TCloudQueryLimit,
+			Limit:  constant.TCLBDescribeMax,
 		},
 	}
-	result, err := cli.cloudCli.ListLoadBalancer(kt, opt)
-	if err != nil {
-		logs.Errorf("[%s] list lb from cloud failed, err: %v, account: %s, opt: %v, rid: %s",
-			enumor.TCloud, err, params.AccountID, opt, kt.Rid)
-		return nil, err
+	// 指定id时一次只能查询20个
+	for _, cloudIds := range slice.Split(params.CloudIDs, constant.TCLBDescribeMax) {
+		opt.CloudIDs = cloudIds
+		batch, err := cli.cloudCli.ListLoadBalancer(kt, opt)
+		if err != nil {
+			logs.Errorf("[%s] list lb from cloud failed, err: %v, account: %s, opt: %v, rid: %s",
+				enumor.TCloud, err, params.AccountID, opt, kt.Rid)
+			return nil, err
+		}
+		result = append(result, batch...)
 	}
 
 	return result, nil
@@ -391,7 +397,7 @@ func convCloudToDBCreate(cloud typeslb.TCloudClb, accountID string, region strin
 		LoadBalancerType: cvt.PtrToVal(cloud.LoadBalancerType),
 		IPVersion:        cloud.GetIPVersion(),
 		Region:           region,
-		VpcID:            vpcMap[cloudVpcID].VpcID,
+		VpcID:            cvt.PtrToVal(vpcMap[cloudVpcID]).VpcID,
 		CloudVpcID:       cloudVpcID,
 		SubnetID:         subnetMap[cloudSubnetID],
 		CloudSubnetID:    cloudSubnetID,
@@ -488,7 +494,7 @@ func convCloudToDBUpdate(id string, cloud typeslb.TCloudClb, vpcMap map[string]*
 		CloudCreatedTime: cvt.PtrToVal(cloud.CreateTime),
 		CloudStatusTime:  cvt.PtrToVal(cloud.StatusTime),
 		CloudExpiredTime: cvt.PtrToVal(cloud.ExpireTime),
-		VpcID:            vpcMap[cloudVpcID].VpcID,
+		VpcID:            cvt.PtrToVal(vpcMap[cloudVpcID]).VpcID,
 		CloudVpcID:       cloudVpcID,
 		SubnetID:         subnetMap[cloudSubnetID],
 		CloudSubnetID:    cloudSubnetID,

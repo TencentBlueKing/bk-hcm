@@ -643,7 +643,7 @@ func (svc *clbSvc) UpdateTCloudListener(cts *rest.Contexts) (any, error) {
 		logs.Errorf("fail to call tcloud update listener(id:%s), err: %v, rid: %s", lblID, err, cts.Kit.Rid)
 		return nil, err
 	}
-	if err := svc.lblSync(cts.Kit, client, &lbInfo.BaseLoadBalancer); err != nil {
+	if err := svc.lblSync(cts.Kit, client, &lbInfo.BaseLoadBalancer, []string{lblInfo.CloudID}); err != nil {
 		// 调用同步的方法内会打印错误，这里只标记调用方
 		logs.Errorf("fail to sync listener for update listener(%s), rid: %s", lblInfo.ID, cts.Kit.Rid)
 		return nil, err
@@ -703,7 +703,7 @@ func (svc *clbSvc) UpdateTCloudListenerHealthCheck(cts *rest.Contexts) (any, err
 		logs.Errorf("fail to call tcloud update listener(id:%s), err: %v, rid: %s", lblID, err, cts.Kit.Rid)
 		return nil, err
 	}
-	if err := svc.lblSync(cts.Kit, client, &lbInfo.BaseLoadBalancer); err != nil {
+	if err := svc.lblSync(cts.Kit, client, &lbInfo.BaseLoadBalancer, []string{lblInfo.CloudID}); err != nil {
 		// 调用同步的方法内会打印错误，这里只标记调用方
 		logs.Errorf("fail to sync listener for update listener(%s), rid: %s", lblInfo.ID, cts.Kit.Rid)
 		return nil, err
@@ -940,7 +940,7 @@ func (svc *clbSvc) updateTCloudDomainAttr(kt *kit.Kit, req *protolb.DomainAttrUp
 		logs.Errorf("fail to call tcloud update domain attr, err: %v, lblID: %s, rid: %s", err, lblInfo.ID, kt.Rid)
 		return err
 	}
-	if err := svc.lblSync(kt, client, &lbInfo.BaseLoadBalancer); err != nil {
+	if err := svc.lblSync(kt, client, &lbInfo.BaseLoadBalancer, []string{lblInfo.CloudID}); err != nil {
 		// 调用同步的方法内会打印错误，这里只标记调用方
 		logs.Errorf("fail to sync listener for update domain(%s), lblID: %s, rid: %s",
 			domainOpt.Domain, lblInfo.ID, kt.Rid)
