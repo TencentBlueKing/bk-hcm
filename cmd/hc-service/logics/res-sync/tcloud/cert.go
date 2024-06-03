@@ -136,8 +136,8 @@ func (cli *client) updateCert(kt *kit.Kit, accountID string, updateMap map[strin
 			CertType:         enumor.CertType(converter.PtrToVal(one.CertificateType)),
 			EncryptAlgorithm: converter.PtrToVal(one.EncryptAlgorithm),
 			CertStatus:       strconv.FormatUint(converter.PtrToVal(one.Status), 10),
-			CloudCreatedTime: converter.PtrToVal(one.InsertTime),
-			CloudExpiredTime: converter.PtrToVal(one.CertEndTime),
+			CloudCreatedTime: convTCloudTimeStd(converter.PtrToVal(one.InsertTime)),
+			CloudExpiredTime: convTCloudTimeStd(converter.PtrToVal(one.CertEndTime)),
 		}
 
 		certs = append(certs, cert)
@@ -185,8 +185,8 @@ func (cli *client) createCert(kt *kit.Kit, accountID string, opt *SyncCertOption
 				CertType:         enumor.CertType(converter.PtrToVal(one.CertificateType)),
 				EncryptAlgorithm: converter.PtrToVal(one.EncryptAlgorithm),
 				CertStatus:       strconv.FormatUint(converter.PtrToVal(one.Status), 10),
-				CloudCreatedTime: converter.PtrToVal(one.InsertTime),
-				CloudExpiredTime: converter.PtrToVal(one.CertEndTime),
+				CloudCreatedTime: convTCloudTimeStd(converter.PtrToVal(one.InsertTime)),
+				CloudExpiredTime: convTCloudTimeStd(converter.PtrToVal(one.CertEndTime)),
 			},
 		}
 
@@ -307,22 +307,7 @@ func isCertChange(cloud typecert.TCloudCert, db *corecert.Cert[corecert.TCloudCe
 		return true
 	}
 
-	cloudEndTime := converter.PtrToVal(cloud.CertEndTime)
-	if len(cloudEndTime) == 0 && len(db.CloudExpiredTime) > 0 {
-		return true
-	}
-
-	if len(cloudEndTime) > 0 && len(db.CloudExpiredTime) == 0 {
-		return true
-	}
-
-	expireTime, err := time.Parse(constant.TimeStdFormat, db.CloudExpiredTime)
-	if err != nil {
-		logs.Errorf("cert sync expired time parse failed, dbExpireTime: %s, err: %v", db.CloudExpiredTime, err)
-		return true
-	}
-
-	if cloudEndTime != expireTime.Format(constant.DateTimeLayout) {
+	if db.CloudExpiredTime != convTCloudTimeStd(converter.PtrToVal(cloud.CertEndTime)) {
 		return true
 	}
 
@@ -389,4 +374,13 @@ func (cli *client) RemoveCertDeleteFromCloud(kt *kit.Kit, accountID, region stri
 	}
 
 	return nil
+}
+
+func convTCloudTimeStd(t string) string {
+	parse, err := time.Parse(constant.DateTimeLayout, t)
+	if err != nil {
+		logs.Errorf("[%s] parse time failed, time: %s, err: %v", enumor.TCloud, t, err)
+		return ""
+	}
+	return parse.Format(constant.TimeStdFormat)
 }
