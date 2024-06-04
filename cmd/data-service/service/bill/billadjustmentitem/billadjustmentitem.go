@@ -17,23 +17,31 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package capability ...
-package capability
+// Package billadjustmentitem ...
+package billadjustmentitem
 
 import (
-	"hcm/pkg/cryptography"
-	"hcm/pkg/dal/dao"
-	"hcm/pkg/dal/objectstore"
-	"hcm/pkg/thirdparty/esb"
+	"net/http"
 
-	"github.com/emicklei/go-restful/v3"
+	"hcm/cmd/data-service/service/capability"
+	"hcm/pkg/dal/dao"
+	"hcm/pkg/rest"
 )
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService  *restful.WebService
-	Dao         dao.Set
-	Cipher      cryptography.Crypto
-	EsbClient   esb.Client
-	ObjectStore objectstore.Storage
+// InitService initialize the bill adjustment item service
+func InitService(cap *capability.Capability) {
+	svc := &service{
+		dao: cap.Dao,
+	}
+	h := rest.NewHandler()
+	h.Add("CreateBillAdjustmentItem", http.MethodPost, "/bills/adjustmentitems", svc.CreateBillAdjustmentItem)
+	h.Add("DeleteBillAdjustmentItem", http.MethodDelete, "/bills/adjustmentitems", svc.DeleteBillAdjustmentItem)
+	h.Add("UpdateBillAdjustmentItem", http.MethodPut, "/bills/adjustmentitems", svc.UpdateBillAdjustmentItem)
+	h.Add("ListBillAdjustmentItem", http.MethodGet, "/bills/adjustmentitems", svc.ListBillAdjustmentItem)
+
+	h.Load(cap.WebService)
+}
+
+type service struct {
+	dao dao.Set
 }

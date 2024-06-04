@@ -17,23 +17,28 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package capability ...
-package capability
+// Package rawbill ...
+package rawbill
 
 import (
-	"hcm/pkg/cryptography"
-	"hcm/pkg/dal/dao"
-	"hcm/pkg/dal/objectstore"
-	"hcm/pkg/thirdparty/esb"
+	"net/http"
 
-	"github.com/emicklei/go-restful/v3"
+	"hcm/cmd/data-service/service/capability"
+	"hcm/pkg/dal/objectstore"
+	"hcm/pkg/rest"
 )
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService  *restful.WebService
-	Dao         dao.Set
-	Cipher      cryptography.Crypto
-	EsbClient   esb.Client
-	ObjectStore objectstore.Storage
+// InitService initialize the raw bill service
+func InitService(cap *capability.Capability) {
+	svc := &service{
+		ostore: cap.ObjectStore,
+	}
+	h := rest.NewHandler()
+	h.Add("CreateRawBill", http.MethodPost, "bills/rawbills", svc.CreateRawBill)
+
+	h.Load(cap.WebService)
+}
+
+type service struct {
+	ostore objectstore.Storage
 }

@@ -17,23 +17,31 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package capability ...
-package capability
+package rawbill
 
 import (
-	"hcm/pkg/cryptography"
-	"hcm/pkg/dal/dao"
-	"hcm/pkg/dal/objectstore"
-	"hcm/pkg/thirdparty/esb"
-
-	"github.com/emicklei/go-restful/v3"
+	"hcm/pkg/api/core"
+	dsbill "hcm/pkg/api/data-service/bill"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/rest"
 )
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService  *restful.WebService
-	Dao         dao.Set
-	Cipher      cryptography.Crypto
-	EsbClient   esb.Client
-	ObjectStore objectstore.Storage
+// CreateRawBill create cloud raw bill
+func (s *service) CreateRawBill(cts *rest.Contexts) (interface{}, error) {
+	req := new(dsbill.RawBillCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	uploadPath := generateFilePath(req)
+	buffer, err := generateCSV(req.Items)
+	if err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	if err := s.ostore.Upload(cts.Request.Request.Context(), uploadPath, buffer); err != nil {
+		return nil, errf.NewFromErr(errf.Aborted, err)
+	}
+	return &core.CreateResult{}, nil
 }
