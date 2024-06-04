@@ -52,7 +52,7 @@
     "@wangeditor/editor-for-vue": "^5.1.12",
     "art-template": "^4.13.2",
     "axios": "^1.6.0",
-    "bkui-vue": "^1.0.3-beta.67.dialog.3",
+    "bkui-vue": "^2.0.1-beta.11",
     "classnames": "^2.3.1",
     "cookie": "^0.5.0",
     "cookie-parser": "^1.4.6",
