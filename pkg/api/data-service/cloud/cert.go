@@ -42,7 +42,7 @@ type CertBatchCreateReq[Extension corecert.Extension] struct {
 // CertBatchCreate define cert batch create.
 type CertBatchCreate[Extension corecert.Extension] struct {
 	CloudID          string          `json:"cloud_id" validate:"required"`
-	Name             string          `json:"name" validate:"required"`
+	Name             string          `json:"name"`
 	Vendor           string          `json:"vendor" validate:"required"`
 	AccountID        string          `json:"account_id" validate:"required"`
 	BkBizID          int64           `json:"bk_biz_id" validate:"omitempty"`

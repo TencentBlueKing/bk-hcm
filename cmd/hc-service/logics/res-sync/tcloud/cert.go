@@ -41,11 +41,14 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 )
 
 // SyncCertOption ...
 type SyncCertOption struct {
 	BkBizID int64 `json:"bk_biz_id" validate:"omitempty"`
+	// should match params' cloud id
+	PreCachedCertList []typecert.TCloudCert
 }
 
 // Validate ...
@@ -58,22 +61,19 @@ func (cli *client) Cert(kt *kit.Kit, params *SyncBaseParams, opt *SyncCertOption
 	if err := validator.ValidateTool(params, opt); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-
-	certFromCloud, err := cli.listCertFromCloud(kt, params)
-	if err != nil {
-		return nil, err
+	certFromCloud := opt.PreCachedCertList
+	if certFromCloud == nil {
+		var err error
+		certFromCloud, err = cli.listCertFromCloud(kt, params)
+		if err != nil {
+			return nil, err
+		}
 	}
-
-	logs.Infof("[%s] hcservice sync cert listCertFromCloud success, params: %+v, cloud_cert_count: %d, rid: %s",
-		enumor.TCloud, params, len(certFromCloud), kt.Rid)
 
 	certFromDB, err := cli.listCertFromDB(kt, params)
 	if err != nil {
 		return nil, err
 	}
-
-	logs.Infof("[%s] hcservice sync cert listCertFromDB success, db_cert_count: %d, rid: %s",
-		enumor.TCloud, len(certFromDB), kt.Rid)
 
 	if len(certFromCloud) == 0 && len(certFromDB) == 0 {
 		return new(SyncResult), nil
@@ -82,25 +82,16 @@ func (cli *client) Cert(kt *kit.Kit, params *SyncBaseParams, opt *SyncCertOption
 	addSlice, updateMap, delCloudIDs := common.Diff[typecert.TCloudCert, *corecert.Cert[corecert.TCloudCertExtension]](
 		certFromCloud, certFromDB, isCertChange)
 
-	logs.Infof("[%s] hcservice sync cert diff success, addNum: %d, updateNum: %d, delNum: %d, rid: %s",
-		enumor.TCloud, len(addSlice), len(updateMap), len(delCloudIDs), kt.Rid)
-
-	if len(delCloudIDs) > 0 {
-		if err = cli.deleteCert(kt, params.AccountID, params.Region, delCloudIDs); err != nil {
-			return nil, err
-		}
+	if err = cli.deleteCert(kt, params.AccountID, params.Region, delCloudIDs); err != nil {
+		return nil, err
 	}
 
-	if len(addSlice) > 0 {
-		if err = cli.createCert(kt, params.AccountID, opt, addSlice); err != nil {
-			return nil, err
-		}
+	if err = cli.createCert(kt, params.AccountID, opt, addSlice); err != nil {
+		return nil, err
 	}
 
-	if len(updateMap) > 0 {
-		if err = cli.updateCert(kt, params.AccountID, updateMap); err != nil {
-			return nil, err
-		}
+	if err = cli.updateCert(kt, params.AccountID, updateMap); err != nil {
+		return nil, err
 	}
 
 	return new(SyncResult), nil
@@ -108,43 +99,24 @@ func (cli *client) Cert(kt *kit.Kit, params *SyncBaseParams, opt *SyncCertOption
 
 func (cli *client) deleteCert(kt *kit.Kit, accountID, region string, delCloudIDs []string) error {
 	if len(delCloudIDs) <= 0 {
-		return fmt.Errorf("hcservice resource sync failed, delCloudIDs is <= 0, not delete")
-	}
-
-	checkParams := &SyncBaseParams{
-		AccountID: accountID,
-		Region:    region,
-		CloudIDs:  delCloudIDs,
-	}
-	delFromCloud, err := cli.listCertFromCloud(kt, checkParams)
-	if err != nil {
-		return err
-	}
-
-	if len(delFromCloud) > 0 {
-		logs.Errorf("[%s] validate cert not exist failed, before delete, opt: %v, failed_count: %d, rid: %s",
-			enumor.TCloud, checkParams, len(delFromCloud), kt.Rid)
-		return fmt.Errorf("validate cert not exist failed, before delete")
+		return nil
 	}
 
 	deleteReq := &protocloud.CertBatchDeleteReq{
 		Filter: tools.ContainersExpression("cloud_id", delCloudIDs),
 	}
-	if err = cli.dbCli.Global.BatchDeleteCert(kt.Ctx, kt.Header(), deleteReq); err != nil {
-		logs.Errorf("[%s] request dataservice to batch delete cert failed, err: %v, rid: %s", enumor.TCloud,
-			err, kt.Rid)
+	if err := cli.dbCli.Global.BatchDeleteCert(kt.Ctx, kt.Header(), deleteReq); err != nil {
+		logs.Errorf("[%s] request dataservice to batch delete cert failed, err: %v, rid: %s",
+			enumor.TCloud, err, kt.Rid)
 		return err
 	}
-
-	logs.Infof("[%s] sync cert to delete cert success, accountID: %s, count: %d, rid: %s", enumor.TCloud,
-		accountID, len(delCloudIDs), kt.Rid)
 
 	return nil
 }
 
 func (cli *client) updateCert(kt *kit.Kit, accountID string, updateMap map[string]typecert.TCloudCert) error {
 	if len(updateMap) <= 0 {
-		return fmt.Errorf("hcservice resource sync failed, updateMap is <= 0, not update")
+		return nil
 	}
 
 	certs := make([]*protocloud.CertExtUpdateReq[corecert.TCloudCertExtension], 0)
@@ -164,8 +136,8 @@ func (cli *client) updateCert(kt *kit.Kit, accountID string, updateMap map[strin
 			CertType:         enumor.CertType(converter.PtrToVal(one.CertificateType)),
 			EncryptAlgorithm: converter.PtrToVal(one.EncryptAlgorithm),
 			CertStatus:       strconv.FormatUint(converter.PtrToVal(one.Status), 10),
-			CloudCreatedTime: converter.PtrToVal(one.InsertTime),
-			CloudExpiredTime: converter.PtrToVal(one.CertEndTime),
+			CloudCreatedTime: convTCloudTimeStd(converter.PtrToVal(one.InsertTime)),
+			CloudExpiredTime: convTCloudTimeStd(converter.PtrToVal(one.CertEndTime)),
 		}
 
 		certs = append(certs, cert)
@@ -187,9 +159,11 @@ func (cli *client) updateCert(kt *kit.Kit, accountID string, updateMap map[strin
 	return nil
 }
 
-func (cli *client) createCert(kt *kit.Kit, accountID string, opt *SyncCertOption, addSlice []typecert.TCloudCert) error {
+func (cli *client) createCert(kt *kit.Kit, accountID string, opt *SyncCertOption,
+	addSlice []typecert.TCloudCert) error {
+
 	if len(addSlice) <= 0 {
-		return fmt.Errorf("hcservice resource sync failed, addSlice is <= 0, not create")
+		return nil
 	}
 
 	var createReq = new(protocloud.CertBatchCreateReq[corecert.TCloudCertExtension])
@@ -211,25 +185,49 @@ func (cli *client) createCert(kt *kit.Kit, accountID string, opt *SyncCertOption
 				CertType:         enumor.CertType(converter.PtrToVal(one.CertificateType)),
 				EncryptAlgorithm: converter.PtrToVal(one.EncryptAlgorithm),
 				CertStatus:       strconv.FormatUint(converter.PtrToVal(one.Status), 10),
-				CloudCreatedTime: converter.PtrToVal(one.InsertTime),
-				CloudExpiredTime: converter.PtrToVal(one.CertEndTime),
+				CloudCreatedTime: convTCloudTimeStd(converter.PtrToVal(one.InsertTime)),
+				CloudExpiredTime: convTCloudTimeStd(converter.PtrToVal(one.CertEndTime)),
 			},
 		}
 
 		createReq.Certs = append(createReq.Certs, cert...)
 	}
 
-	newIDs, err := cli.dbCli.TCloud.BatchCreateCert(kt.Ctx, kt.Header(), createReq)
+	_, err := cli.dbCli.TCloud.BatchCreateCert(kt.Ctx, kt.Header(), createReq)
 	if err != nil {
 		logs.Errorf("[%s] request dataservice to create tcloud cert failed, createReq: %+v, err: %v, rid: %s",
 			enumor.TCloud, createReq, err, kt.Rid)
 		return err
 	}
 
-	logs.Infof("[%s] sync cert to create cert success, accountID: %s, count: %d, newIDs: %v, opt: %+v, rid: %s", enumor.TCloud,
-		accountID, len(addSlice), newIDs, opt, kt.Rid)
-
 	return nil
+}
+
+// 不支持按id批量获取，直接获取全部数据可以降低调用腾讯云api次数
+func (cli *client) listAllCertFromCloud(kt *kit.Kit) ([]typecert.TCloudCert, error) {
+
+	list := make([]typecert.TCloudCert, 0, 100)
+	opt := &typecert.TCloudListOption{
+		Page: &adcore.TCloudPage{Offset: 0, Limit: adcore.TCloudQueryLimit},
+	}
+	for {
+		result, err := cli.cloudCli.ListCert(kt, opt)
+		if err != nil {
+			logs.Errorf("[%s] list all cert from cloud failed, account: %s, opt: %v, err: %v, rid: %s",
+				enumor.TCloud, cli.accountID, opt, err, kt.Rid)
+			return nil, err
+		}
+
+		list = append(list, result...)
+
+		if uint64(len(result)) < opt.Page.Limit {
+			break
+		}
+		opt.Page.Offset += opt.Page.Limit
+
+	}
+
+	return list, nil
 }
 
 func (cli *client) listCertFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]typecert.TCloudCert, error) {
@@ -309,22 +307,7 @@ func isCertChange(cloud typecert.TCloudCert, db *corecert.Cert[corecert.TCloudCe
 		return true
 	}
 
-	cloudEndTime := converter.PtrToVal(cloud.CertEndTime)
-	if len(cloudEndTime) == 0 && len(db.CloudExpiredTime) > 0 {
-		return true
-	}
-
-	if len(cloudEndTime) > 0 && len(db.CloudExpiredTime) == 0 {
-		return true
-	}
-
-	expireTime, err := time.Parse(constant.TimeStdFormat, db.CloudExpiredTime)
-	if err != nil {
-		logs.Errorf("cert sync expired time parse failed, dbExpireTime: %s, err: %v", db.CloudExpiredTime, err)
-		return true
-	}
-
-	if cloudEndTime != expireTime.Format(constant.DateTimeLayout) {
+	if db.CloudExpiredTime != convTCloudTimeStd(converter.PtrToVal(cloud.CertEndTime)) {
 		return true
 	}
 
@@ -350,6 +333,16 @@ func (cli *client) RemoveCertDeleteFromCloud(kt *kit.Kit, accountID, region stri
 			Limit: constant.BatchOperationMaxLimit,
 		},
 	}
+	// 全量获取一次云端证书数据
+	allResultFromCloud, err := cli.listAllCertFromCloud(kt)
+	certCloudIDMap := make(map[string]struct{}, len(allResultFromCloud))
+	for _, cert := range allResultFromCloud {
+		certCloudIDMap[cert.GetCloudID()] = struct{}{}
+	}
+	if err != nil {
+		return err
+	}
+	delCloudIDs := make([]string, 0)
 	for {
 		resultFromDB, err := cli.dbCli.Global.ListCert(kt, req)
 		if err != nil {
@@ -357,36 +350,9 @@ func (cli *client) RemoveCertDeleteFromCloud(kt *kit.Kit, accountID, region stri
 				enumor.TCloud, req, err, kt.Rid)
 			return err
 		}
-
-		cloudIDs := make([]string, 0)
-		for _, one := range resultFromDB.Details {
-			cloudIDs = append(cloudIDs, one.CloudID)
-		}
-
-		if len(cloudIDs) == 0 {
-			break
-		}
-
-		params := &SyncBaseParams{
-			AccountID: accountID,
-			Region:    region,
-			CloudIDs:  cloudIDs,
-		}
-		resultFromCloud, err := cli.listCertFromCloud(kt, params)
-		if err != nil {
-			return err
-		}
-
-		// 如果有资源没有查询出来，说明数据被从云上删除
-		if len(resultFromCloud) != len(cloudIDs) {
-			cloudIDMap := converter.StringSliceToMap(cloudIDs)
-			for _, one := range resultFromCloud {
-				delete(cloudIDMap, converter.PtrToVal(one.CertificateId))
-			}
-
-			cloudIDs = converter.MapKeyToStringSlice(cloudIDMap)
-			if err = cli.deleteCert(kt, accountID, region, cloudIDs); err != nil {
-				return err
+		for _, detail := range resultFromDB.Details {
+			if _, ok := certCloudIDMap[detail.CloudID]; !ok {
+				delCloudIDs = append(delCloudIDs, detail.CloudID)
 			}
 		}
 
@@ -396,6 +362,25 @@ func (cli *client) RemoveCertDeleteFromCloud(kt *kit.Kit, accountID, region stri
 
 		req.Page.Start += constant.BatchOperationMaxLimit
 	}
+	if len(delCloudIDs) == 0 {
+		return nil
+	}
+
+	for _, delCloudBatch := range slice.Split(delCloudIDs, constant.BatchOperationMaxLimit) {
+		if err = cli.deleteCert(kt, accountID, region, delCloudBatch); err != nil {
+			return err
+		}
+
+	}
 
 	return nil
+}
+
+func convTCloudTimeStd(t string) string {
+	parse, err := time.Parse(constant.DateTimeLayout, t)
+	if err != nil {
+		logs.Errorf("[%s] parse time failed, time: %s, err: %v", enumor.TCloud, t, err)
+		return ""
+	}
+	return parse.Format(constant.TimeStdFormat)
 }
