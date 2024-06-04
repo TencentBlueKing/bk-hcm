@@ -97,9 +97,9 @@ type AccountBillItem struct {
 	// Extension 云原始字段
 	Extension types.JsonField `db:"extension" json:"extension"`
 	// CreatedAt 创建时间
-	CreatedAt types.Time `db:"created_at" validate:"excluded_unless" json:"created_at"`
+	CreatedAt types.Time `db:"created_at" json:"created_at"`
 	// UpdatedAt 更新时间
-	UpdatedAt types.Time `db:"updated_at" validate:"excluded_unless" json:"updated_at"`
+	UpdatedAt types.Time `db:"updated_at" json:"updated_at"`
 }
 
 // TableName 返回账单明细表名
@@ -109,9 +109,6 @@ func (abs *AccountBillItem) TableName() table.Name {
 
 // InsertValidate validate account bill item on insert
 func (abs *AccountBillItem) InsertValidate() error {
-	if err := validator.Validate.Struct(abs); err != nil {
-		return err
-	}
 	if len(abs.ID) == 0 {
 		return errors.New("id is required")
 	}
@@ -139,14 +136,14 @@ func (abs *AccountBillItem) InsertValidate() error {
 	if len(abs.VersionID) == 0 {
 		return errors.New("version_ib is required")
 	}
+	if err := validator.Validate.Struct(abs); err != nil {
+		return err
+	}
 	return nil
 }
 
 // UpdateValidate validate account bill item on update
 func (abs *AccountBillItem) UpdateValidate() error {
-	if err := validator.Validate.Struct(abs); err != nil {
-		return err
-	}
 	if len(abs.ID) == 0 {
 		return errors.New("id is required")
 	}
@@ -170,6 +167,9 @@ func (abs *AccountBillItem) UpdateValidate() error {
 	}
 	if abs.BillDay == 0 {
 		return errors.New("bill_day is required")
+	}
+	if err := validator.Validate.Struct(abs); err != nil {
+		return err
 	}
 	return nil
 }

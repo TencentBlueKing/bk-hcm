@@ -69,9 +69,9 @@ type AccountBillSummary struct {
 	// CurrentVersion current version
 	CurrentVersion string `db:"current_version" json:"current_version"`
 	// CreatedAt 创建时间
-	CreatedAt types.Time `db:"created_at" validate:"excluded_unless" json:"created_at"`
+	CreatedAt types.Time `db:"created_at" json:"created_at"`
 	// UpdatedAt 更新时间
-	UpdatedAt types.Time `db:"updated_at" validate:"excluded_unless" json:"updated_at"`
+	UpdatedAt types.Time `db:"updated_at" json:"updated_at"`
 }
 
 // TableName 返回月度汇总账单表名
@@ -81,9 +81,6 @@ func (abs *AccountBillSummary) TableName() table.Name {
 
 // InsertValidate validate account bill summary on insert
 func (abs *AccountBillSummary) InsertValidate() error {
-	if err := validator.Validate.Struct(abs); err != nil {
-		return err
-	}
 	if len(abs.ID) == 0 {
 		return errors.New("id is required")
 	}
@@ -105,14 +102,14 @@ func (abs *AccountBillSummary) InsertValidate() error {
 	if abs.BillMonth == 0 {
 		return errors.New("bill_month is required")
 	}
+	if err := validator.Validate.Struct(abs); err != nil {
+		return err
+	}
 	return nil
 }
 
 // UpdateValidate validate account bill summary on update
 func (abs *AccountBillSummary) UpdateValidate() error {
-	if err := validator.Validate.Struct(abs); err != nil {
-		return err
-	}
 	if len(abs.ID) == 0 {
 		return errors.New("id is required")
 	}
@@ -130,6 +127,9 @@ func (abs *AccountBillSummary) UpdateValidate() error {
 	}
 	if abs.BillMonth == 0 {
 		return errors.New("bill_month is required")
+	}
+	if err := validator.Validate.Struct(abs); err != nil {
+		return err
 	}
 	return nil
 }

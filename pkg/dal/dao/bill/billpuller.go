@@ -59,6 +59,7 @@ type AccountBillPullerDao struct {
 // BatchCreateWithTx batch create account bill puller
 func (abpDao AccountBillPullerDao) BatchCreateWithTx(
 	kt *kit.Kit, tx *sqlx.Tx, abPullers []*tablebill.AccountBillPuller) ([]string, error) {
+
 	if len(abPullers) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "account bill puller model data is required")
 	}
@@ -92,6 +93,7 @@ func (abpDao AccountBillPullerDao) BatchCreateWithTx(
 // List list account bill puller
 func (abpDao AccountBillPullerDao) List(kt *kit.Kit, opt *types.ListOption) (
 	*typesbill.ListAccountBillPullerDetails, error) {
+
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list account bill puller options is nil")
 	}
@@ -161,6 +163,7 @@ func (abpDao AccountBillPullerDao) UpdateByIDWithTx(
 
 // DeleteWithTx delete account bill puller
 func (abpDao AccountBillPullerDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error {
+
 	if filterExpr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}

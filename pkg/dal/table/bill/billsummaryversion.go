@@ -80,9 +80,9 @@ type AccountBillSummaryVersion struct {
 	// RMBCost 费用
 	RMBCost decimal.Decimal `db:"rmb_cost" json:"rmb_cost"`
 	// CreatedAt 创建时间
-	CreatedAt types.Time `db:"created_at" validate:"excluded_unless" json:"created_at"`
+	CreatedAt types.Time `db:"created_at" json:"created_at"`
 	// UpdatedAt 更新时间
-	UpdatedAt types.Time `db:"updated_at" validate:"excluded_unless" json:"updated_at"`
+	UpdatedAt types.Time `db:"updated_at" json:"updated_at"`
 }
 
 // TableName 返回月度汇总账单版本表名
@@ -92,9 +92,6 @@ func (abs *AccountBillSummaryVersion) TableName() table.Name {
 
 // InsertValidate validate account bill summary on insert
 func (abs *AccountBillSummaryVersion) InsertValidate() error {
-	if err := validator.Validate.Struct(abs); err != nil {
-		return err
-	}
 	if len(abs.ID) == 0 {
 		return errors.New("id is required")
 	}
@@ -119,14 +116,14 @@ func (abs *AccountBillSummaryVersion) InsertValidate() error {
 	if len(abs.VersionID) == 0 {
 		return errors.New("version_ib is required")
 	}
+	if err := validator.Validate.Struct(abs); err != nil {
+		return err
+	}
 	return nil
 }
 
 // UpdateValidate validate account bill summary on update
 func (abs *AccountBillSummaryVersion) UpdateValidate() error {
-	if err := validator.Validate.Struct(abs); err != nil {
-		return err
-	}
 	if len(abs.ID) == 0 {
 		return errors.New("id is required")
 	}
@@ -147,6 +144,9 @@ func (abs *AccountBillSummaryVersion) UpdateValidate() error {
 	}
 	if abs.BillMonth == 0 {
 		return errors.New("bill_month is required")
+	}
+	if err := validator.Validate.Struct(abs); err != nil {
+		return err
 	}
 	return nil
 }

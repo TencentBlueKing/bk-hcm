@@ -88,9 +88,9 @@ type AccountBillDailyPullTask struct {
 	// Cost 金额，单位：元
 	Cost decimal.Decimal `db:"cost" json:"cost"`
 	// CreatedAt 创建时间
-	CreatedAt types.Time `db:"created_at" validate:"excluded_unless" json:"created_at"`
+	CreatedAt types.Time `db:"created_at" json:"created_at"`
 	// UpdatedAt 更新时间
-	UpdatedAt types.Time `db:"updated_at" validate:"excluded_unless" json:"updated_at"`
+	UpdatedAt types.Time `db:"updated_at" json:"updated_at"`
 }
 
 // TableName 返回表名
@@ -100,9 +100,6 @@ func (abdpt *AccountBillDailyPullTask) TableName() table.Name {
 
 // InsertValidate validate account bill summary on insert
 func (abdpt *AccountBillDailyPullTask) InsertValidate() error {
-	if err := validator.Validate.Struct(abdpt); err != nil {
-		return err
-	}
 	if len(abdpt.ID) == 0 {
 		return errors.New("id is required")
 	}
@@ -126,15 +123,15 @@ func (abdpt *AccountBillDailyPullTask) InsertValidate() error {
 	}
 	if len(abdpt.VersionID) == 0 {
 		return errors.New("version_ib is required")
+	}
+	if err := validator.Validate.Struct(abdpt); err != nil {
+		return err
 	}
 	return nil
 }
 
 // UpdateValidate validate account bill summary on update
 func (abdpt *AccountBillDailyPullTask) UpdateValidate() error {
-	if err := validator.Validate.Struct(abdpt); err != nil {
-		return err
-	}
 	if len(abdpt.ID) == 0 {
 		return errors.New("id is required")
 	}
@@ -158,6 +155,9 @@ func (abdpt *AccountBillDailyPullTask) UpdateValidate() error {
 	}
 	if len(abdpt.VersionID) == 0 {
 		return errors.New("version_ib is required")
+	}
+	if err := validator.Validate.Struct(abdpt); err != nil {
+		return err
 	}
 	return nil
 }

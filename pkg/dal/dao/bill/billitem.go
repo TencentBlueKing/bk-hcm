@@ -134,10 +134,7 @@ func (a AccountBillItemDao) List(kt *kit.Kit, opt *types.ListOption) (
 
 // Update update account bill item.
 func (a AccountBillItemDao) UpdateByIDWithTx(
-	kt *kit.Kit,
-	tx *sqlx.Tx,
-	id string,
-	updateData *tablebill.AccountBillItem) error {
+	kt *kit.Kit, tx *sqlx.Tx, id string, updateData *tablebill.AccountBillItem) error {
 
 	if err := updateData.UpdateValidate(); err != nil {
 		return err

@@ -134,10 +134,7 @@ func (a AccountBillSummaryDailyDao) List(kt *kit.Kit, opt *types.ListOption) (
 
 // Update update account bill summary daliy.
 func (a AccountBillSummaryDailyDao) UpdateByIDWithTx(
-	kt *kit.Kit,
-	tx *sqlx.Tx,
-	id string,
-	updateData *tablebill.AccountBillSummaryDaily) error {
+	kt *kit.Kit, tx *sqlx.Tx, id string, updateData *tablebill.AccountBillSummaryDaily) error {
 
 	if err := updateData.UpdateValidate(); err != nil {
 		return err
@@ -163,6 +160,7 @@ func (a AccountBillSummaryDailyDao) UpdateByIDWithTx(
 
 // DeleteWithTx delete account bill summary daliy with tx.
 func (a AccountBillSummaryDailyDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
+
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}

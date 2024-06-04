@@ -88,9 +88,9 @@ type AccountBillAdjustmentItem struct {
 	// State 状态，未确定、已确定
 	State string `db:"string" json:"string"`
 	// CreatedAt 创建时间
-	CreatedAt types.Time `db:"created_at" validate:"excluded_unless" json:"created_at"`
+	CreatedAt types.Time `db:"created_at" json:"created_at"`
 	// UpdatedAt 更新时间
-	UpdatedAt types.Time `db:"updated_at" validate:"excluded_unless" json:"updated_at"`
+	UpdatedAt types.Time `db:"updated_at" json:"updated_at"`
 }
 
 // TableName 返回账单明细表名
@@ -100,9 +100,6 @@ func (abs *AccountBillAdjustmentItem) TableName() table.Name {
 
 // InsertValidate validate account bill item on insert
 func (abs *AccountBillAdjustmentItem) InsertValidate() error {
-	if err := validator.Validate.Struct(abs); err != nil {
-		return err
-	}
 	if len(abs.ID) == 0 {
 		return errors.New("id is required")
 	}
@@ -138,15 +135,15 @@ func (abs *AccountBillAdjustmentItem) InsertValidate() error {
 	}
 	if len(abs.State) == 0 {
 		return errors.New("state is required")
+	}
+	if err := validator.Validate.Struct(abs); err != nil {
+		return err
 	}
 	return nil
 }
 
 // UpdateValidate validate account bill item on update
 func (abs *AccountBillAdjustmentItem) UpdateValidate() error {
-	if err := validator.Validate.Struct(abs); err != nil {
-		return err
-	}
 	if len(abs.ID) == 0 {
 		return errors.New("id is required")
 	}
@@ -182,6 +179,9 @@ func (abs *AccountBillAdjustmentItem) UpdateValidate() error {
 	}
 	if len(abs.State) == 0 {
 		return errors.New("state is required")
+	}
+	if err := validator.Validate.Struct(abs); err != nil {
+		return err
 	}
 	return nil
 }
