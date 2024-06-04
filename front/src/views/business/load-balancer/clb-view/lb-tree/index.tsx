@@ -6,15 +6,14 @@ import { Loading, Message, OverflowTitle, Tree } from 'bkui-vue';
 import SimpleSearchSelect from '../../components/simple-search-select';
 import Confirm from '@/components/confirm';
 // import stores
-import { useBusinessStore, useLoadBalancerStore } from '@/store';
+import { useAccountStore, useBusinessStore, useLoadBalancerStore } from '@/store';
 // import custom hooks
 import { useI18n } from 'vue-i18n';
-import useLoadTreeData from './useLoadTreeData';
 import useMoreActionDropdown from '@/hooks/useMoreActionDropdown';
 // import utils
-import { throttle } from 'lodash';
 import bus from '@/common/bus';
-import { getInstVip } from '@/utils';
+import { asyncGetListenerCount, getInstVip } from '@/utils';
+import http from '@/http';
 // import static resources
 import allLBIcon from '@/assets/image/all-lb.svg';
 import lbIcon from '@/assets/image/loadbalancer.svg';
@@ -22,7 +21,12 @@ import listenerIcon from '@/assets/image/listener.svg';
 import domainIcon from '@/assets/image/domain.svg';
 // import constants
 import { LBRouteName, LB_ROUTE_NAME_MAP, TRANSPORT_LAYER_LIST } from '@/constants';
+import { QueryRuleOPEnum } from '@/typings';
 import './index.scss';
+
+const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
+
+type ResourceNodeType = 'lb' | 'listener' | 'domain';
 
 export default defineComponent({
   name: 'LoadBalancerTree',
@@ -32,6 +36,7 @@ export default defineComponent({
     const router = useRouter();
     const route = useRoute();
     // use stores
+    const accountStore = useAccountStore();
     const businessStore = useBusinessStore();
     const loadBalancerStore = useLoadBalancerStore();
 
@@ -49,13 +54,149 @@ export default defineComponent({
     // lb-tree相关
     const treeData = ref([]);
     const treeRef = ref();
+    const rootPagination = { start: 0, count: 0, loading: false };
     const allLBNode = { type: 'all', isDropdownListShow: false, id: '-1' };
     const lastSelectedNode = ref(); // 记录上一次选中的tree-node, 不包括全部负载均衡
-    const loadingRef = ref();
     const expandedNodeArr = ref([]);
+    const isLoading = ref(false);
 
-    // use custom hooks
-    const { loadRemoteData, handleLoadDataByScroll, reset, isLoading } = useLoadTreeData(treeData);
+    /**
+     * 加载数据
+     * @param {*} node 需要加载数据的节点，值为 null 表示加载根节点的数据
+     * @param {*} level 需要加载数据的节点的深度，取值为：0, 1, 2
+     */
+    const loadRemoteData = async (node: any, level: number) => {
+      const depthTypeMap = ['lb', 'listener', 'domain'] as ResourceNodeType[];
+
+      // 获取请求 url
+      const getUrl = (node: any, level: number) => {
+        const baseUrl = `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${accountStore.bizs}/`;
+        const typeUrl = !node ? getTypeUrl(depthTypeMap[level]) : getTypeUrl(depthTypeMap[level], node.id);
+        return `${baseUrl}${typeUrl}/list`;
+
+        // 根据 type 获取请求 url
+        function getTypeUrl(type: ResourceNodeType, id?: string) {
+          switch (type) {
+            case 'lb':
+              return 'load_balancers/with/delete_protection';
+            case 'listener':
+              return `load_balancers/${id}/listeners`;
+            case 'domain':
+              return `vendors/tcloud/listeners/${id}/domains`;
+          }
+        }
+      };
+
+      const url = getUrl(node, level);
+      const startIdx = !node ? rootPagination.start : node.start;
+
+      const [detailsRes, countRes] = await Promise.all(
+        [false, true].map((isCount) =>
+          http.post(url, {
+            filter: { op: QueryRuleOPEnum.AND, rules: [] },
+            page: {
+              count: isCount,
+              start: isCount ? 0 : startIdx,
+              limit: isCount ? 0 : 50,
+            },
+          }),
+        ),
+      );
+      // 如果是加载负载均衡节点, 则还需要请求对应负载均衡下的监听器数量接口
+      if (!node && detailsRes.data.details?.length > 0) {
+        detailsRes.data.details = await asyncGetListenerCount(detailsRes.data.details);
+      }
+
+      // 组装新增的节点(这里需要对domain单独处理)
+      let incrementNodes;
+      if (node?.type === 'listener') {
+        const { default_domain, domain_list } = detailsRes.data;
+        incrementNodes =
+          domain_list?.map((domain: any) => {
+            domain.type = 'domain';
+            domain.id = domain.domain;
+            domain.name = domain.domain;
+            domain.listener_id = node.id;
+            domain.isDefault = default_domain === domain.domain;
+            return domain;
+          }) || [];
+      } else {
+        incrementNodes =
+          detailsRes.data.details?.map((item: any) => {
+            // 设置资源类型
+            item.type = depthTypeMap[level];
+            // 如果是加载根节点或非叶子节点的数据，需要给每个 item 添加 async = true 用于异步加载，以及初始化 start = 0
+            if (level < 2 || !node) {
+              // 如果是4层监听器, 无需异步加载其下级资源
+              item.async = !TRANSPORT_LAYER_LIST.includes(item.protocol);
+              item.start = 0;
+            }
+            return item;
+          }) || [];
+      }
+
+      if (!node) {
+        treeData.value = [...treeData.value, ...incrementNodes];
+        rootPagination.count = countRes.data.count || 0;
+      } else {
+        node.count = countRes.data.count || 0;
+        node.children = [...(node.children || []), ...incrementNodes];
+      }
+    };
+
+    // 加载根节点数据
+    const loadRootRemoteData = async () => {
+      isLoading.value = true;
+      try {
+        await loadRemoteData(null, 0);
+      } finally {
+        isLoading.value = false;
+      }
+    };
+
+    // 节点进入父容器可视区域时执行的回调
+    const intersectionObserverCb = ({ index, level, parent }: any) => {
+      /**
+       * 加载下一页数据
+       * @param target 需要加载下一页数据的目标节点, 为 null 时加载根节点的下一页数据
+       * @param targetChildrenLength 目标节点当前 children 的长度
+       * @param page 分页参数
+       */
+      const loadNextPageData = async (target: any, targetChildrenLength: number, page: any) => {
+        // 如果节点是当前层级的最后一个节点，那么判断是否有下一页数据
+        if (index === targetChildrenLength - 1 && targetChildrenLength < page.count) {
+          // 如果当前目标节点已经处于 loading 状态，无需再执行后续代码
+          if (page.loading) return;
+
+          page.start += 50;
+          target ? target.children.push({ type: 'loading' }) : treeData.value.push({ type: 'loading' });
+          page.loading = true;
+
+          await loadRemoteData(target, level);
+
+          target
+            ? (target.children = target.children.filter((item: any) => item.type !== 'loading'))
+            : (treeData.value = treeData.value.filter((item: any) => item.type !== 'loading'));
+
+          page.loading = false;
+        }
+      };
+
+      if (level === 0) {
+        // 加载负载均衡的下一页数据
+        loadNextPageData(null, treeData.value.length, rootPagination);
+      } else if (level === 1) {
+        // 加载负载均衡监听器的下一页数据
+        loadNextPageData(parent, parent.children.length, parent);
+      }
+    };
+
+    // 重置数据
+    const reset = () => {
+      treeData.value = [];
+      rootPagination.start = 0;
+      loadRootRemoteData();
+    };
 
     // 删除负载均衡
     const handleDeleteLB = (node: any) => {
@@ -238,49 +379,11 @@ export default defineComponent({
       },
     );
 
-    // Intersection Observer 监听器
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          // 触发 loadingRef 身上的 loadDataByScroll 自定义事件
-          loadingRef.value.$emit('loadDataByScroll');
-        }
-      });
-    });
-
     // type 与 icon 的映射关系
     const typeIconMap = {
       lb: lbIcon,
       listener: listenerIcon,
       domain: domainIcon,
-    };
-
-    // generator函数 - 滚动加载函数
-    const getTreeScrollFunc = () => {
-      return throttle(() => {
-        loadingRef.value && observer.observe(loadingRef.value.$el);
-
-        // // 记录当前是否滚动了一屏的高度
-        // const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-        // if (treeRef.value.$el.scrollTop >= viewportHeight) {
-        //   isScrollOnePageHeight.value = true;
-        // } else {
-        //   isScrollOnePageHeight.value = false;
-        // }
-      }, 200);
-    };
-
-    // generator函数 - lb-tree 懒加载配置对象
-    const getTreeAsyncOption = () => {
-      return {
-        callback: (_item: any, _callback: Function, _schema: any) => {
-          // 如果是4层监听器, 无需加载其下级资源
-          if (_item.type === 'listener' && TRANSPORT_LAYER_LIST.includes(_item.protocol)) return;
-          // 异步加载当前点击节点的 children node
-          loadRemoteData(_item, _schema.fullPath.split('-').length - 1);
-        },
-        cache: true,
-      };
     };
 
     // util-路由切换
@@ -343,12 +446,9 @@ export default defineComponent({
     };
 
     onMounted(() => {
-      // 组件挂载，加载 root node
-      loadRemoteData(null, 0);
-    });
+      // 组件挂载完成后，加载 root node
+      loadRootRemoteData();
 
-    onMounted(() => {
-      // 重新加载lb-tree数据
       bus.$on('resetLbTree', reset);
     });
 
@@ -411,8 +511,16 @@ export default defineComponent({
             indent={16}
             line-height={36}
             onNodeClick={handleNodeClick}
-            onScroll={getTreeScrollFunc()}
-            async={getTreeAsyncOption()}
+            async={{
+              callback: (_item: any, _callback: Function, _schema: any) => {
+                loadRemoteData(_item, _schema.fullPath.split('-').length);
+              },
+              cache: true,
+            }}
+            intersectionObserver={{
+              callback: intersectionObserverCb,
+              enabled: true,
+            }}
             onNodeExpand={handleNodeExpand}
             onNodeCollapse={handleNodeCollapse}
             search={searchOption.value}
@@ -421,15 +529,7 @@ export default defineComponent({
               default: ({ data, attributes }: any) => {
                 if (data.type === 'loading') {
                   return (
-                    <bk-loading
-                      class='tree-loading-node'
-                      ref={loadingRef}
-                      loading
-                      size='small'
-                      onLoadDataByScroll={() => {
-                        // 因为在标签上使用 data-xxx 会丢失引用，但我需要 data._parent 的引用（因为加载数据时会直接操作该对象），所以这里借用了闭包的特性。
-                        handleLoadDataByScroll(data, attributes);
-                      }}>
+                    <bk-loading class='tree-loading-node' loading size='small'>
                       <div style={{ height: '36px' }}></div>
                     </bk-loading>
                   );
@@ -499,6 +599,7 @@ export default defineComponent({
               },
               nodeAction: (node: any) => {
                 const { type, listenerNum, domain_num } = node;
+                if (type === 'loading') return null;
                 let isVisible = true;
                 if ((type === 'lb' && !listenerNum) || (type === 'listener' && domain_num === 0) || type === 'domain') {
                   isVisible = false;
