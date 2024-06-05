@@ -21,6 +21,7 @@ package tcloud
 
 import (
 	"hcm/pkg/adaptor/types"
+	"time"
 
 	billing "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/billing/v20180709"
 	cam "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam/v20190116"
@@ -40,6 +41,7 @@ const (
 
 // ClientSet interface to get tcloud sdk client set
 type ClientSet interface {
+	SetRateLimitExceededRetry(int, time.Duration)
 	CamServiceClient(region string) (*cam.Client, error)
 	CvmClient(region string) (*cvm.Client, error)
 	CbsClient(region string) (*cbs.Client, error)
@@ -60,6 +62,12 @@ func newClientSet(s *types.BaseSecret, profile *profile.ClientProfile) ClientSet
 		credential: common.NewCredential(s.CloudSecretID, s.CloudSecretKey),
 		profile:    profile,
 	}
+}
+
+// SetRateLimitExceededRetry Set up a retry mechanism after exceeding the rate limit
+func (c *clientSet) SetRateLimitExceededRetry(maxRetries int, interval time.Duration) {
+	c.profile.RateLimitExceededMaxRetries = maxRetries
+	c.profile.RateLimitExceededRetryDuration = profile.ConstantDurationFunc(interval)
 }
 
 // CamServiceClient tcloud sdk cam client
