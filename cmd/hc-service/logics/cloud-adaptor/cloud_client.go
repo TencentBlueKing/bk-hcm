@@ -58,7 +58,7 @@ func (cli *CloudAdaptorClient) TCloud(kt *kit.Kit, accountID string) (tcloud.TCl
 	}
 
 	client, err := cli.adaptor.TCloud(secret)
-	client.WithRateLimitExceededRetryable(kt.RequestSource == enumor.AsynchronousTasks)
+	client.SetRateLimitExceededRetryable(kt.RequestSource == enumor.AsynchronousTasks)
 	return client, err
 }
 

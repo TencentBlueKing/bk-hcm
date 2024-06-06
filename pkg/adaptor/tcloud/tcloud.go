@@ -22,6 +22,7 @@ package tcloud
 
 import (
 	"hcm/pkg/adaptor/types"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"math/rand"
 	"time"
@@ -61,16 +62,15 @@ func validateSecret(s *types.BaseSecret) error {
 	return nil
 }
 
-// WithRateLimitExceededRetryable determine whether to set the retry parameter after exceeding the rate limit
-func (t *TCloudImpl) WithRateLimitExceededRetryable(retryable bool) {
-	if retryable {
-		maxRetries := 1000
-		minRetryInterval := 100
-		maxRetryInterval := 500
-		rand.Seed(time.Now().UnixNano())
-		randomSec := rand.Intn(maxRetryInterval-minRetryInterval+1) + minRetryInterval
-		interval := time.Duration(randomSec) * time.Millisecond
-
-		t.clientSet.SetRateLimitExceededRetry(maxRetries, interval)
+// SetRateLimitExceededRetryable determine whether to set the retry parameter after exceeding the rate limit
+func (t *TCloudImpl) SetRateLimitExceededRetryable(retryable bool) {
+	if !retryable {
+		return
 	}
+
+	rand.Seed(time.Now().UnixNano())
+	randomNum := rand.Intn(constant.MaxRetryInterval-constant.MinRetryInterval+1) + constant.MinRetryInterval
+	interval := time.Duration(randomNum) * time.Millisecond
+
+	t.clientSet.SetRateLimitExceededRetry(constant.MaxRetries, interval)
 }
