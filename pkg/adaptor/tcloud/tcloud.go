@@ -21,11 +21,12 @@
 package tcloud
 
 import (
+	"time"
+
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/tools/rand"
-	"time"
 
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
 )
