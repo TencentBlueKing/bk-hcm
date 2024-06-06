@@ -62,8 +62,8 @@ func validateSecret(s *types.BaseSecret) error {
 	return nil
 }
 
-// SetRateLimitExceededRetryable determine whether to set the retry parameter after exceeding the rate limit
-func (t *TCloudImpl) SetRateLimitExceededRetryable(retryable bool) {
+// SetRateLimitExceededRetryableWithRandomInterval determine whether to set the retry parameter after exceeding the rate limit
+func (t *TCloudImpl) SetRateLimitExceededRetryableWithRandomInterval(retryable bool) {
 	if !retryable {
 		return
 	}
@@ -72,5 +72,5 @@ func (t *TCloudImpl) SetRateLimitExceededRetryable(retryable bool) {
 	randomNum := rand.Intn(constant.MaxRetryInterval-constant.MinRetryInterval+1) + constant.MinRetryInterval
 	interval := time.Duration(randomNum) * time.Millisecond
 
-	t.clientSet.SetRateLimitExceededRetry(constant.MaxRetries, interval)
+	t.clientSet.SetRateLimitExceededRetryWithConstantInterval(constant.MaxRetries, interval)
 }

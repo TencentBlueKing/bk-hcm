@@ -41,7 +41,7 @@ const (
 
 // ClientSet interface to get tcloud sdk client set
 type ClientSet interface {
-	SetRateLimitExceededRetry(int, time.Duration)
+	SetRateLimitExceededRetryWithConstantInterval(int, time.Duration)
 	CamServiceClient(region string) (*cam.Client, error)
 	CvmClient(region string) (*cvm.Client, error)
 	CbsClient(region string) (*cbs.Client, error)
@@ -64,8 +64,8 @@ func newClientSet(s *types.BaseSecret, profile *profile.ClientProfile) ClientSet
 	}
 }
 
-// SetRateLimitExceededRetry Set up a retry mechanism after exceeding the rate limit
-func (c *clientSet) SetRateLimitExceededRetry(maxRetries int, interval time.Duration) {
+// SetRateLimitExceededRetryWithConstantInterval Set up a retry mechanism after exceeding the rate limit
+func (c *clientSet) SetRateLimitExceededRetryWithConstantInterval(maxRetries int, interval time.Duration) {
 	c.profile.RateLimitExceededMaxRetries = maxRetries
 	c.profile.RateLimitExceededRetryDuration = profile.ConstantDurationFunc(interval)
 }
