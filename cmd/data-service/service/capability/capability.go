@@ -23,6 +23,7 @@ package capability
 import (
 	"hcm/pkg/cryptography"
 	"hcm/pkg/dal/dao"
+	"hcm/pkg/dal/objectstore"
 	"hcm/pkg/thirdparty/esb"
 
 	"github.com/emicklei/go-restful/v3"
@@ -30,8 +31,9 @@ import (
 
 // Capability defines the service's capability
 type Capability struct {
-	WebService *restful.WebService
-	Dao        dao.Set
-	Cipher     cryptography.Crypto
-	EsbClient  esb.Client
+	WebService  *restful.WebService
+	Dao         dao.Set
+	Cipher      cryptography.Crypto
+	EsbClient   esb.Client
+	ObjectStore objectstore.Storage
 }
