@@ -16,6 +16,8 @@ import { get as lodash_get } from 'lodash-es';
 import { VendorReverseMap } from '@/common/constant';
 import { LB_NETWORK_TYPE_REVERSE_MAP, LISTENER_BINDING_STATUS_REVERSE_MAP, SCHEDULER_REVERSE_MAP } from '@/constants';
 import usePagination from '../usePagination';
+import { defaults } from 'lodash';
+import { fetchData } from '@pluginHandler/useTable';
 
 export interface IProp {
   // search-select 配置项
@@ -41,7 +43,7 @@ export interface IProp {
   // 请求相关字段
   requestOption: {
     // 资源类型
-    type: string;
+    type?: string;
     // 排序参数
     sortOption?: {
       sort: string; // 需要排序的字段
@@ -73,6 +75,9 @@ export interface IProp {
 }
 
 export const useTable = (props: IProp) => {
+  defaults(props, { requestOption: {} });
+  defaults(props.requestOption, { dataPath: 'data.details' });
+
   const { whereAmI } = useWhereAmI();
 
   const regionsStore = useRegionsStore();
@@ -121,49 +126,35 @@ export const useTable = (props: IProp) => {
     }
     isLoading.value = true;
 
-    // 判断是业务下, 还是资源下
-    const api = whereAmI.value === Senarios.business ? businessStore.list : resourceStore.list;
-    // 请求数据
-    const [detailsRes, countRes] = await Promise.all(
-      [false, true].map((isCount) =>
-        api(
-          {
-            page: {
-              limit: isCount ? 0 : pagination.limit,
-              start: isCount ? 0 : pagination.start,
-              sort: isCount ? undefined : sort.value,
-              order: isCount ? undefined : order.value,
-              count: isCount,
-            },
-            filter: { op: filter.op, rules: filter.rules },
-            ...props.requestOption.extension,
-          },
-          type ? type : props.requestOption.type,
-        ),
-      ),
-    );
-    // 更新数据
-    dataList.value = props.requestOption.dataPath
-      ? lodash_get(detailsRes, props.requestOption.dataPath)
-      : detailsRes?.data?.details;
+    try {
+      // 判断是业务下, 还是资源下
+      const api = whereAmI.value === Senarios.business ? businessStore.list : resourceStore.list;
+      const [detailsRes, countRes] = await fetchData({ api, pagination, sort, order, filter, props, type });
 
-    // 异步处理 dataList
-    if (typeof props.requestOption.resolveDataListCb === 'function') {
-      props.requestOption.resolveDataListCb(dataList.value, getListData).then((newDataList: any[]) => {
-        dataList.value = newDataList;
-      });
+      // 更新数据
+      dataList.value = lodash_get(detailsRes, props.requestOption.dataPath, []);
+
+      // 异步处理 dataList
+      if (typeof props.requestOption.resolveDataListCb === 'function') {
+        props.requestOption.resolveDataListCb(dataList.value, getListData).then((newDataList: any[]) => {
+          dataList.value = newDataList;
+        });
+      }
+
+      // 处理 pagination.count
+      if (typeof props.requestOption.resolvePaginationCountCb === 'function') {
+        props.requestOption.resolvePaginationCountCb(countRes?.data).then((newCount: number) => {
+          pagination.count = newCount;
+        });
+      } else {
+        pagination.count = countRes?.data?.count || 0;
+      }
+    } catch (error) {
+      dataList.value = [];
+      pagination.count = 0;
+    } finally {
+      isLoading.value = false;
     }
-
-    // 处理 pagination.count
-    if (typeof props.requestOption.resolvePaginationCountCb === 'function') {
-      props.requestOption.resolvePaginationCountCb(countRes?.data).then((newCount: number) => {
-        pagination.count = newCount;
-      });
-    } else {
-      pagination.count = countRes?.data?.count || 0;
-    }
-
-    isLoading.value = false;
   };
 
   const CommonTable = defineComponent({
@@ -393,6 +384,8 @@ export const useTable = (props: IProp) => {
 
   return {
     CommonTable,
+    dataList,
     getListData,
+    pagination,
   };
 };
