@@ -40,14 +40,14 @@ type MainAccountExtensionCreateReq interface {
 
 // AwsMainAccountExtensionCreateReq ...
 type AwsMainAccountExtensionCreateReq struct {
-	CloudMainAccountID           string `json:"cloud_main_account_id"`
-	CloudMainAccountName         string `json:"cloud_main_account_name"`
-	CloudMainAccountInitPassword string `json:"cloud_main_account_init_password"`
+	CloudMainAccountID   string `json:"cloud_main_account_id"`
+	CloudMainAccountName string `json:"cloud_main_account_name"`
+	CloudInitPassword    string `json:"cloud_init_password"`
 }
 
 // EncryptSecretKey encrypt secret key
 func (req *AwsMainAccountExtensionCreateReq) EncryptSecretKey(cipher cryptography.Crypto) {
-	req.CloudMainAccountInitPassword = cipher.EncryptToBase64(req.CloudMainAccountInitPassword)
+	req.CloudInitPassword = cipher.EncryptToBase64(req.CloudInitPassword)
 }
 
 // GcpMainAccountExtensionCreateReq ...
@@ -65,47 +65,49 @@ func (req *GcpMainAccountExtensionCreateReq) EncryptSecretKey(cipher cryptograph
 type AzureMainAccountExtensionCreateReq struct {
 	CloudSubscriptionID   string `json:"cloud_subscription_id"`
 	CloudSubscriptionName string `json:"cloud_subscription_name"`
+	CloudInitPassword     string `json:"cloud_init_password"`
 }
 
 // EncryptSecretKey encrypt secret key
 func (req *AzureMainAccountExtensionCreateReq) EncryptSecretKey(cipher cryptography.Crypto) {
 	// nothing to encrypt
+	req.CloudInitPassword = cipher.EncryptToBase64(req.CloudInitPassword)
 }
 
 // HuaWeiMainAccountExtensionCreateReq ...
 type HuaWeiMainAccountExtensionCreateReq struct {
-	CloudMainAccountID           string `json:"cloud_main_account_id"`
-	CloudMainAccountName         string `json:"cloud_main_account_name"`
-	CloudMainAccountInitPassword string `json:"cloud_main_account_init_password"`
+	CloudMainAccountID   string `json:"cloud_main_account_id"`
+	CloudMainAccountName string `json:"cloud_main_account_name"`
+	CloudInitPassword    string `json:"cloud_init_password"`
 }
 
 // EncryptSecretKey ...
 func (req *HuaWeiMainAccountExtensionCreateReq) EncryptSecretKey(cipher cryptography.Crypto) {
-	req.CloudMainAccountInitPassword = cipher.EncryptToBase64(req.CloudMainAccountInitPassword)
+	req.CloudInitPassword = cipher.EncryptToBase64(req.CloudInitPassword)
 }
 
 // ZenlayerMainAccountExtensionCreateReq ...
 type ZenlayerMainAccountExtensionCreateReq struct {
-	CloudMainAccountID           string `json:"cloud_main_account_id"`
-	CloudMainAccountName         string `json:"cloud_main_account_name"`
-	CloudMainAccountInitPassword string `json:"cloud_main_account_init_password"`
+	CloudMainAccountID   string `json:"cloud_main_account_id"`
+	CloudMainAccountName string `json:"cloud_main_account_name"`
+	CloudInitPassword    string `json:"cloud_init_password"`
 }
 
 // EncryptSecretKey ...
 func (req *ZenlayerMainAccountExtensionCreateReq) EncryptSecretKey(cipher cryptography.Crypto) {
-	req.CloudMainAccountInitPassword = cipher.EncryptToBase64(req.CloudMainAccountInitPassword)
+	req.CloudInitPassword = cipher.EncryptToBase64(req.CloudInitPassword)
 }
 
 // KaopuMainAccountExtensionCreateReq ...
 type KaopuMainAccountExtensionCreateReq struct {
-	CloudMainAccountID           string `json:"cloud_main_account_id"`
-	CloudMainAccountName         string `json:"cloud_main_account_name"`
-	CloudMainAccountInitPassword string `json:"cloud_main_account_init_password"`
+	CloudMainAccountID   string `json:"cloud_main_account_id"`
+	CloudMainAccountName string `json:"cloud_main_account_name"`
+	CloudInitPassword    string `json:"cloud_init_password"`
 }
 
 // EncryptSecretKey ...
 func (req *KaopuMainAccountExtensionCreateReq) EncryptSecretKey(cipher cryptography.Crypto) {
-	req.CloudMainAccountInitPassword = cipher.EncryptToBase64(req.CloudMainAccountInitPassword)
+	req.CloudInitPassword = cipher.EncryptToBase64(req.CloudInitPassword)
 }
 
 // MainAccountCreateReq ...
@@ -114,7 +116,7 @@ type MainAccountCreateReq[T MainAccountExtensionCreateReq] struct {
 	Email             string                         `json:"email" validate:"required"`
 	Managers          []string                       `json:"managers" validate:"required"`
 	BakManagers       []string                       `json:"bak_managers" validate:"required"`
-	Site              string                         `json:"site" validate:"required"`
+	Site              enumor.MainAccountSiteType     `json:"site" validate:"required"`
 	BusinessType      enumor.MainAccountBusinessType `json:"business_type" validate:"required"`
 	Status            string                         `json:"status" validate:"required"`
 	ParentAccountName string                         `json:"parent_account_name" validate:"required"`
