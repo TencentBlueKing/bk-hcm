@@ -1,3 +1,7 @@
 .bk-popover.bk-table-settings .setting-content .setting-footer .bk-button:last-of-type {
   margin-right: 0 !important;
 }
+
+.bk-table.has-scroll-y .bk-table-head {
+  flex-shrink: 0;
+}
