@@ -26,11 +26,13 @@ import (
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	cvt "hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 
 	tclb "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb/v20180317"
 )
@@ -190,23 +192,26 @@ func (cli *client) updateLayer4Rule(kt *kit.Kit, updateMap map[string]typeslb.TC
 		return nil
 	}
 	updateReq := &dataproto.TCloudUrlRuleBatchUpdateReq{}
+	urlRules := make([]*dataproto.TCloudUrlRuleUpdate, 0, len(updateMap))
 	for id, listener := range updateMap {
-		updateReq.UrlRules = append(updateReq.UrlRules,
-			&dataproto.TCloudUrlRuleUpdate{
-				ID:            id,
-				Scheduler:     cvt.PtrToVal(listener.Scheduler),
-				SessionType:   cvt.PtrToVal(listener.SessionType),
-				SessionExpire: listener.SessionExpireTime,
-				HealthCheck:   convHealthCheck(listener.HealthCheck),
-				Certificate:   convCert(listener.Certificate),
-			},
-		)
+		urlRules = append(urlRules, &dataproto.TCloudUrlRuleUpdate{
+			ID:            id,
+			Scheduler:     cvt.PtrToVal(listener.Scheduler),
+			SessionType:   cvt.PtrToVal(listener.SessionType),
+			SessionExpire: listener.SessionExpireTime,
+			HealthCheck:   convHealthCheck(listener.HealthCheck),
+			Certificate:   convCert(listener.Certificate),
+		})
 	}
-	err := cli.dbCli.TCloud.LoadBalancer.BatchUpdateTCloudUrlRule(kt, updateReq)
-	if err != nil {
-		logs.Errorf("fail to update tcloud url rule, err: %v, rid: %s", err, kt.Rid)
-		return err
+	for _, updateBatch := range slice.Split(urlRules, constant.BatchOperationMaxLimit) {
+		updateReq.UrlRules = updateBatch
+		err := cli.dbCli.TCloud.LoadBalancer.BatchUpdateTCloudUrlRule(kt, updateReq)
+		if err != nil {
+			logs.Errorf("fail to update tcloud url rule, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
 	}
+
 	return nil
 }
 
@@ -215,12 +220,14 @@ func (cli *client) deleteLayer7Rule(kt *kit.Kit, cloudIds []string) error {
 	if len(cloudIds) == 0 {
 		return nil
 	}
-	delReq := &dataproto.LoadBalancerBatchDeleteReq{Filter: tools.ContainersExpression("cloud_id", cloudIds)}
-	err := cli.dbCli.TCloud.LoadBalancer.BatchDeleteTCloudUrlRule(kt, delReq)
-	if err != nil {
-		logs.Errorf("fail to delete listeners(ids:%v) while sync, err: %v, rid: %s",
-			cloudIds, err, kt.Rid)
-		return err
+	for _, cloudIdsBatch := range slice.Split(cloudIds, constant.BatchOperationMaxLimit) {
+		delReq := &dataproto.LoadBalancerBatchDeleteReq{Filter: tools.ContainersExpression("cloud_id", cloudIdsBatch)}
+		err := cli.dbCli.TCloud.LoadBalancer.BatchDeleteTCloudUrlRule(kt, delReq)
+		if err != nil {
+			logs.Errorf("fail to delete listeners while sync, err: %v, ids:%v, rid: %s",
+				cloudIdsBatch, err, kt.Rid)
+			return err
+		}
 	}
 	return nil
 }
@@ -232,36 +239,41 @@ func (cli *client) createLayer7Rule(kt *kit.Kit, opt *SyncLayer7RuleOption,
 		return nil, nil
 	}
 
-	dbRules := make([]dataproto.TCloudUrlRuleCreate, 0)
-	for _, cloud := range addSlice {
+	createdIDs := make([]string, 0, len(addSlice))
+	dbRules := make([]dataproto.TCloudUrlRuleCreate, 0, len(addSlice))
 
-		dbRules = append(dbRules, dataproto.TCloudUrlRuleCreate{
-			LbID:       opt.LBID,
-			CloudLbID:  opt.CloudLBID,
-			LblID:      opt.ListenerID,
-			CloudLBLID: opt.CloudListenerID,
-			CloudID:    cloud.GetCloudID(),
-			RuleType:   enumor.Layer7RuleType,
+	for _, addSliceBatch := range slice.Split(addSlice, constant.BatchOperationMaxLimit) {
+		dbRules = dbRules[:0]
+		for _, cloud := range addSliceBatch {
+			dbRules = append(dbRules, dataproto.TCloudUrlRuleCreate{
+				LbID:       opt.LBID,
+				CloudLbID:  opt.CloudLBID,
+				LblID:      opt.ListenerID,
+				CloudLBLID: opt.CloudListenerID,
+				CloudID:    cloud.GetCloudID(),
+				RuleType:   enumor.Layer7RuleType,
 
-			Domain:    cvt.PtrToVal(cloud.Domain),
-			URL:       cvt.PtrToVal(cloud.Url),
-			Scheduler: cvt.PtrToVal(cloud.Scheduler),
+				Domain:    cvt.PtrToVal(cloud.Domain),
+				URL:       cvt.PtrToVal(cloud.Url),
+				Scheduler: cvt.PtrToVal(cloud.Scheduler),
 
-			SessionExpire: cvt.PtrToVal(cloud.SessionExpireTime),
-			HealthCheck:   convHealthCheck(cloud.HealthCheck),
-			Certificate:   convCert(cloud.Certificate),
-		})
+				SessionExpire: cvt.PtrToVal(cloud.SessionExpireTime),
+				HealthCheck:   convHealthCheck(cloud.HealthCheck),
+				Certificate:   convCert(cloud.Certificate),
+			})
+		}
+
+		ruleCreated, err := cli.dbCli.TCloud.LoadBalancer.BatchCreateTCloudUrlRule(kt,
+			&dataproto.TCloudUrlRuleBatchCreateReq{UrlRules: dbRules})
+		if err != nil {
+			logs.Errorf("fail to create rule while sync, err: %v syncOpt: %+v, rid: %s",
+				err, opt, kt.Rid)
+			return nil, err
+		}
+		createdIDs = append(createdIDs, ruleCreated.IDs...)
 	}
 
-	ruleCreated, err := cli.dbCli.TCloud.LoadBalancer.BatchCreateTCloudUrlRule(kt,
-		&dataproto.TCloudUrlRuleBatchCreateReq{UrlRules: dbRules})
-	if err != nil {
-		logs.Errorf("fail to create rule while sync, err: %v syncOpt: %+v, rid: %s",
-			err, opt, kt.Rid)
-		return nil, err
-	}
-
-	return ruleCreated.IDs, nil
+	return createdIDs, nil
 }
 
 func (cli *client) updateLayer7Rule(kt *kit.Kit, updateMap map[string]typeslb.TCloudUrlRule) error {
@@ -284,13 +296,14 @@ func (cli *client) updateLayer7Rule(kt *kit.Kit, updateMap map[string]typeslb.TC
 		})
 	}
 
-	err := cli.dbCli.TCloud.LoadBalancer.BatchUpdateTCloudUrlRule(kt,
-		&dataproto.TCloudUrlRuleBatchUpdateReq{UrlRules: updates})
-	if err != nil {
-		logs.Errorf("fail to update rule while sync, err: %v, rid: %s", err, kt.Rid)
-		return err
+	for _, updateBatch := range slice.Split(updates, constant.BatchOperationMaxLimit) {
+		err := cli.dbCli.TCloud.LoadBalancer.BatchUpdateTCloudUrlRule(kt,
+			&dataproto.TCloudUrlRuleBatchUpdateReq{UrlRules: updateBatch})
+		if err != nil {
+			logs.Errorf("fail to update rule while sync, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
 	}
-
 	return nil
 }
 func convHealthCheck(cloud *tclb.HealthCheck) *corelb.TCloudHealthCheckInfo {

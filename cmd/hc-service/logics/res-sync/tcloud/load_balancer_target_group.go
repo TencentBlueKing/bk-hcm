@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -438,12 +439,13 @@ func (cli *client) deleteRs(kt *kit.Kit, localIds []string) error {
 	if len(localIds) == 0 {
 		return nil
 	}
-
-	delReq := &dataproto.LoadBalancerBatchDeleteReq{Filter: tools.ContainersExpression("id", localIds)}
-	err := cli.dbCli.Global.LoadBalancer.BatchDeleteTarget(kt, delReq)
-	if err != nil {
-		logs.Errorf("fail to delete rs (ids=%v), err: %v, rid: %s", localIds, err, kt.Rid)
-		return err
+	for _, idBatch := range slice.Split(localIds, constant.BatchOperationMaxLimit) {
+		delReq := &dataproto.LoadBalancerBatchDeleteReq{Filter: tools.ContainersExpression("id", idBatch)}
+		err := cli.dbCli.Global.LoadBalancer.BatchDeleteTarget(kt, delReq)
+		if err != nil {
+			logs.Errorf("fail to delete rs, err: %v, ids: %v, rid: %s", err, idBatch, kt.Rid)
+			return err
+		}
 	}
 
 	return nil
@@ -466,9 +468,12 @@ func (cli *client) updateRs(kt *kit.Kit, updateMap map[string]typeslb.Backend) (
 			InstName:         cvt.PtrToVal(backend.InstanceName),
 		})
 	}
-	updateReq := &dataproto.TargetBatchUpdateReq{Targets: updates}
-	if err = cli.dbCli.Global.LoadBalancer.BatchUpdateTarget(kt, updateReq); err != nil {
-		logs.Errorf("fail to update targets while syncing, err: %v, rid:%s", err, kt.Rid)
+
+	for _, updateBatch := range slice.Split(updates, constant.BatchOperationMaxLimit) {
+		updateReq := &dataproto.TargetBatchUpdateReq{Targets: updateBatch}
+		if err = cli.dbCli.Global.LoadBalancer.BatchUpdateTarget(kt, updateReq); err != nil {
+			logs.Errorf("fail to update targets while syncing, err: %v, rid:%s", err, kt.Rid)
+		}
 	}
 
 	return err
@@ -480,20 +485,26 @@ func (cli *client) createRs(kt *kit.Kit, accountID, tgId string, addSlice []type
 		return nil, nil
 	}
 
-	var targets []*dataproto.TargetBaseReq = make([]*dataproto.TargetBaseReq, 0, len(addSlice))
-	for _, backend := range addSlice {
-		rs := convTarget(accountID)(backend.Backend)
-		rs.TargetGroupID = tgId
-		targets = append(targets, rs)
+	targets := make([]*dataproto.TargetBaseReq, 0, constant.BatchOperationMaxLimit)
+	createIds := make([]string, 0, len(targets))
+
+	for _, targetBatch := range slice.Split(addSlice, constant.BatchOperationMaxLimit) {
+		targets = targets[:0]
+		for _, backend := range targetBatch {
+			rs := convTarget(accountID)(backend.Backend)
+			rs.TargetGroupID = tgId
+			targets = append(targets, rs)
+		}
+		created, err := cli.dbCli.Global.LoadBalancer.BatchCreateTCloudTarget(kt,
+			&dataproto.TargetBatchCreateReq{Targets: targets})
+		if err != nil {
+			logs.Errorf("fail to create target for target group syncing, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+		createIds = append(createIds, created.IDs...)
 	}
 
-	created, err := cli.dbCli.Global.LoadBalancer.BatchCreateTCloudTarget(kt,
-		&dataproto.TargetBatchCreateReq{Targets: targets})
-	if err != nil {
-		logs.Errorf("fail to create target for target group syncing, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
-	}
-	return created.IDs, nil
+	return createIds, nil
 }
 
 // 获取云上监听器列表
