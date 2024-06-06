@@ -58,8 +58,6 @@ func (cli *client) LoadBalancerWithListener(kt *kit.Kit, params *SyncBaseParams,
 	}
 	// 同步下属监听器
 	requiredLBCloudIds := params.CloudIDs
-	// 获取同步后的lb数据
-	params.CloudIDs = nil
 	lbList, err := cli.listLBFromDB(kt, params)
 	if err != nil {
 		logs.Errorf("fail to get lb from db after lb layer sync, before listener sync, err: %v, rid: %s", err, kt.Rid)
