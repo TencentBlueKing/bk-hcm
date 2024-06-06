@@ -47,19 +47,19 @@ type BaseMainAccount struct {
 
 // AwsMainAccountExtension 云主账号/云二级账号扩展字段
 type AwsMainAccountExtension struct {
-	CloudMainAccountID           string `json:"cloud_main_account_id"`
-	CloudMainAccountName         string `json:"cloud_main_account_name"`
-	CloudMainAccountInitPassword string `json:"cloud_main_account_init_password"`
+	CloudMainAccountID   string `json:"cloud_main_account_id"`
+	CloudMainAccountName string `json:"cloud_main_account_name"`
+	CloudInitPassword    string `json:"cloud_init_password"`
 }
 
 // DecryptSecretKey ...
 func (e *AwsMainAccountExtension) DecryptSecretKey(cipher cryptography.Crypto) error {
-	if e.CloudMainAccountInitPassword != "" {
-		plainSecretKey, err := cipher.DecryptFromBase64(e.CloudMainAccountInitPassword)
+	if e.CloudInitPassword != "" {
+		plainSecretKey, err := cipher.DecryptFromBase64(e.CloudInitPassword)
 		if err != nil {
 			return err
 		}
-		e.CloudMainAccountInitPassword = plainSecretKey
+		e.CloudInitPassword = plainSecretKey
 	}
 	return nil
 }
@@ -78,19 +78,19 @@ func (e *GcpMainAccountExtension) DecryptSecretKey(cipher cryptography.Crypto) e
 
 // HuaweiMainAccountExtension 云主账号/云二级账号扩展字段
 type HuaWeiMainAccountExtension struct {
-	CloudMainAccountID           string `json:"cloud_main_account_id"`
-	CloudMainAccountName         string `json:"cloud_main_account_name"`
-	CloudMainAccountInitPassword string `json:"cloud_main_account_init_password"`
+	CloudMainAccountID   string `json:"cloud_main_account_id"`
+	CloudMainAccountName string `json:"cloud_main_account_name"`
+	CloudInitPassword    string `json:"cloud_init_password"`
 }
 
 // DecryptSecretKey ...
 func (e *HuaWeiMainAccountExtension) DecryptSecretKey(cipher cryptography.Crypto) error {
-	if e.CloudMainAccountInitPassword != "" {
-		plainSecretKey, err := cipher.DecryptFromBase64(e.CloudMainAccountInitPassword)
+	if e.CloudInitPassword != "" {
+		plainSecretKey, err := cipher.DecryptFromBase64(e.CloudInitPassword)
 		if err != nil {
 			return err
 		}
-		e.CloudMainAccountInitPassword = plainSecretKey
+		e.CloudInitPassword = plainSecretKey
 	}
 	return nil
 }
@@ -99,47 +99,55 @@ func (e *HuaWeiMainAccountExtension) DecryptSecretKey(cipher cryptography.Crypto
 type AzureMainAccountExtension struct {
 	CloudSubscriptionID   string `json:"cloud_subscription_id"`
 	CloudSubscriptionName string `json:"cloud_subscription_name"`
+	CloudInitPassword     string `json:"cloud_init_password"`
 }
 
 // DecryptSecretKey ...
 func (e *AzureMainAccountExtension) DecryptSecretKey(cipher cryptography.Crypto) error {
+	if e.CloudInitPassword != "" {
+		plainSecretKey, err := cipher.DecryptFromBase64(e.CloudInitPassword)
+		if err != nil {
+			return err
+		}
+		e.CloudInitPassword = plainSecretKey
+	}
 	return nil
 }
 
 // ZenlayerMainAccountExtension 云主账号/云二级账号扩展字段
 type ZenlayerMainAccountExtension struct {
-	CloudMainAccountID           string `json:"cloud_main_account_id"`
-	CloudMainAccountName         string `json:"cloud_main_account_name"`
-	CloudMainAccountInitPassword string `json:"cloud_main_account_init_password"`
+	CloudMainAccountID   string `json:"cloud_main_account_id"`
+	CloudMainAccountName string `json:"cloud_main_account_name"`
+	CloudInitPassword    string `json:"cloud_init_password"`
 }
 
 // DecryptSecretKey ...
 func (e *ZenlayerMainAccountExtension) DecryptSecretKey(cipher cryptography.Crypto) error {
-	if e.CloudMainAccountInitPassword != "" {
-		plainSecretKey, err := cipher.DecryptFromBase64(e.CloudMainAccountInitPassword)
+	if e.CloudInitPassword != "" {
+		plainSecretKey, err := cipher.DecryptFromBase64(e.CloudInitPassword)
 		if err != nil {
 			return err
 		}
-		e.CloudMainAccountInitPassword = plainSecretKey
+		e.CloudInitPassword = plainSecretKey
 	}
 	return nil
 }
 
 // KaopuMainAccountExtension 云主账号/云二级账号扩展字段
 type KaopuMainAccountExtension struct {
-	CloudMainAccountID           string `json:"cloud_main_account_id"`
-	CloudMainAccountName         string `json:"cloud_main_account_name"`
-	CloudMainAccountInitPassword string `json:"cloud_main_account_init_password"`
+	CloudMainAccountID   string `json:"cloud_main_account_id"`
+	CloudMainAccountName string `json:"cloud_main_account_name"`
+	CloudInitPassword    string `json:"cloud_init_password"`
 }
 
 // DecryptSecretKey ...
 func (e *KaopuMainAccountExtension) DecryptSecretKey(cipher cryptography.Crypto) error {
-	if e.CloudMainAccountInitPassword != "" {
-		plainSecretKey, err := cipher.DecryptFromBase64(e.CloudMainAccountInitPassword)
+	if e.CloudInitPassword != "" {
+		plainSecretKey, err := cipher.DecryptFromBase64(e.CloudInitPassword)
 		if err != nil {
 			return err
 		}
-		e.CloudMainAccountInitPassword = plainSecretKey
+		e.CloudInitPassword = plainSecretKey
 	}
 	return nil
 }

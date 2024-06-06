@@ -17,23 +17,12 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package capability 公共参数。
-package capability
+package mainaccount
 
-import (
-	"hcm/cmd/account-server/logics/audit"
-	"hcm/pkg/client"
-	"hcm/pkg/cryptography"
-	"hcm/pkg/iam/auth"
+import "hcm/pkg/criteria/enumor"
 
-	"github.com/emicklei/go-restful/v3"
-)
-
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	Cipher     cryptography.Crypto
-	Authorizer auth.Authorizer
-	Audit      audit.Interface
+// Deliver 审批通过后资源的交付
+func (a *ApplicationOfCreateMainAccount) Deliver() (enumor.ApplicationStatus, map[string]interface{}, error) {
+	// 更新单据状态，等待管理员确认交付
+	return enumor.Delivering, map[string]interface{}{"delivering": "wait for platform resource manager creating"}, nil
 }

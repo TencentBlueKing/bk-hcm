@@ -17,23 +17,31 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package capability 公共参数。
-package capability
+package mainaccount
 
 import (
-	"hcm/cmd/account-server/logics/audit"
-	"hcm/pkg/client"
-	"hcm/pkg/cryptography"
-	"hcm/pkg/iam/auth"
+	"fmt"
 
-	"github.com/emicklei/go-restful/v3"
+	"hcm/pkg/criteria/enumor"
 )
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	Cipher     cryptography.Crypto
-	Authorizer auth.Authorizer
-	Audit      audit.Interface
+// CheckReq 申请单的表单校验
+func (a *ApplicationOfUpdateMainAccount) CheckReq() error {
+	if err := a.req.Validate(); err != nil {
+		return err
+	}
+
+	// 检查vendor
+	switch a.req.Vendor {
+	case enumor.Aws:
+	case enumor.Gcp:
+	case enumor.HuaWei:
+	case enumor.Azure:
+	case enumor.Zenlayer:
+	case enumor.Kaopu:
+	default:
+		return fmt.Errorf("vendor [%s] is not supported", a.req.Vendor)
+	}
+
+	return nil
 }

@@ -45,6 +45,9 @@ func (a ApplicationType) Validate() error {
 	case AssociateSecurityGroup:
 	case DisassociateSecurityGroup:
 
+	case CreateMainAccount:
+	case UpdateMainAccount:
+
 	default:
 		return fmt.Errorf("unsupported application type: %s", a)
 	}
@@ -61,6 +64,10 @@ const (
 	CreateVpc ApplicationType = "create_vpc"
 	// CreateDisk 创建云盘
 	CreateDisk ApplicationType = "create_disk"
+	// CreateMainAccount 创建主账号/二级账号
+	CreateMainAccount ApplicationType = "create_main_account"
+	// UpdateMainAccount 修改主账号/二级账号
+	UpdateMainAccount ApplicationType = "update_main_account"
 
 	// CreateSecurityGroup 创建安全组
 	CreateSecurityGroup ApplicationType = "create_security_group"

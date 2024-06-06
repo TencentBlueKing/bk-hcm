@@ -18,7 +18,7 @@
  */
 
  /*
-    SQLVER=0019,HCMVER=v1.5.0
+    SQLVER=9999,HCMVER=v9.9.9
 
     Notes:
     1. 支持云账号管理
@@ -54,6 +54,8 @@ create table if not exists `main_account`
 ) engine = innodb
   default charset = utf8mb4;
 
+insert into id_generator(`resource`,`max_id`)
+value ('main_account','0')
 
 -- 2. 一级账号表
 create table if not exists `root_account`
@@ -77,3 +79,12 @@ create table if not exists `root_account`
     unique key `idx_uk_cloud_id_vendor` (`cloud_id`, `vendor`)
 ) engine = innodb
   default charset = utf8mb4;
+
+insert into id_generator(`resource`,`max_id`)
+value ('root_account','0')
+
+
+CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
+SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+
+COMMIT

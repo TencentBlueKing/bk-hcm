@@ -17,23 +17,32 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package capability 公共参数。
-package capability
+package mainaccount
 
 import (
-	"hcm/cmd/account-server/logics/audit"
-	"hcm/pkg/client"
-	"hcm/pkg/cryptography"
+	"hcm/cmd/cloud-server/service/application/handlers"
+	proto "hcm/pkg/api/cloud-server/application"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/iam/auth"
-
-	"github.com/emicklei/go-restful/v3"
 )
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	Cipher     cryptography.Crypto
-	Authorizer auth.Authorizer
-	Audit      audit.Interface
+// ApplicationOfUpdateMainAccount ...
+type ApplicationOfCreateMainAccount struct {
+	handlers.BaseApplicationHandler
+
+	req         *proto.MainAccountCreateReq
+	completeReq *proto.MainAccountCompleteReq
+	authorizer  auth.Authorizer
+}
+
+// NewApplicationOfCreateMainAccount ...
+func NewApplicationOfCreateMainAccount(opt *handlers.HandlerOption, authorizer auth.Authorizer,
+	req *proto.MainAccountCreateReq, completeReq *proto.MainAccountCompleteReq) *ApplicationOfCreateMainAccount {
+
+	return &ApplicationOfCreateMainAccount{
+		authorizer:             authorizer,
+		BaseApplicationHandler: handlers.NewBaseApplicationHandler(opt, enumor.CreateMainAccount, req.Vendor),
+		req:                    req,
+		completeReq:            completeReq,
+	}
 }

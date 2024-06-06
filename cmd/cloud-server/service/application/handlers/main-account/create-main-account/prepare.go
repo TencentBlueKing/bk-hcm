@@ -17,23 +17,32 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package capability 公共参数。
-package capability
+package mainaccount
 
-import (
-	"hcm/cmd/account-server/logics/audit"
-	"hcm/pkg/client"
-	"hcm/pkg/cryptography"
-	"hcm/pkg/iam/auth"
+import "hcm/pkg/thirdparty/api-gateway/itsm"
 
-	"github.com/emicklei/go-restful/v3"
-)
+// PrepareReq 预处理申请单数据
+func (a *ApplicationOfCreateMainAccount) PrepareReq() error {
+	// 二级账号申请不包含敏感信息，无需处理
+	return nil
+}
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	Cipher     cryptography.Crypto
-	Authorizer auth.Authorizer
-	Audit      audit.Interface
+// GenerateApplicationContent 生成存储到DB的申请单content的内容，Interface格式，便于统一处理
+func (a *ApplicationOfCreateMainAccount) GenerateApplicationContent() interface{} {
+	return a.req
+}
+
+// PrepareReqFromContent 申请单内容从DB里获取后可以进行预处理，便于资源交付时资源请求
+func (a *ApplicationOfCreateMainAccount) PrepareReqFromContent() error {
+	return nil
+}
+
+// GetItsmApprover 获取itsm审批人信息
+func (a *ApplicationOfCreateMainAccount) GetItsmApprover(managers []string) []itsm.VariableApprover {
+	return []itsm.VariableApprover{
+		{
+			Variable:  "platform_manager",
+			Approvers: managers,
+		},
+	}
 }

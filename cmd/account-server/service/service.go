@@ -38,12 +38,10 @@ import (
 	"hcm/pkg/handler"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/logs"
-	"hcm/pkg/metrics"
 	"hcm/pkg/rest"
 	restcli "hcm/pkg/rest/client"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
-	"hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/tools/ssl"
 
 	"github.com/emicklei/go-restful/v3"
@@ -53,7 +51,6 @@ import (
 type Service struct {
 	clientSet  *client.ClientSet
 	serve      *http.Server
-	itsmCli    itsm.Client
 	cipher     cryptography.Crypto
 	authorizer auth.Authorizer
 	audit      logicaudit.Interface
@@ -93,16 +90,8 @@ func NewService(sd serviced.ServiceDiscover, shutdownWaitTimeSec int) (*Service,
 		return nil, err
 	}
 
-	itsmCfg := cc.AccountServer().Itsm
-	itsmCli, err := itsm.NewClient(&itsmCfg, metrics.Register())
-	if err != nil {
-		logs.Errorf("failed to create itsm client, err: %v", err)
-		return nil, err
-	}
-
 	svr := &Service{
 		clientSet:  apiClientSet,
-		itsmCli:    itsmCli,
 		cipher:     cipher,
 		authorizer: authorizer,
 		audit:      logicaudit.NewAudit(apiClientSet.DataService()),
@@ -183,7 +172,6 @@ func (s *Service) apiSet() *restful.Container {
 		WebService: ws,
 		ApiClient:  s.clientSet,
 		Cipher:     s.cipher,
-		ItsmCli:    s.itsmCli,
 		Authorizer: s.authorizer,
 		Audit:      s.audit,
 	}

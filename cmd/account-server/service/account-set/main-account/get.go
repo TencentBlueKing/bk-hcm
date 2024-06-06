@@ -47,7 +47,7 @@ func (s *service) Get(cts *rest.Contexts) (interface{}, error) {
 	case enumor.Aws:
 		account, err := s.client.DataService().Aws.MainAccount.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
 		if account != nil {
-			account.Extension.CloudMainAccountInitPassword = ""
+			account.Extension.CloudInitPassword = ""
 		}
 		return account, err
 	case enumor.Gcp:
@@ -59,25 +59,26 @@ func (s *service) Get(cts *rest.Contexts) (interface{}, error) {
 	case enumor.Azure:
 		account, err := s.client.DataService().Azure.MainAccount.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
 		// 	 nothing to set null
-		// if account != nil {
-		// }
+		if account != nil {
+			account.Extension.CloudInitPassword = ""
+		}
 		return account, err
 	case enumor.HuaWei:
 		account, err := s.client.DataService().HuaWei.MainAccount.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
 		if account != nil {
-			account.Extension.CloudMainAccountInitPassword = ""
+			account.Extension.CloudInitPassword = ""
 		}
 		return account, err
 	case enumor.Zenlayer:
 		account, err := s.client.DataService().Zenlayer.MainAccount.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
 		if account != nil {
-			account.Extension.CloudMainAccountInitPassword = ""
+			account.Extension.CloudInitPassword = ""
 		}
 		return account, err
 	case enumor.Kaopu:
 		account, err := s.client.DataService().Kaopu.MainAccount.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
 		if account != nil {
-			account.Extension.CloudMainAccountInitPassword = ""
+			account.Extension.CloudInitPassword = ""
 		}
 		return account, err
 	default:

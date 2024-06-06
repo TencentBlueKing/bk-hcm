@@ -40,8 +40,30 @@ const (
 	ChinaBusiness         MainAccountBusinessType = "china"
 )
 
+var (
+	MainAccountBusinessTypeNameMap = map[MainAccountBusinessType]string{
+		InternationalBusiness: "国际业务",
+		ChinaBusiness:         "中国业务",
+	}
+)
+
 // AccountSiteType is site type.
 type MainAccountSiteType string
+
+const (
+	// MainAccountChinaSite is china site.
+	MainAccountChinaSite MainAccountSiteType = "china"
+	// MainAccountInternationalSite is international site.
+	MainAccountInternationalSite MainAccountSiteType = "international"
+)
+
+var (
+	// MainAccountSiteTypeNameMap is the map of main account site type name
+	MainAccountSiteTypeNameMap = map[MainAccountSiteType]string{
+		MainAccountChinaSite:         "中国站",
+		MainAccountInternationalSite: "国际站",
+	}
+)
 
 // Validate the AccountSiteType is valid or not
 func (a MainAccountSiteType) Validate() error {
@@ -56,9 +78,62 @@ func (a MainAccountSiteType) Validate() error {
 	return nil
 }
 
-const (
-	// MainAccountChinaSite is china site.
-	MainAccountChinaSite MainAccountSiteType = "china"
-	// MainAccountInternationalSite is international site.
-	MainAccountInternationalSite MainAccountSiteType = "international"
-)
+// GetMainAccountSiteTypeName get the main account site type name
+func (a MainAccountSiteType) GetMainAccountSiteTypeName() string {
+	return MainAccountSiteTypeNameMap[a]
+}
+
+// MainAccountCommonFields is the common fields of main account
+type MainAccountCommonFields struct {
+	AccountName  string
+	AccountID    string
+	InitPassword string
+}
+
+// MainAccountNameFieldNameMap is the map of main account fields name, only use for main account management
+var MainAccountNameFieldNameMap = map[Vendor]MainAccountCommonFields{
+	Aws: {
+		AccountName:  "cloud_main_account_name",
+		AccountID:    "cloud_main_account_id",
+		InitPassword: "cloud_init_password",
+	},
+	Gcp: {
+		AccountName: "cloud_project_name",
+		AccountID:   "cloud_project_id",
+	},
+	HuaWei: {
+		AccountName:  "cloud_main_account_name",
+		AccountID:    "cloud_main_account_id",
+		InitPassword: "cloud_init_password",
+	},
+	Azure: {
+		AccountName:  "cloud_subscription_name",
+		AccountID:    "cloud_subscription_id",
+		InitPassword: "cloud_init_password",
+	},
+	Zenlayer: {
+		AccountName:  "cloud_main_account_name",
+		AccountID:    "cloud_main_account_id",
+		InitPassword: "cloud_init_password",
+	},
+	Kaopu: {
+		AccountName:  "cloud_main_account_name",
+		AccountID:    "cloud_main_account_id",
+		InitPassword: "cloud_init_password",
+	},
+}
+
+// GetMainAccountNameFieldName get the main account name field name
+func (v Vendor) GetMainAccountNameFieldName() string {
+	return MainAccountNameFieldNameMap[v].AccountName
+}
+
+// GetMainAccountIDFieldName get the main account id field name
+func (v Vendor) GetMainAccountIDFieldName() string {
+	return MainAccountNameFieldNameMap[v].AccountID
+}
+
+// GetMainAccountInitPasswordFieldName get the main account init password field name
+func (v Vendor) GetMainAccountInitPasswordFieldName() string {
+	return MainAccountNameFieldNameMap[v].InitPassword
+}

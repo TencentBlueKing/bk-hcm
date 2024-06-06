@@ -52,4 +52,7 @@ type ApplicationHandler interface {
 	PrepareReqFromContent() error
 	// Deliver  审批通过后资源的交付
 	Deliver() (status enumor.ApplicationStatus, deliverDetail map[string]interface{}, err error)
+
+	// Complete 审批通过后资源的交付如未完成，需要进一步手动完善申请流程
+	Complete() (status enumor.ApplicationStatus, deliverDetail map[string]interface{}, err error)
 }
