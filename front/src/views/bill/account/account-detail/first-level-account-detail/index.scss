@@ -1,0 +1,40 @@
+.account-detail-wrapper {
+  .sub-title {
+    font-weight: 700;
+    font-size: 14px;
+    color: #313238;
+    margin-top: 28px;
+
+    &:first-of-type {
+      margin-top: 0;
+    }
+  }
+  .detail-info {
+
+    .item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 18px;
+      font-size: 14px;
+  
+      .label {
+        margin-right: 5px;
+        width: 120px;
+        text-align: right;
+      }
+  
+      .value {
+        margin-left: 8px;
+        color: #313238;
+      }
+  
+      &:last-of-type {
+        margin-bottom: 41px;
+      }
+
+      &:first-of-type {
+        margin-top: 25px;
+      }
+    }
+  }
+}

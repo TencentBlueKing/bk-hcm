@@ -27,6 +27,10 @@ export default defineComponent({
       default: false,
     },
     handleClose: Function,
+    noFooter: {
+      type: Boolean,
+      default: false,
+    }, // 是否不需要footer
   },
   emits: ['update:isShow', 'handleSubmit'],
   setup(props, ctx) {
@@ -53,18 +57,20 @@ export default defineComponent({
         }}>
         {{
           default: () => <div class='common-sideslider-content'>{ctx.slots.default?.()}</div>,
-          footer: () => (
-            <>
-              <Button
-                theme='primary'
-                onClick={handleSubmit}
-                disabled={props.isSubmitDisabled}
-                loading={props.isSubmitLoading}>
-                {t('提交')}
-              </Button>
-              <Button onClick={() => triggerShow(false)}>{t('取消')}</Button>
-            </>
-          ),
+          footer: !props.noFooter
+            ? () => (
+                <>
+                  <Button
+                    theme='primary'
+                    onClick={handleSubmit}
+                    disabled={props.isSubmitDisabled}
+                    loading={props.isSubmitLoading}>
+                    {t('提交')}
+                  </Button>
+                  <Button onClick={() => triggerShow(false)}>{t('取消')}</Button>
+                </>
+              )
+            : undefined,
         }}
       </Sideslider>
     );

@@ -13,6 +13,7 @@ import service from './module/service';
 import serviceInside from './module/service-inside';
 import business from './module/business';
 import scheme from './module/scheme';
+import bill from './module/bill';
 import i18n from '@/language/i18n';
 import { useCommonStore } from '@/store';
 import { useVerify } from '@/hooks';
@@ -28,6 +29,7 @@ const routes: RouteRecordRaw[] = [
   ...serviceInside,
   ...business,
   ...scheme,
+  ...bill,
   {
     // path: '/',
     // name: 'index',
