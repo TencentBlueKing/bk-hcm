@@ -52,7 +52,7 @@ import (
 
 // TCloud adaptor interface for tencent cloud
 type TCloud interface {
-	SetRateLimitExceededRetryWithRandomInterval(retryable bool)
+	SetRateLimitRetryWithRandomInterval(retryable bool)
 	ListImage(kt *kit.Kit,
 		opt *image.TCloudImageListOption) (*image.TCloudImageListResult, error)
 	CreateSubnet(kt *kit.Kit, opt *adtysubnet.TCloudSubnetCreateOption) (*adtysubnet.TCloudSubnet,
