@@ -24,7 +24,7 @@ import (
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
-	"math/rand"
+	"hcm/pkg/tools/rand"
 	"time"
 
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
@@ -62,14 +62,13 @@ func validateSecret(s *types.BaseSecret) error {
 	return nil
 }
 
-// SetRateLimitExceededRetryableWithRandomInterval determine whether to set the retry parameter after exceeding the rate limit
-func (t *TCloudImpl) SetRateLimitExceededRetryableWithRandomInterval(retryable bool) {
+// SetRateLimitExceededRetryWithRandomInterval determine whether to set the retry parameter after exceeding the rate limit
+func (t *TCloudImpl) SetRateLimitExceededRetryWithRandomInterval(retryable bool) {
 	if !retryable {
 		return
 	}
 
-	rand.Seed(time.Now().UnixNano())
-	randomNum := rand.Intn(constant.MaxRetryInterval-constant.MinRetryInterval+1) + constant.MinRetryInterval
+	randomNum := rand.RandomRange([2]int{constant.MinRetryInterval, constant.MaxRetryInterval})
 	interval := time.Duration(randomNum) * time.Millisecond
 
 	t.clientSet.SetRateLimitExceededRetryWithConstantInterval(constant.MaxRetries, interval)
