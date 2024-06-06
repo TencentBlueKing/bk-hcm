@@ -641,11 +641,45 @@ func genUrlRuleResource(a *meta.ResourceAttribute) (client.ActionID, []client.Re
 }
 
 func genMainAccountRuleResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	//todo
-	return "", nil, nil
+	res := client.Resource{
+		System: sys.SystemIDHCM,
+		Type:   sys.MainAccount,
+	}
+	if len(a.ResourceID) > 0 {
+		res.ID = a.ResourceID
+	}
+
+	switch a.Basic.Action {
+	case meta.Find:
+		return sys.MainAccountFind, []client.Resource{res}, nil
+	case meta.Update:
+		return sys.MainAccountEdit, []client.Resource{res}, nil
+	case meta.Create:
+		return sys.MainAccountCreate, []client.Resource{res}, nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+
 }
 
 func genRootAccountRuleResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	//todo
-	return "", nil, nil
+	res := client.Resource{
+		System: sys.SystemIDHCM,
+		Type:   sys.RootAccount,
+	}
+	if len(a.ResourceID) > 0 {
+		res.ID = a.ResourceID
+	}
+
+	switch a.Basic.Action {
+	case meta.Find:
+		return sys.RootAccountFind, []client.Resource{res}, nil
+	case meta.Update:
+		return sys.RootAccountEdit, []client.Resource{res}, nil
+	case meta.Import:
+		return sys.RootAccountImport, []client.Resource{res}, nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+
 }

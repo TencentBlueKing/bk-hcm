@@ -33,7 +33,7 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
-// GetRootAccount get main account with options
+// Add get main account with options
 func (s *service) Add(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.RootAccountAddReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -55,7 +55,13 @@ func (s *service) Add(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	var err error
+	// authorize
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.RootAccount, Action: meta.Import}}
+	err := s.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	if err != nil {
+		return nil, err
+	}
+
 	var accountID string
 	switch req.Vendor {
 	case enumor.Aws:
