@@ -77,7 +77,7 @@ func (a *ApplicationOfCreateMainAccount) CheckReq() error {
 	}
 
 	// 检查名称是否重复
-	if err := a.isDuplicateName(account_name); err != nil {
+	if err := a.isDuplicateName(a.req.Vendor.GetMainAccountNameFieldName(), account_name); err != nil {
 		return err
 	}
 
@@ -85,41 +85,40 @@ func (a *ApplicationOfCreateMainAccount) CheckReq() error {
 }
 
 func (a *ApplicationOfCreateMainAccount) isDuplicateEmail(vendor enumor.Vendor, email string) error {
-	return a.isDuplicateField([]*fields{
-		{
-			key:   "email",
-			value: email,
+	rules := []filter.RuleFactory{
+		filter.AtomRule{
+			Field: "email",
+			Op:    filter.Equal.Factory(),
+			Value: email,
 		},
-		{
-			key:   "vendor",
-			value: string(vendor),
+		filter.AtomRule{
+			Field: "vendor",
+			Op:    filter.Equal.Factory(),
+			Value: string(vendor),
 		},
-	})
+	}
+
+	return a.isDuplicateField(rules)
 }
 
-func (a *ApplicationOfCreateMainAccount) isDuplicateName(name string) error {
-	if err := a.isDuplicateField([]*fields{
-		{
-			key:   "name",
-			value: name,
+func (a *ApplicationOfCreateMainAccount) isDuplicateName(field, name string) error {
+	rules := []filter.RuleFactory{
+		filter.AtomRule{
+			Field: fmt.Sprintf("extension.%s", field),
+			Op:    filter.JSONEqual.Factory(),
+			Value: name,
 		},
-	}); err != nil {
-		return fmt.Errorf("account [%s] has already exits, should be not duplicate", name)
+	}
+
+	if err := a.isDuplicateField(rules); err != nil {
+		return fmt.Errorf("main account [%s] duplicate checking err, err: %s", name, err.Error())
 	}
 	return nil
 }
 
-func (a *ApplicationOfCreateMainAccount) isDuplicateField(fields []*fields) error {
-	if len(fields) == 0 {
+func (a *ApplicationOfCreateMainAccount) isDuplicateField(rules []filter.RuleFactory) error {
+	if len(rules) == 0 {
 		return nil
-	}
-	rules := []filter.RuleFactory{}
-	for _, field := range fields {
-		rules = append(rules, filter.AtomRule{
-			Field: field.key,
-			Op:    filter.Equal.Factory(),
-			Value: field.value,
-		})
 	}
 
 	// TODO: 后续需要解决并发问题
@@ -142,7 +141,7 @@ func (a *ApplicationOfCreateMainAccount) isDuplicateField(fields []*fields) erro
 	}
 
 	if result.Count > 0 {
-		return fmt.Errorf("apply info account has already exits, should be not duplicate, duplicate: %v", fields)
+		return fmt.Errorf("apply info account has already exits, should be not duplicate, duplicate: %v", rules)
 	}
 
 	return nil

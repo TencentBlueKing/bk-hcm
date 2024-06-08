@@ -41,7 +41,7 @@ var MainAccountColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "managers", NamedC: "managers", Type: enumor.Json},
 	{Column: "bak_managers", NamedC: "bak_managers", Type: enumor.Json},
 	{Column: "site", NamedC: "site", Type: enumor.String},
-	{Column: "type", NamedC: "business_type", Type: enumor.String},
+	{Column: "business_type", NamedC: "business_type", Type: enumor.String},
 	{Column: "status", NamedC: "status", Type: enumor.String},
 	{Column: "parent_account_name", NamedC: "parent_account_name", Type: enumor.String},
 	{Column: "parent_account_id", NamedC: "parent_account_id", Type: enumor.String},
@@ -73,7 +73,7 @@ type MainAccountTable struct {
 	// Site 站点(中国站｜国际站)
 	Site string `db:"site"`
 	// Type 账号类型(国内业务|国际业务)
-	BusinessType string `db:"type" json:"business_type"`
+	BusinessType string `db:"business_type" json:"business_type"`
 	// Status
 	Status string `db:"status" json:"status"`
 	// ParentAccountName 所属账号

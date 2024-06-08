@@ -23,7 +23,6 @@ package capability
 import (
 	"hcm/cmd/account-server/logics/audit"
 	"hcm/pkg/client"
-	"hcm/pkg/cryptography"
 	"hcm/pkg/iam/auth"
 
 	"github.com/emicklei/go-restful/v3"
@@ -33,7 +32,6 @@ import (
 type Capability struct {
 	WebService *restful.WebService
 	ApiClient  *client.ClientSet
-	Cipher     cryptography.Crypto
 	Authorizer auth.Authorizer
 	Audit      audit.Interface
 }

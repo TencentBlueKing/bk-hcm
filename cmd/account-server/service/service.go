@@ -30,6 +30,7 @@ import (
 
 	logicaudit "hcm/cmd/account-server/logics/audit"
 	mainaccount "hcm/cmd/account-server/service/account-set/main-account"
+	rootaccount "hcm/cmd/account-server/service/account-set/root-account"
 	"hcm/cmd/account-server/service/capability"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
@@ -51,13 +52,12 @@ import (
 type Service struct {
 	clientSet  *client.ClientSet
 	serve      *http.Server
-	cipher     cryptography.Crypto
 	authorizer auth.Authorizer
 	audit      logicaudit.Interface
 }
 
 // NewService create a service instance.
-func NewService(sd serviced.ServiceDiscover, shutdownWaitTimeSec int) (*Service, error) {
+func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 	tls := cc.AccountServer().Network.TLS
 
 	var tlsConfig *ssl.TLSConfig
@@ -84,15 +84,8 @@ func NewService(sd serviced.ServiceDiscover, shutdownWaitTimeSec int) (*Service,
 		return nil, err
 	}
 
-	// 加解密器
-	cipher, err := newCipherFromConfig(cc.AccountServer().Crypto)
-	if err != nil {
-		return nil, err
-	}
-
 	svr := &Service{
 		clientSet:  apiClientSet,
-		cipher:     cipher,
 		authorizer: authorizer,
 		audit:      logicaudit.NewAudit(apiClientSet.DataService()),
 	}
@@ -171,12 +164,12 @@ func (s *Service) apiSet() *restful.Container {
 	c := &capability.Capability{
 		WebService: ws,
 		ApiClient:  s.clientSet,
-		Cipher:     s.cipher,
 		Authorizer: s.authorizer,
 		Audit:      s.audit,
 	}
 
 	mainaccount.InitService(c)
+	rootaccount.InitService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

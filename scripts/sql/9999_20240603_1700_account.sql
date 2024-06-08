@@ -54,8 +54,8 @@ create table if not exists `main_account`
 ) engine = innodb
   default charset = utf8mb4;
 
-insert into id_generator(`resource`,`max_id`)
-value ('main_account','0')
+insert into id_generator(`resource`, `max_id`)
+value ('main_account','0');
 
 -- 2. 一级账号表
 create table if not exists `root_account`
@@ -80,8 +80,8 @@ create table if not exists `root_account`
 ) engine = innodb
   default charset = utf8mb4;
 
-insert into id_generator(`resource`,`max_id`)
-value ('root_account','0')
+insert into id_generator(`resource`, `max_id`)
+value ('root_account','0');
 
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
