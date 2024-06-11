@@ -7,7 +7,7 @@ import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import { computed, defineComponent, reactive, ref, watch } from 'vue';
 import './index.scss';
 import Empty from '@/components/empty';
-import { useAccountStore, useResourceStore, useBusinessStore } from '@/store';
+import { useResourceStore, useBusinessStore } from '@/store';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useWhereAmI, Senarios } from '../useWhereAmI';
@@ -83,7 +83,6 @@ export const useTable = (props: IProp) => {
   const regionsStore = useRegionsStore();
   const resourceStore = useResourceStore();
   const businessStore = useBusinessStore();
-  const accountStore = useAccountStore();
   const businessMapStore = useBusinessMapStore();
 
   const searchVal = ref('');
@@ -313,9 +312,8 @@ export const useTable = (props: IProp) => {
   };
 
   watch(
-    [() => searchVal.value, () => accountStore.bizs],
-    ([searchVal, bizs], [oldSearchVal]) => {
-      if (whereAmI.value === Senarios.business && !bizs) return;
+    () => searchVal.value,
+    (searchVal, oldSearchVal) => {
       // 记录上一次 search-select 的规则名
       const oldSearchFieldList: string[] =
         (Array.isArray(oldSearchVal) && oldSearchVal.reduce((prev: any, item: any) => [...prev, item.id], [])) || [];

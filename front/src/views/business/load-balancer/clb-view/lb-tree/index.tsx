@@ -422,8 +422,6 @@ export default defineComponent({
 
     // define handler function - 节点点击
     const handleNodeClick = (node: any) => {
-      // 防止重复点击
-      if (route.params.id === node.id) return;
       // 切换四级路由组件
       pushState(node);
       // 交互 - 高亮切换效果
@@ -501,7 +499,7 @@ export default defineComponent({
           {/* lb-tree */}
           <Tree
             class='lb-tree'
-            node-key='id'
+            node-key='cloud_id'
             ref={treeRef}
             data={treeData.value}
             label='name'

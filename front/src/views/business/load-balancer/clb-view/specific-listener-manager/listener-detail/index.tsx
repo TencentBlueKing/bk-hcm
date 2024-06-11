@@ -1,6 +1,6 @@
 import { computed, defineComponent, onMounted, onUnmounted, reactive, ref, watchEffect } from 'vue';
 // import components
-import { Button, Tag } from 'bkui-vue';
+import { Button, Loading, Tag } from 'bkui-vue';
 import StatusLoading from '@/assets/image/status_loading.png';
 // import stores
 import { useAccountStore, useLoadBalancerStore, useBusinessStore } from '@/store';
@@ -26,6 +26,7 @@ export default defineComponent({
     const loadBalancerStore = useLoadBalancerStore();
 
     // define data
+    const isLoading = ref(false);
     const listenerDetail = reactive<any>({}); // 监听器详情
     const isTargetGroupBinding = ref(false);
 
@@ -153,22 +154,27 @@ export default defineComponent({
 
     // 获取监听器详情
     const getListenerDetail = async (id: string) => {
-      // 监听器详情
-      const { data: listener_detail } = await businessStore.detail('listeners', id);
-      // todo: 这里暂时使用list接口, 后续直接用detail接口中的字段来控制是否为loading状态
-      const listRes = await businessStore.list(
-        {
-          filter: { op: QueryRuleOPEnum.AND, rules: [{ field: 'id', op: QueryRuleOPEnum.EQ, value: id }] },
-          page: { count: false, start: 0, limit: 1 },
-        },
-        `load_balancers/${listener_detail.lb_id}/listeners`,
-      );
-      isTargetGroupBinding.value = listRes.data.details[0].binding_status === 'binding';
-      // 负载均衡详情
-      const { data: lbDetail } = await businessStore.detail('load_balancers', listener_detail.lb_id);
-      Object.assign(listenerDetail, { ...listener_detail, lb: lbDetail });
-      // 更新store
-      loadBalancerStore.setCurrentSelectedTreeNode(listenerDetail);
+      isLoading.value = true;
+      try {
+        // 监听器详情
+        const { data: listener_detail } = await businessStore.detail('listeners', id);
+        // todo: 这里暂时使用list接口, 后续直接用detail接口中的字段来控制是否为loading状态
+        const listRes = await businessStore.list(
+          {
+            filter: { op: QueryRuleOPEnum.AND, rules: [{ field: 'id', op: QueryRuleOPEnum.EQ, value: id }] },
+            page: { count: false, start: 0, limit: 1 },
+          },
+          `load_balancers/${listener_detail.lb_id}/listeners`,
+        );
+        isTargetGroupBinding.value = listRes.data.details[0].binding_status === 'binding';
+        // 负载均衡详情
+        const { data: lbDetail } = await businessStore.detail('load_balancers', listener_detail.lb_id);
+        Object.assign(listenerDetail, { ...listener_detail, lb: lbDetail });
+        // 更新store
+        loadBalancerStore.setCurrentSelectedTreeNode(listenerDetail);
+      } finally {
+        isLoading.value = false;
+      }
     };
 
     watchEffect(() => {
@@ -188,7 +194,7 @@ export default defineComponent({
     });
 
     return () => (
-      <div class='listener-detail-wrap'>
+      <Loading loading={isLoading.value} opacity={1} class='listener-detail-wrap'>
         <Button
           class='fixed-edit-btn'
           outline
@@ -242,7 +248,7 @@ export default defineComponent({
             </div>
           );
         })}
-      </div>
+      </Loading>
     );
   },
 });
