@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
 )
 
@@ -73,11 +74,13 @@ func (a *ApplicationOfCreateMainAccount) CheckReq() error {
 
 	// 检查邮箱是否重复
 	if err := a.isDuplicateEmail(a.req.Vendor, a.req.Email); err != nil {
+		logs.Errorf("check email duplicate failed, err: %s, rid: %s", err, a.Cts.Kit.Rid)
 		return err
 	}
 
 	// 检查名称是否重复
 	if err := a.isDuplicateName(a.req.Vendor.GetMainAccountNameFieldName(), account_name); err != nil {
+		logs.Errorf("check name duplicate failed, err: %s, rid: %s", err, a.Cts.Kit.Rid)
 		return err
 	}
 

@@ -20,13 +20,9 @@
 package global
 
 import (
-	"context"
-	"net/http"
-
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/account-set"
 	"hcm/pkg/client/common"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
@@ -44,26 +40,13 @@ func NewMainAccountClient(client rest.ClientInterface) *MainAccountClient {
 }
 
 // GetBasicInfo ...
-func (a *MainAccountClient) GetBasicInfo(kt *kit.Kit, h http.Header, accountID string) (
+func (a *MainAccountClient) GetBasicInfo(kt *kit.Kit, accountID string) (
 	*dataproto.MainAccountGetBaseResult, error,
 ) {
-	resp := new(dataproto.MainAccountGetBaseResp)
 
-	err := a.client.Get().
-		WithContext(kt.Ctx).
-		SubResourcef("/main_accounts/basic_info/%s", accountID).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
+	return common.Request[common.Empty, dataproto.MainAccountGetBaseResult](
+		a.client, rest.GET, kt, nil, "/main_accounts/basic_info/%s", accountID,
+	)
 }
 
 // List ...
@@ -76,27 +59,12 @@ func (a *MainAccountClient) List(kt *kit.Kit, request *core.ListWithoutFieldReq)
 }
 
 // Update ...
-func (a *MainAccountClient) Update(ctx context.Context, h http.Header, accountID string,
+func (a *MainAccountClient) Update(kt *kit.Kit, accountID string,
 	request *dataproto.MainAccountUpdateReq) (
 	interface{}, error,
 ) {
 
-	resp := new(core.UpdateResp)
-
-	err := a.client.Patch().
-		WithContext(ctx).
-		Body(request).
-		SubResourcef("/main_accounts/%s", accountID).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
+	return common.Request[dataproto.MainAccountUpdateReq, interface{}](
+		a.client, rest.PATCH, kt, request, "/main_accounts/%s", accountID,
+	)
 }

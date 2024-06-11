@@ -40,7 +40,7 @@ func (a *ApplicationOfUpdateMainAccount) RenderItsmForm() (string, error) {
 	req := a.req
 
 	// 获取原来的账号
-	oldAccount, err := a.Client.DataService().Global.MainAccount.GetBasicInfo(a.Cts.Kit, a.Cts.Kit.Header(), req.ID)
+	oldAccount, err := a.Client.DataService().Global.MainAccount.GetBasicInfo(a.Cts.Kit, req.ID)
 	if err != nil {
 		return "", fmt.Errorf("get old account failed, err: %w", err)
 	}

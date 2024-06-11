@@ -35,7 +35,7 @@ type BaseMainAccount struct {
 	BakManagers       []string                       `json:"bak_managers"`
 	Site              enumor.MainAccountSiteType     `json:"site"`
 	BusinessType      enumor.MainAccountBusinessType `json:"business_type"`
-	Status            string                         `json:"status"`
+	Status            enumor.MainAccountStatus       `json:"status"`
 	ParentAccountName string                         `json:"parent_account_name"`
 	ParentAccountID   string                         `json:"parent_account_id"`
 	DeptID            int64                          `json:"dept_id"`

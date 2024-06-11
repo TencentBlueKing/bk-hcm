@@ -104,8 +104,9 @@ func updateRootAccount[T dataproto.RootAccountExtensionUpdateReq, PT dataproto.R
 
 	err := svc.dao.RootAccount().Update(cts.Kit, tools.EqualExpression("id", accountID), account)
 	if err != nil {
-		logs.Errorf("update main account failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("update main account failed, err: %v", err)
+		err = fmt.Errorf("update main account failed, accountID: %s, err: %v, rid: %s", accountID, err, cts.Kit.Rid)
+		logs.Errorf(err.Error())
+		return nil, err
 	}
 
 	return nil, nil

@@ -20,12 +20,9 @@
 package global
 
 import (
-	"net/http"
-
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/account-set"
 	"hcm/pkg/client/common"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
@@ -43,26 +40,13 @@ func NewRootAccountClient(client rest.ClientInterface) *RootAccountClient {
 }
 
 // GetBasicInfo ...
-func (a *RootAccountClient) GetBasicInfo(kt *kit.Kit, h http.Header, accountID string) (
+func (a *RootAccountClient) GetBasicInfo(kt *kit.Kit, accountID string) (
 	*dataproto.RootAccountGetBaseResult, error,
 ) {
-	resp := new(dataproto.RootAccountGetBaseResp)
 
-	err := a.client.Get().
-		WithContext(kt.Ctx).
-		SubResourcef("/root_accounts/basic_info/%s", accountID).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
+	return common.Request[common.Empty, dataproto.RootAccountGetBaseResult](
+		a.client, rest.GET, kt, nil, "/root_accounts/basic_info/%s", accountID,
+	)
 }
 
 // List ...

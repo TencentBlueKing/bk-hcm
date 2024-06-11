@@ -51,7 +51,7 @@ func (a *ApplicationOfUpdateMainAccount) Deliver() (enumor.ApplicationStatus, ma
 func (a *ApplicationOfUpdateMainAccount) update() error {
 	req := a.req
 
-	oldAccount, err := a.Client.DataService().Global.MainAccount.GetBasicInfo(a.Cts.Kit, a.Cts.Kit.Header(), a.req.ID)
+	oldAccount, err := a.Client.DataService().Global.MainAccount.GetBasicInfo(a.Cts.Kit, a.req.ID)
 	if err != nil {
 		return err
 	}
@@ -91,8 +91,7 @@ func (a *ApplicationOfUpdateMainAccount) update() error {
 	}
 
 	_, err = a.Client.DataService().Global.MainAccount.Update(
-		a.Cts.Kit.Ctx,
-		a.Cts.Kit.Header(),
+		a.Cts.Kit,
 		a.req.ID,
 		updateReq,
 	)

@@ -137,3 +137,29 @@ func (v Vendor) GetMainAccountIDFieldName() string {
 func (v Vendor) GetMainAccountInitPasswordFieldName() string {
 	return MainAccountNameFieldNameMap[v].InitPassword
 }
+
+// MainAccountStatus is main account status, 状态为后续功能预留
+type MainAccountStatus string
+
+const (
+	// MainAccountStatusRUNNING is main account running status
+	MainAccountStatusRUNNING MainAccountStatus = "RUNNING"
+	// MainAccountStatusDELETED is main account deleted status
+	MainAccountStatusDELETED MainAccountStatus = "DELETED"
+	// MainAccountStatusSUSPEND is main account suspend status
+	MainAccountStatusSUSPEND MainAccountStatus = "SUSPEND"
+)
+
+// Validate the AccountSiteType is valid or not
+func (a MainAccountStatus) Validate() error {
+	switch a {
+	case MainAccountStatusRUNNING:
+	case MainAccountStatusDELETED:
+	case MainAccountStatusSUSPEND:
+	default:
+		return fmt.Errorf("unsupported main account status type: %s", a)
+
+	}
+
+	return nil
+}

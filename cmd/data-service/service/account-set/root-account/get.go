@@ -43,6 +43,7 @@ func (svc *service) GetRootAccountBasicInfo(cts *rest.Contexts) (interface{}, er
 
 	dbAccount, err := getRootAccountFromTable(accountID, svc, cts)
 	if err != nil {
+		logs.Errorf("GetRootAccountBasicInfo getRootAccountFromTable accountID: %s, error: %s, rid: %s", accountID, err.Error(), cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -80,6 +81,7 @@ func (svc *service) GetRootAccount(cts *rest.Contexts) (interface{}, error) {
 
 	dbAccount, err := getRootAccountFromTable(accountID, svc, cts)
 	if err != nil {
+		logs.Errorf("GetRootAccount getRootAccountFromTable accountID: %s, error: %s, rid: %s", accountID, err.Error(), cts.Kit.Rid)
 		return nil, err
 	}
 

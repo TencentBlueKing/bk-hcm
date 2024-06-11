@@ -38,45 +38,45 @@ func (s *service) Get(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// 查询该账号对应的Vendor
-	baseInfo, err := s.client.DataService().Global.MainAccount.GetBasicInfo(cts.Kit, cts.Kit.Header(), accountID)
+	baseInfo, err := s.client.DataService().Global.MainAccount.GetBasicInfo(cts.Kit, accountID)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	switch baseInfo.Vendor {
 	case enumor.Aws:
-		account, err := s.client.DataService().Aws.MainAccount.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
+		account, err := s.client.DataService().Aws.MainAccount.Get(cts.Kit, accountID)
 		if account != nil {
 			account.Extension.CloudInitPassword = ""
 		}
 		return account, err
 	case enumor.Gcp:
-		account, err := s.client.DataService().Gcp.MainAccount.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
+		account, err := s.client.DataService().Gcp.MainAccount.Get(cts.Kit, accountID)
 		// 	 nothing to set null
 		// if account != nil {
 		// }
 		return account, err
 	case enumor.Azure:
-		account, err := s.client.DataService().Azure.MainAccount.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
+		account, err := s.client.DataService().Azure.MainAccount.Get(cts.Kit, accountID)
 		// 	 nothing to set null
 		if account != nil {
 			account.Extension.CloudInitPassword = ""
 		}
 		return account, err
 	case enumor.HuaWei:
-		account, err := s.client.DataService().HuaWei.MainAccount.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
+		account, err := s.client.DataService().HuaWei.MainAccount.Get(cts.Kit, accountID)
 		if account != nil {
 			account.Extension.CloudInitPassword = ""
 		}
 		return account, err
 	case enumor.Zenlayer:
-		account, err := s.client.DataService().Zenlayer.MainAccount.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
+		account, err := s.client.DataService().Zenlayer.MainAccount.Get(cts.Kit, accountID)
 		if account != nil {
 			account.Extension.CloudInitPassword = ""
 		}
 		return account, err
 	case enumor.Kaopu:
-		account, err := s.client.DataService().Kaopu.MainAccount.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
+		account, err := s.client.DataService().Kaopu.MainAccount.Get(cts.Kit, accountID)
 		if account != nil {
 			account.Extension.CloudInitPassword = ""
 		}

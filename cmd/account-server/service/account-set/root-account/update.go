@@ -21,7 +21,6 @@ package rootaccount
 
 import (
 	"fmt"
-
 	"hcm/cmd/cloud-server/service/common"
 	proto "hcm/pkg/api/account-server/account-set"
 	dataproto "hcm/pkg/api/data-service/account-set"
@@ -49,30 +48,39 @@ func (s *service) Update(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// 查询该账号对应的Vendor
-	baseInfo, err := s.client.DataService().Global.RootAccount.GetBasicInfo(cts.Kit, nil, accountID)
+	baseInfo, err := s.client.DataService().Global.RootAccount.GetBasicInfo(cts.Kit, accountID)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	var (
+		result interface{}
+	)
+
 	switch baseInfo.Vendor {
 	case enumor.Aws:
-		return s.updateForAws(cts, req, accountID)
+		result, err = s.updateForAws(cts, req, accountID)
 	case enumor.HuaWei:
-		return s.updateForHuaWei(cts, req, accountID)
+		result, err = s.updateForHuaWei(cts, req, accountID)
 	case enumor.Gcp:
-		return s.updateForGcp(cts, req, accountID)
+		result, err = s.updateForGcp(cts, req, accountID)
 	case enumor.Azure:
-		return s.updateForAzure(cts, req, accountID)
+		result, err = s.updateForAzure(cts, req, accountID)
 	case enumor.Zenlayer:
-		return s.updateForZenlayer(cts, req, accountID)
+		result, err = s.updateForZenlayer(cts, req, accountID)
 	case enumor.Kaopu:
-		return s.updateForKaopu(cts, req, accountID)
+		result, err = s.updateForKaopu(cts, req, accountID)
 	default:
-		err := fmt.Errorf("no support vendor: %s", baseInfo.Vendor)
-		logs.Errorf(err.Error())
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	if err != nil {
+		err := fmt.Errorf("update [%s] main account error: %s, rid: %s", baseInfo.Vendor, err.Error(), cts.Kit.Rid)
+		logs.Errorf(err.Error())
+		return nil, err
+	}
+
+	return result, nil
 }
 
 func (s *service) updateForAws(cts *rest.Contexts, req *proto.RootAccountUpdateReq, accountID string) (interface{}, error) {
@@ -103,8 +111,7 @@ func (s *service) updateForAws(cts *rest.Contexts, req *proto.RootAccountUpdateR
 
 	// 更新
 	_, err := s.client.DataService().Aws.RootAccount.Update(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
+		cts.Kit,
 		accountID,
 		&dataproto.RootAccountUpdateReq[dataproto.AwsRootAccountExtensionUpdateReq]{
 			Name:        req.Name,
@@ -152,8 +159,7 @@ func (s *service) updateForGcp(cts *rest.Contexts, req *proto.RootAccountUpdateR
 
 	// 更新
 	_, err := s.client.DataService().Gcp.RootAccount.Update(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
+		cts.Kit,
 		accountID,
 		&dataproto.RootAccountUpdateReq[dataproto.GcpRootAccountExtensionUpdateReq]{
 			Name:        req.Name,
@@ -201,8 +207,7 @@ func (s *service) updateForAzure(cts *rest.Contexts, req *proto.RootAccountUpdat
 
 	// 更新
 	_, err := s.client.DataService().Azure.RootAccount.Update(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
+		cts.Kit,
 		accountID,
 		&dataproto.RootAccountUpdateReq[dataproto.AzureRootAccountExtensionUpdateReq]{
 			Name:        req.Name,
@@ -250,8 +255,7 @@ func (s *service) updateForHuaWei(cts *rest.Contexts, req *proto.RootAccountUpda
 
 	// 更新
 	_, err := s.client.DataService().HuaWei.RootAccount.Update(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
+		cts.Kit,
 		accountID,
 		&dataproto.RootAccountUpdateReq[dataproto.HuaWeiRootAccountExtensionUpdateReq]{
 			Name:        req.Name,
@@ -293,8 +297,7 @@ func (s *service) updateForZenlayer(cts *rest.Contexts, req *proto.RootAccountUp
 
 	// 更新
 	_, err := s.client.DataService().Zenlayer.RootAccount.Update(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
+		cts.Kit,
 		accountID,
 		&dataproto.RootAccountUpdateReq[dataproto.ZenlayerRootAccountExtensionUpdateReq]{
 			Name:        req.Name,
@@ -336,8 +339,7 @@ func (s *service) updateForKaopu(cts *rest.Contexts, req *proto.RootAccountUpdat
 
 	// 更新
 	_, err := s.client.DataService().Kaopu.RootAccount.Update(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
+		cts.Kit,
 		accountID,
 		&dataproto.RootAccountUpdateReq[dataproto.KaopuRootAccountExtensionUpdateReq]{
 			Name:        req.Name,

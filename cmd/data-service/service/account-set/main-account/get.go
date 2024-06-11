@@ -43,6 +43,7 @@ func (svc *service) GetMainAccountBasicInfo(cts *rest.Contexts) (interface{}, er
 
 	dbAccount, err := getMainAccountFromTable(accountID, svc, cts)
 	if err != nil {
+		logs.Errorf("GetMainAccountBasicInfo getMainAccountFromTable accountID:%s, error: %s, rid: %s", accountID, err.Error(), cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -55,7 +56,7 @@ func (svc *service) GetMainAccountBasicInfo(cts *rest.Contexts) (interface{}, er
 		BakManagers:       dbAccount.BakManagers,
 		Site:              enumor.MainAccountSiteType(dbAccount.Site),
 		BusinessType:      enumor.MainAccountBusinessType(dbAccount.BusinessType),
-		Status:            dbAccount.Status,
+		Status:            enumor.MainAccountStatus(dbAccount.Status),
 		ParentAccountName: dbAccount.ParentAccountName,
 		ParentAccountID:   dbAccount.ParentAccountID,
 		DeptID:            dbAccount.DeptID,
@@ -85,6 +86,7 @@ func (svc *service) GetMainAccount(cts *rest.Contexts) (interface{}, error) {
 
 	dbAccount, err := getMainAccountFromTable(accountID, svc, cts)
 	if err != nil {
+		logs.Errorf("GetMainAccount getMainAccountFromTable accountID: %s, error: %s, rid: %s", accountID, err.Error(), cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -97,7 +99,7 @@ func (svc *service) GetMainAccount(cts *rest.Contexts) (interface{}, error) {
 		BakManagers:       dbAccount.BakManagers,
 		Site:              enumor.MainAccountSiteType(dbAccount.Site),
 		BusinessType:      enumor.MainAccountBusinessType(dbAccount.BusinessType),
-		Status:            dbAccount.Status,
+		Status:            enumor.MainAccountStatus(dbAccount.Status),
 		ParentAccountName: dbAccount.ParentAccountName,
 		ParentAccountID:   dbAccount.ParentAccountID,
 		DeptID:            dbAccount.DeptID,
@@ -143,7 +145,7 @@ func getMainAccountFromTable(accountID string, svc *service, cts *rest.Contexts)
 	}
 	listMainAccountDetails, err := svc.dao.MainAccount().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("list main account failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("list main account failed, account id: %s, err: %v, rid: %s", accountID, err, cts.Kit.Rid)
 		return nil, fmt.Errorf("list main account failed, err: %v", err)
 	}
 

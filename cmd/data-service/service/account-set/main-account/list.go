@@ -69,7 +69,7 @@ func (svc *service) ListMainAccount(cts *rest.Contexts) (interface{}, error) {
 			BakManagers:       account.BakManagers,
 			Site:              enumor.MainAccountSiteType(account.Site),
 			BusinessType:      enumor.MainAccountBusinessType(account.BusinessType),
-			Status:            account.Status,
+			Status:            enumor.MainAccountStatus(account.Status),
 			ParentAccountName: account.ParentAccountName,
 			ParentAccountID:   account.ParentAccountID,
 			DeptID:            account.DeptID,

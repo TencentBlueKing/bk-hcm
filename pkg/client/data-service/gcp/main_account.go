@@ -20,14 +20,10 @@
 package gcp
 
 import (
-	"context"
-	"net/http"
-
 	"hcm/pkg/api/core"
 	protocore "hcm/pkg/api/core/account-set"
 	dataproto "hcm/pkg/api/data-service/account-set"
 	"hcm/pkg/client/common"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
@@ -55,25 +51,10 @@ func (a *MainAccountClient) Create(kt *kit.Kit,
 }
 
 // Get gcp account detail.
-func (a *MainAccountClient) Get(ctx context.Context, h http.Header, accountID string) (
+func (a *MainAccountClient) Get(kt *kit.Kit, accountID string) (
 	*dataproto.MainAccountGetResult[protocore.GcpMainAccountExtension], error,
 ) {
 
-	resp := new(dataproto.MainAccountGetResp[protocore.GcpMainAccountExtension])
-
-	err := a.client.Get().
-		WithContext(ctx).
-		SubResourcef("/main_accounts/%s", accountID).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
+	return common.Request[common.Empty, dataproto.MainAccountGetResult[protocore.GcpMainAccountExtension]](
+		a.client, rest.GET, kt, nil, "/main_accounts/%s", accountID)
 }

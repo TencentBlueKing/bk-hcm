@@ -52,7 +52,7 @@ func updateMainAccount(accountID string,
 	account := &table.MainAccountTable{
 		Managers:    req.Managers,
 		BakManagers: req.BakManagers,
-		Status:      req.Status,
+		Status:      string(req.Status),
 		DeptID:      req.DeptID,
 		BkBizID:     req.BkBizID,
 		OpProductID: req.OpProductID,

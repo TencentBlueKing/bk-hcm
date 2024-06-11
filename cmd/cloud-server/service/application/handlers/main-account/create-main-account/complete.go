@@ -50,7 +50,7 @@ func (a *ApplicationOfCreateMainAccount) Complete() (enumor.ApplicationStatus, m
 	}
 
 	// 验证一级账号是否有效
-	rootAccount, err := a.Client.DataService().Global.RootAccount.GetBasicInfo(a.Cts.Kit, a.Cts.Kit.Header(), a.completeReq.RootAccountID)
+	rootAccount, err := a.Client.DataService().Global.RootAccount.GetBasicInfo(a.Cts.Kit, a.completeReq.RootAccountID)
 	if err != nil {
 		err := fmt.Errorf("cannot get root account info")
 		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
@@ -75,7 +75,7 @@ func (a *ApplicationOfCreateMainAccount) Complete() (enumor.ApplicationStatus, m
 		accountID, err = a.createForKaopu(&rootAccount.BaseRootAccount)
 	}
 	if err != nil {
-		logs.Errorf("create main account for [%s] failed, err: %v", a.req.Vendor, err)
+		logs.Errorf("create main account for [%s] failed, err: %v, rid: %s", a.req.Vendor, err, a.Cts.Kit.Rid)
 		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
 	}
 
@@ -125,7 +125,7 @@ func (a *ApplicationOfCreateMainAccount) createForAzure(rootAccount *protocore.B
 			BakManagers:       req.BakManagers,
 			Site:              req.Site,
 			BusinessType:      req.BusinessType,
-			Status:            "RUNNING",
+			Status:            enumor.MainAccountStatusRUNNING,
 			ParentAccountName: rootAccount.Name,
 			ParentAccountID:   rootAccount.ID,
 			DeptID:            req.DeptID,
@@ -161,7 +161,7 @@ func (a *ApplicationOfCreateMainAccount) createForHuaWei(rootAccount *protocore.
 			BakManagers:       req.BakManagers,
 			Site:              req.Site,
 			BusinessType:      req.BusinessType,
-			Status:            "RUNNING",
+			Status:            enumor.MainAccountStatusRUNNING,
 			ParentAccountName: rootAccount.Name,
 			ParentAccountID:   rootAccount.ID,
 			DeptID:            req.DeptID,
@@ -197,7 +197,7 @@ func (a *ApplicationOfCreateMainAccount) createForZenlayer(rootAccount *protocor
 			BakManagers:       req.BakManagers,
 			Site:              req.Site,
 			BusinessType:      req.BusinessType,
-			Status:            "RUNNING",
+			Status:            enumor.MainAccountStatusRUNNING,
 			ParentAccountName: rootAccount.Name,
 			ParentAccountID:   rootAccount.ID,
 			DeptID:            req.DeptID,
@@ -233,7 +233,7 @@ func (a *ApplicationOfCreateMainAccount) createForKaopu(rootAccount *protocore.B
 			BakManagers:       req.BakManagers,
 			Site:              req.Site,
 			BusinessType:      req.BusinessType,
-			Status:            "RUNNING",
+			Status:            enumor.MainAccountStatusRUNNING,
 			ParentAccountName: rootAccount.Name,
 			ParentAccountID:   rootAccount.ID,
 			DeptID:            req.DeptID,

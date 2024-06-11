@@ -38,44 +38,44 @@ func (s *service) Get(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// 查询该账号对应的Vendor
-	baseInfo, err := s.client.DataService().Global.RootAccount.GetBasicInfo(cts.Kit, nil, accountID)
+	baseInfo, err := s.client.DataService().Global.RootAccount.GetBasicInfo(cts.Kit, accountID)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	switch baseInfo.Vendor {
 	case enumor.Aws:
-		account, err := s.client.DataService().Aws.RootAccount.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
+		account, err := s.client.DataService().Aws.RootAccount.Get(cts.Kit, accountID)
 		if account != nil {
 			account.Extension.CloudSecretKey = ""
 		}
 		return account, err
 	case enumor.Gcp:
-		account, err := s.client.DataService().Gcp.RootAccount.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
+		account, err := s.client.DataService().Gcp.RootAccount.Get(cts.Kit, accountID)
 		if account != nil {
 			account.Extension.CloudServiceSecretKey = ""
 		}
 		return account, err
 	case enumor.Azure:
-		account, err := s.client.DataService().Azure.RootAccount.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
+		account, err := s.client.DataService().Azure.RootAccount.Get(cts.Kit, accountID)
 		if account != nil {
 			account.Extension.CloudClientSecretKey = ""
 		}
 		return account, err
 	case enumor.HuaWei:
-		account, err := s.client.DataService().HuaWei.RootAccount.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
+		account, err := s.client.DataService().HuaWei.RootAccount.Get(cts.Kit, accountID)
 		if account != nil {
 			account.Extension.CloudSecretKey = ""
 		}
 		return account, err
 	case enumor.Zenlayer:
-		account, err := s.client.DataService().Zenlayer.RootAccount.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
+		account, err := s.client.DataService().Zenlayer.RootAccount.Get(cts.Kit, accountID)
 		// zenlayer not support store secret info
 		// if account != nil {
 		// }
 		return account, err
 	case enumor.Kaopu:
-		account, err := s.client.DataService().Kaopu.RootAccount.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
+		account, err := s.client.DataService().Kaopu.RootAccount.Get(cts.Kit, accountID)
 		// kaopu not support store secret info
 		// if account != nil {
 		// }

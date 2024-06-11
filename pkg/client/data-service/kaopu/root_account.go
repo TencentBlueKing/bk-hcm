@@ -20,14 +20,10 @@
 package kaopu
 
 import (
-	"context"
-	"net/http"
-
 	"hcm/pkg/api/core"
 	protocore "hcm/pkg/api/core/account-set"
 	dataproto "hcm/pkg/api/data-service/account-set"
 	"hcm/pkg/client/common"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
@@ -55,50 +51,20 @@ func (a *RootAccountClient) Create(kt *kit.Kit,
 }
 
 // Get kaopu account detail.
-func (a *RootAccountClient) Get(ctx context.Context, h http.Header, accountID string) (
+func (a *RootAccountClient) Get(kt *kit.Kit, accountID string) (
 	*dataproto.RootAccountGetResult[protocore.KaopuRootAccountExtension], error,
 ) {
 
-	resp := new(dataproto.RootAccountGetResp[protocore.KaopuRootAccountExtension])
-
-	err := a.client.Get().
-		WithContext(ctx).
-		SubResourcef("/root_accounts/%s", accountID).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
+	return common.Request[common.Empty, dataproto.RootAccountGetResult[protocore.KaopuRootAccountExtension]](
+		a.client, rest.GET, kt, nil, "/root_accounts/%s", accountID)
 }
 
 // Update ...
-func (a *RootAccountClient) Update(ctx context.Context, h http.Header, accountID string,
+func (a *RootAccountClient) Update(kt *kit.Kit, accountID string,
 	request *dataproto.RootAccountUpdateReq[dataproto.KaopuRootAccountExtensionUpdateReq]) (
 	interface{}, error,
 ) {
-	resp := new(core.UpdateResp)
 
-	err := a.client.Patch().
-		WithContext(ctx).
-		Body(request).
-		SubResourcef("/root_accounts/%s", accountID).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
+	return common.Request[dataproto.RootAccountUpdateReq[dataproto.KaopuRootAccountExtensionUpdateReq], interface{}](
+		a.client, rest.PATCH, kt, nil, "/root_accounts/%s", accountID)
 }

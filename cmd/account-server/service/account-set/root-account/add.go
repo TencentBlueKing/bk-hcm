@@ -79,7 +79,7 @@ func (s *service) Add(cts *rest.Contexts) (interface{}, error) {
 		accountID, err = s.addForKaopu(cts, req)
 	}
 	if err != nil {
-		logs.Errorf("add root account for [%s] failed, err: %v", req.Vendor, err)
+		logs.Errorf("add root account for [%s] failed, err: %v, rid: %s", req.Vendor, err, cts.Kit.Rid)
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
@@ -92,7 +92,7 @@ func (s *service) Add(cts *rest.Contexts) (interface{}, error) {
 
 	if err = s.authorizer.RegisterResourceCreatorAction(cts.Kit, iamReq); err != nil {
 		err = fmt.Errorf("create account success, "+
-			"but add create action associate permissions failed, err: %v", err)
+			"but add create action associate permissions failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		logs.Errorf(err.Error())
 		return accountID, errf.NewFromErr(errf.Unknown, err)
 	}

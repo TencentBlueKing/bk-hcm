@@ -116,7 +116,7 @@ type MainAccountCreateReq[T MainAccountExtensionCreateReq] struct {
 	BakManagers       []string                       `json:"bak_managers" validate:"required"`
 	Site              enumor.MainAccountSiteType     `json:"site" validate:"required"`
 	BusinessType      enumor.MainAccountBusinessType `json:"business_type" validate:"required"`
-	Status            string                         `json:"status" validate:"required"`
+	Status            enumor.MainAccountStatus       `json:"status" validate:"required"`
 	ParentAccountName string                         `json:"parent_account_name" validate:"required"`
 	ParentAccountID   string                         `json:"parent_account_id" validate:"required"`
 	DeptID            int64                          `json:"dept_id" validate:"required"`
@@ -135,12 +135,12 @@ func (c *MainAccountCreateReq[T]) Validate() error {
 
 // MainAccountUpdateReq 不允许对extension更新，允许更新字段：负责人/备份负责人/组织架构/运营产品/业务，单独更新状态
 type MainAccountUpdateReq struct {
-	Managers    []string `json:"managers"`
-	BakManagers []string `json:"bak_managers"`
-	Status      string   `json:"status"`
-	DeptID      int64    `json:"dept_id"`
-	BkBizID     int64    `json:"bk_biz_id"`
-	OpProductID int64    `json:"op_product_id"`
+	Managers    []string                 `json:"managers"`
+	BakManagers []string                 `json:"bak_managers"`
+	Status      enumor.MainAccountStatus `json:"status"`
+	DeptID      int64                    `json:"dept_id"`
+	BkBizID     int64                    `json:"bk_biz_id"`
+	OpProductID int64                    `json:"op_product_id"`
 }
 
 // Validate ...

@@ -395,6 +395,7 @@ func (a *applicationSvc) CreateForCreateMainAccount(cts *rest.Contexts) (interfa
 
 // CreateForUpdateMainAccount ...
 func (a *applicationSvc) CreateForUpdateMainAccount(cts *rest.Contexts) (interface{}, error) {
+	// 固定remark，该接口没有备注字段，为了保持接口一致，这里固定
 	remark := "申请变更"
 	commReq := new(proto.CreateCommonReq)
 	commReq.Remark = &remark

@@ -31,6 +31,7 @@ import (
 	"hcm/pkg/dal/dao/orm"
 	table "hcm/pkg/dal/table/account-set"
 	"hcm/pkg/dal/table/types"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/json"
 
@@ -43,22 +44,32 @@ func (svc *service) CreateMainAccount(cts *rest.Contexts) (interface{}, error) {
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
+	var (
+		result interface{}
+		err    error
+	)
 	switch vendor {
 	case enumor.Aws:
-		return createAccount[dataproto.AwsMainAccountExtensionCreateReq](vendor, svc, cts)
+		result, err = createAccount[dataproto.AwsMainAccountExtensionCreateReq](vendor, svc, cts)
 	case enumor.Gcp:
-		return createAccount[dataproto.GcpMainAccountExtensionCreateReq](vendor, svc, cts)
+		result, err = createAccount[dataproto.GcpMainAccountExtensionCreateReq](vendor, svc, cts)
 	case enumor.HuaWei:
-		return createAccount[dataproto.HuaWeiMainAccountExtensionCreateReq](vendor, svc, cts)
+		result, err = createAccount[dataproto.HuaWeiMainAccountExtensionCreateReq](vendor, svc, cts)
 	case enumor.Azure:
-		return createAccount[dataproto.AzureMainAccountExtensionCreateReq](vendor, svc, cts)
+		result, err = createAccount[dataproto.AzureMainAccountExtensionCreateReq](vendor, svc, cts)
 	case enumor.Zenlayer:
-		return createAccount[dataproto.ZenlayerMainAccountExtensionCreateReq](vendor, svc, cts)
+		result, err = createAccount[dataproto.ZenlayerMainAccountExtensionCreateReq](vendor, svc, cts)
 	case enumor.Kaopu:
-		return createAccount[dataproto.KaopuMainAccountExtensionCreateReq](vendor, svc, cts)
+		result, err = createAccount[dataproto.KaopuMainAccountExtensionCreateReq](vendor, svc, cts)
 	default:
 		return nil, fmt.Errorf("unsupport %s vendor for now", vendor)
 	}
+
+	if err != nil {
+		logs.Errorf("create [%s] main account failed, err: %s, rid: %s", vendor, err, cts.Kit.Rid)
+		return nil, err
+	}
+	return result, nil
 }
 
 func createAccount[T dataproto.MainAccountExtensionCreateReq, PT dataproto.SecretEncryptor[T]](vendor enumor.Vendor,
@@ -92,7 +103,7 @@ func createAccount[T dataproto.MainAccountExtensionCreateReq, PT dataproto.Secre
 			BakManagers:       req.BakManagers,
 			Site:              string(req.Site),
 			BusinessType:      string(req.BusinessType),
-			Status:            req.Status,
+			Status:            string(req.Status),
 			ParentAccountName: req.ParentAccountName,
 			ParentAccountID:   req.ParentAccountID,
 			DeptID:            req.DeptID,
