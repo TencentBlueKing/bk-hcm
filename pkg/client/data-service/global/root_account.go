@@ -20,10 +20,11 @@
 package global
 
 import (
-	"context"
 	"net/http"
 
+	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/account-set"
+	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
@@ -65,25 +66,11 @@ func (a *RootAccountClient) GetBasicInfo(kt *kit.Kit, h http.Header, accountID s
 }
 
 // List ...
-func (a *RootAccountClient) List(ctx context.Context, h http.Header, request *dataproto.RootAccountListReq) (
+func (a *RootAccountClient) List(kt *kit.Kit, request *core.ListWithoutFieldReq) (
 	*dataproto.RootAccountListResult, error,
 ) {
-	resp := new(dataproto.RootAccountListResp)
 
-	err := a.client.Post().
-		WithContext(ctx).
-		Body(request).
-		SubResourcef("/root_accounts/list").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	if err != nil {
-		return nil, err
-	}
+	return common.Request[core.ListWithoutFieldReq, dataproto.RootAccountListResult](
+		a.client, rest.POST, kt, request, "/root_accounts/list")
 
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
 }

@@ -40,6 +40,10 @@ type MainAccountCommonCreateReq struct {
 
 // Validate ...
 func (req *MainAccountCommonCreateReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
 	if err := req.Vendor.Validate(); err != nil {
 		return err
 	}
@@ -82,6 +86,10 @@ type MainAccountCompleteReq struct {
 
 // Validate ...
 func (req *MainAccountCompleteReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
 	if err := req.Vendor.Validate(); err != nil {
 		return err
 	}
@@ -102,6 +110,10 @@ type MainAccountCommonUpdateReq struct {
 
 // Validate ...
 func (req *MainAccountCommonUpdateReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
 	if err := req.Vendor.Validate(); err != nil {
 		return err
 	}

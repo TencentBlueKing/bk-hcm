@@ -148,6 +148,7 @@ func getRootAccountFromTable(accountID string, svc *service, cts *rest.Contexts)
 func convertToRootAccountResult[T dataproto.RootAccountExtensionGetResp, PT dataproto.RootSecretDecryptor[T]](
 	baseRootAccount *protocore.BaseRootAccount, dbExtension tabletype.JsonField, svc *service,
 ) (*dataproto.RootAccountGetResult[T], error) {
+
 	extension := new(T)
 	err := json.UnmarshalFromString(string(dbExtension), extension)
 	if err != nil {

@@ -35,7 +35,7 @@ import (
 
 // ListRootAccount	list root account
 func (svc *service) ListRootAccount(cts *rest.Contexts) (interface{}, error) {
-	req := new(dataproto.RootAccountListReq)
+	req := new(core.ListWithoutFieldReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}

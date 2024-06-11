@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
@@ -42,10 +43,8 @@ func (s *service) Update(cts *rest.Contexts) (interface{}, error) {
 	}
 	accountID := cts.PathParameter("account_id").String()
 
-	action := meta.Update
-
 	// 校验用户有该账号的更新权限
-	if err := s.checkPermission(cts, action, accountID); err != nil {
+	if err := s.checkPermission(cts, meta.Update, accountID); err != nil {
 		return nil, err
 	}
 
@@ -69,7 +68,9 @@ func (s *service) Update(cts *rest.Contexts) (interface{}, error) {
 	case enumor.Kaopu:
 		return s.updateForKaopu(cts, req, accountID)
 	default:
-		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", baseInfo.Vendor))
+		err := fmt.Errorf("no support vendor: %s", baseInfo.Vendor)
+		logs.Errorf(err.Error())
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 }

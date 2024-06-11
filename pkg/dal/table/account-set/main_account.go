@@ -74,7 +74,7 @@ type MainAccountTable struct {
 	Site string `db:"site"`
 	// Type 账号类型(国内业务|国际业务)
 	BusinessType string `db:"business_type" json:"business_type"`
-	// Status
+	// Status 状态（RUNNING｜DELETED｜SUSPENDED｜）
 	Status string `db:"status" json:"status"`
 	// ParentAccountName 所属账号
 	ParentAccountName string `db:"parent_account_name" json:"parent_account_name"`
@@ -117,6 +117,42 @@ func (a MainAccountTable) InsertValidate() error {
 
 	if len(a.UpdatedAt) != 0 {
 		return errors.New("updated_at can not set")
+	}
+
+	if len(a.Vendor) == 0 {
+		return errors.New("vendor is required")
+	}
+
+	if len(a.CloudID) == 0 {
+		return errors.New("cloud_id is required")
+	}
+
+	if len(a.Email) == 0 {
+		return errors.New("email is required")
+	}
+
+	if len(a.Managers) == 0 {
+		return errors.New("managers is required")
+	}
+
+	if len(a.Site) == 0 {
+		return errors.New("site is required")
+	}
+
+	if len(a.BusinessType) == 0 {
+		return errors.New("business_type is required")
+	}
+
+	if len(a.Status) == 0 {
+		return errors.New("status is required")
+	}
+
+	if len(a.ParentAccountName) == 0 {
+		return errors.New("parent_account_name is required")
+	}
+
+	if len(a.ParentAccountID) == 0 {
+		return errors.New("parent_account_id is required")
 	}
 
 	return nil

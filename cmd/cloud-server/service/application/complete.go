@@ -48,10 +48,12 @@ func (a *applicationSvc) CompleteForCreateMainAccount(cts *rest.Contexts) (inter
 	// 查询单据
 	application, err := a.getApplicationBySN(cts, completeReq.SN)
 	if err != nil {
+		logs.Errorf("get application by sn failed, sn: %s, err: %s, rid: %s", completeReq.SN, err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	if application.Status != enumor.Delivering {
+		logs.Errorf("application status is not delivering, sn: %s, status: %s, rid: %s", completeReq.SN, application.Status, cts.Kit.Rid)
 		return nil, fmt.Errorf("application status is not delivering")
 	}
 

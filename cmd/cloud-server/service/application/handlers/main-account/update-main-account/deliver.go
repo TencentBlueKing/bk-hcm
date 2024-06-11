@@ -65,12 +65,12 @@ func (a *ApplicationOfUpdateMainAccount) update() error {
 		BkBizID:     oldAccount.BkBizID,
 	}
 
-	// 更新负责人
+	// 更新负责人，顺序变更时同样需要更新
 	if !reflect.DeepEqual(req.Managers, oldAccount.Managers) {
 		updateReq.Managers = req.Managers
 	}
 
-	// 更新备份负责人
+	// 更新备份负责人，顺序变更时同样需要更新
 	if !reflect.DeepEqual(req.BakManagers, oldAccount.BakManagers) {
 		updateReq.BakManagers = req.BakManagers
 	}

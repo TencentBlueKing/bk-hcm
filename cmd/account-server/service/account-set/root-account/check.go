@@ -21,12 +21,12 @@ package rootaccount
 
 import (
 	"fmt"
+
 	"hcm/pkg/api/core"
-	accountset "hcm/pkg/api/data-service/account-set"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 )
 
 // CheckDuplicateRootAccount 检查主账号是否重复
@@ -38,24 +38,12 @@ func CheckDuplicateRootAccount(cts *rest.Contexts, client *client.ClientSet, ven
 	mainAccountIDFieldName := vendor.GetMainAccountIDField()
 
 	result, err := client.DataService().Global.RootAccount.List(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&accountset.RootAccountListReq{
-			Filter: &filter.Expression{
-				Op: filter.And,
-				Rules: []filter.RuleFactory{
-					filter.AtomRule{
-						Field: "vendor",
-						Op:    filter.Equal.Factory(),
-						Value: string(vendor),
-					},
-					filter.AtomRule{
-						Field: fmt.Sprintf("extension.%s", mainAccountIDFieldName),
-						Op:    filter.JSONEqual.Factory(),
-						Value: mainAccountIDFieldValue,
-					},
-				},
-			},
+		cts.Kit,
+		&core.ListWithoutFieldReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleEqual("vendor", string(vendor)),
+				tools.RuleJSONEqual(fmt.Sprintf("extension.%s", mainAccountIDFieldName), mainAccountIDFieldValue),
+			),
 			Page: &core.BasePage{
 				Count: true,
 			},

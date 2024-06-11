@@ -19,20 +19,3 @@
 
 // Package accountset defines account-server api call protocols.
 package accountset
-
-import (
-	"hcm/pkg/api/core"
-	"hcm/pkg/criteria/validator"
-	"hcm/pkg/runtime/filter"
-)
-
-// MainAccountListReq ...
-type MainAccountListReq struct {
-	Filter *filter.Expression `json:"filter" validate:"required"`
-	Page   *core.BasePage     `json:"page" validate:"required"`
-}
-
-// Validate ...
-func (req *MainAccountListReq) Validate() error {
-	return validator.Validate.Struct(req)
-}

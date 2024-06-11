@@ -26,7 +26,9 @@ import (
 	"hcm/pkg/api/core"
 	protocore "hcm/pkg/api/core/account-set"
 	dataproto "hcm/pkg/api/data-service/account-set"
+	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -43,28 +45,13 @@ func NewMainAccountClient(client rest.ClientInterface) *MainAccountClient {
 }
 
 // Create ...
-func (a *MainAccountClient) Create(ctx context.Context, h http.Header,
+func (a *MainAccountClient) Create(kt *kit.Kit,
 	request *dataproto.MainAccountCreateReq[dataproto.HuaWeiMainAccountExtensionCreateReq]) (
 	*core.CreateResult, error,
 ) {
-	resp := new(core.CreateResp)
 
-	err := a.client.Post().
-		WithContext(ctx).
-		Body(request).
-		SubResourcef("/main_accounts/create").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
+	return common.Request[dataproto.MainAccountCreateReq[dataproto.HuaWeiMainAccountExtensionCreateReq], core.CreateResult](
+		a.client, rest.POST, kt, request, "/main_accounts/create")
 }
 
 // Get huawei account detail.

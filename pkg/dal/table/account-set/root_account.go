@@ -104,6 +104,30 @@ func (a RootAccountTable) InsertValidate() error {
 		return errors.New("updated_at can not set")
 	}
 
+	if len(a.Name) == 0 {
+		return errors.New("name is required")
+	}
+
+	if len(a.Vendor) == 0 {
+		return errors.New("vendor is required")
+	}
+
+	if len(a.CloudID) == 0 {
+		return errors.New("cloud_id is required")
+	}
+
+	if len(a.Email) == 0 {
+		return errors.New("email is required")
+	}
+
+	if len(a.Managers) == 0 {
+		return errors.New("managers is required")
+	}
+
+	if len(a.Site) == 0 {
+		return errors.New("site is required")
+	}
+
 	return nil
 }
 

@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/iam/sys"
+	"hcm/pkg/logs"
 )
 
 // Complete complete the application by manual.
@@ -74,6 +75,7 @@ func (a *ApplicationOfCreateMainAccount) Complete() (enumor.ApplicationStatus, m
 		accountID, err = a.createForKaopu(&rootAccount.BaseRootAccount)
 	}
 	if err != nil {
+		logs.Errorf("create main account for [%s] failed, err: %v", a.req.Vendor, err)
 		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
 	}
 
@@ -115,8 +117,7 @@ func (a *ApplicationOfCreateMainAccount) createForAzure(rootAccount *protocore.B
 	extension.EncryptSecretKey(a.Cipher)
 
 	result, err := a.Client.DataService().Azure.MainAccount.Create(
-		a.Cts.Kit.Ctx,
-		a.Cts.Kit.Header(),
+		a.Cts.Kit,
 		&dataproto.MainAccountCreateReq[dataproto.AzureMainAccountExtensionCreateReq]{
 			CloudID:           a.completeReq.Extension[a.Vendor().GetMainAccountIDFieldName()],
 			Email:             req.Email,
@@ -124,7 +125,7 @@ func (a *ApplicationOfCreateMainAccount) createForAzure(rootAccount *protocore.B
 			BakManagers:       req.BakManagers,
 			Site:              req.Site,
 			BusinessType:      req.BusinessType,
-			Status:            "SUCCESS",
+			Status:            "RUNNING",
 			ParentAccountName: rootAccount.Name,
 			ParentAccountID:   rootAccount.ID,
 			DeptID:            req.DeptID,
@@ -152,8 +153,7 @@ func (a *ApplicationOfCreateMainAccount) createForHuaWei(rootAccount *protocore.
 	extension.EncryptSecretKey(a.Cipher)
 
 	result, err := a.Client.DataService().HuaWei.MainAccount.Create(
-		a.Cts.Kit.Ctx,
-		a.Cts.Kit.Header(),
+		a.Cts.Kit,
 		&dataproto.MainAccountCreateReq[dataproto.HuaWeiMainAccountExtensionCreateReq]{
 			CloudID:           a.completeReq.Extension[a.Vendor().GetMainAccountIDFieldName()],
 			Email:             req.Email,
@@ -161,7 +161,7 @@ func (a *ApplicationOfCreateMainAccount) createForHuaWei(rootAccount *protocore.
 			BakManagers:       req.BakManagers,
 			Site:              req.Site,
 			BusinessType:      req.BusinessType,
-			Status:            "SUCCESS",
+			Status:            "RUNNING",
 			ParentAccountName: rootAccount.Name,
 			ParentAccountID:   rootAccount.ID,
 			DeptID:            req.DeptID,
@@ -189,8 +189,7 @@ func (a *ApplicationOfCreateMainAccount) createForZenlayer(rootAccount *protocor
 	extension.EncryptSecretKey(a.Cipher)
 
 	result, err := a.Client.DataService().Zenlayer.MainAccount.Create(
-		a.Cts.Kit.Ctx,
-		a.Cts.Kit.Header(),
+		a.Cts.Kit,
 		&dataproto.MainAccountCreateReq[dataproto.ZenlayerMainAccountExtensionCreateReq]{
 			CloudID:           a.completeReq.Extension[a.Vendor().GetMainAccountIDFieldName()],
 			Email:             req.Email,
@@ -198,7 +197,7 @@ func (a *ApplicationOfCreateMainAccount) createForZenlayer(rootAccount *protocor
 			BakManagers:       req.BakManagers,
 			Site:              req.Site,
 			BusinessType:      req.BusinessType,
-			Status:            "SUCCESS",
+			Status:            "RUNNING",
 			ParentAccountName: rootAccount.Name,
 			ParentAccountID:   rootAccount.ID,
 			DeptID:            req.DeptID,
@@ -226,8 +225,7 @@ func (a *ApplicationOfCreateMainAccount) createForKaopu(rootAccount *protocore.B
 	extension.EncryptSecretKey(a.Cipher)
 
 	result, err := a.Client.DataService().Kaopu.MainAccount.Create(
-		a.Cts.Kit.Ctx,
-		a.Cts.Kit.Header(),
+		a.Cts.Kit,
 		&dataproto.MainAccountCreateReq[dataproto.KaopuMainAccountExtensionCreateReq]{
 			CloudID:           a.completeReq.Extension[a.Vendor().GetMainAccountIDFieldName()],
 			Email:             req.Email,
@@ -235,7 +233,7 @@ func (a *ApplicationOfCreateMainAccount) createForKaopu(rootAccount *protocore.B
 			BakManagers:       req.BakManagers,
 			Site:              req.Site,
 			BusinessType:      req.BusinessType,
-			Status:            "SUCCESS",
+			Status:            "RUNNING",
 			ParentAccountName: rootAccount.Name,
 			ParentAccountID:   rootAccount.ID,
 			DeptID:            req.DeptID,

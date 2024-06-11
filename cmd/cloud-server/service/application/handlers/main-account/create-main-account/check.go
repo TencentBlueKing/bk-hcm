@@ -24,8 +24,8 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
-	dataproto "hcm/pkg/api/data-service/account-set"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/runtime/filter"
 )
 
@@ -52,11 +52,6 @@ func (a *ApplicationOfCreateMainAccount) CheckReq() error {
 		return fmt.Errorf("vendor [%s] is not supported", a.req.Vendor)
 	}
 
-	// 检查邮箱是否重复
-	if err := a.isDuplicateEmail(a.req.Vendor, a.req.Email); err != nil {
-		return err
-	}
-
 	// 检查参数
 	if len(a.req.Managers) < 1 || len(a.req.Managers) > 5 || len(a.req.BakManagers) < 1 || len(a.req.BakManagers) > 5 {
 		return fmt.Errorf("managers and backup managers length should be 1~5")
@@ -76,6 +71,11 @@ func (a *ApplicationOfCreateMainAccount) CheckReq() error {
 		return fmt.Errorf("extension[%s] is empty", a.req.Vendor.GetMainAccountNameFieldName())
 	}
 
+	// 检查邮箱是否重复
+	if err := a.isDuplicateEmail(a.req.Vendor, a.req.Email); err != nil {
+		return err
+	}
+
 	// 检查名称是否重复
 	if err := a.isDuplicateName(a.req.Vendor.GetMainAccountNameFieldName(), account_name); err != nil {
 		return err
@@ -85,38 +85,24 @@ func (a *ApplicationOfCreateMainAccount) CheckReq() error {
 }
 
 func (a *ApplicationOfCreateMainAccount) isDuplicateEmail(vendor enumor.Vendor, email string) error {
-	rules := []filter.RuleFactory{
-		filter.AtomRule{
-			Field: "email",
-			Op:    filter.Equal.Factory(),
-			Value: email,
-		},
-		filter.AtomRule{
-			Field: "vendor",
-			Op:    filter.Equal.Factory(),
-			Value: string(vendor),
-		},
+	rules := []*filter.AtomRule{
+		tools.RuleEqual("email", email),
+		tools.RuleEqual("vendor", string(vendor)),
 	}
 
-	return a.isDuplicateField(rules)
+	return a.isDuplicateField(rules...)
 }
 
 func (a *ApplicationOfCreateMainAccount) isDuplicateName(field, name string) error {
-	rules := []filter.RuleFactory{
-		filter.AtomRule{
-			Field: fmt.Sprintf("extension.%s", field),
-			Op:    filter.JSONEqual.Factory(),
-			Value: name,
-		},
-	}
+	rule := tools.RuleJSONEqual(fmt.Sprintf("extension.%s", field), name)
 
-	if err := a.isDuplicateField(rules); err != nil {
+	if err := a.isDuplicateField(rule); err != nil {
 		return fmt.Errorf("main account [%s] duplicate checking err, err: %s", name, err.Error())
 	}
 	return nil
 }
 
-func (a *ApplicationOfCreateMainAccount) isDuplicateField(rules []filter.RuleFactory) error {
+func (a *ApplicationOfCreateMainAccount) isDuplicateField(rules ...*filter.AtomRule) error {
 	if len(rules) == 0 {
 		return nil
 	}
@@ -124,13 +110,9 @@ func (a *ApplicationOfCreateMainAccount) isDuplicateField(rules []filter.RuleFac
 	// TODO: 后续需要解决并发问题
 	// 后台查询是否主账号重复
 	result, err := a.Client.DataService().Global.MainAccount.List(
-		a.Cts.Kit.Ctx,
-		a.Cts.Kit.Header(),
-		&dataproto.MainAccountListReq{
-			Filter: &filter.Expression{
-				Op:    filter.And,
-				Rules: rules,
-			},
+		a.Cts.Kit,
+		&core.ListWithoutFieldReq{
+			Filter: tools.ExpressionAnd(rules...),
 			Page: &core.BasePage{
 				Count: true,
 			},

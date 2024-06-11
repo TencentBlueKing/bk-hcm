@@ -22,9 +22,9 @@ package rootaccount
 import (
 	"fmt"
 
-	proto "hcm/pkg/api/account-server/account-set"
-	dataproto "hcm/pkg/api/data-service/account-set"
+	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
@@ -32,7 +32,7 @@ import (
 
 // List list main account with options
 func (s *service) List(cts *rest.Contexts) (interface{}, error) {
-	req := new(proto.RootAccountListReq)
+	req := new(core.ListWithoutFieldReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -57,12 +57,7 @@ func (s *service) List(cts *rest.Contexts) (interface{}, error) {
 	if isAny {
 		reqFilter = req.Filter
 	} else {
-		reqFilter = &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: accountIDs},
-			},
-		}
+		reqFilter = tools.ExpressionAnd(tools.RuleIn("id", accountIDs))
 		// 加上请求里过滤条件
 		if req.Filter != nil && !req.Filter.IsEmpty() {
 			reqFilter.Rules = append(reqFilter.Rules, req.Filter)
@@ -70,9 +65,8 @@ func (s *service) List(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	accounts, err := s.client.DataService().Global.RootAccount.List(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&dataproto.RootAccountListReq{
+		cts.Kit,
+		&core.ListWithoutFieldReq{
 			Filter: reqFilter,
 			Page:   req.Page,
 		},
@@ -87,6 +81,7 @@ func (s *service) List(cts *rest.Contexts) (interface{}, error) {
 
 func (s *service) listAuthorized(cts *rest.Contexts, action meta.Action,
 	typ meta.ResourceType) ([]string, bool, error) {
+
 	resources, err := s.authorizer.ListAuthorizedInstances(cts.Kit, &meta.ListAuthResInput{Type: typ,
 		Action: action})
 	if err != nil {

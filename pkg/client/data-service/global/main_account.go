@@ -25,6 +25,7 @@ import (
 
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/account-set"
+	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
@@ -66,27 +67,12 @@ func (a *MainAccountClient) GetBasicInfo(kt *kit.Kit, h http.Header, accountID s
 }
 
 // List ...
-func (a *MainAccountClient) List(ctx context.Context, h http.Header, request *dataproto.MainAccountListReq) (
+func (a *MainAccountClient) List(kt *kit.Kit, request *core.ListWithoutFieldReq) (
 	*dataproto.MainAccountListResult, error,
 ) {
-	resp := new(dataproto.MainAccountListResp)
 
-	err := a.client.Post().
-		WithContext(ctx).
-		Body(request).
-		SubResourcef("/main_accounts/list").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
+	return common.Request[core.ListWithoutFieldReq, dataproto.MainAccountListResult](
+		a.client, rest.POST, kt, request, "/main_accounts/list")
 }
 
 // Update ...
@@ -94,6 +80,7 @@ func (a *MainAccountClient) Update(ctx context.Context, h http.Header, accountID
 	request *dataproto.MainAccountUpdateReq) (
 	interface{}, error,
 ) {
+
 	resp := new(core.UpdateResp)
 
 	err := a.client.Patch().

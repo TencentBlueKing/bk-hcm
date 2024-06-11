@@ -27,10 +27,11 @@ import (
 	dataproto "hcm/pkg/api/data-service/account-set"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/iam/sys"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 )
 
 // Add get main account with options
@@ -78,6 +79,7 @@ func (s *service) Add(cts *rest.Contexts) (interface{}, error) {
 		accountID, err = s.addForKaopu(cts, req)
 	}
 	if err != nil {
+		logs.Errorf("add root account for [%s] failed, err: %v", req.Vendor, err)
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
@@ -89,8 +91,10 @@ func (s *service) Add(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	if err = s.authorizer.RegisterResourceCreatorAction(cts.Kit, iamReq); err != nil {
-		return accountID, errf.NewFromErr(errf.Unknown, fmt.Errorf("create account success, "+
-			"but add create action associate permissions failed, err: %v", err))
+		err = fmt.Errorf("create account success, "+
+			"but add create action associate permissions failed, err: %v", err)
+		logs.Errorf(err.Error())
+		return accountID, errf.NewFromErr(errf.Unknown, err)
 	}
 
 	return accountID, nil
@@ -100,19 +104,9 @@ func (s *service) isDuplicateName(cts *rest.Contexts, name string) error {
 	// TODO: 后续需要解决并发问题
 	// 后台查询是否主账号重复
 	result, err := s.client.DataService().Global.RootAccount.List(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&dataproto.RootAccountListReq{
-			Filter: &filter.Expression{
-				Op: filter.And,
-				Rules: []filter.RuleFactory{
-					filter.AtomRule{
-						Field: "name",
-						Op:    filter.Equal.Factory(),
-						Value: name,
-					},
-				},
-			},
+		cts.Kit,
+		&core.ListWithoutFieldReq{
+			Filter: tools.ExpressionAnd(tools.RuleEqual("name", name)),
 			Page: &core.BasePage{
 				Count: true,
 			},
@@ -131,8 +125,7 @@ func (s *service) isDuplicateName(cts *rest.Contexts, name string) error {
 
 func (s *service) addForAws(cts *rest.Contexts, req *proto.RootAccountAddReq) (string, error) {
 	result, err := s.client.DataService().Aws.RootAccount.Create(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
+		cts.Kit,
 		&dataproto.RootAccountCreateReq[dataproto.AwsRootAccountExtensionCreateReq]{
 			Name:        req.Name,
 			CloudID:     req.Extension["cloud_account_id"],
@@ -158,8 +151,7 @@ func (s *service) addForAws(cts *rest.Contexts, req *proto.RootAccountAddReq) (s
 
 func (s *service) addForGcp(cts *rest.Contexts, req *proto.RootAccountAddReq) (string, error) {
 	result, err := s.client.DataService().Gcp.RootAccount.Create(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
+		cts.Kit,
 		&dataproto.RootAccountCreateReq[dataproto.GcpRootAccountExtensionCreateReq]{
 			Name:        req.Name,
 			CloudID:     req.Extension["cloud_project_id"],
@@ -187,8 +179,7 @@ func (s *service) addForGcp(cts *rest.Contexts, req *proto.RootAccountAddReq) (s
 
 func (s *service) addForAzure(cts *rest.Contexts, req *proto.RootAccountAddReq) (string, error) {
 	result, err := s.client.DataService().Azure.RootAccount.Create(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
+		cts.Kit,
 		&dataproto.RootAccountCreateReq[dataproto.AzureRootAccountExtensionCreateReq]{
 			Name:        req.Name,
 			CloudID:     req.Extension["cloud_subscription_id"],
@@ -216,8 +207,7 @@ func (s *service) addForAzure(cts *rest.Contexts, req *proto.RootAccountAddReq) 
 
 func (s *service) addForHuaWei(cts *rest.Contexts, req *proto.RootAccountAddReq) (string, error) {
 	result, err := s.client.DataService().HuaWei.RootAccount.Create(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
+		cts.Kit,
 		&dataproto.RootAccountCreateReq[dataproto.HuaWeiRootAccountExtensionCreateReq]{
 			Name:        req.Name,
 			CloudID:     req.Extension["cloud_sub_account_id"],
@@ -245,8 +235,7 @@ func (s *service) addForHuaWei(cts *rest.Contexts, req *proto.RootAccountAddReq)
 
 func (s *service) addForZenlayer(cts *rest.Contexts, req *proto.RootAccountAddReq) (string, error) {
 	result, err := s.client.DataService().Zenlayer.RootAccount.Create(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
+		cts.Kit,
 		&dataproto.RootAccountCreateReq[dataproto.ZenlayerRootAccountExtensionCreateReq]{
 			Name:        req.Name,
 			CloudID:     req.Extension["cloud_account_id"],
@@ -269,8 +258,7 @@ func (s *service) addForZenlayer(cts *rest.Contexts, req *proto.RootAccountAddRe
 
 func (s *service) addForKaopu(cts *rest.Contexts, req *proto.RootAccountAddReq) (string, error) {
 	result, err := s.client.DataService().Kaopu.RootAccount.Create(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
+		cts.Kit,
 		&dataproto.RootAccountCreateReq[dataproto.KaopuRootAccountExtensionCreateReq]{
 			Name:        req.Name,
 			CloudID:     req.Extension["cloud_account_id"],

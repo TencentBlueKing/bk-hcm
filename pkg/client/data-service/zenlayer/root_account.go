@@ -26,7 +26,9 @@ import (
 	"hcm/pkg/api/core"
 	protocore "hcm/pkg/api/core/account-set"
 	dataproto "hcm/pkg/api/data-service/account-set"
+	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -43,28 +45,13 @@ func NewRootAccountClient(client rest.ClientInterface) *RootAccountClient {
 }
 
 // Create ...
-func (a *RootAccountClient) Create(ctx context.Context, h http.Header,
+func (a *RootAccountClient) Create(kt *kit.Kit,
 	request *dataproto.RootAccountCreateReq[dataproto.ZenlayerRootAccountExtensionCreateReq]) (
 	*core.CreateResult, error,
 ) {
-	resp := new(core.CreateResp)
 
-	err := a.client.Post().
-		WithContext(ctx).
-		Body(request).
-		SubResourcef("/root_accounts/create").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
+	return common.Request[dataproto.RootAccountCreateReq[dataproto.ZenlayerRootAccountExtensionCreateReq], core.CreateResult](
+		a.client, rest.POST, kt, request, "/root_accounts/create")
 }
 
 // Get zenlayer account detail.

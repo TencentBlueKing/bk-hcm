@@ -21,13 +21,11 @@
 package accountset
 
 import (
-	"hcm/pkg/api/core"
 	protocore "hcm/pkg/api/core/account-set"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/cryptography"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 )
 
 // -------------------------- Create --------------------------
@@ -284,16 +282,7 @@ type RootAccountGetResp[T RootAccountExtensionGetResp] struct {
 
 // -------------------------- List --------------------------
 
-// RootAccountListReq ...
-type RootAccountListReq struct {
-	Filter *filter.Expression `json:"filter" validate:"required"`
-	Page   *core.BasePage     `json:"page" validate:"required"`
-}
-
-// Validate ...
-func (l *RootAccountListReq) Validate() error {
-	return validator.Validate.Struct(l)
-}
+// use core.ListWithoutFileds
 
 // RootAccountListResult defines list main account result.
 type RootAccountListResult struct {

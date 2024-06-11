@@ -22,24 +22,13 @@ package accountset
 
 import (
 	"encoding/json"
-	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
-	"hcm/pkg/runtime/filter"
 )
 
 // -------------------------- List --------------------------
 
-// RootAccountListReq ...
-type RootAccountListReq struct {
-	Filter *filter.Expression `json:"filter" validate:"required"`
-	Page   *core.BasePage     `json:"page" validate:"required"`
-}
-
-// Validate ...
-func (req *RootAccountListReq) Validate() error {
-	return validator.Validate.Struct(req)
-}
+// use core.ListWithoutFields
 
 // -------------------------- Add --------------------------
 

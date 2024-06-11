@@ -122,6 +122,21 @@ func RuleGreaterThan(fieldName string, values any) *filter.AtomRule {
 	return &filter.AtomRule{Field: fieldName, Op: filter.GreaterThan.Factory(), Value: values}
 }
 
+// RuleJSONEqual 生成资源字段等于查询的AtomRule，即fieldName=value
+func RuleJSONEqual(fieldName string, value any) *filter.AtomRule {
+	return &filter.AtomRule{Field: fieldName, Op: filter.JSONEqual.Factory(), Value: value}
+}
+
+// RuleJSONNotEqual 生成资源字段等于查询的AtomRule，即fieldName!=value
+func RuleJSONNotEqual(fieldName string, value any) *filter.AtomRule {
+	return &filter.AtomRule{Field: fieldName, Op: filter.JSONNotEqual.Factory(), Value: value}
+}
+
+// RuleJsonIn 生成资源字段等于查询的AtomRule，即fieldName in values
+func RuleJsonIn[T any](fieldName string, values []T) *filter.AtomRule {
+	return &filter.AtomRule{Field: fieldName, Op: filter.JSONIn.Factory(), Value: values}
+}
+
 // ExpressionAnd expression with op and
 func ExpressionAnd(rules ...*filter.AtomRule) *filter.Expression {
 	// for type transformation

@@ -38,7 +38,7 @@ func (s *service) Get(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// 查询该账号对应的Vendor
-	baseInfo, err := s.client.DataService().Global.MainAccount.GetBasicInfo(cts.Kit, nil, accountID)
+	baseInfo, err := s.client.DataService().Global.MainAccount.GetBasicInfo(cts.Kit, cts.Kit.Header(), accountID)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}

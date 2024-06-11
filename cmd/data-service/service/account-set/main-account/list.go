@@ -35,7 +35,7 @@ import (
 
 // ListMainAccount list main account
 func (svc *service) ListMainAccount(cts *rest.Contexts) (interface{}, error) {
-	req := new(dataproto.MainAccountListReq)
+	req := new(core.ListWithoutFieldReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
