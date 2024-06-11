@@ -127,8 +127,8 @@ export default defineComponent({
           },
         });
       } else {
-        router.push({
-          path: route.path,
+        await router.push({
+          path: (route.meta.rootRoutePath as string) || route.path,
           query: {
             ...route.query,
             bizs: businessId.value,
