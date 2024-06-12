@@ -69,6 +69,8 @@ export interface IProp {
     resolvePaginationCountCb?: (...args: any) => Promise<any>;
     // 列表数据的路径，如 data.details
     dataPath?: string;
+    // 是否为全量数据
+    full?: boolean;
   };
   // 资源下筛选业务功能相关的 prop
   bizFilter?: FilterType;
@@ -131,7 +133,7 @@ export const useTable = (props: IProp) => {
       const [detailsRes, countRes] = await fetchData({ api, pagination, sort, order, filter, props, type });
 
       // 更新数据
-      dataList.value = lodash_get(detailsRes, props.requestOption.dataPath, []);
+      dataList.value = lodash_get(detailsRes, props.requestOption.dataPath, []) || [];
 
       // 异步处理 dataList
       if (typeof props.requestOption.resolveDataListCb === 'function') {
@@ -157,7 +159,7 @@ export const useTable = (props: IProp) => {
   };
 
   const CommonTable = defineComponent({
-    setup(_props, { slots }) {
+    setup(_props, { slots, expose }) {
       const searchData = computed(() => {
         return (
           (typeof props.searchOptions.searchData === 'function'
@@ -165,6 +167,10 @@ export const useTable = (props: IProp) => {
             : props.searchOptions.searchData) || []
         );
       });
+
+      const tableRef = ref();
+
+      expose({ tableRef });
 
       return () => (
         <div class={`remote-table-container${props.searchOptions.disabled ? ' no-search' : ''}`}>
@@ -183,12 +189,13 @@ export const useTable = (props: IProp) => {
           </section>
           <Loading loading={isLoading.value} class='loading-table-container'>
             <Table
+              ref={tableRef}
               class='table-container'
               data={dataList.value}
               rowKey='id'
               columns={props.tableOptions.columns}
               pagination={pagination}
-              remotePagination
+              remotePagination={!props.requestOption.full}
               showOverflowTooltip
               {...(props.tableOptions.extra || {})}
               onPageLimitChange={handlePageLimitChange}
