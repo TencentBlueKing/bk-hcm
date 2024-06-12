@@ -29,6 +29,7 @@ import (
 	"path/filepath"
 
 	cos "github.com/tencentyun/cos-go-sdk-v5"
+	"github.com/tencentyun/cos-go-sdk-v5/debug"
 )
 
 const (
@@ -63,6 +64,12 @@ func NewTCloudCOS() (*TCloudCOS, error) {
 		Transport: &cos.AuthorizationTransport{
 			SecretID:  id,
 			SecretKey: key,
+			Transport: &debug.DebugRequestTransport{
+				RequestHeader:  true,
+				RequestBody:    true,
+				ResponseHeader: true,
+				ResponseBody:   true,
+			},
 		},
 	})
 	_, err = client.Bucket.Head(context.Background())
@@ -112,7 +119,8 @@ func (t *TCloudCOS) Download(ctx context.Context, downloadPath string, w io.Writ
 func (t *TCloudCOS) ListItems(ctx context.Context, folderPath string) ([]string, error) {
 	folderPath = filepath.Join(t.prefix, folderPath)
 	opt := &cos.BucketGetOptions{
-		Prefix:    folderPath,
+		// filepath join之后，最后的斜杠会被去掉，这里需要加上，不然查不出来
+		Prefix:    folderPath + "/",
 		Delimiter: "/",
 		MaxKeys:   1000,
 	}

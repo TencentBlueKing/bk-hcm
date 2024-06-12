@@ -36,6 +36,7 @@ import (
 	"hcm/cmd/data-service/service/bill/billitem"
 	"hcm/cmd/data-service/service/bill/billpuller"
 	"hcm/cmd/data-service/service/bill/billsummary"
+	"hcm/cmd/data-service/service/bill/billsummaryroot"
 	"hcm/cmd/data-service/service/bill/billsummaryversion"
 	"hcm/cmd/data-service/service/bill/rawbill"
 	"hcm/cmd/data-service/service/capability"
@@ -52,14 +53,14 @@ import (
 	"hcm/cmd/data-service/service/cloud/eip"
 	eipcvmrel "hcm/cmd/data-service/service/cloud/eip-cvm-rel"
 	"hcm/cmd/data-service/service/cloud/image"
-	"hcm/cmd/data-service/service/cloud/load-balancer"
+	loadbalancer "hcm/cmd/data-service/service/cloud/load-balancer"
 	networkinterface "hcm/cmd/data-service/service/cloud/network-interface"
 	networkcvmrel "hcm/cmd/data-service/service/cloud/network-interface-cvm-rel"
 	"hcm/cmd/data-service/service/cloud/region"
 	resourcegroup "hcm/cmd/data-service/service/cloud/resource-group"
 	routetable "hcm/cmd/data-service/service/cloud/route-table"
-	sgcomrel "hcm/cmd/data-service/service/cloud/security-group-common-rel"
 	securitygroup "hcm/cmd/data-service/service/cloud/security-group"
+	sgcomrel "hcm/cmd/data-service/service/cloud/security-group-common-rel"
 	sgcvmrel "hcm/cmd/data-service/service/cloud/security-group-cvm-rel"
 	subaccount "hcm/cmd/data-service/service/cloud/sub-account"
 	sync "hcm/cmd/data-service/service/cloud/sync"
@@ -246,6 +247,7 @@ func (s *Service) apiSet() *restful.Container {
 	billitem.InitService(capability)
 	billdailytask.InitService(capability)
 	billadjustmentitem.InitService(capability)
+	billsummaryroot.InitService(capability)
 	if capability.ObjectStore != nil {
 		rawbill.InitService(capability)
 	}

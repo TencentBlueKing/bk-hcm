@@ -34,19 +34,19 @@ import (
 	"hcm/pkg/dal/dao/cloud"
 	daoselection "hcm/pkg/dal/dao/cloud-selection"
 	argstpl "hcm/pkg/dal/dao/cloud/argument-template"
-	"hcm/pkg/dal/dao/cloud/cert"
 	cloudbill "hcm/pkg/dal/dao/cloud/bill"
+	"hcm/pkg/dal/dao/cloud/cert"
 	"hcm/pkg/dal/dao/cloud/cvm"
 	"hcm/pkg/dal/dao/cloud/disk"
 	diskcvmrel "hcm/pkg/dal/dao/cloud/disk-cvm-rel"
 	"hcm/pkg/dal/dao/cloud/eip"
 	eipcvmrel "hcm/pkg/dal/dao/cloud/eip-cvm-rel"
 	cimage "hcm/pkg/dal/dao/cloud/image"
-	"hcm/pkg/dal/dao/cloud/load-balancer"
+	loadbalancer "hcm/pkg/dal/dao/cloud/load-balancer"
 	networkinterface "hcm/pkg/dal/dao/cloud/network-interface"
 	nicvmrel "hcm/pkg/dal/dao/cloud/network-interface-cvm-rel"
 	"hcm/pkg/dal/dao/cloud/region"
-	"hcm/pkg/dal/dao/cloud/resource-flow"
+	resflow "hcm/pkg/dal/dao/cloud/resource-flow"
 	resourcegroup "hcm/pkg/dal/dao/cloud/resource-group"
 	routetable "hcm/pkg/dal/dao/cloud/route-table"
 	securitygroup "hcm/pkg/dal/dao/cloud/security-group"
@@ -112,6 +112,7 @@ type Set interface {
 	AccountBillSummaryVersion() bill.AccountBillSummaryVersion
 	AccountBillItem() bill.AccountBillItem
 	AccountBillAdjustmentItem() bill.AccountBillAdjustmentItem
+	AccountBillSummaryRoot() bill.AccountBillSummaryRoot
 	AsyncFlow() daoasync.AsyncFlow
 	AsyncFlowTask() daoasync.AsyncFlowTask
 	UserCollection() daouser.Interface
@@ -541,6 +542,14 @@ func (s *set) AccountBillItem() bill.AccountBillItem {
 // AccountBillAdjustmentItem returns AccountBillAdjustmentItem dao.
 func (s *set) AccountBillAdjustmentItem() bill.AccountBillAdjustmentItem {
 	return &bill.AccountBillAdjustmentItemDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+	}
+}
+
+// AccountBillSummaryRoot returns AccountBillSummaryRoot dao.
+func (s *set) AccountBillSummaryRoot() bill.AccountBillSummaryRoot {
+	return &bill.AccountBillSummaryRootDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 	}

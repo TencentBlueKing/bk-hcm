@@ -17,42 +17,44 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package rawbill ...
-package rawbill
+package types
 
 import (
-	"net/http"
+	"fmt"
 
-	"hcm/cmd/data-service/service/capability"
-	"hcm/pkg/dal/objectstore"
-	"hcm/pkg/rest"
+	"database/sql/driver"
+
+	"github.com/shopspring/decimal"
 )
 
-// InitService initialize the raw bill service
-func InitService(cap *capability.Capability) {
-	svc := &service{
-		ostore: cap.ObjectStore,
-	}
-	h := rest.NewHandler()
-	h.Add(
-		"CreateRawBill",
-		http.MethodPost,
-		"bills/rawbills",
-		svc.CreateRawBill)
-	h.Add(
-		"ListRawBill",
-		http.MethodGet,
-		"bills/rawbills/{vendor}/{root_account_id}/{account_id}/{bill_year}/{bill_month}/{version}/{bill_date}",
-		svc.ListRawBill)
-	h.Add(
-		"QueryRawBillDetail",
-		http.MethodGet,
-		"bills/rawbills/{vendor}/{root_account_id}/{account_id}/{bill_year}/{bill_month}/{version}/{bill_date}/{bill_name}",
-		svc.QueryRawBillDetail)
-
-	h.Load(cap.WebService)
+// Decimal is wrapper for
+type Decimal struct {
+	decimal.Decimal
 }
 
-type service struct {
-	ostore objectstore.Storage
+// Scan is used to decode raw message which is read from db into
+func (d *Decimal) Scan(raw interface{}) error {
+	if raw == nil {
+		return nil
+	}
+	data := ""
+	switch v := raw.(type) {
+	case []byte:
+		data = string(v)
+	case string:
+		data = v
+	default:
+		return fmt.Errorf("unsupported decimal raw type: %T", v)
+	}
+	internalDecimal, err := decimal.NewFromString(data)
+	if err != nil {
+		return fmt.Errorf("parse decimal %s failed, err %s", data, err.Error())
+	}
+	d.Decimal = internalDecimal
+	return nil
+}
+
+// Value encode the Decimal to a json raw, so that it can be stored to db with json raw.
+func (d *Decimal) Value() (driver.Value, error) {
+	return d.String(), nil
 }
