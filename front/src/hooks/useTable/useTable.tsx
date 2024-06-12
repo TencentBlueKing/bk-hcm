@@ -177,7 +177,7 @@ export const useTable = (props: IProp) => {
       });
 
       return () => (
-        <div class={`remote-table-container${props.searchOptions.disabled ? ' no-search' : ''}`}>
+        <div class={`remote-table-container${props.searchOptions.disabled && !slots.operation ? ' no-top-bar' : ''}`}>
           <section class='operation-wrap'>
             {slots.operation && <div class='operate-btn-groups'>{slots.operation?.()}</div>}
             {!props.searchOptions.disabled && (
