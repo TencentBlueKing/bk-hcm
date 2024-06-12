@@ -19,10 +19,30 @@
 
 package mainaccount
 
-import "hcm/pkg/rest"
+import "hcm/pkg/thirdparty/api-gateway/itsm"
 
-// Get get main account with options
-func (a *service) Get(cts *rest.Contexts) (interface{}, error) {
-	//todo
-	return nil, nil
+// PrepareReq 预处理申请单数据
+func (a *ApplicationOfUpdateMainAccount) PrepareReq() error {
+	// 二级账号变更不包含敏感信息，无需处理
+	return nil
+}
+
+// GenerateApplicationContent 生成存储到DB的申请单content的内容，Interface格式，便于统一处理
+func (a *ApplicationOfUpdateMainAccount) GenerateApplicationContent() interface{} {
+	return a.req
+}
+
+// PrepareReqFromContent 申请单内容从DB里获取后可以进行预处理，便于资源交付时资源请求
+func (a *ApplicationOfUpdateMainAccount) PrepareReqFromContent() error {
+	return nil
+}
+
+// GetItsmApprover 获取itsm审批人信息
+func (a *ApplicationOfUpdateMainAccount) GetItsmApprover(managers []string) []itsm.VariableApprover {
+	return []itsm.VariableApprover{
+		{
+			Variable:  "platform_manager",
+			Approvers: managers,
+		},
+	}
 }

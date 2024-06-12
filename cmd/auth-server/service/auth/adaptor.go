@@ -100,6 +100,10 @@ func AdaptAuthOptions(a *meta.ResourceAttribute) (client.ActionID, []client.Reso
 		return genTargetGroupResource(a)
 	case meta.UrlRuleAuditResType:
 		return genUrlRuleResource(a)
+	case meta.MainAccount:
+		return genMainAccountRuleResource(a)
+	case meta.RootAccount:
+		return genRootAccountRuleResource(a)
 
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm auth type: %s", a.Basic.Type)

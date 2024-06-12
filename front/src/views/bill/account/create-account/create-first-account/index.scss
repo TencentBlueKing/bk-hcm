@@ -1,0 +1,102 @@
+.create-first-account-wrapper {
+  width: calc(100% - 239px);
+
+  .header-title {
+    font-family: MicrosoftYaHei;
+    font-size: 16px;
+    color: #313238;
+    letter-spacing: 0;
+    line-height: 24px;
+    padding: 14px 5px;
+    display: flex;
+    align-items: center;
+  }
+
+  .info-card {
+    margin: 12px 24px;
+    width: calc(83.5vw);
+
+    &:first-of-type {
+      margin-top: 76px;
+    }
+
+    &:last-of-type {
+      margin-bottom: 16px;
+    }
+
+    .account-vendor-selector {
+      display: grid;
+      grid-template-columns: repeat(5, 120px);
+      column-gap: 12px;
+
+      .account-vendor-option {
+        width: 120px;
+        height: 40px;
+        background: #f5f7fa;
+        border-radius: 2px;
+        display: flex;
+        align-items: center;
+        padding: 4px 7px 4px 4px;
+        cursor: pointer;
+
+        .account-vendor-option-icon {
+          margin-right: 8px;
+          padding: 5px;
+          width: 32px;
+          height: 32px;
+          background-color: #fff;
+        }
+
+        .account-vendor-option-text {
+          font-size: 12px;
+          color: #313238;
+        }
+      }
+
+      .account-vendor-option-active {
+        background-color: #e1ecff;
+
+        .active-icon {
+          margin-left: auto;
+        }
+      }
+    }
+
+    .account-form-card-content {
+      width: 560px;
+      .account-manager-wrapper {
+        width: 100%;
+        display: flex;
+        align-items: center;
+
+        .account-manager {
+          flex: 1;
+        }
+      }
+    }
+
+    .api-secret-header {
+      display: flex;
+      align-items: center;
+      .account-form-card-title {
+        font-size: 14px;
+        color: #313238;
+        letter-spacing: 0;
+        margin-right: 16px;
+      }
+      .header-text {
+        font-weight: normal;
+        margin-left: 9px;
+        color: #63656E;
+        font-size: 12px;
+      }
+      .header-btn {
+        font-size: 12px;
+      }
+
+      .btn-guide-wrap {
+        display: none;
+      }
+    }
+  }
+}

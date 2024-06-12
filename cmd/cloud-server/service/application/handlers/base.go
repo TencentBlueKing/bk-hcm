@@ -115,3 +115,8 @@ func (a *BaseApplicationHandler) GetItsmPlatformAndAccountApprover(managers []st
 
 	return allManagers
 }
+
+// Complete complete the application by manual.
+func (a *BaseApplicationHandler) Complete() (status enumor.ApplicationStatus, deliverDetail map[string]interface{}, err error) {
+	return enumor.DeliverError, map[string]interface{}{}, fmt.Errorf("not implemented")
+}

@@ -1,0 +1,144 @@
+.create-second-account-wrapper {
+
+  .header-title {
+    font-family: MicrosoftYaHei;
+    font-size: 16px;
+    color: #313238;
+    letter-spacing: 0;
+    line-height: 24px;
+    padding: 14px 5px;
+    display: flex;
+    align-items: center;
+  }
+
+  .left-container {
+    height: calc(100vh - 120px);
+    padding-right: 48px;
+    margin-top: 68px;
+    overflow: scroll;
+
+    .mr-24 {
+      margin-right: -24px;
+    }
+
+    .info-card {
+      margin: 12px 24px;
+
+      &:last-of-type {
+        margin-bottom: 16px;
+      }
+
+      .account-vendor-selector {
+        display: grid;
+        grid-template-columns: repeat(5, 120px);
+        column-gap: 12px;
+
+        .account-vendor-option {
+          width: 120px;
+          height: 40px;
+          background: #f5f7fa;
+          border-radius: 2px;
+          display: flex;
+          align-items: center;
+          padding: 4px 7px 4px 4px;
+          cursor: pointer;
+
+          .account-vendor-option-icon {
+            margin-right: 8px;
+            padding: 5px;
+            width: 32px;
+            height: 32px;
+            background-color: #fff;
+          }
+
+          .account-vendor-option-text {
+            font-size: 12px;
+            color: #313238;
+          }
+        }
+
+        .account-vendor-option-active {
+          background-color: #e1ecff;
+
+          .active-icon {
+            margin-left: auto;
+          }
+        }
+      }
+
+      .email-tip {
+        font-size: 12px;
+        color: #63656E;
+        display: flex;
+        align-items: center;
+
+        .email-tip-icon {
+          color: #EA3636;
+          font-size: 14px;
+          margin-right: 9px;
+        }
+      }
+
+      .evaluation-wrapper {
+        display: flex;
+        align-items: center;
+        width: 245px;
+
+        .evaluation-suffix {
+          width: 50px;
+          margin-left: 8px;
+        }
+      }
+
+      .account-form-card-content {
+        width: 560px;
+
+        .account-manager-wrapper {
+          width: 100%;
+          display: flex;
+          align-items: center;
+
+          .account-manager {
+            flex: 1;
+          }
+        }
+      }
+    }
+  }
+
+  .right-container {
+    margin-top: 52px;
+    background-color: #fff;
+    height: calc(100vh - 104px);
+    padding: 12px 24px;
+
+    .header {
+      height: 48px;
+      display: flex;
+      align-items: center;
+
+      .title {
+        font-size: 14px;
+        color: #313238;
+      }
+
+      .link {
+        font-size: 12px;
+        margin-left: auto;
+      }
+    }
+
+    .info-block {
+      margin-top: 4px;
+      font-size: 12px;
+
+      .info-title {
+        font-weight: 700;
+        font-size: 14px;
+        color: #63656E;
+        margin-bottom: 8px;
+      }
+    }
+  }
+
+}

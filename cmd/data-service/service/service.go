@@ -28,6 +28,8 @@ import (
 	"strconv"
 	"time"
 
+	mainaccount "hcm/cmd/data-service/service/account-set/main-account"
+	rootaccount "hcm/cmd/data-service/service/account-set/root-account"
 	"hcm/cmd/data-service/service/application"
 	"hcm/cmd/data-service/service/audit"
 	"hcm/cmd/data-service/service/auth"
@@ -237,6 +239,21 @@ func (s *Service) apiSet() *restful.Container {
 	user.InitService(capability)
 	cloudselection.InitService(capability)
 	argstpl.InitService(capability)
+	cert.InitService(capability)
+	loadbalancer.InitService(capability)
+	sgcomrel.InitService(capability)
+	mainaccount.InitService(capability)
+	rootaccount.InitService(capability)
+
+	billpuller.InitService(capability)
+	billsummary.InitService(capability)
+	billsummaryversion.InitService(capability)
+	billitem.InitService(capability)
+	billdailytask.InitService(capability)
+	billadjustmentitem.InitService(capability)
+	if capability.ObjectStore != nil {
+		rawbill.InitService(capability)
+	}
 	cert.InitService(capability)
 	loadbalancer.InitService(capability)
 	sgcomrel.InitService(capability)

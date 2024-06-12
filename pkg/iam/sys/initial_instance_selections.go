@@ -46,5 +46,27 @@ func GenerateStaticInstanceSelections() []client.InstanceSelection {
 				},
 			},
 		},
+		{
+			ID:     MainAccountSelection,
+			Name:   "二级账号列表",
+			NameEn: "Main Account List",
+			ResourceTypeChain: []client.ResourceChain{
+				{
+					SystemID: SystemIDHCM,
+					ID:       MainAccount,
+				},
+			},
+		},
+		{
+			ID:     RootAccountSelection,
+			Name:   "一级账号列表",
+			NameEn: "Root Account List",
+			ResourceTypeChain: []client.ResourceChain{
+				{
+					SystemID: SystemIDHCM,
+					ID:       RootAccount,
+				},
+			},
+		},
 	}
 }

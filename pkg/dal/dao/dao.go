@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"hcm/pkg/cc"
+	accountset "hcm/pkg/dal/dao/account-set"
 	"hcm/pkg/dal/dao/application"
 	daoasync "hcm/pkg/dal/dao/async"
 	"hcm/pkg/dal/dao/audit"
@@ -130,6 +131,8 @@ type Set interface {
 	ResourceFlowRel() resflow.ResourceFlowRelInterface
 	ResourceFlowLock() resflow.ResourceFlowLockInterface
 	SGCommonRel() sgcomrel.Interface
+	MainAccount() accountset.MainAccount
+	RootAccount() accountset.RootAccount
 
 	Txn() *Txn
 }
@@ -697,5 +700,23 @@ func (s *set) ResourceFlowLock() resflow.ResourceFlowLockInterface {
 func (s *set) SGCommonRel() sgcomrel.Interface {
 	return &sgcomrel.Dao{
 		Orm: s.orm,
+	}
+}
+
+// MainAccount return mainaccount dao
+func (s *set) MainAccount() accountset.MainAccount {
+	return &accountset.MainAccountDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
+// RootAccount return rootaccount dao
+func (s *set) RootAccount() accountset.RootAccount {
+	return &accountset.RootAccountDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
 	}
 }

@@ -36,6 +36,8 @@ type Client struct {
 	RouteTable    *RouteTableClient
 	Bill          *BillClient
 	SubAccount    *SubAccountClient
+	MainAccount   *MainAccountClient
+	RootAccount   *RootAccountClient
 }
 
 type restClient struct {
@@ -56,5 +58,7 @@ func NewClient(client rest.ClientInterface) *Client {
 		RouteTable:    NewRouteTableClient(client),
 		Bill:          NewBillClient(client),
 		SubAccount:    NewSubAccountClient(client),
+		MainAccount:   NewMainAccountClient(client),
+		RootAccount:   NewRootAccountClient(client),
 	}
 }

@@ -36,6 +36,8 @@ type Client struct {
 	RouteTable       *RouteTableClient
 	NetworkInterface *NetworkInterfaceClient
 	SubAccount       *SubAccountClient
+	MainAccount      *MainAccountClient
+	RootAccount      *RootAccountClient
 }
 
 type restClient struct {
@@ -56,5 +58,7 @@ func NewClient(client rest.ClientInterface) *Client {
 		RouteTable:       NewRouteTableClient(client),
 		NetworkInterface: NewNetworkInterfaceClient(client),
 		SubAccount:       NewSubAccountClient(client),
+		MainAccount:      NewMainAccountClient(client),
+		RootAccount:      NewRootAccountClient(client),
 	}
 }

@@ -37,6 +37,7 @@ const (
 	envTCloudCOSSecretID  = "TCLOUD_COS_SECRET_ID"
 	envTCloudCOSSecretKey = "TCLOUD_COS_SECRET_KEY"
 	envTCloudCOSBucketURL = "TCLOUD_COS_BUCKET_URL"
+	envTCloudCOSDebug     = "TCLOUD_COS_DEBUG"
 )
 
 // TCloudCOS tcloud cos client
@@ -60,17 +61,20 @@ func NewTCloudCOS() (*TCloudCOS, error) {
 		return nil, fmt.Errorf("parse bucket url %s failed, err %s", bucketURL, err.Error())
 	}
 	b := &cos.BaseURL{BucketURL: u}
+	transport := &cos.AuthorizationTransport{
+		SecretID:  id,
+		SecretKey: key,
+	}
+	if os.Getenv(envTCloudCOSDebug) == "true" {
+		transport.Transport = &debug.DebugRequestTransport{
+			RequestHeader:  true,
+			RequestBody:    true,
+			ResponseHeader: true,
+			ResponseBody:   true,
+		}
+	}
 	client := cos.NewClient(b, &http.Client{
-		Transport: &cos.AuthorizationTransport{
-			SecretID:  id,
-			SecretKey: key,
-			Transport: &debug.DebugRequestTransport{
-				RequestHeader:  true,
-				RequestBody:    true,
-				ResponseHeader: true,
-				ResponseBody:   true,
-			},
-		},
+		Transport: transport,
 	})
 	_, err = client.Bucket.Head(context.Background())
 	if err != nil {

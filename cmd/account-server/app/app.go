@@ -35,8 +35,6 @@ import (
 	"hcm/pkg/serviced"
 )
 
-const shutdownWaitTimeSec = 60
-
 // Run start the account server.
 func Run(opt *options.Option) error {
 	as := new(accountServer)
@@ -53,7 +51,7 @@ func Run(opt *options.Option) error {
 	}
 
 	shutdown.RegisterFirstShutdown(as.finalizer)
-	shutdown.WaitShutdown(shutdownWaitTimeSec)
+	shutdown.WaitShutdown(60)
 	return nil
 }
 
@@ -89,7 +87,7 @@ func (ds *accountServer) prepare(opt *options.Option) error {
 	ds.sd = sd
 
 	// init service.
-	svc, err := service.NewService(sd, shutdownWaitTimeSec)
+	svc, err := service.NewService(sd)
 	if err != nil {
 		return fmt.Errorf("initialize service failed, err: %v", err)
 	}

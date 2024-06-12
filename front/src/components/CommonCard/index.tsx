@@ -1,11 +1,11 @@
 import { Card } from 'bkui-vue';
-import { PropType, defineComponent } from 'vue';
+import { PropType, VNode, defineComponent } from 'vue';
 import './index.scss';
 
 export default defineComponent({
   props: {
     title: {
-      type: Function as PropType<() => string | HTMLElement>,
+      type: Function as PropType<() => string | VNode>,
       required: true,
     },
     layout: {
