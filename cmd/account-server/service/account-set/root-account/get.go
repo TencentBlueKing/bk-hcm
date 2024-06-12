@@ -32,8 +32,8 @@ import (
 func (s *service) Get(cts *rest.Contexts) (interface{}, error) {
 	accountID := cts.PathParameter("account_id").String()
 
-	// 校验用户有该账号的查看权限
-	if err := s.checkPermission(cts, meta.Find, accountID); err != nil {
+	// 校验用户有一级账号管理权限
+	if err := s.checkPermission(cts, meta.RootAccount, meta.Find); err != nil {
 		return nil, err
 	}
 

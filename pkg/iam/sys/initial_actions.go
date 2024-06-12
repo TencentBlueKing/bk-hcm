@@ -73,19 +73,6 @@ var (
 			},
 		},
 	}
-
-	rootaccountResource = []client.RelateResourceType{
-		{
-			SystemID: SystemIDHCM,
-			ID:       RootAccount,
-			InstanceSelections: []client.RelatedInstanceSelection{
-				{
-					SystemID: SystemIDHCM,
-					ID:       RootAccountSelection,
-				},
-			},
-		},
-	}
 )
 
 // GenerateStaticActions return need to register action.
@@ -506,7 +493,16 @@ func genPlatformManageActions() []client.ResourceAction {
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
 		Version:              1,
-	}}
+	}, {
+		ID:                   RootAccountManage,
+		Name:                 ActionIDNameMap[RootAccountManage],
+		NameEn:               "Root Account Manage",
+		Type:                 View,
+		RelatedResourceTypes: nil,
+		RelatedActions:       nil,
+		Version:              1,
+	},
+	}
 }
 
 func genAccountManageActions() []client.ResourceAction {
@@ -538,32 +534,5 @@ func genAccountManageActions() []client.ResourceAction {
 	},
 	}
 
-	// RootAccount
-	actions = append(actions, []client.ResourceAction{{
-		ID:                   RootAccountFind,
-		Name:                 ActionIDNameMap[RootAccountFind],
-		NameEn:               "Find RootAccount",
-		Type:                 View,
-		RelatedResourceTypes: rootaccountResource,
-		RelatedActions:       nil,
-		Version:              1,
-	}, {
-		ID:                   RootAccountImport,
-		Name:                 ActionIDNameMap[RootAccountImport],
-		NameEn:               "Create RootAccount",
-		Type:                 Create,
-		RelatedResourceTypes: nil,
-		RelatedActions:       nil,
-		Version:              1,
-	}, {
-		ID:                   RootAccountEdit,
-		Name:                 ActionIDNameMap[RootAccountEdit],
-		NameEn:               "Edit RootAccount",
-		Type:                 Edit,
-		RelatedResourceTypes: rootaccountResource,
-		RelatedActions:       nil,
-		Version:              1,
-	},
-	}...)
 	return actions
 }

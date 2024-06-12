@@ -43,7 +43,7 @@ func (s *service) Update(cts *rest.Contexts) (interface{}, error) {
 	accountID := cts.PathParameter("account_id").String()
 
 	// 校验用户有该账号的更新权限
-	if err := s.checkPermission(cts, meta.Update, accountID); err != nil {
+	if err := s.checkPermission(cts, meta.RootAccount, meta.Find); err != nil {
 		return nil, err
 	}
 

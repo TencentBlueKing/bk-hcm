@@ -57,23 +57,21 @@ type service struct {
 	audit      audit.Interface
 }
 
-func (s *service) checkPermission(cts *rest.Contexts, action meta.Action, accountID string) error {
-	return s.checkPermissions(cts, action, []string{accountID})
+func (s *service) checkPermission(cts *rest.Contexts, resType meta.ResourceType, action meta.Action) error {
+	return s.checkPermissions(cts, resType, action)
 }
 
-func (s *service) checkPermissions(cts *rest.Contexts, action meta.Action, accountIDs []string) error {
-	resources := make([]meta.ResourceAttribute, 0, len(accountIDs))
-	for _, accountID := range accountIDs {
-		resources = append(resources, meta.ResourceAttribute{
-			Basic: &meta.Basic{
-				Type:       meta.RootAccount,
-				Action:     action,
-				ResourceID: accountID,
-			},
-		})
-	}
+// checkPermissions check permissions
+func (s *service) checkPermissions(cts *rest.Contexts, resType meta.ResourceType, action meta.Action) error {
+	resources := make([]meta.ResourceAttribute, 0)
+	resources = append(resources, meta.ResourceAttribute{
+		Basic: &meta.Basic{
+			Type:   resType,
+			Action: action,
+		},
+	})
 
-	decisions, authorized, err := s.authorizer.Authorize(cts.Kit, resources...)
+	_, authorized, err := s.authorizer.Authorize(cts.Kit, resources...)
 	if err != nil {
 		return errf.NewFromErr(
 			errf.PermissionDenied,
@@ -82,18 +80,7 @@ func (s *service) checkPermissions(cts *rest.Contexts, action meta.Action, accou
 	}
 
 	if !authorized {
-		// 查询无权限的ID列表，用于提示
-		unauthorizedIDs := make([]string, 0, len(accountIDs))
-		for index, d := range decisions {
-			if !d.Authorized && index < len(accountIDs) {
-				unauthorizedIDs = append(unauthorizedIDs, accountIDs[index])
-			}
-		}
-
-		return errf.NewFromErr(
-			errf.PermissionDenied,
-			fmt.Errorf("you have not permission of %s accounts(ids=%v)", action, unauthorizedIDs),
-		)
+		return errf.NewFromErr(errf.PermissionDenied, fmt.Errorf("you have not permission of %s", action))
 	}
 
 	return nil
