@@ -1,0 +1,50 @@
+.bill-manage-module {
+  height: 100%;
+
+  .header-container {
+    padding: 12px 24px 0;
+    background-color: #fff;
+    box-shadow: 0 3px 4px 0 #0000000a;
+
+    .title-wrap {
+      display: flex;
+      align-items: center;
+
+      .title {
+        margin-right: 22px;
+        font-size: 16px;
+        color: #313238;
+      }
+
+      .bk-date-picker {
+        width: 120px;
+
+        .bk-date-picker-editor {
+          background: #f0f1f5;
+        }
+      }
+    }
+
+    .link-wrap {
+      margin-top: 3px;
+      .link-item {
+        display: inline-block;
+        margin-right: 24px;
+        padding: 0 8px;
+        height: 41px;
+        line-height: 41px;
+        font-size: 14px;
+        color: #63656e;
+
+        &.active {
+          color: #3a84ff;
+          border-bottom: 2px solid #3a84ff;
+        }
+      }
+    }
+  }
+
+  .main-container {
+    height: calc(100% - 88px);
+  }
+}
