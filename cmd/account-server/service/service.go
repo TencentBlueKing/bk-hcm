@@ -29,6 +29,8 @@ import (
 	"time"
 
 	logicaudit "hcm/cmd/account-server/logics/audit"
+	mainaccount "hcm/cmd/account-server/service/account-set/main-account"
+	rootaccount "hcm/cmd/account-server/service/account-set/root-account"
 	"hcm/cmd/account-server/service/capability"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
@@ -37,12 +39,10 @@ import (
 	"hcm/pkg/handler"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/logs"
-	"hcm/pkg/metrics"
 	"hcm/pkg/rest"
 	restcli "hcm/pkg/rest/client"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
-	"hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/tools/ssl"
 
 	"github.com/emicklei/go-restful/v3"
@@ -52,15 +52,12 @@ import (
 type Service struct {
 	clientSet  *client.ClientSet
 	serve      *http.Server
-	itsmCli    itsm.Client
-	cipher     cryptography.Crypto
 	authorizer auth.Authorizer
 	audit      logicaudit.Interface
-	//audit
 }
 
 // NewService create a service instance.
-func NewService(sd serviced.ServiceDiscover, shutdownWaitTimeSec int) (*Service, error) {
+func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 	tls := cc.AccountServer().Network.TLS
 
 	var tlsConfig *ssl.TLSConfig
@@ -87,23 +84,8 @@ func NewService(sd serviced.ServiceDiscover, shutdownWaitTimeSec int) (*Service,
 		return nil, err
 	}
 
-	// 加解密器
-	cipher, err := newCipherFromConfig(cc.AccountServer().Crypto)
-	if err != nil {
-		return nil, err
-	}
-
-	itsmCfg := cc.AccountServer().Itsm
-	itsmCli, err := itsm.NewClient(&itsmCfg, metrics.Register())
-	if err != nil {
-		logs.Errorf("failed to create itsm client, err: %v", err)
-		return nil, err
-	}
-
 	svr := &Service{
 		clientSet:  apiClientSet,
-		itsmCli:    itsmCli,
-		cipher:     cipher,
 		authorizer: authorizer,
 		audit:      logicaudit.NewAudit(apiClientSet.DataService()),
 	}
@@ -182,15 +164,12 @@ func (s *Service) apiSet() *restful.Container {
 	c := &capability.Capability{
 		WebService: ws,
 		ApiClient:  s.clientSet,
-		Cipher:     s.cipher,
-		ItsmCli:    s.itsmCli,
 		Authorizer: s.authorizer,
 		Audit:      s.audit,
 	}
 
-	// todo
-	// init sub services
-	// e.g. cvm.InitCvmService(c)
+	mainaccount.InitService(c)
+	rootaccount.InitService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

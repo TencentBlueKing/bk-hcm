@@ -34,6 +34,8 @@ import (
 	gcpdiskhandler "hcm/cmd/cloud-server/service/application/handlers/disk/gcp"
 	huaweidiskhandler "hcm/cmd/cloud-server/service/application/handlers/disk/huawei"
 	tclouddiskhandler "hcm/cmd/cloud-server/service/application/handlers/disk/tcloud"
+	createmainaccount "hcm/cmd/cloud-server/service/application/handlers/main-account/create-main-account"
+	updatemainaccount "hcm/cmd/cloud-server/service/application/handlers/main-account/update-main-account"
 	awsvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/aws"
 	azurevpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/azure"
 	gcpvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/gcp"
@@ -367,4 +369,50 @@ func (a *applicationSvc) CreateForCreateDisk(cts *rest.Contexts) (interface{}, e
 	}
 
 	return nil, nil
+}
+
+// CreateForCreateMainAccount ...
+func (a *applicationSvc) CreateForCreateMainAccount(cts *rest.Contexts) (interface{}, error) {
+	req, err := parseReqFromRequestBody[proto.MainAccountCreateReq](cts)
+	if err != nil {
+		return nil, err
+	}
+
+	commReq := new(proto.CreateCommonReq)
+	commReq.Remark = req.Memo
+
+	handler := createmainaccount.NewApplicationOfCreateMainAccount(a.getHandlerOption(cts), a.authorizer, req, nil)
+
+	// authorize
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.MainAccount, Action: meta.Create}}
+	err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	if err != nil {
+		return nil, err
+	}
+
+	return a.create(cts, commReq, handler)
+}
+
+// CreateForUpdateMainAccount ...
+func (a *applicationSvc) CreateForUpdateMainAccount(cts *rest.Contexts) (interface{}, error) {
+	// 固定remark，该接口没有备注字段，为了保持接口一致，这里固定
+	remark := "申请变更"
+	commReq := new(proto.CreateCommonReq)
+	commReq.Remark = &remark
+
+	req, err := parseReqFromRequestBody[proto.MainAccountUpdateReq](cts)
+	if err != nil {
+		return nil, err
+	}
+
+	handler := updatemainaccount.NewApplicationOfUpdateMainAccount(a.getHandlerOption(cts), a.authorizer, req)
+
+	// authorize
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.MainAccount, Action: meta.Update}}
+	err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	if err != nil {
+		return nil, err
+	}
+
+	return a.create(cts, commReq, handler)
 }

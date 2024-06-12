@@ -97,6 +97,7 @@ func genResManagementActionGroups() []client.ActionGroup {
 	actionGroups = append(actionGroups, genResourceAccessActionGroups())
 	actionGroups = append(actionGroups, genCloudSelectionActionGroups())
 	actionGroups = append(actionGroups, genPlatformManageActionGroups())
+	actionGroups = append(actionGroups, genCloudAccountActionGroups())
 
 	return actionGroups
 }
@@ -207,6 +208,33 @@ func genPlatformManageActionGroups() client.ActionGroup {
 				NameEn: "Configuration Management",
 				Actions: []client.ActionWithID{
 					{ID: GlobalConfiguration},
+				},
+			},
+		},
+	}
+}
+
+func genCloudAccountActionGroups() client.ActionGroup {
+	return client.ActionGroup{
+		Name:   "云账号管理",
+		NameEn: "Cloud Account Management",
+		SubGroups: []client.ActionGroup{
+			{
+				Name:   "二级账号",
+				NameEn: "Main Account",
+				Actions: []client.ActionWithID{
+					{ID: MainAccountFind},
+					{ID: MainAccountCreate},
+					{ID: MainAccountEdit},
+				},
+			},
+			{
+				Name:   "一级账号",
+				NameEn: "Root Account",
+				Actions: []client.ActionWithID{
+					{ID: RootAccountFind},
+					{ID: RootAccountImport},
+					{ID: RootAccountEdit},
 				},
 			},
 		},

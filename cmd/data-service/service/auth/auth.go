@@ -24,7 +24,7 @@ import (
 	"fmt"
 
 	"hcm/cmd/data-service/service/capability"
-	"hcm/pkg/api/data-service"
+	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/table"
@@ -61,6 +61,10 @@ func (s *auth) ListAuthInstances(cts *rest.Contexts) (interface{}, error) {
 		tableName = table.AccountTable
 	case sys.CloudSelectionScheme:
 		tableName = table.CloudSelectionSchemeTable
+	case sys.MainAccount:
+		tableName = table.MainAccountTable
+	case sys.RootAccount:
+		tableName = table.RootAccountTable
 	default:
 		return nil, fmt.Errorf("resource type %s not support", req.ResourceType)
 	}

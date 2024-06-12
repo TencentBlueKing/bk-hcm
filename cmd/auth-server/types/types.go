@@ -180,6 +180,10 @@ func getResourceIDField(resType client.TypeID) (string, error) {
 		return "id", nil
 	case sys.CloudSelectionScheme:
 		return "id", nil
+	case sys.MainAccount:
+		return "id", nil
+	case sys.RootAccount:
+		return "id", nil
 
 	default:
 		return "", errf.New(errf.InvalidParameter, "resource type not support")
