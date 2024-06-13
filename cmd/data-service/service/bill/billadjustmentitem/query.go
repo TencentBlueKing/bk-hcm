@@ -70,8 +70,8 @@ func toProtoPullerResult(m *tablebill.AccountBillAdjustmentItem) *dataproto.Bill
 		Memo:            m.Memo,
 		Operator:        m.Operator,
 		Currency:        m.Currency,
-		Cost:            m.Cost,
-		RMBCost:         m.RMBCost,
+		Cost:            m.Cost.Decimal,
+		RMBCost:         m.RMBCost.Decimal,
 		CreatedAt:       m.CreatedAt,
 		UpdatedAt:       m.UpdatedAt,
 	}

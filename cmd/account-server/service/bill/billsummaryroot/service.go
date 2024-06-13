@@ -17,42 +17,36 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package rawbill ...
-package rawbill
+package billsummaryroot
 
 import (
 	"net/http"
 
-	"hcm/cmd/data-service/service/capability"
-	"hcm/pkg/dal/objectstore"
+	"hcm/cmd/account-server/logics/audit"
+	"hcm/cmd/account-server/service/capability"
+	"hcm/pkg/client"
+	"hcm/pkg/iam/auth"
 	"hcm/pkg/rest"
 )
 
-// InitService initialize the raw bill service
-func InitService(cap *capability.Capability) {
+// InitService initial the main account service
+func InitService(c *capability.Capability) {
 	svc := &service{
-		ostore: cap.ObjectStore,
+		client:     c.ApiClient,
+		authorizer: c.Authorizer,
+		audit:      c.Audit,
 	}
-	h := rest.NewHandler()
-	h.Add(
-		"CreateRawBill",
-		http.MethodPost,
-		"bills/rawbills",
-		svc.CreateRawBill)
-	h.Add(
-		"ListRawBill",
-		http.MethodGet,
-		"bills/rawbills/{vendor}/{root_account_id}/{account_id}/{bill_year}/{bill_month}/{version}/{bill_date}",
-		svc.ListRawBill)
-	h.Add(
-		"QueryRawBillDetail",
-		http.MethodGet,
-		"bills/rawbills/{vendor}/{root_account_id}/{account_id}/{bill_year}/{bill_month}/{version}/{bill_date}/{bill_name}",
-		svc.QueryRawBillDetail)
 
-	h.Load(cap.WebService)
+	h := rest.NewHandler()
+
+	// register handler
+	h.Add("ListRootAccountSummary", http.MethodPost, "/bills/root-account-summarys/list", svc.ListRootAccountSummary)
+
+	h.Load(c.WebService)
 }
 
 type service struct {
-	ostore objectstore.Storage
+	client     *client.ClientSet
+	authorizer auth.Authorizer
+	audit      audit.Interface
 }

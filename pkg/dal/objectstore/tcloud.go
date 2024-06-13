@@ -29,6 +29,7 @@ import (
 	"path/filepath"
 
 	cos "github.com/tencentyun/cos-go-sdk-v5"
+	"github.com/tencentyun/cos-go-sdk-v5/debug"
 )
 
 const (
@@ -36,6 +37,7 @@ const (
 	envTCloudCOSSecretID  = "TCLOUD_COS_SECRET_ID"
 	envTCloudCOSSecretKey = "TCLOUD_COS_SECRET_KEY"
 	envTCloudCOSBucketURL = "TCLOUD_COS_BUCKET_URL"
+	envTCloudCOSDebug     = "TCLOUD_COS_DEBUG"
 )
 
 // TCloudCOS tcloud cos client
@@ -59,11 +61,20 @@ func NewTCloudCOS() (*TCloudCOS, error) {
 		return nil, fmt.Errorf("parse bucket url %s failed, err %s", bucketURL, err.Error())
 	}
 	b := &cos.BaseURL{BucketURL: u}
+	transport := &cos.AuthorizationTransport{
+		SecretID:  id,
+		SecretKey: key,
+	}
+	if os.Getenv(envTCloudCOSDebug) == "true" {
+		transport.Transport = &debug.DebugRequestTransport{
+			RequestHeader:  true,
+			RequestBody:    true,
+			ResponseHeader: true,
+			ResponseBody:   true,
+		}
+	}
 	client := cos.NewClient(b, &http.Client{
-		Transport: &cos.AuthorizationTransport{
-			SecretID:  id,
-			SecretKey: key,
-		},
+		Transport: transport,
 	})
 	_, err = client.Bucket.Head(context.Background())
 	if err != nil {
@@ -112,7 +123,8 @@ func (t *TCloudCOS) Download(ctx context.Context, downloadPath string, w io.Writ
 func (t *TCloudCOS) ListItems(ctx context.Context, folderPath string) ([]string, error) {
 	folderPath = filepath.Join(t.prefix, folderPath)
 	opt := &cos.BucketGetOptions{
-		Prefix:    folderPath,
+		// filepath join之后，最后的斜杠会被去掉，这里需要加上，不然查不出来
+		Prefix:    folderPath + "/",
 		Delimiter: "/",
 		MaxKeys:   1000,
 	}

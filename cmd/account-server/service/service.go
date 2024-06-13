@@ -31,6 +31,8 @@ import (
 	logicaudit "hcm/cmd/account-server/logics/audit"
 	mainaccount "hcm/cmd/account-server/service/account-set/main-account"
 	rootaccount "hcm/cmd/account-server/service/account-set/root-account"
+	"hcm/cmd/account-server/service/bill/billsummarymain"
+	"hcm/cmd/account-server/service/bill/billsummaryroot"
 	"hcm/cmd/account-server/service/capability"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
@@ -170,6 +172,8 @@ func (s *Service) apiSet() *restful.Container {
 
 	mainaccount.InitService(c)
 	rootaccount.InitService(c)
+	billsummaryroot.InitService(c)
+	billsummarymain.InitService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

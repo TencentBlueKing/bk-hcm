@@ -40,23 +40,23 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// AccountBillItem only used for interface.
-type AccountBillItem interface {
-	CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, regions []tablebill.AccountBillItem) ([]string, error)
-	List(kt *kit.Kit, opt *types.ListOption) (*typesbill.ListAccountBillItemDetails, error)
-	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, billID string, updateData *tablebill.AccountBillItem) error
+// AccountBillSummaryRoot only used for interface.
+type AccountBillSummaryRoot interface {
+	CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, datas []*tablebill.AccountBillSummaryRoot) ([]string, error)
+	List(kt *kit.Kit, opt *types.ListOption) (*typesbill.ListAccountBillSummaryRootDetails, error)
+	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, billID string, updateData *tablebill.AccountBillSummaryRoot) error
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error
 }
 
-// AccountBillItemDao account bill item dao
-type AccountBillItemDao struct {
+// AccountBillSummaryRootDao account bill summary of root account dao
+type AccountBillSummaryRootDao struct {
 	Orm   orm.Interface
 	IDGen idgenerator.IDGenInterface
 }
 
-// CreateWithTx create account bill item with tx.
-func (a AccountBillItemDao) CreateWithTx(
-	kt *kit.Kit, tx *sqlx.Tx, models []tablebill.AccountBillItem) (
+// CreateWithTx create account bill summary of root account with tx.
+func (a AccountBillSummaryRootDao) CreateWithTx(
+	kt *kit.Kit, tx *sqlx.Tx, models []*tablebill.AccountBillSummaryRoot) (
 	[]string, error) {
 
 	if len(models) == 0 {
@@ -77,7 +77,7 @@ func (a AccountBillItemDao) CreateWithTx(
 	}
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, models[0].TableName(),
-		tablebill.AccountBillItemColumns.ColumnExpr(), tablebill.AccountBillItemColumns.ColonNameExpr())
+		tablebill.AccountBillSummaryRootColumns.ColumnExpr(), tablebill.AccountBillSummaryRootColumns.ColonNameExpr())
 
 	if err = a.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, models); err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", models[0].TableName(), err, kt.Rid)
@@ -87,15 +87,15 @@ func (a AccountBillItemDao) CreateWithTx(
 	return ids, nil
 }
 
-// List get account bill item list.
-func (a AccountBillItemDao) List(kt *kit.Kit, opt *types.ListOption) (
-	*typesbill.ListAccountBillItemDetails, error) {
+// List get account bill summary of root account list.
+func (a AccountBillSummaryRootDao) List(kt *kit.Kit, opt *types.ListOption) (
+	*typesbill.ListAccountBillSummaryRootDetails, error) {
 
 	if opt == nil {
-		return nil, errf.New(errf.InvalidParameter, "list account bill item options is nil")
+		return nil, errf.New(errf.InvalidParameter, "list account bill summary of root account options is nil")
 	}
 
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tablebill.AccountBillItemColumns.ColumnTypes())),
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tablebill.AccountBillSummaryRootColumns.ColumnTypes())),
 		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
@@ -106,15 +106,15 @@ func (a AccountBillItemDao) List(kt *kit.Kit, opt *types.ListOption) (
 	}
 
 	if opt.Page.Count {
-		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.AccountBillItemTable, whereExpr)
+		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.AccountBillSummaryRootTable, whereExpr)
 		count, err := a.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
-			logs.ErrorJson("count account bill item failed, err: %v, filter: %s, rid: %s",
+			logs.ErrorJson("count account bill summary of root account failed, err: %v, filter: %s, rid: %s",
 				err, opt.Filter, kt.Rid)
 			return nil, err
 		}
 
-		return &typesbill.ListAccountBillItemDetails{Count: &count}, nil
+		return &typesbill.ListAccountBillSummaryRootDetails{Count: &count}, nil
 	}
 
 	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
@@ -122,19 +122,19 @@ func (a AccountBillItemDao) List(kt *kit.Kit, opt *types.ListOption) (
 		return nil, err
 	}
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tablebill.AccountBillItemColumns.FieldsNamedExpr(opt.Fields),
-		table.AccountBillItemTable, whereExpr, pageExpr)
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tablebill.AccountBillSummaryRootColumns.FieldsNamedExpr(opt.Fields),
+		table.AccountBillSummaryRootTable, whereExpr, pageExpr)
 
-	details := make([]tablebill.AccountBillItem, 0)
+	details := make([]tablebill.AccountBillSummaryRoot, 0)
 	if err = a.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}
-	return &typesbill.ListAccountBillItemDetails{Details: details}, nil
+	return &typesbill.ListAccountBillSummaryRootDetails{Details: details}, nil
 }
 
-// Update update account bill item.
-func (a AccountBillItemDao) UpdateByIDWithTx(
-	kt *kit.Kit, tx *sqlx.Tx, id string, updateData *tablebill.AccountBillItem) error {
+// Update update account bill summary of root account.
+func (a AccountBillSummaryRootDao) UpdateByIDWithTx(
+	kt *kit.Kit, tx *sqlx.Tx, id string, updateData *tablebill.AccountBillSummaryRoot) error {
 
 	if err := updateData.UpdateValidate(); err != nil {
 		return err
@@ -146,20 +146,21 @@ func (a AccountBillItemDao) UpdateByIDWithTx(
 		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)
 	}
 
-	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, table.AccountBillItemTable, setExpr)
+	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, table.AccountBillSummaryRootTable, setExpr)
 
 	toUpdate["id"] = id
 	_, err = a.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
 	if err != nil {
-		logs.ErrorJson("update account bill item failed, err: %v, id: %s, rid: %v", err, id, kt.Rid)
+		logs.ErrorJson("update account bill summary of root account failed, err: %v, id: %s, rid: %v", err, id, kt.Rid)
 		return err
 	}
 
 	return nil
 }
 
-// DeleteWithTx delete account bill item with tx.
-func (a AccountBillItemDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
+// DeleteWithTx delete account bill summary of root account with tx.
+func (a AccountBillSummaryRootDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
+
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}
@@ -169,10 +170,11 @@ func (a AccountBillItemDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.
 		return err
 	}
 
-	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.AccountBillItemTable, whereExpr)
+	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.AccountBillSummaryRootTable, whereExpr)
 
 	if _, err = a.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
-		logs.ErrorJson("delete account bill item failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
+		logs.ErrorJson("delete account bill summary of root account failed, err: %v, filter: %s, rid: %s",
+			err, expr, kt.Rid)
 		return err
 	}
 

@@ -502,6 +502,15 @@ func genPlatformManageActions() []client.ResourceAction {
 		RelatedActions:       nil,
 		Version:              1,
 	},
+		{
+			ID:                   AccountBillManage,
+			Name:                 ActionIDNameMap[AccountBillManage],
+			NameEn:               "Account Bill Manage",
+			Type:                 View,
+			RelatedResourceTypes: nil,
+			RelatedActions:       nil,
+			Version:              1,
+		},
 	}
 }
 

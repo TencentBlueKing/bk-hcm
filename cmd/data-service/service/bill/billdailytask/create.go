@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	tablebill "hcm/pkg/dal/table/bill"
+	"hcm/pkg/dal/table/types"
 	"hcm/pkg/rest"
 
 	"github.com/jmoiron/sqlx"
@@ -57,7 +58,7 @@ func (svc *service) CreateBillDailyPullTask(cts *rest.Contexts) (interface{}, er
 			Message:         req.Message,
 			Count:           req.Count,
 			Currency:        req.Currency,
-			Cost:            req.Cost,
+			Cost:            &types.Decimal{Decimal: req.Cost},
 		}
 		ids, err := svc.dao.AccountBillDailyPullTask().BatchCreateWithTx(
 			cts.Kit, txn, []*tablebill.AccountBillDailyPullTask{

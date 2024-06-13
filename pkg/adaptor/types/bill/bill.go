@@ -324,6 +324,36 @@ func (opt HuaWeiBillListOption) Validate() error {
 	return nil
 }
 
+// HuaWeiFeeRecordListOption defines huawei fee record list options
+type HuaWeiFeeRecordListOption struct {
+	AccountID    string `json:"account_id" validate:"required"`
+	SubAccountID string `json:"sub_account_id" validate:"required"`
+	// 查询的资源详单所在账期,东八区时间,格式为YYYY-MM。 示例:2019-01 说明: 不支持2019年1月份之前的资源详单。
+	Month string `json:"month" validate:"required"`
+	// 查询的资源消费记录的开始日期,格式为YYYY-MM-DD
+	// 说明: 必须和cycle(即资源的消费账期)在同一个月
+	// bill_date_begin和bill_date_end两个参数必须同时出现,否则仅按照cycle(即资源的消费账期)进行查询。
+	BillDateBegin string `json:"bill_date_begin" validate:"required"`
+	BillDateEnd   string `json:"bill_date_end" validate:"required"`
+	// Limit: 最大值为1000
+	Page *HuaWeiBillPage `json:"page" validate:"omitempty"`
+}
+
+// Validate huawei huawei fee record list option.
+func (opt HuaWeiFeeRecordListOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if opt.Page != nil {
+		if err := opt.Page.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // HuaWeiBillPage define huawei bill page option.
 type HuaWeiBillPage struct {
 	Limit  *int32 `json:"limit,omitempty"`

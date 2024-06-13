@@ -72,7 +72,7 @@ func toProtoPullerResult(m *tablebill.AccountBillDailyPullTask) *dataproto.BillD
 		Message:         m.Message,
 		Count:           m.Count,
 		Currency:        m.Currency,
-		Cost:            m.Cost,
+		Cost:            m.Cost.Decimal,
 		CreatedAt:       m.CreatedAt,
 		UpdatedAt:       m.UpdatedAt,
 	}

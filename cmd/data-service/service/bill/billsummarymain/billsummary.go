@@ -17,42 +17,31 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package rawbill ...
-package rawbill
+// Package billsummarymain ...
+package billsummarymain
 
 import (
 	"net/http"
 
 	"hcm/cmd/data-service/service/capability"
-	"hcm/pkg/dal/objectstore"
+	"hcm/pkg/dal/dao"
 	"hcm/pkg/rest"
 )
 
-// InitService initialize the raw bill service
+// InitService initialize the bill summary service
 func InitService(cap *capability.Capability) {
 	svc := &service{
-		ostore: cap.ObjectStore,
+		dao: cap.Dao,
 	}
 	h := rest.NewHandler()
-	h.Add(
-		"CreateRawBill",
-		http.MethodPost,
-		"bills/rawbills",
-		svc.CreateRawBill)
-	h.Add(
-		"ListRawBill",
-		http.MethodGet,
-		"bills/rawbills/{vendor}/{root_account_id}/{account_id}/{bill_year}/{bill_month}/{version}/{bill_date}",
-		svc.ListRawBill)
-	h.Add(
-		"QueryRawBillDetail",
-		http.MethodGet,
-		"bills/rawbills/{vendor}/{root_account_id}/{account_id}/{bill_year}/{bill_month}/{version}/{bill_date}/{bill_name}",
-		svc.QueryRawBillDetail)
+	h.Add("BatchCreateBillSummaryMain", http.MethodPost, "/bills/summarymains", svc.BatchCreateBillSummaryMain)
+	h.Add("DeleteBillSummaryMain", http.MethodDelete, "/bills/summarymains", svc.DeleteBillSummaryMain)
+	h.Add("UpdateBillSummaryMain", http.MethodPut, "/bills/summarymains", svc.UpdateBillSummaryMain)
+	h.Add("ListBillSummaryMain", http.MethodGet, "/bills/summarymains", svc.ListBillSummaryMain)
 
 	h.Load(cap.WebService)
 }
 
 type service struct {
-	ostore objectstore.Storage
+	dao dao.Set
 }

@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	tablebill "hcm/pkg/dal/table/bill"
+	"hcm/pkg/dal/table/types"
 	"hcm/pkg/rest"
 
 	"github.com/jmoiron/sqlx"
@@ -55,8 +56,8 @@ func (svc *service) UpdateBillItem(cts *rest.Contexts) (interface{}, error) {
 		BillDay:         req.BillDay,
 		VersionID:       req.VersionID,
 		Currency:        req.Currency,
-		Cost:            req.Cost,
-		RMBCost:         req.RMBCost,
+		Cost:            &types.Decimal{Decimal: req.Cost},
+		RMBCost:         &types.Decimal{Decimal: req.RMBCost},
 	}
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		if err := svc.dao.AccountBillItem().UpdateByIDWithTx(cts.Kit, txn, BillItem.ID, BillItem); err != nil {

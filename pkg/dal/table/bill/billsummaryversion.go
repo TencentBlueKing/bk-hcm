@@ -28,8 +28,6 @@ import (
 	"hcm/pkg/dal/table"
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/dal/table/utils"
-
-	"github.com/shopspring/decimal"
 )
 
 // AccountBillSummaryVersionColumns defines account_bill_summary's columns.
@@ -76,9 +74,9 @@ type AccountBillSummaryVersion struct {
 	// Currency 币种
 	Currency string `db:"currency" json:"currency"`
 	// Cost 费用
-	Cost decimal.Decimal `db:"cost" json:"cost"`
+	Cost *types.Decimal `db:"cost" json:"cost"`
 	// RMBCost 费用
-	RMBCost decimal.Decimal `db:"rmb_cost" json:"rmb_cost"`
+	RMBCost *types.Decimal `db:"rmb_cost" json:"rmb_cost"`
 	// CreatedAt 创建时间
 	CreatedAt types.Time `db:"created_at" json:"created_at"`
 	// UpdatedAt 更新时间

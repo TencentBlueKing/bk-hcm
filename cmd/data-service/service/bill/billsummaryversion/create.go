@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	tablebill "hcm/pkg/dal/table/bill"
+	"hcm/pkg/dal/table/types"
 	"hcm/pkg/rest"
 
 	"github.com/jmoiron/sqlx"
@@ -53,8 +54,8 @@ func (svc *service) CreateBillSummaryVersion(cts *rest.Contexts) (interface{}, e
 			BillMonth:       req.BillMonth,
 			VersionID:       req.VersionID,
 			Currency:        req.Currency,
-			Cost:            req.Cost,
-			RMBCost:         req.RMBCost,
+			Cost:            &types.Decimal{Decimal: req.Cost},
+			RMBCost:         &types.Decimal{Decimal: req.RMBCost},
 		}
 		ids, err := svc.dao.AccountBillSummaryVersion().CreateWithTx(
 			cts.Kit, txn, []tablebill.AccountBillSummaryVersion{

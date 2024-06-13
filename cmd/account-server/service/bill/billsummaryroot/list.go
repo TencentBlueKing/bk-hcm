@@ -17,57 +17,50 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package billsummary
+package billsummaryroot
 
 import (
-	dataproto "hcm/pkg/api/data-service/bill"
+	asbillapi "hcm/pkg/api/account-server/bill"
+	dsbillapi "hcm/pkg/api/data-service/bill"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao/types"
-	tablebill "hcm/pkg/dal/table/bill"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 )
 
-// ListBillSummary list account bill summary with options
-func (svc *service) ListBillSummary(cts *rest.Contexts) (interface{}, error) {
-	req := new(dataproto.BillSummaryListReq)
+// List list root account summary with options
+func (s *service) ListRootAccountSummary(cts *rest.Contexts) (interface{}, error) {
+	req := new(asbillapi.RootAccountSummaryListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
-
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-	opt := &types.ListOption{
-		Filter: req.Filter,
-		Page:   req.Page,
-		Fields: req.Fields,
+	var expressions []filter.RuleFactory
+	expressions = append(expressions, []filter.RuleFactory{
+		filter.AtomRule{
+			Field: "bill_year",
+			Op:    filter.Equal.Factory(),
+			Value: req.BillYear,
+		},
+		filter.AtomRule{
+			Field: "bill_month",
+			Op:    filter.Equal.Factory(),
+			Value: req.BillMonth,
+		},
+	}...)
+	if req.Filter != nil {
+		expressions = append(expressions, req.Filter)
 	}
-
-	data, err := svc.dao.AccountBillSummary().List(cts.Kit, opt)
+	bizFilter, err := tools.And(
+		expressions...)
 	if err != nil {
 		return nil, err
 	}
 
-	details := make([]*dataproto.BillSummaryResult, len(data.Details))
-	for indx, d := range data.Details {
-		details[indx] = toProtoPullerResult(&d)
-	}
-
-	return &dataproto.BillSummaryListResult{Details: details, Count: data.Count}, nil
-}
-
-func toProtoPullerResult(m *tablebill.AccountBillSummary) *dataproto.BillSummaryResult {
-	return &dataproto.BillSummaryResult{
-		ID:              m.ID,
-		FirstAccountID:  m.FirstAccountID,
-		SecondAccountID: m.SecondAccountID,
-		Vendor:          m.Vendor,
-		ProductID:       m.ProductID,
-		BkBizID:         m.BkBizID,
-		BillYear:        m.BillYear,
-		BillMonth:       m.BillMonth,
-		CurrentVersion:  m.CurrentVersion,
-		CreatedAt:       m.CreatedAt,
-		UpdatedAt:       m.UpdatedAt,
-	}
+	return s.client.DataService().Global.Bill.ListBillSummaryRoot(cts.Kit, &dsbillapi.BillSummaryRootListReq{
+		Filter: bizFilter,
+		Page:   req.Page,
+	})
 }

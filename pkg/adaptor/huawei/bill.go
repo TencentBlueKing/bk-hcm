@@ -62,3 +62,43 @@ func (h *HuaWei) GetBillList(_ *kit.Kit, opt *typesBill.HuaWeiBillListOption) (
 
 	return resp, nil
 }
+
+// GetFeeRecordList get fee record list.
+// reference: https://console-intl.huaweicloud.com/apiexplorer/#/openapi/BSSINTL/debug?api=ListCustomerselfResourceRecords
+func (h *HuaWei) GetFeeRecordList(kit *kit.Kit, opt *typesBill.HuaWeiFeeRecordListOption) (
+	*model.ListCustomerselfResourceRecordsResponse, error) {
+
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	client, err := h.clientSet.bssintlGlobalClient()
+	if err != nil {
+		return nil, fmt.Errorf("new fee record failed, err: %v", err)
+	}
+
+	method := "sub_customer"
+	req := new(model.ListCustomerselfResourceRecordsRequest)
+	req.SubCustomerId = &opt.SubAccountID
+	req.Method = &method
+	req.Cycle = opt.Month
+	req.BillDateBegin = &opt.BillDateBegin
+	req.BillDateEnd = &opt.BillDateEnd
+
+	// 统计类型。默认值为3。 1：按账期 3：按明细；
+	// 当前版本sdk没有StatisticType字段，暂时先不填，默认为3
+	// req.StatisticType = proto.Int(3)
+
+	if opt.Page != nil {
+		req.Offset = opt.Page.Offset
+		req.Limit = opt.Page.Limit
+	}
+
+	resp, err := client.ListCustomerselfResourceRecords(req)
+	if err != nil {
+		logs.Errorf("huawei fee record list request adaptor failed, opt: %+v, err: %+v", opt, err)
+		return nil, err
+	}
+
+	return resp, nil
+}

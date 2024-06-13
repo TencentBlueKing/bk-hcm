@@ -215,7 +215,14 @@ func genPlatformManageActionGroups() client.ActionGroup {
 				NameEn: "Root Account Management",
 				Actions: []client.ActionWithID{
 					{ID: RootAccountManage},
-					//todo add bill action id {ID: BillManage}
+				},
+			},
+			{
+				Name:   "云账单管理",
+				NameEn: "Account Bill Management",
+				Actions: []client.ActionWithID{
+					{ID: RootAccountManage},
+					{ID: AccountBillManage},
 				},
 			},
 		},

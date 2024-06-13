@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	tablebill "hcm/pkg/dal/table/bill"
+	"hcm/pkg/dal/table/types"
 	"hcm/pkg/rest"
 
 	"github.com/jmoiron/sqlx"
@@ -58,7 +59,7 @@ func (svc *service) UpdateBillDailyPullTask(cts *rest.Contexts) (interface{}, er
 		Message:         req.Message,
 		Count:           req.Count,
 		Currency:        req.Currency,
-		Cost:            req.Cost,
+		Cost:            &types.Decimal{Decimal: req.Cost},
 	}
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		if err := svc.dao.AccountBillDailyPullTask().UpdateByIDWithTx(cts.Kit, txn, BillDailyPullTask.ID, BillDailyPullTask); err != nil {

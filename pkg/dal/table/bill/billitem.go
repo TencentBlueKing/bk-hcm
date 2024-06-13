@@ -27,8 +27,6 @@ import (
 	"hcm/pkg/dal/table"
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/dal/table/utils"
-
-	"github.com/shopspring/decimal"
 )
 
 // AccountBillItemColumns defines account_bill_item's columns.
@@ -83,15 +81,15 @@ type AccountBillItem struct {
 	// Currency 币种
 	Currency string `db:"currency" json:"currency"`
 	// Cost 费用
-	Cost decimal.Decimal `db:"cost" json:"cost"`
+	Cost *types.Decimal `db:"cost" json:"cost"`
 	// RMBCost 费用
-	RMBCost decimal.Decimal `db:"rmb_cost" json:"rmb_cost"`
+	RMBCost *types.Decimal `db:"rmb_cost" json:"rmb_cost"`
 	// HcProductCode 云服务代号
 	HcProductCode string `db:"hc_product_code" json:"hc_product_code"`
 	// HcProductName 云服务名字
 	HcProductName string `db:"hc_product_name" json:"hc_product_name"`
 	// ResAmount 用量，部分云账单可能没有
-	ResAmount decimal.Decimal `db:"res_amount" json:"res_amount,omitempty"`
+	ResAmount *types.Decimal `db:"res_amount" json:"res_amount,omitempty"`
 	// ResAmountUnit 用量单位
 	ResAmountUnit string `db:"res_amount_unit" json:"res_amount_unit,omitempty"`
 	// Extension 云原始字段
