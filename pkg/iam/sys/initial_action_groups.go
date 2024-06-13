@@ -210,6 +210,14 @@ func genPlatformManageActionGroups() client.ActionGroup {
 					{ID: GlobalConfiguration},
 				},
 			},
+			{
+				Name:   "云账号管理",
+				NameEn: "Root Account Management",
+				Actions: []client.ActionWithID{
+					{ID: RootAccountManage},
+					//todo add bill action id {ID: BillManage}
+				},
+			},
 		},
 	}
 }
@@ -226,15 +234,6 @@ func genCloudAccountActionGroups() client.ActionGroup {
 					{ID: MainAccountFind},
 					{ID: MainAccountCreate},
 					{ID: MainAccountEdit},
-				},
-			},
-			{
-				Name:   "一级账号",
-				NameEn: "Root Account",
-				Actions: []client.ActionWithID{
-					{ID: RootAccountFind},
-					{ID: RootAccountImport},
-					{ID: RootAccountEdit},
 				},
 			},
 		},
