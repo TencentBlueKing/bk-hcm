@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	tablebill "hcm/pkg/dal/table/bill"
+	"hcm/pkg/dal/table/types"
 	"hcm/pkg/rest"
 
 	"github.com/jmoiron/sqlx"
@@ -56,8 +57,8 @@ func (svc *service) UpdateBillAdjustmentItem(cts *rest.Contexts) (interface{}, e
 		Memo:            req.Memo,
 		Operator:        req.Operator,
 		Currency:        req.Currency,
-		Cost:            req.Cost,
-		RMBCost:         req.RMBCost,
+		Cost:            &types.Decimal{Decimal: req.Cost},
+		RMBCost:         &types.Decimal{Decimal: req.RMBCost},
 		State:           req.State,
 	}
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {

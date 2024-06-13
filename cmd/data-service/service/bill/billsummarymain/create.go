@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package billsummaryroot
+package billsummarymain
 
 import (
 	"fmt"
@@ -34,9 +34,9 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// CreateBillSummaryRoot create bill summary of root account with options
-func (svc *service) CreateBillSummaryRoot(cts *rest.Contexts) (interface{}, error) {
-	req := new(dsbill.BillSummaryRootCreateReq)
+// BatchCreateBillSummaryMain create account bill summary main with options
+func (svc *service) BatchCreateBillSummaryMain(cts *rest.Contexts) (interface{}, error) {
+	req := new(dsbill.BillSummaryMainCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -44,10 +44,16 @@ func (svc *service) CreateBillSummaryRoot(cts *rest.Contexts) (interface{}, erro
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 	id, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		summary := &tablebill.AccountBillSummaryRoot{
+		summary := &tablebill.AccountBillSummaryMain{
 			RootAccountID:             req.RootAccountID,
 			RootAccountName:           req.RootAccountName,
+			MainAccountID:             req.MainAccountID,
+			MainAccountName:           req.MainAccountName,
 			Vendor:                    req.Vendor,
+			ProductID:                 req.ProductID,
+			ProductName:               req.ProductName,
+			BkBizID:                   req.BkBizID,
+			BkBizName:                 req.BkBizName,
 			BillYear:                  req.BillYear,
 			BillMonth:                 req.BillMonth,
 			LastSyncedVersion:         req.LastSyncedVersion,
@@ -65,15 +71,14 @@ func (svc *service) CreateBillSummaryRoot(cts *rest.Contexts) (interface{}, erro
 			AjustmentRMBCost:          &types.Decimal{Decimal: req.AjustmentRMBCost},
 			State:                     req.State,
 		}
-		ids, err := svc.dao.AccountBillSummaryRoot().CreateWithTx(
-			cts.Kit, txn, []*tablebill.AccountBillSummaryRoot{
-				summary,
-			})
+		ids, err := svc.dao.AccountBillSummaryMain().CreateWithTx(cts.Kit, txn, []*tablebill.AccountBillSummaryMain{
+			summary,
+		})
 		if err != nil {
-			return nil, fmt.Errorf("create account bill summary of root account failed, err: %v", err)
+			return nil, fmt.Errorf("create account bill summary main failed, err: %v", err)
 		}
 		if len(ids) != 1 {
-			return nil, fmt.Errorf("create account bill summary of root account expect 1 puller ID: %v", ids)
+			return nil, fmt.Errorf("create account bill summary main expect 1 puller ID: %v", ids)
 		}
 		return ids[0], nil
 	})
@@ -82,7 +87,7 @@ func (svc *service) CreateBillSummaryRoot(cts *rest.Contexts) (interface{}, erro
 	}
 	idStr, ok := id.(string)
 	if !ok {
-		return nil, fmt.Errorf("create account bill summary of root account but return id type not string, id type: %v",
+		return nil, fmt.Errorf("create account bill summary main but return id type not string, id type: %v",
 			reflect.TypeOf(id).String())
 	}
 

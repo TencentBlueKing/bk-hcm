@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package billsummaryroot
+package billsummarymain
 
 import (
 	dataproto "hcm/pkg/api/data-service/bill"
@@ -27,9 +27,9 @@ import (
 	"hcm/pkg/rest"
 )
 
-// ListBillSummaryRoot list bill summary daily with options
-func (svc *service) ListBillSummaryRoot(cts *rest.Contexts) (interface{}, error) {
-	req := new(dataproto.BillSummaryRootListReq)
+// ListBillSummaryMain list account bill summary main with options
+func (svc *service) ListBillSummaryMain(cts *rest.Contexts) (interface{}, error) {
+	req := new(dataproto.BillSummaryMainListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -43,25 +43,31 @@ func (svc *service) ListBillSummaryRoot(cts *rest.Contexts) (interface{}, error)
 		Fields: req.Fields,
 	}
 
-	data, err := svc.dao.AccountBillSummaryRoot().List(cts.Kit, opt)
+	data, err := svc.dao.AccountBillSummaryMain().List(cts.Kit, opt)
 	if err != nil {
 		return nil, err
 	}
 
-	details := make([]*dataproto.BillSummaryRootResult, len(data.Details))
+	details := make([]*dataproto.BillSummaryMainResult, len(data.Details))
 	for indx, d := range data.Details {
 		details[indx] = toProtoPullerResult(&d)
 	}
 
-	return &dataproto.BillSummaryRootListResult{Details: details, Count: data.Count}, nil
+	return &dataproto.BillSummaryMainListResult{Details: details, Count: data.Count}, nil
 }
 
-func toProtoPullerResult(m *tablebill.AccountBillSummaryRoot) *dataproto.BillSummaryRootResult {
-	return &dataproto.BillSummaryRootResult{
+func toProtoPullerResult(m *tablebill.AccountBillSummaryMain) *dataproto.BillSummaryMainResult {
+	return &dataproto.BillSummaryMainResult{
 		ID:                        m.ID,
 		RootAccountID:             m.RootAccountID,
 		RootAccountName:           m.RootAccountName,
+		MainAccountID:             m.MainAccountID,
+		MainAccountName:           m.MainAccountName,
 		Vendor:                    m.Vendor,
+		ProductID:                 m.ProductID,
+		ProductName:               m.ProductName,
+		BkBizID:                   m.BkBizID,
+		BkBizName:                 m.BkBizName,
 		BillYear:                  m.BillYear,
 		BillMonth:                 m.BillMonth,
 		LastSyncedVersion:         m.LastSyncedVersion,

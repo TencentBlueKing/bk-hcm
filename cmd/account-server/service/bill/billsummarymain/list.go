@@ -17,52 +17,50 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package billsummary
+package billsummarymain
 
 import (
-	"fmt"
-
-	dataservice "hcm/pkg/api/data-service/bill"
+	asbillapi "hcm/pkg/api/account-server/bill"
+	dsbillapi "hcm/pkg/api/data-service/bill"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao/orm"
-	tablebill "hcm/pkg/dal/table/bill"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/rest"
-
-	"github.com/jmoiron/sqlx"
+	"hcm/pkg/runtime/filter"
 )
 
-// UpdateBillSummary update account bill summary with options
-func (svc *service) UpdateBillSummary(cts *rest.Contexts) (interface{}, error) {
-	req := new(dataservice.BillSummaryUpdateReq)
-
+// List list root account summary with options
+func (s *service) ListMainAccountSummary(cts *rest.Contexts) (interface{}, error) {
+	req := new(asbillapi.MainAccountSummaryListReq)
 	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+		return nil, err
 	}
-
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-
-	BillSummary := &tablebill.AccountBillSummary{
-		ID:              req.ID,
-		FirstAccountID:  req.FirstAccountID,
-		SecondAccountID: req.SecondAccountID,
-		Vendor:          req.Vendor,
-		ProductID:       req.ProductID,
-		BkBizID:         req.BkBizID,
-		BillYear:        req.BillYear,
-		BillMonth:       req.BillMonth,
-		CurrentVersion:  req.CurrentVersion,
+	var expressions []filter.RuleFactory
+	expressions = append(expressions, []filter.RuleFactory{
+		filter.AtomRule{
+			Field: "bill_year",
+			Op:    filter.Equal.Factory(),
+			Value: req.BillYear,
+		},
+		filter.AtomRule{
+			Field: "bill_month",
+			Op:    filter.Equal.Factory(),
+			Value: req.BillMonth,
+		},
+	}...)
+	if req.Filter != nil {
+		expressions = append(expressions, req.Filter)
 	}
-	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		if err := svc.dao.AccountBillSummary().UpdateByIDWithTx(cts.Kit, txn, BillSummary.ID, BillSummary); err != nil {
-			return nil, fmt.Errorf("update bill summary failed, err: %v", err)
-		}
-		return nil, nil
-	})
+	bizFilter, err := tools.And(
+		expressions...)
 	if err != nil {
 		return nil, err
 	}
 
-	return nil, nil
+	return s.client.DataService().Global.Bill.ListBillSummaryMain(cts.Kit, &dsbillapi.BillSummaryMainListReq{
+		Filter: bizFilter,
+		Page:   req.Page,
+	})
 }

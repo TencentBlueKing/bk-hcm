@@ -23,10 +23,10 @@ import (
 	tablebill "hcm/pkg/dal/table/bill"
 )
 
-// ListAccountBillSummaryDetails list account bill config details.
-type ListAccountBillSummaryDetails struct {
-	Count   *uint64                        `json:"count,omitempty"`
-	Details []tablebill.AccountBillSummary `json:"details,omitempty"`
+// ListAccountBillSummaryMainDetails list account bill config details.
+type ListAccountBillSummaryMainDetails struct {
+	Count   *uint64                            `json:"count,omitempty"`
+	Details []tablebill.AccountBillSummaryMain `json:"details,omitempty"`
 }
 
 // ListAccountBillSummaryVersionDetails list account bill summary version details.

@@ -29,7 +29,6 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
-	"hcm/pkg/iam/sys"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
@@ -44,6 +43,11 @@ func (s *service) Add(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	// 校验用户有一级账号管理权限
+	if err := s.checkPermission(cts, meta.RootAccount, meta.Find); err != nil {
+		return nil, err
+	}
+
 	// 检查账号名是否重复
 	if err := s.isDuplicateName(cts, req.Name); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -56,14 +60,8 @@ func (s *service) Add(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.RootAccount, Action: meta.Import}}
-	err := s.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
-	if err != nil {
-		return nil, err
-	}
-
 	var accountID string
+	var err error
 	switch req.Vendor {
 	case enumor.Aws:
 		accountID, err = s.addForAws(cts, req)
@@ -81,19 +79,6 @@ func (s *service) Add(cts *rest.Contexts) (interface{}, error) {
 	if err != nil {
 		logs.Errorf("add root account for [%s] failed, err: %v, rid: %s", req.Vendor, err, cts.Kit.Rid)
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	// 授予创建者创建资源默认附加权限
-	iamReq := &meta.RegisterResCreatorActionInst{
-		Type: string(sys.RootAccount),
-		ID:   accountID,
-		Name: req.Name,
-	}
-
-	if err = s.authorizer.RegisterResourceCreatorAction(cts.Kit, iamReq); err != nil {
-		logs.Errorf("create account success, "+
-			"but add create action associate permissions failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return accountID, nil
 	}
 
 	return accountID, nil

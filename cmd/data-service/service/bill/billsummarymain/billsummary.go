@@ -17,42 +17,31 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package rootaccount
+// Package billsummarymain ...
+package billsummarymain
 
 import (
-	"hcm/pkg/api/core"
-	"hcm/pkg/criteria/errf"
-	"hcm/pkg/iam/meta"
+	"net/http"
+
+	"hcm/cmd/data-service/service/capability"
+	"hcm/pkg/dal/dao"
 	"hcm/pkg/rest"
 )
 
-// List list main account with options
-func (s *service) List(cts *rest.Contexts) (interface{}, error) {
-	req := new(core.ListWithoutFieldReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
+// InitService initialize the bill summary service
+func InitService(cap *capability.Capability) {
+	svc := &service{
+		dao: cap.Dao,
 	}
+	h := rest.NewHandler()
+	h.Add("BatchCreateBillSummaryMain", http.MethodPost, "/bills/summarymains", svc.BatchCreateBillSummaryMain)
+	h.Add("DeleteBillSummaryMain", http.MethodDelete, "/bills/summarymains", svc.DeleteBillSummaryMain)
+	h.Add("UpdateBillSummaryMain", http.MethodPut, "/bills/summarymains", svc.UpdateBillSummaryMain)
+	h.Add("ListBillSummaryMain", http.MethodGet, "/bills/summarymains", svc.ListBillSummaryMain)
 
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
+	h.Load(cap.WebService)
+}
 
-	// 校验用户有一级账号管理权限
-	if err := s.checkPermission(cts, meta.RootAccount, meta.Find); err != nil {
-		return nil, err
-	}
-
-	accounts, err := s.client.DataService().Global.RootAccount.List(
-		cts.Kit,
-		&core.ListWithoutFieldReq{
-			Filter: req.Filter,
-			Page:   req.Page,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return accounts, nil
-
+type service struct {
+	dao dao.Set
 }

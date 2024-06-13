@@ -68,8 +68,8 @@ func toProtoPullerResult(m *tablebill.AccountBillSummaryVersion) *dataproto.Bill
 		BillMonth:       m.BillMonth,
 		VersionID:       m.VersionID,
 		Currency:        m.Currency,
-		Cost:            m.Cost,
-		RMBCost:         m.RMBCost,
+		Cost:            m.Cost.Decimal,
+		RMBCost:         m.RMBCost.Decimal,
 		CreatedAt:       m.CreatedAt,
 		UpdatedAt:       m.UpdatedAt,
 	}

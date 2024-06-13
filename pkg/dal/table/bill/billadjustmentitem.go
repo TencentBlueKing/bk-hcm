@@ -27,8 +27,6 @@ import (
 	"hcm/pkg/dal/table"
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/dal/table/utils"
-
-	"github.com/shopspring/decimal"
 )
 
 // AccountBillAdjustmentItemColumns defines account_bill_adjustment_item's columns.
@@ -82,9 +80,9 @@ type AccountBillAdjustmentItem struct {
 	// Currency 币种
 	Currency string `db:"currency" json:"currency"`
 	// Cost 费用
-	Cost decimal.Decimal `db:"cost" json:"cost"`
+	Cost *types.Decimal `db:"cost" json:"cost"`
 	// RMBCost 费用
-	RMBCost decimal.Decimal `db:"rmb_cost" json:"rmb_cost"`
+	RMBCost *types.Decimal `db:"rmb_cost" json:"rmb_cost"`
 	// State 状态，未确定、已确定
 	State string `db:"string" json:"string"`
 	// CreatedAt 创建时间

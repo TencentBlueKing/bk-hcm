@@ -29,11 +29,17 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// BillSummaryRootCreateReq create request
-type BillSummaryRootCreateReq struct {
+// BillSummaryMainCreateReq create request
+type BillSummaryMainCreateReq struct {
 	RootAccountID             string          `json:"root_account_id" validate:"required"`
-	RootAccountName           string          `json:"root_account_name" validate:"required"`
+	RootAccountName           string          `json:"root_account_name" validate:"omitempty"`
+	MainAccountID             string          `json:"main_account_id" validate:"required"`
+	MainAccountName           string          `json:"main_account_name" validate:"omitempty"`
 	Vendor                    enumor.Vendor   `json:"vendor" validate:"required"`
+	ProductID                 int64           `json:"product_id" validate:"omitempty"`
+	ProductName               string          `json:"product_name" validate:"omitempty"`
+	BkBizID                   int64           `json:"bk_biz_id" validate:"omitempty"`
+	BkBizName                 string          `json:"bk_biz_name" validate:"omitempty"`
 	BillYear                  int             `json:"bill_year" validate:"required"`
 	BillMonth                 int             `json:"bill_month" validate:"required"`
 	LastSyncedVersion         int             `json:"last_synced_version" validate:"omitempty"`
@@ -53,34 +59,40 @@ type BillSummaryRootCreateReq struct {
 }
 
 // Validate ...
-func (c *BillSummaryRootCreateReq) Validate() error {
+func (c *BillSummaryMainCreateReq) Validate() error {
 	return validator.Validate.Struct(c)
 }
 
-// BillSummaryRootListReq list request
-type BillSummaryRootListReq struct {
+// BillSummaryMainListReq list request
+type BillSummaryMainListReq struct {
 	Filter *filter.Expression `json:"filter" validate:"required"`
 	Page   *core.BasePage     `json:"page" validate:"required"`
 	Fields []string           `json:"fields" validate:"omitempty"`
 }
 
 // Validate ...
-func (req *BillSummaryRootListReq) Validate() error {
+func (req *BillSummaryMainListReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// BillSummaryRootListResult list result
-type BillSummaryRootListResult struct {
+// BillSummaryMainListResult list result
+type BillSummaryMainListResult struct {
 	Count   *uint64                  `json:"count,omitempty"`
-	Details []*BillSummaryRootResult `json:"details"`
+	Details []*BillSummaryMainResult `json:"details"`
 }
 
-// BillSummaryRootResult result
-type BillSummaryRootResult struct {
+// BillSummaryMainResult result
+type BillSummaryMainResult struct {
 	ID                        string          `json:"id,omitempty"`
 	RootAccountID             string          `json:"root_account_id" validate:"required"`
-	RootAccountName           string          `json:"root_account_name" validate:"required"`
+	RootAccountName           string          `json:"root_account_name" validate:"omitempty"`
+	MainAccountID             string          `json:"main_account_id" validate:"required"`
+	MainAccountName           string          `json:"main_account_name" validate:"omitempty"`
 	Vendor                    enumor.Vendor   `json:"vendor" validate:"required"`
+	ProductID                 int64           `json:"product_id" validate:"omitempty"`
+	ProductName               string          `json:"product_name" validate:"omitempty"`
+	BkBizID                   int64           `json:"bk_biz_id" validate:"omitempty"`
+	BkBizName                 string          `json:"bk_biz_name" validate:"omitempty"`
 	BillYear                  int             `json:"bill_year" validate:"required"`
 	BillMonth                 int             `json:"bill_month" validate:"required"`
 	LastSyncedVersion         int             `json:"last_synced_version" validate:"omitempty"`
@@ -101,12 +113,18 @@ type BillSummaryRootResult struct {
 	UpdatedAt                 types.Time      `json:"updated_at,omitempty"`
 }
 
-// BillSummaryRootUpdateReq update request
-type BillSummaryRootUpdateReq struct {
+// BillSummaryMainUpdateReq ...
+type BillSummaryMainUpdateReq struct {
 	ID                        string          `json:"id,omitempty" validate:"required"`
 	RootAccountID             string          `json:"root_account_id" validate:"required"`
-	RootAccountName           string          `json:"root_account_name" validate:"required"`
+	RootAccountName           string          `json:"root_account_name" validate:"omitempty"`
+	MainAccountID             string          `json:"main_account_id" validate:"required"`
+	MainAccountName           string          `json:"main_account_name" validate:"omitempty"`
 	Vendor                    enumor.Vendor   `json:"vendor" validate:"required"`
+	ProductID                 int64           `json:"product_id" validate:"omitempty"`
+	ProductName               string          `json:"product_name" validate:"omitempty"`
+	BkBizID                   int64           `json:"bk_biz_id" validate:"omitempty"`
+	BkBizName                 string          `json:"bk_biz_name" validate:"omitempty"`
 	BillYear                  int             `json:"bill_year" validate:"required"`
 	BillMonth                 int             `json:"bill_month" validate:"required"`
 	LastSyncedVersion         int             `json:"last_synced_version" validate:"omitempty"`
@@ -126,6 +144,6 @@ type BillSummaryRootUpdateReq struct {
 }
 
 // Validate ...
-func (req *BillSummaryRootUpdateReq) Validate() error {
+func (req *BillSummaryMainUpdateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }

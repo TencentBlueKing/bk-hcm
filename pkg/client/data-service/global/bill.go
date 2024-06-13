@@ -206,30 +206,30 @@ func (b *BillClient) ListBillPuller(kt *kit.Kit, req *billproto.BillPullerListRe
 
 // --- bill summary ---
 
-// CreateBillSummary create bill summary
-func (b *BillClient) CreateBillSummary(kt *kit.Kit, req *billproto.BillSummaryCreateReq) (
+// CreateBillSummaryMain create bill summary
+func (b *BillClient) CreateBillSummaryMain(kt *kit.Kit, req *billproto.BillSummaryMainCreateReq) (
 	*core.CreateResult, error) {
-	return common.Request[billproto.BillSummaryCreateReq, core.CreateResult](
-		b.client, rest.POST, kt, req, "/bills/summarys")
+	return common.Request[billproto.BillSummaryMainCreateReq, core.CreateResult](
+		b.client, rest.POST, kt, req, "/bills/summarymains")
 }
 
-// BatchDeleteBillSummary delete bill summary
-func (b *BillClient) BatchDeleteBillSummary(kt *kit.Kit, req *dataservice.BatchDeleteReq) error {
+// BatchDeleteBillSummaryMain delete bill summary
+func (b *BillClient) BatchDeleteBillSummaryMain(kt *kit.Kit, req *dataservice.BatchDeleteReq) error {
 	return common.RequestNoResp[dataservice.BatchDeleteReq](
-		b.client, rest.DELETE, kt, req, "/bills/summarys")
+		b.client, rest.DELETE, kt, req, "/bills/summarymains")
 }
 
-// UpdateBillSummary update bill summary
-func (b *BillClient) UpdateBillSummary(kt *kit.Kit, req *billproto.BillSummaryUpdateReq) error {
-	return common.RequestNoResp[billproto.BillSummaryUpdateReq](
-		b.client, rest.PATCH, kt, req, "/bills/summarys")
+// UpdateBillSummaryMain update bill summary
+func (b *BillClient) UpdateBillSummaryMain(kt *kit.Kit, req *billproto.BillSummaryMainUpdateReq) error {
+	return common.RequestNoResp[billproto.BillSummaryMainUpdateReq](
+		b.client, rest.PATCH, kt, req, "/bills/summarymains")
 }
 
-// ListBillSummary list bill summary
-func (b *BillClient) ListBillSummary(kt *kit.Kit, req *billproto.BillSummaryListReq) (
-	*billproto.BillSummaryListResult, error) {
-	return common.Request[billproto.BillSummaryListReq, billproto.BillSummaryListResult](
-		b.client, rest.GET, kt, req, "/bills/summarys")
+// ListBillSummaryMain list bill summary
+func (b *BillClient) ListBillSummaryMain(kt *kit.Kit, req *billproto.BillSummaryMainListReq) (
+	*billproto.BillSummaryMainListResult, error) {
+	return common.Request[billproto.BillSummaryMainListReq, billproto.BillSummaryMainListResult](
+		b.client, rest.GET, kt, req, "/bills/summarymains")
 }
 
 // --- bill summary daily ---

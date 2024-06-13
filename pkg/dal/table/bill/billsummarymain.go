@@ -22,7 +22,6 @@ package bill
 
 import (
 	"errors"
-	"fmt"
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
@@ -31,15 +30,21 @@ import (
 	"hcm/pkg/dal/table/utils"
 )
 
-// AccountBillSummaryRootColumns defines account_bill_adjustment_item's columns.
-var AccountBillSummaryRootColumns = utils.MergeColumns(nil, AccountBillSummaryRootColumnDescriptor)
+// AccountBillSummaryMainColumns defines account_bill_summary_main's columns.
+var AccountBillSummaryMainColumns = utils.MergeColumns(nil, AccountBillSummaryMainColumnDescriptor)
 
-// AccountBillSummaryRootColumnDescriptor is account_bill_summary_daily's column descriptors.
-var AccountBillSummaryRootColumnDescriptor = utils.ColumnDescriptors{
+// AccountBillSummaryMainColumnDescriptor is AwsBill's column descriptors.
+var AccountBillSummaryMainColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
 	{Column: "root_account_id", NamedC: "root_account_id", Type: enumor.String},
 	{Column: "root_account_name", NamedC: "root_account_name", Type: enumor.String},
+	{Column: "main_account_id", NamedC: "main_account_id", Type: enumor.String},
+	{Column: "main_account_name", NamedC: "main_account_name", Type: enumor.String},
 	{Column: "vendor", NamedC: "vendor", Type: enumor.String},
+	{Column: "product_id", NamedC: "product_id", Type: enumor.Numeric},
+	{Column: "product_name", NamedC: "product_name", Type: enumor.String},
+	{Column: "bk_biz_id", NamedC: "bk_biz_id", Type: enumor.Numeric},
+	{Column: "bk_biz_name", NamedC: "bk_biz_name", Type: enumor.String},
 	{Column: "bill_year", NamedC: "bill_year", Type: enumor.Numeric},
 	{Column: "bill_month", NamedC: "bill_month", Type: enumor.Numeric},
 	{Column: "last_synced_version", NamedC: "last_synced_version", Type: enumor.Numeric},
@@ -60,16 +65,28 @@ var AccountBillSummaryRootColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "updated_at", NamedC: "updated_at", Type: enumor.Time},
 }
 
-// AccountBillSummaryRoot 一级账号汇总信息
-type AccountBillSummaryRoot struct {
+// AccountBillSummaryMain account_bill_summary_main表，存储月度汇总账单
+type AccountBillSummaryMain struct {
 	// ID 自增ID
 	ID string `db:"id" validate:"lte=64" json:"id"`
 	// RootAccountID 一级账号ID
 	RootAccountID string `db:"root_account_id" json:"root_account_id"`
-	// RootAccountName 一级账号名
+	// RootAccountName 一级账号名称
 	RootAccountName string `db:"root_account_name" json:"root_account_name"`
+	// MainAccountID 账号ID
+	MainAccountID string `db:"main_account_id" json:"main_account_id"`
+	// MainAccountName 一级账号名称
+	MainAccountName string `db:"main_account_name" json:"main_account_name"`
 	// Vendor 云厂商
 	Vendor enumor.Vendor `db:"vendor" json:"vendor"`
+	// ProductID 运营产品ID
+	ProductID int64 `db:"product_id" json:"product_id"`
+	// ProductName 运营产品名称
+	ProductName string `db:"product_name" json:"product_name"`
+	// BkBizID 业务ID
+	BkBizID int64 `db:"bk_biz_id" json:"bk_biz_id"`
+	// BkBizName 业务名称
+	BkBizName string `db:"bk_biz_name" json:"bk_biz_name"`
 	// BillYear 账单年份
 	BillYear int `db:"bill_year" json:"bill_year"`
 	// BillMonth 账单月份
@@ -108,13 +125,13 @@ type AccountBillSummaryRoot struct {
 	UpdatedAt types.Time `db:"updated_at" json:"updated_at"`
 }
 
-// TableName 返回每天汇总账单版本表名
-func (abs *AccountBillSummaryRoot) TableName() table.Name {
-	return table.AccountBillSummaryRootTable
+// TableName 返回月度汇总账单表名
+func (abs *AccountBillSummaryMain) TableName() table.Name {
+	return table.AccountBillSummaryMainTable
 }
 
-// InsertValidate validate account bill day on insert
-func (abs *AccountBillSummaryRoot) InsertValidate() error {
+// InsertValidate validate account bill summary on insert
+func (abs *AccountBillSummaryMain) InsertValidate() error {
 	if len(abs.ID) == 0 {
 		return errors.New("id is required")
 	}
@@ -124,14 +141,17 @@ func (abs *AccountBillSummaryRoot) InsertValidate() error {
 	if len(abs.RootAccountID) == 0 {
 		return errors.New("root_account_id is required")
 	}
+	if len(abs.MainAccountID) == 0 {
+		return errors.New("main_account_id is required")
+	}
+	if abs.BkBizID == 0 && abs.ProductID == 0 {
+		return errors.New("bk_biz_id or product_id is required")
+	}
 	if abs.BillYear == 0 {
 		return errors.New("bill_year is required")
 	}
 	if abs.BillMonth == 0 {
 		return errors.New("bill_month is required")
-	}
-	if abs.CurrentVersion < 0 {
-		return fmt.Errorf("invalid current_version %d", abs.CurrentVersion)
 	}
 	if err := validator.Validate.Struct(abs); err != nil {
 		return err
@@ -139,25 +159,25 @@ func (abs *AccountBillSummaryRoot) InsertValidate() error {
 	return nil
 }
 
-// UpdateValidate validate account bill day on update
-func (abs *AccountBillSummaryRoot) UpdateValidate() error {
+// UpdateValidate validate account bill summary on update
+func (abs *AccountBillSummaryMain) UpdateValidate() error {
 	if len(abs.ID) == 0 {
 		return errors.New("id is required")
 	}
-	if len(abs.Vendor) == 0 {
-		return errors.New("vendor is required")
-	}
 	if len(abs.RootAccountID) == 0 {
 		return errors.New("root_account_id is required")
+	}
+	if len(abs.MainAccountID) == 0 {
+		return errors.New("main_account_id is required")
+	}
+	if abs.BkBizID == 0 && abs.ProductID == 0 {
+		return errors.New("bk_biz_id or product_id is required")
 	}
 	if abs.BillYear == 0 {
 		return errors.New("bill_year is required")
 	}
 	if abs.BillMonth == 0 {
 		return errors.New("bill_month is required")
-	}
-	if abs.CurrentVersion < 0 {
-		return fmt.Errorf("invalid current_version %d", abs.CurrentVersion)
 	}
 	if err := validator.Validate.Struct(abs); err != nil {
 		return err

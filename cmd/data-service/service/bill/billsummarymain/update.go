@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package billsummaryroot
+package billsummarymain
 
 import (
 	"fmt"
@@ -32,9 +32,9 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// UpdateBillSummaryRoot update bill summary of root account with options
-func (svc *service) UpdateBillSummaryRoot(cts *rest.Contexts) (interface{}, error) {
-	req := new(dataservice.BillSummaryRootUpdateReq)
+// UpdateBillSummary update account bill summary main with options
+func (svc *service) UpdateBillSummaryMain(cts *rest.Contexts) (interface{}, error) {
+	req := new(dataservice.BillSummaryMainUpdateReq)
 
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -44,11 +44,17 @@ func (svc *service) UpdateBillSummaryRoot(cts *rest.Contexts) (interface{}, erro
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	billSummaryRoot := &tablebill.AccountBillSummaryRoot{
+	billSummaryMain := &tablebill.AccountBillSummaryMain{
 		ID:                        req.ID,
 		RootAccountID:             req.RootAccountID,
 		RootAccountName:           req.RootAccountName,
+		MainAccountID:             req.MainAccountID,
+		MainAccountName:           req.MainAccountName,
 		Vendor:                    req.Vendor,
+		ProductID:                 req.ProductID,
+		ProductName:               req.ProductName,
+		BkBizID:                   req.BkBizID,
+		BkBizName:                 req.BkBizName,
 		BillYear:                  req.BillYear,
 		BillMonth:                 req.BillMonth,
 		LastSyncedVersion:         req.LastSyncedVersion,
@@ -67,9 +73,9 @@ func (svc *service) UpdateBillSummaryRoot(cts *rest.Contexts) (interface{}, erro
 		State:                     req.State,
 	}
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		if err := svc.dao.AccountBillSummaryRoot().UpdateByIDWithTx(
-			cts.Kit, txn, billSummaryRoot.ID, billSummaryRoot); err != nil {
-			return nil, fmt.Errorf("update bill summary of root account failed, err: %v", err)
+		if err := svc.dao.AccountBillSummaryMain().UpdateByIDWithTx(
+			cts.Kit, txn, billSummaryMain.ID, billSummaryMain); err != nil {
+			return nil, fmt.Errorf("update bill summary main failed, err: %v", err)
 		}
 		return nil, nil
 	})

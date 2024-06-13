@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	tablebill "hcm/pkg/dal/table/bill"
+	"hcm/pkg/dal/table/types"
 	"hcm/pkg/rest"
 
 	"github.com/jmoiron/sqlx"
@@ -60,8 +61,8 @@ func (svc *service) CreateBillAdjustmentItem(cts *rest.Contexts) (interface{}, e
 				Memo:            item.Memo,
 				Operator:        item.Operator,
 				Currency:        item.Currency,
-				Cost:            item.Cost,
-				RMBCost:         item.RMBCost,
+				Cost:            &types.Decimal{Decimal: item.Cost},
+				RMBCost:         &types.Decimal{Decimal: item.RMBCost},
 				State:           item.State,
 			}
 			itemList = append(itemList, item)

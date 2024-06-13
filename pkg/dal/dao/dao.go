@@ -108,7 +108,7 @@ type Set interface {
 	AccountBillConfig() cloudbill.Interface
 	AccountBillDailyPullTask() bill.AccountBillDailyPullTask
 	AccountBillPuller() bill.AccountBillPuller
-	AccountBillSummary() bill.AccountBillSummary
+	AccountBillSummaryMain() bill.AccountBillSummaryMain
 	AccountBillSummaryDaily() bill.AccountBillSummaryDaily
 	AccountBillSummaryVersion() bill.AccountBillSummaryVersion
 	AccountBillItem() bill.AccountBillItem
@@ -510,9 +510,9 @@ func (s *set) AccountBillPuller() bill.AccountBillPuller {
 	}
 }
 
-// AccountBillSummary returns AccountBillSummary dao.
-func (s *set) AccountBillSummary() bill.AccountBillSummary {
-	return &bill.AccountBillSummaryDao{
+// AccountBillSummaryMain returns AccountBillSummaryMain dao.
+func (s *set) AccountBillSummaryMain() bill.AccountBillSummaryMain {
+	return &bill.AccountBillSummaryMainDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 	}

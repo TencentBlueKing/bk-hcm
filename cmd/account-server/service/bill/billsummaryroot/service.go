@@ -17,42 +17,36 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package rootaccount
+package billsummaryroot
 
 import (
-	"hcm/pkg/api/core"
-	"hcm/pkg/criteria/errf"
-	"hcm/pkg/iam/meta"
+	"net/http"
+
+	"hcm/cmd/account-server/logics/audit"
+	"hcm/cmd/account-server/service/capability"
+	"hcm/pkg/client"
+	"hcm/pkg/iam/auth"
 	"hcm/pkg/rest"
 )
 
-// List list main account with options
-func (s *service) List(cts *rest.Contexts) (interface{}, error) {
-	req := new(core.ListWithoutFieldReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
+// InitService initial the main account service
+func InitService(c *capability.Capability) {
+	svc := &service{
+		client:     c.ApiClient,
+		authorizer: c.Authorizer,
+		audit:      c.Audit,
 	}
 
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
+	h := rest.NewHandler()
 
-	// 校验用户有一级账号管理权限
-	if err := s.checkPermission(cts, meta.RootAccount, meta.Find); err != nil {
-		return nil, err
-	}
+	// register handler
+	h.Add("ListRootAccountSummary", http.MethodPost, "/bills/root-account-summarys/list", svc.ListRootAccountSummary)
 
-	accounts, err := s.client.DataService().Global.RootAccount.List(
-		cts.Kit,
-		&core.ListWithoutFieldReq{
-			Filter: req.Filter,
-			Page:   req.Page,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
+	h.Load(c.WebService)
+}
 
-	return accounts, nil
-
+type service struct {
+	client     *client.ClientSet
+	authorizer auth.Authorizer
+	audit      audit.Interface
 }

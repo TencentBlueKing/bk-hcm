@@ -37,7 +37,7 @@ import (
 	"hcm/cmd/data-service/service/bill/billdailytask"
 	"hcm/cmd/data-service/service/bill/billitem"
 	"hcm/cmd/data-service/service/bill/billpuller"
-	"hcm/cmd/data-service/service/bill/billsummary"
+	"hcm/cmd/data-service/service/bill/billsummarymain"
 	"hcm/cmd/data-service/service/bill/billsummaryroot"
 	"hcm/cmd/data-service/service/bill/billsummaryversion"
 	"hcm/cmd/data-service/service/bill/rawbill"
@@ -246,20 +246,7 @@ func (s *Service) apiSet() *restful.Container {
 	rootaccount.InitService(capability)
 
 	billpuller.InitService(capability)
-	billsummary.InitService(capability)
-	billsummaryversion.InitService(capability)
-	billitem.InitService(capability)
-	billdailytask.InitService(capability)
-	billadjustmentitem.InitService(capability)
-	if capability.ObjectStore != nil {
-		rawbill.InitService(capability)
-	}
-	cert.InitService(capability)
-	loadbalancer.InitService(capability)
-	sgcomrel.InitService(capability)
-
-	billpuller.InitService(capability)
-	billsummary.InitService(capability)
+	billsummarymain.InitService(capability)
 	billsummaryversion.InitService(capability)
 	billitem.InitService(capability)
 	billdailytask.InitService(capability)

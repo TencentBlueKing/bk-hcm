@@ -176,8 +176,6 @@ const (
 	// RootAccountTable is main_account table's name
 	RootAccountTable Name = "root_account"
 
-	// AccountBillSummaryTable 月度汇总账单
-	AccountBillSummaryTable = "account_bill_summary"
 	// AccountBillSummaryVersionTable 月度汇总账单版本
 	AccountBillSummaryVersionTable = "account_bill_summary_version"
 	// AccountBillSummaryDailyTable 每天汇总账单版本
@@ -192,6 +190,8 @@ const (
 	AccountBillDailyPullTaskTable = "account_bill_daily_pull_task"
 	// AccountBillSummaryRootTable 一级账号账单汇总信息
 	AccountBillSummaryRootTable = "account_bill_summary_root"
+	// AccountBillSummaryMainTable 月度汇总账单
+	AccountBillSummaryMainTable = "account_bill_summary_main"
 )
 
 // Validate whether the table name is valid or not.
@@ -270,7 +270,7 @@ var TableMap = map[Name]struct{}{
 
 	AccountBillPullerTable:          {},
 	AccountBillDailyPullTaskTable:   {},
-	AccountBillSummaryTable:         {},
+	AccountBillSummaryMainTable:     {},
 	AccountBillSummaryVersionTable:  {},
 	AccountBillSummaryDailyTable:    {},
 	AccountBillItemTable:            {},

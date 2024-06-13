@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	tablebill "hcm/pkg/dal/table/bill"
+	"hcm/pkg/dal/table/types"
 	"hcm/pkg/rest"
 
 	"github.com/jmoiron/sqlx"
@@ -59,8 +60,8 @@ func (svc *service) CreateBillItem(cts *rest.Contexts) (interface{}, error) {
 				BillDay:         item.BillDay,
 				VersionID:       item.VersionID,
 				Currency:        item.Currency,
-				Cost:            item.Cost,
-				RMBCost:         item.RMBCost,
+				Cost:            &types.Decimal{Decimal: item.Cost},
+				RMBCost:         &types.Decimal{Decimal: item.RMBCost},
 			}
 			summaryList = append(summaryList, summary)
 		}
