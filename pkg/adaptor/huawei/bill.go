@@ -32,7 +32,7 @@ import (
 
 // GetBillList get bill list.
 // reference: https://support.huaweicloud.com/api-oce/mbc_00003.html
-func (h *HuaWei) GetBillList(_ *kit.Kit, opt *typesBill.HuaWeiBillListOption) (
+func (h *HuaWei) GetBillList(kt *kit.Kit, opt *typesBill.HuaWeiBillListOption) (
 	*model.ListCustomerselfResourceRecordDetailsResponse, error) {
 
 	if err := opt.Validate(); err != nil {
@@ -56,7 +56,7 @@ func (h *HuaWei) GetBillList(_ *kit.Kit, opt *typesBill.HuaWeiBillListOption) (
 
 	resp, err := client.ListCustomerselfResourceRecordDetails(req)
 	if err != nil {
-		logs.Errorf("huawei bill list request adaptor failed, opt: %+v, err: %+v", opt, err)
+		logs.Errorf("huawei bill list request adaptor failed, err: %+v, opt: %+v, rid: %s", opt, err, kt.Rid)
 		return nil, err
 	}
 
@@ -65,7 +65,7 @@ func (h *HuaWei) GetBillList(_ *kit.Kit, opt *typesBill.HuaWeiBillListOption) (
 
 // GetFeeRecordList get fee record list.
 // reference: https://console-intl.huaweicloud.com/apiexplorer/#/openapi/BSSINTL/debug?api=ListCustomerselfResourceRecords
-func (h *HuaWei) GetFeeRecordList(kit *kit.Kit, opt *typesBill.HuaWeiFeeRecordListOption) (
+func (h *HuaWei) GetFeeRecordList(kt *kit.Kit, opt *typesBill.HuaWeiFeeRecordListOption) (
 	*model.ListCustomerselfResourceRecordsResponse, error) {
 
 	if err := opt.Validate(); err != nil {
@@ -96,7 +96,7 @@ func (h *HuaWei) GetFeeRecordList(kit *kit.Kit, opt *typesBill.HuaWeiFeeRecordLi
 
 	resp, err := client.ListCustomerselfResourceRecords(req)
 	if err != nil {
-		logs.Errorf("huawei fee record list request adaptor failed, opt: %+v, err: %+v", opt, err)
+		logs.Errorf("huawei fee record list request adaptor failed, err: %+v, opt: %+v, rid: %s", opt, err, kt.Rid)
 		return nil, err
 	}
 

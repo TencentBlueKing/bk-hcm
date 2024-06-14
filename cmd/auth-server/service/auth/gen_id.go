@@ -670,3 +670,13 @@ func genRootAccountRuleResource(a *meta.ResourceAttribute) (client.ActionID, []c
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }
+
+// 生成账单账号权限映射
+func genAccountBillResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	switch a.Basic.Action {
+	case meta.Find, meta.Delete, meta.Import, meta.Create, meta.Update, meta.Access:
+		return sys.AccountBillManage, make([]client.Resource, 0), nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+}

@@ -1,7 +1,7 @@
 /*
  * TencentBlueKing is pleased to support the open source community by making
  * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
- * Copyright (C) 2022 THL A29 Limited,
+ * Copyright (C) 2024 THL A29 Limited,
  * a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,35 +17,31 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package billitem ...
-package billitem
+package azure
 
 import (
-	"net/http"
-
-	"hcm/cmd/data-service/service/capability"
-	"hcm/pkg/dal/dao"
+	"hcm/pkg/api/core"
+	billproto "hcm/pkg/api/data-service/bill"
+	"hcm/pkg/client/common"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
-// InitService initialize the bill item service
-func InitService(cap *capability.Capability) {
-	svc := &service{
-		dao: cap.Dao,
+// NewBillClient create a new bill api client.
+func NewBillClient(client rest.ClientInterface) *BillClient {
+	return &BillClient{
+		client: client,
 	}
-	h := rest.NewHandler()
-
-	h.Add("ListBillItemExt", http.MethodPost, "/vendors/{vendor}/bills/items/list", svc.ListBillItemExt)
-	h.Add("ListBillItem", http.MethodPost, "/bills/items/list", svc.ListBillItem)
-	h.Add("ListBillItemRaw", http.MethodPost, "/bills/items/list_with_extension", svc.ListBillItemRaw)
-
-	h.Add("CreateBillItem", http.MethodPost, "/vendors/{vendor}/bills/items/create", svc.CreateBillItem)
-	h.Add("DeleteBillItem", http.MethodDelete, "/bills/items", svc.DeleteBillItem)
-	h.Add("UpdateBillItem", http.MethodPut, "/vendors/{vendor}/bills/items/update", svc.UpdateBillItem)
-
-	h.Load(cap.WebService)
 }
 
-type service struct {
-	dao dao.Set
+// BillClient is data service bill api client.
+type BillClient struct {
+	client rest.ClientInterface
+}
+
+// ListBillItem list bill item
+func (b *BillClient) ListBillItem(kt *kit.Kit, req *core.ListReq) (*billproto.AzureBillItemListResult, error) {
+
+	return common.Request[core.ListReq, billproto.AzureBillItemListResult](
+		b.client, rest.POST, kt, req, "/bills/items/list")
 }
