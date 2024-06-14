@@ -4,8 +4,8 @@ import { reactive, ref, watch } from 'vue';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 export interface IProp {
-  vendor: VendorEnum,
-  isValidate?: boolean,
+  vendor: VendorEnum;
+  isValidate?: boolean;
 }
 export interface IExtensionItem {
   label: string;
@@ -22,7 +22,7 @@ export interface IExtension {
   output1: Record<string, IExtensionItem>; // 需要显眼的输出
   output2: Record<string, IExtensionItem>; // 不需要显眼的输出
   validatedStatus: ValidateStatus; // 是否校验通过
-  validateFailedReason?: string, // 不通过的理由
+  validateFailedReason?: string; // 不通过的理由
 }
 export const useSecretExtension = (props: IProp) => {
   // 腾讯云
@@ -195,6 +195,19 @@ export const useSecretExtension = (props: IProp) => {
     },
     validatedStatus: ValidateStatus.UNKOWN,
   });
+  // 腾讯云
+  const zenlayerOrKaopuExtension: IExtension = reactive({
+    output1: {},
+    output2: {},
+    input: {
+      cloud_account_id: {
+        value: '',
+        label: '云账号ID',
+      },
+    },
+    // 无需校验
+    validatedStatus: ValidateStatus.YES,
+  });
   // 当前选中的云厂商对应的 extension
   const curExtension = ref<IExtension>(tcloudExtension);
   const isValidateLoading = ref(false);
@@ -226,6 +239,10 @@ export const useSecretExtension = (props: IProp) => {
           curExtension.value = azureExtension;
           break;
         }
+        case VendorEnum.ZENLAYER:
+        case VendorEnum.KAOPU:
+          curExtension.value = zenlayerOrKaopuExtension;
+          break;
       }
     },
     {

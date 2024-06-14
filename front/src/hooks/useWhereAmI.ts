@@ -17,6 +17,7 @@ export const useWhereAmI = (): {
     if (/^\/service\/.+$/.test(route.path)) return Senarios.service;
     if (/^\/workbench\/.+$/.test(route.path)) return Senarios.workbench;
     if (/^\/scheme\/.+$/.test(route.path)) return Senarios.scheme;
+    if (/^\/bill\/.+$/.test(route.path)) return Senarios.bill;
     return Senarios.unknown;
   });
   return {
@@ -35,5 +36,6 @@ export enum Senarios {
   service = 'service',
   workbench = 'workbench',
   scheme = 'scheme',
+  bill = 'bill',
   unknown = 'unknown',
 }
