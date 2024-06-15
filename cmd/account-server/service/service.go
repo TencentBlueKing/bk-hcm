@@ -29,6 +29,7 @@ import (
 	"time"
 
 	logicaudit "hcm/cmd/account-server/logics/audit"
+	"hcm/cmd/account-server/logics/bill"
 	mainaccount "hcm/cmd/account-server/service/account-set/main-account"
 	rootaccount "hcm/cmd/account-server/service/account-set/root-account"
 	"hcm/cmd/account-server/service/bill/billsummarymain"
@@ -52,10 +53,11 @@ import (
 
 // Service do all the account server's work
 type Service struct {
-	clientSet  *client.ClientSet
-	serve      *http.Server
-	authorizer auth.Authorizer
-	audit      logicaudit.Interface
+	clientSet   *client.ClientSet
+	serve       *http.Server
+	authorizer  auth.Authorizer
+	audit       logicaudit.Interface
+	billManager *bill.BillManager
 }
 
 // NewService create a service instance.
@@ -86,10 +88,21 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 		return nil, err
 	}
 
+	// start bill manager
+	newBillManager := &bill.BillManager{
+		Sd:     sd,
+		Client: apiClientSet,
+		AccountList: &bill.MainAccountLister{
+			Client: apiClientSet,
+		},
+		CurrentControllers: make(map[string]*bill.MainAccountController),
+	}
+
 	svr := &Service{
-		clientSet:  apiClientSet,
-		authorizer: authorizer,
-		audit:      logicaudit.NewAudit(apiClientSet.DataService()),
+		clientSet:   apiClientSet,
+		authorizer:  authorizer,
+		audit:       logicaudit.NewAudit(apiClientSet.DataService()),
+		billManager: newBillManager,
 	}
 
 	return svr, nil
@@ -125,6 +138,9 @@ func (s *Service) ListenAndServeRest() error {
 
 		server.TLSConfig = tlsC
 	}
+
+	logs.Infof("start bill manager")
+	go s.billManager.Run(context.Background())
 
 	logs.Infof("listen restful server on %s with secure(%v) now.", server.Addr, network.TLS.Enable())
 

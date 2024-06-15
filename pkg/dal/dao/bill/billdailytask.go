@@ -62,16 +62,6 @@ func (abpDao AccountBillDailyPullTaskDao) BatchCreateWithTx(
 	if len(abPullers) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "account bill daily pull task model data is required")
 	}
-	for _, i := range abPullers {
-		if err := i.InsertValidate(); err != nil {
-			return nil, err
-		}
-	}
-
-	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`,
-		table.AccountBillDailyPullTaskTable, tablebill.AccountBillDailyPullTaskColumns.ColumnExpr(),
-		tablebill.AccountBillDailyPullTaskColumns.ColonNameExpr(),
-	)
 
 	ids, err := abpDao.IDGen.Batch(kt, table.AccountBillDailyPullTaskTable, len(abPullers))
 	if err != nil {
@@ -80,7 +70,15 @@ func (abpDao AccountBillDailyPullTaskDao) BatchCreateWithTx(
 
 	for idx, d := range abPullers {
 		d.ID = ids[idx]
+		if err := d.InsertValidate(); err != nil {
+			return nil, err
+		}
 	}
+
+	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`,
+		table.AccountBillDailyPullTaskTable, tablebill.AccountBillDailyPullTaskColumns.ColumnExpr(),
+		tablebill.AccountBillDailyPullTaskColumns.ColonNameExpr(),
+	)
 
 	err = abpDao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, abPullers)
 	if err != nil {
@@ -141,7 +139,17 @@ func (abpDao AccountBillDailyPullTaskDao) UpdateByIDWithTx(
 		return err
 	}
 
-	opts := utils.NewFieldOptions().AddIgnoredFields(types.DefaultIgnoredFields...)
+	ignoredFields := types.DefaultIgnoredFields
+	ignoredFields = append(ignoredFields, []string{
+		"root_account_id",
+		"main_account_id",
+		"vendor",
+		"bill_year",
+		"bill_month",
+		"bill_day",
+		"version_id",
+	}...)
+	opts := utils.NewFieldOptions().AddIgnoredFields(ignoredFields...)
 	setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(updateData, opts)
 	if err != nil {
 		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)

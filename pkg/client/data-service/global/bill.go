@@ -110,7 +110,7 @@ func (b *BillClient) BatchDeleteBillAdjustmentItem(kt *kit.Kit, req *dataservice
 // UpdateBillAdjustmentItem update bill adjustment item
 func (b *BillClient) UpdateBillAdjustmentItem(kt *kit.Kit, req *billproto.BillAdjustmentItemUpdateReq) error {
 	return common.RequestNoResp[billproto.BillAdjustmentItemUpdateReq](
-		b.client, rest.PATCH, kt, req, "/bills/adjustmentitems")
+		b.client, rest.PUT, kt, req, "/bills/adjustmentitems")
 }
 
 // ListBillAdjustmentItem list bill adjustment item
@@ -138,7 +138,7 @@ func (b *BillClient) BatchDeleteBillItem(kt *kit.Kit, req *dataservice.BatchDele
 // UpdateBillItem update bill item
 func (b *BillClient) UpdateBillItem(kt *kit.Kit, req *billproto.BillItemUpdateReq) error {
 	return common.RequestNoResp[billproto.BillItemUpdateReq](
-		b.client, rest.PATCH, kt, req, "/bills/items")
+		b.client, rest.PUT, kt, req, "/bills/items")
 }
 
 // ListBillItem list bill item
@@ -166,7 +166,7 @@ func (b *BillClient) BatchDeleteBillDailyPullTask(kt *kit.Kit, req *dataservice.
 // UpdateBillDailyPullTask update bill daily pull task
 func (b *BillClient) UpdateBillDailyPullTask(kt *kit.Kit, req *billproto.BillDailyPullTaskUpdateReq) error {
 	return common.RequestNoResp[billproto.BillDailyPullTaskUpdateReq](
-		b.client, rest.PATCH, kt, req, "/bills/dailypulltasks")
+		b.client, rest.PUT, kt, req, "/bills/dailypulltasks")
 }
 
 // ListBillDailyPullTask list bill daily pull task
@@ -194,7 +194,7 @@ func (b *BillClient) BatchDeleteBillPuller(kt *kit.Kit, req *dataservice.BatchDe
 // UpdateBillPuller update bill puller
 func (b *BillClient) UpdateBillPuller(kt *kit.Kit, req *billproto.BillPullerUpdateReq) error {
 	return common.RequestNoResp[billproto.BillPullerUpdateReq](
-		b.client, rest.PATCH, kt, req, "/bills/pullers")
+		b.client, rest.PUT, kt, req, "/bills/pullers")
 }
 
 // ListBillPuller list bill puller
@@ -222,7 +222,7 @@ func (b *BillClient) BatchDeleteBillSummaryMain(kt *kit.Kit, req *dataservice.Ba
 // UpdateBillSummaryMain update bill summary
 func (b *BillClient) UpdateBillSummaryMain(kt *kit.Kit, req *billproto.BillSummaryMainUpdateReq) error {
 	return common.RequestNoResp[billproto.BillSummaryMainUpdateReq](
-		b.client, rest.PATCH, kt, req, "/bills/summarymains")
+		b.client, rest.PUT, kt, req, "/bills/summarymains")
 }
 
 // ListBillSummaryMain list bill summary
@@ -250,7 +250,7 @@ func (b *BillClient) BatchDeleteBillSummaryDaily(kt *kit.Kit, req *dataservice.B
 // UpdateBillSummaryDaily update bill summary daily
 func (b *BillClient) UpdateBillSummaryDaily(kt *kit.Kit, req *billproto.BillSummaryDailyUpdateReq) error {
 	return common.RequestNoResp[billproto.BillSummaryDailyUpdateReq](
-		b.client, rest.PATCH, kt, req, "/bills/summarydailys")
+		b.client, rest.PUT, kt, req, "/bills/summarydailys")
 }
 
 // ListBillSummaryDaily list bill summary daily
@@ -278,7 +278,7 @@ func (b *BillClient) BatchDeleteBillSummaryVersion(kt *kit.Kit, req *dataservice
 // UpdateBillSummaryVersion update bill summary version
 func (b *BillClient) UpdateBillSummaryVersion(kt *kit.Kit, req *billproto.BillSummaryVersionUpdateReq) error {
 	return common.RequestNoResp[billproto.BillSummaryVersionUpdateReq](
-		b.client, rest.PATCH, kt, req, "/bills/summaryversions")
+		b.client, rest.PUT, kt, req, "/bills/summaryversions")
 }
 
 // ListBillSummaryVersion list bill summary version
@@ -300,7 +300,7 @@ func (b *BillClient) CreateBillSummaryRoot(kt *kit.Kit, req *billproto.BillSumma
 // UpdateBillSummaryRoot update bill summary version
 func (b *BillClient) UpdateBillSummaryRoot(kt *kit.Kit, req *billproto.BillSummaryRootUpdateReq) error {
 	return common.RequestNoResp[billproto.BillSummaryRootUpdateReq](
-		b.client, rest.PATCH, kt, req, "/bills/summaryroots")
+		b.client, rest.PUT, kt, req, "/bills/summaryroots")
 }
 
 // ListBillSummaryRoot list bill summary version

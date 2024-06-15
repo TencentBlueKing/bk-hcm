@@ -43,8 +43,8 @@ type BillSummaryMainCreateReq struct {
 	BillYear                  int             `json:"bill_year" validate:"required"`
 	BillMonth                 int             `json:"bill_month" validate:"required"`
 	LastSyncedVersion         int             `json:"last_synced_version" validate:"omitempty"`
-	CurrentVersion            int             `json:"current_version" validate:"required"`
-	Currency                  string          `json:"currency" validate:"required"`
+	CurrentVersion            int             `json:"current_version" validate:"omitempty"`
+	Currency                  string          `json:"currency" validate:"omitempty"`
 	LastMonthCostSynced       decimal.Decimal `json:"last_month_cost_synced" validate:"omitempty"`
 	LastMonthRMBCostSynced    decimal.Decimal `json:"last_month_rmb_cost_synced" validate:"omitempty"`
 	CurrentMonthCostSynced    decimal.Decimal `json:"current_month_cost_synced" validate:"omitempty"`
@@ -54,8 +54,8 @@ type BillSummaryMainCreateReq struct {
 	CurrentMonthRMBCost       decimal.Decimal `json:"current_month_rmb_cost" validate:"omitempty"`
 	AjustmentCost             decimal.Decimal `json:"adjustment_cost" validate:"omitempty"`
 	AjustmentRMBCost          decimal.Decimal `json:"adjustment_rmb_cost" validate:"omitempty"`
-	Rate                      float64         `json:"rate" validate:"required"`
-	State                     string          `json:"state" validate:"required"`
+	Rate                      float64         `json:"rate" validate:"omitempty"`
+	State                     string          `json:"state" validate:"omitempty"`
 }
 
 // Validate ...

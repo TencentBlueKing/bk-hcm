@@ -22,6 +22,7 @@ package bill
 
 import (
 	"errors"
+	"fmt"
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
@@ -36,8 +37,8 @@ var AccountBillSummaryDailyColumns = utils.MergeColumns(nil, AccountBillSummaryD
 // AccountBillSummaryDailyColumnDescriptor is account_bill_summary_daily's column descriptors.
 var AccountBillSummaryDailyColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
-	{Column: "first_account_id", NamedC: "first_account_id", Type: enumor.String},
-	{Column: "second_account_id", NamedC: "second_account_id", Type: enumor.String},
+	{Column: "root_account_id", NamedC: "root_account_id", Type: enumor.String},
+	{Column: "main_account_id", NamedC: "main_account_id", Type: enumor.String},
 	{Column: "vendor", NamedC: "vendor", Type: enumor.String},
 	{Column: "product_id", NamedC: "product_id", Type: enumor.Numeric},
 	{Column: "bk_biz_id", NamedC: "bk_biz_id", Type: enumor.Numeric},
@@ -47,7 +48,7 @@ var AccountBillSummaryDailyColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "version_id", NamedC: "version_id", Type: enumor.String},
 	{Column: "currency", NamedC: "currency", Type: enumor.String},
 	{Column: "cost", NamedC: "cost", Type: enumor.Numeric},
-	{Column: "rmb_cost", NamedC: "rmb_cost", Type: enumor.Numeric},
+	{Column: "count", NamedC: "count", Type: enumor.Numeric},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
 	{Column: "updated_at", NamedC: "updated_at", Type: enumor.Time},
 }
@@ -56,10 +57,10 @@ var AccountBillSummaryDailyColumnDescriptor = utils.ColumnDescriptors{
 type AccountBillSummaryDaily struct {
 	// ID 自增ID
 	ID string `db:"id" validate:"lte=64" json:"id"`
-	// FirstAccountID 一级账号ID
-	FirstAccountID string `db:"first_account_id" json:"first_account_id"`
-	// SecondAccountID 账号ID
-	SecondAccountID string `db:"second_account_id" json:"second_account_id"`
+	// RootAccountID 一级账号ID
+	RootAccountID string `db:"root_account_id" json:"root_account_id"`
+	// MainAccountID 账号ID
+	MainAccountID string `db:"main_account_id" json:"main_account_id"`
 	// Vendor 云厂商
 	Vendor enumor.Vendor `db:"vendor" json:"vendor"`
 	// ProductID 运营产品ID
@@ -72,14 +73,14 @@ type AccountBillSummaryDaily struct {
 	BillMonth int `db:"bill_month" json:"bill_month"`
 	// BillDay 账单日期
 	BillDay int `db:"bill_day" json:"bill_day"`
-	// VersionID AccountBillSummary VersionID
-	VersionID string `db:"version_id" json:"version_id"`
+	// VersionID 版本号
+	VersionID int `db:"version_id" json:"version_id"`
 	// Currency 币种
 	Currency string `db:"currency" json:"currency"`
 	// Cost 费用
 	Cost *types.Decimal `db:"cost" json:"cost"`
-	// RMBCost 费用
-	RMBCost *types.Decimal `db:"rmb_cost" json:"rmb_cost"`
+	// Count 账单条数
+	Count int64 `db:"count" json:"count"`
 	// CreatedAt 创建时间
 	CreatedAt types.Time `db:"created_at" json:"created_at"`
 	// UpdatedAt 更新时间
@@ -99,11 +100,11 @@ func (abs *AccountBillSummaryDaily) InsertValidate() error {
 	if len(abs.Vendor) == 0 {
 		return errors.New("vendor is required")
 	}
-	if len(abs.FirstAccountID) == 0 {
-		return errors.New("first_account_id is required")
+	if len(abs.RootAccountID) == 0 {
+		return errors.New("root_account_id is required")
 	}
-	if len(abs.SecondAccountID) == 0 {
-		return errors.New("second_account_id is required")
+	if len(abs.MainAccountID) == 0 {
+		return errors.New("main_account_id is required")
 	}
 	if abs.BkBizID == 0 && abs.ProductID == 0 {
 		return errors.New("bk_biz_id or product_id is required")
@@ -117,8 +118,8 @@ func (abs *AccountBillSummaryDaily) InsertValidate() error {
 	if abs.BillDay == 0 {
 		return errors.New("bill_day is required")
 	}
-	if len(abs.VersionID) == 0 {
-		return errors.New("version_ib is required")
+	if abs.VersionID < 0 {
+		return fmt.Errorf("version_id %d is invalid", abs.VersionID)
 	}
 	if err := validator.Validate.Struct(abs); err != nil {
 		return err
@@ -130,27 +131,6 @@ func (abs *AccountBillSummaryDaily) InsertValidate() error {
 func (abs *AccountBillSummaryDaily) UpdateValidate() error {
 	if len(abs.ID) == 0 {
 		return errors.New("id is required")
-	}
-	if len(abs.Vendor) == 0 {
-		return errors.New("vendor is required")
-	}
-	if len(abs.FirstAccountID) == 0 {
-		return errors.New("first_account_id is required")
-	}
-	if len(abs.SecondAccountID) == 0 {
-		return errors.New("second_account_id is required")
-	}
-	if abs.BkBizID == 0 && abs.ProductID == 0 {
-		return errors.New("bk_biz_id or product_id is required")
-	}
-	if abs.BillYear == 0 {
-		return errors.New("bill_year is required")
-	}
-	if abs.BillMonth == 0 {
-		return errors.New("bill_month is required")
-	}
-	if abs.BillDay == 0 {
-		return errors.New("bill_day is required")
 	}
 	if err := validator.Validate.Struct(abs); err != nil {
 		return err
