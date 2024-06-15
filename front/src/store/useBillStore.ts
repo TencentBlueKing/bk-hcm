@@ -17,7 +17,7 @@ export default defineStore('billStore', () => {
   };
 
   /**
-   * 一级账号详情获取
+   * 录入一级账号
    * @param data
    * @returns
    */
@@ -315,7 +315,7 @@ interface CreateZenlayerKaopuMainExtension {
 }
 
 // Union Type for all possible main extensions
-type CreateMainExtension =
+export type CreateMainExtension =
   | CreateAwsMainExtension
   | CreateGcpMainExtension
   | CreateAzureMainExtension
@@ -344,4 +344,4 @@ interface ZenlayerKaopuCompleteExtension {
 }
 
 // Union Type for all possible complete extensions (单据信息填写)
-type CompleteExtension = AzureCompleteExtension | HuaweiCompleteExtension | ZenlayerKaopuCompleteExtension;
+export type CompleteExtension = AzureCompleteExtension | HuaweiCompleteExtension | ZenlayerKaopuCompleteExtension;

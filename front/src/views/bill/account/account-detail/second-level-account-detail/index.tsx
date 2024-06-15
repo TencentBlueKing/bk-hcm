@@ -1,82 +1,110 @@
-import { PropType, defineComponent } from 'vue';
+import { computed, defineComponent, ref, watch } from 'vue';
 import './index.scss';
+import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
+import useBillStore from '@/store/useBillStore';
 
 export default defineComponent({
   props: {
-    detail: {
-      type: Object as PropType<{
-        // 二级帐号名称
-        secondaryAccountName: string;
-        // 二级帐号ID
-        secondaryAccountId: string;
-        // 所属一级帐号
-        parentPrimaryAccount: string;
-        // 云厂商
-        cloudProvider: string;
-        // 站点类型
-        siteType: string;
-        // 帐号邮箱
-        accountEmail: string;
-        // 主负责人
-        mainResponsiblePerson: string;
-        // 运营产品
-        operatingProduct: string;
-      }>,
+    accountId: {
+      type: String,
+      required: true,
     },
   },
   setup(props) {
+    const detail = ref({});
+    const billStore = useBillStore();
+    const getDetail = async () => {
+      const { data } = await billStore.main_account_detail(props.accountId);
+      detail.value = data;
+    };
+    const computedExtension = computed(() => {
+      let extension = [
+        {
+          prop: 'cloud_main_account_name',
+          name: '二级账号名',
+          render: () => detail.value.extension?.cloud_main_account_name,
+        },
+        {
+          prop: 'cloud_main_account_id',
+          name: '二级账号ID',
+          render: () => detail.value.extension?.cloud_main_account_id,
+        },
+      ];
+      switch (detail.value.vendor) {
+        case 'aws':
+        case 'huawei':
+        case 'zenlayer':
+        case 'kaopu':
+          extension = [
+            {
+              prop: 'cloud_main_account_name',
+              name: '二级账号名',
+              render: () => detail.value.extension?.cloud_main_account_name,
+            },
+            {
+              prop: 'cloud_main_account_id',
+              name: '二级账号ID',
+              render: () => detail.value.extension?.cloud_main_account_id,
+            },
+          ];
+          break;
+        case 'gcp':
+          extension = [
+            { prop: 'cloud_project_name', name: '云项目名', render: () => detail.value.extension?.cloud_project_name },
+            { prop: 'cloud_project_id', name: '云项目ID', render: () => detail.value.extension?.cloud_project_id },
+          ];
+          break;
+        case 'azure':
+          extension = [
+            {
+              prop: 'cloud_subscription_name',
+              name: '订阅名',
+              render: () => detail.value.extension?.cloud_subscription_name,
+            },
+            {
+              prop: 'cloud_subscription_id',
+              name: '订阅ID',
+              render: () => detail.value.extension?.cloud_subscription_id,
+            },
+          ];
+          break;
+      }
+      return extension;
+    });
+    watch(
+      () => props.accountId,
+      () => {
+        getDetail();
+      },
+      {
+        immediate: true,
+        deep: true,
+      },
+    );
     return () => (
       <div class={'account-detail-wrapper'}>
         <p class={'sub-title'}>帐号信息</p>
-        <div class={'detail-info'}>
-          <div class='item'>
-            <span class='label'>二级帐号名称：</span>
-            <span class='value'>{props.detail.secondaryAccountName}</span>
-          </div>
-          <div class='item'>
-            <span class='label'>二级帐号ID：</span>
-            <span class='value'>{props.detail.secondaryAccountId}</span>
-          </div>
-          <div class='item'>
-            <span class='label'>所属一级帐号：</span>
-            <span class='value'>{props.detail.parentPrimaryAccount}</span>
-          </div>
-          <div class='item'>
-            <span class='label'>云厂商：</span>
-            <span class='value'>{props.detail.cloudProvider}</span>
-          </div>
-          <div class='item'>
-            <span class='label'>站点类型：</span>
-            <span class='value'>{props.detail.siteType}</span>
-          </div>
-          <div class='item'>
-            <span class='label'>帐号邮箱：</span>
-            <span class='value'>{props.detail.accountEmail}</span>
-          </div>
-          <div class='item'>
-            <span class='label'>主负责人：</span>
-            <span class='value'>{props.detail.mainResponsiblePerson}</span>
-          </div>
-          <div class='item'>
-            <span class='label'>运营产品：</span>
-            <span class='value'>{props.detail.operatingProduct}</span>
-          </div>
-        </div>
+        <DetailInfo
+          detail={detail.value}
+          wide
+          fields={[
+            { prop: 'vendor', name: '云厂商' },
+            { prop: 'parent_account_id', name: '一级账号ID' },
+            { prop: 'id', name: '二级帐号ID' },
+            { prop: 'cloud_id', name: '云账号id' },
+            { prop: 'site', name: '站点类型' },
+            { prop: 'email', name: '帐号邮箱' },
+            { prop: 'managers', name: '主负责人', edit: true },
+            { prop: 'bak_managers', name: '备份负责人', edit: true },
+            { prop: 'business_type', name: '业务类型' },
+            { prop: 'dept_id', name: '组织架构', edit: true },
+            { prop: 'op_product_id', name: '运营产品' },
+            { prop: 'status', name: '账号状态' },
+            { prop: 'memo', name: '备注' },
+          ]}
+        />
         <p class={'sub-title'}>API 密钥</p>
-        <div class={'detail-info'}>
-          <div class='item'>
-            <span class='label'>云密钥 ID：</span>
-            <span class='value'>{'************'}</span>
-          </div>
-          <div class='item'>
-            <span class='label'>云密钥：</span>
-            <span class='value'>{'************'}</span>
-          </div>
-          <div class='item'>
-            <span class='label'>所属账号 ID：</span>
-            <span class='value'>{'************'}</span>
-          </div>
-        </div>
+        <DetailInfo detail={detail.value} fields={computedExtension.value} wide />
       </div>
     );
   },
