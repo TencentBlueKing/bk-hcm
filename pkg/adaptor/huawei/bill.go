@@ -56,7 +56,7 @@ func (h *HuaWei) GetBillList(kt *kit.Kit, opt *typesBill.HuaWeiBillListOption) (
 
 	resp, err := client.ListCustomerselfResourceRecordDetails(req)
 	if err != nil {
-		logs.Errorf("huawei bill list request adaptor failed, err: %+v, opt: %+v, rid: %s", opt, err, kt.Rid)
+		logs.Errorf("huawei bill list request adaptor failed, err: %+v, opt: %+v, rid: %s", err, opt, kt.Rid)
 		return nil, err
 	}
 
@@ -96,7 +96,7 @@ func (h *HuaWei) GetFeeRecordList(kt *kit.Kit, opt *typesBill.HuaWeiFeeRecordLis
 
 	resp, err := client.ListCustomerselfResourceRecords(req)
 	if err != nil {
-		logs.Errorf("huawei fee record list request adaptor failed, err: %+v, opt: %+v, rid: %s", opt, err, kt.Rid)
+		logs.Errorf("huawei fee record list request adaptor failed, err: %+v, opt: %+v, rid: %s", err, opt, kt.Rid)
 		return nil, err
 	}
 

@@ -106,8 +106,6 @@ func (svc *service) ListBillItemExt(cts *rest.Contexts) (any, error) {
 	}
 
 	switch vendor {
-	case enumor.TCloud:
-		return listBillItemExt[bill.TCloudBillItemExtension](cts, svc, vendor)
 	case enumor.Aws:
 		return listBillItemExt[bill.AwsBillItemExtension](cts, svc, vendor)
 	case enumor.HuaWei:

@@ -46,8 +46,6 @@ func (svc *service) CreateBillItem(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	switch vendor {
-	case enumor.TCloud:
-		return createBillItem[bill.TCloudBillItemExtension](cts, svc, vendor)
 	case enumor.Aws:
 		return createBillItem[bill.AwsBillItemExtension](cts, svc, vendor)
 	case enumor.HuaWei:
@@ -61,7 +59,7 @@ func (svc *service) CreateBillItem(cts *rest.Contexts) (interface{}, error) {
 	case enumor.Zenlayer:
 		return createBillItem[bill.ZenlayerBillItemExtension](cts, svc, vendor)
 	default:
-		return nil, fmt.Errorf("unsupport %s vendor", vendor)
+		return nil, fmt.Errorf("unsupport vendor %s ", vendor)
 	}
 }
 
@@ -109,7 +107,7 @@ func createBillItem[E bill.BillItemExtension](cts *rest.Contexts, svc *service, 
 		ids, err := svc.dao.AccountBillItem().CreateWithTx(cts.Kit, txn, billItemTables)
 		if err != nil {
 			logs.Errorf("fail to create %s bill item, err: %v, rid: %s", vendor, err, cts.Kit.Rid)
-			return nil, fmt.Errorf("create accountbill item list failed, err: %v", err)
+			return nil, fmt.Errorf("create account bill item list failed, err: %v", err)
 		}
 		return ids, nil
 	})
