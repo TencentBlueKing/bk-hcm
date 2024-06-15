@@ -111,6 +111,18 @@ const (
 	Postpaid TCloudLoadBalancerChargeType = "POSTPAID"
 )
 
+// TCloudLoadBalancerNetworkChargeType 腾讯云网络计费类型
+type TCloudLoadBalancerNetworkChargeType string
+
+const (
+	// TrafficPostPaidByHour  按流量按小时后计费
+	TrafficPostPaidByHour TCloudLoadBalancerNetworkChargeType = `TRAFFIC_POSTPAID_BY_HOUR`
+	// BandwidthPostpaidByHour 按带宽按小时后计费
+	BandwidthPostpaidByHour TCloudLoadBalancerNetworkChargeType = `BANDWIDTH_POSTPAID_BY_HOUR`
+	// BandwidthPackage 带宽包计费
+	BandwidthPackage TCloudLoadBalancerNetworkChargeType = `BANDWIDTH_PACKAGE`
+)
+
 // -------------------------- List Clb--------------------------
 
 // TCloudListOption defines options to list tcloud clb instances.
@@ -260,9 +272,9 @@ type TCloudCreateClbOption struct {
 	DynamicVip               *bool                      `json:"dynamic_vip" validate:"omitempty"`
 	Egress                   *string                    `json:"egress" validate:"omitempty"`
 
-	InternetChargeType      *TCloudLoadBalancerChargeType `json:"internet_charge_type"`
-	InternetMaxBandwidthOut *int64                        `json:"internet_max_bandwidth_out" `
-	BandwidthpkgSubType     *string                       `json:"bandwidthpkg_sub_type" validate:"omitempty"`
+	InternetChargeType      *TCloudLoadBalancerNetworkChargeType `json:"internet_charge_type"`
+	InternetMaxBandwidthOut *int64                               `json:"internet_max_bandwidth_out" `
+	BandwidthpkgSubType     *string                              `json:"bandwidthpkg_sub_type" validate:"omitempty"`
 
 	// 不填默认按量付费
 	LoadBalancerChargeType TCloudLoadBalancerChargeType `json:"load_balancer_charge_type"`

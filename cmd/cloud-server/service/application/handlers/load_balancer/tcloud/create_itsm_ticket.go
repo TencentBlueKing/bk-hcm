@@ -203,7 +203,10 @@ func (a *ApplicationOfCreateTCloudLB) renderInstanceChargeForm() []formItem {
 
 	payMode := "按量计费"
 	if req.InternetChargeType != nil {
-		payMode = NetworkChargeTypeNameMap[*req.InternetChargeType]
+		payMode = LoadBalancerNetworkChargeTypeNameMap[*req.InternetChargeType]
+	}
+	if payMode == "" {
+		payMode = string(*req.InternetChargeType)
 	}
 	// 计费模式
 	formItems = append(formItems, formItem{Label: "网络计费模式", Value: payMode})
