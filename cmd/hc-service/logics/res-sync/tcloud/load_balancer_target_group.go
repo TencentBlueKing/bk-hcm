@@ -47,6 +47,7 @@ import (
 // LocalTargetGroup 同步本地目标组
 func (cli *client) LocalTargetGroup(kt *kit.Kit, param *SyncBaseParams, opt *SyncListenerOption,
 	cloudListeners []typeslb.TCloudListener) error {
+
 	// 目前主要是同步健康检查
 	healthMap := make(map[string]*tclb.HealthCheck, len(cloudListeners))
 	cloudIDs := make([]string, 0, len(cloudListeners))
@@ -63,8 +64,14 @@ func (cli *client) LocalTargetGroup(kt *kit.Kit, param *SyncBaseParams, opt *Syn
 			cloudIDs = append(cloudIDs, cvt.PtrToVal(rule.LocationId))
 		}
 	}
+	if len(cloudIDs) == 0 {
+		// 只有7层监听器，且所有监听器都为空的情况会导致这里为空
+		logs.Infof("no listener found for %v, rid: %s", cloudListeners, kt.Rid)
+		return nil
+	}
 	tgCloudHealthMap, tgList, err := cli.getTargetGruop(kt, opt.LBID, cloudIDs, healthMap)
 	if err != nil {
+		logs.Errorf("fail to get local target group for sync, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 	for _, tg := range tgList {
@@ -209,6 +216,11 @@ func (cli *client) listTargetRelated(kt *kit.Kit, param *SyncBaseParams, opt *Sy
 		logs.Errorf("fail to list target from db while syncing, err: %v, rid: %s", err, kt.Rid)
 		return nil, nil, nil, nil, err
 	}
+	if opt.CachedLoadBalancer != nil && opt.CachedLoadBalancer.CloudID == opt.CloudLBID {
+		return cloudListenerTargets, relMap, tgRsMap, opt.CachedLoadBalancer, nil
+	}
+
+	logs.Errorf("cache for target sync mismatch opt: %+v, rid:%s ", opt, kt.Rid)
 
 	lbResp, err := cli.listLBFromDB(kt, &SyncBaseParams{
 		AccountID: param.AccountID,
@@ -228,8 +240,7 @@ func (cli *client) listTargetRelated(kt *kit.Kit, param *SyncBaseParams, opt *Sy
 }
 
 func (cli *client) compareTargetsChange(kt *kit.Kit, accountID, tgID string, cloudTargets []*tclb.Backend,
-	dbRsList []corelb.BaseTarget) (
-	err error) {
+	dbRsList []corelb.BaseTarget) (err error) {
 
 	// 增加包裹类型
 	cloudRsList := slice.Map(cloudTargets, func(rs *tclb.Backend) typeslb.Backend {
@@ -247,6 +258,7 @@ func (cli *client) compareTargetsChange(kt *kit.Kit, accountID, tgID string, clo
 	if _, err = cli.createRs(kt, accountID, tgID, addSlice); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -321,6 +333,7 @@ func convTarget(accountID string) func(cloudTarget *tclb.Backend) *dataproto.Tar
 	return func(cloudTarget *tclb.Backend) *dataproto.TargetBaseReq {
 		localTarget := typeslb.Backend{Backend: cloudTarget}
 		target := &dataproto.TargetBaseReq{
+			InstName:         cvt.PtrToVal(cloudTarget.InstanceName),
 			InstType:         cvt.PtrToVal((*enumor.InstType)(cloudTarget.Type)),
 			CloudInstID:      cvt.PtrToVal(cloudTarget.InstanceId),
 			Port:             cvt.PtrToVal(cloudTarget.Port),

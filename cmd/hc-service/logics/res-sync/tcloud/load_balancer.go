@@ -82,7 +82,7 @@ func (cli *client) LoadBalancerWithListener(kt *kit.Kit, params *SyncBaseParams,
 	}
 
 	if _, err = cli.listenerByLbBatch(kt, lblParams); err != nil {
-		logs.Errorf("fail to sync listener of lbs(ids: %v), err: %v, rid: %s", requiredLBCloudIds, err, kt.Rid)
+		logs.Errorf("fail to sync listener of lbs, err: %v, ids: %v, rid: %s", err, requiredLBCloudIds, kt.Rid)
 		return nil, err
 	}
 
@@ -138,9 +138,10 @@ func (cli *client) RemoveLoadBalancerDeleteFromCloud(kt *kit.Kit, accountID stri
 		),
 		Page: &core.BasePage{
 			Start: 0,
-			Limit: constant.TCLBDescribeMax,
+			Limit: constant.BatchOperationMaxLimit,
 		},
 	}
+
 	for {
 		lbFromDB, err := cli.dbCli.Global.LoadBalancer.ListLoadBalancer(kt, req)
 		if err != nil {

@@ -29,10 +29,16 @@ var (
 		typeslb.OpenLoadBalancerType:     "公网",
 		typeslb.InternalLoadBalancerType: "内网",
 	}
-	// NetworkChargeTypeNameMap ...
-	NetworkChargeTypeNameMap = map[typeslb.TCloudLoadBalancerChargeType]string{
+	// LoadBalancerChargeTypeNameMap 负载均衡实例计费类型
+	LoadBalancerChargeTypeNameMap = map[typeslb.TCloudLoadBalancerChargeType]string{
 		typeslb.Prepaid:  "包年包月",
 		typeslb.Postpaid: "按量计费",
+	}
+	// LoadBalancerNetworkChargeTypeNameMap 负载均衡网络计费类型
+	LoadBalancerNetworkChargeTypeNameMap = map[typeslb.TCloudLoadBalancerNetworkChargeType]string{
+		typeslb.TrafficPostPaidByHour:   "按流量按小时后计费",
+		typeslb.BandwidthPostpaidByHour: "按带宽按小时后计费",
+		typeslb.BandwidthPackage:        "带宽包计费",
 	}
 	// IPVersionNameMap ...
 	IPVersionNameMap = map[typeslb.TCloudIPVersionForCreate]string{
