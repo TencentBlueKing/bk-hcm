@@ -145,7 +145,9 @@ func (hp *HuaweiPuller) createRawBill(
 }
 
 func (hp *HuaweiPuller) doPull(
-	kt run.ExecuteKit, opt *registry.PullDailyBillOption, offset *int32, limit *int32) (int, *registry.PullerResult, error) {
+	kt run.ExecuteKit, opt *registry.PullDailyBillOption, offset *int32, limit *int32) (
+	int, *registry.PullerResult, error) {
+
 	hcCli := actcli.GetHCService()
 	resp, err := hcCli.HuaWei.Bill.ListFeeRecord(kt.Kit().Ctx, kt.Kit().Header(), &hcbillservice.HuaWeiFeeRecordListReq{
 		AccountID:     opt.RootAccountID,
