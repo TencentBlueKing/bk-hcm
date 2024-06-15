@@ -22,22 +22,14 @@ package objectstore
 import (
 	"context"
 	"fmt"
+	"hcm/pkg/cc"
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"path/filepath"
 
 	cos "github.com/tencentyun/cos-go-sdk-v5"
 	"github.com/tencentyun/cos-go-sdk-v5/debug"
-)
-
-const (
-	envTCloudCOSPrefix    = "TCLOUD_COS_PREFIX"
-	envTCloudCOSSecretID  = "TCLOUD_COS_SECRET_ID"
-	envTCloudCOSSecretKey = "TCLOUD_COS_SECRET_KEY"
-	envTCloudCOSBucketURL = "TCLOUD_COS_BUCKET_URL"
-	envTCloudCOSDebug     = "TCLOUD_COS_DEBUG"
 )
 
 // TCloudCOS tcloud cos client
@@ -47,15 +39,14 @@ type TCloudCOS struct {
 }
 
 // NewTCloudCOS create cos client
-func NewTCloudCOS() (*TCloudCOS, error) {
-	prefix := os.Getenv(envTCloudCOSPrefix)
-	id := os.Getenv(envTCloudCOSSecretID)
-	key := os.Getenv(envTCloudCOSSecretKey)
-	bucketURL := os.Getenv(envTCloudCOSBucketURL)
-	if len(id) == 0 || len(key) == 0 || len(bucketURL) == 0 {
-		return nil, fmt.Errorf("any of env %s, %s, %s cannot be empty",
-			envTCloudCOSSecretID, envTCloudCOSSecretKey, envTCloudCOSBucketURL)
+func NewTCloudCOS(config cc.ObjectStoreTCloud) (*TCloudCOS, error) {
+	if err := config.Validate(); err != nil {
+		return nil, err
 	}
+	prefix := config.COSPrefix
+	id := config.COSSecretID
+	key := config.COSSecretKey
+	bucketURL := config.COSBucketURL
 	u, err := url.Parse(bucketURL)
 	if err != nil {
 		return nil, fmt.Errorf("parse bucket url %s failed, err %s", bucketURL, err.Error())
@@ -65,7 +56,7 @@ func NewTCloudCOS() (*TCloudCOS, error) {
 		SecretID:  id,
 		SecretKey: key,
 	}
-	if os.Getenv(envTCloudCOSDebug) == "true" {
+	if config.COSIsDebug {
 		transport.Transport = &debug.DebugRequestTransport{
 			RequestHeader:  true,
 			RequestBody:    true,

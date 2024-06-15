@@ -117,7 +117,7 @@ func NewService() (*Service, error) {
 	}
 
 	// create object store
-	oStore, err := objectstore.GetObjectStoreFromEnv()
+	oStore, err := objectstore.GetObjectStore(cc.DataService().Objectstore)
 	if err != nil {
 		return nil, err
 	}
