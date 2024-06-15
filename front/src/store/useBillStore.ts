@@ -3,6 +3,10 @@ import { defineStore } from 'pinia';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 export default defineStore('billStore', () => {
+  const list = (data: ListProp, type: string) => {
+    return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/${type}/list`, data);
+  };
+
   /**
    * 一级账号列表
    * @param param0
@@ -165,6 +169,8 @@ export default defineStore('billStore', () => {
     // 单据
     list_applications,
     get_application,
+    // 通用list方法
+    list,
   };
 });
 

@@ -16,6 +16,7 @@ import { get as lodash_get } from 'lodash-es';
 import { VendorReverseMap } from '@/common/constant';
 import { LB_NETWORK_TYPE_REVERSE_MAP, LISTENER_BINDING_STATUS_REVERSE_MAP, SCHEDULER_REVERSE_MAP } from '@/constants';
 import usePagination from '../usePagination';
+import useBillStore from '@/store/useBillStore';
 
 export interface IProp {
   // search-select 配置项
@@ -122,7 +123,8 @@ export const useTable = (props: IProp) => {
     isLoading.value = true;
 
     // 判断是业务下, 还是资源下
-    const api = whereAmI.value === Senarios.business ? businessStore.list : resourceStore.list;
+    let api = whereAmI.value === Senarios.business ? businessStore.list : resourceStore.list;
+    if (whereAmI.value === Senarios.bill) api = useBillStore().list;
     // 请求数据
     const [detailsRes, countRes] = await Promise.all(
       [false, true].map((isCount) =>

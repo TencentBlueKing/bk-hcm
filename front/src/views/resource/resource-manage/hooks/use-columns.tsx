@@ -1803,58 +1803,50 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const firstAccountColumns = [
     {
       label: '一级帐号ID',
-      field: 'primaryAccountId',
+      field: 'id',
     },
     {
       label: '云厂商',
-      field: 'cloudProvider',
+      field: 'vendor',
     },
     {
       label: '帐号邮箱',
-      field: 'accountEmail',
+      field: 'email',
     },
     {
       label: '主负责人',
-      field: 'mainResponsiblePerson',
+      field: 'managers',
     },
     {
       label: '组织架构',
-      field: 'organizationalStructure',
-    },
-    {
-      label: '二级帐号个数',
-      field: 'secondaryAccountCount',
+      field: 'dept_id',
     },
   ];
 
   const secondaryAccountColumns = [
     {
-      label: '二级帐号ID',
-      field: 'secondaryAccountId',
-    },
-    {
       label: '所属一级帐号',
-      field: 'parentPrimaryAccount',
+      field: 'parent_account_name',
     },
     {
       label: '云厂商',
-      field: 'cloudProvider',
+      field: 'vendor',
     },
     {
       label: '站点类型',
-      field: 'siteType',
+      field: 'site',
     },
     {
       label: '帐号邮箱',
-      field: 'accountEmail',
+      field: 'email',
     },
     {
       label: '主负责人',
-      field: 'mainResponsiblePerson',
+      field: 'managers',
     },
     {
       label: '运营产品',
-      field: 'operatingProduct',
+      field: 'op_product_id',
     },
   ];
 
