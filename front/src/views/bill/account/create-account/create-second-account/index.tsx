@@ -4,7 +4,7 @@ import DetailHeader from '@/views/resource/resource-manage/common/header/detail-
 import CommonCard from '@/components/CommonCard';
 import { Alert, Button, Form, Input, ResizeLayout, Select } from 'bkui-vue';
 import { VendorEnum } from '@/common/constant';
-import { VENDORS_INFO } from '../constants';
+import { BILL_VENDORS_INFO } from '../constants';
 import { Success } from 'bkui-vue/lib/icon';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import MemberSelect from '@/components/MemberSelect';
@@ -30,17 +30,17 @@ export default defineComponent({
       extension: {}, // 扩展字段对象
     });
 
-    const resetFormModel = () => {
-      formModel.name = '';
-      formModel.vendor = VendorEnum.GCP;
-      formModel.email = '';
-      formModel.managers = [];
-      formModel.bak_managers = [];
-      formModel.site = '';
-      formModel.dept_id = '';
-      formModel.memo = '';
-      formModel.extension = {};
-    };
+    // const resetFormModel = () => {
+    //   formModel.name = '';
+    //   formModel.vendor = VendorEnum.GCP;
+    //   formModel.email = '';
+    //   formModel.managers = [];
+    //   formModel.bak_managers = [];
+    //   formModel.site = '';
+    //   formModel.dept_id = '';
+    //   formModel.memo = '';
+    //   formModel.extension = {};
+    // };
 
     return () => (
       <div class={'create-second-account-wrapper'}>
@@ -62,7 +62,7 @@ export default defineComponent({
                     <Form formType='vertical' model={formModel}>
                       <FormItem label='云厂商' required property='vendor'>
                         <div class={'account-vendor-selector'}>
-                          {VENDORS_INFO.map(({ vendor, name, icon }) => (
+                          {BILL_VENDORS_INFO.map(({ vendor, name, icon }) => (
                             <div
                               class={`account-vendor-option ${
                                 vendor === formModel.vendor ? 'account-vendor-option-active' : ''
@@ -113,11 +113,13 @@ export default defineComponent({
                           {{
                             title: () => (
                               // 缺图标
-                              <p> 
+                              <p>
                                 当前金额超过 1,000 美元，需要上传凭证作为审批依据
-                                <Button theme='primary' text class={'ml8'}>上传</Button>
+                                <Button theme='primary' text class={'ml8'}>
+                                  上传
+                                </Button>
                               </p>
-                            )
+                            ),
                           }}
                         </Alert>
                       </FormItem>
@@ -155,20 +157,20 @@ export default defineComponent({
                 <Button>取消</Button>
               </div>
             ),
-            aside: () => <div class={'right-container'}>
-              <div class={'header'}>
-                <p class={'title'}>
-                  申请指引
-                </p>
-                <Button text theme='primary' class={'link'}>查看更多</Button>
+            aside: () => (
+              <div class={'right-container'}>
+                <div class={'header'}>
+                  <p class={'title'}>申请指引</p>
+                  <Button text theme='primary' class={'link'}>
+                    查看更多
+                  </Button>
+                </div>
+                <div class={'info-block'}>
+                  <p class={'info-title'}>申请邮箱</p>
+                  <p>此邮箱是用于接收云账号注册信息的专用邮箱，需要开通外部邮件接收权限并配置邮件转发列表</p>
+                </div>
               </div>
-              <div class={'info-block'}>
-                <p class={'info-title'}>申请邮箱</p>
-                <p>
-                此邮箱是用于接收云账号注册信息的专用邮箱，需要开通外部邮件接收权限并配置邮件转发列表
-                </p>
-              </div>
-            </div>,
+            ),
           }}
         </ResizeLayout>
       </div>

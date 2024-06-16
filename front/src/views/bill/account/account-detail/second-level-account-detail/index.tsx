@@ -2,6 +2,7 @@ import { computed, defineComponent, ref, watch } from 'vue';
 import './index.scss';
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 import useBillStore from '@/store/useBillStore';
+import { Message } from 'bkui-vue';
 
 export default defineComponent({
   props: {
@@ -81,12 +82,20 @@ export default defineComponent({
         deep: true,
       },
     );
+    const handleUpdate = async () => {
+      await billStore.update_main_account(detail.value);
+      Message({
+        message: '更新成功',
+        theme: 'success',
+      });
+    };
     return () => (
       <div class={'account-detail-wrapper'}>
         <p class={'sub-title'}>帐号信息</p>
         <DetailInfo
           detail={detail.value}
           wide
+          onChange={handleUpdate}
           fields={[
             { prop: 'vendor', name: '云厂商' },
             { prop: 'parent_account_id', name: '一级账号ID' },
@@ -103,7 +112,13 @@ export default defineComponent({
             { prop: 'memo', name: '备注' },
           ]}
         />
-        <p class={'sub-title'}>API 密钥</p>
+        <p class={'sub-title'}>
+          API 密钥
+          <span class={'edit-icon'}>
+            <i class={'hcm-icon bkhcm-icon-bianji mr6'} />
+            编辑
+          </span>
+        </p>
         <DetailInfo detail={detail.value} fields={computedExtension.value} wide />
       </div>
     );

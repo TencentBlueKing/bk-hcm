@@ -138,7 +138,7 @@ export default defineComponent({
           width={640}
           title={'一级账号详情'}
           noFooter={true}>
-          <FirstLevelAccountDetail accountId={curFirstLevelAccount.value} />
+          <FirstLevelAccountDetail accountId={curFirstLevelAccount.value.id} />
         </CommonSideslider>
 
         {/* 二级账号详情及编辑 */}

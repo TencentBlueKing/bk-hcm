@@ -18,6 +18,7 @@ type Field = {
   copy?: boolean;
   edit?: boolean;
   type?: string;
+  prop?: string;
   tipsContent?: string;
   txtBtn?: (cell: string) => void;
   render?: (cell: string) => void;
