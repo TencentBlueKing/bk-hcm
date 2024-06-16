@@ -1,7 +1,7 @@
 /*
  * TencentBlueKing is pleased to support the open source community by making
  * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
- * Copyright (C) 2022 THL A29 Limited,
+ * Copyright (C) 2024 THL A29 Limited,
  * a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,31 +21,32 @@
 package billitem
 
 import (
-	"net/http"
-
-	"hcm/cmd/data-service/service/capability"
-	"hcm/pkg/dal/dao"
+	"hcm/cmd/account-server/logics/audit"
+	"hcm/cmd/account-server/service/capability"
+	"hcm/pkg/client"
+	"hcm/pkg/iam/auth"
 	"hcm/pkg/rest"
 )
 
-// InitService initialize the bill item service
-func InitService(cap *capability.Capability) {
-	svc := &service{
-		dao: cap.Dao,
+// InitBillItemService 注册账单明细服务
+func InitBillItemService(c *capability.Capability) {
+	svc := &billItemSvc{
+		client:     c.ApiClient,
+		authorizer: c.Authorizer,
+		audit:      c.Audit,
 	}
+
 	h := rest.NewHandler()
 
-	h.Add("ListBillItemExt", http.MethodPost, "/vendors/{vendor}/bills/items/list", svc.ListBillItemExt)
-	h.Add("ListBillItem", http.MethodPost, "/bills/items/list", svc.ListBillItem)
-	h.Add("ListBillItemRaw", http.MethodPost, "/bills/items/list_with_extension", svc.ListBillItemRaw)
+	h.Add("ListBillItems", "POST", "/vendors/{vendor}/bills/items/list", svc.ListBillItems)
+	h.Add("ExportBillItems", "POST", "/vendors/{vendor}/bills/items/export", svc.ExportBillItems)
 
-	h.Add("CreateBillItem", http.MethodPost, "/vendors/{vendor}/bills/items/create", svc.CreateBillItem)
-	h.Add("DeleteBillItem", http.MethodDelete, "/bills/items", svc.DeleteBillItem)
-	h.Add("UpdateBillItem", http.MethodPut, "/vendors/{vendor}/bills/items/update", svc.UpdateBillItem)
-
-	h.Load(cap.WebService)
+	h.Load(c.WebService)
 }
 
-type service struct {
-	dao dao.Set
+// 账单明细
+type billItemSvc struct {
+	client     *client.ClientSet
+	authorizer auth.Authorizer
+	audit      audit.Interface
 }

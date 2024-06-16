@@ -28,6 +28,7 @@ type Client struct {
 	*restClient
 	MainAccount *MainAccountClient
 	RootAccount *RootAccountClient
+	Bill        *BillClient
 }
 
 type restClient struct {
@@ -40,5 +41,6 @@ func NewClient(client rest.ClientInterface) *Client {
 		restClient:  &restClient{client: client},
 		MainAccount: NewMainAccountClient(client),
 		RootAccount: NewRootAccountClient(client),
+		Bill:        NewBillClient(client),
 	}
 }

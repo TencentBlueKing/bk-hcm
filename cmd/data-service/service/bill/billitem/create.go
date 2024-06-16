@@ -24,19 +24,47 @@ import (
 	"reflect"
 
 	"hcm/pkg/api/core"
+	"hcm/pkg/api/core/bill"
 	dsbill "hcm/pkg/api/data-service/bill"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	tablebill "hcm/pkg/dal/table/bill"
 	"hcm/pkg/dal/table/types"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/json"
 
 	"github.com/jmoiron/sqlx"
 )
 
 // CreateBillItem create bill item with options
 func (svc *service) CreateBillItem(cts *rest.Contexts) (interface{}, error) {
-	req := make(dsbill.BatchBillItemCreateReq, 0)
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	switch vendor {
+	case enumor.Aws:
+		return createBillItem[bill.AwsBillItemExtension](cts, svc, vendor)
+	case enumor.HuaWei:
+		return createBillItem[bill.HuaweiBillItemExtension](cts, svc, vendor)
+	case enumor.Azure:
+		return createBillItem[bill.AzureBillItemExtension](cts, svc, vendor)
+	case enumor.Gcp:
+		return createBillItem[bill.GcpBillItemExtension](cts, svc, vendor)
+	case enumor.Kaopu:
+		return createBillItem[bill.KaopuBillItemExtension](cts, svc, vendor)
+	case enumor.Zenlayer:
+		return createBillItem[bill.ZenlayerBillItemExtension](cts, svc, vendor)
+	default:
+		return nil, fmt.Errorf("unsupport vendor %s ", vendor)
+	}
+}
+
+func createBillItem[E bill.BillItemExtension](cts *rest.Contexts, svc *service, vendor enumor.Vendor) (any, error) {
+	req := make(dsbill.BatchBillItemCreateReq[E], 0)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -47,12 +75,17 @@ func (svc *service) CreateBillItem(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	idList, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		var summaryList []tablebill.AccountBillItem
+		var billItemTables []tablebill.AccountBillItem
 		for _, item := range req {
-			summary := tablebill.AccountBillItem{
+			extJson, err := json.MarshalToString(item.Extension)
+			if err != nil {
+				logs.Errorf("fail marashal %s bill item into json, err: %v, rid: %v", vendor, err, cts.Kit.Rid)
+				return nil, err
+			}
+			billItem := tablebill.AccountBillItem{
 				FirstAccountID:  item.FirstAccountID,
 				SecondAccountID: item.SecondAccountID,
-				Vendor:          item.Vendor,
+				Vendor:          vendor,
 				ProductID:       item.ProductID,
 				BkBizID:         item.BkBizID,
 				BillYear:        item.BillYear,
@@ -62,17 +95,23 @@ func (svc *service) CreateBillItem(cts *rest.Contexts) (interface{}, error) {
 				Currency:        item.Currency,
 				Cost:            &types.Decimal{Decimal: item.Cost},
 				RMBCost:         &types.Decimal{Decimal: item.RMBCost},
+				HcProductCode:   item.HcProductCode,
+				HcProductName:   item.HcProductName,
+				ResAmount:       &types.Decimal{Decimal: item.ResAmount},
+				ResAmountUnit:   item.ResAmountUnit,
+				Extension:       types.JsonField(extJson),
 			}
-			summaryList = append(summaryList, summary)
+			billItemTables = append(billItemTables, billItem)
 		}
 
-		ids, err := svc.dao.AccountBillItem().CreateWithTx(
-			cts.Kit, txn, summaryList)
+		ids, err := svc.dao.AccountBillItem().CreateWithTx(cts.Kit, txn, billItemTables)
 		if err != nil {
+			logs.Errorf("fail to create %s bill item, err: %v, rid: %s", vendor, err, cts.Kit.Rid)
 			return nil, fmt.Errorf("create account bill item list failed, err: %v", err)
 		}
 		return ids, nil
 	})
+
 	if err != nil {
 		return nil, err
 	}

@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/dal/dao/orm"
 	tablebill "hcm/pkg/dal/table/bill"
 	"hcm/pkg/dal/table/types"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 
 	"github.com/jmoiron/sqlx"
@@ -44,7 +45,7 @@ func (svc *service) UpdateBillItem(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	BillItem := &tablebill.AccountBillItem{
+	billItem := &tablebill.AccountBillItem{
 		ID:              req.ID,
 		FirstAccountID:  req.FirstAccountID,
 		SecondAccountID: req.SecondAccountID,
@@ -58,9 +59,16 @@ func (svc *service) UpdateBillItem(cts *rest.Contexts) (interface{}, error) {
 		Currency:        req.Currency,
 		Cost:            &types.Decimal{Decimal: req.Cost},
 		RMBCost:         &types.Decimal{Decimal: req.RMBCost},
+		HcProductCode:   req.HcProductCode,
+		HcProductName:   req.HcProductName,
+		ResAmount:       &types.Decimal{Decimal: req.ResAmount},
+		ResAmountUnit:   req.ResAmountUnit,
+		// 全量覆盖更新
+		Extension: req.Extension,
 	}
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		if err := svc.dao.AccountBillItem().UpdateByIDWithTx(cts.Kit, txn, BillItem.ID, BillItem); err != nil {
+		if err := svc.dao.AccountBillItem().UpdateByIDWithTx(cts.Kit, txn, billItem.ID, billItem); err != nil {
+			logs.Errorf("fail to update bill item for %s, err: %v, rid: %s", billItem.ID, err, cts.Kit.Rid)
 			return nil, fmt.Errorf("update bill item failed, err: %v", err)
 		}
 		return nil, nil
