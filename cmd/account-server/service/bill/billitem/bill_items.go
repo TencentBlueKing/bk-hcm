@@ -115,7 +115,7 @@ func exportHuaweiBillItems(kt *kit.Kit, b *billItemSvc, filter *filter.Expressio
 	any, error) {
 
 	billListReq := &core.ListReq{Filter: filter, Page: core.NewDefaultBasePage()}
-	_, err := b.client.DataService().Zenlayer.Bill.ListBillItem(kt, billListReq)
+	_, err := b.client.DataService().HuaWei.Bill.ListBillItem(kt, billListReq)
 	if err != nil {
 		logs.Errorf("fail to list bill item for export, err: %v, req: %+v, rid: %s", err, billListReq, kt.Rid)
 		return nil, err
