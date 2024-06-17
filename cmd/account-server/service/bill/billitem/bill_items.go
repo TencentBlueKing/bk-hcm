@@ -55,12 +55,15 @@ func (b *billItemSvc) ListBillItems(cts *rest.Contexts) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	mergedFilter, err := tools.And(
+	expressions := []filter.RuleFactory{
 		tools.RuleEqual("vendor", vendor),
 		tools.RuleEqual("bill_year", req.BillYear),
 		tools.RuleEqual("bill_month", req.BillMonth),
-		req.Filter)
+	}
+	if req.Filter != nil {
+		expressions = append(expressions, req.Filter)
+	}
+	mergedFilter, err := tools.And(expressions...)
 	if err != nil {
 		logs.Errorf("fail merge filter for listing bill items, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
 		return nil, err
