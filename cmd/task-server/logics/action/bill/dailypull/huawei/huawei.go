@@ -45,8 +45,10 @@ func init() {
 	registry.PullerRegistry[enumor.HuaWei] = &HuaweiPuller{}
 }
 
+// HuaweiPuller huawei puller
 type HuaweiPuller struct{}
 
+// Pull pull huawei data
 func (hp *HuaweiPuller) Pull(kt run.ExecuteKit, opt *registry.PullDailyBillOption) (*registry.PullerResult, error) {
 	offset := int32(0)
 	count := int64(0)

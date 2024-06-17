@@ -46,8 +46,9 @@ func (svc *service) UpdateBillItem(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	billItem := &tablebill.AccountBillItem{
-		ID:        req.ID,
-		Currency:  req.Currency,
+		ID:       req.ID,
+		Currency: req.Currency,
+		// 全量覆盖更新
 		Extension: req.Extension,
 		Reviser:   cts.Kit.User,
 	}

@@ -62,9 +62,9 @@ func (bm *BillManager) Run(ctx context.Context) {
 }
 
 func (bm *BillManager) syncControllers() error {
-	list, err := bm.AccountList.ListAccount(getInternalKit())
+	list, err := bm.AccountList.ListAllAccount(getInternalKit())
 	if err != nil {
-		return nil
+		return err
 	}
 	for _, item := range list {
 		_, ok := bm.CurrentControllers[item.Key()]

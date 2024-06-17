@@ -105,11 +105,11 @@ func (mac *MainAccountController) Start() error {
 func (mac *MainAccountController) syncBillSummary() error {
 	curBillYear, curBillMonth := mac.getCurrentBillMonth()
 	if err := mac.ensureBillSummary(curBillYear, curBillMonth); err != nil {
-		return err
+		return fmt.Errorf("ensure bill summary for %d %d failed, err %s", curBillYear, curBillMonth, err.Error())
 	}
 	lastBillYear, lastBillMonth := mac.getLastBillMonth()
 	if err := mac.ensureBillSummary(lastBillYear, lastBillMonth); err != nil {
-		return err
+		return fmt.Errorf("ensure bill summary for %d %d failed, err %s", lastBillYear, lastBillMonth, err.Error())
 	}
 	return nil
 }
@@ -199,14 +199,13 @@ func (mac *MainAccountController) Stop() {
 }
 
 func (mac *MainAccountController) getBillSummary(billYear, billMonth int) (*dsbillapi.BillSummaryMainResult, error) {
-	var expressions []*filter.AtomRule
-	expressions = append(expressions, []*filter.AtomRule{
+	expressions := []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", mac.RootAccountID),
 		tools.RuleEqual("main_account_id", mac.MainAccountID),
 		tools.RuleEqual("vendor", mac.Vendor),
 		tools.RuleEqual("bill_year", billYear),
 		tools.RuleEqual("bill_month", billMonth),
-	}...)
+	}
 	result, err := mac.Client.DataService().Global.Bill.ListBillSummaryMain(
 		getInternalKit(), &dsbillapi.BillSummaryMainListReq{
 			Filter: tools.ExpressionAnd(expressions...),
