@@ -44,7 +44,7 @@ func (svc *service) UpdateBillDailyPullTask(cts *rest.Contexts) (interface{}, er
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	BillDailyPullTask := &tablebill.AccountBillDailyPullTask{
+	billDailyPullTask := &tablebill.AccountBillDailyPullTask{
 		ID:            req.ID,
 		RootAccountID: req.RootAccountID,
 		MainAccountID: req.MainAccountID,
@@ -59,10 +59,13 @@ func (svc *service) UpdateBillDailyPullTask(cts *rest.Contexts) (interface{}, er
 		Count:         req.Count,
 		Currency:      req.Currency,
 		FlowID:        req.FlowID,
-		Cost:          &types.Decimal{Decimal: req.Cost},
+	}
+	if !req.Cost.IsZero() {
+		billDailyPullTask.Cost = &types.Decimal{Decimal: req.Cost}
 	}
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		if err := svc.dao.AccountBillDailyPullTask().UpdateByIDWithTx(cts.Kit, txn, BillDailyPullTask.ID, BillDailyPullTask); err != nil {
+		if err := svc.dao.AccountBillDailyPullTask().UpdateByIDWithTx(
+			cts.Kit, txn, billDailyPullTask.ID, billDailyPullTask); err != nil {
 			return nil, fmt.Errorf("update account bill daily pull task failed, err: %v", err)
 		}
 		return nil, nil

@@ -20,6 +20,7 @@
 package bill
 
 import (
+	"fmt"
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
@@ -89,6 +90,12 @@ type BillDailyPullTaskResult struct {
 	FlowID        string          `json:"flow_id" validate:"omitempty"`
 	CreatedAt     types.Time      `json:"created_at,omitempty"`
 	UpdatedAt     types.Time      `json:"updated_at,omitempty"`
+}
+
+// Key get key
+func (b *BillDailyPullTaskResult) Key() string {
+	return fmt.Sprintf("%s/%s/%s/%d/%d/%d/%d",
+		b.RootAccountID, b.MainAccountID, b.Vendor, b.BillYear, b.BillMonth, b.BillDay, b.VersionID)
 }
 
 // BillDailyPullTaskUpdateReq ...

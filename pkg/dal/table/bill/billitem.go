@@ -35,23 +35,24 @@ var AccountBillItemColumns = utils.MergeColumns(nil, AccountBillItemColumnDescri
 // AccountBillItemColumnDescriptor is account_bill_item's column descriptors.
 var AccountBillItemColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
-	{Column: "first_account_id", NamedC: "first_account_id", Type: enumor.String},
-	{Column: "second_account_id", NamedC: "second_account_id", Type: enumor.String},
+	{Column: "root_account_id", NamedC: "root_account_id", Type: enumor.String},
+	{Column: "main_account_id", NamedC: "main_account_id", Type: enumor.String},
 	{Column: "vendor", NamedC: "vendor", Type: enumor.String},
 	{Column: "product_id", NamedC: "product_id", Type: enumor.Numeric},
 	{Column: "bk_biz_id", NamedC: "bk_biz_id", Type: enumor.Numeric},
 	{Column: "bill_year", NamedC: "bill_year", Type: enumor.Numeric},
 	{Column: "bill_month", NamedC: "bill_month", Type: enumor.Numeric},
 	{Column: "bill_day", NamedC: "bill_day", Type: enumor.Numeric},
-	{Column: "version_id", NamedC: "version_id", Type: enumor.String},
+	{Column: "version_id", NamedC: "version_id", Type: enumor.Numeric},
 	{Column: "currency", NamedC: "currency", Type: enumor.String},
 	{Column: "cost", NamedC: "cost", Type: enumor.Numeric},
-	{Column: "rmb_cost", NamedC: "rmb_cost", Type: enumor.Numeric},
 	{Column: "hc_product_code", NamedC: "hc_product_code", Type: enumor.String},
 	{Column: "hc_product_name", NamedC: "hc_product_name", Type: enumor.String},
 	{Column: "res_amount", NamedC: "res_amount", Type: enumor.Numeric},
 	{Column: "res_amount_unit", NamedC: "res_amount_unit", Type: enumor.String},
 	{Column: "extension", NamedC: "extension", Type: enumor.Json},
+	{Column: "creator", NamedC: "creator", Type: enumor.String},
+	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
 	{Column: "updated_at", NamedC: "updated_at", Type: enumor.Time},
 }
@@ -60,10 +61,10 @@ var AccountBillItemColumnDescriptor = utils.ColumnDescriptors{
 type AccountBillItem struct {
 	// ID 自增ID
 	ID string `db:"id" validate:"lte=64" json:"id"`
-	// FirstAccountID 一级账号ID
-	FirstAccountID string `db:"first_account_id" json:"first_account_id"`
-	// SecondAccountID 账号ID
-	SecondAccountID string `db:"second_account_id" json:"second_account_id"`
+	// RootAccountID 一级账号ID
+	RootAccountID string `db:"root_account_id" json:"root_account_id"`
+	// MainAccountID 账号ID
+	MainAccountID string `db:"main_account_id" json:"main_account_id"`
 	// Vendor 云厂商
 	Vendor enumor.Vendor `db:"vendor" json:"vendor"`
 	// ProductID 运营产品ID
@@ -77,13 +78,11 @@ type AccountBillItem struct {
 	// BillDay 账单日期
 	BillDay int `db:"bill_day" json:"bill_day"`
 	// VersionID AccountBillSummary VersionID
-	VersionID string `db:"version_id" json:"version_id"`
+	VersionID int `db:"version_id" json:"version_id"`
 	// Currency 币种
 	Currency string `db:"currency" json:"currency"`
 	// Cost 费用
 	Cost *types.Decimal `db:"cost" json:"cost"`
-	// RMBCost 费用
-	RMBCost *types.Decimal `db:"rmb_cost" json:"rmb_cost"`
 	// HcProductCode 云服务代号
 	HcProductCode string `db:"hc_product_code" json:"hc_product_code"`
 	// HcProductName 云服务名字
@@ -94,6 +93,10 @@ type AccountBillItem struct {
 	ResAmountUnit string `db:"res_amount_unit" json:"res_amount_unit,omitempty"`
 	// Extension 云原始字段
 	Extension types.JsonField `db:"extension" json:"extension"`
+	// Creator 创建者
+	Creator string `db:"creator" json:"creator"`
+	// Reviser 更新者
+	Reviser string `db:"reviser" json:"reviser"`
 	// CreatedAt 创建时间
 	CreatedAt types.Time `db:"created_at" json:"created_at"`
 	// UpdatedAt 更新时间
@@ -113,11 +116,11 @@ func (abs *AccountBillItem) InsertValidate() error {
 	if len(abs.Vendor) == 0 {
 		return errors.New("vendor is required")
 	}
-	if len(abs.FirstAccountID) == 0 {
-		return errors.New("first_account_id is required")
+	if len(abs.RootAccountID) == 0 {
+		return errors.New("root_account_id is required")
 	}
-	if len(abs.SecondAccountID) == 0 {
-		return errors.New("second_account_id is required")
+	if len(abs.MainAccountID) == 0 {
+		return errors.New("main_account_id is required")
 	}
 	if abs.BkBizID == 0 && abs.ProductID == 0 {
 		return errors.New("bk_biz_id or product_id is required")
@@ -131,8 +134,8 @@ func (abs *AccountBillItem) InsertValidate() error {
 	if abs.BillDay == 0 {
 		return errors.New("bill_day is required")
 	}
-	if len(abs.VersionID) == 0 {
-		return errors.New("version_ib is required")
+	if abs.VersionID == 0 {
+		return errors.New("version_id is required")
 	}
 	if err := validator.Validate.Struct(abs); err != nil {
 		return err
@@ -148,11 +151,11 @@ func (abs *AccountBillItem) UpdateValidate() error {
 	if len(abs.Vendor) == 0 {
 		return errors.New("vendor is required")
 	}
-	if len(abs.FirstAccountID) == 0 {
-		return errors.New("first_account_id is required")
+	if len(abs.RootAccountID) == 0 {
+		return errors.New("root_account_id is required")
 	}
-	if len(abs.SecondAccountID) == 0 {
-		return errors.New("second_account_id is required")
+	if len(abs.MainAccountID) == 0 {
+		return errors.New("main_account_id is required")
 	}
 	if abs.BkBizID == 0 && abs.ProductID == 0 {
 		return errors.New("bk_biz_id or product_id is required")

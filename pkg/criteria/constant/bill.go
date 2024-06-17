@@ -46,6 +46,8 @@ const (
 	MainAccountRawBillPullStatePulling = "拉取中"
 	// MainAccountRawBillPullStatePulled 已拉取
 	MainAccountRawBillPullStatePulled = "已拉取"
+	// MainAccountRawBillPullStateSplitted 已分账
+	MainAccountRawBillPullStateSplitted = "已分账"
 	// MainAccountRawBillPullStateStop 停止中
 	MainAccountRawBillPullStateStop = "停止中"
 )

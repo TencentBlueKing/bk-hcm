@@ -21,6 +21,7 @@ package bill
 
 import (
 	"hcm/pkg/api/core"
+	billcore "hcm/pkg/api/core/bill"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/table/types"
@@ -34,23 +35,22 @@ type BatchBillItemCreateReq []BillItemCreateReq
 
 // BillItemCreateReq create request
 type BillItemCreateReq struct {
-	FirstAccountID  string          `json:"first_account_id" validate:"required"`
-	SecondAccountID string          `json:"second_account_id" validate:"required"`
-	Vendor          enumor.Vendor   `json:"vendor" validate:"required"`
-	ProductID       int64           `json:"product_id" validate:"omitempty"`
-	BkBizID         int64           `json:"bk_biz_id" validate:"omitempty"`
-	BillYear        int             `json:"bill_year" validate:"required"`
-	BillMonth       int             `json:"bill_month" validate:"required"`
-	BillDay         int             `json:"bill_day" validate:"required"`
-	VersionID       string          `json:"version_id" validate:"required"`
-	Currency        string          `json:"currency" validate:"required"`
-	Cost            decimal.Decimal `json:"cost" validate:"required"`
-	RMBCost         decimal.Decimal `json:"rmb_cost" validate:"required"`
-	HcProductCode   string          `json:"hc_product_code,omitempty"`
-	HcProductName   string          `json:"hc_product_name,omitempty"`
-	ResAmount       decimal.Decimal `json:"res_amount,omitempty"`
-	ResAmountUnit   string          `json:"res_amount_unit,omitempty"`
-	Extension       types.JsonField `json:"extension"`
+	RootAccountID string          `json:"root_account_id" validate:"required"`
+	MainAccountID string          `json:"main_account_id" validate:"required"`
+	Vendor        enumor.Vendor   `json:"vendor" validate:"required"`
+	ProductID     int64           `json:"product_id" validate:"omitempty"`
+	BkBizID       int64           `json:"bk_biz_id" validate:"omitempty"`
+	BillYear      int             `json:"bill_year" validate:"required"`
+	BillMonth     int             `json:"bill_month" validate:"required"`
+	BillDay       int             `json:"bill_day" validate:"required"`
+	VersionID     int             `json:"version_id" validate:"required"`
+	Currency      string          `json:"currency" validate:"required"`
+	Cost          decimal.Decimal `json:"cost" validate:"required"`
+	HcProductCode string          `json:"hc_product_code,omitempty"`
+	HcProductName string          `json:"hc_product_name,omitempty"`
+	ResAmount     decimal.Decimal `json:"res_amount,omitempty"`
+	ResAmountUnit string          `json:"res_amount_unit,omitempty"`
+	Extension     types.JsonField `json:"extension"`
 }
 
 // Validate ...
@@ -72,54 +72,20 @@ func (req *BillItemListReq) Validate() error {
 
 // BillItemListResult list result
 type BillItemListResult struct {
-	Count   *uint64           `json:"count,omitempty"`
-	Details []*BillItemResult `json:"details"`
-}
-
-// BillItemResult result
-type BillItemResult struct {
-	ID              string          `json:"id,omitempty"`
-	FirstAccountID  string          `json:"first_account_id" validate:"required"`
-	SecondAccountID string          `json:"second_account_id" validate:"required"`
-	Vendor          enumor.Vendor   `json:"vendor" validate:"required"`
-	ProductID       int64           `json:"product_id" validate:"omitempty"`
-	BkBizID         int64           `json:"bk_biz_id" validate:"omitempty"`
-	BillYear        int             `json:"bill_year" validate:"required"`
-	BillMonth       int             `json:"bill_month" validate:"required"`
-	BillDay         int             `json:"bill_day" validate:"required"`
-	VersionID       string          `json:"version_id" validate:"required"`
-	Currency        string          `json:"currency" validate:"required"`
-	Cost            decimal.Decimal `json:"cost" validate:"required"`
-	RMBCost         decimal.Decimal `json:"rmb_cost" validate:"required"`
-	HcProductCode   string          `json:"hc_product_code,omitempty"`
-	HcProductName   string          `json:"hc_product_name,omitempty"`
-	ResAmount       decimal.Decimal `json:"res_amount,omitempty"`
-	ResAmountUnit   string          `json:"res_amount_unit,omitempty"`
-	Extension       types.JsonField `json:"extension"`
-	CreatedAt       types.Time      `json:"created_at,omitempty"`
-	UpdatedAt       types.Time      `json:"updated_at,omitempty"`
+	Count   *uint64                     `json:"count,omitempty"`
+	Details []*billcore.AccountBillItem `json:"details"`
 }
 
 // BillItemUpdateReq update request
 type BillItemUpdateReq struct {
-	ID              string          `json:"id,omitempty" validate:"required"`
-	FirstAccountID  string          `json:"first_account_id" validate:"required"`
-	SecondAccountID string          `json:"second_account_id" validate:"required"`
-	Vendor          enumor.Vendor   `json:"vendor" validate:"required"`
-	ProductID       int64           `json:"product_id" validate:"omitempty"`
-	BkBizID         int64           `json:"bk_biz_id" validate:"omitempty"`
-	BillYear        int             `json:"bill_year" validate:"required"`
-	BillMonth       int             `json:"bill_month" validate:"required"`
-	BillDay         int             `json:"bill_day" validate:"required"`
-	VersionID       string          `json:"version_id" validate:"required"`
-	Currency        string          `json:"currency" validate:"required"`
-	Cost            decimal.Decimal `json:"cost" validate:"required"`
-	RMBCost         decimal.Decimal `json:"rmb_cost" validate:"required"`
-	HcProductCode   string          `json:"hc_product_code,omitempty"`
-	HcProductName   string          `json:"hc_product_name,omitempty"`
-	ResAmount       decimal.Decimal `json:"res_amount,omitempty"`
-	ResAmountUnit   string          `json:"res_amount_unit,omitempty"`
-	Extension       types.JsonField `json:"extension"`
+	ID            string          `json:"id,omitempty" validate:"required"`
+	Currency      string          `json:"currency" validate:"required"`
+	Cost          decimal.Decimal `json:"cost" validate:"required"`
+	HcProductCode string          `json:"hc_product_code,omitempty"`
+	HcProductName string          `json:"hc_product_name,omitempty"`
+	ResAmount     decimal.Decimal `json:"res_amount,omitempty"`
+	ResAmountUnit string          `json:"res_amount_unit,omitempty"`
+	Extension     types.JsonField `json:"extension"`
 }
 
 // Validate ...

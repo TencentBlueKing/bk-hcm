@@ -44,7 +44,7 @@ func (svc *service) CreateBillSummaryDaily(cts *rest.Contexts) (interface{}, err
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 	id, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		summary := tablebill.AccountBillSummaryDaily{
+		summary := &tablebill.AccountBillSummaryDaily{
 			RootAccountID: string(req.RootAccountID),
 			MainAccountID: string(req.MainAccountID),
 			Vendor:        req.Vendor,
@@ -56,9 +56,12 @@ func (svc *service) CreateBillSummaryDaily(cts *rest.Contexts) (interface{}, err
 			VersionID:     req.VersionID,
 			Currency:      req.Currency,
 			Cost:          &types.Decimal{Decimal: req.Cost},
+			Count:         req.Count,
+			Creator:       cts.Kit.User,
+			Reviser:       cts.Kit.User,
 		}
 		ids, err := svc.dao.AccountBillSummaryDaily().CreateWithTx(
-			cts.Kit, txn, []tablebill.AccountBillSummaryDaily{
+			cts.Kit, txn, []*tablebill.AccountBillSummaryDaily{
 				summary,
 			})
 		if err != nil {

@@ -37,7 +37,7 @@ import (
 // CreateBillItem create bill item with options
 func (svc *service) CreateBillItem(cts *rest.Contexts) (interface{}, error) {
 	req := make(dsbill.BatchBillItemCreateReq, 0)
-	if err := cts.DecodeInto(req); err != nil {
+	if err := cts.DecodeInto(&req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 	for _, item := range req {
@@ -47,21 +47,27 @@ func (svc *service) CreateBillItem(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	idList, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		var summaryList []tablebill.AccountBillItem
+		var summaryList []*tablebill.AccountBillItem
 		for _, item := range req {
-			summary := tablebill.AccountBillItem{
-				FirstAccountID:  item.FirstAccountID,
-				SecondAccountID: item.SecondAccountID,
-				Vendor:          item.Vendor,
-				ProductID:       item.ProductID,
-				BkBizID:         item.BkBizID,
-				BillYear:        item.BillYear,
-				BillMonth:       item.BillMonth,
-				BillDay:         item.BillDay,
-				VersionID:       item.VersionID,
-				Currency:        item.Currency,
-				Cost:            &types.Decimal{Decimal: item.Cost},
-				RMBCost:         &types.Decimal{Decimal: item.RMBCost},
+			summary := &tablebill.AccountBillItem{
+				RootAccountID: item.RootAccountID,
+				MainAccountID: item.MainAccountID,
+				Vendor:        item.Vendor,
+				ProductID:     item.ProductID,
+				BkBizID:       item.BkBizID,
+				BillYear:      item.BillYear,
+				BillMonth:     item.BillMonth,
+				BillDay:       item.BillDay,
+				VersionID:     item.VersionID,
+				Currency:      item.Currency,
+				Cost:          &types.Decimal{Decimal: item.Cost},
+				HcProductCode: item.HcProductCode,
+				HcProductName: item.HcProductName,
+				ResAmount:     &types.Decimal{Decimal: item.ResAmount},
+				ResAmountUnit: item.ResAmountUnit,
+				Extension:     item.Extension,
+				Creator:       cts.Kit.User,
+				Reviser:       cts.Kit.User,
 			}
 			summaryList = append(summaryList, summary)
 		}

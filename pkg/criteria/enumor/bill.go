@@ -82,3 +82,10 @@ const (
 	// ActionDailySummary action for calculate daily summary
 	ActionDailySummary = "dailysummary"
 )
+
+const (
+	// CurrencyUSD usd currency
+	CurrencyUSD = "USD"
+	// CurrencyRMB rmb currency
+	CurrencyRMB = "RMB"
+)

@@ -54,6 +54,8 @@ var defaultFlowNameMap = map[FlowName]struct{}{
 	FlowCreateHuaweiSGRule:  {},
 	FlowDeleteEIP:           {},
 	FlowPullRawBill:         {},
+	FlowSplitBill:           {},
+	FlowBillDailySummary:    {},
 }
 
 // ValidateDefault validate default FlowName.
@@ -144,5 +146,7 @@ const (
 
 // 账单相关Flow
 const (
-	FlowPullRawBill FlowName = "bill_pull_daily_raw"
+	FlowPullRawBill      FlowName = "bill_pull_daily_raw"
+	FlowSplitBill        FlowName = "bill_split_daily"
+	FlowBillDailySummary FlowName = "bill_daily_summary"
 )

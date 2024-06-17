@@ -94,7 +94,8 @@ func (abpDao AccountBillDailyPullTaskDao) List(kt *kit.Kit, opt *types.ListOptio
 		return nil, errf.New(errf.InvalidParameter, "list account bill daily pull task options is nil")
 	}
 
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tablebill.AccountBillDailyPullTaskColumns.ColumnTypes())),
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(
+		tablebill.AccountBillDailyPullTaskColumns.ColumnTypes())),
 		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}

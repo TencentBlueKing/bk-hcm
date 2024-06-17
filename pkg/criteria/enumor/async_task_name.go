@@ -42,7 +42,7 @@ func (v ActionName) Validate() error {
 	case ActionLoadBalancerOperateWatch:
 	case ActionListenerRuleAddTarget:
 	case ActionDeleteLoadBalancer:
-	case ActionPullDailyRawBill:
+	case ActionPullDailyRawBill, ActionDailyAccountSplit, ActionDailyAccountSummary:
 	default:
 		return fmt.Errorf("unsupported action name type: %s", v)
 	}
@@ -118,5 +118,8 @@ const (
 
 // 账单相关Action
 const (
-	ActionPullDailyRawBill = "bill_pull_daily_raw"
+	ActionPullDailyRawBill    = "bill_pull_daily_raw"
+	ActionMainAccountSummary  = "bill_main_account_summary"
+	ActionDailyAccountSplit   = "bill_daily_account_split"
+	ActionDailyAccountSummary = "bill_daily_account_summary"
 )

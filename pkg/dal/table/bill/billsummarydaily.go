@@ -45,10 +45,12 @@ var AccountBillSummaryDailyColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "bill_year", NamedC: "bill_year", Type: enumor.Numeric},
 	{Column: "bill_month", NamedC: "bill_month", Type: enumor.Numeric},
 	{Column: "bill_day", NamedC: "bill_day", Type: enumor.Numeric},
-	{Column: "version_id", NamedC: "version_id", Type: enumor.String},
+	{Column: "version_id", NamedC: "version_id", Type: enumor.Numeric},
 	{Column: "currency", NamedC: "currency", Type: enumor.String},
 	{Column: "cost", NamedC: "cost", Type: enumor.Numeric},
 	{Column: "count", NamedC: "count", Type: enumor.Numeric},
+	{Column: "creator", NamedC: "creator", Type: enumor.String},
+	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
 	{Column: "updated_at", NamedC: "updated_at", Type: enumor.Time},
 }
@@ -81,6 +83,10 @@ type AccountBillSummaryDaily struct {
 	Cost *types.Decimal `db:"cost" json:"cost"`
 	// Count 账单条数
 	Count int64 `db:"count" json:"count"`
+	// Creator 创建者
+	Creator string `db:"creator" json:"creator"`
+	// Reviser 更新者
+	Reviser string `db:"reviser" json:"reviser"`
 	// CreatedAt 创建时间
 	CreatedAt types.Time `db:"created_at" json:"created_at"`
 	// UpdatedAt 更新时间

@@ -20,6 +20,8 @@
 package billsummarydaily
 
 import (
+	"hcm/pkg/api/core"
+	billcore "hcm/pkg/api/core/bill"
 	dataproto "hcm/pkg/api/data-service/bill"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
@@ -48,7 +50,7 @@ func (svc *service) ListBillSummaryDaily(cts *rest.Contexts) (interface{}, error
 		return nil, err
 	}
 
-	details := make([]*dataproto.BillSummaryDailyResult, len(data.Details))
+	details := make([]billcore.BillSummaryDaily, len(data.Details))
 	for indx, d := range data.Details {
 		details[indx] = toProtoPullerResult(&d)
 	}
@@ -56,8 +58,8 @@ func (svc *service) ListBillSummaryDaily(cts *rest.Contexts) (interface{}, error
 	return &dataproto.BillSummaryDailyListResult{Details: details, Count: data.Count}, nil
 }
 
-func toProtoPullerResult(m *tablebill.AccountBillSummaryDaily) *dataproto.BillSummaryDailyResult {
-	return &dataproto.BillSummaryDailyResult{
+func toProtoPullerResult(m *tablebill.AccountBillSummaryDaily) billcore.BillSummaryDaily {
+	return billcore.BillSummaryDaily{
 		ID:            m.ID,
 		RootAccountID: m.RootAccountID,
 		MainAccountID: m.MainAccountID,
@@ -70,7 +72,11 @@ func toProtoPullerResult(m *tablebill.AccountBillSummaryDaily) *dataproto.BillSu
 		VersionID:     m.VersionID,
 		Currency:      m.Currency,
 		Cost:          m.Cost.Decimal,
-		CreatedAt:     m.CreatedAt,
-		UpdatedAt:     m.UpdatedAt,
+		Revision: core.Revision{
+			Creator:   m.Creator,
+			Reviser:   m.Reviser,
+			CreatedAt: m.CreatedAt.String(),
+			UpdatedAt: m.UpdatedAt.String(),
+		},
 	}
 }
