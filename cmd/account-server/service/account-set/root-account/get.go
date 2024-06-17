@@ -28,7 +28,7 @@ import (
 	"hcm/pkg/rest"
 )
 
-// Get get main account with options
+// Get get root account with options
 func (s *service) Get(cts *rest.Contexts) (interface{}, error) {
 	accountID := cts.PathParameter("account_id").String()
 
