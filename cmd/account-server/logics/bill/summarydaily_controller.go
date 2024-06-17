@@ -24,6 +24,8 @@ import (
 	"fmt"
 	"time"
 
+	"hcm/cmd/task-server/logics/action/bill/dailysummary"
+	taskserver "hcm/pkg/api/task-server"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
@@ -35,6 +37,7 @@ type MainSummaryDailyControllerOption struct {
 	RootAccountID string
 	MainAccountID string
 	Vendor        enumor.Vendor
+	Version       int
 	ProductID     int64
 	BkBizID       int64
 	Client        *client.ClientSet
@@ -45,6 +48,7 @@ type MainSummaryDailyController struct {
 	Client        *client.ClientSet
 	RootAccountID string
 	MainAccountID string
+	Version       int
 	ProductID     int64
 	BkBizID       int64
 	Vendor        enumor.Vendor
@@ -58,7 +62,7 @@ func (msdc *MainSummaryDailyController) Start() error {
 	if msdc.kt != nil {
 		return fmt.Errorf("controller already start")
 	}
-	kt := kit.New()
+	kt := getInternalKit()
 	cancelFunc := kt.CtxBackgroundWithCancel()
 	msdc.kt = kt
 	msdc.cancelFunc = cancelFunc
@@ -67,14 +71,14 @@ func (msdc *MainSummaryDailyController) Start() error {
 }
 
 func (msdc *MainSummaryDailyController) runBillDailySummaryLoop(kt *kit.Kit) {
-	if err := msdc.syncBillSummary(kt); err != nil {
+	if err := msdc.doSync(kt); err != nil {
 		logs.Warnf("sync daily summary failed, err %s", err.Error())
 	}
-	ticker := time.NewTicker(defaultControllerSyncDuration)
+	ticker := time.NewTicker(defaultDailySummaryDuration)
 	for {
 		select {
 		case <-ticker.C:
-			if err := msdc.syncBillSummary(kt); err != nil {
+			if err := msdc.doSync(kt); err != nil {
 				logs.Warnf("sync daily summary for account (%s, %s, %s) failed, err %s",
 					msdc.RootAccountID, msdc.MainAccountID, msdc.Vendor, err.Error())
 			}
@@ -86,6 +90,40 @@ func (msdc *MainSummaryDailyController) runBillDailySummaryLoop(kt *kit.Kit) {
 	}
 }
 
-func (msdc *MainSummaryDailyController) syncBillSummary(kt *kit.Kit) error {
+func (msdc *MainSummaryDailyController) doSync(kt *kit.Kit) error {
+	curBillYear, curBillMonth := getCurrentBillMonth()
+	if err := msdc.syncDailySummary(kt.NewSubKit(), curBillYear, curBillMonth); err != nil {
+		return fmt.Errorf("ensure bill summary for %d %d failed, err %s", curBillYear, curBillMonth, err.Error())
+	}
+	lastBillYear, lastBillMonth := getLastBillMonth()
+	if err := msdc.syncDailySummary(kt.NewSubKit(), lastBillYear, lastBillMonth); err != nil {
+		return fmt.Errorf("ensure bill summary for %d %d failed, err %s", lastBillYear, lastBillMonth, err.Error())
+	}
+	return nil
+}
+
+func (msdc *MainSummaryDailyController) syncDailySummary(kt *kit.Kit, billYear, billMonth int) error {
+	_, err := msdc.Client.TaskServer().CreateCustomFlow(kt, &taskserver.AddCustomFlowReq{
+		Name: enumor.FlowBillDailySummary,
+		Memo: "do daily summary",
+		Tasks: []taskserver.CustomFlowTask{
+			dailysummary.BuildDailySummaryTask(
+				msdc.RootAccountID,
+				msdc.MainAccountID,
+				msdc.Vendor,
+				msdc.ProductID,
+				msdc.BkBizID,
+				billYear,
+				billMonth,
+				msdc.Version,
+			),
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("create daily summary task flow failed for %s/%s/%s/%d/%d/%d, err %s",
+			msdc.RootAccountID, msdc.MainAccountID, msdc.Vendor, billYear, billMonth, msdc.Version, err.Error())
+	}
+	logs.Infof("create daily summary task flow for %s/%s/%s/%d/%d/%d successfully",
+		msdc.RootAccountID, msdc.MainAccountID, msdc.Vendor, billYear, billMonth, msdc.Version)
 	return nil
 }

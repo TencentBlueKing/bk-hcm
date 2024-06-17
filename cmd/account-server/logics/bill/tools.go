@@ -28,6 +28,7 @@ import (
 const (
 	defaultAccountListLimit       = uint64(500)
 	defaultControllerSyncDuration = 30 * time.Second
+	defaultDailySummaryDuration   = 2 * time.Minute
 )
 
 func getInternalKit() *kit.Kit {
@@ -35,4 +36,15 @@ func getInternalKit() *kit.Kit {
 	newKit.User = string(cc.AccountServerName)
 	newKit.AppCode = string(cc.AccountServerName)
 	return newKit
+}
+
+func getCurrentBillMonth() (int, int) {
+	now := time.Now().UTC()
+	return now.Year(), int(now.Month())
+}
+
+func getLastBillMonth() (int, int) {
+	now := time.Now().UTC()
+	lastMonthNow := now.AddDate(0, -1, 0)
+	return lastMonthNow.Year(), int(lastMonthNow.Month())
 }

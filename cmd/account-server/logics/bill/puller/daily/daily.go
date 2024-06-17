@@ -105,10 +105,10 @@ func (dp *DailyPuller) updateDailyPullTaskFlowID(kit *kit.Kit, dataID, flowID st
 	})
 }
 
-func (dp *DailyPuller) ensureDailyPulling(kit *kit.Kit, billDay int) error {
+func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, billDay int) error {
 	filter := dp.getFilter(billDay)
 	billTaskResult, err := dp.Client.DataService().Global.Bill.ListBillDailyPullTask(
-		kit, &bill.BillDailyPullTaskListReq{
+		kt, &bill.BillDailyPullTaskListReq{
 			Filter: filter,
 			Page: &core.BasePage{
 				Start: 0,
@@ -120,7 +120,7 @@ func (dp *DailyPuller) ensureDailyPulling(kit *kit.Kit, billDay int) error {
 	}
 	// 如果不存在pull task数据，则创建新的pull task
 	if len(billTaskResult.Details) == 0 {
-		return dp.createDailyPullTask(kit, billDay)
+		return dp.createDailyPullTask(kt, billDay)
 	}
 	if len(billTaskResult.Details) != 1 {
 		return fmt.Errorf("more than 1 pull task found, details %v", billTaskResult.Details)
@@ -129,7 +129,7 @@ func (dp *DailyPuller) ensureDailyPulling(kit *kit.Kit, billDay int) error {
 
 	// 如果没有创建拉取task flow，则创建
 	if len(billTask.FlowID) == 0 {
-		flowResult, err := dp.Client.TaskServer().CreateCustomFlow(kit, &taskserver.AddCustomFlowReq{
+		flowResult, err := dp.Client.TaskServer().CreateCustomFlow(kt, &taskserver.AddCustomFlowReq{
 			Name: enumor.FlowPullRawBill,
 			Memo: "pull daily raw bill",
 			Tasks: []taskserver.CustomFlowTask{
@@ -147,8 +147,8 @@ func (dp *DailyPuller) ensureDailyPulling(kit *kit.Kit, billDay int) error {
 		if err != nil {
 			return fmt.Errorf("failed to create custom flow, err %s", err.Error())
 		}
-		logs.Infof("create pull task flow for billTask %v", billTask)
-		if err := dp.updateDailyPullTaskFlowID(kit, billTask.ID, flowResult.ID); err != nil {
+		logs.Infof("create pull task flow for billTask %v, rid: %s", billTask, kt.Rid)
+		if err := dp.updateDailyPullTaskFlowID(kt, billTask.ID, flowResult.ID); err != nil {
 			return fmt.Errorf("update flow id failed, err %s", err.Error())
 		}
 		return nil
@@ -179,7 +179,7 @@ func (dp *DailyPuller) ensureDailyPulling(kit *kit.Kit, billDay int) error {
 		if err != nil {
 			return fmt.Errorf("failed to create custom flow, err %s", err.Error())
 		}
-		if err := dp.updateDailyPullTaskFlowID(kit, billTask.ID, flowResult.ID); err != nil {
+		if err := dp.updateDailyPullTaskFlowID(kt, billTask.ID, flowResult.ID); err != nil {
 			return fmt.Errorf("update flow id failed, err %s", err.Error())
 		}
 		return nil

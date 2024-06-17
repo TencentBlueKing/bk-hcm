@@ -94,7 +94,7 @@ func (mac *MainAccountController) Start() error {
 	if mac.kt != nil {
 		return fmt.Errorf("controller already start")
 	}
-	kt := kit.New()
+	kt := getInternalKit()
 	cancelFunc := kt.CtxBackgroundWithCancel()
 	mac.kt = kt
 	mac.cancelFunc = cancelFunc
@@ -105,33 +105,35 @@ func (mac *MainAccountController) Start() error {
 
 // Sync do sync
 func (mac *MainAccountController) syncBillSummary(kt *kit.Kit) error {
-	curBillYear, curBillMonth := mac.getCurrentBillMonth()
+	curBillYear, curBillMonth := getCurrentBillMonth()
 	if err := mac.ensureBillSummary(kt.NewSubKit(), curBillYear, curBillMonth); err != nil {
-		return fmt.Errorf("ensure bill summary for %d %d failed, err %s", curBillYear, curBillMonth, err.Error())
+		return fmt.Errorf("ensure bill summary for %d %d failed, err %s, rid: %s",
+			curBillYear, curBillMonth, err.Error(), kt.Rid)
 	}
-	lastBillYear, lastBillMonth := mac.getLastBillMonth()
+	lastBillYear, lastBillMonth := getLastBillMonth()
 	if err := mac.ensureBillSummary(kt.NewSubKit(), lastBillYear, lastBillMonth); err != nil {
-		return fmt.Errorf("ensure bill summary for %d %d failed, err %s", lastBillYear, lastBillMonth, err.Error())
+		return fmt.Errorf("ensure bill summary for %d %d failed, err %s, rid: %s",
+			lastBillYear, lastBillMonth, err.Error(), kt.Rid)
 	}
 	return nil
 }
 
 func (mac *MainAccountController) runBillSummaryLoop(kt *kit.Kit) {
 	if err := mac.syncBillSummary(kt.NewSubKit()); err != nil {
-		logs.Warnf("sync bill summary for account (%s, %s, %s) failed, err %s",
-			mac.RootAccountID, mac.MainAccountID, mac.Vendor, err.Error())
+		logs.Warnf("sync bill summary for account (%s, %s, %s) failed, err %s, rid: %s",
+			mac.RootAccountID, mac.MainAccountID, mac.Vendor, err.Error(), kt.Rid)
 	}
 	ticker := time.NewTicker(defaultControllerSyncDuration)
 	for {
 		select {
 		case <-ticker.C:
 			if err := mac.syncBillSummary(kt.NewSubKit()); err != nil {
-				logs.Warnf("sync bill summary for account (%s, %s, %s) failed, err %s",
-					mac.RootAccountID, mac.MainAccountID, mac.Vendor, err.Error())
+				logs.Warnf("sync bill summary for account (%s, %s, %s) failed, err %s, rid: %s",
+					mac.RootAccountID, mac.MainAccountID, mac.Vendor, err.Error(), kt.Rid)
 			}
 		case <-kt.Ctx.Done():
-			logs.Infof("main account (%s, %s, %s) summary controller context done",
-				mac.RootAccountID, mac.MainAccountID, mac.Vendor)
+			logs.Infof("main account (%s, %s, %s) summary controller context done, rid: %s",
+				mac.RootAccountID, mac.MainAccountID, mac.Vendor, kt.Rid)
 			return
 		}
 	}
@@ -139,20 +141,20 @@ func (mac *MainAccountController) runBillSummaryLoop(kt *kit.Kit) {
 
 func (mac *MainAccountController) runDailyRawBillLoop(kt *kit.Kit) {
 	if err := mac.syncDailyRawBill(kt); err != nil {
-		logs.Warnf("sync daily raw bill for account (%s, %s, %s) failed, err %s",
-			mac.RootAccountID, mac.MainAccountID, mac.Vendor, err.Error())
+		logs.Warnf("sync daily raw bill for account (%s, %s, %s) failed, err %s, rid: %s",
+			mac.RootAccountID, mac.MainAccountID, mac.Vendor, err.Error(), kt.Rid)
 	}
 	ticker := time.NewTicker(defaultControllerSyncDuration)
 	for {
 		select {
 		case <-ticker.C:
 			if err := mac.syncDailyRawBill(kt); err != nil {
-				logs.Warnf("sync daily raw bill for account (%s, %s, %s) failed, err %s",
-					mac.RootAccountID, mac.MainAccountID, mac.Vendor, err.Error())
+				logs.Warnf("sync daily raw bill for account (%s, %s, %s) failed, err %s, rid: %s",
+					mac.RootAccountID, mac.MainAccountID, mac.Vendor, err.Error(), kt.Rid)
 			}
 		case <-kt.Ctx.Done():
-			logs.Infof("main account (%s, %s, %s) raw bill controller context done",
-				mac.RootAccountID, mac.MainAccountID, mac.Vendor)
+			logs.Infof("main account (%s, %s, %s) raw bill controller context done, rid: %s",
+				mac.RootAccountID, mac.MainAccountID, mac.Vendor, kt.Rid)
 			return
 		}
 	}
@@ -161,7 +163,7 @@ func (mac *MainAccountController) runDailyRawBillLoop(kt *kit.Kit) {
 func (mac *MainAccountController) syncDailyRawBill(kt *kit.Kit) error {
 	// 同步拉取任务
 	// 上月
-	lastBillYear, lastBillMonth := mac.getLastBillMonth()
+	lastBillYear, lastBillMonth := getLastBillMonth()
 	lastBillSummaryMain, err := mac.getBillSummary(kt, lastBillYear, lastBillMonth)
 	if err != nil {
 		return err
@@ -176,7 +178,7 @@ func (mac *MainAccountController) syncDailyRawBill(kt *kit.Kit) error {
 		}
 	}
 	// 本月
-	curBillYear, curBillMonth := mac.getCurrentBillMonth()
+	curBillYear, curBillMonth := getCurrentBillMonth()
 	billSummaryMain, err := mac.getBillSummary(kt, curBillYear, curBillMonth)
 	if err != nil {
 		return err
@@ -243,8 +245,8 @@ func (mac *MainAccountController) createNewBillSummary(kt *kit.Kit, billYear, bi
 		return fmt.Errorf("failed to create bill summary for main account (%s, %s, %s) in in (%04d, %02d), err %s",
 			mac.RootAccountID, mac.MainAccountID, mac.Vendor, billYear, billMonth, err.Error())
 	}
-	logs.Infof("main account (%s, %s, %s) in (%04d, %02d) bill summary create successfully",
-		mac.RootAccountID, mac.MainAccountID, mac.Vendor, billYear, billMonth)
+	logs.Infof("main account (%s, %s, %s) in (%04d, %02d) bill summary create successfully, rid: %s",
+		mac.RootAccountID, mac.MainAccountID, mac.Vendor, billYear, billMonth, kt.Rid)
 	return nil
 }
 
@@ -272,17 +274,6 @@ func (mac *MainAccountController) ensureBillSummary(kt *kit.Kit, billYear, billM
 		return mac.createNewBillSummary(kt, billYear, billMonth)
 	}
 	return nil
-}
-
-func (mac *MainAccountController) getCurrentBillMonth() (int, int) {
-	now := time.Now().UTC()
-	return now.Year(), int(now.Month())
-}
-
-func (mac *MainAccountController) getLastBillMonth() (int, int) {
-	now := time.Now().UTC()
-	lastMonthNow := now.AddDate(0, -1, 0)
-	return lastMonthNow.Year(), int(lastMonthNow.Month())
 }
 
 func (mac *MainAccountController) getKey() string {
