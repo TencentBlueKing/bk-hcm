@@ -1,16 +1,8 @@
 .primary-stand-zone-selector {
-  width: 360px;
   .selected-tag-value-container {
-    .bk-tag {
-      user-select: none;
-    }
     .bkhcm-icon-exchange-line {
-      margin-right: 6px;
+      margin: 0 8px;
       color: #3a84ff;
     }
   }
-}
-
-.ml12 {
-  margin-left: 12px;
 }

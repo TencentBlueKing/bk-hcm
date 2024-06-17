@@ -8,7 +8,7 @@ import BatchOperationDialog from '@/components/batch-operation-dialog';
 import AddRsDialog from '../components/AddRsDialog';
 import BatchAddRsSideslider from './BatchAddRsSideslider';
 // import stores
-import { useLoadBalancerStore } from '@/store';
+import { useBusinessStore, useLoadBalancerStore } from '@/store';
 // import custom hooks
 import useRenderTRList from './useRenderTGList';
 import useBatchDeleteTR from './useBatchDeleteTR';
@@ -27,6 +27,7 @@ export default defineComponent({
     const { t } = useI18n();
     // use stores
     const loadBalancerStore = useLoadBalancerStore();
+    const businessStore = useBusinessStore();
 
     // 目标组list
     const { searchData, selections, CommonTable, getListData } = useRenderTRList();
@@ -91,13 +92,21 @@ export default defineComponent({
       isBatchDeleteRsShow.value = true;
     };
     // click-handler - 批量添加RS
-    const handleBatchAddRs = () => {
+    const handleBatchAddRs = async () => {
       loadBalancerStore.setCurrentScene('BatchAddRs');
       // 同一账号下的多个目标组支持批量添加rs
-      const { account_id: accountId } = selections.value[0];
+      const { account_id: accountId, lb_id } = selections.value[0];
+
+      // 获取负载均衡的跨域信息
+      let isCorsV2 = false;
+      if (lb_id) {
+        const res = await businessStore.getLbDetail(lb_id);
+        isCorsV2 = res.data.extension?.snat_pro;
+      }
       const vpcIds = [...new Set(selections.value.map((item) => item.vpc_id))];
+
       // 显示添加rs弹框
-      bus.$emit('showAddRsDialog', { accountId, vpcIds, rsList: [] });
+      bus.$emit('showAddRsDialog', { accountId, vpcIds, rsList: [], isCorsV2 });
       // 将选中的目标组数据传递给BatchAddRsSideslider组件
       bus.$emit('setTargetGroups', selections.value);
     };

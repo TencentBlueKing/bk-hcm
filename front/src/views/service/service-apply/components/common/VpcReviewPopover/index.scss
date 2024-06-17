@@ -1,23 +1,32 @@
 .vpc-review-popover {
   .review-detail {
-    padding: 0 16px;
+    padding: 16px;
 
     .detail-item {
+      margin-bottom: 16px;
       display: flex;
       align-items: center;
-      height: 40px;
       font-size: 14px;
 
       .item-label {
-        margin-right: 5px;
-        width: 80px;
+        align-self: flex-start;
+        width: 100px;
         text-align: right;
         color: #63656e;
+
+        &::after {
+          content: ':';
+          margin: 0 10px 0 5px;
+        }
       }
+
       .item-value {
-        margin-left: 12px;
         flex: 1;
         color: #313238;
+      }
+
+      &:last-of-type {
+        margin-bottom: 0;
       }
     }
   }

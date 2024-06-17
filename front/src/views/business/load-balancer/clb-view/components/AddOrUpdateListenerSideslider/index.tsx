@@ -281,6 +281,11 @@ export default defineComponent({
                       : loadBalancerStore.currentSelectedTreeNode.lb.region
                   }
                   protocol={computedProtocol.value}
+                  isCorsV2={
+                    props.originPage === 'lb'
+                      ? loadBalancerStore.currentSelectedTreeNode.extension.snat_pro
+                      : loadBalancerStore.currentSelectedTreeNode.lb.extension.snat_pro
+                  }
                 />
               </FormItem>
             </>

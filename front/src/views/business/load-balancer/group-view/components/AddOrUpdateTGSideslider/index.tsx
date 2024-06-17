@@ -35,6 +35,7 @@ export default defineComponent({
       return !['add', 'edit', 'AddRs', 'port', 'weight', 'BatchDeleteRs'].includes(loadBalancerStore.currentScene);
     });
     let timer: any;
+    const lbDetail = ref(null);
 
     // 表单相关
     const getDefaultFormData = () => ({
@@ -53,11 +54,8 @@ export default defineComponent({
     };
     const formData = reactive(getDefaultFormData());
     const { updateCount } = useChangeScene(isShow, formData);
-    const { formItemOptions, canUpdateRegionOrVpc, formRef, rules, deletedRsList } = useAddOrUpdateTGForm(
-      formData,
-      updateCount,
-      isEdit,
-    );
+    const { formItemOptions, canUpdateRegionOrVpc, formRef, rules, deletedRsList, regionVpcSelectorRef } =
+      useAddOrUpdateTGForm(formData, updateCount, isEdit, lbDetail);
 
     // click-handler - 新建目标组
     const handleAddTargetGroup = () => {
@@ -65,13 +63,29 @@ export default defineComponent({
       loadBalancerStore.setCurrentScene('add');
       isShow.value = true;
       isEdit.value = false;
-      nextTick(() => {
+      nextTick(async () => {
+        // 侧边栏显示后, 刷新 vpc 列表, 支持编辑的时候默认选中 vpc
+        await regionVpcSelectorRef.value.handleRefresh();
         formRef.value.clearValidate();
       });
     };
 
+    const getListenerDetail = async (targetGroup: any) => {
+      // 请求绑定的监听器规则
+      const rulesRes = await businessStore.list(
+        {
+          page: { limit: 1, start: 0, count: false },
+          filter: { op: 'and', rules: [] },
+        },
+        `vendors/tcloud/target_groups/${targetGroup.id}/rules`,
+      );
+      const listenerItem = rulesRes.data.details[0];
+      // 请求监听器详情, 获取端口段信息
+      const detailRes = await businessStore.detail('listeners', listenerItem.lbl_id);
+      loadBalancerStore.setListenerDetailWithTargetGroup(detailRes.data);
+    };
     // click-handler - 编辑目标组
-    const handleEditTargetGroup = (data: any) => {
+    const handleEditTargetGroup = async (data: any) => {
       clearInterval(timer);
       // 初始化场景值
       loadBalancerStore.setUpdateCount(0);
@@ -89,6 +103,16 @@ export default defineComponent({
           reqAsyncTaskStatus(lastAsyncTaskInfo.tgId, lastAsyncTaskInfo.flowId);
         }, 2000);
       }
+      nextTick(() => {
+        // 侧边栏显示后, 刷新 vpc 列表, 支持编辑的时候默认选中 vpc
+        regionVpcSelectorRef.value.handleRefresh();
+      });
+      // 请求关联的负载均衡detail, 获取跨域信息
+      if (data.lb_id) {
+        const res = await businessStore.getLbDetail(data.lb_id);
+        lbDetail.value = res.data;
+      }
+      getListenerDetail(data);
     };
 
     // 处理参数 - add
@@ -130,12 +154,15 @@ export default defineComponent({
           targets: formData.rs_list
             // 只提交新增的rs
             .filter(({ isNew }) => isNew)
-            .map(({ cloud_id, port, weight }) => ({
-              inst_type: 'CVM',
-              cloud_inst_id: cloud_id,
-              port,
-              weight,
-            })),
+            .map(({ cloud_id, port, weight, private_ipv4_addresses }) => {
+              return {
+                inst_type: lbDetail.value?.extension?.snat_pro ? 'ENI' : 'CVM',
+                ip: lbDetail.value?.extension?.snat_pro ? private_ipv4_addresses[0] : undefined,
+                cloud_inst_id: lbDetail.value?.extension?.snat_pro ? undefined : cloud_id,
+                port,
+                weight,
+              };
+            }),
         },
       ],
     });
@@ -263,7 +290,12 @@ export default defineComponent({
         v-model:isShow={isShow.value}
         isSubmitLoading={isSubmitLoading.value}
         isSubmitDisabled={isSubmitDisabled.value}
-        onHandleSubmit={handleAddOrUpdateTargetGroupSubmit}>
+        onHandleSubmit={handleAddOrUpdateTargetGroupSubmit}
+        handleClose={() => {
+          if (['canceled', 'failed'].includes(lastAsyncTaskInfo.state)) {
+            Object.assign(lastAsyncTaskInfo, { tgId: '', flowId: '', state: '' });
+          }
+        }}>
         <bk-container margin={0}>
           <Form formType='vertical' model={formData} ref={formRef} rules={rules}>
             {/* 异步任务提示 */}

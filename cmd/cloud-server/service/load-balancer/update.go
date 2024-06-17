@@ -61,7 +61,7 @@ func (svc *lbSvc) UpdateBizTCloudLoadBalancer(cts *rest.Contexts) (any, error) {
 	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.LoadBalancerCloudResType,
 		lbID)
 	if err != nil {
-		logs.Errorf("getLoadBalancer resource vendor failed, id: %s, err: %s, rid: %s", lbID, err, cts.Kit.Rid)
+		logs.Errorf("get load balancer vendor failed, id: %s, err: %s, rid: %s", lbID, err, cts.Kit.Rid)
 		return nil, err
 	}
 

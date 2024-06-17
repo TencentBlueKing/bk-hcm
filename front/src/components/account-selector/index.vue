@@ -8,6 +8,7 @@ import type {
   FilterType,
 } from '@/typings/resource';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { filterAccountList } from '@pluginHandler/account-selector';
 
 const props = defineProps({
   bizId: Number as PropType<number>,
@@ -78,7 +79,7 @@ const getAccoutList = async (bizs?: number) => {
     (isBusinessPage && route.path.includes('cert')) ||
     ['lb', 'targetGroup'].includes(route.meta.applyRes as string)
   ) {
-    accountList.value = accountList.value.filter((item) => item.vendor === 'tcloud');
+    accountList.value = filterAccountList(accountList.value);
   }
   loading.value = false;
 };

@@ -1,0 +1,22 @@
+.selected-item-preview-comp {
+  display: flex;
+  align-items: center;
+
+  .content {
+    margin-right: 15px;
+    padding: 0 16px;
+    min-width: 160px;
+    height: 32px;
+    border: 1px solid #a3c5fd;
+    border-radius: 2px;
+    background: #f0f5ff;
+    box-sizing: border-box;
+    user-select: none;
+  }
+
+  .edit-btn {
+    font-size: 18px;
+    color: #3a84ff;
+    cursor: pointer;
+  }
+}

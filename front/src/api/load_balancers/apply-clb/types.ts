@@ -117,8 +117,8 @@ export interface ApplyClbModel {
   internet_charge_type?: 'TRAFFIC_POSTPAID_BY_HOUR' | 'BANDWIDTH_POSTPAID_BY_HOUR' | 'BANDWIDTH_PACKAGE';
   // 最大出带宽，单位Mbps
   internet_max_bandwidth_out?: number;
-  // // 带宽包id，计费模式为带宽包计费时必填(暂不支持)
-  // bandwidth_package_id?: string;
+  // // 带宽包id，计费模式为带宽包计费时必填
+  bandwidth_package_id?: string;
   // 负载均衡规格类型: 性能容量型规格, 留空为共享型
   sla_type?: string;
   // // 按月付费自动续费(暂不支持包月)
@@ -127,10 +127,12 @@ export interface ApplyClbModel {
   require_count: number;
   // 备注
   memo?: string;
-  // 可用区类型, 仅前端使用
-  zoneType: 'single' | 'primaryStand';
-  // 云厂商, 前端组件使用
+  // 可用区类型, 0: 单可用区 2: 主备可用区（仅前端使用）
+  zoneType: '0' | '1';
+  // 云厂商（仅前端使用）
   vendor: VendorEnum;
   // 用户网络类型
   account_type: NetworkAccountType;
+  // 负载均衡规格类型, 0：共享型 1：性能容量型（仅前端使用）
+  slaType: '0' | '1';
 }

@@ -465,7 +465,7 @@ func (svc *lbSvc) applyTargetToRule(kt *kit.Kit, tgID, ruleCloudID string, lblIn
 		for _, target := range rsResp.Details {
 			rsReq.Targets = append(rsReq.Targets, &hcproto.RegisterTarget{
 				CloudInstID:      target.CloudInstID,
-				InstType:         string(target.InstType),
+				TargetType:       target.InstType,
 				Port:             target.Port,
 				Weight:           converter.PtrToVal(target.Weight),
 				Zone:             target.Zone,

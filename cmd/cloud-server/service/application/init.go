@@ -64,6 +64,8 @@ func InitApplicationService(c *capability.Capability, bkHcmUrl string) {
 	h.Add("CreateForCreateCvm", "POST", "/vendors/{vendor}/applications/types/create_cvm", svc.CreateForCreateCvm)
 	h.Add("CreateForCreateVpc", "POST", "/vendors/{vendor}/applications/types/create_vpc", svc.CreateForCreateVpc)
 	h.Add("CreateForCreateDisk", "POST", "/vendors/{vendor}/applications/types/create_disk", svc.CreateForCreateDisk)
+	h.Add("CreateForCreateLB", "POST",
+		"/vendors/{vendor}/applications/types/create_load_balancer", svc.CreateForCreateLB)
 
 	h.Add("CreateForCreateMainAccount", "POST", "/applications/types/create_main_account", svc.CreateForCreateMainAccount)
 	h.Add("CompleteForCreateMainAccount", "POST", "/applications/types/complete_main_account", svc.CompleteForCreateMainAccount)

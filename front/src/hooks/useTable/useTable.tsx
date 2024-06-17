@@ -7,7 +7,7 @@ import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import { computed, defineComponent, reactive, ref, watch } from 'vue';
 import './index.scss';
 import Empty from '@/components/empty';
-import { useAccountStore, useResourceStore, useBusinessStore } from '@/store';
+import { useResourceStore, useBusinessStore } from '@/store';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useWhereAmI, Senarios } from '../useWhereAmI';
@@ -16,6 +16,8 @@ import { get as lodash_get } from 'lodash-es';
 import { VendorReverseMap } from '@/common/constant';
 import { LB_NETWORK_TYPE_REVERSE_MAP, LISTENER_BINDING_STATUS_REVERSE_MAP, SCHEDULER_REVERSE_MAP } from '@/constants';
 import usePagination from '../usePagination';
+import { defaults } from 'lodash';
+import { fetchData } from '@pluginHandler/useTable';
 
 export interface IProp {
   // search-select 配置项
@@ -41,7 +43,7 @@ export interface IProp {
   // 请求相关字段
   requestOption: {
     // 资源类型
-    type: string;
+    type?: string;
     // 排序参数
     sortOption?: {
       sort: string; // 需要排序的字段
@@ -67,18 +69,22 @@ export interface IProp {
     resolvePaginationCountCb?: (...args: any) => Promise<any>;
     // 列表数据的路径，如 data.details
     dataPath?: string;
+    // 是否为全量数据
+    full?: boolean;
   };
   // 资源下筛选业务功能相关的 prop
   bizFilter?: FilterType;
 }
 
 export const useTable = (props: IProp) => {
+  defaults(props, { requestOption: {} });
+  defaults(props.requestOption, { dataPath: 'data.details' });
+
   const { whereAmI } = useWhereAmI();
 
   const regionsStore = useRegionsStore();
   const resourceStore = useResourceStore();
   const businessStore = useBusinessStore();
-  const accountStore = useAccountStore();
   const businessMapStore = useBusinessMapStore();
 
   const searchVal = ref('');
@@ -121,53 +127,39 @@ export const useTable = (props: IProp) => {
     }
     isLoading.value = true;
 
-    // 判断是业务下, 还是资源下
-    const api = whereAmI.value === Senarios.business ? businessStore.list : resourceStore.list;
-    // 请求数据
-    const [detailsRes, countRes] = await Promise.all(
-      [false, true].map((isCount) =>
-        api(
-          {
-            page: {
-              limit: isCount ? 0 : pagination.limit,
-              start: isCount ? 0 : pagination.start,
-              sort: isCount ? undefined : sort.value,
-              order: isCount ? undefined : order.value,
-              count: isCount,
-            },
-            filter: { op: filter.op, rules: filter.rules },
-            ...props.requestOption.extension,
-          },
-          type ? type : props.requestOption.type,
-        ),
-      ),
-    );
-    // 更新数据
-    dataList.value = props.requestOption.dataPath
-      ? lodash_get(detailsRes, props.requestOption.dataPath)
-      : detailsRes?.data?.details;
+    try {
+      // 判断是业务下, 还是资源下
+      const api = whereAmI.value === Senarios.business ? businessStore.list : resourceStore.list;
+      const [detailsRes, countRes] = await fetchData({ api, pagination, sort, order, filter, props, type });
 
-    // 异步处理 dataList
-    if (typeof props.requestOption.resolveDataListCb === 'function') {
-      props.requestOption.resolveDataListCb(dataList.value, getListData).then((newDataList: any[]) => {
-        dataList.value = newDataList;
-      });
+      // 更新数据
+      dataList.value = lodash_get(detailsRes, props.requestOption.dataPath, []) || [];
+
+      // 异步处理 dataList
+      if (typeof props.requestOption.resolveDataListCb === 'function') {
+        props.requestOption.resolveDataListCb(dataList.value, getListData).then((newDataList: any[]) => {
+          dataList.value = newDataList;
+        });
+      }
+
+      // 处理 pagination.count
+      if (typeof props.requestOption.resolvePaginationCountCb === 'function') {
+        props.requestOption.resolvePaginationCountCb(countRes?.data).then((newCount: number) => {
+          pagination.count = newCount;
+        });
+      } else {
+        pagination.count = countRes?.data?.count || 0;
+      }
+    } catch (error) {
+      dataList.value = [];
+      pagination.count = 0;
+    } finally {
+      isLoading.value = false;
     }
-
-    // 处理 pagination.count
-    if (typeof props.requestOption.resolvePaginationCountCb === 'function') {
-      props.requestOption.resolvePaginationCountCb(countRes?.data).then((newCount: number) => {
-        pagination.count = newCount;
-      });
-    } else {
-      pagination.count = countRes?.data?.count || 0;
-    }
-
-    isLoading.value = false;
   };
 
   const CommonTable = defineComponent({
-    setup(_props, { slots }) {
+    setup(_props, { slots, expose }) {
       const searchData = computed(() => {
         return (
           (typeof props.searchOptions.searchData === 'function'
@@ -175,6 +167,10 @@ export const useTable = (props: IProp) => {
             : props.searchOptions.searchData) || []
         );
       });
+
+      const tableRef = ref();
+
+      expose({ tableRef });
 
       return () => (
         <div class={`remote-table-container${props.searchOptions.disabled ? ' no-search' : ''}`}>
@@ -193,12 +189,13 @@ export const useTable = (props: IProp) => {
           </section>
           <Loading loading={isLoading.value} class='loading-table-container'>
             <Table
+              ref={tableRef}
               class='table-container'
               data={dataList.value}
               rowKey='id'
               columns={props.tableOptions.columns}
               pagination={pagination}
-              remotePagination
+              remotePagination={!props.requestOption.full}
               showOverflowTooltip
               {...(props.tableOptions.extra || {})}
               onPageLimitChange={handlePageLimitChange}
@@ -322,9 +319,8 @@ export const useTable = (props: IProp) => {
   };
 
   watch(
-    [() => searchVal.value, () => accountStore.bizs],
-    ([searchVal, bizs], [oldSearchVal]) => {
-      if (whereAmI.value === Senarios.business && !bizs) return;
+    () => searchVal.value,
+    (searchVal, oldSearchVal) => {
       // 记录上一次 search-select 的规则名
       const oldSearchFieldList: string[] =
         (Array.isArray(oldSearchVal) && oldSearchVal.reduce((prev: any, item: any) => [...prev, item.id], [])) || [];
@@ -393,6 +389,8 @@ export const useTable = (props: IProp) => {
 
   return {
     CommonTable,
+    dataList,
     getListData,
+    pagination,
   };
 };

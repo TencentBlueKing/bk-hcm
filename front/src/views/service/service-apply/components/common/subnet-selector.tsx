@@ -126,7 +126,12 @@ export default defineComponent({
         () => props.resourceGroup,
       ],
       async ([bizId, region, vendor, vpcId, accountId, zone]) => {
-        await getSubnetsData(bizId, region, vendor, vpcId, accountId, zone);
+        if (bizId && region && vendor && vpcId && accountId && zone) {
+          await getSubnetsData(bizId, region, vendor, vpcId, accountId, zone);
+        }
+      },
+      {
+        immediate: true,
       },
     );
 
@@ -140,9 +145,8 @@ export default defineComponent({
           clearable={props.clearable}
           {...{ attrs }}
           onChange={(cloud_id: string) => {
-            console.log(cloud_id);
             const data = list.value.find((item) => item.cloud_id === cloud_id);
-            props.handleChange(data);
+            typeof props.handleChange === 'function' && props.handleChange(data);
           }}>
           {list.value.map(({ cloud_id, name, ipv4_cidr, available_ip_count }) => (
             <Option

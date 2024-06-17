@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -44,8 +45,9 @@ import (
 )
 
 // LocalTargetGroup 同步本地目标组
-func (cli *client) LocalTargetGroup(kt *kit.Kit, param *SyncBaseParams, opt *SyncListenerOfSingleLBOption,
+func (cli *client) LocalTargetGroup(kt *kit.Kit, param *SyncBaseParams, opt *SyncListenerOption,
 	cloudListeners []typeslb.TCloudListener) error {
+
 	// 目前主要是同步健康检查
 	healthMap := make(map[string]*tclb.HealthCheck, len(cloudListeners))
 	cloudIDs := make([]string, 0, len(cloudListeners))
@@ -62,8 +64,14 @@ func (cli *client) LocalTargetGroup(kt *kit.Kit, param *SyncBaseParams, opt *Syn
 			cloudIDs = append(cloudIDs, cvt.PtrToVal(rule.LocationId))
 		}
 	}
+	if len(cloudIDs) == 0 {
+		// 只有7层监听器，且所有监听器都为空的情况会导致这里为空
+		logs.Infof("no listener found for %v, rid: %s", cloudListeners, kt.Rid)
+		return nil
+	}
 	tgCloudHealthMap, tgList, err := cli.getTargetGruop(kt, opt.LBID, cloudIDs, healthMap)
 	if err != nil {
+		logs.Errorf("fail to get local target group for sync, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 	for _, tg := range tgList {
@@ -127,7 +135,7 @@ func (cli *client) getTargetGruop(kt *kit.Kit, lbId string, cloudIDs []string,
 
 // ListenerTargets 监听器下的target，用来更新目标组.
 // SyncBaseParams 中的CloudID作为监听器id筛选，不传的话就是同步当前LB下的全部监听器
-func (cli *client) ListenerTargets(kt *kit.Kit, param *SyncBaseParams, opt *SyncListenerOfSingleLBOption) error {
+func (cli *client) ListenerTargets(kt *kit.Kit, param *SyncBaseParams, opt *SyncListenerOption) error {
 
 	cloudListenerTargets, relMap, tgRsMap, lb, err := cli.listTargetRelated(kt, param, opt)
 	if err != nil {
@@ -146,7 +154,7 @@ func (cli *client) ListenerTargets(kt *kit.Kit, param *SyncBaseParams, opt *Sync
 		}
 
 		// 存在则比较
-		return cli.compareTargetsChange(kt, opt.AccountID, tgId, cloudTargets, tgRsMap[tgId])
+		return cli.compareTargetsChange(kt, param.AccountID, tgId, cloudTargets, tgRsMap[tgId])
 	}
 	// 遍历云上的监听器、规则
 	for _, listener := range cloudListenerTargets {
@@ -191,7 +199,7 @@ func (cli *client) ListenerTargets(kt *kit.Kit, param *SyncBaseParams, opt *Sync
 }
 
 // 获取同步rs所需关联资源
-func (cli *client) listTargetRelated(kt *kit.Kit, param *SyncBaseParams, opt *SyncListenerOfSingleLBOption) (
+func (cli *client) listTargetRelated(kt *kit.Kit, param *SyncBaseParams, opt *SyncListenerOption) (
 	[]typeslb.TCloudListenerTarget, map[string]*corelb.BaseTargetListenerRuleRel,
 	map[string][]corelb.BaseTarget, *corelb.TCloudLoadBalancer, error) {
 
@@ -208,10 +216,15 @@ func (cli *client) listTargetRelated(kt *kit.Kit, param *SyncBaseParams, opt *Sy
 		logs.Errorf("fail to list target from db while syncing, err: %v, rid: %s", err, kt.Rid)
 		return nil, nil, nil, nil, err
 	}
+	if opt.CachedLoadBalancer != nil && opt.CachedLoadBalancer.CloudID == opt.CloudLBID {
+		return cloudListenerTargets, relMap, tgRsMap, opt.CachedLoadBalancer, nil
+	}
+
+	logs.Errorf("cache for target sync mismatch opt: %+v, rid:%s ", opt, kt.Rid)
 
 	lbResp, err := cli.listLBFromDB(kt, &SyncBaseParams{
-		AccountID: opt.AccountID,
-		Region:    opt.Region,
+		AccountID: param.AccountID,
+		Region:    param.Region,
 		CloudIDs:  []string{opt.CloudLBID},
 	})
 	if err != nil {
@@ -227,8 +240,7 @@ func (cli *client) listTargetRelated(kt *kit.Kit, param *SyncBaseParams, opt *Sy
 }
 
 func (cli *client) compareTargetsChange(kt *kit.Kit, accountID, tgID string, cloudTargets []*tclb.Backend,
-	dbRsList []corelb.BaseTarget) (
-	err error) {
+	dbRsList []corelb.BaseTarget) (err error) {
 
 	// 增加包裹类型
 	cloudRsList := slice.Map(cloudTargets, func(rs *tclb.Backend) typeslb.Backend {
@@ -246,11 +258,12 @@ func (cli *client) compareTargetsChange(kt *kit.Kit, accountID, tgID string, clo
 	if _, err = cli.createRs(kt, accountID, tgID, addSlice); err != nil {
 		return err
 	}
+
 	return nil
 }
 
 // 为rs创建目标组不跳过没有rs的规则
-func (cli *client) createLocalTargetGroupL7(kt *kit.Kit, opt *SyncListenerOfSingleLBOption,
+func (cli *client) createLocalTargetGroupL7(kt *kit.Kit, opt *SyncListenerOption,
 	lb *corelb.TCloudLoadBalancer, listener typeslb.TCloudListenerTarget, cloudRule *tclb.RuleTargets) error {
 
 	// 获取数据库中的规则
@@ -282,9 +295,9 @@ func (cli *client) createLocalTargetGroupL7(kt *kit.Kit, opt *SyncListenerOfSing
 		TargetGroup: dataproto.TargetGroupBatchCreate[corelb.TCloudTargetGroupExtension]{
 			Name:            genTargetGroupNameL7(dbRule),
 			Vendor:          enumor.TCloud,
-			AccountID:       opt.AccountID,
+			AccountID:       lb.AccountID,
 			BkBizID:         opt.BizID,
-			Region:          opt.Region,
+			Region:          lb.Region,
 			Protocol:        listener.GetProtocol(),
 			Port:            cvt.PtrToVal(listener.Port),
 			VpcID:           lb.VpcID,
@@ -293,7 +306,7 @@ func (cli *client) createLocalTargetGroupL7(kt *kit.Kit, opt *SyncListenerOfSing
 			Weight:          0,
 			HealthCheck:     types.JsonField(healthcheck),
 			Memo:            cvt.ValToPtr("auto created for rule " + cvt.PtrToVal(cloudRule.LocationId)),
-			RsList:          slice.Map(cloudRule.Targets, convTarget(opt.AccountID)),
+			RsList:          slice.Map(cloudRule.Targets, convTarget(lb.AccountID)),
 		},
 		ListenerRuleID:      dbRule.ID,
 		CloudListenerRuleID: dbRule.CloudID,
@@ -318,18 +331,30 @@ func (cli *client) createLocalTargetGroupL7(kt *kit.Kit, opt *SyncListenerOfSing
 
 func convTarget(accountID string) func(cloudTarget *tclb.Backend) *dataproto.TargetBaseReq {
 	return func(cloudTarget *tclb.Backend) *dataproto.TargetBaseReq {
-		return &dataproto.TargetBaseReq{
-			InstType:    cvt.PtrToVal((*enumor.InstType)(cloudTarget.Type)),
-			CloudInstID: cvt.PtrToVal(cloudTarget.InstanceId),
-			Port:        cvt.PtrToVal(cloudTarget.Port),
-			Weight:      cloudTarget.Weight,
-			AccountID:   accountID,
+		localTarget := typeslb.Backend{Backend: cloudTarget}
+		target := &dataproto.TargetBaseReq{
+			InstName:         cvt.PtrToVal(cloudTarget.InstanceName),
+			InstType:         cvt.PtrToVal((*enumor.InstType)(cloudTarget.Type)),
+			CloudInstID:      cvt.PtrToVal(cloudTarget.InstanceId),
+			Port:             cvt.PtrToVal(cloudTarget.Port),
+			Weight:           cloudTarget.Weight,
+			AccountID:        accountID,
+			PrivateIPAddress: cvt.PtrToSlice(cloudTarget.PrivateIpAddresses),
+			PublicIPAddress:  cvt.PtrToSlice(cloudTarget.PublicIpAddresses),
+			IP:               localTarget.GetIP(),
 		}
+		if enumor.InstType(cvt.PtrToVal(cloudTarget.Type)) == enumor.CcnInstType {
+			target.CloudInstID = localTarget.GetCloudID()
+		}
+		if enumor.InstType(cvt.PtrToVal(cloudTarget.Type)) == enumor.EniInstType {
+			target.CloudInstID = cvt.PtrToVal(localTarget.EniId)
+		}
+		return target
 	}
 }
 
 // 创建本地目标组以及关系，不会跳过没有rs的监听器
-func (cli *client) createLocalTargetGroupL4(kt *kit.Kit, opt *SyncListenerOfSingleLBOption,
+func (cli *client) createLocalTargetGroupL4(kt *kit.Kit, opt *SyncListenerOption,
 	lb *corelb.TCloudLoadBalancer, listener typeslb.TCloudListenerTarget) error {
 
 	lbl, rule, err := cli.listListenerWithRule(kt, cvt.PtrToVal(listener.ListenerId))
@@ -349,7 +374,7 @@ func (cli *client) createLocalTargetGroupL4(kt *kit.Kit, opt *SyncListenerOfSing
 			Vendor:          enumor.TCloud,
 			AccountID:       lbl.AccountID,
 			BkBizID:         lbl.BkBizID,
-			Region:          opt.Region,
+			Region:          lb.Region,
 			Protocol:        lbl.Protocol,
 			Port:            lbl.Port,
 			VpcID:           lb.VpcID,
@@ -358,7 +383,7 @@ func (cli *client) createLocalTargetGroupL4(kt *kit.Kit, opt *SyncListenerOfSing
 			Weight:          0,
 			HealthCheck:     types.JsonField(healthcheck),
 			Memo:            cvt.ValToPtr("auto created for listener " + cvt.PtrToVal(listener.ListenerId)),
-			RsList:          slice.Map(listener.Targets, convTarget(opt.AccountID)),
+			RsList:          slice.Map(listener.Targets, convTarget(lb.AccountID)),
 		},
 		// 需要用4层对应的规则id
 		ListenerRuleID:      rule.ID,
@@ -427,12 +452,13 @@ func (cli *client) deleteRs(kt *kit.Kit, localIds []string) error {
 	if len(localIds) == 0 {
 		return nil
 	}
-
-	delReq := &dataproto.LoadBalancerBatchDeleteReq{Filter: tools.ContainersExpression("id", localIds)}
-	err := cli.dbCli.Global.LoadBalancer.BatchDeleteTarget(kt, delReq)
-	if err != nil {
-		logs.Errorf("fail to delete rs (ids=%v), err: %v, rid: %s", localIds, err, kt.Rid)
-		return err
+	for _, idBatch := range slice.Split(localIds, constant.BatchOperationMaxLimit) {
+		delReq := &dataproto.LoadBalancerBatchDeleteReq{Filter: tools.ContainersExpression("id", idBatch)}
+		err := cli.dbCli.Global.LoadBalancer.BatchDeleteTarget(kt, delReq)
+		if err != nil {
+			logs.Errorf("fail to delete rs, err: %v, ids: %v, rid: %s", err, idBatch, kt.Rid)
+			return err
+		}
 	}
 
 	return nil
@@ -455,9 +481,12 @@ func (cli *client) updateRs(kt *kit.Kit, updateMap map[string]typeslb.Backend) (
 			InstName:         cvt.PtrToVal(backend.InstanceName),
 		})
 	}
-	updateReq := &dataproto.TargetBatchUpdateReq{Targets: updates}
-	if err = cli.dbCli.Global.LoadBalancer.BatchUpdateTarget(kt, updateReq); err != nil {
-		logs.Errorf("fail to update targets while syncing, err: %v, rid:%s", err, kt.Rid)
+
+	for _, updateBatch := range slice.Split(updates, constant.BatchOperationMaxLimit) {
+		updateReq := &dataproto.TargetBatchUpdateReq{Targets: updateBatch}
+		if err = cli.dbCli.Global.LoadBalancer.BatchUpdateTarget(kt, updateReq); err != nil {
+			logs.Errorf("fail to update targets while syncing, err: %v, rid:%s", err, kt.Rid)
+		}
 	}
 
 	return err
@@ -469,33 +498,34 @@ func (cli *client) createRs(kt *kit.Kit, accountID, tgId string, addSlice []type
 		return nil, nil
 	}
 
-	var targets []*dataproto.TargetBaseReq
-	for _, backend := range addSlice {
-		targets = append(targets, &dataproto.TargetBaseReq{
-			InstType:      cvt.PtrToVal((*enumor.InstType)(backend.Type)),
-			CloudInstID:   cvt.PtrToVal(backend.InstanceId),
-			Port:          cvt.PtrToVal(backend.Port),
-			Weight:        backend.Weight,
-			AccountID:     accountID,
-			TargetGroupID: tgId,
-		})
+	targets := make([]*dataproto.TargetBaseReq, 0, constant.BatchOperationMaxLimit)
+	createIds := make([]string, 0, len(targets))
+
+	for _, targetBatch := range slice.Split(addSlice, constant.BatchOperationMaxLimit) {
+		targets = targets[:0]
+		for _, backend := range targetBatch {
+			rs := convTarget(accountID)(backend.Backend)
+			rs.TargetGroupID = tgId
+			targets = append(targets, rs)
+		}
+		created, err := cli.dbCli.Global.LoadBalancer.BatchCreateTCloudTarget(kt,
+			&dataproto.TargetBatchCreateReq{Targets: targets})
+		if err != nil {
+			logs.Errorf("fail to create target for target group syncing, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+		createIds = append(createIds, created.IDs...)
 	}
 
-	created, err := cli.dbCli.Global.LoadBalancer.BatchCreateTCloudTarget(kt,
-		&dataproto.TargetBatchCreateReq{Targets: targets})
-	if err != nil {
-		logs.Errorf("fail to create target for target group syncing, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
-	}
-	return created.IDs, nil
+	return createIds, nil
 }
 
 // 获取云上监听器列表
 func (cli *client) listTargetsFromCloud(kt *kit.Kit, param *SyncBaseParams,
-	opt *SyncListenerOfSingleLBOption) ([]typeslb.TCloudListenerTarget, error) {
+	opt *SyncListenerOption) ([]typeslb.TCloudListenerTarget, error) {
 
 	listOpt := &typeslb.TCloudListTargetsOption{
-		Region:         opt.Region,
+		Region:         param.Region,
 		LoadBalancerId: opt.CloudLBID,
 		ListenerIds:    param.CloudIDs,
 	}
@@ -503,7 +533,7 @@ func (cli *client) listTargetsFromCloud(kt *kit.Kit, param *SyncBaseParams,
 }
 
 // 获取云上监听器列表
-func (cli *client) listTargetsFromDB(kt *kit.Kit, param *SyncBaseParams, opt *SyncListenerOfSingleLBOption) (
+func (cli *client) listTargetsFromDB(kt *kit.Kit, param *SyncBaseParams, opt *SyncListenerOption) (
 	relMap map[string]*corelb.BaseTargetListenerRuleRel, tgRsMap map[string][]corelb.BaseTarget, err error) {
 
 	listReq := &core.ListReq{
@@ -555,6 +585,9 @@ func (cli *client) listTargetsFromDB(kt *kit.Kit, param *SyncBaseParams, opt *Sy
 
 // 判断rs信息是否变化
 func isRsChange(cloud typeslb.Backend, db corelb.BaseTarget) bool {
+	if cloud.GetIP() != db.IP {
+		return true
+	}
 	if cvt.PtrToVal(cloud.Port) != db.Port {
 		return true
 	}

@@ -1,4 +1,4 @@
-import { defineComponent } from 'vue';
+import { PropType, defineComponent } from 'vue';
 import { Dialog } from 'bkui-vue';
 import { useI18n } from 'vue-i18n';
 import './index.scss';
@@ -12,6 +12,7 @@ export default defineComponent({
     },
     title: String,
     width: [String, Number],
+    dialogType: String as PropType<'show' | 'operation' | 'confirm' | 'process'>,
   },
   emits: ['update:isShow', 'handleConfirm'],
   setup(props, { emit, slots }) {
@@ -29,6 +30,7 @@ export default defineComponent({
         isShow={props.isShow}
         title={t(props.title)}
         width={props.width}
+        dialogType={props.dialogType}
         onConfirm={handleConfirm}
         onClosed={() => triggerShow(false)}>
         {{

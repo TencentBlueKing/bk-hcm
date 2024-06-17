@@ -102,10 +102,6 @@ func (v SslCertTable) InsertValidate() error {
 		return errors.New("cloud id can not be empty")
 	}
 
-	if len(v.Name) == 0 {
-		return errors.New("name can not be nil")
-	}
-
 	if len(v.Vendor) == 0 {
 		return errors.New("vendor can not be empty")
 	}

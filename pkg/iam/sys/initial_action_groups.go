@@ -50,7 +50,7 @@ func genResManagementActionGroups() []client.ActionGroup {
 						{ID: BizIaaSResDelete},
 					},
 				},
-				/*{
+				{
 					Name:   "负载均衡",
 					NameEn: "Biz CLB Resource Management",
 					Actions: []client.ActionWithID{
@@ -58,7 +58,7 @@ func genResManagementActionGroups() []client.ActionGroup {
 						{ID: BizCLBResOperate},
 						{ID: BizCLBResDelete},
 					},
-				},*/{
+				}, {
 					Name:   "证书管理",
 					NameEn: "Biz Cert Resource Management",
 					Actions: []client.ActionWithID{
@@ -154,7 +154,7 @@ func genResourceAccessActionGroups() client.ActionGroup {
 					{ID: IaaSResDelete},
 				},
 			},
-			/*{
+			{
 				Name:   "负载均衡",
 				NameEn: "CLB Resource Management",
 				Actions: []client.ActionWithID{
@@ -162,7 +162,7 @@ func genResourceAccessActionGroups() client.ActionGroup {
 					{ID: CLBResOperate},
 					{ID: CLBResDelete},
 				},
-			},*/{
+			}, {
 				Name:   "证书管理",
 				NameEn: "Cert Resource Management",
 				Actions: []client.ActionWithID{
