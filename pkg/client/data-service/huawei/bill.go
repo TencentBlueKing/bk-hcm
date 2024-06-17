@@ -1,7 +1,7 @@
 /*
  * TencentBlueKing is pleased to support the open source community by making
  * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
- * Copyright (C) 2022 THL A29 Limited,
+ * Copyright (C) 2024 THL A29 Limited,
  * a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,30 +17,31 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package kaopu
+package huawei
 
 import (
+	"hcm/pkg/api/core"
+	billproto "hcm/pkg/api/data-service/bill"
+	"hcm/pkg/client/common"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
-// Client is a huawei api client
-type Client struct {
-	*restClient
-	MainAccount *MainAccountClient
-	RootAccount *RootAccountClient
-	Bill        *BillClient
+// NewBillClient create a new bill api client.
+func NewBillClient(client rest.ClientInterface) *BillClient {
+	return &BillClient{
+		client: client,
+	}
 }
 
-type restClient struct {
+// BillClient is data service bill api client.
+type BillClient struct {
 	client rest.ClientInterface
 }
 
-// NewClient create a new huawei api client.
-func NewClient(client rest.ClientInterface) *Client {
-	return &Client{
-		restClient:  &restClient{client: client},
-		MainAccount: NewMainAccountClient(client),
-		RootAccount: NewRootAccountClient(client),
-		Bill:        NewBillClient(client),
-	}
+// ListBillItem list bill item
+func (b *BillClient) ListBillItem(kt *kit.Kit, req *core.ListReq) (*billproto.HuaweiBillItemListResult, error) {
+
+	return common.Request[core.ListReq, billproto.HuaweiBillItemListResult](
+		b.client, rest.POST, kt, req, "/bills/items/list")
 }

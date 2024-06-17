@@ -20,6 +20,9 @@
 package dailysplit
 
 import (
+	rawjson "encoding/json"
+	"fmt"
+
 	protocore "hcm/pkg/api/core/account-set"
 	"hcm/pkg/api/data-service/bill"
 )
@@ -27,7 +30,8 @@ import (
 // RawBillSplitter splitter for raw bill
 type RawBillSplitter interface {
 	DoSplit(opt *DailyAccountSplitActionOption, billDay int,
-		item *bill.RawBillItem, mainAccount *protocore.BaseMainAccount) ([]*bill.BillItemCreateReq, error)
+		item *bill.RawBillItem, mainAccount *protocore.BaseMainAccount) (
+		[]*bill.BillItemCreateReq[rawjson.RawMessage], error)
 }
 
 // DefaultSplitter default account splitter
@@ -35,9 +39,18 @@ type DefaultSplitter struct{}
 
 // DoSplit implements RawBillSplitter
 func (ds *DefaultSplitter) DoSplit(opt *DailyAccountSplitActionOption, billDay int,
-	item *bill.RawBillItem, mainAccount *protocore.BaseMainAccount) ([]bill.BillItemCreateReq, error) {
+	item *bill.RawBillItem, mainAccount *protocore.BaseMainAccount) ([]bill.BillItemCreateReq[rawjson.RawMessage], error) {
 
-	req := bill.BillItemCreateReq{
+	data, err := item.Extension.MarshalJSON()
+	if err != nil {
+		return nil, fmt.Errorf("get extension value failed, err %s", err.Error())
+	}
+	var ext rawjson.RawMessage
+	if err := rawjson.Unmarshal(data, &ext); err != nil {
+		return nil, err
+	}
+
+	req := bill.BillItemCreateReq[rawjson.RawMessage]{
 		RootAccountID: opt.RootAccountID,
 		MainAccountID: opt.MainAccountID,
 		Vendor:        opt.Vendor,
@@ -53,8 +66,9 @@ func (ds *DefaultSplitter) DoSplit(opt *DailyAccountSplitActionOption, billDay i
 		HcProductName: item.HcProductName,
 		ResAmount:     item.ResAmount,
 		ResAmountUnit: item.ResAmountUnit,
+		Extension:     &ext,
 	}
-	return []bill.BillItemCreateReq{
+	return []bill.BillItemCreateReq[rawjson.RawMessage]{
 		req,
 	}, nil
 }

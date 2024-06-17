@@ -32,6 +32,7 @@ import (
 	"hcm/cmd/account-server/logics/bill"
 	mainaccount "hcm/cmd/account-server/service/account-set/main-account"
 	rootaccount "hcm/cmd/account-server/service/account-set/root-account"
+	"hcm/cmd/account-server/service/bill/billitem"
 	"hcm/cmd/account-server/service/bill/billsummarymain"
 	"hcm/cmd/account-server/service/bill/billsummaryroot"
 	"hcm/cmd/account-server/service/capability"
@@ -190,6 +191,8 @@ func (s *Service) apiSet() *restful.Container {
 	rootaccount.InitService(c)
 	billsummaryroot.InitService(c)
 	billsummarymain.InitService(c)
+
+	billitem.InitBillItemService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

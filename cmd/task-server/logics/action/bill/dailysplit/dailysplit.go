@@ -20,6 +20,7 @@
 package dailysplit
 
 import (
+	rawjson "encoding/json"
 	"fmt"
 	"path/filepath"
 
@@ -147,14 +148,11 @@ func cleanBillItem(kt *kit.Kit, opt *DailyAccountSplitActionOption, billDay int)
 		if err != nil {
 			return fmt.Errorf("count bill item for %v day %d failed, err %s", opt, billDay, err.Error())
 		}
-		if result.Count == nil {
-			return fmt.Errorf("count bill item for %v day %d failed, invalid resp %v", opt, billDay, result)
-		}
-		if *result.Count > 0 {
+		if result.Count > 0 {
 			if err := actcli.GetDataService().Global.Bill.BatchDeleteBillItem(kt, &dataservice.BatchDeleteReq{
 				Filter: getFilter(opt, billDay)}); err != nil {
 				return fmt.Errorf("delete 500 of %d bill item for %v day %d failed, err %s",
-					*result.Count, opt, billDay, err.Error())
+					result.Count, opt, billDay, err.Error())
 			}
 			continue
 		}
@@ -182,7 +180,7 @@ func splitBillItem(kt *kit.Kit, opt *DailyAccountSplitActionOption, billDay int)
 		return fmt.Errorf("failed to list raw bill files for %v, err %s", opt, err.Error())
 	}
 	for _, filename := range resp.Filenames {
-		var billItemList []bill.BillItemCreateReq
+		var billItemList []bill.BillItemCreateReq[rawjson.RawMessage]
 		// 后续可在该过程中，增加处理过程
 		name := filepath.Base(filename)
 		tmpReq := &bill.RawBillItemQueryReq{
@@ -209,7 +207,7 @@ func splitBillItem(kt *kit.Kit, opt *DailyAccountSplitActionOption, billDay int)
 			billItemList = append(billItemList, reqList...)
 		}
 		_, err = actcli.GetDataService().Global.Bill.BatchCreateBillItem(
-			kt, (*bill.BatchBillItemCreateReq)(&billItemList))
+			kt, opt.Vendor, (*bill.BatchBillItemCreateReq[rawjson.RawMessage])(&billItemList))
 		if err != nil {
 			return fmt.Errorf("batch create bill item for %s failed, err %s", filename, err.Error())
 		}

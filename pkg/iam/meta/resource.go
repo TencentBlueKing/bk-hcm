@@ -95,4 +95,7 @@ const (
 	MainAccount ResourceType = "main_account"
 	// RootAccount defines main cloud account resource's hcm auth resource type
 	RootAccount ResourceType = "root_account"
+
+	// AccountBill 云账单管理
+	AccountBill ResourceType = "account_bill"
 )

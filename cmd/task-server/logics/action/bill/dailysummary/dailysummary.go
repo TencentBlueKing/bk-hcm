@@ -121,16 +121,13 @@ func (act DailySummaryAction) doDailySummary(kt run.ExecuteKit, opt *DailySummar
 	if err != nil {
 		return fmt.Errorf("count bill item for %v day %d failed, err %s", opt, billDay, err.Error())
 	}
-	if result.Count == nil {
-		return fmt.Errorf("count bill item for %v day %d failed, invalid resp %v", opt, billDay, result)
-	}
 
 	currency := enumor.CurrencyUSD
 	cost := decimal.NewFromFloat(0)
-	count := *result.Count
+	count := result.Count
 
 	limit := uint64(500)
-	for start := uint64(0); start < *result.Count; start = start + limit {
+	for start := uint64(0); start < result.Count; start = start + limit {
 		result, err := actcli.GetDataService().Global.Bill.ListBillItem(kt.Kit(), &bill.BillItemListReq{
 			Filter: getFilter(opt, billDay),
 			Page: &core.BasePage{

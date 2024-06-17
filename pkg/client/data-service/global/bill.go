@@ -21,14 +21,17 @@ package global
 
 import (
 	"context"
+	rawjson "encoding/json"
 	"fmt"
 	"net/http"
 
 	"hcm/pkg/api/core"
+	"hcm/pkg/api/core/bill"
 	dataservice "hcm/pkg/api/data-service"
 	billproto "hcm/pkg/api/data-service/bill"
 	datacloudbillproto "hcm/pkg/api/data-service/cloud/bill"
 	"hcm/pkg/client/common"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
@@ -122,13 +125,6 @@ func (b *BillClient) ListBillAdjustmentItem(kt *kit.Kit, req *billproto.BillAdju
 
 // --- bill item ---
 
-// BatchCreateBillItem create bill item
-func (b *BillClient) BatchCreateBillItem(kt *kit.Kit, req *billproto.BatchBillItemCreateReq) (
-	*core.BatchCreateResult, error) {
-	return common.Request[billproto.BatchBillItemCreateReq, core.BatchCreateResult](
-		b.client, rest.POST, kt, req, "/bills/items")
-}
-
 // BatchDeleteBillItem delete bill item
 func (b *BillClient) BatchDeleteBillItem(kt *kit.Kit, req *dataservice.BatchDeleteReq) error {
 	return common.RequestNoResp[dataservice.BatchDeleteReq](
@@ -142,10 +138,17 @@ func (b *BillClient) UpdateBillItem(kt *kit.Kit, req *billproto.BillItemUpdateRe
 }
 
 // ListBillItem list bill item
-func (b *BillClient) ListBillItem(kt *kit.Kit, req *billproto.BillItemListReq) (
-	*billproto.BillItemListResult, error) {
-	return common.Request[billproto.BillItemListReq, billproto.BillItemListResult](
-		b.client, rest.GET, kt, req, "/bills/items")
+func (b *BillClient) ListBillItem(kt *kit.Kit, req *core.ListReq) (*billproto.BillItemBaseListResult, error) {
+
+	return common.Request[core.ListReq, billproto.BillItemBaseListResult](
+		b.client, rest.POST, kt, req, "/bills/items/list")
+}
+
+// ListBillItemRaw list with extension
+func (b *BillClient) ListBillItemRaw(kt *kit.Kit, req *core.ListReq) (*core.ListResultT[*bill.BillItemRaw], error) {
+
+	return common.Request[core.ListReq, core.ListResultT[*bill.BillItemRaw]](
+		b.client, rest.POST, kt, req, "/bills/items/list_with_extension")
 }
 
 // --- bill daily pull task ---
@@ -153,6 +156,7 @@ func (b *BillClient) ListBillItem(kt *kit.Kit, req *billproto.BillItemListReq) (
 // CreateBillDailyPullTask create bill daily pull task
 func (b *BillClient) CreateBillDailyPullTask(kt *kit.Kit, req *billproto.BillDailyPullTaskCreateReq) (
 	*core.CreateResult, error) {
+
 	return common.Request[billproto.BillDailyPullTaskCreateReq, core.CreateResult](
 		b.client, rest.POST, kt, req, "/bills/dailypulltasks")
 }
@@ -336,4 +340,15 @@ func (b *BillClient) QueryRawBillItems(kt *kit.Kit, req *billproto.RawBillItemQu
 		b.client, rest.GET, kt, nil, fmt.Sprintf("/bills/rawbills/%s/%s/%s/%s/%s/%s/%s/%s",
 			req.Vendor, req.FirstAccountID, req.AccountID,
 			req.BillYear, req.BillMonth, req.Version, req.BillDate, req.FileName))
+}
+
+// --- bill item ---
+
+// BatchCreateBillItem create bill item
+func (b *BillClient) BatchCreateBillItem(
+	kt *kit.Kit, vendor enumor.Vendor, req *billproto.BatchBillItemCreateReq[rawjson.RawMessage]) (
+	*core.BatchCreateResult, error) {
+
+	return common.Request[billproto.BatchBillItemCreateReq[rawjson.RawMessage], core.BatchCreateResult](
+		b.client, rest.POST, kt, req, fmt.Sprintf("/vendors/%s/bills/rawitems/create", vendor))
 }

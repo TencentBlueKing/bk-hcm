@@ -21,20 +21,19 @@ package bill
 
 import (
 	"hcm/pkg/api/core"
-	billcore "hcm/pkg/api/core/bill"
+	"hcm/pkg/api/core/bill"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/table/types"
-	"hcm/pkg/runtime/filter"
 
 	"github.com/shopspring/decimal"
 )
 
 // BatchBillItemCreateReq batch bill item create request
-type BatchBillItemCreateReq []BillItemCreateReq
+type BatchBillItemCreateReq[E bill.BillItemExtension] []BillItemCreateReq[E]
 
 // BillItemCreateReq create request
-type BillItemCreateReq struct {
+type BillItemCreateReq[E bill.BillItemExtension] struct {
 	RootAccountID string          `json:"root_account_id" validate:"required"`
 	MainAccountID string          `json:"main_account_id" validate:"required"`
 	Vendor        enumor.Vendor   `json:"vendor" validate:"required"`
@@ -50,31 +49,40 @@ type BillItemCreateReq struct {
 	HcProductName string          `json:"hc_product_name,omitempty"`
 	ResAmount     decimal.Decimal `json:"res_amount,omitempty"`
 	ResAmountUnit string          `json:"res_amount_unit,omitempty"`
-	Extension     types.JsonField `json:"extension"`
+	Extension     *E              `json:"extension"`
 }
 
 // Validate ...
-func (c *BillItemCreateReq) Validate() error {
+func (c *BillItemCreateReq[E]) Validate() error {
 	return validator.Validate.Struct(c)
 }
 
 // BillItemListReq list request
-type BillItemListReq struct {
-	Filter *filter.Expression `json:"filter" validate:"required"`
-	Page   *core.BasePage     `json:"page" validate:"required"`
-	Fields []string           `json:"fields" validate:"omitempty"`
-}
+type BillItemListReq = core.ListReq
 
-// Validate ...
-func (req *BillItemListReq) Validate() error {
-	return validator.Validate.Struct(req)
-}
+// BillItemBaseListResult ...
+type BillItemBaseListResult = core.ListResultT[*bill.BaseBillItem]
 
-// BillItemListResult list result
-type BillItemListResult struct {
-	Count   *uint64                     `json:"count,omitempty"`
-	Details []*billcore.AccountBillItem `json:"details"`
-}
+// TCloudBillItemListResult ...
+type TCloudBillItemListResult = core.ListResultT[*bill.TCloudBillItem]
+
+// GcpBillItemListResult ...
+type GcpBillItemListResult = core.ListResultT[*bill.GcpBillItem]
+
+// AwsBillItemListResult ...
+type AwsBillItemListResult = core.ListResultT[*bill.AwsBillItem]
+
+// AzureBillItemListResult ...
+type AzureBillItemListResult = core.ListResultT[*bill.AzureBillItem]
+
+// HuaweiBillItemListResult ...
+type HuaweiBillItemListResult = core.ListResultT[*bill.HuaweiBillItem]
+
+// KaopuBillItemListResult ...
+type KaopuBillItemListResult = core.ListResultT[*bill.KaopuBillItem]
+
+// ZenlayerBillItemListResult ...
+type ZenlayerBillItemListResult = core.ListResultT[*bill.ZenlayerBillItem]
 
 // BillItemUpdateReq update request
 type BillItemUpdateReq struct {
