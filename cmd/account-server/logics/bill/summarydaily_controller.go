@@ -26,6 +26,7 @@ import (
 
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
 
@@ -48,35 +49,36 @@ type MainSummaryDailyController struct {
 	BkBizID       int64
 	Vendor        enumor.Vendor
 
-	ctx        context.Context
+	kt         *kit.Kit
 	cancelFunc context.CancelFunc
 }
 
 // Start run controller
 func (msdc *MainSummaryDailyController) Start() error {
-	if msdc.ctx != nil {
+	if msdc.kt != nil {
 		return fmt.Errorf("controller already start")
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-	msdc.ctx = ctx
-	msdc.cancelFunc = cancel
-	go msdc.runBillDailySummaryLoop(msdc.ctx)
+	kt := kit.New()
+	cancelFunc := kt.CtxBackgroundWithCancel()
+	msdc.kt = kt
+	msdc.cancelFunc = cancelFunc
+	go msdc.runBillDailySummaryLoop(kt)
 	return nil
 }
 
-func (msdc *MainSummaryDailyController) runBillDailySummaryLoop(ctx context.Context) {
-	if err := msdc.syncBillSummary(); err != nil {
+func (msdc *MainSummaryDailyController) runBillDailySummaryLoop(kt *kit.Kit) {
+	if err := msdc.syncBillSummary(kt); err != nil {
 		logs.Warnf("sync daily summary failed, err %s", err.Error())
 	}
 	ticker := time.NewTicker(defaultControllerSyncDuration)
 	for {
 		select {
 		case <-ticker.C:
-			if err := msdc.syncBillSummary(); err != nil {
+			if err := msdc.syncBillSummary(kt); err != nil {
 				logs.Warnf("sync daily summary for account (%s, %s, %s) failed, err %s",
 					msdc.RootAccountID, msdc.MainAccountID, msdc.Vendor, err.Error())
 			}
-		case <-ctx.Done():
+		case <-kt.Ctx.Done():
 			logs.Infof("main account (%s, %s, %s) daily summary controller context done",
 				msdc.RootAccountID, msdc.MainAccountID, msdc.Vendor)
 			return
@@ -84,6 +86,6 @@ func (msdc *MainSummaryDailyController) runBillDailySummaryLoop(ctx context.Cont
 	}
 }
 
-func (msdc *MainSummaryDailyController) syncBillSummary() error {
+func (msdc *MainSummaryDailyController) syncBillSummary(kt *kit.Kit) error {
 	return nil
 }

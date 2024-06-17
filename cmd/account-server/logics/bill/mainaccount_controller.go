@@ -31,6 +31,7 @@ import (
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
 )
@@ -84,38 +85,39 @@ type MainAccountController struct {
 	BkBizID       int64
 	Vendor        enumor.Vendor
 
-	ctx        context.Context
+	kt         *kit.Kit
 	cancelFunc context.CancelFunc
 }
 
 // Start run controller
 func (mac *MainAccountController) Start() error {
-	if mac.ctx != nil {
+	if mac.kt != nil {
 		return fmt.Errorf("controller already start")
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-	mac.ctx = ctx
-	mac.cancelFunc = cancel
-	go mac.runBillSummaryLoop(mac.ctx)
-	go mac.runDailyRawBillLoop(mac.ctx)
+	kt := kit.New()
+	cancelFunc := kt.CtxBackgroundWithCancel()
+	mac.kt = kt
+	mac.cancelFunc = cancelFunc
+	go mac.runBillSummaryLoop(kt)
+	go mac.runDailyRawBillLoop(kt)
 	return nil
 }
 
 // Sync do sync
-func (mac *MainAccountController) syncBillSummary() error {
+func (mac *MainAccountController) syncBillSummary(kt *kit.Kit) error {
 	curBillYear, curBillMonth := mac.getCurrentBillMonth()
-	if err := mac.ensureBillSummary(curBillYear, curBillMonth); err != nil {
+	if err := mac.ensureBillSummary(kt.NewSubKit(), curBillYear, curBillMonth); err != nil {
 		return fmt.Errorf("ensure bill summary for %d %d failed, err %s", curBillYear, curBillMonth, err.Error())
 	}
 	lastBillYear, lastBillMonth := mac.getLastBillMonth()
-	if err := mac.ensureBillSummary(lastBillYear, lastBillMonth); err != nil {
+	if err := mac.ensureBillSummary(kt.NewSubKit(), lastBillYear, lastBillMonth); err != nil {
 		return fmt.Errorf("ensure bill summary for %d %d failed, err %s", lastBillYear, lastBillMonth, err.Error())
 	}
 	return nil
 }
 
-func (mac *MainAccountController) runBillSummaryLoop(ctx context.Context) {
-	if err := mac.syncBillSummary(); err != nil {
+func (mac *MainAccountController) runBillSummaryLoop(kt *kit.Kit) {
+	if err := mac.syncBillSummary(kt.NewSubKit()); err != nil {
 		logs.Warnf("sync bill summary for account (%s, %s, %s) failed, err %s",
 			mac.RootAccountID, mac.MainAccountID, mac.Vendor, err.Error())
 	}
@@ -123,11 +125,11 @@ func (mac *MainAccountController) runBillSummaryLoop(ctx context.Context) {
 	for {
 		select {
 		case <-ticker.C:
-			if err := mac.syncBillSummary(); err != nil {
+			if err := mac.syncBillSummary(kt.NewSubKit()); err != nil {
 				logs.Warnf("sync bill summary for account (%s, %s, %s) failed, err %s",
 					mac.RootAccountID, mac.MainAccountID, mac.Vendor, err.Error())
 			}
-		case <-ctx.Done():
+		case <-kt.Ctx.Done():
 			logs.Infof("main account (%s, %s, %s) summary controller context done",
 				mac.RootAccountID, mac.MainAccountID, mac.Vendor)
 			return
@@ -135,8 +137,8 @@ func (mac *MainAccountController) runBillSummaryLoop(ctx context.Context) {
 	}
 }
 
-func (mac *MainAccountController) runDailyRawBillLoop(ctx context.Context) {
-	if err := mac.syncDailyRawBill(); err != nil {
+func (mac *MainAccountController) runDailyRawBillLoop(kt *kit.Kit) {
+	if err := mac.syncDailyRawBill(kt); err != nil {
 		logs.Warnf("sync daily raw bill for account (%s, %s, %s) failed, err %s",
 			mac.RootAccountID, mac.MainAccountID, mac.Vendor, err.Error())
 	}
@@ -144,11 +146,11 @@ func (mac *MainAccountController) runDailyRawBillLoop(ctx context.Context) {
 	for {
 		select {
 		case <-ticker.C:
-			if err := mac.syncDailyRawBill(); err != nil {
+			if err := mac.syncDailyRawBill(kt); err != nil {
 				logs.Warnf("sync daily raw bill for account (%s, %s, %s) failed, err %s",
 					mac.RootAccountID, mac.MainAccountID, mac.Vendor, err.Error())
 			}
-		case <-ctx.Done():
+		case <-kt.Ctx.Done():
 			logs.Infof("main account (%s, %s, %s) raw bill controller context done",
 				mac.RootAccountID, mac.MainAccountID, mac.Vendor)
 			return
@@ -156,11 +158,11 @@ func (mac *MainAccountController) runDailyRawBillLoop(ctx context.Context) {
 	}
 }
 
-func (mac *MainAccountController) syncDailyRawBill() error {
+func (mac *MainAccountController) syncDailyRawBill(kt *kit.Kit) error {
 	// 同步拉取任务
 	// 上月
 	lastBillYear, lastBillMonth := mac.getLastBillMonth()
-	lastBillSummaryMain, err := mac.getBillSummary(lastBillYear, lastBillMonth)
+	lastBillSummaryMain, err := mac.getBillSummary(kt, lastBillYear, lastBillMonth)
 	if err != nil {
 		return err
 	}
@@ -169,13 +171,13 @@ func (mac *MainAccountController) syncDailyRawBill() error {
 		if err != nil {
 			return err
 		}
-		if err := curPuller.EnsurePullTask(getInternalKit(), mac.Client, lastBillSummaryMain); err != nil {
+		if err := curPuller.EnsurePullTask(kt, mac.Client, lastBillSummaryMain); err != nil {
 			return err
 		}
 	}
 	// 本月
 	curBillYear, curBillMonth := mac.getCurrentBillMonth()
-	billSummaryMain, err := mac.getBillSummary(curBillYear, curBillMonth)
+	billSummaryMain, err := mac.getBillSummary(kt, curBillYear, curBillMonth)
 	if err != nil {
 		return err
 	}
@@ -184,7 +186,7 @@ func (mac *MainAccountController) syncDailyRawBill() error {
 		if err != nil {
 			return err
 		}
-		if err := curPuller.EnsurePullTask(getInternalKit(), mac.Client, billSummaryMain); err != nil {
+		if err := curPuller.EnsurePullTask(kt, mac.Client, billSummaryMain); err != nil {
 			return err
 		}
 	}
@@ -198,7 +200,7 @@ func (mac *MainAccountController) Stop() {
 	}
 }
 
-func (mac *MainAccountController) getBillSummary(billYear, billMonth int) (*dsbillapi.BillSummaryMainResult, error) {
+func (mac *MainAccountController) getBillSummary(kt *kit.Kit, billYear, billMonth int) (*dsbillapi.BillSummaryMainResult, error) {
 	expressions := []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", mac.RootAccountID),
 		tools.RuleEqual("main_account_id", mac.MainAccountID),
@@ -207,7 +209,7 @@ func (mac *MainAccountController) getBillSummary(billYear, billMonth int) (*dsbi
 		tools.RuleEqual("bill_month", billMonth),
 	}
 	result, err := mac.Client.DataService().Global.Bill.ListBillSummaryMain(
-		getInternalKit(), &dsbillapi.BillSummaryMainListReq{
+		kt, &dsbillapi.BillSummaryMainListReq{
 			Filter: tools.ExpressionAnd(expressions...),
 			Page: &core.BasePage{
 				Start: 0,
@@ -223,9 +225,9 @@ func (mac *MainAccountController) getBillSummary(billYear, billMonth int) (*dsbi
 	return result.Details[0], nil
 }
 
-func (mac *MainAccountController) createNewBillSummary(billYear, billMonth int) error {
+func (mac *MainAccountController) createNewBillSummary(kt *kit.Kit, billYear, billMonth int) error {
 	_, err := mac.Client.DataService().Global.Bill.CreateBillSummaryMain(
-		getInternalKit(), &dsbillapi.BillSummaryMainCreateReq{
+		kt, &dsbillapi.BillSummaryMainCreateReq{
 			RootAccountID:     mac.RootAccountID,
 			MainAccountID:     mac.MainAccountID,
 			BkBizID:           mac.BkBizID,
@@ -246,7 +248,7 @@ func (mac *MainAccountController) createNewBillSummary(billYear, billMonth int) 
 	return nil
 }
 
-func (mac *MainAccountController) ensureBillSummary(billYear, billMonth int) error {
+func (mac *MainAccountController) ensureBillSummary(kt *kit.Kit, billYear, billMonth int) error {
 	var expressions []*filter.AtomRule
 	expressions = append(expressions, []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", mac.RootAccountID),
@@ -256,7 +258,7 @@ func (mac *MainAccountController) ensureBillSummary(billYear, billMonth int) err
 		tools.RuleEqual("bill_month", billMonth),
 	}...)
 	result, err := mac.Client.DataService().Global.Bill.ListBillSummaryMain(
-		getInternalKit(), &dsbillapi.BillSummaryMainListReq{
+		kt, &dsbillapi.BillSummaryMainListReq{
 			Filter: tools.ExpressionAnd(expressions...),
 			Page: &core.BasePage{
 				Start: 0,
@@ -267,7 +269,7 @@ func (mac *MainAccountController) ensureBillSummary(billYear, billMonth int) err
 		return fmt.Errorf("ensure main account bill summary failed, err %s", err.Error())
 	}
 	if len(result.Details) == 0 {
-		return mac.createNewBillSummary(billYear, billMonth)
+		return mac.createNewBillSummary(kt, billYear, billMonth)
 	}
 	return nil
 }
