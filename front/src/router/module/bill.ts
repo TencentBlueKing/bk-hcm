@@ -12,11 +12,25 @@ const bill: RouteRecordRaw[] = [
   },
   {
     path: '/bill/bill-manage',
-    name: '云账单',
-    component: () => import('@/views/bill/bill/bill-manage/index'),
+    name: '云账单管理',
+    component: () => import('@/views/bill/bill/index'),
+    redirect: '/bill/bill-manage/summary',
+    children: [
+      {
+        path: 'summary',
+        name: 'billSummary',
+        component: () => import('@/views/bill/bill/summary'),
+      },
+      {
+        path: 'detail',
+        name: 'billDetail',
+        component: () => import('@/views/bill/bill/detail'),
+      },
+    ],
     meta: {
       activeKey: 'bill-manage',
       icon: 'hcm-icon bkhcm-icon-host',
+      hasPageRoute: true,
     },
   },
   {
@@ -36,7 +50,7 @@ const bill: RouteRecordRaw[] = [
       notMenu: true,
       activeKey: 'account-manage',
     },
-  }
+  },
 ];
 
 export default bill;

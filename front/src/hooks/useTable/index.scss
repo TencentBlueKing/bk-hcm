@@ -4,6 +4,7 @@
   .operation-wrap {
     display: flex;
     justify-content: space-between;
+    margin-bottom: 16px;
 
     .operate-btn-groups {
       display: flex;
@@ -44,7 +45,7 @@
     }
   }
 
-  &.no-search .loading-table-container {
+  &.no-top-bar .loading-table-container {
     height: 100%;
   }
 }

@@ -385,7 +385,7 @@ export default defineComponent({
                       openedKeys={openedKeys}
                       activeKey={route.meta.activeKey as string}>
                       {menus.value.map((menuItem) =>
-                        Array.isArray(menuItem.children) ? (
+                        Array.isArray(menuItem.children) && !menuItem.meta?.hasPageRoute ? (
                           <Menu.Group key={menuItem.path as string} name={menuItem.name as string}>
                             {{
                               default: () =>
@@ -396,7 +396,7 @@ export default defineComponent({
                                       <Menu.Item key={child.meta?.activeKey as string}>
                                         {/* {route.meta.activeKey} */}
                                         {{
-                                          icon: () => <i class={child.meta.icon} />,
+                                          icon: () => <i class={child.meta?.icon} />,
                                           default: () => (
                                             <p class='flex-row flex-1 justify-content-between align-items-center pr16'>
                                               <span class='flex-1 text-ov'>{child.name as string}</span>
