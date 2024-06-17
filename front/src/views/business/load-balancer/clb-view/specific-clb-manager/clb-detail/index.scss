@@ -21,3 +21,50 @@
     align-items: center;
   }
 }
+
+.cors-config-container {
+  padding-top: 10px;
+
+  .cors-config-item {
+    display: flex;
+    min-height: 40px;
+
+    .cors-config-item-title {
+      flex-shrink: 0;
+      width: 120px;
+      text-align: right;
+      color: #63656e;
+
+      &::after {
+        content: ':';
+        margin: 0 10px 0 5px;
+      }
+    }
+    .cors-config-item-content {
+      color: #313238;
+    }
+
+    .snat-ip-container {
+      margin: 8px 0 24px;
+      padding: 16px 24px;
+      background: #f5f7fa;
+      border-radius: 2px;
+
+      .top-bar {
+        margin-bottom: 16px;
+        .desc {
+          margin-left: 16px;
+          font-size: 12px;
+          color: #979ba5;
+        }
+      }
+    }
+  }
+
+  .ml10 {
+    margin-left: 10px;
+  }
+  .mr10 {
+    margin-right: 10px;
+  }
+}

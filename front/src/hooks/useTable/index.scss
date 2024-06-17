@@ -33,6 +33,7 @@
 
   .loading-table-container {
     height: calc(100% - 48px);
+    min-height: 290px;
 
     .table-container {
       max-height: 100%;

@@ -141,7 +141,9 @@ func (t *TCloudImpl) formatCreateListenerRequest(opt *typelb.TCloudCreateListene
 	req.Protocol = converter.ValToPtr(string(opt.Protocol))
 	req.Ports = append(req.Ports, converter.ValToPtr(opt.Port))
 	req.MultiCertInfo = convCert(opt.Certificate)
-
+	if opt.EndPort > 0 {
+		req.EndPort = converter.ValToPtr(opt.EndPort)
+	}
 	if len(opt.Scheduler) > 0 {
 		req.Scheduler = converter.ValToPtr(opt.Scheduler)
 	}
@@ -601,7 +603,8 @@ func (t *TCloudImpl) RegisterTargets(kt *kit.Kit, opt *typelb.TCloudRegisterTarg
 	}
 	regResp, err := client.BatchRegisterTargetsWithContext(kt.Ctx, req)
 	if err != nil {
-		logs.Errorf("register tencent cloud targets instance failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
+		logs.Errorf("register tencent cloud targets instance failed, err: %v, opt: %+v, rid: %s",
+			err, req.ToJsonString(), kt.Rid)
 		return nil, err
 	}
 
@@ -646,7 +649,8 @@ func (t *TCloudImpl) DeRegisterTargets(kt *kit.Kit, opt *typelb.TCloudRegisterTa
 	}
 	deRegResp, err := client.BatchDeregisterTargetsWithContext(kt.Ctx, req)
 	if err != nil {
-		logs.Errorf("deregister tencent cloud targets instance failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
+		logs.Errorf("deregister tencent cloud targets instance failed, err: %v, req: %s, rid: %s",
+			err, req.ToJsonString(), kt.Rid)
 		return nil, err
 	}
 

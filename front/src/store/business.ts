@@ -187,6 +187,7 @@ export const useBusinessStore = defineStore({
       internet_max_bandwidth_out?: number; // 最大出带宽
       delete_protect?: boolean; // 删除
       load_balancer_pass_to_target?: boolean; // Target是否放通来自CLB的流量
+      snat_pro?: boolean; // 跨域2.0开关
       memo?: string; // 备注
     }) {
       return http.patch(
@@ -505,6 +506,30 @@ export const useBusinessStore = defineStore({
      */
     getAsyncTaskDetail(flowId: string): Promise<AsyncTaskDetailResp> {
       return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/async_task/flows/${flowId}`);
+    },
+    /**
+     * 业务下新增腾讯云负载均衡SNAT IP
+     * @param lb_id 负载均衡id
+     * @param data 待新增SNAT IP数组. subnet_id 为 SNAT IP 所在子网cloud_id; ip 为指定IP, 留空自动生成
+     */
+    createSnatIps(lb_id: string, data: { snat_ips: { subnet_id: string; ip?: string }[] }) {
+      return http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/tcloud/load_balancers/${lb_id}/snat_ips/create`,
+        data,
+      );
+    },
+    /**
+     * 业务下删除腾讯云负载均衡SNAT IP
+     * @param lb_id 负载均衡id
+     * @param data 待删除SNAT IP地址数组
+     */
+    deleteSnatIps(lb_id: string, data: { delete_ips: string[] }) {
+      return http.delete(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/tcloud/load_balancers/${lb_id}/snat_ips`,
+        {
+          data,
+        },
+      );
     },
   },
 });

@@ -1,12 +1,12 @@
 ### 描述
 
-- 该接口提供版本：v1.5.0+。
+- 该接口提供版本：v9.9.9+。
 - 该接口所需权限：负载均衡创建。
-- 该接口功能描述：业务下创建负载均衡。
+- 该接口功能描述：业务下创建负载均衡申请。
 
 ### URL
 
-POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/create
+POST /api/v1/cloud/vendors/tcloud/applications/types/create_load_balancer
 
 ### 输入参数
 
@@ -29,11 +29,13 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/create
 | vip_isp                    | string       | 否  | 运营商类型仅公网，枚举值：CMCC,CUCC,CTCC,BGP。通过TCloudDescribeResource 接口确定 |
 | internet_charge_type       | string       | 否  | 网络计费模式                                                        |
 | internet_max_bandwidth_out | int64        | 否  | 最大出带宽，单位Mbps                                                  |
+| bandwidthpkg_sub_type      | string       | 否  | 带宽包的类型，如SINGLEISP（单线）、BGP（多线）。                                |
 | bandwidth_package_id       | string       | 否  | 带宽包id，计费模式为带宽包计费时必填                                           |
 | sla_type                   | string       | 否  | 性能容量型规格, 留空为共享型                                               |
 | auto_renew                 | boolean      | 否  | 按月付费自动续费                                                      |
 | require_count	             | int          | 是  | 购买数量                                                          |
 | memo                       | string       | 否  | 备注                                                            |
+| remark                     | string       | 否  | 单据备注                                                          |
 
 #### 网络计费模式取值范围：
 
@@ -99,9 +101,6 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/create
 
 #### data
 
-| 参数名称              | 参数类型   | 描述           |
-|-------------------|--------|--------------|
-| unknown_cloud_ids | string | 未知创建状态的lb id |
-| success_cloud_ids | string | 成功创建的lb id   |
-| failed_cloud_ids  | string | 创建失败的lb id   |
-| failed_message    | string | 失败原因         |
+| 参数名称 | 参数类型   | 描述   |
+|------|--------|------|
+| id   | string | 单据ID |

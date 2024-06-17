@@ -108,32 +108,36 @@ export default (
   });
 
   // 获取 rs 列表
-  const getRSTableList = async (accountId: string, vpcIds: string[]) => {
+  const getRSTableList = async (accountId: string, vpcIds: string[], isCorsV2: boolean) => {
     if (!accountId) {
       rsTableList.value = [];
       return;
     }
     try {
       isTableLoading.value = true;
+      const queryFilter = {
+        op: QueryRuleOPEnum.AND,
+        rules: [
+          {
+            field: 'account_id',
+            op: QueryRuleOPEnum.EQ,
+            value: accountId,
+          },
+          ...filter.rules,
+        ],
+      };
+      // 如果没有开启跨域2.0, 则需要使用vpc过滤rs列表
+      if (!isCorsV2) {
+        queryFilter.rules.push({
+          field: 'vpc_ids',
+          op: QueryRuleOPEnum.JSON_OVERLAPS,
+          value: vpcIds,
+        });
+      }
       const [detailRes, countRes] = await Promise.all(
         [false, true].map((isCount) =>
           businessStore.getAllRsList({
-            filter: {
-              op: QueryRuleOPEnum.AND,
-              rules: [
-                {
-                  field: 'account_id',
-                  op: QueryRuleOPEnum.EQ,
-                  value: accountId,
-                },
-                {
-                  field: 'vpc_ids',
-                  op: QueryRuleOPEnum.JSON_OVERLAPS,
-                  value: vpcIds,
-                },
-                ...filter.rules,
-              ],
-            },
+            filter: queryFilter,
             page: {
               count: isCount,
               start: isCount ? 0 : pagination.start,

@@ -5,6 +5,7 @@ import (
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
+	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -242,4 +243,67 @@ func (svc *lbSvc) getTargetByTGIDs(kt *kit.Kit, targetGroupIDs []string) ([]core
 	}
 
 	return targetResult.Details, nil
+}
+
+// StatBizTargetWeight 统计目标组下的RS权重情况
+func (svc *lbSvc) StatBizTargetWeight(cts *rest.Contexts) (any, error) {
+	return svc.statTargetWeight(cts, handler.BizOperateAuth)
+}
+
+// ListTargetWeightNumMap ...
+func (svc *lbSvc) statTargetWeight(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (any, error) {
+
+	req := new(cslb.ListTargetWeightNumReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	basicInfoReq := dataproto.ListResourceBasicInfoReq{
+		ResourceType: enumor.TargetGroupCloudResType,
+		IDs:          req.TargetGroupIDs,
+	}
+
+	tgInfos, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, basicInfoReq)
+	if err != nil {
+		return nil, err
+	}
+
+	// list authorized instances
+	err = validHandler(cts, &handler.ValidWithAuthOption{
+		Authorizer: svc.authorizer,
+		ResType:    meta.TargetGroup,
+		Action:     meta.Find,
+		BasicInfos: tgInfos,
+	})
+	if err != nil {
+		return nil, err
+	}
+	// 获取rs
+	targetResp, err := svc.getTargetByTGIDs(cts.Kit, req.TargetGroupIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	targetWeightMap := make(map[string]cslb.TargetGroupRsWeightNum, 0)
+	for _, item := range targetResp {
+		tmpTarget := targetWeightMap[item.TargetGroupID]
+		if cvt.PtrToVal(item.Weight) == 0 {
+			tmpTarget.RsWeightZeroNum++
+		} else {
+			tmpTarget.RsWeightNonZeroNum++
+		}
+		targetWeightMap[item.TargetGroupID] = tmpTarget
+	}
+
+	result := make([]cslb.TargetGroupRsWeightNum, 0, len(req.TargetGroupIDs))
+	for _, tgID := range req.TargetGroupIDs {
+		info := targetWeightMap[tgID]
+		info.TargetGroupID = tgID
+		result = append(result, info)
+	}
+	return result, nil
 }

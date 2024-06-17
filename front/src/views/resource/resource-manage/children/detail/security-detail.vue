@@ -2,7 +2,7 @@
 import DetailHeader from '../../common/header/detail-header';
 import DetailTab from '../../common/tab/detail-tab';
 import SecurityInfo from '../components/security/security-info.vue';
-import SecurityRelate from '../components/security/security-relate.vue';
+import SecurityRelate from '../components/security/security-relate';
 import SecurityRule from '../components/security/security-rule.vue';
 import { useI18n } from 'vue-i18n';
 
@@ -39,13 +39,13 @@ const tabs = [
     name: t('基本信息'),
     value: 'detail',
   },
-  // {
-  //   name: t('关联实例'),
-  //   value: 'relate',
-  // },
   {
     name: t('安全组规则'),
     value: 'rule',
+  },
+  {
+    name: t('关联实例'),
+    value: 'relate',
   },
 ];
 
@@ -151,15 +151,15 @@ const getTemplateData = async (detail: { account_id: string }) => {
           :detail="detail"
           :get-detail="getDetail"
         />
-        <security-relate v-if="type === 'relate'" />
         <security-rule
-          v-if="type === 'rule'"
+          v-else-if="type === 'rule'"
           :filter="filter"
           :id="securityId"
           :vendor="vendor"
           :related-security-groups="relatedSecurityGroups"
           :template-data="templateData"
         />
+        <security-relate v-else />
       </template>
     </detail-tab>
   </div>

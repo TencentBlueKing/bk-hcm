@@ -22,9 +22,11 @@ package handlers
 import (
 	"fmt"
 
+	"hcm/pkg/api/core"
 	corecloudzone "hcm/pkg/api/core/cloud/zone"
 	dataprotozone "hcm/pkg/api/data-service/cloud/zone"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/runtime/filter"
 )
 
@@ -55,4 +57,32 @@ func (a *BaseApplicationHandler) GetZone(vendor enumor.Vendor, region, zone stri
 	}
 
 	return &resp.Details[0], nil
+}
+
+// GetZones 查询多个可用区
+func (a *BaseApplicationHandler) GetZones(vendor enumor.Vendor, region string, zoneNames []string) (
+	[]corecloudzone.BaseZone, error) {
+
+	reqFilter := tools.ExpressionAnd(
+		tools.RuleEqual("vendor", vendor),
+		tools.RuleEqual("region", region),
+		tools.RuleIn("name", zoneNames),
+	)
+	// 查询
+	resp, err := a.Client.DataService().Global.Zone.ListZone(
+		a.Cts.Kit.Ctx,
+		a.Cts.Kit.Header(),
+		&dataprotozone.ZoneListReq{
+			Filter: reqFilter,
+			Page:   &core.BasePage{Count: false, Start: 0, Limit: uint(len(zoneNames))},
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	if resp == nil || len(resp.Details) == 0 {
+		return nil, fmt.Errorf("not found %s zone by region(%s) and zone names(%v)", vendor, region, zoneNames)
+	}
+
+	return resp.Details, nil
 }
