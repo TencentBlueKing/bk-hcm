@@ -66,5 +66,5 @@ func (a *RootAccountClient) Update(kt *kit.Kit, accountID string,
 ) {
 
 	return common.Request[dataproto.RootAccountUpdateReq[dataproto.HuaWeiRootAccountExtensionUpdateReq], interface{}](
-		a.client, rest.PATCH, kt, nil, "/root_accounts/%s", accountID)
+		a.client, rest.PATCH, kt, request, "/root_accounts/%s", accountID)
 }

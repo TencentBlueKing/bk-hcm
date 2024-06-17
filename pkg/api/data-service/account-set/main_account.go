@@ -135,12 +135,12 @@ func (c *MainAccountCreateReq[T]) Validate() error {
 
 // MainAccountUpdateReq 不允许对extension更新，允许更新字段：负责人/备份负责人/组织架构/运营产品/业务，单独更新状态
 type MainAccountUpdateReq struct {
-	Managers    []string                 `json:"managers"`
-	BakManagers []string                 `json:"bak_managers"`
-	Status      enumor.MainAccountStatus `json:"status"`
-	DeptID      int64                    `json:"dept_id"`
-	BkBizID     int64                    `json:"bk_biz_id"`
-	OpProductID int64                    `json:"op_product_id"`
+	Managers    []string                 `json:"managers" validate:"omitempty"`
+	BakManagers []string                 `json:"bak_managers" validate:"omitempty"`
+	Status      enumor.MainAccountStatus `json:"status" validate:"omitempty"`
+	DeptID      int64                    `json:"dept_id" validate:"omitempty"`
+	BkBizID     int64                    `json:"bk_biz_id" validate:"omitempty"`
+	OpProductID int64                    `json:"op_product_id" validate:"omitempty"`
 }
 
 // Validate ...

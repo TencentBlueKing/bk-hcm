@@ -236,9 +236,9 @@ func (req *KaopuRootAccountExtensionUpdateReq) EncryptSecretKey(cipher cryptogra
 // RootAccountUpdateReq 不允许对extension更新，允许更新字段：负责人/备份负责人/组织架构/运营产品/业务，单独更新状态
 type RootAccountUpdateReq[T RootAccountExtensionUpdateReq] struct {
 	Name        string   `json:"name" validate:"omitempty"`
-	Managers    []string `json:"managers"`
-	BakManagers []string `json:"bak_managers"`
-	DeptID      int64    `json:"dept_id"`
+	Managers    []string `json:"managers" validate:"omitempty"`
+	BakManagers []string `json:"bak_managers" validate:"omitempty"`
+	DeptID      int64    `json:"dept_id" validate:"omitempty"`
 	Memo        *string  `json:"memo" validate:"omitempty"`
 	Extension   *T       `json:"extension" validate:"omitempty"`
 }
