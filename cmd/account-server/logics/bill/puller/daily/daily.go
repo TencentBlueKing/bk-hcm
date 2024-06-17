@@ -155,13 +155,13 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, billDay int) error {
 	}
 
 	// 如果已经有拉取task flow，则检查拉取任务是否有问题
-	flow, err := dp.Client.TaskServer().GetFlow(kit, billTask.FlowID)
+	flow, err := dp.Client.TaskServer().GetFlow(kt, billTask.FlowID)
 	if err != nil {
 		return fmt.Errorf("failed to get flow by id %s", billTask.FlowID)
 	}
 	// 如果flow失败了，则重新创建一个新的flow
 	if flow.State == enumor.FlowFailed {
-		flowResult, err := dp.Client.TaskServer().CreateCustomFlow(kit, &taskserver.AddCustomFlowReq{
+		flowResult, err := dp.Client.TaskServer().CreateCustomFlow(kt, &taskserver.AddCustomFlowReq{
 			Name: enumor.FlowPullRawBill,
 			Memo: "pull daily raw bill",
 			Tasks: []taskserver.CustomFlowTask{
