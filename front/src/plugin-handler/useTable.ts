@@ -1,25 +1,45 @@
 export const fetchData = async (params: any) => {
-  const { api, pagination, sort, order, filter, props, type } = params;
+  const { api, props, pagination, sort, order, filter, type } = params;
+  const { requestOption } = props;
+  const { apiMethod, extension, full } = requestOption;
 
-  // 请求数据
-  const [detailsRes, countRes] = await Promise.all(
-    [false, true].map((isCount) =>
-      api(
-        {
-          page: {
-            limit: isCount ? 0 : pagination.limit,
-            start: isCount ? 0 : pagination.start,
-            sort: isCount ? undefined : sort.value,
-            order: isCount ? undefined : order.value,
-            count: isCount,
-          },
-          filter: { op: filter.op, rules: filter.rules },
-          ...props.requestOption.extension,
-        },
-        type ? type : props.requestOption.type,
-      ),
-    ),
-  );
+  // type api
+  if (requestOption.type) {
+    // 判断是业务下, 还是资源下
+    const fetchApi = async (page: any) =>
+      api({ page, filter: { op: filter.op, rules: filter.rules }, ...extension }, type || requestOption.type);
 
-  return [detailsRes, countRes];
+    // 请求数据
+    return await Promise.all([
+      fetchApi({
+        limit: pagination.limit,
+        start: pagination.start,
+        sort: sort.value,
+        order: order.value,
+        count: false,
+      }),
+      fetchApi({ count: true }),
+    ]);
+  }
+
+  // apiMethod api
+  if (full) {
+    // 非分页请求
+    return [await apiMethod(extension), null];
+  }
+
+  const fetchApi = async (page: any) =>
+    apiMethod({ page, filter: { op: filter.op, rules: filter.rules }, ...extension });
+
+  // 分页请求
+  return await Promise.all([
+    fetchApi({
+      limit: pagination.limit,
+      start: pagination.start,
+      sort: sort.value,
+      order: order.value,
+      count: false,
+    }),
+    fetchApi({ count: true }),
+  ]);
 };

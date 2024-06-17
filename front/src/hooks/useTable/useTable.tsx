@@ -42,8 +42,10 @@ export interface IProp {
   };
   // 请求相关字段
   requestOption: {
-    // 资源类型
+    // 资源类型，与 apiMethod 互斥
     type?: string;
+    // 请求方法，与 type 互斥
+    apiMethod?: <T>(...args: any) => Promise<T>;
     // 排序参数
     sortOption?: {
       sort: string; // 需要排序的字段
@@ -148,7 +150,7 @@ export const useTable = (props: IProp) => {
           pagination.count = newCount;
         });
       } else {
-        pagination.count = countRes?.data?.count || 0;
+        pagination.count = (countRes === null ? detailsRes.data.count : countRes.data.count) || 0;
       }
     } catch (error) {
       dataList.value = [];
