@@ -54,15 +54,14 @@ type DailyPuller struct {
 }
 
 func (dp *DailyPuller) getFilter(billDay int) *filter.Expression {
-	var expressions []*filter.AtomRule
-	expressions = append(expressions, []*filter.AtomRule{
+	expressions := []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", dp.RootAccountID),
 		tools.RuleEqual("main_account_id", dp.MainAccountID),
 		tools.RuleEqual("vendor", dp.Vendor),
 		tools.RuleEqual("version_id", dp.Version),
 		tools.RuleEqual("bill_year", dp.BillYear),
 		tools.RuleEqual("bill_month", dp.BillMonth),
-	}...)
+	}
 	if billDay > 0 {
 		expressions = append(expressions, tools.RuleEqual("bill_day", billDay))
 	}

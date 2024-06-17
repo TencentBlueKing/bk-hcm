@@ -67,43 +67,15 @@ func (act PullDailyBillAction) Run(kt run.ExecuteKit, params interface{}) (inter
 		return nil, errf.New(errf.Aborted, err.Error())
 	}
 
-	var expressions []filter.RuleFactory
-	expressions = append(expressions, []filter.RuleFactory{
-		filter.AtomRule{
-			Field: "root_account_id",
-			Op:    filter.Equal.Factory(),
-			Value: opt.RootAccountID,
-		},
-		filter.AtomRule{
-			Field: "main_account_id",
-			Op:    filter.Equal.Factory(),
-			Value: opt.MainAccountID,
-		},
-		filter.AtomRule{
-			Field: "version_id",
-			Op:    filter.Equal.Factory(),
-			Value: opt.VersionID,
-		},
-		filter.AtomRule{
-			Field: "bill_year",
-			Op:    filter.Equal.Factory(),
-			Value: opt.BillYear,
-		},
-		filter.AtomRule{
-			Field: "bill_month",
-			Op:    filter.Equal.Factory(),
-			Value: opt.BillMonth,
-		},
-		filter.AtomRule{
-			Field: "bill_day",
-			Op:    filter.Equal.Factory(),
-			Value: opt.BillDay,
-		},
-	}...)
-	filter, err := tools.And(expressions...)
-	if err != nil {
-		return nil, err
+	expressions := []*filter.AtomRule{
+		tools.RuleEqual("root_account_id", opt.RootAccountID),
+		tools.RuleEqual("main_account_id", opt.MainAccountID),
+		tools.RuleEqual("version_id", opt.VersionID),
+		tools.RuleEqual("bill_year", opt.BillYear),
+		tools.RuleEqual("bill_month", opt.BillMonth),
+		tools.RuleEqual("bill_day", opt.BillDay),
 	}
+	filter := tools.ExpressionAnd(expressions...)
 
 	billCli := actcli.GetDataService().Global.Bill
 	billTaskResult, err := billCli.ListBillDailyPullTask(kt.Kit(), &billproto.BillDailyPullTaskListReq{
