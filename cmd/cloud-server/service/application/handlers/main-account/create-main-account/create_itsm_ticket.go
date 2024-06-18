@@ -39,22 +39,26 @@ func (a *ApplicationOfCreateMainAccount) RenderItsmTitle() (string, error) {
 func (a *ApplicationOfCreateMainAccount) RenderItsmForm() (string, error) {
 	req := a.req
 
-	// 获取业务名字
-	bkName, err := a.GetBizName(req.BkBizID)
-	if err != nil {
-		return "", fmt.Errorf("list biz name failed, bk_biz_ids: %v, err: %w", req.BkBizID, err)
-	}
-
 	// 公共参数
 	formItems := []formItem{
 		{Label: "云厂商", Value: req.Vendor.GetNameZh()},
 		{Label: "站点类型", Value: req.Site.GetMainAccountSiteTypeName()},
 		{Label: "账号名称", Value: req.Extension[req.Vendor.GetMainAccountNameFieldName()]},
 		{Label: "账号邮箱", Value: req.Email},
-		{Label: "使用业务", Value: bkName},
 		{Label: "负责人", Value: strings.Join(req.Managers, ",")},
 		{Label: "备份负责人", Value: strings.Join(req.BakManagers, ",")},
 	}
+
+	// 业务
+	if req.BkBizID != 0 {
+		// 获取业务名字
+		bkName, err := a.GetBizName(req.BkBizID)
+		if err != nil {
+			return "", fmt.Errorf("list biz name failed, bk_biz_ids: %v, err: %w", req.BkBizID, err)
+		}
+		formItems = append(formItems, formItem{Label: "使用业务", Value: bkName})
+	}
+
 	// 备注
 	if req.Memo != nil && *req.Memo != "" {
 		formItems = append(formItems, formItem{Label: "备注", Value: *req.Memo})
