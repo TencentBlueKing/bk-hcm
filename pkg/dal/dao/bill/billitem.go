@@ -42,7 +42,7 @@ import (
 
 // AccountBillItem only used for interface.
 type AccountBillItem interface {
-	CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, regions []tablebill.AccountBillItem) ([]string, error)
+	CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, items []*tablebill.AccountBillItem) ([]string, error)
 	List(kt *kit.Kit, opt *types.ListOption) (*typesbill.ListAccountBillItemDetails, error)
 	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, billID string, updateData *tablebill.AccountBillItem) error
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error
@@ -56,7 +56,7 @@ type AccountBillItemDao struct {
 
 // CreateWithTx create account bill item with tx.
 func (a AccountBillItemDao) CreateWithTx(
-	kt *kit.Kit, tx *sqlx.Tx, models []tablebill.AccountBillItem) (
+	kt *kit.Kit, tx *sqlx.Tx, models []*tablebill.AccountBillItem) (
 	[]string, error) {
 
 	if len(models) == 0 {

@@ -20,6 +20,9 @@
 package logicsaction
 
 import (
+	actionbilldailypull "hcm/cmd/task-server/logics/action/bill/dailypull"
+	actionbillsplit "hcm/cmd/task-server/logics/action/bill/dailysplit"
+	actiondailysummary "hcm/cmd/task-server/logics/action/bill/dailysummary"
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	actioncvm "hcm/cmd/task-server/logics/action/cvm"
 	actioneip "hcm/cmd/task-server/logics/action/eip"
@@ -27,7 +30,7 @@ import (
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
 	actionsg "hcm/cmd/task-server/logics/action/security-group"
 	actionsubnet "hcm/cmd/task-server/logics/action/subnet"
-	"hcm/cmd/task-server/logics/flow"
+	actionflow "hcm/cmd/task-server/logics/flow"
 	"hcm/pkg/async/action"
 	"hcm/pkg/client"
 	"hcm/pkg/dal/dao"
@@ -65,4 +68,8 @@ func register() {
 
 	action.RegisterAction(actionlb.ListenerRuleAddTargetAction{})
 	action.RegisterAction(actionlb.DeleteLoadBalancerAction{})
+
+	action.RegisterAction(actionbilldailypull.PullDailyBillAction{})
+	action.RegisterAction(actionbillsplit.DailyAccountSplitAction{})
+	action.RegisterAction(actiondailysummary.DailySummaryAction{})
 }

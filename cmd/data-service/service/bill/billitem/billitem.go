@@ -40,6 +40,7 @@ func InitService(cap *capability.Capability) {
 	h.Add("ListBillItemRaw", http.MethodPost, "/bills/items/list_with_extension", svc.ListBillItemRaw)
 
 	h.Add("CreateBillItem", http.MethodPost, "/vendors/{vendor}/bills/items/create", svc.CreateBillItem)
+	h.Add("CreateBillItemRaw", http.MethodPost, "/vendors/{vendor}/bills/rawitems/create", svc.CreateBillItemRaw)
 	h.Add("DeleteBillItem", http.MethodDelete, "/bills/items", svc.DeleteBillItem)
 	h.Add("UpdateBillItem", http.MethodPut, "/vendors/{vendor}/bills/items/update", svc.UpdateBillItem)
 

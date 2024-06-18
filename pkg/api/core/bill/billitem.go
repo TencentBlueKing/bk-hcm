@@ -21,7 +21,6 @@ package bill
 
 import (
 	rawjson "encoding/json"
-
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 
@@ -29,26 +28,25 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// BaseBillItem 账单详情
+// BaseBillItem 存储分账后的明细
 type BaseBillItem struct {
-	ID              string          `json:"id,omitempty"`
-	FirstAccountID  string          `json:"first_account_id" validate:"required"`
-	SecondAccountID string          `json:"second_account_id" validate:"required"`
-	Vendor          enumor.Vendor   `json:"vendor" validate:"required"`
-	ProductID       int64           `json:"product_id" validate:"omitempty"`
-	BkBizID         int64           `json:"bk_biz_id" validate:"omitempty"`
-	BillYear        int             `json:"bill_year" validate:"required"`
-	BillMonth       int             `json:"bill_month" validate:"required"`
-	BillDay         int             `json:"bill_day" validate:"required"`
-	VersionID       string          `json:"version_id" validate:"required"`
-	Currency        string          `json:"currency" validate:"required"`
-	Cost            decimal.Decimal `json:"cost" validate:"required"`
-	RMBCost         decimal.Decimal `json:"rmb_cost" validate:"required"`
-	HcProductCode   string          `json:"hc_product_code,omitempty"`
-	HcProductName   string          `json:"hc_product_name,omitempty"`
-	ResAmount       decimal.Decimal `json:"res_amount,omitempty"`
-	ResAmountUnit   string          `json:"res_amount_unit,omitempty"`
-	*core.Revision  `json:",inline"`
+	ID             string          `json:"id,omitempty"`
+	RootAccountID  string          `json:"root_account_id"`
+	MainAccountID  string          `json:"main_account_id"`
+	Vendor         enumor.Vendor   `json:"vendor" validate:"required"`
+	ProductID      int64           `json:"product_id" validate:"omitempty"`
+	BkBizID        int64           `json:"bk_biz_id" validate:"omitempty"`
+	BillYear       int             `json:"bill_year" validate:"required"`
+	BillMonth      int             `json:"bill_month" validate:"required"`
+	BillDay        int             `json:"bill_day" validate:"required"`
+	VersionID      int             `json:"version_id" validate:"required"`
+	Currency       string          `json:"currency" validate:"required"`
+	Cost           decimal.Decimal `json:"cost" validate:"required"`
+	HcProductCode  string          `json:"hc_product_code,omitempty"`
+	HcProductName  string          `json:"hc_product_name,omitempty"`
+	ResAmount      decimal.Decimal `json:"res_amount,omitempty"`
+	ResAmountUnit  string          `json:"res_amount_unit,omitempty"`
+	*core.Revision `json:",inline"`
 }
 
 // BillItem ...
@@ -92,7 +90,8 @@ type BillItemExtension interface {
 		AzureBillItemExtension |
 		GcpBillItemExtension |
 		KaopuBillItemExtension |
-		ZenlayerBillItemExtension
+		ZenlayerBillItemExtension |
+		rawjson.RawMessage
 }
 
 // TCloudBillItemExtension ...

@@ -37,6 +37,7 @@ import (
 	"hcm/cmd/data-service/service/bill/billdailytask"
 	"hcm/cmd/data-service/service/bill/billitem"
 	"hcm/cmd/data-service/service/bill/billpuller"
+	"hcm/cmd/data-service/service/bill/billsummarydaily"
 	"hcm/cmd/data-service/service/bill/billsummarymain"
 	"hcm/cmd/data-service/service/bill/billsummaryroot"
 	"hcm/cmd/data-service/service/bill/billsummaryversion"
@@ -116,7 +117,7 @@ func NewService() (*Service, error) {
 	}
 
 	// create object store
-	oStore, err := objectstore.GetObjectStoreFromEnv()
+	oStore, err := objectstore.GetObjectStore(cc.DataService().Objectstore)
 	if err != nil {
 		return nil, err
 	}
@@ -252,6 +253,7 @@ func (s *Service) apiSet() *restful.Container {
 	billdailytask.InitService(capability)
 	billadjustmentitem.InitService(capability)
 	billsummaryroot.InitService(capability)
+	billsummarydaily.InitService(capability)
 	if capability.ObjectStore != nil {
 		rawbill.InitService(capability)
 	}

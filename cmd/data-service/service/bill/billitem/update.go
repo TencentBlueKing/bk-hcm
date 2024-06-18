@@ -46,25 +46,14 @@ func (svc *service) UpdateBillItem(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	billItem := &tablebill.AccountBillItem{
-		ID:              req.ID,
-		FirstAccountID:  req.FirstAccountID,
-		SecondAccountID: req.SecondAccountID,
-		Vendor:          req.Vendor,
-		ProductID:       req.ProductID,
-		BkBizID:         req.BkBizID,
-		BillYear:        req.BillYear,
-		BillMonth:       req.BillMonth,
-		BillDay:         req.BillDay,
-		VersionID:       req.VersionID,
-		Currency:        req.Currency,
-		Cost:            &types.Decimal{Decimal: req.Cost},
-		RMBCost:         &types.Decimal{Decimal: req.RMBCost},
-		HcProductCode:   req.HcProductCode,
-		HcProductName:   req.HcProductName,
-		ResAmount:       &types.Decimal{Decimal: req.ResAmount},
-		ResAmountUnit:   req.ResAmountUnit,
+		ID:       req.ID,
+		Currency: req.Currency,
 		// 全量覆盖更新
 		Extension: req.Extension,
+		Reviser:   cts.Kit.User,
+	}
+	if !req.Cost.IsZero() {
+		billItem.Cost = &types.Decimal{Decimal: req.Cost}
 	}
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		if err := svc.dao.AccountBillItem().UpdateByIDWithTx(cts.Kit, txn, billItem.ID, billItem); err != nil {

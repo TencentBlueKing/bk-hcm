@@ -103,3 +103,34 @@ func (opt *ListAuthResOption) Validate() error {
 
 	return nil
 }
+
+// ListAuthManagerHandler 系统管理员查询操作合法性校验
+type ListAuthManagerHandler func (cts *rest.Contexts, opt *ListAuthManagerOption) (noPerm bool, err error)
+
+// ListAuthManagerOption list authorized manager operations options
+type ListAuthManagerOption struct {
+	Authorizer auth.Authorizer
+	ResType    meta.ResourceType
+	Action     meta.Action
+}
+
+// Validate ListAuthManagerOption
+func (opt *ListAuthManagerOption) Validate() error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "validate with auth option must be set")
+	}
+
+	if opt.Authorizer == nil {
+		return errf.New(errf.InvalidParameter, "authorizer must be set")
+	}
+
+	if len(opt.ResType) == 0 {
+		return errf.New(errf.InvalidParameter, "authorize resource type must be set")
+	}
+
+	if len(opt.Action) == 0 {
+		return errf.New(errf.InvalidParameter, "authorize action must be set")
+	}
+
+	return nil
+}

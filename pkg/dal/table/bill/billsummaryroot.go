@@ -144,21 +144,6 @@ func (abs *AccountBillSummaryRoot) UpdateValidate() error {
 	if len(abs.ID) == 0 {
 		return errors.New("id is required")
 	}
-	if len(abs.Vendor) == 0 {
-		return errors.New("vendor is required")
-	}
-	if len(abs.RootAccountID) == 0 {
-		return errors.New("root_account_id is required")
-	}
-	if abs.BillYear == 0 {
-		return errors.New("bill_year is required")
-	}
-	if abs.BillMonth == 0 {
-		return errors.New("bill_month is required")
-	}
-	if abs.CurrentVersion < 0 {
-		return fmt.Errorf("invalid current_version %d", abs.CurrentVersion)
-	}
 	if err := validator.Validate.Struct(abs); err != nil {
 		return err
 	}

@@ -28,4 +28,26 @@ const (
 	StatusCheckYml             = 4
 	StatusCreateCloudFormation = 5
 	StatusSuccess              = 100
+
+	// 二级账号账单汇总状态
+	// MainAccountBillSummaryStateAccounting 核算中
+	MainAccountBillSummaryStateAccounting = "核算中"
+	// MainAccountBillSummaryStateAccounted 已核算
+	MainAccountBillSummaryStateAccounted = "已核算"
+	// MainAccountBillSummaryStateSyncing 同步中
+	MainAccountBillSummaryStateSyncing = "同步中"
+	// MainAccountBillSummaryStateSynced 已同步
+	MainAccountBillSummaryStateSynced = "已同步"
+	// MainAccountBillSummaryStateStop 停止中
+	MainAccountBillSummaryStateStop = "停止中"
+
+	// 二级账号账单拉取状态
+	// MainAccountRawBillPullStatePulling 拉取中
+	MainAccountRawBillPullStatePulling = "拉取中"
+	// MainAccountRawBillPullStatePulled 已拉取
+	MainAccountRawBillPullStatePulled = "已拉取"
+	// MainAccountRawBillPullStateSplitted 已分账
+	MainAccountRawBillPullStateSplitted = "已分账"
+	// MainAccountRawBillPullStateStop 停止中
+	MainAccountRawBillPullStateStop = "停止中"
 )

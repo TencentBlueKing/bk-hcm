@@ -20,6 +20,7 @@
 package billitem
 
 import (
+	rawjson "encoding/json"
 	"fmt"
 	"reflect"
 
@@ -37,6 +38,15 @@ import (
 
 	"github.com/jmoiron/sqlx"
 )
+
+// CreateBillItemRaw create bill item with options
+func (svc *service) CreateBillItemRaw(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	return createBillItem[rawjson.RawMessage](cts, svc, vendor)
+}
 
 // CreateBillItem create bill item with options
 func (svc *service) CreateBillItem(cts *rest.Contexts) (interface{}, error) {
@@ -65,7 +75,7 @@ func (svc *service) CreateBillItem(cts *rest.Contexts) (interface{}, error) {
 
 func createBillItem[E bill.BillItemExtension](cts *rest.Contexts, svc *service, vendor enumor.Vendor) (any, error) {
 	req := make(dsbill.BatchBillItemCreateReq[E], 0)
-	if err := cts.DecodeInto(req); err != nil {
+	if err := cts.DecodeInto(&req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 	for _, item := range req {
@@ -75,7 +85,7 @@ func createBillItem[E bill.BillItemExtension](cts *rest.Contexts, svc *service, 
 	}
 
 	idList, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		var billItemTables []tablebill.AccountBillItem
+		var billItemTables []*tablebill.AccountBillItem
 		for _, item := range req {
 			extJson, err := json.MarshalToString(item.Extension)
 			if err != nil {
@@ -83,25 +93,24 @@ func createBillItem[E bill.BillItemExtension](cts *rest.Contexts, svc *service, 
 				return nil, err
 			}
 			billItem := tablebill.AccountBillItem{
-				FirstAccountID:  item.FirstAccountID,
-				SecondAccountID: item.SecondAccountID,
-				Vendor:          vendor,
-				ProductID:       item.ProductID,
-				BkBizID:         item.BkBizID,
-				BillYear:        item.BillYear,
-				BillMonth:       item.BillMonth,
-				BillDay:         item.BillDay,
-				VersionID:       item.VersionID,
-				Currency:        item.Currency,
-				Cost:            &types.Decimal{Decimal: item.Cost},
-				RMBCost:         &types.Decimal{Decimal: item.RMBCost},
-				HcProductCode:   item.HcProductCode,
-				HcProductName:   item.HcProductName,
-				ResAmount:       &types.Decimal{Decimal: item.ResAmount},
-				ResAmountUnit:   item.ResAmountUnit,
-				Extension:       types.JsonField(extJson),
+				RootAccountID: item.RootAccountID,
+				MainAccountID: item.MainAccountID,
+				Vendor:        vendor,
+				ProductID:     item.ProductID,
+				BkBizID:       item.BkBizID,
+				BillYear:      item.BillYear,
+				BillMonth:     item.BillMonth,
+				BillDay:       item.BillDay,
+				VersionID:     item.VersionID,
+				Currency:      item.Currency,
+				Cost:          &types.Decimal{Decimal: item.Cost},
+				HcProductCode: item.HcProductCode,
+				HcProductName: item.HcProductName,
+				ResAmount:     &types.Decimal{Decimal: item.ResAmount},
+				ResAmountUnit: item.ResAmountUnit,
+				Extension:     types.JsonField(extJson),
 			}
-			billItemTables = append(billItemTables, billItem)
+			billItemTables = append(billItemTables, &billItem)
 		}
 
 		ids, err := svc.dao.AccountBillItem().CreateWithTx(cts.Kit, txn, billItemTables)

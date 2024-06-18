@@ -21,9 +21,9 @@ package bill
 
 import (
 	"hcm/pkg/api/core"
+	billcore "hcm/pkg/api/core/bill"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
-	"hcm/pkg/dal/table/types"
 	"hcm/pkg/runtime/filter"
 
 	"github.com/shopspring/decimal"
@@ -31,18 +31,18 @@ import (
 
 // BillSummaryDailyCreateReq create request
 type BillSummaryDailyCreateReq struct {
-	FirstAccountID  string          `json:"first_account_id" validate:"required"`
-	SecondAccountID string          `json:"second_account_id" validate:"required"`
-	Vendor          enumor.Vendor   `json:"vendor" validate:"required"`
-	ProductID       int64           `json:"product_id" validate:"omitempty"`
-	BkBizID         int64           `json:"bk_biz_id" validate:"omitempty"`
-	BillYear        int             `json:"bill_year" validate:"required"`
-	BillMonth       int             `json:"bill_month" validate:"required"`
-	BillDay         int             `json:"bill_day" validate:"required"`
-	VersionID       string          `json:"version_id" validate:"required"`
-	Currency        string          `json:"currency" validate:"required"`
-	Cost            decimal.Decimal `json:"cost" validate:"required"`
-	RMBCost         decimal.Decimal `json:"rmb_cost" validate:"required"`
+	RootAccountID string          `json:"root_account_id" validate:"required"`
+	MainAccountID string          `json:"main_account_id" validate:"required"`
+	Vendor        enumor.Vendor   `json:"vendor" validate:"required"`
+	ProductID     int64           `json:"product_id" validate:"omitempty"`
+	BkBizID       int64           `json:"bk_biz_id" validate:"omitempty"`
+	BillYear      int             `json:"bill_year" validate:"required"`
+	BillMonth     int             `json:"bill_month" validate:"required"`
+	BillDay       int             `json:"bill_day" validate:"required"`
+	VersionID     int             `json:"version_id" validate:"required"`
+	Currency      string          `json:"currency" validate:"required"`
+	Cost          decimal.Decimal `json:"cost" validate:"required"`
+	Count         int64           `json:"count" validate:"required"`
 }
 
 // Validate ...
@@ -64,44 +64,16 @@ func (req *BillSummaryDailyListReq) Validate() error {
 
 // BillSummaryDailyListResult list result
 type BillSummaryDailyListResult struct {
-	Count   *uint64                   `json:"count,omitempty"`
-	Details []*BillSummaryDailyResult `json:"details"`
-}
-
-// BillSummaryDailyResult result
-type BillSummaryDailyResult struct {
-	ID              string          `json:"id,omitempty"`
-	FirstAccountID  string          `json:"first_account_id" validate:"required"`
-	SecondAccountID string          `json:"second_account_id" validate:"required"`
-	Vendor          enumor.Vendor   `json:"vendor" validate:"required"`
-	ProductID       int64           `json:"product_id" validate:"omitempty"`
-	BkBizID         int64           `json:"bk_biz_id" validate:"omitempty"`
-	BillYear        int             `json:"bill_year" validate:"required"`
-	BillMonth       int             `json:"bill_month" validate:"required"`
-	BillDay         int             `json:"bill_day" validate:"required"`
-	VersionID       string          `json:"version_id" validate:"required"`
-	Currency        string          `json:"currency" validate:"required"`
-	Cost            decimal.Decimal `json:"cost" validate:"required"`
-	RMBCost         decimal.Decimal `json:"rmb_cost" validate:"required"`
-	CreatedAt       types.Time      `json:"created_at,omitempty"`
-	UpdatedAt       types.Time      `json:"updated_at,omitempty"`
+	Count   *uint64                     `json:"count,omitempty"`
+	Details []billcore.BillSummaryDaily `json:"details"`
 }
 
 // BillSummaryDailyUpdateReq update request
 type BillSummaryDailyUpdateReq struct {
-	ID              string          `json:"id,omitempty" validate:"required"`
-	FirstAccountID  string          `json:"first_account_id" validate:"required"`
-	SecondAccountID string          `json:"second_account_id" validate:"required"`
-	Vendor          enumor.Vendor   `json:"vendor" validate:"required"`
-	ProductID       int64           `json:"product_id" validate:"omitempty"`
-	BkBizID         int64           `json:"bk_biz_id" validate:"omitempty"`
-	BillYear        int             `json:"bill_year" validate:"required"`
-	BillMonth       int             `json:"bill_month" validate:"required"`
-	BillDay         int             `json:"bill_day" validate:"required"`
-	VersionID       string          `json:"version_id" validate:"required"`
-	Currency        string          `json:"currency" validate:"required"`
-	Cost            decimal.Decimal `json:"cost" validate:"required"`
-	RMBCost         decimal.Decimal `json:"rmb_cost" validate:"required"`
+	ID       string          `json:"id,omitempty" validate:"required"`
+	Currency string          `json:"currency" validate:"required"`
+	Cost     decimal.Decimal `json:"cost" validate:"required"`
+	Count    int64           `json:"count" validate:"required"`
 }
 
 // Validate ...
