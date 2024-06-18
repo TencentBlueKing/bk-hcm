@@ -17,35 +17,32 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package bill
+package dailysummary
 
 import (
-	"hcm/pkg/cc"
-	"hcm/pkg/kit"
-	"time"
+	ts "hcm/pkg/api/task-server"
+	"hcm/pkg/async/action"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/tools/uuid"
 )
 
-const (
-	defaultAccountListLimit       = uint64(500)
-	defaultControllerSyncDuration = 30 * time.Second
-	defaultDailySummaryDuration   = 2 * time.Minute
-	defaultDailySplitDuration     = 2 * time.Minute
-)
+// BuildDailySummaryTask build daily bill pull task
+func BuildDailySummaryTask(
+	rootAccountID, mainAccountID string, vendor enumor.Vendor,
+	productID, bkBizID int64, billYear, billMonth, version int) ts.CustomFlowTask {
 
-func getInternalKit() *kit.Kit {
-	newKit := kit.New()
-	newKit.User = string(cc.AccountServerName)
-	newKit.AppCode = string(cc.AccountServerName)
-	return newKit
-}
-
-func getCurrentBillMonth() (int, int) {
-	now := time.Now().UTC()
-	return now.Year(), int(now.Month())
-}
-
-func getLastBillMonth() (int, int) {
-	now := time.Now().UTC()
-	lastMonthNow := now.AddDate(0, -1, 0)
-	return lastMonthNow.Year(), int(lastMonthNow.Month())
+	return ts.CustomFlowTask{
+		ActionID:   action.ActIDType(uuid.UUID()),
+		ActionName: enumor.ActionDailySummary,
+		Params: DailySummaryOption{
+			RootAccountID: rootAccountID,
+			MainAccountID: mainAccountID,
+			ProductID:     productID,
+			BkBizID:       bkBizID,
+			Vendor:        vendor,
+			VersionID:     version,
+			BillYear:      billYear,
+			BillMonth:     billMonth,
+		},
+	}
 }

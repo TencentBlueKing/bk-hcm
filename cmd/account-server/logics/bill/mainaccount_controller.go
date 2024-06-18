@@ -66,13 +66,23 @@ func NewMainAccountController(opt *MainAccountControllerOption) (*MainAccountCon
 	if len(opt.Vendor) == 0 {
 		return nil, fmt.Errorf("vendor cannot be empty")
 	}
+	splitCtrl, err := NewMainDailySplitController(opt)
+	if err != nil {
+		return nil, err
+	}
+	dailySummaryCtrl, err := NewMainSummaryDailyController(opt)
+	if err != nil {
+		return nil, err
+	}
 	return &MainAccountController{
-		Client:        opt.Client,
-		RootAccountID: opt.RootAccountID,
-		MainAccountID: opt.MainAccountID,
-		ProductID:     opt.ProductID,
-		BkBizID:       opt.BkBizID,
-		Vendor:        opt.Vendor,
+		Client:           opt.Client,
+		RootAccountID:    opt.RootAccountID,
+		MainAccountID:    opt.MainAccountID,
+		ProductID:        opt.ProductID,
+		BkBizID:          opt.BkBizID,
+		Vendor:           opt.Vendor,
+		splitCtrl:        splitCtrl,
+		dailySummaryCtrl: dailySummaryCtrl,
 	}, nil
 }
 
@@ -84,6 +94,9 @@ type MainAccountController struct {
 	ProductID     int64
 	BkBizID       int64
 	Vendor        enumor.Vendor
+
+	splitCtrl        *MainDailySplitController
+	dailySummaryCtrl *MainSummaryDailyController
 
 	kt         *kit.Kit
 	cancelFunc context.CancelFunc
@@ -100,6 +113,15 @@ func (mac *MainAccountController) Start() error {
 	mac.cancelFunc = cancelFunc
 	go mac.runBillSummaryLoop(kt)
 	go mac.runDailyRawBillLoop(kt)
+
+	// start split controller
+	if err := mac.splitCtrl.Start(); err != nil {
+		return err
+	}
+	// start daily summary controller
+	if err := mac.dailySummaryCtrl.Start(); err != nil {
+		return err
+	}
 	return nil
 }
 

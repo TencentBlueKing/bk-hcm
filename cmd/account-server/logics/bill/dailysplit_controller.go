@@ -24,7 +24,7 @@ import (
 	"fmt"
 	"time"
 
-	"hcm/cmd/task-server/logics/action/bill/dailysummary"
+	"hcm/cmd/task-server/logics/action/bill/dailysplit"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/bill"
 	dsbillapi "hcm/pkg/api/data-service/bill"
@@ -37,8 +37,8 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
-// NewMainSummaryDailyController create main account daily splitter controller
-func NewMainSummaryDailyController(opt *MainAccountControllerOption) (*MainSummaryDailyController, error) {
+// NewMainDailySplitController create main account daily splitter controller
+func NewMainDailySplitController(opt *MainAccountControllerOption) (*MainDailySplitController, error) {
 	if opt == nil {
 		return nil, fmt.Errorf("option cannot be empty")
 	}
@@ -57,7 +57,7 @@ func NewMainSummaryDailyController(opt *MainAccountControllerOption) (*MainSumma
 	if len(opt.Vendor) == 0 {
 		return nil, fmt.Errorf("vendor cannot be empty")
 	}
-	return &MainSummaryDailyController{
+	return &MainDailySplitController{
 		Client:        opt.Client,
 		RootAccountID: opt.RootAccountID,
 		MainAccountID: opt.MainAccountID,
@@ -67,8 +67,8 @@ func NewMainSummaryDailyController(opt *MainAccountControllerOption) (*MainSumma
 	}, nil
 }
 
-// MainSummaryDailyController main account daily summary controller
-type MainSummaryDailyController struct {
+// MainDailySplitController main account daily summary controller
+type MainDailySplitController struct {
 	Client        *client.ClientSet
 	RootAccountID string
 	MainAccountID string
@@ -82,7 +82,7 @@ type MainSummaryDailyController struct {
 }
 
 // Start run controller
-func (msdc *MainSummaryDailyController) Start() error {
+func (msdc *MainDailySplitController) Start() error {
 	if msdc.kt != nil {
 		return fmt.Errorf("controller already start")
 	}
@@ -90,43 +90,43 @@ func (msdc *MainSummaryDailyController) Start() error {
 	cancelFunc := kt.CtxBackgroundWithCancel()
 	msdc.kt = kt
 	msdc.cancelFunc = cancelFunc
-	go msdc.runBillDailySummaryLoop(kt)
+	go msdc.runBillDailySplitLoop(kt)
 	return nil
 }
 
-func (msdc *MainSummaryDailyController) runBillDailySummaryLoop(kt *kit.Kit) {
+func (msdc *MainDailySplitController) runBillDailySplitLoop(kt *kit.Kit) {
 	if err := msdc.doSync(kt); err != nil {
-		logs.Warnf("sync daily summary failed, err %s, rid: %s", err.Error(), kt.Rid)
+		logs.Warnf("sync daily split failed, err %s, rid: %s", err.Error(), kt.Rid)
 	}
-	ticker := time.NewTicker(defaultDailySummaryDuration)
+	ticker := time.NewTicker(defaultDailySplitDuration)
 	for {
 		select {
 		case <-ticker.C:
 			if err := msdc.doSync(kt); err != nil {
-				logs.Warnf("sync daily summary for account (%s, %s, %s) failed, err %s",
-					msdc.RootAccountID, msdc.MainAccountID, msdc.Vendor, err.Error())
+				logs.Warnf("sync daily split for account (%s, %s, %s) failed, err %s, rid: %s",
+					msdc.RootAccountID, msdc.MainAccountID, msdc.Vendor, err.Error(), kt.Rid)
 			}
 		case <-kt.Ctx.Done():
-			logs.Infof("main account (%s, %s, %s) daily summary controller context done",
-				msdc.RootAccountID, msdc.MainAccountID, msdc.Vendor)
+			logs.Infof("main account (%s, %s, %s) daily split controller context done, rid: %s",
+				msdc.RootAccountID, msdc.MainAccountID, msdc.Vendor, kt.Rid)
 			return
 		}
 	}
 }
 
-func (msdc *MainSummaryDailyController) doSync(kt *kit.Kit) error {
+func (msdc *MainDailySplitController) doSync(kt *kit.Kit) error {
 	curBillYear, curBillMonth := getCurrentBillMonth()
-	if err := msdc.syncDailySummary(kt.NewSubKit(), curBillYear, curBillMonth); err != nil {
+	if err := msdc.syncDailySplit(kt.NewSubKit(), curBillYear, curBillMonth); err != nil {
 		return fmt.Errorf("ensure bill summary for %d %d failed, err %s", curBillYear, curBillMonth, err.Error())
 	}
 	lastBillYear, lastBillMonth := getLastBillMonth()
-	if err := msdc.syncDailySummary(kt.NewSubKit(), lastBillYear, lastBillMonth); err != nil {
+	if err := msdc.syncDailySplit(kt.NewSubKit(), lastBillYear, lastBillMonth); err != nil {
 		return fmt.Errorf("ensure bill summary for %d %d failed, err %s", lastBillYear, lastBillMonth, err.Error())
 	}
 	return nil
 }
 
-func (msdc *MainSummaryDailyController) getBillSummary(
+func (msdc *MainDailySplitController) getBillSummary(
 	kt *kit.Kit, billYear, billMonth int) (*bill.BillSummaryMainResult, error) {
 
 	var expressions []*filter.AtomRule
@@ -154,22 +154,20 @@ func (msdc *MainSummaryDailyController) getBillSummary(
 	return result.Details[0], nil
 }
 
-func (msdc *MainSummaryDailyController) syncDailySummary(kt *kit.Kit, billYear, billMonth int) error {
-
+func (msdc *MainDailySplitController) syncDailySplit(kt *kit.Kit, billYear, billMonth int) error {
 	summary, err := msdc.getBillSummary(kt, billYear, billMonth)
 	if err != nil {
 		return err
 	}
+
 	_, err = msdc.Client.TaskServer().CreateCustomFlow(kt, &taskserver.AddCustomFlowReq{
-		Name: enumor.FlowBillDailySummary,
-		Memo: "do daily summary",
+		Name: enumor.FlowSplitBill,
+		Memo: "do daily split",
 		Tasks: []taskserver.CustomFlowTask{
-			dailysummary.BuildDailySummaryTask(
+			dailysplit.BuildDailySplitTask(
 				msdc.RootAccountID,
 				msdc.MainAccountID,
 				msdc.Vendor,
-				msdc.ProductID,
-				msdc.BkBizID,
 				billYear,
 				billMonth,
 				summary.CurrentVersion,
@@ -177,10 +175,10 @@ func (msdc *MainSummaryDailyController) syncDailySummary(kt *kit.Kit, billYear, 
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("create daily summary task flow failed for %s/%s/%s/%d/%d/%d, err %s",
+		return fmt.Errorf("create daily split task flow failed for %s/%s/%s/%d/%d/%d, err %s",
 			msdc.RootAccountID, msdc.MainAccountID, msdc.Vendor, billYear, billMonth, msdc.Version, err.Error())
 	}
-	logs.Infof("create daily summary task flow for %s/%s/%s/%d/%d/%d successfully, rid: %s",
+	logs.Infof("create daily split task flow for %s/%s/%s/%d/%d/%d successfully, rid: %s",
 		msdc.RootAccountID, msdc.MainAccountID, msdc.Vendor, billYear, billMonth, msdc.Version, kt.Rid)
 	return nil
 }
