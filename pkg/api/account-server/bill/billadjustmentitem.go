@@ -1,7 +1,7 @@
 /*
  * TencentBlueKing is pleased to support the open source community by making
  * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
- * Copyright (C) 2022 THL A29 Limited,
+ * Copyright (C) 2024 THL A29 Limited,
  * a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,31 +17,20 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package billadjustmentitem ...
-package billadjustmentitem
+package bill
 
 import (
-	"net/http"
-
-	"hcm/cmd/data-service/service/capability"
-	"hcm/pkg/dal/dao"
-	"hcm/pkg/rest"
+	"hcm/pkg/api/data-service/bill"
+	"hcm/pkg/criteria/validator"
 )
 
-// InitService initialize the bill adjustment item service
-func InitService(cap *capability.Capability) {
-	svc := &service{
-		dao: cap.Dao,
-	}
-	h := rest.NewHandler()
-	h.Add("CreateBillAdjustmentItem", http.MethodPost, "/bills/adjustment_items/create", svc.CreateBillAdjustmentItem)
-	h.Add("DeleteBillAdjustmentItem", http.MethodDelete, "/bills/adjustment_items", svc.DeleteBillAdjustmentItem)
-	h.Add("UpdateBillAdjustmentItem", http.MethodPut, "/bills/adjustment_items", svc.UpdateBillAdjustmentItem)
-	h.Add("ListBillAdjustmentItem", http.MethodPost, "/bills/adjustment_items/list", svc.ListBillAdjustmentItem)
-
-	h.Load(cap.WebService)
+// BatchBillAdjustmentItemCreateReq batch create request
+type BatchBillAdjustmentItemCreateReq struct {
+	RootAccountID string                             `json:"root_account_id" validate:"required"`
+	Items         []bill.BillAdjustmentItemCreateReq `json:"items" validate:"required,min=1,max=100,dive,required"`
 }
 
-type service struct {
-	dao dao.Set
+// Validate ...
+func (r *BatchBillAdjustmentItemCreateReq) Validate() error {
+	return validator.Validate.Struct(r)
 }

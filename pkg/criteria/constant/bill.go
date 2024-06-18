@@ -30,6 +30,7 @@ const (
 	StatusSuccess              = 100
 
 	// 二级账号账单汇总状态
+
 	// MainAccountBillSummaryStateAccounting 核算中
 	MainAccountBillSummaryStateAccounting = "核算中"
 	// MainAccountBillSummaryStateAccounted 已核算

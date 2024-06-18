@@ -20,11 +20,14 @@
 package billadjustmentitem
 
 import (
+	"hcm/pkg/api/core/bill"
 	dataproto "hcm/pkg/api/data-service/bill"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
 	tablebill "hcm/pkg/dal/table/bill"
 	"hcm/pkg/rest"
+	cvt "hcm/pkg/tools/converter"
 )
 
 // ListBillAdjustmentItem account with options
@@ -48,31 +51,33 @@ func (svc *service) ListBillAdjustmentItem(cts *rest.Contexts) (interface{}, err
 		return nil, err
 	}
 
-	details := make([]*dataproto.BillAdjustmentItemResult, len(data.Details))
+	details := make([]*bill.AdjustmentItem, len(data.Details))
 	for indx, d := range data.Details {
 		details[indx] = toProtoPullerResult(&d)
 	}
 
-	return &dataproto.BillAdjustmentItemListResult{Details: details, Count: data.Count}, nil
+	return &dataproto.BillAdjustmentItemListResult{Details: details, Count: cvt.PtrToVal(data.Count)}, nil
 }
 
-func toProtoPullerResult(m *tablebill.AccountBillAdjustmentItem) *dataproto.BillAdjustmentItemResult {
-	return &dataproto.BillAdjustmentItemResult{
-		ID:              m.ID,
-		FirstAccountID:  m.FirstAccountID,
-		SecondAccountID: m.SecondAccountID,
-		ProductID:       m.ProductID,
-		BkBizID:         m.BkBizID,
-		BillYear:        m.BillYear,
-		BillMonth:       m.BillMonth,
-		BillDay:         m.BillDay,
-		Type:            m.Type,
-		Memo:            m.Memo,
-		Operator:        m.Operator,
-		Currency:        m.Currency,
-		Cost:            m.Cost.Decimal,
-		RMBCost:         m.RMBCost.Decimal,
-		CreatedAt:       m.CreatedAt,
-		UpdatedAt:       m.UpdatedAt,
+func toProtoPullerResult(m *tablebill.AccountBillAdjustmentItem) *bill.AdjustmentItem {
+	return &bill.AdjustmentItem{
+		ID:            m.ID,
+		RootAccountID: m.RootAccountID,
+		MainAccountID: m.MainAccountID,
+		ProductID:     m.ProductID,
+		BkBizID:       m.BkBizID,
+		BillYear:      m.BillYear,
+		BillMonth:     m.BillMonth,
+		BillDay:       m.BillDay,
+		Type:          enumor.BillAdjustmentType(m.Type),
+		Memo:          m.Memo,
+		Operator:      m.Operator,
+		Currency:      m.Currency,
+		Cost:          m.Cost.Decimal,
+		RMBCost:       m.RMBCost.Decimal,
+		State:         m.State,
+		Creator:       m.Creator,
+		CreatedAt:     m.CreatedAt.String(),
+		UpdatedAt:     m.UpdatedAt.String(),
 	}
 }

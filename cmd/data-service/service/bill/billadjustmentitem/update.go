@@ -45,21 +45,21 @@ func (svc *service) UpdateBillAdjustmentItem(cts *rest.Contexts) (interface{}, e
 	}
 
 	BillAdjustmentItem := &tablebill.AccountBillAdjustmentItem{
-		ID:              req.ID,
-		FirstAccountID:  req.FirstAccountID,
-		SecondAccountID: req.SecondAccountID,
-		ProductID:       req.ProductID,
-		BkBizID:         req.BkBizID,
-		BillYear:        req.BillYear,
-		BillMonth:       req.BillMonth,
-		BillDay:         req.BillDay,
-		Type:            req.Type,
-		Memo:            req.Memo,
-		Operator:        req.Operator,
-		Currency:        req.Currency,
-		Cost:            &types.Decimal{Decimal: req.Cost},
-		RMBCost:         &types.Decimal{Decimal: req.RMBCost},
-		State:           req.State,
+		ID:            req.ID,
+		RootAccountID: req.RootAccountID,
+		MainAccountID: req.MainAccountID,
+		ProductID:     req.ProductID,
+		BkBizID:       req.BkBizID,
+		BillYear:      req.BillYear,
+		BillMonth:     req.BillMonth,
+		BillDay:       req.BillDay,
+		Type:          string(req.Type),
+		Memo:          req.Memo,
+		Operator:      req.Operator,
+		Currency:      req.Currency,
+		Cost:          &types.Decimal{Decimal: req.Cost},
+		RMBCost:       &types.Decimal{Decimal: req.RMBCost},
+		State:         req.State,
 	}
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		if err := svc.dao.AccountBillAdjustmentItem().UpdateByIDWithTx(

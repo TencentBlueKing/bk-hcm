@@ -77,7 +77,8 @@ func (a AccountBillAdjustmentItemDao) CreateWithTx(
 	}
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, models[0].TableName(),
-		tablebill.AccountBillAdjustmentItemColumns.ColumnExpr(), tablebill.AccountBillAdjustmentItemColumns.ColonNameExpr())
+		tablebill.AccountBillAdjustmentItemColumns.ColumnExpr(),
+		tablebill.AccountBillAdjustmentItemColumns.ColonNameExpr())
 
 	if err = a.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, models); err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", models[0].TableName(), err, kt.Rid)
@@ -123,21 +124,20 @@ func (a AccountBillAdjustmentItemDao) List(kt *kit.Kit, opt *types.ListOption) (
 		return nil, err
 	}
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tablebill.AccountBillAdjustmentItemColumns.FieldsNamedExpr(opt.Fields),
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`,
+		tablebill.AccountBillAdjustmentItemColumns.FieldsNamedExpr(opt.Fields),
 		table.AccountBillAdjustmentItemTable, whereExpr, pageExpr)
 
 	details := make([]tablebill.AccountBillAdjustmentItem, 0)
 	if err = a.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+		logs.Errorf("fail to select bill adjustment item, err: %v ,rid: %s", err, kt.Rid)
 		return nil, err
 	}
 	return &typesbill.ListAccountBillAdjustmentItemDetails{Details: details}, nil
 }
 
-// Update update account bill adjustment item.
-func (a AccountBillAdjustmentItemDao) UpdateByIDWithTx(
-	kt *kit.Kit,
-	tx *sqlx.Tx,
-	id string,
+// UpdateByIDWithTx update account bill adjustment item.
+func (a AccountBillAdjustmentItemDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
 	updateData *tablebill.AccountBillAdjustmentItem) error {
 
 	if err := updateData.UpdateValidate(); err != nil {

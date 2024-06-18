@@ -57,3 +57,27 @@ func (r *ListBillItemReq) Validate() error {
 
 	return validator.Validate.Struct(r)
 }
+
+// ImportBillAdjustmentReq 导入账单调整
+type ImportBillAdjustmentReq struct {
+	// 调账 文件上传
+	ExcelFileBase64 string `json:"excel_file_base64" validate:"required"`
+}
+
+// Validate ListBillAdjustmentReq
+func (r *ImportBillAdjustmentReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// ListBillAdjustmentReq ...
+type ListBillAdjustmentReq = core.ListReq
+
+// BatchDeleteReq ...
+type BatchDeleteReq struct {
+	Ids []string `json:"ids" validate:"required,min=1,dive,required"`
+}
+
+// Validate ...
+func (r *BatchDeleteReq) Validate() error {
+	return validator.Validate.Struct(r)
+}

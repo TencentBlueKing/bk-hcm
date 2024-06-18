@@ -89,3 +89,13 @@ const (
 	// CurrencyRMB rmb currency
 	CurrencyRMB = "RMB"
 )
+
+// BillAdjustmentType 调账类型
+type BillAdjustmentType string
+
+const (
+	// BillAdjustmentIncrease 增加
+	BillAdjustmentIncrease BillAdjustmentType = "increase"
+	// BillAdjustmentDecrease 减少
+	BillAdjustmentDecrease BillAdjustmentType = "decrease"
+)
