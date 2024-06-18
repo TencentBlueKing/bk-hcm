@@ -1,5 +1,5 @@
 import { reactive, ref, watch } from 'vue';
-import { defaults } from 'lodash';
+import { defaults, get } from 'lodash';
 import { QueryRuleOPEnum, RulesItem } from '@/typings';
 import http from '@/http';
 
@@ -19,9 +19,14 @@ export function useSingleList(options?: {
   rules?: RulesItem[] | ((...args: any) => RulesItem[]);
   // 自定义的 api 方法（请求全量数据时使用）
   apiMethod?: (...args: any) => Promise<any[]>;
+  // 自定义参数路径
+  path?: { data: string; count: string };
 }) {
   // 设置 options 默认值
-  defaults(options, { immediate: false, rules: [], apiMethod: null });
+  defaults(options, { immediate: false, rules: [], apiMethod: null, path: {} });
+  // 设置 path 默认值
+  defaults(options.path, { data: 'details', count: 'count' });
+
   const getDefaultPagination = () => ({ start: 0, limit: 50, count: 0 });
 
   const dataList = ref([]);
@@ -63,9 +68,9 @@ export function useSingleList(options?: {
     return apiMethod()
       .then(([detailRes, countRes]) => {
         // 加载数据
-        dataList.value = [...dataList.value, ...detailRes.data.details];
+        dataList.value = [...dataList.value, ...get(detailRes.data, options.path.data, [])];
         // 更新分页参数
-        pagination.count = countRes.data.count;
+        pagination.count = get(countRes.data, options.path.count, 0);
         // 将加载数据后的 dataList 作为 then 函数的返回值, 用以支持对新的 dataList 做额外的处理
         return dataList.value;
       })

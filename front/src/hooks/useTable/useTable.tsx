@@ -5,7 +5,7 @@ import { Loading, SearchSelect, Table } from 'bkui-vue';
 import type { Column } from 'bkui-vue/lib/table/props';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import { computed, defineComponent, reactive, ref, watch } from 'vue';
-import './index.scss';
+import cssModule from './index.module.scss';
 import Empty from '@/components/empty';
 import { useResourceStore, useBusinessStore } from '@/store';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
@@ -42,8 +42,10 @@ export interface IProp {
   };
   // 请求相关字段
   requestOption: {
-    // 资源类型
+    // 资源类型，与 apiMethod 互斥
     type?: string;
+    // 请求方法，与 type 互斥
+    apiMethod?: <T>(...args: any) => Promise<T>;
     // 排序参数
     sortOption?: {
       sort: string; // 需要排序的字段
@@ -62,7 +64,7 @@ export interface IProp {
       fuzzySwitch?: boolean;
     };
     // 请求需要的额外荷载数据
-    extension?: Record<string, any>;
+    extension?: Record<string, any> | (() => Record<string, any>);
     // 钩子 - 可以根据当前请求结果异步更新 dataList
     resolveDataListCb?: (...args: any) => Promise<any>;
     // 钩子 - 可以根据当前请求结果异步更新 pagination.count
@@ -71,6 +73,8 @@ export interface IProp {
     dataPath?: string;
     // 是否为全量数据
     full?: boolean;
+    // 是否立即请求
+    immediate?: boolean;
   };
   // 资源下筛选业务功能相关的 prop
   bizFilter?: FilterType;
@@ -78,7 +82,7 @@ export interface IProp {
 
 export const useTable = (props: IProp) => {
   defaults(props, { requestOption: {} });
-  defaults(props.requestOption, { dataPath: 'data.details' });
+  defaults(props.requestOption, { dataPath: 'data.details', immediate: true });
 
   const { whereAmI } = useWhereAmI();
 
@@ -102,7 +106,6 @@ export const useTable = (props: IProp) => {
 
   // 钩子 - 表头排序时
   const handleSort = ({ column, type }: any) => {
-    pagination.start = 0;
     sort.value = column.field;
     order.value = type === 'asc' ? 'ASC' : 'DESC';
     // 如果type为null，则默认排序
@@ -148,7 +151,7 @@ export const useTable = (props: IProp) => {
           pagination.count = newCount;
         });
       } else {
-        pagination.count = countRes?.data?.count || 0;
+        pagination.count = (countRes === null ? detailsRes.data.count : countRes.data.count) || 0;
       }
     } catch (error) {
       dataList.value = [];
@@ -168,29 +171,49 @@ export const useTable = (props: IProp) => {
         );
       });
 
+      const hasTopBar = computed(() => {
+        return slots.tableToolbar || slots.operation || slots.operationBarEnd;
+      });
+
+      const getTableHeight = () => {
+        const baseHeight = '100%';
+        const topBarHeight = hasTopBar.value ? 48 : 0;
+        const toolBarHeight = slots.tableToolbar ? 40 : 0;
+        const totalHeight = topBarHeight + toolBarHeight;
+
+        return totalHeight ? `calc(${baseHeight} - ${totalHeight}px)` : baseHeight;
+      };
+
       const tableRef = ref();
 
       expose({ tableRef });
 
       return () => (
-        <div class={`remote-table-container${props.searchOptions.disabled ? ' no-search' : ''}`}>
-          <section class='operation-wrap'>
-            {slots.operation && <div class='operate-btn-groups'>{slots.operation?.()}</div>}
-            {!props.searchOptions.disabled && (
-              <SearchSelect
-                class='table-search-selector'
-                style={props.searchOptions?.extra?.searchSelectExtStyle}
-                v-model={searchVal.value}
-                data={searchData.value}
-                valueBehavior='need-key'
-                {...(props.searchOptions.extra || {})}
-              />
-            )}
-          </section>
-          <Loading loading={isLoading.value} class='loading-table-container'>
+        <div
+          class={{
+            [cssModule['remote-table-container']]: true,
+            [cssModule['no-search']]: props.searchOptions.disabled,
+          }}>
+          {hasTopBar.value && (
+            <section class={cssModule['top-bar']}>
+              {slots.operation && <div class={cssModule['operate-btn-groups']}>{slots.operation?.()}</div>}
+              {!props.searchOptions.disabled && (
+                <SearchSelect
+                  class={cssModule['table-search-selector']}
+                  style={props.searchOptions?.extra?.searchSelectExtStyle}
+                  v-model={searchVal.value}
+                  data={searchData.value}
+                  valueBehavior='need-key'
+                  {...(props.searchOptions.extra || {})}
+                />
+              )}
+              {slots.operationBarEnd && <div class={cssModule['operation-bar-end']}>{slots.operationBarEnd()}</div>}
+            </section>
+          )}
+          {slots.tableToolbar?.()}
+          <Loading loading={isLoading.value} class={cssModule['loading-wrapper']} style={{ height: getTableHeight() }}>
             <Table
               ref={tableRef}
-              class='table-container'
               data={dataList.value}
               rowKey='id'
               columns={props.tableOptions.columns}
@@ -203,6 +226,7 @@ export const useTable = (props: IProp) => {
               onColumnSort={handleSort}
               onColumnFilter={() => {}}>
               {{
+                expandRow: (row: any) => slots.expandRow?.(row),
                 empty: () => {
                   if (isLoading.value) return null;
                   return <Empty />;
@@ -350,7 +374,7 @@ export const useTable = (props: IProp) => {
       getListData();
     },
     {
-      immediate: true,
+      immediate: props.requestOption.immediate,
     },
   );
 
@@ -392,5 +416,8 @@ export const useTable = (props: IProp) => {
     dataList,
     getListData,
     pagination,
+    sort,
+    order,
+    isLoading,
   };
 };

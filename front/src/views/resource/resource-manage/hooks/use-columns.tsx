@@ -1924,6 +1924,88 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
   ];
 
+  const billsRootAccountSummaryColumns = [
+    {
+      label: '一级账号ID',
+      field: 'root_account_id',
+    },
+    {
+      label: '一级账号名称',
+      field: 'root_account_name',
+    },
+    {
+      label: '账号状态',
+      field: 'state',
+    },
+    {
+      label: '账单同步（人民币-元）当月',
+      field: 'current_month_rmb_cost_synced',
+    },
+    {
+      label: '账单同步（人民币-元）上月',
+      field: 'last_month_rmb_cost_synced',
+    },
+    {
+      label: '账单同步（美金-美元）当月',
+      field: 'current_month_cost_synced',
+    },
+    {
+      label: '账单同步（美金-美元）上月',
+      field: 'last_month_cost_synced',
+    },
+    {
+      label: '账单同步环比',
+      field: 'month_on_month_value',
+    },
+    {
+      label: '当前账单人民币（元）',
+      field: 'current_month_rmb_cost',
+    },
+    {
+      label: '当前账单美金（美元）',
+      field: 'current_month_cost',
+    },
+    {
+      label: '调账人民币（元）',
+      field: 'adjustment_cost',
+    },
+    {
+      label: '调账美金（美元）',
+      field: 'adjustment_cost',
+    },
+  ];
+
+  const billsMainAccountSummaryColumns = [
+    {
+      label: '二级账号ID',
+      field: 'main_account_id',
+    },
+    {
+      label: '二级账号名称',
+      field: 'main_account_name',
+    },
+    {
+      label: '运营产品',
+      field: 'product_name',
+    },
+    {
+      label: '已确认账单人民币（元）',
+      field: 'current_month_rmb_cost_synced',
+    },
+    {
+      label: '已确认账单美金（美元）',
+      field: 'current_month_cost_synced',
+    },
+    {
+      label: '当前账单人民币（元）',
+      field: 'current_month_rmb_cost',
+    },
+    {
+      label: '当前账单美金（美元）',
+      field: 'current_month_cost',
+    },
+  ];
+
   const columnsMap = {
     vpc: vpcColumns,
     subnet: subnetColumns,
@@ -1948,6 +2030,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     firstAccount: firstAccountColumns,
     secondaryAccount: secondaryAccountColumns,
     myApply: myApplyColumns,
+    billsRootAccountSummary: billsRootAccountSummaryColumns,
+    billsMainAccountSummary: billsMainAccountSummaryColumns,
   };
 
   let columns = (columnsMap[type] || []).filter((column: any) => !isSimpleShow || !column.onlyShowOnList);

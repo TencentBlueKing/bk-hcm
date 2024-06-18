@@ -1,0 +1,7 @@
+.button {
+  width: 88px;
+
+  + .button {
+    margin-left: 8px;
+  }
+}
