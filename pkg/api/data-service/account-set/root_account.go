@@ -286,8 +286,8 @@ type RootAccountGetResp[T RootAccountExtensionGetResp] struct {
 
 // RootAccountListResult defines list main account result.
 type RootAccountListResult struct {
-	Count   uint64 `json:"count"`
-	Details []*protocore.BaseRootAccount
+	Count   uint64                       `json:"count"`
+	Details []*protocore.BaseRootAccount `json:"details"`
 }
 
 // RootAccountListResp ...

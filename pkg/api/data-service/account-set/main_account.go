@@ -183,8 +183,8 @@ type MainAccountGetResp[T MainAccountExtensionGetResp] struct {
 
 // MainAccountListResult defines list main account result.
 type MainAccountListResult struct {
-	Count   uint64 `json:"count"`
-	Details []*protocore.BaseMainAccount
+	Count   uint64                       `json:"count"`
+	Details []*protocore.BaseMainAccount `json:"details"`
 }
 
 // MainAccountListResp ...
