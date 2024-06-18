@@ -1,14 +1,13 @@
-import { defineComponent, reactive } from 'vue';
+import { defineComponent, reactive, ref } from 'vue';
 import './index.scss';
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import CommonCard from '@/components/CommonCard';
 import { Button, Form, Input } from 'bkui-vue';
 import { BILL_VENDORS_INFO } from '../constants';
-import { InfoLine, Success, TextFile } from 'bkui-vue/lib/icon';
+import { InfoLine, Success } from 'bkui-vue/lib/icon';
 import { VendorEnum } from '@/common/constant';
 import MemberSelect from '@/components/MemberSelect';
 import { useUserStore } from '@/store';
-import OrganizationSelect from '@/components/OrganizationSelect';
 import { useRouter } from 'vue-router';
 import useBillStore from '@/store/useBillStore';
 import successIcon from '@/assets/image/corret-fill.png';
@@ -25,6 +24,7 @@ export default defineComponent({
     const userStore = useUserStore();
     const router = useRouter();
     const billStore = useBillStore();
+    const formRef = ref();
 
     const formModel = reactive({
       name: '', // 名字
@@ -50,10 +50,15 @@ export default defineComponent({
     //   formModel.extension = {};
     // };
 
-    const { curExtension, isValidateDiasbled, handleValidate, isValidateLoading } = useSecretExtension(formModel);
+    const { curExtension, isValidateDiasbled, handleValidate, isValidateLoading, extensionPayload } =
+      useSecretExtension(formModel);
 
     const handleSubmit = async () => {
-      await billStore.root_accounts_add(formModel);
+      await formRef.value.validate();
+      await billStore.root_accounts_add({
+        ...formModel,
+        extension: extensionPayload.value,
+      });
     };
 
     return () => (
@@ -64,7 +69,7 @@ export default defineComponent({
 
         <CommonCard title={() => '基础信息'} class={'info-card'}>
           <div class={'account-form-card-content'}>
-            <Form formType='vertical' model={formModel}>
+            <Form formType='vertical' model={formModel} ref={formRef}>
               <FormItem label='云厂商' required property='vendor'>
                 <div class={'account-vendor-selector'}>
                   {BILL_VENDORS_INFO.map(({ vendor, name, icon }) => (
@@ -86,7 +91,7 @@ export default defineComponent({
 
         <CommonCard title={() => '账号信息'} class={'info-card'}>
           <div class={'account-form-card-content'}>
-            <Form formType='vertical' model={formModel}>
+            <Form formType='vertical' model={formModel} auto-check>
               <FormItem label='帐号名称' required property='name'>
                 <Input v-model={formModel.name} placeholder='请输入账号名称'></Input>
               </FormItem>
@@ -109,9 +114,9 @@ export default defineComponent({
                   <MemberSelect v-model={formModel.bak_managers} />
                 </FormItem>
               </div>
-              <FormItem label='所属组织架构' required property='dept_id'>
+              {/* <FormItem label='所属组织架构' required property='dept_id'>
                 <OrganizationSelect />
-              </FormItem>
+              </FormItem> */}
               <FormItem label='备注' property='memo'>
                 <Input type='textarea' rows={5} maxlength={100} v-model={formModel.memo} />
               </FormItem>
@@ -130,42 +135,27 @@ export default defineComponent({
           class={'info-card'}>
           <>
             <div class={'account-form-card-content'}>
-              <Form formType='vertical' class={'account-form-card-content-grid'}>
-                <div>
-                  {Object.entries(curExtension.value.input).map(([property, { label }]) => (
-                    <FormItem label={label} property={property} required>
-                      <Input
-                        v-model={curExtension.value.input[property].value}
-                        type={
-                          property === 'cloud_service_secret_key' && formModel.vendor === VendorEnum.GCP
-                            ? 'textarea'
-                            : 'text'
-                        }
-                        rows={8}
-                        resize={!(formModel.vendor === VendorEnum.GCP)}
-                      />
-                    </FormItem>
-                  ))}
-                </div>
-                <div class={'account-form-card-content-grid-right'}>
-                  {formModel.vendor === VendorEnum.TCLOUD && tcloudExtension.validatedStatus === ValidateStatus.YES ? (
-                    <Button
-                      text
-                      theme='primary'
-                      class={'api-form-btn'}
-                      onClick={() => {
-                        isAuthDialogShow.value = true;
-                      }}>
-                      <TextFile fill='#3A84FF' />
-                      查看账号权限
-                    </Button>
-                  ) : null}
-                  {Object.entries(curExtension.value.output1).map(([property, { label, value, placeholder }]) => (
+              <Form labelWidth={130} ref={formRef} formType='vertical'>
+                {Object.entries(curExtension.value.input).map(([property, { label }]) => (
+                  <FormItem label={label} property={property}>
+                    <Input
+                      v-model={curExtension.value.input[property].value}
+                      type={
+                        property === 'cloud_service_secret_key' && formModel.vendor === VendorEnum.GCP
+                          ? 'textarea'
+                          : 'text'
+                      }
+                      rows={8}
+                    />
+                  </FormItem>
+                ))}
+                {[curExtension.value.output1, curExtension.value.output2].map((output) =>
+                  Object.entries(output).map(([property, { label, placeholder }]) => (
                     <FormItem label={label} property={property}>
-                      <Input v-model={value} readonly placeholder={placeholder} />
+                      <Input v-model={output[property].value} readonly placeholder={placeholder} />
                     </FormItem>
-                  ))}
-                </div>
+                  )),
+                )}
               </Form>
             </div>
             <div class={'validate-btn-block'}>
@@ -173,7 +163,7 @@ export default defineComponent({
                 theme='primary'
                 outline={curExtension.value.validatedStatus === ValidateStatus.YES}
                 class={'account-validate-btn'}
-                onClick={() => handleValidate((payload: Record<string, string>) => props.changeExtension(payload))}
+                onClick={() => handleValidate()}
                 disabled={isValidateDiasbled.value}
                 loading={isValidateLoading.value}>
                 账号校验

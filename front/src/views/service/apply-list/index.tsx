@@ -1,4 +1,4 @@
-import { defineComponent, ref } from 'vue';
+import { computed, defineComponent, ref, watch } from 'vue';
 import './index.scss';
 import { useTable } from '@/hooks/useTable/useTable';
 import { APPLY_TYPES, searchData } from './constants';
@@ -13,7 +13,10 @@ export default defineComponent({
     const { columns } = useColumns('myApply');
     const router = useRouter();
     const route = useRoute();
-    const { CommonTable } = useTable({
+    const computedRules = computed(() => {
+      return APPLY_TYPES.find(({name}) => name === applyType.value).rule;
+    });
+    const { CommonTable, getListData } = useTable({
       searchOptions: {
         searchData,
       },
@@ -45,6 +48,10 @@ export default defineComponent({
       requestOption: {
         type: 'applications',
       },
+    });
+    watch(() => applyType.value,
+    () => {
+      getListData(computedRules.value);
     });
     return () => (
       <div class={'apply-list-wrapper'}>

@@ -1,7 +1,8 @@
+import { QueryRuleOPEnum } from "@/typings";
+
 export const searchData = [
   {
     name: '申请ID',
-    id: 'id',
   },
   {
     name: '来源',
@@ -57,25 +58,92 @@ export const APPLY_TYPES = [
   {
     label: '全部',
     name: 'all',
+    rule: [
+    ],
+  },
+  {
+    label: '云主机',
+    name: 'cloudMachines',
+    rule: [
+      {
+        field: 'type',
+        op: QueryRuleOPEnum.IN,
+        value: [
+          'create_cvm',
+        ],
+      }
+    ],
   },
   {
     label: '账号',
     name: 'account',
+    rule: [
+      {
+        field: 'type',
+        op: QueryRuleOPEnum.IN,
+        value: [
+          'add_account',
+        ],
+      }
+    ],
   },
   {
     label: '硬盘',
     name: 'disk',
+    rule: [
+      {
+        field: 'type',
+        op: QueryRuleOPEnum.IN,
+        value: [
+          'create_disk',
+        ],
+      }
+    ],
   },
   {
     label: 'VPC',
     name: 'vpc',
+    rule: [
+      {
+        field: 'type',
+        op: QueryRuleOPEnum.IN,
+        value: [
+          'create_disk',
+        ],
+      }
+    ],
   },
   {
     label: '安全组',
     name: 'securityGroup',
+    rule: [
+      {
+        field: 'type',
+        op: QueryRuleOPEnum.IN,
+        value: [
+          "create_security_group",
+          "update_security_group",
+          "delete_security_group",
+          "associate_security_group",
+          "disassociate_security_group",
+          "create_security_group_rule",
+          "update_security_group_rule",
+          "delete_security_group_rule"
+        ],
+      }
+    ],
   },
   {
     label: '负载均衡',
     name: 'loadBalancer',
+    rule: [
+      {
+        field: 'type',
+        op: QueryRuleOPEnum.IN,
+        value: [
+          'create_load_balancer',
+        ],
+      }
+    ],
   },
 ];

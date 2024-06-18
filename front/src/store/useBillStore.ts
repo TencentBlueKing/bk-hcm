@@ -89,14 +89,14 @@ export default defineStore('billStore', () => {
    */
   const create_main_account = (data: {
     vendor: 'aws' | 'gcp' | 'azure' | 'huawei' | 'zenlayer' | 'kaopu'; // 云厂商
-    site: 'international' | 'china'; // 站点
-    name: string; // 账号名
+    site?: 'international' | 'china'; // 站点
+    name: string; // 账号名   6-20 a-z数字  字母开头
     email: string; // 邮箱
     project_id: string; // 项目ID
     project_type: 'international' | 'china'; // 项目类型
     managers: string[]; // 负责人，最大5个
     bak_managers: string[]; // 备份负责人
-    dept_id: number; // 组织架构ID
+    dept_id?: number; // 组织架构ID
     bk_biz_id: number[]; // 关联业务ID
     memo: string; // 备注
     extension: CreateMainExtension; // 扩展信息
@@ -243,9 +243,9 @@ export interface HuaweiExtension {
 // Zenlayer/Kaopu
 export interface ZenlayerKaopuExtension {
   cloud_account_id: string;
-  cloud_iam_username: string;
-  cloud_secret_id: string;
-  cloud_secret_key: string;
+  cloud_iam_username?: string;
+  cloud_secret_id?: string;
+  cloud_secret_key?: string;
 }
 
 // Union Type for all possible extensions
