@@ -253,7 +253,15 @@ func convertZenlayerRawBillItemToRawBillCreateReq(kt *kit.Kit, billYear, billMon
 			logs.Errorf("fail to find summary main by cloud id(%s), rid: %s", mainAccountCloudID, kt.Rid)
 			return nil, fmt.Errorf("fail to find summary main by cloud id(%s)", mainAccountCloudID)
 		}
-		split := strings.Split(*record.BillID, "-")
+		billID := converter.PtrToVal[string](record.BillID)
+		if summaryMain.State != enumor.MainAccountBillSummaryStateAccounting {
+			logs.Errorf("summaryMainAccount(%s) state is not accounting, can't import bill, rid: %s",
+				summaryMain.ID, kt.Rid)
+			return nil, fmt.Errorf("summaryMainAccount(%s) state is not accounting, can't import bill",
+				summaryMain.ID)
+		}
+
+		split := strings.Split(billID, "-")
 		if len(split) != 3 {
 			return nil, fmt.Errorf("invalid bill id: %s, expect format: yy-mm-dd", *record.BillID)
 		}

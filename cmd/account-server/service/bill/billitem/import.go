@@ -21,6 +21,7 @@ package billitem
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"reflect"
 	"time"
@@ -79,6 +80,11 @@ func (b *billItemSvc) ImportBillItems(cts *rest.Contexts) (any, error) {
 	if len(mainAccountIDs) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "items.main_account_id is required")
 	}
+
+	if err = b.validateSummaryAccountState(cts.Kit, mainAccountIDs, vendor, req.BillYear, req.BillMonth); err != nil {
+		return nil, err
+	}
+
 	if err = b.deleteBillItemsByMainAccountIDs(cts, vendor, req.BillYear, req.BillMonth, mainAccountIDs); err != nil {
 		logs.Errorf("delete bill items failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
@@ -93,6 +99,23 @@ func (b *billItemSvc) ImportBillItems(cts *rest.Contexts) (any, error) {
 		return nil, err
 	}
 	return nil, nil
+}
+
+func (b *billItemSvc) validateSummaryAccountState(kt *kit.Kit, mainAccountsIDs []string,
+	vendor enumor.Vendor, billYear, billMonth int) error {
+	summaryMains, err := b.listSummaryMainByMainAccountIDs(kt, vendor, mainAccountsIDs, billYear, billMonth)
+	if err != nil {
+		return err
+	}
+	for _, summary := range summaryMains {
+		if summary.State != enumor.MainAccountBillSummaryStateAccounting {
+			logs.Errorf("summaryMainAccount(%s) state is not accounting, can't import bill, rid: %s",
+				summary.ID, kt.Rid)
+			return fmt.Errorf("summaryMainAccount(%s) state is not accounting, can't import bill",
+				summary.ID)
+		}
+	}
+	return nil
 }
 
 func (b *billItemSvc) createBillItems(cts *rest.Contexts, vendor enumor.Vendor,
