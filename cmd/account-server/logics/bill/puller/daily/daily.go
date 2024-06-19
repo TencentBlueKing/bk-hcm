@@ -143,7 +143,7 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 			if err := dp.updateDailyPullTaskFlowID(kt, billTask.ID, flowResult.ID); err != nil {
 				return fmt.Errorf("update flow id failed, err %s", err.Error())
 			}
-			return nil
+			continue
 		}
 
 		// 如果已经有拉取task flow，则检查拉取任务是否有问题
@@ -174,7 +174,6 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 			if err := dp.updateDailyPullTaskFlowID(kt, billTask.ID, flowResult.ID); err != nil {
 				return fmt.Errorf("update flow id failed, err %s", err.Error())
 			}
-			return nil
 		}
 	}
 	for _, day := range dayList {
