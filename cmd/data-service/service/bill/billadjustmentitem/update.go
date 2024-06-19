@@ -22,11 +22,14 @@ package billadjustmentitem
 import (
 	"fmt"
 
+	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/api/data-service/bill"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	tablebill "hcm/pkg/dal/table/bill"
 	"hcm/pkg/dal/table/types"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 
 	"github.com/jmoiron/sqlx"
@@ -66,6 +69,40 @@ func (svc *service) UpdateBillAdjustmentItem(cts *rest.Contexts) (interface{}, e
 			cts.Kit, txn, BillAdjustmentItem.ID, BillAdjustmentItem); err != nil {
 			return nil, fmt.Errorf("update bill adjustment item failed, err: %v", err)
 		}
+		return nil, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+// BatchConfirmBillAdjustmentItem batch confirm
+func (svc *service) BatchConfirmBillAdjustmentItem(cts *rest.Contexts) (any, error) {
+	req := new(core.BatchDeleteReq)
+
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
+
+		for _, id := range req.IDs {
+			updateReq := &tablebill.AccountBillAdjustmentItem{
+				ID:    id,
+				State: enumor.BillAdjustmentStateConfirmed,
+			}
+			if err := svc.dao.AccountBillAdjustmentItem().UpdateByIDWithTx(cts.Kit, txn, id, updateReq); err != nil {
+				logs.Errorf("fail to set bill adjustment item state to confirm, err: %v,rid: %v", err, cts.Kit.Rid)
+				return nil, fmt.Errorf("confirm bill adjustment item failed, err: %v", err)
+			}
+		}
+
 		return nil, nil
 	})
 	if err != nil {

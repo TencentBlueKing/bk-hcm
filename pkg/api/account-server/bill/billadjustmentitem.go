@@ -20,17 +20,55 @@
 package bill
 
 import (
-	"hcm/pkg/api/data-service/bill"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
+
+	"github.com/shopspring/decimal"
 )
 
 // BatchBillAdjustmentItemCreateReq batch create request
 type BatchBillAdjustmentItemCreateReq struct {
-	RootAccountID string                             `json:"root_account_id" validate:"required"`
-	Items         []bill.BillAdjustmentItemCreateReq `json:"items" validate:"required,min=1,max=100,dive,required"`
+	RootAccountID string                        `json:"root_account_id" validate:"required"`
+	Items         []BillAdjustmentItemCreateReq `json:"items" validate:"required,min=1,max=100,dive,required"`
 }
 
 // Validate ...
 func (r *BatchBillAdjustmentItemCreateReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// BillAdjustmentItemCreateReq create request
+type BillAdjustmentItemCreateReq struct {
+	RootAccountID string                    `json:"root_account_id" validate:"omitempty"`
+	MainAccountID string                    `json:"main_account_id" validate:"required"`
+	Vendor        enumor.Vendor             `json:"vendor" validate:"required"`
+	ProductID     int64                     `json:"product_id" validate:"required"`
+	BkBizID       int64                     `json:"bk_biz_id" validate:"omitempty"`
+	BillYear      int                       `json:"bill_year" validate:"required"`
+	BillMonth     int                       `json:"bill_month" validate:"required"`
+	BillDay       int                       `json:"bill_day" validate:"required"`
+	Type          enumor.BillAdjustmentType `json:"type" validate:"required"`
+	Currency      string                    `json:"currency" validate:"required"`
+	Cost          decimal.Decimal           `json:"cost" validate:"required"`
+	Memo          string                    `json:"memo"`
+}
+
+// BillAdjustmentItemUpdateReq update request
+type BillAdjustmentItemUpdateReq struct {
+	RootAccountID string                    `json:"root_account_id"`
+	MainAccountID string                    `json:"main_account_id"`
+	ProductID     int64                     `json:"product_id" validate:"omitempty"`
+	BkBizID       int64                     `json:"bk_biz_id" validate:"omitempty"`
+	BillYear      int                       `json:"bill_year"`
+	BillMonth     int                       `json:"bill_month"`
+	BillDay       int                       `json:"bill_day" `
+	Type          enumor.BillAdjustmentType `json:"type"`
+	Memo          string                    `json:"memo"`
+	Currency      string                    `json:"currency"`
+	Cost          decimal.Decimal           `json:"cost" `
+}
+
+// Validate ...
+func (r *BillAdjustmentItemUpdateReq) Validate() error {
 	return validator.Validate.Struct(r)
 }

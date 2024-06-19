@@ -71,7 +71,7 @@ func (svc *service) CreateBillAdjustmentItem(cts *rest.Contexts) (interface{}, e
 		ids, err := svc.dao.AccountBillAdjustmentItem().CreateWithTx(
 			cts.Kit, txn, itemList)
 		if err != nil {
-			return nil, fmt.Errorf("create account bill adjustment item list failed, err: %v", err)
+			return nil, fmt.Errorf("create account bill adjustment item failed, err: %v", err)
 		}
 		return ids, nil
 	})

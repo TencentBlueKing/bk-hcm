@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/dal/table"
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/dal/table/utils"
+	cvt "hcm/pkg/tools/converter"
 )
 
 // AccountBillAdjustmentItemColumns defines account_bill_adjustment_item's columns.
@@ -90,7 +91,7 @@ type AccountBillAdjustmentItem struct {
 	// RMBCost 费用
 	RMBCost *types.Decimal `db:"rmb_cost" json:"rmb_cost"`
 	// State 状态，未确定、已确定
-	State string `db:"state" json:"string"`
+	State enumor.BillAdjustmentState `db:"state" json:"string"`
 
 	// Creator 创建者
 	Creator string `db:"creator" validate:"max=64" json:"creator"`
@@ -131,7 +132,7 @@ func (abs *AccountBillAdjustmentItem) InsertValidate() error {
 	if len(abs.Currency) == 0 {
 		return errors.New("currency is required")
 	}
-	if abs.Cost.IsZero() {
+	if cvt.PtrToVal(abs.Cost).IsZero() {
 		return errors.New("cost is required")
 	}
 	if len(abs.State) == 0 {

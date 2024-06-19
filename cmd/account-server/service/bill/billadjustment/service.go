@@ -50,6 +50,8 @@ func InitBillAdjustmentService(c *capability.Capability) {
 		"/bills/adjustment_items/{id}", svc.DeleteBillAdjustmentItem)
 	h.Add("BatchDeleteBillAdjustmentItem", "DELETE",
 		"/bills/adjustment_items/batch", svc.BatchDeleteBillAdjustmentItem)
+	h.Add("BatchConfirmBillAdjustmentItem", "POST",
+		"/bills/adjustment_items/confirm", svc.BatchConfirmBillAdjustmentItem)
 
 	h.Load(c.WebService)
 }

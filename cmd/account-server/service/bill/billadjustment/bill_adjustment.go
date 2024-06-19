@@ -22,11 +22,14 @@ package billadjustment
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"hcm/pkg/api/account-server/bill"
 	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/api/data-service"
 	dsbill "hcm/pkg/api/data-service/bill"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
@@ -35,7 +38,7 @@ import (
 	"hcm/pkg/rest"
 	cvt "hcm/pkg/tools/converter"
 
-	excelize "github.com/xuri/excelize/v2"
+	"github.com/xuri/excelize/v2"
 )
 
 // CreateBillAdjustmentItem 手动创建调账明细
@@ -53,14 +56,13 @@ func (b *billAdjustmentSvc) CreateBillAdjustmentItem(cts *rest.Contexts) (any, e
 	err := b.authorizer.AuthorizeWithPerm(cts.Kit,
 		meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.AccountBill, Action: meta.Create}})
 
-	// 校验一级账号和二级账号是否存在并匹配
-
+	// 1. 校验一级账号和二级账号是否存在并匹配
 	rootAccountInfo, err := b.client.DataService().Global.RootAccount.GetBasicInfo(cts.Kit, req.RootAccountID)
 	if err != nil {
 		return nil, err
 	}
 
-	filledItems, err := b.checkMainAccountAndFillRoot(cts.Kit, rootAccountInfo.ID, req.Items)
+	filledItems, err := b.checkForCreateAdjustment(cts.Kit, rootAccountInfo.ID, req.Items)
 	if err != nil {
 		logs.Errorf("fail to check main account: err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
@@ -75,19 +77,35 @@ func (b *billAdjustmentSvc) CreateBillAdjustmentItem(cts *rest.Contexts) (any, e
 	return result, nil
 }
 
-func (b *billAdjustmentSvc) checkMainAccountAndFillRoot(kt *kit.Kit, rootAccountID string,
-	items []dsbill.BillAdjustmentItemCreateReq) ([]dsbill.BillAdjustmentItemCreateReq, error) {
+func (b *billAdjustmentSvc) checkForCreateAdjustment(kt *kit.Kit, rootAccountID string,
+	items []bill.BillAdjustmentItemCreateReq) ([]dsbill.BillAdjustmentItemCreateReq, error) {
 
+	dsReq := make([]dsbill.BillAdjustmentItemCreateReq, 0, len(items))
 	mainAccountIdMap := make(map[string]struct{})
 	for i, item := range items {
 		if item.RootAccountID == "" {
 			items[i].RootAccountID = rootAccountID
 		}
 		if item.RootAccountID != rootAccountID {
-			return nil, fmt.Errorf("root account id does not match  want: %s, given: %s",
+			return nil, fmt.Errorf("root account id does not match, want: %s, given: %s",
 				rootAccountID, item.RootAccountID)
 		}
-		item.Operator = kt.User
+		dsReq = append(dsReq, dsbill.BillAdjustmentItemCreateReq{
+			RootAccountID: item.RootAccountID,
+			MainAccountID: item.MainAccountID,
+			Vendor:        item.Vendor,
+			ProductID:     item.ProductID,
+			BkBizID:       item.BkBizID,
+			BillYear:      item.BillYear,
+			BillMonth:     item.BillMonth,
+			BillDay:       item.BillDay,
+			Type:          item.Type,
+			Operator:      kt.User,
+			Memo:          item.Memo,
+			Currency:      item.Currency,
+			Cost:          item.Cost,
+			State:         enumor.BillAdjustmentStateUnconfirmed,
+		})
 		mainAccountIdMap[item.MainAccountID] = struct{}{}
 	}
 	mainAccountReq := &core.ListReq{
@@ -110,7 +128,7 @@ func (b *billAdjustmentSvc) checkMainAccountAndFillRoot(kt *kit.Kit, rootAccount
 	if len(mainAccountIdMap) > 0 {
 		return nil, fmt.Errorf("main account id not found: %v", cvt.MapKeyToSlice(mainAccountIdMap))
 	}
-	return items, nil
+	return dsReq, nil
 }
 
 // ListBillAdjustmentItem 查询调账明细
@@ -140,7 +158,7 @@ func (b *billAdjustmentSvc) UpdateBillAdjustmentItem(cts *rest.Contexts) (any, e
 	if len(id) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
 	}
-	req := new(dsbill.BillAdjustmentItemUpdateReq)
+	req := new(bill.BillAdjustmentItemUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -154,8 +172,27 @@ func (b *billAdjustmentSvc) UpdateBillAdjustmentItem(cts *rest.Contexts) (any, e
 	if err != nil {
 		return nil, err
 	}
-	req.ID = id
-	err = b.client.DataService().Global.Bill.UpdateBillAdjustmentItem(cts.Kit, req)
+
+	if err := b.checkAdjustmentUnconfirmed(cts, []string{id}); err != nil {
+		return nil, err
+	}
+
+	dsReq := &dsbill.BillAdjustmentItemUpdateReq{
+		ID:            id,
+		RootAccountID: req.RootAccountID,
+		MainAccountID: req.MainAccountID,
+		ProductID:     req.ProductID,
+		BkBizID:       req.BkBizID,
+		BillYear:      req.BillYear,
+		BillMonth:     req.BillMonth,
+		BillDay:       req.BillDay,
+		Type:          req.Type,
+		Memo:          req.Memo,
+		Currency:      req.Currency,
+		Cost:          req.Cost,
+	}
+
+	err = b.client.DataService().Global.Bill.UpdateBillAdjustmentItem(cts.Kit, dsReq)
 	if err != nil {
 		logs.Errorf("fail to update bill adjustment item, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
@@ -163,16 +200,9 @@ func (b *billAdjustmentSvc) UpdateBillAdjustmentItem(cts *rest.Contexts) (any, e
 	return nil, nil
 }
 
-// ImportBillAdjustment 导入账单明细
-func (b *billAdjustmentSvc) ImportBillAdjustment(cts *rest.Contexts) (any, error) {
-
-	err := b.authorizer.AuthorizeWithPerm(cts.Kit,
-		meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.AccountBill, Action: meta.Create}})
-	if err != nil {
-		return nil, err
-	}
-
-	req := new(bill.ImportBillAdjustmentReq)
+// BatchConfirmBillAdjustmentItem 批量确认调账明细
+func (b *billAdjustmentSvc) BatchConfirmBillAdjustmentItem(cts *rest.Contexts) (any, error) {
+	req := new(core.BatchDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -181,53 +211,22 @@ func (b *billAdjustmentSvc) ImportBillAdjustment(cts *rest.Contexts) (any, error
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	err = ExcelRowsIterator(cts.Kit, cts.Request.Request.Body, 0, func(columns []string, err error) error {
-		// 组装然后调用接口创建
-		if err != nil {
-			return err
-		}
-		// TODO
-		return nil
-	})
+	err := b.authorizer.AuthorizeWithPerm(cts.Kit,
+		meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.AccountBill, Action: meta.Update}})
 	if err != nil {
-		logs.Errorf("fail parase excel file, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	// TODO
+	if err := b.checkAdjustmentUnconfirmed(cts, req.IDs); err != nil {
+		return nil, err
+	}
+
+	err = b.client.DataService().Global.Bill.BatchConfirmBillAdjustmentItem(cts.Kit, req)
+	if err != nil {
+		logs.Errorf("fail to update bill adjustment item, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
 	return nil, nil
-}
-
-// ExcelRowsIterator traverse each row in Excel file by given operation
-func ExcelRowsIterator(kt *kit.Kit, reader io.Reader, sheetIdx int, opFunc func([]string, error) error) error {
-
-	excel, err := excelize.OpenReader(reader)
-	if err != nil {
-		logs.Errorf("fialed to create excel reader, err: %v, rid: %s", err, kt.Rid)
-		return err
-	}
-	defer excel.Close()
-
-	sheetName := excel.GetSheetName(sheetIdx)
-
-	rows, err := excel.Rows(sheetName)
-	if err != nil {
-		logs.Errorf("fail to read rows from sheet(%s), err: %v, rid: %s", sheetName, err, kt.Rid)
-		return err
-	}
-	defer rows.Close()
-	// traverse all rows
-	for rows.Next() {
-		columns, err := rows.Columns()
-		if err != nil {
-			return opFunc(nil, err)
-		}
-
-		if err := opFunc(columns, nil); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 // DeleteBillAdjustmentItem ...
@@ -242,6 +241,11 @@ func (b *billAdjustmentSvc) DeleteBillAdjustmentItem(cts *rest.Contexts) (any, e
 	if err != nil {
 		return nil, err
 	}
+
+	if err := b.checkAdjustmentUnconfirmed(cts, []string{id}); err != nil {
+		return nil, err
+	}
+
 	delReq := &dataservice.BatchDeleteReq{
 		Filter: tools.EqualExpression("id", id),
 	}
@@ -270,6 +274,11 @@ func (b *billAdjustmentSvc) BatchDeleteBillAdjustmentItem(cts *rest.Contexts) (a
 	if err != nil {
 		return nil, err
 	}
+
+	if err := b.checkAdjustmentUnconfirmed(cts, req.Ids); err != nil {
+		return nil, err
+	}
+
 	delReq := &dataservice.BatchDeleteReq{
 		Filter: tools.ContainersExpression("id", req.Ids),
 	}
@@ -279,4 +288,115 @@ func (b *billAdjustmentSvc) BatchDeleteBillAdjustmentItem(cts *rest.Contexts) (a
 		return nil, err
 	}
 	return nil, nil
+}
+
+// 检查给定的调整明细是否都是未确认调账条目，如果存在已确定条目会返回错误
+func (b *billAdjustmentSvc) checkAdjustmentUnconfirmed(cts *rest.Contexts, ids []string) error {
+	// 检查是否已确认调账明细
+	listReq := &core.ListReq{
+		Filter: tools.ContainersExpression("id", ids),
+		Page:   core.NewDefaultBasePage(),
+		Fields: []string{"id", "state"},
+	}
+	itemResp, err := b.client.DataService().Global.Bill.ListBillAdjustmentItem(cts.Kit, listReq)
+	if err != nil {
+		logs.Errorf("fail to query bill adjustment for check unconfirmed, err: %v, ids: %v, rid: %s",
+			err, ids, cts.Kit.Rid)
+		return err
+	}
+
+	if len(itemResp.Details) != len(ids) {
+		return errf.New(errf.RecordNotFound, "item not found")
+	}
+	confirmed := make([]string, 0)
+	for _, detail := range itemResp.Details {
+		if detail.State == enumor.BillAdjustmentStateConfirmed {
+			confirmed = append(confirmed, detail.ID)
+		}
+	}
+	if len(confirmed) > 0 {
+		return errf.New(errf.InvalidParameter, "confirmed items can not be modified, ids: "+strings.Join(confirmed,
+			","))
+	}
+	return nil
+}
+
+// ImportBillAdjustment 导入账单明细
+func (b *billAdjustmentSvc) ImportBillAdjustment(cts *rest.Contexts) (any, error) {
+
+	err := b.authorizer.AuthorizeWithPerm(cts.Kit,
+		meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.AccountBill, Action: meta.Create}})
+	if err != nil {
+		return nil, err
+	}
+
+	req := new(bill.ImportBillAdjustmentReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	err = excelRowsIterator(cts.Kit, cts.Request.Request.Body, 0, constant.BatchOperationMaxLimit,
+		func(rows [][]string, err error) error {
+			// 组装然后调用接口创建
+			if err != nil {
+				logs.Errorf("fail to read excel, err: %v, rid: %s", err, cts.Kit.Rid)
+				return err
+			}
+			if len(rows) == 0 {
+				return nil
+			}
+			// TODO 确认Excel 格式
+
+			return nil
+		})
+	if err != nil {
+		logs.Errorf("fail parase excel file, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+// excelRowsIterator traverse each row in Excel file by given operation
+func excelRowsIterator(kt *kit.Kit, reader io.Reader, sheetIdx, batchSize int,
+	opFunc func([][]string, error) error) error {
+
+	excel, err := excelize.OpenReader(reader)
+	if err != nil {
+		logs.Errorf("fialed to create excel reader, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+	defer excel.Close()
+
+	sheetName := excel.GetSheetName(sheetIdx)
+
+	rows, err := excel.Rows(sheetName)
+	if err != nil {
+		logs.Errorf("fail to read rows from sheet(%s), err: %v, rid: %s", sheetName, err, kt.Rid)
+		return err
+	}
+	defer rows.Close()
+
+	rowBatch := make([][]string, 0, batchSize)
+	// traverse all rows
+	for rows.Next() {
+		columns, err := rows.Columns()
+		if err != nil {
+			return opFunc(nil, err)
+		}
+		rowBatch = append(rowBatch, columns)
+		if len(rowBatch) < batchSize {
+			continue
+		}
+		if err := opFunc(rowBatch, nil); err != nil {
+			return err
+		}
+		rowBatch = rowBatch[:0]
+
+	}
+	return nil
 }

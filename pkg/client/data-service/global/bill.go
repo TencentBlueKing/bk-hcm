@@ -123,6 +123,13 @@ func (b *BillClient) ListBillAdjustmentItem(kt *kit.Kit, req *billproto.BillAdju
 		b.client, rest.POST, kt, req, "/bills/adjustment_items/list")
 }
 
+// BatchConfirmBillAdjustmentItem 批量确认调账详情
+func (b *BillClient) BatchConfirmBillAdjustmentItem(kt *kit.Kit, req *core.BatchDeleteReq) error {
+
+	return common.RequestNoResp[core.BatchDeleteReq](b.client, rest.POST, kt, req,
+		"/bills/adjustment_items/confirm")
+}
+
 // --- bill item ---
 
 // BatchDeleteBillItem delete bill item

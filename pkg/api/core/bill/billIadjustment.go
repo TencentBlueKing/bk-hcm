@@ -27,22 +27,22 @@ import (
 
 // AdjustmentItem bill adjustment 调账明细
 type AdjustmentItem struct {
-	ID            string                    `json:"id,omitempty"`
-	RootAccountID string                    `json:"root_account_id"`
-	MainAccountID string                    `json:"main_account_id"`
-	ProductID     int64                     `json:"product_id"`
-	BkBizID       int64                     `json:"bk_biz_id"`
-	BillYear      int                       `json:"bill_year"`
-	BillMonth     int                       `json:"bill_month"`
-	BillDay       int                       `json:"bill_day"`
-	Type          enumor.BillAdjustmentType `json:"type"`
-	Memo          string                    `json:"memo"`
-	Operator      string                    `json:"operator"`
-	Currency      string                    `json:"currency"`
-	Cost          decimal.Decimal           `json:"cost"`
-	RMBCost       decimal.Decimal           `json:"rmb_cost"`
-	State         string                    `json:"state"`
-	Creator       string                    `json:"creator"`
-	CreatedAt     string                    `json:"created_at"`
-	UpdatedAt     string                    `json:"updated_at"`
+	ID            string                     `json:"id,omitempty"`
+	RootAccountID string                     `json:"root_account_id"`
+	MainAccountID string                     `json:"main_account_id"`
+	ProductID     int64                      `json:"product_id"`
+	BkBizID       int64                      `json:"bk_biz_id"`
+	BillYear      int                        `json:"bill_year"`
+	BillMonth     int                        `json:"bill_month"`
+	BillDay       int                        `json:"bill_day"`
+	Type          enumor.BillAdjustmentType  `json:"type"`
+	Memo          string                     `json:"memo"`
+	Operator      string                     `json:"operator"`
+	Currency      string                     `json:"currency"`
+	Cost          decimal.Decimal            `json:"cost"`
+	RMBCost       decimal.Decimal            `json:"rmb_cost"`
+	State         enumor.BillAdjustmentState `json:"state"`
+	Creator       string                     `json:"creator"`
+	CreatedAt     string                     `json:"created_at"`
+	UpdatedAt     string                     `json:"updated_at"`
 }

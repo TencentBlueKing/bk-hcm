@@ -99,3 +99,13 @@ const (
 	// BillAdjustmentDecrease 减少
 	BillAdjustmentDecrease BillAdjustmentType = "decrease"
 )
+
+// BillAdjustmentState 调账明细状态
+type BillAdjustmentState string
+
+const (
+	// BillAdjustmentStateConfirmed 已确认
+	BillAdjustmentStateConfirmed BillAdjustmentState = "confirmed"
+	// BillAdjustmentStateUnconfirmed 未确认
+	BillAdjustmentStateUnconfirmed BillAdjustmentState = "unconfirmed"
+)
