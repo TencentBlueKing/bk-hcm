@@ -21,6 +21,7 @@
 package accountset
 
 import (
+	"hcm/pkg/api/core"
 	protocore "hcm/pkg/api/core/account-set"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
@@ -182,10 +183,7 @@ type MainAccountGetResp[T MainAccountExtensionGetResp] struct {
 // -------------------------- List --------------------------
 
 // MainAccountListResult defines list main account result.
-type MainAccountListResult struct {
-	Count   uint64 `json:"count"`
-	Details []*protocore.BaseMainAccount
-}
+type MainAccountListResult core.ListResultT[*protocore.BaseMainAccount]
 
 // MainAccountListResp ...
 type MainAccountListResp struct {
