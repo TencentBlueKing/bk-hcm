@@ -28,8 +28,8 @@ import (
 const (
 	defaultAccountListLimit       = uint64(500)
 	defaultControllerSyncDuration = 30 * time.Second
-	defaultDailySummaryDuration   = 2 * time.Minute
-	defaultDailySplitDuration     = 2 * time.Minute
+	defaultDailySummaryDuration   = 10 * time.Minute
+	defaultDailySplitDuration     = 10 * time.Minute
 )
 
 func getInternalKit() *kit.Kit {
