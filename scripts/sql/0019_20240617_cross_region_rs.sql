@@ -19,7 +19,7 @@
 
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0019,HCMVER=v1.5.2
 
     Notes:
     1. 修改`load_balancer_target`表: 增加ip, 以 `cloud_target_group_id`,`ip`,`port` 为唯一键
@@ -57,6 +57,6 @@ alter table ssl_cert
 
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.5.2' as `hcm_ver`, '0019' as `sql_ver`;
 
 COMMIT
