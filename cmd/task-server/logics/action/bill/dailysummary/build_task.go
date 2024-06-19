@@ -33,7 +33,7 @@ func BuildDailySummaryTask(
 
 	return ts.CustomFlowTask{
 		ActionID:   action.ActIDType(uuid.UUID()),
-		ActionName: enumor.ActionDailySummary,
+		ActionName: enumor.ActionDailyAccountSummary,
 		Params: DailySummaryOption{
 			RootAccountID: rootAccountID,
 			MainAccountID: mainAccountID,
