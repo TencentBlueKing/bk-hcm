@@ -42,7 +42,7 @@ type BillSummaryDailyCreateReq struct {
 	VersionID     int             `json:"version_id" validate:"required"`
 	Currency      string          `json:"currency" validate:"required"`
 	Cost          decimal.Decimal `json:"cost" validate:"required"`
-	Count         int64           `json:"count" validate:"required"`
+	Count         int64           `json:"count" validate:"omitempty"`
 }
 
 // Validate ...

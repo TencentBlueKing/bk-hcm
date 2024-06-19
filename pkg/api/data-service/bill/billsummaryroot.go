@@ -48,7 +48,7 @@ type BillSummaryRootCreateReq struct {
 	CurrentMonthRMBCost       decimal.Decimal `json:"current_month_rmb_cost" validate:"omitempty"`
 	AjustmentCost             decimal.Decimal `json:"adjustment_cost" validate:"omitempty"`
 	AjustmentRMBCost          decimal.Decimal `json:"adjustment_rmb_cost" validate:"omitempty"`
-	Rate                      float64         `json:"rate" validate:"required"`
+	Rate                      float64         `json:"rate" validate:"omitempty"`
 	State                     string          `json:"state" validate:"required"`
 }
 
@@ -121,8 +121,8 @@ type BillSummaryRootUpdateReq struct {
 	CurrentMonthRMBCost       decimal.Decimal `json:"current_month_rmb_cost" validate:"omitempty"`
 	AjustmentCost             decimal.Decimal `json:"adjustment_cost" validate:"omitempty"`
 	AjustmentRMBCost          decimal.Decimal `json:"adjustment_rmb_cost" validate:"omitempty"`
-	Rate                      float64         `json:"rate" validate:"required"`
-	State                     string          `json:"state" validate:"required"`
+	Rate                      float64         `json:"rate" validate:"omitempty"`
+	State                     string          `json:"state" validate:"omitempty"`
 }
 
 // Validate ...
