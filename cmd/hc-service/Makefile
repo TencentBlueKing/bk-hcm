@@ -7,7 +7,7 @@ include ../../scripts/makefile/uname.mk
 
 default:
 	@echo -e "\033[34;1mBuilding $(SERVER)...\033[0m"
-	go build -ldflags ${LDVersionFLAG} ${GOTAGS} -o $(BIN) hc_service.go
+	go build -p 8 -ldflags ${LDVersionFLAG} ${GOTAGS} -o $(BIN) hc_service.go
 	@cp -r etc $(BINDIR)
 	@sh $(GENERATOR) '$(SERVER)' '$(ARGS)' '$(BINDIR)'
 	@echo -e "\033[32;1mBuild $(SERVER) success!\n\033[0m"

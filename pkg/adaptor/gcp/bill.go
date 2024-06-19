@@ -44,6 +44,8 @@ const (
 		"resource.name as resource_name,resource.global_name as resource_global_name,cost,currency," +
 		"usage.amount as usage_amount,usage.unit as usage_unit,usage.amount_in_pricing_units as " +
 		"usage_amount_in_pricing_units,usage.pricing_unit as usage_pricing_unit," +
+		"ARRAY_TO_STRING(ARRAY(SELECT CONCAT(name, ':', CAST(amount AS STRING)) AS credit FROM UNNEST(credits)), ',') AS credits_amount," +
+		"currency_conversion_rate," +
 		"cost+IFNULL((SELECT SUM(c.amount) FROM UNNEST(credits) c), 0) AS total_cost," +
 		"invoice.month as month,cost_type"
 	// QueryBillSQL 查询云账单的SQL
