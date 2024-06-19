@@ -56,7 +56,7 @@ type AccountBillConfigTable struct {
 	// Vendor 云厂商
 	Vendor enumor.Vendor `db:"vendor" validate:"-" json:"vendor"`
 	// RootAccountID 账号ID
-	RootAccountID string `db:"account_id" validate:"max=64" json:"account_id"`
+	RootAccountID string `db:"root_account_id" validate:"max=64" json:"root_account_id"`
 	// CloudDatabaseName 云账单数据库名称
 	CloudDatabaseName string `db:"cloud_database_name" validate:"max=64" json:"cloud_database_name"`
 	// CloudTableName 云账单数据表名称
@@ -90,8 +90,8 @@ func (a AccountBillConfigTable) InsertValidate() error {
 		return errors.New("vendor is required")
 	}
 
-	if len(a.AccountID) == 0 {
-		return errors.New("account_id can not be empty")
+	if len(a.RootAccountID) == 0 {
+		return errors.New("root_account_id can not be empty")
 	}
 
 	if len(a.Creator) == 0 {
