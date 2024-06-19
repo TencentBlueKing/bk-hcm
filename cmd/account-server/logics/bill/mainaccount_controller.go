@@ -145,7 +145,7 @@ func (mac *MainAccountController) runBillSummaryLoop(kt *kit.Kit) {
 		logs.Warnf("sync bill summary for account (%s, %s, %s) failed, err %s, rid: %s",
 			mac.RootAccountID, mac.MainAccountID, mac.Vendor, err.Error(), kt.Rid)
 	}
-	ticker := time.NewTicker(defaultControllerSyncDuration)
+	ticker := time.NewTicker(defaultControllerSummaryDuration)
 	for {
 		select {
 		case <-ticker.C:
