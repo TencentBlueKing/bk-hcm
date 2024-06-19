@@ -42,6 +42,7 @@ import (
 	"hcm/cmd/data-service/service/bill/billsummaryroot"
 	"hcm/cmd/data-service/service/bill/billsummaryversion"
 	"hcm/cmd/data-service/service/bill/rawbill"
+	"hcm/cmd/data-service/service/bill/rootaccountbillconfig"
 	"hcm/cmd/data-service/service/capability"
 	"hcm/cmd/data-service/service/cloud"
 	cloudselection "hcm/cmd/data-service/service/cloud-selection"
@@ -254,6 +255,7 @@ func (s *Service) apiSet() *restful.Container {
 	billadjustmentitem.InitService(capability)
 	billsummaryroot.InitService(capability)
 	billsummarydaily.InitService(capability)
+	rootaccountbillconfig.InitService(capability)
 	if capability.ObjectStore != nil {
 		rawbill.InitService(capability)
 	}

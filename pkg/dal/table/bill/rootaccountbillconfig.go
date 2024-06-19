@@ -30,17 +30,16 @@ import (
 	"hcm/pkg/dal/table/utils"
 )
 
-// AwsBillColumns defines all the Aws bill table's columns.
-var AwsBillColumns = utils.MergeColumns(nil, AwsBillColumnDescriptor)
+// RootAccountBillConfigColumns defines all the Aws bill table's columns.
+var RootAccountBillConfigColumns = utils.MergeColumns(nil, RootAccountBillConfigColumnDescriptor)
 
-// AwsBillColumnDescriptor is AwsBill's column descriptors.
-var AwsBillColumnDescriptor = utils.ColumnDescriptors{
+// RootAccountBillConfigColumnDescriptor is AwsBill's column descriptors.
+var RootAccountBillConfigColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
 	{Column: "vendor", NamedC: "vendor", Type: enumor.String},
 	{Column: "root_account_id", NamedC: "root_account_id", Type: enumor.String},
 	{Column: "cloud_database_name", NamedC: "cloud_database_name", Type: enumor.String},
 	{Column: "cloud_table_name", NamedC: "cloud_table_name", Type: enumor.String},
-	{Column: "status", NamedC: "status", Type: enumor.Numeric},
 	{Column: "err_msg", NamedC: "err_msg", Type: enumor.Json},
 	{Column: "extension", NamedC: "extension", Type: enumor.Json},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
@@ -49,8 +48,8 @@ var AwsBillColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "updated_at", NamedC: "updated_at", Type: enumor.Time},
 }
 
-// AccountBillConfigTable account_bill_config表
-type AccountBillConfigTable struct {
+// RootAccountBillConfigTable root_account_bill_config表
+type RootAccountBillConfigTable struct {
 	// ID 自增ID
 	ID string `db:"id" json:"id"`
 	// Vendor 云厂商
@@ -76,12 +75,12 @@ type AccountBillConfigTable struct {
 }
 
 // TableName return account bill config table name.
-func (a AccountBillConfigTable) TableName() table.Name {
-	return table.AccountBillConfigTable
+func (a RootAccountBillConfigTable) TableName() table.Name {
+	return table.RootAccountBillConfigTable
 }
 
 // InsertValidate validate account bill config table on insert.
-func (a AccountBillConfigTable) InsertValidate() error {
+func (a RootAccountBillConfigTable) InsertValidate() error {
 	if err := validator.Validate.Struct(a); err != nil {
 		return err
 	}
@@ -102,7 +101,7 @@ func (a AccountBillConfigTable) InsertValidate() error {
 }
 
 // UpdateValidate validate account bill config table on update.
-func (a AccountBillConfigTable) UpdateValidate() error {
+func (a RootAccountBillConfigTable) UpdateValidate() error {
 	if err := validator.Validate.Struct(a); err != nil {
 		return err
 	}

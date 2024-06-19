@@ -17,36 +17,26 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package bill
+// Package rootaccountbillconfig ...
+package rootaccountbillconfig
 
 import (
-	"hcm/pkg/cc"
-	"hcm/pkg/kit"
-	"time"
+	"encoding/json"
+
+	tabletype "hcm/pkg/dal/table/types"
+	"hcm/pkg/logs"
 )
 
-const (
-	defaultAccountListLimit          = uint64(500)
-	defaultControllerSyncDuration    = 30 * time.Second
-	defaultControllerSummaryDuration = 20 * time.Second
-	defaultDailySummaryDuration      = 10 * time.Minute
-	defaultDailySplitDuration        = 10 * time.Minute
-)
+func convertArrToTableJSON(arr []string) (tabletype.JsonField, error) {
+	if len(arr) == 0 {
+		return "[]", nil
+	}
 
-func getInternalKit() *kit.Kit {
-	newKit := kit.New()
-	newKit.User = string(cc.AccountServerName)
-	newKit.AppCode = string(cc.AccountServerName)
-	return newKit
-}
+	str, err := json.Marshal(arr)
+	if err != nil {
+		logs.Errorf("convert arr to table json, json.Marshal failed, arr: %v, err: %v", arr, err)
+		return "[]", err
+	}
 
-func getCurrentBillMonth() (int, int) {
-	now := time.Now().UTC()
-	return now.Year(), int(now.Month())
-}
-
-func getLastBillMonth() (int, int) {
-	now := time.Now().UTC()
-	lastMonthNow := now.AddDate(0, -1, 0)
-	return lastMonthNow.Year(), int(lastMonthNow.Month())
+	return tabletype.JsonField(str), nil
 }

@@ -192,6 +192,8 @@ const (
 	AccountBillSummaryRootTable = "account_bill_summary_root"
 	// AccountBillSummaryMainTable 月度汇总账单
 	AccountBillSummaryMainTable = "account_bill_summary_main"
+	// RootAccountBillConfigTable 一级账号账单配置表
+	RootAccountBillConfigTable = "root_account_bill_config"
 )
 
 // Validate whether the table name is valid or not.
@@ -276,6 +278,7 @@ var TableMap = map[Name]struct{}{
 	AccountBillItemTable:            {},
 	AccountBillAdjustmentItemTable:  {},
 	AccountBillSummaryRootTable:     {},
+	RootAccountBillConfigTable:      {},
 	LoadBalancerTable:               {},
 	SecurityGroupCommonRelTable:     {},
 	LoadBalancerListenerTable:       {},

@@ -107,8 +107,41 @@ type HuaweiBillItemExtension struct {
 	*model.ResFeeRecordV2 `json:",inline"`
 }
 
+// GcpRawBillItem bill item from big query
+type GcpRawBillItem struct {
+	BillingAccountID          string           `json:"billing_account_id"`
+	Cost                      *decimal.Decimal `json:"cost"`
+	CostType                  *string          `json:"cost_type"`
+	Country                   *string          `json:"country"`
+	CreditsAmount             *string          `json:"credits_amount"`
+	Currency                  *string          `json:"currency"`
+	CurrencyConversionRate    *decimal.Decimal `json:"currency_conversion_rate"`
+	Location                  *string          `json:"location"`
+	Month                     *string          `json:"month"`
+	ProjectID                 *string          `json:"project_id"`
+	ProjectName               *string          `json:"project_name"`
+	ProjectNumber             *string          `json:"project_number"`
+	Region                    *string          `json:"region"`
+	ResourceGlobalName        *string          `json:"resource_global_name"`
+	ResourceName              *string          `json:"resource_name"`
+	ServiceDescription        *string          `json:"service_description"`
+	ServiceID                 *string          `json:"service_id"`
+	SkuDescription            *string          `json:"sku_description"`
+	SkuID                     *string          `json:"sku_id"`
+	TotalCost                 *decimal.Decimal `json:"total_cost"`
+	ReturnCost                *decimal.Decimal `json:"return_cost"`
+	UsageAmount               *decimal.Decimal `json:"usage_amount"`
+	UsageAmountInPricingUnits *decimal.Decimal `json:"usage_amount_in_pricing_units"`
+	UsageEndTime              *string          `json:"usage_end_time"`
+	UsagePricingUnit          *string          `json:"usage_pricing_unit"`
+	UsageStartTime            *string          `json:"usage_start_time"`
+	UsageUnit                 *string          `json:"usage_unit"`
+	Zone                      *string          `json:"zone"`
+}
+
 // GcpBillItemExtension ...
 type GcpBillItemExtension struct {
+	*GcpRawBillItem `json:",inline"`
 }
 
 // AzureBillItemExtension ...

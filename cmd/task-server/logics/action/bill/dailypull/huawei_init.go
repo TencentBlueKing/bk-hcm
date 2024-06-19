@@ -21,4 +21,5 @@ package dailypull
 
 import (
 	_ "hcm/cmd/task-server/logics/action/bill/dailypull/huawei"
+	_ "hcm/cmd/task-server/logics/action/bill/dailypull/gcp"
 )
