@@ -419,12 +419,12 @@ func (a *applicationSvc) CreateForCreateMainAccount(cts *rest.Contexts) (interfa
 
 	handler := createmainaccount.NewApplicationOfCreateMainAccount(a.getHandlerOption(cts), a.authorizer, req, nil)
 
-	// authorize
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.MainAccount, Action: meta.Create}}
-	err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
-	if err != nil {
-		return nil, err
-	}
+	// 申请创建账号无需鉴权，由审批流程确认是否可以完成创建，如需对创建账号进行鉴权，可放开以下注释
+	// authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.MainAccount, Action: meta.Create}}
+	// err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	return a.create(cts, commReq, handler)
 }
