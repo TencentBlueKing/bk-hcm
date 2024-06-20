@@ -66,12 +66,13 @@ func (svc *service) BatchDeleteExchangeRate(cts *rest.Contexts) (interface{}, er
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		delFilter := tools.ContainersExpression("id", delIDs)
 		if err = svc.dao.AccountBillExchangeRate().DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
+			logs.Errorf("delete account bill exchange rate failed, err: %v, delIDs: %v, rid: %s",
+				err, delIDs, cts.Kit.Rid)
 			return nil, err
 		}
 		return nil, nil
 	})
 	if err != nil {
-		logs.Errorf("delete account bill exchange rate failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 

@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/dal/dao/orm"
 	tablebill "hcm/pkg/dal/table/bill"
 	"hcm/pkg/dal/table/types"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 
 	"github.com/jmoiron/sqlx"
@@ -57,8 +58,9 @@ func (svc *service) UpdateBillExchangeRate(cts *rest.Contexts) (any, error) {
 		r.ExchangeRate = &types.Decimal{Decimal: *req.ExchangeRate}
 	}
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		if err := svc.dao.AccountBillExchangeRate().UpdateByIDWithTx(
-			cts.Kit, txn, r.ID, r); err != nil {
+		err := svc.dao.AccountBillExchangeRate().UpdateByIDWithTx(cts.Kit, txn, r.ID, r)
+		if err != nil {
+			logs.Errorf("update account bill exchange rate failed, err: %v, id: %s, rid: %s", err, r.ID, cts.Kit.Rid)
 			return nil, fmt.Errorf("update bill exchange rate failed, err: %v", err)
 		}
 		return nil, nil

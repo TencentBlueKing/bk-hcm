@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/dal/dao/orm"
 	tablebill "hcm/pkg/dal/table/bill"
 	"hcm/pkg/dal/table/types"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 
 	"github.com/jmoiron/sqlx"
@@ -61,6 +62,7 @@ func (svc *service) CreateBillExchangeRate(cts *rest.Contexts) (any, error) {
 
 		ids, err := svc.dao.AccountBillExchangeRate().CreateWithTx(cts.Kit, txn, rateList)
 		if err != nil {
+			logs.Errorf("fail to create bill exchange rate, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, fmt.Errorf("create account bill exchange rate list failed, err: %v", err)
 		}
 		return ids, nil
