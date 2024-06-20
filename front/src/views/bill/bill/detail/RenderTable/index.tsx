@@ -1,14 +1,21 @@
 import { PropType, defineComponent, ref } from 'vue';
+import './index.scss';
+
 import { Button } from 'bkui-vue';
 import { useTable } from '@/hooks/useTable/useTable';
 import ImportBillDetailDialog from '../ImportBillDetailDialog';
+
+import { useI18n } from 'vue-i18n';
 import { VendorEnum } from '@/common/constant';
-import './index.scss';
 
 export default defineComponent({
   name: 'BillDetailRenderTable',
   props: { vendor: String as PropType<VendorEnum> },
-  setup() {
+  setup(props) {
+    const { t } = useI18n();
+
+    const importBillDetailDialogRef = ref();
+
     const { CommonTable } = useTable({
       tableOptions: {
         columns: [
@@ -86,18 +93,16 @@ export default defineComponent({
       },
     });
 
-    const importBillDetailDialogRef = ref();
-
     return () => (
       <div class='bill-detail-render-table-container'>
         <CommonTable>
           {{
             operation: () => (
               <>
-                <Button class='w88 mr8' onClick={() => importBillDetailDialogRef.value.triggerShow(true)}>
-                  导入
-                </Button>
-                <Button class='w88'>导出</Button>
+                {props.vendor === VendorEnum.ZENLAYER && (
+                  <Button onClick={() => importBillDetailDialogRef.value.triggerShow(true)}>{t('导入')}</Button>
+                )}
+                <Button>{t('导出')}</Button>
               </>
             ),
           }}

@@ -2006,6 +2006,41 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
   ];
 
+  const billsSummaryOperationRecordColumns = [
+    {
+      label: '操作时间',
+      field: 'operationTime',
+    },
+    {
+      label: '状态',
+      field: 'status',
+    },
+    {
+      label: '账单月份',
+      field: 'billingMonth',
+    },
+    {
+      label: '云厂商',
+      field: 'cloudVendor',
+    },
+    {
+      label: '一级账号ID',
+      field: 'primaryAccountId',
+    },
+    {
+      label: '操作人',
+      field: 'operator',
+    },
+    {
+      label: '人民币（元）',
+      field: 'rmbAmount',
+    },
+    {
+      label: '美金（美元）',
+      field: 'usdAmount',
+    },
+  ];
+
   const columnsMap = {
     vpc: vpcColumns,
     subnet: subnetColumns,
@@ -2032,6 +2067,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     myApply: myApplyColumns,
     billsRootAccountSummary: billsRootAccountSummaryColumns,
     billsMainAccountSummary: billsMainAccountSummaryColumns,
+    billsSummaryOperationRecord: billsSummaryOperationRecordColumns,
   };
 
   let columns = (columnsMap[type] || []).filter((column: any) => !isSimpleShow || !column.onlyShowOnList);
