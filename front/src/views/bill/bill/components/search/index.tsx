@@ -2,7 +2,7 @@ import { defineComponent, ref } from 'vue';
 import { useRoute } from 'vue-router';
 
 import cssModule from './index.module.scss';
-import { Button } from 'bkui-vue';
+import { Button, DatePicker } from 'bkui-vue';
 import VendorSelector from './vendor-selector';
 import PrimaryAccountSelector from './primary-account-selector';
 import SubAccountSelector from './sub-account-selector';
@@ -16,6 +16,7 @@ interface ISearchModal {
   root_account_id: string[];
   main_account_id: string[];
   product_id: string[];
+  update_time: string;
 }
 
 export default defineComponent({
@@ -29,6 +30,7 @@ export default defineComponent({
       root_account_id: [],
       main_account_id: [],
       product_id: [],
+      update_time: '',
     });
     const modal = ref(getDefaultModal());
 
@@ -50,26 +52,34 @@ export default defineComponent({
               <VendorSelector v-model={modal.value.vendor} />
             </div>
           )}
-          <div>
-            <div class={cssModule['search-label']}>{t('一级账号')}</div>
-            <PrimaryAccountSelector v-model={modal.value.root_account_id} />
-          </div>
+          {route.name !== 'billAdjust' && (
+            <div>
+              <div class={cssModule['search-label']}>{t('一级账号')}</div>
+              <PrimaryAccountSelector v-model={modal.value.root_account_id} />
+            </div>
+          )}
           <div>
             <div class={cssModule['search-label']}>{t('运营产品')}</div>
             <OperationProductSelector v-model={modal.value.product_id} />
           </div>
-          {route.name === 'billDetail' && (
+          {['billDetail', 'billAdjust'].includes(route.name as string) && (
             <div>
               <div class={cssModule['search-label']}>{t('二级账号')}</div>
               <SubAccountSelector v-model={modal.value.main_account_id} />
             </div>
           )}
+          {route.name === 'billAdjust' && (
+            <div>
+              <div class={cssModule['search-label']}>{t('更新时间')}</div>
+              <DatePicker class={cssModule.datePicker} placeholder='如：2019-01-30 至 2019-01-30' />
+            </div>
+          )}
         </div>
         <Button theme='primary' class={cssModule['search-button']} onClick={handleSearch}>
-          查询
+          {t('查询')}
         </Button>
         <Button class={cssModule['search-button']} onClick={handleReset}>
-          重置
+          {t('重置')}
         </Button>
       </div>
     );

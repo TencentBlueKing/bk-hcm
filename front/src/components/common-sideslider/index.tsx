@@ -1,7 +1,7 @@
 import { defineComponent } from 'vue';
 import { Sideslider, Button } from 'bkui-vue';
 import { useI18n } from 'vue-i18n';
-import './index.scss';
+import cssModule from './index.module.scss';
 
 export default defineComponent({
   name: 'CommonSideslider',
@@ -47,7 +47,7 @@ export default defineComponent({
 
     return () => (
       <Sideslider
-        class='common-sideslider'
+        class={cssModule.sideslider}
         width={props.width}
         isShow={props.isShow}
         title={t(props.title)}
@@ -56,10 +56,10 @@ export default defineComponent({
           props.handleClose?.();
         }}>
         {{
-          default: () => <div class='common-sideslider-content'>{ctx.slots.default?.()}</div>,
+          default: () => <div class={cssModule.content}>{ctx.slots.default?.()}</div>,
           footer: !props.noFooter
             ? () => (
-                <>
+                <div class={cssModule.footer}>
                   <Button
                     theme='primary'
                     onClick={handleSubmit}
@@ -68,7 +68,7 @@ export default defineComponent({
                     {t('提交')}
                   </Button>
                   <Button onClick={() => triggerShow(false)}>{t('取消')}</Button>
-                </>
+                </div>
               )
             : undefined,
         }}

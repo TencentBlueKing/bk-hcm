@@ -1,0 +1,15 @@
+.sideslider {
+  .content {
+    padding: 24px 40px;
+  }
+
+  .footer {
+    :global(.bk-button) {
+      min-width: 88px;
+
+      + :global(.bk-button) {
+        margin-left: 8px;
+      }
+    }
+  }
+}

@@ -7,6 +7,9 @@
     margin-bottom: 16px;
 
     .operate-btn-groups {
+      display: flex;
+      align-items: center;
+
       :global(.bk-button) {
         min-width: 88px;
 

@@ -20,11 +20,29 @@ const bill: RouteRecordRaw[] = [
         path: 'summary',
         name: 'billSummary',
         component: () => import('@/views/bill/bill/summary'),
+        redirect: '/bill/bill-manage/summary/manage',
+        children: [
+          {
+            path: 'manage',
+            name: 'billSummaryManage',
+            component: () => import('@/views/bill/bill/summary/manage'),
+          },
+          {
+            path: 'operation-record',
+            name: 'billSummaryOperationRecord',
+            component: () => import('@/views/bill/bill/summary/operation-record'),
+          },
+        ],
       },
       {
         path: 'detail',
         name: 'billDetail',
         component: () => import('@/views/bill/bill/detail'),
+      },
+      {
+        path: 'adjust',
+        name: 'billAdjust',
+        component: () => import('@/views/bill/bill/adjust'),
       },
     ],
     meta: {
