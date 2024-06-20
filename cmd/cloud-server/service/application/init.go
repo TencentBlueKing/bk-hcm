@@ -33,6 +33,7 @@ import (
 	dataproto "hcm/pkg/api/data-service"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/cryptography"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/iam/meta"
@@ -190,6 +191,30 @@ func (a *applicationSvc) checkApplyResPermission(cts *rest.Contexts, resType met
 	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: resType, Action: meta.Apply}, BizID: bizID}
 	if err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (a *applicationSvc) checkActionPermission(cts *rest.Contexts, resType meta.ResourceType, action meta.Action) error {
+	resources := make([]meta.ResourceAttribute, 0)
+	resources = append(resources, meta.ResourceAttribute{
+		Basic: &meta.Basic{
+			Type:   resType,
+			Action: action,
+		},
+	})
+
+	_, authorized, err := a.authorizer.Authorize(cts.Kit, resources...)
+	if err != nil {
+		return errf.NewFromErr(
+			errf.PermissionDenied,
+			fmt.Errorf("check permissions failed, resourceType: %s, action: %s, err: %v", resType, action, err),
+		)
+	}
+
+	if !authorized {
+		return errf.NewFromErr(errf.PermissionDenied, fmt.Errorf("you have not permission of resourceType: %s, action: %s", resType, action))
 	}
 
 	return nil

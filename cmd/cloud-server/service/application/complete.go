@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/json"
@@ -35,6 +36,11 @@ import (
 
 // CompleteForCreateMainAccount 申请单完成流程
 func (a *applicationSvc) CompleteForCreateMainAccount(cts *rest.Contexts) (interface{}, error) {
+	// 仅一级账号管理员可以complete二级账号的创建，因为二级账号需要归属一级账号
+	if err := a.checkActionPermission(cts, meta.RootAccount, meta.Find); err != nil {
+		return nil, err
+	}
+
 	// 获取请求参数
 	completeReq := new(proto.MainAccountCompleteReq)
 	if err := cts.DecodeInto(completeReq); err != nil {
@@ -43,6 +49,21 @@ func (a *applicationSvc) CompleteForCreateMainAccount(cts *rest.Contexts) (inter
 
 	if err := completeReq.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// extension params check
+	switch completeReq.Vendor {
+	case enumor.HuaWei, enumor.Azure, enumor.Zenlayer, enumor.Kaopu:
+		if _, ok := completeReq.Extension[completeReq.Vendor.GetMainAccountNameFieldName()]; !ok {
+			return nil, errf.Newf(errf.InvalidParameter, "extension %s is required", completeReq.Vendor.GetMainAccountNameFieldName())
+		}
+		if _, ok := completeReq.Extension[completeReq.Vendor.GetMainAccountIDFieldName()]; !ok {
+			return nil, errf.Newf(errf.InvalidParameter, "extension %s is required", completeReq.Vendor.GetMainAccountIDFieldName())
+		}
+	case enumor.Aws, enumor.Gcp:
+		// auto create main account, no need to check extension
+	default:
+		return nil, errf.Newf(errf.InvalidParameter, "unsupport %s vendor for now", completeReq.Vendor)
 	}
 
 	// 查询单据
