@@ -24,6 +24,7 @@ import (
 
 	protocore "hcm/pkg/api/core/account-set"
 	dataproto "hcm/pkg/api/data-service/account-set"
+	hsproto "hcm/pkg/api/hc-service/main-account"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/iam/sys"
@@ -112,8 +113,62 @@ func (a *ApplicationOfCreateMainAccount) createForAws(rootAccount *protocore.Bas
 }
 
 func (a *ApplicationOfCreateMainAccount) createForGcp(rootAccount *protocore.BaseRootAccount) (string, error) {
-	//todo 待添加自动化创建流程
-	return "", fmt.Errorf("gcp not implemented for create account auto")
+	req := a.req
+
+	// create gcp main account auto
+	fullRootAccount, err := a.Client.DataService().Gcp.RootAccount.Get(a.Cts.Kit, rootAccount.ID)
+	if err != nil {
+		return "", err
+	}
+
+	billingAccount := fullRootAccount.Extension.CloudBillingAccount
+	organization := fullRootAccount.Extension.CloudOrganization
+	if billingAccount == "" || organization == "" {
+		return "", fmt.Errorf("root account [%s] not have billing account or organization", rootAccount.ID)
+	}
+
+	accountResp, err := a.Client.HCService().Gcp.MainAccount.Create(a.Cts.Kit, &hsproto.CreateGcpMainAccountReq{
+		RootAccountID:       a.completeReq.RootAccountID,
+		Email:               req.Email,
+		ProjectName:         req.Extension[string(req.Vendor.GetMainAccountNameFieldName())],
+		CloudBillingAccount: billingAccount,
+		CloudOrganization:   organization,
+	})
+	if err != nil {
+		return "", fmt.Errorf("create gcp main account [%s] failed, err: %v, rid: %s", req.Extension[string(req.Vendor.GetMainAccountNameFieldName())], err, a.Cts.Kit.Rid)
+	}
+
+	// create gcp main account in dbs
+	extension := &dataproto.GcpMainAccountExtensionCreateReq{
+		CloudProjectID:   accountResp.ProjectID,
+		CloudProjectName: accountResp.ProjectName,
+	}
+	extension.EncryptSecretKey(a.Cipher)
+
+	result, err := a.Client.DataService().Gcp.MainAccount.Create(
+		a.Cts.Kit,
+		&dataproto.MainAccountCreateReq[dataproto.GcpMainAccountExtensionCreateReq]{
+			CloudID:           accountResp.ProjectID,
+			Email:             req.Email,
+			Managers:          req.Managers,
+			BakManagers:       req.BakManagers,
+			Site:              req.Site,
+			BusinessType:      req.BusinessType,
+			Status:            enumor.MainAccountStatusRUNNING,
+			ParentAccountName: rootAccount.Name,
+			ParentAccountID:   rootAccount.ID,
+			DeptID:            req.DeptID,
+			BkBizID:           req.BkBizID,
+			OpProductID:       req.OpProductID,
+			Memo:              req.Memo,
+			Extension:         extension,
+		},
+	)
+	if err != nil {
+		return "", err
+	}
+
+	return result.ID, nil
 }
 
 func (a *ApplicationOfCreateMainAccount) createForAzure(rootAccount *protocore.BaseRootAccount) (string, error) {

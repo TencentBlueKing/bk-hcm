@@ -116,7 +116,7 @@ func createAccount[T dataproto.MainAccountExtensionCreateReq, PT dataproto.Secre
 		}
 		accountID, err := svc.dao.MainAccount().CreateWithTx(cts.Kit, txn, account)
 		if err != nil {
-			return nil, fmt.Errorf("create account failed, err: %v", err)
+			return nil, fmt.Errorf("create main account failed, err: %v", err)
 		}
 
 		return accountID, nil

@@ -21,7 +21,10 @@ package gcp
 
 import (
 	"fmt"
+	"math/rand"
+	"regexp"
 	"strings"
+	"time"
 
 	"hcm/pkg/adaptor/types"
 )
@@ -76,4 +79,61 @@ func generateResourceFilter(field string, values []string) string {
 func parseSelfLinkToName(link string) string {
 	idx := strings.LastIndex(link, "/")
 	return link[idx+1:]
+}
+
+func ensureProjectPrefix(s string) string {
+	if !strings.HasPrefix(s, "projects/") {
+		return "projects/" + s
+	}
+	return s
+}
+
+func ensureBillingAccountPrefix(s string) string {
+	if !strings.HasPrefix(s, "billingAccounts/") {
+		return "billingAccounts/" + s
+	}
+	return s
+}
+
+func ensureOrganizationPrefix(s string) string {
+	if !strings.HasPrefix(s, "organizations/") {
+		return "organizations/" + s
+	}
+	return s
+}
+
+func formatToProjectID(name string) string {
+	name = strings.ToLower(name)
+	name = strings.ReplaceAll(name, " ", "-")
+	// projectId要求最低6个字符
+	if len(name) < 6 {
+		name = addRandomSuffix(name)
+	}
+	return name
+}
+
+// 给项目ID添加随机数后缀，规则为六位随机数，与GCP保持一致
+func addRandomSuffix(projectId string) string {
+	rand.Seed(time.Now().UnixNano())
+	return projectId + "-" + fmt.Sprintf("%06d", rand.Intn(900000)+100000)
+}
+
+// isRandomSuffix 判断是否已经添加过末尾随机数，如果有，则返回true，否则返回false
+func isRandomSuffix(projectId string) bool {
+	// 查找最后一个"-"的位置
+	lastDashIndex := -1
+	for i := len(projectId) - 1; i >= 0; i-- {
+		if projectId[i] == '-' {
+			lastDashIndex = i
+			break
+		}
+	}
+
+	if lastDashIndex == -1 || len(projectId)-lastDashIndex != 7 {
+		return false
+	}
+
+	pattern := `^-\d{6}$`
+	matched, _ := regexp.MatchString(pattern, projectId[lastDashIndex:])
+	return matched
 }
