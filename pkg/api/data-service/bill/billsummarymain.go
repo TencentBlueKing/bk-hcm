@@ -77,7 +77,7 @@ func (req *BillSummaryMainListReq) Validate() error {
 
 // BillSummaryMainListResult list result
 type BillSummaryMainListResult struct {
-	Count   uint64                   `json:"count,omitempty"`
+	Count   *uint64                  `json:"count,omitempty"`
 	Details []*BillSummaryMainResult `json:"details"`
 }
 

@@ -53,7 +53,7 @@ func (svc *service) ListBillSummaryRoot(cts *rest.Contexts) (interface{}, error)
 		details[indx] = toProtoPullerResult(&d)
 	}
 
-	return &dataproto.BillSummaryRootListResult{Details: details, Count: data.Count}, nil
+	return &dataproto.BillSummaryRootListResult{Details: details, Count: &data.Count}, nil
 }
 
 func toProtoPullerResult(m *tablebill.AccountBillSummaryRoot) *dataproto.BillSummaryRootResult {

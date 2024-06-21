@@ -342,6 +342,7 @@ const businesseMenus: RouteRecordRaw[] = [
                 },
                 meta: {
                   type: 'lb',
+                  rootRoutePath: '/business/loadbalancer/clb-view',
                 },
               },
               {
@@ -353,6 +354,7 @@ const businesseMenus: RouteRecordRaw[] = [
                 },
                 meta: {
                   type: 'listener',
+                  rootRoutePath: '/business/loadbalancer/clb-view',
                 },
               },
               {
@@ -364,6 +366,7 @@ const businesseMenus: RouteRecordRaw[] = [
                 },
                 meta: {
                   type: 'domain',
+                  rootRoutePath: '/business/loadbalancer/clb-view',
                 },
               },
             ],
@@ -388,6 +391,9 @@ const businesseMenus: RouteRecordRaw[] = [
                   import('@/views/business/load-balancer/group-view/specific-target-group-manager/index'),
                 props(route) {
                   return { ...route.params, ...route.query };
+                },
+                meta: {
+                  rootRoutePath: '/business/loadbalancer/group-view',
                 },
               },
             ],

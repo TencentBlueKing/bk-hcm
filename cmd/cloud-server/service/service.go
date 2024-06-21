@@ -38,6 +38,7 @@ import (
 	"hcm/cmd/cloud-server/service/assign"
 	asynctask "hcm/cmd/cloud-server/service/async-task"
 	"hcm/cmd/cloud-server/service/audit"
+	bandwidthpackage "hcm/cmd/cloud-server/service/bandwidth-package"
 	"hcm/cmd/cloud-server/service/bill"
 	"hcm/cmd/cloud-server/service/capability"
 	"hcm/cmd/cloud-server/service/cert"
@@ -305,6 +306,8 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 	cert.InitCertService(c)
 	loadbalancer.InitService(c)
 	asynctask.InitService(c)
+
+	bandwidthpackage.InitService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

@@ -65,7 +65,7 @@ func (svc *service) ListBillItemRaw(cts *rest.Contexts) (any, error) {
 		})
 	}
 
-	return &core.ListResultT[*bill.BillItemRaw]{Details: details, Count: cvt.PtrToVal(data.Count)}, nil
+	return &core.ListResultT[*bill.BillItemRaw]{Details: details, Count: cvt.PtrToVal(&data.Count)}, nil
 }
 
 // ListBillItem list bill item with options
@@ -94,7 +94,7 @@ func (svc *service) ListBillItem(cts *rest.Contexts) (interface{}, error) {
 		details[idx] = convBillItem(&d)
 	}
 
-	return &dataproto.BillItemBaseListResult{Details: details, Count: cvt.PtrToVal(data.Count)}, nil
+	return &dataproto.BillItemBaseListResult{Details: details, Count: cvt.PtrToVal(&data.Count)}, nil
 }
 
 // ListBillItemExt ...
@@ -152,7 +152,7 @@ func listBillItemExt[E bill.BillItemExtension](cts *rest.Contexts, svc *service,
 		}
 	}
 
-	return &core.ListResultT[*bill.BillItem[E]]{Details: details, Count: cvt.PtrToVal(data.Count)}, nil
+	return &core.ListResultT[*bill.BillItem[E]]{Details: details, Count: cvt.PtrToVal(&data.Count)}, nil
 }
 
 func convBillItemExt[E bill.BillItemExtension](m *tablebill.AccountBillItem) (*bill.BillItem[E], error) {

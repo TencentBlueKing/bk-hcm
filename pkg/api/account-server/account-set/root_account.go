@@ -66,7 +66,7 @@ type RootAccountUpdateReq struct {
 	Managers    []string        `json:"managers" validate:"omitempty,max=5"`
 	BakManagers []string        `json:"bak_managers" validate:"omitempty,max=5"`
 	Memo        *string         `json:"memo" validate:"omitempty"`
-	DeptID      int64           `json:"dept_id" validate:"required,min=1"`
+	DeptID      int64           `json:"dept_id" validate:"omitempty,min=1"`
 	Extension   json.RawMessage `json:"extension" validate:"omitempty"`
 }
 

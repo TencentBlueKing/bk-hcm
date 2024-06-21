@@ -58,11 +58,9 @@ func (cli *client) LoadBalancerWithListener(kt *kit.Kit, params *SyncBaseParams,
 	}
 	// 同步下属监听器
 	requiredLBCloudIds := params.CloudIDs
-	// 获取同步后的lb数据
-	params.CloudIDs = nil
 	lbList, err := cli.listLBFromDB(kt, params)
 	if err != nil {
-		logs.Errorf("fail to get lb from db after lb layer sync, before Listener sync, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("fail to get lb from db after lb layer sync, before listener sync, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
@@ -77,14 +75,14 @@ func (cli *client) LoadBalancerWithListener(kt *kit.Kit, params *SyncBaseParams,
 		return new(SyncResult), nil
 	}
 
-	lblParams := &SyncListenerOption{
+	lblParams := &SyncListenerBatchOption{
 		AccountID: params.AccountID,
 		Region:    params.Region,
 		LbInfos:   lbList,
 	}
 
 	if _, err = cli.listenerByLbBatch(kt, lblParams); err != nil {
-		logs.Errorf("fail to sync Listener of lbs(ids: %v), err: %v, rid: %s", requiredLBCloudIds, err, kt.Rid)
+		logs.Errorf("fail to sync listener of lbs, err: %v, ids: %v, rid: %s", err, requiredLBCloudIds, kt.Rid)
 		return nil, err
 	}
 
@@ -143,6 +141,7 @@ func (cli *client) RemoveLoadBalancerDeleteFromCloud(kt *kit.Kit, accountID stri
 			Limit: constant.BatchOperationMaxLimit,
 		},
 	}
+
 	for {
 		lbFromDB, err := cli.dbCli.Global.LoadBalancer.ListLoadBalancer(kt, req)
 		if err != nil {
@@ -284,7 +283,7 @@ func (cli *client) updateLoadBalancer(kt *kit.Kit, accountID string, region stri
 	var updateReq protocloud.TCloudClbBatchUpdateReq
 
 	for id, clb := range updateMap {
-		updateReq.Lbs = append(updateReq.Lbs, convCloudToDBUpdate(id, clb, vpcMap, subnetMap))
+		updateReq.Lbs = append(updateReq.Lbs, convCloudToDBUpdate(id, clb, vpcMap, subnetMap, region))
 	}
 	if err := cli.dbCli.TCloud.LoadBalancer.BatchUpdate(kt, &updateReq); err != nil {
 		logs.Errorf("[%s] call data service to update tcloud load balancer failed, err: %v, rid: %s",
@@ -333,20 +332,26 @@ func (cli *client) deleteLoadBalancer(kt *kit.Kit, accountID string, region stri
 }
 
 // listLBFromCloud list load balancer from cloud vendor
-func (cli *client) listLBFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]typeslb.TCloudClb, error) {
+func (cli *client) listLBFromCloud(kt *kit.Kit, params *SyncBaseParams) (result []typeslb.TCloudClb, err error) {
+
 	opt := &typeslb.TCloudListOption{
 		Region:   params.Region,
 		CloudIDs: params.CloudIDs,
 		Page: &typecore.TCloudPage{
 			Offset: 0,
-			Limit:  typecore.TCloudQueryLimit,
+			Limit:  constant.TCLBDescribeMax,
 		},
 	}
-	result, err := cli.cloudCli.ListLoadBalancer(kt, opt)
-	if err != nil {
-		logs.Errorf("[%s] list lb from cloud failed, err: %v, account: %s, opt: %v, rid: %s",
-			enumor.TCloud, err, params.AccountID, opt, kt.Rid)
-		return nil, err
+	// 指定id时一次只能查询20个
+	for _, cloudIds := range slice.Split(params.CloudIDs, constant.TCLBDescribeMax) {
+		opt.CloudIDs = cloudIds
+		batch, err := cli.cloudCli.ListLoadBalancer(kt, opt)
+		if err != nil {
+			logs.Errorf("[%s] list lb from cloud failed, err: %v, account: %s, opt: %v, rid: %s",
+				enumor.TCloud, err, params.AccountID, opt, kt.Rid)
+			return nil, err
+		}
+		result = append(result, batch...)
 	}
 
 	return result, nil
@@ -391,7 +396,7 @@ func convCloudToDBCreate(cloud typeslb.TCloudClb, accountID string, region strin
 		LoadBalancerType: cvt.PtrToVal(cloud.LoadBalancerType),
 		IPVersion:        cloud.GetIPVersion(),
 		Region:           region,
-		VpcID:            vpcMap[cloudVpcID].VpcID,
+		VpcID:            cvt.PtrToVal(vpcMap[cloudVpcID]).VpcID,
 		CloudVpcID:       cloudVpcID,
 		SubnetID:         subnetMap[cloudSubnetID],
 		CloudSubnetID:    cloudSubnetID,
@@ -422,12 +427,12 @@ func convCloudToDBCreate(cloud typeslb.TCloudClb, accountID string, region strin
 		lb.Zones = []string{cvt.PtrToVal(cloud.MasterZone.Zone)}
 	}
 
-	lb.Extension = convertTCloudExtension(cloud)
+	lb.Extension = convertTCloudExtension(cloud, region)
 
 	return lb
 }
 
-func convertTCloudExtension(cloud typeslb.TCloudClb) *corelb.TCloudClbExtension {
+func convertTCloudExtension(cloud typeslb.TCloudClb, region string) *corelb.TCloudClbExtension {
 	ext := &corelb.TCloudClbExtension{
 		SlaType:                  cloud.SlaType,
 		VipIsp:                   cloud.VipIsp,
@@ -453,7 +458,7 @@ func convertTCloudExtension(cloud typeslb.TCloudClb) *corelb.TCloudClbExtension 
 			}
 			ipList = append(ipList, corelb.SnatIp{SubnetId: snatIP.SubnetId, Ip: snatIP.Ip})
 		}
-		ext.SnatIps = ipList
+		ext.SnatIps = cvt.ValToPtr(ipList)
 	}
 
 	flagMap := make(map[string]bool)
@@ -464,11 +469,18 @@ func convertTCloudExtension(cloud typeslb.TCloudClb) *corelb.TCloudClbExtension 
 	// 逐个赋值flag
 	ext.DeleteProtect = cvt.ValToPtr(flagMap[constant.TCLBDeleteProtect])
 
+	// 跨域1.0 信息
+	if cvt.PtrToVal(cloud.TargetRegionInfo.Region) != region ||
+		!assert.IsPtrStringEqual(cloud.TargetRegionInfo.VpcId, cloud.VpcId) {
+		ext.TargetRegion = cloud.TargetRegionInfo.Region
+		ext.TargetCloudVpcID = cloud.TargetRegionInfo.VpcId
+	}
+
 	return ext
 }
 
 func convCloudToDBUpdate(id string, cloud typeslb.TCloudClb, vpcMap map[string]*common.VpcDB,
-	subnetMap map[string]string) *protocloud.LoadBalancerExtUpdateReq[corelb.TCloudClbExtension] {
+	subnetMap map[string]string, region string) *protocloud.LoadBalancerExtUpdateReq[corelb.TCloudClbExtension] {
 
 	cloudVpcID := cvt.PtrToVal(cloud.VpcId)
 	cloudSubnetID := cvt.PtrToVal(cloud.SubnetId)
@@ -481,7 +493,7 @@ func convCloudToDBUpdate(id string, cloud typeslb.TCloudClb, vpcMap map[string]*
 		CloudCreatedTime: cvt.PtrToVal(cloud.CreateTime),
 		CloudStatusTime:  cvt.PtrToVal(cloud.StatusTime),
 		CloudExpiredTime: cvt.PtrToVal(cloud.ExpireTime),
-		VpcID:            vpcMap[cloudVpcID].VpcID,
+		VpcID:            cvt.PtrToVal(vpcMap[cloudVpcID]).VpcID,
 		CloudVpcID:       cloudVpcID,
 		SubnetID:         subnetMap[cloudSubnetID],
 		CloudSubnetID:    cloudSubnetID,
@@ -509,7 +521,7 @@ func convCloudToDBUpdate(id string, cloud typeslb.TCloudClb, vpcMap map[string]*
 			}
 			ipList = append(ipList, corelb.SnatIp{SubnetId: snatIP.SubnetId, Ip: snatIP.Ip})
 		}
-		lb.Extension.SnatIps = ipList
+		lb.Extension.SnatIps = cvt.ValToPtr(ipList)
 	}
 
 	if len(cloud.LoadBalancerVips) != 0 {
@@ -535,6 +547,13 @@ func convCloudToDBUpdate(id string, cloud typeslb.TCloudClb, vpcMap map[string]*
 
 	if cloud.Egress != nil {
 		lb.Extension.Egress = cloud.Egress
+	}
+
+	// 跨域1.0 信息
+	if cvt.PtrToVal(cloud.TargetRegionInfo.Region) != region ||
+		!assert.IsPtrStringEqual(cloud.TargetRegionInfo.VpcId, cloud.VpcId) {
+		lb.Extension.TargetRegion = cloud.TargetRegionInfo.Region
+		lb.Extension.TargetCloudVpcID = cloud.TargetRegionInfo.VpcId
 	}
 	return &lb
 }
@@ -659,13 +678,21 @@ func isLBExtensionChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) 
 		return true
 	}
 
+	// 跨域1.0 信息
+	if !assert.IsPtrStringEqual(db.Extension.TargetRegion, cloud.TargetRegionInfo.Region) {
+		return true
+	}
+	if !assert.IsPtrStringEqual(db.Extension.TargetCloudVpcID, cloud.TargetRegionInfo.VpcId) {
+		return true
+	}
+
 	return false
 }
 
 // 云上SnatIP列表与本地对比
 func isSnatIPChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) bool {
-
-	if len(db.Extension.SnatIps) != len(cloud.SnatIps) {
+	dbSnatIps := cvt.PtrToVal(db.Extension.SnatIps)
+	if len(dbSnatIps) != len(cloud.SnatIps) {
 		return true
 	}
 	if len(cloud.SnatIps) == 0 {
@@ -674,7 +701,7 @@ func isSnatIPChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) bool 
 	}
 	// 转为map逐个比较
 	cloudSnatMap := cloudSnatSliceToMap(cloud.SnatIps)
-	for _, local := range db.Extension.SnatIps {
+	for _, local := range dbSnatIps {
 		delete(cloudSnatMap, local.Hash())
 	}
 	// 数量相等的情况下，应该刚好删除干净。因此非零就是存在不同

@@ -32,9 +32,9 @@ type MainAccountCommonCreateReq struct {
 	BakManagers  []string                       `json:"bak_managers" validate:"required,max=5"`
 	Site         enumor.MainAccountSiteType     `json:"site" validate:"required"`
 	BusinessType enumor.MainAccountBusinessType `json:"business_type" validate:"required"`
-	DeptID       int64                          `json:"dept_id" validate:"required"`
-	BkBizID      int64                          `json:"bk_biz_id" validate:"required"`
-	OpProductID  int64                          `json:"op_product_id" validate:"required"`
+	DeptID       int64                          `json:"dept_id" validate:"omitempty"`
+	BkBizID      int64                          `json:"bk_biz_id" validate:"omitempty"`
+	OpProductID  int64                          `json:"op_product_id" validate:"omitempty"`
 	Memo         *string                        `json:"memo" validate:"omitempty"`
 }
 
@@ -49,6 +49,10 @@ func (req *MainAccountCommonCreateReq) Validate() error {
 	}
 
 	if err := req.Site.Validate(); err != nil {
+		return err
+	}
+
+	if err := req.BusinessType.Validate(); err != nil {
 		return err
 	}
 

@@ -21,6 +21,7 @@ package rootaccount
 
 import (
 	"fmt"
+
 	"hcm/cmd/cloud-server/service/common"
 	proto "hcm/pkg/api/account-server/account-set"
 	dataproto "hcm/pkg/api/data-service/account-set"
@@ -31,7 +32,7 @@ import (
 	"hcm/pkg/rest"
 )
 
-// Update update main account with options
+// Update update root account with options
 func (s *service) Update(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.RootAccountUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -75,7 +76,7 @@ func (s *service) Update(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	if err != nil {
-		err := fmt.Errorf("update [%s] main account error: %s, rid: %s", baseInfo.Vendor, err.Error(), cts.Kit.Rid)
+		err := fmt.Errorf("update [%s] root account error: %s, rid: %s", baseInfo.Vendor, err.Error(), cts.Kit.Rid)
 		logs.Errorf(err.Error())
 		return nil, err
 	}

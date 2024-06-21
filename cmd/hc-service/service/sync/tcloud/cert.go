@@ -44,9 +44,10 @@ type certHandler struct {
 	cli ressync.Interface
 
 	// Prepare 构建参数
-	request *sync.TCloudSyncReq
-	syncCli tcloud.Interface
-	offset  uint64
+	request        *sync.TCloudSyncReq
+	syncCli        tcloud.Interface
+	offset         uint64
+	cachedCertList []cert.TCloudCert
 }
 
 var _ handler.Handler = new(certHandler)
@@ -87,7 +88,8 @@ func (hd *certHandler) Next(kt *kit.Kit) ([]string, error) {
 		cloudIDs = append(cloudIDs, converter.PtrToVal(one.CertificateId))
 	}
 
-	hd.offset += typecore.TCloudQueryLimit
+	hd.offset += uint64(len(result))
+	hd.cachedCertList = result
 	return cloudIDs, nil
 }
 
@@ -98,7 +100,12 @@ func (hd *certHandler) Sync(kt *kit.Kit, cloudIDs []string) error {
 		Region:    hd.request.Region,
 		CloudIDs:  cloudIDs,
 	}
-	if _, err := hd.syncCli.Cert(kt, params, &tcloud.SyncCertOption{BkBizID: constant.UnassignedBiz}); err != nil {
+	// 腾讯云证书api 不支持按id批量获取证书，因此将Next步骤中获取的证书直接传入
+	opt := &tcloud.SyncCertOption{
+		BkBizID:           constant.UnassignedBiz,
+		PreCachedCertList: hd.cachedCertList,
+	}
+	if _, err := hd.syncCli.Cert(kt, params, opt); err != nil {
 		logs.Errorf("sync tcloud cert failed, opt: %v, err: %v, rid: %s", params, err, kt.Rid)
 		return err
 	}

@@ -2,22 +2,23 @@ import { computed, defineComponent, ref, watch } from 'vue';
 // import components
 import { Button, Form, Input, Select, Slider } from 'bkui-vue';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
-import { BkButtonGroup } from 'bkui-vue/lib/button';
 import { EditLine, Plus } from 'bkui-vue/lib/icon';
 import ZoneSelector from '@/components/zone-selector/index.vue';
-import PrimaryStandZoneSelector from '../../components/common/primary-stand-zone-selector';
-import RegionVpcSelector from '../../components/common/region-vpc-selector';
+import PrimaryStandZoneSelector from '../../components/common/PrimaryStandZoneSelector';
+import RegionVpcSelector from '../../components/common/RegionVpcSelector';
 import SubnetSelector from '../../components/common/subnet-selector';
 import InputNumber from '@/components/input-number';
 import ConditionOptions from '../../components/common/condition-options.vue';
 import CommonCard from '@/components/CommonCard';
 import VpcReviewPopover from '../../components/common/VpcReviewPopover';
+import SelectedItemPreviewComp from '@/components/SelectedItemPreviewComp';
+import BandwidthPackageSelector from '../../components/common/BandwidthPackageSelector';
 // import types
 import { type ISubnetItem } from '../../cvm/children/SubnetPreviewDialog';
 import type { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
 // import constants
 import { CLB_SPECS, LB_ISP, ResourceTypeEnum } from '@/common/constant';
-import { LOAD_BALANCER_TYPE, ADDRESS_IP_VERSION, ZONE_TYPE, INTERNET_CHARGE_TYPE } from '@/constants/clb';
+import { LOAD_BALANCER_TYPE, ADDRESS_IP_VERSION, ZONE_TYPE, INTERNET_CHARGE_TYPE, ISP_TYPES } from '@/constants/clb';
 // import utils
 import bus from '@/common/bus';
 import { useI18n } from 'vue-i18n';
@@ -42,7 +43,6 @@ export default (formModel: ApplyClbModel) => {
   // define data
   const vpcId = ref('');
   const vpcData = ref(null); // 预览vpc
-  const isVpcPreviewDialogShow = ref(false);
   const subnetData = ref(null); // 预览子网
   const isSubnetPreviewDialogShow = ref(false);
   const formRef = ref();
@@ -70,7 +70,7 @@ export default (formModel: ApplyClbModel) => {
   };
 
   // use custom hooks
-  const { ispList, isResourceListLoading, quotas } = useFilterResource(formModel);
+  const { ispList, isResourceListLoading, quotas, isInquiryPricesLoading } = useFilterResource(formModel);
 
   // 当前地域下负载均衡的配额
   const currentLbQuota = computed(() => {
@@ -96,6 +96,12 @@ export default (formModel: ApplyClbModel) => {
       },
     ],
   };
+
+  // change-handle - 更新 sla_type
+  const handleSlaTypeChange = (v: '0' | '1') => {
+    if (v === '0') formModel.sla_type = 'shared';
+  };
+
   // form item options
   const formItemOptions = computed(() => [
     {
@@ -111,7 +117,7 @@ export default (formModel: ApplyClbModel) => {
             content: () => (
               <BkRadioGroup v-model={formModel.load_balancer_type}>
                 {LOAD_BALANCER_TYPE.map(({ label, value }) => (
-                  <BkRadioButton label={value} class='w120'>
+                  <BkRadioButton label={value} class='w110'>
                     {t(label)}
                   </BkRadioButton>
                 ))}
@@ -131,7 +137,7 @@ export default (formModel: ApplyClbModel) => {
                   return (
                     <BkRadioButton
                       label={value}
-                      class='w120'
+                      class='w110'
                       disabled={disabled}
                       v-bk-tooltips={{
                         content: t('当前地域不支持IPv6 NAT64'),
@@ -152,9 +158,10 @@ export default (formModel: ApplyClbModel) => {
           content: () => (
             <div class='component-with-preview'>
               <RegionVpcSelector
-                class='base'
+                class='flex-1'
                 v-model={formModel.cloud_vpc_id}
                 accountId={formModel.account_id}
+                vendor={formModel.vendor}
                 region={formModel.region}
                 onChange={handleVpcChange}
               />
@@ -163,74 +170,75 @@ export default (formModel: ApplyClbModel) => {
           ),
         },
         {
-          label: '可用区类型',
-          property: 'zoneType',
+          label: '可用区',
           description:
             '单可用区：仅支持一个可用区。\n主备可用区：主可用区是当前承载流量的可用区。备可用区默认不承载流量，主可用区不可用时才使用备可用区。',
-          hidden: isIntranet.value || formModel.address_ip_version !== 'IPV4',
-          content: () => (
-            <BkRadioGroup v-model={formModel.zoneType}>
-              {ZONE_TYPE.map(({ label, value, isDisabled }) => {
-                const disabled =
-                  typeof isDisabled === 'function' ? isDisabled(formModel.region, formModel.account_type) : false;
-                return (
-                  <BkRadioButton
-                    label={value}
-                    class='w120'
-                    disabled={disabled}
-                    v-bk-tooltips={{
-                      content:
-                        formModel.account_type === 'LEGACY' ? (
-                          <span>
-                            {t('仅标准型账号支持主备可用区')}账号类型说明，参考{' '}
-                            <a
-                              href='https://cloud.tencent.com/document/product/1199/49090#judge'
-                              target='_blank'
-                              style={{ color: '#3A84FF' }}>
-                              https://cloud.tencent.com/document/product/1199/49090#judge
-                            </a>
-                          </span>
-                        ) : (
-                          t('仅广州、上海、南京、北京、中国香港、首尔地域的 IPv4 版本的 CLB 支持主备可用区')
-                        ),
-                      disabled: !disabled,
-                    }}>
-                    {t(label)}
-                  </BkRadioButton>
-                );
-              })}
-            </BkRadioGroup>
-          ),
-        },
-        {
-          label: '可用区',
-          property: 'zones',
           hidden: !isIntranet.value && formModel.address_ip_version !== 'IPV4',
-          content: () => {
-            let zoneSelectorVNode = null;
-            if (isIntranet.value || formModel.zoneType === 'single') {
-              zoneSelectorVNode = (
-                <ZoneSelector
-                  v-model={formModel.zones}
-                  vendor={formModel.vendor}
-                  region={formModel.region}
-                  delayed={true}
-                  isLoading={isResourceListLoading.value}
-                />
-              );
-            } else {
-              zoneSelectorVNode = (
-                <PrimaryStandZoneSelector
-                  v-model:zones={formModel.zones}
-                  v-model:backupZones={formModel.backup_zones}
-                  vendor={formModel.vendor}
-                  region={formModel.region}
-                  onResetVipIsp={() => (formModel.vip_isp = '')}
-                />
-              );
-            }
-            return zoneSelectorVNode;
-          },
+          content: () => (
+            <div class='flex-row'>
+              {!isIntranet.value && (
+                <Select v-model={formModel.zoneType} clearable={false} filterable={false} class='w220'>
+                  {ZONE_TYPE.map(({ label, value, isDisabled }) => {
+                    const disabled =
+                      typeof isDisabled === 'function' ? isDisabled(formModel.region, formModel.account_type) : false;
+                    return (
+                      <Option
+                        id={value}
+                        name={label}
+                        disabled={disabled}
+                        v-bk-tooltips={{
+                          boundary: 'parent',
+                          placement: 'right',
+                          content:
+                            formModel.account_type === 'LEGACY' ? (
+                              <span>
+                                {t('仅标准型账号支持主备可用区')}账号类型说明，参考{' '}
+                                <a
+                                  href='https://cloud.tencent.com/document/product/1199/49090#judge'
+                                  target='_blank'
+                                  style={{ color: '#3A84FF' }}>
+                                  https://cloud.tencent.com/document/product/1199/49090#judge
+                                </a>
+                              </span>
+                            ) : (
+                              t('仅广州、上海、南京、北京、中国香港、首尔地域的 IPv4 版本的 CLB 支持主备可用区')
+                            ),
+                          disabled: !disabled,
+                        }}>
+                        {t(label)}
+                      </Option>
+                    );
+                  })}
+                </Select>
+              )}
+              {(function () {
+                let zoneSelectorVNode = null;
+                if (isIntranet.value || formModel.zoneType === '0') {
+                  zoneSelectorVNode = (
+                    <ZoneSelector
+                      class='flex-1'
+                      v-model={formModel.zones}
+                      vendor={formModel.vendor}
+                      region={formModel.region}
+                      delayed={true}
+                      isLoading={isResourceListLoading.value}
+                    />
+                  );
+                } else {
+                  zoneSelectorVNode = (
+                    <PrimaryStandZoneSelector
+                      class='flex-1'
+                      v-model:zones={formModel.zones}
+                      v-model:backupZones={formModel.backup_zones}
+                      vendor={formModel.vendor}
+                      region={formModel.region}
+                    />
+                  );
+                }
+                return zoneSelectorVNode;
+              })()}
+            </div>
+          ),
         },
         {
           label: '子网',
@@ -240,7 +248,7 @@ export default (formModel: ApplyClbModel) => {
           content: () => (
             <div class='component-with-preview'>
               <SubnetSelector
-                class='base'
+                class='flex-1'
                 v-model={formModel.cloud_subnet_id}
                 bizId={formModel.bk_biz_id}
                 vpcId={vpcId.value}
@@ -269,53 +277,79 @@ export default (formModel: ApplyClbModel) => {
           required: true,
           property: 'vip_isp',
           hidden: isIntranet.value,
-          description: '运营商类型选择范围由主可用区, 备可用区, IP版本决定',
-          content: () => (
-            <Select v-model={formModel.vip_isp} loading={isResourceListLoading.value}>
-              {ispList.value?.map((item) => (
-                <Option key={item} id={item} name={LB_ISP[item]}>
-                  {LB_ISP[item]}
-                </Option>
-              ))}
-            </Select>
-          ),
+          content: () => {
+            return (
+              <BkRadioGroup v-model={formModel.vip_isp}>
+                {ISP_TYPES.map((item) => (
+                  <BkRadioButton
+                    key={item}
+                    label={item}
+                    class='w110'
+                    disabled={!ispList.value?.includes(item)}
+                    v-bk-tooltips={(function () {
+                      if (!formModel.zones) {
+                        return { content: '请选择可用区', disabled: formModel.zones };
+                      }
+                      return { content: '当前地域不支持', disabled: ispList.value?.includes(item) };
+                    })()}>
+                    {LB_ISP[item]}
+                  </BkRadioButton>
+                ))}
+              </BkRadioGroup>
+            );
+          },
         },
-        {
-          label: '负载均衡规格类型',
-          required: true,
-          property: 'sla_type',
-          description:
-            '共享型实例：按照规格提供性能保障，单实例最大支持并发连接数5万、每秒新建连接数5000、每秒查询数（QPS）5000。\n性能容量型实例：按照规格提供性能保障，单实例最大可支持并发连接数1000万、每秒新建连接数100万、每秒查询数（QPS）30万。',
-          hidden: isIntranet.value,
-          content: () => (
-            <>
-              <BkButtonGroup>
+        [
+          {
+            label: '负载均衡规格类型',
+            required: true,
+            property: 'slaType',
+            description:
+              '共享型实例：按照规格提供性能保障，单实例最大支持并发连接数5万、每秒新建连接数5000、每秒查询数（QPS）5000。\n性能容量型实例：按照规格提供性能保障，单实例最大可支持并发连接数1000万、每秒新建连接数100万、每秒查询数（QPS）30万。',
+            hidden: isIntranet.value,
+            content: () => (
+              <Select
+                v-model={formModel.slaType}
+                filterable={false}
+                clearable={false}
+                class='w220'
+                onChange={handleSlaTypeChange}>
+                <Option id='0' name={t('共享型')} />
+                <Option
+                  id='1'
+                  name={t('性能容量型')}
+                  disabled={!formModel.vip_isp}
+                  v-bk-tooltips={{ content: '请选择运营商类型', disabled: !!formModel.vip_isp, boundary: 'parent' }}
+                />
+              </Select>
+            ),
+          },
+          {
+            label: '实例规格',
+            required: true,
+            property: 'sla_type',
+            hidden: formModel.slaType !== '1',
+            content: () => {
+              if (formModel.sla_type !== 'shared') {
+                return (
+                  <SelectedItemPreviewComp
+                    content={CLB_SPECS[formModel.sla_type]}
+                    onClick={() => bus.$emit('showLbSpecTypeSelectDialog')}
+                  />
+                );
+              }
+              return (
                 <Button
-                  selected={formModel.sla_type === 'shared'}
-                  onClick={() => (formModel.sla_type = 'shared')}
-                  class='w120'>
-                  {t('共享型')}
-                </Button>
-                <Button
-                  selected={formModel.sla_type !== 'shared'}
                   onClick={() => bus.$emit('showLbSpecTypeSelectDialog')}
                   disabled={!formModel.vip_isp}
-                  v-bk-tooltips={{ content: '请选择运营商类型', disabled: !!formModel.vip_isp }}
-                  class='w120'>
-                  {t('性能容量型')}
+                  v-bk-tooltips={{ content: '请选择运营商类型', disabled: !!formModel.vip_isp }}>
+                  <Plus class='f24' />
+                  {t('选择实例规格')}
                 </Button>
-              </BkButtonGroup>
-              {formModel.sla_type !== 'shared' && (
-                <div class='flex-row align-items-center'>
-                  <span class='text-desc'>规格为:</span>
-                  <Button text theme='primary' class='ml10' onClick={() => bus.$emit('showLbSpecTypeSelectDialog')}>
-                    {CLB_SPECS[formModel.sla_type]} <EditLine class='ml5 text-link' />
-                  </Button>
-                </div>
-              )}
-            </>
-          ),
-        },
+              );
+            },
+          },
+        ],
         {
           label: '弹性公网 IP',
           // 弹性IP，仅内网可绑定。公网类型无法指定IP。绑定弹性IP后，内网CLB当做公网CLB使用
@@ -368,7 +402,11 @@ export default (formModel: ApplyClbModel) => {
           property: 'internet_charge_type',
           hidden: (!isIntranet.value && formModel.account_type === 'LEGACY') || isIntranet.value,
           content: () => (
-            <BkRadioGroup v-model={formModel.internet_charge_type}>
+            <BkRadioGroup
+              v-model={formModel.internet_charge_type}
+              onChange={(val) => {
+                if (val !== 'BANDWIDTH_PACKAGE') formModel.bandwidth_package_id = undefined;
+              }}>
               {INTERNET_CHARGE_TYPE.map(({ label, value }) => (
                 <BkRadioButton
                   key={value}
@@ -383,6 +421,19 @@ export default (formModel: ApplyClbModel) => {
                 </BkRadioButton>
               ))}
             </BkRadioGroup>
+          ),
+        },
+        {
+          label: '共享带宽包',
+          required: true,
+          property: 'bandwidth_package_id',
+          hidden: formModel.internet_charge_type !== 'BANDWIDTH_PACKAGE',
+          content: () => (
+            <BandwidthPackageSelector
+              v-model={formModel.bandwidth_package_id}
+              accountId={formModel.account_id}
+              region={formModel.region}
+            />
           ),
         },
         {
@@ -554,5 +605,12 @@ export default (formModel: ApplyClbModel) => {
     },
   );
 
-  return { vpcData, isVpcPreviewDialogShow, subnetData, isSubnetPreviewDialogShow, ApplyClbForm, formRef };
+  return {
+    vpcData,
+    subnetData,
+    isSubnetPreviewDialogShow,
+    ApplyClbForm,
+    formRef,
+    isInquiryPricesLoading,
+  };
 };

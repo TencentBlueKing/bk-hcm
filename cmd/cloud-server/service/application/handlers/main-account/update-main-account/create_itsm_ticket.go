@@ -47,21 +47,21 @@ func (a *ApplicationOfUpdateMainAccount) RenderItsmForm() (string, error) {
 
 	formItems := []formItem{
 		{Label: "云厂商", Value: req.Vendor.GetNameZh()},
-		{Label: "站点类型", Value: string(oldAccount.Site)},
+		{Label: "站点类型", Value: oldAccount.Site.GetMainAccountSiteTypeName()},
 		{Label: "账号邮箱", Value: oldAccount.Email},
-		{Label: "变更信息如下: ", Value: "        "},
+		{Label: "变更信息如下", Value: "        "},
 	}
 
 	// 管理员变更
 	if !reflect.DeepEqual(req.Managers, oldAccount.Managers) {
 		formItems = append(formItems,
 			formItem{
-				Label: "管理员变更前: ",
-				Value: fmt.Sprintf(" %s", strings.Join(req.Managers, ",")),
+				Label: "管理员变更前",
+				Value: strings.Join(oldAccount.Managers, ","),
 			},
 			formItem{
-				Label: "管理员变更后: ",
-				Value: fmt.Sprintf(" %s", strings.Join(oldAccount.Managers, ",")),
+				Label: "管理员变更后",
+				Value: strings.Join(req.Managers, ","),
 			},
 		)
 
@@ -71,25 +71,25 @@ func (a *ApplicationOfUpdateMainAccount) RenderItsmForm() (string, error) {
 	if !reflect.DeepEqual(req.BakManagers, oldAccount.BakManagers) {
 		formItems = append(formItems,
 			formItem{
-				Label: "备份管理员变更前: ",
-				Value: fmt.Sprintf(" %s", strings.Join(oldAccount.BakManagers, ",")),
+				Label: "备份管理员变更前",
+				Value: strings.Join(oldAccount.BakManagers, ","),
 			},
 			formItem{
-				Label: "备份管理员变更后: ",
-				Value: fmt.Sprintf(" %s", strings.Join(req.BakManagers, ",")),
+				Label: "备份管理员变更后",
+				Value: strings.Join(req.BakManagers, ","),
 			},
 		)
 	}
 
 	// 组织架构变更
-	if req.DeptID != oldAccount.DeptID {
+	if req.DeptID != 0 && req.DeptID != oldAccount.DeptID {
 		formItems = append(formItems,
 			formItem{
-				Label: "组织架构变更前: ",
+				Label: "组织架构变更前",
 				Value: fmt.Sprintf("%d", oldAccount.DeptID),
 			},
 			formItem{
-				Label: "组织架构变更后: ",
+				Label: "组织架构变更后",
 				Value: fmt.Sprintf("%d", req.DeptID),
 			},
 		)
@@ -110,12 +110,12 @@ func (a *ApplicationOfUpdateMainAccount) RenderItsmForm() (string, error) {
 
 		formItems = append(formItems,
 			formItem{
-				Label: "组织架构变更前: ",
-				Value: fmt.Sprintf("        %s", oldBkName),
+				Label: "业务变更前",
+				Value: oldBkName,
 			},
 			formItem{
-				Label: "组织架构变更后: ",
-				Value: fmt.Sprintf("        %s,", bkName),
+				Label: "业务变更后",
+				Value: bkName,
 			},
 		)
 	}

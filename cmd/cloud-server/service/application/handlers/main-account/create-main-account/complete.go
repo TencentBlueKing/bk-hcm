@@ -79,14 +79,24 @@ func (a *ApplicationOfCreateMainAccount) Complete() (enumor.ApplicationStatus, m
 		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
 	}
 
+	// 自动创建的账号请求里没有云上账号Id/CloudId，需要从数据库里查
+	account, err := a.Client.DataService().Global.MainAccount.GetBasicInfo(a.Cts.Kit, accountID)
+	if err != nil {
+		err := fmt.Errorf("create account success, accountId: %s, "+
+			"but get main account basic info failed, err: %v, rid: %s", accountID, err, a.Cts.Kit.Rid)
+		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
+	}
+
 	req := &meta.RegisterResCreatorActionInst{
 		Type: string(sys.MainAccount),
 		ID:   accountID,
-		Name: a.req.Extension[a.req.Vendor.GetMainAccountIDFieldName()],
+		Name: account.CloudID,
 	}
 	if err = a.authorizer.RegisterResourceCreatorAction(a.Cts.Kit, req); err != nil {
-		return enumor.DeliverError, map[string]interface{}{"error": fmt.Sprintf("create account success, "+
-			"but add create action associate permissions failed, err: %v", err)}, err
+		err := fmt.Errorf("create account success, accountId: %s, "+
+			"but add create action associate permissions failed, err: %v, rid: %s", accountID, err, a.Cts.Kit.Rid)
+		logs.Errorf(err.Error())
+		return enumor.DeliverError, map[string]interface{}{"error": err}, err
 	}
 
 	// todo 异步发送邮件通知用户
@@ -108,11 +118,12 @@ func (a *ApplicationOfCreateMainAccount) createForGcp(rootAccount *protocore.Bas
 
 func (a *ApplicationOfCreateMainAccount) createForAzure(rootAccount *protocore.BaseRootAccount) (string, error) {
 	req := a.req
+	comReq := a.completeReq
 
 	extension := &dataproto.AzureMainAccountExtensionCreateReq{
-		CloudSubscriptionID:   req.Extension[a.Vendor().GetMainAccountIDFieldName()],
-		CloudSubscriptionName: req.Extension[a.Vendor().GetMainAccountNameFieldName()],
-		CloudInitPassword:     req.Extension[a.Vendor().GetMainAccountInitPasswordFieldName()],
+		CloudSubscriptionID:   comReq.Extension[a.Vendor().GetMainAccountIDFieldName()],
+		CloudSubscriptionName: comReq.Extension[a.Vendor().GetMainAccountNameFieldName()],
+		CloudInitPassword:     comReq.Extension[a.Vendor().GetMainAccountInitPasswordFieldName()],
 	}
 	extension.EncryptSecretKey(a.Cipher)
 
@@ -144,11 +155,12 @@ func (a *ApplicationOfCreateMainAccount) createForAzure(rootAccount *protocore.B
 
 func (a *ApplicationOfCreateMainAccount) createForHuaWei(rootAccount *protocore.BaseRootAccount) (string, error) {
 	req := a.req
+	comReq := a.completeReq
 
 	extension := &dataproto.HuaWeiMainAccountExtensionCreateReq{
-		CloudMainAccountID:   req.Extension[a.Vendor().GetMainAccountIDFieldName()],
-		CloudMainAccountName: req.Extension[a.Vendor().GetMainAccountNameFieldName()],
-		CloudInitPassword:    req.Extension[a.Vendor().GetMainAccountInitPasswordFieldName()],
+		CloudMainAccountID:   comReq.Extension[a.Vendor().GetMainAccountIDFieldName()],
+		CloudMainAccountName: comReq.Extension[a.Vendor().GetMainAccountNameFieldName()],
+		CloudInitPassword:    comReq.Extension[a.Vendor().GetMainAccountInitPasswordFieldName()],
 	}
 	extension.EncryptSecretKey(a.Cipher)
 
@@ -180,11 +192,12 @@ func (a *ApplicationOfCreateMainAccount) createForHuaWei(rootAccount *protocore.
 
 func (a *ApplicationOfCreateMainAccount) createForZenlayer(rootAccount *protocore.BaseRootAccount) (string, error) {
 	req := a.req
+	comReq := a.completeReq
 
 	extension := &dataproto.ZenlayerMainAccountExtensionCreateReq{
-		CloudMainAccountID:   req.Extension[a.Vendor().GetMainAccountIDFieldName()],
-		CloudMainAccountName: req.Extension[a.Vendor().GetMainAccountNameFieldName()],
-		CloudInitPassword:    req.Extension[a.Vendor().GetMainAccountInitPasswordFieldName()],
+		CloudMainAccountID:   comReq.Extension[a.Vendor().GetMainAccountIDFieldName()],
+		CloudMainAccountName: comReq.Extension[a.Vendor().GetMainAccountNameFieldName()],
+		CloudInitPassword:    comReq.Extension[a.Vendor().GetMainAccountInitPasswordFieldName()],
 	}
 	extension.EncryptSecretKey(a.Cipher)
 
@@ -216,11 +229,12 @@ func (a *ApplicationOfCreateMainAccount) createForZenlayer(rootAccount *protocor
 
 func (a *ApplicationOfCreateMainAccount) createForKaopu(rootAccount *protocore.BaseRootAccount) (string, error) {
 	req := a.req
+	comReq := a.completeReq
 
 	extension := &dataproto.KaopuMainAccountExtensionCreateReq{
-		CloudMainAccountID:   req.Extension[a.Vendor().GetMainAccountIDFieldName()],
-		CloudMainAccountName: req.Extension[a.Vendor().GetMainAccountNameFieldName()],
-		CloudInitPassword:    req.Extension[a.Vendor().GetMainAccountInitPasswordFieldName()],
+		CloudMainAccountID:   comReq.Extension[a.Vendor().GetMainAccountIDFieldName()],
+		CloudMainAccountName: comReq.Extension[a.Vendor().GetMainAccountNameFieldName()],
+		CloudInitPassword:    comReq.Extension[a.Vendor().GetMainAccountInitPasswordFieldName()],
 	}
 	extension.EncryptSecretKey(a.Cipher)
 

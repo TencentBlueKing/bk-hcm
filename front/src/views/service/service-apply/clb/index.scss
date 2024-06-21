@@ -28,10 +28,6 @@
       display: flex;
       align-items: center;
 
-      .base {
-        flex: 1;
-      }
-
       .preview-btn {
         position: absolute;
         left: calc(100% + 16px);
@@ -128,6 +124,9 @@
     .info-wrap {
       position: relative;
       padding: 0 24px;
+      display: flex;
+      align-items: center;
+      
       .label {
         margin-right: 5px;
         &.has-tips {
@@ -182,8 +181,11 @@
 .w88 {
   width: 88px;
 }
-.w120 {
-  width: 120px;
+.w110 {
+  width: 110px;
+}
+.w220 {
+  width: 220px;
 }
 .w240 {
   width: 240px;

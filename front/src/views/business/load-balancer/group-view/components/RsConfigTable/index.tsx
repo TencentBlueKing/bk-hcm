@@ -26,6 +26,7 @@ export default defineComponent({
     noSearch: Boolean,
     noDisabled: Boolean, // 禁用所有disabled
     onlyShow: Boolean, // 只用于显示(基本信息页面使用)
+    lbDetail: Object,
   },
   emits: ['update:rsList', 'update:deletedRsList'],
   setup(props, { emit }) {
@@ -135,7 +136,15 @@ export default defineComponent({
         field: 'port',
         isDefaultShow: true,
         render: ({ cell, data, index }: { cell: number; data: any; index: number }) => {
-          if (props.onlyShow) return cell;
+          const port = loadBalancerStore.listenerDetailWithTargetGroup?.end_port
+            ? `${cell}-${
+                cell +
+                loadBalancerStore.listenerDetailWithTargetGroup?.end_port -
+                loadBalancerStore.listenerDetailWithTargetGroup?.port
+              }`
+            : cell;
+
+          if (props.onlyShow) return port;
           return (
             <FormItem
               property={`rs_list.${index}.port`}
@@ -145,11 +154,9 @@ export default defineComponent({
                 { validator: (v: number) => v >= 1 && v <= 65535, message: '端口范围为1-65535', trigger: 'change' },
               ]}>
               <Input
-                modelValue={cell}
+                modelValue={port}
                 onChange={handleUpdate(data.id, 'port')}
                 disabled={!props.noDisabled && !(isAdd.value || (isAddRs.value && data.isNew))}
-                type='number'
-                class='no-number-control'
               />
             </FormItem>
           );
@@ -216,6 +223,7 @@ export default defineComponent({
         vpcIds: [vpc_id.value],
         port: props.port,
         rsList: props.rsList,
+        isCorsV2: props.lbDetail?.extension?.snat_pro,
       });
     };
 

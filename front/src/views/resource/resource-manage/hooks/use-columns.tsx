@@ -770,7 +770,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'private_ipv4_addresses',
       idFiled: 'id',
       onlyShowOnList: false,
-      render: (data) => [...data.private_ipv4_addresses, ...data.private_ipv6_addresses].join(','),
+      render: (data) =>
+        [...(data.private_ipv4_addresses || []), ...(data.private_ipv6_addresses || [])].join(',') || '--',
       sort: false,
     }),
     {
@@ -778,14 +779,15 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'vendor',
       isDefaultShow: true,
       onlyShowOnList: true,
-      render: ({ data }: any) => [...data.public_ipv4_addresses, ...data.public_ipv6_addresses].join(',') || '--',
+      render: ({ data }: any) =>
+        [...(data.public_ipv4_addresses || []), ...(data.public_ipv6_addresses || [])].join(',') || '--',
     },
     {
       label: '所属VPC',
       field: 'cloud_vpc_ids',
       isDefaultShow: true,
       onlyShowOnList: true,
-      render: ({ data }: any) => data.cloud_vpc_ids.join(',') || '--',
+      render: ({ data }: any) => data.cloud_vpc_ids?.join(',') || '--',
     },
     {
       label: '云厂商',
@@ -1324,6 +1326,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '端口',
       field: 'port',
       isDefaultShow: true,
+      render: ({ data, cell }: any) => `${cell}${data.end_port ? `-${data.end_port}` : ''}`,
     },
     {
       label: '均衡方式',
@@ -1605,25 +1608,9 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       isDefaultShow: true,
       width: 300,
       render: ({ data }: any) => {
-        const {
-          lb_name,
-          private_ipv4_addresses,
-          private_ipv6_addresses,
-          public_ipv4_addresses,
-          public_ipv6_addresses,
-        } = data;
-        if (public_ipv4_addresses.length > 0) {
-          return `${lb_name}（${public_ipv4_addresses.join(',')}）`;
-        }
-        if (public_ipv6_addresses.length > 0) {
-          return `${lb_name}（${public_ipv6_addresses.join(',')}）`;
-        }
-        if (private_ipv4_addresses.length > 0) {
-          return `${lb_name}（${private_ipv4_addresses.join(',')}）`;
-        }
-        if (private_ipv6_addresses.length > 0) {
-          return `${lb_name}（${private_ipv6_addresses.join(',')}）`;
-        }
+        const vip = getInstVip(data);
+        const { lb_name } = data;
+        return `${lb_name}（${vip}）`;
       },
     },
     {
@@ -1649,6 +1636,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '端口',
       field: 'port',
       isDefaultShow: true,
+      render: ({ data, cell }: any) => `${cell}${data.end_port ? `-${data.end_port}` : ''}`,
     },
     {
       label: '异常端口数',
@@ -1936,6 +1924,123 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
   ];
 
+  const billsRootAccountSummaryColumns = [
+    {
+      label: '一级账号ID',
+      field: 'root_account_id',
+    },
+    {
+      label: '一级账号名称',
+      field: 'root_account_name',
+    },
+    {
+      label: '账号状态',
+      field: 'state',
+    },
+    {
+      label: '账单同步（人民币-元）当月',
+      field: 'current_month_rmb_cost_synced',
+    },
+    {
+      label: '账单同步（人民币-元）上月',
+      field: 'last_month_rmb_cost_synced',
+    },
+    {
+      label: '账单同步（美金-美元）当月',
+      field: 'current_month_cost_synced',
+    },
+    {
+      label: '账单同步（美金-美元）上月',
+      field: 'last_month_cost_synced',
+    },
+    {
+      label: '账单同步环比',
+      field: 'month_on_month_value',
+    },
+    {
+      label: '当前账单人民币（元）',
+      field: 'current_month_rmb_cost',
+    },
+    {
+      label: '当前账单美金（美元）',
+      field: 'current_month_cost',
+    },
+    {
+      label: '调账人民币（元）',
+      field: 'adjustment_cost',
+    },
+    {
+      label: '调账美金（美元）',
+      field: 'adjustment_cost',
+    },
+  ];
+
+  const billsMainAccountSummaryColumns = [
+    {
+      label: '二级账号ID',
+      field: 'main_account_id',
+    },
+    {
+      label: '二级账号名称',
+      field: 'main_account_name',
+    },
+    {
+      label: '运营产品',
+      field: 'product_name',
+    },
+    {
+      label: '已确认账单人民币（元）',
+      field: 'current_month_rmb_cost_synced',
+    },
+    {
+      label: '已确认账单美金（美元）',
+      field: 'current_month_cost_synced',
+    },
+    {
+      label: '当前账单人民币（元）',
+      field: 'current_month_rmb_cost',
+    },
+    {
+      label: '当前账单美金（美元）',
+      field: 'current_month_cost',
+    },
+  ];
+
+  const billsSummaryOperationRecordColumns = [
+    {
+      label: '操作时间',
+      field: 'operationTime',
+    },
+    {
+      label: '状态',
+      field: 'status',
+    },
+    {
+      label: '账单月份',
+      field: 'billingMonth',
+    },
+    {
+      label: '云厂商',
+      field: 'cloudVendor',
+    },
+    {
+      label: '一级账号ID',
+      field: 'primaryAccountId',
+    },
+    {
+      label: '操作人',
+      field: 'operator',
+    },
+    {
+      label: '人民币（元）',
+      field: 'rmbAmount',
+    },
+    {
+      label: '美金（美元）',
+      field: 'usdAmount',
+    },
+  ];
+
   const columnsMap = {
     vpc: vpcColumns,
     subnet: subnetColumns,
@@ -1960,6 +2065,9 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     firstAccount: firstAccountColumns,
     secondaryAccount: secondaryAccountColumns,
     myApply: myApplyColumns,
+    billsRootAccountSummary: billsRootAccountSummaryColumns,
+    billsMainAccountSummary: billsMainAccountSummaryColumns,
+    billsSummaryOperationRecord: billsSummaryOperationRecordColumns,
   };
 
   let columns = (columnsMap[type] || []).filter((column: any) => !isSimpleShow || !column.onlyShowOnList);

@@ -10,16 +10,25 @@ PATCH /api/v1/cloud/bizs/{bk_biz_id}/vendors/tcloud/load_balancers/{id}
 
 ### 输入参数
 
-| 参数名称                         | 参数类型    | 必选 | 描述                                                                                                      |
-|------------------------------|---------|----|---------------------------------------------------------------------------------------------------------|
-| bk_biz_id                    | int64   | 是  | 业务ID                                                                                                    |
-| id                           | string  | 是  | 负载均衡ID                                                                                                  |
-| name                         | string  | 否  | 名字                                                                                                      |
-| internet_charge_type         | string  | 否  | 计费模式 TRAFFIC_POSTPAID_BY_HOUR 按流量按小时后计费 ; BANDWIDTH_POSTPAID_BY_HOUR 按带宽按小时后计费; BANDWIDTH_PACKAGE 带宽包计费 |
-| internet_max_bandwidth_out   | int64   | 否  | 最大出带宽，单位Mbps                                                                                            |
-| delete_protect               | boolean | 否  | 删除保护                                                                                                    |
-| load_balancer_pass_to_target | boolean | 否  | Target是否放通来自CLB的流量。开启放通（true）：只验证CLB上的安全组；不开启放通（false）：需同时验证CLB和后端实例上的安全组。                              |
-| memo                         | string  | 否  | 备注                                                                                                      |
+| 参数名称                         | 参数类型    | 必选 | 描述                                                                         |
+|------------------------------|---------|----|----------------------------------------------------------------------------|
+| bk_biz_id                    | int64   | 是  | 业务ID                                                                       |
+| id                           | string  | 是  | 负载均衡ID                                                                     |
+| name                         | string  | 否  | 名字                                                                         |
+| internet_charge_type         | string  | 否  | 计费模式                                                                       |
+| internet_max_bandwidth_out   | int64   | 否  | 最大出带宽，单位Mbps                                                               |
+| delete_protect               | boolean | 否  | 删除保护                                                                       |
+| load_balancer_pass_to_target | boolean | 否  | Target是否放通来自CLB的流量。开启放通（true）：只验证CLB上的安全组；不开启放通（false）：需同时验证CLB和后端实例上的安全组。 |
+| snat_pro                     | boolean | 否  | 跨域2.0 开关                                                                   |
+| target_region                | string  | 否  | 开启跨域1.0后，修改目标地域信息                                                          |
+| target_vpc                   | string  | 否  | 开启跨域1.0后，修改目标VPC云上ID，返回0表示基础网络                                             |
+| memo                         | string  | 否  | 备注                                                                         |
+
+#### internet_charge_type 计费模式取值范围
+
+- `TRAFFIC_POSTPAID_BY_HOUR` 按流量按小时后计费
+- `BANDWIDTH_POSTPAID_BY_HOUR` 按带宽按小时后计费
+- `BANDWIDTH_PACKAGE` 带宽包计费
 
 接口调用者可以根据以上参数自行根据更新场景设置更新的字段，除了ID之外的更新字段至少需要填写一个。
 

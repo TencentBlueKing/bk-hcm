@@ -56,21 +56,24 @@ export default defineComponent({
           content: () => (
             <div class='review-detail'>
               <div class='detail-item'>
-                <span class='item-label'>资源 ID</span>:<span class='item-value'>{props.data.cloud_id}</span>
+                <div class='item-label'>资源 ID</div>
+                <div class='item-value'>{props.data.cloud_id}</div>
               </div>
               <div class='detail-item'>
-                <span class='item-label'>名称</span>:<span class='item-value'>{props.data.name}</span>
+                <div class='item-label'>名称</div>
+                <div class='item-value'>{props.data.name}</div>
               </div>
               <div class='detail-item'>
-                <span class='item-label'>管控区域 ID</span>:<span class='item-value'>{props.data.bk_cloud_id}</span>
+                <div class='item-label'>管控区域 ID</div>
+                <div class='item-value'>{props.data.bk_cloud_id}</div>
               </div>
               <div class='detail-item'>
-                <span class='item-label'>IPv4 CIDR</span>:
-                <span class='item-value'>
+                <div class='item-label'>IPv4 CIDR</div>
+                <div class='item-value'>
                   {props.data.extension?.cidr?.map((obj: any) => (
                     <p>{obj.cidr}</p>
                   ))}
-                </span>
+                </div>
               </div>
             </div>
           ),

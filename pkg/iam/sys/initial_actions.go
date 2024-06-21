@@ -122,12 +122,13 @@ func genResManagementActions() []client.ResourceAction {
 		RelatedActions:       []client.ActionID{BizAccess},
 		Version:              1,
 	}}
-	// TODO 开启clb和编排相关功能后放开注释
-	// actions = append(actions, genCLBResManActions()...)
+
+	actions = append(actions, genCLBResManActions()...)
 
 	// 证书管理的Actions
 	actions = append(actions, genCertResManActions()...)
 
+	// TODO 开启编排相关功能后放开注释
 	// 资源编排的Actions
 	// actions = append(actions, genArrangeResManActions()...)
 	actions = append(actions, []client.ResourceAction{{
@@ -159,7 +160,6 @@ func genResManagementActions() []client.ResourceAction {
 	return actions
 }
 
-/*
 func genCLBResManActions() []client.ResourceAction {
 	return []client.ResourceAction{
 		{
@@ -189,7 +189,6 @@ func genCLBResManActions() []client.ResourceAction {
 		},
 	}
 }
-*/
 
 // genCertResManActions 业务-证书管理的Actions
 func genCertResManActions() []client.ResourceAction {
@@ -290,7 +289,7 @@ func genResourceAccessActions() []client.ResourceAction {
 	}}
 	actions = append(actions, genIaaSResAccessActions()...)
 	// TODO 开启clb和编排相关功能后放开注释
-	// actions = append(actions, genCLBResAccessActions()...)
+	actions = append(actions, genCLBResAccessActions()...)
 	actions = append(actions, genCertResAccessActions()...)
 	actions = append(actions, []client.ResourceAction{{
 		ID:                   RecycleBinAccess,
@@ -413,7 +412,6 @@ func genIaaSResAccessActions() []client.ResourceAction {
 	}
 }
 
-/*
 func genCLBResAccessActions() []client.ResourceAction {
 	return []client.ResourceAction{
 		{
@@ -443,7 +441,6 @@ func genCLBResAccessActions() []client.ResourceAction {
 		},
 	}
 }
-*/
 
 // genCertResAccessActions 资源-证书管理的Actions
 func genCertResAccessActions() []client.ResourceAction {

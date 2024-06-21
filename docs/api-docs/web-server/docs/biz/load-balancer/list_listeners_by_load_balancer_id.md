@@ -194,8 +194,6 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/{lb_id}/listeners/list
         "scheduler": "IP_HASH",
         "domain_num": 50,
         "url_num": 100,
-        "rs_weight_zero_num": 2,
-        "rs_weight_non_zero_num": 8,
         "binding_status": "binding",
         "memo": "cvm test",
         "creator": "Jim",
@@ -237,29 +235,27 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/{lb_id}/listeners/list
 
 #### data.details[n]
 
-| 参数名称                | 参数类型       | 描述                             |
-|------------------------|--------------|--------------------------------|
-| id                     | string       | 资源ID                           |
-| cloud_id               | string       | 云资源ID                          |
-| name                   | string       | 名称                             |
-| vendor                 | string       | 供应商（枚举值：tcloud）                |
-| account_id             | string       | 账号ID                           |
-| bk_biz_id              | int          | 业务ID                           |
-| lb_id                  | string       | 负载均衡ID                         |
-| cloud_lb_id            | string       | 云负载均衡ID                        |
-| protocol               | string       | 协议                             |
-| port                   | string       | 端口                             |
-| default_domain         | string       | 默认域名                           |
-| zones                  | string array | 可用区数组                          |
-| target_group_id        | string       | 目标组ID                           |
-| scheduler              | string array | 负载均衡方式数组                     |
-| domain_num             | int          | 域名数量                           |
-| url_num                | int          | URL数量                          |
-| rs_weight_zero_num     | int          | 权重为0的RS数量                   |
-| rs_weight_non_zero_num | int          | 权重不为0的RS数量                 |
-| binding_status         | string       | 绑定状态(success:成功 failed:失败 binding:绑定中 partial_failed:部分失败) |
-| memo                   | string       | 备注                             |
-| creator                | string       | 创建者                            |
-| reviser                | string       | 修改者                            |
-| created_at             | string       | 创建时间，标准格式：2006-01-02T15:04:05Z |
-| updated_at             | string       | 修改时间，标准格式：2006-01-02T15:04:05Z |
+| 参数名称            | 参数类型         | 描述                                                         |
+|-----------------|--------------|------------------------------------------------------------|
+| id              | string       | 资源ID                                                       |
+| cloud_id        | string       | 云资源ID                                                      |
+| name            | string       | 名称                                                         |
+| vendor          | string       | 供应商（枚举值：tcloud）                                            |
+| account_id      | string       | 账号ID                                                       |
+| bk_biz_id       | int          | 业务ID                                                       |
+| lb_id           | string       | 负载均衡ID                                                     |
+| cloud_lb_id     | string       | 云负载均衡ID                                                    |
+| protocol        | string       | 协议                                                         |
+| port            | string       | 端口                                                         |
+| default_domain  | string       | 默认域名                                                       |
+| zones           | string array | 可用区数组                                                      |
+| target_group_id | string       | 目标组ID                                                      |
+| scheduler       | string array | 负载均衡方式数组                                                   |
+| domain_num      | int          | 域名数量                                                       |
+| url_num         | int          | URL数量                                                      |
+| binding_status  | string       | 绑定状态(success:成功 failed:失败 binding:绑定中 partial_failed:部分失败) |
+| memo            | string       | 备注                                                         |
+| creator         | string       | 创建者                                                        |
+| reviser         | string       | 修改者                                                        |
+| created_at      | string       | 创建时间，标准格式：2006-01-02T15:04:05Z                             |
+| updated_at      | string       | 修改时间，标准格式：2006-01-02T15:04:05Z                             |

@@ -37,19 +37,10 @@ func (s *service) ListRootAccountSummary(cts *rest.Contexts) (interface{}, error
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-	var expressions []filter.RuleFactory
-	expressions = append(expressions, []filter.RuleFactory{
-		filter.AtomRule{
-			Field: "bill_year",
-			Op:    filter.Equal.Factory(),
-			Value: req.BillYear,
-		},
-		filter.AtomRule{
-			Field: "bill_month",
-			Op:    filter.Equal.Factory(),
-			Value: req.BillMonth,
-		},
-	}...)
+	expressions := []filter.RuleFactory{
+		tools.RuleEqual("bill_year", req.BillYear),
+		tools.RuleEqual("bill_month", req.BillMonth),
+	}
 	if req.Filter != nil {
 		expressions = append(expressions, req.Filter)
 	}

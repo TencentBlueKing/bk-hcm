@@ -53,7 +53,7 @@ func (svc *service) ListBillSummaryVersion(cts *rest.Contexts) (interface{}, err
 		details[indx] = toProtoPullerResult(&d)
 	}
 
-	return &dataproto.BillSummaryVersionListResult{Details: details, Count: data.Count}, nil
+	return &dataproto.BillSummaryVersionListResult{Details: details, Count: &data.Count}, nil
 }
 
 func toProtoPullerResult(m *tablebill.AccountBillSummaryVersion) *dataproto.BillSummaryVersionResult {

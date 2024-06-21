@@ -1,0 +1,46 @@
+.security-relate-page {
+  max-height: 100%;
+  .top-bar {
+    display: flex;
+    align-items: center;
+  }
+
+  .table-wrap {
+    margin-top: 16px;
+    height: calc(100% - 48px);
+
+    .has-selection {
+      padding: 0;
+      .common-card-wrap {
+        padding: 0;
+      }
+      .bk-table .bk-table-head .bk-checkbox {
+        vertical-align: middle;
+      }
+      .bk-table .bk-table-head tr th:nth-of-type(2) .cell {
+        padding-left: 8px;
+      }
+      .bk-table .bk-table-body .cell.selection {
+        text-align: right;
+        .bk-checkbox {
+          vertical-align: middle;
+        }
+      }
+      .bk-table .bk-table-body tr td:nth-of-type(2) .cell {
+        padding-left: 8px;
+      }
+    }
+  }
+
+  .mw88 {
+    min-width: 88px;
+  }
+
+  .ml12 {
+    margin-left: 12px;
+  }
+
+  .f22 {
+    font-size: 22px;
+  }
+}

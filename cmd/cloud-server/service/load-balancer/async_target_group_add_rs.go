@@ -47,6 +47,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/classifier"
 	"hcm/pkg/tools/counter"
 	"hcm/pkg/tools/hooks/handler"
 	"hcm/pkg/tools/slice"
@@ -101,59 +102,63 @@ func (svc *lbSvc) buildAddTCloudTarget(kt *kit.Kit, body json.RawMessage, accoun
 	}
 
 	// 检查传入的Target是否已存在
-	if err := svc.checkAddTarget(kt, req, accountID); err != nil {
+	if err := svc.checkTargetExists(kt, req, accountID); err != nil {
 		return nil, err
 	}
 
 	targetIDs := make([]string, 0)
 	lbIDs := make([]string, 0)
 	targetGroupRsListMap := make(map[string][]*dataproto.TargetBaseReq, 0)
-	targetGroupRuleRelMap := make(map[string][]corelb.BaseTargetListenerRuleRel, 0)
-	for _, item := range req.TargetGroups {
-		if _, ok := targetGroupRuleRelMap[item.TargetGroupID]; !ok {
-			// 根据目标组ID，获取目标组绑定的监听器、规则列表
-			ruleRelReq := &core.ListReq{
-				Filter: tools.EqualExpression("target_group_id", item.TargetGroupID),
-				Page:   core.NewDefaultBasePage(),
-			}
-			ruleRelList, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroupListenerRel(kt, ruleRelReq)
-			if err != nil {
-				logs.Errorf("list tcloud listener url rule failed, tgItem: %+v, err: %v, rid: %s", item, err, kt.Rid)
-				return nil, err
-			}
-			targetGroupRuleRelMap[item.TargetGroupID] = ruleRelList.Details
-		}
 
+	groupIds := slice.Map(req.TargetGroups, func(tg *cslb.TCloudBatchAddTargetReq) string { return tg.TargetGroupID })
+
+	// 根据目标组ID，获取目标组绑定的监听器、规则列表
+	ruleRelReq := &core.ListReq{
+		Filter: tools.ContainersExpression("target_group_id", groupIds),
+		Page:   core.NewDefaultBasePage(),
+	}
+	ruleRelList, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroupListenerRel(kt, ruleRelReq)
+	if err != nil {
+		logs.Errorf("list tcloud listener url rule failed, tgIds: %+v, err: %v, rid: %s", groupIds, err, kt.Rid)
+		return nil, err
+	}
+	// 按目标组id分类
+	targetGroupRuleRelMap := classifier.ClassifySlice(ruleRelList.Details,
+		func(r corelb.BaseTargetListenerRuleRel) string { return r.TargetGroupID })
+
+	for _, group := range req.TargetGroups {
 		// 该目标组尚未绑定监听器及规则，不需要云端操作
-		ruleRelList := targetGroupRuleRelMap[item.TargetGroupID]
-		if len(ruleRelList) == 0 {
-			rsIDs, err := svc.batchCreateTargetDb(kt, item.Targets, item.TargetGroupID, accountID)
+		tgId := group.TargetGroupID
+		relList := targetGroupRuleRelMap[tgId]
+		if len(relList) == 0 {
+			rsIDs, err := svc.batchCreateTargetDb(kt, group.Targets, tgId, accountID)
 			if err != nil {
+				logs.Errorf("fail to insert target, err: %v, rid: %s", err, kt.Rid)
 				return nil, err
 			}
 			targetIDs = append(targetIDs, rsIDs.IDs...)
 		} else {
-			lbIDs = slice.Unique(slice.Map(ruleRelList, func(rel corelb.BaseTargetListenerRuleRel) string {
-				return rel.LbID
-			}))
-			targetGroupRsListMap[item.TargetGroupID] = append(targetGroupRsListMap[item.TargetGroupID], item.Targets...)
+			for _, rel := range relList {
+				lbIDs = append(lbIDs, rel.LbID)
+			}
+			targetGroupRsListMap[tgId] = append(targetGroupRsListMap[tgId], group.Targets...)
 		}
-	}
 
+	}
 	// 都是未绑定监听器的目标组，不需要云端操作
 	if len(targetGroupRsListMap) == 0 {
 		return &corelb.TargetOperateResult{TargetIDs: targetIDs}, nil
 	}
 
 	// 目标组需要属于同一个负载均衡
-	if len(lbIDs) > 1 {
+	if len(slice.Unique(lbIDs)) > 1 {
 		return nil, errf.New(errf.InvalidParameter, "target group need belong to the same load balancer")
 	}
 
 	return svc.buildAddTCloudTargetTasks(kt, accountID, lbIDs[0], targetGroupRsListMap)
 }
 
-func (svc *lbSvc) checkAddTarget(kt *kit.Kit, req *cslb.TCloudTargetBatchCreateReq, accountID string) error {
+func (svc *lbSvc) checkTargetExists(kt *kit.Kit, req *cslb.TCloudTargetBatchCreateReq, accountID string) error {
 	for _, tgItem := range req.TargetGroups {
 		cloudInstIDs := make([]string, 0)
 		ports := make([]int64, 0)
@@ -193,7 +198,6 @@ func (svc *lbSvc) batchCreateTargetDb(kt *kit.Kit, targets []*dataproto.TargetBa
 		return nil, err
 	}
 
-	// 检查RS是否已绑定该目标组
 	rsReq := &dataproto.TargetBatchCreateReq{}
 	for _, item := range addRsParams.RsList {
 		rsReq.Targets = append(rsReq.Targets, &dataproto.TargetBaseReq{
@@ -257,13 +261,7 @@ func (svc *lbSvc) initFlowAddTargetByLbID(kt *kit.Kit, accountID, lbID string,
 					Vendor:                      enumor.TCloud,
 					TCloudBatchOperateTargetReq: *addRsParams,
 				},
-				Retry: &tableasync.Retry{
-					Enable: true,
-					Policy: &tableasync.RetryPolicy{
-						Count:        3,
-						SleepRangeMS: [2]uint{100, 200},
-					},
-				},
+				Retry: tableasync.NewRetryWithPolicy(3, 100, 200),
 			}
 			if len(lastActionID) > 0 {
 				tmpTask.DependOn = []action.ActIDType{lastActionID}

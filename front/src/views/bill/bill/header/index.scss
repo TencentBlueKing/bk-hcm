@@ -1,0 +1,42 @@
+.header-container {
+  padding: 0 24px;
+  background-color: #fff;
+  box-shadow: 0 3px 4px 0 #0000000a;
+
+  .title-wrap {
+    display: flex;
+    align-items: center;
+    height: 52px;
+
+    .title {
+      margin-right: 22px;
+      font-size: 16px;
+      color: #313238;
+    }
+
+    .bk-date-picker {
+      width: 120px;
+
+      .bk-date-picker-editor {
+        background: #f0f1f5;
+      }
+    }
+  }
+
+  .link-wrap {
+    .link-item {
+      display: inline-block;
+      margin-right: 24px;
+      padding: 0 8px;
+      height: 36px;
+      line-height: 36px;
+      font-size: 14px;
+      color: #63656e;
+
+      &.active {
+        color: #3a84ff;
+        border-bottom: 2px solid #3a84ff;
+      }
+    }
+  }
+}

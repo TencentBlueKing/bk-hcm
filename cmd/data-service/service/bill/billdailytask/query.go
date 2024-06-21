@@ -53,7 +53,7 @@ func (svc *service) ListBillDailyPullTask(cts *rest.Contexts) (interface{}, erro
 		details[indx] = toProtoPullerResult(&d)
 	}
 
-	return &dataproto.BillDailyPullTaskListResult{Details: details, Count: data.Count}, nil
+	return &dataproto.BillDailyPullTaskListResult{Details: details, Count: &data.Count}, nil
 }
 
 func toProtoPullerResult(m *tablebill.AccountBillDailyPullTask) *dataproto.BillDailyPullTaskResult {

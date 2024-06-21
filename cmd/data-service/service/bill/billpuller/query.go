@@ -53,7 +53,7 @@ func (svc *service) ListBillPuller(cts *rest.Contexts) (interface{}, error) {
 		details[indx] = toProtoPullerResult(&d)
 	}
 
-	return &dataproto.BillPullerListResult{Details: details, Count: data.Count}, nil
+	return &dataproto.BillPullerListResult{Details: details, Count: &data.Count}, nil
 }
 
 func toProtoPullerResult(m *tablebill.AccountBillPuller) *dataproto.BillPullerResult {

@@ -36,15 +36,18 @@ var LoadBalancerTargetColumns = utils.MergeColumns(nil, LoadBalancerTargetColumn
 var LoadBalancerTargetColumnsDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
 	{Column: "account_id", NamedC: "account_id", Type: enumor.String},
-
-	{Column: "inst_type", NamedC: "inst_type", Type: enumor.String},
-	{Column: "inst_id", NamedC: "inst_id", Type: enumor.String},
-	{Column: "cloud_inst_id", NamedC: "cloud_inst_id", Type: enumor.String},
-	{Column: "inst_name", NamedC: "inst_name", Type: enumor.String},
 	{Column: "target_group_id", NamedC: "target_group_id", Type: enumor.String},
 	{Column: "cloud_target_group_id", NamedC: "cloud_target_group_id", Type: enumor.String},
+
+	{Column: "ip", NamedC: "ip", Type: enumor.String},
 	{Column: "port", NamedC: "port", Type: enumor.Numeric},
 	{Column: "weight", NamedC: "weight", Type: enumor.Numeric},
+
+	{Column: "cloud_inst_id", NamedC: "cloud_inst_id", Type: enumor.String},
+	{Column: "inst_name", NamedC: "inst_name", Type: enumor.String},
+	{Column: "inst_type", NamedC: "inst_type", Type: enumor.String},
+	{Column: "inst_id", NamedC: "inst_id", Type: enumor.String},
+
 	{Column: "private_ip_address", NamedC: "private_ip_address", Type: enumor.Json},
 	{Column: "public_ip_address", NamedC: "public_ip_address", Type: enumor.Json},
 	{Column: "cloud_vpc_ids", NamedC: "cloud_vpc_ids", Type: enumor.Json},
@@ -62,14 +65,15 @@ type LoadBalancerTargetTable struct {
 	ID        string `db:"id" validate:"lte=64" json:"id"`
 	AccountID string `db:"account_id" validate:"lte=64" json:"account_id"`
 
+	TargetGroupID      string            `db:"target_group_id" validate:"lte=255" json:"target_group_id"`
+	CloudTargetGroupID string            `db:"cloud_target_group_id" validate:"lte=255" json:"cloud_target_group_id"`
+	IP                 string            `db:"ip" validate:"lte=255" json:"ip"`
+	Port               int64             `db:"port" json:"port"`
+	Weight             *int64            `db:"weight" json:"weight"`
 	InstType           enumor.InstType   `db:"inst_type" validate:"lte=255" json:"inst_type"`
 	InstID             string            `db:"inst_id" validate:"lte=255" json:"inst_id"`
 	CloudInstID        string            `db:"cloud_inst_id" validate:"lte=255" json:"cloud_inst_id"`
 	InstName           string            `db:"inst_name" validate:"lte=255" json:"inst_name"`
-	TargetGroupID      string            `db:"target_group_id" validate:"lte=255" json:"target_group_id"`
-	CloudTargetGroupID string            `db:"cloud_target_group_id" validate:"lte=255" json:"cloud_target_group_id"`
-	Port               int64             `db:"port" json:"port"`
-	Weight             *int64            `db:"weight" json:"weight"`
 	PrivateIPAddress   types.StringArray `db:"private_ip_address" json:"private_ip_address"`
 	PublicIPAddress    types.StringArray `db:"public_ip_address" json:"public_ip_address"`
 	CloudVpcIDs        types.StringArray `db:"cloud_vpc_ids" json:"cloud_vpc_ids"`
@@ -87,32 +91,21 @@ func (lbt LoadBalancerTargetTable) TableName() table.Name {
 	return table.LoadBalancerTargetTable
 }
 
-// InsertValidate load_balancer_target table when insert.
+// InsertValidate load_balancer_target table when inserted.
 func (lbt LoadBalancerTargetTable) InsertValidate() error {
-	if err := validator.Validate.Struct(lbt); err != nil {
-		return err
-	}
 
-	if len(lbt.CloudInstID) == 0 {
-		return errors.New("cloud_inst_id is required")
-	}
-
-	if len(lbt.CloudTargetGroupID) == 0 {
-		return errors.New("cloud_target_group_id is required")
+	if len(lbt.IP) == 0 {
+		return errors.New("ip is required")
 	}
 
 	if len(lbt.Creator) == 0 {
 		return errors.New("creator is required")
 	}
-
-	return nil
+	return validator.Validate.Struct(lbt)
 }
 
 // UpdateValidate load_balancer_target table when update.
 func (lbt LoadBalancerTargetTable) UpdateValidate() error {
-	if err := validator.Validate.Struct(lbt); err != nil {
-		return err
-	}
 
 	if len(lbt.Creator) != 0 {
 		return errors.New("creator can not update")
@@ -122,5 +115,5 @@ func (lbt LoadBalancerTargetTable) UpdateValidate() error {
 		return errors.New("reviser can not be empty")
 	}
 
-	return nil
+	return validator.Validate.Struct(lbt)
 }

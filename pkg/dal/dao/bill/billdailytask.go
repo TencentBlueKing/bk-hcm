@@ -114,7 +114,7 @@ func (abpDao AccountBillDailyPullTaskDao) List(kt *kit.Kit, opt *types.ListOptio
 			return nil, err
 		}
 
-		return &typesbill.ListAccountBillDailyPullTaskDetails{Count: &count}, nil
+		return &typesbill.ListAccountBillDailyPullTaskDetails{Count: count}, nil
 	}
 
 	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)

@@ -33,11 +33,11 @@ import (
 	"hcm/pkg/tools/converter"
 )
 
-// TCloudBatchCreateReq tcloud batch create req.
-type TCloudBatchCreateReq struct {
+// TCloudLoadBalancerCreateReq tcloud batch create req.
+type TCloudLoadBalancerCreateReq struct {
 	AccountID string  `json:"account_id" validate:"required"`
+	BkBizID   int64   `json:"bk_biz_id"`
 	Region    string  `json:"region" validate:"required"`
-	BkBizID   int64   `json:"bk_biz_id" validate:"required"`
 	Name      *string `json:"name" validate:"required,max=60"`
 
 	LoadBalancerType typelb.TCloudLoadBalancerType   `json:"load_balancer_type" validate:"required"`
@@ -52,17 +52,25 @@ type TCloudBatchCreateReq struct {
 	Vip                     *string  `json:"vip" validate:"omitempty"`
 	CloudEipID              *string  `json:"cloud_eip_id" validate:"omitempty"`
 	VipIsp                  *string  `json:"vip_isp" validate:"omitempty"`
-	InternetChargeType      *string  `json:"internet_charge_type" validate:"omitempty"`
 	InternetMaxBandwidthOut *int64   `json:"internet_max_bandwidth_out" validate:"omitempty"`
 	BandwidthPackageID      *string  `json:"bandwidth_package_id" validate:"omitempty"`
-	SlaType                 *string  `json:"sla_type" validate:"omitempty"`
-	AutoRenew               *bool    `json:"auto_renew" validate:"omitempty"`
-	RequireCount            *uint64  `json:"require_count" validate:"omitempty"`
-	Memo                    string   `json:"memo" validate:"omitempty"`
+	BandwidthpkgSubType     *string  `json:"bandwidthpkg_sub_type" validate:"omitempty"`
+
+	SlaType      *string `json:"sla_type" validate:"omitempty"`
+	AutoRenew    *bool   `json:"auto_renew" validate:"omitempty"`
+	RequireCount *uint64 `json:"require_count" validate:"omitempty"`
+	Memo         string  `json:"memo" validate:"omitempty"`
+
+	InternetChargeType *typelb.TCloudLoadBalancerNetworkChargeType `json:"internet_charge_type" validate:"omitempty"`
 }
 
 // Validate request.
-func (req *TCloudBatchCreateReq) Validate() error {
+func (req *TCloudLoadBalancerCreateReq) Validate(bizRequired bool) error {
+
+	if bizRequired && req.BkBizID <= 0 {
+		return errors.New("bk_biz_id is required")
+	}
+
 	switch req.LoadBalancerType {
 	case typelb.InternalLoadBalancerType:
 		// 内网校验
@@ -72,6 +80,10 @@ func (req *TCloudBatchCreateReq) Validate() error {
 	case typelb.OpenLoadBalancerType:
 		if converter.PtrToVal(req.CloudEipID) != "" {
 			return errors.New("eip id only support load balancer type 'INTERNAL'")
+		}
+		// 	公网不能指定子网
+		if converter.PtrToVal(req.CloudSubnetID) != "" {
+			return errors.New("subnet id is not supported for load balancer type 'OPEN'")
 		}
 	default:
 		return fmt.Errorf("unknown load balancer type: '%s'", req.LoadBalancerType)
@@ -176,6 +188,11 @@ type TCloudLBUpdateReq struct {
 	SnatPro                  *bool `json:"snat_pro" validate:"omitempty"`
 	DeleteProtect            *bool `json:"delete_protect" validate:"omitempty"`
 	ModifyClassicDomain      *bool `json:"modify_classic_domain" validate:"omitempty"`
+
+	// 跨域1.0 region 非空表示支持跨域
+	TargetRegion *string `json:"target_region,omitempty"`
+	// 跨域1.0 为0表示基础网络
+	TargetCloudVpcID *string `json:"target_vpc,omitempty"`
 }
 
 // Validate tcloud security group update request.
@@ -281,6 +298,7 @@ type ListenerWithRuleCreateReq struct {
 	Url           string                        `json:"url" validate:"omitempty"`
 	SniSwitch     enumor.SniType                `json:"sni_switch" validate:"omitempty"`
 	Certificate   *corelb.TCloudCertificateInfo `json:"certificate" validate:"omitempty"`
+	EndPort       uint64                        `json:"end_port" validate:"omitempty"`
 }
 
 // Validate 校验创建监听器的参数
@@ -371,18 +389,25 @@ func (r BatchRegisterTCloudTargetReq) Validate() error {
 
 // RegisterTarget ...
 type RegisterTarget struct {
-	CloudInstID      string   `json:"cloud_inst_id,omitempty" validate:"required"`
-	InstType         string   `json:"inst_type,omitempty" validate:"required"`
-	Port             int64    `json:"port" validate:"required"`
-	Weight           int64    `json:"weight" validate:"required"`
-	Zone             string   `json:"zone,omitempty" validate:"omitempty"`
-	InstName         string   `json:"inst_name,omitempty" validate:"omitempty"`
-	PrivateIPAddress []string `json:"private_ip_address,omitempty" validate:"omitempty"`
-	PublicIPAddress  []string `json:"public_ip_address,omitempty" validate:"omitempty"`
+	CloudInstID      string          `json:"cloud_inst_id,omitempty" validate:"omitempty"`
+	TargetType       enumor.InstType `json:"inst_type,omitempty" validate:"required"`
+	EniIp            string          `json:"eni_ip,omitempty" validate:"omitempty"`
+	Port             int64           `json:"port" validate:"required"`
+	Weight           int64           `json:"weight" validate:"required"`
+	Zone             string          `json:"zone,omitempty" validate:"omitempty"`
+	InstName         string          `json:"inst_name,omitempty" validate:"omitempty"`
+	PrivateIPAddress []string        `json:"private_ip_address,omitempty" validate:"omitempty"`
+	PublicIPAddress  []string        `json:"public_ip_address,omitempty" validate:"omitempty"`
 }
 
 // Validate ...
 func (r RegisterTarget) Validate() error {
+	if r.TargetType == enumor.EniInstType && len(r.EniIp) == 0 {
+		return errors.New("eni_ip not set for eni type target")
+	}
+	if r.TargetType == enumor.CvmInstType && len(r.CloudInstID) == 0 {
+		return errors.New("cloud_inst_id not set for cvm type target")
+	}
 	return validator.Validate.Struct(r)
 }
 
@@ -476,4 +501,30 @@ type TCloudListLoadBalancerQuotaReq struct {
 // Validate request.
 func (req *TCloudListLoadBalancerQuotaReq) Validate() error {
 	return validator.Validate.Struct(req)
+}
+
+// TCloudCreateSnatIpReq ...
+type TCloudCreateSnatIpReq struct {
+	AccountID           string           `json:"account_id" validate:"required"`
+	Region              string           `json:"region" validate:"required"`
+	LoadBalancerCloudId string           `json:"load_balancer_cloud_id" validate:"required"`
+	SnatIPs             []*corelb.SnatIp `json:"snat_ips" validate:"required,min=1,dive,required"`
+}
+
+// Validate ...
+func (r *TCloudCreateSnatIpReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// TCloudDeleteSnatIpReq ...
+type TCloudDeleteSnatIpReq struct {
+	AccountID           string   `json:"account_id" validate:"required"`
+	Region              string   `json:"region" validate:"required"`
+	LoadBalancerCloudId string   `json:"load_balancer_cloud_id" validate:"required"`
+	Ips                 []string `json:"ips" validate:"required,min=1,dive,required"`
+}
+
+// Validate ...
+func (r *TCloudDeleteSnatIpReq) Validate() error {
+	return validator.Validate.Struct(r)
 }

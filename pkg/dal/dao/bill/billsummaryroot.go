@@ -114,7 +114,7 @@ func (a AccountBillSummaryRootDao) List(kt *kit.Kit, opt *types.ListOption) (
 			return nil, err
 		}
 
-		return &typesbill.ListAccountBillSummaryRootDetails{Count: &count}, nil
+		return &typesbill.ListAccountBillSummaryRootDetails{Count: count}, nil
 	}
 
 	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)

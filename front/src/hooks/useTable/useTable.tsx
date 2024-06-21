@@ -5,9 +5,9 @@ import { Loading, SearchSelect, Table } from 'bkui-vue';
 import type { Column } from 'bkui-vue/lib/table/props';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import { computed, defineComponent, reactive, ref, watch } from 'vue';
-import './index.scss';
+import cssModule from './index.module.scss';
 import Empty from '@/components/empty';
-import { useAccountStore, useResourceStore, useBusinessStore } from '@/store';
+import { useResourceStore, useBusinessStore } from '@/store';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useWhereAmI, Senarios } from '../useWhereAmI';
@@ -16,6 +16,8 @@ import { get as lodash_get } from 'lodash-es';
 import { VendorReverseMap } from '@/common/constant';
 import { LB_NETWORK_TYPE_REVERSE_MAP, LISTENER_BINDING_STATUS_REVERSE_MAP, SCHEDULER_REVERSE_MAP } from '@/constants';
 import usePagination from '../usePagination';
+import { defaults } from 'lodash';
+import { fetchData } from '@pluginHandler/useTable';
 
 export interface IProp {
   // search-select 配置项
@@ -40,8 +42,10 @@ export interface IProp {
   };
   // 请求相关字段
   requestOption: {
-    // 资源类型
-    type: string;
+    // 资源类型，与 apiMethod 互斥
+    type?: string;
+    // 请求方法，与 type 互斥
+    apiMethod?: <T>(...args: any) => Promise<T>;
     // 排序参数
     sortOption?: {
       sort: string; // 需要排序的字段
@@ -60,25 +64,31 @@ export interface IProp {
       fuzzySwitch?: boolean;
     };
     // 请求需要的额外荷载数据
-    extension?: Record<string, any>;
+    extension?: Record<string, any> | (() => Record<string, any>);
     // 钩子 - 可以根据当前请求结果异步更新 dataList
     resolveDataListCb?: (...args: any) => Promise<any>;
     // 钩子 - 可以根据当前请求结果异步更新 pagination.count
     resolvePaginationCountCb?: (...args: any) => Promise<any>;
     // 列表数据的路径，如 data.details
     dataPath?: string;
+    // 是否为全量数据
+    full?: boolean;
+    // 是否立即请求
+    immediate?: boolean;
   };
   // 资源下筛选业务功能相关的 prop
   bizFilter?: FilterType;
 }
 
 export const useTable = (props: IProp) => {
+  defaults(props, { requestOption: {} });
+  defaults(props.requestOption, { dataPath: 'data.details', immediate: true });
+
   const { whereAmI } = useWhereAmI();
 
   const regionsStore = useRegionsStore();
   const resourceStore = useResourceStore();
   const businessStore = useBusinessStore();
-  const accountStore = useAccountStore();
   const businessMapStore = useBusinessMapStore();
 
   const searchVal = ref('');
@@ -96,7 +106,6 @@ export const useTable = (props: IProp) => {
 
   // 钩子 - 表头排序时
   const handleSort = ({ column, type }: any) => {
-    pagination.start = 0;
     sort.value = column.field;
     order.value = type === 'asc' ? 'ASC' : 'DESC';
     // 如果type为null，则默认排序
@@ -121,53 +130,39 @@ export const useTable = (props: IProp) => {
     }
     isLoading.value = true;
 
-    // 判断是业务下, 还是资源下
-    const api = whereAmI.value === Senarios.business ? businessStore.list : resourceStore.list;
-    // 请求数据
-    const [detailsRes, countRes] = await Promise.all(
-      [false, true].map((isCount) =>
-        api(
-          {
-            page: {
-              limit: isCount ? 0 : pagination.limit,
-              start: isCount ? 0 : pagination.start,
-              sort: isCount ? undefined : sort.value,
-              order: isCount ? undefined : order.value,
-              count: isCount,
-            },
-            filter: { op: filter.op, rules: filter.rules },
-            ...props.requestOption.extension,
-          },
-          type ? type : props.requestOption.type,
-        ),
-      ),
-    );
-    // 更新数据
-    dataList.value = props.requestOption.dataPath
-      ? lodash_get(detailsRes, props.requestOption.dataPath)
-      : detailsRes?.data?.details;
+    try {
+      // 判断是业务下, 还是资源下
+      const api = whereAmI.value === Senarios.business ? businessStore.list : resourceStore.list;
+      const [detailsRes, countRes] = await fetchData({ api, pagination, sort, order, filter, props, type });
 
-    // 异步处理 dataList
-    if (typeof props.requestOption.resolveDataListCb === 'function') {
-      props.requestOption.resolveDataListCb(dataList.value, getListData).then((newDataList: any[]) => {
-        dataList.value = newDataList;
-      });
+      // 更新数据
+      dataList.value = lodash_get(detailsRes, props.requestOption.dataPath, []) || [];
+
+      // 异步处理 dataList
+      if (typeof props.requestOption.resolveDataListCb === 'function') {
+        props.requestOption.resolveDataListCb(dataList.value, getListData).then((newDataList: any[]) => {
+          dataList.value = newDataList;
+        });
+      }
+
+      // 处理 pagination.count
+      if (typeof props.requestOption.resolvePaginationCountCb === 'function') {
+        props.requestOption.resolvePaginationCountCb(countRes?.data).then((newCount: number) => {
+          pagination.count = newCount;
+        });
+      } else {
+        pagination.count = (countRes === null ? detailsRes.data.count : countRes.data.count) || 0;
+      }
+    } catch (error) {
+      dataList.value = [];
+      pagination.count = 0;
+    } finally {
+      isLoading.value = false;
     }
-
-    // 处理 pagination.count
-    if (typeof props.requestOption.resolvePaginationCountCb === 'function') {
-      props.requestOption.resolvePaginationCountCb(countRes?.data).then((newCount: number) => {
-        pagination.count = newCount;
-      });
-    } else {
-      pagination.count = countRes?.data?.count || 0;
-    }
-
-    isLoading.value = false;
   };
 
   const CommonTable = defineComponent({
-    setup(_props, { slots }) {
+    setup(_props, { slots, expose }) {
       const searchData = computed(() => {
         return (
           (typeof props.searchOptions.searchData === 'function'
@@ -176,29 +171,54 @@ export const useTable = (props: IProp) => {
         );
       });
 
+      const hasTopBar = computed(() => {
+        return slots.tableToolbar || slots.operation || slots.operationBarEnd;
+      });
+
+      const getTableHeight = () => {
+        const baseHeight = '100%';
+        const topBarHeight = hasTopBar.value ? 48 : 0;
+        const toolBarHeight = slots.tableToolbar ? 40 : 0;
+        const totalHeight = topBarHeight + toolBarHeight;
+
+        return totalHeight ? `calc(${baseHeight} - ${totalHeight}px)` : baseHeight;
+      };
+
+      const tableRef = ref();
+
+      expose({ tableRef });
+
       return () => (
-        <div class={`remote-table-container${props.searchOptions.disabled ? ' no-search' : ''}`}>
-          <section class='operation-wrap'>
-            {slots.operation && <div class='operate-btn-groups'>{slots.operation?.()}</div>}
-            {!props.searchOptions.disabled && (
-              <SearchSelect
-                class='table-search-selector'
-                style={props.searchOptions?.extra?.searchSelectExtStyle}
-                v-model={searchVal.value}
-                data={searchData.value}
-                valueBehavior='need-key'
-                {...(props.searchOptions.extra || {})}
-              />
-            )}
-          </section>
-          <Loading loading={isLoading.value} class='loading-table-container'>
+        <div
+          class={{
+            [cssModule['remote-table-container']]: true,
+            [cssModule['no-search']]: props.searchOptions.disabled,
+          }}>
+          {hasTopBar.value && (
+            <section class={cssModule['top-bar']}>
+              {slots.operation && <div class={cssModule['operate-btn-groups']}>{slots.operation?.()}</div>}
+              {!props.searchOptions.disabled && (
+                <SearchSelect
+                  class={cssModule['table-search-selector']}
+                  style={props.searchOptions?.extra?.searchSelectExtStyle}
+                  v-model={searchVal.value}
+                  data={searchData.value}
+                  valueBehavior='need-key'
+                  {...(props.searchOptions.extra || {})}
+                />
+              )}
+              {slots.operationBarEnd && <div class={cssModule['operation-bar-end']}>{slots.operationBarEnd()}</div>}
+            </section>
+          )}
+          {slots.tableToolbar?.()}
+          <Loading loading={isLoading.value} class={cssModule['loading-wrapper']} style={{ height: getTableHeight() }}>
             <Table
-              class='table-container'
+              ref={tableRef}
               data={dataList.value}
               rowKey='id'
               columns={props.tableOptions.columns}
               pagination={pagination}
-              remotePagination
+              remotePagination={!props.requestOption.full}
               showOverflowTooltip
               {...(props.tableOptions.extra || {})}
               onPageLimitChange={handlePageLimitChange}
@@ -206,6 +226,7 @@ export const useTable = (props: IProp) => {
               onColumnSort={handleSort}
               onColumnFilter={() => {}}>
               {{
+                expandRow: (row: any) => slots.expandRow?.(row),
                 empty: () => {
                   if (isLoading.value) return null;
                   return <Empty />;
@@ -322,9 +343,8 @@ export const useTable = (props: IProp) => {
   };
 
   watch(
-    [() => searchVal.value, () => accountStore.bizs],
-    ([searchVal, bizs], [oldSearchVal]) => {
-      if (whereAmI.value === Senarios.business && !bizs) return;
+    () => searchVal.value,
+    (searchVal, oldSearchVal) => {
       // 记录上一次 search-select 的规则名
       const oldSearchFieldList: string[] =
         (Array.isArray(oldSearchVal) && oldSearchVal.reduce((prev: any, item: any) => [...prev, item.id], [])) || [];
@@ -354,7 +374,7 @@ export const useTable = (props: IProp) => {
       getListData();
     },
     {
-      immediate: true,
+      immediate: props.requestOption.immediate,
     },
   );
 
@@ -393,6 +413,11 @@ export const useTable = (props: IProp) => {
 
   return {
     CommonTable,
+    dataList,
     getListData,
+    pagination,
+    sort,
+    order,
+    isLoading,
   };
 };

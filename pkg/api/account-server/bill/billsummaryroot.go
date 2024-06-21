@@ -38,15 +38,14 @@ func (req *RootAccountSummaryListReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// MainAccountSummaryListReq list request for main account summary
-type MainAccountSummaryListReq struct {
-	BillYear  int                `json:"bill_year" validate:"required"`
-	BillMonth int                `json:"bill_month" validate:"required"`
-	Filter    *filter.Expression `json:"filter" validate:"omitempty"`
-	Page      *core.BasePage     `json:"page" validate:"omitempty"`
+// RootAccountSummaryReaccountReq reaccount request for root account summary
+type RootAccountSummaryReaccountReq struct {
+	BillYear      int    `json:"bill_year" validate:"required"`
+	BillMonth     int    `json:"bill_month" validate:"required"`
+	RootAccountID string `json:"root_account_id" validate:"required"`
 }
 
 // Validate ...
-func (req *MainAccountSummaryListReq) Validate() error {
+func (req *RootAccountSummaryReaccountReq) Validate() error {
 	return validator.Validate.Struct(req)
 }

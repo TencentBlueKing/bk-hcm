@@ -35,6 +35,7 @@ var TargetGroupListenerRuleRelColumns = utils.MergeColumns(nil, TargetGroupListe
 // TargetGroupListenerRuleRelColumnsDescriptor is target_group_listener_rule_rel's column descriptors.
 var TargetGroupListenerRuleRelColumnsDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
+	{Column: "vendor", NamedC: "vendor", Type: enumor.String},
 	{Column: "listener_rule_id", NamedC: "listener_rule_id", Type: enumor.String},
 	{Column: "cloud_listener_rule_id", NamedC: "cloud_listener_rule_id", Type: enumor.String},
 	{Column: "listener_rule_type", NamedC: "listener_rule_type", Type: enumor.String},
@@ -55,7 +56,9 @@ var TargetGroupListenerRuleRelColumnsDescriptor = utils.ColumnDescriptors{
 
 // TargetGroupListenerRuleRelTable 目标组监听器关系表
 type TargetGroupListenerRuleRelTable struct {
-	ID                  string `db:"id" validate:"lte=64" json:"id"`
+	ID     string        `db:"id" validate:"lte=64" json:"id"`
+	Vendor enumor.Vendor `db:"vendor" validate:"lte=16" json:"vendor"`
+
 	ListenerRuleID      string `db:"listener_rule_id" validate:"lte=64" json:"listener_rule_id"`
 	CloudListenerRuleID string `db:"cloud_listener_rule_id" validate:"lte=64" json:"cloud_listener_rule_id"`
 
@@ -84,8 +87,9 @@ func (tlrr TargetGroupListenerRuleRelTable) TableName() table.Name {
 
 // InsertValidate validate table when insert.
 func (tlrr TargetGroupListenerRuleRelTable) InsertValidate() error {
-	if err := validator.Validate.Struct(tlrr); err != nil {
-		return err
+
+	if len(tlrr.Vendor) == 0 {
+		return errors.New("vendor is required")
 	}
 
 	if len(tlrr.TargetGroupID) == 0 {
@@ -120,7 +124,7 @@ func (tlrr TargetGroupListenerRuleRelTable) InsertValidate() error {
 		return errors.New("creator is required")
 	}
 
-	return nil
+	return validator.Validate.Struct(tlrr)
 }
 
 // UpdateValidate validate table when update.
