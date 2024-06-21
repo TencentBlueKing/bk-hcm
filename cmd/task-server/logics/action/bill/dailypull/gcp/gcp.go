@@ -130,7 +130,7 @@ func (gcp *GcpPuller) createRawBill(
 	storeReq := &dsbill.RawBillCreateReq{
 		Vendor:         enumor.Gcp,
 		FirstAccountID: opt.RootAccountID,
-		AccountID:      opt.BillAccountID,
+		AccountID:      opt.MainAccountID,
 		BillYear:       fmt.Sprintf("%d", opt.BillYear),
 		BillMonth:      fmt.Sprintf("%02d", opt.BillMonth),
 		BillDate:       fmt.Sprintf("%02d", opt.BillDay),
@@ -153,7 +153,7 @@ func (gcp *GcpPuller) doPull(
 	hcCli := actcli.GetHCService()
 	resp, err := hcCli.Gcp.Bill.RootAccountBillList(kt.Kit().Ctx, kt.Kit().Header(), &bill.GcpBillListReq{
 		BillAccountID: opt.RootAccountID,
-		AccountID:     opt.RootAccountID,
+		AccountID:     opt.MainAccountID,
 		BeginDate:     fmt.Sprintf("%d-%02d-%02dT00:00:00Z", opt.BillYear, opt.BillMonth, opt.BillDay),
 		EndDate:       fmt.Sprintf("%d-%02d-%02dT23:59:59Z", opt.BillYear, opt.BillMonth, opt.BillDay),
 		Page: &typesBill.GcpBillPage{
