@@ -70,7 +70,7 @@ type HcmAccountLister struct {
 
 // ListAllMainAccount list main account
 func (t *HcmAccountLister) ListAllMainAccount(kt *kit.Kit) ([]*MainAccount, error) {
-	result, err := t.Client.DataService().Global.MainAccount.List(kt, &core.ListWithoutFieldReq{
+	result, err := t.Client.DataService().Global.MainAccount.List(kt, &core.ListReq{
 		Filter: tools.AllExpression(),
 		Page: &core.BasePage{
 			Count: true,
@@ -81,7 +81,7 @@ func (t *HcmAccountLister) ListAllMainAccount(kt *kit.Kit) ([]*MainAccount, erro
 	}
 	var retList []*MainAccount
 	for offset := uint64(0); offset < result.Count; offset = offset + defaultAccountListLimit {
-		accountResult, err := t.Client.DataService().Global.MainAccount.List(kt, &core.ListWithoutFieldReq{
+		accountResult, err := t.Client.DataService().Global.MainAccount.List(kt, &core.ListReq{
 			Filter: tools.AllExpression(),
 			Page: &core.BasePage{
 				Start: uint32(offset),

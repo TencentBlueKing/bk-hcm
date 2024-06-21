@@ -17,25 +17,26 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package billdailytask
+package billexchangerate
 
 import (
 	"fmt"
 
 	dataservice "hcm/pkg/api/data-service/bill"
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	tablebill "hcm/pkg/dal/table/bill"
 	"hcm/pkg/dal/table/types"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 
 	"github.com/jmoiron/sqlx"
 )
 
-// UpdateBillDailyPullTask update account bill daily pull task with options
-func (svc *service) UpdateBillDailyPullTask(cts *rest.Contexts) (interface{}, error) {
-	req := new(dataservice.BillDailyPullTaskUpdateReq)
+// UpdateBillExchangeRate account with options
+func (svc *service) UpdateBillExchangeRate(cts *rest.Contexts) (any, error) {
+
+	req := new(dataservice.ExchangeRateUpdateReq)
 
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -45,31 +46,22 @@ func (svc *service) UpdateBillDailyPullTask(cts *rest.Contexts) (interface{}, er
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	billDailyPullTask := &tablebill.AccountBillDailyPullTask{
-		ID:                 req.ID,
-		RootAccountID:      req.RootAccountID,
-		MainAccountID:      req.MainAccountID,
-		Vendor:             req.Vendor,
-		ProductID:          req.ProductID,
-		BkBizID:            req.BkBizID,
-		BillYear:           req.BillYear,
-		BillMonth:          req.BillMonth,
-		BillDay:            req.BillDay,
-		VersionID:          req.VersionID,
-		State:              req.State,
-		Count:              req.Count,
-		Currency:           enumor.CurrencyCode(req.Currency),
-		FlowID:             req.FlowID,
-		SplitFlowID:        req.SplitFlowID,
-		DailySummaryFlowID: req.DailySummaryFlowID,
+	r := &tablebill.AccountBillExchangeRate{
+		ID:           req.ID,
+		Year:         req.Year,
+		Month:        req.Month,
+		FromCurrency: req.FromCurrency,
+		ToCurrency:   req.ToCurrency,
+		Reviser:      cts.Kit.User,
 	}
-	if !req.Cost.IsZero() {
-		billDailyPullTask.Cost = &types.Decimal{Decimal: req.Cost}
+	if req.ExchangeRate != nil {
+		r.ExchangeRate = &types.Decimal{Decimal: *req.ExchangeRate}
 	}
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		if err := svc.dao.AccountBillDailyPullTask().UpdateByIDWithTx(
-			cts.Kit, txn, billDailyPullTask.ID, billDailyPullTask); err != nil {
-			return nil, fmt.Errorf("update account bill daily pull task failed, err: %v", err)
+		err := svc.dao.AccountBillExchangeRate().UpdateByIDWithTx(cts.Kit, txn, r.ID, r)
+		if err != nil {
+			logs.Errorf("update account bill exchange rate failed, err: %v, id: %s, rid: %s", err, r.ID, cts.Kit.Rid)
+			return nil, fmt.Errorf("update bill exchange rate failed, err: %v", err)
 		}
 		return nil, nil
 	})

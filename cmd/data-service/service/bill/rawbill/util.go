@@ -43,7 +43,7 @@ func generateCSV(items []dsbill.RawBillItem) (*bytes.Buffer, error) {
 			item.Region,
 			item.HcProductCode,
 			item.HcProductName,
-			item.BillCurrency,
+			string(item.BillCurrency),
 			item.BillCost.String(),
 			item.ResAmount.String(),
 			item.ResAmountUnit,

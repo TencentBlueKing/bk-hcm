@@ -78,7 +78,7 @@ type AccountBillSummaryDaily struct {
 	// VersionID 版本号
 	VersionID int `db:"version_id" json:"version_id"`
 	// Currency 币种
-	Currency string `db:"currency" json:"currency"`
+	Currency enumor.CurrencyCode `db:"currency" json:"currency"`
 	// Cost 费用
 	Cost *types.Decimal `db:"cost" json:"cost"`
 	// Count 账单条数

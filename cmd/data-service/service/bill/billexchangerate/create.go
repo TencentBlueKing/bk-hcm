@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package billadjustmentitem
+package billexchangerate
 
 import (
 	"fmt"
@@ -29,14 +29,15 @@ import (
 	"hcm/pkg/dal/dao/orm"
 	tablebill "hcm/pkg/dal/table/bill"
 	"hcm/pkg/dal/table/types"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 
 	"github.com/jmoiron/sqlx"
 )
 
-// CreateBillAdjustmentItem account bill adjustment item with options
-func (svc *service) CreateBillAdjustmentItem(cts *rest.Contexts) (interface{}, error) {
-	req := new(dsbill.BatchBillAdjustmentItemCreateReq)
+// CreateBillExchangeRate account bill exchange rate with options
+func (svc *service) CreateBillExchangeRate(cts *rest.Contexts) (any, error) {
+	req := new(dsbill.BatchCreateBillExchangeRateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -45,33 +46,24 @@ func (svc *service) CreateBillAdjustmentItem(cts *rest.Contexts) (interface{}, e
 	}
 
 	idList, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		var itemList []tablebill.AccountBillAdjustmentItem
-		for _, item := range req.Items {
-			item := tablebill.AccountBillAdjustmentItem{
-				RootAccountID: item.RootAccountID,
-				MainAccountID: item.MainAccountID,
-				Vendor:        item.Vendor,
-				ProductID:     item.ProductID,
-				BkBizID:       item.BkBizID,
-				BillYear:      item.BillYear,
-				BillMonth:     item.BillMonth,
-				BillDay:       item.BillDay,
-				Type:          string(item.Type),
-				Memo:          item.Memo,
-				Currency:      item.Currency,
-				Cost:          &types.Decimal{Decimal: item.Cost},
-				RMBCost:       &types.Decimal{Decimal: item.RMBCost},
-				State:         item.State,
-				Creator:       cts.Kit.User,
-				Operator:      cts.Kit.User,
+		var rateList []tablebill.AccountBillExchangeRate
+		for _, rate := range req.ExchangeRates {
+			dbRate := tablebill.AccountBillExchangeRate{
+				Year:         rate.Year,
+				Month:        rate.Month,
+				FromCurrency: rate.FromCurrency,
+				ToCurrency:   rate.ToCurrency,
+				ExchangeRate: &types.Decimal{Decimal: *rate.ExchangeRate},
+				Creator:      cts.Kit.User,
+				Reviser:      cts.Kit.User,
 			}
-			itemList = append(itemList, item)
+			rateList = append(rateList, dbRate)
 		}
 
-		ids, err := svc.dao.AccountBillAdjustmentItem().CreateWithTx(
-			cts.Kit, txn, itemList)
+		ids, err := svc.dao.AccountBillExchangeRate().CreateWithTx(cts.Kit, txn, rateList)
 		if err != nil {
-			return nil, fmt.Errorf("create account bill adjustment item failed, err: %v", err)
+			logs.Errorf("fail to create bill exchange rate, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, fmt.Errorf("create account bill exchange rate list failed, err: %v", err)
 		}
 		return ids, nil
 	})
@@ -80,7 +72,7 @@ func (svc *service) CreateBillAdjustmentItem(cts *rest.Contexts) (interface{}, e
 	}
 	retList, ok := idList.([]string)
 	if !ok {
-		return nil, fmt.Errorf("create account bill adjustment item but return ids type not []string, ids type: %v",
+		return nil, fmt.Errorf("create account bill exchange rate but return ids type not []string, ids type: %v",
 			reflect.TypeOf(idList).String())
 	}
 

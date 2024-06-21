@@ -32,6 +32,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/logs"
+	cvt "hcm/pkg/tools/converter"
 
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/bssintl/v2/model"
 	"github.com/shopspring/decimal"
@@ -53,7 +54,7 @@ func (hp *HuaweiPuller) Pull(kt run.ExecuteKit, opt *registry.PullDailyBillOptio
 	offset := int32(0)
 	count := int64(0)
 	cost := decimal.NewFromInt(0)
-	currency := ""
+	var currency enumor.CurrencyCode
 	for {
 		limit := huaweiMaxBill
 		itemLen, tmpResult, err := hp.doPull(kt, opt, &offset, &limit)
@@ -84,7 +85,7 @@ func getRawBillCost(rawBills []dsbill.RawBillItem) decimal.Decimal {
 	return cost
 }
 
-func convertToRawBill(currency string, recordList []model.ResFeeRecordV2) ([]dsbill.RawBillItem, error) {
+func convertToRawBill(currency enumor.CurrencyCode, recordList []model.ResFeeRecordV2) ([]dsbill.RawBillItem, error) {
 	var retList []dsbill.RawBillItem
 	for _, record := range recordList {
 		creditCost := decimal.NewFromFloat(0)
@@ -172,7 +173,7 @@ func (hp *HuaweiPuller) doPull(
 	if resp.Details == nil {
 		return 0, nil, fmt.Errorf("details in response is empty, resp %v", resp)
 	}
-	currency := *resp.Currency
+	currency := enumor.CurrencyCode(cvt.PtrToVal(resp.Currency))
 
 	itemList, ok := resp.Details.([]interface{})
 	if !ok {

@@ -101,26 +101,33 @@ func (b *BillClient) BatchDelete(ctx context.Context, h http.Header, req *datase
 func (b *BillClient) BatchCreateBillAdjustmentItem(kt *kit.Kit, req *billproto.BatchBillAdjustmentItemCreateReq) (
 	*core.BatchCreateResult, error) {
 	return common.Request[billproto.BatchBillAdjustmentItemCreateReq, core.BatchCreateResult](
-		b.client, rest.POST, kt, req, "/bills/adjustmentitems")
+		b.client, rest.POST, kt, req, "/bills/adjustment_items/create")
 }
 
 // BatchDeleteBillAdjustmentItem delete bill adjustment item
 func (b *BillClient) BatchDeleteBillAdjustmentItem(kt *kit.Kit, req *dataservice.BatchDeleteReq) error {
 	return common.RequestNoResp[dataservice.BatchDeleteReq](
-		b.client, rest.DELETE, kt, req, "/bills/adjustmentitems")
+		b.client, rest.DELETE, kt, req, "/bills/adjustment_items")
 }
 
 // UpdateBillAdjustmentItem update bill adjustment item
 func (b *BillClient) UpdateBillAdjustmentItem(kt *kit.Kit, req *billproto.BillAdjustmentItemUpdateReq) error {
 	return common.RequestNoResp[billproto.BillAdjustmentItemUpdateReq](
-		b.client, rest.PUT, kt, req, "/bills/adjustmentitems")
+		b.client, rest.PUT, kt, req, "/bills/adjustment_items")
 }
 
 // ListBillAdjustmentItem list bill adjustment item
 func (b *BillClient) ListBillAdjustmentItem(kt *kit.Kit, req *billproto.BillAdjustmentItemListReq) (
 	*billproto.BillAdjustmentItemListResult, error) {
 	return common.Request[billproto.BillAdjustmentItemListReq, billproto.BillAdjustmentItemListResult](
-		b.client, rest.GET, kt, req, "/bills/adjustmentitems")
+		b.client, rest.POST, kt, req, "/bills/adjustment_items/list")
+}
+
+// BatchConfirmBillAdjustmentItem 批量确认调账详情
+func (b *BillClient) BatchConfirmBillAdjustmentItem(kt *kit.Kit, req *core.BatchDeleteReq) error {
+
+	return common.RequestNoResp[core.BatchDeleteReq](b.client, rest.POST, kt, req,
+		"/bills/adjustment_items/confirm")
 }
 
 // --- bill item ---
@@ -411,4 +418,34 @@ func (b *BillClient) BatchDeleteRootAccountBillConfig(
 	}
 
 	return nil
+}
+
+// --- exchange rate ---
+
+// BatchCreateExchangeRate create exchange rate
+func (b *BillClient) BatchCreateExchangeRate(kt *kit.Kit, req *billproto.BatchCreateBillExchangeRateReq) (
+	*core.BatchCreateResult, error) {
+
+	return common.Request[billproto.BatchCreateBillExchangeRateReq, core.BatchCreateResult](
+		b.client, rest.POST, kt, req, "/bills/exchange_rates/batch/create")
+}
+
+// UpdateExchangeRate update exchange rate
+func (b *BillClient) UpdateExchangeRate(kt *kit.Kit, req *billproto.ExchangeRateUpdateReq) error {
+
+	return common.RequestNoResp[billproto.ExchangeRateUpdateReq](
+		b.client, rest.PATCH, kt, req, "/bills/exchange_rates")
+}
+
+// BatchDeleteExchangeRate batch delete exchange rate
+func (b *BillClient) BatchDeleteExchangeRate(kt *kit.Kit, req *core.BatchDeleteReq) error {
+
+	return common.RequestNoResp[core.BatchDeleteReq](b.client, rest.DELETE, kt, req, "/bills/exchange_rates")
+}
+
+// ListExchangeRate list exchange rate
+func (b *BillClient) ListExchangeRate(kt *kit.Kit, req *core.ListReq) (*billproto.ExchangeRateListResult, error) {
+
+	return common.Request[core.ListReq, billproto.ExchangeRateListResult](b.client, rest.POST, kt, req,
+		"/bills/exchange_rates/list")
 }

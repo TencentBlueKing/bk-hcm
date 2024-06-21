@@ -17,22 +17,23 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package billadjustmentitem
+package billexchangerate
 
 import (
+	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/bill"
-	dataproto "hcm/pkg/api/data-service/bill"
-	"hcm/pkg/criteria/enumor"
+	dsbill "hcm/pkg/api/data-service/bill"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
 	tablebill "hcm/pkg/dal/table/bill"
 	"hcm/pkg/rest"
 	cvt "hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 )
 
-// ListBillAdjustmentItem account with options
-func (svc *service) ListBillAdjustmentItem(cts *rest.Contexts) (interface{}, error) {
-	req := new(dataproto.BillAdjustmentItemListReq)
+// ListBillExchangeRate account with options
+func (svc *service) ListBillExchangeRate(cts *rest.Contexts) (interface{}, error) {
+	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -46,39 +47,28 @@ func (svc *service) ListBillAdjustmentItem(cts *rest.Contexts) (interface{}, err
 		Fields: req.Fields,
 	}
 
-	data, err := svc.dao.AccountBillAdjustmentItem().List(cts.Kit, opt)
+	data, err := svc.dao.AccountBillExchangeRate().List(cts.Kit, opt)
 	if err != nil {
 		return nil, err
 	}
 
-	details := make([]*bill.AdjustmentItem, len(data.Details))
-	for indx, d := range data.Details {
-		details[indx] = convBillAdjustment(&d)
-	}
-
-	return &dataproto.BillAdjustmentItemListResult{Details: details, Count: data.Count}, nil
+	return &dsbill.ExchangeRateListResult{Details: slice.Map(data.Details, convExchangeRate),
+		Count: data.Count}, nil
 }
 
-func convBillAdjustment(m *tablebill.AccountBillAdjustmentItem) *bill.AdjustmentItem {
-	return &bill.AdjustmentItem{
-		ID:            m.ID,
-		RootAccountID: m.RootAccountID,
-		MainAccountID: m.MainAccountID,
-		Vendor:        m.Vendor,
-		ProductID:     m.ProductID,
-		BkBizID:       m.BkBizID,
-		BillYear:      m.BillYear,
-		BillMonth:     m.BillMonth,
-		BillDay:       m.BillDay,
-		Type:          enumor.BillAdjustmentType(m.Type),
-		Memo:          m.Memo,
-		Operator:      m.Operator,
-		Currency:      m.Currency,
-		Cost:          cvt.PtrToVal(m.Cost).Decimal,
-		RMBCost:       cvt.PtrToVal(m.RMBCost).Decimal,
-		State:         m.State,
-		Creator:       m.Creator,
-		CreatedAt:     m.CreatedAt.String(),
-		UpdatedAt:     m.UpdatedAt.String(),
+func convExchangeRate(r tablebill.AccountBillExchangeRate) bill.ExchangeRate {
+	return bill.ExchangeRate{
+		ID:           r.ID,
+		Year:         r.Year,
+		Month:        r.Month,
+		FromCurrency: r.FromCurrency,
+		ToCurrency:   r.ToCurrency,
+		ExchangeRate: cvt.ValToPtr(r.ExchangeRate.Decimal),
+		Revision: &core.Revision{
+			Creator:   r.Creator,
+			Reviser:   r.Reviser,
+			CreatedAt: r.CreatedAt.String(),
+			UpdatedAt: r.UpdatedAt.String(),
+		},
 	}
 }

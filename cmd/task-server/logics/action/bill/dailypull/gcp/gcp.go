@@ -54,7 +54,7 @@ func (gcp *GcpPuller) Pull(kt run.ExecuteKit, opt *registry.PullDailyBillOption)
 	offset := uint64(0)
 	count := uint64(0)
 	cost := decimal.NewFromInt(0)
-	currency := ""
+	currency := enumor.CurrencyCode("")
 	for {
 		limit := uint64(gcpMaxBill)
 		itemLen, tmpResult, err := gcp.doPull(kt, opt, offset, limit)
@@ -109,7 +109,7 @@ func convertToRawBill(recordList []billcore.GcpRawBillItem) ([]dsbill.RawBillIte
 			newBillItem.ResAmount = *record.UsageAmount
 		}
 		if record.Currency != nil {
-			newBillItem.BillCurrency = *record.Currency
+			newBillItem.BillCurrency = enumor.CurrencyCode(*record.Currency)
 		}
 		if record.Cost != nil {
 			newBillItem.BillCost = *record.Cost
@@ -178,7 +178,7 @@ func (gcp *GcpPuller) doPull(
 		}, nil
 	}
 
-	currency := ""
+	currency := enumor.CurrencyCode("")
 	var recordList []billcore.GcpRawBillItem
 	for _, item := range itemList {
 		respData, err := json.Marshal(item)
@@ -190,7 +190,7 @@ func (gcp *GcpPuller) doPull(
 			return 0, nil, fmt.Errorf("decode gcp response failed, err %s", err.Error())
 		}
 		if record.Currency != nil {
-			currency = *record.Currency
+			currency = enumor.CurrencyCode(*record.Currency)
 		}
 		recordList = append(recordList, record)
 	}

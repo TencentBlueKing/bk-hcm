@@ -25,6 +25,7 @@ import (
 
 	"hcm/pkg/api/core"
 	dsbill "hcm/pkg/api/data-service/bill"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	tablebill "hcm/pkg/dal/table/bill"
@@ -56,7 +57,7 @@ func (svc *service) CreateBillDailyPullTask(cts *rest.Contexts) (interface{}, er
 			VersionID:          req.VersionID,
 			State:              req.State,
 			Count:              req.Count,
-			Currency:           req.Currency,
+			Currency:           enumor.CurrencyCode(req.Currency),
 			FlowID:             req.FlowID,
 			SplitFlowID:        req.SplitFlowID,
 			DailySummaryFlowID: req.DailySummaryFlowID,

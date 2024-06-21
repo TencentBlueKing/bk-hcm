@@ -18,7 +18,7 @@
  */
 
 // Package billadjustmentitem ...
-package billadjustmentitem
+package billexchangerate
 
 import (
 	"net/http"
@@ -34,12 +34,10 @@ func InitService(cap *capability.Capability) {
 		dao: cap.Dao,
 	}
 	h := rest.NewHandler()
-	h.Add("CreateBillAdjustmentItem", http.MethodPost, "/bills/adjustment_items/create", svc.CreateBillAdjustmentItem)
-	h.Add("DeleteBillAdjustmentItem", http.MethodDelete, "/bills/adjustment_items", svc.DeleteBillAdjustmentItem)
-	h.Add("UpdateBillAdjustmentItem", http.MethodPut, "/bills/adjustment_items", svc.UpdateBillAdjustmentItem)
-	h.Add("ListBillAdjustmentItem", http.MethodPost, "/bills/adjustment_items/list", svc.ListBillAdjustmentItem)
-	h.Add("BatchConfirmBillAdjustmentItem", http.MethodPost,
-		"/bills/adjustment_items/confirm", svc.BatchConfirmBillAdjustmentItem)
+	h.Add("CreateBillExchangeRate", http.MethodPost, "/bills/exchange_rates/batch/create", svc.CreateBillExchangeRate)
+	h.Add("BatchDeleteExchangeRate", http.MethodDelete, "/bills/exchange_rates/batch", svc.BatchDeleteExchangeRate)
+	h.Add("UpdateBillExchangeRate", http.MethodPatch, "/bills/exchange_rates", svc.UpdateBillExchangeRate)
+	h.Add("ListBillExchangeRate", http.MethodPost, "/bills/exchange_rates/list", svc.ListBillExchangeRate)
 
 	h.Load(cap.WebService)
 }

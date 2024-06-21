@@ -157,8 +157,8 @@ values
 -- 调账明细数据
 create table if not exists `account_bill_adjustment_item` (
   `id` varchar(64) not null,
-  `first_account_id` varchar(64) not null,
-  `second_account_id` varchar(64) not null,
+  `root_account_id` varchar(64) not null,
+  `main_account_id` varchar(64) not null,
   `vendor` varchar(16) not null,
   `product_id` bigint(1),
   `bk_biz_id` bigint(1),
@@ -172,6 +172,7 @@ create table if not exists `account_bill_adjustment_item` (
   `cost` decimal(28, 8) not null,
   `rmb_cost` decimal(28, 8) not null,
   `state` varchar(64) not null,
+  `creator` varchar(64) not null,
   `created_at` timestamp not null default current_timestamp,
   `updated_at` timestamp not null default current_timestamp on update current_timestamp,
   primary key (`id`)
@@ -322,10 +323,30 @@ insert into
 values
   ('root_account_bill_config', '0');
 
+create table account_bill_exchange_rate (
+  `id` varchar(64) not null,
+  `year` int not null,
+  `month` int not null,
+  `from_currency` varchar(32) not null comment '转换前货币',
+  `to_currency` varchar(32) not null comment '转换后货币',
+  `exchange_rate` decimal(38, 10) not null comment '转换汇率，单位转换前货币对应的转换后货币数量',
+  `creator` varchar(64) not null,
+  `reviser` varchar(64) not null,
+  `created_at` timestamp not null default current_timestamp,
+  `updated_at` timestamp not null default current_timestamp on update current_timestamp,
+  primary key (`id`),
+  unique key `idx_uk_year_month_from_currency_to_currency` (`year`, `month`, `from_currency`, `to_currency`)
+) comment '转换汇率';
+
+insert into
+  id_generator(`resource`, `max_id`)
+values
+  ('account_bill_exchange_rate', '0');
+
 CREATE
 OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
 SELECT
   'v9.9.9' as `hcm_ver`,
   '9999' as `sql_ver`;
 
-COMMIT
+COMMIT;

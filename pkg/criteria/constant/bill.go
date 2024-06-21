@@ -42,6 +42,7 @@ const (
 	RootAccountBillSummaryStateStop = "stopped"
 
 	// 二级账号账单汇总状态
+
 	// MainAccountBillSummaryStateAccounting 核算中
 	MainAccountBillSummaryStateAccounting = "accounting"
 	// MainAccountBillSummaryStateAccounted 已核算

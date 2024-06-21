@@ -17,33 +17,36 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package billadjustmentitem ...
-package billadjustmentitem
+package exchangerate
 
 import (
 	"net/http"
 
-	"hcm/cmd/data-service/service/capability"
-	"hcm/pkg/dal/dao"
+	"hcm/cmd/account-server/logics/audit"
+	"hcm/cmd/account-server/service/capability"
+	"hcm/pkg/client"
+	"hcm/pkg/iam/auth"
 	"hcm/pkg/rest"
 )
 
-// InitService initialize the bill adjustment item service
-func InitService(cap *capability.Capability) {
+// InitService initial the main account service
+func InitService(c *capability.Capability) {
 	svc := &service{
-		dao: cap.Dao,
+		client:     c.ApiClient,
+		authorizer: c.Authorizer,
+		audit:      c.Audit,
 	}
-	h := rest.NewHandler()
-	h.Add("CreateBillAdjustmentItem", http.MethodPost, "/bills/adjustment_items/create", svc.CreateBillAdjustmentItem)
-	h.Add("DeleteBillAdjustmentItem", http.MethodDelete, "/bills/adjustment_items", svc.DeleteBillAdjustmentItem)
-	h.Add("UpdateBillAdjustmentItem", http.MethodPut, "/bills/adjustment_items", svc.UpdateBillAdjustmentItem)
-	h.Add("ListBillAdjustmentItem", http.MethodPost, "/bills/adjustment_items/list", svc.ListBillAdjustmentItem)
-	h.Add("BatchConfirmBillAdjustmentItem", http.MethodPost,
-		"/bills/adjustment_items/confirm", svc.BatchConfirmBillAdjustmentItem)
 
-	h.Load(cap.WebService)
+	h := rest.NewHandler()
+
+	// register handler
+	h.Add("ListExchangeRate", http.MethodPost, "/bills/exchange_rates/list", svc.ListExchangeRate)
+
+	h.Load(c.WebService)
 }
 
 type service struct {
-	dao dao.Set
+	client     *client.ClientSet
+	authorizer auth.Authorizer
+	audit      audit.Interface
 }

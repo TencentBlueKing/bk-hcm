@@ -40,23 +40,22 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// AccountBillAdjustmentItem only used for interface.
-type AccountBillAdjustmentItem interface {
-	CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, regions []tablebill.AccountBillAdjustmentItem) ([]string, error)
-	List(kt *kit.Kit, opt *types.ListOption) (*typesbill.ListAccountBillAdjustmentItemDetails, error)
-	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, billID string, updateData *tablebill.AccountBillAdjustmentItem) error
+// AccountBillExchangeRate only used for interface.
+type AccountBillExchangeRate interface {
+	CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, regions []tablebill.AccountBillExchangeRate) ([]string, error)
+	List(kt *kit.Kit, opt *types.ListOption) (*typesbill.ListAccountBillExchangeRateDetails, error)
+	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, billID string, updateData *tablebill.AccountBillExchangeRate) error
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error
 }
 
-// AccountBillAdjustmentItemDao account bill adjustment item dao
-type AccountBillAdjustmentItemDao struct {
+// AccountBillExchangeRateDao account bill exchange rate dao
+type AccountBillExchangeRateDao struct {
 	Orm   orm.Interface
 	IDGen idgenerator.IDGenInterface
 }
 
-// CreateWithTx create account bill summary with tx.
-func (a AccountBillAdjustmentItemDao) CreateWithTx(
-	kt *kit.Kit, tx *sqlx.Tx, models []tablebill.AccountBillAdjustmentItem) (
+// CreateWithTx create account bill exchange rate with tx.
+func (a AccountBillExchangeRateDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []tablebill.AccountBillExchangeRate) (
 	[]string, error) {
 
 	if len(models) == 0 {
@@ -68,17 +67,16 @@ func (a AccountBillAdjustmentItemDao) CreateWithTx(
 		return nil, err
 	}
 
-	for index, model := range models {
+	for index := range models {
 		models[index].ID = ids[index]
 
-		if err = model.InsertValidate(); err != nil {
+		if err = models[index].InsertValidate(); err != nil {
 			return nil, err
 		}
 	}
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, models[0].TableName(),
-		tablebill.AccountBillAdjustmentItemColumns.ColumnExpr(),
-		tablebill.AccountBillAdjustmentItemColumns.ColonNameExpr())
+		tablebill.AccountBillExchangeRateColumns.ColumnExpr(), tablebill.AccountBillExchangeRateColumns.ColonNameExpr())
 
 	if err = a.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, models); err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", models[0].TableName(), err, kt.Rid)
@@ -88,16 +86,16 @@ func (a AccountBillAdjustmentItemDao) CreateWithTx(
 	return ids, nil
 }
 
-// List get account bill adjustment item list.
-func (a AccountBillAdjustmentItemDao) List(kt *kit.Kit, opt *types.ListOption) (
-	*typesbill.ListAccountBillAdjustmentItemDetails, error) {
+// List get account bill exchange rate list.
+func (a AccountBillExchangeRateDao) List(kt *kit.Kit, opt *types.ListOption) (
+	*typesbill.ListAccountBillExchangeRateDetails, error) {
 
 	if opt == nil {
-		return nil, errf.New(errf.InvalidParameter, "list account bill adjustment item options is nil")
+		return nil, errf.New(errf.InvalidParameter, "list account bill exchange rate options is nil")
 	}
 
 	if err := opt.Validate(filter.NewExprOption(
-		filter.RuleFields(tablebill.AccountBillAdjustmentItemColumns.ColumnTypes())),
+		filter.RuleFields(tablebill.AccountBillExchangeRateColumns.ColumnTypes())),
 		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
@@ -108,15 +106,15 @@ func (a AccountBillAdjustmentItemDao) List(kt *kit.Kit, opt *types.ListOption) (
 	}
 
 	if opt.Page.Count {
-		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.AccountBillAdjustmentItemTable, whereExpr)
+		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.AccountBillExchangeRateTable, whereExpr)
 		count, err := a.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
-			logs.ErrorJson("count account bill adjustment item failed, err: %v, filter: %s, rid: %s",
+			logs.ErrorJson("count account bill exchange rate failed, err: %v, filter: %s, rid: %s",
 				err, opt.Filter, kt.Rid)
 			return nil, err
 		}
 
-		return &typesbill.ListAccountBillAdjustmentItemDetails{Count: count}, nil
+		return &typesbill.ListAccountBillExchangeRateDetails{Count: count}, nil
 	}
 
 	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
@@ -124,21 +122,19 @@ func (a AccountBillAdjustmentItemDao) List(kt *kit.Kit, opt *types.ListOption) (
 		return nil, err
 	}
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`,
-		tablebill.AccountBillAdjustmentItemColumns.FieldsNamedExpr(opt.Fields),
-		table.AccountBillAdjustmentItemTable, whereExpr, pageExpr)
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tablebill.AccountBillExchangeRateColumns.FieldsNamedExpr(opt.Fields),
+		table.AccountBillExchangeRateTable, whereExpr, pageExpr)
 
-	details := make([]tablebill.AccountBillAdjustmentItem, 0)
+	details := make([]tablebill.AccountBillExchangeRate, 0)
 	if err = a.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
-		logs.Errorf("fail to select bill adjustment item, err: %v ,rid: %s", err, kt.Rid)
 		return nil, err
 	}
-	return &typesbill.ListAccountBillAdjustmentItemDetails{Details: details}, nil
+	return &typesbill.ListAccountBillExchangeRateDetails{Details: details}, nil
 }
 
-// UpdateByIDWithTx update account bill adjustment item.
-func (a AccountBillAdjustmentItemDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
-	updateData *tablebill.AccountBillAdjustmentItem) error {
+// UpdateByIDWithTx  account bill exchange rate.
+func (a AccountBillExchangeRateDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
+	updateData *tablebill.AccountBillExchangeRate) error {
 
 	if err := updateData.UpdateValidate(); err != nil {
 		return err
@@ -150,20 +146,20 @@ func (a AccountBillAdjustmentItemDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx,
 		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)
 	}
 
-	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, table.AccountBillAdjustmentItemTable, setExpr)
+	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, table.AccountBillExchangeRateTable, setExpr)
 
 	toUpdate["id"] = id
 	_, err = a.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
 	if err != nil {
-		logs.ErrorJson("update account bill adjustment item failed, err: %v, id: %s, rid: %v", err, id, kt.Rid)
+		logs.ErrorJson("update account bill exchange rate failed, err: %v, id: %s, rid: %v", err, id, kt.Rid)
 		return err
 	}
 
 	return nil
 }
 
-// DeleteWithTx delete account bill adjustment item with tx.
-func (a AccountBillAdjustmentItemDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
+// DeleteWithTx delete account bill exchange rate with tx.
+func (a AccountBillExchangeRateDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}
@@ -173,10 +169,10 @@ func (a AccountBillAdjustmentItemDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, exp
 		return err
 	}
 
-	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.AccountBillAdjustmentItemTable, whereExpr)
+	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.AccountBillExchangeRateTable, whereExpr)
 
 	if _, err = a.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
-		logs.ErrorJson("delete account bill adjustment item failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
+		logs.ErrorJson("delete account bill exchange rate failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
 		return err
 	}
 

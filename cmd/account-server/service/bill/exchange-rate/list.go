@@ -17,33 +17,29 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package billadjustmentitem ...
-package billadjustmentitem
+package exchangerate
 
 import (
-	"net/http"
-
-	"hcm/cmd/data-service/service/capability"
-	"hcm/pkg/dal/dao"
+	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
 )
 
-// InitService initialize the bill adjustment item service
-func InitService(cap *capability.Capability) {
-	svc := &service{
-		dao: cap.Dao,
+// ListExchangeRate List  exchange rate with options
+func (s *service) ListExchangeRate(cts *rest.Contexts) (interface{}, error) {
+	req := new(core.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
 	}
-	h := rest.NewHandler()
-	h.Add("CreateBillAdjustmentItem", http.MethodPost, "/bills/adjustment_items/create", svc.CreateBillAdjustmentItem)
-	h.Add("DeleteBillAdjustmentItem", http.MethodDelete, "/bills/adjustment_items", svc.DeleteBillAdjustmentItem)
-	h.Add("UpdateBillAdjustmentItem", http.MethodPut, "/bills/adjustment_items", svc.UpdateBillAdjustmentItem)
-	h.Add("ListBillAdjustmentItem", http.MethodPost, "/bills/adjustment_items/list", svc.ListBillAdjustmentItem)
-	h.Add("BatchConfirmBillAdjustmentItem", http.MethodPost,
-		"/bills/adjustment_items/confirm", svc.BatchConfirmBillAdjustmentItem)
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
 
-	h.Load(cap.WebService)
-}
-
-type service struct {
-	dao dao.Set
+	err := service{}.authorizer.AuthorizeWithPerm(cts.Kit,
+		meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.AccountBill, Action: meta.Find}})
+	if err != nil {
+		return nil, err
+	}
+	return s.client.DataService().Global.Bill.ListExchangeRate(cts.Kit, req)
 }

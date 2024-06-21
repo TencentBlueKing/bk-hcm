@@ -194,6 +194,8 @@ const (
 	AccountBillSummaryMainTable = "account_bill_summary_main"
 	// RootAccountBillConfigTable 一级账号账单配置表
 	RootAccountBillConfigTable = "root_account_bill_config"
+	// AccountBillExchangeRateTable 账单汇率换算表
+	AccountBillExchangeRateTable = "account_bill_exchange_rate"
 )
 
 // Validate whether the table name is valid or not.
@@ -279,6 +281,7 @@ var TableMap = map[Name]struct{}{
 	AccountBillAdjustmentItemTable:  {},
 	AccountBillSummaryRootTable:     {},
 	RootAccountBillConfigTable:      {},
+	AccountBillExchangeRateTable:    {},
 	LoadBalancerTable:               {},
 	SecurityGroupCommonRelTable:     {},
 	LoadBalancerListenerTable:       {},
