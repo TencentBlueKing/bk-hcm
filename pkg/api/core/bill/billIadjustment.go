@@ -30,6 +30,7 @@ type AdjustmentItem struct {
 	ID            string                     `json:"id,omitempty"`
 	RootAccountID string                     `json:"root_account_id"`
 	MainAccountID string                     `json:"main_account_id"`
+	Vendor        enumor.Vendor              `json:"vendor"`
 	ProductID     int64                      `json:"product_id"`
 	BkBizID       int64                      `json:"bk_biz_id"`
 	BillYear      int                        `json:"bill_year"`

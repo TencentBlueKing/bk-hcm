@@ -53,17 +53,18 @@ func (svc *service) ListBillAdjustmentItem(cts *rest.Contexts) (interface{}, err
 
 	details := make([]*bill.AdjustmentItem, len(data.Details))
 	for indx, d := range data.Details {
-		details[indx] = toProtoPullerResult(&d)
+		details[indx] = convBillAdjustment(&d)
 	}
 
 	return &dataproto.BillAdjustmentItemListResult{Details: details, Count: cvt.PtrToVal(data.Count)}, nil
 }
 
-func toProtoPullerResult(m *tablebill.AccountBillAdjustmentItem) *bill.AdjustmentItem {
+func convBillAdjustment(m *tablebill.AccountBillAdjustmentItem) *bill.AdjustmentItem {
 	return &bill.AdjustmentItem{
 		ID:            m.ID,
 		RootAccountID: m.RootAccountID,
 		MainAccountID: m.MainAccountID,
+		Vendor:        m.Vendor,
 		ProductID:     m.ProductID,
 		BkBizID:       m.BkBizID,
 		BillYear:      m.BillYear,
