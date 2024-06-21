@@ -35,6 +35,7 @@ export default defineComponent({
                     path: '/service/my-apply/detail',
                     query: {
                       ...route.query,
+                      id: data.id,
                     },
                   });
                 }}>

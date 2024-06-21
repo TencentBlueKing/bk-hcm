@@ -19,6 +19,7 @@ const serviceMenus: RouteRecordRaw[] = [
     path: '/service/my-apply',
     name: t('我的申请'),
     component: () => import('@/views/service/apply-list/index'),
+    // component: () => import('@/views/service/my-apply/index.vue'),
     meta: {
       activeKey: 'myApply',
       breadcrumb: [t('服务'), t('我的申请')],
