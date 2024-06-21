@@ -20,6 +20,7 @@
 package gcp
 
 import (
+	"fmt"
 	"hcm/cmd/account-server/logics/bill/puller"
 	"hcm/cmd/account-server/logics/bill/puller/daily"
 	"hcm/pkg/api/data-service/bill"
@@ -47,9 +48,15 @@ type GcpPuller struct {
 func (hp *GcpPuller) EnsurePullTask(
 	kt *kit.Kit, client *client.ClientSet, billSummaryMain *dsbillapi.BillSummaryMainResult) error {
 
+	gcpMainAccount, err := client.DataService().Gcp.MainAccount.Get(kt, billSummaryMain.MainAccountID)
+	if err != nil {
+		return fmt.Errorf("get gcp main account failed, err %s", err.Error())
+	}
+
 	dp := &daily.DailyPuller{
 		RootAccountID: billSummaryMain.RootAccountID,
 		MainAccountID: billSummaryMain.MainAccountID,
+		BillAccountID: gcpMainAccount.Extension.CloudProjectID,
 		ProductID:     billSummaryMain.ProductID,
 		BkBizID:       billSummaryMain.BkBizID,
 		Vendor:        billSummaryMain.Vendor,

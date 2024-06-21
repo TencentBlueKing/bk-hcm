@@ -130,7 +130,7 @@ func (gcp *GcpPuller) createRawBill(
 	storeReq := &dsbill.RawBillCreateReq{
 		Vendor:         enumor.Gcp,
 		FirstAccountID: opt.RootAccountID,
-		AccountID:      opt.MainAccountID,
+		AccountID:      opt.BillAccountID,
 		BillYear:       fmt.Sprintf("%d", opt.BillYear),
 		BillMonth:      fmt.Sprintf("%02d", opt.BillMonth),
 		BillDate:       fmt.Sprintf("%02d", opt.BillDay),

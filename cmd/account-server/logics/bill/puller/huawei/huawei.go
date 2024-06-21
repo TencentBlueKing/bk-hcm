@@ -20,6 +20,7 @@
 package huawei
 
 import (
+	"fmt"
 	"hcm/cmd/account-server/logics/bill/puller"
 	"hcm/cmd/account-server/logics/bill/puller/daily"
 	"hcm/pkg/api/data-service/bill"
@@ -47,9 +48,15 @@ type HuaweiPuller struct {
 func (hp *HuaweiPuller) EnsurePullTask(
 	kt *kit.Kit, client *client.ClientSet, billSummaryMain *dsbillapi.BillSummaryMainResult) error {
 
+	hwMainAccount, err := client.DataService().HuaWei.MainAccount.Get(kt, billSummaryMain.MainAccountID)
+	if err != nil {
+		return fmt.Errorf("get gcp main account failed, err %s", err.Error())
+	}
+
 	dp := &daily.DailyPuller{
 		RootAccountID: billSummaryMain.RootAccountID,
 		MainAccountID: billSummaryMain.MainAccountID,
+		BillAccountID: hwMainAccount.CloudID,
 		ProductID:     billSummaryMain.ProductID,
 		BkBizID:       billSummaryMain.BkBizID,
 		Vendor:        billSummaryMain.Vendor,

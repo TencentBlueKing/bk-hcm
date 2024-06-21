@@ -29,7 +29,7 @@ import (
 
 // BuildDailyPullTask build daily bill pull task
 func BuildDailyPullTask(
-	rootAccountID, mainAccountID string, vendor enumor.Vendor,
+	rootAccountID, mainAccountID, billAccountID string, vendor enumor.Vendor,
 	billYear, billMonth, billDay, version int) ts.CustomFlowTask {
 
 	return ts.CustomFlowTask{
@@ -38,6 +38,7 @@ func BuildDailyPullTask(
 		Params: registry.PullDailyBillOption{
 			RootAccountID: rootAccountID,
 			MainAccountID: mainAccountID,
+			BillAccountID: billAccountID,
 			Vendor:        vendor,
 			VersionID:     version,
 			BillYear:      billYear,

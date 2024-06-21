@@ -42,6 +42,7 @@ import (
 type DailyPuller struct {
 	RootAccountID string
 	MainAccountID string
+	BillAccountID string
 	ProductID     int64
 	BkBizID       int64
 	Vendor        enumor.Vendor
@@ -128,6 +129,7 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 					dailypull.BuildDailyPullTask(
 						dp.RootAccountID,
 						dp.MainAccountID,
+						dp.BillAccountID,
 						dp.Vendor,
 						dp.BillYear,
 						dp.BillMonth,
@@ -160,6 +162,7 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 					dailypull.BuildDailyPullTask(
 						dp.RootAccountID,
 						dp.MainAccountID,
+						dp.BillAccountID,
 						dp.Vendor,
 						dp.BillYear,
 						dp.BillMonth,
