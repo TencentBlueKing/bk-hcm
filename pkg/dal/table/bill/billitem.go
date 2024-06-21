@@ -22,6 +22,7 @@ package bill
 
 import (
 	"errors"
+
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/table"
@@ -80,7 +81,7 @@ type AccountBillItem struct {
 	// VersionID AccountBillSummary VersionID
 	VersionID int `db:"version_id" json:"version_id"`
 	// Currency 币种
-	Currency string `db:"currency" json:"currency"`
+	Currency enumor.CurrencyCode `db:"currency" json:"currency"`
 	// Cost 费用
 	Cost *types.Decimal `db:"cost" json:"cost"`
 	// HcProductCode 云服务代号

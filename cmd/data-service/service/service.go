@@ -35,6 +35,7 @@ import (
 	"hcm/cmd/data-service/service/auth"
 	"hcm/cmd/data-service/service/bill/billadjustmentitem"
 	"hcm/cmd/data-service/service/bill/billdailytask"
+	"hcm/cmd/data-service/service/bill/billexchangerate"
 	"hcm/cmd/data-service/service/bill/billitem"
 	"hcm/cmd/data-service/service/bill/billpuller"
 	"hcm/cmd/data-service/service/bill/billsummarydaily"
@@ -260,6 +261,8 @@ func (s *Service) apiSet() *restful.Container {
 	cert.InitService(capability)
 	loadbalancer.InitService(capability)
 	sgcomrel.InitService(capability)
+
+	billexchangerate.InitService(capability)
 
 	return restful.NewContainer().Add(capability.WebService)
 }

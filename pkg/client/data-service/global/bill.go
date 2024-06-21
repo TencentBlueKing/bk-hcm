@@ -359,3 +359,33 @@ func (b *BillClient) BatchCreateBillItem(
 	return common.Request[billproto.BatchBillItemCreateReq[rawjson.RawMessage], core.BatchCreateResult](
 		b.client, rest.POST, kt, req, fmt.Sprintf("/vendors/%s/bills/rawitems/create", vendor))
 }
+
+// --- exchange rate ---
+
+// BatchCreateExchangeRate create exchange rate
+func (b *BillClient) BatchCreateExchangeRate(kt *kit.Kit, req *billproto.BatchCreateBillExchangeRateReq) (
+	*core.BatchCreateResult, error) {
+
+	return common.Request[billproto.BatchCreateBillExchangeRateReq, core.BatchCreateResult](
+		b.client, rest.POST, kt, req, "/bills/exchange_rates/batch/create")
+}
+
+// UpdateExchangeRate update exchange rate
+func (b *BillClient) UpdateExchangeRate(kt *kit.Kit, req *billproto.ExchangeRateUpdateReq) error {
+
+	return common.RequestNoResp[billproto.ExchangeRateUpdateReq](
+		b.client, rest.PATCH, kt, req, "/bills/exchange_rates")
+}
+
+// BatchDeleteExchangeRate batch delete exchange rate
+func (b *BillClient) BatchDeleteExchangeRate(kt *kit.Kit, req *core.BatchDeleteReq) error {
+
+	return common.RequestNoResp[core.BatchDeleteReq](b.client, rest.DELETE, kt, req, "/bills/exchange_rates")
+}
+
+// ListExchangeRate list exchange rate
+func (b *BillClient) ListExchangeRate(kt *kit.Kit, req *core.ListReq) (*billproto.ExchangeRateListResult, error) {
+
+	return common.Request[core.ListReq, billproto.ExchangeRateListResult](b.client, rest.POST, kt, req,
+		"/bills/exchange_rates/list")
+}
