@@ -9,8 +9,8 @@ export default defineComponent({
     const bill_year = computed(() => currentMonth.value.getFullYear());
     const bill_month = computed(() => currentMonth.value.getMonth() + 1);
     provide('currentMonth', currentMonth);
-    provide('bill_year', bill_year.value);
-    provide('bill_month', bill_month.value);
+    provide('bill_year', bill_year);
+    provide('bill_month', bill_month);
 
     return () => (
       <div class='bill-manage-module'>

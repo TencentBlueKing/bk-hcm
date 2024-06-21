@@ -1,4 +1,4 @@
-import { defineComponent, inject } from 'vue';
+import { Ref, defineComponent, inject } from 'vue';
 import Button from '../../components/button';
 import Amount from '../../components/amount';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
@@ -8,23 +8,20 @@ import { reqBillsMainAccountSummaryList } from '@/api/bill';
 export default defineComponent({
   name: 'OperationProductTabPanel',
   setup() {
-    const bill_year = inject<number>('bill_year');
-    const bill_month = inject<number>('bill_month');
+    const bill_year = inject<Ref<number>>('bill_year');
+    const bill_month = inject<Ref<number>>('bill_month');
 
-    const { columns, settings } = useColumns('billsMainAccountSummary');
+    const { columns } = useColumns('billsMainAccountSummary');
     const { CommonTable } = useTable({
       searchOptions: { disabled: true },
       tableOptions: {
         columns: columns.slice(2, -1),
-        extra: {
-          settings: settings.value,
-        },
       },
       requestOption: {
-        apiMethod: reqBillsMainAccountSummaryList as any,
+        apiMethod: reqBillsMainAccountSummaryList,
         extension: () => ({
-          bill_year,
-          bill_month,
+          bill_year: bill_year.value,
+          bill_month: bill_month.value,
         }),
       },
     });

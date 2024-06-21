@@ -10,18 +10,20 @@ import OperationProductSelector from './operation-product-selector';
 
 import { useI18n } from 'vue-i18n';
 import { VendorEnum } from '@/common/constant';
+import { QueryRuleOPEnum } from '@/typings';
+import dayjs from 'dayjs';
 
 interface ISearchModal {
   vendor: VendorEnum[];
   root_account_id: string[];
   main_account_id: string[];
   product_id: string[];
-  update_time: string;
+  updated_at: Date[];
 }
 
 export default defineComponent({
   emits: ['search'],
-  setup(_, { emit }) {
+  setup(_, { emit, expose }) {
     const { t } = useI18n();
     const route = useRoute();
 
@@ -30,12 +32,39 @@ export default defineComponent({
       root_account_id: [],
       main_account_id: [],
       product_id: [],
-      update_time: '',
+      updated_at: [],
     });
     const modal = ref(getDefaultModal());
 
+    const getRules = () => {
+      const { vendor, root_account_id, main_account_id, product_id, updated_at } = modal.value;
+      const rules = [
+        { field: 'vendor', op: QueryRuleOPEnum.IN, value: vendor },
+        { field: 'root_account_id', op: QueryRuleOPEnum.IN, value: root_account_id },
+        { field: 'main_account_id', op: QueryRuleOPEnum.IN, value: main_account_id },
+        { field: 'product_id', op: QueryRuleOPEnum.IN, value: product_id },
+        {
+          field: 'updated_at',
+          op: QueryRuleOPEnum.GTE,
+          value: updated_at[0] ? dayjs(updated_at[0]).format('YYYY-MM-DDTHH:mm:ssZ') : '',
+        },
+        {
+          field: 'updated_at',
+          op: QueryRuleOPEnum.LTE,
+          value: updated_at[1] ? dayjs(updated_at[1]).format('YYYY-MM-DDTHH:mm:ssZ') : '',
+        },
+      ];
+
+      return rules.filter((rule) => {
+        if (Array.isArray(rule.value)) {
+          return rule.value.length;
+        }
+        return !!rule.value;
+      });
+    };
+
     const handleSearch = () => {
-      emit('search', modal.value);
+      emit('search', getRules());
     };
 
     const handleReset = () => {
@@ -43,10 +72,12 @@ export default defineComponent({
       handleSearch();
     };
 
+    expose({ handleSearch });
+
     return () => (
       <div class={cssModule['search-container']}>
         <div class={cssModule['search-grid']}>
-          {route.name === 'billSummary' && (
+          {route.name === 'billSummaryManage' && (
             <div>
               <div class={cssModule['search-label']}>{t('云厂商')}</div>
               <VendorSelector v-model={modal.value.vendor} />
@@ -71,7 +102,12 @@ export default defineComponent({
           {route.name === 'billAdjust' && (
             <div>
               <div class={cssModule['search-label']}>{t('更新时间')}</div>
-              <DatePicker class={cssModule.datePicker} placeholder='如：2019-01-30 至 2019-01-30' />
+              <DatePicker
+                v-model={modal.value.updated_at}
+                type='monthrange'
+                class={cssModule.datePicker}
+                placeholder='如：2019-01-30 至 2019-01-30'
+              />
             </div>
           )}
         </div>

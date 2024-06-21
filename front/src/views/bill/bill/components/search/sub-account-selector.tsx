@@ -42,8 +42,8 @@ export default defineComponent({
         onScroll-end={handleScrollEnd}
         loading={isDataLoad.value}
         scrollLoading={isDataLoad.value}>
-        {dataList.value.map(({ id, name }) => (
-          <Select.Option key={id} id={id} name={name} />
+        {dataList.value.map(({ id, cloud_id }) => (
+          <Select.Option key={id} id={id} name={cloud_id} />
         ))}
       </Select>
     );

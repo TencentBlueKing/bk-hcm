@@ -21,7 +21,7 @@ import { fetchData } from '@pluginHandler/useTable';
 
 export interface IProp {
   // search-select 配置项
-  searchOptions: {
+  searchOptions?: {
     // search-select 可选项
     searchData?: Array<ISearchItem> | (() => Array<ISearchItem>);
     // 是否禁用 search-select
@@ -41,11 +41,11 @@ export interface IProp {
     extra?: Object;
   };
   // 请求相关字段
-  requestOption: {
+  requestOption?: {
     // 资源类型，与 apiMethod 互斥
     type?: string;
     // 请求方法，与 type 互斥
-    apiMethod?: <T>(...args: any) => Promise<T>;
+    apiMethod?: (...args: any) => Promise<any>;
     // 排序参数
     sortOption?: {
       sort: string; // 需要排序的字段
@@ -121,8 +121,8 @@ export const useTable = (props: IProp) => {
    * @param customRules 自定义规则
    * @param type 资源类型
    */
-  const getListData = async (customRules: Array<RulesItem> = [], type?: string) => {
-    buildFilter({ rules: customRules });
+  const getListData = async (customRules: Array<RulesItem> | (() => Array<RulesItem>) = [], type?: string) => {
+    buildFilter({ rules: typeof customRules === 'function' ? customRules() : customRules });
     // 预览
     if (props.tableOptions.reviewData) {
       dataList.value = props.tableOptions.reviewData;
@@ -165,7 +165,7 @@ export const useTable = (props: IProp) => {
     setup(_props, { slots, expose }) {
       const searchData = computed(() => {
         return (
-          (typeof props.searchOptions.searchData === 'function'
+          (typeof props.searchOptions?.searchData === 'function'
             ? props.searchOptions.searchData()
             : props.searchOptions.searchData) || []
         );
@@ -192,7 +192,7 @@ export const useTable = (props: IProp) => {
         <div
           class={{
             [cssModule['remote-table-container']]: true,
-            [cssModule['no-search']]: props.searchOptions.disabled,
+            [cssModule['no-search']]: props.searchOptions?.disabled,
           }}>
           {hasTopBar.value && (
             <section class={cssModule['top-bar']}>
@@ -204,7 +204,7 @@ export const useTable = (props: IProp) => {
                   v-model={searchVal.value}
                   data={searchData.value}
                   valueBehavior='need-key'
-                  {...(props.searchOptions.extra || {})}
+                  {...(props.searchOptions?.extra || {})}
                 />
               )}
               {slots.operationBarEnd && <div class={cssModule['operation-bar-end']}>{slots.operationBarEnd()}</div>}
@@ -280,7 +280,8 @@ export const useTable = (props: IProp) => {
         if (Array.isArray(tmpRule.rules)) {
           filterMap.set(newRule.field, { op: QueryRuleOPEnum.OR, rules: [...tmpRule.rules, newRule] });
         } else {
-          filterMap.set(newRule.field, { op: QueryRuleOPEnum.OR, rules: [tmpRule, newRule] });
+          const op = newRule.field === 'updated_at' ? QueryRuleOPEnum.AND : QueryRuleOPEnum.OR;
+          filterMap.set(newRule.field, { op, rules: [tmpRule, newRule] });
         }
       } else {
         filterMap.set(newRule.field, JSON.parse(JSON.stringify(newRule)));
@@ -340,6 +341,10 @@ export const useTable = (props: IProp) => {
       op = QueryRuleOPEnum.EQ;
     }
     return op;
+  };
+
+  const clearFilter = () => {
+    filter.rules = getInitialRules();
   };
 
   watch(
@@ -419,5 +424,6 @@ export const useTable = (props: IProp) => {
     sort,
     order,
     isLoading,
+    clearFilter,
   };
 };

@@ -17,13 +17,17 @@ export function useSingleList(options?: {
   immediate?: boolean;
   // 初始搜索条件（数组参数形式推荐 id 等不变值搜索条件；函数参数形式可以支持响应式的搜索条件）
   rules?: RulesItem[] | ((...args: any) => RulesItem[]);
+  // 请求载荷
+  payload?: object | ((...args: any) => object);
   // 自定义的 api 方法（请求全量数据时使用）
   apiMethod?: (...args: any) => Promise<any[]>;
   // 自定义参数路径
   path?: { data: string; count: string };
+  // 禁用排序
+  disableSort?: boolean;
 }) {
   // 设置 options 默认值
-  defaults(options, { immediate: false, rules: [], apiMethod: null, path: {} });
+  defaults(options, { immediate: false, rules: [], payload: {}, apiMethod: null, path: {}, disableSort: false });
   // 设置 path 默认值
   defaults(options.path, { data: 'details', count: 'count' });
 
@@ -52,9 +56,11 @@ export function useSingleList(options?: {
               count: isCount,
               start: isCount ? 0 : pagination.start,
               limit: isCount ? 0 : pagination.limit,
-              sort: isCount ? undefined : 'created_at',
-              order: isCount ? undefined : 'DESC',
+              ...(options.disableSort
+                ? {}
+                : { sort: isCount ? undefined : 'created_at', order: isCount ? undefined : 'DESC' }),
             },
+            ...(typeof options.payload === 'function' ? options.payload() : options.payload),
           }),
         ),
       );
