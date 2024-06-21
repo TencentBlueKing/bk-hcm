@@ -184,8 +184,11 @@ func (b *billAdjustmentSvc) ListBillAdjustmentItem(cts *rest.Contexts) (any, err
 	}
 	// 填充主账号云id 和 email
 	for i, adjustmentItem := range resp.Details {
-		resp.Details[i].MainAccountCloudID = mainAccIDCloudIDMap[adjustmentItem.MainAccountID].CloudID
-		resp.Details[i].MainAccountEmail = mainAccIDCloudIDMap[adjustmentItem.MainAccountID].Email
+		mainAccount := mainAccIDCloudIDMap[adjustmentItem.MainAccountID]
+		if mainAccount != nil {
+			resp.Details[i].MainAccountCloudID = mainAccIDCloudIDMap[adjustmentItem.MainAccountID].CloudID
+			resp.Details[i].MainAccountEmail = mainAccIDCloudIDMap[adjustmentItem.MainAccountID].Email
+		}
 	}
 	return resp, nil
 }
