@@ -83,11 +83,16 @@ const (
 	ActionDailySummary = "dailysummary"
 )
 
+// CurrencyCode 货币代码
+type CurrencyCode string
+
 const (
 	// CurrencyUSD usd currency
-	CurrencyUSD = "USD"
+	CurrencyUSD CurrencyCode = "USD"
+	// CurrencyCNY rmb currency
+	CurrencyCNY CurrencyCode = "CNY"
 	// CurrencyRMB rmb currency
-	CurrencyRMB = "RMB"
+	CurrencyRMB = CurrencyCNY
 )
 
 // BillAdjustmentType 调账类型

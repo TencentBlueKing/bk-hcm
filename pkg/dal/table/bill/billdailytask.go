@@ -82,7 +82,7 @@ type AccountBillDailyPullTask struct {
 	// Count 账单条目数量
 	Count int64 `db:"count" json:"count"`
 	// Currency 币种
-	Currency string `db:"currency" json:"currency"`
+	Currency enumor.CurrencyCode `db:"currency" json:"currency"`
 	// Cost 金额，单位：元
 	Cost *types.Decimal `db:"cost" json:"cost"`
 	// FlowID task id

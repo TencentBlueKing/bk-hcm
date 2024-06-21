@@ -22,6 +22,7 @@ package bill
 import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/bill"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 
 	"github.com/shopspring/decimal"
@@ -39,9 +40,9 @@ type ExchangeRateCreate struct {
 	// Month 账单月份
 	Month int `json:"month" validate:"required,ge=1,le=12"`
 	// FromCurrency 原币种
-	FromCurrency string `json:"from_currency" validate:"required"`
+	FromCurrency enumor.CurrencyCode `json:"from_currency" validate:"required"`
 	// ToCurrency 转换后币种
-	ToCurrency string `json:"to_currency" validate:"required"`
+	ToCurrency enumor.CurrencyCode `json:"to_currency" validate:"required"`
 	// ExchangeRate 汇率
 	ExchangeRate *decimal.Decimal `json:"exchange_rate" validate:"required"`
 }
@@ -64,9 +65,9 @@ type ExchangeRateUpdateReq struct {
 	// Month 账单月份
 	Month int `json:"month" validate:"omitempty,gte=1,lte=12"`
 	// FromCurrency 原币种
-	FromCurrency string `json:"from_currency"`
+	FromCurrency enumor.CurrencyCode `json:"from_currency"`
 	// ToCurrency 转换后币种
-	ToCurrency string `json:"to_currency"`
+	ToCurrency enumor.CurrencyCode `json:"to_currency"`
 	// ExchangeRate 汇率
 	ExchangeRate *decimal.Decimal `json:"exchange_rate" `
 }

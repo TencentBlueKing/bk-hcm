@@ -24,6 +24,7 @@ import (
 	"fmt"
 
 	"encoding/csv"
+
 	dsbill "hcm/pkg/api/data-service/bill"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -77,7 +78,7 @@ func (s *service) QueryRawBillDetail(cts *rest.Contexts) (interface{}, error) {
 			Region:        csvlineArr[0],
 			HcProductCode: csvlineArr[1],
 			HcProductName: csvlineArr[2],
-			BillCurrency:  csvlineArr[3],
+			BillCurrency:  enumor.CurrencyCode(csvlineArr[3]),
 			BillCost:      cost,
 			ResAmount:     resAmount,
 			ResAmountUnit: csvlineArr[6],

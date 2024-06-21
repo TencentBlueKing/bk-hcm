@@ -59,9 +59,9 @@ type AccountBillExchangeRate struct {
 	// Month 账单月份
 	Month int `db:"month" json:"month"`
 	// FromCurrency 原币种
-	FromCurrency string `db:"from_currency" json:"from_currency"`
+	FromCurrency enumor.CurrencyCode `db:"from_currency" json:"from_currency"`
 	// ToCurrency 转换后币种
-	ToCurrency string `db:"to_currency" json:"to_currency"`
+	ToCurrency enumor.CurrencyCode `db:"to_currency" json:"to_currency"`
 	// ExchangeRate 汇率
 	ExchangeRate *types.Decimal `db:"exchange_rate" json:"exchange_rate"`
 

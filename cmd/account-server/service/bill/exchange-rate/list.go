@@ -1,7 +1,7 @@
 /*
  * TencentBlueKing is pleased to support the open source community by making
  * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
- * Copyright (C) 2024 THL A29 Limited,
+ * Copyright (C) 2022 THL A29 Limited,
  * a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,29 +17,29 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package bill
+package exchangerate
 
 import (
 	"hcm/pkg/api/core"
-	"hcm/pkg/criteria/enumor"
-
-	"github.com/shopspring/decimal"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/iam/meta"
+	"hcm/pkg/rest"
 )
 
-// ExchangeRate ...
-type ExchangeRate struct {
-	ID string `json:"id"`
+// ListExchangeRate List  exchange rate with options
+func (s *service) ListExchangeRate(cts *rest.Contexts) (interface{}, error) {
+	req := new(core.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
 
-	// Year 账单年份
-	Year int `json:"year"`
-	// Month 账单月份
-	Month int `json:"month"`
-	// FromCurrency 原币种
-	FromCurrency enumor.CurrencyCode `json:"from_currency"`
-	// ToCurrency 转换后币种
-	ToCurrency enumor.CurrencyCode `json:"to_currency"`
-	// ExchangeRate 汇率
-	ExchangeRate *decimal.Decimal `json:"exchange_rate"`
-
-	*core.Revision `json:",inline"`
+	err := service{}.authorizer.AuthorizeWithPerm(cts.Kit,
+		meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.AccountBill, Action: meta.Find}})
+	if err != nil {
+		return nil, err
+	}
+	return s.client.DataService().Global.Bill.ListExchangeRate(cts.Kit, req)
 }

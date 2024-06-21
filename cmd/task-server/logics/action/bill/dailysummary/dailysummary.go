@@ -150,7 +150,7 @@ func (act DailySummaryAction) doDailySummary(kt run.ExecuteKit, opt *DailySummar
 }
 
 func (act DailySummaryAction) syncDailySummary(kt run.ExecuteKit, opt *DailySummaryOption,
-	billDay int, currency string, cost decimal.Decimal, count uint64) error {
+	billDay int, currency enumor.CurrencyCode, cost decimal.Decimal, count uint64) error {
 
 	result, err := actcli.GetDataService().Global.Bill.ListBillSummaryDaily(kt.Kit(), &bill.BillSummaryDailyListReq{
 		Filter: getFilter(opt, billDay),
@@ -163,20 +163,21 @@ func (act DailySummaryAction) syncDailySummary(kt run.ExecuteKit, opt *DailySumm
 		return fmt.Errorf("get daily summary for %v day %d failed, err %s", opt, billDay, err.Error())
 	}
 	if len(result.Details) == 0 {
-		if _, err := actcli.GetDataService().Global.Bill.CreateBillSummaryDaily(kt.Kit(), &bill.BillSummaryDailyCreateReq{
-			RootAccountID: opt.RootAccountID,
-			MainAccountID: opt.MainAccountID,
-			ProductID:     opt.ProductID,
-			BkBizID:       opt.BkBizID,
-			Vendor:        opt.Vendor,
-			BillYear:      opt.BillYear,
-			BillMonth:     opt.BillMonth,
-			BillDay:       billDay,
-			VersionID:     opt.VersionID,
-			Currency:      currency,
-			Cost:          cost,
-			Count:         int64(count),
-		}); err != nil {
+		if _, err := actcli.GetDataService().Global.Bill.CreateBillSummaryDaily(kt.Kit(),
+			&bill.BillSummaryDailyCreateReq{
+				RootAccountID: opt.RootAccountID,
+				MainAccountID: opt.MainAccountID,
+				ProductID:     opt.ProductID,
+				BkBizID:       opt.BkBizID,
+				Vendor:        opt.Vendor,
+				BillYear:      opt.BillYear,
+				BillMonth:     opt.BillMonth,
+				BillDay:       billDay,
+				VersionID:     opt.VersionID,
+				Currency:      currency,
+				Cost:          cost,
+				Count:         int64(count),
+			}); err != nil {
 			return fmt.Errorf("create daily summary for %v day %d failed, err %s", opt, billDay, err.Error())
 		}
 		logs.Infof("create daily summary for %v day %d successfully cost %s count %d",
