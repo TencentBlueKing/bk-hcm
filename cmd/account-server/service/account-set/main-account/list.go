@@ -67,7 +67,7 @@ func (s *service) List(cts *rest.Contexts) (interface{}, error) {
 
 	accounts, err := s.client.DataService().Global.MainAccount.List(
 		cts.Kit,
-		&core.ListWithoutFieldReq{
+		&core.ListReq{
 			Filter: reqFilter,
 			Page:   req.Page,
 		},

@@ -50,11 +50,11 @@ func (a *MainAccountClient) GetBasicInfo(kt *kit.Kit, accountID string) (
 }
 
 // List ...
-func (a *MainAccountClient) List(kt *kit.Kit, request *core.ListWithoutFieldReq) (
+func (a *MainAccountClient) List(kt *kit.Kit, request *core.ListReq) (
 	*dataproto.MainAccountListResult, error,
 ) {
 
-	return common.Request[core.ListWithoutFieldReq, dataproto.MainAccountListResult](
+	return common.Request[core.ListReq, dataproto.MainAccountListResult](
 		a.client, rest.POST, kt, request, "/main_accounts/list")
 }
 

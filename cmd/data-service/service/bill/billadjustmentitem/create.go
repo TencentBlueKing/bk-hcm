@@ -36,34 +36,34 @@ import (
 
 // CreateBillAdjustmentItem account bill adjustment item with options
 func (svc *service) CreateBillAdjustmentItem(cts *rest.Contexts) (interface{}, error) {
-	req := make(dsbill.BatchBillAdjustmentItemCreateReq, 0)
+	req := new(dsbill.BatchBillAdjustmentItemCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
-	for _, item := range req {
-		if err := item.Validate(); err != nil {
-			return nil, errf.NewFromErr(errf.InvalidParameter, err)
-		}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	idList, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		var itemList []tablebill.AccountBillAdjustmentItem
-		for _, item := range req {
+		for _, item := range req.Items {
 			item := tablebill.AccountBillAdjustmentItem{
-				FirstAccountID:  item.FirstAccountID,
-				SecondAccountID: item.SecondAccountID,
-				ProductID:       item.ProductID,
-				BkBizID:         item.BkBizID,
-				BillYear:        item.BillYear,
-				BillMonth:       item.BillMonth,
-				BillDay:         item.BillDay,
-				Type:            item.Type,
-				Memo:            item.Memo,
-				Operator:        item.Operator,
-				Currency:        item.Currency,
-				Cost:            &types.Decimal{Decimal: item.Cost},
-				RMBCost:         &types.Decimal{Decimal: item.RMBCost},
-				State:           item.State,
+				RootAccountID: item.RootAccountID,
+				MainAccountID: item.MainAccountID,
+				Vendor:        item.Vendor,
+				ProductID:     item.ProductID,
+				BkBizID:       item.BkBizID,
+				BillYear:      item.BillYear,
+				BillMonth:     item.BillMonth,
+				BillDay:       item.BillDay,
+				Type:          string(item.Type),
+				Memo:          item.Memo,
+				Currency:      item.Currency,
+				Cost:          &types.Decimal{Decimal: item.Cost},
+				RMBCost:       &types.Decimal{Decimal: item.RMBCost},
+				State:         item.State,
+				Creator:       cts.Kit.User,
+				Operator:      cts.Kit.User,
 			}
 			itemList = append(itemList, item)
 		}
@@ -71,7 +71,7 @@ func (svc *service) CreateBillAdjustmentItem(cts *rest.Contexts) (interface{}, e
 		ids, err := svc.dao.AccountBillAdjustmentItem().CreateWithTx(
 			cts.Kit, txn, itemList)
 		if err != nil {
-			return nil, fmt.Errorf("create account bill adjustment item list failed, err: %v", err)
+			return nil, fmt.Errorf("create account bill adjustment item failed, err: %v", err)
 		}
 		return ids, nil
 	})

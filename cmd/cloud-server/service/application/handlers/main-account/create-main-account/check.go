@@ -114,7 +114,7 @@ func (a *ApplicationOfCreateMainAccount) isDuplicateField(rules ...*filter.AtomR
 	// 后台查询是否主账号重复
 	result, err := a.Client.DataService().Global.MainAccount.List(
 		a.Cts.Kit,
-		&core.ListWithoutFieldReq{
+		&core.ListReq{
 			Filter: tools.ExpressionAnd(rules...),
 			Page: &core.BasePage{
 				Count: true,

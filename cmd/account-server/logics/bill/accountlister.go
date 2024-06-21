@@ -55,7 +55,7 @@ type MainAccountLister struct {
 
 // ListAccount list main account
 func (t *MainAccountLister) ListAllAccount(kt *kit.Kit) ([]*Account, error) {
-	result, err := t.Client.DataService().Global.MainAccount.List(kt, &core.ListWithoutFieldReq{
+	result, err := t.Client.DataService().Global.MainAccount.List(kt, &core.ListReq{
 		Filter: tools.AllExpression(),
 		Page: &core.BasePage{
 			Count: true,
@@ -66,7 +66,7 @@ func (t *MainAccountLister) ListAllAccount(kt *kit.Kit) ([]*Account, error) {
 	}
 	var retList []*Account
 	for offset := uint64(0); offset < result.Count; offset = offset + defaultAccountListLimit {
-		accountResult, err := t.Client.DataService().Global.MainAccount.List(kt, &core.ListWithoutFieldReq{
+		accountResult, err := t.Client.DataService().Global.MainAccount.List(kt, &core.ListReq{
 			Filter: tools.AllExpression(),
 			Page: &core.BasePage{
 				Start: uint32(offset),

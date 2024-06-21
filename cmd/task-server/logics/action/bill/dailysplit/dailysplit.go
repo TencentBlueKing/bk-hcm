@@ -221,7 +221,7 @@ func getMainAccount(kt *kit.Kit, mainAccountID string) (*protocore.BaseMainAccou
 	expressions = append(expressions, []*filter.AtomRule{
 		tools.RuleEqual("cloud_id", mainAccountID),
 	}...)
-	result, err := actcli.GetDataService().Global.MainAccount.List(kt, &core.ListWithoutFieldReq{
+	result, err := actcli.GetDataService().Global.MainAccount.List(kt, &core.ListReq{
 		Filter: tools.ExpressionAnd(expressions...),
 		Page: &core.BasePage{
 			Start: 0,

@@ -147,8 +147,8 @@ values
 -- 调账明细数据
 create table if not exists `account_bill_adjustment_item` (
   `id` varchar(64) not null,
-  `first_account_id` varchar(64) not null,
-  `second_account_id` varchar(64) not null,
+  `root_account_id` varchar(64) not null,
+  `main_account_id` varchar(64) not null,
   `vendor` varchar(16) not null,
   `product_id` bigint(1),
   `bk_biz_id` bigint(1),
@@ -162,6 +162,7 @@ create table if not exists `account_bill_adjustment_item` (
   `cost` decimal(28, 8) not null,
   `rmb_cost` decimal(28, 8) not null,
   `state` varchar(64) not null,
+  `creator` varchar(64) not null,
   `created_at` timestamp not null default current_timestamp,
   `updated_at` timestamp not null default current_timestamp on update current_timestamp,
   primary key (`id`)

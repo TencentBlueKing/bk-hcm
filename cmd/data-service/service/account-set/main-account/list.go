@@ -35,7 +35,7 @@ import (
 
 // ListMainAccount list main account
 func (svc *service) ListMainAccount(cts *rest.Contexts) (interface{}, error) {
-	req := new(core.ListWithoutFieldReq)
+	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -47,6 +47,7 @@ func (svc *service) ListMainAccount(cts *rest.Contexts) (interface{}, error) {
 	opt := &types.ListOption{
 		Filter: req.Filter,
 		Page:   req.Page,
+		Fields: req.Fields,
 	}
 
 	daoAccountResp, err := svc.dao.MainAccount().List(cts.Kit, opt)
