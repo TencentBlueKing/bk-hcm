@@ -22,6 +22,7 @@ package gcp
 import (
 	"hcm/cmd/account-server/logics/bill/puller"
 	"hcm/cmd/account-server/logics/bill/puller/daily"
+	"hcm/pkg/api/data-service/bill"
 	dsbillapi "hcm/pkg/api/data-service/bill"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
@@ -61,8 +62,9 @@ func (hp *GcpPuller) EnsurePullTask(
 	return dp.EnsurePullTask(kt)
 }
 
-func (hp *GcpPuller) GetPullState(
-	kt *kit.Kit, client *client.ClientSet, billSummaryMain *dsbillapi.BillSummaryMainResult) (string, error) {
+func (hp *GcpPuller) GetPullTaskList(
+	kt *kit.Kit, client *client.ClientSet, billSummaryMain *dsbillapi.BillSummaryMainResult) (
+	[]*bill.BillDailyPullTaskResult, error) {
 
 	dp := &daily.DailyPuller{
 		RootAccountID: billSummaryMain.RootAccountID,
@@ -76,5 +78,5 @@ func (hp *GcpPuller) GetPullState(
 		BillDelay:     hp.BillDelay,
 		Client:        client,
 	}
-	return dp.GetPullState(kt)
+	return dp.GetPullTaskList(kt)
 }

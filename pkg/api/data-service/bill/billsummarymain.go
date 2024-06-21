@@ -77,7 +77,7 @@ func (req *BillSummaryMainListReq) Validate() error {
 
 // BillSummaryMainListResult list result
 type BillSummaryMainListResult struct {
-	Count   *uint64                  `json:"count,omitempty"`
+	Count   uint64                   `json:"count,omitempty"`
 	Details []*BillSummaryMainResult `json:"details"`
 }
 
@@ -116,20 +116,15 @@ type BillSummaryMainResult struct {
 // BillSummaryMainUpdateReq ...
 type BillSummaryMainUpdateReq struct {
 	ID                        string          `json:"id,omitempty" validate:"required"`
-	RootAccountID             string          `json:"root_account_id" validate:"required"`
 	RootAccountName           string          `json:"root_account_name" validate:"omitempty"`
-	MainAccountID             string          `json:"main_account_id" validate:"required"`
 	MainAccountName           string          `json:"main_account_name" validate:"omitempty"`
-	Vendor                    enumor.Vendor   `json:"vendor" validate:"required"`
 	ProductID                 int64           `json:"product_id" validate:"omitempty"`
 	ProductName               string          `json:"product_name" validate:"omitempty"`
 	BkBizID                   int64           `json:"bk_biz_id" validate:"omitempty"`
 	BkBizName                 string          `json:"bk_biz_name" validate:"omitempty"`
-	BillYear                  int             `json:"bill_year" validate:"required"`
-	BillMonth                 int             `json:"bill_month" validate:"required"`
 	LastSyncedVersion         int             `json:"last_synced_version" validate:"omitempty"`
-	CurrentVersion            int             `json:"current_version" validate:"required"`
-	Currency                  string          `json:"currency" validate:"required"`
+	CurrentVersion            int             `json:"current_version" validate:"omitempty"`
+	Currency                  string          `json:"currency" validate:"omitempty"`
 	LastMonthCostSynced       decimal.Decimal `json:"last_month_cost_synced" validate:"omitempty"`
 	LastMonthRMBCostSynced    decimal.Decimal `json:"last_month_rmb_cost_synced" validate:"omitempty"`
 	CurrentMonthCostSynced    decimal.Decimal `json:"current_month_cost_synced" validate:"omitempty"`
@@ -139,8 +134,8 @@ type BillSummaryMainUpdateReq struct {
 	CurrentMonthRMBCost       decimal.Decimal `json:"current_month_rmb_cost" validate:"omitempty"`
 	AjustmentCost             decimal.Decimal `json:"adjustment_cost" validate:"omitempty"`
 	AjustmentRMBCost          decimal.Decimal `json:"adjustment_rmb_cost" validate:"omitempty"`
-	Rate                      float64         `json:"rate" validate:"required"`
-	State                     string          `json:"state" validate:"required"`
+	Rate                      float64         `json:"rate" validate:"omitempty"`
+	State                     string          `json:"state" validate:"omitempty"`
 }
 
 // Validate ...

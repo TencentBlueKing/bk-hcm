@@ -29,25 +29,39 @@ const (
 	StatusCreateCloudFormation = 5
 	StatusSuccess              = 100
 
+	// 一级账号账单汇总状态
+	// RootAccountBillSummaryStateAccounting 核算中
+	RootAccountBillSummaryStateAccounting = "accounting"
+	// RootAccountBillSummaryStateAccounted 已核算
+	RootAccountBillSummaryStateAccounted = "accounted"
+	// RootAccountBillSummaryStateSyncing 同步中
+	RootAccountBillSummaryStateSyncing = "syncing"
+	// RootAccountBillSummaryStateSynced 已同步
+	RootAccountBillSummaryStateSynced = "synced"
+	// RootAccountBillSummaryStateStop 停止中
+	RootAccountBillSummaryStateStop = "stopped"
+
 	// 二级账号账单汇总状态
 	// MainAccountBillSummaryStateAccounting 核算中
-	MainAccountBillSummaryStateAccounting = "核算中"
+	MainAccountBillSummaryStateAccounting = "accounting"
 	// MainAccountBillSummaryStateAccounted 已核算
-	MainAccountBillSummaryStateAccounted = "已核算"
+	MainAccountBillSummaryStateAccounted = "accounted"
 	// MainAccountBillSummaryStateSyncing 同步中
-	MainAccountBillSummaryStateSyncing = "同步中"
+	MainAccountBillSummaryStateSyncing = "syncing"
 	// MainAccountBillSummaryStateSynced 已同步
-	MainAccountBillSummaryStateSynced = "已同步"
+	MainAccountBillSummaryStateSynced = "synced"
 	// MainAccountBillSummaryStateStop 停止中
-	MainAccountBillSummaryStateStop = "停止中"
+	MainAccountBillSummaryStateStop = "stopped"
 
 	// 二级账号账单拉取状态
 	// MainAccountRawBillPullStatePulling 拉取中
-	MainAccountRawBillPullStatePulling = "拉取中"
+	MainAccountRawBillPullStatePulling = "pulling"
 	// MainAccountRawBillPullStatePulled 已拉取
-	MainAccountRawBillPullStatePulled = "已拉取"
+	MainAccountRawBillPullStatePulled = "pulled"
 	// MainAccountRawBillPullStateSplitted 已分账
-	MainAccountRawBillPullStateSplitted = "已分账"
+	MainAccountRawBillPullStateSplitted = "splitted"
+	// MainAccountRawBillPullStateAccounted
+	MainAccountRawBillPullStateAccounted = "accounted"
 	// MainAccountRawBillPullStateStop 停止中
-	MainAccountRawBillPullStateStop = "停止中"
+	MainAccountRawBillPullStateStop = "stopped"
 )

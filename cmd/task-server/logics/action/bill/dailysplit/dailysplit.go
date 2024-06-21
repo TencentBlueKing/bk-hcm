@@ -45,6 +45,7 @@ type DailyAccountSplitActionOption struct {
 	MainAccountID string        `json:"main_account_id" validate:"required"`
 	BillYear      int           `json:"bill_year" validate:"required"`
 	BillMonth     int           `json:"bill_month" validate:"required"`
+	BillDay       int           `json:"bill_day" validate:"required"`
 	VersionID     int           `json:"version_id" validate:"required"`
 	Vendor        enumor.Vendor `json:"vendor" validate:"required"`
 }
@@ -63,15 +64,14 @@ func (act DailyAccountSplitAction) Name() enumor.ActionName {
 }
 
 func getFilter(opt *DailyAccountSplitActionOption, billDay int) *filter.Expression {
-	var expressions []*filter.AtomRule
-	expressions = append(expressions, []*filter.AtomRule{
+	expressions := []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", opt.RootAccountID),
 		tools.RuleEqual("main_account_id", opt.MainAccountID),
 		tools.RuleEqual("vendor", opt.Vendor),
 		tools.RuleEqual("version_id", opt.VersionID),
 		tools.RuleEqual("bill_year", opt.BillYear),
 		tools.RuleEqual("bill_month", opt.BillMonth),
-	}...)
+	}
 	if billDay != 0 {
 		expressions = append(expressions, tools.RuleEqual("bill_day", billDay))
 	}
@@ -87,25 +87,27 @@ func (act DailyAccountSplitAction) Run(kt run.ExecuteKit, params interface{}) (i
 
 	pullTaskList, err := actcli.GetDataService().Global.Bill.ListBillDailyPullTask(
 		kt.Kit(), &bill.BillDailyPullTaskListReq{
-			Filter: getFilter(opt, 0),
+			Filter: getFilter(opt, opt.BillDay),
 			Page: &core.BasePage{
 				Start: 0,
 				Limit: 31,
 			},
 		})
 	if err != nil {
-		return nil, fmt.Errorf("list pull task by opt %v failed, err %s", opt, err.Error())
+		return nil, fmt.Errorf("get pull task by opt %v failed, err %s", opt, err.Error())
 	}
+	if len(pullTaskList.Details) != 1 {
+		return nil, fmt.Errorf("get pull task invalid length, resp %v", pullTaskList.Details)
+	}
+	task := pullTaskList.Details[0]
 
-	for _, task := range pullTaskList.Details {
-		if task.State == constant.MainAccountRawBillPullStatePulled {
-			if err := act.doDailySplit(kt, opt, task.BillDay); err != nil {
-				return nil, fmt.Errorf("do splitting for %v day-%d failed, err %s", opt, task.BillDay, err.Error())
-			}
-			if err := act.changeTaskToSplitted(kt, task); err != nil {
-				return nil, fmt.Errorf("update task %s to %s failed, err %s",
-					task.ID, constant.MainAccountRawBillPullStateSplitted, err.Error())
-			}
+	if task.State == constant.MainAccountRawBillPullStatePulled {
+		if err := act.doDailySplit(kt, opt, task.BillDay); err != nil {
+			return nil, fmt.Errorf("do splitting for %v day-%d failed, err %s", opt, task.BillDay, err.Error())
+		}
+		if err := act.changeTaskToSplitted(kt, task); err != nil {
+			return nil, fmt.Errorf("update task %s to %s failed, err %s",
+				task.ID, constant.MainAccountRawBillPullStateSplitted, err.Error())
 		}
 	}
 
@@ -219,7 +221,7 @@ func splitBillItem(kt *kit.Kit, opt *DailyAccountSplitActionOption, billDay int)
 func getMainAccount(kt *kit.Kit, mainAccountID string) (*protocore.BaseMainAccount, error) {
 	var expressions []*filter.AtomRule
 	expressions = append(expressions, []*filter.AtomRule{
-		tools.RuleEqual("cloud_id", mainAccountID),
+		tools.RuleEqual("id", mainAccountID),
 	}...)
 	result, err := actcli.GetDataService().Global.MainAccount.List(kt, &core.ListWithoutFieldReq{
 		Filter: tools.ExpressionAnd(expressions...),

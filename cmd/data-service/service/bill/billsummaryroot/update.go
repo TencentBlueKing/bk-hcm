@@ -46,11 +46,7 @@ func (svc *service) UpdateBillSummaryRoot(cts *rest.Contexts) (interface{}, erro
 
 	billSummaryRoot := &tablebill.AccountBillSummaryRoot{
 		ID:                        req.ID,
-		RootAccountID:             req.RootAccountID,
 		RootAccountName:           req.RootAccountName,
-		Vendor:                    req.Vendor,
-		BillYear:                  req.BillYear,
-		BillMonth:                 req.BillMonth,
 		LastSyncedVersion:         req.LastSyncedVersion,
 		CurrentVersion:            req.CurrentVersion,
 		Currency:                  req.Currency,

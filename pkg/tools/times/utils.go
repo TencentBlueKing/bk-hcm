@@ -17,36 +17,19 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package bill
+package times
 
 import (
-	"hcm/pkg/cc"
-	"hcm/pkg/kit"
+	"fmt"
 	"time"
 )
 
-const (
-	defaultAccountListLimit          = uint64(500)
-	defaultControllerSyncDuration    = 30 * time.Second
-	defaultControllerSummaryDuration = 30 * time.Second
-	defaultDailySummaryDuration      = 30 * time.Second
-	defaultDailySplitDuration        = 30 * time.Second
-)
-
-func getInternalKit() *kit.Kit {
-	newKit := kit.New()
-	newKit.User = string(cc.AccountServerName)
-	newKit.AppCode = string(cc.AccountServerName)
-	return newKit
-}
-
-func getCurrentBillMonth() (int, int) {
-	now := time.Now().UTC()
-	return now.Year(), int(now.Month())
-}
-
-func getLastBillMonth() (int, int) {
-	now := time.Now().UTC()
-	lastMonthNow := now.AddDate(0, -1, 0)
-	return lastMonthNow.Year(), int(lastMonthNow.Month())
+// GetLastMonth get last month year and month
+func GetLastMonth(billYear, billMonth int) (int, int, error) {
+	t, err := time.Parse("2006-01-02T15:04:05.000+08:00", fmt.Sprintf("%d-%02d-02T15:04:05.000+08:00", billYear, billMonth))
+	if err != nil {
+		return 0, 0, err
+	}
+	lastT := t.AddDate(0, -1, 0)
+	return lastT.Year(), int(lastT.Month()), nil
 }

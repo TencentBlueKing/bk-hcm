@@ -17,36 +17,34 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package bill
+package times
 
 import (
-	"hcm/pkg/cc"
-	"hcm/pkg/kit"
+	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
-const (
-	defaultAccountListLimit          = uint64(500)
-	defaultControllerSyncDuration    = 30 * time.Second
-	defaultControllerSummaryDuration = 30 * time.Second
-	defaultDailySummaryDuration      = 30 * time.Second
-	defaultDailySplitDuration        = 30 * time.Second
-)
-
-func getInternalKit() *kit.Kit {
-	newKit := kit.New()
-	newKit.User = string(cc.AccountServerName)
-	newKit.AppCode = string(cc.AccountServerName)
-	return newKit
-}
-
-func getCurrentBillMonth() (int, int) {
-	now := time.Now().UTC()
-	return now.Year(), int(now.Month())
-}
-
-func getLastBillMonth() (int, int) {
-	now := time.Now().UTC()
-	lastMonthNow := now.AddDate(0, -1, 0)
-	return lastMonthNow.Year(), int(lastMonthNow.Month())
+func TestDaysInMonth(t *testing.T) {
+	testCases := []struct {
+		year  int
+		month time.Month
+		days  int
+	}{
+		{
+			year:  2024,
+			month: time.Month(5),
+			days:  31,
+		},
+		{
+			year:  2024,
+			month: time.Month(4),
+			days:  30,
+		},
+	}
+	for _, testCase := range testCases {
+		days := DaysInMonth(testCase.year, testCase.month)
+		assert.Equal(t, days, testCase.days)
+	}
 }

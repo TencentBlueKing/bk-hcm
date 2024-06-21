@@ -29,32 +29,47 @@ import (
 	"hcm/pkg/kit"
 )
 
-// Account account info
-type Account struct {
+// MainAccount main account info
+type MainAccount struct {
 	*apicoreaccount.BaseMainAccount
 }
 
-// Key account key
-func (a *Account) Key() string {
+// Key main account key
+func (a *MainAccount) Key() string {
 	if a.BaseMainAccount == nil {
 		return ""
 	}
 	return fmt.Sprintf("%s/%s/%s",
-		a.BaseMainAccount.Vendor, a.BaseMainAccount.ParentAccountID, a.BaseMainAccount.CloudID)
+		a.BaseMainAccount.Vendor, a.BaseMainAccount.ParentAccountID, a.BaseMainAccount.ID)
+}
+
+// RootAccount root account info
+type RootAccount struct {
+	*apicoreaccount.BaseRootAccount
+}
+
+// Key root account key
+func (r *RootAccount) Key() string {
+	if r.BaseRootAccount == nil {
+		return ""
+	}
+	return fmt.Sprintf("%s/%s",
+		r.BaseRootAccount.Vendor, r.BaseRootAccount.ID)
 }
 
 // AccountLister account lister
 type AccountLister interface {
-	ListAllAccount(kt *kit.Kit) ([]*Account, error)
+	ListAllMainAccount(kt *kit.Kit) ([]*MainAccount, error)
+	ListAllRootAccount(kt *kit.Kit) ([]*RootAccount, error)
 }
 
-// MainAccountLister lister for main account
-type MainAccountLister struct {
+// HcmAccountLister lister for main account and root account
+type HcmAccountLister struct {
 	Client *client.ClientSet
 }
 
-// ListAccount list main account
-func (t *MainAccountLister) ListAllAccount(kt *kit.Kit) ([]*Account, error) {
+// ListAllMainAccount list main account
+func (t *HcmAccountLister) ListAllMainAccount(kt *kit.Kit) ([]*MainAccount, error) {
 	result, err := t.Client.DataService().Global.MainAccount.List(kt, &core.ListWithoutFieldReq{
 		Filter: tools.AllExpression(),
 		Page: &core.BasePage{
@@ -64,7 +79,7 @@ func (t *MainAccountLister) ListAllAccount(kt *kit.Kit) ([]*Account, error) {
 	if err != nil {
 		return nil, err
 	}
-	var retList []*Account
+	var retList []*MainAccount
 	for offset := uint64(0); offset < result.Count; offset = offset + defaultAccountListLimit {
 		accountResult, err := t.Client.DataService().Global.MainAccount.List(kt, &core.ListWithoutFieldReq{
 			Filter: tools.AllExpression(),
@@ -74,11 +89,43 @@ func (t *MainAccountLister) ListAllAccount(kt *kit.Kit) ([]*Account, error) {
 			},
 		})
 		if err != nil {
-			return nil, fmt.Errorf("list account failed, err %s", err.Error())
+			return nil, fmt.Errorf("list main account failed, err %s", err.Error())
 		}
 		for _, item := range accountResult.Details {
-			retList = append(retList, &Account{
+			retList = append(retList, &MainAccount{
 				BaseMainAccount: item,
+			})
+		}
+	}
+	return retList, nil
+}
+
+// ListAllRootAccount list root account
+func (t *HcmAccountLister) ListAllRootAccount(kt *kit.Kit) ([]*RootAccount, error) {
+	result, err := t.Client.DataService().Global.RootAccount.List(kt, &core.ListWithoutFieldReq{
+		Filter: tools.AllExpression(),
+		Page: &core.BasePage{
+			Count: true,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	var retList []*RootAccount
+	for offset := uint64(0); offset < result.Count; offset = offset + defaultAccountListLimit {
+		accountResult, err := t.Client.DataService().Global.RootAccount.List(kt, &core.ListWithoutFieldReq{
+			Filter: tools.AllExpression(),
+			Page: &core.BasePage{
+				Start: uint32(offset),
+				Limit: uint(defaultAccountListLimit),
+			},
+		})
+		if err != nil {
+			return nil, fmt.Errorf("list root account failed, err %s", err.Error())
+		}
+		for _, item := range accountResult.Details {
+			retList = append(retList, &RootAccount{
+				BaseRootAccount: item,
 			})
 		}
 	}

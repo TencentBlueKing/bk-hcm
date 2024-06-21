@@ -17,36 +17,52 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package bill
+package times
 
 import (
-	"hcm/pkg/cc"
-	"hcm/pkg/kit"
-	"time"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-const (
-	defaultAccountListLimit          = uint64(500)
-	defaultControllerSyncDuration    = 30 * time.Second
-	defaultControllerSummaryDuration = 30 * time.Second
-	defaultDailySummaryDuration      = 30 * time.Second
-	defaultDailySplitDuration        = 30 * time.Second
-)
-
-func getInternalKit() *kit.Kit {
-	newKit := kit.New()
-	newKit.User = string(cc.AccountServerName)
-	newKit.AppCode = string(cc.AccountServerName)
-	return newKit
-}
-
-func getCurrentBillMonth() (int, int) {
-	now := time.Now().UTC()
-	return now.Year(), int(now.Month())
-}
-
-func getLastBillMonth() (int, int) {
-	now := time.Now().UTC()
-	lastMonthNow := now.AddDate(0, -1, 0)
-	return lastMonthNow.Year(), int(lastMonthNow.Month())
+func TestGetLastMonth(t *testing.T) {
+	testCases := []struct {
+		year        int
+		month       int
+		resultYear  int
+		resultMonth int
+		hasErr      bool
+	}{
+		{
+			year:        2024,
+			month:       5,
+			resultYear:  2024,
+			resultMonth: 4,
+			hasErr:      false,
+		},
+		{
+			year:        2024,
+			month:       1,
+			resultYear:  2023,
+			resultMonth: 12,
+			hasErr:      false,
+		},
+		{
+			year:   2024,
+			month:  110,
+			hasErr: true,
+		},
+	}
+	for _, testCase := range testCases {
+		tmpY, tmpM, err := GetLastMonth(testCase.year, testCase.month)
+		if testCase.hasErr {
+			assert.Error(t, err)
+			continue
+		}
+		assert.Equal(t, testCase.resultYear, tmpY, "should be equal")
+		assert.Equal(t, testCase.resultMonth, tmpM, "should be equal")
+		if !testCase.hasErr {
+			assert.NoError(t, err, "no error")
+		}
+	}
 }

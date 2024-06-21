@@ -139,6 +139,16 @@ create table if not exists `account_bill_item` (
   primary key (`id`)
 ) engine = innodb default charset = utf8mb4;
 
+create index bill_item_index ON account_bill_item(
+  `root_account_id`,
+  `main_account_id`,
+  `vendor`,
+  `version_id`,
+  `bill_year`,
+  `bill_month`,
+  `bill_day`
+);
+
 insert into
   id_generator(`resource`, `max_id`)
 values
@@ -188,7 +198,9 @@ create table if not exists `account_bill_daily_pull_task` (
   `count` bigint(1) not null,
   `currency` varchar(64) not null,
   `cost` decimal(30, 10) not null,
-  `flow_id` varchar(64),
+  `flow_id` varchar(64) not null,
+  `split_flow_id` varchar(64) not null,
+  `daily_summary_flow_id` varchar(64) not null,
   `created_at` timestamp not null default current_timestamp,
   `updated_at` timestamp not null default current_timestamp on update current_timestamp,
   primary key (`id`),
@@ -309,7 +321,6 @@ insert into
   id_generator(`resource`, `max_id`)
 values
   ('root_account_bill_config', '0');
-
 
 CREATE
 OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS

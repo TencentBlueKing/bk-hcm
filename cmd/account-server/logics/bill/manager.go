@@ -31,24 +31,31 @@ import (
 
 // BillManager bill manager
 type BillManager struct {
-	Sd                 serviced.ServiceDiscover
-	Client             *client.ClientSet
-	CurrentControllers map[string]*MainAccountController
-	AccountList        AccountLister
+	Sd                     serviced.ServiceDiscover
+	Client                 *client.ClientSet
+	CurrentMainControllers map[string]*MainAccountController
+	CurrentRootControllers map[string]*RootAccountController
+	AccountList            AccountLister
 }
 
 // Run bill manager
 func (bm *BillManager) Run(ctx context.Context) {
-	if err := bm.syncControllers(); err != nil {
-		logs.Warnf("sync controllers failed, err %s", err.Error())
+	if err := bm.syncMainControllers(); err != nil {
+		logs.Warnf("sync main controllers failed, err %s", err.Error())
+	}
+	if err := bm.syncRootControllers(); err != nil {
+		logs.Warnf("sync root controllers failed, err %s", err.Error())
 	}
 	ticker := time.NewTicker(defaultControllerSyncDuration)
 	for {
 		select {
 		case <-ticker.C:
 			if bm.Sd.IsMaster() {
-				if err := bm.syncControllers(); err != nil {
-					logs.Warnf("sync controllers failed, err %s", err.Error())
+				if err := bm.syncMainControllers(); err != nil {
+					logs.Warnf("sync main controllers failed, err %s", err.Error())
+				}
+				if err := bm.syncRootControllers(); err != nil {
+					logs.Warnf("sync root controllers failed, err %s", err.Error())
 				}
 			} else {
 				bm.stopControllers()
@@ -61,22 +68,62 @@ func (bm *BillManager) Run(ctx context.Context) {
 	}
 }
 
-func (bm *BillManager) syncControllers() error {
-	list, err := bm.AccountList.ListAllAccount(getInternalKit())
+func (bm *BillManager) syncRootControllers() error {
+	list, err := bm.AccountList.ListAllRootAccount(getInternalKit())
 	if err != nil {
 		return err
 	}
+	existedAccountKeyMap := make(map[string]struct{})
 	for _, item := range list {
-		_, ok := bm.CurrentControllers[item.Key()]
+		existedAccountKeyMap[item.Key()] = struct{}{}
+		_, ok := bm.CurrentRootControllers[item.Key()]
 		if !ok {
-			ctrl, err := NewMainAccountController(&MainAccountControllerOption{
+			opt := RootAccountControllerOption{
+				RootAccountID: item.BaseRootAccount.ID,
+				Vendor:        item.Vendor,
+				Client:        bm.Client,
+			}
+			ctrl, err := NewRootAccountController(&opt)
+			if err != nil {
+				return fmt.Errorf("create root for %v controller failed, err %s", opt, err)
+			}
+			if err := ctrl.Start(); err != nil {
+				ctrl.Stop()
+				return fmt.Errorf("start controller failed, err %s", err.Error())
+			}
+			bm.CurrentRootControllers[item.Key()] = ctrl
+			logs.Infof("start root account controller for %v", opt)
+		}
+	}
+	for key, controller := range bm.CurrentRootControllers {
+		if _, ok := existedAccountKeyMap[key]; !ok {
+			controller.Stop()
+			logs.Infof("stop root account controller for %v", controller)
+			delete(bm.CurrentRootControllers, key)
+		}
+	}
+	return nil
+}
+
+func (bm *BillManager) syncMainControllers() error {
+	list, err := bm.AccountList.ListAllMainAccount(getInternalKit())
+	if err != nil {
+		return err
+	}
+	existedAccountKeyMap := make(map[string]struct{})
+	for _, item := range list {
+		existedAccountKeyMap[item.Key()] = struct{}{}
+		_, ok := bm.CurrentMainControllers[item.Key()]
+		if !ok {
+			opt := MainAccountControllerOption{
 				RootAccountID: item.BaseMainAccount.ParentAccountID,
-				MainAccountID: item.BaseMainAccount.CloudID,
+				MainAccountID: item.BaseMainAccount.ID,
 				BkBizID:       item.BkBizID,
 				ProductID:     item.OpProductID,
 				Vendor:        item.Vendor,
 				Client:        bm.Client,
-			})
+			}
+			ctrl, err := NewMainAccountController(&opt)
 			if err != nil {
 				return fmt.Errorf("create controller failed, err %s", err)
 			}
@@ -84,16 +131,30 @@ func (bm *BillManager) syncControllers() error {
 				ctrl.Stop()
 				return fmt.Errorf("start controller failed, err %s", err.Error())
 			}
-			bm.CurrentControllers[item.Key()] = ctrl
+			bm.CurrentMainControllers[item.Key()] = ctrl
+			logs.Infof("start main account controller for %v", opt)
+		}
+	}
+	for key, controller := range bm.CurrentMainControllers {
+		if _, ok := existedAccountKeyMap[key]; !ok {
+			controller.Stop()
+			logs.Infof("stop main account controller for %v", controller)
+			delete(bm.CurrentMainControllers, key)
 		}
 	}
 	return nil
 }
 
 func (bm *BillManager) stopControllers() {
-	for key, ctrl := range bm.CurrentControllers {
-		logs.Warnf("stop controller %s", key)
+	for key, ctrl := range bm.CurrentRootControllers {
+		logs.Warnf("stop root account controller %s", key)
 		ctrl.Stop()
-		delete(bm.CurrentControllers, key)
+		delete(bm.CurrentRootControllers, key)
+	}
+
+	for key, ctrl := range bm.CurrentMainControllers {
+		logs.Warnf("stop main account controller %s", key)
+		ctrl.Stop()
+		delete(bm.CurrentMainControllers, key)
 	}
 }

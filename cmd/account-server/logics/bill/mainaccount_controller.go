@@ -125,7 +125,7 @@ func (mac *MainAccountController) Start() error {
 	return nil
 }
 
-// Sync do sync
+// do sync
 func (mac *MainAccountController) syncBillSummary(kt *kit.Kit) error {
 	curBillYear, curBillMonth := getCurrentBillMonth()
 	if err := mac.ensureBillSummary(kt.NewSubKit(), curBillYear, curBillMonth); err != nil {
@@ -186,7 +186,7 @@ func (mac *MainAccountController) syncDailyRawBill(kt *kit.Kit) error {
 	// 同步拉取任务
 	// 上月
 	lastBillYear, lastBillMonth := getLastBillMonth()
-	lastBillSummaryMain, err := mac.getBillSummary(kt, lastBillYear, lastBillMonth)
+	lastBillSummaryMain, err := mac.getMainBillSummary(kt, lastBillYear, lastBillMonth)
 	if err != nil {
 		return err
 	}
@@ -201,7 +201,7 @@ func (mac *MainAccountController) syncDailyRawBill(kt *kit.Kit) error {
 	}
 	// 本月
 	curBillYear, curBillMonth := getCurrentBillMonth()
-	billSummaryMain, err := mac.getBillSummary(kt, curBillYear, curBillMonth)
+	billSummaryMain, err := mac.getMainBillSummary(kt, curBillYear, curBillMonth)
 	if err != nil {
 		return err
 	}
@@ -224,7 +224,42 @@ func (mac *MainAccountController) Stop() {
 	}
 }
 
-func (mac *MainAccountController) getBillSummary(kt *kit.Kit, billYear, billMonth int) (*dsbillapi.BillSummaryMainResult, error) {
+func (mac *MainAccountController) getRootBillSummary(
+	kt *kit.Kit, billYear, billMonth int) (*dsbillapi.BillSummaryRootResult, error) {
+
+	var expressions []*filter.AtomRule
+	expressions = append(expressions, []*filter.AtomRule{
+		tools.RuleEqual("root_account_id", mac.RootAccountID),
+		tools.RuleEqual("vendor", mac.Vendor),
+		tools.RuleEqual("bill_year", billYear),
+		tools.RuleEqual("bill_month", billMonth),
+	}...)
+	result, err := mac.Client.DataService().Global.Bill.ListBillSummaryRoot(
+		kt, &dsbillapi.BillSummaryRootListReq{
+			Filter: tools.ExpressionAnd(expressions...),
+			Page: &core.BasePage{
+				Start: 0,
+				Limit: 1,
+			},
+		})
+	if err != nil {
+		logs.Warnf("get root account bill summary of %s/%s %d-%d failed, err %s",
+			mac.RootAccountID, mac.Vendor, billYear, billMonth, err.Error())
+		return nil, fmt.Errorf("get root account bill summary of %s/%s %d-%d failed, err %s",
+			mac.RootAccountID, mac.Vendor, billYear, billMonth, err.Error())
+	}
+	if len(result.Details) == 0 {
+		return nil, nil
+	}
+	if len(result.Details) != 1 {
+		return nil, fmt.Errorf("invalid length of root account bill summary resp, %v", result.Details)
+	}
+	return result.Details[0], nil
+}
+
+func (mac *MainAccountController) getMainBillSummary(
+	kt *kit.Kit, billYear, billMonth int) (*dsbillapi.BillSummaryMainResult, error) {
+
 	expressions := []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", mac.RootAccountID),
 		tools.RuleEqual("main_account_id", mac.MainAccountID),
@@ -249,7 +284,8 @@ func (mac *MainAccountController) getBillSummary(kt *kit.Kit, billYear, billMont
 	return result.Details[0], nil
 }
 
-func (mac *MainAccountController) createNewBillSummary(kt *kit.Kit, billYear, billMonth int) error {
+func (mac *MainAccountController) createNewBillSummary(
+	kt *kit.Kit, billYear, billMonth int, billSummary *dsbillapi.BillSummaryRootResult) error {
 	_, err := mac.Client.DataService().Global.Bill.CreateBillSummaryMain(
 		kt, &dsbillapi.BillSummaryMainCreateReq{
 			RootAccountID:     mac.RootAccountID,
@@ -259,20 +295,29 @@ func (mac *MainAccountController) createNewBillSummary(kt *kit.Kit, billYear, bi
 			Vendor:            mac.Vendor,
 			BillYear:          billYear,
 			BillMonth:         billMonth,
-			LastSyncedVersion: -1,
-			CurrentVersion:    1,
+			LastSyncedVersion: billSummary.LastSyncedVersion,
+			CurrentVersion:    billSummary.CurrentVersion,
 			State:             constant.MainAccountBillSummaryStateAccounting,
 		})
 	if err != nil {
-		return fmt.Errorf("failed to create bill summary for main account (%s, %s, %s) in in (%04d, %02d), err %s",
+		return fmt.Errorf("failed to create bill summary for main account (%s, %s, %s) in in (%d, %02d), err %s",
 			mac.RootAccountID, mac.MainAccountID, mac.Vendor, billYear, billMonth, err.Error())
 	}
-	logs.Infof("main account (%s, %s, %s) in (%04d, %02d) bill summary create successfully, rid: %s",
+	logs.Infof("main account (%s, %s, %s) in (%d, %02d) bill summary create successfully, rid: %s",
 		mac.RootAccountID, mac.MainAccountID, mac.Vendor, billYear, billMonth, kt.Rid)
 	return nil
 }
 
 func (mac *MainAccountController) ensureBillSummary(kt *kit.Kit, billYear, billMonth int) error {
+	rootSummary, err := mac.getRootBillSummary(kt, billYear, billMonth)
+	if err != nil {
+		return err
+	}
+	if rootSummary == nil {
+		return fmt.Errorf("root account bill summary of %s/%s %d-%d not found, wait",
+			mac.RootAccountID, mac.Vendor, billYear, billMonth)
+	}
+
 	var expressions []*filter.AtomRule
 	expressions = append(expressions, []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", mac.RootAccountID),
@@ -293,7 +338,29 @@ func (mac *MainAccountController) ensureBillSummary(kt *kit.Kit, billYear, billM
 		return fmt.Errorf("ensure main account bill summary failed, err %s", err.Error())
 	}
 	if len(result.Details) == 0 {
-		return mac.createNewBillSummary(kt, billYear, billMonth)
+		return mac.createNewBillSummary(kt, billYear, billMonth, rootSummary)
+	}
+	if len(result.Details) != 1 {
+		return fmt.Errorf("main account bill summary for %s, %d-%d not found", mac.getKey(), billYear, billMonth)
+	}
+	mainSummary := result.Details[0]
+	if rootSummary.CurrentVersion != mainSummary.CurrentVersion ||
+		rootSummary.LastSyncedVersion != mainSummary.LastSyncedVersion {
+		if err = mac.Client.DataService().Global.Bill.UpdateBillSummaryMain(
+			kt, &dsbillapi.BillSummaryMainUpdateReq{
+				ID:                mainSummary.ID,
+				LastSyncedVersion: rootSummary.LastSyncedVersion,
+				CurrentVersion:    rootSummary.CurrentVersion,
+			}); err != nil {
+			logs.Warnf("failed to update bill summary for main account (%s, %s, %s) in in (%d, %02d), err %s, rid: %s",
+				mac.RootAccountID, mac.MainAccountID, mac.Vendor, billYear, billMonth, err.Error(), kt.Rid)
+			return fmt.Errorf("failed to update bill summary for main account (%s, %s, %s) in in (%d, %02d), err %s",
+				mac.RootAccountID, mac.MainAccountID, mac.Vendor, billYear, billMonth, err.Error())
+		}
+		logs.Infof("successfully update main account bill summary for main account "+
+			"(%s, %s, %s) in in (%d, %02d) to version %d, last synced version %d, rid: %s",
+			mac.RootAccountID, mac.MainAccountID, mac.Vendor, billYear, billMonth,
+			rootSummary.CurrentVersion, rootSummary.LastSyncedVersion, kt.Rid)
 	}
 	return nil
 }
