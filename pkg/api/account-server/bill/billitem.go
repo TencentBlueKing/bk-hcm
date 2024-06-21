@@ -23,6 +23,7 @@ import (
 	"errors"
 
 	"hcm/pkg/api/core"
+	"hcm/pkg/api/core/bill"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/runtime/filter"
@@ -80,4 +81,11 @@ type BatchDeleteReq struct {
 // Validate ...
 func (r *BatchDeleteReq) Validate() error {
 	return validator.Validate.Struct(r)
+}
+
+// AdjustmentItemResult wrapper for adjustment item
+type AdjustmentItemResult struct {
+	MainAccountCloudID string `json:"main_account_cloud_id"`
+	MainAccountEmail   string `json:"main_account_email"`
+	*bill.AdjustmentItem
 }

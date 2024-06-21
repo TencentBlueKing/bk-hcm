@@ -26,6 +26,7 @@ import (
 
 	"hcm/pkg/api/account-server/bill"
 	"hcm/pkg/api/core"
+	accountset "hcm/pkg/api/core/account-set"
 	dataservice "hcm/pkg/api/data-service"
 	dsbill "hcm/pkg/api/data-service/bill"
 	"hcm/pkg/criteria/constant"
@@ -149,7 +150,44 @@ func (b *billAdjustmentSvc) ListBillAdjustmentItem(cts *rest.Contexts) (any, err
 		return nil, err
 	}
 
-	return b.client.DataService().Global.Bill.ListBillAdjustmentItem(cts.Kit, req)
+	dsItems, err := b.client.DataService().Global.Bill.ListBillAdjustmentItem(cts.Kit, req)
+	if err != nil {
+		logs.Errorf("fail to call data service to list bill adjustment item, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	resp := core.ListResultT[bill.AdjustmentItemResult]{
+		Count:   dsItems.Count,
+		Details: make([]bill.AdjustmentItemResult, len(dsItems.Details)),
+	}
+	if len(dsItems.Details) == 0 {
+		return dsItems, nil
+	}
+	mainAccIDCloudIDMap := make(map[string]*accountset.BaseMainAccount, len(dsItems.Details))
+	// collect main account id for list cloud id
+	for i, adjustmentItem := range dsItems.Details {
+		resp.Details[i].AdjustmentItem = adjustmentItem
+		mainAccIDCloudIDMap[adjustmentItem.MainAccountID] = nil
+	}
+	// list for cloud id
+	mainAccReq := &core.ListReq{
+		Filter: tools.ContainersExpression("id", cvt.MapKeyToSlice(mainAccIDCloudIDMap)),
+		Page:   req.Page,
+		Fields: []string{"id", "email", "cloud_id"},
+	}
+	mainAccountListResult, err := b.client.DataService().Global.MainAccount.List(cts.Kit, mainAccReq)
+	if err != nil {
+		logs.Errorf("fail to query main account for bill adjustment item, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	for _, mainAccount := range mainAccountListResult.Details {
+		mainAccIDCloudIDMap[mainAccount.ID] = mainAccount
+	}
+	// 填充主账号云id 和 email
+	for i, adjustmentItem := range resp.Details {
+		resp.Details[i].MainAccountCloudID = mainAccIDCloudIDMap[adjustmentItem.MainAccountID].CloudID
+		resp.Details[i].MainAccountEmail = mainAccIDCloudIDMap[adjustmentItem.MainAccountID].Email
+	}
+	return resp, nil
 }
 
 // UpdateBillAdjustmentItem 更新调账明细
