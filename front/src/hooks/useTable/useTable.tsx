@@ -112,9 +112,10 @@ export const useTable = (props: IProp) => {
    * 请求表格数据
    * @param customRules 自定义规则
    * @param type 资源类型
+   * @param type 标志当前为独立的请求，无需合并之前的filter
    */
-  const getListData = async (customRules: Array<RulesItem> = [], type?: string) => {
-    buildFilter({ rules: customRules });
+  const getListData = async (customRules: Array<RulesItem> = [], type?: string, isInvidual = false) => {
+    buildFilter({ rules: customRules, isInvidual });
     // 预览
     if (props.tableOptions.reviewData) {
       dataList.value = props.tableOptions.reviewData;
@@ -250,8 +251,9 @@ export const useTable = (props: IProp) => {
     rules: Array<RulesItem>; // 规则列表
     deleteOption?: { field: string; flagValue: any }; // 删除选项(可选, 用于 tab 切换时, 删除规则)
     differenceFields?: string[]; // search-select 移除条件时的搜索字段差集(只用于 search-select 组件)
+    isInvidual?: Boolean; // 标志当前为独立的请求，无需合并之前的filter
   }) => {
-    const { rules, deleteOption, differenceFields } = options;
+    const { rules, deleteOption, differenceFields, isInvidual } = options;
     const filterMap = new Map();
     // 先添加新的规则
     rules.forEach((rule) => {
@@ -268,11 +270,13 @@ export const useTable = (props: IProp) => {
       }
     });
     // 后添加 filter 的规则
-    filter.rules.forEach((rule) => {
-      if (!filterMap.get(rule.field) && !rule.rules) {
-        filterMap.set(rule.field, rule);
-      }
-    });
+    if (!isInvidual) {
+      filter.rules.forEach((rule) => {
+        if (!filterMap.get(rule.field) && !rule.rules) {
+          filterMap.set(rule.field, rule);
+        }
+      });
+    }
     // 如果配置了 deleteOption, 则当符合条件时, 删除对应规则
     if (deleteOption) {
       const { field, flagValue } = deleteOption;

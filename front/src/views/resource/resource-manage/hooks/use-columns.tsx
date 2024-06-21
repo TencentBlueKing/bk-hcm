@@ -28,6 +28,7 @@ import { IP_VERSION_MAP, LBRouteName, LB_NETWORK_TYPE_MAP, SCHEDULER_MAP } from 
 import { getInstVip } from '@/utils';
 import dayjs from 'dayjs';
 import { Spinner } from 'bkui-vue/lib/icon';
+import { APPLICATION_TYPE_MAP } from '@/views/service/apply-list/constants';
 
 interface LinkFieldOptions {
   type: string; // 资源类型
@@ -1862,6 +1863,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '申请类型',
       field: 'type',
+      render: ({ cell }: { cell: string }) => APPLICATION_TYPE_MAP[cell],
     },
     {
       label: '单据状态',

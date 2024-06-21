@@ -14,7 +14,7 @@ export default defineComponent({
     const router = useRouter();
     const route = useRoute();
     const computedRules = computed(() => {
-      return APPLY_TYPES.find(({name}) => name === applyType.value).rule;
+      return APPLY_TYPES.find(({ name }) => name === applyType.value).rules;
     });
     const { CommonTable, getListData } = useTable({
       searchOptions: {
@@ -49,10 +49,12 @@ export default defineComponent({
         type: 'applications',
       },
     });
-    watch(() => applyType.value,
-    () => {
-      getListData(computedRules.value);
-    });
+    watch(
+      () => applyType.value,
+      () => {
+        getListData(applyType.value === 'all' ? [] : computedRules.value, 'applications', true);
+      },
+    );
     return () => (
       <div class={'apply-list-wrapper'}>
         <Tab type='unborder-card' v-model:active={applyType.value} class={'header-tab'}>
