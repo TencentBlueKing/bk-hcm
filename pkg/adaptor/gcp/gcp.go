@@ -22,7 +22,6 @@ package gcp
 import (
 	"fmt"
 	"math/rand"
-	"regexp"
 	"strings"
 	"time"
 
@@ -120,20 +119,19 @@ func addRandomSuffix(projectId string) string {
 
 // isRandomSuffix 判断是否已经添加过末尾随机数，如果有，则返回true，否则返回false
 func isRandomSuffix(projectId string) bool {
-	// 查找最后一个"-"的位置
-	lastDashIndex := -1
-	for i := len(projectId) - 1; i >= 0; i-- {
-		if projectId[i] == '-' {
-			lastDashIndex = i
-			break
-		}
-	}
-
-	if lastDashIndex == -1 || len(projectId)-lastDashIndex != 7 {
+	if len(projectId) < 7 {
 		return false
 	}
 
-	pattern := `^-\d{6}$`
-	matched, _ := regexp.MatchString(pattern, projectId[lastDashIndex:])
-	return matched
+	// 末尾第7位是“-” 并且 末尾6位是数字
+	if projectId[len(projectId)-7] == '-' {
+		for _, c := range projectId[len(projectId)-6:] {
+			if c < '0' || c > '9' {
+				return false
+			}
+		}
+		return true
+	}
+
+	return false
 }

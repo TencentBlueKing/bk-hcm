@@ -33,6 +33,10 @@ func (s *service) GcpCreateMainAccount(cts *rest.Contexts) (interface{}, error) 
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
 	// 1、获取一级账号Gcp Client
 	client, err := s.ad.GcpRoot(cts.Kit, req.RootAccountID)
 	if err != nil {

@@ -19,18 +19,24 @@
 
 package hsmainaccount
 
-// CreateAwsMainAccountReq request for create aws main account
-type CreateAwsMainAccountReq struct {
-	//todo
-}
+import "hcm/pkg/criteria/validator"
 
 // CreateGcpMainAccountReq request for create gcp main account
 type CreateGcpMainAccountReq struct {
-	RootAccountID       string `json:"root_account_id"`
-	Email               string `json:"email"`
-	ProjectName         string `json:"project_name"`
-	CloudBillingAccount string `json:"cloud_billing_account"`
-	CloudOrganization   string `json:"cloud_organization"`
+	RootAccountID       string `json:"root_account_id" validate:"required"`
+	Email               string `json:"email" validate:"required"`
+	ProjectName         string `json:"project_name" validate:"required"`
+	CloudBillingAccount string `json:"cloud_billing_account" validate:"required"`
+	CloudOrganization   string `json:"cloud_organization" validate:"required"`
+}
+
+// Validate validate ...
+func (req *CreateGcpMainAccountReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // CreateGcpMainAccountReq request for create gcp main account
