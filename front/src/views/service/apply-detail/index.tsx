@@ -1,4 +1,4 @@
-import { defineComponent, ref, watch } from 'vue';
+import { defineComponent, onMounted, onUnmounted, ref, watch } from 'vue';
 import './index.scss';
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import ApplyDetail from '@/views/service/my-apply/components/apply-detail/index.vue';
@@ -15,6 +15,7 @@ export default defineComponent({
     const curApplyKey = ref('');
     const isCancelBtnLoading = ref(false);
     const route = useRoute();
+    let interval: NodeJS.Timeout;
 
     // 获取单据详情
     const getMyApplyDetail = async (id: string) => {
@@ -22,12 +23,19 @@ export default defineComponent({
       try {
         const res = await accountStore.getApplyAccountDetail(id);
         currentApplyData.value = res.data;
-        console.log(66666, currentApplyData.value);
         curApplyKey.value = res.data.id;
       } finally {
         isLoading.value = false;
       }
     };
+
+    onMounted(() => {
+      interval = setInterval(() => getMyApplyDetail(route.query.id as string), 5000);
+    });
+
+    onUnmounted(() => {
+      clearInterval(interval);
+    });
 
     // 撤销单据
     const handleCancel = async (id: string) => {
@@ -61,7 +69,7 @@ export default defineComponent({
         {currentApplyData.value.type && (
           <div class={'apply-content-wrapper'}>
             {ACCOUNT_TYPES.includes(currentApplyData.value.type) ? (
-              <AccountApplyDetail detail={currentApplyData.value}/>
+              <AccountApplyDetail detail={currentApplyData.value} />
             ) : (
               <ApplyDetail
                 params={currentApplyData.value}

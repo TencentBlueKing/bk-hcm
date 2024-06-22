@@ -4,7 +4,7 @@ import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useStatus } from './useStatus';
 import { Close, Spinner, Success } from 'bkui-vue/lib/icon';
-import { Button, Exception, Form, Input, Select } from 'bkui-vue';
+import { Button, Exception, Form, Input, Message, Select } from 'bkui-vue';
 import CommonDialog from '@/components/common-dialog';
 import useBillStore from '@/store/useBillStore';
 import useFormModel from '@/hooks/useFormModel';
@@ -191,6 +191,10 @@ export default defineComponent({
               sn: props.detail.sn,
               id: props.detail.id,
               vendor: info.value.vendor,
+            });
+            Message({
+              message: '录入成功',
+              theme: 'success',
             });
           }}>
           <Form formType='vertical'>
