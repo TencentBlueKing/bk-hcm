@@ -4,7 +4,7 @@ import DetailHeader from '@/views/resource/resource-manage/common/header/detail-
 import CommonCard from '@/components/CommonCard';
 import { Alert, Button, Form, Input, Message, ResizeLayout } from 'bkui-vue';
 import { VendorEnum } from '@/common/constant';
-import { BILL_VENDORS_INFO } from '../constants';
+import { MAIN_ACCOUNT_VENDORS } from '../constants';
 import { Success } from 'bkui-vue/lib/icon';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import MemberSelect from '@/components/MemberSelect';
@@ -14,6 +14,7 @@ import useFormModel from '@/hooks/useFormModel';
 import useBillStore from '@/store/useBillStore';
 import { Extension_Name_Map } from './constants';
 import { useRouter } from 'vue-router';
+import { useOperationProducts } from '@/hooks/useOperationProducts';
 
 const { FormItem } = Form;
 
@@ -33,10 +34,11 @@ export default defineComponent({
       site: 'china', // 站点
       // dept_id: '', // 组织架构ID
       memo: '', // 备忘录
+      op_product_id: '',
       bk_biz_id: '', // 业务
       // extension: {}, // 扩展字段对象
     });
-
+    const { OperationProductsSelector } = useOperationProducts();
     const handleSubmit = async () => {
       try {
         isLoading.value = true;
@@ -80,17 +82,35 @@ export default defineComponent({
                     <Form formType='vertical' model={formModel} ref={formInstance} auto-check={true}>
                       <FormItem label='云厂商' required property='vendor'>
                         <div class={'account-vendor-selector'}>
-                          {BILL_VENDORS_INFO.map(({ vendor, name, icon }) => (
-                            <div
-                              class={`account-vendor-option ${
-                                vendor === formModel.vendor ? 'account-vendor-option-active' : ''
-                              }`}
-                              onClick={() => (formModel.vendor = vendor)}>
-                              <img src={icon} alt={name} class={'account-vendor-option-icon'} />
-                              <p class={'account-vendor-option-text'}>{name}</p>
-                              {formModel.vendor === vendor ? <Success fill='#3A84FF' class={'active-icon'} /> : null}
-                            </div>
-                          ))}
+                          {MAIN_ACCOUNT_VENDORS.map(({ vendor, name, icon }) =>
+                            vendor !== VendorEnum.TCLOUD ? (
+                              <div
+                                class={`account-vendor-option ${
+                                  vendor === formModel.vendor ? 'account-vendor-option-active' : ''
+                                }`}
+                                onClick={() => (formModel.vendor = vendor)}>
+                                <img src={icon} alt={name} class={'account-vendor-option-icon'} />
+                                <p class={'account-vendor-option-text'}>{name}</p>
+                                {formModel.vendor === vendor ? <Success fill='#3A84FF' class={'active-icon'} /> : null}
+                              </div>
+                            ) : (
+                              <div
+                                class={`account-vendor-option disabled-option`}
+                                v-bk-tooltips={{
+                                  content: (
+                                    <span>
+                                      腾讯云账号需要到云梯申请，请参考{' '}
+                                      <Button text theme='primary'>
+                                        腾讯云账号申请指引
+                                      </Button>
+                                    </span>
+                                  ),
+                                }}>
+                                <img src={icon} alt={name} class={'account-vendor-option-icon'} />
+                                <p>{name}</p>
+                              </div>
+                            ),
+                          )}
                         </div>
                       </FormItem>
                       <FormItem label='站点类型' required property='site'>
@@ -158,8 +178,12 @@ export default defineComponent({
                           }}
                         </Alert>
                       </FormItem> */}
-                      <FormItem label='运营产品' required property=''>
+                      <FormItem label='业务' required property=''>
                         <BusinessSelector authed autoSelect v-model={formModel.bk_biz_id} />
+                      </FormItem>
+
+                      <FormItem label='运营产品' required property=''>
+                        <OperationProductsSelector v-model={formModel.op_product_id} />
                       </FormItem>
                       <div class={'account-manager-wrapper'}>
                         <FormItem label='主负责人' required property='managers' class={'account-manager'}>

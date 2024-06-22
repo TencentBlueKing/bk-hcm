@@ -2,7 +2,7 @@ import { defineComponent, reactive, ref } from 'vue';
 import './index.scss';
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import CommonCard from '@/components/CommonCard';
-import { Button, Form, Input } from 'bkui-vue';
+import { Button, Form, Input, Message } from 'bkui-vue';
 import { BILL_VENDORS_INFO } from '../constants';
 import { InfoLine, Success } from 'bkui-vue/lib/icon';
 import { VendorEnum } from '@/common/constant';
@@ -12,11 +12,11 @@ import { useRouter } from 'vue-router';
 import useBillStore from '@/store/useBillStore';
 import successIcon from '@/assets/image/corret-fill.png';
 import failedIcon from '@/assets/image/delete-fill.png';
+import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import {
   ValidateStatus,
   useSecretExtension,
 } from '@/views/resource/resource-manage/account/createAccount/components/accountForm/useSecretExtension';
-import { useOperationProducts } from '@/hooks/useOperationProducts';
 
 const { FormItem } = Form;
 
@@ -26,41 +26,37 @@ export default defineComponent({
     const router = useRouter();
     const billStore = useBillStore();
     const formRef = ref();
-    const { OperationProductsSelector } = useOperationProducts();
 
     const formModel = reactive({
       name: '', // 名字
       vendor: VendorEnum.AZURE, // 云厂商
       email: '', // 邮箱
-      managers: [], // 负责人数组
-      bak_managers: [], // 备份负责人数组
-      site: '', // 站点
-      dept_id: '', // 组织架构ID
+      managers: [userStore.username], // 负责人数组
+      bak_managers: [userStore.username], // 备份负责人数组
+      site: 'china', // 站点
+      dept_id: -1, // 组织架构ID
       memo: '', // 备忘录
       extension: {}, // 扩展字段对象
     });
 
-    // const resetFormModel = () => {
-    //   formModel.name = '';
-    //   formModel.vendor = VendorEnum.GCP;
-    //   formModel.email = '';
-    //   formModel.managers = [];
-    //   formModel.bak_managers = [];
-    //   formModel.site = '';
-    //   formModel.dept_id = '';
-    //   formModel.memo = '';
-    //   formModel.extension = {};
-    // };
-
-    const { curExtension, isValidateDiasbled, handleValidate, isValidateLoading, extensionPayload } =
-      useSecretExtension(formModel);
+    const { curExtension, isValidateDiasbled, handleValidate, isValidateLoading } = useSecretExtension(formModel);
 
     const handleSubmit = async () => {
       await formRef.value.validate();
-      await billStore.root_accounts_add({
-        ...formModel,
-        extension: extensionPayload.value,
+      formModel.extension = Object.entries({
+        ...curExtension.value.input,
+        ...curExtension.value.output1,
+        ...curExtension.value.output2,
+      }).reduce((prev, [key, { value }]) => {
+        prev[key] = value;
+        return prev;
+      }, {});
+      await billStore.root_accounts_add(formModel);
+      Message({
+        message: '一级账号录入成功',
+        theme: 'success',
       });
+      router.go(-1);
     };
 
     return () => (
@@ -70,9 +66,22 @@ export default defineComponent({
         </DetailHeader>
 
         <CommonCard title={() => '基础信息'} class={'info-card'}>
-          <OperationProductsSelector />
           <div class={'account-form-card-content'}>
-            <Form formType='vertical' model={formModel} ref={formRef}>
+            <Form
+              formType='vertical'
+              model={formModel}
+              ref={formRef}
+              rules={{
+                name: [
+                  {
+                    trigger: 'change',
+                    message: '账号名称只能包括小写字母和数字，并且仅能以小写字母开头，长度为6-20个字符',
+                    validator: (val: string) => {
+                      return /^[a-z][a-z0-9]{5,19}$/.test(val);
+                    },
+                  },
+                ],
+              }}>
               <FormItem label='云厂商' required property='vendor'>
                 <div class={'account-vendor-selector'}>
                   {BILL_VENDORS_INFO.map(({ vendor, name, icon }) => (
@@ -87,6 +96,12 @@ export default defineComponent({
                     </div>
                   ))}
                 </div>
+              </FormItem>
+              <FormItem label='站点类型' required property='site'>
+                <BkRadioGroup v-model={formModel.site}>
+                  <BkRadioButton label='china'>中国站</BkRadioButton>
+                  <BkRadioButton label='international'>国际站</BkRadioButton>
+                </BkRadioGroup>
               </FormItem>
             </Form>
           </div>
@@ -114,7 +129,15 @@ export default defineComponent({
                   />
                 </FormItem>
                 <FormItem label='备份负责人' required property='bak_managers' class={'ml24 account-manager'}>
-                  <MemberSelect v-model={formModel.bak_managers} />
+                  <MemberSelect
+                    v-model={formModel.bak_managers}
+                    defaultUserlist={[
+                      {
+                        username: userStore.username,
+                        display_name: userStore.username,
+                      },
+                    ]}
+                  />
                 </FormItem>
               </div>
               {/* <FormItem label='所属组织架构' required property='dept_id'>
@@ -138,52 +161,57 @@ export default defineComponent({
           class={'info-card'}>
           <>
             <div class={'account-form-card-content'}>
-              <Form labelWidth={130} ref={formRef} formType='vertical'>
-                {Object.entries(curExtension.value.input).map(([property, { label }]) => (
-                  <FormItem label={label} property={property}>
-                    <Input
-                      v-model={curExtension.value.input[property].value}
-                      type={
-                        property === 'cloud_service_secret_key' && formModel.vendor === VendorEnum.GCP
-                          ? 'textarea'
-                          : 'text'
-                      }
-                      rows={8}
-                    />
-                  </FormItem>
-                ))}
-                {[curExtension.value.output1, curExtension.value.output2].map((output) =>
-                  Object.entries(output).map(([property, { label, placeholder }]) => (
-                    <FormItem label={label} property={property}>
-                      <Input v-model={output[property].value} readonly placeholder={placeholder} />
+              <Form formType='vertical' class={'account-form-card-content-grid'}>
+                <div>
+                  {Object.entries(curExtension.value.input).map(([property, { label }]) => (
+                    <FormItem label={label} property={property} required>
+                      <Input
+                        v-model={curExtension.value.input[property].value}
+                        type={
+                          property === 'cloud_service_secret_key' && formModel.vendor === VendorEnum.GCP
+                            ? 'textarea'
+                            : 'text'
+                        }
+                        rows={8}
+                        resize={!(formModel.vendor === VendorEnum.GCP)}
+                      />
                     </FormItem>
-                  )),
-                )}
+                  ))}
+                </div>
+                <div class={'account-form-card-content-grid-right'}>
+                  {Object.entries(curExtension.value.output1).map(([property, { label, value, placeholder }]) => (
+                    <FormItem label={label} property={property}>
+                      <Input v-model={value} readonly placeholder={placeholder} />
+                    </FormItem>
+                  ))}
+                </div>
               </Form>
             </div>
-            <div class={'validate-btn-block'}>
-              <Button
-                theme='primary'
-                outline={curExtension.value.validatedStatus === ValidateStatus.YES}
-                class={'account-validate-btn'}
-                onClick={() => handleValidate()}
-                disabled={isValidateDiasbled.value}
-                loading={isValidateLoading.value}>
-                账号校验
-              </Button>
-              {curExtension.value.validatedStatus === ValidateStatus.YES ? (
-                <>
-                  <img src={successIcon} alt='success' class={'validate-icon'}></img>
-                  <span> 校验成功 </span>
-                </>
-              ) : null}
-              {curExtension.value.validatedStatus === ValidateStatus.NO ? (
-                <>
-                  <img src={failedIcon} alt='success' class={'validate-icon'}></img>
-                  <span> 校验失败 {curExtension.value.validateFailedReason}</span>
-                </>
-              ) : null}
-            </div>
+            {![VendorEnum.KAOPU, VendorEnum.ZENLAYER].includes(formModel.vendor) && (
+              <div class={'validate-btn-block'}>
+                <Button
+                  theme='primary'
+                  outline={curExtension.value.validatedStatus === ValidateStatus.YES}
+                  class={'account-validate-btn'}
+                  onClick={() => handleValidate()}
+                  disabled={isValidateDiasbled.value}
+                  loading={isValidateLoading.value}>
+                  账号校验
+                </Button>
+                {curExtension.value.validatedStatus === ValidateStatus.YES ? (
+                  <>
+                    <img src={successIcon} alt='success' class={'validate-icon'}></img>
+                    <span> 校验成功 </span>
+                  </>
+                ) : null}
+                {curExtension.value.validatedStatus === ValidateStatus.NO ? (
+                  <>
+                    <img src={failedIcon} alt='success' class={'validate-icon'}></img>
+                    <span> 校验失败 {curExtension.value.validateFailedReason}</span>
+                  </>
+                ) : null}
+              </div>
+            )}
           </>
         </CommonCard>
 

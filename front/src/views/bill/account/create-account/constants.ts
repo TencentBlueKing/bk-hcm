@@ -6,6 +6,7 @@ import gcpVendor from '@/assets/image/vendor-gcp.svg';
 import huaweiVendor from '@/assets/image/vendor-huawei.svg';
 import zenlayerVendor from '@/assets/image/zenlayer.png';
 import kaopuVendor from '@/assets/image/kaopu.png';
+import disabledTcloudVendor from '@/assets/image/disabled-tcloud.png';
 
 export const VENDORS_INFO = [
   {
@@ -65,5 +66,14 @@ export const BILL_VENDORS_INFO = [
     vendor: VendorEnum.KAOPU,
     name: '靠谱云',
     icon: kaopuVendor,
+  },
+];
+
+export const MAIN_ACCOUNT_VENDORS = [
+  ...BILL_VENDORS_INFO,
+  {
+    vendor: VendorEnum.TCLOUD,
+    name: '腾讯云',
+    icon: disabledTcloudVendor,
   },
 ];

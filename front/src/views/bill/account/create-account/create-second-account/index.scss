@@ -1,5 +1,5 @@
 .create-second-account-wrapper {
-
+  padding-bottom: 12px;
   .header-title {
     font-family: MicrosoftYaHei;
     font-size: 16px;
@@ -32,6 +32,7 @@
         display: grid;
         grid-template-columns: repeat(6, 120px);
         column-gap: 12px;
+        row-gap: 12px;
 
         .account-vendor-option {
           width: 120px;
@@ -55,6 +56,11 @@
             font-size: 12px;
             color: #313238;
           }
+        }
+
+        .disabled-option {
+          color: #C4C6CC;
+          cursor: not-allowed;
         }
 
         .account-vendor-option-active {

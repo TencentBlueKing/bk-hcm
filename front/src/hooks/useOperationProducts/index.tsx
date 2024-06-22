@@ -43,7 +43,7 @@ export const useOperationProducts = () => {
       watch(
         () => selectedVal.value,
         (val) => {
-          emit('change', val);
+          emit('update:modelValue', val);
         },
       );
 

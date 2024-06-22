@@ -52,7 +52,7 @@ export default defineComponent({
       },
       requestOption: {
         type: 'account/root_accounts',
-        dataPath: 'data.Details',
+        dataPath: 'data.details',
       },
     });
 
@@ -82,7 +82,7 @@ export default defineComponent({
       },
       requestOption: {
         type: 'account/main_accounts',
-        dataPath: 'data.Details',
+        dataPath: 'data.details',
       },
     });
 
