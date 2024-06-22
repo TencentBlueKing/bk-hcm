@@ -224,6 +224,13 @@ func genPlatformManageActionGroups() client.ActionGroup {
 					{ID: AccountBillManage},
 				},
 			},
+			{
+				Name:   "服务请求",
+				NameEn: "Service Request",
+				Actions: []client.ActionWithID{
+					{ID: ApplicationManage},
+				},
+			},
 		},
 	}
 }
