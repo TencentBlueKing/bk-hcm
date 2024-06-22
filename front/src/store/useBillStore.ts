@@ -154,6 +154,36 @@ export default defineStore('billStore', () => {
     return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/applications/${application_id}`);
   };
 
+  /**
+   * 批量拉取运营产品列表
+   * @param data
+   * @returns
+   */
+  const list_operation_products = (data: {
+    op_product_ids?: number[]; // 运营产品ID列表
+    op_product_name?: string; // 运营产品名称，支持模糊搜索
+    dept_ids?: number[]; // 部门ID列表
+    bg_ids?: number[]; // 事业组ID列表
+    page: {
+      count: boolean; // 是否返回总记录数
+      start: number; // 记录开始位置
+      limit: number; // 每页限制条数，最大500，不能为0
+      sort?: string; // 排序字段
+      order?: 'ASC' | 'DESC'; // 排序顺序
+    };
+  }) => {
+    return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/operation_products/list`, data);
+  };
+
+  /**
+   * 获取运营产品详情
+   * @param op_product_id 运营产品ID
+   * @returns
+   */
+  const get_operation_product = (op_product_id: string) => {
+    return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/operation_products/${op_product_id}`);
+  };
+
   return {
     // 一级账号
     root_accounts_add,
@@ -169,6 +199,9 @@ export default defineStore('billStore', () => {
     // 单据
     list_applications,
     get_application,
+    // 运营产品
+    list_operation_products,
+    get_operation_product,
     // 通用list方法
     list,
   };

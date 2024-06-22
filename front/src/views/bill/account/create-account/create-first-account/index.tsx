@@ -16,6 +16,7 @@ import {
   ValidateStatus,
   useSecretExtension,
 } from '@/views/resource/resource-manage/account/createAccount/components/accountForm/useSecretExtension';
+import { useOperationProducts } from '@/hooks/useOperationProducts';
 
 const { FormItem } = Form;
 
@@ -25,6 +26,7 @@ export default defineComponent({
     const router = useRouter();
     const billStore = useBillStore();
     const formRef = ref();
+    const { OperationProductsSelector } = useOperationProducts();
 
     const formModel = reactive({
       name: '', // 名字
@@ -68,6 +70,7 @@ export default defineComponent({
         </DetailHeader>
 
         <CommonCard title={() => '基础信息'} class={'info-card'}>
+          <OperationProductsSelector />
           <div class={'account-form-card-content'}>
             <Form formType='vertical' model={formModel} ref={formRef}>
               <FormItem label='云厂商' required property='vendor'>
