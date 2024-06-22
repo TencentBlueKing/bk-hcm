@@ -1,4 +1,4 @@
-import { defineComponent, inject, ref } from 'vue';
+import { Ref, defineComponent, inject, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { Button } from 'bkui-vue';
@@ -18,8 +18,8 @@ export default defineComponent({
   setup() {
     const { t } = useI18n();
     const router = useRouter();
-    const bill_year = inject<number>('bill_year');
-    const bill_month = inject<number>('bill_month');
+    const bill_year = inject<Ref<number>>('bill_year');
+    const bill_month = inject<Ref<number>>('bill_month');
 
     const { columns, settings } = useColumns('billsRootAccountSummary');
 
@@ -65,10 +65,10 @@ export default defineComponent({
         },
       },
       requestOption: {
-        apiMethod: reqBillsRootAccountSummaryList as any,
+        apiMethod: reqBillsRootAccountSummaryList,
         extension: () => ({
-          bill_year,
-          bill_month,
+          bill_year: bill_year.value,
+          bill_month: bill_month.value,
         }),
       },
     });
