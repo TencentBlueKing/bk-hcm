@@ -25,8 +25,10 @@ import (
 	"time"
 
 	"hcm/cmd/account-server/logics/bill/puller"
+	"hcm/cmd/task-server/logics/action/bill/mainsummary"
 	"hcm/pkg/api/core"
 	dsbillapi "hcm/pkg/api/data-service/bill"
+	taskserver "hcm/pkg/api/task-server"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -113,6 +115,7 @@ func (mac *MainAccountController) Start() error {
 	mac.cancelFunc = cancelFunc
 	go mac.runBillSummaryLoop(kt)
 	go mac.runDailyRawBillLoop(kt)
+	go mac.runCalculateBillSummaryLoop(kt)
 
 	// start split controller
 	if err := mac.splitCtrl.Start(); err != nil {
@@ -159,6 +162,77 @@ func (mac *MainAccountController) runBillSummaryLoop(kt *kit.Kit) {
 			return
 		}
 	}
+}
+
+func (mac *MainAccountController) runCalculateBillSummaryLoop(kt *kit.Kit) {
+	ticker := time.NewTicker(defaultControllerSummaryDuration)
+	curMonthflowID := ""
+	lastMonthflowID := ""
+	for {
+		select {
+		case <-ticker.C:
+			subKit := kt.NewSubKit()
+			lastBillYear, lastBillMonth := getLastBillMonth()
+			lastMonthflowID = mac.pollMainSummaryTask(subKit, lastMonthflowID, lastBillYear, lastBillMonth)
+			curBillYear, curBillMonth := getCurrentBillMonth()
+			curMonthflowID = mac.pollMainSummaryTask(subKit, curMonthflowID, curBillYear, curBillMonth)
+
+		case <-kt.Ctx.Done():
+			logs.Infof("main account (%s, %s, %s) summary controller context done, rid: %s",
+				mac.RootAccountID, mac.MainAccountID, mac.Vendor, kt.Rid)
+			return
+		}
+	}
+}
+
+func (mac *MainAccountController) pollMainSummaryTask(subKit *kit.Kit, flowID string, billYear, billMonth int) string {
+	if len(flowID) == 0 {
+		result, err := mac.createMainSummaryTask(subKit, billYear, billMonth)
+		if err != nil {
+			logs.Warnf("create new main summary task for %s/%s/%s %d-%d failed, err %s, rid: %s",
+				mac.RootAccountID, mac.MainAccountID, mac.Vendor,
+				billYear, billMonth, err.Error(), subKit)
+			return flowID
+		}
+		logs.Infof("create main summary task for %s/%s/%s %d-%d successfully, flow id %s, rid: %s",
+			mac.RootAccountID, mac.MainAccountID, mac.Vendor,
+			billYear, billMonth, flowID, subKit)
+		return result.ID
+
+	}
+	flow, err := mac.Client.TaskServer().GetFlow(subKit, flowID)
+	if err != nil {
+		logs.Warnf("get flow by id %s failed, err %s, rid: %s", flowID, err.Error(), subKit.Rid)
+		return flowID
+	}
+	if flow.State == enumor.FlowSuccess || flow.State == enumor.FlowFailed {
+		result, err := mac.createMainSummaryTask(subKit, billYear, billMonth)
+		if err != nil {
+			logs.Warnf("create new main summary task for %s/%s/%s %d-%d failed, err %s, rid: %s",
+				mac.RootAccountID, mac.MainAccountID, mac.Vendor,
+				billYear, billMonth, err.Error(), subKit)
+			return flowID
+		}
+
+		logs.Infof("create main summary task for %s/%s/%s %d-%d successfully, flow id %s, rid: %s",
+			mac.RootAccountID, mac.MainAccountID, mac.Vendor,
+			billYear, billMonth, flowID, subKit)
+		return result.ID
+	}
+	return flowID
+}
+
+func (mac *MainAccountController) createMainSummaryTask(
+	kt *kit.Kit, billYear, billMonth int) (*core.CreateResult, error) {
+
+	return mac.Client.TaskServer().CreateCustomFlow(kt, &taskserver.AddCustomFlowReq{
+		Name: enumor.FlowBillMainAccountSummary,
+		Memo: "calculate main account bill summary",
+		Tasks: []taskserver.CustomFlowTask{
+			mainsummary.BuildMainSummaryTask(
+				mac.RootAccountID, mac.MainAccountID, mac.Vendor, billYear, billMonth),
+		},
+	})
 }
 
 func (mac *MainAccountController) runDailyRawBillLoop(kt *kit.Kit) {

@@ -24,8 +24,10 @@ import (
 	"fmt"
 	"time"
 
+	"hcm/cmd/task-server/logics/action/bill/rootsummary"
 	"hcm/pkg/api/core"
 	dsbillapi "hcm/pkg/api/data-service/bill"
+	taskserver "hcm/pkg/api/task-server"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -82,6 +84,7 @@ func (rac *RootAccountController) Start() error {
 	rac.kt = kt
 	rac.cancelFunc = cancelFunc
 	go rac.runBillSummaryLoop(kt)
+	go rac.runCalculateBillSummaryLoop(kt)
 
 	return nil
 }
@@ -105,6 +108,72 @@ func (rac *RootAccountController) runBillSummaryLoop(kt *kit.Kit) {
 			return
 		}
 	}
+}
+
+func (rac *RootAccountController) runCalculateBillSummaryLoop(kt *kit.Kit) {
+	ticker := time.NewTicker(defaultControllerSummaryDuration)
+	curMonthflowID := ""
+	lastMonthflowID := ""
+	for {
+		select {
+		case <-ticker.C:
+			subKit := kt.NewSubKit()
+			lastBillYear, lastBillMonth := getLastBillMonth()
+			lastMonthflowID = rac.pollRootSummaryTask(subKit, lastMonthflowID, lastBillYear, lastBillMonth)
+			curBillYear, curBillMonth := getCurrentBillMonth()
+			curMonthflowID = rac.pollRootSummaryTask(subKit, curMonthflowID, curBillYear, curBillMonth)
+
+		case <-kt.Ctx.Done():
+			logs.Infof("root account (%s, %s) summary controller context done, rid: %s", rac.RootAccountID, rac.Vendor, kt.Rid)
+			return
+		}
+	}
+}
+
+func (rac *RootAccountController) pollRootSummaryTask(subKit *kit.Kit, flowID string, billYear, billMonth int) string {
+	if len(flowID) == 0 {
+		result, err := rac.createRootSummaryTask(subKit, billYear, billMonth)
+		if err != nil {
+			logs.Warnf("create new root summary task for %s/%s %d-%d failed, err %s, rid: %s",
+				rac.RootAccountID, rac.Vendor, billYear, billMonth, err.Error(), subKit)
+			return flowID
+		}
+
+		logs.Infof("create root summary task for %s/%s %d-%d successfully, flow id %s, rid: %s",
+			rac.RootAccountID, rac.Vendor, billYear, billMonth, flowID, subKit)
+		return result.ID
+	}
+	flow, err := rac.Client.TaskServer().GetFlow(subKit, flowID)
+	if err != nil {
+		logs.Warnf("get flow by id %s failed, err %s, rid: %s", flowID, err.Error(), subKit.Rid)
+		return flowID
+	}
+	if flow.State == enumor.FlowSuccess || flow.State == enumor.FlowFailed {
+		result, err := rac.createRootSummaryTask(subKit, billYear, billMonth)
+		if err != nil {
+			logs.Warnf("create new root summary task for %s/%s %d-%d failed, err %s, rid: %s",
+				rac.RootAccountID, rac.Vendor, billYear, billMonth, err.Error(), subKit)
+			return flowID
+		}
+
+		logs.Infof("create main summary task for %s/%s %d-%d successfully, flow id %s, rid: %s",
+			rac.RootAccountID, rac.Vendor, billYear, billMonth, flowID, subKit)
+		return result.ID
+	}
+	return flowID
+}
+
+func (rac *RootAccountController) createRootSummaryTask(
+	kt *kit.Kit, billYear, billMonth int) (*core.CreateResult, error) {
+
+	return rac.Client.TaskServer().CreateCustomFlow(kt, &taskserver.AddCustomFlowReq{
+		Name: enumor.FlowBillRootAccountSummary,
+		Memo: "calculate root account bill summary",
+		Tasks: []taskserver.CustomFlowTask{
+			rootsummary.BuildRootSummaryTask(
+				rac.RootAccountID, rac.Vendor, billYear, billMonth),
+		},
+	})
 }
 
 func (rac *RootAccountController) syncBillSummary(kt *kit.Kit) error {
