@@ -138,6 +138,10 @@ export const APPLY_TYPES = [
   },
 ];
 
+// 二级账号管理单据类型
+export const ACCOUNT_TYPES = ['create_main_account', 'update_main_account'];
+
+// 单据类型映射 (英中)
 export const APPLICATION_TYPE_MAP = {
   add_account: '新增账号',
   create_cvm: '创建虚拟机',
@@ -156,4 +160,5 @@ export const APPLICATION_TYPE_MAP = {
   delete_security_group_rule: '删除安全组规则',
 };
 
+// 单据类型映射 (中英)
 export const APPLICATION_TYPE_MAP_CN = reverseObj(APPLICATION_TYPE_MAP);

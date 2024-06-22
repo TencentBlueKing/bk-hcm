@@ -4,6 +4,8 @@ import DetailHeader from '@/views/resource/resource-manage/common/header/detail-
 import ApplyDetail from '@/views/service/my-apply/components/apply-detail/index.vue';
 import { useAccountStore } from '@/store';
 import { useRoute } from 'vue-router';
+import { ACCOUNT_TYPES, APPLICATION_TYPE_MAP } from '../apply-list/constants';
+import AccountApplyDetail from './account-apply-detail';
 
 export default defineComponent({
   setup() {
@@ -20,6 +22,7 @@ export default defineComponent({
       try {
         const res = await accountStore.getApplyAccountDetail(id);
         currentApplyData.value = res.data;
+        console.log(66666, currentApplyData.value);
         curApplyKey.value = res.data.id;
       } finally {
         isLoading.value = false;
@@ -52,17 +55,24 @@ export default defineComponent({
     return () => (
       <div class={'apply-detail-container'}>
         <DetailHeader>
-          <span>申请单详情</span>
+          <span class={'title'}>申请单详情</span>
+          <span class={'sub-title'}>&nbsp;-&nbsp;{APPLICATION_TYPE_MAP[currentApplyData.value.type]}</span>
         </DetailHeader>
-        <div class={'apply-content-wrapper'}>
-          <ApplyDetail
-            params={currentApplyData.value}
-            loading={isLoading.value}
-            key={curApplyKey.value}
-            cancelLoading={isCancelBtnLoading.value}
-            onCancel={handleCancel}
-          />
-        </div>
+        {currentApplyData.value.type && (
+          <div class={'apply-content-wrapper'}>
+            {ACCOUNT_TYPES.includes(currentApplyData.value.type) ? (
+              <AccountApplyDetail detail={currentApplyData.value}/>
+            ) : (
+              <ApplyDetail
+                params={currentApplyData.value}
+                loading={isLoading.value}
+                key={curApplyKey.value}
+                cancelLoading={isCancelBtnLoading.value}
+                onCancel={handleCancel}
+              />
+            )}
+          </div>
+        )}
       </div>
     );
   },
