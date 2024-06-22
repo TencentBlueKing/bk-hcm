@@ -114,7 +114,7 @@ func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 	}
 	if curMonthCostSynced != nil {
 		req.CurrentMonthCostSynced = *curMonthCostSynced
-		if lastMonthCostSynced != nil {
+		if lastMonthCostSynced != nil && !lastMonthCostSynced.IsZero() {
 			req.LastMonthCostSynced = *lastMonthCostSynced
 			req.MonthOnMonthValue = curMonthCostSynced.DivRound(*lastMonthCostSynced, 5).InexactFloat64()
 		}
