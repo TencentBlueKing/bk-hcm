@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package billsummaryrootall
+package billsummaryroot
 
 import (
 	asbillapi "hcm/pkg/api/account-server/bill"
@@ -33,8 +33,8 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-func (s *service) ListAllRootAccountSummary(cts *rest.Contexts) (interface{}, error) {
-	req := new(asbillapi.AllRootAccountSummaryGetReq)
+func (s *service) SumRootAccountSummary(cts *rest.Contexts) (interface{}, error) {
+	req := new(asbillapi.RootAccountSummarySumReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -75,14 +75,12 @@ func (s *service) ListAllRootAccountSummary(cts *rest.Contexts) (interface{}, er
 		if err != nil {
 			return nil, err
 		}
-		for _, detail := range tmpResult.Details {
-			rootSummaryList = append(rootSummaryList, detail)
-		}
+		rootSummaryList = append(rootSummaryList, tmpResult.Details...)
 	}
-	return s.doCalcalcute(rootSummaryList)
+	return s.doCalcalcute(rootSummaryList, *result.Count)
 }
 
-func (s *service) doCalcalcute(rootSummaryList []*dsbillapi.BillSummaryRootResult) (interface{}, error) {
+func (s *service) doCalcalcute(rootSummaryList []*dsbillapi.BillSummaryRootResult, count uint64) (interface{}, error) {
 	retMap := make(map[enumor.CurrencyCode]*billcore.CostWithCurrency)
 	for _, rootSummary := range rootSummaryList {
 		if _, ok := retMap[rootSummary.Currency]; !ok {
@@ -95,7 +93,8 @@ func (s *service) doCalcalcute(rootSummaryList []*dsbillapi.BillSummaryRootResul
 		retMap[rootSummary.Currency].Cost = retMap[rootSummary.Currency].Cost.Add(rootSummary.CurrentMonthCost)
 		retMap[rootSummary.Currency].RMBCost = retMap[rootSummary.Currency].RMBCost.Add(rootSummary.CurrentMonthRMBCost)
 	}
-	return &asbillapi.AllRootAccountSummaryGetResult{
+	return &asbillapi.RootAccountSummarySumResult{
+		Count:   count,
 		CostMap: retMap,
 	}, nil
 }

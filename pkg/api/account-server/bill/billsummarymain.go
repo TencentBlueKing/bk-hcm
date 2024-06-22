@@ -21,6 +21,8 @@ package bill
 
 import (
 	"hcm/pkg/api/core"
+	billcore "hcm/pkg/api/core/bill"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/runtime/filter"
 )
@@ -36,4 +38,22 @@ type MainAccountSummaryListReq struct {
 // Validate ...
 func (req *MainAccountSummaryListReq) Validate() error {
 	return validator.Validate.Struct(req)
+}
+
+// MainAccountSummarySumReq get request for all account summary
+type MainAccountSummarySumReq struct {
+	BillYear  int                `json:"bill_year" validate:"required"`
+	BillMonth int                `json:"bill_month" validate:"required"`
+	Filter    *filter.Expression `json:"filter" validate:"omitempty"`
+}
+
+// Validate ...
+func (req *MainAccountSummarySumReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// MainAccountSummarySumResult all root account summary get result
+type MainAccountSummarySumResult struct {
+	Count   uint64                                             `json:"count"`
+	CostMap map[enumor.CurrencyCode]*billcore.CostWithCurrency `json:"cost_map"`
 }

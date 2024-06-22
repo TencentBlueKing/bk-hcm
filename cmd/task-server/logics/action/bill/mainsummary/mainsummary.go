@@ -118,6 +118,7 @@ func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 		RootAccountName: mAccountResult.ParentAccountName,
 		ProductID:       opProductID,
 		BkBizID:         bkBizID,
+		Currency:        currency,
 	}
 	if curMonthCost != nil {
 		req.CurrentMonthCost = *curMonthCost
@@ -206,7 +207,7 @@ func (act *MainAccountSummaryAction) getMonthVersionCost(
 		return nil, false, "", fmt.Errorf("get main account summary of %v failed, err %s", opt, err.Error())
 	}
 	totalCost := decimal.NewFromFloat(0)
-	currencyCode := enumor.CurrencyCode("")
+	currencyCode := enumor.CurrencyUSD
 	for _, dailySummary := range result.Details {
 		if len(dailySummary.Currency) != 0 {
 			currencyCode = dailySummary.Currency

@@ -41,6 +41,7 @@
  
 	 // register handler
 	 h.Add("ListMainAccountSummary", http.MethodPost, "/bills/main-account-summarys/list", svc.ListMainAccountSummary)
+	 h.Add("SumMainAccountSummary", http.MethodPost, "/bills/main-account-summarys/sum", svc.SumMainAccountSummary)
  
 	 h.Load(c.WebService)
  }

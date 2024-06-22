@@ -43,6 +43,7 @@ func InitService(c *capability.Capability) {
 	h.Add("ListRootAccountSummary", http.MethodPost, "/bills/root-account-summarys/list", svc.ListRootAccountSummary)
 	h.Add("ReaccountRootAccountSummary",
 		http.MethodPost, "/bills/root-account-summarys/reaccount", svc.ReaccountRootAccountSummary)
+	h.Add("SumRootAccountSummary", http.MethodPost, "/bills/root-account-summarys/sum", svc.SumRootAccountSummary)
 
 	h.Load(c.WebService)
 }

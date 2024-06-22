@@ -118,7 +118,7 @@ func (act RootAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 	}
 	req := &bill.BillSummaryRootUpdateReq{
 		ID:                        summary.ID,
-		Currency:                  enumor.CurrencyCode(currency),
+		Currency:                  currency,
 		RootAccountName:           rAccountResult.Name,
 		LastMonthCostSynced:       lastMonthSyncedCost,
 		LastMonthRMBCostSynced:    lastMonthSyncedRMBCost,
