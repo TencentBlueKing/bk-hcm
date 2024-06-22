@@ -122,7 +122,7 @@ func (b bill) GcpGetRootAccountBillList(cts *rest.Contexts) (interface{}, error)
 	}
 
 	// 检查rootAccountID是否存在，是否资源账号
-	resAccountInfo, err := b.cs.DataService().Gcp.RootAccount.Get(cts.Kit, req.AccountID)
+	resAccountInfo, err := b.cs.DataService().Gcp.RootAccount.Get(cts.Kit, req.BillAccountID)
 	if err != nil {
 		logs.Errorf("get gcp root account failed, rootAccountID: %s, err: %+v", req.AccountID, err)
 		return nil, err
