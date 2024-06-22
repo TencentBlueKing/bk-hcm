@@ -189,8 +189,8 @@ export interface Page {
   count: boolean; // 是否计数
   start: number; // 起始位置
   limit: number; // 每页最多项目数
-  sort: string; // 排序字段
-  order: 'ASC' | 'DESC'; // 排序方式，可以是 "ASC" 或 "DESC"
+  sort?: string; // 排序字段
+  order?: 'ASC' | 'DESC'; // 排序方式，可以是 "ASC" 或 "DESC"
 }
 
 export interface ListProp {
