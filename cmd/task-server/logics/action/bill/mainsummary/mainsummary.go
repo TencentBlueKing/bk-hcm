@@ -77,6 +77,7 @@ func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 	if err != nil {
 		return nil, err
 	}
+
 	opProductID := mAccountResult.OpProductID
 	bkBizID := mAccountResult.BkBizID
 	// 计算上月同步成本
@@ -89,16 +90,25 @@ func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 	var curMonthCostSynced *decimal.Decimal
 	isCurMonthAccounted := false
 	if summary.LastSyncedVersion != 0 {
-		curMonthCostSynced, _, err = act.getMonthVersionCost(kt.Kit(), opt, summary.LastSyncedVersion)
+		curMonthCostSynced, _, _, err = act.getMonthVersionCost(kt.Kit(), opt, summary.LastSyncedVersion)
 		if err != nil {
 			return nil, fmt.Errorf("get current month synced cost failed, err %s", err.Error())
 		}
 	}
 
 	// 计算当月实时成本
-	curMonthCost, isCurMonthAccounted, err := act.getMonthVersionCost(kt.Kit(), opt, summary.CurrentVersion)
+	curMonthCost, isCurMonthAccounted, currency, err := act.getMonthVersionCost(kt.Kit(), opt, summary.CurrentVersion)
 	if err != nil {
 		return nil, fmt.Errorf("get current month synced cost failed, err %s", err.Error())
+	}
+
+	// 获取当月平均汇率
+	var exhangeRate *decimal.Decimal
+	if len(currency) != 0 {
+		exhangeRate, err = act.getExchangeRate(kt.Kit(), currency, enumor.CurrencyRMB, opt.BillYear, opt.BillMonth)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// TODO: 计算调账成本
@@ -111,9 +121,15 @@ func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 	}
 	if curMonthCost != nil {
 		req.CurrentMonthCost = *curMonthCost
+		if exhangeRate != nil {
+			req.CurrentMonthRMBCost = req.CurrentMonthCost.Mul(*exhangeRate)
+		}
 	}
 	if curMonthCostSynced != nil {
 		req.CurrentMonthCostSynced = *curMonthCostSynced
+		if exhangeRate != nil {
+			req.CurrentMonthRMBCostSynced = req.CurrentMonthCostSynced.Mul(*exhangeRate)
+		}
 		if lastMonthCostSynced != nil && !lastMonthCostSynced.IsZero() {
 			req.LastMonthCostSynced = *lastMonthCostSynced
 			req.MonthOnMonthValue = curMonthCostSynced.DivRound(*lastMonthCostSynced, 5).InexactFloat64()
@@ -134,8 +150,43 @@ func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 	return nil, nil
 }
 
+func (act *MainAccountSummaryAction) getExchangeRate(
+	kt *kit.Kit, fromCurrency, toCurrency enumor.CurrencyCode, billYear, billMonth int) (*decimal.Decimal, error) {
+	expressions := []*filter.AtomRule{
+		tools.RuleEqual("from_currency", fromCurrency),
+		tools.RuleEqual("to_currency", toCurrency),
+		tools.RuleEqual("year", billYear),
+		tools.RuleEqual("month", billMonth),
+	}
+	result, err := actcli.GetDataService().Global.Bill.ListExchangeRate(kt, &core.ListReq{
+		Filter: tools.ExpressionAnd(expressions...),
+		Page: &core.BasePage{
+			Start: 0,
+			Limit: 1,
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get exchange rate from %s to %s in %d-%d failed, err %s",
+			fromCurrency, toCurrency, billYear, billMonth, err.Error())
+	}
+	if len(result.Details) == 0 {
+		logs.Infof("get no exchange rate from %s to %s in %d-%d, rid %s",
+			fromCurrency, toCurrency, billYear, billMonth, kt.Rid)
+		return nil, nil
+	}
+	if len(result.Details) != 1 {
+		logs.Infof("get invalid resp length from exchange rate from %s to %s in %d-%d, resp %v, rid %s",
+			fromCurrency, toCurrency, billYear, billMonth, result.Details, kt.Rid)
+		return nil, fmt.Errorf("get invalid resp length from exchange rate from %s to %s in %d-%d, resp %v",
+			fromCurrency, toCurrency, billYear, billMonth, result.Details)
+	}
+	return result.Details[0].ExchangeRate, nil
+}
+
 func (act *MainAccountSummaryAction) getMonthVersionCost(
-	kt *kit.Kit, opt *MainAccountSummaryActionOption, versionID int) (*decimal.Decimal, bool, error) {
+	kt *kit.Kit, opt *MainAccountSummaryActionOption, versionID int) (
+	*decimal.Decimal, bool, enumor.CurrencyCode, error) {
+
 	expressions := []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", opt.RootAccountID),
 		tools.RuleEqual("main_account_id", opt.MainAccountID),
@@ -152,17 +203,21 @@ func (act *MainAccountSummaryAction) getMonthVersionCost(
 		},
 	})
 	if err != nil {
-		return nil, false, fmt.Errorf("get main account summary of %v failed, err %s", opt, err.Error())
+		return nil, false, "", fmt.Errorf("get main account summary of %v failed, err %s", opt, err.Error())
 	}
 	totalCost := decimal.NewFromFloat(0)
+	currencyCode := enumor.CurrencyCode("")
 	for _, dailySummary := range result.Details {
+		if len(dailySummary.Currency) != 0 {
+			currencyCode = dailySummary.Currency
+		}
 		totalCost = totalCost.Add(dailySummary.Cost)
 	}
 	isAccounted := false
 	if len(result.Details) == times.DaysInMonth(opt.BillYear, time.Month(opt.BillMonth)) {
 		isAccounted = true
 	}
-	return &totalCost, isAccounted, nil
+	return &totalCost, isAccounted, currencyCode, nil
 }
 
 func (act *MainAccountSummaryAction) getLastMonthSyncedCost(
