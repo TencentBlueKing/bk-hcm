@@ -33,7 +33,7 @@ import (
 	"hcm/pkg/rest"
 )
 
-// Add get main account with options
+// Add get root account with options
 func (s *service) Add(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.RootAccountAddReq)
 	if err := cts.DecodeInto(req); err != nil {

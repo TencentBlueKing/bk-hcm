@@ -3,6 +3,7 @@ import { Divider, Select } from 'bkui-vue';
 import { Plus, RightTurnLine, Spinner } from 'bkui-vue/lib/icon';
 import { useAccountStore } from '@/store';
 import { useSingleList } from '@/hooks/useSingleList';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { Protocol, QueryRuleOPEnum } from '@/typings';
 
 const { Option } = Select;
@@ -23,19 +24,28 @@ export default defineComponent({
     cloudVpcId: String,
     region: String,
     protocol: String as PropType<Protocol>,
+    isCorsV2: Boolean,
   },
   emits: ['update:modelValue'],
   setup(props, { emit, expose }) {
+    const { getBusinessApiPath } = useWhereAmI();
     const accountStore = useAccountStore();
 
     const targetGroupId = ref(props.modelValue);
-    const { dataList, isDataLoad, isDataRefresh, handleScrollEnd, handleRefresh } = useSingleList('target_groups', {
-      rules: () => [
-        { field: 'account_id', op: QueryRuleOPEnum.EQ, value: props.accountId },
-        { field: 'cloud_vpc_id', op: QueryRuleOPEnum.EQ, value: props.cloudVpcId },
-        { field: 'region', op: QueryRuleOPEnum.EQ, value: props.region },
-        { field: 'protocol', op: QueryRuleOPEnum.EQ, value: props.protocol },
-      ],
+    const { dataList, isDataLoad, isDataRefresh, handleScrollEnd, handleRefresh } = useSingleList({
+      url: `/api/v1/cloud/${getBusinessApiPath()}target_groups/list`,
+      rules: () => {
+        const baseRules = [
+          { field: 'account_id', op: QueryRuleOPEnum.EQ, value: props.accountId },
+          { field: 'protocol', op: QueryRuleOPEnum.EQ, value: props.protocol },
+        ];
+        if (props.isCorsV2) return baseRules;
+        return [
+          ...baseRules,
+          { field: 'region', op: QueryRuleOPEnum.EQ, value: props.region },
+          { field: 'cloud_vpc_id', op: QueryRuleOPEnum.EQ, value: props.cloudVpcId },
+        ];
+      },
     });
 
     // click-handler - 新增目标组

@@ -1,0 +1,29 @@
+.item {
+  span {
+    line-height: 40px;
+    display: inline-block;
+  }
+
+  span:first-of-type {
+    width: 150px;
+    text-align: right;
+
+    &::after {
+      content: ':';
+      margin: 0 10px 0 5px;
+    }
+
+    & + span {
+      font-family: MicrosoftYaHei;
+      font-size: 14px;
+      color: #313238;
+
+      &.money {
+        font-family: MicrosoftYaHei-Bold;
+        font-weight: 700;
+        font-size: 16px;
+        color: #ff9c01;
+      }
+    }
+  }
+}

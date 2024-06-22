@@ -1,7 +1,7 @@
 package loadbalancer
 
 import (
-	"fmt"
+	"errors"
 
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
@@ -14,7 +14,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/classifier"
 	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
 )
@@ -46,7 +46,7 @@ func (svc *lbSvc) listListener(cts *rest.Contexts, authHandler handler.ListAuthR
 
 	filterWithLb, err := tools.And(tools.RuleEqual("lb_id", lbID), req.Filter)
 	if err != nil {
-		logs.Errorf("fail to merge loadbalancer id rule into request filter, err: %v, req.Filter: %+v, rid: %s",
+		logs.Errorf("fail to merge load balancer id rule into request filter, err: %v, req.Filter: %+v, rid: %s",
 			err, req.Filter, cts.Kit.Rid)
 		return nil, err
 	}
@@ -58,8 +58,7 @@ func (svc *lbSvc) listListener(cts *rest.Contexts, authHandler handler.ListAuthR
 			lbID, noPermFlag, err, cts.Kit.Rid)
 		return nil, err
 	}
-
-	resList := &cslb.ListListenerResult{Count: 0, Details: make([]cslb.ListListenerBase, 0)}
+	resList := &cslb.ListListenerResult{Count: 0, Details: make([]*cslb.ListenerListInfo, 0)}
 	if noPermFlag {
 		logs.Errorf("list listener no perm auth, lbID: %s, noPermFlag: %v, rid: %s", lbID, noPermFlag, cts.Kit.Rid)
 		return resList, nil
@@ -71,69 +70,85 @@ func (svc *lbSvc) listListener(cts *rest.Contexts, authHandler handler.ListAuthR
 		logs.Errorf("fail to get load balancer basic info, lbID: %s, err: %v, rid: %s", lbID, err, cts.Kit.Rid)
 		return nil, err
 	}
-
+	req.Filter = expr
+	if req.Page.Count {
+		return svc.client.DataService().Global.LoadBalancer.ListListener(cts.Kit, req)
+	}
 	switch basicInfo.Vendor {
 	case enumor.TCloud:
-		urlRuleMap, targetWeightMap, lblTargetGroupMap, err := svc.getTCloudUrlRuleAndTargetGroupMap(
-			cts.Kit, expr, req, lbID, resList)
-		if err != nil {
-			return nil, err
-		}
-
-		for idx, lblItem := range resList.Details {
-			tmpTargetGroupID := lblTargetGroupMap[lblItem.ID].TargetGroupID
-			resList.Details[idx].TargetGroupID = tmpTargetGroupID
-			resList.Details[idx].Scheduler = urlRuleMap[lblItem.ID].Scheduler
-			if lblItem.Protocol.IsLayer7Protocol() {
-				resList.Details[idx].DomainNum = urlRuleMap[lblItem.ID].DomainNum
-				resList.Details[idx].UrlNum = urlRuleMap[lblItem.ID].UrlNum
-			}
-			if len(tmpTargetGroupID) > 0 {
-				resList.Details[idx].RsWeightNonZeroNum = targetWeightMap[tmpTargetGroupID].RsWeightNonZeroNum
-				resList.Details[idx].RsWeightZeroNum = targetWeightMap[tmpTargetGroupID].RsWeightZeroNum
-			}
-			resList.Details[idx].BindingStatus = lblTargetGroupMap[lblItem.ID].BindingStatus
-		}
-
-		return resList, nil
+		lblInfoList, err := svc.getTCloudUrlRuleAndTargetGroupMap(cts.Kit, lbID, req)
+		return &cslb.ListListenerResult{Details: lblInfoList}, err
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "lbID: %s vendor: %s not support", lbID, basicInfo.Vendor)
 	}
 }
 
-func (svc *lbSvc) getTCloudUrlRuleAndTargetGroupMap(kt *kit.Kit, expr *filter.Expression, req *core.ListReq,
-	lbID string, resList *cslb.ListListenerResult) (map[string]cslb.ListListenerBase,
-	map[string]cslb.ListListenerBase, map[string]cslb.ListListenerBase, error) {
+// 返回监听器信息， 域名数量和url数量，绑定目标组同步状态
+func (svc *lbSvc) getTCloudUrlRuleAndTargetGroupMap(kt *kit.Kit, lbID string,
+	req *core.ListReq) ([]*cslb.ListenerListInfo, error) {
 
-	listenerReq := &core.ListReq{
-		Filter: expr,
-		Page:   req.Page,
-	}
-	listenerList, err := svc.client.DataService().Global.LoadBalancer.ListListener(kt, listenerReq)
+	listenerList, err := svc.client.DataService().TCloud.LoadBalancer.ListListener(kt, req)
 	if err != nil {
 		logs.Errorf("list listener failed, lbID: %s, err: %v, rid: %s", lbID, err, kt.Rid)
-		return nil, nil, nil, err
-	}
-	if req.Page.Count || len(listenerList.Details) == 0 {
-		resList.Count = listenerList.Count
-		return nil, nil, nil, nil
+		return nil, err
 	}
 
-	resList.Count = listenerList.Count
+	baseLblList := listenerList.Details
+	lblInfoList := make([]*cslb.ListenerListInfo, 0, len(baseLblList))
 	lblIDs := make([]string, 0)
-	for _, listenerItem := range listenerList.Details {
-		lblIDs = append(lblIDs, listenerItem.ID)
-		resList.Details = append(resList.Details, cslb.ListListenerBase{
-			BaseListener: listenerItem,
+	for _, lbl := range baseLblList {
+		lblIDs = append(lblIDs, lbl.ID)
+		lblInfoList = append(lblInfoList, &cslb.ListenerListInfo{
+			BaseListener: *lbl.BaseListener,
+			EndPort:      lbl.Extension.EndPort,
 		})
 	}
 
-	urlRuleMap, err := svc.listTCloudLbUrlRuleMap(kt, lbID, lblIDs)
+	// 2. 拼接规则信息到监听器表中，如果是4层监听器，拼接均衡方式和同步状态，7层监听器拼接域名数量和url数量
+	lblRuleMap, err := svc.listTCloudRuleMap(kt, lbID, lblIDs)
 	if err != nil {
-		return nil, nil, nil, err
+		logs.Errorf("fail to list tcloud rule map, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
 	}
 
-	// 根据lbID、lblID获取绑定的目标组ID列表
+	// 3. 根据lbID、lblID获取绑定的目标组ID列表
+	relMap, err := svc.listTgLblRelMap(kt, lbID, lblIDs)
+	if err != nil {
+		logs.Errorf("fail to list target group  listener rel, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	for _, lblInfo := range lblInfoList {
+		lblID := lblInfo.BaseListener.ID
+		rules := lblRuleMap[lblID]
+		if len(rules) == 0 {
+			continue
+		}
+		if lblInfo.Protocol.IsLayer7Protocol() {
+			// 7层监听器获取url规则数量和域名数量
+			domains := cvt.SliceToMap(rules,
+				func(r corelb.TCloudLbUrlRule) (string, struct{}) { return r.Domain, struct{}{} })
+			lblInfo.DomainNum = int64(len(domains))
+			lblInfo.UrlNum = int64(len(rules))
+		} else {
+			// 4层监听器
+			lblInfo.Scheduler = rules[0].Scheduler
+			lblInfo.SessionType = rules[0].SessionType
+			lblInfo.SessionExpire = rules[0].SessionExpire
+			lblInfo.HealthCheck = rules[0].HealthCheck
+			lblInfo.Certificate = rules[0].Certificate
+			// 获取同步状态和目标组id
+			lblInfo.TargetGroupID = relMap[lblID].TargetGroupID
+			lblInfo.BindingStatus = relMap[lblID].BindingStatus
+		}
+	}
+
+	return lblInfoList, nil
+}
+
+func (svc *lbSvc) listTgLblRelMap(kt *kit.Kit, lbID string, lblIDs []string) (
+	map[string]corelb.BaseTargetListenerRuleRel, error) {
+
 	ruleRelReq := &core.ListReq{
 		Filter: tools.ExpressionAnd(
 			tools.RuleEqual("lb_id", lbID),
@@ -141,38 +156,21 @@ func (svc *lbSvc) getTCloudUrlRuleAndTargetGroupMap(kt *kit.Kit, expr *filter.Ex
 		),
 		Page: core.NewDefaultBasePage(),
 	}
-	ruleRelList, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroupListenerRel(kt, ruleRelReq)
+	ruleRelResp, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroupListenerRel(kt, ruleRelReq)
 	if err != nil {
 		logs.Errorf("list target group listener rule rel failed, lbID: %s, lblIDs: %v, err: %v, rid: %s",
 			lbID, lblIDs, err, kt.Rid)
-		return nil, nil, nil, err
+		return nil, err
 	}
-	// 没有对应的目标组、监听器关联关系记录
-	if len(ruleRelList.Details) == 0 {
-		return nil, nil, nil, nil
+	relMap := make(map[string]corelb.BaseTargetListenerRuleRel)
+	for _, rel := range ruleRelResp.Details {
+		relMap[rel.LblID] = rel
 	}
-
-	targetGroupIDs := make([]string, 0)
-	lblTargetGroupMap := make(map[string]cslb.ListListenerBase, 0)
-	for _, item := range ruleRelList.Details {
-		targetGroupIDs = append(targetGroupIDs, item.TargetGroupID)
-		lblTargetGroupMap[item.LblID] = cslb.ListListenerBase{
-			TargetGroupID: item.TargetGroupID,
-			BindingStatus: item.BindingStatus,
-		}
-	}
-
-	// TODO 后面拆成独立接口，让前端异步调用
-	targetWeightMap, err := svc.listTargetWeightNumMap(kt, targetGroupIDs)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	return urlRuleMap, targetWeightMap, lblTargetGroupMap, nil
+	return relMap, nil
 }
 
-func (svc *lbSvc) listTCloudLbUrlRuleMap(kt *kit.Kit, lbID string, lblIDs []string) (
-	map[string]cslb.ListListenerBase, error) {
+func (svc *lbSvc) listTCloudRuleMap(kt *kit.Kit, lbID string, lblIDs []string) (
+	map[string][]corelb.TCloudLbUrlRule, error) {
 
 	urlRuleReq := &core.ListReq{
 		Filter: tools.ExpressionAnd(
@@ -186,44 +184,9 @@ func (svc *lbSvc) listTCloudLbUrlRuleMap(kt *kit.Kit, lbID string, lblIDs []stri
 		logs.Errorf("list tcloud url rule failed, lbID: %s, lblIDs: %v, err: %v, rid: %s", lbID, lblIDs, err, kt.Rid)
 		return nil, err
 	}
-
-	listenerRuleMap := make(map[string]cslb.ListListenerBase, 0)
-	domainsExist := make(map[string]struct{}, 0)
-	for _, ruleItem := range urlRuleList.Details {
-		if _, ok := listenerRuleMap[ruleItem.LblID]; !ok {
-			listenerRuleMap[ruleItem.LblID] = cslb.ListListenerBase{
-				TargetGroupID: ruleItem.TargetGroupID,
-				Scheduler:     ruleItem.Scheduler,
-				SessionType:   ruleItem.SessionType,
-				SessionExpire: ruleItem.SessionExpire,
-				HealthCheck:   ruleItem.HealthCheck,
-				Certificate:   ruleItem.Certificate,
-			}
-		}
-
-		tmpListener := listenerRuleMap[ruleItem.LblID]
-		// 计算监听器下的域名数量
-		calcDomainNumByListener(&tmpListener, ruleItem, domainsExist)
-		if len(ruleItem.URL) > 0 {
-			tmpListener.UrlNum++
-		}
-
-		listenerRuleMap[ruleItem.LblID] = tmpListener
-	}
-
-	return listenerRuleMap, nil
-}
-
-// 计算监听器下的域名数量
-func calcDomainNumByListener(tmpListener *cslb.ListListenerBase, ruleItem corelb.TCloudLbUrlRule,
-	domainsExist map[string]struct{}) {
-
-	domainUnique := fmt.Sprintf("%s-%s", ruleItem.LblID, ruleItem.Domain)
-	if _, ok := domainsExist[domainUnique]; !ok && len(ruleItem.Domain) > 0 {
-		tmpListener.DomainNum++
-		domainsExist[domainUnique] = struct{}{}
-	}
-	return
+	lblRuleMap := classifier.ClassifySlice(urlRuleList.Details,
+		func(r corelb.TCloudLbUrlRule) string { return r.LblID })
+	return lblRuleMap, nil
 }
 
 func (svc *lbSvc) listListenerMap(kt *kit.Kit, lblIDs []string) (map[string]corelb.BaseListener, error) {
@@ -297,29 +260,37 @@ func (svc *lbSvc) getTCloudListener(kt *kit.Kit, lblID string) (*cslb.GetTCloudL
 		return nil, err
 	}
 
-	urlRuleMap, err := svc.listTCloudLbUrlRuleMap(kt, listenerInfo.LbID, []string{lblID})
+	urlRuleMap, err := svc.listTCloudRuleMap(kt, listenerInfo.LbID, []string{lblID})
 	if err != nil {
 		return nil, err
 	}
-
-	targetGroupID := urlRuleMap[listenerInfo.ID].TargetGroupID
+	rules := urlRuleMap[listenerInfo.ID]
+	if len(rules) == 0 {
+		logs.Errorf("fail to find related rule fo lbl(%s),rid: %s", lblID, kt.Rid)
+		return nil, errors.New("related rule not found")
+	}
+	rule := rules[0]
+	targetGroupID := rule.TargetGroupID
 	result := &cslb.GetTCloudListenerDetail{
 		TCloudListener: *listenerInfo,
 		LblID:          listenerInfo.ID,
 		LblName:        listenerInfo.Name,
 		CloudLblID:     listenerInfo.CloudID,
 		TargetGroupID:  targetGroupID,
-		Scheduler:      urlRuleMap[listenerInfo.ID].Scheduler,
-		SessionType:    urlRuleMap[listenerInfo.ID].SessionType,
-		SessionExpire:  urlRuleMap[listenerInfo.ID].SessionExpire,
-		HealthCheck:    urlRuleMap[listenerInfo.ID].HealthCheck,
+		EndPort:        listenerInfo.Extension.EndPort,
+		Scheduler:      rule.Scheduler,
+		SessionType:    rule.SessionType,
+		SessionExpire:  rule.SessionExpire,
+		HealthCheck:    rule.HealthCheck,
 	}
 	if listenerInfo.Protocol.IsLayer7Protocol() {
-		result.DomainNum = urlRuleMap[listenerInfo.ID].DomainNum
-		result.UrlNum = urlRuleMap[listenerInfo.ID].UrlNum
+		domains := cvt.SliceToMap(rules,
+			func(r corelb.TCloudLbUrlRule) (string, struct{}) { return r.Domain, struct{}{} })
+		result.DomainNum = int64(len(domains))
+		result.UrlNum = int64(len(rules))
 		// 只有SNI开启时，证书才会出现在域名上面，才需要返回Certificate字段
 		if listenerInfo.SniSwitch == enumor.SniTypeOpen {
-			result.Certificate = urlRuleMap[listenerInfo.ID].Certificate
+			result.Certificate = rule.Certificate
 			result.Extension.Certificate = nil
 		}
 	}
@@ -337,28 +308,6 @@ func (svc *lbSvc) getTCloudListener(kt *kit.Kit, lblID string) (*cslb.GetTCloudL
 	}
 
 	return result, nil
-}
-
-func (svc *lbSvc) listTargetWeightNumMap(kt *kit.Kit, targetGroupIDs []string) (
-	map[string]cslb.ListListenerBase, error) {
-
-	targetList, err := svc.getTargetByTGIDs(kt, targetGroupIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	targetWeightMap := make(map[string]cslb.ListListenerBase, 0)
-	for _, item := range targetList {
-		tmpTarget := targetWeightMap[item.TargetGroupID]
-		if cvt.PtrToVal(item.Weight) == 0 {
-			tmpTarget.RsWeightZeroNum++
-		} else {
-			tmpTarget.RsWeightNonZeroNum++
-		}
-		targetWeightMap[item.TargetGroupID] = tmpTarget
-	}
-
-	return targetWeightMap, nil
 }
 
 // ListListenerCountByLbIDs list listener count by lbIDs.

@@ -93,7 +93,7 @@ func (svc *clbSvc) TCloudCreateUrlRule(cts *rest.Contexts) (any, error) {
 		return nil, err
 	}
 
-	if err := svc.lblSync(cts.Kit, tcloudAdpt, lb); err != nil {
+	if err := svc.lblSync(cts.Kit, tcloudAdpt, lb, []string{listener.CloudID}); err != nil {
 		// 调用同步的方法内会打印错误，这里只标记调用方
 		logs.Errorf("fail to sync listener for create rule, lblID: %s, rid: %s", lblID, cts.Kit.Rid)
 		return nil, err
@@ -210,7 +210,7 @@ func (svc *clbSvc) TCloudUpdateUrlRule(cts *rest.Contexts) (any, error) {
 		logs.Errorf("fail to update rule, err: %v, id: %s, rid: %s", err, ruleID, cts.Kit.Rid)
 		return nil, err
 	}
-	if err := svc.lblSync(cts.Kit, tcloudAdpt, lb); err != nil {
+	if err := svc.lblSync(cts.Kit, tcloudAdpt, lb, []string{rules[0].CloudLBLID}); err != nil {
 		logs.Errorf("fail to sync listener for update rule(%s), rid: %s", ruleID, cts.Kit.Rid)
 		return nil, err
 	}
@@ -295,7 +295,7 @@ func (svc *clbSvc) TCloudBatchDeleteUrlRule(cts *rest.Contexts) (any, error) {
 		return nil, err
 	}
 
-	if err := svc.lblSync(cts.Kit, tcloudAdpt, lb); err != nil {
+	if err := svc.lblSync(cts.Kit, tcloudAdpt, lb, []string{rules[0].CloudLBLID}); err != nil {
 		// 调用同步的方法内会打印错误，这里只标记调用方
 		logs.Errorf("fail to sync listener for delete rule, req: %+v, rid: %s", req, cts.Kit.Rid)
 		return nil, err
@@ -349,7 +349,7 @@ func (svc *clbSvc) TCloudBatchDeleteUrlRuleByDomain(cts *rest.Contexts) (any, er
 		}
 	}
 
-	if err := svc.lblSync(cts.Kit, tcloudAdpt, lb); err != nil {
+	if err := svc.lblSync(cts.Kit, tcloudAdpt, lb, []string{listener.CloudID}); err != nil {
 		// 调用同步的方法内会打印错误，这里只标记调用方
 		logs.Errorf("fail to sync listener for delete rule, req: %+v, rid: %s", req, cts.Kit.Rid)
 		return nil, err
@@ -358,16 +358,19 @@ func (svc *clbSvc) TCloudBatchDeleteUrlRuleByDomain(cts *rest.Contexts) (any, er
 	return nil, nil
 }
 
-func (svc *clbSvc) lblSync(kt *kit.Kit, adaptor tcloud.TCloud, lb *corelb.BaseLoadBalancer) error {
+func (svc *clbSvc) lblSync(kt *kit.Kit, adaptor tcloud.TCloud, lb *corelb.BaseLoadBalancer, cloudIDs []string) error {
 	syncClient := synctcloud.NewClient(svc.dataCli, adaptor)
-	params := &synctcloud.SyncListenerOfSingleLBOption{
-		AccountID: lb.AccountID,
-		Region:    lb.Region,
+	opt := &synctcloud.SyncListenerOption{
 		BizID:     lb.BkBizID,
 		LBID:      lb.ID,
 		CloudLBID: lb.CloudID,
 	}
-	_, err := syncClient.Listener(kt, params)
+	param := &synctcloud.SyncBaseParams{
+		AccountID: lb.AccountID,
+		Region:    lb.Region,
+		CloudIDs:  cloudIDs,
+	}
+	_, err := syncClient.Listener(kt, param, opt)
 	if err != nil {
 		logs.Errorf("sync listener of lb(%s) failed, err: %v, rid: %s", lb.CloudID, err, kt.Rid)
 		return err

@@ -31,7 +31,7 @@ export default (formModel: ApplyClbModel, formRef: any) => {
     resetParams();
     Object.assign(formModel, {
       address_ip_version: 'IPV4',
-      zoneType: 'single',
+      zoneType: '0',
       sla_type: 'shared',
       internet_charge_type: 'TRAFFIC_POSTPAID_BY_HOUR',
     });
@@ -49,7 +49,7 @@ export default (formModel: ApplyClbModel, formRef: any) => {
         // 如果是公网, 则重置初始状态
         Object.assign(formModel, {
           address_ip_version: 'IPV4',
-          zoneType: 'single',
+          zoneType: '0',
           sla_type: 'shared',
           internet_charge_type: 'TRAFFIC_POSTPAID_BY_HOUR',
         });
@@ -69,7 +69,7 @@ export default (formModel: ApplyClbModel, formRef: any) => {
   watch(
     () => formModel.zoneType,
     () => {
-      resetParams(['zones', 'backup_zones', 'cloud_vpc_id']);
+      resetParams(['zones', 'backup_zones']);
       handleClearValidate();
     },
   );

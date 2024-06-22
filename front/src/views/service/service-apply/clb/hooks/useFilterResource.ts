@@ -1,6 +1,7 @@
 import { computed, reactive, ref, shallowRef, watch } from 'vue';
 import { Message } from 'bkui-vue';
 import { useBusinessStore } from '@/store';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 import bus from '@/common/bus';
 // import types
 import { ApplyClbModel, SpecAvailability } from '@/api/load_balancers/apply-clb/types';
@@ -10,6 +11,7 @@ import { debounce } from 'lodash';
 
 // 当云地域变更时, 获取用户在当前地域支持可用区列表和资源列表
 export default (formModel: ApplyClbModel) => {
+  const { isBusinessPage } = useWhereAmI();
   const businessStore = useBusinessStore();
   // define data
   const isResourceListLoading = ref(false); // 是否正在获取资源列表
@@ -17,6 +19,7 @@ export default (formModel: ApplyClbModel) => {
   const ispList = ref([]); // 运营商类型
   const specAvailabilitySet = ref<Array<SpecAvailability>>([]); // 负载均衡规格类型
   const quotas = ref<ClbQuota[]>([]); // 配额
+  const isInquiryPricesLoading = ref(false); // 是否正在询价
   const isInquiryPrices = computed(() => {
     // 内网下, account_id, region, zones, cloud_vpc_id, cloud_subnet_id, require_count, name 不为空时才询价一次
     if (formModel.load_balancer_type === 'INTERNAL') {
@@ -110,12 +113,20 @@ export default (formModel: ApplyClbModel) => {
    * 询价
    */
   const inquiryPrices = async () => {
-    const { data } = await businessStore.lbPricesInquiry({
-      ...formModel,
-      zones: [formModel.zones],
-      backup_zones: formModel.backup_zones ? [formModel.backup_zones] : undefined,
-    });
-    prices.value = data;
+    isInquiryPricesLoading.value = true;
+    try {
+      const { data } = await businessStore.lbPricesInquiry({
+        ...formModel,
+        bk_biz_id: isBusinessPage ? formModel.bk_biz_id : undefined,
+        zones: [formModel.zones],
+        backup_zones: formModel.backup_zones ? [formModel.backup_zones] : undefined,
+        bandwidthpkg_sub_type: formModel.vip_isp === 'BGP' ? 'BGP' : 'SINGLE_ISP',
+        bandwidth_package_id: undefined,
+      });
+      prices.value = data;
+    } finally {
+      isInquiryPricesLoading.value = false;
+    }
   };
 
   watch(
@@ -150,11 +161,21 @@ export default (formModel: ApplyClbModel) => {
   );
 
   watch(
+    ispList,
+    () => {
+      formModel.vip_isp = ispList.value.length ? 'BGP' : '';
+      formModel.slaType = '0';
+      formModel.sla_type = 'shared';
+    },
+    { deep: true },
+  );
+
+  watch(
     () => formModel.vip_isp,
     () => {
       const { zones, address_ip_version, vip_isp, region } = formModel;
+      specAvailabilitySet.value = [];
       if (!vip_isp) {
-        specAvailabilitySet.value = [];
         formModel.sla_type = 'shared';
         return;
       }
@@ -167,16 +188,25 @@ export default (formModel: ApplyClbModel) => {
     },
   );
 
-  watch(specAvailabilitySet, (val) => {
-    if (val) {
-      bus.$emit(
-        'updateSpecAvailabilitySet',
-        val.filter(({ SpecType }) => SpecType !== 'shared'),
-      );
-    } else {
-      Message({ theme: 'warning', message: '当前地域下无可用规格, 请切换地域' });
-    }
-  });
+  watch(
+    specAvailabilitySet,
+    (val) => {
+      // 重置 sla_type
+      formModel.slaType = '0';
+      formModel.sla_type = 'shared';
+      if (val) {
+        bus.$emit(
+          'updateSpecAvailabilitySet',
+          val.filter(({ SpecType }) => SpecType !== 'shared'),
+        );
+      } else {
+        Message({ theme: 'warning', message: '当前地域下无可用规格, 请切换地域' });
+      }
+    },
+    {
+      deep: true,
+    },
+  );
 
   watch(
     formModel,
@@ -200,5 +230,6 @@ export default (formModel: ApplyClbModel) => {
     ispList,
     isResourceListLoading,
     quotas,
+    isInquiryPricesLoading,
   };
 };

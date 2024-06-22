@@ -41,4 +41,7 @@ const (
 	BatchModifyTargetPortCloudMaxLimit = 20
 	// BatchModifyTargetWeightCloudMaxLimit 公有云上批量修改RS权重的最大限制数量
 	BatchModifyTargetWeightCloudMaxLimit = 100
+
+	// ExcelExportLimit two hundred thousands 二十万
+	ExcelExportLimit = 20_0000
 )

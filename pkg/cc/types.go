@@ -781,3 +781,32 @@ type ThreshHoldRanges struct {
 	Score int   `yaml:"score" json:"score"`
 	Range []int `yaml:"range" json:"range"`
 }
+
+// ObjectStore object store config
+type ObjectStore struct {
+	Type              string `yaml:"type"`
+	ObjectStoreTCloud `yaml:",inline"`
+}
+
+// ObjectStoreTCloud tencent cloud cos config
+type ObjectStoreTCloud struct {
+	COSPrefix    string `yaml:"cos_prefix"`
+	COSSecretID  string `yaml:"cos_secret_id"`
+	COSSecretKey string `yaml:"cos_secret_key"`
+	COSBucketURL string `yaml:"cos_bucket_url"`
+	COSIsDebug   bool   `yaml:"cos is_debug"`
+}
+
+// Validate do validate
+func (ost ObjectStoreTCloud) Validate() error {
+	if len(ost.COSSecretID) == 0 {
+		return errors.New("cos_secret_id cannot be empty")
+	}
+	if len(ost.COSSecretKey) == 0 {
+		return errors.New("cos_secret_key cannot be empty")
+	}
+	if len(ost.COSBucketURL) == 0 {
+		return errors.New("cos_bucket_url cannot be empty")
+	}
+	return nil
+}

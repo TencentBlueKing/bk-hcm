@@ -123,6 +123,8 @@ const (
 	CvmInstType InstType = "CVM"
 	// EniInstType 实例类型-弹性网卡
 	EniInstType InstType = "ENI"
+	// CcnInstType 实例类型-CCN 云联网
+	CcnInstType InstType = "CCN"
 )
 
 // ResFlowStatus 资源跟Flow的状态类型

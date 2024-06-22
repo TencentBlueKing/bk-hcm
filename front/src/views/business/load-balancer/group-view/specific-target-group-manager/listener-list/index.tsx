@@ -25,6 +25,7 @@ export default defineComponent({
      * 异步请求端口健康信息
      */
     const asyncGetTargetsHealth = async (dataList: any) => {
+      if (!dataList.length) return;
       const cloud_lb_ids = dataList.map(({ cloud_lb_id }: any) => cloud_lb_id);
       if (cloud_lb_ids.length === 0) return;
       // 查询指定的目标组绑定的负载均衡下的端口健康信息
@@ -64,6 +65,20 @@ export default defineComponent({
       });
     };
 
+    /**
+     * 异步请求监听器详情信息, 获取端口段信息
+     */
+    const asyncGetListenerDetail = async (dataList: any) => {
+      if (!dataList.length) return;
+      const lbl_ids = dataList.map(({ lbl_id }: any) => lbl_id);
+      if (lbl_ids.length === 0) return;
+      // CLB只会有一条监听器
+      const res = await businessStore.detail('listeners', lbl_ids[0]);
+      return dataList.map((data: any) => {
+        return { ...data, end_port: res.data.end_port };
+      });
+    };
+
     const { CommonTable, getListData } = useTable({
       searchOptions: {
         disabled: true,
@@ -76,8 +91,8 @@ export default defineComponent({
       },
       requestOption: {
         type: `vendors/tcloud/target_groups/${loadBalancerStore.targetGroupId}/rules`,
-        resolveDataListCb(dataList: any[]) {
-          return asyncGetTargetsHealth(dataList);
+        async resolveDataListCb(dataList: any[]) {
+          return asyncGetListenerDetail(dataList).then((dataList) => asyncGetTargetsHealth(dataList));
         },
       },
     });

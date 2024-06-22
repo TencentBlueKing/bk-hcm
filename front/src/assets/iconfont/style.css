@@ -182,6 +182,9 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .bkhcm-icon-unknown:before {
 	content: "\e11b";
 }
+.bkhcm-icon-lishijilu:before {
+	content: "\e15b";
+}
 .bkhcm-icon-jiangxu:before {
 	content: "\e12c";
 }
@@ -271,4 +274,7 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 }
 .bkhcm-icon-mubiao:before {
 	content: "\e158";
+}
+.bkhcm-icon-user-8:before {
+	content: "\e15a";
 }

@@ -48,11 +48,11 @@ export const ADDRESS_IP_VERSION = [
 export const ZONE_TYPE = [
   {
     label: '单可用区',
-    value: 'single',
+    value: '0',
   },
   {
     label: '主备可用区',
-    value: 'primaryStand',
+    value: '1',
     isDisabled: (region: string, accountType: NetworkAccountType) =>
       !WHITE_LIST_REGION_PRIMARY_STAND_ZONE.includes(region) || accountType !== 'STANDARD',
   },
@@ -71,10 +71,10 @@ export const INTERNET_CHARGE_TYPE = [
     label: '按带宽',
     value: 'BANDWIDTH_POSTPAID_BY_HOUR',
   },
-  // {
-  //   label: '共享带宽包',
-  //   value: 'BANDWIDTH_PACKAGE',
-  // },
+  {
+    label: '共享带宽包',
+    value: 'BANDWIDTH_PACKAGE',
+  },
 ];
 
 // 支持IPv6 NAT64的地域
@@ -225,4 +225,35 @@ export const IP_VERSION_MAP = {
   ipv6: 'IPv6',
   ipv6_nat64: 'IPv6_NAT',
   ipv6_dual_stack: 'IPv6双栈',
+};
+
+// 运营商类型
+export const ISP_TYPES = ['BGP', 'CTCC', 'CUCC', 'CMCC'];
+
+// 带宽包状态
+export enum BANDWIDTH_PACKAGE_STATUS {
+  CREATING = 'CREATING',
+  CREATED = 'CREATED',
+  DELETING = 'DELETING',
+  DELETED = 'DELETED',
+}
+
+// 带宽包类型映射
+export const BANDWIDTH_PACKAGE_NETWORK_TYPE_MAP = {
+  BGP: '普通BGP共享带宽包',
+  HIGH_QUALITY_BGP: '精品BGP共享带宽包',
+  SINGLEISP_CMCC: '中国移动共享带宽包',
+  SINGLEISP_CTCC: '中国电信共享带宽包',
+  SINGLEISP_CUCC: '中国联通共享带宽包',
+  SINGLEISP: '单线',
+  ANYCAST: 'ANYCAST加速',
+};
+
+// 带宽包计费类型映射
+export const BANDWIDTH_PACKAGE_CHARGE_TYPE_MAP = {
+  TOP5_POSTPAID_BY_MONTH: '按月后付费TOP5计费',
+  PERCENT95_POSTPAID_BY_MONTH: '按月后付费月95计费',
+  ENHANCED95_POSTPAID_BY_MONTH: '按月后付费增强型95计费',
+  FIXED_PREPAID_BY_MONTH: '包月预付费计费',
+  PEAK_BANDWIDTH_POSTPAID_BY_DAY: '后付费日结按带宽计费',
 };

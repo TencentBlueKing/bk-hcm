@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	tablebill "hcm/pkg/dal/table/bill"
+	"hcm/pkg/dal/table/types"
 	"hcm/pkg/rest"
 
 	"github.com/jmoiron/sqlx"
@@ -43,24 +44,18 @@ func (svc *service) UpdateBillSummaryDaily(cts *rest.Contexts) (interface{}, err
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	BillSummaryDaily := &tablebill.AccountBillSummaryDaily{
-		ID:              req.ID,
-		FirstAccountID:  req.FirstAccountID,
-		SecondAccountID: req.SecondAccountID,
-		Vendor:          req.Vendor,
-		ProductID:       req.ProductID,
-		BkBizID:         req.BkBizID,
-		BillYear:        req.BillYear,
-		BillMonth:       req.BillMonth,
-		BillDay:         req.BillDay,
-		VersionID:       req.VersionID,
-		Currency:        req.Currency,
-		Cost:            req.Cost,
-		RMBCost:         req.RMBCost,
+	billSummaryDaily := &tablebill.AccountBillSummaryDaily{
+		ID:       req.ID,
+		Currency: req.Currency,
+		Cost:     &types.Decimal{Decimal: req.Cost},
+		Count:    req.Count,
+	}
+	if !req.Cost.IsZero() {
+		billSummaryDaily.Cost = &types.Decimal{Decimal: req.Cost}
 	}
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		if err := svc.dao.AccountBillSummaryDaily().UpdateByIDWithTx(
-			cts.Kit, txn, BillSummaryDaily.ID, BillSummaryDaily); err != nil {
+			cts.Kit, txn, billSummaryDaily.ID, billSummaryDaily); err != nil {
 			return nil, fmt.Errorf("update bill summary daily failed, err: %v", err)
 		}
 		return nil, nil

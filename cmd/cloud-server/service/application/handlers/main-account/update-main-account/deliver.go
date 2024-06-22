@@ -76,17 +76,17 @@ func (a *ApplicationOfUpdateMainAccount) update() error {
 	}
 
 	// 更新业务
-	if req.BkBizID != oldAccount.BkBizID {
+	if req.BkBizID != 0 && req.BkBizID != oldAccount.BkBizID {
 		updateReq.BkBizID = req.BkBizID
 	}
 
 	// 更新组织架
-	if req.DeptID != oldAccount.DeptID {
+	if req.DeptID != 0 && req.DeptID != oldAccount.DeptID {
 		updateReq.DeptID = req.DeptID
 	}
 
 	// 更新运营产品
-	if req.OpProductID != oldAccount.OpProductID {
+	if req.OpProductID != 0 && req.OpProductID != oldAccount.OpProductID {
 		updateReq.OpProductID = req.OpProductID
 	}
 

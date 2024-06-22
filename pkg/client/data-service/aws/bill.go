@@ -25,8 +25,11 @@ import (
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
+	billproto "hcm/pkg/api/data-service/bill"
 	protobill "hcm/pkg/api/data-service/cloud/bill"
+	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -113,4 +116,11 @@ func (v *BillClient) List(ctx context.Context, h http.Header, req *core.ListReq)
 	}
 
 	return resp.Data, nil
+}
+
+// ListBillItem list bill item
+func (b *BillClient) ListBillItem(kt *kit.Kit, req *core.ListReq) (*billproto.AwsBillItemListResult, error) {
+
+	return common.Request[core.ListReq, billproto.AwsBillItemListResult](
+		b.client, rest.POST, kt, req, "/bills/items/list")
 }

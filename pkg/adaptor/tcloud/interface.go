@@ -92,19 +92,15 @@ type TCloud interface {
 	DeleteEip(kt *kit.Kit, opt *eip.TCloudEipDeleteOption) error
 	AssociateEip(kt *kit.Kit, opt *eip.TCloudEipAssociateOption) error
 	DisassociateEip(kt *kit.Kit, opt *eip.TCloudEipDisassociateOption) error
-	DetermineIPv6Type(kt *kit.Kit, region string, ipv6Addresses []*string) ([]*string,
-		[]*string, error,
-	)
+	DetermineIPv6Type(kt *kit.Kit, region string, ipv6Addresses []*string) ([]*string, []*string, error)
 	CreateEip(kt *kit.Kit, opt *eip.TCloudEipCreateOption) (*poller.BaseDoneResult, error)
 	ListRegion(kt *kit.Kit) (*region.TCloudRegionListResult, error)
 	GetBillList(kt *kit.Kit, opt *typesBill.TCloudBillListOption) (*billing.DescribeBillDetailResponseParams, error)
 	ListInstanceType(kt *kit.Kit, opt *instancetype.TCloudInstanceTypeListOption) (
-		[]instancetype.TCloudInstanceType, error,
-	)
+		[]instancetype.TCloudInstanceType, error)
 	UpdateRouteTable(_ *kit.Kit, _ *routetable.TCloudRouteTableUpdateOption) error
 	DeleteRouteTable(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) error
-	ListRouteTable(kt *kit.Kit, opt *core.TCloudListOption) (*routetable.TCloudRouteTableListResult,
-		error)
+	ListRouteTable(kt *kit.Kit, opt *core.TCloudListOption) (*routetable.TCloudRouteTableListResult, error)
 	CountRouteTable(kt *kit.Kit, region string) (int32, error)
 	CreateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.TCloudCreateOption) error
 	DeleteSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.TCloudDeleteOption) error
@@ -185,4 +181,10 @@ type TCloud interface {
 	InquiryPriceLoadBalancer(kt *kit.Kit, opt *typelb.TCloudCreateClbOption) (*typelb.TCloudLBPrice, error)
 	ListLoadBalancerQuota(kt *kit.Kit, opt *typelb.ListTCloudLoadBalancerQuotaOption) (
 		[]typelb.TCloudLoadBalancerQuota, error)
+
+	ListBandwidthPackage(kt *kit.Kit, opt *types.TCloudListBwPkgOption) (
+		*types.TCloudListBwPkgResult, error)
+
+	CreateLoadBalancerSnatIps(kt *kit.Kit, opt *typelb.TCloudCreateSnatIpOpt) error
+	DeleteLoadBalancerSnatIps(kt *kit.Kit, opt *typelb.TCloudDeleteSnatIpOpt) error
 }

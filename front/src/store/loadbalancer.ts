@@ -24,6 +24,11 @@ export const useLoadBalancerStore = defineStore('load-balancer', () => {
     targetGroupId.value = v;
   };
 
+  const listenerDetailWithTargetGroup = ref({} as any);
+  const setListenerDetailWithTargetGroup = (v: any) => {
+    listenerDetailWithTargetGroup.value = v;
+  };
+
   // state - lb-tree - 当前选中的资源
   // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
   const currentSelectedTreeNode: Ref<ITreeNode> = ref({} as ITreeNode);
@@ -67,5 +72,7 @@ export const useLoadBalancerStore = defineStore('load-balancer', () => {
     setLbTreeSearchTarget,
     tgSearchTarget,
     setTgSearchTarget,
+    listenerDetailWithTargetGroup,
+    setListenerDetailWithTargetGroup,
   };
 });

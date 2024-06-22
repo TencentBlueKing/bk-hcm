@@ -23,7 +23,7 @@ package auth
 import (
 	asproto "hcm/pkg/api/auth-server"
 	"hcm/pkg/cc"
-	"hcm/pkg/client/auth-server"
+	authserver "hcm/pkg/client/auth-server"
 	"hcm/pkg/client/discovery"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -217,7 +217,7 @@ func (a authorizer) ListAuthInstWithFilter(kt *kit.Kit, input *meta.ListAuthResI
 // RegisterResourceCreatorAction registers iam resource instance so that creator will be authorized on related actions
 func (a authorizer) RegisterResourceCreatorAction(kt *kit.Kit, input *meta.RegisterResCreatorActionInst) error {
 	if input == nil || len(input.Type) == 0 || len(input.ID) == 0 || len(input.Name) == 0 {
-		return errf.New(errf.InvalidParameter, "list authorized instances input is invalid")
+		return errf.New(errf.InvalidParameter, "register resource creator action input is invalid")
 	}
 
 	req := &asproto.RegisterResourceCreatorActionReq{

@@ -1,0 +1,27 @@
+.cors-config-dialog {
+  .config-item {
+    margin-top: 18px;
+    display: flex;
+
+    .label {
+      flex-shrink: 0;
+
+      &::after {
+        content: ':';
+        margin: 0 10px 0 5px;
+      }
+    }
+
+    .value {
+      color: #313238;
+    }
+
+    &.vertical {
+      flex-direction: column;
+
+      .label {
+        margin-bottom: 8px;
+      }
+    }
+  }
+}

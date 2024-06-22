@@ -53,6 +53,9 @@ var defaultFlowNameMap = map[FlowName]struct{}{
 	FlowDeleteSecurityGroup: {},
 	FlowCreateHuaweiSGRule:  {},
 	FlowDeleteEIP:           {},
+	FlowPullRawBill:         {},
+	FlowSplitBill:           {},
+	FlowBillDailySummary:    {},
 }
 
 // ValidateDefault validate default FlowName.
@@ -139,4 +142,11 @@ const (
 	FlowApplyTargetGroupToListenerRule FlowName = "apply_tg_listener_rule"
 
 	FlowDeleteLoadBalancer FlowName = "delete_load_balancer"
+)
+
+// 账单相关Flow
+const (
+	FlowPullRawBill      FlowName = "bill_pull_daily_raw"
+	FlowSplitBill        FlowName = "bill_split_daily"
+	FlowBillDailySummary FlowName = "bill_daily_summary"
 )

@@ -42,7 +42,7 @@ import (
 
 // AccountBillSummaryDaily only used for interface.
 type AccountBillSummaryDaily interface {
-	CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, regions []tablebill.AccountBillSummaryDaily) ([]string, error)
+	CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, summaryList []*tablebill.AccountBillSummaryDaily) ([]string, error)
 	List(kt *kit.Kit, opt *types.ListOption) (*typesbill.ListAccountBillSummaryDailyDetails, error)
 	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, billID string, updateData *tablebill.AccountBillSummaryDaily) error
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error
@@ -56,7 +56,7 @@ type AccountBillSummaryDailyDao struct {
 
 // CreateWithTx create account bill summary daliy with tx.
 func (a AccountBillSummaryDailyDao) CreateWithTx(
-	kt *kit.Kit, tx *sqlx.Tx, models []tablebill.AccountBillSummaryDaily) (
+	kt *kit.Kit, tx *sqlx.Tx, models []*tablebill.AccountBillSummaryDaily) (
 	[]string, error) {
 
 	if len(models) == 0 {

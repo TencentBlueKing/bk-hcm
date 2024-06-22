@@ -43,7 +43,7 @@ func InitService(cap *capability.Capability) {
 	h.Add("UpdateRootAccount", http.MethodPatch, "/vendors/{vendor}/root_accounts/{account_id}", svc.UpdateRootAccount)
 	h.Add("ListRootAccount", http.MethodPost, "/root_accounts/list", svc.ListRootAccount)
 
-	h.Add("GetRootAccountBasicInfo", http.MethodGet, "/root_accounts/{account_id}", svc.GetRootAccountBasicInfo)
+	h.Add("GetRootAccountBasicInfo", http.MethodGet, "/root_accounts/basic_info/{account_id}", svc.GetRootAccountBasicInfo)
 
 	h.Load(cap.WebService)
 }

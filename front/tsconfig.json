@@ -36,7 +36,8 @@
       "@datasource/*": ["./src/plugins/datasource/*"],
       "@dashboard/*": ["./src/plugins/dashboard/*"],
       "@modules/*": ["./src/store/modules/*"],
-      "@api/*": ["./src/api/modules/*"]
+      "@api/*": ["./src/api/modules/*"],
+      "@pluginHandler/*": ["./src/plugin-handler/*"]
     }
   },
  /* "typeRoots": [                            *//* 要包含的类型声明文件路径列表*//*

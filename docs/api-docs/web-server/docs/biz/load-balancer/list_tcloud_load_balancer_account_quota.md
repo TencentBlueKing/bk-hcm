@@ -66,5 +66,5 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/tcloud/load_balancers/accounts/{acco
  - TOTAL_LISTENER_QUOTA：一个CLB下的监听器配额
  - TOTAL_LISTENER_RULE_QUOTA：一个监听器下的转发规则配额
  - TOTAL_TARGET_BIND_QUOTA：一条转发规则下可绑定设备的配额
- - TOTAL_SNAP_IP_QUOTA： 一个CLB实例下跨地域2.0的SNAT IP配额
+ - TOTAL_SNAT_IP_QUOTA： 一个CLB实例下跨地域2.0的SNAT IP配额
  - TOTAL_ISP_CLB_QUOTA：用户当前地域下的三网CLB配额

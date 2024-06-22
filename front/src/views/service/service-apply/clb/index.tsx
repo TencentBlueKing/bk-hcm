@@ -2,7 +2,6 @@ import { defineComponent, reactive } from 'vue';
 // import components
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import SubnetPreviewDialog from '../cvm/children/SubnetPreviewDialog';
-import VpcPreviewDialog from '../cvm/children/VpcPreviewDialog';
 import LbSpecTypeSelectDialog from '@/views/business/load-balancer/components/LbSpecTypeDialog';
 // import custom hooks
 import useBindEip from './hooks/useBindEip';
@@ -27,22 +26,25 @@ export default defineComponent({
       region: '',
       load_balancer_type: 'OPEN',
       address_ip_version: 'IPV4',
-      zoneType: 'single',
-      zones: '',
       cloud_vpc_id: '',
-      internet_charge_type: 'TRAFFIC_POSTPAID_BY_HOUR',
+      zoneType: '0',
+      zones: '',
+      backup_zones: '',
+      vip_isp: '',
       sla_type: 'shared',
+      internet_charge_type: 'TRAFFIC_POSTPAID_BY_HOUR',
       require_count: 1,
       name: '',
       vendor: null,
       account_type: 'STANDARD',
+      slaType: '0',
     });
 
     // use custom hooks
-    const { vpcData, isVpcPreviewDialogShow, subnetData, isSubnetPreviewDialogShow, ApplyClbForm, formRef } =
+    const { subnetData, isSubnetPreviewDialogShow, ApplyClbForm, formRef, isInquiryPricesLoading } =
       useRenderForm(formModel);
     const { BindEipDialog } = useBindEip(formModel);
-    const { ApplyClbBottomBar } = useBottomBar(formModel, formRef);
+    const { ApplyClbBottomBar } = useBottomBar(formModel, formRef, isInquiryPricesLoading);
     useHandleParams(formModel, formRef);
 
     return () => (
@@ -58,11 +60,6 @@ export default defineComponent({
         {/* bottom */}
         <ApplyClbBottomBar />
 
-        <VpcPreviewDialog
-          isShow={isVpcPreviewDialogShow.value}
-          data={vpcData.value}
-          handleClose={() => (isVpcPreviewDialogShow.value = false)}
-        />
         <SubnetPreviewDialog
           isShow={isSubnetPreviewDialogShow.value}
           data={subnetData.value}

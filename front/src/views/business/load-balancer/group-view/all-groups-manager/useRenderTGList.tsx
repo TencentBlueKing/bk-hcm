@@ -69,7 +69,7 @@ export default () => {
       width: 120,
       render: ({ data }: any) => (
         <div>
-          <Button text theme={'primary'} onClick={() => handleEditTargetGroup(data.id)}>
+          <Button text theme={'primary'} onClick={() => handleEditTargetGroup(data)}>
             编辑
           </Button>
           <span
@@ -125,10 +125,10 @@ export default () => {
   });
 
   // 编辑单个目标组
-  const handleEditTargetGroup = async (id: string) => {
+  const handleEditTargetGroup = async (tgItem: any) => {
     // 获取对应目标组的详情
-    const { data } = await businessStore.getTargetGroupDetail(id);
-    bus.$emit('editTargetGroup', { ...data, rs_list: data.target_list });
+    const { data } = await businessStore.getTargetGroupDetail(tgItem.id);
+    bus.$emit('editTargetGroup', { ...data, rs_list: data.target_list, lb_id: tgItem.lb_id });
   };
 
   // 删除单个目标组
