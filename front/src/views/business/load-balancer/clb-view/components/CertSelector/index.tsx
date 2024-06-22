@@ -1,6 +1,7 @@
 import { PropType, computed, defineComponent, ref, watch } from 'vue';
 import { Select, Tag } from 'bkui-vue';
 import { useSingleList } from '@/hooks/useSingleList';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { QueryRuleOPEnum } from '@/typings';
 
 const { Option } = Select;
@@ -20,9 +21,12 @@ export default defineComponent({
   },
   emits: ['update:modelValue'],
   setup(props, { emit, expose }) {
+    const { getBusinessApiPath } = useWhereAmI();
+
     const selected = ref<String | Array<String>>(props.modelValue);
     const isSVRCert = computed(() => props.type === 'SVR');
-    const { dataList, isDataLoad, handleScrollEnd, handleRefresh } = useSingleList('certs', {
+    const { dataList, isDataLoad, handleScrollEnd, handleRefresh } = useSingleList({
+      url: `/api/v1/cloud/${getBusinessApiPath()}certs/list`,
       rules: [
         { field: 'cert_type', op: QueryRuleOPEnum.EQ, value: props.type },
         { field: 'account_id', op: QueryRuleOPEnum.EQ, value: props.accountId },

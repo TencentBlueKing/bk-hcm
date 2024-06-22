@@ -115,22 +115,21 @@ func (req *AssignLbToBizReq) Validate() error {
 // -------------------------- List Listener--------------------------
 
 // ListListenerResult defines list listener result.
-type ListListenerResult = core.ListResultT[ListListenerBase]
+type ListListenerResult = core.ListResultT[*ListenerListInfo]
 
-// ListListenerBase define list listener base.
-type ListListenerBase struct {
+// ListenerListInfo define list listener base.
+type ListenerListInfo struct {
 	corelb.BaseListener
-	TargetGroupID      string                        `json:"target_group_id"`
-	Scheduler          string                        `json:"scheduler"`
-	SessionType        string                        `json:"session_type"`
-	SessionExpire      int64                         `json:"session_expire"`
-	DomainNum          int64                         `json:"domain_num"`
-	UrlNum             int64                         `json:"url_num"`
-	HealthCheck        *corelb.TCloudHealthCheckInfo `json:"health_check"`
-	Certificate        *corelb.TCloudCertificateInfo `json:"certificate"`
-	RsWeightZeroNum    int64                         `json:"rs_weight_zero_num"`
-	RsWeightNonZeroNum int64                         `json:"rs_weight_non_zero_num"`
-	BindingStatus      enumor.BindingStatus          `json:"binding_status"`
+	EndPort       *int64                        `json:"end_port"`
+	TargetGroupID string                        `json:"target_group_id"`
+	Scheduler     string                        `json:"scheduler"`
+	SessionType   string                        `json:"session_type"`
+	SessionExpire int64                         `json:"session_expire"`
+	DomainNum     int64                         `json:"domain_num"`
+	UrlNum        int64                         `json:"url_num"`
+	HealthCheck   *corelb.TCloudHealthCheckInfo `json:"health_check"`
+	Certificate   *corelb.TCloudCertificateInfo `json:"certificate"`
+	BindingStatus enumor.BindingStatus          `json:"binding_status"`
 }
 
 // -------------------------- Get Listener --------------------------
@@ -138,6 +137,7 @@ type ListListenerBase struct {
 // GetTCloudListenerDetail define get tcloud listener detail.
 type GetTCloudListenerDetail struct {
 	corelb.TCloudListener
+	EndPort            *int64                        `json:"end_port"`
 	LblID              string                        `json:"lbl_id"`
 	LblName            string                        `json:"lbl_name"`
 	CloudLblID         string                        `json:"cloud_lbl_id"`
@@ -151,6 +151,23 @@ type GetTCloudListenerDetail struct {
 	Certificate        *corelb.TCloudCertificateInfo `json:"certificate"`
 	DomainNum          int64                         `json:"domain_num"`
 	UrlNum             int64                         `json:"url_num"`
+}
+
+// ListTargetWeightNumReq ...
+type ListTargetWeightNumReq struct {
+	TargetGroupIDs []string `json:"target_group_ids" validate:"required,min=1"`
+}
+
+// Validate ...
+func (r ListTargetWeightNumReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// TargetGroupRsWeightNum 目标组下rs权重统计
+type TargetGroupRsWeightNum struct {
+	TargetGroupID      string `json:"target_group_id"`
+	RsWeightZeroNum    int64  `json:"rs_weight_zero_num"`
+	RsWeightNonZeroNum int64  `json:"rs_weight_non_zero_num"`
 }
 
 // -------------------------- List LoadBalancer Url Rule --------------------------
@@ -486,4 +503,24 @@ type TargetGroupCreateReq struct {
 // Validate 验证目标组创建参数
 func (req *TargetGroupCreateReq) Validate() error {
 	return validator.Validate.Struct(req)
+}
+
+// TCloudCreateSnatIpReq ...
+type TCloudCreateSnatIpReq struct {
+	SnatIps []*corelb.SnatIp `json:"snat_ips" validate:"required,min=1,dive,required"`
+}
+
+// Validate ...
+func (r *TCloudCreateSnatIpReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// TCloudDeleteSnatIpReq ...
+type TCloudDeleteSnatIpReq struct {
+	DeleteIps []string `json:"delete_ips" validate:"required,min=1,dive,required"`
+}
+
+// Validate ...
+func (r *TCloudDeleteSnatIpReq) Validate() error {
+	return validator.Validate.Struct(r)
 }

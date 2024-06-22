@@ -21,6 +21,8 @@
 package loadbalancer
 
 import (
+	"errors"
+
 	typelb "hcm/pkg/adaptor/types/load-balancer"
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
@@ -89,54 +91,67 @@ func (svc *clbSvc) BatchCreateTCloudTargets(cts *rest.Contexts) (any, error) {
 		logs.Errorf("list tcloud listener url rule failed, tgID: %s, err: %v, rid: %s", tgID, err, cts.Kit.Rid)
 		return nil, err
 	}
+	rule := urlRuleList.Details[0]
+	lbReq := core.ListReq{Filter: tools.EqualExpression("id", rule.LbID), Page: core.NewDefaultBasePage()}
+	lbResp, err := svc.dataCli.Global.LoadBalancer.ListLoadBalancer(cts.Kit, &lbReq)
+	if err != nil {
+		logs.Errorf("fail to find load balancer for add target group, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	if len(lbResp.Details) == 0 {
+		return nil, errf.New(errf.RecordNotFound, "load balancer not found")
+	}
 
 	// 调用云端批量绑定虚拟主机接口
-	return svc.batchAddTargetsToGroup(cts.Kit, req, tgList[0], urlRuleList)
+	return svc.batchAddTargetsToGroup(cts.Kit, req, lbResp.Details[0], rule)
 }
 
 func (svc *clbSvc) batchAddTargetsToGroup(kt *kit.Kit, req *protolb.TCloudBatchOperateTargetReq,
-	tgInfo corelb.BaseTargetGroup, urlRuleList *dataproto.TCloudURLRuleListResult) (
-	*protolb.BatchCreateResult, error) {
+	lbInfo corelb.BaseLoadBalancer, ruleInfo corelb.TCloudLbUrlRule) (*protolb.BatchCreateResult, error) {
 
-	tcloudAdpt, err := svc.ad.TCloud(kt, tgInfo.AccountID)
+	tcloudAdpt, err := svc.ad.TCloud(kt, lbInfo.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
-	cloudLBExists := make(map[string]struct{}, 0)
 	rsOpt := &typelb.TCloudRegisterTargetsOption{
-		Region: tgInfo.Region,
-	}
-	for _, ruleItem := range urlRuleList.Details {
-		if _, ok := cloudLBExists[ruleItem.CloudLbID]; !ok {
-			rsOpt.LoadBalancerId = ruleItem.CloudLbID
-			cloudLBExists[ruleItem.CloudLbID] = struct{}{}
-		}
-		for _, rsItem := range req.RsList {
-			tmpRs := &typelb.BatchTarget{
-				ListenerId: cvt.ValToPtr(ruleItem.CloudLBLID),
-				InstanceId: cvt.ValToPtr(rsItem.CloudInstID),
-				Port:       cvt.ValToPtr(rsItem.Port),
-				Weight:     rsItem.Weight,
-			}
-			if ruleItem.RuleType == enumor.Layer7RuleType {
-				tmpRs.LocationId = cvt.ValToPtr(ruleItem.CloudID)
-			}
-			rsOpt.Targets = append(rsOpt.Targets, tmpRs)
-		}
-		failIDs, err := tcloudAdpt.RegisterTargets(kt, rsOpt)
-		if err != nil {
-			logs.Errorf("register tcloud target api failed, err: %v, rsOpt: %+v, rid: %s", err, rsOpt, kt.Rid)
-			return nil, err
-		}
-		if len(failIDs) > 0 {
-			logs.Errorf("register tcloud target api partially failed, failLblIDs: %v, req: %+v, rsOpt: %+v, rid: %s",
-				failIDs, req, rsOpt, kt.Rid)
-			return nil, errf.Newf(errf.PartialFailed, "register tcloud target failed, failListenerIDs: %v", failIDs)
-		}
+		Region:         lbInfo.Region,
+		LoadBalancerId: ruleInfo.CloudLbID,
 	}
 
-	rsIDs, err := svc.batchCreateTargetDb(kt, req, tgInfo.AccountID, tgInfo.ID)
+	for _, rsItem := range req.RsList {
+		tmpRs := &typelb.BatchTarget{
+			ListenerId: cvt.ValToPtr(ruleInfo.CloudLBLID),
+			Port:       cvt.ValToPtr(rsItem.Port),
+			Weight:     rsItem.Weight,
+		}
+		switch rsItem.InstType {
+		case enumor.CvmInstType:
+			tmpRs.InstanceId = cvt.ValToPtr(rsItem.CloudInstID)
+		case enumor.EniInstType:
+			// 跨域rs 指定 ip
+			tmpRs.EniIp = cvt.ValToPtr(rsItem.IP)
+		default:
+			return nil, errors.New(string("invalid target type: " + rsItem.InstType))
+		}
+
+		if ruleInfo.RuleType == enumor.Layer7RuleType {
+			tmpRs.LocationId = cvt.ValToPtr(ruleInfo.CloudID)
+		}
+		rsOpt.Targets = append(rsOpt.Targets, tmpRs)
+	}
+	failIDs, err := tcloudAdpt.RegisterTargets(kt, rsOpt)
+	if err != nil {
+		logs.Errorf("register tcloud target api failed, err: %v, rsOpt: %+v, rid: %s", err, rsOpt, kt.Rid)
+		return nil, err
+	}
+	if len(failIDs) > 0 {
+		logs.Errorf("register tcloud target api partially failed, failLblIDs: %v, req: %+v, rsOpt: %+v, rid: %s",
+			failIDs, req, rsOpt, kt.Rid)
+		return nil, errf.Newf(errf.PartialFailed, "register tcloud target failed, failListenerIDs: %v", failIDs)
+	}
+
+	rsIDs, err := svc.batchCreateTargetDb(kt, req, lbInfo.AccountID, req.TargetGroupID)
 	if err != nil {
 		return nil, err
 	}
@@ -174,6 +189,7 @@ func (svc *clbSvc) batchCreateTargetDb(kt *kit.Kit, req *protolb.TCloudBatchOper
 	for _, item := range rsList {
 		rsReq.Targets = append(rsReq.Targets, &dataproto.TargetBaseReq{
 			AccountID:     accountID,
+			IP:            item.IP,
 			TargetGroupID: tgID,
 			InstType:      item.InstType,
 			CloudInstID:   item.CloudInstID,
@@ -300,7 +316,7 @@ func (svc *clbSvc) batchDeleteTargetDb(kt *kit.Kit, req *protolb.TCloudBatchOper
 			Filter: tools.ExpressionAnd(
 				tools.RuleEqual("account_id", accountID),
 				tools.RuleEqual("target_group_id", tgID),
-				tools.RuleEqual("cloud_inst_id", item.CloudInstID),
+				tools.RuleEqual("ip", item.IP),
 				tools.RuleEqual("port", item.Port),
 			),
 			Page: core.NewDefaultBasePage(),

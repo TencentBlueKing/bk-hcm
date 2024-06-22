@@ -178,12 +178,13 @@ func (s CloudServerSetting) Validate() error {
 
 // DataServiceSetting defines data service used setting options.
 type DataServiceSetting struct {
-	Network  Network   `yaml:"network"`
-	Service  Service   `yaml:"service"`
-	Log      LogOption `yaml:"log"`
-	Database DataBase  `yaml:"database"`
-	Crypto   Crypto    `yaml:"crypto"`
-	Esb      Esb       `yaml:"esb"`
+	Network     Network     `yaml:"network"`
+	Service     Service     `yaml:"service"`
+	Log         LogOption   `yaml:"log"`
+	Database    DataBase    `yaml:"database"`
+	Objectstore ObjectStore `yaml:"objectstore"`
+	Crypto      Crypto      `yaml:"crypto"`
+	Esb         Esb         `yaml:"esb"`
 }
 
 // trySetFlagBindIP try set flag bind ip.

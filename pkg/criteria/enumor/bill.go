@@ -82,3 +82,35 @@ const (
 	// ActionDailySummary action for calculate daily summary
 	ActionDailySummary = "dailysummary"
 )
+
+// CurrencyCode 货币代码
+type CurrencyCode string
+
+const (
+	// CurrencyUSD usd currency
+	CurrencyUSD CurrencyCode = "USD"
+	// CurrencyCNY rmb currency
+	CurrencyCNY CurrencyCode = "CNY"
+	// CurrencyRMB rmb currency
+	CurrencyRMB = CurrencyCNY
+)
+
+// BillAdjustmentType 调账类型
+type BillAdjustmentType string
+
+const (
+	// BillAdjustmentIncrease 增加
+	BillAdjustmentIncrease BillAdjustmentType = "increase"
+	// BillAdjustmentDecrease 减少
+	BillAdjustmentDecrease BillAdjustmentType = "decrease"
+)
+
+// BillAdjustmentState 调账明细状态
+type BillAdjustmentState string
+
+const (
+	// BillAdjustmentStateConfirmed 已确认
+	BillAdjustmentStateConfirmed BillAdjustmentState = "confirmed"
+	// BillAdjustmentStateUnconfirmed 未确认
+	BillAdjustmentStateUnconfirmed BillAdjustmentState = "unconfirmed"
+)

@@ -23,25 +23,20 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
+
+	"hcm/pkg/cc"
+	"hcm/pkg/criteria/enumor"
 )
 
-const (
-	envObjectStorageType = "OBJECT_STORE_TYPE"
-
-	objectStorageTCloud = "TCLOUD"
-)
-
-// GetObjectStoreFromEnv get object store from env
-func GetObjectStoreFromEnv() (Storage, error) {
-	t := os.Getenv(envObjectStorageType)
-	switch t {
+// GetObjectStore get object store from env
+func GetObjectStore(config cc.ObjectStore) (Storage, error) {
+	switch config.Type {
 	case "":
 		return nil, nil
-	case objectStorageTCloud:
-		return NewTCloudCOS()
+	case string(enumor.TCloud):
+		return NewTCloudCOS(config.ObjectStoreTCloud)
 	default:
-		return nil, fmt.Errorf("invalid object store type %s", t)
+		return nil, fmt.Errorf("invalid object store type %s", config.Type)
 	}
 }
 

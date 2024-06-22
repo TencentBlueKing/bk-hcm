@@ -34,12 +34,26 @@ export default defineComponent({
 
     const getTargetGroupDetail = async (id: string) => {
       const res = await businessStore.getTargetGroupDetail(id);
-      // todo: 这里要改回来
       res.data.target_list = res.data.target_list.map((item: any) => {
         item.region = item.zone.slice(0, item.zone.lastIndexOf('-'));
         return item;
       });
       tgDetail.value = res.data;
+    };
+
+    const getListenerDetail = async (tgId: any) => {
+      // 请求绑定的监听器规则
+      const rulesRes = await businessStore.list(
+        {
+          page: { limit: 1, start: 0, count: false },
+          filter: { op: 'and', rules: [] },
+        },
+        `vendors/tcloud/target_groups/${tgId}/rules`,
+      );
+      const listenerItem = rulesRes.data.details[0];
+      // 请求监听器详情, 获取端口段信息
+      const detailRes = await businessStore.detail('listeners', listenerItem.lbl_id);
+      loadBalancerStore.setListenerDetailWithTargetGroup(detailRes.data);
     };
 
     watch(
@@ -49,6 +63,7 @@ export default defineComponent({
         // 目标组id状态保持
         loadBalancerStore.setTargetGroupId(id);
         getTargetGroupDetail(id);
+        getListenerDetail(id);
       },
       {
         immediate: true,

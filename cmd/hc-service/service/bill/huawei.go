@@ -86,7 +86,7 @@ func (b bill) HuaWeiGetFeeRecordList(cts *rest.Contexts) (interface{}, error) {
 		req.Page = &typesBill.HuaWeiBillPage{Offset: proto.Int32(0), Limit: proto.Int32(typesBill.HuaWeiQueryLimit)}
 	}
 
-	cli, err := b.ad.HuaWei(cts.Kit, req.AccountID)
+	cli, err := b.ad.HuaWeiRoot(cts.Kit, req.AccountID)
 	if err != nil {
 		logs.Errorf("huawei request adaptor client err, req: %+v, err: %+v", req, err)
 		return nil, err

@@ -1,6 +1,6 @@
 import { defineComponent, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 // import components
-import { Message, Tag } from 'bkui-vue';
+import { Form, Message, Tag } from 'bkui-vue';
 import CommonSideslider from '@/components/common-sideslider';
 import RsConfigTable from '../../components/RsConfigTable';
 // import stores
@@ -23,6 +23,7 @@ export default defineComponent({
 
     const getDefaultFormData = () => ({
       targets: [] as any[],
+      rs_list: [] as any[],
     });
     const clearFormData = () => {
       Object.assign(formData, getDefaultFormData());
@@ -54,6 +55,8 @@ export default defineComponent({
           return prev;
         }, []),
       ];
+      // 同步rs_list, 用于form校验
+      Object.assign(formData.rs_list, formData.targets);
     };
 
     // 处理参数
@@ -113,12 +116,14 @@ export default defineComponent({
               ))}
             </div>
           </div>
-          <RsConfigTable
-            v-model:rsList={formData.targets}
-            accountId={account_id.value}
-            vpcId={vpc_id.value}
-            noDisabled={true}
-          />
+          <Form formType='vertical' model={formData}>
+            <RsConfigTable
+              v-model:rsList={formData.targets}
+              accountId={account_id.value}
+              vpcId={vpc_id.value}
+              noDisabled={true}
+            />
+          </Form>
         </div>
       </CommonSideslider>
     );

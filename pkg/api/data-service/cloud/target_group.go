@@ -67,12 +67,13 @@ func (req *TargetGroupCreateReq) Validate() error {
 // TargetBaseReq Target基本参数
 type TargetBaseReq struct {
 	ID               string          `json:"id" validate:"omitempty"`
+	IP               string          `json:"ip" validate:"omitempty"`
 	InstType         enumor.InstType `json:"inst_type" validate:"required"`
-	CloudInstID      string          `json:"cloud_inst_id" validate:"required"`
 	Port             int64           `json:"port" validate:"required"`
 	Weight           *int64          `json:"weight" validate:"required"`
 	AccountID        string          `json:"account_id,omitempty" validate:"omitempty"`
 	TargetGroupID    string          `json:"target_group_id,omitempty" validate:"omitempty"`
+	CloudInstID      string          `json:"cloud_inst_id" validate:"omitempty"`
 	InstName         string          `json:"inst_name,omitempty" validate:"omitempty"`
 	PrivateIPAddress []string        `json:"private_ip_address,omitempty" validate:"omitempty"`
 	PublicIPAddress  []string        `json:"public_ip_address,omitempty" validate:"omitempty"`
@@ -82,11 +83,14 @@ type TargetBaseReq struct {
 	NewWeight        *int64          `json:"new_weight,omitempty" validate:"omitempty"`
 }
 
-// Validate validate req(目前仅支持CVM的实例类型)
+// Validate ...
 func (req *TargetBaseReq) Validate() error {
-	if req.InstType != enumor.CvmInstType {
-		return errf.Newf(errf.InvalidParameter, "inst_type only supports %s", enumor.CvmInstType)
+	switch req.InstType {
+	case enumor.CvmInstType, enumor.EniInstType, enumor.CcnInstType:
+	default:
+		return errf.Newf(errf.InvalidParameter, "inst_type not supportted %s", req.InstType)
 	}
+
 	return validator.Validate.Struct(req)
 }
 
@@ -271,6 +275,7 @@ type TargetListenerRuleRelListResult = core.ListResultT[corelb.BaseTargetListene
 
 // TargetGroupListenerRelCreateReq target group listener rel create req.
 type TargetGroupListenerRelCreateReq struct {
+	Vendor              enumor.Vendor        `json:"vendor" validate:"required"`
 	ListenerRuleID      string               `json:"listener_rule_id" validate:"required"`
 	CloudListenerRuleID string               `json:"cloud_listener_rule_id" validate:"required"`
 	ListenerRuleType    enumor.RuleType      `json:"listener_rule_type" validate:"required"`
@@ -302,23 +307,21 @@ func (req *TGListenerRelStatusUpdateReq) Validate() error {
 
 // -------------------------- Create Listener --------------------------
 
+// TCloudListenerBatchCreateReq ...
+type TCloudListenerBatchCreateReq = ListenerBatchCreateReq[corelb.TCloudListenerExtension]
+
 // ListenerBatchCreateReq listener batch create req.
-type ListenerBatchCreateReq struct {
-	Listeners []ListenersCreateReq `json:"listeners" validate:"required,min=1"`
+type ListenerBatchCreateReq[T corelb.ListenerExtension] struct {
+	Listeners []ListenersCreateReq[T] `json:"listeners" validate:"required,min=1,dive,required"`
 }
 
 // Validate 验证监听器批量创建的参数
-func (req *ListenerBatchCreateReq) Validate() error {
-	for _, item := range req.Listeners {
-		if err := item.Validate(); err != nil {
-			return errf.NewFromErr(errf.InvalidParameter, err)
-		}
-	}
+func (req *ListenerBatchCreateReq[T]) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
 // ListenersCreateReq listener create req.
-type ListenersCreateReq struct {
+type ListenersCreateReq[Extension corelb.ListenerExtension] struct {
 	CloudID       string              `json:"cloud_id" validate:"required"`
 	Name          string              `json:"name" validate:"required"`
 	Vendor        enumor.Vendor       `json:"vendor" validate:"required"`
@@ -329,10 +332,11 @@ type ListenersCreateReq struct {
 	Protocol      enumor.ProtocolType `json:"protocol" validate:"required"`
 	Port          int64               `json:"port" validate:"required"`
 	DefaultDomain string              `json:"default_domain" validate:"omitempty"`
+	Extension     *Extension          `json:"extension"`
 }
 
 // Validate 验证监听器创建参数
-func (req *ListenersCreateReq) Validate() error {
+func (req *ListenersCreateReq[T]) Validate() error {
 	return validator.Validate.Struct(req)
 }
 

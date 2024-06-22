@@ -73,6 +73,8 @@ var AuditResourceTypeEnums = map[AuditResourceType]struct{}{
 	ListenerAuditResType:          {},
 	UrlRuleAuditResType:           {},
 	UrlRuleDomainAuditResType:     {},
+	MainAccountAuditResType:       {},
+	RootAccountAuditResType:       {},
 }
 
 // Exist judge enum value exist.

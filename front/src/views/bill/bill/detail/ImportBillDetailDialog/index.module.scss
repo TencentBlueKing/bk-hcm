@@ -1,0 +1,21 @@
+.datePicker {
+  width: 100%;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+
+  :global(.bk-button) {
+    width: 88px;
+
+    + :global(.bk-button) {
+      margin-left: 8px;
+    }
+  }
+
+  .amounts {
+    margin: 0 auto 0 0;
+    text-align: left;
+  }
+}

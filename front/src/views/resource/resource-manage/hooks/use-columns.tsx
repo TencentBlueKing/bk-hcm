@@ -4,7 +4,7 @@ import i18n from '@/language/i18n';
 import { CloudType, SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum } from '@/typings';
 import { useAccountStore, useLoadBalancerStore } from '@/store';
 import { Button } from 'bkui-vue';
-import type { Settings } from 'bkui-vue/lib/table/props';
+import { type Settings } from 'bkui-vue/lib/table/props';
 import { h, ref } from 'vue';
 import type { Ref } from 'vue';
 import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
@@ -26,9 +26,10 @@ import { defaults } from 'lodash';
 import { timeFormatter } from '@/common/util';
 import { IP_VERSION_MAP, LBRouteName, LB_NETWORK_TYPE_MAP, SCHEDULER_MAP } from '@/constants/clb';
 import { getInstVip } from '@/utils';
-import dayjs from 'dayjs';
 import { Spinner } from 'bkui-vue/lib/icon';
 import { APPLICATION_TYPE_MAP } from '@/views/service/apply-list/constants';
+import dayjs from 'dayjs';
+import { BILL_TYPE__MAP_HW, CURRENCY_MAP } from '@/constants';
 
 interface LinkFieldOptions {
   type: string; // 资源类型
@@ -771,7 +772,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'private_ipv4_addresses',
       idFiled: 'id',
       onlyShowOnList: false,
-      render: (data) => [...data.private_ipv4_addresses, ...data.private_ipv6_addresses].join(','),
+      render: (data) =>
+        [...(data.private_ipv4_addresses || []), ...(data.private_ipv6_addresses || [])].join(',') || '--',
       sort: false,
     }),
     {
@@ -779,14 +781,15 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'vendor',
       isDefaultShow: true,
       onlyShowOnList: true,
-      render: ({ data }: any) => [...data.public_ipv4_addresses, ...data.public_ipv6_addresses].join(',') || '--',
+      render: ({ data }: any) =>
+        [...(data.public_ipv4_addresses || []), ...(data.public_ipv6_addresses || [])].join(',') || '--',
     },
     {
       label: '所属VPC',
       field: 'cloud_vpc_ids',
       isDefaultShow: true,
       onlyShowOnList: true,
-      render: ({ data }: any) => data.cloud_vpc_ids.join(',') || '--',
+      render: ({ data }: any) => data.cloud_vpc_ids?.join(',') || '--',
     },
     {
       label: '云厂商',
@@ -1325,6 +1328,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '端口',
       field: 'port',
       isDefaultShow: true,
+      render: ({ data, cell }: any) => `${cell}${data.end_port ? `-${data.end_port}` : ''}`,
     },
     {
       label: '均衡方式',
@@ -1606,25 +1610,9 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       isDefaultShow: true,
       width: 300,
       render: ({ data }: any) => {
-        const {
-          lb_name,
-          private_ipv4_addresses,
-          private_ipv6_addresses,
-          public_ipv4_addresses,
-          public_ipv6_addresses,
-        } = data;
-        if (public_ipv4_addresses.length > 0) {
-          return `${lb_name}（${public_ipv4_addresses.join(',')}）`;
-        }
-        if (public_ipv6_addresses.length > 0) {
-          return `${lb_name}（${public_ipv6_addresses.join(',')}）`;
-        }
-        if (private_ipv4_addresses.length > 0) {
-          return `${lb_name}（${private_ipv4_addresses.join(',')}）`;
-        }
-        if (private_ipv6_addresses.length > 0) {
-          return `${lb_name}（${private_ipv6_addresses.join(',')}）`;
-        }
+        const vip = getInstVip(data);
+        const { lb_name } = data;
+        return `${lb_name}（${vip}）`;
       },
     },
     {
@@ -1650,6 +1638,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '端口',
       field: 'port',
       isDefaultShow: true,
+      render: ({ data, cell }: any) => `${cell}${data.end_port ? `-${data.end_port}` : ''}`,
     },
     {
       label: '异常端口数',
@@ -1932,6 +1921,694 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
   ];
 
+  const billsRootAccountSummaryColumns = [
+    {
+      label: '一级账号ID',
+      field: 'root_account_id',
+    },
+    {
+      label: '一级账号名称',
+      field: 'root_account_name',
+    },
+    {
+      label: '账号状态',
+      field: 'state',
+    },
+    {
+      label: '账单同步（人民币-元）当月',
+      field: 'current_month_rmb_cost_synced',
+    },
+    {
+      label: '账单同步（人民币-元）上月',
+      field: 'last_month_rmb_cost_synced',
+    },
+    {
+      label: '账单同步（美金-美元）当月',
+      field: 'current_month_cost_synced',
+    },
+    {
+      label: '账单同步（美金-美元）上月',
+      field: 'last_month_cost_synced',
+    },
+    {
+      label: '账单同步环比',
+      field: 'month_on_month_value',
+    },
+    {
+      label: '当前账单人民币（元）',
+      field: 'current_month_rmb_cost',
+    },
+    {
+      label: '当前账单美金（美元）',
+      field: 'current_month_cost',
+    },
+    {
+      label: '调账人民币（元）',
+      field: 'adjustment_cost',
+    },
+    {
+      label: '调账美金（美元）',
+      field: 'adjustment_cost',
+    },
+  ];
+
+  const billsMainAccountSummaryColumns = [
+    {
+      label: '二级账号ID',
+      field: 'main_account_id',
+    },
+    {
+      label: '二级账号名称',
+      field: 'main_account_name',
+    },
+    {
+      label: '运营产品',
+      field: 'product_name',
+    },
+    {
+      label: '已确认账单人民币（元）',
+      field: 'current_month_rmb_cost_synced',
+    },
+    {
+      label: '已确认账单美金（美元）',
+      field: 'current_month_cost_synced',
+    },
+    {
+      label: '当前账单人民币（元）',
+      field: 'current_month_rmb_cost',
+    },
+    {
+      label: '当前账单美金（美元）',
+      field: 'current_month_cost',
+    },
+  ];
+
+  const billDetailAwsColumns = [
+    {
+      label: '核算年月',
+      field: 'accounting_month_year',
+    },
+    {
+      label: '业务分类',
+      field: 'business_category',
+    },
+    {
+      label: '事业群',
+      field: 'business_group',
+    },
+    {
+      label: '业务部门',
+      field: 'business_department',
+    },
+    {
+      label: '规划产品',
+      field: 'planned_product',
+    },
+    {
+      label: '运营产品',
+      field: 'operational_product',
+      isDefaultShow: true,
+    },
+    {
+      label: '主帐号ID',
+      field: 'main_account_id',
+    },
+    {
+      label: '子帐号ID',
+      field: 'sub_account_id',
+      isDefaultShow: true,
+    },
+    {
+      label: '子账户名称',
+      field: 'sub_account_name',
+      isDefaultShow: true,
+    },
+    {
+      label: '发票ID',
+      field: 'invoice_id',
+    },
+    {
+      label: '账单实体',
+      field: 'billing_entity',
+    },
+    {
+      label: '产品代号',
+      field: 'product_code',
+      isDefaultShow: true,
+    },
+    {
+      label: '服务组',
+      field: 'service_group',
+    },
+    {
+      label: '产品名称',
+      field: 'product_name',
+    },
+    {
+      label: 'API操作',
+      field: 'api_action',
+    },
+    {
+      label: '产品规格',
+      field: 'product_specifications',
+    },
+    {
+      label: '实例类型',
+      field: 'instance_type',
+    },
+    {
+      label: '地区',
+      field: 'region',
+      isDefaultShow: true,
+    },
+    {
+      label: '区域',
+      field: 'zone',
+      isDefaultShow: true,
+    },
+    {
+      label: '地区名称',
+      field: 'region_name',
+    },
+    {
+      label: '资源ID',
+      field: 'resource_id',
+      isDefaultShow: true,
+    },
+    {
+      label: '计费方式',
+      field: 'billing_method',
+      isDefaultShow: true,
+    },
+    {
+      label: '计费类型',
+      field: 'billing_type',
+      isDefaultShow: true,
+    },
+    {
+      label: '计费说明',
+      field: 'billing_description',
+      isDefaultShow: true,
+    },
+    {
+      label: '用量',
+      field: 'usage',
+      isDefaultShow: true,
+    },
+    {
+      label: '单位',
+      field: 'unit',
+      isDefaultShow: true,
+    },
+    {
+      label: '折扣前成本（外币）',
+      field: 'cost_before_discount_foreign_currency',
+      isDefaultShow: true,
+    },
+    {
+      label: '外币种类',
+      field: 'foreign_currency_type',
+      isDefaultShow: true,
+    },
+    {
+      label: '人民币成本（元）',
+      field: 'cost_rmb',
+      isDefaultShow: true,
+    },
+    {
+      label: '汇率',
+      field: 'exchange_rate',
+    },
+  ];
+
+  const billDetailAzureColumns = [
+    {
+      label: '区域',
+      field: 'region',
+    },
+    {
+      label: '地区编码',
+      field: 'region_code',
+    },
+    {
+      label: '核算年月',
+      field: 'accounting_month_year',
+    },
+    {
+      label: '业务分类',
+      field: 'business_category',
+    },
+    {
+      label: '事业群',
+      field: 'business_group',
+    },
+    {
+      label: '业务部门',
+      field: 'business_department',
+    },
+    {
+      label: '规划产品',
+      field: 'planned_product',
+    },
+    {
+      label: '运营产品',
+      field: 'operational_product',
+      isDefaultShow: true,
+    },
+    {
+      label: '账号邮箱',
+      field: 'account_email',
+    },
+    {
+      label: '子账号名称',
+      field: 'sub_account_name',
+      isDefaultShow: true,
+    },
+    {
+      label: '服务一级类别名称',
+      field: 'service_primary_category_name',
+    },
+    {
+      label: '服务二级类别名称',
+      field: 'service_secondary_category_name',
+    },
+    {
+      label: '服务三级类别名称',
+      field: 'service_tertiary_category_name',
+    },
+    {
+      label: '产品名称',
+      field: 'product_name',
+    },
+    {
+      label: '资源类别',
+      field: 'resource_category',
+    },
+    {
+      label: '计量地区',
+      field: 'measurement_region',
+    },
+    {
+      label: '资源地区编码',
+      field: 'resource_region_code',
+      isDefaultShow: true,
+    },
+    {
+      label: '单位',
+      field: 'unit',
+    },
+    {
+      label: '用量',
+      field: 'usage',
+    },
+    {
+      label: '折后税前成本（外币）',
+      field: 'post_discount_pretax_cost_foreign_currency',
+    },
+    {
+      label: '币种',
+      field: 'currency',
+    },
+    {
+      label: '汇率',
+      field: 'exchange_rate',
+    },
+    {
+      label: 'RMB成本（元）',
+      field: 'cost_rmb',
+    },
+  ];
+
+  const billDetailGcpColumns = [
+    {
+      label: '核算年月',
+      field: 'accounting_month_year',
+    },
+    {
+      label: '业务分类',
+      field: 'business_category',
+    },
+    {
+      label: '事业群',
+      field: 'business_group',
+    },
+    {
+      label: '业务部门',
+      field: 'business_department',
+    },
+    {
+      label: '规划产品',
+      field: 'planned_product',
+    },
+    {
+      label: '运营产品',
+      field: 'operational_product',
+      isDefaultShow: true,
+    },
+    {
+      label: 'BillingAccountId',
+      field: 'billing_account_id',
+    },
+    {
+      label: '项目ID',
+      field: 'project_id',
+    },
+    {
+      label: '项目名称',
+      field: 'project_name',
+      isDefaultShow: true,
+    },
+    {
+      label: '服务分类',
+      field: 'service_category',
+      isDefaultShow: true,
+    },
+    {
+      label: '服务分类名称',
+      field: 'service_category_name',
+    },
+    {
+      label: 'Sku名称',
+      field: 'sku_name',
+    },
+    {
+      label: 'Location',
+      field: 'location',
+    },
+    {
+      label: '国家',
+      field: 'country',
+    },
+    {
+      label: 'Region代码',
+      field: 'region_code',
+    },
+    {
+      label: 'Region位置',
+      field: 'region_position',
+      isDefaultShow: true,
+    },
+    {
+      label: '外币类型',
+      field: 'foreign_currency_type',
+      isDefaultShow: true,
+    },
+    {
+      label: '用量单位',
+      field: 'usage_unit',
+      isDefaultShow: true,
+    },
+    {
+      label: '用量',
+      field: 'usage',
+      isDefaultShow: true,
+    },
+    {
+      label: '外币成本(元)',
+      field: 'foreign_currency_cost',
+      isDefaultShow: true,
+    },
+    {
+      label: '汇率',
+      field: 'exchange_rate',
+      isDefaultShow: true,
+    },
+    {
+      label: '人民币成本(元)',
+      field: 'cost_rmb',
+      isDefaultShow: true,
+    },
+  ];
+
+  const billDetailHuaweiColumns = [
+    {
+      label: '核算日期',
+      field: 'bill_date',
+      render: ({ data: { bill_year, bill_month, bill_day } }: any) =>
+        dayjs(new Date(bill_year, bill_month - 1, bill_day)).format('YYYYMMDD'),
+    },
+    {
+      label: 'ID',
+      field: 'id',
+    },
+    {
+      label: '一级账号ID',
+      field: 'root_account_id',
+      isDefaultShow: true,
+    },
+    {
+      label: '二级账号ID',
+      field: 'main_account_id',
+      isDefaultShow: true,
+    },
+    {
+      label: '云厂商',
+      field: 'vendor',
+      isDefaultShow: true,
+    },
+    {
+      label: '运营产品',
+      field: 'product_id',
+      isDefaultShow: true,
+    },
+    {
+      label: '业务ID',
+      field: 'bk_biz_id',
+      isDefaultShow: true,
+    },
+    {
+      label: '币种',
+      field: 'currency',
+      isDefaultShow: true,
+      render: ({ cell }: any) => CURRENCY_MAP[cell],
+    },
+    {
+      label: '本期应付金额',
+      field: 'cost',
+      isDefaultShow: true,
+    },
+    {
+      label: '金额单位',
+      field: 'extension.measure_id',
+      isDefaultShow: true,
+    },
+    {
+      label: '资源类型编码',
+      field: 'hc_product_code',
+      isDefaultShow: true,
+    },
+    {
+      label: '产品名称',
+      field: 'hc_product_name',
+      isDefaultShow: true,
+    },
+    {
+      label: '预留实例使用量',
+      field: 'res_amount',
+      isDefaultShow: true,
+    },
+    {
+      label: '预留实例使用单位',
+      field: 'res_amount_unit',
+      isDefaultShow: true,
+    },
+    {
+      label: '使用量类型',
+      field: 'extension.usage_type',
+    },
+    {
+      label: '使用量',
+      field: 'extension.usage',
+    },
+    {
+      label: '使用量度量单位',
+      field: 'extension.unit',
+    },
+    {
+      label: '云服务类型编码',
+      field: 'extension.cloud_service_type',
+    },
+    {
+      label: '云服务类型名称',
+      field: 'extension.cloud_service_type_name',
+    },
+    {
+      label: '云服务区编码',
+      field: 'extension.region',
+    },
+    {
+      label: '云服务区名称',
+      field: 'extension.region_name',
+    },
+    {
+      label: '资源类型编码',
+      field: 'extension.resource_type',
+    },
+    {
+      label: '资源类型名称',
+      field: 'extension.resource_type_name',
+    },
+    {
+      label: '计费模式',
+      field: 'extension.charge_mode',
+    },
+    {
+      label: '账单类型',
+      field: 'extension.bill_type',
+      render: ({ cell }: any) => BILL_TYPE__MAP_HW[cell],
+    },
+  ];
+
+  const billDetailZenlayerColumns = [
+    {
+      label: '核算年月',
+      field: 'accounting_month_year',
+    },
+    {
+      label: '业务分类',
+      field: 'business_category',
+    },
+    {
+      label: '事业群',
+      field: 'business_group',
+    },
+    {
+      label: '业务部门',
+      field: 'business_department',
+    },
+    {
+      label: '规划产品',
+      field: 'planned_product',
+    },
+    {
+      label: '运营产品',
+      field: 'operational_product',
+      isDefaultShow: true,
+    },
+    {
+      label: '主账号CID',
+      field: 'main_account_cid',
+    },
+    {
+      label: '业务组(子账号)',
+      field: 'business_unit_sub_account',
+      isDefaultShow: true,
+    },
+    {
+      label: '城市',
+      field: 'city',
+    },
+    {
+      label: '合约周期',
+      field: 'contract_period',
+    },
+    {
+      label: 'group_uid',
+      field: 'group_uid',
+    },
+    {
+      label: '付费数量',
+      field: 'paid_quantity',
+      isDefaultShow: true,
+    },
+    {
+      label: '付费内容',
+      field: 'paid_content',
+      isDefaultShow: true,
+    },
+    {
+      label: '单价(USD)',
+      field: 'unit_price_usd',
+      isDefaultShow: true,
+    },
+    {
+      label: '类型',
+      field: 'type',
+      isDefaultShow: true,
+    },
+    {
+      label: '账单ID',
+      field: 'bill_id',
+      isDefaultShow: true,
+    },
+    {
+      label: '账单月份',
+      field: 'billing_month',
+      isDefaultShow: true,
+    },
+    {
+      label: '外币成本(元)',
+      field: 'foreign_currency_cost',
+      isDefaultShow: true,
+    },
+    {
+      label: '币种',
+      field: 'currency',
+      isDefaultShow: true,
+    },
+    {
+      label: '汇率',
+      field: 'exchange_rate',
+      isDefaultShow: true,
+    },
+    {
+      label: '人民币成本(元)',
+      field: 'cost_rmb',
+      isDefaultShow: true,
+    },
+    {
+      label: 'CPU',
+      field: 'cpu',
+    },
+    {
+      label: '磁盘',
+      field: 'disk',
+    },
+    {
+      label: '内存',
+      field: 'memory',
+    },
+    {
+      label: '备注',
+      field: 'note',
+    },
+  ];
+
+  const billsSummaryOperationRecordColumns = [
+    {
+      label: '操作时间',
+      field: 'operationTime',
+    },
+    {
+      label: '状态',
+      field: 'status',
+    },
+    {
+      label: '账单月份',
+      field: 'billingMonth',
+    },
+    {
+      label: '云厂商',
+      field: 'cloudVendor',
+    },
+    {
+      label: '一级账号ID',
+      field: 'primaryAccountId',
+    },
+    {
+      label: '操作人',
+      field: 'operator',
+    },
+    {
+      label: '人民币（元）',
+      field: 'rmbAmount',
+    },
+    {
+      label: '美金（美元）',
+      field: 'usdAmount',
+    },
+  ];
+
   const columnsMap = {
     vpc: vpcColumns,
     subnet: subnetColumns,
@@ -1956,6 +2633,14 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     firstAccount: firstAccountColumns,
     secondaryAccount: secondaryAccountColumns,
     myApply: myApplyColumns,
+    billsRootAccountSummary: billsRootAccountSummaryColumns,
+    billsMainAccountSummary: billsMainAccountSummaryColumns,
+    billDetailAws: billDetailAwsColumns,
+    billDetailAzure: billDetailAzureColumns,
+    billDetailGcp: billDetailGcpColumns,
+    billDetailHuawei: billDetailHuaweiColumns,
+    billDetailZenlayer: billDetailZenlayerColumns,
+    billsSummaryOperationRecord: billsSummaryOperationRecordColumns,
   };
 
   let columns = (columnsMap[type] || []).filter((column: any) => !isSimpleShow || !column.onlyShowOnList);

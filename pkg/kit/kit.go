@@ -104,6 +104,13 @@ func (kt *Kit) CtxWithTimeoutMS(timeoutMS int) context.CancelFunc {
 	return cancel
 }
 
+// CtxBackgroundWithCancel create a new context with backgroup and cancel function
+func (kt *Kit) CtxBackgroundWithCancel() context.CancelFunc {
+	var cancel context.CancelFunc
+	kt.Ctx, cancel = context.WithCancel(kt.Ctx)
+	return cancel
+}
+
 // Validate context kit.
 func (kt *Kit) Validate() error {
 	if kt.Ctx == nil {

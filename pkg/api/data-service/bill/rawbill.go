@@ -29,14 +29,14 @@ import (
 
 // RawBillItem raw bill item
 type RawBillItem struct {
-	Region        string          `json:"region,omitempty" validate:"required"`
-	HcProductCode string          `json:"hcProductCode,omitempty"`                    // 云服务代号
-	HcProductName string          `json:"hcProductName,omitempty"`                    // 云服务名字
-	BillCurrency  string          `json:"billCurrency,omitempty" validate:"required"` // 币种
-	BillCost      decimal.Decimal `json:"billCost,omitempty" validate:"required"`     // 原币种消费（元）
-	ResAmount     decimal.Decimal `json:"resAmount,omitempty"`                        // 用量，部分云账单可能没有
-	ResAmountUnit string          `json:"resAmountUnit,omitempty"`                    // 用量单位
-	Extension     types.JsonField `json:"extension" validate:"required"`              // 存储云原始账单信息
+	Region        string              `json:"region,omitempty" validate:"required"`
+	HcProductCode string              `json:"hcProductCode,omitempty"`                    // 云服务代号
+	HcProductName string              `json:"hcProductName,omitempty"`                    // 云服务名字
+	BillCurrency  enumor.CurrencyCode `json:"billCurrency,omitempty" validate:"required"` // 币种
+	BillCost      decimal.Decimal     `json:"billCost,omitempty" validate:"required"`     // 原币种消费（元）
+	ResAmount     decimal.Decimal     `json:"resAmount,omitempty"`                        // 用量，部分云账单可能没有
+	ResAmountUnit string              `json:"resAmountUnit,omitempty"`                    // 用量单位
+	Extension     types.JsonField     `json:"extension" validate:"required"`              // 存储云原始账单信息
 }
 
 // RawBillCreateReq create request

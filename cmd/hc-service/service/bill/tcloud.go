@@ -46,7 +46,7 @@ func (b bill) TCloudGetBillList(cts *rest.Contexts) (interface{}, error) {
 
 	cli, err := b.ad.TCloud(cts.Kit, req.AccountID)
 	if err != nil {
-		logs.Errorf("tcloud request adaptor client err, req: %+v, err: %+v", req, err)
+		logs.Errorf("tcloud request adaptor client err, err: %+v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
 		return nil, err
 	}
 

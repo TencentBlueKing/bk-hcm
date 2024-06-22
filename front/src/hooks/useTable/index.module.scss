@@ -1,0 +1,49 @@
+.remote-table-container {
+  height: 100%;
+
+  .top-bar {
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px;
+
+    .operate-btn-groups {
+      display: flex;
+      align-items: center;
+
+      :global(.bk-button) {
+        min-width: 88px;
+
+        + :global(.bk-button) {
+          margin-left: 8px;
+        }
+      }
+    }
+
+    .table-search-selector {
+      margin-left: auto;
+      min-width: 500px;
+    }
+
+    .operation-bar-end {
+      display: flex;
+      align-items: center;
+      margin-left: 24px;
+    }
+  }
+
+  &.no-search .operation-bar-end {
+    margin-left: auto;
+  }
+
+  .loading-wrapper {
+    min-height: 290px;
+
+    :global(.bk-table) {
+      max-height: 100%;
+
+      .table-new-row td {
+        background-color: #f2fff4 !important;
+      }
+    }
+  }
+}

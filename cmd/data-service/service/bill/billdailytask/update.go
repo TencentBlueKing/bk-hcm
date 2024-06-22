@@ -44,26 +44,29 @@ func (svc *service) UpdateBillDailyPullTask(cts *rest.Contexts) (interface{}, er
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	BillDailyPullTask := &tablebill.AccountBillDailyPullTask{
-		ID:              req.ID,
-		FirstAccountID:  req.FirstAccountID,
-		SecondAccountID: req.SecondAccountID,
-		Vendor:          req.Vendor,
-		ProductID:       req.ProductID,
-		BkBizID:         req.BkBizID,
-		BillYear:        req.BillYear,
-		BillMonth:       req.BillMonth,
-		BillDay:         req.BillDay,
-		VersionID:       req.VersionID,
-		State:           req.State,
-		Message:         req.Message,
-		Count:           req.Count,
-		Currency:        req.Currency,
-		Cost:            &types.Decimal{Decimal: req.Cost},
+	billDailyPullTask := &tablebill.AccountBillDailyPullTask{
+		ID:            req.ID,
+		RootAccountID: req.RootAccountID,
+		MainAccountID: req.MainAccountID,
+		Vendor:        req.Vendor,
+		ProductID:     req.ProductID,
+		BkBizID:       req.BkBizID,
+		BillYear:      req.BillYear,
+		BillMonth:     req.BillMonth,
+		BillDay:       req.BillDay,
+		VersionID:     req.VersionID,
+		State:         req.State,
+		Count:         req.Count,
+		Currency:      req.Currency,
+		FlowID:        req.FlowID,
+	}
+	if !req.Cost.IsZero() {
+		billDailyPullTask.Cost = &types.Decimal{Decimal: req.Cost}
 	}
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		if err := svc.dao.AccountBillDailyPullTask().UpdateByIDWithTx(cts.Kit, txn, BillDailyPullTask.ID, BillDailyPullTask); err != nil {
-			return nil, fmt.Errorf("update bill summary failed, err: %v", err)
+		if err := svc.dao.AccountBillDailyPullTask().UpdateByIDWithTx(
+			cts.Kit, txn, billDailyPullTask.ID, billDailyPullTask); err != nil {
+			return nil, fmt.Errorf("update account bill daily pull task failed, err: %v", err)
 		}
 		return nil, nil
 	})

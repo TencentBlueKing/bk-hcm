@@ -70,3 +70,9 @@ type ListAccountBillSummaryRootDetails struct {
 	Count   *uint64                            `json:"count,omitempty"`
 	Details []tablebill.AccountBillSummaryRoot `json:"details,omitempty"`
 }
+
+// ListAccountBillExchangeRateDetails list account bill adjustment item details
+type ListAccountBillExchangeRateDetails struct {
+	Count   uint64                              `json:"count,omitempty"`
+	Details []tablebill.AccountBillExchangeRate `json:"details,omitempty"`
+}

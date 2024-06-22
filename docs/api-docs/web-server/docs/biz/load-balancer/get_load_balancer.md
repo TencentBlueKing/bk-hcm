@@ -128,6 +128,8 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/{id}
 | snat                         | string | snat                                        |
 | snat_pro                     | string | 是否开启SnatPro。                                |
 | snat_ips                     | string | 开启SnatPro负载均衡后，SnatIp列表。                    |
+| target_region                | string | 开启跨域1.0后，返回目标地域信息                           |
+| target_vpc                   | string | 开启跨域1.0后，返回目标VPC云上ID，返回0表示基础网络              |
 | delete_protect               | string | 删除保护                                        |
 | egress                       | string | 网络出口                                        |
 | mix_ip_target                | string | 双栈混绑                                        |

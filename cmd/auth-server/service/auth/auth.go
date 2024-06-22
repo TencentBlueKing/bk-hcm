@@ -156,13 +156,13 @@ func (a *Auth) authorizeBatch(kt *kit.Kit, req *authserver.AuthorizeBatchReq, ex
 	if exact {
 		authDecisions, err = a.auth.AuthorizeBatch(kt.Ctx, opts)
 		if err != nil {
-			logs.Errorf("authorize batch failed, ops: %#v, req: %#v, err: %v, rid: %s", err, opts, req, kt.Rid)
+			logs.Errorf("authorize batch failed, err: %v ,ops: %#v, req: %#v, rid: %s", err, opts, req, kt.Rid)
 			return nil, err
 		}
 	} else {
 		authDecisions, err = a.auth.AuthorizeAnyBatch(kt.Ctx, opts)
 		if err != nil {
-			logs.Errorf("authorize any batch failed, ops: %#v, req: %#v, err: %v, rid: %s", err, opts, req, kt.Rid)
+			logs.Errorf("authorize any batch failed, err: %v, ops: %#v, req: %#v, rid: %s", err, opts, req, kt.Rid)
 			return nil, err
 		}
 	}
