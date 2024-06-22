@@ -162,7 +162,8 @@ func (gcp *GcpPuller) doPull(
 		},
 	})
 	if err != nil {
-		return 0, nil, fmt.Errorf("list gcp root account bill list for %+v, offset %d, limit %d", opt, offset, limit)
+		return 0, nil, fmt.Errorf("list gcp root account bill list for %+v, offset %d, limit %d, err %s",
+			opt, offset, limit, err.Error())
 	}
 	itemList, ok := resp.Details.([]interface{})
 	if !ok {
