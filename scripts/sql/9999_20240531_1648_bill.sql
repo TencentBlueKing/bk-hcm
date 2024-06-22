@@ -149,6 +149,19 @@ create index bill_item_index ON account_bill_item(
   `bill_day`
 );
 
+create index bill_item_index1 ON account_bill_item(
+  `vendor`,
+  `version_id`,
+  `bill_year`,
+  `bill_month`
+);
+
+create index bill_item_index2 ON account_bill_item(
+  `vendor`,
+  `bill_year`,
+  `bill_month`
+);
+
 insert into
   id_generator(`resource`, `max_id`)
 values

@@ -21,6 +21,7 @@ package billsummaryroot
 
 import (
 	dataproto "hcm/pkg/api/data-service/bill"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
 	tablebill "hcm/pkg/dal/table/bill"
@@ -70,7 +71,7 @@ func toProtoPullerResult(m *tablebill.AccountBillSummaryRoot) *dataproto.BillSum
 		LastMonthRMBCostSynced:    m.LastMonthRMBCostSynced.Decimal,
 		CurrentMonthCostSynced:    m.CurrentMonthCostSynced.Decimal,
 		CurrentMonthRMBCostSynced: m.CurrentMonthRMBCostSynced.Decimal,
-		Currency:                  m.Currency,
+		Currency:                  enumor.CurrencyCode(m.Currency),
 		CurrentMonthCost:          m.CurrentMonthCost.Decimal,
 		CurrentMonthRMBCost:       m.CurrentMonthRMBCost.Decimal,
 		Rate:                      m.Rate,

@@ -85,7 +85,7 @@ func (act RootAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 	}
 
 	rate := float64(0)
-	currency := ""
+	currency := enumor.CurrencyUSD
 	lastMonthSyncedCost := decimal.NewFromFloat(0)
 	lastMonthSyncedRMBCost := decimal.NewFromFloat(0)
 	currentCostSynced := decimal.NewFromFloat(0)
@@ -118,7 +118,7 @@ func (act RootAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 	}
 	req := &bill.BillSummaryRootUpdateReq{
 		ID:                        summary.ID,
-		Currency:                  currency,
+		Currency:                  enumor.CurrencyCode(currency),
 		RootAccountName:           rAccountResult.Name,
 		LastMonthCostSynced:       lastMonthSyncedCost,
 		LastMonthRMBCostSynced:    lastMonthSyncedRMBCost,
@@ -174,7 +174,7 @@ func (act *RootAccountSummaryAction) countMainAccount(
 	kt *kit.Kit, opt *RootAccountSummaryActionOption) (uint64, error) {
 
 	expressions := []*filter.AtomRule{
-		tools.RuleEqual("root_account_id", opt.RootAccountID),
+		tools.RuleEqual("parent_account_id", opt.RootAccountID),
 		tools.RuleEqual("vendor", opt.Vendor),
 		tools.RuleEqual("bill_year", opt.BillYear),
 		tools.RuleEqual("bill_month", opt.BillMonth),
