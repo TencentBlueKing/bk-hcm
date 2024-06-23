@@ -81,3 +81,20 @@ export interface BillsMainAccountSummary {
   updated_at: string;
 }
 export type BillsMainAccountSummaryResData = IListResData<BillsMainAccountSummary[]>;
+
+// 调账明细
+export interface AdjustmentItem {
+  id?: string; // 调账id
+  main_account_id: string; // 所属主账号id
+  vendor: string; // 云厂商
+  product_id: number; // 运营产品id
+  bk_biz_id?: number; // 业务id
+  bill_year: number; // 所属年份
+  bill_month: number; // 所属月份
+  bill_day: number; // 所属日期
+  type: 'increase' | 'decrease'; // 调账类型 枚举值（increase、decrease）
+  currency: string; // 币种
+  cost: string; // 金额
+  rmb_cost: string; // 对应人民币金额
+  memo?: string; // 备注信息
+}
