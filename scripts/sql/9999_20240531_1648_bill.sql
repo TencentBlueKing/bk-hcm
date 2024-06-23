@@ -139,27 +139,21 @@ create table if not exists `account_bill_item` (
   primary key (`id`)
 ) engine = innodb default charset = utf8mb4;
 
-create index bill_item_index ON account_bill_item(
-  `root_account_id`,
-  `main_account_id`,
+create index bill_item_index on account_bill_item(
   `vendor`,
-  `version_id`,
   `bill_year`,
   `bill_month`,
-  `bill_day`
+  `root_account_id`,
+  `product_id`,
+  `main_account_id`,
+  `bill_day`,
+  `bk_biz_id`,
+  `version_id`
 );
 
-create index bill_item_index1 ON account_bill_item(
-  `vendor`,
-  `version_id`,
-  `bill_year`,
-  `bill_month`
-);
-
-create index bill_item_index2 ON account_bill_item(
-  `vendor`,
-  `bill_year`,
-  `bill_month`
+create index bill_item_index_create_at on account_bill_item(
+  `created_at`,
+  `updated_at`
 );
 
 insert into
