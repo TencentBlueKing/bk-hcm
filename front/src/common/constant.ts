@@ -5,6 +5,7 @@ export enum VendorEnum {
   GCP = 'gcp',
   HUAWEI = 'huawei',
   ZENLAYER = 'zenlayer',
+  KAOPU = 'kaopu',
 }
 
 export enum ResourceTypeEnum {

@@ -10,7 +10,7 @@ export const headRouteConfig = [
   },
   {
     id: 'service',
-    name: '我的单据',
+    name: '服务请求',
     path: '/service/my-apply',
   },
   {

@@ -27,6 +27,7 @@ import { timeFormatter } from '@/common/util';
 import { IP_VERSION_MAP, LBRouteName, LB_NETWORK_TYPE_MAP, SCHEDULER_MAP } from '@/constants/clb';
 import { getInstVip } from '@/utils';
 import { Spinner } from 'bkui-vue/lib/icon';
+import { APPLICATION_TYPE_MAP } from '@/views/service/apply-list/constants';
 import dayjs from 'dayjs';
 import { BILL_TYPE__MAP_HW, CURRENCY_MAP } from '@/constants';
 
@@ -1792,58 +1793,52 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const firstAccountColumns = [
     {
       label: '一级帐号ID',
-      field: 'primaryAccountId',
+      field: 'id',
     },
     {
       label: '云厂商',
-      field: 'cloudProvider',
+      field: 'vendor',
     },
     {
       label: '帐号邮箱',
-      field: 'accountEmail',
+      field: 'email',
     },
     {
       label: '主负责人',
-      field: 'mainResponsiblePerson',
+      field: 'managers',
+      render: ({ cell }: any) => cell.join(','),
     },
-    {
-      label: '组织架构',
-      field: 'organizationalStructure',
-    },
-    {
-      label: '二级帐号个数',
-      field: 'secondaryAccountCount',
-    },
+    // {
+    //   label: '组织架构',
+    //   field: 'dept_id',
+    // },
   ];
 
   const secondaryAccountColumns = [
     {
-      label: '二级帐号ID',
-      field: 'secondaryAccountId',
-    },
-    {
       label: '所属一级帐号',
-      field: 'parentPrimaryAccount',
+      field: 'parent_account_name',
     },
     {
       label: '云厂商',
-      field: 'cloudProvider',
+      field: 'vendor',
     },
     {
       label: '站点类型',
-      field: 'siteType',
+      field: 'site',
     },
     {
       label: '帐号邮箱',
-      field: 'accountEmail',
+      field: 'email',
     },
     {
       label: '主负责人',
-      field: 'mainResponsiblePerson',
+      field: 'managers',
+      render: ({ cell }: any) => cell.join(','),
     },
     {
       label: '运营产品',
-      field: 'operatingProduct',
+      field: 'op_product_id',
     },
   ];
 
@@ -1859,6 +1854,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '申请类型',
       field: 'type',
+      render: ({ cell }: { cell: string }) => APPLICATION_TYPE_MAP[cell],
     },
     {
       label: '单据状态',
