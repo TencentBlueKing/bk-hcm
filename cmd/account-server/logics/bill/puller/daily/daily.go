@@ -30,6 +30,7 @@ import (
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -151,10 +152,12 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 		// 如果已经有拉取task flow，则检查拉取任务是否有问题
 		flow, err := dp.Client.TaskServer().GetFlow(kt, billTask.FlowID)
 		if err != nil {
-			return fmt.Errorf("failed to get flow by id %s, err %s", billTask.FlowID, err.Error())
+			if !errf.IsRecordNotFound(err) {
+				return fmt.Errorf("failed to get flow by id %s, err %s", billTask.FlowID, err.Error())
+			}
 		}
-		// 如果flow失败了，则重新创建一个新的flow
-		if flow.State == enumor.FlowFailed {
+		// 如果flow失败了或者flow找不到了，则重新创建一个新的flow
+		if flow.State == enumor.FlowFailed || errf.IsRecordNotFound(err) {
 			flowResult, err := dp.Client.TaskServer().CreateCustomFlow(kt, &taskserver.AddCustomFlowReq{
 				Name: enumor.FlowPullRawBill,
 				Memo: "pull daily raw bill",
