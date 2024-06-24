@@ -20,8 +20,10 @@
 package huawei
 
 import (
+	"fmt"
 	"hcm/cmd/account-server/logics/bill/puller"
 	"hcm/cmd/account-server/logics/bill/puller/daily"
+	"hcm/pkg/api/data-service/bill"
 	dsbillapi "hcm/pkg/api/data-service/bill"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
@@ -46,9 +48,15 @@ type HuaweiPuller struct {
 func (hp *HuaweiPuller) EnsurePullTask(
 	kt *kit.Kit, client *client.ClientSet, billSummaryMain *dsbillapi.BillSummaryMainResult) error {
 
+	hwMainAccount, err := client.DataService().HuaWei.MainAccount.Get(kt, billSummaryMain.MainAccountID)
+	if err != nil {
+		return fmt.Errorf("get gcp main account failed, err %s", err.Error())
+	}
+
 	dp := &daily.DailyPuller{
 		RootAccountID: billSummaryMain.RootAccountID,
 		MainAccountID: billSummaryMain.MainAccountID,
+		BillAccountID: hwMainAccount.CloudID,
 		ProductID:     billSummaryMain.ProductID,
 		BkBizID:       billSummaryMain.BkBizID,
 		Vendor:        billSummaryMain.Vendor,
@@ -61,8 +69,9 @@ func (hp *HuaweiPuller) EnsurePullTask(
 	return dp.EnsurePullTask(kt)
 }
 
-func (hp *HuaweiPuller) GetPullState(
-	kt *kit.Kit, client *client.ClientSet, billSummaryMain *dsbillapi.BillSummaryMainResult) (string, error) {
+func (hp *HuaweiPuller) GetPullTaskList(
+	kt *kit.Kit, client *client.ClientSet, billSummaryMain *dsbillapi.BillSummaryMainResult) (
+	[]*bill.BillDailyPullTaskResult, error) {
 
 	dp := &daily.DailyPuller{
 		RootAccountID: billSummaryMain.RootAccountID,
@@ -76,5 +85,5 @@ func (hp *HuaweiPuller) GetPullState(
 		BillDelay:     hp.BillDelay,
 		Client:        client,
 	}
-	return dp.GetPullState(kt)
+	return dp.GetPullTaskList(kt)
 }

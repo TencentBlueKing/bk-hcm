@@ -23,9 +23,10 @@ package bill
 import (
 	"fmt"
 
-	"hcm/cmd/hc-service/logics/cloud-adaptor"
+	cloudadaptor "hcm/cmd/hc-service/logics/cloud-adaptor"
 	"hcm/cmd/hc-service/service/capability"
 	"hcm/pkg/api/core"
+	billcore "hcm/pkg/api/core/bill"
 	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/client"
 	dataserviceclient "hcm/pkg/client/data-service"
@@ -53,6 +54,7 @@ func InitBillService(cap *capability.Capability) {
 	h.Add("HuaWeiGetFeeRecordList", "POST", "/vendors/huawei/feerecords/list", v.HuaWeiGetFeeRecordList)
 	h.Add("AzureGetBillList", "POST", "/vendors/azure/bills/list", v.AzureGetBillList)
 	h.Add("GcpGetBillList", "POST", "/vendors/gcp/bills/list", v.GcpGetBillList)
+	h.Add("GcpGetRootAccountBillList", "POST", "/vendors/gcp/root-account-bills/list", v.GcpGetRootAccountBillList)
 
 	h.Load(cap.WebService)
 }
@@ -66,7 +68,7 @@ type bill struct {
 func getBillInfo[T cloud.AccountBillConfigExtension](kt *kit.Kit, accountID string,
 	dataCli *dataserviceclient.Client) (*cloud.AccountBillConfig[T], error) {
 
-	// 查询aws账单基础表
+	// 查询gcp账单基础表
 	billList, err := dataCli.Global.Bill.List(kt.Ctx, kt.Header(), &core.ListReq{
 		Filter: tools.EqualExpression("account_id", accountID),
 		Page:   &core.BasePage{Count: false, Start: 0, Limit: 1},
@@ -91,5 +93,37 @@ func getBillInfo[T cloud.AccountBillConfigExtension](kt *kit.Kit, accountID stri
 	return &cloud.AccountBillConfig[T]{
 		BaseAccountBillConfig: billData,
 		Extension:             extension,
+	}, nil
+}
+
+// getRootAccountBillConfigInfo get root account bill config info.
+func getRootAccountBillConfigInfo[T billcore.RootAccountBillConfigExtension](kt *kit.Kit, rootAccountID string,
+	dataCli *dataserviceclient.Client) (*billcore.RootAccountBillConfig[T], error) {
+
+	// 查询gcp账单基础表
+	billList, err := dataCli.Global.Bill.ListRootAccountBillConfig(kt.Ctx, kt.Header(), &core.ListReq{
+		Filter: tools.EqualExpression("root_account_id", rootAccountID),
+		Page:   &core.BasePage{Count: false, Start: 0, Limit: 1},
+	})
+	if err != nil {
+		logs.Errorf("aws get base info from db failed, rootAccountID: %s, err: %+v", rootAccountID, err)
+		return nil, err
+	}
+	if len(billList.Details) == 0 {
+		return nil, nil
+	}
+
+	billData := billList.Details[0]
+	extension := new(T)
+	if billData.Extension != "" {
+		err = json.UnmarshalFromString(string(billData.Extension), extension)
+		if err != nil {
+			return nil, fmt.Errorf("UnmarshalFromString root account bill config hc extension failed, err: %+v", err)
+		}
+	}
+
+	return &billcore.RootAccountBillConfig[T]{
+		BaseRootAccountBillConfig: billData,
+		Extension:                 extension,
 	}, nil
 }

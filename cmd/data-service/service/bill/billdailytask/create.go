@@ -25,6 +25,7 @@ import (
 
 	"hcm/pkg/api/core"
 	dsbill "hcm/pkg/api/data-service/bill"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	tablebill "hcm/pkg/dal/table/bill"
@@ -45,20 +46,22 @@ func (svc *service) CreateBillDailyPullTask(cts *rest.Contexts) (interface{}, er
 	}
 	id, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		task := &tablebill.AccountBillDailyPullTask{
-			RootAccountID: req.RootAccountID,
-			MainAccountID: req.MainAccountID,
-			Vendor:        req.Vendor,
-			ProductID:     req.ProductID,
-			BkBizID:       req.BkBizID,
-			BillYear:      req.BillYear,
-			BillMonth:     req.BillMonth,
-			BillDay:       req.BillDay,
-			VersionID:     req.VersionID,
-			State:         req.State,
-			Count:         req.Count,
-			Currency:      req.Currency,
-			FlowID:        req.FlowID,
-			Cost:          &types.Decimal{Decimal: req.Cost},
+			RootAccountID:      req.RootAccountID,
+			MainAccountID:      req.MainAccountID,
+			Vendor:             req.Vendor,
+			ProductID:          req.ProductID,
+			BkBizID:            req.BkBizID,
+			BillYear:           req.BillYear,
+			BillMonth:          req.BillMonth,
+			BillDay:            req.BillDay,
+			VersionID:          req.VersionID,
+			State:              req.State,
+			Count:              req.Count,
+			Currency:           enumor.CurrencyCode(req.Currency),
+			FlowID:             req.FlowID,
+			SplitFlowID:        req.SplitFlowID,
+			DailySummaryFlowID: req.DailySummaryFlowID,
+			Cost:               &types.Decimal{Decimal: req.Cost},
 		}
 		ids, err := svc.dao.AccountBillDailyPullTask().BatchCreateWithTx(
 			cts.Kit, txn, []*tablebill.AccountBillDailyPullTask{

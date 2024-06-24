@@ -24,12 +24,13 @@ import (
 	"fmt"
 	"time"
 
+	"hcm/cmd/account-server/logics/bill/puller"
 	"hcm/cmd/task-server/logics/action/bill/dailysplit"
 	"hcm/pkg/api/core"
-	"hcm/pkg/api/data-service/bill"
 	dsbillapi "hcm/pkg/api/data-service/bill"
 	taskserver "hcm/pkg/api/task-server"
 	"hcm/pkg/client"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
@@ -72,7 +73,6 @@ type MainDailySplitController struct {
 	Client        *client.ClientSet
 	RootAccountID string
 	MainAccountID string
-	Version       int
 	ProductID     int64
 	BkBizID       int64
 	Vendor        enumor.Vendor
@@ -127,16 +127,15 @@ func (msdc *MainDailySplitController) doSync(kt *kit.Kit) error {
 }
 
 func (msdc *MainDailySplitController) getBillSummary(
-	kt *kit.Kit, billYear, billMonth int) (*bill.BillSummaryMainResult, error) {
+	kt *kit.Kit, billYear, billMonth int) (*dsbillapi.BillSummaryMainResult, error) {
 
-	var expressions []*filter.AtomRule
-	expressions = append(expressions, []*filter.AtomRule{
+	expressions := []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", msdc.RootAccountID),
 		tools.RuleEqual("main_account_id", msdc.MainAccountID),
 		tools.RuleEqual("vendor", msdc.Vendor),
 		tools.RuleEqual("bill_year", billYear),
 		tools.RuleEqual("bill_month", billMonth),
-	}...)
+	}
 	result, err := msdc.Client.DataService().Global.Bill.ListBillSummaryMain(
 		kt, &dsbillapi.BillSummaryMainListReq{
 			Filter: tools.ExpressionAnd(expressions...),
@@ -160,7 +159,65 @@ func (msdc *MainDailySplitController) syncDailySplit(kt *kit.Kit, billYear, bill
 		return err
 	}
 
-	_, err = msdc.Client.TaskServer().CreateCustomFlow(kt, &taskserver.AddCustomFlowReq{
+	curPuller, err := puller.GetPuller(summary.Vendor)
+	if err != nil {
+		return err
+	}
+	pullTaskList, err := curPuller.GetPullTaskList(kt, msdc.Client, summary)
+	if err != nil {
+		return err
+	}
+	for _, task := range pullTaskList {
+		if task.State == constant.MainAccountRawBillPullStatePulled {
+			if len(task.SplitFlowID) == 0 {
+				logs.Infof("split task of day %d main account %v bill should be create", task.BillDay, summary)
+				flowID, err := msdc.createDailySplitTask(kt, summary, billYear, billMonth, task.BillDay)
+				if err != nil {
+					logs.Warnf("create daily split task for %v, %d/%d/%d failed, err %s, rid: %s",
+						summary, billYear, billMonth, task.BillDay, err.Error(), kt.Rid)
+					continue
+				}
+				logs.Infof("create daily split task flow %s for %s/%s/%s/%d/%d/%d/%d successfully, rid: %s",
+					task.ID, msdc.RootAccountID, msdc.MainAccountID, msdc.Vendor, billYear,
+					billMonth, task.BillDay, summary.CurrentVersion, kt.Rid)
+				if err := msdc.updateDailyPullTaskFlowID(kt, task.ID, flowID); err != nil {
+					logs.Warnf("set pull task %s split flow id to %s failed, err %s, rid: %s",
+						task.ID, flowID, err.Error(), kt.Rid)
+					continue
+				}
+
+			} else {
+				// 如果已经有拉取task flow，则检查拉取任务是否有问题
+				flow, err := msdc.Client.TaskServer().GetFlow(kt, task.SplitFlowID)
+				if err != nil {
+					return fmt.Errorf("failed to get flow by id %s, err %s", task.SplitFlowID, err.Error())
+				}
+				if flow.State == enumor.FlowFailed {
+					flowID, err := msdc.createDailySplitTask(kt, summary, billYear, billMonth, task.BillDay)
+					if err != nil {
+						logs.Warnf("create daily split task for %v, %d/%d/%d failed, err %s, rid: %s",
+							summary, billYear, billMonth, task.BillDay, err.Error(), kt.Rid)
+						continue
+					}
+					logs.Infof("create new daily split task flow %s for %s/%s/%s/%d/%d/%d/%d successfully, rid: %s",
+						task.ID, msdc.RootAccountID, msdc.MainAccountID, msdc.Vendor, billYear,
+						billMonth, task.BillDay, summary.CurrentVersion, kt.Rid)
+					if err := msdc.updateDailyPullTaskFlowID(kt, task.ID, flowID); err != nil {
+						logs.Warnf("update pull task %s split flow id to %s failed, err %s, rid: %s",
+							task.ID, flowID, err.Error(), kt.Rid)
+						continue
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func (msdc *MainDailySplitController) createDailySplitTask(
+	kt *kit.Kit, summary *dsbillapi.BillSummaryMainResult, billYear, billMonth, billDay int) (string, error) {
+
+	result, err := msdc.Client.TaskServer().CreateCustomFlow(kt, &taskserver.AddCustomFlowReq{
 		Name: enumor.FlowSplitBill,
 		Memo: "do daily split",
 		Tasks: []taskserver.CustomFlowTask{
@@ -170,15 +227,22 @@ func (msdc *MainDailySplitController) syncDailySplit(kt *kit.Kit, billYear, bill
 				msdc.Vendor,
 				billYear,
 				billMonth,
+				billDay,
 				summary.CurrentVersion,
 			),
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("create daily split task flow failed for %s/%s/%s/%d/%d/%d, err %s",
-			msdc.RootAccountID, msdc.MainAccountID, msdc.Vendor, billYear, billMonth, msdc.Version, err.Error())
+		return "", fmt.Errorf("create daily split task flow failed for %s/%s/%s/%d/%d/%d/%d, err %s",
+			msdc.RootAccountID, msdc.MainAccountID, msdc.Vendor, billYear,
+			billMonth, billDay, summary.CurrentVersion, err.Error())
 	}
-	logs.Infof("create daily split task flow for %s/%s/%s/%d/%d/%d successfully, rid: %s",
-		msdc.RootAccountID, msdc.MainAccountID, msdc.Vendor, billYear, billMonth, msdc.Version, kt.Rid)
-	return nil
+	return result.ID, nil
+}
+
+func (msdc *MainDailySplitController) updateDailyPullTaskFlowID(kt *kit.Kit, dataID, flowID string) error {
+	return msdc.Client.DataService().Global.Bill.UpdateBillDailyPullTask(kt, &dsbillapi.BillDailyPullTaskUpdateReq{
+		ID:          dataID,
+		SplitFlowID: flowID,
+	})
 }

@@ -41,6 +41,11 @@ func InitService(c *capability.Capability) {
 
 	// register handler
 	h.Add("ListRootAccountSummary", http.MethodPost, "/bills/root-account-summarys/list", svc.ListRootAccountSummary)
+	h.Add("ReaccountRootAccountSummary",
+		http.MethodPost, "/bills/root-account-summarys/reaccount", svc.ReaccountRootAccountSummary)
+	h.Add("SumRootAccountSummary", http.MethodPost, "/bills/root-account-summarys/sum", svc.SumRootAccountSummary)
+	h.Add("ConfirmRootAccountSummary",
+		http.MethodPost, "bills/root-account-summarys/confirm", svc.ConfirmRootAccountSummary)
 
 	h.Load(c.WebService)
 }

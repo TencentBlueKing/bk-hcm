@@ -45,6 +45,7 @@ type DailySummaryOption struct {
 	BkBizID       int64         `json:"bk_biz_id" validate:"required"`
 	BillYear      int           `json:"bill_year" validate:"required"`
 	BillMonth     int           `json:"bill_month" validate:"required"`
+	BillDay       int           `json:"bill_day" validate:"required"`
 	VersionID     int           `json:"version_id" validate:"required"`
 	Vendor        enumor.Vendor `json:"vendor" validate:"required"`
 }
@@ -92,20 +93,28 @@ func (act DailySummaryAction) Run(kt run.ExecuteKit, params interface{}) (interf
 
 	pullTaskList, err := actcli.GetDataService().Global.Bill.ListBillDailyPullTask(
 		kt.Kit(), &bill.BillDailyPullTaskListReq{
-			Filter: getFilter(opt, 0),
+			Filter: getFilter(opt, opt.BillDay),
 			Page: &core.BasePage{
 				Start: 0,
-				Limit: 31,
+				Limit: 1,
 			},
 		})
 	if err != nil {
 		return nil, fmt.Errorf("list pull task by opt %v failed, err %s", opt, err.Error())
 	}
-	for _, task := range pullTaskList.Details {
-		if task.State == constant.MainAccountRawBillPullStateSplitted {
-			if err := act.doDailySummary(kt, opt, task.BillDay); err != nil {
-				return nil, err
-			}
+	if len(pullTaskList.Details) != 1 {
+		return nil, fmt.Errorf("get pull task invalid length, resp %v", pullTaskList.Details)
+	}
+	task := pullTaskList.Details[0]
+	if task.State == constant.MainAccountRawBillPullStateSplitted {
+		if err := act.doDailySummary(kt, opt, task.BillDay); err != nil {
+			logs.Infof("do daily summary for task %v failed, err %s, rid %s", task, err.Error(), kt.Kit().Rid)
+			return nil, err
+		}
+		if err := act.changeTaskToAccounted(kt, task); err != nil {
+			logs.Infof("change pull task %v to accounted state failed, err %s, rid %s",
+				task, err.Error(), kt.Kit().Rid)
+			return nil, err
 		}
 	}
 	return nil, nil
@@ -147,6 +156,16 @@ func (act DailySummaryAction) doDailySummary(kt run.ExecuteKit, opt *DailySummar
 		}
 	}
 	return act.syncDailySummary(kt, opt, billDay, currency, cost, count)
+}
+
+func (act DailySummaryAction) changeTaskToAccounted(
+	kt run.ExecuteKit, billTask *bill.BillDailyPullTaskResult) error {
+
+	return actcli.GetDataService().Global.Bill.UpdateBillDailyPullTask(
+		kt.Kit(), &bill.BillDailyPullTaskUpdateReq{
+			ID:    billTask.ID,
+			State: constant.MainAccountRawBillPullStateAccounted,
+		})
 }
 
 func (act DailySummaryAction) syncDailySummary(kt run.ExecuteKit, opt *DailySummaryOption,
@@ -196,6 +215,7 @@ func (act DailySummaryAction) syncDailySummary(kt run.ExecuteKit, opt *DailySumm
 	}); err != nil {
 		return fmt.Errorf("update daily summary for %v day %d failed, err %s", opt, billDay, err.Error())
 	}
-	logs.Infof("update daily summary for %v day %d successfully cost %s count %d", opt, billDay, cost.String(), count)
+	logs.Infof("update daily summary for %v day %d successfully cost %s count %d, rid: %s",
+		opt, billDay, cost.String(), count, kt.Kit().Rid)
 	return nil
 }

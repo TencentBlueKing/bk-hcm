@@ -41,21 +41,23 @@ func (v FlowName) Validate() error {
 
 // 默认的FlowName
 var defaultFlowNameMap = map[FlowName]struct{}{
-	FlowStartCvm:            {},
-	FlowStopCvm:             {},
-	FlowRebootCvm:           {},
-	FlowDeleteCvm:           {},
-	FlowCreateCvm:           {},
-	FlowDeleteFirewallRule:  {},
-	FlowDeleteSubnet:        {},
-	FlowNormalTest:          {},
-	FlowSleepTest:           {},
-	FlowDeleteSecurityGroup: {},
-	FlowCreateHuaweiSGRule:  {},
-	FlowDeleteEIP:           {},
-	FlowPullRawBill:         {},
-	FlowSplitBill:           {},
-	FlowBillDailySummary:    {},
+	FlowStartCvm:               {},
+	FlowStopCvm:                {},
+	FlowRebootCvm:              {},
+	FlowDeleteCvm:              {},
+	FlowCreateCvm:              {},
+	FlowDeleteFirewallRule:     {},
+	FlowDeleteSubnet:           {},
+	FlowNormalTest:             {},
+	FlowSleepTest:              {},
+	FlowDeleteSecurityGroup:    {},
+	FlowCreateHuaweiSGRule:     {},
+	FlowDeleteEIP:              {},
+	FlowPullRawBill:            {},
+	FlowSplitBill:              {},
+	FlowBillDailySummary:       {},
+	FlowBillMainAccountSummary: {},
+	FlowBillRootAccountSummary: {},
 }
 
 // ValidateDefault validate default FlowName.
@@ -146,7 +148,9 @@ const (
 
 // 账单相关Flow
 const (
-	FlowPullRawBill      FlowName = "bill_pull_daily_raw"
-	FlowSplitBill        FlowName = "bill_split_daily"
-	FlowBillDailySummary FlowName = "bill_daily_summary"
+	FlowPullRawBill            FlowName = "bill_pull_daily_raw"
+	FlowSplitBill              FlowName = "bill_split_daily"
+	FlowBillDailySummary       FlowName = "bill_daily_summary"
+	FlowBillMainAccountSummary FlowName = "bill_main_account_summary"
+	FlowBillRootAccountSummary FlowName = "bill_root_account_summary"
 )

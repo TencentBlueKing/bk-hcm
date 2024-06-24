@@ -29,11 +29,11 @@ import (
 // BuildDailySummaryTask build daily bill pull task
 func BuildDailySummaryTask(
 	rootAccountID, mainAccountID string, vendor enumor.Vendor,
-	productID, bkBizID int64, billYear, billMonth, version int) ts.CustomFlowTask {
+	productID, bkBizID int64, billYear, billMonth, billDay, version int) ts.CustomFlowTask {
 
 	return ts.CustomFlowTask{
 		ActionID:   action.ActIDType(uuid.UUID()),
-		ActionName: enumor.ActionDailySummary,
+		ActionName: enumor.ActionDailyAccountSummary,
 		Params: DailySummaryOption{
 			RootAccountID: rootAccountID,
 			MainAccountID: mainAccountID,
@@ -43,6 +43,7 @@ func BuildDailySummaryTask(
 			VersionID:     version,
 			BillYear:      billYear,
 			BillMonth:     billMonth,
+			BillDay:       billDay,
 		},
 	}
 }

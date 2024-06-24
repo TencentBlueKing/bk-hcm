@@ -53,27 +53,29 @@ func (svc *service) ListBillDailyPullTask(cts *rest.Contexts) (interface{}, erro
 		details[indx] = toProtoPullerResult(&d)
 	}
 
-	return &dataproto.BillDailyPullTaskListResult{Details: details, Count: data.Count}, nil
+	return &dataproto.BillDailyPullTaskListResult{Details: details, Count: &data.Count}, nil
 }
 
 func toProtoPullerResult(m *tablebill.AccountBillDailyPullTask) *dataproto.BillDailyPullTaskResult {
 	return &dataproto.BillDailyPullTaskResult{
-		ID:            m.ID,
-		RootAccountID: m.RootAccountID,
-		MainAccountID: m.MainAccountID,
-		Vendor:        m.Vendor,
-		ProductID:     m.ProductID,
-		BkBizID:       m.BkBizID,
-		BillYear:      m.BillYear,
-		BillMonth:     m.BillMonth,
-		BillDay:       m.BillDay,
-		VersionID:     m.VersionID,
-		State:         m.State,
-		Count:         m.Count,
-		Currency:      m.Currency,
-		Cost:          m.Cost.Decimal,
-		FlowID:        m.FlowID,
-		CreatedAt:     m.CreatedAt,
-		UpdatedAt:     m.UpdatedAt,
+		ID:                 m.ID,
+		RootAccountID:      m.RootAccountID,
+		MainAccountID:      m.MainAccountID,
+		Vendor:             m.Vendor,
+		ProductID:          m.ProductID,
+		BkBizID:            m.BkBizID,
+		BillYear:           m.BillYear,
+		BillMonth:          m.BillMonth,
+		BillDay:            m.BillDay,
+		VersionID:          m.VersionID,
+		State:              m.State,
+		Count:              m.Count,
+		Currency:           string(m.Currency),
+		Cost:               m.Cost.Decimal,
+		FlowID:             m.FlowID,
+		SplitFlowID:        m.SplitFlowID,
+		DailySummaryFlowID: m.DailySummaryFlowID,
+		CreatedAt:          m.CreatedAt,
+		UpdatedAt:          m.UpdatedAt,
 	}
 }

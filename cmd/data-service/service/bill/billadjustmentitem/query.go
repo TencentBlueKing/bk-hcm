@@ -56,7 +56,7 @@ func (svc *service) ListBillAdjustmentItem(cts *rest.Contexts) (interface{}, err
 		details[indx] = convBillAdjustment(&d)
 	}
 
-	return &dataproto.BillAdjustmentItemListResult{Details: details, Count: cvt.PtrToVal(data.Count)}, nil
+	return &dataproto.BillAdjustmentItemListResult{Details: details, Count: data.Count}, nil
 }
 
 func convBillAdjustment(m *tablebill.AccountBillAdjustmentItem) *bill.AdjustmentItem {

@@ -25,50 +25,56 @@ import (
 
 // ListAccountBillSummaryMainDetails list account bill config details.
 type ListAccountBillSummaryMainDetails struct {
-	Count   *uint64                            `json:"count,omitempty"`
+	Count   uint64                             `json:"count,omitempty"`
 	Details []tablebill.AccountBillSummaryMain `json:"details,omitempty"`
 }
 
 // ListAccountBillSummaryVersionDetails list account bill summary version details.
 type ListAccountBillSummaryVersionDetails struct {
-	Count   *uint64                               `json:"count,omitempty"`
+	Count   uint64                                `json:"count,omitempty"`
 	Details []tablebill.AccountBillSummaryVersion `json:"details,omitempty"`
 }
 
 // ListAccountBillSummaryDailyDetails list account bill summary daily details.
 type ListAccountBillSummaryDailyDetails struct {
-	Count   *uint64                             `json:"count,omitempty"`
+	Count   uint64                              `json:"count,omitempty"`
 	Details []tablebill.AccountBillSummaryDaily `json:"details,omitempty"`
 }
 
 // ListAccountBillItemDetails list account bill summary daily details.
 type ListAccountBillItemDetails struct {
-	Count   *uint64                     `json:"count,omitempty"`
+	Count   uint64                      `json:"count,omitempty"`
 	Details []tablebill.AccountBillItem `json:"details,omitempty"`
 }
 
 // ListAccountBillPullerDetails list account bill puller details
 type ListAccountBillPullerDetails struct {
-	Count   *uint64                       `json:"count,omitempty"`
+	Count   uint64                        `json:"count,omitempty"`
 	Details []tablebill.AccountBillPuller `json:"details,omitempty"`
 }
 
 // ListAccountBillDailyPullTaskDetails list account bill daily pull task details
 type ListAccountBillDailyPullTaskDetails struct {
-	Count   *uint64                              `json:"count,omitempty"`
+	Count   uint64                               `json:"count,omitempty"`
 	Details []tablebill.AccountBillDailyPullTask `json:"details,omitempty"`
 }
 
 // ListAccountBillAdjustmentItemDetails list account bill adjustment item details
 type ListAccountBillAdjustmentItemDetails struct {
-	Count   *uint64                               `json:"count,omitempty"`
+	Count   uint64                                `json:"count,omitempty"`
 	Details []tablebill.AccountBillAdjustmentItem `json:"details,omitempty"`
 }
 
 // ListAccountBillSummaryRootDetails list account bill adjustment item details
 type ListAccountBillSummaryRootDetails struct {
-	Count   *uint64                            `json:"count,omitempty"`
+	Count   uint64                             `json:"count,omitempty"`
 	Details []tablebill.AccountBillSummaryRoot `json:"details,omitempty"`
+}
+
+// ListRootAccountBillConfigDetails list account bill config details.
+type ListRootAccountBillConfigDetails struct {
+	Count   uint64                                 `json:"count,omitempty"`
+	Details []tablebill.RootAccountBillConfigTable `json:"details,omitempty"`
 }
 
 // ListAccountBillExchangeRateDetails list account bill adjustment item details

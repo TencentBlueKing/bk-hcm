@@ -21,6 +21,8 @@ package bill
 
 import (
 	"hcm/pkg/api/core"
+	billcore "hcm/pkg/api/core/bill"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/runtime/filter"
 )
@@ -38,15 +40,44 @@ func (req *RootAccountSummaryListReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// MainAccountSummaryListReq list request for main account summary
-type MainAccountSummaryListReq struct {
-	BillYear  int                `json:"bill_year" validate:"required"`
-	BillMonth int                `json:"bill_month" validate:"required"`
-	Filter    *filter.Expression `json:"filter" validate:"omitempty"`
-	Page      *core.BasePage     `json:"page" validate:"omitempty"`
+// RootAccountSummaryReaccountReq reaccount request for root account summary
+type RootAccountSummaryReaccountReq struct {
+	BillYear      int    `json:"bill_year" validate:"required"`
+	BillMonth     int    `json:"bill_month" validate:"required"`
+	RootAccountID string `json:"root_account_id" validate:"required"`
 }
 
 // Validate ...
-func (req *MainAccountSummaryListReq) Validate() error {
+func (req *RootAccountSummaryReaccountReq) Validate() error {
 	return validator.Validate.Struct(req)
+}
+
+// RootAccountSummaryConfirmReq confirm request for root account summary
+type RootAccountSummaryConfirmReq struct {
+	BillYear      int    `json:"bill_year" validate:"required"`
+	BillMonth     int    `json:"bill_month" validate:"required"`
+	RootAccountID string `json:"root_account_id" validate:"required"`
+}
+
+// Validate ...
+func (req *RootAccountSummaryConfirmReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// RootAccountSummarySumReq get request for all account summary
+type RootAccountSummarySumReq struct {
+	BillYear  int                `json:"bill_year" validate:"required"`
+	BillMonth int                `json:"bill_month" validate:"required"`
+	Filter    *filter.Expression `json:"filter" validate:"omitempty"`
+}
+
+// Validate ...
+func (req *RootAccountSummarySumReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// RootAccountSummarySumResult all root account summary get result
+type RootAccountSummarySumResult struct {
+	Count   uint64                                             `json:"count"`
+	CostMap map[enumor.CurrencyCode]*billcore.CostWithCurrency `json:"cost_map"`
 }

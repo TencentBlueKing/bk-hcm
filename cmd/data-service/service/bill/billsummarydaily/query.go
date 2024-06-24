@@ -55,7 +55,7 @@ func (svc *service) ListBillSummaryDaily(cts *rest.Contexts) (interface{}, error
 		details[indx] = toProtoPullerResult(&d)
 	}
 
-	return &dataproto.BillSummaryDailyListResult{Details: details, Count: data.Count}, nil
+	return &dataproto.BillSummaryDailyListResult{Details: details, Count: &data.Count}, nil
 }
 
 func toProtoPullerResult(m *tablebill.AccountBillSummaryDaily) billcore.BillSummaryDaily {

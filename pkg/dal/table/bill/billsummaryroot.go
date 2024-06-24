@@ -55,6 +55,8 @@ var AccountBillSummaryRootColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "rate", NamedC: "rate", Type: enumor.Numeric},
 	{Column: "adjustment_cost", NamedC: "adjustment_cost", Type: enumor.Numeric},
 	{Column: "adjustment_rmb_cost", NamedC: "adjustment_rmb_cost", Type: enumor.Numeric},
+	{Column: "bk_biz_num", NamedC: "bk_biz_num", Type: enumor.Numeric},
+	{Column: "product_num", NamedC: "product_num", Type: enumor.Numeric},
 	{Column: "state", NamedC: "state", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
 	{Column: "updated_at", NamedC: "updated_at", Type: enumor.Time},
@@ -79,7 +81,7 @@ type AccountBillSummaryRoot struct {
 	// CurrentVersion 当前账单版本
 	CurrentVersion int `db:"current_version" json:"current_version"`
 	// Currency 币种
-	Currency string `db:"currency" json:"currency"`
+	Currency enumor.CurrencyCode `db:"currency" json:"currency"`
 	// LastMonthCostSynced 上月已同步账单
 	LastMonthCostSynced *types.Decimal `db:"last_month_cost_synced" json:"last_month_cost_synced"`
 	// LastMonthRMBCostSynced 上月已同步人民币账单
@@ -100,6 +102,10 @@ type AccountBillSummaryRoot struct {
 	AjustmentCost *types.Decimal `db:"adjustment_cost" json:"adjustment_cost"`
 	// AjustmentRMBCost 实时人民币调账账单
 	AjustmentRMBCost *types.Decimal `db:"adjustment_rmb_cost" json:"adjustment_rmb_cost"`
+	// BkBizNum 业务数量
+	BkBizNum uint64 `db:"bk_biz_num" json:"bk_biz_num"`
+	// ProductNum 运营产品数量
+	ProductNum uint64 `db:"product_num" json:"product_num"`
 	// State 状态
 	State string `db:"state" json:"state"`
 	// CreatedAt 创建时间

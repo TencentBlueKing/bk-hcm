@@ -94,10 +94,11 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 	newBillManager := &bill.BillManager{
 		Sd:     sd,
 		Client: apiClientSet,
-		AccountList: &bill.MainAccountLister{
+		AccountList: &bill.HcmAccountLister{
 			Client: apiClientSet,
 		},
-		CurrentControllers: make(map[string]*bill.MainAccountController),
+		CurrentMainControllers: make(map[string]*bill.MainAccountController),
+		CurrentRootControllers: make(map[string]*bill.RootAccountController),
 	}
 
 	svr := &Service{
@@ -192,7 +193,6 @@ func (s *Service) apiSet() *restful.Container {
 	rootaccount.InitService(c)
 	billsummaryroot.InitService(c)
 	billsummarymain.InitService(c)
-
 	billitem.InitBillItemService(c)
 	billadjustment.InitBillAdjustmentService(c)
 

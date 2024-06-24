@@ -51,6 +51,8 @@ var AccountBillDailyPullTaskDescriptor = utils.ColumnDescriptors{
 	{Column: "currency", NamedC: "currency", Type: enumor.String},
 	{Column: "cost", NamedC: "cost", Type: enumor.Numeric},
 	{Column: "flow_id", NamedC: "flow_id", Type: enumor.String},
+	{Column: "split_flow_id", NamedC: "split_flow_id", Type: enumor.String},
+	{Column: "daily_summary_flow_id", NamedC: "daily_summary_flow_id", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
 	{Column: "updated_at", NamedC: "updated_at", Type: enumor.Time},
 }
@@ -87,6 +89,10 @@ type AccountBillDailyPullTask struct {
 	Cost *types.Decimal `db:"cost" json:"cost"`
 	// FlowID task id
 	FlowID string `db:"flow_id" json:"flow_id"`
+	// SplitFlowID split flow id
+	SplitFlowID string `db:"split_flow_id" json:"split_flow_id"`
+	// DailySummaryFlowID daily summary flow id
+	DailySummaryFlowID string `db:"daily_summary_flow_id" json:"daily_summary_flow_id"`
 	// CreatedAt 创建时间
 	CreatedAt types.Time `db:"created_at" json:"created_at"`
 	// UpdatedAt 更新时间

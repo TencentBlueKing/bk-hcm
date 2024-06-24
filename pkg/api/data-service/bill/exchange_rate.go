@@ -38,7 +38,7 @@ type ExchangeRateCreate struct {
 	// Year 账单年份
 	Year int `json:"year" validate:"required,gt=0"`
 	// Month 账单月份
-	Month int `json:"month" validate:"required,ge=1,le=12"`
+	Month int `json:"month" validate:"required,gte=1,lte=12"`
 	// FromCurrency 原币种
 	FromCurrency enumor.CurrencyCode `json:"from_currency" validate:"required"`
 	// ToCurrency 转换后币种

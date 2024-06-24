@@ -117,7 +117,7 @@ func (abpDao AccountBillPullerDao) List(kt *kit.Kit, opt *types.ListOption) (
 			return nil, err
 		}
 
-		return &typesbill.ListAccountBillPullerDetails{Count: &count}, nil
+		return &typesbill.ListAccountBillPullerDetails{Count: count}, nil
 	}
 
 	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)

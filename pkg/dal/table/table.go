@@ -192,7 +192,8 @@ const (
 	AccountBillSummaryRootTable = "account_bill_summary_root"
 	// AccountBillSummaryMainTable 月度汇总账单
 	AccountBillSummaryMainTable = "account_bill_summary_main"
-
+	// RootAccountBillConfigTable 一级账号账单配置表
+	RootAccountBillConfigTable = "root_account_bill_config"
 	// AccountBillExchangeRateTable 账单汇率换算表
 	AccountBillExchangeRateTable = "account_bill_exchange_rate"
 )
@@ -279,6 +280,7 @@ var TableMap = map[Name]struct{}{
 	AccountBillItemTable:            {},
 	AccountBillAdjustmentItemTable:  {},
 	AccountBillSummaryRootTable:     {},
+	RootAccountBillConfigTable:      {},
 	AccountBillExchangeRateTable:    {},
 	LoadBalancerTable:               {},
 	SecurityGroupCommonRelTable:     {},

@@ -42,6 +42,7 @@ import (
 type DailyPuller struct {
 	RootAccountID string
 	MainAccountID string
+	BillAccountID string
 	ProductID     int64
 	BkBizID       int64
 	Vendor        enumor.Vendor
@@ -68,18 +69,16 @@ func (dp *DailyPuller) getFilter(billDay int) *filter.Expression {
 	return tools.ExpressionAnd(expressions...)
 }
 
-func (dp *DailyPuller) EnsurePullTask(kit *kit.Kit) error {
+func (dp *DailyPuller) EnsurePullTask(kt *kit.Kit) error {
 	dayList := getBillDays(dp.BillYear, dp.BillMonth, dp.BillDelay, time.Now())
-	for _, day := range dayList {
-		if err := dp.ensureDailyPulling(kit, day); err != nil {
-			return err
-		}
+	if err := dp.ensureDailyPulling(kt, dayList); err != nil {
+		return err
 	}
 	return nil
 }
 
-func (dp *DailyPuller) createDailyPullTask(kit *kit.Kit, billDay int) error {
-	_, err := dp.Client.DataService().Global.Bill.CreateBillDailyPullTask(kit, &bill.BillDailyPullTaskCreateReq{
+func (dp *DailyPuller) createDailyPullTask(kt *kit.Kit, billDay int) error {
+	_, err := dp.Client.DataService().Global.Bill.CreateBillDailyPullTask(kt, &bill.BillDailyPullTaskCreateReq{
 		RootAccountID: dp.RootAccountID,
 		MainAccountID: dp.MainAccountID,
 		Vendor:        dp.Vendor,
@@ -98,140 +97,117 @@ func (dp *DailyPuller) createDailyPullTask(kit *kit.Kit, billDay int) error {
 	return err
 }
 
-func (dp *DailyPuller) updateDailyPullTaskFlowID(kit *kit.Kit, dataID, flowID string) error {
-	return dp.Client.DataService().Global.Bill.UpdateBillDailyPullTask(kit, &bill.BillDailyPullTaskUpdateReq{
+func (dp *DailyPuller) updateDailyPullTaskFlowID(kt *kit.Kit, dataID, flowID string) error {
+	return dp.Client.DataService().Global.Bill.UpdateBillDailyPullTask(kt, &bill.BillDailyPullTaskUpdateReq{
 		ID:     dataID,
 		FlowID: flowID,
 	})
 }
 
-func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, billDay int) error {
-	filter := dp.getFilter(billDay)
+func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
+	filter := dp.getFilter(0)
 	billTaskResult, err := dp.Client.DataService().Global.Bill.ListBillDailyPullTask(
 		kt, &bill.BillDailyPullTaskListReq{
 			Filter: filter,
 			Page: &core.BasePage{
 				Start: 0,
-				Limit: 1,
+				Limit: 31,
 			},
 		})
 	if err != nil {
-		return fmt.Errorf("get pull task for %d failed, err %s", billDay, err.Error())
+		return fmt.Errorf("get pull task for %v failed, err %s", dp, err.Error())
 	}
-	// 如果不存在pull task数据，则创建新的pull task
-	if len(billTaskResult.Details) == 0 {
-		return dp.createDailyPullTask(kt, billDay)
-	}
-	if len(billTaskResult.Details) != 1 {
-		return fmt.Errorf("more than 1 pull task found, details %v", billTaskResult.Details)
-	}
-	billTask := billTaskResult.Details[0]
+	billTaskDayMap := make(map[int]struct{})
+	for _, billTask := range billTaskResult.Details {
+		billTaskDayMap[billTask.BillDay] = struct{}{}
+		// 如果没有创建拉取task flow，则创建
+		if len(billTask.FlowID) == 0 {
+			flowResult, err := dp.Client.TaskServer().CreateCustomFlow(kt, &taskserver.AddCustomFlowReq{
+				Name: enumor.FlowPullRawBill,
+				Memo: "pull daily raw bill",
+				Tasks: []taskserver.CustomFlowTask{
+					dailypull.BuildDailyPullTask(
+						dp.RootAccountID,
+						dp.MainAccountID,
+						dp.BillAccountID,
+						dp.Vendor,
+						dp.BillYear,
+						dp.BillMonth,
+						billTask.BillDay,
+						dp.Version,
+					),
+				},
+			})
+			if err != nil {
+				return fmt.Errorf("failed to create custom flow, err %s", err.Error())
+			}
+			logs.Infof("create pull task flow for billTask %v, rid: %s", billTask, kt.Rid)
+			if err := dp.updateDailyPullTaskFlowID(kt, billTask.ID, flowResult.ID); err != nil {
+				return fmt.Errorf("update flow id failed, err %s", err.Error())
+			}
+			continue
+		}
 
-	// 如果没有创建拉取task flow，则创建
-	if len(billTask.FlowID) == 0 {
-		flowResult, err := dp.Client.TaskServer().CreateCustomFlow(kt, &taskserver.AddCustomFlowReq{
-			Name: enumor.FlowPullRawBill,
-			Memo: "pull daily raw bill",
-			Tasks: []taskserver.CustomFlowTask{
-				dailypull.BuildDailyPullTask(
-					dp.RootAccountID,
-					dp.MainAccountID,
-					dp.Vendor,
-					dp.BillYear,
-					dp.BillMonth,
-					billDay,
-					dp.Version,
-				),
-			},
-		})
+		// 如果已经有拉取task flow，则检查拉取任务是否有问题
+		flow, err := dp.Client.TaskServer().GetFlow(kt, billTask.FlowID)
 		if err != nil {
-			return fmt.Errorf("failed to create custom flow, err %s", err.Error())
+			return fmt.Errorf("failed to get flow by id %s, err %s", billTask.FlowID, err.Error())
 		}
-		logs.Infof("create pull task flow for billTask %v, rid: %s", billTask, kt.Rid)
-		if err := dp.updateDailyPullTaskFlowID(kt, billTask.ID, flowResult.ID); err != nil {
-			return fmt.Errorf("update flow id failed, err %s", err.Error())
+		// 如果flow失败了，则重新创建一个新的flow
+		if flow.State == enumor.FlowFailed {
+			flowResult, err := dp.Client.TaskServer().CreateCustomFlow(kt, &taskserver.AddCustomFlowReq{
+				Name: enumor.FlowPullRawBill,
+				Memo: "pull daily raw bill",
+				Tasks: []taskserver.CustomFlowTask{
+					dailypull.BuildDailyPullTask(
+						dp.RootAccountID,
+						dp.MainAccountID,
+						dp.BillAccountID,
+						dp.Vendor,
+						dp.BillYear,
+						dp.BillMonth,
+						billTask.BillDay,
+						dp.Version,
+					),
+				},
+			})
+			if err != nil {
+				return fmt.Errorf("failed to create custom flow, err %s", err.Error())
+			}
+			if err := dp.updateDailyPullTaskFlowID(kt, billTask.ID, flowResult.ID); err != nil {
+				return fmt.Errorf("update flow id failed, err %s", err.Error())
+			}
 		}
-		return nil
+	}
+	for _, day := range dayList {
+		if _, ok := billTaskDayMap[day]; !ok {
+			// 如果不存在pull task数据，则创建新的pull task
+			if err := dp.createDailyPullTask(kt, day); err != nil {
+				logs.Warnf("create dailed pull task %v for day %d failed, err %s, rid: %s",
+					dp, day, err.Error(), kt.Rid)
+			}
+			logs.Infof("create pull task for %v day %d successfully, rid: %s", dp, day, kt.Rid)
+		}
 	}
 
-	// 如果已经有拉取task flow，则检查拉取任务是否有问题
-	flow, err := dp.Client.TaskServer().GetFlow(kt, billTask.FlowID)
-	if err != nil {
-		return fmt.Errorf("failed to get flow by id %s", billTask.FlowID)
-	}
-	// 如果flow失败了，则重新创建一个新的flow
-	if flow.State == enumor.FlowFailed {
-		flowResult, err := dp.Client.TaskServer().CreateCustomFlow(kt, &taskserver.AddCustomFlowReq{
-			Name: enumor.FlowPullRawBill,
-			Memo: "pull daily raw bill",
-			Tasks: []taskserver.CustomFlowTask{
-				dailypull.BuildDailyPullTask(
-					dp.RootAccountID,
-					dp.MainAccountID,
-					dp.Vendor,
-					dp.BillYear,
-					dp.BillMonth,
-					billDay,
-					dp.Version,
-				),
-			},
-		})
-		if err != nil {
-			return fmt.Errorf("failed to create custom flow, err %s", err.Error())
-		}
-		if err := dp.updateDailyPullTaskFlowID(kt, billTask.ID, flowResult.ID); err != nil {
-			return fmt.Errorf("update flow id failed, err %s", err.Error())
-		}
-		return nil
-	}
 	return nil
 }
 
-// GetPullState 获取拉取状态
-func (dp *DailyPuller) GetPullState(kit *kit.Kit) (string, error) {
+// GetPullTaskList 获取拉取状态
+func (dp *DailyPuller) GetPullTaskList(kit *kit.Kit) ([]*bill.BillDailyPullTaskResult, error) {
 	filter := dp.getFilter(0)
 	billTaskResult, err := dp.Client.DataService().Global.Bill.ListBillDailyPullTask(
 		kit, &bill.BillDailyPullTaskListReq{
 			Filter: filter,
 			Page: &core.BasePage{
 				Start: 0,
-				Limit: 1,
+				Limit: 31,
 			},
 		})
 	if err != nil {
-		return "", fmt.Errorf("list pull task failed, err %s", err.Error())
+		return nil, fmt.Errorf("list pull task failed, err %s", err.Error())
 	}
-
-	days := daysInMonth(dp.BillYear, time.Month(dp.BillMonth))
-	if len(billTaskResult.Details) != days {
-		return constant.MainAccountRawBillPullStatePulling, nil
-	}
-	for _, pullTask := range billTaskResult.Details {
-		if len(pullTask.FlowID) == 0 {
-			return constant.MainAccountRawBillPullStatePulling, nil
-		}
-		// 如果已经有拉取task flow，则检查拉取任务是否有问题
-		flow, err := dp.Client.TaskServer().GetFlow(kit, pullTask.FlowID)
-		if err != nil {
-			return "", fmt.Errorf("failed to get flow by id %s", pullTask.FlowID)
-		}
-		if flow.State != enumor.FlowSuccess {
-			return constant.MainAccountRawBillPullStatePulling, nil
-		}
-	}
-
-	return constant.MainAccountRawBillPullStatePulled, nil
-}
-
-// daysInMonth 返回给定年份和月份的天数
-func daysInMonth(year int, month time.Month) int {
-	// 获取下个月的第一天
-	firstOfNextMonth := time.Date(year, month+1, 1, 0, 0, 0, 0, time.UTC)
-
-	// 获取本月的最后一天
-	lastOfThisMonth := firstOfNextMonth.AddDate(0, 0, -1)
-
-	return lastOfThisMonth.Day()
+	return billTaskResult.Details, nil
 }
 
 func getBillDays(billYear, billMonth, billDelay int, now time.Time) []int {

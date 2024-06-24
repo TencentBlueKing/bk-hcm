@@ -360,6 +360,66 @@ func (b *BillClient) BatchCreateBillItem(
 		b.client, rest.POST, kt, req, fmt.Sprintf("/vendors/%s/bills/rawitems/create", vendor))
 }
 
+// RootAccountBillConfigClient is data service bill api client.
+type RootAccountBillConfigClient struct {
+	client rest.ClientInterface
+}
+
+// NewRootAccountBillConfigClient create a new bill api client.
+func NewRootAccountBillConfigClient(client rest.ClientInterface) *RootAccountBillConfigClient {
+	return &RootAccountBillConfigClient{
+		client: client,
+	}
+}
+
+// ListRootAccountBillConfig list bill.
+func (b *BillClient) ListRootAccountBillConfig(ctx context.Context, h http.Header, req *core.ListReq) (
+	*billproto.RootAccountBillConfigListResult, error) {
+
+	resp := new(billproto.RootAccountBillConfigListResp)
+
+	err := b.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/bills/root_account_config/list").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}
+
+// BatchDeleteRootAccountBillConfig batch delete bill.
+func (b *BillClient) BatchDeleteRootAccountBillConfig(
+	ctx context.Context, h http.Header, req *dataservice.BatchDeleteReq) error {
+
+	resp := new(rest.BaseResp)
+
+	err := b.client.Delete().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/bills/root_account_config/batch").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Code != errf.OK {
+		return errf.New(resp.Code, resp.Message)
+	}
+
+	return nil
+}
+
 // --- exchange rate ---
 
 // BatchCreateExchangeRate create exchange rate

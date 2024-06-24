@@ -20,6 +20,7 @@
 package registry
 
 import (
+	accountset "hcm/pkg/api/core/account-set"
 	"hcm/pkg/async/action/run"
 	"hcm/pkg/criteria/enumor"
 
@@ -30,11 +31,13 @@ import (
 type PullDailyBillOption struct {
 	RootAccountID string        `json:"root_account_id" validate:"required"`
 	MainAccountID string        `json:"main_account_id" validate:"required"`
+	BillAccountID string        `json:"bill_account_id" validate:"required"`
 	BillYear      int           `json:"bill_year" validate:"required"`
 	BillMonth     int           `json:"bill_month" validate:"required"`
 	BillDay       int           `json:"bill_day" validate:"required"`
 	VersionID     int           `json:"version_id" validate:"required"`
 	Vendor        enumor.Vendor `json:"vendor" validate:"required"`
+	MainAccount   *accountset.BaseMainAccount
 }
 
 // PullerRegistry registry of pullers

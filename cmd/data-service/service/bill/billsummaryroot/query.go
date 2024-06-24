@@ -21,6 +21,7 @@ package billsummaryroot
 
 import (
 	dataproto "hcm/pkg/api/data-service/bill"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
 	tablebill "hcm/pkg/dal/table/bill"
@@ -53,7 +54,7 @@ func (svc *service) ListBillSummaryRoot(cts *rest.Contexts) (interface{}, error)
 		details[indx] = toProtoPullerResult(&d)
 	}
 
-	return &dataproto.BillSummaryRootListResult{Details: details, Count: data.Count}, nil
+	return &dataproto.BillSummaryRootListResult{Details: details, Count: &data.Count}, nil
 }
 
 func toProtoPullerResult(m *tablebill.AccountBillSummaryRoot) *dataproto.BillSummaryRootResult {
@@ -70,13 +71,15 @@ func toProtoPullerResult(m *tablebill.AccountBillSummaryRoot) *dataproto.BillSum
 		LastMonthRMBCostSynced:    m.LastMonthRMBCostSynced.Decimal,
 		CurrentMonthCostSynced:    m.CurrentMonthCostSynced.Decimal,
 		CurrentMonthRMBCostSynced: m.CurrentMonthRMBCostSynced.Decimal,
-		Currency:                  m.Currency,
+		Currency:                  enumor.CurrencyCode(m.Currency),
 		CurrentMonthCost:          m.CurrentMonthCost.Decimal,
 		CurrentMonthRMBCost:       m.CurrentMonthRMBCost.Decimal,
 		Rate:                      m.Rate,
 		AjustmentCost:             m.AjustmentCost.Decimal,
 		AjustmentRMBCost:          m.AjustmentRMBCost.Decimal,
 		State:                     m.State,
+		BkBizNum:                  m.BkBizNum,
+		ProductNum:                m.ProductNum,
 		CreatedAt:                 m.CreatedAt,
 		UpdatedAt:                 m.UpdatedAt,
 	}

@@ -40,9 +40,9 @@ type BillSummaryDailyCreateReq struct {
 	BillMonth     int                 `json:"bill_month" validate:"required"`
 	BillDay       int                 `json:"bill_day" validate:"required"`
 	VersionID     int                 `json:"version_id" validate:"required"`
-	Currency      enumor.CurrencyCode `json:"currency" validate:"required"`
-	Cost          decimal.Decimal     `json:"cost" validate:"required"`
-	Count         int64               `json:"count" validate:"required"`
+	Currency      enumor.CurrencyCode `json:"currency" validate:"omitempty"`
+	Cost          decimal.Decimal     `json:"cost" validate:"omitempty"`
+	Count         int64               `json:"count" validate:"omitempty"`
 }
 
 // Validate ...

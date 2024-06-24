@@ -96,7 +96,7 @@ type AccountBillSummaryMain struct {
 	// CurrentVersion 当前账单版本
 	CurrentVersion int `db:"current_version" json:"current_version"`
 	// Currency 币种
-	Currency string `db:"currency" json:"currency"`
+	Currency enumor.CurrencyCode `db:"currency" json:"currency"`
 	// LastMonthCostSynced 上月已同步账单
 	LastMonthCostSynced *types.Decimal `db:"last_month_cost_synced" json:"last_month_cost_synced"`
 	// LastMonthRMBCostSynced 上月已同步人民币账单

@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	dataservice "hcm/pkg/api/data-service/bill"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	tablebill "hcm/pkg/dal/table/bill"
@@ -45,20 +46,22 @@ func (svc *service) UpdateBillDailyPullTask(cts *rest.Contexts) (interface{}, er
 	}
 
 	billDailyPullTask := &tablebill.AccountBillDailyPullTask{
-		ID:            req.ID,
-		RootAccountID: req.RootAccountID,
-		MainAccountID: req.MainAccountID,
-		Vendor:        req.Vendor,
-		ProductID:     req.ProductID,
-		BkBizID:       req.BkBizID,
-		BillYear:      req.BillYear,
-		BillMonth:     req.BillMonth,
-		BillDay:       req.BillDay,
-		VersionID:     req.VersionID,
-		State:         req.State,
-		Count:         req.Count,
-		Currency:      req.Currency,
-		FlowID:        req.FlowID,
+		ID:                 req.ID,
+		RootAccountID:      req.RootAccountID,
+		MainAccountID:      req.MainAccountID,
+		Vendor:             req.Vendor,
+		ProductID:          req.ProductID,
+		BkBizID:            req.BkBizID,
+		BillYear:           req.BillYear,
+		BillMonth:          req.BillMonth,
+		BillDay:            req.BillDay,
+		VersionID:          req.VersionID,
+		State:              req.State,
+		Count:              req.Count,
+		Currency:           enumor.CurrencyCode(req.Currency),
+		FlowID:             req.FlowID,
+		SplitFlowID:        req.SplitFlowID,
+		DailySummaryFlowID: req.DailySummaryFlowID,
 	}
 	if !req.Cost.IsZero() {
 		billDailyPullTask.Cost = &types.Decimal{Decimal: req.Cost}

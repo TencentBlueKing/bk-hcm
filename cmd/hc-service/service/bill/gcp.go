@@ -24,6 +24,7 @@ import (
 	"fmt"
 
 	typesBill "hcm/pkg/adaptor/types/bill"
+	billcore "hcm/pkg/api/core/bill"
 	"hcm/pkg/api/core/cloud"
 	hcbillservice "hcm/pkg/api/hc-service/bill"
 	"hcm/pkg/criteria/enumor"
@@ -87,6 +88,70 @@ func (b bill) GcpGetBillList(cts *rest.Contexts) (interface{}, error) {
 		}
 	}
 	resp, count, err := cli.GetBillList(cts.Kit, opt, billInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	return &hcbillservice.GcpBillListResult{
+		Count:   count,
+		Details: resp,
+	}, nil
+}
+
+// GcpGetRootAccountBillList get gcp bill list.
+func (b bill) GcpGetRootAccountBillList(cts *rest.Contexts) (interface{}, error) {
+	req := new(hcbillservice.GcpBillListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// 查询aws账单基础表
+	billInfo, err := getRootAccountBillConfigInfo[billcore.GcpBillConfigExtension](
+		cts.Kit, req.BillAccountID, b.cs.DataService())
+	if err != nil {
+		logs.Errorf("gcp root account bill config get base info db failed, billAccID: %s, err: %+v",
+			req.BillAccountID, err)
+		return nil, err
+	}
+	if billInfo == nil {
+		return nil, errf.Newf(errf.RecordNotFound, "bill config for root_account_id: %s is not found", req.BillAccountID)
+	}
+
+	// 检查rootAccountID是否存在，是否资源账号
+	resAccountInfo, err := b.cs.DataService().Gcp.RootAccount.Get(cts.Kit, req.BillAccountID)
+	if err != nil {
+		logs.Errorf("get gcp root account failed, rootAccountID: %s, err: %+v", req.AccountID, err)
+		return nil, err
+	}
+	if resAccountInfo.Extension == nil || resAccountInfo.Extension.CloudProjectID == "" {
+		return nil, fmt.Errorf("root account: %s cloud_project_id is empty", req.AccountID)
+	}
+
+	cli, err := b.ad.GcpRoot(cts.Kit, req.BillAccountID)
+	if err != nil {
+		logs.Errorf("gcp request adaptor client err, req: %+v, err: %+v", req, err)
+		return nil, err
+	}
+
+	opt := &typesBill.GcpBillListOption{
+		BillAccountID: req.BillAccountID,
+		AccountID:     req.AccountID,
+		Month:         req.Month,
+		BeginDate:     req.BeginDate,
+		EndDate:       req.EndDate,
+		ProjectID:     resAccountInfo.Extension.CloudProjectID,
+	}
+	if req.Page != nil {
+		opt.Page = &typesBill.GcpBillPage{
+			Offset: req.Page.Offset,
+			Limit:  req.Page.Limit,
+		}
+	}
+	resp, count, err := cli.GetRootAccountBillList(cts.Kit, opt, billInfo)
 	if err != nil {
 		return nil, err
 	}
