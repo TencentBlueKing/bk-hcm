@@ -418,14 +418,14 @@ func (mac *MainAccountController) ensureBillSummary(kt *kit.Kit, billYear, billM
 		return fmt.Errorf("main account bill summary for %s, %d-%d not found", mac.getKey(), billYear, billMonth)
 	}
 	mainSummary := result.Details[0]
-	if rootSummary.CurrentVersion != mainSummary.CurrentVersion ||
-		rootSummary.LastSyncedVersion != mainSummary.LastSyncedVersion {
+	if rootSummary.CurrentVersion != mainSummary.CurrentVersion {
+		req := &dsbillapi.BillSummaryMainUpdateReq{
+			ID:             mainSummary.ID,
+			CurrentVersion: rootSummary.CurrentVersion,
+			State:          constant.MainAccountBillSummaryStateAccounting,
+		}
 		if err = mac.Client.DataService().Global.Bill.UpdateBillSummaryMain(
-			kt, &dsbillapi.BillSummaryMainUpdateReq{
-				ID:                mainSummary.ID,
-				LastSyncedVersion: rootSummary.LastSyncedVersion,
-				CurrentVersion:    rootSummary.CurrentVersion,
-			}); err != nil {
+			kt, req); err != nil {
 			logs.Warnf("failed to update bill summary for main account (%s, %s, %s) in in (%d, %02d), err %s, rid: %s",
 				mac.RootAccountID, mac.MainAccountID, mac.Vendor, billYear, billMonth, err.Error(), kt.Rid)
 			return fmt.Errorf("failed to update bill summary for main account (%s, %s, %s) in in (%d, %02d), err %s",
