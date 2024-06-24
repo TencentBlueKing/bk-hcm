@@ -155,31 +155,11 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 			if !errf.IsRecordNotFound(err) {
 				return fmt.Errorf("failed to get flow by id %s, err %s", billTask.FlowID, err.Error())
 			}
+			return dp.createNewPullTask(kt, billTask)
 		}
 		// 如果flow失败了或者flow找不到了，则重新创建一个新的flow
-		if flow.State == enumor.FlowFailed || errf.IsRecordNotFound(err) {
-			flowResult, err := dp.Client.TaskServer().CreateCustomFlow(kt, &taskserver.AddCustomFlowReq{
-				Name: enumor.FlowPullRawBill,
-				Memo: "pull daily raw bill",
-				Tasks: []taskserver.CustomFlowTask{
-					dailypull.BuildDailyPullTask(
-						dp.RootAccountID,
-						dp.MainAccountID,
-						dp.BillAccountID,
-						dp.Vendor,
-						dp.BillYear,
-						dp.BillMonth,
-						billTask.BillDay,
-						dp.Version,
-					),
-				},
-			})
-			if err != nil {
-				return fmt.Errorf("failed to create custom flow, err %s", err.Error())
-			}
-			if err := dp.updateDailyPullTaskFlowID(kt, billTask.ID, flowResult.ID); err != nil {
-				return fmt.Errorf("update flow id failed, err %s", err.Error())
-			}
+		if flow.State == enumor.FlowFailed {
+			return dp.createNewPullTask(kt, billTask)
 		}
 	}
 	for _, day := range dayList {
@@ -193,6 +173,32 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 		}
 	}
 
+	return nil
+}
+
+func (dp *DailyPuller) createNewPullTask(kt *kit.Kit, billTask *bill.BillDailyPullTaskResult) error {
+	flowResult, err := dp.Client.TaskServer().CreateCustomFlow(kt, &taskserver.AddCustomFlowReq{
+		Name: enumor.FlowPullRawBill,
+		Memo: "pull daily raw bill",
+		Tasks: []taskserver.CustomFlowTask{
+			dailypull.BuildDailyPullTask(
+				dp.RootAccountID,
+				dp.MainAccountID,
+				dp.BillAccountID,
+				dp.Vendor,
+				dp.BillYear,
+				dp.BillMonth,
+				billTask.BillDay,
+				dp.Version,
+			),
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create custom flow, err %s", err.Error())
+	}
+	if err := dp.updateDailyPullTaskFlowID(kt, billTask.ID, flowResult.ID); err != nil {
+		return fmt.Errorf("update flow id failed, err %s", err.Error())
+	}
 	return nil
 }
 
