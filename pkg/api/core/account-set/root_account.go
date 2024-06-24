@@ -69,6 +69,8 @@ type GcpRootAccountExtension struct {
 	CloudServiceAccountName string `json:"cloud_service_account_name"`
 	CloudServiceSecretID    string `json:"cloud_service_secret_id"`
 	CloudServiceSecretKey   string `json:"cloud_service_secret_key,omitempty"`
+	CloudBillingAccount     string `json:"cloud_billing_account,omitempty" validate:"omitempty"`
+	CloudOrganization       string `json:"cloud_organization,omitempty" validate:"omitempty"`
 }
 
 // DecryptSecretKey ...

@@ -95,3 +95,11 @@ func NewLoadBalancerDefaultPollerOption() *poller.PollUntilDoneOption {
 		Retry:             retry.NewRetryPolicy(10, [2]uint{2000, 30000}),
 	}
 }
+
+// NewCreateMainAccountPollerOption 超时时间5分钟，10次之内重试间隔时间2s，10次之后重试间隔时间2-30s之间
+func NewCreateMainAccountPollerOption() *poller.PollUntilDoneOption {
+	return &poller.PollUntilDoneOption{
+		TimeoutTimeSecond: 5 * 60,
+		Retry:             retry.NewRetryPolicy(10, [2]uint{2000, 30000}),
+	}
+}
