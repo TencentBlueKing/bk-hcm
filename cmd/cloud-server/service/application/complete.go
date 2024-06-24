@@ -104,6 +104,15 @@ func (a *applicationSvc) CompleteForCreateMainAccount(cts *rest.Contexts) (inter
 	// complete
 	status, deliveryDetail, err := handler.Complete()
 	if err != nil {
+		deliverStatus = status
+		deliveryDetailStr, err = json.MarshalToString(deliveryDetail)
+		if err != nil {
+			logs.Errorf("marshal deliver detail failed, err: %v, detail: %+v, rid: %s", err, deliveryDetail, cts.Kit.Rid)
+
+			deliverStatus = enumor.DeliverError
+			deliveryDetailStr = `{"error": "marshal deliver detail failed"}`
+			return nil, err
+		}
 		return nil, err
 	}
 
