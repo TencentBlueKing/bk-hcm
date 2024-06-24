@@ -36,3 +36,13 @@ export const CURRENCY_MAP = {
   USD: '美元',
   RMB: '人民币',
 };
+
+// 一级账号账单汇总状态
+export const BILLS_ROOT_ACCOUNT_SUMMARY_STATE_MAP = {
+  accounting: '核算中',
+  accounted: '已核算',
+  confirmed: '已确认',
+  syncing: '同步中',
+  synced: '已同步',
+  stopped: '停止中',
+};

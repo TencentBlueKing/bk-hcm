@@ -1,4 +1,4 @@
-import { PropType, Ref, defineComponent, inject, ref } from 'vue';
+import { PropType, Ref, defineComponent, inject, ref, watch } from 'vue';
 import './index.scss';
 
 import { Button } from 'bkui-vue';
@@ -58,6 +58,10 @@ export default defineComponent({
       clearFilter();
       getListData(rules);
     };
+
+    watch([bill_year, bill_month], () => {
+      getListData();
+    });
 
     expose({ reloadTable });
 

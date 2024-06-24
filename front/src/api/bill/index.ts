@@ -6,13 +6,27 @@ import {
   BillsMainAccountSummaryResData,
   BillsRootAccountSummaryHistoryResData,
   BillsRootAccountSummaryResData,
+  BillsSummarySumResData,
 } from '@/typings/bill';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
-// 获取当月所有一级账号总金额（分vendor）
-export const reqBillsSummaryList = async (data: { bill_year: number; bill_month: number }) => {
-  return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/summarys/list`, data);
+// 获取当月筛选出来的一级账号总金额
+export const reqBillsRootAccountSummarySum = async (data: {
+  bill_year: number;
+  bill_month: number;
+  filter: FilterType;
+}): Promise<BillsSummarySumResData> => {
+  return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/root-account-summarys/sum`, data);
+};
+
+// 获取当月筛选出来的二级账号总金额
+export const reqBillsMainAccountSummarySum = async (data: {
+  bill_year: number;
+  bill_month: number;
+  filter: FilterType;
+}): Promise<BillsSummarySumResData> => {
+  return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/main-account-summarys/sum`, data);
 };
 
 // 拉取当月一级账号账单汇总
@@ -43,6 +57,15 @@ export const reqBillsMainAccountSummaryList = async (data: {
   page: IPageQuery;
 }): Promise<BillsMainAccountSummaryResData> => {
   return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/main-account-summarys/list`, data);
+};
+
+// 重新核算某个一级账号下所有账单数据
+export const reAccountBillsRootAccountSummary = async (data: {
+  bill_year: number;
+  bill_month: number;
+  root_account_id: string;
+}) => {
+  return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/root-account-summarys/reaccount`, data);
 };
 
 // 查询当月账单明细

@@ -86,7 +86,7 @@ export default defineComponent({
           {route.name !== 'billAdjust' && (
             <div>
               <div class={cssModule['search-label']}>{t('一级账号')}</div>
-              <PrimaryAccountSelector v-model={modal.value.root_account_id} />
+              <PrimaryAccountSelector v-model={modal.value.root_account_id} vendor={modal.value.vendor} />
             </div>
           )}
           <div>

@@ -524,6 +524,8 @@ export const VendorMap = {
   [VendorEnum.GCP]: '谷歌云',
   [VendorEnum.HUAWEI]: '华为云',
   [VendorEnum.TCLOUD]: '腾讯云',
+  [VendorEnum.ZENLAYER]: 'Zenlayer',
+  [VendorEnum.KAOPU]: '靠谱云',
 };
 
 export const VendorReverseMap = {
@@ -532,6 +534,8 @@ export const VendorReverseMap = {
   谷歌云: VendorEnum.GCP,
   华为云: VendorEnum.HUAWEI,
   腾讯云: VendorEnum.TCLOUD,
+  Zenlayer: VendorEnum.ZENLAYER,
+  靠谱云: VendorEnum.KAOPU,
 };
 
 export const SYNC_STAUS_MAP = {
