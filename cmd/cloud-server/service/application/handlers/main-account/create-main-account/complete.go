@@ -36,25 +36,25 @@ func (a *ApplicationOfCreateMainAccount) Complete() (enumor.ApplicationStatus, m
 	// Complete 的complete request 不能为空，其他情况可以为空
 	if a.completeReq == nil {
 		err := fmt.Errorf("complete request is nil cannot complete this application")
-		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
+		return enumor.Delivering, map[string]interface{}{"error": err.Error()}, err
 	}
 
 	// 验证complete request
 	if err := a.completeReq.Validate(); err != nil {
-		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
+		return enumor.Delivering, map[string]interface{}{"error": err.Error()}, err
 	}
 
 	// 验证complete request的vendor和create request的vendor是否匹配
 	if a.completeReq.Vendor != a.req.Vendor {
 		err := fmt.Errorf("complete request's vendor and create request's vendor not match")
-		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
+		return enumor.Delivering, map[string]interface{}{"error": err.Error()}, err
 	}
 
 	// 验证一级账号是否有效
 	rootAccount, err := a.Client.DataService().Global.RootAccount.GetBasicInfo(a.Cts.Kit, a.completeReq.RootAccountID)
 	if err != nil {
 		err := fmt.Errorf("cannot get root account info")
-		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
+		return enumor.Delivering, map[string]interface{}{"error": err.Error()}, err
 	}
 
 	var (
