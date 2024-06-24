@@ -56,6 +56,9 @@ func (b *billAdjustmentSvc) CreateBillAdjustmentItem(cts *rest.Contexts) (any, e
 
 	err := b.authorizer.AuthorizeWithPerm(cts.Kit,
 		meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.AccountBill, Action: meta.Create}})
+	if err != nil {
+		return nil, err
+	}
 
 	// 1. 校验一级账号和二级账号是否存在并匹配
 	rootAccountInfo, err := b.client.DataService().Global.RootAccount.GetBasicInfo(cts.Kit, req.RootAccountID)

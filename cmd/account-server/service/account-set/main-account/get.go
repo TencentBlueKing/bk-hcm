@@ -33,7 +33,7 @@ func (s *service) Get(cts *rest.Contexts) (interface{}, error) {
 	accountID := cts.PathParameter("account_id").String()
 
 	// 校验用户有该账号的查看权限
-	if err := s.checkPermission(cts, meta.Find, accountID); err != nil {
+	if err := s.checkMainAccountPermission(cts, meta.Find, accountID); err != nil {
 		return nil, err
 	}
 
@@ -86,7 +86,7 @@ func (s *service) Get(cts *rest.Contexts) (interface{}, error) {
 	}
 }
 
-func (s *service) checkPermission(cts *rest.Contexts, action meta.Action, accountID string) error {
+func (s *service) checkMainAccountPermission(cts *rest.Contexts, action meta.Action, accountID string) error {
 	return s.checkPermissions(cts, action, []string{accountID})
 }
 
