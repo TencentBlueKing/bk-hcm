@@ -78,6 +78,8 @@ func toProtoPullerResult(m *tablebill.AccountBillSummaryRoot) *dataproto.BillSum
 		AjustmentCost:             m.AjustmentCost.Decimal,
 		AjustmentRMBCost:          m.AjustmentRMBCost.Decimal,
 		State:                     m.State,
+		BkBizNum:                  m.BkBizNum,
+		ProductNum:                m.ProductNum,
 		CreatedAt:                 m.CreatedAt,
 		UpdatedAt:                 m.UpdatedAt,
 	}

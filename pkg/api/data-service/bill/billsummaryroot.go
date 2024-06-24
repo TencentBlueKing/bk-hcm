@@ -49,6 +49,8 @@ type BillSummaryRootCreateReq struct {
 	AjustmentCost             decimal.Decimal     `json:"adjustment_cost" validate:"omitempty"`
 	AjustmentRMBCost          decimal.Decimal     `json:"adjustment_rmb_cost" validate:"omitempty"`
 	Rate                      float64             `json:"rate" validate:"omitempty"`
+	BkBizNum                  uint64              `json:"bk_biz_num" validate:"omitempty"`
+	ProductNum                uint64              `json:"product_num" vaidate:"omitempty"`
 	State                     string              `json:"state" validate:"omitempty"`
 }
 
@@ -96,6 +98,8 @@ type BillSummaryRootResult struct {
 	AjustmentCost             decimal.Decimal     `json:"adjustment_cost" validate:"omitempty"`
 	AjustmentRMBCost          decimal.Decimal     `json:"adjustment_rmb_cost" validate:"omitempty"`
 	Rate                      float64             `json:"rate" validate:"required"`
+	BkBizNum                  uint64              `json:"bk_biz_num" validate:"omitempty"`
+	ProductNum                uint64              `json:"product_num" vaidate:"omitempty"`
 	State                     string              `json:"state" validate:"required"`
 	CreatedAt                 types.Time          `json:"created_at,omitempty"`
 	UpdatedAt                 types.Time          `json:"updated_at,omitempty"`
@@ -118,6 +122,8 @@ type BillSummaryRootUpdateReq struct {
 	AjustmentCost             decimal.Decimal     `json:"adjustment_cost" validate:"omitempty"`
 	AjustmentRMBCost          decimal.Decimal     `json:"adjustment_rmb_cost" validate:"omitempty"`
 	Rate                      float64             `json:"rate" validate:"omitempty"`
+	BkBizNum                  uint64              `json:"bk_biz_num" validate:"omitempty"`
+	ProductNum                uint64              `json:"product_num" vaidate:"omitempty"`
 	State                     string              `json:"state" validate:"omitempty"`
 }
 

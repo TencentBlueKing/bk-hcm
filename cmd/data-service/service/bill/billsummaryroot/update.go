@@ -61,6 +61,8 @@ func (svc *service) UpdateBillSummaryRoot(cts *rest.Contexts) (interface{}, erro
 		AjustmentCost:             &types.Decimal{Decimal: req.AjustmentCost},
 		AjustmentRMBCost:          &types.Decimal{Decimal: req.AjustmentRMBCost},
 		State:                     req.State,
+		BkBizNum:                  req.BkBizNum,
+		ProductNum:                req.ProductNum,
 	}
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		if err := svc.dao.AccountBillSummaryRoot().UpdateByIDWithTx(

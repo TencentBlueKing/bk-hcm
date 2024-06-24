@@ -60,6 +60,8 @@ func (svc *service) CreateBillSummaryRoot(cts *rest.Contexts) (interface{}, erro
 			MonthOnMonthValue:         req.MonthOnMonthValue,
 			CurrentMonthCost:          &types.Decimal{Decimal: req.CurrentMonthCost},
 			CurrentMonthRMBCost:       &types.Decimal{Decimal: req.CurrentMonthRMBCost},
+			BkBizNum:                  req.BkBizNum,
+			ProductNum:                req.ProductNum,
 			Rate:                      req.Rate,
 			AjustmentCost:             &types.Decimal{Decimal: req.AjustmentCost},
 			AjustmentRMBCost:          &types.Decimal{Decimal: req.AjustmentRMBCost},

@@ -93,6 +93,8 @@ func (act RootAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 	currentCost := decimal.NewFromFloat(0)
 	currentRMBCost := decimal.NewFromFloat(0)
 	isAccounted := true
+	bkBizNum := uint64(0)
+	productNum := uint64(0)
 	for _, mainSummary := range mainSummaryList {
 		if mainSummary.State != constant.MainAccountBillSummaryStateAccounted {
 			isAccounted = false
@@ -105,6 +107,12 @@ func (act RootAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 		currentCostRMBSynced = currentCostRMBSynced.Add(mainSummary.CurrentMonthCostSynced)
 		currentCost = currentCost.Add(mainSummary.CurrentMonthCost)
 		currentRMBCost = currentRMBCost.Add(mainSummary.CurrentMonthRMBCost)
+		if mainSummary.BkBizID > 0 {
+			bkBizNum = bkBizNum + 1
+		}
+		if mainSummary.ProductID > 0 {
+			productNum = productNum + 1
+		}
 	}
 	if isAccounted {
 		// 防止主账号账单汇总还没有创建的，判断都已经核算完成了
@@ -127,6 +135,8 @@ func (act RootAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 		CurrentMonthCost:          currentCost,
 		CurrentMonthRMBCost:       currentRMBCost,
 		Rate:                      rate,
+		BkBizNum:                  bkBizNum,
+		ProductNum:                productNum,
 	}
 	if !lastMonthSyncedCost.IsZero() {
 		req.MonthOnMonthValue = currentCostSynced.DivRound(lastMonthSyncedCost, 5).InexactFloat64()

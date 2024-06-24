@@ -52,6 +52,18 @@ func (req *RootAccountSummaryReaccountReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
+// RootAccountSummaryConfirmReq confirm request for root account summary
+type RootAccountSummaryConfirmReq struct {
+	BillYear      int    `json:"bill_year" validate:"required"`
+	BillMonth     int    `json:"bill_month" validate:"required"`
+	RootAccountID string `json:"root_account_id" validate:"required"`
+}
+
+// Validate ...
+func (req *RootAccountSummaryConfirmReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
 // RootAccountSummarySumReq get request for all account summary
 type RootAccountSummarySumReq struct {
 	BillYear  int                `json:"bill_year" validate:"required"`

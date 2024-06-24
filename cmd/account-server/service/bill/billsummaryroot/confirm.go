@@ -23,20 +23,15 @@ import (
 	"fmt"
 
 	asbillapi "hcm/pkg/api/account-server/bill"
-	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/bill"
-	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
-	"hcm/pkg/dal/dao/tools"
-	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 )
 
-// ReaccountRootAccountSummary reaccount root account summary
-func (s *service) ReaccountRootAccountSummary(cts *rest.Contexts) (interface{}, error) {
-	req := new(asbillapi.RootAccountSummaryReaccountReq)
+// ConfirmRootAccountSummary reaccount root account summary
+func (s *service) ConfirmRootAccountSummary(cts *rest.Contexts) (interface{}, error) {
+	req := new(asbillapi.RootAccountSummaryConfirmReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -44,20 +39,17 @@ func (s *service) ReaccountRootAccountSummary(cts *rest.Contexts) (interface{}, 
 	if err != nil {
 		return nil, err
 	}
-
 	if rootSummary.State != constant.RootAccountBillSummaryStateAccounted &&
-		rootSummary.State != constant.RootAccountBillSummaryStateConfirmed &&
-		rootSummary.State != constant.RootAccountBillSummaryStateSynced {
-		logs.Warnf("bill of root account %s in %d-%02d is in state %s, cannot do reaccount",
+		rootSummary.State != constant.RootAccountBillSummaryStateConfirmed {
+		logs.Warnf("bill of root account %s in %d-%02d is in state %s, cannot do confirm",
 			rootSummary.RootAccountID, req.BillYear, req.BillMonth, rootSummary.State)
-		return nil, fmt.Errorf("bill of root account %s %d-%02d is in state %s, cannot do reaccount",
+		return nil, fmt.Errorf("bill of root account %s %d-%02d is in state %s, cannot do confirm",
 			rootSummary.RootAccountID, req.BillYear, req.BillMonth, rootSummary.State)
 	}
 
 	updateReq := &bill.BillSummaryRootUpdateReq{
-		ID:             req.RootAccountID,
-		CurrentVersion: rootSummary.CurrentVersion + 1,
-		State:          constant.RootAccountBillSummaryStateAccounting,
+		ID:    req.RootAccountID,
+		State: constant.RootAccountBillSummaryStateConfirmed,
 	}
 	if err := s.client.DataService().Global.Bill.UpdateBillSummaryRoot(cts.Kit, updateReq); err != nil {
 		logs.Warnf("failed to update root account bill summary %s to version %d state %s, err %s, rid %s",
@@ -67,41 +59,4 @@ func (s *service) ReaccountRootAccountSummary(cts *rest.Contexts) (interface{}, 
 	logs.Infof("successfully update root account bill summary %s to version %d state %s, rid %s",
 		updateReq.ID, updateReq.CurrentVersion, updateReq.State, cts.Kit.Rid)
 	return nil, nil
-}
-
-func getRootSummary(
-	client *client.ClientSet, kt *kit.Kit,
-	rootAccountID string, billYear, billMonth int) (
-	*bill.BillSummaryRootResult, error) {
-
-	expressions := []*filter.AtomRule{
-		tools.RuleEqual("root_account_id", rootAccountID),
-		tools.RuleEqual("bill_year", billYear),
-		tools.RuleEqual("bill_month", billMonth),
-	}
-	rootSummaryList, err := client.DataService().Global.Bill.ListBillSummaryRoot(
-		kt, &bill.BillSummaryRootListReq{
-			Filter: tools.ExpressionAnd(expressions...),
-			Page: &core.BasePage{
-				Start: 0,
-				Limit: 1,
-			},
-		})
-	if err != nil {
-		logs.Warnf(
-			"list root account bill summary failed by req %s/%d/%d failed, err %s, rid: %s",
-			rootAccountID, billYear, billMonth, err.Error(), kt.Rid)
-		return nil, err
-	}
-	if len(rootSummaryList.Details) == 0 {
-		logs.Warnf("root account bill summary with %s/%d/%d no found, rid: %s",
-			rootAccountID, billYear, billMonth, kt.Rid)
-		return nil, fmt.Errorf("root account bill summary with %s/%d/%d no found, rid: %s",
-			rootAccountID, billYear, billMonth, kt.Rid)
-	}
-	if len(rootSummaryList.Details) != 1 {
-		logs.Warnf("invalid response length, resp %v, rid: %s", rootSummaryList.Details, kt.Rid)
-		return nil, fmt.Errorf("invalid response length, resp %v", rootSummaryList.Details)
-	}
-	return rootSummaryList.Details[0], nil
 }

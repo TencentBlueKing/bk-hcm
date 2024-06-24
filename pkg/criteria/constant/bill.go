@@ -34,6 +34,8 @@ const (
 	RootAccountBillSummaryStateAccounting = "accounting"
 	// RootAccountBillSummaryStateAccounted 已核算
 	RootAccountBillSummaryStateAccounted = "accounted"
+	// RootAccountBillSummaryStateConfirmed 已确认
+	RootAccountBillSummaryStateConfirmed = "confirmed"
 	// RootAccountBillSummaryStateSyncing 同步中
 	RootAccountBillSummaryStateSyncing = "syncing"
 	// RootAccountBillSummaryStateSynced 已同步

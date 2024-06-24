@@ -151,10 +151,35 @@ create index bill_item_index on account_bill_item(
   `version_id`
 );
 
-create index bill_item_index_create_at on account_bill_item(
-  `created_at`,
-  `updated_at`
+create index bill_item_index_root_account_id on account_bill_item(
+  `vendor`,
+  `bill_year`,
+  `bill_month`,
+  `root_account_id`
 );
+
+create index bill_item_index_created_at on account_bill_item(
+  `vendor`,
+  `bill_year`,
+  `bill_month`,
+  `created_at`
+);
+
+create index bill_item_index_main_account_id on account_bill_item(
+  `vendor`,
+  `bill_year`,
+  `bill_month`,
+  `main_account_id`
+);
+
+create index bill_item_index_product_id on account_bill_item(
+  `vendor`,
+  `bill_year`,
+  `bill_month`,
+  `product_id`
+);
+
+create index bill_item_index_create_at on account_bill_item(`created_at`, `updated_at`);
 
 insert into
   id_generator(`resource`, `max_id`)
@@ -249,6 +274,8 @@ create table if not exists `account_bill_summary_root` (
   `adjustment_cost` decimal(38, 10) not null,
   `adjustment_rmb_cost` decimal(38, 10) not null,
   `state` varchar(64) not null,
+  `bk_biz_num` bigint(1) not null,
+  `product_num` bigint(1) not null,
   `created_at` timestamp not null default current_timestamp,
   `updated_at` timestamp not null default current_timestamp on update current_timestamp,
   primary key (`id`),
