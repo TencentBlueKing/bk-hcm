@@ -1,10 +1,10 @@
-import { Ref, defineComponent, inject } from 'vue';
+import { Ref, defineComponent, inject, ref, watch } from 'vue';
 import Search from '../../components/search';
 import Button from '../../components/button';
 import Amount from '../../components/amount';
 import { useTable } from '@/hooks/useTable/useTable';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
-import { reqBillsMainAccountSummaryList } from '@/api/bill';
+import { reqBillsMainAccountSummaryList, reqBillsMainAccountSummarySum } from '@/api/bill';
 import { RulesItem } from '@/typings';
 
 export default defineComponent({
@@ -12,9 +12,10 @@ export default defineComponent({
   setup() {
     const bill_year = inject<Ref<number>>('bill_year');
     const bill_month = inject<Ref<number>>('bill_month');
+    const amountRef = ref();
 
     const { columns } = useColumns('billsMainAccountSummary');
-    const { CommonTable, getListData, clearFilter } = useTable({
+    const { CommonTable, getListData, clearFilter, filter } = useTable({
       searchOptions: { disabled: true },
       tableOptions: {
         columns,
@@ -33,6 +34,15 @@ export default defineComponent({
       getListData(rules);
     };
 
+    watch([bill_year, bill_month], () => {
+      getListData();
+      amountRef.value.refreshAmountInfo();
+    });
+
+    watch(filter, () => {
+      amountRef.value.refreshAmountInfo();
+    });
+
     return () => (
       <>
         <Search onSearch={reloadTable} />
@@ -40,7 +50,13 @@ export default defineComponent({
           <CommonTable>
             {{
               operation: () => <Button noSyncBtn />,
-              operationBarEnd: () => <Amount />,
+              operationBarEnd: () => (
+                <Amount
+                  ref={amountRef}
+                  api={reqBillsMainAccountSummarySum}
+                  payload={() => ({ bill_year: bill_year.value, bill_month: bill_month.value, filter })}
+                />
+              ),
             }}
           </CommonTable>
         </div>

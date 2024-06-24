@@ -123,8 +123,12 @@ export const useTable = (props: IProp) => {
    * @param type 资源类型
    * @param type 标志当前为独立的请求，无需合并之前的filter
    */
-  const getListData = async (customRules: Array<RulesItem> | (() => Array<RulesItem>) = [], type?: string, isInvidual = false) => {
-    buildFilter({ rules: typeof customRules === 'function' ? customRules() : customRules,  isInvidual});
+  const getListData = async (
+    customRules: Array<RulesItem> | (() => Array<RulesItem>) = [],
+    type?: string,
+    isInvidual = false,
+  ) => {
+    buildFilter({ rules: typeof customRules === 'function' ? customRules() : customRules, isInvidual });
     // 预览
     if (props.tableOptions.reviewData) {
       dataList.value = props.tableOptions.reviewData;
@@ -430,6 +434,7 @@ export const useTable = (props: IProp) => {
     sort,
     order,
     isLoading,
+    filter,
     clearFilter,
   };
 };
