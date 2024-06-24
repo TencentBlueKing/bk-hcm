@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/api/core"
 	dsbillapi "hcm/pkg/api/data-service/bill"
 	taskserver "hcm/pkg/api/task-server"
+	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -36,6 +37,8 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/serviced"
+	"hcm/pkg/tools/slice"
 )
 
 // MainAccountControllerOption option for MainAccountController
@@ -46,6 +49,7 @@ type MainAccountControllerOption struct {
 	ProductID     int64
 	BkBizID       int64
 	Client        *client.ClientSet
+	Sd            serviced.ServiceDiscover
 }
 
 // NewMainAccountController create new main account controller
@@ -55,6 +59,9 @@ func NewMainAccountController(opt *MainAccountControllerOption) (*MainAccountCon
 	}
 	if opt.Client == nil {
 		return nil, fmt.Errorf("client cannot be empty")
+	}
+	if opt.Sd == nil {
+		return nil, fmt.Errorf("servicediscovery cannot be empty")
 	}
 	if len(opt.MainAccountID) == 0 {
 		return nil, fmt.Errorf("main account id cannot be empty")
@@ -78,6 +85,7 @@ func NewMainAccountController(opt *MainAccountControllerOption) (*MainAccountCon
 	}
 	return &MainAccountController{
 		Client:           opt.Client,
+		Sd:               opt.Sd,
 		RootAccountID:    opt.RootAccountID,
 		MainAccountID:    opt.MainAccountID,
 		ProductID:        opt.ProductID,
@@ -91,6 +99,7 @@ func NewMainAccountController(opt *MainAccountControllerOption) (*MainAccountCon
 // MainAccountController main account controller
 type MainAccountController struct {
 	Client        *client.ClientSet
+	Sd            serviced.ServiceDiscover
 	RootAccountID string
 	MainAccountID string
 	ProductID     int64
@@ -186,6 +195,11 @@ func (mac *MainAccountController) runCalculateBillSummaryLoop(kt *kit.Kit) {
 }
 
 func (mac *MainAccountController) pollMainSummaryTask(subKit *kit.Kit, flowID string, billYear, billMonth int) string {
+	taskServerNameList, err := mac.Sd.GetServiceAllNodeKeys(cc.TaskServerName)
+	if err != nil {
+		logs.Warnf("get task server name list failed, err %s", err.Error())
+		return flowID
+	}
 	if len(flowID) == 0 {
 		result, err := mac.createMainSummaryTask(subKit, billYear, billMonth)
 		if err != nil {
@@ -205,7 +219,14 @@ func (mac *MainAccountController) pollMainSummaryTask(subKit *kit.Kit, flowID st
 		logs.Warnf("get flow by id %s failed, err %s, rid: %s", flowID, err.Error(), subKit.Rid)
 		return flowID
 	}
-	if flow.State == enumor.FlowSuccess || flow.State == enumor.FlowFailed {
+	// task server异常重启之后，已经处于scheduled的状态的flow永远不会执行
+	// 此处需要进行判断，如果flow的worker不在当前task 列表中，并且处于scheduled状态，则需要重新创建flow
+	if flow.State == enumor.FlowSuccess ||
+		flow.State == enumor.FlowFailed ||
+		(flow.State == enumor.FlowScheduled &&
+			flow.Worker != nil &&
+			!slice.IsItemInSlice[string](taskServerNameList, *flow.Worker)) {
+
 		result, err := mac.createMainSummaryTask(subKit, billYear, billMonth)
 		if err != nil {
 			logs.Warnf("create new main summary task for %s/%s/%s %d-%d failed, err %s, rid: %s",
@@ -269,7 +290,7 @@ func (mac *MainAccountController) syncDailyRawBill(kt *kit.Kit) error {
 		if err != nil {
 			return err
 		}
-		if err := curPuller.EnsurePullTask(kt, mac.Client, lastBillSummaryMain); err != nil {
+		if err := curPuller.EnsurePullTask(kt, mac.Client, mac.Sd, lastBillSummaryMain); err != nil {
 			return err
 		}
 	}
@@ -284,7 +305,7 @@ func (mac *MainAccountController) syncDailyRawBill(kt *kit.Kit) error {
 		if err != nil {
 			return err
 		}
-		if err := curPuller.EnsurePullTask(kt, mac.Client, billSummaryMain); err != nil {
+		if err := curPuller.EnsurePullTask(kt, mac.Client, mac.Sd, billSummaryMain); err != nil {
 			return err
 		}
 	}

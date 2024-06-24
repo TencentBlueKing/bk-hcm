@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/bill"
 	taskserver "hcm/pkg/api/task-server"
+	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -35,6 +36,8 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/serviced"
+	"hcm/pkg/tools/slice"
 
 	"github.com/shopspring/decimal"
 )
@@ -53,6 +56,7 @@ type DailyPuller struct {
 	// 账单延迟查询时间
 	BillDelay int
 	Client    *client.ClientSet
+	Sd        serviced.ServiceDiscover
 }
 
 func (dp *DailyPuller) getFilter(billDay int) *filter.Expression {
@@ -118,6 +122,11 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 	if err != nil {
 		return fmt.Errorf("get pull task for %v failed, err %s", dp, err.Error())
 	}
+	taskServerNameList, err := dp.Sd.GetServiceAllNodeKeys(cc.TaskServerName)
+	if err != nil {
+		logs.Warnf("get task server name list failed, err %s", err.Error())
+		return err
+	}
 	billTaskDayMap := make(map[int]struct{})
 	for _, billTask := range billTaskResult.Details {
 		billTaskDayMap[billTask.BillDay] = struct{}{}
@@ -158,7 +167,11 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 			return dp.createNewPullTask(kt, billTask)
 		}
 		// 如果flow失败了或者flow找不到了，则重新创建一个新的flow
-		if flow.State == enumor.FlowFailed {
+		if flow.State == enumor.FlowFailed ||
+			(flow.State == enumor.FlowScheduled &&
+				flow.Worker != nil &&
+				!slice.IsItemInSlice[string](taskServerNameList, *flow.Worker)) {
+
 			return dp.createNewPullTask(kt, billTask)
 		}
 	}

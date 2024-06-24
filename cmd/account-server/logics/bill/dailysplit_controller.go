@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/api/core"
 	dsbillapi "hcm/pkg/api/data-service/bill"
 	taskserver "hcm/pkg/api/task-server"
+	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -36,6 +37,8 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/serviced"
+	"hcm/pkg/tools/slice"
 )
 
 // NewMainDailySplitController create main account daily splitter controller
@@ -45,6 +48,9 @@ func NewMainDailySplitController(opt *MainAccountControllerOption) (*MainDailySp
 	}
 	if opt.Client == nil {
 		return nil, fmt.Errorf("client cannot be empty")
+	}
+	if opt.Sd == nil {
+		return nil, fmt.Errorf("servicediscovery cannot be empty")
 	}
 	if len(opt.MainAccountID) == 0 {
 		return nil, fmt.Errorf("main account id cannot be empty")
@@ -60,6 +66,7 @@ func NewMainDailySplitController(opt *MainAccountControllerOption) (*MainDailySp
 	}
 	return &MainDailySplitController{
 		Client:        opt.Client,
+		Sd:            opt.Sd,
 		RootAccountID: opt.RootAccountID,
 		MainAccountID: opt.MainAccountID,
 		ProductID:     opt.ProductID,
@@ -71,6 +78,7 @@ func NewMainDailySplitController(opt *MainAccountControllerOption) (*MainDailySp
 // MainDailySplitController main account daily summary controller
 type MainDailySplitController struct {
 	Client        *client.ClientSet
+	Sd            serviced.ServiceDiscover
 	RootAccountID string
 	MainAccountID string
 	ProductID     int64
@@ -158,13 +166,17 @@ func (msdc *MainDailySplitController) syncDailySplit(kt *kit.Kit, billYear, bill
 	if err != nil {
 		return err
 	}
-
 	curPuller, err := puller.GetPuller(summary.Vendor)
 	if err != nil {
 		return err
 	}
-	pullTaskList, err := curPuller.GetPullTaskList(kt, msdc.Client, summary)
+	pullTaskList, err := curPuller.GetPullTaskList(kt, msdc.Client, msdc.Sd, summary)
 	if err != nil {
+		return err
+	}
+	taskServerNameList, err := msdc.Sd.GetServiceAllNodeKeys(cc.TaskServerName)
+	if err != nil {
+		logs.Warnf("get task server name list failed, err %s", err.Error())
 		return err
 	}
 	for _, task := range pullTaskList {
@@ -192,7 +204,10 @@ func (msdc *MainDailySplitController) syncDailySplit(kt *kit.Kit, billYear, bill
 				if err != nil {
 					return fmt.Errorf("failed to get flow by id %s, err %s", task.SplitFlowID, err.Error())
 				}
-				if flow.State == enumor.FlowFailed {
+				if flow.State == enumor.FlowFailed ||
+					(flow.State == enumor.FlowScheduled &&
+						flow.Worker != nil &&
+						!slice.IsItemInSlice[string](taskServerNameList, *flow.Worker)) {
 					flowID, err := msdc.createDailySplitTask(kt, summary, billYear, billMonth, task.BillDay)
 					if err != nil {
 						logs.Warnf("create daily split task for %v, %d/%d/%d failed, err %s, rid: %s",

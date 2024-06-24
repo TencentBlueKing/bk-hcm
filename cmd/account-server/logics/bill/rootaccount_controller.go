@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/api/core"
 	dsbillapi "hcm/pkg/api/data-service/bill"
 	taskserver "hcm/pkg/api/task-server"
+	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -35,6 +36,8 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/serviced"
+	"hcm/pkg/tools/slice"
 )
 
 // RootAccountControllerOption option for RootAccountController
@@ -42,6 +45,7 @@ type RootAccountControllerOption struct {
 	RootAccountID string
 	Vendor        enumor.Vendor
 	Client        *client.ClientSet
+	Sd            serviced.ServiceDiscover
 }
 
 // NewRootAccountController create new root account controller
@@ -52,6 +56,9 @@ func NewRootAccountController(opt *RootAccountControllerOption) (*RootAccountCon
 	if opt.Client == nil {
 		return nil, fmt.Errorf("client cannot be empty")
 	}
+	if opt.Sd == nil {
+		return nil, fmt.Errorf("servicediscovery cannot be empty")
+	}
 	if len(opt.RootAccountID) == 0 {
 		return nil, fmt.Errorf("root account id cannot be empty")
 	}
@@ -60,6 +67,7 @@ func NewRootAccountController(opt *RootAccountControllerOption) (*RootAccountCon
 	}
 	return &RootAccountController{
 		Client:        opt.Client,
+		Sd:            opt.Sd,
 		RootAccountID: opt.RootAccountID,
 		Vendor:        opt.Vendor,
 	}, nil
@@ -67,6 +75,7 @@ func NewRootAccountController(opt *RootAccountControllerOption) (*RootAccountCon
 
 type RootAccountController struct {
 	Client        *client.ClientSet
+	Sd            serviced.ServiceDiscover
 	RootAccountID string
 	Vendor        enumor.Vendor
 
@@ -131,6 +140,11 @@ func (rac *RootAccountController) runCalculateBillSummaryLoop(kt *kit.Kit) {
 }
 
 func (rac *RootAccountController) pollRootSummaryTask(subKit *kit.Kit, flowID string, billYear, billMonth int) string {
+	taskServerNameList, err := rac.Sd.GetServiceAllNodeKeys(cc.TaskServerName)
+	if err != nil {
+		logs.Warnf("get task server name list failed, err %s", err.Error())
+		return flowID
+	}
 	if len(flowID) == 0 {
 		result, err := rac.createRootSummaryTask(subKit, billYear, billMonth)
 		if err != nil {
@@ -148,7 +162,12 @@ func (rac *RootAccountController) pollRootSummaryTask(subKit *kit.Kit, flowID st
 		logs.Warnf("get flow by id %s failed, err %s, rid: %s", flowID, err.Error(), subKit.Rid)
 		return flowID
 	}
-	if flow.State == enumor.FlowSuccess || flow.State == enumor.FlowFailed {
+	if flow.State == enumor.FlowSuccess ||
+		flow.State == enumor.FlowFailed ||
+		(flow.State == enumor.FlowScheduled &&
+			flow.Worker != nil &&
+			!slice.IsItemInSlice[string](taskServerNameList, *flow.Worker)) {
+
 		result, err := rac.createRootSummaryTask(subKit, billYear, billMonth)
 		if err != nil {
 			logs.Warnf("create new root summary task for %s/%s %d-%d failed, err %s, rid: %s",

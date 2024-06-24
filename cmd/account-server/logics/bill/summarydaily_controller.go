@@ -30,6 +30,7 @@ import (
 	"hcm/pkg/api/data-service/bill"
 	dsbillapi "hcm/pkg/api/data-service/bill"
 	taskserver "hcm/pkg/api/task-server"
+	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -37,6 +38,8 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/serviced"
+	"hcm/pkg/tools/slice"
 )
 
 // NewMainSummaryDailyController create main account daily splitter controller
@@ -46,6 +49,9 @@ func NewMainSummaryDailyController(opt *MainAccountControllerOption) (*MainSumma
 	}
 	if opt.Client == nil {
 		return nil, fmt.Errorf("client cannot be empty")
+	}
+	if opt.Sd == nil {
+		return nil, fmt.Errorf("servicediscovery cannot be empty")
 	}
 	if len(opt.MainAccountID) == 0 {
 		return nil, fmt.Errorf("main account id cannot be empty")
@@ -61,6 +67,7 @@ func NewMainSummaryDailyController(opt *MainAccountControllerOption) (*MainSumma
 	}
 	return &MainSummaryDailyController{
 		Client:        opt.Client,
+		Sd:            opt.Sd,
 		RootAccountID: opt.RootAccountID,
 		MainAccountID: opt.MainAccountID,
 		ProductID:     opt.ProductID,
@@ -72,6 +79,7 @@ func NewMainSummaryDailyController(opt *MainAccountControllerOption) (*MainSumma
 // MainSummaryDailyController main account daily summary controller
 type MainSummaryDailyController struct {
 	Client        *client.ClientSet
+	Sd            serviced.ServiceDiscover
 	RootAccountID string
 	MainAccountID string
 	Version       int
@@ -157,18 +165,21 @@ func (msdc *MainSummaryDailyController) getBillSummary(
 }
 
 func (msdc *MainSummaryDailyController) syncDailySummary(kt *kit.Kit, billYear, billMonth int) error {
-
 	summary, err := msdc.getBillSummary(kt, billYear, billMonth)
 	if err != nil {
 		return err
 	}
-
 	curPuller, err := puller.GetPuller(summary.Vendor)
 	if err != nil {
 		return err
 	}
-	pullTaskList, err := curPuller.GetPullTaskList(kt, msdc.Client, summary)
+	pullTaskList, err := curPuller.GetPullTaskList(kt, msdc.Client, msdc.Sd, summary)
 	if err != nil {
+		return err
+	}
+	taskServerNameList, err := msdc.Sd.GetServiceAllNodeKeys(cc.TaskServerName)
+	if err != nil {
+		logs.Warnf("get task server name list failed, err %s", err.Error())
 		return err
 	}
 	for _, task := range pullTaskList {
@@ -196,7 +207,11 @@ func (msdc *MainSummaryDailyController) syncDailySummary(kt *kit.Kit, billYear, 
 				if err != nil {
 					return fmt.Errorf("failed to get flow by id %s, err %s", task.DailySummaryFlowID, err.Error())
 				}
-				if flow.State == enumor.FlowFailed {
+				if flow.State == enumor.FlowFailed ||
+					(flow.State == enumor.FlowScheduled &&
+						flow.Worker != nil &&
+						!slice.IsItemInSlice[string](taskServerNameList, *flow.Worker)) {
+
 					flowID, err := msdc.createDailySummaryTask(kt, summary, billYear, billMonth, task.BillDay)
 					if err != nil {
 						logs.Warnf("create daily summary task for %v, %d/%d/%d failed, err %s, rid: %s",

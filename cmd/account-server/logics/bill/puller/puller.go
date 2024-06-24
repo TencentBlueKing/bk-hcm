@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
+	"hcm/pkg/serviced"
 )
 
 var (
@@ -46,9 +47,11 @@ func GetPuller(vendor enumor.Vendor) (Puller, error) {
 // Puller puller interface
 type Puller interface {
 	EnsurePullTask(
-		kt *kit.Kit, client *client.ClientSet, billSummaryMain *dsbillapi.BillSummaryMainResult) error
+		kt *kit.Kit, client *client.ClientSet,
+		sd serviced.ServiceDiscover, billSummaryMain *dsbillapi.BillSummaryMainResult) error
 	// 返回的map的key表示某个二级账号某月所有应该同步的天数的账单状态
 	GetPullTaskList(
-		kt *kit.Kit, client *client.ClientSet, billSummaryMain *dsbillapi.BillSummaryMainResult) (
+		kt *kit.Kit, client *client.ClientSet,
+		sd serviced.ServiceDiscover, billSummaryMain *dsbillapi.BillSummaryMainResult) (
 		[]*bill.BillDailyPullTaskResult, error)
 }

@@ -82,6 +82,7 @@ func (bm *BillManager) syncRootControllers() error {
 				RootAccountID: item.BaseRootAccount.ID,
 				Vendor:        item.Vendor,
 				Client:        bm.Client,
+				Sd:            bm.Sd,
 			}
 			ctrl, err := NewRootAccountController(&opt)
 			if err != nil {
@@ -122,6 +123,7 @@ func (bm *BillManager) syncMainControllers() error {
 				ProductID:     item.OpProductID,
 				Vendor:        item.Vendor,
 				Client:        bm.Client,
+				Sd:            bm.Sd,
 			}
 			ctrl, err := NewMainAccountController(&opt)
 			if err != nil {
