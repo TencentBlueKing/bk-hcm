@@ -136,50 +136,43 @@ create table if not exists `account_bill_item` (
   `reviser` varchar(64) not null,
   `created_at` timestamp not null default current_timestamp,
   `updated_at` timestamp not null default current_timestamp on update current_timestamp,
-  primary key (`id`)
+  primary key (`id`),
+  index `idx_bill_item` (
+    `vendor`,
+    `bill_year`,
+    `bill_month`,
+    `root_account_id`,
+    `product_id`,
+    `main_account_id`,
+    `bill_day`,
+    `bk_biz_id`,
+    `version_id`
+  ),
+  index `idx_bill_item_root_account_id` (
+    `vendor`,
+    `bill_year`,
+    `bill_month`,
+    `root_account_id`
+  ),
+  index `idx_bill_item_created_at` (
+    `vendor`,
+    `bill_year`,
+    `bill_month`,
+    `created_at`
+  ),
+  index `idx_bill_item__main_account_id` (
+    `vendor`,
+    `bill_year`,
+    `bill_month`,
+    `main_account_id`
+  ),
+  index `idx_bill_item_product_id` (
+    `vendor`,
+    `bill_year`,
+    `bill_month`,
+    `product_id`
+  )
 ) engine = innodb default charset = utf8mb4;
-
-create index bill_item_index on account_bill_item(
-  `vendor`,
-  `bill_year`,
-  `bill_month`,
-  `root_account_id`,
-  `product_id`,
-  `main_account_id`,
-  `bill_day`,
-  `bk_biz_id`,
-  `version_id`
-);
-
-create index bill_item_index_root_account_id on account_bill_item(
-  `vendor`,
-  `bill_year`,
-  `bill_month`,
-  `root_account_id`
-);
-
-create index bill_item_index_created_at on account_bill_item(
-  `vendor`,
-  `bill_year`,
-  `bill_month`,
-  `created_at`
-);
-
-create index bill_item_index_main_account_id on account_bill_item(
-  `vendor`,
-  `bill_year`,
-  `bill_month`,
-  `main_account_id`
-);
-
-create index bill_item_index_product_id on account_bill_item(
-  `vendor`,
-  `bill_year`,
-  `bill_month`,
-  `product_id`
-);
-
-create index bill_item_index_create_at on account_bill_item(`created_at`, `updated_at`);
 
 insert into
   id_generator(`resource`, `max_id`)
