@@ -17,7 +17,7 @@ export default defineComponent({
     const tabs = ref([
       { name: 'primary', label: t('一级账号'), Component: PrimaryAccount },
       { name: 'sub', label: t('二级账号'), Component: SubAccount },
-      { name: 'product', label: t('运营产品'), Component: OperationProduct },
+      { name: 'product', label: '业务', Component: OperationProduct },
     ]);
 
     return () => (

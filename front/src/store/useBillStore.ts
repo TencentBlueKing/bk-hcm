@@ -78,7 +78,7 @@ export default defineStore('billStore', () => {
    * @param id 账号id
    * @returns
    */
-  const main_account_detail = (id: string) => {
+  const main_account_detail = (id: string): Promise<IMainAccountDetailResponse> => {
     return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/main_accounts/${id}`);
   };
 
@@ -114,7 +114,8 @@ export default defineStore('billStore', () => {
     id: string; // 海曼单据编号
     vendor: 'aws' | 'gcp' | 'azure' | 'huawei' | 'zenlayer' | 'kaopu'; // 云厂商
     root_account_id: string; // 一级账号的id
-    extension?: CompleteExtension; // 扩展信息，根据云厂商传递的参数不一致
+    // extension?: CompleteExtension; // 扩展信息，根据云厂商传递的参数不一致
+    extension: any;
   }) => {
     return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/applications/types/complete_main_account`, data);
   };
@@ -130,7 +131,7 @@ export default defineStore('billStore', () => {
     managers?: string[]; // 选填，要变更成为的管理员列表
     bak_managers?: string[]; // 选填，要变更成为的备份负责人列表
     dept_id?: number; // 选填，要变更成为的部门id
-    op_product_id?: number; // 选填，要变更成为的运营产品id
+    op_product_id?: number; // 选填，要变更成为的业务ID
     bk_biz_id?: number; // 选填，要变更成为的业务id
   }) => {
     return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/applications/types/update_main_account`, data);
@@ -154,36 +155,6 @@ export default defineStore('billStore', () => {
     return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/applications/${application_id}`);
   };
 
-  /**
-   * 批量拉取运营产品列表
-   * @param data
-   * @returns
-   */
-  const list_operation_products = (data: {
-    op_product_ids?: number[]; // 运营产品ID列表
-    op_product_name?: string; // 运营产品名称，支持模糊搜索
-    dept_ids?: number[]; // 部门ID列表
-    bg_ids?: number[]; // 事业组ID列表
-    page: {
-      count: boolean; // 是否返回总记录数
-      start: number; // 记录开始位置
-      limit: number; // 每页限制条数，最大500，不能为0
-      sort?: string; // 排序字段
-      order?: 'ASC' | 'DESC'; // 排序顺序
-    };
-  }) => {
-    return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/operation_products/list`, data);
-  };
-
-  /**
-   * 获取运营产品详情
-   * @param op_product_id 运营产品ID
-   * @returns
-   */
-  const get_operation_product = (op_product_id: string) => {
-    return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/operation_products/${op_product_id}`);
-  };
-
   return {
     // 一级账号
     root_accounts_add,
@@ -199,9 +170,6 @@ export default defineStore('billStore', () => {
     // 单据
     list_applications,
     get_application,
-    // 运营产品
-    list_operation_products,
-    get_operation_product,
     // 通用list方法
     list,
   };
@@ -378,3 +346,65 @@ interface ZenlayerKaopuCompleteExtension {
 
 // Union Type for all possible complete extensions (单据信息填写)
 export type CompleteExtension = AzureCompleteExtension | HuaweiCompleteExtension | ZenlayerKaopuCompleteExtension;
+
+export interface IMainAccountDetailResponse {
+  data: IMainAccountDetail;
+}
+
+export interface IMainAccountDetail {
+  vendor?: string;
+  parent_account_id?: string;
+  id?: string;
+  cloud_id?: string;
+  site?: string;
+  email?: string;
+  managers?: string;
+  bak_managers?: string;
+  business_type?: string;
+  op_product_id?: number;
+  status?: string;
+  memo?: string;
+}
+
+export interface IRootAccountDetailExtension {
+  cloud_account_id?: string;
+  cloud_iam_username?: string;
+  cloud_secret_id?: string;
+  cloud_secret_key?: string;
+  email?: string;
+  cloud_project_id?: string;
+  cloud_project_name?: string;
+  cloud_service_account_id?: string;
+  cloud_service_account_name?: string;
+  cloud_service_secret_id?: string;
+  cloud_service_secret_key?: string;
+  display_name_name?: string;
+  cloud_tenant_id?: string;
+  cloud_subscription_id?: string;
+  cloud_subscription_name?: string;
+  cloud_application_id?: string;
+  cloud_application_name?: string;
+  cloud_client_secret_id?: string;
+  cloud_client_secret_key?: string;
+  cloud_main_account_name?: string;
+  cloud_sub_account_id?: string;
+  cloud_sub_account_name?: string;
+  cloud_iam_user_id?: string;
+}
+
+export interface IRootAccountDetail {
+  id?: string;
+  name?: string;
+  vendor?: string;
+  cloud_id?: string;
+  email?: string;
+  managers?: string;
+  bak_managers?: string;
+  site?: string;
+  memo?: string;
+  creator?: string;
+  reviser?: string;
+  created_at?: string;
+  updated_at?: string;
+  extension?: IRootAccountDetailExtension;
+}

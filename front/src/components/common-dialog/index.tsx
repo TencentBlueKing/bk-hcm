@@ -21,7 +21,7 @@ export default defineComponent({
       emit('update:isShow', isShow);
     };
     const handleConfirm = () => {
-      emit('update:isShow', false);
+      if (props.dialogType !== 'operation') emit('update:isShow', false);
       emit('handleConfirm');
     };
     return () => (

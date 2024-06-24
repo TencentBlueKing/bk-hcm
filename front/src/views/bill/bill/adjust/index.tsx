@@ -68,7 +68,7 @@ export default defineComponent({
         field: 'id',
       },
       {
-        label: t('运营产品'),
+        label: '业务',
         field: 'product_id',
       },
       {

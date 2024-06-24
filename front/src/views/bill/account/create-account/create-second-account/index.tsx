@@ -1,4 +1,4 @@
-import { defineComponent, ref } from 'vue';
+import { defineComponent, ref, watch } from 'vue';
 import './index.scss';
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import CommonCard from '@/components/CommonCard';
@@ -9,13 +9,11 @@ import { Success } from 'bkui-vue/lib/icon';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import MemberSelect from '@/components/MemberSelect';
 import { useUserStore } from '@/store';
-import BusinessSelector from '@/components/business-selector/index.vue';
 import useFormModel from '@/hooks/useFormModel';
 import useBillStore from '@/store/useBillStore';
 import { Extension_Name_Map } from './constants';
-import { useRouter } from 'vue-router';
-import { useOperationProducts } from '@/hooks/useOperationProducts';
-
+import { useRoute, useRouter } from 'vue-router';
+import BusinessSelector from '@/components/business-selector/index.vue';
 const { FormItem } = Form;
 
 export default defineComponent({
@@ -25,26 +23,27 @@ export default defineComponent({
     const isLoading = ref(false);
     const billStore = useBillStore();
     const router = useRouter();
+    const route = useRoute();
     const { formModel } = useFormModel({
       name: '', // 名字
       vendor: VendorEnum.AZURE, // 云厂商
       email: '', // 邮箱
       managers: [userStore.username], // 负责人数组
       bak_managers: [userStore.username], // 备份负责人数组
-      site: 'china', // 站点
+      site: 'international', // 站点
       // dept_id: '', // 组织架构ID
       memo: '', // 备忘录
       op_product_id: '',
-      bk_biz_id: '', // 业务
+      bk_biz_id: -1, // 业务
       // extension: {}, // 扩展字段对象
     });
-    const { OperationProductsSelector } = useOperationProducts();
     const handleSubmit = async () => {
       try {
         isLoading.value = true;
         await formInstance.value.validate();
-        await billStore.create_main_account({
+        const { data } = await billStore.create_main_account({
           ...formModel,
+          email: `${formModel.email}@tencent.com`,
           business_type: formModel.site,
           extension: {
             [Extension_Name_Map[formModel.vendor]]: formModel.name,
@@ -54,13 +53,28 @@ export default defineComponent({
           message: '创建成功',
           theme: 'success',
         });
-        router.go(-1);
+        router.push({
+          path: '/service/my-apply/detail',
+          query: {
+            ...route.query,
+            id: data.id,
+          },
+        });
       } catch (err) {
         // console.log(err);
       } finally {
         isLoading.value = false;
       }
     };
+
+    watch(
+      () => formModel.vendor,
+      () => {
+        if ([VendorEnum.AZURE, VendorEnum.GCP, VendorEnum.HUAWEI].includes(formModel.vendor)) {
+          formModel.site = 'international';
+        }
+      },
+    );
 
     return () => (
       <div class={'create-second-account-wrapper'}>
@@ -115,7 +129,17 @@ export default defineComponent({
                       </FormItem>
                       <FormItem label='站点类型' required property='site'>
                         <BkRadioGroup v-model={formModel.site}>
-                          <BkRadioButton label='china'>中国站</BkRadioButton>
+                          <BkRadioButton
+                            label='china'
+                            v-bk-tooltips={{
+                              disabled: ![VendorEnum.AZURE, VendorEnum.GCP, VendorEnum.HUAWEI].includes(
+                                formModel.vendor,
+                              ),
+                              content: '当前微软云、谷歌云、华为云的站点类型默认限制为“国际站”，“中国站”不可选 ',
+                            }}
+                            disabled={[VendorEnum.AZURE, VendorEnum.GCP, VendorEnum.HUAWEI].includes(formModel.vendor)}>
+                            中国站
+                          </BkRadioButton>
                           <BkRadioButton label='international'>国际站</BkRadioButton>
                         </BkRadioGroup>
                       </FormItem>
@@ -178,12 +202,12 @@ export default defineComponent({
                           }}
                         </Alert>
                       </FormItem> */}
-                      <FormItem label='业务' required property=''>
+                      {/* <FormItem label='业务' required property=''>
                         <BusinessSelector authed autoSelect v-model={formModel.bk_biz_id} />
-                      </FormItem>
+                      </FormItem> */}
 
-                      <FormItem label='运营产品' required property=''>
-                        <OperationProductsSelector v-model={formModel.op_product_id} />
+                      <FormItem label='业务' required property=''>
+                        <BusinessSelector v-model={formModel.op_product_id} />
                       </FormItem>
                       <div class={'account-manager-wrapper'}>
                         <FormItem label='主负责人' required property='managers' class={'account-manager'}>
@@ -218,7 +242,7 @@ export default defineComponent({
                     </Form>
                   </div>
                 </CommonCard>
-                <Button theme='primary' class={'mr8 ml24'} onClick={() => handleSubmit()}>
+                <Button theme='primary' class={'mr8 ml24'} onClick={() => handleSubmit()} loading={isLoading.value}>
                   提交
                 </Button>
                 <Button>取消</Button>

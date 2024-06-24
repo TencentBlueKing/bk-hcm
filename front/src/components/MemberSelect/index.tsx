@@ -114,6 +114,7 @@ export default defineComponent({
         saveKey='username'
         is-async-list
         searchKey={searchKey}
+        has-delete-icon
         // filterCallback={handleSearch}
         modelValue={props.modelValue}
         onChange={handleChange}

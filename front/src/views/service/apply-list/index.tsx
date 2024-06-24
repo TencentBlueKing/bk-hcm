@@ -30,7 +30,6 @@ export default defineComponent({
                 text
                 theme='primary'
                 onClick={() => {
-                  // 这里应该用 vendorHandler
                   router.push({
                     path: '/service/my-apply/detail',
                     query: {

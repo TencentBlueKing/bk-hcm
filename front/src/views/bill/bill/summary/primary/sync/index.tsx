@@ -30,7 +30,7 @@ export default defineComponent({
             <span class={cssModule.money}>xxx</span>
           </div>
           <div class={cssModule.item}>
-            <span>{t('运营产品数量')}</span>
+            <span>{'业务数量'}</span>
             <span class={cssModule.count}>xxx</span>
           </div>
         </section>
