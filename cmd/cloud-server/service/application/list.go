@@ -24,6 +24,9 @@ import (
 	"fmt"
 	"strings"
 
+	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/iam/meta"
+
 	"github.com/tidwall/gjson"
 
 	proto "hcm/pkg/api/cloud-server/application"
@@ -43,14 +46,23 @@ func (a *applicationSvc) List(cts *rest.Contexts) (interface{}, error) {
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-
-	// 构造过滤条件，只能查询自己的单据
-	reqFilter := &filter.Expression{
-		Op: filter.And,
-		Rules: []filter.RuleFactory{
-			filter.AtomRule{Field: "applicant", Op: filter.Equal.Factory(), Value: cts.Kit.User},
-		},
+	_, authorized, err := a.authorizer.Authorize(cts.Kit, meta.ResourceAttribute{Basic: &meta.Basic{
+		Type:   meta.Application,
+		Action: meta.Find,
+	}})
+	if err != nil {
+		return nil, err
 	}
+	// 构造过滤条件
+	reqFilter := &filter.Expression{
+		Op:    filter.And,
+		Rules: []filter.RuleFactory{},
+	}
+	if !authorized {
+		// 没有单据管理权限的只能查询自己的单据
+		req.Filter.Rules = append(req.Filter.Rules, tools.RuleEqual("applicant", cts.Kit.User))
+	}
+
 	// 加上请求里过滤条件
 	if req.Filter != nil && !req.Filter.IsEmpty() {
 		reqFilter.Rules = append(reqFilter.Rules, req.Filter)

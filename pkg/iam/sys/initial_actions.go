@@ -506,6 +506,14 @@ func genPlatformManageActions() []client.ResourceAction {
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
 		Version:              1,
+	}, {
+		ID:                   ApplicationManage,
+		Name:                 ActionIDNameMap[ApplicationManage],
+		NameEn:               "Application Manage",
+		Type:                 View,
+		RelatedResourceTypes: nil,
+		RelatedActions:       nil,
+		Version:              1,
 	},
 	}
 }

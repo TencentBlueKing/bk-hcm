@@ -184,8 +184,15 @@ func (b *billAdjustmentSvc) ListBillAdjustmentItem(cts *rest.Contexts) (any, err
 	}
 	// 填充主账号云id 和 email
 	for i, adjustmentItem := range resp.Details {
-		resp.Details[i].MainAccountCloudID = mainAccIDCloudIDMap[adjustmentItem.MainAccountID].CloudID
-		resp.Details[i].MainAccountEmail = mainAccIDCloudIDMap[adjustmentItem.MainAccountID].Email
+		mainAccount := mainAccIDCloudIDMap[adjustmentItem.MainAccountID]
+		if mainAccount == nil {
+			// Skip not found account info
+			logs.Warnf("main account of bill adjustment not found, main account id: %s, adjustment id: %s, rid: %s",
+				adjustmentItem.MainAccountID, adjustmentItem.ID, cts.Kit.Rid)
+			continue
+		}
+		resp.Details[i].MainAccountCloudID = mainAccount.CloudID
+		resp.Details[i].MainAccountEmail = mainAccount.Email
 	}
 	return resp, nil
 }

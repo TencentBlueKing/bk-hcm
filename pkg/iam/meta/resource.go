@@ -98,4 +98,7 @@ const (
 
 	// AccountBill 云账单管理
 	AccountBill ResourceType = "account_bill"
+
+	// Application 申请单据
+	Application ResourceType = "application"
 )
