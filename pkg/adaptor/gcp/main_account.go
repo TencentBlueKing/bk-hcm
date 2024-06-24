@@ -43,7 +43,10 @@ const (
 
 // CreateProject create project, if success, return project id.
 func (g *Gcp) CreateProject(kt *kit.Kit, name string, organization string) (projectId string, err error) {
-	// 根据name生成合规的ID
+	// Note: 根据name生成合规的ID，id自动生成出于以下考虑：
+	// 1.产品设计上只让用户输入name，id需要自动生成；
+	// 2.gcp页面上创建也可以只输入name，自动生成一个推荐的id（规则与hcm规则一致，后附6位随机数）。
+	// 3.由于没有gcp的id是否重复的校验接口，故通过2次随机降低创建失败概率
 	return g.createProjectWithId(kt, formatToProjectID(name), name, organization)
 }
 
