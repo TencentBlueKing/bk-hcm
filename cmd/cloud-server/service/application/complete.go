@@ -101,9 +101,19 @@ func (a *applicationSvc) CompleteForCreateMainAccount(cts *rest.Contexts) (inter
 	}
 
 	handler := createmainaccount.NewApplicationOfCreateMainAccount(opt, a.authorizer, originReq, completeReq)
-	// complete
+	// complete，如果在创建账号之前有错误，会返回错误，同时允许再次进行账号的录入，状态保持为交付中
 	status, deliveryDetail, err := handler.Complete()
 	if err != nil {
+		deliverStatus = status
+		marshalStr, mashalErr := json.MarshalToString(deliveryDetail)
+		if mashalErr != nil {
+			logs.Errorf("marshal deliver detail failed, err: %v, detail: %+v, rid: %s", mashalErr, deliveryDetail, cts.Kit.Rid)
+
+			deliverStatus = enumor.DeliverError
+			deliveryDetailStr = `{"error": "marshal deliver detail failed"}`
+			return nil, mashalErr
+		}
+		deliveryDetailStr = marshalStr
 		return nil, err
 	}
 

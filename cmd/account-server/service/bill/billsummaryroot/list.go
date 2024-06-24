@@ -24,11 +24,11 @@ import (
 	dsbillapi "hcm/pkg/api/data-service/bill"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 )
 
-// List list root account summary with options
+// ListRootAccountSummary list root account summary with options
 func (s *service) ListRootAccountSummary(cts *rest.Contexts) (interface{}, error) {
 	req := new(asbillapi.RootAccountSummaryListReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -37,21 +37,25 @@ func (s *service) ListRootAccountSummary(cts *rest.Contexts) (interface{}, error
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-	expressions := []filter.RuleFactory{
-		tools.RuleEqual("bill_year", req.BillYear),
-		tools.RuleEqual("bill_month", req.BillMonth),
-	}
-	if req.Filter != nil {
-		expressions = append(expressions, req.Filter)
-	}
-	bizFilter, err := tools.And(
-		expressions...)
+	err := s.authorizer.AuthorizeWithPerm(cts.Kit,
+		meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.AccountBill, Action: meta.Find}})
 	if err != nil {
 		return nil, err
 	}
 
+	var expression = tools.ExpressionAnd(
+		tools.RuleEqual("bill_year", req.BillYear),
+		tools.RuleEqual("bill_month", req.BillMonth),
+	)
+	if req.Filter != nil {
+		var err error
+		expression, err = tools.And(req.Filter, expression)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return s.client.DataService().Global.Bill.ListBillSummaryRoot(cts.Kit, &dsbillapi.BillSummaryRootListReq{
-		Filter: bizFilter,
+		Filter: expression,
 		Page:   req.Page,
 	})
 }

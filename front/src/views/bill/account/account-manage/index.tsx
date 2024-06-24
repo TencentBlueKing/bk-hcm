@@ -2,7 +2,7 @@ import { defineComponent, ref } from 'vue';
 import './index.scss';
 import { Button, Tab } from 'bkui-vue';
 import { BkTabPanel } from 'bkui-vue/lib/tab';
-import { AccountLevelEnum, reviewData, searchData, secondaryReviewData, secondarySearchData } from './constants';
+import { AccountLevelEnum, searchData, secondarySearchData } from './constants';
 import { useTable } from '@/hooks/useTable/useTable';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import CommonSideslider from '@/components/common-sideslider';
@@ -30,7 +30,7 @@ export default defineComponent({
         columns: [
           {
             label: '一级帐号名称',
-            field: 'primaryAccountName',
+            field: 'name',
             render: ({ data }: any) => (
               <Button
                 text
@@ -40,26 +40,28 @@ export default defineComponent({
                   curFirstLevelAccount.value = data;
                   isFirstLevelSideSliderShow.value = true;
                 }}>
-                {data.primaryAccountName}
+                {data.name}
               </Button>
             ),
           },
           ...firstAccountColumns,
         ],
-        reviewData,
       },
       searchOptions: {
         searchData,
       },
-      requestOption: {},
+      requestOption: {
+        type: 'account/root_accounts',
+        dataPath: 'data.details',
+      },
     });
 
     const { CommonTable: SecondaryLevelTable } = useTable({
       tableOptions: {
         columns: [
           {
-            label: '二级帐号名称',
-            field: 'secondaryAccountName',
+            label: '二级帐号ID',
+            field: 'id',
             render: ({ data }: any) => (
               <Button
                 text
@@ -68,18 +70,20 @@ export default defineComponent({
                   curSecondLeveleAccount.value = data;
                   isSecondLevelSideSliderShow.value = true;
                 }}>
-                {data.secondaryAccountName}
+                {data.id}
               </Button>
             ),
           },
           ...secondaryAccountColumns,
         ],
-        reviewData: secondaryReviewData,
       },
       searchOptions: {
         searchData: secondarySearchData,
       },
-      requestOption: {},
+      requestOption: {
+        type: 'account/main_accounts',
+        dataPath: 'data.details',
+      },
     });
 
     const tabs = [
@@ -134,7 +138,7 @@ export default defineComponent({
           width={640}
           title={'一级账号详情'}
           noFooter={true}>
-          <FirstLevelAccountDetail detail={curFirstLevelAccount.value} />
+          <FirstLevelAccountDetail accountId={curFirstLevelAccount.value.id} />
         </CommonSideslider>
 
         {/* 二级账号详情及编辑 */}
@@ -143,7 +147,7 @@ export default defineComponent({
           width={640}
           title={'二级账号详情'}
           noFooter={true}>
-          <SecondLevelAccountDetail detail={curSecondLeveleAccount.value} />
+          <SecondLevelAccountDetail accountId={curSecondLeveleAccount.value.id} />
         </CommonSideslider>
       </div>
     );

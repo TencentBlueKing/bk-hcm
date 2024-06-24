@@ -18,7 +18,9 @@ type Field = {
   copy?: boolean;
   edit?: boolean;
   type?: string;
+  prop?: string;
   tipsContent?: string;
+  type?: string;
   txtBtn?: (cell: string) => void;
   render?: (cell: string) => void;
 };
@@ -31,11 +33,15 @@ export default defineComponent({
 
   props: {
     fields: Array as PropType<Field[]>,
+    wide: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   emits: ['change'],
 
-  setup(_, { emit }) {
+  setup(props, { emit }) {
     const { t } = useI18n();
 
     const handleCopy = (val: string) => {
@@ -64,10 +70,10 @@ export default defineComponent({
     const handleblur = async (val: any, key: string) => {
       emit('change', { [key]: val });
     };
-
     return {
       handleCopy,
       handleblur,
+      props,
     };
   },
 
@@ -92,6 +98,7 @@ export default defineComponent({
     const renderEditTxt = (field: Field) => (
       <RenderDetailEdit
         modelValue={field.value}
+        fromType={field.type}
         needValidate={false}
         fromKey={field.prop}
         onChange={this.handleblur}></RenderDetailEdit>
@@ -133,11 +140,11 @@ export default defineComponent({
     };
 
     return (
-      <ul class='info-list-main g-scroller'>
+      <ul class={`info-list-main g-scroller`}>
         {this.fields.map((field) => {
           return (
             <>
-              <li class='info-list-item'>
+              <li class='info-list-item' style={this.props.wide ? { width: '80%' } : undefined}>
                 {field.tipsContent ? (
                   <div class='item-field has-tips'>
                     <span v-BkTooltips={{ content: field.tipsContent }}>{field.name}</span>

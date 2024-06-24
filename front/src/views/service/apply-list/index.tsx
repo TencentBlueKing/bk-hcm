@@ -1,4 +1,4 @@
-import { defineComponent, ref } from 'vue';
+import { computed, defineComponent, ref, watch } from 'vue';
 import './index.scss';
 import { useTable } from '@/hooks/useTable/useTable';
 import { APPLY_TYPES, searchData } from './constants';
@@ -13,7 +13,10 @@ export default defineComponent({
     const { columns } = useColumns('myApply');
     const router = useRouter();
     const route = useRoute();
-    const { CommonTable } = useTable({
+    const computedRules = computed(() => {
+      return APPLY_TYPES.find(({ name }) => name === applyType.value).rules;
+    });
+    const { CommonTable, getListData } = useTable({
       searchOptions: {
         searchData,
       },
@@ -32,6 +35,7 @@ export default defineComponent({
                     path: '/service/my-apply/detail',
                     query: {
                       ...route.query,
+                      id: data.id,
                     },
                   });
                 }}>
@@ -46,6 +50,12 @@ export default defineComponent({
         type: 'applications',
       },
     });
+    watch(
+      () => applyType.value,
+      () => {
+        getListData(applyType.value === 'all' ? [] : computedRules.value, 'applications', true);
+      },
+    );
     return () => (
       <div class={'apply-list-wrapper'}>
         <Tab type='unborder-card' v-model:active={applyType.value} class={'header-tab'}>

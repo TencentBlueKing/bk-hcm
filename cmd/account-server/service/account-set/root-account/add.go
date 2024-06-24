@@ -146,6 +146,7 @@ func (s *service) addForGcp(cts *rest.Contexts, req *proto.RootAccountAddReq) (s
 			DeptID:      req.DeptID,
 			Memo:        req.Memo,
 			Extension: &dataproto.GcpRootAccountExtensionCreateReq{
+				Email:                   req.Extension["email"],
 				CloudProjectID:          req.Extension["cloud_project_id"],
 				CloudProjectName:        req.Extension["cloud_project_name"],
 				CloudServiceAccountID:   req.Extension["cloud_service_account_id"],
@@ -174,6 +175,7 @@ func (s *service) addForAzure(cts *rest.Contexts, req *proto.RootAccountAddReq) 
 			DeptID:      req.DeptID,
 			Memo:        req.Memo,
 			Extension: &dataproto.AzureRootAccountExtensionCreateReq{
+				DisplayNameName:       req.Extension["display_name_name"],
 				CloudTenantID:         req.Extension["cloud_tenant_id"],
 				CloudSubscriptionID:   req.Extension["cloud_subscription_id"],
 				CloudSubscriptionName: req.Extension["cloud_subscription_name"],

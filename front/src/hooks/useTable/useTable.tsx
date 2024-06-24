@@ -16,6 +16,7 @@ import { get as lodash_get } from 'lodash-es';
 import { VendorReverseMap } from '@/common/constant';
 import { LB_NETWORK_TYPE_REVERSE_MAP, LISTENER_BINDING_STATUS_REVERSE_MAP, SCHEDULER_REVERSE_MAP } from '@/constants';
 import usePagination from '../usePagination';
+import useBillStore from '@/store/useBillStore';
 import { defaults } from 'lodash';
 import { fetchData } from '@pluginHandler/useTable';
 
@@ -120,9 +121,14 @@ export const useTable = (props: IProp) => {
    * 请求表格数据
    * @param customRules 自定义规则
    * @param type 资源类型
+   * @param type 标志当前为独立的请求，无需合并之前的filter
    */
-  const getListData = async (customRules: Array<RulesItem> | (() => Array<RulesItem>) = [], type?: string) => {
-    buildFilter({ rules: typeof customRules === 'function' ? customRules() : customRules });
+  const getListData = async (
+    customRules: Array<RulesItem> | (() => Array<RulesItem>) = [],
+    type?: string,
+    isInvidual = false,
+  ) => {
+    buildFilter({ rules: typeof customRules === 'function' ? customRules() : customRules, isInvidual });
     // 预览
     if (props.tableOptions.reviewData) {
       dataList.value = props.tableOptions.reviewData;
@@ -132,7 +138,8 @@ export const useTable = (props: IProp) => {
 
     try {
       // 判断是业务下, 还是资源下
-      const api = whereAmI.value === Senarios.business ? businessStore.list : resourceStore.list;
+      let api = whereAmI.value === Senarios.business ? businessStore.list : resourceStore.list;
+      if (whereAmI.value === Senarios.bill) api = useBillStore().list;
       const [detailsRes, countRes] = await fetchData({ api, pagination, sort, order, filter, props, type });
 
       // 更新数据
@@ -269,8 +276,9 @@ export const useTable = (props: IProp) => {
     rules: Array<RulesItem>; // 规则列表
     deleteOption?: { field: string; flagValue: any }; // 删除选项(可选, 用于 tab 切换时, 删除规则)
     differenceFields?: string[]; // search-select 移除条件时的搜索字段差集(只用于 search-select 组件)
+    isInvidual?: Boolean; // 标志当前为独立的请求，无需合并之前的filter
   }) => {
-    const { rules, deleteOption, differenceFields } = options;
+    const { rules, deleteOption, differenceFields, isInvidual } = options;
     const filterMap = new Map();
     // 先添加新的规则
     rules.forEach((rule) => {
@@ -288,11 +296,13 @@ export const useTable = (props: IProp) => {
       }
     });
     // 后添加 filter 的规则
-    filter.rules.forEach((rule) => {
-      if (!filterMap.get(rule.field) && !rule.rules) {
-        filterMap.set(rule.field, rule);
-      }
-    });
+    if (!isInvidual) {
+      filter.rules.forEach((rule) => {
+        if (!filterMap.get(rule.field) && !rule.rules) {
+          filterMap.set(rule.field, rule);
+        }
+      });
+    }
     // 如果配置了 deleteOption, 则当符合条件时, 删除对应规则
     if (deleteOption) {
       const { field, flagValue } = deleteOption;
@@ -424,6 +434,7 @@ export const useTable = (props: IProp) => {
     sort,
     order,
     isLoading,
+    filter,
     clearFilter,
   };
 };

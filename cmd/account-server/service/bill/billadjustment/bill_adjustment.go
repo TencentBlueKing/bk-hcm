@@ -56,6 +56,9 @@ func (b *billAdjustmentSvc) CreateBillAdjustmentItem(cts *rest.Contexts) (any, e
 
 	err := b.authorizer.AuthorizeWithPerm(cts.Kit,
 		meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.AccountBill, Action: meta.Create}})
+	if err != nil {
+		return nil, err
+	}
 
 	// 1. 校验一级账号和二级账号是否存在并匹配
 	rootAccountInfo, err := b.client.DataService().Global.RootAccount.GetBasicInfo(cts.Kit, req.RootAccountID)
@@ -184,8 +187,15 @@ func (b *billAdjustmentSvc) ListBillAdjustmentItem(cts *rest.Contexts) (any, err
 	}
 	// 填充主账号云id 和 email
 	for i, adjustmentItem := range resp.Details {
-		resp.Details[i].MainAccountCloudID = mainAccIDCloudIDMap[adjustmentItem.MainAccountID].CloudID
-		resp.Details[i].MainAccountEmail = mainAccIDCloudIDMap[adjustmentItem.MainAccountID].Email
+		mainAccount := mainAccIDCloudIDMap[adjustmentItem.MainAccountID]
+		if mainAccount == nil {
+			// Skip not found account info
+			logs.Warnf("main account of bill adjustment not found, main account id: %s, adjustment id: %s, rid: %s",
+				adjustmentItem.MainAccountID, adjustmentItem.ID, cts.Kit.Rid)
+			continue
+		}
+		resp.Details[i].MainAccountCloudID = mainAccount.CloudID
+		resp.Details[i].MainAccountEmail = mainAccount.Email
 	}
 	return resp, nil
 }
