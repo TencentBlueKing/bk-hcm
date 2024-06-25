@@ -67,4 +67,12 @@ const (
 	MainAccountRawBillPullStateAccounted = "accounted"
 	// MainAccountRawBillPullStateStop 停止中
 	MainAccountRawBillPullStateStop = "stopped"
+
+	// 云账单同步状态
+	// BillSyncRecordStateSyncing 同步中
+	BillSyncRecordStateSyncing = "asyncing"
+	// BillSyncRecordStateSynced 已同步
+	BillSyncRecordStateSynced = "synced"
+	// BillSyncRecordStateFailed 同步失败
+	BillSyncRecordStateFailed = "failed"
 )
