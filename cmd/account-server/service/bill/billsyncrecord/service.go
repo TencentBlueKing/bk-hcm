@@ -17,31 +17,38 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package billsummaryroot ...
-package billsummaryroot
+package billsyncrecord
 
 import (
 	"net/http"
 
-	"hcm/cmd/data-service/service/capability"
-	"hcm/pkg/dal/dao"
+	"hcm/cmd/account-server/logics/audit"
+	"hcm/cmd/account-server/service/capability"
+	"hcm/pkg/client"
+	"hcm/pkg/iam/auth"
 	"hcm/pkg/rest"
 )
 
-// InitService initialize the bill summary service
-func InitService(cap *capability.Capability) {
+// InitService initial the main account service
+func InitService(c *capability.Capability) {
 	svc := &service{
-		dao: cap.Dao,
+		client:     c.ApiClient,
+		authorizer: c.Authorizer,
+		audit:      c.Audit,
 	}
-	h := rest.NewHandler()
-	h.Add("CreateBillSummaryRoot", http.MethodPost, "/bills/summaryroots", svc.CreateBillSummaryRoot)
-	h.Add("UpdateBillSummaryRoot", http.MethodPut, "/bills/summaryroots", svc.UpdateBillSummaryRoot)
-	h.Add("ListBillSummaryRoot", http.MethodGet, "/bills/summaryroots", svc.ListBillSummaryRoot)
-	h.Add("BatchSyncBillSummaryRoot", http.MethodPost, "bills/summaryroots/batchsync", svc.BatchSyncBillSummaryRoot)
 
-	h.Load(cap.WebService)
+	h := rest.NewHandler()
+
+	// register handler
+	h.Add("ListSyncRecord", http.MethodPost, "/bills/sync_records/list", svc.ListSyncRecord)
+	h.Add("CreateSyncRecord",
+		http.MethodPost, "/bills/sync_records", svc.CreateSyncRecord)
+
+	h.Load(c.WebService)
 }
 
 type service struct {
-	dao dao.Set
+	client     *client.ClientSet
+	authorizer auth.Authorizer
+	audit      audit.Interface
 }

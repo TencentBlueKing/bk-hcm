@@ -82,3 +82,9 @@ type ListAccountBillExchangeRateDetails struct {
 	Count   uint64                              `json:"count,omitempty"`
 	Details []tablebill.AccountBillExchangeRate `json:"details,omitempty"`
 }
+
+// ListAccountBillSyncRecordDetails list account bill sync record details
+type ListAccountBillSyncRecordDetails struct {
+	Count   uint64                            `json:"count,omitempty"`
+	Details []tablebill.AccountBillSyncRecord `json:"details,omitempty"`
+}

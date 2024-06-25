@@ -131,3 +131,15 @@ type BillSummaryRootUpdateReq struct {
 func (req *BillSummaryRootUpdateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// BillSummaryBatchSyncReq batch sync request
+type BillSummaryBatchSyncReq struct {
+	Vendor    enumor.Vendor `json:"vendor" validate:"required"`
+	BillYear  int           `json:"bill_year" validate:"required"`
+	BillMonth int           `json:"bill_month" validate:"required"`
+}
+
+// Validate ...
+func (req *BillSummaryBatchSyncReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

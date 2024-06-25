@@ -36,6 +36,7 @@ import (
 	"hcm/cmd/account-server/service/bill/billitem"
 	"hcm/cmd/account-server/service/bill/billsummarymain"
 	"hcm/cmd/account-server/service/bill/billsummaryroot"
+	"hcm/cmd/account-server/service/bill/billsyncrecord"
 	"hcm/cmd/account-server/service/capability"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
@@ -195,6 +196,7 @@ func (s *Service) apiSet() *restful.Container {
 	billsummarymain.InitService(c)
 	billitem.InitBillItemService(c)
 	billadjustment.InitBillAdjustmentService(c)
+	billsyncrecord.InitService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

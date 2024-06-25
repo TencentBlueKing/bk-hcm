@@ -44,6 +44,7 @@ import (
 type AccountBillSummaryRoot interface {
 	CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, datas []*tablebill.AccountBillSummaryRoot) ([]string, error)
 	List(kt *kit.Kit, opt *types.ListOption) (*typesbill.ListAccountBillSummaryRootDetails, error)
+	ListWithTx(kt *kit.Kit, tx *sqlx.Tx, opt *types.ListOption) (*typesbill.ListAccountBillSummaryRootDetails, error)
 	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, billID string, updateData *tablebill.AccountBillSummaryRoot) error
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error
 }
@@ -85,6 +86,51 @@ func (a AccountBillSummaryRootDao) CreateWithTx(
 	}
 
 	return ids, nil
+}
+
+// ListWithTx list summary root with tx.
+func (dao AccountBillSummaryRootDao) ListWithTx(kt *kit.Kit, tx *sqlx.Tx,
+	opt *types.ListOption) (*typesbill.ListAccountBillSummaryRootDetails, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "list account bill summary of root account options is nil")
+	}
+
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tablebill.AccountBillSummaryRootColumns.ColumnTypes())),
+		core.NewDefaultPageOption()); err != nil {
+		return nil, err
+	}
+
+	whereExpr, whereValue, err := opt.Filter.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	if err != nil {
+		return nil, err
+	}
+
+	if opt.Page.Count {
+		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.AccountBillSummaryRootTable, whereExpr)
+		count, err := dao.Orm.Txn(tx).Count(kt.Ctx, sql, whereValue)
+		if err != nil {
+			logs.ErrorJson("count account bill summary of root account failed, err: %v, filter: %s, rid: %s",
+				err, opt.Filter, kt.Rid)
+			return nil, err
+		}
+
+		return &typesbill.ListAccountBillSummaryRootDetails{Count: count}, nil
+	}
+
+	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
+	if err != nil {
+		return nil, err
+	}
+
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tablebill.AccountBillSummaryRootColumns.FieldsNamedExpr(opt.Fields),
+		table.AccountBillSummaryRootTable, whereExpr, pageExpr)
+
+	details := make([]tablebill.AccountBillSummaryRoot, 0)
+	if err = dao.Orm.Txn(tx).Select(kt.Ctx, &details, sql, whereValue); err != nil {
+		return nil, err
+	}
+	return &typesbill.ListAccountBillSummaryRootDetails{Details: details}, nil
 }
 
 // List get account bill summary of root account list.

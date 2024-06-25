@@ -321,6 +321,28 @@ create table account_bill_exchange_rate
 insert into id_generator(`resource`, `max_id`)
 values ('account_bill_exchange_rate', '0');
 
+create table `account_bill_sync_record`
+(
+    `id`         varchar(64)     not null,
+    `vendor`     varchar(16)     not null default '',
+    `bill_year`  int             not null,
+    `bill_month` int             not null,
+    `state`      varchar(64)     not null,
+    `currency`   varchar(32)     not null comment '货币',
+    `cost`       decimal(38, 10) not null,
+    `rmb_cost`   decimal(38, 10) not null,
+    `detail`     text            not null,
+    `operator`   varchar(64)     not null,
+    `creator`    varchar(64)     not null,
+    `reviser`    varchar(64)     not null,
+    `created_at` timestamp       not null default current_timestamp,
+    `updated_at` timestamp       not null default current_timestamp on update current_timestamp,
+    primary key (`id`)
+) comment '同步记录';
+
+insert into id_generator(`resource`, `max_id`)
+values ('account_bill_sync_record', '0');
+
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
 SELECT 'v9.9.9' as `hcm_ver`,
        '9999'   as `sql_ver`;

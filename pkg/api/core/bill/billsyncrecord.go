@@ -17,31 +17,26 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package billsummaryroot ...
-package billsummaryroot
+package bill
 
 import (
-	"net/http"
+	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/enumor"
 
-	"hcm/cmd/data-service/service/capability"
-	"hcm/pkg/dal/dao"
-	"hcm/pkg/rest"
+	"github.com/shopspring/decimal"
 )
 
-// InitService initialize the bill summary service
-func InitService(cap *capability.Capability) {
-	svc := &service{
-		dao: cap.Dao,
-	}
-	h := rest.NewHandler()
-	h.Add("CreateBillSummaryRoot", http.MethodPost, "/bills/summaryroots", svc.CreateBillSummaryRoot)
-	h.Add("UpdateBillSummaryRoot", http.MethodPut, "/bills/summaryroots", svc.UpdateBillSummaryRoot)
-	h.Add("ListBillSummaryRoot", http.MethodGet, "/bills/summaryroots", svc.ListBillSummaryRoot)
-	h.Add("BatchSyncBillSummaryRoot", http.MethodPost, "bills/summaryroots/batchsync", svc.BatchSyncBillSummaryRoot)
-
-	h.Load(cap.WebService)
-}
-
-type service struct {
-	dao dao.Set
+// SyncRecord 同步记录
+type SyncRecord struct {
+	ID        string              `json:"id,omitempty"`
+	Vendor    enumor.Vendor       `json:"vendor"`
+	BillYear  int                 `json:"bill_year"`
+	BillMonth int                 `json:"bill_month"`
+	State     string              `json:"state"`
+	Currency  enumor.CurrencyCode `json:"currency" `
+	Cost      decimal.Decimal     `json:"cost"`
+	RMBCost   decimal.Decimal     `json:"rmb_cost"`
+	Detail    string              `json:"detail"`
+	Operator  string              `json:"operator"`
+	core.Revision
 }

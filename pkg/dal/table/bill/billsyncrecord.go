@@ -61,7 +61,7 @@ type AccountBillSyncRecord struct {
 	// State 同步状态
 	State string `db:"state" json:"state"`
 	// Currency 币种
-	Currency string `db:"currency" json:"currency"`
+	Currency enumor.CurrencyCode `db:"currency" json:"currency"`
 	// Cost 账单
 	Cost *types.Decimal `db:"cost" json:"cost"`
 	// RMBCost 人民币账单

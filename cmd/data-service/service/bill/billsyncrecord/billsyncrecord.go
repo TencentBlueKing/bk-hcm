@@ -17,27 +17,26 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package billsummaryroot ...
-package billsummaryroot
+// Package billsyncrecord ...
+package billsyncrecord
 
 import (
-	"net/http"
-
 	"hcm/cmd/data-service/service/capability"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/rest"
+	"net/http"
 )
 
-// InitService initialize the bill summary service
+// InitService initialize the bill adjustment item service
 func InitService(cap *capability.Capability) {
 	svc := &service{
 		dao: cap.Dao,
 	}
 	h := rest.NewHandler()
-	h.Add("CreateBillSummaryRoot", http.MethodPost, "/bills/summaryroots", svc.CreateBillSummaryRoot)
-	h.Add("UpdateBillSummaryRoot", http.MethodPut, "/bills/summaryroots", svc.UpdateBillSummaryRoot)
-	h.Add("ListBillSummaryRoot", http.MethodGet, "/bills/summaryroots", svc.ListBillSummaryRoot)
-	h.Add("BatchSyncBillSummaryRoot", http.MethodPost, "bills/summaryroots/batchsync", svc.BatchSyncBillSummaryRoot)
+	h.Add("CreateBillSyncRecord", http.MethodPost, "/bills/sync_records/create", svc.CreateBillSyncRecord)
+	h.Add("DeleteBillSyncRecord", http.MethodDelete, "/bills/sync_records", svc.DeleteBillSyncRecord)
+	h.Add("UpdateBillSyncRecord", http.MethodPut, "/bills/sync_records", svc.UpdateBillSyncRecord)
+	h.Add("ListBillSyncRecord", http.MethodPost, "/bills/sync_records/list", svc.ListBillSyncRecord)
 
 	h.Load(cap.WebService)
 }

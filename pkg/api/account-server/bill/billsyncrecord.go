@@ -17,31 +17,22 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package billsummaryroot ...
-package billsummaryroot
+// Package bill ...
+package bill
 
 import (
-	"net/http"
-
-	"hcm/cmd/data-service/service/capability"
-	"hcm/pkg/dal/dao"
-	"hcm/pkg/rest"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/validator"
 )
 
-// InitService initialize the bill summary service
-func InitService(cap *capability.Capability) {
-	svc := &service{
-		dao: cap.Dao,
-	}
-	h := rest.NewHandler()
-	h.Add("CreateBillSummaryRoot", http.MethodPost, "/bills/summaryroots", svc.CreateBillSummaryRoot)
-	h.Add("UpdateBillSummaryRoot", http.MethodPut, "/bills/summaryroots", svc.UpdateBillSummaryRoot)
-	h.Add("ListBillSummaryRoot", http.MethodGet, "/bills/summaryroots", svc.ListBillSummaryRoot)
-	h.Add("BatchSyncBillSummaryRoot", http.MethodPost, "bills/summaryroots/batchsync", svc.BatchSyncBillSummaryRoot)
-
-	h.Load(cap.WebService)
+// BillSyncRecordCreateReq create request
+type BillSyncRecordCreateReq struct {
+	Vendor    enumor.Vendor `json:"vendor" validate:"required"`
+	BillYear  int           `json:"bill_year" validate:"required"`
+	BillMonth int           `json:"bill_month" validate:"required"`
 }
 
-type service struct {
-	dao dao.Set
+// Validate ...
+func (c *BillSyncRecordCreateReq) Validate() error {
+	return validator.Validate.Struct(c)
 }
