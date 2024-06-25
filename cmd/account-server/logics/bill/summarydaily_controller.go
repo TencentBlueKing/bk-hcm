@@ -177,7 +177,7 @@ func (msdc *MainSummaryDailyController) syncDailySummary(kt *kit.Kit, billYear, 
 	if err != nil {
 		return err
 	}
-	taskServerNameList, err := msdc.Sd.GetServiceAllNodeKeys(cc.TaskServerName)
+	taskServerNameList, err := getTaskServerKeyList(msdc.Sd)
 	if err != nil {
 		logs.Warnf("get task server name list failed, err %s", err.Error())
 		return err

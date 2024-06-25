@@ -29,7 +29,6 @@ import (
 	"hcm/pkg/api/core"
 	dsbillapi "hcm/pkg/api/data-service/bill"
 	taskserver "hcm/pkg/api/task-server"
-	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -195,7 +194,7 @@ func (mac *MainAccountController) runCalculateBillSummaryLoop(kt *kit.Kit) {
 }
 
 func (mac *MainAccountController) pollMainSummaryTask(subKit *kit.Kit, flowID string, billYear, billMonth int) string {
-	taskServerNameList, err := mac.Sd.GetServiceAllNodeKeys(cc.TaskServerName)
+	taskServerNameList, err := getTaskServerKeyList(mac.Sd)
 	if err != nil {
 		logs.Warnf("get task server name list failed, err %s", err.Error())
 		return flowID

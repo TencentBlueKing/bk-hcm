@@ -21,6 +21,7 @@ package daily
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"hcm/cmd/task-server/logics/action/bill/dailypull"
@@ -122,7 +123,7 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 	if err != nil {
 		return fmt.Errorf("get pull task for %v failed, err %s", dp, err.Error())
 	}
-	taskServerNameList, err := dp.Sd.GetServiceAllNodeKeys(cc.TaskServerName)
+	taskServerNameList, err := getTaskServerKeyList(dp.Sd)
 	if err != nil {
 		logs.Warnf("get task server name list failed, err %s", err.Error())
 		return err
@@ -243,4 +244,18 @@ func getBillDays(billYear, billMonth, billDelay int, now time.Time) []int {
 		retList = append(retList, t.Day())
 	}
 	return retList
+}
+
+func getTaskServerKeyList(sd serviced.ServiceDiscover) ([]string, error) {
+	taskServerNameList, err := sd.GetServiceAllNodeKeys(cc.TaskServerName)
+	if err != nil {
+		logs.Warnf("get task server name list failed, err %s", err.Error())
+		return nil, err
+	}
+	var keyUUIDs []string
+	for _, one := range taskServerNameList {
+		split := strings.Split(one, "/")
+		keyUUIDs = append(keyUUIDs, split[len(split)-1])
+	}
+	return keyUUIDs, nil
 }

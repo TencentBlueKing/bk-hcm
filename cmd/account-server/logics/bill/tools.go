@@ -22,6 +22,9 @@ package bill
 import (
 	"hcm/pkg/cc"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
+	"hcm/pkg/serviced"
+	"strings"
 	"time"
 )
 
@@ -49,4 +52,18 @@ func getLastBillMonth() (int, int) {
 	now := time.Now().UTC()
 	lastMonthNow := now.AddDate(0, -1, 0)
 	return lastMonthNow.Year(), int(lastMonthNow.Month())
+}
+
+func getTaskServerKeyList(sd serviced.ServiceDiscover) ([]string, error) {
+	taskServerNameList, err := sd.GetServiceAllNodeKeys(cc.TaskServerName)
+	if err != nil {
+		logs.Warnf("get task server name list failed, err %s", err.Error())
+		return nil, err
+	}
+	var keyUUIDs []string
+	for _, one := range taskServerNameList {
+		split := strings.Split(one, "/")
+		keyUUIDs = append(keyUUIDs, split[len(split)-1])
+	}
+	return keyUUIDs, nil
 }

@@ -140,7 +140,7 @@ func (rac *RootAccountController) runCalculateBillSummaryLoop(kt *kit.Kit) {
 }
 
 func (rac *RootAccountController) pollRootSummaryTask(subKit *kit.Kit, flowID string, billYear, billMonth int) string {
-	taskServerNameList, err := rac.Sd.GetServiceAllNodeKeys(cc.TaskServerName)
+	taskServerNameList, err := getTaskServerKeyList(rac.Sd)
 	if err != nil {
 		logs.Warnf("get task server name list failed, err %s", err.Error())
 		return flowID

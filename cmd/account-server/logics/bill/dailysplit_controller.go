@@ -29,7 +29,6 @@ import (
 	"hcm/pkg/api/core"
 	dsbillapi "hcm/pkg/api/data-service/bill"
 	taskserver "hcm/pkg/api/task-server"
-	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -125,11 +124,11 @@ func (msdc *MainDailySplitController) runBillDailySplitLoop(kt *kit.Kit) {
 func (msdc *MainDailySplitController) doSync(kt *kit.Kit) error {
 	curBillYear, curBillMonth := getCurrentBillMonth()
 	if err := msdc.syncDailySplit(kt.NewSubKit(), curBillYear, curBillMonth); err != nil {
-		return fmt.Errorf("ensure bill summary for %d %d failed, err %s", curBillYear, curBillMonth, err.Error())
+		return fmt.Errorf("ensure daily split for %d %d failed, err %s", curBillYear, curBillMonth, err.Error())
 	}
 	lastBillYear, lastBillMonth := getLastBillMonth()
 	if err := msdc.syncDailySplit(kt.NewSubKit(), lastBillYear, lastBillMonth); err != nil {
-		return fmt.Errorf("ensure bill summary for %d %d failed, err %s", lastBillYear, lastBillMonth, err.Error())
+		return fmt.Errorf("ensure daily split for %d %d failed, err %s", lastBillYear, lastBillMonth, err.Error())
 	}
 	return nil
 }
@@ -174,7 +173,7 @@ func (msdc *MainDailySplitController) syncDailySplit(kt *kit.Kit, billYear, bill
 	if err != nil {
 		return err
 	}
-	taskServerNameList, err := msdc.Sd.GetServiceAllNodeKeys(cc.TaskServerName)
+	taskServerNameList, err := getTaskServerKeyList(msdc.Sd)
 	if err != nil {
 		logs.Warnf("get task server name list failed, err %s", err.Error())
 		return err
@@ -208,6 +207,7 @@ func (msdc *MainDailySplitController) syncDailySplit(kt *kit.Kit, billYear, bill
 					(flow.State == enumor.FlowScheduled &&
 						flow.Worker != nil &&
 						!slice.IsItemInSlice[string](taskServerNameList, *flow.Worker)) {
+
 					flowID, err := msdc.createDailySplitTask(kt, summary, billYear, billMonth, task.BillDay)
 					if err != nil {
 						logs.Warnf("create daily split task for %v, %d/%d/%d failed, err %s, rid: %s",

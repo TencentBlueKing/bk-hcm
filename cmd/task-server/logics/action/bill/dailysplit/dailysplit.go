@@ -78,6 +78,20 @@ func getFilter(opt *DailyAccountSplitActionOption, billDay int) *filter.Expressi
 	return tools.ExpressionAnd(expressions...)
 }
 
+func getBillItemFilter(opt *DailyAccountSplitActionOption, billDay int) *filter.Expression {
+	expressions := []*filter.AtomRule{
+		tools.RuleEqual("root_account_id", opt.RootAccountID),
+		tools.RuleEqual("main_account_id", opt.MainAccountID),
+		tools.RuleEqual("vendor", opt.Vendor),
+		tools.RuleEqual("bill_year", opt.BillYear),
+		tools.RuleEqual("bill_month", opt.BillMonth),
+	}
+	if billDay != 0 {
+		expressions = append(expressions, tools.RuleEqual("bill_day", billDay))
+	}
+	return tools.ExpressionAnd(expressions...)
+}
+
 // Run run pull daily bill
 func (act DailyAccountSplitAction) Run(kt run.ExecuteKit, params interface{}) (interface{}, error) {
 	opt, ok := params.(*DailyAccountSplitActionOption)
@@ -139,23 +153,30 @@ func (act DailyAccountSplitAction) changeTaskToSplitted(
 		})
 }
 
+// 当前版本实现会把所有历史版本全部清理掉
+// 待后续需要实现历史版本明细查看时，可分版本清理
 func cleanBillItem(kt *kit.Kit, opt *DailyAccountSplitActionOption, billDay int) error {
+	batch := 0
 	for {
 		result, err := actcli.GetDataService().Global.Bill.ListBillItem(kt, &bill.BillItemListReq{
-			Filter: getFilter(opt, billDay),
+			Filter: getBillItemFilter(opt, billDay),
 			Page: &core.BasePage{
 				Count: true,
 			},
 		})
 		if err != nil {
+			logs.Warnf("count bill item for %v day %d failed, err %s, rid %s", opt, billDay, err.Error(), kt.Rid)
 			return fmt.Errorf("count bill item for %v day %d failed, err %s", opt, billDay, err.Error())
 		}
 		if result.Count > 0 {
 			if err := actcli.GetDataService().Global.Bill.BatchDeleteBillItem(kt, &dataservice.BatchDeleteReq{
-				Filter: getFilter(opt, billDay)}); err != nil {
+				Filter: getBillItemFilter(opt, billDay)}); err != nil {
 				return fmt.Errorf("delete 500 of %d bill item for %v day %d failed, err %s",
 					result.Count, opt, billDay, err.Error())
 			}
+			logs.Infof("successfully delete batch %d for %d bill item for %v day %d, rid %s",
+				result.Count, opt, billDay, kt.Rid)
+			batch = batch + 1
 			continue
 		}
 		break
