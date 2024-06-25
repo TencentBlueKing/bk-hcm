@@ -26,6 +26,7 @@ import (
 
 	"hcm/cmd/task-server/logics/action/bill/rootsummary"
 	"hcm/pkg/api/core"
+	"hcm/pkg/api/data-service/bill"
 	dsbillapi "hcm/pkg/api/data-service/bill"
 	taskserver "hcm/pkg/api/task-server"
 	"hcm/pkg/client"
@@ -132,13 +133,23 @@ func (rac *RootAccountController) runCalculateBillSummaryLoop(kt *kit.Kit) {
 			curMonthflowID = rac.pollRootSummaryTask(subKit, curMonthflowID, curBillYear, curBillMonth)
 
 		case <-kt.Ctx.Done():
-			logs.Infof("root account (%s, %s) summary controller context done, rid: %s", rac.RootAccountID, rac.Vendor, kt.Rid)
+			logs.Infof("root account (%s, %s) summary controller context done, rid: %s",
+				rac.RootAccountID, rac.Vendor, kt.Rid)
 			return
 		}
 	}
 }
 
 func (rac *RootAccountController) pollRootSummaryTask(subKit *kit.Kit, flowID string, billYear, billMonth int) string {
+	summary, err := rac.getBillSummary(subKit, billYear, billMonth)
+	if err != nil {
+		logs.Warnf("get root account bill summary failed, err %s, rid: %s", err.Error(), subKit.Rid)
+		return flowID
+	}
+	if summary.State != constant.RootAccountBillSummaryStateAccounted &&
+		summary.State != constant.RootAccountBillSummaryStateAccounting {
+		return flowID
+	}
 	taskServerNameList, err := getTaskServerKeyList(rac.Sd)
 	if err != nil {
 		logs.Warnf("get task server name list failed, err %s", err.Error())
@@ -206,6 +217,33 @@ func (rac *RootAccountController) syncBillSummary(kt *kit.Kit) error {
 			lastBillYear, lastBillMonth, err.Error(), kt.Rid)
 	}
 	return nil
+}
+
+func (rac *RootAccountController) getBillSummary(kt *kit.Kit, billYear, billMonth int) (
+	*bill.BillSummaryRootResult, error) {
+
+	var expressions []*filter.AtomRule
+	expressions = append(expressions, []*filter.AtomRule{
+		tools.RuleEqual("root_account_id", rac.RootAccountID),
+		tools.RuleEqual("vendor", rac.Vendor),
+		tools.RuleEqual("bill_year", billYear),
+		tools.RuleEqual("bill_month", billMonth),
+	}...)
+	result, err := rac.Client.DataService().Global.Bill.ListBillSummaryRoot(
+		kt, &dsbillapi.BillSummaryRootListReq{
+			Filter: tools.ExpressionAnd(expressions...),
+			Page: &core.BasePage{
+				Start: 0,
+				Limit: 1,
+			},
+		})
+	if err != nil {
+		return nil, fmt.Errorf("get root account bill summary failed, err %s", err.Error())
+	}
+	if len(result.Details) == 0 {
+		return nil, fmt.Errorf("root account bill summary not found")
+	}
+	return result.Details[0], nil
 }
 
 func (rac *RootAccountController) ensureBillSummary(kt *kit.Kit, billYear, billMonth int) error {
