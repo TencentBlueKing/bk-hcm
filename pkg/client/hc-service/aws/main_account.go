@@ -17,38 +17,31 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package mainaccount Package service defines service.
-package mainaccount
+package aws
 
 import (
-	proto "hcm/pkg/api/hc-service/main-account"
-	"hcm/pkg/criteria/errf"
+	dataproto "hcm/pkg/api/hc-service/main-account"
+	"hcm/pkg/client/common"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
-// AwsCreateMainAccount 创建aws账号
-func (s *service) AwsCreateMainAccount(cts *rest.Contexts) (interface{}, error) {
-	//todo
-	req := new(proto.CreateAwsMainAccountReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+// NewMainAccountClient create a new image api client.
+func NewMainAccountClient(client rest.ClientInterface) *MainAccountClient {
+	return &MainAccountClient{
+		client: client,
 	}
+}
 
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
+// MainAccountClient main account client.
+type MainAccountClient struct {
+	client rest.ClientInterface
+}
 
-	// 1、获取一级账号aws Client
-	client, err := s.ad.AwsRoot(cts.Kit, req.RootAccountID)
-	if err != nil {
-		return nil, err
-	}
+// Create ...
+func (m *MainAccountClient) Create(kt *kit.Kit,
+	request *dataproto.CreateAwsMainAccountReq) (*dataproto.CreateAwsMainAccountResp, error) {
 
-	// 2、在组织中创建AWS账号
-	resp, err := client.CreateAccount(cts.Kit, req)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp, nil
+	return common.Request[dataproto.CreateAwsMainAccountReq, dataproto.CreateAwsMainAccountResp](
+		m.client, rest.POST, kt, request, "/main_accounts/create")
 }

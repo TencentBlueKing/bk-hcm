@@ -104,12 +104,53 @@ func (a *ApplicationOfCreateMainAccount) Complete() (enumor.ApplicationStatus, m
 	go a.sendEmail(accountID)
 
 	// 交付成功，记录交付的账号ID
-	return enumor.Completed, map[string]interface{}{"account_id": accountID}, nil
+	return enumor.Completed, map[string]interface{}{"account_id": accountID, "cloud_account_name": account.Name, "cloud_account_id": account.CloudID}, nil
 }
 
 func (a *ApplicationOfCreateMainAccount) createForAws(rootAccount *protocore.BaseRootAccount) (string, error) {
-	//todo 待添加自动化创建流程
-	return "", fmt.Errorf("aws not implemented for create account auto")
+	req := a.req
+
+	accountResp, err := a.Client.HCService().Aws.MainAccount.Create(a.Cts.Kit, &hsproto.CreateAwsMainAccountReq{
+		RootAccountID:    rootAccount.ID,
+		Email:            req.Email,
+		CloudAccountName: req.Extension[string(req.Vendor.GetMainAccountIDFieldName())],
+	})
+	if err != nil {
+		return "", fmt.Errorf("create aws main account [%s] failed, err: %v, rid: %s", req.Extension[string(req.Vendor.GetMainAccountNameFieldName())], err, a.Cts.Kit.Rid)
+	}
+
+	// create aws main account in dbs
+	extension := &dataproto.AwsMainAccountExtensionCreateReq{
+		CloudMainAccountName: accountResp.AccountName,
+		CloudMainAccountID:   accountResp.AccountID,
+	}
+	extension.EncryptSecretKey(a.Cipher)
+
+	result, err := a.Client.DataService().Aws.MainAccount.Create(
+		a.Cts.Kit,
+		&dataproto.MainAccountCreateReq[dataproto.AwsMainAccountExtensionCreateReq]{
+			Name:              accountResp.AccountName,
+			CloudID:           accountResp.AccountID,
+			Email:             req.Email,
+			Managers:          req.Managers,
+			BakManagers:       req.BakManagers,
+			Site:              req.Site,
+			BusinessType:      req.BusinessType,
+			Status:            enumor.MainAccountStatusRUNNING,
+			ParentAccountName: rootAccount.Name,
+			ParentAccountID:   rootAccount.ID,
+			DeptID:            req.DeptID,
+			BkBizID:           req.BkBizID,
+			OpProductID:       req.OpProductID,
+			Memo:              req.Memo,
+			Extension:         extension,
+		},
+	)
+	if err != nil {
+		return "", fmt.Errorf("create main account in cloud success, but create main account in db failed, cloud_id: %s err: %v, rid: %s", accountResp.AccountID, err, a.Cts.Kit.Rid)
+	}
+
+	return result.ID, nil
 }
 
 func (a *ApplicationOfCreateMainAccount) createForGcp(rootAccount *protocore.BaseRootAccount) (string, error) {
@@ -166,7 +207,7 @@ func (a *ApplicationOfCreateMainAccount) createForGcp(rootAccount *protocore.Bas
 		},
 	)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("create main account in cloud success, but create main account in db failed, cloud_id: %s err: %v, rid: %s", accountResp.ProjectID, err, a.Cts.Kit.Rid)
 	}
 
 	return result.ID, nil
