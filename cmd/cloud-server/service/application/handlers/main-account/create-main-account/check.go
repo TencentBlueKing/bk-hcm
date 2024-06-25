@@ -79,8 +79,14 @@ func (a *ApplicationOfCreateMainAccount) CheckReq() error {
 	}
 
 	// 检查名称是否重复
-	if err := a.isDuplicateName(a.req.Vendor.GetMainAccountNameFieldName(), account_name); err != nil {
+	if err := a.isDuplicateName("name", account_name); err != nil {
 		logs.Errorf("check name duplicate failed, err: %s, rid: %s", err, a.Cts.Kit.Rid)
+		return err
+	}
+
+	// 检查extension中的名称是否重复
+	if err := a.isDuplicateExtensionName(a.req.Vendor.GetMainAccountNameFieldName(), account_name); err != nil {
+		logs.Errorf("check extension.name duplicate failed, err: %s, rid: %s", err, a.Cts.Kit.Rid)
 		return err
 	}
 
@@ -97,6 +103,15 @@ func (a *ApplicationOfCreateMainAccount) isDuplicateEmail(vendor enumor.Vendor, 
 }
 
 func (a *ApplicationOfCreateMainAccount) isDuplicateName(field, name string) error {
+	rule := tools.RuleJSONEqual(field, name)
+
+	if err := a.isDuplicateField(rule); err != nil {
+		return fmt.Errorf("main account [%s] duplicate checking err, err: %s", name, err.Error())
+	}
+	return nil
+}
+
+func (a *ApplicationOfCreateMainAccount) isDuplicateExtensionName(field, name string) error {
 	rule := tools.RuleJSONEqual(fmt.Sprintf("extension.%s", field), name)
 
 	if err := a.isDuplicateField(rule); err != nil {

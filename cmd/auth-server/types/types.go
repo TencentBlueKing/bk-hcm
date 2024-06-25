@@ -200,7 +200,7 @@ func getResourceKeywordField(resType client.TypeID) (string, error) {
 	case sys.CloudSelectionScheme:
 		return "name", nil
 	case sys.MainAccount:
-		return "cloud_id", nil
+		return "name", nil
 	default:
 		return "", errf.New(errf.InvalidParameter, "resource type not support")
 	}

@@ -28,6 +28,7 @@ import (
 // BaseMainAccount 云主账号/云二级账号
 type BaseMainAccount struct {
 	ID                string                         `json:"id"`
+	Name              string                         `json:"name"`
 	Vendor            enumor.Vendor                  `json:"vendor"`
 	CloudID           string                         `json:"cloud_id"`
 	Email             string                         `json:"email"`

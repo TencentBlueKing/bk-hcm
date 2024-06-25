@@ -111,6 +111,7 @@ func (req *KaopuMainAccountExtensionCreateReq) EncryptSecretKey(cipher cryptogra
 
 // MainAccountCreateReq ...
 type MainAccountCreateReq[T MainAccountExtensionCreateReq] struct {
+	Name              string                         `json:"name" validate:"required"`
 	CloudID           string                         `json:"cloud_id" validate:"required"`
 	Email             string                         `json:"email" validate:"required"`
 	Managers          []string                       `json:"managers" validate:"required"`

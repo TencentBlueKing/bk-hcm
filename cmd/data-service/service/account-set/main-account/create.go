@@ -97,6 +97,7 @@ func createAccount[T dataproto.MainAccountExtensionCreateReq, PT dataproto.Secre
 
 		account := &table.MainAccountTable{
 			Vendor:            string(vendor),
+			Name:              req.Name,
 			CloudID:           req.CloudID,
 			Email:             req.Email,
 			Managers:          req.Managers,
