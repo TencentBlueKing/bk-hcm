@@ -52,6 +52,7 @@ func (svc *service) UpdateBillSyncRecord(cts *rest.Contexts) (interface{}, error
 		RMBCost:  &types.Decimal{Decimal: req.RMBCost},
 		State:    req.State,
 		Detail:   req.Detail,
+		Reviser:  cts.Kit.User,
 	}
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		if err := svc.dao.AccountBillSyncRecord().UpdateByIDWithTx(
