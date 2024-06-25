@@ -174,7 +174,7 @@ func cleanBillItem(kt *kit.Kit, opt *DailyAccountSplitActionOption, billDay int)
 				return fmt.Errorf("delete 500 of %d bill item for %v day %d failed, err %s",
 					result.Count, opt, billDay, err.Error())
 			}
-			logs.Infof("successfully delete batch %d for %d bill item for %v day %d, rid %s",
+			logs.Infof("successfully delete batch %d bill item for %v day %d, rid %s",
 				result.Count, opt, billDay, kt.Rid)
 			batch = batch + 1
 			continue
