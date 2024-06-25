@@ -93,6 +93,10 @@ func (svc *lbSvc) getTCloudUrlRuleAndTargetGroupMap(kt *kit.Kit, lbID string,
 		return nil, err
 	}
 
+	if len(listenerList.Details) == 0 {
+		return nil, nil
+	}
+
 	baseLblList := listenerList.Details
 	lblInfoList := make([]*cslb.ListenerListInfo, 0, len(baseLblList))
 	lblIDs := make([]string, 0)
