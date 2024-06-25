@@ -55,6 +55,7 @@ func (svc *service) CreateBillSyncRecord(cts *rest.Contexts) (interface{}, error
 				Cost:      &types.Decimal{Decimal: item.Cost},
 				RMBCost:   &types.Decimal{Decimal: item.RMBCost},
 				State:     item.State,
+				Reviser:   cts.Kit.User,
 				Creator:   cts.Kit.User,
 				Operator:  cts.Kit.User,
 			}
