@@ -43,6 +43,7 @@ var AccountBillSyncRecordColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "rmb_cost", NamedC: "rmb_cost", Type: enumor.Numeric},
 	{Column: "detail", NamedC: "detail", Type: enumor.String},
 	{Column: "state", NamedC: "state", Type: enumor.String},
+	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
 	{Column: "updated_at", NamedC: "updated_at", Type: enumor.Time},
