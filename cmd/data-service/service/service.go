@@ -70,6 +70,7 @@ import (
 	subaccount "hcm/cmd/data-service/service/cloud/sub-account"
 	sync "hcm/cmd/data-service/service/cloud/sync"
 	"hcm/cmd/data-service/service/cloud/zone"
+	"hcm/cmd/data-service/service/cos"
 	recyclerecord "hcm/cmd/data-service/service/recycle-record"
 	"hcm/cmd/data-service/service/user"
 	"hcm/pkg/cc"
@@ -259,6 +260,7 @@ func (s *Service) apiSet() *restful.Container {
 	rootaccountbillconfig.InitService(capability)
 	if capability.ObjectStore != nil {
 		rawbill.InitService(capability)
+		cos.InitService(capability)
 	}
 	cert.InitService(capability)
 	loadbalancer.InitService(capability)
