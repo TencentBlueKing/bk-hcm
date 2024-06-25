@@ -1,7 +1,7 @@
 /*
  * TencentBlueKing is pleased to support the open source community by making
  * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
- * Copyright (C) 2022 THL A29 Limited,
+ * Copyright (C) 2024 THL A29 Limited,
  * a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,31 +17,27 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package rawbill
+package cos
 
 import (
-	"hcm/pkg/api/core"
-	dsbill "hcm/pkg/api/data-service/bill"
-	"hcm/pkg/criteria/errf"
-	"hcm/pkg/rest"
+	"hcm/pkg/criteria/validator"
 )
 
-// CreateRawBill create cloud raw bill
-func (s *service) CreateRawBill(cts *rest.Contexts) (interface{}, error) {
-	req := new(dsbill.RawBillCreateReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-	uploadPath := generateFilePath(req.RawBillPathParam)
-	buffer, err := generateCSV(req.Items)
-	if err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-	if err := s.ostore.Upload(cts.Kit, uploadPath, buffer); err != nil {
-		return nil, errf.NewFromErr(errf.Aborted, err)
-	}
-	return &core.CreateResult{}, nil
+// GenerateTemporalUrlReq ...
+type GenerateTemporalUrlReq struct {
+	Filename   string `json:"filename" validate:"omitempty"`
+	TTLSeconds int64  `json:"ttl_seconds" validate:"required,max=3600"`
+}
+
+// Validate ...
+func (r *GenerateTemporalUrlReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// GenerateTemporalUrlResult ...
+type GenerateTemporalUrlResult struct {
+	AK    string `json:"ak"`
+	SK    string `json:"sk"`
+	Token string `json:"token"`
+	URL   string `json:"url"`
 }
