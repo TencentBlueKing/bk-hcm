@@ -28,7 +28,6 @@ import (
 
 // AwsCreateMainAccount 创建aws账号
 func (s *service) AwsCreateMainAccount(cts *rest.Contexts) (interface{}, error) {
-	//todo
 	req := new(proto.CreateAwsMainAccountReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)

@@ -41,8 +41,8 @@ const (
 	// AccountCreateStatusInProgress	The account is currently being created.
 	AccountCreateStatusInProgress = "IN_PROGRESS"
 
-	// AccountCreateErrorsAccountAlreadyExists	The account already exists.
-	AccountCreateErrorsAccountAlreadyExists = "EMAIL_ALREADY_EXISTS"
+	// AccountCreateErrorMessageAccountAlreadyExists	The account already exists.
+	AccountCreateErrorMessageAccountAlreadyExists = "EMAIL_ALREADY_EXISTS"
 )
 
 // CreateAccount
@@ -90,6 +90,10 @@ type createMainAccountPollingHandler struct {
 
 // Done ...
 func (h *createMainAccountPollingHandler) Done(status *organizations.CreateAccountStatus) (bool, *organizations.CreateAccountStatus) {
+	// Note: 没有error的情况分两种, 一种是在创建中，创建中不结束Poll，返回false，另一种是创建成功，返回true
+	if converter.PtrToVal(status.State) == AccountCreateStatusInProgress {
+		return false, status
+	}
 	return true, status
 }
 
@@ -114,18 +118,16 @@ func (h *createMainAccountPollingHandler) Poll(client *Aws, kt *kit.Kit, reqIds 
 		return nil, err
 	}
 
+	// Note: 成功或者在创建中，都不返回error。如果失败则返回error
 	switch converter.PtrToVal(result.CreateAccountStatus.State) {
-	case AccountCreateStatusSuccess:
+	case AccountCreateStatusSuccess, AccountCreateStatusInProgress:
 		return result.CreateAccountStatus, nil
 	case AccountCreateStatusFailed:
-		if converter.PtrToVal(result.CreateAccountStatus.FailureReason) == AccountCreateErrorsAccountAlreadyExists {
+		if converter.PtrToVal(result.CreateAccountStatus.FailureReason) == AccountCreateErrorMessageAccountAlreadyExists {
 			return nil, fmt.Errorf("create account failed, state: %s, reason: email already exists", *result.CreateAccountStatus.State)
 		}
 		return nil, fmt.Errorf("create account failed, state: %s, reason: %s", *result.CreateAccountStatus.State, *result.CreateAccountStatus.FailureReason)
-	case AccountCreateStatusInProgress:
-		return nil, fmt.Errorf("create account in progress, state: %s", *result.CreateAccountStatus.State)
 	default:
-		return nil, fmt.Errorf("create account unknown, state: %s", *result.CreateAccountStatus.State)
+		return nil, fmt.Errorf("create account unknown progress, state: %s", *result.CreateAccountStatus.State)
 	}
-
 }
