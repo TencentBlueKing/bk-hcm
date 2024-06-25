@@ -59,6 +59,15 @@ export const reqBillsMainAccountSummaryList = async (data: {
   return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/main-account-summarys/list`, data);
 };
 
+// 确认某个一级账号下所有账单数据
+export const confirmBillsRootAccountSummary = async (data: {
+  bill_year: number;
+  bill_month: number;
+  root_account_id: string;
+}) => {
+  return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/root-account-summarys/confirm`, data);
+};
+
 // 重新核算某个一级账号下所有账单数据
 export const reAccountBillsRootAccountSummary = async (data: {
   bill_year: number;
