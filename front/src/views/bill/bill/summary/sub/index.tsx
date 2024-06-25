@@ -45,8 +45,8 @@ export default defineComponent({
 
     return () => (
       <>
-        <Search onSearch={reloadTable} />
-        <div class='p24' style={{ height: 'calc(100% - 162px)' }}>
+        <Search searchKeys={['vendor', 'root_account_id', 'product_id', 'main_account_id']} onSearch={reloadTable} />
+        <div class='p24' style={{ height: 'calc(100% - 238px)' }}>
           <CommonTable>
             {{
               operation: () => <Button noSyncBtn />,

@@ -19,7 +19,7 @@ export default defineComponent({
 
     const actionTypes = [
       { label: 'sync', text: t('同步') },
-      { label: 'confirm', text: t('定帐') },
+      { label: 'confirm', text: t('确认') },
       { label: 'import', text: t('导入') },
     ];
     const activeActionType = ref('sync');
