@@ -31,7 +31,6 @@ import (
 	"hcm/pkg/iam/sys"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 )
 
 // InitAuthService initial the auth used service
@@ -68,8 +67,6 @@ func (s *auth) ListAuthInstances(cts *rest.Contexts) (interface{}, error) {
 		opts.TableName = table.CloudSelectionSchemeTable
 	case sys.MainAccount:
 		opts.TableName = table.MainAccountTable
-		opts.DisplayNameField = "cloud_id"
-		opts.Priority = filter.Priority{"cloud_id"}
 	default:
 		return nil, fmt.Errorf("resource type %s not support", req.ResourceType)
 	}

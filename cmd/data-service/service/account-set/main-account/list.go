@@ -63,6 +63,7 @@ func (svc *service) ListMainAccount(cts *rest.Contexts) (interface{}, error) {
 	for _, account := range daoAccountResp.Details {
 		details = append(details, &protocore.BaseMainAccount{
 			ID:                account.ID,
+			Name:              account.Name,
 			Vendor:            enumor.Vendor(account.Vendor),
 			CloudID:           account.CloudID,
 			Email:             account.Email,

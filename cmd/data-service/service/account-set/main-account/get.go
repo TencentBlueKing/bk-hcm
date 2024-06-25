@@ -49,6 +49,7 @@ func (svc *service) GetMainAccountBasicInfo(cts *rest.Contexts) (interface{}, er
 
 	baseAccount := &protocore.BaseMainAccount{
 		ID:                dbAccount.ID,
+		Name:              dbAccount.Name,
 		Vendor:            enumor.Vendor(dbAccount.Vendor),
 		CloudID:           dbAccount.CloudID,
 		Email:             dbAccount.Email,
@@ -92,6 +93,7 @@ func (svc *service) GetMainAccount(cts *rest.Contexts) (interface{}, error) {
 
 	baseAccount := &protocore.BaseMainAccount{
 		ID:                dbAccount.ID,
+		Name:              dbAccount.Name,
 		Vendor:            enumor.Vendor(dbAccount.Vendor),
 		CloudID:           dbAccount.CloudID,
 		Email:             dbAccount.Email,
