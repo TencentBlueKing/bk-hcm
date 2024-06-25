@@ -100,9 +100,6 @@ func (absr *AccountBillSyncRecord) InsertValidate() error {
 	if absr.BillMonth == 0 {
 		return errors.New("bill_month is required")
 	}
-	if len(absr.Detail) == 0 {
-		return errors.New("detail is required")
-	}
 	if len(absr.State) == 0 {
 		return errors.New("state is required")
 	}
