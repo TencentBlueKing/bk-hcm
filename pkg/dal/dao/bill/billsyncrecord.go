@@ -68,10 +68,10 @@ func (a AccountBillSyncRecordDao) CreateWithTx(
 		return nil, err
 	}
 
-	for index, model := range models {
+	for index := range models {
 		models[index].ID = ids[index]
 
-		if err = model.InsertValidate(); err != nil {
+		if err = models[index].InsertValidate(); err != nil {
 			return nil, err
 		}
 	}
