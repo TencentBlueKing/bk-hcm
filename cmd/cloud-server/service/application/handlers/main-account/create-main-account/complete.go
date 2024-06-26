@@ -56,6 +56,10 @@ func (a *ApplicationOfCreateMainAccount) Complete() (enumor.ApplicationStatus, m
 		err := fmt.Errorf("cannot get root account info")
 		return enumor.Delivering, map[string]interface{}{"error": err.Error()}, err
 	}
+	if rootAccount.Vendor != a.req.Vendor {
+		err := fmt.Errorf("root account's vendor not match main account's vendor")
+		return enumor.Delivering, map[string]interface{}{"error": err.Error()}, err
+	}
 
 	var (
 		accountID string
