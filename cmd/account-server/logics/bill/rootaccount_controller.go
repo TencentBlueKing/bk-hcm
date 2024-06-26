@@ -178,6 +178,10 @@ func (rac *RootAccountController) pollRootSummaryTask(subKit *kit.Kit, flowID st
 			flow.Worker != nil &&
 			!slice.IsItemInSlice[string](taskServerNameList, *flow.Worker)) {
 
+		if err := rac.Client.TaskServer().CancelFlow(subKit, flow.ID); err != nil {
+			logs.Warnf("cancel flow %v failed, err %s, rid: %s", flow, err.Error(), subKit.Rid)
+			return flowID
+		}
 		result, err := rac.createRootSummaryTask(subKit, billYear, billMonth)
 		if err != nil {
 			logs.Warnf("create new root summary task for %s/%s %d-%d failed, err %s, rid: %s",

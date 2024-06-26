@@ -173,6 +173,10 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 				flow.Worker != nil &&
 				!slice.IsItemInSlice[string](taskServerNameList, *flow.Worker)) {
 
+			if err := dp.Client.TaskServer().CancelFlow(kt, flow.ID); err != nil {
+				logs.Warnf("cancel flow %v failed, err %s, rid: %s", flow, err.Error(), kt.Rid)
+				continue
+			}
 			return dp.createNewPullTask(kt, billTask)
 		}
 	}

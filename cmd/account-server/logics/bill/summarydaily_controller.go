@@ -211,6 +211,10 @@ func (msdc *MainSummaryDailyController) syncDailySummary(kt *kit.Kit, billYear, 
 						flow.Worker != nil &&
 						!slice.IsItemInSlice[string](taskServerNameList, *flow.Worker)) {
 
+					if err := msdc.Client.TaskServer().CancelFlow(kt, flow.ID); err != nil {
+						logs.Warnf("cancel flow %v failed, err %s, rid: %s", flow, err.Error(), kt.Rid)
+						continue
+					}
 					flowID, err := msdc.createDailySummaryTask(kt, summary, billYear, billMonth, task.BillDay)
 					if err != nil {
 						logs.Warnf("create daily summary task for %v, %d/%d/%d failed, err %s, rid: %s",
