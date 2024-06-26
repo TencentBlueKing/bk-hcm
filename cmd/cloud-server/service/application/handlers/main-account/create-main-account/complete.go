@@ -113,7 +113,7 @@ func (a *ApplicationOfCreateMainAccount) createForAws(rootAccount *protocore.Bas
 	accountResp, err := a.Client.HCService().Aws.MainAccount.Create(a.Cts.Kit, &hsproto.CreateAwsMainAccountReq{
 		RootAccountID:    rootAccount.ID,
 		Email:            req.Email,
-		CloudAccountName: req.Extension[string(req.Vendor.GetMainAccountIDFieldName())],
+		CloudAccountName: req.Extension[string(req.Vendor.GetMainAccountNameFieldName())],
 	})
 	if err != nil {
 		return "", fmt.Errorf("create aws main account [%s] failed, err: %v, rid: %s", req.Extension[string(req.Vendor.GetMainAccountNameFieldName())], err, a.Cts.Kit.Rid)
