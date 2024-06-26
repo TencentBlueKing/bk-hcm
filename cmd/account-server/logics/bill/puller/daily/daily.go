@@ -213,6 +213,7 @@ func (dp *DailyPuller) createNewPullTask(kt *kit.Kit, billTask *bill.BillDailyPu
 	if err := dp.updateDailyPullTaskFlowID(kt, billTask.ID, flowResult.ID); err != nil {
 		return fmt.Errorf("update flow id failed, err %s", err.Error())
 	}
+
 	return nil
 }
 

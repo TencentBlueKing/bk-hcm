@@ -148,6 +148,7 @@ func (a *ApplicationOfCreateMainAccount) createForGcp(rootAccount *protocore.Bas
 	result, err := a.Client.DataService().Gcp.MainAccount.Create(
 		a.Cts.Kit,
 		&dataproto.MainAccountCreateReq[dataproto.GcpMainAccountExtensionCreateReq]{
+			Name:              accountResp.ProjectName,
 			CloudID:           accountResp.ProjectID,
 			Email:             req.Email,
 			Managers:          req.Managers,
@@ -185,6 +186,7 @@ func (a *ApplicationOfCreateMainAccount) createForAzure(rootAccount *protocore.B
 	result, err := a.Client.DataService().Azure.MainAccount.Create(
 		a.Cts.Kit,
 		&dataproto.MainAccountCreateReq[dataproto.AzureMainAccountExtensionCreateReq]{
+			Name:              a.completeReq.Extension[a.Vendor().GetMainAccountNameFieldName()],
 			CloudID:           a.completeReq.Extension[a.Vendor().GetMainAccountIDFieldName()],
 			Email:             req.Email,
 			Managers:          req.Managers,
@@ -222,6 +224,7 @@ func (a *ApplicationOfCreateMainAccount) createForHuaWei(rootAccount *protocore.
 	result, err := a.Client.DataService().HuaWei.MainAccount.Create(
 		a.Cts.Kit,
 		&dataproto.MainAccountCreateReq[dataproto.HuaWeiMainAccountExtensionCreateReq]{
+			Name:              a.completeReq.Extension[a.Vendor().GetMainAccountNameFieldName()],
 			CloudID:           a.completeReq.Extension[a.Vendor().GetMainAccountIDFieldName()],
 			Email:             req.Email,
 			Managers:          req.Managers,
@@ -259,6 +262,7 @@ func (a *ApplicationOfCreateMainAccount) createForZenlayer(rootAccount *protocor
 	result, err := a.Client.DataService().Zenlayer.MainAccount.Create(
 		a.Cts.Kit,
 		&dataproto.MainAccountCreateReq[dataproto.ZenlayerMainAccountExtensionCreateReq]{
+			Name:              a.completeReq.Extension[a.Vendor().GetMainAccountNameFieldName()],
 			CloudID:           a.completeReq.Extension[a.Vendor().GetMainAccountIDFieldName()],
 			Email:             req.Email,
 			Managers:          req.Managers,
@@ -296,6 +300,7 @@ func (a *ApplicationOfCreateMainAccount) createForKaopu(rootAccount *protocore.B
 	result, err := a.Client.DataService().Kaopu.MainAccount.Create(
 		a.Cts.Kit,
 		&dataproto.MainAccountCreateReq[dataproto.KaopuMainAccountExtensionCreateReq]{
+			Name:              a.completeReq.Extension[a.Vendor().GetMainAccountNameFieldName()],
 			CloudID:           a.completeReq.Extension[a.Vendor().GetMainAccountIDFieldName()],
 			Email:             req.Email,
 			Managers:          req.Managers,

@@ -35,6 +35,7 @@ var MainAccountColumns = utils.MergeColumns(nil, MainAccountColumnDescriptor)
 // MainAccountColumnDescriptor is MainAccountID's column descriptors.
 var MainAccountColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
+	{Column: "name", NamedC: "name", Type: enumor.String},
 	{Column: "vendor", NamedC: "vendor", Type: enumor.String},
 	{Column: "cloud_id", NamedC: "cloud_id", Type: enumor.String},
 	{Column: "email", NamedC: "email", Type: enumor.String},
@@ -60,6 +61,8 @@ var MainAccountColumnDescriptor = utils.ColumnDescriptors{
 type MainAccountTable struct {
 	// ID 账号 ID
 	ID string `db:"id" json:"id"`
+	// Name 云账号名
+	Name string `db:"name" json:"name"`
 	// Vendor 云厂商
 	Vendor string `db:"vendor" json:"vendor"`
 	// CloudID 云账号ID
@@ -109,6 +112,10 @@ func (a MainAccountTable) TableName() table.Name {
 func (a MainAccountTable) InsertValidate() error {
 	if len(a.ID) != 0 {
 		return errors.New("id can not set")
+	}
+
+	if len(a.Name) == 0 {
+		return errors.New("name is required")
 	}
 
 	if len(a.CreatedAt) != 0 {

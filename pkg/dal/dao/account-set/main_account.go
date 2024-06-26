@@ -83,7 +83,7 @@ func (a MainAccountDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model *tableaccou
 
 	auditInfo := &tableaudit.AuditTable{
 		ResID:     model.CloudID,
-		ResName:   model.Email,
+		ResName:   model.Name,
 		ResType:   enumor.MainAccountAuditResType,
 		Action:    enumor.Create,
 		Vendor:    enumor.Vendor(model.Vendor),

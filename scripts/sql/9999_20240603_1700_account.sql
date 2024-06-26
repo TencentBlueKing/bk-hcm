@@ -30,6 +30,7 @@ START TRANSACTION;
 create table if not exists `main_account`
 (
     `id`                    varchar(64)     not null,
+    `name`                  varchar(255)    not null,
     `vendor`                varchar(16)     not null,
     `cloud_id`              varchar(64)     not null,
     `email`                 varchar(255)    not null,
