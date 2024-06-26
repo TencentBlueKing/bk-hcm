@@ -34,8 +34,8 @@ import (
 )
 
 const (
-	// AccountCreateStatusSuccess	The account was created and confirmed.
-	AccountCreateStatusSuccess = "SUCCESS"
+	// AccountCreateStatusSucceeded	The account was created and confirmed.
+	AccountCreateStatusSucceeded = "SUCCEEDED"
 	// AccountCreateStatusFailed	The account could not be created.
 	AccountCreateStatusFailed = "FAILED"
 	// AccountCreateStatusInProgress	The account is currently being created.
@@ -75,7 +75,7 @@ func (a *Aws) CreateAccount(kt *kit.Kit, req *proto.CreateAwsMainAccountReq) (*p
 	if err != nil {
 		return nil, err
 	}
-	if converter.PtrToVal(result.State) != AccountCreateStatusSuccess {
+	if converter.PtrToVal(result.State) != AccountCreateStatusSucceeded {
 		return nil, fmt.Errorf("create aws account failed, reason: %s, err: %v, rid: %s", *result.FailureReason, err, kt.Rid)
 	}
 
@@ -120,7 +120,7 @@ func (h *createMainAccountPollingHandler) Poll(client *Aws, kt *kit.Kit, reqIds 
 
 	// Note: 成功或者在创建中，都不返回error。如果失败则返回error
 	switch converter.PtrToVal(result.CreateAccountStatus.State) {
-	case AccountCreateStatusSuccess, AccountCreateStatusInProgress:
+	case AccountCreateStatusSucceeded, AccountCreateStatusInProgress:
 		return result.CreateAccountStatus, nil
 	case AccountCreateStatusFailed:
 		if converter.PtrToVal(result.CreateAccountStatus.FailureReason) == AccountCreateErrorMessageAccountAlreadyExists {
