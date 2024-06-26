@@ -23,6 +23,10 @@ export default defineComponent({
         columns: columns.slice(2, -1),
       },
       requestOption: {
+        sortOption: {
+          sort: 'current_month_rmb_cost',
+          order: 'DESC',
+        },
         apiMethod: reqBillsMainAccountSummaryList,
         extension: () => ({
           bill_year: bill_year.value,

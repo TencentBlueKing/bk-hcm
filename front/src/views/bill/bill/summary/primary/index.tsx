@@ -96,6 +96,10 @@ export default defineComponent({
         },
       },
       requestOption: {
+        sortOption: {
+          sort: 'current_month_rmb_cost',
+          order: 'DESC',
+        },
         apiMethod: reqBillsRootAccountSummaryList,
         extension: () => ({
           bill_year: bill_year.value,
