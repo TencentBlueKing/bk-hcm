@@ -25,7 +25,7 @@ import './use-columns.scss';
 import { defaults } from 'lodash';
 import { timeFormatter } from '@/common/util';
 import { IP_VERSION_MAP, LBRouteName, LB_NETWORK_TYPE_MAP, SCHEDULER_MAP } from '@/constants/clb';
-import { getInstVip } from '@/utils';
+import { formatBillCost, getInstVip } from '@/utils';
 import { Spinner } from 'bkui-vue/lib/icon';
 import { APPLICATION_TYPE_MAP } from '@/views/service/apply-list/constants';
 import dayjs from 'dayjs';
@@ -1952,21 +1952,25 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '账单同步（人民币-元）当月',
       field: 'current_month_rmb_cost_synced',
       isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
     },
     {
       label: '账单同步（人民币-元）上月',
       field: 'last_month_rmb_cost_synced',
       isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
     },
     {
       label: '账单同步（美金-美元）当月',
       field: 'current_month_cost_synced',
       isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
     },
     {
       label: '账单同步（美金-美元）上月',
       field: 'last_month_cost_synced',
       isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
     },
     {
       label: '账单同步环比',
@@ -1977,21 +1981,25 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '当前账单人民币（元）',
       field: 'current_month_rmb_cost',
       isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
     },
     {
       label: '当前账单美金（美元）',
       field: 'current_month_cost',
       isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
     },
     {
       label: '调账人民币（元）',
       field: 'adjustment_cost',
       isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
     },
     {
       label: '调账美金（美元）',
       field: 'adjustment_cost',
       isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
     },
     {
       label: '账号状态',
@@ -2021,21 +2029,25 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '已确认账单人民币（元）',
       field: 'current_month_rmb_cost_synced',
       isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
     },
     {
       label: '已确认账单美金（美元）',
       field: 'current_month_cost_synced',
       isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
     },
     {
       label: '当前账单人民币（元）',
       field: 'current_month_rmb_cost',
       isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
     },
     {
       label: '当前账单美金（美元）',
       field: 'current_month_cost',
       isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
     },
   ];
 
@@ -2088,6 +2100,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '本期应付金额',
       field: 'cost',
       isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
     },
     {
       label: '资源类型编码',
@@ -2160,6 +2173,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '本期应付金额',
       field: 'cost',
       isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
     },
     {
       label: '资源类型编码',
@@ -2232,6 +2246,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '本期应付金额',
       field: 'cost',
       isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
     },
     {
       label: '资源类型编码',
@@ -2304,6 +2319,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '本期应付金额',
       field: 'cost',
       isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
     },
     {
       label: '资源类型编码',
@@ -2421,6 +2437,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '本期应付金额',
       field: 'cost',
       isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
     },
     {
       label: '资源类型编码',
@@ -2462,10 +2479,12 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '人民币（元）',
       field: 'rmb_cost',
+      render: ({ cell }: any) => formatBillCost(cell),
     },
     {
       label: '美金（美元）',
       field: 'cost',
+      render: ({ cell }: any) => formatBillCost(cell),
     },
     {
       label: '操作人',
