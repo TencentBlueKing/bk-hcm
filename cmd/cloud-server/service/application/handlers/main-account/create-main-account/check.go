@@ -72,10 +72,13 @@ func (a *ApplicationOfCreateMainAccount) CheckReq() error {
 		return fmt.Errorf("extension[%s] is empty", a.req.Vendor.GetMainAccountNameFieldName())
 	}
 
-	// 检查邮箱是否重复
-	if err := a.isDuplicateEmail(a.req.Vendor, a.req.Email); err != nil {
-		logs.Errorf("check email duplicate failed, err: %s, rid: %s", err, a.Cts.Kit.Rid)
-		return err
+	// gcp 支持同一邮箱管理多个项目
+	if a.req.Vendor != enumor.Gcp {
+		// 检查邮箱是否重复，同一个vendor一个邮箱只能管理一个二级账号
+		if err := a.isDuplicateEmail(a.req.Vendor, a.req.Email); err != nil {
+			logs.Errorf("check email duplicate failed, err: %s, rid: %s", err, a.Cts.Kit.Rid)
+			return err
+		}
 	}
 
 	// 检查名称是否重复
