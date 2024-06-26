@@ -13,6 +13,7 @@ import { useTable } from '@/hooks/useTable/useTable';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import { reqBillsRootAccountSummaryList, reqBillsRootAccountSummarySum } from '@/api/bill';
 import { BillsRootAccountSummaryState } from '@/typings/bill';
+import { BILLS_ROOT_ACCOUNT_SUMMARY_STATE_MAP } from '@/constants';
 
 export default defineComponent({
   name: 'PrimaryAccountTabPanel',
@@ -29,8 +30,11 @@ export default defineComponent({
     const recalculateBillDialogRef = ref();
     const amountRef = ref();
 
-    const handleConfirmBill = () => {
-      confirmBillDialogRef.value.triggerShow(true);
+    const canConfirmBill = (state: BillsRootAccountSummaryState) => {
+      return ![BillsRootAccountSummaryState.accounting, BillsRootAccountSummaryState.syncing].includes(state);
+    };
+    const handleConfirmBill = (data: any) => {
+      confirmBillDialogRef.value.triggerShow(true, data);
     };
     const canRecalculate = (state: BillsRootAccountSummaryState) => {
       return [
@@ -59,7 +63,16 @@ export default defineComponent({
             fixed: 'right',
             render: ({ data }: any) => (
               <>
-                <Button text theme='primary' class='mr4' onClick={handleConfirmBill}>
+                <Button
+                  text
+                  theme='primary'
+                  class='mr4'
+                  onClick={() => handleConfirmBill(data)}
+                  disabled={!canConfirmBill(data.state)}
+                  v-bk-tooltips={{
+                    content: `${BILLS_ROOT_ACCOUNT_SUMMARY_STATE_MAP[data.state]}的账单不可进行确认操作`,
+                    disabled: canConfirmBill(data.state),
+                  }}>
                   {t('确认账单')}
                 </Button>
                 <Button
@@ -69,7 +82,7 @@ export default defineComponent({
                   onClick={() => handleRecalculate(data)}
                   disabled={!canRecalculate(data.state)}
                   v-bk-tooltips={{
-                    content: '只有已核算、已确认、已同步的账单才能进行重新核算操作',
+                    content: `${BILLS_ROOT_ACCOUNT_SUMMARY_STATE_MAP[data.state]}的账单不可进行重新核算操作`,
                     disabled: canRecalculate(data.state),
                   }}>
                   {t('重新核算')}
@@ -83,6 +96,10 @@ export default defineComponent({
         },
       },
       requestOption: {
+        sortOption: {
+          sort: 'current_month_rmb_cost',
+          order: 'DESC',
+        },
         apiMethod: reqBillsRootAccountSummaryList,
         extension: () => ({
           bill_year: bill_year.value,
@@ -125,8 +142,8 @@ export default defineComponent({
             ),
           }}
         </CommonTable>
-        <BillSyncDialog ref={billSyncDialogRef} />
-        <ConfirmBillDialog ref={confirmBillDialogRef} />
+        <BillSyncDialog ref={billSyncDialogRef} billYear={bill_year.value} billMonth={bill_month.value} />
+        <ConfirmBillDialog ref={confirmBillDialogRef} reloadTable={getListData} />
         <RecalculateBillDialog ref={recalculateBillDialogRef} reloadTable={getListData} />
       </div>
     );

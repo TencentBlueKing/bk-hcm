@@ -27,7 +27,10 @@ export default defineComponent({
     return () => (
       <div class='bill-detail-module'>
         <Tab v-model:active={activeType.value} type='card-grid'>
-          <Search onSearch={(rules) => billDetailRenderTableRef.value?.reloadTable(rules)} />
+          <Search
+            searchKeys={['root_account_id', 'product_id', 'main_account_id']}
+            onSearch={(rules) => billDetailRenderTableRef.value?.reloadTable(rules)}
+          />
           {types.value.map(({ name, label }) => (
             <BkTabPanel key={name} name={name} label={label} renderDirective='if'>
               <BillDetailRenderTable ref={billDetailRenderTableRef} vendor={name} />
