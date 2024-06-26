@@ -45,7 +45,14 @@ func (a *ApplicationOfUpdateMainAccount) Deliver() (enumor.ApplicationStatus, ma
 		return enumor.DeliverError, map[string]interface{}{"error": err}, err
 	}
 
-	return enumor.Completed, map[string]interface{}{"complete": fmt.Sprintf("update main account(%s) success", req.ID)}, nil
+	account, err := a.Client.DataService().Global.MainAccount.GetBasicInfo(a.Cts.Kit, req.ID)
+	if err != nil {
+		err := fmt.Errorf("update account success, accountId: %s, "+
+			"but get main account basic info failed, err: %v, rid: %s", req.ID, err, a.Cts.Kit.Rid)
+		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
+	}
+
+	return enumor.Completed, map[string]interface{}{"account_id": account.ID, "cloud_account_name": account.Name, "cloud_account_id": account.CloudID}, nil
 }
 
 func (a *ApplicationOfUpdateMainAccount) update() error {
