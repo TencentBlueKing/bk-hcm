@@ -134,6 +134,15 @@ func (s *service) addForAws(cts *rest.Contexts, req *proto.RootAccountAddReq) (s
 }
 
 func (s *service) addForGcp(cts *rest.Contexts, req *proto.RootAccountAddReq) (string, error) {
+	// extension 的email如果没有填写则使用req的email，如果extension的email填写了则要求req.email和extension的email一致
+	email, ok := req.Extension["email"]
+	if !ok || email == "" {
+		email = req.Email
+	}
+	if email != req.Email {
+		return "", fmt.Errorf("request email [%s] and extension email [%s] should be same", req.Email, email)
+	}
+
 	result, err := s.client.DataService().Gcp.RootAccount.Create(
 		cts.Kit,
 		&dataproto.RootAccountCreateReq[dataproto.GcpRootAccountExtensionCreateReq]{
@@ -146,7 +155,7 @@ func (s *service) addForGcp(cts *rest.Contexts, req *proto.RootAccountAddReq) (s
 			DeptID:      req.DeptID,
 			Memo:        req.Memo,
 			Extension: &dataproto.GcpRootAccountExtensionCreateReq{
-				Email:                   req.Extension["email"],
+				Email:                   email,
 				CloudProjectID:          req.Extension["cloud_project_id"],
 				CloudProjectName:        req.Extension["cloud_project_name"],
 				CloudServiceAccountID:   req.Extension["cloud_service_account_id"],
