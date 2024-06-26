@@ -1953,24 +1953,28 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'current_month_rmb_cost_synced',
       isDefaultShow: true,
       render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
     },
     {
       label: '账单同步（人民币-元）上月',
       field: 'last_month_rmb_cost_synced',
       isDefaultShow: true,
       render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
     },
     {
       label: '账单同步（美金-美元）当月',
       field: 'current_month_cost_synced',
       isDefaultShow: true,
       render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
     },
     {
       label: '账单同步（美金-美元）上月',
       field: 'last_month_cost_synced',
       isDefaultShow: true,
       render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
     },
     {
       label: '账单同步环比',
@@ -1982,24 +1986,28 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'current_month_rmb_cost',
       isDefaultShow: true,
       render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
     },
     {
       label: '当前账单美金（美元）',
       field: 'current_month_cost',
       isDefaultShow: true,
       render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
     },
     {
       label: '调账人民币（元）',
       field: 'adjustment_cost',
       isDefaultShow: true,
       render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
     },
     {
       label: '调账美金（美元）',
       field: 'adjustment_cost',
       isDefaultShow: true,
       render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
     },
     {
       label: '账号状态',
@@ -2030,24 +2038,28 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'current_month_rmb_cost_synced',
       isDefaultShow: true,
       render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
     },
     {
       label: '已确认账单美金（美元）',
       field: 'current_month_cost_synced',
       isDefaultShow: true,
       render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
     },
     {
       label: '当前账单人民币（元）',
       field: 'current_month_rmb_cost',
       isDefaultShow: true,
       render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
     },
     {
       label: '当前账单美金（美元）',
       field: 'current_month_cost',
       isDefaultShow: true,
       render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
     },
   ];
 
@@ -2101,6 +2113,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'cost',
       isDefaultShow: true,
       render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
     },
     {
       label: '资源类型编码',
@@ -2174,6 +2187,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'cost',
       isDefaultShow: true,
       render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
     },
     {
       label: '资源类型编码',
@@ -2247,6 +2261,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'cost',
       isDefaultShow: true,
       render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
     },
     {
       label: '资源类型编码',
@@ -2320,6 +2335,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'cost',
       isDefaultShow: true,
       render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
     },
     {
       label: '资源类型编码',
@@ -2438,6 +2454,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'cost',
       isDefaultShow: true,
       render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
     },
     {
       label: '资源类型编码',
@@ -2480,11 +2497,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '人民币（元）',
       field: 'rmb_cost',
       render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
     },
     {
       label: '美金（美元）',
       field: 'cost',
       render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
     },
     {
       label: '操作人',
