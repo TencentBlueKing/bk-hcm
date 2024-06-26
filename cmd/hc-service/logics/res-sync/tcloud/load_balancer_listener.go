@@ -52,7 +52,7 @@ func (cli *client) listenerByLbBatch(kt *kit.Kit, params *SyncListenerBatchOptio
 
 	// 并发同步多个负载均衡下的监听器
 	var syncResult *SyncResult
-	err := concurrence.BaseExec(constant.SyncConcurrencyDefaultMaxLimit, params.LbInfos,
+	err := concurrence.BaseExec(constant.CLBListenerSyncConcurrencyMaxLimit, params.LbInfos,
 		func(lb corelb.TCloudLoadBalancer) error {
 			newKit := kt.NewSubKit()
 			syncOpt := &SyncListenerOption{
