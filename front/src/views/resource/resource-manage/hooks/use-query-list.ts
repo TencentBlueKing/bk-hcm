@@ -118,16 +118,18 @@ export default (
     // 执行获取数据的逻辑
     method()
       .then(([listResult, countResult]: [any, any]) => {
-        datas.value = (listResult?.data?.details || listResult?.data || []).map((item: any) => {
-          return {
-            ...item,
-            ...item.spec,
-            ...item.attachment,
-            ...item.revision,
-            ...item.extension,
-            ...item?.extension?.attachment,
-          };
-        });
+        datas.value = Array.isArray(listResult?.data?.details || listResult?.data || [])
+          ? (listResult?.data?.details || listResult?.data || []).map((item: any) => {
+              return {
+                ...item,
+                ...item.spec,
+                ...item.attachment,
+                ...item.revision,
+                ...item.extension,
+                ...item?.extension?.attachment,
+              };
+            }) || []
+          : [];
         // 如果传入了 extraResolveData 方法，则执行该方法, 对 datas 做额外的处理
         typeof extraResolveData === 'function' && extraResolveData(datas.value).then((res) => (datas.value = res));
         pagination.value.count = countResult?.data?.count || 0;

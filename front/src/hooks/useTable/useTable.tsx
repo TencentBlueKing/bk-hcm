@@ -1,6 +1,5 @@
 /* eslint-disable no-nested-ternary */
 import { QueryRuleOPEnum, RulesItem } from '@/typings/common';
-import { FilterType } from '@/typings';
 import { Loading, SearchSelect, Table } from 'bkui-vue';
 import type { Column } from 'bkui-vue/lib/table/props';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
@@ -16,6 +15,7 @@ import { get as lodash_get } from 'lodash-es';
 import { VendorReverseMap } from '@/common/constant';
 import { LB_NETWORK_TYPE_REVERSE_MAP, LISTENER_BINDING_STATUS_REVERSE_MAP, SCHEDULER_REVERSE_MAP } from '@/constants';
 import usePagination from '../usePagination';
+import { defaults } from 'lodash';
 
 export interface IProp {
   // search-select 配置项
@@ -50,7 +50,7 @@ export interface IProp {
     // 筛选参数
     filterOption?: {
       // 规则
-      rules: Array<RulesItem>;
+      rules?: Array<RulesItem>;
       // Tab 切换时选用项(如选中全部时, 删除对应的 rule)
       deleteOption?: {
         field: string;
@@ -67,12 +67,15 @@ export interface IProp {
     resolvePaginationCountCb?: (...args: any) => Promise<any>;
     // 列表数据的路径，如 data.details
     dataPath?: string;
+    // 是否立即请求
+    immediate?: boolean;
   };
-  // 资源下筛选业务功能相关的 prop
-  bizFilter?: FilterType;
 }
 
 export const useTable = (props: IProp) => {
+  defaults(props.requestOption, {});
+  defaults(props.requestOption, { immediate: true });
+
   const { whereAmI } = useWhereAmI();
 
   const regionsStore = useRegionsStore();
@@ -246,10 +249,9 @@ export const useTable = (props: IProp) => {
    */
   const buildFilter = (options: {
     rules: Array<RulesItem>; // 规则列表
-    deleteOption?: { field: string; flagValue: any }; // 删除选项(可选, 用于 tab 切换时, 删除规则)
     differenceFields?: string[]; // search-select 移除条件时的搜索字段差集(只用于 search-select 组件)
   }) => {
-    const { rules, deleteOption, differenceFields } = options;
+    const { rules, differenceFields } = options;
     const filterMap = new Map();
     // 先添加新的规则
     rules.forEach((rule) => {
@@ -272,6 +274,7 @@ export const useTable = (props: IProp) => {
       }
     });
     // 如果配置了 deleteOption, 则当符合条件时, 删除对应规则
+    const { deleteOption } = props.requestOption.filterOption || {};
     if (deleteOption) {
       const { field, flagValue } = deleteOption;
       const rule = filterMap.get(field);
@@ -321,6 +324,11 @@ export const useTable = (props: IProp) => {
     return op;
   };
 
+  const clearFilter = () => {
+    pagination.start = 0;
+    filter.rules = getInitialRules();
+  };
+
   watch(
     [() => searchVal.value, () => accountStore.bizs],
     ([searchVal, bizs], [oldSearchVal]) => {
@@ -354,36 +362,16 @@ export const useTable = (props: IProp) => {
       getListData();
     },
     {
-      immediate: true,
+      immediate: props.requestOption.immediate,
     },
-  );
-
-  // 分配业务筛选
-  watch(
-    () => props.bizFilter,
-    (val) => {
-      const idx = filter.rules.findIndex((rule) => rule.field === 'bk_biz_id');
-      const bizFilter = val.rules[0];
-      if (bizFilter) {
-        if (idx !== -1) {
-          filter.rules[idx] = bizFilter;
-        } else {
-          filter.rules.push(val.rules[0]);
-        }
-      } else {
-        filter.rules.splice(idx, 1);
-      }
-      getListData();
-    },
-    { deep: true },
   );
 
   watch(
     () => props.requestOption.filterOption,
     (val) => {
       if (!val) return;
-      const { rules, deleteOption } = val;
-      buildFilter({ rules, deleteOption });
+      const { rules } = val;
+      buildFilter({ rules });
       getListData();
     },
     {
@@ -394,5 +382,6 @@ export const useTable = (props: IProp) => {
   return {
     CommonTable,
     getListData,
+    clearFilter,
   };
 };
