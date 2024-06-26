@@ -42,6 +42,7 @@ import (
 	"hcm/cmd/data-service/service/bill/billsummarymain"
 	"hcm/cmd/data-service/service/bill/billsummaryroot"
 	"hcm/cmd/data-service/service/bill/billsummaryversion"
+	"hcm/cmd/data-service/service/bill/billsyncrecord"
 	"hcm/cmd/data-service/service/bill/rawbill"
 	"hcm/cmd/data-service/service/bill/rootaccountbillconfig"
 	"hcm/cmd/data-service/service/capability"
@@ -265,6 +266,7 @@ func (s *Service) apiSet() *restful.Container {
 	sgcomrel.InitService(capability)
 
 	billexchangerate.InitService(capability)
+	billsyncrecord.InitService(capability)
 
 	return restful.NewContainer().Add(capability.WebService)
 }

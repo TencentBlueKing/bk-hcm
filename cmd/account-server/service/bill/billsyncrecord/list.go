@@ -17,31 +17,32 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package billsummaryroot ...
-package billsummaryroot
+package billsyncrecord
 
 import (
-	"net/http"
-
-	"hcm/cmd/data-service/service/capability"
-	"hcm/pkg/dal/dao"
+	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
 )
 
-// InitService initialize the bill summary service
-func InitService(cap *capability.Capability) {
-	svc := &service{
-		dao: cap.Dao,
+// ListSyncRecord 查询同步记录
+func (b *service) ListSyncRecord(cts *rest.Contexts) (any, error) {
+
+	req := new(core.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
-	h := rest.NewHandler()
-	h.Add("CreateBillSummaryRoot", http.MethodPost, "/bills/summaryroots", svc.CreateBillSummaryRoot)
-	h.Add("UpdateBillSummaryRoot", http.MethodPut, "/bills/summaryroots", svc.UpdateBillSummaryRoot)
-	h.Add("ListBillSummaryRoot", http.MethodGet, "/bills/summaryroots", svc.ListBillSummaryRoot)
-	h.Add("BatchSyncBillSummaryRoot", http.MethodPost, "bills/summaryroots/batchsync", svc.BatchSyncBillSummaryRoot)
 
-	h.Load(cap.WebService)
-}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
 
-type service struct {
-	dao dao.Set
+	err := b.authorizer.AuthorizeWithPerm(cts.Kit,
+		meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.AccountBill, Action: meta.Find}})
+	if err != nil {
+		return nil, err
+	}
+
+	return b.client.DataService().Global.Bill.ListBillSyncRecord(cts.Kit, req)
 }

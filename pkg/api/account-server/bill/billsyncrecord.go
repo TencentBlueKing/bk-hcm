@@ -17,41 +17,22 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package puller
+// Package bill ...
+package bill
 
 import (
-	"fmt"
-
-	"hcm/pkg/api/data-service/bill"
-	dsbillapi "hcm/pkg/api/data-service/bill"
-	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/kit"
-	"hcm/pkg/serviced"
+	"hcm/pkg/criteria/validator"
 )
 
-var (
-	// PullerRegistry puller registry
-	PullerRegistry = make(map[enumor.Vendor]Puller)
-)
-
-// GetPuller get puller by vendor
-func GetPuller(vendor enumor.Vendor) (Puller, error) {
-	puller, ok := PullerRegistry[vendor]
-	if !ok {
-		return nil, fmt.Errorf("unsupported vendor %s", vendor)
-	}
-	return puller, nil
+// BillSyncRecordCreateReq create request
+type BillSyncRecordCreateReq struct {
+	Vendor    enumor.Vendor `json:"vendor" validate:"required"`
+	BillYear  int           `json:"bill_year" validate:"required"`
+	BillMonth int           `json:"bill_month" validate:"required"`
 }
 
-// Puller puller interface
-type Puller interface {
-	EnsurePullTask(
-		kt *kit.Kit, client *client.ClientSet,
-		sd serviced.ServiceDiscover, billSummaryMain *dsbillapi.BillSummaryMainResult) error
-	// 返回的map的key表示某个二级账号某月所有应该同步的天数的账单状态
-	GetPullTaskList(
-		kt *kit.Kit, client *client.ClientSet,
-		sd serviced.ServiceDiscover, billSummaryMain *dsbillapi.BillSummaryMainResult) (
-		[]*bill.BillDailyPullTaskResult, error)
+// Validate ...
+func (c *BillSyncRecordCreateReq) Validate() error {
+	return validator.Validate.Struct(c)
 }

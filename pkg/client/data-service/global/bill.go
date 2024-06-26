@@ -301,24 +301,30 @@ func (b *BillClient) ListBillSummaryVersion(kt *kit.Kit, req *billproto.BillSumm
 
 // --- bill summary root ---
 
-// CreateBillSummaryRoot create bill summary version
+// CreateBillSummaryRoot create bill summary root
 func (b *BillClient) CreateBillSummaryRoot(kt *kit.Kit, req *billproto.BillSummaryRootCreateReq) (
 	*core.CreateResult, error) {
 	return common.Request[billproto.BillSummaryRootCreateReq, core.CreateResult](
 		b.client, rest.POST, kt, req, "/bills/summaryroots")
 }
 
-// UpdateBillSummaryRoot update bill summary version
+// UpdateBillSummaryRoot update bill summary root
 func (b *BillClient) UpdateBillSummaryRoot(kt *kit.Kit, req *billproto.BillSummaryRootUpdateReq) error {
 	return common.RequestNoResp[billproto.BillSummaryRootUpdateReq](
 		b.client, rest.PUT, kt, req, "/bills/summaryroots")
 }
 
-// ListBillSummaryRoot list bill summary version
+// ListBillSummaryRoot list bill summary root
 func (b *BillClient) ListBillSummaryRoot(kt *kit.Kit, req *billproto.BillSummaryRootListReq) (
 	*billproto.BillSummaryRootListResult, error) {
 	return common.Request[billproto.BillSummaryRootListReq, billproto.BillSummaryRootListResult](
 		b.client, rest.GET, kt, req, "/bills/summaryroots")
+}
+
+// BatchSyncBillSummaryRoot batch update bill summary root state to syncing
+func (b *BillClient) BatchSyncBillSummaryRoot(kt *kit.Kit, req *billproto.BillSummaryBatchSyncReq) error {
+	return common.RequestNoResp[billproto.BillSummaryBatchSyncReq](
+		b.client, rest.POST, kt, req, "/bills/summaryroots/batchsync")
 }
 
 // --- raw bill ---
@@ -448,4 +454,32 @@ func (b *BillClient) ListExchangeRate(kt *kit.Kit, req *core.ListReq) (*billprot
 
 	return common.Request[core.ListReq, billproto.ExchangeRateListResult](b.client, rest.POST, kt, req,
 		"/bills/exchange_rates/list")
+}
+
+// --- bill adjustment item ---
+
+// BatchCreateBillSyncRecord create bill adjustment item
+func (b *BillClient) BatchCreateBillSyncRecord(kt *kit.Kit, req *billproto.BatchBillSyncRecordCreateReq) (
+	*core.BatchCreateResult, error) {
+	return common.Request[billproto.BatchBillSyncRecordCreateReq, core.BatchCreateResult](
+		b.client, rest.POST, kt, req, "/bills/sync_records/create")
+}
+
+// BatchDeleteBillSyncRecord delete bill adjustment item
+func (b *BillClient) BatchDeleteBillSyncRecord(kt *kit.Kit, req *dataservice.BatchDeleteReq) error {
+	return common.RequestNoResp[dataservice.BatchDeleteReq](
+		b.client, rest.DELETE, kt, req, "/bills/sync_records")
+}
+
+// UpdateBillSyncRecord update bill adjustment item
+func (b *BillClient) UpdateBillSyncRecord(kt *kit.Kit, req *billproto.BillSyncRecordUpdateReq) error {
+	return common.RequestNoResp[billproto.BillSyncRecordUpdateReq](
+		b.client, rest.PUT, kt, req, "/bills/sync_records")
+}
+
+// ListBillSyncRecord list bill adjustment item
+func (b *BillClient) ListBillSyncRecord(kt *kit.Kit, req *billproto.BillSyncRecordListReq) (
+	*billproto.BillSyncRecordListResult, error) {
+	return common.Request[billproto.BillSyncRecordListReq, billproto.BillSyncRecordListResult](
+		b.client, rest.POST, kt, req, "/bills/sync_records/list")
 }

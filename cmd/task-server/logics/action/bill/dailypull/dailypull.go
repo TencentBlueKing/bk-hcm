@@ -32,6 +32,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
 )
 
@@ -103,5 +104,8 @@ func (act PullDailyBillAction) Run(kt run.ExecuteKit, params interface{}) (inter
 
 		return nil, errf.New(errf.Aborted, err.Error())
 	}
+	logs.Infof("update daily pull task %s to count %d, currency %s, cost %s, state %s, rid: %s",
+		billTask.ID, result.Count, result.Currency, result.Cost,
+		constant.MainAccountRawBillPullStatePulled, kt.Kit().Rid)
 	return nil, nil
 }

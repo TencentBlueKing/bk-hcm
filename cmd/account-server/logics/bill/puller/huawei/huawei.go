@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
+	"hcm/pkg/serviced"
 )
 
 const (
@@ -46,7 +47,8 @@ type HuaweiPuller struct {
 }
 
 func (hp *HuaweiPuller) EnsurePullTask(
-	kt *kit.Kit, client *client.ClientSet, billSummaryMain *dsbillapi.BillSummaryMainResult) error {
+	kt *kit.Kit, client *client.ClientSet,
+	sd serviced.ServiceDiscover, billSummaryMain *dsbillapi.BillSummaryMainResult) error {
 
 	hwMainAccount, err := client.DataService().HuaWei.MainAccount.Get(kt, billSummaryMain.MainAccountID)
 	if err != nil {
@@ -65,12 +67,14 @@ func (hp *HuaweiPuller) EnsurePullTask(
 		Version:       billSummaryMain.CurrentVersion,
 		BillDelay:     hp.BillDelay,
 		Client:        client,
+		Sd:            sd,
 	}
 	return dp.EnsurePullTask(kt)
 }
 
 func (hp *HuaweiPuller) GetPullTaskList(
-	kt *kit.Kit, client *client.ClientSet, billSummaryMain *dsbillapi.BillSummaryMainResult) (
+	kt *kit.Kit, client *client.ClientSet,
+	sd serviced.ServiceDiscover, billSummaryMain *dsbillapi.BillSummaryMainResult) (
 	[]*bill.BillDailyPullTaskResult, error) {
 
 	dp := &daily.DailyPuller{
@@ -84,6 +88,7 @@ func (hp *HuaweiPuller) GetPullTaskList(
 		Version:       billSummaryMain.CurrentVersion,
 		BillDelay:     hp.BillDelay,
 		Client:        client,
+		Sd:            sd,
 	}
 	return dp.GetPullTaskList(kt)
 }

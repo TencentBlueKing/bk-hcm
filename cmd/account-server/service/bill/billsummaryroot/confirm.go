@@ -48,7 +48,7 @@ func (s *service) ConfirmRootAccountSummary(cts *rest.Contexts) (interface{}, er
 	}
 
 	updateReq := &bill.BillSummaryRootUpdateReq{
-		ID:    req.RootAccountID,
+		ID:    rootSummary.ID,
 		State: constant.RootAccountBillSummaryStateConfirmed,
 	}
 	if err := s.client.DataService().Global.Bill.UpdateBillSummaryRoot(cts.Kit, updateReq); err != nil {

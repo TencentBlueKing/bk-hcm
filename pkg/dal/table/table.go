@@ -196,6 +196,8 @@ const (
 	RootAccountBillConfigTable = "root_account_bill_config"
 	// AccountBillExchangeRateTable 账单汇率换算表
 	AccountBillExchangeRateTable = "account_bill_exchange_rate"
+	// AccountBillSyncRecordTable 账单同步记录
+	AccountBillSyncRecordTable = "account_bill_sync_record"
 )
 
 // Validate whether the table name is valid or not.
@@ -282,6 +284,7 @@ var TableMap = map[Name]struct{}{
 	AccountBillSummaryRootTable:     {},
 	RootAccountBillConfigTable:      {},
 	AccountBillExchangeRateTable:    {},
+	AccountBillSyncRecordTable:      {},
 	LoadBalancerTable:               {},
 	SecurityGroupCommonRelTable:     {},
 	LoadBalancerListenerTable:       {},

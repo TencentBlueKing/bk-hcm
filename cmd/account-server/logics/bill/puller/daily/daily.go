@@ -21,19 +21,24 @@ package daily
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"hcm/cmd/task-server/logics/action/bill/dailypull"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/bill"
 	taskserver "hcm/pkg/api/task-server"
+	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/serviced"
+	"hcm/pkg/tools/slice"
 
 	"github.com/shopspring/decimal"
 )
@@ -52,6 +57,7 @@ type DailyPuller struct {
 	// 账单延迟查询时间
 	BillDelay int
 	Client    *client.ClientSet
+	Sd        serviced.ServiceDiscover
 }
 
 func (dp *DailyPuller) getFilter(billDay int) *filter.Expression {
@@ -117,6 +123,11 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 	if err != nil {
 		return fmt.Errorf("get pull task for %v failed, err %s", dp, err.Error())
 	}
+	taskServerNameList, err := getTaskServerKeyList(dp.Sd)
+	if err != nil {
+		logs.Warnf("get task server name list failed, err %s", err.Error())
+		return err
+	}
 	billTaskDayMap := make(map[int]struct{})
 	for _, billTask := range billTaskResult.Details {
 		billTaskDayMap[billTask.BillDay] = struct{}{}
@@ -151,32 +162,22 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 		// 如果已经有拉取task flow，则检查拉取任务是否有问题
 		flow, err := dp.Client.TaskServer().GetFlow(kt, billTask.FlowID)
 		if err != nil {
-			return fmt.Errorf("failed to get flow by id %s, err %s", billTask.FlowID, err.Error())
+			if !errf.IsRecordNotFound(err) {
+				return fmt.Errorf("failed to get flow by id %s, err %s", billTask.FlowID, err.Error())
+			}
+			return dp.createNewPullTask(kt, billTask)
 		}
-		// 如果flow失败了，则重新创建一个新的flow
-		if flow.State == enumor.FlowFailed {
-			flowResult, err := dp.Client.TaskServer().CreateCustomFlow(kt, &taskserver.AddCustomFlowReq{
-				Name: enumor.FlowPullRawBill,
-				Memo: "pull daily raw bill",
-				Tasks: []taskserver.CustomFlowTask{
-					dailypull.BuildDailyPullTask(
-						dp.RootAccountID,
-						dp.MainAccountID,
-						dp.BillAccountID,
-						dp.Vendor,
-						dp.BillYear,
-						dp.BillMonth,
-						billTask.BillDay,
-						dp.Version,
-					),
-				},
-			})
-			if err != nil {
-				return fmt.Errorf("failed to create custom flow, err %s", err.Error())
+		// 如果flow失败了或者flow找不到了，则重新创建一个新的flow
+		if flow.State == enumor.FlowFailed ||
+			(flow.State == enumor.FlowScheduled &&
+				flow.Worker != nil &&
+				!slice.IsItemInSlice[string](taskServerNameList, *flow.Worker)) {
+
+			if err := dp.Client.TaskServer().CancelFlow(kt, flow.ID); err != nil {
+				logs.Warnf("cancel flow %v failed, err %s, rid: %s", flow, err.Error(), kt.Rid)
+				continue
 			}
-			if err := dp.updateDailyPullTaskFlowID(kt, billTask.ID, flowResult.ID); err != nil {
-				return fmt.Errorf("update flow id failed, err %s", err.Error())
-			}
+			return dp.createNewPullTask(kt, billTask)
 		}
 	}
 	for _, day := range dayList {
@@ -188,6 +189,33 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 			}
 			logs.Infof("create pull task for %v day %d successfully, rid: %s", dp, day, kt.Rid)
 		}
+	}
+
+	return nil
+}
+
+func (dp *DailyPuller) createNewPullTask(kt *kit.Kit, billTask *bill.BillDailyPullTaskResult) error {
+	flowResult, err := dp.Client.TaskServer().CreateCustomFlow(kt, &taskserver.AddCustomFlowReq{
+		Name: enumor.FlowPullRawBill,
+		Memo: "pull daily raw bill",
+		Tasks: []taskserver.CustomFlowTask{
+			dailypull.BuildDailyPullTask(
+				dp.RootAccountID,
+				dp.MainAccountID,
+				dp.BillAccountID,
+				dp.Vendor,
+				dp.BillYear,
+				dp.BillMonth,
+				billTask.BillDay,
+				dp.Version,
+			),
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create custom flow, err %s", err.Error())
+	}
+	if err := dp.updateDailyPullTaskFlowID(kt, billTask.ID, flowResult.ID); err != nil {
+		return fmt.Errorf("update flow id failed, err %s", err.Error())
 	}
 
 	return nil
@@ -221,4 +249,18 @@ func getBillDays(billYear, billMonth, billDelay int, now time.Time) []int {
 		retList = append(retList, t.Day())
 	}
 	return retList
+}
+
+func getTaskServerKeyList(sd serviced.ServiceDiscover) ([]string, error) {
+	taskServerNameList, err := sd.GetServiceAllNodeKeys(cc.TaskServerName)
+	if err != nil {
+		logs.Warnf("get task server name list failed, err %s", err.Error())
+		return nil, err
+	}
+	var keyUUIDs []string
+	for _, one := range taskServerNameList {
+		split := strings.Split(one, "/")
+		keyUUIDs = append(keyUUIDs, split[len(split)-1])
+	}
+	return keyUUIDs, nil
 }

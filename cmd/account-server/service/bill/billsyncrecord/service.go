@@ -17,41 +17,38 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package puller
+package billsyncrecord
 
 import (
-	"fmt"
+	"net/http"
 
-	"hcm/pkg/api/data-service/bill"
-	dsbillapi "hcm/pkg/api/data-service/bill"
+	"hcm/cmd/account-server/logics/audit"
+	"hcm/cmd/account-server/service/capability"
 	"hcm/pkg/client"
-	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/kit"
-	"hcm/pkg/serviced"
+	"hcm/pkg/iam/auth"
+	"hcm/pkg/rest"
 )
 
-var (
-	// PullerRegistry puller registry
-	PullerRegistry = make(map[enumor.Vendor]Puller)
-)
-
-// GetPuller get puller by vendor
-func GetPuller(vendor enumor.Vendor) (Puller, error) {
-	puller, ok := PullerRegistry[vendor]
-	if !ok {
-		return nil, fmt.Errorf("unsupported vendor %s", vendor)
+// InitService initial the main account service
+func InitService(c *capability.Capability) {
+	svc := &service{
+		client:     c.ApiClient,
+		authorizer: c.Authorizer,
+		audit:      c.Audit,
 	}
-	return puller, nil
+
+	h := rest.NewHandler()
+
+	// register handler
+	h.Add("ListSyncRecord", http.MethodPost, "/bills/sync_records/list", svc.ListSyncRecord)
+	h.Add("CreateSyncRecord",
+		http.MethodPost, "/bills/sync_records", svc.CreateSyncRecord)
+
+	h.Load(c.WebService)
 }
 
-// Puller puller interface
-type Puller interface {
-	EnsurePullTask(
-		kt *kit.Kit, client *client.ClientSet,
-		sd serviced.ServiceDiscover, billSummaryMain *dsbillapi.BillSummaryMainResult) error
-	// 返回的map的key表示某个二级账号某月所有应该同步的天数的账单状态
-	GetPullTaskList(
-		kt *kit.Kit, client *client.ClientSet,
-		sd serviced.ServiceDiscover, billSummaryMain *dsbillapi.BillSummaryMainResult) (
-		[]*bill.BillDailyPullTaskResult, error)
+type service struct {
+	client     *client.ClientSet
+	authorizer auth.Authorizer
+	audit      audit.Interface
 }

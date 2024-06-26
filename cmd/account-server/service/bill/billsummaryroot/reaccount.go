@@ -55,7 +55,7 @@ func (s *service) ReaccountRootAccountSummary(cts *rest.Contexts) (interface{}, 
 	}
 
 	updateReq := &bill.BillSummaryRootUpdateReq{
-		ID:             req.RootAccountID,
+		ID:             rootSummary.ID,
 		CurrentVersion: rootSummary.CurrentVersion + 1,
 		State:          constant.RootAccountBillSummaryStateAccounting,
 	}

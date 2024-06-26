@@ -111,7 +111,6 @@ func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 		}
 	}
 
-	// TODO: 计算调账成本
 	req := &bill.BillSummaryMainUpdateReq{
 		ID:              summary.ID,
 		MainAccountName: mAccountResult.CloudID,
@@ -120,6 +119,16 @@ func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 		BkBizID:         bkBizID,
 		Currency:        currency,
 	}
+	// 计算调账成本
+	_, ajCost, err := act.getAdjustmenSummary(kt.Kit(), opt)
+	if err != nil {
+		return nil, err
+	}
+	req.AjustmentCost = *ajCost
+	if exhangeRate != nil {
+		req.AjustmentRMBCost = req.AjustmentCost.Mul(*exhangeRate)
+	}
+
 	if curMonthCost != nil {
 		req.CurrentMonthCost = *curMonthCost
 		if exhangeRate != nil {
@@ -253,6 +262,50 @@ func (act *MainAccountSummaryAction) getLastMonthSyncedCost(
 	}
 	lastMonthSummary := result.Details[0]
 	return &lastMonthSummary.CurrentMonthCostSynced, &lastMonthSummary.CurrentMonthRMBCostSynced, nil
+}
+
+func (act *MainAccountSummaryAction) getAdjustmenSummary(kt *kit.Kit, opt *MainAccountSummaryActionOption) (
+	enumor.CurrencyCode, *decimal.Decimal, error) {
+
+	expressions := []*filter.AtomRule{
+		tools.RuleEqual("root_account_id", opt.RootAccountID),
+		tools.RuleEqual("main_account_id", opt.MainAccountID),
+		tools.RuleEqual("vendor", opt.Vendor),
+		tools.RuleEqual("bill_year", opt.BillYear),
+		tools.RuleEqual("bill_month", opt.BillMonth),
+	}
+	result, err := actcli.GetDataService().Global.Bill.ListBillAdjustmentItem(kt, &core.ListReq{
+		Filter: tools.ExpressionAnd(expressions...),
+		Page: &core.BasePage{
+			Count: true,
+		},
+	})
+	if err != nil {
+		return "", nil, fmt.Errorf("list adjustment item of %v failed, err %s", opt, err.Error())
+	}
+	logs.Infof("found %d adjustment item for opt %v, rid %s", result.Count, opt, kt.Rid)
+	cost := decimal.NewFromFloat(0)
+	var currency enumor.CurrencyCode
+	for offset := uint64(0); offset < result.Count; offset = offset + uint64(core.DefaultMaxPageLimit) {
+		result, err = actcli.GetDataService().Global.Bill.ListBillAdjustmentItem(
+			kt, &core.ListReq{
+				Filter: tools.ExpressionAnd(expressions...),
+				Page: &core.BasePage{
+					Start: 0,
+					Limit: core.DefaultMaxPageLimit,
+				},
+			})
+		if err != nil {
+			return "", nil, fmt.Errorf("list adjustment item of %v failed, err %s", opt, err.Error())
+		}
+		for _, item := range result.Details {
+			cost = cost.Add(item.Cost)
+			if len(item.Currency) == 0 {
+				currency = enumor.CurrencyCode(item.Currency)
+			}
+		}
+	}
+	return currency, &cost, nil
 }
 
 func (act *MainAccountSummaryAction) getBillSummary(
