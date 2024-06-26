@@ -52,6 +52,7 @@ export default defineComponent({
       },
       requestOption: {
         type: 'account/root_accounts',
+        sortOption: { sort: 'created_at', order: 'DESC' },
         dataPath: 'data.details',
       },
     });
@@ -61,7 +62,7 @@ export default defineComponent({
         columns: [
           {
             label: '二级帐号ID',
-            field: 'id',
+            field: 'cloud_id',
             render: ({ data }: any) => (
               <Button
                 text
@@ -70,7 +71,7 @@ export default defineComponent({
                   curSecondLeveleAccount.value = data;
                   isSecondLevelSideSliderShow.value = true;
                 }}>
-                {data.id}
+                {data.cloud_id}
               </Button>
             ),
           },
@@ -83,6 +84,7 @@ export default defineComponent({
       requestOption: {
         type: 'account/main_accounts',
         dataPath: 'data.details',
+        sortOption: { sort: 'created_at', order: 'DESC' },
       },
     });
 

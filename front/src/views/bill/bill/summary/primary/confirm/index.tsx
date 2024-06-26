@@ -37,7 +37,7 @@ export default defineComponent({
           <span>xxx</span>
         </div>
         <div class={cssModule.item}>
-          <span>{t('运营产品数量')}</span>
+          <span>{'业务'}</span>
           <span>xxx</span>
         </div>
         <div class={cssModule.item}>

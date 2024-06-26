@@ -1,9 +1,19 @@
-import { computed, defineComponent, ref, watch } from 'vue';
+import { computed, defineComponent, reactive, ref, watch } from 'vue';
 import './index.scss';
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
-import useBillStore from '@/store/useBillStore';
-import { Message } from 'bkui-vue';
+import useBillStore, { IRootAccountDetail } from '@/store/useBillStore';
+import { Button, Form, Input, Message } from 'bkui-vue';
 import { timeFormatter } from '@/common/util';
+import { BILL_VENDORS_MAP } from '../../account-manage/constants';
+import { SITE_TYPE_MAP, VendorEnum } from '@/common/constant';
+import CommonDialog from '@/components/common-dialog';
+import {
+  ValidateStatus,
+  useSecretExtension,
+} from '@/views/resource/resource-manage/account/createAccount/components/accountForm/useSecretExtension';
+import { SecretModel } from '@/typings/account';
+
+const { FormItem } = Form;
 
 export default defineComponent({
   props: {
@@ -13,12 +23,32 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const detail = ref({});
+    const detail = ref<IRootAccountDetail>({});
     const billStore = useBillStore();
     const getDetail = async () => {
       const { data } = await billStore.root_account_detail(props.accountId);
       detail.value = data;
     };
+    const isEditDialogShow = ref(false);
+    const buttonLoading = ref(false);
+    const formDiaRef = ref(null);
+
+    const initSecretModel: SecretModel = {
+      secretId: '',
+      secretKey: '',
+      subAccountId: '',
+      iamUserName: '',
+    };
+
+    const { curExtension, isValidateLoading, handleValidate, isValidateDiasbled } = useSecretExtension({
+      vendor: detail.value.vendor as VendorEnum,
+      isValidate: true,
+    });
+
+    const secretModel = reactive<SecretModel>({
+      ...initSecretModel,
+    });
+
     watch(
       () => props.accountId,
       () => {
@@ -38,7 +68,7 @@ export default defineComponent({
             { prop: 'cloud_account_id', name: '一级账号ID', render: () => detail.value.extension?.cloud_account_id },
             { prop: 'cloud_iam_username', name: 'IAM用户名', render: () => detail.value.extension?.cloud_iam_username },
             { prop: 'cloud_secret_id', name: '密钥ID', render: () => detail.value.extension?.cloud_secret_id },
-            { prop: 'cloud_secret_key', name: '密钥', render: () => detail.value.extension?.cloud_secret_key },
+            // { prop: 'cloud_secret_key', name: '密钥', render: () => detail.value.extension?.cloud_secret_key },
           ];
           break;
         case 'gcp':
@@ -61,11 +91,11 @@ export default defineComponent({
               name: '服务密钥ID',
               render: () => detail.value.extension?.cloud_service_secret_id,
             },
-            {
-              prop: 'cloud_service_secret_key',
-              name: '服务密钥',
-              render: () => detail.value.extension?.cloud_service_secret_key,
-            },
+            // {
+            //   prop: 'cloud_service_secret_key',
+            //   name: '服务密钥',
+            //   render: () => detail.value.extension?.cloud_service_secret_key,
+            // },
           ];
           break;
         case 'azure':
@@ -97,20 +127,20 @@ export default defineComponent({
               name: '客户端密钥ID',
               render: () => detail.value.extension?.cloud_client_secret_id,
             },
-            {
-              prop: 'cloud_client_secret_key',
-              name: '客户端密钥',
-              render: () => detail.value.extension?.cloud_client_secret_key,
-            },
+            // {
+            //   prop: 'cloud_client_secret_key',
+            //   name: '客户端密钥',
+            //   render: () => detail.value.extension?.cloud_client_secret_key,
+            // },
           ];
           break;
         case 'huawei':
           extension = [
-            {
-              prop: 'cloud_main_account_name',
-              name: '主账号名',
-              render: () => detail.value.extension?.cloud_main_account_name,
-            },
+            // {
+            //   prop: 'cloud_main_account_name',
+            //   name: '主账号名',
+            //   render: () => detail.value.extension?.cloud_main_account_name,
+            // },
             {
               prop: 'cloud_sub_account_id',
               name: '子账号ID',
@@ -122,7 +152,7 @@ export default defineComponent({
               render: () => detail.value.extension?.cloud_sub_account_name,
             },
             { prop: 'cloud_secret_id', name: '密钥ID', render: () => detail.value.extension?.cloud_secret_id },
-            { prop: 'cloud_secret_key', name: '密钥', render: () => detail.value.extension?.cloud_secret_key },
+            // { prop: 'cloud_secret_key', name: '密钥', render: () => detail.value.extension?.cloud_secret_key },
             { prop: 'cloud_iam_user_id', name: 'IAM用户ID', render: () => detail.value.extension?.cloud_iam_user_id },
             { prop: 'cloud_iam_username', name: 'IAM用户名', render: () => detail.value.extension?.cloud_iam_username },
           ];
@@ -137,7 +167,7 @@ export default defineComponent({
 
       return extension;
     });
-    const handleUpdate = async (val) => {
+    const handleUpdate = async (val: any) => {
       await billStore.root_account_update(props.accountId, val);
       Message({
         message: '更新成功',
@@ -156,12 +186,12 @@ export default defineComponent({
           fields={[
             { prop: 'id', name: 'id' },
             { prop: 'name', name: '名字', edit: true },
-            { prop: 'vendor', name: '云厂商' },
+            { prop: 'vendor', name: '云厂商', render: () => BILL_VENDORS_MAP[detail.value.vendor] },
             { prop: 'cloud_id', name: '云ID' },
             { prop: 'email', name: '邮箱', edit: true },
             { prop: 'managers', name: '负责人', edit: true, type: 'member' },
             { prop: 'bak_managers', name: '备份负责人', edit: true, type: 'member' },
-            { prop: 'site', name: '站点' },
+            { prop: 'site', name: '站点', render: () => SITE_TYPE_MAP[detail.value.site] },
             // { prop: 'dept_id', name: '组织架构ID' },
             { prop: 'memo', name: '备注', edit: true },
             { prop: 'creator', name: '创建者' },
@@ -172,14 +202,85 @@ export default defineComponent({
         />
         <p class={'sub-title'}>
           API 密钥
-          <span class={'edit-icon'}>
-            <i class={'hcm-icon bkhcm-icon-bianji mr6'} />
-            编辑
-          </span>
+          {![VendorEnum.KAOPU, VendorEnum.ZENLAYER].includes(detail.value.vendor as VendorEnum) && (
+            <span
+              class={'edit-icon'}
+              onClick={() => {
+                isEditDialogShow.value = true;
+              }}>
+              <i class={'hcm-icon bkhcm-icon-bianji mr6'} />
+              编辑
+            </span>
+          )}
         </p>
         <div class={'detail-info'}>
           <DetailInfo detail={detail.value} fields={computedExtension.value} wide />
         </div>
+
+        {/* <Dialog isShow={isEditDialogShow.value} title='编辑API密钥'>
+          1231
+        </Dialog> */}
+        <CommonDialog v-model:isShow={isEditDialogShow.value} title={'编辑API密钥'} dialogType='operation'>
+          {{
+            default: () => (
+              <>
+                <Form labelWidth={130} model={secretModel} ref={formDiaRef} formType='vertical'>
+                  {Object.entries(curExtension.value.input).map(([property, { label }]) => (
+                    <FormItem label={label} property={property}>
+                      <Input
+                        v-model={curExtension.value.input[property].value}
+                        type={
+                          property === 'cloud_service_secret_key' && detail.value.vendor === VendorEnum.GCP
+                            ? 'textarea'
+                            : 'text'
+                        }
+                        rows={8}
+                      />
+                    </FormItem>
+                  ))}
+                  {[curExtension.value.output1, curExtension.value.output2].map((output) =>
+                    Object.entries(output).map(([property, { label, placeholder }]) => (
+                      <FormItem label={label} property={property}>
+                        <Input v-model={output[property].value} readonly placeholder={placeholder} />
+                      </FormItem>
+                    )),
+                  )}
+                </Form>
+              </>
+            ),
+            footer: () => (
+              <div class={'validate-btn-container'}>
+                <Button
+                  theme='primary'
+                  class={'validate-btn'}
+                  loading={isValidateLoading.value}
+                  onClick={() => handleValidate()}
+                  disabled={isValidateDiasbled.value}>
+                  账号校验
+                </Button>
+                <Button
+                  theme='primary'
+                  disabled={isValidateDiasbled.value || curExtension.value.validatedStatus !== ValidateStatus.YES}
+                  loading={buttonLoading.value}
+                  onClick={async () => {
+                    try {
+                      buttonLoading.value = true;
+                      await handleUpdate({
+                        extension: secretModel,
+                      });
+                    } finally {
+                      buttonLoading.value = false;
+                    }
+                  }}>
+                  {'确认'}
+                </Button>
+                <Button class='ml10' onClick={() => (isEditDialogShow.value = false)}>
+                  {'取消'}
+                </Button>
+              </div>
+            ),
+          }}
+        </CommonDialog>
       </div>
     );
   },

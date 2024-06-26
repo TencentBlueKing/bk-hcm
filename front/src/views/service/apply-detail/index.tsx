@@ -5,13 +5,13 @@ import ApplyDetail from '@/views/service/my-apply/components/apply-detail/index.
 import { useAccountStore } from '@/store';
 import { useRoute } from 'vue-router';
 import { ACCOUNT_TYPES, APPLICATION_TYPE_MAP } from '../apply-list/constants';
-import AccountApplyDetail from './account-apply-detail';
+import AccountApplyDetail, { IDetail } from './account-apply-detail';
 
 export default defineComponent({
   setup() {
     const accountStore = useAccountStore();
     const isLoading = ref(false);
-    const currentApplyData = ref({});
+    const currentApplyData = ref<IDetail>({});
     const curApplyKey = ref('');
     const isCancelBtnLoading = ref(false);
     const route = useRoute();
@@ -73,7 +73,6 @@ export default defineComponent({
             ) : (
               <ApplyDetail
                 params={currentApplyData.value}
-                loading={isLoading.value}
                 key={curApplyKey.value}
                 cancelLoading={isCancelBtnLoading.value}
                 onCancel={handleCancel}
