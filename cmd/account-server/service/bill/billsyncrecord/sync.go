@@ -138,7 +138,7 @@ func (b *service) collectAllBillSummaryRoot(cts *rest.Contexts, req *bill.BillSy
 			cost = cost.Add(item.AjustmentCost)
 			rmbCost = rmbCost.Add(item.CurrentMonthRMBCost)
 			rmbCost = rmbCost.Add(item.AjustmentRMBCost)
-			if len(currency) == 0 {
+			if len(item.Currency) != 0 {
 				currency = item.Currency
 			}
 		}
