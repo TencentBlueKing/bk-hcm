@@ -1,4 +1,5 @@
 import { defineComponent, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import cssModule from './index.module.scss';
 
 import { ArrowsLeft } from 'bkui-vue/lib/icon';
@@ -8,7 +9,7 @@ import Panel from '@/components/panel';
 import { useI18n } from 'vue-i18n';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import { useTable } from '@/hooks/useTable/useTable';
-import { useRouter } from 'vue-router';
+import { reqBillsSyncRecordList } from '@/api/bill';
 
 export default defineComponent({
   name: 'BillSummaryOperationRecord',
@@ -29,7 +30,7 @@ export default defineComponent({
       tableOptions: {
         columns,
       },
-      requestOption: { apiMethod: null },
+      requestOption: { apiMethod: reqBillsSyncRecordList },
     });
 
     return () => (

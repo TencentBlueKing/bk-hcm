@@ -2447,35 +2447,29 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const billsSummaryOperationRecordColumns = [
     {
       label: '操作时间',
-      field: 'operationTime',
+      field: 'updated_at',
+      render: ({ cell }: any) => timeFormatter(cell),
     },
     {
       label: '状态',
-      field: 'status',
+      field: 'state',
     },
     {
       label: '账单月份',
-      field: 'billingMonth',
+      field: 'bill_month',
+      render: ({ data }: any) => dayjs(new Date(data.bill_year, data.bill_month - 1)).format('YYYY-MM'),
     },
     {
-      label: '云厂商',
-      field: 'cloudVendor',
+      label: '人民币（元）',
+      field: 'rmb_cost',
     },
     {
-      label: '一级账号ID',
-      field: 'primaryAccountId',
+      label: '美金（美元）',
+      field: 'cost',
     },
     {
       label: '操作人',
       field: 'operator',
-    },
-    {
-      label: '人民币（元）',
-      field: 'rmbAmount',
-    },
-    {
-      label: '美金（美元）',
-      field: 'usdAmount',
     },
   ];
 

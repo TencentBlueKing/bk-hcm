@@ -138,7 +138,7 @@ export default defineComponent({
             ),
           }}
         </CommonTable>
-        <BillSyncDialog ref={billSyncDialogRef} />
+        <BillSyncDialog ref={billSyncDialogRef} billYear={bill_year.value} billMonth={bill_month.value} />
         <ConfirmBillDialog ref={confirmBillDialogRef} reloadTable={getListData} />
         <RecalculateBillDialog ref={recalculateBillDialogRef} reloadTable={getListData} />
       </div>

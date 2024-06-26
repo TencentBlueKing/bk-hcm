@@ -77,6 +77,11 @@ export const reAccountBillsRootAccountSummary = async (data: {
   return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/root-account-summarys/reaccount`, data);
 };
 
+// 账单同步至 OBS
+export const syncRecordsBills = async (data: { bill_year: number; bill_month: number; vendor: VendorEnum }) => {
+  return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/sync_records`, data);
+};
+
 // 查询当月账单明细
 export const reqBillsItemList = async (data: {
   vendor: VendorEnum;
@@ -131,4 +136,9 @@ export const confirmBillsAdjustment = async (ids: string[]) => {
 // 批量删除调账明细，已确定的调账明细不能删除
 export const deleteBillsAdjustment = async (ids: string[]) => {
   return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/adjustment_items/batch`, { data: { ids } });
+};
+
+// 账单同步记录查询接口
+export const reqBillsSyncRecordList = async (data: { filter: FilterType; page: IPageQuery }) => {
+  return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/sync_records/list`, data);
 };
