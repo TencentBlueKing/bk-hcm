@@ -24,13 +24,13 @@ import (
 	"encoding/json"
 	"fmt"
 
+	lblogic "hcm/cmd/cloud-server/logics/load-balancer"
 	cloudserver "hcm/pkg/api/cloud-server"
-	cslb "hcm/pkg/api/cloud-server/load-balancer"
+	"hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
-	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/hooks/handler"
@@ -73,23 +73,134 @@ func (svc *lbSvc) batchBizRuleOnline(cts *rest.Contexts, authHandler handler.Val
 
 	switch accountInfo.Vendor {
 	case enumor.TCloud:
-		return svc.buildCreateTcloudRule(cts.Kit, req.Data, accountInfo.AccountID)
+		return svc.buildCreateTcloudRule(cts, req.Data, accountInfo.AccountID)
 	default:
 		return nil, fmt.Errorf("vendor: %s not support", accountInfo.Vendor)
 	}
 }
 
-func (svc *lbSvc) buildCreateTcloudRule(kt *kit.Kit, body json.RawMessage, accountID string) (any, error) {
-	req := new(cslb.TCloudSopsRuleBatchCreateReq)
-	if err := json.Unmarshal(body, req); err != nil {
+func (svc *lbSvc) buildCreateTcloudRule(cts *rest.Contexts, body json.RawMessage, accountID string) (any, error) {
+	rawInputList := new([]lblogic.BindRSRawInput)
+	if err := json.Unmarshal(body, rawInputList); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	// TODO 拼凑调整参数，请求创建规则的批量异步任务接口
+	var bindRSReqParam []*cloud.BatchOperationReq[*lblogic.BindRSRecord]
+
+	// TODO 参数检查preview
+	result, err := svc.previewValidate(cts, *rawInputList)
+	if err != nil {
+		return nil, fmt.Errorf("batch sops rule online, preview validate err, err: %v", err)
+	}
+	switch value := result.(type) {
+	case []*cloud.BatchOperationValidateError:
+		return nil, fmt.Errorf("batch sops rule online, preview validate err, err: %v", value)
+	case []*cloud.BatchOperationPreviewResult[*lblogic.BindRSRecord]:
+		bindRSReqParam = convertBatchOperationPreviewResultToReq(value)
+	default:
+		return nil, fmt.Errorf("batch sops rule online, preview validate result type is invalid")
 	}
 
-	// TODO 拼凑调整参数，请求创建规则的批量异步任务接口
-
+	// TODO 提交异步任务
+	logs.Infof("batch sops rule online, request bind rs api, request param: %v", bindRSReqParam)
+	//return svc.BindRS(bindRSReqParam)
 	return nil, nil
+}
+
+func (svc *lbSvc) previewValidate(cts *rest.Contexts, rawInputList []lblogic.BindRSRawInput) (any, error) {
+	// 初始化规则配置切片
+	var bindRSRecords []*lblogic.BindRSRecord
+	// 错误校验列表
+	errList := make([]*cloud.BatchOperationValidateError, 0)
+	// 解析每一行数据
+	for i, rawInput := range rawInputList {
+		records, err := rawInput.SplitRecord()
+		if err != nil {
+			errList = append(errList, &cloud.BatchOperationValidateError{
+				Reason: fmt.Sprintf("解析第%d行数据失败: %v", i+2, err),
+			})
+			continue
+		}
+
+		bindRSRecords = append(bindRSRecords, records...)
+	}
+
+	recordMap := make(map[string]struct{})
+	resultMap := make(map[string]*cloud.BatchOperationPreviewResult[*lblogic.BindRSRecord])
+	for _, record := range bindRSRecords {
+		key := record.GetKey()
+		err := record.Validate()
+		if err != nil {
+			errList = append(errList, &cloud.BatchOperationValidateError{
+				Reason: fmt.Sprintf("%s %v", key, err),
+			})
+		}
+		if _, ok := recordMap[key]; ok {
+			errList = append(errList, &cloud.BatchOperationValidateError{
+				Reason: fmt.Sprintf("%s duplicate record", key),
+			})
+		}
+		recordMap[key] = struct{}{}
+
+		validateErrs := record.CheckWithDataService(cts, svc.client.DataService(), svc.cvmLgc)
+		if len(validateErrs) > 0 {
+			errList = append(errList, validateErrs...)
+			continue
+		}
+
+		lb, _ := record.GetLoadBalancer(cts, svc.client.DataService())
+		if lb == nil {
+			continue
+		}
+		previewResp, ok := resultMap[lb.ID]
+		if !ok {
+			previewResp = &cloud.BatchOperationPreviewResult[*lblogic.BindRSRecord]{
+				ClbID:     lb.ID,
+				ClbName:   lb.Name,
+				Vip:       record.VIP,
+				Listeners: make([]*lblogic.BindRSRecord, 0),
+			}
+			resultMap[lb.ID] = previewResp
+		}
+		previewResp.Listeners = append(previewResp.Listeners, record)
+		previewResp.NewRsCount += len(record.RSInfos)
+	}
+
+	for lbID, previewResp := range resultMap {
+		_, err := svc.checkResFlowRel(cts.Kit, lbID, enumor.LoadBalancerCloudResType)
+		if err != nil {
+			errList = append(errList, &cloud.BatchOperationValidateError{
+				Reason: fmt.Sprintf("%s 已有任务执行中，不支持变更", previewResp.Vip),
+				Ext:    lbID,
+			})
+		}
+	}
+
+	if len(errList) > 0 {
+		return errList, nil
+	}
+
+	result := make([]*cloud.BatchOperationPreviewResult[*lblogic.BindRSRecord], 0, len(resultMap))
+	for _, pr := range resultMap {
+		result = append(result, pr)
+	}
+	return result, nil
+}
+
+func convertBatchOperationPreviewResultToReq(previewResultList []*cloud.BatchOperationPreviewResult[*lblogic.BindRSRecord]) []*cloud.BatchOperationReq[*lblogic.BindRSRecord] {
+	batchOperationReqList := make([]*cloud.BatchOperationReq[*lblogic.BindRSRecord], 0, len(previewResultList))
+	for _, previewResult := range previewResultList {
+		req := &cloud.BatchOperationReq[*lblogic.BindRSRecord]{
+			ClbID:             previewResult.ClbID,
+			ClbName:           previewResult.ClbName,
+			Vip:               previewResult.Vip,
+			NewRsCount:        previewResult.NewRsCount,
+			UpdateWeightCount: previewResult.UpdateWeightCount,
+			Listeners:         previewResult.Listeners,
+		}
+		batchOperationReqList = append(batchOperationReqList, req)
+	}
+
+	return batchOperationReqList
 }
