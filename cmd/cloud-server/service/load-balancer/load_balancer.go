@@ -154,6 +154,8 @@ func bizService(h *rest.Handler, svc *lbSvc) {
 		"/sops/target_groups/targets/batch", svc.BatchBizRemoveTargetGroupRS)
 	h.Add("BatchBizModifyWeightTargetGroup", http.MethodPatch,
 		"/sops/target_groups/targets/weight", svc.BatchBizModifyWeightTargetGroup)
+	h.Add("BatchBiz", http.MethodPost,
+		"/sops/rule/online", svc.BatchBizRuleOnline)
 }
 
 type lbSvc struct {

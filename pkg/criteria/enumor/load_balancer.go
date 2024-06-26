@@ -146,3 +146,25 @@ const (
 func (r ResFlowStatus) IsEnd() bool {
 	return r == CancelResFlowStatus || r == TimeoutResFlowStatus || r == SuccessResFlowStatus
 }
+
+// OperationType 操作类型
+type OperationType string
+
+const (
+	// OperationTypeListenerRS 操作类型-新增监听器 & 绑定RS
+	OperationTypeListenerRS OperationType = "LISTENER_RS"
+	// OperationTypeUrlRS 操作类型-新增URLRule & 绑定RS
+	OperationTypeUrlRS OperationType = "URL_RS"
+	// OperationTypeListenerUrlRS 操作类型-新增监听器 & 新增URLRule & 绑定RS
+	OperationTypeListenerUrlRS OperationType = "LISTENER_URL_RS"
+)
+
+// Scheduler 负载均衡方式
+type Scheduler string
+
+const (
+	// WRR 权重轮循
+	WRR Scheduler = "WRR"
+	// LEAST_CONN 最少连接数
+	LEAST_CONN Scheduler = "LEAST_CONN"
+)

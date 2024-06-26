@@ -556,6 +556,90 @@ type TCloudSopsTargetBatchModifyWeightReq struct {
 	RsWeight      int64                      `json:"rs_weight" validate:"required"`
 }
 
+// --------------------------[标准运维-批量添加规则]--------------------------
+
+// TCloudSopsRuleBatchCreateReq tloud sops rule batch create request
+type TCloudSopsRuleBatchCreateReq struct {
+	RuleInfoTcpUdpList []RuleInfoTcpUdp `json:"rule_info_tcp_udp_list" validate:"required"`
+	RuleInfoHttpList   []RuleInfoHttp   `json:"RuleInfoHttpList" validate:"required"`
+	RuleInfoHttpsList  []RuleInfoHttps  `json:"RuleInfoHttpsList" validate:"required"`
+}
+
+// Validate validate req data
+func (req *TCloudSopsRuleBatchCreateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// RuleInfoTcpUdp 四层规则信息（TCP&UDP）
+type RuleInfoTcpUdp struct {
+	OperationType enumor.OperationType `json:"operation_type" jsonschema:"title=操作类型"`
+	Region        string               `json:"region" jsonschema:"title=地域"`
+	ClbVip        string               `json:"clb_vip" jsonschema:"title=CLB_VIP"`
+	ListenerPort  string               `json:"listener_port" jsonschema:"title=监听器端口"`
+	ListenerName  string               `json:"listener_name" jsonschema:"title=监听器名称"`
+	Protocol      enumor.ProtocolType  `json:"protocol" jsonschema:"title=协议"`
+	RsIP          string               `json:"rs_ip" jsonschema:"title=RS IP"`
+	RsPort        string               `json:"rs_port" jsonschema:"title=RS PORT"`
+	RsWeight      *int64               `json:"rs_weight" jsonschema:"title=RS权重"`
+	RsType        enumor.InstType      `json:"rs_type" jsonschema:"title=RS类型"`
+	Scheduler     enumor.Scheduler     `json:"scheduler" jsonschema:"title=负载均衡方式"`
+	SessionExpire *int64               `json:"session_expire" jsonschema:"title=会话保持时间"`
+}
+
+// Validate validate tcp&udp rule info
+func (i *RuleInfoTcpUdp) Validate() error {
+	return nil
+}
+
+// RuleInfoHttp 规则信息（HTTP）
+type RuleInfoHttp struct {
+	OperationType enumor.OperationType `json:"operation_type" jsonschema:"title=操作类型"`
+	Region        string               `json:"region" jsonschema:"title=地域"`
+	ClbVip        string               `json:"clb_vip" jsonschema:"title=CLB VIP"`
+	ListenerPort  string               `json:"listener_port" jsonschema:"title=监听器端口"`
+	ListenerName  string               `json:"listener_name" jsonschema:"title=监听器名称"`
+	Protocol      enumor.ProtocolType  `json:"protocol" jsonschema:"title=协议"`
+	Domain        string               `json:"domain" jsonschema:"title=域名"`
+	Url           string               `json:"url" jsonschema:"title=URL"`
+	RsIP          string               `json:"rs_ip" jsonschema:"title=RS IP"`
+	RsPort        string               `json:"rs_port" jsonschema:"title=RS PORT"`
+	RsWeight      *int64               `json:"rs_weight" jsonschema:"title=RS权重"`
+	RsType        enumor.InstType      `json:"rs_type" jsonschema:"title=RS类型"`
+	Scheduler     enumor.Scheduler     `json:"scheduler" jsonschema:"title=负载均衡方式"`
+	SessionExpire *int64               `json:"session_expire" jsonschema:"title=会话保持时间"`
+}
+
+// Validate validate http rule info
+func (i *RuleInfoHttp) Validate() error {
+	return nil
+}
+
+// RuleInfoHttps 规则信息（HTTPS）
+type RuleInfoHttps struct {
+	OperationType enumor.OperationType `json:"operation_type" jsonschema:"title=操作类型"`
+	Region        string               `json:"region" jsonschema:"title=地域"`
+	ClbVip        string               `json:"clb_vip" jsonschema:"title=CLB_VIP"`
+	ListenerPort  string               `json:"listener_port" jsonschema:"title=监听器端口"`
+	ListenerName  string               `json:"listener_name" jsonschema:"title=监听器名称"`
+	Protocol      enumor.ProtocolType  `json:"protocol" jsonschema:"title=协议"`
+	Domain        string               `json:"domain" jsonschema:"title=域名"`
+	Url           string               `json:"url" jsonschema:"title=URL"`
+	RsIP          string               `json:"rs_ip" jsonschema:"title=RS IP"`
+	RsPort        string               `json:"rs_port" jsonschema:"title=RS PORT"`
+	RsWeight      *int64               `json:"rs_weight" jsonschema:"title=RS权重"`
+	RsType        enumor.InstType      `json:"rs_type" jsonschema:"title=RS类型"`
+	Scheduler     enumor.Scheduler     `json:"scheduler" jsonschema:"title=负载均衡方式"`
+	SessionExpire *int64               `json:"session_expire" jsonschema:"title=会话保持时间"`
+	CertID        string               `json:"cert_id" jsonschema:"title=证书ID"`
+}
+
+// Validate validate https rule info
+func (i *RuleInfoHttps) Validate() error {
+	return nil
+}
+
+// --------------------------[标准运维-批量移除规则]--------------------------
+
 // Validate request.
 func (req *TCloudSopsTargetBatchModifyWeightReq) Validate() error {
 	return validator.Validate.Struct(req)
