@@ -88,10 +88,10 @@ type ZenlayerBillItemListResult = core.ListResultT[*bill.ZenlayerBillItem]
 type BillItemUpdateReq struct {
 	ID            string              `json:"id,omitempty" validate:"required"`
 	Currency      enumor.CurrencyCode `json:"currency" validate:"required"`
-	Cost          decimal.Decimal     `json:"cost" validate:"required"`
+	Cost          *decimal.Decimal     `json:"cost" validate:"required"`
 	HcProductCode string              `json:"hc_product_code,omitempty"`
 	HcProductName string              `json:"hc_product_name,omitempty"`
-	ResAmount     decimal.Decimal     `json:"res_amount,omitempty"`
+	ResAmount     *decimal.Decimal     `json:"res_amount,omitempty"`
 	ResAmountUnit string              `json:"res_amount_unit,omitempty"`
 	Extension     types.JsonField     `json:"extension"`
 }

@@ -45,27 +45,43 @@ func (svc *service) UpdateBillSummaryMain(cts *rest.Contexts) (interface{}, erro
 	}
 
 	billSummaryMain := &tablebill.AccountBillSummaryMain{
-		ID:                        req.ID,
-		RootAccountName:           req.RootAccountName,
-		MainAccountName:           req.MainAccountName,
-		ProductID:                 req.ProductID,
-		ProductName:               req.ProductName,
-		BkBizID:                   req.BkBizID,
-		BkBizName:                 req.BkBizName,
-		LastSyncedVersion:         req.LastSyncedVersion,
-		CurrentVersion:            req.CurrentVersion,
-		Currency:                  req.Currency,
-		LastMonthCostSynced:       &types.Decimal{Decimal: req.LastMonthCostSynced},
-		LastMonthRMBCostSynced:    &types.Decimal{Decimal: req.LastMonthRMBCostSynced},
-		CurrentMonthCostSynced:    &types.Decimal{Decimal: req.CurrentMonthCostSynced},
-		CurrentMonthRMBCostSynced: &types.Decimal{Decimal: req.CurrentMonthRMBCostSynced},
-		MonthOnMonthValue:         req.MonthOnMonthValue,
-		CurrentMonthCost:          &types.Decimal{Decimal: req.CurrentMonthCost},
-		CurrentMonthRMBCost:       &types.Decimal{Decimal: req.CurrentMonthRMBCost},
-		Rate:                      req.Rate,
-		AjustmentCost:             &types.Decimal{Decimal: req.AjustmentCost},
-		AjustmentRMBCost:          &types.Decimal{Decimal: req.AjustmentRMBCost},
-		State:                     req.State,
+		ID:                req.ID,
+		RootAccountName:   req.RootAccountName,
+		MainAccountName:   req.MainAccountName,
+		ProductID:         req.ProductID,
+		ProductName:       req.ProductName,
+		BkBizID:           req.BkBizID,
+		BkBizName:         req.BkBizName,
+		LastSyncedVersion: req.LastSyncedVersion,
+		CurrentVersion:    req.CurrentVersion,
+		Currency:          req.Currency,
+		MonthOnMonthValue: req.MonthOnMonthValue,
+		Rate:              req.Rate,
+		State:             req.State,
+	}
+	if req.LastMonthCostSynced != nil {
+		billSummaryMain.LastMonthCostSynced = &types.Decimal{Decimal: *req.LastMonthCostSynced}
+	}
+	if req.LastMonthRMBCostSynced != nil {
+		billSummaryMain.LastMonthRMBCostSynced = &types.Decimal{Decimal: *req.LastMonthRMBCostSynced}
+	}
+	if req.CurrentMonthCostSynced != nil {
+		billSummaryMain.CurrentMonthCostSynced = &types.Decimal{Decimal: *req.CurrentMonthCostSynced}
+	}
+	if req.CurrentMonthRMBCostSynced != nil {
+		billSummaryMain.CurrentMonthRMBCostSynced = &types.Decimal{Decimal: *req.CurrentMonthRMBCostSynced}
+	}
+	if req.CurrentMonthCost != nil {
+		billSummaryMain.CurrentMonthCost = &types.Decimal{Decimal: *req.CurrentMonthCost}
+	}
+	if req.CurrentMonthRMBCost != nil {
+		billSummaryMain.CurrentMonthRMBCost = &types.Decimal{Decimal: *req.CurrentMonthRMBCost}
+	}
+	if req.AjustmentCost != nil {
+		billSummaryMain.AjustmentCost = &types.Decimal{Decimal: *req.AjustmentCost}
+	}
+	if req.AjustmentRMBCost != nil {
+		billSummaryMain.AjustmentRMBCost = &types.Decimal{Decimal: *req.AjustmentRMBCost}
 	}
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		if err := svc.dao.AccountBillSummaryMain().UpdateByIDWithTx(
