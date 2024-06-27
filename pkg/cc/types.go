@@ -810,3 +810,33 @@ func (ost ObjectStoreTCloud) Validate() error {
 	}
 	return nil
 }
+
+var (
+	defaultControllerSyncDuration         = 30 * time.Second
+	defaultMainAccountSummarySyncDuration = 10 * time.Minute
+	defaultRootAccountSummarySyncDuration = 10 * time.Minute
+	defaultDailySummarySyncDuration       = 30 * time.Second
+)
+
+// BillControllerOption bill controller option
+type BillControllerOption struct {
+	ControllerSyncDuration         *time.Duration `yaml:"controller_sync_duration,omitempty"`
+	MainAccountSummarySyncDuration *time.Duration `yaml:"main_account_summary_sync_duration,omitempty"`
+	RootAccountSummarySyncDuration *time.Duration `yaml:"root_account_summary_sync_duration,omitempty"`
+	DailySummarySyncDuration       *time.Duration `yaml:"daily_summary_sync_duration,omitempty"`
+}
+
+func (bco *BillControllerOption) trySetDefault() {
+	if bco.ControllerSyncDuration == nil {
+		bco.ControllerSyncDuration = &defaultControllerSyncDuration
+	}
+	if bco.MainAccountSummarySyncDuration == nil {
+		bco.MainAccountSummarySyncDuration = &defaultMainAccountSummarySyncDuration
+	}
+	if bco.RootAccountSummarySyncDuration == nil {
+		bco.RootAccountSummarySyncDuration = &defaultRootAccountSummarySyncDuration
+	}
+	if bco.DailySummarySyncDuration == nil {
+		bco.DailySummarySyncDuration = &defaultDailySummarySyncDuration
+	}
+}
