@@ -1,12 +1,14 @@
 <script lang="ts" setup>
-import { computed, ref, watchEffect, defineExpose, PropType } from 'vue';
+import { computed, ref, watchEffect, defineExpose, PropType, reactive } from 'vue';
 import { useAccountStore } from '@/store';
+import { SelectColumn } from '@blueking/ediatable';
 
 const props = defineProps({
   modelValue: Number as PropType<number>,
   authed: Boolean as PropType<boolean>,
   autoSelect: Boolean as PropType<boolean>,
   isAudit: Boolean as PropType<boolean>,
+  isEditable: Boolean as PropType<boolean>,
 });
 const emit = defineEmits(['update:modelValue']);
 
@@ -26,6 +28,13 @@ watchEffect(async () => {
   businessList.value = res?.data;
 });
 
+const computedBuinessList = computed(() => {
+  return businessList.value.map(({ name, id }) => ({
+    value: id,
+    label: name,
+  }));
+});
+
 const selectedValue = computed({
   get() {
     if (props.modelValue) {
@@ -43,13 +52,31 @@ const selectedValue = computed({
   },
 });
 
+const rules = reactive([
+  {
+    validator: (value: string) => Boolean(value),
+    message: '请选择业务',
+  },
+]);
+
 defineExpose({
   businessList,
+  computedBuinessList,
+  rules,
 });
 </script>
 
 <template>
-  <bk-select v-model="selectedValue" filterable :loading="loading">
+  <select-column
+    v-model="selectedValue"
+    v-if="isEditable"
+    :list="computedBuinessList"
+    filterable
+    :loading="loading"
+    :rules="rules"
+  ></select-column>
+
+  <bk-select v-model="selectedValue" filterable :loading="loading" v-else>
     <bk-option v-for="(item, index) in businessList" :key="index" :value="item.id" :label="item.name" />
   </bk-select>
 </template>

@@ -143,9 +143,6 @@ export default defineComponent({
                   />
                 </FormItem>
               </div>
-              {/* <FormItem label='所属组织架构' required property='dept_id'>
-                <OrganizationSelect />
-              </FormItem> */}
               <FormItem label='备注' property='memo'>
                 <Input type='textarea' rows={5} maxlength={100} v-model={formModel.memo} />
               </FormItem>
