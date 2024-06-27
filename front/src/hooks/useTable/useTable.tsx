@@ -354,6 +354,7 @@ export const useTable = (props: IProp) => {
   };
 
   const clearFilter = () => {
+    pagination.start = 0;
     filter.rules = getInitialRules();
   };
 

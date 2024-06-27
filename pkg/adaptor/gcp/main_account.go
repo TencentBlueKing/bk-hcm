@@ -105,7 +105,7 @@ func (g *Gcp) createProjectWithId(kt *kit.Kit, projectId, projectName string, or
 	}
 
 	if result.Error != nil {
-		return "", err
+		return "", fmt.Errorf("create project failed, err: %v, rid: %s", *result.Error, kt.Rid)
 	}
 
 	_, err = client.Projects.Get(ensureProjectPrefix(projectId)).Context(kt.Ctx).Do()
@@ -197,7 +197,11 @@ type createMainAccountPollingHandler struct {
 
 // Done ...
 func (h *createMainAccountPollingHandler) Done(op *resourcemanager.Operation) (bool, *resourcemanager.Operation) {
-	return true, op
+	// Note: 没有error的情况分两种, 一种是在创建中，创建中不结束Poll，返回false，另一种是创建成功，返回true
+	if op.Done {
+		return true, op
+	}
+	return false, op
 }
 
 // Poll ...
@@ -217,10 +221,6 @@ func (h *createMainAccountPollingHandler) Poll(client *Gcp, kt *kit.Kit, opIds [
 	if err != nil {
 		logs.Errorf("get operation failed, err: %s, rid: %s", err.Error(), kt.Rid)
 		return nil, err
-	}
-
-	if !op.Done {
-		return nil, fmt.Errorf("operation is not done")
 	}
 
 	return op, nil

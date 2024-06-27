@@ -51,14 +51,6 @@ export default defineComponent({
         minWidth: 32,
       },
       {
-        label: t('调账状态'),
-        field: 'state',
-        width: 100,
-        render: ({ cell }: any) => (
-          <bk-tag theme={cell === 'confirmed' ? 'success' : undefined}>{BILL_ADJUSTMENT_STATE__MAP[cell]}</bk-tag>
-        ),
-      },
-      {
         label: t('更新时间'),
         field: 'updated_at',
         render: ({ cell }: any) => timeFormatter(cell),
@@ -68,7 +60,7 @@ export default defineComponent({
         field: 'id',
       },
       {
-        label: t('运营产品'),
+        label: '业务',
         field: 'product_id',
       },
       {
@@ -93,6 +85,14 @@ export default defineComponent({
       {
         label: t('美金（美元）'),
         field: 'cost',
+      },
+      {
+        label: t('调账状态'),
+        field: 'state',
+        width: 100,
+        render: ({ cell }: any) => (
+          <bk-tag theme={cell === 'confirmed' ? 'success' : undefined}>{BILL_ADJUSTMENT_STATE__MAP[cell]}</bk-tag>
+        ),
       },
       {
         label: t('操作'),
@@ -167,7 +167,12 @@ export default defineComponent({
     return () => (
       <div class='bill-adjust-module'>
         <Panel>
-          <Search ref={searchRef} onSearch={reloadTable} style={{ padding: 0, boxShadow: 'none' }} />
+          <Search
+            ref={searchRef}
+            searchKeys={['product_id', 'main_account_id', 'updated_at']}
+            onSearch={reloadTable}
+            style={{ padding: 0, boxShadow: 'none' }}
+          />
         </Panel>
         <Panel class='mt12'>
           <CommonTable>

@@ -87,13 +87,12 @@ func (e *GcpRootAccountExtension) DecryptSecretKey(cipher cryptography.Crypto) e
 
 // HuaweiRootAccountExtension 云主账号/云二级账号扩展字段
 type HuaWeiRootAccountExtension struct {
-	CloudMainAccountName string `json:"cloud_main_account_name"`
-	CloudSubAccountID    string `json:"cloud_sub_account_id"`
-	CloudSubAccountName  string `json:"cloud_sub_account_name"`
-	CloudSecretID        string `json:"cloud_secret_id"`
-	CloudSecretKey       string `json:"cloud_secret_key,omitempty"`
-	CloudIamUserID       string `json:"cloud_iam_user_id" `
-	CloudIamUsername     string `json:"cloud_iam_username"`
+	CloudSubAccountID   string `json:"cloud_sub_account_id"`
+	CloudSubAccountName string `json:"cloud_sub_account_name"`
+	CloudSecretID       string `json:"cloud_secret_id"`
+	CloudSecretKey      string `json:"cloud_secret_key,omitempty"`
+	CloudIamUserID      string `json:"cloud_iam_user_id" `
+	CloudIamUsername    string `json:"cloud_iam_username"`
 }
 
 // DecryptSecretKey ...
@@ -135,6 +134,7 @@ func (e *AzureRootAccountExtension) DecryptSecretKey(cipher cryptography.Crypto)
 
 // ZenlayerRootAccountExtension 云主账号/云二级账号扩展字段
 type ZenlayerRootAccountExtension struct {
+	CloudAccountID string `json:"cloud_account_id"`
 }
 
 // DecryptSecretKey ...
@@ -144,6 +144,7 @@ func (e *ZenlayerRootAccountExtension) DecryptSecretKey(cipher cryptography.Cryp
 
 // KaopuRootAccountExtension 云主账号/云二级账号扩展字段
 type KaopuRootAccountExtension struct {
+	CloudAccountID string `json:"cloud_account_id"`
 }
 
 // DecryptSecretKey ...

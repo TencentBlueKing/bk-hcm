@@ -1,3 +1,4 @@
+.vendor-wrapper,
 .sync-content-wrapper {
   margin: 16px 0 16px;
 
@@ -6,7 +7,9 @@
     font-size: 14px;
     color: #313238;
   }
+}
 
+.sync-content-wrapper {
   .item {
     span {
       line-height: 24px;
@@ -40,4 +43,12 @@
 
 .mb12 {
   margin-bottom: 12px;
+}
+
+.button {
+  width: 88px;
+
+  + .button {
+    margin-left: 8px;
+  }
 }

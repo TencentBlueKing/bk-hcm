@@ -221,6 +221,11 @@ export default defineComponent({
         <Button
           theme='primary'
           class={'mr8 ml24'}
+          disabled={curExtension.value.validatedStatus !== ValidateStatus.YES}
+          v-bk-tooltips={{
+            disabled: !(curExtension.value.validatedStatus !== ValidateStatus.YES),
+            content: 'API密钥校验通过才能提交',
+          }}
           onClick={() => {
             handleSubmit();
           }}>

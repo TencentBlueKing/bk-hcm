@@ -67,7 +67,7 @@ export interface BillsRootAccountSummaryHistory {
 }
 export type BillsRootAccountSummaryHistoryResData = IListResData<BillsRootAccountSummaryHistory[]>;
 
-// 当月账单汇总（二级账号or运营产品）拉取接口
+// 当月账单汇总（二级账号or业务）拉取接口
 export interface BillsMainAccountSummary {
   root_account_id: string;
   root_account_name: string;
@@ -101,7 +101,7 @@ export interface AdjustmentItem {
   id?: string; // 调账id
   main_account_id: string; // 所属主账号id
   vendor: string; // 云厂商
-  product_id: number; // 运营产品id
+  product_id: number; // 业务id
   bk_biz_id?: number; // 业务id
   bill_year: number; // 所属年份
   bill_month: number; // 所属月份

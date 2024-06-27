@@ -49,7 +49,7 @@ export const reqBillsRootAccountHistorySummaryList = async (data: {
   return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/root-account-summary-historys/list`, data);
 };
 
-// 拉取当月二级账号或者运营产品账单汇总
+// 拉取当月二级账号或者业务账单汇总
 export const reqBillsMainAccountSummaryList = async (data: {
   bill_year: number;
   bill_month: number;
@@ -57,6 +57,15 @@ export const reqBillsMainAccountSummaryList = async (data: {
   page: IPageQuery;
 }): Promise<BillsMainAccountSummaryResData> => {
   return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/main-account-summarys/list`, data);
+};
+
+// 确认某个一级账号下所有账单数据
+export const confirmBillsRootAccountSummary = async (data: {
+  bill_year: number;
+  bill_month: number;
+  root_account_id: string;
+}) => {
+  return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/root-account-summarys/confirm`, data);
 };
 
 // 重新核算某个一级账号下所有账单数据
@@ -68,6 +77,11 @@ export const reAccountBillsRootAccountSummary = async (data: {
   return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/root-account-summarys/reaccount`, data);
 };
 
+// 账单同步至 OBS
+export const syncRecordsBills = async (data: { bill_year: number; bill_month: number; vendor: VendorEnum }) => {
+  return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/sync_records`, data);
+};
+
 // 查询当月账单明细
 export const reqBillsItemList = async (data: {
   vendor: VendorEnum;
@@ -77,17 +91,6 @@ export const reqBillsItemList = async (data: {
   page: IPageQuery;
 }) => {
   return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/vendors/${data.vendor}/bills/items/list`, data);
-};
-
-// 批量拉取运营产品
-export const reqOperationProductList = async (data: {
-  op_product_ids?: number[];
-  op_product_name?: string;
-  dept_ids?: number[];
-  bg_ids?: number[];
-  page: IPageQuery;
-}) => {
-  return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/operation_products/list`, data);
 };
 
 // 批量创建调账明细
@@ -110,7 +113,7 @@ export const updateBillsAdjustment = async (
     root_account_id?: string; // 所属根账号id
     main_account_id?: string; // 所属主账号id
     vendor?: string; // 云厂商
-    product_id?: number; // 运营产品id
+    product_id?: number; // 业务id
     bk_biz_id?: number; // 业务id
     bill_year?: number; // 所属年份
     bill_month?: number; // 所属月份
@@ -133,4 +136,9 @@ export const confirmBillsAdjustment = async (ids: string[]) => {
 // 批量删除调账明细，已确定的调账明细不能删除
 export const deleteBillsAdjustment = async (ids: string[]) => {
   return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/adjustment_items/batch`, { data: { ids } });
+};
+
+// 账单同步记录查询接口
+export const reqBillsSyncRecordList = async (data: { filter: FilterType; page: IPageQuery }) => {
+  return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/sync_records/list`, data);
 };

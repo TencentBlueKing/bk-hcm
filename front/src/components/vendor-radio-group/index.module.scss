@@ -1,12 +1,28 @@
-.radio {
-  margin: 0 8px 0 0 !important;
-  padding: 0 24px;
-  width: 130px;
-  height: 52px !important;
-  justify-content: flex-start;
+.group {
+  .radio {
+    margin: 0 8px 0 0 !important;
+    justify-content: flex-start;
+  }
 
-  img {
-    width: 20px;
-    margin-right: 8px;
+  &.normal .radio {
+    padding: 0 24px;
+    width: 130px;
+    height: 52px !important;
+
+    img {
+      width: 20px;
+      margin-right: 8px;
+    }
+  }
+
+  &.small .radio {
+    padding: 0 12px;
+    width: 100px;
+    height: 32px !important;
+
+    img {
+      width: 16px;
+      margin-right: 4px;
+    }
   }
 }
