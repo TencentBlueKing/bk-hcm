@@ -81,7 +81,7 @@ type AccountBillAdjustmentItem struct {
 	// Type 调账类型
 	Type string `db:"type" json:"type"`
 	// Memo 注解
-	Memo string `db:"memo" json:"memo"`
+	Memo *string `db:"memo" json:"memo"`
 	// Operator 操作人
 	Operator string `db:"operator" validate:"max=64" json:"operator"`
 	// Currency 币种
