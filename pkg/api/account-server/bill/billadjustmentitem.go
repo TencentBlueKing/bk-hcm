@@ -65,7 +65,7 @@ type BillAdjustmentItemUpdateReq struct {
 	Type          enumor.BillAdjustmentType `json:"type"`
 	Memo          string                    `json:"memo"`
 	Currency      string                    `json:"currency"`
-	Cost          decimal.Decimal           `json:"cost" `
+	Cost          *decimal.Decimal          `json:"cost" `
 }
 
 // Validate ...
