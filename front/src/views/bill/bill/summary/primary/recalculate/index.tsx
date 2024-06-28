@@ -7,6 +7,7 @@ import { useI18n } from 'vue-i18n';
 import { BillsRootAccountSummary } from '@/typings/bill';
 import { timeFormatter } from '@/common/util';
 import { reAccountBillsRootAccountSummary } from '@/api/bill';
+import { formatBillCost } from '@/utils';
 
 export default defineComponent({
   props: { reloadTable: Function },
@@ -59,16 +60,16 @@ export default defineComponent({
           <span>{timeFormatter(info.value.updated_at)}</span>
         </div>
         <div class={cssModule.item}>
-          <span>{'业务数量'}</span>
+          <span>{t('业务数量')}</span>
           <span>{info.value.product_num}</span>
         </div>
         <div class={cssModule.item}>
           <span>{t('总金额（人民币）')}</span>
-          <span class={cssModule.money}>￥{info.value.current_month_rmb_cost}</span>
+          <span class={cssModule.money}>￥{formatBillCost(info.value.current_month_rmb_cost)}</span>
         </div>
         <div class={cssModule.item}>
           <span>{t('总金额（美金）')}</span>
-          <span class={cssModule.money}>＄{info.value.current_month_cost}</span>
+          <span class={cssModule.money}>＄{formatBillCost(info.value.current_month_cost)}</span>
         </div>
       </Dialog>
     );

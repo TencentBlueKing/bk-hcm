@@ -11,6 +11,7 @@ import BatchOperation from './batch-operation';
 
 import { useI18n } from 'vue-i18n';
 import { cloneDeep } from 'lodash';
+import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useTable } from '@/hooks/useTable/useTable';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import { deleteBillsAdjustment, reqBillsAdjustmentList } from '@/api/bill';
@@ -24,6 +25,8 @@ export default defineComponent({
     const { t } = useI18n();
     const bill_year = inject<Ref<number>>('bill_year');
     const bill_month = inject<Ref<number>>('bill_month');
+    const businessMapStore = useBusinessMapStore();
+
     const searchRef = ref();
     const createAdjustSideSliderRef = ref();
 
@@ -60,8 +63,9 @@ export default defineComponent({
         field: 'id',
       },
       {
-        label: '业务',
+        label: t('业务名称'),
         field: 'product_id',
+        render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
       },
       {
         label: t('二级账号名称'),
@@ -148,6 +152,7 @@ export default defineComponent({
             { field: 'bill_month', op: QueryRuleOPEnum.EQ, value: bill_month.value },
           ],
         },
+        immediate: false,
       },
     });
 
@@ -171,6 +176,7 @@ export default defineComponent({
             ref={searchRef}
             searchKeys={['product_id', 'main_account_id', 'updated_at']}
             onSearch={reloadTable}
+            autoSelectMainAccount
             style={{ padding: 0, boxShadow: 'none' }}
           />
         </Panel>

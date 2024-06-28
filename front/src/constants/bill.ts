@@ -1,5 +1,7 @@
 // 账单下共用的业务key
 export const BILL_BIZS_KEY = 'bill_bizs';
+// 账单下共有的二级账号key
+export const BILL_MAIN_ACCOUNTS_KEY = 'main_accounts';
 
 // 账单类型 - 华为
 export const BILL_TYPE__MAP_HW = {

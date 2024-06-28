@@ -14,6 +14,7 @@ export default defineComponent({
     },
     api: Function as PropType<(...args: any) => Promise<BillsSummarySumResData>>,
     payload: Function as PropType<() => object>,
+    immediate: Boolean,
   },
   setup(props, { expose }) {
     const { t } = useI18n();
@@ -31,7 +32,7 @@ export default defineComponent({
     };
 
     onMounted(() => {
-      props.api && props.payload && getAmountInfo();
+      props.api && props.payload && props.immediate && getAmountInfo();
     });
 
     expose({ refreshAmountInfo: getAmountInfo });

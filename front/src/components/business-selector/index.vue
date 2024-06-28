@@ -62,8 +62,9 @@ watchEffect(async () => {
   }
   // 支持多选
   if (props.multiple) {
-    // 如果存在已保存的业务id, 则直接使用(解码后是一个数组); 否则, 需要套一个数组(默认值为 string 类型)
-    id = route.query?.[props.bizsKey] ? id : [id];
+    // 如果存在已保存的业务id, 则直接使用(解码后是一个数组); 否则, 需要套一个数组(默认值为 string | null 类型)
+    // eslint-disable-next-line no-nested-ternary
+    id = route.query?.[props.bizsKey] ? id : id ? [id] : [];
   }
 
   // 设置选中的值
@@ -108,18 +109,23 @@ const selectedValue = computed({
 });
 
 const handleChange = (val: string | string[]) => {
-  if (props.saveBizs) {
-    const hasAll = Array.isArray(val) && val.includes('all');
+  if (!props.saveBizs) return;
+
+  const query = { ...route.query };
+
+  // 多选
+  if (props.multiple) {
+    // 全选时/未选时, 不用存业务id
+    const isSave = !(props.isShowAll && val.includes('all')) && val.length > 0;
     // 考虑到数组可能有多个元素, 使用 base64 配合 JSON 进行转码
-    const customBizs = btoa(JSON.stringify(val));
-    router.push({
-      query: {
-        ...route.query,
-        // 全选时, 不用存业务id
-        [props.bizsKey]: hasAll || !val ? undefined : customBizs,
-      },
-    });
+    query[props.bizsKey] = isSave ? btoa(JSON.stringify(val)) : undefined;
   }
+  // 单选
+  else {
+    query[props.bizsKey] = val || undefined;
+  }
+
+  router.push({ query });
 };
 
 defineExpose({
