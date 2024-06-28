@@ -298,6 +298,7 @@ type ListenerWithRuleCreateReq struct {
 	Url           string                        `json:"url" validate:"omitempty"`
 	SniSwitch     enumor.SniType                `json:"sni_switch" validate:"omitempty"`
 	Certificate   *corelb.TCloudCertificateInfo `json:"certificate" validate:"omitempty"`
+	HealthCheck   *corelb.TCloudHealthCheckInfo `json:"health_check" validate:"omitempty"`
 	EndPort       uint64                        `json:"end_port" validate:"omitempty"`
 }
 
