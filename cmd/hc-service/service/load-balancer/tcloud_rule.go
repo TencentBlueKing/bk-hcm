@@ -86,7 +86,7 @@ func (svc *clbSvc) TCloudCreateUrlRule(cts *rest.Contexts) (any, error) {
 	createReq := &cloud.TCloudUrlRuleBatchCreateReq{}
 
 	for i, cloudID := range creatResult.SuccessCloudIDs {
-		createReq.UrlRules = append(createReq.UrlRules, convURLRuleCreateReq(&req.Rules[i], lb, listener, cloudID))
+		createReq.UrlRules = append(createReq.UrlRules, convURLRuleCreateReq(&req.Rules[i], lb, listener, cloudID, enumor.TCloud))
 	}
 	_, err = svc.dataCli.TCloud.LoadBalancer.BatchCreateTCloudUrlRule(cts.Kit, createReq)
 	if err != nil {
@@ -103,13 +103,14 @@ func (svc *clbSvc) TCloudCreateUrlRule(cts *rest.Contexts) (any, error) {
 }
 
 func convURLRuleCreateReq(createReq *protolb.TCloudRuleCreate, lb *corelb.BaseLoadBalancer,
-	listener *corelb.BaseListener, cloudID string) cloud.TCloudUrlRuleCreate {
+	listener *corelb.BaseListener, cloudID string, vendor enumor.Vendor) cloud.TCloudUrlRuleCreate {
 	// 7层不支持设置健康检查端口
 	if createReq.HealthCheck != nil {
 		createReq.HealthCheck.CheckPort = nil
 	}
 
 	return cloud.TCloudUrlRuleCreate{
+		Vendor:             vendor,
 		LbID:               lb.ID,
 		CloudLbID:          lb.CloudID,
 		LblID:              listener.ID,
