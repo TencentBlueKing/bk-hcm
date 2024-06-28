@@ -1,3 +1,6 @@
+// 账单下共用的业务key
+export const BILL_BIZS_KEY = 'bill_bizs';
+
 // 账单类型 - 华为
 export const BILL_TYPE__MAP_HW = {
   1: '消费-新购',

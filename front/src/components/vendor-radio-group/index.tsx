@@ -46,7 +46,12 @@ export default defineComponent({
     );
 
     return () => (
-      <BkButtonGroup class={[cssModule.group, { [cssModule.small]: props.size === 'small' }]} v-model={vendor.value}>
+      <BkButtonGroup
+        class={[
+          cssModule.group,
+          { [cssModule.small]: props.size === 'small', [cssModule.normal]: props.size === 'normal' },
+        ]}
+        v-model={vendor.value}>
         {buttons.value.map(({ label, value, icon }) => (
           <Button class={cssModule.radio} selected={vendor.value === value} onClick={() => (vendor.value = value)}>
             <img src={icon} alt='' />
