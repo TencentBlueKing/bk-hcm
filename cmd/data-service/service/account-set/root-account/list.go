@@ -29,10 +29,8 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
-	account "hcm/pkg/dal/table/account-set"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 )
 
 // ListRootAccount	list root account
@@ -49,10 +47,6 @@ func (svc *service) ListRootAccount(cts *rest.Contexts) (interface{}, error) {
 	opt := &types.ListOption{
 		Filter: req.Filter,
 		Page:   req.Page,
-	}
-	columnTypes := account.RootAccountColumns.ColumnTypes()
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)), core.NewDefaultPageOption()); err != nil {
-		return nil, err
 	}
 
 	daoAccountResp, err := svc.dao.RootAccount().List(cts.Kit, opt)

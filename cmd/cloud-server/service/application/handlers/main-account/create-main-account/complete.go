@@ -118,10 +118,10 @@ func (a *ApplicationOfCreateMainAccount) createForAws(rootAccount *protocore.Bas
 	accountResp, err := a.Client.HCService().Aws.MainAccount.Create(a.Cts.Kit, &hsproto.CreateAwsMainAccountReq{
 		RootAccountID:    rootAccount.ID,
 		Email:            req.Email,
-		CloudAccountName: req.Extension[string(req.Vendor.GetMainAccountNameFieldName())],
+		CloudAccountName: req.Extension[req.Vendor.GetMainAccountNameFieldName()],
 	})
 	if err != nil {
-		return "", fmt.Errorf("create aws main account [%s] failed, err: %v, rid: %s", req.Extension[string(req.Vendor.GetMainAccountNameFieldName())], err, a.Cts.Kit.Rid)
+		return "", fmt.Errorf("create aws main account [%s] failed, err: %v, rid: %s", req.Extension[req.Vendor.GetMainAccountNameFieldName()], err, a.Cts.Kit.Rid)
 	}
 
 	// create aws main account in dbs
@@ -176,12 +176,12 @@ func (a *ApplicationOfCreateMainAccount) createForGcp(rootAccount *protocore.Bas
 	accountResp, err := a.Client.HCService().Gcp.MainAccount.Create(a.Cts.Kit, &hsproto.CreateGcpMainAccountReq{
 		RootAccountID:       a.completeReq.RootAccountID,
 		Email:               req.Email,
-		ProjectName:         req.Extension[string(req.Vendor.GetMainAccountNameFieldName())],
+		ProjectName:         req.Extension[req.Vendor.GetMainAccountNameFieldName()],
 		CloudBillingAccount: billingAccount,
 		CloudOrganization:   organization,
 	})
 	if err != nil {
-		return "", fmt.Errorf("create gcp main account [%s] failed, err: %v, rid: %s", req.Extension[string(req.Vendor.GetMainAccountNameFieldName())], err, a.Cts.Kit.Rid)
+		return "", fmt.Errorf("create gcp main account [%s] failed, err: %v, rid: %s", req.Extension[req.Vendor.GetMainAccountNameFieldName()], err, a.Cts.Kit.Rid)
 	}
 
 	// create gcp main account in dbs

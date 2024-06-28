@@ -29,10 +29,8 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
-	account "hcm/pkg/dal/table/account-set"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 )
 
 // ListMainAccount list main account
@@ -50,15 +48,6 @@ func (svc *service) ListMainAccount(cts *rest.Contexts) (interface{}, error) {
 		Filter: req.Filter,
 		Page:   req.Page,
 		Fields: req.Fields,
-	}
-	columnTypes := account.MainAccountColumns.ColumnTypes()
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
-		&core.PageOption{
-			EnableUnlimitedLimit: true,
-			MaxLimit:             10000,
-			DisabledSort:         false,
-		}); err != nil {
-		return nil, err
 	}
 
 	daoAccountResp, err := svc.dao.MainAccount().List(cts.Kit, opt)
