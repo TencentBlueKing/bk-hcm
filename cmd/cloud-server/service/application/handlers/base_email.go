@@ -17,33 +17,13 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package capability ...
-package capability
+package handlers
 
 import (
-	"github.com/emicklei/go-restful/v3"
-
-	"hcm/cmd/cloud-server/logics"
-	"hcm/cmd/cloud-server/logics/audit"
-	"hcm/pkg/client"
-	"hcm/pkg/cryptography"
-	"hcm/pkg/iam/auth"
-	"hcm/pkg/thirdparty/api-gateway/bkbase"
 	"hcm/pkg/thirdparty/api-gateway/cmsi"
-	"hcm/pkg/thirdparty/api-gateway/itsm"
-	"hcm/pkg/thirdparty/esb"
 )
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	Authorizer auth.Authorizer
-	Audit      audit.Interface
-	Cipher     cryptography.Crypto
-	EsbClient  esb.Client
-	Logics     *logics.Logics
-	ItsmCli    itsm.Client
-	BKBaseCli  bkbase.Client
-	CmsiCli    cmsi.Client
+// SendMail send mail
+func (a *BaseApplicationHandler) SendMail(m *cmsi.CmsiMail) error {
+	return a.CmsiClient.SendMail(a.Cts.Kit, m)
 }

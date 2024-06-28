@@ -705,7 +705,7 @@ func (gt ApiGateway) GetAuthValue() string {
 	}
 
 	if len(gt.BkToken) != 0 {
-		return fmt.Sprintf("{\"bk_app_code\": \"%s\", \"bk_app_secret\": \"%s\", \"bk_token\":\"%s\"}",
+		return fmt.Sprintf("{\"bk_app_code\": \"%s\", \"bk_app_secret\": \"%s\", \"access_token\":\"%s\"}",
 			gt.AppCode, gt.AppSecret, gt.BkToken)
 	}
 
@@ -808,5 +808,29 @@ func (ost ObjectStoreTCloud) Validate() error {
 	if len(ost.COSBucketURL) == 0 {
 		return errors.New("cos_bucket_url cannot be empty")
 	}
+	return nil
+}
+
+// CMSI cmsi config
+type CMSI struct {
+	CC         []string `yaml:"cc"`
+	Sender     string   `yaml:"sender"`
+	ApiGateway `yaml:"-,inline"`
+}
+
+// Validate do validate
+func (c *CMSI) validate() error {
+	if err := c.ApiGateway.validate(); err != nil {
+		return err
+	}
+
+	if c.CC == nil || len(c.CC) == 0 {
+		c.CC = make([]string, 0)
+	}
+
+	if len(c.Sender) == 0 {
+		return errors.New("sender cannot be empty")
+	}
+
 	return nil
 }

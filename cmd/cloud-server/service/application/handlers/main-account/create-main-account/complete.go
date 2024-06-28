@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/iam/sys"
 	"hcm/pkg/logs"
+	"hcm/pkg/thirdparty/api-gateway/cmsi"
 )
 
 // Complete complete the application by manual.
@@ -104,8 +105,8 @@ func (a *ApplicationOfCreateMainAccount) Complete() (enumor.ApplicationStatus, m
 		return enumor.DeliverError, map[string]interface{}{"error": err}, err
 	}
 
-	// todo 异步发送邮件通知用户
-	go a.sendEmail(accountID)
+	//  异步发送邮件通知用户
+	go a.sendMail(account)
 
 	// 交付成功，记录交付的账号ID
 	return enumor.Completed, map[string]interface{}{"account_id": accountID, "cloud_account_name": account.Name, "cloud_account_id": account.CloudID}, nil
@@ -369,6 +370,51 @@ func (a *ApplicationOfCreateMainAccount) createForKaopu(rootAccount *protocore.B
 	return result.ID, nil
 }
 
-func (a *ApplicationOfCreateMainAccount) sendEmail(accountID string) {
-	// todo
+func (a *ApplicationOfCreateMainAccount) sendMail(account *dataproto.MainAccountGetBaseResult) {
+	if account == nil {
+		logs.Errorf("account should not be nill when send email")
+		return
+	}
+
+	var (
+		loginUrl string
+	)
+
+	switch account.Vendor {
+	case enumor.Aws:
+		loginUrl = AwsLoginAddress
+	case enumor.Gcp:
+		loginUrl = fmt.Sprintf(GcpLoginAddress, account.CloudID)
+	case enumor.HuaWei:
+		loginUrl = HuaweiLoginAddress
+	case enumor.Azure:
+		loginUrl = AzureLoginAddress
+	case enumor.Zenlayer:
+		loginUrl = ZenlayerLoginAddress
+	case enumor.Kaopu:
+		loginUrl = KaopuLoginAddress
+	default:
+		logs.Errorf("unknown vendor: %s", account.Vendor)
+		return
+	}
+
+	mail := &cmsi.CmsiMail{
+		Receiver: a.req.Email,
+		Title:    fmt.Sprintf(EmailTitleTemplate, account.Vendor.GetNameZh()),
+		Content: fmt.Sprintf(EmailContentTemplate,
+			account.Vendor.GetNameZh(),
+			account.Name,
+			account.CloudID,
+			loginUrl,
+			loginUrl,
+		),
+	}
+
+	err := a.SendMail(mail)
+	if err != nil {
+		logs.Errorf("send email failed for main account, id: %s, cloud_id: %s, name: %s, error: %v", account.ID, account.CloudID, account.Name, err)
+		return
+	}
+
+	logs.Infof("send email success for main account, id: %s, cloud_id: %s, name: %s,", account.ID, account.CloudID, account.Name)
 }
