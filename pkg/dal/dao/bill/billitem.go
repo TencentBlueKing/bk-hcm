@@ -117,6 +117,8 @@ func (a AccountBillItemDao) List(kt *kit.Kit, opt *types.ListOption) (
 		return &typesbill.ListAccountBillItemDetails{Count: count}, nil
 	}
 
+	opt.Page.Order = ""
+	opt.Page.Sort = ""
 	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
 	if err != nil {
 		return nil, err
