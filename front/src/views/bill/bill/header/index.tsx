@@ -3,7 +3,7 @@ import { DatePicker } from 'bkui-vue';
 import { RouterLink, useRoute } from 'vue-router';
 import './index.scss';
 import { useI18n } from 'vue-i18n';
-import { BILL_BIZS_KEY } from '@/constants';
+import { BILL_BIZS_KEY, BILL_MAIN_ACCOUNTS_KEY } from '@/constants';
 
 export default defineComponent({
   setup() {
@@ -28,7 +28,13 @@ export default defineComponent({
           {links.value.map(({ name, title }) => (
             <RouterLink
               class='link-item'
-              to={{ name, query: { [BILL_BIZS_KEY]: route.query[BILL_BIZS_KEY] } }}
+              to={{
+                name,
+                query: {
+                  [BILL_BIZS_KEY]: route.query[BILL_BIZS_KEY],
+                  [BILL_MAIN_ACCOUNTS_KEY]: route.query[BILL_MAIN_ACCOUNTS_KEY],
+                },
+              }}
               activeClass='active'>
               {title}
             </RouterLink>

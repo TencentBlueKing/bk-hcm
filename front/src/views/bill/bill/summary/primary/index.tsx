@@ -114,7 +114,6 @@ export default defineComponent({
 
     watch([bill_year, bill_month], () => {
       getListData();
-      amountRef.value.refreshAmountInfo();
     });
 
     watch(filter, () => {
@@ -138,6 +137,7 @@ export default defineComponent({
                 class='mt16 mb16'
                 api={reqBillsRootAccountSummarySum}
                 payload={() => ({ bill_year: bill_year.value, bill_month: bill_month.value, filter })}
+                immediate
               />
             ),
           }}

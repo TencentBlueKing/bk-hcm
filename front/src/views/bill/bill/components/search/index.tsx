@@ -13,6 +13,7 @@ import { QueryRuleOPEnum, RulesItem } from '@/typings';
 import dayjs from 'dayjs';
 import BusinessSelector from '@/components/business-selector/index.vue';
 import { BILL_BIZS_KEY } from '@/constants';
+
 interface ISearchModal {
   vendor: VendorEnum[];
   root_account_id: string[];
@@ -41,6 +42,8 @@ export default defineComponent({
       type: String,
       default: '请选择搜索条件',
     },
+    // 是否自动选中二级账号
+    autoSelectMainAccount: Boolean,
   },
   emits: ['search'],
   setup(props, { emit, expose }) {
@@ -123,6 +126,7 @@ export default defineComponent({
                 v-model={modal.value.main_account_id}
                 vendor={modal.value.vendor}
                 rootAccountId={modal.value.root_account_id}
+                autoSelect={props.autoSelectMainAccount}
               />
             </div>
           )}

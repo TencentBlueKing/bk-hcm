@@ -2,7 +2,7 @@
 import { computed, ref, watchEffect, defineExpose, PropType } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAccountStore } from '@/store';
-import { isEmpty } from '@/common/util';
+import { isEmpty, localStorageActions } from '@/common/util';
 import { useI18n } from 'vue-i18n';
 
 const props = defineProps({
@@ -16,6 +16,7 @@ const props = defineProps({
   notAutoSelectAll: Boolean as PropType<boolean>,
   saveBizs: Boolean as PropType<boolean>,
   bizsKey: String as PropType<string>,
+  apiMethod: Function as PropType<(...args: any) => Promise<any>>,
 });
 const emit = defineEmits(['update:modelValue']);
 
@@ -30,6 +31,7 @@ const loading = ref(null);
 watchEffect(async () => {
   loading.value = true;
   let req = props.authed ? accountStore.getBizListWithAuth : accountStore.getBizList;
+  req = props.apiMethod || req;
   if (props.isAudit) {
     req = accountStore.getBizAuditListWithAuth;
   }
@@ -40,10 +42,7 @@ watchEffect(async () => {
 
   // 支持全选
   if (props.isShowAll) {
-    businessList.value.unshift({
-      name: t('全部'),
-      id: 'all',
-    });
+    businessList.value.unshift({ name: t('全部'), id: 'all' });
   }
 
   let id = null;
@@ -57,13 +56,15 @@ watchEffect(async () => {
   }
   // 开启 saveBizs, 则自动选中上一次选中的业务
   if (props.saveBizs) {
-    // 如果存在已保存的业务id, 则使用; 否则, 取默认值
-    id = route.query?.[props.bizsKey] ? JSON.parse(atob(route.query?.[props.bizsKey] as string)) : id;
-  }
-  // 支持多选
-  if (props.multiple) {
-    // 如果存在已保存的业务id, 则直接使用(解码后是一个数组); 否则, 需要套一个数组(默认值为 string 类型)
-    id = route.query?.[props.bizsKey] ? id : [id];
+    const urlBizs = route.query[props.bizsKey] as string;
+
+    // 优先使用 url 中的业务id, 其次是持久化的, 最后是默认值
+    // 如果是取默认值, 则多选时需要转为数组, 注意默认值可能为 null, 此时需要转为空数组
+    id = urlBizs
+      ? JSON.parse(atob(urlBizs))
+      : localStorageActions.get(props.bizsKey, (value) => JSON.parse(atob(value))) ||
+        // eslint-disable-next-line no-nested-ternary
+        (props.multiple ? (id ? [id] : []) : id);
   }
 
   // 设置选中的值
@@ -108,18 +109,29 @@ const selectedValue = computed({
 });
 
 const handleChange = (val: string | string[]) => {
-  if (props.saveBizs) {
-    const hasAll = Array.isArray(val) && val.includes('all');
-    // 考虑到数组可能有多个元素, 使用 base64 配合 JSON 进行转码
-    const customBizs = btoa(JSON.stringify(val));
-    router.push({
-      query: {
-        ...route.query,
-        // 全选时, 不用存业务id
-        [props.bizsKey]: hasAll || !val ? undefined : customBizs,
-      },
-    });
+  if (!props.saveBizs) return;
+
+  const query = { ...route.query };
+  const encodedBizs = btoa(JSON.stringify(val));
+
+  // 多选
+  if (props.multiple) {
+    // 未选时, 不用存业务id
+    query[props.bizsKey] = val.length > 0 ? encodedBizs : undefined;
   }
+  // 单选
+  else {
+    query[props.bizsKey] = encodedBizs || undefined;
+  }
+
+  // 持久化处理
+  if (query[props.bizsKey]) {
+    localStorageActions.set(props.bizsKey, query[props.bizsKey]);
+  } else {
+    localStorageActions.remove(props.bizsKey);
+  }
+  // 记录业务id 到 url 上
+  router.push({ query });
 };
 
 defineExpose({

@@ -9,6 +9,7 @@ import { VendorEnum } from '@/common/constant';
 import { reqBillsRootAccountSummaryList, reqBillsRootAccountSummarySum, syncRecordsBills } from '@/api/bill';
 import { QueryRuleOPEnum } from '@/typings';
 import { BillsRootAccountSummaryState, BillsSummarySum } from '@/typings/bill';
+import { formatBillCost } from '@/utils';
 
 export default defineComponent({
   props: {
@@ -90,14 +91,14 @@ export default defineComponent({
                 <div class={cssModule.title}>{t('同步内容')}</div>
                 <div class={cssModule.item}>
                   <span>{t('总金额（人民币）')}</span>
-                  <span class={cssModule.money}>￥{syncInfo.value?.cost_map?.USD?.RMBCost || 0}</span>
+                  <span class={cssModule.money}>￥{formatBillCost(syncInfo.value?.cost_map?.USD?.RMBCost)}</span>
                 </div>
                 <div class={cssModule.item}>
                   <span>{t('总金额（美金）')}</span>
-                  <span class={cssModule.money}>＄{syncInfo.value?.cost_map?.USD?.Cost || 0}</span>
+                  <span class={cssModule.money}>＄{formatBillCost(syncInfo.value?.cost_map?.USD?.Cost)}</span>
                 </div>
                 <div class={cssModule.item}>
-                  <span>{'业务数量'}</span>
+                  <span>{t('业务数量')}</span>
                   <span class={cssModule.count}>{syncInfo.value?.count || 0}</span>
                 </div>
               </section>
