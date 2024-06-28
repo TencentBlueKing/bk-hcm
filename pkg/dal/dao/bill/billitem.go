@@ -123,9 +123,13 @@ func (a AccountBillItemDao) List(kt *kit.Kit, opt *types.ListOption) (
 	}
 
 	idSql := fmt.Sprintf(`SELECT id FROM %s %s %s`, table.AccountBillItemTable, whereExpr, pageExpr)
-	detailIDs := make([]string, 0)
-	if err = a.Orm.Do().Select(kt.Ctx, &detailIDs, idSql, whereValue); err != nil {
+	preDetails := make([]tablebill.AccountBillItem, 0)
+	if err = a.Orm.Do().Select(kt.Ctx, &preDetails, idSql, whereValue); err != nil {
 		return nil, err
+	}
+	detailIDs := make([]string, 0, len(preDetails))
+	for _, detail := range preDetails {
+		detailIDs = append(detailIDs, detail.ID)
 	}
 
 	sql := fmt.Sprintf(`SELECT %s FROM %s IN WHERE id IN (:ids)`,
