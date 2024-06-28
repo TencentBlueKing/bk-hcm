@@ -1949,6 +1949,12 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       isDefaultShow: true,
     },
     {
+      label: '账号状态',
+      field: 'state',
+      isDefaultShow: true,
+      render: ({ cell }: any) => BILLS_ROOT_ACCOUNT_SUMMARY_STATE_MAP[cell],
+    },
+    {
       label: '账单同步（人民币-元）当月',
       field: 'current_month_rmb_cost_synced',
       isDefaultShow: true,
@@ -2008,12 +2014,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       isDefaultShow: true,
       render: ({ cell }: any) => formatBillCost(cell),
       sort: true,
-    },
-    {
-      label: '账号状态',
-      field: 'state',
-      isDefaultShow: true,
-      render: ({ cell }: any) => BILLS_ROOT_ACCOUNT_SUMMARY_STATE_MAP[cell],
     },
   ];
 

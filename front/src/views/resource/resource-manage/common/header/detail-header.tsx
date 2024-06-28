@@ -2,21 +2,24 @@ import { defineComponent } from 'vue';
 
 import { ArrowsLeft } from 'bkui-vue/lib/icon';
 
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 import './detail-header.scss';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 
 export default defineComponent({
-  components: {
-    ArrowsLeft,
-  },
-
-  setup() {
+  components: { ArrowsLeft },
+  props: { backRouteName: String },
+  setup(props) {
     const router = useRouter();
+    const route = useRoute();
     const { whereAmI } = useWhereAmI();
 
     const goBack = () => {
+      if (props.backRouteName) {
+        router.replace({ name: props.backRouteName, query: { ...route.query } });
+        return;
+      }
       if (window.history.state.back) {
         router.back();
       } else {

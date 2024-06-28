@@ -2,17 +2,28 @@ import { VendorEnum } from '@/common/constant';
 import { useSingleList } from '@/hooks/useSingleList';
 import { QueryRuleOPEnum } from '@/typings';
 import { Select } from 'bkui-vue';
-import { PropType, defineComponent, ref, watch } from 'vue';
+import { PropType, computed, defineComponent, ref, watch } from 'vue';
 
 export default defineComponent({
-  props: { modelValue: String as PropType<string>, vendor: String as PropType<VendorEnum> },
+  props: {
+    modelValue: String as PropType<string>,
+    vendor: Array as PropType<VendorEnum[]>,
+    rootAccountId: Array as PropType<string[]>,
+  },
   emits: ['update:modelValue'],
   setup(props, { emit }) {
     const selectedValue = ref(props.modelValue);
+    const rules = computed(() => {
+      const rules = [];
+      if (props.vendor.length) rules.push({ field: 'vendor', op: QueryRuleOPEnum.IN, value: props.vendor });
+      if (props.rootAccountId.length)
+        rules.push({ field: 'parent_account_id', op: QueryRuleOPEnum.IN, value: props.rootAccountId });
+      return rules;
+    });
 
-    const { dataList, isDataLoad, loadDataList, handleScrollEnd } = useSingleList({
+    const { dataList, isDataLoad, handleScrollEnd, handleRefresh } = useSingleList({
       url: '/api/v1/account/main_accounts/list',
-      rules: () => (props.vendor ? [{ field: 'vendor', op: QueryRuleOPEnum.EQ, value: props.vendor }] : []),
+      rules: () => rules.value,
       immediate: true,
     });
 
@@ -27,12 +38,7 @@ export default defineComponent({
       emit('update:modelValue', val);
     });
 
-    watch(
-      () => props.vendor,
-      () => {
-        loadDataList();
-      },
-    );
+    watch(rules, () => handleRefresh(), { deep: true });
 
     return () => (
       <Select
