@@ -26,6 +26,7 @@ import (
 
 	lblogic "hcm/cmd/cloud-server/logics/load-balancer"
 	cloudserver "hcm/pkg/api/cloud-server"
+	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -68,7 +69,7 @@ func (svc *lbSvc) batchBizRuleOnline(cts *rest.Contexts, authHandler handler.Val
 		cts.Kit, enumor.AccountCloudResType, req.AccountID)
 	if err != nil {
 		logs.Errorf("get sops account basic info failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
+		return nil, fmt.Errorf("get sops account basic info failed, err: %v, rid: %s", err, cts.Kit.Rid)
 	}
 
 	switch accountInfo.Vendor {
@@ -80,22 +81,21 @@ func (svc *lbSvc) batchBizRuleOnline(cts *rest.Contexts, authHandler handler.Val
 }
 
 func (svc *lbSvc) buildCreateTcloudRule(cts *rest.Contexts, body json.RawMessage, accountID string) (any, error) {
-	rawInputList := new([]lblogic.BindRSRawInput)
-	if err := json.Unmarshal(body, rawInputList); err != nil {
+	req := new(cslb.TCloudSopsRuleBatchCreateReq)
+	if err := json.Unmarshal(body, req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
 	// TODO 拼凑调整参数，请求创建规则的批量异步任务接口
 	var bindRSReqParam []*cloud.BatchOperationReq[*lblogic.BindRSRecord]
-
 	// TODO 参数检查preview
-	result, err := svc.previewValidate(cts, *rawInputList)
+	result, err := svc.previewValidate(cts, req.BindRSRecords)
 	if err != nil {
-		return nil, fmt.Errorf("batch sops rule online, preview validate err, err: %v", err)
+		return nil, fmt.Errorf("batch sops rule online, preview validate err, err: %s", err)
 	}
 	switch value := result.(type) {
 	case []*cloud.BatchOperationValidateError:
-		return nil, fmt.Errorf("batch sops rule online, preview validate err, err: %v", value)
+		return nil, fmt.Errorf("batch sops rule online, preview validate err, err: %s", value)
 	case []*cloud.BatchOperationPreviewResult[*lblogic.BindRSRecord]:
 		bindRSReqParam = convertBatchOperationPreviewResultToReq(value)
 	default:
@@ -108,23 +108,9 @@ func (svc *lbSvc) buildCreateTcloudRule(cts *rest.Contexts, body json.RawMessage
 	return nil, nil
 }
 
-func (svc *lbSvc) previewValidate(cts *rest.Contexts, rawInputList []lblogic.BindRSRawInput) (any, error) {
-	// 初始化规则配置切片
-	var bindRSRecords []*lblogic.BindRSRecord
+func (svc *lbSvc) previewValidate(cts *rest.Contexts, bindRSRecords []lblogic.BindRSRecord) (any, error) {
 	// 错误校验列表
 	errList := make([]*cloud.BatchOperationValidateError, 0)
-	// 解析每一行数据
-	for i, rawInput := range rawInputList {
-		records, err := rawInput.SplitRecord()
-		if err != nil {
-			errList = append(errList, &cloud.BatchOperationValidateError{
-				Reason: fmt.Sprintf("解析第%d行数据失败: %v", i+2, err),
-			})
-			continue
-		}
-
-		bindRSRecords = append(bindRSRecords, records...)
-	}
 
 	recordMap := make(map[string]struct{})
 	resultMap := make(map[string]*cloud.BatchOperationPreviewResult[*lblogic.BindRSRecord])
@@ -163,7 +149,7 @@ func (svc *lbSvc) previewValidate(cts *rest.Contexts, rawInputList []lblogic.Bin
 			}
 			resultMap[lb.ID] = previewResp
 		}
-		previewResp.Listeners = append(previewResp.Listeners, record)
+		previewResp.Listeners = append(previewResp.Listeners, &record)
 		previewResp.NewRsCount += len(record.RSInfos)
 	}
 
