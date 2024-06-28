@@ -1,4 +1,4 @@
-import { defineComponent, ref } from 'vue';
+import { PropType, defineComponent, ref, watch } from 'vue';
 import cssModule from './index.module.scss';
 
 import { Button } from 'bkui-vue';
@@ -13,10 +13,18 @@ import { useI18n } from 'vue-i18n';
 import { VendorEnum } from '@/common/constant';
 
 export default defineComponent({
-  setup() {
+  props: {
+    modelValue: [String, Array] as PropType<VendorEnum | VendorEnum[]>,
+    size: {
+      type: String as PropType<'small' | 'normal'>,
+      default: 'normal',
+    },
+  },
+  emits: ['update:modelValue'],
+  setup(props, { emit }) {
     const { t } = useI18n();
 
-    const vendor = ref(VendorEnum.AZURE);
+    const vendor = ref(props.modelValue);
 
     const buttons = ref([
       { label: t('微软云'), value: VendorEnum.AZURE, icon: vendorAzure },
@@ -27,8 +35,23 @@ export default defineComponent({
       { label: t('腾讯云'), value: VendorEnum.TCLOUD, icon: vendorTcloud },
     ]);
 
+    watch(vendor, (v) => emit('update:modelValue', v), { deep: true });
+
+    watch(
+      () => props.modelValue,
+      (v) => (vendor.value = v),
+      {
+        deep: true,
+      },
+    );
+
     return () => (
-      <BkButtonGroup class={cssModule.group} v-model={vendor.value}>
+      <BkButtonGroup
+        class={[
+          cssModule.group,
+          { [cssModule.small]: props.size === 'small', [cssModule.normal]: props.size === 'normal' },
+        ]}
+        v-model={vendor.value}>
         {buttons.value.map(({ label, value, icon }) => (
           <Button class={cssModule.radio} selected={vendor.value === value} onClick={() => (vendor.value = value)}>
             <img src={icon} alt='' />

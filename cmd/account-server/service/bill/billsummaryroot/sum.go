@@ -68,7 +68,7 @@ func (s *service) SumRootAccountSummary(cts *rest.Contexts) (interface{}, error)
 		tmpResult, err := s.client.DataService().Global.Bill.ListBillSummaryRoot(cts.Kit, &dsbillapi.BillSummaryRootListReq{
 			Filter: bizFilter,
 			Page: &core.BasePage{
-				Start: 0,
+				Start: uint32(offset),
 				Limit: core.DefaultMaxPageLimit,
 			},
 		})

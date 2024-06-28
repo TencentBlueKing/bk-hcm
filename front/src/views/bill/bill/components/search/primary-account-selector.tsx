@@ -19,10 +19,6 @@ export default defineComponent({
       },
       immediate: true,
     });
-    const renderDataList = computed(() => {
-      if (props.vendor.length) return dataList.value.filter((item) => props.vendor.includes(item.vendor));
-      return dataList.value;
-    });
 
     watch(
       () => props.modelValue,
@@ -51,7 +47,7 @@ export default defineComponent({
         onScroll-end={handleScrollEnd}
         loading={isDataLoad.value}
         scrollLoading={isDataLoad.value}>
-        {renderDataList.value.map(({ id, name }) => (
+        {dataList.value.map(({ id, name }) => (
           <Select.Option key={id} id={id} name={name} />
         ))}
       </Select>

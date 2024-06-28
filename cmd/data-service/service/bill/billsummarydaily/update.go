@@ -47,12 +47,12 @@ func (svc *service) UpdateBillSummaryDaily(cts *rest.Contexts) (interface{}, err
 	billSummaryDaily := &tablebill.AccountBillSummaryDaily{
 		ID:       req.ID,
 		Currency: req.Currency,
-		Cost:     &types.Decimal{Decimal: req.Cost},
 		Count:    req.Count,
 	}
-	if !req.Cost.IsZero() {
-		billSummaryDaily.Cost = &types.Decimal{Decimal: req.Cost}
+	if req.Cost != nil {
+		billSummaryDaily.Cost = &types.Decimal{Decimal: *req.Cost}
 	}
+
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		if err := svc.dao.AccountBillSummaryDaily().UpdateByIDWithTx(
 			cts.Kit, txn, billSummaryDaily.ID, billSummaryDaily); err != nil {

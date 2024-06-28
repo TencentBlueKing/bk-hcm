@@ -2,9 +2,10 @@ import { defineComponent, ref, watch } from 'vue';
 import './index.scss';
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 import useBillStore, { IMainAccountDetail } from '@/store/useBillStore';
-import { Message } from 'bkui-vue';
+import { Message, Button } from 'bkui-vue';
 import { BILL_VENDORS_MAP } from '../../account-manage/constants';
 import { SITE_TYPE_MAP } from '@/common/constant';
+import { timeFormatter } from '@/common/util';
 
 export default defineComponent({
   props: {
@@ -31,13 +32,25 @@ export default defineComponent({
       },
     );
     const handleUpdate = async (val: any) => {
-      await billStore.update_main_account({
+      const { data } = await billStore.update_main_account({
         id: props.accountId,
         ...detail.value,
         ...val,
       });
       Message({
-        message: '更新已提交，等待单据审批',
+        message: (
+          <span>
+            修改申请已提交，审批通过后生效。审批信息
+            <Button
+              theme='primary'
+              text
+              onClick={() => {
+                window.open(`/#/service/my-apply/detail?id=${data.id}`);
+              }}>
+              链接
+            </Button>
+          </span>
+        ),
         theme: 'success',
       });
       // router.push({
@@ -59,19 +72,21 @@ export default defineComponent({
             { prop: 'vendor', name: '云厂商', render: () => BILL_VENDORS_MAP[detail.value.vendor] },
             { prop: 'parent_account_id', name: '一级账号ID' },
             { prop: 'id', name: '二级帐号ID' },
+            { prop: 'name', name: '二级帐号名称' },
             { prop: 'cloud_id', name: '云账号id' },
             { prop: 'site', name: '站点类型', render: () => SITE_TYPE_MAP[detail.value.site] },
             { prop: 'email', name: '帐号邮箱', edit: true },
             { prop: 'managers', name: '主负责人', edit: true, type: 'member' },
             { prop: 'bak_managers', name: '备份负责人', edit: true, type: 'member' },
-            // { prop: 'business_type', name: '业务类型' },
-            // { prop: 'dept_id', name: '组织架构', edit: true },
             {
               prop: 'op_product_id',
               name: '业务',
             },
-            // { prop: 'status', name: '账号状态' },
             { prop: 'memo', name: '备注', edit: true },
+            { prop: 'creator', name: '创建者' },
+            { prop: 'reviser', name: '修改者' },
+            { prop: 'created_at', name: '创建时间', render: () => timeFormatter(detail.value.created_at) },
+            { prop: 'updated_at', name: '修改时间', render: () => timeFormatter(detail.value.updated_at) },
           ]}
         />
         {/* <p class={'sub-title'}>

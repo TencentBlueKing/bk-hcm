@@ -12,6 +12,7 @@ export default defineComponent({
   setup(_, { expose }) {
     const { t } = useI18n();
     const isShow = ref(false);
+    const modal = ref({ vendor: [] });
 
     const triggerShow = (v: boolean) => {
       isShow.value = v;
@@ -28,7 +29,7 @@ export default defineComponent({
                 <VendorRadioGroup />
               </Form.FormItem>
               <Form.FormItem label={t('一级账号')} required>
-                <PrimaryAccountSelector />
+                <PrimaryAccountSelector vendor={modal.value.vendor} />
               </Form.FormItem>
               <Form.FormItem label={t('调账配置')} required>
                 <Table

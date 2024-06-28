@@ -158,9 +158,10 @@ export default defineComponent({
                         name: [
                           {
                             trigger: 'change',
-                            message: '账号名称只能包括小写字母和数字，并且仅能以小写字母开头，长度为6-20个字符',
+                            message:
+                              '账号名称只能包括英文字母、数字和中划线-，并且仅能以英文字母开头，长度为6-20个字符',
                             validator: (val: string) => {
-                              return /^[a-z][a-z0-9]{5,19}$/.test(val);
+                              return /^[a-zA-Z][a-zA-Z0-9-]{5,19}$/.test(val);
                             },
                           },
                         ],
@@ -169,7 +170,7 @@ export default defineComponent({
                         label='帐号名称'
                         required
                         property='name'
-                        description='账号名称只能包括小写字母和数字，并且仅能以小写字母开头，长度为6-20个字符'>
+                        description='账号名称只能包括英文字母、数字和中划线-，并且仅能以英文字母开头，长度为6-20个字符'>
                         <Input v-model={formModel.name} placeholder='请输入账号名称'></Input>
                       </FormItem>
                       <FormItem label='帐号邮箱' required property='email'>

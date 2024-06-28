@@ -3,6 +3,7 @@ import cssModule from './index.module.scss';
 import { useI18n } from 'vue-i18n';
 import { BillsSummarySum, BillsSummarySumResData } from '@/typings/bill';
 import { Loading } from 'bkui-vue';
+import { formatBillCost } from '@/utils';
 
 export default defineComponent({
   props: {
@@ -45,7 +46,7 @@ export default defineComponent({
           {t('共计')}
           {props.isAdjust ? t('增加') : t('人民币')}：
           <Loading loading={isLoading.value} opacity={1} style={{ minWidth: '80px' }} size='small'>
-            <span class={cssModule.money}>￥{amountInfo.value?.cost_map?.USD?.RMBCost || 0}</span>
+            <span class={cssModule.money}>￥{formatBillCost(amountInfo.value?.cost_map?.USD?.RMBCost)}</span>
             {props.isAdjust && (
               <>
                 &nbsp;|&nbsp;<span class={cssModule.money}>xxx</span>
@@ -57,7 +58,7 @@ export default defineComponent({
           {t('共计')}
           {props.isAdjust ? t('减少') : t('美金')}：
           <Loading loading={isLoading.value} opacity={1} style={{ minWidth: '80px' }} size='small'>
-            <span class={cssModule.money}>＄{amountInfo.value?.cost_map?.USD?.Cost || 0}</span>
+            <span class={cssModule.money}>＄{formatBillCost(amountInfo.value?.cost_map?.USD?.Cost)}</span>
             {props.isAdjust && (
               <>
                 &nbsp;|&nbsp;<span class={cssModule.money}>xxx</span>

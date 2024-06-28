@@ -259,7 +259,11 @@ export default defineComponent({
                                 menuItem.children
                                   .filter((child) => !child.meta?.notMenu)
                                   .map((child) => (
-                                    <RouterLink to={{ path: `${child.path}`, query: { bizs: accountStore.bizs } }}>
+                                    <RouterLink
+                                      to={{
+                                        path: `${child.path}`,
+                                        query: { ...route.query, bizs: accountStore.bizs },
+                                      }}>
                                       <Menu.Item key={child.meta?.activeKey as string}>
                                         {/* {route.meta.activeKey} */}
                                         {{

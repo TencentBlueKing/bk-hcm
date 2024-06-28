@@ -1,5 +1,4 @@
-import { defineComponent, ref } from 'vue';
-import { useRoute } from 'vue-router';
+import { PropType, computed, defineComponent, ref } from 'vue';
 
 import cssModule from './index.module.scss';
 import { Button, DatePicker } from 'bkui-vue';
@@ -10,9 +9,10 @@ import SubAccountSelector from './sub-account-selector';
 
 import { useI18n } from 'vue-i18n';
 import { VendorEnum } from '@/common/constant';
-import { QueryRuleOPEnum } from '@/typings';
+import { QueryRuleOPEnum, RulesItem } from '@/typings';
 import dayjs from 'dayjs';
 import BusinessSelector from '@/components/business-selector/index.vue';
+import { BILL_BIZS_KEY } from '@/constants';
 interface ISearchModal {
   vendor: VendorEnum[];
   root_account_id: string[];
@@ -21,22 +21,40 @@ interface ISearchModal {
   updated_at: Date[];
 }
 
+type ISearchKeys = 'vendor' | 'root_account_id' | 'main_account_id' | 'product_id' | 'updated_at';
+
 export default defineComponent({
+  props: {
+    searchKeys: {
+      type: Array as PropType<ISearchKeys[]>,
+      required: true,
+    },
+    vendor: {
+      type: Array as PropType<VendorEnum[]>,
+      default: [],
+    },
+    disableSearchHandler: {
+      type: Function as PropType<(rules: RulesItem[]) => boolean>,
+      default: () => false,
+    },
+    disabledTipContent: {
+      type: String,
+      default: '请选择搜索条件',
+    },
+  },
   emits: ['search'],
-  setup(_, { emit, expose }) {
+  setup(props, { emit, expose }) {
     const { t } = useI18n();
-    const route = useRoute();
 
     const getDefaultModal = (): ISearchModal => ({
-      vendor: [],
+      vendor: props.vendor,
       root_account_id: [],
       main_account_id: [],
       product_id: [],
       updated_at: [],
     });
     const modal = ref(getDefaultModal());
-
-    const getRules = () => {
+    const rules = computed<RulesItem[]>(() => {
       const { vendor, root_account_id, main_account_id, product_id, updated_at } = modal.value;
       const rules = [
         { field: 'vendor', op: QueryRuleOPEnum.IN, value: vendor },
@@ -61,10 +79,13 @@ export default defineComponent({
         }
         return !!rule.value;
       });
-    };
+    });
+    const disabledSearch = computed(() => {
+      return props.disableSearchHandler(rules.value);
+    });
 
     const handleSearch = () => {
-      emit('search', getRules());
+      emit('search', rules.value);
     };
 
     const handleReset = () => {
@@ -77,29 +98,35 @@ export default defineComponent({
     return () => (
       <div class={cssModule['search-container']}>
         <div class={cssModule['search-grid']}>
-          {route.name === 'billSummaryManage' && (
+          {props.searchKeys.includes('vendor') && (
             <div>
               <div class={cssModule['search-label']}>{t('云厂商')}</div>
               <VendorSelector v-model={modal.value.vendor} />
             </div>
           )}
-          {route.name !== 'billAdjust' && (
+          {props.searchKeys.includes('root_account_id') && (
             <div>
               <div class={cssModule['search-label']}>{t('一级账号')}</div>
               <PrimaryAccountSelector v-model={modal.value.root_account_id} vendor={modal.value.vendor} />
             </div>
           )}
-          <div>
-            <div class={cssModule['search-label']}>{'业务'}</div>
-            <BusinessSelector v-model={modal.value.product_id} />
-          </div>
-          {['billDetail', 'billAdjust'].includes(route.name as string) && (
+          {props.searchKeys.includes('product_id') && (
             <div>
-              <div class={cssModule['search-label']}>{t('二级账号')}</div>
-              <SubAccountSelector v-model={modal.value.main_account_id} />
+              <div class={cssModule['search-label']}>{'业务'}</div>
+              <BusinessSelector v-model={modal.value.product_id} clearable multiple saveBizs bizsKey={BILL_BIZS_KEY} />
             </div>
           )}
-          {route.name === 'billAdjust' && (
+          {props.searchKeys.includes('main_account_id') && (
+            <div>
+              <div class={cssModule['search-label']}>{t('二级账号')}</div>
+              <SubAccountSelector
+                v-model={modal.value.main_account_id}
+                vendor={modal.value.vendor}
+                rootAccountId={modal.value.root_account_id}
+              />
+            </div>
+          )}
+          {props.searchKeys.includes('updated_at') && (
             <div>
               <div class={cssModule['search-label']}>{t('更新时间')}</div>
               <DatePicker
@@ -111,7 +138,12 @@ export default defineComponent({
             </div>
           )}
         </div>
-        <Button theme='primary' class={cssModule['search-button']} onClick={handleSearch}>
+        <Button
+          theme='primary'
+          class={cssModule['search-button']}
+          onClick={handleSearch}
+          disabled={disabledSearch.value}
+          v-bk-tooltips={{ content: props.disabledTipContent, disabled: !disabledSearch.value }}>
           {t('查询')}
         </Button>
         <Button class={cssModule['search-button']} onClick={handleReset}>
