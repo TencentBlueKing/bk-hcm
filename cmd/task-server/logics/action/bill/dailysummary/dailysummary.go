@@ -210,7 +210,7 @@ func (act DailySummaryAction) syncDailySummary(kt run.ExecuteKit, opt *DailySumm
 	if err := actcli.GetDataService().Global.Bill.UpdateBillSummaryDaily(kt.Kit(), &bill.BillSummaryDailyUpdateReq{
 		ID:       summary.ID,
 		Currency: currency,
-		Cost:     cost,
+		Cost:     &cost,
 		Count:    int64(count),
 	}); err != nil {
 		return fmt.Errorf("update daily summary for %v day %d failed, err %s", opt, billDay, err.Error())

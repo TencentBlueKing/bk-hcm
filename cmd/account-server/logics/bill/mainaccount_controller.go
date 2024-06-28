@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/api/core"
 	dsbillapi "hcm/pkg/api/data-service/bill"
 	taskserver "hcm/pkg/api/task-server"
+	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -156,7 +157,7 @@ func (mac *MainAccountController) runBillSummaryLoop(kt *kit.Kit) {
 		logs.Warnf("sync bill summary for account (%s, %s, %s) failed, err %s, rid: %s",
 			mac.RootAccountID, mac.MainAccountID, mac.Vendor, err.Error(), kt.Rid)
 	}
-	ticker := time.NewTicker(defaultControllerSummaryDuration)
+	ticker := time.NewTicker(*cc.AccountServer().Controller.MainAccountSummarySyncDuration)
 	for {
 		select {
 		case <-ticker.C:
@@ -173,7 +174,7 @@ func (mac *MainAccountController) runBillSummaryLoop(kt *kit.Kit) {
 }
 
 func (mac *MainAccountController) runCalculateBillSummaryLoop(kt *kit.Kit) {
-	ticker := time.NewTicker(defaultControllerSummaryDuration)
+	ticker := time.NewTicker(*cc.AccountServer().Controller.MainAccountSummarySyncDuration)
 	curMonthflowID := ""
 	lastMonthflowID := ""
 	for {

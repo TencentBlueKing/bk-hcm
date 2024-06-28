@@ -47,7 +47,7 @@ func (svc *service) UpdateBillAdjustmentItem(cts *rest.Contexts) (interface{}, e
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	BillAdjustmentItem := &tablebill.AccountBillAdjustmentItem{
+	billAdjustmentItem := &tablebill.AccountBillAdjustmentItem{
 		ID:            req.ID,
 		RootAccountID: req.RootAccountID,
 		MainAccountID: req.MainAccountID,
@@ -60,13 +60,17 @@ func (svc *service) UpdateBillAdjustmentItem(cts *rest.Contexts) (interface{}, e
 		Memo:          req.Memo,
 		Operator:      req.Operator,
 		Currency:      req.Currency,
-		Cost:          &types.Decimal{Decimal: req.Cost},
-		RMBCost:       &types.Decimal{Decimal: req.RMBCost},
 		State:         req.State,
+	}
+	if req.Cost != nil {
+		billAdjustmentItem.Cost = &types.Decimal{Decimal: *req.Cost}
+	}
+	if req.RMBCost != nil {
+		billAdjustmentItem.RMBCost = &types.Decimal{Decimal: *req.RMBCost}
 	}
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		if err := svc.dao.AccountBillAdjustmentItem().UpdateByIDWithTx(
-			cts.Kit, txn, BillAdjustmentItem.ID, BillAdjustmentItem); err != nil {
+			cts.Kit, txn, billAdjustmentItem.ID, billAdjustmentItem); err != nil {
 			return nil, fmt.Errorf("update bill adjustment item failed, err: %v", err)
 		}
 		return nil, nil

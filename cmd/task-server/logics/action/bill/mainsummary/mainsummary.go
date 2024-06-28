@@ -124,29 +124,32 @@ func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 	if err != nil {
 		return nil, err
 	}
-	req.AjustmentCost = *ajCost
+	req.AjustmentCost = ajCost
 	if exhangeRate != nil {
-		req.AjustmentRMBCost = req.AjustmentCost.Mul(*exhangeRate)
+		ajustmentRMBCost := req.AjustmentCost.Mul(*exhangeRate)
+		req.AjustmentRMBCost = &ajustmentRMBCost
 	}
 
 	if curMonthCost != nil {
-		req.CurrentMonthCost = *curMonthCost
+		req.CurrentMonthCost = curMonthCost
 		if exhangeRate != nil {
-			req.CurrentMonthRMBCost = req.CurrentMonthCost.Mul(*exhangeRate)
+			currentMonthRMBCost := req.CurrentMonthCost.Mul(*exhangeRate)
+			req.CurrentMonthRMBCost = &currentMonthRMBCost
 		}
 	}
 	if curMonthCostSynced != nil {
-		req.CurrentMonthCostSynced = *curMonthCostSynced
+		req.CurrentMonthCostSynced = curMonthCostSynced
 		if exhangeRate != nil {
-			req.CurrentMonthRMBCostSynced = req.CurrentMonthCostSynced.Mul(*exhangeRate)
+			currentMonthRMBCostSynced := req.CurrentMonthCostSynced.Mul(*exhangeRate)
+			req.CurrentMonthRMBCostSynced = &currentMonthRMBCostSynced
 		}
 		if lastMonthCostSynced != nil && !lastMonthCostSynced.IsZero() {
-			req.LastMonthCostSynced = *lastMonthCostSynced
+			req.LastMonthCostSynced = lastMonthCostSynced
 			req.MonthOnMonthValue = curMonthCostSynced.DivRound(*lastMonthCostSynced, 5).InexactFloat64()
 		}
 	}
 	if lastMonthRMBCostSynced != nil {
-		req.LastMonthRMBCostSynced = *lastMonthRMBCostSynced
+		req.LastMonthRMBCostSynced = lastMonthRMBCostSynced
 	}
 	if isCurMonthAccounted {
 		req.State = constant.MainAccountBillSummaryStateAccounted
