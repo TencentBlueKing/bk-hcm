@@ -133,6 +133,9 @@ func (a AccountBillItemDao) List(kt *kit.Kit, opt *types.ListOption) (
 	for _, detail := range preDetails {
 		detailIDs = append(detailIDs, detail.ID)
 	}
+	if len(detailIDs) == 0 {
+		return &typesbill.ListAccountBillItemDetails{Details: make([]tablebill.AccountBillItem, 0)}, nil
+	}
 
 	sql := fmt.Sprintf(`SELECT %s FROM %s WHERE id IN (:ids)`,
 		tablebill.AccountBillItemColumns.FieldsNamedExpr(opt.Fields),
