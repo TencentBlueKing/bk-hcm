@@ -132,7 +132,7 @@ func (a AccountBillItemDao) List(kt *kit.Kit, opt *types.ListOption) (
 		detailIDs = append(detailIDs, detail.ID)
 	}
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s IN WHERE id IN (:ids)`,
+	sql := fmt.Sprintf(`SELECT %s FROM %s WHERE id IN (:ids)`,
 		tablebill.AccountBillItemColumns.FieldsNamedExpr(opt.Fields),
 		table.AccountBillItemTable)
 	details := make([]tablebill.AccountBillItem, 0)
