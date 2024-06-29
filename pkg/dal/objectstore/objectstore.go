@@ -20,12 +20,15 @@
 package objectstore
 
 import (
-	"context"
 	"fmt"
 	"io"
+	"time"
 
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/kit"
+
+	sts "github.com/tencentyun/qcloud-cos-sts-sdk/go"
 )
 
 // GetObjectStore get object store from env
@@ -42,7 +45,9 @@ func GetObjectStore(config cc.ObjectStore) (Storage, error) {
 
 // Storage the interface of storage
 type Storage interface {
-	Upload(ctx context.Context, uploadPath string, r io.Reader) error
-	Download(ctx context.Context, downloadPath string, w io.Writer) error
-	ListItems(ctx context.Context, folderPath string) ([]string, error)
+	Upload(kt *kit.Kit, uploadPath string, r io.Reader) error
+	Download(kt *kit.Kit, downloadPath string, w io.Writer) error
+	ListItems(kt *kit.Kit, folderPath string) ([]string, error)
+	GetPreSignedURL(kt *kit.Kit, action string, ttl time.Duration, path string) (
+		tempCred *sts.Credentials, url string, err error)
 }
