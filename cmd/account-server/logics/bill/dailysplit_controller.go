@@ -205,13 +205,16 @@ func (msdc *MainDailySplitController) syncDailySplit(kt *kit.Kit, billYear, bill
 					return fmt.Errorf("failed to get flow by id %s, err %s", task.SplitFlowID, err.Error())
 				}
 				if flow.State == enumor.FlowFailed ||
+					flow.State == enumor.FlowCancel ||
 					(flow.State == enumor.FlowScheduled &&
 						flow.Worker != nil &&
 						!slice.IsItemInSlice[string](taskServerNameList, *flow.Worker)) {
 
-					if err := msdc.Client.TaskServer().CancelFlow(kt, flow.ID); err != nil {
-						logs.Warnf("cancel flow %v failed, err %s, rid: %s", flow, err.Error(), kt.Rid)
-						continue
+					if flow.State == enumor.FlowScheduled {
+						if err := msdc.Client.TaskServer().CancelFlow(kt, flow.ID); err != nil {
+							logs.Warnf("cancel flow %v failed, err %s, rid: %s", flow, err.Error(), kt.Rid)
+							continue
+						}
 					}
 					flowID, err := msdc.createDailySplitTask(kt, summary, billYear, billMonth, task.BillDay)
 					if err != nil {

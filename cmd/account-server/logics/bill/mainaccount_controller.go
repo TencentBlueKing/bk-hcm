@@ -223,13 +223,16 @@ func (mac *MainAccountController) pollMainSummaryTask(subKit *kit.Kit, flowID st
 	// 此处需要进行判断，如果flow的worker不在当前task 列表中，并且处于scheduled状态，则需要重新创建flow
 	if flow.State == enumor.FlowSuccess ||
 		flow.State == enumor.FlowFailed ||
+		flow.State == enumor.FlowCancel ||
 		(flow.State == enumor.FlowScheduled &&
 			flow.Worker != nil &&
 			!slice.IsItemInSlice[string](taskServerNameList, *flow.Worker)) {
 
-		if err := mac.Client.TaskServer().CancelFlow(subKit, flow.ID); err != nil {
-			logs.Warnf("cancel flow %v failed, err %s, rid: %s", flow, err.Error(), subKit.Rid)
-			return flowID
+		if flow.State == enumor.FlowScheduled {
+			if err := mac.Client.TaskServer().CancelFlow(subKit, flow.ID); err != nil {
+				logs.Warnf("cancel flow %v failed, err %s, rid: %s", flow, err.Error(), subKit.Rid)
+				return flowID
+			}
 		}
 		result, err := mac.createMainSummaryTask(subKit, billYear, billMonth)
 		if err != nil {

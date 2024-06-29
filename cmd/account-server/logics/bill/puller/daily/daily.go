@@ -170,13 +170,16 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 		}
 		// 如果flow失败了或者flow找不到了，则重新创建一个新的flow
 		if flow.State == enumor.FlowFailed ||
+			flow.State == enumor.FlowCancel ||
 			(flow.State == enumor.FlowScheduled &&
 				flow.Worker != nil &&
 				!slice.IsItemInSlice[string](taskServerNameList, *flow.Worker)) {
 
-			if err := dp.Client.TaskServer().CancelFlow(kt, flow.ID); err != nil {
-				logs.Warnf("cancel flow %v failed, err %s, rid: %s", flow, err.Error(), kt.Rid)
-				continue
+			if flow.State == enumor.FlowScheduled {
+				if err := dp.Client.TaskServer().CancelFlow(kt, flow.ID); err != nil {
+					logs.Warnf("cancel flow %v failed, err %s, rid: %s", flow, err.Error(), kt.Rid)
+					continue
+				}
 			}
 			return dp.createNewPullTask(kt, billTask)
 		}
