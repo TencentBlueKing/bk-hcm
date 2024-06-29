@@ -74,6 +74,7 @@ func NewRootAccountController(opt *RootAccountControllerOption) (*RootAccountCon
 	}, nil
 }
 
+// RootAccountController ...
 type RootAccountController struct {
 	Client        *client.ClientSet
 	Sd            serviced.ServiceDiscover

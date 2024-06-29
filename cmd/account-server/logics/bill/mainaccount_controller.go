@@ -205,12 +205,12 @@ func (mac *MainAccountController) pollMainSummaryTask(subKit *kit.Kit, flowID st
 		if err != nil {
 			logs.Warnf("create new main summary task for %s/%s/%s %d-%d failed, err %s, rid: %s",
 				mac.RootAccountID, mac.MainAccountID, mac.Vendor,
-				billYear, billMonth, err.Error(), subKit)
+				billYear, billMonth, err.Error(), subKit.Rid)
 			return flowID
 		}
 		logs.Infof("create main summary task for %s/%s/%s %d-%d successfully, flow id %s, rid: %s",
 			mac.RootAccountID, mac.MainAccountID, mac.Vendor,
-			billYear, billMonth, flowID, subKit)
+			billYear, billMonth, flowID, subKit.Rid)
 		return result.ID
 
 	}
@@ -235,13 +235,13 @@ func (mac *MainAccountController) pollMainSummaryTask(subKit *kit.Kit, flowID st
 		if err != nil {
 			logs.Warnf("create new main summary task for %s/%s/%s %d-%d failed, err %s, rid: %s",
 				mac.RootAccountID, mac.MainAccountID, mac.Vendor,
-				billYear, billMonth, err.Error(), subKit)
+				billYear, billMonth, err.Error(), subKit.Rid)
 			return flowID
 		}
 
 		logs.Infof("create main summary task for %s/%s/%s %d-%d successfully, flow id %s, rid: %s",
 			mac.RootAccountID, mac.MainAccountID, mac.Vendor,
-			billYear, billMonth, flowID, subKit)
+			billYear, billMonth, flowID, subKit.Rid)
 		return result.ID
 	}
 	return flowID

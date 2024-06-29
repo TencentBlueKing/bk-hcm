@@ -77,7 +77,7 @@ const (
 
 // GetBillList get bill list
 func (a *Aws) GetBillList(kt *kit.Kit, opt *typesBill.AwsBillListOption,
-	billInfo *cloud.AccountBillConfig[cloud.AwsBillConfigExtension]) (int64, interface{}, error) {
+	billInfo *cloud.AccountBillConfig[cloud.AwsBillConfigExtension]) (int64, []map[string]string, error) {
 
 	where, err := parseCondition(opt)
 	if err != nil {
@@ -491,11 +491,11 @@ func (a *Aws) DeleteStack(kt *kit.Kit, opt *typesBill.AwsDeleteStackReq) error {
 
 // -------------- 新增账号账单管理部分 --------------
 
-// GetRootAccountBillList get bill list for root account
-func (a *Aws) GetRootAccountBillList(kt *kit.Kit, opt *typesBill.AwsBillListOption,
-	billInfo *billcore.RootAccountBillConfig[billcore.AwsBillConfigExtension]) (int64, interface{}, error) {
+// GetMainAccountBillList get bill list for main account
+func (a *Aws) GetMainAccountBillList(kt *kit.Kit, opt *typesBill.AwsMainBillListOption,
+	billInfo *billcore.RootAccountBillConfig[billcore.AwsBillConfigExtension]) (int64, []map[string]string, error) {
 
-	where, err := parseCondition(opt)
+	where, err := parseRootCondition(opt)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -521,8 +521,28 @@ func (a *Aws) GetRootAccountBillList(kt *kit.Kit, opt *typesBill.AwsBillListOpti
 	if err != nil {
 		return 0, nil, err
 	}
-
+	for i, item := range list {
+		bill_usage_account_id := item["line_item_usage_account_id"]
+		if bill_usage_account_id != opt.CloudAccountID {
+			logs.Errorf("@%d: line_item_usage_account_id mismatch, want: %s, bill_id: %s, sql: %s, rid: %s",
+				i, billInfo.RootAccountID, bill_usage_account_id, sql, kt.Rid)
+		}
+	}
 	return total, list, nil
+}
+
+func parseRootCondition(opt *typesBill.AwsMainBillListOption) (string, error) {
+	var condition = fmt.Sprintf("WHERE line_item_usage_account_id = '%s' ", opt.CloudAccountID)
+	if opt.BeginDate != "" && opt.EndDate != "" {
+		searchDate, err := time.Parse(constant.DateLayout, opt.BeginDate)
+		if err != nil {
+			return "", fmt.Errorf("conv search date failed, err: %v", err)
+		}
+		condition += fmt.Sprintf("AND year = '%d' AND month = '%d' AND "+
+			"date(line_item_usage_start_date) >= date '%s' AND date(line_item_usage_start_date) <= date '%s'",
+			searchDate.Year(), searchDate.Month(), opt.BeginDate, opt.EndDate)
+	}
+	return condition, nil
 }
 
 // GetRootAccountBillTotal get bill list total for root account
