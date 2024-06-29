@@ -239,6 +239,7 @@ func (b *BillClient) UpdateBillSummaryMain(kt *kit.Kit, req *billproto.BillSumma
 // ListBillSummaryMain list bill summary
 func (b *BillClient) ListBillSummaryMain(kt *kit.Kit, req *billproto.BillSummaryMainListReq) (
 	*billproto.BillSummaryMainListResult, error) {
+
 	return common.Request[billproto.BillSummaryMainListReq, billproto.BillSummaryMainListResult](
 		b.client, rest.GET, kt, req, "/bills/summarymains")
 }

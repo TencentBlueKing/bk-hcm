@@ -65,7 +65,7 @@ func (s *service) SumMainAccountSummary(cts *rest.Contexts) (interface{}, error)
 		return nil, err
 	}
 	var mainSummaryList []*dsbillapi.BillSummaryMainResult
-	for offset := uint64(0); offset < *result.Count; offset = offset + uint64(core.DefaultMaxPageLimit) {
+	for offset := uint64(0); offset < result.Count; offset = offset + uint64(core.DefaultMaxPageLimit) {
 		tmpResult, err := s.client.DataService().Global.Bill.ListBillSummaryMain(
 			cts.Kit, &dsbillapi.BillSummaryMainListReq{
 				Filter: bizFilter,
@@ -79,7 +79,7 @@ func (s *service) SumMainAccountSummary(cts *rest.Contexts) (interface{}, error)
 		}
 		mainSummaryList = append(mainSummaryList, tmpResult.Details...)
 	}
-	return s.doCalcalcute(mainSummaryList, *result.Count)
+	return s.doCalcalcute(mainSummaryList, result.Count)
 }
 
 func (s *service) doCalcalcute(mainSummaryList []*dsbillapi.BillSummaryMainResult, count uint64) (interface{}, error) {

@@ -20,19 +20,5 @@
 package bill
 
 import (
-	"hcm/pkg/rest"
+	_ "hcm/cmd/account-server/logics/bill/puller/aws"
 )
-
-// -------------------------- List --------------------------
-
-// AwsBillListResult define aws bill list result.
-type AwsBillListResult struct {
-	Count   int64 `json:"count"`
-	Details any   `json:"details"`
-}
-
-// AwsBillListResp define aws bill list resp.
-type AwsBillListResp struct {
-	rest.BaseResp `json:",inline"`
-	Data          *AwsBillListResult `json:"data"`
-}

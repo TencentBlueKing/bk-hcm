@@ -109,6 +109,8 @@ func createBillItem[E bill.BillItemExtension](cts *rest.Contexts, svc *service, 
 				ResAmount:     &types.Decimal{Decimal: item.ResAmount},
 				ResAmountUnit: item.ResAmountUnit,
 				Extension:     types.JsonField(extJson),
+				Creator:       cts.Kit.User,
+				Reviser:       cts.Kit.User,
 			}
 			billItemTables = append(billItemTables, &billItem)
 		}

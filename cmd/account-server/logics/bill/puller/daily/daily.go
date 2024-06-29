@@ -47,6 +47,7 @@ import (
 type DailyPuller struct {
 	RootAccountID string
 	MainAccountID string
+	// 主账号云id
 	BillAccountID string
 	ProductID     int64
 	BkBizID       int64

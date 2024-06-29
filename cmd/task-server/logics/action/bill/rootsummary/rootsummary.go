@@ -175,7 +175,7 @@ func (act *RootAccountSummaryAction) getBillSummary(
 		return nil, fmt.Errorf("get root account bill summary failed, err %s", err.Error())
 	}
 	if len(result.Details) != 1 {
-		return nil, fmt.Errorf("get invalid length root account bill summary resp %v", result)
+		return nil, fmt.Errorf("get invalid length root account bill summary resp %+v", result)
 	}
 	return result.Details[0], nil
 }
@@ -218,12 +218,12 @@ func (act *RootAccountSummaryAction) listAllMainSummary(
 	if err != nil {
 		return nil, fmt.Errorf("list main account bill summary of %v failed, err %s", opt, err.Error())
 	}
-	if result.Count == nil {
+	if result.Count == 0 {
 		return nil, fmt.Errorf("empty count in result %+v", result)
 	}
-	logs.Infof("found %d main account summary for opt %v, rid %s", *result.Count, opt, kt.Rid)
+	logs.Infof("found %d main account summary for opt %v, rid %s", result.Count, opt, kt.Rid)
 	var mainSummaryList []*bill.BillSummaryMainResult
-	for offset := uint64(0); offset < *result.Count; offset = offset + uint64(core.DefaultMaxPageLimit) {
+	for offset := uint64(0); offset < result.Count; offset = offset + uint64(core.DefaultMaxPageLimit) {
 		result, err = actcli.GetDataService().Global.Bill.ListBillSummaryMain(
 			kt, &bill.BillSummaryMainListReq{
 				Filter: tools.ExpressionAnd(expressions...),

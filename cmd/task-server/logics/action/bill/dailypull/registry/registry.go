@@ -29,8 +29,9 @@ import (
 
 // PullDailyBillOption define daily bill pull option
 type PullDailyBillOption struct {
-	RootAccountID string        `json:"root_account_id" validate:"required"`
-	MainAccountID string        `json:"main_account_id" validate:"required"`
+	RootAccountID string `json:"root_account_id" validate:"required"`
+	MainAccountID string `json:"main_account_id" validate:"required"`
+	// 主账号云id
 	BillAccountID string        `json:"bill_account_id" validate:"required"`
 	BillYear      int           `json:"bill_year" validate:"required"`
 	BillMonth     int           `json:"bill_month" validate:"required"`
