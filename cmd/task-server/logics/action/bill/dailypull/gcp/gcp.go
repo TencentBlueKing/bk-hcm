@@ -151,9 +151,9 @@ func (gcp *GcpPuller) doPull(
 	int, *registry.PullerResult, error) {
 
 	hcCli := actcli.GetHCService()
-	resp, err := hcCli.Gcp.Bill.RootAccountBillList(kt.Kit().Ctx, kt.Kit().Header(), &bill.GcpBillListReq{
-		BillAccountID: opt.RootAccountID,
-		AccountID:     opt.MainAccountID,
+	resp, err := hcCli.Gcp.Bill.RootAccountBillList(kt.Kit().Ctx, kt.Kit().Header(), &bill.GcpRootAccountBillListReq{
+		RootAccountID: opt.RootAccountID,
+		MainAccountID: opt.MainAccountID,
 		BeginDate:     fmt.Sprintf("%d-%02d-%02dT00:00:00Z", opt.BillYear, opt.BillMonth, opt.BillDay),
 		EndDate:       fmt.Sprintf("%d-%02d-%02dT23:59:59Z", opt.BillYear, opt.BillMonth, opt.BillDay),
 		Page: &typesBill.GcpBillPage{
