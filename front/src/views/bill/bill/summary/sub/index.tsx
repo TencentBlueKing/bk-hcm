@@ -12,6 +12,8 @@ export default defineComponent({
   setup() {
     const bill_year = inject<Ref<number>>('bill_year');
     const bill_month = inject<Ref<number>>('bill_month');
+
+    const searchRef = ref();
     const amountRef = ref();
 
     const { columns } = useColumns('billsMainAccountSummary');
@@ -30,6 +32,7 @@ export default defineComponent({
           bill_year: bill_year.value,
           bill_month: bill_month.value,
         }),
+        immediate: false,
       },
     });
 
@@ -39,8 +42,7 @@ export default defineComponent({
     };
 
     watch([bill_year, bill_month], () => {
-      getListData();
-      amountRef.value.refreshAmountInfo();
+      searchRef.value.handleSearch();
     });
 
     watch(filter, () => {
@@ -49,7 +51,12 @@ export default defineComponent({
 
     return () => (
       <>
-        <Search searchKeys={['vendor', 'root_account_id', 'product_id', 'main_account_id']} onSearch={reloadTable} />
+        <Search
+          ref={searchRef}
+          searchKeys={['vendor', 'root_account_id', 'product_id', 'main_account_id']}
+          onSearch={reloadTable}
+          autoSelectMainAccount
+        />
         <div class='p24' style={{ height: 'calc(100% - 238px)' }}>
           <CommonTable>
             {{

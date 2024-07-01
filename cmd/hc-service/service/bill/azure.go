@@ -42,7 +42,7 @@ func (b bill) AzureGetBillList(cts *rest.Contexts) (interface{}, error) {
 
 	cli, err := b.ad.Azure(cts.Kit, req.AccountID)
 	if err != nil {
-		logs.Errorf("azure request adaptor client err, req: %+v, err: %+v", req, err)
+		logs.Errorf("azure request adaptor client err, req: %+v, err: %+v, rid: %s", req, err, cts.Kit.Rid)
 		return nil, err
 	}
 

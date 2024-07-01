@@ -1,4 +1,4 @@
-import { defineComponent, ref, watch } from 'vue';
+import { defineComponent, ref, watch, watchEffect } from 'vue';
 import './index.scss';
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import CommonCard from '@/components/CommonCard';
@@ -28,8 +28,8 @@ export default defineComponent({
       name: '', // 名字
       vendor: VendorEnum.AZURE, // 云厂商
       email: '', // 邮箱
-      managers: [userStore.username], // 负责人数组
-      bak_managers: [userStore.username], // 备份负责人数组
+      managers: [], // 负责人数组
+      bak_managers: [], // 备份负责人数组
       site: 'international', // 站点
       // dept_id: '', // 组织架构ID
       memo: '', // 备忘录
@@ -37,6 +37,13 @@ export default defineComponent({
       bk_biz_id: -1, // 业务
       // extension: {}, // 扩展字段对象
     });
+
+    watchEffect(() => {
+      const currentUser = userStore.username;
+      formModel.managers = [currentUser];
+      formModel.bak_managers = [currentUser];
+    });
+
     const handleSubmit = async () => {
       try {
         isLoading.value = true;

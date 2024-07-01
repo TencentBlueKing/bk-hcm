@@ -25,13 +25,25 @@ export function useSingleList(options?: {
   path?: { data: string; count: string };
   // 禁用排序
   disableSort?: boolean;
+  // 初始分页参数
+  pagination?: { start?: number; limit: number; count?: number };
 }) {
   // 设置 options 默认值
-  defaults(options, { immediate: false, rules: [], payload: {}, apiMethod: null, path: {}, disableSort: false });
+  defaults(options, {
+    immediate: false,
+    rules: [],
+    payload: {},
+    apiMethod: null,
+    path: {},
+    pagination: {},
+    disableSort: false,
+  });
   // 设置 path 默认值
   defaults(options.path, { data: 'details', count: 'count' });
+  // 设置 pagination 默认值
+  defaults(options.pagination, { start: 0, limit: 50, count: 0 });
 
-  const getDefaultPagination = () => ({ start: 0, limit: 50, count: 0 });
+  const getDefaultPagination = () => options.pagination;
 
   const dataList = ref([]);
   const pagination = reactive(getDefaultPagination());

@@ -1,11 +1,12 @@
 import { computed, defineComponent, provide, ref } from 'vue';
 import { RouterView } from 'vue-router';
 import Header from './header';
+import dayjs from 'dayjs';
 import './index.scss';
 
 export default defineComponent({
   setup() {
-    const currentMonth = ref(new Date());
+    const currentMonth = ref(dayjs().subtract(1, 'month').toDate());
     const bill_year = computed(() => currentMonth.value.getFullYear());
     const bill_month = computed(() => currentMonth.value.getMonth() + 1);
     provide('currentMonth', currentMonth);

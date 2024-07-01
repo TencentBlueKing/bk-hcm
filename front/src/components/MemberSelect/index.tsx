@@ -86,11 +86,11 @@ export default defineComponent({
     };
 
     watch(
-      () => staffStore.list,
-      (list) => {
+      [() => staffStore.list, () => props.defaultUserlist],
+      ([list, defaultUserlist]) => {
         if (list.length) {
           nextTick(() => {
-            const arr = [...userList.value, ...list];
+            const arr = [...userList.value, ...list, ...defaultUserlist];
             const set = new Set(arr.map(({ username }) => username));
             userList.value = Array.from(set).map((name) => ({
               username: name,

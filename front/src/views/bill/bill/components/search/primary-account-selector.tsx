@@ -44,6 +44,8 @@ export default defineComponent({
         v-model={selectedValue.value}
         multiple
         multipleMode='tag'
+        collapseTags
+        clearable
         onScroll-end={handleScrollEnd}
         loading={isDataLoad.value}
         scrollLoading={isDataLoad.value}>

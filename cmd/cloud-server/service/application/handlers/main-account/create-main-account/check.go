@@ -106,7 +106,7 @@ func (a *ApplicationOfCreateMainAccount) isDuplicateEmail(vendor enumor.Vendor, 
 }
 
 func (a *ApplicationOfCreateMainAccount) isDuplicateName(field, name string) error {
-	rule := tools.RuleJSONEqual(field, name)
+	rule := tools.RuleEqual(field, name)
 
 	if err := a.isDuplicateField(rule); err != nil {
 		return fmt.Errorf("main account [%s] duplicate checking err, err: %s", name, err.Error())
