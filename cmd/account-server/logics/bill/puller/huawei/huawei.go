@@ -32,7 +32,7 @@ import (
 )
 
 const (
-	defaultHuaWeiDelay = 3
+	defaultHuaWeiDelay = 1
 )
 
 func init() {
