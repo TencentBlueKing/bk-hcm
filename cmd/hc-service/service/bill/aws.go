@@ -28,7 +28,9 @@ import (
 
 	"hcm/pkg/adaptor/aws"
 	typesBill "hcm/pkg/adaptor/types/bill"
+	adcore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core"
+	billcore "hcm/pkg/api/core/bill"
 	"hcm/pkg/api/core/cloud"
 	dataservice "hcm/pkg/api/data-service"
 	protocloud "hcm/pkg/api/data-service/cloud"
@@ -751,4 +753,60 @@ func (b bill) AwsBillConfigDelete(cts *rest.Contexts) (interface{}, error) {
 func sanitizeString(str string) string {
 	reg := regexp.MustCompile(`[^a-z0-9.\-]`)
 	return reg.ReplaceAllString(strings.ToLower(str), "")
+}
+
+// AwsGetRootAccountBillList get aws bill record list
+func (b bill) AwsGetRootAccountBillList(cts *rest.Contexts) (any, error) {
+
+	req := new(hcbillservice.AwsRootBillListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	if req.Page == nil {
+		req.Page = &hcbillservice.AwsBillListPage{Offset: 0, Limit: adcore.AwsQueryLimit}
+	}
+
+	// 查询aws账单基础表
+	billInfo, err := getRootAccountBillConfigInfo[billcore.AwsBillConfigExtension](
+		cts.Kit, req.RootAccountID, b.cs.DataService())
+	if err != nil {
+		logs.Errorf("aws root account bill config get base info db failed, main_account_cloud_id: %s, err: %+v,rid: %s",
+			req.MainAccountCloudID, err, cts.Kit.Rid)
+		return nil, err
+	}
+	if billInfo == nil {
+		return nil, errf.Newf(errf.RecordNotFound, "bill config for root_account_id: %s is not found",
+			req.RootAccountID)
+	}
+
+	cli, err := b.ad.AwsRoot(cts.Kit, req.RootAccountID)
+	if err != nil {
+		logs.Errorf("aws request adaptor client err, req: %+v, err: %+v,rid: %s", req, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	opt := &typesBill.AwsMainBillListOption{
+		CloudAccountID: req.MainAccountCloudID,
+		BeginDate:      req.BeginDate,
+		EndDate:        req.EndDate,
+		Page: &typesBill.AwsBillPage{
+			Offset: req.Page.Offset,
+			Limit:  req.Page.Limit,
+		},
+	}
+	count, resp, err := cli.GetMainAccountBillList(cts.Kit, opt, billInfo)
+	if err != nil {
+		logs.Errorf("fail to list main account bill for aws, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return &hcbillservice.AwsBillListResult{
+		Count:   count,
+		Details: resp,
+	}, nil
 }

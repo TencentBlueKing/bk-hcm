@@ -129,14 +129,14 @@ func (hp *HuaweiPuller) createRawBill(
 	filename string, billItems []dsbill.RawBillItem) error {
 
 	storeReq := &dsbill.RawBillCreateReq{
-		Vendor:         enumor.HuaWei,
-		FirstAccountID: opt.RootAccountID,
-		AccountID:      opt.MainAccountID,
-		BillYear:       fmt.Sprintf("%d", opt.BillYear),
-		BillMonth:      fmt.Sprintf("%02d", opt.BillMonth),
-		BillDate:       fmt.Sprintf("%02d", opt.BillDay),
-		Version:        fmt.Sprintf("%d", opt.VersionID),
-		FileName:       filename,
+		Vendor:        enumor.HuaWei,
+		RootAccountID: opt.RootAccountID,
+		AccountID:     opt.MainAccountID,
+		BillYear:      fmt.Sprintf("%d", opt.BillYear),
+		BillMonth:     fmt.Sprintf("%02d", opt.BillMonth),
+		BillDate:      fmt.Sprintf("%02d", opt.BillDay),
+		Version:       fmt.Sprintf("%d", opt.VersionID),
+		FileName:      filename,
 	}
 	storeReq.Items = billItems
 	databillCli := actcli.GetDataService().Global.Bill

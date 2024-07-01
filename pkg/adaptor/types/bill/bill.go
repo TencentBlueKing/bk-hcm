@@ -484,3 +484,47 @@ func (opt GcpBillPage) Validate() error {
 
 	return nil
 }
+
+// AwsMainBillListOption define aws root bill list option.
+type AwsMainBillListOption struct {
+	CloudAccountID string `json:"cloud_account_id" validate:"required"`
+	// 起始日期，格式为yyyy-mm-dd，不支持跨月查询
+	BeginDate string `json:"begin_date" validate:"required"`
+	// 截止日期，格式为yyyy-mm-dd，不支持跨月查询
+	EndDate string       `json:"end_date" validate:"required"`
+	Page    *AwsBillPage `json:"page" validate:"omitempty"`
+}
+
+// Validate aws bill list option.
+func (opt AwsMainBillListOption) Validate() error {
+
+	// aws的AthenaQuery属于sql查询，跟SDK接口的Limit限制不同
+	if opt.Page != nil {
+		if opt.Page.Limit == 0 {
+			return errf.New(errf.InvalidParameter, "aws.limit is required")
+		}
+		if opt.Page.Limit > 100000 {
+			return errf.New(errf.InvalidParameter, "aws.limit should <= 100000")
+		}
+	}
+
+	if (opt.BeginDate == "" && opt.EndDate != "") || (opt.BeginDate != "" && opt.EndDate == "") {
+		return errf.New(errf.InvalidParameter, "begin_date and end_date can not be empty")
+	}
+
+	beginDate, err := time.Parse(constant.DateLayout, opt.BeginDate)
+	if err != nil {
+		return err
+	}
+
+	endDate, err := time.Parse(constant.DateLayout, opt.EndDate)
+	if err != nil {
+		return err
+	}
+
+	if beginDate.Year() != endDate.Year() || beginDate.Month() != endDate.Month() {
+		return errf.New(errf.InvalidParameter, "begin_date and end_date are not the same year and month.")
+	}
+
+	return validator.Validate.Struct(opt)
+}

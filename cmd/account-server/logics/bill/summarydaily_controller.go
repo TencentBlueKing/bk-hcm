@@ -159,7 +159,7 @@ func (msdc *MainSummaryDailyController) getBillSummary(
 		return nil, fmt.Errorf("get main account bill summary failed, err %s", err.Error())
 	}
 	if len(result.Details) != 1 {
-		return nil, fmt.Errorf("get invalid main account bill summary resp %v", result)
+		return nil, fmt.Errorf("get invalid main account bill summary resp %+v", result)
 	}
 	return result.Details[0], nil
 }

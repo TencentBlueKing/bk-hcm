@@ -117,16 +117,31 @@ func (a AccountBillItemDao) List(kt *kit.Kit, opt *types.ListOption) (
 		return &typesbill.ListAccountBillItemDetails{Count: count}, nil
 	}
 
+	opt.Page.Order = ""
+	opt.Page.Sort = ""
 	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
 	if err != nil {
 		return nil, err
 	}
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tablebill.AccountBillItemColumns.FieldsNamedExpr(opt.Fields),
-		table.AccountBillItemTable, whereExpr, pageExpr)
+	idSql := fmt.Sprintf(`SELECT id FROM %s %s %s`, table.AccountBillItemTable, whereExpr, pageExpr)
+	preDetails := make([]tablebill.AccountBillItem, 0)
+	if err = a.Orm.Do().Select(kt.Ctx, &preDetails, idSql, whereValue); err != nil {
+		return nil, err
+	}
+	detailIDs := make([]string, 0, len(preDetails))
+	for _, detail := range preDetails {
+		detailIDs = append(detailIDs, detail.ID)
+	}
+	if len(detailIDs) == 0 {
+		return &typesbill.ListAccountBillItemDetails{Details: make([]tablebill.AccountBillItem, 0)}, nil
+	}
 
+	sql := fmt.Sprintf(`SELECT %s FROM %s WHERE id IN (:ids)`,
+		tablebill.AccountBillItemColumns.FieldsNamedExpr(opt.Fields),
+		table.AccountBillItemTable)
 	details := make([]tablebill.AccountBillItem, 0)
-	if err = a.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	if err = a.Orm.Do().Select(kt.Ctx, &details, sql, map[string]interface{}{"ids": detailIDs}); err != nil {
 		return nil, err
 	}
 	return &typesbill.ListAccountBillItemDetails{Details: details}, nil
