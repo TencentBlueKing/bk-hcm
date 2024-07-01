@@ -1,5 +1,5 @@
 import { Alert, Button, Card, Dialog, Form, Input, Loading, Radio, Select, Table } from 'bkui-vue';
-import { PropType, defineComponent, onMounted, reactive, ref, watch } from 'vue';
+import { PropType, defineComponent, onMounted, reactive, ref, watch, watchEffect } from 'vue';
 import './index.scss';
 import { VendorEnum } from '@/common/constant';
 import tcloudVendor from '@/assets/image/vendor-tcloud.svg';
@@ -72,7 +72,7 @@ export default defineComponent({
       site: 'international' as 'china' | 'international', // 站点
       vendor: VendorEnum.TCLOUD, // 云厂商
       name: '', // 账号别名
-      managers: [userStore.username], // 责任人
+      managers: [], // 责任人
       type: 'resource', // 账号类型，当前产品形态固定为 resource，资源账号
       memo: '', // 备注
       extension: {}, // 不同云的secretKey\id
@@ -84,6 +84,10 @@ export default defineComponent({
     const isAuthDialogShow = ref(false);
     const isAuthTableLoading = ref(false);
     const authTableData = ref([]);
+
+    watchEffect(() => {
+      formModel.managers = [userStore.username];
+    });
 
     const { curExtension, tcloudExtension, handleValidate, isValidateLoading, isValidateDiasbled } =
       useSecretExtension(formModel);
