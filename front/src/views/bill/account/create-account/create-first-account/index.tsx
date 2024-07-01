@@ -1,4 +1,4 @@
-import { defineComponent, reactive, ref } from 'vue';
+import { defineComponent, reactive, ref, watchEffect } from 'vue';
 import './index.scss';
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import CommonCard from '@/components/CommonCard';
@@ -31,12 +31,18 @@ export default defineComponent({
       name: '', // 名字
       vendor: VendorEnum.AZURE, // 云厂商
       email: '', // 邮箱
-      managers: [userStore.username], // 负责人数组
-      bak_managers: [userStore.username], // 备份负责人数组
+      managers: [], // 负责人数组
+      bak_managers: [], // 备份负责人数组
       site: 'china', // 站点
       dept_id: -1, // 组织架构ID
       memo: '', // 备忘录
       extension: {}, // 扩展字段对象
+    });
+
+    watchEffect(() => {
+      const currentUser = userStore.username;
+      formModel.managers = [currentUser];
+      formModel.bak_managers = [currentUser];
     });
 
     const { curExtension, isValidateDiasbled, handleValidate, isValidateLoading } = useSecretExtension(formModel);
