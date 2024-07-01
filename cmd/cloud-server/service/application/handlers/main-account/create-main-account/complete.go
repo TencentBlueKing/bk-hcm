@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/iam/sys"
 	"hcm/pkg/logs"
+	"hcm/pkg/thirdparty/api-gateway/cmsi"
 )
 
 // Complete complete the application by manual.
@@ -104,8 +105,8 @@ func (a *ApplicationOfCreateMainAccount) Complete() (enumor.ApplicationStatus, m
 		return enumor.DeliverError, map[string]interface{}{"error": err}, err
 	}
 
-	// todo 异步发送邮件通知用户
-	go a.sendEmail(accountID)
+	//  异步发送邮件通知用户
+	go a.sendMail(account)
 
 	// 交付成功，记录交付的账号ID
 	return enumor.Completed, map[string]interface{}{"account_id": accountID, "cloud_account_name": account.Name, "cloud_account_id": account.CloudID}, nil
@@ -117,10 +118,10 @@ func (a *ApplicationOfCreateMainAccount) createForAws(rootAccount *protocore.Bas
 	accountResp, err := a.Client.HCService().Aws.MainAccount.Create(a.Cts.Kit, &hsproto.CreateAwsMainAccountReq{
 		RootAccountID:    rootAccount.ID,
 		Email:            req.Email,
-		CloudAccountName: req.Extension[string(req.Vendor.GetMainAccountNameFieldName())],
+		CloudAccountName: req.Extension[req.Vendor.GetMainAccountNameFieldName()],
 	})
 	if err != nil {
-		return "", fmt.Errorf("create aws main account [%s] failed, err: %v, rid: %s", req.Extension[string(req.Vendor.GetMainAccountNameFieldName())], err, a.Cts.Kit.Rid)
+		return "", fmt.Errorf("create aws main account [%s] failed, err: %v, rid: %s", req.Extension[req.Vendor.GetMainAccountNameFieldName()], err, a.Cts.Kit.Rid)
 	}
 
 	// create aws main account in dbs
@@ -175,12 +176,12 @@ func (a *ApplicationOfCreateMainAccount) createForGcp(rootAccount *protocore.Bas
 	accountResp, err := a.Client.HCService().Gcp.MainAccount.Create(a.Cts.Kit, &hsproto.CreateGcpMainAccountReq{
 		RootAccountID:       a.completeReq.RootAccountID,
 		Email:               req.Email,
-		ProjectName:         req.Extension[string(req.Vendor.GetMainAccountNameFieldName())],
+		ProjectName:         req.Extension[req.Vendor.GetMainAccountNameFieldName()],
 		CloudBillingAccount: billingAccount,
 		CloudOrganization:   organization,
 	})
 	if err != nil {
-		return "", fmt.Errorf("create gcp main account [%s] failed, err: %v, rid: %s", req.Extension[string(req.Vendor.GetMainAccountNameFieldName())], err, a.Cts.Kit.Rid)
+		return "", fmt.Errorf("create gcp main account [%s] failed, err: %v, rid: %s", req.Extension[req.Vendor.GetMainAccountNameFieldName()], err, a.Cts.Kit.Rid)
 	}
 
 	// create gcp main account in dbs
@@ -369,6 +370,51 @@ func (a *ApplicationOfCreateMainAccount) createForKaopu(rootAccount *protocore.B
 	return result.ID, nil
 }
 
-func (a *ApplicationOfCreateMainAccount) sendEmail(accountID string) {
-	// todo
+func (a *ApplicationOfCreateMainAccount) sendMail(account *dataproto.MainAccountGetBaseResult) {
+	if account == nil {
+		logs.Errorf("send mail failed, account should not be nil when send email, rid: %s", a.Cts.Kit.Rid)
+		return
+	}
+
+	var (
+		loginUrl string
+	)
+
+	switch account.Vendor {
+	case enumor.Aws:
+		loginUrl = AwsLoginAddress
+	case enumor.Gcp:
+		loginUrl = fmt.Sprintf(GcpLoginAddress, account.CloudID)
+	case enumor.HuaWei:
+		loginUrl = HuaweiLoginAddress
+	case enumor.Azure:
+		loginUrl = AzureLoginAddress
+	case enumor.Zenlayer:
+		loginUrl = ZenlayerLoginAddress
+	case enumor.Kaopu:
+		loginUrl = KaopuLoginAddress
+	default:
+		logs.Errorf("send mail failed, unknown vendor: %s, rid: %s", account.Vendor, a.Cts.Kit.Rid)
+		return
+	}
+
+	mail := &cmsi.CmsiMail{
+		Receiver: a.req.Email,
+		Title:    fmt.Sprintf(EmailTitleTemplate, account.Vendor.GetNameZh()),
+		Content: fmt.Sprintf(EmailContentTemplate,
+			account.Vendor.GetNameZh(),
+			account.Name,
+			account.CloudID,
+			loginUrl,
+			loginUrl,
+		),
+	}
+
+	err := a.SendMail(mail)
+	if err != nil {
+		logs.Errorf("send email failed for main account, id: %s, cloud_id: %s, name: %s, error: %v", account.ID, account.CloudID, account.Name, err)
+		return
+	}
+
+	logs.Infof("send email success for main account, id: %s, cloud_id: %s, name: %s, rid: %s", account.ID, account.CloudID, account.Name, a.Cts.Kit.Rid)
 }
