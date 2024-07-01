@@ -143,7 +143,7 @@ func (b bill) GcpGetRootAccountBillList(cts *rest.Contexts) (interface{}, error)
 			return nil, err
 		}
 		if mainAccountInfo.Extension == nil || mainAccountInfo.Extension.CloudProjectID == "" {
-			return nil, fmt.Errorf("root account: %s cloud_project_id is empty", req.MainAccountID)
+			return nil, fmt.Errorf("main account: %s cloud_project_id is empty", req.MainAccountID)
 		}
 		opt.ProjectID = mainAccountInfo.Extension.CloudProjectID
 	}

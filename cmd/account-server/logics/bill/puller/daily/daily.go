@@ -21,6 +21,7 @@ package daily
 
 import (
 	"fmt"
+	"math/rand"
 	"strings"
 	"time"
 
@@ -41,6 +42,10 @@ import (
 	"hcm/pkg/tools/slice"
 
 	"github.com/shopspring/decimal"
+)
+
+const (
+	defaultSleepMillisecond = 2000
 )
 
 // DailyPuller 执行每天账单拉取任务
@@ -131,6 +136,7 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 	}
 	billTaskDayMap := make(map[int]struct{})
 	for _, billTask := range billTaskResult.Details {
+		time.Sleep(time.Millisecond * time.Duration(rand.Intn(defaultSleepMillisecond)))
 		billTaskDayMap[billTask.BillDay] = struct{}{}
 		// 如果没有创建拉取task flow，则创建
 		if len(billTask.FlowID) == 0 {

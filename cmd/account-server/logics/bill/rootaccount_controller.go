@@ -22,6 +22,7 @@ package bill
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"time"
 
 	"hcm/cmd/task-server/logics/action/bill/rootsummary"
@@ -143,6 +144,7 @@ func (rac *RootAccountController) runCalculateBillSummaryLoop(kt *kit.Kit) {
 }
 
 func (rac *RootAccountController) pollRootSummaryTask(subKit *kit.Kit, flowID string, billYear, billMonth int) string {
+	time.Sleep(time.Millisecond * time.Duration(rand.Intn(defaultSleepMillisecond)))
 	summary, err := rac.getBillSummary(subKit, billYear, billMonth)
 	if err != nil {
 		logs.Warnf("get root account bill summary failed, err %s, rid: %s", err.Error(), subKit.Rid)

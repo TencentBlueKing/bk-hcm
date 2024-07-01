@@ -165,13 +165,24 @@ func (gcp *GcpPuller) doPull(
 		return 0, nil, fmt.Errorf("list gcp root account bill list for %+v, offset %d, limit %d, err %s",
 			opt, offset, limit, err.Error())
 	}
-	itemList, ok := resp.Details.([]interface{})
-	if !ok {
-		logs.Warnf("response %v is not []billcore.GcpRawBillItem", resp.Details)
-		return 0, nil, fmt.Errorf("response %v is not []billcore.GcpRawBillItem", resp.Details)
-	}
-	itemLen := len(itemList)
-	if itemLen == 0 {
+	var itemList []interface{}
+	itemLen := 0
+	if resp.Details != nil {
+		ok := false
+		itemList, ok = resp.Details.([]interface{})
+		if !ok {
+			logs.Warnf("response %v is not []billcore.GcpRawBillItem", resp.Details)
+			return 0, nil, fmt.Errorf("response %v is not []billcore.GcpRawBillItem", resp.Details)
+		}
+		itemLen = len(itemList)
+		if itemLen == 0 {
+			return 0, &registry.PullerResult{
+				Count:    int64(0),
+				Currency: "",
+				Cost:     decimal.NewFromFloat(0),
+			}, nil
+		}
+	} else {
 		return 0, &registry.PullerResult{
 			Count:    int64(0),
 			Currency: "",

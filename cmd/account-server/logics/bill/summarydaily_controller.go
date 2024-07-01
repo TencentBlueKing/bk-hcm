@@ -22,6 +22,7 @@ package bill
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"time"
 
 	"hcm/cmd/account-server/logics/bill/puller"
@@ -165,6 +166,7 @@ func (msdc *MainSummaryDailyController) getBillSummary(
 }
 
 func (msdc *MainSummaryDailyController) syncDailySummary(kt *kit.Kit, billYear, billMonth int) error {
+	time.Sleep(time.Millisecond * time.Duration(rand.Intn(defaultSleepMillisecond)))
 	summary, err := msdc.getBillSummary(kt, billYear, billMonth)
 	if err != nil {
 		return err

@@ -22,6 +22,7 @@ package bill
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"time"
 
 	"hcm/cmd/account-server/logics/bill/puller"
@@ -180,6 +181,7 @@ func (msdc *MainDailySplitController) syncDailySplit(kt *kit.Kit, billYear, bill
 		return err
 	}
 	for _, task := range pullTaskList {
+		time.Sleep(time.Millisecond * time.Duration(rand.Intn(defaultSleepMillisecond)))
 		if task.State == constant.MainAccountRawBillPullStatePulled {
 			if len(task.SplitFlowID) == 0 {
 				logs.Infof("split task of day %d main account %v bill should be create", task.BillDay, summary)
