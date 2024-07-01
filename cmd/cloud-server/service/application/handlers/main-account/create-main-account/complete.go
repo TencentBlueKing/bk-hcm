@@ -372,7 +372,7 @@ func (a *ApplicationOfCreateMainAccount) createForKaopu(rootAccount *protocore.B
 
 func (a *ApplicationOfCreateMainAccount) sendMail(account *dataproto.MainAccountGetBaseResult) {
 	if account == nil {
-		logs.Errorf("account should not be nill when send email")
+		logs.Errorf("send mail failed, account should not be nil when send email, rid: %s", a.Cts.Kit.Rid)
 		return
 	}
 
@@ -394,7 +394,7 @@ func (a *ApplicationOfCreateMainAccount) sendMail(account *dataproto.MainAccount
 	case enumor.Kaopu:
 		loginUrl = KaopuLoginAddress
 	default:
-		logs.Errorf("unknown vendor: %s", account.Vendor)
+		logs.Errorf("send mail failed, unknown vendor: %s, rid: %s", account.Vendor, a.Cts.Kit.Rid)
 		return
 	}
 
@@ -416,5 +416,5 @@ func (a *ApplicationOfCreateMainAccount) sendMail(account *dataproto.MainAccount
 		return
 	}
 
-	logs.Infof("send email success for main account, id: %s, cloud_id: %s, name: %s,", account.ID, account.CloudID, account.Name)
+	logs.Infof("send email success for main account, id: %s, cloud_id: %s, name: %s, rid: %s", account.ID, account.CloudID, account.Name, a.Cts.Kit.Rid)
 }
