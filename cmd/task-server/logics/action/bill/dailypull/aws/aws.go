@@ -38,7 +38,7 @@ import (
 )
 
 const (
-	awsMaxBill = int32(1000)
+	awsMaxBill = int32(999)
 )
 
 func init() {
