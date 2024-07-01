@@ -2029,9 +2029,15 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       isDefaultShow: true,
     },
     {
+      label: '一级账号名称',
+      field: 'root_account_name',
+      isDefaultShow: true,
+    },
+    {
       label: '业务名称',
       field: 'product_name',
       isDefaultShow: true,
+      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
     },
     {
       label: '已确认账单人民币（元）',
