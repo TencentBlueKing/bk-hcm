@@ -231,12 +231,10 @@ func (b *billAdjustmentSvc) UpdateBillAdjustmentItem(cts *rest.Contexts) (any, e
 		MainAccountID: req.MainAccountID,
 		ProductID:     req.ProductID,
 		BkBizID:       req.BkBizID,
-		BillDay:       1,
 		Type:          req.Type,
 		Memo:          req.Memo,
 		Currency:      req.Currency,
 		Cost:          req.Cost,
-		RMBCost:       req.RmbCost,
 	}
 
 	err = b.client.DataService().Global.Bill.UpdateBillAdjustmentItem(cts.Kit, dsReq)
