@@ -775,8 +775,8 @@ func (b bill) AwsGetRootAccountBillList(cts *rest.Contexts) (any, error) {
 	billInfo, err := getRootAccountBillConfigInfo[billcore.AwsBillConfigExtension](
 		cts.Kit, req.RootAccountID, b.cs.DataService())
 	if err != nil {
-		logs.Errorf("aws root account bill config get base info db failed, main_account_cloud_id: %s, err: %+v",
-			req.MainAccountCloudID, err)
+		logs.Errorf("aws root account bill config get base info db failed, main_account_cloud_id: %s, err: %+v,rid: %s",
+			req.MainAccountCloudID, err, cts.Kit.Rid)
 		return nil, err
 	}
 	if billInfo == nil {
@@ -786,7 +786,7 @@ func (b bill) AwsGetRootAccountBillList(cts *rest.Contexts) (any, error) {
 
 	cli, err := b.ad.AwsRoot(cts.Kit, req.RootAccountID)
 	if err != nil {
-		logs.Errorf("aws request adaptor client err, req: %+v, err: %+v", req, err)
+		logs.Errorf("aws request adaptor client err, req: %+v, err: %+v,rid: %s", req, err, cts.Kit.Rid)
 		return nil, err
 	}
 

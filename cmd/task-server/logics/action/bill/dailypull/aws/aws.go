@@ -110,7 +110,7 @@ func (hp *AwsPuller) doPull(kt run.ExecuteKit, opt *registry.PullDailyBillOption
 	for _, record := range recordList {
 		bill, err := convertToRawBill(record)
 		if err != nil {
-			logs.Errorf("fail to convert aws raw bill, err %v, rid: %s", err, kt.Kit().Rid)
+			logs.Errorf("fail to convert aws raw bill, err: %v, rid: %s", err, kt.Kit().Rid)
 			return 0, nil, err
 		}
 		if bill.BillCurrency != "" {
@@ -188,7 +188,7 @@ func getDecimal(dict map[string]string, key string) (*decimal.Decimal, error) {
 	}
 	d, err := decimal.NewFromString(val)
 	if err != nil {
-		return nil, fmt.Errorf("fail to convert to decimal, key: %s, value: %s, err %v", key, val, err)
+		return nil, fmt.Errorf("fail to convert to decimal, key: %s, value: %s, err: %v", key, val, err)
 	}
 	return &d, nil
 }
