@@ -54,17 +54,21 @@ watchEffect(async () => {
         ? businessList.value[1].id
         : businessList.value[0]?.id;
   }
+
+  // 处理多选情况，注意默认值可能为 null，此时需要转为空数组
+  if (props.multiple) {
+    id = id ? [id] : [];
+  }
+
   // 开启 saveBizs, 则自动选中上一次选中的业务
   if (props.saveBizs) {
     const urlBizs = route.query[props.bizsKey] as string;
 
     // 优先使用 url 中的业务id, 其次是持久化的, 最后是默认值
-    // 如果是取默认值, 则多选时需要转为数组, 注意默认值可能为 null, 此时需要转为空数组
+    // 如果是取默认值, 则多选时需要转为数组
     id = urlBizs
       ? JSON.parse(atob(urlBizs))
-      : localStorageActions.get(props.bizsKey, (value) => JSON.parse(atob(value))) ||
-        // eslint-disable-next-line no-nested-ternary
-        (props.multiple ? (id ? [id] : []) : id);
+      : localStorageActions.get(props.bizsKey, (value) => JSON.parse(atob(value))) || id;
   }
 
   // 设置选中的值
