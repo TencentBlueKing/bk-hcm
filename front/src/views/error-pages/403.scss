@@ -1,14 +1,18 @@
-.forbid-layout{
+.error-page-container {
+  display: flow-root;
+
+  .forbid-layout {
     margin-top: 100px;
     text-align: center;
-}
-.describe{
-  width: 750px;
-  margin: 0 auto;
-}
-.sub-describe{
-  margin-left: 40px;
-}
-.btn-warp{
-  text-align: center;
+  }
+  .describe {
+    width: 750px;
+    margin: 0 auto;
+  }
+  .sub-describe {
+    margin-left: 40px;
+  }
+  .btn-warp {
+    text-align: center;
+  }
 }

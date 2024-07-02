@@ -33,7 +33,7 @@ export const useCommonStore = defineStore({
       { type: 'account', action: 'update', id: 'account_edit' },
 
       // 业务访问权限
-      { type: 'biz', action: 'access', id: 'biz_access' },
+      { type: 'biz', action: 'access', id: 'biz_access', path: /^\/business/ },
 
       // 目前资源下主机、vpc、子网、安全组、云硬盘、网络接口、弹性IP、路由表、镜像等都当作iaas统一鉴权，为了方便，使用cvm当作整个iaas鉴权
       { type: 'cvm', action: 'find', id: 'resource_find', path: ['/resource/resource'] }, // 业务 资源对应的路径
@@ -62,6 +62,11 @@ export const useCommonStore = defineStore({
       { type: 'cert', action: 'create', id: 'biz_cert_resource_create', bk_biz_id: 0 }, // 业务 证书上传
       { type: 'cert', action: 'delete', id: 'cert_resource_delete' }, // 资源 证书删除
       { type: 'cert', action: 'delete', id: 'biz_cert_resource_delete', bk_biz_id: 0 }, // 业务 证书删除
+
+      // 账号管理
+      { type: 'root_account', action: 'find', id: 'root_account_find' }, // 云账号管理 - 一级账号
+      { type: 'main_account', action: 'find', id: 'main_account_find' }, // 云账号管理 - 二级账号
+      { type: 'account_bill', action: 'find', id: 'account_bill_find' }, // 云账单管理
     ],
   }),
   actions: {

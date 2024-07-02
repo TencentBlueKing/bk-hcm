@@ -1,4 +1,6 @@
 .account-manage-wrapper {
+  height: 100%;
+
   .header {
     background: #fff;
     border-bottom: 1px solid #dcdee5;
@@ -13,9 +15,19 @@
       align-items: center;
     }
   }
+
   .account-table {
-    margin: 24px;
-  } 
+    height: calc(100% - 53px);
+    padding: 24px;
+
+    .bk-tab-content {
+      padding: 0;
+
+      .bk-tab-panel {
+        padding: 16px 24px;
+      }
+    }
+  }
 }
 
 .account-sideslider-header {

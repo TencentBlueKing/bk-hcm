@@ -6,7 +6,6 @@ import AppSelect from '@blueking/app-select';
 import '@blueking/app-select/dist/style.css';
 
 import { useAccountStore } from '@/store';
-import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { localStorageActions } from '@/common/util';
 import { getFavoriteList, useFavorite } from '@/hooks/useFavorite';
 import { Button, Dialog, Exception } from 'bkui-vue';
@@ -24,7 +23,6 @@ export default defineComponent({
     const favoriteList = ref([]);
     const isDialogShow = ref(false);
 
-    const { whereAmI } = useWhereAmI();
     const { favoriteSet, addToFavorite, removeFromFavorite } = useFavorite(businessId.value, favoriteList.value);
 
     // 选择业务
@@ -61,17 +59,12 @@ export default defineComponent({
       const res = await accountStore.getBizListWithAuth();
       // 更新业务列表
       businessList.value = res.data;
-      // 没有权限
-      if (!businessList.value.length && whereAmI.value === Senarios.business) {
-        router.push({ name: '403', params: { id: 'biz_access' } });
-        return;
-      }
       // 先从 url 中获取 bizs 参数, 如果没有, 则从 localStorage 中获取, 如果还是没有, 则取第一个
       let { bizs } = route.query;
       if (!bizs) {
         bizs = localStorageActions.get('bizs');
       }
-      businessId.value = Number(bizs) || res.data[0].id;
+      businessId.value = Number(bizs) || res.data[0]?.id || 0;
       // 设置全局业务id
       accountStore.updateBizsId(businessId.value);
       // 持久化存储全局业务id
@@ -84,7 +77,8 @@ export default defineComponent({
 
     watch(
       () => businessId.value,
-      async () => {
+      async (val) => {
+        if (!val) return;
         favoriteList.value = await getFavoriteList(businessId.value);
         for (const id of favoriteList.value) favoriteSet.value.add(id);
       },
