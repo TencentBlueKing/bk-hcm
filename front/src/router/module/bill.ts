@@ -49,6 +49,7 @@ const bill: RouteRecordRaw[] = [
       activeKey: 'bill-manage',
       icon: 'hcm-icon bkhcm-icon-host',
       hasPageRoute: true,
+      checkAuth: 'account_bill_find',
     },
   },
   {
