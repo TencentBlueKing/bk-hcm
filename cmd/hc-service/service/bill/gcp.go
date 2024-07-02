@@ -100,7 +100,7 @@ func (b bill) GcpGetBillList(cts *rest.Contexts) (interface{}, error) {
 
 // GcpGetRootAccountBillList get gcp bill list.
 func (b bill) GcpGetRootAccountBillList(cts *rest.Contexts) (interface{}, error) {
-	req := new(hcbillservice.GcpBillListReq)
+	req := new(hcbillservice.GcpRootAccountBillListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -111,40 +111,43 @@ func (b bill) GcpGetRootAccountBillList(cts *rest.Contexts) (interface{}, error)
 
 	// 查询aws账单基础表
 	billInfo, err := getRootAccountBillConfigInfo[billcore.GcpBillConfigExtension](
-		cts.Kit, req.BillAccountID, b.cs.DataService())
+		cts.Kit, req.RootAccountID, b.cs.DataService())
 	if err != nil {
-		logs.Errorf("gcp root account bill config get base info db failed, billAccID: %s, err: %+v",
-			req.BillAccountID, err)
+		logs.Errorf("gcp root account bill config get base info db failed, root account id: %s, err: %+v",
+			req.RootAccountID, err)
 		return nil, err
 	}
 	if billInfo == nil {
-		return nil, errf.Newf(errf.RecordNotFound, "bill config for root_account_id: %s is not found", req.BillAccountID)
+		return nil, errf.Newf(
+			errf.RecordNotFound, "bill config for root_account_id: %s is not found", req.RootAccountID)
 	}
 
-	// 检查rootAccountID是否存在，是否资源账号
-	resAccountInfo, err := b.cs.DataService().Gcp.RootAccount.Get(cts.Kit, req.BillAccountID)
-	if err != nil {
-		logs.Errorf("get gcp root account failed, rootAccountID: %s, err: %+v", req.AccountID, err)
-		return nil, err
-	}
-	if resAccountInfo.Extension == nil || resAccountInfo.Extension.CloudProjectID == "" {
-		return nil, fmt.Errorf("root account: %s cloud_project_id is empty", req.AccountID)
-	}
-
-	cli, err := b.ad.GcpRoot(cts.Kit, req.BillAccountID)
+	cli, err := b.ad.GcpRoot(cts.Kit, req.RootAccountID)
 	if err != nil {
 		logs.Errorf("gcp request adaptor client err, req: %+v, err: %+v", req, err)
 		return nil, err
 	}
 
-	opt := &typesBill.GcpBillListOption{
-		BillAccountID: req.BillAccountID,
-		AccountID:     req.AccountID,
+	opt := &typesBill.GcpRootAccountBillListOption{
+		RootAccountID: req.RootAccountID,
+		MainAccountID: req.MainAccountID,
 		Month:         req.Month,
 		BeginDate:     req.BeginDate,
 		EndDate:       req.EndDate,
-		ProjectID:     resAccountInfo.Extension.CloudProjectID,
 	}
+	// 检查Main AccountID是否存在
+	if len(req.MainAccountID) > 0 {
+		mainAccountInfo, err := b.cs.DataService().Gcp.MainAccount.Get(cts.Kit, req.MainAccountID)
+		if err != nil {
+			logs.Errorf("get gcp main account failed, main account id: %s, err: %+v", req.MainAccountID, err)
+			return nil, err
+		}
+		if mainAccountInfo.Extension == nil || mainAccountInfo.Extension.CloudProjectID == "" {
+			return nil, fmt.Errorf("main account: %s cloud_project_id is empty", req.MainAccountID)
+		}
+		opt.ProjectID = mainAccountInfo.Extension.CloudProjectID
+	}
+
 	if req.Page != nil {
 		opt.Page = &typesBill.GcpBillPage{
 			Offset: req.Page.Offset,

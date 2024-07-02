@@ -34,6 +34,7 @@ const (
 	defaultControllerSummaryDuration = 30 * time.Second
 	defaultDailySummaryDuration      = 30 * time.Second
 	defaultDailySplitDuration        = 30 * time.Second
+	defaultSleepMillisecond          = 2000
 )
 
 func getInternalKit() *kit.Kit {

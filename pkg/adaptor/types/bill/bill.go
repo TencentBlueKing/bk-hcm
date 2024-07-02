@@ -466,6 +466,49 @@ func (opt GcpBillListOption) Validate() error {
 	return nil
 }
 
+// GcpRootAccountBillListOption defines gcp bill list options.
+// 时间戳docs: https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types?hl=zh-cn#timestamp_type
+type GcpRootAccountBillListOption struct {
+	// RootAccountID root account id
+	RootAccountID string `json:"root_account_id" validate:"required"`
+	// MainAccountID main account id
+	MainAccountID string `json:"main_account_id" validate:"omitempty"`
+	// 包含费用专列项的账单的年份和月份，格式为YYYYMM 示例:201901，可以使用此字段获取账单上的总费用
+	Month string `json:"month" validate:"omitempty"`
+	// 起始时间戳，时间戳值表示绝对时间点，与任何时区或惯例（如夏令时）无关，可精确到微秒，
+	// 格式：0001-01-01 00:00:00 至 9999-12-31 23:59:59.999999（世界协调时间 (UTC)）
+	// 也可以使用UTC格式：2014-09-27T12:30:00.45Z
+	BeginDate string `json:"begin_date" validate:"omitempty"`
+	// 截止时间戳，时间戳值表示绝对时间点，与任何时区或惯例（如夏令时）无关，可精确到微秒
+	EndDate string       `json:"end_date" validate:"omitempty"`
+	Page    *GcpBillPage `json:"page" validate:"omitempty"`
+	// ProjectID 账号所属的项目ID
+	ProjectID string `json:"project_id" validate:"required"`
+}
+
+// Validate root account gcp bill list option.
+func (opt GcpRootAccountBillListOption) Validate() error {
+	if err := validator.Validate.Struct(opt); err != nil {
+		return err
+	}
+
+	if opt.Month == "" && opt.BeginDate == "" && opt.EndDate == "" {
+		return errf.New(errf.InvalidParameter, "month and begin_date and end_date can not be empty")
+	}
+
+	// gcp的BigQuery属于sql查询，跟SDK接口的Limit限制不同
+	if opt.Page != nil {
+		if opt.Page.Limit == 0 {
+			return errf.New(errf.InvalidParameter, "page.limit is required")
+		}
+		if opt.Page.Limit > 100000 {
+			return errf.New(errf.InvalidParameter, "page.limit should <= 100000")
+		}
+	}
+
+	return nil
+}
+
 // GcpBillPage defines gcp bill list page.
 type GcpBillPage struct {
 	Offset uint64 `json:"offset"`

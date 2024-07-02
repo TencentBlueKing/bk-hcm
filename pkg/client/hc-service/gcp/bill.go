@@ -66,11 +66,11 @@ func (v *BillClient) List(ctx context.Context, h http.Header, req *hcbillservice
 }
 
 // RootAccountBillList list root account bill list
-func (v *BillClient) RootAccountBillList(ctx context.Context, h http.Header, req *hcbillservice.GcpBillListReq) (
+func (v *BillClient) RootAccountBillList(
+	ctx context.Context, h http.Header, req *hcbillservice.GcpRootAccountBillListReq) (
 	*hcbillservice.GcpBillListResult, error) {
 
 	resp := new(hcbillservice.GcpBillListResp)
-
 	err := v.client.Post().
 		WithContext(ctx).
 		Body(req).
