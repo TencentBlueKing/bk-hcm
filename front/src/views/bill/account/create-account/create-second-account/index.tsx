@@ -250,10 +250,20 @@ export default defineComponent({
                     </Form>
                   </div>
                 </CommonCard>
-                <Button theme='primary' class={'mr8 ml24'} onClick={() => handleSubmit()} loading={isLoading.value}>
+                <Button
+                  theme='primary'
+                  class={'mr8 ml24 mw88'}
+                  onClick={() => handleSubmit()}
+                  loading={isLoading.value}>
                   提交
                 </Button>
-                <Button>取消</Button>
+                <Button
+                  class='mw88'
+                  onClick={() => {
+                    router.back();
+                  }}>
+                  取消
+                </Button>
               </div>
             ),
             aside: () => (
