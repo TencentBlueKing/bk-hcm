@@ -86,9 +86,9 @@ func (b *billAdjustmentSvc) convBillAdjustmentCreate(kt *kit.Kit, rootAccountID 
 
 	dsReq := make([]dsbill.BillAdjustmentItemCreateReq, 0, len(req.Items))
 	mainAccountIdMap := make(map[string]struct{})
-	for i, item := range req.Items {
+	for _, item := range req.Items {
 		if item.RootAccountID == "" {
-			req.Items[i].RootAccountID = rootAccountID
+			item.RootAccountID = rootAccountID
 		}
 		if item.RootAccountID != rootAccountID {
 			return nil, fmt.Errorf("root account id does not match, want: %s, given: %s",
