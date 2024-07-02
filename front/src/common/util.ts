@@ -215,9 +215,12 @@ export const localStorageActions = {
     }
     localStorage.setItem(key, value);
   },
-  get(key: string) {
+  get(key: string, parseFn?: (value: string) => any) {
     const value = localStorage.getItem(key);
     if (value) {
+      if (parseFn) {
+        return parseFn(value);
+      }
       return JSON.parse(value);
     }
     return null;
