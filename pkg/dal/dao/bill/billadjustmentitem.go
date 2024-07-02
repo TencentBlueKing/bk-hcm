@@ -144,7 +144,7 @@ func (a AccountBillAdjustmentItemDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx,
 		return err
 	}
 
-	opts := utils.NewFieldOptions().AddIgnoredFields(types.DefaultIgnoredFields...)
+	opts := utils.NewFieldOptions().AddIgnoredFields(types.DefaultIgnoredFields...).AddBlankedFields("memo")
 	setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(updateData, opts)
 	if err != nil {
 		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)
