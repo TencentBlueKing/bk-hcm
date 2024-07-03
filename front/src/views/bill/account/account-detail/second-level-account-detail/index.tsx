@@ -1,4 +1,4 @@
-import { defineComponent, ref, watch } from 'vue';
+import { defineComponent, provide, ref, watch } from 'vue';
 import './index.scss';
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 import useBillStore, { IMainAccountDetail } from '@/store/useBillStore';
@@ -6,6 +6,8 @@ import { Message, Button } from 'bkui-vue';
 import { BILL_VENDORS_MAP } from '../../account-manage/constants';
 import { SITE_TYPE_MAP } from '@/common/constant';
 import { timeFormatter } from '@/common/util';
+import { useVerify } from '@/hooks';
+import PermissionDialog from '@/components/permission-dialog';
 
 export default defineComponent({
   props: {
@@ -17,6 +19,18 @@ export default defineComponent({
   setup(props) {
     const detail = ref<IMainAccountDetail>({});
     const billStore = useBillStore();
+
+    const {
+      showPermissionDialog,
+      handlePermissionConfirm,
+      handlePermissionDialog,
+      handleAuth,
+      permissionParams,
+      authVerifyData,
+    } = useVerify();
+    // provide 预鉴权参数
+    provide('authAction', { authVerifyData, handleAuth, authId: 'main_account_edit' });
+
     const getDetail = async () => {
       const { data } = await billStore.main_account_detail(props.accountId);
       detail.value = data;
@@ -88,6 +102,13 @@ export default defineComponent({
             { prop: 'created_at', name: '创建时间', render: () => timeFormatter(detail.value.created_at) },
             { prop: 'updated_at', name: '修改时间', render: () => timeFormatter(detail.value.updated_at) },
           ]}
+        />
+        {/* 申请权限 */}
+        <PermissionDialog
+          v-model:isShow={showPermissionDialog.value}
+          params={permissionParams.value}
+          onCancel={handlePermissionDialog}
+          onConfirm={handlePermissionConfirm}
         />
         {/* <p class={'sub-title'}>
           API 密钥
