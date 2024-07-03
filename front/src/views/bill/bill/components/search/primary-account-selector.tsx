@@ -56,10 +56,12 @@ export default defineComponent({
         v-model={selectedValue.value}
         multiple={props.multiple}
         multipleMode={props.multiple ? 'tag' : ''}
+        collapseTags
+        clearable
         onScroll-end={handleScrollEnd}
         loading={isDataLoad.value}
         scrollLoading={isDataLoad.value}>
-        {renderDataList.value.map(({ id, name }) => (
+        {dataList.value.map(({ id, name }) => (
           <Select.Option key={id} id={id} name={name} />
         ))}
       </Select>

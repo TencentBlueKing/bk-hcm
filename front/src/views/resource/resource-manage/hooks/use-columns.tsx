@@ -1949,6 +1949,12 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       isDefaultShow: true,
     },
     {
+      label: '账号状态',
+      field: 'state',
+      isDefaultShow: true,
+      render: ({ cell }: any) => BILLS_ROOT_ACCOUNT_SUMMARY_STATE_MAP[cell],
+    },
+    {
       label: '账单同步（人民币-元）当月',
       field: 'current_month_rmb_cost_synced',
       isDefaultShow: true,
@@ -2009,12 +2015,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       render: ({ cell }: any) => formatBillCost(cell),
       sort: true,
     },
-    {
-      label: '账号状态',
-      field: 'state',
-      isDefaultShow: true,
-      render: ({ cell }: any) => BILLS_ROOT_ACCOUNT_SUMMARY_STATE_MAP[cell],
-    },
   ];
 
   const billsMainAccountSummaryColumns = [
@@ -2029,9 +2029,15 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       isDefaultShow: true,
     },
     {
+      label: '一级账号名称',
+      field: 'root_account_name',
+      isDefaultShow: true,
+    },
+    {
       label: '业务名称',
       field: 'product_name',
       isDefaultShow: true,
+      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
     },
     {
       label: '已确认账单人民币（元）',

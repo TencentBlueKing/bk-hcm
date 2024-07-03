@@ -21,4 +21,4 @@ if [ -n "$violations" ]; then
     exit 1 
 fi
 
-yarn lint-staged
+npx lint-staged

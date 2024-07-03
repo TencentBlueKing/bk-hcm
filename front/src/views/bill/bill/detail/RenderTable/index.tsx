@@ -51,6 +51,7 @@ export default defineComponent({
       requestOption: {
         apiMethod: reqBillsItemList,
         extension: () => ({ vendor: props.vendor, bill_year: bill_year.value, bill_month: bill_month.value }),
+        immediate: false,
       },
     });
 

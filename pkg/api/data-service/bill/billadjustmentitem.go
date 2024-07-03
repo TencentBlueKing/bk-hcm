@@ -82,8 +82,8 @@ type BillAdjustmentItemUpdateReq struct {
 	Operator      string                     `json:"operator"`
 	Memo          string                     `json:"memo"`
 	Currency      string                     `json:"currency"`
-	Cost          decimal.Decimal            `json:"cost" `
-	RMBCost       decimal.Decimal            `json:"rmb_cost" `
+	Cost          *decimal.Decimal           `json:"cost" `
+	RMBCost       *decimal.Decimal           `json:"rmb_cost" `
 	State         enumor.BillAdjustmentState `json:"state" `
 }
 

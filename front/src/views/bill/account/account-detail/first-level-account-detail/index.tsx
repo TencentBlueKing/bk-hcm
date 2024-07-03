@@ -4,8 +4,7 @@ import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info
 import useBillStore, { IRootAccountDetail } from '@/store/useBillStore';
 import { Button, Form, Input, Message } from 'bkui-vue';
 import { timeFormatter } from '@/common/util';
-import { BILL_VENDORS_MAP } from '../../account-manage/constants';
-import { SITE_TYPE_MAP, VendorEnum } from '@/common/constant';
+import { VendorEnum } from '@/common/constant';
 import CommonDialog from '@/components/common-dialog';
 import {
   ValidateStatus,
@@ -184,15 +183,11 @@ export default defineComponent({
           detail={detail.value}
           onChange={handleUpdate}
           fields={[
-            { prop: 'id', name: 'id' },
-            { prop: 'name', name: '名字', edit: true },
-            { prop: 'vendor', name: '云厂商', render: () => BILL_VENDORS_MAP[detail.value.vendor] },
-            { prop: 'cloud_id', name: '云ID' },
-            { prop: 'email', name: '邮箱', edit: true },
-            { prop: 'managers', name: '负责人', edit: true, type: 'member' },
+            { prop: 'name', name: '一级账号名称', edit: true },
+            { prop: 'cloud_id', name: '一级账号ID' },
+            { prop: 'email', name: '账号邮箱' },
+            { prop: 'managers', name: '主负责人', edit: true, type: 'member' },
             { prop: 'bak_managers', name: '备份负责人', edit: true, type: 'member' },
-            { prop: 'site', name: '站点', render: () => SITE_TYPE_MAP[detail.value.site] },
-            // { prop: 'dept_id', name: '组织架构ID' },
             { prop: 'memo', name: '备注', edit: true },
             { prop: 'creator', name: '创建者' },
             { prop: 'reviser', name: '修改者' },

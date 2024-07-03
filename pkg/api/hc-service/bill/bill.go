@@ -327,3 +327,22 @@ func (opt GcpBillListReq) Validate() error {
 
 	return nil
 }
+
+// AwsRootBillListReq defines aws bill record list request.
+type AwsRootBillListReq struct {
+	// 本地主账号
+	RootAccountID string `json:"root_account_id" validate:"required"`
+	// 云上子账号id
+	MainAccountCloudID string `json:"main_account_cloud_id" validate:"required"`
+
+	// 起始日期，格式为yyyy-mm-dd，不支持跨月查询
+	BeginDate string `json:"begin_date" validate:"required"`
+	// 截止日期，格式为yyyy-mm-dd，不支持跨月查询
+	EndDate string           `json:"end_date" validate:"required"`
+	Page    *AwsBillListPage `json:"page" validate:"omitempty"`
+}
+
+// Validate ...
+func (r *AwsRootBillListReq) Validate() error {
+	return validator.Validate.Struct(r)
+}

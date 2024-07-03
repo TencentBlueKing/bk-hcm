@@ -44,19 +44,23 @@ func (svc *service) UpdateBillSyncRecord(cts *rest.Contexts) (interface{}, error
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	BillSyncRecord := &tablebill.AccountBillSyncRecord{
+	billSyncRecord := &tablebill.AccountBillSyncRecord{
 		ID:       req.ID,
 		Operator: req.Operator,
 		Currency: req.Currency,
-		Cost:     &types.Decimal{Decimal: req.Cost},
-		RMBCost:  &types.Decimal{Decimal: req.RMBCost},
 		State:    req.State,
 		Detail:   req.Detail,
 		Reviser:  cts.Kit.User,
 	}
+	if req.Cost != nil {
+		billSyncRecord.Cost = &types.Decimal{Decimal: *req.Cost}
+	}
+	if req.RMBCost != nil {
+		billSyncRecord.RMBCost = &types.Decimal{Decimal: *req.RMBCost}
+	}
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		if err := svc.dao.AccountBillSyncRecord().UpdateByIDWithTx(
-			cts.Kit, txn, BillSyncRecord.ID, BillSyncRecord); err != nil {
+			cts.Kit, txn, billSyncRecord.ID, billSyncRecord); err != nil {
 			return nil, fmt.Errorf("update bill sync record failed, err: %v", err)
 		}
 		return nil, nil

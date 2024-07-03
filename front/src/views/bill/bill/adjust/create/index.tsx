@@ -41,6 +41,8 @@ export default defineComponent({
     const isLoading = ref(false);
     const formRef = ref();
     const tableRef = ref();
+    const modal = ref({ vendor: [] });
+
     const triggerShow = (v: boolean) => {
       isShow.value = v;
     };

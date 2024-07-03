@@ -23,8 +23,11 @@ import (
 	"context"
 	"net/http"
 
+	"hcm/pkg/api/core"
 	hcbillservice "hcm/pkg/api/hc-service/bill"
+	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -107,4 +110,13 @@ func (v *BillClient) BillPipeline(ctx context.Context, h http.Header, req *hcbil
 	}
 
 	return nil
+}
+
+// GetRootAccountBillList list root account bill list
+func (v *BillClient) GetRootAccountBillList(kt *kit.Kit,
+	req *hcbillservice.AwsRootBillListReq) (*core.ListResultT[map[string]string], error) {
+
+	return common.Request[hcbillservice.AwsRootBillListReq, core.ListResultT[map[string]string]](
+		v.client, rest.POST, kt, req, "/root_account_bills/list")
+
 }

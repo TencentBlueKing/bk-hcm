@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/api/core"
 	dsbillapi "hcm/pkg/api/data-service/bill"
 	taskserver "hcm/pkg/api/task-server"
+	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -105,7 +106,7 @@ func (msdc *MainDailySplitController) runBillDailySplitLoop(kt *kit.Kit) {
 	if err := msdc.doSync(kt); err != nil {
 		logs.Warnf("sync daily split failed, err %s, rid: %s", err.Error(), kt.Rid)
 	}
-	ticker := time.NewTicker(defaultDailySplitDuration)
+	ticker := time.NewTicker(*cc.AccountServer().Controller.ControllerSyncDuration)
 	for {
 		select {
 		case <-ticker.C:
@@ -155,7 +156,7 @@ func (msdc *MainDailySplitController) getBillSummary(
 		return nil, fmt.Errorf("get main account bill summary failed, err %s", err.Error())
 	}
 	if len(result.Details) != 1 {
-		return nil, fmt.Errorf("get invalid main account bill summary resp %v", result)
+		return nil, fmt.Errorf("get invalid main account bill summary resp %+v", result.Count)
 	}
 	return result.Details[0], nil
 }

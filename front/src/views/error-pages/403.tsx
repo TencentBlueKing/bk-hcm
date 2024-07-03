@@ -22,7 +22,6 @@ export default defineComponent({
     // 根据urlKey获取权限链接
     const getAuthActionUrl = async () => {
       const { authVerifyData } = commonStore;
-      console.log(authVerifyData.urlParams, urlKey.value);
       if (authVerifyData) {
         // 权限矩阵数据
         const params = authVerifyData.urlParams[urlKey.value]; // 获取权限链接需要的参数
@@ -65,7 +64,6 @@ export default defineComponent({
     watch(
       () => props.urlKeyId,
       (key: any, oldKey: any) => {
-        console.log(key, oldKey);
         if (key === oldKey) return;
         urlKey.value = key;
         getAuthActionUrl();
@@ -89,7 +87,7 @@ export default defineComponent({
 
   render() {
     return (
-      <div>
+      <div class='error-page-container'>
         <div class='forbid-layout'>
           <img src={permissions} alt='403' />
           <h2>{this.t('抱歉，您暂无该功能的权限')}</h2>

@@ -76,10 +76,7 @@ func (req *BillSummaryMainListReq) Validate() error {
 }
 
 // BillSummaryMainListResult list result
-type BillSummaryMainListResult struct {
-	Count   *uint64                  `json:"count,omitempty"`
-	Details []*BillSummaryMainResult `json:"details"`
-}
+type BillSummaryMainListResult = core.ListResultT[*BillSummaryMainResult]
 
 // BillSummaryMainResult result
 type BillSummaryMainResult struct {
@@ -125,15 +122,15 @@ type BillSummaryMainUpdateReq struct {
 	LastSyncedVersion         int                 `json:"last_synced_version" validate:"omitempty"`
 	CurrentVersion            int                 `json:"current_version" validate:"omitempty"`
 	Currency                  enumor.CurrencyCode `json:"currency" validate:"omitempty"`
-	LastMonthCostSynced       decimal.Decimal     `json:"last_month_cost_synced" validate:"omitempty"`
-	LastMonthRMBCostSynced    decimal.Decimal     `json:"last_month_rmb_cost_synced" validate:"omitempty"`
-	CurrentMonthCostSynced    decimal.Decimal     `json:"current_month_cost_synced" validate:"omitempty"`
-	CurrentMonthRMBCostSynced decimal.Decimal     `json:"current_month_rmb_cost_synced" validate:"omitempty"`
+	LastMonthCostSynced       *decimal.Decimal    `json:"last_month_cost_synced" validate:"omitempty"`
+	LastMonthRMBCostSynced    *decimal.Decimal    `json:"last_month_rmb_cost_synced" validate:"omitempty"`
+	CurrentMonthCostSynced    *decimal.Decimal    `json:"current_month_cost_synced" validate:"omitempty"`
+	CurrentMonthRMBCostSynced *decimal.Decimal    `json:"current_month_rmb_cost_synced" validate:"omitempty"`
 	MonthOnMonthValue         float64             `json:"month_on_month_value" validate:"omitempty"`
-	CurrentMonthCost          decimal.Decimal     `json:"current_month_cost" validate:"omitempty"`
-	CurrentMonthRMBCost       decimal.Decimal     `json:"current_month_rmb_cost" validate:"omitempty"`
-	AjustmentCost             decimal.Decimal     `json:"adjustment_cost" validate:"omitempty"`
-	AjustmentRMBCost          decimal.Decimal     `json:"adjustment_rmb_cost" validate:"omitempty"`
+	CurrentMonthCost          *decimal.Decimal    `json:"current_month_cost" validate:"omitempty"`
+	CurrentMonthRMBCost       *decimal.Decimal    `json:"current_month_rmb_cost" validate:"omitempty"`
+	AjustmentCost             *decimal.Decimal    `json:"adjustment_cost" validate:"omitempty"`
+	AjustmentRMBCost          *decimal.Decimal    `json:"adjustment_rmb_cost" validate:"omitempty"`
 	Rate                      float64             `json:"rate" validate:"omitempty"`
 	State                     string              `json:"state" validate:"omitempty"`
 }

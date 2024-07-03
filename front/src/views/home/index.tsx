@@ -47,6 +47,7 @@ export default defineComponent({
     const { fetchAllCloudAreas } = useCloudAreaStore();
     const { fetchRegions } = useRegionsStore();
     const { whereAmI } = useWhereAmI();
+    const { getAuthVerifyData, authVerifyData } = useVerify(); // 权限中心权限
 
     const openedKeys: string[] = [];
     const isRouterAlive = ref<Boolean>(true);
@@ -123,7 +124,6 @@ export default defineComponent({
           return e;
         });
         commonStore.updatePageAuthData(bizsPageAuthData);
-        const { getAuthVerifyData } = useVerify(); // 权限中心权限
         await getAuthVerifyData(bizsPageAuthData);
       },
       { immediate: true },
@@ -242,53 +242,81 @@ export default defineComponent({
                 menu: () => (
                   <div class={'home-menu'}>
                     {topMenuActiveItem.value === 'business' && isMenuOpen.value && <BusinessSelector reload={reload} />}
-
                     <Menu
                       class='menu-warp'
-                      style={{
-                        width: `${NAV_WIDTH}px`,
-                      }}
+                      style={{ width: `${NAV_WIDTH}px` }}
                       uniqueOpen={false}
                       openedKeys={openedKeys}
                       activeKey={route.meta.activeKey as string}>
-                      {menus.value.map((menuItem) =>
-                        Array.isArray(menuItem.children) && !menuItem.meta?.hasPageRoute ? (
-                          <Menu.Group key={menuItem.path as string} name={menuItem.name as string}>
-                            {{
-                              default: () =>
-                                menuItem.children
-                                  .filter((child) => !child.meta?.notMenu)
-                                  .map((child) => (
-                                    <RouterLink to={{ path: `${child.path}`, query: { bizs: accountStore.bizs } }}>
-                                      <Menu.Item key={child.meta?.activeKey as string}>
-                                        {/* {route.meta.activeKey} */}
-                                        {{
-                                          icon: () => <i class={child.meta?.icon} />,
-                                          default: () => (
-                                            <p class='flex-row flex-1 justify-content-between align-items-center pr16'>
-                                              <span class='flex-1 text-ov'>{child.name as string}</span>
-                                            </p>
-                                          ),
-                                        }}
-                                      </Menu.Item>
-                                    </RouterLink>
-                                  )),
-                            }}
-                          </Menu.Group>
-                        ) : (
-                          !menuItem.meta?.notMenu && (
+                      {menus.value
+                        .map((menuItem) => {
+                          // menuItem.children 是一个数组, 且没有配置 hasPageRoute(页面级子路由)
+                          if (Array.isArray(menuItem.children) && !menuItem.meta?.hasPageRoute) {
+                            const children = menuItem.children
+                              // 过滤掉非菜单的路由项
+                              .filter((child) => !child.meta?.notMenu)
+                              // 构建子菜单项
+                              .map((child) => {
+                                // 如果配置了 checkAuth, 则检查菜单是否具有访问权限
+                                if (
+                                  child.meta?.checkAuth &&
+                                  !authVerifyData.value?.permissionAction[child.meta?.checkAuth as string]
+                                ) {
+                                  return null;
+                                }
+
+                                return (
+                                  <RouterLink
+                                    to={{ path: `${child.path}`, query: { ...route.query, bizs: accountStore.bizs } }}>
+                                    <Menu.Item key={child.meta?.activeKey as string}>
+                                      {{
+                                        icon: () => <i class={child.meta?.icon} />,
+                                        default: () => (
+                                          <p class='flex-row flex-1 justify-content-between align-items-center pr16'>
+                                            <span class='flex-1 text-ov'>{child.name as string}</span>
+                                          </p>
+                                        ),
+                                      }}
+                                    </Menu.Item>
+                                  </RouterLink>
+                                );
+                              })
+                              // 过滤掉 null 项
+                              .filter((item) => !!item);
+
+                            // 如果构建的子菜单项为空, 则表明子菜单都不具备访问权限, 直接隐藏 group
+                            if (!children.length) return null;
+
+                            return (
+                              <Menu.Group key={menuItem.path as string} name={menuItem.name as string}>
+                                {{ default: () => children }}
+                              </Menu.Group>
+                            );
+                          }
+
+                          // 如果配置了 notMenu、或者配置了 checkAuth 且不具备访问权限, 则隐藏菜单
+                          if (
+                            menuItem.meta?.notMenu ||
+                            (menuItem.meta?.checkAuth &&
+                              !authVerifyData.value?.permissionAction[menuItem.meta.checkAuth as string])
+                          ) {
+                            return null;
+                          }
+
+                          // 正常显示菜单
+                          return (
                             <RouterLink to={`${menuItem.path}`}>
                               <Menu.Item key={menuItem.meta.activeKey as string}>
-                                {/* {menuItem.meta.activeKey} */}
                                 {{
                                   icon: () => <i class={menuItem.meta.icon} />,
                                   default: () => menuItem.name as string,
                                 }}
                               </Menu.Item>
                             </RouterLink>
-                          )
-                        ),
-                      )}
+                          );
+                        })
+                        // 过滤掉 null 项
+                        .filter((item) => !!item)}
                     </Menu>
                   </div>
                 ),

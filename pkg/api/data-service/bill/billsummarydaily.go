@@ -72,7 +72,7 @@ type BillSummaryDailyListResult struct {
 type BillSummaryDailyUpdateReq struct {
 	ID       string              `json:"id,omitempty" validate:"required"`
 	Currency enumor.CurrencyCode `json:"currency" validate:"omitempty"`
-	Cost     decimal.Decimal     `json:"cost" validate:"omitempty"`
+	Cost     *decimal.Decimal    `json:"cost" validate:"omitempty"`
 	Count    int64               `json:"count" validate:"omitempty"`
 }
 

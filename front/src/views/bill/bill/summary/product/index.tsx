@@ -14,10 +14,12 @@ export default defineComponent({
   setup() {
     const bill_year = inject<Ref<number>>('bill_year');
     const bill_month = inject<Ref<number>>('bill_month');
+
+    const searchRef = ref();
     const amountRef = ref();
 
     const { columns } = useColumns('billsMainAccountSummary');
-    const { CommonTable, getListData, clearFilter } = useTable({
+    const { CommonTable, getListData, clearFilter, filter } = useTable({
       searchOptions: { disabled: true },
       tableOptions: {
         columns: columns.slice(2, -1),
@@ -32,6 +34,7 @@ export default defineComponent({
           bill_year: bill_year.value,
           bill_month: bill_month.value,
         }),
+        immediate: false,
       },
     });
 
@@ -41,13 +44,16 @@ export default defineComponent({
     };
 
     watch([bill_year, bill_month], () => {
-      getListData();
+      searchRef.value.handleSearch();
+    });
+
+    watch(filter, () => {
       amountRef.value.refreshAmountInfo();
     });
 
     return () => (
       <>
-        <Search searchKeys={['product_id']} onSearch={reloadTable} />
+        <Search ref={searchRef} searchKeys={['product_id']} onSearch={reloadTable} autoSelectMainAccount />
         <div class='p24' style={{ height: 'calc(100% - 162px)' }}>
           <CommonTable>
             {{
@@ -56,7 +62,7 @@ export default defineComponent({
                 <Amount
                   ref={amountRef}
                   api={reqBillsMainAccountSummarySum}
-                  payload={() => ({ bill_year: bill_year.value, bill_month: bill_month.value })}
+                  payload={() => ({ bill_year: bill_year.value, bill_month: bill_month.value, filter })}
                 />
               ),
             }}

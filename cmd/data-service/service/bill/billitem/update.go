@@ -52,8 +52,8 @@ func (svc *service) UpdateBillItem(cts *rest.Contexts) (interface{}, error) {
 		Extension: req.Extension,
 		Reviser:   cts.Kit.User,
 	}
-	if !req.Cost.IsZero() {
-		billItem.Cost = &types.Decimal{Decimal: req.Cost}
+	if req.Cost != nil {
+		billItem.Cost = &types.Decimal{Decimal: *req.Cost}
 	}
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		if err := svc.dao.AccountBillItem().UpdateByIDWithTx(cts.Kit, txn, billItem.ID, billItem); err != nil {

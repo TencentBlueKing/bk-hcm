@@ -387,6 +387,8 @@ export interface IMainAccountDetail {
   op_product_id?: number;
   status?: string;
   memo?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface IRootAccountDetailExtension {

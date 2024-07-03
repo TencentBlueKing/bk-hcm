@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"time"
 
+	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/logs"
 	"hcm/pkg/serviced"
@@ -46,7 +47,7 @@ func (bm *BillManager) Run(ctx context.Context) {
 	if err := bm.syncRootControllers(); err != nil {
 		logs.Warnf("sync root controllers failed, err %s", err.Error())
 	}
-	ticker := time.NewTicker(defaultControllerSyncDuration)
+	ticker := time.NewTicker(*cc.AccountServer().Controller.ControllerSyncDuration)
 	for {
 		select {
 		case <-ticker.C:

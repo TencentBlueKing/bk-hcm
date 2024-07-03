@@ -1,4 +1,4 @@
-import { defineComponent, ref, watch } from 'vue';
+import { defineComponent, ref, watch, watchEffect } from 'vue';
 import './index.scss';
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import CommonCard from '@/components/CommonCard';
@@ -28,8 +28,8 @@ export default defineComponent({
       name: '', // 名字
       vendor: VendorEnum.AZURE, // 云厂商
       email: '', // 邮箱
-      managers: [userStore.username], // 负责人数组
-      bak_managers: [userStore.username], // 备份负责人数组
+      managers: [], // 负责人数组
+      bak_managers: [], // 备份负责人数组
       site: 'international', // 站点
       // dept_id: '', // 组织架构ID
       memo: '', // 备忘录
@@ -37,6 +37,13 @@ export default defineComponent({
       bk_biz_id: -1, // 业务
       // extension: {}, // 扩展字段对象
     });
+
+    watchEffect(() => {
+      const currentUser = userStore.username;
+      formModel.managers = [currentUser];
+      formModel.bak_managers = [currentUser];
+    });
+
     const handleSubmit = async () => {
       try {
         isLoading.value = true;
@@ -158,9 +165,10 @@ export default defineComponent({
                         name: [
                           {
                             trigger: 'change',
-                            message: '账号名称只能包括小写字母和数字，并且仅能以小写字母开头，长度为6-20个字符',
+                            message:
+                              '账号名称只能包括英文字母、数字和中划线-，并且仅能以英文字母开头，长度为6-20个字符',
                             validator: (val: string) => {
-                              return /^[a-z][a-z0-9]{5,19}$/.test(val);
+                              return /^[a-zA-Z][a-zA-Z0-9-]{5,19}$/.test(val);
                             },
                           },
                         ],
@@ -169,7 +177,7 @@ export default defineComponent({
                         label='帐号名称'
                         required
                         property='name'
-                        description='账号名称只能包括小写字母和数字，并且仅能以小写字母开头，长度为6-20个字符'>
+                        description='账号名称只能包括英文字母、数字和中划线-，并且仅能以英文字母开头，长度为6-20个字符'>
                         <Input v-model={formModel.name} placeholder='请输入账号名称'></Input>
                       </FormItem>
                       <FormItem label='帐号邮箱' required property='email'>
@@ -242,10 +250,20 @@ export default defineComponent({
                     </Form>
                   </div>
                 </CommonCard>
-                <Button theme='primary' class={'mr8 ml24'} onClick={() => handleSubmit()} loading={isLoading.value}>
+                <Button
+                  theme='primary'
+                  class={'mr8 ml24 mw88'}
+                  onClick={() => handleSubmit()}
+                  loading={isLoading.value}>
                   提交
                 </Button>
-                <Button>取消</Button>
+                <Button
+                  class='mw88'
+                  onClick={() => {
+                    router.back();
+                  }}>
+                  取消
+                </Button>
               </div>
             ),
             aside: () => (

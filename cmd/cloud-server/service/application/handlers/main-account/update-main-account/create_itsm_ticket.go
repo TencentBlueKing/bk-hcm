@@ -48,6 +48,8 @@ func (a *ApplicationOfUpdateMainAccount) RenderItsmForm() (string, error) {
 	formItems := []formItem{
 		{Label: "云厂商", Value: req.Vendor.GetNameZh()},
 		{Label: "站点类型", Value: oldAccount.Site.GetMainAccountSiteTypeName()},
+		{Label: "云账号名", Value: oldAccount.Name},
+		{Label: "云账号ID", Value: oldAccount.CloudID},
 		{Label: "账号邮箱", Value: oldAccount.Email},
 		{Label: "变更信息如下", Value: "        "},
 	}

@@ -31,7 +31,7 @@ export default defineComponent({
     });
 
     return () => (
-      <Select v-model={selectedValue.value} multiple multipleMode='tag'>
+      <Select v-model={selectedValue.value} multiple multipleMode='tag' collapseTags clearable>
         {list.value.map(({ id, name }) => (
           <Select.Option key={id} id={id} name={name} />
         ))}

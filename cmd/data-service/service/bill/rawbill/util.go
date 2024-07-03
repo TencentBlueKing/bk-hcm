@@ -29,7 +29,7 @@ import (
 
 func generateFilePath(req *dsbill.RawBillCreateReq) string {
 	return fmt.Sprintf("rawbills/%s/%s/%s/%s/%s/%s/%s/%s",
-		req.Vendor, req.FirstAccountID, req.AccountID, req.BillYear,
+		req.Vendor, req.RootAccountID, req.AccountID, req.BillYear,
 		req.BillMonth, req.Version, req.BillDate, req.FileName)
 }
 

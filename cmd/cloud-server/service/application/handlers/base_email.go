@@ -17,9 +17,13 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package dailypull
+package handlers
 
 import (
-	_ "hcm/cmd/task-server/logics/action/bill/dailypull/gcp"
-	_ "hcm/cmd/task-server/logics/action/bill/dailypull/huawei"
+	"hcm/pkg/thirdparty/api-gateway/cmsi"
 )
+
+// SendMail send mail
+func (a *BaseApplicationHandler) SendMail(m *cmsi.CmsiMail) error {
+	return a.CmsiClient.SendMail(a.Cts.Kit, m)
+}

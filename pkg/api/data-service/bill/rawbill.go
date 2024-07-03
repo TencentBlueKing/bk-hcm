@@ -41,13 +41,13 @@ type RawBillItem struct {
 
 // RawBillCreateReq create request
 type RawBillCreateReq struct {
-	Vendor         enumor.Vendor `json:"vendor" vaildate:"required"`
-	FirstAccountID string        `json:"first_account_id" validate:"required"`
-	AccountID      string        `json:"account_id" vaildate:"required"`
-	BillYear       string        `json:"bill_year" validate:"required"`
-	BillMonth      string        `json:"bill_month" validate:"required"`
-	Version        string        `json:"version" validate:"required"`
-	BillDate       string        `json:"bill_date" validate:"required"`
+	Vendor        enumor.Vendor `json:"vendor" vaildate:"required"`
+	RootAccountID string        `json:"root_account_id" validate:"required"`
+	AccountID     string        `json:"account_id" vaildate:"required"`
+	BillYear      string        `json:"bill_year" validate:"required"`
+	BillMonth     string        `json:"bill_month" validate:"required"`
+	Version       string        `json:"version" validate:"required"`
+	BillDate      string        `json:"bill_date" validate:"required"`
 	// FileName cos写入的文件名
 	FileName string        `json:"file_name" validate:"required"`
 	Items    []RawBillItem `json:"items" validate:"required"`
