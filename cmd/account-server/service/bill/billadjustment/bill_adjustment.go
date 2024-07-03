@@ -66,7 +66,7 @@ func (b *billAdjustmentSvc) CreateBillAdjustmentItem(cts *rest.Contexts) (any, e
 		return nil, err
 	}
 
-	filledItems, err := b.checkForCreateAdjustment(cts.Kit, rootAccountInfo.ID, req.Items)
+	filledItems, err := b.convBillAdjustmentCreate(cts.Kit, rootAccountInfo.ID, req)
 	if err != nil {
 		logs.Errorf("fail to check main account: err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
@@ -81,14 +81,14 @@ func (b *billAdjustmentSvc) CreateBillAdjustmentItem(cts *rest.Contexts) (any, e
 	return result, nil
 }
 
-func (b *billAdjustmentSvc) checkForCreateAdjustment(kt *kit.Kit, rootAccountID string,
-	items []bill.BillAdjustmentItemCreateReq) ([]dsbill.BillAdjustmentItemCreateReq, error) {
+func (b *billAdjustmentSvc) convBillAdjustmentCreate(kt *kit.Kit, rootAccountID string,
+	req *bill.BatchBillAdjustmentItemCreateReq) ([]dsbill.BillAdjustmentItemCreateReq, error) {
 
-	dsReq := make([]dsbill.BillAdjustmentItemCreateReq, 0, len(items))
+	dsReq := make([]dsbill.BillAdjustmentItemCreateReq, 0, len(req.Items))
 	mainAccountIdMap := make(map[string]struct{})
-	for i, item := range items {
+	for _, item := range req.Items {
 		if item.RootAccountID == "" {
-			items[i].RootAccountID = rootAccountID
+			item.RootAccountID = rootAccountID
 		}
 		if item.RootAccountID != rootAccountID {
 			return nil, fmt.Errorf("root account id does not match, want: %s, given: %s",
@@ -97,18 +97,19 @@ func (b *billAdjustmentSvc) checkForCreateAdjustment(kt *kit.Kit, rootAccountID 
 		dsReq = append(dsReq, dsbill.BillAdjustmentItemCreateReq{
 			RootAccountID: item.RootAccountID,
 			MainAccountID: item.MainAccountID,
-			Vendor:        item.Vendor,
+			Vendor:        req.Vendor,
 			ProductID:     item.ProductID,
 			BkBizID:       item.BkBizID,
 			BillYear:      item.BillYear,
 			BillMonth:     item.BillMonth,
-			BillDay:       item.BillDay,
+			BillDay:       1,
+			State:         enumor.BillAdjustmentStateUnconfirmed,
 			Type:          item.Type,
 			Operator:      kt.User,
-			Memo:          item.Memo,
 			Currency:      item.Currency,
 			Cost:          item.Cost,
-			State:         enumor.BillAdjustmentStateUnconfirmed,
+			RMBCost:       item.RmbCost,
+			Memo:          item.Memo,
 		})
 		mainAccountIdMap[item.MainAccountID] = struct{}{}
 	}
@@ -227,19 +228,13 @@ func (b *billAdjustmentSvc) UpdateBillAdjustmentItem(cts *rest.Contexts) (any, e
 
 	dsReq := &dsbill.BillAdjustmentItemUpdateReq{
 		ID:            id,
-		RootAccountID: req.RootAccountID,
 		MainAccountID: req.MainAccountID,
 		ProductID:     req.ProductID,
 		BkBizID:       req.BkBizID,
-		BillYear:      req.BillYear,
-		BillMonth:     req.BillMonth,
-		BillDay:       req.BillDay,
 		Type:          req.Type,
 		Memo:          req.Memo,
 		Currency:      req.Currency,
-	}
-	if req.Cost != nil {
-		dsReq.Cost = req.Cost
+		Cost:          req.Cost,
 	}
 
 	err = b.client.DataService().Global.Bill.UpdateBillAdjustmentItem(cts.Kit, dsReq)
