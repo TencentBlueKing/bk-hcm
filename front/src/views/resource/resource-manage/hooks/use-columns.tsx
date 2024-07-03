@@ -2020,12 +2020,12 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const billsMainAccountSummaryColumns = [
     {
       label: '二级账号ID',
-      field: 'main_account_id',
+      field: 'main_account_cloud_id',
       isDefaultShow: true,
     },
     {
       label: '二级账号名称',
-      field: 'main_account_name',
+      field: 'main_account_cloud_name',
       isDefaultShow: true,
     },
     {
