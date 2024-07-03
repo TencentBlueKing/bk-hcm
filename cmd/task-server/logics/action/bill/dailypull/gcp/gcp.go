@@ -151,9 +151,9 @@ func (gcp *GcpPuller) doPull(
 	int, *registry.PullerResult, error) {
 
 	hcCli := actcli.GetHCService()
-	resp, err := hcCli.Gcp.Bill.RootAccountBillList(kt.Kit().Ctx, kt.Kit().Header(), &bill.GcpBillListReq{
-		BillAccountID: opt.RootAccountID,
-		AccountID:     opt.MainAccountID,
+	resp, err := hcCli.Gcp.Bill.RootAccountBillList(kt.Kit().Ctx, kt.Kit().Header(), &bill.GcpRootAccountBillListReq{
+		RootAccountID: opt.RootAccountID,
+		MainAccountID: opt.MainAccountID,
 		BeginDate:     fmt.Sprintf("%d-%02d-%02dT00:00:00Z", opt.BillYear, opt.BillMonth, opt.BillDay),
 		EndDate:       fmt.Sprintf("%d-%02d-%02dT23:59:59Z", opt.BillYear, opt.BillMonth, opt.BillDay),
 		Page: &typesBill.GcpBillPage{
@@ -165,13 +165,24 @@ func (gcp *GcpPuller) doPull(
 		return 0, nil, fmt.Errorf("list gcp root account bill list for %+v, offset %d, limit %d, err %s",
 			opt, offset, limit, err.Error())
 	}
-	itemList, ok := resp.Details.([]interface{})
-	if !ok {
-		logs.Warnf("response %v is not []billcore.GcpRawBillItem", resp.Details)
-		return 0, nil, fmt.Errorf("response %v is not []billcore.GcpRawBillItem", resp.Details)
-	}
-	itemLen := len(itemList)
-	if itemLen == 0 {
+	var itemList []interface{}
+	itemLen := 0
+	if resp.Details != nil {
+		ok := false
+		itemList, ok = resp.Details.([]interface{})
+		if !ok {
+			logs.Warnf("response %v is not []billcore.GcpRawBillItem", resp.Details)
+			return 0, nil, fmt.Errorf("response %v is not []billcore.GcpRawBillItem", resp.Details)
+		}
+		itemLen = len(itemList)
+		if itemLen == 0 {
+			return 0, &registry.PullerResult{
+				Count:    int64(0),
+				Currency: "",
+				Cost:     decimal.NewFromFloat(0),
+			}, nil
+		}
+	} else {
 		return 0, &registry.PullerResult{
 			Count:    int64(0),
 			Currency: "",

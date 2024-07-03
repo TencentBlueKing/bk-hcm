@@ -22,6 +22,7 @@ package bill
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"time"
 
 	"hcm/cmd/task-server/logics/action/bill/rootsummary"
@@ -143,6 +144,7 @@ func (rac *RootAccountController) runCalculateBillSummaryLoop(kt *kit.Kit) {
 }
 
 func (rac *RootAccountController) pollRootSummaryTask(subKit *kit.Kit, flowID string, billYear, billMonth int) string {
+	time.Sleep(time.Millisecond * time.Duration(rand.Intn(defaultSleepMillisecond)))
 	summary, err := rac.getBillSummary(subKit, billYear, billMonth)
 	if err != nil {
 		logs.Warnf("get root account bill summary failed, err %s, rid: %s", err.Error(), subKit.Rid)
@@ -176,14 +178,18 @@ func (rac *RootAccountController) pollRootSummaryTask(subKit *kit.Kit, flowID st
 	}
 	if flow.State == enumor.FlowSuccess ||
 		flow.State == enumor.FlowFailed ||
+		flow.State == enumor.FlowCancel ||
 		(flow.State == enumor.FlowScheduled &&
 			flow.Worker != nil &&
 			!slice.IsItemInSlice[string](taskServerNameList, *flow.Worker)) {
 
-		if err := rac.Client.TaskServer().CancelFlow(subKit, flow.ID); err != nil {
-			logs.Warnf("cancel flow %v failed, err %s, rid: %s", flow, err.Error(), subKit.Rid)
-			return flowID
+		if flow.State == enumor.FlowScheduled {
+			if err := rac.Client.TaskServer().CancelFlow(subKit, flow.ID); err != nil {
+				logs.Warnf("cancel flow %v failed, err %s, rid: %s", flow, err.Error(), subKit.Rid)
+				return flowID
+			}
 		}
+
 		result, err := rac.createRootSummaryTask(subKit, billYear, billMonth)
 		if err != nil {
 			logs.Warnf("create new root summary task for %s/%s %d-%d failed, err %s, rid: %s",
