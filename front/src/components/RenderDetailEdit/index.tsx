@@ -1,5 +1,5 @@
 import { Input, Select } from 'bkui-vue';
-import { defineComponent, ref, nextTick, watch, PropType, computed } from 'vue';
+import { defineComponent, ref, nextTick, watch, PropType, computed, inject } from 'vue';
 import { useI18n } from 'vue-i18n';
 import MemberSelect from '@/components/MemberSelect';
 import OrganizationSelect from '@/components/OrganizationSelect';
@@ -46,19 +46,28 @@ export default defineComponent({
   },
   emits: ['update:modelValue', 'change', 'input', 'blur'],
   setup(props, ctx) {
+    // 注入预鉴权相关参数
+    const { authVerifyData, handleAuth, authId } = inject<any>('authAction') || {};
+
     const { t } = useI18n();
     const { Option } = Select;
     const renderEdit = ref(false);
     const inputRef = ref<InstanceType<typeof Input>>(null);
     const selectRef = ref(null);
     const handleEdit = () => {
-      // @ts-ignore
-      renderEdit.value = true;
-      nextTick(() => {
+      // 如果祖辈组件有 provide 预鉴权参数, 则需要对编辑操作进行预鉴权处理
+      if (authId && !authVerifyData?.value?.permissionAction?.[authId]) {
+        // 无权限, 展示权限申请弹窗
+        handleAuth(authId);
+      } else {
         // @ts-ignore
-        inputRef.value?.focus();
-        selectRef.value?.handleTogglePopover();
-      });
+        renderEdit.value = true;
+        nextTick(() => {
+          // @ts-ignore
+          inputRef.value?.focus();
+          selectRef.value?.handleTogglePopover();
+        });
+      }
     };
 
     watch(
@@ -211,7 +220,9 @@ export default defineComponent({
         ) : (
           <i
             onClick={handleEdit}
-            class={'icon hcm-icon bkhcm-icon-bianji account-edit-icon'}
+            class={`icon hcm-icon bkhcm-icon-bianji account-edit-icon ${
+              !authVerifyData?.value?.permissionAction?.[authId] ? 'hcm-no-permision-text-btn' : ''
+            }`}
             style={{ marginLeft: '10px', color: '#979BA5' }}
           />
         )}
