@@ -41,7 +41,6 @@ export default defineComponent({
     const isLoading = ref(false);
     const formRef = ref();
     const tableRef = ref();
-    const modal = ref({ vendor: [] });
 
     const triggerShow = (v: boolean) => {
       isShow.value = v;
@@ -82,7 +81,7 @@ export default defineComponent({
         else await billStore.create_adjustment_items(paylaod);
         isShow.value = false;
         Message({
-          message: '创建成功',
+          message: props.edit ? t('编辑成功') : t('创建成功'),
           theme: 'success',
         });
         emit('update');
@@ -143,7 +142,13 @@ export default defineComponent({
               </Form.FormItem>
               <Form.FormItem label={t('调账配置')} required>
                 <div>
-                  <AdjustTable ref={tableRef} vendor={formModel.vendor} edit={props.edit} editData={editData.value} />
+                  <AdjustTable
+                    ref={tableRef}
+                    vendor={formModel.vendor}
+                    edit={props.edit}
+                    editData={editData.value}
+                    rootAccountId={formModel.root_account_id}
+                  />
                 </div>
               </Form.FormItem>
               <Form.FormItem label={t('结果预览')}>

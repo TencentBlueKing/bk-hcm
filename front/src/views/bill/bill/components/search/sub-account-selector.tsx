@@ -29,8 +29,8 @@ export default defineComponent({
 
     const rules = computed(() => {
       const rules = [];
-      if (props.vendor.length) rules.push({ field: 'vendor', op: QueryRuleOPEnum.IN, value: props.vendor });
-      if (props.rootAccountId.length)
+      if (props.vendor?.length) rules.push({ field: 'vendor', op: QueryRuleOPEnum.IN, value: props.vendor });
+      if (props.rootAccountId?.length)
         rules.push({ field: 'parent_account_id', op: QueryRuleOPEnum.IN, value: props.rootAccountId });
       return rules;
     });

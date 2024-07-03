@@ -20,13 +20,17 @@ export default defineComponent({
       required: true,
       type: String as PropType<VendorEnum>,
     },
+    rootAccountId: {
+      required: true,
+      type: String,
+    },
   },
   setup(props, { expose }) {
     const Record = (): Partial<AdjustmentItem> => {
       return {
         product_id: -1,
         bk_biz_id: -1,
-        type: 'increase',
+        type: AdjustTypeEnum.Increase,
         cost: '',
         main_account_id: '',
         memo: '',
@@ -60,11 +64,12 @@ export default defineComponent({
     return () => (
       <div class={'adjust-table-container'}>
         <RenderTable edit={props.edit}>
-          {tableData.value.map((_, idx) => (
+          {tableData.value.map((item, idx) => (
             <RenderTableRow
               edit={props.edit}
-              editData={props.editData}
+              editData={props.edit ? props.editData : item}
               vendor={props.vendor}
+              rootAccountId={props.rootAccountId}
               onCostChange={handleCostChange}
               onAdd={() => {
                 tableData.value.push(Record());
@@ -73,6 +78,9 @@ export default defineComponent({
               onRemove={() => {
                 tableData.value.splice(idx, 1);
                 rowRefs.splice(idx, 1);
+              }}
+              onCopy={() => {
+                tableData.value.splice(idx, 0, tableData.value[idx]);
               }}
               removeable={tableData.value.length < 2}
               ref={rowRefs[idx]}

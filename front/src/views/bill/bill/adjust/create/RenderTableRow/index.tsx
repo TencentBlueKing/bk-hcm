@@ -16,6 +16,10 @@ export default defineComponent({
       required: true,
       type: String as PropType<VendorEnum>,
     },
+    rootAccountId: {
+      required: true,
+      type: String,
+    },
     editData: {
       required: true,
       type: Object,
@@ -26,7 +30,7 @@ export default defineComponent({
       type: Boolean,
     },
   },
-  emits: ['add', 'remove', 'costChange'],
+  emits: ['add', 'remove', 'costChange', 'copy'],
   setup(props, { emit, expose }) {
     const type = ref(AdjustTypeEnum.Increase);
     const bk_biz_id = ref('');
@@ -122,7 +126,8 @@ export default defineComponent({
               isEditable={true}
               v-model={main_account_id.value}
               ref={mainAccountRef}
-              vendor={props.vendor}
+              vendor={[props.vendor]}
+              rootAccountId={[props.rootAccountId]}
             />
           </td>
           <td>

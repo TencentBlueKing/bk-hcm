@@ -7,9 +7,14 @@ function useFormModel<T extends object>(initialState: T) {
     Object.assign(formModel, initialState);
   }
 
+  function setFormValues(values: Partial<T>) {
+    Object.assign(formModel, values);
+  }
+
   return {
     formModel,
     resetForm,
+    setFormValues,
   };
 }
 

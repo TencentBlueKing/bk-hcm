@@ -162,12 +162,24 @@ defineExpose({
 </script>
 
 <template>
+  <select-column
+    v-model="selectedValue"
+    v-if="isEditable"
+    :list="computedBuinessList"
+    filterable
+    :loading="loading"
+    :rules="rules"
+  ></select-column>
 
-  <select-column v-model="selectedValue" v-if="isEditable" :list="computedBuinessList" filterable :loading="loading"
-    :rules="rules"></select-column>
-
-  <bk-select v-model="selectedValue" :multiple="multiple" filterable :loading="loading" :clearable="clearable"
-    @change="handleChange">
+  <bk-select
+    v-model="selectedValue"
+    :multiple="multiple"
+    filterable
+    :loading="loading"
+    :clearable="clearable"
+    v-else
+    @change="handleChange"
+  >
     <bk-option v-for="item in businessList" :key="item.id" :value="item.id" :label="item.name" />
   </bk-select>
 </template>

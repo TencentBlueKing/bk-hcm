@@ -27,10 +27,6 @@ export default defineComponent({
       },
       immediate: true,
     });
-    const renderDataList = computed(() => {
-      if (props.vendor?.length) return dataList.value.filter((item) => props.vendor.includes(item.vendor));
-      return dataList.value;
-    });
 
     watch(
       () => props.modelValue,
