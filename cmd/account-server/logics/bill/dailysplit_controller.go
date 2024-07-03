@@ -157,7 +157,7 @@ func (msdc *MainDailySplitController) getBillSummary(
 		return nil, fmt.Errorf("get main account bill summary failed, err %s", err.Error())
 	}
 	if len(result.Details) != 1 {
-		return nil, fmt.Errorf("get invalid main account bill summary resp %+v", result.Count)
+		return nil, fmt.Errorf("get invalid main account bill summary resp %d", result.Count)
 	}
 	return result.Details[0], nil
 }
