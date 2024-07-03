@@ -37,6 +37,8 @@ const (
 	defaultGrantLeaseTTL = 10
 	// defaultErrSleepTime is exec failed need to wait time.
 	defaultErrSleepTime = time.Second
+	// defaultEtcdTimeout operation timeout of etcd
+	defaultEtcdTimeout = 5 * time.Second
 )
 
 // ServiceOption defines a service related options.

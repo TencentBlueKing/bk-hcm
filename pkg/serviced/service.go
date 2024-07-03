@@ -141,7 +141,9 @@ func (s *service) Register() error {
 		logs.Errorf("grant lease failed, err: %v", err)
 		return err
 	}
-	_, err = s.cli.Put(s.ctx, key, value, etcd3.WithLease(leaseResp.ID))
+	ctx, cancel := context.WithTimeout(s.ctx, defaultEtcdTimeout)
+	defer cancel()
+	_, err = s.cli.Put(ctx, key, value, etcd3.WithLease(leaseResp.ID))
 	if err != nil {
 		logs.Errorf("put kv with lease failed, key: %s, value: %s, err: %v", key, value, err)
 		return err
@@ -173,7 +175,10 @@ func (s *service) keepAlive(key string, value string) {
 						time.Sleep(defaultErrSleepTime)
 						continue
 					}
-					_, err = s.cli.Put(s.ctx, key, value, etcd3.WithLease(leaseResp.ID))
+
+					ctx, cancel := context.WithTimeout(s.ctx, defaultEtcdTimeout)
+					defer cancel()
+					_, err = s.cli.Put(ctx, key, value, etcd3.WithLease(leaseResp.ID))
 					if err != nil {
 						logs.Errorf("put kv failed, key: %s, lease: %d, err: %v", key, leaseResp.ID, err)
 						time.Sleep(defaultErrSleepTime)
@@ -185,7 +190,9 @@ func (s *service) keepAlive(key string, value string) {
 				} else {
 					// before keep alive, need to judge if service key exists.
 					// if not exist, need to re-register.
-					resp, err := s.cli.Get(s.ctx, key)
+					ctx, cancel := context.WithTimeout(s.ctx, defaultEtcdTimeout)
+					defer cancel()
+					resp, err := s.cli.Get(ctx, key)
 					if err != nil {
 						logs.Errorf("get key failed, lease: %d, err: %v", curLeaseID, err)
 						s.keepAliveFailed()
@@ -220,7 +227,9 @@ func (s *service) keepAliveFailed() {
 func (s *service) Deregister() error {
 	s.cancel()
 
-	if _, err := s.cli.Delete(context.Background(), key(ServiceDiscoveryName(s.svcOpt.Name),
+	ctx, cancel := context.WithTimeout(context.Background(), defaultEtcdTimeout)
+	defer cancel()
+	if _, err := s.cli.Delete(ctx, key(ServiceDiscoveryName(s.svcOpt.Name),
 		s.svcOpt.Uid)); err != nil {
 		return err
 	}
@@ -266,7 +275,9 @@ func (s *service) syncMasterState() {
 
 	// watch service register path change event. if receive event, need to sync master state.
 	go func() {
-		s.watchChan = s.cli.Watch(context.Background(), svrPath, etcd3.WithPrefix(), etcd3.WithPrevKV())
+		ctx, cancel := context.WithTimeout(context.Background(), defaultEtcdTimeout)
+		defer cancel()
+		s.watchChan = s.cli.Watch(ctx, svrPath, etcd3.WithPrefix(), etcd3.WithPrevKV())
 
 		for {
 			resp, ok := <-s.watchChan
@@ -284,7 +295,7 @@ func (s *service) syncMasterState() {
 
 			// if the abnormal pipe is closed, you need to retry watch
 			if !ok || resp.Err() != nil {
-				s.watchChan = s.cli.Watch(context.Background(), svrPath, etcd3.WithPrefix(),
+				s.watchChan = s.cli.Watch(ctx, svrPath, etcd3.WithPrefix(),
 					etcd3.WithPrevKV())
 			}
 		}
@@ -311,7 +322,9 @@ func (s *service) syncMasterState() {
 // isMaster judge current service is master node.
 func (s *service) isMaster(srvPath, srvKey string) (bool, error) {
 	// get current instance version info.
-	resp, err := s.cli.Get(context.Background(), srvKey, etcd3.WithPrefix(), etcd3.WithSerializable())
+	ctx, cancel := context.WithTimeout(context.Background(), defaultEtcdTimeout)
+	defer cancel()
+	resp, err := s.cli.Get(ctx, srvKey, etcd3.WithPrefix(), etcd3.WithSerializable())
 	if err != nil {
 		return false, err
 	}
@@ -323,7 +336,7 @@ func (s *service) isMaster(srvPath, srvKey string) (bool, error) {
 	// get first service instance version info.
 	opts := etcd3.WithFirstCreate()
 	opts = append(opts, etcd3.WithSerializable())
-	resp, err = s.cli.Get(context.Background(), srvPath, opts...)
+	resp, err = s.cli.Get(ctx, srvPath, opts...)
 	if err != nil {
 		return false, err
 	}
