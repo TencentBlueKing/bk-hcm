@@ -66,7 +66,7 @@ func (svc *service) UpdateBillAdjustmentItem(cts *rest.Contexts) (interface{}, e
 		adjustment.Cost = &types.Decimal{Decimal: *req.Cost}
 	}
 	if req.RMBCost != nil {
-		adjustment.Cost = &types.Decimal{Decimal: *req.RMBCost}
+		adjustment.RMBCost = &types.Decimal{Decimal: *req.RMBCost}
 	}
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		if err := svc.dao.AccountBillAdjustmentItem().UpdateByIDWithTx(

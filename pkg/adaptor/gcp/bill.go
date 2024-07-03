@@ -130,10 +130,19 @@ func (g *Gcp) GetRootAccountBillTotal(
 }
 
 // GetRootAccountBillList demonstrates issuing a query and reading results.
-func (g *Gcp) GetRootAccountBillList(kt *kit.Kit, opt *typesBill.GcpBillListOption,
+func (g *Gcp) GetRootAccountBillList(kt *kit.Kit, opt *typesBill.GcpRootAccountBillListOption,
 	billInfo *billcore.RootAccountBillConfig[billcore.GcpBillConfigExtension]) (interface{}, int64, error) {
 
-	where, err := g.parseCondition(opt)
+	conditionOpt := &typesBill.GcpBillListOption{
+		BillAccountID: opt.RootAccountID,
+		AccountID:     opt.MainAccountID,
+		Month:         opt.Month,
+		BeginDate:     opt.BeginDate,
+		EndDate:       opt.EndDate,
+		Page:          opt.Page,
+		ProjectID:     opt.ProjectID,
+	}
+	where, err := g.parseRootAccountCondition(conditionOpt)
 	if err != nil {
 		logs.Errorf("gcp get bill list parse date failed, opt: %+v, err: %v", opt, err)
 		return nil, 0, err
@@ -204,7 +213,10 @@ func (g *Gcp) GetBigQuery(kt *kit.Kit, query string) ([]map[string]bigquery.Valu
 }
 
 func (g *Gcp) parseCondition(opt *typesBill.GcpBillListOption) (string, error) {
-	var condition = []string{fmt.Sprintf("project.id = '%s'", opt.ProjectID)}
+	var condition []string
+	if len(opt.ProjectID) != 0 {
+		condition = []string{fmt.Sprintf("project.id = '%s'", opt.ProjectID)}
+	}
 	if opt.Month != "" {
 		condition = append(condition, fmt.Sprintf("invoice.month = '%s'", opt.Month))
 	} else if opt.BeginDate != "" && opt.EndDate != "" {
@@ -218,6 +230,34 @@ func (g *Gcp) parseCondition(opt *typesBill.GcpBillListOption) (string, error) {
 			return "", err
 		}
 		condition = append(condition, fmt.Sprintf("TIMESTAMP_TRUNC(PARTITIONTIME, DAY) BETWEEN TIMESTAMP(\"%s\") AND "+
+			"TIMESTAMP(\"%s\")", beginDate.Format(constant.DateLayout), endDate.Format(constant.DateLayout)))
+	}
+
+	if len(condition) > 0 {
+		return "WHERE " + strings.Join(condition, " AND "), nil
+	}
+
+	return "", nil
+}
+
+func (g *Gcp) parseRootAccountCondition(opt *typesBill.GcpBillListOption) (string, error) {
+	var condition []string
+	if len(opt.ProjectID) != 0 {
+		condition = []string{fmt.Sprintf("project.id = '%s'", opt.ProjectID)}
+	}
+	if opt.Month != "" {
+		condition = append(condition, fmt.Sprintf("invoice.month = '%s'", opt.Month))
+	} else if opt.BeginDate != "" && opt.EndDate != "" {
+		beginDate, err := time.Parse(constant.TimeStdFormat, opt.BeginDate)
+		if err != nil {
+			return "", err
+		}
+
+		endDate, err := time.Parse(constant.TimeStdFormat, opt.EndDate)
+		if err != nil {
+			return "", err
+		}
+		condition = append(condition, fmt.Sprintf("TIMESTAMP_TRUNC(_PARTITIONTIME, DAY) BETWEEN TIMESTAMP(\"%s\") AND "+
 			"TIMESTAMP(\"%s\")", beginDate.Format(constant.DateLayout), endDate.Format(constant.DateLayout)))
 	}
 
