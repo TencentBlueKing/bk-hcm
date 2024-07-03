@@ -86,7 +86,11 @@ export default defineComponent({
         </CommonTable>
 
         {/* 一级账号详情及编辑 */}
-        <CommonSideslider v-model:isShow={isSideSliderShow.value} width={640} title={'一级账号详情'} noFooter={true}>
+        <CommonSideslider
+          v-model:isShow={isSideSliderShow.value}
+          width={640}
+          title={props.accountLevel === AccountLevelEnum.FirstLevel ? t('一级账号详情') : t('二级账号详情')}
+          noFooter={true}>
           {props.accountLevel === AccountLevelEnum.FirstLevel ? (
             <FirstLevelAccountDetail accountId={curAccount.value.id} />
           ) : (
