@@ -66,6 +66,7 @@ export const useCommonStore = defineStore({
       // 账号管理
       { type: 'root_account', action: 'find', id: 'root_account_find' }, // 云账号管理 - 一级账号
       { type: 'main_account', action: 'find', id: 'main_account_find' }, // 云账号管理 - 二级账号
+      { type: 'main_account', action: 'update', id: 'main_account_edit' }, // 云账号管理 - 二级账号编辑
       { type: 'account_bill', action: 'find', id: 'account_bill_find' }, // 云账单管理
     ],
   }),
