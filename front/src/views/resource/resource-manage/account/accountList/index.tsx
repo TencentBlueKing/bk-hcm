@@ -9,6 +9,8 @@ import { useResourceAccount } from './useResourceAccount';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
+import { useVerify } from '@/hooks';
+import PermissionDialog from '@/components/permission-dialog';
 
 export default defineComponent({
   setup() {
@@ -21,6 +23,14 @@ export default defineComponent({
     const { setAccountId } = useResourceAccount();
     const resourceAccountStore = useResourceAccountStore();
     const { currentVendor, currentAccountVendor } = storeToRefs(resourceAccountStore);
+    const {
+      showPermissionDialog,
+      handlePermissionConfirm,
+      handlePermissionDialog,
+      handleAuth,
+      permissionParams,
+      authVerifyData,
+    } = useVerify();
 
     const handleCancel = () => {
       // isCreateAccountDialogShow.value = false;
@@ -71,14 +81,18 @@ export default defineComponent({
             <Button
               text
               theme='primary'
+              class={!authVerifyData.value?.permissionAction?.account_import ? 'hcm-no-permision-text-btn' : ''}
               onClick={() => {
-                router.push({
-                  query: {
-                    ...route.query,
-                    dialog: 'create_account',
-                  },
-                });
-                // isCreateAccountDialogShow.value = true;
+                if (!authVerifyData.value?.permissionAction?.account_import) {
+                  handleAuth('account_import');
+                } else {
+                  router.push({
+                    query: {
+                      ...route.query,
+                      dialog: 'create_account',
+                    },
+                  });
+                }
               }}>
               <div class={'flex-row align-items-center'}>
                 <i class={'hcm-icon bkhcm-icon-plus-circle mr3'} />
@@ -137,6 +151,13 @@ export default defineComponent({
           )}
         </Loading>
         <CreateAccount isShow={isCreateAccountDialogShow.value} onCancel={handleCancel} onSubmit={handleSubmit} />
+        {/* 申请权限 */}
+        <PermissionDialog
+          v-model:isShow={showPermissionDialog.value}
+          params={permissionParams.value}
+          onCancel={handlePermissionDialog}
+          onConfirm={handlePermissionConfirm}
+        />
       </div>
     );
   },
