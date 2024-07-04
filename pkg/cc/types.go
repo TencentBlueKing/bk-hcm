@@ -677,7 +677,7 @@ type ApiGateway struct {
 // validate hcm runtime.
 func (gt ApiGateway) validate() error {
 	if len(gt.Endpoints) == 0 {
-		return errors.New("endpoints is not set")
+		return errors.New("api gateway endpoints is not set")
 	}
 	if len(gt.AppCode) == 0 {
 		return errors.New("app code is not set")
