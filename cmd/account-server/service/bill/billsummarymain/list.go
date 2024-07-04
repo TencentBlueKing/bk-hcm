@@ -74,18 +74,15 @@ func (s *service) ListMainAccountSummary(cts *rest.Contexts) (interface{}, error
 		Details: make([]*asbillapi.MainAccountSummaryResult, 0, len(summary.Details)),
 	}
 
-	productIDs := make([]int64, 0, len(summary.Details))
 	accountIDs := make([]string, 0, len(summary.Details))
-
 	for _, detail := range summary.Details {
-		productIDs = append(productIDs, detail.ProductID)
 		accountIDs = append(accountIDs, detail.MainAccountID)
 	}
 
 	// fetch account
 	listOpt := &core.ListReq{
 		Filter: tools.ExpressionAnd(
-			tools.RuleJsonIn("id", accountIDs),
+			tools.RuleIn("id", accountIDs),
 		),
 		Page: core.NewDefaultBasePage(),
 	}
