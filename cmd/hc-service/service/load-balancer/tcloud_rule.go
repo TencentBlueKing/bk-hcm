@@ -86,7 +86,8 @@ func (svc *clbSvc) TCloudCreateUrlRule(cts *rest.Contexts) (any, error) {
 	createReq := &cloud.TCloudUrlRuleBatchCreateReq{}
 
 	for i, cloudID := range creatResult.SuccessCloudIDs {
-		createReq.UrlRules = append(createReq.UrlRules, convURLRuleCreateReq(&req.Rules[i], lb, listener, cloudID, enumor.TCloud))
+		createReq.UrlRules = append(createReq.UrlRules,
+			convURLRuleCreateReq(&req.Rules[i], lb, listener, cloudID, enumor.TCloud))
 	}
 	_, err = svc.dataCli.TCloud.LoadBalancer.BatchCreateTCloudUrlRule(cts.Kit, createReq)
 	if err != nil {
