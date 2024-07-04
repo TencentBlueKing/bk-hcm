@@ -20,6 +20,7 @@ export const useWhereAmI = (): {
     if (/^\/workbench\/.+$/.test(route.path)) return Senarios.workbench;
     if (/^\/scheme\/.+$/.test(route.path)) return Senarios.scheme;
     if (/^\/bill\/.+$/.test(route.path)) return Senarios.bill;
+    if (/^\/403\/.+$/.test(route.path)) return Senarios.unauthorized;
     return Senarios.unknown;
   });
 
@@ -50,4 +51,5 @@ export enum Senarios {
   scheme = 'scheme',
   bill = 'bill',
   unknown = 'unknown',
+  unauthorized = 'unauthorized',
 }
