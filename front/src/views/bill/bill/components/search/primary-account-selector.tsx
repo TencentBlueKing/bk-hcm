@@ -5,7 +5,15 @@ import { Select } from 'bkui-vue';
 import { PropType, computed, defineComponent, ref, watch } from 'vue';
 
 export default defineComponent({
-  props: { modelValue: String as PropType<string>, vendor: Array as PropType<VendorEnum[]> },
+  props: {
+    modelValue: String as PropType<string>,
+    vendor: Array as PropType<VendorEnum[]>,
+    multiple: {
+      type: Boolean,
+      default: true,
+    },
+    autoSelect: Boolean,
+  },
   emits: ['update:modelValue'],
   setup(props, { emit }) {
     const selectedValue = ref(props.modelValue);
@@ -42,8 +50,8 @@ export default defineComponent({
     return () => (
       <Select
         v-model={selectedValue.value}
-        multiple
-        multipleMode='tag'
+        multiple={props.multiple}
+        multipleMode={props.multiple ? 'tag' : ''}
         collapseTags
         clearable
         onScroll-end={handleScrollEnd}

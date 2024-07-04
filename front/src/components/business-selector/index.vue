@@ -1,7 +1,8 @@
 <script lang="ts" setup>
-import { computed, ref, watchEffect, defineExpose, PropType } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { computed, ref, watchEffect, defineExpose, PropType, reactive } from 'vue';
 import { useAccountStore } from '@/store';
+import { SelectColumn } from '@blueking/ediatable';
+import { useRouter, useRoute } from 'vue-router';
 import { isEmpty, localStorageActions } from '@/common/util';
 import { useI18n } from 'vue-i18n';
 
@@ -10,6 +11,7 @@ const props = defineProps({
   authed: Boolean as PropType<boolean>,
   autoSelect: Boolean as PropType<boolean>,
   isAudit: Boolean as PropType<boolean>,
+  isEditable: Boolean as PropType<boolean>,
   multiple: Boolean as PropType<boolean>,
   clearable: Boolean as PropType<boolean>,
   isShowAll: Boolean as PropType<boolean>,
@@ -78,6 +80,13 @@ watchEffect(async () => {
   handleChange(id);
 });
 
+const computedBuinessList = computed(() => {
+  return businessList.value.map(({ name, id }) => ({
+    value: id,
+    label: name,
+  }));
+});
+
 const selectedValue = computed({
   get() {
     if (!isEmpty(props.modelValue)) {
@@ -138,19 +147,37 @@ const handleChange = (val: string | string[]) => {
   router.push({ query });
 };
 
+const rules = reactive([
+  {
+    validator: (value: string) => Boolean(value),
+    message: '请选择业务',
+  },
+]);
+
 defineExpose({
   businessList,
   defaultBusiness,
+  rules,
 });
 </script>
 
 <template>
+  <select-column
+    v-model="selectedValue"
+    v-if="isEditable"
+    :list="computedBuinessList"
+    filterable
+    :loading="loading"
+    :rules="rules"
+  ></select-column>
+
   <bk-select
     v-model="selectedValue"
     :multiple="multiple"
     filterable
     :loading="loading"
     :clearable="clearable"
+    v-else
     @change="handleChange"
   >
     <bk-option v-for="item in businessList" :key="item.id" :value="item.id" :label="item.name" />
