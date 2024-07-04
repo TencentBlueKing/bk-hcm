@@ -21,6 +21,8 @@ package billsummarymain
 
 import (
 	asbillapi "hcm/pkg/api/account-server/bill"
+	"hcm/pkg/api/core"
+	accountset "hcm/pkg/api/core/account-set"
 	dsbillapi "hcm/pkg/api/data-service/bill"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -55,8 +57,55 @@ func (s *service) ListMainAccountSummary(cts *rest.Contexts) (interface{}, error
 			return nil, err
 		}
 	}
-	return s.client.DataService().Global.Bill.ListBillSummaryMain(cts.Kit, &dsbillapi.BillSummaryMainListReq{
+
+	summary, err := s.client.DataService().Global.Bill.ListBillSummaryMain(cts.Kit, &dsbillapi.BillSummaryMainListReq{
 		Filter: expression,
 		Page:   req.Page,
 	})
+	if err != nil {
+		return nil, err
+	}
+	if len(summary.Details) == 0 {
+		return summary, nil
+	}
+
+	ret := &asbillapi.MainAccountSummaryListResult{
+		Count:   0,
+		Details: make([]*asbillapi.MainAccountSummaryResult, 0, len(summary.Details)),
+	}
+
+	accountIDs := make([]string, 0, len(summary.Details))
+	for _, detail := range summary.Details {
+		accountIDs = append(accountIDs, detail.MainAccountID)
+	}
+
+	// fetch account
+	listOpt := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleIn("id", accountIDs),
+		),
+		Page: core.NewDefaultBasePage(),
+	}
+	accountResult, err := s.client.DataService().Global.MainAccount.List(cts.Kit, listOpt)
+	if err != nil {
+		return nil, err
+	}
+
+	accountMap := make(map[string]*accountset.BaseMainAccount, len(accountIDs))
+	for _, detail := range accountResult.Details {
+		accountMap[detail.ID] = detail
+	}
+
+	for _, detail := range summary.Details {
+		account := accountMap[detail.MainAccountID]
+
+		tmp := &asbillapi.MainAccountSummaryResult{
+			BillSummaryMainResult: *detail,
+			MainAccountCloudID:    account.CloudID,
+			MainAccountCloudName:  account.Name,
+		}
+		ret.Details = append(ret.Details, tmp)
+	}
+
+	return ret, nil
 }
