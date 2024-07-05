@@ -14,10 +14,6 @@ export default defineComponent({
     },
     api: Function as PropType<(...args: any) => Promise<BillsSummarySumResData>>,
     payload: Function as PropType<() => object>,
-    adjustData: Object as PropType<{
-      increaseSum: number;
-      decreaseSum: number;
-    }>,
     immediate: Boolean,
   },
   setup(props, { expose }) {
@@ -53,7 +49,9 @@ export default defineComponent({
           <Loading loading={isLoading.value} opacity={1} style={{ minWidth: '80px' }} size='small'>
             <span class={cssModule.money}>
               {props.isAdjust
-                ? props.adjustData.increaseSum
+                ? `￥ ${formatBillCost(amountInfo.value?.cost_map?.increase.RMB?.Cost)}  |  $ ${formatBillCost(
+                    amountInfo.value?.cost_map?.increase.USD?.Cost,
+                  )} `
                 : `￥${formatBillCost(amountInfo.value?.cost_map?.USD?.RMBCost)}`}
             </span>
           </Loading>
@@ -64,7 +62,9 @@ export default defineComponent({
           <Loading loading={isLoading.value} opacity={1} style={{ minWidth: '80px' }} size='small'>
             <span class={cssModule.money}>
               {props.isAdjust
-                ? props.adjustData.decreaseSum
+                ? `￥ ${formatBillCost(amountInfo.value?.cost_map?.decrease.RMB?.Cost)}  |  $ ${formatBillCost(
+                    amountInfo.value?.cost_map?.decrease.USD?.Cost,
+                  )} `
                 : `＄${formatBillCost(amountInfo.value?.cost_map?.USD?.Cost)}`}
             </span>
           </Loading>

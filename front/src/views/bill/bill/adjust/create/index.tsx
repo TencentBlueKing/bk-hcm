@@ -3,7 +3,6 @@ import { Form, Message, Select } from 'bkui-vue';
 import PrimaryAccountSelector from '../../components/search/primary-account-selector';
 import VendorRadioGroup from '@/components/vendor-radio-group';
 import CommonSideslider from '@/components/common-sideslider';
-import Amount from '../../components/amount';
 
 import { useI18n } from 'vue-i18n';
 import AdjustTable from './AdjustTable';
@@ -11,6 +10,7 @@ import useFormModel from '@/hooks/useFormModel';
 import { VendorEnum } from '@/common/constant';
 import { BILLS_CURRENCY } from '@/constants/bill';
 import useBillStore, { UpdateAdjustmentItemParams } from '@/store/useBillStore';
+import AdjustAmount from './AdjustAmount';
 
 const { Option } = Select;
 
@@ -152,7 +152,7 @@ export default defineComponent({
                 </div>
               </Form.FormItem>
               <Form.FormItem label={t('结果预览')}>
-                <Amount isAdjust showType='vertical' adjustData={costSum} />
+                <AdjustAmount adjustData={costSum} currency={formModel.currency as 'RMB' | 'USD'} />
               </Form.FormItem>
             </Form>
           ),
