@@ -130,7 +130,7 @@ watch(
     // 多选
     if (props.multiple) {
       // 未选时, 不用存业务id
-      query[props.bizsKey] = val.length > 0 ? encodedBizs : undefined;
+      query[props.bizsKey] = (val as string[]).length > 0 ? encodedBizs : undefined;
     }
     // 单选
     else {
@@ -144,7 +144,7 @@ watch(
       localStorageActions.remove(props.bizsKey);
     }
     // 记录业务id 到 url 上
-    router.push({ query });
+    router.replace({ ...route, query });
   },
   { deep: true },
 );

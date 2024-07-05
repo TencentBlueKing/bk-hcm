@@ -52,13 +52,13 @@ export default defineComponent({
 
     watch(
       () => props.modelValue,
-      (val) => {
-        selectedValue.value = val;
-      },
+      (val) => (selectedValue.value = val),
+      { deep: true },
     );
 
-    watch(selectedValue, (val) => {
-      router.push({
+    watch(selectedValue, async (val) => {
+      // async/await 避免因异步路由跳转导致取值错误
+      await router.push({
         query: { ...route.query, [BILL_MAIN_ACCOUNTS_KEY]: val.length ? btoa(JSON.stringify(val)) : undefined },
       });
       emit('update:modelValue', val);

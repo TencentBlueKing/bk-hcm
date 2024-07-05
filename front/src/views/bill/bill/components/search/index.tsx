@@ -1,4 +1,4 @@
-import { PropType, computed, defineComponent, ref } from 'vue';
+import { PropType, computed, defineComponent, ref, watch } from 'vue';
 
 import cssModule from './index.module.scss';
 import { Button, DatePicker } from 'bkui-vue';
@@ -95,6 +95,20 @@ export default defineComponent({
       modal.value = getDefaultModal();
       handleSearch();
     };
+
+    // 云厂商变化, 重置一级账号
+    watch(
+      () => modal.value.vendor,
+      () => (modal.value.root_account_id = []),
+      { deep: true },
+    );
+
+    // 一级账号变化, 重置二级账号
+    watch(
+      () => modal.value.root_account_id,
+      () => (modal.value.main_account_id = []),
+      { deep: true },
+    );
 
     expose({ handleSearch });
 

@@ -1,36 +1,38 @@
 import { defineComponent } from 'vue';
 import { Ediatable, HeadColumn } from '@blueking/ediatable';
+import { useI18n } from 'vue-i18n';
 export default defineComponent({
   props: {
     edit: Boolean,
   },
   setup(props, { slots }) {
+    const { t } = useI18n();
     return () => (
       <Ediatable>
         {{
           default: () => (
             <>
               <HeadColumn required minWidth={120} width={450}>
-                调整方式
+                {t('调整方式')}
               </HeadColumn>
               <HeadColumn required minWidth={120} width={450}>
-                产品
+                {t('业务')}
               </HeadColumn>
               <HeadColumn required minWidth={120} width={450}>
-                二级账号
+                {t('二级账号')}
               </HeadColumn>
               <HeadColumn required minWidth={120} width={450}>
-                资源类型
+                {t('资源类型')}
               </HeadColumn>
               <HeadColumn required minWidth={120} width={450}>
-                金额
+                {t('金额')}
               </HeadColumn>
               <HeadColumn minWidth={120} width={450}>
-                备注
+                {t('备注')}
               </HeadColumn>
               {!props.edit && (
                 <HeadColumn minWidth={120} width={450}>
-                  操作
+                  {t('操作')}
                 </HeadColumn>
               )}
             </>
