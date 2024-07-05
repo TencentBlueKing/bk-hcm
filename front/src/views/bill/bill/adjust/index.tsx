@@ -54,12 +54,7 @@ export default defineComponent({
     };
 
     const columns = [
-      {
-        label: '',
-        type: 'selection',
-        width: 32,
-        minWidth: 32,
-      },
+      { type: 'selection', width: 30, minWidth: 30 },
       {
         label: t('更新时间'),
         field: 'updated_at',

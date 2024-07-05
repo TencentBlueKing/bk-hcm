@@ -215,7 +215,7 @@ const isCurRowSelectEnable = (row: any) => {
 </script>
 
 <template>
-  <bk-loading :loading="isLoading">
+  <bk-loading :loading="isLoading" opacity="1">
     <section
       class="flex-row align-items-center"
       :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'"
@@ -259,7 +259,6 @@ const isCurRowSelectEnable = (row: any) => {
 
     <bk-table
       :settings="settings"
-      class="has-selection"
       row-hover="auto"
       remote-pagination
       show-overflow-tooltip

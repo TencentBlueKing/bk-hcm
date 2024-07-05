@@ -218,7 +218,11 @@ export const useTable = (props: IProp) => {
             </section>
           )}
           {slots.tableToolbar?.()}
-          <Loading loading={isLoading.value} class={cssModule['loading-wrapper']} style={{ height: getTableHeight() }}>
+          <Loading
+            loading={isLoading.value}
+            opacity={1}
+            class={cssModule['loading-wrapper']}
+            style={{ height: getTableHeight() }}>
             <Table
               ref={tableRef}
               data={dataList.value}
@@ -235,7 +239,7 @@ export const useTable = (props: IProp) => {
               {{
                 expandRow: (row: any) => slots.expandRow?.(row),
                 empty: () => {
-                  if (isLoading.value) return null;
+                  if (isLoading.value || dataList.value.length) return null;
                   return <Empty />;
                 },
               }}

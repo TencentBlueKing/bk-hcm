@@ -1,5 +1,5 @@
 <template>
-  <Loading :loading="isLoading">
+  <Loading :loading="isLoading" :opacity="1">
     <section
       class="flex-row align-items-center"
       :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'"
@@ -24,7 +24,6 @@
       </div>
     </section>
     <Table
-      class="has-selection"
       :columns="renderColumns"
       :data="datas"
       :settings="settings"
