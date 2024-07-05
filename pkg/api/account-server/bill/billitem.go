@@ -93,7 +93,7 @@ type AdjustmentItemResult struct {
 
 // AdjustmentItemSumReq ...
 type AdjustmentItemSumReq struct {
-	Filter *filter.Expression `json:"filter" validate:"omitempty"`
+	Filter *filter.Expression `json:"filter" validate:"required"`
 }
 
 // Validate	...
