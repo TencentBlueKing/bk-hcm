@@ -66,11 +66,15 @@ export default defineComponent({
      * @param {*} level 需要加载数据的节点的深度，取值为：0, 1, 2
      */
     const loadRemoteData = async (node: any, level: number) => {
+      // TCP, UDP 下无资源, 不需要请求
+      if (TRANSPORT_LAYER_LIST.includes(node?.protocol)) return;
       const depthTypeMap = ['lb', 'listener', 'domain'] as ResourceNodeType[];
 
       // 获取请求 url
       const getUrl = (node: any, level: number) => {
-        const baseUrl = `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${accountStore.bizs}/`;
+        const baseUrl = `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${
+          accountStore.bizs || route.query.bizs || localStorage.getItem('bizs')
+        }/`;
         const typeUrl = !node ? getTypeUrl(depthTypeMap[level]) : getTypeUrl(depthTypeMap[level], node.id);
         return `${baseUrl}${typeUrl}/list`;
 
