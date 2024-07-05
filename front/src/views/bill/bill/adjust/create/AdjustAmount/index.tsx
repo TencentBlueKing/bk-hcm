@@ -1,5 +1,6 @@
 import { PropType, computed, defineComponent } from 'vue';
 import './index.scss';
+import { formatBillCost } from '@/utils';
 
 export default defineComponent({
   props: {
@@ -17,11 +18,11 @@ export default defineComponent({
       <div class={'amount-wrapper'}>
         <span class={'item'}>
           增加：
-          <span class={'money'}>{`${moneySign.value} ${props.adjustData.increaseSum}`}</span>
+          <span class={'money'}>{`${moneySign.value} ${formatBillCost(`${props.adjustData.increaseSum}`)}`}</span>
         </span>
         <span class={'item'}>
           减少：
-          <span class={'money'}>{`${moneySign.value} ${props.adjustData.decreaseSum}`}</span>
+          <span class={'money'}>{`${moneySign.value} ${formatBillCost(`${props.adjustData.decreaseSum}`)}`}</span>
         </span>
       </div>
     );

@@ -4,6 +4,7 @@ import AdjustTypeSelector, { AdjustTypeEnum } from './components/AdjustTypeSelec
 import BusinessSelector from '@/components/business-selector/index.vue';
 import SubAccountSelector from '../../../components/search/sub-account-selector';
 import { VendorEnum } from '@/common/constant';
+import useFormModel from '@/hooks/useFormModel';
 
 export default defineComponent({
   props: {
@@ -30,13 +31,15 @@ export default defineComponent({
       type: Boolean,
     },
   },
-  emits: ['add', 'remove', 'costChange', 'copy'],
+  emits: ['add', 'remove', 'copy', 'change'],
   setup(props, { emit, expose }) {
-    const type = ref(AdjustTypeEnum.Increase);
-    const bk_biz_id = ref('');
-    const main_account_id = ref('');
-    const cost = ref('');
-    const memo = ref('');
+    const { formModel, resetForm, setFormValues } = useFormModel({
+      type: AdjustTypeEnum.Increase,
+      bk_biz_id: '',
+      main_account_id: '',
+      cost: '',
+      memo: '',
+    });
 
     const costRef = ref();
     const memoRef = ref();
@@ -51,26 +54,14 @@ export default defineComponent({
       emit('remove');
     };
 
-    const reset = () => {
-      type.value = AdjustTypeEnum.Increase;
-      bk_biz_id.value = '';
-      main_account_id.value = '';
-      cost.value = '';
-      memo.value = '';
+    const handleCopy = () => {
+      emit('copy', formModel);
     };
 
     watch(
-      [() => props.edit, () => props.editData],
-      ([isEdit, data]) => {
-        if (isEdit) {
-          type.value = data.type;
-          main_account_id.value = data.main_account_id;
-          bk_biz_id.value = data.bk_biz_id;
-          cost.value = data.cost;
-          memo.value = data.memo;
-        } else {
-          reset();
-        }
+      () => props.editData,
+      (data) => {
+        setFormValues(data);
       },
       {
         deep: true,
@@ -78,37 +69,29 @@ export default defineComponent({
       },
     );
 
-    watch([() => cost.value, () => type.value], ([val]) => {
-      emit('costChange', val ? val : 0);
-    });
+    watch(
+      () => formModel,
+      (val) => {
+        emit('change', val);
+      },
+      {
+        deep: true,
+      },
+    );
 
     expose({
       getValue: async () => {
         return await Promise.all([
           costRef.value!.getValue(),
           memoRef.value!.getValue(),
-          // bizIdRef.value!.getValue(),
           mainAccountRef.value!.getValue(),
-        ]).then((data) => {
-          const [cost, memo] = data;
-          return {
-            type: type.value,
-            bk_biz_id: bk_biz_id.value,
-            main_account_id: main_account_id.value,
-            cost,
-            memo,
-          };
+        ]).then(() => {
+          return formModel;
         });
       },
-      reset,
+      reset: resetForm,
       getRowValue: () => {
-        return {
-          type: type.value,
-          bk_biz_id: bk_biz_id.value,
-          main_account_id: main_account_id.value,
-          cost: cost.value,
-          memo: memo.value,
-        };
+        return formModel;
       },
     });
 
@@ -116,15 +99,15 @@ export default defineComponent({
       <>
         <tr>
           <td>
-            <AdjustTypeSelector v-model={type.value} />
+            <AdjustTypeSelector v-model={formModel.type} />
           </td>
           <td>
-            <BusinessSelector v-model={bk_biz_id.value} ref={bizIdRef} isEditable />
+            <BusinessSelector v-model={formModel.bk_biz_id} ref={bizIdRef} isEditable />
           </td>
           <td>
             <SubAccountSelector
               isEditable={true}
-              v-model={main_account_id.value}
+              v-model={formModel.main_account_id}
               ref={mainAccountRef}
               vendor={[props.vendor]}
               rootAccountId={[props.rootAccountId]}
@@ -138,7 +121,7 @@ export default defineComponent({
               type='number'
               precision={3}
               ref={costRef}
-              v-model={cost.value}
+              v-model={formModel.cost}
               rules={[
                 {
                   validator: (value: string) => Boolean(value),
@@ -148,9 +131,17 @@ export default defineComponent({
             />
           </td>
           <td>
-            <InputColumn ref={memoRef} v-model={memo.value} />
+            <InputColumn ref={memoRef} v-model={formModel.memo} />
           </td>
-          {!props.edit && <OperationColumn removeable={props.removeable} onAdd={handleAdd} onRemove={handleRemove} />}
+          {!props.edit && (
+            <OperationColumn
+              removeable={props.removeable}
+              onAdd={handleAdd}
+              onRemove={handleRemove}
+              showCopy
+              onCopy={handleCopy}
+            />
+          )}
         </tr>
       </>
     );

@@ -7,7 +7,7 @@ const bill: RouteRecordRaw[] = [
     component: () => import('@/views/bill/account/account-manage/index'),
     meta: {
       activeKey: 'account-manage',
-      icon: 'hcm-icon bkhcm-icon-host',
+      icon: 'hcm-icon bkhcm-icon-user-8',
     },
   },
   {

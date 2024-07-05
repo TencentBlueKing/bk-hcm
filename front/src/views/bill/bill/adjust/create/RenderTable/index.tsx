@@ -1,4 +1,4 @@
-import { defineComponent } from 'vue';
+import { computed, defineComponent } from 'vue';
 import { Ediatable, HeadColumn } from '@blueking/ediatable';
 import { useI18n } from 'vue-i18n';
 export default defineComponent({
@@ -7,6 +7,13 @@ export default defineComponent({
   },
   setup(props, { slots }) {
     const { t } = useI18n();
+    const OpColumn = computed(() =>
+      props.edit ? null : (
+        <HeadColumn minWidth={120} width={450}>
+          {t('操作')}
+        </HeadColumn>
+      ),
+    );
     return () => (
       <Ediatable>
         {{
@@ -30,11 +37,7 @@ export default defineComponent({
               <HeadColumn minWidth={120} width={450}>
                 {t('备注')}
               </HeadColumn>
-              {!props.edit && (
-                <HeadColumn minWidth={120} width={450}>
-                  {t('操作')}
-                </HeadColumn>
-              )}
+              {OpColumn.value}
             </>
           ),
           data: slots.default?.(),
