@@ -51,6 +51,7 @@ export default defineComponent({
         `vendors/tcloud/target_groups/${tgId}/rules`,
       );
       const listenerItem = rulesRes.data.details[0];
+      if (!listenerItem) return;
       // 请求监听器详情, 获取端口段信息
       const detailRes = await businessStore.detail('listeners', listenerItem.lbl_id);
       loadBalancerStore.setListenerDetailWithTargetGroup(detailRes.data);

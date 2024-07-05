@@ -1,6 +1,7 @@
 import { Ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAccountStore } from '@/store';
+import { getQueryStringParams, localStorageActions } from '@/common/util';
 
 export const useWhereAmI = (): {
   whereAmI: Ref<Senarios>;
@@ -29,7 +30,10 @@ export const useWhereAmI = (): {
    */
   const getBusinessApiPath = () => {
     const { bizs } = useAccountStore();
-    return senario.value === Senarios.business ? `bizs/${bizs}/` : '';
+
+    return senario.value === Senarios.business
+      ? `bizs/${bizs || getQueryStringParams('bizs') || localStorageActions.get('bizs')}/`
+      : '';
   };
 
   return {
