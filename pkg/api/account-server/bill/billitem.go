@@ -91,6 +91,16 @@ type AdjustmentItemResult struct {
 	*bill.AdjustmentItem
 }
 
+// AdjustmentItemSumReq ...
+type AdjustmentItemSumReq struct {
+	Filter *filter.Expression `json:"filter" validate:"omitempty"`
+}
+
+// Validate	...
+func (req *AdjustmentItemSumReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
 // AdjustmentItemSumResult all adjustment item summary get result
 type AdjustmentItemSumResult struct {
 	Count   uint64                                                                       `json:"count"`

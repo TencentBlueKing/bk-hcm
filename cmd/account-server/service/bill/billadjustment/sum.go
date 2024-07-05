@@ -14,7 +14,7 @@ import (
 
 // SumBillAdjustmentItem ...
 func (b *billAdjustmentSvc) SumBillAdjustmentItem(cts *rest.Contexts) (interface{}, error) {
-	req := new(asbillapi.ListBillAdjustmentReq)
+	req := new(asbillapi.AdjustmentItemSumReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
