@@ -140,29 +140,7 @@ export default defineComponent({
       batchOperationRef.value.triggerShow(true);
     };
 
-    const amountFilter = computed(() => ({
-      filter: {
-        op: 'and',
-        rules: [
-          {
-            field: 'bill_year',
-            op: 'eq',
-            value: bill_year.value,
-          },
-          {
-            field: 'bill_month',
-            op: 'eq',
-            value: bill_month.value,
-          },
-        ],
-      },
-    }));
-
-    watch([() => bill_year.value, () => bill_month.value], () => {
-      amountRef.value.refreshAmountInfo();
-    });
-
-    const { CommonTable, getListData, clearFilter } = useTable({
+    const { CommonTable, getListData, clearFilter, filter } = useTable({
       searchOptions: {
         disabled: true,
       },
@@ -182,9 +160,16 @@ export default defineComponent({
             { field: 'bill_month', op: QueryRuleOPEnum.EQ, value: bill_month.value },
           ],
         },
-        immediate: true,
+        immediate: false,
       },
     });
+
+    const amountFilter = computed(() => ({
+      filter: {
+        op: 'and',
+        rules: filter.rules,
+      },
+    }));
 
     const reloadTable = (rules: RulesItem[]) => {
       clearFilter();
@@ -197,6 +182,10 @@ export default defineComponent({
 
     watch([bill_year, bill_month], () => {
       searchRef.value.handleSearch();
+    });
+
+    watch(filter, () => {
+      amountRef.value.refreshAmountInfo();
     });
 
     return () => (
@@ -234,13 +223,7 @@ export default defineComponent({
                 </>
               ),
               operationBarEnd: () => (
-                <Amount
-                  immediate
-                  isAdjust
-                  api={billStore.sum_adjust_items}
-                  payload={() => amountFilter.value}
-                  ref={amountRef}
-                />
+                <Amount isAdjust api={billStore.sum_adjust_items} payload={() => amountFilter.value} ref={amountRef} />
               ),
             }}
           </CommonTable>

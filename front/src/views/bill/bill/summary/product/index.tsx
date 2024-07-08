@@ -53,7 +53,7 @@ export default defineComponent({
 
     return () => (
       <>
-        <Search ref={searchRef} searchKeys={['product_id']} onSearch={reloadTable} autoSelectMainAccount />
+        <Search ref={searchRef} searchKeys={['product_id']} onSearch={reloadTable} />
         <div class='p24' style={{ height: 'calc(100% - 162px)' }}>
           <CommonTable>
             {{
