@@ -43,7 +43,7 @@
     "@blueking/app-select": "^0.0.1-beta.6",
     "@blueking/babel-preset-bk": "^2.1.0-beta4",
     "@blueking/cli-service-webpack": "0.0.0-beta26",
-    "@blueking/ediatable": "^0.0.1-beta.3",
+    "@blueking/ediatable": "^0.0.1-beta.4",
     "@blueking/login-modal": "^1.0.1",
     "@types/lodash": "^4.14.182",
     "@types/qs": "^6.9.7",

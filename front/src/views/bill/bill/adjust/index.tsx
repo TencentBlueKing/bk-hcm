@@ -18,6 +18,9 @@ import { deleteBillsAdjustment, reqBillsAdjustmentList } from '@/api/bill';
 import { timeFormatter } from '@/common/util';
 import { BILL_ADJUSTMENT_STATE__MAP, BILL_ADJUSTMENT_TYPE__MAP, CURRENCY_MAP } from '@/constants';
 import { DoublePlainObject, QueryRuleOPEnum, RulesItem } from '@/typings';
+import useBillStore from '@/store/useBillStore';
+import { computed } from '@vue/reactivity';
+import { formatBillCost } from '@/utils';
 
 export default defineComponent({
   name: 'BillAdjust',
@@ -26,6 +29,8 @@ export default defineComponent({
     const bill_year = inject<Ref<number>>('bill_year');
     const bill_month = inject<Ref<number>>('bill_month');
     const businessMapStore = useBusinessMapStore();
+    const billStore = useBillStore();
+    const amountRef = ref();
 
     const searchRef = ref();
     const createAdjustSideSliderRef = ref();
@@ -87,6 +92,7 @@ export default defineComponent({
       {
         label: t('金额'),
         field: 'cost',
+        render: ({ cell }: any) => formatBillCost(cell),
       },
       {
         label: t('币种'),
@@ -139,6 +145,28 @@ export default defineComponent({
       batchOperationRef.value.triggerShow(true);
     };
 
+    const amountFilter = computed(() => ({
+      filter: {
+        op: 'and',
+        rules: [
+          {
+            field: 'bill_year',
+            op: 'eq',
+            value: bill_year.value,
+          },
+          {
+            field: 'bill_month',
+            op: 'eq',
+            value: bill_month.value,
+          },
+        ],
+      },
+    }));
+
+    watch([() => bill_year.value, () => bill_month.value], () => {
+      amountRef.value.refreshAmountInfo();
+    });
+
     const { CommonTable, getListData, clearFilter } = useTable({
       searchOptions: {
         disabled: true,
@@ -159,7 +187,7 @@ export default defineComponent({
             { field: 'bill_month', op: QueryRuleOPEnum.EQ, value: bill_month.value },
           ],
         },
-        immediate: false,
+        immediate: true,
       },
     });
 
@@ -210,7 +238,15 @@ export default defineComponent({
                   </Button>
                 </>
               ),
-              operationBarEnd: () => <Amount />,
+              operationBarEnd: () => (
+                <Amount
+                  immediate
+                  isAdjust
+                  api={billStore.sum_adjust_items}
+                  payload={() => amountFilter.value}
+                  ref={amountRef}
+                />
+              ),
             }}
           </CommonTable>
         </Panel>

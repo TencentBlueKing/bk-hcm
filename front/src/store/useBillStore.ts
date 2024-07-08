@@ -175,6 +175,13 @@ export default defineStore('billStore', () => {
     return http.patch(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/adjustment_items/${id}`, data);
   };
 
+  /**
+   * 查询调账共计金额
+   */
+  const sum_adjust_items = (data: any) => {
+    return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/adjustment_items/sum`, data);
+  };
+
   return {
     // 一级账号
     root_accounts_add,
@@ -193,6 +200,7 @@ export default defineStore('billStore', () => {
     // 调账
     create_adjustment_items,
     update_adjustment_item,
+    sum_adjust_items,
     // 通用list方法
     list,
   };

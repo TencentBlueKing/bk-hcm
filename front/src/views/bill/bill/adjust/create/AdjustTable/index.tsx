@@ -1,4 +1,4 @@
-import { PropType, defineComponent, inject, ref } from 'vue';
+import { PropType, defineComponent, inject, ref, watch } from 'vue';
 import './index.scss';
 import RenderTable from '../RenderTable';
 import RenderTableRow from '../RenderTableRow';
@@ -28,8 +28,8 @@ export default defineComponent({
   setup(props, { expose }) {
     const Record = (): Partial<AdjustmentItem> => {
       return {
-        product_id: -1,
-        bk_biz_id: -1,
+        product_id: '',
+        bk_biz_id: '',
         type: AdjustTypeEnum.Increase,
         cost: '',
         main_account_id: '',
@@ -37,19 +37,36 @@ export default defineComponent({
       };
     };
     const rowRefs = [ref(null)];
-    const tableData = ref([Record()]);
+    const tableData = ref([props.edit ? props.editData : Record()]);
     const setCostSum = inject<Function>('adjust_bill_set_costSum');
 
-    const handleCostChange = async () => {
-      const tableData = rowRefs.map((row) => row.value.getRowValue());
-      let increaseSum = 0;
-      let decreaseSum = 0;
-      for (const { cost, type } of tableData) {
-        if (type === AdjustTypeEnum.Increase) increaseSum += +cost;
-        else decreaseSum += +cost;
-      }
-      setCostSum(increaseSum, decreaseSum);
-    };
+    watch(
+      () => tableData.value,
+      (arr) => {
+        let increaseSum = 0;
+        let decreaseSum = 0;
+        for (const { cost, type } of arr) {
+          if (type === AdjustTypeEnum.Increase) increaseSum += +cost;
+          else decreaseSum += +cost;
+        }
+        setCostSum(increaseSum, decreaseSum);
+      },
+      {
+        deep: true,
+      },
+    );
+
+    watch(
+      [() => props.edit, () => props.editData],
+      ([isEdit, data]) => {
+        tableData.value = [isEdit ? data : Record()];
+        rowRefs.map((rowRef) => rowRef.value?.reset());
+      },
+      {
+        immediate: true,
+        deep: true,
+      },
+    );
 
     expose({
       getValue: async () => {
@@ -57,7 +74,7 @@ export default defineComponent({
       },
       reset: () => {
         tableData.value = [Record()];
-        rowRefs.map((row) => row.value.reset());
+        rowRefs.map((rowRef) => rowRef.value.reset());
       },
     });
 
@@ -67,10 +84,9 @@ export default defineComponent({
           {tableData.value.map((item, idx) => (
             <RenderTableRow
               edit={props.edit}
-              editData={props.edit ? props.editData : item}
+              editData={item}
               vendor={props.vendor}
               rootAccountId={props.rootAccountId}
-              onCostChange={handleCostChange}
               onAdd={() => {
                 tableData.value.push(Record());
                 rowRefs.push(ref(null));
@@ -81,6 +97,9 @@ export default defineComponent({
               }}
               onCopy={() => {
                 tableData.value.splice(idx, 0, tableData.value[idx]);
+              }}
+              onChange={(val) => {
+                tableData.value[idx] = val;
               }}
               removeable={tableData.value.length < 2}
               ref={rowRefs[idx]}

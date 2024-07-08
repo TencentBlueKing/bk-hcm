@@ -101,8 +101,8 @@ export interface AdjustmentItem {
   id?: string; // 调账id
   main_account_id: string; // 所属主账号id
   vendor: string; // 云厂商
-  product_id: number; // 业务id
-  bk_biz_id?: number; // 业务id
+  product_id: string | number; // 业务id
+  bk_biz_id?: string | number; // 业务id
   bill_year: number; // 所属年份
   bill_month: number; // 所属月份
   bill_day: number; // 所属日期
