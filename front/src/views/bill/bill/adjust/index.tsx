@@ -210,7 +210,7 @@ export default defineComponent({
             style={{ padding: 0, boxShadow: 'none' }}
           />
         </Panel>
-        <Panel class='mt12'>
+        <Panel class='mt12' style={{ height: 'calc(100% - 159px)' }}>
           <CommonTable>
             {{
               operation: () => (

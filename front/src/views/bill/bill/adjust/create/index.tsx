@@ -1,4 +1,4 @@
-import { PropType, Ref, defineComponent, inject, provide, reactive, ref, watch } from 'vue';
+import { PropType, Ref, defineComponent, inject, nextTick, provide, reactive, ref, watch } from 'vue';
 import { Form, Message, Select } from 'bkui-vue';
 import PrimaryAccountSelector from '../../components/search/primary-account-selector';
 import VendorRadioGroup from '@/components/vendor-radio-group';
@@ -44,6 +44,9 @@ export default defineComponent({
 
     const triggerShow = (v: boolean) => {
       isShow.value = v;
+      nextTick(() => {
+        formRef.value.clearValidate();
+      });
     };
     const costSum = reactive({
       increaseSum: 0,
@@ -69,6 +72,8 @@ export default defineComponent({
               bill_year: bill_year.value,
               bill_month: bill_month.value,
               ...formModel,
+              product_id: !!row.product_id ? row.product_id : undefined,
+              bk_biz_id: !!row.bk_biz_id ? row.bk_biz_id : undefined,
             };
           }),
         };
@@ -112,6 +117,12 @@ export default defineComponent({
       },
     );
 
+    // 云厂商变更，重置一级账号
+    watch(
+      () => formModel.vendor,
+      () => (formModel.root_account_id = ''),
+    );
+
     return () => (
       <CommonSideslider
         v-model:isShow={isShow.value}
@@ -129,7 +140,7 @@ export default defineComponent({
                 <PrimaryAccountSelector
                   v-model={formModel.root_account_id}
                   multiple={false}
-                  vendor={[formModel.vendor]}
+                  vendor={formModel.vendor}
                   autoSelect={!props.edit}
                 />
               </Form.FormItem>

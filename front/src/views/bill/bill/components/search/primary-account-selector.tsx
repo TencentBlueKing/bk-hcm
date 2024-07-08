@@ -7,7 +7,7 @@ import { PropType, computed, defineComponent, ref, watch } from 'vue';
 export default defineComponent({
   props: {
     modelValue: String as PropType<string>,
-    vendor: Array as PropType<VendorEnum[]>,
+    vendor: [String, Array] as PropType<VendorEnum | VendorEnum[]>,
     multiple: {
       type: Boolean,
       default: true,
@@ -17,13 +17,15 @@ export default defineComponent({
   emits: ['update:modelValue'],
   setup(props, { emit }) {
     const selectedValue = ref(props.modelValue);
-    const isMulVendor = computed(() => Array.isArray(props.vendor) && props.vendor.length);
+    const isMulVendor = computed(() => Array.isArray(props.vendor));
 
     const { dataList, isDataLoad, handleScrollEnd, handleRefresh } = useSingleList({
       url: '/api/v1/account/root_accounts/list',
       rules: () => {
-        if (!props.vendor || !isMulVendor.value) return [];
-        return [{ field: 'vendor', op: QueryRuleOPEnum.IN, value: props.vendor }];
+        if (!props.vendor.length) return [];
+        return [
+          { field: 'vendor', op: isMulVendor.value ? QueryRuleOPEnum.IN : QueryRuleOPEnum.EQ, value: props.vendor },
+        ];
       },
       immediate: true,
     });
