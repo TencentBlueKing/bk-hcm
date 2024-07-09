@@ -34,7 +34,7 @@ func main() {
 
 	opts := options.InitOptions()
 	if err := app.Run(opts); err != nil {
-		fmt.Fprintf(os.Stderr, "start hc server failed, err: %v", err)
+		fmt.Fprintf(os.Stderr, "start cloud server failed, err: %v", err)
 		logs.CloseLogs()
 		os.Exit(1)
 	}
