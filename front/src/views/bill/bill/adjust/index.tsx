@@ -1,4 +1,4 @@
-import { defineComponent, ref, inject, watch, Ref } from 'vue';
+import { defineComponent, ref, inject, watch, Ref, onMounted } from 'vue';
 
 import { Button, Message } from 'bkui-vue';
 import { Plus } from 'bkui-vue/lib/icon';
@@ -16,15 +16,23 @@ import { useTable } from '@/hooks/useTable/useTable';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import { deleteBillsAdjustment, reqBillsAdjustmentList } from '@/api/bill';
 import { timeFormatter } from '@/common/util';
-import { BILL_ADJUSTMENT_STATE__MAP, BILL_ADJUSTMENT_TYPE__MAP, CURRENCY_MAP } from '@/constants';
+import {
+  BILL_ADJUSTMENT_STATE__MAP,
+  BILL_ADJUSTMENT_TYPE__MAP,
+  BILL_BIZS_KEY,
+  BILL_MAIN_ACCOUNTS_KEY,
+  CURRENCY_MAP,
+} from '@/constants';
 import { DoublePlainObject, QueryRuleOPEnum, RulesItem } from '@/typings';
 import useBillStore from '@/store/useBillStore';
 import { computed } from '@vue/reactivity';
 import { formatBillCost } from '@/utils';
+import { useRoute } from 'vue-router';
 
 export default defineComponent({
   name: 'BillAdjust',
   setup() {
+    const route = useRoute();
     const { t } = useI18n();
     const bill_year = inject<Ref<number>>('bill_year');
     const bill_month = inject<Ref<number>>('bill_month');
@@ -186,6 +194,26 @@ export default defineComponent({
 
     watch(filter, () => {
       amountRef.value.refreshAmountInfo();
+    });
+
+    onMounted(() => {
+      // 只有业务、二级账号有保存的需求
+      const rules = [];
+      if (route.query[BILL_MAIN_ACCOUNTS_KEY]) {
+        rules.push({
+          field: 'main_account_id',
+          op: QueryRuleOPEnum.IN,
+          value: JSON.parse(atob(route.query[BILL_MAIN_ACCOUNTS_KEY] as string)),
+        });
+      }
+      if (route.query[BILL_BIZS_KEY]) {
+        rules.push({
+          field: 'bk_biz_id',
+          op: QueryRuleOPEnum.IN,
+          value: JSON.parse(atob(route.query[BILL_BIZS_KEY] as string)),
+        });
+      }
+      reloadTable(rules);
     });
 
     return () => (
