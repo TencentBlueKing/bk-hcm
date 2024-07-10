@@ -38,7 +38,7 @@ func (b *billAdjustmentSvc) SumBillAdjustmentItem(cts *rest.Contexts) (interface
 			&dsbillapi.BillAdjustmentItemListReq{
 				Filter: req.Filter,
 				Page: &core.BasePage{
-					Start: 0,
+					Start: uint32(offset),
 					Limit: core.DefaultMaxPageLimit,
 				},
 			})

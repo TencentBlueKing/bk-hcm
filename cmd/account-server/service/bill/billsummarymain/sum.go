@@ -70,7 +70,7 @@ func (s *service) SumMainAccountSummary(cts *rest.Contexts) (interface{}, error)
 			cts.Kit, &dsbillapi.BillSummaryMainListReq{
 				Filter: bizFilter,
 				Page: &core.BasePage{
-					Start: 0,
+					Start: uint32(offset),
 					Limit: core.DefaultMaxPageLimit,
 				},
 			})
