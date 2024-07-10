@@ -49,7 +49,7 @@ type Puller interface {
 	EnsurePullTask(
 		kt *kit.Kit, client *client.ClientSet,
 		sd serviced.ServiceDiscover, billSummaryMain *dsbillapi.BillSummaryMainResult) error
-	// 返回的map的key表示某个二级账号某月所有应该同步的天数的账单状态
+	// GetPullTaskList 返回的map的key表示某个二级账号某月所有应该同步的天数的账单状态
 	GetPullTaskList(
 		kt *kit.Kit, client *client.ClientSet,
 		sd serviced.ServiceDiscover, billSummaryMain *dsbillapi.BillSummaryMainResult) (

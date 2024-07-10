@@ -27,7 +27,6 @@ import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/bill"
 	"hcm/pkg/async/action/run"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -124,10 +123,10 @@ func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 	if err != nil {
 		return nil, err
 	}
-	req.AjustmentCost = ajCost
+	req.AdjustmentCost = ajCost
 	if exhangeRate != nil {
-		ajustmentRMBCost := req.AjustmentCost.Mul(*exhangeRate)
-		req.AjustmentRMBCost = &ajustmentRMBCost
+		AdjustmentRMBCost := req.AdjustmentCost.Mul(*exhangeRate)
+		req.AdjustmentRMBCost = &AdjustmentRMBCost
 	}
 
 	if curMonthCost != nil {
@@ -152,7 +151,7 @@ func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 		req.LastMonthRMBCostSynced = lastMonthRMBCostSynced
 	}
 	if isCurMonthAccounted {
-		req.State = constant.MainAccountBillSummaryStateAccounted
+		req.State = enumor.MainAccountBillSummaryStateAccounted
 	}
 	if err := actcli.GetDataService().Global.Bill.UpdateBillSummaryMain(kt.Kit(), req); err != nil {
 		logs.Warnf("failed to update main account bill summary %v, err %s, rid: %s", opt, err.Error(), kt.Kit().Rid)

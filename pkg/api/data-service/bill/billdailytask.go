@@ -33,22 +33,22 @@ import (
 
 // BillDailyPullTaskCreateReq BillDailyPullTask create request
 type BillDailyPullTaskCreateReq struct {
-	RootAccountID      string          `json:"root_account_id" validate:"required"`
-	MainAccountID      string          `json:"main_account_id" validate:"required"`
-	Vendor             enumor.Vendor   `json:"vendor" validate:"required"`
-	ProductID          int64           `json:"product_id" validate:"omitempty"`
-	BkBizID            int64           `json:"bk_biz_id" validate:"omitempty"`
-	BillYear           int             `json:"bill_year" validate:"required"`
-	BillMonth          int             `json:"bill_month" validate:"required"`
-	BillDay            int             `json:"bill_day" validate:"required"`
-	VersionID          int             `json:"version_id" validate:"required"`
-	State              string          `json:"state" vaildate:"required"`
-	Count              int64           `json:"count" validate:"omitempty"`
-	Currency           string          `json:"currency" validate:"omitempty"`
-	Cost               decimal.Decimal `json:"cost" validate:"omitempty"`
-	FlowID             string          `json:"flow_id" validate:"omitempty"`
-	SplitFlowID        string          `json:"split_flow_id" validate:"omitempty"`
-	DailySummaryFlowID string          `json:"daily_summary_flow_id" validate:"omitempty"`
+	RootAccountID      string                      `json:"root_account_id" validate:"required"`
+	MainAccountID      string                      `json:"main_account_id" validate:"required"`
+	Vendor             enumor.Vendor               `json:"vendor" validate:"required"`
+	ProductID          int64                       `json:"product_id" validate:"omitempty"`
+	BkBizID            int64                       `json:"bk_biz_id" validate:"omitempty"`
+	BillYear           int                         `json:"bill_year" validate:"required"`
+	BillMonth          int                         `json:"bill_month" validate:"required"`
+	BillDay            int                         `json:"bill_day" validate:"required"`
+	VersionID          int                         `json:"version_id" validate:"required"`
+	State              enumor.MainRawBillPullState `json:"state" validate:"required"`
+	Count              int64                       `json:"count" validate:"omitempty"`
+	Currency           string                      `json:"currency" validate:"omitempty"`
+	Cost               decimal.Decimal             `json:"cost" validate:"omitempty"`
+	FlowID             string                      `json:"flow_id" validate:"omitempty"`
+	SplitFlowID        string                      `json:"split_flow_id" validate:"omitempty"`
+	DailySummaryFlowID string                      `json:"daily_summary_flow_id" validate:"omitempty"`
 }
 
 // Validate validates BillDailyPullTaskCreateReq
@@ -76,25 +76,25 @@ type BillDailyPullTaskListResult struct {
 
 // BillDailyPullTaskResult BillDailyPullTask result
 type BillDailyPullTaskResult struct {
-	ID                 string           `json:"id,omitempty"`
-	RootAccountID      string           `json:"root_account_id" validate:"required"`
-	MainAccountID      string           `json:"main_account_id" validate:"required"`
-	Vendor             enumor.Vendor    `json:"vendor" validate:"required"`
-	ProductID          int64            `json:"product_id" validate:"omitempty"`
-	BkBizID            int64            `json:"bk_biz_id" validate:"omitempty"`
-	BillYear           int              `json:"bill_year" validate:"required"`
-	BillMonth          int              `json:"bill_month" validate:"required"`
-	BillDay            int              `json:"bill_day" validate:"required"`
-	VersionID          int              `json:"version_id" validate:"required"`
-	State              string           `json:"state" vaildate:"required"`
-	Count              int64            `json:"count" validate:"omitempty"`
-	Currency           string           `json:"currency" validate:"omitempty"`
-	Cost               *decimal.Decimal `json:"cost" validate:"omitempty"`
-	FlowID             string           `json:"flow_id" validate:"omitempty"`
-	SplitFlowID        string           `json:"split_flow_id" validate:"omitempty"`
-	DailySummaryFlowID string           `json:"daily_summary_flow_id" validate:"omitempty"`
-	CreatedAt          types.Time       `json:"created_at,omitempty"`
-	UpdatedAt          types.Time       `json:"updated_at,omitempty"`
+	ID                 string                      `json:"id,omitempty"`
+	RootAccountID      string                      `json:"root_account_id" validate:"required"`
+	MainAccountID      string                      `json:"main_account_id" validate:"required"`
+	Vendor             enumor.Vendor               `json:"vendor" validate:"required"`
+	ProductID          int64                       `json:"product_id" validate:"omitempty"`
+	BkBizID            int64                       `json:"bk_biz_id" validate:"omitempty"`
+	BillYear           int                         `json:"bill_year" validate:"required"`
+	BillMonth          int                         `json:"bill_month" validate:"required"`
+	BillDay            int                         `json:"bill_day" validate:"required"`
+	VersionID          int                         `json:"version_id" validate:"required"`
+	State              enumor.MainRawBillPullState `json:"state" validate:"required"`
+	Count              int64                       `json:"count" validate:"omitempty"`
+	Currency           string                      `json:"currency" validate:"omitempty"`
+	Cost               *decimal.Decimal            `json:"cost" validate:"omitempty"`
+	FlowID             string                      `json:"flow_id" validate:"omitempty"`
+	SplitFlowID        string                      `json:"split_flow_id" validate:"omitempty"`
+	DailySummaryFlowID string                      `json:"daily_summary_flow_id" validate:"omitempty"`
+	CreatedAt          types.Time                  `json:"created_at,omitempty"`
+	UpdatedAt          types.Time                  `json:"updated_at,omitempty"`
 }
 
 // Key get key
@@ -105,23 +105,23 @@ func (b *BillDailyPullTaskResult) Key() string {
 
 // BillDailyPullTaskUpdateReq ...
 type BillDailyPullTaskUpdateReq struct {
-	ID                 string              `json:"id,omitempty" validate:"required"`
-	RootAccountID      string              `json:"root_account_id" validate:"omitempty"`
-	MainAccountID      string              `json:"main_account_id" validate:"omitempty"`
-	Vendor             enumor.Vendor       `json:"vendor" validate:"omitempty"`
-	ProductID          int64               `json:"product_id" validate:"omitempty"`
-	BkBizID            int64               `json:"bk_biz_id" validate:"omitempty"`
-	BillYear           int                 `json:"bill_year" validate:"omitempty"`
-	BillMonth          int                 `json:"bill_month" validate:"omitempty"`
-	BillDay            int                 `json:"bill_day" validate:"omitempty"`
-	VersionID          int                 `json:"version_id" validate:"omitempty"`
-	State              string              `json:"state" vaildate:"omitempty"`
-	Count              int64               `json:"count" validate:"omitempty"`
-	Currency           enumor.CurrencyCode `json:"currency" validate:"omitempty"`
-	Cost               decimal.Decimal     `json:"cost" validate:"omitempty"`
-	FlowID             string              `json:"flow_id" validate:"omitempty"`
-	SplitFlowID        string              `json:"split_flow_id" validate:"omitempty"`
-	DailySummaryFlowID string              `json:"daily_summary_flow_id" validate:"omitempty"`
+	ID                 string                      `json:"id,omitempty" validate:"required"`
+	RootAccountID      string                      `json:"root_account_id" validate:"omitempty"`
+	MainAccountID      string                      `json:"main_account_id" validate:"omitempty"`
+	Vendor             enumor.Vendor               `json:"vendor" validate:"omitempty"`
+	ProductID          int64                       `json:"product_id" validate:"omitempty"`
+	BkBizID            int64                       `json:"bk_biz_id" validate:"omitempty"`
+	BillYear           int                         `json:"bill_year" validate:"omitempty"`
+	BillMonth          int                         `json:"bill_month" validate:"omitempty"`
+	BillDay            int                         `json:"bill_day" validate:"omitempty"`
+	VersionID          int                         `json:"version_id" validate:"omitempty"`
+	State              enumor.MainRawBillPullState `json:"state" validate:"omitempty"`
+	Count              int64                       `json:"count" validate:"omitempty"`
+	Currency           enumor.CurrencyCode         `json:"currency" validate:"omitempty"`
+	Cost               decimal.Decimal             `json:"cost" validate:"omitempty"`
+	FlowID             string                      `json:"flow_id" validate:"omitempty"`
+	SplitFlowID        string                      `json:"split_flow_id" validate:"omitempty"`
+	DailySummaryFlowID string                      `json:"daily_summary_flow_id" validate:"omitempty"`
 }
 
 // Validate validates BillDailyPullTaskUpdateReq

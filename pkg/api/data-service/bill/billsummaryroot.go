@@ -31,27 +31,27 @@ import (
 
 // BillSummaryRootCreateReq create request
 type BillSummaryRootCreateReq struct {
-	RootAccountID             string              `json:"root_account_id" validate:"required"`
-	RootAccountName           string              `json:"root_account_name" validate:"omitempty"`
-	Vendor                    enumor.Vendor       `json:"vendor" validate:"required"`
-	BillYear                  int                 `json:"bill_year" validate:"required"`
-	BillMonth                 int                 `json:"bill_month" validate:"required"`
-	LastSyncedVersion         int                 `json:"last_synced_version" validate:"omitempty"`
-	CurrentVersion            int                 `json:"current_version" validate:"required"`
-	Currency                  enumor.CurrencyCode `json:"currency" validate:"omitempty"`
-	LastMonthCostSynced       decimal.Decimal     `json:"last_month_cost_synced" validate:"omitempty"`
-	LastMonthRMBCostSynced    decimal.Decimal     `json:"last_month_rmb_cost_synced" validate:"omitempty"`
-	CurrentMonthCostSynced    decimal.Decimal     `json:"current_month_cost_synced" validate:"omitempty"`
-	CurrentMonthRMBCostSynced decimal.Decimal     `json:"current_month_rmb_cost_synced" validate:"omitempty"`
-	MonthOnMonthValue         float64             `json:"month_on_month_value" validate:"omitempty"`
-	CurrentMonthCost          decimal.Decimal     `json:"current_month_cost" validate:"omitempty"`
-	CurrentMonthRMBCost       decimal.Decimal     `json:"current_month_rmb_cost" validate:"omitempty"`
-	AjustmentCost             decimal.Decimal     `json:"adjustment_cost" validate:"omitempty"`
-	AjustmentRMBCost          decimal.Decimal     `json:"adjustment_rmb_cost" validate:"omitempty"`
-	Rate                      float64             `json:"rate" validate:"omitempty"`
-	BkBizNum                  uint64              `json:"bk_biz_num" validate:"omitempty"`
-	ProductNum                uint64              `json:"product_num" vaidate:"omitempty"`
-	State                     string              `json:"state" validate:"omitempty"`
+	RootAccountID             string                      `json:"root_account_id" validate:"required"`
+	RootAccountName           string                      `json:"root_account_name" validate:"omitempty"`
+	Vendor                    enumor.Vendor               `json:"vendor" validate:"required"`
+	BillYear                  int                         `json:"bill_year" validate:"required"`
+	BillMonth                 int                         `json:"bill_month" validate:"required"`
+	LastSyncedVersion         int                         `json:"last_synced_version" validate:"omitempty"`
+	CurrentVersion            int                         `json:"current_version" validate:"required"`
+	Currency                  enumor.CurrencyCode         `json:"currency" validate:"omitempty"`
+	LastMonthCostSynced       decimal.Decimal             `json:"last_month_cost_synced" validate:"omitempty"`
+	LastMonthRMBCostSynced    decimal.Decimal             `json:"last_month_rmb_cost_synced" validate:"omitempty"`
+	CurrentMonthCostSynced    decimal.Decimal             `json:"current_month_cost_synced" validate:"omitempty"`
+	CurrentMonthRMBCostSynced decimal.Decimal             `json:"current_month_rmb_cost_synced" validate:"omitempty"`
+	MonthOnMonthValue         float64                     `json:"month_on_month_value" validate:"omitempty"`
+	CurrentMonthCost          decimal.Decimal             `json:"current_month_cost" validate:"omitempty"`
+	CurrentMonthRMBCost       decimal.Decimal             `json:"current_month_rmb_cost" validate:"omitempty"`
+	AdjustmentCost            decimal.Decimal             `json:"adjustment_cost" validate:"omitempty"`
+	AdjustmentRMBCost         decimal.Decimal             `json:"adjustment_rmb_cost" validate:"omitempty"`
+	Rate                      float64                     `json:"rate" validate:"omitempty"`
+	BkBizNum                  uint64                      `json:"bk_biz_num" validate:"omitempty"`
+	ProductNum                uint64                      `json:"product_num" validate:"omitempty"`
+	State                     enumor.RootBillSummaryState `json:"state" validate:"omitempty"`
 }
 
 // Validate ...
@@ -79,52 +79,52 @@ type BillSummaryRootListResult struct {
 
 // BillSummaryRootResult result
 type BillSummaryRootResult struct {
-	ID                        string              `json:"id,omitempty"`
-	RootAccountID             string              `json:"root_account_id" validate:"required"`
-	RootAccountName           string              `json:"root_account_name" validate:"required"`
-	Vendor                    enumor.Vendor       `json:"vendor" validate:"required"`
-	BillYear                  int                 `json:"bill_year" validate:"required"`
-	BillMonth                 int                 `json:"bill_month" validate:"required"`
-	LastSyncedVersion         int                 `json:"last_synced_version" validate:"omitempty"`
-	CurrentVersion            int                 `json:"current_version" validate:"required"`
-	Currency                  enumor.CurrencyCode `json:"currency" validate:"required"`
-	LastMonthCostSynced       decimal.Decimal     `json:"last_month_cost_synced" validate:"omitempty"`
-	LastMonthRMBCostSynced    decimal.Decimal     `json:"last_month_rmb_cost_synced" validate:"omitempty"`
-	CurrentMonthCostSynced    decimal.Decimal     `json:"current_month_cost_synced" validate:"omitempty"`
-	CurrentMonthRMBCostSynced decimal.Decimal     `json:"current_month_rmb_cost_synced" validate:"omitempty"`
-	MonthOnMonthValue         float64             `json:"month_on_month_value" validate:"omitempty"`
-	CurrentMonthCost          decimal.Decimal     `json:"current_month_cost" validate:"omitempty"`
-	CurrentMonthRMBCost       decimal.Decimal     `json:"current_month_rmb_cost" validate:"omitempty"`
-	AjustmentCost             decimal.Decimal     `json:"adjustment_cost" validate:"omitempty"`
-	AjustmentRMBCost          decimal.Decimal     `json:"adjustment_rmb_cost" validate:"omitempty"`
-	Rate                      float64             `json:"rate" validate:"required"`
-	BkBizNum                  uint64              `json:"bk_biz_num" validate:"omitempty"`
-	ProductNum                uint64              `json:"product_num" vaidate:"omitempty"`
-	State                     string              `json:"state" validate:"required"`
-	CreatedAt                 types.Time          `json:"created_at,omitempty"`
-	UpdatedAt                 types.Time          `json:"updated_at,omitempty"`
+	ID                        string                      `json:"id,omitempty"`
+	RootAccountID             string                      `json:"root_account_id" validate:"required"`
+	RootAccountName           string                      `json:"root_account_name" validate:"required"`
+	Vendor                    enumor.Vendor               `json:"vendor" validate:"required"`
+	BillYear                  int                         `json:"bill_year" validate:"required"`
+	BillMonth                 int                         `json:"bill_month" validate:"required"`
+	LastSyncedVersion         int                         `json:"last_synced_version" validate:"omitempty"`
+	CurrentVersion            int                         `json:"current_version" validate:"required"`
+	Currency                  enumor.CurrencyCode         `json:"currency" validate:"required"`
+	LastMonthCostSynced       decimal.Decimal             `json:"last_month_cost_synced" validate:"omitempty"`
+	LastMonthRMBCostSynced    decimal.Decimal             `json:"last_month_rmb_cost_synced" validate:"omitempty"`
+	CurrentMonthCostSynced    decimal.Decimal             `json:"current_month_cost_synced" validate:"omitempty"`
+	CurrentMonthRMBCostSynced decimal.Decimal             `json:"current_month_rmb_cost_synced" validate:"omitempty"`
+	MonthOnMonthValue         float64                     `json:"month_on_month_value" validate:"omitempty"`
+	CurrentMonthCost          decimal.Decimal             `json:"current_month_cost" validate:"omitempty"`
+	CurrentMonthRMBCost       decimal.Decimal             `json:"current_month_rmb_cost" validate:"omitempty"`
+	AdjustmentCost            decimal.Decimal             `json:"adjustment_cost" validate:"omitempty"`
+	AdjustmentRMBCost         decimal.Decimal             `json:"adjustment_rmb_cost" validate:"omitempty"`
+	Rate                      float64                     `json:"rate" validate:"required"`
+	BkBizNum                  uint64                      `json:"bk_biz_num" validate:"omitempty"`
+	ProductNum                uint64                      `json:"product_num" validate:"omitempty"`
+	State                     enumor.RootBillSummaryState `json:"state" validate:"required"`
+	CreatedAt                 types.Time                  `json:"created_at,omitempty"`
+	UpdatedAt                 types.Time                  `json:"updated_at,omitempty"`
 }
 
 // BillSummaryRootUpdateReq update request
 type BillSummaryRootUpdateReq struct {
-	ID                        string              `json:"id,omitempty" validate:"required"`
-	RootAccountName           string              `json:"root_account_name" validate:"omitempty"`
-	LastSyncedVersion         int                 `json:"last_synced_version" validate:"omitempty"`
-	CurrentVersion            int                 `json:"current_version" validate:"omitempty"`
-	Currency                  enumor.CurrencyCode `json:"currency" validate:"omitempty"`
-	LastMonthCostSynced       *decimal.Decimal    `json:"last_month_cost_synced" validate:"omitempty"`
-	LastMonthRMBCostSynced    *decimal.Decimal    `json:"last_month_rmb_cost_synced" validate:"omitempty"`
-	CurrentMonthCostSynced    *decimal.Decimal    `json:"current_month_cost_synced" validate:"omitempty"`
-	CurrentMonthRMBCostSynced *decimal.Decimal    `json:"current_month_rmb_cost_synced" validate:"omitempty"`
-	MonthOnMonthValue         float64             `json:"month_on_month_value" validate:"omitempty"`
-	CurrentMonthCost          *decimal.Decimal    `json:"current_month_cost" validate:"omitempty"`
-	CurrentMonthRMBCost       *decimal.Decimal    `json:"current_month_rmb_cost" validate:"omitempty"`
-	AjustmentCost             *decimal.Decimal    `json:"adjustment_cost" validate:"omitempty"`
-	AjustmentRMBCost          *decimal.Decimal    `json:"adjustment_rmb_cost" validate:"omitempty"`
-	Rate                      float64             `json:"rate" validate:"omitempty"`
-	BkBizNum                  uint64              `json:"bk_biz_num" validate:"omitempty"`
-	ProductNum                uint64              `json:"product_num" vaidate:"omitempty"`
-	State                     string              `json:"state" validate:"omitempty"`
+	ID                        string                      `json:"id,omitempty" validate:"required"`
+	RootAccountName           string                      `json:"root_account_name" validate:"omitempty"`
+	LastSyncedVersion         int                         `json:"last_synced_version" validate:"omitempty"`
+	CurrentVersion            int                         `json:"current_version" validate:"omitempty"`
+	Currency                  enumor.CurrencyCode         `json:"currency" validate:"omitempty"`
+	LastMonthCostSynced       *decimal.Decimal            `json:"last_month_cost_synced" validate:"omitempty"`
+	LastMonthRMBCostSynced    *decimal.Decimal            `json:"last_month_rmb_cost_synced" validate:"omitempty"`
+	CurrentMonthCostSynced    *decimal.Decimal            `json:"current_month_cost_synced" validate:"omitempty"`
+	CurrentMonthRMBCostSynced *decimal.Decimal            `json:"current_month_rmb_cost_synced" validate:"omitempty"`
+	MonthOnMonthValue         float64                     `json:"month_on_month_value" validate:"omitempty"`
+	CurrentMonthCost          *decimal.Decimal            `json:"current_month_cost" validate:"omitempty"`
+	CurrentMonthRMBCost       *decimal.Decimal            `json:"current_month_rmb_cost" validate:"omitempty"`
+	AdjustmentCost            *decimal.Decimal            `json:"adjustment_cost" validate:"omitempty"`
+	AdjustmentRMBCost         *decimal.Decimal            `json:"adjustment_rmb_cost" validate:"omitempty"`
+	Rate                      float64                     `json:"rate" validate:"omitempty"`
+	BkBizNum                  uint64                      `json:"bk_biz_num" validate:"omitempty"`
+	ProductNum                uint64                      `json:"product_num" validate:"omitempty"`
+	State                     enumor.RootBillSummaryState `json:"state" validate:"omitempty"`
 }
 
 // Validate ...

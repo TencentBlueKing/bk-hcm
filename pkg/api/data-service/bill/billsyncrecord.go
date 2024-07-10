@@ -40,15 +40,15 @@ func (r *BatchBillSyncRecordCreateReq) Validate() error {
 
 // BillSyncRecordCreateReq create request
 type BillSyncRecordCreateReq struct {
-	Vendor    enumor.Vendor       `json:"vendor" validate:"required"`
-	BillYear  int                 `json:"bill_year" validate:"required"`
-	BillMonth int                 `json:"bill_month" validate:"required"`
-	State     string              `json:"state" validate:"required"`
-	Currency  enumor.CurrencyCode `json:"currency" validate:"omitempty"`
-	Cost      decimal.Decimal     `json:"cost" validate:"omitempty"`
-	RMBCost   decimal.Decimal     `json:"rmb_cost" validate:"omitempty"`
-	Detail    string              `json:"detail" validate:"omitempty"`
-	Operator  string              `json:"operator" validate:"max=64" `
+	Vendor    enumor.Vendor        `json:"vendor" validate:"required"`
+	BillYear  int                  `json:"bill_year" validate:"required"`
+	BillMonth int                  `json:"bill_month" validate:"required"`
+	State     enumor.BillSyncState `json:"state" validate:"required"`
+	Currency  enumor.CurrencyCode  `json:"currency" validate:"omitempty"`
+	Cost      decimal.Decimal      `json:"cost" validate:"omitempty"`
+	RMBCost   decimal.Decimal      `json:"rmb_cost" validate:"omitempty"`
+	Detail    string               `json:"detail" validate:"omitempty"`
+	Operator  string               `json:"operator" validate:"max=64" `
 }
 
 // Validate ...
@@ -64,13 +64,13 @@ type BillSyncRecordListResult = core.ListResultT[*bill.SyncRecord]
 
 // BillSyncRecordUpdateReq update request
 type BillSyncRecordUpdateReq struct {
-	ID       string              `json:"id"`
-	State    string              `json:"state" validate:"omitempty"`
-	Currency enumor.CurrencyCode `json:"currency" validate:"omitempty"`
-	Cost     *decimal.Decimal    `json:"cost" validate:"omitempty"`
-	RMBCost  *decimal.Decimal    `json:"rmb_cost" validate:"omitempty"`
-	Detail   string              `json:"detail" validate:"omitempty"`
-	Operator string              `json:"operator" validate:"max=64" `
+	ID       string               `json:"id"`
+	State    enumor.BillSyncState `json:"state" validate:"omitempty"`
+	Currency enumor.CurrencyCode  `json:"currency" validate:"omitempty"`
+	Cost     *decimal.Decimal     `json:"cost" validate:"omitempty"`
+	RMBCost  *decimal.Decimal     `json:"rmb_cost" validate:"omitempty"`
+	Detail   string               `json:"detail" validate:"omitempty"`
+	Operator string               `json:"operator" validate:"max=64" `
 }
 
 // Validate ...

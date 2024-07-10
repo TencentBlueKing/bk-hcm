@@ -27,7 +27,6 @@ import (
 	"hcm/pkg/api/data-service/bill"
 	"hcm/pkg/async/action"
 	"hcm/pkg/async/action/run"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -106,7 +105,7 @@ func (act DailySummaryAction) Run(kt run.ExecuteKit, params interface{}) (interf
 		return nil, fmt.Errorf("get pull task invalid length, resp %v", pullTaskList.Details)
 	}
 	task := pullTaskList.Details[0]
-	if task.State == constant.MainAccountRawBillPullStateSplitted {
+	if task.State == enumor.MainAccountRawBillPullStateSplit {
 		if err := act.doDailySummary(kt, opt, task.BillDay); err != nil {
 			logs.Infof("do daily summary for task %v failed, err %s, rid %s", task, err.Error(), kt.Kit().Rid)
 			return nil, err
@@ -164,7 +163,7 @@ func (act DailySummaryAction) changeTaskToAccounted(
 	return actcli.GetDataService().Global.Bill.UpdateBillDailyPullTask(
 		kt.Kit(), &bill.BillDailyPullTaskUpdateReq{
 			ID:    billTask.ID,
-			State: constant.MainAccountRawBillPullStateAccounted,
+			State: enumor.MainAccountRawBillPullStateAccounted,
 		})
 }
 

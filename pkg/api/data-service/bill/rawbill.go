@@ -41,9 +41,9 @@ type RawBillItem struct {
 
 // RawBillCreateReq create request
 type RawBillCreateReq struct {
-	Vendor        enumor.Vendor `json:"vendor" vaildate:"required"`
+	Vendor        enumor.Vendor `json:"vendor" validate:"required"`
 	RootAccountID string        `json:"root_account_id" validate:"required"`
-	AccountID     string        `json:"account_id" vaildate:"required"`
+	AccountID     string        `json:"account_id" validate:"required"`
 	BillYear      string        `json:"bill_year" validate:"required"`
 	BillMonth     string        `json:"bill_month" validate:"required"`
 	Version       string        `json:"version" validate:"required"`
@@ -61,9 +61,9 @@ func (c *RawBillCreateReq) Validate() error {
 // RawBillItemQueryReq request for query bill item content
 // only used in client
 type RawBillItemQueryReq struct {
-	Vendor         enumor.Vendor `json:"vendor" vaildate:"required"`
+	Vendor         enumor.Vendor `json:"vendor" validate:"required"`
 	FirstAccountID string        `json:"first_account_id" validate:"required"`
-	AccountID      string        `json:"account_id" vaildate:"required"`
+	AccountID      string        `json:"account_id" validate:"required"`
 	BillYear       string        `json:"bill_year" validate:"required"`
 	BillMonth      string        `json:"bill_month" validate:"required"`
 	Version        string        `json:"version" validate:"required"`
@@ -81,9 +81,9 @@ type RawBillItemQueryResult struct {
 // RawBillItemNameListReq request for list bill name list
 // only used in client
 type RawBillItemNameListReq struct {
-	Vendor         enumor.Vendor `json:"vendor" vaildate:"required"`
+	Vendor         enumor.Vendor `json:"vendor" validate:"required"`
 	FirstAccountID string        `json:"first_account_id" validate:"required"`
-	AccountID      string        `json:"account_id" vaildate:"required"`
+	AccountID      string        `json:"account_id" validate:"required"`
 	BillYear       string        `json:"bill_year" validate:"required"`
 	BillMonth      string        `json:"bill_month" validate:"required"`
 	Version        string        `json:"version" validate:"required"`

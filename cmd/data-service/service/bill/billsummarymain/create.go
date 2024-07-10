@@ -67,8 +67,8 @@ func (svc *service) BatchCreateBillSummaryMain(cts *rest.Contexts) (interface{},
 			CurrentMonthCost:          &types.Decimal{Decimal: req.CurrentMonthCost},
 			CurrentMonthRMBCost:       &types.Decimal{Decimal: req.CurrentMonthRMBCost},
 			Rate:                      req.Rate,
-			AjustmentCost:             &types.Decimal{Decimal: req.AjustmentCost},
-			AjustmentRMBCost:          &types.Decimal{Decimal: req.AjustmentRMBCost},
+			AdjustmentCost:            &types.Decimal{Decimal: req.AdjustmentCost},
+			AdjustmentRMBCost:         &types.Decimal{Decimal: req.AdjustmentRMBCost},
 			State:                     req.State,
 		}
 		ids, err := svc.dao.AccountBillSummaryMain().CreateWithTx(cts.Kit, txn, []*tablebill.AccountBillSummaryMain{

@@ -32,7 +32,6 @@ import (
 	taskserver "hcm/pkg/api/task-server"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
@@ -150,8 +149,8 @@ func (rac *RootAccountController) pollRootSummaryTask(subKit *kit.Kit, flowID st
 		logs.Warnf("get root account bill summary failed, err %s, rid: %s", err.Error(), subKit.Rid)
 		return flowID
 	}
-	if summary.State != constant.RootAccountBillSummaryStateAccounted &&
-		summary.State != constant.RootAccountBillSummaryStateAccounting {
+	if summary.State != enumor.RootAccountBillSummaryStateAccounted &&
+		summary.State != enumor.RootAccountBillSummaryStateAccounting {
 		return flowID
 	}
 	taskServerNameList, err := getTaskServerKeyList(rac.Sd)
@@ -292,7 +291,7 @@ func (rac *RootAccountController) createNewBillSummary(kt *kit.Kit, billYear, bi
 			BillMonth:         billMonth,
 			LastSyncedVersion: -1,
 			CurrentVersion:    1,
-			State:             constant.RootAccountBillSummaryStateAccounting,
+			State:             enumor.RootAccountBillSummaryStateAccounting,
 		})
 	if err != nil {
 		return fmt.Errorf("failed to create bill summary for root account (%s, %s) in in (%d, %02d), err %s",

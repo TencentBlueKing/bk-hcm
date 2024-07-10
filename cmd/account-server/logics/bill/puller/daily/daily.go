@@ -31,7 +31,6 @@ import (
 	taskserver "hcm/pkg/api/task-server"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -81,6 +80,7 @@ func (dp *DailyPuller) getFilter(billDay int) *filter.Expression {
 	return tools.ExpressionAnd(expressions...)
 }
 
+// EnsurePullTask 检查拉取任务，不存在或失败则新建
 func (dp *DailyPuller) EnsurePullTask(kt *kit.Kit) error {
 	dayList := getBillDays(dp.BillYear, dp.BillMonth, dp.BillDelay, time.Now())
 	if err := dp.ensureDailyPulling(kt, dayList); err != nil {
@@ -100,7 +100,7 @@ func (dp *DailyPuller) createDailyPullTask(kt *kit.Kit, billDay int) error {
 		BillMonth:     dp.BillMonth,
 		BillDay:       billDay,
 		VersionID:     dp.Version,
-		State:         constant.MainAccountRawBillPullStatePulling,
+		State:         enumor.MainAccountRawBillPullStatePulling,
 		Count:         0,
 		Currency:      "",
 		Cost:          decimal.NewFromFloat(0),
@@ -165,7 +165,10 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 			}
 			continue
 		}
-
+		if billTask.State != "pulling" {
+			// 跳过非拉取中状态的任务
+			continue
+		}
 		// 如果已经有拉取task flow，则检查拉取任务是否有问题
 		flow, err := dp.Client.TaskServer().GetFlow(kt, billTask.FlowID)
 		if err != nil {

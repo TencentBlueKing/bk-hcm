@@ -21,6 +21,7 @@ package bill
 
 import (
 	"errors"
+
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/table"
@@ -60,7 +61,7 @@ type AccountBillSyncRecord struct {
 	// BillMonth 出账月份
 	BillMonth int `db:"bill_month" json:"bill_month"`
 	// State 同步状态
-	State string `db:"state" json:"state"`
+	State enumor.BillSyncState `db:"state" json:"state"`
 	// Currency 币种
 	Currency enumor.CurrencyCode `db:"currency" json:"currency"`
 	// Cost 账单

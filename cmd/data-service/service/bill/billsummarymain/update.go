@@ -77,11 +77,11 @@ func (svc *service) UpdateBillSummaryMain(cts *rest.Contexts) (interface{}, erro
 	if req.CurrentMonthRMBCost != nil {
 		billSummaryMain.CurrentMonthRMBCost = &types.Decimal{Decimal: *req.CurrentMonthRMBCost}
 	}
-	if req.AjustmentCost != nil {
-		billSummaryMain.AjustmentCost = &types.Decimal{Decimal: *req.AjustmentCost}
+	if req.AdjustmentCost != nil {
+		billSummaryMain.AdjustmentCost = &types.Decimal{Decimal: *req.AdjustmentCost}
 	}
-	if req.AjustmentRMBCost != nil {
-		billSummaryMain.AjustmentRMBCost = &types.Decimal{Decimal: *req.AjustmentRMBCost}
+	if req.AdjustmentRMBCost != nil {
+		billSummaryMain.AdjustmentRMBCost = &types.Decimal{Decimal: *req.AdjustmentRMBCost}
 	}
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		if err := svc.dao.AccountBillSummaryMain().UpdateByIDWithTx(
