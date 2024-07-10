@@ -57,15 +57,16 @@ func (b *billAdjustmentSvc) doCalculate(adjustmentItems []*billcore.AdjustmentIt
 
 	for _, item := range adjustmentItems {
 		tmpMap := retMap[item.Type]
-		if _, ok := tmpMap[enumor.CurrencyCode(item.Currency)]; !ok {
-			tmpMap[enumor.CurrencyCode(item.Currency)] = &billcore.CostWithCurrency{
+		currencyCode := enumor.CurrencyCode(item.Currency)
+		if _, ok := tmpMap[currencyCode]; !ok {
+			tmpMap[currencyCode] = &billcore.CostWithCurrency{
 				Cost:     decimal.NewFromFloat(0),
 				RMBCost:  decimal.NewFromFloat(0),
-				Currency: enumor.CurrencyCode(item.Currency),
+				Currency: currencyCode,
 			}
 		}
-		tmpMap[enumor.CurrencyCode(item.Currency)].Cost = tmpMap[enumor.CurrencyCode(item.Currency)].Cost.Add(item.Cost)
-		tmpMap[enumor.CurrencyCode(item.Currency)].RMBCost = tmpMap[enumor.CurrencyCode(item.Currency)].RMBCost.Add(item.RMBCost)
+		tmpMap[currencyCode].Cost = tmpMap[currencyCode].Cost.Add(item.Cost)
+		tmpMap[currencyCode].RMBCost = tmpMap[currencyCode].RMBCost.Add(item.RMBCost)
 	}
 	return &asbillapi.AdjustmentItemSumResult{
 		Count:   count,
