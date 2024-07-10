@@ -802,16 +802,16 @@ type ObjectStoreTCloud struct {
 // Validate do validate
 func (ost ObjectStoreTCloud) Validate() error {
 	if len(ost.COSSecretID) == 0 {
-		return errors.New("secret_id cannot be empty")
+		return errors.New("cos secret_id cannot be empty")
 	}
 	if len(ost.COSSecretKey) == 0 {
-		return errors.New("secret_key cannot be empty")
+		return errors.New("cos secret_key cannot be empty")
 	}
 	if len(ost.COSBucketURL) == 0 {
-		return errors.New("bucket_url cannot be empty")
+		return errors.New("cos bucket_url cannot be empty")
 	}
 	if len(ost.UIN) == 0 {
-		return errors.New("uin cannot be empty")
+		return errors.New("cos uin cannot be empty")
 	}
 	return nil
 }
