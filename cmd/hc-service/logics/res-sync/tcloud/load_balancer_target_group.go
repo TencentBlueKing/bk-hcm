@@ -545,10 +545,20 @@ func (cli *client) listTargetsFromDB(kt *kit.Kit, param *SyncBaseParams, opt *Sy
 		listReq.Filter.Rules = append(listReq.Filter.Rules, tools.RuleIn("cloud_lbl_id", param.CloudIDs))
 	}
 	// 获取关系
-	relResp, err := cli.dbCli.Global.LoadBalancer.ListTargetGroupListenerRel(kt, listReq)
-	if err != nil {
-		logs.Errorf("fail to ListTargetGroupListenerRel, err: %v, rid: %s ", err, kt.Rid)
-		return nil, nil, err
+	relResp := new(dataproto.TargetListenerRuleRelListResult)
+	for {
+		relRespTemp, err := cli.dbCli.Global.LoadBalancer.ListTargetGroupListenerRel(kt, listReq)
+		if err != nil {
+			logs.Errorf("fail to ListTargetGroupListenerRel, err: %v, rid: %s ", err, kt.Rid)
+			return nil, nil, err
+		}
+		relResp.Details = append(relResp.Details, relRespTemp.Details...)
+
+		if uint(len(relRespTemp.Details)) < core.DefaultMaxPageLimit {
+			break
+		}
+
+		listReq.Page.Start += uint32(core.DefaultMaxPageLimit)
 	}
 	relMap = make(map[string]*corelb.BaseTargetListenerRuleRel)
 	tgRsMap = make(map[string][]corelb.BaseTarget)
@@ -567,13 +577,23 @@ func (cli *client) listTargetsFromDB(kt *kit.Kit, param *SyncBaseParams, opt *Sy
 	tgIDs := cvt.MapKeyToStringSlice(tgIDMap)
 
 	// 查询对应的rs列表
-	rsList, err := cli.dbCli.Global.LoadBalancer.ListTarget(kt, &core.ListReq{
+	rsList := new(dataproto.TargetListResult)
+	rsReq := &core.ListReq{
 		Filter: tools.ExpressionAnd(tools.RuleIn("target_group_id", tgIDs)),
 		Page:   core.NewDefaultBasePage(),
-	})
-	if err != nil {
-		logs.Errorf("fail to list targets of target group(ids=%v), err: %v, rid: %s", tgIDs, err, kt.Rid)
-		return nil, nil, err
+	}
+	for {
+		rsListTemp, err := cli.dbCli.Global.LoadBalancer.ListTarget(kt, rsReq)
+		if err != nil {
+			logs.Errorf("fail to list targets of target group(ids=%v), err: %v, rid: %s", tgIDs, err, kt.Rid)
+			return nil, nil, err
+		}
+		rsList.Details = append(rsList.Details, rsListTemp.Details...)
+		if uint(len(rsListTemp.Details)) < core.DefaultMaxPageLimit {
+			break
+		}
+
+		rsReq.Page.Start += uint32(core.DefaultMaxPageLimit)
 	}
 	// 按目标组分
 	tgRsMap = classifier.ClassifySlice(rsList.Details, func(rs corelb.BaseTarget) string {
