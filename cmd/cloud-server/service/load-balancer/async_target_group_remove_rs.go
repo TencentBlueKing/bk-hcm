@@ -130,9 +130,9 @@ func (svc *lbSvc) buildRemoveTCloudTarget(kt *kit.Kit, body json.RawMessage, acc
 			}
 			targetIDs = append(targetIDs, item.TargetIDs...)
 		} else {
-			lbIDs = slice.Unique(slice.Map(ruleRelList, func(rel corelb.BaseTargetListenerRuleRel) string {
+			lbIDs = append(lbIDs, slice.Unique(slice.Map(ruleRelList, func(rel corelb.BaseTargetListenerRuleRel) string {
 				return rel.LbID
-			}))
+			}))...)
 			targetGroupIDMap[item.TargetGroupID] = append(targetGroupIDMap[item.TargetGroupID], item.TargetIDs...)
 		}
 	}

@@ -105,6 +105,31 @@ func (svc *lbSvc) buildCreateTCloudTarget(kt *kit.Kit, body json.RawMessage, acc
 		return nil, errf.New(errf.RecordNotFound, "no matching target groups were found")
 	}
 
+	// 按照clb分组targetGroup
+	lbTgsMap := make(map[string][]string)
+	for _, tgID := range tgIDs {
+		// 根据目标组ID，获取目标组绑定的监听器、规则列表
+		ruleRelReq := &core.ListReq{
+			Filter: tools.EqualExpression("target_group_id", tgID),
+			Page:   core.NewDefaultBasePage(),
+		}
+		ruleRelList, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroupListenerRel(kt, ruleRelReq)
+		if err != nil {
+			logs.Errorf("list tcloud listener url rule failed, tgID: %s, err: %v, rid: %s", tgID, err, kt.Rid)
+			return nil, err
+		}
+
+		lbID := "-1"
+		if len(ruleRelList.Details) != 0 {
+			// 已经绑定了监听器及规则，归属某一clb
+			lbID = ruleRelList.Details[0].LbID
+		}
+		if _, exists := lbTgsMap[lbID]; !exists {
+			lbTgsMap[lbID] = make([]string, 0)
+		}
+		lbTgsMap[lbID] = append(lbTgsMap[lbID], tgID)
+	}
+
 	// 根据RS IP获取CVM的云端ID
 	instCloudIDMap := make(map[string]string)
 	switch req.RsType {
@@ -121,55 +146,71 @@ func (svc *lbSvc) buildCreateTCloudTarget(kt *kit.Kit, body json.RawMessage, acc
 		}
 	}
 
-	params := &cslb.TCloudTargetBatchCreateReq{
-		TargetGroups: []*cslb.TCloudBatchAddTargetReq{},
-	}
-	for _, tmpTgID := range tgIDs {
-		tmpTargetReq := &cslb.TCloudBatchAddTargetReq{
-			TargetGroupID: tmpTgID,
-			Targets:       []*dataproto.TargetBaseReq{},
-		}
-		for idx, tmpIP := range req.RsIP {
-			tmpCloudInstID, ok := instCloudIDMap[tmpIP]
-			if !ok {
-				continue
-			}
-			portInt64, err := strconv.ParseInt(req.RsPort[idx], 10, 64)
-			if err != nil {
-				return nil, err
-			}
-			tmpTargetReq.Targets = append(tmpTargetReq.Targets, &dataproto.TargetBaseReq{
-				InstType:    req.RsType,
-				CloudInstID: tmpCloudInstID,
-				Port:        portInt64,
-				Weight:      cvt.ValToPtr(req.RsWeight),
-			})
-		}
-		if len(tmpTargetReq.Targets) == 0 {
+	// 获取到targets
+	targets := make([]*dataproto.TargetBaseReq, 0)
+	for idx, tmpIP := range req.RsIP {
+		tmpCloudInstID, ok := instCloudIDMap[tmpIP]
+		if !ok {
 			continue
 		}
-
-		params.TargetGroups = append(params.TargetGroups, tmpTargetReq)
+		portInt64, err := strconv.ParseInt(req.RsPort[idx], 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		targets = append(targets, &dataproto.TargetBaseReq{
+			InstType:    req.RsType,
+			CloudInstID: tmpCloudInstID,
+			Port:        portInt64,
+			Weight:      cvt.ValToPtr(req.RsWeight),
+		})
+	}
+	if len(targets) == 0 {
+		return nil, fmt.Errorf("target list is empty")
 	}
 
-	if len(params.TargetGroups) == 0 {
-		logs.Errorf("build sops tcloud add target params parse failed, err: %v, accountID: %s, tgIDs: %v, rid: %s",
-			err, accountID, tgIDs, kt.Rid)
-		return nil, errf.NewFromErr(errf.RecordNotFound, fmt.Errorf("build add target param parse empty"))
+	flowStateResults := make([]*core.FlowStateResult, 0)
+	for lbID, lbTgIDs := range lbTgsMap {
+		params := &cslb.TCloudTargetBatchCreateReq{
+			TargetGroups: []*cslb.TCloudBatchAddTargetReq{},
+		}
+		for _, tgID := range lbTgIDs {
+			tmpTargetReq := &cslb.TCloudBatchAddTargetReq{
+				TargetGroupID: tgID,
+				Targets:       targets,
+			}
+
+			params.TargetGroups = append(params.TargetGroups, tmpTargetReq)
+		}
+
+		if len(params.TargetGroups) == 0 {
+			logs.Errorf("build sops tcloud add target params parse failed, err: %v, accountID: %s, lbTgIDs: %v, rid: %s",
+				err, accountID, lbTgIDs, kt.Rid)
+			return nil, errf.NewFromErr(errf.RecordNotFound, fmt.Errorf("build add target param parse empty"))
+		}
+
+		addTargetJSON, err := json.Marshal(params)
+		if err != nil {
+			logs.Errorf("build sops tcloud add target params marshal failed, err: %v, params: %+v, rid: %s",
+				err, params, kt.Rid)
+			return nil, err
+		}
+
+		// 记录标准运维参数转换后的数据，方便排查问题
+		logs.Infof("build sops tcloud add target params jsonmarshal success, lbID: %s, lbTgIDs: %v, addTargetJSON: %s, rid: %s",
+			lbID, lbTgIDs, addTargetJSON, kt.Rid)
+
+		result, err := svc.buildAddTCloudTarget(kt, addTargetJSON, accountID)
+		if err != nil {
+			return nil, err
+		}
+		resultValue, ok := result.(*core.FlowStateResult)
+		if !ok {
+			return nil, fmt.Errorf("buildAddTCloudTarget failed, result: %v", resultValue)
+		}
+		flowStateResults = append(flowStateResults, resultValue)
 	}
 
-	addTargetJSON, err := json.Marshal(params)
-	if err != nil {
-		logs.Errorf("build sops tcloud add target params marshal failed, err: %v, params: %+v, rid: %s",
-			err, params, kt.Rid)
-		return nil, err
-	}
-
-	// 记录标准运维参数转换后的数据，方便排查问题
-	logs.Infof("build sops tcloud add target params jsonmarshal success, tgIDs: %v, addTargetJSON: %s, rid: %s",
-		tgIDs, addTargetJSON, kt.Rid)
-
-	return svc.buildAddTCloudTarget(kt, addTargetJSON, accountID)
+	return flowStateResults, nil
 }
 
 // parseTCloudRsIPForCvmInstIDMap 解析标准运维参数-根据RS IP获取CVM的云端ID
