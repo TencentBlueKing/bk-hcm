@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package objectstore for object store api
 package objectstore
 
 import (
