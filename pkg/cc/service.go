@@ -408,7 +408,7 @@ func (s TaskServerSetting) Validate() error {
 type AccountServerSetting struct {
 	Network    Network              `yaml:"network"`
 	Service    Service              `yaml:"service"`
-	Controller BillControllerOption `yaml:"contorller"`
+	Controller BillControllerOption `yaml:"controller"`
 	Log        LogOption            `yaml:"log"`
 }
 

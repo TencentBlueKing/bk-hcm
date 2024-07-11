@@ -61,3 +61,11 @@ log:
   alsoToStdErr: false
   # log level.
   verbosity: 0
+
+
+# bill controller
+controller:
+  controllerSyncDuration:
+  mainAccountSummarySyncDuration:
+  rootAccountSummarySyncDuration:
+  dailySummarySyncDuration:

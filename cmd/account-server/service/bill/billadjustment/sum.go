@@ -12,7 +12,7 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// SumBillAdjustmentItem ...
+// SumBillAdjustmentItem Summarize the adjustment items bill
 func (b *billAdjustmentSvc) SumBillAdjustmentItem(cts *rest.Contexts) (interface{}, error) {
 	req := new(asbillapi.AdjustmentItemSumReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -38,7 +38,7 @@ func (b *billAdjustmentSvc) SumBillAdjustmentItem(cts *rest.Contexts) (interface
 			&dsbillapi.BillAdjustmentItemListReq{
 				Filter: req.Filter,
 				Page: &core.BasePage{
-					Start: 0,
+					Start: uint32(offset),
 					Limit: core.DefaultMaxPageLimit,
 				},
 			})
