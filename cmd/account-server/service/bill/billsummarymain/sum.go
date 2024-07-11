@@ -33,6 +33,7 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+// SumMainAccountSummary Summarize the main account bill
 func (s *service) SumMainAccountSummary(cts *rest.Contexts) (interface{}, error) {
 	req := new(asbillapi.MainAccountSummarySumReq)
 	if err := cts.DecodeInto(req); err != nil {
