@@ -105,3 +105,75 @@ const (
 	// BillAdjustmentStateUnconfirmed 未确认
 	BillAdjustmentStateUnconfirmed BillAdjustmentState = "unconfirmed"
 )
+
+// RootBillSummaryState 一级账号账单汇总状态枚举
+type RootBillSummaryState string
+
+const (
+	// RootAccountBillSummaryStateAccounting 核算中
+	RootAccountBillSummaryStateAccounting RootBillSummaryState = "accounting"
+	// RootAccountBillSummaryStateAccounted 已核算
+	RootAccountBillSummaryStateAccounted RootBillSummaryState = "accounted"
+	// RootAccountBillSummaryStateConfirmed 已确认
+	RootAccountBillSummaryStateConfirmed RootBillSummaryState = "confirmed"
+	// RootAccountBillSummaryStateSyncing 同步中
+	RootAccountBillSummaryStateSyncing RootBillSummaryState = "syncing"
+	// RootAccountBillSummaryStateSynced 已同步
+	RootAccountBillSummaryStateSynced RootBillSummaryState = "synced"
+	// RootAccountBillSummaryStateStop 已停止
+	RootAccountBillSummaryStateStop RootBillSummaryState = "stopped"
+)
+
+// MainBillSummaryState  二级账号账单汇总状态
+type MainBillSummaryState string
+
+const (
+	// MainAccountBillSummaryStateAccounting 核算中
+	MainAccountBillSummaryStateAccounting MainBillSummaryState = "accounting"
+
+	// MainAccountBillSummaryStateAccounted 已核算
+	MainAccountBillSummaryStateAccounted MainBillSummaryState = "accounted"
+
+	// MainAccountBillSummaryStateSyncing 同步中
+	MainAccountBillSummaryStateSyncing MainBillSummaryState = "syncing"
+
+	// MainAccountBillSummaryStateSynced 已同步
+	MainAccountBillSummaryStateSynced MainBillSummaryState = "synced"
+
+	// MainAccountBillSummaryStateStop 停止中
+	MainAccountBillSummaryStateStop MainBillSummaryState = "stopped"
+)
+
+// MainRawBillPullState 二级账号账单拉取状态
+type MainRawBillPullState string
+
+const (
+	// MainAccountRawBillPullStatePulling 拉取中
+	MainAccountRawBillPullStatePulling MainRawBillPullState = "pulling"
+
+	// MainAccountRawBillPullStatePulled 已拉取
+	MainAccountRawBillPullStatePulled MainRawBillPullState = "pulled"
+
+	// MainAccountRawBillPullStateSplit 已分账
+	MainAccountRawBillPullStateSplit MainRawBillPullState = "split"
+
+	// MainAccountRawBillPullStateAccounted 已核算
+	MainAccountRawBillPullStateAccounted MainRawBillPullState = "accounted"
+
+	// MainAccountRawBillPullStateStop 停止中
+	MainAccountRawBillPullStateStop MainRawBillPullState = "stopped"
+)
+
+// BillSyncState 云账单同步状态
+type BillSyncState string
+
+const (
+	// BillSyncRecordStateSyncing 同步中
+	BillSyncRecordStateSyncing BillSyncState = "asyncing"
+
+	// BillSyncRecordStateSynced 已同步
+	BillSyncRecordStateSynced BillSyncState = "synced"
+
+	// BillSyncRecordStateFailed 同步失败
+	BillSyncRecordStateFailed BillSyncState = "failed"
+)

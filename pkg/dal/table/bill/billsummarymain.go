@@ -113,12 +113,12 @@ type AccountBillSummaryMain struct {
 	CurrentMonthRMBCost *types.Decimal `db:"current_month_rmb_cost" json:"current_month_rmb_cost"`
 	// Rate 汇率
 	Rate float64 `db:"rate" json:"rate"`
-	// AjustmentCost 实时调账账单
-	AjustmentCost *types.Decimal `db:"adjustment_cost" json:"adjustment_cost"`
-	// AjustmentRMBCost 实时人民币调账账单
-	AjustmentRMBCost *types.Decimal `db:"adjustment_rmb_cost" json:"adjustment_rmb_cost"`
+	// AdjustmentCost 实时调账账单
+	AdjustmentCost *types.Decimal `db:"adjustment_cost" json:"adjustment_cost"`
+	// AdjustmentRMBCost 实时人民币调账账单
+	AdjustmentRMBCost *types.Decimal `db:"adjustment_rmb_cost" json:"adjustment_rmb_cost"`
 	// State 状态
-	State string `db:"state" json:"state"`
+	State enumor.MainBillSummaryState `db:"state" json:"state"`
 	// CreatedAt 创建时间
 	CreatedAt types.Time `db:"created_at" json:"created_at"`
 	// UpdatedAt 更新时间

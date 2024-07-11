@@ -112,7 +112,7 @@ export default defineComponent({
     };
 
     return () => (
-      <div class='common-card-wrap has-selection'>
+      <div class='common-card-wrap'>
         {/* 目标组list */}
         <CommonTable>
           {{
@@ -225,7 +225,7 @@ export default defineComponent({
             </div>
             <SearchSelect class='w400' data={batchDeleteRsSearchData} />
           </div>
-          <Loading loading={isBatchDeleteRsTableLoading.value} class='has-selection'>
+          <Loading loading={isBatchDeleteRsTableLoading.value}>
             <Table data={batchDeleteRsTableData.value} columns={batchDeleteRsTableColumn} rowHeight={32} border='none'>
               {{
                 expandContent: (row: any) => (

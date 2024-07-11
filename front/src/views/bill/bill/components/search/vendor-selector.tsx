@@ -21,14 +21,11 @@ export default defineComponent({
 
     watch(
       () => props.modelValue,
-      (val) => {
-        selectedValue.value = val;
-      },
+      (val) => (selectedValue.value = val),
+      { deep: true },
     );
 
-    watch(selectedValue, (val) => {
-      emit('update:modelValue', val);
-    });
+    watch(selectedValue, (val) => emit('update:modelValue', val), { deep: true });
 
     return () => (
       <Select v-model={selectedValue.value} multiple multipleMode='tag' collapseTags clearable>

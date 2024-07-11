@@ -5,31 +5,38 @@ import { Select } from 'bkui-vue';
 import { PropType, computed, defineComponent, ref, watch } from 'vue';
 
 export default defineComponent({
-  props: { modelValue: String as PropType<string>, vendor: Array as PropType<VendorEnum[]> },
+  props: {
+    modelValue: String as PropType<string>,
+    vendor: [String, Array] as PropType<VendorEnum | VendorEnum[]>,
+    multiple: {
+      type: Boolean,
+      default: true,
+    },
+    autoSelect: Boolean,
+  },
   emits: ['update:modelValue'],
   setup(props, { emit }) {
     const selectedValue = ref(props.modelValue);
-    const isMulVendor = computed(() => Array.isArray(props.vendor) && props.vendor.length);
+    const isMulVendor = computed(() => Array.isArray(props.vendor));
 
     const { dataList, isDataLoad, handleScrollEnd, handleRefresh } = useSingleList({
       url: '/api/v1/account/root_accounts/list',
       rules: () => {
-        if (!props.vendor || !isMulVendor.value) return [];
-        return [{ field: 'vendor', op: QueryRuleOPEnum.IN, value: props.vendor }];
+        if (!props.vendor.length) return [];
+        return [
+          { field: 'vendor', op: isMulVendor.value ? QueryRuleOPEnum.IN : QueryRuleOPEnum.EQ, value: props.vendor },
+        ];
       },
       immediate: true,
     });
 
     watch(
       () => props.modelValue,
-      (val) => {
-        selectedValue.value = val;
-      },
+      (val) => (selectedValue.value = val),
+      { deep: true },
     );
 
-    watch(selectedValue, (val) => {
-      emit('update:modelValue', val);
-    });
+    watch(selectedValue, (val) => emit('update:modelValue', val), { deep: true });
 
     watch(
       () => props.vendor,
@@ -42,8 +49,8 @@ export default defineComponent({
     return () => (
       <Select
         v-model={selectedValue.value}
-        multiple
-        multipleMode='tag'
+        multiple={props.multiple}
+        multipleMode={props.multiple ? 'tag' : ''}
         collapseTags
         clearable
         onScroll-end={handleScrollEnd}

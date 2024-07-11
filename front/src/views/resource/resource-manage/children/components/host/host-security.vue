@@ -201,9 +201,7 @@ if (props.data.vendor === 'azure') {
 }
 
 const securityColumns = [
-  {
-    type: 'selection',
-  },
+  { type: 'selection', width: 30, minWidth: 30 },
   {
     label: 'ID',
     field: 'id',

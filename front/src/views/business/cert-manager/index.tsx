@@ -79,13 +79,7 @@ export default defineComponent({
         },
       ];
       if (isResourcePage) {
-        result.unshift({
-          type: 'selection',
-          width: 32,
-          minWidth: 32,
-          onlyShowOnList: true,
-          align: 'right',
-        });
+        result.unshift({ type: 'selection', width: 30, minWidth: 30, onlyShowOnList: true });
       }
       return result;
     });
@@ -343,8 +337,8 @@ export default defineComponent({
     });
 
     return () => (
-      <div class={`cert-manager-page${isResourcePage ? ' has-selection' : ''}`}>
-        <div class='common-card-wrap'>
+      <div class='cert-manager-page' style={{ padding: isResourcePage ? '0' : '16px 24px' }}>
+        <div class='common-card-wrap' style={{ padding: isResourcePage ? '0' : '16px 24px' }}>
           <CommonTable>
             {{
               operation: () => (

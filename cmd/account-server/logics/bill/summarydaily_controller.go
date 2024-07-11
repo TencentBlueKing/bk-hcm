@@ -33,7 +33,6 @@ import (
 	taskserver "hcm/pkg/api/task-server"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
@@ -185,7 +184,7 @@ func (msdc *MainSummaryDailyController) syncDailySummary(kt *kit.Kit, billYear, 
 		return err
 	}
 	for _, task := range pullTaskList {
-		if task.State == constant.MainAccountRawBillPullStateSplitted {
+		if task.State == enumor.MainAccountRawBillPullStateSplit {
 			if len(task.DailySummaryFlowID) == 0 {
 				logs.Infof("summary task of day %d main account %v bill should be create", task.BillDay, summary)
 				flowID, err := msdc.createDailySummaryTask(kt, summary, billYear, billMonth, task.BillDay)

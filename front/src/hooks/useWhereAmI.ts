@@ -1,6 +1,7 @@
 import { Ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAccountStore } from '@/store';
+import { getQueryStringParams, localStorageActions } from '@/common/util';
 
 export const useWhereAmI = (): {
   whereAmI: Ref<Senarios>;
@@ -20,6 +21,7 @@ export const useWhereAmI = (): {
     if (/^\/workbench\/.+$/.test(route.path)) return Senarios.workbench;
     if (/^\/scheme\/.+$/.test(route.path)) return Senarios.scheme;
     if (/^\/bill\/.+$/.test(route.path)) return Senarios.bill;
+    if (/^\/403\/.+$/.test(route.path)) return Senarios.unauthorized;
     return Senarios.unknown;
   });
 
@@ -28,7 +30,10 @@ export const useWhereAmI = (): {
    */
   const getBusinessApiPath = () => {
     const { bizs } = useAccountStore();
-    return senario.value === Senarios.business ? `bizs/${bizs}/` : '';
+
+    return senario.value === Senarios.business
+      ? `bizs/${bizs || getQueryStringParams('bizs') || localStorageActions.get('bizs')}/`
+      : '';
   };
 
   return {
@@ -50,4 +55,5 @@ export enum Senarios {
   scheme = 'scheme',
   bill = 'bill',
   unknown = 'unknown',
+  unauthorized = 'unauthorized',
 }

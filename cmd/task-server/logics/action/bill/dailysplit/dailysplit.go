@@ -30,7 +30,6 @@ import (
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/bill"
 	"hcm/pkg/async/action/run"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -115,13 +114,13 @@ func (act DailyAccountSplitAction) Run(kt run.ExecuteKit, params interface{}) (i
 	}
 	task := pullTaskList.Details[0]
 
-	if task.State == constant.MainAccountRawBillPullStatePulled {
+	if task.State == enumor.MainAccountRawBillPullStatePulled {
 		if err := act.doDailySplit(kt, opt, task.BillDay); err != nil {
 			return nil, fmt.Errorf("do splitting for %v day-%d failed, err %s", opt, task.BillDay, err.Error())
 		}
 		if err := act.changeTaskToSplitted(kt, task); err != nil {
 			return nil, fmt.Errorf("update task %s to %s failed, err %s",
-				task.ID, constant.MainAccountRawBillPullStateSplitted, err.Error())
+				task.ID, enumor.MainAccountRawBillPullStateSplit, err.Error())
 		}
 	}
 
@@ -149,7 +148,7 @@ func (act DailyAccountSplitAction) changeTaskToSplitted(
 	return actcli.GetDataService().Global.Bill.UpdateBillDailyPullTask(
 		kt.Kit(), &bill.BillDailyPullTaskUpdateReq{
 			ID:    billTask.ID,
-			State: constant.MainAccountRawBillPullStateSplitted,
+			State: enumor.MainAccountRawBillPullStateSplit,
 		})
 }
 

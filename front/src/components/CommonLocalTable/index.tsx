@@ -112,7 +112,7 @@ export default defineComponent({
             {...(props.tableOptions.extra || {})}>
             {{
               empty: () => {
-                if (props.loading) return null;
+                if (props.loading || renderTableData.value.length) return null;
                 return <Empty />;
               },
             }}

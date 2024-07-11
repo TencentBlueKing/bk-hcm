@@ -56,12 +56,7 @@ export default defineComponent({
     // 表格相关
     const { columns, settings } = useColumns('domain');
     const tableColumns = [
-      {
-        type: 'selection',
-        width: 32,
-        minWidth: 32,
-        align: 'right',
-      },
+      { type: 'selection', width: 30, minWidth: 30 },
       {
         label: t('域名'),
         field: 'domain',
@@ -227,7 +222,7 @@ export default defineComponent({
     };
 
     return () => (
-      <div class='domain-list-page has-selection'>
+      <div class='domain-list-page'>
         <CommonLocalTable
           loading={isLoading.value}
           tableOptions={{

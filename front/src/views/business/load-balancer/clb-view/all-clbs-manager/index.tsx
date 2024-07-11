@@ -137,7 +137,7 @@ export default defineComponent({
       requestOption: {
         type: 'load_balancers/with/delete_protection',
         sortOption: { sort: 'created_at', order: 'DESC' },
-        resolveDataListCb(dataList: any[]) {
+        async resolveDataListCb(dataList: any[]) {
           return asyncGetListenerCount(
             dataList.map((item) => {
               item.lb_type = LB_NETWORK_TYPE_MAP[item.lb_type];
@@ -187,7 +187,7 @@ export default defineComponent({
     );
 
     return () => (
-      <div class='common-card-wrap has-selection'>
+      <div class='common-card-wrap'>
         {/* 负载均衡list */}
         <CommonTable>
           {{

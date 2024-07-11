@@ -32,7 +32,6 @@ import (
 	taskserver "hcm/pkg/api/task-server"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
@@ -182,7 +181,7 @@ func (msdc *MainDailySplitController) syncDailySplit(kt *kit.Kit, billYear, bill
 	}
 	for _, task := range pullTaskList {
 		time.Sleep(time.Millisecond * time.Duration(rand.Intn(defaultSleepMillisecond)))
-		if task.State == constant.MainAccountRawBillPullStatePulled {
+		if task.State == enumor.MainAccountRawBillPullStatePulled {
 			if len(task.SplitFlowID) == 0 {
 				logs.Infof("split task of day %d main account %v bill should be create", task.BillDay, summary)
 				flowID, err := msdc.createDailySplitTask(kt, summary, billYear, billMonth, task.BillDay)

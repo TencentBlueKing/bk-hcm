@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package dailypull ...
 package dailypull
 
 import (
@@ -28,7 +29,6 @@ import (
 	billproto "hcm/pkg/api/data-service/bill"
 	"hcm/pkg/async/action"
 	"hcm/pkg/async/action/run"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -99,13 +99,13 @@ func (act PullDailyBillAction) Run(kt run.ExecuteKit, params interface{}) (inter
 			Count:    result.Count,
 			Currency: result.Currency,
 			Cost:     result.Cost,
-			State:    constant.MainAccountRawBillPullStatePulled,
+			State:    enumor.MainAccountRawBillPullStatePulled,
 		}); err != nil {
 
 		return nil, errf.New(errf.Aborted, err.Error())
 	}
 	logs.Infof("update daily pull task %s to count %d, currency %s, cost %s, state %s, rid: %s",
 		billTask.ID, result.Count, result.Currency, result.Cost,
-		constant.MainAccountRawBillPullStatePulled, kt.Kit().Rid)
+		enumor.MainAccountRawBillPullStatePulled, kt.Kit().Rid)
 	return nil, nil
 }

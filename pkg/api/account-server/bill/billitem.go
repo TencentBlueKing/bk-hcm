@@ -25,6 +25,7 @@ import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/bill"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/runtime/filter"
 )
@@ -88,4 +89,20 @@ type AdjustmentItemResult struct {
 	MainAccountCloudID string `json:"main_account_cloud_id"`
 	MainAccountEmail   string `json:"main_account_email"`
 	*bill.AdjustmentItem
+}
+
+// AdjustmentItemSumReq ...
+type AdjustmentItemSumReq struct {
+	Filter *filter.Expression `json:"filter" validate:"required"`
+}
+
+// Validate ...
+func (req *AdjustmentItemSumReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AdjustmentItemSumResult all adjustment item summary get result
+type AdjustmentItemSumResult struct {
+	Count   uint64                                                                       `json:"count"`
+	CostMap map[enumor.BillAdjustmentType]map[enumor.CurrencyCode]*bill.CostWithCurrency `json:"cost_map"`
 }

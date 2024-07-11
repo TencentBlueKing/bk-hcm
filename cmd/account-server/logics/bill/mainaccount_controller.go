@@ -32,7 +32,6 @@ import (
 	taskserver "hcm/pkg/api/task-server"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
@@ -294,7 +293,7 @@ func (mac *MainAccountController) syncDailyRawBill(kt *kit.Kit) error {
 	if err != nil {
 		return err
 	}
-	if lastBillSummaryMain.State == constant.MainAccountBillSummaryStateAccounting {
+	if lastBillSummaryMain.State == enumor.MainAccountBillSummaryStateAccounting {
 		curPuller, err := puller.GetPuller(lastBillSummaryMain.Vendor)
 		if err != nil {
 			return err
@@ -309,7 +308,7 @@ func (mac *MainAccountController) syncDailyRawBill(kt *kit.Kit) error {
 	if err != nil {
 		return err
 	}
-	if billSummaryMain.State == constant.MainAccountBillSummaryStateAccounting {
+	if billSummaryMain.State == enumor.MainAccountBillSummaryStateAccounting {
 		curPuller, err := puller.GetPuller(billSummaryMain.Vendor)
 		if err != nil {
 			return err
@@ -401,7 +400,7 @@ func (mac *MainAccountController) createNewBillSummary(
 			BillMonth:         billMonth,
 			LastSyncedVersion: billSummary.LastSyncedVersion,
 			CurrentVersion:    billSummary.CurrentVersion,
-			State:             constant.MainAccountBillSummaryStateAccounting,
+			State:             enumor.MainAccountBillSummaryStateAccounting,
 		})
 	if err != nil {
 		return fmt.Errorf("failed to create bill summary for main account (%s, %s, %s) in in (%d, %02d), err %s",
@@ -452,7 +451,7 @@ func (mac *MainAccountController) ensureBillSummary(kt *kit.Kit, billYear, billM
 		req := &dsbillapi.BillSummaryMainUpdateReq{
 			ID:             mainSummary.ID,
 			CurrentVersion: rootSummary.CurrentVersion,
-			State:          constant.MainAccountBillSummaryStateAccounting,
+			State:          enumor.MainAccountBillSummaryStateAccounting,
 		}
 		if err = mac.Client.DataService().Global.Bill.UpdateBillSummaryMain(
 			kt, req); err != nil {

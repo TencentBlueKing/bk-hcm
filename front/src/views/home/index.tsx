@@ -55,7 +55,9 @@ export default defineComponent({
     const isMenuOpen = ref<boolean>(true);
     const language = ref(cookie.parse(document.cookie).blueking_language || 'zh-cn');
 
-    const isNeedSideMenu = computed(() => ![Senarios.resource, Senarios.scheme].includes(whereAmI.value));
+    const isNeedSideMenu = computed(
+      () => ![Senarios.resource, Senarios.scheme, Senarios.unauthorized].includes(whereAmI.value),
+    );
 
     const { hasPagePermission, permissionMsg, logout } = usePagePermissionStore();
 

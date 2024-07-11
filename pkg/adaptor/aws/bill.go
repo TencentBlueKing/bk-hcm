@@ -514,19 +514,14 @@ func (a *Aws) GetMainAccountBillList(kt *kit.Kit, opt *typesBill.AwsMainBillList
 	}
 
 	sql := fmt.Sprintf(QueryBillSQL, "*", billInfo.CloudDatabaseName, billInfo.CloudTableName, where)
+	// 没有指定字段的情况下得到账单顺序会乱，多页的时候会导致账单重复、遗漏
+	sql += " ORDER BY identity_line_item_id,line_item_usage_start_date,line_item_usage_end_date "
 	if opt.Page != nil {
 		sql += fmt.Sprintf(" OFFSET %d LIMIT %d", opt.Page.Offset, opt.Page.Limit)
 	}
 	list, err := a.GetRootAccountAwsAthenaQuery(kt, sql, billInfo)
 	if err != nil {
 		return 0, nil, err
-	}
-	for i, item := range list {
-		bill_usage_account_id := item["line_item_usage_account_id"]
-		if bill_usage_account_id != opt.CloudAccountID {
-			logs.Errorf("@%d: line_item_usage_account_id mismatch, want: %s, bill_id: %s, sql: %s, rid: %s",
-				i, billInfo.RootAccountID, bill_usage_account_id, sql, kt.Rid)
-		}
 	}
 	return total, list, nil
 }

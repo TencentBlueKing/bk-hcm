@@ -40,7 +40,7 @@ export default (
   const tableRef = ref(null);
   const isTableLoading = ref(false);
   const columns = [
-    { type: 'selection', width: 32, minWidth: 32, align: 'right' },
+    { type: 'selection', width: 30, minWidth: 30 },
     {
       label: '内网IP',
       render({ data }: any) {

@@ -22,6 +22,7 @@ package bill
 import (
 	"hcm/pkg/api/core"
 	billcore "hcm/pkg/api/core/bill"
+	"hcm/pkg/api/data-service/bill"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/runtime/filter"
@@ -56,4 +57,17 @@ func (req *MainAccountSummarySumReq) Validate() error {
 type MainAccountSummarySumResult struct {
 	Count   uint64                                             `json:"count"`
 	CostMap map[enumor.CurrencyCode]*billcore.CostWithCurrency `json:"cost_map"`
+}
+
+// MainAccountSummaryListResult main account summary list result
+type MainAccountSummaryListResult struct {
+	Count   uint64                      `json:"count,omitempty"`
+	Details []*MainAccountSummaryResult `json:"details"`
+}
+
+// MainAccountSummaryResult main account summary get result
+type MainAccountSummaryResult struct {
+	bill.BillSummaryMainResult
+	MainAccountCloudID   string `json:"main_account_cloud_id" validate:"required"`
+	MainAccountCloudName string `json:"main_account_cloud_name" validate:"required"`
 }

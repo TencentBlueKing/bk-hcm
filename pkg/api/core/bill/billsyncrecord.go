@@ -28,15 +28,15 @@ import (
 
 // SyncRecord 同步记录
 type SyncRecord struct {
-	ID        string              `json:"id,omitempty"`
-	Vendor    enumor.Vendor       `json:"vendor"`
-	BillYear  int                 `json:"bill_year"`
-	BillMonth int                 `json:"bill_month"`
-	State     string              `json:"state"`
-	Currency  enumor.CurrencyCode `json:"currency" `
-	Cost      decimal.Decimal     `json:"cost"`
-	RMBCost   decimal.Decimal     `json:"rmb_cost"`
-	Detail    string              `json:"detail"`
-	Operator  string              `json:"operator"`
+	ID        string               `json:"id,omitempty"`
+	Vendor    enumor.Vendor        `json:"vendor"`
+	BillYear  int                  `json:"bill_year"`
+	BillMonth int                  `json:"bill_month"`
+	State     enumor.BillSyncState `json:"state"`
+	Currency  enumor.CurrencyCode  `json:"currency" `
+	Cost      decimal.Decimal      `json:"cost"`
+	RMBCost   decimal.Decimal      `json:"rmb_cost"`
+	Detail    string               `json:"detail"`
+	Operator  string               `json:"operator"`
 	core.Revision
 }

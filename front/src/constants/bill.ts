@@ -51,3 +51,15 @@ export const BILLS_ROOT_ACCOUNT_SUMMARY_STATE_MAP = {
   synced: '已同步',
   stopped: '停止中',
 };
+
+// 币种
+export const BILLS_CURRENCY = [
+  {
+    id: 'USD',
+    name: '美元',
+  },
+  {
+    id: 'RMB',
+    name: '人民币',
+  },
+];

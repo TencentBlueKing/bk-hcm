@@ -1,7 +1,8 @@
 <script lang="ts" setup>
-import { computed, ref, watchEffect, defineExpose, PropType } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { computed, ref, watchEffect, defineExpose, PropType, reactive, watch } from 'vue';
 import { useAccountStore } from '@/store';
+import { SelectColumn } from '@blueking/ediatable';
+import { useRouter, useRoute } from 'vue-router';
 import { isEmpty, localStorageActions } from '@/common/util';
 import { useI18n } from 'vue-i18n';
 
@@ -10,6 +11,7 @@ const props = defineProps({
   authed: Boolean as PropType<boolean>,
   autoSelect: Boolean as PropType<boolean>,
   isAudit: Boolean as PropType<boolean>,
+  isEditable: Boolean as PropType<boolean>,
   multiple: Boolean as PropType<boolean>,
   clearable: Boolean as PropType<boolean>,
   isShowAll: Boolean as PropType<boolean>,
@@ -65,7 +67,6 @@ watchEffect(async () => {
     const urlBizs = route.query[props.bizsKey] as string;
 
     // 优先使用 url 中的业务id, 其次是持久化的, 最后是默认值
-    // 如果是取默认值, 则多选时需要转为数组
     id = urlBizs
       ? JSON.parse(atob(urlBizs))
       : localStorageActions.get(props.bizsKey, (value) => JSON.parse(atob(value))) || id;
@@ -74,8 +75,13 @@ watchEffect(async () => {
   // 设置选中的值
   defaultBusiness.value = id;
   selectedValue.value = id;
-  // 记录业务id 到 url 上
-  handleChange(id);
+});
+
+const computedBuinessList = computed(() => {
+  return businessList.value.map(({ name, id }) => ({
+    value: id,
+    label: name,
+  }));
 });
 
 const selectedValue = computed({
@@ -112,47 +118,62 @@ const selectedValue = computed({
   },
 });
 
-const handleChange = (val: string | string[]) => {
-  if (!props.saveBizs) return;
+// 记录业务id
+watch(
+  selectedValue,
+  (val) => {
+    if (!props.saveBizs) return;
 
-  const query = { ...route.query };
-  const encodedBizs = btoa(JSON.stringify(val));
+    const query = { ...route.query };
+    const encodedBizs = btoa(JSON.stringify(val));
 
-  // 多选
-  if (props.multiple) {
-    // 未选时, 不用存业务id
-    query[props.bizsKey] = val.length > 0 ? encodedBizs : undefined;
-  }
-  // 单选
-  else {
-    query[props.bizsKey] = encodedBizs || undefined;
-  }
+    // 多选
+    if (props.multiple) {
+      // 未选时, 不用存业务id
+      query[props.bizsKey] = (val as string[]).length > 0 ? encodedBizs : undefined;
+    }
+    // 单选
+    else {
+      query[props.bizsKey] = encodedBizs || undefined;
+    }
 
-  // 持久化处理
-  if (query[props.bizsKey]) {
-    localStorageActions.set(props.bizsKey, query[props.bizsKey]);
-  } else {
-    localStorageActions.remove(props.bizsKey);
-  }
-  // 记录业务id 到 url 上
-  router.push({ query });
-};
+    // 持久化处理
+    if (query[props.bizsKey]) {
+      localStorageActions.set(props.bizsKey, query[props.bizsKey]);
+    } else {
+      localStorageActions.remove(props.bizsKey);
+    }
+    // 记录业务id 到 url 上
+    router.replace({ ...route, query });
+  },
+  { deep: true },
+);
+
+const rules = reactive([
+  {
+    validator: (value: string) => Boolean(value),
+    message: '请选择业务',
+  },
+]);
 
 defineExpose({
   businessList,
   defaultBusiness,
+  rules,
 });
 </script>
 
 <template>
-  <bk-select
+  <select-column
     v-model="selectedValue"
-    :multiple="multiple"
+    v-if="isEditable"
+    :list="computedBuinessList"
     filterable
     :loading="loading"
-    :clearable="clearable"
-    @change="handleChange"
-  >
+    :rules="rules"
+  ></select-column>
+
+  <bk-select v-else v-model="selectedValue" :multiple="multiple" filterable :loading="loading" :clearable="clearable">
     <bk-option v-for="item in businessList" :key="item.id" :value="item.id" :label="item.name" />
   </bk-select>
 </template>

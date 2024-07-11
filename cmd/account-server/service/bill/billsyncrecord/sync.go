@@ -21,10 +21,10 @@ package billsyncrecord
 
 import (
 	"fmt"
+
 	"hcm/pkg/api/account-server/bill"
 	"hcm/pkg/api/core"
 	dsbill "hcm/pkg/api/data-service/bill"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -64,7 +64,7 @@ func (b *service) CreateSyncRecord(cts *rest.Contexts) (any, error) {
 				Vendor:    req.Vendor,
 				BillYear:  req.BillYear,
 				BillMonth: req.BillMonth,
-				State:     constant.BillSyncRecordStateSyncing,
+				State:     enumor.BillSyncRecordStateSyncing,
 				Currency:  currency,
 				Cost:      *cost,
 				RMBCost:   *rmbCost,
@@ -128,16 +128,16 @@ func (b *service) collectAllBillSummaryRoot(cts *rest.Contexts, req *bill.BillSy
 			return "", nil, nil, fmt.Errorf("list bill summary root failed, err %s", err.Error())
 		}
 		for _, item := range result.Details {
-			if item.State != constant.RootAccountBillSummaryStateConfirmed {
+			if item.State != enumor.RootAccountBillSummaryStateConfirmed {
 				logs.Errorf("bill summary root %s is state %s, cannot do sync, rid: %s",
 					item.ID, item.State, cts.Kit.Rid)
 				return "", nil, nil, fmt.Errorf("bill summary root %s is state %s, cannot do sync",
 					item.ID, item.State)
 			}
 			cost = cost.Add(item.CurrentMonthCost)
-			cost = cost.Add(item.AjustmentCost)
+			cost = cost.Add(item.AdjustmentCost)
 			rmbCost = rmbCost.Add(item.CurrentMonthRMBCost)
-			rmbCost = rmbCost.Add(item.AjustmentRMBCost)
+			rmbCost = rmbCost.Add(item.AdjustmentRMBCost)
 			if len(item.Currency) != 0 {
 				currency = item.Currency
 			}

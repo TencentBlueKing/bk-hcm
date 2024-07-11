@@ -50,6 +50,7 @@ export default defineComponent({
     };
 
     const { authVerifyData } = useVerify();
+    if (!authVerifyData.value.permissionAction.cloud_selection_recommend) return () => <ErrorPage />;
 
     const handleChangeCountry = async () => {
       clearLastData();
@@ -272,8 +273,6 @@ export default defineComponent({
         });
       }
     });
-
-    if (!authVerifyData.value.permissionAction.cloud_selection_recommend) return () => <ErrorPage />;
 
     return () => (
       <bk-loading loading={generateSchemesLoading.value} opacity='1' style='height: 100%'>

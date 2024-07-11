@@ -1,15 +1,18 @@
-import { Ref, defineComponent, inject, ref, watch } from 'vue';
+import { Ref, defineComponent, inject, onMounted, ref, watch } from 'vue';
 import Search from '../../components/search';
 import Button from '../../components/button';
 import Amount from '../../components/amount';
 import { useTable } from '@/hooks/useTable/useTable';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import { reqBillsMainAccountSummaryList, reqBillsMainAccountSummarySum } from '@/api/bill';
-import { RulesItem } from '@/typings';
+import { QueryRuleOPEnum, RulesItem } from '@/typings';
+import { useRoute } from 'vue-router';
+import { BILL_BIZS_KEY, BILL_MAIN_ACCOUNTS_KEY } from '@/constants';
 
 export default defineComponent({
   name: 'SubAccountTabPanel',
   setup() {
+    const route = useRoute();
     const bill_year = inject<Ref<number>>('bill_year');
     const bill_month = inject<Ref<number>>('bill_month');
 
@@ -47,6 +50,26 @@ export default defineComponent({
 
     watch(filter, () => {
       amountRef.value.refreshAmountInfo();
+    });
+
+    onMounted(() => {
+      // 只有业务、二级账号有保存的需求
+      const rules = [];
+      if (route.query[BILL_MAIN_ACCOUNTS_KEY]) {
+        rules.push({
+          field: 'main_account_id',
+          op: QueryRuleOPEnum.IN,
+          value: JSON.parse(atob(route.query[BILL_MAIN_ACCOUNTS_KEY] as string)),
+        });
+      }
+      if (route.query[BILL_BIZS_KEY]) {
+        rules.push({
+          field: 'bk_biz_id',
+          op: QueryRuleOPEnum.IN,
+          value: JSON.parse(atob(route.query[BILL_BIZS_KEY] as string)),
+        });
+      }
+      reloadTable(rules);
     });
 
     return () => (

@@ -82,13 +82,7 @@ export default defineComponent({
       },
       tableOptions: {
         columns: [
-          {
-            type: 'selection',
-            width: 32,
-            minWidth: 32,
-            onlyShowOnList: true,
-            align: 'right',
-          },
+          { type: 'selection', width: 30, minWidth: 30, onlyShowOnList: true },
           ...columns,
           {
             label: t('操作'),
@@ -171,7 +165,7 @@ export default defineComponent({
     return () => (
       <div class='listener-list-page'>
         {/* 监听器list */}
-        <CommonTable class='has-selection'>
+        <CommonTable>
           {{
             operation: () => (
               <div class={'flex-row align-item-center'}>
