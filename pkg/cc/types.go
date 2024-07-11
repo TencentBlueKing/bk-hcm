@@ -820,10 +820,10 @@ var (
 
 // BillControllerOption bill controller option
 type BillControllerOption struct {
-	ControllerSyncDuration         *time.Duration `yaml:"controller_sync_duration,omitempty"`
-	MainAccountSummarySyncDuration *time.Duration `yaml:"main_account_summary_sync_duration,omitempty"`
-	RootAccountSummarySyncDuration *time.Duration `yaml:"root_account_summary_sync_duration,omitempty"`
-	DailySummarySyncDuration       *time.Duration `yaml:"daily_summary_sync_duration,omitempty"`
+	ControllerSyncDuration         *time.Duration `yaml:"controllerSyncDuration,omitempty"`
+	MainAccountSummarySyncDuration *time.Duration `yaml:"mainAccountSummarySyncDuration,omitempty"`
+	RootAccountSummarySyncDuration *time.Duration `yaml:"rootAccountSummarySyncDuration,omitempty"`
+	DailySummarySyncDuration       *time.Duration `yaml:"dailySummarySyncDuration,omitempty"`
 }
 
 func (bco *BillControllerOption) trySetDefault() {

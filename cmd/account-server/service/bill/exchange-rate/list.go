@@ -36,7 +36,7 @@ func (s *service) ListExchangeRate(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	err := service{}.authorizer.AuthorizeWithPerm(cts.Kit,
+	err := s.authorizer.AuthorizeWithPerm(cts.Kit,
 		meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.AccountBill, Action: meta.Find}})
 	if err != nil {
 		return nil, err
