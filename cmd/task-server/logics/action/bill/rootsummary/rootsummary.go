@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package rootsummary ...
 package rootsummary
 
 import (
@@ -26,7 +27,6 @@ import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/bill"
 	"hcm/pkg/async/action/run"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -96,7 +96,7 @@ func (act RootAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 	bkBizNum := uint64(0)
 	productNum := uint64(0)
 	for _, mainSummary := range mainSummaryList {
-		if mainSummary.State != constant.MainAccountBillSummaryStateAccounted {
+		if mainSummary.State != enumor.MainAccountBillSummaryStateAccounted {
 			isAccounted = false
 		}
 		currency = mainSummary.Currency
@@ -142,9 +142,9 @@ func (act RootAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 		req.MonthOnMonthValue = currentCostSynced.DivRound(lastMonthSyncedCost, 5).InexactFloat64()
 	}
 	if isAccounted {
-		req.State = constant.RootAccountBillSummaryStateAccounted
+		req.State = enumor.RootAccountBillSummaryStateAccounted
 	} else {
-		req.State = constant.RootAccountBillSummaryStateAccounting
+		req.State = enumor.RootAccountBillSummaryStateAccounting
 	}
 	if err := actcli.GetDataService().Global.Bill.UpdateBillSummaryRoot(kt.Kit(), req); err != nil {
 		logs.Warnf("failed to update root account bill summary %v, err %s, rid: %s", opt, err.Error(), kt.Kit().Rid)

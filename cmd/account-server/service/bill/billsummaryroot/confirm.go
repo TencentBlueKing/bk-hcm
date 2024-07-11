@@ -24,7 +24,7 @@ import (
 
 	asbillapi "hcm/pkg/api/account-server/bill"
 	"hcm/pkg/api/data-service/bill"
-	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
@@ -39,8 +39,8 @@ func (s *service) ConfirmRootAccountSummary(cts *rest.Contexts) (interface{}, er
 	if err != nil {
 		return nil, err
 	}
-	if rootSummary.State != constant.RootAccountBillSummaryStateAccounted &&
-		rootSummary.State != constant.RootAccountBillSummaryStateConfirmed {
+	if rootSummary.State != enumor.RootAccountBillSummaryStateAccounted &&
+		rootSummary.State != enumor.RootAccountBillSummaryStateConfirmed {
 		logs.Warnf("bill of root account %s in %d-%02d is in state %s, cannot do confirm",
 			rootSummary.RootAccountID, req.BillYear, req.BillMonth, rootSummary.State)
 		return nil, fmt.Errorf("bill of root account %s %d-%02d is in state %s, cannot do confirm",
@@ -49,7 +49,7 @@ func (s *service) ConfirmRootAccountSummary(cts *rest.Contexts) (interface{}, er
 
 	updateReq := &bill.BillSummaryRootUpdateReq{
 		ID:    rootSummary.ID,
-		State: constant.RootAccountBillSummaryStateConfirmed,
+		State: enumor.RootAccountBillSummaryStateConfirmed,
 	}
 	if err := s.client.DataService().Global.Bill.UpdateBillSummaryRoot(cts.Kit, updateReq); err != nil {
 		logs.Warnf("failed to update root account bill summary %s to version %d state %s, err %s, rid %s",

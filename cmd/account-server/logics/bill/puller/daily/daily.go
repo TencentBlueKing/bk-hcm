@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package daily 每天账单拉取任务
 package daily
 
 import (
@@ -31,7 +32,6 @@ import (
 	taskserver "hcm/pkg/api/task-server"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -39,7 +39,6 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/serviced"
-	"hcm/pkg/tools/slice"
 
 	"github.com/shopspring/decimal"
 )
@@ -81,6 +80,7 @@ func (dp *DailyPuller) getFilter(billDay int) *filter.Expression {
 	return tools.ExpressionAnd(expressions...)
 }
 
+// EnsurePullTask 检查拉取任务，不存在或失败则新建
 func (dp *DailyPuller) EnsurePullTask(kt *kit.Kit) error {
 	dayList := getBillDays(dp.BillYear, dp.BillMonth, dp.BillDelay, time.Now())
 	if err := dp.ensureDailyPulling(kt, dayList); err != nil {
@@ -100,7 +100,7 @@ func (dp *DailyPuller) createDailyPullTask(kt *kit.Kit, billDay int) error {
 		BillMonth:     dp.BillMonth,
 		BillDay:       billDay,
 		VersionID:     dp.Version,
-		State:         constant.MainAccountRawBillPullStatePulling,
+		State:         enumor.MainAccountRawBillPullStatePulling,
 		Count:         0,
 		Currency:      "",
 		Cost:          decimal.NewFromFloat(0),
@@ -128,11 +128,6 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 		})
 	if err != nil {
 		return fmt.Errorf("get pull task for %v failed, err %s", dp, err.Error())
-	}
-	taskServerNameList, err := getTaskServerKeyList(dp.Sd)
-	if err != nil {
-		logs.Warnf("get task server name list failed, err %s", err.Error())
-		return err
 	}
 	billTaskDayMap := make(map[int]struct{})
 	for _, billTask := range billTaskResult.Details {
@@ -165,7 +160,10 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 			}
 			continue
 		}
-
+		if billTask.State != enumor.MainAccountRawBillPullStatePulling {
+			// 跳过非拉取中状态的任务
+			continue
+		}
 		// 如果已经有拉取task flow，则检查拉取任务是否有问题
 		flow, err := dp.Client.TaskServer().GetFlow(kt, billTask.FlowID)
 		if err != nil {
@@ -175,18 +173,7 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 			return dp.createNewPullTask(kt, billTask)
 		}
 		// 如果flow失败了或者flow找不到了，则重新创建一个新的flow
-		if flow.State == enumor.FlowFailed ||
-			flow.State == enumor.FlowCancel ||
-			(flow.State == enumor.FlowScheduled &&
-				flow.Worker != nil &&
-				!slice.IsItemInSlice[string](taskServerNameList, *flow.Worker)) {
-
-			if flow.State == enumor.FlowScheduled {
-				if err := dp.Client.TaskServer().CancelFlow(kt, flow.ID); err != nil {
-					logs.Warnf("cancel flow %v failed, err %s, rid: %s", flow, err.Error(), kt.Rid)
-					continue
-				}
-			}
+		if flow.State == enumor.FlowFailed || flow.State == enumor.FlowCancel {
 			return dp.createNewPullTask(kt, billTask)
 		}
 	}
@@ -200,7 +187,6 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 			logs.Infof("create pull task for %v day %d successfully, rid: %s", dp, day, kt.Rid)
 		}
 	}
-
 	return nil
 }
 

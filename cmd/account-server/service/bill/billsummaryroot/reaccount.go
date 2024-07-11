@@ -26,7 +26,7 @@ import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/bill"
 	"hcm/pkg/client"
-	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -45,9 +45,9 @@ func (s *service) ReaccountRootAccountSummary(cts *rest.Contexts) (interface{}, 
 		return nil, err
 	}
 
-	if rootSummary.State != constant.RootAccountBillSummaryStateAccounted &&
-		rootSummary.State != constant.RootAccountBillSummaryStateConfirmed &&
-		rootSummary.State != constant.RootAccountBillSummaryStateSynced {
+	if rootSummary.State != enumor.RootAccountBillSummaryStateAccounted &&
+		rootSummary.State != enumor.RootAccountBillSummaryStateConfirmed &&
+		rootSummary.State != enumor.RootAccountBillSummaryStateSynced {
 		logs.Warnf("bill of root account %s in %d-%02d is in state %s, cannot do reaccount",
 			rootSummary.RootAccountID, req.BillYear, req.BillMonth, rootSummary.State)
 		return nil, fmt.Errorf("bill of root account %s %d-%02d is in state %s, cannot do reaccount",
@@ -57,7 +57,7 @@ func (s *service) ReaccountRootAccountSummary(cts *rest.Contexts) (interface{}, 
 	updateReq := &bill.BillSummaryRootUpdateReq{
 		ID:             rootSummary.ID,
 		CurrentVersion: rootSummary.CurrentVersion + 1,
-		State:          constant.RootAccountBillSummaryStateAccounting,
+		State:          enumor.RootAccountBillSummaryStateAccounting,
 	}
 	if err := s.client.DataService().Global.Bill.UpdateBillSummaryRoot(cts.Kit, updateReq); err != nil {
 		logs.Warnf("failed to update root account bill summary %s to version %d state %s, err %s, rid %s",

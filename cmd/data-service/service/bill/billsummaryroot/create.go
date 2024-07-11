@@ -63,8 +63,8 @@ func (svc *service) CreateBillSummaryRoot(cts *rest.Contexts) (interface{}, erro
 			BkBizNum:                  req.BkBizNum,
 			ProductNum:                req.ProductNum,
 			Rate:                      req.Rate,
-			AjustmentCost:             &types.Decimal{Decimal: req.AjustmentCost},
-			AjustmentRMBCost:          &types.Decimal{Decimal: req.AjustmentRMBCost},
+			AdjustmentCost:            &types.Decimal{Decimal: req.AdjustmentCost},
+			AdjustmentRMBCost:         &types.Decimal{Decimal: req.AdjustmentRMBCost},
 			State:                     req.State,
 		}
 		ids, err := svc.dao.AccountBillSummaryRoot().CreateWithTx(

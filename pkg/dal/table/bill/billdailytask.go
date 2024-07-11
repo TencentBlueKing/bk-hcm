@@ -80,7 +80,7 @@ type AccountBillDailyPullTask struct {
 	// VersionID 版本号
 	VersionID int `db:"version_id" json:"version_id"`
 	// State 状态
-	State string `db:"state" json:"state"`
+	State enumor.MainRawBillPullState `db:"state" json:"state"`
 	// Count 账单条目数量
 	Count int64 `db:"count" json:"count"`
 	// Currency 币种

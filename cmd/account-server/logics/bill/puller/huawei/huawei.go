@@ -17,10 +17,12 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package huawei ...
 package huawei
 
 import (
 	"fmt"
+
 	"hcm/cmd/account-server/logics/bill/puller"
 	"hcm/cmd/account-server/logics/bill/puller/daily"
 	"hcm/pkg/api/data-service/bill"
@@ -46,6 +48,7 @@ type HuaweiPuller struct {
 	BillDelay int
 }
 
+// EnsurePullTask 检查拉取任务，如果失败、不存在，则新建
 func (hp *HuaweiPuller) EnsurePullTask(
 	kt *kit.Kit, client *client.ClientSet,
 	sd serviced.ServiceDiscover, billSummaryMain *dsbillapi.BillSummaryMainResult) error {
@@ -72,6 +75,7 @@ func (hp *HuaweiPuller) EnsurePullTask(
 	return dp.EnsurePullTask(kt)
 }
 
+// GetPullTaskList ...
 func (hp *HuaweiPuller) GetPullTaskList(
 	kt *kit.Kit, client *client.ClientSet,
 	sd serviced.ServiceDiscover, billSummaryMain *dsbillapi.BillSummaryMainResult) (
