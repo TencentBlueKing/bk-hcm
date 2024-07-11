@@ -165,7 +165,7 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 			}
 			continue
 		}
-		if billTask.State != "pulling" {
+		if billTask.State != enumor.MainAccountRawBillPullStatePulling {
 			// 跳过非拉取中状态的任务
 			continue
 		}
