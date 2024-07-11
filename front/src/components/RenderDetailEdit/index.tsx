@@ -221,7 +221,7 @@ export default defineComponent({
           <i
             onClick={handleEdit}
             class={`icon hcm-icon bkhcm-icon-bianji account-edit-icon ${
-              !authVerifyData?.value?.permissionAction?.[authId] ? 'hcm-no-permision-text-btn' : ''
+              authId && !authVerifyData?.value?.permissionAction?.[authId] ? 'hcm-no-permision-text-btn' : ''
             }`}
             style={{ marginLeft: '10px', color: '#979BA5' }}
           />
