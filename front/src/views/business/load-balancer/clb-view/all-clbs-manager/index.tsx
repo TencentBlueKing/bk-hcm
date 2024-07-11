@@ -187,7 +187,7 @@ export default defineComponent({
     );
 
     return () => (
-      <div class='common-card-wrap has-selection'>
+      <div class='common-card-wrap'>
         {/* 负载均衡list */}
         <CommonTable>
           {{

@@ -447,10 +447,8 @@ watch(
       <bk-table-column label="弹性公网IP" prop="public_ip" />
     </bk-table>
     <template #footer>
-      <section class="bk-dialog-footer">
-        <bk-button theme="primary" :loading="isBinding" @click="handleConfirmBind">确定</bk-button>
-        <bk-button class="bk-dialog-cancel" :disabled="isBinding" @click="handleToggleShowBind(false)">取消</bk-button>
-      </section>
+      <bk-button theme="primary" :loading="isBinding" @click="handleConfirmBind">确定</bk-button>
+      <bk-button class="bk-dialog-cancel" :disabled="isBinding" @click="handleToggleShowBind(false)">取消</bk-button>
     </template>
   </bk-dialog>
 </template>

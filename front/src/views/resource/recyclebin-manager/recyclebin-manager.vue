@@ -53,10 +53,10 @@
           </span>
           <SearchSelect class="w500 common-search-selector" v-model="searchVal" :data="searchData" />
         </section>
-        <bk-loading :loading="isLoading">
+        <bk-loading :loading="isLoading" opacity="1">
           <bk-table
             :key="selectedType"
-            class="table-layout has-selection"
+            class="table-layout"
             :data="datas"
             remote-pagination
             :pagination="pagination"
@@ -69,7 +69,7 @@
             :is-row-select-enable="isRowSelectEnable"
             show-overflow-tooltip
           >
-            <bk-table-column width="32" min-width="32" align="right" type="selection" />
+            <bk-table-column width="30" min-width="30" type="selection" />
             <bk-table-column :label="`${selectedType === 'cvm' ? '主机' : '硬盘'}ID`" prop="cloud_res_id" sort>
               <template #default="props">
                 <bk-button
@@ -441,8 +441,7 @@ export default defineComponent({
 
     watch(
       () => searchVal.value,
-      (vals, preVals) => {
-        console.log(222, vals, preVals?.length);
+      (vals) => {
         const idx = state.filter.rules.findIndex(({ field }) => field === 'res_id');
         if (idx !== -1) state.filter.rules.splice(idx, 1);
         if (!vals.length) return;
@@ -547,8 +546,6 @@ export default defineComponent({
         });
         // 重新请求列表
         getList();
-      } catch (error) {
-        console.log(error);
       } finally {
         state.showDeleteBox = false;
       }
@@ -586,9 +583,7 @@ export default defineComponent({
       };
     };
     const handleOperate = (type: string, ids?: string[]) => {
-      console.log('selections', ids, selections.value);
       state.selectedIds = ids ? ids : selections.value.map((e) => e.id);
-      console.log('state.selectedIds', state.selectedIds);
       state.type = type;
       state.deleteBoxTitle = `确认要 ${type === 'destroy' ? t('销毁') : t('恢复')}`;
       state.showDeleteBox = true;
@@ -596,13 +591,9 @@ export default defineComponent({
 
     // 资源详情
     const handleShowDialog = async (type: string, id: string, vendor: string) => {
-      try {
-        state.detail = await resourceStore.recycledResourceDetail(`${type}s`, id);
-        state.vendor = vendor;
-        state.showResourceInfo = true;
-      } catch (error) {
-        console.log(error);
-      }
+      state.detail = await resourceStore.recycledResourceDetail(`${type}s`, id);
+      state.vendor = vendor;
+      state.showResourceInfo = true;
     };
 
     const handleClick = (vendor: VendorEnum, id: number, type: 'drive' | 'host') => {

@@ -74,7 +74,7 @@ export default defineComponent({
       },
       reset: () => {
         tableData.value = [Record()];
-        rowRefs.map((rowRef) => rowRef.value.reset());
+        rowRefs.map((rowRef) => rowRef.value?.reset());
       },
     });
 

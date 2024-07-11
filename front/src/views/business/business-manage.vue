@@ -333,24 +333,6 @@ const {
       }
     }
   }
-
-  :deep(.bk-table.has-selection) {
-    .bk-table-head .bk-checkbox {
-      vertical-align: middle;
-    }
-    .bk-table-head tr th:nth-of-type(2) .cell {
-      padding-left: 8px;
-    }
-    .bk-table-body .cell.selection {
-      text-align: right;
-      .bk-checkbox {
-        vertical-align: middle;
-      }
-    }
-    .bk-table-body tr td:nth-of-type(2) .cell {
-      padding-left: 8px;
-    }
-  }
 }
 </style>
 

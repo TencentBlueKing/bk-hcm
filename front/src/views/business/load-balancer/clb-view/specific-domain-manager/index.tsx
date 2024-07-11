@@ -334,7 +334,7 @@ export default defineComponent({
     });
 
     return () => (
-      <div class={'url-list-container has-selection has-breadcrumb'}>
+      <div class={'url-list-container has-breadcrumb'}>
         <CommonTable>
           {{
             operation: () => (
