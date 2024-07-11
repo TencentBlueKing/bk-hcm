@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package mainsummary ...
 package mainsummary
 
 import (
@@ -33,6 +34,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/times"
 
 	"github.com/shopspring/decimal"
@@ -60,7 +62,7 @@ func (act MainAccountSummaryAction) Name() enumor.ActionName {
 	return enumor.ActionMainAccountSummary
 }
 
-// Run run task
+// Run  task
 func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (interface{}, error) {
 	opt, ok := params.(*MainAccountSummaryActionOption)
 	if !ok {
@@ -77,8 +79,6 @@ func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 		return nil, err
 	}
 
-	opProductID := mAccountResult.OpProductID
-	bkBizID := mAccountResult.BkBizID
 	// 计算上月同步成本
 	lastMonthCostSynced, lastMonthRMBCostSynced, err := act.getLastMonthSyncedCost(kt.Kit(), opt)
 	if err != nil {
@@ -87,7 +87,6 @@ func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 
 	// 计算当月已同步成本
 	var curMonthCostSynced *decimal.Decimal
-	isCurMonthAccounted := false
 	if summary.LastSyncedVersion != 0 {
 		curMonthCostSynced, _, _, err = act.getMonthVersionCost(kt.Kit(), opt, summary.LastSyncedVersion)
 		if err != nil {
@@ -102,54 +101,37 @@ func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 	}
 
 	// 获取当月平均汇率
-	var exhangeRate *decimal.Decimal
+	var exchangeRate *decimal.Decimal
 	if len(currency) != 0 {
-		exhangeRate, err = act.getExchangeRate(kt.Kit(), currency, enumor.CurrencyRMB, opt.BillYear, opt.BillMonth)
+		exchangeRate, err = act.getExchangeRate(kt.Kit(), currency, enumor.CurrencyRMB, opt.BillYear, opt.BillMonth)
 		if err != nil {
 			return nil, err
 		}
 	}
-
-	req := &bill.BillSummaryMainUpdateReq{
-		ID:              summary.ID,
-		MainAccountName: mAccountResult.CloudID,
-		RootAccountName: mAccountResult.ParentAccountName,
-		ProductID:       opProductID,
-		BkBizID:         bkBizID,
-		Currency:        currency,
-	}
 	// 计算调账成本
-	_, ajCost, err := act.getAdjustmenSummary(kt.Kit(), opt)
+	_, adjCost, err := act.getAdjustmenSummary(kt.Kit(), opt)
 	if err != nil {
 		return nil, err
 	}
-	req.AdjustmentCost = ajCost
-	if exhangeRate != nil {
-		AdjustmentRMBCost := req.AdjustmentCost.Mul(*exhangeRate)
-		req.AdjustmentRMBCost = &AdjustmentRMBCost
+	req := &bill.BillSummaryMainUpdateReq{
+		ID:                     summary.ID,
+		MainAccountName:        mAccountResult.CloudID,
+		RootAccountName:        mAccountResult.ParentAccountName,
+		ProductID:              mAccountResult.OpProductID,
+		BkBizID:                mAccountResult.BkBizID,
+		Currency:               currency,
+		CurrentMonthCost:       curMonthCost,
+		CurrentMonthCostSynced: curMonthCostSynced,
+		LastMonthRMBCostSynced: lastMonthRMBCostSynced,
+		AdjustmentCost:         adjCost,
 	}
 
-	if curMonthCost != nil {
-		req.CurrentMonthCost = curMonthCost
-		if exhangeRate != nil {
-			currentMonthRMBCost := req.CurrentMonthCost.Mul(*exhangeRate)
-			req.CurrentMonthRMBCost = &currentMonthRMBCost
-		}
+	req = calRMBCost(req, exchangeRate)
+	if curMonthCostSynced != nil && lastMonthCostSynced != nil && !lastMonthCostSynced.IsZero() {
+		req.LastMonthCostSynced = lastMonthCostSynced
+		req.MonthOnMonthValue = curMonthCostSynced.DivRound(*lastMonthCostSynced, 5).InexactFloat64()
 	}
-	if curMonthCostSynced != nil {
-		req.CurrentMonthCostSynced = curMonthCostSynced
-		if exhangeRate != nil {
-			currentMonthRMBCostSynced := req.CurrentMonthCostSynced.Mul(*exhangeRate)
-			req.CurrentMonthRMBCostSynced = &currentMonthRMBCostSynced
-		}
-		if lastMonthCostSynced != nil && !lastMonthCostSynced.IsZero() {
-			req.LastMonthCostSynced = lastMonthCostSynced
-			req.MonthOnMonthValue = curMonthCostSynced.DivRound(*lastMonthCostSynced, 5).InexactFloat64()
-		}
-	}
-	if lastMonthRMBCostSynced != nil {
-		req.LastMonthRMBCostSynced = lastMonthRMBCostSynced
-	}
+
 	if isCurMonthAccounted {
 		req.State = enumor.MainAccountBillSummaryStateAccounted
 	}
@@ -158,8 +140,20 @@ func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 		return nil, fmt.Errorf("failed to update main account bill summary %v, err %s", opt, err.Error())
 	}
 	logs.Infof("sucessfully update main account bill summary %+v", req)
-
 	return nil, nil
+}
+
+func calRMBCost(req *bill.BillSummaryMainUpdateReq, exchangeRate *decimal.Decimal) *bill.BillSummaryMainUpdateReq {
+	if exchangeRate != nil {
+		req.AdjustmentRMBCost = cvt.ValToPtr(req.AdjustmentCost.Mul(*exchangeRate))
+		if req.CurrentMonthCost != nil {
+			req.CurrentMonthRMBCost = cvt.ValToPtr(req.CurrentMonthCost.Mul(*exchangeRate))
+		}
+		if req.CurrentMonthCostSynced != nil {
+			req.CurrentMonthRMBCostSynced = cvt.ValToPtr(req.CurrentMonthCostSynced.Mul(*exchangeRate))
+		}
+	}
+	return req
 }
 
 func (act *MainAccountSummaryAction) getExchangeRate(
@@ -197,7 +191,7 @@ func (act *MainAccountSummaryAction) getExchangeRate(
 
 func (act *MainAccountSummaryAction) getMonthVersionCost(
 	kt *kit.Kit, opt *MainAccountSummaryActionOption, versionID int) (
-	*decimal.Decimal, bool, enumor.CurrencyCode, error) {
+	total *decimal.Decimal, isAccounted bool, currencyCode enumor.CurrencyCode, err error) {
 
 	expressions := []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", opt.RootAccountID),
@@ -217,15 +211,15 @@ func (act *MainAccountSummaryAction) getMonthVersionCost(
 	if err != nil {
 		return nil, false, "", fmt.Errorf("get main account summary of %v failed, err %s", opt, err.Error())
 	}
-	totalCost := decimal.NewFromFloat(0)
-	currencyCode := enumor.CurrencyUSD
+	totalCost := decimal.NewFromInt(0)
+	currencyCode = enumor.CurrencyUSD
 	for _, dailySummary := range result.Details {
 		if len(dailySummary.Currency) != 0 {
 			currencyCode = dailySummary.Currency
 		}
 		totalCost = totalCost.Add(dailySummary.Cost)
 	}
-	isAccounted := false
+	isAccounted = false
 	if len(result.Details) == times.DaysInMonth(opt.BillYear, time.Month(opt.BillMonth)) {
 		isAccounted = true
 	}

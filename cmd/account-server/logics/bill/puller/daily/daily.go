@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package daily 每天账单拉取任务
 package daily
 
 import (
@@ -38,7 +39,6 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/serviced"
-	"hcm/pkg/tools/slice"
 
 	"github.com/shopspring/decimal"
 )
@@ -129,11 +129,6 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 	if err != nil {
 		return fmt.Errorf("get pull task for %v failed, err %s", dp, err.Error())
 	}
-	taskServerNameList, err := getTaskServerKeyList(dp.Sd)
-	if err != nil {
-		logs.Warnf("get task server name list failed, err %s", err.Error())
-		return err
-	}
 	billTaskDayMap := make(map[int]struct{})
 	for _, billTask := range billTaskResult.Details {
 		time.Sleep(time.Millisecond * time.Duration(rand.Intn(defaultSleepMillisecond)))
@@ -178,18 +173,7 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 			return dp.createNewPullTask(kt, billTask)
 		}
 		// 如果flow失败了或者flow找不到了，则重新创建一个新的flow
-		if flow.State == enumor.FlowFailed ||
-			flow.State == enumor.FlowCancel ||
-			(flow.State == enumor.FlowScheduled &&
-				flow.Worker != nil &&
-				!slice.IsItemInSlice[string](taskServerNameList, *flow.Worker)) {
-
-			if flow.State == enumor.FlowScheduled {
-				if err := dp.Client.TaskServer().CancelFlow(kt, flow.ID); err != nil {
-					logs.Warnf("cancel flow %v failed, err %s, rid: %s", flow, err.Error(), kt.Rid)
-					continue
-				}
-			}
+		if flow.State == enumor.FlowFailed || flow.State == enumor.FlowCancel {
 			return dp.createNewPullTask(kt, billTask)
 		}
 	}
@@ -203,7 +187,6 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 			logs.Infof("create pull task for %v day %d successfully, rid: %s", dp, day, kt.Rid)
 		}
 	}
-
 	return nil
 }
 

@@ -96,7 +96,7 @@ type AdjustmentItemSumReq struct {
 	Filter *filter.Expression `json:"filter" validate:"required"`
 }
 
-// Validate	...
+// Validate ...
 func (req *AdjustmentItemSumReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
