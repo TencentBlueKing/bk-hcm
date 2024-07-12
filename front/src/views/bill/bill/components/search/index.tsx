@@ -12,7 +12,7 @@ import { VendorEnum } from '@/common/constant';
 import { QueryRuleOPEnum, RulesItem } from '@/typings';
 import dayjs from 'dayjs';
 import BusinessSelector from '@/components/business-selector/index.vue';
-import { BILL_BIZS_KEY } from '@/constants';
+import { BILL_BIZS_KEY, BILL_MAIN_ACCOUNTS_KEY } from '@/constants';
 
 interface ISearchModal {
   vendor: VendorEnum[];
@@ -144,6 +144,7 @@ export default defineComponent({
                 vendor={modal.value.vendor}
                 rootAccountId={modal.value.root_account_id}
                 autoSelect={props.autoSelectMainAccount}
+                urlKey={BILL_MAIN_ACCOUNTS_KEY}
               />
             </div>
           )}
