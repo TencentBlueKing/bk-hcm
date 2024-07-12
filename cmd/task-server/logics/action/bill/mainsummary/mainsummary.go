@@ -91,7 +91,7 @@ func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 	if rootSummary.State == enumor.RootAccountBillSummaryStateConfirmed ||
 		rootSummary.State == enumor.RootAccountBillSummaryStateSyncing ||
 		rootSummary.State == enumor.RootAccountBillSummaryStateSynced {
-		curMonthCostSynced, _, _, err = act.getMonthVersionCost(kt.Kit(), opt, summary.LastSyncedVersion)
+		curMonthCostSynced, _, _, err = act.getMonthVersionCost(kt.Kit(), opt, summary.CurrentVersion)
 		if err != nil {
 			return nil, fmt.Errorf("get current month synced cost failed, err %s", err.Error())
 		}
