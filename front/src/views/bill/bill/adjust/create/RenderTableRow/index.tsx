@@ -79,6 +79,13 @@ export default defineComponent({
       },
     );
 
+    watch(
+      () => props.rootAccountId,
+      () => {
+        formModel.main_account_id = '';
+      },
+    );
+
     expose({
       getValue: async () => {
         return await Promise.all([

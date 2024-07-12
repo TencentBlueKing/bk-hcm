@@ -1,4 +1,4 @@
-import { defineComponent } from 'vue';
+import { PropType, defineComponent } from 'vue';
 import { Sideslider, Button } from 'bkui-vue';
 import { useI18n } from 'vue-i18n';
 import cssModule from './index.module.scss';
@@ -31,6 +31,10 @@ export default defineComponent({
       type: Boolean,
       default: false,
     }, // 是否不需要footer
+    renderType: {
+      type: String as PropType<'show' | 'if'>,
+      default: 'show',
+    },
   },
   emits: ['update:isShow', 'handleSubmit'],
   setup(props, ctx) {
@@ -47,6 +51,7 @@ export default defineComponent({
 
     return () => (
       <Sideslider
+        renderDirective={props.renderType}
         class={cssModule.sideslider}
         width={props.width}
         isShow={props.isShow}

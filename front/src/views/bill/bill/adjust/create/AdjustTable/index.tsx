@@ -5,6 +5,7 @@ import RenderTableRow from '../RenderTableRow';
 import { AdjustmentItem } from '@/typings/bill';
 import { VendorEnum } from '@/common/constant';
 import { AdjustTypeEnum } from '../RenderTableRow/components/AdjustTypeSelector';
+import { cloneDeep } from 'lodash-es';
 
 export default defineComponent({
   props: {
@@ -89,14 +90,15 @@ export default defineComponent({
               rootAccountId={props.rootAccountId}
               onAdd={() => {
                 tableData.value.push(Record());
-                rowRefs.push(ref(null));
+                rowRefs.push(ref());
               }}
               onRemove={() => {
                 tableData.value.splice(idx, 1);
                 rowRefs.splice(idx, 1);
               }}
               onCopy={() => {
-                tableData.value.splice(idx, 0, tableData.value[idx]);
+                tableData.value.push(cloneDeep(tableData.value[idx]));
+                rowRefs.push(ref());
               }}
               onChange={(val) => {
                 tableData.value[idx] = val;

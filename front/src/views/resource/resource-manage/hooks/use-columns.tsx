@@ -1943,7 +1943,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
     {
       label: '调账人民币（元）',
-      field: 'adjustment_cost',
+      field: 'adjustment_rmb_cost',
       isDefaultShow: true,
       render: ({ cell }: any) => formatBillCost(cell),
       sort: true,

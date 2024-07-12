@@ -45,7 +45,7 @@ export default defineComponent({
     const triggerShow = (v: boolean) => {
       isShow.value = v;
       nextTick(() => {
-        formRef.value.clearValidate();
+        formRef.value?.clearValidate();
       });
     };
     const costSum = reactive({
@@ -98,7 +98,7 @@ export default defineComponent({
     const reset = () => {
       resetForm();
       // emit('clearEdit');
-      tableRef.value.reset();
+      tableRef.value?.reset();
     };
 
     watch(
@@ -117,14 +117,9 @@ export default defineComponent({
       },
     );
 
-    // 云厂商变更，重置一级账号
-    watch(
-      () => formModel.vendor,
-      () => (formModel.root_account_id = ''),
-    );
-
     return () => (
       <CommonSideslider
+        renderType='if'
         v-model:isShow={isShow.value}
         width={1280}
         title='新增调账'
@@ -134,10 +129,17 @@ export default defineComponent({
           default: () => (
             <Form formType='vertical' ref={formRef} model={formModel}>
               <Form.FormItem label={t('云厂商')} required property='vendor'>
-                <VendorRadioGroup v-model={formModel.vendor} />
+                <VendorRadioGroup
+                  disabled={props.edit}
+                  v-model={formModel.vendor}
+                  onUpdate:modelValue={() => {
+                    if (!props.edit) formModel.root_account_id = '';
+                  }}
+                />
               </Form.FormItem>
               <Form.FormItem label={t('一级账号')} required property='root_account_id'>
                 <PrimaryAccountSelector
+                  disabled={props.edit}
                   v-model={formModel.root_account_id}
                   multiple={false}
                   vendor={formModel.vendor}

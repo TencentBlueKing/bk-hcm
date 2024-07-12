@@ -19,6 +19,7 @@ export default defineComponent({
       type: String as PropType<'small' | 'normal'>,
       default: 'normal',
     },
+    disabled: Boolean,
   },
   emits: ['update:modelValue'],
   setup(props, { emit }) {
@@ -53,7 +54,11 @@ export default defineComponent({
         ]}
         v-model={vendor.value}>
         {buttons.value.map(({ label, value, icon }) => (
-          <Button class={cssModule.radio} selected={vendor.value === value} onClick={() => (vendor.value = value)}>
+          <Button
+            class={cssModule.radio}
+            selected={vendor.value === value}
+            onClick={() => (vendor.value = value)}
+            disabled={props.disabled}>
             <img src={icon} alt='' />
             <span>{label}</span>
           </Button>
