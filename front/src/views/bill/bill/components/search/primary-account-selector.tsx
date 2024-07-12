@@ -13,6 +13,7 @@ export default defineComponent({
       default: true,
     },
     autoSelect: Boolean,
+    disabled: Boolean,
   },
   emits: ['update:modelValue'],
   setup(props, { emit }) {
@@ -48,6 +49,7 @@ export default defineComponent({
 
     return () => (
       <Select
+        disabled={props.disabled}
         v-model={selectedValue.value}
         multiple={props.multiple}
         multipleMode={props.multiple ? 'tag' : ''}

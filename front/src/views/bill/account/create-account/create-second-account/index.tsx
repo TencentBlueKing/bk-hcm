@@ -1,4 +1,4 @@
-import { defineComponent, ref, watch, watchEffect } from 'vue';
+import { computed, defineComponent, ref, watch, watchEffect } from 'vue';
 import './index.scss';
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import CommonCard from '@/components/CommonCard';
@@ -36,6 +36,17 @@ export default defineComponent({
       op_product_id: '',
       bk_biz_id: -1, // 业务
       // extension: {}, // 扩展字段对象
+    });
+    const nameTips = computed(() => {
+      let tip = '账号名称只能包括英文字母、数字和中划线-，并且仅能以英文字母开头，长度为6-20个字符';
+      switch (formModel.vendor) {
+        case VendorEnum.AWS:
+        case VendorEnum.HUAWEI:
+        case VendorEnum.AZURE:
+          tip = '账号名称只能包括英文字母、数字和下划线_，并且仅能以英文字母开头，长度为6-20个字符';
+          break;
+      }
+      return tip;
     });
 
     watchEffect(() => {
@@ -165,19 +176,21 @@ export default defineComponent({
                         name: [
                           {
                             trigger: 'change',
-                            message:
-                              '账号名称只能包括英文字母、数字和中划线-，并且仅能以英文字母开头，长度为6-20个字符',
+                            message: nameTips.value,
                             validator: (val: string) => {
+                              if (
+                                [VendorEnum.AWS, VendorEnum.AZURE, VendorEnum.HUAWEI].includes(
+                                  formModel.vendor as VendorEnum,
+                                )
+                              ) {
+                                return /^[a-zA-Z][a-zA-Z0-9_]{5,19}$/.test(val);
+                              }
                               return /^[a-zA-Z][a-zA-Z0-9-]{5,19}$/.test(val);
                             },
                           },
                         ],
                       }}>
-                      <FormItem
-                        label='帐号名称'
-                        required
-                        property='name'
-                        description='账号名称只能包括英文字母、数字和中划线-，并且仅能以英文字母开头，长度为6-20个字符'>
+                      <FormItem label='帐号名称' required property='name' description={nameTips.value}>
                         <Input v-model={formModel.name} placeholder='请输入账号名称'></Input>
                       </FormItem>
                       <FormItem label='帐号邮箱' required property='email'>
