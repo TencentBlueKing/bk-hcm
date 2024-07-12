@@ -239,7 +239,7 @@ export const useTable = (props: IProp) => {
               {{
                 expandRow: (row: any) => slots.expandRow?.(row),
                 empty: () => {
-                  if (isLoading.value || dataList.value.length) return null;
+                  if (isLoading.value || dataList.value?.length) return null;
                   return <Empty />;
                 },
               }}
