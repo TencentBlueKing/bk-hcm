@@ -77,7 +77,7 @@ export const reAccountBillsRootAccountSummary = async (data: {
   return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/root-account-summarys/reaccount`, data);
 };
 
-// 账单同步至 OBS
+// 账单同步(云厂商)
 export const syncRecordsBills = async (data: { bill_year: number; bill_month: number; vendor: VendorEnum }) => {
   return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/sync_records`, data);
 };
@@ -141,4 +141,9 @@ export const deleteBillsAdjustment = async (ids: string[]) => {
 // 账单同步记录查询接口
 export const reqBillsSyncRecordList = async (data: { filter: FilterType; page: IPageQuery }) => {
   return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/sync_records/list`, data);
+};
+
+// 查询汇率
+export const reqBillsExchangeRateList = async (data: { filter: FilterType; page: IPageQuery }) => {
+  return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/exchange_rates/list`, data);
 };
