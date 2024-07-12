@@ -142,3 +142,8 @@ export const deleteBillsAdjustment = async (ids: string[]) => {
 export const reqBillsSyncRecordList = async (data: { filter: FilterType; page: IPageQuery }) => {
   return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/sync_records/list`, data);
 };
+
+// 查询汇率
+export const reqBillsExchangeRateList = async (data: { filter: FilterType; page: IPageQuery }) => {
+  return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/exchange_rates/list`, data);
+};

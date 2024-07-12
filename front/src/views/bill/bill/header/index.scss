@@ -21,6 +21,17 @@
         background: #f0f1f5;
       }
     }
+
+    .rate-wrapper {
+      margin-left: 24px;
+      display: flex;
+
+      .rate-label {
+        border-bottom: 1px dashed #979ba5;
+        color: #313238;
+        cursor: pointer;
+      }
+    }
   }
 
   .link-wrap {
