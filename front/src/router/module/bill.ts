@@ -3,16 +3,17 @@ import type { RouteRecordRaw } from 'vue-router';
 const bill: RouteRecordRaw[] = [
   {
     path: '/bill/account-manage',
-    name: '云账号管理',
+    name: 'account-manage',
     component: () => import('@/views/bill/account/account-manage/index'),
     meta: {
+      title: '云账号管理',
       activeKey: 'account-manage',
       icon: 'hcm-icon bkhcm-icon-user-8',
     },
   },
   {
     path: '/bill/bill-manage',
-    name: '云账单管理',
+    name: 'bill-manage',
     component: () => import('@/views/bill/bill/index'),
     redirect: '/bill/bill-manage/summary',
     children: [
@@ -46,6 +47,7 @@ const bill: RouteRecordRaw[] = [
       },
     ],
     meta: {
+      title: '云账单管理',
       activeKey: 'bill-manage',
       icon: 'hcm-icon bkhcm-icon-host',
       hasPageRoute: true,
