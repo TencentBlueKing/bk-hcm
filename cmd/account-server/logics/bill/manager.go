@@ -99,7 +99,7 @@ func (bm *BillManager) syncRootControllers() error {
 				return fmt.Errorf("start controller failed, err %s", err.Error())
 			}
 			bm.CurrentRootControllers[item.Key()] = ctrl
-			logs.Infof("start root account controller for %v", opt)
+			logs.Infof("start root account controller for %+v", opt)
 		}
 	}
 	for key, controller := range bm.CurrentRootControllers {
