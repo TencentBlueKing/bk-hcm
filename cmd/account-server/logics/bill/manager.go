@@ -41,12 +41,17 @@ type BillManager struct {
 
 // Run bill manager
 func (bm *BillManager) Run(ctx context.Context) {
-	if err := bm.syncMainControllers(); err != nil {
-		logs.Warnf("sync main controllers failed, err %s", err.Error())
+	if bm.Sd.IsMaster() {
+		if err := bm.syncMainControllers(); err != nil {
+			logs.Warnf("sync main controllers failed, err %s", err.Error())
+		}
+		if err := bm.syncRootControllers(); err != nil {
+			logs.Warnf("sync root controllers failed, err %s", err.Error())
+		}
+	} else {
+		bm.stopControllers()
 	}
-	if err := bm.syncRootControllers(); err != nil {
-		logs.Warnf("sync root controllers failed, err %s", err.Error())
-	}
+
 	ticker := time.NewTicker(*cc.AccountServer().Controller.ControllerSyncDuration)
 	for {
 		select {
@@ -94,7 +99,7 @@ func (bm *BillManager) syncRootControllers() error {
 				return fmt.Errorf("start controller failed, err %s", err.Error())
 			}
 			bm.CurrentRootControllers[item.Key()] = ctrl
-			logs.Infof("start root account controller for %v", opt)
+			logs.Infof("start root account controller for %+v", opt)
 		}
 	}
 	for key, controller := range bm.CurrentRootControllers {
