@@ -33,7 +33,6 @@ export default defineComponent({
       { label: t('华为云'), value: VendorEnum.HUAWEI, icon: vendorHuawei },
       { label: t('亚马逊云'), value: VendorEnum.AWS, icon: vendorAWS },
       { label: t('zenlayer'), value: VendorEnum.ZENLAYER, icon: vendorTcloud },
-      { label: t('腾讯云'), value: VendorEnum.TCLOUD, icon: vendorTcloud },
     ]);
 
     watch(vendor, (v) => emit('update:modelValue', v), { deep: true });

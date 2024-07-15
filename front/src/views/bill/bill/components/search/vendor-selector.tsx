@@ -11,7 +11,6 @@ export default defineComponent({
     const selectedValue = ref(props.modelValue);
 
     const list = ref([
-      { id: VendorEnum.TCLOUD, name: t('腾讯云') },
       { id: VendorEnum.AWS, name: t('亚马逊云') },
       { id: VendorEnum.AZURE, name: t('微软云') },
       { id: VendorEnum.GCP, name: t('谷歌云') },
