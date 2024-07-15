@@ -144,15 +144,6 @@ func (rac *RootAccountController) runCalculateBillSummaryLoop(kt *kit.Kit) {
 
 func (rac *RootAccountController) pollRootSummaryTask(subKit *kit.Kit, flowID string, billYear, billMonth int) string {
 	time.Sleep(time.Millisecond * time.Duration(rand.Intn(defaultSleepMillisecond)))
-	summary, err := rac.getBillSummary(subKit, billYear, billMonth)
-	if err != nil {
-		logs.Warnf("get root account bill summary failed, err %s, rid: %s", err.Error(), subKit.Rid)
-		return flowID
-	}
-	if summary.State != enumor.RootAccountBillSummaryStateAccounted &&
-		summary.State != enumor.RootAccountBillSummaryStateAccounting {
-		return flowID
-	}
 	taskServerNameList, err := getTaskServerKeyList(rac.Sd)
 	if err != nil {
 		logs.Warnf("get task server name list failed, err %s", err.Error())

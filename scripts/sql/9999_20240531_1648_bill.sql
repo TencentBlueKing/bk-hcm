@@ -343,6 +343,13 @@ create table `account_bill_sync_record`
 insert into id_generator(`resource`, `max_id`)
 values ('account_bill_sync_record', '0');
 
+
+/*
+ 为async_flow_task表增加索引
+ */
+create index idx_state_updated_at ON async_flow_task(`state`, `updated_at`);
+create index idx_flow_id ON async_flow_task(`flow_id`);
+
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
 SELECT 'v9.9.9' as `hcm_ver`,
        '9999'   as `sql_ver`;

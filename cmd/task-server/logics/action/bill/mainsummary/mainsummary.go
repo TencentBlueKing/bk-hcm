@@ -68,7 +68,7 @@ func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 	if !ok {
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
 	}
-	summary, err := act.getBillSummary(kt.Kit(), opt)
+	rootSummary, summary, err := act.getBillSummary(kt.Kit(), opt)
 	if err != nil {
 		return nil, err
 	}
@@ -87,8 +87,11 @@ func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 
 	// 计算当月已同步成本
 	var curMonthCostSynced *decimal.Decimal
-	if summary.LastSyncedVersion != 0 {
-		curMonthCostSynced, _, _, err = act.getMonthVersionCost(kt.Kit(), opt, summary.LastSyncedVersion)
+	// 主账号账单已处于确认或者同步状态，则计算已同步成本
+	if rootSummary.State == enumor.RootAccountBillSummaryStateConfirmed ||
+		rootSummary.State == enumor.RootAccountBillSummaryStateSyncing ||
+		rootSummary.State == enumor.RootAccountBillSummaryStateSynced {
+		curMonthCostSynced, _, _, err = act.getMonthVersionCost(kt.Kit(), opt, summary.CurrentVersion)
 		if err != nil {
 			return nil, fmt.Errorf("get current month synced cost failed, err %s", err.Error())
 		}
@@ -305,7 +308,29 @@ func (act *MainAccountSummaryAction) getAdjustmenSummary(kt *kit.Kit, opt *MainA
 }
 
 func (act *MainAccountSummaryAction) getBillSummary(
-	kt *kit.Kit, opt *MainAccountSummaryActionOption) (*bill.BillSummaryMainResult, error) {
+	kt *kit.Kit, opt *MainAccountSummaryActionOption) (
+	*bill.BillSummaryRootResult, *bill.BillSummaryMainResult, error) {
+
+	rootAccountExpr := []*filter.AtomRule{
+		tools.RuleEqual("root_account_id", opt.RootAccountID),
+		tools.RuleEqual("vendor", opt.Vendor),
+		tools.RuleEqual("bill_year", opt.BillYear),
+		tools.RuleEqual("bill_month", opt.BillMonth),
+	}
+	rootResult, err := actcli.GetDataService().Global.Bill.ListBillSummaryRoot(
+		kt, &bill.BillSummaryRootListReq{
+			Filter: tools.ExpressionAnd(rootAccountExpr...),
+			Page: &core.BasePage{
+				Start: 0,
+				Limit: 1,
+			},
+		})
+	if err != nil {
+		return nil, nil, fmt.Errorf("get root account bill summary failed, opt %+v, err %s", opt, err.Error())
+	}
+	if len(rootResult.Details) != 1 {
+		return nil, nil, fmt.Errorf("get invalid length root account bill summary resp %v", rootResult)
+	}
 
 	expressions := []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", opt.RootAccountID),
@@ -323,10 +348,11 @@ func (act *MainAccountSummaryAction) getBillSummary(
 			},
 		})
 	if err != nil {
-		return nil, fmt.Errorf("get main account bill summary failed, err %s", err.Error())
+		return nil, nil, fmt.Errorf("get main account bill summary failed, opt %+v, err %s", opt, err.Error())
 	}
 	if len(result.Details) != 1 {
-		return nil, fmt.Errorf("get invalid length main account bill summary resp %v", result)
+		return nil, nil, fmt.Errorf("get invalid length main account bill summary resp %v", result)
 	}
-	return result.Details[0], nil
+
+	return rootResult.Details[0], result.Details[0], nil
 }

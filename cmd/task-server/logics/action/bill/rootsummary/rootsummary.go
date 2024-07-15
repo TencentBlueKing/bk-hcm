@@ -141,11 +141,19 @@ func (act RootAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 	if !lastMonthSyncedCost.IsZero() {
 		req.MonthOnMonthValue = currentCostSynced.DivRound(lastMonthSyncedCost, 5).InexactFloat64()
 	}
-	if isAccounted {
-		req.State = enumor.RootAccountBillSummaryStateAccounted
+	// 如果之前是处于已确认、已同步、同步中的状态，则不进行状态更新
+	if summary.State == enumor.RootAccountBillSummaryStateConfirmed ||
+		summary.State == enumor.RootAccountBillSummaryStateSynced ||
+		summary.State == enumor.RootAccountBillSummaryStateSyncing {
+		req.State = ""
 	} else {
-		req.State = enumor.RootAccountBillSummaryStateAccounting
+		if isAccounted {
+			req.State = enumor.RootAccountBillSummaryStateAccounted
+		} else {
+			req.State = enumor.RootAccountBillSummaryStateAccounting
+		}
 	}
+
 	if err := actcli.GetDataService().Global.Bill.UpdateBillSummaryRoot(kt.Kit(), req); err != nil {
 		logs.Warnf("failed to update root account bill summary %v, err %s, rid: %s", opt, err.Error(), kt.Kit().Rid)
 		return nil, fmt.Errorf("failed to update root account bill summary %v, err %s", opt, err.Error())
