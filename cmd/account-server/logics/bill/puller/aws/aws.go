@@ -37,7 +37,10 @@ const (
 )
 
 func init() {
-	puller.PullerRegistry[enumor.Aws] = &AwsPuller{
+	puller.DailyPullerRegistry[enumor.Aws] = &AwsPuller{
+		BillDelay: defaultAwsDelay,
+	}
+	puller.MonthPullerRegistry[enumor.Aws] = &AwsPuller{
 		BillDelay: defaultAwsDelay,
 	}
 }
@@ -93,4 +96,9 @@ func (hp *AwsPuller) GetPullTaskList(kt *kit.Kit, client *client.ClientSet,
 		Sd:            sd,
 	}
 	return dp.GetPullTaskList(kt)
+}
+
+// HasMonthPullTask return if has month pull task
+func (hp *AwsPuller) HasMonthPullTask() bool {
+	return false
 }

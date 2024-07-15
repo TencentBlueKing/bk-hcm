@@ -17,46 +17,31 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package actcli
+package monthtask
 
 import (
-	"hcm/pkg/client"
-	dataservice "hcm/pkg/client/data-service"
-	hcservice "hcm/pkg/client/hc-service"
-	"hcm/pkg/dal/dao"
+	rawjson "encoding/json"
+	"fmt"
+
+	"hcm/pkg/api/data-service/bill"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/kit"
 )
 
-var (
-	cliSet *client.ClientSet
-	daoSet dao.Set
-)
-
-// SetClientSet set client set.
-func SetClientSet(cli *client.ClientSet) {
-	cliSet = cli
+func GetRunner(vendor enumor.Vendor) (MonthTaskRunner, error) {
+	switch vendor {
+	case enumor.Gcp:
+		return newGcpRunner(), nil
+	default:
+		return nil, fmt.Errorf("vendor %s not support now", vendor)
+	}
 }
 
-// GetClientSet get client set.
-func GetClientSet() *client.ClientSet {
-	return cliSet
-}
-
-// GetHCService get hc service.
-func GetHCService() *hcservice.Client {
-	return cliSet.HCService()
-}
-
-// GetDataService get data service.
-func GetDataService() *dataservice.Client {
-	return cliSet.DataService()
-}
-
-// SetDaoSet set dao set.
-func SetDaoSet(cli dao.Set) {
-	daoSet = cli
-}
-
-// GetDaoSet get dao set.
-func GetDaoSet() dao.Set {
-	return daoSet
+// MonthTaskRunner ...
+type MonthTaskRunner interface {
+	GetBatchSize(kt *kit.Kit) uint64
+	Pull(kt *kit.Kit, rootAccountID string, billYear, billMonth int, index uint64) (
+		itemList []bill.RawBillItem, isFinished bool, err error)
+	Split(kt *kit.Kit, rawItemList []*bill.RawBillItem) (
+		[]bill.BillItemCreateReq[rawjson.RawMessage], error)
 }

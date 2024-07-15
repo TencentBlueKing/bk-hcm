@@ -17,46 +17,29 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package actcli
+package monthtask
 
 import (
-	"hcm/pkg/client"
-	dataservice "hcm/pkg/client/data-service"
-	hcservice "hcm/pkg/client/hc-service"
-	"hcm/pkg/dal/dao"
+	ts "hcm/pkg/api/task-server"
+	"hcm/pkg/async/action"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/tools/uuid"
 )
 
-var (
-	cliSet *client.ClientSet
-	daoSet dao.Set
-)
+// BuildMonthTask build month task
+func BuildMonthTask(
+	t enumor.MonthTaskType, rootAccountID string,
+	vendor enumor.Vendor, billYear, billMonth int) ts.CustomFlowTask {
 
-// SetClientSet set client set.
-func SetClientSet(cli *client.ClientSet) {
-	cliSet = cli
-}
-
-// GetClientSet get client set.
-func GetClientSet() *client.ClientSet {
-	return cliSet
-}
-
-// GetHCService get hc service.
-func GetHCService() *hcservice.Client {
-	return cliSet.HCService()
-}
-
-// GetDataService get data service.
-func GetDataService() *dataservice.Client {
-	return cliSet.DataService()
-}
-
-// SetDaoSet set dao set.
-func SetDaoSet(cli dao.Set) {
-	daoSet = cli
-}
-
-// GetDaoSet get dao set.
-func GetDaoSet() dao.Set {
-	return daoSet
+	return ts.CustomFlowTask{
+		ActionID:   action.ActIDType(uuid.UUID()),
+		ActionName: enumor.ActionMainAccountSummary,
+		Params: MonthTaskActionOption{
+			Type:          t,
+			RootAccountID: rootAccountID,
+			Vendor:        vendor,
+			BillYear:      billYear,
+			BillMonth:     billMonth,
+		},
+	}
 }

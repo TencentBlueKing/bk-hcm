@@ -58,6 +58,7 @@ var defaultFlowNameMap = map[FlowName]struct{}{
 	FlowBillDailySummary:       {},
 	FlowBillMainAccountSummary: {},
 	FlowBillRootAccountSummary: {},
+	FlowBillMonthTask:          {},
 }
 
 // ValidateDefault validate default FlowName.
@@ -153,4 +154,5 @@ const (
 	FlowBillDailySummary       FlowName = "bill_daily_summary"
 	FlowBillMainAccountSummary FlowName = "bill_main_account_summary"
 	FlowBillRootAccountSummary FlowName = "bill_root_account_summary"
+	FlowBillMonthTask          FlowName = "bill_month_task"
 )

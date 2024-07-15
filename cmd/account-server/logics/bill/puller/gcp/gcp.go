@@ -32,11 +32,14 @@ import (
 )
 
 const (
-	defaultGcpDelay = 3
+	defaultGcpDelay = 1
 )
 
 func init() {
-	puller.PullerRegistry[enumor.Gcp] = &GcpPuller{
+	puller.DailyPullerRegistry[enumor.Gcp] = &GcpPuller{
+		BillDelay: defaultGcpDelay,
+	}
+	puller.MonthPullerRegistry[enumor.Gcp] = &GcpPuller{
 		BillDelay: defaultGcpDelay,
 	}
 }
@@ -91,4 +94,9 @@ func (hp *GcpPuller) GetPullTaskList(
 		Sd:            sd,
 	}
 	return dp.GetPullTaskList(kt)
+}
+
+// HasMonthPullTask return if has month pull task
+func (hp *GcpPuller) HasMonthPullTask() bool {
+	return true
 }

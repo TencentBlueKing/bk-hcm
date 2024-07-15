@@ -38,7 +38,10 @@ const (
 )
 
 func init() {
-	puller.PullerRegistry[enumor.HuaWei] = &HuaweiPuller{
+	puller.DailyPullerRegistry[enumor.HuaWei] = &HuaweiPuller{
+		BillDelay: defaultHuaWeiDelay,
+	}
+	puller.MonthPullerRegistry[enumor.HuaWei] = &HuaweiPuller{
 		BillDelay: defaultHuaWeiDelay,
 	}
 }
@@ -95,4 +98,9 @@ func (hp *HuaweiPuller) GetPullTaskList(
 		Sd:            sd,
 	}
 	return dp.GetPullTaskList(kt)
+}
+
+// HasMonthPullTask return if has month pull task
+func (hp *HuaweiPuller) HasMonthPullTask() bool {
+	return false
 }

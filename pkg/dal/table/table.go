@@ -184,8 +184,8 @@ const (
 	AccountBillItemTable = "account_bill_item"
 	// AccountBillAdjustmentItemTable 手动调账表
 	AccountBillAdjustmentItemTable = "account_bill_adjustment_item"
-	// AccountBillPullerTable 账单拉取器表
-	AccountBillPullerTable = "account_bill_puller"
+	// AccountBillMonthTaskTable 账单拉取器表
+	AccountBillMonthTaskTable = "account_bill_month_task"
 	// AccountBillDailyPullTaskTable 日账单拉取任务表
 	AccountBillDailyPullTaskTable = "account_bill_daily_pull_task"
 	// AccountBillSummaryRootTable 一级账号账单汇总信息
@@ -274,7 +274,7 @@ var TableMap = map[Name]struct{}{
 
 	ArgumentTemplateTable: {},
 
-	AccountBillPullerTable:          {},
+	AccountBillMonthTaskTable:       {},
 	AccountBillDailyPullTaskTable:   {},
 	AccountBillSummaryMainTable:     {},
 	AccountBillSummaryVersionTable:  {},

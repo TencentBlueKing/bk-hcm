@@ -1,7 +1,7 @@
 /*
  * TencentBlueKing is pleased to support the open source community by making
  * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
- * Copyright (C) 2022 THL A29 Limited,
+ * Copyright (C) 2024 THL A29 Limited,
  * a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,31 +17,19 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package billpuller ...
-package billpuller
+package bill
 
 import (
-	"net/http"
+	"hcm/pkg/criteria/enumor"
 
-	"hcm/cmd/data-service/service/capability"
-	"hcm/pkg/dal/dao"
-	"hcm/pkg/rest"
+	"github.com/shopspring/decimal"
 )
 
-// InitService initialize the bill puller service
-func InitService(cap *capability.Capability) {
-	svc := &service{
-		dao: cap.Dao,
-	}
-	h := rest.NewHandler()
-	h.Add("BatchCreateBillPuller", http.MethodPost, "/bills/pullers", svc.BatchCreateBillPuller)
-	h.Add("DeleteBillPuller", http.MethodDelete, "/bills/pullers", svc.DeleteBillPuller)
-	h.Add("UpdateBillPuller", http.MethodPut, "/bills/pullers", svc.UpdateBillPuller)
-	h.Add("ListBillPuller", http.MethodGet, "/bills/pullers", svc.ListBillPuller)
-
-	h.Load(cap.WebService)
-}
-
-type service struct {
-	dao dao.Set
+// MonthTaskSummaryDetailItem detail item of month task summary
+type MonthTaskSummaryDetailItem struct {
+	MainAccountID string              `json:"mainAccountID"`
+	IsFinished    bool                `json:"isFinished"`
+	Currency      enumor.CurrencyCode `json:"currency"`
+	Cost          decimal.Decimal     `json:"cost"`
+	Count         uint64              `json:"count"`
 }

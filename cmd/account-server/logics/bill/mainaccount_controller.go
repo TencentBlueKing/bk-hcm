@@ -294,7 +294,7 @@ func (mac *MainAccountController) syncDailyRawBill(kt *kit.Kit) error {
 		return err
 	}
 	if lastBillSummaryMain.State == enumor.MainAccountBillSummaryStateAccounting {
-		curPuller, err := puller.GetPuller(lastBillSummaryMain.Vendor)
+		curPuller, err := puller.GetDailyPuller(lastBillSummaryMain.Vendor)
 		if err != nil {
 			return err
 		}
@@ -309,7 +309,7 @@ func (mac *MainAccountController) syncDailyRawBill(kt *kit.Kit) error {
 		return err
 	}
 	if billSummaryMain.State == enumor.MainAccountBillSummaryStateAccounting {
-		curPuller, err := puller.GetPuller(billSummaryMain.Vendor)
+		curPuller, err := puller.GetDailyPuller(billSummaryMain.Vendor)
 		if err != nil {
 			return err
 		}

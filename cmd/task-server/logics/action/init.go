@@ -24,6 +24,7 @@ import (
 	actionbillsplit "hcm/cmd/task-server/logics/action/bill/dailysplit"
 	actiondailysummary "hcm/cmd/task-server/logics/action/bill/dailysummary"
 	actionmainsummary "hcm/cmd/task-server/logics/action/bill/mainsummary"
+	actionmonthtask "hcm/cmd/task-server/logics/action/bill/monthtask"
 	actionrootsummary "hcm/cmd/task-server/logics/action/bill/rootsummary"
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	actioncvm "hcm/cmd/task-server/logics/action/cvm"
@@ -76,4 +77,5 @@ func register() {
 	action.RegisterAction(actiondailysummary.DailySummaryAction{})
 	action.RegisterAction(actionmainsummary.MainAccountSummaryAction{})
 	action.RegisterAction(actionrootsummary.RootAccountSummaryAction{})
+	action.RegisterAction(actionmonthtask.MonthTaskAction{})
 }
