@@ -62,6 +62,7 @@ type ApplicationResp struct {
 	SN             string                   `json:"sn"`
 	Type           enumor.ApplicationType   `json:"type"`
 	Status         enumor.ApplicationStatus `json:"status"`
+	BkBizIDs       []int64                  `json:"bk_biz_ids"`
 	Applicant      string                   `json:"applicant"`
 	Content        string                   `json:"content"`
 	DeliveryDetail string                   `json:"delivery_detail"`

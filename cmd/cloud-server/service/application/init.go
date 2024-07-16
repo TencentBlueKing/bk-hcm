@@ -58,7 +58,7 @@ func InitApplicationService(c *capability.Capability, bkHcmUrl string) {
 		cmsiCli:    c.CmsiCli,
 	}
 	h := rest.NewHandler()
-	h.Add("List", "POST", "/applications/list", svc.List)
+	h.Add("ListApplications", "POST", "/applications/list", svc.ListApplications)
 	h.Add("Get", "GET", "/applications/{application_id}", svc.Get)
 	h.Add("Cancel", "PATCH", "/applications/{application_id}/cancel", svc.Cancel)
 	h.Add("Approve", "POST", "/applications/approve", svc.Approve)
@@ -74,8 +74,17 @@ func InitApplicationService(c *capability.Capability, bkHcmUrl string) {
 	h.Add("CompleteForCreateMainAccount", "POST", "/applications/types/complete_main_account", svc.CompleteForCreateMainAccount)
 	h.Add("CreateForUpdateMainAccount", "POST", "/applications/types/update_main_account", svc.CreateForUpdateMainAccount)
 
+	bizH := rest.NewHandler()
+	bizH.Path("/bizs/{bk_biz_id}")
+	bizService(bizH, svc)
+
 	initApplicationServiceHooks(svc, h)
 	h.Load(c.WebService)
+	bizH.Load(c.WebService)
+}
+
+func bizService(h *rest.Handler, svc *applicationSvc) {
+	h.Add("ListBizApplications", "POST", "/applications/list", svc.ListBizApplications)
 }
 
 type applicationSvc struct {

@@ -137,6 +137,11 @@ func RuleJsonIn[T any](fieldName string, values []T) *filter.AtomRule {
 	return &filter.AtomRule{Field: fieldName, Op: filter.JSONIn.Factory(), Value: values}
 }
 
+// RuleJSONContains 生成资源字段等于查询的AtomRule，即values in fieldName
+func RuleJSONContains[T any](fieldName string, values T) *filter.AtomRule {
+	return &filter.AtomRule{Field: fieldName, Op: filter.JSONContains.Factory(), Value: values}
+}
+
 // ExpressionAnd expression with op and
 func ExpressionAnd(rules ...*filter.AtomRule) *filter.Expression {
 	// for type transformation
