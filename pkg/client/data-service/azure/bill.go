@@ -20,7 +20,6 @@
 package azure
 
 import (
-	"hcm/pkg/api/core"
 	billproto "hcm/pkg/api/data-service/bill"
 	"hcm/pkg/client/common"
 	"hcm/pkg/kit"
@@ -40,8 +39,9 @@ type BillClient struct {
 }
 
 // ListBillItem list bill item
-func (b *BillClient) ListBillItem(kt *kit.Kit, req *core.ListReq) (*billproto.AzureBillItemListResult, error) {
+func (b *BillClient) ListBillItem(kt *kit.Kit, req *billproto.BillItemListReq) (
+	*billproto.AzureBillItemListResult, error) {
 
-	return common.Request[core.ListReq, billproto.AzureBillItemListResult](
+	return common.Request[billproto.BillItemListReq, billproto.AzureBillItemListResult](
 		b.client, rest.POST, kt, req, "/bills/items/list")
 }
