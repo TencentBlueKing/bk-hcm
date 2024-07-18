@@ -1,9 +1,9 @@
-import { computed, defineComponent, reactive, ref, PropType } from 'vue';
+import { computed, defineComponent, reactive, ref, PropType, watch } from 'vue';
 import { Button, Form, Input, Upload, Message } from 'bkui-vue';
 import BkRadio, { BkRadioGroup } from 'bkui-vue/lib/radio';
 import './index.scss';
 import { VendorEnum } from '@/common/constant';
-import { DoublePlainObject, FilterType } from '@/typings';
+import { DoublePlainObject, FilterType, QueryRuleOPEnum } from '@/typings';
 import { useTable } from '@/hooks/useTable/useTable';
 import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
 import { useAccountStore, useResourceStore } from '@/store';
@@ -30,6 +30,15 @@ export default defineComponent({
     const resourceAccountStore = useResourceAccountStore();
 
     const { selections, handleSelectionChange, resetSelections } = useSelection();
+
+    const rules = computed(() => {
+      const rules = [...(props.filter?.rules || [])];
+      if (isResourcePage) {
+        const bizsRules = rules.filter((rule) => rule.field === 'bk_biz_id');
+        !bizsRules.length && rules.push({ field: 'bk_biz_id', op: QueryRuleOPEnum.EQ, value: 'all' });
+      }
+      return rules;
+    });
 
     const isRowSelectEnable = ({ row, isCheckAll }: DoublePlainObject) => {
       if (isCheckAll) return true;
@@ -89,6 +98,7 @@ export default defineComponent({
       }
       return result;
     });
+
     const { CommonTable, getListData } = useTable({
       searchOptions: {
         searchData: [
@@ -121,6 +131,13 @@ export default defineComponent({
           sort: 'cloud_created_time',
           order: 'DESC',
         },
+        filterOption: {
+          deleteOption: {
+            field: 'bk_biz_id',
+            flagValue: 'all',
+          },
+        },
+        immediate: false,
         async resolveDataListCb(dataList: any[]) {
           if (dataList.length === 0) return;
           return dataList.map((item: any) => {
@@ -131,7 +148,6 @@ export default defineComponent({
           });
         },
       },
-      bizFilter: props.filter,
     });
     const isCertUploadSidesliderShow = ref(false);
     const isLoading = ref(false);
@@ -341,6 +357,14 @@ export default defineComponent({
       }
       return authVerifyData.value?.permissionAction?.cert_resource_delete;
     });
+
+    watch(
+      rules,
+      (val) => {
+        getListData(val);
+      },
+      { deep: true, immediate: true },
+    );
 
     return () => (
       <div class={`cert-manager-page${isResourcePage ? ' has-selection' : ''}`}>
