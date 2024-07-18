@@ -1,0 +1,39 @@
+.host_operations_w100 {
+  width: 100px;
+}
+
+.host_operations_blue_txt {
+  color: rgb(0, 136, 255)
+}
+
+.host_operations_red_txt {
+  color: red;
+}
+
+.host_operations_container {
+  margin-right: 10px;
+
+  .f26 {
+    font-size: 26px;
+  }
+}
+
+.host-operations-selection-tip {
+  color: #313238;
+  margin-bottom: 8px;
+
+  .host-operations-selection-tip-all {
+    color: #3a84ff;
+    font-weight: bold;
+  }
+
+  .host-operations-selection-tip-target {
+    color: #2dcb56;
+    font-weight: bold;
+  }
+
+  .host-operations-selection-tip-untarget {
+    color: #ea3636;
+    font-weight: bold;
+  }
+}
