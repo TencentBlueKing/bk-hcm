@@ -26,6 +26,7 @@ import (
 
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/logs"
 
 	"github.com/tidwall/gjson"
 
@@ -83,6 +84,7 @@ func (a *applicationSvc) ListBizApplications(cts *rest.Contexts) (interface{}, e
 	})
 	if err != nil {
 		// 没有业务查看权限的只能查询自己的单据
+		logs.Errorf("user %s has no business permissions, err: %v, rid: %s", cts.Kit.User, err, cts.Kit.Rid)
 		req.Filter.Rules = append(req.Filter.Rules, tools.RuleEqual("applicant", cts.Kit.User))
 	}
 
