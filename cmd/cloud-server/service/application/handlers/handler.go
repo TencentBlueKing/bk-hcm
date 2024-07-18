@@ -55,4 +55,7 @@ type ApplicationHandler interface {
 
 	// Complete 审批通过后资源的交付如未完成，需要进一步手动完善申请流程
 	Complete() (status enumor.ApplicationStatus, deliverDetail map[string]interface{}, err error)
+
+	// GetBkBizIDs 获取当前的业务IDs
+	GetBkBizIDs() []int64
 }

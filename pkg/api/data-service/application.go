@@ -33,6 +33,7 @@ type ApplicationCreateReq struct {
 	SN             string                   `json:"sn" validate:"required"`
 	Type           enumor.ApplicationType   `json:"type" validate:"required"`
 	Status         enumor.ApplicationStatus `json:"status" validate:"required"`
+	BkBizIDs       []int64                  `json:"bk_biz_ids" validate:"required"`
 	Applicant      string                   `json:"applicant" validate:"required"`
 	Content        string                   `json:"content" validate:"required"`
 	DeliveryDetail string                   `json:"delivery_detail" validate:"required"`

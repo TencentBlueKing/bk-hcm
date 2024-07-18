@@ -19,7 +19,9 @@
 
 package mainaccount
 
-import "hcm/pkg/thirdparty/api-gateway/itsm"
+import (
+	"hcm/pkg/thirdparty/api-gateway/itsm"
+)
 
 // PrepareReq 预处理申请单数据
 func (a *ApplicationOfUpdateMainAccount) PrepareReq() error {
@@ -45,4 +47,9 @@ func (a *ApplicationOfUpdateMainAccount) GetItsmApprover(managers []string) []it
 			Approvers: managers,
 		},
 	}
+}
+
+// GetBkBizIDs 获取当前的业务IDs
+func (a *ApplicationOfUpdateMainAccount) GetBkBizIDs() []int64 {
+	return []int64{a.req.BkBizID}
 }
