@@ -34,10 +34,23 @@ const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, ha
 
 const { selections, handleSelectionChange, resetSelections } = useTableSelection();
 
+const handlePageLimitChange = (limit: number) => {
+  resetSelections();
+  handlePageSizeChange(limit);
+};
+const handlePageValueChange = (current: number) => {
+  resetSelections();
+  handlePageChange(current);
+};
+
+const hostOperationRef = ref(null);
+const tableRef = ref(null);
 const { columns, generateColumnsSettings } = useColumns({
   extra: {
     isLoading,
     triggerApi,
+    getHostOperationRef: () => hostOperationRef,
+    getTableRef: () => tableRef,
   },
 });
 const resourceStore = useResourceStore();
@@ -121,6 +134,7 @@ getCloudAreas();
     >
       <slot></slot>
       <HostOperations
+        ref="hostOperationRef"
         :selections="selections"
         :on-finished="(type: 'confirm' | 'cancel' = 'confirm') => {
         if(type === 'confirm') triggerApi();
@@ -135,6 +149,7 @@ getCloudAreas();
     </section>
 
     <bk-table
+      ref="tableRef"
       row-hover="auto"
       :columns="columns"
       :data="datas"
@@ -143,8 +158,8 @@ getCloudAreas();
       remote-pagination
       show-overflow-tooltip
       :is-row-select-enable="isRowSelectEnable"
-      @page-limit-change="handlePageSizeChange"
-      @page-value-change="handlePageChange"
+      @page-limit-change="handlePageLimitChange"
+      @page-value-change="handlePageValueChange"
       @selection-change="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable)"
       @select-all="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true)"
       @column-sort="handleSort"

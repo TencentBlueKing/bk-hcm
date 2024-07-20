@@ -3,10 +3,9 @@
  */
 import type { FilterType } from '@/typings/resource';
 
-import { useResourceStore } from '@/store/resource';
+import { useResourceStore, useBusinessStore } from '@/store';
 import { ref, onMounted, watch } from 'vue';
-import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
-import { useAccountStore } from '@/store';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 
 type SortType = {
   column: {
@@ -29,6 +28,7 @@ export default (
 ) => {
   // 接口
   const resourceStore = useResourceStore();
+  const businessStore = useBusinessStore();
 
   // 查询列表相关状态
   const isLoading = ref(false);
@@ -55,17 +55,17 @@ export default (
   }
 
   const isFilter = ref(false);
-  const { whereAmI } = useWhereAmI();
-  const accountStore = useAccountStore();
+  const { isBusinessPage } = useWhereAmI();
+
+  const targetStore = isBusinessPage ? businessStore : resourceStore;
 
   // 更新数据
   const triggerApi = () => {
     isLoading.value = true;
-    if (whereAmI.value === Senarios.business && !accountStore.bizs) return;
     // 默认拉取方法
     const getDefaultList = () =>
       Promise.all([
-        resourceStore[apiName](
+        targetStore[apiName](
           {
             page: {
               count: false,
@@ -79,7 +79,7 @@ export default (
           },
           type,
         ),
-        resourceStore[apiName](
+        targetStore[apiName](
           {
             page: {
               count: true,
