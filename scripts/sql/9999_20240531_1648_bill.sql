@@ -343,6 +343,33 @@ create table `account_bill_sync_record`
 insert into id_generator(`resource`, `max_id`)
 values ('account_bill_sync_record', '0');
 
+create table `account_bill_month_task`
+(
+    `id`              varchar(64)     not null,
+    `root_account_id` varchar(64)     not null,
+    `vendor`          varchar(16)     not null default '',
+    `bill_year`       int             not null,
+    `bill_month`      int             not null,
+    `version_id`      bigint(1)       not null,
+    `state`           varchar(64)     not null,
+    `currency`        varchar(32)     not null comment '货币',
+    `cost`            decimal(38, 10) not null,
+    `pull_index`      bigint(1)       not null,
+    `pull_flow_id`    varchar(64)     not null,
+    `split_index`     bigint(1)       not null,
+    `split_flow_id`   varchar(64)     not null,
+    `summary_flow_id` varchar(64)     not null,
+    `summary_detail`  text            not null,
+    `creator`         varchar(64)     not null,
+    `reviser`         varchar(64)     not null,
+    `created_at`      timestamp       not null default current_timestamp,
+    `updated_at`      timestamp       not null default current_timestamp on update current_timestamp,
+    primary key (`id`),
+    unique key `idx_root_account_id_year_month` (`root_account_id`, `bill_year`, `bill_month`)
+) comment '月度任务';
+
+insert into id_generator(`resource`, `max_id`)
+values ('account_bill_month_task', '0');
 
 /*
  为async_flow_task表增加索引

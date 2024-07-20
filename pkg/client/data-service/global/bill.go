@@ -187,32 +187,32 @@ func (b *BillClient) ListBillDailyPullTask(kt *kit.Kit, req *billproto.BillDaily
 		b.client, rest.GET, kt, req, "/bills/dailypulltasks")
 }
 
-// --- bill puller ---
+// --- bill month task ---
 
-// CreateBillPuller create bill puller
-func (b *BillClient) CreateBillPuller(kt *kit.Kit, req *billproto.BillPullerCreateReq) (
+// CreateBillMonthPullTask create bill month task
+func (b *BillClient) CreateBillMonthPullTask(kt *kit.Kit, req *billproto.BillMonthTaskCreateReq) (
 	*core.CreateResult, error) {
-	return common.Request[billproto.BillPullerCreateReq, core.CreateResult](
-		b.client, rest.POST, kt, req, "/bills/pullers")
+	return common.Request[billproto.BillMonthTaskCreateReq, core.CreateResult](
+		b.client, rest.POST, kt, req, "/bills/monthpulltask")
 }
 
-// BatchDeleteBillPuller delete bill puller
-func (b *BillClient) BatchDeleteBillPuller(kt *kit.Kit, req *dataservice.BatchDeleteReq) error {
+// DeleteBillMonthPullTask delete bill month task
+func (b *BillClient) DeleteBillMonthPullTask(kt *kit.Kit, req *dataservice.BatchDeleteReq) error {
 	return common.RequestNoResp[dataservice.BatchDeleteReq](
-		b.client, rest.DELETE, kt, req, "/bills/pullers")
+		b.client, rest.DELETE, kt, req, "/bills/monthpulltask")
 }
 
-// UpdateBillPuller update bill puller
-func (b *BillClient) UpdateBillPuller(kt *kit.Kit, req *billproto.BillPullerUpdateReq) error {
-	return common.RequestNoResp[billproto.BillPullerUpdateReq](
-		b.client, rest.PUT, kt, req, "/bills/pullers")
+// UpdateBillMonthPullTask update bill month task
+func (b *BillClient) UpdateBillMonthPullTask(kt *kit.Kit, req *billproto.BillMonthTaskUpdateReq) error {
+	return common.RequestNoResp[billproto.BillMonthTaskUpdateReq](
+		b.client, rest.PUT, kt, req, "/bills/monthpulltask")
 }
 
-// ListBillPuller list bill puller
-func (b *BillClient) ListBillPuller(kt *kit.Kit, req *billproto.BillPullerListReq) (
-	*billproto.BillPullerListResult, error) {
-	return common.Request[billproto.BillPullerListReq, billproto.BillPullerListResult](
-		b.client, rest.GET, kt, req, "/bills/pullers")
+// ListBillMonthPullTask update bill month task
+func (b *BillClient) ListBillMonthPullTask(kt *kit.Kit, req *billproto.BillMonthTaskListReq) (
+	*billproto.BillMonthTaskListResult, error) {
+	return common.Request[billproto.BillMonthTaskListReq, billproto.BillMonthTaskListResult](
+		b.client, rest.GET, kt, req, "/bills/monthpulltask")
 }
 
 // --- bill summary ---

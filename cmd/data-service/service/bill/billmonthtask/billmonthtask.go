@@ -17,46 +17,31 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package actcli
+// Package billmonthtask ...
+package billmonthtask
 
 import (
-	"hcm/pkg/client"
-	dataservice "hcm/pkg/client/data-service"
-	hcservice "hcm/pkg/client/hc-service"
+	"net/http"
+
+	"hcm/cmd/data-service/service/capability"
 	"hcm/pkg/dal/dao"
+	"hcm/pkg/rest"
 )
 
-var (
-	cliSet *client.ClientSet
-	daoSet dao.Set
-)
+// InitService initialize the bill puller service
+func InitService(cap *capability.Capability) {
+	svc := &service{
+		dao: cap.Dao,
+	}
+	h := rest.NewHandler()
+	h.Add("CreateBillMonthPullTask", http.MethodPost, "/bills/monthpulltask", svc.CreateBillMonthPullTask)
+	h.Add("DeleteBillMonthPullTask", http.MethodDelete, "/bills/monthpulltask", svc.DeleteBillMonthPullTask)
+	h.Add("UpdateBillMonthPullTask", http.MethodPut, "/bills/monthpulltask", svc.UpdateBillMonthPullTask)
+	h.Add("ListBillMonthPullTask", http.MethodGet, "/bills/monthpulltask", svc.ListBillMonthPullTask)
 
-// SetClientSet set client set.
-func SetClientSet(cli *client.ClientSet) {
-	cliSet = cli
+	h.Load(cap.WebService)
 }
 
-// GetClientSet get client set.
-func GetClientSet() *client.ClientSet {
-	return cliSet
-}
-
-// GetHCService get hc service.
-func GetHCService() *hcservice.Client {
-	return cliSet.HCService()
-}
-
-// GetDataService get data service.
-func GetDataService() *dataservice.Client {
-	return cliSet.DataService()
-}
-
-// SetDaoSet set dao set.
-func SetDaoSet(cli dao.Set) {
-	daoSet = cli
-}
-
-// GetDaoSet get dao set.
-func GetDaoSet() dao.Set {
-	return daoSet
+type service struct {
+	dao dao.Set
 }

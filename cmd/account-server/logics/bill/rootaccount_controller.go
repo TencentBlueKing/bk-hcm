@@ -25,8 +25,11 @@ import (
 	"math/rand"
 	"time"
 
+	"hcm/cmd/account-server/logics/bill/puller"
+	"hcm/cmd/task-server/logics/action/bill/monthtask"
 	"hcm/cmd/task-server/logics/action/bill/rootsummary"
 	"hcm/pkg/api/core"
+	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/bill"
 	dsbillapi "hcm/pkg/api/data-service/bill"
 	taskserver "hcm/pkg/api/task-server"
@@ -96,6 +99,7 @@ func (rac *RootAccountController) Start() error {
 	rac.cancelFunc = cancelFunc
 	go rac.runBillSummaryLoop(kt)
 	go rac.runCalculateBillSummaryLoop(kt)
+	go rac.runMonthTaskLoop(kt)
 
 	return nil
 }
@@ -133,6 +137,30 @@ func (rac *RootAccountController) runCalculateBillSummaryLoop(kt *kit.Kit) {
 			lastMonthflowID = rac.pollRootSummaryTask(subKit, lastMonthflowID, lastBillYear, lastBillMonth)
 			curBillYear, curBillMonth := getCurrentBillMonth()
 			curMonthflowID = rac.pollRootSummaryTask(subKit, curMonthflowID, curBillYear, curBillMonth)
+
+		case <-kt.Ctx.Done():
+			logs.Infof("root account (%s, %s) summary controller context done, rid: %s",
+				rac.RootAccountID, rac.Vendor, kt.Rid)
+			return
+		}
+	}
+}
+
+func (rac *RootAccountController) runMonthTaskLoop(kt *kit.Kit) {
+	ticker := time.NewTicker(*cc.AccountServer().Controller.RootAccountSummarySyncDuration)
+	for {
+		select {
+		case <-ticker.C:
+			lastBillYear, lastBillMonth := getLastBillMonth()
+			if err := rac.ensureMonthTask(kt.NewSubKit(), lastBillYear, lastBillMonth); err != nil {
+				logs.Warnf("ensure last month task for (%s, %s) failed, err %s, rid: %s",
+					rac.RootAccountID, rac.Vendor, err.Error(), kt.Rid)
+			}
+			curBillYear, curBillMonth := getCurrentBillMonth()
+			if err := rac.ensureMonthTask(kt.NewSubKit(), curBillYear, curBillMonth); err != nil {
+				logs.Warnf("ensure current month task for (%s, %s) failed, err %s, rid: %s",
+					rac.RootAccountID, rac.Vendor, err.Error(), kt.Rid)
+			}
 
 		case <-kt.Ctx.Done():
 			logs.Infof("root account (%s, %s) summary controller context done, rid: %s",
@@ -222,7 +250,7 @@ func (rac *RootAccountController) syncBillSummary(kt *kit.Kit) error {
 }
 
 func (rac *RootAccountController) getBillSummary(kt *kit.Kit, billYear, billMonth int) (
-	*bill.BillSummaryRootResult, error) {
+	*dsbillapi.BillSummaryRootResult, error) {
 
 	var expressions []*filter.AtomRule
 	expressions = append(expressions, []*filter.AtomRule{
@@ -291,6 +319,323 @@ func (rac *RootAccountController) createNewBillSummary(kt *kit.Kit, billYear, bi
 	logs.Infof("root account (%s, %s) in (%d, %02d) bill summary create successfully, rid: %s",
 		rac.RootAccountID, rac.Vendor, billYear, billMonth, kt.Rid)
 	return nil
+}
+
+func (rac *RootAccountController) ensureMonthTask(kt *kit.Kit, billYear, billMonth int) error {
+	rootSummary, err := rac.getBillSummary(kt, billYear, billMonth)
+	if err != nil {
+		return err
+	}
+	monthPuller, err := puller.GetMonthPuller(rac.Vendor)
+	if err != nil {
+		return err
+	}
+	if !monthPuller.HasMonthPullTask() {
+		logs.Infof("no month pull task for root account (%s, %s), skip", rac.RootAccountID, rac.Vendor)
+		return nil
+	}
+
+	mainSummaryList, err := rac.listAllMainSummary(kt, billYear, billMonth)
+	if err != nil {
+		return err
+	}
+	isAllAccounted := true
+	for _, mainSummary := range mainSummaryList {
+		if mainSummary.CurrentVersion != rootSummary.CurrentVersion {
+			isAllAccounted = false
+		}
+		if mainSummary.State != enumor.MainAccountBillSummaryStateAccounted &&
+			mainSummary.State != enumor.MainAccountBillSummaryStateWaitMonthTask {
+			isAllAccounted = false
+		}
+	}
+	if !isAllAccounted {
+		logs.Infof("not all main account bill summary for root account (%s, %s) were accounted, wait",
+			rac.RootAccountID, rac.Vendor)
+		return nil
+	}
+
+	monthTask, err := rac.getMonthPullTask(kt, billYear, billMonth)
+	if err != nil {
+		return err
+	}
+	if monthTask == nil {
+		return rac.createMonthPullTask(kt, rootSummary)
+	}
+	// 判断versionID是否一致，不一致，则重新创建month pull task
+	if monthTask.VersionID != rootSummary.CurrentVersion {
+		if err := rac.deleteMonthPullTask(kt, billYear, billMonth); err != nil {
+			return err
+		}
+		return rac.createMonthPullTask(kt, rootSummary)
+	}
+	switch monthTask.State {
+	case enumor.RootAccountMonthBillTaskStatePulling:
+		if err := rac.ensureMonthTaskPullStage(kt, monthTask); err != nil {
+			return err
+		}
+	case enumor.RootAccountMonthBillTaskStatePulled:
+		if err := rac.ensureMonthTaskSplitStage(kt, monthTask); err != nil {
+			return err
+		}
+	case enumor.RootAccountMonthBillTaskStateSplit:
+		if err := rac.ensureMonthTaskAccountStage(kt, monthTask); err != nil {
+			return err
+		}
+	case enumor.RootAccountMonthBillTaskStateAccounted:
+		// nothing
+	}
+	return nil
+}
+
+func (rac *RootAccountController) listAllMainSummary(
+	kt *kit.Kit, billYear, billMonth int) ([]*dsbillapi.BillSummaryMainResult, error) {
+
+	expressions := []*filter.AtomRule{
+		tools.RuleEqual("root_account_id", rac.RootAccountID),
+		tools.RuleEqual("vendor", rac.Vendor),
+		tools.RuleEqual("bill_year", billYear),
+		tools.RuleEqual("bill_month", billMonth),
+	}
+	result, err := rac.Client.DataService().Global.Bill.ListBillSummaryMain(
+		kt, &bill.BillSummaryMainListReq{
+			Filter: tools.ExpressionAnd(expressions...),
+			Page: &core.BasePage{
+				Count: true,
+			},
+		})
+	if err != nil {
+		return nil, fmt.Errorf("list main account bill summary of %+v failed, err %s", rac, err.Error())
+	}
+	if result.Count == 0 {
+		return nil, fmt.Errorf("empty count in result %+v", result)
+	}
+	logs.Infof("found %d main account summary for %+v, rid: %s", result.Count, rac, kt.Rid)
+	var mainSummaryList []*bill.BillSummaryMainResult
+	for offset := uint64(0); offset < result.Count; offset = offset + uint64(core.DefaultMaxPageLimit) {
+		result, err = rac.Client.DataService().Global.Bill.ListBillSummaryMain(
+			kt, &bill.BillSummaryMainListReq{
+				Filter: tools.ExpressionAnd(expressions...),
+				Page: &core.BasePage{
+					Start: 0,
+					Limit: core.DefaultMaxPageLimit,
+				},
+			})
+		if err != nil {
+			return nil, fmt.Errorf("list main account bill summary of %+v failed, err %s", rac, err.Error())
+		}
+		mainSummaryList = append(mainSummaryList, result.Details...)
+	}
+	return mainSummaryList, nil
+}
+
+func (rac *RootAccountController) ensureMonthTaskPullStage(kt *kit.Kit, task *dsbillapi.BillMonthTaskResult) error {
+	if len(task.PullFlowID) == 0 {
+		result, err := rac.createMonthTask(
+			kt, rac.RootAccountID, task.BillYear, task.BillMonth, enumor.MonthTaskTypePull)
+		if err != nil {
+			logs.Warnf("failed to create month task, err %s, rid: %s", err.Error(), kt.Rid)
+			return err
+		}
+		if err := rac.Client.DataService().Global.Bill.UpdateBillMonthPullTask(kt, &dsbillapi.BillMonthTaskUpdateReq{
+			ID:         task.ID,
+			PullFlowID: result.ID,
+		}); err != nil {
+			logs.Warnf("failed to update month pull task pull flow id %s, err: %s, rid: %s",
+				result.ID, err.Error(), kt.Rid)
+			return err
+		}
+		logs.Infof("successfully create month pull task, flow id: %s, rid: %s", result.ID, kt.Rid)
+		return nil
+	}
+	flow, err := rac.Client.TaskServer().GetFlow(kt, task.PullFlowID)
+	if err != nil {
+		logs.Warnf("get flow by id %s failed, err %s, rid: %s", task.PullFlowID, err.Error(), kt.Rid)
+		return err
+	}
+	// 如果任务失败，则重新创建
+	if flow.State == enumor.FlowFailed {
+		result, err := rac.createMonthTask(
+			kt, rac.RootAccountID, task.BillYear, task.BillMonth, enumor.MonthTaskTypePull)
+		if err != nil {
+			logs.Warnf("failed to create month task, err %s, rid: %s", err.Error(), kt.Rid)
+			return err
+		}
+		if err := rac.Client.DataService().Global.Bill.UpdateBillMonthPullTask(kt, &dsbillapi.BillMonthTaskUpdateReq{
+			ID:         task.ID,
+			PullFlowID: result.ID,
+		}); err != nil {
+			logs.Warnf("failed to update month pull task pull flow id %s, err: %s, rid: %s",
+				result.ID, err.Error(), kt.Rid)
+			return err
+		}
+		logs.Infof("successfully recreate month pull task, flow id: %s, rid: %s", result.ID, kt.Rid)
+		return nil
+	}
+	// 其它情况等待flow中更新task状态
+	return nil
+}
+
+func (rac *RootAccountController) ensureMonthTaskSplitStage(kt *kit.Kit, task *dsbillapi.BillMonthTaskResult) error {
+	if len(task.SplitFlowID) == 0 {
+		result, err := rac.createMonthTask(
+			kt, rac.RootAccountID, task.BillYear, task.BillMonth, enumor.MonthTaskTypeSplit)
+		if err != nil {
+			logs.Warnf("failed to create month task, err %s, rid: %s", err.Error(), kt.Rid)
+			return err
+		}
+		if err := rac.Client.DataService().Global.Bill.UpdateBillMonthPullTask(kt, &dsbillapi.BillMonthTaskUpdateReq{
+			ID:          task.ID,
+			SplitFlowID: result.ID,
+		}); err != nil {
+			logs.Warnf("failed to update month pull task split flow id %s, err: %s, rid: %s",
+				result.ID, err.Error(), kt.Rid)
+			return err
+		}
+		logs.Infof("successfully create month split task, flow id: %s, rid: %s", result.ID, kt.Rid)
+		return nil
+	}
+	flow, err := rac.Client.TaskServer().GetFlow(kt, task.SplitFlowID)
+	if err != nil {
+		logs.Warnf("get flow by id %s failed, err %s, rid: %s", task.SplitFlowID, err.Error(), kt.Rid)
+		return err
+	}
+	// 如果任务失败，则重新创建
+	if flow.State == enumor.FlowFailed {
+		result, err := rac.createMonthTask(
+			kt, rac.RootAccountID, task.BillYear, task.BillMonth, enumor.MonthTaskTypeSplit)
+		if err != nil {
+			logs.Warnf("failed to create month task, err %s, rid: %s", err.Error(), kt.Rid)
+			return err
+		}
+		if err := rac.Client.DataService().Global.Bill.UpdateBillMonthPullTask(kt, &dsbillapi.BillMonthTaskUpdateReq{
+			ID:          task.ID,
+			SplitFlowID: result.ID,
+		}); err != nil {
+			logs.Warnf("failed to update month pull task split flow id %s, err: %s, rid: %s",
+				result.ID, err.Error(), kt.Rid)
+			return err
+		}
+		logs.Infof("successfully recreate month split task, flow id: %s, rid: %s", result.ID, kt.Rid)
+		return nil
+	}
+	// 其它情况等待flow中更新task状态
+	return nil
+}
+
+func (rac *RootAccountController) ensureMonthTaskAccountStage(kt *kit.Kit, task *dsbillapi.BillMonthTaskResult) error {
+	if len(task.SummaryFlowID) == 0 {
+		result, err := rac.createMonthTask(
+			kt, rac.RootAccountID, task.BillYear, task.BillMonth, enumor.MonthTaskTypeSummary)
+		if err != nil {
+			logs.Warnf("failed to create month task, err %s, rid: %s", err.Error(), kt.Rid)
+			return err
+		}
+		if err := rac.Client.DataService().Global.Bill.UpdateBillMonthPullTask(kt, &dsbillapi.BillMonthTaskUpdateReq{
+			ID:            task.ID,
+			SummaryFlowID: result.ID,
+		}); err != nil {
+			logs.Warnf("failed to update month pull task summary flow id %s, err: %s, rid: %s",
+				result.ID, err.Error(), kt.Rid)
+			return err
+		}
+		logs.Infof("successfully create month summary task, flow id: %s, rid: %s", result.ID, kt.Rid)
+		return nil
+	}
+	flow, err := rac.Client.TaskServer().GetFlow(kt, task.SummaryFlowID)
+	if err != nil {
+		logs.Warnf("get flow by id %s failed, err %s, rid: %s", task.SummaryFlowID, err.Error(), kt.Rid)
+		return err
+	}
+	// 如果任务失败，则重新创建
+	if flow.State == enumor.FlowFailed {
+		result, err := rac.createMonthTask(
+			kt, rac.RootAccountID, task.BillYear, task.BillMonth, enumor.MonthTaskTypeSummary)
+		if err != nil {
+			logs.Warnf("failed to create month task, err %s, rid: %s", err.Error(), kt.Rid)
+			return err
+		}
+		if err := rac.Client.DataService().Global.Bill.UpdateBillMonthPullTask(kt, &dsbillapi.BillMonthTaskUpdateReq{
+			ID:            task.ID,
+			SummaryFlowID: result.ID,
+		}); err != nil {
+			logs.Warnf("failed to update month pull task summary flow id %s, err: %s, rid: %s",
+				result.ID, err.Error(), kt.Rid)
+			return err
+		}
+		logs.Infof("successfully recreate month summary task, flow id: %s, rid: %s", result.ID, kt.Rid)
+		return nil
+	}
+	// 其它情况等待flow中更新task状态
+	return nil
+}
+
+func (rac *RootAccountController) createMonthTask(
+	kt *kit.Kit, rootAccountID string, billYear, billMonth int, t enumor.MonthTaskType) (*core.CreateResult, error) {
+	return rac.Client.TaskServer().CreateCustomFlow(kt, &taskserver.AddCustomFlowReq{
+		Name: enumor.FlowBillMonthTask,
+		Memo: "run bill month task",
+		Tasks: []taskserver.CustomFlowTask{
+			monthtask.BuildMonthTask(
+				t, rootAccountID, rac.Vendor, billYear, billMonth),
+		},
+	})
+}
+
+func (rac *RootAccountController) createMonthPullTask(kt *kit.Kit, rootSummary *dsbillapi.BillSummaryRootResult) error {
+	_, err := rac.Client.DataService().Global.Bill.CreateBillMonthPullTask(kt, &dsbillapi.BillMonthTaskCreateReq{
+		RootAccountID: rac.RootAccountID,
+		Vendor:        rac.Vendor,
+		BillYear:      rootSummary.BillYear,
+		BillMonth:     rootSummary.BillMonth,
+		VersionID:     rootSummary.CurrentVersion,
+		State:         enumor.RootAccountMonthBillTaskStatePulling,
+	})
+	if err != nil {
+		logs.Infof("create month pull task failed, err: %s, rid: %s", err.Error(), kt.Rid)
+		return err
+	}
+	return nil
+}
+
+func (rac *RootAccountController) getMonthPullTask(
+	kt *kit.Kit, billYear, billMonth int) (*dsbillapi.BillMonthTaskResult, error) {
+
+	expressions := []*filter.AtomRule{
+		tools.RuleEqual("root_account_id", rac.RootAccountID),
+		tools.RuleEqual("bill_year", billYear),
+		tools.RuleEqual("bill_month", billMonth),
+	}
+	result, err := rac.Client.DataService().Global.Bill.ListBillMonthPullTask(kt, &dsbillapi.BillMonthTaskListReq{
+		Filter: tools.ExpressionAnd(expressions...),
+		Page: &core.BasePage{
+			Start: 0,
+			Limit: 1,
+		},
+	})
+	if err != nil {
+		logs.Warnf("get month pull task failed, err: %s, rid: %s", err.Error(), kt.Rid)
+		return nil, fmt.Errorf("get month pull task failed, err: %s", err.Error())
+	}
+	if len(result.Details) == 0 {
+		return nil, nil
+	}
+	if len(result.Details) != 1 {
+		logs.Warnf("get invalid length month pull task, resp: %v, rid: %s", result, kt.Rid)
+		return nil, fmt.Errorf("get invalid length month pull task, resp: %v", result)
+	}
+	return result.Details[0], nil
+}
+
+func (rac *RootAccountController) deleteMonthPullTask(kt *kit.Kit, billYear, billMonth int) error {
+	expressions := []*filter.AtomRule{
+		tools.RuleEqual("root_account_id", rac.RootAccountID),
+		tools.RuleEqual("bill_year", billYear),
+		tools.RuleEqual("bill_month", billMonth),
+	}
+	return rac.Client.DataService().Global.Bill.DeleteBillMonthPullTask(kt, &dataservice.BatchDeleteReq{
+		Filter: tools.ExpressionAnd(expressions...),
+	})
 }
 
 // Stop stop controller
