@@ -21,7 +21,6 @@ package monthtask
 
 import (
 	"encoding/json"
-	rawjson "encoding/json"
 	"fmt"
 
 	actcli "hcm/cmd/task-server/logics/action/cli"
@@ -30,12 +29,14 @@ import (
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/bill"
 	"hcm/pkg/async/action/run"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/slice"
 
 	"github.com/shopspring/decimal"
 )
@@ -148,7 +149,7 @@ func (act MonthTaskAction) runPull(kt *kit.Kit, runner MonthTaskRunner, opt *Mon
 }
 
 func (act MonthTaskAction) runSplit(kt *kit.Kit, runner MonthTaskRunner, opt *MonthTaskActionOption) error {
-	// step1 清理原有月度人物的billitem，因为有可能之前存在中途失败的脏数据了
+	// step1 清理原有月度任务的billitem，因为有可能之前存在中途失败的脏数据了
 	if err := act.cleanBillItem(kt, opt); err != nil {
 		return err
 	}
@@ -186,12 +187,16 @@ func (act MonthTaskAction) runSplit(kt *kit.Kit, runner MonthTaskRunner, opt *Mo
 			logs.Warnf("failed to split bill item, opt: %+v, err: %s, rid: %s", opt, err.Error(), kt.Rid)
 			return err
 		}
-		_, err = actcli.GetDataService().Global.Bill.BatchCreateBillItem(
-			kt, opt.Vendor, (*bill.BatchBillItemCreateReq[rawjson.RawMessage])(&tmpBillItemList))
-		if err != nil {
-			logs.Warnf("failed to batch create bill item, opt: %+v, err: %s, rid: %s", opt, err.Error(), kt.Rid)
-			return fmt.Errorf("failed to batch create bill item, opt: %+v, err: %s", opt, err.Error())
+		for i, itemsBatch := range slice.Split(tmpBillItemList, constant.BatchOperationMaxLimit) {
+			createReq := &bill.BatchRawBillItemCreateReq{Items: itemsBatch}
+			_, err = actcli.GetDataService().Global.Bill.BatchCreateBillItem(kt, opt.Vendor, createReq)
+			if err != nil {
+				logs.Warnf("failed to batch create bill item of batch idx %d, err: %s, opt: %+v, rid: %s",
+					i, err.Error(), opt, kt.Rid)
+				return fmt.Errorf("failed to batch create bill item, err: %s, opt: %+v", err.Error(), opt)
+			}
 		}
+
 		logs.Infof("split bill item for opt %+v done, offset: %d, limit: %d", opt, offset, limit)
 		if isFinished {
 			if err := actcli.GetDataService().Global.Bill.UpdateBillMonthPullTask(kt, &bill.BillMonthTaskUpdateReq{

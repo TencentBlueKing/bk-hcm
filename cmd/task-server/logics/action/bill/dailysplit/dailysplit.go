@@ -30,12 +30,14 @@ import (
 	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/bill"
 	"hcm/pkg/async/action/run"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/slice"
 )
 
 // DailyAccountSplitActionOption option for main account summary action
@@ -215,23 +217,25 @@ func splitBillItem(kt *kit.Kit, opt *DailyAccountSplitActionOption, billDay int)
 			BillDate:       fmt.Sprintf("%02d", billDay),
 			FileName:       name,
 		}
+		splitter := DefaultSplitter{}
 		resp, err := actcli.GetDataService().Global.Bill.QueryRawBillItems(kt, tmpReq)
 		if err != nil {
 			return fmt.Errorf("failed to get raw bill item for %v, err %s", tmpReq, err.Error())
 		}
-		for _, item := range resp.Details {
-			defaultSplitter := &DefaultSplitter{}
-			reqList, err := defaultSplitter.DoSplit(opt, billDay, item, mainAccountInfo)
-			if err != nil {
-				logs.Warnf("raw bill %v do splitting failed, err %s", item, err.Error())
-				return err
+		for _, itemsBatch := range slice.Split(resp.Details, constant.BatchOperationMaxLimit) {
+			for _, item := range itemsBatch {
+				reqList, err := splitter.DoSplit(kt, opt, billDay, item, mainAccountInfo)
+				if err != nil {
+					logs.Warnf("raw bill %v do splitting failed, err %s", item, err.Error())
+					return err
+				}
+				billItemList = append(billItemList, reqList...)
 			}
-			billItemList = append(billItemList, reqList...)
-		}
-		_, err = actcli.GetDataService().Global.Bill.BatchCreateBillItem(
-			kt, opt.Vendor, (*bill.BatchBillItemCreateReq[rawjson.RawMessage])(&billItemList))
-		if err != nil {
-			return fmt.Errorf("batch create bill item for %s failed, err %s", filename, err.Error())
+			createReq := &bill.BatchRawBillItemCreateReq{Items: billItemList}
+			_, err = actcli.GetDataService().Global.Bill.BatchCreateBillItem(kt, opt.Vendor, createReq)
+			if err != nil {
+				return fmt.Errorf("batch create bill item for %s failed, err %s", filename, err.Error())
+			}
 		}
 		logs.Infof("split %s successfully", filename)
 	}

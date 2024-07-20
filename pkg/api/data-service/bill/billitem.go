@@ -20,8 +20,12 @@
 package bill
 
 import (
+	rawjson "encoding/json"
+	"fmt"
+
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/bill"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/table/types"
@@ -29,8 +33,13 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+// BatchRawBillItemCreateReq ...
+type BatchRawBillItemCreateReq = BatchBillItemCreateReq[rawjson.RawMessage]
+
 // BatchBillItemCreateReq batch bill item create request
-type BatchBillItemCreateReq[E bill.BillItemExtension] []BillItemCreateReq[E]
+type BatchBillItemCreateReq[E bill.BillItemExtension] struct {
+	Items []BillItemCreateReq[E] `json:"items" validate:"required,dive"`
+}
 
 // BillItemCreateReq create request
 type BillItemCreateReq[E bill.BillItemExtension] struct {
@@ -50,6 +59,14 @@ type BillItemCreateReq[E bill.BillItemExtension] struct {
 	ResAmount     decimal.Decimal     `json:"res_amount,omitempty"`
 	ResAmountUnit string              `json:"res_amount_unit,omitempty"`
 	Extension     *E                  `json:"extension"`
+}
+
+// Validate ...
+func (req *BatchBillItemCreateReq[E]) Validate() error {
+	if len(req.Items) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("bill item  count should <= %d", constant.BatchOperationMaxLimit)
+	}
+	return validator.Validate.Struct(req)
 }
 
 // Validate ...
@@ -88,10 +105,10 @@ type ZenlayerBillItemListResult = core.ListResultT[*bill.ZenlayerBillItem]
 type BillItemUpdateReq struct {
 	ID            string              `json:"id,omitempty" validate:"required"`
 	Currency      enumor.CurrencyCode `json:"currency" validate:"required"`
-	Cost          *decimal.Decimal     `json:"cost" validate:"required"`
+	Cost          *decimal.Decimal    `json:"cost" validate:"required"`
 	HcProductCode string              `json:"hc_product_code,omitempty"`
 	HcProductName string              `json:"hc_product_name,omitempty"`
-	ResAmount     *decimal.Decimal     `json:"res_amount,omitempty"`
+	ResAmount     *decimal.Decimal    `json:"res_amount,omitempty"`
 	ResAmountUnit string              `json:"res_amount_unit,omitempty"`
 	Extension     types.JsonField     `json:"extension"`
 }
