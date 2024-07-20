@@ -364,7 +364,7 @@ create table `account_bill_month_task`
     `reviser`         varchar(64)     not null,
     `created_at`      timestamp       not null default current_timestamp,
     `updated_at`      timestamp       not null default current_timestamp on update current_timestamp,
-    primary key (`id`)
+    primary key (`id`),
     unique key `idx_root_account_id_year_month` (`root_account_id`, `bill_year`, `bill_month`)
 ) comment '月度任务';
 
