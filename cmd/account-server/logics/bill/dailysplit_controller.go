@@ -184,7 +184,7 @@ func (msdc *MainDailySplitController) syncDailySplit(kt *kit.Kit, billYear, bill
 		if task.State == enumor.MainAccountRawBillPullStatePulled {
 			if len(task.SplitFlowID) == 0 {
 				logs.Infof("split task of day %d main account %v bill should be create", task.BillDay, summary)
-				flowID, err := msdc.createDailySplitTask(kt, summary, billYear, billMonth, task.BillDay)
+				flowID, err := msdc.createDailySplitFlow(kt, summary, billYear, billMonth, task.BillDay)
 				if err != nil {
 					logs.Warnf("create daily split task for %v, %d/%d/%d failed, err %s, rid: %s",
 						summary, billYear, billMonth, task.BillDay, err.Error(), kt.Rid)
@@ -217,7 +217,7 @@ func (msdc *MainDailySplitController) syncDailySplit(kt *kit.Kit, billYear, bill
 							continue
 						}
 					}
-					flowID, err := msdc.createDailySplitTask(kt, summary, billYear, billMonth, task.BillDay)
+					flowID, err := msdc.createDailySplitFlow(kt, summary, billYear, billMonth, task.BillDay)
 					if err != nil {
 						logs.Warnf("create daily split task for %v, %d/%d/%d failed, err %s, rid: %s",
 							summary, billYear, billMonth, task.BillDay, err.Error(), kt.Rid)
@@ -238,7 +238,7 @@ func (msdc *MainDailySplitController) syncDailySplit(kt *kit.Kit, billYear, bill
 	return nil
 }
 
-func (msdc *MainDailySplitController) createDailySplitTask(
+func (msdc *MainDailySplitController) createDailySplitFlow(
 	kt *kit.Kit, summary *dsbillapi.BillSummaryMainResult, billYear, billMonth, billDay int) (string, error) {
 
 	result, err := msdc.Client.TaskServer().CreateCustomFlow(kt, &taskserver.AddCustomFlowReq{

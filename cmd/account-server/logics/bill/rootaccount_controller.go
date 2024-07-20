@@ -360,14 +360,14 @@ func (rac *RootAccountController) ensureMonthTask(kt *kit.Kit, billYear, billMon
 		return err
 	}
 	if monthTask == nil {
-		return rac.createMonthPullTask(kt, rootSummary)
+		return rac.createMonthPullTaskStub(kt, rootSummary)
 	}
 	// 判断versionID是否一致，不一致，则重新创建month pull task
 	if monthTask.VersionID != rootSummary.CurrentVersion {
 		if err := rac.deleteMonthPullTask(kt, billYear, billMonth); err != nil {
 			return err
 		}
-		return rac.createMonthPullTask(kt, rootSummary)
+		return rac.createMonthPullTaskStub(kt, rootSummary)
 	}
 	switch monthTask.State {
 	case enumor.RootAccountMonthBillTaskStatePulling:
@@ -431,7 +431,7 @@ func (rac *RootAccountController) listAllMainSummary(
 
 func (rac *RootAccountController) ensureMonthTaskPullStage(kt *kit.Kit, task *dsbillapi.BillMonthTaskResult) error {
 	if len(task.PullFlowID) == 0 {
-		result, err := rac.createMonthTask(
+		result, err := rac.createMonthFlow(
 			kt, rac.RootAccountID, task.BillYear, task.BillMonth, enumor.MonthTaskTypePull)
 		if err != nil {
 			logs.Warnf("failed to create month task, err %s, rid: %s", err.Error(), kt.Rid)
@@ -455,7 +455,7 @@ func (rac *RootAccountController) ensureMonthTaskPullStage(kt *kit.Kit, task *ds
 	}
 	// 如果任务失败，则重新创建
 	if flow.State == enumor.FlowFailed {
-		result, err := rac.createMonthTask(
+		result, err := rac.createMonthFlow(
 			kt, rac.RootAccountID, task.BillYear, task.BillMonth, enumor.MonthTaskTypePull)
 		if err != nil {
 			logs.Warnf("failed to create month task, err %s, rid: %s", err.Error(), kt.Rid)
@@ -478,7 +478,7 @@ func (rac *RootAccountController) ensureMonthTaskPullStage(kt *kit.Kit, task *ds
 
 func (rac *RootAccountController) ensureMonthTaskSplitStage(kt *kit.Kit, task *dsbillapi.BillMonthTaskResult) error {
 	if len(task.SplitFlowID) == 0 {
-		result, err := rac.createMonthTask(
+		result, err := rac.createMonthFlow(
 			kt, rac.RootAccountID, task.BillYear, task.BillMonth, enumor.MonthTaskTypeSplit)
 		if err != nil {
 			logs.Warnf("failed to create month task, err %s, rid: %s", err.Error(), kt.Rid)
@@ -502,7 +502,7 @@ func (rac *RootAccountController) ensureMonthTaskSplitStage(kt *kit.Kit, task *d
 	}
 	// 如果任务失败，则重新创建
 	if flow.State == enumor.FlowFailed {
-		result, err := rac.createMonthTask(
+		result, err := rac.createMonthFlow(
 			kt, rac.RootAccountID, task.BillYear, task.BillMonth, enumor.MonthTaskTypeSplit)
 		if err != nil {
 			logs.Warnf("failed to create month task, err %s, rid: %s", err.Error(), kt.Rid)
@@ -525,7 +525,7 @@ func (rac *RootAccountController) ensureMonthTaskSplitStage(kt *kit.Kit, task *d
 
 func (rac *RootAccountController) ensureMonthTaskAccountStage(kt *kit.Kit, task *dsbillapi.BillMonthTaskResult) error {
 	if len(task.SummaryFlowID) == 0 {
-		result, err := rac.createMonthTask(
+		result, err := rac.createMonthFlow(
 			kt, rac.RootAccountID, task.BillYear, task.BillMonth, enumor.MonthTaskTypeSummary)
 		if err != nil {
 			logs.Warnf("failed to create month task, err %s, rid: %s", err.Error(), kt.Rid)
@@ -549,7 +549,7 @@ func (rac *RootAccountController) ensureMonthTaskAccountStage(kt *kit.Kit, task 
 	}
 	// 如果任务失败，则重新创建
 	if flow.State == enumor.FlowFailed {
-		result, err := rac.createMonthTask(
+		result, err := rac.createMonthFlow(
 			kt, rac.RootAccountID, task.BillYear, task.BillMonth, enumor.MonthTaskTypeSummary)
 		if err != nil {
 			logs.Warnf("failed to create month task, err %s, rid: %s", err.Error(), kt.Rid)
@@ -570,7 +570,7 @@ func (rac *RootAccountController) ensureMonthTaskAccountStage(kt *kit.Kit, task 
 	return nil
 }
 
-func (rac *RootAccountController) createMonthTask(
+func (rac *RootAccountController) createMonthFlow(
 	kt *kit.Kit, rootAccountID string, billYear, billMonth int, t enumor.MonthTaskType) (*core.CreateResult, error) {
 	return rac.Client.TaskServer().CreateCustomFlow(kt, &taskserver.AddCustomFlowReq{
 		Name: enumor.FlowBillMonthTask,
@@ -582,7 +582,8 @@ func (rac *RootAccountController) createMonthTask(
 	})
 }
 
-func (rac *RootAccountController) createMonthPullTask(kt *kit.Kit, rootSummary *dsbillapi.BillSummaryRootResult) error {
+func (rac *RootAccountController) createMonthPullTaskStub(kt *kit.Kit,
+	rootSummary *dsbillapi.BillSummaryRootResult) error {
 	_, err := rac.Client.DataService().Global.Bill.CreateBillMonthPullTask(kt, &dsbillapi.BillMonthTaskCreateReq{
 		RootAccountID: rac.RootAccountID,
 		Vendor:        rac.Vendor,
@@ -638,7 +639,7 @@ func (rac *RootAccountController) deleteMonthPullTask(kt *kit.Kit, billYear, bil
 	})
 }
 
-// Stop stop controller
+// Stop  controller
 func (rac *RootAccountController) Stop() {
 	if rac.cancelFunc != nil {
 		rac.cancelFunc()
