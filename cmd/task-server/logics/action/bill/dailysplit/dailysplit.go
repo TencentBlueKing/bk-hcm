@@ -203,6 +203,11 @@ func splitBillItem(kt *kit.Kit, opt *DailyAccountSplitActionOption, billDay int)
 	if err != nil {
 		return fmt.Errorf("failed to list raw bill files for %v, err %s", opt, err.Error())
 	}
+	splitter, err := GetSplitter(opt.Vendor)
+	if err != nil {
+		return fmt.Errorf("failed to get splitter for %v, err %s", opt, err.Error())
+	}
+
 	for _, filename := range resp.Filenames {
 		var billItemList []bill.BillItemCreateReq[rawjson.RawMessage]
 		// 后续可在该过程中，增加处理过程
@@ -238,6 +243,21 @@ func splitBillItem(kt *kit.Kit, opt *DailyAccountSplitActionOption, billDay int)
 			}
 		}
 		logs.Infof("split %s successfully", filename)
+	}
+	items, err := splitter.FinishSplit(kt, opt, billDay, mainAccountInfo)
+	if err != nil {
+		logs.Warnf("finish splitting raw bill failed,vendor: %s, err %s", opt.Vendor, err.Error())
+		return err
+	}
+	if len(items) == 0 {
+		return nil
+	}
+	for _, batch := range slice.Split(items, constant.BatchOperationMaxLimit) {
+		createReq := &bill.BatchRawBillItemCreateReq{Items: batch}
+		_, err = actcli.GetDataService().Global.Bill.BatchCreateBillItem(kt, opt.Vendor, createReq)
+		if err != nil {
+			return fmt.Errorf("batch create extral bill item for %s failed, err %s", opt.Vendor, err.Error())
+		}
 	}
 	return nil
 }
