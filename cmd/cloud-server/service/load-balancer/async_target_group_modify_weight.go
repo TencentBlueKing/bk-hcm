@@ -199,7 +199,7 @@ func (svc *lbSvc) initFlowTargetWeight(kt *kit.Kit, req *cslb.TCloudBatchModifyT
 			Retry: &tableasync.Retry{
 				Enable: true,
 				Policy: &tableasync.RetryPolicy{
-					Count:        constant.FlowRetryMaxLimit,
+					Count:        500,
 					SleepRangeMS: [2]uint{100, 200},
 				},
 			},

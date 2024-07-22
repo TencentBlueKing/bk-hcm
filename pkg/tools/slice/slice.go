@@ -39,6 +39,18 @@ func IsItemInSlice[T comparable](l []T, item T) bool {
 	return false
 }
 
+// Intersection 取交集
+func Intersection[T comparable](slice1 []T, slice2 []T) []T {
+	IntersectSlice := make([]T, 0)
+	for _, item := range slice1 {
+		if IsItemInSlice[T](slice2, item) {
+			IntersectSlice = append(IntersectSlice, item)
+		}
+	}
+
+	return IntersectSlice
+}
+
 // Unique 去重
 func Unique[T comparable](list []T) []T {
 	uniqueMap := make(map[T]struct{})

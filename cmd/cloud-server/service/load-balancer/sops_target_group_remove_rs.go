@@ -36,6 +36,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/hooks/handler"
+	"hcm/pkg/tools/slice"
 )
 
 // BatchBizRemoveTargetGroupRS batch biz remove target group rs.
@@ -92,52 +93,66 @@ func (svc *lbSvc) buildDeleteTCloudTarget(kt *kit.Kit, body json.RawMessage, acc
 	}
 
 	// 查询规则列表，查出符合条件的目标组
-	tgIDs, err := svc.parseSOpsTargetParams(kt, accountID, req.RuleQueryList)
+	tgIDsMap, err := svc.parseSOpsTargetParams(kt, accountID, req.RuleQueryList)
 	if err != nil {
 		return nil, err
 	}
-	if len(tgIDs) == 0 {
+	if len(tgIDsMap) == 0 {
 		return nil, errf.New(errf.RecordNotFound, "no matching target groups were found")
 	}
 
 	// 按照clb分组targetGroup
 	lbTgsMap := make(map[string][]string)
-	for _, tgID := range tgIDs {
-		// 根据目标组ID，获取目标组绑定的监听器、规则列表
-		ruleRelReq := &core.ListReq{
-			Filter: tools.EqualExpression("target_group_id", tgID),
-			Page:   core.NewDefaultBasePage(),
+	tgTargetMap := make(map[string][]string)
+	for index, tgIDs := range tgIDsMap {
+		for _, tgID := range tgIDs {
+			// 根据目标组ID，获取目标组绑定的监听器、规则列表
+			ruleRelReq := &core.ListReq{
+				Filter: tools.EqualExpression("target_group_id", tgID),
+				Page:   core.NewDefaultBasePage(),
+			}
+			ruleRelList, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroupListenerRel(kt, ruleRelReq)
+			if err != nil {
+				logs.Errorf("list tcloud listener url rule failed, tgID: %s, err: %v, rid: %s", tgID, err, kt.Rid)
+				return nil, err
+			}
+
+			// 还未绑定监听器及规则
+			lbID := "-1"
+			if len(ruleRelList.Details) != 0 {
+				// 已经绑定了监听器及规则，归属某一clb
+				lbID = ruleRelList.Details[0].LbID
+			}
+			if _, exists := lbTgsMap[lbID]; !exists {
+				lbTgsMap[lbID] = make([]string, 0)
+			}
+			lbTgsMap[lbID] = append(lbTgsMap[lbID], tgID)
 		}
-		ruleRelList, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroupListenerRel(kt, ruleRelReq)
+
+		// 查询每一行筛选出的目标组对应的目标，按照当前行填写的条件进行筛选
+		targetList, err := svc.getTargetByTGIDs(kt, tgIDs)
 		if err != nil {
-			logs.Errorf("list tcloud listener url rule failed, tgID: %s, err: %v, rid: %s", tgID, err, kt.Rid)
 			return nil, err
 		}
-
-		// 还未绑定监听器及规则
-		lbID := "-1"
-		if len(ruleRelList.Details) != 0 {
-			// 已经绑定了监听器及规则，归属某一clb
-			lbID = ruleRelList.Details[0].LbID
+		rsIPs := req.RuleQueryList[index-1].RsIP
+		rsType := req.RuleQueryList[index-1].RsType
+		for _, target := range targetList {
+			// 筛选rsType
+			if string(target.InstType) != rsType {
+				continue
+			}
+			// 筛选rsIp
+			for _, rsIp := range target.PrivateIPAddress {
+				if slice.IsItemInSlice(rsIPs, rsIp) {
+					// 构建tg与target的映射map
+					if _, ok := tgTargetMap[target.TargetGroupID]; !ok {
+						tgTargetMap[target.TargetGroupID] = make([]string, 0)
+					}
+					tgTargetMap[target.TargetGroupID] = append(tgTargetMap[target.TargetGroupID], target.ID)
+					continue
+				}
+			}
 		}
-		if _, exists := lbTgsMap[lbID]; !exists {
-			lbTgsMap[lbID] = make([]string, 0)
-		}
-		lbTgsMap[lbID] = append(lbTgsMap[lbID], tgID)
-	}
-
-	// 构建tg与target的映射map
-	targetList, err := svc.getTargetByTGIDs(kt, tgIDs)
-	if err != nil {
-		return nil, err
-	}
-	targetGroupMap := make(map[string][]string)
-	for _, item := range targetList {
-		if _, ok := targetGroupMap[item.TargetGroupID]; !ok {
-			targetGroupMap[item.TargetGroupID] = []string{item.ID}
-			continue
-		}
-		targetGroupMap[item.TargetGroupID] = append(targetGroupMap[item.TargetGroupID], item.ID)
 	}
 
 	// 一个clb一个异步flow
@@ -151,10 +166,10 @@ func (svc *lbSvc) buildDeleteTCloudTarget(kt *kit.Kit, body json.RawMessage, acc
 				TargetGroupID: tmpTgID,
 				TargetIDs:     []string{},
 			}
-			if _, ok := targetGroupMap[tmpTgID]; !ok {
+			if _, ok := tgTargetMap[tmpTgID]; !ok {
 				continue
 			}
-			tmpTargetReq.TargetIDs = targetGroupMap[tmpTgID]
+			tmpTargetReq.TargetIDs = tgTargetMap[tmpTgID]
 			params.TargetGroups = append(params.TargetGroups, tmpTargetReq)
 		}
 

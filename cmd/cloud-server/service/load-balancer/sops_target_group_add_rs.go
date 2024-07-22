@@ -38,6 +38,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
 	"hcm/pkg/tools/slice"
@@ -97,37 +98,40 @@ func (svc *lbSvc) buildCreateTCloudTarget(kt *kit.Kit, body json.RawMessage, acc
 	}
 
 	// 查询规则列表，查出符合条件的目标组
-	tgIDs, err := svc.parseSOpsTargetParams(kt, accountID, req.RuleQueryList)
+	tgIDsMap, err := svc.parseSOpsTargetParams(kt, accountID, req.RuleQueryList)
 	if err != nil {
 		return nil, err
 	}
-	if len(tgIDs) == 0 {
+	if len(tgIDsMap) == 0 {
 		return nil, errf.New(errf.RecordNotFound, "no matching target groups were found")
 	}
 
 	// 按照clb分组targetGroup
 	lbTgsMap := make(map[string][]string)
-	for _, tgID := range tgIDs {
-		// 根据目标组ID，获取目标组绑定的监听器、规则列表
-		ruleRelReq := &core.ListReq{
-			Filter: tools.EqualExpression("target_group_id", tgID),
-			Page:   core.NewDefaultBasePage(),
-		}
-		ruleRelList, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroupListenerRel(kt, ruleRelReq)
-		if err != nil {
-			logs.Errorf("list tcloud listener url rule failed, tgID: %s, err: %v, rid: %s", tgID, err, kt.Rid)
-			return nil, err
-		}
+	for _, tgIDs := range tgIDsMap {
+		for _, tgID := range tgIDs {
+			// 根据目标组ID，获取目标组绑定的监听器、规则列表
+			ruleRelReq := &core.ListReq{
+				Filter: tools.EqualExpression("target_group_id", tgID),
+				Page:   core.NewDefaultBasePage(),
+			}
+			ruleRelList, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroupListenerRel(kt, ruleRelReq)
+			if err != nil {
+				logs.Errorf("list tcloud listener url rule failed, tgID: %s, err: %v, rid: %s", tgID, err, kt.Rid)
+				return nil, err
+			}
 
-		lbID := "-1"
-		if len(ruleRelList.Details) != 0 {
-			// 已经绑定了监听器及规则，归属某一clb
-			lbID = ruleRelList.Details[0].LbID
+			// 未绑定监听器及规则，分组到lbID=-1的默认组中
+			lbID := "-1"
+			if len(ruleRelList.Details) != 0 {
+				// 已经绑定了监听器及规则，归属某一clb
+				lbID = ruleRelList.Details[0].LbID
+			}
+			if _, exists := lbTgsMap[lbID]; !exists {
+				lbTgsMap[lbID] = make([]string, 0)
+			}
+			lbTgsMap[lbID] = append(lbTgsMap[lbID], tgID)
 		}
-		if _, exists := lbTgsMap[lbID]; !exists {
-			lbTgsMap[lbID] = make([]string, 0)
-		}
-		lbTgsMap[lbID] = append(lbTgsMap[lbID], tgID)
 	}
 
 	// 根据RS IP获取CVM的云端ID
@@ -251,109 +255,217 @@ func (svc *lbSvc) parseTCloudRsIPForCvmInstIDMap(kt *kit.Kit, accountID string,
 
 // parseSOpsTargetParams 解析标准运维参数
 func (svc *lbSvc) parseSOpsTargetParams(kt *kit.Kit, accountID string,
-	ruleQueryList []cslb.TargetGroupRuleQueryItem) ([]string, error) {
+	ruleQueryList []cslb.TargetGroupRuleQueryItem) (map[int][]string, error) {
+
+	tgIDsMap := make(map[int][]string)
+	index := 1
+	for _, item := range ruleQueryList {
+		var protoDomainTgIDs, rsIpTypeTgIDs, vIpPortTgIDs, tgIDsItem []string
+		var err error
+
+		// 根据Protocol和Domain查询UrlRule，获取对应的目标组ID
+		protoDomainTgIDs, err = svc.parseSOpsProtocolAndDomainForTgIDs(kt, accountID, item)
+		if err != nil {
+			logs.Errorf("parse protocol and domain for target group failed, accountID: %s, item: %+v, err: %v, rid: %s",
+				accountID, item, err, kt.Rid)
+			return nil, err
+		}
+		if protoDomainTgIDs != nil {
+			tgIDsItem = protoDomainTgIDs
+		}
+
+		//  根据RsIp和RsType查询Target，获取对应的目标组ID
+		rsIpTypeTgIDs, err = svc.parseSOpsRsIpAndRsTypeForTgIDs(kt, accountID, item)
+		if err != nil {
+			logs.Errorf("parse rsip and rstype for target group failed, accountID: %s, item: %+v, err: %v, rid: %s",
+				accountID, item, err, kt.Rid)
+			return nil, err
+		}
+		if rsIpTypeTgIDs != nil {
+			if tgIDsItem != nil {
+				// 取交集
+				tgIDsItem = slice.Intersection(tgIDsItem, rsIpTypeTgIDs)
+			} else {
+				tgIDsItem = rsIpTypeTgIDs
+			}
+		}
+
+		// 根据Vip和Vport查询到对应负载均衡下的对应监听器下的UrlRule，获取对应的目标组ID
+		vIpPortTgIDs, err = svc.parseSOpsVipAndVportForTgIDs(kt, accountID, item)
+		if err != nil {
+			logs.Errorf("parse vip and vport for target group failed, accountID: %s, item: %+v, err: %v, rid: %s",
+				accountID, item, err, kt.Rid)
+			return nil, err
+		}
+		if vIpPortTgIDs != nil {
+			if tgIDsItem != nil {
+				// 取交集
+				tgIDsItem = slice.Intersection(tgIDsItem, vIpPortTgIDs)
+			} else {
+				tgIDsItem = vIpPortTgIDs
+			}
+		}
+
+		tgIDsItem = slice.Unique(tgIDsItem)
+		if len(tgIDsItem) == 0 {
+			return nil, fmt.Errorf("no matching target groups were found for line %d", index)
+		}
+
+		// 分别记录每一行条件查询出的目标组ID列表
+		tgIDsMap[index] = tgIDsItem
+		index++
+	}
+
+	return tgIDsMap, nil
+}
+
+// parseSOpsProtocolAndDomainForTgIDs 根据Protocol和Domain查询UrlRule，获取对应的目标组ID
+func (svc *lbSvc) parseSOpsProtocolAndDomainForTgIDs(kt *kit.Kit, accountID string,
+	item cslb.TargetGroupRuleQueryItem) ([]string, error) {
+
+	if len(item.Protocol) == 0 {
+		// 没有对应的筛选条件，表现为不筛选
+		return nil, nil
+	}
+
+	// 筛选查询urlRule
+	var urlRuleFilter *filter.Expression
+	var err error
+	if item.Protocol.IsLayer7Protocol() {
+		urlRuleFilter = tools.ExpressionAnd(
+			tools.RuleEqual("rule_type", enumor.Layer7RuleType),
+		)
+		if len(item.Domain) != 0 {
+			urlRuleFilter, err = tools.And(urlRuleFilter, tools.RuleEqual("domain", item.Domain))
+			if err != nil {
+				return nil, err
+			}
+		}
+	} else if item.Protocol.IsLayer4Protocol() {
+		urlRuleFilter = tools.ExpressionAnd(
+			tools.RuleEqual("rule_type", enumor.Layer4RuleType),
+		)
+	} else {
+		return nil, fmt.Errorf("protocol: %s not support", item.Protocol)
+	}
+
+	tgRuleReq := &core.ListReq{
+		Filter: urlRuleFilter,
+		Page:   core.NewDefaultBasePage(),
+	}
+	urlRuleResult, err := svc.client.DataService().TCloud.LoadBalancer.ListUrlRule(kt, tgRuleReq)
+	if err != nil {
+		return nil, err
+	}
+
+	// 记录urlRule对应的目标组ID
+	tgIDs := make([]string, 0)
+	for _, ruleItem := range urlRuleResult.Details {
+		if len(ruleItem.TargetGroupID) == 0 {
+			continue
+		}
+		tgIDs = append(tgIDs, ruleItem.TargetGroupID)
+	}
+
+	return slice.Unique(tgIDs), nil
+}
+
+// parseSOpsRsIpAndRsTypeForTgIDs 根据RsIp和RsType查询Target，获取对应的目标组ID
+func (svc *lbSvc) parseSOpsRsIpAndRsTypeForTgIDs(kt *kit.Kit, accountID string,
+	item cslb.TargetGroupRuleQueryItem) ([]string, error) {
+
+	if len(item.RsIP) == 0 || len(item.RsType) == 0 {
+		// 没有对应的筛选条件，表现为不筛选
+		return nil, nil
+	}
 
 	tgIDs := make([]string, 0)
-	for _, item := range ruleQueryList {
-		// 根据Domain获取符合的目标组ID
-		if item.Protocol.IsLayer7Protocol() && len(item.Domain) > 0 {
-			tgRuleReq := &core.ListReq{
-				Filter: tools.ExpressionAnd(
-					tools.RuleEqual("rule_type", enumor.Layer7RuleType),
-					tools.RuleEqual("domain", item.Domain),
-				),
-				Page: core.NewDefaultBasePage(),
-			}
-			tgRuleList, err := svc.client.DataService().TCloud.LoadBalancer.ListUrlRule(kt, tgRuleReq)
-			if err != nil {
-				return nil, err
-			}
-			for _, ruleItem := range tgRuleList.Details {
-				if len(ruleItem.TargetGroupID) == 0 {
-					continue
-				}
-				tgIDs = append(tgIDs, ruleItem.TargetGroupID)
-			}
+	for _, rsIP := range item.RsIP {
+		// 查询出对应的目标
+		filter := tools.ExpressionAnd(
+			tools.RuleEqual("account_id", accountID),
+			tools.RuleEqual("inst_type", item.RsType),
+			tools.RuleJSONContains("private_ip_address", rsIP))
+		targetReq := &core.ListReq{
+			Fields: []string{"target_group_id"},
+			Filter: filter,
+			Page:   core.NewDefaultBasePage(),
+		}
+		targetResult, err := svc.client.DataService().Global.LoadBalancer.ListTarget(kt, targetReq)
+		if err != nil {
+			return nil, err
 		}
 
-		// 根据RS IP获取符合的目标组ID
-		if len(item.RsIP) > 0 {
-			targetReq := &core.ListReq{
-				Fields: []string{"target_group_id"},
-				Filter: tools.ExpressionAnd(
-					tools.RuleEqual("account_id", accountID),
-					tools.RuleJSONContains("private_ip_address", item.RsIP),
-					tools.RuleEqual("inst_type", item.RsType),
-				),
-				Page: core.NewDefaultBasePage(),
+		// 记录目标对应的目标组ID
+		for _, target := range targetResult.Details {
+			if len(target.TargetGroupID) == 0 {
+				continue
 			}
-			tgRuleList, err := svc.client.DataService().Global.LoadBalancer.ListTarget(kt, targetReq)
-			if err != nil {
-				return nil, err
-			}
-			for _, ruleItem := range tgRuleList.Details {
-				if len(ruleItem.TargetGroupID) == 0 {
-					continue
-				}
-				tgIDs = append(tgIDs, ruleItem.TargetGroupID)
-			}
-		}
-
-		// 根据VIP、VPORT获取符合的目标组ID
-		if len(item.Vip) > 0 && len(item.VPort) > 0 {
-			tmpVipTgIDs, err := svc.parseSOpsVipInfoForTgIDs(kt, accountID, item)
-			if err != nil {
-				logs.Errorf("parse vipinfo for target group failed, accountID: %s, item: %+v, err: %v, rid: %s",
-					accountID, item, err, kt.Rid)
-				return nil, err
-			}
-			tgIDs = append(tgIDs, tmpVipTgIDs...)
+			tgIDs = append(tgIDs, target.TargetGroupID)
 		}
 	}
 
 	return slice.Unique(tgIDs), nil
 }
 
-// parseSOpsVipInfoForTgIDs 解析标准运维参数-VIP、VPORT获取符合的目标组ID
-func (svc *lbSvc) parseSOpsVipInfoForTgIDs(kt *kit.Kit, accountID string,
+// parseSOpsVipAndVportForTgIDs 根据Vip和Vport查询到对应负载均衡下的对应监听器下的UrlRule，获取对应的目标组ID
+func (svc *lbSvc) parseSOpsVipAndVportForTgIDs(kt *kit.Kit, accountID string,
 	item cslb.TargetGroupRuleQueryItem) ([]string, error) {
 
-	// 查询符合的负载均衡列表
-	lbReq := &core.ListReq{
-		Filter: tools.ExpressionAnd(
-			tools.RuleEqual("vendor", enumor.TCloud),
-			tools.RuleEqual("account_id", accountID),
-			tools.RuleEqual("region", item.Region),
-			tools.RuleJSONContains("public_ipv4_addresses", item.Vip),
-		),
-		Page: core.NewDefaultBasePage(),
-	}
-	lbList, err := svc.client.DataService().Global.LoadBalancer.ListLoadBalancer(kt, lbReq)
-	if err != nil {
-		return nil, err
-	}
-
-	lbIDs := make([]string, 0)
-	for _, lbItem := range lbList.Details {
-		lbIDs = append(lbIDs, lbItem.ID)
-	}
-
-	if len(lbIDs) == 0 {
+	if len(item.Vip) == 0 && len(item.VPort) == 0 {
+		// 没有对应的筛选条件，表现为不筛选
 		return nil, nil
 	}
 
+	lbIDs := make([]string, 0)
+	tgIDs := make([]string, 0)
+	if len(item.Vip) != 0 {
+		// 若有vip筛选条件，则查询符合的负载均衡列表
+		for _, vip := range item.Vip {
+			lbReq := &core.ListReq{
+				Filter: tools.ExpressionAnd(
+					tools.RuleEqual("vendor", enumor.TCloud),
+					tools.RuleEqual("account_id", accountID),
+					tools.RuleEqual("region", item.Region),
+					tools.RuleJSONContains("public_ipv4_addresses", vip),
+				),
+				Page: core.NewDefaultBasePage(),
+			}
+			lbList, err := svc.client.DataService().Global.LoadBalancer.ListLoadBalancer(kt, lbReq)
+			if err != nil {
+				return nil, err
+			}
+
+			for _, lbItem := range lbList.Details {
+				lbIDs = append(lbIDs, lbItem.ID)
+			}
+		}
+		// 若没有对应vip的负载均衡，则直接返回
+		if len(lbIDs) == 0 {
+			return tgIDs, nil
+		}
+	}
+
 	// 查询符合的监听器列表
-	vportInt, err := strconv.ParseInt(item.VPort, 10, 64)
-	if err != nil {
-		return nil, err
+	lblFilter := tools.ExpressionAnd(
+		tools.RuleEqual("vendor", enumor.TCloud),
+	)
+	var err error
+	if len(lbIDs) != 0 {
+		lblFilter, err = tools.And(lblFilter, tools.RuleIn("lb_id", lbIDs))
+		if err != nil {
+			return nil, err
+		}
+	}
+	if len(item.VPort) != 0 {
+		lblFilter, err = tools.And(lblFilter, tools.RuleIn("port", item.VPort))
+		if err != nil {
+			return nil, err
+		}
 	}
 	lblReq := &core.ListReq{
-		Filter: tools.ExpressionAnd(
-			tools.RuleEqual("vendor", enumor.TCloud),
-			tools.RuleIn("lb_id", lbIDs),
-			tools.RuleEqual("port", vportInt),
-		),
-		Page: core.NewDefaultBasePage(),
+		Filter: lblFilter,
+		Page:   core.NewDefaultBasePage(),
 	}
 	lblList, err := svc.client.DataService().Global.LoadBalancer.ListListener(kt, lblReq)
 	if err != nil {
@@ -362,16 +474,14 @@ func (svc *lbSvc) parseSOpsVipInfoForTgIDs(kt *kit.Kit, accountID string,
 	lblIDs := slice.Map(lblList.Details, func(lbl corelb.BaseListener) string {
 		return lbl.ID
 	})
-
 	if len(lblIDs) == 0 {
-		return nil, nil
+		return tgIDs, nil
 	}
 
 	// 查询符合的监听器与目标组绑定关系的列表
 	lblRuleReq := &core.ListReq{
 		Fields: []string{"target_group_id"},
 		Filter: tools.ExpressionAnd(
-			tools.RuleIn("lb_id", lbIDs),
 			tools.RuleIn("lbl_id", lblIDs),
 			tools.RuleEqual("binding_status", enumor.SuccessBindingStatus),
 		),
@@ -383,7 +493,6 @@ func (svc *lbSvc) parseSOpsVipInfoForTgIDs(kt *kit.Kit, accountID string,
 		return nil, err
 	}
 
-	tgIDs := make([]string, 0)
 	for _, ruleRelItem := range lblRuleList.Details {
 		if len(ruleRelItem.TargetGroupID) == 0 {
 			continue
@@ -391,5 +500,5 @@ func (svc *lbSvc) parseSOpsVipInfoForTgIDs(kt *kit.Kit, accountID string,
 		tgIDs = append(tgIDs, ruleRelItem.TargetGroupID)
 	}
 
-	return tgIDs, nil
+	return slice.Unique(tgIDs), nil
 }

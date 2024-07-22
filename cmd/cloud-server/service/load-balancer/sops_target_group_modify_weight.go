@@ -26,7 +26,6 @@ import (
 
 	cloudserver "hcm/pkg/api/cloud-server"
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
-	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
@@ -34,8 +33,8 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
+	"hcm/pkg/tools/slice"
 )
 
 // BatchBizModifyWeightTargetGroup batch biz modify weight target group.
@@ -94,60 +93,46 @@ func (svc *lbSvc) buildModifyWeightTCloudTarget(kt *kit.Kit, body json.RawMessag
 	}
 
 	// 查询规则列表，查出符合条件的目标组
-	tgIDs, err := svc.parseSOpsTargetParams(kt, accountID, req.RuleQueryList)
+	tgIDsMap, err := svc.parseSOpsTargetParams(kt, accountID, req.RuleQueryList)
 	if err != nil {
 		return nil, err
 	}
-	if len(tgIDs) == 0 {
+	if len(tgIDsMap) == 0 {
 		return nil, errf.New(errf.RecordNotFound, "no matching target groups were found")
 	}
 
-	targetList, err := svc.getTargetByTGIDs(kt, tgIDs)
+	// 查询每一行筛选出的目标组对应的目标，按照当前行填写的条件进行筛选
+	tgTargetsMap := make(map[string][]string)
+	for index, tgIDs := range tgIDsMap {
+		targetList, err := svc.getTargetByTGIDs(kt, tgIDs)
+		if err != nil {
+			return nil, err
+		}
+
+		rsIPs := req.RuleQueryList[index-1].RsIP
+		rsType := req.RuleQueryList[index-1].RsType
+		for _, target := range targetList {
+			// 筛选rsType
+			if string(target.InstType) != rsType {
+				continue
+			}
+			// 筛选rsIp
+			for _, rsIp := range target.PrivateIPAddress {
+				if slice.IsItemInSlice(rsIPs, rsIp) {
+					if _, ok := tgTargetsMap[target.TargetGroupID]; !ok {
+						tgTargetsMap[target.TargetGroupID] = make([]string, 0)
+					}
+					tgTargetsMap[target.TargetGroupID] = append(tgTargetsMap[target.TargetGroupID], target.ID)
+					continue
+				}
+			}
+		}
+	}
+
+	flowStateResults, err := svc.buildBatchModifyTCloudTargetWeight(kt, tgTargetsMap, &req.RsWeight, accountID)
 	if err != nil {
 		return nil, err
 	}
 
-	targetGroupMap := make(map[string][]string)
-	for _, item := range targetList {
-		if _, ok := targetGroupMap[item.TargetGroupID]; !ok {
-			targetGroupMap[item.TargetGroupID] = []string{item.ID}
-			continue
-		}
-		targetGroupMap[item.TargetGroupID] = append(targetGroupMap[item.TargetGroupID], item.ID)
-	}
-
-	flowStateList := make([]*core.FlowStateResult, 0)
-	for _, tmpTgID := range tgIDs {
-		targetIDs, ok := targetGroupMap[tmpTgID]
-		if !ok {
-			logs.Errorf("build sops tcloud modify weight, target group not bind target, tgID: %s, rid: %s",
-				tmpTgID, kt.Rid)
-			continue
-		}
-
-		params := &cslb.TCloudBatchModifyTargetWeightReq{
-			TargetIDs: targetIDs,
-			NewWeight: cvt.ValToPtr(req.RsWeight),
-		}
-		targetJSON, err := json.Marshal(params)
-		if err != nil {
-			logs.Errorf("build sops tcloud modify weight target params marshal failed, err: %v, tgIDs: %v, "+
-				"targetIDs: %v, params: %+v, rid: %s", err, tgIDs, targetIDs, params, kt.Rid)
-			return nil, err
-		}
-
-		// 记录标准运维参数转换后的数据，方便排查问题
-		logs.Infof("build sops tcloud modify weight target params jsonmarshal success, tgIDs: %v, targetIDs: %v, "+
-			"targetJSON: %s, rid: %s", tgIDs, targetIDs, targetJSON, kt.Rid)
-
-		flowState, err := svc.buildModifyTCloudTargetWeight(kt, targetJSON, tmpTgID, accountID)
-		if err != nil {
-			logs.Errorf("build sops tcloud modify weight target async call failed, err: %v, tgIDs: %v, targetIDs: %v, "+
-				"targetJSON: %s, rid: %s", err, tgIDs, targetIDs, targetJSON, kt.Rid)
-			return nil, err
-		}
-		flowStateList = append(flowStateList, flowState)
-	}
-
-	return flowStateList, nil
+	return flowStateResults, nil
 }
