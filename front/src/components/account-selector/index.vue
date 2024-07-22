@@ -119,7 +119,7 @@ defineExpose({
   <bk-select
     v-model="selectedValue"
     filterable
-    @scroll-end="getAccoutList"
+    @scroll-end="whereAmI === Senarios.business ? undefined : getAccoutList"
     :loading="loading"
     @change="handleChange"
     v-bind="attrs"
