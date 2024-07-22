@@ -203,14 +203,12 @@ func (s *Service) ListenAndServeRest() error {
 			logs.Infof("shutdown restful server success...")
 		}
 	}()
-
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logs.Errorf("serve restful server failed, err: %v", err)
 			shutdown.SignalShutdownGracefully()
 		}
 	}()
-
 	return nil
 }
 
