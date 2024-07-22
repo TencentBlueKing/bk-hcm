@@ -84,6 +84,7 @@ type MainDailySplitController struct {
 	ProductID     int64
 	BkBizID       int64
 	Vendor        enumor.Vendor
+	ext           map[string]string
 
 	kt         *kit.Kit
 	cancelFunc context.CancelFunc
@@ -98,7 +99,37 @@ func (msdc *MainDailySplitController) Start() error {
 	cancelFunc := kt.CtxBackgroundWithCancel()
 	msdc.kt = kt
 	msdc.cancelFunc = cancelFunc
+	if msdc.Vendor == enumor.Aws {
+		if err := msdc.setAwsExtension(kt); err != nil {
+			return err
+		}
+	}
 	go msdc.runBillDailySplitLoop(kt)
+	return nil
+}
+
+func (msdc *MainDailySplitController) setAwsExtension(kt *kit.Kit) error {
+	// 	matching saving plan allocation option
+	for _, spOpt := range cc.AccountServer().BillAllocation.AwsSavingPlans {
+		if spOpt.RootAccountID != msdc.RootAccountID {
+			continue
+		}
+		mainAcc, err := msdc.Client.DataService().Global.MainAccount.List(kt, &core.ListReq{
+			Filter: tools.EqualExpression("cloud_id", spOpt.SpPurchaseAccountCloudID),
+			Page:   core.NewDefaultBasePage(),
+		})
+		if err != nil {
+			logs.Errorf("fail to find sp purchase account, err %s, cloud_id: %s, rid: %s",
+				err.Error(), spOpt.SpPurchaseAccountCloudID, kt.Rid)
+			return err
+		}
+		if len(mainAcc.Details) == 0 {
+			logs.Warnf("sp purchase main account not found by cloud id %s, rid: %s",
+				spOpt.SpPurchaseAccountCloudID, kt.Rid)
+			continue
+		}
+		msdc.ext = dailysplit.BuildAwsDailySplitOptionExt(mainAcc.Details[0].ID, spOpt.SpArnPrefix)
+	}
 	return nil
 }
 
@@ -253,6 +284,7 @@ func (msdc *MainDailySplitController) createDailySplitFlow(
 				billMonth,
 				billDay,
 				summary.CurrentVersion,
+				msdc.ext,
 			),
 		},
 	})

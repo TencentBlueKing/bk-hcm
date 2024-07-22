@@ -32,6 +32,8 @@ func GetRunner(vendor enumor.Vendor) (MonthTaskRunner, error) {
 	switch vendor {
 	case enumor.Gcp:
 		return newGcpRunner(), nil
+	case enumor.Aws:
+		return newAwsRunner(), nil
 	default:
 		return nil, fmt.Errorf("vendor %s not support now", vendor)
 	}
@@ -42,6 +44,6 @@ type MonthTaskRunner interface {
 	GetBatchSize(kt *kit.Kit) uint64
 	Pull(kt *kit.Kit, rootAccountID string, billYear, billMonth int, index uint64) (
 		itemList []bill.RawBillItem, isFinished bool, err error)
-	Split(kt *kit.Kit, rawItemList []*bill.RawBillItem) (
+	Split(kt *kit.Kit, rootAccountID string, rawItemList []*bill.RawBillItem) (
 		[]bill.BillItemCreateReq[rawjson.RawMessage], error)
 }

@@ -42,13 +42,14 @@ import (
 
 // DailyAccountSplitActionOption option for main account summary action
 type DailyAccountSplitActionOption struct {
-	RootAccountID string        `json:"root_account_id" validate:"required"`
-	MainAccountID string        `json:"main_account_id" validate:"required"`
-	BillYear      int           `json:"bill_year" validate:"required"`
-	BillMonth     int           `json:"bill_month" validate:"required"`
-	BillDay       int           `json:"bill_day" validate:"required"`
-	VersionID     int           `json:"version_id" validate:"required"`
-	Vendor        enumor.Vendor `json:"vendor" validate:"required"`
+	RootAccountID string            `json:"root_account_id" validate:"required"`
+	MainAccountID string            `json:"main_account_id" validate:"required"`
+	BillYear      int               `json:"bill_year" validate:"required"`
+	BillMonth     int               `json:"bill_month" validate:"required"`
+	BillDay       int               `json:"bill_day" validate:"required"`
+	VersionID     int               `json:"version_id" validate:"required"`
+	Vendor        enumor.Vendor     `json:"vendor" validate:"required"`
+	Extension     map[string]string `json:"extension"`
 }
 
 // DailyAccountSplitAction define main account summary action
@@ -203,6 +204,7 @@ func splitBillItem(kt *kit.Kit, opt *DailyAccountSplitActionOption, billDay int)
 	if err != nil {
 		return fmt.Errorf("failed to list raw bill files for %v, err %s", opt, err.Error())
 	}
+
 	splitter, err := GetSplitter(opt.Vendor)
 	if err != nil {
 		return fmt.Errorf("failed to get splitter for %v, err %s", opt, err.Error())
@@ -222,42 +224,29 @@ func splitBillItem(kt *kit.Kit, opt *DailyAccountSplitActionOption, billDay int)
 			BillDate:       fmt.Sprintf("%02d", billDay),
 			FileName:       name,
 		}
-		splitter := DefaultSplitter{}
-		resp, err := actcli.GetDataService().Global.Bill.QueryRawBillItems(kt, tmpReq)
+
+		rawResp, err := actcli.GetDataService().Global.Bill.QueryRawBillItems(kt, tmpReq)
 		if err != nil {
 			return fmt.Errorf("failed to get raw bill item for %v, err %s", tmpReq, err.Error())
 		}
-		for _, itemsBatch := range slice.Split(resp.Details, constant.BatchOperationMaxLimit) {
-			for _, item := range itemsBatch {
-				reqList, err := splitter.DoSplit(kt, opt, billDay, item, mainAccountInfo)
-				if err != nil {
-					logs.Warnf("raw bill %v do splitting failed, err %s", item, err.Error())
-					return err
-				}
-				billItemList = append(billItemList, reqList...)
+
+		for _, item := range rawResp.Details {
+			reqList, err := splitter.DoSplit(kt, opt, billDay, item, mainAccountInfo)
+			if err != nil {
+				logs.Warnf("raw bill %v do splitting failed, err %s", item, err.Error())
+				return err
 			}
-			createReq := &bill.BatchRawBillItemCreateReq{Items: billItemList}
+			billItemList = append(billItemList, reqList...)
+		}
+
+		for _, itemsBatch := range slice.Split(billItemList, constant.BatchOperationMaxLimit) {
+			createReq := &bill.BatchRawBillItemCreateReq{Items: itemsBatch}
 			_, err = actcli.GetDataService().Global.Bill.BatchCreateBillItem(kt, opt.Vendor, createReq)
 			if err != nil {
 				return fmt.Errorf("batch create bill item for %s failed, err %s", filename, err.Error())
 			}
 		}
 		logs.Infof("split %s successfully", filename)
-	}
-	items, err := splitter.FinishSplit(kt, opt, billDay, mainAccountInfo)
-	if err != nil {
-		logs.Warnf("finish splitting raw bill failed,vendor: %s, err %s", opt.Vendor, err.Error())
-		return err
-	}
-	if len(items) == 0 {
-		return nil
-	}
-	for _, batch := range slice.Split(items, constant.BatchOperationMaxLimit) {
-		createReq := &bill.BatchRawBillItemCreateReq{Items: batch}
-		_, err = actcli.GetDataService().Global.Bill.BatchCreateBillItem(kt, opt.Vendor, createReq)
-		if err != nil {
-			return fmt.Errorf("batch create extral bill item for %s failed, err %s", opt.Vendor, err.Error())
-		}
 	}
 	return nil
 }

@@ -109,7 +109,7 @@ func (act MonthTaskAction) runPull(kt *kit.Kit, runner MonthTaskRunner, opt *Mon
 		lenRawBillItemList := len(rawBillItemList)
 		filename := fmt.Sprintf("%d-%d.csv", task.PullIndex, lenRawBillItemList)
 		storeReq := &bill.RawBillCreateReq{
-			Vendor:        enumor.HuaWei,
+			Vendor:        opt.Vendor,
 			RootAccountID: task.RootAccountID,
 			AccountID:     enumor.MonthRawBillPathName,
 			BillYear:      fmt.Sprintf("%d", task.BillYear),
@@ -182,7 +182,7 @@ func (act MonthTaskAction) runSplit(kt *kit.Kit, runner MonthTaskRunner, opt *Mo
 			logs.Warnf("failed to get raw bill item for %v, err %s, rid: %s", tmpReq, err.Error(), kt.Rid)
 			return fmt.Errorf("failed to get raw bill item for %v, err %s", tmpReq, err.Error())
 		}
-		tmpBillItemList, err := runner.Split(kt, resp.Details)
+		tmpBillItemList, err := runner.Split(kt, task.RootAccountID, resp.Details)
 		if err != nil {
 			logs.Warnf("failed to split bill item, opt: %+v, err: %s, rid: %s", opt, err.Error(), kt.Rid)
 			return err

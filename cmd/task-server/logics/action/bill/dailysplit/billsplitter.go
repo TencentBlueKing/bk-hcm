@@ -51,9 +51,6 @@ type RawBillSplitter interface {
 	DoSplit(kt *kit.Kit, opt *DailyAccountSplitActionOption, billDay int,
 		item *bill.RawBillItem, mainAccount *protocore.BaseMainAccount) (
 		[]bill.BillItemCreateReq[rawjson.RawMessage], error)
-
-	FinishSplit(kt *kit.Kit, opt *DailyAccountSplitActionOption, billDay int,
-		mainAccount *protocore.BaseMainAccount) ([]bill.BillItemCreateReq[rawjson.RawMessage], error)
 }
 
 // DefaultSplitter default account splitter
@@ -94,10 +91,4 @@ func (ds *DefaultSplitter) DoSplit(kt *kit.Kit, opt *DailyAccountSplitActionOpti
 	return []bill.BillItemCreateReq[rawjson.RawMessage]{
 		req,
 	}, nil
-}
-
-// FinishSplit implements RawBillSplitter
-func (ds *DefaultSplitter) FinishSplit(kt *kit.Kit, opt *DailyAccountSplitActionOption, billDay int,
-	mainAccount *protocore.BaseMainAccount) ([]bill.BillItemCreateReq[rawjson.RawMessage], error) {
-	return nil, nil
 }
