@@ -551,7 +551,7 @@ func (req *TCloudSopsTargetBatchCreateReq) Validate() error {
 
 // TCloudSopsTargetBatchRemoveReq tcloud sops target batch remove req.
 type TCloudSopsTargetBatchRemoveReq struct {
-	RuleQueryList []TargetGroupRuleQueryItem `json:"rule_query_list" validate:"required,min=1"`
+	RuleQueryList []TargetGroupRuleQueryItem `json:"rule_query_list" validate:"required,min=1,max=10"`
 }
 
 // Validate request.
@@ -563,7 +563,7 @@ func (req *TCloudSopsTargetBatchRemoveReq) Validate() error {
 
 // TCloudSopsTargetBatchModifyWeightReq tcloud sops target batch modify weight req.
 type TCloudSopsTargetBatchModifyWeightReq struct {
-	RuleQueryList []TargetGroupRuleQueryItem `json:"rule_query_list" validate:"required,min=1"`
+	RuleQueryList []TargetGroupRuleQueryItem `json:"rule_query_list" validate:"required,min=1,max=10"`
 	RsWeight      int64                      `json:"rs_weight" validate:"required"`
 }
 

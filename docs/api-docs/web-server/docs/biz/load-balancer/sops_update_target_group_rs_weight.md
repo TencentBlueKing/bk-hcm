@@ -19,13 +19,16 @@ PATCH /api/v1/cloud/bizs/{bk_biz_id}/sops/target_groups/targets/weight
 
 #### rule_query_list
 
-| 参数名称   | 参数类型   | 必选 | 描述                       |
-|-----------|----------|------|---------------------------|
-| region    | string   | 否   | 区域                       |
-| protocol  | string   | 否   | 协议(UDP、TCP、HTTP、HTTPS) |
-| domain    | string   | 否   | 域名                       |
-| vip       | string   | 否   | 负载均衡的VIP               |
-| vport     | string   | 否   | 监听器的默认端口             |
+| 参数名称     | 参数类型  | 必选 | 描述                     |
+|----------|-------|----|------------------------|
+| region   | string | 是  | 区域                     |
+| vip      | []string | 否  | 负载均衡的VIP               |
+| vport    | []int | 否  | 监听器的默认端口               |
+| rs_ip    | []string      | 是  | real server的ip         |
+| rs_type  | string | 是  | real server的类型         |
+| protocol | string | 否  | 协议(UDP、TCP、HTTP、HTTPS) |
+| domain   | string | 否  | 域名                     |
+
 
 ### 调用示例
 
@@ -35,11 +38,16 @@ PATCH /api/v1/cloud/bizs/{bk_biz_id}/sops/target_groups/targets/weight
   "rule_query_list": [
     {
       "region": "ap-nanjing",
+      "rs_ip": [
+        "xxx.xxx.xxx.xxx",
+        "zzz.zzz.zzz.zzz"
+      ],
+      "rs_type": "CVM",
       "protocol": "HTTPS",
       "domain": "www.xxxx.com"
     }
   ],
-  "rs_weight": 10
+  "rs_weight": 66
 }
 ```
 
@@ -48,8 +56,11 @@ PATCH /api/v1/cloud/bizs/{bk_biz_id}/sops/target_groups/targets/weight
 ```json
 {
   "code": 0,
-  "message": "ok",
+  "message": "",
   "data": [
+    {
+      "flow_id": "xxxxxxxx"
+    },
     {
       "flow_id": "xxxxxxxx"
     }
@@ -60,13 +71,13 @@ PATCH /api/v1/cloud/bizs/{bk_biz_id}/sops/target_groups/targets/weight
 ### 响应参数说明
 
 | 参数名称  | 参数类型      | 描述    |
-|---------|--------------|---------|
-| code    | int          | 状态码   |
-| message | string       | 请求信息 |
-| data    | object array | 响应数据 |
+|---------|-----------|---------|
+| code    | int       | 状态码   |
+| message | string    | 请求信息 |
+| data    | object array  | 响应数据 |
 
-#### data
+#### data[n]
 
-| 参数名称  | 参数类型 | 描述    |
-|----------|--------|---------|
-| flow_id  | string | 任务id   |
+| 参数名称    | 参数类型 | 描述   |
+|---------|--------|------|
+| flow_id | string | 任务id |
