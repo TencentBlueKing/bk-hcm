@@ -71,7 +71,7 @@ func (a AwsMonthTask) Pull(kt *kit.Kit, rootAccountID string, billYear, billMont
 		BeginDate:          fmt.Sprintf("%d-%02d-%02d", billYear, billMonth, 1),
 		EndDate:            fmt.Sprintf("%d-%02d-%02d", billYear, billMonth, lastDay),
 		Page: &hcbill.AwsBillListPage{
-			Offset: index * a.GetBatchSize(kt),
+			Offset: index,
 			Limit:  a.GetBatchSize(kt),
 		},
 	})
@@ -106,14 +106,17 @@ func (a AwsMonthTask) Pull(kt *kit.Kit, rootAccountID string, billYear, billMont
 			Extension:     types.JsonField(extensionBytes),
 		})
 	}
-	finished := uint64(len(billResp.Details)) == a.GetBatchSize(kt)
+	finished := uint64(len(billResp.Details)) < a.GetBatchSize(kt)
 	return itemList, finished, nil
 }
 
 // Split root account bill into main accounts
-func (a AwsMonthTask) Split(kt *kit.Kit, rootAccountID string,
+func (a AwsMonthTask) Split(kt *kit.Kit, rootAccountID string, billYear, billMonth int,
 	rawItemList []*bill.RawBillItem) ([]bill.BillItemCreateReq[json.RawMessage], error) {
 
+	if len(rawItemList) == 0 {
+		return nil, nil
+	}
 	// 查询根账号信息
 	rootAccount, err := actcli.GetDataService().Aws.RootAccount.Get(kt, rootAccountID)
 	if err != nil {
@@ -123,7 +126,7 @@ func (a AwsMonthTask) Split(kt *kit.Kit, rootAccountID string,
 
 	mainAccountsResp, err := actcli.GetDataService().Global.MainAccount.List(kt, &core.ListReq{
 		Filter: tools.ExpressionAnd(
-			tools.RuleEqual("root_account_id", rootAccountID),
+			tools.RuleEqual("parent_account_id", rootAccountID),
 			// 排除根账号
 			tools.RuleNotEqual("cloud_id", rootAccount.CloudID)),
 		Page: core.NewDefaultBasePage(),
@@ -140,8 +143,12 @@ func (a AwsMonthTask) Split(kt *kit.Kit, rootAccountID string,
 	}
 
 	summaryMainResp, err := actcli.GetDataService().Global.Bill.ListBillSummaryMain(kt, &bill.BillSummaryMainListReq{
-		Filter: tools.ContainersExpression("id", mainAccountIDs),
-		Page:   core.NewDefaultBasePage(),
+		Filter: tools.ExpressionAnd(
+			tools.RuleIn("main_account_id", mainAccountIDs),
+			tools.RuleEqual("bill_year", billYear),
+			tools.RuleEqual("bill_month", billMonth),
+		),
+		Page: core.NewDefaultBasePage(),
 	})
 	if err != nil {
 		logs.Errorf("failt to list main account bill summary for %s month task, err: %v, rid: %s",
@@ -154,6 +161,7 @@ func (a AwsMonthTask) Split(kt *kit.Kit, rootAccountID string,
 	for _, item := range rawItemList {
 		batchCost = batchCost.Add(item.BillCost)
 	}
+	// 按比例分摊给各个二级账号
 	summaryTotal := decimal.Zero
 	for _, summaryMain := range summaryMainResp.Details {
 		summaryTotal = summaryTotal.Add(summaryMain.CurrentMonthCost)
@@ -172,7 +180,6 @@ func (a AwsMonthTask) Split(kt *kit.Kit, rootAccountID string,
 			BkBizID:       summary.BkBizID,
 			BillYear:      summary.BillYear,
 			BillMonth:     summary.BillMonth,
-			BillDay:       1,
 			VersionID:     summary.CurrentVersion,
 			Currency:      summary.Currency,
 			Cost:          cost,
@@ -188,7 +195,6 @@ func (a AwsMonthTask) Split(kt *kit.Kit, rootAccountID string,
 			BkBizID:       summary.BkBizID,
 			BillYear:      summary.BillYear,
 			BillMonth:     summary.BillMonth,
-			BillDay:       1,
 			VersionID:     summary.CurrentVersion,
 			Currency:      summary.Currency,
 			Cost:          cost.Neg(),

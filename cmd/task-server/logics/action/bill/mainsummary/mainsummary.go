@@ -33,6 +33,7 @@ import (
 	"hcm/pkg/async/action/run"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -50,6 +51,11 @@ type MainAccountSummaryActionOption struct {
 	BillYear      int           `json:"bill_year" validate:"required"`
 	BillMonth     int           `json:"bill_month" validate:"required"`
 	Vendor        enumor.Vendor `json:"vendor" validate:"required"`
+}
+
+// Validate ...
+func (r *MainAccountSummaryActionOption) Validate() error {
+	return validator.Validate.Struct(r)
 }
 
 // MainAccountSummaryAction define main account summary action
@@ -71,8 +77,12 @@ func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 	if !ok {
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
 	}
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
 	rootSummary, summary, err := act.getBillSummary(kt.Kit(), opt)
 	if err != nil {
+		logs.Errorf("fail to get root summary for main summary, err: %v, rid: %s", err, kt.Kit().Rid)
 		return nil, err
 	}
 

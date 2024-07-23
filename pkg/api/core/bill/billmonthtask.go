@@ -27,8 +27,8 @@ import (
 
 // MonthTaskSummaryDetailItem detail item of month task summary
 type MonthTaskSummaryDetailItem struct {
-	MainAccountID string              `json:"mainAccountID"`
-	IsFinished    bool                `json:"isFinished"`
+	MainAccountID string              `json:"main_account_id"`
+	IsFinished    bool                `json:"is_finished"`
 	Currency      enumor.CurrencyCode `json:"currency"`
 	Cost          decimal.Decimal     `json:"cost"`
 	Count         uint64              `json:"count"`

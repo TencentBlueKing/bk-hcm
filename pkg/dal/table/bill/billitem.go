@@ -132,9 +132,7 @@ func (abs *AccountBillItem) InsertValidate() error {
 	if abs.BillMonth == 0 {
 		return errors.New("bill_month is required")
 	}
-	if abs.BillDay == 0 {
-		return errors.New("bill_day is required")
-	}
+
 	if abs.VersionID == 0 {
 		return errors.New("version_id is required")
 	}
@@ -167,9 +165,7 @@ func (abs *AccountBillItem) UpdateValidate() error {
 	if abs.BillMonth == 0 {
 		return errors.New("bill_month is required")
 	}
-	if abs.BillDay == 0 {
-		return errors.New("bill_day is required")
-	}
+
 	if err := validator.Validate.Struct(abs); err != nil {
 		return err
 	}
