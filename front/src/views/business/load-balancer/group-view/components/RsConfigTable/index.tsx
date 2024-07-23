@@ -154,6 +154,7 @@ export default defineComponent({
                 { validator: (v: number) => v >= 1 && v <= 65535, message: '端口范围为1-65535', trigger: 'change' },
               ]}>
               <Input
+                type='number'
                 modelValue={port}
                 onChange={handleUpdate(data.id, 'port')}
                 disabled={!props.noDisabled && !(isAdd.value || (isAddRs.value && data.isNew))}
