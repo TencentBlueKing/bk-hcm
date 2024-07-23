@@ -1,6 +1,5 @@
 /* eslint-disable no-nested-ternary */
 import { QueryRuleOPEnum, RulesItem } from '@/typings/common';
-import { FilterType } from '@/typings';
 import { Loading, SearchSelect, Table } from 'bkui-vue';
 import type { Column } from 'bkui-vue/lib/table/props';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
@@ -17,7 +16,7 @@ import { VendorReverseMap } from '@/common/constant';
 import { LB_NETWORK_TYPE_REVERSE_MAP, LISTENER_BINDING_STATUS_REVERSE_MAP, SCHEDULER_REVERSE_MAP } from '@/constants';
 import usePagination from '../usePagination';
 import useBillStore from '@/store/useBillStore';
-import { defaults } from 'lodash';
+import { defaults, isEqual } from 'lodash';
 import { fetchData } from '@pluginHandler/useTable';
 
 export interface IProp {
@@ -55,7 +54,7 @@ export interface IProp {
     // 筛选参数
     filterOption?: {
       // 规则
-      rules: Array<RulesItem>;
+      rules?: Array<RulesItem>;
       // Tab 切换时选用项(如选中全部时, 删除对应的 rule)
       deleteOption?: {
         field: string;
@@ -77,8 +76,6 @@ export interface IProp {
     // 是否立即请求
     immediate?: boolean;
   };
-  // 资源下筛选业务功能相关的 prop
-  bizFilter?: FilterType;
 }
 
 export const useTable = (props: IProp) => {
@@ -127,8 +124,13 @@ export const useTable = (props: IProp) => {
     customRules: Array<RulesItem> | (() => Array<RulesItem>) = [],
     type?: string,
     isInvidual = false,
+    differenceFields?: Array<string>,
   ) => {
-    buildFilter({ rules: typeof customRules === 'function' ? customRules() : customRules, isInvidual });
+    buildFilter({
+      rules: typeof customRules === 'function' ? customRules() : customRules,
+      isInvidual,
+      differenceFields,
+    });
     // 预览
     if (props.tableOptions.reviewData) {
       dataList.value = props.tableOptions.reviewData;
@@ -278,11 +280,10 @@ export const useTable = (props: IProp) => {
    */
   const buildFilter = (options: {
     rules: Array<RulesItem>; // 规则列表
-    deleteOption?: { field: string; flagValue: any }; // 删除选项(可选, 用于 tab 切换时, 删除规则)
     differenceFields?: string[]; // search-select 移除条件时的搜索字段差集(只用于 search-select 组件)
     isInvidual?: Boolean; // 标志当前为独立的请求，无需合并之前的filter
   }) => {
-    const { rules, deleteOption, differenceFields, isInvidual } = options;
+    const { rules, differenceFields, isInvidual } = options;
     const filterMap = new Map();
     // 先添加新的规则
     rules.forEach((rule) => {
@@ -308,6 +309,7 @@ export const useTable = (props: IProp) => {
       });
     }
     // 如果配置了 deleteOption, 则当符合条件时, 删除对应规则
+    const { deleteOption } = props.requestOption.filterOption || {};
     if (deleteOption) {
       const { field, flagValue } = deleteOption;
       const rule = filterMap.get(field);
@@ -322,7 +324,9 @@ export const useTable = (props: IProp) => {
       });
     }
     // 整合后的规则重新赋值给 filter.rules
-    filter.rules = [...filterMap.values()];
+    if (!isEqual(filter.rules, [...filterMap.values()])) {
+      filter.rules = [...filterMap.values()];
+    }
   };
 
   /**
@@ -383,47 +387,26 @@ export const useTable = (props: IProp) => {
             return { field, op, value };
           })
         : [];
-      // 如果 search-select 的条件减少, 则移除差集中的规则
-      if (oldSearchFieldList.length > searchFieldList.length) {
-        buildFilter({ rules: searchRules, differenceFields: getDifferenceSet(oldSearchFieldList, searchFieldList) });
-      } else {
-        buildFilter({ rules: searchRules });
-      }
       // 页码重置
       pagination.start = 0;
-      getListData();
+      // 如果 search-select 的条件减少, 则移除差集中的规则
+      if (oldSearchFieldList.length > searchFieldList.length) {
+        getListData(searchRules, null, null, getDifferenceSet(oldSearchFieldList, searchFieldList));
+      } else {
+        getListData(searchRules);
+      }
     },
     {
       immediate: props.requestOption.immediate,
     },
   );
 
-  // 分配业务筛选
-  watch(
-    () => props.bizFilter,
-    (val) => {
-      const idx = filter.rules.findIndex((rule) => rule.field === 'bk_biz_id');
-      const bizFilter = val.rules[0];
-      if (bizFilter) {
-        if (idx !== -1) {
-          filter.rules[idx] = bizFilter;
-        } else {
-          filter.rules.push(val.rules[0]);
-        }
-      } else {
-        filter.rules.splice(idx, 1);
-      }
-      getListData();
-    },
-    { deep: true },
-  );
-
   watch(
     () => props.requestOption.filterOption,
     (val) => {
       if (!val) return;
-      const { rules, deleteOption } = val;
-      buildFilter({ rules, deleteOption });
+      const { rules } = val;
+      buildFilter({ rules });
       getListData();
     },
     {
