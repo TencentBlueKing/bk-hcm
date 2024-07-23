@@ -30,11 +30,11 @@ import (
 	"hcm/pkg/dal/table/utils"
 )
 
-// AccountBillMonthPullTaskColumns defines account_bill_month_task's columns
-var AccountBillMonthPullTaskColumns = utils.MergeColumns(nil, AccountBillMonthPullTaskDescriptor)
+// AccountBillMonthTaskColumns defines account_bill_month_task's columns
+var AccountBillMonthTaskColumns = utils.MergeColumns(nil, AccountBillMonthTaskDescriptor)
 
-// AccountBillMonthPullTaskDescriptor is AccountBillMonthPullTask's column descriptors
-var AccountBillMonthPullTaskDescriptor = utils.ColumnDescriptors{
+// AccountBillMonthTaskDescriptor is AccountBillMonthTask's column descriptors
+var AccountBillMonthTaskDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
 	{Column: "root_account_id", NamedC: "root_account_id", Type: enumor.String},
 	{Column: "vendor", NamedC: "vendor", Type: enumor.String},
@@ -57,8 +57,8 @@ var AccountBillMonthPullTaskDescriptor = utils.ColumnDescriptors{
 	{Column: "updated_at", NamedC: "updated_at", Type: enumor.Time},
 }
 
-// AccountBillMonthPullTask account_bill_month_task表，存储云账单拉取器状态
-type AccountBillMonthPullTask struct {
+// AccountBillMonthTask account_bill_month_task表，存储云账单拉取器状态
+type AccountBillMonthTask struct {
 	// ID 自增ID
 	ID string `db:"id" validate:"lte=64" json:"id"`
 	// RootAccountID 一级账号ID
@@ -102,12 +102,12 @@ type AccountBillMonthPullTask struct {
 }
 
 // TableName 返回账单拉起器状态表表名
-func (abs *AccountBillMonthPullTask) TableName() table.Name {
+func (abs *AccountBillMonthTask) TableName() table.Name {
 	return table.AccountBillMonthTaskTable
 }
 
 // InsertValidate validate account bill month task on insert
-func (abs *AccountBillMonthPullTask) InsertValidate() error {
+func (abs *AccountBillMonthTask) InsertValidate() error {
 	if len(abs.ID) == 0 {
 		return errors.New("id is required")
 	}
@@ -118,7 +118,7 @@ func (abs *AccountBillMonthPullTask) InsertValidate() error {
 }
 
 // UpdateValidate validate account bill month task on update
-func (abs *AccountBillMonthPullTask) UpdateValidate() error {
+func (abs *AccountBillMonthTask) UpdateValidate() error {
 	if len(abs.ID) == 0 {
 		return errors.New("id is required")
 	}

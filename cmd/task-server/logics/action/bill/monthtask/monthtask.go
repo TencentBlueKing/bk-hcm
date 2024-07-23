@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package monthtask ...
 package monthtask
 
 import (
@@ -286,9 +287,7 @@ func (act MonthTaskAction) runSummary(kt *kit.Kit, opt *MonthTaskActionOption) e
 			}
 			result, err := actcli.GetDataService().Global.Bill.ListBillItem(kt, &bill.BillItemListReq{
 				Filter: tools.ExpressionAnd(expressions...),
-				Page: &core.BasePage{
-					Count: true,
-				},
+				Page:   core.NewCountPage(),
 			})
 			if err != nil {
 				logs.Warnf("count bill item for %+v %+v failed, err: %s, rid: %s", opt, item, err.Error(), kt.Rid)

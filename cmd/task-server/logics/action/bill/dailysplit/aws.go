@@ -146,8 +146,8 @@ func (ds *AwsSplitter) extractSpCostItem(kt *kit.Kit, opt *DailyAccountSplitActi
 		VersionID:     opt.VersionID,
 		Currency:      item.BillCurrency,
 		Cost:          spNetCost.Neg(),
-		HcProductCode: "SavingsPlanReverseCost",
-		HcProductName: "SavingsPlanReverseCost",
+		HcProductCode: "SavingsPlanCostReverse",
+		HcProductName: "SavingsPlanCostReverse",
 		Extension:     cvt.ValToPtr(rawjson.RawMessage("{}")),
 	}
 

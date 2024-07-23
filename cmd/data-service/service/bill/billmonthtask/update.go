@@ -44,7 +44,7 @@ func (svc *service) UpdateBillMonthPullTask(cts *rest.Contexts) (interface{}, er
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	monthTask := &tablebill.AccountBillMonthPullTask{
+	monthTask := &tablebill.AccountBillMonthTask{
 		ID:            req.ID,
 		State:         req.State,
 		Count:         req.Count,

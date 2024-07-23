@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package gcp bill puller
 package gcp
 
 import (
@@ -45,11 +46,12 @@ func init() {
 	}
 }
 
-// GcpPuller huawei puller
+// GcpPuller gcp puller
 type GcpPuller struct {
 	BillDelay int
 }
 
+// EnsurePullTask ...
 func (hp *GcpPuller) EnsurePullTask(
 	kt *kit.Kit, client *client.ClientSet,
 	sd serviced.ServiceDiscover, billSummaryMain *dsbillapi.BillSummaryMainResult) error {
@@ -76,6 +78,7 @@ func (hp *GcpPuller) EnsurePullTask(
 	return dp.EnsurePullTask(kt)
 }
 
+// GetPullTaskList ...
 func (hp *GcpPuller) GetPullTaskList(
 	kt *kit.Kit, client *client.ClientSet,
 	sd serviced.ServiceDiscover, billSummaryMain *dsbillapi.BillSummaryMainResult) (

@@ -65,7 +65,7 @@ func (act MainAccountSummaryAction) Name() enumor.ActionName {
 	return enumor.ActionMainAccountSummary
 }
 
-// Run  task
+// Run task
 func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (interface{}, error) {
 	opt, ok := params.(*MainAccountSummaryActionOption)
 	if !ok {

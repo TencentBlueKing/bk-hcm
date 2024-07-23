@@ -197,6 +197,7 @@ func (msdc *MainDailySplitController) syncDailySplit(kt *kit.Kit, billYear, bill
 	if err != nil {
 		return err
 	}
+
 	curPuller, err := puller.GetDailyPuller(summary.Vendor)
 	if err != nil {
 		return err

@@ -24,28 +24,6 @@
  */
 START TRANSACTION;
 
--- 账单同步器表
-create table if not exists `account_bill_puller`
-(
-    `id`                       varchar(64) not null,
-    `first_account_id`         varchar(64) not null,
-    `second_account_id`        varchar(64) not null,
-    `vendor`                   varchar(16) not null,
-    `product_id`               bigint(1),
-    `bk_biz_id`                bigint(1),
-    `pull_mode`                varchar(64) not null,
-    `sync_period`              varchar(64) not null,
-    `bill_delay`               varchar(64) not null,
-    `final_bill_calendar_date` bigint(1)   not null,
-    `created_at`               timestamp   not null default current_timestamp,
-    `updated_at`               timestamp   not null default current_timestamp on update current_timestamp,
-    primary key (`id`),
-    unique key `idx_account_id` (`first_account_id`, `second_account_id`)
-) engine = innodb
-  default charset = utf8mb4;
-
-insert into id_generator(`resource`, `max_id`)
-values ('account_bill_puller', '0');
 
 -- 月账单汇总版本表
 create table if not exists `account_bill_summary_version`

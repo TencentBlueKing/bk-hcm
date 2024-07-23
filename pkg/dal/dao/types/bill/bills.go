@@ -49,8 +49,8 @@ type ListAccountBillItemDetails struct {
 
 // ListAccountBillMonthPullTaskDetails list account bill month pull details
 type ListAccountBillMonthPullTaskDetails struct {
-	Count   uint64                               `json:"count,omitempty"`
-	Details []tablebill.AccountBillMonthPullTask `json:"details,omitempty"`
+	Count   uint64                           `json:"count,omitempty"`
+	Details []tablebill.AccountBillMonthTask `json:"details,omitempty"`
 }
 
 // ListAccountBillDailyPullTaskDetails list account bill daily pull task details

@@ -42,7 +42,7 @@ var (
 func GetDailyPuller(vendor enumor.Vendor) (DailyPuller, error) {
 	puller, ok := DailyPullerRegistry[vendor]
 	if !ok {
-		return nil, fmt.Errorf("unsupported vendor %s", vendor)
+		return nil, fmt.Errorf("unsupported vendor %s for daily puller", vendor)
 	}
 	return puller, nil
 }
@@ -51,7 +51,7 @@ func GetDailyPuller(vendor enumor.Vendor) (DailyPuller, error) {
 func GetMonthPuller(vendor enumor.Vendor) (MonthPuller, error) {
 	puller, ok := MonthPullerRegistry[vendor]
 	if !ok {
-		return nil, fmt.Errorf("unsupported vendor %s", vendor)
+		return nil, fmt.Errorf("unsupported vendor %s for month puller", vendor)
 	}
 	return puller, nil
 }
@@ -70,6 +70,6 @@ type DailyPuller interface {
 
 // MonthPuller month puller interface
 type MonthPuller interface {
-	// HasMonthPullTask return if has month pull task
+	// HasMonthPullTask return true if it needs month pull task
 	HasMonthPullTask() bool
 }

@@ -43,7 +43,7 @@ func GetSplitter(vendor enumor.Vendor) (RawBillSplitter, error) {
 	if _, ok := vendorSplitterFunc[vendor]; ok {
 		return vendorSplitterFunc[vendor](), nil
 	}
-	return nil, fmt.Errorf("unsupported vendor: %s", vendor)
+	return nil, fmt.Errorf("unsupported vendor: %s for daily splitter", vendor)
 }
 
 // RawBillSplitter splitter for raw bill

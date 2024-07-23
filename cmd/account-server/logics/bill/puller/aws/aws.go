@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package aws bill puller Option
 package aws
 
 import (
@@ -100,5 +101,5 @@ func (hp *AwsPuller) GetPullTaskList(kt *kit.Kit, client *client.ClientSet,
 
 // HasMonthPullTask return if has month pull task
 func (hp *AwsPuller) HasMonthPullTask() bool {
-	return false
+	return true
 }

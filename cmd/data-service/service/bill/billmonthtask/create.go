@@ -43,7 +43,7 @@ func (svc *service) CreateBillMonthPullTask(cts *rest.Contexts) (interface{}, er
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 	taskID, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		puller := &tablebill.AccountBillMonthPullTask{
+		puller := &tablebill.AccountBillMonthTask{
 			RootAccountID: req.RootAccountID,
 			Vendor:        req.Vendor,
 			BillYear:      req.BillYear,
@@ -54,7 +54,7 @@ func (svc *service) CreateBillMonthPullTask(cts *rest.Contexts) (interface{}, er
 			Reviser:       cts.Kit.User,
 		}
 		taskIDs, err := svc.dao.AccountBillMonthPullTask().BatchCreateWithTx(
-			cts.Kit, txn, []*tablebill.AccountBillMonthPullTask{
+			cts.Kit, txn, []*tablebill.AccountBillMonthTask{
 				puller,
 			})
 		if err != nil {

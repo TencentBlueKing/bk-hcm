@@ -180,7 +180,23 @@ func (a AwsMonthTask) Split(kt *kit.Kit, rootAccountID string,
 			HcProductName: "CommonExpense",
 			Extension:     cvt.ValToPtr(json.RawMessage("{}")),
 		}
-		billItems = append(billItems, costBillItem)
+		reverseBillItem := bill.BillItemCreateReq[json.RawMessage]{
+			RootAccountID: rootAccountID,
+			MainAccountID: rootAccount.CloudID,
+			Vendor:        summary.Vendor,
+			ProductID:     summary.ProductID,
+			BkBizID:       summary.BkBizID,
+			BillYear:      summary.BillYear,
+			BillMonth:     summary.BillMonth,
+			BillDay:       1,
+			VersionID:     summary.CurrentVersion,
+			Currency:      summary.Currency,
+			Cost:          cost.Neg(),
+			HcProductCode: "CommonExpenseReverse",
+			HcProductName: "CommonExpenseReverse",
+			Extension:     cvt.ValToPtr(json.RawMessage("{}")),
+		}
+		billItems = append(billItems, costBillItem, reverseBillItem)
 	}
 
 	return billItems, nil

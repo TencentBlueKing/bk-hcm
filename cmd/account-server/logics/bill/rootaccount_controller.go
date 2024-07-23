@@ -181,12 +181,12 @@ func (rac *RootAccountController) pollRootSummaryTask(subKit *kit.Kit, flowID st
 		result, err := rac.createRootSummaryTask(subKit, billYear, billMonth)
 		if err != nil {
 			logs.Warnf("create new root summary task for %s/%s %d-%d failed, err %s, rid: %s",
-				rac.RootAccountID, rac.Vendor, billYear, billMonth, err.Error(), subKit)
+				rac.RootAccountID, rac.Vendor, billYear, billMonth, err.Error(), subKit.Rid)
 			return flowID
 		}
 
 		logs.Infof("create root summary task for %s/%s %d-%d successfully, flow id %s, rid: %s",
-			rac.RootAccountID, rac.Vendor, billYear, billMonth, flowID, subKit)
+			rac.RootAccountID, rac.Vendor, billYear, billMonth, flowID, subKit.Rid)
 		return result.ID
 	}
 	flow, err := rac.Client.TaskServer().GetFlow(subKit, flowID)
@@ -211,12 +211,12 @@ func (rac *RootAccountController) pollRootSummaryTask(subKit *kit.Kit, flowID st
 		result, err := rac.createRootSummaryTask(subKit, billYear, billMonth)
 		if err != nil {
 			logs.Warnf("create new root summary task for %s/%s %d-%d failed, err %s, rid: %s",
-				rac.RootAccountID, rac.Vendor, billYear, billMonth, err.Error(), subKit)
+				rac.RootAccountID, rac.Vendor, billYear, billMonth, err.Error(), subKit.Rid)
 			return flowID
 		}
 
 		logs.Infof("create main summary task for %s/%s %d-%d successfully, flow id %s, rid: %s",
-			rac.RootAccountID, rac.Vendor, billYear, billMonth, flowID, subKit)
+			rac.RootAccountID, rac.Vendor, billYear, billMonth, flowID, subKit.Rid)
 		return result.ID
 	}
 	return flowID
@@ -339,16 +339,7 @@ func (rac *RootAccountController) ensureMonthTask(kt *kit.Kit, billYear, billMon
 	if err != nil {
 		return err
 	}
-	isAllAccounted := true
-	for _, mainSummary := range mainSummaryList {
-		if mainSummary.CurrentVersion != rootSummary.CurrentVersion {
-			isAllAccounted = false
-		}
-		if mainSummary.State != enumor.MainAccountBillSummaryStateAccounted &&
-			mainSummary.State != enumor.MainAccountBillSummaryStateWaitMonthTask {
-			isAllAccounted = false
-		}
-	}
+	isAllAccounted := calculateAccountingState(mainSummaryList, rootSummary)
 	if !isAllAccounted {
 		logs.Infof("not all main account bill summary for root account (%s, %s) were accounted, wait",
 			rac.RootAccountID, rac.Vendor)
@@ -386,6 +377,25 @@ func (rac *RootAccountController) ensureMonthTask(kt *kit.Kit, billYear, billMon
 		// nothing
 	}
 	return nil
+}
+
+func calculateAccountingState(mainSummaryList []*dsbillapi.BillSummaryMainResult,
+	rootSummary *dsbillapi.BillSummaryRootResult) (isAllAccounted bool) {
+
+	isAllAccounted = true
+
+	for _, mainSummary := range mainSummaryList {
+		if mainSummary.CurrentVersion != rootSummary.CurrentVersion {
+			isAllAccounted = false
+			return
+		}
+		if mainSummary.State != enumor.MainAccountBillSummaryStateAccounted &&
+			mainSummary.State != enumor.MainAccountBillSummaryStateWaitMonthTask {
+			isAllAccounted = false
+			return
+		}
+	}
+	return isAllAccounted
 }
 
 func (rac *RootAccountController) listAllMainSummary(
