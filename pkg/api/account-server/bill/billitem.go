@@ -20,10 +20,12 @@
 package bill
 
 import (
+	"encoding/json"
 	"errors"
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/bill"
+	dsbill "hcm/pkg/api/data-service/bill"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
@@ -68,6 +70,37 @@ type ImportBillAdjustmentReq struct {
 
 // Validate ListBillAdjustmentReq
 func (r *ImportBillAdjustmentReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// ImportBillItemPreviewReq 账单明细预览
+type ImportBillItemPreviewReq struct {
+	BillYear  int `json:"bill_year" validate:"required"`
+	BillMonth int `json:"bill_month" validate:"required"`
+	// 调账 文件上传
+	ExcelFileBase64 string `json:"excel_file_base64" validate:"required"`
+}
+
+// Validate ...
+func (r *ImportBillItemPreviewReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// ImportBillItemPreviewResult 账单明细预览结果
+type ImportBillItemPreviewResult struct {
+	Items   []dsbill.BillItemCreateReq[json.RawMessage]    `json:"items" validate:"required"`
+	CostMap map[enumor.CurrencyCode]*bill.CostWithCurrency `json:"cost_map"`
+}
+
+// ImportBillItemReq 账单明细
+type ImportBillItemReq struct {
+	BillYear  int                                         `json:"bill_year" validate:"required"`
+	BillMonth int                                         `json:"bill_month" validate:"required"`
+	Items     []dsbill.BillItemCreateReq[json.RawMessage] `json:"items" validate:"required"`
+}
+
+// Validate ...
+func (r *ImportBillItemReq) Validate() error {
 	return validator.Validate.Struct(r)
 }
 
