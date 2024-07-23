@@ -20,9 +20,8 @@
 package types
 
 import (
-	"fmt"
-
 	"database/sql/driver"
+	"fmt"
 
 	"github.com/shopspring/decimal"
 )
@@ -55,6 +54,6 @@ func (d *Decimal) Scan(raw interface{}) error {
 }
 
 // Value encode the Decimal to a json raw, so that it can be stored to db with json raw.
-func (d *Decimal) Value() (driver.Value, error) {
-	return d.String(), nil
+func (d Decimal) Value() (driver.Value, error) {
+	return d.Decimal.String(), nil
 }

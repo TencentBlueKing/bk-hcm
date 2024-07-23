@@ -351,7 +351,11 @@ func (rac *RootAccountController) ensureMonthTask(kt *kit.Kit, billYear, billMon
 		return err
 	}
 	if monthTask == nil {
-		return rac.createMonthPullTaskStub(kt, rootSummary)
+		if err := rac.createMonthPullTaskStub(kt, rootSummary); err != nil {
+			logs.Errorf("fail to create month pull task, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+		return nil
 	}
 	// 判断versionID是否一致，不一致，则重新创建month pull task
 	if monthTask.VersionID != rootSummary.CurrentVersion {
