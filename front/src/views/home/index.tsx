@@ -25,7 +25,7 @@ import { headRouteConfig } from '@/router/header-config';
 import logo from '@/assets/image/logo.png';
 import './index.scss';
 
-const { ENABLE_CLOUD_SELECTION } = window.PROJECT_CONFIG;
+const { ENABLE_CLOUD_SELECTION, ENABLE_ACCOUNT_BILL } = window.PROJECT_CONFIG;
 // import { CogShape } from 'bkui-vue/lib/icon';
 // import { useProjectList } from '@/hooks';
 // import AddProjectDialog from '@/components/AddProjectDialog';
@@ -167,7 +167,9 @@ export default defineComponent({
                       {headRouteConfig
                         .filter(
                           ({ id }) =>
-                            (ENABLE_CLOUD_SELECTION !== 'true' && id !== 'scheme') || ENABLE_CLOUD_SELECTION === 'true',
+                            ((ENABLE_CLOUD_SELECTION !== 'true' && id !== 'scheme') ||
+                              ENABLE_CLOUD_SELECTION === 'true') &&
+                            ((ENABLE_ACCOUNT_BILL !== 'true' && id !== 'bill') || ENABLE_ACCOUNT_BILL === 'true'),
                         )
                         .map(({ id, name, path }) => (
                           <Button
