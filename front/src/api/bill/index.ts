@@ -3,6 +3,8 @@ import http from '@/http';
 import { FilterType, IPageQuery } from '@/typings';
 import {
   AdjustmentItem,
+  BillImportPreviewItems,
+  BillImportPreviewResData,
   BillsMainAccountSummaryResData,
   BillsRootAccountSummaryHistoryResData,
   BillsRootAccountSummaryResData,
@@ -146,4 +148,20 @@ export const reqBillsSyncRecordList = async (data: { filter: FilterType; page: I
 // 查询汇率
 export const reqBillsExchangeRateList = async (data: { filter: FilterType; page: IPageQuery }) => {
   return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/exchange_rates/list`, data);
+};
+
+// 账单明细-导入预览
+export const billItemsImportPreview = async (
+  vendor: VendorEnum,
+  data: { bill_year: number; bill_month: number; excel_file_base64: string },
+): Promise<BillImportPreviewResData> => {
+  return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/vendors/${vendor}/bills/items/import/preview`, data);
+};
+
+// 账单明细-导入
+export const billItemsImport = async (
+  vendor: VendorEnum,
+  data: { bill_year: number; bill_month: number; items: BillImportPreviewItems },
+) => {
+  return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/vendors/${vendor}/bills/items/import`, data);
 };

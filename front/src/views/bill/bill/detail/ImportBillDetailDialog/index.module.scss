@@ -1,5 +1,22 @@
-.datePicker {
-  width: 100%;
+.item {
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  height: 52px;
+
+  .label {
+    width: 80px;
+  }
+
+  .content {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.uploadTip {
+  margin-top: 4px;
+  font-size: 12px;
 }
 
 .footer {

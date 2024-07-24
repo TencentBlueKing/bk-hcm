@@ -2038,12 +2038,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       render: ({ cell }: any) => VendorMap[cell],
     },
     {
-      label: '业务ID',
-      field: 'product_id',
-      isDefaultShow: true,
-    },
-    {
-      label: '业务ID',
+      label: '业务名称',
       field: 'bk_biz_id',
       isDefaultShow: true,
       render: ({ cell }: { cell: number }) => businessMapStore.businessMap.get(cell) || '未分配',
@@ -2112,12 +2107,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       render: ({ cell }: any) => VendorMap[cell],
     },
     {
-      label: '业务ID',
-      field: 'product_id',
-      isDefaultShow: true,
-    },
-    {
-      label: '业务ID',
+      label: '业务名称',
       field: 'bk_biz_id',
       isDefaultShow: true,
       render: ({ cell }: { cell: number }) => businessMapStore.businessMap.get(cell) || '未分配',
@@ -2186,12 +2176,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       render: ({ cell }: any) => VendorMap[cell],
     },
     {
-      label: '业务ID',
-      field: 'product_id',
-      isDefaultShow: true,
-    },
-    {
-      label: '业务ID',
+      label: '业务名称',
       field: 'bk_biz_id',
       isDefaultShow: true,
       render: ({ cell }: { cell: number }) => businessMapStore.businessMap.get(cell) || '未分配',
@@ -2260,12 +2245,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       render: ({ cell }: any) => VendorMap[cell],
     },
     {
-      label: '业务ID',
-      field: 'product_id',
-      isDefaultShow: true,
-    },
-    {
-      label: '业务ID',
+      label: '业务名称',
       field: 'bk_biz_id',
       isDefaultShow: true,
       render: ({ cell }: { cell: number }) => businessMapStore.businessMap.get(cell) || '未分配',
@@ -2379,12 +2359,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       render: ({ cell }: any) => VendorMap[cell],
     },
     {
-      label: '业务ID',
-      field: 'product_id',
-      isDefaultShow: true,
-    },
-    {
-      label: '业务ID',
+      label: '业务名称',
       field: 'bk_biz_id',
       isDefaultShow: true,
       render: ({ cell }: { cell: number }) => businessMapStore.businessMap.get(cell) || '未分配',

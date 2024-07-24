@@ -91,7 +91,8 @@ export default defineComponent({
     });
 
     const handleSearch = () => {
-      emit('search', rules.value);
+      // 如果搜索条件判定为空, 不触发搜索
+      !disabledSearch.value && emit('search', rules.value);
     };
 
     const handleReset = () => {
