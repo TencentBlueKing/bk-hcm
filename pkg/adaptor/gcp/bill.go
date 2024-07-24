@@ -284,7 +284,8 @@ func (g *Gcp) parseRootAccountCondition(opt *typesBill.GcpBillListOption) (strin
 
 	if opt.Month != "" {
 		condition = append(condition, fmt.Sprintf("invoice.month = '%s'", opt.Month))
-	} else if opt.BeginDate != "" && opt.EndDate != "" {
+	}
+	if opt.BeginDate != "" && opt.EndDate != "" {
 		beginDate, err := time.Parse(constant.TimeStdFormat, opt.BeginDate)
 		if err != nil {
 			return "", err

@@ -42,9 +42,9 @@ import (
 
 // AccountBillMonthPullTask interface for operating account bill month task
 type AccountBillMonthPullTask interface {
-	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, mTasks []*tablebill.AccountBillMonthPullTask) ([]string, error)
+	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, mTasks []*tablebill.AccountBillMonthTask) ([]string, error)
 	List(kt *kit.Kit, opt *types.ListOption) (*typesbill.ListAccountBillMonthPullTaskDetails, error)
-	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, taskID string, updateData *tablebill.AccountBillMonthPullTask) error
+	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, taskID string, updateData *tablebill.AccountBillMonthTask) error
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error
 }
 
@@ -58,7 +58,7 @@ type AccountBillMonthPullTaskDao struct {
 
 // BatchCreateWithTx batch create account bill month task
 func (abpDao AccountBillMonthPullTaskDao) BatchCreateWithTx(
-	kt *kit.Kit, tx *sqlx.Tx, mTasks []*tablebill.AccountBillMonthPullTask) ([]string, error) {
+	kt *kit.Kit, tx *sqlx.Tx, mTasks []*tablebill.AccountBillMonthTask) ([]string, error) {
 
 	if len(mTasks) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "account bill month task model data is required")
@@ -80,8 +80,8 @@ func (abpDao AccountBillMonthPullTaskDao) BatchCreateWithTx(
 	}
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`,
-		table.AccountBillMonthTaskTable, tablebill.AccountBillMonthPullTaskColumns.ColumnExpr(),
-		tablebill.AccountBillMonthPullTaskColumns.ColonNameExpr(),
+		table.AccountBillMonthTaskTable, tablebill.AccountBillMonthTaskColumns.ColumnExpr(),
+		tablebill.AccountBillMonthTaskColumns.ColonNameExpr(),
 	)
 	err = abpDao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, mTasks)
 	if err != nil {
@@ -99,7 +99,7 @@ func (abpDao AccountBillMonthPullTaskDao) List(kt *kit.Kit, opt *types.ListOptio
 	}
 
 	if err := opt.Validate(filter.NewExprOption(
-		filter.RuleFields(tablebill.AccountBillMonthPullTaskColumns.ColumnTypes())),
+		filter.RuleFields(tablebill.AccountBillMonthTaskColumns.ColumnTypes())),
 		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
@@ -126,10 +126,10 @@ func (abpDao AccountBillMonthPullTaskDao) List(kt *kit.Kit, opt *types.ListOptio
 		return nil, err
 	}
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tablebill.AccountBillMonthPullTaskColumns.FieldsNamedExpr(opt.Fields),
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tablebill.AccountBillMonthTaskColumns.FieldsNamedExpr(opt.Fields),
 		table.AccountBillMonthTaskTable, whereExpr, pageExpr)
 
-	details := make([]tablebill.AccountBillMonthPullTask, 0)
+	details := make([]tablebill.AccountBillMonthTask, 0)
 	if err = abpDao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}
@@ -138,7 +138,7 @@ func (abpDao AccountBillMonthPullTaskDao) List(kt *kit.Kit, opt *types.ListOptio
 
 // UpdateByIDWithTx update account bill month task
 func (abpDao AccountBillMonthPullTaskDao) UpdateByIDWithTx(
-	kt *kit.Kit, tx *sqlx.Tx, pullerID string, updateData *tablebill.AccountBillMonthPullTask) error {
+	kt *kit.Kit, tx *sqlx.Tx, pullerID string, updateData *tablebill.AccountBillMonthTask) error {
 
 	if err := updateData.UpdateValidate(); err != nil {
 		return err

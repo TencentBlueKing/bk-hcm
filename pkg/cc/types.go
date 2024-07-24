@@ -513,6 +513,7 @@ type Web struct {
 	BkCmdbCreateBizUrl     string `yaml:"bkCmdbCreateBizUrl"`
 	BkCmdbCreateBizDocsUrl string `yaml:"bkCmdbCreateBizDocsUrl"`
 	EnableCloudSelection   bool   `yaml:"enableCloudSelection"`
+	EnableAccountBill      bool   `yaml:"enableAccountBill"`
 }
 
 func (s Web) validate() error {
@@ -863,4 +864,16 @@ func (c *CMSI) validate() error {
 	}
 
 	return nil
+}
+
+// AwsSavingPlanOption ...
+type AwsSavingPlanOption struct {
+	RootAccountID            string `yaml:"rootAccountId"`
+	SpArnPrefix              string `yaml:"spArnPrefix"`
+	SpPurchaseAccountCloudID string `yaml:"SpPurchaseAccountCloudID"`
+}
+
+// BillAllocationOption ...
+type BillAllocationOption struct {
+	AwsSavingPlans []AwsSavingPlanOption `yaml:"awsSavingPlans"`
 }

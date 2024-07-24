@@ -17,43 +17,9 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package types
+package dailysummary
 
 import (
-	"database/sql/driver"
-	"fmt"
-
-	"github.com/shopspring/decimal"
+	// register aws puller
+	_ "hcm/cmd/account-server/logics/bill/puller/aws"
 )
-
-// Decimal is wrapper for
-type Decimal struct {
-	decimal.Decimal
-}
-
-// Scan is used to decode raw message which is read from db into
-func (d *Decimal) Scan(raw interface{}) error {
-	if raw == nil {
-		return nil
-	}
-	data := ""
-	switch v := raw.(type) {
-	case []byte:
-		data = string(v)
-	case string:
-		data = v
-	default:
-		return fmt.Errorf("unsupported decimal raw type: %T", v)
-	}
-	internalDecimal, err := decimal.NewFromString(data)
-	if err != nil {
-		return fmt.Errorf("parse decimal %s failed, err %s", data, err.Error())
-	}
-	d.Decimal = internalDecimal
-	return nil
-}
-
-// Value encode the Decimal to a json raw, so that it can be stored to db with json raw.
-func (d Decimal) Value() (driver.Value, error) {
-	return d.Decimal.String(), nil
-}

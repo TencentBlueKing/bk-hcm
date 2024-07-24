@@ -41,7 +41,7 @@ func (gcp *Gcp) Pull(kt *kit.Kit, rootAccountID string, billYear, billMonth int,
 	itemList []bill.RawBillItem, isFinished bool, err error) {
 	return nil, false, nil
 }
-func (gcp *Gcp) Split(kt *kit.Kit, rawItemList []*bill.RawBillItem) (
-	[]bill.BillItemCreateReq[rawjson.RawMessage], error) {
+func (gcp *Gcp) Split(kt *kit.Kit, rootAccountID string, billYear, billMonth int,
+	rawItemList []*bill.RawBillItem) ([]bill.BillItemCreateReq[rawjson.RawMessage], error) {
 	return nil, nil
 }

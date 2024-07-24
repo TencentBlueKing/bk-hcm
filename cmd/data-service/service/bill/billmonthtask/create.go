@@ -28,9 +28,11 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	tablebill "hcm/pkg/dal/table/bill"
+	"hcm/pkg/dal/table/types"
 	"hcm/pkg/rest"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/shopspring/decimal"
 )
 
 // CreateBillMonthPullTask create bill puller with options
@@ -43,7 +45,7 @@ func (svc *service) CreateBillMonthPullTask(cts *rest.Contexts) (interface{}, er
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 	taskID, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		puller := &tablebill.AccountBillMonthPullTask{
+		puller := &tablebill.AccountBillMonthTask{
 			RootAccountID: req.RootAccountID,
 			Vendor:        req.Vendor,
 			BillYear:      req.BillYear,
@@ -52,9 +54,10 @@ func (svc *service) CreateBillMonthPullTask(cts *rest.Contexts) (interface{}, er
 			State:         req.State,
 			Creator:       cts.Kit.User,
 			Reviser:       cts.Kit.User,
+			Cost:          &types.Decimal{Decimal: decimal.Zero},
 		}
 		taskIDs, err := svc.dao.AccountBillMonthPullTask().BatchCreateWithTx(
-			cts.Kit, txn, []*tablebill.AccountBillMonthPullTask{
+			cts.Kit, txn, []*tablebill.AccountBillMonthTask{
 				puller,
 			})
 		if err != nil {

@@ -184,7 +184,7 @@ const (
 	AccountBillItemTable = "account_bill_item"
 	// AccountBillAdjustmentItemTable 手动调账表
 	AccountBillAdjustmentItemTable = "account_bill_adjustment_item"
-	// AccountBillMonthTaskTable 账单拉取器表
+	// AccountBillMonthTaskTable 月度任务表
 	AccountBillMonthTaskTable = "account_bill_month_task"
 	// AccountBillDailyPullTaskTable 日账单拉取任务表
 	AccountBillDailyPullTaskTable = "account_bill_daily_pull_task"

@@ -57,7 +57,7 @@ func (svc *service) ListBillMonthPullTask(cts *rest.Contexts) (interface{}, erro
 	return &dataproto.BillMonthTaskListResult{Details: details, Count: &data.Count}, nil
 }
 
-func toProtoPullerResult(m *tablebill.AccountBillMonthPullTask) *dataproto.BillMonthTaskResult {
+func toProtoPullerResult(m *tablebill.AccountBillMonthTask) *dataproto.BillMonthTaskResult {
 	return &dataproto.BillMonthTaskResult{
 		ID:            m.ID,
 		RootAccountID: m.RootAccountID,

@@ -406,10 +406,11 @@ func (s TaskServerSetting) Validate() error {
 
 // AccountServerSetting defines task server used setting options.
 type AccountServerSetting struct {
-	Network    Network              `yaml:"network"`
-	Service    Service              `yaml:"service"`
-	Controller BillControllerOption `yaml:"controller"`
-	Log        LogOption            `yaml:"log"`
+	Network        Network              `yaml:"network"`
+	Service        Service              `yaml:"service"`
+	Controller     BillControllerOption `yaml:"controller"`
+	Log            LogOption            `yaml:"log"`
+	BillAllocation BillAllocationOption `yaml:"billAllocation"`
 }
 
 // trySetFlagBindIP try set flag bind ip.

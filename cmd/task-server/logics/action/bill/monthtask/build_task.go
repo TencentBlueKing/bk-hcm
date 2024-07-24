@@ -33,7 +33,7 @@ func BuildMonthTask(
 
 	return ts.CustomFlowTask{
 		ActionID:   action.ActIDType(uuid.UUID()),
-		ActionName: enumor.ActionMainAccountSummary,
+		ActionName: enumor.ActionMonthTaskAction,
 		Params: MonthTaskActionOption{
 			Type:          t,
 			RootAccountID: rootAccountID,

@@ -26,10 +26,40 @@ import (
 
 // GetLastMonth get last month year and month
 func GetLastMonth(billYear, billMonth int) (int, int, error) {
-	t, err := time.Parse("2006-01-02T15:04:05.000+08:00", fmt.Sprintf("%d-%02d-02T15:04:05.000+08:00", billYear, billMonth))
+	t, err := time.Parse(
+		"2006-01-02T15:04:05.000+08:00", fmt.Sprintf("%d-%02d-02T15:04:05.000+08:00", billYear, billMonth))
 	if err != nil {
 		return 0, 0, err
 	}
 	lastT := t.AddDate(0, -1, 0)
 	return lastT.Year(), int(lastT.Month()), nil
+}
+
+// IsLastDayOfMonth 判断给定的天是否是该月的最后一天
+func IsLastDayOfMonth(month, day int) (bool, error) {
+	if month < 1 || month > 12 {
+		return false, fmt.Errorf("invalid month: %d", month)
+	}
+
+	// 获取当前年份
+	year := time.Now().Year()
+
+	// 创建当月的下个月的第一天
+	var nextMonth time.Month
+	if month == 12 {
+		nextMonth = 1
+		year++
+	} else {
+		nextMonth = time.Month(month + 1)
+	}
+	firstDayOfNextMonth := time.Date(year, nextMonth, 1, 0, 0, 0, 0, time.UTC)
+
+	// 获取当月的最后一天
+	lastDayOfCurrentMonth := firstDayOfNextMonth.AddDate(0, 0, -1).Day()
+
+	// 比较提供的天和当月的最后一天
+	if day == lastDayOfCurrentMonth {
+		return true, nil
+	}
+	return false, nil
 }

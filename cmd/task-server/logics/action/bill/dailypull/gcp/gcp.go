@@ -33,6 +33,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/times"
 
 	"github.com/shopspring/decimal"
 )
@@ -149,6 +150,16 @@ func (gcp *GcpPuller) createRawBill(
 func (gcp *GcpPuller) doPull(
 	kt run.ExecuteKit, opt *registry.PullDailyBillOption, offset, limit uint64) (
 	int, *registry.PullerResult, error) {
+
+	// 判断是否是最后一天
+	isLastDay, err := times.IsLastDayOfMonth(opt.BillMonth, opt.BillDay)
+	if err != nil {
+		logs.Warnf("is last day of month failed, err: %v, rid %s", err, kt.Kit().Rid)
+		return 0, nil, err
+	}
+	if isLastDay {
+		
+	}
 
 	hcCli := actcli.GetHCService()
 	beginDate := fmt.Sprintf("%d-%02d-%02dT00:00:00Z", opt.BillYear, opt.BillMonth, opt.BillDay)

@@ -43,14 +43,15 @@ type BatchBillItemCreateReq[E bill.BillItemExtension] struct {
 
 // BillItemCreateReq create request
 type BillItemCreateReq[E bill.BillItemExtension] struct {
-	RootAccountID string              `json:"root_account_id" validate:"required"`
-	MainAccountID string              `json:"main_account_id" validate:"required"`
-	Vendor        enumor.Vendor       `json:"vendor" validate:"required"`
-	ProductID     int64               `json:"product_id" validate:"omitempty"`
-	BkBizID       int64               `json:"bk_biz_id" validate:"omitempty"`
-	BillYear      int                 `json:"bill_year" validate:"required"`
-	BillMonth     int                 `json:"bill_month" validate:"required"`
-	BillDay       int                 `json:"bill_day" validate:"required"`
+	RootAccountID string        `json:"root_account_id" validate:"required"`
+	MainAccountID string        `json:"main_account_id" validate:"required"`
+	Vendor        enumor.Vendor `json:"vendor" validate:"required"`
+	ProductID     int64         `json:"product_id" validate:"omitempty"`
+	BkBizID       int64         `json:"bk_biz_id" validate:"omitempty"`
+	BillYear      int           `json:"bill_year" validate:"required"`
+	BillMonth     int           `json:"bill_month" validate:"required"`
+	// allow bill day `zero` for monthly bill
+	BillDay       int                 `json:"bill_day" `
 	VersionID     int                 `json:"version_id" validate:"required"`
 	Currency      enumor.CurrencyCode `json:"currency" validate:"required"`
 	Cost          decimal.Decimal     `json:"cost" validate:"required"`

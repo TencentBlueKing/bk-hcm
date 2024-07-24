@@ -95,6 +95,11 @@ export default defineComponent({
         </div>
         <div class='describe'>
           <h2 class='mt20'>权限申请说明：</h2>
+          {this.urlKey === 'main_account_find' && (
+            <>
+              <p class='mt5 sub-describe'>{'当前无"账号-二级账号查看"权限'}</p>
+            </>
+          )}
           {this.urlKey === 'cloud_selection_recommend' && (
             <>
               <p class='mt5 sub-describe'>{'当前无“资源选型-选型推荐”的权限'}</p>
@@ -158,6 +163,15 @@ export default defineComponent({
           )}
 
           <h2 class='mt20'>功能说明：</h2>
+          {this.urlKey === 'main_account_find' && (
+            <>
+              <p class='mt5 sub-describe'>
+                {
+                  '二级账号，是由公司和云厂商签订合同协议后，以公司为主体在云上申请独立的云账号，供业务使用。不同二级账号之间的资源是隔离的。'
+                }
+              </p>
+            </>
+          )}
           {this.urlKey === 'cloud_selection_recommend' && (
             <>
               <p class='mt5 sub-describe'>
