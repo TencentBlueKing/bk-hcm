@@ -27,6 +27,7 @@ import (
 
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	"hcm/pkg/api/core"
+	protocore "hcm/pkg/api/core/account-set"
 	"hcm/pkg/api/data-service/bill"
 	hcbill "hcm/pkg/api/hc-service/bill"
 	"hcm/pkg/criteria/enumor"
@@ -125,11 +126,8 @@ func (a AwsMonthTask) Split(kt *kit.Kit, rootAccountID string, billYear, billMon
 	}
 
 	mainAccountsResp, err := actcli.GetDataService().Global.MainAccount.List(kt, &core.ListReq{
-		Filter: tools.ExpressionAnd(
-			tools.RuleEqual("parent_account_id", rootAccountID),
-			// 排除根账号
-			tools.RuleNotEqual("cloud_id", rootAccount.CloudID)),
-		Page: core.NewDefaultBasePage(),
+		Filter: tools.ExpressionAnd(tools.RuleEqual("parent_account_id", rootAccountID)),
+		Page:   core.NewDefaultBasePage(),
 	})
 	if err != nil {
 		logs.Errorf("failt to list main account for %s month task, err: %v, rid: %s",
@@ -138,7 +136,13 @@ func (a AwsMonthTask) Split(kt *kit.Kit, rootAccountID string, billYear, billMon
 	}
 	mainAccounts := mainAccountsResp.Details
 	mainAccountIDs := make([]string, 0, len(mainAccountsResp.Details))
+	// 作为二级账号存在的根账号，用于拉取公共费用
+	var rootAsMainAccount *protocore.BaseMainAccount
 	for _, account := range mainAccounts {
+		if account.CloudID == rootAccount.CloudID {
+			rootAsMainAccount = account
+			continue
+		}
 		mainAccountIDs = append(mainAccountIDs, account.ID)
 	}
 
@@ -180,6 +184,7 @@ func (a AwsMonthTask) Split(kt *kit.Kit, rootAccountID string, billYear, billMon
 			BkBizID:       summary.BkBizID,
 			BillYear:      summary.BillYear,
 			BillMonth:     summary.BillMonth,
+			BillDay:       0,
 			VersionID:     summary.CurrentVersion,
 			Currency:      summary.Currency,
 			Cost:          cost,
@@ -187,14 +192,21 @@ func (a AwsMonthTask) Split(kt *kit.Kit, rootAccountID string, billYear, billMon
 			HcProductName: "CommonExpense",
 			Extension:     cvt.ValToPtr(json.RawMessage("{}")),
 		}
+		billItems = append(billItems, costBillItem)
+
+		if rootAsMainAccount == nil {
+			continue
+		}
+		// 此处冲平根账号支出
 		reverseBillItem := bill.BillItemCreateReq[json.RawMessage]{
 			RootAccountID: rootAccountID,
-			MainAccountID: rootAccount.CloudID,
+			MainAccountID: rootAsMainAccount.CloudID,
 			Vendor:        summary.Vendor,
 			ProductID:     summary.ProductID,
 			BkBizID:       summary.BkBizID,
 			BillYear:      summary.BillYear,
 			BillMonth:     summary.BillMonth,
+			BillDay:       0,
 			VersionID:     summary.CurrentVersion,
 			Currency:      summary.Currency,
 			Cost:          cost.Neg(),
@@ -202,7 +214,7 @@ func (a AwsMonthTask) Split(kt *kit.Kit, rootAccountID string, billYear, billMon
 			HcProductName: "CommonExpenseReverse",
 			Extension:     cvt.ValToPtr(json.RawMessage("{}")),
 		}
-		billItems = append(billItems, costBillItem, reverseBillItem)
+		billItems = append(billItems, reverseBillItem)
 	}
 
 	return billItems, nil
