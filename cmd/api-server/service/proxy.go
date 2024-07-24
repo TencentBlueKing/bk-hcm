@@ -70,6 +70,7 @@ func (p *proxy) apiSet() *restful.Container {
 	ws.Route(ws.POST("{.*}").To(p.Do))
 	ws.Route(ws.PUT("{.*}").To(p.Do))
 	ws.Route(ws.DELETE("{.*}").To(p.Do))
+	ws.Route(ws.PATCH("{.*}").To(p.Do))
 
 	return restful.NewContainer().Add(ws)
 }
