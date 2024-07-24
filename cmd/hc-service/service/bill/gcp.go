@@ -136,7 +136,7 @@ func (b bill) GcpGetRootAccountBillList(cts *rest.Contexts) (interface{}, error)
 		EndDate:       req.EndDate,
 	}
 	// 检查Main AccountID是否存在
-	if len(req.MainAccountID) > 0 {
+	if len(req.MainAccountID) != 0 {
 		mainAccountInfo, err := b.cs.DataService().Gcp.MainAccount.Get(cts.Kit, req.MainAccountID)
 		if err != nil {
 			logs.Errorf("get gcp main account failed, main account id: %s, err: %+v", req.MainAccountID, err)
@@ -146,6 +146,8 @@ func (b bill) GcpGetRootAccountBillList(cts *rest.Contexts) (interface{}, error)
 			return nil, fmt.Errorf("main account: %s cloud_project_id is empty", req.MainAccountID)
 		}
 		opt.ProjectID = mainAccountInfo.Extension.CloudProjectID
+	} else {
+		opt.ProjectID = req.ProjectID
 	}
 
 	if req.Page != nil {

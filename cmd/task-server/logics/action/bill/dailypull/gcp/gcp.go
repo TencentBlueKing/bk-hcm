@@ -151,11 +151,13 @@ func (gcp *GcpPuller) doPull(
 	int, *registry.PullerResult, error) {
 
 	hcCli := actcli.GetHCService()
+	beginDate := fmt.Sprintf("%d-%02d-%02dT00:00:00Z", opt.BillYear, opt.BillMonth, opt.BillDay)
+	endDate := fmt.Sprintf("%d-%02d-%02dT23:59:59Z", opt.BillYear, opt.BillMonth, opt.BillDay)
 	resp, err := hcCli.Gcp.Bill.RootAccountBillList(kt.Kit().Ctx, kt.Kit().Header(), &bill.GcpRootAccountBillListReq{
 		RootAccountID: opt.RootAccountID,
 		MainAccountID: opt.MainAccountID,
-		BeginDate:     fmt.Sprintf("%d-%02d-%02dT00:00:00Z", opt.BillYear, opt.BillMonth, opt.BillDay),
-		EndDate:       fmt.Sprintf("%d-%02d-%02dT23:59:59Z", opt.BillYear, opt.BillMonth, opt.BillDay),
+		BeginDate:     beginDate,
+		EndDate:       endDate,
 		Page: &typesBill.GcpBillPage{
 			Offset: offset,
 			Limit:  limit,
@@ -204,6 +206,8 @@ func (gcp *GcpPuller) doPull(
 		if record.Currency != nil {
 			currency = enumor.CurrencyCode(*record.Currency)
 		}
+		record.UsageStartTime = &beginDate
+		record.UsageEndTime = &endDate
 		recordList = append(recordList, record)
 	}
 	filename := fmt.Sprintf("%d-%d.csv", offset, itemLen)
