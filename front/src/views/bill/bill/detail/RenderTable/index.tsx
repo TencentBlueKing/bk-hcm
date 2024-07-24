@@ -80,7 +80,7 @@ export default defineComponent({
             ),
           }}
         </CommonTable>
-        <ImportBillDetailDialog ref={importBillDetailDialogRef} />
+        <ImportBillDetailDialog ref={importBillDetailDialogRef} vendor={props.vendor} />
       </div>
     );
   },

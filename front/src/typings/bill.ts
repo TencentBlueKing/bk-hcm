@@ -118,7 +118,7 @@ export interface BillsSummarySum {
   count: number;
   cost_map: CostMap;
 }
-interface CostMap {
+export interface CostMap {
   USD: USD;
 }
 interface USD {
@@ -127,3 +127,47 @@ interface USD {
   Currency: string;
 }
 export type BillsSummarySumResData = IQueryResData<BillsSummarySum>;
+
+// 账单明细-zenlayer导入预览
+export interface BillImportPreview {
+  items: BillImportPreviewItem[];
+  cost_map: CostMap;
+}
+interface BillImportPreviewItem {
+  root_account_id: string;
+  main_account_id: string;
+  vendor: string;
+  product_id: number;
+  bk_biz_id: number;
+  bill_year: number;
+  bill_month: number;
+  bill_day: number;
+  version_id: number;
+  currency: string;
+  cost: string;
+  res_amount: string;
+  extension: BillImportPreviewItemExtension;
+}
+interface BillImportPreviewItemExtension {
+  bill_id: string;
+  zenlayer_order: string;
+  cid: string;
+  group_id: string;
+  currency: string;
+  city: string;
+  pay_content: string;
+  type: string;
+  acceptance_num: string;
+  pay_num: string;
+  unit_price_usd: string;
+  total_payable: string;
+  billing_period: string;
+  contract_period: string;
+  remarks: string;
+  business_group: string;
+  cpu: null | string;
+  disk: null | string;
+  memory: null | string;
+}
+export type BillImportPreviewResData = IQueryResData<BillImportPreview>;
+export type BillImportPreviewItems = BillImportPreviewItem[];
