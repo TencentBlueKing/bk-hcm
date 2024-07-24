@@ -69,7 +69,7 @@ type Interface interface {
 	Txn(tx *sqlx.Tx) DoOrmWithTransaction
 	AutoTxn(kt *kit.Kit, run TxnFunc) (interface{}, error)
 	// TableSharding at least one TableSharding option
-	TableSharding(opt TableShardingOpt, others ...TableShardingOpt) Interface
+	TableSharding(opts ...TableShardingOpt) Interface
 }
 
 // InitOrm return orm operations.
@@ -240,11 +240,10 @@ func (o *runtimeOrm) autoTxn(kit *kit.Kit, run TxnFunc) (bool, interface{}, erro
 }
 
 // TableSharding ...
-func (o *runtimeOrm) TableSharding(opt TableShardingOpt, opts ...TableShardingOpt) Interface {
-	allOpt := append([]TableShardingOpt{opt}, opts...)
+func (o *runtimeOrm) TableSharding(opts ...TableShardingOpt) Interface {
 	return &tableShardingOrm{
 		orm:               o,
-		tableShardingOpts: allOpt,
+		tableShardingOpts: opts,
 	}
 
 }
@@ -380,9 +379,8 @@ func (t tableShardingOrm) AutoTxn(kt *kit.Kit, run TxnFunc) (interface{}, error)
 }
 
 // TableSharding ...
-func (t tableShardingOrm) TableSharding(opt TableShardingOpt, opts ...TableShardingOpt) Interface {
+func (t tableShardingOrm) TableSharding(opts ...TableShardingOpt) Interface {
 
-	t.tableShardingOpts = append(t.tableShardingOpts, opt)
 	t.tableShardingOpts = append(t.tableShardingOpts, opts...)
 
 	return t
