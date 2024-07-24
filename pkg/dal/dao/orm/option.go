@@ -103,6 +103,7 @@ func (r *TableSuffixShardingOpt) ReplaceTableName(old string) string {
 	return replaced
 }
 
+// String ...
 func (r *TableSuffixShardingOpt) String() string {
 	return fmt.Sprintf("{tableName:%s, suffixes: %v}", r.tableName, r.suffixes)
 }

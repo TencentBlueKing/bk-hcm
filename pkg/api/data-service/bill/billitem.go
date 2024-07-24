@@ -138,6 +138,9 @@ func (r *BillItemDeleteReq) Validate() error {
 	if r.Filter == nil {
 		return errf.New(errf.InvalidParameter, "filter is required")
 	}
+	if r.ItemCommonOpt == nil {
+		return errf.New(errf.InvalidParameter, "item common option is required")
+	}
 	return r.ItemCommonOpt.Validate()
 }
 

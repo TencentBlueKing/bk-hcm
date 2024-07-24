@@ -243,7 +243,7 @@ func (o *runtimeOrm) autoTxn(kit *kit.Kit, run TxnFunc) (bool, interface{}, erro
 func (o *runtimeOrm) TableSharding(opt TableShardingOpt, opts ...TableShardingOpt) Interface {
 	allOpt := append([]TableShardingOpt{opt}, opts...)
 	return &tableShardingOrm{
-		o:                 o,
+		orm:               o,
 		tableShardingOpts: allOpt,
 	}
 
@@ -251,7 +251,7 @@ func (o *runtimeOrm) TableSharding(opt TableShardingOpt, opts ...TableShardingOp
 
 // tableShardingOrm orm for table sharding, it replaces table name in sql query
 type tableShardingOrm struct {
-	o                 *runtimeOrm
+	orm               *runtimeOrm
 	tableShardingOpts []TableShardingOpt
 }
 
@@ -294,7 +294,6 @@ func (dt *tableShardingDoTxn) Update(ctx context.Context, expr string, arg map[s
 // Insert ...
 func (dt *tableShardingDoTxn) Insert(ctx context.Context, expr string, data interface{}) error {
 	replaced := replaceInsertTableName(dt.tableShardingOpts, expr)
-
 	return dt.doTxn.BulkInsert(ctx, replaced, data)
 }
 
@@ -319,7 +318,6 @@ func (ds *tableShardingDo) Delete(ctx context.Context, expr string, arg map[stri
 // Update ...
 func (ds *tableShardingDo) Update(ctx context.Context, expr string, arg map[string]interface{}) (int64, error) {
 	replaced := replaceUpdateTableName(ds.tableShardingOpts, expr)
-
 	return ds.do.Update(ctx, replaced, arg)
 }
 
@@ -361,8 +359,8 @@ func (t tableShardingOrm) Do() DoOrm {
 
 	return &tableShardingDo{
 		do: &do{
-			db: t.o.db,
-			ro: t.o,
+			db: t.orm.db,
+			ro: t.orm,
 		},
 		tableShardingOpts: t.tableShardingOpts,
 	}
@@ -371,14 +369,14 @@ func (t tableShardingOrm) Do() DoOrm {
 // Txn ...
 func (t tableShardingOrm) Txn(tx *sqlx.Tx) DoOrmWithTransaction {
 	return &tableShardingDoTxn{
-		doTxn:             t.o.Txn(tx),
+		doTxn:             t.orm.Txn(tx),
 		tableShardingOpts: t.tableShardingOpts,
 	}
 }
 
 // AutoTxn ...
 func (t tableShardingOrm) AutoTxn(kt *kit.Kit, run TxnFunc) (interface{}, error) {
-	return t.o.AutoTxn(kt, run)
+	return t.orm.AutoTxn(kt, run)
 }
 
 // TableSharding ...
@@ -488,20 +486,8 @@ func extractTableName(name string) string {
 
 // regular expression for extracting table name
 var (
-	fromTableNameRe   *regexp.Regexp
-	joinTableNameRe   *regexp.Regexp
-	updateTableNameRe *regexp.Regexp
-	insertTableNameRe *regexp.Regexp
-)
-
-func init() {
-
-	fromTableNameRe = regexp.MustCompile("(?i)\\sfrom\\s+(`?\\w+`?\\.)?`?\\w+`?")
-
-	joinTableNameRe = regexp.MustCompile("(?i)\\sjoin\\s+(`?\\w+`?\\.)?`?\\w+`?")
-
+	fromTableNameRe   = regexp.MustCompile("(?i)\\sfrom\\s+(`?\\w+`?\\.)?`?\\w+`?")
+	joinTableNameRe   = regexp.MustCompile("(?i)\\sjoin\\s+(`?\\w+`?\\.)?`?\\w+`?")
 	updateTableNameRe = regexp.MustCompile("(?i)update\\s+(`?\\w+`?\\.)?`?\\w+`?")
-
 	insertTableNameRe = regexp.MustCompile("(?i)insert\\s+into\\s+(`?\\w+`?\\.)?`?\\w+`?")
-
-}
+)
