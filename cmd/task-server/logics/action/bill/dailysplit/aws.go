@@ -130,7 +130,7 @@ func (ds *AwsSplitter) extractSpCostItem(kt *kit.Kit, opt *DailyAccountSplitActi
 		Cost:          spNetCost,
 		HcProductCode: "SavingsPlanCost",
 		HcProductName: "SavingsPlanCost",
-		Extension:     cvt.ValToPtr(rawjson.RawMessage("{}")),
+		Extension:     cvt.ValToPtr(rawjson.RawMessage(item.Extension)),
 	}
 
 	spSpendItem := bill.BillItemCreateReq[rawjson.RawMessage]{
@@ -148,7 +148,7 @@ func (ds *AwsSplitter) extractSpCostItem(kt *kit.Kit, opt *DailyAccountSplitActi
 		Cost:          spNetCost.Neg(),
 		HcProductCode: "SavingsPlanCostReverse",
 		HcProductName: "SavingsPlanCostReverse",
-		Extension:     cvt.ValToPtr(rawjson.RawMessage("{}")),
+		Extension:     cvt.ValToPtr(rawjson.RawMessage(item.Extension)),
 	}
 
 	return []bill.BillItemCreateReq[rawjson.RawMessage]{spUsageItem, spSpendItem}, nil
