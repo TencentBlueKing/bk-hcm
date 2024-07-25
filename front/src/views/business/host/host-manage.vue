@@ -29,15 +29,21 @@ const { whereAmI, isResourcePage } = useWhereAmI();
 
 const { searchData, searchValue, filter } = useFilter(props);
 
-const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort, triggerApi } =
-  useTableListQuery({ filter: filter.value });
-
 const { selections, handleSelectionChange, resetSelections } = useTableSelection();
 
+const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort, triggerApi } =
+  useTableListQuery({ filter: filter.value }, 'cvms', () => {
+    resetSelections();
+  });
+
+const hostOperationRef = ref(null);
+const tableRef = ref(null);
 const { columns, generateColumnsSettings } = useColumns({
   extra: {
     isLoading,
     triggerApi,
+    getHostOperationRef: () => hostOperationRef,
+    getTableRef: () => tableRef,
   },
 });
 const resourceStore = useResourceStore();
@@ -121,6 +127,7 @@ getCloudAreas();
     >
       <slot></slot>
       <HostOperations
+        ref="hostOperationRef"
         :selections="selections"
         :on-finished="(type: 'confirm' | 'cancel' = 'confirm') => {
         if(type === 'confirm') triggerApi();
@@ -135,6 +142,7 @@ getCloudAreas();
     </section>
 
     <bk-table
+      ref="tableRef"
       row-hover="auto"
       :columns="columns"
       :data="datas"
