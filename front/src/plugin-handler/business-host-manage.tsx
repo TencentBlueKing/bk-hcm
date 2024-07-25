@@ -8,6 +8,8 @@ import HostOperations, { OperationActions, operationMap } from '@/views/business
 import useSingleOperation from '@/views/business/host/children/host-operations/use-single-operation';
 import defaultUseTableListQuery from '@/hooks/useTableListQuery';
 import type { PropsType } from '@/hooks/useTableListQuery';
+import { useVerify } from '@/hooks';
+import { useGlobalPermissionDialog } from '@/store/useGlobalPermissionDialog';
 
 const { DropdownMenu, DropdownItem } = Dropdown;
 
@@ -26,6 +28,8 @@ type UseColumnsParams = {
 const useColumns = ({ columnType = 'cvms', isSimpleShow = false, vendor, extra }: UseColumnsParams) => {
   const { t } = useI18n();
   const router = useRouter();
+  const { authVerifyData, handleAuth } = useVerify();
+  const globalPermissionDialogStore = useGlobalPermissionDialog();
   const { handleOperate, isOperateDisabled, currentOperateRowIndex } = useSingleOperation({
     beforeConfirm() {
       extra.isLoading.value = true;
@@ -74,9 +78,23 @@ const useColumns = ({ columnType = 'cvms', isSimpleShow = false, vendor, extra }
                   <Button
                     text
                     theme={'primary'}
-                    class={'mr10'}
-                    onClick={() => handleOperate(OperationActions.RECYCLE, data)}
-                    disabled={isOperateDisabled(OperationActions.RECYCLE, data.status)}>
+                    class={`mr10 ${
+                      !authVerifyData?.value?.permissionAction?.biz_iaas_resource_delete
+                        ? 'hcm-no-permision-text-btn'
+                        : ''
+                    }`}
+                    onClick={() => {
+                      if (authVerifyData?.value?.permissionAction?.biz_iaas_resource_delete) {
+                        handleOperate(OperationActions.RECYCLE, data);
+                      } else {
+                        handleAuth('biz_iaas_resource_delete');
+                        globalPermissionDialogStore.setShow(true);
+                      }
+                    }}
+                    disabled={
+                      authVerifyData?.value?.permissionAction?.biz_iaas_resource_delete &&
+                      isOperateDisabled(OperationActions.RECYCLE, data)
+                    }>
                     {operationMap[OperationActions.RECYCLE].label}
                   </Button>,
                   [[bkTooltips, getBkToolTipsOption(OperationActions.RECYCLE, data)]],

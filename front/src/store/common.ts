@@ -68,6 +68,11 @@ export const useCommonStore = defineStore({
       { type: 'main_account', action: 'find', id: 'main_account_find' }, // 云账号管理 - 二级账号
       { type: 'main_account', action: 'update', id: 'main_account_edit' }, // 云账号管理 - 二级账号编辑
       { type: 'account_bill', action: 'find', id: 'account_bill_find' }, // 云账单管理
+
+      // 负载均衡
+      { type: 'load_balancer', action: 'create', id: 'load_balancer_create' }, // 业务-负载均衡创建
+      { type: 'load_balancer', action: 'update', id: 'load_balancer_update' }, // 业务-负载均衡操作
+      { type: 'load_balancer', action: 'delete', id: 'load_balancer_delete' }, // 业务-负载均衡删除
     ],
   }),
   actions: {

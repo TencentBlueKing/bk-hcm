@@ -24,6 +24,7 @@ import { classes } from '@/common/util';
 import { headRouteConfig } from '@/router/header-config';
 import logo from '@/assets/image/logo.png';
 import './index.scss';
+import GlobalPermissionDialog from '@/components/global-permission-dialog';
 
 const { ENABLE_CLOUD_SELECTION } = window.PROJECT_CONFIG;
 // import { CogShape } from 'bkui-vue/lib/icon';
@@ -334,8 +335,8 @@ export default defineComponent({
               }}
             </Navigation>
           }
+          <GlobalPermissionDialog />
         </div>
-        {/* <AddProjectDialog isShow={showAddProjectDialog.value} onClose={toggleAddProjectDialog} /> */}
       </main>
     );
   },
