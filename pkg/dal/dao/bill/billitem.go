@@ -21,6 +21,7 @@
 package bill
 
 import (
+	"errors"
 	"fmt"
 
 	"hcm/pkg/api/core"
@@ -42,10 +43,15 @@ import (
 
 // AccountBillItem only used for interface.
 type AccountBillItem interface {
-	CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, items []*tablebill.AccountBillItem) ([]string, error)
-	List(kt *kit.Kit, opt *types.ListOption) (*typesbill.ListAccountBillItemDetails, error)
-	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, billID string, updateData *tablebill.AccountBillItem) error
-	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error
+	CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, commonOpt *typesbill.ItemCommonOpt,
+		items []*tablebill.AccountBillItem) ([]string, error)
+	List(kt *kit.Kit, commonOpt *typesbill.ItemCommonOpt, opt *types.ListOption) (
+		*typesbill.ListAccountBillItemDetails, error)
+
+	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, commonOpt *typesbill.ItemCommonOpt, billID string,
+		updateData *tablebill.AccountBillItem) error
+
+	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, commonOpt *typesbill.ItemCommonOpt, filterExpr *filter.Expression) error
 }
 
 // AccountBillItemDao account bill item dao
@@ -55,15 +61,19 @@ type AccountBillItemDao struct {
 }
 
 // CreateWithTx create account bill item with tx.
-func (a AccountBillItemDao) CreateWithTx(
-	kt *kit.Kit, tx *sqlx.Tx, models []*tablebill.AccountBillItem) (
-	[]string, error) {
+func (a AccountBillItemDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, commonOpt *typesbill.ItemCommonOpt,
+	models []*tablebill.AccountBillItem) ([]string, error) {
 
+	if commonOpt == nil {
+		return nil, errf.New(errf.InvalidParameter, "common options is nil")
+	}
 	if len(models) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "models to create cannot be empty")
 	}
 
-	ids, err := a.IDGen.Batch(kt, models[0].TableName(), len(models))
+	tableName := table.AccountBillItemTable
+
+	ids, err := a.IDGen.Batch(kt, table.Name(tableName), len(models))
 	if err != nil {
 		return nil, err
 	}
@@ -75,22 +85,28 @@ func (a AccountBillItemDao) CreateWithTx(
 			return nil, err
 		}
 	}
-
-	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, models[0].TableName(),
+	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, tableName,
 		tablebill.AccountBillItemColumns.ColumnExpr(), tablebill.AccountBillItemColumns.ColonNameExpr())
 
-	if err = a.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, models); err != nil {
-		logs.Errorf("insert %s failed, err: %v, rid: %s", models[0].TableName(), err, kt.Rid)
-		return nil, fmt.Errorf("insert %s failed, err: %v", models[0].TableName(), err)
+	shardingOpt, err := convertShardingOpt(tableName, commonOpt)
+	if err != nil {
+		return nil, err
+	}
+	if err = a.Orm.TableSharding(shardingOpt).Txn(tx).BulkInsert(kt.Ctx, sql, models); err != nil {
+		logs.Errorf("insert %s failed, err: %v, shardingOpt: %v, rid: %s", tableName, err, shardingOpt, kt.Rid)
+		return nil, fmt.Errorf("insert %s failed, err: %v", tableName, err)
 	}
 
 	return ids, nil
 }
 
 // List get account bill item list.
-func (a AccountBillItemDao) List(kt *kit.Kit, opt *types.ListOption) (
+func (a AccountBillItemDao) List(kt *kit.Kit, commonOpt *typesbill.ItemCommonOpt, opt *types.ListOption) (
 	*typesbill.ListAccountBillItemDetails, error) {
 
+	if commonOpt == nil {
+		return nil, errf.New(errf.InvalidParameter, "common options is nil")
+	}
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list account bill item options is nil")
 	}
@@ -105,12 +121,17 @@ func (a AccountBillItemDao) List(kt *kit.Kit, opt *types.ListOption) (
 		return nil, err
 	}
 
+	tableName := table.AccountBillItemTable
+	shardingOpt, err := convertShardingOpt(tableName, commonOpt)
+	if err != nil {
+		return nil, err
+	}
 	if opt.Page.Count {
-		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.AccountBillItemTable, whereExpr)
-		count, err := a.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, tableName, whereExpr)
+		count, err := a.Orm.TableSharding(shardingOpt).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
-			logs.ErrorJson("count account bill item failed, err: %v, filter: %s, rid: %s",
-				err, opt.Filter, kt.Rid)
+			logs.ErrorJson("count account bill item failed, err: %v, shardingOpt: %v, opt: %+v, rid: %s",
+				err, shardingOpt, opt, kt.Rid)
 			return nil, err
 		}
 
@@ -124,9 +145,11 @@ func (a AccountBillItemDao) List(kt *kit.Kit, opt *types.ListOption) (
 		return nil, err
 	}
 
-	idSql := fmt.Sprintf(`SELECT id FROM %s %s %s`, table.AccountBillItemTable, whereExpr, pageExpr)
+	idSql := fmt.Sprintf(`SELECT id FROM %s %s %s`, tableName, whereExpr, pageExpr)
 	preDetails := make([]tablebill.AccountBillItem, 0)
-	if err = a.Orm.Do().Select(kt.Ctx, &preDetails, idSql, whereValue); err != nil {
+	if err = a.Orm.TableSharding(shardingOpt).Do().Select(kt.Ctx, &preDetails, idSql, whereValue); err != nil {
+		logs.Errorf("fail to select id for bill item, err: %v, table: %s, opt: %+v, rid: %s",
+			err, tableName, opt, kt.Rid)
 		return nil, err
 	}
 	detailIDs := make([]string, 0, len(preDetails))
@@ -138,35 +161,47 @@ func (a AccountBillItemDao) List(kt *kit.Kit, opt *types.ListOption) (
 	}
 
 	sql := fmt.Sprintf(`SELECT %s FROM %s WHERE id IN (:ids)`,
-		tablebill.AccountBillItemColumns.FieldsNamedExpr(opt.Fields),
-		table.AccountBillItemTable)
+		tablebill.AccountBillItemColumns.FieldsNamedExpr(opt.Fields), tableName)
 	details := make([]tablebill.AccountBillItem, 0)
-	if err = a.Orm.Do().Select(kt.Ctx, &details, sql, map[string]interface{}{"ids": detailIDs}); err != nil {
+
+	err = a.Orm.TableSharding(shardingOpt).Do().Select(kt.Ctx, &details, sql, map[string]any{"ids": detailIDs})
+	if err != nil {
+		logs.Errorf("fail to select bill item by ids, err: %v, shardingOpt: %v, opt: %+v, ids: %v, rid: %s",
+			err, shardingOpt.String(), opt, detailIDs, kt.Rid)
 		return nil, err
 	}
 	return &typesbill.ListAccountBillItemDetails{Details: details}, nil
 }
 
-// Update update account bill item.
-func (a AccountBillItemDao) UpdateByIDWithTx(
-	kt *kit.Kit, tx *sqlx.Tx, id string, updateData *tablebill.AccountBillItem) error {
+// UpdateByIDWithTx update account bill item.
+func (a AccountBillItemDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, commonOpt *typesbill.ItemCommonOpt,
+	id string, updateData *tablebill.AccountBillItem) error {
 
+	if commonOpt == nil {
+		return errf.New(errf.InvalidParameter, "common options is nil")
+	}
 	if err := updateData.UpdateValidate(); err != nil {
 		return err
 	}
 
+	tableName := table.AccountBillItemTable
+	shardingOpt, err := convertShardingOpt(tableName, commonOpt)
+	if err != nil {
+		return err
+	}
 	opts := utils.NewFieldOptions().AddIgnoredFields(types.DefaultIgnoredFields...)
 	setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(updateData, opts)
 	if err != nil {
 		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)
 	}
 
-	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, table.AccountBillItemTable, setExpr)
+	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, tableName, setExpr)
 
 	toUpdate["id"] = id
-	_, err = a.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
+	_, err = a.Orm.TableSharding(shardingOpt).Txn(tx).Update(kt.Ctx, sql, toUpdate)
 	if err != nil {
-		logs.ErrorJson("update account bill item failed, err: %v, id: %s, rid: %v", err, id, kt.Rid)
+		logs.ErrorJson("update account bill item failed, err: %v, shardingOpt: %v, id: %s, rid: %v",
+			err, shardingOpt, id, kt.Rid)
 		return err
 	}
 
@@ -174,7 +209,12 @@ func (a AccountBillItemDao) UpdateByIDWithTx(
 }
 
 // DeleteWithTx delete account bill item with tx.
-func (a AccountBillItemDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error {
+func (a AccountBillItemDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, commonOpt *typesbill.ItemCommonOpt,
+	expr *filter.Expression) error {
+
+	if commonOpt == nil {
+		return errf.New(errf.InvalidParameter, "common options is nil")
+	}
 	if expr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}
@@ -184,12 +224,27 @@ func (a AccountBillItemDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.
 		return err
 	}
 
-	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.AccountBillItemTable, whereExpr)
+	tableName := table.AccountBillItemTable
+	shardingOpt, err := convertShardingOpt(tableName, commonOpt)
+	if err != nil {
+		return err
+	}
+	sql := fmt.Sprintf(`DELETE FROM %s %s`, tableName, whereExpr)
 
-	if _, err = a.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
-		logs.ErrorJson("delete account bill item failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
+	if _, err = a.Orm.TableSharding(shardingOpt).Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+		logs.ErrorJson("delete account bill item failed, err: %v, shardingOpt: %s, filter: %s, rid: %s",
+			err, shardingOpt, expr, kt.Rid)
 		return err
 	}
 
 	return nil
+}
+
+func convertShardingOpt(tableName string, commonOpt *typesbill.ItemCommonOpt) (*orm.TableSuffixShardingOpt, error) {
+	if commonOpt == nil {
+		return nil, errors.New("common opt is required")
+	}
+	shardingOpt := orm.NewTableSuffixShardingOpt(tableName,
+		[]string{fmt.Sprintf("%s_%d%02d", commonOpt.Vendor, commonOpt.Year, commonOpt.Month)})
+	return shardingOpt, nil
 }

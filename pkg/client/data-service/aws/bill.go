@@ -119,8 +119,9 @@ func (v *BillClient) List(ctx context.Context, h http.Header, req *core.ListReq)
 }
 
 // ListBillItem list bill item
-func (b *BillClient) ListBillItem(kt *kit.Kit, req *core.ListReq) (*billproto.AwsBillItemListResult, error) {
+func (b *BillClient) ListBillItem(kt *kit.Kit, req *billproto.BillItemListReq) (
+	*billproto.AwsBillItemListResult, error) {
 
-	return common.Request[core.ListReq, billproto.AwsBillItemListResult](
+	return common.Request[billproto.BillItemListReq, billproto.AwsBillItemListResult](
 		b.client, rest.POST, kt, req, "/bills/items/list")
 }
