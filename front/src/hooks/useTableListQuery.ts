@@ -21,6 +21,7 @@ export type PropsType = {
 export default (
   props: PropsType,
   type: string,
+  completeCallback: () => void,
   apiMethod?: Function,
   apiName = 'list',
   args: any = {},
@@ -112,6 +113,7 @@ export default (
       .finally(() => {
         isLoading.value = false;
         isFilter.value = false;
+        completeCallback?.();
       });
   };
 

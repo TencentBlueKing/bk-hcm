@@ -29,19 +29,12 @@ const { whereAmI, isResourcePage } = useWhereAmI();
 
 const { searchData, searchValue, filter } = useFilter(props);
 
-const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort, triggerApi } =
-  useTableListQuery({ filter: filter.value });
-
 const { selections, handleSelectionChange, resetSelections } = useTableSelection();
 
-const handlePageLimitChange = (limit: number) => {
-  resetSelections();
-  handlePageSizeChange(limit);
-};
-const handlePageValueChange = (current: number) => {
-  resetSelections();
-  handlePageChange(current);
-};
+const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort, triggerApi } =
+  useTableListQuery({ filter: filter.value }, 'cvms', () => {
+    resetSelections();
+  });
 
 const hostOperationRef = ref(null);
 const tableRef = ref(null);
@@ -158,8 +151,8 @@ getCloudAreas();
       remote-pagination
       show-overflow-tooltip
       :is-row-select-enable="isRowSelectEnable"
-      @page-limit-change="handlePageLimitChange"
-      @page-value-change="handlePageValueChange"
+      @page-limit-change="handlePageSizeChange"
+      @page-value-change="handlePageChange"
       @selection-change="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable)"
       @select-all="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true)"
       @column-sort="handleSort"

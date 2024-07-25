@@ -144,7 +144,7 @@ const useFilter = (props: PropsType) => {
           op:
             field === 'cloud_vpc_ids'
               ? 'json_contains'
-              : typeof conditionValue === 'number'
+              : typeof conditionValue === 'number' || field === 'vendor'
               ? QueryRuleOPEnum.EQ
               : QueryRuleOPEnum.CS,
         };
