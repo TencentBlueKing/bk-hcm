@@ -186,7 +186,8 @@ func (msdc *MainSummaryDailyController) syncDailySummary(kt *kit.Kit, billYear, 
 	for _, task := range pullTaskList {
 		if task.State == enumor.MainAccountRawBillPullStateSplit {
 			if len(task.DailySummaryFlowID) == 0 {
-				logs.Infof("summary task of day %d main account %v bill should be create", task.BillDay, summary)
+				logs.Infof("summary task of day %d main account id %s bill should be created, rid: %s ",
+					task.BillDay, summary.MainAccountID, kt.Rid)
 				flowID, err := msdc.createDailySummaryTask(kt, summary, billYear, billMonth, task.BillDay)
 				if err != nil {
 					logs.Warnf("create daily summary task for %v, %d/%d/%d failed, err %s, rid: %s",

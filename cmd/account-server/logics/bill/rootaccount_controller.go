@@ -85,7 +85,7 @@ type RootAccountController struct {
 	cancelFunc context.CancelFunc
 }
 
-// Start start controller
+// Start controller
 func (rac *RootAccountController) Start() error {
 	if rac.kt != nil {
 		return fmt.Errorf("controller already start")
@@ -123,16 +123,16 @@ func (rac *RootAccountController) runBillSummaryLoop(kt *kit.Kit) {
 
 func (rac *RootAccountController) runCalculateBillSummaryLoop(kt *kit.Kit) {
 	ticker := time.NewTicker(*cc.AccountServer().Controller.RootAccountSummarySyncDuration)
-	curMonthflowID := ""
-	lastMonthflowID := ""
+	curMonthFlowID := ""
+	lastMonthFlowID := ""
 	for {
 		select {
 		case <-ticker.C:
 			subKit := kt.NewSubKit()
 			lastBillYear, lastBillMonth := getLastBillMonth()
-			lastMonthflowID = rac.pollRootSummaryTask(subKit, lastMonthflowID, lastBillYear, lastBillMonth)
+			lastMonthFlowID = rac.pollRootSummaryTask(subKit, lastMonthFlowID, lastBillYear, lastBillMonth)
 			curBillYear, curBillMonth := getCurrentBillMonth()
-			curMonthflowID = rac.pollRootSummaryTask(subKit, curMonthflowID, curBillYear, curBillMonth)
+			curMonthFlowID = rac.pollRootSummaryTask(subKit, curMonthFlowID, curBillYear, curBillMonth)
 
 		case <-kt.Ctx.Done():
 			logs.Infof("root account (%s, %s) summary controller context done, rid: %s",
@@ -153,12 +153,12 @@ func (rac *RootAccountController) pollRootSummaryTask(subKit *kit.Kit, flowID st
 		result, err := rac.createRootSummaryTask(subKit, billYear, billMonth)
 		if err != nil {
 			logs.Warnf("create new root summary task for %s/%s %d-%d failed, err %s, rid: %s",
-				rac.RootAccountID, rac.Vendor, billYear, billMonth, err.Error(), subKit)
+				rac.RootAccountID, rac.Vendor, billYear, billMonth, err.Error(), subKit.Rid)
 			return flowID
 		}
 
 		logs.Infof("create root summary task for %s/%s %d-%d successfully, flow id %s, rid: %s",
-			rac.RootAccountID, rac.Vendor, billYear, billMonth, flowID, subKit)
+			rac.RootAccountID, rac.Vendor, billYear, billMonth, flowID, subKit.Rid)
 		return result.ID
 	}
 	flow, err := rac.Client.TaskServer().GetFlow(subKit, flowID)
@@ -183,12 +183,12 @@ func (rac *RootAccountController) pollRootSummaryTask(subKit *kit.Kit, flowID st
 		result, err := rac.createRootSummaryTask(subKit, billYear, billMonth)
 		if err != nil {
 			logs.Warnf("create new root summary task for %s/%s %d-%d failed, err %s, rid: %s",
-				rac.RootAccountID, rac.Vendor, billYear, billMonth, err.Error(), subKit)
+				rac.RootAccountID, rac.Vendor, billYear, billMonth, err.Error(), subKit.Rid)
 			return flowID
 		}
 
 		logs.Infof("create main summary task for %s/%s %d-%d successfully, flow id %s, rid: %s",
-			rac.RootAccountID, rac.Vendor, billYear, billMonth, flowID, subKit)
+			rac.RootAccountID, rac.Vendor, billYear, billMonth, flowID, subKit.Rid)
 		return result.ID
 	}
 	return flowID
@@ -293,7 +293,7 @@ func (rac *RootAccountController) createNewBillSummary(kt *kit.Kit, billYear, bi
 	return nil
 }
 
-// Stop stop controller
+// Stop controller
 func (rac *RootAccountController) Stop() {
 	if rac.cancelFunc != nil {
 		rac.cancelFunc()

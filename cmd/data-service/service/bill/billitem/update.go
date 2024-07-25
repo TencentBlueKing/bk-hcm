@@ -45,7 +45,7 @@ func (svc *service) UpdateBillItem(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	billItem := &tablebill.AccountBillItem{
+	item := &tablebill.AccountBillItem{
 		ID:       req.ID,
 		Currency: req.Currency,
 		// 全量覆盖更新
@@ -53,11 +53,12 @@ func (svc *service) UpdateBillItem(cts *rest.Contexts) (interface{}, error) {
 		Reviser:   cts.Kit.User,
 	}
 	if req.Cost != nil {
-		billItem.Cost = &types.Decimal{Decimal: *req.Cost}
+		item.Cost = &types.Decimal{Decimal: *req.Cost}
 	}
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		if err := svc.dao.AccountBillItem().UpdateByIDWithTx(cts.Kit, txn, billItem.ID, billItem); err != nil {
-			logs.Errorf("fail to update bill item for %s, err: %v, rid: %s", billItem.ID, err, cts.Kit.Rid)
+		err := svc.dao.AccountBillItem().UpdateByIDWithTx(cts.Kit, txn, req.ItemCommonOpt, item.ID, item)
+		if err != nil {
+			logs.Errorf("fail to update bill item for %s, err: %v, rid: %s", item.ID, err, cts.Kit.Rid)
 			return nil, fmt.Errorf("update bill item failed, err: %v", err)
 		}
 		return nil, nil
