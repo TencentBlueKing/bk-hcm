@@ -58,7 +58,7 @@ func (b *billItemSvc) ImportBillItemsPreview(cts *rest.Contexts) (any, error) {
 
 	switch vendor {
 	case enumor.Zenlayer:
-		return importZenlayerBillItems(cts.Kit, b, req)
+		return importZenlayerBillItemsPreview(cts.Kit, b, req)
 	default:
 		return nil, fmt.Errorf("unsupport %s vendor", vendor)
 	}
@@ -112,7 +112,7 @@ func (b *billItemSvc) ImportBillItems(cts *rest.Contexts) (any, error) {
 	return ids, nil
 }
 
-func importZenlayerBillItems(kt *kit.Kit, b *billItemSvc, req *bill.ImportBillItemPreviewReq) (any, error) {
+func importZenlayerBillItemsPreview(kt *kit.Kit, b *billItemSvc, req *bill.ImportBillItemPreviewReq) (any, error) {
 
 	reader := getReader(req.ExcelFileBase64)
 	records := make([]billcore.ZenlayerRawBillItem, 0)
@@ -131,8 +131,9 @@ func importZenlayerBillItems(kt *kit.Kit, b *billItemSvc, req *bill.ImportBillIt
 			return nil
 		})
 	if err != nil {
-		logs.Errorf("fail parase excel file, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
+		logs.Errorf("fail parse excel file, err: %v, rid: %s", err, kt.Rid)
+
+		return nil, errf.New(errf.BillItemImportDataError, "fail parse excel file")
 	}
 
 	businessGroupIDs := make([]string, 0, len(records))
@@ -316,8 +317,10 @@ func convertZenlayerToRawBillCreateReq(kt *kit.Kit, billYear, billMonth int, rec
 
 		// validate bill year and month
 		if curYear != billYear || curMonth != billMonth {
-			return nil, fmt.Errorf("invalid billID, expect: %d-%d, but got: %d-%d",
-				billYear, billMonth, curYear, curMonth)
+
+			return nil, errf.NewFromErr(errf.BillItemImportBillDateError,
+				fmt.Errorf("invalid billID, expect: %d-%d, but got: %d-%d",
+					billYear, billMonth, curYear, curMonth))
 		}
 
 		tmp.BillYear = billYear
