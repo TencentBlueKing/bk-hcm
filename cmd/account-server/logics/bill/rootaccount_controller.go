@@ -383,8 +383,6 @@ func (rac *RootAccountController) ensureMonthTask(kt *kit.Kit, billYear, billMon
 	return nil
 }
 
-<<<<<<< HEAD
-=======
 func calculateAccountingState(mainSummaryList []*dsbillapi.BillSummaryMainResult,
 	rootSummary *dsbillapi.BillSummaryRootResult) (isAllAccounted bool) {
 
@@ -404,7 +402,6 @@ func calculateAccountingState(mainSummaryList []*dsbillapi.BillSummaryMainResult
 	return isAllAccounted
 }
 
->>>>>>> 608ffedf09b648228997a2765d309c8d1470f521
 func (rac *RootAccountController) listAllMainSummary(
 	kt *kit.Kit, billYear, billMonth int) ([]*dsbillapi.BillSummaryMainResult, error) {
 
@@ -601,7 +598,7 @@ func (rac *RootAccountController) createMonthFlow(
 
 func (rac *RootAccountController) createMonthPullTaskStub(kt *kit.Kit,
 	rootSummary *dsbillapi.BillSummaryRootResult) error {
-	_, err := rac.Client.DataService().Global.Bill.CreateBillMonthPullTask(kt, &dsbillapi.BillMonthTaskCreateReq{
+	taskResult, err := rac.Client.DataService().Global.Bill.CreateBillMonthPullTask(kt, &dsbillapi.BillMonthTaskCreateReq{
 		RootAccountID: rac.RootAccountID,
 		Vendor:        rac.Vendor,
 		BillYear:      rootSummary.BillYear,
@@ -613,6 +610,7 @@ func (rac *RootAccountController) createMonthPullTaskStub(kt *kit.Kit,
 		logs.Infof("create month pull task failed, err: %s, rid: %s", err.Error(), kt.Rid)
 		return err
 	}
+	logs.Infof("create month pull task stub success, taskID: %s, rid: %s", taskResult.ID, kt.Rid)
 	return nil
 }
 

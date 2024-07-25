@@ -157,21 +157,21 @@ func (act MonthTaskAction) runSplit(kt *kit.Kit, runner MonthTaskRunner, opt *Mo
 	}
 	// step2 进行分账
 	var splitMainAccountMap = make(map[string]struct{})
-
+	curlIndex := uint64(0)
 	for {
 		task, err := getMonthPullTask(kt, opt)
 		if err != nil {
 			logs.Errorf("fail to get month task for splitting, err: %s, rid: %s", err.Error(), kt.Rid)
 			return err
 		}
-		cnt, isFinished, err := act.split(kt, runner, opt, task, splitMainAccountMap)
+		cnt, isFinished, err := act.split(kt, runner, opt, task, splitMainAccountMap, curlIndex)
 		if err != nil {
 			return err
 		}
 
 		mtUpdate := &bill.BillMonthTaskUpdateReq{
 			ID:         task.ID,
-			SplitIndex: task.SplitIndex + uint64(cnt),
+			SplitIndex: curlIndex + uint64(cnt),
 		}
 		if isFinished {
 			var itemList = make([]billcore.MonthTaskSummaryDetailItem, 0, len(splitMainAccountMap))
@@ -197,13 +197,11 @@ func (act MonthTaskAction) runSplit(kt *kit.Kit, runner MonthTaskRunner, opt *Mo
 			return err
 		}
 	}
-	return nil
 }
 
 func (act MonthTaskAction) split(kt *kit.Kit, runner MonthTaskRunner, opt *MonthTaskActionOption,
-	monthTask *bill.BillMonthTaskResult, accountMap map[string]struct{}) (cnt int, finished bool, err error) {
+	monthTask *bill.BillMonthTaskResult, accountMap map[string]struct{}, offset uint64) (cnt int, finished bool, err error) {
 
-	offset := monthTask.SplitIndex
 	limit := runner.GetBatchSize(kt)
 	if offset >= monthTask.PullIndex {
 		return 0, true, nil
