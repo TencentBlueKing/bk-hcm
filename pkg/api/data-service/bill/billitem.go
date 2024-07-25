@@ -27,8 +27,11 @@ import (
 	"hcm/pkg/api/core/bill"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
+	typesbill "hcm/pkg/dal/dao/types/bill"
 	"hcm/pkg/dal/table/types"
+	"hcm/pkg/runtime/filter"
 
 	"github.com/shopspring/decimal"
 )
@@ -38,7 +41,8 @@ type BatchRawBillItemCreateReq = BatchBillItemCreateReq[rawjson.RawMessage]
 
 // BatchBillItemCreateReq batch bill item create request
 type BatchBillItemCreateReq[E bill.BillItemExtension] struct {
-	Items []BillItemCreateReq[E] `json:"items" validate:"required,dive"`
+	*ItemCommonOpt `json:",inline" validate:"required"`
+	Items          []BillItemCreateReq[E] `json:"items" validate:"required,dive"`
 }
 
 // BillItemCreateReq create request
@@ -76,7 +80,19 @@ func (c *BillItemCreateReq[E]) Validate() error {
 }
 
 // BillItemListReq list request
-type BillItemListReq = core.ListReq
+type BillItemListReq struct {
+	*ItemCommonOpt `json:",inline" validate:"required"`
+
+	*core.ListReq `json:",inline"`
+}
+
+// Validate ...
+func (r *BillItemListReq) Validate() error {
+	if err := r.ItemCommonOpt.Validate(); err != nil {
+		return err
+	}
+	return r.ListReq.Validate()
+}
 
 // BillItemBaseListResult ...
 type BillItemBaseListResult = core.ListResultT[*bill.BaseBillItem]
@@ -104,6 +120,8 @@ type ZenlayerBillItemListResult = core.ListResultT[*bill.ZenlayerBillItem]
 
 // BillItemUpdateReq update request
 type BillItemUpdateReq struct {
+	*ItemCommonOpt `json:",inline" validate:"required"`
+
 	ID            string              `json:"id,omitempty" validate:"required"`
 	Currency      enumor.CurrencyCode `json:"currency" validate:"required"`
 	Cost          *decimal.Decimal    `json:"cost" validate:"required"`
@@ -118,3 +136,24 @@ type BillItemUpdateReq struct {
 func (req *BillItemUpdateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// BillItemDeleteReq ...
+type BillItemDeleteReq struct {
+	*ItemCommonOpt `json:",inline" validate:"required"`
+	Filter         *filter.Expression `json:"filter" validate:"required"`
+}
+
+// Validate ...
+func (r *BillItemDeleteReq) Validate() error {
+
+	if r.Filter == nil {
+		return errf.New(errf.InvalidParameter, "filter is required")
+	}
+	if r.ItemCommonOpt == nil {
+		return errf.New(errf.InvalidParameter, "item common option is required")
+	}
+	return r.ItemCommonOpt.Validate()
+}
+
+// ItemCommonOpt general option for all bill item operations
+type ItemCommonOpt = typesbill.ItemCommonOpt

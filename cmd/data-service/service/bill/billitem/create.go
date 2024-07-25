@@ -74,13 +74,13 @@ func (svc *service) CreateBillItem(cts *rest.Contexts) (interface{}, error) {
 }
 
 func createBillItem[E bill.BillItemExtension](cts *rest.Contexts, svc *service, vendor enumor.Vendor) (any, error) {
-	req := new(dsbill.BatchBillItemCreateReq[E])
+	var req dsbill.BatchBillItemCreateReq[E]
 	if err := cts.DecodeInto(&req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
 	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+		return nil, err
 	}
 
 	idList, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
@@ -114,7 +114,7 @@ func createBillItem[E bill.BillItemExtension](cts *rest.Contexts, svc *service, 
 			billItemTables = append(billItemTables, &billItem)
 		}
 
-		ids, err := svc.dao.AccountBillItem().CreateWithTx(cts.Kit, txn, billItemTables)
+		ids, err := svc.dao.AccountBillItem().CreateWithTx(cts.Kit, txn, req.ItemCommonOpt, billItemTables)
 		if err != nil {
 			logs.Errorf("fail to create %s bill item, err: %v, rid: %s", vendor, err, cts.Kit.Rid)
 			return nil, fmt.Errorf("create account bill item list failed, err: %v", err)

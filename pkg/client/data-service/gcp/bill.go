@@ -20,7 +20,6 @@
 package gcp
 
 import (
-	"hcm/pkg/api/core"
 	billproto "hcm/pkg/api/data-service/bill"
 	"hcm/pkg/client/common"
 	"hcm/pkg/kit"
@@ -40,8 +39,9 @@ type BillClient struct {
 }
 
 // ListBillItem list bill item
-func (b *BillClient) ListBillItem(kt *kit.Kit, req *core.ListReq) (*billproto.GcpBillItemListResult, error) {
+func (b *BillClient) ListBillItem(kt *kit.Kit, req *billproto.BillItemListReq) (
+	*billproto.GcpBillItemListResult, error) {
 
-	return common.Request[core.ListReq, billproto.GcpBillItemListResult](
+	return common.Request[billproto.BillItemListReq, billproto.GcpBillItemListResult](
 		b.client, rest.POST, kt, req, "/bills/items/list")
 }
