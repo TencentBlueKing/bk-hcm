@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package gcp contains gcp bill pull function
 package gcp
 
 import (
@@ -148,11 +149,7 @@ func (gcp *GcpPuller) createRawBill(
 	return nil
 }
 
-func (gcp *GcpPuller) doPull(
-	kt run.ExecuteKit, opt *registry.PullDailyBillOption, offset, limit uint64) (
-	int, *registry.PullerResult, error) {
-
-	hcCli := actcli.GetHCService()
+func (gcp *GcpPuller) getPullDate(kt run.ExecuteKit, opt *registry.PullDailyBillOption) (string, string, error) {
 	beginDate := fmt.Sprintf("%d-%02d-%02dT00:00:00Z", opt.BillYear, opt.BillMonth, opt.BillDay)
 	endDate := fmt.Sprintf("%d-%02d-%02dT23:59:59Z", opt.BillYear, opt.BillMonth, opt.BillDay)
 
@@ -162,18 +159,29 @@ func (gcp *GcpPuller) doPull(
 	isLastDay, err := times.IsLastDayOfMonth(opt.BillMonth, opt.BillDay)
 	if err != nil {
 		logs.Warnf("is last day of month failed, err: %v, rid %s", err, kt.Kit().Rid)
-		return 0, nil, err
+		return "", "", err
 	}
 	if isLastDay {
 		tmpYear, tmpMonth, tmpDay, err := times.AddDaysToDate(
 			opt.BillYear, opt.BillMonth, opt.BillDay, gcpTimestampExtraDays)
 		if err != nil {
 			logs.Warnf("add days to date failed, err: %v, rid %s", err, kt.Kit().Rid)
-			return 0, nil, err
+			return "", "", err
 		}
 		endDate = fmt.Sprintf("%d-%02d-%02dT23:59:59Z", tmpYear, tmpMonth, tmpDay)
 	}
+	return beginDate, endDate, nil
+}
 
+func (gcp *GcpPuller) doPull(
+	kt run.ExecuteKit, opt *registry.PullDailyBillOption, offset, limit uint64) (
+	int, *registry.PullerResult, error) {
+
+	hcCli := actcli.GetHCService()
+	beginDate, endDate, err := gcp.getPullDate(kt, opt)
+	if err != nil {
+		return 0, nil, err
+	}
 	resp, err := hcCli.Gcp.Bill.RootAccountBillList(kt.Kit().Ctx, kt.Kit().Header(), &bill.GcpRootAccountBillListReq{
 		RootAccountID: opt.RootAccountID,
 		MainAccountID: opt.MainAccountID,
@@ -191,6 +199,11 @@ func (gcp *GcpPuller) doPull(
 	}
 	var itemList []interface{}
 	itemLen := 0
+	zeroResult := &registry.PullerResult{
+		Count:    int64(0),
+		Currency: "",
+		Cost:     decimal.NewFromFloat(0),
+	}
 	if resp.Details != nil {
 		ok := false
 		itemList, ok = resp.Details.([]interface{})
@@ -200,18 +213,10 @@ func (gcp *GcpPuller) doPull(
 		}
 		itemLen = len(itemList)
 		if itemLen == 0 {
-			return 0, &registry.PullerResult{
-				Count:    int64(0),
-				Currency: "",
-				Cost:     decimal.NewFromFloat(0),
-			}, nil
+			return 0, zeroResult, nil
 		}
 	} else {
-		return 0, &registry.PullerResult{
-			Count:    int64(0),
-			Currency: "",
-			Cost:     decimal.NewFromFloat(0),
-		}, nil
+		return 0, zeroResult, nil
 	}
 
 	currency := enumor.CurrencyCode("")

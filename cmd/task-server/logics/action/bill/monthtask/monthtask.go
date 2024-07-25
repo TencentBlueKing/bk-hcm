@@ -199,8 +199,10 @@ func (act MonthTaskAction) runSplit(kt *kit.Kit, runner MonthTaskRunner, opt *Mo
 	}
 }
 
-func (act MonthTaskAction) split(kt *kit.Kit, runner MonthTaskRunner, opt *MonthTaskActionOption,
-	monthTask *bill.BillMonthTaskResult, accountMap map[string]struct{}, offset uint64) (cnt int, finished bool, err error) {
+func (act MonthTaskAction) split(
+	kt *kit.Kit, runner MonthTaskRunner, opt *MonthTaskActionOption,
+	monthTask *bill.BillMonthTaskResult, accountMap map[string]struct{}, offset uint64) (
+	cnt int, finished bool, err error) {
 
 	limit := runner.GetBatchSize(kt)
 	if offset >= monthTask.PullIndex {
@@ -253,13 +255,15 @@ func (act MonthTaskAction) split(kt *kit.Kit, runner MonthTaskRunner, opt *Month
 	return len(resp.Details), isFinished, nil
 }
 
-func getBillItemFilter(opt *MonthTaskActionOption) *filter.Expression {
+func getCleanBillItemFilter(opt *MonthTaskActionOption) *filter.Expression {
 	expressions := []*filter.AtomRule{
+		// do not set main_account_id
 		tools.RuleEqual("root_account_id", opt.RootAccountID),
-		tools.RuleEqual("main_account_id", enumor.MonthRawBillPathName),
 		tools.RuleEqual("vendor", opt.Vendor),
 		tools.RuleEqual("bill_year", opt.BillYear),
 		tools.RuleEqual("bill_month", opt.BillMonth),
+		// special day 0 for month bill
+		tools.RuleEqual("bill_day", 0),
 	}
 	return tools.ExpressionAnd(expressions...)
 }
@@ -269,7 +273,7 @@ func (act MonthTaskAction) cleanBillItem(
 	batch := 0
 	for {
 		result, err := actcli.GetDataService().Global.Bill.ListBillItem(kt, &bill.BillItemListReq{
-			Filter: getBillItemFilter(opt),
+			Filter: getCleanBillItemFilter(opt),
 			Page: &core.BasePage{
 				Count: true,
 			},
@@ -280,7 +284,7 @@ func (act MonthTaskAction) cleanBillItem(
 		}
 		if result.Count > 0 {
 			if err := actcli.GetDataService().Global.Bill.BatchDeleteBillItem(kt, &dataservice.BatchDeleteReq{
-				Filter: getBillItemFilter(opt)}); err != nil {
+				Filter: getCleanBillItemFilter(opt)}); err != nil {
 				return fmt.Errorf("delete 500 of %d bill item for %+v failed, err %s",
 					result.Count, opt, err.Error())
 			}
@@ -294,19 +298,9 @@ func (act MonthTaskAction) cleanBillItem(
 	return nil
 }
 
-func (act MonthTaskAction) runSummary(kt *kit.Kit, opt *MonthTaskActionOption) error {
-	task, err := getMonthPullTask(kt, opt)
-	if err != nil {
-		return err
-	}
-	var itemList []billcore.MonthTaskSummaryDetailItem
-	if task.SummaryDetail != "" {
-		if err := json.Unmarshal([]byte(task.SummaryDetail), &itemList); err != nil {
-			logs.Warnf("decode %s to []billcore.MonthTaskSummaryDetailItem failed, err: %s, rid: %s",
-				task.SummaryDetail, err.Error(), kt.Rid)
-			return err
-		}
-	}
+func (act MonthTaskAction) runMainAccountSummary(
+	kt *kit.Kit, opt *MonthTaskActionOption,
+	task *bill.BillMonthTaskResult, itemList []billcore.MonthTaskSummaryDetailItem) error {
 
 	for i, item := range itemList {
 		if item.IsFinished {
@@ -318,7 +312,7 @@ func (act MonthTaskAction) runSummary(kt *kit.Kit, opt *MonthTaskActionOption) e
 			tools.RuleEqual("bill_year", opt.BillYear),
 			tools.RuleEqual("bill_month", opt.BillMonth),
 			tools.RuleEqual("vendor", task.Vendor),
-			// special day 0
+			// special day 0 for month bill
 			tools.RuleEqual("bill_day", 0),
 		}
 		result, err := actcli.GetDataService().Global.Bill.ListBillItem(kt, &bill.BillItemListReq{
@@ -369,6 +363,27 @@ func (act MonthTaskAction) runSummary(kt *kit.Kit, opt *MonthTaskActionOption) e
 			return err
 		}
 	}
+	return nil
+}
+
+func (act MonthTaskAction) runSummary(kt *kit.Kit, opt *MonthTaskActionOption) error {
+	task, err := getMonthPullTask(kt, opt)
+	if err != nil {
+		return err
+	}
+	var itemList []billcore.MonthTaskSummaryDetailItem
+	if task.SummaryDetail != "" {
+		if err := json.Unmarshal([]byte(task.SummaryDetail), &itemList); err != nil {
+			logs.Warnf("decode %s to []billcore.MonthTaskSummaryDetailItem failed, err: %s, rid: %s",
+				task.SummaryDetail, err.Error(), kt.Rid)
+			return err
+		}
+	}
+
+	if err := act.runMainAccountSummary(kt, opt, task, itemList); err != nil {
+		return err
+	}
+
 	if err := actcli.GetDataService().Global.Bill.UpdateBillMonthPullTask(kt, &bill.BillMonthTaskUpdateReq{
 		ID:    task.ID,
 		State: enumor.RootAccountMonthBillTaskStateAccounted,
