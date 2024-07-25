@@ -134,9 +134,9 @@ type GcpRawBillItem struct {
 	ReturnCost                *decimal.Decimal `json:"return_cost"`
 	UsageAmount               *decimal.Decimal `json:"usage_amount"`
 	UsageAmountInPricingUnits *decimal.Decimal `json:"usage_amount_in_pricing_units"`
-	UsageEndTime              *string          `json:"usage_end_time"`
+	UsageEndTime              *string          `json:"usage_end_time,omitempty"`
 	UsagePricingUnit          *string          `json:"usage_pricing_unit"`
-	UsageStartTime            *string          `json:"usage_start_time"`
+	UsageStartTime            *string          `json:"usage_start_time,omitempty"`
 	UsageUnit                 *string          `json:"usage_unit"`
 	Zone                      *string          `json:"zone"`
 }

@@ -233,8 +233,7 @@ func splitBillItem(kt *kit.Kit, opt *DailyAccountSplitActionOption, billDay int)
 		for _, item := range rawResp.Details {
 			reqList, err := splitter.DoSplit(kt, opt, billDay, item, mainAccountInfo)
 			if err != nil {
-				logs.Warnf("raw bill %v do splitting failed, err %s", item, err.Error())
-				return err
+				return fmt.Errorf("batch create bill item for %s failed, err %s", filename, err.Error())
 			}
 			billItemList = append(billItemList, reqList...)
 		}

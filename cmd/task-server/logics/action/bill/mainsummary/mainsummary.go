@@ -236,6 +236,9 @@ func (act *MainAccountSummaryAction) getMonthPullTaskStatus(
 	if err != nil {
 		return decimal.Zero, false, err
 	}
+	if monthTask == nil {
+		return decimal.Zero, false, nil
+	}
 
 	if monthTask.State != enumor.RootAccountMonthBillTaskStateAccounted {
 		return decimal.Zero, false, err
@@ -274,6 +277,9 @@ func getMonthPullTask(kt *kit.Kit, rootAccountID string, billYear, billMonth int
 			rootAccountID, billYear, billMonth, err.Error(), kt.Rid)
 		return nil, fmt.Errorf("get month pull task for %s %d %d failed, err: %s",
 			rootAccountID, billYear, billMonth, err.Error())
+	}
+	if len(result.Details) == 0 {
+		return nil, nil
 	}
 	if len(result.Details) != 1 {
 		logs.Warnf("get invalid length month pull task, resp: %v, rid: %s", result, kt.Rid)

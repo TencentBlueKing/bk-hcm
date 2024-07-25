@@ -33,12 +33,14 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/times"
 
 	"github.com/shopspring/decimal"
 )
 
 const (
-	gcpMaxBill = int32(1000)
+	gcpMaxBill            = int32(1000)
+	gcpTimestampExtraDays = 2
 )
 
 func init() {
@@ -151,11 +153,33 @@ func (gcp *GcpPuller) doPull(
 	int, *registry.PullerResult, error) {
 
 	hcCli := actcli.GetHCService()
+	beginDate := fmt.Sprintf("%d-%02d-%02dT00:00:00Z", opt.BillYear, opt.BillMonth, opt.BillDay)
+	endDate := fmt.Sprintf("%d-%02d-%02dT23:59:59Z", opt.BillYear, opt.BillMonth, opt.BillDay)
+
+	// 由于GCP账单TIMESTAMP与invoice.month的月份可能不一致，
+	// 比如：TIMESTAMP处于7月1日的账单，实际其invoice.month可能是6。
+	// 所以如果是该月最后一天，那么则将TIMESTAMP放大gcpTimestampExtraDays天，保证能够拉取到延迟出帐的那部分账单
+	isLastDay, err := times.IsLastDayOfMonth(opt.BillMonth, opt.BillDay)
+	if err != nil {
+		logs.Warnf("is last day of month failed, err: %v, rid %s", err, kt.Kit().Rid)
+		return 0, nil, err
+	}
+	if isLastDay {
+		tmpYear, tmpMonth, tmpDay, err := times.AddDaysToDate(
+			opt.BillYear, opt.BillMonth, opt.BillDay, gcpTimestampExtraDays)
+		if err != nil {
+			logs.Warnf("add days to date failed, err: %v, rid %s", err, kt.Kit().Rid)
+			return 0, nil, err
+		}
+		endDate = fmt.Sprintf("%d-%02d-%02dT23:59:59Z", tmpYear, tmpMonth, tmpDay)
+	}
+
 	resp, err := hcCli.Gcp.Bill.RootAccountBillList(kt.Kit().Ctx, kt.Kit().Header(), &bill.GcpRootAccountBillListReq{
 		RootAccountID: opt.RootAccountID,
 		MainAccountID: opt.MainAccountID,
-		BeginDate:     fmt.Sprintf("%d-%02d-%02dT00:00:00Z", opt.BillYear, opt.BillMonth, opt.BillDay),
-		EndDate:       fmt.Sprintf("%d-%02d-%02dT23:59:59Z", opt.BillYear, opt.BillMonth, opt.BillDay),
+		Month:         fmt.Sprintf("%d%02d", opt.BillYear, opt.BillMonth),
+		BeginDate:     beginDate,
+		EndDate:       endDate,
 		Page: &typesBill.GcpBillPage{
 			Offset: offset,
 			Limit:  limit,
@@ -204,6 +228,8 @@ func (gcp *GcpPuller) doPull(
 		if record.Currency != nil {
 			currency = enumor.CurrencyCode(*record.Currency)
 		}
+		record.UsageStartTime = &beginDate
+		record.UsageEndTime = &endDate
 		recordList = append(recordList, record)
 	}
 	filename := fmt.Sprintf("%d-%d.csv", offset, itemLen)

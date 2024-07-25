@@ -598,7 +598,7 @@ func (rac *RootAccountController) createMonthFlow(
 
 func (rac *RootAccountController) createMonthPullTaskStub(kt *kit.Kit,
 	rootSummary *dsbillapi.BillSummaryRootResult) error {
-	_, err := rac.Client.DataService().Global.Bill.CreateBillMonthPullTask(kt, &dsbillapi.BillMonthTaskCreateReq{
+	taskResult, err := rac.Client.DataService().Global.Bill.CreateBillMonthPullTask(kt, &dsbillapi.BillMonthTaskCreateReq{
 		RootAccountID: rac.RootAccountID,
 		Vendor:        rac.Vendor,
 		BillYear:      rootSummary.BillYear,
@@ -610,6 +610,7 @@ func (rac *RootAccountController) createMonthPullTaskStub(kt *kit.Kit,
 		logs.Infof("create month pull task failed, err: %s, rid: %s", err.Error(), kt.Rid)
 		return err
 	}
+	logs.Infof("create month pull task stub success, taskID: %s, rid: %s", taskResult.ID, kt.Rid)
 	return nil
 }
 
