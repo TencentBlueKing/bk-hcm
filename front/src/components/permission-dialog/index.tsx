@@ -39,7 +39,7 @@ export default defineComponent({
 
   emits: ['confirm', 'cancel'],
 
-  setup(_, { emit }) {
+  setup(props, { emit }) {
     const { t } = useI18n();
     const { whereAmI } = useWhereAmI();
     const resourceAccountStore = useResourceAccountStore();
@@ -83,11 +83,11 @@ export default defineComponent({
     const { getActionPermission } = useVerify();
 
     watch(
-      () => _.isShow,
+      () => props.isShow,
       async (val) => {
         if (val) {
-          tableData.value = _.params.actions;
-          url.value = await getActionPermission(_.params);
+          tableData.value = props.params.actions;
+          url.value = await getActionPermission(props.params);
         }
       },
     );
