@@ -89,7 +89,7 @@ func toProtoPullerResult(m *tablebill.AccountBillSummaryMain) *dataproto.BillSum
 	}
 }
 
-// ListBillSummarybiz list account bill summary biz with options
+// ListBillSummaryBiz list account bill summary biz with options
 func (svc *service) ListBillSummaryBiz(cts *rest.Contexts) (interface{}, error) {
 	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -111,13 +111,13 @@ func (svc *service) ListBillSummaryBiz(cts *rest.Contexts) (interface{}, error) 
 
 	details := make([]*dataproto.BillSummaryBizResult, len(data.Details))
 	for indx, d := range data.Details {
-		details[indx] = toProductResult(&d)
+		details[indx] = toBizResult(&d)
 	}
 
 	return &dataproto.BillSummaryBizListResult{Details: details, Count: data.Count}, nil
 }
 
-func toProductResult(m *tablebill.AccountBillSummaryMain) *dataproto.BillSummaryBizResult {
+func toBizResult(m *tablebill.AccountBillSummaryMain) *dataproto.BillSummaryBizResult {
 	return &dataproto.BillSummaryBizResult{
 		BkBizID:                   m.BkBizID,
 		BkBizName:                 m.BkBizName,

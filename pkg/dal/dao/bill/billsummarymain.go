@@ -209,6 +209,11 @@ func (a AccountBillSummaryMainDao) ListGroupByBiz(kt *kit.Kit, opt *types.ListOp
 		return &typesbill.ListAccountBillSummaryMainDetails{Count: count}, nil
 	}
 
+	// 排序字段默认设置为bk_biz_id, 避免因为设置成根据id排序导致sql执行失败
+	if opt.Page.Sort == "" {
+		opt.Page.Sort = "bk_biz_id"
+	}
+
 	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
 	if err != nil {
 		return nil, err
