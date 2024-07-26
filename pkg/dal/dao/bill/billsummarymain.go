@@ -133,7 +133,7 @@ func (a AccountBillSummaryMainDao) List(kt *kit.Kit, opt *types.ListOption) (
 	return &typesbill.ListAccountBillSummaryMainDetails{Details: details}, nil
 }
 
-// Update update account bill summary.
+// UpdateByIDWithTx Update update account bill summary.
 func (a AccountBillSummaryMainDao) UpdateByIDWithTx(
 	kt *kit.Kit, tx *sqlx.Tx, billID string, updateData *tablebill.AccountBillSummaryMain) error {
 
