@@ -5,11 +5,14 @@ import {
   AdjustmentItem,
   BillImportPreviewItems,
   BillImportPreviewResData,
+  BillsExportReqParams,
+  BillsExportReqParamsWithBizs,
+  BillsExportResData,
   BillsMainAccountSummaryResData,
   BillsRootAccountSummaryHistoryResData,
   BillsRootAccountSummaryResData,
   BillsSummarySumReqParams,
-  BillsSummaryListReqParamsWithoutBizs,
+  BillsSummaryListReqParams,
   BillsSummaryListReqParamsWithBizs,
   BillsBizSummaryResData,
   BillsSummarySumResData,
@@ -33,26 +36,26 @@ export const reqBillsMainAccountSummarySum = async (
 
 // 拉取当月一级账号账单汇总
 export const reqBillsRootAccountSummaryList = async (
-  data: BillsSummaryListReqParamsWithoutBizs,
+  data: BillsSummaryListReqParams,
 ): Promise<BillsRootAccountSummaryResData> => {
   return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/root-account-summarys/list`, data);
 };
 
 // 拉取当月账单汇总历史版本（一级账号）
 export const reqBillsRootAccountHistorySummaryList = async (
-  data: BillsSummaryListReqParamsWithoutBizs,
+  data: BillsSummaryListReqParams,
 ): Promise<BillsRootAccountSummaryHistoryResData> => {
   return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/root-account-summary-historys/list`, data);
 };
 
 // 拉取当月二级账号账单汇总
 export const reqBillsMainAccountSummaryList = async (
-  data: BillsSummaryListReqParamsWithoutBizs,
+  data: BillsSummaryListReqParams,
 ): Promise<BillsMainAccountSummaryResData> => {
   return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/main-account-summarys/list`, data);
 };
 
-// 查看根据业务聚合的账单信息
+// 拉取当月业务账单汇总
 export const reqBillsBizSummaryList = async (
   data: BillsSummaryListReqParamsWithBizs,
 ): Promise<BillsBizSummaryResData> => {
@@ -75,11 +78,6 @@ export const reAccountBillsRootAccountSummary = async (data: {
   root_account_id: string;
 }) => {
   return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/root-account-summarys/reaccount`, data);
-};
-
-// 账单同步(云厂商)
-export const syncRecordsBills = async (data: { bill_year: number; bill_month: number; vendor: VendorEnum }) => {
-  return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/sync_records`, data);
 };
 
 // 查询当月账单明细
@@ -162,4 +160,29 @@ export const billItemsImport = async (
   data: { bill_year: number; bill_month: number; items: BillImportPreviewItems },
 ) => {
   return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/vendors/${vendor}/bills/items/import`, data);
+};
+
+// 导出一级账号账单汇总数据
+export const exportBillsRootAccountSummary = async (data: BillsExportReqParams): Promise<BillsExportResData> => {
+  return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/root-account-summarys/export`, data);
+};
+
+// 导出二级账号账单汇总数据
+export const exportBillsMainAccountSummary = async (data: BillsExportReqParams): Promise<BillsExportResData> => {
+  return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/main-account-summarys/export`, data);
+};
+
+// 导出业务账单汇总数据
+export const exportBillsBizSummary = async (data: BillsExportReqParamsWithBizs): Promise<BillsExportResData> => {
+  return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/biz_summarys/export`, data);
+};
+
+// 导出账单明细数据
+export const exportBillsItems = async (vendor: VendorEnum, data: BillsExportReqParams): Promise<BillsExportResData> => {
+  return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/vendors/${vendor}/bills/items/export`, data);
+};
+
+// 导出账单调整数据
+export const exportBillsAdjustmentItems = async (data: BillsExportReqParams): Promise<BillsExportResData> => {
+  return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/adjustment_items/export`, data);
 };

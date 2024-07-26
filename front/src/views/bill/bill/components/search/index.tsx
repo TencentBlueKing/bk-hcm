@@ -114,7 +114,7 @@ export default defineComponent({
       { deep: true },
     );
 
-    expose({ handleSearch });
+    expose({ handleSearch, rules });
 
     return () => (
       <div class={cssModule['search-container']}>
