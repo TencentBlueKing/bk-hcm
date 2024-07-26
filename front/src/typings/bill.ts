@@ -1,4 +1,10 @@
-import { IListResData, IQueryResData } from './common';
+import { IListResData, IPageQuery, IQueryResData } from './common';
+import { FilterType } from './resource';
+
+export type BillsSummarySumReqParams = { bill_year: number; bill_month: number; filter: FilterType };
+type BillsSummaryListBaseReqParams = { bill_year: number; bill_month: number; page: IPageQuery };
+export type BillsSummaryListReqParamsWithoutBizs = BillsSummaryListBaseReqParams & { filter: FilterType };
+export type BillsSummaryListReqParamsWithBizs = BillsSummaryListBaseReqParams & { bk_biz_id: number[] };
 
 // 当月账单总金额
 export interface BillsSummary {
@@ -67,7 +73,7 @@ export interface BillsRootAccountSummaryHistory {
 }
 export type BillsRootAccountSummaryHistoryResData = IListResData<BillsRootAccountSummaryHistory[]>;
 
-// 当月账单汇总（二级账号or业务）拉取接口
+// 当月账单汇总（二级账号）拉取接口
 export interface BillsMainAccountSummary {
   root_account_id: string;
   root_account_name: string;
@@ -95,6 +101,21 @@ export interface BillsMainAccountSummary {
   updated_at: string;
 }
 export type BillsMainAccountSummaryResData = IListResData<BillsMainAccountSummary[]>;
+
+// 当月账单汇总（业务）拉取接口
+interface BillsBizSummary {
+  bk_biz_id: number;
+  bk_biz_name: string;
+  last_month_cost_synced: string;
+  last_month_rmb_cost_synced: string;
+  current_month_cost_synced: string;
+  current_month_rmb_cost_synced: string;
+  current_month_cost: string;
+  current_month_rmb_cost: string;
+  adjustment_cost: string;
+  adjustment_rmb_cost: string;
+}
+export type BillsBizSummaryResData = IListResData<BillsBizSummary[]>;
 
 // 调账明细
 export interface AdjustmentItem {

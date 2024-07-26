@@ -6,7 +6,7 @@ import Search from '../../components/search';
 
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import { useTable } from '@/hooks/useTable/useTable';
-import { reqBillsMainAccountSummaryList, reqBillsMainAccountSummarySum } from '@/api/bill';
+import { reqBillsBizSummaryList, reqBillsMainAccountSummarySum } from '@/api/bill';
 import { QueryRuleOPEnum, RulesItem } from '@/typings';
 import { useRoute } from 'vue-router';
 import { BILL_BIZS_KEY } from '@/constants';
@@ -20,28 +20,32 @@ export default defineComponent({
 
     const searchRef = ref();
     const amountRef = ref();
+    const selectedBkBizIds = ref([]);
 
     const { columns } = useColumns('billsMainAccountSummary');
     const { CommonTable, getListData, clearFilter, filter } = useTable({
       searchOptions: { disabled: true },
       tableOptions: {
-        columns: columns.slice(2, -1),
+        columns: columns.slice(2),
       },
       requestOption: {
         sortOption: {
           sort: 'current_month_rmb_cost',
           order: 'DESC',
         },
-        apiMethod: reqBillsMainAccountSummaryList,
+        apiMethod: reqBillsBizSummaryList,
         extension: () => ({
           bill_year: bill_year.value,
           bill_month: bill_month.value,
+          bk_biz_ids: selectedBkBizIds.value,
+          filter: undefined,
         }),
         immediate: false,
       },
     });
 
     const reloadTable = (rules: RulesItem[]) => {
+      selectedBkBizIds.value = (rules.find((rule) => rule.field === 'bk_biz_id')?.value as number[]) || [];
       clearFilter();
       getListData(rules);
     };
