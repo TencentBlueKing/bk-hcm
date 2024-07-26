@@ -131,6 +131,9 @@ const (
 	// MainAccountBillSummaryStateAccounting 核算中
 	MainAccountBillSummaryStateAccounting MainBillSummaryState = "accounting"
 
+	// MainAccountBillSummaryStateWaitMonthTask 等待月度分账
+	MainAccountBillSummaryStateWaitMonthTask MainBillSummaryState = "waiting_month_task"
+
 	// MainAccountBillSummaryStateAccounted 已核算
 	MainAccountBillSummaryStateAccounted MainBillSummaryState = "accounted"
 
@@ -176,4 +179,43 @@ const (
 
 	// BillSyncRecordStateFailed 同步失败
 	BillSyncRecordStateFailed BillSyncState = "failed"
+)
+
+// RootAccountMonthBillTaskState 一级账号月度账单（除去每日账单）状态
+type RootAccountMonthBillTaskState string
+
+const (
+	// RootAccountMonthBillTaskStatePulling 拉取中
+	RootAccountMonthBillTaskStatePulling = "pulling"
+
+	// RootAccountMonthBillTaskStatePulled 已拉取
+	RootAccountMonthBillTaskStatePulled = "pulled"
+
+	// RootAccountMonthBillTaskStateSplit 已分账
+	RootAccountMonthBillTaskStateSplit = "split"
+
+	// RootAccountMonthBillTaskStateAccounted 已核算
+	RootAccountMonthBillTaskStateAccounted = "accounted"
+
+	// RootAccountMonthBillTaskStateStop 停止中
+	RootAccountMonthBillTaskStateStop = "stopped"
+)
+
+// MonthTaskType 月度任务类型
+type MonthTaskType string
+
+const (
+	// MonthTaskTypePull 拉取类型
+	MonthTaskTypePull = "pull"
+	// MonthTaskTypeSplit 分账类型
+	MonthTaskTypeSplit = "split"
+	// MonthTaskTypeSummary 汇总类型
+	MonthTaskTypeSummary = "summary"
+)
+
+const (
+	// MonthRawBillPathName 拉取原始账单保存路径
+	MonthRawBillPathName = "monthbill"
+	// MonthRawBillSpecialDatePathName 特殊日期原始账单保存路径
+	MonthRawBillSpecialDatePathName = "00"
 )

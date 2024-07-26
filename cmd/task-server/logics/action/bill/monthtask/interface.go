@@ -17,43 +17,33 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package types
+package monthtask
 
 import (
-	"database/sql/driver"
+	rawjson "encoding/json"
 	"fmt"
 
-	"github.com/shopspring/decimal"
+	"hcm/pkg/api/data-service/bill"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/kit"
 )
 
-// Decimal is wrapper for
-type Decimal struct {
-	decimal.Decimal
-}
-
-// Scan is used to decode raw message which is read from db into
-func (d *Decimal) Scan(raw interface{}) error {
-	if raw == nil {
-		return nil
-	}
-	data := ""
-	switch v := raw.(type) {
-	case []byte:
-		data = string(v)
-	case string:
-		data = v
+func GetRunner(vendor enumor.Vendor) (MonthTaskRunner, error) {
+	switch vendor {
+	case enumor.Gcp:
+		return newGcpRunner(), nil
+	case enumor.Aws:
+		return newAwsRunner(), nil
 	default:
-		return fmt.Errorf("unsupported decimal raw type: %T", v)
+		return nil, fmt.Errorf("vendor %s not support now", vendor)
 	}
-	internalDecimal, err := decimal.NewFromString(data)
-	if err != nil {
-		return fmt.Errorf("parse decimal %s failed, err %s", data, err.Error())
-	}
-	d.Decimal = internalDecimal
-	return nil
 }
 
-// Value encode the Decimal to a json raw, so that it can be stored to db with json raw.
-func (d Decimal) Value() (driver.Value, error) {
-	return d.Decimal.String(), nil
+// MonthTaskRunner ...
+type MonthTaskRunner interface {
+	GetBatchSize(kt *kit.Kit) uint64
+	Pull(kt *kit.Kit, rootAccountID string, billYear, billMonth int, index uint64) (
+		itemList []bill.RawBillItem, isFinished bool, err error)
+	Split(kt *kit.Kit, rootAccountID string, billYear, billMonth int, rawItemList []*bill.RawBillItem) (
+		[]bill.BillItemCreateReq[rawjson.RawMessage], error)
 }

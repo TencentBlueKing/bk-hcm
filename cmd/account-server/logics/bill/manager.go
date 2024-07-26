@@ -113,6 +113,7 @@ func (bm *BillManager) syncRootControllers() error {
 }
 
 func (bm *BillManager) syncMainControllers() error {
+	// TODO: 所有主账号 改为 所有未核算完成的主账号
 	list, err := bm.AccountList.ListAllMainAccount(getInternalKit())
 	if err != nil {
 		return err

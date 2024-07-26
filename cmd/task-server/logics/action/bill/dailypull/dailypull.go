@@ -34,6 +34,7 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	cvt "hcm/pkg/tools/converter"
 )
 
 var _ action.Action = new(PullDailyBillAction)
@@ -98,10 +99,9 @@ func (act PullDailyBillAction) Run(kt run.ExecuteKit, params interface{}) (inter
 			ID:       billTask.ID,
 			Count:    result.Count,
 			Currency: result.Currency,
-			Cost:     result.Cost,
+			Cost:     cvt.ValToPtr(result.Cost),
 			State:    enumor.MainAccountRawBillPullStatePulled,
 		}); err != nil {
-
 		return nil, errf.New(errf.Aborted, err.Error())
 	}
 	logs.Infof("update daily pull task %s to count %d, currency %s, cost %s, state %s, rid: %s",

@@ -466,6 +466,61 @@ taskserver:
       # taskTimeoutSec 判断任务执行超时时间
       taskTimeoutSec: 300
 
+accountserver:
+  ## 镜像
+  ##
+  image:
+    repository: blueking/bk-hcm-cloudserver
+    tag:
+  ## 日志配置
+  ##
+  log:
+    alsoToStdErr: true
+    logDir: /data/hcm/logs
+    maxPerFileSizeMB: 1024
+    maxPerLineSizeKB: 2
+    maxFileNum: 5
+    logAppend: false
+    toStdErr: false
+    verbosity: 0
+  # bill controller
+  controller:
+    controllerSyncDuration:
+    mainAccountSummarySyncDuration:
+    rootAccountSummarySyncDuration:
+    dailySummarySyncDuration:
+
+  billAllocation:
+    # aws saving plan allocation option
+    awsSavingPlans:
+    #    - rootAccountId:
+    #      spArnPrefix:
+    #      SpPurchaseAccountCloudID:
+
+  ## pod配置
+  ##
+  replicas: 1
+  podAnnotations: { }
+  affinity: { }
+  nodeSelector: { }
+  tolerations: [ ]
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1024Mi
+    requests:
+      memory: 512Mi
+      cpu: 200m
+  service:
+    type: "ClusterIP"
+    ports:
+      - name: http
+        protocol: TCP
+        port: 80
+        targetPort: 80
+        nodePort:
+  port: 80
+
 ## appCode
 appCode: bk-hcm
 ## appSecret

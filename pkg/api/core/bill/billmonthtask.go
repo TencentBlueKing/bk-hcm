@@ -1,7 +1,7 @@
 /*
  * TencentBlueKing is pleased to support the open source community by making
  * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
- * Copyright (C) 2022 THL A29 Limited,
+ * Copyright (C) 2024 THL A29 Limited,
  * a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,43 +17,19 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package types
+package bill
 
 import (
-	"database/sql/driver"
-	"fmt"
+	"hcm/pkg/criteria/enumor"
 
 	"github.com/shopspring/decimal"
 )
 
-// Decimal is wrapper for
-type Decimal struct {
-	decimal.Decimal
-}
-
-// Scan is used to decode raw message which is read from db into
-func (d *Decimal) Scan(raw interface{}) error {
-	if raw == nil {
-		return nil
-	}
-	data := ""
-	switch v := raw.(type) {
-	case []byte:
-		data = string(v)
-	case string:
-		data = v
-	default:
-		return fmt.Errorf("unsupported decimal raw type: %T", v)
-	}
-	internalDecimal, err := decimal.NewFromString(data)
-	if err != nil {
-		return fmt.Errorf("parse decimal %s failed, err %s", data, err.Error())
-	}
-	d.Decimal = internalDecimal
-	return nil
-}
-
-// Value encode the Decimal to a json raw, so that it can be stored to db with json raw.
-func (d Decimal) Value() (driver.Value, error) {
-	return d.Decimal.String(), nil
+// MonthTaskSummaryDetailItem detail item of month task summary
+type MonthTaskSummaryDetailItem struct {
+	MainAccountID string              `json:"main_account_id"`
+	IsFinished    bool                `json:"is_finished"`
+	Currency      enumor.CurrencyCode `json:"currency"`
+	Cost          decimal.Decimal     `json:"cost"`
+	Count         uint64              `json:"count"`
 }

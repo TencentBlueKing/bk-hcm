@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package gcp contains gcp bill pull function
 package gcp
 
 import (
@@ -33,12 +34,14 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/times"
 
 	"github.com/shopspring/decimal"
 )
 
 const (
-	gcpMaxBill = int32(1000)
+	gcpMaxBill            = int32(1000)
+	gcpTimestampExtraDays = 2
 )
 
 func init() {
@@ -146,16 +149,45 @@ func (gcp *GcpPuller) createRawBill(
 	return nil
 }
 
+func (gcp *GcpPuller) getPullDate(kt run.ExecuteKit, opt *registry.PullDailyBillOption) (string, string, error) {
+	beginDate := fmt.Sprintf("%d-%02d-%02dT00:00:00Z", opt.BillYear, opt.BillMonth, opt.BillDay)
+	endDate := fmt.Sprintf("%d-%02d-%02dT23:59:59Z", opt.BillYear, opt.BillMonth, opt.BillDay)
+
+	// 由于GCP账单TIMESTAMP与invoice.month的月份可能不一致，
+	// 比如：TIMESTAMP处于7月1日的账单，实际其invoice.month可能是6。
+	// 所以如果是该月最后一天，那么则将TIMESTAMP放大gcpTimestampExtraDays天，保证能够拉取到延迟出帐的那部分账单
+	isLastDay, err := times.IsLastDayOfMonth(opt.BillMonth, opt.BillDay)
+	if err != nil {
+		logs.Warnf("is last day of month failed, err: %v, rid %s", err, kt.Kit().Rid)
+		return "", "", err
+	}
+	if isLastDay {
+		tmpYear, tmpMonth, tmpDay, err := times.AddDaysToDate(
+			opt.BillYear, opt.BillMonth, opt.BillDay, gcpTimestampExtraDays)
+		if err != nil {
+			logs.Warnf("add days to date failed, err: %v, rid %s", err, kt.Kit().Rid)
+			return "", "", err
+		}
+		endDate = fmt.Sprintf("%d-%02d-%02dT23:59:59Z", tmpYear, tmpMonth, tmpDay)
+	}
+	return beginDate, endDate, nil
+}
+
 func (gcp *GcpPuller) doPull(
 	kt run.ExecuteKit, opt *registry.PullDailyBillOption, offset, limit uint64) (
 	int, *registry.PullerResult, error) {
 
 	hcCli := actcli.GetHCService()
+	beginDate, endDate, err := gcp.getPullDate(kt, opt)
+	if err != nil {
+		return 0, nil, err
+	}
 	resp, err := hcCli.Gcp.Bill.RootAccountBillList(kt.Kit().Ctx, kt.Kit().Header(), &bill.GcpRootAccountBillListReq{
 		RootAccountID: opt.RootAccountID,
 		MainAccountID: opt.MainAccountID,
-		BeginDate:     fmt.Sprintf("%d-%02d-%02dT00:00:00Z", opt.BillYear, opt.BillMonth, opt.BillDay),
-		EndDate:       fmt.Sprintf("%d-%02d-%02dT23:59:59Z", opt.BillYear, opt.BillMonth, opt.BillDay),
+		Month:         fmt.Sprintf("%d%02d", opt.BillYear, opt.BillMonth),
+		BeginDate:     beginDate,
+		EndDate:       endDate,
 		Page: &typesBill.GcpBillPage{
 			Offset: offset,
 			Limit:  limit,
@@ -167,6 +199,11 @@ func (gcp *GcpPuller) doPull(
 	}
 	var itemList []interface{}
 	itemLen := 0
+	zeroResult := &registry.PullerResult{
+		Count:    int64(0),
+		Currency: "",
+		Cost:     decimal.NewFromFloat(0),
+	}
 	if resp.Details != nil {
 		ok := false
 		itemList, ok = resp.Details.([]interface{})
@@ -176,18 +213,10 @@ func (gcp *GcpPuller) doPull(
 		}
 		itemLen = len(itemList)
 		if itemLen == 0 {
-			return 0, &registry.PullerResult{
-				Count:    int64(0),
-				Currency: "",
-				Cost:     decimal.NewFromFloat(0),
-			}, nil
+			return 0, zeroResult, nil
 		}
 	} else {
-		return 0, &registry.PullerResult{
-			Count:    int64(0),
-			Currency: "",
-			Cost:     decimal.NewFromFloat(0),
-		}, nil
+		return 0, zeroResult, nil
 	}
 
 	currency := enumor.CurrencyCode("")
@@ -204,6 +233,8 @@ func (gcp *GcpPuller) doPull(
 		if record.Currency != nil {
 			currency = enumor.CurrencyCode(*record.Currency)
 		}
+		record.UsageStartTime = &beginDate
+		record.UsageEndTime = &endDate
 		recordList = append(recordList, record)
 	}
 	filename := fmt.Sprintf("%d-%d.csv", offset, itemLen)

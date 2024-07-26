@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package aws daily puller
 package aws
 
 import (
@@ -116,7 +117,7 @@ func (hp *AwsPuller) doPull(kt run.ExecuteKit, opt *registry.PullDailyBillOption
 		if bill.BillCurrency != "" {
 			currency = bill.BillCurrency
 		}
-		cost.Add(bill.BillCost)
+		cost = cost.Add(bill.BillCost)
 		billItems = append(billItems, *bill)
 	}
 	filename := fmt.Sprintf("%d-%d.csv", *offset, itemLen)

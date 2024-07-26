@@ -17,8 +17,8 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package billpuller ...
-package billpuller
+// Package billmonthtask ...
+package billmonthtask
 
 import (
 	"net/http"
@@ -34,10 +34,10 @@ func InitService(cap *capability.Capability) {
 		dao: cap.Dao,
 	}
 	h := rest.NewHandler()
-	h.Add("BatchCreateBillPuller", http.MethodPost, "/bills/pullers", svc.BatchCreateBillPuller)
-	h.Add("DeleteBillPuller", http.MethodDelete, "/bills/pullers", svc.DeleteBillPuller)
-	h.Add("UpdateBillPuller", http.MethodPut, "/bills/pullers", svc.UpdateBillPuller)
-	h.Add("ListBillPuller", http.MethodGet, "/bills/pullers", svc.ListBillPuller)
+	h.Add("CreateBillMonthPullTask", http.MethodPost, "/bills/monthpulltask", svc.CreateBillMonthPullTask)
+	h.Add("DeleteBillMonthPullTask", http.MethodDelete, "/bills/monthpulltask", svc.DeleteBillMonthPullTask)
+	h.Add("UpdateBillMonthPullTask", http.MethodPut, "/bills/monthpulltask", svc.UpdateBillMonthPullTask)
+	h.Add("ListBillMonthPullTask", http.MethodGet, "/bills/monthpulltask", svc.ListBillMonthPullTask)
 
 	h.Load(cap.WebService)
 }

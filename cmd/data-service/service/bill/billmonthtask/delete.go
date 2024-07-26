@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package billpuller
+package billmonthtask
 
 import (
 	"fmt"
@@ -34,8 +34,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// DeleteBillPuller delete bill puller with options
-func (svc *service) DeleteBillPuller(cts *rest.Contexts) (interface{}, error) {
+// DeleteBillMonthPullTask delete bill month task with options
+func (svc *service) DeleteBillMonthPullTask(cts *rest.Contexts) (interface{}, error) {
 	req := new(dataservice.BatchDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -51,10 +51,10 @@ func (svc *service) DeleteBillPuller(cts *rest.Contexts) (interface{}, error) {
 			Limit: core.DefaultMaxPageLimit,
 		},
 	}
-	listResp, err := svc.dao.AccountBillPuller().List(cts.Kit, opt)
+	listResp, err := svc.dao.AccountBillMonthPullTask().List(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("delete list account bill puller failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("delete list account bill puller failed, err: %v", err)
+		logs.Errorf("delete list account bill month task failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("delete list account bill month task failed, err: %v", err)
 	}
 	if len(listResp.Details) == 0 {
 		return nil, nil
@@ -65,13 +65,13 @@ func (svc *service) DeleteBillPuller(cts *rest.Contexts) (interface{}, error) {
 	}
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		delFilter := tools.ContainersExpression("id", delIDs)
-		if err = svc.dao.AccountBillPuller().DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
+		if err = svc.dao.AccountBillMonthPullTask().DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
 	if err != nil {
-		logs.Errorf("delete account bill puller failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("delete account bill month task failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 

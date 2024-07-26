@@ -136,7 +136,7 @@ func (msdc *MainSummaryDailyController) doSync(kt *kit.Kit) error {
 	return nil
 }
 
-func (msdc *MainSummaryDailyController) getBillSummary(
+func (msdc *MainSummaryDailyController) getBillSummaryMain(
 	kt *kit.Kit, billYear, billMonth int) (*bill.BillSummaryMainResult, error) {
 
 	var expressions []*filter.AtomRule
@@ -166,11 +166,11 @@ func (msdc *MainSummaryDailyController) getBillSummary(
 
 func (msdc *MainSummaryDailyController) syncDailySummary(kt *kit.Kit, billYear, billMonth int) error {
 	time.Sleep(time.Millisecond * time.Duration(rand.Intn(defaultSleepMillisecond)))
-	summary, err := msdc.getBillSummary(kt, billYear, billMonth)
+	summary, err := msdc.getBillSummaryMain(kt, billYear, billMonth)
 	if err != nil {
 		return err
 	}
-	curPuller, err := puller.GetPuller(summary.Vendor)
+	curPuller, err := puller.GetDailyPuller(summary.Vendor)
 	if err != nil {
 		return err
 	}

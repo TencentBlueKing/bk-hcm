@@ -25,21 +25,41 @@ import (
 
 	protocore "hcm/pkg/api/core/account-set"
 	"hcm/pkg/api/data-service/bill"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/kit"
 )
+
+var vendorSplitterFunc = map[enumor.Vendor]func() RawBillSplitter{
+	enumor.Aws:      func() RawBillSplitter { return &AwsSplitter{} },
+	enumor.Gcp:      func() RawBillSplitter { return &DefaultSplitter{} },
+	enumor.HuaWei:   func() RawBillSplitter { return &DefaultSplitter{} },
+	enumor.Azure:    func() RawBillSplitter { return &DefaultSplitter{} },
+	enumor.Kaopu:    func() RawBillSplitter { return &DefaultSplitter{} },
+	enumor.Zenlayer: func() RawBillSplitter { return &DefaultSplitter{} },
+}
+
+// GetSplitter ...
+func GetSplitter(vendor enumor.Vendor) (RawBillSplitter, error) {
+	if _, ok := vendorSplitterFunc[vendor]; ok {
+		return vendorSplitterFunc[vendor](), nil
+	}
+	return nil, fmt.Errorf("unsupported vendor: %s for daily splitter", vendor)
+}
 
 // RawBillSplitter splitter for raw bill
 type RawBillSplitter interface {
-	DoSplit(opt *DailyAccountSplitActionOption, billDay int,
+	DoSplit(kt *kit.Kit, opt *DailyAccountSplitActionOption, billDay int,
 		item *bill.RawBillItem, mainAccount *protocore.BaseMainAccount) (
-		[]*bill.BillItemCreateReq[rawjson.RawMessage], error)
+		[]bill.BillItemCreateReq[rawjson.RawMessage], error)
 }
 
 // DefaultSplitter default account splitter
 type DefaultSplitter struct{}
 
 // DoSplit implements RawBillSplitter
-func (ds *DefaultSplitter) DoSplit(opt *DailyAccountSplitActionOption, billDay int,
-	item *bill.RawBillItem, mainAccount *protocore.BaseMainAccount) ([]bill.BillItemCreateReq[rawjson.RawMessage], error) {
+func (ds *DefaultSplitter) DoSplit(kt *kit.Kit, opt *DailyAccountSplitActionOption, billDay int,
+	item *bill.RawBillItem, mainAccount *protocore.BaseMainAccount) ([]bill.BillItemCreateReq[rawjson.RawMessage],
+	error) {
 
 	data, err := item.Extension.MarshalJSON()
 	if err != nil {

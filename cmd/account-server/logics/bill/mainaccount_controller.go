@@ -43,13 +43,14 @@ import (
 
 // MainAccountControllerOption option for MainAccountController
 type MainAccountControllerOption struct {
-	RootAccountID string
-	MainAccountID string
-	Vendor        enumor.Vendor
-	ProductID     int64
-	BkBizID       int64
-	Client        *client.ClientSet
-	Sd            serviced.ServiceDiscover
+	RootAccountID       string
+	MainAccountID       string
+	Vendor              enumor.Vendor
+	ProductID           int64
+	BkBizID             int64
+	Client              *client.ClientSet
+	Sd                  serviced.ServiceDiscover
+	AwsSavingPlanOption cc.AwsSavingPlanOption
 }
 
 // NewMainAccountController create new main account controller
@@ -84,15 +85,16 @@ func NewMainAccountController(opt *MainAccountControllerOption) (*MainAccountCon
 		return nil, err
 	}
 	return &MainAccountController{
-		Client:           opt.Client,
-		Sd:               opt.Sd,
-		RootAccountID:    opt.RootAccountID,
-		MainAccountID:    opt.MainAccountID,
-		ProductID:        opt.ProductID,
-		BkBizID:          opt.BkBizID,
-		Vendor:           opt.Vendor,
-		splitCtrl:        splitCtrl,
-		dailySummaryCtrl: dailySummaryCtrl,
+		Client:              opt.Client,
+		Sd:                  opt.Sd,
+		RootAccountID:       opt.RootAccountID,
+		MainAccountID:       opt.MainAccountID,
+		ProductID:           opt.ProductID,
+		BkBizID:             opt.BkBizID,
+		Vendor:              opt.Vendor,
+		splitCtrl:           splitCtrl,
+		dailySummaryCtrl:    dailySummaryCtrl,
+		AwsSavingPlanOption: opt.AwsSavingPlanOption,
 	}, nil
 }
 
@@ -111,6 +113,8 @@ type MainAccountController struct {
 
 	kt         *kit.Kit
 	cancelFunc context.CancelFunc
+
+	AwsSavingPlanOption cc.AwsSavingPlanOption
 }
 
 // Start run controller
@@ -294,7 +298,7 @@ func (mac *MainAccountController) syncDailyRawBill(kt *kit.Kit) error {
 		return err
 	}
 	if lastBillSummaryMain.State == enumor.MainAccountBillSummaryStateAccounting {
-		curPuller, err := puller.GetPuller(lastBillSummaryMain.Vendor)
+		curPuller, err := puller.GetDailyPuller(lastBillSummaryMain.Vendor)
 		if err != nil {
 			return err
 		}
@@ -309,7 +313,7 @@ func (mac *MainAccountController) syncDailyRawBill(kt *kit.Kit) error {
 		return err
 	}
 	if billSummaryMain.State == enumor.MainAccountBillSummaryStateAccounting {
-		curPuller, err := puller.GetPuller(billSummaryMain.Vendor)
+		curPuller, err := puller.GetDailyPuller(billSummaryMain.Vendor)
 		if err != nil {
 			return err
 		}

@@ -37,7 +37,7 @@ import (
 	"hcm/cmd/data-service/service/bill/billdailytask"
 	"hcm/cmd/data-service/service/bill/billexchangerate"
 	"hcm/cmd/data-service/service/bill/billitem"
-	"hcm/cmd/data-service/service/bill/billpuller"
+	"hcm/cmd/data-service/service/bill/billmonthtask"
 	"hcm/cmd/data-service/service/bill/billsummarydaily"
 	"hcm/cmd/data-service/service/bill/billsummarymain"
 	"hcm/cmd/data-service/service/bill/billsummaryroot"
@@ -249,7 +249,7 @@ func (s *Service) apiSet() *restful.Container {
 	mainaccount.InitService(capability)
 	rootaccount.InitService(capability)
 
-	billpuller.InitService(capability)
+	billmonthtask.InitService(capability)
 	billsummarymain.InitService(capability)
 	billsummaryversion.InitService(capability)
 	billitem.InitService(capability)

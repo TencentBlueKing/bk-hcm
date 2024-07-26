@@ -116,12 +116,45 @@ func (g *Gcp) GetBillTotal(kt *kit.Kit, where string, billInfo *cloud.AccountBil
 	return total, nil
 }
 
+const (
+	// RootAccountQueryBillFields 需要查询的云账单字段
+	RootAccountQueryBillFields = "ANY_VALUE(billing_account_id) as billing_account_id," +
+		"ANY_VALUE(service.id) as service_id," +
+		"ANY_VALUE(service.description) as service_description," +
+		"sku.id as sku_id," +
+		"ANY_VALUE(sku.description) as sku_description," +
+		"project.id as project_id," +
+		"ANY_VALUE(project.name) as project_name," +
+		"ANY_VALUE(project.number) as project_number," +
+		"ANY_VALUE(IFNULL(location.location,'')) as location," +
+		"ANY_VALUE(IFNULL(location.country,'')) as country," +
+		"ANY_VALUE(IFNULL(location.region,'')) as region," +
+		"ANY_VALUE(IFNULL(location.zone,'')) as zone," +
+		"ANY_VALUE(resource.name) as resource_name," +
+		"ANY_VALUE(resource.global_name) as resource_global_name," +
+		"(CAST(SUM(cost) * 1000000 AS int64)) / 1000000 as cost," +
+		"ANY_VALUE(currency) as currency," +
+		"SUM(IFNULL(usage.amount,0)) AS usage_amount," +
+		"ANY_VALUE(IFNULL(usage.unit, '')) AS usage_unit," +
+		"SUM(usage.amount_in_pricing_units) as usage_amount_in_pricing_units," +
+		"ANY_VALUE(usage.pricing_unit) as usage_pricing_unit," +
+		"SUM(cost)+SUM(IFNULL((SELECT SUM(c.amount) FROM UNNEST(credits) c), 0)) AS total_cost," +
+		"ANY_VALUE(invoice.month) as month," +
+		"ANY_VALUE(cost_type) as cost_type," +
+		"SUM(IFNULL((SELECT sum(CAST(amount*1000000 AS int64)) AS credit FROM UNNEST(credits)),0)/1000000) as return_cost," +
+		"ANY_VALUE(currency_conversion_rate) as currency_conversion_rate"
+	// RootAccountQueryBillSQL 查询云账单的SQL
+	RootAccountQueryBillSQL = "SELECT %s FROM %s.%s %s GROUP BY sku.id, project.id"
+	// RootAccountQueryBillTotalSQL 查询云账单总数量的SQL
+	RootAccountQueryBillTotalSQL = "SELECT COUNT(*) FROM (SELECT DISTINCT sku.id, project.id FROM %s.%s %s GROUP BY sku.id, project.id)"
+)
+
 // GetRootAccountBillTotal get bill total num
 func (g *Gcp) GetRootAccountBillTotal(
 	kt *kit.Kit, where string, billInfo *billcore.RootAccountBillConfig[billcore.GcpBillConfigExtension]) (
 	int64, error) {
 
-	sql := fmt.Sprintf(QueryBillTotalSQL, billInfo.CloudDatabaseName, billInfo.CloudTableName, where)
+	sql := fmt.Sprintf(RootAccountQueryBillTotalSQL, billInfo.CloudDatabaseName, billInfo.CloudTableName, where)
 	_, total, err := g.GetBigQuery(kt, sql)
 	if err != nil {
 		return 0, err
@@ -160,7 +193,8 @@ func (g *Gcp) GetRootAccountBillList(kt *kit.Kit, opt *typesBill.GcpRootAccountB
 		}
 	}
 
-	query := fmt.Sprintf(QueryBillSQL, QueryBillFields, billInfo.CloudDatabaseName, billInfo.CloudTableName, where)
+	query := fmt.Sprintf(RootAccountQueryBillSQL, RootAccountQueryBillFields,
+		billInfo.CloudDatabaseName, billInfo.CloudTableName, where)
 	if opt.Page != nil {
 		query += fmt.Sprintf(" LIMIT %d OFFSET %d", opt.Page.Limit, opt.Page.Offset)
 	}
@@ -229,7 +263,7 @@ func (g *Gcp) parseCondition(opt *typesBill.GcpBillListOption) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		condition = append(condition, fmt.Sprintf("TIMESTAMP_TRUNC(PARTITIONTIME, DAY) BETWEEN TIMESTAMP(\"%s\") AND "+
+		condition = append(condition, fmt.Sprintf("TIMESTAMP_TRUNC(_PARTITIONTIME, DAY) BETWEEN TIMESTAMP(\"%s\") AND "+
 			"TIMESTAMP(\"%s\")", beginDate.Format(constant.DateLayout), endDate.Format(constant.DateLayout)))
 	}
 
@@ -244,10 +278,14 @@ func (g *Gcp) parseRootAccountCondition(opt *typesBill.GcpBillListOption) (strin
 	var condition []string
 	if len(opt.ProjectID) != 0 {
 		condition = []string{fmt.Sprintf("project.id = '%s'", opt.ProjectID)}
+	} else {
+		condition = []string{"project.id IS NULL"}
 	}
+
 	if opt.Month != "" {
 		condition = append(condition, fmt.Sprintf("invoice.month = '%s'", opt.Month))
-	} else if opt.BeginDate != "" && opt.EndDate != "" {
+	}
+	if opt.BeginDate != "" && opt.EndDate != "" {
 		beginDate, err := time.Parse(constant.TimeStdFormat, opt.BeginDate)
 		if err != nil {
 			return "", err
