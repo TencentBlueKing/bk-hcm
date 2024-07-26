@@ -1,9 +1,10 @@
 import { IListResData, IPageQuery, IQueryResData } from './common';
 import { FilterType } from './resource';
 
+// 账单汇总
 export type BillsSummarySumReqParams = { bill_year: number; bill_month: number; filter: FilterType };
 type BillsSummaryListBaseReqParams = { bill_year: number; bill_month: number; page: IPageQuery };
-export type BillsSummaryListReqParamsWithoutBizs = BillsSummaryListBaseReqParams & { filter: FilterType };
+export type BillsSummaryListReqParams = BillsSummaryListBaseReqParams & { filter: FilterType };
 export type BillsSummaryListReqParamsWithBizs = BillsSummaryListBaseReqParams & { bk_biz_id: number[] };
 
 // 当月账单总金额
@@ -192,3 +193,9 @@ interface BillImportPreviewItemExtension {
 }
 export type BillImportPreviewResData = IQueryResData<BillImportPreview>;
 export type BillImportPreviewItems = BillImportPreviewItem[];
+
+// 账单导出
+type BillsExportBaseReqParams = { bill_year: number; bill_month: number; export_limit: number };
+export type BillsExportReqParams = BillsExportBaseReqParams & { filter: FilterType };
+export type BillsExportReqParamsWithBizs = BillsExportBaseReqParams & { bk_biz_ids: number[] };
+export type BillsExportResData = IQueryResData<{ download_url: string }>;

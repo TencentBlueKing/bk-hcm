@@ -2,13 +2,14 @@ import { PropType, Ref, defineComponent, inject, ref, watch } from 'vue';
 import './index.scss';
 
 import { Button } from 'bkui-vue';
+import BillsExportButton from '../../components/bills-export-button';
 import ImportBillDetailDialog from '../ImportBillDetailDialog';
 
 import { useI18n } from 'vue-i18n';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import { useTable } from '@/hooks/useTable/useTable';
-import { VendorEnum } from '@/common/constant';
-import { reqBillsItemList } from '@/api/bill';
+import { VendorEnum, VendorMap } from '@/common/constant';
+import { exportBillsItems, reqBillsItemList } from '@/api/bill';
 import { RulesItem } from '@/typings';
 
 export default defineComponent({
@@ -38,7 +39,7 @@ export default defineComponent({
 
     const { columns, settings } = useColumns(getColumnName());
 
-    const { CommonTable, getListData, clearFilter } = useTable({
+    const { CommonTable, getListData, clearFilter, filter } = useTable({
       tableOptions: {
         columns,
         extra: {
@@ -75,7 +76,17 @@ export default defineComponent({
                 {props.vendor === VendorEnum.ZENLAYER && (
                   <Button onClick={() => importBillDetailDialogRef.value.triggerShow(true)}>{t('导入')}</Button>
                 )}
-                <Button>{t('导出')}</Button>
+                <BillsExportButton
+                  cb={() =>
+                    exportBillsItems(props.vendor, {
+                      bill_year: bill_year.value,
+                      bill_month: bill_month.value,
+                      export_limit: 200000,
+                      filter,
+                    })
+                  }
+                  fileName={t(`账单明细-${VendorMap[props.vendor]}`)}
+                />
               </>
             ),
           }}

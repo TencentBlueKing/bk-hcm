@@ -8,13 +8,14 @@ import CreateAdjustSideSlider from './create';
 import Amount from '../components/amount';
 import Confirm from '@/components/confirm';
 import BatchOperation from './batch-operation';
+import BillsExportButton from '../components/bills-export-button';
 
 import { useI18n } from 'vue-i18n';
 import { cloneDeep } from 'lodash';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useTable } from '@/hooks/useTable/useTable';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
-import { deleteBillsAdjustment, reqBillsAdjustmentList } from '@/api/bill';
+import { deleteBillsAdjustment, exportBillsAdjustmentItems, reqBillsAdjustmentList } from '@/api/bill';
 import { timeFormatter } from '@/common/util';
 import {
   BILL_ADJUSTMENT_STATE__MAP,
@@ -241,7 +242,17 @@ export default defineComponent({
                     {t('新增调账')}
                   </Button>
                   <Button>{t('导入')}</Button>
-                  <Button>{t('导出')}</Button>
+                  <BillsExportButton
+                    cb={() =>
+                      exportBillsAdjustmentItems({
+                        bill_year: bill_year.value,
+                        bill_month: bill_month.value,
+                        export_limit: 200000,
+                        filter,
+                      })
+                    }
+                    fileName={t(`账单调整`)}
+                  />
                   <Button onClick={() => handleBatchOperation('delete')} disabled={selections.value.length === 0}>
                     {t('批量删除')}
                   </Button>
