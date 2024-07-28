@@ -54,8 +54,8 @@ type RawBillPathParam struct {
 
 // RawBillCreateReq create request
 type RawBillCreateReq struct {
-	RawBillPathParam
-	Items []RawBillItem `json:"items" validate:"required"`
+	RawBillPathParam `json:",inline"`
+	Items            []RawBillItem `json:"items" validate:"required"`
 }
 
 // Validate RawBillCreateReq.
@@ -65,7 +65,7 @@ func (c *RawBillCreateReq) Validate() error {
 
 // RawBillDeleteReq delete request
 type RawBillDeleteReq struct {
-	RawBillPathParam
+	RawBillPathParam RawBillPathParam `json:",inline"`
 }
 
 // Validate RawBillDeleteReq
