@@ -65,7 +65,7 @@ func (c *RawBillCreateReq) Validate() error {
 
 // RawBillDeleteReq delete request
 type RawBillDeleteReq struct {
-	RawBillPathParam RawBillPathParam `json:",inline"`
+	RawBillPathParam `json:",inline"`
 }
 
 // Validate RawBillDeleteReq
