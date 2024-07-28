@@ -20,41 +20,23 @@
 package rawbill
 
 import (
-	"bytes"
-	"encoding/csv"
-	"fmt"
-
 	dsbill "hcm/pkg/api/data-service/bill"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/rest"
 )
 
-func generateFilePath(param dsbill.RawBillPathParam) string {
-	return fmt.Sprintf("rawbills/%s/%s/%s/%s/%s/%s/%s/%s",
-		param.Vendor, param.RootAccountID, param.MainAccountID, param.BillYear,
-		param.BillMonth, param.Version, param.BillDate, param.FileName)
-}
-
-// 生成csv内容
-func generateCSV(items []dsbill.RawBillItem) (*bytes.Buffer, error) {
-	// 创建CSV文件的缓冲区
-	var buffer bytes.Buffer
-	csvWriter := csv.NewWriter(&buffer)
-	for _, item := range items {
-		record := []string{
-			item.Region,
-			item.HcProductCode,
-			item.HcProductName,
-			string(item.BillCurrency),
-			item.BillCost.String(),
-			item.ResAmount.String(),
-			item.ResAmountUnit,
-			string(item.Extension),
-		}
-		err := csvWriter.Write(record)
-		if err != nil {
-			return nil, fmt.Errorf("write record to csv failed, err %s", err.Error())
-		}
+// DeleteRawBill delete cloud raw bill
+func (s *service) DeleteRawBill(cts *rest.Contexts) (interface{}, error) {
+	req := new(dsbill.RawBillDeleteReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
-	// 刷新缓冲区，确保所有记录都写入
-	csvWriter.Flush()
-	return &buffer, nil
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	deletePath := generateFilePath(req.RawBillPathParam)
+	if err := s.ostore.Delete(cts.Request.Request.Context(), deletePath); err != nil {
+		return nil, err
+	}
+	return nil, nil
 }

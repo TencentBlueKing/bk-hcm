@@ -23,6 +23,7 @@ package gcp
 import (
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 
 	"hcm/cmd/task-server/logics/action/bill/dailypull/registry"
 	actcli "hcm/cmd/task-server/logics/action/cli"
@@ -54,6 +55,11 @@ type GcpPuller struct {
 
 // Pull pull gcp bill data
 func (gcp *GcpPuller) Pull(kt run.ExecuteKit, opt *registry.PullDailyBillOption) (*registry.PullerResult, error) {
+	// clean previous raw bills
+	if err := gcp.cleanRawBills(kt, opt); err != nil {
+		return nil, err
+	}
+
 	offset := uint64(0)
 	count := uint64(0)
 	cost := decimal.NewFromInt(0)
@@ -131,20 +137,58 @@ func (gcp *GcpPuller) createRawBill(
 	filename string, billItems []dsbill.RawBillItem) error {
 
 	storeReq := &dsbill.RawBillCreateReq{
-		Vendor:        enumor.Gcp,
-		RootAccountID: opt.RootAccountID,
-		AccountID:     opt.MainAccountID,
-		BillYear:      fmt.Sprintf("%d", opt.BillYear),
-		BillMonth:     fmt.Sprintf("%02d", opt.BillMonth),
-		BillDate:      fmt.Sprintf("%02d", opt.BillDay),
-		Version:       fmt.Sprintf("%d", opt.VersionID),
-		FileName:      filename,
+		RawBillPathParam: dsbill.RawBillPathParam{
+			Vendor:        enumor.Gcp,
+			RootAccountID: opt.RootAccountID,
+			MainAccountID: opt.MainAccountID,
+			BillYear:      fmt.Sprintf("%d", opt.BillYear),
+			BillMonth:     fmt.Sprintf("%02d", opt.BillMonth),
+			BillDate:      fmt.Sprintf("%02d", opt.BillDay),
+			Version:       fmt.Sprintf("%d", opt.VersionID),
+			FileName:      filename,
+		},
 	}
 	storeReq.Items = billItems
 	databillCli := actcli.GetDataService().Global.Bill
 	_, err := databillCli.CreateRawBill(kt.Kit(), storeReq)
 	if err != nil {
 		return fmt.Errorf("create raw bill to dataservice failed, err %s", err.Error())
+	}
+	return nil
+}
+
+func (gcp *GcpPuller) cleanRawBills(kt run.ExecuteKit, opt *registry.PullDailyBillOption) error {
+	listResult, err := actcli.GetDataService().Global.Bill.ListRawBillFileNames(
+		kt.Kit(), &dsbill.RawBillItemNameListReq{
+			Vendor:        enumor.Gcp,
+			RootAccountID: opt.RootAccountID,
+			MainAccountID: opt.MainAccountID,
+			BillYear:      fmt.Sprintf("%d", opt.BillYear),
+			BillMonth:     fmt.Sprintf("%02d", opt.BillMonth),
+			BillDate:      fmt.Sprintf("%02d", opt.BillDay),
+			Version:       fmt.Sprintf("%d", opt.VersionID),
+		})
+	if err != nil {
+		logs.Warnf("list raw bill filenames failed, err: %s, rid: %s", err.Error(), kt.Kit().Rid)
+		return err
+	}
+	for _, filename := range listResult.Filenames {
+		name := filepath.Base(filename)
+		if err := actcli.GetDataService().Global.Bill.DeleteRawBill(kt.Kit(), &dsbill.RawBillDeleteReq{
+			RawBillPathParam: dsbill.RawBillPathParam{
+				Vendor:        enumor.Gcp,
+				RootAccountID: opt.RootAccountID,
+				MainAccountID: opt.MainAccountID,
+				BillYear:      fmt.Sprintf("%d", opt.BillYear),
+				BillMonth:     fmt.Sprintf("%02d", opt.BillMonth),
+				BillDate:      fmt.Sprintf("%02d", opt.BillDay),
+				Version:       fmt.Sprintf("%d", opt.VersionID),
+				FileName:      name,
+			},
+		}); err != nil {
+			logs.Warnf("delete raw bill %s failed, err: %s, rid: %s", filename, err.Error(), kt.Kit().Rid)
+			return err
+		}
 	}
 	return nil
 }
