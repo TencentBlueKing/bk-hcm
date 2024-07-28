@@ -53,8 +53,7 @@ func InitService(cap *capability.Capability) {
 	h.Add(
 		"DeleteRawBill",
 		http.MethodDelete,
-		"bills/rawbills/{vendor}/{root_account_id}/{account_id}"+
-			"/{bill_year}/{bill_month}/{version}/{bill_date}/{bill_name}",
+		"bills/rawbills",
 		svc.DeleteRawBill)
 
 	h.Load(cap.WebService)

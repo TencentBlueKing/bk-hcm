@@ -359,10 +359,8 @@ func (b *BillClient) QueryRawBillItems(kt *kit.Kit, req *billproto.RawBillItemQu
 
 // DeleteRawBill delete raw bill
 func (b *BillClient) DeleteRawBill(kt *kit.Kit, req *billproto.RawBillDeleteReq) error {
-	return common.RequestNoResp[billproto.RawBillDeleteReq](
-		b.client, rest.DELETE, kt, nil, fmt.Sprintf("/bills/rawbills/%s/%s/%s/%s/%s/%s/%s/%s",
-			req.Vendor, req.RootAccountID, req.MainAccountID,
-			req.BillYear, req.BillMonth, req.Version, req.BillDate, req.FileName))
+	return common.RequestNoResp(
+		b.client, rest.DELETE, kt, req, "/bills/rawbills")
 }
 
 // --- bill item ---
