@@ -27,7 +27,6 @@ import (
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	"hcm/pkg/api/core"
 	protocore "hcm/pkg/api/core/account-set"
-	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/bill"
 	"hcm/pkg/async/action/run"
 	"hcm/pkg/criteria/constant"
@@ -159,20 +158,27 @@ func (act DailyAccountSplitAction) changeTaskToSplitted(
 // 待后续需要实现历史版本明细查看时，可分版本清理
 func cleanBillItem(kt *kit.Kit, opt *DailyAccountSplitActionOption, billDay int) error {
 	batch := 0
+	commonOpt := &bill.ItemCommonOpt{
+		Vendor: opt.Vendor,
+		Year:   opt.BillYear,
+		Month:  opt.BillMonth,
+	}
 	for {
-		result, err := actcli.GetDataService().Global.Bill.ListBillItem(kt, &bill.BillItemListReq{
-			Filter: getBillItemFilter(opt, billDay),
-			Page: &core.BasePage{
-				Count: true,
-			},
-		})
+		var billListReq = &bill.BillItemListReq{
+			ItemCommonOpt: commonOpt,
+			ListReq:       &core.ListReq{Filter: getBillItemFilter(opt, billDay), Page: core.NewCountPage()},
+		}
+		result, err := actcli.GetDataService().Global.Bill.ListBillItem(kt, billListReq)
 		if err != nil {
 			logs.Warnf("count bill item for %v day %d failed, err %s, rid %s", opt, billDay, err.Error(), kt.Rid)
 			return fmt.Errorf("count bill item for %v day %d failed, err %s", opt, billDay, err.Error())
 		}
 		if result.Count > 0 {
-			if err := actcli.GetDataService().Global.Bill.BatchDeleteBillItem(kt, &dataservice.BatchDeleteReq{
-				Filter: getBillItemFilter(opt, billDay)}); err != nil {
+			delReq := &bill.BillItemDeleteReq{
+				ItemCommonOpt: commonOpt,
+				Filter:        getBillItemFilter(opt, billDay),
+			}
+			if err := actcli.GetDataService().Global.Bill.BatchDeleteBillItem(kt, delReq); err != nil {
 				return fmt.Errorf("delete 500 of %d bill item for %v day %d failed, err %s",
 					result.Count, opt, billDay, err.Error())
 			}
@@ -239,8 +245,15 @@ func splitBillItem(kt *kit.Kit, opt *DailyAccountSplitActionOption, billDay int)
 		}
 
 		for _, itemsBatch := range slice.Split(billItemList, constant.BatchOperationMaxLimit) {
-			createReq := &bill.BatchRawBillItemCreateReq{Items: itemsBatch}
-			_, err = actcli.GetDataService().Global.Bill.BatchCreateBillItem(kt, opt.Vendor, createReq)
+			createReq := &bill.BatchBillItemCreateReq[rawjson.RawMessage]{
+				ItemCommonOpt: &bill.ItemCommonOpt{
+					Vendor: opt.Vendor,
+					Year:   opt.BillYear,
+					Month:  opt.BillMonth,
+				},
+				Items: itemsBatch,
+			}
+			_, err = actcli.GetDataService().Global.Bill.BatchCreateBillItem(kt, createReq)
 			if err != nil {
 				return fmt.Errorf("batch create bill item for %s failed, err %s", filename, err.Error())
 			}

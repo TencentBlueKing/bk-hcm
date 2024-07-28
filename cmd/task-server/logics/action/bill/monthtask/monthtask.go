@@ -27,7 +27,6 @@ import (
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	"hcm/pkg/api/core"
 	billcore "hcm/pkg/api/core/bill"
-	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/api/data-service/bill"
 	"hcm/pkg/async/action/run"
 	"hcm/pkg/criteria/constant"
@@ -239,14 +238,15 @@ func (act MonthTaskAction) split(
 		logs.Warnf("failed to split bill item, opt: %+v, err: %s, rid: %s", opt, err.Error(), kt.Rid)
 		return 0, false, err
 	}
+	commonOpt := &bill.ItemCommonOpt{Vendor: opt.Vendor, Year: opt.BillYear, Month: opt.BillMonth}
 	for i, itemsBatch := range slice.Split(tmpBillItemList, constant.BatchOperationMaxLimit) {
 		for idx := range itemsBatch {
 			// force bill day as zero to represent month bill
 			itemsBatch[idx].BillDay = 0
 			accountMap[itemsBatch[idx].MainAccountID] = struct{}{}
 		}
-		createReq := &bill.BatchRawBillItemCreateReq{Items: itemsBatch}
-		_, err = actcli.GetDataService().Global.Bill.BatchCreateBillItem(kt, opt.Vendor, createReq)
+		createReq := &bill.BatchRawBillItemCreateReq{ItemCommonOpt: commonOpt, Items: itemsBatch}
+		_, err = actcli.GetDataService().Global.Bill.BatchCreateBillItem(kt, createReq)
 		if err != nil {
 			logs.Warnf("failed to batch create bill item of batch idx %d, err: %s, opt: %+v, rid: %s",
 				i, err.Error(), opt, kt.Rid)
@@ -271,23 +271,23 @@ func getCleanBillItemFilter(opt *MonthTaskActionOption) *filter.Expression {
 	return tools.ExpressionAnd(expressions...)
 }
 
-func (act MonthTaskAction) cleanBillItem(
-	kt *kit.Kit, opt *MonthTaskActionOption) error {
+func (act MonthTaskAction) cleanBillItem(kt *kit.Kit, opt *MonthTaskActionOption) error {
 	batch := 0
+	commonOpt := &bill.ItemCommonOpt{Vendor: opt.Vendor, Year: opt.BillYear, Month: opt.BillMonth}
+
 	for {
-		result, err := actcli.GetDataService().Global.Bill.ListBillItem(kt, &bill.BillItemListReq{
-			Filter: getCleanBillItemFilter(opt),
-			Page: &core.BasePage{
-				Count: true,
-			},
-		})
+		listReq := &bill.BillItemListReq{
+			ItemCommonOpt: commonOpt,
+			ListReq:       &core.ListReq{Filter: getCleanBillItemFilter(opt), Page: core.NewCountPage()},
+		}
+		result, err := actcli.GetDataService().Global.Bill.ListBillItem(kt, listReq)
 		if err != nil {
 			logs.Warnf("count bill item for %+v failed, err %s, rid %s", opt, err.Error(), kt.Rid)
 			return fmt.Errorf("count bill item for %+vfailed, err %s", opt, err.Error())
 		}
+		delReq := &bill.BillItemDeleteReq{ItemCommonOpt: commonOpt, Filter: getCleanBillItemFilter(opt)}
 		if result.Count > 0 {
-			if err := actcli.GetDataService().Global.Bill.BatchDeleteBillItem(kt, &dataservice.BatchDeleteReq{
-				Filter: getCleanBillItemFilter(opt)}); err != nil {
+			if err := actcli.GetDataService().Global.Bill.BatchDeleteBillItem(kt, delReq); err != nil {
 				return fmt.Errorf("delete 500 of %d bill item for %+v failed, err %s",
 					result.Count, opt, err.Error())
 			}
@@ -301,15 +301,15 @@ func (act MonthTaskAction) cleanBillItem(
 	return nil
 }
 
-func (act MonthTaskAction) runMainAccountSummary(
-	kt *kit.Kit, opt *MonthTaskActionOption,
+func (act MonthTaskAction) runMainAccountSummary(kt *kit.Kit, opt *MonthTaskActionOption,
 	task *bill.BillMonthTaskResult, itemList []billcore.MonthTaskSummaryDetailItem) error {
 
+	commonOpt := &bill.ItemCommonOpt{Vendor: opt.Vendor, Year: opt.BillYear, Month: opt.BillMonth}
 	for i, item := range itemList {
 		if item.IsFinished {
 			continue
 		}
-		expressions := []*filter.AtomRule{
+		flt := tools.ExpressionAnd(
 			tools.RuleEqual("root_account_id", opt.RootAccountID),
 			tools.RuleEqual("main_account_id", item.MainAccountID),
 			tools.RuleEqual("bill_year", opt.BillYear),
@@ -317,11 +317,12 @@ func (act MonthTaskAction) runMainAccountSummary(
 			tools.RuleEqual("vendor", task.Vendor),
 			// special day 0 for month bill
 			tools.RuleEqual("bill_day", 0),
+		)
+		listReq := &bill.BillItemListReq{
+			ItemCommonOpt: commonOpt,
+			ListReq:       &core.ListReq{Filter: flt, Page: core.NewCountPage()},
 		}
-		result, err := actcli.GetDataService().Global.Bill.ListBillItem(kt, &bill.BillItemListReq{
-			Filter: tools.ExpressionAnd(expressions...),
-			Page:   core.NewCountPage(),
-		})
+		result, err := actcli.GetDataService().Global.Bill.ListBillItem(kt, listReq)
 		if err != nil {
 			logs.Warnf("count bill item for %+v %+v failed, err: %s, rid: %s", opt, item, err.Error(), kt.Rid)
 			return fmt.Errorf("count bill item for %+v %+v failed, err: %s", opt, item, err.Error())
@@ -330,13 +331,14 @@ func (act MonthTaskAction) runMainAccountSummary(
 		cost := decimal.NewFromFloat(0)
 		count := result.Count
 		limit := uint64(500)
+
 		for start := uint64(0); start < result.Count; start = start + limit {
-			result, err := actcli.GetDataService().Global.Bill.ListBillItem(kt, &bill.BillItemListReq{
-				Filter: tools.ExpressionAnd(expressions...),
-				Page: &core.BasePage{
-					Start: uint32(start),
-					Limit: uint(limit),
-				}})
+			listReq := &bill.BillItemListReq{
+				ItemCommonOpt: commonOpt,
+				ListReq: &core.ListReq{Filter: flt,
+					Page: &core.BasePage{Start: uint32(start), Limit: uint(limit)}},
+			}
+			result, err := actcli.GetDataService().Global.Bill.ListBillItem(kt, listReq)
 			if err != nil {
 				logs.Warnf("get %d-%d bill item for %+v %+v failed, err: %s, rid: %s",
 					start, limit, opt, item, err.Error(), kt.Rid)
