@@ -291,8 +291,8 @@ func (act MonthTaskAction) cleanBillItem(kt *kit.Kit, opt *MonthTaskActionOption
 				return fmt.Errorf("delete 500 of %d bill item for %+v failed, err %s",
 					result.Count, opt, err.Error())
 			}
-			logs.Infof("successfully delete batch %d bill item for %+v day %d, rid %s",
-				result.Count, opt, kt.Rid)
+			logs.Infof("successfully delete batch %d bill item for %+v, month %d, rid %s",
+				result.Count, opt.RootAccountID, opt.BillMonth, kt.Rid)
 			batch = batch + 1
 			continue
 		}
