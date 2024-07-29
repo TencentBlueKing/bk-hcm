@@ -23,7 +23,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
-	dataservice "hcm/pkg/api/data-service"
+	dataproto "hcm/pkg/api/data-service/bill"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
@@ -36,7 +36,7 @@ import (
 
 // DeleteBillItem delete bill item with options
 func (svc *service) DeleteBillItem(cts *rest.Contexts) (interface{}, error) {
-	req := new(dataservice.BatchDeleteReq)
+	req := new(dataproto.BillItemDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func (svc *service) DeleteBillItem(cts *rest.Contexts) (interface{}, error) {
 			Limit: core.DefaultMaxPageLimit,
 		},
 	}
-	listResp, err := svc.dao.AccountBillItem().List(cts.Kit, opt)
+	listResp, err := svc.dao.AccountBillItem().List(cts.Kit, req.ItemCommonOpt, opt)
 	if err != nil {
 		logs.Errorf("delete list account bill item failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, fmt.Errorf("delete list account bill item failed, err: %v", err)
@@ -65,7 +65,8 @@ func (svc *service) DeleteBillItem(cts *rest.Contexts) (interface{}, error) {
 	}
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		delFilter := tools.ContainersExpression("id", delIDs)
-		if err = svc.dao.AccountBillItem().DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
+		err = svc.dao.AccountBillItem().DeleteWithTx(cts.Kit, txn, req.ItemCommonOpt, delFilter)
+		if err != nil {
 			return nil, err
 		}
 		return nil, nil

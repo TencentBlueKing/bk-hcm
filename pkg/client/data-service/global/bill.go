@@ -31,7 +31,6 @@ import (
 	billproto "hcm/pkg/api/data-service/bill"
 	datacloudbillproto "hcm/pkg/api/data-service/cloud/bill"
 	"hcm/pkg/client/common"
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
@@ -133,28 +132,30 @@ func (b *BillClient) BatchConfirmBillAdjustmentItem(kt *kit.Kit, req *core.Batch
 // --- bill item ---
 
 // BatchDeleteBillItem delete bill item
-func (b *BillClient) BatchDeleteBillItem(kt *kit.Kit, req *dataservice.BatchDeleteReq) error {
-	return common.RequestNoResp[dataservice.BatchDeleteReq](
+func (b *BillClient) BatchDeleteBillItem(kt *kit.Kit, req *billproto.BillItemDeleteReq) error {
+	return common.RequestNoResp[billproto.BillItemDeleteReq](
 		b.client, rest.DELETE, kt, req, "/bills/items")
 }
 
 // UpdateBillItem update bill item
 func (b *BillClient) UpdateBillItem(kt *kit.Kit, req *billproto.BillItemUpdateReq) error {
 	return common.RequestNoResp[billproto.BillItemUpdateReq](
-		b.client, rest.PUT, kt, req, "/bills/items")
+		b.client, rest.PUT, kt, req, "/bills/items/update")
 }
 
 // ListBillItem list bill item
-func (b *BillClient) ListBillItem(kt *kit.Kit, req *core.ListReq) (*billproto.BillItemBaseListResult, error) {
+func (b *BillClient) ListBillItem(kt *kit.Kit, req *billproto.BillItemListReq) (
+	*billproto.BillItemBaseListResult, error) {
 
-	return common.Request[core.ListReq, billproto.BillItemBaseListResult](
+	return common.Request[billproto.BillItemListReq, billproto.BillItemBaseListResult](
 		b.client, rest.POST, kt, req, "/bills/items/list")
 }
 
 // ListBillItemRaw list with extension
-func (b *BillClient) ListBillItemRaw(kt *kit.Kit, req *core.ListReq) (*core.ListResultT[*bill.BillItemRaw], error) {
+func (b *BillClient) ListBillItemRaw(kt *kit.Kit, req *billproto.BillItemListReq) (
+	*core.ListResultT[*bill.BillItemRaw], error) {
 
-	return common.Request[core.ListReq, core.ListResultT[*bill.BillItemRaw]](
+	return common.Request[billproto.BillItemListReq, core.ListResultT[*bill.BillItemRaw]](
 		b.client, rest.POST, kt, req, "/bills/items/list_with_extension")
 }
 
@@ -354,7 +355,7 @@ func (b *BillClient) ListRawBillFileNames(kt *kit.Kit, req *billproto.RawBillIte
 			req.BillYear, req.BillMonth, req.Version, req.BillDate))
 }
 
-// QueryRawBillItems get rawl bill item
+// QueryRawBillItems get raw bill item
 func (b *BillClient) QueryRawBillItems(kt *kit.Kit, req *billproto.RawBillItemQueryReq) (
 	*billproto.RawBillItemQueryResult, error) {
 
@@ -367,12 +368,11 @@ func (b *BillClient) QueryRawBillItems(kt *kit.Kit, req *billproto.RawBillItemQu
 // --- bill item ---
 
 // BatchCreateBillItem create bill item
-func (b *BillClient) BatchCreateBillItem(
-	kt *kit.Kit, vendor enumor.Vendor, req *billproto.BatchBillItemCreateReq[rawjson.RawMessage]) (
+func (b *BillClient) BatchCreateBillItem(kt *kit.Kit, req *billproto.BatchBillItemCreateReq[rawjson.RawMessage]) (
 	*core.BatchCreateResult, error) {
 
 	return common.Request[billproto.BatchBillItemCreateReq[rawjson.RawMessage], core.BatchCreateResult](
-		b.client, rest.POST, kt, req, fmt.Sprintf("/vendors/%s/bills/rawitems/create", vendor))
+		b.client, rest.POST, kt, req, fmt.Sprintf("/vendors/%s/bills/rawitems/create", req.Vendor))
 }
 
 // RootAccountBillConfigClient is data service bill api client.

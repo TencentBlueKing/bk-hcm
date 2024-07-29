@@ -31,6 +31,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	typesbill "hcm/pkg/dal/dao/types/bill"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
 
@@ -121,10 +122,16 @@ func (act DailySummaryAction) Run(kt run.ExecuteKit, params interface{}) (interf
 }
 
 func (act DailySummaryAction) doDailySummary(kt run.ExecuteKit, opt *DailySummaryOption, billDay int) error {
+	commonOpt := &typesbill.ItemCommonOpt{
+		Vendor: opt.Vendor,
+		Year:   opt.BillYear,
+		Month:  opt.BillMonth,
+	}
 	result, err := actcli.GetDataService().Global.Bill.ListBillItem(kt.Kit(), &bill.BillItemListReq{
-		Filter: getFilter(opt, billDay),
-		Page: &core.BasePage{
-			Count: true,
+		ItemCommonOpt: commonOpt,
+		ListReq: &core.ListReq{
+			Filter: getFilter(opt, billDay),
+			Page:   core.NewCountPage(),
 		},
 	})
 	if err != nil {
@@ -138,10 +145,13 @@ func (act DailySummaryAction) doDailySummary(kt run.ExecuteKit, opt *DailySummar
 	limit := uint64(500)
 	for start := uint64(0); start < result.Count; start = start + limit {
 		result, err := actcli.GetDataService().Global.Bill.ListBillItem(kt.Kit(), &bill.BillItemListReq{
-			Filter: getFilter(opt, billDay),
-			Page: &core.BasePage{
-				Start: uint32(start),
-				Limit: uint(limit),
+			ItemCommonOpt: commonOpt,
+			ListReq: &core.ListReq{
+				Filter: getFilter(opt, billDay),
+				Page: &core.BasePage{
+					Start: uint32(start),
+					Limit: uint(limit),
+				},
 			},
 		})
 		if err != nil {

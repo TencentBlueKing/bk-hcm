@@ -24,14 +24,13 @@ import (
 
 	"hcm/pkg/api/account-server/bill"
 	"hcm/pkg/api/core"
+	databill "hcm/pkg/api/data-service/bill"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 )
 
 // ListBillItems 查询账单明细
@@ -55,20 +54,15 @@ func (b *billItemSvc) ListBillItems(cts *rest.Contexts) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	expressions := []filter.RuleFactory{
-		tools.RuleEqual("vendor", vendor),
-		tools.RuleEqual("bill_year", req.BillYear),
-		tools.RuleEqual("bill_month", req.BillMonth),
+
+	billListReq := &databill.BillItemListReq{
+		ItemCommonOpt: &databill.ItemCommonOpt{
+			Vendor: vendor,
+			Year:   req.BillYear,
+			Month:  req.BillMonth,
+		},
+		ListReq: &core.ListReq{Filter: req.Filter, Page: req.Page},
 	}
-	if req.Filter != nil {
-		expressions = append(expressions, req.Filter)
-	}
-	mergedFilter, err := tools.And(expressions...)
-	if err != nil {
-		logs.Errorf("fail merge filter for listing bill items, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
-		return nil, err
-	}
-	billListReq := &core.ListReq{Filter: mergedFilter, Page: req.Page}
 
 	return b.client.DataService().Global.Bill.ListBillItemRaw(cts.Kit, billListReq)
 
@@ -96,28 +90,25 @@ func (b *billItemSvc) ExportBillItems(cts *rest.Contexts) (any, error) {
 		return nil, err
 	}
 
-	mergedFilter, err := tools.And(
-		tools.RuleEqual("vendor", vendor),
-		tools.RuleEqual("bill_year", req.BillYear),
-		tools.RuleEqual("bill_month", req.BillMonth),
-		req.Filter)
-	if err != nil {
-		logs.Errorf("fail merge filter for exporting bill items, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
-		return nil, err
-	}
-
 	switch vendor {
 	case enumor.HuaWei:
-		return exportHuaweiBillItems(cts.Kit, b, mergedFilter, req.ExportLimit)
+		return exportHuaweiBillItems(cts.Kit, b, vendor, req)
 	default:
 		return nil, fmt.Errorf("unsupport %s vendor", vendor)
 	}
 }
 
-func exportHuaweiBillItems(kt *kit.Kit, b *billItemSvc, filter *filter.Expression, requireCount uint64) (
-	any, error) {
+func exportHuaweiBillItems(kt *kit.Kit, b *billItemSvc, vendor enumor.Vendor,
+	req *bill.ExportBillItemReq) (any, error) {
 
-	billListReq := &core.ListReq{Filter: filter, Page: core.NewDefaultBasePage()}
+	billListReq := &databill.BillItemListReq{
+		ItemCommonOpt: &databill.ItemCommonOpt{
+			Vendor: vendor,
+			Year:   req.BillYear,
+			Month:  req.BillMonth,
+		},
+		ListReq: &core.ListReq{Filter: req.Filter, Page: core.NewDefaultBasePage()},
+	}
 	_, err := b.client.DataService().HuaWei.Bill.ListBillItem(kt, billListReq)
 	if err != nil {
 		logs.Errorf("fail to list bill item for export, err: %v, req: %+v, rid: %s", err, billListReq, kt.Rid)
