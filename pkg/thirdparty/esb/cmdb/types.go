@@ -463,3 +463,71 @@ var HuaWeiCmdbStatusMap = map[string]CloudHostStatus{
 	"SHELVED_OFFLOADED": UnknownCloudHostStatus,
 	"UNKNOWN":           UnknownCloudHostStatus,
 }
+
+// EventType is cmdb watch event type.
+type EventType string
+
+const (
+	// Create is cmdb watch event create type.
+	Create EventType = "create"
+	// Update is cmdb watch event update type.
+	Update EventType = "update"
+	// Delete is cmdb watch event delete type.
+	Delete EventType = "delete"
+)
+
+// CursorType is cmdb watch event cursor type.
+type CursorType string
+
+const (
+	// HostType is cmdb watch event host cursor type.
+	HostType CursorType = "host"
+	// HostRelation is cmdb watch event host relation cursor type.
+	HostRelation CursorType = "host_relation"
+)
+
+// WatchEventParams is esb watch cmdb event parameter.
+type WatchEventParams struct {
+	// event types you want to care, empty means all.
+	EventTypes []EventType `json:"bk_event_types"`
+	// the fields you only care, if nil, means all.
+	Fields []string `json:"bk_fields"`
+	// unix seconds timesss to where you want to watch from.
+	// it's like Cursor, but StartFrom and Cursor can not use at the same time.
+	StartFrom int64 `json:"bk_start_from"`
+	// the cursor you hold previous, means you want to watch event form here.
+	Cursor string `json:"bk_cursor"`
+	// the resource kind you want to watch
+	Resource CursorType       `json:"bk_resource"`
+	Filter   WatchEventFilter `json:"bk_filter"`
+}
+
+// WatchEventFilter watch event filter
+type WatchEventFilter struct {
+	// SubResource the sub resource you want to watch, eg. object ID of the instance resource, watch all if not set
+	SubResource string `json:"bk_sub_resource,omitempty"`
+}
+
+// CCErrEventChainNodeNotExist 如果事件节点不存在，cc会返回该错误码
+var CCErrEventChainNodeNotExist = "1103007"
+
+// WatchEventResult is cmdb watch event result.
+type WatchEventResult struct {
+	// watched events or not
+	Watched bool               `json:"bk_watched"`
+	Events  []WatchEventDetail `json:"bk_events"`
+}
+
+// WatchEventDetail is cmdb watch event detail.
+type WatchEventDetail struct {
+	Cursor    string          `json:"bk_cursor"`
+	Resource  CursorType      `json:"bk_resource"`
+	EventType EventType       `json:"bk_event_type"`
+	Detail    json.RawMessage `json:"bk_detail"`
+}
+
+// HostModuleRelationParams get host and module relation parameter
+type HostModuleRelationParams struct {
+	BizID  int64   `json:"bk_biz_id,omitempty"`
+	HostID []int64 `json:"bk_host_id"`
+}
