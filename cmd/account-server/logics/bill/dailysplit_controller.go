@@ -192,6 +192,10 @@ func (msdc *MainDailySplitController) getBillSummary(
 }
 
 func (msdc *MainDailySplitController) syncDailySplit(kt *kit.Kit, billYear, billMonth int) error {
+
+	logs.Infof("start daily split sync, vendor %s, period: %d-%d, root account %s, main account %s, rid: %s",
+		msdc.Vendor, billYear, billMonth, msdc.RootAccountID, msdc.MainAccountID, kt.Rid)
+
 	summary, err := msdc.getBillSummary(kt, billYear, billMonth)
 	if err != nil {
 		return err

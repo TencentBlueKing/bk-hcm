@@ -36,6 +36,8 @@ import (
 const AwsSavingPlanAccountIDKey = "aws_saving_plan_account_id"
 const AwsSavingPlanARNPrefixKey = "aws_saving_plan_arn_prefix"
 const AwsLineItemTypeSavingPlanCoveredUsage = "SavingsPlanCoveredUsage"
+const AwsSavingsPlansCostCode = "SavingsPlanCost"
+const AwsSavingsPlansCostCodeReverse = "SavingsPlanCostReverse"
 
 // AwsSplitter default account splitter
 type AwsSplitter struct {
@@ -128,8 +130,8 @@ func (ds *AwsSplitter) extractSpCostItem(kt *kit.Kit, opt *DailyAccountSplitActi
 		VersionID:     opt.VersionID,
 		Currency:      item.BillCurrency,
 		Cost:          spNetCost,
-		HcProductCode: "SavingsPlanCost",
-		HcProductName: "SavingsPlanCost",
+		HcProductCode: AwsSavingsPlansCostCode,
+		HcProductName: AwsSavingsPlansCostCode,
 		Extension:     cvt.ValToPtr(rawjson.RawMessage(item.Extension)),
 	}
 
@@ -146,8 +148,8 @@ func (ds *AwsSplitter) extractSpCostItem(kt *kit.Kit, opt *DailyAccountSplitActi
 		VersionID:     opt.VersionID,
 		Currency:      item.BillCurrency,
 		Cost:          spNetCost.Neg(),
-		HcProductCode: "SavingsPlanCostReverse",
-		HcProductName: "SavingsPlanCostReverse",
+		HcProductCode: AwsSavingsPlansCostCodeReverse,
+		HcProductName: AwsSavingsPlansCostCodeReverse,
 		Extension:     cvt.ValToPtr(rawjson.RawMessage(item.Extension)),
 	}
 

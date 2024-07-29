@@ -885,7 +885,13 @@ type AwsSavingPlanOption struct {
 	SpPurchaseAccountCloudID string `yaml:"SpPurchaseAccountCloudID"`
 }
 
+// AwsCommonExpense ...
+type AwsCommonExpense struct {
+	ExcludeAccountCloudIds []string `yaml:"excludeAccountCloudIds"`
+}
+
 // BillAllocationOption ...
 type BillAllocationOption struct {
-	AwsSavingPlans []AwsSavingPlanOption `yaml:"awsSavingPlans"`
+	AwsSavingPlans   []AwsSavingPlanOption `yaml:"awsSavingPlans"`
+	AwsCommonExpense AwsCommonExpense      `yaml:"awsCommonExpense"`
 }

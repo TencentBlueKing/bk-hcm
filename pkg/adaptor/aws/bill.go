@@ -44,9 +44,9 @@ import (
 
 const (
 	// QueryBillSQL 查询云账单的SQL
-	QueryBillSQL = "SELECT %s FROM %s.%s %s"
+	QueryBillSQL = "SELECT %s FROM %s.%s %s "
 	// QueryBillTotalSQL 查询云账单总数量的SQL
-	QueryBillTotalSQL = "SELECT COUNT(*) FROM %s.%s %s"
+	QueryBillTotalSQL = "SELECT COUNT(*) FROM %s.%s %s "
 	BucketNameDefault = "hcm-bill-%s-%s"
 	BucketTimeOut     = 12  // 12小时
 	StackTimeOut      = 120 // 120秒
@@ -73,6 +73,74 @@ const (
 	AthenaSavePath        = "s3://{BucketName}/{CurPrefix}/{CurName}/QueryLog"
 	CrawlerCfnFileKey     = "/%s/%s/crawler-cfn.yml"
 	YmlURL                = "https://{BucketName}.s3.amazonaws.com/{CurPrefix}/{CurName}/crawler-cfn.yml"
+)
+
+const (
+	// QueryRootBillSelectField select fields
+	QueryRootBillSelectField = ` 
+	bill_payer_account_id,
+	identity_line_item_id,
+	line_item_usage_account_id,
+	bill_invoice_id,
+	bill_billing_entity,
+	line_item_product_code,
+	product_product_family,
+	product_product_name,
+	line_item_usage_type,
+	product_instance_type,
+	product_region,
+	product_location,
+	line_item_resource_id,
+	pricing_term,
+	line_item_line_item_type,
+	line_item_line_item_description,
+	'' AS line_item_usage_start_date,
+	'' AS line_item_usage_end_date,
+	pricing_unit,
+	line_item_currency_code,
+	pricing_public_on_demand_rate,
+	line_item_unblended_rate,
+	savings_plan_savings_plan_rate,
+	line_item_net_unblended_rate,
+	line_item_operation,
+	savings_plan_savings_plan_a_r_n,
+	SUM(line_item_usage_amount) AS line_item_usage_amount,
+	SUM(pricing_public_on_demand_cost) AS pricing_public_on_demand_cost,
+	SUM(line_item_unblended_cost) AS line_item_unblended_cost,
+	SUM(line_item_net_unblended_cost) AS line_item_net_unblended_cost,
+	SUM(savings_plan_savings_plan_effective_cost) AS savings_plan_savings_plan_effective_cost,
+	SUM(savings_plan_net_savings_plan_effective_cost) AS savings_plan_net_savings_plan_effective_cost,
+	SUM(reservation_effective_cost) AS reservation_effective_cost,
+	SUM(reservation_net_effective_cost) AS reservation_net_effective_cost 
+`
+	// QueryRootBillGroupBySQL group by sql fragment
+	QueryRootBillGroupBySQL = ` GROUP BY 
+	identity_line_item_id, bill_payer_account_id,
+	line_item_usage_account_id,
+	bill_invoice_id,
+	bill_billing_entity,
+	savings_plan_savings_plan_a_r_n,
+	line_item_product_code,
+	product_product_family,
+	product_product_name,
+	line_item_usage_type,
+	product_instance_type,
+	product_region,
+	product_location,
+	line_item_resource_id,
+	pricing_term,
+	line_item_line_item_type,
+	line_item_line_item_description,
+	pricing_unit,
+	line_item_currency_code,
+	pricing_public_on_demand_rate,
+	line_item_unblended_rate,
+	savings_plan_savings_plan_rate, 
+	line_item_net_unblended_rate, 
+	line_item_operation `
+
+	// QueryRootBillOrderBySQL 没有指定字段的情况下得到账单顺序会乱，多页的时候会导致账单重复、遗漏
+	QueryRootBillOrderBySQL = " ORDER BY identity_line_item_id,line_item_usage_start_date,line_item_usage_end_date "
 )
 
 // GetBillList get bill list
@@ -127,6 +195,7 @@ func (a *Aws) GetBillTotal(kt *kit.Kit, where string, billInfo *cloud.AccountBil
 	return total, nil
 }
 
+// GetAwsAthenaQuery ...
 func (a *Aws) GetAwsAthenaQuery(kt *kit.Kit, query string,
 	billInfo *cloud.AccountBillConfig[cloud.AwsBillConfigExtension]) ([]map[string]string, error) {
 
@@ -500,22 +569,10 @@ func (a *Aws) GetMainAccountBillList(kt *kit.Kit, opt *typesBill.AwsMainBillList
 		return 0, nil, err
 	}
 
-	// 只有第一页时才返回数量
-	var total = int64(0)
-	if opt.Page != nil && opt.Page.Offset == 0 {
-		// get bill total
-		total, err = a.GetRootAccountBillTotal(kt, where, billInfo)
-		if err != nil {
-			return 0, nil, err
-		}
-		if total == 0 {
-			return 0, nil, nil
-		}
-	}
-
-	sql := fmt.Sprintf(QueryBillSQL, "*", billInfo.CloudDatabaseName, billInfo.CloudTableName, where)
-	// 没有指定字段的情况下得到账单顺序会乱，多页的时候会导致账单重复、遗漏
-	sql += " ORDER BY identity_line_item_id,line_item_usage_start_date,line_item_usage_end_date "
+	sql := fmt.Sprintf(QueryBillSQL, QueryRootBillSelectField, billInfo.CloudDatabaseName, billInfo.CloudTableName,
+		where)
+	sql += QueryRootBillGroupBySQL
+	sql += QueryRootBillOrderBySQL
 	if opt.Page != nil {
 		sql += fmt.Sprintf(" OFFSET %d LIMIT %d", opt.Page.Offset, opt.Page.Limit)
 	}
@@ -523,7 +580,8 @@ func (a *Aws) GetMainAccountBillList(kt *kit.Kit, opt *typesBill.AwsMainBillList
 	if err != nil {
 		return 0, nil, err
 	}
-	return total, list, nil
+	// 暂不返回数量
+	return 0, list, nil
 }
 
 func parseRootCondition(opt *typesBill.AwsMainBillListOption) (string, error) {
@@ -541,11 +599,10 @@ func parseRootCondition(opt *typesBill.AwsMainBillListOption) (string, error) {
 }
 
 // GetRootAccountBillTotal get bill list total for root account
-func (a *Aws) GetRootAccountBillTotal(
-	kt *kit.Kit, where string, billInfo *billcore.RootAccountBillConfig[billcore.AwsBillConfigExtension]) (
-	int64, error) {
+func (a *Aws) GetRootAccountBillTotal(kt *kit.Kit, where string, billInfo *billcore.AwsRootBillConfig) (int64, error) {
 
 	sql := fmt.Sprintf(QueryBillTotalSQL, billInfo.CloudDatabaseName, billInfo.CloudTableName, where)
+	sql += QueryRootBillGroupBySQL
 	cloudList, err := a.GetRootAccountAwsAthenaQuery(kt, sql, billInfo)
 	if err != nil {
 		return 0, err
@@ -560,9 +617,10 @@ func (a *Aws) GetRootAccountBillTotal(
 }
 
 // GetRootAccountAwsAthenaQuery get aws athena query
-func (a *Aws) GetRootAccountAwsAthenaQuery(kt *kit.Kit, query string,
-	billInfo *billcore.RootAccountBillConfig[billcore.AwsBillConfigExtension]) ([]map[string]string, error) {
+func (a *Aws) GetRootAccountAwsAthenaQuery(kt *kit.Kit, query string, billInfo *billcore.AwsRootBillConfig) (
+	[]map[string]string, error) {
 
+	logs.V(4).Infof("aws root account athena query sql: [%s], rid: %s", query, kt.Rid)
 	client, err := a.clientSet.athenaClient(billInfo.Extension.Region)
 	if err != nil {
 		return nil, err
