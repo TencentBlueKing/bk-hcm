@@ -14,7 +14,6 @@ import (
 	"hcm/pkg/api/core"
 	protocore "hcm/pkg/api/core/account-set"
 	billcore "hcm/pkg/api/core/bill"
-	dataservice "hcm/pkg/api/data-service"
 	dsbill "hcm/pkg/api/data-service/bill"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -90,21 +89,30 @@ func (b *billItemSvc) ImportBillItems(cts *rest.Contexts) (any, error) {
 	for _, item := range req.Items {
 		mainAccountIDs = append(mainAccountIDs, item.MainAccountID)
 	}
+	itemCommonOpt := &dsbill.ItemCommonOpt{
+		Vendor: vendor,
+		Year:   req.BillYear,
+		Month:  req.BillMonth,
+	}
+	billDeleteReq := &dsbill.BillItemDeleteReq{
+		ItemCommonOpt: itemCommonOpt,
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("vendor", vendor),
+			tools.RuleIn("main_account_id", slice.Unique(mainAccountIDs)),
+			tools.RuleEqual("bill_year", req.BillYear),
+			tools.RuleEqual("bill_month", req.BillMonth),
+		),
+	}
 	if err = b.client.DataService().Global.Bill.BatchDeleteBillItem(cts.Kit,
-		&dataservice.BatchDeleteReq{
-			Filter: tools.ExpressionAnd(
-				tools.RuleEqual("vendor", vendor),
-				tools.RuleIn("main_account_id", slice.Unique(mainAccountIDs)),
-				tools.RuleEqual("bill_year", req.BillYear),
-				tools.RuleEqual("bill_month", req.BillMonth),
-			),
-		},
-	); err != nil {
+		billDeleteReq); err != nil {
 		return nil, err
 	}
 
-	ids, err := b.client.DataService().Global.Bill.BatchCreateBillItem(cts.Kit, vendor,
-		(*dsbill.BatchBillItemCreateReq[json.RawMessage])(&req.Items))
+	billCreateReq := &dsbill.BatchBillItemCreateReq[json.RawMessage]{
+		ItemCommonOpt: itemCommonOpt,
+		Items:         req.Items,
+	}
+	ids, err := b.client.DataService().Global.Bill.BatchCreateBillItem(cts.Kit, billCreateReq)
 	if err != nil {
 		return nil, err
 	}
