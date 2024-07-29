@@ -113,6 +113,8 @@ func (svc *lbSvc) buildModifyTCloudTargetWeight(kt *kit.Kit, body json.RawMessag
 	if len(ruleRelList.Details) == 0 {
 		err = svc.batchUpdateTargetWeightDb(kt, req)
 		if err != nil {
+			logs.Errorf("batch update target weight in database failed, req: %+v, err: %v, rid: %s",
+				req, err, kt.Rid)
 			return nil, err
 		}
 		return &core.FlowStateResult{State: enumor.FlowSuccess}, nil

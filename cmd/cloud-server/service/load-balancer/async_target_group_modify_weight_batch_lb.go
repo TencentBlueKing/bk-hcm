@@ -60,6 +60,8 @@ func (svc *lbSvc) buildBatchModifyTCloudTargetWeight(kt *kit.Kit, tgTargetsMap m
 				NewWeight: newWeight,
 			})
 			if err != nil {
+				logs.Errorf("batch update target weight in database failed, targetIDs: %v, newWeight: %d, err: %v, rid: %s",
+					targetIDs, newWeight, err, kt.Rid)
 				return nil, err
 			}
 			continue
