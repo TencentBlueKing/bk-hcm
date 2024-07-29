@@ -51,7 +51,7 @@ func (svc *service) ListBillItemRaw(cts *rest.Contexts) (any, error) {
 		Fields: req.Fields,
 	}
 
-	data, err := svc.dao.AccountBillItem().List(cts.Kit, opt)
+	data, err := svc.dao.AccountBillItem().List(cts.Kit, req.ItemCommonOpt, opt)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func (svc *service) ListBillItem(cts *rest.Contexts) (interface{}, error) {
 		Fields: req.Fields,
 	}
 
-	data, err := svc.dao.AccountBillItem().List(cts.Kit, opt)
+	data, err := svc.dao.AccountBillItem().List(cts.Kit, req.ItemCommonOpt, opt)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ func listBillItemExt[E bill.BillItemExtension](cts *rest.Contexts, svc *service,
 		Fields: req.Fields,
 	}
 
-	data, err := svc.dao.AccountBillItem().List(cts.Kit, opt)
+	data, err := svc.dao.AccountBillItem().List(cts.Kit, req.ItemCommonOpt, opt)
 	if err != nil {
 		return nil, err
 	}

@@ -20,6 +20,8 @@
 package orm
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -66,4 +68,42 @@ func SlowRequestMS(ms uint) Option {
 	return func(opt *options) {
 		opt.slowRequestMS = time.Duration(ms) * time.Millisecond
 	}
+}
+
+// TableShardingOpt defines table name generation options.
+type TableShardingOpt interface {
+	// Match check if table name match this sharding option
+	Match(name string) bool
+	// ReplaceTableName try to replace table name, only matched table name should be replaced
+	ReplaceTableName(old string) string
+}
+
+// TableSuffixShardingOpt  append suffix to table name
+type TableSuffixShardingOpt struct {
+	tableName string
+	suffixes  []string
+}
+
+// NewTableSuffixShardingOpt ...
+func NewTableSuffixShardingOpt(tableName string, suffixes []string) *TableSuffixShardingOpt {
+	return &TableSuffixShardingOpt{tableName: tableName, suffixes: suffixes}
+}
+
+// Match given table name
+func (r *TableSuffixShardingOpt) Match(name string) bool {
+	return strings.Compare(r.tableName, name) == 0
+}
+
+// ReplaceTableName append suffix to original table name
+func (r *TableSuffixShardingOpt) ReplaceTableName(old string) string {
+	replaced := old
+	for _, s := range r.suffixes {
+		replaced += "_" + s
+	}
+	return replaced
+}
+
+// String ...
+func (r *TableSuffixShardingOpt) String() string {
+	return fmt.Sprintf("{tableName:%s, suffixes: %v}", r.tableName, r.suffixes)
 }

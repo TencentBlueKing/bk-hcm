@@ -203,14 +203,12 @@ func (s *Service) ListenAndServeRest() error {
 			logs.Infof("shutdown restful server success...")
 		}
 	}()
-
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logs.Errorf("serve restful server failed, err: %v", err)
 			shutdown.SignalShutdownGracefully()
 		}
 	}()
-
 	return nil
 }
 
@@ -316,6 +314,7 @@ func (s *Service) indexHandleFunc(req *restful.Request, resp *restful.Response) 
 		"BK_CMDB_CREATE_BIZ_URL":      cc.WebServer().Web.BkCmdbCreateBizUrl,
 		"BK_CMDB_CREATE_BIZ_DOCS_URL": cc.WebServer().Web.BkCmdbCreateBizDocsUrl,
 		"ENABLE_CLOUD_SELECTION":      cc.WebServer().Web.EnableCloudSelection,
+		"ENABLE_ACCOUNT_BILL":         cc.WebServer().Web.EnableAccountBill,
 	}
 	err = tmpl.Execute(resp.ResponseWriter, content)
 	if err != nil {

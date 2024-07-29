@@ -81,6 +81,8 @@ web:
   bkCmdbCreateBizDocsUrl: "http://cmdb.bk.com/docs"
   # 是否启用云选型
   enableCloudSelection: true
+  # 是否启用账单账号功能
+  enableAccountBill: true
 
 # defines esb related settings.
 esb:

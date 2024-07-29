@@ -2,7 +2,7 @@ import { PropType, defineComponent, onMounted, ref, watch } from 'vue';
 import { Scene, PolygonLayer, LineLayer, Zoom, Popup, PointLayer } from '@antv/l7';
 import { Mapbox } from '@antv/l7-maps';
 import { IIdcInfo } from '@/typings/scheme';
-import geoData from '@/constants/geo-data';
+import geoData from '@/constants/geo-data.json';
 import IdcReginData from '@/constants/idc-region-data';
 import CloudServiceTag from '@/views/scheme/components/cloud-service-tag';
 
@@ -125,7 +125,6 @@ export default defineComponent({
         let popup: Popup;
         polygonLayer.on('mousemove', (e) => {
           const { name } = e.feature.properties;
-          console.log(name);
           if (props.list.find((item) => transCountryName(item.country) === name)) {
             popup = new Popup({
               offsets: [0, 0],
