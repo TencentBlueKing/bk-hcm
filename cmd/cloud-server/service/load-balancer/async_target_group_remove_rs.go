@@ -143,6 +143,7 @@ func (svc *lbSvc) buildRemoveTCloudTarget(kt *kit.Kit, body json.RawMessage, acc
 	}
 
 	// 目标组需要属于同一个负载均衡
+	lbIDs = slice.Unique(lbIDs)
 	if len(lbIDs) > 1 {
 		return nil, errf.New(errf.InvalidParameter, "target group need belong to the same load balancer")
 	}
