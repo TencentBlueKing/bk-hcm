@@ -28,6 +28,7 @@ import (
 	dsbill "hcm/pkg/api/data-service/bill"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/runtime/filter"
 )
@@ -101,6 +102,9 @@ type ImportBillItemReq struct {
 
 // Validate ...
 func (r *ImportBillItemReq) Validate() error {
+	if len(r.Items) == 0 {
+		return errf.New(errf.InvalidParameter, "items is empty")
+	}
 	return validator.Validate.Struct(r)
 }
 

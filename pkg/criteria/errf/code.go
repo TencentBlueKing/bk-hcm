@@ -70,4 +70,6 @@ const (
 	BillItemImportBillDateError int32 = 2000015
 	// BillItemImportDataError 账单导入数据错误, 账单数据格式不正确
 	BillItemImportDataError int32 = 2000016
+	// BillItemImportEmptyDataError 账单导入空列表
+	BillItemImportEmptyDataError int32 = 2000017
 )

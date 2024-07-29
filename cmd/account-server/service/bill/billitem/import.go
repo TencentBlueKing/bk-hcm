@@ -144,6 +144,10 @@ func importZenlayerBillItemsPreview(kt *kit.Kit, b *billItemSvc, req *bill.Impor
 		return nil, errf.New(errf.BillItemImportDataError, "fail parse excel file")
 	}
 
+	if len(records) == 0 {
+		return nil, errf.New(errf.BillItemImportEmptyDataError, "empty excel file")
+	}
+
 	businessGroupIDs := make([]string, 0, len(records))
 	for _, record := range records {
 		businessGroupIDs = append(businessGroupIDs, *record.BusinessGroup)
