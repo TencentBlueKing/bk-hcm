@@ -23,7 +23,6 @@ package loadbalancer
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 
 	cloudserver "hcm/pkg/api/cloud-server"
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
@@ -157,14 +156,14 @@ func (svc *lbSvc) buildCreateTCloudTarget(kt *kit.Kit, body json.RawMessage, acc
 		if !ok {
 			continue
 		}
-		portInt64, err := strconv.ParseInt(req.RsPort[idx], 10, 64)
 		if err != nil {
 			return nil, err
 		}
 		targets = append(targets, &dataproto.TargetBaseReq{
 			InstType:    req.RsType,
+			IP:          tmpIP,
 			CloudInstID: tmpCloudInstID,
-			Port:        portInt64,
+			Port:        int64(req.RsPort[idx]),
 			Weight:      cvt.ValToPtr(req.RsWeight),
 		})
 	}

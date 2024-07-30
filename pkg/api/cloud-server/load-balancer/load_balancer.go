@@ -522,7 +522,7 @@ func (req *TargetGroupCreateReq) Validate() error {
 type TCloudSopsTargetBatchCreateReq struct {
 	RuleQueryList []TargetGroupRuleQueryItem `json:"rule_query_list" validate:"required,min=1"`
 	RsIP          []string                   `json:"rs_ip" validate:"required,min=1"`
-	RsPort        []string                   `json:"rs_port" validate:"required,min=1"`
+	RsPort        []int                      `json:"rs_port" validate:"required,min=1"`
 	RsWeight      int64                      `json:"rs_weight" validate:"required"`
 	RsType        enumor.InstType            `json:"rs_type" validate:"required"`
 }
