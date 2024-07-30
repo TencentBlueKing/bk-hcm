@@ -30,7 +30,6 @@ import (
 	"hcm/cmd/task-server/logics/action/bill/rootsummary"
 	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/api/data-service"
-	"hcm/pkg/api/data-service/bill"
 	dsbillapi "hcm/pkg/api/data-service/bill"
 	taskserver "hcm/pkg/api/task-server"
 	"hcm/pkg/cc"
@@ -412,7 +411,7 @@ func (rac *RootAccountController) listAllMainSummary(
 		tools.RuleEqual("bill_month", billMonth),
 	}
 	result, err := rac.Client.DataService().Global.Bill.ListBillSummaryMain(
-		kt, &bill.BillSummaryMainListReq{
+		kt, &dsbillapi.BillSummaryMainListReq{
 			Filter: tools.ExpressionAnd(expressions...),
 			Page: &core.BasePage{
 				Count: true,
@@ -425,10 +424,10 @@ func (rac *RootAccountController) listAllMainSummary(
 		return nil, fmt.Errorf("empty count in result %+v", result)
 	}
 	logs.Infof("found %d main account summary for %+v, rid: %s", result.Count, rac, kt.Rid)
-	var mainSummaryList []*bill.BillSummaryMainResult
+	var mainSummaryList []*dsbillapi.BillSummaryMainResult
 	for offset := uint64(0); offset < result.Count; offset = offset + uint64(core.DefaultMaxPageLimit) {
 		result, err = rac.Client.DataService().Global.Bill.ListBillSummaryMain(
-			kt, &bill.BillSummaryMainListReq{
+			kt, &dsbillapi.BillSummaryMainListReq{
 				Filter: tools.ExpressionAnd(expressions...),
 				Page: &core.BasePage{
 					Start: 0,
