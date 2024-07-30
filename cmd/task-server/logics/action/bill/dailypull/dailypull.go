@@ -22,11 +22,12 @@ package dailypull
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"hcm/cmd/task-server/logics/action/bill/dailypull/registry"
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	"hcm/pkg/api/core"
-	billproto "hcm/pkg/api/data-service/bill"
+	databill "hcm/pkg/api/data-service/bill"
 	"hcm/pkg/async/action"
 	"hcm/pkg/async/action/run"
 	"hcm/pkg/criteria/enumor"
@@ -53,6 +54,12 @@ func (act PullDailyBillAction) Name() enumor.ActionName {
 	return enumor.ActionPullDailyRawBill
 }
 
+// Rollback clean old raw bills
+func (act PullDailyBillAction) Rollback(kt run.ExecuteKit, params interface{}) error {
+	logs.Infof("rollback daily pull bill action, rid: %s", kt.Kit().Rid)
+	return nil
+}
+
 // Run run pull daily bill
 func (act PullDailyBillAction) Run(kt run.ExecuteKit, params interface{}) (interface{}, error) {
 	opt, ok := params.(*registry.PullDailyBillOption)
@@ -64,6 +71,14 @@ func (act PullDailyBillAction) Run(kt run.ExecuteKit, params interface{}) (inter
 	if !ok {
 		return nil, errf.New(errf.InvalidParameter, fmt.Sprintf("invalid vendor %s", opt.Vendor))
 	}
+
+	// clean old raw bill item
+	err := act.cleanRawBills(kt, opt)
+	if err != nil {
+		logs.Errorf("fail to clean raw bills before pull, err: %v, vendor:%s, rid: %s", err, opt.Vendor, kt.Kit().Rid)
+		return nil, err
+	}
+
 	result, err := pl.Pull(kt, opt)
 	if err != nil {
 		return nil, errf.New(errf.Aborted, err.Error())
@@ -80,7 +95,7 @@ func (act PullDailyBillAction) Run(kt run.ExecuteKit, params interface{}) (inter
 	filter := tools.ExpressionAnd(expressions...)
 
 	billCli := actcli.GetDataService().Global.Bill
-	billTaskResult, err := billCli.ListBillDailyPullTask(kt.Kit(), &billproto.BillDailyPullTaskListReq{
+	billTaskResult, err := billCli.ListBillDailyPullTask(kt.Kit(), &databill.BillDailyPullTaskListReq{
 		Filter: filter,
 		Page: &core.BasePage{
 			Start: 0,
@@ -95,7 +110,7 @@ func (act PullDailyBillAction) Run(kt run.ExecuteKit, params interface{}) (inter
 	}
 	billTask := billTaskResult.Details[0]
 	if err = billCli.UpdateBillDailyPullTask(
-		kt.Kit(), &billproto.BillDailyPullTaskUpdateReq{
+		kt.Kit(), &databill.BillDailyPullTaskUpdateReq{
 			ID:       billTask.ID,
 			Count:    result.Count,
 			Currency: result.Currency,
@@ -108,4 +123,41 @@ func (act PullDailyBillAction) Run(kt run.ExecuteKit, params interface{}) (inter
 		billTask.ID, result.Count, result.Currency, result.Cost,
 		enumor.MainAccountRawBillPullStatePulled, kt.Kit().Rid)
 	return nil, nil
+}
+
+func (act *PullDailyBillAction) cleanRawBills(kt run.ExecuteKit, opt *registry.PullDailyBillOption) error {
+	listResult, err := actcli.GetDataService().Global.Bill.ListRawBillFileNames(
+		kt.Kit(), &databill.RawBillItemNameListReq{
+			Vendor:        opt.Vendor,
+			RootAccountID: opt.RootAccountID,
+			MainAccountID: opt.MainAccountID,
+			BillYear:      fmt.Sprintf("%d", opt.BillYear),
+			BillMonth:     fmt.Sprintf("%02d", opt.BillMonth),
+			BillDate:      fmt.Sprintf("%02d", opt.BillDay),
+			Version:       fmt.Sprintf("%d", opt.VersionID),
+		})
+	if err != nil {
+		logs.Warnf("list raw bill filenames failed, err: %s, vendor:%s, rid: %s", err.Error(), opt.Vendor, kt.Kit().Rid)
+		return err
+	}
+	for _, filename := range listResult.Filenames {
+		name := filepath.Base(filename)
+		if err := actcli.GetDataService().Global.Bill.DeleteRawBill(kt.Kit(), &databill.RawBillDeleteReq{
+			RawBillPathParam: databill.RawBillPathParam{
+				Vendor:        opt.Vendor,
+				RootAccountID: opt.RootAccountID,
+				MainAccountID: opt.MainAccountID,
+				BillYear:      fmt.Sprintf("%d", opt.BillYear),
+				BillMonth:     fmt.Sprintf("%02d", opt.BillMonth),
+				BillDate:      fmt.Sprintf("%02d", opt.BillDay),
+				Version:       fmt.Sprintf("%d", opt.VersionID),
+				FileName:      name,
+			},
+		}); err != nil {
+			logs.Warnf("delete raw bill %s failed, err: %s, vendor: %s, rid: %s",
+				filename, err.Error(), opt.Vendor, kt.Kit().Rid)
+			return err
+		}
+	}
+	return nil
 }
