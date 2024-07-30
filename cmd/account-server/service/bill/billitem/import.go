@@ -57,7 +57,7 @@ func (b *billItemSvc) ImportBillItemsPreview(cts *rest.Contexts) (any, error) {
 
 	switch vendor {
 	case enumor.Zenlayer:
-		return importZenlayerBillItemsPreview(cts.Kit, b, req)
+		return b.importZenlayerBillItemsPreview(cts.Kit, req)
 	default:
 		return nil, fmt.Errorf("unsupport %s vendor", vendor)
 	}
@@ -120,7 +120,7 @@ func (b *billItemSvc) ImportBillItems(cts *rest.Contexts) (any, error) {
 	return ids, nil
 }
 
-func importZenlayerBillItemsPreview(kt *kit.Kit, b *billItemSvc, req *bill.ImportBillItemPreviewReq) (any, error) {
+func (b *billItemSvc) importZenlayerBillItemsPreview(kt *kit.Kit, req *bill.ImportBillItemPreviewReq) (any, error) {
 
 	reader := getReader(req.ExcelFileBase64)
 	records := make([]billcore.ZenlayerRawBillItem, 0)
@@ -152,7 +152,7 @@ func importZenlayerBillItemsPreview(kt *kit.Kit, b *billItemSvc, req *bill.Impor
 	for _, record := range records {
 		businessGroupIDs = append(businessGroupIDs, *record.BusinessGroup)
 	}
-	mainAccountMap, err := listMainAccountByBusinessGroups(kt, b, enumor.Zenlayer, businessGroupIDs)
+	mainAccountMap, err := b.listMainAccountByBusinessGroups(kt, enumor.Zenlayer, businessGroupIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +163,7 @@ func importZenlayerBillItemsPreview(kt *kit.Kit, b *billItemSvc, req *bill.Impor
 		return nil, err
 	}
 
-	rate, err := getExchangedRate(kt, b, req.BillYear, req.BillMonth)
+	rate, err := b.getExchangedRate(kt, req.BillYear, req.BillMonth)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +196,7 @@ func doCalculate(records []dsbill.BillItemCreateReq[json.RawMessage], rate *deci
 	return retMap, nil
 }
 
-func listMainAccountByBusinessGroups(kt *kit.Kit, b *billItemSvc, vendor enumor.Vendor, businessGroupIDs []string) (
+func (b *billItemSvc) listMainAccountByBusinessGroups(kt *kit.Kit, vendor enumor.Vendor, businessGroupIDs []string) (
 	map[string]*protocore.BaseMainAccount, error) {
 
 	businessGroupIDs = slice.Unique(businessGroupIDs)
@@ -363,7 +363,7 @@ func getReader(str string) io.Reader {
 	return base64.NewDecoder(base64.StdEncoding, bytes.NewReader([]byte(str)))
 }
 
-func getExchangedRate(kt *kit.Kit, b *billItemSvc, billYear, billMonth int) (*decimal.Decimal, error) {
+func (b *billItemSvc) getExchangedRate(kt *kit.Kit, billYear, billMonth int) (*decimal.Decimal, error) {
 	// 获取汇率
 	result, err := b.client.DataService().Global.Bill.ListExchangeRate(kt, &core.ListReq{
 		Filter: tools.ExpressionAnd(
