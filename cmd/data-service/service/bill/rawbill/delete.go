@@ -17,48 +17,26 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package rawbill ...
 package rawbill
 
 import (
-	"net/http"
-
-	"hcm/cmd/data-service/service/capability"
-	"hcm/pkg/dal/objectstore"
+	dsbill "hcm/pkg/api/data-service/bill"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
 
-// InitService initialize the raw bill service
-func InitService(cap *capability.Capability) {
-	svc := &service{
-		ostore: cap.ObjectStore,
+// DeleteRawBill delete cloud raw bill
+func (s *service) DeleteRawBill(cts *rest.Contexts) (interface{}, error) {
+	req := new(dsbill.RawBillDeleteReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
-	h := rest.NewHandler()
-	h.Add(
-		"CreateRawBill",
-		http.MethodPost,
-		"bills/rawbills",
-		svc.CreateRawBill)
-	h.Add(
-		"ListRawBill",
-		http.MethodGet,
-		"bills/rawbills/{vendor}/{root_account_id}/{account_id}/{bill_year}/{bill_month}/{version}/{bill_date}",
-		svc.ListRawBill)
-	h.Add(
-		"QueryRawBillDetail",
-		http.MethodGet,
-		"bills/rawbills/{vendor}/{root_account_id}/{account_id}"+
-			"/{bill_year}/{bill_month}/{version}/{bill_date}/{bill_name}",
-		svc.QueryRawBillDetail)
-	h.Add(
-		"DeleteRawBill",
-		http.MethodDelete,
-		"bills/rawbills",
-		svc.DeleteRawBill)
-
-	h.Load(cap.WebService)
-}
-
-type service struct {
-	ostore objectstore.Storage
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	deletePath := generateFilePath(req.RawBillPathParam)
+	if err := s.ostore.Delete(cts.Request.Request.Context(), deletePath); err != nil {
+		return nil, err
+	}
+	return nil, nil
 }

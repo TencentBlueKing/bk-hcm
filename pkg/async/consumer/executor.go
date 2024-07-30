@@ -156,8 +156,8 @@ func (exec *executor) subWorkerQueue() {
 	for task := range exec.workerQueue {
 		if err := exec.workerDo(task); err != nil {
 			// Task执行失败告警通知
-			logs.Errorf("%s: executor sub worker workerDo exec failed, err: %v, rid: %s",
-				constant.AsyncTaskWarnSign, err, task.Kit.Rid)
+			logs.Errorf("%s: executor sub worker workerDo exec failed, err: %v, taskID: %s, action: %s, rid: %s",
+				constant.AsyncTaskWarnSign, err, task.ID, task.ActionName, task.Kit.Rid)
 		}
 	}
 

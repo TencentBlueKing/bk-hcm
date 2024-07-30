@@ -109,15 +109,18 @@ func (act MonthTaskAction) runPull(kt *kit.Kit, runner MonthTaskRunner, opt *Mon
 		lenRawBillItemList := len(rawBillItemList)
 		filename := fmt.Sprintf("%d-%d.csv", task.PullIndex, lenRawBillItemList)
 		storeReq := &bill.RawBillCreateReq{
-			Vendor:        opt.Vendor,
-			RootAccountID: task.RootAccountID,
-			AccountID:     enumor.MonthRawBillPathName,
-			BillYear:      fmt.Sprintf("%d", task.BillYear),
-			BillMonth:     fmt.Sprintf("%02d", task.BillMonth),
-			BillDate:      enumor.MonthRawBillSpecialDatePathName,
-			Version:       fmt.Sprintf("%d", task.VersionID),
-			FileName:      filename,
-			Items:         rawBillItemList,
+			RawBillPathParam: bill.RawBillPathParam{
+				Vendor:        opt.Vendor,
+				RootAccountID: task.RootAccountID,
+				MainAccountID: enumor.MonthRawBillPathName,
+				BillYear:      fmt.Sprintf("%d", task.BillYear),
+				BillMonth:     fmt.Sprintf("%02d", task.BillMonth),
+				BillDate:      enumor.MonthRawBillSpecialDatePathName,
+				Version:       fmt.Sprintf("%d", task.VersionID),
+				FileName:      filename,
+			},
+
+			Items: rawBillItemList,
 		}
 		databillCli := actcli.GetDataService().Global.Bill
 		_, err = databillCli.CreateRawBill(kt, storeReq)
@@ -215,14 +218,14 @@ func (act MonthTaskAction) split(
 
 	name := fmt.Sprintf("%d-%d.csv", offset, limit)
 	tmpReq := &bill.RawBillItemQueryReq{
-		Vendor:         monthTask.Vendor,
-		FirstAccountID: monthTask.RootAccountID,
-		AccountID:      enumor.MonthRawBillPathName,
-		BillYear:       fmt.Sprintf("%d", monthTask.BillYear),
-		BillMonth:      fmt.Sprintf("%02d", monthTask.BillMonth),
-		Version:        fmt.Sprintf("%d", monthTask.VersionID),
-		BillDate:       enumor.MonthRawBillSpecialDatePathName,
-		FileName:       name,
+		Vendor:        monthTask.Vendor,
+		RootAccountID: monthTask.RootAccountID,
+		MainAccountID: enumor.MonthRawBillPathName,
+		BillYear:      fmt.Sprintf("%d", monthTask.BillYear),
+		BillMonth:     fmt.Sprintf("%02d", monthTask.BillMonth),
+		Version:       fmt.Sprintf("%d", monthTask.VersionID),
+		BillDate:      enumor.MonthRawBillSpecialDatePathName,
+		FileName:      name,
 	}
 	resp, err := actcli.GetDataService().Global.Bill.QueryRawBillItems(kt, tmpReq)
 	if err != nil {
@@ -288,8 +291,8 @@ func (act MonthTaskAction) cleanBillItem(kt *kit.Kit, opt *MonthTaskActionOption
 				return fmt.Errorf("delete 500 of %d bill item for %+v failed, err %s",
 					result.Count, opt, err.Error())
 			}
-			logs.Infof("successfully delete batch %d bill item for %+v day %d, rid %s",
-				result.Count, opt, kt.Rid)
+			count := min(result.Count, constant.BatchOperationMaxLimit)
+			logs.Infof("successfully delete batch %d bill item for %+v, rid %s", count, opt, kt.Rid)
 			batch = batch + 1
 			continue
 		}

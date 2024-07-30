@@ -199,13 +199,13 @@ func splitBillItem(kt *kit.Kit, opt *DailyAccountSplitActionOption, billDay int)
 		return err
 	}
 	resp, err := actcli.GetDataService().Global.Bill.ListRawBillFileNames(kt, &bill.RawBillItemNameListReq{
-		Vendor:         opt.Vendor,
-		FirstAccountID: opt.RootAccountID,
-		AccountID:      opt.MainAccountID,
-		BillYear:       fmt.Sprintf("%d", opt.BillYear),
-		BillMonth:      fmt.Sprintf("%02d", opt.BillMonth),
-		Version:        fmt.Sprintf("%d", opt.VersionID),
-		BillDate:       fmt.Sprintf("%02d", billDay),
+		Vendor:        opt.Vendor,
+		RootAccountID: opt.RootAccountID,
+		MainAccountID: opt.MainAccountID,
+		BillYear:      fmt.Sprintf("%d", opt.BillYear),
+		BillMonth:     fmt.Sprintf("%02d", opt.BillMonth),
+		Version:       fmt.Sprintf("%d", opt.VersionID),
+		BillDate:      fmt.Sprintf("%02d", billDay),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to list raw bill files for %v, err %s", opt, err.Error())
@@ -221,14 +221,14 @@ func splitBillItem(kt *kit.Kit, opt *DailyAccountSplitActionOption, billDay int)
 		// 后续可在该过程中，增加处理过程
 		name := filepath.Base(filename)
 		tmpReq := &bill.RawBillItemQueryReq{
-			Vendor:         opt.Vendor,
-			FirstAccountID: opt.RootAccountID,
-			AccountID:      opt.MainAccountID,
-			BillYear:       fmt.Sprintf("%d", opt.BillYear),
-			BillMonth:      fmt.Sprintf("%02d", opt.BillMonth),
-			Version:        fmt.Sprintf("%d", opt.VersionID),
-			BillDate:       fmt.Sprintf("%02d", billDay),
-			FileName:       name,
+			Vendor:        opt.Vendor,
+			RootAccountID: opt.RootAccountID,
+			MainAccountID: opt.MainAccountID,
+			BillYear:      fmt.Sprintf("%d", opt.BillYear),
+			BillMonth:     fmt.Sprintf("%02d", opt.BillMonth),
+			Version:       fmt.Sprintf("%d", opt.VersionID),
+			BillDate:      fmt.Sprintf("%02d", billDay),
+			FileName:      name,
 		}
 
 		rawResp, err := actcli.GetDataService().Global.Bill.QueryRawBillItems(kt, tmpReq)

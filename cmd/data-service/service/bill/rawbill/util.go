@@ -27,10 +27,10 @@ import (
 	dsbill "hcm/pkg/api/data-service/bill"
 )
 
-func generateFilePath(req *dsbill.RawBillCreateReq) string {
+func generateFilePath(param dsbill.RawBillPathParam) string {
 	return fmt.Sprintf("rawbills/%s/%s/%s/%s/%s/%s/%s/%s",
-		req.Vendor, req.RootAccountID, req.AccountID, req.BillYear,
-		req.BillMonth, req.Version, req.BillDate, req.FileName)
+		param.Vendor, param.RootAccountID, param.MainAccountID, param.BillYear,
+		param.BillMonth, param.Version, param.BillDate, param.FileName)
 }
 
 // 生成csv内容

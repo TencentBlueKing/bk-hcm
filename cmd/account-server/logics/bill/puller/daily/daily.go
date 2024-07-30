@@ -154,7 +154,7 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 			if err != nil {
 				return fmt.Errorf("failed to create custom flow, err %s", err.Error())
 			}
-			logs.Infof("create pull task flow for billTask %v, rid: %s", billTask, kt.Rid)
+			logs.Infof("create pull task flow for billTask %+v, rid: %s", billTask, kt.Rid)
 			if err := dp.updateDailyPullTaskFlowID(kt, billTask.ID, flowResult.ID); err != nil {
 				return fmt.Errorf("update flow id failed, err %s", err.Error())
 			}
@@ -208,10 +208,10 @@ func (dp *DailyPuller) createNewPullTask(kt *kit.Kit, billTask *bill.BillDailyPu
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create custom flow, err %s", err.Error())
+		return fmt.Errorf("failed to create daily raw bill pull flow, err %s", err.Error())
 	}
 	if err := dp.updateDailyPullTaskFlowID(kt, billTask.ID, flowResult.ID); err != nil {
-		return fmt.Errorf("update flow id failed, err %s", err.Error())
+		return fmt.Errorf("update daily pull flow id failed, err %s", err.Error())
 	}
 
 	return nil

@@ -140,3 +140,13 @@ func (t *TCloudCOS) ListItems(ctx context.Context, folderPath string) ([]string,
 	}
 	return retList, nil
 }
+
+// Delete delete object by path
+func (t *TCloudCOS) Delete(ctx context.Context, path string) error {
+	deletePath := filepath.Join(t.prefix, path)
+	_, err := t.cli.Object.Delete(ctx, deletePath)
+	if err != nil {
+		return err
+	}
+	return nil
+}

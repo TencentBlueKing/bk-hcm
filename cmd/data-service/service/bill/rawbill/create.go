@@ -35,7 +35,7 @@ func (s *service) CreateRawBill(cts *rest.Contexts) (interface{}, error) {
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-	uploadPath := generateFilePath(req)
+	uploadPath := generateFilePath(req.RawBillPathParam)
 	buffer, err := generateCSV(req.Items)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
