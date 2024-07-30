@@ -56,19 +56,7 @@ func (act PullDailyBillAction) Name() enumor.ActionName {
 
 // Rollback clean old raw bills
 func (act PullDailyBillAction) Rollback(kt run.ExecuteKit, params interface{}) error {
-
-	opt, ok := params.(*registry.PullDailyBillOption)
-	if !ok {
-		return errf.New(errf.InvalidParameter, "params type mismatch for rollback")
-	}
-
-	// clean old raw bill item
-	err := act.cleanRawBills(kt, opt)
-	if err != nil {
-		logs.Errorf("fail to clean raw bills for rollback, err: %v, vendor:%s, rid: %s",
-			err, opt.Vendor, kt.Kit().Rid)
-		return err
-	}
+	logs.Infof("rollback daily pull bill action, rid: %s", kt.Kit().Rid)
 	return nil
 }
 

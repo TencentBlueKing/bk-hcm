@@ -139,7 +139,7 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 			return err
 		}
 
-		privateIPv4Addresses, publicIPv4Addresses, privateIPv6Addresses,
+		privateIPv4Addresses, privateIPv6Addresses, publicIPv4Addresses,
 			publicIPv6Addresses := cli.getIps(one.Addresses)
 
 		sgIDs := make([]string, 0)
@@ -295,7 +295,7 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 			return err
 		}
 
-		privateIPv4Addresses, publicIPv4Addresses, privateIPv6Addresses,
+		privateIPv4Addresses, privateIPv6Addresses, publicIPv4Addresses,
 			publicIPv6Addresses := cli.getIps(one.Addresses)
 
 		sgIDs := make([]string, 0)
@@ -422,8 +422,8 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 	return nil
 }
 
-func (cli *client) getIps(serverAddress map[string][]model.ServerAddress) (priV4 []string, pubV4 []string,
-	priV6 []string, pubV6 []string) {
+func (cli *client) getIps(serverAddress map[string][]model.ServerAddress) ([]string, []string,
+	[]string, []string) {
 
 	privateIPv4Addresses := make([]string, 0)
 	publicIPv4Addresses := make([]string, 0)

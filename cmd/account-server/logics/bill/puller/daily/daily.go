@@ -208,7 +208,7 @@ func (dp *DailyPuller) createNewPullTask(kt *kit.Kit, billTask *bill.BillDailyPu
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create dail raw bill pull flow, err %s", err.Error())
+		return fmt.Errorf("failed to create daily raw bill pull flow, err %s", err.Error())
 	}
 	if err := dp.updateDailyPullTaskFlowID(kt, billTask.ID, flowResult.ID); err != nil {
 		return fmt.Errorf("update daily pull flow id failed, err %s", err.Error())
