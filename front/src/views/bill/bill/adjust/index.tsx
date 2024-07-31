@@ -27,7 +27,7 @@ import {
 import { DoublePlainObject, QueryRuleOPEnum, RulesItem } from '@/typings';
 import useBillStore from '@/store/useBillStore';
 import { computed } from '@vue/reactivity';
-import { formatBillCost } from '@/utils';
+import { BillSearchRules, formatBillCost } from '@/utils';
 import { useRoute } from 'vue-router';
 
 export default defineComponent({
@@ -199,22 +199,11 @@ export default defineComponent({
 
     onMounted(() => {
       // 只有业务、二级账号有保存的需求
-      const rules = [];
-      if (route.query[BILL_MAIN_ACCOUNTS_KEY]) {
-        rules.push({
-          field: 'main_account_id',
-          op: QueryRuleOPEnum.IN,
-          value: JSON.parse(atob(route.query[BILL_MAIN_ACCOUNTS_KEY] as string)),
-        });
-      }
-      if (route.query[BILL_BIZS_KEY]) {
-        rules.push({
-          field: 'bk_biz_id',
-          op: QueryRuleOPEnum.IN,
-          value: JSON.parse(atob(route.query[BILL_BIZS_KEY] as string)),
-        });
-      }
-      reloadTable(rules);
+      const billSearchRules = new BillSearchRules();
+      billSearchRules
+        .addRule(route, BILL_BIZS_KEY, 'bk_biz_id', QueryRuleOPEnum.IN)
+        .addRule(route, BILL_MAIN_ACCOUNTS_KEY, 'main_account_id', QueryRuleOPEnum.IN);
+      reloadTable(billSearchRules.rules);
     });
 
     return () => (

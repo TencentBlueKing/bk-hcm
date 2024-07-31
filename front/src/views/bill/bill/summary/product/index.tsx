@@ -11,6 +11,7 @@ import { useTable } from '@/hooks/useTable/useTable';
 import { exportBillsBizSummary, reqBillsBizSummaryList, reqBillsMainAccountSummarySum } from '@/api/bill';
 import { QueryRuleOPEnum, RulesItem } from '@/typings';
 import { BILL_BIZS_KEY } from '@/constants';
+import { BillSearchRules } from '@/utils';
 
 export default defineComponent({
   name: 'OperationProductTabPanel',
@@ -28,7 +29,7 @@ export default defineComponent({
     const { CommonTable, getListData, clearFilter, filter } = useTable({
       searchOptions: { disabled: true },
       tableOptions: {
-        columns: columns.slice(2),
+        columns: columns.slice(3),
       },
       requestOption: {
         sortOption: {
@@ -62,15 +63,9 @@ export default defineComponent({
 
     onMounted(() => {
       // 只有业务有保存的需求
-      const rules = [];
-      if (route.query[BILL_BIZS_KEY]) {
-        rules.push({
-          field: 'bk_biz_id',
-          op: QueryRuleOPEnum.IN,
-          value: JSON.parse(atob(route.query[BILL_BIZS_KEY] as string)),
-        });
-      }
-      reloadTable(rules);
+      const billSearchRules = new BillSearchRules();
+      billSearchRules.addRule(route, BILL_BIZS_KEY, 'bk_biz_id', QueryRuleOPEnum.IN);
+      reloadTable(billSearchRules.rules);
     });
 
     return () => (

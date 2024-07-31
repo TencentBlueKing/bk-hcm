@@ -1975,7 +1975,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
     {
       label: '业务名称',
-      field: 'product_name',
+      field: 'bk_biz_id',
       isDefaultShow: true,
       render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
     },
@@ -2003,6 +2003,20 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '当前账单美金（美元）',
       field: 'current_month_cost',
+      isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
+    },
+    {
+      label: '调账人民币（元）',
+      field: 'adjustment_rmb_cost',
+      isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
+    },
+    {
+      label: '调账美金（美元）',
+      field: 'adjustment_cost',
       isDefaultShow: true,
       render: ({ cell }: any) => formatBillCost(cell),
       sort: true,
