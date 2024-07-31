@@ -61,7 +61,7 @@ func (svc *service) UpdateBillDailyPullTask(cts *rest.Contexts) (interface{}, er
 		Currency:           enumor.CurrencyCode(req.Currency),
 		FlowID:             req.FlowID,
 		SplitFlowID:        req.SplitFlowID,
-		DailySummaryFlowID: &req.DailySummaryFlowID,
+		DailySummaryFlowID: req.DailySummaryFlowID,
 	}
 	if !req.Cost.IsZero() {
 		billDailyPullTask.Cost = &types.Decimal{Decimal: req.Cost}

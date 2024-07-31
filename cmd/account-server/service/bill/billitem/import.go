@@ -198,10 +198,11 @@ func (b *billItemSvc) createOrUpdatePullTasks(kt *kit.Kit, vendor enumor.Vendor,
 
 // reset daily pull task to split state and clear daily summary flow id
 func (b *billItemSvc) updatePullTaskStateAndDailySummaryFlowID(kt *kit.Kit, task *dsbill.BillDailyPullTaskResult) error {
+	emptyFlowID := ""
 	updateReq := &dsbill.BillDailyPullTaskUpdateReq{
 		ID:                 task.ID,
 		State:              enumor.MainAccountRawBillPullStateSplit,
-		DailySummaryFlowID: "",
+		DailySummaryFlowID: &emptyFlowID,
 	}
 	err := b.client.DataService().Global.Bill.UpdateBillDailyPullTask(kt, updateReq)
 	if err != nil {

@@ -276,6 +276,6 @@ func (msdc *MainSummaryDailyController) createDailySummaryTask(
 func (msdc *MainSummaryDailyController) updateDailySummaryTaskFlowID(kt *kit.Kit, dataID, flowID string) error {
 	return msdc.Client.DataService().Global.Bill.UpdateBillDailyPullTask(kt, &bill.BillDailyPullTaskUpdateReq{
 		ID:                 dataID,
-		DailySummaryFlowID: flowID,
+		DailySummaryFlowID: &flowID,
 	})
 }
