@@ -20,5 +20,6 @@
 package bill
 
 import (
+	// import zenlayer puller
 	_ "hcm/cmd/account-server/logics/bill/puller/zenlayer"
 )
