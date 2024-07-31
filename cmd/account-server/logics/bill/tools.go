@@ -20,12 +20,14 @@
 package bill
 
 import (
+	"strings"
+	"time"
+
 	"hcm/pkg/cc"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/serviced"
-	"strings"
-	"time"
+	"hcm/pkg/tools/times"
 )
 
 const (
@@ -51,8 +53,12 @@ func getCurrentBillMonth() (int, int) {
 
 func getLastBillMonth() (int, int) {
 	now := time.Now().UTC()
-	lastMonthNow := now.AddDate(0, -1, 0)
-	return lastMonthNow.Year(), int(lastMonthNow.Month())
+	return times.GetRelativeMonth(now, -1)
+}
+
+func getMonthOffset(offset int) (int, int) {
+	now := time.Now().UTC()
+	return times.GetRelativeMonth(now, offset)
 }
 
 func getTaskServerKeyList(sd serviced.ServiceDiscover) ([]string, error) {
