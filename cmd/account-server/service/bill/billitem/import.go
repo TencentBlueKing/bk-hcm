@@ -21,7 +21,6 @@ package billitem
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"reflect"
 
@@ -152,6 +151,8 @@ func (b *billItemSvc) createOrUpdatePullTasks(kt *kit.Kit, vendor enumor.Vendor,
 	}
 
 	accountToBillDayMap := make(map[string][]int, len(items))
+	days := getMonthDays(billYear, billMonth)
+	createReqs := make([]*dsbill.BillDailyPullTaskCreateReq, 0, len(items))
 	for _, summaryMain := range summaryMainResults {
 		billDayList := make([]int, 0)
 		for _, pullTask := range mapPullTasks[summaryMain.MainAccountID] {
@@ -161,34 +162,28 @@ func (b *billItemSvc) createOrUpdatePullTasks(kt *kit.Kit, vendor enumor.Vendor,
 			billDayList = append(billDayList, pullTask.BillDay)
 		}
 		accountToBillDayMap[summaryMain.MainAccountID] = billDayList
-	}
 
-	createReqs := make(map[string]*dsbill.BillDailyPullTaskCreateReq, len(items))
-	for _, item := range items {
-		inSlice := slice.IsItemInSlice[int](accountToBillDayMap[item.MainAccountID], item.BillDay)
-		if inSlice {
-			// already has a daily pull task for this bill day, skip
-			continue
-		}
-
-		// 去重, 防止items中有重复日期的账单
-		key := fmt.Sprintf("%s-%s-%d-%d-%d-%d", item.RootAccountID, item.MainAccountID,
-			item.BillYear, item.BillMonth, item.BillDay, item.VersionID)
-		createReqs[key] = &dsbill.BillDailyPullTaskCreateReq{
-			RootAccountID: item.RootAccountID,
-			MainAccountID: item.MainAccountID,
-			Vendor:        item.Vendor,
-			ProductID:     item.ProductID,
-			BkBizID:       item.BkBizID,
-			BillYear:      item.BillYear,
-			BillMonth:     item.BillMonth,
-			BillDay:       item.BillDay,
-			VersionID:     item.VersionID,
-			State:         enumor.MainAccountRawBillPullStateSplit,
-			Count:         0,
-			Currency:      "",
-			Cost:          decimal.NewFromFloat(0),
-			FlowID:        "",
+		for _, day := range days {
+			if slice.IsItemInSlice[int](billDayList, day) {
+				continue
+			}
+			createReq := &dsbill.BillDailyPullTaskCreateReq{
+				RootAccountID: summaryMain.RootAccountID,
+				MainAccountID: summaryMain.MainAccountID,
+				Vendor:        summaryMain.Vendor,
+				ProductID:     summaryMain.ProductID,
+				BkBizID:       summaryMain.BkBizID,
+				BillYear:      summaryMain.BillYear,
+				BillMonth:     summaryMain.BillMonth,
+				BillDay:       day,
+				VersionID:     summaryMain.CurrentVersion,
+				State:         enumor.MainAccountRawBillPullStateSplit,
+				Count:         0,
+				Currency:      "",
+				Cost:          decimal.NewFromFloat(0),
+				FlowID:        "",
+			}
+			createReqs = append(createReqs, createReq)
 		}
 	}
 
@@ -198,7 +193,6 @@ func (b *billItemSvc) createOrUpdatePullTasks(kt *kit.Kit, vendor enumor.Vendor,
 			return err
 		}
 	}
-
 	return nil
 }
 
