@@ -1,3 +1,5 @@
+import isIP from 'validator/es/lib/isIP';
+
 /**
  * 获取实例的ip地址
  * @param inst 实例
@@ -26,4 +28,45 @@ const getInstVip = (inst: any) => {
   return '--';
 };
 
-export { getInstVip };
+/**
+ * 按内置分隔符切割IP文本
+ * @param raw 原始文本
+ * @returns 切割后的列表
+ */
+const splitIP = (raw: string): string[] => {
+  const list: string[] = [];
+  raw
+    .trim()
+    .split(/\n|;|；|,|，|\|/)
+    .forEach((text) => {
+      const ip = text.trim();
+      ip.length && list.push(ip);
+    });
+  return list;
+};
+
+/**
+ * 从文本中解析出IP地址
+ * @param text IP文本
+ * @returns IPv4与IPv6地址列表
+ */
+const parseIP = (text: string) => {
+  const list = splitIP(text);
+  const IPv4List: string[] = [];
+  const IPv6List: string[] = [];
+
+  list.forEach((text) => {
+    if (isIP(text, 4)) {
+      IPv4List.push(text);
+    } else if (isIP(text, 6)) {
+      IPv6List.push(text);
+    }
+  });
+
+  return {
+    IPv4List,
+    IPv6List,
+  };
+};
+
+export { getInstVip, splitIP, parseIP };

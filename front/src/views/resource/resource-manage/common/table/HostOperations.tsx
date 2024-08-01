@@ -409,7 +409,8 @@ export default defineComponent({
           title={computedTitle.value}
           ref={dialogRef}
           width={1500}
-          closeIcon={!isLoading.value}>
+          closeIcon={!isLoading.value}
+          onClosed={() => (operationType.value = Operations.None)}>
           {{
             default: () => (
               <Loading loading={isDialogLoading.value}>
