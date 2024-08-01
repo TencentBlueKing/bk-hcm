@@ -598,15 +598,16 @@ func (rac *RootAccountController) createMonthFlow(
 
 func (rac *RootAccountController) createMonthPullTaskStub(kt *kit.Kit,
 	rootSummary *dsbillapi.BillSummaryRootResult) error {
-	taskResult, err := rac.Client.DataService().Global.Bill.CreateBillMonthPullTask(kt,
-		&dsbillapi.BillMonthTaskCreateReq{
-			RootAccountID: rac.RootAccountID,
-			Vendor:        rac.Vendor,
-			BillYear:      rootSummary.BillYear,
-			BillMonth:     rootSummary.BillMonth,
-			VersionID:     rootSummary.CurrentVersion,
-			State:         enumor.RootAccountMonthBillTaskStatePulling,
-		})
+
+	createReq := &dsbillapi.BillMonthTaskCreateReq{
+		RootAccountID: rac.RootAccountID,
+		Vendor:        rac.Vendor,
+		BillYear:      rootSummary.BillYear,
+		BillMonth:     rootSummary.BillMonth,
+		VersionID:     rootSummary.CurrentVersion,
+		State:         enumor.RootAccountMonthBillTaskStatePulling,
+	}
+	taskResult, err := rac.Client.DataService().Global.Bill.CreateBillMonthPullTask(kt, createReq)
 	if err != nil {
 		logs.Infof("create month pull task failed, err: %s, rid: %s", err.Error(), kt.Rid)
 		return err
