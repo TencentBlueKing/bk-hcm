@@ -24,10 +24,11 @@ import (
 	"hcm/pkg/criteria/validator"
 )
 
-// MainAccountAcommonCreateReq ...
+// MainAccountCommonCreateReq ...
 type MainAccountCommonCreateReq struct {
 	Vendor       enumor.Vendor                  `json:"vendor" validate:"required"`
 	Email        string                         `json:"email" validate:"required"`
+	VerifyCode   string                         `json:"verify_code" validate:"required"`
 	Managers     []string                       `json:"managers" validate:"required,max=5"`
 	BakManagers  []string                       `json:"bak_managers" validate:"required,max=5"`
 	Site         enumor.MainAccountSiteType     `json:"site" validate:"required"`
@@ -101,7 +102,7 @@ func (req *MainAccountCompleteReq) Validate() error {
 	return nil
 }
 
-// RootAccountCommonAddReq ...
+// MainAccountCommonUpdateReq ...
 type MainAccountCommonUpdateReq struct {
 	ID          string        `json:"id" validate:"required,min=3,max=64"`
 	Vendor      enumor.Vendor `json:"vendor" validate:"required"`
