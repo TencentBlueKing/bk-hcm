@@ -41,6 +41,7 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/serviced"
 	"hcm/pkg/tools/slice"
+	"hcm/pkg/tools/times"
 )
 
 // RootAccountControllerOption option for RootAccountController
@@ -132,9 +133,9 @@ func (rac *RootAccountController) runCalculateBillSummaryLoop(kt *kit.Kit) {
 		select {
 		case <-ticker.C:
 			subKit := kt.NewSubKit()
-			lastBillYear, lastBillMonth := getLastBillMonth()
+			lastBillYear, lastBillMonth := times.GetLastMonthUTC()
 			lastMonthFlowID = rac.pollRootSummaryTask(subKit, lastMonthFlowID, lastBillYear, lastBillMonth)
-			curBillYear, curBillMonth := getCurrentBillMonth()
+			curBillYear, curBillMonth := times.GetCurrentMonthUTC()
 			curMonthFlowID = rac.pollRootSummaryTask(subKit, curMonthFlowID, curBillYear, curBillMonth)
 
 		case <-kt.Ctx.Done():
@@ -150,12 +151,12 @@ func (rac *RootAccountController) runMonthTaskLoop(kt *kit.Kit) {
 	for {
 		select {
 		case <-ticker.C:
-			lastBillYear, lastBillMonth := getLastBillMonth()
+			lastBillYear, lastBillMonth := times.GetLastMonthUTC()
 			if err := rac.ensureMonthTask(kt.NewSubKit(), lastBillYear, lastBillMonth); err != nil {
 				logs.Warnf("ensure last month task for (%s, %s) failed, err %s, rid: %s",
 					rac.RootAccountID, rac.Vendor, err.Error(), kt.Rid)
 			}
-			curBillYear, curBillMonth := getCurrentBillMonth()
+			curBillYear, curBillMonth := times.GetCurrentMonthUTC()
 			if err := rac.ensureMonthTask(kt.NewSubKit(), curBillYear, curBillMonth); err != nil {
 				logs.Warnf("ensure current month task for (%s, %s) failed, err %s, rid: %s",
 					rac.RootAccountID, rac.Vendor, err.Error(), kt.Rid)
@@ -235,12 +236,12 @@ func (rac *RootAccountController) createRootSummaryTask(
 }
 
 func (rac *RootAccountController) syncBillSummary(kt *kit.Kit) error {
-	curBillYear, curBillMonth := getCurrentBillMonth()
+	curBillYear, curBillMonth := times.GetCurrentMonthUTC()
 	if err := rac.ensureBillSummary(kt.NewSubKit(), curBillYear, curBillMonth); err != nil {
 		return fmt.Errorf("ensure root account bill summary for %d %d failed, err %s, rid: %s",
 			curBillYear, curBillMonth, err.Error(), kt.Rid)
 	}
-	lastBillYear, lastBillMonth := getLastBillMonth()
+	lastBillYear, lastBillMonth := times.GetLastMonthUTC()
 	if err := rac.ensureBillSummary(kt.NewSubKit(), lastBillYear, lastBillMonth); err != nil {
 		return fmt.Errorf("ensure root account bill summary for %d %d failed, err %s, rid: %s",
 			lastBillYear, lastBillMonth, err.Error(), kt.Rid)
@@ -597,14 +598,15 @@ func (rac *RootAccountController) createMonthFlow(
 
 func (rac *RootAccountController) createMonthPullTaskStub(kt *kit.Kit,
 	rootSummary *dsbillapi.BillSummaryRootResult) error {
-	taskResult, err := rac.Client.DataService().Global.Bill.CreateBillMonthPullTask(kt, &dsbillapi.BillMonthTaskCreateReq{
-		RootAccountID: rac.RootAccountID,
-		Vendor:        rac.Vendor,
-		BillYear:      rootSummary.BillYear,
-		BillMonth:     rootSummary.BillMonth,
-		VersionID:     rootSummary.CurrentVersion,
-		State:         enumor.RootAccountMonthBillTaskStatePulling,
-	})
+	taskResult, err := rac.Client.DataService().Global.Bill.CreateBillMonthPullTask(kt,
+		&dsbillapi.BillMonthTaskCreateReq{
+			RootAccountID: rac.RootAccountID,
+			Vendor:        rac.Vendor,
+			BillYear:      rootSummary.BillYear,
+			BillMonth:     rootSummary.BillMonth,
+			VersionID:     rootSummary.CurrentVersion,
+			State:         enumor.RootAccountMonthBillTaskStatePulling,
+		})
 	if err != nil {
 		logs.Infof("create month pull task failed, err: %s, rid: %s", err.Error(), kt.Rid)
 		return err

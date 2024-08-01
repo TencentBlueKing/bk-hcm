@@ -39,6 +39,7 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/serviced"
 	"hcm/pkg/tools/slice"
+	"hcm/pkg/tools/times"
 )
 
 // NewMainDailySplitController create main account daily splitter controller
@@ -154,11 +155,11 @@ func (msdc *MainDailySplitController) runBillDailySplitLoop(kt *kit.Kit) {
 }
 
 func (msdc *MainDailySplitController) doSync(kt *kit.Kit) error {
-	curBillYear, curBillMonth := getCurrentBillMonth()
+	curBillYear, curBillMonth := times.GetCurrentMonthUTC()
 	if err := msdc.syncDailySplit(kt.NewSubKit(), curBillYear, curBillMonth); err != nil {
 		return fmt.Errorf("ensure daily split for %d %d failed, err %s", curBillYear, curBillMonth, err.Error())
 	}
-	lastBillYear, lastBillMonth := getLastBillMonth()
+	lastBillYear, lastBillMonth := times.GetLastMonthUTC()
 	if err := msdc.syncDailySplit(kt.NewSubKit(), lastBillYear, lastBillMonth); err != nil {
 		return fmt.Errorf("ensure daily split for %d %d failed, err %s", lastBillYear, lastBillMonth, err.Error())
 	}

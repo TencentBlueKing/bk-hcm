@@ -39,6 +39,7 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/serviced"
 	"hcm/pkg/tools/slice"
+	"hcm/pkg/tools/times"
 )
 
 // MainAccountControllerOption option for MainAccountController
@@ -143,12 +144,12 @@ func (mac *MainAccountController) Start() error {
 
 // do sync
 func (mac *MainAccountController) syncBillSummary(kt *kit.Kit) error {
-	curBillYear, curBillMonth := getCurrentBillMonth()
+	curBillYear, curBillMonth := times.GetCurrentMonthUTC()
 	if err := mac.ensureBillSummary(kt.NewSubKit(), curBillYear, curBillMonth); err != nil {
 		return fmt.Errorf("ensure bill summary for %d %d failed, err %s, rid: %s",
 			curBillYear, curBillMonth, err.Error(), kt.Rid)
 	}
-	lastBillYear, lastBillMonth := getLastBillMonth()
+	lastBillYear, lastBillMonth := times.GetLastMonthUTC()
 	if err := mac.ensureBillSummary(kt.NewSubKit(), lastBillYear, lastBillMonth); err != nil {
 		return fmt.Errorf("ensure bill summary for %d %d failed, err %s, rid: %s",
 			lastBillYear, lastBillMonth, err.Error(), kt.Rid)
@@ -185,9 +186,9 @@ func (mac *MainAccountController) runCalculateBillSummaryLoop(kt *kit.Kit) {
 		select {
 		case <-ticker.C:
 			subKit := kt.NewSubKit()
-			lastBillYear, lastBillMonth := getLastBillMonth()
+			lastBillYear, lastBillMonth := times.GetLastMonthUTC()
 			lastMonthflowID = mac.pollMainSummaryTask(subKit, lastMonthflowID, lastBillYear, lastBillMonth)
-			curBillYear, curBillMonth := getCurrentBillMonth()
+			curBillYear, curBillMonth := times.GetCurrentMonthUTC()
 			curMonthflowID = mac.pollMainSummaryTask(subKit, curMonthflowID, curBillYear, curBillMonth)
 
 		case <-kt.Ctx.Done():
@@ -292,7 +293,7 @@ func (mac *MainAccountController) runDailyRawBillLoop(kt *kit.Kit) {
 func (mac *MainAccountController) syncDailyRawBill(kt *kit.Kit) error {
 	// 同步拉取任务
 	// 上月
-	lastBillYear, lastBillMonth := getLastBillMonth()
+	lastBillYear, lastBillMonth := times.GetLastMonthUTC()
 	lastBillSummaryMain, err := mac.getMainBillSummary(kt, lastBillYear, lastBillMonth)
 	if err != nil {
 		return err
@@ -307,7 +308,7 @@ func (mac *MainAccountController) syncDailyRawBill(kt *kit.Kit) error {
 		}
 	}
 	// 本月
-	curBillYear, curBillMonth := getCurrentBillMonth()
+	curBillYear, curBillMonth := times.GetCurrentMonthUTC()
 	billSummaryMain, err := mac.getMainBillSummary(kt, curBillYear, curBillMonth)
 	if err != nil {
 		return err

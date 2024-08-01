@@ -27,7 +27,6 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/serviced"
-	"hcm/pkg/tools/times"
 )
 
 const (
@@ -44,21 +43,6 @@ func getInternalKit() *kit.Kit {
 	newKit.User = string(cc.AccountServerName)
 	newKit.AppCode = string(cc.AccountServerName)
 	return newKit
-}
-
-func getCurrentBillMonth() (int, int) {
-	now := time.Now().UTC()
-	return now.Year(), int(now.Month())
-}
-
-func getLastBillMonth() (int, int) {
-	now := time.Now().UTC()
-	return times.GetRelativeMonth(now, -1)
-}
-
-func getMonthOffset(offset int) (int, int) {
-	now := time.Now().UTC()
-	return times.GetRelativeMonth(now, offset)
 }
 
 func getTaskServerKeyList(sd serviced.ServiceDiscover) ([]string, error) {
