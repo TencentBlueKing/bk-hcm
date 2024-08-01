@@ -25,14 +25,15 @@ import (
 )
 
 // GetLastMonth get last month year and month
-func GetLastMonth(billYear, billMonth int) (int, int, error) {
-	t, err := time.Parse(
-		"2006-01-02T15:04:05.000+08:00", fmt.Sprintf("%d-%02d-02T15:04:05.000+08:00", billYear, billMonth))
-	if err != nil {
-		return 0, 0, err
+func GetLastMonth(year, month int) (int, int, error) {
+	if year < 1 {
+		return 0, 0, fmt.Errorf("invalid year for related: %d", year)
 	}
-	lastT := t.AddDate(0, -1, 0)
-	return lastT.Year(), int(lastT.Month()), nil
+	if month < 1 || month > 12 {
+		return 0, 0, fmt.Errorf("invalid month: %d", month)
+	}
+	y, m := getRelativeMonth(year, month, -1)
+	return y, m, nil
 }
 
 // IsLastDayOfMonth 判断给定的天是否是该月的最后一天
@@ -110,4 +111,33 @@ func GetLastDayOfMonth(year int, month int) (int, error) {
 	// 获取当前月的最后一天
 	lastDay := firstDayOfNextMonth.AddDate(0, 0, -1)
 	return lastDay.Day(), nil
+}
+
+// GetRelativeMonth 计算相对月份和年份
+func GetRelativeMonth(base time.Time, offset int) (int, int) {
+	return getRelativeMonth(base.Year(), int(base.Month()), offset)
+}
+
+// getRelativeMonth 计算相对月份和年份
+func getRelativeMonth(year, month, offset int) (int, int) {
+	cur := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+	wanted := cur.AddDate(0, offset, 0)
+	return wanted.Year(), int(wanted.Month())
+}
+
+// GetCurrentMonthUTC current month in utc
+func GetCurrentMonthUTC() (year int, month int) {
+	return GetRelativeMonthUTC(0)
+
+}
+
+// GetLastMonthUTC last month in utc
+func GetLastMonthUTC() (year int, month int) {
+	return GetRelativeMonthUTC(-1)
+}
+
+// GetRelativeMonthUTC relative month in UTC
+func GetRelativeMonthUTC(offset int) (int, int) {
+	now := time.Now().UTC()
+	return getRelativeMonth(now.Year(), int(now.Month()), offset)
 }
