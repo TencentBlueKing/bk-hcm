@@ -1,1 +1,1 @@
-export * from './option-common';
+export { default } from './option-common';

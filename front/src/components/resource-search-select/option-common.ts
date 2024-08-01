@@ -100,9 +100,11 @@ const getOptionData = (type: ResourceTypeEnum) => {
   return optionMap.get(type);
 };
 
-export const factory = {
+const factory = {
   getOptionData,
   getOptionMenu,
 };
 
 export type FactoryType = typeof factory;
+
+export default factory;

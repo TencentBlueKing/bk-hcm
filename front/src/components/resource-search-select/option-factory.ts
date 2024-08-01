@@ -1,7 +1,10 @@
 import { VendorEnum } from '@/common/constant';
-import { type FactoryType } from './option-common';
+import optionCommon, { type FactoryType } from './option-common';
+import optionAws from './option-aws';
 
-export default async function optionFactory(vendor?: VendorEnum): Promise<FactoryType> {
-  const { factory } = await import(`./option-${vendor ?? 'common'}.ts`);
-  return factory;
+export default function optionFactory(vendor?: Extract<VendorEnum, VendorEnum.AWS>): FactoryType {
+  const optionMap = {
+    [VendorEnum.AWS]: optionAws,
+  };
+  return optionMap[vendor] ?? optionCommon;
 }

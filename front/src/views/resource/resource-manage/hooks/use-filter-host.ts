@@ -1,6 +1,5 @@
 import { onMounted, ref, watch } from 'vue';
 import type { FilterType } from '@/typings/resource';
-import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import { SEARCH_VALUE_IDS } from '@/common/constant';
 import { ResourceTypeEnum } from '@/common/resource-constant';
 import cloneDeep from 'lodash/cloneDeep';
@@ -21,16 +20,10 @@ const useFilterHost = (props: PropsType) => {
   const route = useRoute();
   const regionStore = useRegionsStore();
 
-  let filterOptions: ISearchItem[] = [];
-  const getFilterOptions = async () => {
-    const { getOptionData } = await optionFactory();
-    filterOptions = getOptionData(ResourceTypeEnum.CVM);
-  };
+  const { getOptionData } = optionFactory();
+  const filterOptions = getOptionData(ResourceTypeEnum.CVM);
 
   const saveQueryInSearch = async () => {
-    if (!filterOptions.length) {
-      await getFilterOptions();
-    }
     let params = [] as typeof searchValue.value;
     Object.entries(route.query).forEach(([queryName, queryValue]) => {
       if (!!queryName && SEARCH_VALUE_IDS.includes(queryName)) {

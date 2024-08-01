@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, watchEffect, computed } from 'vue';
+import { computed } from 'vue';
 import { SearchSelect } from 'bkui-vue';
-import type { ISearchItem, ISearchValue } from 'bkui-vue/lib/search-select/utils';
+import type { ISearchValue } from 'bkui-vue/lib/search-select/utils';
 import { ResourceTypeEnum } from '@/common/resource-constant';
 import optionFactory from './option-factory';
 
@@ -20,13 +20,8 @@ const props = withDefaults(defineProps<IResourceSelectProps>(), {
 
 const emit = defineEmits(['update:modelValue']);
 
-const searchOptions = ref<ISearchItem[]>([]);
-const getOptionMenuList = ref();
-watchEffect(async () => {
-  const { getOptionData, getOptionMenu } = await optionFactory();
-  searchOptions.value = getOptionData(props.resourceType);
-  getOptionMenuList.value = getOptionMenu;
-});
+const { getOptionData, getOptionMenu } = optionFactory();
+const searchOptions = getOptionData(props.resourceType);
 
 const selectValue = computed({
   get() {
@@ -45,7 +40,7 @@ const selectValue = computed({
     :clearable="props.clearable"
     :conditions="[]"
     :data="searchOptions"
-    :get-menu-list="getOptionMenuList"
+    :get-menu-list="getOptionMenu"
     :unique-select="true"
   />
 </template>
