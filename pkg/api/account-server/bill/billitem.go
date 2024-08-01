@@ -74,16 +74,34 @@ func (r *ImportBillAdjustmentReq) Validate() error {
 	return validator.Validate.Struct(r)
 }
 
+const (
+	importFileSizeMaxLimit1MB = 1 * 1024 * 1024
+	importBillItemsMaxLimit   = 200000
+)
+
+// Base64String base64 string
+type Base64String string
+
+func (b Base64String) checkSize(expectedSize int) error {
+	if len(b) > expectedSize {
+		return errors.New("file size exceed limit")
+	}
+	return nil
+}
+
 // ImportBillItemPreviewReq 账单明细预览
 type ImportBillItemPreviewReq struct {
 	BillYear  int `json:"bill_year" validate:"required"`
 	BillMonth int `json:"bill_month" validate:"required"`
 	// 调账 文件上传
-	ExcelFileBase64 string `json:"excel_file_base64" validate:"required"`
+	ExcelFileBase64 Base64String `json:"excel_file_base64" validate:"required"`
 }
 
 // Validate ...
 func (r *ImportBillItemPreviewReq) Validate() error {
+	if err := r.ExcelFileBase64.checkSize(importFileSizeMaxLimit1MB); err != nil {
+		return err
+	}
 	return validator.Validate.Struct(r)
 }
 
@@ -104,6 +122,9 @@ type ImportBillItemReq struct {
 func (r *ImportBillItemReq) Validate() error {
 	if len(r.Items) == 0 {
 		return errf.New(errf.InvalidParameter, "items is empty")
+	}
+	if len(r.Items) > importBillItemsMaxLimit {
+		return errf.New(errf.InvalidParameter, "items count exceed limit 200000")
 	}
 	return validator.Validate.Struct(r)
 }

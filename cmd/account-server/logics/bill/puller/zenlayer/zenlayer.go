@@ -47,16 +47,14 @@ type ZenlayerPuller struct {
 }
 
 // EnsurePullTask 空实现，PullTask的创建由账单导入模块完成
-func (hp *ZenlayerPuller) EnsurePullTask(
-	kt *kit.Kit, client *client.ClientSet,
+func (hp *ZenlayerPuller) EnsurePullTask(kt *kit.Kit, client *client.ClientSet,
 	sd serviced.ServiceDiscover, billSummaryMain *dsbillapi.BillSummaryMainResult) error {
 
 	return nil
 }
 
 // GetPullTaskList ...
-func (hp *ZenlayerPuller) GetPullTaskList(
-	kt *kit.Kit, client *client.ClientSet,
+func (hp *ZenlayerPuller) GetPullTaskList(kt *kit.Kit, client *client.ClientSet,
 	sd serviced.ServiceDiscover, billSummaryMain *dsbillapi.BillSummaryMainResult) (
 	[]*bill.BillDailyPullTaskResult, error) {
 

@@ -41,6 +41,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 
 	"github.com/shopspring/decimal"
@@ -93,6 +94,7 @@ func (b *billItemSvc) importZenlayerBillItemsPreview(kt *kit.Kit, req *bill.Impo
 	cloudIDToSummaryMainMap, err := b.listSummaryMainByBusinessGroups(kt, enumor.Zenlayer,
 		businessGroupIDs, req.BillYear, req.BillMonth)
 	if err != nil {
+		logs.Errorf("list summary main by business groups failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
@@ -100,18 +102,16 @@ func (b *billItemSvc) importZenlayerBillItemsPreview(kt *kit.Kit, req *bill.Impo
 	createReqs, err := convertZenlayerRawBillItemToRawBillCreateReq(kt, req.BillYear, req.BillMonth,
 		records, cloudIDToSummaryMainMap)
 	if err != nil {
+		logs.Errorf("convert raw bill item to createReqs failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
 	rate, err := b.getExchangedRate(kt, req.BillYear, req.BillMonth)
 	if err != nil {
+		logs.Errorf("get exchange rate, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
-	costMap, err := doCalculate(createReqs, rate)
-	if err != nil {
-		return nil, err
-	}
-
+	costMap := doCalculate(createReqs, rate)
 	return bill.ImportBillItemPreviewResult{
 		Items:   createReqs,
 		CostMap: costMap,
@@ -120,12 +120,12 @@ func (b *billItemSvc) importZenlayerBillItemsPreview(kt *kit.Kit, req *bill.Impo
 
 type convertStringToEntityFunc[T any] func([]string) (T, error)
 
-func getReader(str string) io.Reader {
+func convertBase64StrToReader(str bill.Base64String) io.Reader {
 	return base64.NewDecoder(base64.StdEncoding, bytes.NewReader([]byte(str)))
 }
 
-func parseExcelToRecords[T any](kt *kit.Kit, base64 string, convertFunc convertStringToEntityFunc[T]) ([]T, error) {
-	reader := getReader(base64)
+func parseExcelToRecords[T any](kt *kit.Kit, base64 bill.Base64String, convertFunc convertStringToEntityFunc[T]) ([]T, error) {
+	reader := convertBase64StrToReader(base64)
 	records := make([]T, 0)
 	err := excelRowsIterator(kt, reader, 0, constant.BatchOperationMaxLimit,
 		func(rows [][]string, err error) error {
@@ -142,8 +142,7 @@ func parseExcelToRecords[T any](kt *kit.Kit, base64 string, convertFunc convertS
 			return nil
 		})
 	if err != nil {
-		logs.Errorf("fail parse excel file, err: %v, rid: %s", err, kt.Rid)
-
+		logs.Errorf("fail to parse excel file for zenlayer bill import perview, err: %v, rid: %s", err, kt.Rid)
 		return nil, errf.New(errf.BillItemImportDataError, "fail parse excel file")
 	}
 	return records, nil
@@ -151,7 +150,7 @@ func parseExcelToRecords[T any](kt *kit.Kit, base64 string, convertFunc convertS
 
 func (b *billItemSvc) getExchangedRate(kt *kit.Kit, billYear, billMonth int) (*decimal.Decimal, error) {
 	// 获取汇率
-	result, err := b.client.DataService().Global.Bill.ListExchangeRate(kt, &core.ListReq{
+	listReq := &core.ListReq{
 		Filter: tools.ExpressionAnd(
 			tools.RuleEqual("from_currency", enumor.CurrencyUSD),
 			tools.RuleEqual("to_currency", enumor.CurrencyRMB),
@@ -162,7 +161,8 @@ func (b *billItemSvc) getExchangedRate(kt *kit.Kit, billYear, billMonth int) (*d
 			Start: 0,
 			Limit: 1,
 		},
-	})
+	}
+	result, err := b.client.DataService().Global.Bill.ListExchangeRate(kt, listReq)
 	if err != nil {
 		return nil, fmt.Errorf("get exchange rate from %s to %s in %d-%d failed, err %s",
 			enumor.CurrencyUSD, enumor.CurrencyRMB, billYear, billMonth, err.Error())
@@ -178,8 +178,8 @@ func (b *billItemSvc) getExchangedRate(kt *kit.Kit, billYear, billMonth int) (*d
 	return result.Details[0].ExchangeRate, nil
 }
 
-func doCalculate(records []dsbill.BillItemCreateReq[json.RawMessage], rate *decimal.Decimal) (
-	map[enumor.CurrencyCode]*billcore.CostWithCurrency, error) {
+func doCalculate(records []dsbill.BillItemCreateReq[json.RawMessage],
+	rate *decimal.Decimal) map[enumor.CurrencyCode]*billcore.CostWithCurrency {
 
 	retMap := make(map[enumor.CurrencyCode]*billcore.CostWithCurrency)
 	for _, record := range records {
@@ -193,7 +193,7 @@ func doCalculate(records []dsbill.BillItemCreateReq[json.RawMessage], rate *deci
 		retMap[record.Currency].Cost = retMap[record.Currency].Cost.Add(record.Cost)
 		retMap[record.Currency].RMBCost = retMap[record.Currency].RMBCost.Add(record.Cost.Mul(*rate))
 	}
-	return retMap, nil
+	return retMap
 }
 
 func (b *billItemSvc) listSummaryMainByBusinessGroups(kt *kit.Kit, vendor enumor.Vendor, businessGroupIDs []string,
@@ -203,14 +203,16 @@ func (b *billItemSvc) listSummaryMainByBusinessGroups(kt *kit.Kit, vendor enumor
 	idToCloudIDMap := make(map[string]string, len(businessGroupIDs))
 	accountIDs := make([]string, 0, len(businessGroupIDs))
 	for _, ids := range slice.Split(businessGroupIDs, int(core.DefaultMaxPageLimit)) {
-		list, err := b.client.DataService().Global.MainAccount.List(kt, &core.ListReq{
+		listReq := &core.ListReq{
 			Filter: tools.ExpressionAnd(
 				tools.RuleEqual("vendor", vendor),
 				tools.RuleIn("cloud_id", ids),
 			),
 			Page: core.NewDefaultBasePage(),
-		})
+		}
+		list, err := b.client.DataService().Global.MainAccount.List(kt, listReq)
 		if err != nil {
+			logs.Errorf("list main account failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
 		}
 		for _, detail := range list.Details {
@@ -222,6 +224,7 @@ func (b *billItemSvc) listSummaryMainByBusinessGroups(kt *kit.Kit, vendor enumor
 	result := make(map[string]*dsbill.BillSummaryMainResult, len(accountIDs))
 	summaryMains, err := b.listSummaryMainByMainAccountIDs(kt, vendor, accountIDs, billYear, billMonth)
 	if err != nil {
+		logs.Errorf("list summary main by main account ids failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 	for _, summaryMain := range summaryMains {
@@ -237,22 +240,18 @@ func convertZenlayerRawBillItemToRawBillCreateReq(kt *kit.Kit, billYear, billMon
 
 	result := make([]dsbill.BillItemCreateReq[json.RawMessage], 0, len(recordList))
 	for _, record := range recordList {
-		mainAccountCloudID := *record.BusinessGroup
+		err := validateBillYearAndMonth(converter.PtrToVal[string](record.BillingPeriod), billYear, billMonth)
+		if err != nil {
+			logs.Errorf("validate year and month failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
 
-		tmp := dsbill.BillItemCreateReq[json.RawMessage]{}
-
-		tmp.Vendor = enumor.Zenlayer
+		mainAccountCloudID := converter.PtrToVal[string](record.BusinessGroup)
 		summaryMain, ok := summaryMap[mainAccountCloudID]
 		if !ok {
 			logs.Errorf("fail to find summary main by cloud id(%s), rid: %s", mainAccountCloudID, kt.Rid)
 			return nil, fmt.Errorf("fail to find summary main by cloud id(%s)", mainAccountCloudID)
 		}
-		tmp.RootAccountID = summaryMain.RootAccountID
-		tmp.MainAccountID = summaryMain.MainAccountID
-		tmp.ProductID = summaryMain.ProductID
-		tmp.BkBizID = summaryMain.BkBizID
-		tmp.VersionID = summaryMain.CurrentVersion
-
 		split := strings.Split(*record.BillID, "-")
 		if len(split) != 3 {
 			return nil, fmt.Errorf("invalid bill id: %s, expect format: yy-mm-dd", *record.BillID)
@@ -261,39 +260,44 @@ func convertZenlayerRawBillItemToRawBillCreateReq(kt *kit.Kit, billYear, billMon
 		if err != nil {
 			return nil, err
 		}
-		curYear, err := strconv.Atoi((*record.BillingPeriod)[:4])
-		if err != nil {
-			return nil, err
-		}
-		curMonth, err := strconv.Atoi((*record.BillingPeriod)[4:])
-		if err != nil {
-			return nil, err
-		}
-		// validate bill year and month
-		if curYear != billYear || curMonth != billMonth {
-			return nil, errf.NewFromErr(errf.BillItemImportBillDateError,
-				fmt.Errorf("invalid billID, expect: %d-%d, but got: %d-%d",
-					billYear, billMonth, curYear, curMonth))
-		}
-		tmp.BillYear = billYear
-		tmp.BillMonth = billMonth
-		tmp.BillDay = curDay
-
-		if record.TotalPayable != nil {
-			tmp.Cost = *record.TotalPayable
-		}
-		if record.Currency != nil {
-			tmp.Currency = enumor.CurrencyCode(*record.Currency)
-		}
-
 		data, err := json.Marshal(record)
 		if err != nil {
 			return nil, err
 		}
-		tmp.Extension = (*json.RawMessage)(&data)
-		result = append(result, tmp)
+		result = append(result, dsbill.BillItemCreateReq[json.RawMessage]{
+			RootAccountID: summaryMain.RootAccountID,
+			MainAccountID: summaryMain.MainAccountID,
+			Vendor:        enumor.Zenlayer,
+			ProductID:     summaryMain.ProductID,
+			BkBizID:       summaryMain.BkBizID,
+			BillYear:      billYear,
+			BillMonth:     billMonth,
+			BillDay:       curDay,
+			VersionID:     summaryMain.CurrentVersion,
+			Currency:      enumor.CurrencyCode(converter.PtrToVal[string](record.Currency)),
+			Cost:          converter.PtrToVal[decimal.Decimal](record.TotalPayable),
+			Extension:     (*json.RawMessage)(&data),
+		})
 	}
 	return result, nil
+}
+
+func validateBillYearAndMonth(curDate string, billYear, billMonth int) error {
+	curYear, err := strconv.Atoi(curDate[:4])
+	if err != nil {
+		return err
+	}
+	curMonth, err := strconv.Atoi(curDate[4:])
+	if err != nil {
+		return err
+	}
+	// validate bill year and month
+	if curYear != billYear || curMonth != billMonth {
+		err = fmt.Errorf("invalid billID, expect: %d-%d, but got: %d-%d",
+			billYear, billMonth, curYear, curMonth)
+		return errf.NewFromErr(errf.BillItemImportBillDateError, err)
+	}
+	return nil
 }
 
 func convertStringToZenlayerRawBillItem(row []string) (billcore.ZenlayerRawBillItem, error) {

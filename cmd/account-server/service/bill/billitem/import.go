@@ -30,6 +30,7 @@ import (
 	"hcm/pkg/api/core"
 	billcore "hcm/pkg/api/core/bill"
 	dsbill "hcm/pkg/api/data-service/bill"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -76,33 +77,39 @@ func (b *billItemSvc) ImportBillItems(cts *rest.Contexts) (any, error) {
 	}
 	mainAccountIDs = slice.Unique(mainAccountIDs)
 	if err = b.deleteBillItemsByMainAccountIDs(cts, vendor, req.BillYear, req.BillMonth, mainAccountIDs); err != nil {
+		logs.Errorf("delete bill items failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	if err = b.createBillItems(cts, vendor, req); err != nil {
+		logs.Errorf("create bill items failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	if err = b.createOrUpdatePullTasks(cts.Kit, vendor, req); err != nil {
+	if err = b.ensurePullTasks(cts.Kit, vendor, req); err != nil {
+		logs.Errorf("ensure pull tasks failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 	return nil, nil
 }
 
-func (b *billItemSvc) createBillItems(cts *rest.Contexts, vendor enumor.Vendor, req *bill.ImportBillItemReq) error {
+func (b *billItemSvc) createBillItems(cts *rest.Contexts, vendor enumor.Vendor,
+	req *bill.ImportBillItemReq) error {
 
 	itemCommonOpt := &dsbill.ItemCommonOpt{
 		Vendor: vendor,
 		Year:   req.BillYear,
 		Month:  req.BillMonth,
 	}
-	billCreateReq := &dsbill.BatchBillItemCreateReq[json.RawMessage]{
-		ItemCommonOpt: itemCommonOpt,
-		Items:         req.Items,
-	}
-	_, err := b.client.DataService().Global.Bill.BatchCreateBillItem(cts.Kit, billCreateReq)
-	if err != nil {
-		return err
+	for _, items := range slice.Split(req.Items, constant.BatchOperationMaxLimit) {
+		billCreateReq := &dsbill.BatchBillItemCreateReq[json.RawMessage]{
+			ItemCommonOpt: itemCommonOpt,
+			Items:         items,
+		}
+		_, err := b.client.DataService().Global.Bill.BatchCreateBillItem(cts.Kit, billCreateReq)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -125,8 +132,8 @@ func (b *billItemSvc) deleteBillItemsByMainAccountIDs(cts *rest.Contexts, vendor
 			tools.RuleEqual("bill_month", billMonth),
 		),
 	}
-	if err := b.client.DataService().Global.Bill.BatchDeleteBillItem(cts.Kit,
-		billDeleteReq); err != nil {
+	err := b.client.DataService().Global.Bill.BatchDeleteBillItem(cts.Kit, billDeleteReq)
+	if err != nil {
 		return err
 	}
 	return nil
@@ -158,7 +165,7 @@ func (b *billItemSvc) mapAccountIDToPullTaskList(kt *kit.Kit, summaryMains []*ds
 }
 
 // create daily pull task
-func (b *billItemSvc) createOrUpdatePullTasks(kt *kit.Kit, vendor enumor.Vendor,
+func (b *billItemSvc) ensurePullTasks(kt *kit.Kit, vendor enumor.Vendor,
 	req *bill.ImportBillItemReq) error {
 
 	mainAccountIDs := make([]string, 0, len(req.Items))
@@ -169,10 +176,12 @@ func (b *billItemSvc) createOrUpdatePullTasks(kt *kit.Kit, vendor enumor.Vendor,
 	summaryMainResults, err := b.listSummaryMainByMainAccountIDs(kt, vendor,
 		slice.Unique(mainAccountIDs), req.BillYear, req.BillMonth)
 	if err != nil {
+		logs.Errorf("list summary main by main account ids failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 	mapPullTasks, err := b.mapAccountIDToPullTaskList(kt, summaryMainResults)
 	if err != nil {
+		logs.Errorf("map account id to pull task list failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 
@@ -181,6 +190,7 @@ func (b *billItemSvc) createOrUpdatePullTasks(kt *kit.Kit, vendor enumor.Vendor,
 		existDays := make([]int, 0)
 		for _, pullTask := range mapPullTasks[summaryMain.MainAccountID] {
 			if err = b.updatePullTaskStateAndDailySummaryFlowID(kt, pullTask); err != nil {
+				logs.Errorf("update pull task state failed, err: %v, rid: %s", err, kt.Rid)
 				return err
 			}
 			existDays = append(existDays, pullTask.BillDay)
@@ -188,8 +198,9 @@ func (b *billItemSvc) createOrUpdatePullTasks(kt *kit.Kit, vendor enumor.Vendor,
 		createReqs = append(createReqs, generateRemainingPullTask(existDays, summaryMain)...)
 	}
 
-	for _, req := range createReqs {
-		if _, err = b.client.DataService().Global.Bill.CreateBillDailyPullTask(kt, req); err != nil {
+	for _, createReq := range createReqs {
+		if _, err = b.client.DataService().Global.Bill.CreateBillDailyPullTask(kt, createReq); err != nil {
+			logs.Errorf("create bill daily pull task failed, err: %v, rid: %s", err, kt.Rid)
 			return err
 		}
 	}
@@ -293,7 +304,7 @@ func excelRowsIterator(kt *kit.Kit, reader io.Reader, sheetIdx, batchSize int,
 	for rows.Next() {
 		columns, err := rows.Columns()
 		if err != nil {
-			return opFunc(nil, err)
+			return err
 		}
 		rowBatch = append(rowBatch, columns)
 		if len(rowBatch) < batchSize {
@@ -302,8 +313,8 @@ func excelRowsIterator(kt *kit.Kit, reader io.Reader, sheetIdx, batchSize int,
 		if err := opFunc(rowBatch, nil); err != nil {
 			return err
 		}
+		// 清空rowBatch, 下次循环写入新数据
 		rowBatch = rowBatch[:0]
-
 	}
 	return opFunc(rowBatch, nil)
 }
