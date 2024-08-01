@@ -71,8 +71,8 @@ POST /api/v1/account/vendors/{vendor}/bills/items/import/preview
     ],
   "cost_map": {
     "USD": {
-      "Cost": "218330.6",
-      "RMBCost": "1550147.26",
+      "Cost": "123",
+      "RMBCost": "123",
       "Currency": "USD"
     }
   }

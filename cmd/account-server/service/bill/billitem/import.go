@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"io"
 	"reflect"
+	"time"
 
 	"hcm/cmd/account-server/logics/bill/puller/daily"
 	"hcm/pkg/api/account-server/bill"
@@ -37,6 +38,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/slice"
+	"hcm/pkg/tools/times"
 
 	"github.com/shopspring/decimal"
 	"github.com/xuri/excelize/v2"
@@ -72,43 +74,65 @@ func (b *billItemSvc) ImportBillItems(cts *rest.Contexts) (any, error) {
 	for _, item := range req.Items {
 		mainAccountIDs = append(mainAccountIDs, item.MainAccountID)
 	}
+	mainAccountIDs = slice.Unique(mainAccountIDs)
+	if err = b.deleteBillItemsByMainAccountIDs(cts, vendor, req.BillYear, req.BillMonth, mainAccountIDs); err != nil {
+		return nil, err
+	}
 
-	// 清理所有已存在的账单明细，不区分version
+	if err = b.createBillItems(cts, vendor, req); err != nil {
+		return nil, err
+	}
+
+	if err = b.createOrUpdatePullTasks(cts.Kit, vendor, req); err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
+
+func (b *billItemSvc) createBillItems(cts *rest.Contexts, vendor enumor.Vendor, req *bill.ImportBillItemReq) error {
+
 	itemCommonOpt := &dsbill.ItemCommonOpt{
 		Vendor: vendor,
 		Year:   req.BillYear,
 		Month:  req.BillMonth,
+	}
+	billCreateReq := &dsbill.BatchBillItemCreateReq[json.RawMessage]{
+		ItemCommonOpt: itemCommonOpt,
+		Items:         req.Items,
+	}
+	_, err := b.client.DataService().Global.Bill.BatchCreateBillItem(cts.Kit, billCreateReq)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (b *billItemSvc) deleteBillItemsByMainAccountIDs(cts *rest.Contexts, vendor enumor.Vendor, billYear, billMonth int,
+	mainAccountIDs []string) error {
+
+	// 清理所有已存在的账单明细，不区分version
+	itemCommonOpt := &dsbill.ItemCommonOpt{
+		Vendor: vendor,
+		Year:   billYear,
+		Month:  billMonth,
 	}
 	billDeleteReq := &dsbill.BillItemDeleteReq{
 		ItemCommonOpt: itemCommonOpt,
 		Filter: tools.ExpressionAnd(
 			tools.RuleEqual("vendor", vendor),
 			tools.RuleIn("main_account_id", slice.Unique(mainAccountIDs)),
-			tools.RuleEqual("bill_year", req.BillYear),
-			tools.RuleEqual("bill_month", req.BillMonth),
+			tools.RuleEqual("bill_year", billYear),
+			tools.RuleEqual("bill_month", billMonth),
 		),
 	}
-	if err = b.client.DataService().Global.Bill.BatchDeleteBillItem(cts.Kit,
+	if err := b.client.DataService().Global.Bill.BatchDeleteBillItem(cts.Kit,
 		billDeleteReq); err != nil {
-		return nil, err
+		return err
 	}
-
-	billCreateReq := &dsbill.BatchBillItemCreateReq[json.RawMessage]{
-		ItemCommonOpt: itemCommonOpt,
-		Items:         req.Items,
-	}
-	_, err = b.client.DataService().Global.Bill.BatchCreateBillItem(cts.Kit, billCreateReq)
-	if err != nil {
-		return nil, err
-	}
-
-	if err = b.createOrUpdatePullTasks(cts.Kit, vendor, req.BillYear, req.BillMonth, req.Items); err != nil {
-		return nil, err
-	}
-	return nil, nil
+	return nil
 }
 
-func (b *billItemSvc) mapPullTaskList(kt *kit.Kit, summaryMains []*dsbill.BillSummaryMainResult) (
+func (b *billItemSvc) mapAccountIDToPullTaskList(kt *kit.Kit, summaryMains []*dsbill.BillSummaryMainResult) (
 	map[string][]*dsbill.BillDailyPullTaskResult, error) {
 
 	result := make(map[string][]*dsbill.BillDailyPullTaskResult, len(summaryMains))
@@ -134,66 +158,76 @@ func (b *billItemSvc) mapPullTaskList(kt *kit.Kit, summaryMains []*dsbill.BillSu
 }
 
 // create daily pull task
-func (b *billItemSvc) createOrUpdatePullTasks(kt *kit.Kit, vendor enumor.Vendor, billYear int, billMonth int, items []dsbill.BillItemCreateReq[json.RawMessage]) error {
+func (b *billItemSvc) createOrUpdatePullTasks(kt *kit.Kit, vendor enumor.Vendor,
+	req *bill.ImportBillItemReq) error {
 
-	mainAccountIDs := make([]string, 0, len(items))
-	for _, item := range items {
+	mainAccountIDs := make([]string, 0, len(req.Items))
+	for _, item := range req.Items {
 		mainAccountIDs = append(mainAccountIDs, item.MainAccountID)
 	}
 
-	summaryMainResults, err := b.listSummaryMainByMainAccountIDs(kt, vendor, slice.Unique(mainAccountIDs), billYear, billMonth)
+	summaryMainResults, err := b.listSummaryMainByMainAccountIDs(kt, vendor,
+		slice.Unique(mainAccountIDs), req.BillYear, req.BillMonth)
 	if err != nil {
 		return err
 	}
-	mapPullTasks, err := b.mapPullTaskList(kt, summaryMainResults)
+	mapPullTasks, err := b.mapAccountIDToPullTaskList(kt, summaryMainResults)
 	if err != nil {
 		return err
 	}
 
-	accountToBillDayMap := make(map[string][]int, len(items))
-	days := getMonthDays(billYear, billMonth)
-	createReqs := make([]*dsbill.BillDailyPullTaskCreateReq, 0, len(items))
+	createReqs := make([]*dsbill.BillDailyPullTaskCreateReq, 0, len(req.Items))
 	for _, summaryMain := range summaryMainResults {
-		billDayList := make([]int, 0)
+		existDays := make([]int, 0)
 		for _, pullTask := range mapPullTasks[summaryMain.MainAccountID] {
 			if err = b.updatePullTaskStateAndDailySummaryFlowID(kt, pullTask); err != nil {
 				return err
 			}
-			billDayList = append(billDayList, pullTask.BillDay)
+			existDays = append(existDays, pullTask.BillDay)
 		}
-		accountToBillDayMap[summaryMain.MainAccountID] = billDayList
-
-		for _, day := range days {
-			if slice.IsItemInSlice[int](billDayList, day) {
-				continue
-			}
-			createReq := &dsbill.BillDailyPullTaskCreateReq{
-				RootAccountID: summaryMain.RootAccountID,
-				MainAccountID: summaryMain.MainAccountID,
-				Vendor:        summaryMain.Vendor,
-				ProductID:     summaryMain.ProductID,
-				BkBizID:       summaryMain.BkBizID,
-				BillYear:      summaryMain.BillYear,
-				BillMonth:     summaryMain.BillMonth,
-				BillDay:       day,
-				VersionID:     summaryMain.CurrentVersion,
-				State:         enumor.MainAccountRawBillPullStateSplit,
-				Count:         0,
-				Currency:      "",
-				Cost:          decimal.NewFromFloat(0),
-				FlowID:        "",
-			}
-			createReqs = append(createReqs, createReq)
-		}
+		createReqs = append(createReqs, generateRemainingPullTask(existDays, summaryMain)...)
 	}
 
 	for _, req := range createReqs {
-		_, err := b.client.DataService().Global.Bill.CreateBillDailyPullTask(kt, req)
-		if err != nil {
+		if _, err = b.client.DataService().Global.Bill.CreateBillDailyPullTask(kt, req); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func generateRemainingPullTask(existBillDays []int, summary *dsbill.BillSummaryMainResult) []*dsbill.BillDailyPullTaskCreateReq {
+	days := times.GetMonthDays(summary.BillYear, time.Month(summary.BillMonth))
+
+	result := make([]*dsbill.BillDailyPullTaskCreateReq, 0, len(days))
+	for _, day := range days {
+		if slice.IsItemInSlice[int](existBillDays, day) {
+			continue
+		}
+		result = append(result, newPullTaskCreateReqFromSummaryMain(summary, day))
+	}
+	return result
+}
+
+func newPullTaskCreateReqFromSummaryMain(summaryMain *dsbill.BillSummaryMainResult,
+	day int) *dsbill.BillDailyPullTaskCreateReq {
+
+	return &dsbill.BillDailyPullTaskCreateReq{
+		RootAccountID: summaryMain.RootAccountID,
+		MainAccountID: summaryMain.MainAccountID,
+		Vendor:        summaryMain.Vendor,
+		ProductID:     summaryMain.ProductID,
+		BkBizID:       summaryMain.BkBizID,
+		BillYear:      summaryMain.BillYear,
+		BillMonth:     summaryMain.BillMonth,
+		BillDay:       day,
+		VersionID:     summaryMain.CurrentVersion,
+		State:         enumor.MainAccountRawBillPullStateSplit,
+		Count:         0,
+		Currency:      "",
+		Cost:          decimal.NewFromFloat(0),
+		FlowID:        "",
+	}
 }
 
 // reset daily pull task to split state and clear daily summary flow id
@@ -246,7 +280,6 @@ func excelRowsIterator(kt *kit.Kit, reader io.Reader, sheetIdx, batchSize int,
 	defer excel.Close()
 
 	sheetName := excel.GetSheetName(sheetIdx)
-
 	rows, err := excel.Rows(sheetName)
 	if err != nil {
 		logs.Errorf("fail to read rows from sheet(%s), err: %v, rid: %s", sheetName, err, kt.Rid)

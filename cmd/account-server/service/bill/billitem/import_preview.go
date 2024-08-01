@@ -20,8 +20,11 @@
 package billitem
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"reflect"
 	"strconv"
 	"strings"
@@ -75,28 +78,10 @@ func (b *billItemSvc) ImportBillItemsPreview(cts *rest.Contexts) (any, error) {
 
 func (b *billItemSvc) importZenlayerBillItemsPreview(kt *kit.Kit, req *bill.ImportBillItemPreviewReq) (any, error) {
 
-	reader := getReader(req.ExcelFileBase64)
-	records := make([]billcore.ZenlayerRawBillItem, 0)
-	err := excelRowsIterator(kt, reader, 0, constant.BatchOperationMaxLimit,
-		func(rows [][]string, err error) error {
-			if len(rows) == 0 {
-				return nil
-			}
-			for _, row := range rows {
-				item, err := convertStringToZenlayerRawBillItem(row)
-				if err != nil {
-					return err
-				}
-				records = append(records, item)
-			}
-			return nil
-		})
+	records, err := parseExcelToRecords(kt, req.ExcelFileBase64, convertStringToZenlayerRawBillItem)
 	if err != nil {
-		logs.Errorf("fail parse excel file, err: %v, rid: %s", err, kt.Rid)
-
-		return nil, errf.New(errf.BillItemImportDataError, "fail parse excel file")
+		return nil, err
 	}
-
 	if len(records) == 0 {
 		return nil, errf.New(errf.BillItemImportEmptyDataError, "empty excel file")
 	}
@@ -112,7 +97,7 @@ func (b *billItemSvc) importZenlayerBillItemsPreview(kt *kit.Kit, req *bill.Impo
 	}
 
 	// convert to BillItemCreateReq
-	createReqs, err := convertZenlayerToRawBillCreateReq(kt, req.BillYear, req.BillMonth,
+	createReqs, err := convertZenlayerRawBillItemToRawBillCreateReq(kt, req.BillYear, req.BillMonth,
 		records, cloudIDToSummaryMainMap)
 	if err != nil {
 		return nil, err
@@ -131,6 +116,37 @@ func (b *billItemSvc) importZenlayerBillItemsPreview(kt *kit.Kit, req *bill.Impo
 		Items:   createReqs,
 		CostMap: costMap,
 	}, nil
+}
+
+type convertStringToEntityFunc[T any] func([]string) (T, error)
+
+func getReader(str string) io.Reader {
+	return base64.NewDecoder(base64.StdEncoding, bytes.NewReader([]byte(str)))
+}
+
+func parseExcelToRecords[T any](kt *kit.Kit, base64 string, convertFunc convertStringToEntityFunc[T]) ([]T, error) {
+	reader := getReader(base64)
+	records := make([]T, 0)
+	err := excelRowsIterator(kt, reader, 0, constant.BatchOperationMaxLimit,
+		func(rows [][]string, err error) error {
+			if len(rows) == 0 {
+				return nil
+			}
+			for _, row := range rows {
+				item, err := convertFunc(row)
+				if err != nil {
+					return err
+				}
+				records = append(records, item)
+			}
+			return nil
+		})
+	if err != nil {
+		logs.Errorf("fail parse excel file, err: %v, rid: %s", err, kt.Rid)
+
+		return nil, errf.New(errf.BillItemImportDataError, "fail parse excel file")
+	}
+	return records, nil
 }
 
 func (b *billItemSvc) getExchangedRate(kt *kit.Kit, billYear, billMonth int) (*decimal.Decimal, error) {
@@ -215,7 +231,7 @@ func (b *billItemSvc) listSummaryMainByBusinessGroups(kt *kit.Kit, vendor enumor
 	return result, nil
 }
 
-func convertZenlayerToRawBillCreateReq(kt *kit.Kit, billYear, billMonth int,
+func convertZenlayerRawBillItemToRawBillCreateReq(kt *kit.Kit, billYear, billMonth int,
 	recordList []billcore.ZenlayerRawBillItem, summaryMap map[string]*dsbill.BillSummaryMainResult) (
 	[]dsbill.BillItemCreateReq[json.RawMessage], error) {
 
@@ -253,15 +269,12 @@ func convertZenlayerToRawBillCreateReq(kt *kit.Kit, billYear, billMonth int,
 		if err != nil {
 			return nil, err
 		}
-
 		// validate bill year and month
 		if curYear != billYear || curMonth != billMonth {
-
 			return nil, errf.NewFromErr(errf.BillItemImportBillDateError,
 				fmt.Errorf("invalid billID, expect: %d-%d, but got: %d-%d",
 					billYear, billMonth, curYear, curMonth))
 		}
-
 		tmp.BillYear = billYear
 		tmp.BillMonth = billMonth
 		tmp.BillDay = curDay
@@ -278,7 +291,6 @@ func convertZenlayerToRawBillCreateReq(kt *kit.Kit, billYear, billMonth int,
 			return nil, err
 		}
 		tmp.Extension = (*json.RawMessage)(&data)
-
 		result = append(result, tmp)
 	}
 	return result, nil
