@@ -124,7 +124,7 @@ func (r *ImportBillItemReq) Validate() error {
 		return errf.New(errf.InvalidParameter, "items is empty")
 	}
 	if len(r.Items) > importBillItemsMaxLimit {
-		return errf.New(errf.InvalidParameter, "items count exceed limit 200000")
+		return errf.New(errf.InvalidParameter, "items count exceed limit importBillItemsMaxLimit")
 	}
 	return validator.Validate.Struct(r)
 }

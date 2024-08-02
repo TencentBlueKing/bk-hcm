@@ -66,6 +66,7 @@ func (b *billItemSvc) ImportBillItemsPreview(cts *rest.Contexts) (any, error) {
 	err := b.authorizer.AuthorizeWithPerm(cts.Kit,
 		meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.AccountBill, Action: meta.Create}})
 	if err != nil {
+		logs.Errorf("import bill item auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -128,7 +129,7 @@ func parseExcelToRecords[T any](kt *kit.Kit, base64 bill.Base64String, convertFu
 	reader := convertBase64StrToReader(base64)
 	records := make([]T, 0)
 	err := excelRowsIterator(kt, reader, 0, constant.BatchOperationMaxLimit,
-		func(rows [][]string, err error) error {
+		func(rows [][]string) error {
 			if len(rows) == 0 {
 				return nil
 			}
@@ -142,7 +143,7 @@ func parseExcelToRecords[T any](kt *kit.Kit, base64 bill.Base64String, convertFu
 			return nil
 		})
 	if err != nil {
-		logs.Errorf("fail to parse excel file for zenlayer bill import perview, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("fail to parse excel file for bill import perview, err: %v, rid: %s", err, kt.Rid)
 		return nil, errf.New(errf.BillItemImportDataError, "fail parse excel file")
 	}
 	return records, nil
@@ -168,12 +169,12 @@ func (b *billItemSvc) getExchangedRate(kt *kit.Kit, billYear, billMonth int) (*d
 			enumor.CurrencyUSD, enumor.CurrencyRMB, billYear, billMonth, err.Error())
 	}
 	if len(result.Details) == 0 {
-		return nil, fmt.Errorf("get no exchange rate from %s to %s in %d-%d, rid %s",
-			enumor.CurrencyUSD, enumor.CurrencyRMB, billYear, billMonth, kt.Rid)
+		return nil, fmt.Errorf("get no exchange rate from %s to %s in %d-%d",
+			enumor.CurrencyUSD, enumor.CurrencyRMB, billYear, billMonth)
 	}
 	if result.Details[0].ExchangeRate == nil {
-		return nil, fmt.Errorf("get exchange rate is nil, from %s to %s in %d-%d, rid %s",
-			enumor.CurrencyUSD, enumor.CurrencyRMB, billYear, billMonth, kt.Rid)
+		return nil, fmt.Errorf("get exchange rate is nil, from %s to %s in %d-%d",
+			enumor.CurrencyUSD, enumor.CurrencyRMB, billYear, billMonth)
 	}
 	return result.Details[0].ExchangeRate, nil
 }

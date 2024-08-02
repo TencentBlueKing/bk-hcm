@@ -76,13 +76,15 @@ func (b *billItemSvc) ImportBillItems(cts *rest.Contexts) (any, error) {
 		mainAccountIDs = append(mainAccountIDs, item.MainAccountID)
 	}
 	mainAccountIDs = slice.Unique(mainAccountIDs)
+	if len(mainAccountIDs) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "items.main_account_id is required")
+	}
 	if err = b.deleteBillItemsByMainAccountIDs(cts, vendor, req.BillYear, req.BillMonth, mainAccountIDs); err != nil {
 		logs.Errorf("delete bill items failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	if err = b.createBillItems(cts, vendor, req); err != nil {
-		logs.Errorf("create bill items failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -108,6 +110,7 @@ func (b *billItemSvc) createBillItems(cts *rest.Contexts, vendor enumor.Vendor,
 		}
 		_, err := b.client.DataService().Global.Bill.BatchCreateBillItem(cts.Kit, billCreateReq)
 		if err != nil {
+			logs.Errorf("create bill items failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return err
 		}
 	}
@@ -116,6 +119,10 @@ func (b *billItemSvc) createBillItems(cts *rest.Contexts, vendor enumor.Vendor,
 
 func (b *billItemSvc) deleteBillItemsByMainAccountIDs(cts *rest.Contexts, vendor enumor.Vendor, billYear, billMonth int,
 	mainAccountIDs []string) error {
+
+	if len(mainAccountIDs) == 0 {
+		return nil
+	}
 
 	// 清理所有已存在的账单明细，不区分version
 	itemCommonOpt := &dsbill.ItemCommonOpt{
@@ -134,6 +141,8 @@ func (b *billItemSvc) deleteBillItemsByMainAccountIDs(cts *rest.Contexts, vendor
 	}
 	err := b.client.DataService().Global.Bill.BatchDeleteBillItem(cts.Kit, billDeleteReq)
 	if err != nil {
+		logs.Errorf("delete bill items by main_account_ids[%v] failed, err: %v, rid: %s",
+			mainAccountIDs, err, cts.Kit.Rid)
 		return err
 	}
 	return nil
@@ -190,7 +199,7 @@ func (b *billItemSvc) ensurePullTasks(kt *kit.Kit, vendor enumor.Vendor,
 		existDays := make([]int, 0)
 		for _, pullTask := range mapPullTasks[summaryMain.MainAccountID] {
 			if err = b.updatePullTaskStateAndDailySummaryFlowID(kt, pullTask); err != nil {
-				logs.Errorf("update pull task state failed, err: %v, rid: %s", err, kt.Rid)
+				logs.Errorf("update pull task(%s) state failed, err: %v, rid: %s", pullTask.ID, err, kt.Rid)
 				return err
 			}
 			existDays = append(existDays, pullTask.BillDay)
@@ -281,7 +290,7 @@ func (b *billItemSvc) listSummaryMainByMainAccountIDs(kt *kit.Kit, vendor enumor
 
 // excelRowsIterator traverse each row in Excel file by given operation
 func excelRowsIterator(kt *kit.Kit, reader io.Reader, sheetIdx, batchSize int,
-	opFunc func([][]string, error) error) error {
+	opFunc func([][]string) error) error {
 
 	excel, err := excelize.OpenReader(reader)
 	if err != nil {
@@ -310,11 +319,11 @@ func excelRowsIterator(kt *kit.Kit, reader io.Reader, sheetIdx, batchSize int,
 		if len(rowBatch) < batchSize {
 			continue
 		}
-		if err := opFunc(rowBatch, nil); err != nil {
+		if err := opFunc(rowBatch); err != nil {
 			return err
 		}
 		// 清空rowBatch, 下次循环写入新数据
 		rowBatch = rowBatch[:0]
 	}
-	return opFunc(rowBatch, nil)
+	return opFunc(rowBatch)
 }
