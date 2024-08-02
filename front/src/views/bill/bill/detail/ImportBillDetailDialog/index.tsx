@@ -1,7 +1,7 @@
 import { defineComponent, inject, PropType, reactive, Ref, ref, watch } from 'vue';
 import cssModule from './index.module.scss';
 
-import { Button, Dialog, Message, Upload } from 'bkui-vue';
+import { Alert, Button, Dialog, Message, Upload } from 'bkui-vue';
 import Amount from '../../components/amount';
 import zenlayerIcon from '@/assets/image/zenlayer.png';
 
@@ -112,6 +112,15 @@ export default defineComponent({
         {{
           default: () => (
             <>
+              <Alert theme='info'>
+                <p>{t('1.导入的Excel大小限制为1MB，行数最多为20万行。')}</p>
+                <p>{t('2.导入将覆盖本月的账单数据，即本月原有数据将清理后，以Excel最新数据为准。')}</p>
+                <p>
+                  {t(
+                    '3.本月账单数据已存在且已确认，将不允许导入。点击账单汇总-一级账号-zenlayer的账号“重新核算”后，方可导入。',
+                  )}
+                </p>
+              </Alert>
               <div class={cssModule.item}>
                 <div class={cssModule.label}>{t('云厂商')}</div>
                 <div class={cssModule.content}>
