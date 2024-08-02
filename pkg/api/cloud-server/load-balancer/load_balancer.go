@@ -520,22 +520,11 @@ func (req *TargetGroupCreateReq) Validate() error {
 
 // TCloudSopsTargetBatchCreateReq tcloud sops target batch create req.
 type TCloudSopsTargetBatchCreateReq struct {
-	RuleQueryList []TargetGroupRuleQueryItem `json:"rule_query_list" validate:"required,min=1"`
-	RsIP          []string                   `json:"rs_ip" validate:"required,min=1"`
-	RsPort        []int                      `json:"rs_port" validate:"required,min=1"`
-	RsWeight      int64                      `json:"rs_weight" validate:"required"`
-	RsType        enumor.InstType            `json:"rs_type" validate:"required"`
-}
-
-// TargetGroupRuleQueryItem 目标组规则查询结构体
-type TargetGroupRuleQueryItem struct {
-	Region   string              `json:"region" jsonschema:"title=地域"`
-	Vip      []string            `json:"vip" jsonschema:"title=VIP"`
-	VPort    []int               `json:"vport" jsonschema:"title=VPORT"`
-	RsIP     []string            `json:"rs_ip" jsonschema:"title=RS IP"`
-	RsType   string              `json:"rs_type" jsonschema:"title=RS TYPE"`
-	Protocol enumor.ProtocolType `json:"protocol" jsonschema:"title=协议"`
-	Domain   string              `json:"domain" jsonschema:"title=域名"`
+	RuleQueryList []TargetGroupQueryItemForRsOnline `json:"rule_query_list" validate:"required,min=1"`
+	RsIP          []string                          `json:"rs_ip" validate:"required,min=1"`
+	RsPort        []int                             `json:"rs_port" validate:"required,min=1"`
+	RsWeight      int64                             `json:"rs_weight" validate:"required"`
+	RsType        enumor.InstType                   `json:"rs_type" validate:"required"`
 }
 
 // Validate request.
@@ -545,6 +534,18 @@ func (req *TCloudSopsTargetBatchCreateReq) Validate() error {
 	}
 
 	return validator.Validate.Struct(req)
+}
+
+// TargetGroupQueryItemForRsOnline 规则查询结构体-RS上线专属
+type TargetGroupQueryItemForRsOnline struct {
+	Region   string              `json:"region" jsonschema:"title=地域"`
+	Vip      []string            `json:"vip" jsonschema:"title=VIP"`
+	VPort    []int               `json:"vport" jsonschema:"title=VPORT"`
+	RsIP     []string            `json:"rs_ip" jsonschema:"title=RS IP"`
+	RsType   string              `json:"rs_type" jsonschema:"title=RS TYPE"`
+	Protocol enumor.ProtocolType `json:"protocol" jsonschema:"title=协议"`
+	Domain   []string            `json:"domain" jsonschema:"title=域名"`
+	Url      []string            `json:"url" jsonschema:"title=url"`
 }
 
 // --------------------------[标准运维-批量移除RS]--------------------------
@@ -557,6 +558,17 @@ type TCloudSopsTargetBatchRemoveReq struct {
 // Validate request.
 func (req *TCloudSopsTargetBatchRemoveReq) Validate() error {
 	return validator.Validate.Struct(req)
+}
+
+// TargetGroupRuleQueryItem 目标组规则查询结构体
+type TargetGroupRuleQueryItem struct {
+	Region   string              `json:"region" jsonschema:"title=地域"`
+	Vip      []string            `json:"vip" jsonschema:"title=VIP"`
+	VPort    []int               `json:"vport" jsonschema:"title=VPORT"`
+	RsIP     []string            `json:"rs_ip" jsonschema:"title=RS IP"`
+	RsType   string              `json:"rs_type" jsonschema:"title=RS TYPE"`
+	Protocol enumor.ProtocolType `json:"protocol" jsonschema:"title=协议"`
+	Domain   string              `json:"domain" jsonschema:"title=域名"`
 }
 
 // --------------------------[标准运维-批量修改权重]--------------------------

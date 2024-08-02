@@ -97,7 +97,7 @@ func (svc *lbSvc) buildCreateTCloudTarget(kt *kit.Kit, body json.RawMessage, acc
 	}
 
 	// 查询规则列表，查出符合条件的目标组
-	tgIDsMap, err := svc.parseSOpsTargetParams(kt, accountID, req.RuleQueryList)
+	tgIDsMap, err := svc.parseSOpsTargetParamsForRsOnline(kt, accountID, req.RuleQueryList)
 	if err != nil {
 		return nil, err
 	}
@@ -274,7 +274,7 @@ func (svc *lbSvc) parseSOpsTargetParams(kt *kit.Kit, accountID string,
 		}
 
 		//  根据RsIp和RsType查询Target，获取对应的目标组ID
-		rsIpTypeTgIDs, err = svc.parseSOpsRsIpAndRsTypeForTgIDs(kt, accountID, item)
+		rsIpTypeTgIDs, err = svc.parseSOpsRsIpAndRsTypeForTgIDs(kt, accountID, item.RsIP, item.RsType)
 		if err != nil {
 			logs.Errorf("parse rsip and rstype for target group failed, accountID: %s, item: %+v, err: %v, rid: %s",
 				accountID, item, err, kt.Rid)
@@ -290,7 +290,7 @@ func (svc *lbSvc) parseSOpsTargetParams(kt *kit.Kit, accountID string,
 		}
 
 		// 根据Vip和Vport查询到对应负载均衡下的对应监听器下的UrlRule，获取对应的目标组ID
-		vIpPortTgIDs, err = svc.parseSOpsVipAndVportForTgIDs(kt, accountID, item)
+		vIpPortTgIDs, err = svc.parseSOpsVipAndVportForTgIDs(kt, accountID, item.Vip, item.VPort, item.Region)
 		if err != nil {
 			logs.Errorf("parse vip and vport for target group failed, accountID: %s, item: %+v, err: %v, rid: %s",
 				accountID, item, err, kt.Rid)
@@ -305,6 +305,7 @@ func (svc *lbSvc) parseSOpsTargetParams(kt *kit.Kit, accountID string,
 			}
 		}
 
+		// 当前行条件没有能匹配到的目标组
 		tgIDsItem = slice.Unique(tgIDsItem)
 		if len(tgIDsItem) == 0 {
 			return nil, fmt.Errorf("no matching target groups were found for line %d", index)
@@ -371,19 +372,19 @@ func (svc *lbSvc) parseSOpsProtocolAndDomainForTgIDs(kt *kit.Kit, accountID stri
 
 // parseSOpsRsIpAndRsTypeForTgIDs 根据RsIp和RsType查询Target，获取对应的目标组ID
 func (svc *lbSvc) parseSOpsRsIpAndRsTypeForTgIDs(kt *kit.Kit, accountID string,
-	item cslb.TargetGroupRuleQueryItem) ([]string, error) {
+	rsIPList []string, rsType string) ([]string, error) {
 
-	if len(item.RsIP) == 0 || len(item.RsType) == 0 {
+	if len(rsIPList) == 0 || len(rsType) == 0 {
 		// 没有对应的筛选条件，表现为不筛选
 		return nil, nil
 	}
 
 	tgIDs := make([]string, 0)
-	for _, rsIP := range item.RsIP {
+	for _, rsIP := range rsIPList {
 		// 查询出对应的目标
 		filter := tools.ExpressionAnd(
 			tools.RuleEqual("account_id", accountID),
-			tools.RuleEqual("inst_type", item.RsType),
+			tools.RuleEqual("inst_type", rsType),
 			tools.RuleJSONContains("private_ip_address", rsIP))
 		targetReq := &core.ListReq{
 			Fields: []string{"target_group_id"},
@@ -409,23 +410,23 @@ func (svc *lbSvc) parseSOpsRsIpAndRsTypeForTgIDs(kt *kit.Kit, accountID string,
 
 // parseSOpsVipAndVportForTgIDs 根据Vip和Vport查询到对应负载均衡下的对应监听器下的UrlRule，获取对应的目标组ID
 func (svc *lbSvc) parseSOpsVipAndVportForTgIDs(kt *kit.Kit, accountID string,
-	item cslb.TargetGroupRuleQueryItem) ([]string, error) {
+	vip []string, vport []int, region string) ([]string, error) {
 
-	if len(item.Vip) == 0 && len(item.VPort) == 0 {
+	if len(vip) == 0 && len(vport) == 0 {
 		// 没有对应的筛选条件，表现为不筛选
 		return nil, nil
 	}
 
 	lbIDs := make([]string, 0)
 	tgIDs := make([]string, 0)
-	if len(item.Vip) != 0 {
+	if len(vip) != 0 {
 		// 若有vip筛选条件，则查询符合的负载均衡列表
-		for _, vip := range item.Vip {
+		for _, vip := range vip {
 			lbReq := &core.ListReq{
 				Filter: tools.ExpressionAnd(
 					tools.RuleEqual("vendor", enumor.TCloud),
 					tools.RuleEqual("account_id", accountID),
-					tools.RuleEqual("region", item.Region),
+					tools.RuleEqual("region", region),
 					tools.RuleJSONContains("public_ipv4_addresses", vip),
 				),
 				Page: core.NewDefaultBasePage(),
@@ -456,8 +457,8 @@ func (svc *lbSvc) parseSOpsVipAndVportForTgIDs(kt *kit.Kit, accountID string,
 			return nil, err
 		}
 	}
-	if len(item.VPort) != 0 {
-		lblFilter, err = tools.And(lblFilter, tools.RuleIn("port", item.VPort))
+	if len(vport) != 0 {
+		lblFilter, err = tools.And(lblFilter, tools.RuleIn("port", vport))
 		if err != nil {
 			return nil, err
 		}
@@ -497,6 +498,123 @@ func (svc *lbSvc) parseSOpsVipAndVportForTgIDs(kt *kit.Kit, accountID string,
 			continue
 		}
 		tgIDs = append(tgIDs, ruleRelItem.TargetGroupID)
+	}
+
+	return slice.Unique(tgIDs), nil
+}
+
+// parseSOpsTargetParamsForRsOnline 解析标准运维参数-RS上线专属
+func (svc *lbSvc) parseSOpsTargetParamsForRsOnline(kt *kit.Kit, accountID string,
+	tgQueryList []cslb.TargetGroupQueryItemForRsOnline) (map[int][]string, error) {
+
+	tgIDsMap := make(map[int][]string)
+	index := 1
+	for _, item := range tgQueryList {
+		// 原1.0逻辑
+		// 1.根据VIP和RSIP获取到clb列表
+
+		// 2.获取每个clb的listener列表（按照protocol和vport筛选）
+
+		// 3.如果是七层，则按照筛选条件（rsip，rstype，domain，url）筛选 当前监听器下 的 所有规则
+
+		// 4.如果是四层，则按照筛选条件（rsip，rstype）筛选 当前监听器
+
+		// 5.转换为对应的TargetGroup
+
+		// 优化逻辑
+		// 1.Protocol、Domain、URL筛选出一批TargetGroup
+		protoDomainUrlTgIDs, err := svc.parseSOpsProtocolAndDomainAndUrlForTgIDs(kt, accountID, item.Protocol, item.Domain, item.Url)
+		if err != nil {
+			logs.Errorf("parse protocol and domain and url for target group failed, accountID: %s, item: %+v, err: %v, rid: %s",
+				accountID, item, err, kt.Rid)
+			return nil, err
+		}
+
+		// 2.VIP、VPort筛选出一批TargetGroup
+		vIpPortTgIDs, err := svc.parseSOpsVipAndVportForTgIDs(kt, accountID, item.Vip, item.VPort, item.Region)
+		if err != nil {
+			logs.Errorf("parse vip and vport for target group failed, accountID: %s, item: %+v, err: %v, rid: %s",
+				accountID, item, err, kt.Rid)
+			return nil, err
+		}
+
+		// 3.RSIP、RSTYPE直接查询到一批TargetGroup
+		rsIpTypeTgIDs, err := svc.parseSOpsRsIpAndRsTypeForTgIDs(kt, accountID, item.RsIP, item.RsType)
+		if err != nil {
+			logs.Errorf("parse rsip and rstype for target group failed, accountID: %s, item: %+v, err: %v, rid: %s",
+				accountID, item, err, kt.Rid)
+			return nil, err
+		}
+
+		// 按照情况取交集
+		tgIDsItem := protoDomainUrlTgIDs
+		if vIpPortTgIDs != nil {
+			tgIDsItem = slice.Intersection(tgIDsItem, vIpPortTgIDs)
+		}
+		if rsIpTypeTgIDs != nil {
+			tgIDsItem = slice.Intersection(tgIDsItem, rsIpTypeTgIDs)
+		}
+
+		// 当前行条件没有能匹配到的目标组
+		tgIDsItem = slice.Unique(tgIDsItem)
+		if len(tgIDsItem) == 0 {
+			return nil, fmt.Errorf("no matching target groups were found for line %d", index)
+		}
+
+		// 分别记录每一行条件查询出的目标组ID列表
+		tgIDsMap[index] = tgIDsItem
+		index++
+	}
+
+	return tgIDsMap, nil
+}
+
+// parseSOpsProtocolAndDomainAndUrlForTgIDs 根据Protocol、Domain、URL查询UrlRule，获取对应的目标组ID
+func (svc *lbSvc) parseSOpsProtocolAndDomainAndUrlForTgIDs(kt *kit.Kit, accountID string,
+	protocol enumor.ProtocolType, domain, url []string) ([]string, error) {
+	// 筛选查询urlRule
+	var urlRuleFilter *filter.Expression
+	var err error
+	if protocol.IsLayer7Protocol() {
+		urlRuleFilter = tools.ExpressionAnd(
+			tools.RuleEqual("rule_type", enumor.Layer7RuleType),
+		)
+		if len(domain) != 0 && domain[0] != "all" {
+			urlRuleFilter, err = tools.And(urlRuleFilter, tools.RuleIn("domain", domain))
+			if err != nil {
+				return nil, err
+			}
+		}
+		if len(url) != 0 && url[0] != "all" {
+			urlRuleFilter, err = tools.And(urlRuleFilter, tools.RuleIn("url", url))
+			if err != nil {
+				return nil, err
+			}
+		}
+	} else if protocol.IsLayer4Protocol() {
+		urlRuleFilter = tools.ExpressionAnd(
+			tools.RuleEqual("rule_type", enumor.Layer4RuleType),
+		)
+	} else {
+		return nil, fmt.Errorf("protocol: %s not support", protocol)
+	}
+
+	tgRuleReq := &core.ListReq{
+		Filter: urlRuleFilter,
+		Page:   core.NewDefaultBasePage(),
+	}
+	urlRuleResult, err := svc.client.DataService().TCloud.LoadBalancer.ListUrlRule(kt, tgRuleReq)
+	if err != nil {
+		return nil, err
+	}
+
+	// 记录urlRule对应的目标组ID
+	tgIDs := make([]string, 0)
+	for _, ruleItem := range urlRuleResult.Details {
+		if len(ruleItem.TargetGroupID) == 0 {
+			continue
+		}
+		tgIDs = append(tgIDs, ruleItem.TargetGroupID)
 	}
 
 	return slice.Unique(tgIDs), nil
