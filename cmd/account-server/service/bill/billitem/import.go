@@ -29,6 +29,7 @@ import (
 	"hcm/cmd/account-server/logics/bill/puller/daily"
 	"hcm/pkg/api/account-server/bill"
 	"hcm/pkg/api/core"
+	accountset "hcm/pkg/api/core/account-set"
 	billcore "hcm/pkg/api/core/bill"
 	dsbill "hcm/pkg/api/data-service/bill"
 	"hcm/pkg/criteria/constant"
@@ -200,9 +201,14 @@ func (b *billItemSvc) mapAccountIDToPullTaskList(kt *kit.Kit, summaryMains []*ds
 func (b *billItemSvc) ensurePullTasks(kt *kit.Kit, vendor enumor.Vendor,
 	req *bill.ImportBillItemReq) error {
 
+	mainAccounts, err := b.listMainAccount(kt, vendor)
+	if err != nil {
+		logs.Errorf("list main account failed, err: %v, rid: %s, vendor: %s", err, kt.Rid, vendor)
+		return err
+	}
 	mainAccountIDs := make([]string, 0, len(req.Items))
-	for _, item := range req.Items {
-		mainAccountIDs = append(mainAccountIDs, item.MainAccountID)
+	for _, item := range mainAccounts {
+		mainAccountIDs = append(mainAccountIDs, item.ID)
 	}
 
 	summaryMainResults, err := b.listSummaryMainByMainAccountIDs(kt, vendor,
@@ -221,7 +227,7 @@ func (b *billItemSvc) ensurePullTasks(kt *kit.Kit, vendor enumor.Vendor,
 	for _, summaryMain := range summaryMainResults {
 		existDays := make([]int, 0)
 		for _, pullTask := range mapPullTasks[summaryMain.MainAccountID] {
-			if err = b.updatePullTaskStateAndDailySummaryFlowID(kt, pullTask); err != nil {
+			if err = b.updatePullTaskStateToSplitAndResetDailySummaryFlowID(kt, pullTask.ID); err != nil {
 				logs.Errorf("update pull task(%s) state failed, err: %v, rid: %s", pullTask.ID, err, kt.Rid)
 				return err
 			}
@@ -239,9 +245,10 @@ func (b *billItemSvc) ensurePullTasks(kt *kit.Kit, vendor enumor.Vendor,
 	return nil
 }
 
-func generateRemainingPullTask(existBillDays []int, summary *dsbill.BillSummaryMainResult) []*dsbill.BillDailyPullTaskCreateReq {
-	days := times.GetMonthDays(summary.BillYear, time.Month(summary.BillMonth))
+func generateRemainingPullTask(existBillDays []int,
+	summary *dsbill.BillSummaryMainResult) []*dsbill.BillDailyPullTaskCreateReq {
 
+	days := times.GetMonthDays(summary.BillYear, time.Month(summary.BillMonth))
 	result := make([]*dsbill.BillDailyPullTaskCreateReq, 0, len(days))
 	for _, day := range days {
 		if slice.IsItemInSlice[int](existBillDays, day) {
@@ -273,11 +280,10 @@ func newPullTaskCreateReqFromSummaryMain(summaryMain *dsbill.BillSummaryMainResu
 	}
 }
 
-// reset daily pull task to split state and clear daily summary flow id
-func (b *billItemSvc) updatePullTaskStateAndDailySummaryFlowID(kt *kit.Kit, task *dsbill.BillDailyPullTaskResult) error {
+func (b *billItemSvc) updatePullTaskStateToSplitAndResetDailySummaryFlowID(kt *kit.Kit, taskID string) error {
 	emptyFlowID := ""
 	updateReq := &dsbill.BillDailyPullTaskUpdateReq{
-		ID:                 task.ID,
+		ID:                 taskID,
 		State:              enumor.MainAccountRawBillPullStateSplit,
 		DailySummaryFlowID: &emptyFlowID,
 	}
@@ -349,4 +355,39 @@ func excelRowsIterator(kt *kit.Kit, reader io.Reader, sheetIdx, batchSize int,
 		rowBatch = rowBatch[:0]
 	}
 	return opFunc(rowBatch)
+}
+
+func (b *billItemSvc) listMainAccount(kt *kit.Kit, vendor enumor.Vendor) ([]*accountset.BaseMainAccount, error) {
+	filter := tools.ExpressionAnd(
+		tools.RuleEqual("vendor", vendor),
+	)
+	countReq := &core.ListReq{
+		Filter: filter,
+		Page:   core.NewCountPage(),
+	}
+	countResp, err := b.client.DataService().Global.MainAccount.List(kt, countReq)
+	if err != nil {
+		logs.Errorf("list main account failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+	total := countResp.Count
+
+	result := make([]*accountset.BaseMainAccount, 0, total)
+	for i := uint64(0); i < total; i += uint64(core.DefaultMaxPageLimit) {
+		listReq := &core.ListReq{
+			Filter: filter,
+			Page: &core.BasePage{
+				Start: uint32(i),
+				Limit: core.DefaultMaxPageLimit,
+			},
+		}
+		listResult, err := b.client.DataService().Global.MainAccount.List(kt, listReq)
+		if err != nil {
+			logs.Errorf("list main account failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+		result = append(result, listResult.Details...)
+	}
+
+	return result, nil
 }
