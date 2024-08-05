@@ -4,6 +4,7 @@ import cssModule from './index.module.scss';
 import { AngleDown } from 'bkui-vue/lib/icon';
 import { BkDropdownItem, BkDropdownMenu } from 'bkui-vue/lib/dropdown';
 import CommonLocalTable from '@/components/LocalTable';
+import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
 import useBatchOperation from './use-batch-operation';
 
@@ -105,6 +106,8 @@ export default defineComponent({
       selected,
       isDialogLoading,
       tableData,
+      selectedRowPrivateIPs,
+      selectedRowPublicIPs,
       getDiskNumByCvmIds,
       handleSwitch,
       handleConfirm,
@@ -166,6 +169,16 @@ export default defineComponent({
                         {`批量${opData.label}`}
                       </BkDropdownItem>
                     ))}
+                  <CopyToClipboard
+                    type='dropdown-item'
+                    text='复制内网IP'
+                    content={selectedRowPrivateIPs.value?.join?.(',')}
+                  />
+                  <CopyToClipboard
+                    type='dropdown-item'
+                    text='复制公网IP'
+                    content={selectedRowPublicIPs.value?.join?.(',')}
+                  />
                 </BkDropdownMenu>
               ),
             }}

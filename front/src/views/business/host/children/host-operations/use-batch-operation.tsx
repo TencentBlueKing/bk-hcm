@@ -61,20 +61,26 @@ const useBatchOperation = ({ selections, onFinished }: Params) => {
     }
   };
 
+  const getPrivateIPs = (data: any) => {
+    return [...(data.private_ipv4_addresses || []), ...(data.private_ipv6_addresses || [])].join(',') || '--';
+  };
+  const getPublicIPs = (data: any) => {
+    return [...(data.public_ipv4_addresses || []), ...(data.public_ipv6_addresses || [])].join(',') || '--';
+  };
+
+  const selectedRowPrivateIPs = computed(() => selections.value.map(getPrivateIPs));
+  const selectedRowPublicIPs = computed(() => selections.value.map(getPublicIPs));
+
   const baseColumns = computed(() => [
     {
       field: '_private_ip',
       label: '内网IP',
-      render: ({ data }: any) => (
-        <span>{[...data.private_ipv4_addresses, ...data.private_ipv6_addresses].join(',') || '--'}</span>
-      ),
+      render: ({ data }: any) => <span>{getPrivateIPs(data)}</span>,
     },
     {
       field: '_public_ip',
       label: '外网IP',
-      render: ({ data }: any) => (
-        <span>{[...data.public_ipv4_addresses, ...data.public_ipv6_addresses].join(',') || '--'}</span>
-      ),
+      render: ({ data }: any) => <span>{getPublicIPs(data)}</span>,
     },
     {
       field: 'name',
@@ -301,6 +307,8 @@ const useBatchOperation = ({ selections, onFinished }: Params) => {
     selected,
     isDialogLoading,
     searchData,
+    selectedRowPrivateIPs,
+    selectedRowPublicIPs,
     getDiskNumByCvmIds,
     handleSwitch,
     handleConfirm,

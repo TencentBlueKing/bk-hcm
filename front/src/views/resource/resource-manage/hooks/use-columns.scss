@@ -55,3 +55,15 @@
     color: #63656e;
   }
 }
+
+.cell-private-ip,
+.cell-public-ip {
+  .copy-icon {
+    display: none;
+  }
+  &:hover {
+    .copy-icon {
+      display: inline-flex;
+    }
+  }
+}

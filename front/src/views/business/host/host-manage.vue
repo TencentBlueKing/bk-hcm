@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import type { DoublePlainObject, FilterType } from '@/typings';
-
-import { PropType, ref, computed } from 'vue';
+import { PropType, ref } from 'vue';
 import useTableSelection from '@/hooks/useTableSelection';
 import businessHostManagePlugin from '@pluginHandler/business-host-manage';
-import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
+import useFilterHost from '@/views/resource/resource-manage/hooks/use-filter-host';
 import { useResourceStore } from '@/store';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { ResourceTypeEnum } from '@/common/resource-constant';
+import ResourceSearchSelect from '@/components/resource-search-select/index.vue';
 
 const { useColumns, useTableListQuery, HostOperations } = businessHostManagePlugin;
 
@@ -27,7 +28,7 @@ const cloudAreaPage = ref(0);
 const cloudAreas = ref([]);
 const { whereAmI, isResourcePage } = useWhereAmI();
 
-const { searchData, searchValue, filter } = useFilter(props);
+const { searchValue, filter } = useFilterHost(props);
 
 const { selections, handleSelectionChange, resetSelections } = useTableSelection();
 
@@ -47,42 +48,6 @@ const { columns, generateColumnsSettings } = useColumns({
   },
 });
 const resourceStore = useResourceStore();
-
-const hostSearchData = computed(() => {
-  return [
-    {
-      name: '主机ID',
-      id: 'cloud_id',
-    },
-    ...searchData.value,
-    ...[
-      {
-        name: '管控区域',
-        id: 'bk_cloud_id',
-      },
-      {
-        name: '操作系统',
-        id: 'os_name',
-      },
-      {
-        name: '云地域',
-        id: 'region',
-      },
-      {
-        name: '公网IP',
-        id: 'public_ipv4_addresses',
-      },
-      {
-        name: '内网IP',
-        id: 'private_ipv4_addresses',
-      },
-      {
-        name: '所属VPC',
-        id: 'cloud_vpc_ids',
-      },
-    ],
-  ];
-});
 
 const tableSettings = generateColumnsSettings(columns);
 
@@ -136,7 +101,7 @@ getCloudAreas();
       ></HostOperations>
 
       <div class="flex-row align-items-center justify-content-arround search-selector-container">
-        <bk-search-select class="w500" clearable :conditions="[]" :data="hostSearchData" v-model="searchValue" />
+        <resource-search-select v-model="searchValue" :resource-type="ResourceTypeEnum.CVM" />
         <slot name="recycleHistory"></slot>
       </div>
     </section>
