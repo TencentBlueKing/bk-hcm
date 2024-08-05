@@ -48,9 +48,6 @@ type service struct {
 
 // GenerateTemporalUrl ...
 func (s service) GenerateTemporalUrl(cts *rest.Contexts) (any, error) {
-
-	action := string(cts.PathParameter("action"))
-
 	req := new(cos.GenerateTemporalUrlReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -59,14 +56,15 @@ func (s service) GenerateTemporalUrl(cts *rest.Contexts) (any, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	action := objectstore.OperateAction(cts.PathParameter("action"))
 	cred, url, err := s.ostore.GetPreSignedURL(cts.Kit, action, time.Second*time.Duration(req.TTLSeconds), req.Filename)
 	if err != nil {
-		logs.Errorf("fail to get presigned download URL, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("fail to get presigned download URL, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
 		return nil, err
 	}
+
 	return &cos.GenerateTemporalUrlResult{
-		AK: cred.TmpSecretID,
-		// SK:    cred.TmpSecretKey,
+		AK:    cred.TmpSecretID,
 		Token: cred.SessionToken,
 		URL:   url,
 	}, nil

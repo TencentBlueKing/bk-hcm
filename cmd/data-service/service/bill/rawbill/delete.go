@@ -35,7 +35,7 @@ func (s *service) DeleteRawBill(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 	deletePath := generateFilePath(req.RawBillPathParam)
-	if err := s.ostore.Delete(cts.Request.Request.Context(), deletePath); err != nil {
+	if err := s.ostore.Delete(cts.Kit, deletePath); err != nil {
 		return nil, err
 	}
 	return nil, nil

@@ -41,9 +41,14 @@ import (
 // TCloudCOS tcloud cos client
 type TCloudCOS struct {
 	prefix string
-	uin    string
+	config cc.ObjectStoreTCloud
 	cli    *cos.Client
 	sts    *sts.Client
+}
+
+// URLToken 通过 tag 的方式，用户可以将请求参数或者请求头部放进签名中。
+type URLToken struct {
+	SessionToken string `url:"x-cos-security-token,omitempty" header:"-"`
 }
 
 // NewTCloudCOS create cos client
@@ -84,7 +89,7 @@ func NewTCloudCOS(config cc.ObjectStoreTCloud) (*TCloudCOS, error) {
 		prefix: prefix,
 		cli:    client,
 		sts:    stsCli,
-		uin:    config.UIN,
+		config: config,
 	}, nil
 }
 
@@ -153,9 +158,9 @@ func (t *TCloudCOS) ListItems(kt *kit.Kit, folderPath string) ([]string, error) 
 }
 
 // Delete delete object by path
-func (t *TCloudCOS) Delete(ctx context.Context, path string) error {
+func (t *TCloudCOS) Delete(kt *kit.Kit, path string) error {
 	deletePath := filepath.Join(t.prefix, path)
-	_, err := t.cli.Object.Delete(ctx, deletePath)
+	_, err := t.cli.Object.Delete(kt.Ctx, deletePath)
 	if err != nil {
 		return err
 	}
@@ -163,31 +168,37 @@ func (t *TCloudCOS) Delete(ctx context.Context, path string) error {
 }
 
 // GetPreSignedURL 获取预签名URL
-func (t *TCloudCOS) GetPreSignedURL(kt *kit.Kit, action string, ttl time.Duration,
+func (t *TCloudCOS) GetPreSignedURL(kt *kit.Kit, action OperateAction, ttl time.Duration,
 	path string) (tempCred *sts.Credentials, url string, err error) {
 	var cosActions []CosAction
 	var httpMethod string
 	switch action {
-	case "download":
+	case DownloadOperateAction:
 		cosActions = []CosAction{CosActionGet}
 		httpMethod = http.MethodGet
-	case "upload":
+	case UploadOperateAction:
 		cosActions = []CosAction{CosActionPost, CosActionPut}
 		httpMethod = http.MethodPut
 	default:
-		return nil, "", errors.New("invalid action for get presigned url: " + action)
+		return nil, "", errors.New("invalid action for get presigned url: " + string(action))
 	}
 	path = t.prependPrefix(path)
-	tempCred, err = t.GetTemporalSecret(kt, "ap-guangzhou", ttl, path, cosActions,
-		nil)
+	tempCred, err = t.GetTemporalSecret(kt, t.config.CosBucketRegion, ttl, path, cosActions, nil)
 	if err != nil {
-		logs.Errorf("fail to get temporal secret for %s url, err: %s", action, err.Error())
+		logs.Errorf("fail to get temporal secret for action: %s url, err: %s, ttl: %f, path: %s, rid: %s",
+			action, err.Error(), ttl.Seconds(), path, kt.Rid)
 		return nil, "", err
 	}
-	presigned, err := t.cli.Object.GetPresignedURL(kt.Ctx, httpMethod, path, tempCred.TmpSecretKey,
-		tempCred.TmpSecretID, ttl, nil)
+
+	// 构造临时下载链接的访问Token
+	urlToken := &URLToken{
+		SessionToken: tempCred.SessionToken,
+	}
+	presigned, err := t.cli.Object.GetPresignedURL(kt.Ctx, httpMethod, path, tempCred.TmpSecretID,
+		tempCred.TmpSecretKey, ttl, urlToken)
 	if err != nil {
-		logs.Errorf("fail to get presigned url for %s, err: %s, rid: %s", action, err.Error(), kt.Rid)
+		logs.Errorf("fail to get presigned url for action: %s, err: %s, httpMethod: %s, ttl: %f, path: %s, rid: %s",
+			action, err.Error(), httpMethod, ttl.Seconds(), path, kt.Rid)
 		return nil, "", err
 	}
 	return tempCred, presigned.String(), nil
@@ -201,16 +212,14 @@ func (t *TCloudCOS) GetTemporalSecret(kt *kit.Kit, region string, ttl time.Durat
 	for i, action := range actions {
 		strActions[i] = string(action)
 	}
-	path = t.prependPrefix(path)
 
 	statement := sts.CredentialPolicyStatement{
-		Action: strActions,
-		Effect: "allow",
-		Resource: []string{
-			// cos 资源格式 ； qcs::cos:{region}:uid/{appid}:{bucket}/{path}
-			"qcs::cos:" + region + ":uid/" + t.uin + ":" + t.cli.BaseURL.BucketURL.Host + "/" + path,
-		},
+		Action:   strActions,
+		Effect:   "allow",
+		Resource: []string{},
 	}
+	// 添加存储桶的Policy
+	statement.Resource = append(statement.Resource, t.getResourcePolicy(region, path))
 
 	if len(allowIps) > 0 {
 		// 开始构建生效条件 condition
@@ -240,8 +249,14 @@ func (t *TCloudCOS) GetTemporalSecret(kt *kit.Kit, region string, ttl time.Durat
 	}
 	return credential.Credentials, nil
 }
+
 func (t *TCloudCOS) prependPrefix(path string) string {
 	return filepath.Join(t.prefix, path)
+}
+
+// getResourcePolicy cos资源格式: qcs::cos:{region}:uid/{appid}:{bucket}/{path}
+func (t *TCloudCOS) getResourcePolicy(region, path string) string {
+	return fmt.Sprintf("qcs::cos:%s:uid/%s:%s/%s", region, t.config.UIN, t.config.CosBucketName, path)
 }
 
 // CosAction allowed post action
@@ -253,5 +268,15 @@ const (
 	// CosActionGet cos 下载操作
 	CosActionGet CosAction = "name/cos:GetObject"
 	// CosActionPut cos 上传操作
-	CosActionPut CosAction = "name/cos:GutObject"
+	CosActionPut CosAction = "name/cos:PutObject"
+)
+
+// OperateAction operate action
+type OperateAction string
+
+const (
+	// DownloadOperateAction 操作Action-下载
+	DownloadOperateAction OperateAction = "download"
+	// UploadOperateAction 操作Action-上传
+	UploadOperateAction OperateAction = "upload"
 )
