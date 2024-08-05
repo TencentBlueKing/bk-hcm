@@ -117,6 +117,8 @@ const (
 	ModifyWeightTaskType = TaskType(FlowTargetGroupModifyWeight)
 	// ApplyTargetGroupType 任务类型应用目标组到监听器/规则上
 	ApplyTargetGroupType = TaskType(FlowApplyTargetGroupToListenerRule)
+	// DeleteRuleTaskType 任务类型-删除负载均衡规则
+	DeleteRuleTaskType = TaskType(FlowLoadBalancerDeleteRule)
 )
 
 // InstType 实例类型

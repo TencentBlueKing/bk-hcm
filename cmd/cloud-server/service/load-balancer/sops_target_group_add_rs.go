@@ -611,9 +611,32 @@ func (svc *lbSvc) parseSOpsProtocolAndDomainAndUrlForTgIDs(kt *kit.Kit, accountI
 	// 记录urlRule对应的目标组ID
 	tgIDs := make([]string, 0)
 	for _, ruleItem := range urlRuleResult.Details {
-		if len(ruleItem.TargetGroupID) == 0 {
+		if len(ruleItem.LblID) == 0 || len(ruleItem.TargetGroupID) == 0 {
 			continue
 		}
+		lblResult, err := svc.client.DataService().TCloud.LoadBalancer.GetListener(kt, ruleItem.LblID)
+		if err != nil {
+			return nil, err
+		}
+		if lblResult == nil {
+			continue
+		}
+		targetGroupResult, err := svc.client.DataService().TCloud.LoadBalancer.GetTargetGroup(kt, ruleItem.TargetGroupID)
+		if err != nil {
+			return nil, err
+		}
+		if targetGroupResult == nil {
+			continue
+		}
+
+		if lblResult.Protocol != targetGroupResult.Protocol {
+			return nil, fmt.Errorf("listener and target group protocols are different，listenrID: %s, targetGroupID: %s",
+				ruleItem.LblID, ruleItem.TargetGroupID)
+		}
+		if protocol != targetGroupResult.Protocol {
+			continue
+		}
+
 		tgIDs = append(tgIDs, ruleItem.TargetGroupID)
 	}
 

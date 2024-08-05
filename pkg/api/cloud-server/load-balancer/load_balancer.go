@@ -279,6 +279,8 @@ type TCloudRemoveTargetReq struct {
 	TargetIDs     []string `json:"target_ids" validate:"required,min=1,max=100,dive"`
 }
 
+// --------------------------[批量增加规则]--------------------------
+
 // TCloudRuleBatchCreateReq tcloud lb url rule batch create req.
 type TCloudRuleBatchCreateReq struct {
 	Rules []TCloudRuleCreate `json:"rules" validate:"min=1,dive"`
@@ -314,6 +316,33 @@ type TCloudRuleCreate struct {
 // Validate request.
 func (req *TCloudRuleCreate) Validate() error {
 	return validator.Validate.Struct(req)
+}
+
+// --------------------------[批量移除规则]--------------------------
+
+// TcloudBatchDeleteRuleReq 批量移除规则的请求体，包含七层（url_rule）和四层（listener）规则
+type TcloudBatchDeleteRuleReq struct {
+	// 要删除的七层规则id列表（url_rule_ids）
+	URLRuleIDs []string `json:"url_rule_ids"`
+	// 要删除的四层规则id列表（listener_ids）
+	ListenerIDs []string `json:"listener_ids"`
+}
+
+// Validate validate request
+func (req TcloudBatchDeleteRuleReq) Validate() error {
+	if len(req.URLRuleIDs)+len(req.ListenerIDs) == 0 {
+		return fmt.Errorf("url_rule_ids and listener_ids cannot both be empty")
+	}
+
+	return validator.Validate.Struct(req)
+}
+
+// TcloudBatchDeleteRuleIDs delete rule ids
+type TcloudBatchDeleteRuleIDs struct {
+	// 要删除的七层规则id列表（url_rule_ids）
+	URLRuleIDs []string `json:"url_rule_ids" validate:"required"`
+	// 要删除的四层规则id列表（listener_ids）
+	ListenerIDs []string `json:"listener_ids" validate:"required"`
 }
 
 // --------------------------[批量修改RS端口]--------------------------
@@ -587,86 +616,38 @@ func (req *TCloudSopsTargetBatchModifyWeightReq) Validate() error {
 // --------------------------[标准运维-批量添加规则]--------------------------
 
 // TCloudSopsRuleBatchCreateReq tloud sops rule batch create request
-type TCloudSopsRuleBatchCreateReq struct {
-	RuleInfoTcpUdpList []RuleInfoTcpUdp `json:"rule_info_tcp_udp_list" validate:"required"`
-	RuleInfoHttpList   []RuleInfoHttp   `json:"RuleInfoHttpList" validate:"required"`
-	RuleInfoHttpsList  []RuleInfoHttps  `json:"RuleInfoHttpsList" validate:"required"`
+//type TCloudSopsRuleBatchCreateReq struct {
+//	BindRSRecords []lblogic.BindRSRecord `json:"bind_rs_records" validate:"required"`
+//}
+//
+//// Validate validate req data
+//func (req *TCloudSopsRuleBatchCreateReq) Validate() error {
+//	return validator.Validate.Struct(req)
+//}
+
+// --------------------------[标准运维-批量移除规则]--------------------------
+
+// TCloudSopsRuleBatchDeleteReq tloud sops rule batch delete request
+type TCloudSopsRuleBatchDeleteReq struct {
+	RuleQueryList []RuleQueryItemForRuleOffline `json:"rule_query_list" validate:"required,min=1"`
 }
 
-// Validate validate req data
-func (req *TCloudSopsRuleBatchCreateReq) Validate() error {
+// Validate request.
+func (req *TCloudSopsRuleBatchDeleteReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// RuleInfoTcpUdp 四层规则信息（TCP&UDP）
-type RuleInfoTcpUdp struct {
-	OperationType enumor.OperationType `json:"operation_type" jsonschema:"title=操作类型"`
-	Region        string               `json:"region" jsonschema:"title=地域"`
-	ClbVip        string               `json:"clb_vip" jsonschema:"title=CLB_VIP"`
-	ListenerPort  string               `json:"listener_port" jsonschema:"title=监听器端口"`
-	ListenerName  string               `json:"listener_name" jsonschema:"title=监听器名称"`
-	Protocol      enumor.ProtocolType  `json:"protocol" jsonschema:"title=协议"`
-	RsIP          string               `json:"rs_ip" jsonschema:"title=RS IP"`
-	RsPort        string               `json:"rs_port" jsonschema:"title=RS PORT"`
-	RsWeight      *int64               `json:"rs_weight" jsonschema:"title=RS权重"`
-	RsType        enumor.InstType      `json:"rs_type" jsonschema:"title=RS类型"`
-	Scheduler     enumor.Scheduler     `json:"scheduler" jsonschema:"title=负载均衡方式"`
-	SessionExpire *int64               `json:"session_expire" jsonschema:"title=会话保持时间"`
+// RuleQueryItemForRuleOffline 规则查询结构体-规则下线专属
+type RuleQueryItemForRuleOffline struct {
+	Region   string                `json:"region" jsonschema:"title=地域"`
+	Vip      []string              `json:"vip" jsonschema:"title=VIP"`
+	VPort    []int                 `json:"vport" jsonschema:"title=VPORT"`
+	RsIP     []string              `json:"rs_ip" jsonschema:"title=RS IP"`
+	RsType   string                `json:"rs_type" jsonschema:"title=RS TYPE"`
+	Protocol []enumor.ProtocolType `json:"protocol" jsonschema:"title=协议"`
+	Domain   []string              `json:"domain" jsonschema:"title=域名"`
+	Url      []string              `json:"url" jsonschema:"title=url"`
 }
-
-// Validate validate tcp&udp rule info
-func (i *RuleInfoTcpUdp) Validate() error {
-	return nil
-}
-
-// RuleInfoHttp 规则信息（HTTP）
-type RuleInfoHttp struct {
-	OperationType enumor.OperationType `json:"operation_type" jsonschema:"title=操作类型"`
-	Region        string               `json:"region" jsonschema:"title=地域"`
-	ClbVip        string               `json:"clb_vip" jsonschema:"title=CLB VIP"`
-	ListenerPort  string               `json:"listener_port" jsonschema:"title=监听器端口"`
-	ListenerName  string               `json:"listener_name" jsonschema:"title=监听器名称"`
-	Protocol      enumor.ProtocolType  `json:"protocol" jsonschema:"title=协议"`
-	Domain        string               `json:"domain" jsonschema:"title=域名"`
-	Url           string               `json:"url" jsonschema:"title=URL"`
-	RsIP          string               `json:"rs_ip" jsonschema:"title=RS IP"`
-	RsPort        string               `json:"rs_port" jsonschema:"title=RS PORT"`
-	RsWeight      *int64               `json:"rs_weight" jsonschema:"title=RS权重"`
-	RsType        enumor.InstType      `json:"rs_type" jsonschema:"title=RS类型"`
-	Scheduler     enumor.Scheduler     `json:"scheduler" jsonschema:"title=负载均衡方式"`
-	SessionExpire *int64               `json:"session_expire" jsonschema:"title=会话保持时间"`
-}
-
-// Validate validate http rule info
-func (i *RuleInfoHttp) Validate() error {
-	return nil
-}
-
-// RuleInfoHttps 规则信息（HTTPS）
-type RuleInfoHttps struct {
-	OperationType enumor.OperationType `json:"operation_type" jsonschema:"title=操作类型"`
-	Region        string               `json:"region" jsonschema:"title=地域"`
-	ClbVip        string               `json:"clb_vip" jsonschema:"title=CLB_VIP"`
-	ListenerPort  string               `json:"listener_port" jsonschema:"title=监听器端口"`
-	ListenerName  string               `json:"listener_name" jsonschema:"title=监听器名称"`
-	Protocol      enumor.ProtocolType  `json:"protocol" jsonschema:"title=协议"`
-	Domain        string               `json:"domain" jsonschema:"title=域名"`
-	Url           string               `json:"url" jsonschema:"title=URL"`
-	RsIP          string               `json:"rs_ip" jsonschema:"title=RS IP"`
-	RsPort        string               `json:"rs_port" jsonschema:"title=RS PORT"`
-	RsWeight      *int64               `json:"rs_weight" jsonschema:"title=RS权重"`
-	RsType        enumor.InstType      `json:"rs_type" jsonschema:"title=RS类型"`
-	Scheduler     enumor.Scheduler     `json:"scheduler" jsonschema:"title=负载均衡方式"`
-	SessionExpire *int64               `json:"session_expire" jsonschema:"title=会话保持时间"`
-	CertID        string               `json:"cert_id" jsonschema:"title=证书ID"`
-}
-
-// Validate validate https rule info
-func (i *RuleInfoHttps) Validate() error {
-	return nil
-}
-
-// --------------------------[标准运维-批量移除规则]--------------------------
 
 // TCloudCreateSnatIpReq ...
 type TCloudCreateSnatIpReq struct {

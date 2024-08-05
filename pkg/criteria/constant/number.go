@@ -43,6 +43,10 @@ const (
 	BatchModifyTargetPortCloudMaxLimit = 20
 	// BatchModifyTargetWeightCloudMaxLimit 公有云上批量修改RS权重的最大限制数量
 	BatchModifyTargetWeightCloudMaxLimit = 100
+	// BatchDeleteUrlRuleCloudMaxLimit 公有云上批量删除负载均衡七层监听器的转发规则的最大限制数量
+	BatchDeleteUrlRuleCloudMaxLimit = 20
+	// BatchDeleteListenerCloudMaxLimit 公有云上批量删除负载均衡监听器的最大限制数量
+	BatchDeleteListenerCloudMaxLimit = 20
 
 	// ExcelExportLimit two hundred thousands 二十万
 	ExcelExportLimit = 20_0000

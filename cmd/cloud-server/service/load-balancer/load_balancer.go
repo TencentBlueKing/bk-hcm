@@ -115,6 +115,7 @@ func bizService(h *rest.Handler, svc *lbSvc) {
 		http.MethodPatch, "/target_groups/{target_group_id}/targets/port", svc.BatchModifyBizTargetsPort)
 	h.Add("BatchModifyBizTargetsWeight", http.MethodPatch,
 		"/target_groups/{target_group_id}/targets/weight", svc.BatchModifyBizTargetsWeight)
+	h.Add("BatchDeleteBizRule", http.MethodDelete, "/rule/batch", svc.BatchDeleteBizRule)
 
 	h.Add("CancelFlow", http.MethodPost, "/load_balancers/{lb_id}/async_flows/terminate", svc.BizTerminateFlow)
 	h.Add("RetryTask", http.MethodPost, "/load_balancers/{lb_id}/async_tasks/retry", svc.BizRetryTask)
@@ -154,8 +155,10 @@ func bizService(h *rest.Handler, svc *lbSvc) {
 		"/sops/target_groups/targets/batch", svc.BatchBizRemoveTargetGroupRS)
 	h.Add("BatchBizModifyWeightTargetGroup", http.MethodPatch,
 		"/sops/target_groups/targets/weight", svc.BatchBizModifyWeightTargetGroup)
-	//h.Add("BatchBiz", http.MethodPost,
+	//h.Add("BatchBizRuleOnline", http.MethodPost,
 	//	"/sops/rule/online", svc.BatchBizRuleOnline)
+	h.Add("BatchBizRuleOffline", http.MethodDelete,
+		"/sops/rule/offline", svc.BatchBizRuleOffline)
 }
 
 type lbSvc struct {
