@@ -216,7 +216,7 @@ func (svc lbSvc) initFlowDeleteRuleLayer(kt *kit.Kit, lbID string, ruleIDs cslb.
 	tasks := make([]ts.CustomFlowTask, 0)
 	getActionID := counter.NewNumStringCounter(1, 10)
 
-	var lastActionIDTaskUrlRule action.ActIDType
+	var lastActionID action.ActIDType
 	elems := slice.Split(ruleIDs.URLRuleIDs, constant.BatchDeleteUrlRuleCloudMaxLimit)
 	for _, parts := range elems {
 		actionID := action.ActIDType(getActionID())
@@ -230,14 +230,13 @@ func (svc lbSvc) initFlowDeleteRuleLayer(kt *kit.Kit, lbID string, ruleIDs cslb.
 			},
 			Retry: tableasync.NewRetryWithPolicy(3, 100, 200),
 		}
-		if len(lastActionIDTaskUrlRule) > 0 {
-			tmpTask.DependOn = []action.ActIDType{lastActionIDTaskUrlRule}
+		if len(lastActionID) > 0 {
+			tmpTask.DependOn = []action.ActIDType{lastActionID}
 		}
 		tasks = append(tasks, tmpTask)
-		lastActionIDTaskUrlRule = actionID
+		lastActionID = actionID
 	}
 
-	var lastActionIDTaskListener = *new(action.ActIDType)
 	elems = slice.Split(ruleIDs.ListenerIDs, constant.BatchDeleteListenerCloudMaxLimit)
 	for _, parts := range elems {
 		actionID := action.ActIDType(getActionID())
@@ -251,11 +250,11 @@ func (svc lbSvc) initFlowDeleteRuleLayer(kt *kit.Kit, lbID string, ruleIDs cslb.
 			},
 			Retry: tableasync.NewRetryWithPolicy(3, 100, 200),
 		}
-		if len(lastActionIDTaskListener) > 0 {
-			tmpTask.DependOn = []action.ActIDType{lastActionIDTaskListener}
+		if len(lastActionID) > 0 {
+			tmpTask.DependOn = []action.ActIDType{lastActionID}
 		}
 		tasks = append(tasks, tmpTask)
-		lastActionIDTaskListener = actionID
+		lastActionID = actionID
 	}
 
 	addReq := &ts.AddCustomFlowReq{
