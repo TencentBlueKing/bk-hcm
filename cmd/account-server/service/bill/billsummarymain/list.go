@@ -20,6 +20,8 @@
 package billsummarymain
 
 import (
+	"fmt"
+
 	asbillapi "hcm/pkg/api/account-server/bill"
 	"hcm/pkg/api/core"
 	accountset "hcm/pkg/api/core/account-set"
@@ -98,10 +100,13 @@ func (s *service) ListMainAccountSummary(cts *rest.Contexts) (interface{}, error
 
 	for _, detail := range summary.Details {
 		var accountCloudID, accountCloudName string
-		if account, ok := accountMap[detail.MainAccountID]; ok {
-			accountCloudID = account.CloudID
-			accountCloudName = account.Name
+		account, ok := accountMap[detail.MainAccountID]
+		if !ok {
+			return nil, fmt.Errorf("[ListMainAccountSummary] summaryMain(%s): mainAccount(%s) not found",
+				detail.ID, detail.MainAccountID)
 		}
+		accountCloudID = account.CloudID
+		accountCloudName = account.Name
 
 		tmp := &asbillapi.MainAccountSummaryResult{
 			BillSummaryMainResult: *detail,
