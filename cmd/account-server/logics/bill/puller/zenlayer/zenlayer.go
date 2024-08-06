@@ -36,7 +36,10 @@ const (
 )
 
 func init() {
-	puller.PullerRegistry[enumor.Zenlayer] = &ZenlayerPuller{
+	puller.DailyPullerRegistry[enumor.Zenlayer] = &ZenlayerPuller{
+		BillDelay: defaultZenlayerDelay,
+	}
+	puller.MonthPullerRegistry[enumor.Zenlayer] = &ZenlayerPuller{
 		BillDelay: defaultZenlayerDelay,
 	}
 }
@@ -44,6 +47,11 @@ func init() {
 // ZenlayerPuller Zenlayer puller
 type ZenlayerPuller struct {
 	BillDelay int
+}
+
+// HasMonthPullTask ...
+func (hp *ZenlayerPuller) HasMonthPullTask() bool {
+	return false
 }
 
 // EnsurePullTask 空实现，PullTask的创建由账单导入模块完成
