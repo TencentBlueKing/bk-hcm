@@ -279,7 +279,7 @@ func convSummaryToCommonReverse(rootAccountID, mainAccountID string, summary *bi
 		BillDay:       0,
 		VersionID:     summary.CurrentVersion,
 		Currency:      summary.Currency,
-		Cost:          cost.Neg(),
+		Cost:          cost,
 		HcProductCode: AwsCommonExpenseReverseName,
 		HcProductName: AwsCommonExpenseReverseName,
 		Extension:     cvt.ValToPtr[json.RawMessage](extension),
