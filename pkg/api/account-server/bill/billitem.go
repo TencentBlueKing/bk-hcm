@@ -20,12 +20,15 @@
 package bill
 
 import (
+	"encoding/json"
 	"errors"
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/bill"
+	dsbill "hcm/pkg/api/data-service/bill"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/runtime/filter"
 )
@@ -68,6 +71,61 @@ type ImportBillAdjustmentReq struct {
 
 // Validate ListBillAdjustmentReq
 func (r *ImportBillAdjustmentReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+const (
+	importFileSizeMaxLimit1MB = 1 * 1024 * 1024
+	importBillItemsMaxLimit   = 200000
+)
+
+// Base64String base64 string
+type Base64String string
+
+func (b Base64String) checkSize(expectedSize int) error {
+	if len(b) > expectedSize {
+		return errors.New("file size exceed limit")
+	}
+	return nil
+}
+
+// ImportBillItemPreviewReq 账单明细预览
+type ImportBillItemPreviewReq struct {
+	BillYear  int `json:"bill_year" validate:"required"`
+	BillMonth int `json:"bill_month" validate:"required"`
+	// 调账 文件上传
+	ExcelFileBase64 Base64String `json:"excel_file_base64" validate:"required"`
+}
+
+// Validate ...
+func (r *ImportBillItemPreviewReq) Validate() error {
+	if err := r.ExcelFileBase64.checkSize(importFileSizeMaxLimit1MB); err != nil {
+		return err
+	}
+	return validator.Validate.Struct(r)
+}
+
+// ImportBillItemPreviewResult 账单明细预览结果
+type ImportBillItemPreviewResult struct {
+	Items   []dsbill.BillItemCreateReq[json.RawMessage]    `json:"items" validate:"required"`
+	CostMap map[enumor.CurrencyCode]*bill.CostWithCurrency `json:"cost_map"`
+}
+
+// ImportBillItemReq 账单明细
+type ImportBillItemReq struct {
+	BillYear  int                                         `json:"bill_year" validate:"required"`
+	BillMonth int                                         `json:"bill_month" validate:"required"`
+	Items     []dsbill.BillItemCreateReq[json.RawMessage] `json:"items" validate:"required"`
+}
+
+// Validate ...
+func (r *ImportBillItemReq) Validate() error {
+	if len(r.Items) == 0 {
+		return errf.New(errf.InvalidParameter, "items is empty")
+	}
+	if len(r.Items) > importBillItemsMaxLimit {
+		return errf.New(errf.InvalidParameter, "items count exceed limit importBillItemsMaxLimit")
+	}
 	return validator.Validate.Struct(r)
 }
 

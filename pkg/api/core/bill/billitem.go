@@ -156,6 +156,30 @@ type KaopuBillItemExtension struct {
 
 // ZenlayerBillItemExtension ...
 type ZenlayerBillItemExtension struct {
+	*ZenlayerRawBillItem `json:",inline"`
+}
+
+// ZenlayerRawBillItem bill item from zenlayer
+type ZenlayerRawBillItem struct {
+	BillID         *string          `json:"bill_id"`         // 账单ID
+	ZenlayerOrder  *string          `json:"zenlayer_order"`  // Zenlayer订单编号
+	CID            *string          `json:"cid"`             // CID
+	GroupID        *string          `json:"group_id"`        // GROUP ID
+	Currency       *string          `json:"currency"`        // 币种
+	City           *string          `json:"city"`            // 城市
+	PayContent     *string          `json:"pay_content"`     // 付费内容
+	Type           *string          `json:"type"`            // 类型
+	AcceptanceNum  *decimal.Decimal `json:"acceptance_num"`  // 验收数量
+	PayNum         *decimal.Decimal `json:"pay_num"`         // 付费数量
+	UnitPriceUSD   *decimal.Decimal `json:"unit_price_usd"`  // 单价USD
+	TotalPayable   *decimal.Decimal `json:"total_payable"`   // 应付USD
+	BillingPeriod  *string          `json:"billing_period"`  // 账期
+	ContractPeriod *string          `json:"contract_period"` // 合约周期
+	Remarks        *string          `json:"remarks"`         // 备注
+	BusinessGroup  *string          `json:"business_group"`  // 业务组
+	CPU            *string          `json:"cpu"`             // CPU
+	Disk           *string          `json:"disk"`            // 硬盘
+	Memory         *string          `json:"memory"`          // 内存
 }
 
 // AwsRawBillItem Aws 原始账单结构

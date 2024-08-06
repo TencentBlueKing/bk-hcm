@@ -92,7 +92,7 @@ type AccountBillDailyPullTask struct {
 	// SplitFlowID split flow id
 	SplitFlowID string `db:"split_flow_id" json:"split_flow_id"`
 	// DailySummaryFlowID daily summary flow id
-	DailySummaryFlowID string `db:"daily_summary_flow_id" json:"daily_summary_flow_id"`
+	DailySummaryFlowID *string `db:"daily_summary_flow_id" json:"daily_summary_flow_id"`
 	// CreatedAt 创建时间
 	CreatedAt types.Time `db:"created_at" json:"created_at"`
 	// UpdatedAt 更新时间

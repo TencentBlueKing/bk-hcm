@@ -60,7 +60,7 @@ func (svc *service) CreateBillDailyPullTask(cts *rest.Contexts) (interface{}, er
 			Currency:           enumor.CurrencyCode(req.Currency),
 			FlowID:             req.FlowID,
 			SplitFlowID:        req.SplitFlowID,
-			DailySummaryFlowID: req.DailySummaryFlowID,
+			DailySummaryFlowID: &req.DailySummaryFlowID,
 			Cost:               &types.Decimal{Decimal: req.Cost},
 		}
 		ids, err := svc.dao.AccountBillDailyPullTask().BatchCreateWithTx(

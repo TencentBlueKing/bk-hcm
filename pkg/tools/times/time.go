@@ -58,3 +58,14 @@ func DaysInMonth(year int, month time.Month) int {
 
 	return lastOfThisMonth.Day()
 }
+
+// GetMonthDays 获取指定年月的天数列表
+func GetMonthDays(year int, month time.Month) []int {
+	lastDay := DaysInMonth(year, month)
+	// 创建日期列表
+	days := make([]int, lastDay)
+	for day := 1; day <= int(lastDay); day++ {
+		days[day-1] = day
+	}
+	return days
+}

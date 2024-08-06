@@ -150,7 +150,7 @@ func (abpDao AccountBillDailyPullTaskDao) UpdateByIDWithTx(
 		"bill_day",
 		"version_id",
 	}...)
-	opts := utils.NewFieldOptions().AddIgnoredFields(ignoredFields...)
+	opts := utils.NewFieldOptions().AddIgnoredFields(ignoredFields...).AddBlankedFields("daily_summary_flow_id")
 	setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(updateData, opts)
 	if err != nil {
 		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)

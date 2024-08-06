@@ -121,7 +121,7 @@ type BillDailyPullTaskUpdateReq struct {
 	Cost               *decimal.Decimal            `json:"cost" validate:"omitempty"`
 	FlowID             string                      `json:"flow_id" validate:"omitempty"`
 	SplitFlowID        string                      `json:"split_flow_id" validate:"omitempty"`
-	DailySummaryFlowID string                      `json:"daily_summary_flow_id" validate:"omitempty"`
+	DailySummaryFlowID *string                     `json:"daily_summary_flow_id" validate:"omitempty"`
 }
 
 // Validate validates BillDailyPullTaskUpdateReq

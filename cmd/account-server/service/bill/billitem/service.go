@@ -40,6 +40,10 @@ func InitBillItemService(c *capability.Capability) {
 
 	h.Add("ListBillItems", "POST", "/vendors/{vendor}/bills/items/list", svc.ListBillItems)
 	h.Add("ExportBillItems", "POST", "/vendors/{vendor}/bills/items/export", svc.ExportBillItems)
+	h.Add("ImportBillItemsPreview", "POST", "/vendors/{vendor}/bills/items/import/preview",
+		svc.ImportBillItemsPreview)
+	h.Add("ImportBillItems", "POST", "/vendors/{vendor}/bills/items/import",
+		svc.ImportBillItems)
 
 	h.Load(c.WebService)
 }

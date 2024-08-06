@@ -83,9 +83,6 @@ func getBillItemFilter(opt *DailyAccountSplitActionOption, billDay int) *filter.
 	expressions := []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", opt.RootAccountID),
 		tools.RuleEqual("main_account_id", opt.MainAccountID),
-		tools.RuleEqual("vendor", opt.Vendor),
-		tools.RuleEqual("bill_year", opt.BillYear),
-		tools.RuleEqual("bill_month", opt.BillMonth),
 	}
 	if billDay != 0 {
 		expressions = append(expressions, tools.RuleEqual("bill_day", billDay))
