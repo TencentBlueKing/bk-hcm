@@ -123,10 +123,10 @@ const (
 			  <div class="content">
 				<p class="content-header">尊敬的用户您好！</p>
 				<div class="content-body">
-				  <p>您正在申请{{ %s }}云的二级账号</p>
-				  <p><strong>云账号名称</strong>：{{ %s }}</p>
-				  <p><strong>云账号邮箱</strong>：{{ %s }}</p>
-				  <p><strong>本次验证码</strong>：{{ %s }}</p>
+				  <p>您正在申请 %s 云的二级账号</p>
+				  <p><strong>云账号名称</strong>： %s </p>
+				  <p><strong>云账号邮箱</strong>： %s </p>
+				  <p><strong>本次验证码</strong>： %s </p>
 				  <p><strong>验证码有效时间</strong>：%d分钟</p>
 				</div>
 				<p class="content-footer">请勿向他人提供验证码，使用专用邮箱，账号申请后邮箱不可更改。</p>
