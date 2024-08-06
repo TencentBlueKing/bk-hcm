@@ -40,6 +40,7 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/serviced"
 	"hcm/pkg/tools/slice"
+	"hcm/pkg/tools/times"
 )
 
 // NewMainSummaryDailyController create main account daily splitter controller
@@ -125,18 +126,18 @@ func (msdc *MainSummaryDailyController) runBillDailySummaryLoop(kt *kit.Kit) {
 }
 
 func (msdc *MainSummaryDailyController) doSync(kt *kit.Kit) error {
-	curBillYear, curBillMonth := getCurrentBillMonth()
+	curBillYear, curBillMonth := times.GetCurrentMonthUTC()
 	if err := msdc.syncDailySummary(kt.NewSubKit(), curBillYear, curBillMonth); err != nil {
 		return fmt.Errorf("ensure bill summary for %d %d failed, err %s", curBillYear, curBillMonth, err.Error())
 	}
-	lastBillYear, lastBillMonth := getLastBillMonth()
+	lastBillYear, lastBillMonth := times.GetLastMonthUTC()
 	if err := msdc.syncDailySummary(kt.NewSubKit(), lastBillYear, lastBillMonth); err != nil {
 		return fmt.Errorf("ensure bill summary for %d %d failed, err %s", lastBillYear, lastBillMonth, err.Error())
 	}
 	return nil
 }
 
-func (msdc *MainSummaryDailyController) getBillSummary(
+func (msdc *MainSummaryDailyController) getBillSummaryMain(
 	kt *kit.Kit, billYear, billMonth int) (*bill.BillSummaryMainResult, error) {
 
 	var expressions []*filter.AtomRule
@@ -166,11 +167,11 @@ func (msdc *MainSummaryDailyController) getBillSummary(
 
 func (msdc *MainSummaryDailyController) syncDailySummary(kt *kit.Kit, billYear, billMonth int) error {
 	time.Sleep(time.Millisecond * time.Duration(rand.Intn(defaultSleepMillisecond)))
-	summary, err := msdc.getBillSummary(kt, billYear, billMonth)
+	summary, err := msdc.getBillSummaryMain(kt, billYear, billMonth)
 	if err != nil {
 		return err
 	}
-	curPuller, err := puller.GetPuller(summary.Vendor)
+	curPuller, err := puller.GetDailyPuller(summary.Vendor)
 	if err != nil {
 		return err
 	}

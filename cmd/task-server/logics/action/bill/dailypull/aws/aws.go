@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package aws daily puller
 package aws
 
 import (
@@ -116,7 +117,7 @@ func (hp *AwsPuller) doPull(kt run.ExecuteKit, opt *registry.PullDailyBillOption
 		if bill.BillCurrency != "" {
 			currency = bill.BillCurrency
 		}
-		cost.Add(bill.BillCost)
+		cost = cost.Add(bill.BillCost)
 		billItems = append(billItems, *bill)
 	}
 	filename := fmt.Sprintf("%d-%d.csv", *offset, itemLen)
@@ -163,14 +164,16 @@ func (hp *AwsPuller) createRawBill(
 	filename string, billItems []dsbill.RawBillItem) error {
 
 	storeReq := &dsbill.RawBillCreateReq{
-		Vendor:        enumor.Aws,
-		RootAccountID: opt.RootAccountID,
-		AccountID:     opt.MainAccountID,
-		BillYear:      fmt.Sprintf("%d", opt.BillYear),
-		BillMonth:     fmt.Sprintf("%02d", opt.BillMonth),
-		BillDate:      fmt.Sprintf("%02d", opt.BillDay),
-		Version:       fmt.Sprintf("%d", opt.VersionID),
-		FileName:      filename,
+		RawBillPathParam: dsbill.RawBillPathParam{
+			Vendor:        enumor.Aws,
+			RootAccountID: opt.RootAccountID,
+			MainAccountID: opt.MainAccountID,
+			BillYear:      fmt.Sprintf("%d", opt.BillYear),
+			BillMonth:     fmt.Sprintf("%02d", opt.BillMonth),
+			BillDate:      fmt.Sprintf("%02d", opt.BillDay),
+			Version:       fmt.Sprintf("%d", opt.VersionID),
+			FileName:      filename,
+		},
 	}
 	storeReq.Items = billItems
 	dataBill := actcli.GetDataService().Global.Bill

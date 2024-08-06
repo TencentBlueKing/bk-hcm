@@ -29,7 +29,7 @@ import (
 // BuildDailySplitTask build daily bill pull task
 func BuildDailySplitTask(
 	rootAccountID, mainAccountID string, vendor enumor.Vendor,
-	billYear, billMonth, billDay, version int) ts.CustomFlowTask {
+	billYear, billMonth, billDay, version int, ext map[string]string) ts.CustomFlowTask {
 
 	return ts.CustomFlowTask{
 		ActionID:   action.ActIDType(uuid.UUID()),
@@ -42,6 +42,7 @@ func BuildDailySplitTask(
 			BillYear:      billYear,
 			BillMonth:     billMonth,
 			BillDay:       billDay,
+			Extension:     ext,
 		},
 	}
 }

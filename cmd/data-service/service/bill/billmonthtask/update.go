@@ -17,61 +17,56 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package billpuller
+package billmonthtask
 
 import (
 	"fmt"
 
-	"hcm/pkg/api/core"
-	dataservice "hcm/pkg/api/data-service"
+	dataservice "hcm/pkg/api/data-service/bill"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
-	"hcm/pkg/dal/dao/tools"
-	"hcm/pkg/dal/dao/types"
-	"hcm/pkg/logs"
+	tablebill "hcm/pkg/dal/table/bill"
+	"hcm/pkg/dal/table/types"
 	"hcm/pkg/rest"
 
 	"github.com/jmoiron/sqlx"
 )
 
-// DeleteBillPuller delete bill puller with options
-func (svc *service) DeleteBillPuller(cts *rest.Contexts) (interface{}, error) {
-	req := new(dataservice.BatchDeleteReq)
+// UpdateBillMonthPullTask update bill puller with options
+func (svc *service) UpdateBillMonthPullTask(cts *rest.Contexts) (interface{}, error) {
+	req := new(dataservice.BillMonthTaskUpdateReq)
+
 	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-	opt := &types.ListOption{
-		Filter: req.Filter,
-		Page: &core.BasePage{
-			Start: 0,
-			Limit: core.DefaultMaxPageLimit,
-		},
+
+	monthTask := &tablebill.AccountBillMonthTask{
+		ID:            req.ID,
+		State:         req.State,
+		Count:         req.Count,
+		Currency:      req.Currency,
+		PullIndex:     req.PullIndex,
+		PullFlowID:    req.PullFlowID,
+		SplitIndex:    req.SplitIndex,
+		SplitFlowID:   req.SplitFlowID,
+		SummaryFlowID: req.SummaryFlowID,
+		SummaryDetail: req.SummaryDetail,
 	}
-	listResp, err := svc.dao.AccountBillPuller().List(cts.Kit, opt)
-	if err != nil {
-		logs.Errorf("delete list account bill puller failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("delete list account bill puller failed, err: %v", err)
+	if req.Cost != nil {
+		monthTask.Cost = &types.Decimal{Decimal: *req.Cost}
 	}
-	if len(listResp.Details) == 0 {
-		return nil, nil
-	}
-	delIDs := make([]string, len(listResp.Details))
-	for index, one := range listResp.Details {
-		delIDs[index] = one.ID
-	}
-	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		delFilter := tools.ContainersExpression("id", delIDs)
-		if err = svc.dao.AccountBillPuller().DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
-			return nil, err
+	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		if err := svc.dao.AccountBillMonthPullTask().UpdateByIDWithTx(
+			cts.Kit, txn, monthTask.ID, monthTask); err != nil {
+			return nil, fmt.Errorf("update bill month task failed, err: %v", err)
 		}
 		return nil, nil
 	})
 	if err != nil {
-		logs.Errorf("delete account bill puller failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 

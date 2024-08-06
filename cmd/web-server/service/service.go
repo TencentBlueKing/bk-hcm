@@ -199,7 +199,6 @@ func (s *Service) ListenAndServeRest() error {
 				logs.Errorf("shutdown restful server failed, err: %v", err)
 				return
 			}
-
 			logs.Infof("shutdown restful server success...")
 		}
 	}()

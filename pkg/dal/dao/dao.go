@@ -107,7 +107,7 @@ type Set interface {
 	EipCvmRel() eipcvmrel.EipCvmRel
 	AccountBillConfig() cloudbill.Interface
 	AccountBillDailyPullTask() bill.AccountBillDailyPullTask
-	AccountBillPuller() bill.AccountBillPuller
+	AccountBillMonthPullTask() bill.AccountBillMonthPullTask
 	AccountBillSummaryMain() bill.AccountBillSummaryMain
 	AccountBillSummaryDaily() bill.AccountBillSummaryDaily
 	AccountBillSummaryVersion() bill.AccountBillSummaryVersion
@@ -505,9 +505,9 @@ func (s *set) AccountBillDailyPullTask() bill.AccountBillDailyPullTask {
 	}
 }
 
-// AccountBillPuller returns AccountBillPuller dao.
-func (s *set) AccountBillPuller() bill.AccountBillPuller {
-	return &bill.AccountBillPullerDao{
+// AccountBillMonthPullTask returns AccountBillMonthPullTask dao.
+func (s *set) AccountBillMonthPullTask() bill.AccountBillMonthPullTask {
+	return &bill.AccountBillMonthPullTaskDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 	}

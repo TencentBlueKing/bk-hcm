@@ -17,53 +17,26 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package billpuller
+package rawbill
 
 import (
-	"fmt"
-
-	dataservice "hcm/pkg/api/data-service/bill"
+	dsbill "hcm/pkg/api/data-service/bill"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao/orm"
-	tablebill "hcm/pkg/dal/table/bill"
 	"hcm/pkg/rest"
-
-	"github.com/jmoiron/sqlx"
 )
 
-// UpdateBillPuller update bill puller with options
-func (svc *service) UpdateBillPuller(cts *rest.Contexts) (interface{}, error) {
-	req := new(dataservice.BillPullerUpdateReq)
-
+// DeleteRawBill delete cloud raw bill
+func (s *service) DeleteRawBill(cts *rest.Contexts) (interface{}, error) {
+	req := new(dsbill.RawBillDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
-
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-
-	billPuller := &tablebill.AccountBillPuller{
-		ID:                    req.ID,
-		FirstAccountID:        req.FirstAccountID,
-		SecondAccountID:       req.SecondAccountID,
-		Vendor:                req.Vendor,
-		ProductID:             req.ProductID,
-		BkBizID:               req.BkBizID,
-		PullMode:              req.PullMode,
-		SyncPeriod:            req.SyncPeriod,
-		BillDelay:             req.BillDelay,
-		FinalBillCalendarDate: req.FinalBillCalendarDate,
-	}
-	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		if err := svc.dao.AccountBillPuller().UpdateByIDWithTx(cts.Kit, txn, billPuller.ID, billPuller); err != nil {
-			return nil, fmt.Errorf("update bill puller failed, err: %v", err)
-		}
-		return nil, nil
-	})
-	if err != nil {
+	deletePath := generateFilePath(req.RawBillPathParam)
+	if err := s.ostore.Delete(cts.Request.Request.Context(), deletePath); err != nil {
 		return nil, err
 	}
-
 	return nil, nil
 }

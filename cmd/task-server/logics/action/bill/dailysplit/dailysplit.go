@@ -29,23 +29,26 @@ import (
 	protocore "hcm/pkg/api/core/account-set"
 	"hcm/pkg/api/data-service/bill"
 	"hcm/pkg/async/action/run"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/slice"
 )
 
 // DailyAccountSplitActionOption option for main account summary action
 type DailyAccountSplitActionOption struct {
-	RootAccountID string        `json:"root_account_id" validate:"required"`
-	MainAccountID string        `json:"main_account_id" validate:"required"`
-	BillYear      int           `json:"bill_year" validate:"required"`
-	BillMonth     int           `json:"bill_month" validate:"required"`
-	BillDay       int           `json:"bill_day" validate:"required"`
-	VersionID     int           `json:"version_id" validate:"required"`
-	Vendor        enumor.Vendor `json:"vendor" validate:"required"`
+	RootAccountID string            `json:"root_account_id" validate:"required"`
+	MainAccountID string            `json:"main_account_id" validate:"required"`
+	BillYear      int               `json:"bill_year" validate:"required"`
+	BillMonth     int               `json:"bill_month" validate:"required"`
+	BillDay       int               `json:"bill_day" validate:"required"`
+	VersionID     int               `json:"version_id" validate:"required"`
+	Vendor        enumor.Vendor     `json:"vendor" validate:"required"`
+	Extension     map[string]string `json:"extension"`
 }
 
 // DailyAccountSplitAction define main account summary action
@@ -193,56 +196,64 @@ func splitBillItem(kt *kit.Kit, opt *DailyAccountSplitActionOption, billDay int)
 		return err
 	}
 	resp, err := actcli.GetDataService().Global.Bill.ListRawBillFileNames(kt, &bill.RawBillItemNameListReq{
-		Vendor:         opt.Vendor,
-		FirstAccountID: opt.RootAccountID,
-		AccountID:      opt.MainAccountID,
-		BillYear:       fmt.Sprintf("%d", opt.BillYear),
-		BillMonth:      fmt.Sprintf("%02d", opt.BillMonth),
-		Version:        fmt.Sprintf("%d", opt.VersionID),
-		BillDate:       fmt.Sprintf("%02d", billDay),
+		Vendor:        opt.Vendor,
+		RootAccountID: opt.RootAccountID,
+		MainAccountID: opt.MainAccountID,
+		BillYear:      fmt.Sprintf("%d", opt.BillYear),
+		BillMonth:     fmt.Sprintf("%02d", opt.BillMonth),
+		Version:       fmt.Sprintf("%d", opt.VersionID),
+		BillDate:      fmt.Sprintf("%02d", billDay),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to list raw bill files for %v, err %s", opt, err.Error())
 	}
+
+	splitter, err := GetSplitter(opt.Vendor)
+	if err != nil {
+		return fmt.Errorf("failed to get splitter for %v, err %s", opt, err.Error())
+	}
+
 	for _, filename := range resp.Filenames {
 		var billItemList []bill.BillItemCreateReq[rawjson.RawMessage]
 		// 后续可在该过程中，增加处理过程
 		name := filepath.Base(filename)
 		tmpReq := &bill.RawBillItemQueryReq{
-			Vendor:         opt.Vendor,
-			FirstAccountID: opt.RootAccountID,
-			AccountID:      opt.MainAccountID,
-			BillYear:       fmt.Sprintf("%d", opt.BillYear),
-			BillMonth:      fmt.Sprintf("%02d", opt.BillMonth),
-			Version:        fmt.Sprintf("%d", opt.VersionID),
-			BillDate:       fmt.Sprintf("%02d", billDay),
-			FileName:       name,
+			Vendor:        opt.Vendor,
+			RootAccountID: opt.RootAccountID,
+			MainAccountID: opt.MainAccountID,
+			BillYear:      fmt.Sprintf("%d", opt.BillYear),
+			BillMonth:     fmt.Sprintf("%02d", opt.BillMonth),
+			Version:       fmt.Sprintf("%d", opt.VersionID),
+			BillDate:      fmt.Sprintf("%02d", billDay),
+			FileName:      name,
 		}
-		resp, err := actcli.GetDataService().Global.Bill.QueryRawBillItems(kt, tmpReq)
+
+		rawResp, err := actcli.GetDataService().Global.Bill.QueryRawBillItems(kt, tmpReq)
 		if err != nil {
 			return fmt.Errorf("failed to get raw bill item for %v, err %s", tmpReq, err.Error())
 		}
-		for _, item := range resp.Details {
-			defaultSplitter := &DefaultSplitter{}
-			reqList, err := defaultSplitter.DoSplit(opt, billDay, item, mainAccountInfo)
+
+		for _, item := range rawResp.Details {
+			reqList, err := splitter.DoSplit(kt, opt, billDay, item, mainAccountInfo)
 			if err != nil {
-				logs.Warnf("raw bill %v do splitting failed, err %s", item, err.Error())
-				return err
+				return fmt.Errorf("batch create bill item for %s failed, err %s", filename, err.Error())
 			}
 			billItemList = append(billItemList, reqList...)
 		}
 
-		createReq := &bill.BatchBillItemCreateReq[rawjson.RawMessage]{
-			ItemCommonOpt: &bill.ItemCommonOpt{
-				Vendor: opt.Vendor,
-				Year:   opt.BillYear,
-				Month:  opt.BillMonth,
-			},
-			Items: billItemList,
-		}
-		_, err = actcli.GetDataService().Global.Bill.BatchCreateBillItem(kt, createReq)
-		if err != nil {
-			return fmt.Errorf("batch create bill item for %s failed, err %s", filename, err.Error())
+		for _, itemsBatch := range slice.Split(billItemList, constant.BatchOperationMaxLimit) {
+			createReq := &bill.BatchBillItemCreateReq[rawjson.RawMessage]{
+				ItemCommonOpt: &bill.ItemCommonOpt{
+					Vendor: opt.Vendor,
+					Year:   opt.BillYear,
+					Month:  opt.BillMonth,
+				},
+				Items: itemsBatch,
+			}
+			_, err = actcli.GetDataService().Global.Bill.BatchCreateBillItem(kt, createReq)
+			if err != nil {
+				return fmt.Errorf("batch create bill item for %s failed, err %s", filename, err.Error())
+			}
 		}
 		logs.Infof("split %s successfully", filename)
 	}

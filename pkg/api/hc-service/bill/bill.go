@@ -340,6 +340,8 @@ type GcpRootAccountBillListReq struct {
 	// 格式：0001-01-01 00:00:00 至 9999-12-31 23:59:59.999999（世界协调时间 (UTC)）
 	// 也可以使用UTC格式：2014-09-27T12:30:00.45Z
 	BeginDate string `json:"begin_date" validate:"omitempty"`
+	// ProjectID 项目ID
+	ProjectID string `json:"project_id" validate:"omitempty"`
 	// 截止时间戳，时间戳值表示绝对时间点，与任何时区或惯例（如夏令时）无关，可精确到微秒
 	EndDate string                 `json:"end_date" validate:"omitempty"`
 	Page    *typesBill.GcpBillPage `json:"page" validate:"omitempty"`

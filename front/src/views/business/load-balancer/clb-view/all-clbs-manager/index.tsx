@@ -20,6 +20,8 @@ import { CLB_STATUS_MAP, LB_NETWORK_TYPE_MAP } from '@/constants';
 import { DoublePlainObject } from '@/typings';
 import './index.scss';
 import Confirm from '@/components/confirm';
+import { useVerify } from '@/hooks';
+import { useGlobalPermissionDialog } from '@/store/useGlobalPermissionDialog';
 export default defineComponent({
   name: 'AllClbsManager',
   setup() {
@@ -29,6 +31,8 @@ export default defineComponent({
     const { t } = useI18n();
     const { whereAmI } = useWhereAmI();
     const { selections, handleSelectionChange, resetSelections } = useSelection();
+    const { authVerifyData, handleAuth } = useVerify();
+    const globalPermissionDialogStore = useGlobalPermissionDialog();
 
     const isRowSelectEnable = ({ row, isCheckAll }: DoublePlainObject) => {
       if (isCheckAll) return true;
@@ -113,13 +117,24 @@ export default defineComponent({
                 <Button
                   text
                   theme='primary'
-                  disabled={data.listenerNum > 0 || data.delete_protect}
+                  class={`${
+                    !authVerifyData?.value?.permissionAction?.load_balancer_delete ? 'hcm-no-permision-text-btn' : ''
+                  }`}
+                  disabled={
+                    authVerifyData?.value?.permissionAction?.load_balancer_delete &&
+                    (data.listenerNum > 0 || data.delete_protect)
+                  }
                   v-bk-tooltips={
                     data.listenerNum > 0
                       ? { content: '该负载均衡已绑定监听器, 不可删除', disabled: !(data.listenerNum > 0) }
                       : { content: t('该负载均衡已开启删除保护, 不可删除'), disabled: !data.delete_protect }
                   }
-                  onClick={() => handleDelete(data)}>
+                  onClick={() => {
+                    if (!authVerifyData?.value?.permissionAction?.load_balancer_delete) {
+                      handleAuth('clb_resource_delete');
+                      globalPermissionDialogStore.setShow(true);
+                    } else handleDelete(data);
+                  }}>
                   删除
                 </Button>
               );
@@ -193,7 +208,17 @@ export default defineComponent({
           {{
             operation: () => (
               <>
-                <Button class='mw64' theme='primary' onClick={handleApply}>
+                <Button
+                  class={`mw64 ${
+                    !authVerifyData?.value?.permissionAction?.load_balancer_create ? 'hcm-no-permision-btn' : ''
+                  }`}
+                  theme='primary'
+                  onClick={() => {
+                    if (!authVerifyData?.value?.permissionAction?.load_balancer_create) {
+                      handleAuth('clb_resource_create');
+                      globalPermissionDialogStore.setShow(true);
+                    } else handleApply();
+                  }}>
                   购买
                 </Button>
                 <Button class='mw88' onClick={handleClickBatchDelete} disabled={selections.value.length === 0}>

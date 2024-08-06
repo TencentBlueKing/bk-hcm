@@ -40,65 +40,66 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// AccountBillPuller interface for operating account bill puller
-type AccountBillPuller interface {
-	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, pullers []*tablebill.AccountBillPuller) ([]string, error)
-	List(kt *kit.Kit, opt *types.ListOption) (*typesbill.ListAccountBillPullerDetails, error)
-	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, pullerID string, updateData *tablebill.AccountBillPuller) error
+// AccountBillMonthPullTask interface for operating account bill month task
+type AccountBillMonthPullTask interface {
+	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, mTasks []*tablebill.AccountBillMonthTask) ([]string, error)
+	List(kt *kit.Kit, opt *types.ListOption) (*typesbill.ListAccountBillMonthPullTaskDetails, error)
+	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, taskID string, updateData *tablebill.AccountBillMonthTask) error
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error
 }
 
-var _ AccountBillPuller = new(AccountBillPullerDao)
+var _ AccountBillMonthPullTask = new(AccountBillMonthPullTaskDao)
 
-// AccountBillPullerDao account bill puller dao
-type AccountBillPullerDao struct {
+// AccountBillMonthPullTaskDao account bill month task dao
+type AccountBillMonthPullTaskDao struct {
 	Orm   orm.Interface
 	IDGen idgenerator.IDGenInterface
 }
 
-// BatchCreateWithTx batch create account bill puller
-func (abpDao AccountBillPullerDao) BatchCreateWithTx(
-	kt *kit.Kit, tx *sqlx.Tx, abPullers []*tablebill.AccountBillPuller) ([]string, error) {
+// BatchCreateWithTx batch create account bill month task
+func (abpDao AccountBillMonthPullTaskDao) BatchCreateWithTx(
+	kt *kit.Kit, tx *sqlx.Tx, mTasks []*tablebill.AccountBillMonthTask) ([]string, error) {
 
-	if len(abPullers) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "account bill puller model data is required")
+	if len(mTasks) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "account bill month task model data is required")
 	}
 
-	ids, err := abpDao.IDGen.Batch(kt, table.AccountBillPullerTable, len(abPullers))
+	ids, err := abpDao.IDGen.Batch(kt, table.AccountBillMonthTaskTable, len(mTasks))
 	if err != nil {
 		return nil, err
 	}
 
-	for idx, d := range abPullers {
-		d.ID = ids[idx]
+	for idx, t := range mTasks {
+		t.ID = ids[idx]
 	}
 
-	for _, i := range abPullers {
+	for _, i := range mTasks {
 		if err := i.InsertValidate(); err != nil {
 			return nil, err
 		}
 	}
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`,
-		table.AccountBillPullerTable, tablebill.AccountBillPullerColumns.ColumnExpr(),
-		tablebill.AccountBillPullerColumns.ColonNameExpr(),
+		table.AccountBillMonthTaskTable, tablebill.AccountBillMonthTaskColumns.ColumnExpr(),
+		tablebill.AccountBillMonthTaskColumns.ColonNameExpr(),
 	)
-	err = abpDao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, abPullers)
+	err = abpDao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, mTasks)
 	if err != nil {
-		return nil, fmt.Errorf("insert %s failed, err: %v", table.AccountBillPullerTable, err)
+		return nil, fmt.Errorf("insert %s failed, err: %v", table.AccountBillMonthTaskTable, err)
 	}
 	return ids, nil
 }
 
-// List list account bill puller
-func (abpDao AccountBillPullerDao) List(kt *kit.Kit, opt *types.ListOption) (
-	*typesbill.ListAccountBillPullerDetails, error) {
+// List list account bill month task
+func (abpDao AccountBillMonthPullTaskDao) List(kt *kit.Kit, opt *types.ListOption) (
+	*typesbill.ListAccountBillMonthPullTaskDetails, error) {
 
 	if opt == nil {
-		return nil, errf.New(errf.InvalidParameter, "list account bill puller options is nil")
+		return nil, errf.New(errf.InvalidParameter, "list account bill month task options is nil")
 	}
 
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tablebill.AccountBillPullerColumns.ColumnTypes())),
+	if err := opt.Validate(filter.NewExprOption(
+		filter.RuleFields(tablebill.AccountBillMonthTaskColumns.ColumnTypes())),
 		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
@@ -109,15 +110,15 @@ func (abpDao AccountBillPullerDao) List(kt *kit.Kit, opt *types.ListOption) (
 	}
 
 	if opt.Page.Count {
-		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.AccountBillPullerTable, whereExpr)
+		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.AccountBillMonthTaskTable, whereExpr)
 		count, err := abpDao.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
-			logs.ErrorJson("count account bill puller failed, err: %v, filter: %s, rid: %s",
+			logs.ErrorJson("count account bill month task failed, err: %v, filter: %s, rid: %s",
 				err, opt.Filter, kt.Rid)
 			return nil, err
 		}
 
-		return &typesbill.ListAccountBillPullerDetails{Count: count}, nil
+		return &typesbill.ListAccountBillMonthPullTaskDetails{Count: count}, nil
 	}
 
 	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
@@ -125,19 +126,19 @@ func (abpDao AccountBillPullerDao) List(kt *kit.Kit, opt *types.ListOption) (
 		return nil, err
 	}
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tablebill.AccountBillPullerColumns.FieldsNamedExpr(opt.Fields),
-		table.AccountBillPullerTable, whereExpr, pageExpr)
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, tablebill.AccountBillMonthTaskColumns.FieldsNamedExpr(opt.Fields),
+		table.AccountBillMonthTaskTable, whereExpr, pageExpr)
 
-	details := make([]tablebill.AccountBillPuller, 0)
+	details := make([]tablebill.AccountBillMonthTask, 0)
 	if err = abpDao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}
-	return &typesbill.ListAccountBillPullerDetails{Details: details}, nil
+	return &typesbill.ListAccountBillMonthPullTaskDetails{Details: details}, nil
 }
 
-// UpdateByIDWithTx update account bill puller
-func (abpDao AccountBillPullerDao) UpdateByIDWithTx(
-	kt *kit.Kit, tx *sqlx.Tx, pullerID string, updateData *tablebill.AccountBillPuller) error {
+// UpdateByIDWithTx update account bill month task
+func (abpDao AccountBillMonthPullTaskDao) UpdateByIDWithTx(
+	kt *kit.Kit, tx *sqlx.Tx, pullerID string, updateData *tablebill.AccountBillMonthTask) error {
 
 	if err := updateData.UpdateValidate(); err != nil {
 		return err
@@ -149,20 +150,20 @@ func (abpDao AccountBillPullerDao) UpdateByIDWithTx(
 		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)
 	}
 
-	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, table.AccountBillPullerTable, setExpr)
+	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, table.AccountBillMonthTaskTable, setExpr)
 
 	toUpdate["id"] = pullerID
 	_, err = abpDao.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
 	if err != nil {
-		logs.ErrorJson("update account bill puller failed, err: %v, id: %s, rid: %v", err, pullerID, kt.Rid)
+		logs.ErrorJson("update account bill month task failed, err: %v, id: %s, rid: %v", err, pullerID, kt.Rid)
 		return err
 	}
 
 	return nil
 }
 
-// DeleteWithTx delete account bill puller
-func (abpDao AccountBillPullerDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error {
+// DeleteWithTx delete account bill month task
+func (abpDao AccountBillMonthPullTaskDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error {
 
 	if filterExpr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")
@@ -173,10 +174,10 @@ func (abpDao AccountBillPullerDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filter
 		return err
 	}
 
-	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.AccountBillPullerTable, whereExpr)
+	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.AccountBillMonthTaskTable, whereExpr)
 
 	if _, err = abpDao.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
-		logs.ErrorJson("delete account bill puller failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
+		logs.ErrorJson("delete account bill month task failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
 		return err
 	}
 

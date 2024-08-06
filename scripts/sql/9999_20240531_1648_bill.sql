@@ -16,6 +16,8 @@
  *
  * to the current version of the project delivered to anyone in the future.
  */
+
+
 /*
  SQLVER=9999,HCMVER=v9.9.9
  
@@ -24,28 +26,6 @@
  */
 START TRANSACTION;
 
--- 账单同步器表
-create table if not exists `account_bill_puller`
-(
-    `id`                       varchar(64) not null,
-    `first_account_id`         varchar(64) not null,
-    `second_account_id`        varchar(64) not null,
-    `vendor`                   varchar(16) not null,
-    `product_id`               bigint(1),
-    `bk_biz_id`                bigint(1),
-    `pull_mode`                varchar(64) not null,
-    `sync_period`              varchar(64) not null,
-    `bill_delay`               varchar(64) not null,
-    `final_bill_calendar_date` bigint(1)   not null,
-    `created_at`               timestamp   not null default current_timestamp,
-    `updated_at`               timestamp   not null default current_timestamp on update current_timestamp,
-    primary key (`id`),
-    unique key `idx_account_id` (`first_account_id`, `second_account_id`)
-) engine = innodb
-  default charset = utf8mb4;
-
-insert into id_generator(`resource`, `max_id`)
-values ('account_bill_puller', '0');
 
 -- 月账单汇总版本表
 create table if not exists `account_bill_summary_version`
@@ -343,12 +323,40 @@ create table `account_bill_sync_record`
 insert into id_generator(`resource`, `max_id`)
 values ('account_bill_sync_record', '0');
 
+create table `account_bill_month_task`
+(
+    `id`              varchar(64)     not null,
+    `root_account_id` varchar(64)     not null,
+    `vendor`          varchar(16)     not null default '',
+    `bill_year`       int             not null,
+    `bill_month`      int             not null,
+    `version_id`      bigint(1)       not null,
+    `state`           varchar(64)     not null,
+    `currency`        varchar(32)     not null comment '货币',
+    `count`           int             not null default 0,
+    `cost`            decimal(38, 10) not null,
+    `pull_index`      bigint(1)       not null,
+    `pull_flow_id`    varchar(64)     not null,
+    `split_index`     bigint(1)       not null,
+    `split_flow_id`   varchar(64)     not null,
+    `summary_flow_id` varchar(64)     not null,
+    `summary_detail`  text            not null,
+    `creator`         varchar(64)     not null,
+    `reviser`         varchar(64)     not null,
+    `created_at`      timestamp       not null default current_timestamp,
+    `updated_at`      timestamp       not null default current_timestamp on update current_timestamp,
+    primary key (`id`),
+    unique key `idx_root_account_id_year_month` (`root_account_id`, `bill_year`, `bill_month`)
+) comment '月度任务';
+
+insert into id_generator(`resource`, `max_id`)
+values ('account_bill_month_task', '0');
 
 /*
  为async_flow_task表增加索引
  */
-create index idx_state_updated_at ON async_flow_task(`state`, `updated_at`);
-create index idx_flow_id ON async_flow_task(`flow_id`);
+create index idx_state_updated_at ON async_flow_task (`state`, `updated_at`);
+create index idx_flow_id ON async_flow_task (`flow_id`);
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
 SELECT 'v9.9.9' as `hcm_ver`,

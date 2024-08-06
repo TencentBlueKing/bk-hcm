@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, provide } from 'vue';
-
-import HostManage from '@/views/resource/resource-manage/children/manage/host-manage.vue';
+import { QueryRuleOPEnum } from '@/typings/common';
+import HostManage from '@/views/business/host/host-manage.vue';
 import VpcManage from '@/views/resource/resource-manage/children/manage/vpc-manage.vue';
 import SubnetManage from '@/views/resource/resource-manage/children/manage/subnet-manage.vue';
 import SecurityManage from '@/views/resource/resource-manage/children/manage/security-manage.vue';
@@ -70,8 +70,6 @@ const formMap = {
   security: securityForm,
 };
 
-const filter = ref({ op: 'and', rules: [] });
-
 const renderComponent = computed(() => {
   return Object.keys(componentMap).reduce((acc, cur) => {
     if (route.path.includes(cur)) acc = componentMap[cur];
@@ -87,6 +85,22 @@ const renderForm = computed(() => {
     }
     return acc;
   }, {});
+});
+
+const filter = computed(() => {
+  if (renderComponent.value === HostManage) {
+    return {
+      op: 'and',
+      rules: [
+        {
+          op: QueryRuleOPEnum.NEQ,
+          field: 'recycle_status',
+          value: 'recycling',
+        },
+      ],
+    };
+  }
+  return { op: 'and', rules: [] };
 });
 
 const isResourcePage = computed(() => {

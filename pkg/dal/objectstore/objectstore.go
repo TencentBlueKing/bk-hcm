@@ -45,4 +45,5 @@ type Storage interface {
 	Upload(ctx context.Context, uploadPath string, r io.Reader) error
 	Download(ctx context.Context, downloadPath string, w io.Writer) error
 	ListItems(ctx context.Context, folderPath string) ([]string, error)
+	Delete(ctx context.Context, path string) error
 }
