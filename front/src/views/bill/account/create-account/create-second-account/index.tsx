@@ -305,7 +305,7 @@ export default defineComponent({
                           <>
                             <Button
                               theme='primary'
-                              disabled={!isMailRules.value || !isMailRules.value}
+                              disabled={!isMailRules.value || !isNameRules.value}
                               onClick={verification}
                               v-bk-tooltips={{
                                 content: !isNameRules.value
