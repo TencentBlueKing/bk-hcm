@@ -181,7 +181,18 @@ export default defineStore('billStore', () => {
   const sum_adjust_items = (data: any) => {
     return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/adjustment_items/sum`, data);
   };
-
+  /**
+   * 发送邮箱验证码。
+   */
+  const send_code = (data: any) => {
+    return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/mail/send_code`, data);
+  };
+  /**
+   * 验证邮箱验证码
+   */
+  const verify_code = (data: any) => {
+    return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/mail/verify_code`, data);
+  };
   return {
     // 一级账号
     root_accounts_add,
@@ -201,6 +212,9 @@ export default defineStore('billStore', () => {
     create_adjustment_items,
     update_adjustment_item,
     sum_adjust_items,
+    // 邮箱验证码
+    send_code,
+    verify_code,
     // 通用list方法
     list,
   };
