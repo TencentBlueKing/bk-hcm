@@ -201,7 +201,7 @@ func (a AccountBillSummaryMainDao) ListGroupByBiz(kt *kit.Kit, opt *types.ListOp
 		sql := fmt.Sprintf(`SELECT COUNT(distinct bk_biz_id) FROM %s %s`, table.AccountBillSummaryMainTable, whereExpr)
 		count, err := a.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
-			logs.ErrorJson("count account bill summary main failed, err: %v, filter: %s, rid: %s",
+			logs.ErrorJson("count account bill summary main failed, err: %v, filter: %v, rid: %s",
 				err, opt.Filter, kt.Rid)
 			return nil, err
 		}
@@ -232,6 +232,8 @@ func (a AccountBillSummaryMainDao) ListGroupByBiz(kt *kit.Kit, opt *types.ListOp
 
 	details := make([]tablebill.AccountBillSummaryMain, 0)
 	if err = a.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+		logs.Errorf("list account bill summary main group by bk_biz_id failed, err: %v, sql: %s, rid: %s",
+			err, sql, kt.Rid)
 		return nil, err
 	}
 	return &typesbill.ListAccountBillSummaryMainDetails{Details: details}, nil

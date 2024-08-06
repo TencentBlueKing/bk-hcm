@@ -55,10 +55,11 @@ func (s *service) ListBizSummary(cts *rest.Contexts) (interface{}, error) {
 		}
 	}
 
-	summary, err := s.client.DataService().Global.Bill.ListBillSummaryBiz(cts.Kit, &core.ListReq{
+	listReq := &core.ListReq{
 		Filter: expression,
 		Page:   req.Page,
-	})
+	}
+	summary, err := s.client.DataService().Global.Bill.ListBillSummaryBiz(cts.Kit, listReq)
 	if err != nil {
 		return nil, err
 	}
