@@ -20,6 +20,8 @@
 package billsummarymain
 
 import (
+	"fmt"
+
 	asbillapi "hcm/pkg/api/account-server/bill"
 	"hcm/pkg/api/core"
 	accountset "hcm/pkg/api/core/account-set"
@@ -27,6 +29,8 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
@@ -79,26 +83,18 @@ func (s *service) ListMainAccountSummary(cts *rest.Contexts) (interface{}, error
 		accountIDs = append(accountIDs, detail.MainAccountID)
 	}
 
-	// fetch account
-	listOpt := &core.ListReq{
-		Filter: tools.ExpressionAnd(
-			tools.RuleIn("id", accountIDs),
-		),
-		Page: core.NewDefaultBasePage(),
-	}
-	accountResult, err := s.client.DataService().Global.MainAccount.List(cts.Kit, listOpt)
+	accountMap, err := s.listMainAccountByIDs(cts.Kit, accountIDs)
 	if err != nil {
+		logs.Errorf("ListMainAccountSummary: list main account by ids(%v) failed: %s", accountIDs, err)
 		return nil, err
 	}
 
-	accountMap := make(map[string]*accountset.BaseMainAccount, len(accountIDs))
-	for _, detail := range accountResult.Details {
-		accountMap[detail.ID] = detail
-	}
-
 	for _, detail := range summary.Details {
-		account := accountMap[detail.MainAccountID]
-
+		account, ok := accountMap[detail.MainAccountID]
+		if !ok {
+			return nil, fmt.Errorf("[ListMainAccountSummary] summaryMain(%s): mainAccount(%s) not found",
+				detail.ID, detail.MainAccountID)
+		}
 		tmp := &asbillapi.MainAccountSummaryResult{
 			BillSummaryMainResult: *detail,
 			MainAccountCloudID:    account.CloudID,
@@ -108,4 +104,25 @@ func (s *service) ListMainAccountSummary(cts *rest.Contexts) (interface{}, error
 	}
 
 	return ret, nil
+}
+
+func (s *service) listMainAccountByIDs(kt *kit.Kit, accountIDs []string) (
+	map[string]*accountset.BaseMainAccount, error) {
+
+	listOpt := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleIn("id", accountIDs),
+		),
+		Page: core.NewDefaultBasePage(),
+	}
+	accountResult, err := s.client.DataService().Global.MainAccount.List(kt, listOpt)
+	if err != nil {
+		return nil, err
+	}
+
+	accountMap := make(map[string]*accountset.BaseMainAccount, len(accountIDs))
+	for _, detail := range accountResult.Details {
+		accountMap[detail.ID] = detail
+	}
+	return accountMap, nil
 }
