@@ -23,7 +23,6 @@ import (
 	"fmt"
 
 	dataservice "hcm/pkg/api/data-service/bill"
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	tablebill "hcm/pkg/dal/table/bill"
@@ -58,13 +57,13 @@ func (svc *service) UpdateBillDailyPullTask(cts *rest.Contexts) (interface{}, er
 		VersionID:          req.VersionID,
 		State:              req.State,
 		Count:              req.Count,
-		Currency:           enumor.CurrencyCode(req.Currency),
+		Currency:           req.Currency,
 		FlowID:             req.FlowID,
 		SplitFlowID:        req.SplitFlowID,
 		DailySummaryFlowID: req.DailySummaryFlowID,
 	}
-	if !req.Cost.IsZero() {
-		billDailyPullTask.Cost = &types.Decimal{Decimal: req.Cost}
+	if req.Cost != nil {
+		billDailyPullTask.Cost = &types.Decimal{Decimal: *req.Cost}
 	}
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		if err := svc.dao.AccountBillDailyPullTask().UpdateByIDWithTx(

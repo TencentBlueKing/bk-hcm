@@ -32,21 +32,32 @@ import (
 )
 
 var (
-	// PullerRegistry puller registry
-	PullerRegistry = make(map[enumor.Vendor]Puller)
+	// DailyPullerRegistry puller registry
+	DailyPullerRegistry = make(map[enumor.Vendor]DailyPuller)
+	// MonthPullerRegistry month puller registry
+	MonthPullerRegistry = make(map[enumor.Vendor]MonthPuller)
 )
 
-// GetPuller get puller by vendor
-func GetPuller(vendor enumor.Vendor) (Puller, error) {
-	puller, ok := PullerRegistry[vendor]
+// GetDailyPuller get puller by vendor
+func GetDailyPuller(vendor enumor.Vendor) (DailyPuller, error) {
+	puller, ok := DailyPullerRegistry[vendor]
 	if !ok {
-		return nil, fmt.Errorf("unsupported vendor %s", vendor)
+		return nil, fmt.Errorf("unsupported vendor %s for daily puller", vendor)
 	}
 	return puller, nil
 }
 
-// Puller puller interface
-type Puller interface {
+// GetMonthPuller get puller by vendor
+func GetMonthPuller(vendor enumor.Vendor) (MonthPuller, error) {
+	puller, ok := MonthPullerRegistry[vendor]
+	if !ok {
+		return nil, fmt.Errorf("unsupported vendor %s for month puller", vendor)
+	}
+	return puller, nil
+}
+
+// DailyPuller puller interface
+type DailyPuller interface {
 	EnsurePullTask(
 		kt *kit.Kit, client *client.ClientSet,
 		sd serviced.ServiceDiscover, billSummaryMain *dsbillapi.BillSummaryMainResult) error
@@ -55,4 +66,10 @@ type Puller interface {
 		kt *kit.Kit, client *client.ClientSet,
 		sd serviced.ServiceDiscover, billSummaryMain *dsbillapi.BillSummaryMainResult) (
 		[]*bill.BillDailyPullTaskResult, error)
+}
+
+// MonthPuller month puller interface
+type MonthPuller interface {
+	// HasMonthPullTask return true if it needs month pull task
+	HasMonthPullTask() bool
 }

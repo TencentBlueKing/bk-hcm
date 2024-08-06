@@ -156,8 +156,8 @@ func (exec *executor) subWorkerQueue() {
 	for task := range exec.workerQueue {
 		if err := exec.workerDo(task); err != nil {
 			// Task执行失败告警通知
-			logs.Errorf("%s: executor sub worker workerDo exec failed, err: %v, rid: %s",
-				constant.AsyncTaskWarnSign, err, task.Kit.Rid)
+			logs.Errorf("%s: executor sub worker workerDo exec failed, err: %v, taskID: %s, action: %s, rid: %s",
+				constant.AsyncTaskWarnSign, err, task.ID, task.ActionName, task.Kit.Rid)
 		}
 	}
 
@@ -251,7 +251,7 @@ func (exec *executor) runTaskOnce(task *Task, act action.Action) (needRetry bool
 	if task.State == enumor.TaskRollback {
 		rollbackAct, ok := act.(action.RollbackAction)
 		if !ok {
-			return false, nil, fmt.Errorf("action: %s not has RollbackAction", act.Name())
+			return false, nil, fmt.Errorf("action: %s has no RollbackAction", act.Name())
 		}
 
 		if err = rollbackAct.Rollback(task.ExecuteKit, params); err != nil {

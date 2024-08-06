@@ -531,5 +531,17 @@ export const useBusinessStore = defineStore({
         },
       );
     },
+    // 主机所关联资源(硬盘, eip)的个数
+    getRelResByCvmIds(data: { ids: string[] }) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}cvms/rel_res/batch`, data);
+    },
+    // 虚拟机回收
+    recycledCvmsData(data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}cvms/recycle`, data);
+    },
+    // 操作主机相关
+    cvmOperate(type: string, data: { ids: string[] }) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}cvms/batch/${type}`, data);
+    },
   },
 });

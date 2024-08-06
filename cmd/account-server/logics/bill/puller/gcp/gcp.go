@@ -17,10 +17,12 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package gcp bill puller
 package gcp
 
 import (
 	"fmt"
+
 	"hcm/cmd/account-server/logics/bill/puller"
 	"hcm/cmd/account-server/logics/bill/puller/daily"
 	"hcm/pkg/api/data-service/bill"
@@ -32,20 +34,24 @@ import (
 )
 
 const (
-	defaultGcpDelay = 3
+	defaultGcpDelay = 1
 )
 
 func init() {
-	puller.PullerRegistry[enumor.Gcp] = &GcpPuller{
+	puller.DailyPullerRegistry[enumor.Gcp] = &GcpPuller{
+		BillDelay: defaultGcpDelay,
+	}
+	puller.MonthPullerRegistry[enumor.Gcp] = &GcpPuller{
 		BillDelay: defaultGcpDelay,
 	}
 }
 
-// GcpPuller huawei puller
+// GcpPuller gcp puller
 type GcpPuller struct {
 	BillDelay int
 }
 
+// EnsurePullTask ...
 func (hp *GcpPuller) EnsurePullTask(
 	kt *kit.Kit, client *client.ClientSet,
 	sd serviced.ServiceDiscover, billSummaryMain *dsbillapi.BillSummaryMainResult) error {
@@ -72,6 +78,7 @@ func (hp *GcpPuller) EnsurePullTask(
 	return dp.EnsurePullTask(kt)
 }
 
+// GetPullTaskList ...
 func (hp *GcpPuller) GetPullTaskList(
 	kt *kit.Kit, client *client.ClientSet,
 	sd serviced.ServiceDiscover, billSummaryMain *dsbillapi.BillSummaryMainResult) (
@@ -91,4 +98,9 @@ func (hp *GcpPuller) GetPullTaskList(
 		Sd:            sd,
 	}
 	return dp.GetPullTaskList(kt)
+}
+
+// HasMonthPullTask return if has month pull task
+func (hp *GcpPuller) HasMonthPullTask() bool {
+	return true
 }

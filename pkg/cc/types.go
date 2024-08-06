@@ -865,3 +865,15 @@ func (c *CMSI) validate() error {
 
 	return nil
 }
+
+// AwsSavingPlanOption ...
+type AwsSavingPlanOption struct {
+	RootAccountID            string `yaml:"rootAccountId"`
+	SpArnPrefix              string `yaml:"spArnPrefix"`
+	SpPurchaseAccountCloudID string `yaml:"SpPurchaseAccountCloudID"`
+}
+
+// BillAllocationOption ...
+type BillAllocationOption struct {
+	AwsSavingPlans []AwsSavingPlanOption `yaml:"awsSavingPlans"`
+}

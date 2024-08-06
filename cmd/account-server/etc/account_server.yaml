@@ -69,3 +69,10 @@ controller:
   mainAccountSummarySyncDuration:
   rootAccountSummarySyncDuration:
   dailySummarySyncDuration:
+
+billAllocation:
+  # aws saving plan allocation option
+  awsSavingPlans:
+#    - rootAccountId:
+#      spArnPrefix:
+#      SpPurchaseAccountCloudID:

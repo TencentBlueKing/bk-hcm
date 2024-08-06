@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package billpuller
+package billmonthtask
 
 import (
 	"fmt"
@@ -28,50 +28,53 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	tablebill "hcm/pkg/dal/table/bill"
+	"hcm/pkg/dal/table/types"
 	"hcm/pkg/rest"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/shopspring/decimal"
 )
 
-// BatchCreateBillPuller create bill puller with options
-func (svc *service) BatchCreateBillPuller(cts *rest.Contexts) (interface{}, error) {
-	req := new(dsbill.BillPullerCreateReq)
+// CreateBillMonthPullTask create bill puller with options
+func (svc *service) CreateBillMonthPullTask(cts *rest.Contexts) (interface{}, error) {
+	req := new(dsbill.BillMonthTaskCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-	pullerID, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		puller := &tablebill.AccountBillPuller{
-			FirstAccountID:        req.FirstAccountID,
-			SecondAccountID:       req.SecondAccountID,
-			Vendor:                req.Vendor,
-			ProductID:             req.ProductID,
-			BkBizID:               req.BkBizID,
-			PullMode:              string(req.PullMode),
-			SyncPeriod:            string(req.SyncPeriod),
-			BillDelay:             string(req.BillDelay),
-			FinalBillCalendarDate: int(req.FinalBillCalendarDate),
+	taskID, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		puller := &tablebill.AccountBillMonthTask{
+			RootAccountID: req.RootAccountID,
+			Vendor:        req.Vendor,
+			BillYear:      req.BillYear,
+			BillMonth:     req.BillMonth,
+			VersionID:     req.VersionID,
+			State:         req.State,
+			Creator:       cts.Kit.User,
+			Reviser:       cts.Kit.User,
+			Cost:          &types.Decimal{Decimal: decimal.Zero},
 		}
-		pullerIDs, err := svc.dao.AccountBillPuller().BatchCreateWithTx(cts.Kit, txn, []*tablebill.AccountBillPuller{
-			puller,
-		})
+		taskIDs, err := svc.dao.AccountBillMonthPullTask().BatchCreateWithTx(
+			cts.Kit, txn, []*tablebill.AccountBillMonthTask{
+				puller,
+			})
 		if err != nil {
-			return nil, fmt.Errorf("create account bill puller failed, err: %v", err)
+			return nil, fmt.Errorf("create account bill month task failed, err: %v", err)
 		}
-		if len(pullerIDs) != 1 {
-			return nil, fmt.Errorf("create account bill puller expect 1 puller ID: %v", pullerIDs)
+		if len(taskIDs) != 1 {
+			return nil, fmt.Errorf("create account bill month task expect 1 puller ID: %v", taskIDs)
 		}
-		return pullerIDs[0], nil
+		return taskIDs[0], nil
 	})
 	if err != nil {
 		return nil, err
 	}
-	id, ok := pullerID.(string)
+	id, ok := taskID.(string)
 	if !ok {
-		return nil, fmt.Errorf("create account bill puller but return id type not string, id type: %v",
-			reflect.TypeOf(pullerID).String())
+		return nil, fmt.Errorf("create account bill month task but return id type not string, id type: %v",
+			reflect.TypeOf(taskID).String())
 	}
 
 	return &core.CreateResult{ID: id}, nil

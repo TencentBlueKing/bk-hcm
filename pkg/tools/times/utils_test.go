@@ -21,6 +21,7 @@ package times
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -65,4 +66,87 @@ func TestGetLastMonth(t *testing.T) {
 			assert.NoError(t, err, "no error")
 		}
 	}
+}
+
+func TestGetRelativeMonth(t *testing.T) {
+	type args struct {
+		base   time.Time
+		mRange int
+	}
+	tests := []struct {
+		name       string
+		args       args
+		startYear  int
+		startMonth int
+	}{
+		{
+			name: "2024/07-0",
+			args: args{
+				base:   getDate(2024, 7),
+				mRange: 0,
+			},
+			startYear:  2024,
+			startMonth: 7,
+		},
+		{
+			name: "2024/07-1",
+			args: args{
+				base:   getDate(2024, 7),
+				mRange: 1,
+			},
+			startYear:  2024,
+			startMonth: 6,
+		},
+		{
+			name: "2024/07-7",
+			args: args{
+				base:   getDate(2024, 7),
+				mRange: 7,
+			},
+			startYear:  2023,
+			startMonth: 12,
+		},
+		{
+			name: "2024/07-30",
+			args: args{
+				base:   getDate(2024, 7),
+				mRange: 30,
+			},
+			startYear:  2022,
+			startMonth: 1,
+		},
+		{
+			name: "2024/07-40",
+			args: args{
+				base:   getDate(2024, 7),
+				mRange: 40,
+			},
+			startYear:  2021,
+			startMonth: 3,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			correctYear := tt.startYear
+			correctMonth := tt.startMonth
+
+			for offset := -tt.args.mRange; offset <= tt.args.mRange; offset++ {
+				gotYear, gotMonth := GetRelativeMonth(tt.args.base, offset)
+				assert.Equalf(t, correctYear, gotYear, "CalRelativeMonth(%v, %v, %v)",
+					tt.args.base.Year(), tt.args.base.Month(), offset)
+				assert.Equalf(t, correctMonth, gotMonth, "CalRelativeMonth(%v, %v, %v)",
+					tt.args.base.Year(), tt.args.base.Month(), offset)
+				correctMonth += 1
+				if correctMonth > 12 {
+					correctMonth = 1
+					correctYear += 1
+				}
+			}
+
+		})
+	}
+}
+
+func getDate(year, month int) time.Time {
+	return time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
 }
