@@ -48,7 +48,7 @@ func (s *service) ListRawBill(cts *rest.Contexts) (interface{}, error) {
 
 	logs.Infof("get path %s\n", path)
 
-	filenames, err := s.ostore.ListItems(cts.Request.Request.Context(), path)
+	filenames, err := s.ostore.ListItems(cts.Kit, path)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.Aborted, err)
 	}

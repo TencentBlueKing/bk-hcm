@@ -53,7 +53,7 @@ func (s *service) QueryRawBillDetail(cts *rest.Contexts) (interface{}, error) {
 
 	// 创建CSV文件的缓冲区
 	var buffer bytes.Buffer
-	if err := s.ostore.Download(cts.Request.Request.Context(), path, &buffer); err != nil {
+	if err := s.ostore.Download(cts.Kit, path, &buffer); err != nil {
 		return nil, errf.NewFromErr(errf.Aborted, err)
 	}
 	csvReader := csv.NewReader(&buffer)

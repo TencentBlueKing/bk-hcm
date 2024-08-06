@@ -1,7 +1,7 @@
 /*
  * TencentBlueKing is pleased to support the open source community by making
  * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
- * Copyright (C) 2022 THL A29 Limited,
+ * Copyright (C) 2024 THL A29 Limited,
  * a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,31 +17,55 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package rawbill
+package cos
 
 import (
-	"hcm/pkg/api/core"
-	dsbill "hcm/pkg/api/data-service/bill"
+	"net/http"
+	"time"
+
+	"hcm/cmd/data-service/service/capability"
+	"hcm/pkg/api/data-service/cos"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/objectstore"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
-// CreateRawBill create cloud raw bill
-func (s *service) CreateRawBill(cts *rest.Contexts) (interface{}, error) {
-	req := new(dsbill.RawBillCreateReq)
+// InitService initialize the raw bill service
+func InitService(cap *capability.Capability) {
+	svc := &service{
+		ostore: cap.ObjectStore,
+	}
+	h := rest.NewHandler()
+	h.Add("GenerateTemporalUrl", http.MethodPost, "/cos/temporal_urls/{action}/generate", svc.GenerateTemporalUrl)
+
+	h.Load(cap.WebService)
+}
+
+type service struct {
+	ostore objectstore.Storage
+}
+
+// GenerateTemporalUrl ...
+func (s service) GenerateTemporalUrl(cts *rest.Contexts) (any, error) {
+	req := new(cos.GenerateTemporalUrlReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-	uploadPath := generateFilePath(req.RawBillPathParam)
-	buffer, err := generateCSV(req.Items)
+
+	action := objectstore.OperateAction(cts.PathParameter("action"))
+	cred, url, err := s.ostore.GetPreSignedURL(cts.Kit, action, time.Second*time.Duration(req.TTLSeconds), req.Filename)
 	if err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+		logs.Errorf("fail to get presigned download URL, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
+		return nil, err
 	}
-	if err := s.ostore.Upload(cts.Kit, uploadPath, buffer); err != nil {
-		return nil, errf.NewFromErr(errf.Aborted, err)
-	}
-	return &core.CreateResult{}, nil
+
+	return &cos.GenerateTemporalUrlResult{
+		AK:    cred.TmpSecretID,
+		Token: cred.SessionToken,
+		URL:   url,
+	}, nil
 }
