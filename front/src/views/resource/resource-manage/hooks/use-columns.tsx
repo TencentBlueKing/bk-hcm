@@ -2049,7 +2049,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '云厂商',
       field: 'vendor',
       isDefaultShow: true,
-      render: ({ cell }: any) => VendorMap[cell],
+      render: ({ cell }: { cell: VendorEnum }) => VendorMap[cell],
     },
     {
       label: '业务名称',
@@ -2118,7 +2118,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '云厂商',
       field: 'vendor',
       isDefaultShow: true,
-      render: ({ cell }: any) => VendorMap[cell],
+      render: ({ cell }: { cell: VendorEnum }) => VendorMap[cell],
     },
     {
       label: '业务名称',
@@ -2187,7 +2187,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '云厂商',
       field: 'vendor',
       isDefaultShow: true,
-      render: ({ cell }: any) => VendorMap[cell],
+      render: ({ cell }: { cell: VendorEnum }) => VendorMap[cell],
     },
     {
       label: '业务名称',
@@ -2256,7 +2256,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '云厂商',
       field: 'vendor',
       isDefaultShow: true,
-      render: ({ cell }: any) => VendorMap[cell],
+      render: ({ cell }: { cell: VendorEnum }) => VendorMap[cell],
     },
     {
       label: '业务名称',
@@ -2370,7 +2370,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '云厂商',
       field: 'vendor',
       isDefaultShow: true,
-      render: ({ cell }: any) => VendorMap[cell],
+      render: ({ cell }: { cell: VendorEnum }) => VendorMap[cell],
     },
     {
       label: '业务名称',
@@ -2416,6 +2416,11 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const billsSummaryOperationRecordColumns = [
     {
       label: '操作时间',
+      field: 'created_at',
+      render: ({ cell }: any) => timeFormatter(cell),
+    },
+    {
+      label: '完成时间',
       field: 'updated_at',
       render: ({ cell }: any) => timeFormatter(cell),
     },
@@ -2429,6 +2434,16 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       render: ({ data }: any) => dayjs(new Date(data.bill_year, data.bill_month - 1)).format('YYYY-MM'),
     },
     {
+      label: '云厂商',
+      field: 'vendor',
+      isDefaultShow: true,
+      render: ({ cell }: { cell: VendorEnum }) => VendorMap[cell],
+    },
+    {
+      label: '操作人',
+      field: 'operator',
+    },
+    {
       label: '人民币（元）',
       field: 'rmb_cost',
       render: ({ cell }: any) => formatBillCost(cell),
@@ -2439,10 +2454,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'cost',
       render: ({ cell }: any) => formatBillCost(cell),
       sort: true,
-    },
-    {
-      label: '操作人',
-      field: 'operator',
     },
   ];
 

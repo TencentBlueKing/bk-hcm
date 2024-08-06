@@ -19,9 +19,9 @@ export default defineComponent({
     const { columns } = useColumns('billsSummaryOperationRecord');
 
     const actionTypes = [
-      { label: 'sync', text: t('同步') },
-      { label: 'confirm', text: t('确认') },
-      { label: 'import', text: t('导入') },
+      { label: 'sync', text: t('同步'), disabled: false },
+      { label: 'confirm', text: t('确认'), disabled: true },
+      { label: 'import', text: t('导入'), disabled: true },
     ];
     const activeActionType = ref('sync');
 
@@ -46,8 +46,13 @@ export default defineComponent({
                 <>
                   <span class={cssModule.title}>{t('操作记录')}</span>
                   <BkRadioGroup v-model={activeActionType.value} class={cssModule['action-type']}>
-                    {actionTypes.map(({ label, text }) => (
-                      <BkRadioButton label={label}>{text}</BkRadioButton>
+                    {actionTypes.map(({ label, text, disabled }) => (
+                      <BkRadioButton
+                        label={label}
+                        disabled={disabled}
+                        v-bk-tooltips={{ content: t('该功能暂未支持'), disabled: !disabled }}>
+                        {text}
+                      </BkRadioButton>
                     ))}
                   </BkRadioGroup>
                 </>
