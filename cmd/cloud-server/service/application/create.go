@@ -143,6 +143,13 @@ func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
 		)
 	}
 
+	// 主机、硬盘、VPC、负载均衡需要记录业务ID
+	var bkBizIDs = make([]int64, 0)
+	if applicationType == enumor.CreateCvm || applicationType == enumor.CreateDisk ||
+		applicationType == enumor.CreateVpc || applicationType == enumor.CreateLoadBalancer {
+		bkBizIDs = handler.GetBkBizIDs()
+	}
+
 	result, err := a.client.DataService().Global.Application.Create(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
@@ -151,6 +158,7 @@ func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
 			Source:         enumor.ApplicationSourceITSM,
 			Type:           applicationType,
 			Status:         enumor.Pending,
+			BkBizIDs:       bkBizIDs,
 			Applicant:      cts.Kit.User,
 			Content:        content,
 			DeliveryDetail: "{}",

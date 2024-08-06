@@ -66,3 +66,8 @@ func (a *ApplicationOfCreateTCloudCvm) PrepareReqFromContent() error {
 func (a *ApplicationOfCreateTCloudCvm) GetItsmApprover(managers []string) []itsm.VariableApprover {
 	return a.GetItsmPlatformAndAccountApprover(managers, a.req.AccountID)
 }
+
+// GetBkBizIDs 获取当前的业务IDs
+func (a *ApplicationOfCreateTCloudCvm) GetBkBizIDs() []int64 {
+	return []int64{a.req.BkBizID}
+}
