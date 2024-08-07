@@ -23,3 +23,5 @@ data:
       {{- toYaml .Values.accountserver.controller | nindent 6 }}
     billAllocation:
       {{- toYaml .Values.accountserver.billAllocation | nindent 6 }}
+    cmsi:
+      {{- toYaml .Values.cmsi | nindent 6 }}

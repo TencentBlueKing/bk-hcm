@@ -19,7 +19,7 @@
 
 
 /*
- SQLVER=9999,HCMVER=v9.9.9
+ SQLVER=0023,HCMVER=v1.6.0
  
  Notes:
  1. 支持云账单
@@ -359,7 +359,7 @@ create index idx_state_updated_at ON async_flow_task (`state`, `updated_at`);
 create index idx_flow_id ON async_flow_task (`flow_id`);
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`,
-       '9999'   as `sql_ver`;
+SELECT 'v1.6.0' as `hcm_ver`,
+       '0023'   as `sql_ver`;
 
 COMMIT;

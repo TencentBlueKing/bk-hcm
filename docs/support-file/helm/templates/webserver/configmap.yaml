@@ -49,5 +49,7 @@ data:
       bkCmdbCreateBizDocsUrl: {{ .Values.bkCmdbCreateBizDocsUrl }}
       # 启用云选型
       enableCloudSelection: {{ .Values.enableCloudSelection }}
+      # 启用账单账号
+      enableAccountBill: {{ .Values.enableAccountBill }}
     itsm:
       {{- toYaml .Values.itsm | nindent 6 }}
