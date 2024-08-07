@@ -31,6 +31,26 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+var (
+	esbClient Client
+)
+
+// InitEsbClient init esb client.
+func InitEsbClient(cfg *cc.Esb, reg prometheus.Registerer) error {
+	cli, err := NewClient(cfg, reg)
+	if err != nil {
+		return err
+	}
+
+	esbClient = cli
+	return nil
+}
+
+// EsbClient get esb client.
+func EsbClient() Client {
+	return esbClient
+}
+
 // Client esb client
 type Client interface {
 	Cmdb() cmdb.Client
@@ -39,6 +59,8 @@ type Client interface {
 }
 
 // NewClient new esb client.
+// Deprecated, 推荐使用InitEsbClient方法初始化esb client后，通过EsbClient方法获取esb调用的客户端,
+// 避免上层需要调用esb接口时，需要将client参数层层往下传递。
 func NewClient(cfg *cc.Esb, reg prometheus.Registerer) (Client, error) {
 	tls := &ssl.TLSConfig{
 		InsecureSkipVerify: cfg.TLS.InsecureSkipVerify,

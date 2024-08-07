@@ -22,11 +22,12 @@ const workbenchMenus: RouteRecordRaw[] = [
   // },
   {
     path: '/workbench/audit',
-    name: '审计',
+    name: 'workbenchAudit',
     component: () => import('@/views/workbench/audit'),
     meta: {
+      title: t('审计'),
       activeKey: 'workbenchAudit',
-      breadcrumb: [t('工作台'), t('审计')],
+      // breadcrumb: [t('工作台'), t('审计')],
     },
   },
 ];

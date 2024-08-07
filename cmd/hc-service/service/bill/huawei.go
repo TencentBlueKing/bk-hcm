@@ -70,3 +70,47 @@ func (b bill) HuaWeiGetBillList(cts *rest.Contexts) (interface{}, error) {
 		Currency: resp.Currency,
 	}, nil
 }
+
+// HuaWeiGetFeeRecordList get huawei fee record list
+func (b bill) HuaWeiGetFeeRecordList(cts *rest.Contexts) (interface{}, error) {
+	req := new(hcbillservice.HuaWeiFeeRecordListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	if req.Page == nil {
+		req.Page = &typesBill.HuaWeiBillPage{Offset: proto.Int32(0), Limit: proto.Int32(typesBill.HuaWeiQueryLimit)}
+	}
+
+	cli, err := b.ad.HuaWeiRoot(cts.Kit, req.AccountID)
+	if err != nil {
+		logs.Errorf("huawei request adaptor client err, req: %+v, err: %+v", req, err)
+		return nil, err
+	}
+
+	opt := &typesBill.HuaWeiFeeRecordListOption{
+		AccountID:     req.AccountID,
+		SubAccountID:  req.SubAccountID,
+		Month:         req.Month,
+		BillDateBegin: req.BillDateBegin,
+		BillDateEnd:   req.BillDateEnd,
+		Page: &typesBill.HuaWeiBillPage{
+			Offset: req.Page.Offset,
+			Limit:  req.Page.Limit,
+		},
+	}
+	resp, err := cli.GetFeeRecordList(cts.Kit, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	return &hcbillservice.HuaWeiBillListResult{
+		Count:    resp.TotalCount,
+		Details:  resp.FeeRecords,
+		Currency: resp.Currency,
+	}, nil
+}

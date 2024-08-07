@@ -99,7 +99,7 @@
           </template>
         </bk-table-column>
         <bk-table-column :label="t('备注')" prop="memo" />
-        <bk-table-column :label="t('操作')">
+        <bk-table-column :label="t('操作')" width="170">
           <template #default="props">
             <div class="operate-button">
               <div @click="handleAuth('account_edit')">
@@ -277,7 +277,6 @@ export default defineComponent({
         const res = await accountStore.getAccountList(params);
         state.tableData = res.data.details;
       } catch (error) {
-        console.log(error);
       } finally {
         state.loading = false;
       }
@@ -287,12 +286,10 @@ export default defineComponent({
     watch(
       () => state.searchValue,
       (val, oldVal) => {
-        console.log('val', val);
         state.filter.rules = val.reduce((p, v) => {
           if (v.type === 'condition') {
             state.filter.op = v.id || 'and';
           } else {
-            console.log('v.values[0].id', v.values[0].id);
             if (v.id === 'managers') {
               p.push({
                 field: v.id,
@@ -360,7 +357,6 @@ export default defineComponent({
         // 重新请求列表
         init();
       } catch (error) {
-        console.log(error);
       } finally {
         state.btnLoading = false;
         state.showDeleteBox = false;
@@ -395,9 +391,7 @@ export default defineComponent({
           await accountStore.accountDeleteValidate(state.dataId);
           state.deleteBoxTitle = '确认删除';
           state.showDeleteBox = true;
-        } catch (error) {
-          console.log(error);
-        }
+        } catch (error) {}
       } else {
         state.deleteBoxTitle = '确认同步';
         state.showDeleteBox = true;

@@ -1,0 +1,32 @@
+.amount-wrapper {
+  margin-left: auto;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+
+  .item {
+    display: flex;
+    align-items: center;
+
+    .money {
+      font-weight: 700;
+      font-size: 16px;
+      color: #ff9c01;
+      line-height: 24px;
+    }
+  }
+
+  > .item:first-of-type {
+    margin-right: 32px;
+  }
+
+  &.vertical {
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+
+    > .item:first-of-type {
+      margin-right: 0;
+    }
+  }
+}

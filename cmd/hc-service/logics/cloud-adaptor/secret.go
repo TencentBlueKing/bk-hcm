@@ -198,3 +198,97 @@ func (cli *SecretClient) GcpRegisterCredential(kt *kit.Kit, accountID string) (*
 
 	return cred, nil
 }
+
+// AwsRootSecret get aws secret and validate secret.
+func (cli *SecretClient) AwsRootSecret(kt *kit.Kit, accountID string) (*types.BaseSecret, string, error) {
+	account, err := cli.data.Aws.RootAccount.Get(kt, accountID)
+	if err != nil {
+		return nil, "", fmt.Errorf("get aws root account failed, err: %v", err)
+	}
+
+	if account.Extension == nil {
+		return nil, "", errors.New("aws root account extension is nil")
+	}
+
+	secret := &types.BaseSecret{
+		CloudSecretID:  account.Extension.CloudSecretID,
+		CloudSecretKey: account.Extension.CloudSecretKey,
+	}
+
+	if err := secret.Validate(); err != nil {
+		return nil, "", err
+	}
+
+	return secret, account.Extension.CloudAccountID, nil
+}
+
+// GcpRootCredential get gcp credential and validate credential.
+func (cli *SecretClient) GcpRootCredential(kt *kit.Kit, accountID string) (*types.GcpCredential, error) {
+	account, err := cli.data.Gcp.RootAccount.Get(kt, accountID)
+	if err != nil {
+		return nil, fmt.Errorf("get gcp root account failed, err: %v", err)
+	}
+
+	if account.Extension == nil {
+		return nil, errors.New("gcp root account extension is nil")
+	}
+
+	cred := &types.GcpCredential{
+		CloudProjectID: account.Extension.CloudProjectID,
+		Json:           []byte(account.Extension.CloudServiceSecretKey),
+	}
+
+	if err := cred.Validate(); err != nil {
+		return nil, err
+	}
+
+	return cred, nil
+}
+
+// HuaWeiRootSecret get huawei secret and validate secret.
+func (cli *SecretClient) HuaWeiRootSecret(kt *kit.Kit, accountID string) (*types.BaseSecret, error) {
+	account, err := cli.data.HuaWei.RootAccount.Get(kt, accountID)
+	if err != nil {
+		return nil, fmt.Errorf("get huawei root account failed, err: %v", err)
+	}
+
+	if account.Extension == nil {
+		return nil, errors.New("huawei root account extension is nil")
+	}
+
+	secret := &types.BaseSecret{
+		CloudSecretID:  account.Extension.CloudSecretID,
+		CloudSecretKey: account.Extension.CloudSecretKey,
+	}
+
+	if err := secret.Validate(); err != nil {
+		return nil, err
+	}
+
+	return secret, nil
+}
+
+// AzureRootCredential get azure credential and validate credential.
+func (cli *SecretClient) AzureRootCredential(kt *kit.Kit, accountID string) (*types.AzureCredential, error) {
+	account, err := cli.data.Azure.RootAccount.Get(kt, accountID)
+	if err != nil {
+		return nil, fmt.Errorf("get azure root account failed, err: %v", err)
+	}
+
+	if account.Extension == nil {
+		return nil, errors.New("azure root account extension is nil")
+	}
+
+	cred := &types.AzureCredential{
+		CloudTenantID:        account.Extension.CloudTenantID,
+		CloudSubscriptionID:  account.Extension.CloudSubscriptionID,
+		CloudApplicationID:   account.Extension.CloudApplicationID,
+		CloudClientSecretKey: account.Extension.CloudClientSecretKey,
+	}
+
+	if err := cred.Validate(); err != nil {
+		return nil, err
+	}
+
+	return cred, nil
+}

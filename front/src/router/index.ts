@@ -13,9 +13,11 @@ import service from './module/service';
 import serviceInside from './module/service-inside';
 import business from './module/business';
 import scheme from './module/scheme';
+import bill from './module/bill';
 import i18n from '@/language/i18n';
 import { useCommonStore } from '@/store';
 import { useVerify } from '@/hooks';
+import { isArray, isRegExp, isString } from 'lodash';
 
 const { t } = i18n.global;
 
@@ -28,6 +30,7 @@ const routes: RouteRecordRaw[] = [
   ...serviceInside,
   ...business,
   ...scheme,
+  ...bill,
   {
     // path: '/',
     // name: 'index',
@@ -93,7 +96,12 @@ const toCurrentPage = (
 router.beforeEach((to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
   const commonStore = useCommonStore();
   const { pageAuthData, authVerifyData } = commonStore; // 所有需要检验的查看权限数据
-  const currentFindAuthData = pageAuthData.find((e: any) => e.path === to.path || e?.path?.includes(to.path));
+  const currentFindAuthData = pageAuthData.find((e: any) => {
+    const { path } = e;
+    if (isString(path)) return path === to.path;
+    if (isArray(path)) return path.includes(to.path);
+    if (isRegExp(path)) return path.test(to.path);
+  });
 
   // if (to.path === '/service/my-approval') {
   //   window.open(`${BK_ITSM_URL}/#/workbench/ticket/approval`);

@@ -28,6 +28,7 @@ import (
 	asset "cloud.google.com/go/asset/apiv1"
 	"cloud.google.com/go/bigquery"
 	credentials "cloud.google.com/go/iam/credentials/apiv1"
+	"google.golang.org/api/cloudbilling/v1"
 	res "google.golang.org/api/cloudresourcemanager/v3"
 	"google.golang.org/api/compute/v1"
 	iam "google.golang.org/api/iam/v1"
@@ -101,5 +102,14 @@ func (c *clientSet) iamServiceClient(kt *kit.Kit) (*iam.Service, error) {
 		return nil, err
 	}
 
+	return service, nil
+}
+
+func (c *clientSet) billingClient(kt *kit.Kit) (*cloudbilling.APIService, error) {
+	opt := option.WithCredentialsJSON(c.credential.Json)
+	service, err := cloudbilling.NewService(kt.Ctx, opt)
+	if err != nil {
+		return nil, err
+	}
 	return service, nil
 }

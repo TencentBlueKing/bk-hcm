@@ -36,6 +36,8 @@ type Client interface {
 	GetBizBriefCacheTopo(kt *kit.Kit, params *GetBizBriefCacheTopoParams) (*GetBizBriefCacheTopoResult, error)
 	FindHostTopoRelation(kt *kit.Kit, params *FindHostTopoRelationParams) (*HostTopoRelationResult, error)
 	SearchModule(kt *kit.Kit, params *SearchModuleParams) (*ModuleInfoResult, error)
+	ResourceWatch(kt *kit.Kit, params *WatchEventParams) (*WatchEventResult, error)
+	FindHostBizRelations(kt *kit.Kit, params *HostModuleRelationParams) (*[]HostTopoRelation, error)
 }
 
 // NewClient initialize a new cmdb client
@@ -103,4 +105,16 @@ func (c *cmdb) SearchModule(kt *kit.Kit, params *SearchModuleParams) (*ModuleInf
 
 	return types.EsbCall[SearchModuleParams, ModuleInfoResult](c.client, c.config, rest.POST, kt, params,
 		"/cc/search_module/")
+}
+
+// ResourceWatch watch cmdb resource event.
+func (c *cmdb) ResourceWatch(kt *kit.Kit, params *WatchEventParams) (*WatchEventResult, error) {
+	return types.EsbCall[WatchEventParams, WatchEventResult](c.client, c.config, rest.POST, kt, params,
+		"/cc/resource_watch/")
+}
+
+// FindHostBizRelations find host biz relations.
+func (c *cmdb) FindHostBizRelations(kt *kit.Kit, params *HostModuleRelationParams) (*[]HostTopoRelation, error) {
+	return types.EsbCall[HostModuleRelationParams, []HostTopoRelation](c.client, c.config, rest.POST, kt, params,
+		"/cc/find_host_biz_relations/")
 }

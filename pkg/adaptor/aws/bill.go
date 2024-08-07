@@ -26,6 +26,7 @@ import (
 	"time"
 
 	typesBill "hcm/pkg/adaptor/types/bill"
+	billcore "hcm/pkg/api/core/bill"
 	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
@@ -76,7 +77,7 @@ const (
 
 // GetBillList get bill list
 func (a *Aws) GetBillList(kt *kit.Kit, opt *typesBill.AwsBillListOption,
-	billInfo *cloud.AccountBillConfig[cloud.AwsBillConfigExtension]) (int64, interface{}, error) {
+	billInfo *cloud.AccountBillConfig[cloud.AwsBillConfigExtension]) (int64, []map[string]string, error) {
 
 	where, err := parseCondition(opt)
 	if err != nil {
@@ -120,7 +121,7 @@ func (a *Aws) GetBillTotal(kt *kit.Kit, where string, billInfo *cloud.AccountBil
 
 	total, err := strconv.ParseInt(cloudList[0]["_col0"], 10, 64)
 	if err != nil {
-		return 0, errf.Newf(errf.InvalidParameter, "get bill total parse id %s failed, err: %v", total, err)
+		return 0, errf.Newf(errf.InvalidParameter, "get bill total parse id %d failed, err: %v", total, err)
 	}
 
 	return total, nil
@@ -486,4 +487,172 @@ func (a *Aws) DeleteStack(kt *kit.Kit, opt *typesBill.AwsDeleteStackReq) error {
 	}
 
 	return nil
+}
+
+// -------------- 新增账号账单管理部分 --------------
+
+// GetMainAccountBillList get bill list for main account
+func (a *Aws) GetMainAccountBillList(kt *kit.Kit, opt *typesBill.AwsMainBillListOption,
+	billInfo *billcore.RootAccountBillConfig[billcore.AwsBillConfigExtension]) (int64, []map[string]string, error) {
+
+	where, err := parseRootCondition(opt)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	// 只有第一页时才返回数量
+	var total = int64(0)
+	if opt.Page != nil && opt.Page.Offset == 0 {
+		// get bill total
+		total, err = a.GetRootAccountBillTotal(kt, where, billInfo)
+		if err != nil {
+			return 0, nil, err
+		}
+		if total == 0 {
+			return 0, nil, nil
+		}
+	}
+
+	sql := fmt.Sprintf(QueryBillSQL, "*", billInfo.CloudDatabaseName, billInfo.CloudTableName, where)
+	// 没有指定字段的情况下得到账单顺序会乱，多页的时候会导致账单重复、遗漏
+	sql += " ORDER BY identity_line_item_id,line_item_usage_start_date,line_item_usage_end_date "
+	if opt.Page != nil {
+		sql += fmt.Sprintf(" OFFSET %d LIMIT %d", opt.Page.Offset, opt.Page.Limit)
+	}
+	list, err := a.GetRootAccountAwsAthenaQuery(kt, sql, billInfo)
+	if err != nil {
+		return 0, nil, err
+	}
+	return total, list, nil
+}
+
+func parseRootCondition(opt *typesBill.AwsMainBillListOption) (string, error) {
+	var condition = fmt.Sprintf("WHERE line_item_usage_account_id = '%s' ", opt.CloudAccountID)
+	if opt.BeginDate != "" && opt.EndDate != "" {
+		searchDate, err := time.Parse(constant.DateLayout, opt.BeginDate)
+		if err != nil {
+			return "", fmt.Errorf("conv search date failed, err: %v", err)
+		}
+		condition += fmt.Sprintf("AND year = '%d' AND month = '%d' AND "+
+			"date(line_item_usage_start_date) >= date '%s' AND date(line_item_usage_start_date) <= date '%s'",
+			searchDate.Year(), searchDate.Month(), opt.BeginDate, opt.EndDate)
+	}
+	return condition, nil
+}
+
+// GetRootAccountBillTotal get bill list total for root account
+func (a *Aws) GetRootAccountBillTotal(
+	kt *kit.Kit, where string, billInfo *billcore.RootAccountBillConfig[billcore.AwsBillConfigExtension]) (
+	int64, error) {
+
+	sql := fmt.Sprintf(QueryBillTotalSQL, billInfo.CloudDatabaseName, billInfo.CloudTableName, where)
+	cloudList, err := a.GetRootAccountAwsAthenaQuery(kt, sql, billInfo)
+	if err != nil {
+		return 0, err
+	}
+
+	total, err := strconv.ParseInt(cloudList[0]["_col0"], 10, 64)
+	if err != nil {
+		return 0, errf.Newf(errf.InvalidParameter, "get bill total parse id %d failed, err: %v", total, err)
+	}
+
+	return total, nil
+}
+
+// GetRootAccountAwsAthenaQuery get aws athena query
+func (a *Aws) GetRootAccountAwsAthenaQuery(kt *kit.Kit, query string,
+	billInfo *billcore.RootAccountBillConfig[billcore.AwsBillConfigExtension]) ([]map[string]string, error) {
+
+	client, err := a.clientSet.athenaClient(billInfo.Extension.Region)
+	if err != nil {
+		return nil, err
+	}
+
+	var s athena.StartQueryExecutionInput
+	s.SetQueryString(query)
+
+	var r athena.ResultConfiguration
+	r.SetOutputLocation(billInfo.Extension.SavePath)
+	s.SetResultConfiguration(&r)
+
+	result, err := client.StartQueryExecution(&s)
+	if err != nil {
+		logs.Errorf("aws athena start query error, billInfo: %+v, err: %v, rid: %s", billInfo, err, kt.Rid)
+		return nil, err
+	}
+
+	var qri athena.GetQueryExecutionInput
+	qri.SetQueryExecutionId(*result.QueryExecutionId)
+
+	var qrop *athena.GetQueryExecutionOutput
+	duration := time.Duration(100) * time.Millisecond
+
+	for {
+		qrop, err = client.GetQueryExecution(&qri)
+		if err != nil {
+			logs.Errorf("aws cloud athena get query loop err, queryExecutionId: %s, err: %v, rid: %s",
+				*result.QueryExecutionId, err, kt.Rid)
+			return nil, err
+		}
+
+		if *qrop.QueryExecution.Status.State != "RUNNING" && *qrop.QueryExecution.Status.State != "QUEUED" {
+			break
+		}
+		time.Sleep(duration)
+	}
+
+	if *qrop.QueryExecution.Status.State == "SUCCEEDED" {
+		var ip athena.GetQueryResultsInput
+		ip.SetQueryExecutionId(*result.QueryExecutionId)
+
+		op, err := client.GetQueryResults(&ip)
+		if err != nil {
+			logs.Errorf("aws cloud athena get query result err, queryExecutionId: %s, err: %v, rid: %s",
+				*result.QueryExecutionId, err, kt.Rid)
+			return nil, err
+		}
+
+		list := make([]map[string]string, 0)
+		resultMap := make([]string, 0)
+		for index, row := range op.ResultSet.Rows {
+			// parse table field
+			if index == 0 {
+				for _, column := range row.Data {
+					tmpField := converter.PtrToVal(column.VarCharValue)
+					resultMap = append(resultMap, tmpField)
+				}
+			} else {
+				tmpMap := make(map[string]string, 0)
+				for colKey, column := range row.Data {
+					tmpValue := converter.PtrToVal(column.VarCharValue)
+					if tmpValue == "" || strings.IndexAny(tmpValue, "Ee") == -1 {
+						tmpMap[resultMap[colKey]] = tmpValue
+						continue
+					}
+
+					decimalNum, err := math.NewDecimalFromString(tmpValue)
+					if err != nil {
+						tmpMap[resultMap[colKey]] = tmpValue
+						continue
+					}
+					tmpMap[resultMap[colKey]] = decimalNum.ToString()
+				}
+				list = append(list, tmpMap)
+			}
+		}
+
+		return list, nil
+	}
+
+	var errMsg = *qrop.QueryExecution.Status.State
+	if qrop.QueryExecution.Status.StateChangeReason != nil {
+		errMsg = *qrop.QueryExecution.Status.StateChangeReason
+	}
+
+	if strings.Contains(errMsg, fmt.Sprintf("%s does not exist", billInfo.CloudDatabaseName)) {
+		return nil, errf.Newf(
+			errf.RecordNotFound, "root accountID: %s bill record is not found", billInfo.RootAccountID)
+	}
+
+	return nil, errf.Newf(errf.DecodeRequestFailed, "Aws Athena Query Failed(%s)", errMsg)
 }

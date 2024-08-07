@@ -60,6 +60,7 @@ export default defineComponent({
       showPermissionDialog,
       permissionParams,
     } = useVerify();
+    if (!authVerifyData.value.permissionAction.cloud_selection_find) return () => <ErrorPage />;
 
     const tableCols = ref([
       {
@@ -514,7 +515,6 @@ export default defineComponent({
     };
 
     const handleColumnFilter = ({ checked, column }: { checked: string[]; column: { field: string } }) => {
-      console.log(checked, column.field);
       const index = filterConfigs.findIndex((filter) => filter.field === column.field);
       if (index > -1) {
         if (checked.length > 0) {
@@ -537,8 +537,6 @@ export default defineComponent({
       getBizTypeList();
       getNormalTableData();
     });
-
-    if (!authVerifyData.value.permissionAction.cloud_selection_find) return () => <ErrorPage />;
 
     return () => (
       <div class='scheme-list-page'>

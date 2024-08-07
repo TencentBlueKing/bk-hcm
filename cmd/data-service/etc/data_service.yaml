@@ -135,3 +135,14 @@ esb:
     caFile:
     # the password to decrypt the certificate.
     password:
+
+objectstore:
+  type:
+  uin:
+  prefix:
+  secretId:
+  secretKey:
+  bucketUrl:
+  bucketName:
+  bucketRegion:
+  isDebug:

@@ -21,7 +21,6 @@ import { ResourceTypeEnum, VendorEnum } from '@/common/constant';
 import useCvmOptions from '../hooks/use-cvm-options';
 import useCondtion from '../hooks/use-condtion';
 import useCvmFormData, { getDataDiskDefaults, getGcpDataDiskDefaults } from '../hooks/use-cvm-form-data';
-// import { useHostStore } from '@/store/host';
 
 import { useAccountStore } from '@/store';
 import CommonCard from '@/components/CommonCard';
@@ -32,7 +31,7 @@ import SubnetPreviewDialog, { ISubnetItem } from './children/SubnetPreviewDialog
 import http from '@/http';
 import { debounce } from 'lodash';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
-// import SelectCvmBlock from './children/SelectCvmBlock';
+import { pluginHandler } from '@pluginHandler/service-apply-cvm';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 const accountStore = useAccountStore();
@@ -66,6 +65,10 @@ export default defineComponent({
       refreshVpcList.value = callback;
     };
 
+    const { useAccountSelector, ApplicationForm } = pluginHandler;
+
+    const { AccountSelectorCard, isAccountShow } = useAccountSelector();
+
     const dialogState = reactive({
       gcpDataDisk: {
         isShow: false,
@@ -74,7 +77,6 @@ export default defineComponent({
         formData: getGcpDataDiskDefaults(),
       },
     });
-    // const hostStore = useHostStore();
 
     const zoneSelectorRef = ref(null);
     const cloudId = ref(null);
@@ -113,12 +115,6 @@ export default defineComponent({
       };
       dialogState.gcpDataDisk.isShow = false;
     };
-    /* const handleEditGcpDataDisk = (index: number) => {
-      dialogState.gcpDataDisk.isShow = true;
-      dialogState.gcpDataDisk.isEdit = true;
-      dialogState.gcpDataDisk.editDataIndex = index;
-      dialogState.gcpDataDisk.formData = formData.data_disk[index];
-    };*/
 
     const handleRemoveDataDisk = (index: number) => {
       formData.data_disk.splice(index, 1);
@@ -266,38 +262,6 @@ export default defineComponent({
         [VendorEnum.GCP]: {
           content: () => (
             <div class='form-content-list data-disk-wrap'>
-              {/* {formData.data_disk.map((item: IDiskOption, index: number) => (
-                <div class='flex-row'>
-
-                  {item.disk_name}, 空白, {item.disk_size_gb}GB,{' '}
-                  {dataDiskTypes.value.find((disk: IOption) => disk.id === item.disk_type)?.name || '--'}
-                  <div class='btns'>
-                    <Button
-                      class='btn'
-                      outline
-                      size='small'
-                      onClick={() => handleEditGcpDataDisk(index)}>
-                      <EditIcon />
-                    </Button>
-                    <Button
-                      class='btn'
-                      outline
-                      size='small'
-                      onClick={() => handleRemoveDataDisk(index)}>
-                      <CloseLineIcon />
-                    </Button>
-                    {index === formData.data_disk.length - 1 && (
-                      <Button
-                        class='btn'
-                        outline
-                        size='small'
-                        onClick={handleCreateGcpDataDisk}>
-                        <PlusIcon />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))}*/}
               {formData.data_disk.map((item: IDiskOption, index: number) => (
                 <div class='flex-row'>
                   <FormItem property={`data_disk[${index}].disk_type`} rules={[]}>
@@ -366,16 +330,6 @@ export default defineComponent({
       };
       return diffs[cond.vendor] || {};
     });
-
-    // const formConfigPublicIpAssignedDiff = computed(() => {
-    //   const diffs = {
-    //     [VendorEnum.HUAWEI]: {
-    //       label: '弹性公网IP',
-    //       content: () => '暂不支持购买，请到EIP中绑定',
-    //     },
-    //   };
-    //   return diffs[cond.vendor] || {};
-    // });
 
     // 当前 vpc下是否有子网列表
     const subnetLength = ref(0);
@@ -484,31 +438,7 @@ export default defineComponent({
       },
     );
 
-    // const curRegionName = computed(() => {
-    //   return hostStore.regionList?.find(region => region.region_id === cond.region) || {};
-    // });
-
     const formConfig = computed(() => [
-      // {
-      //   id: 'region',
-      //   title: '地域',
-      //   children: [
-      //     {
-      //       label: '可用区',
-      //       required: cond.vendor === VendorEnum.AZURE ? zoneSelectorRef.value.list?.length > 0 : true,
-      //       property: 'zone',
-      //       rules: [{
-      //         trigger: 'change',
-      //       }],
-      //       content: () => <ZoneSelector
-      //         ref={zoneSelectorRef}
-      //         v-model={formData.zone}
-      //         vendor={cond.vendor}
-      //         region={cond.region}
-      //         onChange={handleZoneChange} />,
-      //     },
-      //   ],
-      // },
       {
         id: 'network',
         title: '网络信息',
@@ -576,9 +506,6 @@ export default defineComponent({
                     class={'subnet-selector-preview-btn'}
                     onClick={() => {
                       isSubnetPreviewDialogShow.value = true;
-                      // if (!formData.cloud_subnet_id) return;
-                      // const url = `/#/business/subnet?cloud_id=${formData.cloud_subnet_id}&bizs=${cond.bizId}`;
-                      // window.open(url, '_blank');
                     }}>
                     预览
                   </Button>
@@ -586,15 +513,6 @@ export default defineComponent({
               </>
             ),
           },
-          // {
-          //   label: '公网IP',
-          //   display: ![VendorEnum.GCP, VendorEnum.AZURE].includes(cond.vendor),
-          //   required: true,
-          //   description: '',
-          //   property: 'public_ip_assigned',
-          //   content: () => <Checkbox v-model={formData.public_ip_assigned} disabled>自动分配公网IP</Checkbox>,
-          //   ...formConfigPublicIpAssignedDiff.value,
-          // },
           {
             label: '管控区域',
             description:
@@ -637,53 +555,11 @@ export default defineComponent({
                   vpcId={vpcId.value}
                   onSelectedChange={(val) => (formData.cloud_security_group_ids = val)}
                 />
-                {/* {
-                  isResourcePage
-                    ? null
-                    : <Button
-                        text
-                        theme="primary"
-                        onClick={() => {
-                          if (!formData.cloud_security_group_ids) return;
-                          let url = `/#/business/security?bizs=${cond.bizId}&`;
-                          const params = [];
-                          for (const cloudId of formData.cloud_security_group_ids) {
-                            params.push(`cloud_id=${cloudId}`);
-                          }
-                          url += params.join('&');
-                          window.open(url, '_blank');
-                        }}>
-                        详情
-                      </Button>
-                 } */}
               </div>
             ),
           },
         ],
       },
-      // {
-      //   id: 'billing',
-      //   title: '计费',
-      //   display: [VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(cond.vendor),
-      //   children: [
-      //     {
-      //       label: '计费模式',
-      //       required: true,
-      //       property: 'instance_charge_type',
-      //       content: () =>
-      //       // <Select v-model={formData.instance_charge_type} clearable={false}>{
-      //       //     billingModes.value.map(({ id, name }: IOption) => (
-      //       //       <Option key={id} value={id} label={name}></Option>
-      //       //     ))
-      //       //   }
-      //       // </Select>,
-      //       <RadioGroup v-model={formData.instance_charge_type}>
-      //               {billingModes.value.map(item => (<RadioButton label={item.id} >{item.name}
-      //             </RadioButton>))}
-      //       </RadioGroup>,
-      //     },
-      //   ],
-      // },
       {
         id: 'config',
         title: '实例配置',
@@ -814,22 +690,6 @@ export default defineComponent({
                           <path d='M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12c6.627 0 12-5.373 12-12s-5.373-12-12-12zM17.25 12.75h-10.5c-0.414 0-0.75-0.336-0.75-0.75s0.336-0.75 0.75-0.75h10.5c0.414 0 0.75 0.336 0.75 0.75s-0.336 0.75-0.75 0.75z'></path>
                         </svg>
                       </Button>
-                      {/* <Button
-                        class='btn'
-                        outline
-                        size='small'
-                        disabled={formData.data_disk.length !== index + 1}
-                        onClick={handleCreateDataDisk}>
-                        <PlusIcon />
-                      </Button>
-                      <Button
-                        class='btn'
-                        outline
-                        size='small'
-                        disabled={formData.data_disk.length !== index + 1}
-                        onClick={() => handleRemoveDataDisk(index)}>
-                        <CloseLineIcon />
-                      </Button>*/}
                     </div>
                   </div>
                 ))}
@@ -838,10 +698,6 @@ export default defineComponent({
                     <PlusIcon />
                   </Button>
                 )}
-                {
-                  // (formData.data_disks.length > 0 && cond.vendor === VendorEnum.HUAWEI)
-                  // && <Checkbox v-model={formData.is_quickly_initialize_data_disk}>快速初始化数据盘</Checkbox>
-                }
               </div>
             ),
             ...formConfigDataDiskDiff.value,
@@ -894,76 +750,6 @@ export default defineComponent({
           },
         ],
       },
-      // {
-      //   id: 'storage',
-      //   title: '存储',
-      //   children: [
-      //   ],
-      // },
-      // {
-      //   id: 'auth',
-      //   title: '登录',
-      //   children: [
-      //     {
-      //       label: '设置密码',
-      //       required: true,
-      //       description: '字母数字与 ()\`~!@#$%^&*-+=|{}[]:;\',.?/ 字符的组合',
-      //       content: [
-      //         {
-      //           property: 'username',
-      //           display: cond.vendor === VendorEnum.AZURE,
-      //           content: () => <Input placeholder='登录用户' v-model={formData.username}></Input>,
-      //         },
-      //         {
-      //           property: 'password',
-      //           content: () => <Input type='password' placeholder='密码' v-model={formData.password}></Input>,
-      //         },
-      //         {
-      //           property: 'confirmed_password',
-      // eslint-disable-next-line max-len
-      //           content: () => <Input type='password' placeholder='确认密码' v-model={formData.confirmed_password}></Input>,
-      //         },
-      //       ],
-      //     },
-      //   ],
-      // },
-      // {
-      //   id: 'quantity',
-      //   title: '数量',
-      //   children: [
-      //     {
-      //       label: '购买数量',
-      //       required: true,
-      //       property: 'required_count',
-      //       description: '大于0的整数，最大不能超过100',
-      //       content: () => <Input type='number' min={0} max={100} v-model={formData.required_count}></Input>,
-      //     },
-      //     {
-      //       label: '购买时长',
-      //       required: true,
-      //       // PREPAID：包年包月
-      //       display: ['PREPAID'].includes(formData.instance_charge_type),
-      //       content: [
-      //         {
-      //           property: 'purchase_duration.count',
-      //           content: () => <Input type='number' v-model={formData.purchase_duration.count}></Input>,
-      //         },
-      //         {
-      //           property: 'purchase_duration.unit',
-      //           content: () => <Select v-model={formData.purchase_duration.unit} clearable={false}>{
-      //             purchaseDurationUnits.map(({ id, name }: IOption) => (
-      //               <Option key={id} value={id} label={name}></Option>
-      //             ))}
-      //           </Select>,
-      //         },
-      //         {
-      //           property: 'auto_renew',
-      //           content: () => <Checkbox v-model={formData.auto_renew}>自动续费</Checkbox>,
-      //         },
-      //       ],
-      //     },
-      //   ],
-      // },
       {
         id: 'describe',
         title: '备注信息',
@@ -997,7 +783,7 @@ export default defineComponent({
         ],
       },
     ]);
-
+    const conditionRef = ref();
     const formRules = {
       name: [
         {
@@ -1014,11 +800,6 @@ export default defineComponent({
         },
         {
           validator: (value: string) => {
-            /* const pattern = cond.vendor === VendorEnum.HUAWEI
-               ? /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[()`~!@#$%^&*-+=|{}\
-               [\]:;',.?/])[A-Za-z\d()`~!@#$%^&*\-+=|{}\[\]:;',.?/]+$/
-               : /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d|.*[!@$%^\-_=+[{}\]:,./?])[A-Za-z\d!@$%^\-_=+[{}\]:,./?]+$/;
-            */
             const pattern = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d|.*[!@$%^\-_=+[{}\]:,./?])[A-Za-z\d!@$%^\-_=+[{}\]:,./?]+$/;
             return pattern.test(value);
           },
@@ -1135,83 +916,90 @@ export default defineComponent({
           class='create-form-container cvm-wrap'
           style={whereAmI.value === Senarios.resource && { padding: 0, marginBottom: '80px' }}>
           <Form model={formData} rules={formRules} ref={formRef} onSubmit={handleFormSubmit} formType='vertical'>
-            <ConditionOptions
-              type={ResourceTypeEnum.CVM}
-              v-model:bizId={cond.bizId}
-              v-model:cloudAccountId={cond.cloudAccountId}
-              v-model:vendor={cond.vendor}
-              v-model:region={cond.region}
-              v-model:resourceGroup={cond.resourceGroup}>
-              {{
-                default: () => (
-                  <FormItem label={'可用区'} required property='zone'>
-                    <ZoneSelector
-                      ref={zoneSelectorRef}
-                      v-model={formData.zone}
-                      vendor={cond.vendor}
-                      region={cond.region}
-                      onChange={handleZoneChange}
-                    />
-                  </FormItem>
-                ),
-                appendix: () =>
-                  [VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(cond.vendor as VendorEnum) ? (
-                    <FormItem label='计费模式' required property='instance_charge_type'>
-                      <RadioGroup v-model={formData.instance_charge_type}>
-                        {billingModes.value.map((item) => (
-                          <RadioButton label={item.id}>{item.name}</RadioButton>
-                        ))}
-                      </RadioGroup>
-                    </FormItem>
-                  ) : null,
-              }}
-            </ConditionOptions>
-            {formConfig.value
-              .filter(({ display }) => display !== false)
-              .map(({ title, children }) => (
-                <CommonCard title={() => title} class={'mb16'}>
-                  {children
-                    .filter(({ display }) => display !== false)
-                    .map(({ label, description, tips, rules, required, property, content }) => (
-                      <FormItem
-                        label={label}
-                        required={required}
-                        property={property}
-                        rules={rules}
-                        description={description}
-                        class={label === '子网' && 'purchase-cvm-form-item-subnet-wrap'}>
-                        {Array.isArray(content) ? (
-                          <div class='flex-row'>
-                            {content
-                              .filter((sub) => sub.display !== false)
-                              .map((sub) => (
-                                <FormItem
-                                  label={sub.label}
-                                  required={sub.required}
-                                  property={sub.property}
-                                  rules={sub.rules}
-                                  description={sub?.description}
-                                  class='sub-form-item-wrap'>
-                                  {sub.content()}
-                                  {sub.tips && <div class='form-item-tips'>{sub.tips()}</div>}
-                                </FormItem>
-                              ))}
-                          </div>
-                        ) : (
-                          content()
-                        )}
-                        {tips && <div class='form-item-tips'>{tips()}</div>}
+            {
+              <AccountSelectorCard
+                v-model={cond.cloudAccountId}
+                bk_biz_id={cond.bizId}
+                onAccountChange={(account: any) => conditionRef.value?.handleChangeAccount(account)}
+              />
+            }
+            {isAccountShow.value ? (
+              <ApplicationForm isbusiness={true}></ApplicationForm>
+            ) : (
+              <>
+                <ConditionOptions
+                  ref={conditionRef}
+                  type={ResourceTypeEnum.CVM}
+                  v-model:bizId={cond.bizId}
+                  v-model:cloudAccountId={cond.cloudAccountId}
+                  v-model:vendor={cond.vendor}
+                  v-model:region={cond.region}
+                  v-model:resourceGroup={cond.resourceGroup}>
+                  {{
+                    default: () => (
+                      <FormItem label={'可用区'} required property='zone'>
+                        <ZoneSelector
+                          ref={zoneSelectorRef}
+                          v-model={formData.zone}
+                          vendor={cond.vendor}
+                          region={cond.region}
+                          onChange={handleZoneChange}
+                        />
                       </FormItem>
-                    ))}
-                </CommonCard>
-              ))}
-            {/* <div class="action-bar">
-          <Button theme='primary' loading={submitting.value}
-          disabled={submitDisabled.value} onClick={handleFormSubmit}>{
-            isResourcePage ? t('提交') : t('提交审批')
-          }</Button>
-          <Button>{ t('取消') }</Button>
-        </div> */}
+                    ),
+                    appendix: () =>
+                      [VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(cond.vendor as VendorEnum) ? (
+                        <FormItem label='计费模式' required property='instance_charge_type'>
+                          <RadioGroup v-model={formData.instance_charge_type}>
+                            {billingModes.value.map((item) => (
+                              <RadioButton label={item.id}>{item.name}</RadioButton>
+                            ))}
+                          </RadioGroup>
+                        </FormItem>
+                      ) : null,
+                  }}
+                </ConditionOptions>
+                {formConfig.value
+                  .filter(({ display }) => display !== false)
+                  .map(({ title, children }) => (
+                    <CommonCard title={() => title} class={'mb16'}>
+                      {children
+                        .filter(({ display }) => display !== false)
+                        .map(({ label, description, tips, rules, required, property, content }) => (
+                          <FormItem
+                            label={label}
+                            required={required}
+                            property={property}
+                            rules={rules}
+                            description={description}
+                            class={label === '子网' && 'purchase-cvm-form-item-subnet-wrap'}>
+                            {Array.isArray(content) ? (
+                              <div class='flex-row'>
+                                {content
+                                  .filter((sub) => sub.display !== false)
+                                  .map((sub) => (
+                                    <FormItem
+                                      label={sub.label}
+                                      required={sub.required}
+                                      property={sub.property}
+                                      rules={sub.rules}
+                                      description={sub?.description}
+                                      class='sub-form-item-wrap'>
+                                      {sub.content()}
+                                      {sub.tips && <div class='form-item-tips'>{sub.tips()}</div>}
+                                    </FormItem>
+                                  ))}
+                              </div>
+                            ) : (
+                              content()
+                            )}
+                            {tips && <div class='form-item-tips'>{tips()}</div>}
+                          </FormItem>
+                        ))}
+                    </CommonCard>
+                  ))}
+              </>
+            )}
           </Form>
           <GcpDataDiskFormDialog
             v-model:isShow={dialogState.gcpDataDisk.isShow}
@@ -1223,88 +1011,93 @@ export default defineComponent({
             onClose={() => (dialogState.gcpDataDisk.isShow = false)}
           />
         </div>
-        <div class={'purchase-cvm-bottom-bar'}>
-          <Form labelWidth={130} class={'purchase-cvm-bottom-bar-form'}>
-            <div class='purchase-cvm-bottom-bar-form-item-wrap'>
-              <FormItem
-                label='数量'
-                class={'purchase-cvm-bottom-bar-form-count ' + `${limitNum.value !== -1 ? 'mb-12' : ''}`}>
-                <Input
-                  style={{ width: '150px' }}
-                  type='number'
-                  min={0}
-                  max={100}
-                  v-model={formData.required_count}></Input>
-              </FormItem>
-
-              {/* eslint-disable max-len */}
-              {['PREPAID', 'prePaid'].includes(formData.instance_charge_type) ? (
-                <FormItem label='时长'>
-                  <div class={'purchase-cvm-time'}>
-                    <Input style={{ width: '160px' }} type='number' v-model={formData.purchase_duration.count}></Input>
-                    <Select style={{ width: '50px' }} v-model={formData.purchase_duration.unit} clearable={false}>
-                      {purchaseDurationUnits.map(({ id, name }: IOption) => (
-                        <Option key={id} value={id} label={name}></Option>
-                      ))}
-                    </Select>
-                    <Checkbox class='purchase-cvm-time-checkbox' v-model={formData.auto_renew}>
-                      {' '}
-                      自动续费{' '}
-                    </Checkbox>
-                  </div>
+        {isAccountShow.value && (
+          <div class={'purchase-cvm-bottom-bar'}>
+            <Form labelWidth={130} class={'purchase-cvm-bottom-bar-form'}>
+              <div class='purchase-cvm-bottom-bar-form-item-wrap'>
+                <FormItem
+                  label='数量'
+                  class={'purchase-cvm-bottom-bar-form-count ' + `${limitNum.value !== -1 ? 'mb-12' : ''}`}>
+                  <Input
+                    style={{ width: '150px' }}
+                    type='number'
+                    min={0}
+                    max={100}
+                    v-model={formData.required_count}></Input>
                 </FormItem>
-              ) : null}
-            </div>
-            {/* eslint-disable max-len */}
 
-            <div class='purchase-cvm-bottom-bar-form-count-wrap'>
-              {[VendorEnum.TCLOUD, VendorEnum.HUAWEI, VendorEnum.GCP].includes(cond.vendor as VendorEnum) &&
-              limitNum.value !== -1 ? (
-                <p class={'purchase-cvm-bottom-bar-form-count-tip'}>
-                  所在{VendorEnum.TCLOUD === cond.vendor ? '可用区' : '地域'}
-                  配额为{' '}
-                  {
-                    <>
-                      <span class={'purchase-cvm-bottom-bar-form-count-tip-num'}>
-                        {limitNum.value - usageNum.value - formData.required_count}
-                      </span>{' '}
-                      / {limitNum.value}
-                    </>
-                  }
-                </p>
-              ) : null}
-            </div>
-          </Form>
-          <div class={'purchase-cvm-bottom-bar-info'}>
-            {(cond.vendor === VendorEnum.TCLOUD || cond.vendor === VendorEnum.HUAWEI) && (
-              <div class={'purchase-cvm-cost-wrap'}>
-                <div>费用：</div>
-                <div class={'purchase-cvm-cost'}>{cost.value}</div>
+                {/* eslint-disable max-len */}
+                {['PREPAID', 'prePaid'].includes(formData.instance_charge_type) ? (
+                  <FormItem label='时长'>
+                    <div class={'purchase-cvm-time'}>
+                      <Input
+                        style={{ width: '160px' }}
+                        type='number'
+                        v-model={formData.purchase_duration.count}></Input>
+                      <Select style={{ width: '50px' }} v-model={formData.purchase_duration.unit} clearable={false}>
+                        {purchaseDurationUnits.map(({ id, name }: IOption) => (
+                          <Option key={id} value={id} label={name}></Option>
+                        ))}
+                      </Select>
+                      <Checkbox class='purchase-cvm-time-checkbox' v-model={formData.auto_renew}>
+                        {' '}
+                        自动续费{' '}
+                      </Checkbox>
+                    </div>
+                  </FormItem>
+                ) : null}
               </div>
-            )}
-            <Button
-              theme='primary'
-              loading={submitting.value || isSubmitBtnLoading.value}
-              disabled={submitDisabled.value}
-              onClick={handleFormSubmit}
-              class={'mr8'}>
-              立即购买
-            </Button>
-            <Button onClick={() => router.back()}>{t('取消')}</Button>
+              {/* eslint-disable max-len */}
+
+              <div class='purchase-cvm-bottom-bar-form-count-wrap'>
+                {[VendorEnum.TCLOUD, VendorEnum.HUAWEI, VendorEnum.GCP].includes(cond.vendor as VendorEnum) &&
+                limitNum.value !== -1 ? (
+                  <p class={'purchase-cvm-bottom-bar-form-count-tip'}>
+                    所在{VendorEnum.TCLOUD === cond.vendor ? '可用区' : '地域'}
+                    配额为{' '}
+                    {
+                      <>
+                        <span class={'purchase-cvm-bottom-bar-form-count-tip-num'}>
+                          {limitNum.value - usageNum.value - formData.required_count}
+                        </span>{' '}
+                        / {limitNum.value}
+                      </>
+                    }
+                  </p>
+                ) : null}
+              </div>
+            </Form>
+            <div class={'purchase-cvm-bottom-bar-info'}>
+              {(cond.vendor === VendorEnum.TCLOUD || cond.vendor === VendorEnum.HUAWEI) && (
+                <div class={'purchase-cvm-cost-wrap'}>
+                  <div>费用：</div>
+                  <div class={'purchase-cvm-cost'}>{cost.value}</div>
+                </div>
+              )}
+              <Button
+                theme='primary'
+                loading={submitting.value || isSubmitBtnLoading.value}
+                disabled={submitDisabled.value}
+                onClick={handleFormSubmit}
+                class={'mr8'}>
+                立即购买
+              </Button>
+              <Button onClick={() => router.back()}>{t('取消')}</Button>
+            </div>
+
+            <VpcPreviewDialog
+              isShow={isVpcPreviewDialogShow.value}
+              data={vpcData.value}
+              handleClose={() => (isVpcPreviewDialogShow.value = false)}
+            />
+
+            <SubnetPreviewDialog
+              isShow={isSubnetPreviewDialogShow.value}
+              data={subnetData.value}
+              handleClose={() => (isSubnetPreviewDialogShow.value = false)}
+            />
           </div>
-
-          <VpcPreviewDialog
-            isShow={isVpcPreviewDialogShow.value}
-            data={vpcData.value}
-            handleClose={() => (isVpcPreviewDialogShow.value = false)}
-          />
-
-          <SubnetPreviewDialog
-            isShow={isSubnetPreviewDialogShow.value}
-            data={subnetData.value}
-            handleClose={() => (isSubnetPreviewDialogShow.value = false)}
-          />
-        </div>
+        )}
       </div>
     );
   },

@@ -24,6 +24,7 @@ import (
 
 	proto "hcm/pkg/api/cloud-server/application"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
 )
 
@@ -36,9 +37,19 @@ func (a *applicationSvc) Get(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// 只能查询自己的申请单
 	if application.Applicant != cts.Kit.User {
-		return nil, errf.NewFromErr(errf.PermissionDenied, fmt.Errorf("you can not view other people's application"))
+		_, authorized, err := a.authorizer.Authorize(cts.Kit, meta.ResourceAttribute{Basic: &meta.Basic{
+			Type:   meta.Application,
+			Action: meta.Find,
+		}})
+		if err != nil {
+			return nil, err
+		}
+		// 没有单据管理权限的用户只能查询自己的申请单
+		if !authorized {
+			return nil, errf.NewFromErr(errf.PermissionDenied,
+				fmt.Errorf("you can not view other people's application"))
+		}
 	}
 
 	// 查询审批链接

@@ -40,6 +40,7 @@ var ApplicationColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "sn", NamedC: "sn", Type: enumor.String},
 	{Column: "type", NamedC: "type", Type: enumor.String},
 	{Column: "status", NamedC: "status", Type: enumor.String},
+	{Column: "bk_biz_ids", NamedC: "bk_biz_ids", Type: enumor.Json},
 
 	{Column: "applicant", NamedC: "applicant", Type: enumor.String},
 	{Column: "content", NamedC: "content", Type: enumor.Json},
@@ -64,6 +65,8 @@ type ApplicationTable struct {
 	Type string `db:"type" json:"type" validate:"max=64"`
 	// Status 单据状态
 	Status string `db:"status" json:"status" validate:"max=32"`
+	// BkBizID 业务ID
+	BkBizIDs types.Int64Array `db:"bk_biz_ids" json:"bk_biz_ids"`
 
 	// Applicant 申请人
 	Applicant string `db:"applicant" json:"applicant" validate:"max=64"`

@@ -57,6 +57,20 @@ func GenerateResourceCreatorActions() client.ResourceCreatorActions {
 				},
 				SubResourceTypes: nil,
 			},
+			{
+				ResourceID: MainAccount,
+				Actions: []client.CreatorRelatedAction{
+					{
+						ID:         MainAccountFind,
+						IsRequired: false,
+					},
+					{
+						ID:         MainAccountEdit,
+						IsRequired: false,
+					},
+				},
+				SubResourceTypes: nil,
+			},
 		},
 	}
 }

@@ -100,8 +100,24 @@ func AdaptAuthOptions(a *meta.ResourceAttribute) (client.ActionID, []client.Reso
 		return genTargetGroupResource(a)
 	case meta.UrlRuleAuditResType:
 		return genUrlRuleResource(a)
-
+	case meta.MainAccount:
+		return genMainAccountRuleResource(a)
+	case meta.RootAccount:
+		return genRootAccountRuleResource(a)
+	case meta.AccountBill:
+		return genAccountBillResource(a)
+	case meta.Application:
+		return genApplicationResources(a)
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm auth type: %s", a.Basic.Type)
+	}
+}
+
+func genApplicationResources(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	switch a.Basic.Action {
+	case meta.Find, meta.Delete, meta.Update:
+		return sys.ApplicationManage, make([]client.Resource, 0), nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }

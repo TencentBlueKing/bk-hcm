@@ -209,13 +209,7 @@ const isCurRowSelectEnable = (row: any) => {
 const { selections, handleSelectionChange, resetSelections } = useSelection();
 
 const groupColumns = [
-  {
-    type: 'selection',
-    width: 32,
-    minWidth: 32,
-    onlyShowOnList: true,
-    align: 'right',
-  },
+  { type: 'selection', width: 30, minWidth: 30, onlyShowOnList: true },
   {
     label: '安全组 ID',
     field: 'cloud_id',
@@ -439,13 +433,7 @@ const groupColumns = [
 const groupSettings = generateColumnsSettings(groupColumns);
 
 const gcpColumns = [
-  {
-    type: 'selection',
-    width: 32,
-    minWidth: 32,
-    onlyShowOnList: true,
-    align: 'right',
-  },
+  { type: 'selection', width: 30, minWidth: 30, onlyShowOnList: true },
   {
     label: '防火墙 ID	',
     field: 'cloud_id',
@@ -671,12 +659,7 @@ const gcpColumns = [
 const gcpSettings = generateColumnsSettings(gcpColumns);
 
 const templateColumns = [
-  {
-    type: 'selection',
-    width: '100',
-    onlyShowOnList: true,
-    isDefaultShow: true,
-  },
+  { type: 'selection', width: 30, minWidth: 30, onlyShowOnList: true },
   {
     label: '模板ID',
     field: 'cloud_id',
@@ -943,11 +926,10 @@ const securityHandleShowDelete = (data: any) => {
       </section>
     </section>
 
-    <bk-loading :key="activeType" :loading="state.isLoading">
+    <bk-loading :key="activeType" :loading="state.isLoading" opacity="1">
       <bk-table
         v-if="activeType === 'group'"
         :settings="groupSettings"
-        class="has-selection"
         row-hover="auto"
         remote-pagination
         :pagination="state.pagination"
@@ -965,7 +947,6 @@ const securityHandleShowDelete = (data: any) => {
       <bk-table
         v-else-if="activeType === 'gcp'"
         :settings="gcpSettings"
-        class="has-selection"
         row-hover="auto"
         remote-pagination
         :pagination="state.pagination"
@@ -983,7 +964,6 @@ const securityHandleShowDelete = (data: any) => {
       <bk-table
         v-else-if="activeType === 'template'"
         :settings="templateSettings"
-        class="mt20"
         row-hover="auto"
         remote-pagination
         :pagination="state.pagination"

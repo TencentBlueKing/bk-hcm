@@ -45,6 +45,10 @@ const (
 	Azure Vendor = "azure"
 	// HuaWei is hua wei cloud.
 	HuaWei Vendor = "huawei"
+	// Zenlayer is zenlayer cloud.
+	Zenlayer Vendor = "zenlayer"
+	// Kaopu is kaopu cloud.
+	Kaopu Vendor = "kaopu"
 )
 
 // VendorInfo 厂商信息
@@ -89,6 +93,18 @@ var (
 			NameZh:             "微软云",
 			MainAccountIDField: "cloud_subscription_id",
 			SecretKeyField:     "cloud_client_secret_key",
+		},
+		Zenlayer: {
+			NameEn:             "Zenlayer",
+			NameZh:             "Zenlayer",
+			MainAccountIDField: "cloud_main_account_id",
+			SecretKeyField:     "cloud_secret_key",
+		},
+		Kaopu: {
+			NameEn:             "Kaopu",
+			NameZh:             "靠谱云",
+			MainAccountIDField: "cloud_main_account_id",
+			SecretKeyField:     "cloud_secret_key",
 		},
 	}
 )

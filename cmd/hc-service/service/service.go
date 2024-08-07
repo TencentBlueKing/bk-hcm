@@ -28,7 +28,7 @@ import (
 	"strconv"
 	"time"
 
-	"hcm/cmd/hc-service/logics/cloud-adaptor"
+	cloudadaptor "hcm/cmd/hc-service/logics/cloud-adaptor"
 	ressync "hcm/cmd/hc-service/logics/res-sync"
 	"hcm/cmd/hc-service/service/account"
 	argstpl "hcm/cmd/hc-service/service/argument-template"
@@ -42,6 +42,7 @@ import (
 	"hcm/cmd/hc-service/service/firewall"
 	instancetype "hcm/cmd/hc-service/service/instance-type"
 	loadbalancer "hcm/cmd/hc-service/service/load-balancer"
+	mainaccount "hcm/cmd/hc-service/service/main-account"
 	routetable "hcm/cmd/hc-service/service/route-table"
 	securitygroup "hcm/cmd/hc-service/service/security-group"
 	"hcm/cmd/hc-service/service/subnet"
@@ -172,6 +173,7 @@ func (s *Service) apiSet() *restful.Container {
 	loadbalancer.InitLoadBalancerService(c)
 	cert.InitCertService(c)
 	bwpkg.InitBwPkgService(c)
+	mainaccount.InitService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

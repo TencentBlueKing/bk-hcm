@@ -36,6 +36,11 @@ func SetClientSet(cli *client.ClientSet) {
 	cliSet = cli
 }
 
+// GetClientSet get client set.
+func GetClientSet() *client.ClientSet {
+	return cliSet
+}
+
 // GetHCService get hc service.
 func GetHCService() *hcservice.Client {
 	return cliSet.HCService()

@@ -52,7 +52,7 @@ export default defineComponent({
       default: false,
     },
   },
-  emits: ['on-cancel'],
+  emits: ['cancel'],
   setup(props, { emit }) {
     const { t } = useI18n();
 
@@ -61,7 +61,7 @@ export default defineComponent({
     const isShowPage = ref(true);
 
     const handleCancel = () => {
-      emit('on-cancel', basicInfo.value.id);
+      emit('cancel', basicInfo.value.id);
     };
 
     // const handleClone = () => {
