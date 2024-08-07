@@ -47,3 +47,25 @@ func ParseToStdTime(layout, t string) (string, error) {
 
 // Day 24 hours
 const Day = time.Hour * 24
+
+// DaysInMonth 返回给定年份和月份的天数
+func DaysInMonth(year int, month time.Month) int {
+	// 获取下个月的第一天
+	firstOfNextMonth := time.Date(year, month+1, 1, 0, 0, 0, 0, time.UTC)
+
+	// 获取本月的最后一天
+	lastOfThisMonth := firstOfNextMonth.AddDate(0, 0, -1)
+
+	return lastOfThisMonth.Day()
+}
+
+// GetMonthDays 获取指定年月的天数列表
+func GetMonthDays(year int, month time.Month) []int {
+	lastDay := DaysInMonth(year, month)
+	// 创建日期列表
+	days := make([]int, lastDay)
+	for day := 1; day <= int(lastDay); day++ {
+		days[day-1] = day
+	}
+	return days
+}

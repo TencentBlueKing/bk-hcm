@@ -1,0 +1,35 @@
+.back {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  margin-bottom: 16px;
+
+  .back-icon {
+    font-size: 26px;
+    color: #3a84ff;
+  }
+
+  .back-text {
+    font-size: 14px;
+    color: #313238;
+  }
+}
+
+.title {
+  font-family: MicrosoftYaHei-Bold;
+  font-weight: 700;
+  font-size: 16px;
+  color: #313238;
+}
+
+.action-type {
+  margin-left: 24px;
+
+  :global(.bk-radio-button) {
+    width: 88px;
+  }
+}
+
+.table {
+  height: calc(100% - 42px);
+}

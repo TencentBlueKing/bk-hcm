@@ -66,4 +66,10 @@ const (
 	CloudVendorError int32 = 2000013
 	// LoadBalancerTaskExecuting 当前负载均衡正在变更中
 	LoadBalancerTaskExecuting int32 = 2000014
+	// BillItemImportBillDateError 账单导入账单日期错误, bill_year/bill_month 不匹配
+	BillItemImportBillDateError int32 = 2000015
+	// BillItemImportDataError 账单导入数据错误, 账单数据格式不正确
+	BillItemImportDataError int32 = 2000016
+	// BillItemImportEmptyDataError 账单导入空列表
+	BillItemImportEmptyDataError int32 = 2000017
 )

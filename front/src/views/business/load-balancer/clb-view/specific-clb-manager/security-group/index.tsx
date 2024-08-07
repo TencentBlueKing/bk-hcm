@@ -98,11 +98,7 @@ export default defineComponent({
     });
 
     const tableColumns = [
-      {
-        type: 'selection',
-        width: 32,
-        minWidth: 32,
-      },
+      { type: 'selection', width: 30, minWidth: 30 },
       {
         label: '安全组名称',
         field: 'name',

@@ -26,16 +26,20 @@ import (
 // Client is a gcp api client
 type Client struct {
 	*restClient
-	Account          *AccountClient
-	Firewall         *FirewallClient
-	Vpc              *VpcClient
-	Subnet           *SubnetClient
-	Region           *RegionClient
-	Zone             *ZoneClient
-	Cvm              *CvmClient
-	RouteTable       *RouteTableClient
-	NetworkInterface *NetworkInterfaceClient
-	SubAccount       *SubAccountClient
+	Account               *AccountClient
+	Firewall              *FirewallClient
+	Vpc                   *VpcClient
+	Subnet                *SubnetClient
+	Region                *RegionClient
+	Zone                  *ZoneClient
+	Cvm                   *CvmClient
+	RouteTable            *RouteTableClient
+	NetworkInterface      *NetworkInterfaceClient
+	SubAccount            *SubAccountClient
+	MainAccount           *MainAccountClient
+	RootAccount           *RootAccountClient
+	RootAccountBillConfig *RootAccountBillConfigClient
+	Bill                  *BillClient
 }
 
 type restClient struct {
@@ -45,16 +49,20 @@ type restClient struct {
 // NewClient create a new gcp api client.
 func NewClient(client rest.ClientInterface) *Client {
 	return &Client{
-		restClient:       &restClient{client: client},
-		Account:          NewAccountClient(client),
-		Firewall:         NewFirewallClient(client),
-		Vpc:              NewVpcClient(client),
-		Subnet:           NewSubnetClient(client),
-		Region:           NewRegionClient(client),
-		Zone:             NewZoneClient(client),
-		Cvm:              NewCloudCvmClient(client),
-		RouteTable:       NewRouteTableClient(client),
-		NetworkInterface: NewNetworkInterfaceClient(client),
-		SubAccount:       NewSubAccountClient(client),
+		restClient:            &restClient{client: client},
+		Account:               NewAccountClient(client),
+		Firewall:              NewFirewallClient(client),
+		Vpc:                   NewVpcClient(client),
+		Subnet:                NewSubnetClient(client),
+		Region:                NewRegionClient(client),
+		Zone:                  NewZoneClient(client),
+		Cvm:                   NewCloudCvmClient(client),
+		RouteTable:            NewRouteTableClient(client),
+		NetworkInterface:      NewNetworkInterfaceClient(client),
+		SubAccount:            NewSubAccountClient(client),
+		MainAccount:           NewMainAccountClient(client),
+		RootAccount:           NewRootAccountClient(client),
+		RootAccountBillConfig: NewRootAccountBillConfigClient(client),
+		Bill:                  NewBillClient(client),
 	}
 }

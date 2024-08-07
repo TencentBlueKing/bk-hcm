@@ -60,6 +60,19 @@ var (
 			},
 		},
 	}
+
+	mainaccountResource = []client.RelateResourceType{
+		{
+			SystemID: SystemIDHCM,
+			ID:       MainAccount,
+			InstanceSelections: []client.RelatedInstanceSelection{
+				{
+					SystemID: SystemIDHCM,
+					ID:       MainAccountSelection,
+				},
+			},
+		},
+	}
 )
 
 // GenerateStaticActions return need to register action.
@@ -70,6 +83,7 @@ func GenerateStaticActions() []client.ResourceAction {
 	resourceActionList = append(resourceActionList, genResourceAccessActions()...)
 	resourceActionList = append(resourceActionList, genCloudSelectionActions()...)
 	resourceActionList = append(resourceActionList, genPlatformManageActions()...)
+	resourceActionList = append(resourceActionList, genAccountManageActions()...)
 
 	return resourceActionList
 }
@@ -476,5 +490,62 @@ func genPlatformManageActions() []client.ResourceAction {
 		RelatedResourceTypes: nil,
 		RelatedActions:       nil,
 		Version:              1,
-	}}
+	}, {
+		ID:                   RootAccountManage,
+		Name:                 ActionIDNameMap[RootAccountManage],
+		NameEn:               "Root Account Manage",
+		Type:                 View,
+		RelatedResourceTypes: nil,
+		RelatedActions:       nil,
+		Version:              1,
+	}, {
+		ID:                   AccountBillManage,
+		Name:                 ActionIDNameMap[AccountBillManage],
+		NameEn:               "Account Bill Manage",
+		Type:                 View,
+		RelatedResourceTypes: nil,
+		RelatedActions:       nil,
+		Version:              1,
+	}, {
+		ID:                   ApplicationManage,
+		Name:                 ActionIDNameMap[ApplicationManage],
+		NameEn:               "Application Manage",
+		Type:                 View,
+		RelatedResourceTypes: nil,
+		RelatedActions:       nil,
+		Version:              1,
+	},
+	}
+}
+
+func genAccountManageActions() []client.ResourceAction {
+	// MainAccount
+	actions := []client.ResourceAction{{
+		ID:                   MainAccountFind,
+		Name:                 ActionIDNameMap[MainAccountFind],
+		NameEn:               "Find MainAccount",
+		Type:                 View,
+		RelatedResourceTypes: mainaccountResource,
+		RelatedActions:       nil,
+		Version:              1,
+	}, {
+		ID:                   MainAccountCreate,
+		Name:                 ActionIDNameMap[MainAccountCreate],
+		NameEn:               "Create MainAccount",
+		Type:                 Create,
+		RelatedResourceTypes: nil,
+		RelatedActions:       nil,
+		Version:              1,
+	}, {
+		ID:                   MainAccountEdit,
+		Name:                 ActionIDNameMap[MainAccountEdit],
+		NameEn:               "Edit MainAccount",
+		Type:                 Edit,
+		RelatedResourceTypes: mainaccountResource,
+		RelatedActions:       nil,
+		Version:              1,
+	},
+	}
+
+	return actions
 }

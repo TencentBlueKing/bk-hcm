@@ -677,3 +677,44 @@ func genTargetGroupResource(a *meta.ResourceAttribute) (client.ActionID, []clien
 func genUrlRuleResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
 	return genIaaSResourceResource(a)
 }
+
+func genMainAccountRuleResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	res := client.Resource{
+		System: sys.SystemIDHCM,
+		Type:   sys.MainAccount,
+	}
+	if len(a.ResourceID) > 0 {
+		res.ID = a.ResourceID
+	}
+
+	switch a.Basic.Action {
+	case meta.Find:
+		return sys.MainAccountFind, []client.Resource{res}, nil
+	case meta.Update:
+		return sys.MainAccountEdit, []client.Resource{res}, nil
+	case meta.Create:
+		return sys.MainAccountCreate, []client.Resource{res}, nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+
+}
+
+func genRootAccountRuleResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	switch a.Basic.Action {
+	case meta.Find, meta.Create, meta.Update:
+		return sys.RootAccountManage, make([]client.Resource, 0), nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+}
+
+// 生成账单账号权限映射
+func genAccountBillResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	switch a.Basic.Action {
+	case meta.Find, meta.Delete, meta.Import, meta.Create, meta.Update, meta.Access:
+		return sys.AccountBillManage, make([]client.Resource, 0), nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+}

@@ -38,6 +38,7 @@ type Client struct {
 	RouteTable    *RouteTableClient
 	InstanceType  *InstanceTypeClient
 	Bill          *BillClient
+	MainAccount   *MainAccountClient
 }
 
 // NewClient create a new aws api client.
@@ -56,5 +57,6 @@ func NewClient(client rest.ClientInterface) *Client {
 		RouteTable:    NewRouteTableClient(client),
 		InstanceType:  NewInstanceTypeClient(client),
 		Bill:          NewBillClient(client),
+		MainAccount:   NewMainAccountClient(client),
 	}
 }

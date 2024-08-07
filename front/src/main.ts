@@ -11,6 +11,7 @@ import components from '@/components/index';
 import './style/index.scss';
 // 全量引入自定义图标
 import './assets/iconfont/style.css';
+import '@blueking/ediatable/vue3/vue3.css';
 
 // 全量引入 bkui-vue
 import bkui from 'bkui-vue';

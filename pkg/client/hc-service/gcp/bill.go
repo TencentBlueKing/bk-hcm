@@ -64,3 +64,28 @@ func (v *BillClient) List(ctx context.Context, h http.Header, req *hcbillservice
 
 	return resp.Data, nil
 }
+
+// RootAccountBillList list root account bill list
+func (v *BillClient) RootAccountBillList(
+	ctx context.Context, h http.Header, req *hcbillservice.GcpRootAccountBillListReq) (
+	*hcbillservice.GcpBillListResult, error) {
+
+	resp := new(hcbillservice.GcpBillListResp)
+	err := v.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/root-account-bills/list").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}

@@ -46,3 +46,23 @@ func AccountExtensionRemoveSecretKey(extension string) string {
 
 	return fmt.Sprintf("{%s}", ext[:len(ext)-1])
 }
+
+// MainAccountExtensionRemoveSecretKey ...
+func MainAccountExtensionRemoveSecretKey(extension string) string {
+	buffer := bytes.Buffer{}
+
+	m := gjson.Parse(extension).Map()
+	for key, value := range m {
+		if strings.Contains(key, "secret_key") || strings.Contains(key, "password") {
+			continue
+		}
+		buffer.WriteString(fmt.Sprintf(`"%s":%s,`, key, value.Raw))
+	}
+
+	ext := buffer.String()
+	if len(ext) == 0 {
+		return "{}"
+	}
+
+	return fmt.Sprintf("{%s}", ext[:len(ext)-1])
+}

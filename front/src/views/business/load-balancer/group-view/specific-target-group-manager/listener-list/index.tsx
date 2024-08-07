@@ -25,7 +25,7 @@ export default defineComponent({
      * 异步请求端口健康信息
      */
     const asyncGetTargetsHealth = async (dataList: any) => {
-      if (!dataList.length) return;
+      if (!dataList?.length) return;
       const cloud_lb_ids = dataList.map(({ cloud_lb_id }: any) => cloud_lb_id);
       if (cloud_lb_ids.length === 0) return;
       // 查询指定的目标组绑定的负载均衡下的端口健康信息

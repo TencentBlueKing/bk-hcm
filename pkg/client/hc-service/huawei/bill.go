@@ -64,3 +64,28 @@ func (v *BillClient) List(ctx context.Context, h http.Header, req *hcbillservice
 
 	return resp.Data, nil
 }
+
+// ListFeeRecord list fee record
+func (v *BillClient) ListFeeRecord(ctx context.Context, h http.Header, req *hcbillservice.HuaWeiFeeRecordListReq) (
+	*hcbillservice.HuaWeiBillListResult, error) {
+
+	resp := new(hcbillservice.HuaWeiBillListResp)
+
+	err := v.client.Post().
+		WithContext(ctx).
+		Body(req).
+		SubResourcef("/feerecords/list").
+		WithHeaders(h).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.Code != errf.OK {
+		return nil, errf.New(resp.Code, resp.Message)
+	}
+
+	return resp.Data, nil
+}

@@ -21,13 +21,16 @@ package orm
 
 import (
 	"hcm/pkg/metrics"
+	"hcm/pkg/tools/uuid"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 func initMetric(register prometheus.Registerer) *metric {
 	m := new(metric)
-	labels := prometheus.Labels{}
+	labels := prometheus.Labels{
+		"connection_id": uuid.UUID(),
+	}
 
 	m.cmdLagMS = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace:   metrics.Namespace,

@@ -108,3 +108,43 @@ func (cli *CloudAdaptorClient) Azure(kt *kit.Kit, accountID string) (*azure.Azur
 
 	return cli.adaptor.Azure(cred)
 }
+
+// AwsRoot return aws root client.
+func (cli *CloudAdaptorClient) AwsRoot(kt *kit.Kit, accountID string) (*aws.Aws, error) {
+	secret, cloudAccountID, err := cli.secretCli.AwsRootSecret(kt, accountID)
+	if err != nil {
+		return nil, err
+	}
+
+	return cli.adaptor.Aws(secret, cloudAccountID)
+}
+
+// GcpRoot return gcp client.
+func (cli *CloudAdaptorClient) GcpRoot(kt *kit.Kit, accountID string) (*gcp.Gcp, error) {
+	cred, err := cli.secretCli.GcpRootCredential(kt, accountID)
+	if err != nil {
+		return nil, err
+	}
+
+	return cli.adaptor.Gcp(cred)
+}
+
+// HuaWeiRoot return huawei client.
+func (cli *CloudAdaptorClient) HuaWeiRoot(kt *kit.Kit, accountID string) (*huawei.HuaWei, error) {
+	secret, err := cli.secretCli.HuaWeiRootSecret(kt, accountID)
+	if err != nil {
+		return nil, err
+	}
+
+	return cli.adaptor.HuaWei(secret)
+}
+
+// AzureRoot return azure client.
+func (cli *CloudAdaptorClient) AzureRoot(kt *kit.Kit, accountID string) (*azure.Azure, error) {
+	cred, err := cli.secretCli.AzureRootCredential(kt, accountID)
+	if err != nil {
+		return nil, err
+	}
+
+	return cli.adaptor.Azure(cred)
+}

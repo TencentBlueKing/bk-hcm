@@ -157,7 +157,7 @@ export default defineComponent({
                 if (isChecked) withEipSet.value.add(data.id);
                 else withEipSet.value.delete(data.id);
               }}>
-              {cvmRelResMap.value.get(data.id)?.eip.join(',') || '--'}
+              {cvmRelResMap.value.get(data.id)?.eip?.join(',') || '--'}
             </Checkbox>
           ),
         },
@@ -406,12 +406,11 @@ export default defineComponent({
           isShow={isDialogShow.value}
           // quick-close={!isLoading.value}
           quickClose={false}
-          onClosed={() => (operationType.value = Operations.None)}
-          onConfirm={handleConfirm}
           title={computedTitle.value}
           ref={dialogRef}
           width={1500}
-          closeIcon={!isLoading.value}>
+          closeIcon={!isLoading.value}
+          onClosed={() => (operationType.value = Operations.None)}>
           {{
             default: () => (
               <Loading loading={isDialogLoading.value}>
@@ -437,13 +436,13 @@ export default defineComponent({
             footer: (
               <>
                 <Button
-                  onClick={dialogRef?.value?.handleConfirm}
+                  onClick={handleConfirm}
                   theme='primary'
                   disabled={isConfirmDisabled.value}
                   loading={isLoading.value}>
                   {OperationsMap[operationType.value]}
                 </Button>
-                <Button onClick={dialogRef?.value?.handleClose} class='ml10' disabled={isLoading.value}>
+                <Button onClick={() => (operationType.value = Operations.None)} class='ml10' disabled={isLoading.value}>
                   取消
                 </Button>
               </>

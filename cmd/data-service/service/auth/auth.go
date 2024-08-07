@@ -24,7 +24,7 @@ import (
 	"fmt"
 
 	"hcm/cmd/data-service/service/capability"
-	"hcm/pkg/api/data-service"
+	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/table"
@@ -55,20 +55,20 @@ func (s *auth) ListAuthInstances(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	var tableName table.Name
-	switch req.ResourceType {
-	case sys.Account:
-		tableName = table.AccountTable
-	case sys.CloudSelectionScheme:
-		tableName = table.CloudSelectionSchemeTable
-	default:
-		return nil, fmt.Errorf("resource type %s not support", req.ResourceType)
+	opts := &types.ListInstancesOption{
+		Filter: req.Filter,
+		Page:   req.Page,
 	}
 
-	opts := &types.ListInstancesOption{
-		TableName: tableName,
-		Filter:    req.Filter,
-		Page:      req.Page,
+	switch req.ResourceType {
+	case sys.Account:
+		opts.TableName = table.AccountTable
+	case sys.CloudSelectionScheme:
+		opts.TableName = table.CloudSelectionSchemeTable
+	case sys.MainAccount:
+		opts.TableName = table.MainAccountTable
+	default:
+		return nil, fmt.Errorf("resource type %s not support", req.ResourceType)
 	}
 
 	details, err := s.dao.Auth().ListInstances(cts.Kit, opts)

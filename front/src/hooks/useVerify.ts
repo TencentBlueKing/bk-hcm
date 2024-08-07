@@ -3,14 +3,35 @@ import usePagePermissionStore from '@/store/usePagePermissionStore';
 // import { Verify } from '@/typings';
 import { ref } from 'vue';
 
+export type AuthVerifyDataType = {
+  permissionAction: Record<string, boolean>;
+  urlParams: {
+    system_id: string;
+    actions: Array<{
+      id: string;
+      name: string;
+      related_resource_types: Array<any>;
+    }>;
+  };
+};
+
+export type PermissionParamsType = {
+  system_id: string;
+  actions: Array<{
+    id: string;
+    name: string;
+    related_resource_types: Array<any>;
+  }>;
+};
+
 type paramsType = {
   action: string;
   resource_type: string;
   bk_biz_id?: number;
 };
 const showPermissionDialog = ref(false);
-const authVerifyData = ref<any>({ permissionAction: {}, urlParams: {} });
-const permissionParams = ref({ system_id: '', actions: [] });
+const authVerifyData = ref<AuthVerifyDataType>({ permissionAction: {}, urlParams: {} });
+const permissionParams = ref<PermissionParamsType>({ system_id: '', actions: [] });
 
 export enum IAM_CODE {
   Success = 0,
@@ -98,7 +119,6 @@ export function useVerify() {
 
   // 处理鉴权 actionName根据接口返回值传入
   const handleAuth = (actionName: string) => {
-    console.log('!authVerifyData.value?.permissionAction', !authVerifyData.value?.permissionAction, actionName);
     if (!authVerifyData.value?.permissionAction) return;
     const actionItem = authVerifyData.value?.urlParams[actionName];
     if (!actionItem) return;

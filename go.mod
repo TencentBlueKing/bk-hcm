@@ -28,6 +28,7 @@ require (
 	github.com/microsoftgraph/msgraph-sdk-go v1.26.0
 	github.com/pborman/uuid v1.2.1
 	github.com/prometheus/client_golang v1.14.0
+	github.com/shopspring/decimal v1.4.0
 	github.com/smartystreets/goconvey v1.8.1
 	github.com/spf13/pflag v1.0.5
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/billing v1.0.908
@@ -38,7 +39,9 @@ require (
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm v1.0.908
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/ssl v1.0.908
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc v1.0.908
+	github.com/tencentyun/cos-go-sdk-v5 v0.7.48
 	github.com/tidwall/gjson v1.14.4
+	github.com/xuri/excelize/v2 v2.8.1
 	go.etcd.io/etcd/api/v3 v3.5.13
 	go.etcd.io/etcd/client/v3 v3.5.13
 	go.uber.org/atomic v1.10.0
@@ -58,10 +61,12 @@ require (
 	cloud.google.com/go/osconfig v1.12.6 // indirect
 	github.com/apache/arrow/go/v14 v14.0.2 // indirect
 	github.com/cjlapao/common-go v0.0.39 // indirect
+	github.com/clbanning/mxj v1.8.4 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/gopherjs/gopherjs v1.17.2 // indirect
 	github.com/jtolds/gls v4.20.0+incompatible // indirect
 	github.com/microsoft/kiota-abstractions-go v1.6.0 // indirect
@@ -75,7 +80,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/smarty/assertions v1.15.0 // indirect
 	github.com/std-uritemplate/std-uritemplate/go v0.0.57 // indirect
-	github.com/stretchr/testify v1.9.0 // indirect
+	github.com/stretchr/testify v1.9.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.49.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.49.0 // indirect
 	go.opentelemetry.io/otel v1.24.0 // indirect
@@ -87,6 +92,17 @@ require (
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.5.2 // indirect
+	github.com/mitchellh/mapstructure v1.4.3 // indirect
+	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
+	github.com/mozillazg/go-httpheader v0.2.1 // indirect
+	github.com/richardlehane/mscfb v1.0.4 // indirect
+	github.com/richardlehane/msoleps v1.0.3 // indirect
+	github.com/tencentyun/qcloud-cos-sts-sdk v0.0.0-20240524051400-0402a4c50c2a // indirect
+	github.com/xuri/efp v0.0.0-20231025114914-d1ff6096ae53 // indirect
+	github.com/xuri/nfp v0.0.0-20230919160717-d98342af3f05 // indirect
+)
+
+require (
 	github.com/AzureAD/microsoft-authentication-library-for-go v0.9.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect

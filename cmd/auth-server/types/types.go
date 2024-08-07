@@ -143,7 +143,7 @@ type ListInstanceFilter struct {
 }
 
 // GetFilter get filter from list instance filter.
-func (f *ListInstanceFilter) GetFilter() (*filter.Expression, error) {
+func (f *ListInstanceFilter) GetFilter(resType client.TypeID) (*filter.Expression, error) {
 	expr := &filter.Expression{
 		Op:    filter.And,
 		Rules: make([]filter.RuleFactory, 0),
@@ -163,8 +163,12 @@ func (f *ListInstanceFilter) GetFilter() (*filter.Expression, error) {
 	}
 
 	if len(f.Keyword) != 0 {
+		field, err := getResourceKeywordField(resType)
+		if err != nil {
+			return nil, err
+		}
 		expr.Rules = append(expr.Rules, &filter.AtomRule{
-			Field: "name",
+			Field: field,
 			Op:    filter.ContainsInsensitive.Factory(),
 			Value: f.Keyword,
 		})
@@ -180,7 +184,23 @@ func getResourceIDField(resType client.TypeID) (string, error) {
 		return "id", nil
 	case sys.CloudSelectionScheme:
 		return "id", nil
+	case sys.MainAccount:
+		return "id", nil
 
+	default:
+		return "", errf.New(errf.InvalidParameter, "resource type not support")
+	}
+}
+
+// getResourceKeywordField get the query instance keyword field corresponding to the resource type.
+func getResourceKeywordField(resType client.TypeID) (string, error) {
+	switch resType {
+	case sys.Account:
+		return "name", nil
+	case sys.CloudSelectionScheme:
+		return "name", nil
+	case sys.MainAccount:
+		return "name", nil
 	default:
 		return "", errf.New(errf.InvalidParameter, "resource type not support")
 	}

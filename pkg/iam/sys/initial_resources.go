@@ -26,6 +26,7 @@ var ResourceTypeIDMap = map[client.TypeID]string{
 	Account:              "账号",
 	Biz:                  "业务",
 	CloudSelectionScheme: "方案",
+	MainAccount:          "二级账号",
 }
 
 // GenerateStaticResourceTypes generate all the static resource types to register to IAM.
@@ -63,6 +64,21 @@ func genAccountResources() []client.ResourceType {
 			Parents: []client.Parent{{
 				SystemID:   SystemIDHCM,
 				ResourceID: CloudSelectionScheme,
+			}},
+			ProviderConfig: client.ResourceConfig{
+				Path: "/api/v1/auth/iam/find/resource",
+			},
+			Version: 1,
+		},
+		{
+			ID:            MainAccount,
+			Name:          ResourceTypeIDMap[MainAccount],
+			NameEn:        "MainAccount",
+			Description:   "二级账号",
+			DescriptionEn: "main account",
+			Parents: []client.Parent{{
+				SystemID:   SystemIDHCM,
+				ResourceID: MainAccount,
 			}},
 			ProviderConfig: client.ResourceConfig{
 				Path: "/api/v1/auth/iam/find/resource",

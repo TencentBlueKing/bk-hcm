@@ -32,7 +32,7 @@ import (
 // ListInstances query instances based on filter criteria.
 func (i *IAM) ListInstances(kt *kit.Kit, resType client.TypeID, option *types.ListInstanceFilter, page types.Page) (
 	*types.ListInstanceResult, error) {
-	filter, err := option.GetFilter()
+	filter, err := option.GetFilter(resType)
 	if err != nil {
 		return nil, err
 	}

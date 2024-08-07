@@ -29,7 +29,7 @@ export default defineComponent({
         component: () => (
           <>
             <bk-table data={[]} outer-border={false} dark-header show-overflow-tooltip>
-              <bk-table-column type='selection' width='60' />
+              <bk-table-column type='selection' width='30' minWidth='30' />
               <bk-table-column label='ID' prop='id' />
               <bk-table-column label='云硬盘名' prop='id' />
               <bk-table-column label='配置' prop='id' />
