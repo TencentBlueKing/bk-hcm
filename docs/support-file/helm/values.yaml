@@ -795,7 +795,7 @@ cmsi:
     # the password to decrypt the certificate.
     password:
 
-# object s
+# object store
 objectstore:
   type:
   uin:
