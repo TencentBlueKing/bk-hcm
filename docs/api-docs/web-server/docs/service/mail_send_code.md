@@ -13,7 +13,7 @@ POST /api/v1/cloud/mail/send_code
 | 参数名称   | 参数类型    | 必选 | 描述        |
 |--------|---------|----|-----------|
 | mail	  | string	 | 是	 | 邮箱号       |
-| scenes	 | string	  | 是	 | 验证的场景     |
+| scene	 | string	  | 是	 | 验证的场景     |
 | info	  | json	 | 是	 | 邮件内容的部分信息 |
 
 ### 调用示例
@@ -21,9 +21,9 @@ POST /api/v1/cloud/mail/send_code
 ```json
 {
   "mail": "xxx@xxx.com",
-  "scenes": "SecondAccountApplication",
+  "scene": "SecondAccountApplication",
   "info": {
-    "vendor": "腾讯",
+    "vendor": "tcloud",
     "account_name": "测试账号111"
   }
 }

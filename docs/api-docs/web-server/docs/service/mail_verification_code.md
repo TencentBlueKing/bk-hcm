@@ -13,7 +13,7 @@ POST /api/v1/cloud/mail/verify_code
 | 参数名称   | 参数类型    | 必选 | 描述           |
 |--------|---------|----|--------------|
 | mail	  | string	 | 是	 | 邮箱号          |
-| scenes	 | string	 | 是	 | 验证的场景        |
+| scene	 | string	 | 是	 | 验证的场景        |
 | verify_code	 | string	 | 是	 | 验证码          |
 | delete_after_verify	 | bool	   | 否	 | 是否验证通过后删除验证码 |
 
@@ -22,7 +22,7 @@ POST /api/v1/cloud/mail/verify_code
 ```json
 {
   "mail": "xxx@xxx.com",
-  "scenes": "SecondAccountApplication",
+  "scene": "SecondAccountApplication",
   "verify_code": "469766",
   "delete_after_verify": false
 }

@@ -29,15 +29,15 @@ import (
 
 // SendVerifyCodeReq send verify code req
 type SendVerifyCodeReq struct {
-	Mail   string          `json:"mail" validate:"required"`
-	Scenes Scenes          `json:"scenes" validate:"required"`
-	Info   json.RawMessage `json:"info"`
+	Mail  string          `json:"mail" validate:"required"`
+	Scene Scene           `json:"scene" validate:"required,max=64"`
+	Info  json.RawMessage `json:"info"`
 }
 
 // Validate validate req
 func (req *SendVerifyCodeReq) Validate() error {
-	if _, ok := supportScenes[req.Scenes]; !ok {
-		return fmt.Errorf("unsupported secnes: %s", req.Scenes)
+	if _, ok := supportScene[req.Scene]; !ok {
+		return fmt.Errorf("unsupported secne: %s", req.Scene)
 	}
 	return validator.Validate.Struct(req)
 }
@@ -56,15 +56,15 @@ func (info *SecondAccountApplicationInfo) Validate() error {
 // VerificationReq verification code req
 type VerificationReq struct {
 	Mail              string `json:"mail" validate:"required"`
-	Scenes            Scenes `json:"scenes" validate:"required"`
+	Scene             Scene  `json:"scene" validate:"required,max=64"`
 	VerifyCode        string `json:"verify_code" validate:"required"`
 	DeleteAfterVerify bool   `json:"delete_after_verify"`
 }
 
 // Validate validate req
 func (req *VerificationReq) Validate() error {
-	if _, ok := supportScenes[req.Scenes]; !ok {
-		return fmt.Errorf("unsupported secnes: %s", req.Scenes)
+	if _, ok := supportScene[req.Scene]; !ok {
+		return fmt.Errorf("unsupported secne: %s", req.Scene)
 	}
 	re := regexp.MustCompile(`^\d{6}$`)
 	if !re.MatchString(req.VerifyCode) {
@@ -79,16 +79,16 @@ const (
 	VerificationCodeKeyTemplate string = "verification-code-%s-%s"
 )
 
-// Scenes verify type
-type Scenes string
+// Scene verify type
+type Scene string
 
 const (
-	// VerifyScenesSecAccountApp secondary account application verification
-	VerifyScenesSecAccountApp Scenes = "SecondAccountApplication"
+	// VerifySceneSecAccountApp secondary account application verification
+	VerifySceneSecAccountApp Scene = "SecondAccountApplication"
 )
 
-var supportScenes = map[Scenes]struct{}{
-	VerifyScenesSecAccountApp: {},
+var supportScene = map[Scene]struct{}{
+	VerifySceneSecAccountApp: {},
 }
 
 const (

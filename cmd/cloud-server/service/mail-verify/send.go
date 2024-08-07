@@ -44,8 +44,8 @@ func (svc *MailVerifySvc) SendVerifyCode(cts *rest.Contexts) (interface{}, error
 	}
 
 	// 1.发送验证码的频率限制
-	key := svc.GenKey(req.Mail, string(req.Scenes))
-	frequencyLimit, err := svc.CheckSendLimit(key, req.Scenes)
+	key := svc.GenKey(req.Mail, string(req.Scene))
+	frequencyLimit, err := svc.CheckSendLimit(key, req.Scene)
 	if err != nil {
 		logs.Errorf("check send limit failed, key: %s, err: %v, rid: %s",
 			key, err, cts.Kit.Rid)
@@ -60,7 +60,7 @@ func (svc *MailVerifySvc) SendVerifyCode(cts *rest.Contexts) (interface{}, error
 	verifyCode := svc.GenVerifyCode()
 
 	// 3.不同场景生成不同邮件内容
-	mail, err := svc.GenMailByScenes(req, verifyCode)
+	mail, err := svc.GenMailByScene(req, verifyCode)
 	if err != nil {
 		logs.Errorf("generate mail object failed, req: %v, err: %v, rid: %s", req, err, cts.Kit.Rid)
 		return nil, err
@@ -75,7 +75,7 @@ func (svc *MailVerifySvc) SendVerifyCode(cts *rest.Contexts) (interface{}, error
 	}()
 
 	// 5.存储验证码到etcd，设置对应的过期时间
-	err = svc.StoryVerifyCode(key, verifyCode, req.Scenes)
+	err = svc.StoryVerifyCode(key, verifyCode, req.Scene)
 	if err != nil {
 		logs.Errorf("story verification code failed, key: %s, verifyCode: %s, err: %v, rid: %s",
 			key, verifyCode, err, cts.Kit.Rid)
@@ -85,8 +85,8 @@ func (svc *MailVerifySvc) SendVerifyCode(cts *rest.Contexts) (interface{}, error
 	return nil, nil
 }
 
-// GenMailByScenes generate mail by scenes
-func (svc *MailVerifySvc) GenMailByScenes(req *SendVerifyCodeReq, verifyCode string) (*cmsi.CmsiMail, error) {
+// GenMailByScene generate mail by scene
+func (svc *MailVerifySvc) GenMailByScene(req *SendVerifyCodeReq, verifyCode string) (*cmsi.CmsiMail, error) {
 	info := new(SecondAccountApplicationInfo)
 	if err := json.Unmarshal(req.Info, info); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -97,8 +97,8 @@ func (svc *MailVerifySvc) GenMailByScenes(req *SendVerifyCodeReq, verifyCode str
 
 	// 填充邮件内容
 	var title, content string
-	switch req.Scenes {
-	case VerifyScenesSecAccountApp:
+	switch req.Scene {
+	case VerifySceneSecAccountApp:
 		title = SecAccountAppMailTitle
 		content = fmt.Sprintf(SecAccountAppMailTemplate,
 			info.Vendor, info.AccountName, req.Mail, verifyCode, SecAccountAppCodeTTL/60)
@@ -114,7 +114,7 @@ func (svc *MailVerifySvc) GenMailByScenes(req *SendVerifyCodeReq, verifyCode str
 }
 
 // CheckSendLimit check send limit
-func (svc *MailVerifySvc) CheckSendLimit(key string, scenes Scenes) (bool, error) {
+func (svc *MailVerifySvc) CheckSendLimit(key string, scene Scene) (bool, error) {
 	resp, err := svc.EtcdClient.Get(context.Background(), key)
 	if err != nil {
 		logs.Errorf("call etcd get failed, err: %v", err)
@@ -133,8 +133,8 @@ func (svc *MailVerifySvc) CheckSendLimit(key string, scenes Scenes) (bool, error
 	}
 
 	var ttl int64
-	switch scenes {
-	case VerifyScenesSecAccountApp:
+	switch scene {
+	case VerifySceneSecAccountApp:
 		ttl = SecAccountAppCodeTTL
 	}
 
@@ -142,10 +142,10 @@ func (svc *MailVerifySvc) CheckSendLimit(key string, scenes Scenes) (bool, error
 }
 
 // StoryVerifyCode story verification code
-func (svc *MailVerifySvc) StoryVerifyCode(key, verifyCode string, scenes Scenes) error {
+func (svc *MailVerifySvc) StoryVerifyCode(key, verifyCode string, scene Scene) error {
 	var ttl int64
-	switch scenes {
-	case VerifyScenesSecAccountApp:
+	switch scene {
+	case VerifySceneSecAccountApp:
 		ttl = SecAccountAppCodeTTL
 	}
 
@@ -166,8 +166,8 @@ func (svc *MailVerifySvc) StoryVerifyCode(key, verifyCode string, scenes Scenes)
 }
 
 // GenKey generate etcd key
-func (svc *MailVerifySvc) GenKey(mail, scenes string) string {
-	return fmt.Sprintf(VerificationCodeKeyTemplate, mail, scenes)
+func (svc *MailVerifySvc) GenKey(mail, scene string) string {
+	return fmt.Sprintf(VerificationCodeKeyTemplate, mail, scene)
 }
 
 // GenVerifyCode generate a random verification code

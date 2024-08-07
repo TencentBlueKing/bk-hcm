@@ -415,7 +415,7 @@ func (a *applicationSvc) CreateForCreateMainAccount(cts *rest.Contexts) (interfa
 	// 验证邮箱验证码
 	verifyReq := &mailverify.VerificationReq{
 		Mail:              req.Email,
-		Scenes:            mailverify.VerifyScenesSecAccountApp,
+		Scene:             mailverify.VerifySceneSecAccountApp,
 		VerifyCode:        req.VerifyCode,
 		DeleteAfterVerify: true,
 	}

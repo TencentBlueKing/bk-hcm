@@ -45,7 +45,7 @@ func (svc *MailVerifySvc) VerificationCode(kt *kit.Kit, req *VerificationReq) (b
 	}
 
 	// etcd取出验证码，判断
-	key := svc.GenKey(req.Mail, string(req.Scenes))
+	key := svc.GenKey(req.Mail, string(req.Scene))
 	verifyCode, err := svc.GetVerifyCode(key)
 	if err != nil {
 		logs.Errorf("get verification code failed, key: %s err: %v, rid: %s", key, err, kt.Rid)
@@ -53,7 +53,7 @@ func (svc *MailVerifySvc) VerificationCode(kt *kit.Kit, req *VerificationReq) (b
 	}
 
 	if len(verifyCode) == 0 || req.VerifyCode != verifyCode {
-		logs.Infof("verification failed, mail: %s, scenes: %s", req.Mail, req.Scenes)
+		logs.Infof("verification failed, mail: %s, scene: %s", req.Mail, req.Scene)
 		return false, nil
 	}
 
