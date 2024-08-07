@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 
+	lblogic "hcm/cmd/cloud-server/logics/load-balancer"
 	"hcm/pkg/adaptor/types/load-balancer"
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
@@ -616,14 +617,42 @@ func (req *TCloudSopsTargetBatchModifyWeightReq) Validate() error {
 // --------------------------[标准运维-批量添加规则]--------------------------
 
 // TCloudSopsRuleBatchCreateReq tloud sops rule batch create request
-//type TCloudSopsRuleBatchCreateReq struct {
-//	BindRSRecords []lblogic.BindRSRecord `json:"bind_rs_records" validate:"required"`
-//}
-//
-//// Validate validate req data
-//func (req *TCloudSopsRuleBatchCreateReq) Validate() error {
-//	return validator.Validate.Struct(req)
-//}
+type TCloudSopsRuleBatchCreateReq struct {
+	BindRSRecords []*BindRSRecordForSops `json:"bind_rs_records" validate:"required"`
+}
+
+// Validate validate req data
+func (req *TCloudSopsRuleBatchCreateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// BindRSRecordForSops ...
+type BindRSRecordForSops struct {
+	Action enumor.BatchOperationActionType `json:"action"`
+
+	ListenerName string              `json:"name"`
+	Protocol     enumor.ProtocolType `json:"protocol"`
+
+	IPDomainType string `json:"ip_domain_type"`
+	VIP          string `json:"vip"`
+	VPorts       []int  `json:"vports"`
+	HaveEndPort  bool   `json:"have_end_port"` // 是否是端口端
+
+	Domain     string   `json:"domain"`         // 域名
+	URLPath    string   `json:"url"`            // URL路径
+	ServerCert []string `json:"cert_cloud_ids"` // ref: pkg/api/core/cloud/load-balancer/tcloud.go:188
+	ClientCert string   `json:"ca_cloud_id"`    // 客户端证书
+
+	InstType enumor.InstType   `json:"inst_type"` // 后端类型 CVM、ENI
+	RSIPs    []string          `json:"rs_ips"`
+	RSPorts  []int             `json:"rs_ports"`
+	Weight   []int             `json:"weight"`
+	RSInfos  []*lblogic.RSInfo `json:"rs_info"` // 后端实例信息
+
+	Scheduler      string `json:"scheduler"`       // 均衡方式
+	SessionExpired int64  `json:"session_expired"` // 会话保持时间，单位秒
+	HealthCheck    bool   `json:"health_check"`    // 是否开启健康检查
+}
 
 // --------------------------[标准运维-批量移除规则]--------------------------
 

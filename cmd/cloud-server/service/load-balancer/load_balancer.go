@@ -155,8 +155,8 @@ func bizService(h *rest.Handler, svc *lbSvc) {
 		"/sops/target_groups/targets/batch", svc.BatchBizRemoveTargetGroupRS)
 	h.Add("BatchBizModifyWeightTargetGroup", http.MethodPatch,
 		"/sops/target_groups/targets/weight", svc.BatchBizModifyWeightTargetGroup)
-	//h.Add("BatchBizRuleOnline", http.MethodPost,
-	//	"/sops/rule/online", svc.BatchBizRuleOnline)
+	h.Add("BatchBizRuleOnline", http.MethodPost,
+		"/sops/rule/online", svc.BatchBizRuleOnline)
 	h.Add("BatchBizRuleOffline", http.MethodDelete,
 		"/sops/rule/offline", svc.BatchBizRuleOffline)
 }
