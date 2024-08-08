@@ -20,5 +20,9 @@
 package bill
 
 import (
+	_ "hcm/cmd/account-server/logics/bill/puller/aws"
+	_ "hcm/cmd/account-server/logics/bill/puller/azure"
+	_ "hcm/cmd/account-server/logics/bill/puller/gcp"
 	_ "hcm/cmd/account-server/logics/bill/puller/huawei"
+	_ "hcm/cmd/account-server/logics/bill/puller/zenlayer"
 )

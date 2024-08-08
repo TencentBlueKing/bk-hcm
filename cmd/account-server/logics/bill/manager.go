@@ -87,10 +87,10 @@ func (bm *BillManager) syncRootControllers() error {
 		_, ok := bm.CurrentRootControllers[rootAccount.Key()]
 		if !ok {
 			opt := RootAccountControllerOption{
-				RootAccountID: rootAccount.BaseRootAccount.ID,
-				Vendor:        rootAccount.Vendor,
-				Client:        bm.Client,
-				Sd:            bm.Sd,
+				RootAccountID:      rootAccount.ID,
+				RootAccountCloudID: rootAccount.CloudID,
+				Vendor:             rootAccount.Vendor,
+				Client:             bm.Client,
 			}
 			ctrl, err := NewRootAccountController(&opt)
 			if err != nil {
@@ -124,34 +124,46 @@ func (bm *BillManager) syncMainControllers() error {
 	if err != nil {
 		return err
 	}
+
 	existedAccountKeyMap := make(map[string]struct{})
 	for _, mainAccount := range mainAccounts {
 		existedAccountKeyMap[mainAccount.Key()] = struct{}{}
 		_, ok := bm.CurrentMainControllers[mainAccount.Key()]
-		if !ok {
-			opt := MainAccountControllerOption{
-				RootAccountID: mainAccount.BaseMainAccount.ParentAccountID,
-				MainAccountID: mainAccount.BaseMainAccount.ID,
-				BkBizID:       mainAccount.BkBizID,
-				ProductID:     mainAccount.OpProductID,
-				Vendor:        mainAccount.Vendor,
-				Client:        bm.Client,
-				Sd:            bm.Sd,
-			}
-			ctrl, err := NewMainAccountController(&opt)
-			if err != nil {
-				return fmt.Errorf("create main account controller failed, err: %s", err)
-			}
-			if err := ctrl.Start(); err != nil {
-				ctrl.Stop()
-				logs.Errorf("fail to start main account controller, %s, vednor: %s, root_account: %s, biz: %d,product: %d rid: %s",
-					opt.MainAccountID, opt.Vendor, opt.RootAccountID, opt.BkBizID, opt.ProductID, kt.Rid)
-				return fmt.Errorf("start main account controller failed, err: %s", err.Error())
-			}
-			bm.CurrentMainControllers[mainAccount.Key()] = ctrl
-			logs.Infof("start main account controller for %s, vednor: %s, root_account: %s, biz: %d,product: %d rid: %s",
-				opt.MainAccountID, opt.Vendor, opt.RootAccountID, opt.BkBizID, opt.ProductID, kt.Rid)
+		if ok {
+			continue
 		}
+		// 获取root account 信息
+		rootAccount, err := bm.Client.DataService().Global.RootAccount.GetBasicInfo(kt,
+			mainAccount.BaseMainAccount.ParentAccountID)
+		if err != nil {
+			logs.Errorf("get root account for main account  controller failed, err: %s, rid: %s", err, kt.Rid)
+			return fmt.Errorf("get root account for main account  controller failed, err: %w", err)
+		}
+
+		opt := MainAccountControllerOption{
+			RootAccountID: mainAccount.BaseMainAccount.ParentAccountID,
+			MainAccountID: mainAccount.BaseMainAccount.ID,
+			BkBizID:       mainAccount.BkBizID,
+			ProductID:     mainAccount.OpProductID,
+			Vendor:        mainAccount.Vendor,
+			Client:        bm.Client,
+
+			RootAccountCloudID: rootAccount.CloudID,
+			MainAccountCloudID: mainAccount.CloudID,
+		}
+		ctrl, err := NewMainAccountController(&opt)
+		if err != nil {
+			return fmt.Errorf("create main account controller failed, err: %w", err)
+		}
+		if err := ctrl.Start(); err != nil {
+			ctrl.Stop()
+			logs.Errorf("fail to start main account controller, %s, vednor: %s, root_account: %s, biz: %d,product: %d rid: %s",
+				opt.MainAccountID, opt.Vendor, opt.RootAccountID, opt.BkBizID, opt.ProductID, kt.Rid)
+			return fmt.Errorf("start main account controller failed, err: %w", err)
+		}
+		bm.CurrentMainControllers[mainAccount.Key()] = ctrl
+		logs.Infof("start main account controller for %s, vednor: %s, root_account: %s, biz: %d,product: %d rid: %s",
+			opt.MainAccountID, opt.Vendor, opt.RootAccountID, opt.BkBizID, opt.ProductID, kt.Rid)
 	}
 	for key, controller := range bm.CurrentMainControllers {
 		if _, ok := existedAccountKeyMap[key]; !ok {

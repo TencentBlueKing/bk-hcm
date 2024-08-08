@@ -29,16 +29,16 @@ import (
 
 // PullDailyBillOption define daily bill pull option
 type PullDailyBillOption struct {
-	RootAccountID string `json:"root_account_id" validate:"required"`
-	MainAccountID string `json:"main_account_id" validate:"required"`
-	// 主账号云id
-	BillAccountID string        `json:"bill_account_id" validate:"required"`
-	BillYear      int           `json:"bill_year" validate:"required"`
-	BillMonth     int           `json:"bill_month" validate:"required"`
-	BillDay       int           `json:"bill_day" validate:"required"`
-	VersionID     int           `json:"version_id" validate:"required"`
-	Vendor        enumor.Vendor `json:"vendor" validate:"required"`
-	MainAccount   *accountset.BaseMainAccount
+	RootAccountID      string        `json:"root_account_id" validate:"required"`
+	RootAccountCloudID string        `json:"root_account_cloud_id" validate:"required"`
+	MainAccountID      string        `json:"main_account_id" validate:"required"`
+	MainAccountCloudID string        `json:"bill_account_cloud_id" validate:"required"`
+	BillYear           int           `json:"bill_year" validate:"required"`
+	BillMonth          int           `json:"bill_month" validate:"required"`
+	BillDay            int           `json:"bill_day" validate:"required"`
+	VersionID          int           `json:"version_id" validate:"required"`
+	Vendor             enumor.Vendor `json:"vendor" validate:"required"`
+	MainAccount        *accountset.BaseMainAccount
 }
 
 // PullerRegistry registry of pullers

@@ -41,6 +41,7 @@ var AccountBillSyncRecordColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "operator", NamedC: "operator", Type: enumor.String},
 	{Column: "currency", NamedC: "currency", Type: enumor.String},
 	{Column: "cost", NamedC: "cost", Type: enumor.Numeric},
+	{Column: "count", NamedC: "count", Type: enumor.Numeric},
 	{Column: "rmb_cost", NamedC: "rmb_cost", Type: enumor.Numeric},
 	{Column: "detail", NamedC: "detail", Type: enumor.String},
 	{Column: "state", NamedC: "state", Type: enumor.String},
@@ -64,6 +65,8 @@ type AccountBillSyncRecord struct {
 	State enumor.BillSyncState `db:"state" json:"state"`
 	// Currency 币种
 	Currency enumor.CurrencyCode `db:"currency" json:"currency"`
+	// Count 账单数量
+	Count *uint `db:"count" json:"count"`
 	// Cost 账单
 	Cost *types.Decimal `db:"cost" json:"cost"`
 	// RMBCost 人民币账单

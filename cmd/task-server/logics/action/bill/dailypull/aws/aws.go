@@ -84,7 +84,7 @@ func (hp *AwsPuller) doPull(kt run.ExecuteKit, opt *registry.PullDailyBillOption
 	resp, err := hcCli.Aws.Bill.GetRootAccountBillList(kt.Kit(),
 		&hcbill.AwsRootBillListReq{
 			RootAccountID:      opt.RootAccountID,
-			MainAccountCloudID: opt.BillAccountID,
+			MainAccountCloudID: opt.MainAccountCloudID,
 			BeginDate:          fmt.Sprintf("%d-%02d-%02d", opt.BillYear, opt.BillMonth, opt.BillDay),
 			EndDate:            fmt.Sprintf("%d-%02d-%02d", opt.BillYear, opt.BillMonth, opt.BillDay),
 			Page: &hcbill.AwsBillListPage{

@@ -65,7 +65,7 @@ func (hp *AzurePuller) Pull(kt run.ExecuteKit, opt *registry.PullDailyBillOption
 	for {
 		billReq := &hcbill.AzureRootBillListReq{
 			RootAccountID:  opt.RootAccountID,
-			SubscriptionID: opt.BillAccountID,
+			SubscriptionID: opt.MainAccountCloudID,
 			BeginDate:      buildDateArg(opt),
 			EndDate:        buildDateArg(opt),
 			Page:           &bill.AzureBillPage{Limit: limit, NextLink: nextLink},

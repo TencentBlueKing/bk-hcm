@@ -46,9 +46,9 @@ func (svc *service) BatchCreateBillSummaryMain(cts *rest.Contexts) (interface{},
 	id, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		summary := &tablebill.AccountBillSummaryMain{
 			RootAccountID:             req.RootAccountID,
-			RootAccountName:           req.RootAccountName,
+			RootAccountCloudID:        req.RootAccountCloudID,
 			MainAccountID:             req.MainAccountID,
-			MainAccountName:           req.MainAccountName,
+			MainAccountCloudID:        req.MainAccountCloudID,
 			Vendor:                    req.Vendor,
 			ProductID:                 req.ProductID,
 			ProductName:               req.ProductName,

@@ -20,13 +20,10 @@
 package bill
 
 import (
-	"strings"
 	"time"
 
 	"hcm/pkg/cc"
 	"hcm/pkg/kit"
-	"hcm/pkg/logs"
-	"hcm/pkg/serviced"
 )
 
 const (
@@ -43,18 +40,4 @@ func getInternalKit() *kit.Kit {
 	newKit.User = string(cc.AccountServerName)
 	newKit.AppCode = string(cc.AccountServerName)
 	return newKit
-}
-
-func getTaskServerKeyList(sd serviced.ServiceDiscover) ([]string, error) {
-	taskServerNameList, err := sd.GetServiceAllNodeKeys(cc.TaskServerName)
-	if err != nil {
-		logs.Warnf("get task server name list failed, err %s", err.Error())
-		return nil, err
-	}
-	var keyUUIDs []string
-	for _, one := range taskServerNameList {
-		split := strings.Split(one, "/")
-		keyUUIDs = append(keyUUIDs, split[len(split)-1])
-	}
-	return keyUUIDs, nil
 }

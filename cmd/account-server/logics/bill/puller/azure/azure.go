@@ -21,8 +21,6 @@
 package azure
 
 import (
-	"fmt"
-
 	"hcm/cmd/account-server/logics/bill/puller"
 	"hcm/cmd/account-server/logics/bill/puller/daily"
 	"hcm/pkg/api/data-service/bill"
@@ -30,7 +28,6 @@ import (
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
-	"hcm/pkg/serviced"
 )
 
 const (
@@ -53,33 +50,28 @@ type AzurePuller struct {
 
 // EnsurePullTask ...
 func (hp *AzurePuller) EnsurePullTask(kt *kit.Kit, client *client.ClientSet,
-	sd serviced.ServiceDiscover, billSummaryMain *dsbillapi.BillSummaryMainResult) error {
-
-	azureMainAccount, err := client.DataService().Azure.MainAccount.Get(kt, billSummaryMain.MainAccountID)
-	if err != nil {
-		return fmt.Errorf("get azure main account failed, err %s", err.Error())
-	}
+	billSummaryMain *dsbillapi.BillSummaryMainResult) error {
 
 	dp := &daily.DailyPuller{
-		RootAccountID: billSummaryMain.RootAccountID,
-		MainAccountID: billSummaryMain.MainAccountID,
-		BillAccountID: azureMainAccount.CloudID,
-		ProductID:     billSummaryMain.ProductID,
-		BkBizID:       billSummaryMain.BkBizID,
-		Vendor:        billSummaryMain.Vendor,
-		BillYear:      billSummaryMain.BillYear,
-		BillMonth:     billSummaryMain.BillMonth,
-		Version:       billSummaryMain.CurrentVersion,
-		BillDelay:     hp.BillDelay,
-		Client:        client,
-		Sd:            sd,
+		RootAccountID:      billSummaryMain.RootAccountID,
+		RootAccountCloudID: billSummaryMain.RootAccountCloudID,
+		MainAccountID:      billSummaryMain.MainAccountID,
+		MainAccountCloudID: billSummaryMain.MainAccountCloudID,
+		ProductID:          billSummaryMain.ProductID,
+		BkBizID:            billSummaryMain.BkBizID,
+		Vendor:             billSummaryMain.Vendor,
+		BillYear:           billSummaryMain.BillYear,
+		BillMonth:          billSummaryMain.BillMonth,
+		Version:            billSummaryMain.CurrentVersion,
+		BillDelay:          hp.BillDelay,
+		Client:             client,
 	}
 	return dp.EnsurePullTask(kt)
 }
 
 // GetPullTaskList ...
 func (hp *AzurePuller) GetPullTaskList(kt *kit.Kit, client *client.ClientSet,
-	sd serviced.ServiceDiscover, billSummaryMain *dsbillapi.BillSummaryMainResult) (
+	billSummaryMain *dsbillapi.BillSummaryMainResult) (
 	[]*bill.BillDailyPullTaskResult, error) {
 
 	dp := &daily.DailyPuller{
@@ -93,7 +85,6 @@ func (hp *AzurePuller) GetPullTaskList(kt *kit.Kit, client *client.ClientSet,
 		Version:       billSummaryMain.CurrentVersion,
 		BillDelay:     hp.BillDelay,
 		Client:        client,
-		Sd:            sd,
 	}
 	return dp.GetPullTaskList(kt)
 }

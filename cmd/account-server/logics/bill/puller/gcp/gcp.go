@@ -21,8 +21,6 @@
 package gcp
 
 import (
-	"fmt"
-
 	"hcm/cmd/account-server/logics/bill/puller"
 	"hcm/cmd/account-server/logics/bill/puller/daily"
 	"hcm/pkg/api/data-service/bill"
@@ -30,7 +28,6 @@ import (
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
-	"hcm/pkg/serviced"
 )
 
 const (
@@ -52,37 +49,29 @@ type GcpPuller struct {
 }
 
 // EnsurePullTask ...
-func (hp *GcpPuller) EnsurePullTask(
-	kt *kit.Kit, client *client.ClientSet,
-	sd serviced.ServiceDiscover, billSummaryMain *dsbillapi.BillSummaryMainResult) error {
-
-	gcpMainAccount, err := client.DataService().Gcp.MainAccount.Get(kt, billSummaryMain.MainAccountID)
-	if err != nil {
-		return fmt.Errorf("get gcp main account failed, err %s", err.Error())
-	}
+func (hp *GcpPuller) EnsurePullTask(kt *kit.Kit, client *client.ClientSet,
+	billSummaryMain *dsbillapi.BillSummaryMainResult) error {
 
 	dp := &daily.DailyPuller{
-		RootAccountID: billSummaryMain.RootAccountID,
-		MainAccountID: billSummaryMain.MainAccountID,
-		BillAccountID: gcpMainAccount.Extension.CloudProjectID,
-		ProductID:     billSummaryMain.ProductID,
-		BkBizID:       billSummaryMain.BkBizID,
-		Vendor:        billSummaryMain.Vendor,
-		BillYear:      billSummaryMain.BillYear,
-		BillMonth:     billSummaryMain.BillMonth,
-		Version:       billSummaryMain.CurrentVersion,
-		BillDelay:     hp.BillDelay,
-		Client:        client,
-		Sd:            sd,
+		RootAccountID:      billSummaryMain.RootAccountID,
+		RootAccountCloudID: billSummaryMain.RootAccountCloudID,
+		MainAccountID:      billSummaryMain.MainAccountID,
+		MainAccountCloudID: billSummaryMain.MainAccountCloudID,
+		ProductID:          billSummaryMain.ProductID,
+		BkBizID:            billSummaryMain.BkBizID,
+		Vendor:             billSummaryMain.Vendor,
+		BillYear:           billSummaryMain.BillYear,
+		BillMonth:          billSummaryMain.BillMonth,
+		Version:            billSummaryMain.CurrentVersion,
+		BillDelay:          hp.BillDelay,
+		Client:             client,
 	}
 	return dp.EnsurePullTask(kt)
 }
 
 // GetPullTaskList ...
-func (hp *GcpPuller) GetPullTaskList(
-	kt *kit.Kit, client *client.ClientSet,
-	sd serviced.ServiceDiscover, billSummaryMain *dsbillapi.BillSummaryMainResult) (
-	[]*bill.BillDailyPullTaskResult, error) {
+func (hp *GcpPuller) GetPullTaskList(kt *kit.Kit, client *client.ClientSet,
+	billSummaryMain *dsbillapi.BillSummaryMainResult) ([]*bill.BillDailyPullTaskResult, error) {
 
 	dp := &daily.DailyPuller{
 		RootAccountID: billSummaryMain.RootAccountID,
@@ -95,7 +84,6 @@ func (hp *GcpPuller) GetPullTaskList(
 		Version:       billSummaryMain.CurrentVersion,
 		BillDelay:     hp.BillDelay,
 		Client:        client,
-		Sd:            sd,
 	}
 	return dp.GetPullTaskList(kt)
 }

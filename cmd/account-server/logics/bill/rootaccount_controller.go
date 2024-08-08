@@ -40,49 +40,49 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/serviced"
-	"hcm/pkg/tools/slice"
 	"hcm/pkg/tools/times"
 )
 
 // RootAccountControllerOption option for RootAccountController
 type RootAccountControllerOption struct {
-	RootAccountID string
-	Vendor        enumor.Vendor
-	Client        *client.ClientSet
-	Sd            serviced.ServiceDiscover
+	RootAccountID      string
+	RootAccountCloudID string
+	Vendor             enumor.Vendor
+	Client             *client.ClientSet
 }
 
 // NewRootAccountController create new root account controller
 func NewRootAccountController(opt *RootAccountControllerOption) (*RootAccountController, error) {
 	if opt == nil {
-		return nil, fmt.Errorf("option cannot be empty")
+		return nil, fmt.Errorf("option of root account controller cannot be empty")
 	}
 	if opt.Client == nil {
-		return nil, fmt.Errorf("client cannot be empty")
-	}
-	if opt.Sd == nil {
-		return nil, fmt.Errorf("servicediscovery cannot be empty")
+		return nil, fmt.Errorf("client of root account controller cannot be empty")
 	}
 	if len(opt.RootAccountID) == 0 {
-		return nil, fmt.Errorf("root account id cannot be empty")
+		return nil, fmt.Errorf("root account id of root account controller cannot be empty")
+	}
+	if len(opt.RootAccountCloudID) == 0 {
+		return nil, fmt.Errorf("root account cloud id of root account controller cannot be empty")
 	}
 	if len(opt.Vendor) == 0 {
-		return nil, fmt.Errorf("vendor cannot be empty")
+		return nil, fmt.Errorf("vendor of root account controller cannot be empty")
 	}
 	return &RootAccountController{
-		Client:        opt.Client,
-		Sd:            opt.Sd,
-		RootAccountID: opt.RootAccountID,
-		Vendor:        opt.Vendor,
+		Client:             opt.Client,
+		RootAccountID:      opt.RootAccountID,
+		RootAccountCloudID: opt.RootAccountCloudID,
+		Vendor:             opt.Vendor,
 	}, nil
 }
 
 // RootAccountController ...
 type RootAccountController struct {
-	Client        *client.ClientSet
-	Sd            serviced.ServiceDiscover
-	RootAccountID string
-	Vendor        enumor.Vendor
+	Client             *client.ClientSet
+	Sd                 serviced.ServiceDiscover
+	RootAccountID      string
+	RootAccountCloudID string
+	Vendor             enumor.Vendor
 
 	kt         *kit.Kit
 	cancelFunc context.CancelFunc
@@ -172,11 +172,7 @@ func (rac *RootAccountController) runMonthTaskLoop(kt *kit.Kit) {
 
 func (rac *RootAccountController) pollRootSummaryTask(subKit *kit.Kit, flowID string, billYear, billMonth int) string {
 	time.Sleep(time.Millisecond * time.Duration(rand.Intn(defaultSleepMillisecond)))
-	taskServerNameList, err := getTaskServerKeyList(rac.Sd)
-	if err != nil {
-		logs.Warnf("get task server name list failed, err %s", err.Error())
-		return flowID
-	}
+
 	if len(flowID) == 0 {
 		result, err := rac.createRootSummaryTask(subKit, billYear, billMonth)
 		if err != nil {
@@ -194,19 +190,7 @@ func (rac *RootAccountController) pollRootSummaryTask(subKit *kit.Kit, flowID st
 		logs.Warnf("get flow by id %s failed, err %s, rid: %s", flowID, err.Error(), subKit.Rid)
 		return flowID
 	}
-	if flow.State == enumor.FlowSuccess ||
-		flow.State == enumor.FlowFailed ||
-		flow.State == enumor.FlowCancel ||
-		(flow.State == enumor.FlowScheduled &&
-			flow.Worker != nil &&
-			!slice.IsItemInSlice[string](taskServerNameList, *flow.Worker)) {
-
-		if flow.State == enumor.FlowScheduled {
-			if err := rac.Client.TaskServer().CancelFlow(subKit, flow.ID); err != nil {
-				logs.Warnf("cancel flow %v failed, err %s, rid: %s", flow, err.Error(), subKit.Rid)
-				return flowID
-			}
-		}
+	if flow.State == enumor.FlowSuccess || flow.State == enumor.FlowFailed || flow.State == enumor.FlowCancel {
 
 		result, err := rac.createRootSummaryTask(subKit, billYear, billMonth)
 		if err != nil {
@@ -225,9 +209,12 @@ func (rac *RootAccountController) pollRootSummaryTask(subKit *kit.Kit, flowID st
 func (rac *RootAccountController) createRootSummaryTask(
 	kt *kit.Kit, billYear, billMonth int) (*core.CreateResult, error) {
 
+	memo := fmt.Sprintf("[%s] root %s(%.16s) %d-%d", rac.Vendor,
+		rac.RootAccountID, rac.RootAccountCloudID, billYear, billMonth)
+
 	return rac.Client.TaskServer().CreateCustomFlow(kt, &taskserver.AddCustomFlowReq{
 		Name: enumor.FlowBillRootAccountSummary,
-		Memo: "calculate root account bill summary",
+		Memo: memo,
 		Tasks: []taskserver.CustomFlowTask{
 			rootsummary.BuildRootSummaryTask(
 				rac.RootAccountID, rac.Vendor, billYear, billMonth),
@@ -304,13 +291,14 @@ func (rac *RootAccountController) ensureBillSummary(kt *kit.Kit, billYear, billM
 func (rac *RootAccountController) createNewBillSummary(kt *kit.Kit, billYear, billMonth int) error {
 	_, err := rac.Client.DataService().Global.Bill.CreateBillSummaryRoot(
 		kt, &dsbillapi.BillSummaryRootCreateReq{
-			RootAccountID:     rac.RootAccountID,
-			Vendor:            rac.Vendor,
-			BillYear:          billYear,
-			BillMonth:         billMonth,
-			LastSyncedVersion: -1,
-			CurrentVersion:    1,
-			State:             enumor.RootAccountBillSummaryStateAccounting,
+			RootAccountID:      rac.RootAccountID,
+			RootAccountCloudID: rac.RootAccountCloudID,
+			Vendor:             rac.Vendor,
+			BillYear:           billYear,
+			BillMonth:          billMonth,
+			LastSyncedVersion:  -1,
+			CurrentVersion:     1,
+			State:              enumor.RootAccountBillSummaryStateAccounting,
 		})
 	if err != nil {
 		return fmt.Errorf("failed to create bill summary for root account (%s, %s) in in (%d, %02d), err %s",
@@ -331,7 +319,7 @@ func (rac *RootAccountController) ensureMonthTask(kt *kit.Kit, billYear, billMon
 		return err
 	}
 	if !monthPuller.HasMonthPullTask() {
-		logs.Infof("no month pull task for root account (%s, %s), skip", rac.RootAccountID, rac.Vendor)
+		logs.Infof("no month pull task for root account (%s, %s), skip, rid: %s", rac.RootAccountID, rac.Vendor, kt.Rid)
 		return nil
 	}
 
@@ -341,8 +329,8 @@ func (rac *RootAccountController) ensureMonthTask(kt *kit.Kit, billYear, billMon
 	}
 	isAllAccounted := calculateAccountingState(mainSummaryList, rootSummary)
 	if !isAllAccounted {
-		logs.Infof("not all main account bill summary for root account (%s, %s) were accounted, wait",
-			rac.RootAccountID, rac.Vendor)
+		logs.Infof("not all main account bill summary for root account (%s, %s, %d-%02d) were accounted, wait, rid: %s",
+			rac.RootAccountID, rac.Vendor, billYear, billMonth, kt.Rid)
 		return nil
 	}
 
@@ -584,11 +572,15 @@ func (rac *RootAccountController) ensureMonthTaskAccountStage(kt *kit.Kit, task 
 	return nil
 }
 
-func (rac *RootAccountController) createMonthFlow(
-	kt *kit.Kit, rootAccountID string, billYear, billMonth int, t enumor.MonthTaskType) (*core.CreateResult, error) {
+func (rac *RootAccountController) createMonthFlow(kt *kit.Kit, rootAccountID string, billYear, billMonth int,
+	t enumor.MonthTaskType) (*core.CreateResult, error) {
+
+	memo := fmt.Sprintf("[%s] root %s %s(%s) %d-%02d ", rac.Vendor, t, rootAccountID, rac.RootAccountCloudID,
+		billYear, billMonth)
+
 	return rac.Client.TaskServer().CreateCustomFlow(kt, &taskserver.AddCustomFlowReq{
 		Name: enumor.FlowBillMonthTask,
-		Memo: "run bill month task",
+		Memo: memo,
 		Tasks: []taskserver.CustomFlowTask{
 			monthtask.BuildMonthTask(
 				t, rootAccountID, rac.Vendor, billYear, billMonth),
@@ -600,12 +592,13 @@ func (rac *RootAccountController) createMonthPullTaskStub(kt *kit.Kit,
 	rootSummary *dsbillapi.BillSummaryRootResult) error {
 
 	createReq := &dsbillapi.BillMonthTaskCreateReq{
-		RootAccountID: rac.RootAccountID,
-		Vendor:        rac.Vendor,
-		BillYear:      rootSummary.BillYear,
-		BillMonth:     rootSummary.BillMonth,
-		VersionID:     rootSummary.CurrentVersion,
-		State:         enumor.RootAccountMonthBillTaskStatePulling,
+		RootAccountID:      rac.RootAccountID,
+		RootAccountCloudID: rac.RootAccountCloudID,
+		Vendor:             rac.Vendor,
+		BillYear:           rootSummary.BillYear,
+		BillMonth:          rootSummary.BillMonth,
+		VersionID:          rootSummary.CurrentVersion,
+		State:              enumor.RootAccountMonthBillTaskStatePulling,
 	}
 	taskResult, err := rac.Client.DataService().Global.Bill.CreateBillMonthPullTask(kt, createReq)
 	if err != nil {
@@ -656,7 +649,7 @@ func (rac *RootAccountController) deleteMonthPullTask(kt *kit.Kit, billYear, bil
 	})
 }
 
-// Stop  controller
+// Stop controller
 func (rac *RootAccountController) Stop() {
 	if rac.cancelFunc != nil {
 		rac.cancelFunc()

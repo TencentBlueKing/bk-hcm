@@ -69,14 +69,6 @@ func (act RootAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 		logs.Warnf("get bill summary for opt %v failed, err %s, rid: %s", opt, err.Error(), kt.Kit().Rid)
 		return nil, fmt.Errorf("get bill summary for opt %v failed, err %s, rid: %s", opt, err.Error(), kt.Kit().Rid)
 	}
-	// 获取一级账号信息
-	rAccountResult, err := actcli.GetDataService().Global.RootAccount.GetBasicInfo(kt.Kit(), summary.RootAccountID)
-	if err != nil {
-		logs.Warnf("get root account with id %s failed, err %s, rid: %s",
-			summary.RootAccountID, err.Error(), kt.Kit().Rid)
-		return nil, fmt.Errorf("get root account with id %s failed, err %s, rid: %s",
-			summary.RootAccountID, err.Error(), kt.Kit().Rid)
-	}
 
 	mainSummaryList, err := act.listAllMainSummary(kt.Kit(), opt)
 	if err != nil {
@@ -127,7 +119,6 @@ func (act RootAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 	req := &bill.BillSummaryRootUpdateReq{
 		ID:                        summary.ID,
 		Currency:                  currency,
-		RootAccountName:           rAccountResult.Name,
 		LastMonthCostSynced:       &lastMonthSyncedCost,
 		LastMonthRMBCostSynced:    &lastMonthSyncedRMBCost,
 		CurrentMonthCostSynced:    &currentCostSynced,

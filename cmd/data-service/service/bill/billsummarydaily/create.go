@@ -45,20 +45,22 @@ func (svc *service) CreateBillSummaryDaily(cts *rest.Contexts) (interface{}, err
 	}
 	id, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		summary := &tablebill.AccountBillSummaryDaily{
-			RootAccountID: string(req.RootAccountID),
-			MainAccountID: string(req.MainAccountID),
-			Vendor:        req.Vendor,
-			ProductID:     req.ProductID,
-			BkBizID:       req.BkBizID,
-			BillYear:      req.BillYear,
-			BillMonth:     req.BillMonth,
-			BillDay:       req.BillDay,
-			VersionID:     req.VersionID,
-			Currency:      req.Currency,
-			Cost:          &types.Decimal{Decimal: req.Cost},
-			Count:         req.Count,
-			Creator:       cts.Kit.User,
-			Reviser:       cts.Kit.User,
+			RootAccountID:      req.RootAccountID,
+			MainAccountID:      req.MainAccountID,
+			RootAccountCloudID: req.RootAccountCloudID,
+			MainAccountCloudID: req.MainAccountCloudID,
+			Vendor:             req.Vendor,
+			ProductID:          req.ProductID,
+			BkBizID:            req.BkBizID,
+			BillYear:           req.BillYear,
+			BillMonth:          req.BillMonth,
+			BillDay:            req.BillDay,
+			VersionID:          req.VersionID,
+			Currency:           req.Currency,
+			Cost:               &types.Decimal{Decimal: req.Cost},
+			Count:              req.Count,
+			Creator:            cts.Kit.User,
+			Reviser:            cts.Kit.User,
 		}
 		ids, err := svc.dao.AccountBillSummaryDaily().CreateWithTx(
 			cts.Kit, txn, []*tablebill.AccountBillSummaryDaily{

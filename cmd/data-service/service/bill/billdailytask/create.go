@@ -48,6 +48,8 @@ func (svc *service) CreateBillDailyPullTask(cts *rest.Contexts) (interface{}, er
 		task := &tablebill.AccountBillDailyPullTask{
 			RootAccountID:      req.RootAccountID,
 			MainAccountID:      req.MainAccountID,
+			MainAccountCloudID: req.MainAccountCloudID,
+			RootAccountCloudID: req.RootAccountCloudID,
 			Vendor:             req.Vendor,
 			ProductID:          req.ProductID,
 			BkBizID:            req.BkBizID,
@@ -58,10 +60,10 @@ func (svc *service) CreateBillDailyPullTask(cts *rest.Contexts) (interface{}, er
 			State:              req.State,
 			Count:              req.Count,
 			Currency:           enumor.CurrencyCode(req.Currency),
+			Cost:               &types.Decimal{Decimal: req.Cost},
 			FlowID:             req.FlowID,
 			SplitFlowID:        req.SplitFlowID,
 			DailySummaryFlowID: &req.DailySummaryFlowID,
-			Cost:               &types.Decimal{Decimal: req.Cost},
 		}
 		ids, err := svc.dao.AccountBillDailyPullTask().BatchCreateWithTx(
 			cts.Kit, txn, []*tablebill.AccountBillDailyPullTask{

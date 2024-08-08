@@ -46,7 +46,7 @@ func (svc *service) CreateBillSummaryRoot(cts *rest.Contexts) (interface{}, erro
 	id, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		summary := &tablebill.AccountBillSummaryRoot{
 			RootAccountID:             req.RootAccountID,
-			RootAccountName:           req.RootAccountName,
+			RootAccountCloudID:        req.RootAccountCloudID,
 			Vendor:                    req.Vendor,
 			BillYear:                  req.BillYear,
 			BillMonth:                 req.BillMonth,

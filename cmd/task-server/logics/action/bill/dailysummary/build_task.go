@@ -27,23 +27,11 @@ import (
 )
 
 // BuildDailySummaryTask build daily bill pull task
-func BuildDailySummaryTask(
-	rootAccountID, mainAccountID string, vendor enumor.Vendor,
-	productID, bkBizID int64, billYear, billMonth, billDay, version int) ts.CustomFlowTask {
+func BuildDailySummaryTask(opt *DailySummaryOption) ts.CustomFlowTask {
 
 	return ts.CustomFlowTask{
 		ActionID:   action.ActIDType(uuid.UUID()),
 		ActionName: enumor.ActionDailyAccountSummary,
-		Params: DailySummaryOption{
-			RootAccountID: rootAccountID,
-			MainAccountID: mainAccountID,
-			ProductID:     productID,
-			BkBizID:       bkBizID,
-			Vendor:        vendor,
-			VersionID:     version,
-			BillYear:      billYear,
-			BillMonth:     billMonth,
-			BillDay:       billDay,
-		},
+		Params:     opt,
 	}
 }

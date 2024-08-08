@@ -21,8 +21,6 @@
 package aws
 
 import (
-	"fmt"
-
 	"hcm/cmd/account-server/logics/bill/puller"
 	"hcm/cmd/account-server/logics/bill/puller/daily"
 	"hcm/pkg/api/data-service/bill"
@@ -30,7 +28,6 @@ import (
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
-	"hcm/pkg/serviced"
 )
 
 const (
@@ -52,49 +49,44 @@ type AwsPuller struct {
 }
 
 // EnsurePullTask ...
-func (hp *AwsPuller) EnsurePullTask(
-	kt *kit.Kit, client *client.ClientSet,
-	sd serviced.ServiceDiscover, billSummaryMain *dsbillapi.BillSummaryMainResult) error {
-
-	awsMainAccount, err := client.DataService().Aws.MainAccount.Get(kt, billSummaryMain.MainAccountID)
-	if err != nil {
-		return fmt.Errorf("get aws main account failed, err %s", err.Error())
-	}
+func (hp *AwsPuller) EnsurePullTask(kt *kit.Kit, client *client.ClientSet,
+	billSummaryMain *dsbillapi.BillSummaryMainResult) error {
 
 	dp := &daily.DailyPuller{
-		RootAccountID: billSummaryMain.RootAccountID,
-		MainAccountID: billSummaryMain.MainAccountID,
-		BillAccountID: awsMainAccount.CloudID,
-		ProductID:     billSummaryMain.ProductID,
-		BkBizID:       billSummaryMain.BkBizID,
-		Vendor:        billSummaryMain.Vendor,
-		BillYear:      billSummaryMain.BillYear,
-		BillMonth:     billSummaryMain.BillMonth,
-		Version:       billSummaryMain.CurrentVersion,
-		BillDelay:     hp.BillDelay,
-		Client:        client,
-		Sd:            sd,
+		RootAccountID:      billSummaryMain.RootAccountID,
+		RootAccountCloudID: billSummaryMain.RootAccountCloudID,
+		MainAccountID:      billSummaryMain.MainAccountID,
+		MainAccountCloudID: billSummaryMain.MainAccountCloudID,
+		ProductID:          billSummaryMain.ProductID,
+		BkBizID:            billSummaryMain.BkBizID,
+		Vendor:             billSummaryMain.Vendor,
+		BillYear:           billSummaryMain.BillYear,
+		BillMonth:          billSummaryMain.BillMonth,
+		Version:            billSummaryMain.CurrentVersion,
+		BillDelay:          hp.BillDelay,
+		Client:             client,
 	}
 	return dp.EnsurePullTask(kt)
 }
 
 // GetPullTaskList ...
 func (hp *AwsPuller) GetPullTaskList(kt *kit.Kit, client *client.ClientSet,
-	sd serviced.ServiceDiscover, billSummaryMain *dsbillapi.BillSummaryMainResult) (
+	billSummaryMain *dsbillapi.BillSummaryMainResult) (
 	[]*bill.BillDailyPullTaskResult, error) {
 
 	dp := &daily.DailyPuller{
-		RootAccountID: billSummaryMain.RootAccountID,
-		MainAccountID: billSummaryMain.MainAccountID,
-		ProductID:     billSummaryMain.ProductID,
-		BkBizID:       billSummaryMain.BkBizID,
-		Vendor:        billSummaryMain.Vendor,
-		BillYear:      billSummaryMain.BillYear,
-		BillMonth:     billSummaryMain.BillMonth,
-		Version:       billSummaryMain.CurrentVersion,
-		BillDelay:     hp.BillDelay,
-		Client:        client,
-		Sd:            sd,
+		RootAccountID:      billSummaryMain.RootAccountID,
+		MainAccountID:      billSummaryMain.MainAccountID,
+		RootAccountCloudID: billSummaryMain.RootAccountCloudID,
+		MainAccountCloudID: billSummaryMain.MainAccountCloudID,
+		ProductID:          billSummaryMain.ProductID,
+		BkBizID:            billSummaryMain.BkBizID,
+		Vendor:             billSummaryMain.Vendor,
+		BillYear:           billSummaryMain.BillYear,
+		BillMonth:          billSummaryMain.BillMonth,
+		Version:            billSummaryMain.CurrentVersion,
+		BillDelay:          hp.BillDelay,
+		Client:             client,
 	}
 	return dp.GetPullTaskList(kt)
 }

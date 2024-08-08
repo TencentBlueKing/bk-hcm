@@ -38,7 +38,7 @@ var AccountBillSummaryRootColumns = utils.MergeColumns(nil, AccountBillSummaryRo
 var AccountBillSummaryRootColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
 	{Column: "root_account_id", NamedC: "root_account_id", Type: enumor.String},
-	{Column: "root_account_name", NamedC: "root_account_name", Type: enumor.String},
+	{Column: "root_account_cloud_id", NamedC: "root_account_cloud_id", Type: enumor.String},
 	{Column: "vendor", NamedC: "vendor", Type: enumor.String},
 	{Column: "bill_year", NamedC: "bill_year", Type: enumor.Numeric},
 	{Column: "bill_month", NamedC: "bill_month", Type: enumor.Numeric},
@@ -68,8 +68,8 @@ type AccountBillSummaryRoot struct {
 	ID string `db:"id" validate:"lte=64" json:"id"`
 	// RootAccountID 一级账号ID
 	RootAccountID string `db:"root_account_id" json:"root_account_id"`
-	// RootAccountName 一级账号名
-	RootAccountName string `db:"root_account_name" json:"root_account_name"`
+	// RootAccountCloudID 一级账号云id
+	RootAccountCloudID string `db:"root_account_cloud_id" json:"root_account_cloud_id"`
 	// Vendor 云厂商
 	Vendor enumor.Vendor `db:"vendor" json:"vendor"`
 	// BillYear 账单年份

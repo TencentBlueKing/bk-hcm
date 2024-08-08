@@ -61,9 +61,9 @@ func toProtoPullerResult(m *tablebill.AccountBillSummaryMain) *dataproto.BillSum
 	return &dataproto.BillSummaryMainResult{
 		ID:                        m.ID,
 		RootAccountID:             m.RootAccountID,
-		RootAccountName:           m.RootAccountName,
+		RootAccountCloudID:        m.RootAccountCloudID,
 		MainAccountID:             m.MainAccountID,
-		MainAccountName:           m.MainAccountName,
+		MainAccountCloudID:        m.MainAccountCloudID,
 		Vendor:                    m.Vendor,
 		ProductID:                 m.ProductID,
 		ProductName:               m.ProductName,

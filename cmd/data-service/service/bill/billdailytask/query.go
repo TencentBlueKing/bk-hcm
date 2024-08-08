@@ -61,6 +61,8 @@ func toProtoPullerResult(m *tablebill.AccountBillDailyPullTask) *dataproto.BillD
 		ID:                 m.ID,
 		RootAccountID:      m.RootAccountID,
 		MainAccountID:      m.MainAccountID,
+		MainAccountCloudID: m.MainAccountCloudID,
+		RootAccountCloudID: m.RootAccountCloudID,
 		Vendor:             m.Vendor,
 		ProductID:          m.ProductID,
 		BkBizID:            m.BkBizID,

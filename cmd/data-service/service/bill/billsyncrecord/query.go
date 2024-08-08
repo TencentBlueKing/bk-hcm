@@ -66,6 +66,7 @@ func convBillSyncRecord(m *tablebill.AccountBillSyncRecord) *bill.SyncRecord {
 		BillYear:  m.BillYear,
 		BillMonth: m.BillMonth,
 		Currency:  m.Currency,
+		Count:     cvt.PtrToVal(m.Count),
 		Cost:      cvt.PtrToVal(m.Cost).Decimal,
 		RMBCost:   cvt.PtrToVal(m.RMBCost).Decimal,
 		Detail:    m.Detail,

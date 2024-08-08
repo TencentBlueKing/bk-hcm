@@ -39,6 +39,8 @@ var AccountBillDailyPullTaskDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
 	{Column: "root_account_id", NamedC: "root_account_id", Type: enumor.String},
 	{Column: "main_account_id", NamedC: "main_account_id", Type: enumor.String},
+	{Column: "root_account_cloud_id", NamedC: "root_account_cloud_id", Type: enumor.String},
+	{Column: "main_account_cloud_id", NamedC: "main_account_cloud_id", Type: enumor.String},
 	{Column: "vendor", NamedC: "vendor", Type: enumor.String},
 	{Column: "product_id", NamedC: "product_id", Type: enumor.Numeric},
 	{Column: "bk_biz_id", NamedC: "bk_biz_id", Type: enumor.Numeric},
@@ -65,6 +67,10 @@ type AccountBillDailyPullTask struct {
 	RootAccountID string `db:"root_account_id" json:"root_account_id"`
 	// MainAccountID 账号ID
 	MainAccountID string `db:"main_account_id" json:"main_account_id"`
+	// MainAccountCloudID 账号云ID
+	MainAccountCloudID string `db:"main_account_cloud_id" json:"main_account_cloud_id"`
+	// RootAccountCloudID 一级账号云ID
+	RootAccountCloudID string `db:"root_account_cloud_id" json:"root_account_cloud_id"`
 	// Vendor 云厂商
 	Vendor enumor.Vendor `db:"vendor" json:"vendor"`
 	// ProductID 运营产品ID
@@ -114,6 +120,12 @@ func (abdpt *AccountBillDailyPullTask) InsertValidate() error {
 	}
 	if len(abdpt.MainAccountID) == 0 {
 		return errors.New("main_account_id is required")
+	}
+	if len(abdpt.MainAccountCloudID) == 0 {
+		return errors.New("main_account_cloud_id is required")
+	}
+	if len(abdpt.RootAccountCloudID) == 0 {
+		return errors.New("root_account_cloud_id is required")
 	}
 	if abdpt.BkBizID == 0 && abdpt.ProductID == 0 {
 		return errors.New("bk_biz_id or product_id is required")
