@@ -547,6 +547,8 @@ bkCmdbCreateBizUrl: "http://cmdb.bk.com/create_biz"
 bkCmdbCreateBizDocsUrl: "http://cmdb.bk.com/docs"
 # 是否启用云选型
 enableCloudSelection: true
+# 是否启用账单账号功能
+enableAccountBill: true
 
 ## 加密配置，Note: 首次部署后不可修改，否则数据将无法解密
 ##
@@ -618,7 +620,7 @@ mariadb:
   enabled: true
   architecture: standalone
   auth:
-    rootPassword: "admin"
+    rootPassword: ""
     database: hcm
     username: hcm
     password: "admin"
@@ -644,7 +646,8 @@ dbConnConfig:
   maxIdleTimeoutMin: 10
   maxOpenConn: 500
   maxIdleConn: 100
-
+  limiterQps: 500
+  limiterBurst: 500
 ## 内置Etcd
 ##
 etcd:
@@ -791,3 +794,15 @@ cmsi:
     caFile:
     # the password to decrypt the certificate.
     password:
+
+# object store
+objectstore:
+  type:
+  uin:
+  prefix:
+  secretId:
+  secretKey:
+  bucketUrl:
+  bucketName:
+  bucketRegion:
+  isDebug:

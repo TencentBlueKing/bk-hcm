@@ -18,7 +18,7 @@
  */
 
  /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0022,HCMVER=v1.6.0
 
     Notes:
     1. 支持云账号管理
@@ -86,6 +86,6 @@ value ('root_account','0');
 
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.6.0' as `hcm_ver`, '0022' as `sql_ver`;
 
 COMMIT
