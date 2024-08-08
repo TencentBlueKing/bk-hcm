@@ -79,6 +79,7 @@ var loadBalancerFlowNameMap = map[FlowName]struct{}{
 	FlowLoadBalancerOperateWatch:       {},
 	FlowApplyTargetGroupToListenerRule: {},
 	FlowDeleteLoadBalancer:             {},
+	FlowLoadBalancerBatchOperation:     {},
 }
 
 // ValidateLoadBalancer validate load balancer FlowName.
@@ -141,6 +142,8 @@ const (
 	FlowTargetGroupRemoveRS     FlowName = "tg_remove_rs"
 	FlowTargetGroupModifyPort   FlowName = "tg_modify_port"
 	FlowTargetGroupModifyWeight FlowName = "tg_modify_weight"
+
+	FlowLoadBalancerBatchOperation FlowName = "load_balancer_batch_operation"
 
 	FlowApplyTargetGroupToListenerRule FlowName = "apply_tg_listener_rule"
 

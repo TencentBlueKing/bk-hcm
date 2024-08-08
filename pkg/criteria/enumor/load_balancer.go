@@ -146,3 +146,19 @@ const (
 func (r ResFlowStatus) IsEnd() bool {
 	return r == CancelResFlowStatus || r == TimeoutResFlowStatus || r == SuccessResFlowStatus
 }
+
+// BatchOperationActionType 批量操作动作
+type BatchOperationActionType string
+
+const (
+	// AppendRS 追加RS
+	AppendRS BatchOperationActionType = "append_rs"
+	// CreateListenerAndAppendRS 新增监听其并追加RS
+	CreateListenerAndAppendRS BatchOperationActionType = "create_listener_and_append_rs"
+	// CreateURLAndAppendRS 新增URL并追加RS
+	CreateURLAndAppendRS BatchOperationActionType = "create_url_and_append_rs"
+	// CreateListenerWithURLAndAppendRS 新增监听器和URL并追加RS
+	CreateListenerWithURLAndAppendRS BatchOperationActionType = "create_listener_with_url_and_append_rs"
+	// ModifyRSWeight 修改RS权重
+	ModifyRSWeight BatchOperationActionType = "modify_rs_weight"
+)

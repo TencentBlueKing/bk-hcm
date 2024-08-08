@@ -44,6 +44,7 @@ func (v ActionName) Validate() error {
 	case ActionDeleteLoadBalancer:
 	case ActionPullDailyRawBill, ActionMainAccountSummary, ActionRootAccountSummary,
 		ActionDailyAccountSplit, ActionDailyAccountSummary, ActionMonthTaskAction:
+	case ActionListenerCreate, ActionURLRuleCreate:
 	default:
 		return fmt.Errorf("unsupported action name type: %s", v)
 	}
@@ -115,6 +116,9 @@ const (
 	ActionListenerRuleAddTarget ActionName = "listener_rule_add_target"
 
 	ActionDeleteLoadBalancer = "delete_load_balancer"
+
+	ActionListenerCreate ActionName = "listener_create"
+	ActionURLRuleCreate  ActionName = "url_rule_create"
 )
 
 // 账单相关Action

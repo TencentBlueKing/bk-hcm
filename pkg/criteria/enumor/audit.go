@@ -115,24 +115,27 @@ const (
 	Bind AuditAction = "bind"
 	// Deliver 交付
 	Deliver AuditAction = "deliver"
+	// BatchOperation 批量操作
+	BatchOperation AuditAction = "batch_operation"
 )
 
 // AuditActionEnums op type map.
 var AuditActionEnums = map[AuditAction]struct{}{
-	Create:       {},
-	Update:       {},
-	Delete:       {},
-	Assign:       {},
-	Recycle:      {},
-	Recover:      {},
-	Reboot:       {},
-	Start:        {},
-	Stop:         {},
-	ResetPwd:     {},
-	Associate:    {},
-	Disassociate: {},
-	Bind:         {},
-	Deliver:      {},
+	Create:         {},
+	Update:         {},
+	Delete:         {},
+	Assign:         {},
+	Recycle:        {},
+	Recover:        {},
+	Reboot:         {},
+	Start:          {},
+	Stop:           {},
+	ResetPwd:       {},
+	Associate:      {},
+	Disassociate:   {},
+	Bind:           {},
+	Deliver:        {},
+	BatchOperation: {},
 }
 
 // Exist judge enum value exist.

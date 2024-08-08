@@ -72,6 +72,9 @@ func register() {
 	action.RegisterAction(actionlb.ListenerRuleAddTargetAction{})
 	action.RegisterAction(actionlb.DeleteLoadBalancerAction{})
 
+	action.RegisterAction(actionlb.CreateListenerAction{})
+	action.RegisterAction(actionlb.CreateURLRuleAction{})
+
 	action.RegisterAction(actionbilldailypull.PullDailyBillAction{})
 	action.RegisterAction(actionbillsplit.DailyAccountSplitAction{})
 	action.RegisterAction(actiondailysummary.DailySummaryAction{})
