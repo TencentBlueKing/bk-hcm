@@ -170,6 +170,10 @@ const (
 	ResourceFlowRelTable Name = "resource_flow_rel"
 	// ResourceFlowLockTable is resource_flow_lock table's name.
 	ResourceFlowLockTable Name = "resource_flow_lock"
+	// BatchOperationTable is batch_task table's name.
+	BatchOperationTable Name = "batch_operation"
+	// BatchOperationAsyncFlowRelTable is batch_task_async_flow_rel table's name.
+	BatchOperationAsyncFlowRelTable Name = "batch_operation_async_flow_rel"
 
 	// MainAccountTable is main_account table's name
 	MainAccountTable Name = "main_account"
@@ -265,6 +269,9 @@ var TableMap = map[Name]struct{}{
 	CloudSelectionBizTypeTable:   {},
 	CloudSelectionIdcTable:       {},
 	SslCertTable:                 {},
+
+	BatchOperationTable:             {},
+	BatchOperationAsyncFlowRelTable: {},
 
 	// TODO: 临时方案
 	RecycleRecordTableTaskID: {},

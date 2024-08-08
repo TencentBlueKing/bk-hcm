@@ -137,6 +137,9 @@ type Set interface {
 	MainAccount() accountset.MainAccount
 	RootAccount() accountset.RootAccount
 
+	BatchOperation() loadbalancer.BatchOperationInterface
+	BatchOperationAsyncFlowRel() loadbalancer.BatchOperationAsyncFlowRelInterface
+
 	Txn() *Txn
 }
 
@@ -743,6 +746,24 @@ func (s *set) MainAccount() accountset.MainAccount {
 // RootAccount return rootaccount dao
 func (s *set) RootAccount() accountset.RootAccount {
 	return &accountset.RootAccountDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
+// BatchOperation ...
+func (s *set) BatchOperation() loadbalancer.BatchOperationInterface {
+	return &loadbalancer.BatchOperationDao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+		Audit: s.audit,
+	}
+}
+
+// BatchOperationAsyncFlowRel ...
+func (s *set) BatchOperationAsyncFlowRel() loadbalancer.BatchOperationAsyncFlowRelInterface {
+	return &loadbalancer.BatchOperationAsyncFlowRelDao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
 		Audit: s.audit,
