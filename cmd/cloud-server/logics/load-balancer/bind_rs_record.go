@@ -84,15 +84,15 @@ type BindRSRecord struct {
 	VPorts       []int  `json:"ports"`
 	HaveEndPort  bool   `json:"-"` // 是否是端口端
 
-	Domain     string   `json:"domain"`         // 域名
-	URLPath    string   `json:"url"`            // URL路径
-	ServerCert []string `json:"cert_cloud_ids"` // ref: pkg/api/core/cloud/load-balancer/tcloud.go:188
-	ClientCert string   `json:"ca_cloud_id"`    // 客户端证书
+	Domain      string   `json:"domain"`         // 域名
+	URLPath     string   `json:"url"`            // URL路径
+	ServerCerts []string `json:"cert_cloud_ids"` // ref: pkg/api/core/cloud/load-balancer/tcloud.go:188
+	ClientCert  string   `json:"ca_cloud_id"`    // 客户端证书
 
 	InstType enumor.InstType `json:"-"` // 后端类型 CVM、ENI
 	RSIPs    []string        `json:"-"`
 	RSPorts  []int           `json:"-"`
-	Weight   []int           `json:"-"`
+	Weights  []int           `json:"-"`
 	RSInfos  []*RSInfo       `json:"rs_infos"` // 后端实例信息
 
 	Scheduler      string `json:"scheduler"`       // 均衡方式
@@ -203,8 +203,8 @@ func (l *BindRSRecord) checkCert(kt *kit.Kit, client *dataservice.Client,
 
 	result := make([]*cloud.BatchOperationValidateError, 0)
 	certList := make([]string, 0)
-	if len(l.ServerCert) > 0 {
-		certList = append(certList, l.ServerCert...)
+	if len(l.ServerCerts) > 0 {
+		certList = append(certList, l.ServerCerts...)
 	}
 	if len(l.ClientCert) > 0 {
 		certList = append(certList, l.ClientCert)
@@ -652,7 +652,7 @@ func (l *BindRSRecord) validateInstType() error {
 }
 
 func (l *BindRSRecord) validateWeight() error {
-	for _, weight := range l.Weight {
+	for _, weight := range l.Weights {
 		if weight < 0 || weight > 100 {
 			return fmt.Errorf("invalid weight value: %d", weight)
 		}
@@ -673,7 +673,7 @@ func (l *BindRSRecord) validateRS() error {
 		return err
 	}
 
-	if len(l.RSIPs) == 0 || len(l.RSPorts) == 0 || len(l.Weight) == 0 {
+	if len(l.RSIPs) == 0 || len(l.RSPorts) == 0 || len(l.Weights) == 0 {
 		return fmt.Errorf("RSIPs, RSPorts and NewWeight cannot be empty")
 	}
 
@@ -686,7 +686,7 @@ func (l *BindRSRecord) validateRS() error {
 			return fmt.Errorf("port range should have the same length")
 		}
 
-		if len(l.RSIPs) != 1 || len(l.Weight) != 1 {
+		if len(l.RSIPs) != 1 || len(l.Weights) != 1 {
 			return fmt.Errorf("RSIPs and NewWeight should have only one element")
 		}
 
@@ -701,7 +701,7 @@ func (l *BindRSRecord) validateRS() error {
 			IP:       l.RSIPs[0],
 			Port:     l.RSPorts[0],
 			EndPort:  l.RSPorts[1],
-			Weight:   l.Weight[0],
+			Weight:   l.Weights[0],
 		})
 		return nil
 	}
@@ -710,7 +710,7 @@ func (l *BindRSRecord) validateRS() error {
 		return fmt.Errorf("the number of RSPorts and RSIPs should be equal or 1")
 	}
 
-	if len(l.Weight) > 1 && len(l.Weight) != len(l.RSIPs) {
+	if len(l.Weights) > 1 && len(l.Weights) != len(l.RSIPs) {
 		return fmt.Errorf("the number of NewWeight and RSIPs should be equal or 1")
 	}
 
@@ -725,8 +725,8 @@ func (l *BindRSRecord) validateRS() error {
 		l.RSPorts = append(l.RSPorts, l.RSPorts[0])
 	}
 
-	for len(l.Weight) < len(l.RSIPs) {
-		l.Weight = append(l.Weight, l.Weight[0])
+	for len(l.Weights) < len(l.RSIPs) {
+		l.Weights = append(l.Weights, l.Weights[0])
 	}
 
 	for i := 0; i < len(l.RSIPs); i++ {
@@ -734,7 +734,7 @@ func (l *BindRSRecord) validateRS() error {
 			InstType: l.InstType,
 			IP:       l.RSIPs[i],
 			Port:     l.RSPorts[i],
-			Weight:   l.Weight[i],
+			Weight:   l.Weights[i],
 		})
 
 	}
@@ -764,15 +764,15 @@ func (l *BindRSRecord) validateCertAndURL() error {
 		if len(l.Domain) == 0 || len(l.URLPath) == 0 {
 			return fmt.Errorf("domain and url path cannot be empty")
 		}
-		if len(l.ServerCert) == 0 {
+		if len(l.ServerCerts) == 0 {
 			return fmt.Errorf("server-cert cannot be empty for HTTPS protocol")
 		}
-		for _, cert := range l.ServerCert {
+		for _, cert := range l.ServerCerts {
 			if len(cert) == 0 {
 				return fmt.Errorf("server-cert cannot be empty for HTTPS protocol")
 			}
 		}
-		if len(l.ServerCert) > 2 {
+		if len(l.ServerCerts) > 2 {
 			return fmt.Errorf("server-cert cannot be more than 2 for HTTPS protocol")
 		}
 
@@ -780,11 +780,11 @@ func (l *BindRSRecord) validateCertAndURL() error {
 		if len(l.Domain) == 0 || len(l.URLPath) == 0 {
 			return fmt.Errorf("domain and url path cannot be empty")
 		}
-		if len(l.ServerCert) > 0 || len(l.ClientCert) > 0 {
+		if len(l.ServerCerts) > 0 || len(l.ClientCert) > 0 {
 			return fmt.Errorf("server-cert and client-cert cannot be set for HTTP protocol")
 		}
 	case "TCP", "UDP":
-		if len(l.ServerCert) > 0 || len(l.ClientCert) > 0 || len(l.Domain) > 0 || len(l.URLPath) > 0 {
+		if len(l.ServerCerts) > 0 || len(l.ClientCert) > 0 || len(l.Domain) > 0 || len(l.URLPath) > 0 {
 			return fmt.Errorf("server-cert and client-cert and domain and url cannot be set for TCP、UDP protocol")
 		}
 	}

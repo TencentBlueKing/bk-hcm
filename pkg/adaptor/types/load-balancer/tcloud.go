@@ -690,7 +690,7 @@ func (opt TCloudTargetPortUpdateOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
-// -------------------------- Update Target Weight --------------------------
+// -------------------------- Update Target Weights --------------------------
 
 // TCloudTargetWeightUpdateOption defines options to update tcloud target weight instances.
 type TCloudTargetWeightUpdateOption struct {

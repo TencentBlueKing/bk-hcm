@@ -161,28 +161,28 @@ func TestModifyWeightRecord_validateWeight(t *testing.T) {
 		{
 			input: &ModifyWeightRecord{
 				OldWeight: []int{1},
-				Weight:    []int{1},
+				Weights:   []int{1},
 			},
 			expectErr: false,
 		},
 		{
 			input: &ModifyWeightRecord{
 				OldWeight: []int{1},
-				Weight:    []int{101},
+				Weights:   []int{101},
 			},
 			expectErr: true,
 		},
 		{
 			input: &ModifyWeightRecord{
 				OldWeight: []int{1},
-				Weight:    []int{-1},
+				Weights:   []int{-1},
 			},
 			expectErr: true,
 		},
 		{
 			input: &ModifyWeightRecord{
 				OldWeight: []int{1, 2},
-				Weight:    []int{2},
+				Weights:   []int{2},
 			},
 			expectErr: true,
 		},
@@ -293,7 +293,7 @@ func TestModifyWeightRecord_validateRS(t *testing.T) {
 			input: &ModifyWeightRecord{
 				RSIPs:     []string{"192.168.1.3"},
 				RSPorts:   []int{80},
-				Weight:    []int{1},
+				Weights:   []int{1},
 				OldWeight: []int{1},
 			},
 			expectErr: false,
@@ -302,7 +302,7 @@ func TestModifyWeightRecord_validateRS(t *testing.T) {
 			input: &ModifyWeightRecord{
 				RSIPs:     []string{"192.168.1.3"},
 				RSPorts:   []int{80, 8081},
-				Weight:    []int{1, 2},
+				Weights:   []int{1, 2},
 				OldWeight: []int{1, 2},
 			},
 			expectErr: true,
@@ -311,7 +311,7 @@ func TestModifyWeightRecord_validateRS(t *testing.T) {
 			input: &ModifyWeightRecord{
 				RSIPs:     []string{"192.168.1.3"},
 				RSPorts:   []int{80, 8081},
-				Weight:    []int{1},
+				Weights:   []int{1},
 				OldWeight: []int{1, 2},
 			},
 			expectErr: true,
@@ -320,7 +320,7 @@ func TestModifyWeightRecord_validateRS(t *testing.T) {
 			input: &ModifyWeightRecord{
 				RSIPs:     []string{"192.168.1.3", "192.168.1.4"},
 				RSPorts:   []int{80},
-				Weight:    []int{1},
+				Weights:   []int{1},
 				OldWeight: []int{1},
 			},
 			expectErr: false,
@@ -329,7 +329,7 @@ func TestModifyWeightRecord_validateRS(t *testing.T) {
 			input: &ModifyWeightRecord{
 				RSIPs:     []string{"192.168.1.3", "192.168.1.4"},
 				RSPorts:   []int{80, 8081},
-				Weight:    []int{1, 2},
+				Weights:   []int{1, 2},
 				OldWeight: []int{1, 2},
 			},
 			expectErr: false,
@@ -338,7 +338,7 @@ func TestModifyWeightRecord_validateRS(t *testing.T) {
 			input: &ModifyWeightRecord{
 				RSIPs:     []string{"192.168.1.3", "192.168.1.4"},
 				RSPorts:   []int{80},
-				Weight:    []int{1, 2},
+				Weights:   []int{1, 2},
 				OldWeight: []int{1, 2},
 			},
 			expectErr: false,
@@ -347,7 +347,7 @@ func TestModifyWeightRecord_validateRS(t *testing.T) {
 			input: &ModifyWeightRecord{
 				RSIPs:     []string{"192.168.1.3", "192.168.1.4"},
 				RSPorts:   []int{80},
-				Weight:    []int{1, 2, 3},
+				Weights:   []int{1, 2, 3},
 				OldWeight: []int{1, 2, 3},
 			},
 			expectErr: true,
@@ -370,7 +370,7 @@ func TestModifyWeightRecord_validateRS(t *testing.T) {
 		},
 		{
 			input: &ModifyWeightRecord{
-				Weight:    []int{1},
+				Weights:   []int{1},
 				OldWeight: []int{1},
 			},
 			expectErr: true,
@@ -379,7 +379,7 @@ func TestModifyWeightRecord_validateRS(t *testing.T) {
 			input: &ModifyWeightRecord{
 				RSIPs:     []string{"192.168.1.3", "192.168.1.4"},
 				RSPorts:   []int{65535, 65536},
-				Weight:    []int{1, 2},
+				Weights:   []int{1, 2},
 				OldWeight: []int{1, 2},
 			},
 			expectErr: true,
@@ -390,7 +390,7 @@ func TestModifyWeightRecord_validateRS(t *testing.T) {
 				HaveEndPort: true,
 				RSIPs:       []string{"192.168.1.3"},
 				RSPorts:     []int{80},
-				Weight:      []int{1},
+				Weights:     []int{1},
 				OldWeight:   []int{1},
 			},
 			expectErr: true,
@@ -401,7 +401,7 @@ func TestModifyWeightRecord_validateRS(t *testing.T) {
 				RSIPs:       []string{"192.168.1.3", "192.168.1.4"},
 				RSPorts:     []int{80, 8081},
 				VPorts:      []int{80, 8081},
-				Weight:      []int{1, 2},
+				Weights:     []int{1, 2},
 				OldWeight:   []int{1, 2},
 			},
 			expectErr: true,
@@ -412,7 +412,7 @@ func TestModifyWeightRecord_validateRS(t *testing.T) {
 				RSIPs:       []string{"192.168.1.3"},
 				RSPorts:     []int{80, 8081},
 				VPorts:      []int{80, 8080},
-				Weight:      []int{1},
+				Weights:     []int{1},
 				OldWeight:   []int{1},
 			},
 			expectErr: true,
@@ -423,7 +423,7 @@ func TestModifyWeightRecord_validateRS(t *testing.T) {
 				RSIPs:       []string{"192.168.1.3"},
 				RSPorts:     []int{65535, 65536},
 				VPorts:      []int{80, 81},
-				Weight:      []int{1},
+				Weights:     []int{1},
 			},
 			expectErr: true,
 		},
@@ -433,7 +433,7 @@ func TestModifyWeightRecord_validateRS(t *testing.T) {
 				RSIPs:       []string{"192.168.1.3"},
 				RSPorts:     []int{80, 8081},
 				VPorts:      []int{80, 8081},
-				Weight:      []int{1},
+				Weights:     []int{1},
 				OldWeight:   []int{1},
 			},
 			expectErr: false,

@@ -113,14 +113,14 @@ func (l *BindRSRawInput) initRecord() *BindRSRecord {
 		IPDomainType:   l.IPDomainType,
 		Domain:         l.Domain,
 		URLPath:        l.URLPath,
-		ServerCert:     l.ServerCert,
+		ServerCerts:    l.ServerCert,
 		ClientCert:     l.ClientCert,
 		Scheduler:      l.Scheduler,
 		SessionExpired: l.SessionExpired,
 		HealthCheck:    l.HealthCheck,
 		RSIPs:          l.RSIPs,
 		RSPorts:        l.RSPorts,
-		Weight:         l.Weight,
+		Weights:        l.Weight,
 		InstType:       enumor.InstType(l.InstType),
 	}
 }
@@ -185,7 +185,7 @@ func (l *ModifyWeightRawInput) initRecord() *ModifyWeightRecord {
 		URLPath:      l.URLPath,
 		RSIPs:        l.RSIPs,
 		RSPorts:      l.RSPorts,
-		Weight:       l.Weight,
+		Weights:      l.Weight,
 		OldWeight:    l.OldWeight,
 	}
 }

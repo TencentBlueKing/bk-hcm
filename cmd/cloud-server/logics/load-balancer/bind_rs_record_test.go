@@ -38,7 +38,7 @@ func TestBindRSRecord_validateRS(t *testing.T) {
 			input: &BindRSRecord{
 				RSIPs:   []string{"192.168.1.3"},
 				RSPorts: []int{80},
-				Weight:  []int{1},
+				Weights: []int{1},
 			},
 			expectErr: false,
 		},
@@ -46,7 +46,7 @@ func TestBindRSRecord_validateRS(t *testing.T) {
 			input: &BindRSRecord{
 				RSIPs:   []string{"192.168.1.3"},
 				RSPorts: []int{80, 8081},
-				Weight:  []int{1, 2},
+				Weights: []int{1, 2},
 			},
 			expectErr: true,
 		},
@@ -54,7 +54,7 @@ func TestBindRSRecord_validateRS(t *testing.T) {
 			input: &BindRSRecord{
 				RSIPs:   []string{"192.168.1.3"},
 				RSPorts: []int{80, 8081},
-				Weight:  []int{1},
+				Weights: []int{1},
 			},
 			expectErr: true,
 		},
@@ -62,7 +62,7 @@ func TestBindRSRecord_validateRS(t *testing.T) {
 			input: &BindRSRecord{
 				RSIPs:   []string{"192.168.1.3", "192.168.1.4"},
 				RSPorts: []int{80},
-				Weight:  []int{1},
+				Weights: []int{1},
 			},
 			expectErr: false,
 		},
@@ -70,7 +70,7 @@ func TestBindRSRecord_validateRS(t *testing.T) {
 			input: &BindRSRecord{
 				RSIPs:   []string{"192.168.1.3", "192.168.1.4"},
 				RSPorts: []int{80, 8081},
-				Weight:  []int{1, 2},
+				Weights: []int{1, 2},
 			},
 			expectErr: false,
 		},
@@ -78,7 +78,7 @@ func TestBindRSRecord_validateRS(t *testing.T) {
 			input: &BindRSRecord{
 				RSIPs:   []string{"192.168.1.3", "192.168.1.4"},
 				RSPorts: []int{80},
-				Weight:  []int{1, 2},
+				Weights: []int{1, 2},
 			},
 			expectErr: false,
 		},
@@ -86,7 +86,7 @@ func TestBindRSRecord_validateRS(t *testing.T) {
 			input: &BindRSRecord{
 				RSIPs:   []string{"192.168.1.3", "192.168.1.4"},
 				RSPorts: []int{80},
-				Weight:  []int{1, 2, 3},
+				Weights: []int{1, 2, 3},
 			},
 			expectErr: true,
 		},
@@ -108,7 +108,7 @@ func TestBindRSRecord_validateRS(t *testing.T) {
 		},
 		{
 			input: &BindRSRecord{
-				Weight: []int{1},
+				Weights: []int{1},
 			},
 			expectErr: true,
 		},
@@ -118,7 +118,7 @@ func TestBindRSRecord_validateRS(t *testing.T) {
 				HaveEndPort: true,
 				RSIPs:       []string{"192.168.1.3"},
 				RSPorts:     []int{80},
-				Weight:      []int{1},
+				Weights:     []int{1},
 			},
 			expectErr: true,
 		},
@@ -128,7 +128,7 @@ func TestBindRSRecord_validateRS(t *testing.T) {
 				RSIPs:       []string{"192.168.1.3", "192.168.1.4"},
 				RSPorts:     []int{80, 8081},
 				VPorts:      []int{80, 8081},
-				Weight:      []int{1, 2},
+				Weights:     []int{1, 2},
 			},
 			expectErr: true,
 		},
@@ -138,7 +138,7 @@ func TestBindRSRecord_validateRS(t *testing.T) {
 				RSIPs:       []string{"192.168.1.3"},
 				RSPorts:     []int{80, 8081},
 				VPorts:      []int{80, 8080},
-				Weight:      []int{1},
+				Weights:     []int{1},
 			},
 			expectErr: true,
 		},
@@ -148,7 +148,7 @@ func TestBindRSRecord_validateRS(t *testing.T) {
 				RSIPs:       []string{"192.168.1.3"},
 				RSPorts:     []int{65535, 65536},
 				VPorts:      []int{80, 81},
-				Weight:      []int{1},
+				Weights:     []int{1},
 			},
 			expectErr: true,
 		},
@@ -158,7 +158,7 @@ func TestBindRSRecord_validateRS(t *testing.T) {
 				RSIPs:       []string{"192.168.1.3"},
 				RSPorts:     []int{80, 8081},
 				VPorts:      []int{80, 8081},
-				Weight:      []int{1},
+				Weights:     []int{1},
 			},
 			expectErr: false,
 		},
@@ -235,19 +235,19 @@ func TestBindRSRecord_validateWeight(t *testing.T) {
 	}{
 		{
 			input: &BindRSRecord{
-				Weight: []int{1},
+				Weights: []int{1},
 			},
 			expectErr: false,
 		},
 		{
 			input: &BindRSRecord{
-				Weight: []int{101},
+				Weights: []int{101},
 			},
 			expectErr: true,
 		},
 		{
 			input: &BindRSRecord{
-				Weight: []int{-1},
+				Weights: []int{-1},
 			},
 			expectErr: true,
 		},
@@ -396,9 +396,9 @@ func TestBindRSRecord_validateCertAndURL(t *testing.T) {
 		},
 		{
 			input: &BindRSRecord{
-				Protocol:   "HTTPS",
-				Domain:     "example.com",
-				ServerCert: []string{"server.crt"},
+				Protocol:    "HTTPS",
+				Domain:      "example.com",
+				ServerCerts: []string{"server.crt"},
 			},
 			expectErr: true,
 		},
@@ -413,38 +413,38 @@ func TestBindRSRecord_validateCertAndURL(t *testing.T) {
 		},
 		{
 			input: &BindRSRecord{
-				Protocol:   "HTTPS",
-				Domain:     "example.com",
-				URLPath:    "/api",
-				ServerCert: []string{""},
+				Protocol:    "HTTPS",
+				Domain:      "example.com",
+				URLPath:     "/api",
+				ServerCerts: []string{""},
 			},
 			expectErr: true,
 		},
 		{
 			input: &BindRSRecord{
-				Protocol:   "HTTPS",
-				Domain:     "example.com",
-				URLPath:    "/api",
-				ServerCert: []string{"server.crt", "server.crt", "server.crt"},
+				Protocol:    "HTTPS",
+				Domain:      "example.com",
+				URLPath:     "/api",
+				ServerCerts: []string{"server.crt", "server.crt", "server.crt"},
 			},
 			expectErr: true,
 		},
 		{
 			input: &BindRSRecord{
-				Protocol:   "HTTPS",
-				Domain:     "example.com",
-				URLPath:    "/api",
-				ServerCert: []string{"server.crt"},
+				Protocol:    "HTTPS",
+				Domain:      "example.com",
+				URLPath:     "/api",
+				ServerCerts: []string{"server.crt"},
 			},
 			expectErr: false,
 		},
 		{
 			input: &BindRSRecord{
-				Protocol:   "HTTPS",
-				Domain:     "example.com",
-				URLPath:    "/api",
-				ServerCert: []string{"server.crt"},
-				ClientCert: "client.crt",
+				Protocol:    "HTTPS",
+				Domain:      "example.com",
+				URLPath:     "/api",
+				ServerCerts: []string{"server.crt"},
+				ClientCert:  "client.crt",
 			},
 			expectErr: false,
 		},
@@ -471,10 +471,10 @@ func TestBindRSRecord_validateCertAndURL(t *testing.T) {
 		},
 		{
 			input: &BindRSRecord{
-				Protocol:   "HTTP",
-				Domain:     "example.com",
-				URLPath:    "/api",
-				ServerCert: []string{"server.crt"},
+				Protocol:    "HTTP",
+				Domain:      "example.com",
+				URLPath:     "/api",
+				ServerCerts: []string{"server.crt"},
 			},
 			expectErr: true,
 		},
@@ -489,20 +489,20 @@ func TestBindRSRecord_validateCertAndURL(t *testing.T) {
 		},
 		{
 			input: &BindRSRecord{
-				Protocol:   "HTTP",
-				Domain:     "example.com",
-				URLPath:    "/api",
-				ServerCert: []string{"server.crt"},
+				Protocol:    "HTTP",
+				Domain:      "example.com",
+				URLPath:     "/api",
+				ServerCerts: []string{"server.crt"},
 			},
 			expectErr: true,
 		},
 		{
 			input: &BindRSRecord{
-				Protocol:   "HTTP",
-				Domain:     "example.com",
-				URLPath:    "/api",
-				ServerCert: []string{"server.crt"},
-				ClientCert: "client.crt",
+				Protocol:    "HTTP",
+				Domain:      "example.com",
+				URLPath:     "/api",
+				ServerCerts: []string{"server.crt"},
+				ClientCert:  "client.crt",
 			},
 			expectErr: true,
 		},
@@ -537,8 +537,8 @@ func TestBindRSRecord_validateCertAndURL(t *testing.T) {
 		},
 		{
 			input: &BindRSRecord{
-				Protocol:   "TCP",
-				ServerCert: []string{"server.crt"},
+				Protocol:    "TCP",
+				ServerCerts: []string{"server.crt"},
 			},
 			expectErr: true,
 		},
@@ -572,8 +572,8 @@ func TestBindRSRecord_validateCertAndURL(t *testing.T) {
 		},
 		{
 			input: &BindRSRecord{
-				Protocol:   "UDP",
-				ServerCert: []string{"server.crt"},
+				Protocol:    "UDP",
+				ServerCerts: []string{"server.crt"},
 			},
 			expectErr: true,
 		},

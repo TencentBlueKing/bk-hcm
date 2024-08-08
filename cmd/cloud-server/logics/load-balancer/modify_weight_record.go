@@ -54,7 +54,7 @@ type ModifyWeightRecord struct {
 	RSIPs     []string        `json:"-"`
 	RSPorts   []int           `json:"-"`
 	OldWeight []int           `json:"-"`
-	Weight    []int           `json:"-"`
+	Weights   []int           `json:"-"`
 	RSInfos   []*RSUpdateInfo `json:"rs_infos"` // 后端实例信息
 
 	// listener、rule、targetGroup 信息
@@ -342,7 +342,7 @@ func (r *ModifyWeightRecord) validateRS() error {
 		return err
 	}
 
-	if len(r.RSIPs) == 0 || len(r.RSPorts) == 0 || len(r.Weight) == 0 {
+	if len(r.RSIPs) == 0 || len(r.RSPorts) == 0 || len(r.Weights) == 0 {
 		return fmt.Errorf("RSIPs, RSPorts and NewWeight cannot be empty")
 	}
 
@@ -355,7 +355,7 @@ func (r *ModifyWeightRecord) validateRS() error {
 			return fmt.Errorf("port range should have the same length")
 		}
 
-		if len(r.RSIPs) != 1 || len(r.Weight) != 1 {
+		if len(r.RSIPs) != 1 || len(r.Weights) != 1 {
 			return fmt.Errorf("RSIPs and NewWeight should have only one element")
 		}
 
@@ -369,7 +369,7 @@ func (r *ModifyWeightRecord) validateRS() error {
 			IP:        r.RSIPs[0],
 			Port:      r.RSPorts[0],
 			EndPort:   r.RSPorts[1],
-			NewWeight: r.Weight[0],
+			NewWeight: r.Weights[0],
 			OldWeight: r.OldWeight[0],
 		})
 		return nil
@@ -379,7 +379,7 @@ func (r *ModifyWeightRecord) validateRS() error {
 		return fmt.Errorf("the number of RSPorts and RSIPs should be equal or 1")
 	}
 
-	if len(r.Weight) > 1 && len(r.Weight) != len(r.RSIPs) {
+	if len(r.Weights) > 1 && len(r.Weights) != len(r.RSIPs) {
 		return fmt.Errorf("the number of NewWeight and RSIPs should be equal or 1")
 	}
 
@@ -401,8 +401,8 @@ func (r *ModifyWeightRecord) validateRS() error {
 		r.RSPorts = append(r.RSPorts, r.RSPorts[0])
 	}
 
-	for len(r.Weight) < len(r.RSIPs) {
-		r.Weight = append(r.Weight, r.Weight[0])
+	for len(r.Weights) < len(r.RSIPs) {
+		r.Weights = append(r.Weights, r.Weights[0])
 	}
 
 	for len(r.OldWeight) < len(r.RSIPs) {
@@ -413,7 +413,7 @@ func (r *ModifyWeightRecord) validateRS() error {
 		r.RSInfos = append(r.RSInfos, &RSUpdateInfo{
 			IP:        r.RSIPs[i],
 			Port:      r.RSPorts[i],
-			NewWeight: r.Weight[i],
+			NewWeight: r.Weights[i],
 			OldWeight: r.OldWeight[i],
 		})
 	}
@@ -433,11 +433,11 @@ func (r *ModifyWeightRecord) validateRSInfoDuplicate() error {
 }
 
 func (r *ModifyWeightRecord) validateWeight() error {
-	if len(r.Weight) != len(r.OldWeight) {
+	if len(r.Weights) != len(r.OldWeight) {
 		return fmt.Errorf("the number of NewWeight and OldWeight should be equal")
 	}
 
-	for _, weight := range r.Weight {
+	for _, weight := range r.Weights {
 		if weight < 0 || weight > 100 {
 			return fmt.Errorf("invalid weight value: %d", weight)
 		}

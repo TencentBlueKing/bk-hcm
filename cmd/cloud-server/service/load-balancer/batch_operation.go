@@ -204,7 +204,7 @@ func getCertInfo(listener *lblogic.BindRSRecord) *corelb.TCloudCertificateInfo {
 		return nil
 	}
 	certObj := &corelb.TCloudCertificateInfo{
-		CertCloudIDs: listener.ServerCert,
+		CertCloudIDs: listener.ServerCerts,
 	}
 	if len(listener.ClientCert) > 0 {
 		certObj.CaCloudID = cvt.ValToPtr(listener.ClientCert)
