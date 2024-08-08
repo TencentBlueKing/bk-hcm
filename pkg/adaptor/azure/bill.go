@@ -154,7 +154,7 @@ func (b *billClient) GetUsageDetail(kt *kit.Kit, opt *typesBill.AzureBillListOpt
 	h.Set(AuthHeader, "Bearer "+b.LoginToken.AccessToken)
 
 	apiPath := fmt.Sprintf("subscriptions/%s/providers/Microsoft.Consumption/usageDetails",
-		b.LoginToken.SubscriptionID)
+		opt.SubscriptionID)
 	usageClient := b.client.Get().
 		WithContext(kt.Ctx).
 		WithHeaders(h).

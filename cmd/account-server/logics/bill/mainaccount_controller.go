@@ -259,9 +259,12 @@ func (mac *MainAccountController) pollMainSummaryTask(subKit *kit.Kit, flowID st
 func (mac *MainAccountController) createMainSummaryTask(
 	kt *kit.Kit, billYear, billMonth int) (*core.CreateResult, error) {
 
+	memo := fmt.Sprintf("[%s]%s/%s, %4d-%02d",
+		mac.Vendor, mac.RootAccountID, mac.MainAccountID, billYear, billMonth)
+
 	return mac.Client.TaskServer().CreateCustomFlow(kt, &taskserver.AddCustomFlowReq{
 		Name: enumor.FlowBillMainAccountSummary,
-		Memo: "calculate main account bill summary",
+		Memo: memo,
 		Tasks: []taskserver.CustomFlowTask{
 			mainsummary.BuildMainSummaryTask(
 				mac.RootAccountID, mac.MainAccountID, mac.Vendor, billYear, billMonth),

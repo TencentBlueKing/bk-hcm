@@ -378,7 +378,7 @@ func (h HuaWeiBillPage) Validate() error {
 // AzureBillListOption define azure bill list option.
 type AzureBillListOption struct {
 	// AccountID 账号ID
-	AccountID string `json:"account_id" validate:"required"`
+	SubscriptionID string `json:"subscription_id" validate:"required"`
 	// BeginDate 起始日期，格式为yyyy-mm-dd，不支持跨月查询
 	BeginDate string `json:"begin_date" validate:"required"`
 	// EndDate 截止日期，格式为yyyy-mm-dd，不支持跨月查询

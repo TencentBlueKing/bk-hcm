@@ -17,11 +17,8 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package dailypull
+package bill
 
 import (
-	_ "hcm/cmd/task-server/logics/action/bill/dailypull/aws"
-	_ "hcm/cmd/task-server/logics/action/bill/dailypull/azure"
-	_ "hcm/cmd/task-server/logics/action/bill/dailypull/gcp"
-	_ "hcm/cmd/task-server/logics/action/bill/dailypull/huawei"
+	_ "hcm/cmd/account-server/logics/bill/puller/azure"
 )

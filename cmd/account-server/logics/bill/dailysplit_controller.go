@@ -23,6 +23,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"strconv"
 	"time"
 
 	"hcm/cmd/account-server/logics/bill/puller"
@@ -34,6 +35,7 @@ import (
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
+	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
@@ -273,9 +275,26 @@ func (msdc *MainDailySplitController) syncDailySplit(kt *kit.Kit, billYear, bill
 func (msdc *MainDailySplitController) createDailySplitFlow(
 	kt *kit.Kit, summary *dsbillapi.BillSummaryMainResult, billYear, billMonth, billDay int) (string, error) {
 
+	memo := fmt.Sprintf("[%s]%s, %4d-%02d-%02d:v%d",
+		summary.Vendor,
+		summary.MainAccountID,
+		summary.BillYear, summary.BillMonth, billDay,
+		summary.CurrentVersion)
+
+	params := map[string]string{
+		"root_account_id": summary.RootAccountID,
+		"main_account_id": summary.MainAccountID,
+		"vendor":          string(summary.Vendor),
+		"bill_year":       strconv.Itoa(summary.BillYear),
+		"bill_month":      strconv.Itoa(summary.BillMonth),
+		"bill_day":        strconv.Itoa(billDay),
+		"version":         strconv.Itoa(summary.CurrentVersion),
+	}
+
 	result, err := msdc.Client.TaskServer().CreateCustomFlow(kt, &taskserver.AddCustomFlowReq{
-		Name: enumor.FlowSplitBill,
-		Memo: "do daily split",
+		Name:      enumor.FlowSplitBill,
+		Memo:      memo,
+		ShareData: tableasync.NewShareData(params),
 		Tasks: []taskserver.CustomFlowTask{
 			dailysplit.BuildDailySplitTask(
 				msdc.RootAccountID,
