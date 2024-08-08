@@ -78,3 +78,8 @@ type TargetGroupAsyncAuditDetail struct {
 	LoadBalancer tablelb.LoadBalancerTable `json:"load_balancer"`
 	ResFlow      *cloud.ResFlowLockReq     `json:"res_flow"`
 }
+
+// BatchOperationAuditDetail 批量操作详情
+type BatchOperationAuditDetail struct {
+	BatchOperationID string `json:"batch_operation_id"`
+}

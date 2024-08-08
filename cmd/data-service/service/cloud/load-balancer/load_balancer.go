@@ -110,6 +110,14 @@ func InitService(cap *capability.Capability) {
 	h.Add("BatchDeleteResFlowRel", http.MethodDelete, "/res_flow_rels/batch", svc.BatchDeleteResFlowRel)
 	h.Add("ListResFlowRel", http.MethodPost, "/res_flow_rels/list", svc.ListResFlowRel)
 
+	// 批量操作
+	h.Add("ListBatchOperation", http.MethodPost, "/batch_operation/list", svc.ListBatchOperation)
+	h.Add("BatchCreateResFlowRel", http.MethodPost, "/batch_operation/batch/create", svc.BatchCreateBatchOperation)
+	h.Add("ListBatchOperationAsyncFlowRel", http.MethodPost, "/batch_operation_async_flow_rel/list",
+		svc.ListBatchOperationAsyncFlowRel)
+	h.Add("BatchCreateBatchOperationAsyncFlowRel", http.MethodPost, "/batch_operation_async_flow_rel/batch/create",
+		svc.BatchCreateBatchOperationAsyncFlowRel)
+
 	h.Load(cap.WebService)
 }
 

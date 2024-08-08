@@ -44,6 +44,7 @@ type Interface interface {
 	BatchCreate(kt *kit.Kit, audits []*audit.AuditTable) error
 	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, audits []*audit.AuditTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*types.ListAuditDetails, error)
+	ListWithTx(kt *kit.Kit, tx *sqlx.Tx, opt *types.ListOption) (*types.ListAuditDetails, error)
 }
 
 var _ Interface = new(Dao)
@@ -142,6 +143,51 @@ func (d Dao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListAuditDetails, 
 
 	details := make([]audit.AuditTable, 0)
 	if err = d.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+		return nil, err
+	}
+
+	return &types.ListAuditDetails{Details: details}, nil
+}
+
+// List audit.
+func (d Dao) ListWithTx(kt *kit.Kit, tx *sqlx.Tx, opt *types.ListOption) (*types.ListAuditDetails, error) {
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "list options is nil")
+	}
+	columnTypes := audit.AuditColumns.ColumnTypes()
+	columnTypes["detail.data.res_flow.flow_id"] = enumor.String
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
+		core.NewDefaultPageOption()); err != nil {
+		return nil, err
+	}
+
+	whereExpr, whereValue, err := opt.Filter.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	if err != nil {
+		return nil, err
+	}
+
+	if opt.Page.Count {
+		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.AuditTable, whereExpr)
+
+		count, err := d.Orm.Txn(tx).Count(kt.Ctx, sql, whereValue)
+		if err != nil {
+			logs.ErrorJson("count audit failed, err: %v, filter: %d, rid: %d", err, opt.Filter, kt.Rid)
+			return nil, err
+		}
+
+		return &types.ListAuditDetails{Count: count}, nil
+	}
+
+	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
+	if err != nil {
+		return nil, err
+	}
+
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, audit.AuditColumns.FieldsNamedExpr(opt.Fields),
+		table.AuditTable, whereExpr, pageExpr)
+
+	details := make([]audit.AuditTable, 0)
+	if err = d.Orm.Txn(tx).Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}
 

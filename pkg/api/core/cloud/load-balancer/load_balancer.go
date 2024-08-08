@@ -229,3 +229,20 @@ type BaseResFlowRel struct {
 	Status         enumor.ResFlowStatus     `json:"status"`
 	*core.Revision `json:",inline"`
 }
+
+// BatchOperation define batch task.
+type BatchOperation struct {
+	ID      string `json:"id"`
+	BkBizID int64  `json:"bk_biz_id"`
+	LbID    string `json:"lb_id"`
+	AuditID int64  `json:"audit_id"`
+	Detail  string `json:"detail"`
+}
+
+// BatchOperationAsyncFlowRel define batch task async flow rel.
+type BatchOperationAsyncFlowRel struct {
+	ID               string `json:"id"`
+	BatchOperationID string `json:"batch_operation_id"`
+	AuditID          uint64 `json:"audit_id"`
+	FlowID           string `json:"flow_id"`
+}

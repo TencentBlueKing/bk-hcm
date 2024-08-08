@@ -218,3 +218,35 @@ func (cli *LoadBalancerClient) ListLoadBalancerRaw(kt *kit.Kit, req *core.ListRe
 	return common.Request[core.ListReq, dataproto.LbRawListResult](cli.client,
 		rest.POST, kt, req, "/load_balancers/list_with_extension")
 }
+
+// BatchCreateBatchOperation 批量创建 批量任务记录
+func (cli *LoadBalancerClient) BatchCreateBatchOperation(kt *kit.Kit, req *dataproto.BatchOperationBatchCreateReq) (
+	*core.BatchCreateResult, error) {
+
+	return common.Request[dataproto.BatchOperationBatchCreateReq, core.BatchCreateResult](
+		cli.client, rest.POST, kt, req, "/batch_operation/batch/create")
+}
+
+// BatchCreateBatchOperationAsyncFlowRel 批量创建 批量任务记录
+func (cli *LoadBalancerClient) BatchCreateBatchOperationAsyncFlowRel(kt *kit.Kit,
+	req *dataproto.BatchOperationAsyncFlowRelBatchCreateReq) (*core.BatchCreateResult, error) {
+
+	return common.Request[dataproto.BatchOperationAsyncFlowRelBatchCreateReq, core.BatchCreateResult](
+		cli.client, rest.POST, kt, req, "/batch_operation_async_flow_rel/batch/create")
+}
+
+// ListBatchOperation 查询 批量操作记录
+func (cli *LoadBalancerClient) ListBatchOperation(kt *kit.Kit, req *core.ListReq) (
+	*dataproto.BatchOperationListResult, error) {
+
+	return common.Request[core.ListReq, dataproto.BatchOperationListResult](
+		cli.client, rest.POST, kt, req, "/batch_operation/list")
+}
+
+// ListBatchOperationAsyncFlowRel 查询 批量操作与异步任务关系表
+func (cli *LoadBalancerClient) ListBatchOperationAsyncFlowRel(kt *kit.Kit, req *core.ListReq) (
+	*dataproto.BatchOperationAsyncFlowRelListResult, error) {
+
+	return common.Request[core.ListReq, dataproto.BatchOperationAsyncFlowRelListResult](
+		cli.client, rest.POST, kt, req, "/batch_operation_async_flow_rel/list")
+}

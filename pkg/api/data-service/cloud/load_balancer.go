@@ -433,3 +433,130 @@ type TCloudRuleCreateResult struct {
 	RuleID string `json:"rule_id"`
 	RelID  string `json:"rel_id"`
 }
+
+// -------------------------- BatchOperation --------------------------
+
+const (
+	maxFileSize = 100 * 1024
+)
+
+// Base64String ...
+type Base64String string
+
+func (b Base64String) checkSize(expectedSize int) error {
+	if len(b) > expectedSize {
+		return errors.New("file size exceed limit")
+	}
+	return nil
+}
+
+// BatchOperationImportExcelReq excel导入请求
+type BatchOperationImportExcelReq struct {
+	ExcelFileBase64 Base64String `json:"excel_file_base64" validate:"required"`
+}
+
+// Validate ...
+func (req *BatchOperationImportExcelReq) Validate() error {
+	if err := req.ExcelFileBase64.checkSize(maxFileSize); err != nil {
+		return err
+	}
+	return validator.Validate.Struct(req)
+}
+
+// BatchOperationValidateError excel导入校验错误的详细响应
+type BatchOperationValidateError struct {
+	Reason string `json:"reason"`
+	Ext    string `json:"ext"`
+}
+
+// BatchOperationPreviewResult 预览结果
+type BatchOperationPreviewResult[T any] struct {
+	ClbID             string `json:"clb_id"`
+	ClbName           string `json:"clb_name"`
+	Vip               string `json:"vip"`
+	NewRsCount        int    `json:"new_rs_count,omitempty"`
+	UpdateWeightCount int    `json:"update_weight_count,omitempty"`
+	IPDomainType      string `json:"ip_domain_type"`
+	Listeners         []T    `json:"listeners"`
+}
+
+// BatchOperation ...
+type BatchOperation[T any] struct {
+	ClbID             string `json:"clb_id"`
+	ClbName           string `json:"clb_name"`
+	Vip               string `json:"vip"`
+	NewRsCount        int    `json:"new_rs_count,omitempty"`
+	UpdateWeightCount int    `json:"update_weight_count,omitempty"`
+	Listeners         []T    `json:"listeners"`
+}
+
+// BatchOperationReq ...
+type BatchOperationReq[T any] struct {
+	AccountID string               `json:"account_id"`
+	Data      []*BatchOperation[T] `json:"data"`
+}
+
+// BatchOperationListResult ...
+type BatchOperationListResult = core.ListResultT[*corelb.BatchOperation]
+
+// BatchOperationBatchCreateReq ...
+type BatchOperationBatchCreateReq struct {
+	AccountID string                     `json:"account_id"`
+	Tasks     []*BatchOperationCreateReq `json:"batch_tasks" validate:"required,min=1"`
+}
+
+// Validate validate listener batch create
+func (req *BatchOperationBatchCreateReq) Validate() error {
+	for _, item := range req.Tasks {
+		if err := item.Validate(); err != nil {
+			return errf.NewFromErr(errf.InvalidParameter, err)
+		}
+	}
+	return validator.Validate.Struct(req)
+}
+
+// BatchOperationCreateReq ...
+type BatchOperationCreateReq struct {
+	BkBizID int64  `json:"bk_biz_id" validate:"required"`
+	AuditID int64  `json:"audit_id" validate:"omitempty"`
+	Detail  string `json:"detail" validate:"required"`
+}
+
+// Validate ...
+func (req *BatchOperationCreateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// BatchOperationAsyncFlowRelListResult ...
+type BatchOperationAsyncFlowRelListResult = core.ListResultT[*corelb.BatchOperationAsyncFlowRel]
+
+// BatchOperationAsyncFlowRelCreateReq ...
+type BatchOperationAsyncFlowRelBatchCreateReq struct {
+	Rels []*BatchOperationAsyncFlowRelCreateReq `json:"rels" validate:"required,min=1"`
+}
+
+// BatchOperationAsyncFlowRelCreateReq ...
+type BatchOperationAsyncFlowRelCreateReq struct {
+	BatchOperationID string  `json:"batch_operation_id"`
+	AuditID          *uint64 `json:"audit_id"`
+	FlowID           string  `json:"flow_id"`
+}
+
+// Validate validate rel flow rel create
+func (req *BatchOperationAsyncFlowRelBatchCreateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// BatchOperationResult cloud server 查询批量操作的结果
+type BatchOperationResult struct {
+	BatchOperationID string        `json:"batch_operation_id"`
+	AuditId          int64         `json:"audit_id"`
+	Preview          []interface{} `json:"preview"`
+	Flows            []AsyncFlow   `json:"async_flows"`
+}
+
+// AsyncFlow async flow
+type AsyncFlow struct {
+	AuditId uint64 `json:"audit_id"`
+	FlowId  string `json:"flow_id"`
+}
