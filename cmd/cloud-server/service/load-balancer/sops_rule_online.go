@@ -74,13 +74,13 @@ func (svc *lbSvc) batchRuleOnline(cts *rest.Contexts, authHandler handler.ValidW
 
 	switch accountInfo.Vendor {
 	case enumor.TCloud:
-		return svc.buildCreateTcloudRule(cts, req.Data, accountInfo.AccountID)
+		return svc.buildCreateTcloudRule(cts, req.Data, accountInfo.AccountID, accountInfo.BkBizID)
 	default:
 		return nil, fmt.Errorf("vendor: %s not support", accountInfo.Vendor)
 	}
 }
 
-func (svc *lbSvc) buildCreateTcloudRule(cts *rest.Contexts, body json.RawMessage, accountID string) (any, error) {
+func (svc *lbSvc) buildCreateTcloudRule(cts *rest.Contexts, body json.RawMessage, accountID string, BkBizID int64) (any, error) {
 	req := new(cslb.TCloudSopsRuleBatchCreateReq)
 	if err := json.Unmarshal(body, req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -88,7 +88,7 @@ func (svc *lbSvc) buildCreateTcloudRule(cts *rest.Contexts, body json.RawMessage
 
 	bindRsRecord := svc.convBindRsRecord(req.BindRSRecords)
 	// 参数检查preview
-	result, err := svc.bindRSPreview(cts, bindRsRecord, make([]*cloud.BatchOperationValidateError, 0))
+	result, err := svc.bindRSPreview(cts, bindRsRecord, make([]*cloud.BatchOperationValidateError, 0), BkBizID)
 	if err != nil {
 		return nil, fmt.Errorf("batch sops rule online, preview validate err, err: %s", err)
 	}
