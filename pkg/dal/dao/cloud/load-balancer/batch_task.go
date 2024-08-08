@@ -113,12 +113,12 @@ func (dao BatchOperationDao) Update(kt *kit.Kit, expr *filter.Expression, model 
 	_, err = dao.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		effect, err := dao.Orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if err != nil {
-			logs.Errorf("[tcloud-ziyan] update load balancer url rule failed, err: %v, filter: %s, rid: %v", err, expr, kt.Rid)
+			logs.Errorf("update load balancer url rule failed, err: %v, filter: %s, rid: %v", err, expr, kt.Rid)
 			return nil, err
 		}
 
 		if effect == 0 {
-			logs.Infof("[tcloud-ziyan] update load balancer url rule, but record not found, sql: %s, rid: %v", sql, kt.Rid)
+			logs.Infof("update load balancer url rule, but record not found, sql: %s, rid: %v", sql, kt.Rid)
 		}
 
 		return nil, nil
@@ -153,7 +153,7 @@ func (dao BatchOperationDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id strin
 	toUpdate["id"] = id
 	_, err = dao.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
 	if err != nil {
-		logs.Errorf("[tcloud-ziyan] update load balancer url rule failed, id: %s, err: %v, rid: %v", id, err, kt.Rid)
+		logs.Errorf("update load balancer url rule failed, id: %s, err: %v, rid: %v", id, err, kt.Rid)
 		return err
 	}
 
@@ -182,7 +182,7 @@ func (dao BatchOperationDao) List(kt *kit.Kit, opt *types.ListOption) (*types.Li
 
 		count, err := dao.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
-			logs.Errorf("[tcloud-ziyan] count load balancer url rule failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
+			logs.Errorf("count load balancer url rule failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
 		}
 

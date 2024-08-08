@@ -146,6 +146,19 @@ func bizService(h *rest.Handler, svc *lbSvc) {
 		"/vendors/tcloud/listeners/{lbl_id}/rules/batch", svc.BatchDeleteBizTCloudUrlRule)
 	h.Add("BatchDeleteBizTCloudUrlRuleByDomain", http.MethodDelete,
 		"/vendors/tcloud/listeners/{lbl_id}/rules/by/domains/batch", svc.BatchDeleteBizTCloudUrlRuleByDomain)
+
+	// 批量操作
+	h.Add("BindRSPreview", http.MethodPost, "/load_balancers/batch_operations/bind_rs/preview",
+		svc.BindRSPreview)
+	h.Add("ModifyWeightPreview", http.MethodPost, "/load_balancers/batch_operations/modify_weight/preview",
+		svc.ModifyWeightPreview)
+	h.Add("BindRS", http.MethodPost, "/load_balancers/batch_operations/bind_rs",
+		svc.BindRS)
+	h.Add("ModifyWeightPreview", http.MethodPost, "/load_balancers/batch_operations/modify_weight",
+		svc.ModifyWeight)
+	h.Add("GetBatchOperation", http.MethodGet, "/load_balancers/batch_operations/{batch_operation_id}",
+		svc.GetBatchOperation)
+
 }
 
 type lbSvc struct {

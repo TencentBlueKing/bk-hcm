@@ -118,12 +118,10 @@ func (svc *lbSvc) BatchCreateBatchOperation(cts *rest.Contexts) (any, error) {
 				BatchOperationID: model.ID,
 			}
 			audits = append(audits, &tableaudit.AuditTable{
-				ResID: model.ID,
-				// TODO CloudResID: unknown,
-				ResName: fmt.Sprintf("batch-operation-%s", model.ID),
-				ResType: enumor.LoadBalancerAuditResType,
-				BkBizID: model.BkBizID,
-				// TODO Vendor:     unknown,
+				ResID:     model.ID,
+				ResName:   fmt.Sprintf("batch-operation-%s", model.ID),
+				ResType:   enumor.LoadBalancerAuditResType,
+				BkBizID:   model.BkBizID,
 				AccountID: req.AccountID,
 				Action:    enumor.BatchOperation,
 				Operator:  cts.Kit.User,
