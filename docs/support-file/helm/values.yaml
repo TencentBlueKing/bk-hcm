@@ -470,7 +470,7 @@ accountserver:
   ## 镜像
   ##
   image:
-    repository: blueking/bk-hcm-cloudserver
+    repository: blueking/bk-hcm-accountserver
     tag:
   ## 日志配置
   ##
