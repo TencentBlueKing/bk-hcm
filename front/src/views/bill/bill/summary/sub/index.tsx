@@ -1,17 +1,26 @@
 import { Ref, defineComponent, inject, onMounted, ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
+
 import Search from '../../components/search';
-import Button from '../../components/button';
+import BillsExportButton from '../../components/bills-export-button';
 import Amount from '../../components/amount';
+
+import { useI18n } from 'vue-i18n';
 import { useTable } from '@/hooks/useTable/useTable';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
-import { reqBillsMainAccountSummaryList, reqBillsMainAccountSummarySum } from '@/api/bill';
+import {
+  exportBillsMainAccountSummary,
+  reqBillsMainAccountSummaryList,
+  reqBillsMainAccountSummarySum,
+} from '@/api/bill';
 import { QueryRuleOPEnum, RulesItem } from '@/typings';
-import { useRoute } from 'vue-router';
 import { BILL_BIZS_KEY, BILL_MAIN_ACCOUNTS_KEY } from '@/constants';
+import { BillSearchRules } from '@/utils';
 
 export default defineComponent({
   name: 'SubAccountTabPanel',
   setup() {
+    const { t } = useI18n();
     const route = useRoute();
     const bill_year = inject<Ref<number>>('bill_year');
     const bill_month = inject<Ref<number>>('bill_month');
@@ -54,22 +63,11 @@ export default defineComponent({
 
     onMounted(() => {
       // 只有业务、二级账号有保存的需求
-      const rules = [];
-      if (route.query[BILL_MAIN_ACCOUNTS_KEY]) {
-        rules.push({
-          field: 'main_account_id',
-          op: QueryRuleOPEnum.IN,
-          value: JSON.parse(atob(route.query[BILL_MAIN_ACCOUNTS_KEY] as string)),
-        });
-      }
-      if (route.query[BILL_BIZS_KEY]) {
-        rules.push({
-          field: 'bk_biz_id',
-          op: QueryRuleOPEnum.IN,
-          value: JSON.parse(atob(route.query[BILL_BIZS_KEY] as string)),
-        });
-      }
-      reloadTable(rules);
+      const billSearchRules = new BillSearchRules();
+      billSearchRules
+        .addRule(route, BILL_BIZS_KEY, 'bk_biz_id', QueryRuleOPEnum.IN)
+        .addRule(route, BILL_MAIN_ACCOUNTS_KEY, 'main_account_id', QueryRuleOPEnum.IN);
+      reloadTable(billSearchRules.rules);
     });
 
     return () => (
@@ -83,7 +81,20 @@ export default defineComponent({
         <div class='p24' style={{ height: 'calc(100% - 238px)' }}>
           <CommonTable>
             {{
-              operation: () => <Button noSyncBtn />,
+              operation: () => (
+                <BillsExportButton
+                  cb={() =>
+                    exportBillsMainAccountSummary({
+                      bill_year: bill_year.value,
+                      bill_month: bill_month.value,
+                      export_limit: 200000,
+                      filter,
+                    })
+                  }
+                  title={t('账单汇总-二级账号')}
+                  content={t('导出当月二级账号的账单数据')}
+                />
+              ),
               operationBarEnd: () => (
                 <Amount
                   ref={amountRef}

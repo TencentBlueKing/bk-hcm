@@ -1,7 +1,7 @@
 import { PropType, defineComponent, onMounted, ref } from 'vue';
 import cssModule from './index.module.scss';
 import { useI18n } from 'vue-i18n';
-import { BillsSummarySum, BillsSummarySumResData } from '@/typings/bill';
+import { BillsSummarySum, BillsSummarySumResData, CostMap } from '@/typings/bill';
 import { Loading } from 'bkui-vue';
 import { formatBillCost } from '@/utils';
 
@@ -15,6 +15,7 @@ export default defineComponent({
     api: Function as PropType<(...args: any) => Promise<BillsSummarySumResData>>,
     payload: Function as PropType<() => object>,
     immediate: Boolean,
+    data: Object as PropType<CostMap>,
   },
   setup(props, { expose }) {
     const { t } = useI18n();
@@ -52,7 +53,7 @@ export default defineComponent({
                 ? `￥ ${formatBillCost(amountInfo.value?.cost_map?.increase.RMB?.Cost)}  |  $ ${formatBillCost(
                     amountInfo.value?.cost_map?.increase.USD?.Cost,
                   )} `
-                : `￥${formatBillCost(amountInfo.value?.cost_map?.USD?.RMBCost)}`}
+                : `￥${formatBillCost(props.data?.USD?.RMBCost || amountInfo.value?.cost_map?.USD?.RMBCost)}`}
             </span>
           </Loading>
         </span>
@@ -65,7 +66,7 @@ export default defineComponent({
                 ? `￥ ${formatBillCost(amountInfo.value?.cost_map?.decrease.RMB?.Cost)}  |  $ ${formatBillCost(
                     amountInfo.value?.cost_map?.decrease.USD?.Cost,
                   )} `
-                : `＄${formatBillCost(amountInfo.value?.cost_map?.USD?.Cost)}`}
+                : `＄${formatBillCost(props.data?.USD?.Cost || amountInfo.value?.cost_map?.USD?.Cost)}`}
             </span>
           </Loading>
         </span>

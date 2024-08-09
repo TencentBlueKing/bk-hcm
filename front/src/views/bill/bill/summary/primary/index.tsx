@@ -2,16 +2,19 @@ import { Ref, defineComponent, inject, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { Button } from 'bkui-vue';
-import IButton from '../../components/button';
 import Amount from '../../components/amount';
-import BillSyncDialog from './sync';
+import BillsExportButton from '../../components/bills-export-button';
 import ConfirmBillDialog from './confirm';
 import RecalculateBillDialog from './recalculate';
 
 import { useI18n } from 'vue-i18n';
 import { useTable } from '@/hooks/useTable/useTable';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
-import { reqBillsRootAccountSummaryList, reqBillsRootAccountSummarySum } from '@/api/bill';
+import {
+  exportBillsRootAccountSummary,
+  reqBillsRootAccountSummaryList,
+  reqBillsRootAccountSummarySum,
+} from '@/api/bill';
 import { BillsRootAccountSummaryState } from '@/typings/bill';
 import { BILLS_ROOT_ACCOUNT_SUMMARY_STATE_MAP } from '@/constants';
 
@@ -25,7 +28,6 @@ export default defineComponent({
 
     const { columns, settings } = useColumns('billsRootAccountSummary');
 
-    const billSyncDialogRef = ref();
     const confirmBillDialogRef = ref();
     const recalculateBillDialogRef = ref();
     const amountRef = ref();
@@ -124,7 +126,20 @@ export default defineComponent({
       <div class='full-height p24'>
         <CommonTable>
           {{
-            operation: () => <IButton billSyncDialogRef={billSyncDialogRef} />,
+            operation: () => (
+              <BillsExportButton
+                cb={() =>
+                  exportBillsRootAccountSummary({
+                    bill_year: bill_year.value,
+                    bill_month: bill_month.value,
+                    export_limit: 200000,
+                    filter,
+                  })
+                }
+                title={t('账单汇总-一级账号')}
+                content={t('导出当月一级账号的账单数据')}
+              />
+            ),
             operationBarEnd: () => (
               <Button theme='primary' text onClick={goOperationRecord}>
                 <i class='hcm-icon bkhcm-icon-lishijilu mr4'></i>
@@ -142,7 +157,6 @@ export default defineComponent({
             ),
           }}
         </CommonTable>
-        <BillSyncDialog ref={billSyncDialogRef} billYear={bill_year.value} billMonth={bill_month.value} />
         <ConfirmBillDialog ref={confirmBillDialogRef} reloadTable={getListData} />
         <RecalculateBillDialog ref={recalculateBillDialogRef} reloadTable={getListData} />
       </div>

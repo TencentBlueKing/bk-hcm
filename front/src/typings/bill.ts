@@ -1,4 +1,11 @@
-import { IListResData, IQueryResData } from './common';
+import { IListResData, IPageQuery, IQueryResData } from './common';
+import { FilterType } from './resource';
+
+// 账单汇总
+export type BillsSummarySumReqParams = { bill_year: number; bill_month: number; filter: FilterType };
+type BillsSummaryListBaseReqParams = { bill_year: number; bill_month: number; page: IPageQuery };
+export type BillsSummaryListReqParams = BillsSummaryListBaseReqParams & { filter: FilterType };
+export type BillsSummaryListReqParamsWithBizs = BillsSummaryListBaseReqParams & { bk_biz_id: number[] };
 
 // 当月账单总金额
 export interface BillsSummary {
@@ -67,7 +74,7 @@ export interface BillsRootAccountSummaryHistory {
 }
 export type BillsRootAccountSummaryHistoryResData = IListResData<BillsRootAccountSummaryHistory[]>;
 
-// 当月账单汇总（二级账号or业务）拉取接口
+// 当月账单汇总（二级账号）拉取接口
 export interface BillsMainAccountSummary {
   root_account_id: string;
   root_account_name: string;
@@ -96,6 +103,21 @@ export interface BillsMainAccountSummary {
 }
 export type BillsMainAccountSummaryResData = IListResData<BillsMainAccountSummary[]>;
 
+// 当月账单汇总（业务）拉取接口
+interface BillsBizSummary {
+  bk_biz_id: number;
+  bk_biz_name: string;
+  last_month_cost_synced: string;
+  last_month_rmb_cost_synced: string;
+  current_month_cost_synced: string;
+  current_month_rmb_cost_synced: string;
+  current_month_cost: string;
+  current_month_rmb_cost: string;
+  adjustment_cost: string;
+  adjustment_rmb_cost: string;
+}
+export type BillsBizSummaryResData = IListResData<BillsBizSummary[]>;
+
 // 调账明细
 export interface AdjustmentItem {
   id?: string; // 调账id
@@ -118,7 +140,7 @@ export interface BillsSummarySum {
   count: number;
   cost_map: CostMap;
 }
-interface CostMap {
+export interface CostMap {
   USD: USD;
 }
 interface USD {
@@ -127,3 +149,53 @@ interface USD {
   Currency: string;
 }
 export type BillsSummarySumResData = IQueryResData<BillsSummarySum>;
+
+// 账单明细-zenlayer导入预览
+export interface BillImportPreview {
+  items: BillImportPreviewItem[];
+  cost_map: CostMap;
+}
+interface BillImportPreviewItem {
+  root_account_id: string;
+  main_account_id: string;
+  vendor: string;
+  product_id: number;
+  bk_biz_id: number;
+  bill_year: number;
+  bill_month: number;
+  bill_day: number;
+  version_id: number;
+  currency: string;
+  cost: string;
+  res_amount: string;
+  extension: BillImportPreviewItemExtension;
+}
+interface BillImportPreviewItemExtension {
+  bill_id: string;
+  zenlayer_order: string;
+  cid: string;
+  group_id: string;
+  currency: string;
+  city: string;
+  pay_content: string;
+  type: string;
+  acceptance_num: string;
+  pay_num: string;
+  unit_price_usd: string;
+  total_payable: string;
+  billing_period: string;
+  contract_period: string;
+  remarks: string;
+  business_group: string;
+  cpu: null | string;
+  disk: null | string;
+  memory: null | string;
+}
+export type BillImportPreviewResData = IQueryResData<BillImportPreview>;
+export type BillImportPreviewItems = BillImportPreviewItem[];
+
+// 账单导出
+type BillsExportBaseReqParams = { bill_year: number; bill_month: number; export_limit: number };
+export type BillsExportReqParams = BillsExportBaseReqParams & { filter: FilterType };
+export type BillsExportReqParamsWithBizs = BillsExportBaseReqParams & { bk_biz_ids: number[] };
+export type BillsExportResData = IQueryResData<{ download_url: string }>;

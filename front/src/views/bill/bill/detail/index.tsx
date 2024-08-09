@@ -1,4 +1,4 @@
-import { defineComponent, ref } from 'vue';
+import { defineComponent, inject, Ref, ref, watch } from 'vue';
 import './index.scss';
 
 import { Tab } from 'bkui-vue';
@@ -13,6 +13,9 @@ export default defineComponent({
   name: 'BillDetail',
   setup() {
     const { t } = useI18n();
+    const bill_year = inject<Ref<number>>('bill_year');
+    const bill_month = inject<Ref<number>>('bill_month');
+
     const types = ref([
       { name: VendorEnum.AWS, label: t('亚马逊云') },
       { name: VendorEnum.GCP, label: t('谷歌云') },
@@ -22,7 +25,12 @@ export default defineComponent({
     ]);
     const activeType = ref(VendorEnum.AWS);
 
+    const searchRef = ref();
     const billDetailRenderTableRef = ref();
+
+    watch([bill_year, bill_month], () => {
+      searchRef.value?.handleSearch();
+    });
 
     return () => (
       <div class='bill-detail-module'>
@@ -30,6 +38,7 @@ export default defineComponent({
           {types.value.map(({ name, label }) => (
             <BkTabPanel key={name} name={name} label={label} renderDirective='if'>
               <Search
+                ref={searchRef}
                 searchKeys={['root_account_id', 'product_id', 'main_account_id']}
                 vendor={[activeType.value]}
                 onSearch={(rules) => billDetailRenderTableRef.value?.reloadTable(rules)}
