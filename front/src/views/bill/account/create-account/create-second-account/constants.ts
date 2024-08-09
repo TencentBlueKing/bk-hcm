@@ -7,5 +7,5 @@ export const Extension_Name_Map = {
   kaopu: 'cloud_main_account_name',
 };
 export const Scenes = {
-  SecondaryAccount: 'SecondAccountApplication',
+  SecondAccountApplication: 'SecondAccountApplication',
 };
