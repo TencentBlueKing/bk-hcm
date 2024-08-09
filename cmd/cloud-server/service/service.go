@@ -50,7 +50,7 @@ import (
 	"hcm/cmd/cloud-server/service/image"
 	instancetype "hcm/cmd/cloud-server/service/instance-type"
 	loadbalancer "hcm/cmd/cloud-server/service/load-balancer"
-	mail_verify "hcm/cmd/cloud-server/service/mail-verify"
+	mailverify "hcm/cmd/cloud-server/service/mail-verify"
 	networkinterface "hcm/cmd/cloud-server/service/network-interface"
 	"hcm/cmd/cloud-server/service/recycle"
 	"hcm/cmd/cloud-server/service/region"
@@ -321,7 +321,7 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 
 	bandwidthpackage.InitService(c)
 
-	mail_verify.InitEmailService(c)
+	mailverify.InitEmailService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }
