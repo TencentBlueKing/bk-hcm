@@ -32,9 +32,6 @@ const routes: RouteRecordRaw[] = [
   ...scheme,
   ...bill,
   {
-    // path: '/',
-    // name: 'index',
-    // component: () => import('@/views/resource/demo'),
     path: '/',
     redirect: '/business/host',
     meta: {
@@ -43,9 +40,6 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
-    // path: '/',
-    // name: 'index',
-    // component: () => import('@/views/resource/demo'),
     path: '/403',
     redirect: '/403',
   },
@@ -57,40 +51,40 @@ const router = createRouter({
 });
 
 // 进入目标页面
-// eslint-disable-next-line max-len
 const toCurrentPage = (
-  authVerifyData: any,
-  currentFindAuthData: any,
+  authVerifyData: {
+    permissionAction: Record<string, boolean>;
+    urlParams: {
+      system_id: string;
+      actions: Array<{
+        id: string;
+        name: string;
+        related_resource_types: Array<any>;
+      }>;
+    };
+  },
+  currentFindAuthData: {
+    action: string;
+    id: string;
+    path: string;
+    type: string;
+  },
   next: NavigationGuardNext,
   to?: RouteLocationNormalized,
 ) => {
-  if (currentFindAuthData) {
-    // 当前页面需要鉴权
-    if (authVerifyData && !authVerifyData?.permissionAction[currentFindAuthData.id]) {
-      // 当前页面没有权限
-      next({
-        name: '403',
-        params: {
-          id: currentFindAuthData.id,
-        },
-      });
-    } else if (/403/.test(to?.path)) {
-      next({
-        path: '/',
-      });
-    } else {
-      next();
-    }
-  } else {
-    if (to && to.name === '403' && authVerifyData && authVerifyData?.permissionAction?.account_find) {
-      // 无权限用户切换到有权限用户时需要判断
-      next({
-        path: '/resource/account',
-      });
-    } else {
-      next();
-    }
+  // 是否需要鉴权
+  const needAuth = !!currentFindAuthData?.id;
+  // 是否有权限
+  const hasAuth = !!authVerifyData?.permissionAction?.[currentFindAuthData?.id];
+
+  if (!needAuth) {
+    if (to?.name === '403') next(!!authVerifyData?.permissionAction?.biz_access ? { path: '/' } : undefined);
+    else next();
+    return;
   }
+
+  if (hasAuth) next();
+  else next({ name: '403', params: { id: currentFindAuthData?.id } });
 };
 
 router.beforeEach((to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
@@ -112,12 +106,12 @@ router.beforeEach((to: RouteLocationNormalized, from: RouteLocationNormalized, n
     const { getAuthVerifyData } = useVerify(); // 权限中心权限
     getAuthVerifyData(pageAuthData).then(() => {
       const { authVerifyData } = commonStore;
-      toCurrentPage(authVerifyData, currentFindAuthData, next, to);
+      toCurrentPage(authVerifyData, currentFindAuthData as any, next, to);
     });
   } else if (['/scheme/recommendation', '/scheme/deployment/list'].includes(to.path)) {
     next();
   } else {
-    toCurrentPage(authVerifyData, currentFindAuthData, next);
+    toCurrentPage(authVerifyData, currentFindAuthData as any, next);
   }
 });
 
