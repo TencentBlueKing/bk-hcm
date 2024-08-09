@@ -133,7 +133,7 @@ func (a AccountBillSummaryMainDao) List(kt *kit.Kit, opt *types.ListOption) (
 	return &typesbill.ListAccountBillSummaryMainDetails{Details: details}, nil
 }
 
-// UpdateByIDWithTx Update update account bill summary.
+// UpdateByIDWithTx update account bill summary.
 func (a AccountBillSummaryMainDao) UpdateByIDWithTx(
 	kt *kit.Kit, tx *sqlx.Tx, billID string, updateData *tablebill.AccountBillSummaryMain) error {
 
@@ -224,8 +224,8 @@ func (a AccountBillSummaryMainDao) ListGroupByBiz(kt *kit.Kit, opt *types.ListOp
 		"SUM(current_month_cost_synced) as current_month_cost_synced, " +
 		"SUM(current_month_rmb_cost_synced) as current_month_rmb_cost_synced, " +
 		"SUM(current_month_cost) as current_month_cost, " +
-		"SUM(current_month_rmb_cost) as current_month_rmb_cost," +
-		" SUM(adjustment_cost) as adjustment_cost, SUM(adjustment_rmb_cost) as adjustment_rmb_cost"
+		"SUM(current_month_rmb_cost) as current_month_rmb_cost, " +
+		"SUM(adjustment_cost) as adjustment_cost, SUM(adjustment_rmb_cost) as adjustment_rmb_cost"
 
 	sql := fmt.Sprintf(`SELECT %s FROM %s %s group by bk_biz_id %s`, fieldExpr,
 		table.AccountBillSummaryMainTable, whereExpr, pageExpr)

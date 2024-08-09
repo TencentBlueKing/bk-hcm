@@ -132,7 +132,7 @@ func (a AccountBillSummaryDailyDao) List(kt *kit.Kit, opt *types.ListOption) (
 	return &typesbill.ListAccountBillSummaryDailyDetails{Details: details}, nil
 }
 
-// Update update account bill summary daliy.
+// UpdateByIDWithTx update account bill summary daily.
 func (a AccountBillSummaryDailyDao) UpdateByIDWithTx(
 	kt *kit.Kit, tx *sqlx.Tx, id string, updateData *tablebill.AccountBillSummaryDaily) error {
 

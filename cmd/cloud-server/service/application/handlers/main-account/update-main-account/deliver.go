@@ -52,7 +52,12 @@ func (a *ApplicationOfUpdateMainAccount) Deliver() (enumor.ApplicationStatus, ma
 		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
 	}
 
-	return enumor.Completed, map[string]interface{}{"account_id": account.ID, "cloud_account_name": account.Name, "cloud_account_id": account.CloudID}, nil
+	detail := map[string]any{
+		"account_id":         account.ID,
+		"cloud_account_name": account.Name,
+		"cloud_account_id":   account.CloudID,
+	}
+	return enumor.Completed, detail, nil
 }
 
 func (a *ApplicationOfUpdateMainAccount) update() error {

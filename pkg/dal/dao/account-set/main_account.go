@@ -58,7 +58,8 @@ type MainAccountDao struct {
 }
 
 // CreateWithTx create main account with tx.
-func (a MainAccountDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model *tableaccountset.MainAccountTable) (string, error) {
+func (a MainAccountDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model *tableaccountset.MainAccountTable) (string,
+	error) {
 	if err := model.InsertValidate(); err != nil {
 		return "", err
 	}
@@ -69,7 +70,8 @@ func (a MainAccountDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model *tableaccou
 	}
 	model.ID = id
 
-	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, model.TableName(), tableaccountset.MainAccountColumns.ColumnExpr(),
+	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`,
+		model.TableName(), tableaccountset.MainAccountColumns.ColumnExpr(),
 		tableaccountset.MainAccountColumns.ColonNameExpr())
 
 	err = a.Orm.Txn(tx).Insert(kt.Ctx, sql, model)
@@ -105,7 +107,8 @@ func (a MainAccountDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model *tableaccou
 }
 
 // Update accounts.
-func (a MainAccountDao) Update(kt *kit.Kit, filterExpr *filter.Expression, model *tableaccountset.MainAccountTable) error {
+func (a MainAccountDao) Update(kt *kit.Kit, filterExpr *filter.Expression,
+	model *tableaccountset.MainAccountTable) error {
 	if filterExpr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is nil")
 	}

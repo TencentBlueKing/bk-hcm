@@ -96,8 +96,9 @@ func (a AccountBillSummaryVersionDao) List(kt *kit.Kit, opt *types.ListOption) (
 		return nil, errf.New(errf.InvalidParameter, "list account bill summary version options is nil")
 	}
 
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tablebill.AccountBillSummaryVersionColumns.ColumnTypes())),
-		core.NewDefaultPageOption()); err != nil {
+	exprOpt := filter.NewExprOption(filter.RuleFields(tablebill.AccountBillSummaryVersionColumns.ColumnTypes()))
+	pageOpt := core.NewDefaultPageOption()
+	if err := opt.Validate(exprOpt, pageOpt); err != nil {
 		return nil, err
 	}
 
@@ -134,7 +135,7 @@ func (a AccountBillSummaryVersionDao) List(kt *kit.Kit, opt *types.ListOption) (
 	return &typesbill.ListAccountBillSummaryVersionDetails{Details: details}, nil
 }
 
-// Update update account bill summary version.
+// UpdateByIDWithTx update account bill summary version.
 func (a AccountBillSummaryVersionDao) UpdateByIDWithTx(
 	kt *kit.Kit, tx *sqlx.Tx, id string, updateData *tablebill.AccountBillSummaryVersion) error {
 

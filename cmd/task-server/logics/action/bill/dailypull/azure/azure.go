@@ -72,7 +72,7 @@ func (hp *AzurePuller) Pull(kt run.ExecuteKit, opt *registry.PullDailyBillOption
 		}
 		billResp, err := hcCli.Azure.Bill.GetRootAccountBillList(kt.Kit(), billReq)
 		if err != nil {
-			logs.Errorf("fail to call Azure to get root account bills, err: %v,   rid: %s")
+			logs.Errorf("fail to call Azure to get root account bills, err: %v, rid: %s", err, kt.Kit().Rid)
 			return nil, fmt.Errorf("list azure bill failed, err %w", err)
 		}
 
@@ -88,7 +88,8 @@ func (hp *AzurePuller) Pull(kt run.ExecuteKit, opt *registry.PullDailyBillOption
 		cost = cost.Add(ret.Cost)
 		count += ret.Count
 		offset += int(count)
-		logs.Infof("get raw azure bill item %d of puller %+v", ret.Count, opt)
+		logs.Infof("get raw azure bill item, count: %d, offset: %d, main account: %s, date: %d-%02d-%02d, rid: %s",
+			ret.Count, offset, opt.MainAccountCloudID, opt.BillYear, opt.BillMonth, opt.BillDay, kt.Kit().Rid)
 		if int32(ret.Count) < limit {
 			break
 		}
@@ -132,8 +133,7 @@ func (hp *AzurePuller) batchCreateRawBill(kt *kit.Kit, opt *registry.PullDailyBi
 
 // format: [offset]-[length].csv
 func buildRawBillFilename(offset, length int) string {
-	filename := fmt.Sprintf("%d-%d.csv", offset, length)
-	return filename
+	return fmt.Sprintf("%d-%d.csv", offset, length)
 }
 
 // format: yyyy-mm-dd
@@ -182,7 +182,8 @@ func (hp *AzurePuller) createRawBill(kt *kit.Kit, opt *registry.PullDailyBillOpt
 	dataBill := actcli.GetDataService().Global.Bill
 	_, err := dataBill.CreateRawBill(kt, storeReq)
 	if err != nil {
-		return fmt.Errorf("call dataservice to create raw bill failed, err %s", err.Error())
+		logs.Errorf("fail to create raw bill, err: %v, rid: %s", err, kt.Rid)
+		return fmt.Errorf("call dataservice to create raw bill failed, err: %v", err)
 	}
 	return nil
 }

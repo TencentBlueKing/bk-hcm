@@ -47,7 +47,7 @@ func (b bill) AzureGetBillList(cts *rest.Contexts) (interface{}, error) {
 	}
 	account, err := b.cs.DataService().Azure.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), req.AccountID)
 	if err != nil {
-		logs.Errorf("fail to get azure account, err: %s, account_id: %s, rid: %s",
+		logs.Errorf("fail to get azure account, err: %v, account_id: %s, rid: %s",
 			err, req.AccountID, cts.Kit.Rid)
 		return nil, err
 	}

@@ -58,7 +58,8 @@ type RootAccountDao struct {
 }
 
 // CreateWithTx create root account with tx.
-func (a RootAccountDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model *tableaccountset.RootAccountTable) (string, error) {
+func (a RootAccountDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model *tableaccountset.RootAccountTable) (string,
+	error) {
 	if err := model.InsertValidate(); err != nil {
 		return "", err
 	}
@@ -69,7 +70,8 @@ func (a RootAccountDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model *tableaccou
 	}
 	model.ID = id
 
-	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, model.TableName(), tableaccountset.RootAccountColumns.ColumnExpr(),
+	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`,
+		model.TableName(), tableaccountset.RootAccountColumns.ColumnExpr(),
 		tableaccountset.RootAccountColumns.ColonNameExpr())
 
 	err = a.Orm.Txn(tx).Insert(kt.Ctx, sql, model)
@@ -105,7 +107,8 @@ func (a RootAccountDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model *tableaccou
 }
 
 // Update accounts.
-func (a RootAccountDao) Update(kt *kit.Kit, filterExpr *filter.Expression, model *tableaccountset.RootAccountTable) error {
+func (a RootAccountDao) Update(kt *kit.Kit, filterExpr *filter.Expression,
+	model *tableaccountset.RootAccountTable) error {
 	if filterExpr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is nil")
 	}

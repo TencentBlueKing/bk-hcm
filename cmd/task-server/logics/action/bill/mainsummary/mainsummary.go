@@ -106,14 +106,14 @@ func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 		rootSummary.State == enumor.RootAccountBillSummaryStateSynced {
 		curMonthCostSynced, _, _, err = act.getDailyVersionCost(kt.Kit(), opt, summary.CurrentVersion)
 		if err != nil {
-			logs.Errorf("fail get cur month synced cost fialed, err: %v, rid: %s", err, kt.Kit().Rid)
+			logs.Errorf("fail get cur month synced cost faild, err: %v, rid: %s", err, kt.Kit().Rid)
 			return nil, fmt.Errorf("get current month synced cost failed, err %s", err.Error())
 		}
 	}
 
 	// 计算当月实时成本
 	curMonthCost, isCurMonthAccounted, currency, err := act.getDailyVersionCost(kt.Kit(), opt, summary.CurrentVersion)
-	logs.Errorf("fail get current month cost fialed, err: %v, rid: %s", err, kt.Kit().Rid)
+	logs.Errorf("fail get current month cost failed, err: %v, rid: %s", err, kt.Kit().Rid)
 	if err != nil {
 		return nil, fmt.Errorf("get current month cost failed, err %s", err.Error())
 	}

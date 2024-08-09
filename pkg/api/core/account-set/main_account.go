@@ -69,7 +69,7 @@ func (e *AwsMainAccountExtension) DecryptSecretKey(cipher cryptography.Crypto) e
 type GcpMainAccountExtension struct {
 	CloudProjectID   string `json:"cloud_project_id"`
 	CloudProjectName string `json:"cloud_project_name"`
-	//gcp为账号邀请制，没有初始号密码
+	// gcp为账号邀请制，没有初始号密码
 }
 
 // DecryptSecretKey ...
@@ -77,7 +77,7 @@ func (e *GcpMainAccountExtension) DecryptSecretKey(cipher cryptography.Crypto) e
 	return nil
 }
 
-// HuaweiMainAccountExtension 云主账号/云二级账号扩展字段
+// HuaWeiMainAccountExtension 云主账号/云二级账号扩展字段
 type HuaWeiMainAccountExtension struct {
 	CloudMainAccountID   string `json:"cloud_main_account_id"`
 	CloudMainAccountName string `json:"cloud_main_account_name"`

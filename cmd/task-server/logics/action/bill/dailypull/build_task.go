@@ -28,7 +28,7 @@ import (
 )
 
 // BuildDailyPullTask build daily bill pull task
-func BuildDailyPullTask(rootAccountID, rootAccountCloudID, mainAccountID, mainAccountCloudId string,
+func BuildDailyPullTask(rootAccountID, rootAccountCloudID, mainAccountID, mainAccountCloudID string,
 	vendor enumor.Vendor, billYear, billMonth, billDay, version int) ts.CustomFlowTask {
 
 	return ts.CustomFlowTask{
@@ -38,7 +38,7 @@ func BuildDailyPullTask(rootAccountID, rootAccountCloudID, mainAccountID, mainAc
 			RootAccountID:      rootAccountID,
 			RootAccountCloudID: rootAccountCloudID,
 			MainAccountID:      mainAccountID,
-			MainAccountCloudID: mainAccountCloudId,
+			MainAccountCloudID: mainAccountCloudID,
 			Vendor:             vendor,
 			VersionID:          version,
 			BillYear:           billYear,

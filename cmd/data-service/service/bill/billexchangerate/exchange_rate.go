@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package billadjustmentitem ...
+// Package billexchangerate ...
 package billexchangerate
 
 import (

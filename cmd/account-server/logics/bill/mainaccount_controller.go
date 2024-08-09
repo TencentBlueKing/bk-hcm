@@ -185,16 +185,16 @@ func (mac *MainAccountController) runBillSummaryLoop(kt *kit.Kit) {
 
 func (mac *MainAccountController) runCalculateBillSummaryLoop(kt *kit.Kit) {
 	ticker := time.NewTicker(*cc.AccountServer().Controller.MainAccountSummarySyncDuration)
-	curMonthflowID := ""
-	lastMonthflowID := ""
+	curMonthFlowID := ""
+	lastMonthFlowID := ""
 	for {
 		select {
 		case <-ticker.C:
 			subKit := kt.NewSubKit()
 			lastBillYear, lastBillMonth := times.GetLastMonthUTC()
-			lastMonthflowID = mac.pollMainSummaryTask(subKit, lastMonthflowID, lastBillYear, lastBillMonth)
+			lastMonthFlowID = mac.pollMainSummaryTask(subKit, lastMonthFlowID, lastBillYear, lastBillMonth)
 			curBillYear, curBillMonth := times.GetCurrentMonthUTC()
-			curMonthflowID = mac.pollMainSummaryTask(subKit, curMonthflowID, curBillYear, curBillMonth)
+			curMonthFlowID = mac.pollMainSummaryTask(subKit, curMonthFlowID, curBillYear, curBillMonth)
 
 		case <-kt.Ctx.Done():
 			logs.Infof("main account (%s, %s, %s) summary controller context done, rid: %s",
@@ -208,7 +208,7 @@ func (mac *MainAccountController) pollMainSummaryTask(subKit *kit.Kit, flowID st
 	time.Sleep(time.Millisecond * time.Duration(rand.Intn(defaultSleepMillisecond)))
 
 	if len(flowID) == 0 {
-		result, err := mac.createMainSummaryTask(subKit, billYear, billMonth)
+		result, err := mac.createMainSummaryFlow(subKit, billYear, billMonth)
 		if err != nil {
 			logs.Warnf("create new main summary task for %s/%s/%s %d-%d failed, err %s, rid: %s",
 				mac.RootAccountID, mac.MainAccountID, mac.Vendor,
@@ -226,8 +226,9 @@ func (mac *MainAccountController) pollMainSummaryTask(subKit *kit.Kit, flowID st
 		logs.Warnf("get flow by id %s failed, err %s, rid: %s", flowID, err.Error(), subKit.Rid)
 		return flowID
 	}
+	// 任务结束后继续发起summary 任务是为了重新计算，保证账单金额最新
 	if flow.State == enumor.FlowSuccess || flow.State == enumor.FlowFailed || flow.State == enumor.FlowCancel {
-		result, err := mac.createMainSummaryTask(subKit, billYear, billMonth)
+		result, err := mac.createMainSummaryFlow(subKit, billYear, billMonth)
 		if err != nil {
 			logs.Warnf("create new main summary task for %s/%s/%s %d-%d failed, err %s, rid: %s",
 				mac.RootAccountID, mac.MainAccountID, mac.Vendor,
@@ -243,7 +244,7 @@ func (mac *MainAccountController) pollMainSummaryTask(subKit *kit.Kit, flowID st
 	return flowID
 }
 
-func (mac *MainAccountController) createMainSummaryTask(
+func (mac *MainAccountController) createMainSummaryFlow(
 	kt *kit.Kit, billYear, billMonth int) (*core.CreateResult, error) {
 
 	memo := fmt.Sprintf("[%s] main %s(%.16s), %4d-%02d",

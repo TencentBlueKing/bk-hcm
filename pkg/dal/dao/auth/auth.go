@@ -96,7 +96,8 @@ func (r *AuthDao) ListInstances(kt *kit.Kit, opts *types.ListInstancesOption) (*
 		return nil, err
 	}
 
-	sql = fmt.Sprintf(`SELECT %s as id, %s as name FROM %s %s %s`, opts.ResourceIDField, opts.DisplayNameField, opts.TableName, whereExpr, pageExpr)
+	sql = fmt.Sprintf(`SELECT %s as id, %s as name FROM %s %s %s`,
+		opts.ResourceIDField, opts.DisplayNameField, opts.TableName, whereExpr, pageExpr)
 	list := make([]types.InstanceResource, 0)
 	err = r.Orm.Do().Select(kt.Ctx, &list, sql, whereValue)
 	if err != nil {

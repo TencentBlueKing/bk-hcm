@@ -171,7 +171,7 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 		if _, ok := billTaskDayMap[day]; !ok {
 			// 如果不存在pull task数据，则创建新的pull task
 			if err := dp.createDailyPullTaskStub(kt, day); err != nil {
-				logs.Warnf("create dailed pull task for main account %s(%s) of %d-%02d-%02d failed, err %s, rid: %s",
+				logs.Warnf("create dailed pull task for main account %s(%s) of %d-%02d-%02d failed, err: %s, rid: %s",
 					dp.MainAccountID, dp.MainAccountCloudID, dp.BillYear, dp.BillMonth, day, err.Error(), kt.Rid)
 			}
 			logs.Infof("create pull task for %v day %d successfully, rid: %s", dp, day, kt.Rid)

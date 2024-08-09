@@ -25,6 +25,7 @@ import (
 	createmainaccount "hcm/cmd/cloud-server/service/application/handlers/main-account/create-main-account"
 	proto "hcm/pkg/api/cloud-server/application"
 	"hcm/pkg/api/core"
+	dataservice "hcm/pkg/api/data-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -55,10 +56,12 @@ func (a *applicationSvc) CompleteForCreateMainAccount(cts *rest.Contexts) (inter
 	switch completeReq.Vendor {
 	case enumor.HuaWei, enumor.Azure, enumor.Zenlayer, enumor.Kaopu:
 		if _, ok := completeReq.Extension[completeReq.Vendor.GetMainAccountNameFieldName()]; !ok {
-			return nil, errf.Newf(errf.InvalidParameter, "extension %s is required", completeReq.Vendor.GetMainAccountNameFieldName())
+			return nil, errf.Newf(errf.InvalidParameter, "extension %s is required",
+				completeReq.Vendor.GetMainAccountNameFieldName())
 		}
 		if _, ok := completeReq.Extension[completeReq.Vendor.GetMainAccountIDFieldName()]; !ok {
-			return nil, errf.Newf(errf.InvalidParameter, "extension %s is required", completeReq.Vendor.GetMainAccountIDFieldName())
+			return nil, errf.Newf(errf.InvalidParameter, "extension %s is required",
+				completeReq.Vendor.GetMainAccountIDFieldName())
 		}
 	case enumor.Aws, enumor.Gcp:
 		// auto create main account, no need to check extension
@@ -74,13 +77,19 @@ func (a *applicationSvc) CompleteForCreateMainAccount(cts *rest.Contexts) (inter
 	}
 
 	if application.Status != enumor.Delivering {
-		logs.Errorf("application status is not delivering, sn: %s, status: %s, rid: %s", completeReq.SN, application.Status, cts.Kit.Rid)
+		logs.Errorf("application status is not delivering, sn: %s, status: %s, rid: %s", completeReq.SN,
+			application.Status, cts.Kit.Rid)
 		return nil, fmt.Errorf("application status is not delivering")
 	}
 
 	// 将执行人设置为申请人
 	cts.Kit.User = application.Applicant
 
+	return a.doComplete(cts, application, err, completeReq)
+}
+
+func (a *applicationSvc) doComplete(cts *rest.Contexts, application *dataservice.ApplicationResp, err error,
+	completeReq *proto.MainAccountCompleteReq) (any, error) {
 	// 除非交付成功，否则都属于交付失败状态
 	deliverStatus := enumor.DeliverError
 	deliveryDetailStr := `{"error": "unknown deliver error"}`
@@ -107,7 +116,8 @@ func (a *applicationSvc) CompleteForCreateMainAccount(cts *rest.Contexts) (inter
 		deliverStatus = status
 		marshalStr, mashalErr := json.MarshalToString(deliveryDetail)
 		if mashalErr != nil {
-			logs.Errorf("marshal deliver detail failed, err: %v, detail: %+v, rid: %s", mashalErr, deliveryDetail, cts.Kit.Rid)
+			logs.Errorf("marshal deliver detail failed, err: %v, detail: %+v, rid: %s",
+				mashalErr, deliveryDetail, cts.Kit.Rid)
 
 			deliverStatus = enumor.DeliverError
 			deliveryDetailStr = `{"error": "marshal deliver detail failed"}`

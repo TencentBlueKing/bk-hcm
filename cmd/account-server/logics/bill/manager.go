@@ -94,9 +94,9 @@ func (bm *BillManager) syncRootControllers() error {
 			}
 			ctrl, err := NewRootAccountController(&opt)
 			if err != nil {
-				logs.Errorf("create root for %s %s controller failed, err: %s, rid:%s",
+				logs.Errorf("create root for %s %s controller failed, err: %v, rid: %s",
 					opt.Vendor, opt.RootAccountID, err, kt.Rid)
-				return fmt.Errorf("create root for %v controller failed, err %s", opt, err)
+				return fmt.Errorf("create root for %v controller failed, err: %s", opt, err)
 			}
 			if err := ctrl.Start(); err != nil {
 				ctrl.Stop()
@@ -136,8 +136,8 @@ func (bm *BillManager) syncMainControllers() error {
 		rootAccount, err := bm.Client.DataService().Global.RootAccount.GetBasicInfo(kt,
 			mainAccount.BaseMainAccount.ParentAccountID)
 		if err != nil {
-			logs.Errorf("get root account for main account  controller failed, err: %s, rid: %s", err, kt.Rid)
-			return fmt.Errorf("get root account for main account  controller failed, err: %w", err)
+			logs.Errorf("get root account for main account controller failed, err: %v, rid: %s", err, kt.Rid)
+			return fmt.Errorf("get root account for main account controller failed, err: %w", err)
 		}
 
 		opt := MainAccountControllerOption{
@@ -157,18 +157,20 @@ func (bm *BillManager) syncMainControllers() error {
 		}
 		if err := ctrl.Start(); err != nil {
 			ctrl.Stop()
-			logs.Errorf("fail to start main account controller, %s, vednor: %s, root_account: %s, biz: %d,product: %d rid: %s",
+			logs.Errorf("fail to start main account controller of %s, vendor: %s, root account: %s, biz: %d,"+
+				" product: %d, rid: %s",
 				opt.MainAccountID, opt.Vendor, opt.RootAccountID, opt.BkBizID, opt.ProductID, kt.Rid)
 			return fmt.Errorf("start main account controller failed, err: %w", err)
 		}
 		bm.CurrentMainControllers[mainAccount.Key()] = ctrl
-		logs.Infof("start main account controller for %s, vednor: %s, root_account: %s, biz: %d,product: %d rid: %s",
+		logs.Infof("start main account controller for %s, vednor: %s, root_account: %s, biz: %d, product: %d, rid: %s",
 			opt.MainAccountID, opt.Vendor, opt.RootAccountID, opt.BkBizID, opt.ProductID, kt.Rid)
 	}
 	for key, controller := range bm.CurrentMainControllers {
 		if _, ok := existedAccountKeyMap[key]; !ok {
 			controller.Stop()
-			logs.Infof("stop main account controller for  %s, vednor: %s, root_account: %s, biz: %d,product: %d rid: %s",
+			logs.Infof("stop main account controller for  %s, vednor: %s, root_account: %s, biz: %d, "+
+				"product: %d, rid: %s",
 				controller.MainAccountID, controller.Vendor, controller.RootAccountID, controller.BkBizID,
 				controller.ProductID, kt.Rid)
 			delete(bm.CurrentMainControllers, key)

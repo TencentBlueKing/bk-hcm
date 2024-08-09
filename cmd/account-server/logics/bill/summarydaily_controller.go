@@ -239,7 +239,7 @@ func (msdc *MainSummaryDailyController) createDailySummaryTask(
 		RootAccountID:      msdc.RootAccountID,
 		MainAccountID:      msdc.MainAccountID,
 		RootAccountCloudID: msdc.RootAccountCloudID,
-		MainAccountCloudID: msdc.RootAccountCloudID,
+		MainAccountCloudID: msdc.MainAccountCloudID,
 		ProductID:          msdc.ProductID,
 		Vendor:             msdc.Vendor,
 		BkBizID:            msdc.BkBizID,

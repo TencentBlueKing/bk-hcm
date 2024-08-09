@@ -20,6 +20,14 @@
 package dailysummary
 
 import (
+	// register aws puller
+	_ "hcm/cmd/account-server/logics/bill/puller/aws"
+	// register azure puller
+	_ "hcm/cmd/account-server/logics/bill/puller/azure"
 	// register gcp puller
 	_ "hcm/cmd/account-server/logics/bill/puller/gcp"
+	// register huawei puller
+	_ "hcm/cmd/account-server/logics/bill/puller/huawei"
+	// register zenlayer puller
+	_ "hcm/cmd/account-server/logics/bill/puller/zenlayer"
 )
