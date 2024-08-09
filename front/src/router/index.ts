@@ -75,7 +75,7 @@ const toCurrentPage = (
   const hasAuth = !!authVerifyData?.permissionAction?.[currentFindAuthData?.id];
 
   if (!needAuth) {
-    if (to?.name === '403') next({ path: '/' });
+    if (to?.name === '403') next(!!authVerifyData?.permissionAction?.biz_access ? { path: '/' } : undefined);
     else next();
     return;
   }
