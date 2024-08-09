@@ -31,6 +31,7 @@ import { APPLICATION_TYPE_MAP } from '@/views/service/apply-list/constants';
 import dayjs from 'dayjs';
 import { BILLS_ROOT_ACCOUNT_SUMMARY_STATE_MAP, BILL_TYPE__MAP_HW, CURRENCY_MAP } from '@/constants';
 import { BILL_VENDORS_MAP, BILL_SITE_TYPES_MAP } from '@/views/bill/account/account-manage/constants';
+import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
 
 interface LinkFieldOptions {
   type: string; // 资源类型
@@ -40,6 +41,8 @@ interface LinkFieldOptions {
   onlyShowOnList?: boolean; // 只在列表中显示
   onLinkInBusiness?: boolean; // 只在业务下可链接
   render?: (data: any) => any; // 自定义渲染内容
+  renderSuffix?: (data: any) => any; // 自定义后缀渲染内容
+  contentClass?: string; // 内容class
   sort?: boolean; // 是否支持排序
 }
 
@@ -66,7 +69,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       sort: true,
     });
 
-    const { type, label, field, idFiled, onlyShowOnList, onLinkInBusiness, render, sort } = options;
+    const { type, label, field, idFiled, onlyShowOnList, onLinkInBusiness, render, renderSuffix, contentClass, sort } =
+      options;
 
     return {
       label,
@@ -78,37 +82,47 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       render({ data }: { cell: string; data: any }) {
         if (data[idFiled] < 0 || !data[idFiled]) return '--';
         // 如果设置了onLinkInBusiness=true, 则只在业务下可以链接至指定路由
-        if (onLinkInBusiness && whereAmI.value !== Senarios.business) return data[field] || '--';
+        if (onLinkInBusiness && whereAmI.value !== Senarios.business) {
+          return (
+            <div class={contentClass}>
+              {render ? render(data) : data[field] || '--'}
+              {renderSuffix?.(data)}
+            </div>
+          );
+        }
         return (
-          <Button
-            text
-            theme='primary'
-            onClick={() => {
-              const routeInfo: any = {
-                query: {
-                  ...route.query,
-                  id: data[idFiled],
-                  type: data.vendor,
-                },
-              };
-              // 业务下
-              if (route.path.includes('business')) {
-                routeInfo.query.bizs = accountStore.bizs;
-                Object.assign(routeInfo, {
-                  name: `${type}BusinessDetail`,
-                });
-              } else {
-                Object.assign(routeInfo, {
-                  name: 'resourceDetail',
-                  params: {
-                    type,
+          <div class={contentClass}>
+            <Button
+              text
+              theme='primary'
+              onClick={() => {
+                const routeInfo: any = {
+                  query: {
+                    ...route.query,
+                    id: data[idFiled],
+                    type: data.vendor,
                   },
-                });
-              }
-              router.push(routeInfo);
-            }}>
-            {render ? render(data) : data[field] || '--'}
-          </Button>
+                };
+                // 业务下
+                if (route.path.includes('business')) {
+                  routeInfo.query.bizs = accountStore.bizs;
+                  Object.assign(routeInfo, {
+                    name: `${type}BusinessDetail`,
+                  });
+                } else {
+                  Object.assign(routeInfo, {
+                    name: 'resourceDetail',
+                    params: {
+                      type,
+                    },
+                  });
+                }
+                router.push(routeInfo);
+              }}>
+              {render ? render(data) : data[field] || '--'}
+            </Button>
+            {renderSuffix?.(data)}
+          </div>
         );
       },
     };
@@ -739,15 +753,27 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       onlyShowOnList: false,
       render: (data) =>
         [...(data.private_ipv4_addresses || []), ...(data.private_ipv6_addresses || [])].join(',') || '--',
+      renderSuffix: (data) => {
+        const ips = [...(data.private_ipv4_addresses || []), ...(data.private_ipv6_addresses || [])].join(',') || '--';
+        return <CopyToClipboard content={ips} class={['copy-icon', 'ml4']} />;
+      },
+      contentClass: 'cell-private-ip',
       sort: false,
     }),
     {
       label: '公网IP',
-      field: 'vendor',
+      field: 'public_ipv4_addresses',
       isDefaultShow: true,
       onlyShowOnList: true,
-      render: ({ data }: any) =>
-        [...(data.public_ipv4_addresses || []), ...(data.public_ipv6_addresses || [])].join(',') || '--',
+      render: ({ data }: any) => {
+        const ips = [...(data.public_ipv4_addresses || []), ...(data.public_ipv6_addresses || [])].join(',') || '--';
+        return (
+          <div class={'cell-public-ip'}>
+            <span>{ips}</span>
+            <CopyToClipboard content={ips} class={['copy-icon', 'ml4']} />
+          </div>
+        );
+      },
     },
     {
       label: '所属VPC',

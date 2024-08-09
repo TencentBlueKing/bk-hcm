@@ -5,6 +5,7 @@ import { usePreviousState } from '@/hooks/usePreviousState';
 import { useResourceStore } from '@/store';
 import { AngleDown } from 'bkui-vue/lib/icon';
 import { BkDropdownItem, BkDropdownMenu } from 'bkui-vue/lib/dropdown';
+import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
 import CommonLocalTable from '../commonLocalTable';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
 import http from '@/http';
@@ -99,17 +100,26 @@ export default defineComponent({
       },
     ]);
 
+    const getPrivateIPs = (data: any) => {
+      return [...(data.private_ipv4_addresses || []), ...(data.private_ipv6_addresses || [])].join(',') || '--';
+    };
+    const getPublicIPs = (data: any) => {
+      return [...(data.public_ipv4_addresses || []), ...(data.public_ipv6_addresses || [])].join(',') || '--';
+    };
+    const selectedRowPrivateIPs = computed(() => props.selections.map(getPrivateIPs));
+    const selectedRowPublicIPs = computed(() => props.selections.map(getPublicIPs));
+
     const computedColumns = computed(() =>
       [
         {
           field: '_private_ip',
           label: '内网IP',
-          render: ({ data }: any) => [...data.private_ipv4_addresses, ...data.private_ipv6_addresses].join(',') || '--',
+          render: ({ data }: any) => getPrivateIPs(data),
         },
         {
           field: '_public_ip',
           label: '外网IP',
-          render: ({ data }: any) => [...data.public_ipv4_addresses, ...data.public_ipv6_addresses].join(',') || '--',
+          render: ({ data }: any) => getPublicIPs(data),
         },
         {
           field: 'name',
@@ -396,6 +406,16 @@ export default defineComponent({
                       {`批量${opName}`}
                     </BkDropdownItem>
                   ))}
+                  <CopyToClipboard
+                    type='dropdown-item'
+                    text='复制内网IP'
+                    content={selectedRowPrivateIPs.value?.join?.(',')}
+                  />
+                  <CopyToClipboard
+                    type='dropdown-item'
+                    text='复制公网IP'
+                    content={selectedRowPublicIPs.value?.join?.(',')}
+                  />
                 </BkDropdownMenu>
               ),
             }}
