@@ -13,6 +13,7 @@ type Field = {
   edit?: boolean;
   prop?: string;
   tipsContent?: string;
+  type?: string;
   render?: (cell: string | boolean) => void;
 };
 
@@ -24,15 +25,20 @@ export default defineComponent({
   props: {
     fields: Array as PropType<Field[]>,
     detail: Object,
+    wide: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   emits: ['change'],
-  setup(_, { emit }) {
+  setup(props, { emit }) {
     const handleChange = (val: any) => {
       emit('change', val);
     };
     return {
       handleChange,
+      props,
     };
   },
 
@@ -48,6 +54,13 @@ export default defineComponent({
   },
 
   render() {
-    return <info-list class='detail-info-main g-scroller' fields={this.renderFields} onChange={this.handleChange} />;
+    return (
+      <info-list
+        class='detail-info-main g-scroller'
+        fields={this.renderFields}
+        onChange={this.handleChange}
+        wide={this.props.wide}
+      />
+    );
   },
 });

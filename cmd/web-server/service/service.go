@@ -160,7 +160,8 @@ func (s *Service) ListenAndServeRest() error {
 	container.Filter(container.OPTIONSFilter)
 	container.Add(s.staticFileSet())
 	container.Add(s.apiSet())
-	container.Add(s.proxyApiSet())
+	container.Add(s.proxyApiSet("/api/v1/cloud"))
+	container.Add(s.proxyApiSet("/api/v1/account"))
 	container.Add(s.indexSet())
 
 	root.Handle("/", container)
@@ -198,18 +199,15 @@ func (s *Service) ListenAndServeRest() error {
 				logs.Errorf("shutdown restful server failed, err: %v", err)
 				return
 			}
-
 			logs.Infof("shutdown restful server success...")
 		}
 	}()
-
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logs.Errorf("serve restful server failed, err: %v", err)
 			shutdown.SignalShutdownGracefully()
 		}
 	}()
-
 	return nil
 }
 
@@ -242,12 +240,12 @@ func (s *Service) apiSet() *restful.WebService {
 }
 
 // proxyApiSet 处理代理API
-func (s *Service) proxyApiSet() *restful.WebService {
+func (s *Service) proxyApiSet(apiPath string) *restful.WebService {
 	ws := new(restful.WebService)
 	ws.Produces(restful.MIME_JSON)
 
 	// Note: 所有API接口都需要经过用户认证
-	ws.Path("/api/v1/cloud").Filter(
+	ws.Path(apiPath).Filter(
 		NewUserAuthenticateFilter(s.esbClient, cc.WebServer().Web.BkLoginUrl, cc.WebServer().Web.BkLoginCookieName),
 	)
 	ws.Route(ws.GET("{.*}").To(s.proxy.Do))
@@ -315,6 +313,7 @@ func (s *Service) indexHandleFunc(req *restful.Request, resp *restful.Response) 
 		"BK_CMDB_CREATE_BIZ_URL":      cc.WebServer().Web.BkCmdbCreateBizUrl,
 		"BK_CMDB_CREATE_BIZ_DOCS_URL": cc.WebServer().Web.BkCmdbCreateBizDocsUrl,
 		"ENABLE_CLOUD_SELECTION":      cc.WebServer().Web.EnableCloudSelection,
+		"ENABLE_ACCOUNT_BILL":         cc.WebServer().Web.EnableAccountBill,
 	}
 	err = tmpl.Execute(resp.ResponseWriter, content)
 	if err != nil {

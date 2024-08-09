@@ -243,7 +243,7 @@ const renderColumns = [
 </script>
 
 <template>
-  <bk-loading :loading="isLoading">
+  <bk-loading :loading="isLoading" opacity="1">
     <section
       class="flex-row align-items-center"
       :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'"
@@ -270,7 +270,6 @@ const renderColumns = [
 
     <bk-table
       :settings="settings"
-      class="has-selection"
       row-hover="auto"
       remote-pagination
       :pagination="pagination"

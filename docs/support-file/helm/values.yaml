@@ -466,6 +466,61 @@ taskserver:
       # taskTimeoutSec 判断任务执行超时时间
       taskTimeoutSec: 300
 
+accountserver:
+  ## 镜像
+  ##
+  image:
+    repository: blueking/bk-hcm-cloudserver
+    tag:
+  ## 日志配置
+  ##
+  log:
+    alsoToStdErr: true
+    logDir: /data/hcm/logs
+    maxPerFileSizeMB: 1024
+    maxPerLineSizeKB: 2
+    maxFileNum: 5
+    logAppend: false
+    toStdErr: false
+    verbosity: 0
+  # bill controller
+  controller:
+    controllerSyncDuration:
+    mainAccountSummarySyncDuration:
+    rootAccountSummarySyncDuration:
+    dailySummarySyncDuration:
+
+  billAllocation:
+    # aws saving plan allocation option
+    awsSavingPlans:
+    #    - rootAccountId:
+    #      spArnPrefix:
+    #      SpPurchaseAccountCloudID:
+
+  ## pod配置
+  ##
+  replicas: 1
+  podAnnotations: { }
+  affinity: { }
+  nodeSelector: { }
+  tolerations: [ ]
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1024Mi
+    requests:
+      memory: 512Mi
+      cpu: 200m
+  service:
+    type: "ClusterIP"
+    ports:
+      - name: http
+        protocol: TCP
+        port: 80
+        targetPort: 80
+        nodePort:
+  port: 80
+
 ## appCode
 appCode: bk-hcm
 ## appSecret
@@ -492,6 +547,8 @@ bkCmdbCreateBizUrl: "http://cmdb.bk.com/create_biz"
 bkCmdbCreateBizDocsUrl: "http://cmdb.bk.com/docs"
 # 是否启用云选型
 enableCloudSelection: true
+# 是否启用账单账号功能
+enableAccountBill: true
 
 ## 加密配置，Note: 首次部署后不可修改，否则数据将无法解密
 ##
@@ -563,7 +620,7 @@ mariadb:
   enabled: true
   architecture: standalone
   auth:
-    rootPassword: "admin"
+    rootPassword: ""
     database: hcm
     username: hcm
     password: "admin"
@@ -589,7 +646,8 @@ dbConnConfig:
   maxIdleTimeoutMin: 10
   maxOpenConn: 500
   maxIdleConn: 100
-
+  limiterQps: 500
+  limiterBurst: 500
 ## 内置Etcd
 ##
 etcd:
@@ -704,3 +762,47 @@ itsm:
     caFile:
     # the password to decrypt the certificate.
     password:
+
+# defines cmsi related settings.
+cmsi:
+  cc:
+    - manager1@example.com
+    - manager2@example.com
+  sender: hcm@example.com
+  # endpoints is a seed list of host:port addresses of finops api gateway nodes.
+  endpoints:
+    - http://demo.com
+  # appCode is the BlueKing app code of hcm to request finops api gateway.
+  appCode: bk-hcm
+  # appSecret is the BlueKing app secret of hcm to request finops api gateway.
+  appSecret: xxxxxxxxx
+  # user is the BlueKing user of hcm to request finops api gateway.
+  user: bk-hcm
+  # bkTicket is the BlueKing access ticket of hcm to request finops api gateway.
+  bkTicket:
+  # bkToken is the BlueKing access token of hcm to request finops api gateway.
+  bkToken: xxxxxxxxx
+  # defines tls related options.
+  tls:
+    # server should be accessed without verifying the TLS certificate.
+    insecureSkipVerify:
+    # server requires TLS client certificate authentication.
+    certFile:
+    # server requires TLS client certificate authentication.
+    keyFile:
+    # trusted root certificates for server.
+    caFile:
+    # the password to decrypt the certificate.
+    password:
+
+# object store
+objectstore:
+  type:
+  uin:
+  prefix:
+  secretId:
+  secretKey:
+  bucketUrl:
+  bucketName:
+  bucketRegion:
+  isDebug:

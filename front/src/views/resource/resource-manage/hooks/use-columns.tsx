@@ -4,7 +4,7 @@ import i18n from '@/language/i18n';
 import { CloudType, SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum } from '@/typings';
 import { useAccountStore, useLoadBalancerStore } from '@/store';
 import { Button } from 'bkui-vue';
-import type { Settings } from 'bkui-vue/lib/table/props';
+import { type Settings } from 'bkui-vue/lib/table/props';
 import { h, ref } from 'vue';
 import type { Ref } from 'vue';
 import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
@@ -18,14 +18,19 @@ import StatusNormal from '@/assets/image/Status-normal.png';
 import StatusUnknown from '@/assets/image/Status-unknown.png';
 import StatusSuccess from '@/assets/image/success-account.png';
 import StatusLoading from '@/assets/image/status_loading.png';
+import StatusFailure from '@/assets/image/failed-account.png';
 
 import { HOST_RUNNING_STATUS, HOST_SHUTDOWN_STATUS } from '../common/table/HostOperations';
 import './use-columns.scss';
 import { defaults } from 'lodash';
 import { timeFormatter } from '@/common/util';
 import { IP_VERSION_MAP, LBRouteName, LB_NETWORK_TYPE_MAP, SCHEDULER_MAP } from '@/constants/clb';
-import { getInstVip } from '@/utils';
+import { formatBillCost, getInstVip } from '@/utils';
+import { Spinner } from 'bkui-vue/lib/icon';
+import { APPLICATION_TYPE_MAP } from '@/views/service/apply-list/constants';
 import dayjs from 'dayjs';
+import { BILLS_ROOT_ACCOUNT_SUMMARY_STATE_MAP, BILL_TYPE__MAP_HW, CURRENCY_MAP } from '@/constants';
+import { BILL_VENDORS_MAP, BILL_SITE_TYPES_MAP } from '@/views/bill/account/account-manage/constants';
 
 interface LinkFieldOptions {
   type: string; // 资源类型
@@ -125,13 +130,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   };
 
   const vpcColumns = [
-    {
-      type: 'selection',
-      width: 32,
-      minWidth: 32,
-      onlyShowOnList: true,
-      align: 'right',
-    },
+    { type: 'selection', width: 30, minWidth: 30, onlyShowOnList: true },
     getLinkField({ type: 'vpc', label: 'VPC ID', field: 'cloud_id' }),
     // {
     //   label: '资源 ID',
@@ -217,13 +216,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   ];
 
   const subnetColumns = [
-    {
-      type: 'selection',
-      width: 32,
-      minWidth: 32,
-      onlyShowOnList: true,
-      align: 'right',
-    },
+    { type: 'selection', width: 30, minWidth: 30, onlyShowOnList: true },
     getLinkField({ type: 'subnet', label: '子网 ID', field: 'cloud_id', idFiled: 'id', onlyShowOnList: false }),
     // {
     //   label: '资源 ID',
@@ -331,13 +324,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   ];
 
   const groupColumns = [
-    {
-      type: 'selection',
-      width: 32,
-      minWidth: 32,
-      onlyShowOnList: true,
-      align: 'right',
-    },
+    { type: 'selection', width: 30, minWidth: 30, onlyShowOnList: true },
     getLinkField({ type: 'subnet' }),
     {
       label: '资源 ID',
@@ -367,13 +354,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   ];
 
   const gcpColumns = [
-    {
-      type: 'selection',
-      width: 32,
-      minWidth: 32,
-      onlyShowOnList: true,
-      align: 'right',
-    },
+    { type: 'selection', width: 30, minWidth: 30, onlyShowOnList: true },
     getLinkField({ type: 'subnet' }),
     {
       label: '资源 ID',
@@ -412,13 +393,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   ];
 
   const driveColumns: any[] = [
-    {
-      type: 'selection',
-      width: 32,
-      minWidth: 32,
-      onlyShowOnList: true,
-      align: 'right',
-    },
+    { type: 'selection', width: 30, minWidth: 30, onlyShowOnList: true },
     getLinkField({ type: 'drive', label: '云硬盘ID', field: 'cloud_id' }),
     // {
     //   label: '资源 ID',
@@ -742,13 +717,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   ];
 
   const cvmsColumns = [
-    {
-      type: 'selection',
-      width: 32,
-      minWidth: 32,
-      onlyShowOnList: true,
-      align: 'right',
-    },
+    { type: 'selection', width: 30, minWidth: 30, onlyShowOnList: true },
     //   移除 ID 搜索条件
     // {
     //   label: 'ID',
@@ -969,13 +938,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   ];
 
   const eipColumns = [
-    {
-      type: 'selection',
-      width: 32,
-      minWidth: 32,
-      onlyShowOnList: true,
-      align: 'right',
-    },
+    { type: 'selection', width: 30, minWidth: 30, onlyShowOnList: true },
     getLinkField({ type: 'eips', label: 'IP资源ID', field: 'cloud_id', idFiled: 'id' }),
     // {
     //   label: '资源 ID',
@@ -1133,13 +1096,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   ];
 
   const lbColumns = [
-    {
-      type: 'selection',
-      width: 32,
-      minWidth: 32,
-      onlyShowOnList: true,
-      align: 'right',
-    },
+    { type: 'selection', width: 30, minWidth: 30, onlyShowOnList: true },
     getLinkField({
       type: 'lb',
       label: '负载均衡名称',
@@ -1369,13 +1326,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   ];
 
   const targetGroupColumns = [
-    {
-      type: 'selection',
-      width: 32,
-      minWidth: 32,
-      onlyShowOnList: true,
-      align: 'right',
-    },
+    { type: 'selection', width: 30, minWidth: 30, onlyShowOnList: true },
     getLinkField({
       type: 'name',
       label: '目标组名称',
@@ -1654,13 +1605,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   ];
 
   const urlColumns = [
-    {
-      type: 'selection',
-      width: 32,
-      minWidth: 32,
-      onlyShowOnList: true,
-      align: 'right',
-    },
+    { type: 'selection', width: 30, minWidth: 30, onlyShowOnList: true },
     {
       label: 'URL路径',
       field: 'url',
@@ -1786,6 +1731,732 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
   ];
 
+  const firstAccountColumns = [
+    {
+      label: '一级帐号ID',
+      field: 'cloud_id',
+    },
+    {
+      label: '云厂商',
+      field: 'vendor',
+      render: ({ cell }: any) => BILL_VENDORS_MAP[cell] || '--',
+    },
+    {
+      label: '帐号邮箱',
+      field: 'email',
+    },
+    {
+      label: '主负责人',
+      field: 'managers',
+      render: ({ cell }: any) => cell.join(','),
+    },
+    // {
+    //   label: '组织架构',
+    //   field: 'dept_id',
+    // },
+    {
+      label: '备注',
+      field: 'memo',
+    },
+  ];
+
+  const secondaryAccountColumns = [
+    {
+      label: '二级账号名称',
+      field: 'name',
+    },
+    {
+      label: '所属一级帐号',
+      field: 'parent_account_name',
+    },
+    {
+      label: '云厂商',
+      field: 'vendor',
+      render: ({ cell }: any) => BILL_VENDORS_MAP[cell] || '--',
+    },
+    {
+      label: '站点类型',
+      field: 'site',
+      render: ({ cell }: any) => BILL_SITE_TYPES_MAP[cell],
+    },
+    {
+      label: '帐号邮箱',
+      field: 'email',
+    },
+    {
+      label: '主负责人',
+      field: 'managers',
+      render: ({ cell }: any) => cell.join(','),
+    },
+    {
+      label: '业务',
+      field: 'op_product_id',
+    },
+    {
+      label: '备注',
+      field: 'memo',
+    },
+  ];
+
+  const myApplyColumns = [
+    // {
+    //   label: '申请ID',
+    //   field: 'id',
+    // },
+    // {
+    //   label: '来源',
+    //   field: 'source',
+    // },
+    {
+      label: '申请类型',
+      field: 'type',
+      render: ({ cell }: { cell: string }) => APPLICATION_TYPE_MAP[cell],
+    },
+    {
+      label: '单据状态',
+      field: 'status',
+      render({ data }: any) {
+        let icon = StatusAbnormal;
+        let txt = '审批拒绝';
+        switch (data.status) {
+          case 'pending':
+          case 'delivering':
+            icon = StatusLoading;
+            txt = '审批中';
+            break;
+          case 'pass':
+          case 'completed':
+          case 'deliver_partial':
+            icon = StatusSuccess;
+            txt = '审批通过';
+            break;
+          case 'rejected':
+          case 'cancelled':
+          case 'deliver_error':
+            icon = StatusFailure;
+            txt = '审批拒绝';
+            break;
+        }
+        return (
+          <div class={'cvm-status-container'}>
+            {txt === '审批中' ? (
+              <Spinner fill='#3A84FF' class={'mr6'} width={14} height={14} />
+            ) : (
+              <img src={icon} class={'mr6'} width={14} height={14} />
+            )}
+
+            {txt}
+          </div>
+        );
+      },
+    },
+    {
+      label: '申请人',
+      field: 'applicant',
+    },
+    {
+      label: '创建时间',
+      field: 'created_at',
+      render({ cell }: any) {
+        return timeFormatter(cell);
+      },
+    },
+    {
+      label: '更新时间',
+      field: 'updated_at',
+      render({ cell }: any) {
+        return timeFormatter(cell);
+      },
+    },
+    {
+      label: '备注',
+      field: 'memo',
+      render({ cell }: any) {
+        return cell || '--';
+      },
+    },
+  ];
+
+  const billsRootAccountSummaryColumns = [
+    {
+      label: '一级账号ID',
+      field: 'root_account_id',
+      isDefaultShow: true,
+    },
+    {
+      label: '一级账号名称',
+      field: 'root_account_name',
+      isDefaultShow: true,
+    },
+    {
+      label: '账号状态',
+      field: 'state',
+      isDefaultShow: true,
+      render: ({ cell }: any) => BILLS_ROOT_ACCOUNT_SUMMARY_STATE_MAP[cell],
+    },
+    {
+      label: '账单同步（人民币-元）当月',
+      field: 'current_month_rmb_cost_synced',
+      isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
+    },
+    {
+      label: '账单同步（人民币-元）上月',
+      field: 'last_month_rmb_cost_synced',
+      isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
+    },
+    {
+      label: '账单同步（美金-美元）当月',
+      field: 'current_month_cost_synced',
+      isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
+    },
+    {
+      label: '账单同步（美金-美元）上月',
+      field: 'last_month_cost_synced',
+      isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
+    },
+    {
+      label: '账单同步环比',
+      field: 'month_on_month_value',
+      isDefaultShow: true,
+    },
+    {
+      label: '当前账单人民币（元）',
+      field: 'current_month_rmb_cost',
+      isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
+    },
+    {
+      label: '当前账单美金（美元）',
+      field: 'current_month_cost',
+      isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
+    },
+    {
+      label: '调账人民币（元）',
+      field: 'adjustment_rmb_cost',
+      isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
+    },
+    {
+      label: '调账美金（美元）',
+      field: 'adjustment_cost',
+      isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
+    },
+  ];
+
+  const billsMainAccountSummaryColumns = [
+    {
+      label: '二级账号ID',
+      field: 'main_account_cloud_id',
+      isDefaultShow: true,
+    },
+    {
+      label: '二级账号名称',
+      field: 'main_account_cloud_name',
+      isDefaultShow: true,
+    },
+    {
+      label: '一级账号名称',
+      field: 'root_account_name',
+      isDefaultShow: true,
+    },
+    {
+      label: '业务名称',
+      field: 'product_name',
+      isDefaultShow: true,
+      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
+    },
+    {
+      label: '已确认账单人民币（元）',
+      field: 'current_month_rmb_cost_synced',
+      isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
+    },
+    {
+      label: '已确认账单美金（美元）',
+      field: 'current_month_cost_synced',
+      isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
+    },
+    {
+      label: '当前账单人民币（元）',
+      field: 'current_month_rmb_cost',
+      isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
+    },
+    {
+      label: '当前账单美金（美元）',
+      field: 'current_month_cost',
+      isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
+    },
+  ];
+
+  const billDetailAwsColumns = [
+    {
+      label: '核算日期',
+      field: 'bill_date',
+      render: ({ data: { bill_year, bill_month, bill_day } }: any) =>
+        dayjs(new Date(bill_year, bill_month - 1, bill_day)).format('YYYYMMDD'),
+    },
+    {
+      label: 'ID',
+      field: 'id',
+      isDefaultShow: true,
+    },
+    {
+      label: '一级账号ID',
+      field: 'root_account_id',
+      isDefaultShow: true,
+    },
+    {
+      label: '二级账号ID',
+      field: 'main_account_id',
+      isDefaultShow: true,
+    },
+    {
+      label: '云厂商',
+      field: 'vendor',
+      isDefaultShow: true,
+      render: ({ cell }: any) => VendorMap[cell],
+    },
+    {
+      label: '业务ID',
+      field: 'product_id',
+      isDefaultShow: true,
+    },
+    {
+      label: '业务ID',
+      field: 'bk_biz_id',
+      isDefaultShow: true,
+      render: ({ cell }: { cell: number }) => businessMapStore.businessMap.get(cell) || '未分配',
+    },
+    {
+      label: '币种',
+      field: 'currency',
+      isDefaultShow: true,
+      render: ({ cell }: any) => CURRENCY_MAP[cell],
+    },
+    {
+      label: '本期应付金额',
+      field: 'cost',
+      isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
+    },
+    {
+      label: '资源类型编码',
+      field: 'hc_product_code',
+      isDefaultShow: true,
+    },
+    {
+      label: '产品名称',
+      field: 'hc_product_name',
+      isDefaultShow: true,
+    },
+    {
+      label: '预留实例使用量',
+      field: 'res_amount',
+      isDefaultShow: true,
+    },
+    {
+      label: '预留实例使用单位',
+      field: 'res_amount_unit',
+      isDefaultShow: true,
+    },
+  ];
+
+  const billDetailAzureColumns = [
+    {
+      label: '核算日期',
+      field: 'bill_date',
+      render: ({ data: { bill_year, bill_month, bill_day } }: any) =>
+        dayjs(new Date(bill_year, bill_month - 1, bill_day)).format('YYYYMMDD'),
+    },
+    {
+      label: 'ID',
+      field: 'id',
+      isDefaultShow: true,
+    },
+    {
+      label: '一级账号ID',
+      field: 'root_account_id',
+      isDefaultShow: true,
+    },
+    {
+      label: '二级账号ID',
+      field: 'main_account_id',
+      isDefaultShow: true,
+    },
+    {
+      label: '云厂商',
+      field: 'vendor',
+      isDefaultShow: true,
+      render: ({ cell }: any) => VendorMap[cell],
+    },
+    {
+      label: '业务ID',
+      field: 'product_id',
+      isDefaultShow: true,
+    },
+    {
+      label: '业务ID',
+      field: 'bk_biz_id',
+      isDefaultShow: true,
+      render: ({ cell }: { cell: number }) => businessMapStore.businessMap.get(cell) || '未分配',
+    },
+    {
+      label: '币种',
+      field: 'currency',
+      isDefaultShow: true,
+      render: ({ cell }: any) => CURRENCY_MAP[cell],
+    },
+    {
+      label: '本期应付金额',
+      field: 'cost',
+      isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
+    },
+    {
+      label: '资源类型编码',
+      field: 'hc_product_code',
+      isDefaultShow: true,
+    },
+    {
+      label: '产品名称',
+      field: 'hc_product_name',
+      isDefaultShow: true,
+    },
+    {
+      label: '预留实例使用量',
+      field: 'res_amount',
+      isDefaultShow: true,
+    },
+    {
+      label: '预留实例使用单位',
+      field: 'res_amount_unit',
+      isDefaultShow: true,
+    },
+  ];
+
+  const billDetailGcpColumns = [
+    {
+      label: '核算日期',
+      field: 'bill_date',
+      render: ({ data: { bill_year, bill_month, bill_day } }: any) =>
+        dayjs(new Date(bill_year, bill_month - 1, bill_day)).format('YYYYMMDD'),
+    },
+    {
+      label: 'ID',
+      field: 'id',
+      isDefaultShow: true,
+    },
+    {
+      label: '一级账号ID',
+      field: 'root_account_id',
+      isDefaultShow: true,
+    },
+    {
+      label: '二级账号ID',
+      field: 'main_account_id',
+      isDefaultShow: true,
+    },
+    {
+      label: '云厂商',
+      field: 'vendor',
+      isDefaultShow: true,
+      render: ({ cell }: any) => VendorMap[cell],
+    },
+    {
+      label: '业务ID',
+      field: 'product_id',
+      isDefaultShow: true,
+    },
+    {
+      label: '业务ID',
+      field: 'bk_biz_id',
+      isDefaultShow: true,
+      render: ({ cell }: { cell: number }) => businessMapStore.businessMap.get(cell) || '未分配',
+    },
+    {
+      label: '币种',
+      field: 'currency',
+      isDefaultShow: true,
+      render: ({ cell }: any) => CURRENCY_MAP[cell],
+    },
+    {
+      label: '本期应付金额',
+      field: 'cost',
+      isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
+    },
+    {
+      label: '资源类型编码',
+      field: 'hc_product_code',
+      isDefaultShow: true,
+    },
+    {
+      label: '产品名称',
+      field: 'hc_product_name',
+      isDefaultShow: true,
+    },
+    {
+      label: '预留实例使用量',
+      field: 'res_amount',
+      isDefaultShow: true,
+    },
+    {
+      label: '预留实例使用单位',
+      field: 'res_amount_unit',
+      isDefaultShow: true,
+    },
+  ];
+
+  const billDetailHuaweiColumns = [
+    {
+      label: '核算日期',
+      field: 'bill_date',
+      render: ({ data: { bill_year, bill_month, bill_day } }: any) =>
+        dayjs(new Date(bill_year, bill_month - 1, bill_day)).format('YYYYMMDD'),
+    },
+    {
+      label: 'ID',
+      field: 'id',
+      isDefaultShow: true,
+    },
+    {
+      label: '一级账号ID',
+      field: 'root_account_id',
+      isDefaultShow: true,
+    },
+    {
+      label: '二级账号ID',
+      field: 'main_account_id',
+      isDefaultShow: true,
+    },
+    {
+      label: '云厂商',
+      field: 'vendor',
+      isDefaultShow: true,
+      render: ({ cell }: any) => VendorMap[cell],
+    },
+    {
+      label: '业务ID',
+      field: 'product_id',
+      isDefaultShow: true,
+    },
+    {
+      label: '业务ID',
+      field: 'bk_biz_id',
+      isDefaultShow: true,
+      render: ({ cell }: { cell: number }) => businessMapStore.businessMap.get(cell) || '未分配',
+    },
+    {
+      label: '币种',
+      field: 'currency',
+      isDefaultShow: true,
+      render: ({ cell }: any) => CURRENCY_MAP[cell],
+    },
+    {
+      label: '本期应付金额',
+      field: 'cost',
+      isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
+    },
+    {
+      label: '资源类型编码',
+      field: 'hc_product_code',
+      isDefaultShow: true,
+    },
+    {
+      label: '产品名称',
+      field: 'hc_product_name',
+      isDefaultShow: true,
+    },
+    {
+      label: '预留实例使用量',
+      field: 'res_amount',
+      isDefaultShow: true,
+    },
+    {
+      label: '预留实例使用单位',
+      field: 'res_amount_unit',
+      isDefaultShow: true,
+    },
+    {
+      label: '使用量类型',
+      field: 'extension.usage_type',
+    },
+    {
+      label: '使用量',
+      field: 'extension.usage',
+    },
+    {
+      label: '使用量度量单位',
+      field: 'extension.unit',
+    },
+    {
+      label: '云服务类型编码',
+      field: 'extension.cloud_service_type',
+    },
+    {
+      label: '云服务类型名称',
+      field: 'extension.cloud_service_type_name',
+    },
+    {
+      label: '云服务区编码',
+      field: 'extension.region',
+    },
+    {
+      label: '云服务区名称',
+      field: 'extension.region_name',
+    },
+    {
+      label: '资源类型编码',
+      field: 'extension.resource_type',
+    },
+    {
+      label: '资源类型名称',
+      field: 'extension.resource_type_name',
+    },
+    {
+      label: '计费模式',
+      field: 'extension.charge_mode',
+    },
+    {
+      label: '账单类型',
+      field: 'extension.bill_type',
+      render: ({ cell }: any) => BILL_TYPE__MAP_HW[cell],
+    },
+  ];
+
+  const billDetailZenlayerColumns = [
+    {
+      label: '核算日期',
+      field: 'bill_date',
+      render: ({ data: { bill_year, bill_month, bill_day } }: any) =>
+        dayjs(new Date(bill_year, bill_month - 1, bill_day)).format('YYYYMMDD'),
+    },
+    {
+      label: 'ID',
+      field: 'id',
+      isDefaultShow: true,
+    },
+    {
+      label: '一级账号ID',
+      field: 'root_account_id',
+      isDefaultShow: true,
+    },
+    {
+      label: '二级账号ID',
+      field: 'main_account_id',
+      isDefaultShow: true,
+    },
+    {
+      label: '云厂商',
+      field: 'vendor',
+      isDefaultShow: true,
+      render: ({ cell }: any) => VendorMap[cell],
+    },
+    {
+      label: '业务ID',
+      field: 'product_id',
+      isDefaultShow: true,
+    },
+    {
+      label: '业务ID',
+      field: 'bk_biz_id',
+      isDefaultShow: true,
+      render: ({ cell }: { cell: number }) => businessMapStore.businessMap.get(cell) || '未分配',
+    },
+    {
+      label: '币种',
+      field: 'currency',
+      isDefaultShow: true,
+      render: ({ cell }: any) => CURRENCY_MAP[cell],
+    },
+    {
+      label: '本期应付金额',
+      field: 'cost',
+      isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
+    },
+    {
+      label: '资源类型编码',
+      field: 'hc_product_code',
+      isDefaultShow: true,
+    },
+    {
+      label: '产品名称',
+      field: 'hc_product_name',
+      isDefaultShow: true,
+    },
+    {
+      label: '预留实例使用量',
+      field: 'res_amount',
+      isDefaultShow: true,
+    },
+    {
+      label: '预留实例使用单位',
+      field: 'res_amount_unit',
+      isDefaultShow: true,
+    },
+  ];
+
+  const billsSummaryOperationRecordColumns = [
+    {
+      label: '操作时间',
+      field: 'updated_at',
+      render: ({ cell }: any) => timeFormatter(cell),
+    },
+    {
+      label: '状态',
+      field: 'state',
+    },
+    {
+      label: '账单月份',
+      field: 'bill_month',
+      render: ({ data }: any) => dayjs(new Date(data.bill_year, data.bill_month - 1)).format('YYYY-MM'),
+    },
+    {
+      label: '人民币（元）',
+      field: 'rmb_cost',
+      render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
+    },
+    {
+      label: '美金（美元）',
+      field: 'cost',
+      render: ({ cell }: any) => formatBillCost(cell),
+      sort: true,
+    },
+    {
+      label: '操作人',
+      field: 'operator',
+    },
+  ];
+
   const columnsMap = {
     vpc: vpcColumns,
     subnet: subnetColumns,
@@ -1807,6 +2478,17 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     url: urlColumns,
     targetGroupListener: targetGroupListenerColumns,
     cert: certColumns,
+    firstAccount: firstAccountColumns,
+    secondaryAccount: secondaryAccountColumns,
+    myApply: myApplyColumns,
+    billsRootAccountSummary: billsRootAccountSummaryColumns,
+    billsMainAccountSummary: billsMainAccountSummaryColumns,
+    billDetailAws: billDetailAwsColumns,
+    billDetailAzure: billDetailAzureColumns,
+    billDetailGcp: billDetailGcpColumns,
+    billDetailHuawei: billDetailHuaweiColumns,
+    billDetailZenlayer: billDetailZenlayerColumns,
+    billsSummaryOperationRecord: billsSummaryOperationRecordColumns,
   };
 
   let columns = (columnsMap[type] || []).filter((column: any) => !isSimpleShow || !column.onlyShowOnList);

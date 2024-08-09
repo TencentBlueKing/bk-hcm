@@ -17,6 +17,8 @@ import { useI18n } from 'vue-i18n';
 // import utils
 import bus from '@/common/bus';
 import './index.scss';
+import { useVerify } from '@/hooks';
+import { useGlobalPermissionDialog } from '@/store/useGlobalPermissionDialog';
 
 const { DropdownMenu, DropdownItem } = Dropdown;
 
@@ -25,6 +27,8 @@ export default defineComponent({
   setup() {
     // use hooks
     const { t } = useI18n();
+    const { authVerifyData, handleAuth } = useVerify();
+    const globalPermissionDialogStore = useGlobalPermissionDialog();
     // use stores
     const loadBalancerStore = useLoadBalancerStore();
     const businessStore = useBusinessStore();
@@ -112,13 +116,23 @@ export default defineComponent({
     };
 
     return () => (
-      <div class='common-card-wrap has-selection'>
+      <div class='common-card-wrap'>
         {/* 目标组list */}
         <CommonTable>
           {{
             operation: () => (
               <>
-                <Button theme='primary' onClick={() => bus.$emit('addTargetGroup')}>
+                <Button
+                  theme='primary'
+                  onClick={() => {
+                    if (!authVerifyData?.value?.permissionAction?.load_balancer_create) {
+                      handleAuth('clb_resource_create');
+                      globalPermissionDialogStore.setShow(true);
+                    } else bus.$emit('addTargetGroup');
+                  }}
+                  class={`mr8 ${
+                    !authVerifyData?.value?.permissionAction?.load_balancer_create ? 'hcm-no-permision-btn' : ''
+                  }`}>
                   <Plus class='f20' />
                   {t('新建')}
                 </Button>
@@ -225,7 +239,7 @@ export default defineComponent({
             </div>
             <SearchSelect class='w400' data={batchDeleteRsSearchData} />
           </div>
-          <Loading loading={isBatchDeleteRsTableLoading.value} class='has-selection'>
+          <Loading loading={isBatchDeleteRsTableLoading.value}>
             <Table data={batchDeleteRsTableData.value} columns={batchDeleteRsTableColumn} rowHeight={32} border='none'>
               {{
                 expandContent: (row: any) => (

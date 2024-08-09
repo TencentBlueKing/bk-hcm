@@ -66,3 +66,8 @@ func (a *ApplicationOfCreateAwsCvm) PrepareReqFromContent() error {
 func (a *ApplicationOfCreateAwsCvm) GetItsmApprover(managers []string) []itsm.VariableApprover {
 	return a.GetItsmPlatformAndAccountApprover(managers, a.req.AccountID)
 }
+
+// GetBkBizIDs 获取当前的业务IDs
+func (a *ApplicationOfCreateAwsCvm) GetBkBizIDs() []int64 {
+	return []int64{a.req.BkBizID}
+}

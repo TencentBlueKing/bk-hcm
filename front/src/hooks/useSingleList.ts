@@ -1,5 +1,5 @@
 import { reactive, ref, watch } from 'vue';
-import { defaults } from 'lodash';
+import { defaults, get } from 'lodash';
 import { QueryRuleOPEnum, RulesItem } from '@/typings';
 import http from '@/http';
 
@@ -17,12 +17,33 @@ export function useSingleList(options?: {
   immediate?: boolean;
   // 初始搜索条件（数组参数形式推荐 id 等不变值搜索条件；函数参数形式可以支持响应式的搜索条件）
   rules?: RulesItem[] | ((...args: any) => RulesItem[]);
+  // 请求载荷
+  payload?: object | ((...args: any) => object);
   // 自定义的 api 方法（请求全量数据时使用）
   apiMethod?: (...args: any) => Promise<any[]>;
+  // 自定义参数路径
+  path?: { data: string; count: string };
+  // 禁用排序
+  disableSort?: boolean;
+  // 初始分页参数
+  pagination?: { start?: number; limit: number; count?: number };
 }) {
   // 设置 options 默认值
-  defaults(options, { immediate: false, rules: [], apiMethod: null });
-  const getDefaultPagination = () => ({ start: 0, limit: 50, count: 0 });
+  defaults(options, {
+    immediate: false,
+    rules: [],
+    payload: {},
+    apiMethod: null,
+    path: {},
+    pagination: {},
+    disableSort: false,
+  });
+  // 设置 path 默认值
+  defaults(options.path, { data: 'details', count: 'count' });
+  // 设置 pagination 默认值
+  defaults(options.pagination, { start: 0, limit: 50, count: 0 });
+
+  const getDefaultPagination = () => options.pagination;
 
   const dataList = ref([]);
   const pagination = reactive(getDefaultPagination());
@@ -47,9 +68,11 @@ export function useSingleList(options?: {
               count: isCount,
               start: isCount ? 0 : pagination.start,
               limit: isCount ? 0 : pagination.limit,
-              sort: isCount ? undefined : 'created_at',
-              order: isCount ? undefined : 'DESC',
+              ...(options.disableSort
+                ? {}
+                : { sort: isCount ? undefined : 'created_at', order: isCount ? undefined : 'DESC' }),
             },
+            ...(typeof options.payload === 'function' ? options.payload() : options.payload),
           }),
         ),
       );
@@ -63,9 +86,9 @@ export function useSingleList(options?: {
     return apiMethod()
       .then(([detailRes, countRes]) => {
         // 加载数据
-        dataList.value = [...dataList.value, ...detailRes.data.details];
+        dataList.value = [...dataList.value, ...get(detailRes.data, options.path.data, [])];
         // 更新分页参数
-        pagination.count = countRes.data.count;
+        pagination.count = get(countRes.data, options.path.count, 0);
         // 将加载数据后的 dataList 作为 then 函数的返回值, 用以支持对新的 dataList 做额外的处理
         return dataList.value;
       })

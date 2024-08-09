@@ -132,15 +132,21 @@ const useFilter = (props: PropsType) => {
 
         if (props.whereAmI === ResourceManageSenario.image && ['account_id', 'bk_biz_id'].includes(field)) continue;
 
+        const conditionValue =
+          field === 'bk_cloud_id'
+            ? Number(values[0].id)
+            : field === 'region'
+            ? regionStore.getRegionNameEN(values[0].id)
+            : values[0].id;
         const condition = {
           field,
-          op: field === 'cloud_vpc_ids' ? 'json_contains' : QueryRuleOPEnum.CS,
-          value:
-            field === 'bk_cloud_id'
-              ? Number(values[0].id)
-              : field === 'region'
-              ? regionStore.getRegionNameEN(values[0].id)
-              : values[0].id,
+          value: conditionValue,
+          op:
+            field === 'cloud_vpc_ids'
+              ? 'json_contains'
+              : typeof conditionValue === 'number' || field === 'vendor'
+              ? QueryRuleOPEnum.EQ
+              : QueryRuleOPEnum.CS,
         };
 
         if (!map.has(field)) {

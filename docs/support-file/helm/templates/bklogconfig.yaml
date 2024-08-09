@@ -20,7 +20,9 @@ spec:
     - {{ .Values.dataservice.log.logDir }}/*
     - {{ .Values.hcservice.log.logDir }}/*
     - {{ .Values.cloudserver.log.logDir }}/*
-{{- end }}
+    - {{ .Values.taskserver.log.logDir }}/*
+    - {{ .Values.accountserver.log.logDir }}/*
+  {{- end }}
 {{- if .Values.bkLogConfig.std.enabled }}
 ---
 apiVersion: bk.tencent.com/v1alpha1

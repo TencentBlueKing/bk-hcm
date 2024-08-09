@@ -513,6 +513,7 @@ type Web struct {
 	BkCmdbCreateBizUrl     string `yaml:"bkCmdbCreateBizUrl"`
 	BkCmdbCreateBizDocsUrl string `yaml:"bkCmdbCreateBizDocsUrl"`
 	EnableCloudSelection   bool   `yaml:"enableCloudSelection"`
+	EnableAccountBill      bool   `yaml:"enableAccountBill"`
 }
 
 func (s Web) validate() error {
@@ -677,7 +678,7 @@ type ApiGateway struct {
 // validate hcm runtime.
 func (gt ApiGateway) validate() error {
 	if len(gt.Endpoints) == 0 {
-		return errors.New("endpoints is not set")
+		return errors.New("api gateway endpoints is not set")
 	}
 	if len(gt.AppCode) == 0 {
 		return errors.New("app code is not set")
@@ -705,7 +706,7 @@ func (gt ApiGateway) GetAuthValue() string {
 	}
 
 	if len(gt.BkToken) != 0 {
-		return fmt.Sprintf("{\"bk_app_code\": \"%s\", \"bk_app_secret\": \"%s\", \"bk_token\":\"%s\"}",
+		return fmt.Sprintf("{\"bk_app_code\": \"%s\", \"bk_app_secret\": \"%s\", \"access_token\":\"%s\"}",
 			gt.AppCode, gt.AppSecret, gt.BkToken)
 	}
 
@@ -780,4 +781,111 @@ type CloudSelectionTableNames struct {
 type ThreshHoldRanges struct {
 	Score int   `yaml:"score" json:"score"`
 	Range []int `yaml:"range" json:"range"`
+}
+
+// ObjectStore object store config
+type ObjectStore struct {
+	Type              string `yaml:"type"`
+	ObjectStoreTCloud `yaml:",inline"`
+}
+
+// ObjectStoreTCloud tencent cloud cos config
+type ObjectStoreTCloud struct {
+	UIN             string `yaml:"uin"`
+	COSPrefix       string `yaml:"prefix"`
+	COSSecretID     string `yaml:"secretId"`
+	COSSecretKey    string `yaml:"secretKey"`
+	COSBucketURL    string `yaml:"bucketUrl"`
+	CosBucketName   string `yaml:"bucketName"`
+	CosBucketRegion string `yaml:"bucketRegion"`
+	COSIsDebug      bool   `yaml:"isDebug"`
+}
+
+// Validate do validate
+func (ost ObjectStoreTCloud) Validate() error {
+	if len(ost.COSSecretID) == 0 {
+		return errors.New("cos secret_id cannot be empty")
+	}
+	if len(ost.COSSecretKey) == 0 {
+		return errors.New("cos secret_key cannot be empty")
+	}
+	if len(ost.COSBucketURL) == 0 {
+		return errors.New("cos bucket_url cannot be empty")
+	}
+	if len(ost.CosBucketName) == 0 {
+		return errors.New("cos bucket_name cannot be empty")
+	}
+	if len(ost.CosBucketRegion) == 0 {
+		return errors.New("cos bucket_region cannot be empty")
+	}
+	if len(ost.UIN) == 0 {
+		return errors.New("cos uin cannot be empty")
+	}
+	return nil
+}
+
+var (
+	defaultControllerSyncDuration         = 30 * time.Second
+	defaultMainAccountSummarySyncDuration = 10 * time.Minute
+	defaultRootAccountSummarySyncDuration = 10 * time.Minute
+	defaultDailySummarySyncDuration       = 30 * time.Second
+)
+
+// BillControllerOption bill controller option
+type BillControllerOption struct {
+	ControllerSyncDuration         *time.Duration `yaml:"controllerSyncDuration,omitempty"`
+	MainAccountSummarySyncDuration *time.Duration `yaml:"mainAccountSummarySyncDuration,omitempty"`
+	RootAccountSummarySyncDuration *time.Duration `yaml:"rootAccountSummarySyncDuration,omitempty"`
+	DailySummarySyncDuration       *time.Duration `yaml:"dailySummarySyncDuration,omitempty"`
+}
+
+func (bco *BillControllerOption) trySetDefault() {
+	if bco.ControllerSyncDuration == nil {
+		bco.ControllerSyncDuration = &defaultControllerSyncDuration
+	}
+	if bco.MainAccountSummarySyncDuration == nil {
+		bco.MainAccountSummarySyncDuration = &defaultMainAccountSummarySyncDuration
+	}
+	if bco.RootAccountSummarySyncDuration == nil {
+		bco.RootAccountSummarySyncDuration = &defaultRootAccountSummarySyncDuration
+	}
+	if bco.DailySummarySyncDuration == nil {
+		bco.DailySummarySyncDuration = &defaultDailySummarySyncDuration
+	}
+}
+
+// CMSI cmsi config
+type CMSI struct {
+	CC         []string `yaml:"cc"`
+	Sender     string   `yaml:"sender"`
+	ApiGateway `yaml:"-,inline"`
+}
+
+// Validate do validate
+func (c *CMSI) validate() error {
+	if err := c.ApiGateway.validate(); err != nil {
+		return err
+	}
+
+	if c.CC == nil || len(c.CC) == 0 {
+		c.CC = make([]string, 0)
+	}
+
+	if len(c.Sender) == 0 {
+		return errors.New("sender cannot be empty")
+	}
+
+	return nil
+}
+
+// AwsSavingPlanOption ...
+type AwsSavingPlanOption struct {
+	RootAccountID            string `yaml:"rootAccountId"`
+	SpArnPrefix              string `yaml:"spArnPrefix"`
+	SpPurchaseAccountCloudID string `yaml:"SpPurchaseAccountCloudID"`
+}
+
+// BillAllocationOption ...
+type BillAllocationOption struct {
+	AwsSavingPlans []AwsSavingPlanOption `yaml:"awsSavingPlans"`
 }

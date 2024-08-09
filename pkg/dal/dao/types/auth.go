@@ -28,9 +28,12 @@ import (
 
 // ListInstancesOption list instance options.
 type ListInstancesOption struct {
-	TableName table.Name         `json:"table_name"`
-	Filter    *filter.Expression `json:"filter"`
-	Page      *core.BasePage     `json:"page"`
+	TableName        table.Name         `json:"table_name"`
+	Filter           *filter.Expression `json:"filter"`
+	Page             *core.BasePage     `json:"page"`
+	Priority         filter.Priority    `json:"priority"`
+	ResourceIDField  string             `json:"resource_id_field"`
+	DisplayNameField string             `json:"display_name_field"`
 }
 
 // Validate list instance options.

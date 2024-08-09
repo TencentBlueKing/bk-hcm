@@ -33,12 +33,14 @@ import (
 	dataproto "hcm/pkg/api/data-service"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/cryptography"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/thirdparty/api-gateway/cmsi"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/thirdparty/esb"
 )
@@ -53,9 +55,10 @@ func InitApplicationService(c *capability.Capability, bkHcmUrl string) {
 		itsmCli:    c.ItsmCli,
 		esbCli:     c.EsbClient,
 		bkHcmUrl:   bkHcmUrl,
+		cmsiCli:    c.CmsiCli,
 	}
 	h := rest.NewHandler()
-	h.Add("List", "POST", "/applications/list", svc.List)
+	h.Add("ListApplications", "POST", "/applications/list", svc.ListApplications)
 	h.Add("Get", "GET", "/applications/{application_id}", svc.Get)
 	h.Add("Cancel", "PATCH", "/applications/{application_id}/cancel", svc.Cancel)
 	h.Add("Approve", "POST", "/applications/approve", svc.Approve)
@@ -67,8 +70,21 @@ func InitApplicationService(c *capability.Capability, bkHcmUrl string) {
 	h.Add("CreateForCreateLB", "POST",
 		"/vendors/{vendor}/applications/types/create_load_balancer", svc.CreateForCreateLB)
 
+	h.Add("CreateForCreateMainAccount", "POST", "/applications/types/create_main_account", svc.CreateForCreateMainAccount)
+	h.Add("CompleteForCreateMainAccount", "POST", "/applications/types/complete_main_account", svc.CompleteForCreateMainAccount)
+	h.Add("CreateForUpdateMainAccount", "POST", "/applications/types/update_main_account", svc.CreateForUpdateMainAccount)
+
+	bizH := rest.NewHandler()
+	bizH.Path("/bizs/{bk_biz_id}")
+	bizService(bizH, svc)
+
 	initApplicationServiceHooks(svc, h)
 	h.Load(c.WebService)
+	bizH.Load(c.WebService)
+}
+
+func bizService(h *rest.Handler, svc *applicationSvc) {
+	h.Add("ListBizApplications", "POST", "/applications/list", svc.ListBizApplications)
 }
 
 type applicationSvc struct {
@@ -79,6 +95,7 @@ type applicationSvc struct {
 	itsmCli    itsm.Client
 	esbCli     esb.Client
 	bkHcmUrl   string
+	cmsiCli    cmsi.Client
 }
 
 func (a *applicationSvc) getCallbackUrl() string {
@@ -93,6 +110,7 @@ func (a *applicationSvc) getHandlerOption(cts *rest.Contexts) *handlers.HandlerO
 		EsbClient: a.esbCli,
 		Cipher:    a.cipher,
 		Audit:     a.audit,
+		CmsiCli:   a.cmsiCli,
 	}
 }
 
@@ -186,6 +204,30 @@ func (a *applicationSvc) checkApplyResPermission(cts *rest.Contexts, resType met
 	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: resType, Action: meta.Apply}, BizID: bizID}
 	if err = a.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (a *applicationSvc) checkActionPermission(cts *rest.Contexts, resType meta.ResourceType, action meta.Action) error {
+	resources := make([]meta.ResourceAttribute, 0)
+	resources = append(resources, meta.ResourceAttribute{
+		Basic: &meta.Basic{
+			Type:   resType,
+			Action: action,
+		},
+	})
+
+	_, authorized, err := a.authorizer.Authorize(cts.Kit, resources...)
+	if err != nil {
+		return errf.NewFromErr(
+			errf.PermissionDenied,
+			fmt.Errorf("check permissions failed, resourceType: %s, action: %s, err: %v", resType, action, err),
+		)
+	}
+
+	if !authorized {
+		return errf.NewFromErr(errf.PermissionDenied, fmt.Errorf("you have not permission of resourceType: %s, action: %s", resType, action))
 	}
 
 	return nil

@@ -24,42 +24,81 @@ import (
 	"fmt"
 	"strings"
 
+	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/iam/meta"
+	"hcm/pkg/logs"
+
 	"github.com/tidwall/gjson"
 
 	proto "hcm/pkg/api/cloud-server/application"
 	dataproto "hcm/pkg/api/data-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 )
 
-// List ...
-func (a *applicationSvc) List(cts *rest.Contexts) (interface{}, error) {
+// ListApplications list applications
+func (a *applicationSvc) ListApplications(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.ApplicationListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
-
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// 构造过滤条件，只能查询自己的单据
-	reqFilter := &filter.Expression{
-		Op: filter.And,
-		Rules: []filter.RuleFactory{
-			filter.AtomRule{Field: "applicant", Op: filter.Equal.Factory(), Value: cts.Kit.User},
-		},
-	}
-	// 加上请求里过滤条件
-	if req.Filter != nil && !req.Filter.IsEmpty() {
-		reqFilter.Rules = append(reqFilter.Rules, req.Filter)
+	_, authorized, err := a.authorizer.Authorize(cts.Kit, meta.ResourceAttribute{Basic: &meta.Basic{
+		Type:   meta.Application,
+		Action: meta.Find,
+	}})
+	if err != nil {
+		return nil, err
 	}
 
+	if !authorized {
+		// 没有单据管理权限的只能查询自己的单据
+		req.Filter.Rules = append(req.Filter.Rules, tools.RuleEqual("applicant", cts.Kit.User))
+	}
+
+	return a.listApplications(cts, req)
+}
+
+// ListBizApplications list biz applications
+func (a *applicationSvc) ListBizApplications(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.ApplicationListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+	if bkBizID <= 0 {
+		return nil, errf.New(errf.InvalidParameter, "biz id is invalid")
+	}
+	err = a.authorizer.AuthorizeWithPerm(cts.Kit, meta.ResourceAttribute{
+		Basic: &meta.Basic{Type: meta.Biz, Action: meta.Access}, BizID: bkBizID,
+	})
+	if err != nil {
+		// 没有业务查看权限的只能查询自己的单据
+		logs.Errorf("user %s has no business permissions, err: %v, rid: %s", cts.Kit.User, err, cts.Kit.Rid)
+		req.Filter.Rules = append(req.Filter.Rules, tools.RuleEqual("applicant", cts.Kit.User))
+	}
+
+	// 增加业务ID限制
+	req.Filter.Rules = append(req.Filter.Rules, tools.RuleJSONContains[int64]("bk_biz_ids", bkBizID))
+
+	return a.listApplications(cts, req)
+}
+
+func (a *applicationSvc) listApplications(cts *rest.Contexts, req *proto.ApplicationListReq) (interface{}, error) {
 	resp, err := a.client.DataService().Global.Application.List(
 		cts.Kit,
 		&dataproto.ApplicationListReq{
-			Filter: reqFilter,
+			Filter: req.Filter,
 			Page:   req.Page,
 		},
 	)
@@ -74,7 +113,7 @@ func (a *applicationSvc) List(cts *rest.Contexts) (interface{}, error) {
 	return resp, nil
 }
 
-// RemoveSenseField 申请单据内容移除铭感信息，如主机密码等
+// RemoveSenseField 申请单据内容移除敏感信息，如主机密码等
 func RemoveSenseField(content string) string {
 	buffer := bytes.Buffer{}
 

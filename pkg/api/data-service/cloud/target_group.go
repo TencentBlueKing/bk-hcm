@@ -85,11 +85,6 @@ type TargetBaseReq struct {
 
 // Validate ...
 func (req *TargetBaseReq) Validate() error {
-	switch req.InstType {
-	case enumor.CvmInstType, enumor.EniInstType, enumor.CcnInstType:
-	default:
-		return errf.Newf(errf.InvalidParameter, "inst_type not supportted %s", req.InstType)
-	}
 
 	return validator.Validate.Struct(req)
 }

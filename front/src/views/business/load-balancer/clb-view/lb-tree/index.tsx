@@ -23,6 +23,8 @@ import domainIcon from '@/assets/image/domain.svg';
 import { LBRouteName, LB_ROUTE_NAME_MAP, TRANSPORT_LAYER_LIST } from '@/constants';
 import { QueryRuleOPEnum } from '@/typings';
 import './index.scss';
+import { useVerify } from '@/hooks';
+import { useGlobalPermissionDialog } from '@/store/useGlobalPermissionDialog';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -35,10 +37,12 @@ export default defineComponent({
     const { t } = useI18n();
     const router = useRouter();
     const route = useRoute();
+    const { authVerifyData, handleAuth } = useVerify();
     // use stores
     const accountStore = useAccountStore();
     const businessStore = useBusinessStore();
     const loadBalancerStore = useLoadBalancerStore();
+    const globalPermissionDialogStore = useGlobalPermissionDialog();
 
     // 搜索相关
     const searchValue = ref('');
@@ -66,11 +70,15 @@ export default defineComponent({
      * @param {*} level 需要加载数据的节点的深度，取值为：0, 1, 2
      */
     const loadRemoteData = async (node: any, level: number) => {
+      // TCP, UDP 下无资源, 不需要请求
+      if (TRANSPORT_LAYER_LIST.includes(node?.protocol)) return;
       const depthTypeMap = ['lb', 'listener', 'domain'] as ResourceNodeType[];
 
       // 获取请求 url
       const getUrl = (node: any, level: number) => {
-        const baseUrl = `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${accountStore.bizs}/`;
+        const baseUrl = `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${
+          accountStore.bizs || route.query.bizs || localStorage.getItem('bizs')
+        }/`;
         const typeUrl = !node ? getTypeUrl(depthTypeMap[level]) : getTypeUrl(depthTypeMap[level], node.id);
         return `${baseUrl}${typeUrl}/list`;
 
@@ -251,8 +259,15 @@ export default defineComponent({
         { label: '新增监听器', handler: () => bus.$emit('showAddListenerSideslider') },
         {
           label: '删除',
-          handler: handleDeleteLB,
-          isDisabled: (item: any) => item.listenerNum > 0 || item.delete_protect,
+          handler: (args: any) => {
+            if (!authVerifyData?.value?.permissionAction?.load_balancer_delete) {
+              handleAuth('clb_resource_delete');
+              globalPermissionDialogStore.setShow(true);
+            } else handleDeleteLB(args);
+          },
+          isDisabled: (item: any) =>
+            authVerifyData?.value?.permissionAction?.load_balancer_delete &&
+            (item.listenerNum > 0 || item.delete_protect),
           tooltips: (item: any) => {
             if (item.listenerNum > 0) {
               return { content: t('该负载均衡已绑定监听器, 不可删除'), disabled: !(item.listenerNum > 0) };

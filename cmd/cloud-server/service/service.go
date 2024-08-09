@@ -76,6 +76,7 @@ import (
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
 	"hcm/pkg/thirdparty/api-gateway/bkbase"
+	"hcm/pkg/thirdparty/api-gateway/cmsi"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/thirdparty/esb"
 	"hcm/pkg/tools/ssl"
@@ -95,6 +96,7 @@ type Service struct {
 	// itsmCli itsm client.
 	itsmCli   itsm.Client
 	bkBaseCli bkbase.Client
+	cmsiCli   cmsi.Client
 }
 
 // NewService create a service instance.
@@ -181,6 +183,13 @@ func getCloudClientSvr(sd serviced.ServiceDiscover) (*client.ClientSet, esb.Clie
 		return nil, nil, nil, err
 	}
 
+	cmsiCfg := cc.CloudServer().Cmsi
+	cmsiCli, err := cmsi.NewClient(&cmsiCfg, metrics.Register())
+	if err != nil {
+		logs.Errorf("failed to create cmsi client, err: %v", err)
+		return nil, nil, nil, err
+	}
+
 	svr := &Service{
 		client:     apiClientSet,
 		authorizer: authorizer,
@@ -189,6 +198,7 @@ func getCloudClientSvr(sd serviced.ServiceDiscover) (*client.ClientSet, esb.Clie
 		esbClient:  esbClient,
 		itsmCli:    itsmCli,
 		bkBaseCli:  bkbaseCli,
+		cmsiCli:    cmsiCli,
 	}
 
 	return apiClientSet, esbClient, svr, nil
@@ -273,6 +283,7 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 		Logics:     logics.NewLogics(s.client, s.esbClient),
 		ItsmCli:    s.itsmCli,
 		BKBaseCli:  s.bkBaseCli,
+		CmsiCli:    s.cmsiCli,
 	}
 
 	account.InitAccountService(c)
