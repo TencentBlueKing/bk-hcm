@@ -35,8 +35,8 @@ export default defineComponent({
       tableOptions: {
         columns: [
           {
-            label: props.accountLevel === AccountLevelEnum.FirstLevel ? '一级帐号名称' : '二级帐号ID',
-            field: props.accountLevel === AccountLevelEnum.FirstLevel ? 'name' : 'cloud_id',
+            label: props.accountLevel === AccountLevelEnum.FirstLevel ? '一级帐号名称' : '二级帐号名称',
+            field: 'name',
             render: ({ data }: any) => (
               <Button
                 text

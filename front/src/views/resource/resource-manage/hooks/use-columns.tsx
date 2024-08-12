@@ -1788,8 +1788,8 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
 
   const secondaryAccountColumns = [
     {
-      label: '二级账号名称',
-      field: 'name',
+      label: '二级账号ID',
+      field: 'cloud_id',
     },
     {
       label: '所属一级帐号',
