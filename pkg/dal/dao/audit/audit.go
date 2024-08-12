@@ -149,7 +149,7 @@ func (d Dao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListAuditDetails, 
 	return &types.ListAuditDetails{Details: details}, nil
 }
 
-// List audit.
+// ListWithTx audit.
 func (d Dao) ListWithTx(kt *kit.Kit, tx *sqlx.Tx, opt *types.ListOption) (*types.ListAuditDetails, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list options is nil")

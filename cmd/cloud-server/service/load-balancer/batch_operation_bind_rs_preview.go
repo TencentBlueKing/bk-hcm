@@ -45,9 +45,10 @@ func (svc *lbSvc) bindRSPreview(cts *rest.Contexts, bindRSRecords []*lblogic.Bin
 	validateRelationsErrs := svc.validateBindRSRecordRelations(bindRSRecords)
 	errList = append(errList, validateRelationsErrs...)
 
-	resourceLockErrs := svc.checkLoadBalanceResourceLock(cts.Kit, func() (map[string]string, []*cloud.BatchOperationValidateError) {
-		return svc.getBindRSRecordsLoadBalanceMap(cts.Kit, bindRSRecords, bkBizID)
-	})
+	resourceLockErrs := svc.checkLoadBalanceResourceLock(cts.Kit,
+		func() (map[string]string, []*cloud.BatchOperationValidateError) {
+			return svc.getBindRSRecordsLoadBalanceMap(cts.Kit, bindRSRecords, bkBizID)
+		})
 	errList = append(errList, resourceLockErrs...)
 
 	if len(errList) > 0 {

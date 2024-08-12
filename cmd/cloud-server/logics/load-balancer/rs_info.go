@@ -153,10 +153,11 @@ func (r *RSInfo) checkTargetAlreadyExist(kt *kit.Kit, client *dataservice.Client
 	if err != nil {
 		return err
 	}
-	target, err := client.Global.LoadBalancer.ListTarget(kt, &core.ListReq{
+	listReq := &core.ListReq{
 		Filter: expression,
 		Page:   core.NewDefaultBasePage(),
-	})
+	}
+	target, err := client.Global.LoadBalancer.ListTarget(kt, listReq)
 	if err != nil {
 		return err
 	}

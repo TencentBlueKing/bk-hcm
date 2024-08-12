@@ -217,11 +217,11 @@ func (l *BindRSRecord) checkCert(kt *kit.Kit, client *dataservice.Client,
 		tools.ContainersExpression("cloud_id", certList),
 		tools.RuleEqual("bk_biz_id", bkBizID),
 	)
-
-	certs, err := client.Global.ListCert(kt, &core.ListReq{
+	listReq := &core.ListReq{
 		Page:   core.NewDefaultBasePage(),
 		Filter: expr,
-	})
+	}
+	certs, err := client.Global.ListCert(kt, listReq)
 	if err != nil {
 		result = append(result, &cloud.BatchOperationValidateError{
 			Reason: fmt.Sprintf("%s %v", l.GetKey(), err),
@@ -265,16 +265,19 @@ func (l *BindRSRecord) GetLoadBalancer(kt *kit.Kit, client *dataservice.Client, 
 		expression = tools.ExpressionAnd(
 			tools.RuleEqual("domain", l.VIP),
 		)
+	default:
+		return nil, fmt.Errorf("unsupported ip_domain_type: %s", l.IPDomainType)
 	}
 
 	expr, err := tools.And(expression, tools.RuleEqual("bk_biz_id", bkBizID))
 	if err != nil {
 		return nil, err
 	}
-	balancers, err := client.Global.LoadBalancer.ListLoadBalancer(kt, &core.ListReq{
+	listReq := &core.ListReq{
 		Page:   core.NewDefaultBasePage(),
 		Filter: expr,
-	})
+	}
+	balancers, err := client.Global.LoadBalancer.ListLoadBalancer(kt, listReq)
 	if err != nil {
 		return nil, err
 	}
@@ -291,14 +294,15 @@ func (l *BindRSRecord) GetLoadBalancer(kt *kit.Kit, client *dataservice.Client, 
 func (l *BindRSRecord) getTargetGroupID(kt *kit.Kit, client *dataservice.Client,
 	lbID, ruleID string) (string, error) {
 
-	rel, err := client.Global.LoadBalancer.ListTargetGroupListenerRel(kt, &core.ListReq{
+	listReq := &core.ListReq{
 		Fields: []string{"target_group_id"},
 		Page:   core.NewDefaultBasePage(),
 		Filter: tools.ExpressionAnd(
 			tools.RuleEqual("lb_id", lbID),
 			tools.RuleEqual("listener_rule_id", ruleID),
 		),
-	})
+	}
+	rel, err := client.Global.LoadBalancer.ListTargetGroupListenerRel(kt, listReq)
 	if err != nil {
 		return "", err
 	}
@@ -347,7 +351,7 @@ func (l *BindRSRecord) getListenerRuleID(kt *kit.Kit, client *dataservice.Client
 func (l *BindRSRecord) GetListenerID(kt *kit.Kit, client *global.LoadBalancerClient,
 	lbID string) (string, error) {
 
-	listeners, err := client.ListListener(kt, &core.ListReq{
+	listReq := &core.ListReq{
 		Fields: []string{"id"},
 		Page:   core.NewDefaultBasePage(),
 		Filter: tools.ExpressionAnd(
@@ -355,8 +359,10 @@ func (l *BindRSRecord) GetListenerID(kt *kit.Kit, client *global.LoadBalancerCli
 			tools.RuleEqual("protocol", l.Protocol),
 			tools.RuleEqual("port", l.VPorts[0]),
 		),
-	})
+	}
+	listeners, err := client.ListListener(kt, listReq)
 	if err != nil {
+		logs.Errorf("list listener failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err
 	}
 
@@ -373,6 +379,7 @@ func (l *BindRSRecord) checkAction(kt *kit.Kit, lb *loadbalancer.BaseLoadBalance
 	// listener
 	listenerID, err := l.GetListenerID(kt, client.Global.LoadBalancer, lb.ID)
 	if err != nil {
+		logs.Errorf("get listener id failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 
@@ -384,6 +391,7 @@ func (l *BindRSRecord) checkAction(kt *kit.Kit, lb *loadbalancer.BaseLoadBalance
 		} else {
 			ruleID, err := l.getListenerRuleID(kt, client, lb.ID, listenerID, lb.Vendor)
 			if err != nil {
+				logs.Errorf("get listener rule id failed, err: %v, rid: %s", err, kt.Rid)
 				return err
 			}
 
@@ -411,7 +419,7 @@ func (l *BindRSRecord) checkAction(kt *kit.Kit, lb *loadbalancer.BaseLoadBalance
 func (l *BindRSRecord) isExistTcloudUrlRule(kt *kit.Kit, client *tcloud.LoadBalancerClient,
 	lbID, lblID string) (bool, error) {
 
-	rules, err := client.ListUrlRule(kt, &core.ListReq{
+	listReq := &core.ListReq{
 		Page: core.NewDefaultBasePage(),
 		Filter: tools.ExpressionAnd(
 			tools.RuleEqual("lb_id", lbID),
@@ -419,8 +427,10 @@ func (l *BindRSRecord) isExistTcloudUrlRule(kt *kit.Kit, client *tcloud.LoadBala
 			tools.RuleEqual("domain", l.Domain),
 			tools.RuleEqual("url", l.URLPath),
 		),
-	})
+	}
+	rules, err := client.ListUrlRule(kt, listReq)
 	if err != nil {
+		logs.Errorf("list url rule failed, err: %v, rid: %s", err, kt.Rid)
 		return false, err
 	}
 	if rules == nil || len(rules.Details) == 0 {
@@ -462,6 +472,7 @@ func (l *BindRSRecord) checkRSDuplicate(kt *kit.Kit, lbID string, client *datase
 	// 查找该负载均衡下的4层监听器，绑定的所有目标组ID
 	tgIDs, err := getBindTargetGroupIDsByLBID(kt, client, lbID, l.Protocol)
 	if err != nil {
+		logs.Errorf("get bind target group ids by lb id failed, err: %v, rid: %s", err, kt.Rid)
 		return []*cloud.BatchOperationValidateError{{Reason: fmt.Sprintf("%s: err: %v", l.GetKey(), err)}}
 	}
 

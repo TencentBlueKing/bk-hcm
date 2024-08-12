@@ -374,32 +374,11 @@ func TestBindRSRecord_validateCertAndURL(t *testing.T) {
 		expectErr bool
 	}{
 		// HTTPS case
+		{input: &BindRSRecord{Protocol: "HTTPS"}, expectErr: true},
+		{input: &BindRSRecord{Protocol: "HTTPS", Domain: "example.com"}, expectErr: true},
+		{input: &BindRSRecord{Protocol: "HTTPS", URLPath: "/api"}, expectErr: true},
 		{
-			input: &BindRSRecord{
-				Protocol: "HTTPS",
-			},
-			expectErr: true,
-		},
-		{
-			input: &BindRSRecord{
-				Protocol: "HTTPS",
-				Domain:   "example.com",
-			},
-			expectErr: true,
-		},
-		{
-			input: &BindRSRecord{
-				Protocol: "HTTPS",
-				URLPath:  "/api",
-			},
-			expectErr: true,
-		},
-		{
-			input: &BindRSRecord{
-				Protocol:    "HTTPS",
-				Domain:      "example.com",
-				ServerCerts: []string{"server.crt"},
-			},
+			input:     &BindRSRecord{Protocol: "HTTPS", Domain: "example.com", ServerCerts: []string{"server.crt"}},
 			expectErr: true,
 		},
 		{
@@ -413,10 +392,9 @@ func TestBindRSRecord_validateCertAndURL(t *testing.T) {
 		},
 		{
 			input: &BindRSRecord{
-				Protocol:    "HTTPS",
-				Domain:      "example.com",
-				URLPath:     "/api",
-				ServerCerts: []string{""},
+				Protocol: "HTTPS",
+				Domain:   "example.com",
+				URLPath:  "/api", ServerCerts: []string{""},
 			},
 			expectErr: true,
 		},
@@ -449,26 +427,9 @@ func TestBindRSRecord_validateCertAndURL(t *testing.T) {
 			expectErr: false,
 		},
 		// HTTP case
-		{
-			input: &BindRSRecord{
-				Protocol: "HTTP",
-			},
-			expectErr: true,
-		},
-		{
-			input: &BindRSRecord{
-				Protocol: "HTTP",
-				Domain:   "example.com",
-			},
-			expectErr: true,
-		},
-		{
-			input: &BindRSRecord{
-				Protocol: "HTTP",
-				URLPath:  "/api",
-			},
-			expectErr: true,
-		},
+		{input: &BindRSRecord{Protocol: "HTTP"}, expectErr: true},
+		{input: &BindRSRecord{Protocol: "HTTP", Domain: "example.com"}, expectErr: true},
+		{input: &BindRSRecord{Protocol: "HTTP", URLPath: "/api"}, expectErr: true},
 		{
 			input: &BindRSRecord{
 				Protocol:    "HTTP",
@@ -506,84 +467,25 @@ func TestBindRSRecord_validateCertAndURL(t *testing.T) {
 			},
 			expectErr: true,
 		},
-		{
-			input: &BindRSRecord{
-				Protocol: "HTTP",
-				Domain:   "example.com",
-				URLPath:  "/api",
-			},
-			expectErr: false,
-		},
+		{input: &BindRSRecord{Protocol: "HTTP", Domain: "example.com", URLPath: "/api"}, expectErr: false},
 		// TCP cases
+		{input: &BindRSRecord{Protocol: "TCP"}, expectErr: false},
+		{input: &BindRSRecord{Protocol: "TCP", Domain: "example.com"}, expectErr: true},
+		{input: &BindRSRecord{Protocol: "TCP", URLPath: "/api"}, expectErr: true},
 		{
-			input: &BindRSRecord{
-				Protocol: "TCP",
-			},
-			expectErr: false,
-		},
-		{
-			input: &BindRSRecord{
-				Protocol: "TCP",
-				Domain:   "example.com",
-			},
+			input:     &BindRSRecord{Protocol: "TCP", ServerCerts: []string{"server.crt"}},
 			expectErr: true,
 		},
-		{
-			input: &BindRSRecord{
-				Protocol: "TCP",
-				URLPath:  "/api",
-			},
-			expectErr: true,
-		},
-		{
-			input: &BindRSRecord{
-				Protocol:    "TCP",
-				ServerCerts: []string{"server.crt"},
-			},
-			expectErr: true,
-		},
-		{
-			input: &BindRSRecord{
-				Protocol:   "TCP",
-				ClientCert: "client.crt",
-			},
-			expectErr: true,
-		},
+		{input: &BindRSRecord{Protocol: "TCP", ClientCert: "client.crt"}, expectErr: true},
 		// UDP cases
+		{input: &BindRSRecord{Protocol: "UDP"}, expectErr: false},
+		{input: &BindRSRecord{Protocol: "UDP", Domain: "example.com"}, expectErr: true},
+		{input: &BindRSRecord{Protocol: "UDP", URLPath: "/api"}, expectErr: true},
 		{
-			input: &BindRSRecord{
-				Protocol: "UDP",
-			},
-			expectErr: false,
-		},
-		{
-			input: &BindRSRecord{
-				Protocol: "UDP",
-				Domain:   "example.com",
-			},
+			input:     &BindRSRecord{Protocol: "UDP", ServerCerts: []string{"server.crt"}},
 			expectErr: true,
 		},
-		{
-			input: &BindRSRecord{
-				Protocol: "UDP",
-				URLPath:  "/api",
-			},
-			expectErr: true,
-		},
-		{
-			input: &BindRSRecord{
-				Protocol:    "UDP",
-				ServerCerts: []string{"server.crt"},
-			},
-			expectErr: true,
-		},
-		{
-			input: &BindRSRecord{
-				Protocol:   "UDP",
-				ClientCert: "client.crt",
-			},
-			expectErr: true,
-		},
+		{input: &BindRSRecord{Protocol: "UDP", ClientCert: "client.crt"}, expectErr: true},
 	}
 
 	for i, c := range cases {

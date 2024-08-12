@@ -13,8 +13,10 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-func (svc *lbSvc) checkLoadBalanceResourceLock(kt *kit.Kit,
-	getLoadBalancerMapFunc func() (map[string]string, []*cloud.BatchOperationValidateError)) []*cloud.BatchOperationValidateError {
+func (svc *lbSvc) checkLoadBalanceResourceLock(
+	kt *kit.Kit,
+	getLoadBalancerMapFunc func() (map[string]string, []*cloud.BatchOperationValidateError),
+) []*cloud.BatchOperationValidateError {
 
 	lbIDToVIPMap, errList := getLoadBalancerMapFunc()
 	for lbID, vip := range lbIDToVIPMap {

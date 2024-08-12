@@ -78,10 +78,11 @@ func (r *RSUpdateInfo) GetTarget(kt *kit.Kit, client *global.LoadBalancerClient,
 	if err != nil {
 		return nil, err
 	}
-	target, err := client.ListTarget(kt, &core.ListReq{
+	listReq := &core.ListReq{
 		Filter: expression,
 		Page:   core.NewDefaultBasePage(),
-	})
+	}
+	target, err := client.ListTarget(kt, listReq)
 	if err != nil {
 		return nil, err
 	}

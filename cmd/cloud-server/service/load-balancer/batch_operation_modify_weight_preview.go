@@ -44,9 +44,10 @@ func (svc *lbSvc) modifyWeightPreview(cts *rest.Contexts, updateWeightRecords []
 	validateRelationsErrs := svc.validateModifyWeightRecordRelations(updateWeightRecords)
 	errList = append(errList, validateRelationsErrs...)
 
-	resourceLockErrs := svc.checkLoadBalanceResourceLock(cts.Kit, func() (map[string]string, []*cloud.BatchOperationValidateError) {
-		return svc.getModifyWeightRecordsLoadBalanceMap(cts.Kit, updateWeightRecords, bkBizID)
-	})
+	resourceLockErrs := svc.checkLoadBalanceResourceLock(cts.Kit,
+		func() (map[string]string, []*cloud.BatchOperationValidateError) {
+			return svc.getModifyWeightRecordsLoadBalanceMap(cts.Kit, updateWeightRecords, bkBizID)
+		})
 	errList = append(errList, resourceLockErrs...)
 
 	if len(errList) > 0 {

@@ -352,29 +352,15 @@ func TestModifyWeightRecord_validateRS(t *testing.T) {
 			},
 			expectErr: true,
 		},
-		{
-			input:     &ModifyWeightRecord{},
-			expectErr: true,
-		},
+		{input: &ModifyWeightRecord{}, expectErr: true},
 		{
 			input: &ModifyWeightRecord{
 				RSIPs: []string{"192.168.1.3", "192.168.1.4"},
 			},
 			expectErr: true,
 		},
-		{
-			input: &ModifyWeightRecord{
-				RSPorts: []int{80},
-			},
-			expectErr: true,
-		},
-		{
-			input: &ModifyWeightRecord{
-				Weights:   []int{1},
-				OldWeight: []int{1},
-			},
-			expectErr: true,
-		},
+		{input: &ModifyWeightRecord{RSPorts: []int{80}}, expectErr: true},
+		{input: &ModifyWeightRecord{Weights: []int{1}, OldWeight: []int{1}}, expectErr: true},
 		{
 			input: &ModifyWeightRecord{
 				RSIPs:     []string{"192.168.1.3", "192.168.1.4"},

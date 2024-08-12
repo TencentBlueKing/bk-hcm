@@ -30,7 +30,8 @@ import (
 )
 
 // BatchOperationAsyncFlowRelColumns defines all the tcloud_lb_url_rule table's columns.
-var BatchOperationAsyncFlowRelColumns = utils.MergeColumns(utils.InsertWithoutPrimaryID, BatchOperationAsyncFlowRelColumnsDescriptor)
+var BatchOperationAsyncFlowRelColumns = utils.MergeColumns(utils.InsertWithoutPrimaryID,
+	BatchOperationAsyncFlowRelColumnsDescriptor)
 
 // BatchOperationAsyncFlowRelColumnsDescriptor is batch_task table's column descriptors.
 var BatchOperationAsyncFlowRelColumnsDescriptor = utils.ColumnDescriptors{

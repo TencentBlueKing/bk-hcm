@@ -132,6 +132,12 @@ func bizService(h *rest.Handler, svc *lbSvc) {
 	h.Add("UpdateBizDomainAttr", http.MethodPatch, "/listeners/{lbl_id}/domains", svc.UpdateBizDomainAttr)
 
 	// 规则
+	bizRules(h, svc)
+	// 批量操作
+	bizBatchOperation(h, svc)
+}
+
+func bizRules(h *rest.Handler, svc *lbSvc) {
 	h.Add("GetBizTCloudUrlRule", http.MethodGet,
 		"/vendors/tcloud/listeners/{lbl_id}/rules/{rule_id}", svc.GetBizTCloudUrlRule)
 	h.Add("ListBizUrlRulesByListener", http.MethodPost,
@@ -147,18 +153,19 @@ func bizService(h *rest.Handler, svc *lbSvc) {
 	h.Add("BatchDeleteBizTCloudUrlRuleByDomain", http.MethodDelete,
 		"/vendors/tcloud/listeners/{lbl_id}/rules/by/domains/batch", svc.BatchDeleteBizTCloudUrlRuleByDomain)
 
-	// 批量操作
+}
+
+func bizBatchOperation(h *rest.Handler, svc *lbSvc) {
 	h.Add("BindRSPreview", http.MethodPost, "/load_balancers/batch_operations/bind_rs/preview",
 		svc.BindRSPreview)
 	h.Add("ModifyWeightPreview", http.MethodPost, "/load_balancers/batch_operations/modify_weight/preview",
 		svc.ModifyWeightPreview)
 	h.Add("BindRS", http.MethodPost, "/load_balancers/batch_operations/bind_rs",
 		svc.BindRS)
-	h.Add("ModifyWeightPreview", http.MethodPost, "/load_balancers/batch_operations/modify_weight",
+	h.Add("ModifyWeight", http.MethodPost, "/load_balancers/batch_operations/modify_weight",
 		svc.ModifyWeight)
 	h.Add("GetBatchOperation", http.MethodGet, "/load_balancers/batch_operations/{batch_operation_id}",
 		svc.GetBatchOperation)
-
 }
 
 type lbSvc struct {

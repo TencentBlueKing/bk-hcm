@@ -29,11 +29,13 @@ import (
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	auditDao "hcm/pkg/dal/dao/audit"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	tableaudit "hcm/pkg/dal/table/audit"
 	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 
@@ -111,31 +113,7 @@ func (svc *lbSvc) BatchCreateBatchOperation(cts *rest.Contexts) (any, error) {
 			return nil, fmt.Errorf("batch create batch task failed, err: %v", err)
 		}
 
-		audits := make([]*tableaudit.AuditTable, 0)
-		for _, model := range models {
-			// record audit
-			auditData := &audit.BatchOperationAuditDetail{
-				BatchOperationID: model.ID,
-			}
-			audits = append(audits, &tableaudit.AuditTable{
-				ResID:     model.ID,
-				ResName:   fmt.Sprintf("batch-operation-%s", model.ID),
-				ResType:   enumor.LoadBalancerAuditResType,
-				BkBizID:   model.BkBizID,
-				AccountID: req.AccountID,
-				Action:    enumor.BatchOperation,
-				Operator:  cts.Kit.User,
-				Source:    cts.Kit.GetRequestSource(),
-				Rid:       cts.Kit.Rid,
-				AppCode:   cts.Kit.AppCode,
-				Detail: &tableaudit.BasicDetail{
-					Data: auditData,
-				},
-			})
-
-		}
-
-		if err = svc.dao.Audit().BatchCreateWithTx(cts.Kit, txn, audits); err != nil {
+		if err = batchCreateAudit(cts.Kit, txn, svc.dao.Audit(), models, req.AccountID); err != nil {
 			return nil, err
 		}
 
@@ -182,4 +160,35 @@ func (svc *lbSvc) BatchCreateBatchOperation(cts *rest.Contexts) (any, error) {
 	}
 
 	return &core.BatchCreateResult{IDs: ids}, nil
+}
+
+func batchCreateAudit(kt *kit.Kit, txn *sqlx.Tx, auditInterface auditDao.Interface, models []*tablelb.BatchOperationTable, accountID string) error {
+	audits := make([]*tableaudit.AuditTable, 0)
+	for _, model := range models {
+		// record audit
+		auditData := &audit.BatchOperationAuditDetail{
+			BatchOperationID: model.ID,
+		}
+		audits = append(audits, &tableaudit.AuditTable{
+			ResID:     model.ID,
+			ResName:   fmt.Sprintf("batch-operation-%s", model.ID),
+			ResType:   enumor.LoadBalancerAuditResType,
+			BkBizID:   model.BkBizID,
+			AccountID: accountID,
+			Action:    enumor.BatchOperation,
+			Operator:  kt.User,
+			Source:    kt.GetRequestSource(),
+			Rid:       kt.Rid,
+			AppCode:   kt.AppCode,
+			Detail: &tableaudit.BasicDetail{
+				Data: auditData,
+			},
+		})
+
+	}
+	if err := auditInterface.BatchCreateWithTx(kt, txn, audits); err != nil {
+		logs.Errorf("batch create audit failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+	return nil
 }

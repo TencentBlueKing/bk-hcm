@@ -128,14 +128,15 @@ func (r *ModifyWeightRecord) GetTargets(kt *kit.Kit, client *dataservice.Client,
 func (r *ModifyWeightRecord) getTargetGroupID(kt *kit.Kit, client *dataservice.Client,
 	lbID, ruleID string) (string, error) {
 
-	rel, err := client.Global.LoadBalancer.ListTargetGroupListenerRel(kt, &core.ListReq{
+	listReq := &core.ListReq{
 		Fields: []string{"target_group_id"},
 		Page:   core.NewDefaultBasePage(),
 		Filter: tools.ExpressionAnd(
 			tools.RuleEqual("lb_id", lbID),
 			tools.RuleEqual("listener_rule_id", ruleID),
 		),
-	})
+	}
+	rel, err := client.Global.LoadBalancer.ListTargetGroupListenerRel(kt, listReq)
 	if err != nil {
 		return "", err
 	}
@@ -191,7 +192,7 @@ func (r *ModifyWeightRecord) getListenerRuleID(kt *kit.Kit, client *dataservice.
 func (r *ModifyWeightRecord) getListenerID(kt *kit.Kit, client *global.LoadBalancerClient,
 	lbID string) (string, error) {
 
-	listeners, err := client.ListListener(kt, &core.ListReq{
+	listReq := &core.ListReq{
 		Fields: []string{"id"},
 		Page:   core.NewDefaultBasePage(),
 		Filter: tools.ExpressionAnd(
@@ -199,7 +200,8 @@ func (r *ModifyWeightRecord) getListenerID(kt *kit.Kit, client *global.LoadBalan
 			tools.RuleEqual("protocol", r.Protocol),
 			tools.RuleEqual("port", r.VPorts[0]),
 		),
-	})
+	}
+	listeners, err := client.ListListener(kt, listReq)
 	if err != nil {
 		return "", err
 	}
@@ -231,16 +233,20 @@ func (r *ModifyWeightRecord) GetLoadBalancer(kt *kit.Kit, client *dataservice.Cl
 		expression = tools.ExpressionAnd(
 			tools.RuleEqual("domain", r.VIP),
 		)
+	default:
+		return nil, fmt.Errorf("unsupported ip_domain_type: %s", r.IPDomainType)
 	}
 
 	expr, err := tools.And(expression, tools.RuleEqual("bk_biz_id", bkBizID))
 	if err != nil {
 		return nil, err
 	}
-	balancers, err := client.Global.LoadBalancer.ListLoadBalancer(kt, &core.ListReq{
+
+	listReq := &core.ListReq{
 		Page:   core.NewDefaultBasePage(),
 		Filter: expr,
-	})
+	}
+	balancers, err := client.Global.LoadBalancer.ListLoadBalancer(kt, listReq)
 	if err != nil {
 		return nil, err
 	}
@@ -347,32 +353,7 @@ func (r *ModifyWeightRecord) validateRS() error {
 	}
 
 	if r.HaveEndPort {
-		if len(r.RSPorts) != 2 {
-			return fmt.Errorf("port range should have two ports")
-		}
-
-		if r.VPorts[1]-r.VPorts[0] != r.RSPorts[1]-r.RSPorts[0] {
-			return fmt.Errorf("port range should have the same length")
-		}
-
-		if len(r.RSIPs) != 1 || len(r.Weights) != 1 {
-			return fmt.Errorf("RSIPs and NewWeight should have only one element")
-		}
-
-		for _, port := range r.RSPorts {
-			if !validPort(port) {
-				return fmt.Errorf("invalid RSPort: %d", port)
-			}
-		}
-
-		r.RSInfos = append(r.RSInfos, &RSUpdateInfo{
-			IP:        r.RSIPs[0],
-			Port:      r.RSPorts[0],
-			EndPort:   r.RSPorts[1],
-			NewWeight: r.Weights[0],
-			OldWeight: r.OldWeight[0],
-		})
-		return nil
+		return r.validateRSWithEndPort()
 	}
 
 	if len(r.RSPorts) > 1 && len(r.RSPorts) != len(r.RSIPs) {
@@ -417,6 +398,35 @@ func (r *ModifyWeightRecord) validateRS() error {
 			OldWeight: r.OldWeight[i],
 		})
 	}
+	return nil
+}
+
+func (r *ModifyWeightRecord) validateRSWithEndPort() error {
+	if len(r.RSPorts) != 2 {
+		return fmt.Errorf("port range should have two ports")
+	}
+
+	if r.VPorts[1]-r.VPorts[0] != r.RSPorts[1]-r.RSPorts[0] {
+		return fmt.Errorf("port range should have the same length")
+	}
+
+	if len(r.RSIPs) != 1 || len(r.Weights) != 1 {
+		return fmt.Errorf("RSIPs and NewWeight should have only one element")
+	}
+
+	for _, port := range r.RSPorts {
+		if !validPort(port) {
+			return fmt.Errorf("invalid RSPort: %d", port)
+		}
+	}
+
+	r.RSInfos = append(r.RSInfos, &RSUpdateInfo{
+		IP:        r.RSIPs[0],
+		Port:      r.RSPorts[0],
+		EndPort:   r.RSPorts[1],
+		NewWeight: r.Weights[0],
+		OldWeight: r.OldWeight[0],
+	})
 	return nil
 }
 
