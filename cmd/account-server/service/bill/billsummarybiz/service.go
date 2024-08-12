@@ -17,33 +17,36 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package billsummarymain ...
-package billsummarymain
+package billsummarybiz
 
 import (
 	"net/http"
 
-	"hcm/cmd/data-service/service/capability"
-	"hcm/pkg/dal/dao"
+	"hcm/cmd/account-server/logics/audit"
+	"hcm/cmd/account-server/service/capability"
+	"hcm/pkg/client"
+	"hcm/pkg/iam/auth"
 	"hcm/pkg/rest"
 )
 
-// InitService initialize the bill summary service
-func InitService(cap *capability.Capability) {
+// InitService initial the main account service
+func InitService(c *capability.Capability) {
 	svc := &service{
-		dao: cap.Dao,
+		client:     c.ApiClient,
+		authorizer: c.Authorizer,
+		audit:      c.Audit,
 	}
+
 	h := rest.NewHandler()
-	h.Add("BatchCreateBillSummaryMain", http.MethodPost, "/bills/summarymains", svc.BatchCreateBillSummaryMain)
-	h.Add("DeleteBillSummaryMain", http.MethodDelete, "/bills/summarymains", svc.DeleteBillSummaryMain)
-	h.Add("UpdateBillSummaryMain", http.MethodPut, "/bills/summarymains", svc.UpdateBillSummaryMain)
-	h.Add("ListBillSummaryMain", http.MethodGet, "/bills/summarymains", svc.ListBillSummaryMain)
 
-	h.Add("ListBillSummaryBiz", http.MethodGet, "/bills/summarybiz", svc.ListBillSummaryBiz)
+	// register handler
+	h.Add("ListBizSummary", http.MethodPost, "/bills/biz_summarys/list", svc.ListBizSummary)
 
-	h.Load(cap.WebService)
+	h.Load(c.WebService)
 }
 
 type service struct {
-	dao dao.Set
+	client     *client.ClientSet
+	authorizer auth.Authorizer
+	audit      audit.Interface
 }

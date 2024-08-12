@@ -139,3 +139,20 @@ type BillSummaryMainUpdateReq struct {
 func (req *BillSummaryMainUpdateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// BillSummaryBizListResult list result
+type BillSummaryBizListResult = core.ListResultT[*BillSummaryBizResult]
+
+// BillSummaryBizResult result
+type BillSummaryBizResult struct {
+	BkBizID                   int64           `json:"bk_biz_id" validate:"omitempty"`
+	BkBizName                 string          `json:"bk_biz_name" validate:"omitempty"`
+	LastMonthCostSynced       decimal.Decimal `json:"last_month_cost_synced" validate:"omitempty"`
+	LastMonthRMBCostSynced    decimal.Decimal `json:"last_month_rmb_cost_synced" validate:"omitempty"`
+	CurrentMonthCostSynced    decimal.Decimal `json:"current_month_cost_synced" validate:"omitempty"`
+	CurrentMonthRMBCostSynced decimal.Decimal `json:"current_month_rmb_cost_synced" validate:"omitempty"`
+	CurrentMonthCost          decimal.Decimal `json:"current_month_cost" validate:"omitempty"`
+	CurrentMonthRMBCost       decimal.Decimal `json:"current_month_rmb_cost" validate:"omitempty"`
+	AdjustmentCost            decimal.Decimal `json:"adjustment_cost" validate:"omitempty"`
+	AdjustmentRMBCost         decimal.Decimal `json:"adjustment_rmb_cost" validate:"omitempty"`
+}
