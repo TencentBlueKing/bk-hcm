@@ -69,7 +69,7 @@ func (act PullDailyBillAction) Run(kt run.ExecuteKit, params interface{}) (inter
 
 	pl, ok := registry.PullerRegistry[opt.Vendor]
 	if !ok {
-		return nil, errf.New(errf.InvalidParameter, fmt.Sprintf("invalid vendor %s", opt.Vendor))
+		return nil, errf.New(errf.InvalidParameter, fmt.Sprintf("invalid vendor for pull raw bill %s", opt.Vendor))
 	}
 
 	// clean old raw bill item

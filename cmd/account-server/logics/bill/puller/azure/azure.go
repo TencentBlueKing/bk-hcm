@@ -17,8 +17,8 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package aws bill puller Option
-package aws
+// Package azure bill puller Option
+package azure
 
 import (
 	"hcm/cmd/account-server/logics/bill/puller"
@@ -31,25 +31,25 @@ import (
 )
 
 const (
-	defaultAwsDelay = 1
+	defaultAzureDelay = 1
 )
 
 func init() {
-	puller.DailyPullerRegistry[enumor.Aws] = &AwsPuller{
-		BillDelay: defaultAwsDelay,
+	puller.DailyPullerRegistry[enumor.Azure] = &AzurePuller{
+		BillDelay: defaultAzureDelay,
 	}
-	puller.MonthPullerRegistry[enumor.Aws] = &AwsPuller{
-		BillDelay: defaultAwsDelay,
+	puller.MonthPullerRegistry[enumor.Azure] = &AzurePuller{
+		BillDelay: defaultAzureDelay,
 	}
 }
 
-// AwsPuller huawei puller
-type AwsPuller struct {
+// AzurePuller huawei puller
+type AzurePuller struct {
 	BillDelay int
 }
 
 // EnsurePullTask ...
-func (hp *AwsPuller) EnsurePullTask(kt *kit.Kit, client *client.ClientSet,
+func (hp *AzurePuller) EnsurePullTask(kt *kit.Kit, client *client.ClientSet,
 	billSummaryMain *dsbillapi.BillSummaryMainResult) error {
 
 	dp := &daily.DailyPuller{
@@ -70,28 +70,26 @@ func (hp *AwsPuller) EnsurePullTask(kt *kit.Kit, client *client.ClientSet,
 }
 
 // GetPullTaskList ...
-func (hp *AwsPuller) GetPullTaskList(kt *kit.Kit, client *client.ClientSet,
+func (hp *AzurePuller) GetPullTaskList(kt *kit.Kit, client *client.ClientSet,
 	billSummaryMain *dsbillapi.BillSummaryMainResult) (
 	[]*bill.BillDailyPullTaskResult, error) {
 
 	dp := &daily.DailyPuller{
-		RootAccountID:      billSummaryMain.RootAccountID,
-		MainAccountID:      billSummaryMain.MainAccountID,
-		RootAccountCloudID: billSummaryMain.RootAccountCloudID,
-		MainAccountCloudID: billSummaryMain.MainAccountCloudID,
-		ProductID:          billSummaryMain.ProductID,
-		BkBizID:            billSummaryMain.BkBizID,
-		Vendor:             billSummaryMain.Vendor,
-		BillYear:           billSummaryMain.BillYear,
-		BillMonth:          billSummaryMain.BillMonth,
-		Version:            billSummaryMain.CurrentVersion,
-		BillDelay:          hp.BillDelay,
-		Client:             client,
+		RootAccountID: billSummaryMain.RootAccountID,
+		MainAccountID: billSummaryMain.MainAccountID,
+		ProductID:     billSummaryMain.ProductID,
+		BkBizID:       billSummaryMain.BkBizID,
+		Vendor:        billSummaryMain.Vendor,
+		BillYear:      billSummaryMain.BillYear,
+		BillMonth:     billSummaryMain.BillMonth,
+		Version:       billSummaryMain.CurrentVersion,
+		BillDelay:     hp.BillDelay,
+		Client:        client,
 	}
 	return dp.GetPullTaskList(kt)
 }
 
-// HasMonthPullTask return if has month pull task
-func (hp *AwsPuller) HasMonthPullTask() bool {
-	return true
+// HasMonthPullTask return true if it has month pull task
+func (hp *AzurePuller) HasMonthPullTask() bool {
+	return false
 }

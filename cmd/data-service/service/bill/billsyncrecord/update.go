@@ -48,6 +48,7 @@ func (svc *service) UpdateBillSyncRecord(cts *rest.Contexts) (interface{}, error
 		ID:       req.ID,
 		Operator: req.Operator,
 		Currency: req.Currency,
+		Count:    req.Count,
 		State:    req.State,
 		Detail:   req.Detail,
 		Reviser:  cts.Kit.User,

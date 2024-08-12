@@ -34,6 +34,7 @@ type SyncRecord struct {
 	BillMonth int                  `json:"bill_month"`
 	State     enumor.BillSyncState `json:"state"`
 	Currency  enumor.CurrencyCode  `json:"currency" `
+	Count     uint                 `json:"count"`
 	Cost      decimal.Decimal      `json:"cost"`
 	RMBCost   decimal.Decimal      `json:"rmb_cost"`
 	Detail    string               `json:"detail"`

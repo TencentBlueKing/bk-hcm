@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package huawei daily puller
 package huawei
 
 import (
@@ -156,7 +157,7 @@ func (hp *HuaweiPuller) doPull(
 	hcCli := actcli.GetHCService()
 	resp, err := hcCli.HuaWei.Bill.ListFeeRecord(kt.Kit().Ctx, kt.Kit().Header(), &hcbillservice.HuaWeiFeeRecordListReq{
 		AccountID:     opt.RootAccountID,
-		SubAccountID:  opt.BillAccountID,
+		SubAccountID:  opt.MainAccountCloudID,
 		Month:         fmt.Sprintf("%d-%02d", opt.BillYear, opt.BillMonth),
 		BillDateBegin: fmt.Sprintf("%d-%02d-%02d", opt.BillYear, opt.BillMonth, opt.BillDay),
 		BillDateEnd:   fmt.Sprintf("%d-%02d-%02d", opt.BillYear, opt.BillMonth, opt.BillDay),

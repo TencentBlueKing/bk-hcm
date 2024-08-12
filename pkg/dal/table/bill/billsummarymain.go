@@ -37,9 +37,9 @@ var AccountBillSummaryMainColumns = utils.MergeColumns(nil, AccountBillSummaryMa
 var AccountBillSummaryMainColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
 	{Column: "root_account_id", NamedC: "root_account_id", Type: enumor.String},
-	{Column: "root_account_name", NamedC: "root_account_name", Type: enumor.String},
+	{Column: "root_account_cloud_id", NamedC: "root_account_cloud_id", Type: enumor.String},
 	{Column: "main_account_id", NamedC: "main_account_id", Type: enumor.String},
-	{Column: "main_account_name", NamedC: "main_account_name", Type: enumor.String},
+	{Column: "main_account_cloud_id", NamedC: "main_account_cloud_id", Type: enumor.String},
 	{Column: "vendor", NamedC: "vendor", Type: enumor.String},
 	{Column: "product_id", NamedC: "product_id", Type: enumor.Numeric},
 	{Column: "product_name", NamedC: "product_name", Type: enumor.String},
@@ -71,12 +71,12 @@ type AccountBillSummaryMain struct {
 	ID string `db:"id" validate:"lte=64" json:"id"`
 	// RootAccountID 一级账号ID
 	RootAccountID string `db:"root_account_id" json:"root_account_id"`
-	// RootAccountName 一级账号名称
-	RootAccountName string `db:"root_account_name" json:"root_account_name"`
+	// RootAccountCloudID 一级账号云id
+	RootAccountCloudID string `db:"root_account_cloud_id" json:"root_account_cloud_id"`
 	// MainAccountID 账号ID
 	MainAccountID string `db:"main_account_id" json:"main_account_id"`
-	// MainAccountName 一级账号名称
-	MainAccountName string `db:"main_account_name" json:"main_account_name"`
+	// MainAccountCloudID 二级账号云id
+	MainAccountCloudID string `db:"main_account_cloud_id" json:"main_account_cloud_id"`
 	// Vendor 云厂商
 	Vendor enumor.Vendor `db:"vendor" json:"vendor"`
 	// ProductID 运营产品ID

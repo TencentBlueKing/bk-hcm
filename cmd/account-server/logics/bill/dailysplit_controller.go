@@ -23,6 +23,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"strconv"
 	"time"
 
 	"hcm/cmd/account-server/logics/bill/puller"
@@ -34,11 +35,10 @@ import (
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
+	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
-	"hcm/pkg/serviced"
-	"hcm/pkg/tools/slice"
 	"hcm/pkg/tools/times"
 )
 
@@ -49,9 +49,6 @@ func NewMainDailySplitController(opt *MainAccountControllerOption) (*MainDailySp
 	}
 	if opt.Client == nil {
 		return nil, fmt.Errorf("client cannot be empty")
-	}
-	if opt.Sd == nil {
-		return nil, fmt.Errorf("servicediscovery cannot be empty")
 	}
 	if len(opt.MainAccountID) == 0 {
 		return nil, fmt.Errorf("main account id cannot be empty")
@@ -67,7 +64,6 @@ func NewMainDailySplitController(opt *MainAccountControllerOption) (*MainDailySp
 	}
 	return &MainDailySplitController{
 		Client:        opt.Client,
-		Sd:            opt.Sd,
 		RootAccountID: opt.RootAccountID,
 		MainAccountID: opt.MainAccountID,
 		ProductID:     opt.ProductID,
@@ -79,15 +75,17 @@ func NewMainDailySplitController(opt *MainAccountControllerOption) (*MainDailySp
 // MainDailySplitController main account daily summary controller
 type MainDailySplitController struct {
 	Client        *client.ClientSet
-	Sd            serviced.ServiceDiscover
 	RootAccountID string
 	MainAccountID string
 	ProductID     int64
 	BkBizID       int64
 	Vendor        enumor.Vendor
 	ext           map[string]string
+	kt            *kit.Kit
 
-	kt         *kit.Kit
+	RootAccountCloudID string
+	MainAccountCloudID string
+
 	cancelFunc context.CancelFunc
 }
 
@@ -202,15 +200,11 @@ func (msdc *MainDailySplitController) syncDailySplit(kt *kit.Kit, billYear, bill
 	if err != nil {
 		return err
 	}
-	pullTaskList, err := curPuller.GetPullTaskList(kt, msdc.Client, msdc.Sd, summary)
+	pullTaskList, err := curPuller.GetPullTaskList(kt, msdc.Client, summary)
 	if err != nil {
 		return err
 	}
-	taskServerNameList, err := getTaskServerKeyList(msdc.Sd)
-	if err != nil {
-		logs.Warnf("get task server name list failed, err %s", err.Error())
-		return err
-	}
+
 	for _, task := range pullTaskList {
 		time.Sleep(time.Millisecond * time.Duration(rand.Intn(defaultSleepMillisecond)))
 		if task.State == enumor.MainAccountRawBillPullStatePulled {
@@ -237,18 +231,8 @@ func (msdc *MainDailySplitController) syncDailySplit(kt *kit.Kit, billYear, bill
 				if err != nil {
 					return fmt.Errorf("failed to get flow by id %s, err %s", task.SplitFlowID, err.Error())
 				}
-				if flow.State == enumor.FlowFailed ||
-					flow.State == enumor.FlowCancel ||
-					(flow.State == enumor.FlowScheduled &&
-						flow.Worker != nil &&
-						!slice.IsItemInSlice[string](taskServerNameList, *flow.Worker)) {
+				if flow.State == enumor.FlowFailed || flow.State == enumor.FlowCancel {
 
-					if flow.State == enumor.FlowScheduled {
-						if err := msdc.Client.TaskServer().CancelFlow(kt, flow.ID); err != nil {
-							logs.Warnf("cancel flow %v failed, err %s, rid: %s", flow, err.Error(), kt.Rid)
-							continue
-						}
-					}
 					flowID, err := msdc.createDailySplitFlow(kt, summary, billYear, billMonth, task.BillDay)
 					if err != nil {
 						logs.Warnf("create daily split task for %v, %d/%d/%d failed, err %s, rid: %s",
@@ -270,12 +254,27 @@ func (msdc *MainDailySplitController) syncDailySplit(kt *kit.Kit, billYear, bill
 	return nil
 }
 
-func (msdc *MainDailySplitController) createDailySplitFlow(
-	kt *kit.Kit, summary *dsbillapi.BillSummaryMainResult, billYear, billMonth, billDay int) (string, error) {
+func (msdc *MainDailySplitController) createDailySplitFlow(kt *kit.Kit, summary *dsbillapi.BillSummaryMainResult,
+	billYear, billMonth, billDay int) (string, error) {
+
+	memo := fmt.Sprintf("[%s] main %s(%.16s)v%d %4d-%02d-%02d",
+		summary.Vendor, summary.MainAccountID, summary.MainAccountCloudID, summary.CurrentVersion,
+		summary.BillYear, summary.BillMonth, billDay)
+
+	params := map[string]string{
+		"root_account_id": summary.RootAccountID,
+		"main_account_id": summary.MainAccountID,
+		"vendor":          string(summary.Vendor),
+		"bill_year":       strconv.Itoa(summary.BillYear),
+		"bill_month":      strconv.Itoa(summary.BillMonth),
+		"bill_day":        strconv.Itoa(billDay),
+		"version":         strconv.Itoa(summary.CurrentVersion),
+	}
 
 	result, err := msdc.Client.TaskServer().CreateCustomFlow(kt, &taskserver.AddCustomFlowReq{
-		Name: enumor.FlowSplitBill,
-		Memo: "do daily split",
+		Name:      enumor.FlowSplitBill,
+		Memo:      memo,
+		ShareData: tableasync.NewShareData(params),
 		Tasks: []taskserver.CustomFlowTask{
 			dailysplit.BuildDailySplitTask(
 				msdc.RootAccountID,

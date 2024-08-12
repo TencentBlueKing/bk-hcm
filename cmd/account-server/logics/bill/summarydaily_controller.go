@@ -38,8 +38,6 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
-	"hcm/pkg/serviced"
-	"hcm/pkg/tools/slice"
 	"hcm/pkg/tools/times"
 )
 
@@ -50,9 +48,6 @@ func NewMainSummaryDailyController(opt *MainAccountControllerOption) (*MainSumma
 	}
 	if opt.Client == nil {
 		return nil, fmt.Errorf("client cannot be empty")
-	}
-	if opt.Sd == nil {
-		return nil, fmt.Errorf("servicediscovery cannot be empty")
 	}
 	if len(opt.MainAccountID) == 0 {
 		return nil, fmt.Errorf("main account id cannot be empty")
@@ -68,25 +63,29 @@ func NewMainSummaryDailyController(opt *MainAccountControllerOption) (*MainSumma
 	}
 	return &MainSummaryDailyController{
 		Client:        opt.Client,
-		Sd:            opt.Sd,
 		RootAccountID: opt.RootAccountID,
 		MainAccountID: opt.MainAccountID,
 		ProductID:     opt.ProductID,
 		BkBizID:       opt.BkBizID,
 		Vendor:        opt.Vendor,
+
+		RootAccountCloudID: opt.RootAccountCloudID,
+		MainAccountCloudID: opt.MainAccountCloudID,
 	}, nil
 }
 
 // MainSummaryDailyController main account daily summary controller
 type MainSummaryDailyController struct {
 	Client        *client.ClientSet
-	Sd            serviced.ServiceDiscover
 	RootAccountID string
 	MainAccountID string
 	Version       int
 	ProductID     int64
 	BkBizID       int64
 	Vendor        enumor.Vendor
+
+	RootAccountCloudID string
+	MainAccountCloudID string
 
 	kt         *kit.Kit
 	cancelFunc context.CancelFunc
@@ -175,15 +174,11 @@ func (msdc *MainSummaryDailyController) syncDailySummary(kt *kit.Kit, billYear, 
 	if err != nil {
 		return err
 	}
-	pullTaskList, err := curPuller.GetPullTaskList(kt, msdc.Client, msdc.Sd, summary)
+	pullTaskList, err := curPuller.GetPullTaskList(kt, msdc.Client, summary)
 	if err != nil {
 		return err
 	}
-	taskServerNameList, err := getTaskServerKeyList(msdc.Sd)
-	if err != nil {
-		logs.Warnf("get task server name list failed, err %s", err.Error())
-		return err
-	}
+
 	for _, task := range pullTaskList {
 		if task.State == enumor.MainAccountRawBillPullStateSplit {
 			if len(task.DailySummaryFlowID) == 0 {
@@ -210,18 +205,8 @@ func (msdc *MainSummaryDailyController) syncDailySummary(kt *kit.Kit, billYear, 
 				if err != nil {
 					return fmt.Errorf("failed to get flow by id %s, err %s", task.DailySummaryFlowID, err.Error())
 				}
-				if flow.State == enumor.FlowFailed ||
-					flow.State == enumor.FlowCancel ||
-					(flow.State == enumor.FlowScheduled &&
-						flow.Worker != nil &&
-						!slice.IsItemInSlice[string](taskServerNameList, *flow.Worker)) {
+				if flow.State == enumor.FlowFailed || flow.State == enumor.FlowCancel {
 
-					if flow.State == enumor.FlowScheduled {
-						if err := msdc.Client.TaskServer().CancelFlow(kt, flow.ID); err != nil {
-							logs.Warnf("cancel flow %v failed, err %s, rid: %s", flow, err.Error(), kt.Rid)
-							continue
-						}
-					}
 					flowID, err := msdc.createDailySummaryTask(kt, summary, billYear, billMonth, task.BillDay)
 					if err != nil {
 						logs.Warnf("create daily summary task for %v, %d/%d/%d failed, err %s, rid: %s",
@@ -246,23 +231,29 @@ func (msdc *MainSummaryDailyController) syncDailySummary(kt *kit.Kit, billYear, 
 func (msdc *MainSummaryDailyController) createDailySummaryTask(
 	kt *kit.Kit, summary *bill.BillSummaryMainResult, billYear, billMonth, billDay int) (string, error) {
 
-	result, err := msdc.Client.TaskServer().CreateCustomFlow(kt, &taskserver.AddCustomFlowReq{
-		Name: enumor.FlowBillDailySummary,
-		Memo: "do daily summary",
-		Tasks: []taskserver.CustomFlowTask{
-			dailysummary.BuildDailySummaryTask(
-				msdc.RootAccountID,
-				msdc.MainAccountID,
-				msdc.Vendor,
-				msdc.ProductID,
-				msdc.BkBizID,
-				billYear,
-				billMonth,
-				billDay,
-				summary.CurrentVersion,
-			),
-		},
-	})
+	memo := fmt.Sprintf("[%s] main %s(%.16s)v%d %d-%02d-%02d",
+		msdc.Vendor, msdc.MainAccountID, msdc.MainAccountCloudID, summary.CurrentVersion,
+		billYear, billMonth, billDay)
+
+	opt := &dailysummary.DailySummaryOption{
+		RootAccountID:      msdc.RootAccountID,
+		MainAccountID:      msdc.MainAccountID,
+		RootAccountCloudID: msdc.RootAccountCloudID,
+		MainAccountCloudID: msdc.MainAccountCloudID,
+		ProductID:          msdc.ProductID,
+		Vendor:             msdc.Vendor,
+		BkBizID:            msdc.BkBizID,
+		BillYear:           billYear,
+		BillMonth:          billMonth,
+		BillDay:            billDay,
+		VersionID:          summary.CurrentVersion,
+	}
+	taskReq := &taskserver.AddCustomFlowReq{
+		Name:  enumor.FlowBillDailySummary,
+		Memo:  memo,
+		Tasks: []taskserver.CustomFlowTask{dailysummary.BuildDailySummaryTask(opt)},
+	}
+	result, err := msdc.Client.TaskServer().CreateCustomFlow(kt, taskReq)
 	if err != nil {
 		return "", fmt.Errorf("create daily summary task flow failed for %s/%s/%s/%d/%d/%d/%d, err %s",
 			msdc.RootAccountID, msdc.MainAccountID, msdc.Vendor, billYear, billMonth, billDay,

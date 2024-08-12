@@ -20,7 +20,12 @@
 package dailypull
 
 import (
+	// register aws daily pull
 	_ "hcm/cmd/task-server/logics/action/bill/dailypull/aws"
+	// register azure daily pull
+	_ "hcm/cmd/task-server/logics/action/bill/dailypull/azure"
+	// register gcp daily pull
 	_ "hcm/cmd/task-server/logics/action/bill/dailypull/gcp"
+	// register huawei daily pull
 	_ "hcm/cmd/task-server/logics/action/bill/dailypull/huawei"
 )

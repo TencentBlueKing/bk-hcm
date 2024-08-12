@@ -56,6 +56,8 @@ func InitBillService(cap *capability.Capability) {
 	h.Add("GcpGetBillList", "POST", "/vendors/gcp/bills/list", v.GcpGetBillList)
 	h.Add("GcpGetRootAccountBillList", "POST", "/vendors/gcp/root-account-bills/list", v.GcpGetRootAccountBillList)
 	h.Add("AwsGetRootAccountBillList", "POST", "/vendors/aws/root_account_bills/list", v.AwsGetRootAccountBillList)
+	h.Add("AzureGetRootAccountBillList", "POST", "/vendors/azure/root_account_bills/list",
+		v.AzureGetRootAccountBillList)
 
 	h.Load(cap.WebService)
 }

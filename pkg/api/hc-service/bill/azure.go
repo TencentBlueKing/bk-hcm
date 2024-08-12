@@ -21,9 +21,17 @@ package bill
 
 import (
 	"hcm/pkg/rest"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/consumption/armconsumption"
 )
 
 // -------------------------- List --------------------------
+
+// AzureLegacyBillListResult define azure bill legacy list result.
+type AzureLegacyBillListResult struct {
+	NextLink string                             `json:"next_link"`
+	Details  []armconsumption.LegacyUsageDetail `json:"details"`
+}
 
 // AzureBillListResult define azure bill list result.
 type AzureBillListResult struct {

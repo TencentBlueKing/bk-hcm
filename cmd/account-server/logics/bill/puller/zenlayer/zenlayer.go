@@ -28,7 +28,6 @@ import (
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
-	"hcm/pkg/serviced"
 )
 
 const (
@@ -56,28 +55,29 @@ func (hp *ZenlayerPuller) HasMonthPullTask() bool {
 
 // EnsurePullTask 空实现，PullTask的创建由账单导入模块完成
 func (hp *ZenlayerPuller) EnsurePullTask(kt *kit.Kit, client *client.ClientSet,
-	sd serviced.ServiceDiscover, billSummaryMain *dsbillapi.BillSummaryMainResult) error {
+	billSummaryMain *dsbillapi.BillSummaryMainResult) error {
 
 	return nil
 }
 
 // GetPullTaskList ...
 func (hp *ZenlayerPuller) GetPullTaskList(kt *kit.Kit, client *client.ClientSet,
-	sd serviced.ServiceDiscover, billSummaryMain *dsbillapi.BillSummaryMainResult) (
+	billSummaryMain *dsbillapi.BillSummaryMainResult) (
 	[]*bill.BillDailyPullTaskResult, error) {
 
 	dp := &daily.DailyPuller{
-		RootAccountID: billSummaryMain.RootAccountID,
-		MainAccountID: billSummaryMain.MainAccountID,
-		ProductID:     billSummaryMain.ProductID,
-		BkBizID:       billSummaryMain.BkBizID,
-		Vendor:        billSummaryMain.Vendor,
-		BillYear:      billSummaryMain.BillYear,
-		BillMonth:     billSummaryMain.BillMonth,
-		Version:       billSummaryMain.CurrentVersion,
-		BillDelay:     hp.BillDelay,
-		Client:        client,
-		Sd:            sd,
+		RootAccountID:      billSummaryMain.RootAccountID,
+		RootAccountCloudID: billSummaryMain.RootAccountCloudID,
+		MainAccountID:      billSummaryMain.MainAccountID,
+		MainAccountCloudID: billSummaryMain.MainAccountCloudID,
+		ProductID:          billSummaryMain.ProductID,
+		BkBizID:            billSummaryMain.BkBizID,
+		Vendor:             billSummaryMain.Vendor,
+		BillYear:           billSummaryMain.BillYear,
+		BillMonth:          billSummaryMain.BillMonth,
+		Version:            billSummaryMain.CurrentVersion,
+		BillDelay:          hp.BillDelay,
+		Client:             client,
 	}
 	return dp.GetPullTaskList(kt)
 }

@@ -45,16 +45,8 @@ func (svc *service) UpdateBillDailyPullTask(cts *rest.Contexts) (interface{}, er
 	}
 
 	billDailyPullTask := &tablebill.AccountBillDailyPullTask{
-		ID:                 req.ID,
-		RootAccountID:      req.RootAccountID,
-		MainAccountID:      req.MainAccountID,
-		Vendor:             req.Vendor,
-		ProductID:          req.ProductID,
-		BkBizID:            req.BkBizID,
-		BillYear:           req.BillYear,
-		BillMonth:          req.BillMonth,
-		BillDay:            req.BillDay,
-		VersionID:          req.VersionID,
+		ID: req.ID,
+
 		State:              req.State,
 		Count:              req.Count,
 		Currency:           req.Currency,

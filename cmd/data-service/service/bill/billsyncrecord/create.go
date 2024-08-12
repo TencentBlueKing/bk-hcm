@@ -30,6 +30,7 @@ import (
 	tablebill "hcm/pkg/dal/table/bill"
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/rest"
+	cvt "hcm/pkg/tools/converter"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -51,13 +52,15 @@ func (svc *service) CreateBillSyncRecord(cts *rest.Contexts) (interface{}, error
 				Vendor:    item.Vendor,
 				BillYear:  item.BillYear,
 				BillMonth: item.BillMonth,
+				State:     item.State,
 				Currency:  item.Currency,
+				Count:     cvt.ValToPtr(item.Count),
 				Cost:      &types.Decimal{Decimal: item.Cost},
 				RMBCost:   &types.Decimal{Decimal: item.RMBCost},
-				State:     item.State,
-				Reviser:   cts.Kit.User,
-				Creator:   cts.Kit.User,
+				Detail:    "",
 				Operator:  cts.Kit.User,
+				Creator:   cts.Kit.User,
+				Reviser:   cts.Kit.User,
 			}
 			itemList = append(itemList, item)
 		}

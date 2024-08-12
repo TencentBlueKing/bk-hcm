@@ -23,7 +23,7 @@ import (
 	table "hcm/pkg/dal/table/account-set"
 )
 
-// ListAccountDetails list account details.
+// ListMainAccountDetails list account details.
 type ListMainAccountDetails struct {
 	Count   uint64                    `json:"count,omitempty"`
 	Details []*table.MainAccountTable `json:"details,omitempty"`

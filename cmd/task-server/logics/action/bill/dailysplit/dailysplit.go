@@ -90,7 +90,7 @@ func getBillItemFilter(opt *DailyAccountSplitActionOption, billDay int) *filter.
 	return tools.ExpressionAnd(expressions...)
 }
 
-// Run run pull daily bill
+// Run pull daily bill
 func (act DailyAccountSplitAction) Run(kt run.ExecuteKit, params interface{}) (interface{}, error) {
 	opt, ok := params.(*DailyAccountSplitActionOption)
 	if !ok {

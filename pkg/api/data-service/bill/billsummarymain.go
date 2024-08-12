@@ -32,9 +32,9 @@ import (
 // BillSummaryMainCreateReq create request
 type BillSummaryMainCreateReq struct {
 	RootAccountID             string                      `json:"root_account_id" validate:"required"`
-	RootAccountName           string                      `json:"root_account_name" validate:"omitempty"`
+	RootAccountCloudID        string                      `json:"root_account_cloud_id" validate:"omitempty"`
 	MainAccountID             string                      `json:"main_account_id" validate:"required"`
-	MainAccountName           string                      `json:"main_account_name" validate:"omitempty"`
+	MainAccountCloudID        string                      `json:"main_account_cloud_id" validate:"omitempty"`
 	Vendor                    enumor.Vendor               `json:"vendor" validate:"required"`
 	ProductID                 int64                       `json:"product_id" validate:"omitempty"`
 	ProductName               string                      `json:"product_name" validate:"omitempty"`
@@ -81,31 +81,31 @@ type BillSummaryMainListResult = core.ListResultT[*BillSummaryMainResult]
 // BillSummaryMainResult result
 type BillSummaryMainResult struct {
 	ID                        string                      `json:"id,omitempty"`
-	RootAccountID             string                      `json:"root_account_id" validate:"required"`
-	RootAccountName           string                      `json:"root_account_name" validate:"omitempty"`
-	MainAccountID             string                      `json:"main_account_id" validate:"required"`
-	MainAccountName           string                      `json:"main_account_name" validate:"omitempty"`
-	Vendor                    enumor.Vendor               `json:"vendor" validate:"required"`
-	ProductID                 int64                       `json:"product_id" validate:"omitempty"`
-	ProductName               string                      `json:"product_name" validate:"omitempty"`
-	BkBizID                   int64                       `json:"bk_biz_id" validate:"omitempty"`
-	BkBizName                 string                      `json:"bk_biz_name" validate:"omitempty"`
-	BillYear                  int                         `json:"bill_year" validate:"required"`
-	BillMonth                 int                         `json:"bill_month" validate:"required"`
-	LastSyncedVersion         int                         `json:"last_synced_version" validate:"omitempty"`
-	CurrentVersion            int                         `json:"current_version" validate:"required"`
-	Currency                  enumor.CurrencyCode         `json:"currency" validate:"required"`
-	LastMonthCostSynced       decimal.Decimal             `json:"last_month_cost_synced" validate:"omitempty"`
-	LastMonthRMBCostSynced    decimal.Decimal             `json:"last_month_rmb_cost_synced" validate:"omitempty"`
-	CurrentMonthCostSynced    decimal.Decimal             `json:"current_month_cost_synced" validate:"omitempty"`
-	CurrentMonthRMBCostSynced decimal.Decimal             `json:"current_month_rmb_cost_synced" validate:"omitempty"`
-	MonthOnMonthValue         float64                     `json:"month_on_month_value" validate:"omitempty"`
-	CurrentMonthCost          decimal.Decimal             `json:"current_month_cost" validate:"omitempty"`
-	CurrentMonthRMBCost       decimal.Decimal             `json:"current_month_rmb_cost" validate:"omitempty"`
-	AdjustmentCost            decimal.Decimal             `json:"adjustment_cost" validate:"omitempty"`
-	AdjustmentRMBCost         decimal.Decimal             `json:"adjustment_rmb_cost" validate:"omitempty"`
-	Rate                      float64                     `json:"rate" validate:"required"`
-	State                     enumor.MainBillSummaryState `json:"state" validate:"required"`
+	RootAccountID             string                      `json:"root_account_id"`
+	RootAccountCloudID        string                      `json:"root_account_cloud_id"`
+	MainAccountID             string                      `json:"main_account_id"`
+	MainAccountCloudID        string                      `json:"main_account_cloud_id"`
+	Vendor                    enumor.Vendor               `json:"vendor"`
+	ProductID                 int64                       `json:"product_id"`
+	ProductName               string                      `json:"product_name"`
+	BkBizID                   int64                       `json:"bk_biz_id"`
+	BkBizName                 string                      `json:"bk_biz_name"`
+	BillYear                  int                         `json:"bill_year"`
+	BillMonth                 int                         `json:"bill_month"`
+	LastSyncedVersion         int                         `json:"last_synced_version"`
+	CurrentVersion            int                         `json:"current_version"`
+	Currency                  enumor.CurrencyCode         `json:"currency"`
+	LastMonthCostSynced       decimal.Decimal             `json:"last_month_cost_synced"`
+	LastMonthRMBCostSynced    decimal.Decimal             `json:"last_month_rmb_cost_synced"`
+	CurrentMonthCostSynced    decimal.Decimal             `json:"current_month_cost_synced"`
+	CurrentMonthRMBCostSynced decimal.Decimal             `json:"current_month_rmb_cost_synced"`
+	MonthOnMonthValue         float64                     `json:"month_on_month_value"`
+	CurrentMonthCost          decimal.Decimal             `json:"current_month_cost"`
+	CurrentMonthRMBCost       decimal.Decimal             `json:"current_month_rmb_cost"`
+	AdjustmentCost            decimal.Decimal             `json:"adjustment_cost"`
+	AdjustmentRMBCost         decimal.Decimal             `json:"adjustment_rmb_cost"`
+	Rate                      float64                     `json:"rate"`
+	State                     enumor.MainBillSummaryState `json:"state"`
 	CreatedAt                 types.Time                  `json:"created_at,omitempty"`
 	UpdatedAt                 types.Time                  `json:"updated_at,omitempty"`
 }
@@ -113,8 +113,6 @@ type BillSummaryMainResult struct {
 // BillSummaryMainUpdateReq ...
 type BillSummaryMainUpdateReq struct {
 	ID                        string                      `json:"id,omitempty" validate:"required"`
-	RootAccountName           string                      `json:"root_account_name" validate:"omitempty"`
-	MainAccountName           string                      `json:"main_account_name" validate:"omitempty"`
 	ProductID                 int64                       `json:"product_id" validate:"omitempty"`
 	ProductName               string                      `json:"product_name" validate:"omitempty"`
 	BkBizID                   int64                       `json:"bk_biz_id" validate:"omitempty"`

@@ -23,8 +23,10 @@ import (
 	"context"
 	"net/http"
 
-	hcbillservice "hcm/pkg/api/hc-service/bill"
+	hcbill "hcm/pkg/api/hc-service/bill"
+	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -40,11 +42,11 @@ func NewBillClient(client rest.ClientInterface) *BillClient {
 	}
 }
 
-// List list bill.
-func (v *BillClient) List(ctx context.Context, h http.Header, req *hcbillservice.AzureBillListReq) (
-	*hcbillservice.AzureBillListResult, error) {
+// List bill.
+func (v *BillClient) List(ctx context.Context, h http.Header, req *hcbill.AzureBillListReq) (
+	*hcbill.AzureBillListResult, error) {
 
-	resp := new(hcbillservice.AzureBillListResp)
+	resp := new(hcbill.AzureBillListResp)
 
 	err := v.client.Post().
 		WithContext(ctx).
@@ -63,4 +65,12 @@ func (v *BillClient) List(ctx context.Context, h http.Header, req *hcbillservice
 	}
 
 	return resp.Data, nil
+}
+
+// GetRootAccountBillList get bill list by root account
+func (v *BillClient) GetRootAccountBillList(kt *kit.Kit, req *hcbill.AzureRootBillListReq) (
+	*hcbill.AzureLegacyBillListResult, error) {
+
+	return common.Request[hcbill.AzureRootBillListReq, hcbill.AzureLegacyBillListResult](v.client, rest.POST, kt, req,
+		"/root_account_bills/list")
 }

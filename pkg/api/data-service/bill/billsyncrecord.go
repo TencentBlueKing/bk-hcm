@@ -49,6 +49,7 @@ type BillSyncRecordCreateReq struct {
 	RMBCost   decimal.Decimal      `json:"rmb_cost" validate:"omitempty"`
 	Detail    string               `json:"detail" validate:"omitempty"`
 	Operator  string               `json:"operator" validate:"max=64" `
+	Count     uint                 `json:"count"`
 }
 
 // Validate ...
@@ -67,6 +68,7 @@ type BillSyncRecordUpdateReq struct {
 	ID       string               `json:"id"`
 	State    enumor.BillSyncState `json:"state" validate:"omitempty"`
 	Currency enumor.CurrencyCode  `json:"currency" validate:"omitempty"`
+	Count    *uint                `json:"count"  `
 	Cost     *decimal.Decimal     `json:"cost" validate:"omitempty"`
 	RMBCost  *decimal.Decimal     `json:"rmb_cost" validate:"omitempty"`
 	Detail   string               `json:"detail" validate:"omitempty"`

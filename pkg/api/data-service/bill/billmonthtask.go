@@ -31,12 +31,13 @@ import (
 
 // BillMonthTaskCreateReq create request
 type BillMonthTaskCreateReq struct {
-	RootAccountID string                               `json:"root_account_id" validate:"required"`
-	Vendor        enumor.Vendor                        `json:"vendor" validate:"required"`
-	BillYear      int                                  `json:"bill_year" validate:"required"`
-	BillMonth     int                                  `json:"bill_month" validate:"required"`
-	VersionID     int                                  `json:"version_id" validate:"required"`
-	State         enumor.RootAccountMonthBillTaskState `json:"state" validate:"required"`
+	RootAccountID      string                               `json:"root_account_id" validate:"required"`
+	RootAccountCloudID string                               `json:"root_account_cloud_id" validate:"required"`
+	Vendor             enumor.Vendor                        `json:"vendor" validate:"required"`
+	BillYear           int                                  `json:"bill_year" validate:"required"`
+	BillMonth          int                                  `json:"bill_month" validate:"required"`
+	VersionID          int                                  `json:"version_id" validate:"required"`
+	State              enumor.RootAccountMonthBillTaskState `json:"state" validate:"required"`
 }
 
 // Validate AccountBillConfigBatchCreateReq.
@@ -64,26 +65,27 @@ type BillMonthTaskListResult struct {
 
 // BillMonthTaskResult result
 type BillMonthTaskResult struct {
-	ID            string                               `json:"id,omitempty"`
-	RootAccountID string                               `json:"root_account_id,omitempty"`
-	Vendor        enumor.Vendor                        `json:"vendor,omitempty"`
-	BillYear      int                                  `json:"bill_year,omitempty"`
-	BillMonth     int                                  `json:"bill_month,omitempty"`
-	VersionID     int                                  `json:"version_id,omitempty"`
-	State         enumor.RootAccountMonthBillTaskState `json:"state,omitempty"`
-	Count         uint64                               `json:"count,omitempty"`
-	Currency      enumor.CurrencyCode                  `json:"currency,omitempty"`
-	Cost          decimal.Decimal                      `json:"cost,omitempty"`
-	PullIndex     uint64                               `json:"pull_index,omitempty"`
-	PullFlowID    string                               `json:"pull_flow_id,omitempty"`
-	SplitIndex    uint64                               `json:"split_index,omitempty"`
-	SplitFlowID   string                               `json:"split_flow_id,omitempty"`
-	SummaryFlowID string                               `json:"summary_flow_id,omitempty"`
-	SummaryDetail string                               `json:"summary_detail,omitempty"`
-	Creator       string                               `json:"creator,omitempty"`
-	Reviser       string                               `json:"reviser,omitempty"`
-	CreatedAt     types.Time                           `json:"created_at,omitempty"`
-	UpdatedAt     types.Time                           `json:"updated_at,omitempty"`
+	ID                 string                               `json:"id,omitempty"`
+	RootAccountID      string                               `json:"root_account_id,omitempty"`
+	RootAccountCloudID string                               `json:"root_account_cloud_id,omitempty"`
+	Vendor             enumor.Vendor                        `json:"vendor,omitempty"`
+	BillYear           int                                  `json:"bill_year,omitempty"`
+	BillMonth          int                                  `json:"bill_month,omitempty"`
+	VersionID          int                                  `json:"version_id,omitempty"`
+	State              enumor.RootAccountMonthBillTaskState `json:"state,omitempty"`
+	Count              uint64                               `json:"count,omitempty"`
+	Currency           enumor.CurrencyCode                  `json:"currency,omitempty"`
+	Cost               decimal.Decimal                      `json:"cost,omitempty"`
+	PullIndex          uint64                               `json:"pull_index,omitempty"`
+	PullFlowID         string                               `json:"pull_flow_id,omitempty"`
+	SplitIndex         uint64                               `json:"split_index,omitempty"`
+	SplitFlowID        string                               `json:"split_flow_id,omitempty"`
+	SummaryFlowID      string                               `json:"summary_flow_id,omitempty"`
+	SummaryDetail      string                               `json:"summary_detail,omitempty"`
+	Creator            string                               `json:"creator,omitempty"`
+	Reviser            string                               `json:"reviser,omitempty"`
+	CreatedAt          types.Time                           `json:"created_at,omitempty"`
+	UpdatedAt          types.Time                           `json:"updated_at,omitempty"`
 }
 
 // BillMonthTaskUpdateReq update request

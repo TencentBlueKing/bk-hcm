@@ -40,15 +40,17 @@ import (
 
 // DailySummaryOption option for daily summary
 type DailySummaryOption struct {
-	RootAccountID string        `json:"root_account_id" validate:"required"`
-	MainAccountID string        `json:"main_account_id" validate:"required"`
-	ProductID     int64         `json:"product_id" validate:"required"`
-	BkBizID       int64         `json:"bk_biz_id" validate:"required"`
-	BillYear      int           `json:"bill_year" validate:"required"`
-	BillMonth     int           `json:"bill_month" validate:"required"`
-	BillDay       int           `json:"bill_day" validate:"required"`
-	VersionID     int           `json:"version_id" validate:"required"`
-	Vendor        enumor.Vendor `json:"vendor" validate:"required"`
+	RootAccountID      string        `json:"root_account_id" validate:"required"`
+	MainAccountID      string        `json:"main_account_id" validate:"required"`
+	RootAccountCloudID string        `json:"root_account_cloud_id" validate:"required"`
+	MainAccountCloudID string        `json:"main_account_cloud_id" validate:"required"`
+	ProductID          int64         `json:"product_id" validate:"required"`
+	BkBizID            int64         `json:"bk_biz_id" validate:"required"`
+	BillYear           int           `json:"bill_year" validate:"required"`
+	BillMonth          int           `json:"bill_month" validate:"required"`
+	BillDay            int           `json:"bill_day" validate:"required"`
+	VersionID          int           `json:"version_id" validate:"required"`
+	Vendor             enumor.Vendor `json:"vendor" validate:"required"`
 }
 
 var _ action.Action = new(DailySummaryAction)
@@ -194,23 +196,26 @@ func (act DailySummaryAction) syncDailySummary(kt run.ExecuteKit, opt *DailySumm
 	if len(result.Details) == 0 {
 		if _, err := actcli.GetDataService().Global.Bill.CreateBillSummaryDaily(kt.Kit(),
 			&bill.BillSummaryDailyCreateReq{
-				RootAccountID: opt.RootAccountID,
-				MainAccountID: opt.MainAccountID,
-				ProductID:     opt.ProductID,
-				BkBizID:       opt.BkBizID,
-				Vendor:        opt.Vendor,
-				BillYear:      opt.BillYear,
-				BillMonth:     opt.BillMonth,
-				BillDay:       billDay,
-				VersionID:     opt.VersionID,
-				Currency:      currency,
-				Cost:          cost,
-				Count:         int64(count),
+				RootAccountID:      opt.RootAccountID,
+				MainAccountID:      opt.MainAccountID,
+				RootAccountCloudID: opt.RootAccountCloudID,
+				MainAccountCloudID: opt.MainAccountCloudID,
+				ProductID:          opt.ProductID,
+				BkBizID:            opt.BkBizID,
+				Vendor:             opt.Vendor,
+				BillYear:           opt.BillYear,
+				BillMonth:          opt.BillMonth,
+				BillDay:            billDay,
+				VersionID:          opt.VersionID,
+				Currency:           currency,
+				Cost:               cost,
+				Count:              int64(count),
 			}); err != nil {
-			return fmt.Errorf("create daily summary for %v day %d failed, err %s", opt, billDay, err.Error())
+			return fmt.Errorf("create daily summary of main account %s(%s) day %d failed, err %v",
+				opt.MainAccountID, opt.MainAccountCloudID, billDay, err)
 		}
-		logs.Infof("create daily summary for %v day %d successfully cost %s count %d",
-			opt, billDay, cost.String(), count)
+		logs.Infof("[%s]create daily summary of %s(%s) day %d successfully cost %s count %d, rid: %s",
+			opt.Vendor, opt.MainAccountID, opt.MainAccountCloudID, billDay, cost.String(), count, kt.Kit().Rid)
 		return nil
 	}
 	if len(result.Details) != 1 {

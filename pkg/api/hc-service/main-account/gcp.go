@@ -39,7 +39,7 @@ func (req *CreateGcpMainAccountReq) Validate() error {
 	return nil
 }
 
-// CreateGcpMainAccountReq request for create gcp main account
+// CreateGcpMainAccountResp request for create gcp main account
 type CreateGcpMainAccountResp struct {
 	ProjectName string `json:"project_name"`
 	ProjectID   string `json:"project_id"`

@@ -23,6 +23,9 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+
+	proto "hcm/pkg/api/cloud-server/application"
+	dataproto "hcm/pkg/api/data-service/account-set"
 )
 
 type formItem struct {
@@ -97,29 +100,12 @@ func (a *ApplicationOfUpdateMainAccount) RenderItsmForm() (string, error) {
 		)
 	}
 
-	// 业务变更
-	if req.BkBizID != oldAccount.BkBizID {
-		// 获取业务名字
-		bkName, err := a.GetBizName(req.BkBizID)
-		if err != nil {
-			return "", fmt.Errorf("list biz name failed, bk_biz_ids: %v, err: %w", req.BkBizID, err)
-		}
-
-		oldBkName, err := a.GetBizName(oldAccount.BkBizID)
-		if err != nil {
-			return "", fmt.Errorf("list biz name failed, bk_biz_ids: %v, err: %w", req.BkBizID, err)
-		}
-
-		formItems = append(formItems,
-			formItem{
-				Label: "业务变更前",
-				Value: oldBkName,
-			},
-			formItem{
-				Label: "业务变更后",
-				Value: bkName,
-			},
-		)
+	bizChanges, err := a.buildBizChange(req, oldAccount)
+	if err != nil {
+		return "", err
+	}
+	if len(bizChanges) > 0 {
+		formItems = append(formItems, bizChanges...)
 	}
 
 	// 转换为ITSM表单内容数据
@@ -128,4 +114,30 @@ func (a *ApplicationOfUpdateMainAccount) RenderItsmForm() (string, error) {
 		content = append(content, fmt.Sprintf("%s: %s", i.Label, i.Value))
 	}
 	return strings.Join(content, "\n"), nil
+}
+
+func (a *ApplicationOfUpdateMainAccount) buildBizChange(req *proto.MainAccountUpdateReq,
+	oldAccount *dataproto.MainAccountGetBaseResult) ([]formItem, error) {
+
+	// 业务变更
+	if req.BkBizID == oldAccount.BkBizID {
+		return nil, nil
+	}
+	// 获取业务名字
+	bkName, err := a.GetBizName(req.BkBizID)
+	if err != nil {
+		return nil, fmt.Errorf("list biz name failed, bk_biz_ids: %v, err: %w", req.BkBizID, err)
+	}
+
+	oldBkName, err := a.GetBizName(oldAccount.BkBizID)
+	if err != nil {
+		return nil, fmt.Errorf("list biz name failed, bk_biz_ids: %v, err: %w", req.BkBizID, err)
+	}
+
+	formItems := []formItem{
+		{Label: "业务变更前", Value: oldBkName},
+		{Label: "业务变更后", Value: bkName},
+	}
+
+	return formItems, nil
 }

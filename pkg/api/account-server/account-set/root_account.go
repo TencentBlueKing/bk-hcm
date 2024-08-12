@@ -22,6 +22,7 @@ package accountset
 
 import (
 	"encoding/json"
+
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 )
@@ -78,7 +79,7 @@ func (req *RootAccountUpdateReq) Validate() error {
 	return nil
 }
 
-// AwsRootAccountExtensionUpdateReq	...
+// AwsRootAccountExtensionUpdateReq ...
 type AwsRootAccountExtensionUpdateReq struct {
 	CloudIamUsername string `json:"cloud_iam_username" validate:"required"`
 	CloudSecretID    string `json:"cloud_secret_id" validate:"omitempty"`
@@ -94,7 +95,7 @@ func (req *AwsRootAccountExtensionUpdateReq) Validate() error {
 	return nil
 }
 
-// GcpAccountExtensionUpdateReq ...
+// GcpRootAccountExtensionUpdateReq ...
 type GcpRootAccountExtensionUpdateReq struct {
 	CloudProjectName        string `json:"cloud_project_name" validate:"omitempty"`
 	CloudServiceAccountID   string `json:"cloud_service_account_id" validate:"omitempty"`
@@ -112,7 +113,7 @@ func (req *GcpRootAccountExtensionUpdateReq) Validate() error {
 	return nil
 }
 
-// AzureAccountExtensionUpdateReq ...
+// AzureRootAccountExtensionUpdateReq ...
 type AzureRootAccountExtensionUpdateReq struct {
 	CloudTenantID         string `json:"cloud_tenant_id" validate:"omitempty"`
 	CloudSubscriptionName string `json:"cloud_subscription_name" validate:"omitempty"`
@@ -130,7 +131,7 @@ func (req *AzureRootAccountExtensionUpdateReq) Validate() error {
 	return nil
 }
 
-// HuaWeiAccountExtensionUpdateReq ...
+// HuaWeiRootAccountExtensionUpdateReq ...
 type HuaWeiRootAccountExtensionUpdateReq struct {
 	CloudSubAccountName string `json:"cloud_sub_account_name" validate:"required"`
 	CloudIamUserID      string `json:"cloud_iam_user_id" validate:"required"`

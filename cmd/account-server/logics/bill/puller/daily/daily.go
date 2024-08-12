@@ -23,22 +23,20 @@ package daily
 import (
 	"fmt"
 	"math/rand"
-	"strings"
 	"time"
 
 	"hcm/cmd/task-server/logics/action/bill/dailypull"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/bill"
 	taskserver "hcm/pkg/api/task-server"
-	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
-	"hcm/pkg/serviced"
 
 	"github.com/shopspring/decimal"
 )
@@ -52,17 +50,18 @@ type DailyPuller struct {
 	RootAccountID string
 	MainAccountID string
 	// 主账号云id
-	BillAccountID string
-	ProductID     int64
-	BkBizID       int64
-	Vendor        enumor.Vendor
-	BillYear      int
-	BillMonth     int
-	Version       int
+	MainAccountCloudID string
+	RootAccountCloudID string
+
+	ProductID int64
+	BkBizID   int64
+	Vendor    enumor.Vendor
+	BillYear  int
+	BillMonth int
+	Version   int
 	// 账单延迟查询时间
 	BillDelay int
 	Client    *client.ClientSet
-	Sd        serviced.ServiceDiscover
 }
 
 func (dp *DailyPuller) getFilter(billDay int) *filter.Expression {
@@ -89,23 +88,26 @@ func (dp *DailyPuller) EnsurePullTask(kt *kit.Kit) error {
 	return nil
 }
 
-func (dp *DailyPuller) createDailyPullTask(kt *kit.Kit, billDay int) error {
-	_, err := dp.Client.DataService().Global.Bill.CreateBillDailyPullTask(kt, &bill.BillDailyPullTaskCreateReq{
-		RootAccountID: dp.RootAccountID,
-		MainAccountID: dp.MainAccountID,
-		Vendor:        dp.Vendor,
-		ProductID:     dp.ProductID,
-		BkBizID:       dp.BkBizID,
-		BillYear:      dp.BillYear,
-		BillMonth:     dp.BillMonth,
-		BillDay:       billDay,
-		VersionID:     dp.Version,
-		State:         enumor.MainAccountRawBillPullStatePulling,
-		Count:         0,
-		Currency:      "",
-		Cost:          decimal.NewFromFloat(0),
-		FlowID:        "",
-	})
+func (dp *DailyPuller) createDailyPullTaskStub(kt *kit.Kit, billDay int) error {
+	req := &bill.BillDailyPullTaskCreateReq{
+		RootAccountID:      dp.RootAccountID,
+		RootAccountCloudID: dp.RootAccountCloudID,
+		MainAccountCloudID: dp.MainAccountCloudID,
+		MainAccountID:      dp.MainAccountID,
+		Vendor:             dp.Vendor,
+		ProductID:          dp.ProductID,
+		BkBizID:            dp.BkBizID,
+		BillYear:           dp.BillYear,
+		BillMonth:          dp.BillMonth,
+		BillDay:            billDay,
+		VersionID:          dp.Version,
+		State:              enumor.MainAccountRawBillPullStatePulling,
+		Count:              0,
+		Currency:           "",
+		Cost:               decimal.NewFromFloat(0),
+		FlowID:             "",
+	}
+	_, err := dp.Client.DataService().Global.Bill.CreateBillDailyPullTask(kt, req)
 	return err
 }
 
@@ -117,10 +119,10 @@ func (dp *DailyPuller) updateDailyPullTaskFlowID(kt *kit.Kit, dataID, flowID str
 }
 
 func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
-	filter := dp.getFilter(0)
+	flt := dp.getFilter(0)
 	billTaskResult, err := dp.Client.DataService().Global.Bill.ListBillDailyPullTask(
 		kt, &bill.BillDailyPullTaskListReq{
-			Filter: filter,
+			Filter: flt,
 			Page: &core.BasePage{
 				Start: 0,
 				Limit: 31,
@@ -135,29 +137,17 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 		billTaskDayMap[billTask.BillDay] = struct{}{}
 		// 如果没有创建拉取task flow，则创建
 		if len(billTask.FlowID) == 0 {
-			flowResult, err := dp.Client.TaskServer().CreateCustomFlow(kt, &taskserver.AddCustomFlowReq{
-				Name: enumor.FlowPullRawBill,
-				Memo: "pull daily raw bill",
-				Tasks: []taskserver.CustomFlowTask{
-					dailypull.BuildDailyPullTask(
-						dp.RootAccountID,
-						dp.MainAccountID,
-						dp.BillAccountID,
-						dp.Vendor,
-						dp.BillYear,
-						dp.BillMonth,
-						billTask.BillDay,
-						dp.Version,
-					),
-				},
-			})
+			err := dp.createNewPullTask(kt, billTask)
 			if err != nil {
-				return fmt.Errorf("failed to create custom flow, err %s", err.Error())
+				logs.Errorf("fail to create new pull task for billtask, err: %v, billTask: %#v, rid: %s",
+					err, billTask, kt.Rid)
+				return err
 			}
-			logs.Infof("create pull task flow for billTask %+v, rid: %s", billTask, kt.Rid)
-			if err := dp.updateDailyPullTaskFlowID(kt, billTask.ID, flowResult.ID); err != nil {
-				return fmt.Errorf("update flow id failed, err %s", err.Error())
-			}
+			logs.Infof("create pull task flow %s main account: %s(%s), %d-%02d-%02d:v%d, root: %s(%s), rid: %s",
+				billTask.Vendor, billTask.MainAccountID, billTask.MainAccountCloudID,
+				billTask.BillYear, billTask.BillMonth, billTask.BillDay, billTask.VersionID,
+				billTask.RootAccountID, billTask.RootAccountCloudID, kt.Rid)
+
 			continue
 		}
 		if billTask.State != enumor.MainAccountRawBillPullStatePulling {
@@ -180,9 +170,9 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 	for _, day := range dayList {
 		if _, ok := billTaskDayMap[day]; !ok {
 			// 如果不存在pull task数据，则创建新的pull task
-			if err := dp.createDailyPullTask(kt, day); err != nil {
-				logs.Warnf("create dailed pull task %v for day %d failed, err %s, rid: %s",
-					dp, day, err.Error(), kt.Rid)
+			if err := dp.createDailyPullTaskStub(kt, day); err != nil {
+				logs.Warnf("create dailed pull task for main account %s(%s) of %d-%02d-%02d failed, err: %s, rid: %s",
+					dp.MainAccountID, dp.MainAccountCloudID, dp.BillYear, dp.BillMonth, day, err.Error(), kt.Rid)
 			}
 			logs.Infof("create pull task for %v day %d successfully, rid: %s", dp, day, kt.Rid)
 		}
@@ -191,22 +181,40 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 }
 
 func (dp *DailyPuller) createNewPullTask(kt *kit.Kit, billTask *bill.BillDailyPullTaskResult) error {
-	flowResult, err := dp.Client.TaskServer().CreateCustomFlow(kt, &taskserver.AddCustomFlowReq{
-		Name: enumor.FlowPullRawBill,
-		Memo: "pull daily raw bill",
-		Tasks: []taskserver.CustomFlowTask{
-			dailypull.BuildDailyPullTask(
-				dp.RootAccountID,
-				dp.MainAccountID,
-				dp.BillAccountID,
-				dp.Vendor,
-				dp.BillYear,
-				dp.BillMonth,
-				billTask.BillDay,
-				dp.Version,
-			),
-		},
-	})
+
+	task := dailypull.BuildDailyPullTask(
+		dp.RootAccountID,
+		dp.RootAccountCloudID,
+		dp.MainAccountID,
+		dp.MainAccountCloudID,
+		dp.Vendor,
+		dp.BillYear,
+		dp.BillMonth,
+		billTask.BillDay,
+		dp.Version,
+	)
+	infoMap := map[string]string{
+		"root_account_id":       dp.RootAccountID,
+		"root_account_cloud_id": dp.RootAccountCloudID,
+		"main_account_id":       dp.MainAccountID,
+		"main_account_cloud_id": dp.MainAccountCloudID,
+		"vendor":                string(dp.Vendor),
+		"bill_year":             fmt.Sprintf("%d", dp.BillYear),
+		"bill_month":            fmt.Sprintf("%d", dp.BillMonth),
+		"bill_day":              fmt.Sprintf("%d", billTask.BillDay),
+		"version":               fmt.Sprintf("%d", dp.Version),
+	}
+
+	memo := fmt.Sprintf("[%s] main %s(%.16s)v%d %02d-%02d",
+		dp.Vendor, dp.MainAccountID, dp.MainAccountCloudID, dp.Version, dp.BillMonth, billTask.BillDay)
+
+	flowInfo := &taskserver.AddCustomFlowReq{
+		Name:      enumor.FlowPullRawBill,
+		Memo:      memo,
+		ShareData: tableasync.NewShareData(infoMap),
+		Tasks:     []taskserver.CustomFlowTask{task},
+	}
+	flowResult, err := dp.Client.TaskServer().CreateCustomFlow(kt, flowInfo)
 	if err != nil {
 		return fmt.Errorf("failed to create daily raw bill pull flow, err %s", err.Error())
 	}
@@ -245,18 +253,4 @@ func getBillDays(billYear, billMonth, billDelay int, now time.Time) []int {
 		retList = append(retList, t.Day())
 	}
 	return retList
-}
-
-func getTaskServerKeyList(sd serviced.ServiceDiscover) ([]string, error) {
-	taskServerNameList, err := sd.GetServiceAllNodeKeys(cc.TaskServerName)
-	if err != nil {
-		logs.Warnf("get task server name list failed, err %s", err.Error())
-		return nil, err
-	}
-	var keyUUIDs []string
-	for _, one := range taskServerNameList {
-		split := strings.Split(one, "/")
-		keyUUIDs = append(keyUUIDs, split[len(split)-1])
-	}
-	return keyUUIDs, nil
 }

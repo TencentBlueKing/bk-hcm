@@ -388,3 +388,22 @@ type AwsRootBillListReq struct {
 func (r *AwsRootBillListReq) Validate() error {
 	return validator.Validate.Struct(r)
 }
+
+// AzureRootBillListReq azure root account bill list
+type AzureRootBillListReq struct {
+	// 本地主账号
+	RootAccountID string `json:"root_account_id" validate:"required"`
+	// 云上订阅id
+	SubscriptionID string `json:"subscription_id" validate:"required"`
+
+	// 起始日期，格式为yyyy-mm-dd，不支持跨月查询
+	BeginDate string `json:"begin_date" validate:"required"`
+	// 截止日期，格式为yyyy-mm-dd，不支持跨月查询
+	EndDate string                   `json:"end_date" validate:"required"`
+	Page    *typesBill.AzureBillPage `json:"page" validate:"omitempty"`
+}
+
+// Validate ...
+func (r *AzureRootBillListReq) Validate() error {
+	return validator.Validate.Struct(r)
+}

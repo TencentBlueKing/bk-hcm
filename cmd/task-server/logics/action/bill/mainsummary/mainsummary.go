@@ -106,14 +106,16 @@ func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 		rootSummary.State == enumor.RootAccountBillSummaryStateSynced {
 		curMonthCostSynced, _, _, err = act.getDailyVersionCost(kt.Kit(), opt, summary.CurrentVersion)
 		if err != nil {
+			logs.Errorf("fail get cur month synced cost faild, err: %v, rid: %s", err, kt.Kit().Rid)
 			return nil, fmt.Errorf("get current month synced cost failed, err %s", err.Error())
 		}
 	}
 
 	// 计算当月实时成本
 	curMonthCost, isCurMonthAccounted, currency, err := act.getDailyVersionCost(kt.Kit(), opt, summary.CurrentVersion)
+	logs.Errorf("fail get current month cost failed, err: %v, rid: %s", err, kt.Kit().Rid)
 	if err != nil {
-		return nil, fmt.Errorf("get current month synced cost failed, err %s", err.Error())
+		return nil, fmt.Errorf("get current month cost failed, err %s", err.Error())
 	}
 
 	// 获取当月平均汇率
@@ -131,8 +133,6 @@ func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 	}
 	req := &bill.BillSummaryMainUpdateReq{
 		ID:                     summary.ID,
-		MainAccountName:        mAccountResult.CloudID,
-		RootAccountName:        mAccountResult.ParentAccountName,
 		ProductID:              mAccountResult.OpProductID,
 		BkBizID:                mAccountResult.BkBizID,
 		Currency:               currency,
@@ -155,12 +155,7 @@ func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 			return nil, err
 		}
 		if isFinished {
-			if req.CurrentMonthCost == nil {
-				req.CurrentMonthCost = &extraCost
-			} else {
-				newCost := req.CurrentMonthCost.Add(extraCost)
-				req.CurrentMonthCost = &newCost
-			}
+			req.CurrentMonthCost = cvt.ValToPtr(extraCost.Add(cvt.PtrToVal(req.CurrentMonthCost)))
 			req.State = enumor.MainAccountBillSummaryStateAccounted
 		} else {
 			req.State = enumor.MainAccountBillSummaryStateWaitMonthTask
@@ -176,14 +171,15 @@ func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 }
 
 func calRMBCost(req *bill.BillSummaryMainUpdateReq, exchangeRate *decimal.Decimal) *bill.BillSummaryMainUpdateReq {
-	if exchangeRate != nil {
-		req.AdjustmentRMBCost = cvt.ValToPtr(req.AdjustmentCost.Mul(*exchangeRate))
-		if req.CurrentMonthCost != nil {
-			req.CurrentMonthRMBCost = cvt.ValToPtr(req.CurrentMonthCost.Mul(*exchangeRate))
-		}
-		if req.CurrentMonthCostSynced != nil {
-			req.CurrentMonthRMBCostSynced = cvt.ValToPtr(req.CurrentMonthCostSynced.Mul(*exchangeRate))
-		}
+	if exchangeRate == nil {
+		return req
+	}
+	req.AdjustmentRMBCost = cvt.ValToPtr(req.AdjustmentCost.Mul(*exchangeRate))
+	if req.CurrentMonthCost != nil {
+		req.CurrentMonthRMBCost = cvt.ValToPtr(req.CurrentMonthCost.Mul(*exchangeRate))
+	}
+	if req.CurrentMonthCostSynced != nil {
+		req.CurrentMonthRMBCostSynced = cvt.ValToPtr(req.CurrentMonthCostSynced.Mul(*exchangeRate))
 	}
 	return req
 }

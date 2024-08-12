@@ -37,8 +37,6 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
-	"hcm/pkg/serviced"
-	"hcm/pkg/tools/slice"
 	"hcm/pkg/tools/times"
 )
 
@@ -46,36 +44,40 @@ import (
 type MainAccountControllerOption struct {
 	RootAccountID       string
 	MainAccountID       string
+	RootAccountCloudID  string
+	MainAccountCloudID  string
 	Vendor              enumor.Vendor
 	ProductID           int64
 	BkBizID             int64
 	Client              *client.ClientSet
-	Sd                  serviced.ServiceDiscover
 	AwsSavingPlanOption cc.AwsSavingPlanOption
 }
 
 // NewMainAccountController create new main account controller
 func NewMainAccountController(opt *MainAccountControllerOption) (*MainAccountController, error) {
 	if opt == nil {
-		return nil, fmt.Errorf("option cannot be empty")
+		return nil, fmt.Errorf("option of main account controller cannot be empty")
 	}
 	if opt.Client == nil {
-		return nil, fmt.Errorf("client cannot be empty")
-	}
-	if opt.Sd == nil {
-		return nil, fmt.Errorf("servicediscovery cannot be empty")
+		return nil, fmt.Errorf("client of main account controller cannot be empty")
 	}
 	if len(opt.MainAccountID) == 0 {
-		return nil, fmt.Errorf("main account id cannot be empty")
+		return nil, fmt.Errorf("main account id of main account controller cannot be empty")
 	}
 	if len(opt.RootAccountID) == 0 {
 		return nil, fmt.Errorf("root account id cannot be empty")
 	}
+	if len(opt.MainAccountCloudID) == 0 {
+		return nil, fmt.Errorf("main account cloud id of main account controller cannot be empty")
+	}
+	if len(opt.RootAccountCloudID) == 0 {
+		return nil, fmt.Errorf("root account cloud id of main account controller cannot be empty")
+	}
 	if opt.ProductID == 0 && opt.BkBizID == 0 {
-		return nil, fmt.Errorf("product_id or bk_biz_id cannot be empty")
+		return nil, fmt.Errorf("product_id or bk_biz_id of main account controller cannot be empty")
 	}
 	if len(opt.Vendor) == 0 {
-		return nil, fmt.Errorf("vendor cannot be empty")
+		return nil, fmt.Errorf("vendor of main account controller cannot be empty")
 	}
 	splitCtrl, err := NewMainDailySplitController(opt)
 	if err != nil {
@@ -87,9 +89,10 @@ func NewMainAccountController(opt *MainAccountControllerOption) (*MainAccountCon
 	}
 	return &MainAccountController{
 		Client:              opt.Client,
-		Sd:                  opt.Sd,
 		RootAccountID:       opt.RootAccountID,
 		MainAccountID:       opt.MainAccountID,
+		RootAccountCloudID:  opt.RootAccountCloudID,
+		MainAccountCloudID:  opt.MainAccountCloudID,
 		ProductID:           opt.ProductID,
 		BkBizID:             opt.BkBizID,
 		Vendor:              opt.Vendor,
@@ -102,12 +105,14 @@ func NewMainAccountController(opt *MainAccountControllerOption) (*MainAccountCon
 // MainAccountController main account controller
 type MainAccountController struct {
 	Client        *client.ClientSet
-	Sd            serviced.ServiceDiscover
 	RootAccountID string
 	MainAccountID string
 	ProductID     int64
 	BkBizID       int64
 	Vendor        enumor.Vendor
+
+	RootAccountCloudID string
+	MainAccountCloudID string
 
 	splitCtrl        *MainDailySplitController
 	dailySummaryCtrl *MainSummaryDailyController
@@ -180,16 +185,16 @@ func (mac *MainAccountController) runBillSummaryLoop(kt *kit.Kit) {
 
 func (mac *MainAccountController) runCalculateBillSummaryLoop(kt *kit.Kit) {
 	ticker := time.NewTicker(*cc.AccountServer().Controller.MainAccountSummarySyncDuration)
-	curMonthflowID := ""
-	lastMonthflowID := ""
+	curMonthFlowID := ""
+	lastMonthFlowID := ""
 	for {
 		select {
 		case <-ticker.C:
 			subKit := kt.NewSubKit()
 			lastBillYear, lastBillMonth := times.GetLastMonthUTC()
-			lastMonthflowID = mac.pollMainSummaryTask(subKit, lastMonthflowID, lastBillYear, lastBillMonth)
+			lastMonthFlowID = mac.pollMainSummaryTask(subKit, lastMonthFlowID, lastBillYear, lastBillMonth)
 			curBillYear, curBillMonth := times.GetCurrentMonthUTC()
-			curMonthflowID = mac.pollMainSummaryTask(subKit, curMonthflowID, curBillYear, curBillMonth)
+			curMonthFlowID = mac.pollMainSummaryTask(subKit, curMonthFlowID, curBillYear, curBillMonth)
 
 		case <-kt.Ctx.Done():
 			logs.Infof("main account (%s, %s, %s) summary controller context done, rid: %s",
@@ -201,13 +206,9 @@ func (mac *MainAccountController) runCalculateBillSummaryLoop(kt *kit.Kit) {
 
 func (mac *MainAccountController) pollMainSummaryTask(subKit *kit.Kit, flowID string, billYear, billMonth int) string {
 	time.Sleep(time.Millisecond * time.Duration(rand.Intn(defaultSleepMillisecond)))
-	taskServerNameList, err := getTaskServerKeyList(mac.Sd)
-	if err != nil {
-		logs.Warnf("get task server name list failed, err %s", err.Error())
-		return flowID
-	}
+
 	if len(flowID) == 0 {
-		result, err := mac.createMainSummaryTask(subKit, billYear, billMonth)
+		result, err := mac.createMainSummaryFlow(subKit, billYear, billMonth)
 		if err != nil {
 			logs.Warnf("create new main summary task for %s/%s/%s %d-%d failed, err %s, rid: %s",
 				mac.RootAccountID, mac.MainAccountID, mac.Vendor,
@@ -225,22 +226,9 @@ func (mac *MainAccountController) pollMainSummaryTask(subKit *kit.Kit, flowID st
 		logs.Warnf("get flow by id %s failed, err %s, rid: %s", flowID, err.Error(), subKit.Rid)
 		return flowID
 	}
-	// task server异常重启之后，已经处于scheduled的状态的flow永远不会执行
-	// 此处需要进行判断，如果flow的worker不在当前task 列表中，并且处于scheduled状态，则需要重新创建flow
-	if flow.State == enumor.FlowSuccess ||
-		flow.State == enumor.FlowFailed ||
-		flow.State == enumor.FlowCancel ||
-		(flow.State == enumor.FlowScheduled &&
-			flow.Worker != nil &&
-			!slice.IsItemInSlice[string](taskServerNameList, *flow.Worker)) {
-
-		if flow.State == enumor.FlowScheduled {
-			if err := mac.Client.TaskServer().CancelFlow(subKit, flow.ID); err != nil {
-				logs.Warnf("cancel flow %v failed, err %s, rid: %s", flow, err.Error(), subKit.Rid)
-				return flowID
-			}
-		}
-		result, err := mac.createMainSummaryTask(subKit, billYear, billMonth)
+	// 任务结束后继续发起summary 任务是为了重新计算，保证账单金额最新
+	if flow.State == enumor.FlowSuccess || flow.State == enumor.FlowFailed || flow.State == enumor.FlowCancel {
+		result, err := mac.createMainSummaryFlow(subKit, billYear, billMonth)
 		if err != nil {
 			logs.Warnf("create new main summary task for %s/%s/%s %d-%d failed, err %s, rid: %s",
 				mac.RootAccountID, mac.MainAccountID, mac.Vendor,
@@ -256,12 +244,15 @@ func (mac *MainAccountController) pollMainSummaryTask(subKit *kit.Kit, flowID st
 	return flowID
 }
 
-func (mac *MainAccountController) createMainSummaryTask(
+func (mac *MainAccountController) createMainSummaryFlow(
 	kt *kit.Kit, billYear, billMonth int) (*core.CreateResult, error) {
+
+	memo := fmt.Sprintf("[%s] main %s(%.16s), %4d-%02d",
+		mac.Vendor, mac.MainAccountID, mac.MainAccountCloudID, billYear, billMonth)
 
 	return mac.Client.TaskServer().CreateCustomFlow(kt, &taskserver.AddCustomFlowReq{
 		Name: enumor.FlowBillMainAccountSummary,
-		Memo: "calculate main account bill summary",
+		Memo: memo,
 		Tasks: []taskserver.CustomFlowTask{
 			mainsummary.BuildMainSummaryTask(
 				mac.RootAccountID, mac.MainAccountID, mac.Vendor, billYear, billMonth),
@@ -303,7 +294,7 @@ func (mac *MainAccountController) syncDailyRawBill(kt *kit.Kit) error {
 		if err != nil {
 			return err
 		}
-		if err := curPuller.EnsurePullTask(kt, mac.Client, mac.Sd, lastBillSummaryMain); err != nil {
+		if err := curPuller.EnsurePullTask(kt, mac.Client, lastBillSummaryMain); err != nil {
 			return err
 		}
 	}
@@ -318,7 +309,7 @@ func (mac *MainAccountController) syncDailyRawBill(kt *kit.Kit) error {
 		if err != nil {
 			return err
 		}
-		if err := curPuller.EnsurePullTask(kt, mac.Client, mac.Sd, billSummaryMain); err != nil {
+		if err := curPuller.EnsurePullTask(kt, mac.Client, billSummaryMain); err != nil {
 			return err
 		}
 	}
@@ -396,16 +387,18 @@ func (mac *MainAccountController) createNewBillSummary(
 	kt *kit.Kit, billYear, billMonth int, billSummary *dsbillapi.BillSummaryRootResult) error {
 	_, err := mac.Client.DataService().Global.Bill.CreateBillSummaryMain(
 		kt, &dsbillapi.BillSummaryMainCreateReq{
-			RootAccountID:     mac.RootAccountID,
-			MainAccountID:     mac.MainAccountID,
-			BkBizID:           mac.BkBizID,
-			ProductID:         mac.ProductID,
-			Vendor:            mac.Vendor,
-			BillYear:          billYear,
-			BillMonth:         billMonth,
-			LastSyncedVersion: billSummary.LastSyncedVersion,
-			CurrentVersion:    billSummary.CurrentVersion,
-			State:             enumor.MainAccountBillSummaryStateAccounting,
+			RootAccountID:      mac.RootAccountID,
+			MainAccountID:      mac.MainAccountID,
+			RootAccountCloudID: mac.RootAccountCloudID,
+			MainAccountCloudID: mac.MainAccountCloudID,
+			BkBizID:            mac.BkBizID,
+			ProductID:          mac.ProductID,
+			Vendor:             mac.Vendor,
+			BillYear:           billYear,
+			BillMonth:          billMonth,
+			LastSyncedVersion:  billSummary.LastSyncedVersion,
+			CurrentVersion:     billSummary.CurrentVersion,
+			State:              enumor.MainAccountBillSummaryStateAccounting,
 		})
 	if err != nil {
 		return fmt.Errorf("failed to create bill summary for main account (%s, %s, %s) in in (%d, %02d), err %s",

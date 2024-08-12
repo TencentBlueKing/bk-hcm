@@ -28,22 +28,22 @@ import (
 )
 
 // BuildDailyPullTask build daily bill pull task
-func BuildDailyPullTask(
-	rootAccountID, mainAccountID, billAccountID string, vendor enumor.Vendor,
-	billYear, billMonth, billDay, version int) ts.CustomFlowTask {
+func BuildDailyPullTask(rootAccountID, rootAccountCloudID, mainAccountID, mainAccountCloudID string,
+	vendor enumor.Vendor, billYear, billMonth, billDay, version int) ts.CustomFlowTask {
 
 	return ts.CustomFlowTask{
 		ActionID:   action.ActIDType(uuid.UUID()),
 		ActionName: enumor.ActionPullDailyRawBill,
 		Params: registry.PullDailyBillOption{
-			RootAccountID: rootAccountID,
-			MainAccountID: mainAccountID,
-			BillAccountID: billAccountID,
-			Vendor:        vendor,
-			VersionID:     version,
-			BillYear:      billYear,
-			BillMonth:     billMonth,
-			BillDay:       billDay,
+			RootAccountID:      rootAccountID,
+			RootAccountCloudID: rootAccountCloudID,
+			MainAccountID:      mainAccountID,
+			MainAccountCloudID: mainAccountCloudID,
+			Vendor:             vendor,
+			VersionID:          version,
+			BillYear:           billYear,
+			BillMonth:          billMonth,
+			BillDay:            billDay,
 		},
 	}
 }
