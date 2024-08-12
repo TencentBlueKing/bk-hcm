@@ -6,3 +6,6 @@ export const Extension_Name_Map = {
   zenlayer: 'cloud_main_account_name',
   kaopu: 'cloud_main_account_name',
 };
+export const Scenes = {
+  SecondAccountApplication: 'SecondAccountApplication',
+};
