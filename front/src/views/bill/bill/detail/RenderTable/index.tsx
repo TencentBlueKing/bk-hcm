@@ -8,7 +8,7 @@ import ImportBillDetailDialog from '../ImportBillDetailDialog';
 import { useI18n } from 'vue-i18n';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import { useTable } from '@/hooks/useTable/useTable';
-import { VendorEnum } from '@/common/constant';
+import { VendorEnum, VendorMap } from '@/common/constant';
 import { exportBillsItems, reqBillsItemList, reqBillsRootAccountSummaryList } from '@/api/bill';
 import { QueryRuleOPEnum, RulesItem } from '@/typings';
 
@@ -98,7 +98,7 @@ export default defineComponent({
                     onClick={() => importBillDetailDialogRef.value.triggerShow(true)}
                     disabled={disableImport.value}
                     v-bk-tooltips={{
-                      content: t('所有zenlayer账号都处在accounting 核算中的状态，才能进行导入'),
+                      content: t('所有zenlayer账号都处在 accounting 核算中的状态，才能进行导入'),
                       disabled: !disableImport.value,
                     }}>
                     {t('导入')}
@@ -113,8 +113,8 @@ export default defineComponent({
                       filter,
                     })
                   }
-                  title={t('账单汇总-一级账号')}
-                  content={t('导出当月一级账号的账单数据')}
+                  title={t(`账单明细-(${VendorMap[props.vendor]})`)}
+                  content={t(`导出当月${VendorMap[props.vendor]}的账单数据`)}
                 />
               </>
             ),
