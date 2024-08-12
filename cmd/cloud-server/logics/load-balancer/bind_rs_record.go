@@ -475,6 +475,9 @@ func (l *BindRSRecord) checkRSDuplicate(kt *kit.Kit, lbID string, client *datase
 		logs.Errorf("get bind target group ids by lb id failed, err: %v, rid: %s", err, kt.Rid)
 		return []*cloud.BatchOperationValidateError{{Reason: fmt.Sprintf("%s: err: %v", l.GetKey(), err)}}
 	}
+	if len(tgIDs) == 0 {
+		return nil
+	}
 
 	// 查找关联表中所有目标组的rs
 	listRelRsReq := &core.ListReq{
