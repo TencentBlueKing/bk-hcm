@@ -1991,7 +1991,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
     {
       label: '二级账号名称',
-      field: 'main_account_cloud_name',
+      field: 'main_account_name',
       isDefaultShow: true,
     },
     {
