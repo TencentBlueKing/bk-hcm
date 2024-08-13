@@ -128,8 +128,9 @@ func (s *service) ListMainAccountSummary(cts *rest.Contexts) (interface{}, error
 
 func (s *service) listMainAccount(kt *kit.Kit, accountIDs []string) (map[string]*accountset.BaseMainAccount, error) {
 
+	accountMap := make(map[string]*accountset.BaseMainAccount, len(accountIDs))
 	if len(accountIDs) == 0 {
-		return nil, nil
+		return accountMap, nil
 	}
 
 	listOpt := &core.ListReq{
@@ -145,21 +146,22 @@ func (s *service) listMainAccount(kt *kit.Kit, accountIDs []string) (map[string]
 		return nil, err
 	}
 
-	accountMap := make(map[string]*accountset.BaseMainAccount, len(accountIDs))
 	for _, detail := range accountResult.Details {
 		accountMap[detail.ID] = detail
 	}
 	return accountMap, nil
 }
 
-func (s *service) listRootAccount(kt *kit.Kit, accountIds []string) (map[string]*accountset.BaseRootAccount, error) {
+func (s *service) listRootAccount(kt *kit.Kit, accountIDs []string) (map[string]*accountset.BaseRootAccount, error) {
 
-	if len(accountIds) == 0 {
-		return nil, nil
+	rootNameMap := make(map[string]*accountset.BaseRootAccount)
+
+	if len(accountIDs) == 0 {
+		return rootNameMap, nil
 	}
 
 	rootAccountReq := &core.ListReq{
-		Filter: tools.ContainersExpression("id", accountIds),
+		Filter: tools.ContainersExpression("id", accountIDs),
 		Page:   core.NewDefaultBasePage(),
 		Fields: []string{"id", "cloud_id", "name"},
 	}
@@ -168,7 +170,6 @@ func (s *service) listRootAccount(kt *kit.Kit, accountIds []string) (map[string]
 		logs.Errorf("fail to list root account, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
-	rootNameMap := make(map[string]*accountset.BaseRootAccount)
 	for i := range accountResp.Details {
 		account := accountResp.Details[i]
 		rootNameMap[account.ID] = account

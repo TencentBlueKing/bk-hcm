@@ -98,14 +98,14 @@ func (s *service) ListRootAccountSummary(cts *rest.Contexts) (interface{}, error
 	return asbillapi.BillSummaryRootListResult{Count: cvt.PtrToVal(summaryResp.Count), Details: details}, nil
 }
 
-func (s *service) listRootAccount(kt *kit.Kit, accountIds []string) (map[string]*accountset.BaseRootAccount, error) {
+func (s *service) listRootAccount(kt *kit.Kit, accountIDs []string) (map[string]*accountset.BaseRootAccount, error) {
 
-	if len(accountIds) == 0 {
-		return nil, nil
+	if len(accountIDs) == 0 {
+		return map[string]*accountset.BaseRootAccount{}, nil
 	}
 
 	rootAccountReq := &core.ListReq{
-		Filter: tools.ContainersExpression("id", accountIds),
+		Filter: tools.ContainersExpression("id", accountIDs),
 		Page:   core.NewDefaultBasePage(),
 		Fields: []string{"id", "cloud_id", "name"},
 	}
