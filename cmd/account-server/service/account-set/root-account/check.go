@@ -36,19 +36,14 @@ func CheckDuplicateRootAccount(cts *rest.Contexts, client *client.ClientSet, ven
 	// TODO: 后续需要解决并发问题
 	// 后台查询是否主账号重复
 	mainAccountIDFieldName := vendor.GetMainAccountIDField()
-
-	result, err := client.DataService().Global.RootAccount.List(
-		cts.Kit,
-		&core.ListWithoutFieldReq{
-			Filter: tools.ExpressionAnd(
-				tools.RuleEqual("vendor", string(vendor)),
-				tools.RuleJSONEqual(fmt.Sprintf("extension.%s", mainAccountIDFieldName), mainAccountIDFieldValue),
-			),
-			Page: &core.BasePage{
-				Count: true,
-			},
-		},
-	)
+	listReq := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("vendor", string(vendor)),
+			tools.RuleJSONEqual(fmt.Sprintf("extension.%s", mainAccountIDFieldName), mainAccountIDFieldValue),
+		),
+		Page: core.NewCountPage(),
+	}
+	result, err := client.DataService().Global.RootAccount.List(cts.Kit, listReq)
 	if err != nil {
 		return err
 	}
