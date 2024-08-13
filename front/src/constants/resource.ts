@@ -277,6 +277,10 @@ export const AZURE_SECURITY_MESSAGE = {
 
 export const TCLOUD_SECURITY_RULE_PROTOCALS = [
   {
+    id: 'ALL',
+    name: 'ALL',
+  },
+  {
     id: 'tcp',
     name: 'TCP',
   },
@@ -308,6 +312,10 @@ export const TCLOUD_SECURITY_RULE_PROTOCALS = [
 
 export const AWS_SECURITY_RULE_PEOTOCALS = [
   {
+    id: '-1',
+    name: 'ALL',
+  },
+  {
     id: 'tcp',
     name: 'TCP',
   },
@@ -326,6 +334,10 @@ export const AWS_SECURITY_RULE_PEOTOCALS = [
 ];
 
 export const HUAWEI_SECURITY_RULE_PEOTOCALS = [
+  {
+    id: 'huaweiAll',
+    name: 'ALL',
+  },
   {
     id: 'tcp',
     name: 'TCP',

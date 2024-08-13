@@ -133,6 +133,10 @@ const handleDeleteConfirm = () => {
     });
 };
 
+const handleRuleSubmit = () => {
+  getList();
+}
+
 // 提交规则
 const handleSubmitRule = async (tableData: any) => {
   const data = JSON.parse(JSON.stringify(tableData));
@@ -189,6 +193,7 @@ const handleSubmitRule = async (tableData: any) => {
     });
     getList();
     isShowSecurityRule.value = false;
+  } catch (error) {
   } finally {
     securityRuleLoading.value = false;
   }
@@ -623,6 +628,7 @@ if (props.vendor === 'huawei') {
     <security-rule
       v-model:isShow="isShowSecurityRule"
       :loading="securityRuleLoading"
+      :id="props.id"
       dialog-width="1680"
       :active-type="activeType"
       :title="
@@ -630,7 +636,7 @@ if (props.vendor === 'huawei') {
       "
       :is-edit="!!dataId"
       :vendor="vendor"
-      @submit="handleSubmitRule"
+      @submit="handleRuleSubmit"
       :related-security-groups="props.relatedSecurityGroups"
       :template-data="props.templateData"
     />
