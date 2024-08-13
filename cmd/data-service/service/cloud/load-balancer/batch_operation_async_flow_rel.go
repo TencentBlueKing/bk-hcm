@@ -57,7 +57,6 @@ func (svc *lbSvc) ListBatchOperationAsyncFlowRel(cts *rest.Contexts) (any, error
 		logs.Errorf("list batch task rel failed, req: %+v, err: %v, rid: %s", req, err, cts.Kit.Rid)
 		return nil, fmt.Errorf("list batch task rel failed, err: %v", err)
 	}
-
 	if req.Page.Count {
 		return &protocloud.BatchOperationAsyncFlowRelListResult{Count: result.Count}, nil
 	}
@@ -109,6 +108,7 @@ func (svc *lbSvc) BatchCreateBatchOperationAsyncFlowRel(cts *rest.Contexts) (any
 		return ids, nil
 	})
 	if err != nil {
+		logs.Errorf("batch create batch task rel failed, req: %+v, err: %v, rid: %s", req, err, cts.Kit.Rid)
 		return nil, err
 	}
 

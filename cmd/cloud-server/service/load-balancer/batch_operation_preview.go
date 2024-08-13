@@ -9,6 +9,7 @@ import (
 	"hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 
 	"github.com/xuri/excelize/v2"
 )
@@ -37,10 +38,11 @@ func (svc *lbSvc) checkLoadBalanceResourceLock(
 	return errList
 }
 
-func parseExcelFileToRows(body cloud.Base64String) ([][]string, error) {
+func parseExcelFileToRows(k *kit.Kit, body cloud.Base64String) ([][]string, error) {
 	buf := convertBase64StrToReader(body)
 	file, err := excelize.OpenReader(buf)
 	if err != nil {
+		logs.Errorf("open excel file failed: %v, rid: %s", err, k.Rid)
 		return nil, err
 	}
 	defer file.Close()
@@ -51,6 +53,7 @@ func parseExcelFileToRows(body cloud.Base64String) ([][]string, error) {
 	// 获取工作表中所有行
 	rows, err := file.GetRows(sheetName)
 	if err != nil {
+		logs.Errorf("get rows from sheet[%s] failed: %v, rid: %s", sheetName, err, k.Rid)
 		return nil, err
 	}
 

@@ -31,6 +31,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
 )
 
@@ -69,6 +70,7 @@ func (r *ModifyWeightRecord) CheckWithDataService(kt *kit.Kit, client *dataservi
 
 	lb, err := r.GetLoadBalancer(kt, client, bkBizID)
 	if err != nil {
+		logs.Errorf("get load balancer error: %v, rid: %s", err, kt.Rid)
 		return []*dataproto.BatchOperationValidateError{{Reason: fmt.Sprintf("%s %v", r.GetKey(), err)}}
 	}
 
@@ -86,20 +88,25 @@ func (r *ModifyWeightRecord) CheckWithDataService(kt *kit.Kit, client *dataservi
 	return errList
 }
 
-func (r *ModifyWeightRecord) loadDataFromDB(kt *kit.Kit, client *dataservice.Client, lb *loadbalancer.BaseLoadBalancer) error {
+func (r *ModifyWeightRecord) loadDataFromDB(kt *kit.Kit, client *dataservice.Client,
+	lb *loadbalancer.BaseLoadBalancer) error {
+
 	var err error
 	r.ListenerID, err = r.getListenerID(kt, client.Global.LoadBalancer, lb.ID)
 	if err != nil {
+		logs.Errorf("get listener id error: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 
 	r.RuleID, err = r.getListenerRuleID(kt, client, lb.ID, r.ListenerID, lb.Vendor)
 	if err != nil {
+		logs.Errorf("get listener rule id error: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 
 	r.TargetGroupID, err = r.getTargetGroupID(kt, client, lb.ID, r.RuleID)
 	if err != nil {
+		logs.Errorf("get target group id error: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 	return nil
@@ -117,6 +124,7 @@ func (r *ModifyWeightRecord) GetTargets(kt *kit.Kit, client *dataservice.Client,
 	for _, info := range r.RSInfos {
 		target, err := info.GetTarget(kt, client.Global.LoadBalancer, r.TargetGroupID, lb.AccountID)
 		if err != nil {
+			logs.Errorf("get target error: %v, rid: %s", err, kt.Rid)
 			return nil, err
 		}
 		rsList = append(rsList, target)
@@ -138,6 +146,7 @@ func (r *ModifyWeightRecord) getTargetGroupID(kt *kit.Kit, client *dataservice.C
 	}
 	rel, err := client.Global.LoadBalancer.ListTargetGroupListenerRel(kt, listReq)
 	if err != nil {
+		logs.Errorf("list target group listener rel error: %v, rid: %s", err, kt.Rid)
 		return "", err
 	}
 
@@ -178,6 +187,7 @@ func (r *ModifyWeightRecord) getListenerRuleID(kt *kit.Kit, client *dataservice.
 				Filter: tools.ExpressionAnd(rules...),
 			})
 		if err != nil {
+			logs.Errorf("list url rule error: %v, rid: %s", err, kt.Rid)
 			return "", err
 		}
 		if len(rule.Details) == 0 {
@@ -203,6 +213,7 @@ func (r *ModifyWeightRecord) getListenerID(kt *kit.Kit, client *global.LoadBalan
 	}
 	listeners, err := client.ListListener(kt, listReq)
 	if err != nil {
+		logs.Errorf("list listener error: %v, rid: %s", err, kt.Rid)
 		return "", err
 	}
 
@@ -248,6 +259,7 @@ func (r *ModifyWeightRecord) GetLoadBalancer(kt *kit.Kit, client *dataservice.Cl
 	}
 	balancers, err := client.Global.LoadBalancer.ListLoadBalancer(kt, listReq)
 	if err != nil {
+		logs.Errorf("list load balancer error: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 	if len(balancers.Details) == 0 {

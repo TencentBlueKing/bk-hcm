@@ -27,8 +27,9 @@ func (svc *lbSvc) BindRSPreview(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	rows, err := parseExcelFileToRows(req.ExcelFileBase64)
+	rows, err := parseExcelFileToRows(cts.Kit, req.ExcelFileBase64)
 	if err != nil {
+		logs.Errorf("batch operation modify weight auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 

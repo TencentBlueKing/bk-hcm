@@ -84,6 +84,7 @@ func (r *RSUpdateInfo) GetTarget(kt *kit.Kit, client *global.LoadBalancerClient,
 	}
 	target, err := client.ListTarget(kt, listReq)
 	if err != nil {
+		logs.Errorf("list target error: %s, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 

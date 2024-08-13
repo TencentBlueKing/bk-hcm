@@ -77,7 +77,7 @@ func (svc *lbSvc) getLoadBalancersByID(kt *kit.Kit, bizID int64, lbID string) (*
 	}
 	loadBalancers, err := svc.client.DataService().Global.LoadBalancer.ListLoadBalancer(kt, lbReq)
 	if err != nil {
-		logs.Errorf("")
+		logs.Errorf("list load balancer failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 	if len(loadBalancers.Details) == 0 {
@@ -127,6 +127,7 @@ func (svc *lbSvc) saveBatchOperationRecord(cts *rest.Contexts, detail string,
 		},
 	)
 	if err != nil {
+		logs.Errorf("create batch operation failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return "", err
 	}
 
@@ -145,6 +146,7 @@ func (svc *lbSvc) saveBatchOperationRecord(cts *rest.Contexts, detail string,
 	_, err = svc.client.DataService().Global.LoadBalancer.BatchCreateBatchOperationAsyncFlowRel(
 		cts.Kit, createReq)
 	if err != nil {
+		logs.Errorf("create batch operation async flow rel failed, err: %v, rid: %s")
 		return "", err
 	}
 	return batchOperationID, nil
@@ -233,6 +235,7 @@ func (svc *lbSvc) GetBatchOperation(cts *rest.Contexts) (interface{}, error) {
 
 	operations, err := svc.client.DataService().Global.LoadBalancer.ListBatchOperation(cts.Kit, expr)
 	if err != nil {
+		logs.Errorf("list batch operation failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 	if len(operations.Details) == 0 {
@@ -263,6 +266,7 @@ func (svc *lbSvc) GetBatchOperation(cts *rest.Contexts) (interface{}, error) {
 		req,
 	)
 	if err != nil {
+		logs.Errorf("list batch operation async flow rel failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 	if len(flows.Details) == 0 {

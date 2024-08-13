@@ -182,16 +182,18 @@ func (l *BindRSRecord) LoadDataFromDB(kt *kit.Kit, client *dataservice.Client, l
 	var err error
 	l.ListenerID, err = l.GetListenerID(kt, client.Global.LoadBalancer, lb.ID)
 	if err != nil {
+		logs.Errorf("get listener id failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 
 	l.RuleID, err = l.getListenerRuleID(kt, client, lb.ID, l.ListenerID, lb.Vendor)
 	if err != nil {
+		logs.Errorf("get listener rule id failed, err: %v, rid: %s", err, kt.Rid)
 		return err
-
 	}
 	l.TargetGroupID, err = l.getTargetGroupID(kt, client, lb.ID, l.RuleID)
 	if err != nil {
+		logs.Errorf("get target group id failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 	return nil
@@ -279,6 +281,7 @@ func (l *BindRSRecord) GetLoadBalancer(kt *kit.Kit, client *dataservice.Client, 
 	}
 	balancers, err := client.Global.LoadBalancer.ListLoadBalancer(kt, listReq)
 	if err != nil {
+		logs.Errorf("list load balancer failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 	if len(balancers.Details) == 0 {
@@ -304,6 +307,7 @@ func (l *BindRSRecord) getTargetGroupID(kt *kit.Kit, client *dataservice.Client,
 	}
 	rel, err := client.Global.LoadBalancer.ListTargetGroupListenerRel(kt, listReq)
 	if err != nil {
+		logs.Errorf("list target group listener rel failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err
 	}
 
@@ -336,6 +340,7 @@ func (l *BindRSRecord) getListenerRuleID(kt *kit.Kit, client *dataservice.Client
 				Filter: tools.ExpressionAnd(rules...),
 			})
 		if err != nil {
+			logs.Errorf("list url rule failed, err: %v, rid: %s", err, kt.Rid)
 			return "", err
 		}
 		if len(rule.Details) == 0 {
@@ -519,6 +524,7 @@ func getBindTargetGroupIDsByLBID(kt *kit.Kit, client *dataservice.Client, lbID s
 	}
 	tgResp, err := client.Global.LoadBalancer.ListTargetGroupListenerRel(kt, listTGReq)
 	if err != nil {
+		logs.Errorf("list target group listener rel failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 	if len(tgResp.Details) == 0 {
@@ -568,6 +574,7 @@ func (l *BindRSRecord) checkPortConflict(kt *kit.Kit, lbID string, client *datas
 	}
 	lblResp, err := client.Global.LoadBalancer.ListListener(kt, lblReq)
 	if err != nil {
+		logs.Errorf("list listener failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 	if len(lblResp.Details) == 0 {

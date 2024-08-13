@@ -92,7 +92,6 @@ func (svc *lbSvc) BatchCreateBatchOperation(cts *rest.Contexts) (any, error) {
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
-
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -114,6 +113,7 @@ func (svc *lbSvc) BatchCreateBatchOperation(cts *rest.Contexts) (any, error) {
 		}
 
 		if err = batchCreateAudit(cts.Kit, txn, svc.dao.Audit(), models, req.AccountID); err != nil {
+			logs.Errorf("batch create audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
 		}
 
@@ -131,6 +131,7 @@ func (svc *lbSvc) BatchCreateBatchOperation(cts *rest.Contexts) (any, error) {
 			Page:   core.NewDefaultBasePage(),
 		})
 		if err != nil {
+			logs.Errorf("list audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
 		}
 
@@ -143,6 +144,7 @@ func (svc *lbSvc) BatchCreateBatchOperation(cts *rest.Contexts) (any, error) {
 			models[0].AuditID = int64(taskAuditMap[model.ID].ID)
 			err := svc.dao.BatchOperation().UpdateByIDWithTx(cts.Kit, txn, model.ID, models[0])
 			if err != nil {
+				logs.Errorf("update batch task audit_id failed, model(%s), err: %v, rid: %s", model.ID, err, cts.Kit.Rid)
 				return nil, err
 			}
 		}
@@ -150,6 +152,7 @@ func (svc *lbSvc) BatchCreateBatchOperation(cts *rest.Contexts) (any, error) {
 		return ids, nil
 	})
 	if err != nil {
+		logs.Errorf("batch create batch task failed, req: %+v, err: %v, rid: %s", req, err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -158,7 +161,6 @@ func (svc *lbSvc) BatchCreateBatchOperation(cts *rest.Contexts) (any, error) {
 		return nil, fmt.Errorf("batch create batch task but return id type is not []string, id type: %v",
 			reflect.TypeOf(result).String())
 	}
-
 	return &core.BatchCreateResult{IDs: ids}, nil
 }
 

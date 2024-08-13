@@ -119,6 +119,7 @@ func (r *RSInfo) getTCloudTargetReq(kt *kit.Kit, client *dataservice.Client, ven
 
 	cvmInfo, err := r.getCvmInfo(kt, client, vendor, bkBizID)
 	if err != nil {
+		logs.Errorf("get cvm info failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
@@ -159,6 +160,7 @@ func (r *RSInfo) checkTargetAlreadyExist(kt *kit.Kit, client *dataservice.Client
 	}
 	target, err := client.Global.LoadBalancer.ListTarget(kt, listReq)
 	if err != nil {
+		logs.Errorf("list target failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 

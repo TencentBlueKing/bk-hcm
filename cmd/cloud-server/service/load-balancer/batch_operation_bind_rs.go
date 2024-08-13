@@ -104,6 +104,7 @@ func (svc *lbSvc) bindRS(cts *rest.Contexts, req *cloud.BatchOperationReq[*lblog
 	}
 	batchOperationID, err := svc.saveBatchOperationRecord(cts, string(detail), flowAuditMap, req.AccountID)
 	if err != nil {
+		logs.Errorf("save batch operation record failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -119,6 +120,7 @@ func (svc *lbSvc) initBatchBindRSTask(kt *kit.Kit, listeners []*lblogic.BindRSRe
 	for _, listener := range listeners {
 		tgID, createListenerTasks, bindTasks, err := svc.buildBatchBindRSTask(kt, listener, lb)
 		if err != nil {
+			logs.Errorf("build batch bind rs task failed, err: %v, rid: %s", err, kt.Rid)
 			return "", err
 		}
 		createTasks = append(createTasks, createListenerTasks...)
@@ -163,6 +165,7 @@ func (svc *lbSvc) buildBatchBindRSTask(kt *kit.Kit, listener *lblogic.BindRSReco
 		case enumor.TCloud:
 			targetGroupID, err = svc.createTCloudTargetGroup(kt, listener, lb)
 			if err != nil {
+				logs.Errorf("create tcloud target group failed, err: %v, rid: %s", err, kt.Rid)
 				return "", nil, nil, err
 			}
 		default:
@@ -171,6 +174,7 @@ func (svc *lbSvc) buildBatchBindRSTask(kt *kit.Kit, listener *lblogic.BindRSReco
 	} else {
 		err := listener.LoadDataFromDB(kt, svc.client.DataService(), lb)
 		if err != nil {
+			logs.Errorf("load data from db failed, err: %v, rid: %s", err, kt.Rid)
 			return "", nil, nil, err
 		}
 		targetGroupID = listener.ListenerID
@@ -180,6 +184,7 @@ func (svc *lbSvc) buildBatchBindRSTask(kt *kit.Kit, listener *lblogic.BindRSReco
 	case enumor.CreateURLAndAppendRS:
 		task, err := svc.buildCreateURLTask(kt, listener, lb.ID, targetGroupID, lb.Vendor)
 		if err != nil {
+			logs.Errorf("build create url task failed, err: %v, rid: %s", err, kt.Rid)
 			return "", nil, nil, err
 		}
 		createTasks = append(createTasks, *task)
@@ -190,6 +195,7 @@ func (svc *lbSvc) buildBatchBindRSTask(kt *kit.Kit, listener *lblogic.BindRSReco
 
 	tasks, err := svc.buildBindRSTasks(kt, lb, listener, targetGroupID)
 	if err != nil {
+		logs.Errorf("build bind rs tasks failed, err: %v, rid: %s", err, kt.Rid)
 		return "", nil, nil, err
 	}
 	bindTasks = append(bindTasks, tasks...)
@@ -254,6 +260,7 @@ func (svc *lbSvc) createTCloudTargetGroup(kt *kit.Kit, listener *lblogic.BindRSR
 		},
 	)
 	if err != nil {
+		logs.Errorf("create tcloud target group failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err
 	}
 	if len(targets.IDs) == 0 {
@@ -268,6 +275,7 @@ func (svc *lbSvc) buildCreateURLTask(kt *kit.Kit, listener *lblogic.BindRSRecord
 
 	listenerID, err := listener.GetListenerID(kt, svc.client.DataService().Global.LoadBalancer, lbID)
 	if err != nil {
+		logs.Errorf("get listener id failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 	// TODO 支持多vendor实现

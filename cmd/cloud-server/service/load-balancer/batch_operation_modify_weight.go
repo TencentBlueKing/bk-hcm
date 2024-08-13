@@ -118,6 +118,7 @@ func (svc *lbSvc) initBatchModifyWeightTask(kt *kit.Kit, listenerList []*lblogic
 		// 获取每个监听器下的rs，构造异步任务
 		targets, err := listener.GetTargets(kt, svc.client.DataService(), lb)
 		if err != nil {
+			logs.Errorf("get targets failed, err: %v, rid: %s", err, kt.Rid)
 			return "", err
 		}
 
