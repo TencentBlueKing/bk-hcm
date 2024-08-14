@@ -58,6 +58,20 @@ func (d *BatchDeleteReq) Validate() error {
 	return nil
 }
 
+// BaseBatchUpdateReq base request for batch update operation
+type BaseBatchUpdateReq struct {
+	IDs []string `json:"ids"`
+}
+
+// Validate BaseBatchUpdateReq.
+func (d *BaseBatchUpdateReq) Validate() error {
+	if len(d.IDs) == 0 {
+		return errf.New(errf.InvalidParameter, "ids are required")
+	}
+
+	return nil
+}
+
 // BatchOperateResult is a standard batch operation result.
 type BatchOperateResult struct {
 	Succeeded []string    `json:"succeeded,omitempty"`

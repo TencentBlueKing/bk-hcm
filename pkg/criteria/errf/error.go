@@ -56,6 +56,10 @@ func (e *ErrorF) Format() string {
 	return fmt.Sprintf("code: %d, message: %s", e.Code, e.Message)
 }
 
+func (e *ErrorF) String() string {
+	return fmt.Sprint(e)
+}
+
 // Resp get the http response of the error.
 func (e ErrorF) Resp() *ErrorResp {
 	return &ErrorResp{

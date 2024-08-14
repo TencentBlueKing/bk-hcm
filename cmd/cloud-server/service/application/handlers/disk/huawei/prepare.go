@@ -51,3 +51,8 @@ func (a *ApplicationOfCreateHuaWeiDisk) PrepareReqFromContent() error {
 func (a *ApplicationOfCreateHuaWeiDisk) GetItsmApprover(managers []string) []itsm.VariableApprover {
 	return a.GetItsmPlatformAndAccountApprover(managers, a.req.AccountID)
 }
+
+// GetBkBizIDs 获取当前的业务IDs
+func (a *ApplicationOfCreateHuaWeiDisk) GetBkBizIDs() []int64 {
+	return []int64{a.req.BkBizID}
+}

@@ -93,10 +93,16 @@ export const useRegionsStore = defineStore('useRegions', () => {
     return id;
   };
 
+  const getZoneName = (zone: string, vendor: VendorEnum) => {
+    const idx = zone.lastIndexOf('-');
+    return getRegionName(vendor, zone.substring(0, idx)) + zone.substring(idx);
+  };
+
   return {
     getRegionName,
     fetchRegions,
     getRegionNameEN,
+    getZoneName,
     vendor,
   };
 });

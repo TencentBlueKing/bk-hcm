@@ -6,7 +6,7 @@ import { Plus } from 'bkui-vue/lib/icon';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
 import Confirm from '@/components/confirm';
 // import stores
-import { useResourceStore } from '@/store';
+import { useBusinessStore } from '@/store';
 // import custom hooks
 import { useTable } from '@/hooks/useTable/useTable';
 import { useI18n } from 'vue-i18n';
@@ -43,7 +43,7 @@ export default defineComponent({
     };
 
     // use stores
-    const resourceStore = useResourceStore();
+    const businessStore = useBusinessStore();
 
     // listener - table
     const { columns, settings } = useColumns('listener');
@@ -82,13 +82,7 @@ export default defineComponent({
       },
       tableOptions: {
         columns: [
-          {
-            type: 'selection',
-            width: 32,
-            minWidth: 32,
-            onlyShowOnList: true,
-            align: 'right',
-          },
+          { type: 'selection', width: 30, minWidth: 30, onlyShowOnList: true },
           ...columns,
           {
             label: t('操作'),
@@ -131,13 +125,28 @@ export default defineComponent({
               }
             }, 30000);
           }
+          // 设置监听器的 rs 权重
+          setRsWeight(dataList);
           return dataList;
         },
       },
     });
+    const setRsWeight = async (dataList: any[]) => {
+      // 为所有监听器设置rs权重初始值
+      dataList.forEach((item: any) => Object.assign(item, { rs_weight_zero_num: 0, rs_weight_non_zero_num: 0 }));
+      // 绑定了目标组的监听器, 需要查询目标组权重
+      const listenersWithTargetGroup = dataList.filter(({ target_group_id }) => !!target_group_id);
+      const target_group_ids = listenersWithTargetGroup.map(({ target_group_id }) => target_group_id);
+      if (target_group_ids.length) {
+        const { data } = await businessStore.reqStatTargetGroupRsWeight(target_group_ids);
+        data.forEach((item: any, index: number) => Object.assign(listenersWithTargetGroup[index], item));
+      }
+    };
+
     onUnmounted(() => {
       timer && clearTimeout(timer);
     });
+
     watch(
       () => props.id,
       (id) => {
@@ -150,7 +159,7 @@ export default defineComponent({
     // 删除监听器
     const handleDeleteListener = (data: any) => {
       Confirm('请确定删除监听器', `将删除监听器【${data.name}】`, () => {
-        resourceStore.deleteBatch('listeners', { ids: [data.id] }).then(() => {
+        businessStore.deleteBatch('listeners', { ids: [data.id] }).then(() => {
           Message({ theme: 'success', message: '删除成功' });
           getListData();
         });
@@ -171,7 +180,7 @@ export default defineComponent({
     return () => (
       <div class='listener-list-page'>
         {/* 监听器list */}
-        <CommonTable class='has-selection'>
+        <CommonTable>
           {{
             operation: () => (
               <div class={'flex-row align-item-center'}>

@@ -26,12 +26,12 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/tools/converter"
+	cvt "hcm/pkg/tools/converter"
 )
 
 // AzureGetBillList get azure bill list.
 func (b bill) AzureGetBillList(cts *rest.Contexts) (interface{}, error) {
-	req := new(typesBill.AzureBillListOption)
+	req := new(hcbillservice.AzureBillListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -42,15 +42,21 @@ func (b bill) AzureGetBillList(cts *rest.Contexts) (interface{}, error) {
 
 	cli, err := b.ad.Azure(cts.Kit, req.AccountID)
 	if err != nil {
-		logs.Errorf("azure request adaptor client err, req: %+v, err: %+v", req, err)
+		logs.Errorf("azure request adaptor client err, req: %+v, err: %+v, rid: %s", req, err, cts.Kit.Rid)
+		return nil, err
+	}
+	account, err := b.cs.DataService().Azure.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), req.AccountID)
+	if err != nil {
+		logs.Errorf("fail to get azure account, err: %v, account_id: %s, rid: %s",
+			err, req.AccountID, cts.Kit.Rid)
 		return nil, err
 	}
 
 	opt := &typesBill.AzureBillListOption{
-		AccountID: req.AccountID,
-		BeginDate: req.BeginDate,
-		EndDate:   req.EndDate,
-		Page:      req.Page,
+		SubscriptionID: cvt.PtrToVal(account.Extension).CloudSubscriptionID,
+		BeginDate:      req.BeginDate,
+		EndDate:        req.EndDate,
+		Page:           req.Page,
 	}
 
 	list, err := cli.GetBillList(cts.Kit, opt)
@@ -60,7 +66,45 @@ func (b bill) AzureGetBillList(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return &hcbillservice.AzureBillListResult{
-		NextLink: converter.PtrToVal(list.NextLink),
+		NextLink: cvt.PtrToVal(list.NextLink),
+		Details:  list.Value,
+	}, nil
+}
+
+// AzureGetRootAccountBillList 获取azure 根账号下账单
+func (b bill) AzureGetRootAccountBillList(cts *rest.Contexts) (any, error) {
+
+	req := new(hcbillservice.AzureRootBillListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	cli, err := b.ad.AzureRoot(cts.Kit, req.RootAccountID)
+	if err != nil {
+		logs.Errorf("azure request adaptor client err, req: %+v, err: %+v, rid: %s", req, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	opt := &typesBill.AzureBillListOption{
+		SubscriptionID: req.SubscriptionID,
+		BeginDate:      req.BeginDate,
+		EndDate:        req.EndDate,
+		Page:           req.Page,
+	}
+
+	list, err := cli.GetBillList(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("azure request adaptor list root account bill failed, err: %v, req: %+v, rid: %s",
+			err, req, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return &hcbillservice.AzureBillListResult{
+		NextLink: cvt.PtrToVal(list.NextLink),
 		Details:  list.Value,
 	}, nil
 }

@@ -488,6 +488,7 @@ func (svc *lbSvc) ListTarget(cts *rest.Contexts) (interface{}, error) {
 func convTableToBaseTarget(one *tablelb.LoadBalancerTargetTable) *corelb.BaseTarget {
 	return &corelb.BaseTarget{
 		ID:                 one.ID,
+		IP:                 one.IP,
 		AccountID:          one.AccountID,
 		InstType:           one.InstType,
 		InstID:             one.InstID,
@@ -697,11 +698,12 @@ func (svc *lbSvc) ListTargetGroupListenerRel(cts *rest.Contexts) (interface{}, e
 	return &protocloud.TargetListenerRuleRelListResult{Details: details}, nil
 }
 
-func convTableToBaseTargetListenerRuleRel(
-	one *tablelb.TargetGroupListenerRuleRelTable) *corelb.BaseTargetListenerRuleRel {
+func convTableToBaseTargetListenerRuleRel(one *tablelb.TargetGroupListenerRuleRelTable) *corelb.
+	BaseTargetListenerRuleRel {
 
 	return &corelb.BaseTargetListenerRuleRel{
 		ID:                  one.ID,
+		Vendor:              one.Vendor,
 		ListenerRuleID:      one.ListenerRuleID,
 		ListenerRuleType:    one.ListenerRuleType,
 		CloudListenerRuleID: one.CloudListenerRuleID,

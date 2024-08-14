@@ -1,8 +1,6 @@
 .cvm-status-container {
   display: flex;
   align-items: center;
-  padding-top: 10px;
-  line-height: 20px;
 }
 
 .url-sync-partial-success-status {
@@ -55,5 +53,17 @@
   .special-health {
     background-color: #e4faf0;
     color: #63656e;
+  }
+}
+
+.cell-private-ip,
+.cell-public-ip {
+  .copy-icon {
+    display: none;
+  }
+  &:hover {
+    .copy-icon {
+      display: inline-flex;
+    }
   }
 }

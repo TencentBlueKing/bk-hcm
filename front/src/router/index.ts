@@ -13,9 +13,11 @@ import service from './module/service';
 import serviceInside from './module/service-inside';
 import business from './module/business';
 import scheme from './module/scheme';
+import bill from './module/bill';
 import i18n from '@/language/i18n';
 import { useCommonStore } from '@/store';
 import { useVerify } from '@/hooks';
+import { isArray, isRegExp, isString } from 'lodash';
 
 const { t } = i18n.global;
 
@@ -28,10 +30,8 @@ const routes: RouteRecordRaw[] = [
   ...serviceInside,
   ...business,
   ...scheme,
+  ...bill,
   {
-    // path: '/',
-    // name: 'index',
-    // component: () => import('@/views/resource/demo'),
     path: '/',
     redirect: '/business/host',
     meta: {
@@ -40,9 +40,6 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
-    // path: '/',
-    // name: 'index',
-    // component: () => import('@/views/resource/demo'),
     path: '/403',
     redirect: '/403',
   },
@@ -54,46 +51,51 @@ const router = createRouter({
 });
 
 // 进入目标页面
-// eslint-disable-next-line max-len
 const toCurrentPage = (
-  authVerifyData: any,
-  currentFindAuthData: any,
+  authVerifyData: {
+    permissionAction: Record<string, boolean>;
+    urlParams: {
+      system_id: string;
+      actions: Array<{
+        id: string;
+        name: string;
+        related_resource_types: Array<any>;
+      }>;
+    };
+  },
+  currentFindAuthData: {
+    action: string;
+    id: string;
+    path: string;
+    type: string;
+  },
   next: NavigationGuardNext,
   to?: RouteLocationNormalized,
 ) => {
-  if (currentFindAuthData) {
-    // 当前页面需要鉴权
-    if (authVerifyData && !authVerifyData?.permissionAction[currentFindAuthData.id]) {
-      // 当前页面没有权限
-      next({
-        name: '403',
-        params: {
-          id: currentFindAuthData.id,
-        },
-      });
-    } else if (/403/.test(to?.path)) {
-      next({
-        path: '/',
-      });
-    } else {
-      next();
-    }
-  } else {
-    if (to && to.name === '403' && authVerifyData && authVerifyData?.permissionAction?.account_find) {
-      // 无权限用户切换到有权限用户时需要判断
-      next({
-        path: '/resource/account',
-      });
-    } else {
-      next();
-    }
+  // 是否需要鉴权
+  const needAuth = !!currentFindAuthData?.id;
+  // 是否有权限
+  const hasAuth = !!authVerifyData?.permissionAction?.[currentFindAuthData?.id];
+
+  if (!needAuth) {
+    if (to?.name === '403') next(!!authVerifyData?.permissionAction?.biz_access ? { path: '/' } : undefined);
+    else next();
+    return;
   }
+
+  if (hasAuth) next();
+  else next({ name: '403', params: { id: currentFindAuthData?.id } });
 };
 
 router.beforeEach((to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
   const commonStore = useCommonStore();
   const { pageAuthData, authVerifyData } = commonStore; // 所有需要检验的查看权限数据
-  const currentFindAuthData = pageAuthData.find((e: any) => e.path === to.path || e?.path?.includes(to.path));
+  const currentFindAuthData = pageAuthData.find((e: any) => {
+    const { path } = e;
+    if (isString(path)) return path === to.path;
+    if (isArray(path)) return path.includes(to.path);
+    if (isRegExp(path)) return path.test(to.path);
+  });
 
   // if (to.path === '/service/my-approval') {
   //   window.open(`${BK_ITSM_URL}/#/workbench/ticket/approval`);
@@ -104,12 +106,12 @@ router.beforeEach((to: RouteLocationNormalized, from: RouteLocationNormalized, n
     const { getAuthVerifyData } = useVerify(); // 权限中心权限
     getAuthVerifyData(pageAuthData).then(() => {
       const { authVerifyData } = commonStore;
-      toCurrentPage(authVerifyData, currentFindAuthData, next, to);
+      toCurrentPage(authVerifyData, currentFindAuthData as any, next, to);
     });
   } else if (['/scheme/recommendation', '/scheme/deployment/list'].includes(to.path)) {
     next();
   } else {
-    toCurrentPage(authVerifyData, currentFindAuthData, next);
+    toCurrentPage(authVerifyData, currentFindAuthData as any, next);
   }
 });
 

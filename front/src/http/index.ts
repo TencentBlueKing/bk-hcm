@@ -238,6 +238,7 @@ function handleReject(error: any, config: any) {
     return Promise.reject(nextError);
   }
   handleCustomErrorCode(error);
+
   return Promise.reject(error);
 }
 
@@ -246,11 +247,13 @@ function handleReject(error: any, config: any) {
  * @param error 异常
  */
 function handleCustomErrorCode(error: any) {
-  switch (error.code) {
-    case 2000014:
-      Message({ message: '当前负载均衡正在变更中，云平台限制新的任务同时变更。', theme: 'error' });
-      return;
+  if (error.code === 2000014) {
+    Message({ message: '当前负载均衡正在变更中，云平台限制新的任务同时变更。', theme: 'error' });
+    return;
   }
+  // zenlayer 账单导入错误码
+  if ([2000015, 2000016, 2000017].includes(error.code)) return;
+
   if (error.code !== 0 && error.code !== 2000009) Message({ theme: 'error', message: error.message });
 }
 

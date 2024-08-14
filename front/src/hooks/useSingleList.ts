@@ -1,34 +1,49 @@
-import { reactive, ref } from 'vue';
-import { useBusinessStore, useResourceStore } from '@/store';
-import { defaults } from 'lodash';
-import { Senarios, useWhereAmI } from './useWhereAmI';
+import { reactive, ref, watch } from 'vue';
+import { defaults, get } from 'lodash';
 import { QueryRuleOPEnum, RulesItem } from '@/typings';
+import http from '@/http';
+
+const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 /**
  * hooks 函数 - 适用于单列表
- * @param type 请求的资源类型, 如 cvm, drive, vpc 等...
- * @param options 其他配置项, 如 immediate, rules, apiMethod 等...
+ * @param options 配置项, 如 url, immediate, rules, apiMethod 等...
  * @returns dataList, pagination, isDataLoad, isDataRefresh, loadDataList, handleScrollEnd, handleReset, handleRefresh
  */
-export function useSingleList(
-  type: string,
-  options?: {
-    // 是否立即加载数据, 值为 true 时可以省略在 onMounted 中加载初始数据
-    immediate?: boolean;
-    // 初始搜索条件, 数组参数形式推荐 id 等不变值搜索条件, 函数参数形式可以支持响应式的搜索条件
-    rules?: RulesItem[] | ((...args: any) => RulesItem[]);
-    // 自定义的 api 方法, 可以替换默认的 list api
-    apiMethod?: (...args: any) => Promise<any[]>;
-  },
-) {
+export function useSingleList(options?: {
+  // 请求url（固定的 url 可以使用字符串形式；path带参数的 url 用函数形式，如 :id, :vendor 等）
+  url: string | ((...args: any) => string);
+  // 是否立即加载数据, 值为 true 时可以省略在 onMounted 中加载初始数据
+  immediate?: boolean;
+  // 初始搜索条件（数组参数形式推荐 id 等不变值搜索条件；函数参数形式可以支持响应式的搜索条件）
+  rules?: RulesItem[] | ((...args: any) => RulesItem[]);
+  // 请求载荷
+  payload?: object | ((...args: any) => object);
+  // 自定义的 api 方法（请求全量数据时使用）
+  apiMethod?: (...args: any) => Promise<any[]>;
+  // 自定义参数路径
+  path?: { data: string; count: string };
+  // 禁用排序
+  disableSort?: boolean;
+  // 初始分页参数
+  pagination?: { start?: number; limit: number; count?: number };
+}) {
   // 设置 options 默认值
-  defaults(options, { immediate: false, rules: [], apiMethod: null });
-  const getDefaultPagination = () => ({ start: 0, limit: 50, count: 0 });
+  defaults(options, {
+    immediate: false,
+    rules: [],
+    payload: {},
+    apiMethod: null,
+    path: {},
+    pagination: {},
+    disableSort: false,
+  });
+  // 设置 path 默认值
+  defaults(options.path, { data: 'details', count: 'count' });
+  // 设置 pagination 默认值
+  defaults(options.pagination, { start: 0, limit: 50, count: 0 });
 
-  // 引入可能会用到的 hooks 函数以及 store
-  const { whereAmI } = useWhereAmI();
-  const resourceStore = useResourceStore();
-  const businessStore = useBusinessStore();
+  const getDefaultPagination = () => options.pagination;
 
   const dataList = ref([]);
   const pagination = reactive(getDefaultPagination());
@@ -40,25 +55,25 @@ export function useSingleList(
      * @returns 返回一个默认的 list api
      */
     const getDefaultApiMethod = () => {
-      const apiMethod = whereAmI.value === Senarios.business ? businessStore.list : resourceStore.list;
+      const url = typeof options?.url === 'function' ? options?.url() : options?.url;
+
       return Promise.all(
         [false, true].map((isCount) =>
-          apiMethod(
-            {
-              filter: {
-                op: QueryRuleOPEnum.AND,
-                rules: [...(typeof options?.rules === 'function' ? options?.rules() : options?.rules), ...customRules],
-              },
-              page: {
-                count: isCount,
-                start: isCount ? 0 : pagination.start,
-                limit: isCount ? 0 : pagination.limit,
-                sort: isCount ? undefined : 'created_at',
-                order: isCount ? undefined : 'DESC',
-              },
+          http.post(BK_HCM_AJAX_URL_PREFIX + url, {
+            filter: {
+              op: QueryRuleOPEnum.AND,
+              rules: [...(typeof options?.rules === 'function' ? options?.rules() : options?.rules), ...customRules],
             },
-            type,
-          ),
+            page: {
+              count: isCount,
+              start: isCount ? 0 : pagination.start,
+              limit: isCount ? 0 : pagination.limit,
+              ...(options.disableSort
+                ? {}
+                : { sort: isCount ? undefined : 'created_at', order: isCount ? undefined : 'DESC' }),
+            },
+            ...(typeof options.payload === 'function' ? options.payload() : options.payload),
+          }),
         ),
       );
     };
@@ -71,9 +86,9 @@ export function useSingleList(
     return apiMethod()
       .then(([detailRes, countRes]) => {
         // 加载数据
-        dataList.value = [...dataList.value, ...detailRes.data.details];
+        dataList.value = [...dataList.value, ...get(detailRes.data, options.path.data, [])];
         // 更新分页参数
-        pagination.count = countRes.data.count;
+        pagination.count = get(countRes.data, options.path.count, 0);
         // 将加载数据后的 dataList 作为 then 函数的返回值, 用以支持对新的 dataList 做额外的处理
         return dataList.value;
       })
@@ -106,6 +121,14 @@ export function useSingleList(
 
   // 立即执行
   options?.immediate && loadDataList();
+
+  // url 变更时, 刷新列表
+  watch(
+    () => options?.url,
+    () => {
+      handleRefresh();
+    },
+  );
 
   return {
     /**

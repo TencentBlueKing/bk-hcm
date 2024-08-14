@@ -51,6 +51,18 @@ func (r *AuthDao) ListInstances(kt *kit.Kit, opts *types.ListInstancesOption) (*
 		return nil, errf.New(errf.InvalidParameter, "list instances options is null")
 	}
 
+	if opts.Priority == nil {
+		opts.Priority = filter.Priority{"name"}
+	}
+
+	if opts.DisplayNameField == "" {
+		opts.DisplayNameField = "name"
+	}
+
+	if opts.ResourceIDField == "" {
+		opts.ResourceIDField = "id"
+	}
+
 	// enable unlimited query, because this is iam pull resource callback.
 	po := &core.PageOption{MaxLimit: client.BkIAMMaxPageSize}
 	if err := opts.Validate(po); err != nil {
@@ -58,7 +70,7 @@ func (r *AuthDao) ListInstances(kt *kit.Kit, opts *types.ListInstancesOption) (*
 	}
 
 	sqlOpt := &filter.SQLWhereOption{
-		Priority: filter.Priority{"name"},
+		Priority: opts.Priority,
 	}
 	whereExpr, whereValue, err := opts.Filter.SQLWhereExpr(sqlOpt)
 	if err != nil {
@@ -84,7 +96,8 @@ func (r *AuthDao) ListInstances(kt *kit.Kit, opts *types.ListInstancesOption) (*
 		return nil, err
 	}
 
-	sql = fmt.Sprintf(`SELECT id, name FROM %s %s %s`, opts.TableName, whereExpr, pageExpr)
+	sql = fmt.Sprintf(`SELECT %s as id, %s as name FROM %s %s %s`,
+		opts.ResourceIDField, opts.DisplayNameField, opts.TableName, whereExpr, pageExpr)
 	list := make([]types.InstanceResource, 0)
 	err = r.Orm.Do().Select(kt.Ctx, &list, sql, whereValue)
 	if err != nil {

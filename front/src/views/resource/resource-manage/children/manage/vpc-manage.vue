@@ -83,7 +83,6 @@ const hostSearchData = computed(() => {
   ];
 });
 const handleBindRegion = (data: any) => {
-  console.log('1111', data);
   isDialogShow.value = true;
   curVpc.value = data;
   curCloudArea.value = data.bk_cloud_id === -1 ? '' : data.bk_cloud_id;
@@ -112,12 +111,7 @@ const handleConfirm = async () => {
 const getCloudAreas = async () => {
   isDialogBtnLoading.value = true;
   try {
-    const res = await resourceStore.getCloudAreas({
-      page: {
-        start: 0,
-        limit: 500,
-      },
-    });
+    const res = await resourceStore.getAllCloudAreas();
     cloudAreaList.value = res.data?.info || [];
   } finally {
     isDialogBtnLoading.value = false;
@@ -249,7 +243,7 @@ const renderColumns = [
 </script>
 
 <template>
-  <bk-loading :loading="isLoading">
+  <bk-loading :loading="isLoading" opacity="1">
     <section
       class="flex-row align-items-center"
       :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'"
@@ -276,7 +270,6 @@ const renderColumns = [
 
     <bk-table
       :settings="settings"
-      class="has-selection"
       row-hover="auto"
       remote-pagination
       :pagination="pagination"

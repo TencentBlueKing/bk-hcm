@@ -68,7 +68,7 @@ func InitService(c *capability.Capability) {
 }
 
 func bizService(h *rest.Handler, svc *lbSvc) {
-	h.Add("BizBatchCreateLB", http.MethodPost, "/load_balancers/create", svc.BizBatchCreateLB)
+	// h.Add("BizBatchCreateLB", http.MethodPost, "/load_balancers/create", svc.BizBatchCreateLB)
 	h.Add("UpdateBizTCloudLoadBalancer", http.MethodPatch,
 		"/vendors/tcloud/load_balancers/{id}", svc.UpdateBizTCloudLoadBalancer)
 	h.Add("ListBizLoadBalancer", http.MethodPost, "/load_balancers/list", svc.ListBizLoadBalancer)
@@ -87,9 +87,17 @@ func bizService(h *rest.Handler, svc *lbSvc) {
 		"/load_balancers/{id}/lock/status", svc.GetBizLoadBalancerLockStatus)
 	h.Add("ListBizLoadBalancerQuotas", http.MethodPost, "/load_balancers/quotas", svc.ListBizLoadBalancerQuotas)
 
+	h.Add("TCloudCreateSnatIps", http.MethodPost,
+		"/vendors/tcloud/load_balancers/{lb_id}/snat_ips/create", svc.TCloudCreateSnatIps)
+	h.Add("TCloudDeleteSnatIps", http.MethodDelete,
+		"/vendors/tcloud/load_balancers/{lb_id}/snat_ips", svc.TCloudDeleteSnatIps)
+
 	// 目标组
 	h.Add("ListBizTargetsByTGID", http.MethodPost,
 		"/target_groups/{target_group_id}/targets/list", svc.ListBizTargetsByTGID)
+
+	h.Add("StatBizTargetWeight", http.MethodPost,
+		"/target_groups/targets/weight_stat", svc.StatBizTargetWeight)
 	h.Add("AssociateBizTargetGroupListenerRel", http.MethodPost,
 		"/listeners/associate/target_group", svc.AssociateBizTargetGroupListenerRel)
 

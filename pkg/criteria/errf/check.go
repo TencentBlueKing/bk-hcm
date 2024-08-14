@@ -46,6 +46,18 @@ func GetMySQLDuplicated(err error) (merr *mysql.MySQLError) {
 	return nil
 }
 
+// IsRecordNotFound return true if error is a not found error
+func IsRecordNotFound(err error) bool {
+	if err == nil {
+		return false
+	}
+	var ef *ErrorF
+	if errors.As(err, &ef) {
+		return ef.Code == RecordNotFound
+	}
+	return false
+}
+
 // IsContextCanceled return true if error contains string "context canceled"
 func IsContextCanceled(err error) bool {
 	if err == nil {

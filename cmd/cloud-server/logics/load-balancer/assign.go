@@ -32,6 +32,7 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/slice"
 )
 
 // AssignTCloud 分配负载均衡及关联资源到业务下
@@ -152,17 +153,23 @@ func AssignLoadBalancerRelated(kt *kit.Kit, cli *dataservice.Client, lblIds []st
 
 	if len(lblIds) != 0 {
 		// 分配关联规则、关联目标组
-		updateLbl := &dataproto.BizBatchUpdateReq{IDs: lblIds, BkBizID: bizID}
-		if err := cli.Global.LoadBalancer.BatchUpdateListenerBizInfo(kt, updateLbl); err != nil {
-			logs.Errorf("batch update listener biz info failed, err: %v, req: %+v, rid: %s", err, updateLbl, kt.Rid)
-			return err
+		for _, lblIdBatch := range slice.Split(lblIds, constant.BatchOperationMaxLimit) {
+			updateLbl := &dataproto.BizBatchUpdateReq{IDs: lblIdBatch, BkBizID: bizID}
+			if err := cli.Global.LoadBalancer.BatchUpdateListenerBizInfo(kt, updateLbl); err != nil {
+				logs.Errorf("batch update listener biz info failed, err: %v, req: %+v, rid: %s", err, updateLbl, kt.Rid)
+				return err
+			}
 		}
+
 	}
 	if len(tgIds) != 0 {
-		updateTg := &dataproto.BizBatchUpdateReq{IDs: tgIds, BkBizID: bizID}
-		if err := cli.Global.LoadBalancer.BatchUpdateTargetGroupBizInfo(kt, updateTg); err != nil {
-			logs.Errorf("batch update target group biz info failed, err: %v, req: %+v, rid: %s", err, updateTg, kt.Rid)
-			return err
+		for _, tgIdBatch := range slice.Split(tgIds, constant.BatchOperationMaxLimit) {
+			updateTg := &dataproto.BizBatchUpdateReq{IDs: tgIdBatch, BkBizID: bizID}
+			if err := cli.Global.LoadBalancer.BatchUpdateTargetGroupBizInfo(kt, updateTg); err != nil {
+				logs.Errorf("batch update target group biz info failed, err: %v, req: %+v, rid: %s", err, updateTg,
+					kt.Rid)
+				return err
+			}
 		}
 	}
 

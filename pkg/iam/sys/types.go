@@ -48,6 +48,8 @@ const (
 	Biz client.TypeID = "biz"
 	// CloudSelectionScheme define cloud selection scheme resource type to register iam.
 	CloudSelectionScheme client.TypeID = "cloud_selection_scheme"
+	// MainAccount defines main account resource type to register iam.
+	MainAccount client.TypeID = "main_account"
 )
 
 const (
@@ -57,6 +59,8 @@ const (
 	BizSelection client.InstanceSelectionID = "business"
 	// CloudSelectionSchemeSelection 云选型方案实例视图
 	CloudSelectionSchemeSelection client.InstanceSelectionID = "cloud_selection_scheme"
+	// MainAccountSelection is main account instance selection id to register iam.
+	MainAccountSelection client.InstanceSelectionID = "main_account"
 )
 
 // ActionType action type to register iam.
@@ -86,11 +90,11 @@ const (
 	BizIaaSResDelete client.ActionID = "biz_iaas_resource_delete"
 
 	// BizCLBResCreate biz clb resource create action id to register iam.
-	// BizCLBResCreate client.ActionID = "biz_clb_resource_create"
+	BizCLBResCreate client.ActionID = "biz_clb_resource_create"
 	// BizCLBResOperate biz clb resource operate action id to register iam.
-	// BizCLBResOperate client.ActionID = "biz_clb_resource_operate"
+	BizCLBResOperate client.ActionID = "biz_clb_resource_operate"
 	// BizCLBResDelete biz clb resource delete action id to register iam.
-	// BizCLBResDelete client.ActionID = "biz_clb_resource_delete"
+	BizCLBResDelete client.ActionID = "biz_clb_resource_delete"
 
 	// BizCertResCreate biz cert resource create action id to register iam.
 	BizCertResCreate client.ActionID = "biz_cert_resource_create"
@@ -135,11 +139,11 @@ const (
 	IaaSResDelete client.ActionID = "iaas_resource_delete"
 
 	// CLBResCreate clb resource create action id to register iam.
-	// CLBResCreate client.ActionID = "clb_resource_create"
+	CLBResCreate client.ActionID = "clb_resource_create"
 	// CLBResOperate clb resource operate action id to register iam.
-	// CLBResOperate client.ActionID = "clb_resource_operate"
+	CLBResOperate client.ActionID = "clb_resource_operate"
 	// CLBResDelete clb resource delete action id to register iam.
-	// CLBResDelete client.ActionID = "clb_resource_delete"
+	CLBResDelete client.ActionID = "clb_resource_delete"
 
 	// CertResCreate cert resource create action id to register iam.
 	CertResCreate client.ActionID = "cert_resource_create"
@@ -173,6 +177,22 @@ const (
 	// CloudSelectionSchemeDelete 方案删除
 	CloudSelectionSchemeDelete client.ActionID = "cloud_selection_delete"
 
+	// MainAccountFind main account find action id to register iam.
+	MainAccountFind client.ActionID = "main_account_find"
+	// MainAccountEdit main account edit action id to register iam.
+	MainAccountEdit client.ActionID = "main_account_edit"
+	// MainAccountCreate main account create action id to register iam.
+	MainAccountCreate client.ActionID = "main_account_create"
+
+	// RootAccountManage root account manage action id to register iam.
+	RootAccountManage client.ActionID = "root_account_manage"
+
+	// AccountBillManage account bill manage action id to register iam.
+	AccountBillManage client.ActionID = "account_bill_manage"
+
+	// ApplicationManage application manage action id to register iam.
+	ApplicationManage client.ActionID = "application_manage"
+
 	// Skip is an action that no need to auth
 	Skip client.ActionID = "skip"
 )
@@ -183,11 +203,13 @@ var ActionIDNameMap = map[client.ActionID]string{
 	BizIaaSResCreate:  "业务-IaaS资源创建",
 	BizIaaSResOperate: "业务-IaaS资源操作",
 	BizIaaSResDelete:  "业务-IaaS资源删除",
-	// BizCLBResCreate:        "业务-负载均衡创建",
-	// BizCLBResOperate:       "业务-负载均衡操作",
-	// BizCLBResDelete:        "负载均衡删除",
+
+	BizCLBResCreate:  "业务-负载均衡创建",
+	BizCLBResOperate: "业务-负载均衡操作",
+	BizCLBResDelete:  "业务-负载均衡删除",
 	BizCertResCreate: "业务-证书创建",
 	BizCertResDelete: "业务-证书删除",
+
 	// BizArrangeResCreate:    "业务-资源编排创建",
 	// BizArrangeResOperate:   "业务-资源编排操作",
 	// BizArrangeResDelete:    "业务-资源编排删除",
@@ -205,9 +227,11 @@ var ActionIDNameMap = map[client.ActionID]string{
 	IaaSResCreate:  "资源-IaaS资源创建",
 	IaaSResOperate: "资源-IaaS资源操作",
 	IaaSResDelete:  "资源-IaaS资源删除",
-	// CLBResCreate:        "负载均衡创建",
-	// CLBResOperate:       "负载均衡操作",
-	// CLBResDelete:        "负载均衡删除",
+
+	CLBResCreate:  "负载均衡创建",
+	CLBResOperate: "负载均衡操作",
+	CLBResDelete:  "负载均衡删除",
+
 	CertResCreate:       "资源-证书创建",
 	CertResDelete:       "资源-证书删除",
 	RecycleBinAccess:    "资源-回收站查看",
@@ -223,4 +247,11 @@ var ActionIDNameMap = map[client.ActionID]string{
 	CostManage:          "平台-云成本管理",
 	AccountKeyAccess:    "平台-账号密钥访问",
 	GlobalConfiguration: "平台-全局配置",
+	RootAccountManage:   "云账号-一级账号管理",
+	AccountBillManage:   "云账单-云账单管理",
+	ApplicationManage:   "单据管理",
+
+	MainAccountFind:   "账号-二级账号查看",
+	MainAccountCreate: "账号-二级账号创建",
+	MainAccountEdit:   "账号-二级账号编辑",
 }

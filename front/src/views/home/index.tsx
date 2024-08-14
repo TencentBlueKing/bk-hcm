@@ -1,30 +1,32 @@
 import { defineComponent, computed, watch, ref, nextTick, onMounted } from 'vue';
-import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
-import { Menu, Navigation, Dropdown, Dialog, Exception, Button } from 'bkui-vue';
-import { headRouteConfig } from '@/router/header-config';
+import { RouterLink, RouterView, useRoute } from 'vue-router';
+
+import { Menu, Navigation, Dropdown, Button } from 'bkui-vue';
 import Breadcrumb from './breadcrumb';
-import { classes, localStorageActions } from '@/common/util';
+import BusinessSelector from './business-selector';
+import NoPermission from '@/views/resource/NoPermission';
+import AccountList from '../resource/resource-manage/account/accountList';
+
+import cookie from 'cookie';
+import { useI18n } from 'vue-i18n';
+import { useVerify } from '@/hooks';
+import { useUserStore, useAccountStore, useCommonStore } from '@/store';
+import { useRegionsStore } from '@/store/useRegionsStore';
+import { useCloudAreaStore } from '@/store/useCloudAreaStore';
+import { useBusinessMapStore } from '@/store/useBusinessMap';
+import usePagePermissionStore from '@/store/usePagePermissionStore';
+
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import useChangeHeaderTab from './hooks/useChangeHeaderTab';
+import { LANGUAGE_TYPE, VendorEnum } from '@/common/constant';
+import { classes } from '@/common/util';
+
+import { headRouteConfig } from '@/router/header-config';
 import logo from '@/assets/image/logo.png';
 import './index.scss';
-import { useUserStore, useAccountStore, useCommonStore } from '@/store';
-import { useVerify } from '@/hooks';
-import { useI18n } from 'vue-i18n';
-import { useRegionsStore } from '@/store/useRegionsStore';
-import { LANGUAGE_TYPE, VendorEnum } from '@/common/constant';
-import { useBusinessMapStore } from '@/store/useBusinessMap';
-import { useCloudAreaStore } from '@/store/useCloudAreaStore';
-import cookie from 'cookie';
-import NoPermission from '@/views/resource/NoPermission';
-import usePagePermissionStore from '@/store/usePagePermissionStore';
-// @ts-ignore
-import AppSelect from '@blueking/app-select';
-import '@blueking/app-select/dist/style.css';
-import { getFavoriteList, useFavorite } from '@/hooks/useFavorite';
-import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
-import AccountList from '../resource/resource-manage/account/accountList';
-import useChangeHeaderTab from './hooks/useChangeHeaderTab';
+import GlobalPermissionDialog from '@/components/global-permission-dialog';
 
-const { ENABLE_CLOUD_SELECTION } = window.PROJECT_CONFIG;
+const { ENABLE_CLOUD_SELECTION, ENABLE_ACCOUNT_BILL } = window.PROJECT_CONFIG;
 // import { CogShape } from 'bkui-vue/lib/icon';
 // import { useProjectList } from '@/hooks';
 // import AddProjectDialog from '@/components/AddProjectDialog';
@@ -40,50 +42,27 @@ export default defineComponent({
 
     const { t } = useI18n();
     const route = useRoute();
-    const router = useRouter();
     const userStore = useUserStore();
     const accountStore = useAccountStore();
     const { fetchBusinessMap } = useBusinessMapStore();
     const { fetchAllCloudAreas } = useCloudAreaStore();
+    const { fetchRegions } = useRegionsStore();
     const { whereAmI } = useWhereAmI();
+    const { getAuthVerifyData, authVerifyData } = useVerify(); // 权限中心权限
 
     const openedKeys: string[] = [];
-    const businessId = ref<number>(0);
-    const businessList = ref<any[]>([]);
     const isRouterAlive = ref<Boolean>(true);
     const curYear = ref(new Date().getFullYear());
     const isMenuOpen = ref<boolean>(true);
     const language = ref(cookie.parse(document.cookie).blueking_language || 'zh-cn');
-    const isDialogShow = ref(false);
-    const favoriteList = ref([]);
 
-    const isNeedSideMenu = computed(() => ![Senarios.resource, Senarios.scheme].includes(whereAmI.value));
-
-    const { favoriteSet, addToFavorite, removeFromFavorite } = useFavorite(businessId.value, favoriteList.value);
+    const isNeedSideMenu = computed(
+      () => ![Senarios.resource, Senarios.scheme, Senarios.unauthorized].includes(whereAmI.value),
+    );
 
     const { hasPagePermission, permissionMsg, logout } = usePagePermissionStore();
 
-    const { topMenuActiveItem, menus, curPath, handleHeaderMenuClick } = useChangeHeaderTab(businessId, businessList);
-
-    watch(
-      () => accountStore.bizs,
-      async (bizs) => {
-        if (!bizs) return;
-        const commonStore = useCommonStore();
-        const { pageAuthData } = commonStore; // 所有需要检验的查看权限数据
-        const bizsPageAuthData = pageAuthData.map((e: any) => {
-          // eslint-disable-next-line no-prototype-builtins
-          if (e.hasOwnProperty('bk_biz_id')) {
-            e.bk_biz_id = bizs;
-          }
-          return e;
-        });
-        commonStore.updatePageAuthData(bizsPageAuthData);
-        const { getAuthVerifyData } = useVerify(); // 权限中心权限
-        await getAuthVerifyData(bizsPageAuthData);
-      },
-      { immediate: true },
-    );
+    const { topMenuActiveItem, menus, curPath, handleHeaderMenuClick } = useChangeHeaderTab();
 
     const saveLanguage = async (val: string) => {
       return new Promise((resovle) => {
@@ -99,45 +78,6 @@ export default defineComponent({
       });
     };
 
-    watch(
-      () => language.value,
-      async (val) => {
-        document.cookie = `blueking_language=${val}; domain=${window.PROJECT_CONFIG.BK_DOMAIN}`;
-        await saveLanguage(val);
-        location.reload();
-      },
-    );
-
-    // 选择业务
-    const handleChange = async (val: { id: number }) => {
-      if (businessId.value === val.id) return;
-      businessId.value = val.id;
-      accountStore.updateBizsId(businessId.value); // 设置全局业务id
-      // 持久化存储全局业务id
-      localStorageActions.set('bizs', businessId.value);
-      // @ts-ignore
-      // 如果当前页面为详情页, 则当业务id切换时, 跳转至对应资源的列表页
-      const isBusinessDetail = route.name?.includes('BusinessDetail');
-      if (isBusinessDetail) {
-        router.push({
-          path: route.path.split('/detail')[0],
-          query: {
-            ...route.query,
-            bizs: businessId.value,
-          },
-        });
-      } else {
-        router.push({
-          path: route.path,
-          query: {
-            ...route.query,
-            bizs: businessId.value,
-          },
-        });
-        reload();
-      }
-    };
-
     // 切换路由
     const reload = () => {
       isRouterAlive.value = false;
@@ -151,8 +91,6 @@ export default defineComponent({
       isMenuOpen.value = val;
     };
 
-    const { fetchRegions } = useRegionsStore();
-
     const renderRouterView = () => {
       if (whereAmI.value !== Senarios.resource) return <RouterView />;
       return (
@@ -165,45 +103,6 @@ export default defineComponent({
       );
     };
 
-    watch(
-      () => businessId.value,
-      async () => {
-        favoriteList.value = await getFavoriteList(businessId.value);
-        for (const id of favoriteList.value) favoriteSet.value.add(id);
-      },
-    );
-
-    watch(
-      () => favoriteSet.value,
-      () => {
-        businessList.value.sort((biz1, biz2) => {
-          return +favoriteSet.value.has(biz2.id) - +favoriteSet.value.has(biz1.id);
-        });
-      },
-      {
-        deep: true,
-      },
-    );
-
-    watch(
-      () => route.query.bizs,
-      async (val) => {
-        // 业务下, 设置全局业务id
-        if (whereAmI.value === Senarios.business) {
-          let bizs = val || localStorageActions.get('bizs');
-          // url 和 localStorage 中都没有业务id
-          if (!bizs) {
-            // 请求业务列表, 取第一个业务id作为默认业务id
-            const { data } = await accountStore.getBizList();
-            bizs = data[0].id;
-          }
-          // 切换业务选择器的业务
-          handleChange({ id: Number(bizs) });
-        }
-      },
-      { immediate: true },
-    );
-
     /**
      * 在这里获取项目公共数据并缓存
      */
@@ -213,6 +112,34 @@ export default defineComponent({
       fetchBusinessMap();
       fetchAllCloudAreas();
     });
+
+    watch(
+      () => accountStore.bizs,
+      async (bizs) => {
+        if (!bizs) return;
+        const commonStore = useCommonStore();
+        const { pageAuthData } = commonStore; // 所有需要检验的查看权限数据
+        const bizsPageAuthData = pageAuthData.map((e: any) => {
+          // eslint-disable-next-line no-prototype-builtins
+          if (e.hasOwnProperty('bk_biz_id')) {
+            e.bk_biz_id = bizs;
+          }
+          return e;
+        });
+        commonStore.updatePageAuthData(bizsPageAuthData);
+        await getAuthVerifyData(bizsPageAuthData);
+      },
+      { immediate: true },
+    );
+
+    watch(
+      () => language.value,
+      async (val) => {
+        document.cookie = `blueking_language=${val}; domain=${window.PROJECT_CONFIG.BK_DOMAIN}`;
+        await saveLanguage(val);
+        location.reload();
+      },
+    );
 
     if (!hasPagePermission) return () => <NoPermission message={permissionMsg} />;
 
@@ -241,7 +168,9 @@ export default defineComponent({
                       {headRouteConfig
                         .filter(
                           ({ id }) =>
-                            (ENABLE_CLOUD_SELECTION !== 'true' && id !== 'scheme') || ENABLE_CLOUD_SELECTION === 'true',
+                            ((ENABLE_CLOUD_SELECTION !== 'true' && id !== 'scheme') ||
+                              ENABLE_CLOUD_SELECTION === 'true') &&
+                            ((ENABLE_ACCOUNT_BILL !== 'true' && id !== 'bill') || ENABLE_ACCOUNT_BILL === 'true'),
                         )
                         .map(({ id, name, path }) => (
                           <Button
@@ -317,111 +246,82 @@ export default defineComponent({
                 ),
                 menu: () => (
                   <div class={'home-menu'}>
-                    {topMenuActiveItem.value === 'business' && isMenuOpen.value ? (
-                      <AppSelect
-                        data={businessList.value}
-                        onChange={handleChange}
-                        theme={'dark'}
-                        class={'bk-hcm-app-selector'}
-                        value={
-                          {
-                            id: businessId.value,
-                          } || businessList.value?.[0]
-                        }
-                        minWidth={360}>
-                        {{
-                          default: ({ data }: { data: { id: number; name: string } }) => (
-                            <div class='bk-hcm-app-selector-item'>
-                              <div class='bk-hcm-app-selector-item-content'>
-                                <span class={'bk-hcm-app-selector-item-content-name'}>{`${data.name}`}</span>
-                                &nbsp;&nbsp;&nbsp;
-                                <span class={'bk-hcm-app-selector-item-content-id'}>{`(${data.id})`}</span>
-                              </div>
-
-                              <div class='bk-hcm-app-selector-item-star'>
-                                {favoriteSet.value.has(data.id) ? (
-                                  <i
-                                    class={'hcm-icon bkhcm-icon-collect'}
-                                    style={{ color: '#CC933A', fontSize: '15px' }}
-                                    onClick={(event) => {
-                                      removeFromFavorite(data.id);
-                                      event.stopPropagation();
-                                    }}
-                                  />
-                                ) : (
-                                  <i
-                                    class={'hcm-icon bkhcm-icon-not-favorited'}
-                                    onClick={(event) => {
-                                      addToFavorite(data.id);
-                                      event.stopPropagation();
-                                    }}
-                                  />
-                                )}
-                              </div>
-                            </div>
-                          ),
-                          append: () => (
-                            <div
-                              class={'app-action-content'}
-                              onClick={() => {
-                                isDialogShow.value = true;
-                              }}>
-                              <i class={'hcm-icon bkhcm-icon-plus-circle app-action-content-icon'} />
-                              <span class={'app-action-content-text'}>新建业务</span>
-                            </div>
-                          ),
-                        }}
-                      </AppSelect>
-                    ) : (
-                      ''
-                    )}
-
+                    {topMenuActiveItem.value === 'business' && isMenuOpen.value && <BusinessSelector reload={reload} />}
                     <Menu
                       class='menu-warp'
-                      style={{
-                        width: `${NAV_WIDTH}px`,
-                      }}
+                      style={{ width: `${NAV_WIDTH}px` }}
                       uniqueOpen={false}
                       openedKeys={openedKeys}
                       activeKey={route.meta.activeKey as string}>
-                      {menus.value.map((menuItem) =>
-                        Array.isArray(menuItem.children) ? (
-                          <Menu.Group key={menuItem.path as string} name={menuItem.name as string}>
-                            {{
-                              default: () =>
-                                menuItem.children
-                                  .filter((child) => !child.meta?.notMenu)
-                                  .map((child) => (
-                                    <RouterLink to={{ path: `${child.path}`, query: { bizs: accountStore.bizs } }}>
-                                      <Menu.Item key={child.meta?.activeKey as string}>
-                                        {/* {route.meta.activeKey} */}
-                                        {{
-                                          icon: () => <i class={child.meta.icon} />,
-                                          default: () => (
-                                            <p class='flex-row flex-1 justify-content-between align-items-center pr16'>
-                                              <span class='flex-1 text-ov'>{child.name as string}</span>
-                                            </p>
-                                          ),
-                                        }}
-                                      </Menu.Item>
-                                    </RouterLink>
-                                  )),
-                            }}
-                          </Menu.Group>
-                        ) : (
-                          !menuItem.meta?.notMenu && (
+                      {menus.value
+                        .map((menuItem) => {
+                          // menuItem.children 是一个数组, 且没有配置 hasPageRoute(页面级子路由)
+                          if (Array.isArray(menuItem.children) && !menuItem.meta?.hasPageRoute) {
+                            const children = menuItem.children
+                              // 过滤掉非菜单的路由项
+                              .filter((child) => !child.meta?.notMenu)
+                              // 构建子菜单项
+                              .map((child) => {
+                                // 如果配置了 checkAuth, 则检查菜单是否具有访问权限
+                                if (
+                                  child.meta?.checkAuth &&
+                                  !authVerifyData.value?.permissionAction[child.meta?.checkAuth as string]
+                                ) {
+                                  return null;
+                                }
+
+                                return (
+                                  <RouterLink
+                                    to={{ path: `${child.path}`, query: { ...route.query, bizs: accountStore.bizs } }}>
+                                    <Menu.Item key={child.meta?.activeKey as string}>
+                                      {{
+                                        icon: () => <i class={child.meta?.icon} />,
+                                        default: () => (
+                                          <p class='flex-row flex-1 justify-content-between align-items-center pr16'>
+                                            <span class='flex-1 text-ov'>{child.meta?.title}</span>
+                                          </p>
+                                        ),
+                                      }}
+                                    </Menu.Item>
+                                  </RouterLink>
+                                );
+                              })
+                              // 过滤掉 null 项
+                              .filter((item) => !!item);
+
+                            // 如果构建的子菜单项为空, 则表明子菜单都不具备访问权限, 直接隐藏 group
+                            if (!children.length) return null;
+
+                            return (
+                              <Menu.Group key={menuItem.path as string} name={menuItem.meta?.groupTitle as string}>
+                                {{ default: () => children }}
+                              </Menu.Group>
+                            );
+                          }
+
+                          // 如果配置了 notMenu、或者配置了 checkAuth 且不具备访问权限, 则隐藏菜单
+                          if (
+                            menuItem.meta?.notMenu ||
+                            (menuItem.meta?.checkAuth &&
+                              !authVerifyData.value?.permissionAction[menuItem.meta.checkAuth as string])
+                          ) {
+                            return null;
+                          }
+
+                          // 正常显示菜单
+                          return (
                             <RouterLink to={`${menuItem.path}`}>
                               <Menu.Item key={menuItem.meta.activeKey as string}>
-                                {/* {menuItem.meta.activeKey} */}
                                 {{
                                   icon: () => <i class={menuItem.meta.icon} />,
-                                  default: () => menuItem.name as string,
+                                  default: () => menuItem.meta?.title,
                                 }}
                               </Menu.Item>
                             </RouterLink>
-                          )
-                        ),
-                      )}
+                          );
+                        })
+                        // 过滤掉 null 项
+                        .filter((item) => !!item)}
                     </Menu>
                   </div>
                 ),
@@ -437,39 +337,8 @@ export default defineComponent({
               }}
             </Navigation>
           }
+          <GlobalPermissionDialog />
         </div>
-        {/* <AddProjectDialog isShow={showAddProjectDialog.value} onClose={toggleAddProjectDialog} /> */}
-
-        <Dialog
-          isShow={isDialogShow.value}
-          title=''
-          dialogType='show'
-          theme='primary'
-          onConfirm={() => (isDialogShow.value = false)}
-          onClosed={() => (isDialogShow.value = false)}>
-          <Exception
-            type='building'
-            class={'hcm-create-business-dialog-exception-building-picture'}
-            title={'新建业务参考以下指引'}>
-            <div class={'hcm-create-business-dialog-exception-building-tips'}>
-              {/* <p class={'hcm-create-business-dialog-exception-building-tips-text1'}>
-                  可以按照以下方式进行查看
-                </p> */}
-              <p class={'hcm-create-business-dialog-exception-building-tips-text2'}>
-                业务是蓝鲸配置平台的管理空间，可以满足不同团队，不同项目的资源隔离管理需求。
-                <Button
-                  theme='primary'
-                  text
-                  onClick={() => {
-                    const { BK_CMDB_CREATE_BIZ_URL } = window.PROJECT_CONFIG;
-                    window.open(BK_CMDB_CREATE_BIZ_URL, '_blank');
-                  }}>
-                  新建业务
-                </Button>
-              </p>
-            </div>
-          </Exception>
-        </Dialog>
       </main>
     );
   },

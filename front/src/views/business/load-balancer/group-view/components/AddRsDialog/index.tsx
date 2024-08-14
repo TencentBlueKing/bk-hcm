@@ -29,11 +29,13 @@ export default defineComponent({
       vpcIds,
       port,
       rsList,
+      isCorsV2,
     }: {
       accountId: string;
       vpcIds: string[];
       port: number;
       rsList: any[];
+      isCorsV2: boolean;
     }) => {
       isShow.value = true;
       nextTick(handleClear);
@@ -43,7 +45,7 @@ export default defineComponent({
       tableRsList = rsList;
 
       // 根据account_id, vpc_ids查询cvm列表
-      getRSTableList(accountId, vpc_ids);
+      getRSTableList(accountId, vpc_ids, isCorsV2);
     };
 
     // confirm-handler
@@ -110,7 +112,7 @@ export default defineComponent({
       <CommonDialog v-model:isShow={isShow.value} title='添加 RS' width={640} onHandleConfirm={handleAddRs}>
         <div class='add-rs-dialog-content'>
           <SearchSelect class='mb16' v-model={searchVal.value} data={searchData} />
-          <Loading loading={isTableLoading.value} class='loading-table-container has-selection'>
+          <Loading loading={isTableLoading.value} class='loading-table-container'>
             <Table
               class='table-container'
               ref={tableRef}

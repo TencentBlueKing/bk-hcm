@@ -64,6 +64,8 @@ const (
 	WebServerName Name = "web-server"
 	// TaskServerName is task server's name
 	TaskServerName Name = "task-server"
+	// AccountServerName is account server's name
+	AccountServerName Name = "account-server"
 )
 
 // Setting defines all service Setting interface.
@@ -121,6 +123,7 @@ type CloudServerSetting struct {
 	BillConfig     BillConfig     `yaml:"billConfig"`
 	Itsm           ApiGateway     `yaml:"itsm"`
 	CloudSelection CloudSelection `yaml:"cloudSelection"`
+	Cmsi           CMSI           `yaml:"cmsi"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -171,17 +174,22 @@ func (s CloudServerSetting) Validate() error {
 		return err
 	}
 
+	if err := s.Cmsi.validate(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // DataServiceSetting defines data service used setting options.
 type DataServiceSetting struct {
-	Network  Network   `yaml:"network"`
-	Service  Service   `yaml:"service"`
-	Log      LogOption `yaml:"log"`
-	Database DataBase  `yaml:"database"`
-	Crypto   Crypto    `yaml:"crypto"`
-	Esb      Esb       `yaml:"esb"`
+	Network     Network     `yaml:"network"`
+	Service     Service     `yaml:"service"`
+	Log         LogOption   `yaml:"log"`
+	Database    DataBase    `yaml:"database"`
+	Objectstore ObjectStore `yaml:"objectstore"`
+	Crypto      Crypto      `yaml:"crypto"`
+	Esb         Esb         `yaml:"esb"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -390,6 +398,42 @@ func (s TaskServerSetting) Validate() error {
 	}
 
 	if err := s.Database.validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// AccountServerSetting defines task server used setting options.
+type AccountServerSetting struct {
+	Network        Network              `yaml:"network"`
+	Service        Service              `yaml:"service"`
+	Controller     BillControllerOption `yaml:"controller"`
+	Log            LogOption            `yaml:"log"`
+	BillAllocation BillAllocationOption `yaml:"billAllocation"`
+}
+
+// trySetFlagBindIP try set flag bind ip.
+func (s *AccountServerSetting) trySetFlagBindIP(ip net.IP) error {
+	return s.Network.trySetFlagBindIP(ip)
+}
+
+// trySetDefault set the TaskServerSetting default value if user not configured.
+func (s *AccountServerSetting) trySetDefault() {
+	s.Network.trySetDefault()
+	s.Service.trySetDefault()
+	s.Controller.trySetDefault()
+	s.Log.trySetDefault()
+}
+
+// Validate TaskServerSetting option.
+func (s AccountServerSetting) Validate() error {
+
+	if err := s.Network.validate(); err != nil {
+		return err
+	}
+
+	if err := s.Service.validate(); err != nil {
 		return err
 	}
 

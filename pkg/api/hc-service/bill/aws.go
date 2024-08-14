@@ -27,8 +27,8 @@ import (
 
 // AwsBillListResult define aws bill list result.
 type AwsBillListResult struct {
-	Count   int64       `json:"count"`
-	Details interface{} `json:"details"`
+	Count   int64 `json:"count"`
+	Details any   `json:"details"`
 }
 
 // AwsBillListResp define aws bill list resp.

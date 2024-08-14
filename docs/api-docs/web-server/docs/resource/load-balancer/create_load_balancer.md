@@ -29,6 +29,7 @@ POST /api/v1/cloud/vendors/tcloud/load_balancers/create
 | internet_charge_type       | string       | 否  | 网络计费模式                                                        |
 | internet_max_bandwidth_out | int64        | 否  | 最大出带宽，单位Mbps                                                  |
 | bandwidth_package_id       | string       | 否  | 带宽包id，计费模式为带宽包计费时必填                                           |
+| bandwidthpkg_sub_type      | string       | 否  | 带宽包的类型，如SINGLEISP（单线）、BGP（多线）。                                |
 | sla_type                   | string       | 否  | 性能容量型规格, 留空为共享型                                               |
 | auto_renew                 | boolean      | 否  | 按月付费自动续费                                                      |
 | require_count	             | int          | 是  | 购买数量                                                          |

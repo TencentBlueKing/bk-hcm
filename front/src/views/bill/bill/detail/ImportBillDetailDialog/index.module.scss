@@ -1,0 +1,38 @@
+.item {
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  height: 52px;
+
+  .label {
+    width: 80px;
+  }
+
+  .content {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.uploadTip {
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+
+  :global(.bk-button) {
+    width: 88px;
+
+    + :global(.bk-button) {
+      margin-left: 8px;
+    }
+  }
+
+  .amounts {
+    margin: 0 auto 0 0;
+    text-align: left;
+  }
+}

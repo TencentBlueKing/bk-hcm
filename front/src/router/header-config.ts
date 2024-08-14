@@ -10,7 +10,7 @@ export const headRouteConfig = [
   },
   {
     id: 'service',
-    name: '我的单据',
+    name: '服务请求',
     path: '/service/my-apply',
   },
   {
@@ -22,6 +22,11 @@ export const headRouteConfig = [
     id: 'scheme',
     name: '资源选型',
     path: '/scheme/recommendation',
+  },
+  {
+    id: 'bill',
+    name: '账号管理',
+    path: '/bill/account-manage',
   },
 
   // 接下来是 资源选型、平台管理

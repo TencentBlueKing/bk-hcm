@@ -170,6 +170,34 @@ const (
 	ResourceFlowRelTable Name = "resource_flow_rel"
 	// ResourceFlowLockTable is resource_flow_lock table's name.
 	ResourceFlowLockTable Name = "resource_flow_lock"
+
+	// MainAccountTable is main_account table's name
+	MainAccountTable Name = "main_account"
+	// RootAccountTable is main_account table's name
+	RootAccountTable Name = "root_account"
+
+	// AccountBillSummaryVersionTable 月度汇总账单版本
+	AccountBillSummaryVersionTable = "account_bill_summary_version"
+	// AccountBillSummaryDailyTable 每天汇总账单版本
+	AccountBillSummaryDailyTable = "account_bill_summary_daily"
+	// AccountBillItemTable 分账后的账单明细
+	AccountBillItemTable = "account_bill_item"
+	// AccountBillAdjustmentItemTable 手动调账表
+	AccountBillAdjustmentItemTable = "account_bill_adjustment_item"
+	// AccountBillMonthTaskTable 月度任务表
+	AccountBillMonthTaskTable = "account_bill_month_task"
+	// AccountBillDailyPullTaskTable 日账单拉取任务表
+	AccountBillDailyPullTaskTable = "account_bill_daily_pull_task"
+	// AccountBillSummaryRootTable 一级账号账单汇总信息
+	AccountBillSummaryRootTable = "account_bill_summary_root"
+	// AccountBillSummaryMainTable 月度汇总账单
+	AccountBillSummaryMainTable = "account_bill_summary_main"
+	// RootAccountBillConfigTable 一级账号账单配置表
+	RootAccountBillConfigTable = "root_account_bill_config"
+	// AccountBillExchangeRateTable 账单汇率换算表
+	AccountBillExchangeRateTable = "account_bill_exchange_rate"
+	// AccountBillSyncRecordTable 账单同步记录
+	AccountBillSyncRecordTable = "account_bill_sync_record"
 )
 
 // Validate whether the table name is valid or not.
@@ -246,6 +274,17 @@ var TableMap = map[Name]struct{}{
 
 	ArgumentTemplateTable: {},
 
+	AccountBillMonthTaskTable:       {},
+	AccountBillDailyPullTaskTable:   {},
+	AccountBillSummaryMainTable:     {},
+	AccountBillSummaryVersionTable:  {},
+	AccountBillSummaryDailyTable:    {},
+	AccountBillItemTable:            {},
+	AccountBillAdjustmentItemTable:  {},
+	AccountBillSummaryRootTable:     {},
+	RootAccountBillConfigTable:      {},
+	AccountBillExchangeRateTable:    {},
+	AccountBillSyncRecordTable:      {},
 	LoadBalancerTable:               {},
 	SecurityGroupCommonRelTable:     {},
 	LoadBalancerListenerTable:       {},
@@ -255,6 +294,9 @@ var TableMap = map[Name]struct{}{
 	TargetGroupListenerRuleRelTable: {},
 	ResourceFlowRelTable:            {},
 	ResourceFlowLockTable:           {},
+
+	MainAccountTable: {},
+	RootAccountTable: {},
 }
 
 // Register 注册表名

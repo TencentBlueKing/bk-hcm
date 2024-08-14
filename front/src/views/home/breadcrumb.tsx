@@ -18,7 +18,7 @@ export default defineComponent({
           return prev;
         }, [])
         .filter((item) => item.meta?.isShowBreadcrumb)
-        .find((item) => item.path === route.path)?.name;
+        .find((item) => item.path === route.path)?.meta?.title;
     });
 
     return {

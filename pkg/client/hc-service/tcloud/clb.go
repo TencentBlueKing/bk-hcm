@@ -60,8 +60,9 @@ func (c *ClbClient) DescribeResources(kt *kit.Kit, req *hcproto.TCloudDescribeRe
 }
 
 // BatchCreate ...
-func (c *ClbClient) BatchCreate(kt *kit.Kit, req *hcproto.TCloudBatchCreateReq) (*hcproto.BatchCreateResult, error) {
-	return common.Request[hcproto.TCloudBatchCreateReq, hcproto.BatchCreateResult](
+func (c *ClbClient) BatchCreate(kt *kit.Kit, req *hcproto.TCloudLoadBalancerCreateReq) (*hcproto.BatchCreateResult,
+	error) {
+	return common.Request[hcproto.TCloudLoadBalancerCreateReq, hcproto.BatchCreateResult](
 		c.client, http.MethodPost, kt, req, "/load_balancers/batch/create")
 }
 
@@ -199,8 +200,8 @@ func (c *ClbClient) QueryListenerTargetsByCloudIDs(kt *kit.Kit, req *hcproto.Que
 }
 
 // InquiryPrice 负载均衡购买询价
-func (c *ClbClient) InquiryPrice(kt *kit.Kit, req *hcproto.TCloudBatchCreateReq) (*typelb.TCloudLBPrice, error) {
-	return common.Request[hcproto.TCloudBatchCreateReq, typelb.TCloudLBPrice](
+func (c *ClbClient) InquiryPrice(kt *kit.Kit, req *hcproto.TCloudLoadBalancerCreateReq) (*typelb.TCloudLBPrice, error) {
+	return common.Request[hcproto.TCloudLoadBalancerCreateReq, typelb.TCloudLBPrice](
 		c.client, http.MethodPost, kt, req, "/load_balancers/prices/inquiry")
 }
 
@@ -210,4 +211,16 @@ func (c *ClbClient) ListQuota(kt *kit.Kit, req *hcproto.TCloudListLoadBalancerQu
 
 	return common.Request[hcproto.TCloudListLoadBalancerQuotaReq, []typelb.TCloudLoadBalancerQuota](
 		c.client, http.MethodPost, kt, req, "/load_balancers/quota")
+}
+
+// CreateSnatIp ...
+func (c *ClbClient) CreateSnatIp(kt *kit.Kit, req *hcproto.TCloudCreateSnatIpReq) error {
+	return common.RequestNoResp[hcproto.TCloudCreateSnatIpReq](c.client, http.MethodPost, kt, req,
+		"/load_balancers/snat_ips/create")
+}
+
+// DeleteSnatIp ...
+func (c *ClbClient) DeleteSnatIp(kt *kit.Kit, req *hcproto.TCloudDeleteSnatIpReq) error {
+	return common.RequestNoResp[hcproto.TCloudDeleteSnatIpReq](c.client, http.MethodDelete, kt, req,
+		"/load_balancers/snat_ips")
 }

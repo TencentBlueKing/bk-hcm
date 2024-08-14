@@ -33,6 +33,9 @@ writeTimeoutSec: {{ .Values.dbConnConfig.writeTimeoutSec }}
 maxIdleTimeoutMin: {{ .Values.dbConnConfig.maxIdleTimeoutMin }}
 maxOpenConn: {{ .Values.dbConnConfig.maxOpenConn }}
 maxIdleConn: {{ .Values.dbConnConfig.maxIdleConn }}
+limiterQps: {{ .Values.dbConnConfig.limiterQps }}
+limiterBurst: {{ .Values.dbConnConfig.limiterBurst }}
+
 {{- end -}}
 
 {{- define "bk-hcm.databaseConfig" -}}
@@ -57,8 +60,8 @@ resource:
     password:
 maxSlowLogLatencyMS: 200
 limiter:
-  qps: 500
-  burst: 500
+  qps: {{ $cfg.limiterQps }}
+  burst: {{ $cfg.limiterBurst }}
 {{- end -}}
 
 {{- define "bk-hcm.database.host" -}}

@@ -686,10 +686,10 @@ func (l *loggingT) printf(s severity, format string, args ...interface{}) {
 	// if log content <= LineMaxSize, not need to handle.
 	logContentLen := uint32(len(logContent))
 	if logContentLen <= LineMaxSize() {
-		fmt.Fprintf(buf, logContent)
+		fmt.Fprint(buf, logContent)
 	} else {
 		halfLineMaxSize := LineMaxSize() / 2
-		fmt.Fprintf(buf, logContent[:halfLineMaxSize]+lineWrapStandard+logContent[logContentLen-halfLineMaxSize:])
+		fmt.Fprint(buf, logContent[:halfLineMaxSize]+lineWrapStandard+logContent[logContentLen-halfLineMaxSize:])
 	}
 
 	if buf.Bytes()[buf.Len()-1] != '\n' {
@@ -707,10 +707,10 @@ func (l *loggingT) printDepthf(s severity, format string, depth int, args ...int
 	// if log content <= LineMaxSize, not need to handle.
 	logContentLen := uint32(len(logContent))
 	if logContentLen <= LineMaxSize() {
-		fmt.Fprintf(buf, logContent)
+		fmt.Fprint(buf, logContent)
 	} else {
 		halfLineMaxSize := LineMaxSize() / 2
-		fmt.Fprintf(buf, logContent[:halfLineMaxSize]+lineWrapStandard+logContent[logContentLen-halfLineMaxSize:])
+		fmt.Fprint(buf, logContent[:halfLineMaxSize]+lineWrapStandard+logContent[logContentLen-halfLineMaxSize:])
 	}
 
 	if buf.Bytes()[buf.Len()-1] != '\n' {

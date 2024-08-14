@@ -187,6 +187,7 @@ export const useBusinessStore = defineStore({
       internet_max_bandwidth_out?: number; // 最大出带宽
       delete_protect?: boolean; // 删除
       load_balancer_pass_to_target?: boolean; // Target是否放通来自CLB的流量
+      snat_pro?: boolean; // 跨域2.0开关
       memo?: string; // 备注
     }) {
       return http.patch(
@@ -505,6 +506,52 @@ export const useBusinessStore = defineStore({
      */
     getAsyncTaskDetail(flowId: string): Promise<AsyncTaskDetailResp> {
       return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/async_task/flows/${flowId}`);
+    },
+    /**
+     * 业务下新增腾讯云负载均衡SNAT IP
+     * @param lb_id 负载均衡id
+     * @param data 待新增SNAT IP数组. subnet_id 为 SNAT IP 所在子网cloud_id; ip 为指定IP, 留空自动生成
+     */
+    createSnatIps(lb_id: string, data: { snat_ips: { subnet_id: string; ip?: string }[] }) {
+      return http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/tcloud/load_balancers/${lb_id}/snat_ips/create`,
+        data,
+      );
+    },
+    /**
+     * 业务下删除腾讯云负载均衡SNAT IP
+     * @param lb_id 负载均衡id
+     * @param data 待删除SNAT IP地址数组
+     */
+    deleteSnatIps(lb_id: string, data: { delete_ips: string[] }) {
+      return http.delete(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/tcloud/load_balancers/${lb_id}/snat_ips`,
+        {
+          data,
+        },
+      );
+    },
+    /**
+     * 统计指定的目标组的权重情况
+     * @param target_group_ids 目标组id
+     */
+    reqStatTargetGroupRsWeight(target_group_ids: string[]) {
+      return http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/targets/weight_stat`,
+        { target_group_ids },
+      );
+    },
+    // 主机所关联资源(硬盘, eip)的个数
+    getRelResByCvmIds(data: { ids: string[] }) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}cvms/rel_res/batch`, data);
+    },
+    // 虚拟机回收
+    recycledCvmsData(data: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}cvms/recycle`, data);
+    },
+    // 操作主机相关
+    cvmOperate(type: string, data: { ids: string[] }) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}cvms/batch/${type}`, data);
     },
   },
 });

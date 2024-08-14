@@ -223,7 +223,7 @@ func (wd *watchDog) handleScheduledNotExistWorkerFlow(kt *kit.Kit) error {
 			Worker: converter.ValToPtr(""),
 		})
 	}
-	if err = wd.bd.BatchUpdateFlow(kt, flows); err != nil {
+	if err = wd.bd.BatchUpdateFlow(kt, mds); err != nil {
 		logs.Errorf("update flows failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}

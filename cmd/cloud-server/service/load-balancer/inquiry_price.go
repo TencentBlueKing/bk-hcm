@@ -1,3 +1,22 @@
+/*
+ * TencentBlueKing is pleased to support the open source community by making
+ * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
+ * Copyright (C) 2024 THL A29 Limited,
+ * a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ *
+ * We undertake not to change the open source license (MIT license) applicable
+ *
+ * to the current version of the project delivered to anyone in the future.
+ */
+
 package loadbalancer
 
 import (
@@ -5,9 +24,7 @@ import (
 	"fmt"
 
 	cloudserver "hcm/pkg/api/cloud-server"
-	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	hcproto "hcm/pkg/api/hc-service/load-balancer"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
@@ -47,39 +64,15 @@ func (svc *lbSvc) InquiryPriceLoadBalancer(cts *rest.Contexts) (any, error) {
 }
 
 func (svc *lbSvc) inquiryPriceTCloudLoadBalancer(kt *kit.Kit, body json.RawMessage) (any, error) {
-	req := new(cslb.TCloudBatchCreateReq)
+	req := new(hcproto.TCloudLoadBalancerCreateReq)
 	if err := json.Unmarshal(body, req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	if err := req.Validate(); err != nil {
+	if err := req.Validate(false); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-
-	hcReq := &hcproto.TCloudBatchCreateReq{
-		BkBizID:                 constant.UnassignedBiz,
-		AccountID:               req.AccountID,
-		Region:                  req.Region,
-		Name:                    req.Name,
-		LoadBalancerType:        req.LoadBalancerType,
-		AddressIPVersion:        req.AddressIPVersion,
-		Zones:                   req.Zones,
-		BackupZones:             req.BackupZones,
-		CloudVpcID:              req.CloudVpcID,
-		CloudSubnetID:           req.CloudSubnetID,
-		Vip:                     req.Vip,
-		CloudEipID:              req.CloudEipID,
-		VipIsp:                  req.VipIsp,
-		InternetChargeType:      req.InternetChargeType,
-		InternetMaxBandwidthOut: req.InternetMaxBandwidthOut,
-		BandwidthPackageID:      req.BandwidthPackageID,
-		SlaType:                 req.SlaType,
-		AutoRenew:               req.AutoRenew,
-		RequireCount:            req.RequireCount,
-		Memo:                    req.Memo,
-	}
-
-	result, err := svc.client.HCService().TCloud.Clb.InquiryPrice(kt, hcReq)
+	result, err := svc.client.HCService().TCloud.Clb.InquiryPrice(kt, req)
 	if err != nil {
 		logs.Errorf("inquiry price tcloud load balancer failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err

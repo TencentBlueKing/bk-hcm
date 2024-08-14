@@ -584,20 +584,58 @@ func genLoadBalancerResource(a *meta.ResourceAttribute) (client.ActionID, []clie
 		res.ID = a.ResourceID
 	}
 
-	bizRes := client.Resource{
-		System: sys.SystemIDCMDB,
-		Type:   sys.Biz,
-		ID:     strconv.FormatInt(a.BizID, 10),
+	if a.Basic.Action != meta.Assign && a.BizID > 0 {
+		return genBizLoadBalancerResource(a)
 	}
-
 	switch a.Basic.Action {
 	case meta.Associate, meta.Disassociate:
 		if a.BizID > 0 {
-			return sys.BizIaaSResOperate, []client.Resource{bizRes}, nil
+			bizRes := client.Resource{
+				System: sys.SystemIDCMDB,
+				Type:   sys.Biz,
+				ID:     strconv.FormatInt(a.BizID, 10),
+			}
+			return sys.BizCLBResOperate, []client.Resource{bizRes}, nil
 		}
 		return sys.IaaSResOperate, []client.Resource{res}, nil
+	case meta.Create, meta.Apply:
+		return sys.CLBResCreate, []client.Resource{res}, nil
+	case meta.Find, meta.Assign:
+		// find & assign action use generic cloud resource auth.
+		return genCloudResResource(a)
+	case meta.Update:
+		// update resource is related to hcm account resource
+		return sys.CLBResOperate, []client.Resource{res}, nil
+	case meta.Delete:
+		// delete resource is related to hcm account resource
+		return sys.CLBResDelete, []client.Resource{res}, nil
 	default:
-		return genIaaSResourceResource(a)
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+}
+
+func genBizLoadBalancerResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	res := client.Resource{
+		System: sys.SystemIDCMDB,
+		Type:   sys.Biz,
+	}
+
+	// compatible for authorize any
+	if a.BizID > 0 {
+		res.ID = strconv.FormatInt(a.BizID, 10)
+	}
+
+	switch a.Basic.Action {
+	case meta.Find:
+		return sys.BizAccess, []client.Resource{res}, nil
+	case meta.Create, meta.Apply:
+		return sys.BizCLBResCreate, []client.Resource{res}, nil
+	case meta.Update:
+		return sys.BizCLBResOperate, []client.Resource{res}, nil
+	case meta.Delete:
+		return sys.BizCLBResDelete, []client.Resource{res}, nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }
 
@@ -638,4 +676,45 @@ func genTargetGroupResource(a *meta.ResourceAttribute) (client.ActionID, []clien
 // genUrlRuleResource generate clb listener related iam resource.
 func genUrlRuleResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
 	return genIaaSResourceResource(a)
+}
+
+func genMainAccountRuleResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	res := client.Resource{
+		System: sys.SystemIDHCM,
+		Type:   sys.MainAccount,
+	}
+	if len(a.ResourceID) > 0 {
+		res.ID = a.ResourceID
+	}
+
+	switch a.Basic.Action {
+	case meta.Find:
+		return sys.MainAccountFind, []client.Resource{res}, nil
+	case meta.Update:
+		return sys.MainAccountEdit, []client.Resource{res}, nil
+	case meta.Create:
+		return sys.MainAccountCreate, []client.Resource{res}, nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+
+}
+
+func genRootAccountRuleResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	switch a.Basic.Action {
+	case meta.Find, meta.Create, meta.Update:
+		return sys.RootAccountManage, make([]client.Resource, 0), nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+}
+
+// 生成账单账号权限映射
+func genAccountBillResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	switch a.Basic.Action {
+	case meta.Find, meta.Delete, meta.Import, meta.Create, meta.Update, meta.Access:
+		return sys.AccountBillManage, make([]client.Resource, 0), nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
 }

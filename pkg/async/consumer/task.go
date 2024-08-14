@@ -160,7 +160,7 @@ func (task *Task) prepareParams(act action.Action) (params any, err error) {
 func (task *Task) rollback(params interface{}, act action.Action) error {
 	rollbackAct, ok := act.(action.RollbackAction)
 	if !ok {
-		return fmt.Errorf("action: %s not has RollbackAction", act.Name())
+		return fmt.Errorf("action: %s has no RollbackAction", act.Name())
 	}
 
 	if err := rollbackAct.Rollback(task.ExecuteKit, params); err != nil {

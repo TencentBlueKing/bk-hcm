@@ -5,6 +5,7 @@ import { usePreviousState } from '@/hooks/usePreviousState';
 import { useResourceStore } from '@/store';
 import { AngleDown } from 'bkui-vue/lib/icon';
 import { BkDropdownItem, BkDropdownMenu } from 'bkui-vue/lib/dropdown';
+import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
 import CommonLocalTable from '../commonLocalTable';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
 import http from '@/http';
@@ -99,17 +100,26 @@ export default defineComponent({
       },
     ]);
 
+    const getPrivateIPs = (data: any) => {
+      return [...(data.private_ipv4_addresses || []), ...(data.private_ipv6_addresses || [])].join(',') || '--';
+    };
+    const getPublicIPs = (data: any) => {
+      return [...(data.public_ipv4_addresses || []), ...(data.public_ipv6_addresses || [])].join(',') || '--';
+    };
+    const selectedRowPrivateIPs = computed(() => props.selections.map(getPrivateIPs));
+    const selectedRowPublicIPs = computed(() => props.selections.map(getPublicIPs));
+
     const computedColumns = computed(() =>
       [
         {
           field: '_private_ip',
           label: '内网IP',
-          render: ({ data }: any) => [...data.private_ipv4_addresses, ...data.private_ipv6_addresses].join(',') || '--',
+          render: ({ data }: any) => getPrivateIPs(data),
         },
         {
           field: '_public_ip',
           label: '外网IP',
-          render: ({ data }: any) => [...data.public_ipv4_addresses, ...data.public_ipv6_addresses].join(',') || '--',
+          render: ({ data }: any) => getPublicIPs(data),
         },
         {
           field: 'name',
@@ -157,7 +167,7 @@ export default defineComponent({
                 if (isChecked) withEipSet.value.add(data.id);
                 else withEipSet.value.delete(data.id);
               }}>
-              {cvmRelResMap.value.get(data.id)?.eip.join(',') || '--'}
+              {cvmRelResMap.value.get(data.id)?.eip?.join(',') || '--'}
             </Checkbox>
           ),
         },
@@ -396,6 +406,16 @@ export default defineComponent({
                       {`批量${opName}`}
                     </BkDropdownItem>
                   ))}
+                  <CopyToClipboard
+                    type='dropdown-item'
+                    text='复制内网IP'
+                    content={selectedRowPrivateIPs.value?.join?.(',')}
+                  />
+                  <CopyToClipboard
+                    type='dropdown-item'
+                    text='复制公网IP'
+                    content={selectedRowPublicIPs.value?.join?.(',')}
+                  />
                 </BkDropdownMenu>
               ),
             }}
@@ -406,12 +426,11 @@ export default defineComponent({
           isShow={isDialogShow.value}
           // quick-close={!isLoading.value}
           quickClose={false}
-          onClosed={() => (operationType.value = Operations.None)}
-          onConfirm={handleConfirm}
           title={computedTitle.value}
           ref={dialogRef}
           width={1500}
-          closeIcon={!isLoading.value}>
+          closeIcon={!isLoading.value}
+          onClosed={() => (operationType.value = Operations.None)}>
           {{
             default: () => (
               <Loading loading={isDialogLoading.value}>
@@ -437,13 +456,13 @@ export default defineComponent({
             footer: (
               <>
                 <Button
-                  onClick={dialogRef?.value?.handleConfirm}
+                  onClick={handleConfirm}
                   theme='primary'
                   disabled={isConfirmDisabled.value}
                   loading={isLoading.value}>
                   {OperationsMap[operationType.value]}
                 </Button>
-                <Button onClick={dialogRef?.value?.handleClose} class='ml10' disabled={isLoading.value}>
+                <Button onClick={() => (operationType.value = Operations.None)} class='ml10' disabled={isLoading.value}>
                   取消
                 </Button>
               </>

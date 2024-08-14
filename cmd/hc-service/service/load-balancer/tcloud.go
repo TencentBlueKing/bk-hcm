@@ -56,6 +56,10 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 	h.Add("BatchDeleteTCloudLoadBalancer", http.MethodDelete,
 		"/vendors/tcloud/load_balancers/batch", svc.BatchDeleteTCloudLoadBalancer)
 	h.Add("ListQuotaTCloudLB", http.MethodPost, "/vendors/tcloud/load_balancers/quota", svc.ListTCloudLBQuota)
+	h.Add("TCloudCreateSnatIps", http.MethodPost,
+		"/vendors/tcloud/load_balancers/snat_ips/create", svc.TCloudCreateSnatIps)
+	h.Add("TCloudDeleteSnatIps", http.MethodDelete,
+		"/vendors/tcloud/load_balancers/snat_ips", svc.TCloudDeleteSnatIps)
 
 	h.Add("TCloudCreateUrlRule", http.MethodPost,
 		"/vendors/tcloud/listeners/{lbl_id}/rules/batch/create", svc.TCloudCreateUrlRule)
@@ -74,20 +78,20 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 	h.Add("DeleteTCloudListener", http.MethodDelete, "/vendors/tcloud/listeners/batch", svc.DeleteTCloudListener)
 
 	// 域名、规则
-	h.Add("UpdateTCloudDomainAttr", http.MethodPatch, "/vendors/tcloud/listeners/{lbl_id}/domains",
-		svc.UpdateTCloudDomainAttr)
+	h.Add("UpdateTCloudDomainAttr", http.MethodPatch,
+		"/vendors/tcloud/listeners/{lbl_id}/domains", svc.UpdateTCloudDomainAttr)
 
 	// 目标组
-	h.Add("BatchCreateTCloudTargets", http.MethodPost, "/vendors/tcloud/target_groups/{target_group_id}/targets/create",
-		svc.BatchCreateTCloudTargets)
+	h.Add("BatchCreateTCloudTargets", http.MethodPost,
+		"/vendors/tcloud/target_groups/{target_group_id}/targets/create", svc.BatchCreateTCloudTargets)
 	h.Add("BatchRemoveTCloudTargets", http.MethodDelete,
 		"/vendors/tcloud/target_groups/{target_group_id}/targets/batch", svc.BatchRemoveTCloudTargets)
 	h.Add("BatchModifyTCloudTargetsPort", http.MethodPatch,
 		"/vendors/tcloud/target_groups/{target_group_id}/targets/port", svc.BatchModifyTCloudTargetsPort)
 	h.Add("BatchModifyTCloudTargetsWeight", http.MethodPatch,
 		"/vendors/tcloud/target_groups/{target_group_id}/targets/weight", svc.BatchModifyTCloudTargetsWeight)
-	h.Add("ListTCloudTargetsHealth", http.MethodPost, "/vendors/tcloud/load_balancers/targets/health",
-		svc.ListTCloudTargetsHealth)
+	h.Add("ListTCloudTargetsHealth", http.MethodPost,
+		"/vendors/tcloud/load_balancers/targets/health", svc.ListTCloudTargetsHealth)
 
 	h.Add("RegisterTargetToListenerRule", http.MethodPost,
 		"/vendors/tcloud/load_balancers/{lb_id}/targets/create", svc.RegisterTargetToListenerRule)
@@ -99,12 +103,12 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 
 // BatchCreateTCloudClb ...
 func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error) {
-	req := new(protolb.TCloudBatchCreateReq)
+	req := new(protolb.TCloudLoadBalancerCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	if err := req.Validate(); err != nil {
+	if err := req.Validate(false); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
@@ -129,6 +133,8 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 		SlaType:            req.SlaType,
 		Number:             req.RequireCount,
 		ClientToken:        cvt.StrNilPtr(cts.Kit.Rid),
+
+		BandwidthpkgSubType: req.BandwidthpkgSubType,
 	}
 	if cvt.PtrToVal(req.CloudEipID) != "" {
 		createOpt.EipAddressID = req.CloudEipID
@@ -180,7 +186,7 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 	return respData, nil
 }
 
-func (svc *clbSvc) createTCloudDBLoadBalancer(cts *rest.Contexts, req *protolb.TCloudBatchCreateReq,
+func (svc *clbSvc) createTCloudDBLoadBalancer(cts *rest.Contexts, req *protolb.TCloudLoadBalancerCreateReq,
 	cloudIDs []string) (err error) {
 
 	dataReq := &dataproto.TCloudCLBCreateReq{Lbs: make([]dataproto.TCloudCLBCreate, len(cloudIDs))}
@@ -223,13 +229,13 @@ func (svc *clbSvc) ListTCloudClb(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
+	if req.Page.Limit > adcore.TCloudQueryLimit {
+		req.Page.Limit = adcore.TCloudQueryLimit
+	}
 	opt := &typelb.TCloudListOption{
 		Region:   req.Region,
 		CloudIDs: req.CloudIDs,
-		Page: &adcore.TCloudPage{
-			Offset: 0,
-			Limit:  adcore.TCloudQueryLimit,
-		},
+		Page:     req.Page,
 	}
 	result, err := tcloudAdpt.ListLoadBalancer(cts.Kit, opt)
 	if err != nil {
@@ -300,6 +306,11 @@ func (svc *clbSvc) TCloudUpdateCLB(cts *rest.Contexts) (any, error) {
 		SnatPro:                  req.SnatPro,
 		DeleteProtect:            req.DeleteProtect,
 		ModifyClassicDomain:      req.ModifyClassicDomain,
+	}
+
+	if req.TargetRegion != nil || req.TargetCloudVpcID != nil {
+		adtOpt.TargetRegionInfo.Region = req.TargetRegion
+		adtOpt.TargetRegionInfo.VpcId = req.TargetCloudVpcID
 	}
 
 	_, err = client.UpdateLoadBalancer(cts.Kit, adtOpt)
@@ -632,7 +643,7 @@ func (svc *clbSvc) UpdateTCloudListener(cts *rest.Contexts) (any, error) {
 		logs.Errorf("fail to call tcloud update listener(id:%s), err: %v, rid: %s", lblID, err, cts.Kit.Rid)
 		return nil, err
 	}
-	if err := svc.lblSync(cts.Kit, client, &lbInfo.BaseLoadBalancer); err != nil {
+	if err := svc.lblSync(cts.Kit, client, &lbInfo.BaseLoadBalancer, []string{lblInfo.CloudID}); err != nil {
 		// 调用同步的方法内会打印错误，这里只标记调用方
 		logs.Errorf("fail to sync listener for update listener(%s), rid: %s", lblInfo.ID, cts.Kit.Rid)
 		return nil, err
@@ -692,7 +703,7 @@ func (svc *clbSvc) UpdateTCloudListenerHealthCheck(cts *rest.Contexts) (any, err
 		logs.Errorf("fail to call tcloud update listener(id:%s), err: %v, rid: %s", lblID, err, cts.Kit.Rid)
 		return nil, err
 	}
-	if err := svc.lblSync(cts.Kit, client, &lbInfo.BaseLoadBalancer); err != nil {
+	if err := svc.lblSync(cts.Kit, client, &lbInfo.BaseLoadBalancer, []string{lblInfo.CloudID}); err != nil {
 		// 调用同步的方法内会打印错误，这里只标记调用方
 		logs.Errorf("fail to sync listener for update listener(%s), rid: %s", lblInfo.ID, cts.Kit.Rid)
 		return nil, err
@@ -929,7 +940,7 @@ func (svc *clbSvc) updateTCloudDomainAttr(kt *kit.Kit, req *protolb.DomainAttrUp
 		logs.Errorf("fail to call tcloud update domain attr, err: %v, lblID: %s, rid: %s", err, lblInfo.ID, kt.Rid)
 		return err
 	}
-	if err := svc.lblSync(kt, client, &lbInfo.BaseLoadBalancer); err != nil {
+	if err := svc.lblSync(kt, client, &lbInfo.BaseLoadBalancer, []string{lblInfo.CloudID}); err != nil {
 		// 调用同步的方法内会打印错误，这里只标记调用方
 		logs.Errorf("fail to sync listener for update domain(%s), lblID: %s, rid: %s",
 			domainOpt.Domain, lblInfo.ID, kt.Rid)
@@ -995,16 +1006,16 @@ func (svc *clbSvc) BatchDeleteTCloudLoadBalancer(cts *rest.Contexts) (any, error
 
 // InquiryPriceTCloudLB inquiry price tcloud clb.
 func (svc *clbSvc) InquiryPriceTCloudLB(cts *rest.Contexts) (any, error) {
-	req := new(protolb.TCloudBatchCreateReq)
+	req := new(protolb.TCloudLoadBalancerCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
-	if err := req.Validate(); err != nil {
+	if err := req.Validate(false); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	tcloud, err := svc.ad.TCloud(cts.Kit, req.AccountID)
+	adaptor, err := svc.ad.TCloud(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -1023,6 +1034,7 @@ func (svc *clbSvc) InquiryPriceTCloudLB(cts *rest.Contexts) (any, error) {
 
 		InternetChargeType:      req.InternetChargeType,
 		InternetMaxBandwidthOut: req.InternetMaxBandwidthOut,
+		BandwidthpkgSubType:     req.BandwidthpkgSubType,
 
 		BandwidthPackageID: req.BandwidthPackageID,
 		SlaType:            req.SlaType,
@@ -1047,7 +1059,7 @@ func (svc *clbSvc) InquiryPriceTCloudLB(cts *rest.Contexts) (any, error) {
 			createOpt.ZoneID = cvt.ValToPtr(req.Zones[0])
 		}
 	}
-	result, err := tcloud.InquiryPriceLoadBalancer(cts.Kit, createOpt)
+	result, err := adaptor.InquiryPriceLoadBalancer(cts.Kit, createOpt)
 	if err != nil {
 		logs.Errorf("inquiry load balancer price failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
@@ -1067,12 +1079,12 @@ func (svc *clbSvc) ListTCloudLBQuota(cts *rest.Contexts) (any, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	tcloud, err := svc.ad.TCloud(cts.Kit, req.AccountID)
+	adaptor, err := svc.ad.TCloud(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
-	result, err := tcloud.ListLoadBalancerQuota(cts.Kit, &typelb.ListTCloudLoadBalancerQuotaOption{
+	result, err := adaptor.ListLoadBalancerQuota(cts.Kit, &typelb.ListTCloudLoadBalancerQuotaOption{
 		Region: req.Region,
 	})
 	if err != nil {

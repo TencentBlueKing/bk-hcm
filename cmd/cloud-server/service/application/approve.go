@@ -35,6 +35,9 @@ import (
 	gcpdiskhandler "hcm/cmd/cloud-server/service/application/handlers/disk/gcp"
 	huaweidiskhandler "hcm/cmd/cloud-server/service/application/handlers/disk/huawei"
 	tclouddiskhandler "hcm/cmd/cloud-server/service/application/handlers/disk/tcloud"
+	"hcm/cmd/cloud-server/service/application/handlers/load_balancer/tcloud"
+	createmainaccount "hcm/cmd/cloud-server/service/application/handlers/main-account/create-main-account"
+	updatemainaccount "hcm/cmd/cloud-server/service/application/handlers/main-account/update-main-account"
 	awsvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/aws"
 	azurevpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/azure"
 	gcpvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/gcp"
@@ -45,6 +48,7 @@ import (
 	csdisk "hcm/pkg/api/cloud-server/disk"
 	csvpc "hcm/pkg/api/cloud-server/vpc"
 	dataproto "hcm/pkg/api/data-service"
+	hclb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -258,9 +262,24 @@ func (a *applicationSvc) getHandlerOfCreateDisk(
 	}
 }
 
-func (a *applicationSvc) getHandlerByApplication(
-	cts *rest.Contexts, application *dataproto.ApplicationResp,
-) (handlers.ApplicationHandler, error) {
+func (a *applicationSvc) getHandlerOfCreateLoadBalancer(opt *handlers.HandlerOption, vendor enumor.Vendor,
+	application *dataproto.ApplicationResp) (handlers.ApplicationHandler, error) {
+
+	switch vendor {
+	case enumor.TCloud:
+		req, err := parseReqFromApplicationContent[hclb.TCloudLoadBalancerCreateReq](application.Content)
+		if err != nil {
+			return nil, err
+		}
+		return tcloud.NewApplicationOfCreateTCloudLB(opt, req), nil
+	default:
+		return nil, fmt.Errorf("not support handler of create %s load balancer", vendor)
+	}
+}
+
+func (a *applicationSvc) getHandlerByApplication(cts *rest.Contexts, application *dataproto.ApplicationResp) (
+	handlers.ApplicationHandler, error) {
+
 	opt := a.getHandlerOption(cts)
 
 	// 只解析申请单的vendor
@@ -286,6 +305,20 @@ func (a *applicationSvc) getHandlerByApplication(
 		return a.getHandlerOfCreateVpc(opt, vendor, application)
 	case enumor.CreateDisk:
 		return a.getHandlerOfCreateDisk(opt, vendor, application)
+	case enumor.CreateLoadBalancer:
+		return a.getHandlerOfCreateLoadBalancer(opt, vendor, application)
+	case enumor.CreateMainAccount:
+		req, err := parseReqFromApplicationContent[proto.MainAccountCreateReq](application.Content)
+		if err != nil {
+			return nil, err
+		}
+		return createmainaccount.NewApplicationOfCreateMainAccount(opt, a.authorizer, req, nil), nil
+	case enumor.UpdateMainAccount:
+		req, err := parseReqFromApplicationContent[proto.MainAccountUpdateReq](application.Content)
+		if err != nil {
+			return nil, err
+		}
+		return updatemainaccount.NewApplicationOfUpdateMainAccount(opt, a.authorizer, req), nil
 	}
 	return nil, errors.New("not handler to support")
 }

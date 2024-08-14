@@ -5,6 +5,7 @@ import Confirm from '@/components/confirm';
 import { useLoadBalancerStore, useAccountStore, useBusinessStore } from '@/store';
 import useMoreActionDropdown from '@/hooks/useMoreActionDropdown';
 import { useSingleList } from '@/hooks/useSingleList';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { throttle } from 'lodash';
 import bus from '@/common/bus';
 import { LBRouteName } from '@/constants';
@@ -17,6 +18,7 @@ export default defineComponent({
   name: 'TargetGroupList',
   setup() {
     // use hooks
+    const { getBusinessApiPath } = useWhereAmI();
     const router = useRouter();
     const route = useRoute();
     // use stores
@@ -32,7 +34,8 @@ export default defineComponent({
 
     // 获取目标组列表
     const rules = ref([]);
-    const { dataList, pagination, handleScrollEnd, handleRefresh } = useSingleList('target_groups', {
+    const { dataList, pagination, handleScrollEnd, handleRefresh } = useSingleList({
+      url: `/api/v1/cloud/${getBusinessApiPath()}target_groups/list`,
       rules: () => rules.value,
       immediate: !loadBalancerStore.tgSearchTarget,
     });

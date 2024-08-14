@@ -24,15 +24,16 @@ import (
 
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
+	"hcm/pkg/api/data-service/cloud/eip"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/runtime/filter"
 )
 
 // GetVpc 查询VPC
-func (a *BaseApplicationHandler) GetVpc(
-	vendor enumor.Vendor, accountID, cloudVpcID string,
-) (*corecloud.BaseVpc, error) {
+func (a *BaseApplicationHandler) GetVpc(vendor enumor.Vendor, accountID, cloudVpcID string) (
+	*corecloud.BaseVpc, error) {
+
 	reqFilter := &filter.Expression{
 		Op: filter.And,
 		Rules: []filter.RuleFactory{
@@ -100,4 +101,29 @@ func (a *BaseApplicationHandler) GetGcpVpcWithExt(vpcID string) (*corecloud.Vpc[
 		return nil, fmt.Errorf("not found gcp vpc by id(%s)", vpcID)
 	}
 	return &resp.Details[0], nil
+}
+
+// GetEip 获取eip信息
+func (a *BaseApplicationHandler) GetEip(vendor enumor.Vendor, accountID string, cloudEipID string) (
+	*eip.EipResult, error) {
+
+	reqFilter := tools.ExpressionAnd(
+		tools.RuleEqual("vendor", vendor),
+		tools.RuleEqual("account_id", accountID),
+		tools.RuleEqual("cloud_id", cloudEipID),
+	)
+	// 查询
+	resp, err := a.Client.DataService().Global.ListEip(a.Cts.Kit, &core.ListReq{
+		Filter: reqFilter,
+		Page:   a.getPageOfOneLimit(),
+	},
+	)
+	if err != nil {
+		return nil, err
+	}
+	if resp == nil || len(resp.Details) == 0 {
+		return nil, fmt.Errorf("not found %s eip by cloud_id(%s)", vendor, cloudEipID)
+	}
+
+	return resp.Details[0], nil
 }

@@ -22,7 +22,6 @@ export default defineComponent({
     // 根据urlKey获取权限链接
     const getAuthActionUrl = async () => {
       const { authVerifyData } = commonStore;
-      console.log(authVerifyData.urlParams, urlKey.value);
       if (authVerifyData) {
         // 权限矩阵数据
         const params = authVerifyData.urlParams[urlKey.value]; // 获取权限链接需要的参数
@@ -65,7 +64,6 @@ export default defineComponent({
     watch(
       () => props.urlKeyId,
       (key: any, oldKey: any) => {
-        console.log(key, oldKey);
         if (key === oldKey) return;
         urlKey.value = key;
         getAuthActionUrl();
@@ -89,7 +87,7 @@ export default defineComponent({
 
   render() {
     return (
-      <div>
+      <div class='error-page-container'>
         <div class='forbid-layout'>
           <img src={permissions} alt='403' />
           <h2>{this.t('抱歉，您暂无该功能的权限')}</h2>
@@ -97,6 +95,11 @@ export default defineComponent({
         </div>
         <div class='describe'>
           <h2 class='mt20'>权限申请说明：</h2>
+          {this.urlKey === 'main_account_find' && (
+            <>
+              <p class='mt5 sub-describe'>{'当前无"账号-二级账号查看"权限'}</p>
+            </>
+          )}
           {this.urlKey === 'cloud_selection_recommend' && (
             <>
               <p class='mt5 sub-describe'>{'当前无“资源选型-选型推荐”的权限'}</p>
@@ -160,6 +163,15 @@ export default defineComponent({
           )}
 
           <h2 class='mt20'>功能说明：</h2>
+          {this.urlKey === 'main_account_find' && (
+            <>
+              <p class='mt5 sub-describe'>
+                {
+                  '二级账号，是由公司和云厂商签订合同协议后，以公司为主体在云上申请独立的云账号，供业务使用。不同二级账号之间的资源是隔离的。'
+                }
+              </p>
+            </>
+          )}
           {this.urlKey === 'cloud_selection_recommend' && (
             <>
               <p class='mt5 sub-describe'>

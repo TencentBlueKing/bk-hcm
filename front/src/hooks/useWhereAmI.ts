@@ -1,5 +1,7 @@
 import { Ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
+import { useAccountStore } from '@/store';
+import { getQueryStringParams, localStorageActions } from '@/common/util';
 
 export const useWhereAmI = (): {
   whereAmI: Ref<Senarios>;
@@ -8,6 +10,8 @@ export const useWhereAmI = (): {
   isServicePage: boolean;
   isWorkbenchPage: boolean;
   isSchemePage: boolean;
+  getBusinessApiPath: () => string;
+  getBizsId: () => number;
 } => {
   const route = useRoute();
   const senario = computed(() => {
@@ -17,8 +21,23 @@ export const useWhereAmI = (): {
     if (/^\/service\/.+$/.test(route.path)) return Senarios.service;
     if (/^\/workbench\/.+$/.test(route.path)) return Senarios.workbench;
     if (/^\/scheme\/.+$/.test(route.path)) return Senarios.scheme;
+    if (/^\/bill\/.+$/.test(route.path)) return Senarios.bill;
+    if (/^\/403\/.+$/.test(route.path)) return Senarios.unauthorized;
     return Senarios.unknown;
   });
+
+  const getBizsId = () => {
+    const { bizs } = useAccountStore();
+    return Number(bizs || getQueryStringParams('bizs') || localStorageActions.get('bizs'));
+  };
+
+  /**
+   * @returns 业务下需要拼接的 API 路径
+   */
+  const getBusinessApiPath = () => {
+    return senario.value === Senarios.business ? `bizs/${getBizsId()}/` : '';
+  };
+
   return {
     whereAmI: senario,
     isResourcePage: senario.value === Senarios.resource,
@@ -26,6 +45,8 @@ export const useWhereAmI = (): {
     isServicePage: senario.value === Senarios.service,
     isWorkbenchPage: senario.value === Senarios.workbench,
     isSchemePage: senario.value === Senarios.scheme,
+    getBusinessApiPath,
+    getBizsId,
   };
 };
 
@@ -35,5 +56,7 @@ export enum Senarios {
   service = 'service',
   workbench = 'workbench',
   scheme = 'scheme',
+  bill = 'bill',
   unknown = 'unknown',
+  unauthorized = 'unauthorized',
 }

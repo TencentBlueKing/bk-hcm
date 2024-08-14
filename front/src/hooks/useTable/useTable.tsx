@@ -1,13 +1,12 @@
 /* eslint-disable no-nested-ternary */
 import { QueryRuleOPEnum, RulesItem } from '@/typings/common';
-import { FilterType } from '@/typings';
 import { Loading, SearchSelect, Table } from 'bkui-vue';
 import type { Column } from 'bkui-vue/lib/table/props';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import { computed, defineComponent, reactive, ref, watch } from 'vue';
-import './index.scss';
+import cssModule from './index.module.scss';
 import Empty from '@/components/empty';
-import { useAccountStore, useResourceStore, useBusinessStore } from '@/store';
+import { useResourceStore, useBusinessStore } from '@/store';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useWhereAmI, Senarios } from '../useWhereAmI';
@@ -16,10 +15,13 @@ import { get as lodash_get } from 'lodash-es';
 import { VendorReverseMap } from '@/common/constant';
 import { LB_NETWORK_TYPE_REVERSE_MAP, LISTENER_BINDING_STATUS_REVERSE_MAP, SCHEDULER_REVERSE_MAP } from '@/constants';
 import usePagination from '../usePagination';
+import useBillStore from '@/store/useBillStore';
+import { defaults, isEqual } from 'lodash';
+import { fetchData } from '@pluginHandler/useTable';
 
 export interface IProp {
   // search-select 配置项
-  searchOptions: {
+  searchOptions?: {
     // search-select 可选项
     searchData?: Array<ISearchItem> | (() => Array<ISearchItem>);
     // 是否禁用 search-select
@@ -39,9 +41,11 @@ export interface IProp {
     extra?: Object;
   };
   // 请求相关字段
-  requestOption: {
-    // 资源类型
-    type: string;
+  requestOption?: {
+    // 资源类型，与 apiMethod 互斥
+    type?: string;
+    // 请求方法，与 type 互斥
+    apiMethod?: (...args: any) => Promise<any>;
     // 排序参数
     sortOption?: {
       sort: string; // 需要排序的字段
@@ -50,7 +54,7 @@ export interface IProp {
     // 筛选参数
     filterOption?: {
       // 规则
-      rules: Array<RulesItem>;
+      rules?: Array<RulesItem>;
       // Tab 切换时选用项(如选中全部时, 删除对应的 rule)
       deleteOption?: {
         field: string;
@@ -60,25 +64,29 @@ export interface IProp {
       fuzzySwitch?: boolean;
     };
     // 请求需要的额外荷载数据
-    extension?: Record<string, any>;
+    extension?: Record<string, any> | (() => Record<string, any>);
     // 钩子 - 可以根据当前请求结果异步更新 dataList
     resolveDataListCb?: (...args: any) => Promise<any>;
     // 钩子 - 可以根据当前请求结果异步更新 pagination.count
     resolvePaginationCountCb?: (...args: any) => Promise<any>;
     // 列表数据的路径，如 data.details
     dataPath?: string;
+    // 是否为全量数据
+    full?: boolean;
+    // 是否立即请求
+    immediate?: boolean;
   };
-  // 资源下筛选业务功能相关的 prop
-  bizFilter?: FilterType;
 }
 
 export const useTable = (props: IProp) => {
+  defaults(props, { requestOption: {} });
+  defaults(props.requestOption, { dataPath: 'data.details', immediate: true });
+
   const { whereAmI } = useWhereAmI();
 
   const regionsStore = useRegionsStore();
   const resourceStore = useResourceStore();
   const businessStore = useBusinessStore();
-  const accountStore = useAccountStore();
   const businessMapStore = useBusinessMapStore();
 
   const searchVal = ref('');
@@ -96,7 +104,6 @@ export const useTable = (props: IProp) => {
 
   // 钩子 - 表头排序时
   const handleSort = ({ column, type }: any) => {
-    pagination.start = 0;
     sort.value = column.field;
     order.value = type === 'asc' ? 'ASC' : 'DESC';
     // 如果type为null，则默认排序
@@ -111,9 +118,19 @@ export const useTable = (props: IProp) => {
    * 请求表格数据
    * @param customRules 自定义规则
    * @param type 资源类型
+   * @param type 标志当前为独立的请求，无需合并之前的filter
    */
-  const getListData = async (customRules: Array<RulesItem> = [], type?: string) => {
-    buildFilter({ rules: customRules });
+  const getListData = async (
+    customRules: Array<RulesItem> | (() => Array<RulesItem>) = [],
+    type?: string,
+    isInvidual = false,
+    differenceFields?: Array<string>,
+  ) => {
+    buildFilter({
+      rules: typeof customRules === 'function' ? customRules() : customRules,
+      isInvidual,
+      differenceFields,
+    });
     // 预览
     if (props.tableOptions.reviewData) {
       dataList.value = props.tableOptions.reviewData;
@@ -121,84 +138,100 @@ export const useTable = (props: IProp) => {
     }
     isLoading.value = true;
 
-    // 判断是业务下, 还是资源下
-    const api = whereAmI.value === Senarios.business ? businessStore.list : resourceStore.list;
-    // 请求数据
-    const [detailsRes, countRes] = await Promise.all(
-      [false, true].map((isCount) =>
-        api(
-          {
-            page: {
-              limit: isCount ? 0 : pagination.limit,
-              start: isCount ? 0 : pagination.start,
-              sort: isCount ? undefined : sort.value,
-              order: isCount ? undefined : order.value,
-              count: isCount,
-            },
-            filter: { op: filter.op, rules: filter.rules },
-            ...props.requestOption.extension,
-          },
-          type ? type : props.requestOption.type,
-        ),
-      ),
-    );
-    // 更新数据
-    dataList.value = props.requestOption.dataPath
-      ? lodash_get(detailsRes, props.requestOption.dataPath)
-      : detailsRes?.data?.details;
+    try {
+      // 判断是业务下, 还是资源下
+      let api = whereAmI.value === Senarios.business ? businessStore.list : resourceStore.list;
+      if (whereAmI.value === Senarios.bill) api = useBillStore().list;
+      const [detailsRes, countRes] = await fetchData({ api, pagination, sort, order, filter, props, type });
 
-    // 异步处理 dataList
-    if (typeof props.requestOption.resolveDataListCb === 'function') {
-      props.requestOption.resolveDataListCb(dataList.value, getListData).then((newDataList: any[]) => {
-        dataList.value = newDataList;
-      });
+      // 更新数据
+      dataList.value = lodash_get(detailsRes, props.requestOption.dataPath, []) || [];
+
+      // 异步处理 dataList
+      if (typeof props.requestOption.resolveDataListCb === 'function') {
+        props.requestOption.resolveDataListCb(dataList.value, getListData).then((newDataList: any[]) => {
+          dataList.value = newDataList;
+        });
+      }
+
+      // 处理 pagination.count
+      if (typeof props.requestOption.resolvePaginationCountCb === 'function') {
+        props.requestOption.resolvePaginationCountCb(countRes?.data).then((newCount: number) => {
+          pagination.count = newCount;
+        });
+      } else {
+        pagination.count = (countRes === null ? detailsRes.data.count : countRes.data.count) || 0;
+      }
+    } catch (error) {
+      dataList.value = [];
+      pagination.count = 0;
+    } finally {
+      isLoading.value = false;
     }
-
-    // 处理 pagination.count
-    if (typeof props.requestOption.resolvePaginationCountCb === 'function') {
-      props.requestOption.resolvePaginationCountCb(countRes?.data).then((newCount: number) => {
-        pagination.count = newCount;
-      });
-    } else {
-      pagination.count = countRes?.data?.count || 0;
-    }
-
-    isLoading.value = false;
   };
 
   const CommonTable = defineComponent({
-    setup(_props, { slots }) {
+    setup(_props, { slots, expose }) {
       const searchData = computed(() => {
         return (
-          (typeof props.searchOptions.searchData === 'function'
+          (typeof props.searchOptions?.searchData === 'function'
             ? props.searchOptions.searchData()
             : props.searchOptions.searchData) || []
         );
       });
 
+      const hasTopBar = computed(() => {
+        return slots.tableToolbar || slots.operation || slots.operationBarEnd;
+      });
+
+      const getTableHeight = () => {
+        const baseHeight = '100%';
+        const topBarHeight = hasTopBar.value ? 48 : 0;
+        const toolBarHeight = slots.tableToolbar ? 40 : 0;
+        const totalHeight = topBarHeight + toolBarHeight;
+
+        return totalHeight ? `calc(${baseHeight} - ${totalHeight}px)` : baseHeight;
+      };
+
+      const tableRef = ref();
+
+      expose({ tableRef });
+
       return () => (
-        <div class={`remote-table-container${props.searchOptions.disabled ? ' no-search' : ''}`}>
-          <section class='operation-wrap'>
-            {slots.operation && <div class='operate-btn-groups'>{slots.operation?.()}</div>}
-            {!props.searchOptions.disabled && (
-              <SearchSelect
-                class='table-search-selector'
-                style={props.searchOptions?.extra?.searchSelectExtStyle}
-                v-model={searchVal.value}
-                data={searchData.value}
-                valueBehavior='need-key'
-                {...(props.searchOptions.extra || {})}
-              />
-            )}
-          </section>
-          <Loading loading={isLoading.value} class='loading-table-container'>
+        <div
+          class={{
+            [cssModule['remote-table-container']]: true,
+            [cssModule['no-search']]: props.searchOptions?.disabled,
+          }}>
+          {hasTopBar.value && (
+            <section class={cssModule['top-bar']}>
+              {slots.operation && <div class={cssModule['operate-btn-groups']}>{slots.operation?.()}</div>}
+              {!props.searchOptions.disabled && (
+                <SearchSelect
+                  class={cssModule['table-search-selector']}
+                  style={props.searchOptions?.extra?.searchSelectExtStyle}
+                  v-model={searchVal.value}
+                  data={searchData.value}
+                  valueBehavior='need-key'
+                  {...(props.searchOptions?.extra || {})}
+                />
+              )}
+              {slots.operationBarEnd && <div class={cssModule['operation-bar-end']}>{slots.operationBarEnd()}</div>}
+            </section>
+          )}
+          {slots.tableToolbar?.()}
+          <Loading
+            loading={isLoading.value}
+            opacity={1}
+            class={cssModule['loading-wrapper']}
+            style={{ height: getTableHeight() }}>
             <Table
-              class='table-container'
+              ref={tableRef}
               data={dataList.value}
               rowKey='id'
               columns={props.tableOptions.columns}
               pagination={pagination}
-              remotePagination
+              remotePagination={!props.requestOption.full}
               showOverflowTooltip
               {...(props.tableOptions.extra || {})}
               onPageLimitChange={handlePageLimitChange}
@@ -206,8 +239,9 @@ export const useTable = (props: IProp) => {
               onColumnSort={handleSort}
               onColumnFilter={() => {}}>
               {{
+                expandRow: (row: any) => slots.expandRow?.(row),
                 empty: () => {
-                  if (isLoading.value) return null;
+                  if (isLoading.value || dataList.value?.length) return null;
                   return <Empty />;
                 },
               }}
@@ -246,10 +280,10 @@ export const useTable = (props: IProp) => {
    */
   const buildFilter = (options: {
     rules: Array<RulesItem>; // 规则列表
-    deleteOption?: { field: string; flagValue: any }; // 删除选项(可选, 用于 tab 切换时, 删除规则)
     differenceFields?: string[]; // search-select 移除条件时的搜索字段差集(只用于 search-select 组件)
+    isInvidual?: Boolean; // 标志当前为独立的请求，无需合并之前的filter
   }) => {
-    const { rules, deleteOption, differenceFields } = options;
+    const { rules, differenceFields, isInvidual } = options;
     const filterMap = new Map();
     // 先添加新的规则
     rules.forEach((rule) => {
@@ -259,19 +293,23 @@ export const useTable = (props: IProp) => {
         if (Array.isArray(tmpRule.rules)) {
           filterMap.set(newRule.field, { op: QueryRuleOPEnum.OR, rules: [...tmpRule.rules, newRule] });
         } else {
-          filterMap.set(newRule.field, { op: QueryRuleOPEnum.OR, rules: [tmpRule, newRule] });
+          const op = newRule.field === 'updated_at' ? QueryRuleOPEnum.AND : QueryRuleOPEnum.OR;
+          filterMap.set(newRule.field, { op, rules: [tmpRule, newRule] });
         }
       } else {
         filterMap.set(newRule.field, JSON.parse(JSON.stringify(newRule)));
       }
     });
     // 后添加 filter 的规则
-    filter.rules.forEach((rule) => {
-      if (!filterMap.get(rule.field) && !rule.rules) {
-        filterMap.set(rule.field, rule);
-      }
-    });
+    if (!isInvidual) {
+      filter.rules.forEach((rule) => {
+        if (!filterMap.get(rule.field) && !rule.rules) {
+          filterMap.set(rule.field, rule);
+        }
+      });
+    }
     // 如果配置了 deleteOption, 则当符合条件时, 删除对应规则
+    const { deleteOption } = props.requestOption.filterOption || {};
     if (deleteOption) {
       const { field, flagValue } = deleteOption;
       const rule = filterMap.get(field);
@@ -286,7 +324,9 @@ export const useTable = (props: IProp) => {
       });
     }
     // 整合后的规则重新赋值给 filter.rules
-    filter.rules = [...filterMap.values()];
+    if (!isEqual(filter.rules, [...filterMap.values()])) {
+      filter.rules = [...filterMap.values()];
+    }
   };
 
   /**
@@ -321,10 +361,14 @@ export const useTable = (props: IProp) => {
     return op;
   };
 
+  const clearFilter = () => {
+    pagination.start = 0;
+    filter.rules = getInitialRules();
+  };
+
   watch(
-    [() => searchVal.value, () => accountStore.bizs],
-    ([searchVal, bizs], [oldSearchVal]) => {
-      if (whereAmI.value === Senarios.business && !bizs) return;
+    () => searchVal.value,
+    (searchVal, oldSearchVal) => {
       // 记录上一次 search-select 的规则名
       const oldSearchFieldList: string[] =
         (Array.isArray(oldSearchVal) && oldSearchVal.reduce((prev: any, item: any) => [...prev, item.id], [])) || [];
@@ -343,47 +387,26 @@ export const useTable = (props: IProp) => {
             return { field, op, value };
           })
         : [];
-      // 如果 search-select 的条件减少, 则移除差集中的规则
-      if (oldSearchFieldList.length > searchFieldList.length) {
-        buildFilter({ rules: searchRules, differenceFields: getDifferenceSet(oldSearchFieldList, searchFieldList) });
-      } else {
-        buildFilter({ rules: searchRules });
-      }
       // 页码重置
       pagination.start = 0;
-      getListData();
+      // 如果 search-select 的条件减少, 则移除差集中的规则
+      if (oldSearchFieldList.length > searchFieldList.length) {
+        getListData(searchRules, null, null, getDifferenceSet(oldSearchFieldList, searchFieldList));
+      } else {
+        getListData(searchRules);
+      }
     },
     {
-      immediate: true,
+      immediate: props.requestOption.immediate,
     },
-  );
-
-  // 分配业务筛选
-  watch(
-    () => props.bizFilter,
-    (val) => {
-      const idx = filter.rules.findIndex((rule) => rule.field === 'bk_biz_id');
-      const bizFilter = val.rules[0];
-      if (bizFilter) {
-        if (idx !== -1) {
-          filter.rules[idx] = bizFilter;
-        } else {
-          filter.rules.push(val.rules[0]);
-        }
-      } else {
-        filter.rules.splice(idx, 1);
-      }
-      getListData();
-    },
-    { deep: true },
   );
 
   watch(
     () => props.requestOption.filterOption,
     (val) => {
       if (!val) return;
-      const { rules, deleteOption } = val;
-      buildFilter({ rules, deleteOption });
+      const { rules } = val;
+      buildFilter({ rules });
       getListData();
     },
     {
@@ -393,6 +416,13 @@ export const useTable = (props: IProp) => {
 
   return {
     CommonTable,
+    dataList,
     getListData,
+    pagination,
+    sort,
+    order,
+    isLoading,
+    filter,
+    clearFilter,
   };
 };

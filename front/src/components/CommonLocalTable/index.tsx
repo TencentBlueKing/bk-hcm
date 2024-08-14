@@ -8,6 +8,7 @@ import { CLB_SPECS_REVERSE_MAP } from '@/constants';
 import { Column } from 'bkui-vue/lib/table/props';
 import { getLocalFilterConditions } from '@/utils';
 import './index.scss';
+import { VendorReverseMap } from '@/common/constant';
 
 /**
  * 本地搜索. 本地分页 Table 组件
@@ -59,6 +60,8 @@ export default defineComponent({
           // 负载均衡规格类型需要映射
           case 'SpecType':
             return CLB_SPECS_REVERSE_MAP[rule.values[0].id];
+          case 'vendor':
+            return VendorReverseMap[rule.values[0].id];
           default:
             return rule.values[0].id;
         }
@@ -109,7 +112,7 @@ export default defineComponent({
             {...(props.tableOptions.extra || {})}>
             {{
               empty: () => {
-                if (props.loading) return null;
+                if (props.loading || renderTableData.value?.length) return null;
                 return <Empty />;
               },
             }}
