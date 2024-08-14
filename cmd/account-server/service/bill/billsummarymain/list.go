@@ -45,9 +45,8 @@ func (s *service) ListMainAccountSummary(cts *rest.Contexts) (interface{}, error
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	err := s.authorizer.AuthorizeWithPerm(cts.Kit,
-		meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.AccountBill, Action: meta.Find}})
-	if err != nil {
+	authParam := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.AccountBill, Action: meta.Find}}
+	if err := s.authorizer.AuthorizeWithPerm(cts.Kit, authParam); err != nil {
 		return nil, err
 	}
 
@@ -62,11 +61,8 @@ func (s *service) ListMainAccountSummary(cts *rest.Contexts) (interface{}, error
 			return nil, err
 		}
 	}
-
-	summary, err := s.client.DataService().Global.Bill.ListBillSummaryMain(cts.Kit, &dsbillapi.BillSummaryMainListReq{
-		Filter: expression,
-		Page:   req.Page,
-	})
+	listReq := &dsbillapi.BillSummaryMainListReq{Filter: expression, Page: req.Page}
+	summary, err := s.client.DataService().Global.Bill.ListBillSummaryMain(cts.Kit, listReq)
 	if err != nil {
 		return nil, err
 	}
@@ -79,23 +75,13 @@ func (s *service) ListMainAccountSummary(cts *rest.Contexts) (interface{}, error
 		Details: make([]*asbillapi.MainAccountSummaryResult, 0, len(summary.Details)),
 	}
 
-	mainAccountIDMap := make(map[string]struct{})
-	rootAccountIDMap := make(map[string]struct{})
-	for _, detail := range summary.Details {
-		mainAccountIDMap[detail.MainAccountID] = struct{}{}
-		rootAccountIDMap[detail.RootAccountID] = struct{}{}
-	}
-
-	mainAccountIDs := maps.Keys(mainAccountIDMap)
-	rootAccountIDs := maps.Keys(rootAccountIDMap)
-
+	mainAccountIDs, rootAccountIDs := s.getAccountIds(summary)
 	mainMap, err := s.listMainAccount(cts.Kit, mainAccountIDs)
 	if err != nil {
 		logs.Errorf("list main account for summary main failed, err: %v, main ids: %v, rid: %s",
 			err, mainAccountIDs, cts.Kit.Rid)
 		return nil, err
 	}
-
 	rootMap, err := s.listRootAccount(cts.Kit, rootAccountIDs)
 	if err != nil {
 		logs.Errorf("list root account for summary main failed, err: %v, root ids: %v, rid: %s",
@@ -104,7 +90,6 @@ func (s *service) ListMainAccountSummary(cts *rest.Contexts) (interface{}, error
 	}
 
 	for _, detail := range summary.Details {
-
 		mainAccount, ok := mainMap[detail.MainAccountID]
 		if !ok {
 			return nil, fmt.Errorf("main account %s(%s) of summary main %s not found",
@@ -124,6 +109,21 @@ func (s *service) ListMainAccountSummary(cts *rest.Contexts) (interface{}, error
 	}
 
 	return ret, nil
+}
+
+func (s *service) getAccountIds(summary *dsbillapi.BillSummaryMainListResult) (
+	mainAccountIDs []string, rootAccountIDs []string) {
+
+	mainAccountIDMap := make(map[string]struct{})
+	rootAccountIDMap := make(map[string]struct{})
+	for _, detail := range summary.Details {
+		mainAccountIDMap[detail.MainAccountID] = struct{}{}
+		rootAccountIDMap[detail.RootAccountID] = struct{}{}
+	}
+
+	mainAccountIDs = maps.Keys(mainAccountIDMap)
+	rootAccountIDs = maps.Keys(rootAccountIDMap)
+	return mainAccountIDs, rootAccountIDs
 }
 
 func (s *service) listMainAccount(kt *kit.Kit, accountIDs []string) (map[string]*accountset.BaseMainAccount, error) {
