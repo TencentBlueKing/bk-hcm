@@ -22,6 +22,8 @@ package loadbalancer
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
 
 	lblogic "hcm/cmd/cloud-server/logics/load-balancer"
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
@@ -71,6 +73,22 @@ func (svc *lbSvc) modifyWeight(cts *rest.Contexts,
 	bizID, err := cts.PathParameter("bk_biz_id").Int64()
 	if err != nil {
 		return nil, err
+	}
+
+	// validate request
+	for _, tmp := range req.Data {
+		for _, record := range tmp.Listeners {
+			errList := record.CheckWithDataService(cts.Kit, svc.client.DataService(), bizID)
+			if len(errList) > 0 {
+				logs.Errorf("validate request failed, err: %v, rid: %s", errList, cts.Kit.Rid)
+				errStr := &strings.Builder{}
+				for _, validateError := range errList {
+					errStr.WriteString(validateError.Reason)
+					errStr.WriteString(";")
+				}
+				return nil, fmt.Errorf("validate request failed, err: %s", errStr.String())
+			}
+		}
 	}
 
 	flows := make([]string, 0)

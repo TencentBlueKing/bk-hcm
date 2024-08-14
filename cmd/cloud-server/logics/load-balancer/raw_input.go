@@ -105,7 +105,7 @@ func (l *BindRSRawInput) SplitRecord() ([]*BindRSRecord, error) {
 }
 
 func (l *BindRSRawInput) initRecord() *BindRSRecord {
-	return &BindRSRecord{
+	result := &BindRSRecord{
 		Action:         l.Action,
 		ListenerName:   l.ListenerName,
 		Protocol:       enumor.ProtocolType(strings.ToUpper(l.Protocol)),
@@ -123,6 +123,31 @@ func (l *BindRSRawInput) initRecord() *BindRSRecord {
 		Weights:        l.Weight,
 		InstType:       enumor.InstType(l.InstType),
 	}
+	/** 数据补全
+	input: RSIPs: [1.1.1.1 2.2.2.2] RSPorts: [80] NewWeight: [1 1]
+	output: RSIPs: [1.1.1.1 2.2.2.2] RSPorts: [80 80] NewWeight: [1 1]
+
+	input: RSIPs: [1.1.1.1 2.2.2.2] RSPorts: [80 80] NewWeight: [1]
+	output: RSIPs: [1.1.1.1 2.2.2.2] RSPorts: [80 80] NewWeight: [1 1]
+	*/
+	ports := l.RSPorts
+	weights := l.Weight
+	for len(ports) < len(l.RSIPs) {
+		ports = append(ports, ports[0])
+	}
+	for len(weights) < len(l.RSIPs) {
+		weights = append(weights, weights[0])
+	}
+
+	for i := 0; i < len(l.RSIPs); i++ {
+		result.RSInfos = append(result.RSInfos, &RSInfo{
+			InstType: enumor.InstType(l.InstType),
+			IP:       l.RSIPs[i],
+			Port:     ports[i],
+			Weight:   weights[i],
+		})
+	}
+	return result
 }
 
 // ModifyWeightRawInput excel中的原始输入数据结构
@@ -175,7 +200,7 @@ func (l *ModifyWeightRawInput) SplitRecord() ([]*ModifyWeightRecord, error) {
 }
 
 func (l *ModifyWeightRawInput) initRecord() *ModifyWeightRecord {
-	return &ModifyWeightRecord{
+	result := &ModifyWeightRecord{
 		Action:       l.Action,
 		ListenerName: l.ListenerName,
 		Protocol:     enumor.ProtocolType(strings.ToUpper(l.Protocol)),
@@ -188,4 +213,33 @@ func (l *ModifyWeightRawInput) initRecord() *ModifyWeightRecord {
 		Weights:      l.Weight,
 		OldWeight:    l.OldWeight,
 	}
+	/** 数据补全
+	input: RSIPs: [1.1.1.1 2.2.2.2] RSPorts: [80] NewWeight: [1 1]
+	output: RSIPs: [1.1.1.1 2.2.2.2] RSPorts: [80 80] NewWeight: [1 1]
+
+	input: RSIPs: [1.1.1.1 2.2.2.2] RSPorts: [80 80] NewWeight: [1]
+	output: RSIPs: [1.1.1.1 2.2.2.2] RSPorts: [80 80] NewWeight: [1 1]
+	*/
+	ports := l.RSPorts
+	newWeights := l.Weight
+	oldWeights := l.OldWeight
+	for len(ports) < len(l.RSIPs) {
+		ports = append(ports, ports[0])
+	}
+	for len(newWeights) < len(l.RSIPs) {
+		newWeights = append(newWeights, newWeights[0])
+	}
+	for len(oldWeights) < len(l.RSIPs) {
+		oldWeights = append(oldWeights, oldWeights[0])
+	}
+
+	for i := 0; i < len(l.RSIPs); i++ {
+		result.RSInfos = append(result.RSInfos, &RSUpdateInfo{
+			IP:        l.RSIPs[i],
+			Port:      ports[i],
+			NewWeight: newWeights[i],
+			OldWeight: oldWeights[i],
+		})
+	}
+	return result
 }

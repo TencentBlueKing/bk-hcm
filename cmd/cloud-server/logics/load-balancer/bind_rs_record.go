@@ -716,14 +716,6 @@ func (l *BindRSRecord) validateRS() error {
 				return fmt.Errorf("invalid RSPort: %d", port)
 			}
 		}
-
-		l.RSInfos = append(l.RSInfos, &RSInfo{
-			InstType: l.InstType,
-			IP:       l.RSIPs[0],
-			Port:     l.RSPorts[0],
-			EndPort:  l.RSPorts[1],
-			Weight:   l.Weights[0],
-		})
 		return nil
 	}
 
@@ -733,31 +725,6 @@ func (l *BindRSRecord) validateRS() error {
 
 	if len(l.Weights) > 1 && len(l.Weights) != len(l.RSIPs) {
 		return fmt.Errorf("the number of NewWeight and RSIPs should be equal or 1")
-	}
-
-	/** 数据补全
-	input: RSIPs: [1.1.1.1 2.2.2.2] RSPorts: [80] NewWeight: [1 1]
-	output: RSIPs: [1.1.1.1 2.2.2.2] RSPorts: [80 80] NewWeight: [1 1]
-
-	input: RSIPs: [1.1.1.1 2.2.2.2] RSPorts: [80 80] NewWeight: [1]
-	output: RSIPs: [1.1.1.1 2.2.2.2] RSPorts: [80 80] NewWeight: [1 1]
-	*/
-	for len(l.RSPorts) < len(l.RSIPs) {
-		l.RSPorts = append(l.RSPorts, l.RSPorts[0])
-	}
-
-	for len(l.Weights) < len(l.RSIPs) {
-		l.Weights = append(l.Weights, l.Weights[0])
-	}
-
-	for i := 0; i < len(l.RSIPs); i++ {
-		l.RSInfos = append(l.RSInfos, &RSInfo{
-			InstType: l.InstType,
-			IP:       l.RSIPs[i],
-			Port:     l.RSPorts[i],
-			Weight:   l.Weights[i],
-		})
-
 	}
 	return nil
 }

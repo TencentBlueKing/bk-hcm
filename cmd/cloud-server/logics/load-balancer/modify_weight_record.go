@@ -382,34 +382,6 @@ func (r *ModifyWeightRecord) validateRS() error {
 			return fmt.Errorf("invalid RSPort: %d", port)
 		}
 	}
-
-	/** 数据补全
-	input: RSIPs: [1.1.1.1 2.2.2.2] RSPorts: [80] NewWeight: [1 1]
-	output: RSIPs: [1.1.1.1 2.2.2.2] RSPorts: [80 80] NewWeight: [1 1]
-
-	input: RSIPs: [1.1.1.1 2.2.2.2] RSPorts: [80 80] NewWeight: [1]
-	output: RSIPs: [1.1.1.1 2.2.2.2] RSPorts: [80 80] NewWeight: [1 1]
-	*/
-	for len(r.RSPorts) < len(r.RSIPs) {
-		r.RSPorts = append(r.RSPorts, r.RSPorts[0])
-	}
-
-	for len(r.Weights) < len(r.RSIPs) {
-		r.Weights = append(r.Weights, r.Weights[0])
-	}
-
-	for len(r.OldWeight) < len(r.RSIPs) {
-		r.OldWeight = append(r.OldWeight, r.OldWeight[0])
-	}
-
-	for i := 0; i < len(r.RSIPs); i++ {
-		r.RSInfos = append(r.RSInfos, &RSUpdateInfo{
-			IP:        r.RSIPs[i],
-			Port:      r.RSPorts[i],
-			NewWeight: r.Weights[i],
-			OldWeight: r.OldWeight[i],
-		})
-	}
 	return nil
 }
 
@@ -431,14 +403,6 @@ func (r *ModifyWeightRecord) validateRSWithEndPort() error {
 			return fmt.Errorf("invalid RSPort: %d", port)
 		}
 	}
-
-	r.RSInfos = append(r.RSInfos, &RSUpdateInfo{
-		IP:        r.RSIPs[0],
-		Port:      r.RSPorts[0],
-		EndPort:   r.RSPorts[1],
-		NewWeight: r.Weights[0],
-		OldWeight: r.OldWeight[0],
-	})
 	return nil
 }
 
