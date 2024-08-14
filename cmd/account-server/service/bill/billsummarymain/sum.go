@@ -87,7 +87,7 @@ func (s *service) doCalcalcute(mainSummaryList []*dsbillapi.BillSummaryMainResul
 	retMap := make(map[enumor.CurrencyCode]*billcore.CostWithCurrency)
 	for _, rootSummary := range mainSummaryList {
 		if _, ok := retMap[rootSummary.Currency]; !ok {
-			retMap[enumor.CurrencyCode(rootSummary.Currency)] = &billcore.CostWithCurrency{
+			retMap[rootSummary.Currency] = &billcore.CostWithCurrency{
 				Cost:     decimal.NewFromFloat(0),
 				RMBCost:  decimal.NewFromFloat(0),
 				Currency: rootSummary.Currency,

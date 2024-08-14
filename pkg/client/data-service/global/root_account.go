@@ -32,7 +32,7 @@ type RootAccountClient struct {
 	client rest.ClientInterface
 }
 
-// NewAccountClient create a new account api client.
+// NewRootAccountClient create a new account api client.
 func NewRootAccountClient(client rest.ClientInterface) *RootAccountClient {
 	return &RootAccountClient{
 		client: client,
@@ -50,11 +50,9 @@ func (a *RootAccountClient) GetBasicInfo(kt *kit.Kit, accountID string) (
 }
 
 // List ...
-func (a *RootAccountClient) List(kt *kit.Kit, request *core.ListWithoutFieldReq) (
-	*dataproto.RootAccountListResult, error,
-) {
+func (a *RootAccountClient) List(kt *kit.Kit, request *core.ListReq) (*dataproto.RootAccountListResult, error) {
 
-	return common.Request[core.ListWithoutFieldReq, dataproto.RootAccountListResult](
+	return common.Request[core.ListReq, dataproto.RootAccountListResult](
 		a.client, rest.POST, kt, request, "/root_accounts/list")
 
 }

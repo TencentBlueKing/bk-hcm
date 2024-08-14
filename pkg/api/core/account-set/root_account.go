@@ -85,7 +85,7 @@ func (e *GcpRootAccountExtension) DecryptSecretKey(cipher cryptography.Crypto) e
 	return nil
 }
 
-// HuaweiRootAccountExtension 云主账号/云二级账号扩展字段
+// HuaWeiRootAccountExtension 云主账号/云二级账号扩展字段
 type HuaWeiRootAccountExtension struct {
 	CloudSubAccountID   string `json:"cloud_sub_account_id"`
 	CloudSubAccountName string `json:"cloud_sub_account_name"`

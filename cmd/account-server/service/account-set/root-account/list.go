@@ -42,13 +42,8 @@ func (s *service) List(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	accounts, err := s.client.DataService().Global.RootAccount.List(
-		cts.Kit,
-		&core.ListWithoutFieldReq{
-			Filter: req.Filter,
-			Page:   req.Page,
-		},
-	)
+	listReq := &core.ListReq{Filter: req.Filter, Page: req.Page}
+	accounts, err := s.client.DataService().Global.RootAccount.List(cts.Kit, listReq)
 	if err != nil {
 		return nil, err
 	}

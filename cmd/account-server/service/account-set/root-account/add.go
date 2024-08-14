@@ -87,15 +87,11 @@ func (s *service) Add(cts *rest.Contexts) (interface{}, error) {
 func (s *service) isDuplicateName(cts *rest.Contexts, name string) error {
 	// TODO: 后续需要解决并发问题
 	// 后台查询是否主账号重复
-	result, err := s.client.DataService().Global.RootAccount.List(
-		cts.Kit,
-		&core.ListWithoutFieldReq{
-			Filter: tools.ExpressionAnd(tools.RuleEqual("name", name)),
-			Page: &core.BasePage{
-				Count: true,
-			},
-		},
-	)
+	listReq := &core.ListReq{
+		Filter: tools.ExpressionAnd(tools.RuleEqual("name", name)),
+		Page:   core.NewCountPage(),
+	}
+	result, err := s.client.DataService().Global.RootAccount.List(cts.Kit, listReq)
 	if err != nil {
 		return err
 	}

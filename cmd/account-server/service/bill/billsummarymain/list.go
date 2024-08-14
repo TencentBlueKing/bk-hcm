@@ -32,9 +32,10 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/maps"
 )
 
-// ListMainAccountSummary list root account summary with options
+// ListMainAccountSummary list main account summary with options
 func (s *service) ListMainAccountSummary(cts *rest.Contexts) (interface{}, error) {
 	req := new(asbillapi.MainAccountSummaryListReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -78,27 +79,46 @@ func (s *service) ListMainAccountSummary(cts *rest.Contexts) (interface{}, error
 		Details: make([]*asbillapi.MainAccountSummaryResult, 0, len(summary.Details)),
 	}
 
-	accountIDs := make([]string, 0, len(summary.Details))
+	mainAccountIDMap := make(map[string]struct{})
+	rootAccountIDMap := make(map[string]struct{})
 	for _, detail := range summary.Details {
-		accountIDs = append(accountIDs, detail.MainAccountID)
+		mainAccountIDMap[detail.MainAccountID] = struct{}{}
+		rootAccountIDMap[detail.RootAccountID] = struct{}{}
 	}
 
-	accountMap, err := s.listMainAccountByIDs(cts.Kit, accountIDs)
+	mainAccountIDs := maps.Keys(mainAccountIDMap)
+	rootAccountIDs := maps.Keys(rootAccountIDMap)
+
+	mainMap, err := s.listMainAccount(cts.Kit, mainAccountIDs)
 	if err != nil {
-		logs.Errorf("ListMainAccountSummary: list main account by ids(%v) failed: %s", accountIDs, err)
+		logs.Errorf("list main account for summary main failed, err: %v, main ids: %v, rid: %s",
+			err, mainAccountIDs, cts.Kit.Rid)
+		return nil, err
+	}
+
+	rootMap, err := s.listRootAccount(cts.Kit, rootAccountIDs)
+	if err != nil {
+		logs.Errorf("list root account for summary main failed, err: %v, root ids: %v, rid: %s",
+			err, rootAccountIDs, cts.Kit.Rid)
 		return nil, err
 	}
 
 	for _, detail := range summary.Details {
-		account, ok := accountMap[detail.MainAccountID]
+
+		mainAccount, ok := mainMap[detail.MainAccountID]
 		if !ok {
-			return nil, fmt.Errorf("[ListMainAccountSummary] summaryMain(%s): mainAccount(%s) not found",
-				detail.ID, detail.MainAccountID)
+			return nil, fmt.Errorf("main account %s(%s) of summary main %s not found",
+				detail.MainAccountID, detail.MainAccountCloudID, detail.ID)
+		}
+		rootAccount, ok := rootMap[detail.RootAccountID]
+		if !ok {
+			return nil, fmt.Errorf("root account: %s(%s) of summary main %s not found",
+				detail.RootAccountID, detail.RootAccountCloudID, detail.ID)
 		}
 		tmp := &asbillapi.MainAccountSummaryResult{
-			BillSummaryMainResult: *detail,
-			MainAccountCloudID:    account.CloudID,
-			MainAccountCloudName:  account.Name,
+			BillSummaryMainResult: detail,
+			MainAccountName:       mainAccount.Name,
+			RootAccountName:       rootAccount.Name,
 		}
 		ret.Details = append(ret.Details, tmp)
 	}
@@ -106,23 +126,53 @@ func (s *service) ListMainAccountSummary(cts *rest.Contexts) (interface{}, error
 	return ret, nil
 }
 
-func (s *service) listMainAccountByIDs(kt *kit.Kit, accountIDs []string) (
-	map[string]*accountset.BaseMainAccount, error) {
+func (s *service) listMainAccount(kt *kit.Kit, accountIDs []string) (map[string]*accountset.BaseMainAccount, error) {
+
+	accountMap := make(map[string]*accountset.BaseMainAccount, len(accountIDs))
+	if len(accountIDs) == 0 {
+		return accountMap, nil
+	}
 
 	listOpt := &core.ListReq{
 		Filter: tools.ExpressionAnd(
 			tools.RuleIn("id", accountIDs),
 		),
-		Page: core.NewDefaultBasePage(),
+		Page:   core.NewDefaultBasePage(),
+		Fields: []string{"id", "cloud_id", "name"},
 	}
 	accountResult, err := s.client.DataService().Global.MainAccount.List(kt, listOpt)
 	if err != nil {
+		logs.Errorf("fail to list main account, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
-	accountMap := make(map[string]*accountset.BaseMainAccount, len(accountIDs))
 	for _, detail := range accountResult.Details {
 		accountMap[detail.ID] = detail
 	}
 	return accountMap, nil
+}
+
+func (s *service) listRootAccount(kt *kit.Kit, accountIDs []string) (map[string]*accountset.BaseRootAccount, error) {
+
+	rootNameMap := make(map[string]*accountset.BaseRootAccount)
+
+	if len(accountIDs) == 0 {
+		return rootNameMap, nil
+	}
+
+	rootAccountReq := &core.ListReq{
+		Filter: tools.ContainersExpression("id", accountIDs),
+		Page:   core.NewDefaultBasePage(),
+		Fields: []string{"id", "cloud_id", "name"},
+	}
+	accountResp, err := s.client.DataService().Global.RootAccount.List(kt, rootAccountReq)
+	if err != nil {
+		logs.Errorf("fail to list root account, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+	for i := range accountResp.Details {
+		account := accountResp.Details[i]
+		rootNameMap[account.ID] = account
+	}
+	return rootNameMap, nil
 }
