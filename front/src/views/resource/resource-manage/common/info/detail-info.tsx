@@ -25,10 +25,7 @@ export default defineComponent({
   props: {
     fields: Array as PropType<Field[]>,
     detail: Object,
-    wide: {
-      type: Boolean,
-      default: false,
-    },
+    col: { type: Number, default: 2 },
   },
 
   emits: ['change'],
@@ -47,7 +44,7 @@ export default defineComponent({
       return this.fields.map((field) => {
         return {
           ...field,
-          value: field.value || this.detail[field?.prop],
+          value: field.value || this.detail?.[field?.prop],
         };
       });
     },
@@ -59,7 +56,7 @@ export default defineComponent({
         class='detail-info-main g-scroller'
         fields={this.renderFields}
         onChange={this.handleChange}
-        wide={this.props.wide}
+        col={this.col}
       />
     );
   },

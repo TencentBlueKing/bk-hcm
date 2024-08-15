@@ -179,7 +179,7 @@ export default defineComponent({
         <p class={'sub-title'}>帐号信息</p>
 
         <DetailInfo
-          wide
+          col={1}
           detail={detail.value}
           onChange={handleUpdate}
           fields={[
@@ -209,7 +209,7 @@ export default defineComponent({
           )}
         </p>
         <div class={'detail-info'}>
-          <DetailInfo detail={detail.value} fields={computedExtension.value} wide />
+          <DetailInfo col={1} detail={detail.value} fields={computedExtension.value} />
         </div>
 
         {/* <Dialog isShow={isEditDialogShow.value} title='编辑API密钥'>

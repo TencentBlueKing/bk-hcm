@@ -1,4 +1,7 @@
 .info-list-main {
+  display: grid;
+  column-gap: 24px;
+
   &::after {
     content: '';
     display: table;
@@ -7,19 +10,17 @@
 }
 
 .info-list-item {
-  float: left;
-  width: 40%;
-  margin-right: 10px;
   display: flex;
   align-items: center;
   line-height: 40px;
+
   .item-field {
     font-size: 14px;
     width: 100px;
     margin-right: 5px;
     text-align: right;
-    color: #63656E;
-    &.has-tips span{
+    color: #63656e;
+    &.has-tips span {
       position: relative;
       cursor: pointer;
       &::after {
@@ -32,7 +33,7 @@
       }
     }
   }
-  .item-value{
+  .item-value {
     font-size: 14px;
     margin-left: 10px;
     color: #313238;
@@ -42,7 +43,7 @@
     -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
     word-break: break-all;
-    flex:1;
+    flex: 1;
   }
 }
 
@@ -53,7 +54,7 @@
 
 .header-title-content {
   font-size: 14px;
-  color: #63656E;
+  color: #63656e;
 }
 
 .info-item-copy {
@@ -66,9 +67,9 @@
 .status-stopped {
   color: #ea3636;
 }
-.status-RUNNING{
+.status-RUNNING {
   color: #2dcb56;
 }
-.status-STOPPING{
+.status-STOPPING {
   color: #ff9c01;
 }

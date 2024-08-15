@@ -33,10 +33,7 @@ export default defineComponent({
 
   props: {
     fields: Array as PropType<Field[]>,
-    wide: {
-      type: Boolean,
-      default: false,
-    },
+    col: { type: Number, default: 2 },
   },
 
   emits: ['change'],
@@ -140,11 +137,11 @@ export default defineComponent({
     };
 
     return (
-      <ul class={`info-list-main g-scroller`}>
+      <ul class='info-list-main g-scroller' style={{ gridTemplateColumns: `repeat(${this.col}, 1fr)` }}>
         {this.fields.map((field) => {
           return (
             <>
-              <li class='info-list-item' style={this.props.wide ? { width: '80%' } : undefined}>
+              <li class='info-list-item'>
                 {field.tipsContent ? (
                   <div class='item-field has-tips'>
                     <span v-BkTooltips={{ content: field.tipsContent }}>{field.name}</span>

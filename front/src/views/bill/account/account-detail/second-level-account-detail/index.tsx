@@ -80,7 +80,7 @@ export default defineComponent({
         <p class={'sub-title'}>帐号信息</p>
         <DetailInfo
           detail={detail.value}
-          wide
+          col={1}
           onChange={handleUpdate}
           fields={[
             { prop: 'vendor', name: '云厂商', render: () => BILL_VENDORS_MAP[detail.value.vendor] },
@@ -110,14 +110,6 @@ export default defineComponent({
           onCancel={handlePermissionDialog}
           onConfirm={handlePermissionConfirm}
         />
-        {/* <p class={'sub-title'}>
-          API 密钥
-          <span class={'edit-icon'}>
-            <i class={'hcm-icon bkhcm-icon-bianji mr6'} />
-            编辑
-          </span>
-        </p>
-        <DetailInfo detail={detail.value} fields={computedExtension.value} wide /> */}
       </div>
     );
   },
