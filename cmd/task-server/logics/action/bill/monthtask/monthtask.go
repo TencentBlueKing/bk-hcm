@@ -153,7 +153,7 @@ func (act MonthTaskAction) runPull(kt *kit.Kit, runner MonthTaskRunner, opt *Mon
 }
 
 func (act MonthTaskAction) runSplit(kt *kit.Kit, runner MonthTaskRunner, opt *MonthTaskActionOption) error {
-	// step1 清理原有月度任务的billitem，因为有可能之前存在中途失败的脏数据了
+	// step1 清理原有月度任务的bill item，因为有可能之前存在中途失败的脏数据了
 	if err := act.cleanBillItem(kt, opt); err != nil {
 		return err
 	}
@@ -203,8 +203,7 @@ func (act MonthTaskAction) runSplit(kt *kit.Kit, runner MonthTaskRunner, opt *Mo
 	}
 }
 
-func (act MonthTaskAction) split(
-	kt *kit.Kit, runner MonthTaskRunner, opt *MonthTaskActionOption,
+func (act MonthTaskAction) split(kt *kit.Kit, runner MonthTaskRunner, opt *MonthTaskActionOption,
 	monthTask *bill.BillMonthTaskResult, accountMap map[string]struct{}, offset uint64) (
 	cnt int, finished bool, err error) {
 
@@ -243,7 +242,7 @@ func (act MonthTaskAction) split(
 	for i, itemsBatch := range slice.Split(tmpBillItemList, constant.BatchOperationMaxLimit) {
 		for idx := range itemsBatch {
 			// force bill day as zero to represent month bill
-			itemsBatch[idx].BillDay = 0
+			itemsBatch[idx].BillDay = enumor.MonthTaskSpecialBillDay
 			accountMap[itemsBatch[idx].MainAccountID] = struct{}{}
 		}
 		createReq := &bill.BatchRawBillItemCreateReq{ItemCommonOpt: commonOpt, Items: itemsBatch}
@@ -256,7 +255,7 @@ func (act MonthTaskAction) split(
 	}
 
 	logs.Infof("split bill item for opt %+v done, cnt: %d, offset: %d, limit: %d, rid: %s",
-		len(resp.Details), opt, offset, limit, kt.Rid)
+		opt, len(resp.Details), offset, limit, kt.Rid)
 	return len(resp.Details), isFinished, nil
 }
 
@@ -268,7 +267,7 @@ func getCleanBillItemFilter(opt *MonthTaskActionOption) *filter.Expression {
 		tools.RuleEqual("bill_year", opt.BillYear),
 		tools.RuleEqual("bill_month", opt.BillMonth),
 		// special day 0 for month bill
-		tools.RuleEqual("bill_day", 0),
+		tools.RuleEqual("bill_day", enumor.MonthTaskSpecialBillDay),
 	}
 	return tools.ExpressionAnd(expressions...)
 }

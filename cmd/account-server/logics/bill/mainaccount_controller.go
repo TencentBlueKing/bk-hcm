@@ -50,7 +50,7 @@ type MainAccountControllerOption struct {
 	ProductID           int64
 	BkBizID             int64
 	Client              *client.ClientSet
-	AwsSavingPlanOption cc.AwsSavingPlanOption
+	AwsSavingPlanOption cc.AwsSavingsPlansOption
 }
 
 // NewMainAccountController create new main account controller
@@ -120,7 +120,7 @@ type MainAccountController struct {
 	kt         *kit.Kit
 	cancelFunc context.CancelFunc
 
-	AwsSavingPlanOption cc.AwsSavingPlanOption
+	AwsSavingPlanOption cc.AwsSavingsPlansOption
 }
 
 // Start run controller
@@ -362,7 +362,7 @@ func (mac *MainAccountController) getRootBillSummary(
 }
 
 func (mac *MainAccountController) getMainBillSummary(
-	kt *kit.Kit, billYear, billMonth int) (*dsbillapi.BillSummaryMainResult, error) {
+	kt *kit.Kit, billYear, billMonth int) (*dsbillapi.BillSummaryMain, error) {
 
 	expressions := []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", mac.RootAccountID),

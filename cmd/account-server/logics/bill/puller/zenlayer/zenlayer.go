@@ -55,14 +55,14 @@ func (hp *ZenlayerPuller) HasMonthPullTask() bool {
 
 // EnsurePullTask 空实现，PullTask的创建由账单导入模块完成
 func (hp *ZenlayerPuller) EnsurePullTask(kt *kit.Kit, client *client.ClientSet,
-	billSummaryMain *dsbillapi.BillSummaryMainResult) error {
+	billSummaryMain *dsbillapi.BillSummaryMain) error {
 
 	return nil
 }
 
 // GetPullTaskList ...
 func (hp *ZenlayerPuller) GetPullTaskList(kt *kit.Kit, client *client.ClientSet,
-	billSummaryMain *dsbillapi.BillSummaryMainResult) (
+	billSummaryMain *dsbillapi.BillSummaryMain) (
 	[]*bill.BillDailyPullTaskResult, error) {
 
 	dp := &daily.DailyPuller{

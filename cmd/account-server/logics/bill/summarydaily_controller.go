@@ -137,7 +137,7 @@ func (msdc *MainSummaryDailyController) doSync(kt *kit.Kit) error {
 }
 
 func (msdc *MainSummaryDailyController) getBillSummaryMain(
-	kt *kit.Kit, billYear, billMonth int) (*bill.BillSummaryMainResult, error) {
+	kt *kit.Kit, billYear, billMonth int) (*bill.BillSummaryMain, error) {
 
 	var expressions []*filter.AtomRule
 	expressions = append(expressions, []*filter.AtomRule{
@@ -229,7 +229,7 @@ func (msdc *MainSummaryDailyController) syncDailySummary(kt *kit.Kit, billYear, 
 }
 
 func (msdc *MainSummaryDailyController) createDailySummaryTask(
-	kt *kit.Kit, summary *bill.BillSummaryMainResult, billYear, billMonth, billDay int) (string, error) {
+	kt *kit.Kit, summary *bill.BillSummaryMain, billYear, billMonth, billDay int) (string, error) {
 
 	memo := fmt.Sprintf("[%s] main %s(%.16s)v%d %d-%02d-%02d",
 		msdc.Vendor, msdc.MainAccountID, msdc.MainAccountCloudID, summary.CurrentVersion,

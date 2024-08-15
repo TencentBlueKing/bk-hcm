@@ -50,7 +50,7 @@ type GcpPuller struct {
 
 // EnsurePullTask ...
 func (hp *GcpPuller) EnsurePullTask(kt *kit.Kit, client *client.ClientSet,
-	billSummaryMain *dsbillapi.BillSummaryMainResult) error {
+	billSummaryMain *dsbillapi.BillSummaryMain) error {
 
 	dp := &daily.DailyPuller{
 		RootAccountID:      billSummaryMain.RootAccountID,
@@ -71,7 +71,7 @@ func (hp *GcpPuller) EnsurePullTask(kt *kit.Kit, client *client.ClientSet,
 
 // GetPullTaskList ...
 func (hp *GcpPuller) GetPullTaskList(kt *kit.Kit, client *client.ClientSet,
-	billSummaryMain *dsbillapi.BillSummaryMainResult) ([]*bill.BillDailyPullTaskResult, error) {
+	billSummaryMain *dsbillapi.BillSummaryMain) ([]*bill.BillDailyPullTaskResult, error) {
 
 	dp := &daily.DailyPuller{
 		RootAccountID: billSummaryMain.RootAccountID,

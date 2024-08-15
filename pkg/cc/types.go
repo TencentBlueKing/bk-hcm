@@ -878,10 +878,14 @@ func (c *CMSI) validate() error {
 	return nil
 }
 
-// AwsSavingPlanOption ...
-type AwsSavingPlanOption struct {
-	RootAccountID            string `yaml:"rootAccountId"`
-	SpArnPrefix              string `yaml:"spArnPrefix"`
+// AwsSavingsPlansOption savings plans allocation option
+type AwsSavingsPlansOption struct {
+	// RootAccountCloudID which root account these savings plans belongs to
+	RootAccountCloudID string `yaml:"rootAccountCloudId"`
+	// SpArnPrefix arn prefix to match savings plans
+	SpArnPrefix string `yaml:"spArnPrefix"`
+	// SpPurchaseAccountCloudID which account purchase this saving plans,
+	// the cost of savings plans will be added to this account as income
 	SpPurchaseAccountCloudID string `yaml:"SpPurchaseAccountCloudID"`
 }
 
@@ -892,6 +896,6 @@ type AwsCommonExpense struct {
 
 // BillAllocationOption ...
 type BillAllocationOption struct {
-	AwsSavingPlans   []AwsSavingPlanOption `yaml:"awsSavingPlans"`
-	AwsCommonExpense AwsCommonExpense      `yaml:"awsCommonExpense"`
+	AwsSavingsPlans  []AwsSavingsPlansOption `yaml:"awsSavingsPlans"`
+	AwsCommonExpense AwsCommonExpense        `yaml:"awsCommonExpense"`
 }

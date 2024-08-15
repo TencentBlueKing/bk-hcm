@@ -206,7 +206,7 @@ func (gcp *Gcp) Split(kt *kit.Kit, opt *MonthTaskActionOption,
 }
 
 func (gcp *Gcp) getSummaryMainList(
-	kt *kit.Kit, rootAccountID string, billYear, billMonth int) ([]*dsbill.BillSummaryMainResult, error) {
+	kt *kit.Kit, rootAccountID string, billYear, billMonth int) ([]*dsbill.BillSummaryMain, error) {
 
 	filter := tools.ExpressionAnd(
 		tools.RuleEqual("root_account_id", rootAccountID),
@@ -224,7 +224,7 @@ func (gcp *Gcp) getSummaryMainList(
 			err, rootAccountID, billYear, billMonth, kt.Rid)
 		return nil, err
 	}
-	var summaryMainResultList []*dsbill.BillSummaryMainResult
+	var summaryMainResultList []*dsbill.BillSummaryMain
 	for offset := uint64(0); offset < summaryMainCountResp.Count; offset = offset + uint64(core.DefaultMaxPageLimit) {
 		summaryMainCountResp, err := actcli.GetDataService().Global.Bill.ListBillSummaryMain(kt,
 			&dsbill.BillSummaryMainListReq{

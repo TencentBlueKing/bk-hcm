@@ -29,6 +29,7 @@ import (
 	billcore "hcm/pkg/api/core/bill"
 	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -40,6 +41,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	curservice "github.com/aws/aws-sdk-go/service/costandusagereportservice"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/shopspring/decimal"
 )
 
 const (
@@ -713,4 +715,80 @@ func (a *Aws) GetRootAccountAwsAthenaQuery(kt *kit.Kit, query string, billInfo *
 	}
 
 	return nil, errf.Newf(errf.DecodeRequestFailed, "Aws Athena Query Failed(%s)", errMsg)
+}
+
+const (
+	// AwsSPQuerySQl ...
+	AwsSPQuerySQl = `SELECT 
+			count(DISTINCT line_item_usage_account_id) AS account_cnt,
+			sum(line_item_unblended_cost) AS unblended_cost, 
+			sum(savings_plan_savings_plan_effective_cost) AS sp_cost,
+			sum(savings_plan_net_savings_plan_effective_cost) AS sp_net_cost
+			FROM %s.%s  
+			WHERE line_item_line_item_type = 'SavingsPlanCoveredUsage'
+	`
+)
+
+// GetRootSpTotalUsage get sp total usage for root account
+func (a *Aws) GetRootSpTotalUsage(kt *kit.Kit, billInfo *billcore.AwsRootBillConfig,
+	opt *typesBill.AwsRootSpUsageOption) (*typesBill.AwsSpUsageTotalResult, error) {
+
+	if billInfo == nil {
+		return nil, errf.Newf(errf.RecordNotFound, "bill info is required")
+	}
+	if opt == nil {
+		return nil, errf.Newf(errf.RecordNotFound, "opt for get sp usage is required")
+	}
+
+	sql := fmt.Sprintf(AwsSPQuerySQl, billInfo.CloudDatabaseName, billInfo.CloudTableName)
+	sql += fmt.Sprintf(" AND bill_payer_account_id = '%s'", opt.PayerCloudID)
+	sql += fmt.Sprintf(" AND year = '%d'", opt.Year)
+	sql += fmt.Sprintf(" AND month = '%d'", opt.Month)
+	sql += fmt.Sprintf(" AND date(line_item_usage_start_date) >= date '%d-%02d-%02d' ",
+		opt.Year, opt.Month, opt.StartDay)
+	sql += fmt.Sprintf(" AND date(line_item_usage_start_date) <= date '%d-%02d-%02d' ",
+		opt.Year, opt.Month, opt.EndDay)
+	if len(opt.UsageCloudIDs) > 0 {
+		sql += fmt.Sprintf(" AND line_item_usage_account_id IN ('%s') ", strings.Join(opt.UsageCloudIDs, "','"))
+	}
+	if len(opt.SpArnPrefix) > 0 {
+		sql += fmt.Sprintf(" AND savings_plan_savings_plan_a_r_n LIKE '%s%%'", opt.SpArnPrefix)
+	}
+
+	cloudList, err := a.GetRootAccountAwsAthenaQuery(kt, sql, billInfo)
+	if err != nil {
+		logs.Errorf("fail to call aws athena query for get sp total usage, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+	if len(cloudList) == 0 {
+		return nil, errf.Newf(errf.RecordNotFound, "no sp usage found")
+	}
+
+	ret := &typesBill.AwsSpUsageTotalResult{}
+	ret.AccountCount, err = strconv.ParseUint(cloudList[0]["account_cnt"], 10, 64)
+	if err != nil {
+		logs.Errorf("fail to parse account count, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+	ret.Currency = enumor.CurrencyCode(cloudList[0]["pricing_currency"])
+	ubCost, err := decimal.NewFromString(cloudList[0]["unblended_cost"])
+	if err != nil {
+		logs.Errorf("fail to parse unblended cost, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+	ret.UnblendedCost = converter.ValToPtr(ubCost)
+	spCost, err := decimal.NewFromString(cloudList[0]["sp_cost"])
+	if err != nil {
+		logs.Errorf("fail to parse sp cost, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+	ret.SpCost = converter.ValToPtr(spCost)
+	spNetCost, err := decimal.NewFromString(cloudList[0]["sp_net_cost"])
+	if err != nil {
+		logs.Errorf("fail to parse sp net cost, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+	ret.SpNetCost = converter.ValToPtr(spNetCost)
+
+	return ret, nil
 }
