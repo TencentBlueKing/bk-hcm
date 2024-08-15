@@ -523,9 +523,10 @@ func (req *BatchOperationBatchCreateReq) Validate() error {
 
 // BatchOperationCreateReq ...
 type BatchOperationCreateReq struct {
-	BkBizID int64  `json:"bk_biz_id" validate:"required"`
-	AuditID int64  `json:"audit_id" validate:"omitempty"`
-	Detail  string `json:"detail" validate:"required"`
+	BkBizID int64                     `json:"bk_biz_id" validate:"required"`
+	AuditID int64                     `json:"audit_id" validate:"omitempty"`
+	Detail  string                    `json:"detail" validate:"required"`
+	Type    enumor.BatchOperationType `json:"type" validate:"required"`
 }
 
 // Validate ...

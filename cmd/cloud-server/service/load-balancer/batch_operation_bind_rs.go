@@ -122,7 +122,8 @@ func (svc *lbSvc) bindRS(cts *rest.Contexts, req *cloud.BatchOperationReq[*lblog
 	if err != nil {
 		return nil, err
 	}
-	batchOperationID, err := svc.saveBatchOperationRecord(cts, string(detail), flowAuditMap, req.AccountID)
+	batchOperationID, err := svc.saveBatchOperationRecord(cts, string(detail), flowAuditMap,
+		req.AccountID, enumor.BatchOperationTypeBindRS)
 	if err != nil {
 		logs.Errorf("save batch operation record failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err

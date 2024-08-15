@@ -121,7 +121,8 @@ func (svc *lbSvc) modifyWeight(cts *rest.Contexts,
 	if err != nil {
 		return nil, err
 	}
-	batchOperationID, err := svc.saveBatchOperationRecord(cts, string(detail), flowAuditMap, req.AccountID)
+	batchOperationID, err := svc.saveBatchOperationRecord(cts, string(detail), flowAuditMap,
+		req.AccountID, enumor.BatchOperationTypeModifyWeight)
 	if err != nil {
 		logs.Errorf("save batch operation record failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err

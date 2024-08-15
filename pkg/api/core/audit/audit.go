@@ -81,5 +81,6 @@ type TargetGroupAsyncAuditDetail struct {
 
 // BatchOperationAuditDetail 批量操作详情
 type BatchOperationAuditDetail struct {
-	BatchOperationID string `json:"batch_operation_id"`
+	BatchOperationID   string                    `json:"batch_operation_id"`
+	BatchOperationType enumor.BatchOperationType `json:"batch_operation_type"`
 }

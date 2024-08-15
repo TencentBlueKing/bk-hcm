@@ -109,7 +109,7 @@ func (svc *lbSvc) getAuditByLoadBalanceID(kt *kit.Kit, lbID string) (*audit.Audi
 }
 
 func (svc *lbSvc) saveBatchOperationRecord(cts *rest.Contexts, detail string,
-	flowAuditMap map[string]uint64, accountID string) (string, error) {
+	flowAuditMap map[string]uint64, accountID string, batchOperationType enumor.BatchOperationType) (string, error) {
 
 	bizID, err := cts.PathParameter("bk_biz_id").Int64()
 	if err != nil {
@@ -122,6 +122,7 @@ func (svc *lbSvc) saveBatchOperationRecord(cts *rest.Contexts, detail string,
 				{
 					BkBizID: bizID,
 					Detail:  detail,
+					Type:    batchOperationType,
 				},
 			},
 		},

@@ -162,3 +162,13 @@ const (
 	// ModifyRSWeight 修改RS权重
 	ModifyRSWeight BatchOperationActionType = "modify_rs_weight"
 )
+
+// BatchOperationType 批量操作类型
+type BatchOperationType string
+
+const (
+	// BatchOperationTypeBindListener 批量绑定RS
+	BatchOperationTypeBindRS BatchOperationType = "bind_rs"
+	// BatchOperationTypeModifyWeight 批量修改RS权重
+	BatchOperationTypeModifyWeight BatchOperationType = "modify_weight"
+)

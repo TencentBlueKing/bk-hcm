@@ -112,7 +112,7 @@ func (svc *lbSvc) BatchCreateBatchOperation(cts *rest.Contexts) (any, error) {
 			return nil, fmt.Errorf("batch create batch task failed, err: %v", err)
 		}
 
-		if err = batchCreateAudit(cts.Kit, txn, svc.dao.Audit(), models, req.AccountID); err != nil {
+		if err = batchCreateAudit(cts.Kit, txn, svc.dao.Audit(), models, req.Tasks, req.AccountID); err != nil {
 			logs.Errorf("batch create audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
 		}
@@ -164,18 +164,21 @@ func (svc *lbSvc) BatchCreateBatchOperation(cts *rest.Contexts) (any, error) {
 	return &core.BatchCreateResult{IDs: ids}, nil
 }
 
-func batchCreateAudit(kt *kit.Kit, txn *sqlx.Tx, auditInterface auditDao.Interface, models []*tablelb.BatchOperationTable, accountID string) error {
+func batchCreateAudit(kt *kit.Kit, txn *sqlx.Tx, auditInterface auditDao.Interface,
+	models []*tablelb.BatchOperationTable, tasks []*protocloud.BatchOperationCreateReq, accountID string) error {
+
 	audits := make([]*tableaudit.AuditTable, 0)
-	for _, model := range models {
+	for i := 0; i < len(models); i++ {
 		// record audit
 		auditData := &audit.BatchOperationAuditDetail{
-			BatchOperationID: model.ID,
+			BatchOperationID:   models[i].ID,
+			BatchOperationType: tasks[i].Type,
 		}
 		audits = append(audits, &tableaudit.AuditTable{
-			ResID:     model.ID,
-			ResName:   fmt.Sprintf("batch-operation-%s", model.ID),
+			ResID:     models[i].ID,
+			ResName:   fmt.Sprintf("batch-operation-%s", models[i].ID),
 			ResType:   enumor.LoadBalancerAuditResType,
-			BkBizID:   model.BkBizID,
+			BkBizID:   models[i].BkBizID,
 			AccountID: accountID,
 			Action:    enumor.BatchOperation,
 			Operator:  kt.User,
@@ -186,7 +189,6 @@ func batchCreateAudit(kt *kit.Kit, txn *sqlx.Tx, auditInterface auditDao.Interfa
 				Data: auditData,
 			},
 		})
-
 	}
 	if err := auditInterface.BatchCreateWithTx(kt, txn, audits); err != nil {
 		logs.Errorf("batch create audit failed, err: %v, rid: %s", err, kt.Rid)
