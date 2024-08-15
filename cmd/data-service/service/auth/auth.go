@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/table"
 	"hcm/pkg/iam/sys"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
@@ -67,6 +68,9 @@ func (s *auth) ListAuthInstances(cts *rest.Contexts) (interface{}, error) {
 		opts.TableName = table.CloudSelectionSchemeTable
 	case sys.MainAccount:
 		opts.TableName = table.MainAccountTable
+	case sys.BillCloudVendor:
+		// special vendor list from root account table
+		return s.listBillCloudVendors(cts.Kit, req)
 	default:
 		return nil, fmt.Errorf("resource type %s not support", req.ResourceType)
 	}
@@ -83,4 +87,22 @@ func (s *auth) ListAuthInstances(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return result, nil
+}
+
+func (s *auth) listBillCloudVendors(kt *kit.Kit, req *dataservice.ListInstancesReq) (interface{}, error) {
+	listReq := &types.ListOption{
+		Filter: req.Filter,
+		Page:   req.Page,
+	}
+	vendorResp, err := s.dao.RootAccount().ListVendor(kt, listReq)
+	if err != nil {
+		logs.Errorf("fail to list vendor for iam list auth instance, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+	resList := make([]types.InstanceResource, 0, len(vendorResp.Details))
+	for _, detail := range vendorResp.Details {
+		resList = append(resList, types.InstanceResource{ID: detail.Vendor, DisplayName: detail.Vendor})
+	}
+	resp := &dataservice.ListInstancesResult{Count: vendorResp.Count, Details: resList}
+	return resp, nil
 }

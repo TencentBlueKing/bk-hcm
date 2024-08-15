@@ -28,3 +28,14 @@ type ListRootAccountDetails struct {
 	Count   uint64                    `json:"count,omitempty"`
 	Details []*table.RootAccountTable `json:"details,omitempty"`
 }
+
+// AccountVendor ...
+type AccountVendor struct {
+	Vendor string `json:"vendor"`
+}
+
+// ListRootAccountVendorDetails list account vendor details.
+type ListRootAccountVendorDetails struct {
+	Count   uint64          `json:"count,omitempty"`
+	Details []AccountVendor `json:"details,omitempty"`
+}

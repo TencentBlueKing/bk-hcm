@@ -39,11 +39,15 @@ func InitBillItemService(c *capability.Capability) {
 	h := rest.NewHandler()
 
 	h.Add("ListBillItems", "POST", "/vendors/{vendor}/bills/items/list", svc.ListBillItems)
+
 	h.Add("ExportBillItems", "POST", "/vendors/{vendor}/bills/items/export", svc.ExportBillItems)
-	h.Add("ImportBillItemsPreview", "POST", "/vendors/{vendor}/bills/items/import/preview",
-		svc.ImportBillItemsPreview)
-	h.Add("ImportBillItems", "POST", "/vendors/{vendor}/bills/items/import",
-		svc.ImportBillItems)
+	h.Add("ImportBillItemsPreview", "POST",
+		"/vendors/{vendor}/bills/items/import/preview", svc.ImportBillItemsPreview)
+	h.Add("ImportBillItems",
+		"POST", "/vendors/{vendor}/bills/items/import", svc.ImportBillItems)
+
+	h.Add("PullBillItemForThirdParty", "POST",
+		"/vendors/{vendor}/bills/items/pull", svc.PullBillItemForThirdParty)
 
 	h.Load(c.WebService)
 }

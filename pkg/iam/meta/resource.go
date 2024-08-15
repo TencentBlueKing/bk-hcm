@@ -101,4 +101,7 @@ const (
 
 	// Application 申请单据
 	Application ResourceType = "application"
+
+	// AccountBillThirdParty 第三方账单拉取
+	AccountBillThirdParty ResourceType = "account_bill_third_party"
 )

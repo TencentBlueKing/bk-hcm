@@ -123,8 +123,18 @@ func RuleNotIn[T any](fieldName string, values []T) *filter.AtomRule {
 }
 
 // RuleGreaterThan 生成资源字段等于查询的AtomRule，即fieldName > values
-func RuleGreaterThan(fieldName string, values any) *filter.AtomRule {
-	return &filter.AtomRule{Field: fieldName, Op: filter.GreaterThan.Factory(), Value: values}
+func RuleGreaterThan(fieldName string, value any) *filter.AtomRule {
+	return &filter.AtomRule{Field: fieldName, Op: filter.GreaterThan.Factory(), Value: value}
+}
+
+// RuleGreaterThanEqual 生成资源字段大于等于给定值的AtomRule，即fieldName >= values
+func RuleGreaterThanEqual(fieldName string, value any) *filter.AtomRule {
+	return &filter.AtomRule{Field: fieldName, Op: filter.GreaterThanEqual.Factory(), Value: value}
+}
+
+// RuleLessThanEqual 生成资源字段小于等于给定值的AtomRule，即fieldName <= values
+func RuleLessThanEqual(fieldName string, value any) *filter.AtomRule {
+	return &filter.AtomRule{Field: fieldName, Op: filter.LessThanEqual.Factory(), Value: value}
 }
 
 // RuleJSONEqual 生成资源字段等于查询的AtomRule，即fieldName=value

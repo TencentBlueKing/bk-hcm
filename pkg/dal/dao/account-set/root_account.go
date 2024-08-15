@@ -46,6 +46,7 @@ type RootAccount interface {
 	CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, account *tableaccountset.RootAccountTable) (string, error)
 	Update(kt *kit.Kit, expr *filter.Expression, model *tableaccountset.RootAccountTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*types.ListRootAccountDetails, error)
+	ListVendor(kt *kit.Kit, opt *types.ListOption) (*types.ListRootAccountVendorDetails, error)
 }
 
 var _ RootAccount = new(RootAccountDao)
@@ -55,6 +56,57 @@ type RootAccountDao struct {
 	Orm   orm.Interface
 	IDGen idgenerator.IDGenInterface
 	Audit audit.Interface
+}
+
+// ListVendor list vendor info
+func (ra RootAccountDao) ListVendor(kt *kit.Kit, opt *types.ListOption) (*types.ListRootAccountVendorDetails, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "list root account vendor options is nil")
+	}
+	if opt.Page == nil || opt.Filter == nil {
+		return nil, errf.New(errf.InvalidParameter, "list root account vendor options page or filter is nil")
+	}
+	whereExpr, whereValue, err := opt.Filter.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	if err != nil {
+		return nil, err
+	}
+
+	// force to sort by vendor
+	if opt.Page.Sort == "" {
+		opt.Page.Sort = "vendor"
+	}
+	if opt.Page.Sort != "vendor" {
+		return nil, errf.New(errf.InvalidParameter, "root account vendor only support sort by vendor")
+	}
+
+	if opt.Page.Count {
+		// this is a count request, then do count operation only.
+		sql := fmt.Sprintf(`SELECT COUNT(DISTINCT vendor) FROM %s %s`, table.RootAccountTable, whereExpr)
+
+		count, err := ra.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		if err != nil {
+			logs.ErrorJson("count root accounts failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
+			return nil, err
+		}
+
+		return &types.ListRootAccountVendorDetails{Count: count}, nil
+	}
+
+	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
+	if err != nil {
+		return nil, err
+	}
+
+	sql := fmt.Sprintf(`SELECT DISTINCT vendor FROM %s %s %s`,
+		table.RootAccountTable, whereExpr, pageExpr)
+
+	details := make([]types.AccountVendor, 0)
+	if err = ra.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+		return nil, err
+	}
+
+	return &types.ListRootAccountVendorDetails{Count: uint64(len(details)), Details: details}, nil
 }
 
 // CreateWithTx create root account with tx.

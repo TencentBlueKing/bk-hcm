@@ -53,12 +53,40 @@ func (r *ExportBillItemReq) Validate() error {
 type ListBillItemReq struct {
 	BillYear  int                `json:"bill_year" validate:"required"`
 	BillMonth int                `json:"bill_month" validate:"required"`
-	Filter    *filter.Expression `json:"filter" validate:"omitempty"`
+	Filter    *filter.Expression `json:"filter" validate:"required"`
 	Page      *core.BasePage     `json:"page" validate:"required"`
 }
 
 // Validate ListBillItemReq
 func (r *ListBillItemReq) Validate() error {
+
+	return validator.Validate.Struct(r)
+}
+
+// ListBillItemByVendorReq ...
+type ListBillItemByVendorReq struct {
+	BillYear  uint `json:"bill_year" validate:"required"`
+	BillMonth uint `json:"bill_month" validate:"required,min=1,max=12"`
+
+	RootAccountIds      []string `json:"root_account_ids" validate:"max=10"`
+	RootAccountCloudIds []string `json:"root_account_cloud_ids" validate:"max=10"`
+	MainAccountIds      []string `json:"main_account_ids" validate:"max=10"`
+	MainAccountCloudIds []string `json:"main_account_cloud_ids" validate:"max=10"`
+
+	BeginBillDay *uint `json:"begin_bill_day" validate:"omitempty,min=1,max=31"`
+	EndBillDay   *uint `json:"end_bill_day" validate:"omitempty,min=1,max=31"`
+
+	Page *core.BasePage `json:"page" validate:"required"`
+}
+
+// Validate ListBillItemReq
+func (r *ListBillItemByVendorReq) Validate() error {
+	if r.BeginBillDay != nil && r.EndBillDay == nil || r.BeginBillDay == nil && r.EndBillDay != nil {
+		return errf.New(errf.InvalidParameter, "begin_bill_day and end_bill_day must be both empty or not empty")
+	}
+	if r.BeginBillDay != nil && r.EndBillDay != nil && *r.BeginBillDay > *r.EndBillDay {
+		return errf.New(errf.InvalidParameter, "begin_bill_day must be less or equal than end_bill_day")
+	}
 
 	return validator.Validate.Struct(r)
 }
