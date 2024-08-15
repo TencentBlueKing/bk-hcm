@@ -188,4 +188,6 @@ type TCloud interface {
 
 	CreateLoadBalancerSnatIps(kt *kit.Kit, opt *typelb.TCloudCreateSnatIpOpt) error
 	DeleteLoadBalancerSnatIps(kt *kit.Kit, opt *typelb.TCloudDeleteSnatIpOpt) error
+
+	ResetCvmInstance(kt *kit.Kit, opt *cvm.ResetInstanceOption) (*poller.BaseDoneResult, error)
 }

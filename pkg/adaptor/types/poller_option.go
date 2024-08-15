@@ -103,3 +103,11 @@ func NewCreateMainAccountPollerOption() *poller.PollUntilDoneOption {
 		Retry:             retry.NewRetryPolicy(10, [2]uint{2000, 30000}),
 	}
 }
+
+// NewBatchResetCvmPollerOption 超时时间5分钟，10次之内重试间隔时间1s，10次之后重试间隔时间1-5s之间
+func NewBatchResetCvmPollerOption() *poller.PollUntilDoneOption {
+	return &poller.PollUntilDoneOption{
+		TimeoutTimeSecond: 5 * 60,
+		Retry:             retry.NewRetryPolicy(10, [2]uint{1000, 5000}),
+	}
+}
