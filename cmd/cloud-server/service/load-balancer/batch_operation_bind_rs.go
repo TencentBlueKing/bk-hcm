@@ -53,6 +53,9 @@ func (svc *lbSvc) BindRS(cts *rest.Contexts) (interface{}, error) {
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
 
 	basicInfo := &types.CloudResourceBasicInfo{
 		AccountID: req.AccountID,

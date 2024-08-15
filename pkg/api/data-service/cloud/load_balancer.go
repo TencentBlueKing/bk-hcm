@@ -487,13 +487,19 @@ type BatchOperation[T any] struct {
 	Vip               string `json:"vip"`
 	NewRsCount        int    `json:"new_rs_count,omitempty"`
 	UpdateWeightCount int    `json:"update_weight_count,omitempty"`
+	IPDomainType      string `json:"ip_domain_type"`
 	Listeners         []T    `json:"listeners"`
 }
 
 // BatchOperationReq ...
 type BatchOperationReq[T any] struct {
-	AccountID string               `json:"account_id"`
-	Data      []*BatchOperation[T] `json:"data"`
+	AccountID string               `json:"account_id" validate:"required"`
+	Data      []*BatchOperation[T] `json:"data" validate:"required,min=1"`
+}
+
+// Validate ...
+func (req *BatchOperationReq[T]) Validate() error {
+	return validator.Validate.Struct(req)
 }
 
 // BatchOperationListResult ...
