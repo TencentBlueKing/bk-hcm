@@ -73,7 +73,7 @@ const goAsyncTaskDetail = async (flowId: string) => {
   const { id, res_name: name, res_id, bk_biz_id } = data.details[0];
   // 2. 新开页面查看异步任务详情
   window.open(
-    `/#/business/record/detail?id=${id}&name=${name}&res_id=${res_id}&bizs=${bk_biz_id}&flow=${flowId}`,
+    `/#/business/record/detail?record_id=${id}&name=${name}&res_id=${res_id}&bizs=${bk_biz_id}&flow=${flowId}`,
     '_blank',
   );
 };
