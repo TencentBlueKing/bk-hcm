@@ -1,14 +1,13 @@
 /* eslint-disable no-nested-ternary */
 import { Button, Dialog, Form, Input, Message, Select } from 'bkui-vue';
 import { PropType, defineComponent, ref, watch } from 'vue';
-import './index.scss';
+import { analysisIP, analysisPort } from '@/utils';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
 import { VendorEnum } from '@/common/constant';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { useAccountStore, useResourceStore } from '@/store';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
-import { isPortAvailable, validateIpCidr } from '../security-rule/security-rule-validators';
-import { TCLOUD_SECURITY_RULE_PROTOCALS } from '@/constants';
+import { pluginHandlerDialog } from '@/plugin-handler/resource-template-dialog';
 const { FormItem } = Form;
 const { Option } = Select;
 
@@ -65,11 +64,11 @@ export default defineComponent({
     const resourceStore = useResourceStore();
     const accountStore = useAccountStore();
     const { whereAmI } = useWhereAmI();
+    const { vendorArr } = pluginHandlerDialog;
     const isLoading = ref(false);
     const accountList = ref([]);
     const basicForm = ref(null);
     const isGroupLoading = ref(false);
-    let formInstances = [ref(null)];
     const formData = ref({
       name: props.payload?.name || '',
       type: props.payload?.type || TemplateType.IP,
@@ -99,13 +98,14 @@ export default defineComponent({
 
     const handleSubmit = async () => {
       await basicForm.value.validate();
-      await Promise.all(formInstances.map((formInstance) => formInstance.value?.validate()));
+      await formInstance.value?.validate();
       isLoading.value = true;
       let data = {
         ...formData.value,
       };
       switch (formData.value.type) {
         case TemplateType.IP: {
+          ipTableData.value = analysisIP(formList.value.ipsList);
           data = {
             ...data,
             templates: ipTableData.value,
@@ -122,6 +122,7 @@ export default defineComponent({
           break;
         }
         case TemplateType.PORT: {
+          portTableData.value = analysisPort(formList.value.portList);
           data = {
             ...data,
             templates: portTableData.value,
@@ -222,13 +223,20 @@ export default defineComponent({
         };
         switch (formData.value.type) {
           case TemplateType.IP: {
+            let result = '';
             ipTableData.value = props.payload?.templates || [
               {
                 address: '',
                 description: '',
               },
             ];
-            formInstances = ipTableData.value.map((_v) => ref(null));
+            ipTableData.value.forEach((item) => {
+              result += `${item.address} ${item.description}\n`;
+            });
+
+            // 删除最后一个多余的换行符（可选）
+            result = result.trim();
+            formList.value.ipsList = result;
             break;
           }
           case TemplateType.IP_GROUP: {
@@ -236,13 +244,19 @@ export default defineComponent({
             break;
           }
           case TemplateType.PORT: {
+            let result = '';
             portTableData.value = props.payload?.templates || [
               {
                 address: '',
                 description: '',
               },
             ];
-            formInstances = ipTableData.value.map((_v) => ref(null));
+            portTableData.value.forEach((item) => {
+              result += `${item.address} ${item.description}\n`;
+            });
+            // 删除最后一个多余的换行符（可选）
+            result = result.trim();
+            formList.value.portList = result;
             break;
           }
           case TemplateType.PORT_GROUP: {
@@ -255,7 +269,7 @@ export default defineComponent({
         deep: true,
       },
     );
-
+    const formInstance = ref();
     const clearFormData = () => {
       formData.value = {
         name: '',
@@ -280,86 +294,72 @@ export default defineComponent({
           description: '',
         },
       ];
+      formList.value = {
+        ipsList: '',
+        portList: '',
+      };
+      basicForm.value.clearValidate();
+      formInstance.value?.clearValidate();
     };
-
+    const autoSizeConf = {
+      minRows: 9,
+      maxRows: 9,
+    };
+    const formList = ref({
+      ipsList: '',
+      portList: '',
+    });
     const renderTable = (type: TemplateType) => {
-      let list = [] as typeof ipTableData.value;
-      if (type === TemplateType.IP) list = ipTableData.value;
-      else if (type === TemplateType.PORT) list = portTableData.value;
-      else return null;
+      if (![TemplateType.IP, TemplateType.PORT].includes(type)) return null;
       return (
         <div>
-          {list.map((data, idx) => (
-            <Form
-              class={'template-table-item'}
-              formType='vertical'
-              ref={formInstances[idx]}
-              model={data}
-              rules={{
-                address: [
-                  {
-                    trigger: 'blur',
-                    message: formData.value.type === TemplateType.IP ? '请填写正确的IP地址' : '请填写合法的端口',
-                    validator: (val: string) => {
-                      if (formData.value.type === TemplateType.IP) return validateIpCidr(val) !== 'invalid';
-                      if (formData.value.type === TemplateType.PORT) {
-                        const arr = val.trim().split(':');
-                        if (arr.length !== 2) return false;
-                        const [protocal, port] = arr;
-                        const protocols = TCLOUD_SECURITY_RULE_PROTOCALS.map((item) => item.name);
-                        if (!protocols.includes(protocal)) return false;
-                        if (!isPortAvailable(port)) return false;
-                        return true;
-                      }
-                    },
-                  },
-                ],
-              }}>
-              {formData.value.type === TemplateType.IP ? (
-                <FormItem property='address' label={`${idx > 0 ? '' : 'IP地址'}`} required>
-                  <Input placeholder={'输入IP地址'} v-model={list[idx].address} />
-                </FormItem>
-              ) : (
-                <FormItem property='address' label={`${idx > 0 ? '' : '协议端口'}`}>
-                  <Input placeholder={'协议:端口'} v-model={list[idx].address} />
-                </FormItem>
-              )}
-              <FormItem label={`${idx > 0 ? '' : '备注'}`} property='description'>
-                <Input placeholder='备注信息' v-model={list[idx].description} />
-              </FormItem>
-              <FormItem label={`${idx > 0 ? '' : '操作'}`}>
-                <Button
-                  text
-                  class={'ml6'}
-                  theme='primary'
-                  onClick={() => {
-                    list.splice(idx, 1);
-                    formInstances.splice(idx, 1);
-                  }}>
-                  删除
-                </Button>
-              </FormItem>
-            </Form>
-          ))}
-          <Button
-            text
-            theme='primary'
-            class={'mt20'}
-            onClick={() => {
-              list.push({
-                address: '',
-                description: '',
-              });
-              formInstances.push(ref(null));
+          <Form
+            formType='vertical'
+            ref={formInstance}
+            model={formList.value}
+            rules={{
+              ipsList: [
+                {
+                  required: true,
+                  trigger: 'blur',
+                  message: 'IP地址不能为空',
+                },
+              ],
+              portList: [
+                {
+                  required: true,
+                  trigger: 'blur',
+                  message: '协议端口不能为空',
+                },
+              ],
             }}>
-            新增一行
-          </Button>
+            {formData.value.type === TemplateType.IP ? (
+              <FormItem property='ipsList' label={'IP地址'} required>
+                <Input
+                  placeholder={'每行一个IP,使用空格区隔IP与备注信息,换行后可输入多个IP'}
+                  autosize={autoSizeConf}
+                  type='textarea'
+                  v-model={formList.value.ipsList}
+                />
+              </FormItem>
+            ) : (
+              <FormItem property='portList' label={'协议端口'} required>
+                <Input
+                  placeholder={`协议端口可添加多个协议端口,换行分隔,案例如下:\n【单个端口】TCP:80\n【多个离散端口】TCP:80,433\n【连续端口】TCP:3306-20000\n【所有端口】TCP:ALL`}
+                  autosize={autoSizeConf}
+                  type='textarea'
+                  v-model={formList.value.portList}
+                />
+              </FormItem>
+            )}
+          </Form>
         </div>
       );
     };
 
     const getAccountList = async () => {
       const isResource = whereAmI.value === Senarios.resource;
+      const isBusiness = whereAmI.value === Senarios.business;
       const payload = isResource
         ? {
             page: {
@@ -373,7 +373,7 @@ export default defineComponent({
                 {
                   field: 'vendor',
                   op: 'eq',
-                  value: VendorEnum.TCLOUD,
+                  value: vendorArr,
                 },
               ],
             },
@@ -384,11 +384,14 @@ export default defineComponent({
             },
           };
       const res = await accountStore.getAccountList(payload, accountStore.bizs);
+      accountList.value = isResource ? res?.data?.details : res?.data;
       if (resourceAccountStore.resourceAccount?.id) {
         accountList.value = res.data?.details.filter(({ id }) => id === resourceAccountStore.resourceAccount?.id);
         return;
       }
-      accountList.value = isResource ? res?.data?.details : res?.data;
+      if (isBusiness) {
+        accountList.value = accountList.value.filter(({ vendor }) => vendorArr.includes(vendor));
+      }
     };
 
     return () => (
@@ -401,10 +404,9 @@ export default defineComponent({
         onConfirm={() => {
           handleSubmit();
         }}
-        title='新建参数模板'
-        maxHeight={'720px'}
-        width={1000}>
-        <Form model={formData.value} ref={basicForm}>
+        title={props.isEdit ? '编辑参数模板' : '新建参数模板'}
+        width={640}>
+        <Form formType='vertical' model={formData.value} ref={basicForm}>
           <FormItem label='云账号' property='account_id' required>
             <Select
               v-model={formData.value.account_id}
@@ -424,6 +426,7 @@ export default defineComponent({
             <BkButtonGroup>
               <Button
                 selected={formData.value.type === TemplateType.IP}
+                disabled={props.isEdit && !(props.payload.type === TemplateType.IP)}
                 onClick={() => {
                   formData.value.type = TemplateType.IP;
                 }}>
@@ -431,6 +434,7 @@ export default defineComponent({
               </Button>
               <Button
                 selected={formData.value.type === TemplateType.IP_GROUP}
+                disabled={props.isEdit && !(props.payload.type === TemplateType.IP_GROUP)}
                 onClick={() => {
                   formData.value.type = TemplateType.IP_GROUP;
                 }}>
@@ -438,17 +442,19 @@ export default defineComponent({
               </Button>
               <Button
                 selected={formData.value.type === TemplateType.PORT}
+                disabled={props.isEdit && !(props.payload.type === TemplateType.PORT)}
                 onClick={() => {
                   formData.value.type = TemplateType.PORT;
                 }}>
-                端口
+                协议端口
               </Button>
               <Button
                 selected={formData.value.type === TemplateType.PORT_GROUP}
+                disabled={props.isEdit && !(props.payload.type === TemplateType.PORT_GROUP)}
                 onClick={() => {
                   formData.value.type = TemplateType.PORT_GROUP;
                 }}>
-                端口组
+                协议端口组
               </Button>
             </BkButtonGroup>
           </FormItem>

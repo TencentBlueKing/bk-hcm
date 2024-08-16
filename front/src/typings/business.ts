@@ -34,3 +34,7 @@ export interface IEip {
   vendor: string;
   cvm_id?: string;
 }
+export interface AddressDescription {
+  address: string;
+  description: string;
+}

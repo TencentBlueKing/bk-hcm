@@ -893,29 +893,31 @@ const securityHandleShowDelete = (data: any) => {
 <template>
   <div class="security-manager-page">
     <section>
-      <slot></slot>
-      <BatchDistribution
-        :selections="selections"
-        :type="
-          activeType === 'group'
-            ? DResourceType.security_groups
-            : activeType === 'template'
-            ? DResourceType.templates
-            : DResourceType.firewall
-        "
-        :get-data="
-          () => {
-            getList();
-            resetSelections();
-          }
-        "
-      />
       <section class="flex-row align-items-center mt20">
         <bk-radio-group v-model="activeType" :disabled="state.isLoading">
           <bk-radio-button v-for="item in types" :key="item.name" :label="item.name">
             {{ item.label }}
           </bk-radio-button>
         </bk-radio-group>
+        <div class="ml12">
+          <slot></slot>
+        </div>
+        <BatchDistribution
+          :selections="selections"
+          :type="
+            activeType === 'group'
+              ? DResourceType.security_groups
+              : activeType === 'template'
+              ? DResourceType.templates
+              : DResourceType.firewall
+          "
+          :get-data="
+            () => {
+              getList();
+              resetSelections();
+            }
+          "
+        />
         <bk-search-select
           class="search-filter search-selector-container"
           clearable

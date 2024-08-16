@@ -1,5 +1,5 @@
 import isIP from 'validator/es/lib/isIP';
-
+import { AddressDescription } from '@/typings';
 /**
  * 获取实例的ip地址
  * @param inst 实例
@@ -68,5 +68,111 @@ const parseIP = (text: string) => {
     IPv6List,
   };
 };
+/**
+ * 从文本（单个IP、CIDR 网段、连续地址段）中解析出IP地址和备注
+ * @param text 单个IP、CIDR 网段、连续地址段的IP文本
+ * @returns IP地址列表
+ */
+const analysisIP = (text: string): AddressDescription[] => {
+  const list: AddressDescription[] = [];
+  // 通过换行符来分割字符串
+  const lines = text.split('\n');
+  // 判断每一行的情况（单个IP、CIDR 网段、连续地址段）
+  lines.forEach((text) => {
+    // 剔除备注
+    const parts = text.split(/\s+/);
+    const description = parts.length >= 2 ? parts.slice(1).join(' ') : '';
+    if (isSingleIP(parts[0]) || isCIDR(parts[0]) || isRange(parts[0])) {
+      // 1. 单个IP    2. CIDR 网段     // 3. 连续地址段
+      list.push({ address: parts[0], description });
+    }
+  });
+  return list;
+};
+// 判断是否为单个IP
+const isSingleIP = (ip: string) => {
+  return isIP(ip, 4) || isIP(ip, 6);
+};
+// 判断是否为CIDR网段
+const isCIDR = (cidr: string) => {
+  const parts = cidr.split('/');
+  if (parts.length !== 2) {
+    return false;
+  }
+  const [ip, prefix] = parts;
+  if (isIP(ip, 4)) {
+    const prefixNum = parseInt(prefix, 10);
+    return prefixNum >= 0 && prefixNum <= 32;
+  }
+  if (isIP(ip, 6)) {
+    const prefixNum = parseInt(prefix, 10);
+    return prefixNum >= 0 && prefixNum <= 128;
+  }
+  return false;
+};
+// 判断是否为连续地址段
+const isRange = (range: string) => {
+  const parts = range.split('-');
+  if (parts.length !== 2) {
+    return false;
+  }
+  const [startIP, endIP] = parts;
+  return (isIP(startIP, 4) && isIP(endIP, 4)) || (isIP(startIP, 6) && isIP(endIP, 6));
+};
 
-export { getInstVip, splitIP, parseIP };
+/**
+ * 从文本（单个端口、多个离散端口、连续端口、所有端口）中解析出协议端口和备注
+ * @param text 单个端口、多个离散端口、连续端口、所有端口的协议端口文本
+ * @returns 协议端口列表
+ */
+const analysisPort = (port: string) => {
+  // 判断是否为合法端口
+  function isPortNumber(port: string) {
+    // 使用正则表达式检查字符串是否只包含数字
+    const isNumeric = /^\d+$/.test(port);
+    if (!isNumeric) {
+      return false;
+    }
+    const portNumber = parseInt(port, 10);
+    return !isNaN(portNumber) && portNumber > 0 && portNumber <= 65535;
+  }
+  // 判断是否为多个离散端口方案
+  function isDispersedPort(port: string) {
+    if (!port.includes(',')) return false;
+    const ports = port.split(',');
+    return ports.every(isPortNumber);
+  }
+  // 判断是否为连续端口方案
+  function isContinuityPort(port: string) {
+    const rangeParts = port.split('-');
+    if (rangeParts.length !== 2) {
+      // 端口范围应该只有两个部分
+      return false;
+    }
+    return rangeParts.every(isPortNumber);
+  }
+
+  const list: AddressDescription[] = [];
+  // 通过换行符来分割字符串
+  const lines = port.split('\n');
+  lines.forEach((text) => {
+    // 剔除备注
+    const parts = text.split(/\s+/);
+    const description = parts.length >= 2 ? parts.slice(1).join(' ') : '';
+    const portArr = parts[0].trim().split(':');
+    if (portArr.length === 2) {
+      const [protocol, port] = portArr;
+      if (['tcp', 'TCP'].includes(protocol)) {
+        if (isPortNumber(port) || port === 'ALL' || isDispersedPort(port) || isContinuityPort(port)) {
+          // 1. 单个端口   // 2. 多个离散端口  // 3. 连续端口  // 4. 所有端口
+          list.push({
+            address: parts[0],
+            description,
+          });
+        }
+      }
+    }
+  });
+  return list;
+};
+export { getInstVip, splitIP, parseIP, analysisIP, analysisPort };
