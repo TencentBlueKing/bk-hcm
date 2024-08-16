@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, watchEffect, defineExpose, watch, computed } from 'vue';
+import { ref, watchEffect, defineExpose, watch, computed, PropType } from 'vue';
 import { QueryFilterType, QueryRuleOPEnum } from '@/typings';
 import { VendorEnum } from '@/common/constant';
 import { useBusinessStore } from '@/store';
@@ -12,7 +12,7 @@ const props = defineProps({
     type: String,
   },
   modelValue: {
-    type: String,
+    type: [String, Array<String>] as PropType<string | string[]>,
   },
   // 暂时用 delayed 来取消 props.vendor 的即时监听
   delayed: {
@@ -24,6 +24,7 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  multiple: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -139,7 +140,13 @@ defineExpose({
 </script>
 
 <template>
-  <bk-select v-model="selectedValue" filterable @scroll-end="getZonesData" :loading="loading || isLoading">
+  <bk-select
+    v-model="selectedValue"
+    filterable
+    @scroll-end="getZonesData"
+    :loading="loading || isLoading"
+    :multiple="multiple"
+  >
     <bk-option v-for="(item, index) in zonesList" :key="index" :value="item.name" :label="item.name_cn || item.name" />
   </bk-select>
 </template>
