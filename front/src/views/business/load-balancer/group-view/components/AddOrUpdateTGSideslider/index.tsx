@@ -310,7 +310,10 @@ export default defineComponent({
                 return (
                   <Alert theme='danger' class='mb24'>
                     当前目标组有异步任务存在异常，
-                    <Button text theme='primary' onClick={() => goAsyncTaskDetail(lastAsyncTaskInfo.flowId)}>
+                    <Button
+                      text
+                      theme='primary'
+                      onClick={() => goAsyncTaskDetail(businessStore.list, lastAsyncTaskInfo.flowId)}>
                       查看任务
                     </Button>
                     。
@@ -320,7 +323,10 @@ export default defineComponent({
               return (
                 <Alert theme='info' class='mb24'>
                   当前目标组有异步任务正在进行中，
-                  <Button text theme='primary' onClick={() => goAsyncTaskDetail(lastAsyncTaskInfo.flowId)}>
+                  <Button
+                    text
+                    theme='primary'
+                    onClick={() => goAsyncTaskDetail(businessStore.list, lastAsyncTaskInfo.flowId)}>
                     查看任务
                   </Button>
                   。

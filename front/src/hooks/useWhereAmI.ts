@@ -2,6 +2,8 @@ import { Ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAccountStore } from '@/store';
 import { getQueryStringParams, localStorageActions } from '@/common/util';
+import { decodeValueByAtob } from '@/utils';
+import { GLOBAL_BIZS_KEY } from '@/common/constant';
 
 export const useWhereAmI = (): {
   whereAmI: Ref<Senarios>;
@@ -28,7 +30,11 @@ export const useWhereAmI = (): {
 
   const getBizsId = () => {
     const { bizs } = useAccountStore();
-    return Number(bizs || getQueryStringParams('bizs') || localStorageActions.get('bizs'));
+    return Number(
+      bizs ||
+        (getQueryStringParams(GLOBAL_BIZS_KEY) && decodeValueByAtob(getQueryStringParams(GLOBAL_BIZS_KEY))) ||
+        localStorageActions.get(GLOBAL_BIZS_KEY, (value) => value && decodeValueByAtob(value)),
+    );
   };
 
   /**

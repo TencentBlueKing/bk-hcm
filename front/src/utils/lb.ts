@@ -2,22 +2,18 @@
  * 统一管理负载均衡需求下的 utils 函数
  */
 
-// import stores
-import { useBusinessStore } from '@/store';
-const businessStore = useBusinessStore();
-
 /**
  * 异步加载负载均衡的监听器数量
  * @param lbList 负载均衡列表
  * @returns 负载均衡列表(带有listenerNum字段)
  */
-const asyncGetListenerCount = async (lbList: any) => {
+const asyncGetListenerCount = async (api: (data: { lb_ids: string[] }) => any, lbList: any) => {
   // 如果lbList长度为0, 则无需请求监听器数量
   if (lbList.length === 0) return;
   // 负载均衡ids
   const lb_ids = lbList.map(({ id }: { id: string }) => id);
   // 查询负载均衡对应的监听器数量
-  const res = await businessStore.asyncGetListenerCount({ lb_ids });
+  const res = await api({ lb_ids });
   // 构建映射关系
   const listenerCountMap = {};
   res.data.details.forEach(({ lb_id, num }: { lb_id: string; num: number }) => {
@@ -58,9 +54,9 @@ const getLocalFilterConditions = (searchVal: any[], resolveRuleValue: (rule: any
  * 当负载均衡被锁定时, 可以链接至异步任务详情页面
  * @param flowId 异步任务id
  */
-const goAsyncTaskDetail = async (flowId: string) => {
+const goAsyncTaskDetail = async (api: (data: any, type: string) => any, flowId: string) => {
   // 1. 点击后, 先查询到 audit_id
-  const { data } = await businessStore.list(
+  const { data } = await api(
     {
       page: { limit: 1, start: 0, count: false },
       filter: {

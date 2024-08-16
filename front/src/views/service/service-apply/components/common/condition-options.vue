@@ -4,7 +4,7 @@ import AccountSelector from '@/components/account-selector/index.vue';
 import RegionSelector from './region-selector';
 import ResourceGroupSelector from './resource-group-selector';
 import { CloudType } from '@/typings';
-import { ResourceTypeEnum, VendorEnum } from '@/common/constant';
+import { ResourceTypeEnum, VendorEnum, GLOBAL_BIZS_KEY } from '@/common/constant';
 import { ref, PropType, computed, watch } from 'vue';
 import { useAccountStore } from '@/store';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
@@ -94,7 +94,6 @@ const selectedResourceGroup = computed({
 });
 
 const handleChangeAccount = (account: any) => {
-  console.log(account);
   vendorList.value = [
     {
       id: account?.vendor,
@@ -130,7 +129,12 @@ watch(
     <div class="cond-item" v-show="false">
       <div class="mb8">业务</div>
       <div class="cond-content">
-        <business-selector v-model="selectedBizId" :authed="true" :auto-select="true"></business-selector>
+        <business-selector
+          v-model="selectedBizId"
+          :authed="true"
+          :auto-select="true"
+          :url-key="GLOBAL_BIZS_KEY"
+        ></business-selector>
       </div>
     </div>
     <FormItem

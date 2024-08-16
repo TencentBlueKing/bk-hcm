@@ -1,6 +1,7 @@
 import { localStorageActions } from '@/common/util';
 import { QueryRuleOPEnum, RulesItem } from '@/typings';
 import { RouteLocationNormalizedLoaded } from 'vue-router';
+import { decodeValueByAtob } from './common';
 
 // 将输入的字符串形式的数字转换并格式化为指定精度的字符串表示
 export function formatBillCost(value: string, fixed = 3): string {
@@ -26,7 +27,7 @@ export class BillSearchRules {
     urlKey: string,
     field: string,
     op: QueryRuleOPEnum,
-    valueParser = (value: string) => value && JSON.parse(atob(value)),
+    valueParser = (value: string) => value && decodeValueByAtob(value),
   ) {
     const value = valueParser(route.query[urlKey] as string) || localStorageActions.get(urlKey, valueParser);
     value && this.rules.push({ field, op, value });

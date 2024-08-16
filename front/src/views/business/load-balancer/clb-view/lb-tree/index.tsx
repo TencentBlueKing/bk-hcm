@@ -6,9 +6,10 @@ import { Loading, Message, OverflowTitle, Tree } from 'bkui-vue';
 import SimpleSearchSelect from '../../components/simple-search-select';
 import Confirm from '@/components/confirm';
 // import stores
-import { useAccountStore, useBusinessStore, useLoadBalancerStore } from '@/store';
-// import custom hooks
+import { useBusinessStore, useLoadBalancerStore } from '@/store';
+// import hooks
 import { useI18n } from 'vue-i18n';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 import useMoreActionDropdown from '@/hooks/useMoreActionDropdown';
 // import utils
 import bus from '@/common/bus';
@@ -25,6 +26,7 @@ import { QueryRuleOPEnum } from '@/typings';
 import './index.scss';
 import { useVerify } from '@/hooks';
 import { useGlobalPermissionDialog } from '@/store/useGlobalPermissionDialog';
+import { GLOBAL_BIZS_KEY } from '@/common/constant';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -37,9 +39,9 @@ export default defineComponent({
     const { t } = useI18n();
     const router = useRouter();
     const route = useRoute();
+    const { getBusinessApiPath } = useWhereAmI();
     const { authVerifyData, handleAuth } = useVerify();
     // use stores
-    const accountStore = useAccountStore();
     const businessStore = useBusinessStore();
     const loadBalancerStore = useLoadBalancerStore();
     const globalPermissionDialogStore = useGlobalPermissionDialog();
@@ -76,9 +78,7 @@ export default defineComponent({
 
       // 获取请求 url
       const getUrl = (node: any, level: number) => {
-        const baseUrl = `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${
-          accountStore.bizs || route.query.bizs || localStorage.getItem('bizs')
-        }/`;
+        const baseUrl = `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}`;
         const typeUrl = !node ? getTypeUrl(depthTypeMap[level]) : getTypeUrl(depthTypeMap[level], node.id);
         return `${baseUrl}${typeUrl}/list`;
 
@@ -112,7 +112,10 @@ export default defineComponent({
       );
       // 如果是加载负载均衡节点, 则还需要请求对应负载均衡下的监听器数量接口
       if (!node && detailsRes.data.details?.length > 0) {
-        detailsRes.data.details = await asyncGetListenerCount(detailsRes.data.details);
+        detailsRes.data.details = await asyncGetListenerCount(
+          businessStore.asyncGetListenerCount,
+          detailsRes.data.details,
+        );
       }
 
       // 组装新增的节点(这里需要对domain单独处理)
@@ -163,7 +166,9 @@ export default defineComponent({
     };
 
     // 节点进入父容器可视区域时执行的回调
-    const intersectionObserverCb = ({ index, level, parent }: any) => {
+    const intersectionObserverCb = (args: any) => {
+      if (!args) return;
+      const { index, level, parent } = args;
       /**
        * 加载下一页数据
        * @param target 需要加载下一页数据的目标节点, 为 null 时加载根节点的下一页数据
@@ -215,7 +220,7 @@ export default defineComponent({
           // 本期暂时先重新拉取lb列表
           reset();
           // 导航至全部负载均衡
-          router.push({ name: LBRouteName.allLbs, query: { bizs: route.query.bizs } });
+          router.push({ name: LBRouteName.allLbs, query: { [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY] } });
         });
       });
     };
@@ -229,7 +234,7 @@ export default defineComponent({
           // 本期暂时先重新拉取lb列表
           reset();
           // 导航至全部负载均衡
-          router.push({ name: LBRouteName.allLbs, query: { bizs: route.query.bizs } });
+          router.push({ name: LBRouteName.allLbs, query: { [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY] } });
         });
       });
     };
@@ -243,7 +248,7 @@ export default defineComponent({
         // 本期暂时先重新拉取lb列表
         reset();
         // 导航至全部负载均衡
-        router.push({ name: LBRouteName.allLbs, query: { bizs: route.query.bizs } });
+        router.push({ name: LBRouteName.allLbs, query: { [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY] } });
       });
     };
 
