@@ -148,10 +148,10 @@ func (d *discovery) syncAddresses() {
 func (d *discovery) watcher(service cc.Name) {
 	key := ServiceDiscoveryName(service)
 
-	// Use serialized request so resolution still works if the target etcd
-	// server is partitioned away from the quorum.
 	ctx, cancel := context.WithTimeout(d.ctx, defaultEtcdTimeout)
 	defer cancel()
+	// Use serialized request so resolution still works if the target etcd
+	// server is partitioned away from the quorum.
 	resp, err := d.cli.Get(ctx, key, etcd3.WithPrefix(), etcd3.WithSerializable())
 	if err != nil {
 		logs.Infof("get %s key failed, err: %v", key, err)
