@@ -204,6 +204,22 @@ const {
   permissionParams,
   authVerifyData,
 } = useVerify();
+const computedSecurityText = computed(() => {
+  if (renderComponent.value !== SecurityManage) return '新建';
+
+  if (securityType.value === 'template') {
+    return '新建模板';
+  }
+  if (securityType.value === 'gcp') {
+    return '新建GCP防火墙规则';
+  }
+  return '新建安全组';
+});
+const handleEditTemplate = (payload: any) => {
+  isTemplateDialogShow.value = true;
+  isTemplateDialogEdit.value = true;
+  templateDialogPayload.value = payload;
+};
 </script>
 
 <template>
@@ -226,6 +242,7 @@ const {
           handleAuth(val)
         }"
         @handleSecrityType="handleSecrityType"
+        @editTemplate="handleEditTemplate"
         @edit="handleEdit"
         v-model:isFormDataChanged="isFormDataChanged"
       >
@@ -250,7 +267,7 @@ const {
               renderComponent === SubnetManage ||
               renderComponent === VpcManage
                 ? '申请'
-                : '新增'
+                : computedSecurityText
             }}
           </bk-button>
         </span>
