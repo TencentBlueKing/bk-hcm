@@ -120,7 +120,7 @@ export default defineComponent({
         router.push({
           path: `/${isResourcePage ? 'resource' : 'business'}/record/detail`,
           query: {
-            id: listItem.id,
+            record_id: listItem.id,
             name: listItem.res_name,
             flow: listItem.detail.data.res_flow.flow_id,
             res_id: listItem.res_id,
