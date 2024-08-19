@@ -21,13 +21,9 @@
 package loadbalancer
 
 import (
-	"encoding/json"
 	"fmt"
 
-	lblogic "hcm/cmd/cloud-server/logics/load-balancer"
 	cloudserver "hcm/pkg/api/cloud-server"
-	cslb "hcm/pkg/api/cloud-server/load-balancer"
-	"hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
@@ -73,85 +69,88 @@ func (svc *lbSvc) batchRuleOnline(cts *rest.Contexts, authHandler handler.ValidW
 	}
 
 	switch accountInfo.Vendor {
-	case enumor.TCloud:
-		return svc.buildCreateTcloudRule(cts, req.Data, accountInfo.AccountID, accountInfo.BkBizID)
+	// 这里的内容依赖clb excel导入的代码，暂时注释，等待clb excel导入合并后再开放
+	//case enumor.TCloud:
+	//	return svc.buildCreateTcloudRule(cts, req.Data, accountInfo.AccountID, accountInfo.BkBizID)
 	default:
 		return nil, fmt.Errorf("vendor: %s not support", accountInfo.Vendor)
 	}
 }
 
-func (svc *lbSvc) buildCreateTcloudRule(cts *rest.Contexts, body json.RawMessage, accountID string, BkBizID int64) (any, error) {
-	req := new(cslb.TCloudSopsRuleBatchCreateReq)
-	if err := json.Unmarshal(body, req); err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-
-	bindRsRecord := svc.convBindRsRecord(req.BindRSRecords)
-	// 参数检查preview
-	result, err := svc.bindRSPreview(cts, bindRsRecord, make([]*cloud.BatchOperationValidateError, 0), BkBizID)
-	if err != nil {
-		return nil, fmt.Errorf("batch sops rule online, preview validate err, err: %s", err)
-	}
-
-	var bindRSReqParam *cloud.BatchOperationReq[*lblogic.BindRSRecord]
-	switch value := result.(type) {
-	case []*cloud.BatchOperationValidateError:
-		return nil, fmt.Errorf("batch sops rule online, preview validate err, err: %s", value)
-	case []*cloud.BatchOperationPreviewResult[*lblogic.BindRSRecord]:
-		// 转换preview返回结果为请求参数
-		bindRSReqParam = convBatchOperationPreviewResultToReq(value, accountID)
-	default:
-		return nil, fmt.Errorf("batch sops rule online, preview validate result type is invalid")
-	}
-
-	// 提交异步任务
-	logs.Infof("batch sops rule online, request bind rs api, request param: %v", bindRSReqParam)
-	return svc.bindRS(cts, bindRSReqParam)
-}
-
-func convBatchOperationPreviewResultToReq(previewResultList []*cloud.BatchOperationPreviewResult[*lblogic.BindRSRecord], accountID string) *cloud.BatchOperationReq[*lblogic.BindRSRecord] {
-	batchOperationReq := new(cloud.BatchOperationReq[*lblogic.BindRSRecord])
-	batchOperationReq.AccountID = accountID
-	for _, previewResult := range previewResultList {
-		batchOpeItem := &cloud.BatchOperation[*lblogic.BindRSRecord]{
-			ClbID:             previewResult.ClbID,
-			ClbName:           previewResult.ClbName,
-			Vip:               previewResult.Vip,
-			NewRsCount:        previewResult.NewRsCount,
-			UpdateWeightCount: previewResult.UpdateWeightCount,
-			Listeners:         previewResult.Listeners,
-		}
-		batchOperationReq.Data = append(batchOperationReq.Data, batchOpeItem)
-	}
-
-	return batchOperationReq
-}
-
-func (svc *lbSvc) convBindRsRecord(bindRSRecordForSops []*cslb.BindRSRecordForSops) []*lblogic.BindRSRecord {
-	bindRsRecord := make([]*lblogic.BindRSRecord, 0)
-	for _, recordSops := range bindRSRecordForSops {
-		record := &lblogic.BindRSRecord{
-			Action:         recordSops.Action,
-			ListenerName:   recordSops.ListenerName,
-			Protocol:       recordSops.Protocol,
-			IPDomainType:   recordSops.IPDomainType,
-			VIP:            recordSops.VIP,
-			VPorts:         recordSops.VPorts,
-			Domain:         recordSops.Domain,
-			URLPath:        recordSops.URLPath,
-			RSIPs:          recordSops.RSIPs,
-			RSPorts:        recordSops.RSPorts,
-			Weight:         recordSops.Weight,
-			Scheduler:      recordSops.Scheduler,
-			SessionExpired: recordSops.SessionExpired,
-			InstType:       recordSops.InstType,
-			ServerCert:     recordSops.ServerCert,
-			ClientCert:     recordSops.ClientCert,
-			RSInfos:        recordSops.RSInfos,
-			HaveEndPort:    recordSops.HaveEndPort,
-		}
-		bindRsRecord = append(bindRsRecord, record)
-	}
-
-	return bindRsRecord
-}
+// 这里的内容依赖clb excel导入的代码，暂时注释，等待clb excel导入合并后再开放
+//
+//func (svc *lbSvc) buildCreateTcloudRule(cts *rest.Contexts, body json.RawMessage, accountID string, BkBizID int64) (any, error) {
+//	req := new(cslb.TCloudSopsRuleBatchCreateReq)
+//	if err := json.Unmarshal(body, req); err != nil {
+//		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+//	}
+//
+//	bindRsRecord := svc.convBindRsRecord(req.BindRSRecords)
+//	// 参数检查preview
+//	result, err := svc.bindRSPreview(cts, bindRsRecord, make([]*cloud.BatchOperationValidateError, 0), BkBizID)
+//	if err != nil {
+//		return nil, fmt.Errorf("batch sops rule online, preview validate err, err: %s", err)
+//	}
+//
+//	var bindRSReqParam *cloud.BatchOperationReq[*lblogic.BindRSRecord]
+//	switch value := result.(type) {
+//	case []*cloud.BatchOperationValidateError:
+//		return nil, fmt.Errorf("batch sops rule online, preview validate err, err: %s", value)
+//	case []*cloud.BatchOperationPreviewResult[*lblogic.BindRSRecord]:
+//		// 转换preview返回结果为请求参数
+//		bindRSReqParam = convBatchOperationPreviewResultToReq(value, accountID)
+//	default:
+//		return nil, fmt.Errorf("batch sops rule online, preview validate result type is invalid")
+//	}
+//
+//	// 提交异步任务
+//	logs.Infof("batch sops rule online, request bind rs api, request param: %v", bindRSReqParam)
+//	return svc.bindRS(cts, bindRSReqParam)
+//}
+//
+//func convBatchOperationPreviewResultToReq(previewResultList []*cloud.BatchOperationPreviewResult[*lblogic.BindRSRecord], accountID string) *cloud.BatchOperationReq[*lblogic.BindRSRecord] {
+//	batchOperationReq := new(cloud.BatchOperationReq[*lblogic.BindRSRecord])
+//	batchOperationReq.AccountID = accountID
+//	for _, previewResult := range previewResultList {
+//		batchOpeItem := &cloud.BatchOperation[*lblogic.BindRSRecord]{
+//			ClbID:             previewResult.ClbID,
+//			ClbName:           previewResult.ClbName,
+//			Vip:               previewResult.Vip,
+//			NewRsCount:        previewResult.NewRsCount,
+//			UpdateWeightCount: previewResult.UpdateWeightCount,
+//			Listeners:         previewResult.Listeners,
+//		}
+//		batchOperationReq.Data = append(batchOperationReq.Data, batchOpeItem)
+//	}
+//
+//	return batchOperationReq
+//}
+//
+//func (svc *lbSvc) convBindRsRecord(bindRSRecordForSops []*cslb.BindRSRecordForSops) []*lblogic.BindRSRecord {
+//	bindRsRecord := make([]*lblogic.BindRSRecord, 0)
+//	for _, recordSops := range bindRSRecordForSops {
+//		record := &lblogic.BindRSRecord{
+//			Action:         recordSops.Action,
+//			ListenerName:   recordSops.ListenerName,
+//			Protocol:       recordSops.Protocol,
+//			IPDomainType:   recordSops.IPDomainType,
+//			VIP:            recordSops.VIP,
+//			VPorts:         recordSops.VPorts,
+//			Domain:         recordSops.Domain,
+//			URLPath:        recordSops.URLPath,
+//			RSIPs:          recordSops.RSIPs,
+//			RSPorts:        recordSops.RSPorts,
+//			Weight:         recordSops.Weight,
+//			Scheduler:      recordSops.Scheduler,
+//			SessionExpired: recordSops.SessionExpired,
+//			InstType:       recordSops.InstType,
+//			ServerCert:     recordSops.ServerCert,
+//			ClientCert:     recordSops.ClientCert,
+//			RSInfos:        recordSops.RSInfos,
+//			HaveEndPort:    recordSops.HaveEndPort,
+//		}
+//		bindRsRecord = append(bindRsRecord, record)
+//	}
+//
+//	return bindRsRecord
+//}

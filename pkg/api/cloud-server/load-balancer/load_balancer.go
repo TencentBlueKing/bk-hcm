@@ -23,7 +23,6 @@ import (
 	"errors"
 	"fmt"
 
-	lblogic "hcm/cmd/cloud-server/logics/load-balancer"
 	"hcm/pkg/adaptor/types/load-balancer"
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
@@ -628,7 +627,8 @@ func (req *TCloudSopsRuleBatchCreateReq) Validate() error {
 
 // BindRSRecordForSops ...
 type BindRSRecordForSops struct {
-	Action enumor.BatchOperationActionType `json:"action"`
+	// 这里的内容依赖clb excel导入的代码，暂时注释，等待clb excel导入合并后再开放
+	//Action enumor.BatchOperationActionType `json:"action"`
 
 	ListenerName string              `json:"name"`
 	Protocol     enumor.ProtocolType `json:"protocol"`
@@ -643,11 +643,12 @@ type BindRSRecordForSops struct {
 	ServerCert []string `json:"cert_cloud_ids"` // ref: pkg/api/core/cloud/load-balancer/tcloud.go:188
 	ClientCert string   `json:"ca_cloud_id"`    // 客户端证书
 
-	InstType enumor.InstType   `json:"inst_type"` // 后端类型 CVM、ENI
-	RSIPs    []string          `json:"rs_ips"`
-	RSPorts  []int             `json:"rs_ports"`
-	Weight   []int             `json:"weight"`
-	RSInfos  []*lblogic.RSInfo `json:"rs_info"` // 后端实例信息
+	InstType enumor.InstType `json:"inst_type"` // 后端类型 CVM、ENI
+	RSIPs    []string        `json:"rs_ips"`
+	RSPorts  []int           `json:"rs_ports"`
+	Weight   []int           `json:"weight"`
+	// 这里的内容依赖clb excel导入的代码，暂时注释，等待clb excel导入合并后再开放
+	//RSInfos  []*lblogic.RSInfo `json:"rs_info"` // 后端实例信息
 
 	Scheduler      string `json:"scheduler"`       // 均衡方式
 	SessionExpired int64  `json:"session_expired"` // 会话保持时间，单位秒
