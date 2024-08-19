@@ -293,7 +293,7 @@ func (act MonthTaskAction) cleanBillItem(kt *kit.Kit, opt *MonthTaskActionOption
 					result.Count, opt, err.Error())
 			}
 			count := min(result.Count, constant.BatchOperationMaxLimit)
-			logs.Infof("successfully delete (%d/%d) bill item ,batch_idx: %d, opt: %+v, rid %s",
+			logs.Infof("successfully delete (%d/%d) bill item, batch_idx: %d, opt: %+v, rid %s",
 				count, result.Count, batch, opt, kt.Rid)
 			batch = batch + 1
 			continue

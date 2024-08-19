@@ -85,7 +85,7 @@ func (a AwsMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index uint64
 	// 获取指定月份最后一天
 	lastDay, err := times.GetLastDayOfMonth(opt.BillYear, opt.BillMonth)
 	if err != nil {
-		logs.Errorf("fail get last day of month for aws month task, year: %d, month:%d, err: %v, rid: %s",
+		logs.Errorf("fail get last day of month for aws month task, year: %d, month: %d, err: %v, rid: %s",
 			opt.BillYear, opt.BillMonth, err, kt.Rid)
 		return nil, false, err
 	}
@@ -229,9 +229,10 @@ func (a AwsMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption, rawItemList
 	for _, item := range rawItemList {
 		if item.HcProductCode == dailysplit.AwsSavingsPlansCostCodeReverse {
 			spRawItems = append(spRawItems, item)
-		} else {
-			commonRawItems = append(commonRawItems, item)
+			continue
 		}
+		commonRawItems = append(commonRawItems, item)
+
 	}
 
 	commonItems, err := a.splitCommonExpense(kt, opt, mainAccountMap, rootAsMainAccount,

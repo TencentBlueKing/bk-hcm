@@ -223,29 +223,28 @@ func (msdc *MainDailySplitController) syncDailySplit(kt *kit.Kit, billYear, bill
 					task.ID, flowID, err.Error(), kt.Rid)
 				continue
 			}
+			continue
+		}
+		// 如果已经有拉取task flow，则检查拉取任务是否有问题
+		flow, err := msdc.Client.TaskServer().GetFlow(kt, task.SplitFlowID)
+		if err != nil {
+			return fmt.Errorf("failed to get flow by id %s, err %s", task.SplitFlowID, err.Error())
+		}
+		if flow.State == enumor.FlowFailed || flow.State == enumor.FlowCancel {
 
-		} else {
-			// 如果已经有拉取task flow，则检查拉取任务是否有问题
-			flow, err := msdc.Client.TaskServer().GetFlow(kt, task.SplitFlowID)
+			flowID, err := msdc.createDailySplitFlow(kt, summary, billYear, billMonth, task.BillDay)
 			if err != nil {
-				return fmt.Errorf("failed to get flow by id %s, err %s", task.SplitFlowID, err.Error())
+				logs.Warnf("create daily split task for %v, %d/%d/%d failed, err %s, rid: %s",
+					summary, billYear, billMonth, task.BillDay, err.Error(), kt.Rid)
+				continue
 			}
-			if flow.State == enumor.FlowFailed || flow.State == enumor.FlowCancel {
-
-				flowID, err := msdc.createDailySplitFlow(kt, summary, billYear, billMonth, task.BillDay)
-				if err != nil {
-					logs.Warnf("create daily split task for %v, %d/%d/%d failed, err %s, rid: %s",
-						summary, billYear, billMonth, task.BillDay, err.Error(), kt.Rid)
-					continue
-				}
-				logs.Infof("create new daily split task flow %s for %s/%s/%s/%d/%d/%d/%d successfully, rid: %s",
-					task.ID, msdc.RootAccountID, msdc.MainAccountID, msdc.Vendor, billYear,
-					billMonth, task.BillDay, summary.CurrentVersion, kt.Rid)
-				if err := msdc.updateDailyPullTaskFlowID(kt, task.ID, flowID); err != nil {
-					logs.Warnf("update pull task %s split flow id to %s failed, err %s, rid: %s",
-						task.ID, flowID, err.Error(), kt.Rid)
-					continue
-				}
+			logs.Infof("create new daily split task flow %s for %s/%s/%s/%d/%d/%d/%d successfully, rid: %s",
+				task.ID, msdc.RootAccountID, msdc.MainAccountID, msdc.Vendor, billYear,
+				billMonth, task.BillDay, summary.CurrentVersion, kt.Rid)
+			if err := msdc.updateDailyPullTaskFlowID(kt, task.ID, flowID); err != nil {
+				logs.Warnf("update pull task %s split flow id to %s failed, err %s, rid: %s",
+					task.ID, flowID, err.Error(), kt.Rid)
+				continue
 			}
 		}
 	}

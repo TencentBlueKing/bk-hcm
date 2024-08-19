@@ -287,16 +287,16 @@ func (mac *MainAccountController) syncDailyRawBill(kt *kit.Kit) error {
 	lastBillYear, lastBillMonth := times.GetLastMonthUTC()
 	err := mac.ensureDailyRawPullTask(kt, lastBillYear, lastBillMonth)
 	if err != nil {
-		logs.Errorf("fail to ensure daily raw pull task, venodr: %s, period: %d-%d, main_account: %s, rid: %s",
-			mac.Vendor, lastBillYear, lastBillMonth, mac.MainAccountID, kt.Rid)
+		logs.Errorf("fail to ensure last month daily raw pull task, err: %v, vendor: %s, period: %d-%d, "+
+			"main account: %s, rid: %s", err, mac.Vendor, lastBillYear, lastBillMonth, mac.MainAccountID, kt.Rid)
 		return err
 	}
 	// 本月
 	curBillYear, curBillMonth := times.GetCurrentMonthUTC()
 	err = mac.ensureDailyRawPullTask(kt, curBillYear, curBillMonth)
 	if err != nil {
-		logs.Errorf("fail to ensure daily raw pull task, venodr: %s, period: %d-%d, main_account: %s, rid: %s",
-			mac.Vendor, curBillYear, curBillMonth, mac.MainAccountID, kt.Rid)
+		logs.Errorf("fail to ensure current month  daily raw pull task, err: %v, vendor: %s, period: %d-%d, "+
+			"main account: %s, rid: %s", err, mac.Vendor, curBillYear, curBillMonth, mac.MainAccountID, kt.Rid)
 		return err
 	}
 	return nil
