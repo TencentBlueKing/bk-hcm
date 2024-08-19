@@ -23,6 +23,8 @@ import (
 	"time"
 
 	"hcm/pkg/adaptor/types"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/tools/rand"
 
 	billing "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/billing/v20180709"
 	cam "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam/v20190116"
@@ -42,7 +44,7 @@ const (
 
 // ClientSet interface to get tcloud sdk client set
 type ClientSet interface {
-	SetRateLimitRetryWithConstInterval(maxRetries int, interval time.Duration)
+	SetRateLimitRetryWithConstInterval()
 	CamServiceClient(region string) (*cam.Client, error)
 	CvmClient(region string) (*cvm.Client, error)
 	CbsClient(region string) (*cbs.Client, error)
@@ -66,9 +68,18 @@ func newClientSet(s *types.BaseSecret, profile *profile.ClientProfile) ClientSet
 }
 
 // SetRateLimitRetryWithConstInterval Set up a retry mechanism with constant interval after exceeding the rate limit
-func (c *clientSet) SetRateLimitRetryWithConstInterval(maxRetries int, interval time.Duration) {
-	c.profile.RateLimitExceededMaxRetries = maxRetries
-	c.profile.RateLimitExceededRetryDuration = profile.ConstantDurationFunc(interval)
+func (c *clientSet) SetRateLimitRetryWithConstInterval() {
+	c.profile.RateLimitExceededMaxRetries = constant.MaxRetries
+	c.profile.RateLimitExceededRetryDuration = RandomDurationFunc()
+}
+
+// RandomDurationFunc random duration func
+func RandomDurationFunc() profile.DurationFunc {
+	return func(int) time.Duration {
+		randomNum := rand.RandomRange([2]int{constant.MinRetryInterval, constant.MaxRetryInterval})
+		interval := time.Duration(randomNum) * time.Millisecond
+		return interval
+	}
 }
 
 // CamServiceClient tcloud sdk cam client
