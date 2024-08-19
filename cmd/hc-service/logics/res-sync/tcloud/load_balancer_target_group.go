@@ -549,7 +549,7 @@ func (cli *client) listTargetsFromDB(kt *kit.Kit, param *SyncBaseParams, opt *Sy
 	for {
 		relRespTemp, err := cli.dbCli.Global.LoadBalancer.ListTargetGroupListenerRel(kt, listReq)
 		if err != nil {
-			logs.Errorf("fail to ListTargetGroupListenerRel, err: %v, rid: %s ", err, kt.Rid)
+			logs.Errorf("fail to list target group listener rel, err: %v, req: %v, cloud_lbl_id: %s, rid: %s", err, listReq, param.CloudIDs, kt.Rid)
 			return nil, nil, err
 		}
 		relResp.Details = append(relResp.Details, relRespTemp.Details...)
