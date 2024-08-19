@@ -205,6 +205,7 @@ func (svc *lbSvc) batchCreateTargetDb(kt *kit.Kit, targets []*dataproto.TargetBa
 			TargetGroupID: item.TargetGroupID,
 			InstType:      item.InstType,
 			CloudInstID:   item.CloudInstID,
+			IP:            item.IP,
 			Port:          item.Port,
 			Weight:        item.Weight,
 		})
