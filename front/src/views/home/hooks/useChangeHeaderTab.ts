@@ -9,10 +9,10 @@ import scheme from '@/router/module/scheme';
 import bill from '@/router/module/bill';
 // import stores
 import { useAccountStore } from '@/store';
-// import hooks
-import { localStorageActions } from '@/common/util';
-// 点击跳转header-tab时清除一下pinia
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
+import { encodeValueByBtoa } from '@/utils';
+import { GLOBAL_BIZS_KEY } from '@/common/constant';
+
 // home页切换header-tab相关业务逻辑
 export default () => {
   const accountStore = useAccountStore();
@@ -30,10 +30,11 @@ export default () => {
   const handleHeaderMenuClick = (id: string, path: string) => {
     let bizs;
     if (id === 'business') {
-      bizs = localStorageActions.get('bizs');
+      bizs = accountStore.bizs;
     }
+    // 点击跳转header-tab时清除一下pinia
     resourceAccountStore.setResourceAccount({});
-    router.push({ path, query: { bizs } });
+    router.push({ path, query: { [GLOBAL_BIZS_KEY]: bizs ? encodeValueByBtoa(bizs) : undefined } });
   };
 
   // 更新左侧 menus 菜单, 并更新全局业务id

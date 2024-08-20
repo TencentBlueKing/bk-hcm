@@ -2,16 +2,21 @@ import http from '@/http';
 import { defineStore } from 'pinia';
 
 import { useAccountStore } from '@/store';
-import { getQueryStringParams } from '@/common/util';
+import { getQueryStringParams, localStorageActions } from '@/common/util';
 import { AsyncTaskDetailResp, ClbQuotasResp, LbPriceInquiryResp } from '@/typings';
+import { decodeValueByAtob } from '@/utils';
+import { GLOBAL_BIZS_KEY } from '@/common/constant';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 // 获取
 const getBusinessApiPath = () => {
   const store = useAccountStore();
-  const bizs = getQueryStringParams('bizs');
   if (location.href.includes('business')) {
-    return `bizs/${store.bizs || bizs}/`;
+    return `bizs/${
+      store.bizs ||
+      (getQueryStringParams(GLOBAL_BIZS_KEY) && decodeValueByAtob(getQueryStringParams(GLOBAL_BIZS_KEY))) ||
+      localStorageActions.get(GLOBAL_BIZS_KEY, (value) => value && decodeValueByAtob(value))
+    }/`;
   }
   return '';
 };

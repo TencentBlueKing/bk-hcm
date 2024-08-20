@@ -9,6 +9,8 @@ import { useAccountStore } from '@/store';
 import { localStorageActions } from '@/common/util';
 import { getFavoriteList, useFavorite } from '@/hooks/useFavorite';
 import { Button, Dialog, Exception } from 'bkui-vue';
+import { decodeValueByAtob, encodeValueByBtoa } from '@/utils';
+import { GLOBAL_BIZS_KEY } from '@/common/constant';
 
 export default defineComponent({
   name: 'BusinessSelector',
@@ -25,50 +27,52 @@ export default defineComponent({
 
     const { favoriteSet, addToFavorite, removeFromFavorite } = useFavorite(businessId.value, favoriteList.value);
 
+    const saveGlobalBizsId = (val: number) => {
+      // 存入store
+      accountStore.updateBizsId(val);
+      // 存入local storage
+      const saveValue = encodeValueByBtoa(val);
+      localStorageActions.set(GLOBAL_BIZS_KEY, saveValue);
+      // 返回query参数
+      return { [GLOBAL_BIZS_KEY]: saveValue };
+    };
+
     // 选择业务
     const handleChange = async (val: { id: number }) => {
       if (businessId.value === val.id) return;
       businessId.value = val.id;
-      accountStore.updateBizsId(businessId.value); // 设置全局业务id
-      // 持久化存储全局业务id
-      localStorageActions.set('bizs', businessId.value);
+      // 存储全局业务id
+      const globalBizsQueryParams = saveGlobalBizsId(businessId.value);
       // @ts-ignore
       // 如果当前页面为详情页, 则当业务id切换时, 跳转至对应资源的列表页
       const isBusinessDetail = route.name?.includes('BusinessDetail');
+      const query = { ...route.query, ...globalBizsQueryParams };
       if (isBusinessDetail) {
-        router.push({
-          path: route.path.split('/detail')[0],
-          query: {
-            ...route.query,
-            bizs: businessId.value,
-          },
-        });
+        router.push({ path: route.path.split('/detail')[0], query });
       } else {
-        await router.push({
-          path: (route.meta.rootRoutePath as string) || route.path,
-          query: {
-            ...route.query,
-            bizs: businessId.value,
-          },
-        });
+        await router.push({ path: (route.meta.rootRoutePath as string) || route.path, query });
         props.reload();
       }
+    };
+
+    // 获取上一次存储的全局业务id（先从url中获取全局业务id, 如果没有, 则从localStorage中获取, 如果还是没有, 则返回undefined）
+    const getGlobalBizsId = () => {
+      // 获取localStorage中的全局业务id的版本号，如果版本号不一致, 则清除url以及localStorage中的全局业务id，并更新版本号
+      const urlBizs = route.query[GLOBAL_BIZS_KEY] && decodeValueByAtob(route.query[GLOBAL_BIZS_KEY] as string);
+      return urlBizs ?? localStorageActions.get(GLOBAL_BIZS_KEY, (value) => value && decodeValueByAtob(value));
     };
 
     const fetchBusinessList = async () => {
       const res = await accountStore.getBizListWithAuth();
       // 更新业务列表
       businessList.value = res.data;
-      // 先从 url 中获取 bizs 参数, 如果没有, 则从 localStorage 中获取, 如果还是没有, 则取第一个
-      let { bizs } = route.query;
-      if (!bizs) {
-        bizs = localStorageActions.get('bizs');
-      }
-      businessId.value = Number(bizs) || res.data[0]?.id || 0;
-      // 设置全局业务id
-      accountStore.updateBizsId(businessId.value);
-      // 持久化存储全局业务id
-      localStorageActions.set('bizs', businessId.value);
+      // 获取上一次存储的全局业务id
+      const lastBizs = getGlobalBizsId();
+      businessId.value = Number(lastBizs) || res.data[0]?.id || 0;
+      // 存储新的全局业务id
+      const globalBizsQueryParams = saveGlobalBizsId(businessId.value);
+      // 更新query参数
+      router.push({ query: { ...route.query, ...globalBizsQueryParams } });
     };
 
     onMounted(() => {

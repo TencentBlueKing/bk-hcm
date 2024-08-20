@@ -271,8 +271,7 @@ export default defineComponent({
                                 }
 
                                 return (
-                                  <RouterLink
-                                    to={{ path: `${child.path}`, query: { ...route.query, bizs: accountStore.bizs } }}>
+                                  <RouterLink to={{ path: child.path, query: { ...route.query } }}>
                                     <Menu.Item key={child.meta?.activeKey as string}>
                                       {{
                                         icon: () => <i class={child.meta?.icon} />,

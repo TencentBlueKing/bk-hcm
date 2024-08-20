@@ -134,7 +134,7 @@ export default defineComponent({
           {props.searchKeys.includes('product_id') && (
             <div>
               <div class={cssModule['search-label']}>{'业务'}</div>
-              <BusinessSelector v-model={modal.value.bk_biz_id} clearable multiple saveBizs bizsKey={BILL_BIZS_KEY} />
+              <BusinessSelector v-model={modal.value.bk_biz_id} clearable multiple urlKey={BILL_BIZS_KEY} />
             </div>
           )}
           {props.searchKeys.includes('main_account_id') && (

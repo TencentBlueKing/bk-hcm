@@ -1,3 +1,6 @@
+// 全局业务id
+export const GLOBAL_BIZS_KEY = 'bizs';
+
 export enum VendorEnum {
   TCLOUD = 'tcloud',
   AWS = 'aws',

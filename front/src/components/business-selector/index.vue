@@ -5,6 +5,7 @@ import { SelectColumn } from '@blueking/ediatable';
 import { useRouter, useRoute } from 'vue-router';
 import { isEmpty, localStorageActions } from '@/common/util';
 import { useI18n } from 'vue-i18n';
+import { decodeValueByAtob, encodeValueByBtoa } from '@/utils';
 
 const props = defineProps({
   modelValue: [Number, String, Array] as PropType<number | string | Array<number | string>>,
@@ -16,8 +17,7 @@ const props = defineProps({
   clearable: Boolean as PropType<boolean>,
   isShowAll: Boolean as PropType<boolean>,
   notAutoSelectAll: Boolean as PropType<boolean>,
-  saveBizs: Boolean as PropType<boolean>,
-  bizsKey: String as PropType<string>,
+  urlKey: String as PropType<string>,
   apiMethod: Function as PropType<(...args: any) => Promise<any>>,
 });
 const emit = defineEmits(['update:modelValue']);
@@ -62,14 +62,14 @@ watchEffect(async () => {
     id = id ? [id] : [];
   }
 
-  // 开启 saveBizs, 则自动选中上一次选中的业务
-  if (props.saveBizs) {
-    const urlBizs = route.query[props.bizsKey] as string;
+  // 设置了 urlKey, 则自动选中上一次选中的业务
+  if (props.urlKey) {
+    const urlBizs = route.query[props.urlKey] as string;
 
     // 优先使用 url 中的业务id, 其次是持久化的, 最后是默认值
     id = urlBizs
-      ? JSON.parse(atob(urlBizs))
-      : localStorageActions.get(props.bizsKey, (value) => JSON.parse(atob(value))) || id;
+      ? decodeValueByAtob(urlBizs)
+      : localStorageActions.get(props.urlKey, (value) => value && decodeValueByAtob(value)) || id;
   }
 
   // 设置选中的值
@@ -122,26 +122,26 @@ const selectedValue = computed({
 watch(
   selectedValue,
   (val) => {
-    if (!props.saveBizs) return;
+    if (!props.urlKey) return;
 
     const query = { ...route.query };
-    const encodedBizs = btoa(JSON.stringify(val));
+    const encodedBizs = encodeValueByBtoa(val);
 
     // 多选
     if (props.multiple) {
       // 未选时, 不用存业务id
-      query[props.bizsKey] = (val as string[]).length > 0 ? encodedBizs : undefined;
+      query[props.urlKey] = (val as string[]).length > 0 ? encodedBizs : undefined;
     }
     // 单选
     else {
-      query[props.bizsKey] = encodedBizs || undefined;
+      query[props.urlKey] = encodedBizs || undefined;
     }
 
     // 持久化处理
-    if (query[props.bizsKey]) {
-      localStorageActions.set(props.bizsKey, query[props.bizsKey]);
+    if (query[props.urlKey]) {
+      localStorageActions.set(props.urlKey, query[props.urlKey]);
     } else {
-      localStorageActions.remove(props.bizsKey);
+      localStorageActions.remove(props.urlKey);
     }
     // 记录业务id 到 url 上
     router.replace({ ...route, query });

@@ -11,6 +11,7 @@ import { useLoadBalancerStore } from '@/store/loadbalancer';
 import { useRoute } from 'vue-router';
 // import types
 import { IOriginPage } from '@/typings';
+import { GLOBAL_BIZS_KEY } from '@/common/constant';
 
 const { Option } = Select;
 
@@ -90,7 +91,7 @@ export default (getListData: () => void, originPage: IOriginPage, isHttpsAndSniO
     const promise =
       action.value === OpAction.ADD
         ? businessStore.createRules({
-            bk_biz_id: route.query.bizs,
+            bk_biz_id: route.query[GLOBAL_BIZS_KEY],
             target_group_id: formData.target_group_id,
             lbl_id,
             url: formData.url,
