@@ -114,22 +114,29 @@ func (svc *lbSvc) buildCreateTCloudTarget(kt *kit.Kit, body json.RawMessage, acc
 				Filter: tools.EqualExpression("target_group_id", tgID),
 				Page:   core.NewDefaultBasePage(),
 			}
-			ruleRelList, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroupListenerRel(kt, ruleRelReq)
-			if err != nil {
-				logs.Errorf("list tcloud listener url rule failed, tgID: %s, err: %v, rid: %s", tgID, err, kt.Rid)
-				return nil, err
-			}
+			for {
+				listRuleRelResult, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroupListenerRel(kt, ruleRelReq)
+				if err != nil {
+					logs.Errorf("list tcloud listener url rule failed, tgID: %s, err: %v, rid: %s", tgID, err, kt.Rid)
+					return nil, err
+				}
 
-			// 未绑定监听器及规则，分组到lbID=-1的默认组中
-			lbID := "-1"
-			if len(ruleRelList.Details) != 0 {
-				// 已经绑定了监听器及规则，归属某一clb
-				lbID = ruleRelList.Details[0].LbID
+				// 未绑定监听器及规则，分组到lbID=-1的默认组中
+				lbID := "-1"
+				if len(listRuleRelResult.Details) != 0 {
+					// 已经绑定了监听器及规则，归属某一clb
+					lbID = listRuleRelResult.Details[0].LbID
+				}
+				if _, exists := lbTgsMap[lbID]; !exists {
+					lbTgsMap[lbID] = make([]string, 0)
+				}
+				lbTgsMap[lbID] = append(lbTgsMap[lbID], tgID)
+
+				if uint(len(listRuleRelResult.Details)) < core.DefaultMaxPageLimit {
+					break
+				}
+				ruleRelReq.Page.Start += uint32(core.DefaultMaxPageLimit)
 			}
-			if _, exists := lbTgsMap[lbID]; !exists {
-				lbTgsMap[lbID] = make([]string, 0)
-			}
-			lbTgsMap[lbID] = append(lbTgsMap[lbID], tgID)
 		}
 	}
 
