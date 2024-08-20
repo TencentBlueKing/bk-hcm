@@ -78,4 +78,7 @@ func register() {
 	action.RegisterAction(actionmainsummary.MainAccountSummaryAction{})
 	action.RegisterAction(actionrootsummary.RootAccountSummaryAction{})
 	action.RegisterAction(actionmonthtask.MonthTaskAction{})
+
+	action.RegisterAction(actionlb.DeleteURLRuleAction{})
+	action.RegisterAction(actionlb.DeleteListenerAction{})
 }

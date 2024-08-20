@@ -78,6 +78,11 @@ func (p ProtocolType) IsLayer7Protocol() bool {
 	return p == HttpProtocol || p == HttpsProtocol
 }
 
+// IsLayer4Protocol 是否4层规则类型
+func (p ProtocolType) IsLayer4Protocol() bool {
+	return p == TcpProtocol || p == UdpProtocol || p == TcpSslProtocol || p == QuicProtocol
+}
+
 // SniType SNI类型
 type SniType int64
 
@@ -112,6 +117,8 @@ const (
 	ModifyWeightTaskType = TaskType(FlowTargetGroupModifyWeight)
 	// ApplyTargetGroupType 任务类型应用目标组到监听器/规则上
 	ApplyTargetGroupType = TaskType(FlowApplyTargetGroupToListenerRule)
+	// DeleteRuleTaskType 任务类型-删除负载均衡规则
+	DeleteRuleTaskType = TaskType(FlowLoadBalancerDeleteRule)
 )
 
 // InstType 实例类型
@@ -146,3 +153,30 @@ const (
 func (r ResFlowStatus) IsEnd() bool {
 	return r == CancelResFlowStatus || r == TimeoutResFlowStatus || r == SuccessResFlowStatus
 }
+
+// OperationType 操作类型
+type OperationType string
+
+const (
+	// OperationTypeListenerRS 操作类型-新增监听器 & 绑定RS
+	OperationTypeListenerRS OperationType = "LISTENER_RS"
+	// OperationTypeUrlRS 操作类型-新增URLRule & 绑定RS
+	OperationTypeUrlRS OperationType = "URL_RS"
+	// OperationTypeListenerUrlRS 操作类型-新增监听器 & 新增URLRule & 绑定RS
+	OperationTypeListenerUrlRS OperationType = "LISTENER_URL_RS"
+)
+
+// Scheduler 负载均衡方式
+type Scheduler string
+
+const (
+	// WRR 权重轮循
+	WRR Scheduler = "WRR"
+	// LEAST_CONN 最少连接数
+	LEAST_CONN Scheduler = "LEAST_CONN"
+)
+
+const (
+	// ParameterWildcard 参数通配符
+	ParameterWildcard string = "ALL"
+)
