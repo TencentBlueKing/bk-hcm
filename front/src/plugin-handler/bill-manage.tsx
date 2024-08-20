@@ -2,12 +2,14 @@ import { Ref, ref } from 'vue';
 import { RouteLocationNormalizedLoaded } from 'vue-router';
 
 import BillsExportButton from '@/views/bill/bill/components/bills-export-button';
+import BusinessSelector from '@/components/business-selector/index.vue';
 
 import { useI18n } from 'vue-i18n';
 import { exportBillsBizSummary, exportBillsRootAccountSummary, reqBillsBizSummaryList } from '@/api/bill';
 import { FilterType, QueryRuleOPEnum, RulesItem } from '@/typings';
 import { BillSearchRules } from '@/utils';
 import { BILL_BIZS_KEY, BILL_MAIN_ACCOUNTS_KEY } from '@/constants';
+import { ISearchModal } from '@/views/bill/bill/components/search';
 
 // 账单汇总-一级账号
 const usePrimaryHandler = () => {
@@ -116,11 +118,27 @@ const useAdjustHandler = () => {
   };
 };
 
+// 搜索组件
+const useSearchCompHandler = () => {
+  const { t } = useI18n();
+  const productSearchLabel = t('业务');
+
+  const renderProductComponent = (modal: Ref<ISearchModal>) => {
+    return <BusinessSelector v-model={modal.value.bk_biz_id} clearable multiple urlKey={BILL_BIZS_KEY} />;
+  };
+
+  return {
+    productSearchLabel,
+    renderProductComponent,
+  };
+};
+
 const pluginHandler = {
   usePrimaryHandler,
   useSubHandler,
   useProductHandler,
   useAdjustHandler,
+  useSearchCompHandler,
 };
 
 export default pluginHandler;
