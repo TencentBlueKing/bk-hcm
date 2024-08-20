@@ -27,7 +27,6 @@ import (
 	cloudserver "hcm/pkg/api/cloud-server"
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
-	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -78,13 +77,13 @@ func (svc *lbSvc) batchRuleOffline(cts *rest.Contexts, authHandler handler.Valid
 
 	switch accountInfo.Vendor {
 	case enumor.TCloud:
-		return svc.buildDeleteTcloudRule(cts.Kit, req.Data, accountInfo.AccountID)
+		return svc.parseAndBuildDeleteTCloudRule(cts.Kit, req.Data, accountInfo.AccountID)
 	default:
 		return nil, fmt.Errorf("vendor: %s not support", accountInfo.Vendor)
 	}
 }
 
-func (svc *lbSvc) buildDeleteTcloudRule(kt *kit.Kit, body json.RawMessage, accountID string) (any, error) {
+func (svc *lbSvc) parseAndBuildDeleteTCloudRule(kt *kit.Kit, body json.RawMessage, accountID string) (any, error) {
 	req := new(cslb.TCloudSopsRuleBatchDeleteReq)
 	if err := json.Unmarshal(body, req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -97,6 +96,7 @@ func (svc *lbSvc) buildDeleteTcloudRule(kt *kit.Kit, body json.RawMessage, accou
 	// 得到 四层listenerID列表 和 七层urlRuleID列表
 	listenerIDs, urlRuleIDs, err := svc.parseSOpsTargetParamsForRuleOffline(kt, accountID, req.RuleQueryList)
 	if err != nil {
+		logs.Errorf("parse sops target params for rule offline failed, err: %v", err)
 		return nil, err
 	}
 	tcloudBatchDeleteRuleReq := &cslb.TcloudBatchDeleteRuleReq{
@@ -152,7 +152,7 @@ func (svc *lbSvc) parseSOpsTargetParamsForRuleOffline(kt *kit.Kit, accountID str
 		} else if item.Protocol[0].IsLayer7Protocol() {
 			// 七层，确定UrlRule
 			// domain,url确定urlRule，lbl属于上面的监听器列表
-			urIDs, err := svc.parseSOpsProtocolAndDomainAndUrlToUrlRuleIDs(kt, accountID, true,
+			urIDs, err := svc.parseSOpsProtocolAndDomainAndUrlToUrlRuleIDs(kt, true,
 				lblIDs, item.Domain, item.Url)
 			if err != nil {
 				logs.Errorf("parse domain and url to url rule failed, accountID: %s, item: %+v, err: %v, rid: %s",
@@ -186,18 +186,19 @@ func (svc *lbSvc) parseSOpsVipAndVportAndProtocolToListenerIDs(kt *kit.Kit, regi
 	lbIDs := make([]string, 0)
 	if len(vip) != 0 {
 		// 若有vip筛选条件，则查询符合的负载均衡列表
-		for _, vip := range vip {
+		for _, vipItem := range vip {
 			lbReq := &core.ListReq{
 				Filter: tools.ExpressionAnd(
 					tools.RuleEqual("vendor", enumor.TCloud),
 					tools.RuleEqual("account_id", accountID),
 					tools.RuleEqual("region", region),
-					tools.RuleJSONContains("public_ipv4_addresses", vip),
+					tools.RuleJSONContains("public_ipv4_addresses", vipItem),
 				),
 				Page: core.NewDefaultBasePage(),
 			}
 			lbList, err := svc.client.DataService().Global.LoadBalancer.ListLoadBalancer(kt, lbReq)
 			if err != nil {
+				logs.Errorf("list load balancer failed, req: %+v, err: %v", lbReq, err)
 				return nil, err
 			}
 
@@ -212,24 +213,27 @@ func (svc *lbSvc) parseSOpsVipAndVportAndProtocolToListenerIDs(kt *kit.Kit, regi
 	}
 
 	// 查询符合的监听器列表
-	lblFilter := tools.ExpressionAnd(
-		tools.RuleEqual("vendor", enumor.TCloud),
-	)
+	lblFilter := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			tools.RuleEqual("vendor", enumor.TCloud),
+		},
+	}
 	var err error
 	if len(lbIDs) != 0 {
-		lblFilter, err = tools.And(lblFilter, tools.RuleIn("lb_id", lbIDs))
+		lblFilter.Rules = append(lblFilter.Rules, tools.RuleIn("lb_id", lbIDs))
 		if err != nil {
 			return nil, err
 		}
 	}
 	if len(vport) != 0 {
-		lblFilter, err = tools.And(lblFilter, tools.RuleIn("port", vport))
+		lblFilter.Rules = append(lblFilter.Rules, tools.RuleIn("port", vport))
 		if err != nil {
 			return nil, err
 		}
 	}
 	if len(protocol) != 0 {
-		lblFilter, err = tools.And(lblFilter, tools.RuleIn("protocol", protocol))
+		lblFilter.Rules = append(lblFilter.Rules, tools.RuleIn("protocol", protocol))
 		if err != nil {
 			return nil, err
 		}
@@ -238,13 +242,22 @@ func (svc *lbSvc) parseSOpsVipAndVportAndProtocolToListenerIDs(kt *kit.Kit, regi
 		Filter: lblFilter,
 		Page:   core.NewDefaultBasePage(),
 	}
-	lblList, err := svc.client.DataService().Global.LoadBalancer.ListListener(kt, lblReq)
-	if err != nil {
-		return nil, err
+	for {
+		lblListResult, err := svc.client.DataService().Global.LoadBalancer.ListListener(kt, lblReq)
+		if err != nil {
+			logs.Errorf("list listener failed, err: %v", err)
+			return nil, err
+		}
+		for _, detail := range lblListResult.Details {
+			lblIDs = append(lblIDs, detail.ID)
+		}
+
+		if uint(len(lblListResult.Details)) < core.DefaultMaxPageLimit {
+			break
+		}
+
+		lblReq.Page.Start += uint32(core.DefaultMaxPageLimit)
 	}
-	lblIDs = slice.Map(lblList.Details, func(lbl corelb.BaseListener) string {
-		return lbl.ID
-	})
 
 	return lblIDs, nil
 }
@@ -306,49 +319,53 @@ func (svc *lbSvc) parseSOpsRsIpAndRsTypeToListenerIDs(kt *kit.Kit, accountID str
 }
 
 // parseSOpsProtocolAndDomainAndUrlToUrlRuleIDs 根据RuleType、Domain、URL查询UrlRule
-func (svc *lbSvc) parseSOpsProtocolAndDomainAndUrlToUrlRuleIDs(kt *kit.Kit, accountID string,
+func (svc *lbSvc) parseSOpsProtocolAndDomainAndUrlToUrlRuleIDs(kt *kit.Kit,
 	isLayer7RuleType bool, lblIDs, domain, url []string) ([]string, error) {
 	// 筛选查询urlRule
-	var urlRuleFilter *filter.Expression
-	var err error
-	if isLayer7RuleType {
-		urlRuleFilter = tools.ExpressionAnd(
-			tools.RuleEqual("rule_type", enumor.Layer7RuleType),
+	urlRuleFilter := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
 			tools.RuleIn("lbl_id", lblIDs),
-		)
-		if len(domain) != 0 && domain[0] != "all" {
-			urlRuleFilter, err = tools.And(urlRuleFilter, tools.RuleIn("domain", domain))
-			if err != nil {
-				return nil, err
-			}
+		},
+	}
+	if isLayer7RuleType {
+		urlRuleFilter.Rules = append(urlRuleFilter.Rules, tools.RuleEqual("rule_type", enumor.Layer7RuleType))
+		if len(domain) != 0 && !equalsAll(domain[0]) {
+			urlRuleFilter.Rules = append(urlRuleFilter.Rules, tools.RuleIn("domain", domain))
 		}
-		if len(url) != 0 && url[0] != "all" {
-			urlRuleFilter, err = tools.And(urlRuleFilter, tools.RuleIn("url", url))
-			if err != nil {
-				return nil, err
-			}
+		if len(url) != 0 && !equalsAll(url[0]) {
+			urlRuleFilter.Rules = append(urlRuleFilter.Rules, tools.RuleIn("url", url))
 		}
 	} else {
-		urlRuleFilter = tools.ExpressionAnd(
-			tools.RuleEqual("rule_type", enumor.Layer4RuleType),
-			tools.RuleIn("lbl_id", lblIDs),
-		)
+		urlRuleFilter.Rules = append(urlRuleFilter.Rules, tools.RuleEqual("rule_type", enumor.Layer4RuleType))
 	}
 
+	urlRuleIDs := make([]string, 0)
 	urlRuleReq := &core.ListReq{
 		Filter: urlRuleFilter,
 		Page:   core.NewDefaultBasePage(),
 	}
-	urlRuleResult, err := svc.client.DataService().TCloud.LoadBalancer.ListUrlRule(kt, urlRuleReq)
-	if err != nil {
-		return nil, err
-	}
+	for {
+		urlRuleResult, err := svc.client.DataService().TCloud.LoadBalancer.ListUrlRule(kt, urlRuleReq)
+		if err != nil {
+			logs.Errorf("list url rule failed, req: %+v, err: %v", urlRuleReq, err)
+			return nil, err
+		}
+		// 记录urlRuleID
+		for _, ruleItem := range urlRuleResult.Details {
+			urlRuleIDs = append(urlRuleIDs, ruleItem.ID)
+		}
 
-	// 记录urlRuleID
-	urlRuleIDs := make([]string, 0)
-	for _, ruleItem := range urlRuleResult.Details {
-		urlRuleIDs = append(urlRuleIDs, ruleItem.ID)
+		if uint(len(urlRuleResult.Details)) < core.DefaultMaxPageLimit {
+			break
+		}
+
+		urlRuleReq.Page.Start += uint32(core.DefaultMaxPageLimit)
 	}
 
 	return slice.Unique(urlRuleIDs), nil
+}
+
+func equalsAll(str string) bool {
+	return str == "ALL" || str == "all"
 }

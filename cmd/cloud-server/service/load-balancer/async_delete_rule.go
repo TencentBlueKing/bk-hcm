@@ -29,6 +29,7 @@ import (
 	cloudserver "hcm/pkg/api/cloud-server"
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
+	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	ts "hcm/pkg/api/task-server"
 	"hcm/pkg/async/action"
 	"hcm/pkg/criteria/constant"
@@ -41,6 +42,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/counter"
 	"hcm/pkg/tools/hooks/handler"
 	"hcm/pkg/tools/slice"
@@ -104,12 +106,14 @@ func (svc *lbSvc) buildDeleteTCloudRule(kt *kit.Kit, body json.RawMessage) (inte
 	if len(req.URLRuleIDs) != 0 {
 		lbUrlRuleMap, err = svc.checkURLRuleExistsAndGroupByLb(kt, req.URLRuleIDs)
 		if err != nil {
+			logs.Errorf("delete rule failed, err: %v", err)
 			return nil, fmt.Errorf("delete rule failed, err: %v", err)
 		}
 	}
 	if len(req.ListenerIDs) != 0 {
 		lbListenerMap, err = svc.checkListenerExistsAndGroupByLb(kt, req.ListenerIDs)
 		if err != nil {
+			logs.Errorf("delete rule failed, err: %v", err)
 			return nil, fmt.Errorf("delete rule failed, err: %v", err)
 		}
 	}
@@ -133,24 +137,32 @@ func (svc *lbSvc) buildDeleteTCloudRule(kt *kit.Kit, body json.RawMessage) (inte
 	return svc.buildDeleteTCloudRuleTasks(kt, lbRuleMap)
 }
 
-func (svc lbSvc) checkURLRuleExistsAndGroupByLb(kt *kit.Kit, urlRuleIDs []string) (map[string][]string, error) {
+func (svc *lbSvc) checkURLRuleExistsAndGroupByLb(kt *kit.Kit, urlRuleIDs []string) (map[string][]string, error) {
 	// 查询URLRule是否存在，并以负载均衡为粒度进行分组
 	lbUrlRuleMap := make(map[string][]string)
 
+	urlRuleLbMap := make(map[string]string)
 	urlRuleBaseInfoReq := &core.ListReq{
 		Filter: tools.ExpressionAnd(tools.RuleIn("id", urlRuleIDs)),
 		Page:   core.NewDefaultBasePage(),
-		Fields: []string{"id", "lb_id", "health_check", "certificate"},
+		Fields: []string{"id", "lb_id"},
 	}
-	urlRuleBaseInfoResult, err := svc.client.DataService().TCloud.LoadBalancer.ListUrlRule(kt, urlRuleBaseInfoReq)
-	if err != nil {
-		return nil, err
+	for {
+		urlRuleBaseInfoResult, err := svc.client.DataService().TCloud.LoadBalancer.ListUrlRule(kt, urlRuleBaseInfoReq)
+		if err != nil {
+			logs.Errorf("list url rule failed, req: %v, err: %v, rid: %s", urlRuleBaseInfoReq, err, kt.Rid)
+			return nil, err
+		}
+		for _, urlRuleBaseInfo := range urlRuleBaseInfoResult.Details {
+			urlRuleLbMap[urlRuleBaseInfo.ID] = urlRuleBaseInfo.LbID
+		}
+
+		if uint(len(urlRuleBaseInfoResult.Details)) < core.DefaultMaxPageLimit {
+			break
+		}
+		urlRuleBaseInfoReq.Page.Start += uint32(core.DefaultMaxPageLimit)
 	}
 
-	urlRuleLbMap := make(map[string]string)
-	for _, urlRuleBaseInfo := range urlRuleBaseInfoResult.Details {
-		urlRuleLbMap[urlRuleBaseInfo.ID] = urlRuleBaseInfo.LbID
-	}
 	for _, urlRuleID := range urlRuleIDs {
 		lbID, exit := urlRuleLbMap[urlRuleID]
 		if !exit {
@@ -165,20 +177,35 @@ func (svc lbSvc) checkURLRuleExistsAndGroupByLb(kt *kit.Kit, urlRuleIDs []string
 	return lbUrlRuleMap, nil
 }
 
-func (svc lbSvc) checkListenerExistsAndGroupByLb(kt *kit.Kit, listenerIDs []string) (map[string][]string, error) {
+func (svc *lbSvc) checkListenerExistsAndGroupByLb(kt *kit.Kit, listenerIDs []string) (map[string][]string, error) {
 	// 查询Listener是否存在，并以负载均衡为粒度进行分组
-	lbListenerMap := make(map[string][]string)
-
-	for _, listenerID := range listenerIDs {
-		listener, err := svc.client.DataService().TCloud.LoadBalancer.GetListener(kt, listenerID)
+	listenerList := make([]corelb.Listener[corelb.TCloudListenerExtension], 0)
+	listListenerReq := &core.ListReq{
+		Filter: tools.ExpressionAnd(tools.RuleIn("id", listenerIDs)),
+		Page:   core.NewDefaultBasePage(),
+	}
+	for {
+		listenerResult, err := svc.client.DataService().TCloud.LoadBalancer.ListListener(kt, listListenerReq)
 		if err != nil {
-			return nil, fmt.Errorf("found listener: %s failed, err: %v", listenerID, err)
+			logs.Errorf("list listener failed, req: %v, err: %v, rid: %s", listListenerReq, err, kt.Rid)
+			return nil, fmt.Errorf("find listener failed, req: %v, err: %v, rid: %s", listListenerReq, err, kt.Rid)
 		}
+		listenerList = append(listenerList, listenerResult.Details...)
+
+		if uint(len(listenerResult.Details)) < core.DefaultMaxPageLimit {
+			break
+		}
+
+		listListenerReq.Page.Start += uint32(core.DefaultMaxPageLimit)
+	}
+
+	lbListenerMap := make(map[string][]string)
+	for _, listener := range listenerList {
 		if _, exists := lbListenerMap[listener.LbID]; !exists {
 			lbListenerMap[listener.LbID] = make([]string, 0)
 		}
 
-		lbListenerMap[listener.LbID] = append(lbListenerMap[listener.LbID], listenerID)
+		lbListenerMap[listener.LbID] = append(lbListenerMap[listener.LbID], listener.ID)
 	}
 
 	return lbListenerMap, nil
@@ -187,22 +214,25 @@ func (svc lbSvc) checkListenerExistsAndGroupByLb(kt *kit.Kit, listenerIDs []stri
 func (svc *lbSvc) buildDeleteTCloudRuleTasks(kt *kit.Kit, lbRuleMap map[string]cslb.TcloudBatchDeleteRuleIDs) ([]*core.FlowStateResult, error) {
 	flowStateResults := make([]*core.FlowStateResult, 0)
 
-	for lbID, RuleIDs := range lbRuleMap {
+	for lbID, ruleIDs := range lbRuleMap {
 		// 预检测
 		_, err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
 		if err != nil {
+			logs.Errorf("check resource flow relation failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
 		}
 
 		// 创建Flow跟Task的初始化数据
-		flowID, err := svc.initFlowDeleteRuleLayer(kt, lbID, RuleIDs)
+		flowID, err := svc.initFlowTcloudDeleteRule(kt, lbID, ruleIDs)
 		if err != nil {
+			logs.Errorf("init flow batch delete rule failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
 		}
 
 		// 锁定资源跟Flow的状态
 		err = svc.lockResFlowStatus(kt, lbID, enumor.LoadBalancerCloudResType, flowID, enumor.DeleteRuleTaskType)
 		if err != nil {
+			logs.Errorf("lock resource flow status failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
 		}
 
@@ -212,7 +242,7 @@ func (svc *lbSvc) buildDeleteTCloudRuleTasks(kt *kit.Kit, lbRuleMap map[string]c
 	return flowStateResults, nil
 }
 
-func (svc lbSvc) initFlowDeleteRuleLayer(kt *kit.Kit, lbID string, ruleIDs cslb.TcloudBatchDeleteRuleIDs) (string, error) {
+func (svc *lbSvc) initFlowTcloudDeleteRule(kt *kit.Kit, lbID string, ruleIDs cslb.TcloudBatchDeleteRuleIDs) (string, error) {
 	tasks := make([]ts.CustomFlowTask, 0)
 	getActionID := counter.NewNumStringCounter(1, 10)
 
@@ -267,7 +297,7 @@ func (svc lbSvc) initFlowDeleteRuleLayer(kt *kit.Kit, lbID string, ruleIDs cslb.
 	}
 	result, err := svc.client.TaskServer().CreateCustomFlow(kt, addReq)
 	if err != nil {
-		logs.Errorf("call taskserver to batch delete load balancer rule custom flow failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("call taskserver to batch delete load balancer rule custom flow failed, err: %v, req: %+v, rid: %s", converter.PtrToVal(addReq), err, kt.Rid)
 		return "", err
 	}
 	flowID := result.ID
@@ -289,8 +319,8 @@ func (svc lbSvc) initFlowDeleteRuleLayer(kt *kit.Kit, lbID string, ruleIDs cslb.
 	}
 	_, err = svc.client.TaskServer().CreateTemplateFlow(kt, flowWatchReq)
 	if err != nil {
-		logs.Errorf("call taskserver to create res flow status watch task failed, err: %v, flowID: %s, rid: %s",
-			err, flowID, kt.Rid)
+		logs.Errorf("call taskserver to create res flow status watch task failed, err: %v, lbID: %s, tastType: %s, flowID: %s, rid: %s",
+			err, lbID, enumor.DeleteRuleTaskType, flowID, kt.Rid)
 		return "", err
 	}
 

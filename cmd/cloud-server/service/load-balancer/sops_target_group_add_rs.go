@@ -349,12 +349,13 @@ func (svc *lbSvc) parseSOpsProtocolAndDomainForTgIDs(kt *kit.Kit, accountID stri
 		return nil, fmt.Errorf("protocol: %s not support", item.Protocol)
 	}
 
-	tgRuleReq := &core.ListReq{
+	urlRuleReq := &core.ListReq{
 		Filter: urlRuleFilter,
 		Page:   core.NewDefaultBasePage(),
 	}
-	urlRuleResult, err := svc.client.DataService().TCloud.LoadBalancer.ListUrlRule(kt, tgRuleReq)
+	urlRuleResult, err := svc.client.DataService().TCloud.LoadBalancer.ListUrlRule(kt, urlRuleReq)
 	if err != nil {
+		logs.Errorf("list url rule failed, req: %+v, err: %v", urlRuleReq, err)
 		return nil, err
 	}
 
@@ -579,13 +580,13 @@ func (svc *lbSvc) parseSOpsProtocolAndDomainAndUrlForTgIDs(kt *kit.Kit, accountI
 		urlRuleFilter = tools.ExpressionAnd(
 			tools.RuleEqual("rule_type", enumor.Layer7RuleType),
 		)
-		if len(domain) != 0 && domain[0] != "all" {
+		if len(domain) != 0 && !equalsAll(domain[0]) {
 			urlRuleFilter, err = tools.And(urlRuleFilter, tools.RuleIn("domain", domain))
 			if err != nil {
 				return nil, err
 			}
 		}
-		if len(url) != 0 && url[0] != "all" {
+		if len(url) != 0 && !equalsAll(url[0]) {
 			urlRuleFilter, err = tools.And(urlRuleFilter, tools.RuleIn("url", url))
 			if err != nil {
 				return nil, err
@@ -599,12 +600,13 @@ func (svc *lbSvc) parseSOpsProtocolAndDomainAndUrlForTgIDs(kt *kit.Kit, accountI
 		return nil, fmt.Errorf("protocol: %s not support", protocol)
 	}
 
-	tgRuleReq := &core.ListReq{
+	urlRuleReq := &core.ListReq{
 		Filter: urlRuleFilter,
 		Page:   core.NewDefaultBasePage(),
 	}
-	urlRuleResult, err := svc.client.DataService().TCloud.LoadBalancer.ListUrlRule(kt, tgRuleReq)
+	urlRuleResult, err := svc.client.DataService().TCloud.LoadBalancer.ListUrlRule(kt, urlRuleReq)
 	if err != nil {
+		logs.Errorf("list url rule failed, req: %+v, err: %v", urlRuleReq, err)
 		return nil, err
 	}
 

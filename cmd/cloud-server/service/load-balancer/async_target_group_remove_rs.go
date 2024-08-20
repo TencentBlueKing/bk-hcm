@@ -185,18 +185,21 @@ func (svc *lbSvc) buildRemoveTCloudTargetTasks(kt *kit.Kit, accountID, lbID stri
 	// 预检测
 	_, err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
 	if err != nil {
+		logs.Errorf("check resource flow relation failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
 	// 创建Flow跟Task的初始化数据
 	flowID, err := svc.initFlowRemoveTargetByLbID(kt, accountID, lbID, tgMap)
 	if err != nil {
+		logs.Errorf("init flow batch remove target failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
 	// 锁定资源跟Flow的状态
 	err = svc.lockResFlowStatus(kt, lbID, enumor.LoadBalancerCloudResType, flowID, enumor.RemoveRSTaskType)
 	if err != nil {
+		logs.Errorf("lock resource flow status failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 

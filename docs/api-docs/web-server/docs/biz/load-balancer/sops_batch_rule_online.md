@@ -16,28 +16,28 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/sops/rule/online
 | account_id       | string       | 是   | 账号ID    |
 | bind_rs_records  | object array | 是   | 规则具体的信息 |
 
-#### bind_rs_records
+#### TODO bind_rs_records（clb excel导入的部分，需clb excel导入修改完后同步修改到这里）
 
-| 参数名称        | 参数类型      | 必选 | 描述                                         |
-|----------------|-----------|----|--------------------------------------------|
-| action         | string    | 是  | 批处理操作类型                                |
-| name           | string    | 是  | 监听器名称                                     |
-| protocol       | string    | 是  | 协议类型                                       |
-| ip_domain_type | string    | 是  | IP或域名类型                                    |
-| vip            | string    | 是  | 虚拟IP地址                                      |
-| vports         | []int     | 是  | 虚拟端口列表                                    |
-| have_end_port  | bool      | 是  | 是否是端口端                                    |
-| domain         | string    | 是  | 域名                                          |
-| url            | string    | 是  | URL路径                                       |
-| cert_cloud_ids | []string  | 是  | 服务器证书云ID列表，参考pkg/api/core/cloud/load-balancer/tcloud.go:188 |
-| ca_cloud_id    | string    | 是  | 客户端证书云ID                                   |
-| inst_type      | string    | 是  | 后端实例类型（CVM、ENI）                          |
-| rs_ips         | []string  | 是  | 后端实例IP列表                                   |
-| rs_ports       | []int     | 是  | 后端实例端口列表                                  |
-| weight         | []int     | 是  | 权重列表                                        |
-| scheduler      | string    | 是  | 负载均衡调度算法                                  |
-| session_expired| int64     | 是  | 会话保持时间（单位：秒）                           |
-| health_check   | bool      | 是  | 是否开启健康检查                                   |
+| 参数名称        | 参数类型      | 必选 | 描述                                        |
+|----------------|-----------|----|-------------------------------------------|
+| action         | string    | 是  | 批处理操作类型                               |
+| name           | string    | 是  | 监听器名称                                    |
+| protocol       | string    | 是  | 协议类型                                      |
+| ip_domain_type | string    | 是  | IP或域名类型                                   |
+| vip            | string    | 是  | 负载均衡ip地址                                     |
+| vports         | []int     | 是  | 负载均衡监听器端口列表                                   |
+| have_end_port  | bool      | 是  | 是否是端口端                                   |
+| domain         | string    | 是  | 域名                                         |
+| url            | string    | 是  | URL路径                                      |
+| cert_cloud_ids | []string  | 是  | 服务器证书云ID列表 |
+| ca_cloud_id    | string    | 是  | 客户端证书云ID                                  |
+| inst_type      | string    | 是  | 后端实例类型（CVM、ENI）                         |
+| rs_ips         | []string  | 是  | 后端实例IP列表                                  |
+| rs_ports       | []int     | 是  | 后端实例端口列表                                 |
+| weight         | []int     | 是  | 权重列表                                       |
+| scheduler      | string    | 是  | 负载均衡调度算法                                 |
+| session_expired| int64     | 是  | 会话保持时间（单位：秒）                          |
+| health_check   | bool      | 是  | 是否开启健康检查                                  |
 
 ### 调用示例
 

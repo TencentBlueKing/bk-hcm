@@ -33,6 +33,7 @@ import (
 	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/counter"
 	"hcm/pkg/tools/slice"
 )
@@ -91,6 +92,8 @@ func (svc *lbSvc) buildBatchModifyTCloudTargetWeight(kt *kit.Kit, tgTargetsMap m
 		}
 		flowStateResult, err := svc.buildBatchModifyTCloudTargetTasksWeight(kt, accountID, lbID, tgAndReqSlice)
 		if err != nil {
+			logs.Errorf("build batch modify tcloud target weight tasks failed, err: %v, accountID: %s, lbID: %s, tgAndReqSlice: %+v",
+				err, accountID, lbID, tgAndReqSlice)
 			return nil, err
 		}
 		flowStateResults = append(flowStateResults, flowStateResult)
@@ -105,18 +108,21 @@ func (svc *lbSvc) buildBatchModifyTCloudTargetTasksWeight(kt *kit.Kit, accountID
 	// 预检测
 	_, err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
 	if err != nil {
+		logs.Errorf("check resource flow relation failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
 	// 创建Flow跟Task的初始化数据
 	flowID, err := svc.initFlowBatchModifyTargetWeight(kt, accountID, lbID, tgAndReqSlice)
 	if err != nil {
+		logs.Errorf("init flow batch modify target weight failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
 	// 锁定资源跟Flow的状态
 	err = svc.lockResFlowStatus(kt, lbID, enumor.LoadBalancerCloudResType, flowID, enumor.ModifyWeightTaskType)
 	if err != nil {
+		logs.Errorf("lock resource flow status failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
@@ -171,7 +177,8 @@ func (svc *lbSvc) initFlowBatchModifyTargetWeight(kt *kit.Kit, accountID string,
 	}
 	result, err := svc.client.TaskServer().CreateCustomFlow(kt, rsWeightReq)
 	if err != nil {
-		logs.Errorf("call taskserver to batch modify target weight custom flow failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("call taskserver to batch modify target weight custom flow failed, err: %v, rsWeightReq: %+v, rid: %s",
+			err, converter.PtrToVal(rsWeightReq), kt.Rid)
 		return "", err
 	}
 

@@ -69,7 +69,7 @@ func (svc *lbSvc) batchRuleOnline(cts *rest.Contexts, authHandler handler.ValidW
 	}
 
 	switch accountInfo.Vendor {
-	// 这里的内容依赖clb excel导入的代码，暂时注释，等待clb excel导入合并后再开放
+	// TODO 这里的内容依赖clb excel导入的代码，暂时注释，等待clb excel导入合并后再开放
 	//case enumor.TCloud:
 	//	return svc.buildCreateTcloudRule(cts, req.Data, accountInfo.AccountID, accountInfo.BkBizID)
 	default:
@@ -77,7 +77,7 @@ func (svc *lbSvc) batchRuleOnline(cts *rest.Contexts, authHandler handler.ValidW
 	}
 }
 
-// 这里的内容依赖clb excel导入的代码，暂时注释，等待clb excel导入合并后再开放
+// TODO 这里的内容依赖clb excel导入的代码，暂时注释，等待clb excel导入合并后再开放
 //
 //func (svc *lbSvc) buildCreateTcloudRule(cts *rest.Contexts, body json.RawMessage, accountID string, BkBizID int64) (any, error) {
 //	req := new(cslb.TCloudSopsRuleBatchCreateReq)

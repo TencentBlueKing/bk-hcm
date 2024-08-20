@@ -160,25 +160,28 @@ func (svc *lbSvc) buildModifyTCloudTargetTasksWeight(kt *kit.Kit, req *cslb.TClo
 	// 预检测
 	_, err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
 	if err != nil {
+		logs.Errorf("check resource flow relation failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
 	// 创建Flow跟Task的初始化数据
-	flowID, err := svc.initFlowTargetWeight(kt, req, lbID, tgID, accountID)
+	flowID, err := svc.initFlowModifyTargetWeight(kt, req, lbID, tgID, accountID)
 	if err != nil {
+		logs.Errorf("init flow batch modify target weigh failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
 	// 锁定资源跟Flow的状态
 	err = svc.lockResFlowStatus(kt, lbID, enumor.LoadBalancerCloudResType, flowID, enumor.ModifyWeightTaskType)
 	if err != nil {
+		logs.Errorf("lock resource flow status failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
 	return &core.FlowStateResult{FlowID: flowID}, nil
 }
 
-func (svc *lbSvc) initFlowTargetWeight(kt *kit.Kit, req *cslb.TCloudBatchModifyTargetWeightReq,
+func (svc *lbSvc) initFlowModifyTargetWeight(kt *kit.Kit, req *cslb.TCloudBatchModifyTargetWeightReq,
 	lbID, tgID, accountID string) (string, error) {
 
 	tasks := make([]ts.CustomFlowTask, 0)

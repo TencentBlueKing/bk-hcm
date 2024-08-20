@@ -80,7 +80,7 @@ func (p ProtocolType) IsLayer7Protocol() bool {
 
 // IsLayer4Protocol 是否4层规则类型
 func (p ProtocolType) IsLayer4Protocol() bool {
-	return p == TcpProtocol || p == UdpProtocol
+	return p == TcpProtocol || p == UdpProtocol || p == TcpSslProtocol || p == QuicProtocol
 }
 
 // SniType SNI类型
