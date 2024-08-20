@@ -701,7 +701,8 @@ func (req *TCloudSopsTargetBatchModifyWeightReq) Validate() error {
 //
 //	ListenerName string              `json:"name"`
 //	Protocol     enumor.ProtocolType `json:"protocol"`
-//
+//indRSRecordForSops struct {
+//	TODO 这里的内容依赖clb excel导入的代码，暂时注释，等待clb excel导入合并后再
 //	IPDomainType string `json:"ip_domain_type"`
 //	VIP          string `json:"vip"`
 //	VPorts       []int  `json:"vports"`
@@ -709,7 +710,7 @@ func (req *TCloudSopsTargetBatchModifyWeightReq) Validate() error {
 //
 //	Domain     string   `json:"domain"`         // 域名
 //	URLPath    string   `json:"url"`            // URL路径
-//	ServerCert []string `json:"cert_cloud_ids"` // ref: pkg/api/core/cloud/load-balancer/tcloud.go:188
+//	ServerCert []string `json:"cert_cloud_ids"` // ref
 //	ClientCert string   `json:"ca_cloud_id"`    // 客户端证书
 //
 //	InstType enumor.InstType `json:"inst_type"` // 后端类型 CVM、ENI

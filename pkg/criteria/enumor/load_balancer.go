@@ -175,3 +175,8 @@ const (
 	// LEAST_CONN 最少连接数
 	LEAST_CONN Scheduler = "LEAST_CONN"
 )
+
+const (
+	// ParameterWildcard 参数通配符
+	ParameterWildcard string = "ALL"
+)

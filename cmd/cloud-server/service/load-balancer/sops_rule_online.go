@@ -79,7 +79,7 @@ func (svc *lbSvc) batchRuleOnline(cts *rest.Contexts, authHandler handler.ValidW
 
 // TODO 这里的内容依赖clb excel导入的代码，暂时注释，等待clb excel导入合并后再开放
 //
-//func (svc *lbSvc) buildCreateTcloudRule(cts *rest.Contexts, body json.RawMessage, accountID string, BkBizID int64) (any, error) {
+//func (svc *lbSvc) buildCreateTCloudRule(cts *rest.Contexts, body json.RawMessage, accountID string, BkBizID int64) (any, error) {
 //	req := new(cslb.TCloudSopsRuleBatchCreateReq)
 //	if err := json.Unmarshal(body, req); err != nil {
 //		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -104,7 +104,7 @@ func (svc *lbSvc) batchRuleOnline(cts *rest.Contexts, authHandler handler.ValidW
 //	}
 //
 //	// 提交异步任务
-//	logs.Infof("batch sops rule online, request bind rs api, request param: %v", bindRSReqParam)
+//	logs.Infof("batch sops rule online, request bind rs api, request param: %v", converter.PtrToVal(bindRSReqParam))
 //	return svc.bindRS(cts, bindRSReqParam)
 //}
 //

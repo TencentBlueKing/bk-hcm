@@ -86,13 +86,13 @@ func (svc *lbSvc) batchDeleteBizRule(cts *rest.Contexts, authHandler handler.Val
 
 	switch accountInfo.Vendor {
 	case enumor.TCloud:
-		return svc.buildDeleteTCloudRule(cts.Kit, req.Data)
+		return svc.buildDeleteTCloudRule(cts.Kit, req.Data, enumor.TCloud)
 	default:
 		return nil, fmt.Errorf("vendor: %s not support", accountInfo.Vendor)
 	}
 }
 
-func (svc *lbSvc) buildDeleteTCloudRule(kt *kit.Kit, body json.RawMessage) (interface{}, error) {
+func (svc *lbSvc) buildDeleteTCloudRule(kt *kit.Kit, body json.RawMessage, vendor enumor.Vendor) (interface{}, error) {
 	req := new(cslb.TcloudBatchDeleteRuleReq)
 	if err := json.Unmarshal(body, req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -134,7 +134,7 @@ func (svc *lbSvc) buildDeleteTCloudRule(kt *kit.Kit, body json.RawMessage) (inte
 		lbRuleMap[lbID] = ruleIDs
 	}
 
-	return svc.buildDeleteTCloudRuleTasks(kt, lbRuleMap)
+	return svc.buildDeleteRuleTasks(kt, lbRuleMap, vendor)
 }
 
 func (svc *lbSvc) checkURLRuleExistsAndGroupByLb(kt *kit.Kit, urlRuleIDs []string) (map[string][]string, error) {
@@ -211,7 +211,8 @@ func (svc *lbSvc) checkListenerExistsAndGroupByLb(kt *kit.Kit, listenerIDs []str
 	return lbListenerMap, nil
 }
 
-func (svc *lbSvc) buildDeleteTCloudRuleTasks(kt *kit.Kit, lbRuleMap map[string]cslb.TcloudBatchDeleteRuleIDs) ([]*core.FlowStateResult, error) {
+func (svc *lbSvc) buildDeleteRuleTasks(kt *kit.Kit, lbRuleMap map[string]cslb.TcloudBatchDeleteRuleIDs,
+	vendor enumor.Vendor) ([]*core.FlowStateResult, error) {
 	flowStateResults := make([]*core.FlowStateResult, 0)
 
 	for lbID, ruleIDs := range lbRuleMap {
@@ -223,7 +224,7 @@ func (svc *lbSvc) buildDeleteTCloudRuleTasks(kt *kit.Kit, lbRuleMap map[string]c
 		}
 
 		// 创建Flow跟Task的初始化数据
-		flowID, err := svc.initFlowTcloudDeleteRule(kt, lbID, ruleIDs)
+		flowID, err := svc.initFlowDeleteRule(kt, lbID, ruleIDs, vendor)
 		if err != nil {
 			logs.Errorf("init flow batch delete rule failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
@@ -242,7 +243,7 @@ func (svc *lbSvc) buildDeleteTCloudRuleTasks(kt *kit.Kit, lbRuleMap map[string]c
 	return flowStateResults, nil
 }
 
-func (svc *lbSvc) initFlowTcloudDeleteRule(kt *kit.Kit, lbID string, ruleIDs cslb.TcloudBatchDeleteRuleIDs) (string, error) {
+func (svc *lbSvc) initFlowDeleteRule(kt *kit.Kit, lbID string, ruleIDs cslb.TcloudBatchDeleteRuleIDs, vendor enumor.Vendor) (string, error) {
 	tasks := make([]ts.CustomFlowTask, 0)
 	getActionID := counter.NewNumStringCounter(1, 10)
 
@@ -254,7 +255,7 @@ func (svc *lbSvc) initFlowTcloudDeleteRule(kt *kit.Kit, lbID string, ruleIDs csl
 			ActionID:   actionID,
 			ActionName: enumor.ActionLoadBalancerDeleteUrlRule,
 			Params: &actionlb.DeleteURLRuleOption{
-				Vendor:     enumor.TCloud,
+				Vendor:     vendor,
 				LbID:       lbID,
 				URLRuleIDs: parts,
 			},
@@ -274,7 +275,7 @@ func (svc *lbSvc) initFlowTcloudDeleteRule(kt *kit.Kit, lbID string, ruleIDs csl
 			ActionID:   actionID,
 			ActionName: enumor.ActionLoadBalancerDeleteListener,
 			Params: actionlb.DeleteListenerOption{
-				Vendor:      enumor.TCloud,
+				Vendor:      vendor,
 				LbID:        lbID,
 				ListenerIDs: parts,
 			},

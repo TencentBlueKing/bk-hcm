@@ -76,13 +76,13 @@ func (svc *lbSvc) batchRemoveTargetGroupRS(cts *rest.Contexts, authHandler handl
 
 	switch accountInfo.Vendor {
 	case enumor.TCloud:
-		return svc.buildDeleteTCloudTarget(cts.Kit, req.Data, accountInfo.AccountID)
+		return svc.buildDeleteTCloudTarget(cts.Kit, req.Data, accountInfo.AccountID, enumor.TCloud)
 	default:
 		return nil, fmt.Errorf("vendor: %s not support", accountInfo.Vendor)
 	}
 }
 
-func (svc *lbSvc) buildDeleteTCloudTarget(kt *kit.Kit, body json.RawMessage, accountID string) (any, error) {
+func (svc *lbSvc) buildDeleteTCloudTarget(kt *kit.Kit, body json.RawMessage, accountID string, vendor enumor.Vendor) (any, error) {
 	req := new(cslb.TCloudSopsTargetBatchRemoveReq)
 	if err := json.Unmarshal(body, req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -93,7 +93,7 @@ func (svc *lbSvc) buildDeleteTCloudTarget(kt *kit.Kit, body json.RawMessage, acc
 	}
 
 	// 查询规则列表，查出符合条件的目标组
-	tgIDsMap, err := svc.parseSOpsTargetParams(kt, accountID, req.RuleQueryList)
+	tgIDsMap, err := svc.parseSOpsTargetParams(kt, accountID, vendor, req.RuleQueryList)
 	if err != nil {
 		return nil, err
 	}
@@ -111,22 +111,29 @@ func (svc *lbSvc) buildDeleteTCloudTarget(kt *kit.Kit, body json.RawMessage, acc
 				Filter: tools.EqualExpression("target_group_id", tgID),
 				Page:   core.NewDefaultBasePage(),
 			}
-			ruleRelList, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroupListenerRel(kt, ruleRelReq)
-			if err != nil {
-				logs.Errorf("list tcloud listener url rule failed, tgID: %s, err: %v, rid: %s", tgID, err, kt.Rid)
-				return nil, err
-			}
+			for {
+				listRuleRelResult, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroupListenerRel(kt, ruleRelReq)
+				if err != nil {
+					logs.Errorf("list tcloud listener url rule failed, tgID: %s, err: %v, rid: %s", tgID, err, kt.Rid)
+					return nil, err
+				}
 
-			// 还未绑定监听器及规则
-			lbID := "-1"
-			if len(ruleRelList.Details) != 0 {
-				// 已经绑定了监听器及规则，归属某一clb
-				lbID = ruleRelList.Details[0].LbID
+				// 还未绑定监听器及规则
+				lbID := "-1"
+				if len(listRuleRelResult.Details) != 0 {
+					// 已经绑定了监听器及规则，归属某一clb
+					lbID = listRuleRelResult.Details[0].LbID
+				}
+				if _, exists := lbTgsMap[lbID]; !exists {
+					lbTgsMap[lbID] = make([]string, 0)
+				}
+				lbTgsMap[lbID] = append(lbTgsMap[lbID], tgID)
+
+				if uint(len(listRuleRelResult.Details)) < core.DefaultMaxPageLimit {
+					break
+				}
+				ruleRelReq.Page.Start += uint32(core.DefaultMaxPageLimit)
 			}
-			if _, exists := lbTgsMap[lbID]; !exists {
-				lbTgsMap[lbID] = make([]string, 0)
-			}
-			lbTgsMap[lbID] = append(lbTgsMap[lbID], tgID)
 		}
 
 		// 查询每一行筛选出的目标组对应的目标，按照当前行填写的条件进行筛选

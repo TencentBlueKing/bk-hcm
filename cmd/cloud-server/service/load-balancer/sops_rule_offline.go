@@ -77,13 +77,14 @@ func (svc *lbSvc) batchRuleOffline(cts *rest.Contexts, authHandler handler.Valid
 
 	switch accountInfo.Vendor {
 	case enumor.TCloud:
-		return svc.parseAndBuildDeleteTCloudRule(cts.Kit, req.Data, accountInfo.AccountID)
+		return svc.parseAndBuildDeleteTCloudRule(cts.Kit, req.Data, accountInfo.AccountID, enumor.TCloud)
 	default:
 		return nil, fmt.Errorf("vendor: %s not support", accountInfo.Vendor)
 	}
 }
 
-func (svc *lbSvc) parseAndBuildDeleteTCloudRule(kt *kit.Kit, body json.RawMessage, accountID string) (any, error) {
+func (svc *lbSvc) parseAndBuildDeleteTCloudRule(kt *kit.Kit, body json.RawMessage,
+	accountID string, vendor enumor.Vendor) (any, error) {
 	req := new(cslb.TCloudSopsRuleBatchDeleteReq)
 	if err := json.Unmarshal(body, req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -94,7 +95,7 @@ func (svc *lbSvc) parseAndBuildDeleteTCloudRule(kt *kit.Kit, body json.RawMessag
 	}
 
 	// 得到 四层listenerID列表 和 七层urlRuleID列表
-	listenerIDs, urlRuleIDs, err := svc.parseSOpsTargetParamsForRuleOffline(kt, accountID, req.RuleQueryList)
+	listenerIDs, urlRuleIDs, err := svc.parseSOpsTargetParamsForRuleOffline(kt, accountID, vendor, req.RuleQueryList)
 	if err != nil {
 		logs.Errorf("parse sops target params for rule offline failed, err: %v", err)
 		return nil, err
@@ -105,11 +106,11 @@ func (svc *lbSvc) parseAndBuildDeleteTCloudRule(kt *kit.Kit, body json.RawMessag
 	}
 
 	reqJson, _ := json.Marshal(tcloudBatchDeleteRuleReq)
-	return svc.buildDeleteTCloudRule(kt, reqJson)
+	return svc.buildDeleteTCloudRule(kt, reqJson, vendor)
 }
 
 // parseSOpsTargetParamsForRuleOffline 解析标准运维参数-规则下线专属
-func (svc *lbSvc) parseSOpsTargetParamsForRuleOffline(kt *kit.Kit, accountID string,
+func (svc *lbSvc) parseSOpsTargetParamsForRuleOffline(kt *kit.Kit, accountID string, vendor enumor.Vendor,
 	ruleQueryList []cslb.RuleQueryItemForRuleOffline) ([]string, []string, error) {
 
 	listenerIDs := make([]string, 0)
@@ -117,7 +118,7 @@ func (svc *lbSvc) parseSOpsTargetParamsForRuleOffline(kt *kit.Kit, accountID str
 	index := 1
 	for _, item := range ruleQueryList {
 		// 1.VIP,VPort,Protocol确定监听器
-		vipVportProtocolLblIDs, err := svc.parseSOpsVipAndVportAndProtocolToListenerIDs(kt, item.Region, accountID,
+		vipVportProtocolLblIDs, err := svc.parseSOpsVipAndVportAndProtocolToListenerIDs(kt, item.Region, accountID, vendor,
 			item.Vip, item.VPort, item.Protocol)
 		if err != nil {
 			logs.Errorf("parse vip and vport and protocol to listener failed, accountID: %s, item: %+v, err: %v, rid: %s",
@@ -174,7 +175,7 @@ func (svc *lbSvc) parseSOpsTargetParamsForRuleOffline(kt *kit.Kit, accountID str
 }
 
 // parseSOpsVipAndVportAndProtocolToListenerIDs 根据Vip、Vport、Protocol查询到对应负载均衡下的对应监听器
-func (svc *lbSvc) parseSOpsVipAndVportAndProtocolToListenerIDs(kt *kit.Kit, region, accountID string,
+func (svc *lbSvc) parseSOpsVipAndVportAndProtocolToListenerIDs(kt *kit.Kit, region, accountID string, vendor enumor.Vendor,
 	vip []string, vport []int, protocol []enumor.ProtocolType) ([]string, error) {
 
 	if len(vip) == 0 && len(vport) == 0 && len(protocol) == 0 {
@@ -189,7 +190,7 @@ func (svc *lbSvc) parseSOpsVipAndVportAndProtocolToListenerIDs(kt *kit.Kit, regi
 		for _, vipItem := range vip {
 			lbReq := &core.ListReq{
 				Filter: tools.ExpressionAnd(
-					tools.RuleEqual("vendor", enumor.TCloud),
+					tools.RuleEqual("vendor", vendor),
 					tools.RuleEqual("account_id", accountID),
 					tools.RuleEqual("region", region),
 					tools.RuleJSONContains("public_ipv4_addresses", vipItem),
@@ -216,7 +217,7 @@ func (svc *lbSvc) parseSOpsVipAndVportAndProtocolToListenerIDs(kt *kit.Kit, regi
 	lblFilter := &filter.Expression{
 		Op: filter.And,
 		Rules: []filter.RuleFactory{
-			tools.RuleEqual("vendor", enumor.TCloud),
+			tools.RuleEqual("vendor", vendor),
 		},
 	}
 	var err error
@@ -367,5 +368,5 @@ func (svc *lbSvc) parseSOpsProtocolAndDomainAndUrlToUrlRuleIDs(kt *kit.Kit,
 }
 
 func equalsAll(str string) bool {
-	return str == "ALL" || str == "all"
+	return str == enumor.ParameterWildcard
 }

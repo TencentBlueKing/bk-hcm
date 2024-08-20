@@ -25,6 +25,7 @@ import (
 
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	"hcm/pkg/api/core"
+	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	hcproto "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/async/action"
 	"hcm/pkg/async/action/run"
@@ -215,22 +216,32 @@ func (act DeleteURLRuleAction) Run(kt run.ExecuteKit, params any) (any, error) {
 	case enumor.TCloud:
 		// 删除云上url_rule（同时会删除规则表url_rule中信息，删除规则和目标组的绑定关系）
 		lblUrlRuleMap := make(map[string][]string)
-		req := &core.ListReq{
+		lblUrlRuleSlice := make([]corelb.TCloudLbUrlRule, 0)
+		urlRuleReq := &core.ListReq{
 			Filter: tools.ExpressionAnd(tools.RuleIn("id", opt.URLRuleIDs)),
 			Page:   core.NewDefaultBasePage(),
 		}
-		urlRuleResult, err := actcli.GetDataService().TCloud.LoadBalancer.ListUrlRule(kt.Kit(), req)
-		if err != nil {
-			logs.Errorf("fail to list tcloud url ule, err: %v, opt: %+v rid: %s",
-				err, opt, kt.Kit().Rid)
-			return nil, err
+		for {
+			urlRuleResult, err := actcli.GetDataService().TCloud.LoadBalancer.ListUrlRule(kt.Kit(), urlRuleReq)
+			if err != nil {
+				logs.Errorf("fail to list tcloud url ule, err: %v, opt: %+v rid: %s",
+					err, opt, kt.Kit().Rid)
+				return nil, err
+			}
+			lblUrlRuleSlice = append(lblUrlRuleSlice, urlRuleResult.Details...)
+
+			if uint(len(urlRuleResult.Details)) < core.DefaultMaxPageLimit {
+				break
+			}
+
+			urlRuleReq.Page.Start += uint32(core.DefaultMaxPageLimit)
 		}
-		details := urlRuleResult.Details
-		if details == nil || len(details) != len(opt.URLRuleIDs) {
+		if lblUrlRuleSlice == nil || len(lblUrlRuleSlice) != len(opt.URLRuleIDs) {
 			logs.Errorf("fail to list tcloud url ule, url rule not found, opt: %+v rid: %s", opt, kt.Kit().Rid)
 			return nil, fmt.Errorf("fail to list tcloud url ule, url rule not found")
 		}
-		for _, urlRule := range details {
+
+		for _, urlRule := range lblUrlRuleSlice {
 			if _, exists := lblUrlRuleMap[urlRule.LblID]; !exists {
 				lblUrlRuleMap[urlRule.LblID] = make([]string, 0)
 			}

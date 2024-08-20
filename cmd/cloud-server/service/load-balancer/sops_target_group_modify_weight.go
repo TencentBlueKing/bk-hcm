@@ -76,13 +76,13 @@ func (svc *lbSvc) batchModifyWeightTargetGroup(cts *rest.Contexts,
 
 	switch accountInfo.Vendor {
 	case enumor.TCloud:
-		return svc.buildModifyWeightTCloudTarget(cts.Kit, req.Data, accountInfo.AccountID)
+		return svc.buildModifyWeightTCloudTarget(cts.Kit, req.Data, accountInfo.AccountID, enumor.TCloud)
 	default:
 		return nil, fmt.Errorf("vendor: %s not support", accountInfo.Vendor)
 	}
 }
 
-func (svc *lbSvc) buildModifyWeightTCloudTarget(kt *kit.Kit, body json.RawMessage, accountID string) (any, error) {
+func (svc *lbSvc) buildModifyWeightTCloudTarget(kt *kit.Kit, body json.RawMessage, accountID string, vendor enumor.Vendor) (any, error) {
 	req := new(cslb.TCloudSopsTargetBatchModifyWeightReq)
 	if err := json.Unmarshal(body, req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -93,7 +93,7 @@ func (svc *lbSvc) buildModifyWeightTCloudTarget(kt *kit.Kit, body json.RawMessag
 	}
 
 	// 查询规则列表，查出符合条件的目标组
-	tgIDsMap, err := svc.parseSOpsTargetParams(kt, accountID, req.RuleQueryList)
+	tgIDsMap, err := svc.parseSOpsTargetParams(kt, accountID, vendor, req.RuleQueryList)
 	if err != nil {
 		return nil, err
 	}
@@ -109,8 +109,8 @@ func (svc *lbSvc) buildModifyWeightTCloudTarget(kt *kit.Kit, body json.RawMessag
 			return nil, err
 		}
 
-		rsIPs := req.RuleQueryList[index-1].RsIP
-		rsType := req.RuleQueryList[index-1].RsType
+		rsIPs := req.RuleQueryList[index].RsIP
+		rsType := req.RuleQueryList[index].RsType
 		for _, target := range targetList {
 			// 筛选rsType
 			if string(target.InstType) != rsType {
