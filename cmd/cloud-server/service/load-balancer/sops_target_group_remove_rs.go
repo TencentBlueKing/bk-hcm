@@ -139,6 +139,7 @@ func (svc *lbSvc) buildDeleteTCloudTarget(kt *kit.Kit, body json.RawMessage, acc
 		// 查询每一行筛选出的目标组对应的目标，按照当前行填写的条件进行筛选
 		targetList, err := svc.getTargetByTGIDs(kt, tgIDs)
 		if err != nil {
+			logs.Errorf("get target by target group ids failed, err: %v, tgIDs: %v, rid: %s", err, tgIDs, kt.Rid)
 			return nil, err
 		}
 		rsIPs := req.RuleQueryList[index-1].RsIP

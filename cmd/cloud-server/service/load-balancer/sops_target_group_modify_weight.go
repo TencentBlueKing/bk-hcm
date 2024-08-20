@@ -106,6 +106,7 @@ func (svc *lbSvc) buildModifyWeightTCloudTarget(kt *kit.Kit, body json.RawMessag
 	for index, tgIDs := range tgIDsMap {
 		targetList, err := svc.getTargetByTGIDs(kt, tgIDs)
 		if err != nil {
+			logs.Errorf("get target by target group ids failed, err: %v, tgIDs: %v, rid: %s", err, tgIDs, kt.Rid)
 			return nil, err
 		}
 
@@ -131,6 +132,7 @@ func (svc *lbSvc) buildModifyWeightTCloudTarget(kt *kit.Kit, body json.RawMessag
 
 	flowStateResults, err := svc.buildBatchModifyTCloudTargetWeight(kt, tgTargetsMap, &req.RsWeight, accountID)
 	if err != nil {
+		logs.Errorf("build batch modify tcloud target weight failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 

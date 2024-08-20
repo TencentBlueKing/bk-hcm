@@ -106,15 +106,15 @@ func (svc *lbSvc) buildDeleteTCloudRule(kt *kit.Kit, body json.RawMessage, vendo
 	if len(req.URLRuleIDs) != 0 {
 		lbUrlRuleMap, err = svc.checkURLRuleExistsAndGroupByLb(kt, req.URLRuleIDs)
 		if err != nil {
-			logs.Errorf("delete rule failed, err: %v", err)
-			return nil, fmt.Errorf("delete rule failed, err: %v", err)
+			logs.Errorf("delete rule failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, fmt.Errorf("delete rule failed, err: %v, rid: %s", err, kt.Rid)
 		}
 	}
 	if len(req.ListenerIDs) != 0 {
 		lbListenerMap, err = svc.checkListenerExistsAndGroupByLb(kt, req.ListenerIDs)
 		if err != nil {
-			logs.Errorf("delete rule failed, err: %v", err)
-			return nil, fmt.Errorf("delete rule failed, err: %v", err)
+			logs.Errorf("delete rule failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, fmt.Errorf("delete rule failed, err: %v, rid: %s", err, kt.Rid)
 		}
 	}
 

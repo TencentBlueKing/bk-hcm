@@ -139,12 +139,14 @@ func (svc *lbSvc) buildCreateTCloudTarget(kt *kit.Kit, body json.RawMessage, acc
 	case enumor.CvmInstType:
 		instCloudIDMap, err = svc.parseTCloudRsIPForCvmInstIDMap(kt, accountID, vendor, req)
 		if err != nil {
+			logs.Errorf("parse tcloud rs ip for cvm inst id map faile, err: %v, req: %+v, rid : %s", err, req, kt.Rid)
 			return nil, err
 		}
 	case enumor.EniInstType:
 		// ENI也同样的去CVM表中查询，查不到则报错（表示没有找到ENI绑定的CVM）
 		instCloudIDMap, err = svc.parseTCloudRsIPForCvmInstIDMap(kt, accountID, vendor, req)
 		if err != nil {
+			logs.Errorf("parse tcloud rs ip for cvm inst id map faile, err: %v, req: %+v, rid : %s", err, req, kt.Rid)
 			return nil, err
 		}
 	}
@@ -312,7 +314,8 @@ func (svc *lbSvc) parseSOpsTargetParams(kt *kit.Kit, accountID string, vendor en
 		tgIDsMap[index] = tgIDsItem
 		index++
 	}
-	logs.Infof("parse sops target params success, ruleQueryList: %+v, tgIDsMap: %+v", ruleQueryList, tgIDsMap)
+	logs.Infof("parse sops target params success, ruleQueryList: %+v, tgIDsMap: %+v, rid: %s",
+		ruleQueryList, tgIDsMap, kt.Rid)
 
 	return tgIDsMap, nil
 }
@@ -355,7 +358,7 @@ func (svc *lbSvc) parseSOpsProtocolAndDomainForTgIDs(kt *kit.Kit, accountID stri
 	for {
 		urlRuleResult, err := svc.client.DataService().TCloud.LoadBalancer.ListUrlRule(kt, urlRuleReq)
 		if err != nil {
-			logs.Errorf("list url rule failed, req: %+v, err: %v", urlRuleReq, err)
+			logs.Errorf("list url rule failed, req: %+v, err: %v, rid: %s", urlRuleReq, err, kt.Rid)
 			return nil, err
 		}
 		// 记录urlRule对应的目标组ID
@@ -640,7 +643,7 @@ func (svc *lbSvc) parseSOpsProtocolAndDomainAndUrlForTgIDs(kt *kit.Kit, accountI
 		for {
 			urlRuleResult, err := svc.client.DataService().TCloud.LoadBalancer.ListUrlRule(kt, urlRuleReq)
 			if err != nil {
-				logs.Errorf("list url rule failed, req: %+v, err: %v", urlRuleReq, err)
+				logs.Errorf("list url rule failed, req: %+v, err: %v, rid: %s", urlRuleReq, err, kt.Rid)
 				return nil, err
 			}
 			for _, urlRule := range urlRuleResult.Details {

@@ -220,24 +220,14 @@ func (svc *lbSvc) parseSOpsVipAndVportAndProtocolToListenerIDs(kt *kit.Kit, regi
 			tools.RuleEqual("vendor", vendor),
 		},
 	}
-	var err error
 	if len(lbIDs) != 0 {
 		lblFilter.Rules = append(lblFilter.Rules, tools.RuleIn("lb_id", lbIDs))
-		if err != nil {
-			return nil, err
-		}
 	}
 	if len(vport) != 0 {
 		lblFilter.Rules = append(lblFilter.Rules, tools.RuleIn("port", vport))
-		if err != nil {
-			return nil, err
-		}
 	}
 	if len(protocol) != 0 {
 		lblFilter.Rules = append(lblFilter.Rules, tools.RuleIn("protocol", protocol))
-		if err != nil {
-			return nil, err
-		}
 	}
 	lblReq := &core.ListReq{
 		Filter: lblFilter,
@@ -349,7 +339,7 @@ func (svc *lbSvc) parseSOpsProtocolAndDomainAndUrlToUrlRuleIDs(kt *kit.Kit,
 	for {
 		urlRuleResult, err := svc.client.DataService().TCloud.LoadBalancer.ListUrlRule(kt, urlRuleReq)
 		if err != nil {
-			logs.Errorf("list url rule failed, req: %+v, err: %v", urlRuleReq, err)
+			logs.Errorf("list url rule failed, req: %+v, err: %v, rid: %s", urlRuleReq, err, kt.Rid)
 			return nil, err
 		}
 		// 记录urlRuleID
