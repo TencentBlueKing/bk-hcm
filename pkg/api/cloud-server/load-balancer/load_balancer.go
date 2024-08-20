@@ -554,9 +554,9 @@ func (req *TargetGroupCreateReq) Validate() error {
 
 // TCloudSopsTargetBatchCreateReq tcloud sops target batch create req.
 type TCloudSopsTargetBatchCreateReq struct {
-	RuleQueryList []TargetGroupQueryItemForRsOnline `json:"rule_query_list" validate:"required,min=1,dive"`
-	RsIP          []string                          `json:"rs_ip" validate:"required,min=1"`
-	RsPort        []int                             `json:"rs_port" validate:"required,min=1"`
+	RuleQueryList []TargetGroupQueryItemForRsOnline `json:"rule_query_list" validate:"required,min=1,max=50,dive"`
+	RsIP          []string                          `json:"rs_ip" validate:"required,min=1,max=50"`
+	RsPort        []int                             `json:"rs_port" validate:"required,min=1,max=50"`
 	RsWeight      int64                             `json:"rs_weight" validate:"required,min=0,max=100"`
 	RsType        enumor.InstType                   `json:"rs_type" validate:"required"`
 }
@@ -576,14 +576,14 @@ func (req *TCloudSopsTargetBatchCreateReq) Validate() error {
 
 // TargetGroupQueryItemForRsOnline 规则查询结构体-RS上线专属
 type TargetGroupQueryItemForRsOnline struct {
-	Region   string              `json:"region" jsonschema:"title=地域" validate:"required"`
-	Vip      []string            `json:"vip" jsonschema:"title=VIP"`
-	VPort    []int               `json:"vport" jsonschema:"title=VPORT"`
-	RsIP     []string            `json:"rs_ip" jsonschema:"title=RS IP"`
-	RsType   string              `json:"rs_type" jsonschema:"title=RS TYPE"`
-	Protocol enumor.ProtocolType `json:"protocol" jsonschema:"title=协议" validate:"required"`
-	Domain   []string            `json:"domain" jsonschema:"title=域名"`
-	Url      []string            `json:"url" jsonschema:"title=url"`
+	Region   string              `json:"region" validate:"required"`
+	Vip      []string            `json:"vip" validate:"max=50"`
+	VPort    []int               `json:"vport" validate:"max=50"`
+	RsIP     []string            `json:"rs_ip" validate:"max=50"`
+	RsType   string              `json:"rs_type"`
+	Protocol enumor.ProtocolType `json:"protocol" validate:"required"`
+	Domain   []string            `json:"domain" validate:"max=50"`
+	Url      []string            `json:"url" validate:"max=50"`
 }
 
 // Validate req
@@ -600,25 +600,25 @@ func (req *TargetGroupQueryItemForRsOnline) Validate() error {
 
 	//  RSIP 与 VIP 至少填一个
 	if len(req.RsIP) == 0 && len(req.Vip) == 0 {
-		return fmt.Errorf("RSIP 与 VIP 至少填一个")
+		return fmt.Errorf("rs ip and VIP, fill in at least one")
 	}
 
 	// 填写了VIP则必填Vport
 	if len(req.Vip) != 0 && len(req.VPort) == 0 {
-		return fmt.Errorf("填写了VIP则必填Vport")
+		return fmt.Errorf("if you fill in VIP, you must fill in Vport")
 	}
 
 	// RSIP与RSType同时填或不填
 	if (len(req.RsIP) == 0 && len(req.RsType) != 0) || (len(req.RsIP) != 0 && len(req.RsType) == 0) {
-		return fmt.Errorf("RSIP与RSType同时填或不填")
+		return fmt.Errorf("rs ip and RSType can be filled in at the same time or not")
 	}
 
 	// 七层下必填Domain、Url
 	if !req.Protocol.IsLayer7Protocol() && (len(req.Domain) != 0 || len(req.Url) != 0) {
-		return fmt.Errorf("非七层规则下，不能填写Domain、Url")
+		return fmt.Errorf("is not a seven-layer rule, the domain name cannot be filled in")
 	}
 	if req.Protocol.IsLayer7Protocol() && (len(req.Domain) == 0 || len(req.Url) == 0) {
-		return fmt.Errorf("七层规则下，必填Domain、Url")
+		return fmt.Errorf("using the seven-layer rule, the domain name must be filled in")
 	}
 
 	return validator.Validate.Struct(req)
@@ -638,13 +638,13 @@ func (req *TCloudSopsTargetBatchRemoveReq) Validate() error {
 
 // TargetGroupRuleQueryItem 目标组规则查询结构体
 type TargetGroupRuleQueryItem struct {
-	Region   string              `json:"region" jsonschema:"title=地域" validate:"required"`
-	Vip      []string            `json:"vip" jsonschema:"title=VIP"`
-	VPort    []int               `json:"vport" jsonschema:"title=VPORT"`
-	RsIP     []string            `json:"rs_ip" jsonschema:"title=RS IP" validate:"required"`
-	RsType   string              `json:"rs_type" jsonschema:"title=RS TYPE" validate:"required"`
-	Protocol enumor.ProtocolType `json:"protocol" jsonschema:"title=协议"`
-	Domain   string              `json:"domain" jsonschema:"title=域名"`
+	Region   string              `json:"region" validate:"required"`
+	Vip      []string            `json:"vip" validate:"max=50"`
+	VPort    []int               `json:"vport" validate:"max=50"`
+	RsIP     []string            `json:"rs_ip" validate:"required,minx=1,max=50"`
+	RsType   string              `json:"rs_type" validate:"required"`
+	Protocol enumor.ProtocolType `json:"protocol"`
+	Domain   string              `json:"domain"`
 }
 
 // Validate ...
@@ -661,10 +661,10 @@ func (req *TargetGroupRuleQueryItem) Validate() error {
 	}
 
 	if req.Protocol.IsLayer7Protocol() && len(req.Domain) == 0 {
-		return fmt.Errorf("七层规则下，域名不能为空")
+		return fmt.Errorf("using the seven-layer rule, the domain name must be filled in")
 	}
 	if !req.Protocol.IsLayer7Protocol() && len(req.Domain) != 0 {
-		return fmt.Errorf("非七层规则下，不能填写域名")
+		return fmt.Errorf("is not a seven-layer rule, the domain name cannot be filled in")
 	}
 
 	return validator.Validate.Struct(req)
@@ -738,14 +738,14 @@ func (req *TCloudSopsRuleBatchDeleteReq) Validate() error {
 
 // RuleQueryItemForRuleOffline 规则查询结构体-规则下线专属
 type RuleQueryItemForRuleOffline struct {
-	Region   string                `json:"region" jsonschema:"title=地域" validate:"required"`
-	Vip      []string              `json:"vip" jsonschema:"title=VIP"`
-	VPort    []int                 `json:"vport" jsonschema:"title=VPORT"`
-	RsIP     []string              `json:"rs_ip" jsonschema:"title=RS IP"`
-	RsType   string                `json:"rs_type" jsonschema:"title=RS TYPE"`
-	Protocol []enumor.ProtocolType `json:"protocol" jsonschema:"title=协议"`
-	Domain   []string              `json:"domain" jsonschema:"title=域名"`
-	Url      []string              `json:"url" jsonschema:"title=url"`
+	Region   string                `json:"region" validate:"required"`
+	Vip      []string              `json:"vip" validate:"max=50"`
+	VPort    []int                 `json:"vport" validate:"max=50"`
+	RsIP     []string              `json:"rs_ip" validate:"max=50"`
+	RsType   string                `json:"rs_type" validate:"max=50"`
+	Protocol []enumor.ProtocolType `json:"protocol" validate:"max=50"`
+	Domain   []string              `json:"domain" validate:"max=50"`
+	Url      []string              `json:"url" validate:"max=50"`
 }
 
 // Validate ...
@@ -763,10 +763,10 @@ func (r *RuleQueryItemForRuleOffline) Validate() error {
 	}
 
 	if len(r.Vip) == 0 && len(r.RsIP) == 0 {
-		return fmt.Errorf("Vip和RsIP至少明确指定一个")
+		return fmt.Errorf("vip and RsIP must specify at least one")
 	}
 	if (len(r.RsIP) == 0 && len(r.RsType) != 0) || len(r.RsIP) != 0 && len(r.RsType) == 0 {
-		return fmt.Errorf("RsIP与RsType必须同时指定或同时不指定")
+		return fmt.Errorf("rsIP and RsType must be specified at the same time or not at the same time")
 	}
 
 	return validator.Validate.Struct(r)
