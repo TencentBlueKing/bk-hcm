@@ -1,5 +1,7 @@
 // 全局业务id
 export const GLOBAL_BIZS_KEY = 'bizs';
+export const GLOBAL_BIZS_VERSION = '1.6.2';
+export const GLOBAL_BIZS_VERSION_KEY = 'bizs_version';
 
 export enum VendorEnum {
   TCLOUD = 'tcloud',
