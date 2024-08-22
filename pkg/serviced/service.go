@@ -275,9 +275,7 @@ func (s *service) syncMasterState() {
 
 	// watch service register path change event. if receive event, need to sync master state.
 	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), defaultEtcdTimeout)
-		defer cancel()
-		s.watchChan = s.cli.Watch(ctx, svrPath, etcd3.WithPrefix(), etcd3.WithPrevKV())
+		s.watchChan = s.cli.Watch(context.Background(), svrPath, etcd3.WithPrefix(), etcd3.WithPrevKV())
 
 		for {
 			resp, ok := <-s.watchChan
@@ -295,7 +293,7 @@ func (s *service) syncMasterState() {
 
 			// if the abnormal pipe is closed, you need to retry watch
 			if !ok || resp.Err() != nil {
-				s.watchChan = s.cli.Watch(ctx, svrPath, etcd3.WithPrefix(),
+				s.watchChan = s.cli.Watch(context.Background(), svrPath, etcd3.WithPrefix(),
 					etcd3.WithPrevKV())
 			}
 		}
