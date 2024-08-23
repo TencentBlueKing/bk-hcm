@@ -3,7 +3,7 @@
  * @author
  */
 
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import cookie from 'cookie';
 import { Message } from 'bkui-vue';
 // import { uuid } from 'vue-uuid';
@@ -12,6 +12,7 @@ import { showLoginModal } from '@blueking/login-modal';
 import bus from '@/common/bus';
 import CachedPromise from './cached-promise';
 import RequestQueue from './request-queue';
+import { defaults } from 'lodash';
 // import { bus } from '@/common/bus';
 // import { messageError } from '@/common/bkmagic';
 // import UrlParse from 'url-parse';
@@ -64,7 +65,12 @@ axiosInstance.interceptors.request.use(
  * response interceptor
  */
 axiosInstance.interceptors.response.use(
-  (response) => response.data,
+  (response) => {
+    if ((response.config as CombinedRequestConfig).originalResponse) {
+      return response;
+    }
+    return response.data;
+  },
   (error) => Promise.reject(error),
 );
 
@@ -76,6 +82,39 @@ const http: HttpApi = {
   },
   cancelCache: (requestId: string) => http.cache.delete(requestId),
   cancel: (requestId: string) => Promise.all([http.cancelRequest(requestId), http.cancelCache(requestId)]),
+  download: async (config: CombinedRequestConfig) => {
+    defaults(config, { method: 'post', responseType: 'blob', originalResponse: true });
+    // 设置请求配置默认值
+    try {
+      const { data, headers } = await axiosInstance(config);
+      if (headers['content-type'] === 'application/octet-stream') {
+        const downloadUrl = URL.createObjectURL(data);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        // 设置默认文件名
+        [, a.download] = headers['content-disposition'].match(/filename="(.+)"/);
+        // 下载
+        document.body.appendChild(a);
+        a.click();
+        // 释放资源
+        document.body.removeChild(a);
+        URL.revokeObjectURL(downloadUrl);
+      } else if (headers['content-type'] === 'application/json') {
+        // 下载业务报错
+        const reader = new FileReader();
+        reader.onload = () => {
+          const error = JSON.parse(reader.result as string);
+          Message({ theme: 'error', message: error.message });
+        };
+        reader.readAsText(data);
+      } else {
+        throw new Error(`unknown Content-Type: ${headers['content-type']}`);
+      }
+    } catch (error) {
+      console.error(error);
+      Message({ theme: 'error', message: (error as Error).message });
+    }
+  },
 };
 
 const methodsWithoutData: HttpMethodType[] = ['get', 'head', 'options'];
@@ -180,11 +219,6 @@ function handleResponse(params: { config: any; response: any; resolve: any; reje
   isLoginValid = false;
   params.resolve(params.response, params.config);
 
-  // if (!response.data && config.globalError) {
-  //     reject({ message: response.message })
-  // } else {
-  //     resolve(config.originalResponse ? response : response.data, config)
-  // }
   http.queue.delete(params.config.requestId);
 }
 // token失效时多个接口的错误信息通过isActive节流阀只显示一个
@@ -279,7 +313,7 @@ function initConfig(method: string, url: string, userConfig: object) {
     // 是否在请求发起前清楚缓存
     clearCache: false,
     // 响应结果是否返回原始数据
-    originalResponse: true,
+    originalResponse: false,
     // 当路由变更时取消请求
     cancelWhenRouteChange: true,
     // 取消上次请求
@@ -287,6 +321,7 @@ function initConfig(method: string, url: string, userConfig: object) {
   };
   return Object.assign(defaultConfig, userConfig);
 }
+type CombinedRequestConfig = Partial<AxiosRequestConfig & ReturnType<typeof initConfig>>;
 
 /**
  * 生成 http 请求的 cancelToken，用于取消尚未完成的请求

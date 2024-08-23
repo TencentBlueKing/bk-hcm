@@ -7,7 +7,6 @@ import {
   BillImportPreviewResData,
   BillsExportReqParams,
   BillsExportReqParamsWithBizs,
-  BillsExportResData,
   BillsMainAccountSummaryResData,
   BillsRootAccountSummaryHistoryResData,
   BillsRootAccountSummaryResData,
@@ -163,26 +162,26 @@ export const billItemsImport = async (
 };
 
 // 导出一级账号账单汇总数据
-export const exportBillsRootAccountSummary = async (data: BillsExportReqParams): Promise<BillsExportResData> => {
-  return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/root-account-summarys/export`, data);
+export const exportBillsRootAccountSummary = async (data: BillsExportReqParams) => {
+  return http.download({ url: `${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/root-account-summarys/export`, data });
 };
 
 // 导出二级账号账单汇总数据
-export const exportBillsMainAccountSummary = async (data: BillsExportReqParams): Promise<BillsExportResData> => {
-  return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/main-account-summarys/export`, data);
+export const exportBillsMainAccountSummary = async (data: BillsExportReqParams) => {
+  return http.download({ url: `${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/main-account-summarys/export`, data });
 };
 
 // 导出业务账单汇总数据
-export const exportBillsBizSummary = async (data: BillsExportReqParamsWithBizs): Promise<BillsExportResData> => {
-  return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/biz_summarys/export`, data);
+export const exportBillsBizSummary = async (data: BillsExportReqParamsWithBizs) => {
+  return http.download({ url: `${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/biz_summarys/export`, data });
 };
 
 // 导出账单明细数据
-export const exportBillsItems = async (vendor: VendorEnum, data: BillsExportReqParams): Promise<BillsExportResData> => {
-  return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/vendors/${vendor}/bills/items/export`, data);
+export const exportBillsItems = async (vendor: VendorEnum, data: BillsExportReqParams) => {
+  return http.download({ url: `${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/vendors/${vendor}/bills/items/export`, data });
 };
 
 // 导出账单调整数据
-export const exportBillsAdjustmentItems = async (data: BillsExportReqParams): Promise<BillsExportResData> => {
-  return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/adjustment_items/export`, data);
+export const exportBillsAdjustmentItems = async (data: BillsExportReqParams) => {
+  return http.download({ url: `${BK_HCM_AJAX_URL_PREFIX}/api/v1/account/bills/adjustment_items/export`, data });
 };
