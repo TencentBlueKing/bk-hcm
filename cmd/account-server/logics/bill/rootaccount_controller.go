@@ -118,7 +118,7 @@ func (rac *RootAccountController) Start() error {
 
 func (rac *RootAccountController) setAwsExtension(kt *kit.Kit) error {
 	// set exclude account id
-	excludeCloudIds := cc.AccountServer().BillAllocation.AwsCommonExpense.ExcludeAccountCloudIds
+	excludeCloudIds := cc.AccountServer().BillAllocation.AwsCommonExpense.ExcludeAccountCloudIDs
 	var spArnPrefix, spAccountCloudID string
 	// 	matching saving plan allocation option
 	for _, spOpt := range cc.AccountServer().BillAllocation.AwsSavingsPlans {

@@ -73,9 +73,9 @@ controller:
 billAllocation:
   # aws savings plans allocation option
   awsSavingsPlans:
-#    - rootAccountCloudId: xxx
+#    - rootAccountCloudID: xxx
 #      SpPurchaseAccountCloudID: xxx
 #      spArnPrefix: arn:aws:savingsplans::xxxxx:savingsplan/
   awsCommonExpense:
-    excludeAccountCloudIds:
+    excludeAccountCloudIDs:
 #      - 123456789

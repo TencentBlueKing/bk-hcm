@@ -76,7 +76,7 @@ func (bm *BillManager) Run(ctx context.Context) {
 
 func (bm *BillManager) syncRootControllers() error {
 	kt := getInternalKit()
-	logs.Infof("[bm] start sync main controllers, rid: %s", kt.Rid)
+	logs.Infof("[bm] start sync root controllers, rid: %s", kt.Rid)
 	rootAccounts, err := bm.AccountList.ListAllRootAccount(kt)
 	if err != nil {
 		return err

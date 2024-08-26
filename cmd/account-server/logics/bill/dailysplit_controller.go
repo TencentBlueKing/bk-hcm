@@ -211,7 +211,7 @@ func (msdc *MainDailySplitController) syncDailySplit(kt *kit.Kit, billYear, bill
 			logs.Infof("split task of day %d main account %v bill should be create", task.BillDay, summary)
 			flowID, err := msdc.createDailySplitFlow(kt, summary, billYear, billMonth, task.BillDay)
 			if err != nil {
-				logs.Warnf("create daily split task for %v, %d/%d/%d failed, err %s, rid: %s",
+				logs.Errorf("create daily split task for %v, %d/%d/%d failed, err %s, rid: %s",
 					summary, billYear, billMonth, task.BillDay, err.Error(), kt.Rid)
 				continue
 			}
@@ -234,7 +234,7 @@ func (msdc *MainDailySplitController) syncDailySplit(kt *kit.Kit, billYear, bill
 
 			flowID, err := msdc.createDailySplitFlow(kt, summary, billYear, billMonth, task.BillDay)
 			if err != nil {
-				logs.Warnf("create daily split task for %v, %d/%d/%d failed, err %s, rid: %s",
+				logs.Errorf("create daily split task for %v, %d/%d/%d failed, err %s, rid: %s",
 					summary, billYear, billMonth, task.BillDay, err.Error(), kt.Rid)
 				continue
 			}

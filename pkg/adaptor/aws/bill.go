@@ -718,8 +718,8 @@ func (a *Aws) GetRootAccountAwsAthenaQuery(kt *kit.Kit, query string, billInfo *
 }
 
 const (
-	// AwsSPQuerySQl ...
-	AwsSPQuerySQl = `SELECT 
+	// AwsSPQuerySQL ...
+	AwsSPQuerySQL = `SELECT 
 			count(DISTINCT line_item_usage_account_id) AS account_cnt,
 			sum(line_item_unblended_cost) AS unblended_cost, 
 			sum(savings_plan_savings_plan_effective_cost) AS sp_cost,
@@ -740,7 +740,7 @@ func (a *Aws) GetRootSpTotalUsage(kt *kit.Kit, billInfo *billcore.AwsRootBillCon
 		return nil, errf.Newf(errf.RecordNotFound, "opt for get sp usage is required")
 	}
 
-	sql := fmt.Sprintf(AwsSPQuerySQl, billInfo.CloudDatabaseName, billInfo.CloudTableName)
+	sql := fmt.Sprintf(AwsSPQuerySQL, billInfo.CloudDatabaseName, billInfo.CloudTableName)
 	sql += fmt.Sprintf(" AND bill_payer_account_id = '%s'", opt.PayerCloudID)
 	sql += fmt.Sprintf(" AND year = '%d'", opt.Year)
 	sql += fmt.Sprintf(" AND month = '%d'", opt.Month)

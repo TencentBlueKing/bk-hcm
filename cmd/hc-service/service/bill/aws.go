@@ -833,8 +833,8 @@ func (b bill) AwsGetRootAccountSpTotalUsage(cts *rest.Contexts) (any, error) {
 	billInfo, err := getRootAccountBillConfigInfo[billcore.AwsBillConfigExtension](
 		cts.Kit, req.RootAccountID, b.cs.DataService())
 	if err != nil {
-		logs.Errorf("aws get root account bill config for aws sp usage total failed, err: %+v,rid: %s",
-			err, cts.Kit.Rid)
+		logs.Errorf("aws get root account(id: %s) bill config for aws sp usage total failed, err: %+v, rid: %s",
+			req.RootAccountID, err, cts.Kit.Rid)
 		return nil, err
 	}
 	if billInfo == nil {

@@ -881,7 +881,7 @@ func (c *CMSI) validate() error {
 // AwsSavingsPlansOption savings plans allocation option
 type AwsSavingsPlansOption struct {
 	// RootAccountCloudID which root account these savings plans belongs to
-	RootAccountCloudID string `yaml:"rootAccountCloudId" validate:"required"`
+	RootAccountCloudID string `yaml:"rootAccountCloudID" validate:"required"`
 	// SpArnPrefix arn prefix to match savings plans, empty for no filter
 	SpArnPrefix string `yaml:"spArnPrefix" validate:"omitempty"`
 	// SpPurchaseAccountCloudID which account purchase this saving plans,
@@ -902,7 +902,7 @@ func (opt *AwsSavingsPlansOption) validate() error {
 
 // AwsCommonExpense ...
 type AwsCommonExpense struct {
-	ExcludeAccountCloudIds []string `yaml:"excludeAccountCloudIds" validate:"dive,required"`
+	ExcludeAccountCloudIDs []string `yaml:"excludeAccountCloudIDs" validate:"dive,required"`
 }
 
 // BillAllocationOption ...
