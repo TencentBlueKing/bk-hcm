@@ -437,5 +437,9 @@ func (s AccountServerSetting) Validate() error {
 		return err
 	}
 
+	if err := s.BillAllocation.validate(); err != nil {
+		return err
+	}
+
 	return nil
 }
