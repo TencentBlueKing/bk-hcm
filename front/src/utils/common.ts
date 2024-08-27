@@ -158,6 +158,8 @@ const analysisPort = (port: string) => {
   }
 
   const list: AddressDescription[] = [];
+  const protocolArray = ['tcp', 'TCP', , 'UDP', 'udp'];
+  const protocolSpecial = ['ICMP', 'icmp', 'GRE', 'gre'];
   // 通过换行符来分割字符串
   const lines = port.split('\n');
   lines.forEach((text) => {
@@ -167,7 +169,7 @@ const analysisPort = (port: string) => {
     const portArr = parts[0].trim().split(':');
     if (portArr.length === 2) {
       const [protocol, port] = portArr;
-      if (['tcp', 'TCP'].includes(protocol)) {
+      if (protocolArray.includes(protocol)) {
         if (isPortNumber(port) || port === 'ALL' || isDispersedPort(port) || isContinuityPort(port)) {
           // 1. 单个端口   // 2. 多个离散端口  // 3. 连续端口  // 4. 所有端口
           list.push({
@@ -175,6 +177,14 @@ const analysisPort = (port: string) => {
             description,
           });
         }
+      }
+    } else {
+      const [protocol] = portArr;
+      if (protocolSpecial.includes(protocol)) {
+        list.push({
+          address: parts[0],
+          description,
+        });
       }
     }
   });

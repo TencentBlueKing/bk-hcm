@@ -1,6 +1,6 @@
 /* eslint-disable no-nested-ternary */
 import { Button, Dialog, Form, Input, Message, Select } from 'bkui-vue';
-import { PropType, defineComponent, ref, watch } from 'vue';
+import { PropType, defineComponent, ref, watch, nextTick } from 'vue';
 import { analysisIP, analysisPort } from '@/utils';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
 import { VendorEnum } from '@/common/constant';
@@ -95,7 +95,10 @@ export default defineComponent({
 
     const ipGroupList = ref([]);
     const portGroupList = ref([]);
-
+    const clearValidate = () => {
+      basicForm.value.clearValidate();
+      formInstance.value?.clearValidate();
+    };
     const handleSubmit = async () => {
       await basicForm.value.validate();
       await formInstance.value?.validate();
@@ -139,10 +142,15 @@ export default defineComponent({
           break;
         }
       }
-      const submitPromise = props.isEdit
-        ? resourceStore.update('argument_templates', data, props.payload.id)
-        : resourceStore.add('argument_templates/create', data);
-      await submitPromise;
+      try {
+        const submitPromise = props.isEdit
+          ? resourceStore.update('argument_templates', data, props.payload.id)
+          : resourceStore.add('argument_templates/create', data);
+        await submitPromise;
+      } finally {
+        isLoading.value = false;
+      }
+
       Message({
         theme: 'success',
         message: props.isEdit ? '编辑成功' : '创建成功',
@@ -153,11 +161,57 @@ export default defineComponent({
 
     watch(
       () => props.isShow,
-      (isShow) => {
+      async (isShow) => {
         if (isShow) getAccountList();
+        await nextTick();
+        clearValidate();
       },
     );
+    const editAssignment = () => {
+      switch (formData.value.type) {
+        case TemplateType.IP: {
+          let result = '';
+          ipTableData.value = props.payload?.templates || [
+            {
+              address: '',
+              description: '',
+            },
+          ];
+          ipTableData.value.forEach((item) => {
+            result += `${item.address} ${item.description}\n`;
+          });
 
+          // 删除最后一个多余的换行符（可选）
+          result = result.trim();
+          formList.value.ipsList = result;
+          break;
+        }
+        case TemplateType.IP_GROUP: {
+          ipGroupData.value = props.payload?.group_templates || [];
+          break;
+        }
+        case TemplateType.PORT: {
+          let result = '';
+          portTableData.value = props.payload?.templates || [
+            {
+              address: '',
+              description: '',
+            },
+          ];
+          portTableData.value.forEach((item) => {
+            result += `${item.address} ${item.description}\n`;
+          });
+          // 删除最后一个多余的换行符（可选）
+          result = result.trim();
+          formList.value.portList = result;
+          break;
+        }
+        case TemplateType.PORT_GROUP: {
+          portGroupData.value = props.payload?.group_templates || [];
+          break;
+        }
+      }
+    };
     watch(
       () => [formData.value.type, formData.value.account_id],
       async ([type, accountID]) => {
@@ -199,8 +253,12 @@ export default defineComponent({
         if (type === TemplateType.PORT_GROUP) {
           params.filter.rules[1].value = 'service';
           const res = await resourceStore.getCommonList(params, 'argument_templates/list');
+
           portGroupData.value = [];
           portGroupList.value = res.data.details;
+        }
+        if (props.isEdit) {
+          editAssignment();
         }
         isGroupLoading.value = false;
       },
@@ -211,7 +269,7 @@ export default defineComponent({
 
     watch(
       () => props.payload,
-      () => {
+      async () => {
         formData.value = {
           name: props.payload?.name || '',
           type: props.payload?.type || TemplateType.IP,
@@ -221,49 +279,7 @@ export default defineComponent({
           group_templates: props.payload?.group_templates || [],
           bk_biz_id: props.payload?.bk_biz_id || -1,
         };
-        switch (formData.value.type) {
-          case TemplateType.IP: {
-            let result = '';
-            ipTableData.value = props.payload?.templates || [
-              {
-                address: '',
-                description: '',
-              },
-            ];
-            ipTableData.value.forEach((item) => {
-              result += `${item.address} ${item.description}\n`;
-            });
-
-            // 删除最后一个多余的换行符（可选）
-            result = result.trim();
-            formList.value.ipsList = result;
-            break;
-          }
-          case TemplateType.IP_GROUP: {
-            ipGroupData.value = props.payload?.group_templates || [];
-            break;
-          }
-          case TemplateType.PORT: {
-            let result = '';
-            portTableData.value = props.payload?.templates || [
-              {
-                address: '',
-                description: '',
-              },
-            ];
-            portTableData.value.forEach((item) => {
-              result += `${item.address} ${item.description}\n`;
-            });
-            // 删除最后一个多余的换行符（可选）
-            result = result.trim();
-            formList.value.portList = result;
-            break;
-          }
-          case TemplateType.PORT_GROUP: {
-            portGroupData.value = props.payload?.group_templates || [];
-            break;
-          }
-        }
+        editAssignment();
       },
       {
         deep: true,
@@ -298,8 +314,7 @@ export default defineComponent({
         ipsList: '',
         portList: '',
       };
-      basicForm.value.clearValidate();
-      formInstance.value?.clearValidate();
+      clearValidate();
     };
     const autoSizeConf = {
       minRows: 9,
@@ -345,7 +360,7 @@ export default defineComponent({
             ) : (
               <FormItem property='portList' label={'协议端口'} required>
                 <Input
-                  placeholder={`协议端口可添加多个协议端口,换行分隔,案例如下:\n【单个端口】TCP:80\n【多个离散端口】TCP:80,433\n【连续端口】TCP:3306-20000\n【所有端口】TCP:ALL`}
+                  placeholder={`协议端口可添加多个协议端口,换行分隔,案例如下:\n【单个端口】TCP:80 备注说明\n【多个离散端口】TCP:80,433 备注说明\n【连续端口】TCP:3306-20000 备注说明\n【所有端口】TCP:ALL 备注说明\n【ICMP协议】 ICMP 备注说明\n【GRE协议】 GRE 备注说明 `}
                   autosize={autoSizeConf}
                   type='textarea'
                   v-model={formList.value.portList}
@@ -393,93 +408,111 @@ export default defineComponent({
         accountList.value = accountList.value.filter(({ vendor }) => vendorArr.includes(vendor));
       }
     };
-
     return () => (
       <Dialog
         isShow={props.isShow}
+        title={props.isEdit ? '编辑参数模板' : '新建参数模板'}
+        width={640}
         onClosed={() => {
           props.handleClose();
           clearFormData();
+        }}>
+        {{
+          default: () => (
+            <>
+              <Form model={formData.value} ref={basicForm} formType='vertical'>
+                <FormItem label='云账号' property='account_id' required>
+                  <Select
+                    v-model={formData.value.account_id}
+                    disabled={props.isEdit}
+                    onChange={(account_id) => {
+                      const idx = accountList.value.findIndex(({ id }) => id === account_id);
+                      formData.value.vendor = accountList.value[idx].vendor;
+                    }}>
+                    {accountList.value.map((item) => (
+                      <Option key={item.id} id={item.id} name={item.name}></Option>
+                    ))}
+                  </Select>
+                </FormItem>
+                <FormItem label='参数模板名称' property='name' required>
+                  <Input placeholder='输入参数模板名称' v-model={formData.value.name} />
+                </FormItem>
+                <FormItem label='参数模板类型' property='type' required>
+                  <BkButtonGroup>
+                    <Button
+                      selected={formData.value.type === TemplateType.IP}
+                      disabled={props.isEdit && !(props.payload.type === TemplateType.IP)}
+                      onClick={() => {
+                        formData.value.type = TemplateType.IP;
+                      }}>
+                      IP地址
+                    </Button>
+                    <Button
+                      selected={formData.value.type === TemplateType.IP_GROUP}
+                      disabled={props.isEdit && !(props.payload.type === TemplateType.IP_GROUP)}
+                      onClick={() => {
+                        formData.value.type = TemplateType.IP_GROUP;
+                      }}>
+                      IP地址组
+                    </Button>
+                    <Button
+                      selected={formData.value.type === TemplateType.PORT}
+                      disabled={props.isEdit && !(props.payload.type === TemplateType.PORT)}
+                      onClick={() => {
+                        formData.value.type = TemplateType.PORT;
+                      }}>
+                      协议端口
+                    </Button>
+                    <Button
+                      selected={formData.value.type === TemplateType.PORT_GROUP}
+                      disabled={props.isEdit && !(props.payload.type === TemplateType.PORT_GROUP)}
+                      onClick={() => {
+                        formData.value.type = TemplateType.PORT_GROUP;
+                      }}>
+                      协议端口组
+                    </Button>
+                  </BkButtonGroup>
+                </FormItem>
+                {[TemplateType.IP_GROUP].includes(formData.value.type) ? (
+                  <FormItem label='IP地址'>
+                    <Select v-model={ipGroupData.value} multiple multipleMode='tag'>
+                      {ipGroupList.value.map((v) => (
+                        <Option key={v.cloud_id} id={v.cloud_id} name={`${v.cloud_id} (${v.name})`}></Option>
+                      ))}
+                    </Select>
+                  </FormItem>
+                ) : null}
+                {[TemplateType.PORT_GROUP].includes(formData.value.type) ? (
+                  <FormItem label='IP地址'>
+                    <Select v-model={portGroupData.value} multiple multipleMode='tag'>
+                      {portGroupList.value.map((v) => (
+                        <Option key={v.cloud_id} id={v.cloud_id} name={`${v.cloud_id} (${v.name})`}></Option>
+                      ))}
+                    </Select>
+                  </FormItem>
+                ) : null}
+              </Form>
+              {[TemplateType.IP, TemplateType.PORT].includes(formData.value.type) ? (
+                <>{renderTable(formData.value.type)}</>
+              ) : null}
+            </>
+          ),
+          footer: () => (
+            <>
+              <Button theme='primary' loading={isLoading.value} onClick={handleSubmit}>
+                确定
+              </Button>
+              <Button
+                class='ml8'
+                onClick={() => {
+                  props.handleClose();
+                  clearFormData();
+                }}>
+                取消
+              </Button>
+            </>
+          ),
         }}
-        onConfirm={() => {
-          handleSubmit();
-        }}
-        title={props.isEdit ? '编辑参数模板' : '新建参数模板'}
-        width={640}>
-        <Form formType='vertical' model={formData.value} ref={basicForm}>
-          <FormItem label='云账号' property='account_id' required>
-            <Select
-              v-model={formData.value.account_id}
-              onChange={(account_id) => {
-                const idx = accountList.value.findIndex(({ id }) => id === account_id);
-                formData.value.vendor = accountList.value[idx].vendor;
-              }}>
-              {accountList.value.map((item) => (
-                <Option key={item.id} id={item.id} name={item.name}></Option>
-              ))}
-            </Select>
-          </FormItem>
-          <FormItem label='参数模板名称' property='name' required>
-            <Input placeholder='输入参数模板名称' v-model={formData.value.name} />
-          </FormItem>
-          <FormItem label='参数模板类型' property='type' required>
-            <BkButtonGroup>
-              <Button
-                selected={formData.value.type === TemplateType.IP}
-                disabled={props.isEdit && !(props.payload.type === TemplateType.IP)}
-                onClick={() => {
-                  formData.value.type = TemplateType.IP;
-                }}>
-                IP地址
-              </Button>
-              <Button
-                selected={formData.value.type === TemplateType.IP_GROUP}
-                disabled={props.isEdit && !(props.payload.type === TemplateType.IP_GROUP)}
-                onClick={() => {
-                  formData.value.type = TemplateType.IP_GROUP;
-                }}>
-                IP地址组
-              </Button>
-              <Button
-                selected={formData.value.type === TemplateType.PORT}
-                disabled={props.isEdit && !(props.payload.type === TemplateType.PORT)}
-                onClick={() => {
-                  formData.value.type = TemplateType.PORT;
-                }}>
-                协议端口
-              </Button>
-              <Button
-                selected={formData.value.type === TemplateType.PORT_GROUP}
-                disabled={props.isEdit && !(props.payload.type === TemplateType.PORT_GROUP)}
-                onClick={() => {
-                  formData.value.type = TemplateType.PORT_GROUP;
-                }}>
-                协议端口组
-              </Button>
-            </BkButtonGroup>
-          </FormItem>
-          {[TemplateType.IP_GROUP].includes(formData.value.type) ? (
-            <FormItem label='IP地址'>
-              <Select v-model={ipGroupData.value} multiple multipleMode='tag'>
-                {ipGroupList.value.map((v) => (
-                  <Option key={v.cloud_id} id={v.cloud_id} name={`${v.cloud_id} (${v.name})`}></Option>
-                ))}
-              </Select>
-            </FormItem>
-          ) : null}
-          {[TemplateType.PORT_GROUP].includes(formData.value.type) ? (
-            <FormItem label='IP地址'>
-              <Select v-model={portGroupData.value} multiple multipleMode='tag'>
-                {portGroupList.value.map((v) => (
-                  <Option key={v.cloud_id} id={v.cloud_id} name={`${v.cloud_id} (${v.name})`}></Option>
-                ))}
-              </Select>
-            </FormItem>
-          ) : null}
-        </Form>
-        {[TemplateType.IP, TemplateType.PORT].includes(formData.value.type) ? (
-          <>{renderTable(formData.value.type)}</>
-        ) : null}
       </Dialog>
     );
   },

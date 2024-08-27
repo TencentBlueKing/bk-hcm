@@ -158,10 +158,20 @@ watch(
         ids,
         bk_biz_id: whereAmI.value === Senarios.business ? accountStore.bizs : undefined,
       });
+      const dataMap = new Map(
+        res.data.map((element: { id: any; instance_num: any; rule_num: any }) => [element.id, element]),
+      );
       for (let i = 0; i < templateData.value.length; i++) {
         const item = templateData.value[i];
-        item.instance_num = res.data?.[i]?.instance_num || '--';
-        item.rule_num = res.data?.[i]?.rule_num || '--';
+        const foundElement = dataMap.get(item.id);
+
+        if (foundElement) {
+          item.instance_num = foundElement?.instance_num;
+          item.rule_num = foundElement?.rule_num;
+        } else {
+          item.instance_num = '--';
+          item.rule_num = '--';
+        }
       }
     }
   },
