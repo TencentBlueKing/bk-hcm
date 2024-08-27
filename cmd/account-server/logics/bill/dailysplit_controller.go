@@ -69,6 +69,9 @@ func NewMainDailySplitController(opt *MainAccountControllerOption) (*MainDailySp
 		ProductID:     opt.ProductID,
 		BkBizID:       opt.BkBizID,
 		Vendor:        opt.Vendor,
+
+		RootAccountCloudID: opt.RootAccountCloudID,
+		MainAccountCloudID: opt.MainAccountCloudID,
 	}, nil
 }
 
@@ -98,6 +101,7 @@ func (msdc *MainDailySplitController) Start() error {
 	cancelFunc := kt.CtxBackgroundWithCancel()
 	msdc.kt = kt
 	msdc.cancelFunc = cancelFunc
+
 	if msdc.Vendor == enumor.Aws {
 		if err := msdc.setAwsExtension(kt); err != nil {
 			return err
@@ -108,26 +112,15 @@ func (msdc *MainDailySplitController) Start() error {
 }
 
 func (msdc *MainDailySplitController) setAwsExtension(kt *kit.Kit) error {
+
+	billAllocation := cc.AccountServer().BillAllocation
 	// 	matching saving plan allocation option
-	for _, spOpt := range cc.AccountServer().BillAllocation.AwsSavingPlans {
-		if spOpt.RootAccountID != msdc.RootAccountID {
+	for _, spOpt := range billAllocation.AwsSavingsPlans {
+		if spOpt.RootAccountCloudID != msdc.RootAccountCloudID {
 			continue
 		}
-		mainAcc, err := msdc.Client.DataService().Global.MainAccount.List(kt, &core.ListReq{
-			Filter: tools.EqualExpression("cloud_id", spOpt.SpPurchaseAccountCloudID),
-			Page:   core.NewDefaultBasePage(),
-		})
-		if err != nil {
-			logs.Errorf("fail to find sp purchase account, err %s, cloud_id: %s, rid: %s",
-				err.Error(), spOpt.SpPurchaseAccountCloudID, kt.Rid)
-			return err
-		}
-		if len(mainAcc.Details) == 0 {
-			logs.Warnf("sp purchase main account not found by cloud id %s, rid: %s",
-				spOpt.SpPurchaseAccountCloudID, kt.Rid)
-			continue
-		}
-		msdc.ext = dailysplit.BuildAwsDailySplitOptionExt(mainAcc.Details[0].ID, spOpt.SpArnPrefix)
+
+		msdc.ext = dailysplit.BuildAwsDailySplitOptionExt(spOpt.SpArnPrefix)
 	}
 	return nil
 }
@@ -165,7 +158,7 @@ func (msdc *MainDailySplitController) doSync(kt *kit.Kit) error {
 }
 
 func (msdc *MainDailySplitController) getBillSummary(
-	kt *kit.Kit, billYear, billMonth int) (*dsbillapi.BillSummaryMainResult, error) {
+	kt *kit.Kit, billYear, billMonth int) (*dsbillapi.BillSummaryMain, error) {
 
 	expressions := []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", msdc.RootAccountID),
@@ -192,6 +185,10 @@ func (msdc *MainDailySplitController) getBillSummary(
 }
 
 func (msdc *MainDailySplitController) syncDailySplit(kt *kit.Kit, billYear, billMonth int) error {
+
+	logs.Infof("start daily split sync, vendor %s, period: %d-%d, root account %s, main account %s, rid: %s",
+		msdc.Vendor, billYear, billMonth, msdc.RootAccountID, msdc.MainAccountID, kt.Rid)
+
 	summary, err := msdc.getBillSummary(kt, billYear, billMonth)
 	if err != nil {
 		return err
@@ -207,54 +204,54 @@ func (msdc *MainDailySplitController) syncDailySplit(kt *kit.Kit, billYear, bill
 
 	for _, task := range pullTaskList {
 		time.Sleep(time.Millisecond * time.Duration(rand.Intn(defaultSleepMillisecond)))
-		if task.State == enumor.MainAccountRawBillPullStatePulled {
-			if len(task.SplitFlowID) == 0 {
-				logs.Infof("split task of day %d main account %v bill should be create", task.BillDay, summary)
-				flowID, err := msdc.createDailySplitFlow(kt, summary, billYear, billMonth, task.BillDay)
-				if err != nil {
-					logs.Warnf("create daily split task for %v, %d/%d/%d failed, err %s, rid: %s",
-						summary, billYear, billMonth, task.BillDay, err.Error(), kt.Rid)
-					continue
-				}
-				logs.Infof("create daily split task flow %s for %s/%s/%s/%d/%d/%d/%d successfully, rid: %s",
-					task.ID, msdc.RootAccountID, msdc.MainAccountID, msdc.Vendor, billYear,
-					billMonth, task.BillDay, summary.CurrentVersion, kt.Rid)
-				if err := msdc.updateDailyPullTaskFlowID(kt, task.ID, flowID); err != nil {
-					logs.Warnf("set pull task %s split flow id to %s failed, err %s, rid: %s",
-						task.ID, flowID, err.Error(), kt.Rid)
-					continue
-				}
+		if task.State != enumor.MainAccountRawBillPullStatePulled {
+			continue
+		}
+		if len(task.SplitFlowID) == 0 {
+			logs.Infof("split task of day %d main account %v bill should be create", task.BillDay, summary)
+			flowID, err := msdc.createDailySplitFlow(kt, summary, billYear, billMonth, task.BillDay)
+			if err != nil {
+				logs.Errorf("create daily split task for %v, %d/%d/%d failed, err %s, rid: %s",
+					summary, billYear, billMonth, task.BillDay, err.Error(), kt.Rid)
+				continue
+			}
+			logs.Infof("create daily split task flow %s for %s/%s/%s/%d/%d/%d/%d successfully, rid: %s",
+				task.ID, msdc.RootAccountID, msdc.MainAccountID, msdc.Vendor, billYear,
+				billMonth, task.BillDay, summary.CurrentVersion, kt.Rid)
+			if err := msdc.updateDailyPullTaskFlowID(kt, task.ID, flowID); err != nil {
+				logs.Warnf("set pull task %s split flow id to %s failed, err %s, rid: %s",
+					task.ID, flowID, err.Error(), kt.Rid)
+				continue
+			}
+			continue
+		}
+		// 如果已经有拉取task flow，则检查拉取任务是否有问题
+		flow, err := msdc.Client.TaskServer().GetFlow(kt, task.SplitFlowID)
+		if err != nil {
+			return fmt.Errorf("failed to get flow by id %s, err %s", task.SplitFlowID, err.Error())
+		}
+		if flow.State == enumor.FlowFailed || flow.State == enumor.FlowCancel {
 
-			} else {
-				// 如果已经有拉取task flow，则检查拉取任务是否有问题
-				flow, err := msdc.Client.TaskServer().GetFlow(kt, task.SplitFlowID)
-				if err != nil {
-					return fmt.Errorf("failed to get flow by id %s, err %s", task.SplitFlowID, err.Error())
-				}
-				if flow.State == enumor.FlowFailed || flow.State == enumor.FlowCancel {
-
-					flowID, err := msdc.createDailySplitFlow(kt, summary, billYear, billMonth, task.BillDay)
-					if err != nil {
-						logs.Warnf("create daily split task for %v, %d/%d/%d failed, err %s, rid: %s",
-							summary, billYear, billMonth, task.BillDay, err.Error(), kt.Rid)
-						continue
-					}
-					logs.Infof("create new daily split task flow %s for %s/%s/%s/%d/%d/%d/%d successfully, rid: %s",
-						task.ID, msdc.RootAccountID, msdc.MainAccountID, msdc.Vendor, billYear,
-						billMonth, task.BillDay, summary.CurrentVersion, kt.Rid)
-					if err := msdc.updateDailyPullTaskFlowID(kt, task.ID, flowID); err != nil {
-						logs.Warnf("update pull task %s split flow id to %s failed, err %s, rid: %s",
-							task.ID, flowID, err.Error(), kt.Rid)
-						continue
-					}
-				}
+			flowID, err := msdc.createDailySplitFlow(kt, summary, billYear, billMonth, task.BillDay)
+			if err != nil {
+				logs.Errorf("create daily split task for %v, %d/%d/%d failed, err %s, rid: %s",
+					summary, billYear, billMonth, task.BillDay, err.Error(), kt.Rid)
+				continue
+			}
+			logs.Infof("create new daily split task flow %s for %s/%s/%s/%d/%d/%d/%d successfully, rid: %s",
+				task.ID, msdc.RootAccountID, msdc.MainAccountID, msdc.Vendor, billYear,
+				billMonth, task.BillDay, summary.CurrentVersion, kt.Rid)
+			if err := msdc.updateDailyPullTaskFlowID(kt, task.ID, flowID); err != nil {
+				logs.Warnf("update pull task %s split flow id to %s failed, err %s, rid: %s",
+					task.ID, flowID, err.Error(), kt.Rid)
+				continue
 			}
 		}
 	}
 	return nil
 }
 
-func (msdc *MainDailySplitController) createDailySplitFlow(kt *kit.Kit, summary *dsbillapi.BillSummaryMainResult,
+func (msdc *MainDailySplitController) createDailySplitFlow(kt *kit.Kit, summary *dsbillapi.BillSummaryMain,
 	billYear, billMonth, billDay int) (string, error) {
 
 	memo := fmt.Sprintf("[%s] main %s(%.16s)v%d %4d-%02d-%02d",

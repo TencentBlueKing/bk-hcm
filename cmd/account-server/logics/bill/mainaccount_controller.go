@@ -50,7 +50,7 @@ type MainAccountControllerOption struct {
 	ProductID           int64
 	BkBizID             int64
 	Client              *client.ClientSet
-	AwsSavingPlanOption cc.AwsSavingPlanOption
+	AwsSavingPlanOption cc.AwsSavingsPlansOption
 }
 
 // NewMainAccountController create new main account controller
@@ -120,7 +120,7 @@ type MainAccountController struct {
 	kt         *kit.Kit
 	cancelFunc context.CancelFunc
 
-	AwsSavingPlanOption cc.AwsSavingPlanOption
+	AwsSavingPlanOption cc.AwsSavingsPlansOption
 }
 
 // Start run controller
@@ -285,31 +285,36 @@ func (mac *MainAccountController) syncDailyRawBill(kt *kit.Kit) error {
 	// 同步拉取任务
 	// 上月
 	lastBillYear, lastBillMonth := times.GetLastMonthUTC()
-	lastBillSummaryMain, err := mac.getMainBillSummary(kt, lastBillYear, lastBillMonth)
+	err := mac.ensureDailyRawPullTask(kt, lastBillYear, lastBillMonth)
+	if err != nil {
+		logs.Errorf("fail to ensure last month daily raw pull task, err: %v, vendor: %s, period: %d-%d, "+
+			"main account: %s, rid: %s", err, mac.Vendor, lastBillYear, lastBillMonth, mac.MainAccountID, kt.Rid)
+		return err
+	}
+	// 本月
+	curBillYear, curBillMonth := times.GetCurrentMonthUTC()
+	err = mac.ensureDailyRawPullTask(kt, curBillYear, curBillMonth)
+	if err != nil {
+		logs.Errorf("fail to ensure current month  daily raw pull task, err: %v, vendor: %s, period: %d-%d, "+
+			"main account: %s, rid: %s", err, mac.Vendor, curBillYear, curBillMonth, mac.MainAccountID, kt.Rid)
+		return err
+	}
+	return nil
+}
+
+func (mac *MainAccountController) ensureDailyRawPullTask(kt *kit.Kit, billYear int, billMonth int) error {
+	lastBillSummaryMain, err := mac.getMainBillSummary(kt, billYear, billMonth)
 	if err != nil {
 		return err
 	}
 	if lastBillSummaryMain.State == enumor.MainAccountBillSummaryStateAccounting {
+		logs.Infof("start sync daily raw bill for main_account %s, period: %d-%d, rid: %s",
+			mac.MainAccountID, billYear, billMonth, kt.Rid)
 		curPuller, err := puller.GetDailyPuller(lastBillSummaryMain.Vendor)
 		if err != nil {
 			return err
 		}
 		if err := curPuller.EnsurePullTask(kt, mac.Client, lastBillSummaryMain); err != nil {
-			return err
-		}
-	}
-	// 本月
-	curBillYear, curBillMonth := times.GetCurrentMonthUTC()
-	billSummaryMain, err := mac.getMainBillSummary(kt, curBillYear, curBillMonth)
-	if err != nil {
-		return err
-	}
-	if billSummaryMain.State == enumor.MainAccountBillSummaryStateAccounting {
-		curPuller, err := puller.GetDailyPuller(billSummaryMain.Vendor)
-		if err != nil {
-			return err
-		}
-		if err := curPuller.EnsurePullTask(kt, mac.Client, billSummaryMain); err != nil {
 			return err
 		}
 	}
@@ -357,7 +362,7 @@ func (mac *MainAccountController) getRootBillSummary(
 }
 
 func (mac *MainAccountController) getMainBillSummary(
-	kt *kit.Kit, billYear, billMonth int) (*dsbillapi.BillSummaryMainResult, error) {
+	kt *kit.Kit, billYear, billMonth int) (*dsbillapi.BillSummaryMain, error) {
 
 	expressions := []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", mac.RootAccountID),

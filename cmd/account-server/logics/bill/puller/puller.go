@@ -57,9 +57,9 @@ func GetMonthPuller(vendor enumor.Vendor) (MonthPuller, error) {
 
 // DailyPuller puller interface
 type DailyPuller interface {
-	EnsurePullTask(kt *kit.Kit, client *client.ClientSet, billSummaryMain *dsbillapi.BillSummaryMainResult) error
+	EnsurePullTask(kt *kit.Kit, client *client.ClientSet, billSummaryMain *dsbillapi.BillSummaryMain) error
 	// GetPullTaskList 返回的map的key表示某个二级账号某月所有应该同步的天数的账单状态
-	GetPullTaskList(kt *kit.Kit, client *client.ClientSet, billSummaryMain *dsbillapi.BillSummaryMainResult) (
+	GetPullTaskList(kt *kit.Kit, client *client.ClientSet, billSummaryMain *dsbillapi.BillSummaryMain) (
 		[]*bill.BillDailyPullTaskResult, error)
 }
 

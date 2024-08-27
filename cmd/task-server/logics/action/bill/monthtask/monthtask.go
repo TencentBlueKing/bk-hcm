@@ -48,6 +48,7 @@ type MonthTaskActionOption struct {
 	BillYear      int                  `json:"bill_year" validate:"required"`
 	BillMonth     int                  `json:"bill_month" validate:"required"`
 	Vendor        enumor.Vendor        `json:"vendor" validate:"required"`
+	Extension     map[string]string    `json:"extension"`
 }
 
 // MonthTaskAction month task action
@@ -101,8 +102,7 @@ func (act MonthTaskAction) runPull(kt *kit.Kit, runner MonthTaskRunner, opt *Mon
 		if err != nil {
 			return err
 		}
-		rawBillItemList, isFinished, err := runner.Pull(
-			kt, opt.RootAccountID, opt.BillYear, opt.BillMonth, task.PullIndex)
+		rawBillItemList, isFinished, err := runner.Pull(kt, opt, task.PullIndex)
 		if err != nil {
 			return err
 		}
@@ -153,7 +153,7 @@ func (act MonthTaskAction) runPull(kt *kit.Kit, runner MonthTaskRunner, opt *Mon
 }
 
 func (act MonthTaskAction) runSplit(kt *kit.Kit, runner MonthTaskRunner, opt *MonthTaskActionOption) error {
-	// step1 清理原有月度任务的billitem，因为有可能之前存在中途失败的脏数据了
+	// step1 清理原有月度任务的bill item，因为有可能之前存在中途失败的脏数据了
 	if err := act.cleanBillItem(kt, opt); err != nil {
 		return err
 	}
@@ -168,12 +168,14 @@ func (act MonthTaskAction) runSplit(kt *kit.Kit, runner MonthTaskRunner, opt *Mo
 		}
 		cnt, isFinished, err := act.split(kt, runner, opt, task, splitMainAccountMap, curlIndex)
 		if err != nil {
+			logs.Errorf("fail to split for bill month task, err: %v, opt: %+v, rid: %s", err, opt, kt.Rid)
 			return err
 		}
+		curlIndex += uint64(cnt)
 
 		mtUpdate := &bill.BillMonthTaskUpdateReq{
 			ID:         task.ID,
-			SplitIndex: curlIndex + uint64(cnt),
+			SplitIndex: curlIndex,
 		}
 		if isFinished {
 			var itemList = make([]billcore.MonthTaskSummaryDetailItem, 0, len(splitMainAccountMap))
@@ -201,8 +203,7 @@ func (act MonthTaskAction) runSplit(kt *kit.Kit, runner MonthTaskRunner, opt *Mo
 	}
 }
 
-func (act MonthTaskAction) split(
-	kt *kit.Kit, runner MonthTaskRunner, opt *MonthTaskActionOption,
+func (act MonthTaskAction) split(kt *kit.Kit, runner MonthTaskRunner, opt *MonthTaskActionOption,
 	monthTask *bill.BillMonthTaskResult, accountMap map[string]struct{}, offset uint64) (
 	cnt int, finished bool, err error) {
 
@@ -232,8 +233,7 @@ func (act MonthTaskAction) split(
 		logs.Warnf("failed to get raw bill item for %v, err %s, rid: %s", tmpReq, err.Error(), kt.Rid)
 		return 0, false, fmt.Errorf("failed to get raw bill item for %v, err %s", tmpReq, err.Error())
 	}
-	tmpBillItemList, err := runner.Split(kt, monthTask.RootAccountID, monthTask.BillYear, monthTask.BillMonth,
-		resp.Details)
+	tmpBillItemList, err := runner.Split(kt, opt, resp.Details)
 	if err != nil {
 		logs.Warnf("failed to split bill item, opt: %+v, err: %s, rid: %s", opt, err.Error(), kt.Rid)
 		return 0, false, err
@@ -242,7 +242,7 @@ func (act MonthTaskAction) split(
 	for i, itemsBatch := range slice.Split(tmpBillItemList, constant.BatchOperationMaxLimit) {
 		for idx := range itemsBatch {
 			// force bill day as zero to represent month bill
-			itemsBatch[idx].BillDay = 0
+			itemsBatch[idx].BillDay = enumor.MonthTaskSpecialBillDay
 			accountMap[itemsBatch[idx].MainAccountID] = struct{}{}
 		}
 		createReq := &bill.BatchRawBillItemCreateReq{ItemCommonOpt: commonOpt, Items: itemsBatch}
@@ -254,7 +254,8 @@ func (act MonthTaskAction) split(
 		}
 	}
 
-	logs.Infof("split bill item for opt %+v done, offset: %d, limit: %d", opt, offset, limit)
+	logs.Infof("split bill item for opt %+v done, cnt: %d, offset: %d, limit: %d, rid: %s",
+		opt, len(resp.Details), offset, limit, kt.Rid)
 	return len(resp.Details), isFinished, nil
 }
 
@@ -266,7 +267,7 @@ func getCleanBillItemFilter(opt *MonthTaskActionOption) *filter.Expression {
 		tools.RuleEqual("bill_year", opt.BillYear),
 		tools.RuleEqual("bill_month", opt.BillMonth),
 		// special day 0 for month bill
-		tools.RuleEqual("bill_day", 0),
+		tools.RuleEqual("bill_day", enumor.MonthTaskSpecialBillDay),
 	}
 	return tools.ExpressionAnd(expressions...)
 }
@@ -283,16 +284,17 @@ func (act MonthTaskAction) cleanBillItem(kt *kit.Kit, opt *MonthTaskActionOption
 		result, err := actcli.GetDataService().Global.Bill.ListBillItem(kt, listReq)
 		if err != nil {
 			logs.Warnf("count bill item for %+v failed, err %s, rid %s", opt, err.Error(), kt.Rid)
-			return fmt.Errorf("count bill item for %+vfailed, err %s", opt, err.Error())
+			return fmt.Errorf("count bill item for %+v failed, err %s", opt, err.Error())
 		}
 		delReq := &bill.BillItemDeleteReq{ItemCommonOpt: commonOpt, Filter: getCleanBillItemFilter(opt)}
 		if result.Count > 0 {
 			if err := actcli.GetDataService().Global.Bill.BatchDeleteBillItem(kt, delReq); err != nil {
-				return fmt.Errorf("delete 500 of %d bill item for %+v failed, err %s",
+				return fmt.Errorf("delete 100 of %d bill item for %+v failed, err %s",
 					result.Count, opt, err.Error())
 			}
 			count := min(result.Count, constant.BatchOperationMaxLimit)
-			logs.Infof("successfully delete batch %d bill item for %+v, rid %s", count, opt, kt.Rid)
+			logs.Infof("successfully delete (%d/%d) bill item, batch_idx: %d, opt: %+v, rid: %s",
+				count, result.Count, batch, opt, kt.Rid)
 			batch = batch + 1
 			continue
 		}

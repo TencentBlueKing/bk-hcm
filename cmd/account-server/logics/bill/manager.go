@@ -75,8 +75,8 @@ func (bm *BillManager) Run(ctx context.Context) {
 }
 
 func (bm *BillManager) syncRootControllers() error {
-
 	kt := getInternalKit()
+	logs.Infof("[bm] start sync root controllers, rid: %s", kt.Rid)
 	rootAccounts, err := bm.AccountList.ListAllRootAccount(kt)
 	if err != nil {
 		return err
@@ -120,6 +120,7 @@ func (bm *BillManager) syncRootControllers() error {
 func (bm *BillManager) syncMainControllers() error {
 	// TODO: 所有主账号 改为 所有未核算完成的主账号
 	kt := getInternalKit()
+	logs.Infof("[bm] start sync main controllers, rid: %s", kt.Rid)
 	mainAccounts, err := bm.AccountList.ListAllMainAccount(kt)
 	if err != nil {
 		return err
@@ -180,6 +181,7 @@ func (bm *BillManager) syncMainControllers() error {
 }
 
 func (bm *BillManager) stopControllers() {
+	logs.Warnf("[bm] stop controllers")
 	for key, ctrl := range bm.CurrentRootControllers {
 		logs.Warnf("stop root account controller %s", key)
 		ctrl.Stop()

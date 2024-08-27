@@ -101,9 +101,9 @@ func (s *service) ListMainAccountSummary(cts *rest.Contexts) (interface{}, error
 				detail.RootAccountID, detail.RootAccountCloudID, detail.ID)
 		}
 		tmp := &asbillapi.MainAccountSummaryResult{
-			BillSummaryMainResult: detail,
-			MainAccountName:       mainAccount.Name,
-			RootAccountName:       rootAccount.Name,
+			BillSummaryMain: detail,
+			MainAccountName: mainAccount.Name,
+			RootAccountName: rootAccount.Name,
 		}
 		ret.Details = append(ret.Details, tmp)
 	}

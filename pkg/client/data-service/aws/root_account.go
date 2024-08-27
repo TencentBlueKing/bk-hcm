@@ -21,7 +21,6 @@ package aws
 
 import (
 	"hcm/pkg/api/core"
-	protocore "hcm/pkg/api/core/account-set"
 	dataproto "hcm/pkg/api/data-service/account-set"
 	"hcm/pkg/client/common"
 	"hcm/pkg/kit"
@@ -51,11 +50,9 @@ func (a *RootAccountClient) Create(kt *kit.Kit,
 }
 
 // Get aws account detail.
-func (a *RootAccountClient) Get(kt *kit.Kit, accountID string) (
-	*dataproto.RootAccountGetResult[protocore.AwsRootAccountExtension], error,
-) {
+func (a *RootAccountClient) Get(kt *kit.Kit, accountID string) (*dataproto.AwsRootAccount, error) {
 
-	return common.Request[common.Empty, dataproto.RootAccountGetResult[protocore.AwsRootAccountExtension]](
+	return common.Request[common.Empty, dataproto.AwsRootAccount](
 		a.client, rest.GET, kt, nil, "/root_accounts/%s", accountID)
 }
 

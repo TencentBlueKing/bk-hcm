@@ -125,7 +125,8 @@ func convertBase64StrToReader(str bill.Base64String) io.Reader {
 	return base64.NewDecoder(base64.StdEncoding, bytes.NewReader([]byte(str)))
 }
 
-func parseExcelToRecords[T any](kt *kit.Kit, base64 bill.Base64String, convertFunc convertStringToEntityFunc[T]) ([]T, error) {
+func parseExcelToRecords[T any](kt *kit.Kit, base64 bill.Base64String, convertFunc convertStringToEntityFunc[T]) ([]T,
+	error) {
 	reader := convertBase64StrToReader(base64)
 	records := make([]T, 0)
 	err := excelRowsIterator(kt, reader, 0, constant.BatchOperationMaxLimit,
@@ -198,7 +199,7 @@ func doCalculate(records []dsbill.BillItemCreateReq[json.RawMessage],
 }
 
 func (b *billItemSvc) listSummaryMainByBusinessGroups(kt *kit.Kit, vendor enumor.Vendor, businessGroupIDs []string,
-	billYear, billMonth int) (map[string]*dsbill.BillSummaryMainResult, error) {
+	billYear, billMonth int) (map[string]*dsbill.BillSummaryMain, error) {
 
 	businessGroupIDs = slice.Unique(businessGroupIDs)
 	idToCloudIDMap := make(map[string]string, len(businessGroupIDs))
@@ -222,7 +223,7 @@ func (b *billItemSvc) listSummaryMainByBusinessGroups(kt *kit.Kit, vendor enumor
 		}
 	}
 
-	result := make(map[string]*dsbill.BillSummaryMainResult, len(accountIDs))
+	result := make(map[string]*dsbill.BillSummaryMain, len(accountIDs))
 	summaryMains, err := b.listSummaryMainByMainAccountIDs(kt, vendor, accountIDs, billYear, billMonth)
 	if err != nil {
 		logs.Errorf("list summary main by main account ids failed, err: %v, rid: %s", err, kt.Rid)
@@ -236,7 +237,7 @@ func (b *billItemSvc) listSummaryMainByBusinessGroups(kt *kit.Kit, vendor enumor
 }
 
 func convertZenlayerRawBillItemToRawBillCreateReq(kt *kit.Kit, billYear, billMonth int,
-	recordList []billcore.ZenlayerRawBillItem, summaryMap map[string]*dsbill.BillSummaryMainResult) (
+	recordList []billcore.ZenlayerRawBillItem, summaryMap map[string]*dsbill.BillSummaryMain) (
 	[]dsbill.BillItemCreateReq[json.RawMessage], error) {
 
 	result := make([]dsbill.BillItemCreateReq[json.RawMessage], 0, len(recordList))
@@ -333,7 +334,8 @@ func convertStringToZenlayerRawBillItem(row []string) (billcore.ZenlayerRawBillI
 			}
 			fieldValue.Set(reflect.ValueOf(&decValue))
 		default:
-			return billcore.ZenlayerRawBillItem{}, fmt.Errorf("unsupported pointer field type: %v", fieldValue.Type().Elem().Kind())
+			return billcore.ZenlayerRawBillItem{}, fmt.Errorf("unsupported pointer field type: %v",
+				fieldValue.Type().Elem().Kind())
 		}
 	}
 	return item, nil

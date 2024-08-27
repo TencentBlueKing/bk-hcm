@@ -35,7 +35,7 @@ import (
 	dataservice "hcm/pkg/api/data-service"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	protobill "hcm/pkg/api/data-service/cloud/bill"
-	hcbillservice "hcm/pkg/api/hc-service/bill"
+	hcbill "hcm/pkg/api/hc-service/bill"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -50,7 +50,7 @@ import (
 
 // AwsGetBillList get aws bill list.
 func (b bill) AwsGetBillList(cts *rest.Contexts) (interface{}, error) {
-	req := new(hcbillservice.AwsBillListReq)
+	req := new(hcbill.AwsBillListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -96,7 +96,7 @@ func (b bill) AwsGetBillList(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	return &hcbillservice.AwsBillListResult{
+	return &hcbill.AwsBillListResult{
 		Count:   total,
 		Details: list,
 	}, nil
@@ -104,7 +104,7 @@ func (b bill) AwsGetBillList(cts *rest.Contexts) (interface{}, error) {
 
 // AwsBillPipeline aws bill pipeline
 func (b bill) AwsBillPipeline(cts *rest.Contexts) (interface{}, error) {
-	req := new(hcbillservice.BillPipelineReq)
+	req := new(hcbill.BillPipelineReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -207,7 +207,7 @@ func (b bill) GetBillInfo(kt *kit.Kit, accountID string) (
 }
 
 // CheckBillInfo check bill info.
-func (b bill) CheckBillInfo(kt *kit.Kit, req *hcbillservice.BillPipelineReq) (
+func (b bill) CheckBillInfo(kt *kit.Kit, req *hcbill.BillPipelineReq) (
 	*cloud.AccountBillConfig[cloud.AwsBillConfigExtension], bool, error) {
 
 	billInfo, err := b.GetBillInfo(kt, req.AccountID)
@@ -758,7 +758,7 @@ func sanitizeString(str string) string {
 // AwsGetRootAccountBillList get aws bill record list
 func (b bill) AwsGetRootAccountBillList(cts *rest.Contexts) (any, error) {
 
-	req := new(hcbillservice.AwsRootBillListReq)
+	req := new(hcbill.AwsRootBillListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -768,7 +768,7 @@ func (b bill) AwsGetRootAccountBillList(cts *rest.Contexts) (any, error) {
 	}
 
 	if req.Page == nil {
-		req.Page = &hcbillservice.AwsBillListPage{Offset: 0, Limit: adcore.AwsQueryLimit}
+		req.Page = &hcbill.AwsBillListPage{Offset: 0, Limit: adcore.AwsQueryLimit}
 	}
 
 	// 查询aws账单基础表
@@ -805,8 +805,68 @@ func (b bill) AwsGetRootAccountBillList(cts *rest.Contexts) (any, error) {
 		return nil, err
 	}
 
-	return &hcbillservice.AwsBillListResult{
+	return &hcbill.AwsBillListResult{
 		Count:   count,
 		Details: resp,
 	}, nil
+}
+
+// AwsGetRootAccountSpTotalUsage ...
+func (b bill) AwsGetRootAccountSpTotalUsage(cts *rest.Contexts) (any, error) {
+
+	req := new(hcbill.AwsRootSpUsageTotalReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	rootAccount, err := b.cs.DataService().Global.RootAccount.GetBasicInfo(cts.Kit, req.RootAccountID)
+	if err != nil {
+		logs.Errorf("fait to find root account, err: %+v,rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// 查询aws账单基础表
+	billInfo, err := getRootAccountBillConfigInfo[billcore.AwsBillConfigExtension](
+		cts.Kit, req.RootAccountID, b.cs.DataService())
+	if err != nil {
+		logs.Errorf("aws get root account(id: %s) bill config for aws sp usage total failed, err: %+v, rid: %s",
+			req.RootAccountID, err, cts.Kit.Rid)
+		return nil, err
+	}
+	if billInfo == nil {
+		return nil, errf.Newf(errf.RecordNotFound, "bill config for root account: %s is not found",
+			req.RootAccountID)
+	}
+
+	cli, err := b.ad.AwsRoot(cts.Kit, req.RootAccountID)
+	if err != nil {
+		logs.Errorf("aws request adaptor client err, req: %+v, err: %+v,rid: %s", req, err, cts.Kit.Rid)
+		return nil, err
+	}
+	opt := &typesBill.AwsRootSpUsageOption{
+		PayerCloudID:  rootAccount.CloudID,
+		UsageCloudIDs: req.SpUsageAccountCloudIds,
+		SpArnPrefix:   req.SpArnPrefix,
+		Year:          req.Year,
+		Month:         req.Month,
+		StartDay:      req.StartDay,
+		EndDay:        req.EndDay,
+	}
+	usage, err := cli.GetRootSpTotalUsage(cts.Kit, billInfo, opt)
+	if err != nil {
+		logs.Errorf("fail to get root account sp total usage, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	result := hcbill.AwsSpUsageTotalResult{
+		UnblendedCost: usage.UnblendedCost,
+		SPCost:        usage.SpCost,
+		SPNetCost:     usage.SpNetCost,
+		AccountCount:  usage.AccountCount,
+	}
+	return result, nil
 }

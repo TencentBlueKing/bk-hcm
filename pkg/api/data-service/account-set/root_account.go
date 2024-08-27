@@ -277,6 +277,9 @@ type RootAccountGetResult[T RootAccountExtensionGetResp] struct {
 	Extension                 *T `json:"extension"`
 }
 
+// AwsRootAccount ...
+type AwsRootAccount = RootAccountGetResult[protocore.AwsRootAccountExtension]
+
 // RootAccountGetResp ...
 type RootAccountGetResp[T RootAccountExtensionGetResp] struct {
 	rest.BaseResp `json:",inline"`

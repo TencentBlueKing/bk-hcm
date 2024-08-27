@@ -76,10 +76,10 @@ func (req *BillSummaryMainListReq) Validate() error {
 }
 
 // BillSummaryMainListResult list result
-type BillSummaryMainListResult = core.ListResultT[*BillSummaryMainResult]
+type BillSummaryMainListResult = core.ListResultT[*BillSummaryMain]
 
-// BillSummaryMainResult result
-type BillSummaryMainResult struct {
+// BillSummaryMain result
+type BillSummaryMain struct {
 	ID                        string                      `json:"id,omitempty"`
 	RootAccountID             string                      `json:"root_account_id"`
 	RootAccountCloudID        string                      `json:"root_account_cloud_id"`

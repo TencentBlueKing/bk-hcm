@@ -67,7 +67,7 @@ type MainAccountSummaryListResult struct {
 
 // MainAccountSummaryResult main account summary get result
 type MainAccountSummaryResult struct {
-	*bill.BillSummaryMainResult
+	*bill.BillSummaryMain
 	MainAccountName string `json:"main_account_name"`
 	RootAccountName string `json:"root_account_name"`
 }

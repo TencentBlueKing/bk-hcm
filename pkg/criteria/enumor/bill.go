@@ -219,3 +219,6 @@ const (
 	// MonthRawBillSpecialDatePathName 特殊日期原始账单保存路径
 	MonthRawBillSpecialDatePathName = "00"
 )
+
+// MonthTaskSpecialBillDay special bill day 0 to represent the whole month
+const MonthTaskSpecialBillDay = 0

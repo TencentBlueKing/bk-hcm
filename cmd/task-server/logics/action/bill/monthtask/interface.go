@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/kit"
 )
 
+// GetRunner return month task vendor runner
 func GetRunner(vendor enumor.Vendor) (MonthTaskRunner, error) {
 	switch vendor {
 	case enumor.Gcp:
@@ -42,8 +43,8 @@ func GetRunner(vendor enumor.Vendor) (MonthTaskRunner, error) {
 // MonthTaskRunner ...
 type MonthTaskRunner interface {
 	GetBatchSize(kt *kit.Kit) uint64
-	Pull(kt *kit.Kit, rootAccountID string, billYear, billMonth int, index uint64) (
+	Pull(kt *kit.Kit, opt *MonthTaskActionOption, index uint64) (
 		itemList []bill.RawBillItem, isFinished bool, err error)
-	Split(kt *kit.Kit, rootAccountID string, billYear, billMonth int, rawItemList []*bill.RawBillItem) (
+	Split(kt *kit.Kit, opt *MonthTaskActionOption, rawItemList []*bill.RawBillItem) (
 		[]bill.BillItemCreateReq[rawjson.RawMessage], error)
 }
