@@ -23,6 +23,7 @@ package mainaccount
 import (
 	proto "hcm/pkg/api/hc-service/main-account"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
@@ -46,6 +47,7 @@ func (s *service) AwsCreateMainAccount(cts *rest.Contexts) (interface{}, error) 
 	// 2、在组织中创建AWS账号
 	resp, err := client.CreateAccount(cts.Kit, req)
 	if err != nil {
+		logs.Errorf("fail to create aws main account, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
