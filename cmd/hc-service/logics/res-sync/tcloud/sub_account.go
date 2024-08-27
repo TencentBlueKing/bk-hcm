@@ -205,7 +205,7 @@ func (cli *client) createSubAccount(kt *kit.Kit, opt *SyncSubAccountOption, addS
 		}
 
 		tmpRes := dssubaccount.CreateField{
-			CloudID:     strconv.FormatUint(converter.PtrToVal(one.Uid), 10),
+			CloudID:     one.GetCloudID(),
 			Name:        converter.PtrToVal(one.Name),
 			Vendor:      enumor.TCloud,
 			Site:        account.Site,

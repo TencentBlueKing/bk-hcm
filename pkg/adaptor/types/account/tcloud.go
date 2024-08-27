@@ -63,7 +63,7 @@ type TCloudAccount struct {
 
 // GetCloudID ...
 func (account TCloudAccount) GetCloudID() string {
-	return strconv.FormatUint(converter.PtrToVal(account.Uid), 10)
+	return strconv.FormatUint(converter.PtrToVal(account.Uin), 10)
 }
 
 // TCloudListPolicyOption define tcloud list policy option.
