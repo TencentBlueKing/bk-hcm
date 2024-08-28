@@ -41,12 +41,12 @@ export default defineComponent({
       // extension: {}, // 扩展字段对象
     });
     const nameTips = computed(() => {
-      let tip = '账号名称只能包括英文字母、数字和中划线-，并且仅能以英文字母开头，长度为6-20个字符';
+      let tip = '账号名称只能包括英文字母、数字和中划线-，并且仅能以英文字母开头，长度为6-30个字符';
       switch (formModel.vendor) {
         case VendorEnum.AWS:
         case VendorEnum.HUAWEI:
         case VendorEnum.AZURE:
-          tip = '账号名称只能包括英文字母、数字和下划线_，并且仅能以英文字母开头，长度为6-20个字符';
+          tip = '账号名称只能包括英文字母、数字和下划线_，并且仅能以英文字母开头，长度为6-30个字符';
           break;
       }
       return tip;
@@ -189,8 +189,8 @@ export default defineComponent({
                             validator: (val: string) => {
                               const vendorList = [VendorEnum.AWS, VendorEnum.AZURE, VendorEnum.HUAWEI];
                               const regex = vendorList.includes(formModel.vendor as VendorEnum)
-                                ? /^[a-zA-Z][a-zA-Z0-9_]{5,19}$/
-                                : /^[a-zA-Z][a-zA-Z0-9-]{5,19}$/;
+                                ? /^[a-zA-Z][a-zA-Z0-9_]{5,29}$/
+                                : /^[a-zA-Z][a-zA-Z0-9-]{5,29}$/;
                               const isValid = regex.test(val);
 
                               emailInputRef.value.changeNameValid(isValid);
@@ -270,7 +270,7 @@ export default defineComponent({
                         <OrganizationSelect />
                       </FormItem> */}
                       <FormItem label='账号用途' property='memo' required>
-                        <Input type='textarea' rows={5} maxlength={100} v-model={formModel.memo} />
+                        <Input type='textarea' rows={5} maxlength={200} v-model={formModel.memo} />
                       </FormItem>
                     </Form>
                   </div>
