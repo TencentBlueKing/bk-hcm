@@ -418,7 +418,17 @@ const handleBeforeClose = () => {
     handleCancel();
   }
 };
-
+const computedSecurityText = computed(() => {
+  if (!['security'].includes(activeTab.value)) return '新建';
+  switch (securityType.value) {
+    case 'template':
+      return '新建模板';
+    case 'gcp':
+      return '新建GCP防火墙规则';
+    default:
+      return '新建安全组';
+  }
+});
 onMounted(() => {
   getResourceAccountList();
 });
@@ -511,8 +521,10 @@ onMounted(() => {
               <span v-if="['host', 'vpc', 'drive', 'security', 'subnet', 'ip', 'clb'].includes(activeTab)">
                 <bk-button
                   theme="primary"
-                  class="new-button"
-                  :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.iaas_resource_create }"
+                  :class="{
+                    'hcm-no-permision-btn': !authVerifyData?.permissionAction?.iaas_resource_create,
+                    'new-button': !['security'].includes(activeTab),
+                  }"
                   @click="
                     () => {
                       if (!authVerifyData?.permissionAction?.iaas_resource_create) {
@@ -523,7 +535,7 @@ onMounted(() => {
                     }
                   "
                 >
-                  {{ ['host', 'clb'].includes(activeTab) ? '购买' : '新建' }}
+                  {{ ['host', 'clb'].includes(activeTab) ? '购买' : computedSecurityText }}
                 </bk-button>
               </span>
             </component>
