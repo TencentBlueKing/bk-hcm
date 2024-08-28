@@ -1,13 +1,13 @@
 /* eslint-disable no-nested-ternary */
 import { Button, Dialog, Form, Input, Message, Select } from 'bkui-vue';
 import { PropType, defineComponent, ref, watch, nextTick } from 'vue';
-import { analysisIP, analysisPort } from '@/utils';
+import { analysisIP, analysisPort, isIpsValid, isPortValid } from '@/utils';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
 import { VendorEnum } from '@/common/constant';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { useAccountStore, useResourceStore } from '@/store';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
-import { pluginHandlerDialog } from '@/plugin-handler/resource-template-dialog';
+import { pluginHandlerDialog } from '@pluginHandler/resource-template-dialog';
 const { FormItem } = Form;
 const { Option } = Select;
 
@@ -285,6 +285,19 @@ export default defineComponent({
         deep: true,
       },
     );
+    const modifyVendor = (account_id: string) => {
+      const idx = accountList.value.findIndex(({ id }) => id === account_id);
+      formData.value.vendor = accountList.value[idx]?.vendor;
+    };
+    watch(
+      () => accountList.value,
+      () => {
+        modifyVendor(formData.value.account_id);
+      },
+      {
+        deep: true,
+      },
+    );
     const formInstance = ref();
     const clearFormData = () => {
       formData.value = {
@@ -324,6 +337,26 @@ export default defineComponent({
       ipsList: '',
       portList: '',
     });
+    const ipsMessage = ref('IP地址不能为空');
+    const portMessage = ref('协议端口不能为空');
+    watch(
+      () => formList.value.ipsList,
+      (val) => {
+        ipsMessage.value = val === '' ? 'IP地址不能为空' : 'IP地址不合法';
+      },
+      {
+        deep: true,
+      },
+    );
+    watch(
+      () => formList.value.portList,
+      (val) => {
+        portMessage.value = val === '' ? '协议端口不能为空' : '协议端口不合法';
+      },
+      {
+        deep: true,
+      },
+    );
     const renderTable = (type: TemplateType) => {
       if (![TemplateType.IP, TemplateType.PORT].includes(type)) return null;
       return (
@@ -337,14 +370,28 @@ export default defineComponent({
                 {
                   required: true,
                   trigger: 'blur',
-                  message: 'IP地址不能为空',
+                  message: ipsMessage.value,
+                  validator: (val: string) => {
+                    if (val === '') {
+                      return false;
+                    }
+                    const isValid = isIpsValid(val);
+                    return isValid;
+                  },
                 },
               ],
               portList: [
                 {
                   required: true,
                   trigger: 'blur',
-                  message: '协议端口不能为空',
+                  message: portMessage.value,
+                  validator: (val: string) => {
+                    if (val === '') {
+                      return false;
+                    }
+                    const isValid = isPortValid(val);
+                    return isValid;
+                  },
                 },
               ],
             }}>
@@ -387,7 +434,7 @@ export default defineComponent({
               rules: [
                 {
                   field: 'vendor',
-                  op: 'eq',
+                  op: 'in',
                   value: vendorArr,
                 },
               ],
@@ -422,13 +469,7 @@ export default defineComponent({
             <>
               <Form model={formData.value} ref={basicForm} formType='vertical'>
                 <FormItem label='云账号' property='account_id' required>
-                  <Select
-                    v-model={formData.value.account_id}
-                    disabled={props.isEdit}
-                    onChange={(account_id) => {
-                      const idx = accountList.value.findIndex(({ id }) => id === account_id);
-                      formData.value.vendor = accountList.value[idx].vendor;
-                    }}>
+                  <Select v-model={formData.value.account_id} disabled={props.isEdit} onChange={modifyVendor}>
                     {accountList.value.map((item) => (
                       <Option key={item.id} id={item.id} name={item.name}></Option>
                     ))}
@@ -438,8 +479,9 @@ export default defineComponent({
                   <Input placeholder='输入参数模板名称' v-model={formData.value.name} />
                 </FormItem>
                 <FormItem label='参数模板类型' property='type' required>
-                  <BkButtonGroup>
+                  <BkButtonGroup style={'width:100%'}>
                     <Button
+                      style={'width:25%'}
                       selected={formData.value.type === TemplateType.IP}
                       disabled={props.isEdit && !(props.payload.type === TemplateType.IP)}
                       onClick={() => {
@@ -448,6 +490,7 @@ export default defineComponent({
                       IP地址
                     </Button>
                     <Button
+                      style={'width:25%'}
                       selected={formData.value.type === TemplateType.IP_GROUP}
                       disabled={props.isEdit && !(props.payload.type === TemplateType.IP_GROUP)}
                       onClick={() => {
@@ -456,6 +499,7 @@ export default defineComponent({
                       IP地址组
                     </Button>
                     <Button
+                      style={'width:25%'}
                       selected={formData.value.type === TemplateType.PORT}
                       disabled={props.isEdit && !(props.payload.type === TemplateType.PORT)}
                       onClick={() => {
@@ -464,6 +508,7 @@ export default defineComponent({
                       协议端口
                     </Button>
                     <Button
+                      style={'width:25%'}
                       selected={formData.value.type === TemplateType.PORT_GROUP}
                       disabled={props.isEdit && !(props.payload.type === TemplateType.PORT_GROUP)}
                       onClick={() => {
@@ -483,7 +528,7 @@ export default defineComponent({
                   </FormItem>
                 ) : null}
                 {[TemplateType.PORT_GROUP].includes(formData.value.type) ? (
-                  <FormItem label='IP地址'>
+                  <FormItem label='协议端口'>
                     <Select v-model={portGroupData.value} multiple multipleMode='tag'>
                       {portGroupList.value.map((v) => (
                         <Option key={v.cloud_id} id={v.cloud_id} name={`${v.cloud_id} (${v.name})`}></Option>

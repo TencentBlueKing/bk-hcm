@@ -94,6 +94,15 @@ const analysisIP = (text: string): AddressDescription[] => {
   });
   return list;
 };
+
+const isIpsValid = (text: string) => {
+  // 全部行数
+  const lines = text.split('\n').filter((element) => element !== '');
+  if (lines.length > analysisIP(text).length) {
+    return false;
+  }
+  return true;
+};
 // 判断是否为单个IP
 const isSingleIP = (ip: string) => {
   return isIP(ip, 4) || isIP(ip, 6);
@@ -158,7 +167,7 @@ const analysisPort = (port: string) => {
   }
 
   const list: AddressDescription[] = [];
-  const protocolArray = ['tcp', 'TCP', , 'UDP', 'udp'];
+  const protocolArray = ['tcp', 'TCP', 'UDP', 'udp'];
   const protocolSpecial = ['ICMP', 'icmp', 'GRE', 'gre'];
   // 通过换行符来分割字符串
   const lines = port.split('\n');
@@ -190,4 +199,23 @@ const analysisPort = (port: string) => {
   });
   return list;
 };
-export { getInstVip, splitIP, parseIP, encodeValueByBtoa, decodeValueByAtob,analysisIP, analysisPort };
+const isPortValid = (text: string) => {
+  // 全部行数
+  const lines = text.split('\n').filter((element) => element !== '');
+
+  if (lines.length > analysisPort(text).length) {
+    return false;
+  }
+  return true;
+};
+export {
+  getInstVip,
+  splitIP,
+  parseIP,
+  encodeValueByBtoa,
+  decodeValueByAtob,
+  analysisIP,
+  analysisPort,
+  isIpsValid,
+  isPortValid,
+};
