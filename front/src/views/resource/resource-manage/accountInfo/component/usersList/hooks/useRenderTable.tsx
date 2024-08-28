@@ -38,7 +38,7 @@ export default () => {
     },
     {
       label: t('账号 ID'),
-      field: 'id',
+      field: 'cloud_id',
     },
     {
       label: t('所属业务'),

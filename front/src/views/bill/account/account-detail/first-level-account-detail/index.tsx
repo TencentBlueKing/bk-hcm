@@ -41,8 +41,7 @@ export default defineComponent({
 
     const { curExtension, isValidateLoading, handleValidate, isValidateDiasbled } = useSecretExtension({
       vendor: detail.value.vendor as VendorEnum,
-      isValidate: true,
-    });
+    }, true);
 
     const secretModel = reactive<SecretModel>({
       ...initSecretModel,
