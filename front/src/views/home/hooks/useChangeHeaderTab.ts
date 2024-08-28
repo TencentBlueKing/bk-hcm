@@ -10,7 +10,6 @@ import bill from '@/router/module/bill';
 // import stores
 import { useAccountStore } from '@/store';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
-import { encodeValueByBtoa } from '@/utils';
 import { GLOBAL_BIZS_KEY } from '@/common/constant';
 
 // home页切换header-tab相关业务逻辑
@@ -34,7 +33,7 @@ export default () => {
     }
     // 点击跳转header-tab时清除一下pinia
     resourceAccountStore.setResourceAccount({});
-    router.push({ path, query: { [GLOBAL_BIZS_KEY]: bizs ? encodeValueByBtoa(bizs) : undefined } });
+    router.push({ path, query: { [GLOBAL_BIZS_KEY]: bizs } });
   };
 
   // 更新左侧 menus 菜单, 并更新全局业务id

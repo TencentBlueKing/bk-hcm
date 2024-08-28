@@ -9,7 +9,6 @@ import { useAccountStore } from '@/store';
 import { localStorageActions } from '@/common/util';
 import { getFavoriteList, useFavorite } from '@/hooks/useFavorite';
 import { Button, Dialog, Exception } from 'bkui-vue';
-import { decodeValueByAtob, encodeValueByBtoa } from '@/utils';
 import { GLOBAL_BIZS_KEY, GLOBAL_BIZS_VERSION, GLOBAL_BIZS_VERSION_KEY } from '@/common/constant';
 
 export default defineComponent({
@@ -31,10 +30,9 @@ export default defineComponent({
       // 存入store
       accountStore.updateBizsId(val);
       // 存入local storage
-      const saveValue = encodeValueByBtoa(val);
-      localStorageActions.set(GLOBAL_BIZS_KEY, saveValue);
+      localStorageActions.set(GLOBAL_BIZS_KEY, val);
       // 返回query参数
-      return { [GLOBAL_BIZS_KEY]: saveValue };
+      return { [GLOBAL_BIZS_KEY]: val };
     };
 
     // 选择业务
@@ -66,8 +64,8 @@ export default defineComponent({
         return;
       }
 
-      const lastUrlBizs = route.query[GLOBAL_BIZS_KEY] && decodeValueByAtob(route.query[GLOBAL_BIZS_KEY] as string);
-      const lastLocalBizs = localStorageActions.get(GLOBAL_BIZS_KEY, (value) => value && decodeValueByAtob(value));
+      const lastUrlBizs = route.query[GLOBAL_BIZS_KEY];
+      const lastLocalBizs = localStorageActions.get(GLOBAL_BIZS_KEY, (value) => value);
 
       return lastUrlBizs ?? lastLocalBizs;
     };
