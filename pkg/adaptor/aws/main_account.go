@@ -64,7 +64,7 @@ func (a *Aws) CreateAccount(kt *kit.Kit, req *proto.CreateAwsMainAccountReq) (*p
 	// create account
 	output, err := client.CreateAccount(accountInput)
 	if err != nil {
-		logs.Errorf("create aws account error, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
+		logs.Errorf("create aws account error, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
 		return nil, err
 	}
 
@@ -73,16 +73,17 @@ func (a *Aws) CreateAccount(kt *kit.Kit, req *proto.CreateAwsMainAccountReq) (*p
 	result, err := resPoller.PollUntilDone(a, kt, []*string{output.CreateAccountStatus.Id},
 		types.NewCreateMainAccountPollerOption())
 	if err != nil {
-		logs.Errorf("fail to create aws account, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("fail to poll aws account create state, err: %v, status id: %+v, rid: %s",
+			err, output.CreateAccountStatus.Id, kt.Rid)
 		return nil, err
 	}
 	switch state := cvt.PtrToVal(result.State); state {
 	case AccountCreateStatusFailed:
-		logs.Infof("create account failed, status: %s, rid: %s", result.String(), kt.Rid)
+		logs.Errorf("create aws account failed, status: %s, rid: %s", result.String(), kt.Rid)
 		if cvt.PtrToVal(result.FailureReason) == AccountCreateErrorMessageAccountAlreadyExists {
 			return nil, fmt.Errorf("create account failed, reason: email already exists")
 		}
-		return nil, fmt.Errorf("create account failed, state: %s, reason: %s",
+		return nil, fmt.Errorf("create aws account failed, state: %s, reason: %s",
 			cvt.PtrToVal(result.State), cvt.PtrToVal(result.FailureReason))
 	case AccountCreateStatusSucceeded:
 		return &proto.CreateAwsMainAccountResp{
@@ -90,9 +91,9 @@ func (a *Aws) CreateAccount(kt *kit.Kit, req *proto.CreateAwsMainAccountReq) (*p
 			AccountID:   cvt.PtrToVal(result.AccountId),
 		}, nil
 	default:
-		logs.Errorf("create account failed, unknown status state: %s, status: %+v rid: %s ",
+		logs.Errorf("create aws account failed, unknown status state: %s, status: %s, rid: %s ",
 			state, result.String(), kt.Rid)
-		return nil, fmt.Errorf("create account failed, unknown state: %s, rid: %s", state, kt.Rid)
+		return nil, fmt.Errorf("create aws account failed, unknown state: %s, rid: %s", state, kt.Rid)
 	}
 
 }
@@ -131,7 +132,8 @@ func (h *createMainAccountPollingHandler) Poll(client *Aws, kt *kit.Kit, reqIds 
 		CreateAccountRequestId: reqId,
 	})
 	if err != nil {
-		logs.Errorf("describe account create failed, err: %s, result: %+v, rid: %s", err.Error(), result, kt.Rid)
+		logs.Errorf("describe aws account create status failed, err: %v, result: %+v, rid: %s",
+			err, result, kt.Rid)
 		return nil, err
 	}
 
@@ -140,8 +142,8 @@ func (h *createMainAccountPollingHandler) Poll(client *Aws, kt *kit.Kit, reqIds 
 	case AccountCreateStatusSucceeded, AccountCreateStatusInProgress, AccountCreateStatusFailed:
 		return result.CreateAccountStatus, nil
 	default:
-		logs.Infof("create account with unknown status: %s, rid: %s", result.CreateAccountStatus.String(), kt.Rid)
-		return nil, fmt.Errorf("create account unknown progress, state: %s",
+		logs.Errorf("create aws account got unknown status: %s, rid: %s", result.CreateAccountStatus.String(), kt.Rid)
+		return nil, fmt.Errorf("create  aws account unknown progress, state: %s",
 			cvt.PtrToVal(result.CreateAccountStatus.State))
 	}
 }
