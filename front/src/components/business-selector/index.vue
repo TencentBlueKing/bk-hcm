@@ -18,6 +18,7 @@ const props = defineProps({
   isShowAll: Boolean as PropType<boolean>,
   notAutoSelectAll: Boolean as PropType<boolean>,
   urlKey: String as PropType<string>,
+  base64Encode: Boolean as PropType<boolean>,
   apiMethod: Function as PropType<(...args: any) => Promise<any>>,
 });
 const emit = defineEmits(['update:modelValue']);
@@ -64,12 +65,16 @@ watchEffect(async () => {
 
   // 设置了 urlKey, 则自动选中上一次选中的业务
   if (props.urlKey) {
-    const urlBizs = route.query[props.urlKey] as string;
+    let lastUrlBizs = route.query[props.urlKey] as string;
+    let lastLocalBizs = localStorageActions.get(props.urlKey, (value) => value);
+
+    if (props.base64Encode) {
+      lastUrlBizs = lastUrlBizs && decodeValueByAtob(lastUrlBizs);
+      lastLocalBizs = localStorageActions.get(props.urlKey, (value) => value && decodeValueByAtob(value));
+    }
 
     // 优先使用 url 中的业务id, 其次是持久化的, 最后是默认值
-    id = urlBizs
-      ? decodeValueByAtob(urlBizs)
-      : localStorageActions.get(props.urlKey, (value) => value && decodeValueByAtob(value)) || id;
+    id = lastUrlBizs ?? (lastLocalBizs || id);
   }
 
   // 设置选中的值
@@ -125,16 +130,16 @@ watch(
     if (!props.urlKey) return;
 
     const query = { ...route.query };
-    const encodedBizs = encodeValueByBtoa(val);
+    const currentBizs = props.base64Encode ? encodeValueByBtoa(val) : val;
 
     // 多选
     if (props.multiple) {
       // 未选时, 不用存业务id
-      query[props.urlKey] = (val as string[]).length > 0 ? encodedBizs : undefined;
+      query[props.urlKey] = (val as string[]).length > 0 ? (currentBizs as string) : undefined;
     }
     // 单选
     else {
-      query[props.urlKey] = encodedBizs || undefined;
+      query[props.urlKey] = (currentBizs as string) || undefined;
     }
 
     // 持久化处理
