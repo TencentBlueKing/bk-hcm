@@ -21,11 +21,18 @@ package rootaccount
 
 import (
 	"fmt"
+	"strings"
 
+	accountset "hcm/pkg/api/account-server/account-set"
+	"hcm/pkg/api/cloud-server/account"
 	"hcm/pkg/api/core"
+	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/iam/meta"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
@@ -53,4 +60,128 @@ func CheckDuplicateRootAccount(cts *rest.Contexts, client *client.ClientSet, ven
 	}
 
 	return nil
+}
+
+// GetAccountBySecret 根据秘钥获取账号信息
+func (s *service) GetAccountBySecret(cts *rest.Contexts) (interface{}, error) {
+	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// 校验用户有一级账号管理权限
+	if err := s.checkPermission(cts, meta.RootAccount, meta.Find); err != nil {
+		return nil, err
+	}
+
+	switch vendor {
+	case enumor.HuaWei:
+		return s.getHuaWeiAccountInfo(cts)
+	case enumor.Aws:
+		return s.getAwsAccountInfo(cts)
+	case enumor.Azure:
+		return s.getAzureAccountInfo(cts)
+	case enumor.Gcp:
+		return s.getGcpAccountInfo(cts)
+	default:
+		return nil, fmt.Errorf("unsupported vendor: %s", vendor)
+	}
+}
+
+func (s *service) getHuaWeiAccountInfo(cts *rest.Contexts) (*cloud.HuaWeiInfoBySecret, error) {
+	req := new(accountset.HuaWeiAccountInfoBySecretReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	info, err := s.client.HCService().HuaWei.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req.HuaWeiSecret)
+	if err != nil {
+		logs.Errorf("fail to get account info, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return info, nil
+}
+
+func (s *service) getAwsAccountInfo(cts *rest.Contexts) (*cloud.AwsInfoBySecret, error) {
+	req := new(accountset.AwsAccountInfoBySecretReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	info, err := s.client.HCService().Aws.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req.AwsSecret)
+	if err != nil {
+		logs.Errorf("fail to get account info, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return info, nil
+}
+
+func (s *service) getGcpAccountInfo(cts *rest.Contexts) ([]cloud.CloudProjectInfo, error) {
+	req := new(accountset.GcpAccountInfoBySecretReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	info, err := s.client.HCService().Gcp.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req.GcpSecret)
+	if err != nil {
+		logs.Errorf("fail to get account info, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return info.CloudProjectInfos, nil
+}
+
+func (s *service) getAzureAccountInfo(cts *rest.Contexts) (*account.AzureAccountInfoBySecretResp, error) {
+	req := new(accountset.AzureAccountInfoBySecretReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	info, err := s.client.HCService().Azure.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req.AzureSecret)
+	if err != nil {
+		logs.Errorf("[getAzureAccountInfo] fail to get account info, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// TODO 将来需要考虑多订阅的问题
+	// 校验订阅数量，要求订阅数量刚好一个
+	if len(info.SubscriptionInfos) > 1 {
+		subs := make([]string, len(info.SubscriptionInfos))
+		for i, sub := range info.SubscriptionInfos {
+			subs[i] = "(" + sub.CloudSubscriptionID + ")" + sub.CloudSubscriptionName
+		}
+		return nil, fmt.Errorf("more than one subscription found: " + strings.Join(subs, ","))
+	}
+	subscription := info.SubscriptionInfos[0]
+	result := &account.AzureAccountInfoBySecretResp{
+		CloudSubscriptionID:   subscription.CloudSubscriptionID,
+		CloudSubscriptionName: subscription.CloudSubscriptionName,
+	}
+	// 补全ApplicationName
+	for _, one := range info.ApplicationInfos {
+		if one.CloudApplicationID == req.CloudApplicationID {
+			result.CloudApplicationName = one.CloudApplicationName
+			break
+		}
+	}
+	// 没有拿到应用id的情况
+	if len(result.CloudApplicationName) == 0 {
+		return nil, fmt.Errorf("failed to get application name")
+	}
+
+	return result, nil
 }
