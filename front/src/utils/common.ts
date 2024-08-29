@@ -179,7 +179,7 @@ const analysisPort = (port: string) => {
     if (portArr.length === 2) {
       const [protocol, port] = portArr;
       if (protocolArray.includes(protocol)) {
-        if (isPortNumber(port) || port === 'ALL' || isDispersedPort(port) || isContinuityPort(port)) {
+        if (isPortNumber(port) || ['all', 'ALL'].includes(port) || isDispersedPort(port) || isContinuityPort(port)) {
           // 1. 单个端口   // 2. 多个离散端口  // 3. 连续端口  // 4. 所有端口
           list.push({
             address: parts[0],
