@@ -1,7 +1,7 @@
 import { computed, defineComponent, watch, ref } from 'vue';
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import CommonCard from '@/components/CommonCard';
-import ConditionOptions from '../components/common/condition-options.vue';
+import ConditionOptions from '../components/common/condition-options/index.vue';
 import CloudAreaSelector from '../components/common/cloud-area-selector';
 import ZoneSelector from '../components/common/zone-selector';
 import { Form, Input, Checkbox, Button, Radio, Select } from 'bkui-vue';

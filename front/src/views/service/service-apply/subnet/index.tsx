@@ -1,6 +1,6 @@
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import RouteTableSelector from '@/components/route-table-selector/index.vue';
-import ConditionOptions from '../components/common/condition-options.vue';
+import ConditionOptions from '../components/common/condition-options/index.vue';
 import VpcSelector from '@/views/service/service-apply/components/common/vpc-selector';
 import ZoneSelector from '@/components/zone-selector/index.vue';
 import { defineComponent, reactive, ref, watch } from 'vue';
@@ -85,7 +85,6 @@ export default defineComponent({
 
     const getVpcDetail = async (vpc: { id: string }) => {
       const vpcId = vpc.id;
-      console.log('vpcId', vpcId);
       if (!vpcId) return;
       const res = await resourceStore.detail('vpcs', vpcId);
       const arr = res.data?.extension?.cidr || [];
@@ -95,7 +94,6 @@ export default defineComponent({
         const ipArr = ip.split('.');
         subIpv4cidr.value = [ipArr[0], ipArr[1], mask];
       }
-      console.log(subIpv4cidr.value);
     };
 
     const handleSubmit = async () => {
@@ -112,7 +110,7 @@ export default defineComponent({
         });
         handleCancel();
       } catch (error) {
-        console.log(error);
+        console.error(error);
       } finally {
         submitLoading.value = false;
       }

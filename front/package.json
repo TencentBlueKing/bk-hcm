@@ -45,6 +45,7 @@
     "@blueking/cli-service-webpack": "0.0.0-beta26",
     "@blueking/ediatable": "^0.0.1-beta.4",
     "@blueking/login-modal": "^1.0.1",
+    "@blueking/roll-request": "^1.0.0-alpha",
     "@types/lodash": "^4.14.182",
     "@types/qs": "^6.9.7",
     "@types/validator": "^13.12.0",

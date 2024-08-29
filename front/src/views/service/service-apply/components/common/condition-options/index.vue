@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import BusinessSelector from '@/components/business-selector/index.vue';
-import AccountSelector from '@/components/account-selector/index.vue';
-import RegionSelector from './region-selector';
-import ResourceGroupSelector from './resource-group-selector';
-import { CloudType } from '@/typings';
+import AccountSelector from '@/components/account-selector/index-new.vue';
+import RegionSelector from '../region-selector';
+import ResourceGroupSelector from '../resource-group-selector';
+import { IAccountItem } from '@/typings';
 import { ResourceTypeEnum, VendorEnum, GLOBAL_BIZS_KEY } from '@/common/constant';
 import { ref, PropType, computed, watch } from 'vue';
 import { useAccountStore } from '@/store';
@@ -11,6 +11,7 @@ import { useWhereAmI } from '@/hooks/useWhereAmI';
 import CommonCard from '@/components/CommonCard';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { Form } from 'bkui-vue';
+import { accountFilter } from './account-filter.plugin';
 
 const { FormItem } = Form;
 
@@ -73,8 +74,6 @@ const selectedVendor = computed({
   },
 });
 
-const selectedVendorName = computed(() => CloudType[selectedVendor.value]);
-
 const selectedRegion = computed({
   get() {
     return props.region;
@@ -93,16 +92,8 @@ const selectedResourceGroup = computed({
   },
 });
 
-const handleChangeAccount = (account: any) => {
-  vendorList.value = [
-    {
-      id: account?.vendor,
-      name: CloudType[account?.vendor],
-    },
-  ];
-
-  // 默认选中第1个
-  selectedVendor.value = vendorList.value?.[0]?.id ?? '';
+const handleChangeAccount = (account: IAccountItem) => {
+  selectedVendor.value = account?.vendor ?? '';
   selectedRegion.value = '';
 };
 
@@ -116,7 +107,7 @@ watch(
   () => resourceAccountStore.resourceAccount?.id,
   (id) => {
     selectedCloudAccountId.value = id;
-    handleChangeAccount(resourceAccountStore.resourceAccount);
+    handleChangeAccount(resourceAccountStore.resourceAccount as IAccountItem);
   },
   {
     immediate: true,
@@ -144,21 +135,12 @@ watch(
     >
       <account-selector
         v-model="selectedCloudAccountId"
-        :disabled="!!resourceAccountStore?.resourceAccount?.id"
-        :must-biz="!isResourcePage"
-        :biz-id="selectedBizId"
+        :biz-id="isResourcePage ? undefined : selectedBizId"
+        :filter="accountFilter"
+        :disabled="isResourcePage"
+        :placeholder="isResourcePage ? '请在左侧选择账号' : undefined"
         @change="handleChangeAccount"
-        :type="'resource'"
-      ></account-selector>
-    </FormItem>
-    <FormItem label="云厂商" required property="vendor">
-      <bk-select
-        :clearable="false"
-        v-model="selectedVendorName"
-        :disabled="!!resourceAccountStore?.resourceAccount?.id"
-      >
-        <bk-option v-for="(item, index) in vendorList" :key="index" :value="item.id" :label="item.name" />
-      </bk-select>
+      />
     </FormItem>
     <FormItem
       label="资源组"

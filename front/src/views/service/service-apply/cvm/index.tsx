@@ -2,7 +2,7 @@
 // eslint-disable
 import { computed, defineComponent, reactive, ref, watch } from 'vue';
 import { Form, Input, Select, Checkbox, Button, Radio } from 'bkui-vue';
-import ConditionOptions from '../components/common/condition-options.vue';
+import ConditionOptions from '../components/common/condition-options/index.vue';
 import ZoneSelector from '@/components/zone-selector/index.vue';
 import MachineTypeSelector from '../components/common/machine-type-selector';
 import Imagelector from '../components/common/image-selector';
@@ -337,7 +337,6 @@ export default defineComponent({
       () => formData.cloud_vpc_id,
       (val) => {
         !val && (cloudId.value = null);
-        console.log('subnetSelectorRef.value', subnetSelectorRef.value.subnetList);
         subnetLength.value = subnetSelectorRef.value.subnetList?.length || 0;
       },
     );
@@ -1011,7 +1010,7 @@ export default defineComponent({
             onClose={() => (dialogState.gcpDataDisk.isShow = false)}
           />
         </div>
-        {isAccountShow.value && (
+        {!isAccountShow.value && (
           <div class={'purchase-cvm-bottom-bar'}>
             <Form labelWidth={130} class={'purchase-cvm-bottom-bar-form'}>
               <div class='purchase-cvm-bottom-bar-form-item-wrap'>

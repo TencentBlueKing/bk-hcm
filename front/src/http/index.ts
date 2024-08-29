@@ -25,6 +25,7 @@ type HttpMethodType = 'delete' | 'get' | 'head' | 'options' | 'post' | 'put' | '
 
 // axios 实例
 const axiosInstance: AxiosInstance = axios.create({
+  baseURL: window.PROJECT_CONFIG.BK_HCM_AJAX_URL_PREFIX,
   withCredentials: true,
   headers: { 'X-REQUESTED-WITH': 'XMLHttpRequest', 'X-Bkapi-Request-Id': uuidv4() },
 });
