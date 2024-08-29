@@ -77,14 +77,20 @@ func (cli *client) SubAccount(kt *kit.Kit, opt *SyncSubAccountOption) (*SyncResu
 	addSlice, updateMap, delCloudIDs := common.Diff[account.TCloudAccount,
 		coresubaccount.SubAccount[coresubaccount.TCloudExtension]](fromCloud, fromDB, isSubAccountChange)
 
+	account, err := cli.dbCli.TCloud.Account.Get(kt.Ctx, kt.Header(), opt.AccountID)
+	if err != nil {
+		logs.Errorf("request ds to list account failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
 	if len(delCloudIDs) > 0 {
-		if err = cli.deleteSubAccount(kt, opt, delCloudIDs); err != nil {
+		if err = cli.deleteSubAccount(kt, opt, account.Extension.CloudMainAccountID, delCloudIDs); err != nil {
 			return nil, err
 		}
 	}
 
 	if len(addSlice) > 0 {
-		if err = cli.createSubAccount(kt, opt, addSlice); err != nil {
+		if err = cli.createSubAccount(kt, account, addSlice); err != nil {
 			return nil, err
 		}
 	}
@@ -163,22 +169,16 @@ func (cli *client) updateSubAccount(kt *kit.Kit, opt *SyncSubAccountOption,
 	return nil
 }
 
-func (cli *client) createSubAccount(kt *kit.Kit, opt *SyncSubAccountOption, addSlice []account.TCloudAccount) error {
+func (cli *client) createSubAccount(kt *kit.Kit, opt *protocloud.AccountGetResult[protocore.TCloudAccountExtension], addSlice []account.TCloudAccount) error {
 
 	if len(addSlice) <= 0 {
 		return errors.New("addSlice is required")
 	}
 
-	account, err := cli.dbCli.TCloud.Account.Get(kt.Ctx, kt.Header(), opt.AccountID)
-	if err != nil {
-		logs.Errorf("request ds to list account failed, err: %v, rid: %s", err, kt.Rid)
-		return err
-	}
-
 	createResources := make([]dssubaccount.CreateField, 0)
 
 	// 产品侧定义主账号数据较重要，定制化插入一条主账号数据
-	mainAccount, err := cli.makeMainAccount(kt, account)
+	mainAccount, err := cli.makeMainAccount(kt, opt)
 	if err != nil {
 		return err
 	}
@@ -187,7 +187,7 @@ func (cli *client) createSubAccount(kt *kit.Kit, opt *SyncSubAccountOption, addS
 	for _, one := range addSlice {
 
 		extension := &coresubaccount.TCloudExtension{
-			CloudMainAccountID: account.Extension.CloudMainAccountID,
+			CloudMainAccountID: opt.Extension.CloudMainAccountID,
 			Uin:                one.Uin,
 			NickName:           one.NickName,
 			CreateTime:         one.CreateTime,
@@ -199,8 +199,8 @@ func (cli *client) createSubAccount(kt *kit.Kit, opt *SyncSubAccountOption, addS
 		}
 
 		accountType := ""
-		if account.Extension.CloudSubAccountID != "" &&
-			account.Extension.CloudSubAccountID == strconv.FormatUint(converter.PtrToVal(one.Uin), 10) {
+		if opt.Extension.CloudSubAccountID != "" &&
+			opt.Extension.CloudSubAccountID == strconv.FormatUint(converter.PtrToVal(one.Uin), 10) {
 			accountType = string(enumor.CurrentAccount)
 		}
 
@@ -208,8 +208,8 @@ func (cli *client) createSubAccount(kt *kit.Kit, opt *SyncSubAccountOption, addS
 			CloudID:     one.GetCloudID(),
 			Name:        converter.PtrToVal(one.Name),
 			Vendor:      enumor.TCloud,
-			Site:        account.Site,
-			AccountID:   account.ID,
+			Site:        opt.Site,
+			AccountID:   opt.ID,
 			AccountType: accountType,
 			Extension:   ext,
 			// Managers/BizIDs由用户设置不继承资源账号。
@@ -224,18 +224,19 @@ func (cli *client) createSubAccount(kt *kit.Kit, opt *SyncSubAccountOption, addS
 		Items: createResources,
 	}
 	if _, err = cli.dbCli.Global.SubAccount.BatchCreate(kt, createReq); err != nil {
-		logs.Errorf("[%s] create sub account failed, err: %v, account: %s, opt: %v, rid: %s", enumor.TCloud,
-			err, opt.AccountID, opt, kt.Rid)
+		logs.Errorf("[%s] create sub account failed, err: %v, account: %s, rid: %s", enumor.TCloud,
+			err, opt.ID, kt.Rid)
 		return err
 	}
 
 	logs.Infof("[%s] sync sub account to create sub account success, accountID: %s, count: %d, rid: %s", enumor.TCloud,
-		opt.AccountID, len(addSlice), kt.Rid)
+		opt.ID, len(addSlice), kt.Rid)
 
 	return nil
 }
 
-func (cli *client) deleteSubAccount(kt *kit.Kit, opt *SyncSubAccountOption, delCloudIDs []string) error {
+func (cli *client) deleteSubAccount(
+	kt *kit.Kit, opt *SyncSubAccountOption, mainAccountID string, delCloudIDs []string) error {
 
 	if len(delCloudIDs) <= 0 {
 		return errors.New("delCloudIDs is required")
@@ -248,7 +249,7 @@ func (cli *client) deleteSubAccount(kt *kit.Kit, opt *SyncSubAccountOption, delC
 
 	delCloudMap := converter.StringSliceToMap(delCloudIDs)
 	// 主账号构造的数据云上一定没有，这里过滤掉
-	delete(delCloudMap, string(enumor.MainAccount))
+	delete(delCloudMap, mainAccountID)
 	for _, one := range delFromCloud {
 		if _, exsit := delCloudMap[one.GetCloudID()]; exsit {
 			logs.Errorf("[%s] validate account not exist failed, before delete, opt: %v, failed_count: %d, rid: %s",
@@ -372,7 +373,7 @@ func (cli *client) makeMainAccount(kt *kit.Kit,
 
 	ret := make([]dssubaccount.CreateField, 0)
 
-	isExsit, err := cli.isMainAccountInSubAccountDB(kt)
+	isExsit, err := cli.isMainAccountInSubAccountDB(kt, account.Extension.CloudMainAccountID)
 	if err != nil {
 		return ret, err
 	}
@@ -393,7 +394,7 @@ func (cli *client) makeMainAccount(kt *kit.Kit,
 	}
 
 	ret = append(ret, dssubaccount.CreateField{
-		CloudID:     string(enumor.MainAccount),
+		CloudID:     account.Extension.CloudMainAccountID,
 		Name:        string(enumor.MainAccount),
 		Vendor:      enumor.TCloud,
 		Site:        account.Site,
@@ -409,7 +410,7 @@ func (cli *client) makeMainAccount(kt *kit.Kit,
 	return ret, nil
 }
 
-func (cli *client) isMainAccountInSubAccountDB(kt *kit.Kit) (bool, error) {
+func (cli *client) isMainAccountInSubAccountDB(kt *kit.Kit, cloudID string) (bool, error) {
 	ret := false
 
 	req := &core.ListReq{
@@ -424,7 +425,7 @@ func (cli *client) isMainAccountInSubAccountDB(kt *kit.Kit) (bool, error) {
 				&filter.AtomRule{
 					Field: "cloud_id",
 					Op:    filter.Equal.Factory(),
-					Value: enumor.MainAccount,
+					Value: cloudID,
 				},
 			},
 		},
