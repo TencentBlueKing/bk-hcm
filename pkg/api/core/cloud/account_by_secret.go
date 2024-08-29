@@ -19,7 +19,9 @@
 
 package cloud
 
-import "hcm/pkg/criteria/validator"
+import (
+	"hcm/pkg/criteria/validator"
+)
 
 // AccountInfoBySecret 根据秘钥获取的账号字段
 type AccountInfoBySecret interface {
@@ -48,6 +50,11 @@ type HuaWeiInfoBySecret struct {
 
 // GcpInfoBySecret GCP 根据秘钥获取的字段
 type GcpInfoBySecret struct {
+	CloudProjectInfos []CloudProjectInfo `json:"cloud_project_infos"`
+}
+
+// CloudProjectInfo GCP 单个project的字段信息
+type CloudProjectInfo struct {
 	Email                   string `json:"email"`
 	CloudProjectID          string `json:"cloud_project_id"`
 	CloudProjectName        string `json:"cloud_project_name"`
@@ -75,6 +82,7 @@ type TCloudSecret struct {
 	CloudSecretKey string `json:"cloud_secret_key" validate:"required"`
 }
 
+// Validate ...
 func (sk TCloudSecret) Validate() error {
 	return validator.Validate.Struct(sk)
 }
@@ -85,6 +93,7 @@ type AwsSecret struct {
 	CloudSecretKey string `json:"cloud_secret_key" validate:"required"`
 }
 
+// Validate ...
 func (sk AwsSecret) Validate() error {
 	return validator.Validate.Struct(sk)
 }
@@ -95,6 +104,7 @@ type HuaWeiSecret struct {
 	CloudSecretKey string `json:"cloud_secret_key" validate:"required"`
 }
 
+// Validate ...
 func (sk HuaWeiSecret) Validate() error {
 	return validator.Validate.Struct(sk)
 }
@@ -115,6 +125,7 @@ func (g *GcpCredential) Validate() error {
 	return validator.Validate.Struct(g)
 }
 
+// Validate ...
 func (sk GcpSecret) Validate() error {
 	return validator.Validate.Struct(sk)
 }
@@ -126,6 +137,7 @@ type AzureSecret struct {
 	CloudClientSecretKey string `json:"cloud_client_secret_key" validate:"required"`
 }
 
+// Validate ...
 func (sk AzureSecret) Validate() error {
 	return validator.Validate.Struct(sk)
 }
@@ -138,6 +150,7 @@ type AzureAuthSecret struct {
 	CloudClientSecretKey string `json:"cloud_client_secret_key" validate:"required"`
 }
 
+// Validate ...
 func (sk AzureAuthSecret) Validate() error {
 	return validator.Validate.Struct(sk)
 }

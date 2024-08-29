@@ -168,28 +168,35 @@ func (svc *service) GcpAccountCheck(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	if infoBySecret.CloudProjectID != req.CloudProjectID {
-		return nil, errf.New(errf.InvalidParameter,
-			"CloudProjectID does not match the account to which the secret belongs")
-	}
-	if infoBySecret.CloudProjectName != req.CloudProjectName {
-		return nil, errf.New(errf.InvalidParameter,
-			"CloudProjectName does not match the account to which the secret belongs")
-	}
-	if infoBySecret.CloudServiceAccountID != req.CloudServiceAccountID {
-		return nil, errf.New(errf.InvalidParameter,
-			"CloudServiceAccountID does not match the account to which the secret belongs")
-	}
-	if infoBySecret.CloudServiceAccountName != req.CloudServiceAccountName {
-		return nil, errf.New(errf.InvalidParameter,
-			"CloudServiceAccountName does not match the account to which the secret belongs")
-	}
-	if infoBySecret.CloudServiceSecretID != req.CloudServiceSecretID {
-		return nil, errf.New(errf.InvalidParameter,
-			"CloudServiceSecretID does not match the account to which the secret belongs")
+	isMatch := false
+	for _, info := range infoBySecret.CloudProjectInfos {
+		if info.CloudProjectID != req.CloudProjectID {
+			continue
+		}
+		isMatch = true
+		if info.CloudProjectName != req.CloudProjectName {
+			return nil, errf.New(errf.InvalidParameter,
+				"CloudProjectName does not match the account to which the secret belongs")
+		}
+		if info.CloudServiceAccountID != req.CloudServiceAccountID {
+			return nil, errf.New(errf.InvalidParameter,
+				"CloudServiceAccountID does not match the account to which the secret belongs")
+		}
+		if info.CloudServiceAccountName != req.CloudServiceAccountName {
+			return nil, errf.New(errf.InvalidParameter,
+				"CloudServiceAccountName does not match the account to which the secret belongs")
+		}
+		if info.CloudServiceSecretID != req.CloudServiceSecretID {
+			return nil, errf.New(errf.InvalidParameter,
+				"CloudServiceSecretID does not match the account to which the secret belongs")
+		}
 	}
 
-	return nil, err
+	if !isMatch {
+		return nil, errf.New(errf.InvalidParameter,
+			"CloudProjectInfo does not match the account to which the secret belongs")
+	}
+	return nil, nil
 }
 
 // AzureAccountCheck ...
