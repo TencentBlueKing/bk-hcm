@@ -65,9 +65,20 @@ type CloudProjectInfo struct {
 
 // AzureInfoBySecret Azure 根据秘钥获取的字段
 type AzureInfoBySecret struct {
+	SubscriptionInfos []AzureSubscriptionInfo `json:"cloud_subscription_infos"`
+	ApplicationInfos  []AzureApplicationInfo  `json:"cloud_application_infos"`
+}
+
+// AzureApplicationInfo Azure 单个应用实例的字段信息
+type AzureApplicationInfo struct {
+	CloudApplicationID   string `json:"cloud_application_id"`
+	CloudApplicationName string `json:"cloud_application_name"`
+}
+
+// AzureSubscriptionInfo Azure 单个订阅的字段信息
+type AzureSubscriptionInfo struct {
 	CloudSubscriptionID   string `json:"cloud_subscription_id"`
 	CloudSubscriptionName string `json:"cloud_subscription_name"`
-	CloudApplicationName  string `json:"cloud_application_name"`
 }
 
 // AccountSecret 账号所需秘钥

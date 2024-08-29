@@ -176,6 +176,9 @@ func (g *Gcp) GetAccountInfoBySecret(kit *kit.Kit, cloudSecretKeyString string) 
 		logs.Errorf("search project failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
+	if len(projectList.Projects) == 0 {
+		return nil, fmt.Errorf("not project avaiable, please check the permission of given screct")
+	}
 
 	iamClient, err := g.clientSet.iamServiceClient(kit)
 	if err != nil {

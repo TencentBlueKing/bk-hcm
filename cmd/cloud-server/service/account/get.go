@@ -199,7 +199,7 @@ func (a *accountSvc) getAndCheckAwsAccountInfo(cts *rest.Contexts) (*cloud.AwsIn
 	return info, nil
 }
 
-func (a *accountSvc) getAndCheckAzureAccountInfo(cts *rest.Contexts) (*cloud.AzureInfoBySecret, error) {
+func (a *accountSvc) getAndCheckAzureAccountInfo(cts *rest.Contexts) (*account.AzureAccountInfoBySecretResp, error) {
 	req := new(account.AzureAccountInfoBySecretReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -213,15 +213,41 @@ func (a *accountSvc) getAndCheckAzureAccountInfo(cts *rest.Contexts) (*cloud.Azu
 		logs.Errorf("fail to get account info, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
+
+	// 校验订阅数量，要求订阅数量刚好一个
+	if len(info.SubscriptionInfos) > 1 {
+		subs := make([]string, len(info.SubscriptionInfos))
+		for i, sub := range info.SubscriptionInfos {
+			subs[i] = "(" + sub.CloudSubscriptionID + ")" + sub.CloudSubscriptionName
+		}
+		return nil, fmt.Errorf("more than one subscription found: " + strings.Join(subs, ","))
+	}
+	subscription := info.SubscriptionInfos[0]
+	result := &account.AzureAccountInfoBySecretResp{
+		CloudSubscriptionID:   subscription.CloudSubscriptionID,
+		CloudSubscriptionName: subscription.CloudSubscriptionName,
+	}
+	// 补全ApplicationName
+	for _, one := range info.ApplicationInfos {
+		if one.CloudApplicationID == req.CloudApplicationID {
+			result.CloudApplicationName = one.CloudApplicationName
+			break
+		}
+	}
+	// 没有拿到应用id的情况
+	if len(result.CloudApplicationName) == 0 {
+		return nil, fmt.Errorf("failed to get application name")
+	}
+
 	if req.DisableCheck {
-		return info, nil
+		return result, nil
 	}
 	if err = CheckDuplicateMainAccount(cts, a.client, enumor.Azure, enumor.ResourceAccount,
-		info.CloudSubscriptionID); err != nil {
+		subscription.CloudSubscriptionID); err != nil {
 		logs.Errorf("check whether main account duplicate fail, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-	return info, nil
+	return result, nil
 }
 
 func (a *accountSvc) getAndCheckGcpAccountInfo(cts *rest.Contexts) (*cloud.CloudProjectInfo, error) {
@@ -246,9 +272,6 @@ func (a *accountSvc) getAndCheckGcpAccountInfo(cts *rest.Contexts) (*cloud.Cloud
 			projects[i] = "(" + project.CloudProjectID + ")" + project.CloudProjectName
 		}
 		return nil, fmt.Errorf("more than one project found:" + strings.Join(projects, ","))
-	}
-	if len(info.CloudProjectInfos) == 0 {
-		return nil, fmt.Errorf("not project avaiable, please check the permission of given screct")
 	}
 	result := info.CloudProjectInfos[0]
 
