@@ -9,6 +9,7 @@ import type {
 } from '@/typings/resource';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { filterAccountList } from '@pluginHandler/account-selector';
+import { QueryRuleOPEnum } from '@/typings';
 
 const props = defineProps({
   bizId: Number as PropType<number>,
@@ -20,7 +21,6 @@ const props = defineProps({
   },
   type: String as PropType<string>,
   mustBiz: Boolean as PropType<boolean>,
-  isResourcePage: Boolean as PropType<boolean>,
   disabled: Boolean,
 });
 const emit = defineEmits(['input', 'change']);
@@ -31,7 +31,7 @@ const accountStore = useAccountStore();
 const accountList = ref([]);
 const loading = ref(null);
 const accountPage = ref(0);
-const { whereAmI, isResourcePage, isBusinessPage } = useWhereAmI();
+const { whereAmI, isResourcePage } = useWhereAmI();
 const route = useRoute();
 
 const selectedValue = computed({
@@ -61,23 +61,26 @@ const getAccoutList = async (bizs?: number) => {
     },
   };
   if (props.type) {
-    data.params = { account_type: props.type };
+    if (isResourcePage) {
+      data.filter.rules.push({ field: 'type', op: QueryRuleOPEnum.EQ, value: 'resource' });
+    } else {
+      data.params = { account_type: props.type };
+    }
   }
-  const isResource = whereAmI.value === Senarios.resource;
-  const res = await accountStore.getAccountList(data, props.bizId || bizs, isResource);
+  const res = await accountStore.getAccountList(data, props.bizId || bizs, isResourcePage);
 
   accountPage.value += 1;
 
-  if (!isResource) {
+  if (!isResourcePage) {
     accountList.value.push(...(res?.data || []));
   } else {
     accountList.value.push(...(res?.data?.details || []));
   }
-  // cert filter, if support other clouds, remove this line
+  // 负载均衡、目标组、证书托管、参数模板这四个暂时只腾讯云支持
   if (
     (isResourcePage && route.query.type === 'certs') ||
-    (isBusinessPage && route.path.includes('cert')) ||
-    ['lb', 'targetGroup'].includes(route.meta.applyRes as string)
+    route.query.scene === 'template' ||
+    (route.meta.isFilterAccount as boolean)
   ) {
     accountList.value = filterAccountList(accountList.value);
   }

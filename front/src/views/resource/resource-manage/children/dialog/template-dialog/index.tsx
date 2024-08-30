@@ -1,13 +1,13 @@
 /* eslint-disable no-nested-ternary */
 import { Button, Dialog, Form, Input, Message, Select } from 'bkui-vue';
-import { PropType, defineComponent, ref, watch, nextTick } from 'vue';
-import { analysisIP, analysisPort, isIpsValid, isPortValid } from '@/utils';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
+import AccountSelector from '@/components/account-selector/index.vue';
+import { PropType, defineComponent, nextTick, ref, watch } from 'vue';
+import { analysisIP, analysisPort, isIpsValid, isPortValid } from '@/utils';
 import { VendorEnum } from '@/common/constant';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { useAccountStore, useResourceStore } from '@/store';
-import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
-import { pluginHandlerDialog } from '@pluginHandler/resource-template-dialog';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 const { FormItem } = Form;
 const { Option } = Select;
 
@@ -63,10 +63,9 @@ export default defineComponent({
     const resourceAccountStore = useResourceAccountStore();
     const resourceStore = useResourceStore();
     const accountStore = useAccountStore();
-    const { whereAmI } = useWhereAmI();
-    const { vendorArr } = pluginHandlerDialog;
+    const { isBusinessPage } = useWhereAmI();
+
     const isLoading = ref(false);
-    const accountList = ref([]);
     const basicForm = ref(null);
     const isGroupLoading = ref(false);
     const formData = ref({
@@ -161,8 +160,7 @@ export default defineComponent({
 
     watch(
       () => props.isShow,
-      async (isShow) => {
-        if (isShow) getAccountList();
+      async () => {
         await nextTick();
         clearValidate();
       },
@@ -285,19 +283,7 @@ export default defineComponent({
         deep: true,
       },
     );
-    const modifyVendor = (account_id: string) => {
-      const idx = accountList.value.findIndex(({ id }) => id === account_id);
-      formData.value.vendor = accountList.value[idx]?.vendor;
-    };
-    watch(
-      () => accountList.value,
-      () => {
-        modifyVendor(formData.value.account_id);
-      },
-      {
-        deep: true,
-      },
-    );
+
     const formInstance = ref();
     const clearFormData = () => {
       formData.value = {
@@ -419,42 +405,6 @@ export default defineComponent({
       );
     };
 
-    const getAccountList = async () => {
-      const isResource = whereAmI.value === Senarios.resource;
-      const isBusiness = whereAmI.value === Senarios.business;
-      const payload = isResource
-        ? {
-            page: {
-              count: false,
-              limit: 100,
-              start: 0,
-            },
-            filter: {
-              op: 'and',
-              rules: [
-                {
-                  field: 'vendor',
-                  op: 'in',
-                  value: vendorArr,
-                },
-              ],
-            },
-          }
-        : {
-            params: {
-              account_type: 'resource',
-            },
-          };
-      const res = await accountStore.getAccountList(payload, accountStore.bizs);
-      accountList.value = isResource ? res?.data?.details : res?.data;
-      if (resourceAccountStore.resourceAccount?.id) {
-        accountList.value = res.data?.details.filter(({ id }) => id === resourceAccountStore.resourceAccount?.id);
-        return;
-      }
-      if (isBusiness) {
-        accountList.value = accountList.value.filter(({ vendor }) => vendorArr.includes(vendor));
-      }
-    };
     return () => (
       <Dialog
         isShow={props.isShow}
@@ -469,11 +419,13 @@ export default defineComponent({
             <>
               <Form model={formData.value} ref={basicForm} formType='vertical'>
                 <FormItem label='云账号' property='account_id' required>
-                  <Select v-model={formData.value.account_id} disabled={props.isEdit} onChange={modifyVendor}>
-                    {accountList.value.map((item) => (
-                      <Option key={item.id} id={item.id} name={item.name}></Option>
-                    ))}
-                  </Select>
+                  <AccountSelector
+                    v-model={formData.value.account_id}
+                    bizId={accountStore.bizs}
+                    mustBiz={isBusinessPage}
+                    type='resource'
+                    onChange={(account: any) => (formData.value.vendor = account.vendor)}
+                  />
                 </FormItem>
                 <FormItem label='参数模板名称' property='name' required>
                   <Input placeholder='输入参数模板名称' v-model={formData.value.name} />
