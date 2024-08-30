@@ -64,10 +64,10 @@ export default defineComponent({
         return;
       }
 
-      const lastUrlBizs = route.query[GLOBAL_BIZS_KEY];
-      const lastLocalBizs = localStorageActions.get(GLOBAL_BIZS_KEY, (value) => value);
+      const lastUrlBizs = +route.query[GLOBAL_BIZS_KEY];
+      const lastLocalBizs = +localStorageActions.get(GLOBAL_BIZS_KEY, (value) => value);
 
-      return lastUrlBizs ?? lastLocalBizs;
+      return lastUrlBizs || lastLocalBizs;
     };
 
     const fetchBusinessList = async () => {
