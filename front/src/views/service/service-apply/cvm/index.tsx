@@ -337,7 +337,6 @@ export default defineComponent({
       () => formData.cloud_vpc_id,
       (val) => {
         !val && (cloudId.value = null);
-        console.log('subnetSelectorRef.value', subnetSelectorRef.value.subnetList);
         subnetLength.value = subnetSelectorRef.value.subnetList?.length || 0;
       },
     );
@@ -1011,7 +1010,7 @@ export default defineComponent({
             onClose={() => (dialogState.gcpDataDisk.isShow = false)}
           />
         </div>
-        {isAccountShow.value && (
+        {!isAccountShow.value && (
           <div class={'purchase-cvm-bottom-bar'}>
             <Form labelWidth={130} class={'purchase-cvm-bottom-bar-form'}>
               <div class='purchase-cvm-bottom-bar-form-item-wrap'>
