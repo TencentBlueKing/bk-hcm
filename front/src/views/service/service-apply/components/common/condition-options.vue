@@ -109,7 +109,7 @@ const handleChangeAccount = (account: any) => {
 /**
  * 资源下申请主机、VPC、硬盘时无需选择业务，且无需走审批流程
  */
-const { isResourcePage } = useWhereAmI();
+const { isResourcePage, isBusinessPage } = useWhereAmI();
 const resourceAccountStore = useResourceAccountStore();
 
 watch(
@@ -126,7 +126,7 @@ watch(
 
 <template>
   <CommonCard class="mb16" :title="() => '基本信息'" :layout="'grid'">
-    <div class="cond-item" v-show="false">
+    <div class="cond-item" v-if="isBusinessPage" style="display: none">
       <div class="mb8">业务</div>
       <div class="cond-content">
         <business-selector
