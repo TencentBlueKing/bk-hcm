@@ -119,7 +119,8 @@ func (msdc *MainDailySplitController) setAwsExtension(kt *kit.Kit) error {
 		if spOpt.RootAccountCloudID != msdc.RootAccountCloudID {
 			continue
 		}
-
+		logs.Infof("setting aws savings plans config for %s daily split, arn: %s",
+			msdc.MainAccountCloudID, spOpt.SpArnPrefix)
 		msdc.ext = dailysplit.BuildAwsDailySplitOptionExt(spOpt.SpArnPrefix)
 	}
 	return nil

@@ -107,6 +107,7 @@ func (rac *RootAccountController) Start() error {
 				rac.RootAccountID, err, kt.Rid)
 			return err
 		}
+		logs.Infof("aws root account extension set, ext: %v", rac.ext)
 	}
 
 	go rac.runBillSummaryLoop(kt)
