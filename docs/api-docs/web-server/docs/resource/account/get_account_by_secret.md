@@ -154,11 +154,11 @@ POST /api/v1/account/vendors/{vendor}/root_accounts/secret
 
 ### azure 响应参数说明
 
-| 参数名称    | 参数类型     | 描述                             |
-|---------|----------|--------------------------------|
-| code    | int32    | 状态码                            |
-| message | string   | 请求信息                           |
-| data    | []object | 响应数据,一个对象数组，包含多个subscription信息 |
+| 参数名称    | 参数类型   | 描述   |
+|---------|--------|------|
+| code    | int32  | 状态码  |
+| message | string | 请求信息 |
+| data    | object | 响应数据 |
 
 #### data[azure]
 
