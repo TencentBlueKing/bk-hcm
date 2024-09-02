@@ -249,7 +249,8 @@ func (act DeleteURLRuleAction) Run(kt run.ExecuteKit, params any) (any, error) {
 		}
 
 		for lblID, urlRuleIDs := range lblUrlRuleMap {
-			err := actcli.GetHCService().TCloud.Clb.BatchDeleteUrlRule(kt.Kit(), lblID, &hcproto.TCloudRuleDeleteByIDReq{RuleIDs: urlRuleIDs})
+			delReq := &hcproto.TCloudRuleDeleteByIDReq{RuleIDs: urlRuleIDs}
+			err := actcli.GetHCService().TCloud.Clb.BatchDeleteUrlRule(kt.Kit(), lblID, delReq)
 			if err != nil {
 				logs.Errorf("fail to delete tcloud url ule, err: %v, opt: %+v rid: %s",
 					err, opt, kt.Kit().Rid)

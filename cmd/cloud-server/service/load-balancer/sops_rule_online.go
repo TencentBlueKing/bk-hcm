@@ -79,7 +79,8 @@ func (svc *lbSvc) batchRuleOnline(cts *rest.Contexts, authHandler handler.ValidW
 
 // TODO 这里的内容依赖clb excel导入的代码，暂时注释，等待clb excel导入合并后再开放
 //
-//func (svc *lbSvc) buildCreateTCloudRule(cts *rest.Contexts, body json.RawMessage, accountID string, BkBizID int64) (any, error) {
+//func (svc *lbSvc) buildCreateTCloudRule(cts *rest.Contexts, body json.RawMessage, accountID string,
+//BkBizID int64) (any, error) {
 //	req := new(cslb.TCloudSopsRuleBatchCreateReq)
 //	if err := json.Unmarshal(body, req); err != nil {
 //		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -108,7 +109,9 @@ func (svc *lbSvc) batchRuleOnline(cts *rest.Contexts, authHandler handler.ValidW
 //	return svc.bindRS(cts, bindRSReqParam)
 //}
 //
-//func convBatchOperationPreviewResultToReq(previewResultList []*cloud.BatchOperationPreviewResult[*lblogic.BindRSRecord], accountID string) *cloud.BatchOperationReq[*lblogic.BindRSRecord] {
+//func convBatchOperationPreviewResultToReq(
+//previewResultList []*cloud.BatchOperationPreviewResult[*lblogic.BindRSRecord],
+//accountID string) *cloud.BatchOperationReq[*lblogic.BindRSRecord] {
 //	batchOperationReq := new(cloud.BatchOperationReq[*lblogic.BindRSRecord])
 //	batchOperationReq.AccountID = accountID
 //	for _, previewResult := range previewResultList {
