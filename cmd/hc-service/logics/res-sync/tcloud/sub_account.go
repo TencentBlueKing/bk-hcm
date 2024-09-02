@@ -169,7 +169,8 @@ func (cli *client) updateSubAccount(kt *kit.Kit, opt *SyncSubAccountOption,
 	return nil
 }
 
-func (cli *client) createSubAccount(kt *kit.Kit, opt *protocloud.AccountGetResult[protocore.TCloudAccountExtension], addSlice []account.TCloudAccount) error {
+func (cli *client) createSubAccount(kt *kit.Kit,
+	mainAccount *protocloud.AccountGetResult[protocore.TCloudAccountExtension], addSlice []account.TCloudAccount) error {
 
 	if len(addSlice) <= 0 {
 		return errors.New("addSlice is required")
@@ -178,16 +179,16 @@ func (cli *client) createSubAccount(kt *kit.Kit, opt *protocloud.AccountGetResul
 	createResources := make([]dssubaccount.CreateField, 0)
 
 	// 产品侧定义主账号数据较重要，定制化插入一条主账号数据
-	mainAccount, err := cli.makeMainAccount(kt, opt)
+	mainAccountCreateRes, err := cli.makeMainAccount(kt, mainAccount)
 	if err != nil {
 		return err
 	}
-	createResources = append(createResources, mainAccount...)
+	createResources = append(createResources, mainAccountCreateRes...)
 
 	for _, one := range addSlice {
 
 		extension := &coresubaccount.TCloudExtension{
-			CloudMainAccountID: opt.Extension.CloudMainAccountID,
+			CloudMainAccountID: mainAccount.Extension.CloudMainAccountID,
 			Uin:                one.Uin,
 			NickName:           one.NickName,
 			CreateTime:         one.CreateTime,
@@ -199,8 +200,8 @@ func (cli *client) createSubAccount(kt *kit.Kit, opt *protocloud.AccountGetResul
 		}
 
 		accountType := ""
-		if opt.Extension.CloudSubAccountID != "" &&
-			opt.Extension.CloudSubAccountID == strconv.FormatUint(converter.PtrToVal(one.Uin), 10) {
+		if mainAccount.Extension.CloudSubAccountID != "" &&
+			mainAccount.Extension.CloudSubAccountID == strconv.FormatUint(converter.PtrToVal(one.Uin), 10) {
 			accountType = string(enumor.CurrentAccount)
 		}
 
@@ -208,8 +209,8 @@ func (cli *client) createSubAccount(kt *kit.Kit, opt *protocloud.AccountGetResul
 			CloudID:     one.GetCloudID(),
 			Name:        converter.PtrToVal(one.Name),
 			Vendor:      enumor.TCloud,
-			Site:        opt.Site,
-			AccountID:   opt.ID,
+			Site:        mainAccount.Site,
+			AccountID:   mainAccount.ID,
 			AccountType: accountType,
 			Extension:   ext,
 			// Managers/BizIDs由用户设置不继承资源账号。
@@ -225,12 +226,12 @@ func (cli *client) createSubAccount(kt *kit.Kit, opt *protocloud.AccountGetResul
 	}
 	if _, err = cli.dbCli.Global.SubAccount.BatchCreate(kt, createReq); err != nil {
 		logs.Errorf("[%s] create sub account failed, err: %v, account: %s, rid: %s", enumor.TCloud,
-			err, opt.ID, kt.Rid)
+			err, mainAccount.ID, kt.Rid)
 		return err
 	}
 
 	logs.Infof("[%s] sync sub account to create sub account success, accountID: %s, count: %d, rid: %s", enumor.TCloud,
-		opt.ID, len(addSlice), kt.Rid)
+		mainAccount.ID, len(addSlice), kt.Rid)
 
 	return nil
 }
