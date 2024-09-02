@@ -126,7 +126,8 @@ export default defineComponent({
         () => props.resourceGroup,
       ],
       async ([bizId, region, vendor, vpcId, accountId, zone]) => {
-        if (bizId && region && vendor && vpcId && accountId && zone) {
+        // 资源下无需bizId
+        if (region && vendor && vpcId && accountId && zone) {
           await getSubnetsData(bizId, region, vendor, vpcId, accountId, zone);
         }
       },

@@ -43,7 +43,7 @@ const { Group: RadioGroup, Button: RadioButton } = Radio;
 export default defineComponent({
   props: {},
   setup() {
-    const { cond, isEmptyCond } = useCondtion(ResourceTypeEnum.CVM);
+    const { cond, isEmptyCond } = useCondtion();
     const {
       formData,
       formRef,
@@ -370,15 +370,20 @@ export default defineComponent({
           return;
         await formRef.value.validate();
         isSubmitBtnLoading.value = true;
-        const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/cvms/prices/inquiry`, {
-          ...saveData,
-          instance_type:
-            cond.vendor !== VendorEnum.HUAWEI
-              ? saveData.instance_type
-              : `${saveData.instance_type}.${opSystemType.value}`,
-        });
-        cost.value = res.data?.discount_price || '0';
-        isSubmitBtnLoading.value = false;
+        try {
+          const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/cvms/prices/inquiry`, {
+            ...saveData,
+            instance_type:
+              cond.vendor !== VendorEnum.HUAWEI
+                ? saveData.instance_type
+                : `${saveData.instance_type}.${opSystemType.value}`,
+          });
+          cost.value = res.data?.discount_price || '0';
+        } catch (error) {
+          cost.value = '--';
+        } finally {
+          isSubmitBtnLoading.value = false;
+        }
       }, 300),
       {
         immediate: true,
@@ -929,7 +934,7 @@ export default defineComponent({
                 <ConditionOptions
                   ref={conditionRef}
                   type={ResourceTypeEnum.CVM}
-                  v-model:bizId={cond.bizId}
+                  bizs={cond.bizId}
                   v-model:cloudAccountId={cond.cloudAccountId}
                   v-model:vendor={cond.vendor}
                   v-model:region={cond.region}

@@ -541,7 +541,7 @@ export default (formModel: ApplyClbModel) => {
         <Form class='apply-clb-form-container' formType='vertical' model={formModel} ref={formRef} rules={rules}>
           <ConditionOptions
             type={ResourceTypeEnum.CLB}
-            v-model:bizId={formModel.bk_biz_id}
+            bizs={formModel.bk_biz_id}
             v-model:cloudAccountId={formModel.account_id}
             v-model:vendor={formModel.vendor}
             v-model:region={formModel.region}
