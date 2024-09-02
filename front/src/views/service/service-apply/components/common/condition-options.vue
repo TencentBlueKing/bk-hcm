@@ -1,12 +1,10 @@
 <script setup lang="ts">
-import BusinessSelector from '@/components/business-selector/index.vue';
 import AccountSelector from '@/components/account-selector/index.vue';
 import RegionSelector from './region-selector';
 import ResourceGroupSelector from './resource-group-selector';
 import { CloudType } from '@/typings';
-import { ResourceTypeEnum, VendorEnum, GLOBAL_BIZS_KEY } from '@/common/constant';
+import { ResourceTypeEnum, VendorEnum } from '@/common/constant';
 import { ref, PropType, computed, watch } from 'vue';
-import { useAccountStore } from '@/store';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import CommonCard from '@/components/CommonCard';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
@@ -14,11 +12,9 @@ import { Form } from 'bkui-vue';
 
 const { FormItem } = Form;
 
-const accountStore = useAccountStore();
-
 const props = defineProps({
   type: String as PropType<string>,
-  bizId: Number as PropType<number>,
+  bizs: Number as PropType<number>,
   cloudAccountId: String as PropType<string>,
   vendor: String as PropType<string>,
   region: String as PropType<string>,
@@ -34,21 +30,6 @@ const emit = defineEmits([
 ]);
 
 const vendorList = ref([]);
-
-const selectedBizId = computed({
-  get() {
-    if (!props.bizId) emit('update:bizId', accountStore.bizs);
-    return props.bizId || accountStore.bizs;
-  },
-  set(val) {
-    emit('update:bizId', val);
-
-    selectedCloudAccountId.value = '';
-    selectedVendor.value = '';
-    selectedRegion.value = '';
-    vendorList.value = [];
-  },
-});
 
 const selectedCloudAccountId = computed({
   get() {
@@ -109,7 +90,7 @@ const handleChangeAccount = (account: any) => {
 /**
  * 资源下申请主机、VPC、硬盘时无需选择业务，且无需走审批流程
  */
-const { isResourcePage, isBusinessPage } = useWhereAmI();
+const { isResourcePage } = useWhereAmI();
 const resourceAccountStore = useResourceAccountStore();
 
 watch(
@@ -126,17 +107,6 @@ watch(
 
 <template>
   <CommonCard class="mb16" :title="() => '基本信息'" :layout="'grid'">
-    <div class="cond-item" v-if="isBusinessPage" style="display: none">
-      <div class="mb8">业务</div>
-      <div class="cond-content">
-        <business-selector
-          v-model="selectedBizId"
-          :authed="true"
-          :auto-select="true"
-          :url-key="GLOBAL_BIZS_KEY"
-        ></business-selector>
-      </div>
-    </div>
     <FormItem
       label="云账号"
       required
@@ -146,7 +116,7 @@ watch(
         v-model="selectedCloudAccountId"
         :disabled="!!resourceAccountStore?.resourceAccount?.id"
         :must-biz="!isResourcePage"
-        :biz-id="selectedBizId"
+        :biz-id="props.bizs"
         @change="handleChangeAccount"
         :type="'resource'"
       ></account-selector>

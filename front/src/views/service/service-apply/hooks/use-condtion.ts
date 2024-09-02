@@ -11,12 +11,12 @@ export type Cond = {
   resourceGroup?: string;
 };
 
-export default (type: string) => {
-  console.log(type);
+export default () => {
   const resourceAccountStore = useResourceAccountStore();
+  const { getBizsId, whereAmI } = useWhereAmI();
 
   const cond = reactive<Cond>({
-    bizId: null,
+    bizId: whereAmI.value === Senarios.business ? getBizsId() : 0,
     cloudAccountId: '',
     vendor: '',
     region: '',
@@ -29,7 +29,6 @@ export default (type: string) => {
   }
 
   const isEmptyCond = computed(() => {
-    const { whereAmI } = useWhereAmI();
     const isResourcePage = whereAmI.value === Senarios.resource;
     const isEmpty = !cond.cloudAccountId || !cond.vendor || !cond.region || (!isResourcePage && !cond.bizId);
     if (cond.vendor === VendorEnum.AZURE) {

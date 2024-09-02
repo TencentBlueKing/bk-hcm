@@ -114,21 +114,26 @@ const handleAdd = () => {
     isTemplateDialogEdit.value = false;
     return;
   }
+  const { bizs } = route.query;
   if (renderComponent.value === DriveManage) {
     router.push({
       path: '/business/service/service-apply/disk',
+      query: { bizs },
     });
   } else if (renderComponent.value === HostManage) {
     router.push({
       path: '/business/service/service-apply/cvm',
+      query: { bizs },
     });
   } else if (renderComponent.value === VpcManage) {
     router.push({
       path: '/business/service/service-apply/vpc',
+      query: { bizs },
     });
   } else if (renderComponent.value === SubnetManage) {
     router.push({
       path: '/business/service/service-apply/subnet',
+      query: { bizs },
     });
   } else {
     isEdit.value = false;

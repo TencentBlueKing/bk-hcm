@@ -18,8 +18,9 @@ const { Option } = Select;
 export default defineComponent({
   props: {},
   setup() {
+    const { getBizsId, whereAmI, isResourcePage } = useWhereAmI();
     const formModel = reactive({
-      biz_id: '' as string,
+      biz_id: whereAmI.value === Senarios.business ? getBizsId() : 0,
       account_id: '' as string, // 云账号
       vendor: null as VendorEnum, // 云厂商
       resource_group: '' as string, // 资源组
@@ -68,7 +69,6 @@ export default defineComponent({
     const cidr_host2 = ref('');
     const cidr_mask = ref('');
     const submitLoading = ref(false);
-    const { whereAmI, isResourcePage } = useWhereAmI();
     const router = useRouter();
 
     const resourceStore = useResourceStore();
@@ -85,7 +85,6 @@ export default defineComponent({
 
     const getVpcDetail = async (vpc: { id: string }) => {
       const vpcId = vpc.id;
-      console.log('vpcId', vpcId);
       if (!vpcId) return;
       const res = await resourceStore.detail('vpcs', vpcId);
       const arr = res.data?.extension?.cidr || [];
@@ -95,7 +94,6 @@ export default defineComponent({
         const ipArr = ip.split('.');
         subIpv4cidr.value = [ipArr[0], ipArr[1], mask];
       }
-      console.log(subIpv4cidr.value);
     };
 
     const handleSubmit = async () => {
@@ -111,8 +109,6 @@ export default defineComponent({
           message: '创建成功',
         });
         handleCancel();
-      } catch (error) {
-        console.log(error);
       } finally {
         submitLoading.value = false;
       }
@@ -168,7 +164,7 @@ export default defineComponent({
           <Form formType='vertical' model={formModel} ref={formRef} rules={formRules}>
             <ConditionOptions
               type={ResourceTypeEnum.SUBNET}
-              v-model:bizId={formModel.biz_id}
+              bizs={formModel.biz_id}
               v-model:cloudAccountId={formModel.account_id}
               v-model:vendor={formModel.vendor}
               v-model:region={formModel.region}
