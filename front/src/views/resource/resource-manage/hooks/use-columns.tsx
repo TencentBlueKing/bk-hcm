@@ -1802,8 +1802,10 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       render: ({ cell }: any) => cell.join(','),
     },
     {
-      label: '业务',
-      field: 'op_product_id',
+      label: '业务名称',
+      field: 'bk_biz_id',
+      isDefaultShow: true,
+      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
     },
     {
       label: '备注',
@@ -1893,13 +1895,19 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const billsRootAccountSummaryColumns = [
     {
       label: '一级账号ID',
-      field: 'root_account_id',
+      field: 'root_account_cloud_id',
       isDefaultShow: true,
     },
     {
       label: '一级账号名称',
       field: 'root_account_name',
       isDefaultShow: true,
+    },
+    {
+      label: '云厂商',
+      field: 'vendor',
+      isDefaultShow: true,
+      render: ({ cell }: { cell: VendorEnum }) => VendorMap[cell],
     },
     {
       label: '账号状态',
@@ -1980,6 +1988,12 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '二级账号名称',
       field: 'main_account_name',
       isDefaultShow: true,
+    },
+    {
+      label: '云厂商',
+      field: 'vendor',
+      isDefaultShow: true,
+      render: ({ cell }: { cell: VendorEnum }) => VendorMap[cell],
     },
     {
       label: '一级账号名称',
