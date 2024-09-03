@@ -1,0 +1,44 @@
+.wrapper {
+  width: 420px;
+
+  :global(.bk-input--suffix-icon) {
+    order: 1;
+  }
+
+  .button {
+    order: 2;
+    position: relative;
+    top: -1px;
+    right: -1px;
+    border-top-left-radius: 0px;
+    border-bottom-left-radius: 0px;
+  }
+
+  &.render-custom-suffix {
+    background-color: #fff3e1;
+
+    :global(.bk-input--text) {
+      background-color: #fff3e1;
+    }
+
+    .copy,
+    .eye {
+      flex-shrink: 0;
+      margin-right: 8px !important;
+      font-size: 14px !important;
+      cursor: pointer;
+    }
+
+    .copy:hover {
+      color: #3a84ff;
+    }
+
+    .eye {
+      color: #c4c6cc;
+
+      &:hover {
+        color: #313238;
+      }
+    }
+  }
+}

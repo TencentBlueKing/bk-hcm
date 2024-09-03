@@ -12,6 +12,7 @@ import SecurityGroupSelector from '../components/common/security-group-selector'
 import CloudAreaName from '../components/common/cloud-area-name';
 import { Plus as PlusIcon } from 'bkui-vue/lib/icon';
 import GcpDataDiskFormDialog from './children/gcp-data-disk-form-dialog';
+import PwdInput from './children/PwdInput';
 import './index.scss';
 import { useI18n } from 'vue-i18n';
 
@@ -718,19 +719,13 @@ export default defineComponent({
               },
               {
                 property: 'password',
-                content: () => (
-                  <Input
-                    style={{ width: '249px' }}
-                    type='password'
-                    placeholder='密码'
-                    v-model={formData.password}></Input>
-                ),
+                content: () => <PwdInput v-model={formData.password} />,
               },
               {
                 property: 'confirmed_password',
                 content: () => (
                   <Input
-                    style={{ width: '249px' }}
+                    style={{ width: '420px' }}
                     type='password'
                     placeholder='确认密码'
                     v-model={formData.confirmed_password}></Input>
