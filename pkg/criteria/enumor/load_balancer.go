@@ -19,7 +19,9 @@
 
 package enumor
 
-import "errors"
+import (
+	"errors"
+)
 
 // RuleType 负载均衡类型
 type RuleType string

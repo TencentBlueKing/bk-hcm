@@ -7,11 +7,12 @@ export const accountFilter = (
   list: IAccountItem[],
   { route, whereAmI }: { route: RouteLocationNormalizedLoaded; whereAmI: ReturnType<typeof useWhereAmI> },
 ) => {
-  const { isResourcePage, isBusinessPage } = whereAmI;
+  const { isResourcePage } = whereAmI;
+  // 负载均衡、目标组、证书托管、参数模板这四个暂时只腾讯云支持
   if (
     (isResourcePage && route.query.type === 'certs') ||
-    (isBusinessPage && route.path.includes('cert')) ||
-    ['lb', 'targetGroup'].includes(route.meta.applyRes as string)
+    route.query.scene === 'template' ||
+    (route.meta.isFilterAccount as boolean)
   ) {
     return list.filter((item) => item.vendor === VendorEnum.TCLOUD);
   }

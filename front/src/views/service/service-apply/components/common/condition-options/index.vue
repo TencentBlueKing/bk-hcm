@@ -1,12 +1,10 @@
 <script setup lang="ts">
-import BusinessSelector from '@/components/business-selector/index.vue';
 import AccountSelector from '@/components/account-selector/index-new.vue';
 import RegionSelector from '../region-selector';
 import ResourceGroupSelector from '../resource-group-selector';
 import { IAccountItem } from '@/typings';
-import { ResourceTypeEnum, VendorEnum, GLOBAL_BIZS_KEY } from '@/common/constant';
-import { ref, PropType, computed, watch } from 'vue';
-import { useAccountStore } from '@/store';
+import { ResourceTypeEnum, VendorEnum } from '@/common/constant';
+import { PropType, computed, watch } from 'vue';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import CommonCard from '@/components/CommonCard';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
@@ -15,11 +13,9 @@ import { accountFilter } from './account-filter.plugin';
 
 const { FormItem } = Form;
 
-const accountStore = useAccountStore();
-
 const props = defineProps({
   type: String as PropType<string>,
-  bizId: Number as PropType<number>,
+  bizs: Number as PropType<number>,
   cloudAccountId: String as PropType<string>,
   vendor: String as PropType<string>,
   region: String as PropType<string>,
@@ -33,23 +29,6 @@ const emit = defineEmits([
   'update:region',
   'update:resourceGroup',
 ]);
-
-const vendorList = ref([]);
-
-const selectedBizId = computed({
-  get() {
-    if (!props.bizId) emit('update:bizId', accountStore.bizs);
-    return props.bizId || accountStore.bizs;
-  },
-  set(val) {
-    emit('update:bizId', val);
-
-    selectedCloudAccountId.value = '';
-    selectedVendor.value = '';
-    selectedRegion.value = '';
-    vendorList.value = [];
-  },
-});
 
 const selectedCloudAccountId = computed({
   get() {
@@ -117,17 +96,6 @@ watch(
 
 <template>
   <CommonCard class="mb16" :title="() => '基本信息'" :layout="'grid'">
-    <div class="cond-item" v-show="false">
-      <div class="mb8">业务</div>
-      <div class="cond-content">
-        <business-selector
-          v-model="selectedBizId"
-          :authed="true"
-          :auto-select="true"
-          :url-key="GLOBAL_BIZS_KEY"
-        ></business-selector>
-      </div>
-    </div>
     <FormItem
       label="云账号"
       required
@@ -135,7 +103,7 @@ watch(
     >
       <account-selector
         v-model="selectedCloudAccountId"
-        :biz-id="isResourcePage ? undefined : selectedBizId"
+        :biz-id="isResourcePage ? undefined : props.bizs"
         :filter="accountFilter"
         :disabled="isResourcePage"
         :placeholder="isResourcePage ? '请在左侧选择账号' : undefined"

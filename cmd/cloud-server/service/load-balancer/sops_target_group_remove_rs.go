@@ -82,12 +82,13 @@ func (svc *lbSvc) batchRemoveTargetGroupRS(cts *rest.Contexts, authHandler handl
 	}
 }
 
-func (svc *lbSvc) buildDeleteTCloudTarget(kt *kit.Kit, body json.RawMessage, accountID string, vendor enumor.Vendor) (any, error) {
+func (svc *lbSvc) buildDeleteTCloudTarget(kt *kit.Kit, body json.RawMessage, accountID string,
+	vendor enumor.Vendor) (any, error) {
+
 	req := new(cslb.TCloudSopsTargetBatchRemoveReq)
 	if err := json.Unmarshal(body, req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
-
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -100,11 +101,100 @@ func (svc *lbSvc) buildDeleteTCloudTarget(kt *kit.Kit, body json.RawMessage, acc
 	if len(tgIDsMap) == 0 {
 		return nil, errf.New(errf.RecordNotFound, "no matching target groups were found")
 	}
+	lbTgsMap, err := svc.iterateTargetGroupGroupByCLB(kt, tgIDsMap)
+	if err != nil {
+		logs.Errorf("iterate target group group by clb failed, tgIDsMap: %v, err: %v, rid: %s",
+			tgIDsMap, err, kt.Rid)
+		return nil, err
+	}
 
-	// 按照clb分组targetGroup
-	lbTgsMap := make(map[string][]string)
 	tgTargetMap := make(map[string][]string)
 	for index, tgIDs := range tgIDsMap {
+		// 查询每一行筛选出的目标组对应的目标，按照当前行填写的条件进行筛选
+		targetList, err := svc.getTargetByTGIDs(kt, tgIDs)
+		if err != nil {
+			logs.Errorf("get target by target group ids failed, err: %v, tgIDs: %v, rid: %s", err, tgIDs, kt.Rid)
+			return nil, err
+		}
+		rsIPs := req.RuleQueryList[index-1].RsIP
+		rsType := req.RuleQueryList[index-1].RsType
+		for _, target := range targetList {
+			// 筛选rsType
+			if string(target.InstType) != rsType {
+				continue
+			}
+			// 筛选rsIp
+			for _, rsIp := range target.PrivateIPAddress {
+				if slice.IsItemInSlice(rsIPs, rsIp) {
+					if _, ok := tgTargetMap[target.TargetGroupID]; !ok {
+						tgTargetMap[target.TargetGroupID] = make([]string, 0)
+					}
+					tgTargetMap[target.TargetGroupID] = append(tgTargetMap[target.TargetGroupID], target.ID)
+					continue
+				}
+			}
+		}
+	}
+
+	flowStateResults := make([]*core.FlowStateResult, 0)
+	for lbID, lbTgIDs := range lbTgsMap {
+		removeTargetJSON, err := buildTCloudTargetBatchRemoveReq(lbTgIDs, tgTargetMap)
+		if err != nil {
+			logs.Errorf("build sops tcloud remove target params parse failed, "+
+				"err: %v, accountID: %s, tgIDs: %v, rid: %s",
+				err, accountID, lbTgIDs, kt.Rid)
+			return nil, err
+		}
+		logs.Infof(
+			"build sops tcloud remove target params success,lbID: %s tgIDs: %v, removeTargetJSON: %s, rid: %s",
+			lbID, lbTgIDs, removeTargetJSON, kt.Rid)
+		result, err := svc.buildRemoveTCloudTarget(kt, removeTargetJSON, accountID)
+		if err != nil {
+			return nil, err
+		}
+		resultValue, ok := result.(*core.FlowStateResult)
+		if !ok {
+			return nil, fmt.Errorf("buildAddTCloudTarget failed, result: %v", resultValue)
+		}
+		flowStateResults = append(flowStateResults, resultValue)
+	}
+
+	return flowStateResults, nil
+}
+
+func buildTCloudTargetBatchRemoveReq(lbTgIDs []string, tgTargetMap map[string][]string) ([]byte, error) {
+	params := &cslb.TCloudTargetBatchRemoveReq{
+		TargetGroups: []*cslb.TCloudRemoveTargetReq{},
+	}
+	for _, tmpTgID := range lbTgIDs {
+		tmpTargetReq := &cslb.TCloudRemoveTargetReq{
+			TargetGroupID: tmpTgID,
+			TargetIDs:     []string{},
+		}
+		if _, ok := tgTargetMap[tmpTgID]; !ok {
+			continue
+		}
+		tmpTargetReq.TargetIDs = tgTargetMap[tmpTgID]
+		params.TargetGroups = append(params.TargetGroups, tmpTargetReq)
+	}
+
+	if len(params.TargetGroups) == 0 {
+		return nil, errf.NewFromErr(errf.RecordNotFound, fmt.Errorf("build add target param parse failed"))
+	}
+
+	removeTargetJSON, err := json.Marshal(params)
+	if err != nil {
+		return nil, err
+	}
+	return removeTargetJSON, nil
+}
+
+// 按照clb分组targetGroup
+func (svc *lbSvc) iterateTargetGroupGroupByCLB(kt *kit.Kit,
+	tgIDsMap map[int][]string) (map[string][]string, error) {
+
+	lbTgsMap := make(map[string][]string)
+	for _, tgIDs := range tgIDsMap {
 		for _, tgID := range tgIDs {
 			// 根据目标组ID，获取目标组绑定的监听器、规则列表
 			ruleRelReq := &core.ListReq{
@@ -136,78 +226,7 @@ func (svc *lbSvc) buildDeleteTCloudTarget(kt *kit.Kit, body json.RawMessage, acc
 			}
 		}
 
-		// 查询每一行筛选出的目标组对应的目标，按照当前行填写的条件进行筛选
-		targetList, err := svc.getTargetByTGIDs(kt, tgIDs)
-		if err != nil {
-			logs.Errorf("get target by target group ids failed, err: %v, tgIDs: %v, rid: %s", err, tgIDs, kt.Rid)
-			return nil, err
-		}
-		rsIPs := req.RuleQueryList[index-1].RsIP
-		rsType := req.RuleQueryList[index-1].RsType
-		for _, target := range targetList {
-			// 筛选rsType
-			if string(target.InstType) != rsType {
-				continue
-			}
-			// 筛选rsIp
-			for _, rsIp := range target.PrivateIPAddress {
-				if slice.IsItemInSlice(rsIPs, rsIp) {
-					// 构建tg与target的映射map
-					if _, ok := tgTargetMap[target.TargetGroupID]; !ok {
-						tgTargetMap[target.TargetGroupID] = make([]string, 0)
-					}
-					tgTargetMap[target.TargetGroupID] = append(tgTargetMap[target.TargetGroupID], target.ID)
-					continue
-				}
-			}
-		}
 	}
 
-	// 一个clb一个异步flow
-	flowStateResults := make([]*core.FlowStateResult, 0)
-	for lbID, lbTgIDs := range lbTgsMap {
-		params := &cslb.TCloudTargetBatchRemoveReq{
-			TargetGroups: []*cslb.TCloudRemoveTargetReq{},
-		}
-		for _, tmpTgID := range lbTgIDs {
-			tmpTargetReq := &cslb.TCloudRemoveTargetReq{
-				TargetGroupID: tmpTgID,
-				TargetIDs:     []string{},
-			}
-			if _, ok := tgTargetMap[tmpTgID]; !ok {
-				continue
-			}
-			tmpTargetReq.TargetIDs = tgTargetMap[tmpTgID]
-			params.TargetGroups = append(params.TargetGroups, tmpTargetReq)
-		}
-
-		if len(params.TargetGroups) == 0 {
-			logs.Errorf("build sops tcloud remove target params parse failed, err: %v, accountID: %s, tgIDs: %v, rid: %s",
-				err, accountID, lbTgIDs, kt.Rid)
-			return nil, errf.NewFromErr(errf.RecordNotFound, fmt.Errorf("build add target param parse failed"))
-		}
-
-		removeTargetJSON, err := json.Marshal(params)
-		if err != nil {
-			logs.Errorf("build sops tcloud remove target params marshal failed, err: %v, params: %+v, rid: %s",
-				err, params, kt.Rid)
-			return nil, err
-		}
-
-		// 记录标准运维参数转换后的数据，方便排查问题
-		logs.Infof("build sops tcloud remove target params jsonmarshal success,lbID: %s tgIDs: %v, removeTargetJSON: %s, rid: %s",
-			lbID, lbTgIDs, removeTargetJSON, kt.Rid)
-
-		result, err := svc.buildRemoveTCloudTarget(kt, removeTargetJSON, accountID)
-		if err != nil {
-			return nil, err
-		}
-		resultValue, ok := result.(*core.FlowStateResult)
-		if !ok {
-			return nil, fmt.Errorf("buildAddTCloudTarget failed, result: %v", resultValue)
-		}
-		flowStateResults = append(flowStateResults, resultValue)
-	}
-
-	return flowStateResults, nil
+	return lbTgsMap, nil
 }

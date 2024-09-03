@@ -18,7 +18,7 @@ import usePagePermissionStore from '@/store/usePagePermissionStore';
 
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import useChangeHeaderTab from './hooks/useChangeHeaderTab';
-import { LANGUAGE_TYPE, VendorEnum } from '@/common/constant';
+import { GLOBAL_BIZS_KEY, LANGUAGE_TYPE, VendorEnum } from '@/common/constant';
 import { classes } from '@/common/util';
 
 import { headRouteConfig } from '@/router/header-config';
@@ -271,7 +271,14 @@ export default defineComponent({
                                 }
 
                                 return (
-                                  <RouterLink to={{ path: child.path, query: { ...route.query } }}>
+                                  <RouterLink
+                                    to={{
+                                      path: child.path,
+                                      query: {
+                                        [GLOBAL_BIZS_KEY]:
+                                          whereAmI.value === Senarios.business ? accountStore.bizs : undefined,
+                                      },
+                                    }}>
                                     <Menu.Item key={child.meta?.activeKey as string}>
                                       {{
                                         icon: () => <i class={child.meta?.icon} />,

@@ -17,7 +17,7 @@ export interface IAccountSelectorProps {
   disabled?: boolean;
   filter?: (
     list: IAccountItem[],
-    options: { route: RouteLocationNormalizedLoaded; whereAmI: ReturnType<typeof useWhereAmI> },
+    options?: { route: RouteLocationNormalizedLoaded; whereAmI: ReturnType<typeof useWhereAmI> },
   ) => IAccountItem[];
   placeholder?: string;
   optionDisabled?: (accountItem?: IAccountItem) => boolean;

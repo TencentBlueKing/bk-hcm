@@ -31,7 +31,7 @@ const ipv4CidrFir: any = ref('10');
 export default defineComponent({
   props: {},
   setup() {
-    const { cond, isEmptyCond } = useCondtion(ResourceTypeEnum.VPC);
+    const { cond, isEmptyCond } = useCondtion();
     const { isResourcePage } = useWhereAmI();
     const { formData, formRef, handleFormSubmit, submitting } = useVpcFormData(cond);
     // const __ = useVpcOptions(cond, formData);
@@ -475,7 +475,7 @@ export default defineComponent({
           <Form model={formData} rules={formRules} ref={formRef} onSubmit={handleFormSubmit} formType='vertical'>
             <ConditionOptions
               type={ResourceTypeEnum.VPC}
-              v-model:bizId={cond.bizId}
+              bizs={cond.bizId}
               v-model:cloudAccountId={cond.cloudAccountId}
               v-model:vendor={cond.vendor}
               v-model:region={cond.region}

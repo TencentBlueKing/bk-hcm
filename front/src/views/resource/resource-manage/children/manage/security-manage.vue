@@ -59,7 +59,7 @@ const accountStore = useAccountStore();
 const activeType = ref('group');
 const fetchUrl = ref<string>('security_groups/list');
 
-const emit = defineEmits(['auth', 'handleSecrityType', 'edit', 'tabchange', 'editTemplate']);
+const emit = defineEmits(['auth', 'handleSecrityType', 'edit', 'editTemplate']);
 const { columns, generateColumnsSettings } = useColumns('group');
 const businessMapStore = useBusinessMapStore();
 
@@ -132,18 +132,6 @@ state.pagination = pagination;
 state.handlePageChange = handlePageChange;
 state.handlePageSizeChange = handlePageSizeChange;
 
-// 状态保持
-watch(
-  () => activeType.value,
-  (v) => {
-    state.isLoading = true;
-    state.pagination.current = 1;
-    state.pagination.limit = 10;
-    handleSwtichType(v);
-    resetSelections();
-  },
-);
-
 watch(
   () => datas.value,
   async (data) => {
@@ -158,13 +146,11 @@ watch(
         ids,
         bk_biz_id: whereAmI.value === Senarios.business ? accountStore.bizs : undefined,
       });
-      const dataMap = new Map(
+      const dataMap = new Map<any, { id: any; instance_num: any; rule_num: any }>(
         res.data.map((element: { id: any; instance_num: any; rule_num: any }) => [element.id, element]),
       );
-      for (let i = 0; i < templateData.value.length; i++) {
-        const item = templateData.value[i];
+      templateData.value.forEach((item) => {
         const foundElement = dataMap.get(item.id);
-
         if (foundElement) {
           item.instance_num = foundElement?.instance_num;
           item.rule_num = foundElement?.rule_num;
@@ -172,7 +158,7 @@ watch(
           item.instance_num = '--';
           item.rule_num = '--';
         }
-      }
+      });
     }
   },
   {
@@ -195,6 +181,7 @@ const handleSwtichType = async (type: string) => {
     state.params.columns = 'template';
   }
   emit('handleSecrityType', type);
+  router.replace({ query: { type: 'security', scene: type } });
 };
 
 // 抛出请求数据的方法，新增成功使用
@@ -837,15 +824,22 @@ watch(types, () => {
     activeType.value = 'group';
   }
 });
+
+// 状态保持
 watch(
-  activeType,
-  (val) => {
-    emit('tabchange', val);
+  () => activeType.value,
+  (v) => {
+    state.isLoading = true;
+    state.pagination.current = 1;
+    state.pagination.limit = 10;
+    handleSwtichType(v);
+    resetSelections();
   },
   {
     immediate: true,
   },
 );
+
 // const computedSettings = computed(() => {
 //   const fields = [];
 //   const columns = securityType.value === 'group' ? groupColumns : gcpColumns;
