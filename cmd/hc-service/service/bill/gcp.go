@@ -44,10 +44,11 @@ func (b bill) GcpGetBillList(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// 查询aws账单基础表
+	// 查询账单信息表
 	billInfo, err := getBillInfo[cloud.GcpBillConfigExtension](cts.Kit, req.BillAccountID, b.cs.DataService())
 	if err != nil {
-		logs.Errorf("gcp bill config get base info db failed, billAccID: %s, err: %+v", req.BillAccountID, err)
+		logs.Errorf("gcp bill config get base info db failed, billAccID: %s, err: %+v, rid:%s",
+			req.BillAccountID, err, cts.Kit.Rid)
 		return nil, err
 	}
 	if billInfo == nil {

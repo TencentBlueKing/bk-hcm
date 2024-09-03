@@ -151,10 +151,11 @@ func (msdc *MainDailySplitController) doSync(kt *kit.Kit) error {
 	if err := msdc.syncDailySplit(kt.NewSubKit(), curBillYear, curBillMonth); err != nil {
 		return fmt.Errorf("ensure daily split for %d %d failed, err %s", curBillYear, curBillMonth, err.Error())
 	}
-	lastBillYear, lastBillMonth := times.GetLastMonthUTC()
-	if err := msdc.syncDailySplit(kt.NewSubKit(), lastBillYear, lastBillMonth); err != nil {
-		return fmt.Errorf("ensure daily split for %d %d failed, err %s", lastBillYear, lastBillMonth, err.Error())
-	}
+	// DEBUG 屏蔽上月金额 TODO 改为从 bill manager 开始 按指定月份启动，支持指定过去任意月份，支持配置同步月份数量
+	// lastBillYear, lastBillMonth := times.GetLastMonthUTC()
+	// if err := msdc.syncDailySplit(kt.NewSubKit(), lastBillYear, lastBillMonth); err != nil {
+	// 	return fmt.Errorf("ensure daily split for %d %d failed, err %s", lastBillYear, lastBillMonth, err.Error())
+	// }
 	return nil
 }
 

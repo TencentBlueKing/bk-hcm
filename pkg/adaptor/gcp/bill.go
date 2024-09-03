@@ -138,10 +138,13 @@ const (
 		"ANY_VALUE(IFNULL(usage.unit, '')) AS usage_unit," +
 		"SUM(usage.amount_in_pricing_units) as usage_amount_in_pricing_units," +
 		"ANY_VALUE(usage.pricing_unit) as usage_pricing_unit," +
-		"SUM(cost)+SUM(IFNULL((SELECT SUM(c.amount) FROM UNNEST(credits) c), 0)) AS total_cost," +
+		// 非promotion费用直接加到消耗金额中
+		"SUM(cost)+SUM(IFNULL((SELECT SUM(c.amount) FROM UNNEST(credits) c where c.type != 'PROMOTION'), 0)) AS total_cost," +
 		"ANY_VALUE(invoice.month) as month," +
 		"ANY_VALUE(cost_type) as cost_type," +
 		"SUM(IFNULL((SELECT sum(CAST(amount*1000000 AS int64)) AS credit FROM UNNEST(credits)),0)/1000000) as return_cost," +
+		// 将promotion类型保存起来
+		`ARRAY_CONCAT_AGG(ARRAY(select AS STRUCT * from  UNNEST(credits) where type='PROMOTION')) as  credit_infos,` +
 		"ANY_VALUE(currency_conversion_rate) as currency_conversion_rate"
 	// RootAccountQueryBillSQL 查询云账单的SQL
 	RootAccountQueryBillSQL = "SELECT %s FROM %s.%s %s GROUP BY sku.id, project.id"

@@ -296,7 +296,8 @@ func (mac *MainAccountController) syncDailyRawBill(kt *kit.Kit) error {
 	err = mac.ensureDailyRawPullTask(kt, curBillYear, curBillMonth)
 	if err != nil {
 		logs.Errorf("fail to ensure current month  daily raw pull task, err: %v, vendor: %s, period: %d-%d, "+
-			"main account: %s, rid: %s", err, mac.Vendor, curBillYear, curBillMonth, mac.MainAccountID, kt.Rid)
+			"main account: %s(%s), rid: %s",
+			err, mac.Vendor, curBillYear, curBillMonth, mac.MainAccountCloudID, mac.MainAccountID, kt.Rid)
 		return err
 	}
 	return nil
@@ -308,8 +309,8 @@ func (mac *MainAccountController) ensureDailyRawPullTask(kt *kit.Kit, billYear i
 		return err
 	}
 	if lastBillSummaryMain.State == enumor.MainAccountBillSummaryStateAccounting {
-		logs.Infof("start sync daily raw bill for main_account %s, period: %d-%d, rid: %s",
-			mac.MainAccountID, billYear, billMonth, kt.Rid)
+		logs.Infof("start %v-%s(%s) daily raw bill sync, period: %d-%d, rid: %s",
+			mac.Vendor, mac.MainAccountCloudID, mac.MainAccountID, billYear, billMonth, kt.Rid)
 		curPuller, err := puller.GetDailyPuller(lastBillSummaryMain.Vendor)
 		if err != nil {
 			return err

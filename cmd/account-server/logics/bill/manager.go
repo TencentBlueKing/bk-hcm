@@ -26,6 +26,7 @@ import (
 
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/logs"
 	"hcm/pkg/serviced"
 )
@@ -130,6 +131,11 @@ func (bm *BillManager) syncMainControllers() error {
 
 	existedAccountKeyMap := make(map[string]struct{})
 	for _, mainAccount := range mainAccounts {
+		if mainAccount.Status != enumor.MainAccountStatusRUNNING {
+			// DEBUG  跳过非核算账号
+			continue
+		}
+
 		existedAccountKeyMap[mainAccount.Key()] = struct{}{}
 		_, ok := bm.CurrentMainControllers[mainAccount.Key()]
 		if ok {
