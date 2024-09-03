@@ -241,6 +241,7 @@ export default defineComponent({
             footer: () => (
               <div class={'validate-btn-container'}>
                 <Button
+                  outline={curExtension.value.validatedStatus === ValidateStatus.YES}
                   theme='primary'
                   class={'validate-btn'}
                   loading={isValidateLoading.value}
