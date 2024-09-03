@@ -2,7 +2,7 @@
 // eslint-disable
 import { computed, defineComponent, reactive, ref, watch } from 'vue';
 import { Form, Input, Select, Checkbox, Button, Radio } from 'bkui-vue';
-import ConditionOptions from '../components/common/condition-options.vue';
+import ConditionOptions from '../components/common/condition-options/index.vue';
 import ZoneSelector from '@/components/zone-selector/index.vue';
 import MachineTypeSelector from '../components/common/machine-type-selector';
 import Imagelector from '../components/common/image-selector';

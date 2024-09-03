@@ -8,7 +8,7 @@ import PrimaryStandZoneSelector from '../../components/common/PrimaryStandZoneSe
 import RegionVpcSelector from '../../components/common/RegionVpcSelector';
 import SubnetSelector from '../../components/common/subnet-selector';
 import InputNumber from '@/components/input-number';
-import ConditionOptions from '../../components/common/condition-options.vue';
+import ConditionOptions from '../../components/common/condition-options/index.vue';
 import CommonCard from '@/components/CommonCard';
 import VpcReviewPopover from '../../components/common/VpcReviewPopover';
 import SelectedItemPreviewComp from '@/components/SelectedItemPreviewComp';

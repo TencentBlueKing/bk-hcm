@@ -1,7 +1,6 @@
 import { VendorEnum } from '@/common/constant';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { computed, reactive } from 'vue';
-import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 
 export type Cond = {
   bizId: number;
@@ -12,7 +11,6 @@ export type Cond = {
 };
 
 export default () => {
-  const resourceAccountStore = useResourceAccountStore();
   const { getBizsId, whereAmI } = useWhereAmI();
 
   const cond = reactive<Cond>({
@@ -22,11 +20,6 @@ export default () => {
     region: '',
     resourceGroup: '',
   });
-
-  if (resourceAccountStore.resourceAccount) {
-    cond.bizId = resourceAccountStore.resourceAccount.bk_biz_ids?.[0];
-    cond.vendor = resourceAccountStore.resourceAccount.vendor;
-  }
 
   const isEmptyCond = computed(() => {
     const isResourcePage = whereAmI.value === Senarios.resource;
