@@ -5,13 +5,13 @@ import type { Cond } from './use-condtion';
 import { Message } from 'bkui-vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 export interface ISubnet {
   name: string;
-  ipv4_cidr: string | number[];
+  ipv4_cidr: string;
   private_ip_google_access?: boolean;
   zone?: string;
   enable_flow_logs?: boolean;
@@ -46,6 +46,7 @@ export interface IVpcSaveData extends IVpcBaseData {
 export default (cond: Cond) => {
   const { t } = useI18n();
   const router = useRouter();
+  const { isResourcePage, whereAmI } = useWhereAmI();
 
   const vendorDiffFormData = (vendor: string) => {
     const diff = {
@@ -163,7 +164,6 @@ export default (cond: Cond) => {
       region: cond.region,
     };
     saveData.ipv4_cidr = formData.ipv4_cidr;
-    console.log(666, formData.ipv4_cidr);
     if (cond.vendor === VendorEnum.TCLOUD) {
       saveData.subnet = {
         name: subnet.name,
@@ -179,7 +179,7 @@ export default (cond: Cond) => {
     if (cond.vendor === VendorEnum.HUAWEI) {
       saveData.subnet = {
         name: subnet.name,
-        gateway_ip: `${(subnet.ipv4_cidr.slice(0, 3) as number[]).join('.')}.1`,
+        gateway_ip: `${(subnet.ipv4_cidr.split('.').slice(0, 3)).join('.')}.1`,
         ipv4_cidr: formData.ipv4_cidr,
         ipv6_enable: subnet.ipv6_enable,
       };
@@ -203,10 +203,13 @@ export default (cond: Cond) => {
       };
     }
 
+    if(whereAmI.value === Senarios.resource) {
+      delete saveData.bk_biz_id;
+      delete saveData.bizId;
+    }
     return saveData;
   };
 
-  const { isResourcePage } = useWhereAmI();
   const submitting = ref(false);
   const handleFormSubmit = async () => {
     await formRef.value.validate();

@@ -11,11 +11,12 @@ import './index.scss';
 import { ResourceTypeEnum, VendorEnum } from '@/common/constant';
 import useCondtion from '../hooks/use-condtion';
 import useVpcFormData from '../hooks/use-vpc-form-data';
-import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { useRouter } from 'vue-router';
 import { SubnetInput } from '@/components/subnet-input';
 import { IP_RANGES } from './contansts';
 import { Info } from 'bkui-vue/lib/icon';
+import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 
 const { FormItem } = Form;
 const { Group: RadioGroup } = Radio;
@@ -24,8 +25,9 @@ export default defineComponent({
   props: {},
   setup() {
     const { cond, isEmptyCond } = useCondtion();
-    const { isResourcePage } = useWhereAmI();
+    const { isResourcePage, whereAmI } = useWhereAmI();
     const { formData, formRef, handleFormSubmit, submitting } = useVpcFormData(cond);
+    const resourceAccountStore = useResourceAccountStore();
     const { t } = useI18n();
     const router = useRouter();
 
@@ -84,6 +86,16 @@ export default defineComponent({
         immediate: true,
       }
     )
+
+    watch(
+      [() => resourceAccountStore.resourceAccount.id, whereAmI.value, ],
+      () => {
+        if (whereAmI.value === Senarios.resource) {
+          curIpRef.value?.reset();
+          subIpRef.value?.reset();
+        }
+      }
+    );
 
     const submitDisabled = computed(() => isEmptyCond.value);
 

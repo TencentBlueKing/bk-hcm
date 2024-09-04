@@ -24,14 +24,15 @@ export const SubnetInput = defineComponent({
   emits: ['changeIdx', 'update:modelValue'],
   setup(props, { expose, emit }) {
     // 用户可填的IP的V4四段表示法及范围
-    const { formModel, setFormValues } = useFormModel({
-      ip1: 0,
-      ip2: 0,
-      ip3: 0,
-      ip4: 0,
+    const [o1, o2, o3, o4] = props.ips.range[props.ips.idx].ip.split('.').map((v) => +v);
+    const { formModel, setFormValues, resetForm } = useFormModel({
+      ip1: o1,
+      ip2: o2,
+      ip3: o3,
+      ip4: o4,
     });
 
-    const { formModel: ipRange, setFormValues: setIpRange } = useFormModel({
+    const { formModel: ipRange, setFormValues: setIpRange, resetForm: resetIpRange } = useFormModel({
       r1: 0 as any,
       r2: 0 as any,
       r3: 0 as any,
@@ -159,6 +160,11 @@ export const SubnetInput = defineComponent({
         await Promise.all([o2Ref.value.getValue(), o3Ref.value.getValue(), o4Ref.value.getValue()]);
         return formModel;
       },
+      reset: () => {
+        resetForm();
+        resetIpRange();
+        newMask.value = props.ips.range[props.ips.idx].mask;
+      }
     });
 
     return () => (
