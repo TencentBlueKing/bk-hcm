@@ -32,7 +32,10 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
+	"hcm/pkg/thirdparty/esb/cmdb"
 	"hcm/pkg/tools/maps"
+	"hcm/pkg/tools/slice"
 )
 
 // ListMainAccountSummary list main account summary with options
@@ -58,6 +61,7 @@ func (s *service) ListMainAccountSummary(cts *rest.Contexts) (interface{}, error
 		var err error
 		expression, err = tools.And(req.Filter, expression)
 		if err != nil {
+			logs.Errorf("build filter expression failed, error: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
 		}
 	}
@@ -175,4 +179,39 @@ func (s *service) listRootAccount(kt *kit.Kit, accountIDs []string) (map[string]
 		rootNameMap[account.ID] = account
 	}
 	return rootNameMap, nil
+}
+
+func (s *service) listBiz(kt *kit.Kit, ids []int64) (map[int64]string, error) {
+	ids = slice.Unique(ids)
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	data := make(map[int64]string)
+	for _, split := range slice.Split(ids, int(filter.DefaultMaxInLimit)) {
+		rules := []cmdb.Rule{
+			&cmdb.AtomRule{
+				Field:    "bk_biz_id",
+				Operator: cmdb.OperatorIn,
+				Value:    split,
+			},
+		}
+		expression := &cmdb.QueryFilter{Rule: &cmdb.CombinedRule{Condition: "AND", Rules: rules}}
+
+		params := &cmdb.SearchBizParams{
+			BizPropertyFilter: expression,
+			Fields:            []string{"bk_biz_id", "bk_biz_name"},
+		}
+		resp, err := s.esbClient.Cmdb().SearchBusiness(kt, params)
+		if err != nil {
+			logs.Errorf("call cmdb search business api failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, fmt.Errorf("call cmdb search business api failed, err: %v", err)
+		}
+
+		for _, biz := range resp.Info {
+			data[biz.BizID] = biz.BizName
+		}
+	}
+
+	return data, nil
 }

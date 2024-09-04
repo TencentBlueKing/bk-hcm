@@ -122,6 +122,11 @@ func RuleNotIn[T any](fieldName string, values []T) *filter.AtomRule {
 	return &filter.AtomRule{Field: fieldName, Op: filter.NotIn.Factory(), Value: values}
 }
 
+// RuleIDGreaterThan 生成资源字段等于查询的AtomRule，即id > values
+func RuleIDGreaterThan(value any) *filter.AtomRule {
+	return &filter.AtomRule{Field: "id", Op: filter.IDGreaterThan.Factory(), Value: value}
+}
+
 // RuleGreaterThan 生成资源字段等于查询的AtomRule，即fieldName > values
 func RuleGreaterThan(fieldName string, value any) *filter.AtomRule {
 	return &filter.AtomRule{Field: fieldName, Op: filter.GreaterThan.Factory(), Value: value}

@@ -60,6 +60,7 @@ type Client struct {
 
 	MainAccount *MainAccountClient
 	RootAccount *RootAccountClient
+	Cos         *CosClient
 }
 
 type restClient struct {
@@ -102,5 +103,6 @@ func NewClient(client rest.ClientInterface) *Client {
 		SGCommonRel:    NewCloudSGCommonRelClient(client),
 		MainAccount:    NewMainAccountClient(client),
 		RootAccount:    NewRootAccountClient(client),
+		Cos:            NewCosClient(client),
 	}
 }

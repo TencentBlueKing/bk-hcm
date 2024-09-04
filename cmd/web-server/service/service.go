@@ -145,7 +145,7 @@ func (s *Service) ListenAndServeRest() error {
 	cors := restful.CrossOriginResourceSharing{
 		ExposeHeaders: []string{
 			"Content-Length", "Access-Control-Allow-Origin", "Access-Control-Allow-Headers",
-			"Cache-Control", "Content-Language", "Content-Type",
+			"Cache-Control", "Content-Language", "Content-Type", "Content-Disposition",
 		},
 		AllowedHeaders: []string{
 			"Accept", "Accept-encoding", "Authorization", "Content-Type", "Dnt",

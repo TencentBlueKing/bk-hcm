@@ -30,6 +30,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
+	tablebill "hcm/pkg/dal/table/bill"
 	"hcm/pkg/runtime/filter"
 )
 
@@ -37,7 +38,7 @@ import (
 type ExportBillItemReq struct {
 	BillYear    int                `json:"bill_year" validate:"required"`
 	BillMonth   int                `json:"bill_month" validate:"required"`
-	ExportLimit uint64             `json:"export_limit" validate:"omitempty"`
+	ExportLimit uint64             `json:"export_limit" validate:"required"`
 	Filter      *filter.Expression `json:"filter" validate:"omitempty"`
 }
 
@@ -45,6 +46,21 @@ type ExportBillItemReq struct {
 func (r *ExportBillItemReq) Validate() error {
 	if r.ExportLimit > constant.ExcelExportLimit {
 		return errors.New("export limit exceed")
+	}
+	if r.Filter != nil {
+		err := r.Filter.Validate(filter.NewExprOption(filter.RuleFields(tablebill.AccountBillItemColumns.ColumnTypes())))
+		if err != nil {
+			return err
+		}
+	}
+	if r.BillYear == 0 {
+		return errors.New("year is required")
+	}
+	if r.BillMonth == 0 {
+		return errors.New("month is required")
+	}
+	if r.BillMonth > 12 || r.BillMonth < 0 {
+		return errors.New("month must between 1 and 12")
 	}
 	return validator.Validate.Struct(r)
 }
@@ -191,4 +207,26 @@ func (req *AdjustmentItemSumReq) Validate() error {
 type AdjustmentItemSumResult struct {
 	Count   uint64                                                                       `json:"count"`
 	CostMap map[enumor.BillAdjustmentType]map[enumor.CurrencyCode]*bill.CostWithCurrency `json:"cost_map"`
+}
+
+// FileDownloadResp define file download resp.
+type FileDownloadResp struct {
+	ContentTypeStr        string
+	ContentDispositionStr string
+	FilePath              string
+}
+
+// ContentType ...
+func (f *FileDownloadResp) ContentType() string {
+	return f.ContentTypeStr
+}
+
+// ContentDisposition ...
+func (f *FileDownloadResp) ContentDisposition() string {
+	return f.ContentDispositionStr
+}
+
+// Filepath return file path.
+func (f *FileDownloadResp) Filepath() string {
+	return f.FilePath
 }

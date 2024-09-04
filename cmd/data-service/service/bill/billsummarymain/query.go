@@ -25,6 +25,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
 	tablebill "hcm/pkg/dal/table/bill"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
@@ -106,6 +107,7 @@ func (svc *service) ListBillSummaryBiz(cts *rest.Contexts) (interface{}, error) 
 	}
 	data, err := svc.dao.AccountBillSummaryMain().ListGroupByBiz(cts.Kit, opt)
 	if err != nil {
+		logs.Errorf("list bill summary main group by biz failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 

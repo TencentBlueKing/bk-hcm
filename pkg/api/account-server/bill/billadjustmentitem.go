@@ -22,8 +22,11 @@ package bill
 import (
 	"errors"
 
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
+	tablebill "hcm/pkg/dal/table/bill"
+	"hcm/pkg/runtime/filter"
 
 	"github.com/shopspring/decimal"
 )
@@ -79,5 +82,38 @@ type BillAdjustmentItemUpdateReq struct {
 
 // Validate ...
 func (r *BillAdjustmentItemUpdateReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// AdjustmentItemExportReq ...
+type AdjustmentItemExportReq struct {
+	BillYear    int                `json:"bill_year" validate:"required"`
+	BillMonth   int                `json:"bill_month" validate:"required"`
+	ExportLimit uint64             `json:"export_limit" validate:"required"`
+	Filter      *filter.Expression `json:"filter" validate:"omitempty"`
+}
+
+// Validate ...
+func (r *AdjustmentItemExportReq) Validate() error {
+	if r.ExportLimit > constant.ExcelExportLimit {
+		return errors.New("export limit exceed")
+	}
+	if r.Filter != nil {
+		err := r.Filter.Validate(filter.NewExprOption(
+			filter.RuleFields(tablebill.AccountBillAdjustmentItemColumns.ColumnTypes())))
+		if err != nil {
+			return err
+		}
+	}
+	if r.BillYear == 0 {
+		return errors.New("year is required")
+	}
+	if r.BillMonth == 0 {
+		return errors.New("month is required")
+	}
+	if r.BillMonth > 12 || r.BillMonth < 0 {
+		return errors.New("month must between 1 and 12")
+	}
+
 	return validator.Validate.Struct(r)
 }
