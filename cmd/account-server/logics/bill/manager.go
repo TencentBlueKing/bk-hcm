@@ -41,6 +41,8 @@ type BillManager struct {
 
 // Run bill manager
 func (bm *BillManager) Run(ctx context.Context) {
+
+	logs.Infof("bill allocation config: %+v", cc.AccountServer().BillAllocation)
 	if bm.Sd.IsMaster() {
 		if err := bm.syncMainControllers(); err != nil {
 			logs.Warnf("sync main controllers failed, err: %s", err.Error())
