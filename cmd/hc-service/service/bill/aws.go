@@ -43,7 +43,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/tools/converter"
+	cvt "hcm/pkg/tools/converter"
 
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 )
@@ -397,7 +397,7 @@ func (b bill) AwsPutBucketPolicy(kt *kit.Kit, accountID string,
 func (b bill) AwsPutReportDefinition(kt *kit.Kit, accountID string,
 	billInfo *cloud.AccountBillConfig[cloud.AwsBillConfigExtension]) error {
 
-	if billInfo.Status != constant.StatusSetBucketPolicy {
+	if billInfo.Status != constant.StatusSetBucketPolicy && billInfo.Status != constant.StatusReCurReport {
 		return nil
 	}
 
@@ -407,16 +407,22 @@ func (b bill) AwsPutReportDefinition(kt *kit.Kit, accountID string,
 		return err
 	}
 
+	// 获取cur名称
+	curName := aws.CurName
+	if billInfo.Status == constant.StatusReCurReport {
+		curName += fmt.Sprintf("%s", time.Now().Format("20060102150405"))
+	}
+
 	opt := &typesBill.AwsBillPutReportDefinitionReq{
 		Bucket:           billInfo.Extension.Bucket,
 		Region:           billInfo.Extension.Region,
-		CurName:          aws.CurName,
+		CurName:          curName,
 		CurPrefix:        aws.CurPrefix,
 		Format:           aws.CurFormat,
 		TimeUnit:         aws.CurTimeUnit,
 		Compression:      aws.CurCompression,
-		SchemaElements:   []*string{converter.ValToPtr(aws.ResourceSchemaElement)},
-		Artifacts:        []*string{converter.ValToPtr(aws.AthenaArtifact)},
+		SchemaElements:   []*string{cvt.ValToPtr(aws.ResourceSchemaElement)},
+		Artifacts:        []*string{cvt.ValToPtr(aws.AthenaArtifact)},
 		ReportVersioning: aws.ReportVersioning,
 	}
 	err = cli.PutReportDefinition(kt, opt)
@@ -435,6 +441,11 @@ func (b bill) AwsPutReportDefinition(kt *kit.Kit, accountID string,
 				"updateErr: %+v, err: %+v, rid: %s", accountID, billInfo.ID, updateErr, err, kt.Rid)
 		}
 		return err
+	}
+	// 记录日志方便排查问题
+	if billInfo.Status == constant.StatusReCurReport {
+		logs.Infof("aws put report definition regen cur report success, accountID: %s, billID: %s, billInfo: %+v, "+
+			"opt: %+v, rid: %s", accountID, billInfo.ID, cvt.PtrToVal(billInfo), cvt.PtrToVal(opt), kt.Rid)
 	}
 
 	// 更新
@@ -564,7 +575,7 @@ func (b bill) AwsCreateStack(kt *kit.Kit, accountID string,
 		Region:       billInfo.Extension.Region,
 		StackName:    billInfo.Extension.CurName,
 		TemplateURL:  billInfo.Extension.YmlURL,
-		Capabilities: []*string{converter.ValToPtr(aws.CapabilitiesIam)},
+		Capabilities: []*string{cvt.ValToPtr(aws.CapabilitiesIam)},
 	}
 	stackID, err := cli.CreateStack(kt, opt)
 	if err != nil {
@@ -662,8 +673,8 @@ func (b bill) CheckStackStatus(kt *kit.Kit, accountID string,
 		}
 
 		stackInfo = stackList[0]
-		stackCreateTime := converter.PtrToVal(stackInfo.CreationTime)
-		if converter.PtrToVal(stackInfo.StackStatus) == "CREATE_COMPLETE" ||
+		stackCreateTime := cvt.PtrToVal(stackInfo.CreationTime)
+		if cvt.PtrToVal(stackInfo.StackStatus) == "CREATE_COMPLETE" ||
 			nowTime.Sub(stackCreateTime).Seconds() > aws.StackTimeOut {
 			break
 		}
@@ -671,7 +682,7 @@ func (b bill) CheckStackStatus(kt *kit.Kit, accountID string,
 		time.Sleep(duration)
 	}
 
-	var stackStatus = converter.PtrToVal(stackInfo.StackStatus)
+	var stackStatus = cvt.PtrToVal(stackInfo.StackStatus)
 	var updateReq = protobill.AccountBillConfigUpdateReq[cloud.AwsBillConfigExtension]{ID: billInfo.ID}
 	if stackStatus != "CREATE_COMPLETE" {
 		updateReq.ErrMsg = append(updateReq.ErrMsg, "stack status is "+stackStatus)
