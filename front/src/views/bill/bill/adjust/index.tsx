@@ -17,18 +17,13 @@ import { useTable } from '@/hooks/useTable/useTable';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import { deleteBillsAdjustment, exportBillsAdjustmentItems, reqBillsAdjustmentList } from '@/api/bill';
 import { timeFormatter } from '@/common/util';
-import {
-  BILL_ADJUSTMENT_STATE__MAP,
-  BILL_ADJUSTMENT_TYPE__MAP,
-  BILL_BIZS_KEY,
-  BILL_MAIN_ACCOUNTS_KEY,
-  CURRENCY_MAP,
-} from '@/constants';
+import { BILL_ADJUSTMENT_STATE__MAP, BILL_ADJUSTMENT_TYPE__MAP, CURRENCY_MAP } from '@/constants';
 import { DoublePlainObject, QueryRuleOPEnum, RulesItem } from '@/typings';
 import useBillStore from '@/store/useBillStore';
 import { computed } from '@vue/reactivity';
-import { BillSearchRules, formatBillCost } from '@/utils';
+import { formatBillCost } from '@/utils';
 import { useRoute } from 'vue-router';
+import pluginHandler from '@pluginHandler/bill-manage';
 
 export default defineComponent({
   name: 'BillAdjust',
@@ -45,6 +40,9 @@ export default defineComponent({
     const createAdjustSideSliderRef = ref();
     const isEdit = ref(false);
     const editData = ref({});
+
+    const { useAdjustHandler } = pluginHandler;
+    const { mountedCallback } = useAdjustHandler();
 
     const isRowSelectEnable = ({ row, isCheckAll }: DoublePlainObject) => {
       if (isCheckAll) return true;
@@ -198,12 +196,7 @@ export default defineComponent({
     });
 
     onMounted(() => {
-      // 只有业务、二级账号有保存的需求
-      const billSearchRules = new BillSearchRules();
-      billSearchRules
-        .addRule(route, BILL_BIZS_KEY, 'bk_biz_id', QueryRuleOPEnum.IN)
-        .addRule(route, BILL_MAIN_ACCOUNTS_KEY, 'main_account_id', QueryRuleOPEnum.IN);
-      reloadTable(billSearchRules.rules);
+      mountedCallback(route, reloadTable);
     });
 
     return () => (
