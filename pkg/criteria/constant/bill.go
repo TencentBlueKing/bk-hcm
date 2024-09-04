@@ -31,3 +31,8 @@ const (
 	StatusReCurReport          = 99
 	StatusSuccess              = 100
 )
+
+const (
+	// BillExportFolderPrefix 账单导出文件夹前缀
+	BillExportFolderPrefix = "bill_export"
+)

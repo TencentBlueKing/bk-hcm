@@ -127,6 +127,7 @@ func (c *cmdbSvc) listBiz(kt *kit.Kit, filter *cmdb.QueryFilter) (interface{}, e
 	}
 	resp, err := c.esbClient.Cmdb().SearchBusiness(kt, params)
 	if err != nil {
+		logs.Errorf("call cmdb search business api failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, fmt.Errorf("call cmdb search business api failed, err: %v", err)
 	}
 

@@ -20,9 +20,13 @@
 package rest
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
+	"io"
 	"io/ioutil"
+	"net/http"
+	"os"
 	"strconv"
 
 	"hcm/pkg/criteria/constant"
@@ -136,6 +140,61 @@ func (c *Contexts) WithStatusCode(statusCode int) *Contexts {
 	return c
 }
 
+func (c *Contexts) respFile(resp FileDownloadResp) {
+	c.resp.AddHeader("Content-Type", resp.ContentType())
+	c.resp.AddHeader("Content-Disposition", resp.ContentDisposition())
+
+	filepath := resp.Filepath()
+	file, err := os.Open(filepath)
+	defer func() {
+		// 把文件流返回给前端后，将业务中创建的临时文件删除，业务如果需要保留文件，应当将相关的文件另外保存一份
+		err := os.Remove(filepath)
+		if err != nil {
+			logs.ErrorDepthf(1, "remove file failed, filepath: %s, err: %s, rid: %s",
+				filepath, err.Error(), c.Kit.Rid)
+			return
+		}
+	}()
+	defer file.Close()
+	if err != nil {
+		logs.ErrorDepthf(1, "open file failed, err: %s, rid: %s", err.Error(), c.Kit.Rid)
+		return
+	}
+	// 使用bufio.NewReader创建一个新的Reader，用于流式读取
+	reader := bufio.NewReader(file)
+
+	var buffer [4096]byte // 定义一个4096字节的缓冲区，大小可以根据实际情况调整
+	for {
+		// 从reader中读取数据到缓冲区
+		n, err := reader.Read(buffer[:cap(buffer)])
+		if err != nil {
+			if err == io.EOF {
+				// 到达文件末尾，退出循环
+				break
+			}
+			// 读取数据发生错误，记录日志并返回
+			logs.ErrorDepthf(1, "read file failed, err: %s, rid: %s", err.Error(), c.Kit.Rid)
+			return
+		}
+
+		// 将缓冲区中的数据写入HTTP响应
+		_, writeErr := c.resp.ResponseWriter.Write(buffer[:n])
+		if writeErr != nil {
+			// 写入响应时发生错误，记录日志并返回
+			logs.ErrorDepthf(1, "write response failed, err: %s, rid: %s", writeErr.Error(), c.Kit.Rid)
+			return
+		}
+		if f, ok := c.resp.ResponseWriter.(http.Flusher); ok {
+			f.Flush()
+		}
+	}
+
+	// 如果使用HTTP/1.1协议并且没有发送Content-Length头，可能需要调用Flush以确保数据被发送
+	if f, ok := c.resp.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
+}
+
 // respEntity response request with a success response.
 func (c *Contexts) respEntity(data interface{}) {
 	if c.respStatusCode != 0 {
@@ -143,8 +202,13 @@ func (c *Contexts) respEntity(data interface{}) {
 	}
 
 	c.resp.Header().Set(constant.RidKey, c.Kit.Rid)
-	c.resp.AddHeader(restful.HEADER_ContentType, restful.MIME_JSON)
 
+	if fileResp, ok := data.(FileDownloadResp); ok {
+		c.respFile(fileResp)
+		return
+	}
+
+	c.resp.AddHeader(restful.HEADER_ContentType, restful.MIME_JSON)
 	resp := &Response{
 		Code:    errf.OK,
 		Message: "",
@@ -168,7 +232,7 @@ func (c *Contexts) respError(err error) {
 	if c.Kit != nil {
 		c.resp.Header().Set(constant.RidKey, c.Kit.Rid)
 	}
-
+	c.resp.AddHeader(restful.HEADER_ContentType, restful.MIME_JSON)
 	resp := errf.Error(err).Resp()
 
 	encodeErr := json.NewEncoder(c.resp.ResponseWriter).Encode(resp)

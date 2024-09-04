@@ -41,6 +41,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 
@@ -204,7 +205,7 @@ func (b *billItemSvc) listSummaryMainByBusinessGroups(kt *kit.Kit, vendor enumor
 	businessGroupIDs = slice.Unique(businessGroupIDs)
 	idToCloudIDMap := make(map[string]string, len(businessGroupIDs))
 	accountIDs := make([]string, 0, len(businessGroupIDs))
-	for _, ids := range slice.Split(businessGroupIDs, int(core.DefaultMaxPageLimit)) {
+	for _, ids := range slice.Split(businessGroupIDs, int(filter.DefaultMaxInLimit)) {
 		listReq := &core.ListReq{
 			Filter: tools.ExpressionAnd(
 				tools.RuleEqual("vendor", vendor),

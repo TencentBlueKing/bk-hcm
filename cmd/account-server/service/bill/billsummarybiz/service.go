@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/client"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/rest"
+	"hcm/pkg/thirdparty/esb"
 )
 
 // InitService initial the main account service
@@ -35,12 +36,14 @@ func InitService(c *capability.Capability) {
 		client:     c.ApiClient,
 		authorizer: c.Authorizer,
 		audit:      c.Audit,
+		esbClient:  c.EsbClient,
 	}
 
 	h := rest.NewHandler()
 
 	// register handler
 	h.Add("ListBizSummary", http.MethodPost, "/bills/biz_summarys/list", svc.ListBizSummary)
+	h.Add("ExportBizSummary", http.MethodPost, "/bills/biz_summarys/export", svc.ExportBizSummary)
 
 	h.Load(c.WebService)
 }
@@ -49,4 +52,5 @@ type service struct {
 	client     *client.ClientSet
 	authorizer auth.Authorizer
 	audit      audit.Interface
+	esbClient  esb.Client
 }

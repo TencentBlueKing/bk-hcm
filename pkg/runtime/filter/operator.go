@@ -44,6 +44,7 @@ func init() {
 	opFactory[Equal.Factory()] = EqualOp(Equal)
 	opFactory[NotEqual.Factory()] = NotEqualOp(NotEqual)
 
+	opFactory[IDGreaterThan.Factory()] = IDGreaterThanOp(IDGreaterThan)
 	opFactory[GreaterThan.Factory()] = GreaterThanOp(GreaterThan)
 	opFactory[GreaterThanEqual.Factory()] = GreaterThanEqualOp(GreaterThanEqual)
 
@@ -117,6 +118,8 @@ const (
 	Equal OpType = "eq"
 	// NotEqual operator
 	NotEqual OpType = "neq"
+	// IDGreaterThan is the id field greater than the given value.
+	IDGreaterThan OpType = "id_gt"
 	// GreaterThan operator
 	GreaterThan OpType = "gt"
 	// GreaterThanEqual operator
@@ -171,6 +174,8 @@ func (op OpType) Validate() error {
 
 	case JSONEqual, JSONNotEqual, JSONIn, JSONContains, JSONOverlaps,
 		JSONContainsPath, JSONNotContainsPath, JSONLength:
+
+	case IDGreaterThan:
 
 	default:
 		return fmt.Errorf("unsupported operator: %s", op)
@@ -307,6 +312,37 @@ func (ne NotEqualOp) SQLExprAndValue(field string, value interface{}) (string, m
 
 	placeholder := fieldPlaceholderName(field)
 	return fmt.Sprintf(`%s != %s%s`, field, SqlPlaceholder, placeholder),
+		map[string]interface{}{placeholder: value}, nil
+}
+
+// IDGreaterThanOp is greater than operator
+type IDGreaterThanOp OpType
+
+// Name is greater than operator
+func (gt IDGreaterThanOp) Name() OpType {
+	return IDGreaterThan
+}
+
+// ValidateValue validate greater than value
+func (gt IDGreaterThanOp) ValidateValue(v interface{}, opt *ExprOption) error {
+	return nil
+}
+
+// SQLExprAndValue convert this operator's field and value to a mysql's sub
+// query expression.
+func (gt IDGreaterThanOp) SQLExprAndValue(field string, value interface{}) (string, map[string]interface{}, error) {
+	if len(field) == 0 {
+		return "", nil, errors.New("field is empty")
+	}
+
+	var err error
+	value, err = judgeAndParseTime(field, value)
+	if err != nil {
+		return "", nil, err
+	}
+
+	placeholder := fieldPlaceholderName(field)
+	return fmt.Sprintf(`%s > %s%s`, field, SqlPlaceholder, placeholder),
 		map[string]interface{}{placeholder: value}, nil
 }
 

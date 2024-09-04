@@ -500,6 +500,8 @@ accountserver:
       excludeAccountCloudIds:
     #      - 123456789
 
+
+
   ## pod配置
   ##
   replicas: 1
@@ -809,3 +811,5 @@ objectstore:
   bucketName:
   bucketRegion:
   isDebug:
+
+tmpFileDir: /tmp
