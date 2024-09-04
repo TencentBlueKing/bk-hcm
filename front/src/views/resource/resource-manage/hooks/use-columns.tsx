@@ -27,7 +27,7 @@ import { timeFormatter } from '@/common/util';
 import { IP_VERSION_MAP, LBRouteName, LB_NETWORK_TYPE_MAP, SCHEDULER_MAP } from '@/constants/clb';
 import { formatBillCost, getInstVip } from '@/utils';
 import { Spinner } from 'bkui-vue/lib/icon';
-import { APPLICATION_TYPE_MAP } from '@/views/service/apply-list/constants';
+import { APPLICATION_STATUS_MAP, APPLICATION_TYPE_MAP } from '@/views/service/apply-list/constants';
 import dayjs from 'dayjs';
 import { BILLS_ROOT_ACCOUNT_SUMMARY_STATE_MAP, BILL_TYPE__MAP_HW, CURRENCY_MAP } from '@/constants';
 import { BILL_VENDORS_MAP, BILL_SITE_TYPES_MAP } from '@/views/bill/account/account-manage/constants';
@@ -1830,31 +1830,28 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '单据状态',
       field: 'status',
-      render({ data }: any) {
+      render({ cell }: any) {
         let icon = StatusAbnormal;
-        let txt = '审批拒绝';
-        switch (data.status) {
+        const txt = APPLICATION_STATUS_MAP[cell];
+        switch (cell) {
           case 'pending':
           case 'delivering':
             icon = StatusLoading;
-            txt = '审批中';
             break;
           case 'pass':
           case 'completed':
           case 'deliver_partial':
             icon = StatusSuccess;
-            txt = '审批通过';
             break;
           case 'rejected':
           case 'cancelled':
           case 'deliver_error':
             icon = StatusFailure;
-            txt = '审批拒绝';
             break;
         }
         return (
           <div class={'cvm-status-container'}>
-            {txt === '审批中' ? (
+            {icon === StatusLoading ? (
               <Spinner fill='#3A84FF' class={'mr6'} width={14} height={14} />
             ) : (
               <img src={icon} class={'mr6'} width={14} height={14} />
