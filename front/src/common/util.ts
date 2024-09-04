@@ -57,7 +57,17 @@ export function deepMerge(...objectArray: any) {
  * @param format 格式
  * @returns 格式化后的时间
  */
-export function timeFormatter(val: string, format = 'YYYY-MM-DD HH:mm:ss', defaultVal = true) {
+export function timeFormatter(val: any, format = 'YYYY-MM-DD HH:mm:ss', defaultVal = true) {
+  return val ? dayjs(val).format(format) : defaultVal ? val : undefined;
+}
+
+/**
+ * 格式化 UTC时间
+ * @param val 待格式化时间
+ * @param format 格式
+ * @returns 格式化后的时间
+ */
+export function timeUTCFormatter(val: string, format = 'YYYY-MM-DD HH:mm:ss', defaultVal = true) {
   return val ? dayjs.utc(val).format(format) : defaultVal ? val : undefined;
 }
 
