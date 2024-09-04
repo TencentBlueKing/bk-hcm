@@ -15,23 +15,26 @@ export interface IHead {
   width: number;
   renderAppend?: () => VNode;
   required?: boolean;
+  memo?: string;
 }
 
 interface VendorHandlerValue {
   titles: IHead[];
   row: ReturnType<typeof defineComponent>;
   Record: () => Object & { key: string };
-  handleData: Function,
-  preHandle: Function,
+  handleData: Function;
+  preHandle: Function;
 }
+
+export type SecurityRuleType = 'ingress' | 'engress';
 
 export type Ext<T extends object> = T & { [key: string]: any };
 
-export const useVendorHandler = (vendor: VendorEnum) => {
+export const useVendorHandler = (vendor: VendorEnum, type: SecurityRuleType) => {
   const map: Map<VendorEnum, VendorHandlerValue> = new Map();
 
   map.set(VendorEnum.TCLOUD, {
-    titles: tcloudTitles,
+    titles: tcloudTitles(type),
     row: TcloudRenderRow,
     Record: TcloudRecord,
     handleData: tcloudHandler,
@@ -39,7 +42,7 @@ export const useVendorHandler = (vendor: VendorEnum) => {
   });
 
   map.set(VendorEnum.HUAWEI, {
-    titles: huaweiTitles,
+    titles: huaweiTitles(type),
     row: HuaweiRenderRow,
     Record: HuaweiRecord,
     handleData: huaweiHandler,
@@ -47,7 +50,7 @@ export const useVendorHandler = (vendor: VendorEnum) => {
   });
 
   map.set(VendorEnum.AWS, {
-    titles: awsTitles,
+    titles: awsTitles(type),
     row: AwsRenderRow,
     Record: AwsRecord,
     handleData: awsHandler,

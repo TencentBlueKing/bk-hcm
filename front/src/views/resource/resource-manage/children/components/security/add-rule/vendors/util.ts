@@ -8,18 +8,26 @@ import { random as _random } from 'lodash-es'
  */
 export const isPortAvailable = (val: string | number) => {
   const port = String(val).trim();
-  const isPortValid = /^(ALL|0|[1-9]\d*|(\d+,\d+)+|(\d+-\d+)+)$/.test(port);
+  const isPortValid = /^(ALL|([1-9]\d*|[1-9]\d*-\d+)(,([1-9]\d*|[1-9]\d*-\d+))*)$/.test(port);
   if (!isPortValid) return false;
-  if (/^ALL$/.test(port) || +port === 0) return true;
-  if (/,/g.test(port)) {
-    const nums = port.split(/,/);
-    return !nums.some((num) => +num < 0 || +num > 65535);
+  if (/^ALL$/.test(port)) return true;
+
+  const rangesAndPorts = port.split(/,/);
+  for (const rangeOrPort of rangesAndPorts) {
+    if (/-/.test(rangeOrPort)) {
+      const [start, end] = rangeOrPort.split(/-/).map(Number);
+      if (start < 1 || end < 1 || start > 65535 || end > 65535 || start >= end) {
+        return false;
+      }
+    } else {
+      const num = Number(rangeOrPort);
+      if (num < 1 || num > 65535) {
+        return false;
+      }
+    }
   }
-  if (/-/g.test(port)) {
-    const nums = port.split(/-/);
-    return !nums.some((num) => +num < 0 || +num > 65535) && +nums[0] < +nums[1];
-  }
-  return +port >= 0 && +port <= 65535;
+
+  return true;
 };
 
 /**

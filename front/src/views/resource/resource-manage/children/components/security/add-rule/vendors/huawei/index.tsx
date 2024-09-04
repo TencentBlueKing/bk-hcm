@@ -6,7 +6,7 @@ import useFormModel from '@/hooks/useFormModel';
 import SourceAddress from '../tcloud/SourceAddress';
 import { cleanObject, isPortAvailable, random } from '../util';
 import { HUAWEI_TYPE_LIST } from '@/constants/resource';
-import { Ext, IHead } from '../useVendorHanlder';
+import { Ext, IHead, SecurityRuleType } from '../useVendorHanlder';
 
 export interface HuaweiSecurityGroupRule {
   protocol: string; // 协议类型, 取值范围: icmp、tcp、udp、icmpv6或IP协议号约束
@@ -33,12 +33,22 @@ export const HuaweiRecord = (): Ext<HuaweiSecurityGroupRule> => ({
   sourceAddress: HuaweiSourceAddressType.IPV4,
 });
 
-export const huaweiTitles: IHead[] = [
+export const huaweiTitles: (type: SecurityRuleType) => IHead[] = (type) => [
   {
     width: 450,
     minWidth: 120,
     title: '优先级',
     memo: '优先级可选范围为1-100，默认值为1，即最高优先级。优先级数字越小，规则优先级级别越高。',
+  },
+  {
+    width: 450,
+    minWidth: 120,
+    title: type === 'ingress' ? '源地址类型' : '目标地址类型',
+  },
+  {
+    width: 450,
+    minWidth: 120,
+    title: type === 'ingress' ? '源地址' : '目标地址',
   },
   {
     width: 450,
@@ -54,18 +64,7 @@ export const huaweiTitles: IHead[] = [
     width: 450,
     minWidth: 120,
     title: '端口',
-    memo: '请输入0-65535之间数字或者ALL',
-  },
-  {
-    width: 450,
-    minWidth: 120,
-    title: '源地址类型',
-  },
-  {
-    width: 450,
-    minWidth: 120,
-    title: '源地址',
-    memo: '必须指定 CIDR 数据块 或者 安全组 ID',
+    memo: '请输入1-65535之间数字或者ALL',
   },
   {
     width: 450,
@@ -75,13 +74,15 @@ export const huaweiTitles: IHead[] = [
   {
     width: 450,
     minWidth: 120,
-    title: '描述',
+    title: '备注',
     memo: '请输入英文描述, 最大不超过256个字符',
+    required: false,
   },
   {
     width: 450,
     minWidth: 120,
     title: '操作',
+    required: false,
   },
 ];
 
@@ -98,6 +99,13 @@ export enum HuaweiSourceAddressType {
   IP_ADDRESS = 'remote_ip_prefix',
   SECURITY_GROUP = 'cloud_remote_group_id',
 }
+
+export const TcloudSourceTypeArr = [
+  HuaweiSourceAddressType.IPV4,
+  HuaweiSourceAddressType.IPV6,
+  HuaweiSourceAddressType.SECURITY_GROUP,
+  HuaweiSourceAddressType.IP_ADDRESS,
+];
 
 export const huaweiStrategys = [
   { value: 'allow', label: '允许' },
@@ -182,12 +190,12 @@ export const HuaweiRenderRow = defineComponent({
     return () => (
       <>
         <tr>
-          <td>
+        <td>
             <InputColumn
               ref={priorityRef}
               v-model={formModel.priority}
               type='number'
-              min={0}
+              min={1}
               max={100}
               rules={[
                 {
@@ -195,6 +203,27 @@ export const HuaweiRenderRow = defineComponent({
                   message: '优先级不能为空',
                 },
               ]}
+            />
+          </td>
+          <td>
+            <SelectColumn
+              list={huaweiSourceAddressTypes}
+              v-model={formModel.sourceAddress}
+              ref={sourceAddressTypeRef}
+              rules={[
+                {
+                  validator: (value: string) => Boolean(value),
+                  message: '源地址类型不能为空',
+                },
+              ]}
+            />
+          </td>
+          <td>
+            <SourceAddress
+              v-model={formModel[formModel.sourceAddress]}
+              {...props}
+              sourceAddressType={formModel.sourceAddress as HuaweiSourceAddressType}
+              ref={sourceAddressValRef}
             />
           </td>
           <td>
@@ -237,30 +266,9 @@ export const HuaweiRenderRow = defineComponent({
                   validator: (value: string) => {
                     return isPortAvailable(value);
                   },
-                  message: '请填写合法的端口号, 注意需要在 0-65535 之间, 若需使用逗号时请注意使用英文逗号,',
+                  message: '请填写合法的端口号, 注意需要在 1-65535 之间, 若需使用逗号时请注意使用英文逗号,',
                 },
               ]}
-            />
-          </td>
-          <td>
-            <SelectColumn
-              list={huaweiSourceAddressTypes}
-              v-model={formModel.sourceAddress}
-              ref={sourceAddressTypeRef}
-              rules={[
-                {
-                  validator: (value: string) => Boolean(value),
-                  message: '源地址类型不能为空',
-                },
-              ]}
-            />
-          </td>
-          <td>
-            <SourceAddress
-              v-model={formModel[formModel.sourceAddress]}
-              {...props}
-              sourceAddressType={formModel.sourceAddress as HuaweiSourceAddressType}
-              ref={sourceAddressValRef}
             />
           </td>
           <td>
@@ -277,7 +285,15 @@ export const HuaweiRenderRow = defineComponent({
             />
           </td>
           <td>
-            <InputColumn v-model={formModel.memo} />
+            <InputColumn
+              v-model={formModel.memo}
+              rules={[
+                {
+                  validator: (value: string) => value.length <= 256,
+                  message: '备注长度不能超过256个字符',
+                },
+              ]}
+            />
           </td>
           {!props.isEdit && (
             <td>

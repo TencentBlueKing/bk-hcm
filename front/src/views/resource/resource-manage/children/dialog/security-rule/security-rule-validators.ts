@@ -15,7 +15,7 @@ export const securityRuleValidators = (data: SecurityRule, vendor: VendorEnum) =
       },
       {
         trigger: 'blur',
-        message: '请填写合法的端口号, 注意需要在 0-65535 之间, 若需使用逗号时请注意使用英文逗号,',
+        message: '请填写合法的端口号, 注意需要在 1-65535 之间, 若需使用逗号时请注意使用英文逗号,',
         validator: () => {
           if (['cloud_service_id', 'cloud_service_group_id'].includes(data.protocol)) return true;
           return vendor === VendorEnum.HUAWEI || isPortAvailable(data.port);
@@ -127,7 +127,7 @@ export const securityRuleValidators = (data: SecurityRule, vendor: VendorEnum) =
       },
       {
         trigger: 'blur',
-        message: '请填写合法的端口号, 注意需要在 0-65535 之间, 若需使用逗号时请注意使用英文逗号,',
+        message: '请填写合法的端口号, 注意需要在 1-65535 之间, 若需使用逗号时请注意使用英文逗号,',
         validator: (val: string | number) => {
           return data.protocol === '*' || isPortAvailable(val);
         },
@@ -136,7 +136,7 @@ export const securityRuleValidators = (data: SecurityRule, vendor: VendorEnum) =
     source_port_range: [
       {
         trigger: 'blur',
-        message: '请填写合法的端口号, 注意需要在 0-65535 之间, 若需使用逗号时请注意使用英文逗号,',
+        message: '请填写合法的端口号, 注意需要在 1-65535 之间, 若需使用逗号时请注意使用英文逗号,',
         validator: isPortAvailable,
       },
     ],

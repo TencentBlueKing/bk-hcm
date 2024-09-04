@@ -4,7 +4,7 @@ import { SelectColumn, InputColumn, OperationColumn } from '@blueking/ediatable'
 import { SecurityVendorType, useProtocols } from '../useProtocolList';
 import useFormModel from '@/hooks/useFormModel';
 import SourceAddress, { TcloudSourceAddressType } from './SourceAddress';
-import { Ext, IHead } from '../useVendorHanlder';
+import { Ext, IHead, SecurityRuleType } from '../useVendorHanlder';
 import { cleanObject, isPortAvailable, random } from '../util';
 export interface TcloudSecurityGroupRule {
   protocol: string; // 协议, 取值: TCP, UDP, ICMP, ICMPv6, ALL
@@ -37,7 +37,17 @@ export const TcloudRecord = (): Ext<TcloudSecurityGroupRule> => ({
   sourceAddress: TcloudSourceAddressType.IPV4,
 });
 
-export const tcloudTitles: IHead[] = [
+export const tcloudTitles: (type: SecurityRuleType) => IHead[] = (type) => [
+  {
+    width: 450,
+    minWidth: 120,
+    title: type === 'ingress' ? '源地址类型' : '目标地址类型',
+  },
+  {
+    width: 450,
+    minWidth: 120,
+    title: type === 'ingress' ? '源地址' : '目标地址',
+  },
   {
     width: 450,
     minWidth: 120,
@@ -47,18 +57,7 @@ export const tcloudTitles: IHead[] = [
     width: 450,
     minWidth: 120,
     title: '端口',
-    memo: '请输入0-65535之间数字或者ALL',
-  },
-  {
-    width: 450,
-    minWidth: 120,
-    title: '源地址类型',
-  },
-  {
-    width: 450,
-    minWidth: 120,
-    title: '源地址',
-    memo: '必须指定 CIDR 数据块 或者 安全组 ID',
+    memo: '请输入1-65535之间数字或者ALL',
   },
   {
     width: 450,
@@ -68,8 +67,9 @@ export const tcloudTitles: IHead[] = [
   {
     width: 450,
     minWidth: 120,
-    title: '描述',
-    memo: '请输入英文描述, 最大不超过256个字符',
+    title: '备注',
+    memo: '请输入英文描述, 最大不超过100个字符',
+    required: false,
   },
   {
     width: 450,
@@ -195,6 +195,33 @@ export const TcloudRenderRow = defineComponent({
         <tr>
           <td>
             <SelectColumn
+              list={tcloudSourceAddressTypes}
+              v-model={formModel.sourceAddress}
+              ref={sourceAddressTypeRef}
+              rules={[
+                {
+                  validator: (value: string) => Boolean(value),
+                  message: '源地址类型不能为空',
+                },
+                {
+                  validator: (value: string) =>
+                    (formModel.protocol === 'icmpv6' && value !== TcloudSourceAddressType.IPV4) ||
+                    formModel.protocol !== 'icmpv6',
+                  message: 'ICMPV6 不支持 IPV4',
+                },
+              ]}
+            />
+          </td>
+          <td>
+            <SourceAddress
+              v-model={formModel[formModel.sourceAddress]}
+              {...props}
+              sourceAddressType={formModel.sourceAddress as TcloudSourceAddressType}
+              ref={sourceAddressValRef}
+            />
+          </td>
+          <td>
+            <SelectColumn
               list={protocols.value}
               v-model={formModel.protocol}
               ref={protocolRef}
@@ -261,39 +288,12 @@ export const TcloudRenderRow = defineComponent({
                     },
                     {
                       validator: (value: string) => isPortAvailable(value),
-                      message: '请填写合法的端口号, 注意需要在 0-65535 之间, 若需使用逗号时请注意使用英文逗号,',
+                      message: '请填写合法的端口号, 注意需要在 1-65535 之间, 若需使用逗号时请注意使用英文逗号,',
                     },
                   ]}
                 />
               )
             }
-          </td>
-          <td>
-            <SelectColumn
-              list={tcloudSourceAddressTypes}
-              v-model={formModel.sourceAddress}
-              ref={sourceAddressTypeRef}
-              rules={[
-                {
-                  validator: (value: string) => Boolean(value),
-                  message: '源地址类型不能为空',
-                },
-                {
-                  validator: (value: string) =>
-                    (formModel.protocol === 'icmpv6' && value !== TcloudSourceAddressType.IPV4) ||
-                    formModel.protocol !== 'icmpv6',
-                  message: 'ICMPV6 不支持 IPV4',
-                },
-              ]}
-            />
-          </td>
-          <td>
-            <SourceAddress
-              v-model={formModel[formModel.sourceAddress]}
-              {...props}
-              sourceAddressType={formModel.sourceAddress as TcloudSourceAddressType}
-              ref={sourceAddressValRef}
-            />
           </td>
           <td>
             <SelectColumn
@@ -309,7 +309,15 @@ export const TcloudRenderRow = defineComponent({
             />
           </td>
           <td>
-            <InputColumn v-model={formModel.memo} />
+            <InputColumn
+              v-model={formModel.memo}
+              rules={[
+                {
+                  validator: (value: string) => value.length <= 100,
+                  message: '备注长度最大不超过100个字符',
+                },
+              ]}
+            />
           </td>
           {!props.isEdit && (
             <td>

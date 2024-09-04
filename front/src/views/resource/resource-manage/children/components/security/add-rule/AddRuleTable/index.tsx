@@ -26,7 +26,7 @@ export default defineComponent({
   },
   setup(props, { expose }) {
     const resourceStore = useResourceStore();
-    const { handler } = useVendorHandler(props.vendor);
+    const { handler } = useVendorHandler(props.vendor, props.activeType);
     const instances = [ref()];
     const tableData = ref(props.isEdit ? [resourceStore.securityRuleDetail] : [handler.value.Record()]);
 

@@ -5,7 +5,7 @@ import SourceAddress from '../tcloud/SourceAddress';
 import useFormModel from '@/hooks/useFormModel';
 import { SecurityVendorType, useProtocols } from '../useProtocolList';
 import { cleanObject, isPortAvailable, random } from '../util';
-import { Ext, IHead } from '../useVendorHanlder';
+import { Ext, IHead, SecurityRuleType } from '../useVendorHanlder';
 import { AWS_PORT_ALL, AWS_PROTOCOL } from './DataHandler';
 
 export interface AwsSecurityGroupRule {
@@ -32,7 +32,16 @@ export const AwsRecord = (): Ext<AwsSecurityGroupRule> => ({
   sourceAddress: AwsSourceAddressType.IPV4,
 });
 
-export const awsTitles: IHead[] = [
+export const awsTitles: (type: SecurityRuleType) => IHead[] = (type) => [
+  {
+    width: 120,
+    title: type === 'ingress' ? '源地址类型' : '目标地址类型',
+  },
+  {
+    width: 120,
+    title: type === 'ingress' ? '源地址' : '目标地址',
+    memo: '必须指定 CIDR 数据块 或者 安全组 ID',
+  },
   {
     width: 120,
     title: '协议',
@@ -44,21 +53,14 @@ export const awsTitles: IHead[] = [
   },
   {
     width: 120,
-    title: '源地址类型',
-  },
-  {
-    width: 120,
-    title: '源地址',
-    memo: '必须指定 CIDR 数据块 或者 安全组 ID',
-  },
-  {
-    width: 120,
-    title: '描述',
+    title: '备注',
     memo: '请输入英文描述, 最大不超过256个字符',
+    required: false,
   },
   {
     width: 120,
     title: '操作',
+    required: false,
   },
 ];
 
@@ -121,7 +123,7 @@ export const AwsRenderRow = defineComponent({
     watch(
       () => formModel.protocol,
       (protocol) => {
-        if ([AWS_PROTOCOL.ALL, AWS_PROTOCOL.ICMP, AWS_PROTOCOL.ICMPv6 ].includes(protocol as AWS_PROTOCOL)) {
+        if ([AWS_PROTOCOL.ALL, AWS_PROTOCOL.ICMP, AWS_PROTOCOL.ICMPv6].includes(protocol as AWS_PROTOCOL)) {
           formModel.port = AWS_PORT_ALL;
         } else formModel.port = '';
       },
@@ -154,40 +156,6 @@ export const AwsRenderRow = defineComponent({
         <tr>
           <td>
             <SelectColumn
-              list={protocols.value}
-              v-model={formModel.protocol}
-              ref={protocolRef}
-              rules={[
-                {
-                  validator: (value: string) => Boolean(value),
-                  message: '协议不能为空',
-                },
-              ]}
-            />
-          </td>
-          <td>
-            <InputColumn
-              disabled={formModel.protocol === '-1'}
-              v-model={formModel.port}
-              ref={portRef}
-              rules={[
-                {
-                  validator: (value: string) => {
-                    return Boolean(value);
-                  },
-                  message: '端口不能为空',
-                },
-                {
-                  validator: (value: string) => {
-                    return isPortAvailable(value);
-                  },
-                  message: '请填写合法的端口号, 注意需要在 0-65535 之间, 若需使用逗号时请注意使用英文逗号,',
-                },
-              ]}
-            />
-          </td>
-          <td>
-            <SelectColumn
               list={awsSourceAddressTypes}
               v-model={formModel.sourceAddress}
               ref={sourceAddressTypeRef}
@@ -211,10 +179,53 @@ export const AwsRenderRow = defineComponent({
               {...props}
               sourceAddressType={formModel.sourceAddress}
               ref={sourceAddressValRef}
+              isCidr
             />
           </td>
           <td>
-            <InputColumn v-model={formModel.memo} />
+            <SelectColumn
+              list={protocols.value}
+              v-model={formModel.protocol}
+              ref={protocolRef}
+              rules={[
+                {
+                  validator: (value: string) => Boolean(value),
+                  message: '协议不能为空',
+                },
+              ]}
+            />
+          </td>
+          <td>
+            <InputColumn
+              disabled={['-1', 'icmp', 'icmpv6'].includes(formModel.protocol)}
+              v-model={formModel.port}
+              ref={portRef}
+              rules={[
+                {
+                  validator: (value: string) => {
+                    return Boolean(value);
+                  },
+                  message: '端口不能为空',
+                },
+                {
+                  validator: (value: string) => {
+                    return isPortAvailable(value);
+                  },
+                  message: '请填写合法的端口号, 注意需要在 1-65535 之间, 若需使用逗号时请注意使用英文逗号,',
+                },
+              ]}
+            />
+          </td>
+          <td>
+            <InputColumn
+              v-model={formModel.memo}
+              rules={[
+                {
+                  validator: (value: string) => value.length <= 256,
+                  message: '备注长度不能超过256个字符',
+                },
+              ]}
+            />
           </td>
           {!props.isEdit && (
             <td>

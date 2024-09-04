@@ -59,7 +59,7 @@ export const azureTitles: IHead[] = [
   {
     width: 450,
     minWidth: 120,
-    title: '源类型',
+    title: '源地址类型',
   },
   {
     width: 450,
@@ -76,7 +76,7 @@ export const azureTitles: IHead[] = [
   {
     width: 450,
     minWidth: 120,
-    title: '目标类型',
+    title: '目标地址类型',
   },
   {
     width: 450,
@@ -103,12 +103,14 @@ export const azureTitles: IHead[] = [
   {
     width: 450,
     minWidth: 120,
-    title: '描述',
+    title: '备注',
+    required: false,
   },
   {
     width: 450,
     minWidth: 120,
     title: '操作',
+    required: false,
   },
 ];
 
@@ -250,7 +252,7 @@ export const AzureRenderRow = defineComponent({
               ref={priorityRef}
               v-model={formModel.priority}
               type='number'
-              min={0}
+              min={100}
               max={4096}
               rules={[
                 {
@@ -286,7 +288,13 @@ export const AzureRenderRow = defineComponent({
                   validator: (value: string) => {
                     return isPortAvailable(value);
                   },
-                  message: '请填写合法的端口号, 注意需要在 0-65535 之间, 若需使用逗号时请注意使用英文逗号,',
+                  message: '请填写合法的端口号, 注意需要在 1-65535 之间',
+                },
+                {
+                  validator: (value: string) => {
+                    return !/,/.test(value);
+                  },
+                  message: '请填写合法的端口号,不支持逗号分隔',
                 },
               ]}
             />
@@ -327,7 +335,13 @@ export const AzureRenderRow = defineComponent({
                 },
                 {
                   validator: (value: string) => isPortAvailable(value),
-                  message: '请填写合法的端口号, 注意需要在 0-65535 之间, 若需使用逗号时请注意使用英文逗号,',
+                  message: '请填写合法的端口号, 注意需要在 1-65535 之间, 若需使用逗号时请注意使用英文逗号,',
+                },
+                {
+                  validator: (value: string) => {
+                    return !/,/.test(value);
+                  },
+                  message: '请填写合法的端口号,不支持逗号分隔',
                 },
               ]}
             />
@@ -346,7 +360,15 @@ export const AzureRenderRow = defineComponent({
             />
           </td>
           <td>
-            <InputColumn v-model={formModel.memo} />
+            <InputColumn
+              v-model={formModel.memo}
+              rules={[
+                {
+                  validator: (value: string) => value.length <= 256,
+                  message: '备注长度不能超过256个字符',
+                },
+              ]}
+            />
           </td>
           {!props.isEdit && (
             <td>

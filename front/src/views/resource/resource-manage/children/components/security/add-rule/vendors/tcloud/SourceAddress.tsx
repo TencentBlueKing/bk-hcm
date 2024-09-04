@@ -25,6 +25,7 @@ export default defineComponent({
     }>,
     relatedSecurityGroups: Array as PropType<Array<Object>>,
     value: Object as PropType<TcloudSecurityGroupRule>,
+    isCidr: Boolean as PropType<boolean>,
   },
   emits: ['update:modelValue'],
   setup(props, { emit, expose }) {
@@ -118,6 +119,13 @@ export default defineComponent({
                 message: '请填写合法的 IP',
                 validator: (val: string) => {
                   return validateIpCidr(val) !== IpType.invalid;
+                },
+              },
+              {
+                message: '请填写合法的 IP CIDR',
+                validator: (val: string) => {
+                  if (!props.isCidr) return true;
+                  return [IpType.ipv4_cidr, IpType.ipv6_cidr].includes(validateIpCidr(val));
                 },
               },
             ]}
