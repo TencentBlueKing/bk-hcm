@@ -1,0 +1,27 @@
+.subnet-input-wrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+  .item-wrapper {
+    margin: 0 1px;
+    .bk-ediatable-select {
+      height: 32px !important;
+      border: 1px solid #c4c6cc;
+      border-radius: 1px;
+    }
+    .bk-ediatable-input {
+      min-height: 32px;
+      .input-box {
+        height: 32px;
+        border: 1px solid #c4c6cc;
+        border-radius: 1px;
+      }
+      .error-icon {
+        top: 9px;
+      }
+    }
+  }
+  .w100 {
+    width: 100px;
+  }
+}
