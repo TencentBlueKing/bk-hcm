@@ -208,7 +208,7 @@ export default defineComponent({
           );
           [targetVpcDetail.value] = res.data.details;
         }
-        listenerNum.value = listenerNumRes.data.details[0].num;
+        listenerNum.value = listenerNumRes.data.details[0]?.num;
         vpcDetail.value = vpcDetailRes.data;
       },
       {
@@ -285,6 +285,8 @@ export default defineComponent({
         await businessStore.updateLbDetail({ id: props.id, snat_pro });
         Message({ theme: 'success', message: '修改成功' });
         await props.getDetails(props.id);
+      } catch (error) {
+        isSnatproOpen.value = false;
       } finally {
         isSnatproChange.value = false;
       }
