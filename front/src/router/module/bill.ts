@@ -8,7 +8,7 @@ const bill: RouteRecordRaw[] = [
     meta: {
       title: '云账号管理',
       activeKey: 'account-manage',
-      icon: 'hcm-icon bkhcm-icon-user-8',
+      icon: 'hcm-icon bkhcm-icon-account-manage',
     },
   },
   {
@@ -49,7 +49,7 @@ const bill: RouteRecordRaw[] = [
     meta: {
       title: '云账单管理',
       activeKey: 'bill-manage',
-      icon: 'hcm-icon bkhcm-icon-host',
+      icon: 'hcm-icon bkhcm-icon-bill-manage',
       hasPageRoute: true,
       checkAuth: 'account_bill_find',
     },
