@@ -26,6 +26,7 @@ const serviceMenus: RouteRecordRaw[] = [
       activeKey: 'myApply',
       // breadcrumb: [t('服务'), t('我的申请')],
       isShowBreadcrumb: true,
+      icon: 'hcm-icon bkhcm-icon-my-apply',
     },
   },
   {
