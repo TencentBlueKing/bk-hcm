@@ -3,9 +3,10 @@ import http from '@/http';
 import { reactive, ref, watch } from 'vue';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
-export interface IProp {
+export type IProp = {
   vendor: VendorEnum;
-}
+  [key: string]: any;
+};
 export interface IExtensionItem {
   label: string;
   value: string;
