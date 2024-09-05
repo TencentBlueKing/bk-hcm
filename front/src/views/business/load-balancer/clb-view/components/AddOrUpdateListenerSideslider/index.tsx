@@ -6,7 +6,7 @@ import CommonSideslider from '@/components/common-sideslider';
 import TargetGroupSelector from '../TargetGroupSelector';
 import CertSelector from '../CertSelector';
 // import stores
-import { useLoadBalancerStore, useAccountStore } from '@/store';
+import { useLoadBalancerStore, useAccountStore, useBusinessStore } from '@/store';
 // import hooks
 import { useI18n } from 'vue-i18n';
 import useAddOrUpdateListener from './useAddOrUpdateListener';
@@ -31,6 +31,7 @@ export default defineComponent({
   setup(props) {
     const loadBalancerStore = useLoadBalancerStore();
     const accountStore = useAccountStore();
+    const businessStore = useBusinessStore();
     const protocolButtonList = ['TCP', 'UDP', 'HTTP', 'HTTPS'];
     // use hooks
     const { t } = useI18n();
@@ -132,7 +133,10 @@ export default defineComponent({
         {isLbLocked.value ? (
           <Alert theme='danger' class={'mb24'}>
             当前负载均衡正在变更中，不允许新增监听器，
-            <Button text theme='primary' onClick={() => goAsyncTaskDetail(lockedLbInfo.value.flow_id)}>
+            <Button
+              text
+              theme='primary'
+              onClick={() => goAsyncTaskDetail(businessStore.list, lockedLbInfo.value.flow_id)}>
               查看当前任务
             </Button>
             。

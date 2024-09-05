@@ -11,6 +11,7 @@ import { timeFormatter } from '@/common/util';
 import { useRouter } from 'vue-router';
 import { useAccountStore } from '@/store';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
+import { GLOBAL_BIZS_KEY } from '@/common/constant';
 
 export default defineComponent({
   setup() {
@@ -120,11 +121,11 @@ export default defineComponent({
         router.push({
           path: `/${isResourcePage ? 'resource' : 'business'}/record/detail`,
           query: {
-            id: listItem.id,
+            record_id: listItem.id,
             name: listItem.res_name,
             flow: listItem.detail.data.res_flow.flow_id,
             res_id: listItem.res_id,
-            bizs: accountStore.bizs,
+            [GLOBAL_BIZS_KEY]: accountStore.bizs,
           },
         });
         return;

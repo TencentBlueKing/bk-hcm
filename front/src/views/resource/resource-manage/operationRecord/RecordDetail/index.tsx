@@ -85,7 +85,7 @@ export default defineComponent({
         type: 'audits/async_task',
         extension: {
           flow_id: route.query.flow,
-          audit_id: +route.query.id,
+          audit_id: +route.query.record_id,
           action_id: actionId.value || flowInfo.value.actions?.[0] || '1',
         },
         dataPath: 'data.tasks[0].params.targets',
@@ -105,7 +105,7 @@ export default defineComponent({
     };
 
     watch(
-      () => [route.query.id, route.query.flow],
+      () => [route.query.record_id, route.query.flow],
       ([id, flow]) => {
         getFlow(id as string, flow as string);
       },
@@ -121,7 +121,7 @@ export default defineComponent({
           lb_id: route.query.res_id as string,
           flow_id: flow.value.id,
         });
-        getFlow(route.query.id as string, route.query.flow as string);
+        getFlow(route.query.record_id as string, route.query.flow as string);
       } finally {
         isRetryLoading.value = false;
       }
@@ -134,7 +134,7 @@ export default defineComponent({
           lb_id: route.query.res_id as string,
           flow_id: flow.value.id,
         });
-        getFlow(route.query.id as string, route.query.flow as string);
+        getFlow(route.query.record_id as string, route.query.flow as string);
       } finally {
         isRetryLoading.value = false;
       }

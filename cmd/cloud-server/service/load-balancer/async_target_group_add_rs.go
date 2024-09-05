@@ -205,6 +205,7 @@ func (svc *lbSvc) batchCreateTargetDb(kt *kit.Kit, targets []*dataproto.TargetBa
 			TargetGroupID: item.TargetGroupID,
 			InstType:      item.InstType,
 			CloudInstID:   item.CloudInstID,
+			IP:            item.IP,
 			Port:          item.Port,
 			Weight:        item.Weight,
 		})
@@ -218,18 +219,21 @@ func (svc *lbSvc) buildAddTCloudTargetTasks(kt *kit.Kit, accountID, lbID string,
 	// 预检测
 	_, err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
 	if err != nil {
+		logs.Errorf("check resource flow relation failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
 	// 创建Flow跟Task的初始化数据
 	flowID, err := svc.initFlowAddTargetByLbID(kt, accountID, lbID, tgMap)
 	if err != nil {
+		logs.Errorf("init flow batch add target failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
 	// 锁定资源跟Flow的状态
 	err = svc.lockResFlowStatus(kt, lbID, enumor.LoadBalancerCloudResType, flowID, enumor.AddRSTaskType)
 	if err != nil {
+		logs.Errorf("lock resource flow status failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 

@@ -878,14 +878,44 @@ func (c *CMSI) validate() error {
 	return nil
 }
 
-// AwsSavingPlanOption ...
-type AwsSavingPlanOption struct {
-	RootAccountID            string `yaml:"rootAccountId"`
-	SpArnPrefix              string `yaml:"spArnPrefix"`
-	SpPurchaseAccountCloudID string `yaml:"SpPurchaseAccountCloudID"`
+// AwsSavingsPlansOption savings plans allocation option
+type AwsSavingsPlansOption struct {
+	// RootAccountCloudID which root account these savings plans belongs to
+	RootAccountCloudID string `yaml:"rootAccountCloudID" validate:"required"`
+	// SpArnPrefix arn prefix to match savings plans, empty for no filter
+	SpArnPrefix string `yaml:"spArnPrefix" validate:"omitempty"`
+	// SpPurchaseAccountCloudID which account purchase this saving plans,
+	// the cost of savings plans will be added to this account as income
+	SpPurchaseAccountCloudID string `yaml:"SpPurchaseAccountCloudID" validate:"required"`
+}
+
+func (opt *AwsSavingsPlansOption) validate() error {
+	if opt.RootAccountCloudID == "" {
+		return errors.New("root account cloud id cannot be empty for aws savings plans")
+	}
+
+	if opt.SpPurchaseAccountCloudID == "" {
+		return errors.New("sp purchase account cloud id cannot be empty for aws savings plans")
+	}
+	return nil
+}
+
+// AwsCommonExpense ...
+type AwsCommonExpense struct {
+	ExcludeAccountCloudIDs []string `yaml:"excludeAccountCloudIDs" validate:"dive,required"`
 }
 
 // BillAllocationOption ...
 type BillAllocationOption struct {
-	AwsSavingPlans []AwsSavingPlanOption `yaml:"awsSavingPlans"`
+	AwsSavingsPlans  []AwsSavingsPlansOption `yaml:"awsSavingsPlans"`
+	AwsCommonExpense AwsCommonExpense        `yaml:"awsCommonExpense"`
+}
+
+func (opt *BillAllocationOption) validate() error {
+	for i := range opt.AwsSavingsPlans {
+		if err := opt.AwsSavingsPlans[i].validate(); err != nil {
+			return errors.New(fmt.Sprintf("aws savings plans index %d validation failed, %v", i, err))
+		}
+	}
+	return nil
 }

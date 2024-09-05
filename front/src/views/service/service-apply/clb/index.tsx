@@ -8,6 +8,7 @@ import useBindEip from './hooks/useBindEip';
 import useRenderForm from './hooks/useRenderForm';
 import useBottomBar from './hooks/useBottomBar';
 import useHandleParams from './hooks/useHandleParams';
+import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
 // import types
 import { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
 // import utils
@@ -19,9 +20,10 @@ export default defineComponent({
   setup() {
     // use hooks
     const { t } = useI18n();
+    const { getBizsId, whereAmI } = useWhereAmI();
     // define data
     const formModel = reactive<ApplyClbModel>({
-      bk_biz_id: 0,
+      bk_biz_id: whereAmI.value === Senarios.business ? getBizsId() : 0,
       account_id: '',
       region: '',
       load_balancer_type: 'OPEN',

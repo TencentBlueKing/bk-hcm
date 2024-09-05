@@ -57,5 +57,16 @@ func GenerateStaticInstanceSelections() []client.InstanceSelection {
 				},
 			},
 		},
+		{
+			ID:     BillCloudVendorSelection,
+			Name:   "账单云厂商列表",
+			NameEn: "Bill Cloud Vendor List",
+			ResourceTypeChain: []client.ResourceChain{
+				{
+					SystemID: SystemIDHCM,
+					ID:       BillCloudVendor,
+				},
+			},
+		},
 	}
 }

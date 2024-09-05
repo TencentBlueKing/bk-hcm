@@ -1,73 +1,85 @@
 .create-account-dialog-container {
-    background: #F5F7FA;
-    .create-account-dialog-tools {
-      position: relative;
-      z-index: 999;
-      width: 100%;
-      min-height: 52px;
-      background: #FFFFFF;
-      box-shadow: 0 1px 0 0 #DCDEE5, 0 3px 4px 0 #4070cb0f;
-      border: 1px;
-      text-align: center;
-      padding-top: 14px;
-      padding-bottom: 14px;
-      font-size: 16px;
-      color: #313238;
-    }
-    .bk-modal-header {
-      .bk-dialog-header {
-        display: none;
+  background: #f5f7fa;
+  .create-account-dialog-tools {
+    position: relative;
+    z-index: 999;
+    width: 100%;
+    min-height: 52px;
+    background: #ffffff;
+    box-shadow: 0 1px 0 0 #dcdee5, 0 3px 4px 0 #4070cb0f;
+    border: 1px;
+    text-align: center;
+    padding-top: 14px;
+    padding-bottom: 14px;
+    font-size: 16px;
+    color: #313238;
+  }
+  .bk-modal-header {
+    .bk-dialog-header {
+      height: 56px;
+      background: #ffffff;
+      border: 1px solid #4070cb0f!important;
+      display: flex;
+      align-items: center;
+      padding-bottom: 15px;
+      .bk-dialog-title {
+        text-align: center !important;
       }
     }
-    .create-account-dialog-footer {
-        display: flex;
-        flex-direction: row;
-        justify-content: start;
-        padding: 0 300px 0 300px;
+  }
+  .create-account-dialog-footer {
+    display: flex;
+    flex-direction: row;
+    justify-content: start;
+    padding: 0 300px 0 300px;
 
-        .bk-button {
-          min-width: 88px;
-        }
-    }
-    .mr8 {
-        margin-right: 8px;
-    }
-    .create-account-dialog-content {
-        padding: 52px 300px 0 300px;
-        margin: 0 auto;
-        .create-account-dialog-steps {
-          position: fixed;
-          top: 52px;
-          left: 50%;
-          transform: translateX(-50%);
-          z-index: 999;
-          background-color: #f5f7fa;
-          align-items: center;
-          padding: 0 40%;
-          height: 72px;
-        }
-    }
-    .bk-modal-body {
-        padding-bottom: 0 !important;
-        background: #F5F7FA !important;
-
-        .bk-modal-content {
-          height: calc(100% - 52px) !important;
-          max-height: none !important;
-        }
-
-        .bk-modal-footer {
-          height: 52px !important;
-          display: flex;
-          align-items: center;
-        }
-
-        .bk-modal-close {
-          z-index: 9999;
-          top: 10px !important;
-          margin-right: 15px;
-          font-size: 24px !important;
-          color: #63656E !important;
-        }
+    .bk-button {
+      min-width: 88px;
     }
   }
+  .mr8 {
+    margin-right: 8px;
+  }
+  .create-account-dialog-content {
+    padding: 0 300px;
+    margin: 0 auto;
+    .create-account-dialog-steps {
+      position: fixed;
+      top: 52px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 999;
+      background-color: #f5f7fa;
+      align-items: center;
+      padding: 0 40%;
+      height: 72px;
+    }
+  }
+  .bk-modal-wrapper {
+    margin-top: 52px;
+    height: calc(100% - 52px);
+    .bk-modal-body {
+      padding-bottom: 0 !important;
+      background: #f5f7fa !important;
+
+      .bk-modal-content {
+        height: calc(100% - 110px) !important;
+        max-height: none !important;
+      }
+
+      .bk-modal-footer {
+        height: 52px !important;
+        display: flex;
+        align-items: center;
+      }
+
+      .bk-modal-close {
+        z-index: 9999;
+        top: 10px !important;
+        margin-right: 15px;
+        font-size: 24px !important;
+        color: #63656e !important;
+      }
+    }
+  }
+}

@@ -27,9 +27,8 @@ import (
 )
 
 // BuildMonthTask build month task
-func BuildMonthTask(
-	t enumor.MonthTaskType, rootAccountID string,
-	vendor enumor.Vendor, billYear, billMonth int) ts.CustomFlowTask {
+func BuildMonthTask(t enumor.MonthTaskType, rootAccountID string, vendor enumor.Vendor,
+	billYear, billMonth int, ext map[string]string) ts.CustomFlowTask {
 
 	return ts.CustomFlowTask{
 		ActionID:   action.ActIDType(uuid.UUID()),
@@ -40,6 +39,7 @@ func BuildMonthTask(
 			Vendor:        vendor,
 			BillYear:      billYear,
 			BillMonth:     billMonth,
+			Extension:     ext,
 		},
 	}
 }

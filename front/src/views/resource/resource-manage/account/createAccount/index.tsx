@@ -55,14 +55,15 @@ export default defineComponent({
     return () => (
       <Dialog
         fullscreen
+        showMask={false}
         isShow={props.isShow}
         onClosed={() => {
           step.value = 1;
           props.onCancel();
         }}
+        title='云账号接入'
         class={'create-account-dialog-container'}>
         {{
-          tools: () => <div class={'create-account-dialog-tools'}>云账号接入</div>,
           default: () => (
             <div class={'create-account-dialog-content'}>
               {step.value < 3 ? (

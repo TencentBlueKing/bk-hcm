@@ -74,7 +74,7 @@ func (v *BillClient) RootAccountBillList(
 	err := v.client.Post().
 		WithContext(ctx).
 		Body(req).
-		SubResourcef("/root-account-bills/list").
+		SubResourcef("/root_account_bills/list").
 		WithHeaders(h).
 		Do().
 		Into(resp)

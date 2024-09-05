@@ -3,20 +3,16 @@ import { useRouter } from 'vue-router';
 
 import { Button } from 'bkui-vue';
 import Amount from '../../components/amount';
-import BillsExportButton from '../../components/bills-export-button';
 import ConfirmBillDialog from './confirm';
 import RecalculateBillDialog from './recalculate';
 
 import { useI18n } from 'vue-i18n';
 import { useTable } from '@/hooks/useTable/useTable';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
-import {
-  exportBillsRootAccountSummary,
-  reqBillsRootAccountSummaryList,
-  reqBillsRootAccountSummarySum,
-} from '@/api/bill';
+import { reqBillsRootAccountSummaryList, reqBillsRootAccountSummarySum } from '@/api/bill';
 import { BillsRootAccountSummaryState } from '@/typings/bill';
 import { BILLS_ROOT_ACCOUNT_SUMMARY_STATE_MAP } from '@/constants';
+import pluginHandler from '@pluginHandler/bill-manage';
 
 export default defineComponent({
   name: 'PrimaryAccountTabPanel',
@@ -25,6 +21,9 @@ export default defineComponent({
     const router = useRouter();
     const bill_year = inject<Ref<number>>('bill_year');
     const bill_month = inject<Ref<number>>('bill_month');
+
+    const { usePrimaryHandler } = pluginHandler;
+    const { renderOperation } = usePrimaryHandler();
 
     const { columns, settings } = useColumns('billsRootAccountSummary');
 
@@ -126,20 +125,7 @@ export default defineComponent({
       <div class='full-height p24'>
         <CommonTable>
           {{
-            operation: () => (
-              <BillsExportButton
-                cb={() =>
-                  exportBillsRootAccountSummary({
-                    bill_year: bill_year.value,
-                    bill_month: bill_month.value,
-                    export_limit: 200000,
-                    filter,
-                  })
-                }
-                title={t('账单汇总-一级账号')}
-                content={t('导出当月一级账号的账单数据')}
-              />
-            ),
+            operation: () => renderOperation(bill_year.value, bill_month.value, filter),
             operationBarEnd: () => (
               <Button theme='primary' text onClick={goOperationRecord}>
                 <i class='hcm-icon bkhcm-icon-lishijilu mr4'></i>

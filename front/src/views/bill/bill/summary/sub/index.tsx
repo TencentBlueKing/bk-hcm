@@ -13,9 +13,8 @@ import {
   reqBillsMainAccountSummaryList,
   reqBillsMainAccountSummarySum,
 } from '@/api/bill';
-import { QueryRuleOPEnum, RulesItem } from '@/typings';
-import { BILL_BIZS_KEY, BILL_MAIN_ACCOUNTS_KEY } from '@/constants';
-import { BillSearchRules } from '@/utils';
+import { RulesItem } from '@/typings';
+import pluginHandler from '@pluginHandler/bill-manage';
 
 export default defineComponent({
   name: 'SubAccountTabPanel',
@@ -27,6 +26,9 @@ export default defineComponent({
 
     const searchRef = ref();
     const amountRef = ref();
+
+    const { useSubHandler } = pluginHandler;
+    const { mountedCallback } = useSubHandler();
 
     const { columns } = useColumns('billsMainAccountSummary');
     const { CommonTable, getListData, clearFilter, filter } = useTable({
@@ -62,12 +64,7 @@ export default defineComponent({
     });
 
     onMounted(() => {
-      // 只有业务、二级账号有保存的需求
-      const billSearchRules = new BillSearchRules();
-      billSearchRules
-        .addRule(route, BILL_BIZS_KEY, 'bk_biz_id', QueryRuleOPEnum.IN)
-        .addRule(route, BILL_MAIN_ACCOUNTS_KEY, 'main_account_id', QueryRuleOPEnum.IN);
-      reloadTable(billSearchRules.rules);
+      mountedCallback(route, reloadTable);
     });
 
     return () => (

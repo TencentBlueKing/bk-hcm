@@ -22,13 +22,13 @@ package aws
 import (
 	// types "hcm/pkg/adaptor/types/main-account"
 	"fmt"
+
 	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types"
 	proto "hcm/pkg/api/hc-service/main-account"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-	"hcm/pkg/logs/glog"
-	"hcm/pkg/tools/converter"
+	cvt "hcm/pkg/tools/converter"
 
 	"github.com/aws/aws-sdk-go/service/organizations"
 )
@@ -55,16 +55,16 @@ func (a *Aws) CreateAccount(kt *kit.Kit, req *proto.CreateAwsMainAccountReq) (*p
 		return nil, err
 	}
 
-	// create account
-	output, err := client.CreateAccount(&organizations.CreateAccountInput{
-		AccountName:            &req.CloudAccountName,
-		Email:                  &req.Email,
-		IamUserAccessToBilling: converter.ValToPtr("DENY"),
+	accountInput := &organizations.CreateAccountInput{
+		AccountName:            cvt.ValToPtr(req.CloudAccountName),
+		Email:                  cvt.ValToPtr(req.Email),
+		IamUserAccessToBilling: cvt.ValToPtr("DENY"),
 		// 不设置RoleName，使用默认的角色OrganizationAccountAccessRole
-	})
-
+	}
+	// create account
+	output, err := client.CreateAccount(accountInput)
 	if err != nil {
-		logs.Errorf("create aws account error, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
+		logs.Errorf("create aws account error, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
 		return nil, err
 	}
 
@@ -73,32 +73,50 @@ func (a *Aws) CreateAccount(kt *kit.Kit, req *proto.CreateAwsMainAccountReq) (*p
 	result, err := resPoller.PollUntilDone(a, kt, []*string{output.CreateAccountStatus.Id},
 		types.NewCreateMainAccountPollerOption())
 	if err != nil {
+		logs.Errorf("fail to poll aws account create state, err: %v, status id: %+v, rid: %s",
+			err, output.CreateAccountStatus.Id, kt.Rid)
 		return nil, err
 	}
-	if converter.PtrToVal(result.State) != AccountCreateStatusSucceeded {
-		return nil, fmt.Errorf("create aws account failed, reason: %s, err: %v, rid: %s", *result.FailureReason, err, kt.Rid)
+	switch state := cvt.PtrToVal(result.State); state {
+	case AccountCreateStatusFailed:
+		logs.Errorf("create aws account failed, status: %s, rid: %s", result.String(), kt.Rid)
+		if cvt.PtrToVal(result.FailureReason) == AccountCreateErrorMessageAccountAlreadyExists {
+			return nil, fmt.Errorf("create account failed, reason: email already exists")
+		}
+		return nil, fmt.Errorf("create aws account failed, state: %s, reason: %s",
+			cvt.PtrToVal(result.State), cvt.PtrToVal(result.FailureReason))
+	case AccountCreateStatusSucceeded:
+		return &proto.CreateAwsMainAccountResp{
+			AccountName: cvt.PtrToVal(result.AccountName),
+			AccountID:   cvt.PtrToVal(result.AccountId),
+		}, nil
+	default:
+		logs.Errorf("create aws account failed, unknown status state: %s, status: %s, rid: %s ",
+			state, result.String(), kt.Rid)
+		return nil, fmt.Errorf("create aws account failed, unknown state: %s, rid: %s", state, kt.Rid)
 	}
 
-	return &proto.CreateAwsMainAccountResp{
-		AccountName: *output.CreateAccountStatus.AccountName,
-		AccountID:   *output.CreateAccountStatus.AccountId,
-	}, nil
 }
 
 type createMainAccountPollingHandler struct {
 }
 
 // Done ...
-func (h *createMainAccountPollingHandler) Done(status *organizations.CreateAccountStatus) (bool, *organizations.CreateAccountStatus) {
-	// Note: 没有error的情况分两种, 一种是在创建中，创建中不结束Poll，返回false，另一种是创建成功，返回true
-	if converter.PtrToVal(status.State) == AccountCreateStatusInProgress {
+func (h *createMainAccountPollingHandler) Done(status *organizations.CreateAccountStatus) (
+	done bool, ret *organizations.CreateAccountStatus) {
+
+	// 只有还在进行中需要继续轮询
+	if cvt.PtrToVal(status.State) == AccountCreateStatusInProgress {
 		return false, status
 	}
+	// 其他情况均为已完成，交由上层处理
 	return true, status
 }
 
 // Poll ...
-func (h *createMainAccountPollingHandler) Poll(client *Aws, kt *kit.Kit, reqIds []*string) (*organizations.CreateAccountStatus, error) {
+func (h *createMainAccountPollingHandler) Poll(client *Aws, kt *kit.Kit, reqIds []*string) (
+	*organizations.CreateAccountStatus, error) {
+
 	if len(reqIds) == 0 {
 		return nil, fmt.Errorf("operation group id is required")
 	}
@@ -114,20 +132,18 @@ func (h *createMainAccountPollingHandler) Poll(client *Aws, kt *kit.Kit, reqIds 
 		CreateAccountRequestId: reqId,
 	})
 	if err != nil {
-		glog.Errorf("describe account create failed, err: %s, rid: %s", err.Error(), kt.Rid)
+		logs.Errorf("describe aws account create status failed, err: %v, result: %+v, rid: %s",
+			err, result, kt.Rid)
 		return nil, err
 	}
 
-	// Note: 成功或者在创建中，都不返回error。如果失败则返回error
-	switch converter.PtrToVal(result.CreateAccountStatus.State) {
-	case AccountCreateStatusSucceeded, AccountCreateStatusInProgress:
+	// 只有获取失败，或者状态未知返回error
+	switch cvt.PtrToVal(result.CreateAccountStatus.State) {
+	case AccountCreateStatusSucceeded, AccountCreateStatusInProgress, AccountCreateStatusFailed:
 		return result.CreateAccountStatus, nil
-	case AccountCreateStatusFailed:
-		if converter.PtrToVal(result.CreateAccountStatus.FailureReason) == AccountCreateErrorMessageAccountAlreadyExists {
-			return nil, fmt.Errorf("create account failed, state: %s, reason: email already exists", *result.CreateAccountStatus.State)
-		}
-		return nil, fmt.Errorf("create account failed, state: %s, reason: %s", *result.CreateAccountStatus.State, *result.CreateAccountStatus.FailureReason)
 	default:
-		return nil, fmt.Errorf("create account unknown progress, state: %s", *result.CreateAccountStatus.State)
+		logs.Errorf("create aws account got unknown status: %s, rid: %s", result.CreateAccountStatus.String(), kt.Rid)
+		return nil, fmt.Errorf("create  aws account unknown progress, state: %s",
+			cvt.PtrToVal(result.CreateAccountStatus.State))
 	}
 }

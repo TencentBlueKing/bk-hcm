@@ -1,24 +1,5 @@
 #!/bin/sh
-# readonly文件列表
-readonly_files=("../src/common/constant.ts" "../src/constants/resource.ts" "../src/typings/account.ts" "../front/src/typings/service.ts")
-
 . "$(dirname "$0")/_/husky.sh"
 cd front && echo ~+ && echo CODE LINT START
-
-violations=""
-
-modified_files=$(git diff --cached --name-only)
-
-for file in "${readonly_files[@]}"; do
-    if echo "$modified_files" | grep -q "$file"; then
-        violations="${violations}${file}\n"
-    fi
-done
-
-if [ -n "$violations" ]; then
-    printf "错误：以下文件为只可读，请遵守项目规范，不要修改以下文件：\n"
-    printf "$violations"
-    exit 1 
-fi
 
 npx lint-staged

@@ -56,6 +56,7 @@ func (s *service) ListRootAccountSummary(cts *rest.Contexts) (interface{}, error
 		var err error
 		expression, err = tools.And(req.Filter, expression)
 		if err != nil {
+			logs.Errorf("build filter expression failed, error: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
 		}
 	}

@@ -1,42 +1,101 @@
-import { computed, defineComponent, watch, ref } from 'vue';
+import { computed, defineComponent, ref, watch } from 'vue';
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import CommonCard from '@/components/CommonCard';
-import ConditionOptions from '../components/common/condition-options.vue';
+import ConditionOptions from '../components/common/condition-options/index.vue';
 import CloudAreaSelector from '../components/common/cloud-area-selector';
 import ZoneSelector from '../components/common/zone-selector';
-import { Form, Input, Checkbox, Button, Radio, Select } from 'bkui-vue';
-import { Info } from 'bkui-vue/lib/icon';
+import { Form, Input, Checkbox, Button, Radio } from 'bkui-vue';
 import { useI18n } from 'vue-i18n';
 import './index.scss';
 
-import {
-  ResourceTypeEnum,
-  VendorEnum,
-  CIDRLIST,
-  CIDRDATARANGE,
-  CIDRMASKRANGE,
-  TCLOUDCIDRMASKRANGE,
-} from '@/common/constant';
-// import useVpcOptions from '../hooks/use-vpc-options';
+import { ResourceTypeEnum, VendorEnum } from '@/common/constant';
 import useCondtion from '../hooks/use-condtion';
 import useVpcFormData from '../hooks/use-vpc-form-data';
-import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { useRouter } from 'vue-router';
+import { SubnetInput } from '@/components/subnet-input';
+import { IP_RANGES } from './contansts';
+import { Info } from 'bkui-vue/lib/icon';
+import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 
-const { FormItem, ComposeFormItem } = Form;
+const { FormItem } = Form;
 const { Group: RadioGroup } = Radio;
-const { Option } = Select;
-const ipv4CidrFir: any = ref('10');
 
 export default defineComponent({
   props: {},
   setup() {
-    const { cond, isEmptyCond } = useCondtion(ResourceTypeEnum.VPC);
-    const { isResourcePage } = useWhereAmI();
+    const { cond, isEmptyCond } = useCondtion();
+    const { isResourcePage, whereAmI } = useWhereAmI();
     const { formData, formRef, handleFormSubmit, submitting } = useVpcFormData(cond);
-    // const __ = useVpcOptions(cond, formData);
+    const resourceAccountStore = useResourceAccountStore();
     const { t } = useI18n();
     const router = useRouter();
+
+    const curIpRef = ref();
+    const subIpRef = ref();
+
+    const curCIDR = ref(IP_RANGES[VendorEnum.TCLOUD][0]);
+    const subCIDR = ref(IP_RANGES[VendorEnum.TCLOUD][0]);
+
+    const curRange = ref({
+      idx: 0,
+      range: IP_RANGES[VendorEnum.TCLOUD],
+    });
+    const subRange = ref({
+      idx: 0,
+      range: [curCIDR.value],
+    });
+
+    watch(
+      () => curCIDR.value,
+      (val) => {
+        subRange.value = {
+          idx: 0,
+          range: [val],
+        };
+        subCIDR.value = val;
+        formData.ipv4_cidr = `${val.ip}/${val.mask}`;
+      },
+      {
+        deep: true,
+      },
+    );
+
+    watch(
+      () => subCIDR.value,
+      (val) => {
+        formData.subnet.ipv4_cidr = `${val.ip}/${val.mask}`;
+      },
+      {
+        deep: true,
+      },
+    );
+
+    watch(
+      () => cond.vendor,
+      () => {
+        if (VendorEnum.GCP === cond.vendor) {
+          subRange.value = {
+            idx: 0,
+            range: IP_RANGES[VendorEnum.GCP],
+          };
+          subCIDR.value = IP_RANGES[VendorEnum.GCP][0];
+        }
+      },
+      {
+        immediate: true,
+      }
+    )
+
+    watch(
+      [() => resourceAccountStore.resourceAccount.id, whereAmI.value, ],
+      () => {
+        if (whereAmI.value === Senarios.resource) {
+          curIpRef.value?.reset();
+          subIpRef.value?.reset();
+        }
+      }
+    );
 
     const submitDisabled = computed(() => isEmptyCond.value);
 
@@ -112,58 +171,24 @@ export default defineComponent({
           {
             label: 'IPv4 CIDR',
             display: cond.vendor !== VendorEnum.GCP,
-            property: 'ipv4Cidr1',
             content: () => (
-              <>
-                <div class='flex-row align-items-center'>
-                  <ComposeFormItem class='mr5'>
-                    <div class='flex-row'>
-                      <Select class='w110' clearable={false} v-model={formData.ipv4_cidr[0]}>
-                        {CIDRLIST.map((item) => (
-                          <Option key={item.id} value={item.id} label={item.name}>
-                            {item.name}
-                          </Option>
-                        ))}
-                      </Select>
-                      <div>.</div>
-                      <Input
-                        type='number'
-                        disabled={ipv4CidrFir.value === '192'}
-                        placeholder={`${CIDRDATARANGE[ipv4CidrFir.value].min}-${CIDRDATARANGE[ipv4CidrFir.value].max}`}
-                        min={CIDRDATARANGE[ipv4CidrFir.value].min}
-                        max={CIDRDATARANGE[ipv4CidrFir.value].max}
-                        v-model={formData.ipv4_cidr[1]}
-                        class='w110'
-                      />
-                      <div>.</div>
-                      <Input type='number' min={0} max={255} v-model={formData.ipv4_cidr[2]} class='w110' />
-                      <div>.</div>
-                      <Input min={0} max={255} type='number' v-model={formData.ipv4_cidr[3]} class='w110' />
-                      <div>/</div>
-                      <Input
-                        type='number'
-                        placeholder={`${
-                          cond.vendor === 'tcloud'
-                            ? TCLOUDCIDRMASKRANGE[ipv4CidrFir.value].min
-                            : CIDRMASKRANGE[ipv4CidrFir.value].min
-                        }-${CIDRMASKRANGE[ipv4CidrFir.value].max}`}
-                        min={
-                          cond.vendor === 'tcloud'
-                            ? TCLOUDCIDRMASKRANGE[ipv4CidrFir.value].min
-                            : CIDRMASKRANGE[ipv4CidrFir.value].min
-                        }
-                        max={CIDRMASKRANGE[ipv4CidrFir.value].max}
-                        v-model={formData.ipv4_cidr[4]}
-                        class='w110'
-                      />
-                    </div>
-                  </ComposeFormItem>
-                  <Info
-                    v-BkTooltips={{
-                      content: networkTips.value ? networkTips.value : '请先选择云厂商',
-                    }}></Info>
-                </div>
-              </>
+              <div class={'flex-row align-item-center'}>
+                <SubnetInput
+                  disabled={!cond.vendor}
+                  ref={curIpRef}
+                  ips={curRange.value}
+                  v-model={curCIDR.value}
+                  onChangeIdx={(idx) => {
+                    curCIDR.value = IP_RANGES[cond.vendor][idx];
+                    curRange.value.idx = idx;
+                  }}
+                />
+                <Info
+                  class={'ml6'}
+                  v-BkTooltips={{
+                    content: networkTips.value ? networkTips.value : '请先选择云厂商',
+                  }}></Info>
+              </div>
             ),
           },
           {
@@ -262,67 +287,18 @@ export default defineComponent({
             content: () => (
               <>
                 <div class='flex-row align-items-center'>
-                  <ComposeFormItem class='mr5'>
-                    <div class='flex-row'>
-                      {cond.vendor === VendorEnum.GCP ? (
-                        <Select class='w110' clearable={false} v-model={formData.subnet.ipv4_cidr[0]}>
-                          {CIDRLIST.map((item) => (
-                            <Option key={item.id} value={item.id} label={item.name}>
-                              {item.name}
-                            </Option>
-                          ))}
-                        </Select>
-                      ) : (
-                        <Input
-                          type='number'
-                          disabled
-                          placeholder='1-255'
-                          min={1}
-                          max={255}
-                          v-model={formData.subnet.ipv4_cidr[0]}
-                          class='w110'
-                        />
-                      )}
-                      <div>.</div>
-                      <Input
-                        type='number'
-                        disabled={cond.vendor !== VendorEnum.GCP}
-                        placeholder='0-255'
-                        min={0}
-                        max={255}
-                        v-model={formData.subnet.ipv4_cidr[1]}
-                        class='w110'
-                      />
-                      <div>.</div>
-                      <Input
-                        type='number'
-                        placeholder='0-255'
-                        min={0}
-                        max={255}
-                        v-model={formData.subnet.ipv4_cidr[2]}
-                        class='w110'
-                      />
-                      <div>.</div>
-                      <Input
-                        type='number'
-                        placeholder='0-255'
-                        min={0}
-                        max={255}
-                        v-model={formData.subnet.ipv4_cidr[3]}
-                        class='w110'
-                      />
-                      <div>/</div>
-                      <Input
-                        type='number'
-                        placeholder='1-32'
-                        min={1}
-                        max={32}
-                        v-model={formData.subnet.ipv4_cidr[4]}
-                        class='w110'
-                      />
-                    </div>
-                  </ComposeFormItem>
-                  <Info v-BkTooltips={{ content: subnetTips.value }}></Info>
+                  <SubnetInput
+                    ips={subRange.value}
+                    ref={subIpRef}
+                    v-model={subCIDR.value}
+                    disabled={!cond.vendor}
+                    isSub
+                    onChangeIdx={(idx) => {
+                      subCIDR.value = IP_RANGES[cond.vendor][idx];
+                      subRange.value.idx = idx;
+                    }}
+                  />
+                  <Info v-BkTooltips={{ content: subnetTips.value }} class={'ml6'}></Info>
                 </div>
               </>
             ),
@@ -391,80 +367,7 @@ export default defineComponent({
           trigger: 'change',
         },
       ],
-      ipv4Cidr1: [
-        {
-          trigger: 'change',
-          message: 'IPv4 CIDR 不能为空',
-          validator: () => {
-            return !!formData.ipv4_cidr[4];
-          },
-        },
-      ],
-      ipv4Cidr2: [
-        {
-          trigger: 'change',
-          message: 'IPv4 CIDR 前缀长度不能为空',
-          validator: () => {
-            return !!formData.subnet.ipv4_cidr[4];
-          },
-        },
-        {
-          trigger: 'change',
-          message: '子网IPv4 CIDR不合法，或不在VPC的CIDR范围中',
-          validator: () => {
-            if (cond.vendor !== VendorEnum.GCP) {
-              return !formData.ipv4_cidr[4] || +formData.subnet.ipv4_cidr[4] >= +formData.ipv4_cidr[4];
-            }
-            switch (+formData.subnet.ipv4_cidr[0]) {
-              case 10:
-                return +formData.subnet.ipv4_cidr[4] >= 8;
-              case 172:
-                return +formData.subnet.ipv4_cidr[4] >= 12;
-              case 192:
-                return +formData.subnet.ipv4_cidr[4] >= 16;
-            }
-          },
-        },
-      ],
     };
-
-    watch(
-      () => formData.ipv4_cidr[0],
-      (val) => {
-        ipv4CidrFir.value = val;
-        const maskrang: any = cond.vendor === 'tcloud' ? TCLOUDCIDRMASKRANGE : CIDRMASKRANGE;
-        if (val === '192') {
-          formData.ipv4_cidr[1] = '168';
-          if (formData.ipv4_cidr[4] < maskrang[val].min) {
-            formData.ipv4_cidr[4] = maskrang[val].min;
-          }
-        } else if (val === '172') {
-          if (formData.ipv4_cidr[4] < maskrang[val].min) {
-            formData.ipv4_cidr[4] = maskrang[val].min;
-          }
-        } else {
-          if (formData.ipv4_cidr[1] > CIDRDATARANGE[val].max) {
-            formData.ipv4_cidr[1] = CIDRDATARANGE[val].max;
-          }
-          if (formData.ipv4_cidr[1] < CIDRDATARANGE[val].min) {
-            formData.ipv4_cidr[1] = CIDRDATARANGE[val].min;
-          }
-        }
-        // eslint-disable-next-line prefer-destructuring
-        formData.subnet.ipv4_cidr[0] = val;
-        // eslint-disable-next-line prefer-destructuring
-        formData.subnet.ipv4_cidr[1] = formData.ipv4_cidr[1];
-      },
-      { immediate: true },
-    );
-
-    watch(
-      () => formData.ipv4_cidr[1],
-      () => {
-        // eslint-disable-next-line prefer-destructuring
-        formData.subnet.ipv4_cidr[1] = formData.ipv4_cidr[1];
-      },
-    );
 
     return () => (
       <div>
@@ -475,7 +378,7 @@ export default defineComponent({
           <Form model={formData} rules={formRules} ref={formRef} onSubmit={handleFormSubmit} formType='vertical'>
             <ConditionOptions
               type={ResourceTypeEnum.VPC}
-              v-model:bizId={cond.bizId}
+              bizs={cond.bizId}
               v-model:cloudAccountId={cond.cloudAccountId}
               v-model:vendor={cond.vendor}
               v-model:region={cond.region}

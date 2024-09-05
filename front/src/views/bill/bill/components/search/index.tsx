@@ -11,10 +11,10 @@ import { useI18n } from 'vue-i18n';
 import { VendorEnum } from '@/common/constant';
 import { QueryRuleOPEnum, RulesItem } from '@/typings';
 import dayjs from 'dayjs';
-import BusinessSelector from '@/components/business-selector/index.vue';
-import { BILL_BIZS_KEY, BILL_MAIN_ACCOUNTS_KEY } from '@/constants';
+import { BILL_MAIN_ACCOUNTS_KEY } from '@/constants';
+import pluginHandler from '@pluginHandler/bill-manage';
 
-interface ISearchModal {
+export interface ISearchModal {
   vendor: VendorEnum[];
   root_account_id: string[];
   main_account_id: string[];
@@ -49,6 +49,9 @@ export default defineComponent({
   emits: ['search'],
   setup(props, { emit, expose }) {
     const { t } = useI18n();
+
+    const { useSearchCompHandler } = pluginHandler;
+    const { productSearchLabel, renderProductComponent } = useSearchCompHandler();
 
     const getDefaultModal = (): ISearchModal => ({
       vendor: props.vendor,
@@ -133,8 +136,8 @@ export default defineComponent({
           )}
           {props.searchKeys.includes('product_id') && (
             <div>
-              <div class={cssModule['search-label']}>{'业务'}</div>
-              <BusinessSelector v-model={modal.value.bk_biz_id} clearable multiple saveBizs bizsKey={BILL_BIZS_KEY} />
+              <div class={cssModule['search-label']}>{productSearchLabel}</div>
+              {renderProductComponent(modal)}
             </div>
           )}
           {props.searchKeys.includes('main_account_id') && (

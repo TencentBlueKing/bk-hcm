@@ -35,7 +35,7 @@ import (
 	dataservice "hcm/pkg/api/data-service"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	protobill "hcm/pkg/api/data-service/cloud/bill"
-	hcbillservice "hcm/pkg/api/hc-service/bill"
+	hcbill "hcm/pkg/api/hc-service/bill"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -43,14 +43,14 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/tools/converter"
+	cvt "hcm/pkg/tools/converter"
 
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 )
 
 // AwsGetBillList get aws bill list.
 func (b bill) AwsGetBillList(cts *rest.Contexts) (interface{}, error) {
-	req := new(hcbillservice.AwsBillListReq)
+	req := new(hcbill.AwsBillListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -96,7 +96,7 @@ func (b bill) AwsGetBillList(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	return &hcbillservice.AwsBillListResult{
+	return &hcbill.AwsBillListResult{
 		Count:   total,
 		Details: list,
 	}, nil
@@ -104,7 +104,7 @@ func (b bill) AwsGetBillList(cts *rest.Contexts) (interface{}, error) {
 
 // AwsBillPipeline aws bill pipeline
 func (b bill) AwsBillPipeline(cts *rest.Contexts) (interface{}, error) {
-	req := new(hcbillservice.BillPipelineReq)
+	req := new(hcbill.BillPipelineReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -207,7 +207,7 @@ func (b bill) GetBillInfo(kt *kit.Kit, accountID string) (
 }
 
 // CheckBillInfo check bill info.
-func (b bill) CheckBillInfo(kt *kit.Kit, req *hcbillservice.BillPipelineReq) (
+func (b bill) CheckBillInfo(kt *kit.Kit, req *hcbill.BillPipelineReq) (
 	*cloud.AccountBillConfig[cloud.AwsBillConfigExtension], bool, error) {
 
 	billInfo, err := b.GetBillInfo(kt, req.AccountID)
@@ -397,7 +397,7 @@ func (b bill) AwsPutBucketPolicy(kt *kit.Kit, accountID string,
 func (b bill) AwsPutReportDefinition(kt *kit.Kit, accountID string,
 	billInfo *cloud.AccountBillConfig[cloud.AwsBillConfigExtension]) error {
 
-	if billInfo.Status != constant.StatusSetBucketPolicy {
+	if billInfo.Status != constant.StatusSetBucketPolicy && billInfo.Status != constant.StatusReCurReport {
 		return nil
 	}
 
@@ -407,16 +407,22 @@ func (b bill) AwsPutReportDefinition(kt *kit.Kit, accountID string,
 		return err
 	}
 
+	// 获取cur名称
+	curName := aws.CurName
+	if billInfo.Status == constant.StatusReCurReport {
+		curName += fmt.Sprintf("%s", time.Now().Format("20060102150405"))
+	}
+
 	opt := &typesBill.AwsBillPutReportDefinitionReq{
 		Bucket:           billInfo.Extension.Bucket,
 		Region:           billInfo.Extension.Region,
-		CurName:          aws.CurName,
+		CurName:          curName,
 		CurPrefix:        aws.CurPrefix,
 		Format:           aws.CurFormat,
 		TimeUnit:         aws.CurTimeUnit,
 		Compression:      aws.CurCompression,
-		SchemaElements:   []*string{converter.ValToPtr(aws.ResourceSchemaElement)},
-		Artifacts:        []*string{converter.ValToPtr(aws.AthenaArtifact)},
+		SchemaElements:   []*string{cvt.ValToPtr(aws.ResourceSchemaElement)},
+		Artifacts:        []*string{cvt.ValToPtr(aws.AthenaArtifact)},
 		ReportVersioning: aws.ReportVersioning,
 	}
 	err = cli.PutReportDefinition(kt, opt)
@@ -435,6 +441,11 @@ func (b bill) AwsPutReportDefinition(kt *kit.Kit, accountID string,
 				"updateErr: %+v, err: %+v, rid: %s", accountID, billInfo.ID, updateErr, err, kt.Rid)
 		}
 		return err
+	}
+	// 记录日志方便排查问题
+	if billInfo.Status == constant.StatusReCurReport {
+		logs.Infof("aws put report definition regen cur report success, accountID: %s, billID: %s, billInfo: %+v, "+
+			"opt: %+v, rid: %s", accountID, billInfo.ID, cvt.PtrToVal(billInfo), cvt.PtrToVal(opt), kt.Rid)
 	}
 
 	// 更新
@@ -564,7 +575,7 @@ func (b bill) AwsCreateStack(kt *kit.Kit, accountID string,
 		Region:       billInfo.Extension.Region,
 		StackName:    billInfo.Extension.CurName,
 		TemplateURL:  billInfo.Extension.YmlURL,
-		Capabilities: []*string{converter.ValToPtr(aws.CapabilitiesIam)},
+		Capabilities: []*string{cvt.ValToPtr(aws.CapabilitiesIam)},
 	}
 	stackID, err := cli.CreateStack(kt, opt)
 	if err != nil {
@@ -662,8 +673,8 @@ func (b bill) CheckStackStatus(kt *kit.Kit, accountID string,
 		}
 
 		stackInfo = stackList[0]
-		stackCreateTime := converter.PtrToVal(stackInfo.CreationTime)
-		if converter.PtrToVal(stackInfo.StackStatus) == "CREATE_COMPLETE" ||
+		stackCreateTime := cvt.PtrToVal(stackInfo.CreationTime)
+		if cvt.PtrToVal(stackInfo.StackStatus) == "CREATE_COMPLETE" ||
 			nowTime.Sub(stackCreateTime).Seconds() > aws.StackTimeOut {
 			break
 		}
@@ -671,7 +682,7 @@ func (b bill) CheckStackStatus(kt *kit.Kit, accountID string,
 		time.Sleep(duration)
 	}
 
-	var stackStatus = converter.PtrToVal(stackInfo.StackStatus)
+	var stackStatus = cvt.PtrToVal(stackInfo.StackStatus)
 	var updateReq = protobill.AccountBillConfigUpdateReq[cloud.AwsBillConfigExtension]{ID: billInfo.ID}
 	if stackStatus != "CREATE_COMPLETE" {
 		updateReq.ErrMsg = append(updateReq.ErrMsg, "stack status is "+stackStatus)
@@ -758,7 +769,7 @@ func sanitizeString(str string) string {
 // AwsGetRootAccountBillList get aws bill record list
 func (b bill) AwsGetRootAccountBillList(cts *rest.Contexts) (any, error) {
 
-	req := new(hcbillservice.AwsRootBillListReq)
+	req := new(hcbill.AwsRootBillListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -768,7 +779,7 @@ func (b bill) AwsGetRootAccountBillList(cts *rest.Contexts) (any, error) {
 	}
 
 	if req.Page == nil {
-		req.Page = &hcbillservice.AwsBillListPage{Offset: 0, Limit: adcore.AwsQueryLimit}
+		req.Page = &hcbill.AwsBillListPage{Offset: 0, Limit: adcore.AwsQueryLimit}
 	}
 
 	// 查询aws账单基础表
@@ -805,8 +816,68 @@ func (b bill) AwsGetRootAccountBillList(cts *rest.Contexts) (any, error) {
 		return nil, err
 	}
 
-	return &hcbillservice.AwsBillListResult{
+	return &hcbill.AwsBillListResult{
 		Count:   count,
 		Details: resp,
 	}, nil
+}
+
+// AwsGetRootAccountSpTotalUsage ...
+func (b bill) AwsGetRootAccountSpTotalUsage(cts *rest.Contexts) (any, error) {
+
+	req := new(hcbill.AwsRootSpUsageTotalReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	rootAccount, err := b.cs.DataService().Global.RootAccount.GetBasicInfo(cts.Kit, req.RootAccountID)
+	if err != nil {
+		logs.Errorf("fait to find root account, err: %+v,rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// 查询aws账单基础表
+	billInfo, err := getRootAccountBillConfigInfo[billcore.AwsBillConfigExtension](
+		cts.Kit, req.RootAccountID, b.cs.DataService())
+	if err != nil {
+		logs.Errorf("aws get root account(id: %s) bill config for aws sp usage total failed, err: %+v, rid: %s",
+			req.RootAccountID, err, cts.Kit.Rid)
+		return nil, err
+	}
+	if billInfo == nil {
+		return nil, errf.Newf(errf.RecordNotFound, "bill config for root account: %s is not found",
+			req.RootAccountID)
+	}
+
+	cli, err := b.ad.AwsRoot(cts.Kit, req.RootAccountID)
+	if err != nil {
+		logs.Errorf("aws request adaptor client err, req: %+v, err: %+v,rid: %s", req, err, cts.Kit.Rid)
+		return nil, err
+	}
+	opt := &typesBill.AwsRootSpUsageOption{
+		PayerCloudID:  rootAccount.CloudID,
+		UsageCloudIDs: req.SpUsageAccountCloudIds,
+		SpArnPrefix:   req.SpArnPrefix,
+		Year:          req.Year,
+		Month:         req.Month,
+		StartDay:      req.StartDay,
+		EndDay:        req.EndDay,
+	}
+	usage, err := cli.GetRootSpTotalUsage(cts.Kit, billInfo, opt)
+	if err != nil {
+		logs.Errorf("fail to get root account sp total usage, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	result := hcbill.AwsSpUsageTotalResult{
+		UnblendedCost: usage.UnblendedCost,
+		SPCost:        usage.SpCost,
+		SPNetCost:     usage.SpNetCost,
+		AccountCount:  usage.AccountCount,
+	}
+	return result, nil
 }

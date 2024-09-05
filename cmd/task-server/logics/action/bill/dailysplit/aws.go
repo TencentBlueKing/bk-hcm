@@ -33,9 +33,11 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-const AwsSavingPlanAccountIDKey = "aws_saving_plan_account_id"
-const AwsSavingPlanARNPrefixKey = "aws_saving_plan_arn_prefix"
+const AwsSavingsPlanAccountCloudIDKey = "aws_savings_plan_account_cloud_id"
+const AwsSavingsPlanARNPrefixKey = "aws_savings_plan_arn_prefix"
 const AwsLineItemTypeSavingPlanCoveredUsage = "SavingsPlanCoveredUsage"
+const AwsSavingsPlansCostCode = "SavingsPlanCost"
+const AwsSavingsPlansCostCodeReverse = "SavingsPlanCostReverse"
 
 // AwsSplitter default account splitter
 type AwsSplitter struct {
@@ -85,14 +87,10 @@ func (ds *AwsSplitter) extractSpCostItem(kt *kit.Kit, opt *DailyAccountSplitActi
 	if opt.Extension == nil {
 		return nil, nil
 	}
-
-	if opt.Extension[AwsSavingPlanAccountIDKey] == "" || opt.
-		Extension[AwsSavingPlanARNPrefixKey] == "" {
+	spPrefix := opt.Extension[AwsSavingsPlanARNPrefixKey]
+	if len(spPrefix) == 0 {
 		return nil, nil
 	}
-
-	spMainAccount := opt.Extension[AwsSavingPlanAccountIDKey]
-	spPrefix := opt.Extension[AwsSavingPlanARNPrefixKey]
 
 	var ext corebill.AwsBillItemExtension
 	if err := rawjson.Unmarshal([]byte(item.Extension), &ext); err != nil {
@@ -114,7 +112,7 @@ func (ds *AwsSplitter) extractSpCostItem(kt *kit.Kit, opt *DailyAccountSplitActi
 	}
 	// 将的saving plan 消耗转化为两笔明细：
 	// 1. 消耗资源账号的支出明细，对应cost 为 savings_plan_net_savings_plan_effective_cost
-	// 2. 购买SP的账号的收入明细，对应cost 为 -savings_plan_net_savings_plan_effective_cost
+	// 2. 购买SP的账号的收入明细，对应cost 为 -savings_plan_net_savings_plan_effective_cost (该步骤在month task中实现)
 	spUsageItem := bill.BillItemCreateReq[rawjson.RawMessage]{
 		RootAccountID: opt.RootAccountID,
 		// 转化为消耗账户实际支出
@@ -128,36 +126,17 @@ func (ds *AwsSplitter) extractSpCostItem(kt *kit.Kit, opt *DailyAccountSplitActi
 		VersionID:     opt.VersionID,
 		Currency:      item.BillCurrency,
 		Cost:          spNetCost,
-		HcProductCode: "SavingsPlanCost",
-		HcProductName: "SavingsPlanCost",
+		HcProductCode: AwsSavingsPlansCostCode,
+		HcProductName: AwsSavingsPlansCostCode,
 		Extension:     cvt.ValToPtr(rawjson.RawMessage(item.Extension)),
 	}
 
-	spSpendItem := bill.BillItemCreateReq[rawjson.RawMessage]{
-		RootAccountID: opt.RootAccountID,
-		// 抵扣购买账户支出
-		MainAccountID: spMainAccount,
-		Vendor:        opt.Vendor,
-		ProductID:     mainAccount.OpProductID,
-		BkBizID:       mainAccount.BkBizID,
-		BillYear:      opt.BillYear,
-		BillMonth:     opt.BillMonth,
-		BillDay:       billDay,
-		VersionID:     opt.VersionID,
-		Currency:      item.BillCurrency,
-		Cost:          spNetCost.Neg(),
-		HcProductCode: "SavingsPlanCostReverse",
-		HcProductName: "SavingsPlanCostReverse",
-		Extension:     cvt.ValToPtr(rawjson.RawMessage(item.Extension)),
-	}
-
-	return []bill.BillItemCreateReq[rawjson.RawMessage]{spUsageItem, spSpendItem}, nil
+	return []bill.BillItemCreateReq[rawjson.RawMessage]{spUsageItem}, nil
 }
 
 // BuildAwsDailySplitOptionExt build aws daily split option extension
-func BuildAwsDailySplitOptionExt(spAccountID, spArnPrefix string) map[string]string {
+func BuildAwsDailySplitOptionExt(spArnPrefix string) map[string]string {
 	return map[string]string{
-		AwsSavingPlanAccountIDKey: spAccountID,
-		AwsSavingPlanARNPrefixKey: spArnPrefix,
+		AwsSavingsPlanARNPrefixKey: spArnPrefix,
 	}
 }

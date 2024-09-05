@@ -50,7 +50,7 @@ type AwsPuller struct {
 
 // EnsurePullTask ...
 func (hp *AwsPuller) EnsurePullTask(kt *kit.Kit, client *client.ClientSet,
-	billSummaryMain *dsbillapi.BillSummaryMainResult) error {
+	billSummaryMain *dsbillapi.BillSummaryMain) error {
 
 	dp := &daily.DailyPuller{
 		RootAccountID:      billSummaryMain.RootAccountID,
@@ -71,7 +71,7 @@ func (hp *AwsPuller) EnsurePullTask(kt *kit.Kit, client *client.ClientSet,
 
 // GetPullTaskList ...
 func (hp *AwsPuller) GetPullTaskList(kt *kit.Kit, client *client.ClientSet,
-	billSummaryMain *dsbillapi.BillSummaryMainResult) (
+	billSummaryMain *dsbillapi.BillSummaryMain) (
 	[]*bill.BillDailyPullTaskResult, error) {
 
 	dp := &daily.DailyPuller{

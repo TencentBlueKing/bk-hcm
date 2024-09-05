@@ -457,6 +457,9 @@ func (ar AtomRule) Validate(opt *ExprOption) error {
 			return fmt.Errorf("invalid %s's value, %v", ar.Field, err)
 		}
 	}
+	if strings.HasPrefix(string(ar.Op), "id_") && ar.Field != "id" {
+		return fmt.Errorf("operator %s field only support id field", ar.Op)
+	}
 
 	// validate the operator's value
 	if err := ar.Op.Operator().ValidateValue(ar.Value, opt); err != nil {

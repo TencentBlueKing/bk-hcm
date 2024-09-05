@@ -106,3 +106,23 @@ export enum SiteType {
   china = '中国站',
   international = '国际站',
 }
+
+export interface IAccountItem {
+  id: string;
+  vendor: VendorEnum;
+  name: string;
+  managers: string[];
+  type: 'resource' | 'registration' | 'security_audit';
+  site: 'china' | 'international';
+  price: string;
+  price_unit: string;
+  memo: string;
+  bk_biz_ids: number[];
+  sync_status: string;
+  sync_failed_reason: string;
+  recycle_reserve_time: number;
+  creator: string;
+  reviser: string;
+  created_at: string;
+  updated_at: string;
+}

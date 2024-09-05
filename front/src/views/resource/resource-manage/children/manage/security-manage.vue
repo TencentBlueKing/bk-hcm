@@ -59,7 +59,7 @@ const accountStore = useAccountStore();
 const activeType = ref('group');
 const fetchUrl = ref<string>('security_groups/list');
 
-const emit = defineEmits(['auth', 'handleSecrityType', 'edit', 'tabchange', 'editTemplate']);
+const emit = defineEmits(['auth', 'handleSecrityType', 'edit', 'editTemplate']);
 const { columns, generateColumnsSettings } = useColumns('group');
 const businessMapStore = useBusinessMapStore();
 
@@ -132,18 +132,6 @@ state.pagination = pagination;
 state.handlePageChange = handlePageChange;
 state.handlePageSizeChange = handlePageSizeChange;
 
-// 状态保持
-watch(
-  () => activeType.value,
-  (v) => {
-    state.isLoading = true;
-    state.pagination.current = 1;
-    state.pagination.limit = 10;
-    handleSwtichType(v);
-    resetSelections();
-  },
-);
-
 watch(
   () => datas.value,
   async (data) => {
@@ -158,11 +146,19 @@ watch(
         ids,
         bk_biz_id: whereAmI.value === Senarios.business ? accountStore.bizs : undefined,
       });
-      for (let i = 0; i < templateData.value.length; i++) {
-        const item = templateData.value[i];
-        item.instance_num = res.data?.[i]?.instance_num || '--';
-        item.rule_num = res.data?.[i]?.rule_num || '--';
-      }
+      const dataMap = new Map<any, { id: any; instance_num: any; rule_num: any }>(
+        res.data.map((element: { id: any; instance_num: any; rule_num: any }) => [element.id, element]),
+      );
+      templateData.value.forEach((item) => {
+        const foundElement = dataMap.get(item.id);
+        if (foundElement) {
+          item.instance_num = foundElement?.instance_num;
+          item.rule_num = foundElement?.rule_num;
+        } else {
+          item.instance_num = '--';
+          item.rule_num = '--';
+        }
+      });
     }
   },
   {
@@ -185,6 +181,7 @@ const handleSwtichType = async (type: string) => {
     state.params.columns = 'template';
   }
   emit('handleSecrityType', type);
+  router.replace({ query: { type: 'security', scene: type } });
 };
 
 // 抛出请求数据的方法，新增成功使用
@@ -827,15 +824,22 @@ watch(types, () => {
     activeType.value = 'group';
   }
 });
+
+// 状态保持
 watch(
-  activeType,
-  (val) => {
-    emit('tabchange', val);
+  () => activeType.value,
+  (v) => {
+    state.isLoading = true;
+    state.pagination.current = 1;
+    state.pagination.limit = 10;
+    handleSwtichType(v);
+    resetSelections();
   },
   {
     immediate: true,
   },
 );
+
 // const computedSettings = computed(() => {
 //   const fields = [];
 //   const columns = securityType.value === 'group' ? groupColumns : gcpColumns;
@@ -893,29 +897,31 @@ const securityHandleShowDelete = (data: any) => {
 <template>
   <div class="security-manager-page">
     <section>
-      <slot></slot>
-      <BatchDistribution
-        :selections="selections"
-        :type="
-          activeType === 'group'
-            ? DResourceType.security_groups
-            : activeType === 'template'
-            ? DResourceType.templates
-            : DResourceType.firewall
-        "
-        :get-data="
-          () => {
-            getList();
-            resetSelections();
-          }
-        "
-      />
       <section class="flex-row align-items-center mt20">
         <bk-radio-group v-model="activeType" :disabled="state.isLoading">
           <bk-radio-button v-for="item in types" :key="item.name" :label="item.name">
             {{ item.label }}
           </bk-radio-button>
         </bk-radio-group>
+        <div class="ml12">
+          <slot></slot>
+        </div>
+        <BatchDistribution
+          :selections="selections"
+          :type="
+            activeType === 'group'
+              ? DResourceType.security_groups
+              : activeType === 'template'
+              ? DResourceType.templates
+              : DResourceType.firewall
+          "
+          :get-data="
+            () => {
+              getList();
+              resetSelections();
+            }
+          "
+        />
         <bk-search-select
           class="search-filter search-selector-container"
           clearable

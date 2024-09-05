@@ -10,6 +10,7 @@ import { LbPrice } from '@/typings';
 import { useI18n } from 'vue-i18n';
 import bus from '@/common/bus';
 import http from '@/http';
+import { GLOBAL_BIZS_KEY } from '@/common/constant';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -107,7 +108,7 @@ export default (formModel: ApplyClbModel, formRef: any, isInquiryPricesLoading: 
     router.replace({
       path:
         whereAmI.value === Senarios.business
-          ? `/business/loadbalancer/clb-view?bizs=${route.query.bizs}`
+          ? `/business/loadbalancer/clb-view?bizs=${route.query[GLOBAL_BIZS_KEY]}`
           : '/resource/resource?type=clb',
       query: { ...route.query },
     });

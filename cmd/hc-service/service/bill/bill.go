@@ -54,10 +54,12 @@ func InitBillService(cap *capability.Capability) {
 	h.Add("HuaWeiGetFeeRecordList", "POST", "/vendors/huawei/feerecords/list", v.HuaWeiGetFeeRecordList)
 	h.Add("AzureGetBillList", "POST", "/vendors/azure/bills/list", v.AzureGetBillList)
 	h.Add("GcpGetBillList", "POST", "/vendors/gcp/bills/list", v.GcpGetBillList)
-	h.Add("GcpGetRootAccountBillList", "POST", "/vendors/gcp/root-account-bills/list", v.GcpGetRootAccountBillList)
+	h.Add("GcpGetRootAccountBillList", "POST", "/vendors/gcp/root_account_bills/list", v.GcpGetRootAccountBillList)
 	h.Add("AwsGetRootAccountBillList", "POST", "/vendors/aws/root_account_bills/list", v.AwsGetRootAccountBillList)
-	h.Add("AzureGetRootAccountBillList", "POST", "/vendors/azure/root_account_bills/list",
-		v.AzureGetRootAccountBillList)
+	h.Add("AzureGetRootAccountBillList", "POST",
+		"/vendors/azure/root_account_bills/list", v.AzureGetRootAccountBillList)
+	h.Add("AwsGetRootAccountSpTotalUsage", "GET",
+		"/vendors/aws/root_account_bills/sp_usage_total", v.AwsGetRootAccountSpTotalUsage)
 
 	h.Load(cap.WebService)
 }

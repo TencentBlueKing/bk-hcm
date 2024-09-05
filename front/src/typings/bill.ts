@@ -198,4 +198,3 @@ export type BillImportPreviewItems = BillImportPreviewItem[];
 type BillsExportBaseReqParams = { bill_year: number; bill_month: number; export_limit: number };
 export type BillsExportReqParams = BillsExportBaseReqParams & { filter: FilterType };
 export type BillsExportReqParamsWithBizs = BillsExportBaseReqParams & { bk_biz_ids: number[] };
-export type BillsExportResData = IQueryResData<{ download_url: string }>;

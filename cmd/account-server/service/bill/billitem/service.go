@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/client"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/rest"
+	"hcm/pkg/thirdparty/esb"
 )
 
 // InitBillItemService 注册账单明细服务
@@ -34,16 +35,21 @@ func InitBillItemService(c *capability.Capability) {
 		client:     c.ApiClient,
 		authorizer: c.Authorizer,
 		audit:      c.Audit,
+		esbClient:  c.EsbClient,
 	}
 
 	h := rest.NewHandler()
 
 	h.Add("ListBillItems", "POST", "/vendors/{vendor}/bills/items/list", svc.ListBillItems)
+
 	h.Add("ExportBillItems", "POST", "/vendors/{vendor}/bills/items/export", svc.ExportBillItems)
-	h.Add("ImportBillItemsPreview", "POST", "/vendors/{vendor}/bills/items/import/preview",
-		svc.ImportBillItemsPreview)
-	h.Add("ImportBillItems", "POST", "/vendors/{vendor}/bills/items/import",
-		svc.ImportBillItems)
+	h.Add("ImportBillItemsPreview", "POST",
+		"/vendors/{vendor}/bills/items/import/preview", svc.ImportBillItemsPreview)
+	h.Add("ImportBillItems",
+		"POST", "/vendors/{vendor}/bills/items/import", svc.ImportBillItems)
+
+	h.Add("PullBillItemForThirdParty", "POST",
+		"/vendors/{vendor}/bills/items/pull", svc.PullBillItemForThirdParty)
 
 	h.Load(c.WebService)
 }
@@ -53,4 +59,5 @@ type billItemSvc struct {
 	client     *client.ClientSet
 	authorizer auth.Authorizer
 	audit      audit.Interface
+	esbClient  esb.Client
 }

@@ -25,6 +25,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
 	tablebill "hcm/pkg/dal/table/bill"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
@@ -49,7 +50,7 @@ func (svc *service) ListBillSummaryMain(cts *rest.Contexts) (interface{}, error)
 		return nil, err
 	}
 
-	details := make([]*dataproto.BillSummaryMainResult, len(data.Details))
+	details := make([]*dataproto.BillSummaryMain, len(data.Details))
 	for indx, d := range data.Details {
 		details[indx] = toProtoPullerResult(&d)
 	}
@@ -57,8 +58,8 @@ func (svc *service) ListBillSummaryMain(cts *rest.Contexts) (interface{}, error)
 	return &dataproto.BillSummaryMainListResult{Details: details, Count: data.Count}, nil
 }
 
-func toProtoPullerResult(m *tablebill.AccountBillSummaryMain) *dataproto.BillSummaryMainResult {
-	return &dataproto.BillSummaryMainResult{
+func toProtoPullerResult(m *tablebill.AccountBillSummaryMain) *dataproto.BillSummaryMain {
+	return &dataproto.BillSummaryMain{
 		ID:                        m.ID,
 		RootAccountID:             m.RootAccountID,
 		RootAccountCloudID:        m.RootAccountCloudID,
@@ -106,6 +107,7 @@ func (svc *service) ListBillSummaryBiz(cts *rest.Contexts) (interface{}, error) 
 	}
 	data, err := svc.dao.AccountBillSummaryMain().ListGroupByBiz(cts.Kit, opt)
 	if err != nil {
+		logs.Errorf("list bill summary main group by biz failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 

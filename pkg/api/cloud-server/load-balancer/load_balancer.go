@@ -279,6 +279,8 @@ type TCloudRemoveTargetReq struct {
 	TargetIDs     []string `json:"target_ids" validate:"required,min=1,max=100,dive"`
 }
 
+// --------------------------[批量增加规则]--------------------------
+
 // TCloudRuleBatchCreateReq tcloud lb url rule batch create req.
 type TCloudRuleBatchCreateReq struct {
 	Rules []TCloudRuleCreate `json:"rules" validate:"min=1,dive"`
@@ -316,6 +318,38 @@ func (req *TCloudRuleCreate) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
+// --------------------------[批量移除规则]--------------------------
+
+// TcloudBatchDeleteRuleReq 批量移除规则的请求体，包含七层（url_rule）和四层（listener）规则
+type TcloudBatchDeleteRuleReq struct {
+	// 要删除的七层规则id列表（url_rule_ids）
+	URLRuleIDs []string `json:"url_rule_ids" validate:"required,min=1,max=100"`
+	// 要删除的四层规则id列表（listener_ids）
+	ListenerIDs []string `json:"listener_ids" validate:"required,min=1,max=100"`
+}
+
+// Validate validate request
+func (req TcloudBatchDeleteRuleReq) Validate() error {
+	if len(req.URLRuleIDs)+len(req.ListenerIDs) == 0 {
+		return fmt.Errorf("url_rule_ids and listener_ids cannot both be empty")
+	}
+
+	return validator.Validate.Struct(req)
+}
+
+// TcloudBatchDeleteRuleIDs delete rule ids
+type TcloudBatchDeleteRuleIDs struct {
+	// 要删除的七层规则id列表（url_rule_ids）
+	URLRuleIDs []string `json:"url_rule_ids" validate:"required,min=1,max=100"`
+	// 要删除的四层规则id列表（listener_ids）
+	ListenerIDs []string `json:"listener_ids" validate:"required,min=1,max=100"`
+}
+
+// Validate request.
+func (req *TcloudBatchDeleteRuleIDs) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
 // --------------------------[批量修改RS端口]--------------------------
 
 // TCloudBatchModifyTargetPortReq tcloud batch modify target port req.
@@ -339,6 +373,17 @@ type TCloudBatchModifyTargetWeightReq struct {
 
 // Validate request.
 func (req *TCloudBatchModifyTargetWeightReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// TgIDAndTCloudBatchModifyTargetWeightReq tcloud batch modify target weight req.
+type TgIDAndTCloudBatchModifyTargetWeightReq struct {
+	TgID string                           `json:"tg_id" validate:"required"`
+	Req  TCloudBatchModifyTargetWeightReq `json:"req" validate:"required"`
+}
+
+// Validate request.
+func (req *TgIDAndTCloudBatchModifyTargetWeightReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
@@ -503,6 +548,235 @@ type TargetGroupCreateReq struct {
 // Validate 验证目标组创建参数
 func (req *TargetGroupCreateReq) Validate() error {
 	return validator.Validate.Struct(req)
+}
+
+// --------------------------[标准运维-批量添加RS]--------------------------
+
+// TCloudSopsTargetBatchCreateReq tcloud sops target batch create req.
+type TCloudSopsTargetBatchCreateReq struct {
+	RuleQueryList []TargetGroupQueryItemForRsOnline `json:"rule_query_list" validate:"required,min=1,max=50,dive"`
+	RsIP          []string                          `json:"rs_ip" validate:"required,min=1,max=50"`
+	RsPort        []int                             `json:"rs_port" validate:"required,min=1,max=50"`
+	RsWeight      int64                             `json:"rs_weight" validate:"required,min=0,max=100"`
+	RsType        enumor.InstType                   `json:"rs_type" validate:"required"`
+}
+
+// Validate request.
+func (req *TCloudSopsTargetBatchCreateReq) Validate() error {
+	if len(req.RsIP) != len(req.RsPort) {
+		return fmt.Errorf("length of rs_ip and rs_port should be equal")
+	}
+
+	if req.RsType != "CVM" && req.RsType != "ENI" {
+		return fmt.Errorf("unspoort rs type: %s", req.RsType)
+	}
+
+	return validator.Validate.Struct(req)
+}
+
+// TargetGroupQueryItemForRsOnline 规则查询结构体-RS上线专属
+type TargetGroupQueryItemForRsOnline struct {
+	Region   string              `json:"region" validate:"required"`
+	Vip      []string            `json:"vip" validate:"max=50"`
+	VPort    []int               `json:"vport" validate:"max=50"`
+	RsIP     []string            `json:"rs_ip" validate:"max=50"`
+	RsType   string              `json:"rs_type"`
+	Protocol enumor.ProtocolType `json:"protocol" validate:"required"`
+	Domain   []string            `json:"domain" validate:"max=50"`
+	Url      []string            `json:"url" validate:"max=50"`
+}
+
+// Validate req
+func (req *TargetGroupQueryItemForRsOnline) Validate() error {
+	if err := req.validateProtocol(); err != nil {
+		return err
+	}
+	if len(req.RsType) != 0 {
+		if req.RsType != "CVM" && req.RsType != "ENI" {
+			return fmt.Errorf("unspoort rs type: %s", req.RsType)
+		}
+	}
+
+	//  RSIP 与 VIP 至少填一个
+	if len(req.RsIP) == 0 && len(req.Vip) == 0 {
+		return fmt.Errorf("rs ip and VIP, fill in at least one")
+	}
+
+	// 填写了VIP则必填Vport
+	if len(req.Vip) != 0 && len(req.VPort) == 0 {
+		return fmt.Errorf("if you fill in VIP, you must fill in Vport")
+	}
+
+	// RSIP与RSType同时填或不填
+	if (len(req.RsIP) == 0 && len(req.RsType) != 0) || (len(req.RsIP) != 0 && len(req.RsType) == 0) {
+		return fmt.Errorf("rs ip and RSType can be filled in at the same time or not")
+	}
+
+	// 七层下必填Domain、Url
+	if !req.Protocol.IsLayer7Protocol() && (len(req.Domain) != 0 || len(req.Url) != 0) {
+		return fmt.Errorf("is not a seven-layer rule, the domain name cannot be filled in")
+	}
+	if req.Protocol.IsLayer7Protocol() && (len(req.Domain) == 0 || len(req.Url) == 0) {
+		return fmt.Errorf("using the seven-layer rule, the domain name must be filled in")
+	}
+
+	return validator.Validate.Struct(req)
+}
+
+func (req *TargetGroupQueryItemForRsOnline) validateProtocol() error {
+	if req.Protocol != enumor.HttpProtocol && req.Protocol != enumor.HttpsProtocol &&
+		req.Protocol != enumor.TcpProtocol && req.Protocol != enumor.UdpProtocol {
+		return fmt.Errorf("unspoort protocol: %s", req.Protocol)
+	}
+	return nil
+}
+
+// --------------------------[标准运维-批量移除RS]--------------------------
+
+// TCloudSopsTargetBatchRemoveReq tcloud sops target batch remove req.
+type TCloudSopsTargetBatchRemoveReq struct {
+	RuleQueryList []TargetGroupRuleQueryItem `json:"rule_query_list" validate:"required,min=1,max=10,dive"`
+}
+
+// Validate request.
+func (req *TCloudSopsTargetBatchRemoveReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// TargetGroupRuleQueryItem 目标组规则查询结构体
+type TargetGroupRuleQueryItem struct {
+	Region   string              `json:"region" validate:"required"`
+	Vip      []string            `json:"vip" validate:"max=50"`
+	VPort    []int               `json:"vport" validate:"max=50"`
+	RsIP     []string            `json:"rs_ip" validate:"required,minx=1,max=50"`
+	RsType   string              `json:"rs_type" validate:"required"`
+	Protocol enumor.ProtocolType `json:"protocol"`
+	Domain   string              `json:"domain"`
+}
+
+// Validate ...
+func (req *TargetGroupRuleQueryItem) Validate() error {
+	if req.RsType != "CVM" && req.RsType != "ENI" {
+		return fmt.Errorf("unspoort rs type: %s", req.RsType)
+	}
+
+	if len(req.Protocol) != 0 {
+		if req.Protocol != enumor.HttpProtocol && req.Protocol != enumor.HttpsProtocol &&
+			req.Protocol != enumor.TcpProtocol && req.Protocol != enumor.UdpProtocol {
+			return fmt.Errorf("unspoort protocol: %s", req.Protocol)
+		}
+	}
+
+	if req.Protocol.IsLayer7Protocol() && len(req.Domain) == 0 {
+		return fmt.Errorf("using the seven-layer rule, the domain name must be filled in")
+	}
+	if !req.Protocol.IsLayer7Protocol() && len(req.Domain) != 0 {
+		return fmt.Errorf("is not a seven-layer rule, the domain name cannot be filled in")
+	}
+
+	return validator.Validate.Struct(req)
+}
+
+// --------------------------[标准运维-批量修改权重]--------------------------
+
+// TCloudSopsTargetBatchModifyWeightReq tcloud sops target batch modify weight req.
+type TCloudSopsTargetBatchModifyWeightReq struct {
+	RuleQueryList []TargetGroupRuleQueryItem `json:"rule_query_list" validate:"required,min=1,max=10,dive"`
+	RsWeight      int64                      `json:"rs_weight" validate:"required,min=0,max=100"`
+}
+
+// Validate request.
+func (req *TCloudSopsTargetBatchModifyWeightReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// --------------------------[标准运维-批量添加规则]--------------------------
+// TODO 依赖于clb excel导入功能，暂时注释，需clb excel导入功能确定后修改
+// TCloudSopsRuleBatchCreateReq tloud sops rule batch create request
+//type TCloudSopsRuleBatchCreateReq struct {
+//	BindRSRecords []*BindRSRecordForSops `json:"bind_rs_records" validate:"required,dive,required"`
+//}
+//
+//// Validate validate req data
+//func (req *TCloudSopsRuleBatchCreateReq) Validate() error {
+//	return validator.Validate.Struct(req)
+//}
+//
+//// BindRSRecordForSops ...
+//type BindRSRecordForSops struct {
+//	//Action enumor.BatchOperationActionType `json:"action"`
+//
+//	ListenerName string              `json:"name"`
+//	Protocol     enumor.ProtocolType `json:"protocol"`
+//indRSRecordForSops struct {
+//	TODO 这里的内容依赖clb excel导入的代码，暂时注释，等待clb excel导入合并后再
+//	IPDomainType string `json:"ip_domain_type"`
+//	VIP          string `json:"vip"`
+//	VPorts       []int  `json:"vports"`
+//	HaveEndPort  bool   `json:"have_end_port"` // 是否是端口端
+//
+//	Domain     string   `json:"domain"`         // 域名
+//	URLPath    string   `json:"url"`            // URL路径
+//	ServerCert []string `json:"cert_cloud_ids"` // ref
+//	ClientCert string   `json:"ca_cloud_id"`    // 客户端证书
+//
+//	InstType enumor.InstType `json:"inst_type"` // 后端类型 CVM、ENI
+//	RSIPs    []string        `json:"rs_ips"`
+//	RSPorts  []int           `json:"rs_ports"`
+//	Weight   []int           `json:"weight"`
+//	//RSInfos  []*lblogic.RSInfo `json:"rs_info"` // 后端实例信息
+//
+//	Scheduler      string `json:"scheduler"`       // 均衡方式
+//	SessionExpired int64  `json:"session_expired"` // 会话保持时间，单位秒
+//	HealthCheck    bool   `json:"health_check"`    // 是否开启健康检查
+//}
+
+// --------------------------[标准运维-批量移除规则]--------------------------
+
+// TCloudSopsRuleBatchDeleteReq tloud sops rule batch delete request
+type TCloudSopsRuleBatchDeleteReq struct {
+	RuleQueryList []RuleQueryItemForRuleOffline `json:"rule_query_list" validate:"required,min=1,max=10,dive,required"`
+}
+
+// Validate request.
+func (req *TCloudSopsRuleBatchDeleteReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// RuleQueryItemForRuleOffline 规则查询结构体-规则下线专属
+type RuleQueryItemForRuleOffline struct {
+	Region   string                `json:"region" validate:"required"`
+	Vip      []string              `json:"vip" validate:"max=50"`
+	VPort    []int                 `json:"vport" validate:"max=50"`
+	RsIP     []string              `json:"rs_ip" validate:"max=50"`
+	RsType   string                `json:"rs_type" validate:"max=50"`
+	Protocol []enumor.ProtocolType `json:"protocol" validate:"max=50"`
+	Domain   []string              `json:"domain" validate:"max=50"`
+	Url      []string              `json:"url" validate:"max=50"`
+}
+
+// Validate ...
+func (r *RuleQueryItemForRuleOffline) Validate() error {
+	if len(r.RsType) != 0 {
+		if r.RsType != "CVM" && r.RsType != "ENI" {
+			return fmt.Errorf("unspoort rs type: %s", r.RsType)
+		}
+	}
+	for _, protocol := range r.Protocol {
+		if protocol != enumor.HttpProtocol && protocol != enumor.HttpsProtocol &&
+			protocol != enumor.TcpProtocol && protocol != enumor.UdpProtocol {
+			return fmt.Errorf("unspoort protocol: %s", protocol)
+		}
+	}
+
+	if len(r.Vip) == 0 && len(r.RsIP) == 0 {
+		return fmt.Errorf("vip and RsIP must specify at least one")
+	}
+	if (len(r.RsIP) == 0 && len(r.RsType) != 0) || len(r.RsIP) != 0 && len(r.RsType) == 0 {
+		return fmt.Errorf("rsIP and RsType must be specified at the same time or not at the same time")
+	}
+
+	return validator.Validate.Struct(r)
 }
 
 // TCloudCreateSnatIpReq ...

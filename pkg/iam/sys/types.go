@@ -50,6 +50,8 @@ const (
 	CloudSelectionScheme client.TypeID = "cloud_selection_scheme"
 	// MainAccount defines main account resource type to register iam.
 	MainAccount client.TypeID = "main_account"
+	// BillCloudVendor defines cloud vendor resource type to register iam.
+	BillCloudVendor client.TypeID = "bill_cloud_vendor"
 )
 
 const (
@@ -61,6 +63,8 @@ const (
 	CloudSelectionSchemeSelection client.InstanceSelectionID = "cloud_selection_scheme"
 	// MainAccountSelection is main account instance selection id to register iam.
 	MainAccountSelection client.InstanceSelectionID = "main_account"
+	// BillCloudVendorSelection is cloud vendor instance selection id to register iam.
+	BillCloudVendorSelection client.InstanceSelectionID = "bill_cloud_vendor"
 )
 
 // ActionType action type to register iam.
@@ -190,6 +194,9 @@ const (
 	// AccountBillManage account bill manage action id to register iam.
 	AccountBillManage client.ActionID = "account_bill_manage"
 
+	// AccountBillPull account bill pull action id to register iam.
+	AccountBillPull client.ActionID = "account_bill_pull"
+
 	// ApplicationManage application manage action id to register iam.
 	ApplicationManage client.ActionID = "application_manage"
 
@@ -250,6 +257,7 @@ var ActionIDNameMap = map[client.ActionID]string{
 	RootAccountManage:   "云账号-一级账号管理",
 	AccountBillManage:   "云账单-云账单管理",
 	ApplicationManage:   "单据管理",
+	AccountBillPull:     "云账单-云账单拉取",
 
 	MainAccountFind:   "账号-二级账号查看",
 	MainAccountCreate: "账号-二级账号创建",

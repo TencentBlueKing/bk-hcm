@@ -1,7 +1,7 @@
 import { computed, defineComponent } from 'vue';
 import { Form, Input, Select, Checkbox, Button, Radio } from 'bkui-vue';
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
-import ConditionOptions from '../components/common/condition-options.vue';
+import ConditionOptions from '../components/common/condition-options/index.vue';
 import CommonCard from '@/components/CommonCard';
 import ZoneSelector from '../components/common/zone-selector';
 
@@ -22,7 +22,7 @@ const { Group: RadioGroup, Button: RadioButton } = Radio;
 export default defineComponent({
   props: {},
   setup() {
-    const { cond, isEmptyCond } = useCondtion(ResourceTypeEnum.DISK);
+    const { cond, isEmptyCond } = useCondtion();
     const { formData, formRef, handleFormSubmit, submitting } = useDiskFormData(cond);
     const { diskTypes, billingModes, purchaseDurationUnits } = useDiskOptions(cond, formData);
     const { t } = useI18n();
@@ -241,7 +241,7 @@ export default defineComponent({
           <Form model={formData} rules={formRules} ref={formRef} onSubmit={handleFormSubmit} formType='vertical'>
             <ConditionOptions
               type={ResourceTypeEnum.DISK}
-              v-model:bizId={cond.bizId}
+              bizs={cond.bizId}
               v-model:cloudAccountId={cond.cloudAccountId}
               v-model:vendor={cond.vendor}
               v-model:region={cond.region}

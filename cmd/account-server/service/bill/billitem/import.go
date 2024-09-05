@@ -40,6 +40,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/slice"
 	"hcm/pkg/tools/times"
 
@@ -172,7 +173,7 @@ func (b *billItemSvc) deleteBillItemsByMainAccountIDs(cts *rest.Contexts, vendor
 	return nil
 }
 
-func (b *billItemSvc) mapAccountIDToPullTaskList(kt *kit.Kit, summaryMains []*dsbill.BillSummaryMainResult) (
+func (b *billItemSvc) mapAccountIDToPullTaskList(kt *kit.Kit, summaryMains []*dsbill.BillSummaryMain) (
 	map[string][]*dsbill.BillDailyPullTaskResult, error) {
 
 	result := make(map[string][]*dsbill.BillDailyPullTaskResult, len(summaryMains))
@@ -203,7 +204,7 @@ func (b *billItemSvc) ensurePullTasks(kt *kit.Kit, vendor enumor.Vendor,
 
 	mainAccounts, err := b.listMainAccount(kt, vendor)
 	if err != nil {
-		logs.Errorf("list main account failed, err: %v, rid: %s, vendor: %s", err, kt.Rid, vendor)
+		logs.Errorf("list main account failed, vendor: %s, err: %v, rid: %s", vendor, err, kt.Rid)
 		return err
 	}
 	mainAccountIDs := make([]string, 0, len(req.Items))
@@ -246,7 +247,7 @@ func (b *billItemSvc) ensurePullTasks(kt *kit.Kit, vendor enumor.Vendor,
 }
 
 func generateRemainingPullTask(existBillDays []int,
-	summary *dsbill.BillSummaryMainResult) []*dsbill.BillDailyPullTaskCreateReq {
+	summary *dsbill.BillSummaryMain) []*dsbill.BillDailyPullTaskCreateReq {
 
 	days := times.GetMonthDays(summary.BillYear, time.Month(summary.BillMonth))
 	result := make([]*dsbill.BillDailyPullTaskCreateReq, 0, len(days))
@@ -259,7 +260,7 @@ func generateRemainingPullTask(existBillDays []int,
 	return result
 }
 
-func newPullTaskCreateReqFromSummaryMain(summaryMain *dsbill.BillSummaryMainResult,
+func newPullTaskCreateReqFromSummaryMain(summaryMain *dsbill.BillSummaryMain,
 	day int) *dsbill.BillDailyPullTaskCreateReq {
 
 	return &dsbill.BillDailyPullTaskCreateReq{
@@ -295,10 +296,10 @@ func (b *billItemSvc) updatePullTaskStateToSplitAndResetDailySummaryFlowID(kt *k
 }
 
 func (b *billItemSvc) listSummaryMainByMainAccountIDs(kt *kit.Kit, vendor enumor.Vendor, mainAccountIDs []string,
-	billYear, billMonth int) ([]*dsbill.BillSummaryMainResult, error) {
+	billYear, billMonth int) ([]*dsbill.BillSummaryMain, error) {
 
-	result := make([]*dsbill.BillSummaryMainResult, 0, len(mainAccountIDs))
-	for _, ids := range slice.Split(mainAccountIDs, int(core.DefaultMaxPageLimit)) {
+	result := make([]*dsbill.BillSummaryMain, 0, len(mainAccountIDs))
+	for _, ids := range slice.Split(mainAccountIDs, int(filter.DefaultMaxInLimit)) {
 		listReq := &dsbill.BillSummaryMainListReq{
 			Filter: tools.ExpressionAnd(
 				tools.RuleEqual("vendor", vendor),

@@ -40,12 +40,14 @@ func InitService(c *capability.Capability) {
 	h := rest.NewHandler()
 
 	// register handler
-	h.Add("ListRootAccountSummary", http.MethodPost, "/bills/root-account-summarys/list", svc.ListRootAccountSummary)
+	h.Add("ListRootAccountSummary", http.MethodPost, "/bills/root_account_summarys/list", svc.ListRootAccountSummary)
 	h.Add("ReaccountRootAccountSummary",
-		http.MethodPost, "/bills/root-account-summarys/reaccount", svc.ReaccountRootAccountSummary)
-	h.Add("SumRootAccountSummary", http.MethodPost, "/bills/root-account-summarys/sum", svc.SumRootAccountSummary)
+		http.MethodPost, "/bills/root_account_summarys/reaccount", svc.ReaccountRootAccountSummary)
+	h.Add("SumRootAccountSummary", http.MethodPost, "/bills/root_account_summarys/sum", svc.SumRootAccountSummary)
 	h.Add("ConfirmRootAccountSummary",
-		http.MethodPost, "bills/root-account-summarys/confirm", svc.ConfirmRootAccountSummary)
+		http.MethodPost, "bills/root_account_summarys/confirm", svc.ConfirmRootAccountSummary)
+	h.Add("ExportRootAccountSummary", http.MethodPost, "/bills/root_account_summarys/export",
+		svc.ExportRootAccountSummary)
 
 	h.Load(c.WebService)
 }

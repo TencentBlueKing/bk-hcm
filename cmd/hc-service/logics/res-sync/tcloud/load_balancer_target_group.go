@@ -36,7 +36,6 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/assert"
-	"hcm/pkg/tools/classifier"
 	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 	"hcm/pkg/tools/slice"
@@ -545,40 +544,55 @@ func (cli *client) listTargetsFromDB(kt *kit.Kit, param *SyncBaseParams, opt *Sy
 		listReq.Filter.Rules = append(listReq.Filter.Rules, tools.RuleIn("cloud_lbl_id", param.CloudIDs))
 	}
 	// 获取关系
-	relResp, err := cli.dbCli.Global.LoadBalancer.ListTargetGroupListenerRel(kt, listReq)
-	if err != nil {
-		logs.Errorf("fail to ListTargetGroupListenerRel, err: %v, rid: %s ", err, kt.Rid)
-		return nil, nil, err
+	relList := make([]corelb.BaseTargetListenerRuleRel, 0)
+	for {
+		relRespTemp, err := cli.dbCli.Global.LoadBalancer.ListTargetGroupListenerRel(kt, listReq)
+		if err != nil {
+			logs.Errorf("fail to list target group listener rel, err: %v, req: %v, cloud_lbl_id: %s, rid: %s", err, listReq, param.CloudIDs, kt.Rid)
+			return nil, nil, err
+		}
+		relList = append(relList, relRespTemp.Details...)
+
+		if uint(len(relRespTemp.Details)) < core.DefaultMaxPageLimit {
+			break
+		}
+
+		listReq.Page.Start += uint32(core.DefaultMaxPageLimit)
 	}
 	relMap = make(map[string]*corelb.BaseTargetListenerRuleRel)
 	tgRsMap = make(map[string][]corelb.BaseTarget)
-	if len(relResp.Details) == 0 {
+	if len(relList) == 0 {
 		return relMap, tgRsMap, nil
 	}
 
-	tgIDMap := make(map[string]struct{}, len(relResp.Details))
+	tgIDMap := make(map[string]struct{}, len(relList))
 
-	for i, rel := range relResp.Details {
+	for i, rel := range relList {
 		tgIDMap[rel.TargetGroupID] = struct{}{}
-		relMap[rel.CloudListenerRuleID] = cvt.ValToPtr(relResp.Details[i])
+		relMap[rel.CloudListenerRuleID] = cvt.ValToPtr(relList[i])
 	}
-	relResp.Details = nil
+
 	// 目标组ID 去重
 	tgIDs := cvt.MapKeyToStringSlice(tgIDMap)
-
 	// 查询对应的rs列表
-	rsList, err := cli.dbCli.Global.LoadBalancer.ListTarget(kt, &core.ListReq{
-		Filter: tools.ExpressionAnd(tools.RuleIn("target_group_id", tgIDs)),
-		Page:   core.NewDefaultBasePage(),
-	})
-	if err != nil {
-		logs.Errorf("fail to list targets of target group(ids=%v), err: %v, rid: %s", tgIDs, err, kt.Rid)
-		return nil, nil, err
+	for _, tgID := range tgIDs {
+		// 按目标组查询
+		for {
+			// 查询对应的rs列表
+			rsList, err := cli.dbCli.Global.LoadBalancer.ListTarget(kt, &core.ListReq{
+				Filter: tools.ExpressionAnd(tools.RuleEqual("target_group_id", tgID)),
+				Page:   core.NewDefaultBasePage(),
+			})
+			if err != nil {
+				logs.Errorf("fail to list targets of target group(id=%s), err: %v, rid: %s", tgID, err, kt.Rid)
+				return nil, nil, err
+			}
+			if len(rsList.Details) == 0 {
+				break
+			}
+			tgRsMap[tgID] = append(tgRsMap[tgID], rsList.Details...)
+		}
 	}
-	// 按目标组分
-	tgRsMap = classifier.ClassifySlice(rsList.Details, func(rs corelb.BaseTarget) string {
-		return rs.TargetGroupID
-	})
 
 	return relMap, tgRsMap, nil
 }

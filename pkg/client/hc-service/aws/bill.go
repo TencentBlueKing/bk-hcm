@@ -24,7 +24,7 @@ import (
 	"net/http"
 
 	"hcm/pkg/api/core"
-	hcbillservice "hcm/pkg/api/hc-service/bill"
+	hcbill "hcm/pkg/api/hc-service/bill"
 	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
@@ -44,10 +44,10 @@ func NewBillClient(client rest.ClientInterface) *BillClient {
 }
 
 // List list bill.
-func (v *BillClient) List(ctx context.Context, h http.Header, req *hcbillservice.AwsBillListReq) (
-	*hcbillservice.AwsBillListResult, error) {
+func (v *BillClient) List(ctx context.Context, h http.Header, req *hcbill.AwsBillListReq) (
+	*hcbill.AwsBillListResult, error) {
 
-	resp := new(hcbillservice.AwsBillListResp)
+	resp := new(hcbill.AwsBillListResp)
 
 	err := v.client.Post().
 		WithContext(ctx).
@@ -91,7 +91,7 @@ func (v *BillClient) Delete(ctx context.Context, h http.Header, accountID string
 }
 
 // BillPipeline bill pipeline.
-func (v *BillClient) BillPipeline(ctx context.Context, h http.Header, req *hcbillservice.BillPipelineReq) error {
+func (v *BillClient) BillPipeline(ctx context.Context, h http.Header, req *hcbill.BillPipelineReq) error {
 	resp := new(rest.BaseResp)
 
 	err := v.client.Post().
@@ -114,9 +114,18 @@ func (v *BillClient) BillPipeline(ctx context.Context, h http.Header, req *hcbil
 
 // GetRootAccountBillList list root account bill list
 func (v *BillClient) GetRootAccountBillList(kt *kit.Kit,
-	req *hcbillservice.AwsRootBillListReq) (*core.ListResultT[map[string]string], error) {
+	req *hcbill.AwsRootBillListReq) (*core.ListResultT[map[string]string], error) {
 
-	return common.Request[hcbillservice.AwsRootBillListReq, core.ListResultT[map[string]string]](
+	return common.Request[hcbill.AwsRootBillListReq, core.ListResultT[map[string]string]](
 		v.client, rest.POST, kt, req, "/root_account_bills/list")
+
+}
+
+// GetRootAccountSpTotalUsage get root account sp total usage
+func (v *BillClient) GetRootAccountSpTotalUsage(kt *kit.Kit, req *hcbill.AwsRootSpUsageTotalReq) (
+	*hcbill.AwsSpUsageTotalResult, error) {
+
+	return common.Request[hcbill.AwsRootSpUsageTotalReq, hcbill.AwsSpUsageTotalResult](
+		v.client, rest.GET, kt, req, "/root_account_bills/sp_usage_total")
 
 }
