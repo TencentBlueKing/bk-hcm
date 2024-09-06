@@ -61,12 +61,10 @@ export default defineComponent({
       try {
         isLoading.value = true;
         await formInstance.value.validate();
-        if ([null, false].includes(emailInputRef.value.emailCodeVerfiyResult)) return;
         const { data } = await billStore.create_main_account({
           ...formModel,
           email: `${formModel.email}${suffixText}`,
           business_type: formModel.site,
-          verify_code: emailInputRef.value.formModal.code,
           extension: {
             [Extension_Name_Map[formModel.vendor]]: formModel.name,
           },
