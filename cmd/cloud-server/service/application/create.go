@@ -42,7 +42,6 @@ import (
 	gcpvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/gcp"
 	huaweivpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/huawei"
 	tcloudvpchandler "hcm/cmd/cloud-server/service/application/handlers/vpc/tcloud"
-	mailverify "hcm/cmd/cloud-server/service/mail-verify"
 	proto "hcm/pkg/api/cloud-server/application"
 	cscvm "hcm/pkg/api/cloud-server/cvm"
 	csdisk "hcm/pkg/api/cloud-server/disk"
@@ -419,22 +418,6 @@ func (a *applicationSvc) CreateForCreateMainAccount(cts *rest.Contexts) (interfa
 	if err != nil {
 		return nil, err
 	}
-
-	// 验证邮箱验证码
-	verifyReq := &mailverify.VerificationReq{
-		Mail:              req.Email,
-		Scene:             mailverify.VerifySceneSecAccountApp,
-		VerifyCode:        req.VerifyCode,
-		DeleteAfterVerify: true,
-	}
-	verificationPassed, err := mailverify.MVSvc.VerificationCode(cts.Kit, verifyReq)
-	if err != nil {
-		return nil, err
-	}
-	if !verificationPassed {
-		return nil, fmt.Errorf("verifiction failed, rid: %s", cts.Kit.Rid)
-	}
-
 	commReq := new(proto.CreateCommonReq)
 	commReq.Remark = req.Memo
 
