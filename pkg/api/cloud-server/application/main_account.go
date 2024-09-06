@@ -28,7 +28,6 @@ import (
 type MainAccountCommonCreateReq struct {
 	Vendor       enumor.Vendor                  `json:"vendor" validate:"required"`
 	Email        string                         `json:"email" validate:"required"`
-	VerifyCode   string                         `json:"verify_code" validate:"required"`
 	Managers     []string                       `json:"managers" validate:"required,max=5"`
 	BakManagers  []string                       `json:"bak_managers" validate:"required,max=5"`
 	Site         enumor.MainAccountSiteType     `json:"site" validate:"required"`

@@ -20,8 +20,6 @@
 package mailverify
 
 import (
-	"net/http"
-
 	etcd3 "go.etcd.io/etcd/client/v3"
 	"hcm/cmd/cloud-server/service/capability"
 	"hcm/pkg/cc"
@@ -51,8 +49,9 @@ func InitEmailService(c *capability.Capability) {
 	MVSvc = svc
 
 	h := rest.NewHandler()
-	h.Add("SendVerifyCode", http.MethodPost, "/mail/send_code", svc.SendVerifyCode)
-	h.Add("VerificationCode", http.MethodPost, "/mail/verify_code", svc.Verification)
+	// 由于邮箱验证码需要申请权限，暂时关闭邮箱验证码功能
+	//h.Add("SendVerifyCode", http.MethodPost, "/mail/send_code", svc.SendVerifyCode)
+	//h.Add("VerificationCode", http.MethodPost, "/mail/verify_code", svc.Verification)
 	h.Load(c.WebService)
 }
 
