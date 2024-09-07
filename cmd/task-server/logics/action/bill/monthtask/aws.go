@@ -235,8 +235,7 @@ func (a AwsMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption, rawItemList
 
 	}
 
-	commonItems, err := a.splitCommonExpense(kt, opt, mainAccountMap, rootAsMainAccount,
-		commonRawItems)
+	commonItems, err := a.splitCommonExpense(kt, opt, mainAccountMap, rootAsMainAccount, commonRawItems)
 	if err != nil {
 		logs.Errorf("fail to split common expense for aws month task split step, err: %v, opt: %#v, rid: %s",
 			err, opt, kt.Rid)

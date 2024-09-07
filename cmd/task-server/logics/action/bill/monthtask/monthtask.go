@@ -204,7 +204,7 @@ func (act MonthTaskAction) runSplit(kt *kit.Kit, runner MonthTaskRunner, opt *Mo
 }
 
 func (act MonthTaskAction) split(kt *kit.Kit, runner MonthTaskRunner, opt *MonthTaskActionOption,
-	monthTask *bill.BillMonthTaskResult, accountMap map[string]struct{}, offset uint64) (
+	monthTask *billcore.MonthTask, accountMap map[string]struct{}, offset uint64) (
 	cnt int, finished bool, err error) {
 
 	limit := runner.GetBatchSize(kt)
@@ -304,7 +304,7 @@ func (act MonthTaskAction) cleanBillItem(kt *kit.Kit, opt *MonthTaskActionOption
 }
 
 func (act MonthTaskAction) runMainAccountSummary(kt *kit.Kit, opt *MonthTaskActionOption,
-	task *bill.BillMonthTaskResult, itemList []billcore.MonthTaskSummaryDetailItem) error {
+	task *billcore.MonthTask, itemList []billcore.MonthTaskSummaryDetailItem) error {
 
 	commonOpt := &bill.ItemCommonOpt{Vendor: opt.Vendor, Year: opt.BillYear, Month: opt.BillMonth}
 	for i, item := range itemList {
@@ -318,7 +318,7 @@ func (act MonthTaskAction) runMainAccountSummary(kt *kit.Kit, opt *MonthTaskActi
 			tools.RuleEqual("bill_month", opt.BillMonth),
 			tools.RuleEqual("vendor", task.Vendor),
 			// special day 0 for month bill
-			tools.RuleEqual("bill_day", 0),
+			tools.RuleEqual("bill_day", enumor.MonthTaskSpecialBillDay),
 		)
 		listReq := &bill.BillItemListReq{
 			ItemCommonOpt: commonOpt,
@@ -401,7 +401,7 @@ func (act MonthTaskAction) runSummary(kt *kit.Kit, opt *MonthTaskActionOption) e
 	return nil
 }
 
-func getMonthPullTask(kt *kit.Kit, opt *MonthTaskActionOption) (*bill.BillMonthTaskResult, error) {
+func getMonthPullTask(kt *kit.Kit, opt *MonthTaskActionOption) (*billcore.MonthTask, error) {
 	expressions := []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", opt.RootAccountID),
 		tools.RuleEqual("bill_year", opt.BillYear),

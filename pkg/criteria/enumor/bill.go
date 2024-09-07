@@ -206,11 +206,11 @@ type MonthTaskType string
 
 const (
 	// MonthTaskTypePull 拉取类型
-	MonthTaskTypePull = "pull"
+	MonthTaskTypePull MonthTaskType = "pull"
 	// MonthTaskTypeSplit 分账类型
-	MonthTaskTypeSplit = "split"
+	MonthTaskTypeSplit MonthTaskType = "split"
 	// MonthTaskTypeSummary 汇总类型
-	MonthTaskTypeSummary = "summary"
+	MonthTaskTypeSummary MonthTaskType = "summary"
 )
 
 const (

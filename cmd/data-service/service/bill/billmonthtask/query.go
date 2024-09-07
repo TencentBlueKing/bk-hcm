@@ -20,6 +20,7 @@
 package billmonthtask
 
 import (
+	"hcm/pkg/api/core/bill"
 	dataproto "hcm/pkg/api/data-service/bill"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
@@ -49,7 +50,7 @@ func (svc *service) ListBillMonthPullTask(cts *rest.Contexts) (interface{}, erro
 		return nil, err
 	}
 
-	details := make([]*dataproto.BillMonthTaskResult, len(data.Details))
+	details := make([]*bill.MonthTask, len(data.Details))
 	for indx, d := range data.Details {
 		details[indx] = toProtoPullerResult(&d)
 	}
@@ -57,8 +58,8 @@ func (svc *service) ListBillMonthPullTask(cts *rest.Contexts) (interface{}, erro
 	return &dataproto.BillMonthTaskListResult{Details: details, Count: &data.Count}, nil
 }
 
-func toProtoPullerResult(m *tablebill.AccountBillMonthTask) *dataproto.BillMonthTaskResult {
-	return &dataproto.BillMonthTaskResult{
+func toProtoPullerResult(m *tablebill.AccountBillMonthTask) *bill.MonthTask {
+	return &bill.MonthTask{
 		ID:                 m.ID,
 		RootAccountID:      m.RootAccountID,
 		RootAccountCloudID: m.RootAccountCloudID,

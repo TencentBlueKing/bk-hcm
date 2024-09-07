@@ -44,6 +44,21 @@ type BillManager struct {
 func (bm *BillManager) Run(ctx context.Context) {
 
 	logs.Infof("bill allocation config: %+v", cc.AccountServer().BillAllocation)
+	bm.loopOnce()
+
+	ticker := time.NewTicker(*cc.AccountServer().Controller.ControllerSyncDuration)
+	for {
+		select {
+		case <-ticker.C:
+			bm.loopOnce()
+		case <-ctx.Done():
+			logs.Infof("bill manager context done")
+			return
+		}
+	}
+}
+
+func (bm *BillManager) loopOnce() {
 	if bm.Sd.IsMaster() {
 		if err := bm.syncMainControllers(); err != nil {
 			logs.Warnf("sync main controllers failed, err: %s", err.Error())
@@ -53,27 +68,6 @@ func (bm *BillManager) Run(ctx context.Context) {
 		}
 	} else {
 		bm.stopControllers()
-	}
-
-	ticker := time.NewTicker(*cc.AccountServer().Controller.ControllerSyncDuration)
-	for {
-		select {
-		case <-ticker.C:
-			if bm.Sd.IsMaster() {
-				if err := bm.syncMainControllers(); err != nil {
-					logs.Warnf("sync main controllers failed, err: %s", err.Error())
-				}
-				if err := bm.syncRootControllers(); err != nil {
-					logs.Warnf("sync root controllers failed, err: %s", err.Error())
-				}
-			} else {
-				bm.stopControllers()
-			}
-
-		case <-ctx.Done():
-			logs.Infof("bill manager context done")
-			return
-		}
 	}
 }
 

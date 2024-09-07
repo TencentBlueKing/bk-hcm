@@ -21,9 +21,9 @@ package bill
 
 import (
 	"hcm/pkg/api/core"
+	"hcm/pkg/api/core/bill"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
-	"hcm/pkg/dal/table/types"
 	"hcm/pkg/runtime/filter"
 
 	"github.com/shopspring/decimal"
@@ -59,33 +59,8 @@ func (req *BillMonthTaskListReq) Validate() error {
 
 // BillMonthTaskListResult list result
 type BillMonthTaskListResult struct {
-	Count   *uint64                `json:"count,omitempty"`
-	Details []*BillMonthTaskResult `json:"details"`
-}
-
-// BillMonthTaskResult result
-type BillMonthTaskResult struct {
-	ID                 string                               `json:"id,omitempty"`
-	RootAccountID      string                               `json:"root_account_id,omitempty"`
-	RootAccountCloudID string                               `json:"root_account_cloud_id,omitempty"`
-	Vendor             enumor.Vendor                        `json:"vendor,omitempty"`
-	BillYear           int                                  `json:"bill_year,omitempty"`
-	BillMonth          int                                  `json:"bill_month,omitempty"`
-	VersionID          int                                  `json:"version_id,omitempty"`
-	State              enumor.RootAccountMonthBillTaskState `json:"state,omitempty"`
-	Count              uint64                               `json:"count,omitempty"`
-	Currency           enumor.CurrencyCode                  `json:"currency,omitempty"`
-	Cost               decimal.Decimal                      `json:"cost,omitempty"`
-	PullIndex          uint64                               `json:"pull_index,omitempty"`
-	PullFlowID         string                               `json:"pull_flow_id,omitempty"`
-	SplitIndex         uint64                               `json:"split_index,omitempty"`
-	SplitFlowID        string                               `json:"split_flow_id,omitempty"`
-	SummaryFlowID      string                               `json:"summary_flow_id,omitempty"`
-	SummaryDetail      string                               `json:"summary_detail,omitempty"`
-	Creator            string                               `json:"creator,omitempty"`
-	Reviser            string                               `json:"reviser,omitempty"`
-	CreatedAt          types.Time                           `json:"created_at,omitempty"`
-	UpdatedAt          types.Time                           `json:"updated_at,omitempty"`
+	Count   *uint64           `json:"count,omitempty"`
+	Details []*bill.MonthTask `json:"details"`
 }
 
 // BillMonthTaskUpdateReq update request

@@ -21,6 +21,7 @@ package bill
 
 import (
 	rawjson "encoding/json"
+	"fmt"
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
@@ -139,7 +140,7 @@ type GcpRawBillItem struct {
 	UsageStartTime            *string          `json:"usage_start_time,omitempty"`
 	UsageUnit                 *string          `json:"usage_unit"`
 	Zone                      *string          `json:"zone"`
-	CreditInfos               []*GcpCredit     `json:"credit_infos,omitempty"`
+	CreditInfos               []GcpCredit      `json:"credit_infos,omitempty"`
 }
 
 // GcpCredit gcp credit info
@@ -149,6 +150,10 @@ type GcpCredit struct {
 	Name     string           `json:"name"`
 	FullName string           `json:"full_name"`
 	Amount   *decimal.Decimal `json:"amount"`
+}
+
+func (c *GcpCredit) String() string {
+	return fmt.Sprintf("[%s]%s/%s/%s cost: %s", c.Type, c.ID, c.Name, c.FullName, c.Amount.String())
 }
 
 // GcpBillItemExtension ...

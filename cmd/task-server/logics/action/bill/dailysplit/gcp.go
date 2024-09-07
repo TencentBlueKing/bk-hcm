@@ -1,7 +1,7 @@
 /*
  * TencentBlueKing is pleased to support the open source community by making
  * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
- * Copyright (C) 2022 THL A29 Limited,
+ * Copyright (C) 2024 THL A29 Limited,
  * a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,56 +21,39 @@ package dailysplit
 
 import (
 	rawjson "encoding/json"
-	"fmt"
 
 	protocore "hcm/pkg/api/core/account-set"
+	billcore "hcm/pkg/api/core/bill"
 	"hcm/pkg/api/data-service/bill"
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
+	cvt "hcm/pkg/tools/converter"
+	"hcm/pkg/tools/json"
 )
 
-var vendorSplitterFunc = map[enumor.Vendor]func() RawBillSplitter{
-	enumor.Aws:      func() RawBillSplitter { return &AwsSplitter{} },
-	enumor.Gcp:      func() RawBillSplitter { return &GcpSplitter{} },
-	enumor.HuaWei:   func() RawBillSplitter { return &DefaultSplitter{} },
-	enumor.Azure:    func() RawBillSplitter { return &DefaultSplitter{} },
-	enumor.Kaopu:    func() RawBillSplitter { return &DefaultSplitter{} },
-	enumor.Zenlayer: func() RawBillSplitter { return &DefaultSplitter{} },
-}
+// GcpSplitter GCP account splitter
+type GcpSplitter struct{}
 
-// GetSplitter ...
-func GetSplitter(vendor enumor.Vendor) (RawBillSplitter, error) {
-	if _, ok := vendorSplitterFunc[vendor]; ok {
-		return vendorSplitterFunc[vendor](), nil
-	}
-	return nil, fmt.Errorf("unsupported vendor: %s for daily splitter", vendor)
-}
-
-// RawBillSplitter splitter for raw bill
-type RawBillSplitter interface {
-	DoSplit(kt *kit.Kit, opt *DailyAccountSplitActionOption, billDay int,
-		item *bill.RawBillItem, mainAccount *protocore.BaseMainAccount) (
-		[]bill.BillItemCreateReq[rawjson.RawMessage], error)
-}
-
-// DefaultSplitter default account splitter
-type DefaultSplitter struct{}
-
-// DoSplit implements RawBillSplitter
-func (ds *DefaultSplitter) DoSplit(kt *kit.Kit, opt *DailyAccountSplitActionOption, billDay int,
+// DoSplit implements RawBillSplitter for GCP
+func (ds *GcpSplitter) DoSplit(kt *kit.Kit, opt *DailyAccountSplitActionOption, billDay int,
 	item *bill.RawBillItem, mainAccount *protocore.BaseMainAccount) ([]bill.BillItemCreateReq[rawjson.RawMessage],
 	error) {
 
-	data, err := item.Extension.MarshalJSON()
-	if err != nil {
-		return nil, fmt.Errorf("get extension value failed, err %s", err.Error())
+	var billItems []bill.BillItemCreateReq[rawjson.RawMessage]
+	var ext billcore.GcpRawBillItem
+	if err := rawjson.Unmarshal([]byte(item.Extension), &ext); err != nil {
+		logs.Errorf("fail to unmarshal gcp raw bill item extension for split, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
 	}
-	var ext rawjson.RawMessage
-	if err := rawjson.Unmarshal(data, &ext); err != nil {
+	// 聚合credit信息, 减低进入数据库的金额
+	ext.CreditInfos = groupCredits(ext.CreditInfos)
+	rawExt, err := json.Marshal(ext)
+	if err != nil {
+		logs.Errorf("fail to marshal gcp raw bill item extension for split, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
-	req := bill.BillItemCreateReq[rawjson.RawMessage]{
+	usageBillItem := bill.BillItemCreateReq[rawjson.RawMessage]{
 		RootAccountID: opt.RootAccountID,
 		MainAccountID: opt.MainAccountID,
 		Vendor:        opt.Vendor,
@@ -86,9 +69,27 @@ func (ds *DefaultSplitter) DoSplit(kt *kit.Kit, opt *DailyAccountSplitActionOpti
 		HcProductName: item.HcProductName,
 		ResAmount:     item.ResAmount,
 		ResAmountUnit: item.ResAmountUnit,
-		Extension:     &ext,
+		Extension:     cvt.ValToPtr[rawjson.RawMessage](rawExt),
 	}
-	return []bill.BillItemCreateReq[rawjson.RawMessage]{
-		req,
-	}, nil
+	billItems = append(billItems, usageBillItem)
+
+	return billItems, nil
+}
+
+func groupCredits(creditList []billcore.GcpCredit) (groupedCredits []billcore.GcpCredit) {
+
+	if len(creditList) == 0 {
+		return creditList
+	}
+	creditMap := make(map[string]billcore.GcpCredit)
+	for _, credit := range creditList {
+		newAmount := cvt.PtrToVal(credit.Amount)
+		if _, ok := creditMap[credit.ID]; ok {
+			// 存在则加上现有的金额
+			newAmount = newAmount.Add(cvt.PtrToVal(creditMap[credit.ID].Amount))
+		}
+		credit.Amount = cvt.ValToPtr(newAmount)
+		creditMap[credit.ID] = credit
+	}
+	return cvt.MapValueToSlice(creditMap)
 }

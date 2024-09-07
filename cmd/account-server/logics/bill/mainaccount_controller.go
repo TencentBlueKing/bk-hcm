@@ -309,7 +309,7 @@ func (mac *MainAccountController) ensureDailyRawPullTask(kt *kit.Kit, billYear i
 		return err
 	}
 	if lastBillSummaryMain.State == enumor.MainAccountBillSummaryStateAccounting {
-		logs.Infof("start %v-%s(%s) daily raw bill sync, period: %d-%d, rid: %s",
+		logs.Infof("start [%v]%s(%s) daily raw bill sync, period: %d-%d, rid: %s",
 			mac.Vendor, mac.MainAccountCloudID, mac.MainAccountID, billYear, billMonth, kt.Rid)
 		curPuller, err := puller.GetDailyPuller(lastBillSummaryMain.Vendor)
 		if err != nil {
