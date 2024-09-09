@@ -38,9 +38,6 @@ func init() {
 	puller.DailyPullerRegistry[enumor.HuaWei] = &HuaweiPuller{
 		BillDelay: defaultHuaWeiDelay,
 	}
-	puller.MonthPullerRegistry[enumor.HuaWei] = &HuaweiPuller{
-		BillDelay: defaultHuaWeiDelay,
-	}
 }
 
 // HuaweiPuller huawei puller

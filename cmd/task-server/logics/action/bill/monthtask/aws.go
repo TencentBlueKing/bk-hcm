@@ -54,24 +54,31 @@ const (
 	AwsCommonExpenseName = "CommonExpense"
 )
 
-func newAwsRunner() MonthTaskRunner {
-	return &AwsMonthTask{}
+func newAwsRunner(taskType enumor.MonthTaskType) (MonthTaskRunner, error) {
+	switch taskType {
+	case enumor.AwsSupportMonthTask:
+		return &AwsSupportMonthTask{}, nil
+	case enumor.AwsSavingsPlansMonthTask:
+		return &AwsSavingsPlanMonthTask{}, nil
+	default:
+		return nil, errors.New("not support task type of aws: " + string(taskType))
+	}
 }
 
-// AwsMonthTask ...
-type AwsMonthTask struct {
+// AwsSavingsPlanMonthTask ...
+type AwsSavingsPlanMonthTask struct {
 	excludeAccountCloudIds []string
 	spArnPrefix            string
 	spMainAccountCloudID   string
 }
 
 // GetBatchSize for aws is always 999
-func (a AwsMonthTask) GetBatchSize(kt *kit.Kit) uint64 {
+func (a AwsSavingsPlanMonthTask) GetBatchSize(kt *kit.Kit) uint64 {
 	return 999
 }
 
 // Pull aws root account bill
-func (a AwsMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index uint64) (
+func (a AwsSavingsPlanMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index uint64) (
 	itemList []bill.RawBillItem, isFinished bool, err error) {
 
 	a.initExtension(opt)
@@ -144,7 +151,7 @@ func (a AwsMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index uint64
 }
 
 // getSpUsage 获取SP使用总额冲平支出账号
-func (a AwsMonthTask) getSpUsage(kt *kit.Kit, opt *MonthTaskActionOption, lastDay uint, err error) (
+func (a AwsSavingsPlanMonthTask) getSpUsage(kt *kit.Kit, opt *MonthTaskActionOption, lastDay uint, err error) (
 	*bill.RawBillItem, error) {
 
 	// 拉取 sp 分账金额
@@ -187,7 +194,7 @@ func (a AwsMonthTask) getSpUsage(kt *kit.Kit, opt *MonthTaskActionOption, lastDa
 	return spUsageReverseItem, nil
 }
 
-func (a *AwsMonthTask) initExtension(opt *MonthTaskActionOption) {
+func (a *AwsSavingsPlanMonthTask) initExtension(opt *MonthTaskActionOption) {
 	if opt.Extension == nil {
 		return
 	}
@@ -201,7 +208,7 @@ func (a *AwsMonthTask) initExtension(opt *MonthTaskActionOption) {
 }
 
 // Split root account bill into main accounts
-func (a AwsMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption, rawItemList []*bill.RawBillItem) (
+func (a AwsSavingsPlanMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption, rawItemList []*bill.RawBillItem) (
 	[]bill.BillItemCreateReq[json.RawMessage], error) {
 
 	if len(rawItemList) == 0 {
@@ -261,7 +268,7 @@ func (a AwsMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption, rawItemList
 	billItems := append(commonItems, spItems...)
 	return billItems, nil
 }
-func (a AwsMonthTask) splitSpReverseExpense(kt *kit.Kit, opt *MonthTaskActionOption,
+func (a AwsSavingsPlanMonthTask) splitSpReverseExpense(kt *kit.Kit, opt *MonthTaskActionOption,
 	spAccount *protocore.BaseMainAccount, rawItemList []*bill.RawBillItem) (
 	[]bill.BillItemCreateReq[json.RawMessage], error) {
 
@@ -316,7 +323,7 @@ func (a AwsMonthTask) splitSpReverseExpense(kt *kit.Kit, opt *MonthTaskActionOpt
 	return []bill.BillItemCreateReq[json.RawMessage]{item}, nil
 }
 
-func (a AwsMonthTask) splitCommonExpense(kt *kit.Kit, opt *MonthTaskActionOption,
+func (a AwsSavingsPlanMonthTask) splitCommonExpense(kt *kit.Kit, opt *MonthTaskActionOption,
 	mainAccountMap map[string]*protocore.BaseMainAccount, rootAsMainAccount *protocore.BaseMainAccount,
 	rawItemList []*bill.RawBillItem) ([]bill.BillItemCreateReq[json.RawMessage], error) {
 
@@ -379,7 +386,7 @@ func (a AwsMonthTask) splitCommonExpense(kt *kit.Kit, opt *MonthTaskActionOption
 	return billItems, nil
 }
 
-func (a AwsMonthTask) getSummaryMainListExcludeRootAndOwn(kt *kit.Kit, opt *MonthTaskActionOption,
+func (a AwsSavingsPlanMonthTask) getSummaryMainListExcludeRootAndOwn(kt *kit.Kit, opt *MonthTaskActionOption,
 	mainAccountMap map[string]*protocore.BaseMainAccount, rootCloudID string) ([]*bill.BillSummaryMain, error) {
 
 	mainAccountIDs := make([]string, 0, len(mainAccountMap))
@@ -410,7 +417,7 @@ func (a AwsMonthTask) getSummaryMainListExcludeRootAndOwn(kt *kit.Kit, opt *Mont
 	return summaryMainResp.Details, nil
 }
 
-func (a AwsMonthTask) listMainAccount(kt *kit.Kit, rootAccount *dataproto.AwsRootAccount) (
+func (a AwsSavingsPlanMonthTask) listMainAccount(kt *kit.Kit, rootAccount *dataproto.AwsRootAccount) (
 	mainAccountMap map[string]*protocore.BaseMainAccount, rootAsMainAccount *protocore.BaseMainAccount, err error) {
 
 	listReq := &core.ListReq{
@@ -456,7 +463,8 @@ func convSummaryToCommonReverse(mainAccount *protocore.BaseMainAccount, summary 
 	return reverseBillItem
 }
 
-func (a AwsMonthTask) convCommonExpenseExt(productName string, opt *MonthTaskActionOption, rootAccountCloudID string,
+func (a AwsSavingsPlanMonthTask) convCommonExpenseExt(productName string, opt *MonthTaskActionOption,
+	rootAccountCloudID string,
 	mainAccountCloudID string, currencyCode enumor.CurrencyCode, cost decimal.Decimal) ([]byte, error) {
 
 	ext := billcore.AwsRawBillItem{

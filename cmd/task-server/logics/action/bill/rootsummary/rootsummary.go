@@ -154,7 +154,7 @@ func (act RootAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 }
 
 func (act *RootAccountSummaryAction) getBillSummary(
-	kt *kit.Kit, opt *RootAccountSummaryActionOption) (*bill.BillSummaryRootResult, error) {
+	kt *kit.Kit, opt *RootAccountSummaryActionOption) (*bill.BillSummaryRoot, error) {
 
 	expressions := []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", opt.RootAccountID),

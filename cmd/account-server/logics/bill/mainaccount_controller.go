@@ -330,7 +330,7 @@ func (mac *MainAccountController) Stop() {
 }
 
 func (mac *MainAccountController) getRootBillSummary(
-	kt *kit.Kit, billYear, billMonth int) (*dsbillapi.BillSummaryRootResult, error) {
+	kt *kit.Kit, billYear, billMonth int) (*dsbillapi.BillSummaryRoot, error) {
 
 	var expressions []*filter.AtomRule
 	expressions = append(expressions, []*filter.AtomRule{
@@ -390,7 +390,7 @@ func (mac *MainAccountController) getMainBillSummary(
 }
 
 func (mac *MainAccountController) createNewBillSummary(
-	kt *kit.Kit, billYear, billMonth int, billSummary *dsbillapi.BillSummaryRootResult) error {
+	kt *kit.Kit, billYear, billMonth int, billSummary *dsbillapi.BillSummaryRoot) error {
 	_, err := mac.Client.DataService().Global.Bill.CreateBillSummaryMain(
 		kt, &dsbillapi.BillSummaryMainCreateReq{
 			RootAccountID:      mac.RootAccountID,

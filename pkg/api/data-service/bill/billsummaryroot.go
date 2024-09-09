@@ -73,12 +73,12 @@ func (req *BillSummaryRootListReq) Validate() error {
 
 // BillSummaryRootListResult list result
 type BillSummaryRootListResult struct {
-	Count   *uint64                  `json:"count,omitempty"`
-	Details []*BillSummaryRootResult `json:"details"`
+	Count   *uint64            `json:"count,omitempty"`
+	Details []*BillSummaryRoot `json:"details"`
 }
 
-// BillSummaryRootResult result
-type BillSummaryRootResult struct {
+// BillSummaryRoot result
+type BillSummaryRoot struct {
 	ID                        string                      `json:"id,omitempty"`
 	RootAccountID             string                      `json:"root_account_id"`
 	RootAccountCloudID        string                      `json:"root_account_cloud_id"`

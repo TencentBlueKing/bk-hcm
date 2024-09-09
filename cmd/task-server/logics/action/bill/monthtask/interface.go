@@ -29,12 +29,12 @@ import (
 )
 
 // GetRunner return month task vendor runner
-func GetRunner(vendor enumor.Vendor) (MonthTaskRunner, error) {
+func GetRunner(vendor enumor.Vendor, taskType enumor.MonthTaskType) (MonthTaskRunner, error) {
 	switch vendor {
 	case enumor.Gcp:
-		return newGcpRunner(), nil
+		return newGcpRunner(taskType)
 	case enumor.Aws:
-		return newAwsRunner(), nil
+		return newAwsRunner(taskType)
 	default:
 		return nil, fmt.Errorf("vendor %s not support now", vendor)
 	}

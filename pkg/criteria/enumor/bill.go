@@ -205,12 +205,27 @@ const (
 type MonthTaskType string
 
 const (
-	// MonthTaskTypePull 拉取类型
-	MonthTaskTypePull MonthTaskType = "pull"
-	// MonthTaskTypeSplit 分账类型
-	MonthTaskTypeSplit MonthTaskType = "split"
-	// MonthTaskTypeSummary 汇总类型
-	MonthTaskTypeSummary MonthTaskType = "summary"
+	// AwsSavingsPlansMonthTask aws savings plans month task
+	AwsSavingsPlansMonthTask = "aws_savings_plans_month_task"
+	// AwsSupportMonthTask aws support month task
+	AwsSupportMonthTask = "aws_support_month_task"
+
+	// GcpCreditsMonthTask gcp credits month task
+	GcpCreditsMonthTask = "gcp_credits_month_task"
+	// GcpSupportMonthTask gcp support month task
+	GcpSupportMonthTask = "gcp_support_month_task"
+)
+
+// MonthTaskStep 月度任务步骤
+type MonthTaskStep string
+
+const (
+	// MonthTaskStepPull 拉取类型
+	MonthTaskStepPull MonthTaskStep = "pull"
+	// MonthTaskStepSplit 分账类型
+	MonthTaskStepSplit MonthTaskStep = "split"
+	// MonthTaskStepSummary 汇总类型
+	MonthTaskStepSummary MonthTaskStep = "summary"
 )
 
 const (

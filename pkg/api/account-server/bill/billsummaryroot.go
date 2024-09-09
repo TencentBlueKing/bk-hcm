@@ -89,7 +89,7 @@ type RootAccountSummarySumResult struct {
 
 // BillSummaryRootResult ...
 type BillSummaryRootResult struct {
-	*bill.BillSummaryRootResult
+	*bill.BillSummaryRoot
 	RootAccountName string `json:"root_account_name" `
 }
 

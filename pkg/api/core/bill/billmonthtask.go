@@ -43,6 +43,7 @@ type MonthTask struct {
 	RootAccountID      string                               `json:"root_account_id,omitempty"`
 	RootAccountCloudID string                               `json:"root_account_cloud_id,omitempty"`
 	Vendor             enumor.Vendor                        `json:"vendor,omitempty"`
+	Type               enumor.MonthTaskType                 `json:"type"`
 	BillYear           int                                  `json:"bill_year,omitempty"`
 	BillMonth          int                                  `json:"bill_month,omitempty"`
 	VersionID          int                                  `json:"version_id,omitempty"`
@@ -64,6 +65,6 @@ type MonthTask struct {
 
 // String ...
 func (t MonthTask) String() string {
-	return fmt.Sprintf("[%s]%s(%s) %d-%02dv%d:%s", t.Vendor, t.RootAccountID, t.RootAccountCloudID, t.BillYear,
-		t.BillMonth, t.VersionID, t.State)
+	return fmt.Sprintf("[%s:%s]%s(%s) %d-%02dv%d:%s", t.Vendor, t.Type, t.RootAccountID, t.RootAccountCloudID,
+		t.BillYear, t.BillMonth, t.VersionID, t.State)
 }

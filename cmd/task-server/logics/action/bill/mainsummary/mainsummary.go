@@ -217,7 +217,7 @@ func (act *MainAccountSummaryAction) getExchangeRate(
 	return result.Details[0].ExchangeRate, nil
 }
 
-func (act *MainAccountSummaryAction) getMonthPullTaskStatus(kt *kit.Kit, summaryRoot *bill.BillSummaryRootResult,
+func (act *MainAccountSummaryAction) getMonthPullTaskStatus(kt *kit.Kit, summaryRoot *bill.BillSummaryRoot,
 	summary *bill.BillSummaryMain) (decimal.Decimal, bool, error) {
 
 	monthPuller, err := puller.GetMonthPuller(summaryRoot.Vendor)
@@ -400,7 +400,7 @@ func (act *MainAccountSummaryAction) getAdjustmenSummary(kt *kit.Kit, opt *MainA
 }
 
 func (act *MainAccountSummaryAction) getBillSummary(kt *kit.Kit, opt *MainAccountSummaryActionOption) (
-	*bill.BillSummaryRootResult, *bill.BillSummaryMain, error) {
+	*bill.BillSummaryRoot, *bill.BillSummaryMain, error) {
 
 	rootAccountExpr := []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", opt.RootAccountID),

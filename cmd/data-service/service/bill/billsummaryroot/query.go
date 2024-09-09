@@ -48,7 +48,7 @@ func (svc *service) ListBillSummaryRoot(cts *rest.Contexts) (interface{}, error)
 		return nil, err
 	}
 
-	details := make([]*dataproto.BillSummaryRootResult, len(data.Details))
+	details := make([]*dataproto.BillSummaryRoot, len(data.Details))
 	for indx, d := range data.Details {
 		details[indx] = toProtoPullerResult(&d)
 	}
@@ -56,8 +56,8 @@ func (svc *service) ListBillSummaryRoot(cts *rest.Contexts) (interface{}, error)
 	return &dataproto.BillSummaryRootListResult{Details: details, Count: &data.Count}, nil
 }
 
-func toProtoPullerResult(m *tablebill.AccountBillSummaryRoot) *dataproto.BillSummaryRootResult {
-	return &dataproto.BillSummaryRootResult{
+func toProtoPullerResult(m *tablebill.AccountBillSummaryRoot) *dataproto.BillSummaryRoot {
+	return &dataproto.BillSummaryRoot{
 		ID:                        m.ID,
 		RootAccountID:             m.RootAccountID,
 		RootAccountCloudID:        m.RootAccountCloudID,

@@ -64,6 +64,7 @@ func toProtoPullerResult(m *tablebill.AccountBillMonthTask) *bill.MonthTask {
 		RootAccountID:      m.RootAccountID,
 		RootAccountCloudID: m.RootAccountCloudID,
 		Vendor:             m.Vendor,
+		Type:               m.Type,
 		BillYear:           m.BillYear,
 		BillMonth:          m.BillMonth,
 		VersionID:          m.VersionID,

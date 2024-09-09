@@ -112,7 +112,7 @@ func generateFileName() string {
 }
 
 func (s *service) fetchRootAccountSummary(cts *rest.Contexts, req *asbillapi.RootAccountSummaryExportReq) (
-	[]*dsbillapi.BillSummaryRootResult, error) {
+	[]*dsbillapi.BillSummaryRoot, error) {
 
 	var expression = tools.ExpressionAnd(
 		tools.RuleEqual("bill_year", req.BillYear),
@@ -138,7 +138,7 @@ func (s *service) fetchRootAccountSummary(cts *rest.Contexts, req *asbillapi.Roo
 	}
 
 	exportLimit := min(*details.Count, req.ExportLimit)
-	result := make([]*dsbillapi.BillSummaryRootResult, 0, exportLimit)
+	result := make([]*dsbillapi.BillSummaryRoot, 0, exportLimit)
 	for offset := uint64(0); offset < exportLimit; offset = offset + uint64(core.DefaultMaxPageLimit) {
 		left := exportLimit - offset
 		listReq := &dsbillapi.BillSummaryRootListReq{
@@ -158,7 +158,8 @@ func (s *service) fetchRootAccountSummary(cts *rest.Contexts, req *asbillapi.Roo
 	return result, nil
 }
 
-func toRawData(kt *kit.Kit, details []*dsbillapi.BillSummaryRootResult, accountMap map[string]*accountset.BaseRootAccount) ([][]string, error) {
+func toRawData(kt *kit.Kit, details []*dsbillapi.BillSummaryRoot,
+	accountMap map[string]*accountset.BaseRootAccount) ([][]string, error) {
 	data := make([][]string, 0, len(details))
 	for _, detail := range details {
 		rootAccount, ok := accountMap[detail.RootAccountID]

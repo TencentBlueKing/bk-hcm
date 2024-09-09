@@ -34,6 +34,7 @@ type BillMonthTaskCreateReq struct {
 	RootAccountID      string                               `json:"root_account_id" validate:"required"`
 	RootAccountCloudID string                               `json:"root_account_cloud_id" validate:"required"`
 	Vendor             enumor.Vendor                        `json:"vendor" validate:"required"`
+	Type               enumor.MonthTaskType                 `json:"type" validate:"required"`
 	BillYear           int                                  `json:"bill_year" validate:"required"`
 	BillMonth          int                                  `json:"bill_month" validate:"required"`
 	VersionID          int                                  `json:"version_id" validate:"required"`

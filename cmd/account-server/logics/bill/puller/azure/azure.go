@@ -21,6 +21,7 @@
 package azure
 
 import (
+	"hcm/cmd/account-server/logics/bill/monthtask"
 	"hcm/cmd/account-server/logics/bill/puller"
 	"hcm/cmd/account-server/logics/bill/puller/daily"
 	"hcm/pkg/api/data-service/bill"
@@ -38,7 +39,7 @@ func init() {
 	puller.DailyPullerRegistry[enumor.Azure] = &AzurePuller{
 		BillDelay: defaultAzureDelay,
 	}
-	puller.MonthPullerRegistry[enumor.Azure] = &AzurePuller{
+	monthtask.MonthTaskDescriberRegistry[enumor.Azure] = &AzurePuller{
 		BillDelay: defaultAzureDelay,
 	}
 }

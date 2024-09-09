@@ -48,6 +48,7 @@ func (svc *service) CreateBillMonthPullTask(cts *rest.Contexts) (interface{}, er
 		puller := &tablebill.AccountBillMonthTask{
 			RootAccountID:      req.RootAccountID,
 			RootAccountCloudID: req.RootAccountCloudID,
+			Type:               req.Type,
 			Vendor:             req.Vendor,
 			BillYear:           req.BillYear,
 			BillMonth:          req.BillMonth,

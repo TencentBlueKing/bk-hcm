@@ -1,7 +1,7 @@
 /*
  * TencentBlueKing is pleased to support the open source community by making
  * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
- * Copyright (C) 2022 THL A29 Limited,
+ * Copyright (C) 2024 THL A29 Limited,
  * a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,27 +20,28 @@
 package monthtask
 
 import (
-	ts "hcm/pkg/api/task-server"
-	"hcm/pkg/async/action"
-	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/tools/uuid"
+	"encoding/json"
+
+	"hcm/pkg/api/data-service/bill"
+	"hcm/pkg/kit"
 )
 
-// BuildMonthTask build month task
-func BuildMonthTask(curType enumor.MonthTaskType, step enumor.MonthTaskStep, rootAccountID string,
-	vendor enumor.Vendor, billYear, billMonth int, ext map[string]string) ts.CustomFlowTask {
+type AwsSupportMonthTask struct {
+}
 
-	return ts.CustomFlowTask{
-		ActionID:   action.ActIDType(uuid.UUID()),
-		ActionName: enumor.ActionMonthTaskAction,
-		Params: MonthTaskActionOption{
-			Type:          curType,
-			Step:          step,
-			RootAccountID: rootAccountID,
-			Vendor:        vendor,
-			BillYear:      billYear,
-			BillMonth:     billMonth,
-			Extension:     ext,
-		},
-	}
+func (a AwsSupportMonthTask) GetBatchSize(kt *kit.Kit) uint64 {
+	// TODO implement me
+	panic("implement me")
+}
+
+func (a AwsSupportMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index uint64) (itemList []bill.RawBillItem,
+	isFinished bool, err error) {
+	// TODO implement me
+	panic("implement me")
+}
+
+func (a AwsSupportMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption,
+	rawItemList []*bill.RawBillItem) ([]bill.BillItemCreateReq[json.RawMessage], error) {
+	// TODO implement me
+	panic("implement me")
 }

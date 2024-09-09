@@ -44,6 +44,7 @@ import (
 // MonthTaskActionOption option for month task action
 type MonthTaskActionOption struct {
 	Type          enumor.MonthTaskType `json:"type" validate:"required"`
+	Step          enumor.MonthTaskStep `json:"stage" validate:"required"`
 	RootAccountID string               `json:"root_account_id" validate:"required"`
 	BillYear      int                  `json:"bill_year" validate:"required"`
 	BillMonth     int                  `json:"bill_month" validate:"required"`
@@ -70,29 +71,30 @@ func (act MonthTaskAction) Run(kt run.ExecuteKit, param interface{}) (interface{
 	if !ok {
 		return nil, errf.New(errf.InvalidParameter, "param type mismatch")
 	}
-	runner, err := GetRunner(opt.Vendor)
+	// TODO 增加 对type 的处理
+	runner, err := GetRunner(opt.Vendor, opt.Type)
 	if err != nil {
 		return nil, err
 	}
-	switch opt.Type {
-	case enumor.MonthTaskTypePull:
+	switch opt.Step {
+	case enumor.MonthTaskStepPull:
 		if err := act.runPull(kt.Kit(), runner, opt); err != nil {
 			return nil, err
 		}
 		return nil, nil
-	case enumor.MonthTaskTypeSplit:
+	case enumor.MonthTaskStepSplit:
 		if err := act.runSplit(kt.Kit(), runner, opt); err != nil {
 			return nil, err
 		}
 		return nil, nil
-	case enumor.MonthTaskTypeSummary:
+	case enumor.MonthTaskStepSummary:
 		if err := act.runSummary(kt.Kit(), opt); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	default:
 		return nil, errf.New(errf.InvalidParameter, fmt.Sprintf(
-			"invalid month task type %s", opt.Type))
+			"invalid month task type %s", opt.Step))
 	}
 }
 

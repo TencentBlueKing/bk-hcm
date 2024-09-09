@@ -72,7 +72,7 @@ func (s *service) ReaccountRootAccountSummary(cts *rest.Contexts) (interface{}, 
 func getRootSummary(
 	client *client.ClientSet, kt *kit.Kit,
 	rootAccountID string, billYear, billMonth int) (
-	*bill.BillSummaryRootResult, error) {
+	*bill.BillSummaryRoot, error) {
 
 	expressions := []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", rootAccountID),

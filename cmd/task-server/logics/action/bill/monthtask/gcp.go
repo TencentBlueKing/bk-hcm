@@ -21,6 +21,7 @@ package monthtask
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	actcli "hcm/cmd/task-server/logics/action/cli"
@@ -40,15 +41,23 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-func newGcpRunner() *Gcp {
-	return &Gcp{}
+func newGcpRunner(taskType enumor.MonthTaskType) (MonthTaskRunner, error) {
+	switch taskType {
+	case enumor.GcpSupportMonthTask:
+		return &GcpSupportMonthTask{}, nil
+	case enumor.GcpCreditsMonthTask:
+		return &GcpCreditMonthTask{}, nil
+	default:
+		return nil, errors.New("not support task type of gcp: " + string(taskType))
+	}
+
 }
 
-type Gcp struct {
+type GcpSupportMonthTask struct {
 }
 
 // GetBatchSize get batch size
-func (gcp *Gcp) GetBatchSize(kt *kit.Kit) uint64 {
+func (gcp *GcpSupportMonthTask) GetBatchSize(kt *kit.Kit) uint64 {
 	return 1000
 }
 
@@ -91,7 +100,7 @@ func convertToRawBill(recordList []billcore.GcpRawBillItem) ([]dsbill.RawBillIte
 }
 
 // Pull pull gcp bill
-func (gcp *Gcp) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index uint64) (
+func (gcp *GcpSupportMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index uint64) (
 	[]dsbill.RawBillItem, bool, error) {
 
 	limit := gcp.GetBatchSize(kt)
@@ -160,7 +169,7 @@ func (gcp *Gcp) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index uint64) (
 }
 
 // Split split gcp bill
-func (gcp *Gcp) Split(kt *kit.Kit, opt *MonthTaskActionOption,
+func (gcp *GcpSupportMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption,
 	rawItemList []*dsbill.RawBillItem) ([]dsbill.BillItemCreateReq[json.RawMessage], error) {
 
 	if len(rawItemList) <= 0 {
@@ -205,7 +214,7 @@ func (gcp *Gcp) Split(kt *kit.Kit, opt *MonthTaskActionOption,
 	return billItems, nil
 }
 
-func (gcp *Gcp) getSummaryMainList(
+func (gcp *GcpSupportMonthTask) getSummaryMainList(
 	kt *kit.Kit, rootAccountID string, billYear, billMonth int) ([]*dsbill.BillSummaryMain, error) {
 
 	filter := tools.ExpressionAnd(
