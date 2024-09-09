@@ -254,13 +254,13 @@ func (act *MainAccountSummaryAction) getMonthPullTaskStatus(kt *kit.Kit, summary
 	return cost, true, nil
 }
 
-func getMonthPullTask(kt *kit.Kit, rootAccountID string, billYear, billMonth int) (*bill.BillMonthTaskResult, error) {
+func getMonthPullTask(kt *kit.Kit, rootAccountID string, billYear, billMonth int) (*billcore.MonthTask, error) {
 	expressions := []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", rootAccountID),
 		tools.RuleEqual("bill_year", billYear),
 		tools.RuleEqual("bill_month", billMonth),
 	}
-	result, err := actcli.GetDataService().Global.Bill.ListBillMonthPullTask(kt, &bill.BillMonthTaskListReq{
+	result, err := actcli.GetDataService().Global.Bill.ListBillMonthTask(kt, &bill.BillMonthTaskListReq{
 		Filter: tools.ExpressionAnd(expressions...),
 		Page: &core.BasePage{
 			Start: 0,

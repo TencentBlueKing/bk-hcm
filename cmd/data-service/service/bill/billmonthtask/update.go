@@ -32,8 +32,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// UpdateBillMonthPullTask update bill puller with options
-func (svc *service) UpdateBillMonthPullTask(cts *rest.Contexts) (interface{}, error) {
+// UpdateBillMonthTask update bill puller with options
+func (svc *service) UpdateBillMonthTask(cts *rest.Contexts) (interface{}, error) {
 	req := new(dataservice.BillMonthTaskUpdateReq)
 
 	if err := cts.DecodeInto(req); err != nil {

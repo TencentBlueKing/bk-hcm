@@ -35,8 +35,8 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// CreateBillMonthPullTask create bill puller with options
-func (svc *service) CreateBillMonthPullTask(cts *rest.Contexts) (interface{}, error) {
+// CreateBillMonthTask create bill puller with options
+func (svc *service) CreateBillMonthTask(cts *rest.Contexts) (interface{}, error) {
 	req := new(dsbill.BillMonthTaskCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)

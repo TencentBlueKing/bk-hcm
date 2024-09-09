@@ -132,22 +132,24 @@ func (act MonthTaskAction) runPull(kt *kit.Kit, runner MonthTaskRunner, opt *Mon
 		}
 		logs.Infof("month task %+v pulled %d records, continue", opt, lenRawBillItemList)
 		if isFinished {
-			if err := databillCli.UpdateBillMonthPullTask(kt, &bill.BillMonthTaskUpdateReq{
+			updateToPulledReq := &bill.BillMonthTaskUpdateReq{
 				ID:        task.ID,
 				Count:     task.Count + uint64(lenRawBillItemList),
 				PullIndex: task.PullIndex + uint64(lenRawBillItemList),
 				State:     enumor.RootAccountMonthBillTaskStatePulled,
-			}); err != nil {
+			}
+			if err := databillCli.UpdateBillMonthTask(kt, updateToPulledReq); err != nil {
 				logs.Warnf("failed to update month pull task, opt: %+v, err: %s, rid: %s", opt, err.Error(), kt.Rid)
 				return err
 			}
 			return nil
 		}
-		if err := databillCli.UpdateBillMonthPullTask(kt, &bill.BillMonthTaskUpdateReq{
+		updateIdxReq := &bill.BillMonthTaskUpdateReq{
 			ID:        task.ID,
 			Count:     task.Count + uint64(lenRawBillItemList),
 			PullIndex: task.PullIndex + uint64(lenRawBillItemList),
-		}); err != nil {
+		}
+		if err := databillCli.UpdateBillMonthTask(kt, updateIdxReq); err != nil {
 			logs.Warnf("failed to update month pull task, opt: %+v, err: %s, rid: %s", opt, err.Error(), kt.Rid)
 			return err
 		}
@@ -191,14 +193,14 @@ func (act MonthTaskAction) runSplit(kt *kit.Kit, runner MonthTaskRunner, opt *Mo
 			}
 			mtUpdate.SummaryDetail = string(itemListJSON)
 			mtUpdate.State = enumor.RootAccountMonthBillTaskStateSplit
-			if err := actcli.GetDataService().Global.Bill.UpdateBillMonthPullTask(kt, mtUpdate); err != nil {
+			if err := actcli.GetDataService().Global.Bill.UpdateBillMonthTask(kt, mtUpdate); err != nil {
 				logs.Warnf("failed to update month pull task to finished, opt: %+v, err: %s, rid: %s",
 					opt, err.Error(), kt.Rid)
 				return err
 			}
 			return nil
 		}
-		if err := actcli.GetDataService().Global.Bill.UpdateBillMonthPullTask(kt, mtUpdate); err != nil {
+		if err := actcli.GetDataService().Global.Bill.UpdateBillMonthTask(kt, mtUpdate); err != nil {
 			logs.Warnf("failed to update month pull task, opt: %+v, err: %s, rid: %s", opt, err.Error(), kt.Rid)
 			return err
 		}
@@ -364,7 +366,7 @@ func (act MonthTaskAction) runMainAccountSummary(kt *kit.Kit, opt *MonthTaskActi
 			logs.Warnf("marshal detail failed, err: %s, rid: %s", err.Error(), kt.Rid)
 			return err
 		}
-		if err := actcli.GetDataService().Global.Bill.UpdateBillMonthPullTask(kt, &bill.BillMonthTaskUpdateReq{
+		if err := actcli.GetDataService().Global.Bill.UpdateBillMonthTask(kt, &bill.BillMonthTaskUpdateReq{
 			ID:            task.ID,
 			SummaryDetail: string(marshalDetail),
 		}); err != nil {
@@ -393,7 +395,7 @@ func (act MonthTaskAction) runSummary(kt *kit.Kit, opt *MonthTaskActionOption) e
 		return err
 	}
 
-	if err := actcli.GetDataService().Global.Bill.UpdateBillMonthPullTask(kt, &bill.BillMonthTaskUpdateReq{
+	if err := actcli.GetDataService().Global.Bill.UpdateBillMonthTask(kt, &bill.BillMonthTaskUpdateReq{
 		ID:    task.ID,
 		State: enumor.RootAccountMonthBillTaskStateAccounted,
 	}); err != nil {
@@ -409,7 +411,7 @@ func getMonthPullTask(kt *kit.Kit, opt *MonthTaskActionOption) (*billcore.MonthT
 		tools.RuleEqual("bill_year", opt.BillYear),
 		tools.RuleEqual("bill_month", opt.BillMonth),
 	}
-	result, err := actcli.GetDataService().Global.Bill.ListBillMonthPullTask(kt, &bill.BillMonthTaskListReq{
+	result, err := actcli.GetDataService().Global.Bill.ListBillMonthTask(kt, &bill.BillMonthTaskListReq{
 		Filter: tools.ExpressionAnd(expressions...),
 		Page: &core.BasePage{
 			Start: 0,

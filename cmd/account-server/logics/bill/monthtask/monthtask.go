@@ -22,7 +22,6 @@
 package monthtask
 
 import (
-	"context"
 	"fmt"
 
 	"hcm/cmd/account-server/logics/bill/puller"
@@ -52,17 +51,24 @@ type MonthTaskDescriber interface {
 	GetMonthTaskTypes() []enumor.MonthTaskType
 }
 
+func NewDefaultMonthTaskRunner(kt *kit.Kit, vendor enumor.Vendor, rootAccountID, rootAccountCloudID string,
+	ext map[string]string) *DefaultMonthTaskRunner {
+	return &DefaultMonthTaskRunner{
+		rootAccountID:      rootAccountID,
+		rootAccountCloudID: rootAccountCloudID,
+		vendor:             vendor,
+		ext:                ext,
+	}
+}
+
 type DefaultMonthTaskRunner struct {
-	RootAccountID      string
-	RootAccountCloudID string
-	Vendor             enumor.Vendor
+	rootAccountID      string
+	rootAccountCloudID string
+	vendor             enumor.Vendor
 	Client             *client.ClientSet
 
 	// ext extension option for root account
 	ext map[string]string
-
-	kt         *kit.Kit
-	cancelFunc context.CancelFunc
 }
 
 func (rac *DefaultMonthTaskRunner) getBillSummary(kt *kit.Kit, billYear, billMonth int) (
@@ -70,8 +76,8 @@ func (rac *DefaultMonthTaskRunner) getBillSummary(kt *kit.Kit, billYear, billMon
 
 	var expressions []*filter.AtomRule
 	expressions = append(expressions, []*filter.AtomRule{
-		tools.RuleEqual("root_account_id", rac.RootAccountID),
-		tools.RuleEqual("vendor", rac.Vendor),
+		tools.RuleEqual("root_account_id", rac.rootAccountID),
+		tools.RuleEqual("vendor", rac.vendor),
 		tools.RuleEqual("bill_year", billYear),
 		tools.RuleEqual("bill_month", billMonth),
 	}...)
@@ -92,17 +98,17 @@ func (rac *DefaultMonthTaskRunner) getBillSummary(kt *kit.Kit, billYear, billMon
 	return result.Details[0], nil
 }
 
-func (r *DefaultMonthTaskRunner) ensureMonthTask(kt *kit.Kit, billYear, billMonth int) error {
+func (r *DefaultMonthTaskRunner) EnsureMonthTask(kt *kit.Kit, billYear, billMonth int) error {
 	rootSummary, err := r.getBillSummary(kt, billYear, billMonth)
 	if err != nil {
 		return err
 	}
-	monthPuller, err := puller.GetMonthPuller(r.Vendor)
+	monthPuller, err := puller.GetMonthPuller(r.vendor)
 	if err != nil {
 		return err
 	}
 	if !monthPuller.HasMonthPullTask() {
-		logs.Infof("no month pull task for root account (%s, %s), skip, rid: %s", r.RootAccountID, r.Vendor, kt.Rid)
+		logs.Infof("no month pull task for root account (%s, %s), skip, rid: %s", r.rootAccountID, r.vendor, kt.Rid)
 		return nil
 	}
 
@@ -113,7 +119,7 @@ func (r *DefaultMonthTaskRunner) ensureMonthTask(kt *kit.Kit, billYear, billMont
 	isAllAccounted := calculateAccountingState(mainSummaryList, rootSummary)
 	if !isAllAccounted {
 		logs.Infof("not all main account bill summary for root account (%s, %s, %d-%02d) were accounted, wait, rid: %s",
-			r.RootAccountID, r.Vendor, billYear, billMonth, kt.Rid)
+			r.rootAccountID, r.vendor, billYear, billMonth, kt.Rid)
 		return nil
 	}
 	// 进入 月度任务执行阶段
@@ -132,7 +138,7 @@ func (r *DefaultMonthTaskRunner) ensureMonthTask(kt *kit.Kit, billYear, billMont
 		if monthTask == nil {
 			if err := r.createMonthPullTaskStub(kt, rootSummary, curType); err != nil {
 				logs.Errorf("fail to create [%s] month task, type: %s, err: %v, rid: %s",
-					r.Vendor, curType, err, kt.Rid)
+					r.vendor, curType, err, kt.Rid)
 				return err
 			}
 			return nil
@@ -193,8 +199,8 @@ func (r *DefaultMonthTaskRunner) listAllMainSummary(kt *kit.Kit, billYear, billM
 	[]*dsbillapi.BillSummaryMain, error) {
 
 	expressions := []*filter.AtomRule{
-		tools.RuleEqual("root_account_id", r.RootAccountID),
-		tools.RuleEqual("vendor", r.Vendor),
+		tools.RuleEqual("root_account_id", r.rootAccountID),
+		tools.RuleEqual("vendor", r.vendor),
 		tools.RuleEqual("bill_year", billYear),
 		tools.RuleEqual("bill_month", billMonth),
 	}
@@ -330,14 +336,14 @@ func (r *DefaultMonthTaskRunner) ensureMonthTaskAccountedStep(kt *kit.Kit, task 
 func (r *DefaultMonthTaskRunner) createMonthTaskFlow(kt *kit.Kit, task *billcore.MonthTask,
 	step enumor.MonthTaskStep) (*core.CreateResult, error) {
 
-	memo := fmt.Sprintf("%s:%s %s(%s) %d-%02d ", task.Type, step, r.RootAccountCloudID,
-		r.RootAccountCloudID, task.BillYear, task.BillMonth)
+	memo := fmt.Sprintf("%s:%s %s(%s) %d-%02d ", task.Type, step, r.rootAccountCloudID,
+		r.rootAccountCloudID, task.BillYear, task.BillMonth)
 
 	flowReq := &taskserver.AddCustomFlowReq{
 		Name: enumor.FlowBillMonthTask,
 		Memo: memo,
 		Tasks: []taskserver.CustomFlowTask{
-			monthtask.BuildMonthTask(task.Type, step, r.RootAccountCloudID, r.Vendor, task.BillYear, task.BillMonth,
+			monthtask.BuildMonthTask(task.Type, step, r.rootAccountCloudID, r.vendor, task.BillYear, task.BillMonth,
 				r.ext),
 		},
 	}
@@ -358,7 +364,7 @@ func (r *DefaultMonthTaskRunner) createMonthTaskFlow(kt *kit.Kit, task *billcore
 	default:
 		return nil, fmt.Errorf("unsupported month task step %s", step)
 	}
-	if err := r.Client.DataService().Global.Bill.UpdateBillMonthPullTask(kt, updateReq); err != nil {
+	if err := r.Client.DataService().Global.Bill.UpdateBillMonthTask(kt, updateReq); err != nil {
 		logs.Warnf("failed to update month pull task %s flow id %s, err: %v, rid: %s",
 			task.String(), result.ID, err, kt.Rid)
 		return nil, err
@@ -370,16 +376,16 @@ func (r *DefaultMonthTaskRunner) createMonthPullTaskStub(kt *kit.Kit, rootSummar
 	monthTaskType enumor.MonthTaskType) error {
 
 	createReq := &dsbillapi.BillMonthTaskCreateReq{
-		RootAccountID:      r.RootAccountID,
-		RootAccountCloudID: r.RootAccountCloudID,
-		Vendor:             r.Vendor,
+		RootAccountID:      r.rootAccountID,
+		RootAccountCloudID: r.rootAccountCloudID,
+		Vendor:             r.vendor,
 		Type:               monthTaskType,
 		BillYear:           rootSummary.BillYear,
 		BillMonth:          rootSummary.BillMonth,
 		VersionID:          rootSummary.CurrentVersion,
 		State:              enumor.RootAccountMonthBillTaskStatePulling,
 	}
-	taskResult, err := r.Client.DataService().Global.Bill.CreateBillMonthPullTask(kt, createReq)
+	taskResult, err := r.Client.DataService().Global.Bill.CreateBillMonthTask(kt, createReq)
 	if err != nil {
 		logs.Infof("create month pull task failed, err: %s, rid: %s", err.Error(), kt.Rid)
 		return err
@@ -392,7 +398,7 @@ func (r *DefaultMonthTaskRunner) listMonthPullTaskStub(kt *kit.Kit, billYear, bi
 	[]*billcore.MonthTask, error) {
 
 	expressions := []*filter.AtomRule{
-		tools.RuleEqual("root_account_id", r.RootAccountID),
+		tools.RuleEqual("root_account_id", r.rootAccountID),
 		tools.RuleEqual("bill_year", billYear),
 		tools.RuleEqual("bill_month", billMonth),
 	}
@@ -405,7 +411,7 @@ func (r *DefaultMonthTaskRunner) listMonthPullTaskStub(kt *kit.Kit, billYear, bi
 			Order: core.Ascending,
 		},
 	}
-	result, err := r.Client.DataService().Global.Bill.ListBillMonthPullTask(kt, req)
+	result, err := r.Client.DataService().Global.Bill.ListBillMonthTask(kt, req)
 	if err != nil {
 		logs.Errorf("list month task stub failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, fmt.Errorf("list month task stub failed, err: %v", err)
@@ -418,12 +424,12 @@ func (r *DefaultMonthTaskRunner) deleteMonthPullTaskStub(kt *kit.Kit, billYear, 
 	curType enumor.MonthTaskType) error {
 
 	expressions := []*filter.AtomRule{
-		tools.RuleEqual("root_account_id", r.RootAccountID),
+		tools.RuleEqual("root_account_id", r.rootAccountID),
 		tools.RuleEqual("bill_year", billYear),
 		tools.RuleEqual("bill_month", billMonth),
 		tools.RuleEqual("type", curType),
 	}
-	return r.Client.DataService().Global.Bill.DeleteBillMonthPullTask(kt, &dataservice.BatchDeleteReq{
+	return r.Client.DataService().Global.Bill.DeleteBillMonthTask(kt, &dataservice.BatchDeleteReq{
 		Filter: tools.ExpressionAnd(expressions...),
 	})
 }

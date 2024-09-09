@@ -26,14 +26,16 @@ import (
 	"hcm/pkg/kit"
 )
 
+// GcpCreditMonthTask 赠金抽取到对应账号下
 type GcpCreditMonthTask struct {
 }
 
+// GetBatchSize ...
 func (g GcpCreditMonthTask) GetBatchSize(kt *kit.Kit) uint64 {
-	// TODO implement me
-	panic("implement me")
+	return 1000
 }
 
+// Pull gcp credits list
 func (g GcpCreditMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index uint64) (itemList []dsbill.RawBillItem,
 	isFinished bool, err error) {
 	// TODO implement me

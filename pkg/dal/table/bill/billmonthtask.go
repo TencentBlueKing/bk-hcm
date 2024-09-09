@@ -70,7 +70,7 @@ type AccountBillMonthTask struct {
 	// Vendor 云厂商
 	Vendor enumor.Vendor `db:"vendor" json:"vendor"`
 	// Type 任务类型
-	Type string `db:"type" json:"type"`
+	Type enumor.MonthTaskType `db:"type" json:"type"`
 	// BillYear 账单年份
 	BillYear int `db:"bill_year" json:"bill_year"`
 	// BillMonth 账单月份

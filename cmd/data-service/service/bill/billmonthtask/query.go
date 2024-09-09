@@ -29,8 +29,8 @@ import (
 	cvt "hcm/pkg/tools/converter"
 )
 
-// ListBillMonthPullTask list bill month task with options
-func (svc *service) ListBillMonthPullTask(cts *rest.Contexts) (interface{}, error) {
+// ListBillMonthTask list bill month task with options
+func (svc *service) ListBillMonthTask(cts *rest.Contexts) (interface{}, error) {
 	req := new(dataproto.BillMonthTaskListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
