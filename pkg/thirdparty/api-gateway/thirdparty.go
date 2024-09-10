@@ -136,5 +136,6 @@ func getCommonHeader(kt *kit.Kit, cfg *cc.ApiGateway) http.Header {
 	bkAuth := fmt.Sprintf(`{"bk_app_code": "%s", "bk_app_secret": "%s","bk_username":"%s"}`,
 		cfg.AppCode, cfg.AppSecret, user)
 	header.Set(constant.BKGWAuthKey, bkAuth)
+	header.Set(constant.RidKey, kt.Rid)
 	return header
 }

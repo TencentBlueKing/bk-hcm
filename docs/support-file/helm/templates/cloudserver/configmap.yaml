@@ -49,4 +49,4 @@ data:
     cloudSelection:
       {{- toYaml .Values.cloudserver.cloudSelection | nindent 6 }}
     notice:
-      {{- toYaml .Values.notice | nindent 6 }}
+      {{- toYaml .Values.cloudserver.notice | nindent 6 }}

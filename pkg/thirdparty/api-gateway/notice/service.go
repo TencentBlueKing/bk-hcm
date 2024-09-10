@@ -28,6 +28,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+// Client ...
 type Client interface {
 	GetCurAnn(kt *kit.Kit, params map[string]string) (GetCurAnnResp, error)
 	RegApp(kt *kit.Kit) (*RegAppData, error)
@@ -39,6 +40,7 @@ type notice struct {
 	client rest.ClientInterface
 }
 
+// NewClient ...
 func NewClient(cfg *cc.ApiGateway, reg prometheus.Registerer) (Client, error) {
 	tls := &ssl.TLSConfig{
 		InsecureSkipVerify: cfg.TLS.InsecureSkipVerify,

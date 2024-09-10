@@ -29,6 +29,7 @@ type service struct {
 	client pkgnotice.Client
 }
 
+// GetCurrentAnnouncements ...
 func (s service) GetCurrentAnnouncements(cts *rest.Contexts) (interface{}, error) {
 	if !cc.CloudServer().Notice.Enable {
 		return nil, errors.New("notification is not enabled")
