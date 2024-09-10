@@ -29,7 +29,6 @@ import (
 	"hcm/pkg/thirdparty/api-gateway/bkbase"
 	"hcm/pkg/thirdparty/api-gateway/cmsi"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
-	"hcm/pkg/thirdparty/api-gateway/notice"
 	"hcm/pkg/thirdparty/esb"
 
 	"github.com/emicklei/go-restful/v3"
@@ -47,5 +46,4 @@ type Capability struct {
 	ItsmCli    itsm.Client
 	BKBaseCli  bkbase.Client
 	CmsiCli    cmsi.Client
-	NoticeCli  notice.Client
 }

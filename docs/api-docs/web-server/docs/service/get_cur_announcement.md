@@ -6,7 +6,7 @@
 
 ### URL
 
-GET /api/v1/cloud/notice/get_current_announcements
+GET /api/v1/web/notice/get_current_announcements
 
 ### 输入参数
 

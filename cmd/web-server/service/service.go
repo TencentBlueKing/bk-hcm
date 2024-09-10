@@ -23,6 +23,7 @@ package service
 import (
 	"context"
 	"fmt"
+
 	"html/template"
 	"net"
 	"net/http"
@@ -38,6 +39,7 @@ import (
 	"hcm/cmd/web-server/service/cloud/vpc"
 	"hcm/cmd/web-server/service/cmdb"
 	"hcm/cmd/web-server/service/itsm"
+	"hcm/cmd/web-server/service/notice"
 	"hcm/cmd/web-server/service/user"
 	"hcm/cmd/web-server/service/version"
 	"hcm/pkg/cc"
@@ -45,6 +47,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/handler"
 	"hcm/pkg/iam/auth"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/metrics"
 	"hcm/pkg/rest"
@@ -52,6 +55,7 @@ import (
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
 	pkgitsm "hcm/pkg/thirdparty/api-gateway/itsm"
+	pkgnotice "hcm/pkg/thirdparty/api-gateway/notice"
 	"hcm/pkg/thirdparty/esb"
 	"hcm/pkg/tools/ssl"
 	pkgversion "hcm/pkg/version"
@@ -71,6 +75,8 @@ type Service struct {
 	authorizer auth.Authorizer
 	// itsmCli itsm client.
 	itsmCli pkgitsm.Client
+	// noticeCli notification center client
+	noticeCli pkgnotice.Client
 }
 
 // NewService create a service instance.
@@ -121,13 +127,37 @@ func NewService(dis serviced.Discover) (*Service, error) {
 		return nil, err
 	}
 
+	noticeCli, err := newNotificationClient()
+	if err != nil {
+		logs.Errorf("failed to create notice client, err: %v", err)
+		return nil, err
+	}
+
 	return &Service{
 		client:     apiClientSet,
 		esbClient:  esbClient,
 		proxy:      p,
 		authorizer: authorizer,
 		itsmCli:    itsmCli,
+		noticeCli:  noticeCli,
 	}, nil
+}
+
+func newNotificationClient() (pkgnotice.Client, error) {
+	noticeCfg := cc.WebServer().Notice
+	noticeCli, err := pkgnotice.NewClient(&noticeCfg.ApiGateway, metrics.Register())
+	if err != nil {
+		logs.Errorf("failed to create notice client, err: %v", err)
+		return nil, err
+	}
+	if noticeCfg.Enable {
+		_, err := noticeCli.RegApp(kit.New())
+		if err != nil {
+			logs.Errorf("register notice app failed, err: %v", err)
+			return nil, err
+		}
+	}
+	return noticeCli, nil
 }
 
 // ListenAndServeRest listen and serve the restful server
@@ -228,6 +258,7 @@ func (s *Service) apiSet() *restful.WebService {
 		EsbClient:  s.esbClient,
 		Authorizer: s.authorizer,
 		ItsmCli:    s.itsmCli,
+		NoticeCli:  s.noticeCli,
 	}
 
 	user.InitUserService(c)
@@ -237,6 +268,7 @@ func (s *Service) apiSet() *restful.WebService {
 	subnet.InitService(c)
 	itsm.InitService(c)
 	version.InitVersionService(c)
+	notice.InitService(c)
 
 	return ws
 }
