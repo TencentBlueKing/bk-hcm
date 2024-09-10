@@ -23,7 +23,6 @@ package service
 import (
 	"context"
 	"fmt"
-
 	"html/template"
 	"net"
 	"net/http"
