@@ -919,3 +919,18 @@ func (opt *BillAllocationOption) validate() error {
 	}
 	return nil
 }
+
+// Notice ...
+type Notice struct {
+	Enable     bool `yaml:"enable"`
+	ApiGateway `yaml:"-,inline"`
+}
+
+// Validate do validate
+func (c *Notice) validate() error {
+	if err := c.ApiGateway.validate(); err != nil {
+		return err
+	}
+
+	return nil
+}

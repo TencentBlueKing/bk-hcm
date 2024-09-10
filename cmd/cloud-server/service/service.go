@@ -51,6 +51,7 @@ import (
 	instancetype "hcm/cmd/cloud-server/service/instance-type"
 	loadbalancer "hcm/cmd/cloud-server/service/load-balancer"
 	networkinterface "hcm/cmd/cloud-server/service/network-interface"
+	"hcm/cmd/cloud-server/service/notice"
 	"hcm/cmd/cloud-server/service/recycle"
 	"hcm/cmd/cloud-server/service/region"
 	resourcegroup "hcm/cmd/cloud-server/service/resource-group"
@@ -69,6 +70,7 @@ import (
 	"hcm/pkg/cryptography"
 	"hcm/pkg/handler"
 	"hcm/pkg/iam/auth"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/metrics"
 	"hcm/pkg/rest"
@@ -78,6 +80,7 @@ import (
 	"hcm/pkg/thirdparty/api-gateway/bkbase"
 	"hcm/pkg/thirdparty/api-gateway/cmsi"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
+	pkgnotice "hcm/pkg/thirdparty/api-gateway/notice"
 	"hcm/pkg/thirdparty/esb"
 	"hcm/pkg/tools/ssl"
 
@@ -97,6 +100,7 @@ type Service struct {
 	itsmCli   itsm.Client
 	bkBaseCli bkbase.Client
 	cmsiCli   cmsi.Client
+	noticeCli pkgnotice.Client
 }
 
 // NewService create a service instance.
@@ -190,6 +194,12 @@ func getCloudClientSvr(sd serviced.ServiceDiscover) (*client.ClientSet, esb.Clie
 		return nil, nil, nil, err
 	}
 
+	noticeCli, err := newNotificationClient()
+	if err != nil {
+		logs.Errorf("failed to create notice client, err: %v", err)
+		return nil, nil, nil, err
+	}
+
 	svr := &Service{
 		client:     apiClientSet,
 		authorizer: authorizer,
@@ -199,9 +209,27 @@ func getCloudClientSvr(sd serviced.ServiceDiscover) (*client.ClientSet, esb.Clie
 		itsmCli:    itsmCli,
 		bkBaseCli:  bkbaseCli,
 		cmsiCli:    cmsiCli,
+		noticeCli:  noticeCli,
 	}
 
 	return apiClientSet, esbClient, svr, nil
+}
+
+func newNotificationClient() (pkgnotice.Client, error) {
+	noticeCfg := cc.CloudServer().Notice
+	noticeCli, err := pkgnotice.NewClient(&noticeCfg.ApiGateway, metrics.Register())
+	if err != nil {
+		logs.Errorf("failed to create notice client, err: %v", err)
+		return nil, err
+	}
+	if noticeCfg.Enable {
+		_, err := noticeCli.RegApp(kit.New())
+		if err != nil {
+			logs.Errorf("register notice app failed, err: %v", err)
+			return nil, err
+		}
+	}
+	return noticeCli, nil
 }
 
 // newCipherFromConfig 根据配置文件里的加密配置，选择配置的算法并生成对应的加解密器
@@ -284,6 +312,7 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 		ItsmCli:    s.itsmCli,
 		BKBaseCli:  s.bkBaseCli,
 		CmsiCli:    s.cmsiCli,
+		NoticeCli:  s.noticeCli,
 	}
 
 	account.InitAccountService(c)
@@ -319,6 +348,8 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 	asynctask.InitService(c)
 
 	bandwidthpackage.InitService(c)
+
+	notice.InitService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }
