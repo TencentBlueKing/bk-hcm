@@ -24,12 +24,12 @@ import (
 	"errors"
 	"strconv"
 
-	"hcm/cmd/task-server/logics/action/bill/dailysplit"
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	"hcm/pkg/api/core"
 	protocore "hcm/pkg/api/core/account-set"
 	"hcm/pkg/api/data-service/bill"
 	hcbill "hcm/pkg/api/hc-service/bill"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/table/types"
@@ -79,8 +79,8 @@ func (a AwsSavingsPlanMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, i
 		return nil, false, err
 	}
 	extension := map[string]string{
-		"line_item_product_code":       dailysplit.AwsSavingsPlansCostCodeReverse,
-		"product_product_name":         dailysplit.AwsSavingsPlansCostCodeReverse,
+		"line_item_product_code":       constant.AwsSavingsPlansCostCodeReverse,
+		"product_product_name":         constant.AwsSavingsPlansCostCodeReverse,
 		"pricing_unit":                 "Account",
 		"line_item_currency_code":      string(enumor.CurrencyUSD),
 		"line_item_net_unblended_cost": spUsage.SPNetCost.Neg().String(),
@@ -93,8 +93,8 @@ func (a AwsSavingsPlanMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, i
 	}
 	spUsageReverseItem := bill.RawBillItem{
 		Region:        "any",
-		HcProductCode: dailysplit.AwsSavingsPlansCostCodeReverse,
-		HcProductName: dailysplit.AwsSavingsPlansCostCodeReverse,
+		HcProductCode: constant.AwsSavingsPlansCostCodeReverse,
+		HcProductName: constant.AwsSavingsPlansCostCodeReverse,
 		BillCurrency:  enumor.CurrencyUSD,
 		BillCost:      spUsage.SPNetCost.Neg(),
 		ResAmount:     decimal.NewFromUint64(spUsage.AccountCount),
@@ -176,7 +176,7 @@ func (a AwsSavingsPlanMonthTask) splitSpReverseExpense(kt *kit.Kit, opt *MonthTa
 		batchSum = batchSum.Add(item.BillCost)
 	}
 
-	extJson, err := convAwsBillItemExtension(dailysplit.AwsSavingsPlansCostCodeReverse, opt,
+	extJson, err := convAwsBillItemExtension(constant.AwsSavingsPlansCostCodeReverse, opt,
 		summary.RootAccountCloudID, summary.RootAccountCloudID, summary.Currency, batchSum)
 	if err != nil {
 		logs.Errorf("fail to convert common expense extension for aws month task split step, err: %v, opt: %#v, rid: %s",
@@ -196,8 +196,8 @@ func (a AwsSavingsPlanMonthTask) splitSpReverseExpense(kt *kit.Kit, opt *MonthTa
 		VersionID:     summary.CurrentVersion,
 		Currency:      summary.Currency,
 		Cost:          batchSum,
-		HcProductCode: dailysplit.AwsSavingsPlansCostCodeReverse,
-		HcProductName: dailysplit.AwsSavingsPlansCostCodeReverse,
+		HcProductCode: constant.AwsSavingsPlansCostCodeReverse,
+		HcProductName: constant.AwsSavingsPlansCostCodeReverse,
 		Extension:     cvt.ValToPtr[json.RawMessage](extJson),
 	}
 	return []bill.BillItemCreateReq[json.RawMessage]{item}, nil

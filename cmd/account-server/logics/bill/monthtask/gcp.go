@@ -20,20 +20,45 @@
 package monthtask
 
 import (
+	"fmt"
+	"strings"
+
+	"hcm/pkg/cc"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/tools/json"
 )
 
 func init() {
-	MonthTaskDescriberRegistry[enumor.Gcp] = &GcpMonthDescriber{}
+	monthTaskDescriberRegistry[enumor.Gcp] = &GcpMonthDescriber{}
 }
 
 // GcpMonthDescriber gcp month task describer
 type GcpMonthDescriber struct {
 }
 
-// HasMonthPullTask return true if vendor supports month pull task
-func (hp *GcpMonthDescriber) HasMonthPullTask() bool {
-	return true
+// GetTaskExtension ...
+func (hp *GcpMonthDescriber) GetTaskExtension(rootAccountCloudID string) (map[string]string, error) {
+
+	// set exclude account id
+	excludeCloudIds := cc.AccountServer().BillAllocation.GcpCommonExpense.ExcludeAccountCloudIDs
+	var creditReturnConfig string
+	var err error
+	// 	matching saving plan allocation option
+	for _, creditConfigs := range cc.AccountServer().BillAllocation.GcpCredits {
+		if creditConfigs.RootAccountCloudID != rootAccountCloudID {
+			continue
+		}
+		creditReturnConfig, err = json.MarshalToString(creditConfigs)
+		if err != nil {
+			return nil, fmt.Errorf("fail to marshal gcp credit return config to json :%w", err)
+		}
+	}
+
+	return map[string]string{
+		constant.GcpCommonExpenseExcludeCloudIDKey: strings.Join(excludeCloudIds, ","),
+		constant.GcpCreditReturnConfigKey:          creditReturnConfig,
+	}, nil
 }
 
 // GetMonthTaskTypes gcp month tasks

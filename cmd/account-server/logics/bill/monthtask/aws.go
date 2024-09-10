@@ -19,22 +19,44 @@
 
 package monthtask
 
-import "hcm/pkg/criteria/enumor"
+import (
+	"strings"
+
+	"hcm/pkg/cc"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
+)
 
 func init() {
-	MonthTaskDescriberRegistry[enumor.Aws] = &AwsMonthDescriber{}
+	monthTaskDescriberRegistry[enumor.Aws] = &AwsMonthDescriber{}
 }
 
 // AwsMonthDescriber aws month task describer
 type AwsMonthDescriber struct {
 }
 
-// HasMonthPullTask return true if vendor supports month pull task
-func (hp *AwsMonthDescriber) HasMonthPullTask() bool {
-	return true
-}
-
 // GetMonthTaskTypes aws month tasks
 func (hp *AwsMonthDescriber) GetMonthTaskTypes() []enumor.MonthTaskType {
 	return []enumor.MonthTaskType{enumor.AwsSavingsPlansMonthTask, enumor.AwsSupportMonthTask}
+}
+
+// GetTaskExtension extension for task
+func (hp *AwsMonthDescriber) GetTaskExtension(rootAccountCloudID string) (map[string]string, error) {
+	// set exclude account id
+	excludeCloudIds := cc.AccountServer().BillAllocation.AwsCommonExpense.ExcludeAccountCloudIDs
+	var spArnPrefix, spAccountCloudID string
+	// 	matching saving plan allocation option
+	for _, spOpt := range cc.AccountServer().BillAllocation.AwsSavingsPlans {
+		if spOpt.RootAccountCloudID != rootAccountCloudID {
+			continue
+		}
+		spAccountCloudID = spOpt.SpPurchaseAccountCloudID
+		spArnPrefix = spOpt.SpArnPrefix
+	}
+
+	return map[string]string{
+		constant.AwsCommonExpenseExcludeCloudIDKey: strings.Join(excludeCloudIds, ","),
+		constant.AwsSavingsPlanARNPrefixKey:        spArnPrefix,
+		constant.AwsSavingsPlanAccountCloudIDKey:   spAccountCloudID,
+	}, nil
 }

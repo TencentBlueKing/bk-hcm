@@ -25,6 +25,7 @@ import (
 
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	"hcm/pkg/api/core"
+	billcore "hcm/pkg/api/core/bill"
 	"hcm/pkg/api/data-service/bill"
 	"hcm/pkg/async/action/run"
 	"hcm/pkg/criteria/enumor"
@@ -153,8 +154,8 @@ func (act RootAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 	return nil, nil
 }
 
-func (act *RootAccountSummaryAction) getBillSummary(
-	kt *kit.Kit, opt *RootAccountSummaryActionOption) (*bill.BillSummaryRoot, error) {
+func (act *RootAccountSummaryAction) getBillSummary(kt *kit.Kit, opt *RootAccountSummaryActionOption) (
+	*billcore.SummaryRoot, error) {
 
 	expressions := []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", opt.RootAccountID),

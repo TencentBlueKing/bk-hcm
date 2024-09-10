@@ -26,18 +26,13 @@ import (
 	protocore "hcm/pkg/api/core/account-set"
 	corebill "hcm/pkg/api/core/bill"
 	"hcm/pkg/api/data-service/bill"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	cvt "hcm/pkg/tools/converter"
 
 	"github.com/shopspring/decimal"
 )
-
-const AwsSavingsPlanAccountCloudIDKey = "aws_savings_plan_account_cloud_id"
-const AwsSavingsPlanARNPrefixKey = "aws_savings_plan_arn_prefix"
-const AwsLineItemTypeSavingPlanCoveredUsage = "SavingsPlanCoveredUsage"
-const AwsSavingsPlansCostCode = "SavingsPlanCost"
-const AwsSavingsPlansCostCodeReverse = "SavingsPlanCostReverse"
 
 // AwsSplitter default account splitter
 type AwsSplitter struct {
@@ -87,7 +82,7 @@ func (ds *AwsSplitter) extractSpCostItem(kt *kit.Kit, opt *DailyAccountSplitActi
 	if opt.Extension == nil {
 		return nil, nil
 	}
-	spPrefix := opt.Extension[AwsSavingsPlanARNPrefixKey]
+	spPrefix := opt.Extension[constant.AwsSavingsPlanARNPrefixKey]
 	if len(spPrefix) == 0 {
 		return nil, nil
 	}
@@ -97,7 +92,7 @@ func (ds *AwsSplitter) extractSpCostItem(kt *kit.Kit, opt *DailyAccountSplitActi
 		return nil, err
 	}
 
-	if ext.LineItemLineItemType != AwsLineItemTypeSavingPlanCoveredUsage {
+	if ext.LineItemLineItemType != constant.AwsLineItemTypeSavingPlanCoveredUsage {
 		return nil, nil
 	}
 	if !strings.HasPrefix(ext.SavingsPlanSavingsPlanARN, spPrefix) {
@@ -126,8 +121,8 @@ func (ds *AwsSplitter) extractSpCostItem(kt *kit.Kit, opt *DailyAccountSplitActi
 		VersionID:     opt.VersionID,
 		Currency:      item.BillCurrency,
 		Cost:          spNetCost,
-		HcProductCode: AwsSavingsPlansCostCode,
-		HcProductName: AwsSavingsPlansCostCode,
+		HcProductCode: constant.AwsSavingsPlansCostCode,
+		HcProductName: constant.AwsSavingsPlansCostCode,
 		Extension:     cvt.ValToPtr(rawjson.RawMessage(item.Extension)),
 	}
 
@@ -137,6 +132,6 @@ func (ds *AwsSplitter) extractSpCostItem(kt *kit.Kit, opt *DailyAccountSplitActi
 // BuildAwsDailySplitOptionExt build aws daily split option extension
 func BuildAwsDailySplitOptionExt(spArnPrefix string) map[string]string {
 	return map[string]string{
-		AwsSavingsPlanARNPrefixKey: spArnPrefix,
+		constant.AwsSavingsPlanARNPrefixKey: spArnPrefix,
 	}
 }

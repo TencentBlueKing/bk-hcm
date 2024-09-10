@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	typesbill "hcm/pkg/adaptor/types/bill"
@@ -30,6 +31,8 @@ import (
 	billcore "hcm/pkg/api/core/bill"
 	dsbill "hcm/pkg/api/data-service/bill"
 	"hcm/pkg/api/hc-service/bill"
+	"hcm/pkg/cc"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/table/types"
@@ -40,6 +43,37 @@ import (
 
 	"github.com/shopspring/decimal"
 )
+
+type gcpMonthTaskBaseRunner struct {
+	creditReturnMap             map[string]string
+	creditReturnAccountCloudIds []string
+	excludeAccountCloudIds      []string
+}
+
+func (g *gcpMonthTaskBaseRunner) initExtension(opt *MonthTaskActionOption) error {
+	g.creditReturnMap = make(map[string]string)
+	if opt.Extension == nil {
+		return nil
+	}
+
+	var creditReturnConfigs []cc.CreditReturn
+	creditReturnConfigString := opt.Extension[constant.GcpCreditReturnConfigKey]
+	err := json.Unmarshal([]byte(creditReturnConfigString), &creditReturnConfigs)
+	if err != nil {
+		return fmt.Errorf("fail to unmarshal gcp credit return config: %w", err)
+	}
+
+	for _, config := range creditReturnConfigs {
+		g.creditReturnMap[config.CreditID] = config.AccountCloudID
+		g.creditReturnAccountCloudIds = append(g.creditReturnAccountCloudIds, config.AccountCloudID)
+	}
+	if opt.Extension[constant.GcpCommonExpenseExcludeCloudIDKey] != "" {
+		excludeCloudIDStr := opt.Extension[constant.GcpCommonExpenseExcludeCloudIDKey]
+		excluded := strings.Split(excludeCloudIDStr, ",")
+		g.excludeAccountCloudIds = excluded
+	}
+	return nil
+}
 
 func newGcpRunner(taskType enumor.MonthTaskType) (MonthTaskRunner, error) {
 	switch taskType {
@@ -53,7 +87,9 @@ func newGcpRunner(taskType enumor.MonthTaskType) (MonthTaskRunner, error) {
 
 }
 
+// GcpSupportMonthTask gcp support month task
 type GcpSupportMonthTask struct {
+	gcpMonthTaskBaseRunner
 }
 
 // GetBatchSize get batch size

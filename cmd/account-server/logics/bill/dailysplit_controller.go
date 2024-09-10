@@ -151,11 +151,10 @@ func (msdc *MainDailySplitController) doSync(kt *kit.Kit) error {
 	if err := msdc.syncDailySplit(kt.NewSubKit(), curBillYear, curBillMonth); err != nil {
 		return fmt.Errorf("ensure daily split for %d %d failed, err %s", curBillYear, curBillMonth, err.Error())
 	}
-	// DEBUG 屏蔽上月金额 TODO 改为从 bill manager 开始 按指定月份启动，支持指定过去任意月份，支持配置同步月份数量
-	// lastBillYear, lastBillMonth := times.GetLastMonthUTC()
-	// if err := msdc.syncDailySplit(kt.NewSubKit(), lastBillYear, lastBillMonth); err != nil {
-	// 	return fmt.Errorf("ensure daily split for %d %d failed, err %s", lastBillYear, lastBillMonth, err.Error())
-	// }
+	lastBillYear, lastBillMonth := times.GetLastMonthUTC()
+	if err := msdc.syncDailySplit(kt.NewSubKit(), lastBillYear, lastBillMonth); err != nil {
+		return fmt.Errorf("ensure daily split for %d %d failed, err %s", lastBillYear, lastBillMonth, err.Error())
+	}
 	return nil
 }
 
@@ -188,8 +187,9 @@ func (msdc *MainDailySplitController) getBillSummary(
 
 func (msdc *MainDailySplitController) syncDailySplit(kt *kit.Kit, billYear, billMonth int) error {
 
-	logs.Infof("start daily split sync, vendor %s, period: %d-%d, root account %s, main account %s, rid: %s",
-		msdc.Vendor, billYear, billMonth, msdc.RootAccountID, msdc.MainAccountID, kt.Rid)
+	logs.Infof("[%s] start daily split sync, period: %d-%d, main %s(%s), root %s(%s), rid: %s",
+		msdc.Vendor, billYear, billMonth, msdc.MainAccountCloudID, msdc.MainAccountID,
+		msdc.RootAccountCloudID, msdc.RootAccountID, kt.Rid)
 
 	summary, err := msdc.getBillSummary(kt, billYear, billMonth)
 	if err != nil {

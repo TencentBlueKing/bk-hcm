@@ -45,7 +45,7 @@ func (ds *GcpSplitter) DoSplit(kt *kit.Kit, opt *DailyAccountSplitActionOption, 
 		logs.Errorf("fail to unmarshal gcp raw bill item extension for split, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
-	// 聚合credit信息, 减低进入数据库的金额
+	// 聚合credit信息, 降低进入数据库的数据量
 	ext.CreditInfos = groupCredits(ext.CreditInfos)
 	rawExt, err := json.Marshal(ext)
 	if err != nil {

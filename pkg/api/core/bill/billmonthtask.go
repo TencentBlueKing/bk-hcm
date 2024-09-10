@@ -65,6 +65,6 @@ type MonthTask struct {
 
 // String ...
 func (t MonthTask) String() string {
-	return fmt.Sprintf("[%s:%s]%s(%s) %d-%02dv%d:%s", t.Vendor, t.Type, t.RootAccountID, t.RootAccountCloudID,
+	return fmt.Sprintf("[%s:%s]%s(%s) %d-%02dv%d:%s", t.Vendor, t.Type, t.RootAccountCloudID, t.RootAccountID,
 		t.BillYear, t.BillMonth, t.VersionID, t.State)
 }

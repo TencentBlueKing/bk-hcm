@@ -23,7 +23,6 @@ package puller
 import (
 	"fmt"
 
-	"hcm/cmd/account-server/logics/bill/monthtask"
 	"hcm/pkg/api/data-service/bill"
 	dsbillapi "hcm/pkg/api/data-service/bill"
 	"hcm/pkg/client"
@@ -41,15 +40,6 @@ func GetDailyPuller(vendor enumor.Vendor) (DailyPuller, error) {
 	puller, ok := DailyPullerRegistry[vendor]
 	if !ok {
 		return nil, fmt.Errorf("unsupported vendor %s for daily puller", vendor)
-	}
-	return puller, nil
-}
-
-// GetMonthPuller get puller by vendor
-func GetMonthPuller(vendor enumor.Vendor) (monthtask.MonthTaskDescriber, error) {
-	puller, ok := monthtask.MonthTaskDescriberRegistry[vendor]
-	if !ok {
-		return nil, fmt.Errorf("unsupported vendor %s for month puller", vendor)
 	}
 	return puller, nil
 }

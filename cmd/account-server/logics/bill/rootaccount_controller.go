@@ -26,9 +26,9 @@ import (
 	"time"
 
 	monthtask2 "hcm/cmd/account-server/logics/bill/monthtask"
-	"hcm/cmd/task-server/logics/action/bill/monthtask"
 	"hcm/cmd/task-server/logics/action/bill/rootsummary"
 	"hcm/pkg/api/core"
+	billcore "hcm/pkg/api/core/bill"
 	dsbillapi "hcm/pkg/api/data-service/bill"
 	taskserver "hcm/pkg/api/task-server"
 	"hcm/pkg/cc"
@@ -99,37 +99,10 @@ func (rac *RootAccountController) Start() error {
 	rac.kt = kt
 	rac.cancelFunc = cancelFunc
 
-	// TODO: 改到后面统一放到month task 里面
-	if rac.Vendor == enumor.Aws {
-		err := rac.setAwsExtension(kt)
-		if err != nil {
-			logs.Errorf("fail to set extension for  aws root account controller, root account: %s, err: %v, rid: %s",
-				rac.RootAccountID, err, kt.Rid)
-			return err
-		}
-		logs.Infof("aws root account extension set, ext: %v, rid: %s", rac.ext, kt.Rid)
-	}
-
 	go rac.runBillSummaryLoop(kt)
 	go rac.runCalculateBillSummaryLoop(kt)
 	go rac.runMonthTaskLoop(kt)
 
-	return nil
-}
-
-func (rac *RootAccountController) setAwsExtension(kt *kit.Kit) error {
-	// set exclude account id
-	excludeCloudIds := cc.AccountServer().BillAllocation.AwsCommonExpense.ExcludeAccountCloudIDs
-	var spArnPrefix, spAccountCloudID string
-	// 	matching saving plan allocation option
-	for _, spOpt := range cc.AccountServer().BillAllocation.AwsSavingsPlans {
-		if spOpt.RootAccountCloudID != rac.RootAccountCloudID {
-			continue
-		}
-		spAccountCloudID = spOpt.SpPurchaseAccountCloudID
-		spArnPrefix = spOpt.SpArnPrefix
-	}
-	rac.ext = monthtask.BuildAwsMonthTaskOptionExtension(spArnPrefix, spAccountCloudID, excludeCloudIds)
 	return nil
 }
 
@@ -179,18 +152,18 @@ func (rac *RootAccountController) runMonthTaskLoop(kt *kit.Kit) {
 
 	ticker := time.NewTicker(*cc.AccountServer().Controller.RootAccountSummarySyncDuration)
 	for {
-		runner := monthtask2.NewDefaultMonthTaskRunner(kt, rac.Vendor, rac.RootAccountID, rac.RootAccountCloudID,
-			rac.ext)
+		runner := monthtask2.NewDefaultMonthTaskRunner(kt,
+			rac.Vendor, rac.RootAccountID, rac.RootAccountCloudID, rac.Client)
 		select {
 		case <-ticker.C:
 			lastBillYear, lastBillMonth := times.GetLastMonthUTC()
 			if err := runner.EnsureMonthTask(kt.NewSubKit(), lastBillYear, lastBillMonth); err != nil {
-				logs.Warnf("ensure last month task for (%s, %s) failed, err: %v, rid: %s",
+				logs.Errorf("ensure last month task for (%s, %s) failed, err: %v, rid: %s",
 					rac.RootAccountID, rac.Vendor, err, kt.Rid)
 			}
 			curBillYear, curBillMonth := times.GetCurrentMonthUTC()
 			if err := runner.EnsureMonthTask(kt.NewSubKit(), curBillYear, curBillMonth); err != nil {
-				logs.Warnf("ensure current month task for (%s, %s) failed, err: %v, rid: %s",
+				logs.Errorf("ensure current month task for (%s, %s) failed, err: %v, rid: %s",
 					rac.RootAccountID, rac.Vendor, err, kt.Rid)
 			}
 
@@ -269,8 +242,7 @@ func (rac *RootAccountController) syncBillSummary(kt *kit.Kit) error {
 	return nil
 }
 
-func (rac *RootAccountController) getBillSummary(kt *kit.Kit, billYear, billMonth int) (
-	*dsbillapi.BillSummaryRoot, error) {
+func (rac *RootAccountController) getBillSummary(kt *kit.Kit, billYear, billMonth int) (*billcore.SummaryRoot, error) {
 
 	var expressions []*filter.AtomRule
 	expressions = append(expressions, []*filter.AtomRule{

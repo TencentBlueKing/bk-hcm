@@ -36,3 +36,24 @@ const (
 	// BillExportFolderPrefix 账单导出文件夹前缀
 	BillExportFolderPrefix = "bill_export"
 )
+
+const AwsSavingsPlanAccountCloudIDKey = "aws_savings_plan_account_cloud_id"
+const AwsSavingsPlanARNPrefixKey = "aws_savings_plan_arn_prefix"
+
+// AwsCommonExpenseExcludeCloudIDKey ...
+const AwsCommonExpenseExcludeCloudIDKey = "aws_common_expense_exclude_account_cloud_id"
+
+const GcpCommonExpenseExcludeCloudIDKey = "gcp_common_expense_exclude_account_cloud_id"
+const GcpCreditReturnConfigKey = "gcp_credit_return_config"
+
+const AwsLineItemTypeSavingPlanCoveredUsage = "SavingsPlanCoveredUsage"
+const AwsSavingsPlansCostCode = "SavingsPlanCost"
+const AwsSavingsPlansCostCodeReverse = "SavingsPlanCostReverse"
+
+const (
+
+	// AwsCommonExpenseReverseName common expense reverse
+	AwsCommonExpenseReverseName = "CommonExpenseReverse"
+	// AwsCommonExpenseName common expense
+	AwsCommonExpenseName = "CommonExpense"
+)

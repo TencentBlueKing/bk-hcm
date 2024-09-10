@@ -25,7 +25,7 @@ import (
 	"fmt"
 	"time"
 
-	"hcm/cmd/account-server/logics/bill/puller"
+	"hcm/cmd/account-server/logics/bill/monthtask"
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	"hcm/pkg/api/core"
 	billcore "hcm/pkg/api/core/bill"
@@ -149,7 +149,7 @@ func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 
 	if isCurMonthAccounted {
 		// 如果当月所有日账单都已经分账，那么就获取月度账单状态
-		extraCost, isFinished, err := act.getMonthPullTaskStatus(kt.Kit(), rootSummary, summary)
+		extraCost, isFinished, err := act.calculateMonthTaskStatus(kt.Kit(), rootSummary, summary)
 		if err != nil {
 			logs.Warnf("failed to check if month pull task finished, err %s, rid: %s", err.Error(), kt.Kit().Rid)
 			return nil, err
@@ -217,70 +217,62 @@ func (act *MainAccountSummaryAction) getExchangeRate(
 	return result.Details[0].ExchangeRate, nil
 }
 
-func (act *MainAccountSummaryAction) getMonthPullTaskStatus(kt *kit.Kit, summaryRoot *bill.BillSummaryRoot,
-	summary *bill.BillSummaryMain) (decimal.Decimal, bool, error) {
+func (act *MainAccountSummaryAction) calculateMonthTaskStatus(kt *kit.Kit, summaryRoot *billcore.SummaryRoot,
+	summary *bill.BillSummaryMain) (extraCost decimal.Decimal, isFinished bool, err error) {
 
-	monthPuller, err := puller.GetMonthPuller(summaryRoot.Vendor)
-	if err != nil {
-		return decimal.Zero, false, err
-	}
-	if !monthPuller.HasMonthPullTask() {
+	monthDescriber, ok := monthtask.GetMonthTaskDescriber(summaryRoot.Vendor)
+	if !ok {
 		return decimal.Zero, true, nil
 	}
-	monthTask, err := getMonthPullTask(kt, summaryRoot.RootAccountID, summaryRoot.BillYear, summaryRoot.BillMonth)
+
+	monthTasks, err := getMonthTask(kt, summaryRoot.RootAccountID, summaryRoot.BillYear, summaryRoot.BillMonth)
 	if err != nil {
 		return decimal.Zero, false, err
 	}
-	if monthTask == nil {
+	if len(monthTasks) == len(monthDescriber.GetMonthTaskTypes()) {
 		return decimal.Zero, false, nil
 	}
 
-	if monthTask.State != enumor.RootAccountMonthBillTaskStateAccounted {
-		return decimal.Zero, false, err
-	}
-
-	var itemList []billcore.MonthTaskSummaryDetailItem
-	if err := json.Unmarshal([]byte(monthTask.SummaryDetail), &itemList); err != nil {
-		logs.Warnf("decode %s to []billcore.MonthTaskSummaryDetailItem failed, err: %s, rid: %s",
-			monthTask.SummaryDetail, err.Error(), kt.Rid)
-		return decimal.Zero, false, err
-	}
 	cost := decimal.Zero
-	for _, item := range itemList {
-		if item.MainAccountID == summary.MainAccountID {
-			cost = cost.Add(item.Cost)
+	for _, monthTask := range monthTasks {
+		if monthTask.State != enumor.RootAccountMonthBillTaskStateAccounted {
+			return decimal.Zero, false, err
+		}
+
+		var itemList []billcore.MonthTaskSummaryDetailItem
+		if err := json.Unmarshal([]byte(monthTask.SummaryDetail), &itemList); err != nil {
+			logs.Warnf("decode %s to []billcore.MonthTaskSummaryDetailItem failed, err: %s, rid: %s",
+				monthTask.SummaryDetail, err.Error(), kt.Rid)
+			return decimal.Zero, false, err
+		}
+		for _, item := range itemList {
+			if item.MainAccountID == summary.MainAccountID {
+				cost = cost.Add(item.Cost)
+			}
 		}
 	}
+
 	return cost, true, nil
 }
 
-func getMonthPullTask(kt *kit.Kit, rootAccountID string, billYear, billMonth int) (*billcore.MonthTask, error) {
+func getMonthTask(kt *kit.Kit, rootAccountID string, billYear, billMonth int) ([]*billcore.MonthTask, error) {
 	expressions := []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", rootAccountID),
 		tools.RuleEqual("bill_year", billYear),
 		tools.RuleEqual("bill_month", billMonth),
 	}
-	result, err := actcli.GetDataService().Global.Bill.ListBillMonthTask(kt, &bill.BillMonthTaskListReq{
+	req := &bill.BillMonthTaskListReq{
 		Filter: tools.ExpressionAnd(expressions...),
-		Page: &core.BasePage{
-			Start: 0,
-			Limit: 1,
-		},
-	})
+		Page:   core.NewDefaultBasePage(),
+	}
+	result, err := actcli.GetDataService().Global.Bill.ListBillMonthTask(kt, req)
 	if err != nil {
 		logs.Warnf("get month pull task for %s %d %d failed, err: %s, rid: %s",
 			rootAccountID, billYear, billMonth, err.Error(), kt.Rid)
 		return nil, fmt.Errorf("get month pull task for %s %d %d failed, err: %s",
 			rootAccountID, billYear, billMonth, err.Error())
 	}
-	if len(result.Details) == 0 {
-		return nil, nil
-	}
-	if len(result.Details) != 1 {
-		logs.Warnf("get invalid length month pull task, resp: %v, rid: %s", result, kt.Rid)
-		return nil, fmt.Errorf("get invalid length month pull task, resp: %v", result)
-	}
-	return result.Details[0], nil
+	return result.Details, nil
 }
 
 func (act *MainAccountSummaryAction) getDailyVersionCost(
@@ -400,7 +392,7 @@ func (act *MainAccountSummaryAction) getAdjustmenSummary(kt *kit.Kit, opt *MainA
 }
 
 func (act *MainAccountSummaryAction) getBillSummary(kt *kit.Kit, opt *MainAccountSummaryActionOption) (
-	*bill.BillSummaryRoot, *bill.BillSummaryMain, error) {
+	*billcore.SummaryRoot, *bill.BillSummaryMain, error) {
 
 	rootAccountExpr := []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", opt.RootAccountID),

@@ -28,6 +28,7 @@ import (
 	protocore "hcm/pkg/api/core/account-set"
 	"hcm/pkg/api/data-service/bill"
 	hcbill "hcm/pkg/api/hc-service/bill"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/table/types"
@@ -39,6 +40,7 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+// AwsSupportMonthTask ...
 type AwsSupportMonthTask struct {
 	awsMonthTaskBaseRunner
 }
@@ -173,7 +175,7 @@ func (a AwsSupportMonthTask) splitCommonExpense(kt *kit.Kit, opt *MonthTaskActio
 		mainAccount := mainAccountMap[summary.MainAccountID]
 		cost := batchSum.Mul(summary.CurrentMonthCost).Div(summaryTotal)
 		extJson, err := convAwsBillItemExtension(
-			AwsCommonExpenseName, opt, summary.RootAccountCloudID, mainAccount.CloudID, summary.Currency, cost)
+			constant.AwsCommonExpenseName, opt, summary.RootAccountCloudID, mainAccount.CloudID, summary.Currency, cost)
 		if err != nil {
 			logs.Errorf("fail to marshal aws common expense extension to json, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
@@ -187,7 +189,7 @@ func (a AwsSupportMonthTask) splitCommonExpense(kt *kit.Kit, opt *MonthTaskActio
 		}
 		// 此处冲平根账号支出
 		reverseCost := cost.Neg()
-		reverseExtJson, err := convAwsBillItemExtension(AwsCommonExpenseReverseName,
+		reverseExtJson, err := convAwsBillItemExtension(constant.AwsCommonExpenseReverseName,
 			opt, summary.RootAccountCloudID, mainAccount.CloudID, summary.Currency, reverseCost)
 		if err != nil {
 			logs.Errorf("fail to marshal aws common expense reverse extension to json, err: %v, rid: %s", err, kt.Rid)
@@ -247,8 +249,8 @@ func convSummaryToCommonReverse(mainAccount *protocore.BaseMainAccount, summary 
 		VersionID:     summary.CurrentVersion,
 		Currency:      summary.Currency,
 		Cost:          cost,
-		HcProductCode: AwsCommonExpenseReverseName,
-		HcProductName: AwsCommonExpenseReverseName,
+		HcProductCode: constant.AwsCommonExpenseReverseName,
+		HcProductName: constant.AwsCommonExpenseReverseName,
 		Extension:     cvt.ValToPtr[json.RawMessage](extension),
 	}
 	return reverseBillItem
@@ -269,8 +271,8 @@ func convSummaryToCommonExpense(summary *bill.BillSummaryMain,
 		VersionID:     summary.CurrentVersion,
 		Currency:      summary.Currency,
 		Cost:          cost,
-		HcProductCode: AwsCommonExpenseName,
-		HcProductName: AwsCommonExpenseName,
+		HcProductCode: constant.AwsCommonExpenseName,
+		HcProductName: constant.AwsCommonExpenseName,
 		Extension:     cvt.ValToPtr[json.RawMessage](extJson),
 	}
 }

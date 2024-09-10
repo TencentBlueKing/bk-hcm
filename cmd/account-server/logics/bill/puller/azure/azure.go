@@ -21,7 +21,6 @@
 package azure
 
 import (
-	"hcm/cmd/account-server/logics/bill/monthtask"
 	"hcm/cmd/account-server/logics/bill/puller"
 	"hcm/cmd/account-server/logics/bill/puller/daily"
 	"hcm/pkg/api/data-service/bill"
@@ -39,9 +38,7 @@ func init() {
 	puller.DailyPullerRegistry[enumor.Azure] = &AzurePuller{
 		BillDelay: defaultAzureDelay,
 	}
-	monthtask.MonthTaskDescriberRegistry[enumor.Azure] = &AzurePuller{
-		BillDelay: defaultAzureDelay,
-	}
+
 }
 
 // AzurePuller huawei puller
@@ -88,9 +85,4 @@ func (hp *AzurePuller) GetPullTaskList(kt *kit.Kit, client *client.ClientSet,
 		Client:        client,
 	}
 	return dp.GetPullTaskList(kt)
-}
-
-// HasMonthPullTask return true if it has month pull task
-func (hp *AzurePuller) HasMonthPullTask() bool {
-	return false
 }

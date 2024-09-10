@@ -206,14 +206,14 @@ type MonthTaskType string
 
 const (
 	// AwsSavingsPlansMonthTask aws savings plans month task
-	AwsSavingsPlansMonthTask = "aws_savings_plans_month_task"
+	AwsSavingsPlansMonthTask MonthTaskType = "savings_plans"
 	// AwsSupportMonthTask aws support month task
-	AwsSupportMonthTask = "aws_support_month_task"
+	AwsSupportMonthTask MonthTaskType = "support"
 
 	// GcpCreditsMonthTask gcp credits month task
-	GcpCreditsMonthTask = "gcp_credits_month_task"
+	GcpCreditsMonthTask MonthTaskType = "credits"
 	// GcpSupportMonthTask gcp support month task
-	GcpSupportMonthTask = "gcp_support_month_task"
+	GcpSupportMonthTask MonthTaskType = "support"
 )
 
 // MonthTaskStep 月度任务步骤

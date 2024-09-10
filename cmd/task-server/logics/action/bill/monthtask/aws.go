@@ -25,27 +25,18 @@ import (
 	"fmt"
 	"strings"
 
-	"hcm/cmd/task-server/logics/action/bill/dailysplit"
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	"hcm/pkg/api/core"
 	protocore "hcm/pkg/api/core/account-set"
 	billcore "hcm/pkg/api/core/bill"
 	dataproto "hcm/pkg/api/data-service/account-set"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 
 	"github.com/shopspring/decimal"
-)
-
-const (
-	// AwsCommonExpenseExcludeCloudIDKey ...
-	AwsCommonExpenseExcludeCloudIDKey = "aws_common_expense_exclude_account_cloud_id"
-	// AwsCommonExpenseReverseName common expense reverse
-	AwsCommonExpenseReverseName = "CommonExpenseReverse"
-	// AwsCommonExpenseName common expense
-	AwsCommonExpenseName = "CommonExpense"
 )
 
 func newAwsRunner(taskType enumor.MonthTaskType) (MonthTaskRunner, error) {
@@ -70,10 +61,10 @@ func (a *awsMonthTaskBaseRunner) initExtension(opt *MonthTaskActionOption) {
 		return
 	}
 
-	a.spArnPrefix = opt.Extension[dailysplit.AwsSavingsPlanARNPrefixKey]
-	a.spMainAccountCloudID = opt.Extension[dailysplit.AwsSavingsPlanAccountCloudIDKey]
-	if opt.Extension[AwsCommonExpenseExcludeCloudIDKey] != "" {
-		excludeCloudIDStr := opt.Extension[AwsCommonExpenseExcludeCloudIDKey]
+	a.spArnPrefix = opt.Extension[constant.AwsSavingsPlanARNPrefixKey]
+	a.spMainAccountCloudID = opt.Extension[constant.AwsSavingsPlanAccountCloudIDKey]
+	if opt.Extension[constant.AwsCommonExpenseExcludeCloudIDKey] != "" {
+		excludeCloudIDStr := opt.Extension[constant.AwsCommonExpenseExcludeCloudIDKey]
 		excluded := strings.Split(excludeCloudIDStr, ",")
 		a.excludeAccountCloudIds = excluded
 	}
@@ -134,13 +125,13 @@ func convAwsBillItemExtension(productName string, opt *MonthTaskActionOption, ro
 	return json.Marshal(ext)
 }
 
-// BuildAwsMonthTaskOptionExtension build aws month task option extension
-func BuildAwsMonthTaskOptionExtension(arnPrefix, spMainCloudID string,
-	excludeAccountCloudIds []string) map[string]string {
-
-	return map[string]string{
-		AwsCommonExpenseExcludeCloudIDKey:          strings.Join(excludeAccountCloudIds, ","),
-		dailysplit.AwsSavingsPlanARNPrefixKey:      arnPrefix,
-		dailysplit.AwsSavingsPlanAccountCloudIDKey: spMainCloudID,
-	}
-}
+// // BuildAwsMonthTaskOptionExtension build aws month task option extension
+// func BuildAwsMonthTaskOptionExtension(arnPrefix, spMainCloudID string,
+// 	excludeAccountCloudIds []string) map[string]string {
+//
+// 	return map[string]string{
+// 		AwsCommonExpenseExcludeCloudIDKey:          strings.Join(excludeAccountCloudIds, ","),
+// 		dailysplit.AwsSavingsPlanARNPrefixKey:      arnPrefix,
+// 		dailysplit.AwsSavingsPlanAccountCloudIDKey: spMainCloudID,
+// 	}
+// }
