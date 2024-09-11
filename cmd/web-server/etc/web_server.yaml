@@ -135,3 +135,7 @@ itsm:
     caFile:
     # the password to decrypt the certificate.
     password:
+
+changeLogPath:
+  ch: ./changelog
+  en: ./changelog

@@ -400,6 +400,9 @@ webserver:
         nodePort:
   ## Pod对应提供服务的port 与service里的targetPort必须一致
   port: 80
+  changeLogPath:
+    ch:
+    en:
 
 taskserver:
   ## 镜像
