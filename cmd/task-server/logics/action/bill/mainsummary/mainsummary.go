@@ -229,19 +229,24 @@ func (act *MainAccountSummaryAction) calculateMonthTaskStatus(kt *kit.Kit, summa
 	if err != nil {
 		return decimal.Zero, false, err
 	}
-	if len(monthTasks) == len(monthDescriber.GetMonthTaskTypes()) {
+	if len(monthTasks) != len(monthDescriber.GetMonthTaskTypes()) {
 		return decimal.Zero, false, nil
 	}
-
+	mtNameMap := make(map[enumor.MonthTaskType]struct{}, len(monthDescriber.GetMonthTaskTypes()))
+	for _, mt := range monthTasks {
+		mtNameMap[mt.Type] = struct{}{}
+	}
 	cost := decimal.Zero
 	for _, monthTask := range monthTasks {
+		if _, ok := mtNameMap[monthTask.Type]; !ok {
+			return decimal.Zero, false, fmt.Errorf("get invalid month task type: %s ", monthTask.Type)
+		}
 		if monthTask.State != enumor.RootAccountMonthBillTaskStateAccounted {
 			return decimal.Zero, false, err
 		}
-
 		var itemList []billcore.MonthTaskSummaryDetailItem
 		if err := json.Unmarshal([]byte(monthTask.SummaryDetail), &itemList); err != nil {
-			logs.Warnf("decode %s to []billcore.MonthTaskSummaryDetailItem failed, err: %s, rid: %s",
+			logs.Errorf("decode %s to []billcore.MonthTaskSummaryDetailItem failed, err: %s, rid: %s",
 				monthTask.SummaryDetail, err.Error(), kt.Rid)
 			return decimal.Zero, false, err
 		}

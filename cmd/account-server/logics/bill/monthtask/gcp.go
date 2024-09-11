@@ -38,7 +38,7 @@ type GcpMonthDescriber struct {
 }
 
 // GetTaskExtension ...
-func (hp *GcpMonthDescriber) GetTaskExtension(rootAccountCloudID string) (map[string]string, error) {
+func (gcp *GcpMonthDescriber) GetTaskExtension(rootAccountCloudID string) (map[string]string, error) {
 
 	// set exclude account id
 	excludeCloudIds := cc.AccountServer().BillAllocation.GcpCommonExpense.ExcludeAccountCloudIDs
@@ -62,6 +62,6 @@ func (hp *GcpMonthDescriber) GetTaskExtension(rootAccountCloudID string) (map[st
 }
 
 // GetMonthTaskTypes gcp month tasks
-func (hp *GcpMonthDescriber) GetMonthTaskTypes() []enumor.MonthTaskType {
+func (gcp *GcpMonthDescriber) GetMonthTaskTypes() []enumor.MonthTaskType {
 	return []enumor.MonthTaskType{enumor.GcpCreditsMonthTask, enumor.GcpSupportMonthTask}
 }

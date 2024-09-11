@@ -202,3 +202,8 @@ func (a AwsSavingsPlanMonthTask) splitSpReverseExpense(kt *kit.Kit, opt *MonthTa
 	}
 	return []bill.BillItemCreateReq[json.RawMessage]{item}, nil
 }
+
+// GetHcProductCodes hc product code ranges
+func (a AwsSavingsPlanMonthTask) GetHcProductCodes() []string {
+	return []string{constant.AwsSavingsPlansCostCode, constant.AwsSavingsPlansCostCodeReverse}
+}

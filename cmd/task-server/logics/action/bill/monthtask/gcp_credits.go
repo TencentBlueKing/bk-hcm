@@ -30,6 +30,7 @@ import (
 	billcore "hcm/pkg/api/core/bill"
 	dsbill "hcm/pkg/api/data-service/bill"
 	"hcm/pkg/api/hc-service/bill"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
@@ -114,7 +115,6 @@ func (g GcpCreditMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption, rawIt
 		return nil, nil
 	}
 	// 	根据配置把指定的赠金id返还到指定的账号下
-
 	if err = g.initExtension(opt); err != nil {
 		logs.Errorf("init extension failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
@@ -149,54 +149,126 @@ func (g GcpCreditMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption, rawIt
 			return nil, err
 		}
 		for _, credit := range gcpRaw.CreditInfos {
-			summary := summaryMap[cvt.PtrToVal(gcpRaw.ProjectID)]
-			if creditToSummary[credit.ID] != nil {
-				// if match credit return info return to given account
-				summary = creditToSummary[credit.ID]
+			if creditToSummary[credit.ID] == nil {
+				continue
 			}
-			ext := billcore.GcpRawBillItem{
-				BillingAccountID:       gcpRaw.BillingAccountID,
-				Cost:                   credit.Amount,
-				Currency:               gcpRaw.Currency,
-				CurrencyConversionRate: gcpRaw.CurrencyConversionRate,
-				Month:                  gcpRaw.Month,
-				ProjectID:              gcpRaw.ProjectID,
-				ProjectName:            gcpRaw.ProjectName,
-				ProjectNumber:          gcpRaw.ProjectNumber,
-				ServiceID:              cvt.ValToPtr(credit.ID),
-				ServiceDescription:     cvt.ValToPtr(credit.Name),
-				SkuDescription:         cvt.ValToPtr(credit.FullName),
-				SkuID:                  cvt.ValToPtr(credit.ID),
-				TotalCost:              credit.Amount,
-				ReturnCost:             credit.Amount,
-
-				UsageEndTime:     gcpRaw.UsageEndTime,
-				UsagePricingUnit: gcpRaw.UsagePricingUnit,
-				UsageStartTime:   gcpRaw.UsageStartTime,
-				CreditInfos:      []billcore.GcpCredit{credit},
-			}
-			extByte, err := json.Marshal(ext)
+			// if match credit return info return to owner account(negative cost) and usage account(positive cost)
+			usageSummary := summaryMap[cvt.PtrToVal(gcpRaw.ProjectID)]
+			creditOwnerSummary := creditToSummary[credit.ID]
+			usageItems, err := g.convCreditToUsageRaw(gcpRaw, credit, usageSummary)
 			if err != nil {
+				logs.Errorf("fail to conv credit to usage raw bill item, err: %v, rid: %s", err, kt.Rid)
 				return nil, err
 			}
-			result = append(result,
-				dsbill.BillItemCreateReq[json.RawMessage]{
-					RootAccountID: opt.RootAccountID,
-					MainAccountID: summary.MainAccountID,
-					Vendor:        summary.Vendor,
-					ProductID:     summary.ProductID,
-					BkBizID:       summary.BkBizID,
-					BillYear:      summary.BillYear,
-					BillMonth:     summary.BillMonth,
-					BillDay:       enumor.MonthTaskSpecialBillDay,
-					VersionID:     summary.CurrentVersion,
-					Currency:      summary.Currency,
-					Cost:          cvt.PtrToVal(credit.Amount),
-					HcProductCode: "CreditReturnCost",
-					HcProductName: cvt.PtrToVal(ext.ServiceID),
-					Extension:     cvt.ValToPtr[json.RawMessage](extByte),
-				})
+			ownerItems, err := g.convCreditToOwnerRaw(gcpRaw, credit, creditOwnerSummary)
+			if err != nil {
+				logs.Errorf("fail to conv credit to owner raw bill item, err: %v, rid: %s", err, kt.Rid)
+				return nil, err
+			}
+			result = append(result, usageItems...)
+			result = append(result, ownerItems...)
 		}
 	}
 	return result, nil
+}
+
+func (g GcpCreditMonthTask) convCreditToUsageRaw(gcpRaw billcore.GcpRawBillItem, credit billcore.GcpCredit,
+	usageSummary *dsbill.BillSummaryMain) ([]dsbill.BillItemCreateReq[json.RawMessage], error) {
+
+	// 1. 使用方 +123.000
+	usageCost := cvt.ValToPtr(credit.Amount.Neg())
+	ext := billcore.GcpRawBillItem{
+		BillingAccountID:       gcpRaw.BillingAccountID,
+		Cost:                   credit.Amount,
+		Currency:               gcpRaw.Currency,
+		CurrencyConversionRate: gcpRaw.CurrencyConversionRate,
+		Month:                  gcpRaw.Month,
+		ProjectID:              gcpRaw.ProjectID,
+		ProjectName:            gcpRaw.ProjectName,
+		ProjectNumber:          gcpRaw.ProjectNumber,
+		ServiceID:              cvt.ValToPtr(credit.ID),
+		ServiceDescription:     cvt.ValToPtr(credit.Name),
+		SkuDescription:         cvt.ValToPtr(credit.FullName),
+		SkuID:                  cvt.ValToPtr(credit.ID),
+		TotalCost:              usageCost,
+		ReturnCost:             usageCost,
+		UsageEndTime:           gcpRaw.UsageEndTime,
+		UsagePricingUnit:       gcpRaw.UsagePricingUnit,
+		UsageStartTime:         gcpRaw.UsageStartTime,
+		CreditInfos:            []billcore.GcpCredit{credit},
+	}
+
+	extByte, err := json.Marshal(ext)
+	if err != nil {
+		return nil, fmt.Errorf("fail to marshal credit user extension, err: %v", err)
+	}
+	itemUsage := dsbill.BillItemCreateReq[json.RawMessage]{
+		RootAccountID: usageSummary.RootAccountID,
+		MainAccountID: usageSummary.MainAccountID,
+		Vendor:        usageSummary.Vendor,
+		ProductID:     usageSummary.ProductID,
+		BkBizID:       usageSummary.BkBizID,
+		BillYear:      usageSummary.BillYear,
+		BillMonth:     usageSummary.BillMonth,
+		BillDay:       enumor.MonthTaskSpecialBillDay,
+		VersionID:     usageSummary.CurrentVersion,
+		Currency:      usageSummary.Currency,
+		Cost:          cvt.PtrToVal(usageCost),
+		HcProductCode: constant.GcpCreditReturnCostReverse,
+		HcProductName: cvt.PtrToVal(ext.ServiceID),
+		Extension:     cvt.ValToPtr[json.RawMessage](extByte),
+	}
+
+	return []dsbill.BillItemCreateReq[json.RawMessage]{itemUsage}, nil
+}
+
+func (g GcpCreditMonthTask) convCreditToOwnerRaw(gcpRaw billcore.GcpRawBillItem, credit billcore.GcpCredit,
+	ownerSummary *dsbill.BillSummaryMain) ([]dsbill.BillItemCreateReq[json.RawMessage], error) {
+
+	// 2. credit所有者 -123.000
+	ownerExt := billcore.GcpRawBillItem{
+		BillingAccountID:       gcpRaw.BillingAccountID,
+		Cost:                   credit.Amount,
+		Currency:               gcpRaw.Currency,
+		CurrencyConversionRate: gcpRaw.CurrencyConversionRate,
+		Month:                  gcpRaw.Month,
+		ProjectID:              cvt.ValToPtr(ownerSummary.MainAccountCloudID),
+		ServiceID:              cvt.ValToPtr(credit.ID),
+		ServiceDescription:     cvt.ValToPtr(credit.Name),
+		SkuDescription:         cvt.ValToPtr(credit.FullName),
+		SkuID:                  cvt.ValToPtr(credit.ID),
+		TotalCost:              credit.Amount,
+		ReturnCost:             credit.Amount,
+		UsageEndTime:           gcpRaw.UsageEndTime,
+		UsagePricingUnit:       gcpRaw.UsagePricingUnit,
+		UsageStartTime:         gcpRaw.UsageStartTime,
+		CreditInfos:            []billcore.GcpCredit{credit},
+	}
+	extByte, err := json.Marshal(ownerExt)
+	if err != nil {
+		return nil, fmt.Errorf("fail to marshal credit owner extension, err: %v", err)
+	}
+	itemOwner := dsbill.BillItemCreateReq[json.RawMessage]{
+		RootAccountID: ownerSummary.RootAccountID,
+		MainAccountID: ownerSummary.MainAccountID,
+		Vendor:        ownerSummary.Vendor,
+		ProductID:     ownerSummary.ProductID,
+		BkBizID:       ownerSummary.BkBizID,
+		BillYear:      ownerSummary.BillYear,
+		BillMonth:     ownerSummary.BillMonth,
+		BillDay:       enumor.MonthTaskSpecialBillDay,
+		VersionID:     ownerSummary.CurrentVersion,
+		Currency:      ownerSummary.Currency,
+		Cost:          cvt.PtrToVal(credit.Amount),
+		HcProductCode: constant.GcpCreditReturnCost,
+		HcProductName: cvt.PtrToVal(ownerExt.ServiceID),
+		Extension:     cvt.ValToPtr[json.RawMessage](extByte),
+	}
+
+	return []dsbill.BillItemCreateReq[json.RawMessage]{itemOwner}, nil
+}
+
+// GetHcProductCodes type to product codes
+func (g GcpCreditMonthTask) GetHcProductCodes() []string {
+	return []string{constant.GcpCreditReturnCost, constant.GcpCreditReturnCostReverse}
 }

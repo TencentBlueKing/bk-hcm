@@ -47,4 +47,7 @@ type MonthTaskRunner interface {
 		itemList []bill.RawBillItem, isFinished bool, err error)
 	Split(kt *kit.Kit, opt *MonthTaskActionOption, rawItemList []*bill.RawBillItem) (
 		[]bill.BillItemCreateReq[rawjson.RawMessage], error)
+
+	// GetHcProductCodes return all hc product codes for this month task type
+	GetHcProductCodes() []string
 }

@@ -110,7 +110,7 @@ func (b bill) GcpGetRootAccountBillList(cts *rest.Contexts) (interface{}, error)
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// 查询aws账单基础表
+	// 查询gcp账单配置表
 	billInfo, err := getRootAccountBillConfigInfo[billcore.GcpBillConfigExtension](
 		cts.Kit, req.RootAccountID, b.cs.DataService())
 	if err != nil {

@@ -175,7 +175,8 @@ func (a AwsSupportMonthTask) splitCommonExpense(kt *kit.Kit, opt *MonthTaskActio
 		mainAccount := mainAccountMap[summary.MainAccountID]
 		cost := batchSum.Mul(summary.CurrentMonthCost).Div(summaryTotal)
 		extJson, err := convAwsBillItemExtension(
-			constant.AwsCommonExpenseName, opt, summary.RootAccountCloudID, mainAccount.CloudID, summary.Currency, cost)
+			constant.BillCommonExpenseName, opt, summary.RootAccountCloudID, mainAccount.CloudID, summary.Currency,
+			cost)
 		if err != nil {
 			logs.Errorf("fail to marshal aws common expense extension to json, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
@@ -189,7 +190,7 @@ func (a AwsSupportMonthTask) splitCommonExpense(kt *kit.Kit, opt *MonthTaskActio
 		}
 		// 此处冲平根账号支出
 		reverseCost := cost.Neg()
-		reverseExtJson, err := convAwsBillItemExtension(constant.AwsCommonExpenseReverseName,
+		reverseExtJson, err := convAwsBillItemExtension(constant.BillCommonExpenseReverseName,
 			opt, summary.RootAccountCloudID, mainAccount.CloudID, summary.Currency, reverseCost)
 		if err != nil {
 			logs.Errorf("fail to marshal aws common expense reverse extension to json, err: %v, rid: %s", err, kt.Rid)
@@ -249,8 +250,8 @@ func convSummaryToCommonReverse(mainAccount *protocore.BaseMainAccount, summary 
 		VersionID:     summary.CurrentVersion,
 		Currency:      summary.Currency,
 		Cost:          cost,
-		HcProductCode: constant.AwsCommonExpenseReverseName,
-		HcProductName: constant.AwsCommonExpenseReverseName,
+		HcProductCode: constant.BillCommonExpenseReverseName,
+		HcProductName: constant.BillCommonExpenseReverseName,
 		Extension:     cvt.ValToPtr[json.RawMessage](extension),
 	}
 	return reverseBillItem
@@ -271,8 +272,13 @@ func convSummaryToCommonExpense(summary *bill.BillSummaryMain,
 		VersionID:     summary.CurrentVersion,
 		Currency:      summary.Currency,
 		Cost:          cost,
-		HcProductCode: constant.AwsCommonExpenseName,
-		HcProductName: constant.AwsCommonExpenseName,
+		HcProductCode: constant.BillCommonExpenseName,
+		HcProductName: constant.BillCommonExpenseName,
 		Extension:     cvt.ValToPtr[json.RawMessage](extJson),
 	}
+}
+
+// GetHcProductCodes hc product code ranges
+func (a *AwsSupportMonthTask) GetHcProductCodes() []string {
+	return []string{constant.BillCommonExpenseName, constant.BillCommonExpenseReverseName}
 }

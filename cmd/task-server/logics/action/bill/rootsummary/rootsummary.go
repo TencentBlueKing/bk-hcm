@@ -150,7 +150,7 @@ func (act RootAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 		logs.Warnf("failed to update root account bill summary %v, err %s, rid: %s", opt, err.Error(), kt.Kit().Rid)
 		return nil, fmt.Errorf("failed to update root account bill summary %v, err %s", opt, err.Error())
 	}
-	logs.Infof("sucessfully update root account bill summary %v", req)
+	logs.Infof("sucessfully update root account bill summary %+v,rid: %s", req, kt.Kit().Rid)
 	return nil, nil
 }
 

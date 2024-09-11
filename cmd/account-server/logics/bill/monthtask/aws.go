@@ -36,12 +36,12 @@ type AwsMonthDescriber struct {
 }
 
 // GetMonthTaskTypes aws month tasks
-func (hp *AwsMonthDescriber) GetMonthTaskTypes() []enumor.MonthTaskType {
+func (aws *AwsMonthDescriber) GetMonthTaskTypes() []enumor.MonthTaskType {
 	return []enumor.MonthTaskType{enumor.AwsSavingsPlansMonthTask, enumor.AwsSupportMonthTask}
 }
 
 // GetTaskExtension extension for task
-func (hp *AwsMonthDescriber) GetTaskExtension(rootAccountCloudID string) (map[string]string, error) {
+func (aws *AwsMonthDescriber) GetTaskExtension(rootAccountCloudID string) (map[string]string, error) {
 	// set exclude account id
 	excludeCloudIds := cc.AccountServer().BillAllocation.AwsCommonExpense.ExcludeAccountCloudIDs
 	var spArnPrefix, spAccountCloudID string
