@@ -130,8 +130,8 @@ func (r *DefaultMonthTaskRunner) EnsureMonthTask(kt *kit.Kit, billYear, billMont
 	}
 	isAllAccounted := calculateAccountingState(mainSummaryList, rootSummary)
 	if !isAllAccounted {
-		logs.Infof("not all main account bill summary for root account (%s, %s, %d-%02d) were accounted, wait, rid: %s",
-			r.rootAccountID, r.vendor, billYear, billMonth, kt.Rid)
+		logs.Infof("not all main account bill summary for [%s] root account %s(%s), %d-%02d were accounted, wait, "+
+			"rid: %s", r.vendor, r.rootAccountCloudID, r.rootAccountID, billYear, billMonth, kt.Rid)
 		return nil
 	}
 	// 进入 月度任务执行阶段
@@ -355,8 +355,7 @@ func (r *DefaultMonthTaskRunner) createMonthTaskFlow(kt *kit.Kit, task *billcore
 		Name: enumor.FlowBillMonthTask,
 		Memo: memo,
 		Tasks: []taskserver.CustomFlowTask{
-			monthtask.BuildMonthTask(task.Type, step, r.rootAccountCloudID, r.vendor, task.BillYear, task.BillMonth,
-				r.ext),
+			monthtask.BuildMonthTask(task.Type, step, r.rootAccountID, r.vendor, task.BillYear, task.BillMonth, r.ext),
 		},
 	}
 	result, err := r.client.TaskServer().CreateCustomFlow(kt, flowReq)

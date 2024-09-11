@@ -44,6 +44,7 @@ type BillManager struct {
 func (bm *BillManager) Run(ctx context.Context) {
 
 	logs.Infof("bill allocation config: %+v", cc.AccountServer().BillAllocation)
+	time.Sleep(time.Second * 5)
 	bm.loopOnce()
 
 	ticker := time.NewTicker(*cc.AccountServer().Controller.ControllerSyncDuration)

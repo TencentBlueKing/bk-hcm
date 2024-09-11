@@ -175,11 +175,11 @@ func (gcp *GcpSupportMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, in
 
 	firstDay, err := times.GetFirstDayOfMonth(opt.BillYear, opt.BillMonth)
 	if err != nil {
-		return nil, false, fmt.Errorf("times.GetFirstDayOfMonth failed, err: %s", err.Error())
+		return nil, false, fmt.Errorf("times.GetFirstDayOfMonth failed, err: %v", err)
 	}
 	lastDay, err := times.GetLastDayOfMonth(opt.BillYear, opt.BillMonth)
 	if err != nil {
-		return nil, false, fmt.Errorf("times.GetLastDayOfMonth failed, err: %s", err.Error())
+		return nil, false, fmt.Errorf("times.GetLastDayOfMonth failed, err: %v", err)
 	}
 	beginDate := fmt.Sprintf("%d-%02d-%02dT00:00:00Z", opt.BillYear, opt.BillMonth, firstDay)
 	endDate := fmt.Sprintf("%d-%02d-%02dT23:59:59Z", opt.BillYear, opt.BillMonth, lastDay)
@@ -187,11 +187,11 @@ func (gcp *GcpSupportMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, in
 	for _, item := range itemList {
 		respData, err := json.Marshal(item)
 		if err != nil {
-			return nil, false, fmt.Errorf("marshal gcp response failed, err %s", err.Error())
+			return nil, false, fmt.Errorf("marshal gcp response failed, err: %v", err)
 		}
 		record := billcore.GcpRawBillItem{}
 		if err := json.Unmarshal(respData, &record); err != nil {
-			return nil, false, fmt.Errorf("decode gcp response failed, err %s", err.Error())
+			return nil, false, fmt.Errorf("decode gcp response failed, err: %v", err)
 		}
 		record.UsageStartTime = &beginDate
 		record.UsageEndTime = &endDate
@@ -208,10 +208,15 @@ func (gcp *GcpSupportMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, in
 func (gcp *GcpSupportMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption,
 	rawItemList []*dsbill.RawBillItem) ([]dsbill.BillItemCreateReq[json.RawMessage], error) {
 
+	err := gcp.initExtension(opt)
+	if err != nil {
+		logs.Errorf("fail to init gcp extension for gcp support month task, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
 	if len(rawItemList) <= 0 {
 		return nil, nil
 	}
-	summaryMainList, err := gcp.getSummaryMainList(kt, opt.RootAccountID, opt.BillYear, opt.BillMonth)
+	summaryMainList, err := gcp.getSummaryMainListExcluded(kt, opt.RootAccountID, opt.BillYear, opt.BillMonth)
 	if err != nil {
 		return nil, err
 	}
@@ -250,13 +255,15 @@ func (gcp *GcpSupportMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption,
 	return billItems, nil
 }
 
-func (gcp *GcpSupportMonthTask) getSummaryMainList(
-	kt *kit.Kit, rootAccountID string, billYear, billMonth int) ([]*dsbill.BillSummaryMain, error) {
+func (gcp *GcpSupportMonthTask) getSummaryMainListExcluded(kt *kit.Kit, rootAccountID string, billYear, billMonth int) (
+	[]*dsbill.BillSummaryMain, error) {
 
 	filter := tools.ExpressionAnd(
 		tools.RuleEqual("root_account_id", rootAccountID),
 		tools.RuleEqual("bill_year", billYear),
 		tools.RuleEqual("bill_month", billMonth),
+		// 去掉用户需要排除的数据
+		tools.RuleNotIn("main_account_cloud_id", gcp.excludeAccountCloudIds),
 	)
 	summaryMainCountResp, err := actcli.GetDataService().Global.Bill.ListBillSummaryMain(kt,
 		&dsbill.BillSummaryMainListReq{

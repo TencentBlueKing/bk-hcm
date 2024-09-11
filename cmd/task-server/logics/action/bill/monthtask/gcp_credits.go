@@ -193,7 +193,7 @@ func (g GcpCreditMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption, rawIt
 					Currency:      summary.Currency,
 					Cost:          cvt.PtrToVal(credit.Amount),
 					HcProductCode: "CreditReturnCost",
-					HcProductName: "CreditReturnCost",
+					HcProductName: cvt.PtrToVal(ext.ServiceID),
 					Extension:     cvt.ValToPtr[json.RawMessage](extByte),
 				})
 		}

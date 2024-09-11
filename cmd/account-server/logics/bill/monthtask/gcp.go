@@ -49,7 +49,7 @@ func (hp *GcpMonthDescriber) GetTaskExtension(rootAccountCloudID string) (map[st
 		if creditConfigs.RootAccountCloudID != rootAccountCloudID {
 			continue
 		}
-		creditReturnConfig, err = json.MarshalToString(creditConfigs)
+		creditReturnConfig, err = json.MarshalToString(creditConfigs.ReturnConfigs)
 		if err != nil {
 			return nil, fmt.Errorf("fail to marshal gcp credit return config to json :%w", err)
 		}
