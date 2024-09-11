@@ -46,7 +46,7 @@ server: pre
 	@echo -e "\033[32;1mBuild Server Success!\n\033[0m"
 
 # 二进制出包编译
-package: pre ui api ver
+package: pre ui api ver changelog
 	@echo -e "\033[34;1mPackaging...\n\033[0m"
 	@mkdir -p ${OUTPUT_DIR}/bin
 	@mkdir -p ${OUTPUT_DIR}/etc
@@ -62,6 +62,7 @@ docker: pre ui ver
 	@echo -e "\033[34;1mMake Dockering...\n\033[0m"
 	@cp -rf ${PRO_DIR}/docs/support-file/docker/* ${OUTPUT_DIR}/
 	@mv ${OUTPUT_DIR}/front ${OUTPUT_DIR}/bk-hcm-webserver/
+	@mv ${OUTPUT_DIR}/changelog ${OUTPUT_DIR}/bk-hcm-webserver/
 	@cp -rf ${PRO_DIR}/scripts/sql ${OUTPUT_DIR}/bk-hcm-dataservice/
 	@cd ${PRO_DIR}/cmd && make docker
 	@echo -e "\033[32;1mMake Docker All Success!\n\033[0m"
@@ -72,6 +73,11 @@ ui: pre
 	@cd ${PRO_DIR}/front && npm i && npm run build
 	@mv ${PRO_DIR}/front/dist ${OUTPUT_DIR}/front
 	@echo -e "\033[32;1mBuild Front Success!\n\033[0m"
+
+# 添加版本日志到编译文件中
+changelog: pre
+	@cp -rf ${PRO_DIR}/docs/support-file/changelog ${OUTPUT_DIR}/
+	@echo -e "\033[32;1mPackaging ChangeLog Success!\n\033[0m"
 
 # 添加Api文档到编译文件中
 api: pre
