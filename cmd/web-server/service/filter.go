@@ -145,6 +145,10 @@ func NewUserAuthenticateFilter(esbClient esb.Client, bkLoginUrl, bkLoginCookieNa
 			}
 		}
 
+		// 请求通知中心的接口，自动补全rid
+		if isNoticeRequest(req) {
+			req.Request.Header.Set(constant.RidKey, uuid.UUID())
+		}
 		// 这里直接修改请求的Header，后面需要用，可以直接从Header头里取
 		req.Request.Header.Set(constant.UserKey, username)
 		req.Request.Header.Set(constant.AppCodeKey, "hcm-web-server")
@@ -186,4 +190,12 @@ func peekRequest(req *http.Request) (string, error) {
 	}
 
 	return "", nil
+}
+
+func isNoticeRequest(req *restful.Request) bool {
+	if strings.Contains(req.Request.RequestURI,
+		"/api/v1/web/notice/get_current_announcements") && req.Request.Method == http.MethodGet {
+		return true
+	}
+	return false
 }
