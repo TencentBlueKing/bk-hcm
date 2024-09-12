@@ -744,7 +744,7 @@ func (svc *clbSvc) unbindCloudListenerTargets(kt *kit.Kit, req *protolb.TCloudBa
 func (svc *clbSvc) filterListenerTargetList(kt *kit.Kit, lbID string, details []*dataproto.ListBatchListenerResult) (
 	[]*dataproto.ListBatchListenerResult, error) {
 
-	lblRsList := make([]*dataproto.ListBatchListenerResult, len(details))
+	lblRsList := make([]*dataproto.ListBatchListenerResult, 0)
 	for _, detail := range details {
 		tgIDs := make([]string, 0)
 		targetIDs := make([]string, 0)

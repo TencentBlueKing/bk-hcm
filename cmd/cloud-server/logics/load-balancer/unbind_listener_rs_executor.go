@@ -26,8 +26,6 @@ import (
 
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
 	actionflow "hcm/cmd/task-server/logics/flow"
-	"hcm/pkg/api/core"
-	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/api/data-service/task"
 	hclb "hcm/pkg/api/hc-service/load-balancer"
@@ -37,7 +35,6 @@ import (
 	taskserver "hcm/pkg/client/task-server"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/dal/dao/tools"
 	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -45,6 +42,9 @@ import (
 	"hcm/pkg/tools/counter"
 	"hcm/pkg/tools/slice"
 )
+
+// DefaultTaskManageResult 默认的任务管理结果
+const DefaultTaskManageResult = "NO_MATCHING_OR_HAS_DONE"
 
 func newBatchListenerUnbindRsExecutor(cli *dataservice.Client, taskCli *taskserver.Client,
 	vendor enumor.Vendor, bkBizID int64, accountID string, regionIDs []string) *BatchListenerUnbindRsExecutor {
@@ -104,7 +104,7 @@ func (c *BatchListenerUnbindRsExecutor) Execute(kt *kit.Kit, source enumor.TaskM
 	// 没查到符合的监听器，直接返回
 	if len(lblResp.Details) == 0 {
 		logs.Warnf("list batch listener by rsip is empty, lblReq: %+v, rid: %s", cvt.PtrToVal(c.params), kt.Rid)
-		return "", nil
+		return DefaultTaskManageResult, nil
 	}
 
 	// 把符合条件的监听器列表赋值给details
@@ -120,30 +120,17 @@ func (c *BatchListenerUnbindRsExecutor) Execute(kt *kit.Kit, source enumor.TaskM
 
 // Run 执行器执行入口
 func (c *BatchListenerUnbindRsExecutor) Run(kt *kit.Kit, source enumor.TaskManagementSource) (string, error) {
-	// 按负载均衡ID进行分组
-	clbToDetails := make(map[string][]*batchListenerUnbindRsTaskDetail)
-	for _, detail := range c.taskDetails {
-		clbToDetails[detail.CloudClbID] = append(clbToDetails[detail.CloudClbID], detail)
-	}
-
-	// 批量获取负载均衡列表
-	lbMap, err := getLoadBalancersMapByCloudID(kt, c.dataServiceCli, c.vendor, c.accountID, c.bkBizID,
-		cvt.MapKeyToSlice(clbToDetails))
-	if err != nil {
-		return "", err
-	}
-
-	// 优先创建Flow并锁定负载均衡
-	flowIDs, flowClbMap, err := c.buildClbFlows(kt, clbToDetails, lbMap)
-	if err != nil {
-		logs.Errorf("build listener unbind rs async flows failed, err: %v, source: %s, rid: %s", err, source, kt.Rid)
-		return "", err
-	}
-
 	// 创建异步管理任务、任务详情列表
 	taskID, err := c.buildTaskManagementAndDetails(kt, source)
 	if err != nil {
-		logs.Errorf("create task management and details failed, err: %v, flowIDs: %v, rid: %s", err, flowIDs, kt.Rid)
+		logs.Errorf("create task management and details failed, err: %v, rid: %s", err, kt.Rid)
+		return "", err
+	}
+
+	// 创建Flow
+	flowIDs, err := c.buildFlows(kt)
+	if err != nil {
+		logs.Errorf("build listener unbind rs async flows failed, err: %v, source: %s, rid: %s", err, source, kt.Rid)
 		return "", err
 	}
 
@@ -155,60 +142,7 @@ func (c *BatchListenerUnbindRsExecutor) Run(kt *kit.Kit, source enumor.TaskManag
 		return "", err
 	}
 
-	// 最后锁定资源跟Flow并把Flow置为Pending状态
-	for clbID, flowID := range flowClbMap {
-		err = lockResFlowStatus(kt, c.dataServiceCli, c.taskCli, clbID, enumor.LoadBalancerCloudResType,
-			flowID, c.taskType)
-		if err != nil {
-			logs.Errorf("lock resource flow status failed, err: %v, lbID: %s, taskID: %s, flowID: %s, rid: %s",
-				err, clbID, taskID, flowID, kt.Rid)
-			return "", err
-		}
-	}
 	return taskID, nil
-}
-
-// checkListenerBindTargets 检查负载均衡ID、监听器ID，是否绑定目标组及RS
-func (c *BatchListenerUnbindRsExecutor) checkListenerBindTargets(kt *kit.Kit, lbIDs []string, lblIDs []string) error {
-	tgLblRelReq := &core.ListReq{
-		Filter: tools.ExpressionOr(
-			tools.RuleIn("lb_id", lbIDs),
-			tools.RuleIn("lbl_id", lblIDs),
-		),
-		Page: core.NewDefaultBasePage(),
-	}
-	tgLblRelList, err := c.dataServiceCli.Global.LoadBalancer.ListTargetGroupListenerRel(kt, tgLblRelReq)
-	if err != nil {
-		return err
-	}
-
-	// 该监听器没有绑定目标组
-	if len(tgLblRelList.Details) == 0 {
-		return nil
-	}
-
-	targetGroupIDs := make([]string, 0)
-	for _, item := range tgLblRelList.Details {
-		targetGroupIDs = append(targetGroupIDs, item.TargetGroupID)
-	}
-
-	targetReq := &core.ListReq{
-		Filter: tools.ExpressionOr(
-			tools.RuleEqual("account_id", c.accountID),
-			tools.RuleIn("target_group_id", targetGroupIDs),
-		),
-		Page: core.NewDefaultBasePage(),
-	}
-	targetList, err := c.dataServiceCli.Global.LoadBalancer.ListTarget(kt, targetReq)
-	if err != nil {
-		return err
-	}
-
-	if len(targetList.Details) > 0 {
-		return fmt.Errorf("listener[%v] has bind target num: %d", lblIDs, len(targetList.Details))
-	}
-
-	return nil
 }
 
 func (c *BatchListenerUnbindRsExecutor) unmarshalData(rawDetail json.RawMessage) error {
@@ -216,6 +150,9 @@ func (c *BatchListenerUnbindRsExecutor) unmarshalData(rawDetail json.RawMessage)
 	if err != nil {
 		return err
 	}
+	c.params.Vendor = c.vendor
+	c.params.AccountID = c.accountID
+	c.params.BkBizID = c.bkBizID
 	return nil
 }
 
@@ -233,8 +170,42 @@ func (c *BatchListenerUnbindRsExecutor) filter() {
 	return
 }
 
-func (c *BatchListenerUnbindRsExecutor) buildFlows(_ *kit.Kit) ([]string, error) {
-	return nil, nil
+func (c *BatchListenerUnbindRsExecutor) buildFlows(kt *kit.Kit) ([]string, error) {
+	// 按负载均衡ID进行分组
+	clbToDetails := make(map[string][]*batchListenerUnbindRsTaskDetail)
+	for _, detail := range c.taskDetails {
+		clbToDetails[detail.CloudClbID] = append(clbToDetails[detail.CloudClbID], detail)
+	}
+
+	// 批量获取负载均衡列表
+	lbMap, err := getLoadBalancersMapByCloudID(kt, c.dataServiceCli, c.vendor, c.accountID, c.bkBizID,
+		cvt.MapKeyToSlice(clbToDetails))
+	if err != nil {
+		return nil, err
+	}
+
+	flowIDs := make([]string, 0, len(clbToDetails))
+	for cloudClbID, details := range clbToDetails {
+		lbInfo := lbMap[cloudClbID]
+		flowID, err := c.buildFlow(kt, lbInfo.ID, details)
+		if err != nil {
+			logs.Errorf("build flow for unbind listener clb: %s failed, err: %v, rid: %s", cloudClbID, err, kt.Rid)
+			err = c.updateTaskDetailsState(kt, enumor.TaskDetailFailed, details)
+			if err != nil {
+				logs.Errorf("update task details status failed, err: %v, rid: %s", err, kt.Rid)
+				return nil, err
+			}
+			continue
+		}
+		flowIDs = append(flowIDs, flowID)
+	}
+
+	if len(flowIDs) == 0 {
+		logs.Errorf("build clb flow failed, no clb need modified, clbToDetails: %+v, rid: %s", clbToDetails, kt.Rid)
+		return nil, fmt.Errorf("build clb flow failed, no clb need to be modified")
+	}
+
+	return flowIDs, nil
 }
 
 func (c *BatchListenerUnbindRsExecutor) buildTaskManagementAndDetails(
@@ -268,7 +239,7 @@ func (c *BatchListenerUnbindRsExecutor) createTaskManagement(
 				AccountID:  c.accountID,
 				Resource:   enumor.TaskManagementResClb,
 				State:      enumor.TaskManagementRunning, // 默认:执行中
-				Operations: []enumor.TaskOperation{enumor.TaskDeleteListener},
+				Operations: []enumor.TaskOperation{enumor.TaskUnbindListenerRs},
 			},
 		},
 	}
@@ -293,7 +264,7 @@ func (c *BatchListenerUnbindRsExecutor) createTaskDetails(kt *kit.Kit, taskID st
 		taskDetailsCreateReq.Items = append(taskDetailsCreateReq.Items, task.CreateDetailField{
 			BkBizID:          c.bkBizID,
 			TaskManagementID: taskID,
-			Operation:        enumor.TaskDeleteListener,
+			Operation:        enumor.TaskUnbindListenerRs,
 			State:            enumor.TaskDetailInit,
 			Param:            detail,
 		})
@@ -321,27 +292,7 @@ func (c *BatchListenerUnbindRsExecutor) createTaskDetails(kt *kit.Kit, taskID st
 	return nil
 }
 
-func (c *BatchListenerUnbindRsExecutor) buildClbFlows(kt *kit.Kit,
-	clbToDetails map[string][]*batchListenerUnbindRsTaskDetail, lbMap map[string]corelb.BaseLoadBalancer) (
-	[]string, map[string]string, error) {
-
-	flowIDs := make([]string, 0, len(clbToDetails))
-	flowClbMap := make(map[string]string)
-	for cloudClbID, details := range clbToDetails {
-		lbInfo := lbMap[cloudClbID]
-		flowID, err := c.buildClbFlow(kt, lbInfo.ID, details)
-		if err != nil {
-			logs.Errorf("build flow for delete listener clb(%s) failed, err: %v, rid: %s", cloudClbID, err, kt.Rid)
-			return nil, nil, err
-		}
-		flowIDs = append(flowIDs, flowID)
-		flowClbMap[lbInfo.ID] = flowID
-	}
-
-	return flowIDs, flowClbMap, nil
-}
-
-func (c *BatchListenerUnbindRsExecutor) buildClbFlow(kt *kit.Kit, lbID string,
+func (c *BatchListenerUnbindRsExecutor) buildFlow(kt *kit.Kit, lbID string,
 	details []*batchListenerUnbindRsTaskDetail) (string, error) {
 
 	// 预检测
@@ -364,6 +315,13 @@ func (c *BatchListenerUnbindRsExecutor) buildClbFlow(kt *kit.Kit, lbID string,
 		return "", err
 	}
 
+	err = lockResFlowStatus(kt, c.dataServiceCli, c.taskCli, lbID,
+		enumor.LoadBalancerCloudResType, flowID, enumor.ListenerUnbindRsTaskType)
+	if err != nil {
+		logs.Errorf("lock resource flow status failed, err: %v, lbID: %s, rid: %s", err, lbID, kt.Rid)
+		return "", err
+	}
+
 	for _, detail := range details {
 		detail.flowID = flowID
 	}
@@ -378,7 +336,7 @@ func (c *BatchListenerUnbindRsExecutor) buildFlowTask(lbID string,
 	case enumor.TCloud:
 		return c.buildTCloudFlowTask(lbID, details)
 	default:
-		return nil, fmt.Errorf("build flow task failed, lbID: %s, vendor %s not supported", lbID, c.vendor)
+		return nil, fmt.Errorf("build flow task failed, lbID: %s, vendor: %s not supported", lbID, c.vendor)
 	}
 }
 
@@ -476,12 +434,14 @@ func (c *BatchListenerUnbindRsExecutor) updateTaskManagementAndDetails(kt *kit.K
 	flowIDs []string, taskID string) error {
 
 	if err := c.updateTaskManagement(kt, taskID, flowIDs); err != nil {
-		logs.Errorf("update task management failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("update task management failed, err: %v, taskID: %s, flowIDs: %v, rid: %s",
+			err, taskID, flowIDs, kt.Rid)
 		return err
 	}
 
 	if err := c.updateTaskDetails(kt); err != nil {
-		logs.Errorf("update task details failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("update task details failed, err: %v, taskID: %s, flowIDs: %v, rid: %s",
+			err, taskID, flowIDs, kt.Rid)
 		return err
 	}
 	return nil
@@ -526,29 +486,24 @@ func (c *BatchListenerUnbindRsExecutor) updateTaskDetails(kt *kit.Kit) error {
 	return nil
 }
 
-func (c *BatchListenerUnbindRsExecutor) deleteTaskManagementAndDetails(kt *kit.Kit, taskID string) error {
-	deleteReq := &task.DeleteManagementReq{
-		Filter: tools.ExpressionAnd(
-			tools.RuleEqual("id", taskID),
-		),
+func (c *BatchListenerUnbindRsExecutor) updateTaskDetailsState(kt *kit.Kit, state enumor.TaskDetailState,
+	taskDetails []*batchListenerUnbindRsTaskDetail) error {
+
+	updateItems := make([]task.UpdateTaskDetailField, 0, len(taskDetails))
+	for _, detail := range taskDetails {
+		updateItems = append(updateItems, task.UpdateTaskDetailField{
+			ID:    detail.taskDetailID,
+			State: state,
+		})
 	}
-	err := c.dataServiceCli.Global.TaskManagement.Delete(kt, deleteReq)
+	updateDetailsReq := &task.UpdateDetailReq{
+		Items: updateItems,
+	}
+	err := c.dataServiceCli.Global.TaskDetail.Update(kt, updateDetailsReq)
 	if err != nil {
-		logs.Errorf("delete task management failed, err: %v, taskID: %s, rid: %s", err, taskID, kt.Rid)
+		logs.Errorf("update task details state failed, err: %v, state: %s, updateDetailsReq: %+v, rid: %s",
+			err, state, updateDetailsReq, kt.Rid)
 		return err
 	}
-
-	taskDetailIDs := make([]string, 0, len(c.taskDetails))
-	for _, detail := range c.taskDetails {
-		taskDetailIDs = append(taskDetailIDs, detail.taskDetailID)
-	}
-
-	deleteDetailsReq := &task.DeleteDetailReq{Filter: tools.ExpressionAnd(tools.RuleIn("id", taskDetailIDs))}
-	err = c.dataServiceCli.Global.TaskDetail.Delete(kt, deleteDetailsReq)
-	if err != nil {
-		logs.Errorf("delete task details failed, err: %v, taskID: %s, rid: %s", err, taskID, kt.Rid)
-		return err
-	}
-
 	return nil
 }

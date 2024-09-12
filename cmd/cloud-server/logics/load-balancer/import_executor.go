@@ -22,6 +22,7 @@ package lblogic
 import (
 	"encoding/json"
 	"fmt"
+
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
 	"hcm/pkg/api/hc-service/sync"
 	ts "hcm/pkg/api/task-server"
@@ -69,7 +70,7 @@ func NewImportExecutor(operationType OperationType, dataCli *dataservice.Client,
 	//	return newLayer4ListenerBindRSExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
 	//case Layer7ListenerBindRs:
 	//	return newLayer7ListenerBindRSExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
-	case ListenerUnbindRs:
+	case Layer4ListenerUnbindRs, Layer7ListenerUnbindRs:
 		return newBatchListenerUnbindRsExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
 	default:
 		return nil, fmt.Errorf("unsupported operation type: %s", operationType)

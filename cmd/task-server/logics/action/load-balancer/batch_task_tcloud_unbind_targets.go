@@ -81,8 +81,8 @@ func (act BatchTaskUnBindTargetAction) Run(kt run.ExecuteKit, params any) (resul
 	results := make([]*hclb.BatchCreateResult, 0, len(opt.LblList))
 	for i := range opt.LblList {
 		detailID := opt.ManagementDetailIDs[i]
-		// 逐条更新结果
-		ret, optErr := act.batchListenerUnbindRs(kt.Kit(), opt.LoadBalancerID, detailID, opt.LblList[i]) // 结束后写回状态
+		// 逐条更新结果，结束后写回状态
+		ret, optErr := act.batchListenerUnbindRs(kt.Kit(), opt.LoadBalancerID, detailID, opt.LblList[i])
 		targetState := enumor.TaskDetailSuccess
 		if optErr != nil {
 			// 更新为失败
