@@ -107,4 +107,7 @@ const (
 
 	// TaskModifyListenerRsWeight is a task indicating that modify listener rs weight.
 	TaskModifyListenerRsWeight TaskOperation = "listener_rs_weight"
+
+	// TaskDeleteListener is a task indicating that delete listener.
+	TaskDeleteListener TaskOperation = "listener_delete"
 )

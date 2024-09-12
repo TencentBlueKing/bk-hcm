@@ -33,7 +33,6 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
-	typeslb "hcm/pkg/dal/dao/types/load-balancer"
 	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -1043,14 +1042,23 @@ func (svc *lbSvc) listLoadBalancerListCheckVip(kt *kit.Kit, req *protocloud.List
 		),
 		Page: core.NewDefaultBasePage(),
 	}
-	lbList, err := svc.dao.LoadBalancer().List(kt, lbOpt)
-	if err != nil {
-		logs.Errorf("check list load balancer failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
-		return nil, nil, fmt.Errorf("list load balancer failed, err: %v", err)
+	lbAllList := make([]tablelb.LoadBalancerTable, 0)
+	for {
+		lbList, err := svc.dao.LoadBalancer().List(kt, lbOpt)
+		if err != nil {
+			logs.Errorf("check list load balancer failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
+			return nil, nil, fmt.Errorf("list load balancer failed, err: %v", err)
+		}
+
+		lbAllList = append(lbAllList, lbList.Details...)
+		if len(lbList.Details) <= int(core.DefaultMaxPageLimit) {
+			break
+		}
+		lbOpt.Page.Start += uint32(core.DefaultMaxPageLimit)
 	}
 
 	// 检查ip地址/域名，是否在负载均衡的ip地址列表中
-	cloudClbIDs, lbMap, err := checkClbVipAndDomain(lbList, lblReq.CloudLbIDs, lblReq.ClbVipDomains)
+	cloudClbIDs, lbMap, err := checkClbVipAndDomain(lbAllList, lblReq.CloudLbIDs, lblReq.ClbVipDomains)
 	if err != nil {
 		logs.Errorf("check list load balancer and ip domain match failed, err: %v, req: %+v, rid: %s",
 			err, cvt.PtrToVal(req), kt.Rid)
@@ -1060,11 +1068,11 @@ func (svc *lbSvc) listLoadBalancerListCheckVip(kt *kit.Kit, req *protocloud.List
 	return cloudClbIDs, lbMap, nil
 }
 
-func checkClbVipAndDomain(list *typeslb.ListLoadBalancerDetails, paramClbIDs, clbVipDomains []string) (
+func checkClbVipAndDomain(list []tablelb.LoadBalancerTable, paramClbIDs, clbVipDomains []string) (
 	[]string, map[string]tablelb.LoadBalancerTable, error) {
 
 	cloudClbIDs := make([]string, 0)
-	lbMap := cvt.SliceToMap(list.Details, func(item tablelb.LoadBalancerTable) (string, tablelb.LoadBalancerTable) {
+	lbMap := cvt.SliceToMap(list, func(item tablelb.LoadBalancerTable) (string, tablelb.LoadBalancerTable) {
 		return item.CloudID, item
 	})
 
@@ -1326,4 +1334,92 @@ func (svc *lbSvc) listTCloudLoadBalancerUrlRuleByTgIDs(kt *kit.Kit,
 		opt.Page.Start += uint32(core.DefaultMaxPageLimit)
 	}
 	return lblTargetList, nil
+}
+
+// ListBatchListeners list batch listener.
+func (svc *lbSvc) ListBatchListeners(cts *rest.Contexts) (any, error) {
+	req := new(protocloud.BatchDeleteListenerReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	listenerList := &protocloud.BatchListListenerResp{}
+	for _, item := range req.ListenerQueryList {
+		lblList, err := svc.batchQueryListeners(cts.Kit, req, item)
+		if err != nil {
+			return nil, err
+		}
+		listenerList.Details = append(listenerList.Details, lblList...)
+	}
+	return listenerList, nil
+}
+
+func (svc *lbSvc) batchQueryListeners(kt *kit.Kit, req *protocloud.BatchDeleteListenerReq,
+	lblReq *protocloud.ListenerDeleteReq) ([]*corelb.BaseListener, error) {
+
+	// 查询符合条件的负载均衡列表
+	lbReq := &protocloud.ListListenerWithTargetsReq{
+		Vendor:    req.Vendor,
+		AccountID: req.AccountID,
+		BkBizID:   req.BkBizID,
+	}
+	listenerReq := protocloud.ListenerQueryItem{
+		Region:        lblReq.Region,
+		ClbVipDomains: lblReq.ClbVipDomains,
+		CloudLbIDs:    lblReq.CloudLbIDs,
+		Protocol:      lblReq.Protocol,
+		Ports:         lblReq.Ports,
+	}
+	cloudClbIDs, _, err := svc.listLoadBalancerListCheckVip(kt, lbReq, listenerReq)
+	if err != nil {
+		return nil, err
+	}
+
+	// 未查询到符合条件的负载均衡列表
+	if len(cloudClbIDs) == 0 {
+		logs.Errorf("check list load balancer empty, req: %+v, lblReq: %+v, rid: %s", cvt.PtrToVal(req), lblReq, kt.Rid)
+		return nil, nil
+	}
+
+	// 查询符合条件的监听器列表
+	_, _, lblList, err := svc.listBizListenerByLbIDs(kt, lbReq, listenerReq, cloudClbIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	// 未查询到符合的监听器列表
+	if len(lblList) == 0 {
+		logs.Errorf("list biz listener empty, req: %+v, lblReq: %+v, rid: %s", cvt.PtrToVal(req), lblReq, kt.Rid)
+		return nil, nil
+	}
+
+	return svc.convertBatchListListener(lblList)
+}
+
+func (svc *lbSvc) convertBatchListListener(lblList []tablelb.LoadBalancerListenerTable) (
+	[]*corelb.BaseListener, error) {
+
+	lblResult := make([]*corelb.BaseListener, 0)
+	for _, item := range lblList {
+		lblResult = append(lblResult, &corelb.BaseListener{
+			ID:            item.ID,
+			CloudID:       item.CloudID,
+			Name:          item.Name,
+			Vendor:        item.Vendor,
+			AccountID:     item.AccountID,
+			BkBizID:       item.BkBizID,
+			LbID:          item.LBID,
+			CloudLbID:     item.CloudLBID,
+			Protocol:      item.Protocol,
+			Port:          item.Port,
+			DefaultDomain: item.DefaultDomain,
+			Zones:         item.Zones,
+			SniSwitch:     item.SniSwitch,
+		})
+	}
+	return lblResult, nil
 }

@@ -48,6 +48,8 @@ const (
 	LayerListenerUnbindRs = OperationType(enumor.TaskUnbindListenerRs)
 	// LayerListenerRsWeight 监听器批量调整RS权重
 	LayerListenerRsWeight = OperationType(enumor.TaskModifyListenerRsWeight)
+	// ListenerDelete 监听器删除
+	ListenerDelete = OperationType(enumor.TaskDeleteListener)
 )
 
 // ImportPreviewExecutor 导入预览执行器
