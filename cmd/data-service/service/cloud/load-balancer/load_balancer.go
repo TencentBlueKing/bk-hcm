@@ -62,6 +62,7 @@ func InitService(cap *capability.Capability) {
 	h.Add("CountListenerByLbIDs", http.MethodPost, "/load_balancers/listeners/count", svc.CountListenerByLbIDs)
 	h.Add("BatchUpdateListenerBizInfo", http.MethodPatch,
 		"/load_balancers/listeners/bizs/batch/update", svc.BatchUpdateListenerBizInfo)
+	h.Add("ListListenerByRsIP", http.MethodPost, "/load_balancers/listeners/list/by/rsip", svc.ListListenerByRsIP)
 
 	// url规则
 	h.Add("BatchCreateTCloudUrlRule",
