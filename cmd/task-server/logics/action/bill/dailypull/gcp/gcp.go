@@ -194,7 +194,7 @@ func (gcp *GcpPuller) doPull(
 		},
 	})
 	if err != nil {
-		return 0, nil, fmt.Errorf("list gcp root account bill list for %+v, offset %d, limit %d, err %s",
+		return 0, nil, fmt.Errorf("fail to list gcp root account bill list for %+v, offset %d, limit %d, err %s",
 			opt, offset, limit, err.Error())
 	}
 	var itemList []interface{}

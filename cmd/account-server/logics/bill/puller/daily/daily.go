@@ -37,6 +37,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/times"
 
 	"github.com/shopspring/decimal"
 )
@@ -244,13 +245,15 @@ func (dp *DailyPuller) GetPullTaskList(kit *kit.Kit) ([]*bill.BillDailyPullTaskR
 
 func getBillDays(billYear, billMonth, billDelay int, now time.Time) []int {
 	timeBill := now.AddDate(0, 0, -billDelay)
-	var retList []int
-	for t := time.Date(
-		billYear, time.Month(billMonth), 1, 0, 0, 0, 0, now.Location()); t.Before(timeBill); t = t.AddDate(0, 0, 1) {
-		if t.After(timeBill) {
+	var retList = []int{}
+	t := time.Date(billYear, time.Month(billMonth), 1, 0, 0, 0, 0, now.Location())
+	days := times.DaysInMonth(billYear, time.Month(billMonth))
+	for i := 0; i < days; i++ {
+		if t.Unix() > timeBill.Unix() {
 			break
 		}
 		retList = append(retList, t.Day())
+		t = t.AddDate(0, 0, 1)
 	}
 	return retList
 }
