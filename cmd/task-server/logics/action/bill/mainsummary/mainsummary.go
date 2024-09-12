@@ -21,7 +21,6 @@
 package mainsummary
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -244,13 +243,8 @@ func (act *MainAccountSummaryAction) calculateMonthTaskStatus(kt *kit.Kit, summa
 		if monthTask.State != enumor.RootAccountMonthBillTaskStateAccounted {
 			return decimal.Zero, false, err
 		}
-		var itemList []billcore.MonthTaskSummaryDetailItem
-		if err := json.Unmarshal([]byte(monthTask.SummaryDetail), &itemList); err != nil {
-			logs.Errorf("decode %s to []billcore.MonthTaskSummaryDetailItem failed, err: %s, rid: %s",
-				monthTask.SummaryDetail, err.Error(), kt.Rid)
-			return decimal.Zero, false, err
-		}
-		for _, item := range itemList {
+
+		for _, item := range monthTask.SummaryDetail {
 			if item.MainAccountID == summary.MainAccountID {
 				cost = cost.Add(item.Cost)
 			}

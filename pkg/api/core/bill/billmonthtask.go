@@ -56,7 +56,7 @@ type MonthTask struct {
 	SplitIndex         uint64                               `json:"split_index,omitempty"`
 	SplitFlowID        string                               `json:"split_flow_id,omitempty"`
 	SummaryFlowID      string                               `json:"summary_flow_id,omitempty"`
-	SummaryDetail      string                               `json:"summary_detail,omitempty"`
+	SummaryDetail      []MonthTaskSummaryDetailItem         `json:"summary_detail,omitempty"`
 	Creator            string                               `json:"creator,omitempty"`
 	Reviser            string                               `json:"reviser,omitempty"`
 	CreatedAt          types.Time                           `json:"created_at,omitempty"`

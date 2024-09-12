@@ -96,7 +96,7 @@ type AccountBillMonthTask struct {
 	// SummaryFlowID summary flow id
 	SummaryFlowID string `db:"summary_flow_id" json:"summary_flow_id"`
 	// SummaryDetail detail of summary
-	SummaryDetail string `db:"summary_detail" json:"summary_detail"`
+	SummaryDetail types.JsonField `db:"summary_detail" json:"summary_detail"`
 	// Creator 创建者
 	Creator string `db:"creator" json:"creator"`
 	// Reviser 更新者

@@ -21,7 +21,6 @@
 package monthtask
 
 import (
-	"encoding/json"
 	"fmt"
 	"path/filepath"
 
@@ -211,12 +210,7 @@ func (act MonthTaskAction) runSplit(kt *kit.Kit, runner MonthTaskRunner, opt *Mo
 			for mainAccountID := range splitMainAccountMap {
 				itemList = append(itemList, billcore.MonthTaskSummaryDetailItem{MainAccountID: mainAccountID})
 			}
-			itemListJSON, err := json.Marshal(itemList)
-			if err != nil {
-				logs.Errorf("fail to marshal month task summary detail, err: %v, rid: %s", err, kt.Rid)
-				return err
-			}
-			mtUpdate.SummaryDetail = string(itemListJSON)
+			mtUpdate.SummaryDetail = itemList
 			mtUpdate.State = enumor.RootAccountMonthBillTaskStateSplit
 			if err := actcli.GetDataService().Global.Bill.UpdateBillMonthTask(kt, mtUpdate); err != nil {
 				logs.Warnf("failed to update month pull task to finished, opt: %+v, err: %s, rid: %s",
@@ -394,14 +388,10 @@ func (act MonthTaskAction) runMainAccountSummary(kt *kit.Kit, codes []string, ta
 		itemList[i].Currency = currency
 		itemList[i].Cost = cost
 		itemList[i].Count = count
-		marshalDetail, err := json.Marshal(itemList)
-		if err != nil {
-			logs.Errorf("marshal detail failed, err: %v, rid: %s", err, kt.Rid)
-			return err
-		}
+
 		req := &bill.BillMonthTaskUpdateReq{
 			ID:            task.ID,
-			SummaryDetail: string(marshalDetail),
+			SummaryDetail: itemList,
 		}
 		if err := actcli.GetDataService().Global.Bill.UpdateBillMonthTask(kt, req); err != nil {
 			logs.Errorf("failed to update month pull task: %s, err: %v, rid: %s", task.String(), err, kt.Rid)
@@ -416,23 +406,16 @@ func (act MonthTaskAction) runSummary(kt *kit.Kit, runner MonthTaskRunner, opt *
 	if err != nil {
 		return err
 	}
-	var itemList []billcore.MonthTaskSummaryDetailItem
-	if task.SummaryDetail != "" {
-		if err := json.Unmarshal([]byte(task.SummaryDetail), &itemList); err != nil {
-			logs.Warnf("decode %s to []billcore.MonthTaskSummaryDetailItem failed, err: %s, rid: %s",
-				task.SummaryDetail, err.Error(), kt.Rid)
-			return err
-		}
-	}
 
-	if err := act.runMainAccountSummary(kt, runner.GetHcProductCodes(), task, itemList); err != nil {
+	if err := act.runMainAccountSummary(kt, runner.GetHcProductCodes(), task, task.SummaryDetail); err != nil {
 		return err
 	}
 
-	if err := actcli.GetDataService().Global.Bill.UpdateBillMonthTask(kt, &bill.BillMonthTaskUpdateReq{
+	req := &bill.BillMonthTaskUpdateReq{
 		ID:    task.ID,
 		State: enumor.RootAccountMonthBillTaskStateAccounted,
-	}); err != nil {
+	}
+	if err := actcli.GetDataService().Global.Bill.UpdateBillMonthTask(kt, req); err != nil {
 		logs.Warnf("failed to update month pull task, opt: %+v, err: %s, rid: %s", opt, err.Error(), kt.Rid)
 		return err
 	}

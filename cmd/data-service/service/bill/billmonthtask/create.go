@@ -54,6 +54,7 @@ func (svc *service) CreateBillMonthTask(cts *rest.Contexts) (interface{}, error)
 			BillMonth:          req.BillMonth,
 			VersionID:          req.VersionID,
 			State:              req.State,
+			SummaryDetail:      types.JsonField("[]"),
 			Creator:            cts.Kit.User,
 			Reviser:            cts.Kit.User,
 			Cost:               &types.Decimal{Decimal: decimal.Zero},

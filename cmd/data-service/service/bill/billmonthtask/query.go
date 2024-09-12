@@ -20,13 +20,10 @@
 package billmonthtask
 
 import (
-	"hcm/pkg/api/core/bill"
 	dataproto "hcm/pkg/api/data-service/bill"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
-	tablebill "hcm/pkg/dal/table/bill"
 	"hcm/pkg/rest"
-	cvt "hcm/pkg/tools/converter"
 )
 
 // ListBillMonthTask list bill month task with options
@@ -45,42 +42,5 @@ func (svc *service) ListBillMonthTask(cts *rest.Contexts) (interface{}, error) {
 		Fields: req.Fields,
 	}
 
-	data, err := svc.dao.AccountBillMonthPullTask().List(cts.Kit, opt)
-	if err != nil {
-		return nil, err
-	}
-
-	details := make([]*bill.MonthTask, len(data.Details))
-	for indx, d := range data.Details {
-		details[indx] = toProtoPullerResult(&d)
-	}
-
-	return &dataproto.BillMonthTaskListResult{Details: details, Count: &data.Count}, nil
-}
-
-func toProtoPullerResult(m *tablebill.AccountBillMonthTask) *bill.MonthTask {
-	return &bill.MonthTask{
-		ID:                 m.ID,
-		RootAccountID:      m.RootAccountID,
-		RootAccountCloudID: m.RootAccountCloudID,
-		Vendor:             m.Vendor,
-		Type:               m.Type,
-		BillYear:           m.BillYear,
-		BillMonth:          m.BillMonth,
-		VersionID:          m.VersionID,
-		State:              m.State,
-		Count:              m.Count,
-		Currency:           m.Currency,
-		Cost:               cvt.PtrToVal(m.Cost).Decimal,
-		PullIndex:          m.PullIndex,
-		PullFlowID:         m.PullFlowID,
-		SplitIndex:         m.SplitIndex,
-		SplitFlowID:        m.SplitFlowID,
-		SummaryFlowID:      m.SummaryFlowID,
-		SummaryDetail:      m.SummaryDetail,
-		Creator:            m.Creator,
-		Reviser:            m.Reviser,
-		CreatedAt:          m.CreatedAt,
-		UpdatedAt:          m.UpdatedAt,
-	}
+	return svc.dao.AccountBillMonthPullTask().List(cts.Kit, opt)
 }

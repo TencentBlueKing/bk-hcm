@@ -22,6 +22,7 @@ package bill
 import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/table/types"
 
 	"github.com/shopspring/decimal"
 )
@@ -37,7 +38,7 @@ type SyncRecord struct {
 	Count     uint                 `json:"count"`
 	Cost      decimal.Decimal      `json:"cost"`
 	RMBCost   decimal.Decimal      `json:"rmb_cost"`
-	Detail    string               `json:"detail"`
+	Detail    types.JsonField      `json:"detail"`
 	Operator  string               `json:"operator"`
 	core.Revision
 }
