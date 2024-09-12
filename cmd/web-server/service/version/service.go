@@ -22,6 +22,7 @@ package version
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -31,9 +32,12 @@ import (
 	"hcm/cmd/web-server/service/capability"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/version"
+
+	"github.com/emicklei/go-restful/v3"
 )
 
 // InitVersionService ...
@@ -43,8 +47,8 @@ func InitVersionService(c *capability.Capability) {
 	}
 
 	h := rest.NewHandler()
-	h.Add("GetUser", "GET", "/changelogs", svr.GetVersionList)
-	h.Add("GetUser", "GET", "/changelog/{id}", svr.GetVersion)
+	h.Add("GetVersionList", "GET", "/changelogs", svr.GetVersionList)
+	h.Add("GetVersion", "GET", "/changelog/{version}", svr.GetVersion)
 
 	h.Load(c.WebService)
 }
@@ -56,8 +60,8 @@ type service struct {
 // GetVersionList get user info
 func (u *service) GetVersionList(cts *rest.Contexts) (interface{}, error) {
 
-	// TODO 后续多语言支持
-	changelogFilepath := cc.WebServer().ChangeLogPath.Chinese
+	language := getLanguageByHTTPRequest(cts.Request)
+	changelogFilepath := getVersionDirPath(language)
 	files, err := os.ReadDir(changelogFilepath)
 	if err != nil {
 		logs.Errorf("failed to read directory: %s, err: %v, rid: %s", changelogFilepath, err, cts.Kit.Rid)
@@ -75,9 +79,10 @@ func (u *service) GetVersionList(cts *rest.Contexts) (interface{}, error) {
 
 // GetVersion ...
 func (u *service) GetVersion(cts *rest.Contexts) (interface{}, error) {
-	curVersion := cts.PathParameter("id").String()
-	// TODO 后续多语言支持
-	versionFilePath, err := getVersionFilePath(cc.WebServer().ChangeLogPath.Chinese, curVersion)
+	curVersion := cts.PathParameter("version").String()
+
+	language := getLanguageByHTTPRequest(cts.Request)
+	versionFilePath, err := getVersionFilePath(getVersionDirPath(language), curVersion)
 	if err != nil {
 		// 找不到指定的版本数据则返回对应错误
 		logs.Errorf("the changelog file for %s could not be found, err: %v, rid: %s",
@@ -92,6 +97,17 @@ func (u *service) GetVersion(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return string(versionData), nil
+}
+
+func getVersionDirPath(lang constant.Language) string {
+	switch lang {
+	case constant.English:
+		return cc.WebServer().ChangeLogPath.English
+	case constant.Chinese:
+		return cc.WebServer().ChangeLogPath.Chinese
+	default:
+		return cc.WebServer().ChangeLogPath.Chinese
+	}
 }
 
 // getVersionInfoList get all cmdb version info from changelog files
@@ -216,4 +232,19 @@ func getVersionFilePath(changelogPath string, version string) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("no changelog file for " + version + " in " + changelogPath)
+}
+
+// getLanguageByHTTPRequest ...
+func getLanguageByHTTPRequest(req *restful.Request) constant.Language {
+
+	cookie, err := req.Request.Cookie(constant.BKHTTPCookieLanguageKey)
+	if err != nil {
+		return constant.Chinese
+	}
+	cookieLanguage, _ := url.QueryUnescape(cookie.Value)
+	if cookieLanguage == "" {
+		return constant.Chinese
+	}
+
+	return constant.Language(cookieLanguage)
 }

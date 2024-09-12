@@ -6,14 +6,14 @@
 
 ### URL
 
-GET /api/v1/web/changelog/{id}
+GET /api/v1/web/changelog/{version_id}
 
 
 ### 输入参数
 
-| 参数名称 | 参数类型   | 必选 | 描述   |
-|------|--------|----|------|
-| id   | string | 是  | 版本id |
+| 参数名称       | 参数类型   | 必选 | 描述   |
+|------------|--------|----|------|
+| version_id | string | 是  | 版本id |
 
 
 ### 响应示例
