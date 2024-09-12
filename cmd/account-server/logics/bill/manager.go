@@ -127,7 +127,7 @@ func (bm *BillManager) syncMainControllers() error {
 	existedAccountKeyMap := make(map[string]struct{})
 	for _, mainAccount := range mainAccounts {
 		if mainAccount.Status != enumor.MainAccountStatusRUNNING {
-			// DEBUG  跳过非核算账号
+			// 跳过非核算账号
 			continue
 		}
 

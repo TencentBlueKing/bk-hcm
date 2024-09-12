@@ -115,10 +115,8 @@ func convertToRawBill(recordList []billcore.GcpRawBillItem) ([]dsbill.RawBillIte
 			newBillItem.BillCurrency = enumor.CurrencyCode(*record.Currency)
 		}
 		if record.Cost != nil {
-			newBillItem.BillCost = *record.Cost
-		}
-		if record.ReturnCost != nil {
-			newBillItem.BillCost = newBillItem.BillCost.Add(*record.ReturnCost)
+			// use original cost with non promotion cost
+			newBillItem.BillCost = *record.TotalCost
 		}
 		newBillItem.Extension = types.JsonField(string(extensionBytes))
 		retList = append(retList, newBillItem)

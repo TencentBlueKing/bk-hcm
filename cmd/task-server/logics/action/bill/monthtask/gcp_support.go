@@ -233,34 +233,26 @@ func (gcp *GcpSupportMonthTask) getSummaryMainListExcluded(kt *kit.Kit, rootAcco
 		// 去掉用户需要排除的数据
 		tools.RuleNotIn("main_account_cloud_id", gcp.excludeAccountCloudIds),
 	)
-	summaryMainCountResp, err := actcli.GetDataService().Global.Bill.ListBillSummaryMain(kt,
-		&dsbill.BillSummaryMainListReq{
-			Filter: filter,
-			Page:   core.NewCountPage(),
-		})
+	req := &dsbill.BillSummaryMainListReq{
+		Filter: filter,
+		Page:   core.NewCountPage(),
+	}
+	summaryMainCountResp, err := actcli.GetDataService().Global.Bill.ListBillSummaryMain(kt, req)
 	if err != nil {
-		logs.Errorf(
-			"count gcp summary main list failed, err: %v, rootAccountID: %s, billYear: %d, billMonth: %d, rid: %s",
-			err, rootAccountID, billYear, billMonth, kt.Rid)
+		logs.Errorf("get gcp %s %d-%02d summary main list failed, err: %v, rid: %s",
+			rootAccountID, billYear, billMonth, err, kt.Rid)
 		return nil, err
 	}
 	var summaryMainResultList []*dsbill.BillSummaryMain
 	for offset := uint64(0); offset < summaryMainCountResp.Count; offset = offset + uint64(core.DefaultMaxPageLimit) {
-		summaryMainCountResp, err := actcli.GetDataService().Global.Bill.ListBillSummaryMain(kt,
-			&dsbill.BillSummaryMainListReq{
-				Filter: filter,
-				Page: &core.BasePage{
-					Start: uint32(offset),
-					Limit: core.DefaultMaxPageLimit,
-				},
-			})
+		req.Page = &core.BasePage{Start: uint32(offset), Limit: core.DefaultMaxPageLimit}
+		summaryMainResp, err := actcli.GetDataService().Global.Bill.ListBillSummaryMain(kt, req)
 		if err != nil {
-			logs.Errorf(
-				"get gcp summary main list failed, err: %v, rootAccountID: %s, billYear: %d, billMonth: %d, rid: %s",
-				err, rootAccountID, billYear, billMonth, kt.Rid)
+			logs.Errorf("get gcp %s %d-%02d summary main list failed, err: %v, rid: %s",
+				rootAccountID, billYear, billMonth, err, kt.Rid)
 			return nil, err
 		}
-		summaryMainResultList = append(summaryMainResultList, summaryMainCountResp.Details...)
+		summaryMainResultList = append(summaryMainResultList, summaryMainResp.Details...)
 	}
 
 	return summaryMainResultList, nil

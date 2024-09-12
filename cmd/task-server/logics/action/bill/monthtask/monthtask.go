@@ -183,7 +183,7 @@ func (act MonthTaskAction) runPull(kt *kit.Kit, runner MonthTaskRunner, opt *Mon
 
 func (act MonthTaskAction) runSplit(kt *kit.Kit, runner MonthTaskRunner, opt *MonthTaskActionOption) error {
 	// step1 清理原有月度任务的bill item，因为有可能之前存在中途失败的脏数据了
-	if err := act.cleanBillItem(kt, opt); err != nil {
+	if err := act.cleanBillItem(kt, runner, opt); err != nil {
 		return err
 	}
 	// step2 进行分账
@@ -293,7 +293,7 @@ func getMonthTaskRawBillFilename(monthTask *billcore.MonthTask, offset uint64, l
 	return name
 }
 
-func getCleanBillItemFilter(opt *MonthTaskActionOption) *filter.Expression {
+func getCleanBillItemFilter(opt *MonthTaskActionOption, productCodes []string) *filter.Expression {
 	expressions := []*filter.AtomRule{
 		// do not set main_account_id
 		tools.RuleEqual("root_account_id", opt.RootAccountID),
@@ -302,25 +302,27 @@ func getCleanBillItemFilter(opt *MonthTaskActionOption) *filter.Expression {
 		tools.RuleEqual("bill_month", opt.BillMonth),
 		// special day 0 for month bill
 		tools.RuleEqual("bill_day", enumor.MonthTaskSpecialBillDay),
+		tools.RuleIn("hc_product_code", productCodes),
 	}
 	return tools.ExpressionAnd(expressions...)
 }
 
-func (act MonthTaskAction) cleanBillItem(kt *kit.Kit, opt *MonthTaskActionOption) error {
+func (act MonthTaskAction) cleanBillItem(kt *kit.Kit, runner MonthTaskRunner, opt *MonthTaskActionOption) error {
+
 	batch := 0
 	commonOpt := &bill.ItemCommonOpt{Vendor: opt.Vendor, Year: opt.BillYear, Month: opt.BillMonth}
-
+	delFilter := getCleanBillItemFilter(opt, runner.GetHcProductCodes())
 	for {
 		listReq := &bill.BillItemListReq{
 			ItemCommonOpt: commonOpt,
-			ListReq:       &core.ListReq{Filter: getCleanBillItemFilter(opt), Page: core.NewCountPage()},
+			ListReq:       &core.ListReq{Filter: delFilter, Page: core.NewCountPage()},
 		}
 		result, err := actcli.GetDataService().Global.Bill.ListBillItem(kt, listReq)
 		if err != nil {
 			logs.Warnf("count bill item for %+v failed, err %s, rid %s", opt, err.Error(), kt.Rid)
 			return fmt.Errorf("count bill item for %+v failed, err %s", opt, err.Error())
 		}
-		delReq := &bill.BillItemDeleteReq{ItemCommonOpt: commonOpt, Filter: getCleanBillItemFilter(opt)}
+		delReq := &bill.BillItemDeleteReq{ItemCommonOpt: commonOpt, Filter: delFilter}
 		if result.Count > 0 {
 			if err := actcli.GetDataService().Global.Bill.BatchDeleteBillItem(kt, delReq); err != nil {
 				return fmt.Errorf("delete 100 of %d bill item for %+v failed, err %s",
