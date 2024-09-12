@@ -433,3 +433,126 @@ type TCloudRuleCreateResult struct {
 	RuleID string `json:"rule_id"`
 	RelID  string `json:"rel_id"`
 }
+
+// -------------------------- List Listener With Targets --------------------------
+
+// ListListenerWithTargetsReq define list listener with targets req.
+type ListListenerWithTargetsReq struct {
+	BkBizID           int64               `json:"bk_biz_id" validate:"required,min=1"`
+	Vendor            enumor.Vendor       `json:"vendor" validate:"required,min=1"`
+	AccountID         string              `json:"account_id" validate:"required,min=1"`
+	ListenerQueryList []ListenerQueryItem `json:"rule_query_list" validate:"required,min=1,max=20"`
+}
+
+// Validate request.
+func (req *ListListenerWithTargetsReq) Validate() error {
+	if req.BkBizID <= 0 {
+		return errors.New("bk_biz_id is illegal")
+	}
+	if err := req.Vendor.Validate(); err != nil {
+		return err
+	}
+	if len(req.ListenerQueryList) == 0 {
+		return errors.New("rule_query_list is empty")
+	}
+	for _, item := range req.ListenerQueryList {
+		if err := item.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return validator.Validate.Struct(req)
+}
+
+// ListenerQueryItem 监听器查询列表
+type ListenerQueryItem struct {
+	Region        string              `json:"region" validate:"required,min=1"`
+	ClbVipDomains []string            `json:"clb_vip_domains" validate:"required,min=1"`
+	CloudLbIDs    []string            `json:"cloud_lb_ids" validate:"required,min=1"`
+	Protocol      enumor.ProtocolType `json:"protocol" validate:"required,min=1"`
+	Ports         []int64             `json:"ports" validate:"omitempty"`
+	RuleType      enumor.RuleType     `json:"rule_type" validate:"required,min=1"`
+	Domain        string              `json:"domain" validate:"omitempty"`
+	Url           string              `json:"url" validate:"omitempty"`
+	InstType      enumor.InstType     `json:"inst_type" validate:"required,min=1"`
+	RsIPs         []string            `json:"rs_ips" validate:"required,min=1"`
+	RsPorts       []int64             `json:"rs_ports" validate:"omitempty"`
+	RsWeights     []int64             `json:"rs_weights" validate:"omitempty"`
+}
+
+// Validate request.
+func (req *ListenerQueryItem) Validate() error {
+	if !req.Protocol.IsLayer4Protocol() && !req.Protocol.IsLayer7Protocol() {
+		return errors.New("protocol is illegal")
+	}
+	if err := req.RuleType.Validate(); err != nil {
+		return err
+	}
+	if len(req.ClbVipDomains) != len(req.CloudLbIDs) {
+		return errors.New("clb_vip_domains and cloud_lb_ids num must be equal")
+	}
+	// 传入的负载均衡ID数量不能超过50个
+	if len(req.CloudLbIDs) > 50 {
+		return errors.New("cloud_lb_ids num must be less than 50")
+	}
+	// RSPORT填写多个的话，必须和RSIP数量一致
+	if len(req.RsPorts) > 0 && len(req.RsPorts) != len(req.RsIPs) {
+		return errors.New("rs_port and rs_ip num must be equal")
+	}
+	// 权重填写多个的话，必须和RSIP数量一致
+	if len(req.RsWeights) > 0 && len(req.RsWeights) != len(req.RsIPs) {
+		return errors.New("rs_weight and rs_ip num must be equal")
+	}
+
+	return validator.Validate.Struct(req)
+}
+
+// ListListenerWithTargetsResp define list listener with targets resp.
+type ListListenerWithTargetsResp struct {
+	Details []*ListBatchListenerResult `json:"details"`
+}
+
+// ListBatchListenerResult define list batch listener result.
+type ListBatchListenerResult struct {
+	ClbID        string                      `json:"clb_id"`
+	CloudClbID   string                      `json:"cloud_lb_id"`
+	ClbVipDomain string                      `json:"clb_vip_domain"`
+	BkBizID      int64                       `json:"bk_biz_id"`
+	Region       string                      `json:"region"`
+	Vendor       enumor.Vendor               `json:"vendor"`
+	LblID        string                      `json:"lbl_id"`
+	CloudLblID   string                      `json:"cloud_lbl_id"`
+	Protocol     enumor.ProtocolType         `json:"protocol"`
+	Port         int64                       `json:"port"`
+	RsList       []*LoadBalancerTargetRsList `json:"rs_list"`
+}
+
+// LoadBalancerTargetRsList 负载均衡下的RS列表
+type LoadBalancerTargetRsList struct {
+	corelb.BaseTarget `json:",inline"`
+	RuleID            string          `json:"rule_id"`
+	CloudRuleID       string          `json:"cloud_rule_id"`
+	RuleType          enumor.RuleType `json:"rule_type"`
+	Domain            string          `json:"domain,omitempty"`
+	Url               string          `json:"url,omitempty"`
+}
+
+// LoadBalancerUrlRuleResult 负载均衡四层/七层规则信息
+type LoadBalancerUrlRuleResult struct {
+	LbID              string                       `json:"lb_id"`
+	CloudClbID        string                       `json:"cloud_lb_id"`
+	LblID             string                       `json:"lbl_id"`
+	CloudLblID        string                       `json:"cloud_lbl_id"`
+	TargetGroupIDs    []string                     `json:"target_group_ids"`
+	TargetGrouRuleMap map[string]DomainUrlRuleInfo `json:"target_group_rule_map"`
+}
+
+// DomainUrlRuleInfo 负载均衡四层/七层规则信息
+type DomainUrlRuleInfo struct {
+	TargetGroupID string          `json:"target_group_id"`
+	RuleID        string          `json:"rule_id"`
+	CloudRuleID   string          `json:"cloud_rule_id"`
+	RuleType      enumor.RuleType `json:"rule_type"`
+	Domain        string          `json:"domain"`
+	Url           string          `json:"url"`
+}
