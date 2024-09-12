@@ -194,7 +194,7 @@ func peekRequest(req *http.Request) (string, error) {
 
 func isNoticeRequest(req *restful.Request) bool {
 	if strings.Contains(req.Request.RequestURI,
-		"/api/v1/web/notice/get_current_announcements") && req.Request.Method == http.MethodGet {
+		"/api/v1/web/notice/current_announcements") && req.Request.Method == http.MethodGet {
 		return true
 	}
 	return false

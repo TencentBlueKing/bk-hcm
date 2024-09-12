@@ -1,12 +1,12 @@
 ### 描述
 
-- 该接口提供版本：v1.6.5+。
+- 该接口提供版本：v9.9.9。
 - 该接口所需权限：无。
 - 该接口功能描述：获取通知中心信息。
 
 ### URL
 
-GET /api/v1/web/notice/get_current_announcements
+GET /api/v1/web/notice/current_announcements
 
 ### 输入参数
 

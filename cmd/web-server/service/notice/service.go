@@ -19,7 +19,7 @@ func InitService(c *capability.Capability) {
 	h := rest.NewHandler()
 
 	h.Add("GetCurrentAnnouncements", http.MethodGet,
-		"/notice/get_current_announcements", svc.GetCurrentAnnouncements)
+		"/notice/current_announcements", svc.GetCurrentAnnouncements)
 
 	h.Load(c.WebService)
 }
