@@ -41,7 +41,7 @@ all: pre ui server suite
 	@echo -e "\033[32;1mBuild All Success!\n\033[0m"
 
 # 后端本地测试编译
-server: pre
+server: pre changelog
 	@cd ${PRO_DIR}/cmd && make
 	@echo -e "\033[32;1mBuild Server Success!\n\033[0m"
 
