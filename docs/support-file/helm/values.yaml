@@ -498,7 +498,16 @@ accountserver:
     #      spArnPrefix: arn:aws:savingsplans::xxxxx:savingsplan/
     awsCommonExpense:
       excludeAccountCloudIds:
-    #      - 123456789
+      #  - 123456789
+    gcpCredits:
+    #- rootAccountCloudID: gcp_support_account
+    #  returnConfigs:
+    #    - creditId: "some_credit_id"
+    #      creditName: "some_note"
+    #      accountCloudID: "gcp_credit_account"
+    gcpCommonExpense:
+      excludeAccountCloudIDs:
+      # - "account_do_not_share_common_expense"
 
 
 

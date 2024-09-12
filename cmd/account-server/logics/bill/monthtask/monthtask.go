@@ -18,7 +18,7 @@
  */
 
 // Package monthtask  在完成二级账号原始账单pull, split, summary 步骤后进行，
-// 每个厂商支持多种任务，每个类型任务都需要实现Pull、Split、Summary 三个步骤
+// 每个厂商支持多种任务，每个类型任务都需要实现pull, split, summary 三个步骤
 package monthtask
 
 import (
