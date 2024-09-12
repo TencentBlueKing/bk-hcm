@@ -11,7 +11,7 @@ import { useTable } from '@/hooks/useTable/useTable';
 import { useI18n } from 'vue-i18n';
 import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
 import useBatchDeleteLB from './useBatchDeleteLB';
-import { useResourceStore } from '@/store';
+import { useBusinessStore, useResourceStore } from '@/store';
 // import utils
 import { getTableNewRowClass } from '@/common/util';
 import { asyncGetListenerCount } from '@/utils';
@@ -29,6 +29,7 @@ export default defineComponent({
     const router = useRouter();
     const route = useRoute();
     const { t } = useI18n();
+    const businessStore = useBusinessStore();
     const { whereAmI } = useWhereAmI();
     const { selections, handleSelectionChange, resetSelections } = useSelection();
     const { authVerifyData, handleAuth } = useVerify();
@@ -154,6 +155,7 @@ export default defineComponent({
         sortOption: { sort: 'created_at', order: 'DESC' },
         async resolveDataListCb(dataList: any[]) {
           return asyncGetListenerCount(
+            businessStore.asyncGetListenerCount,
             dataList.map((item) => {
               item.lb_type = LB_NETWORK_TYPE_MAP[item.lb_type];
               item.status = CLB_STATUS_MAP[item.status];

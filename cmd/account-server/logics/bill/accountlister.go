@@ -102,24 +102,21 @@ func (t *HcmAccountLister) ListAllMainAccount(kt *kit.Kit) ([]*MainAccount, erro
 
 // ListAllRootAccount list root account
 func (t *HcmAccountLister) ListAllRootAccount(kt *kit.Kit) ([]*RootAccount, error) {
-	result, err := t.Client.DataService().Global.RootAccount.List(kt, &core.ListWithoutFieldReq{
-		Filter: tools.AllExpression(),
-		Page: &core.BasePage{
-			Count: true,
-		},
-	})
+	listReq := &core.ListReq{Filter: tools.AllExpression(), Page: core.NewCountPage()}
+	result, err := t.Client.DataService().Global.RootAccount.List(kt, listReq)
 	if err != nil {
 		return nil, err
 	}
 	var retList []*RootAccount
 	for offset := uint64(0); offset < result.Count; offset = offset + defaultAccountListLimit {
-		accountResult, err := t.Client.DataService().Global.RootAccount.List(kt, &core.ListWithoutFieldReq{
+		rootAccountReq := &core.ListReq{
 			Filter: tools.AllExpression(),
 			Page: &core.BasePage{
 				Start: uint32(offset),
 				Limit: uint(defaultAccountListLimit),
 			},
-		})
+		}
+		accountResult, err := t.Client.DataService().Global.RootAccount.List(kt, rootAccountReq)
 		if err != nil {
 			return nil, fmt.Errorf("list root account failed, err %s", err.Error())
 		}

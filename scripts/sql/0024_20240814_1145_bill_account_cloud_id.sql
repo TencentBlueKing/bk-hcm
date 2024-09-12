@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0024,HCMVER=v1.6.1
 
     Notes:
     1. 修改`account_bill_daily_pull_task`表，增加`root_account_cloud_id`及`main_account_cloud_id`字段
@@ -95,6 +95,6 @@ SET ab.root_account_cloud_id = ra.cloud_id
 WHERE ab.root_account_cloud_id = '';
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.6.1' as `hcm_ver`, '0024' as `sql_ver`;
 
 COMMIT

@@ -219,3 +219,30 @@ const (
 	// MonthRawBillSpecialDatePathName 特殊日期原始账单保存路径
 	MonthRawBillSpecialDatePathName = "00"
 )
+
+// MonthTaskSpecialBillDay special bill day 0 to represent the whole month
+const MonthTaskSpecialBillDay = 0
+
+var (
+	// BillAdjustmentStateNameMap is the map of bill adjustment state name
+	BillAdjustmentStateNameMap = map[BillAdjustmentState]string{
+		BillAdjustmentStateConfirmed:   "已确认",
+		BillAdjustmentStateUnconfirmed: "未确认",
+	}
+
+	// BillAdjustmentTypeNameMap is the map of bill adjustment type name
+	BillAdjustmentTypeNameMap = map[BillAdjustmentType]string{
+		BillAdjustmentIncrease: "增加",
+		BillAdjustmentDecrease: "减少",
+	}
+
+	// RootAccountBillSummaryStateMap 一级账号账单汇总状态中文名
+	RootAccountBillSummaryStateMap = map[RootBillSummaryState]string{
+		RootAccountBillSummaryStateAccounting: "核算中",
+		RootAccountBillSummaryStateAccounted:  "已核算",
+		RootAccountBillSummaryStateConfirmed:  "已确认",
+		RootAccountBillSummaryStateSyncing:    "同步中",
+		RootAccountBillSummaryStateSynced:     "已同步",
+		RootAccountBillSummaryStateStop:       "停止中",
+	}
+)

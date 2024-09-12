@@ -1,9 +1,8 @@
 import { defineComponent, PropType, ref } from 'vue';
 
-import { Button, Dialog } from 'bkui-vue';
+import { Button } from 'bkui-vue';
 
 import { useI18n } from 'vue-i18n';
-import { BillsExportResData } from '@/typings/bill';
 
 /**
  * 导出按钮
@@ -12,22 +11,16 @@ import { BillsExportResData } from '@/typings/bill';
  * @prop {String} content - 弹窗内容
  */
 export default defineComponent({
-  props: { cb: Function as PropType<() => Promise<BillsExportResData>>, title: String, content: String },
+  props: { cb: Function as PropType<() => Promise<void>>, title: String, content: String },
   setup(props) {
     const { t } = useI18n();
 
-    const isShow = ref(false);
     const isLoading = ref(false);
-    const downloadUrl = ref('');
 
     const handleExport = async () => {
       isLoading.value = true;
       try {
-        const res = await props.cb();
-        downloadUrl.value = res.data.download_url;
-        isShow.value = true;
-      } catch (error) {
-        downloadUrl.value = '';
+        await props.cb();
       } finally {
         isLoading.value = false;
       }
@@ -35,17 +28,15 @@ export default defineComponent({
 
     return () => (
       <>
-        <Button onClick={handleExport} loading={isLoading.value}>
+        <Button
+          onClick={handleExport}
+          loading={isLoading.value}
+          v-bk-tooltips={{
+            content: t('单次导出最多20万条账单，超出条数后，当前暂不支持导出。'),
+            placement: 'top-start',
+          }}>
           {t('导出')}
         </Button>
-        <Dialog v-model:isShow={isShow.value} title={props.title} quick-close dialogType='show'>
-          {props.content}，{t('点击')}
-          <a href={downloadUrl.value} download={props.title} class='text-link'>
-            {' '}
-            {t('链接下载')}
-          </a>
-          。
-        </Dialog>
       </>
     );
   },

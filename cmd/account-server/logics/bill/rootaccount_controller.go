@@ -83,6 +83,8 @@ type RootAccountController struct {
 	RootAccountID      string
 	RootAccountCloudID string
 	Vendor             enumor.Vendor
+	// ext extension option for root account
+	ext map[string]string
 
 	kt         *kit.Kit
 	cancelFunc context.CancelFunc
@@ -97,10 +99,37 @@ func (rac *RootAccountController) Start() error {
 	cancelFunc := kt.CtxBackgroundWithCancel()
 	rac.kt = kt
 	rac.cancelFunc = cancelFunc
+
+	if rac.Vendor == enumor.Aws {
+		err := rac.setAwsExtension(kt)
+		if err != nil {
+			logs.Errorf("fail to set extension for  aws root account controller, root account: %s, err: %v, rid: %s",
+				rac.RootAccountID, err, kt.Rid)
+			return err
+		}
+		logs.Infof("aws root account extension set, ext: %v, rid: %s", rac.ext, kt.Rid)
+	}
+
 	go rac.runBillSummaryLoop(kt)
 	go rac.runCalculateBillSummaryLoop(kt)
 	go rac.runMonthTaskLoop(kt)
 
+	return nil
+}
+
+func (rac *RootAccountController) setAwsExtension(kt *kit.Kit) error {
+	// set exclude account id
+	excludeCloudIds := cc.AccountServer().BillAllocation.AwsCommonExpense.ExcludeAccountCloudIDs
+	var spArnPrefix, spAccountCloudID string
+	// 	matching saving plan allocation option
+	for _, spOpt := range cc.AccountServer().BillAllocation.AwsSavingsPlans {
+		if spOpt.RootAccountCloudID != rac.RootAccountCloudID {
+			continue
+		}
+		spAccountCloudID = spOpt.SpPurchaseAccountCloudID
+		spArnPrefix = spOpt.SpArnPrefix
+	}
+	rac.ext = monthtask.BuildAwsMonthTaskOptionExt(spArnPrefix, spAccountCloudID, excludeCloudIds)
 	return nil
 }
 
@@ -371,7 +400,7 @@ func (rac *RootAccountController) ensureMonthTask(kt *kit.Kit, billYear, billMon
 	return nil
 }
 
-func calculateAccountingState(mainSummaryList []*dsbillapi.BillSummaryMainResult,
+func calculateAccountingState(mainSummaryList []*dsbillapi.BillSummaryMain,
 	rootSummary *dsbillapi.BillSummaryRootResult) (isAllAccounted bool) {
 
 	isAllAccounted = true
@@ -391,7 +420,7 @@ func calculateAccountingState(mainSummaryList []*dsbillapi.BillSummaryMainResult
 }
 
 func (rac *RootAccountController) listAllMainSummary(
-	kt *kit.Kit, billYear, billMonth int) ([]*dsbillapi.BillSummaryMainResult, error) {
+	kt *kit.Kit, billYear, billMonth int) ([]*dsbillapi.BillSummaryMain, error) {
 
 	expressions := []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", rac.RootAccountID),
@@ -413,7 +442,7 @@ func (rac *RootAccountController) listAllMainSummary(
 		return nil, fmt.Errorf("empty count in result %+v", result)
 	}
 	logs.Infof("found %d main account summary for %+v, rid: %s", result.Count, rac, kt.Rid)
-	var mainSummaryList []*dsbillapi.BillSummaryMainResult
+	var mainSummaryList []*dsbillapi.BillSummaryMain
 	for offset := uint64(0); offset < result.Count; offset = offset + uint64(core.DefaultMaxPageLimit) {
 		result, err = rac.Client.DataService().Global.Bill.ListBillSummaryMain(
 			kt, &dsbillapi.BillSummaryMainListReq{
@@ -582,8 +611,7 @@ func (rac *RootAccountController) createMonthFlow(kt *kit.Kit, rootAccountID str
 		Name: enumor.FlowBillMonthTask,
 		Memo: memo,
 		Tasks: []taskserver.CustomFlowTask{
-			monthtask.BuildMonthTask(
-				t, rootAccountID, rac.Vendor, billYear, billMonth),
+			monthtask.BuildMonthTask(t, rootAccountID, rac.Vendor, billYear, billMonth, rac.ext),
 		},
 	})
 }

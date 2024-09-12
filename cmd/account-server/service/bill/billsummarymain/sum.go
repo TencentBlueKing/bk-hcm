@@ -65,7 +65,7 @@ func (s *service) SumMainAccountSummary(cts *rest.Contexts) (interface{}, error)
 	if err != nil {
 		return nil, err
 	}
-	var mainSummaryList []*dsbillapi.BillSummaryMainResult
+	var mainSummaryList []*dsbillapi.BillSummaryMain
 	for offset := uint64(0); offset < result.Count; offset = offset + uint64(core.DefaultMaxPageLimit) {
 		tmpResult, err := s.client.DataService().Global.Bill.ListBillSummaryMain(
 			cts.Kit, &dsbillapi.BillSummaryMainListReq{
@@ -83,11 +83,11 @@ func (s *service) SumMainAccountSummary(cts *rest.Contexts) (interface{}, error)
 	return s.doCalcalcute(mainSummaryList, result.Count)
 }
 
-func (s *service) doCalcalcute(mainSummaryList []*dsbillapi.BillSummaryMainResult, count uint64) (interface{}, error) {
+func (s *service) doCalcalcute(mainSummaryList []*dsbillapi.BillSummaryMain, count uint64) (interface{}, error) {
 	retMap := make(map[enumor.CurrencyCode]*billcore.CostWithCurrency)
 	for _, rootSummary := range mainSummaryList {
 		if _, ok := retMap[rootSummary.Currency]; !ok {
-			retMap[enumor.CurrencyCode(rootSummary.Currency)] = &billcore.CostWithCurrency{
+			retMap[rootSummary.Currency] = &billcore.CostWithCurrency{
 				Cost:     decimal.NewFromFloat(0),
 				RMBCost:  decimal.NewFromFloat(0),
 				Currency: rootSummary.Currency,

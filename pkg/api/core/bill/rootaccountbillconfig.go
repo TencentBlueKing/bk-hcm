@@ -64,3 +64,6 @@ type AwsBillConfigExtension struct {
 // GcpBillConfigExtension define gcp bill config extension.
 type GcpBillConfigExtension struct {
 }
+
+// AwsRootBillConfig ...
+type AwsRootBillConfig = RootAccountBillConfig[AwsBillConfigExtension]

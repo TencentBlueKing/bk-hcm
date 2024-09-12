@@ -25,8 +25,11 @@ import (
 
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
+
+	"github.com/shopspring/decimal"
 )
 
 // -------------------------- List --------------------------
@@ -570,4 +573,27 @@ func (opt AwsMainBillListOption) Validate() error {
 	}
 
 	return validator.Validate.Struct(opt)
+}
+
+// AwsRootSpUsageOption define aws root sp usage get option.
+type AwsRootSpUsageOption struct {
+	Year  uint `json:"year" validate:"required"`
+	Month uint `json:"month" validate:"required,min=1,max=12"`
+	// 起始日
+	StartDay uint `json:"start_day" validate:"required,min=1,max=31"`
+	// 截止日
+	EndDay uint `json:"end_day" validate:"required,min=1,max=31"`
+
+	PayerCloudID  string   `json:"payer_cloud_ids" validate:"required"`
+	UsageCloudIDs []string `json:"usage_cloud_ids" validate:"omitempty"`
+	SpArnPrefix   string   `json:"sp_arn_prefix" validate:"omitempty"`
+}
+
+// AwsSpUsageTotalResult ...
+type AwsSpUsageTotalResult struct {
+	AccountCount  uint64              `json:"account_count"`
+	Currency      enumor.CurrencyCode `json:"currency"`
+	UnblendedCost *decimal.Decimal    `json:"unblended_cost"`
+	SpCost        *decimal.Decimal    `json:"sp_cost"`
+	SpNetCost     *decimal.Decimal    `json:"sp_net_cost"`
 }

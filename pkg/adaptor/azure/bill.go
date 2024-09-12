@@ -65,6 +65,7 @@ type billClient struct {
 	LoginToken *LoginTokenProto `json:"login_token"`
 }
 
+// LoginTokenProto ...
 type LoginTokenProto struct {
 	SubscriptionID string `json:"subscription_id"`
 	AccessToken    string `json:"access_token"`
@@ -74,10 +75,12 @@ type LoginTokenProto struct {
 	Resource       string `json:"resource"`
 }
 
+// UsageCommonError ...
 type UsageCommonError struct {
 	Error *UsageRespError `json:"error"`
 }
 
+// UsageRespError ...
 type UsageRespError struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`

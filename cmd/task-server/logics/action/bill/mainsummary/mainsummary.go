@@ -113,8 +113,8 @@ func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 
 	// 计算当月实时成本
 	curMonthCost, isCurMonthAccounted, currency, err := act.getDailyVersionCost(kt.Kit(), opt, summary.CurrentVersion)
-	logs.Errorf("fail get current month cost failed, err: %v, rid: %s", err, kt.Kit().Rid)
 	if err != nil {
+		logs.Errorf("fail get current month cost failed, err: %v, rid: %s", err, kt.Kit().Rid)
 		return nil, fmt.Errorf("get current month cost failed, err %s", err.Error())
 	}
 
@@ -217,9 +217,8 @@ func (act *MainAccountSummaryAction) getExchangeRate(
 	return result.Details[0].ExchangeRate, nil
 }
 
-func (act *MainAccountSummaryAction) getMonthPullTaskStatus(
-	kt *kit.Kit, summaryRoot *bill.BillSummaryRootResult, summary *bill.BillSummaryMainResult) (
-	decimal.Decimal, bool, error) {
+func (act *MainAccountSummaryAction) getMonthPullTaskStatus(kt *kit.Kit, summaryRoot *bill.BillSummaryRootResult,
+	summary *bill.BillSummaryMain) (decimal.Decimal, bool, error) {
 
 	monthPuller, err := puller.GetMonthPuller(summaryRoot.Vendor)
 	if err != nil {
@@ -400,9 +399,8 @@ func (act *MainAccountSummaryAction) getAdjustmenSummary(kt *kit.Kit, opt *MainA
 	return currency, &cost, nil
 }
 
-func (act *MainAccountSummaryAction) getBillSummary(
-	kt *kit.Kit, opt *MainAccountSummaryActionOption) (
-	*bill.BillSummaryRootResult, *bill.BillSummaryMainResult, error) {
+func (act *MainAccountSummaryAction) getBillSummary(kt *kit.Kit, opt *MainAccountSummaryActionOption) (
+	*bill.BillSummaryRootResult, *bill.BillSummaryMain, error) {
 
 	rootAccountExpr := []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", opt.RootAccountID),

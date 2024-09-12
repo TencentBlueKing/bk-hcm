@@ -106,7 +106,7 @@ func (p *ItemCommonOpt) Validate() error {
 	if len(p.Vendor) == 0 {
 		return errf.New(errf.InvalidParameter, "vendor is required")
 	}
-	if p.Year == 0 {
+	if p.Year <= 0 {
 		return errf.New(errf.InvalidParameter, "year is required")
 	}
 	if p.Month == 0 {

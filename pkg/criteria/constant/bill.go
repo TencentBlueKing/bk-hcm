@@ -17,15 +17,22 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package constant 账单状态package
 package constant
 
+// 状态(0:默认1:创建存储桶2:设置存储桶权限3:创建成本报告4:检查yml文件5:创建CloudFormation模版99:重新生成cur成本报告100:正常)
 const (
-	// 状态(0:默认1:创建存储桶2:设置存储桶权限3:创建成本报告4:检查yml文件5:创建CloudFormation模版100:正常)
 	StatusDefault              = 0
 	StatusCreateBucket         = 1
 	StatusSetBucketPolicy      = 2
 	StatusCreateCur            = 3
 	StatusCheckYml             = 4
 	StatusCreateCloudFormation = 5
+	StatusReCurReport          = 99
 	StatusSuccess              = 100
+)
+
+const (
+	// BillExportFolderPrefix 账单导出文件夹前缀
+	BillExportFolderPrefix = "bill_export"
 )

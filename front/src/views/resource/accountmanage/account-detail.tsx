@@ -87,7 +87,7 @@ export default defineComponent({
       handleValidate,
       isValidateDiasbled,
       extensionPayload,
-    } = useSecretExtension({ ...projectModel, isValidate: true });
+    } = useSecretExtension(projectModel, true);
 
     const secretModel = reactive<SecretModel>({
       ...initSecretModel,
@@ -433,16 +433,16 @@ export default defineComponent({
           // 测试连接密钥信息
           id: projectModel.id,
           extension: {
+            cloud_sub_account_id: curExtension.value.output1.cloud_sub_account_id?.value,
             ...extension,
-            cloud_sub_account_id: curExtension.value.output1.cloud_sub_account_id.value,
           },
         });
         await accountStore.updateAccount({
           // 更新密钥信息
           id: projectModel.id,
           extension: {
+            cloud_sub_account_id: curExtension.value.output1.cloud_sub_account_id?.value,
             ...extension,
-            cloud_sub_account_id: curExtension.value.output1.cloud_sub_account_id.value,
           },
         });
         Message({
@@ -791,6 +791,7 @@ export default defineComponent({
               footer: () => (
                 <div class={'validate-btn-container'}>
                   <Button
+                    outline={curExtension.value.validatedStatus === ValidateStatus.YES}
                     theme='primary'
                     class={'validate-btn'}
                     loading={isValidateLoading.value}

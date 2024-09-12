@@ -20,10 +20,15 @@
 package bill
 
 import (
+	"errors"
+
 	"hcm/pkg/api/core"
 	billcore "hcm/pkg/api/core/bill"
+	"hcm/pkg/api/data-service/bill"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
+	tablebill "hcm/pkg/dal/table/bill"
 	"hcm/pkg/runtime/filter"
 )
 
@@ -31,8 +36,8 @@ import (
 type RootAccountSummaryListReq struct {
 	BillYear  int                `json:"bill_year" validate:"required"`
 	BillMonth int                `json:"bill_month" validate:"required"`
-	Filter    *filter.Expression `json:"filter" validate:"omitempty"`
-	Page      *core.BasePage     `json:"page" validate:"omitempty"`
+	Filter    *filter.Expression `json:"filter" validate:"required"`
+	Page      *core.BasePage     `json:"page" validate:"required"`
 }
 
 // Validate ...
@@ -80,4 +85,44 @@ func (req *RootAccountSummarySumReq) Validate() error {
 type RootAccountSummarySumResult struct {
 	Count   uint64                                             `json:"count"`
 	CostMap map[enumor.CurrencyCode]*billcore.CostWithCurrency `json:"cost_map"`
+}
+
+// BillSummaryRootResult ...
+type BillSummaryRootResult struct {
+	*bill.BillSummaryRootResult
+	RootAccountName string `json:"root_account_name" `
+}
+
+// BillSummaryRootListResult ...
+type BillSummaryRootListResult = core.ListResultT[BillSummaryRootResult]
+
+// RootAccountSummaryExportReq ...
+type RootAccountSummaryExportReq struct {
+	BillYear    int                `json:"bill_year" validate:"required"`
+	BillMonth   int                `json:"bill_month" validate:"required"`
+	ExportLimit uint64             `json:"export_limit" validate:"required"`
+	Filter      *filter.Expression `json:"filter" validate:"omitempty"`
+}
+
+// Validate ...
+func (r *RootAccountSummaryExportReq) Validate() error {
+	if r.ExportLimit > constant.ExcelExportLimit {
+		return errors.New("export limit exceed")
+	}
+	if r.Filter != nil {
+		err := r.Filter.Validate(filter.NewExprOption(filter.RuleFields(tablebill.AccountBillItemColumns.ColumnTypes())))
+		if err != nil {
+			return err
+		}
+	}
+	if r.BillYear == 0 {
+		return errors.New("year is required")
+	}
+	if r.BillMonth == 0 {
+		return errors.New("month is required")
+	}
+	if r.BillMonth > 12 || r.BillMonth < 0 {
+		return errors.New("month must between 1 and 12")
+	}
+	return validator.Validate.Struct(r)
 }

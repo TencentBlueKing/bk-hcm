@@ -20,7 +20,10 @@
 package bill
 
 import (
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/rest"
+
+	"github.com/shopspring/decimal"
 )
 
 // -------------------------- List --------------------------
@@ -35,4 +38,33 @@ type AwsBillListResult struct {
 type AwsBillListResp struct {
 	rest.BaseResp `json:",inline"`
 	Data          *AwsBillListResult `json:"data"`
+}
+
+// AwsRootSpUsageTotalReq ...
+type AwsRootSpUsageTotalReq struct {
+	// 根账号id
+	RootAccountID string `json:"root_account_id" validate:"required"`
+	// 筛选使用账号云id，为空则不筛选
+	SpUsageAccountCloudIds []string `json:"sp_usage_account_cloud_ids" `
+	SpArnPrefix            string   `json:"sp_arn_prefix" validate:"omitempty"`
+
+	Year  uint `json:"year" validate:"required"`
+	Month uint `json:"month" validate:"required,min=1,max=12"`
+	// 起始日
+	StartDay uint `json:"start_day" validate:"required,min=1,max=31"`
+	// 截止日
+	EndDay uint `json:"end_day" validate:"required,min=1,max=31"`
+}
+
+// Validate ...
+func (r *AwsRootSpUsageTotalReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// AwsSpUsageTotalResult ...
+type AwsSpUsageTotalResult struct {
+	SPCost        *decimal.Decimal `json:"sp_cost"`
+	UnblendedCost *decimal.Decimal `json:"unblended_cost"`
+	SPNetCost     *decimal.Decimal `json:"sp_net_cost"`
+	AccountCount  uint64           `json:"account_count"`
 }

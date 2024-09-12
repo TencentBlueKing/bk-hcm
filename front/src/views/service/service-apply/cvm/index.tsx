@@ -2,7 +2,7 @@
 // eslint-disable
 import { computed, defineComponent, reactive, ref, watch } from 'vue';
 import { Form, Input, Select, Checkbox, Button, Radio } from 'bkui-vue';
-import ConditionOptions from '../components/common/condition-options.vue';
+import ConditionOptions from '../components/common/condition-options/index.vue';
 import ZoneSelector from '@/components/zone-selector/index.vue';
 import MachineTypeSelector from '../components/common/machine-type-selector';
 import Imagelector from '../components/common/image-selector';
@@ -12,6 +12,7 @@ import SecurityGroupSelector from '../components/common/security-group-selector'
 import CloudAreaName from '../components/common/cloud-area-name';
 import { Plus as PlusIcon } from 'bkui-vue/lib/icon';
 import GcpDataDiskFormDialog from './children/gcp-data-disk-form-dialog';
+import PwdInput from './children/PwdInput';
 import './index.scss';
 import { useI18n } from 'vue-i18n';
 
@@ -43,7 +44,7 @@ const { Group: RadioGroup, Button: RadioButton } = Radio;
 export default defineComponent({
   props: {},
   setup() {
-    const { cond, isEmptyCond } = useCondtion(ResourceTypeEnum.CVM);
+    const { cond, isEmptyCond } = useCondtion();
     const {
       formData,
       formRef,
@@ -337,7 +338,6 @@ export default defineComponent({
       () => formData.cloud_vpc_id,
       (val) => {
         !val && (cloudId.value = null);
-        console.log('subnetSelectorRef.value', subnetSelectorRef.value.subnetList);
         subnetLength.value = subnetSelectorRef.value.subnetList?.length || 0;
       },
     );
@@ -371,15 +371,20 @@ export default defineComponent({
           return;
         await formRef.value.validate();
         isSubmitBtnLoading.value = true;
-        const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/cvms/prices/inquiry`, {
-          ...saveData,
-          instance_type:
-            cond.vendor !== VendorEnum.HUAWEI
-              ? saveData.instance_type
-              : `${saveData.instance_type}.${opSystemType.value}`,
-        });
-        cost.value = res.data?.discount_price || '0';
-        isSubmitBtnLoading.value = false;
+        try {
+          const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/cvms/prices/inquiry`, {
+            ...saveData,
+            instance_type:
+              cond.vendor !== VendorEnum.HUAWEI
+                ? saveData.instance_type
+                : `${saveData.instance_type}.${opSystemType.value}`,
+          });
+          cost.value = res.data?.discount_price || '0';
+        } catch (error) {
+          cost.value = '--';
+        } finally {
+          isSubmitBtnLoading.value = false;
+        }
       }, 300),
       {
         immediate: true,
@@ -714,19 +719,13 @@ export default defineComponent({
               },
               {
                 property: 'password',
-                content: () => (
-                  <Input
-                    style={{ width: '249px' }}
-                    type='password'
-                    placeholder='密码'
-                    v-model={formData.password}></Input>
-                ),
+                content: () => <PwdInput v-model={formData.password} />,
               },
               {
                 property: 'confirmed_password',
                 content: () => (
                   <Input
-                    style={{ width: '249px' }}
+                    style={{ width: '420px' }}
                     type='password'
                     placeholder='确认密码'
                     v-model={formData.confirmed_password}></Input>
@@ -930,7 +929,7 @@ export default defineComponent({
                 <ConditionOptions
                   ref={conditionRef}
                   type={ResourceTypeEnum.CVM}
-                  v-model:bizId={cond.bizId}
+                  bizs={cond.bizId}
                   v-model:cloudAccountId={cond.cloudAccountId}
                   v-model:vendor={cond.vendor}
                   v-model:region={cond.region}
@@ -1011,7 +1010,7 @@ export default defineComponent({
             onClose={() => (dialogState.gcpDataDisk.isShow = false)}
           />
         </div>
-        {isAccountShow.value && (
+        {!isAccountShow.value && (
           <div class={'purchase-cvm-bottom-bar'}>
             <Form labelWidth={130} class={'purchase-cvm-bottom-bar-form'}>
               <div class='purchase-cvm-bottom-bar-form-item-wrap'>

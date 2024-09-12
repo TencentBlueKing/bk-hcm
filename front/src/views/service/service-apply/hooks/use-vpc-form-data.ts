@@ -5,13 +5,13 @@ import type { Cond } from './use-condtion';
 import { Message } from 'bkui-vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 export interface ISubnet {
   name: string;
-  ipv4_cidr: string | number[];
+  ipv4_cidr: string;
   private_ip_google_access?: boolean;
   zone?: string;
   enable_flow_logs?: boolean;
@@ -28,7 +28,7 @@ export interface IVpcBaseData {
   memo: string;
 }
 export interface IVpcFormData extends IVpcBaseData {
-  ipv4_cidr: number[];
+  ipv4_cidr: string;
   type?: number;
   ip_source_type?: number;
   bastion_host_enable?: boolean;
@@ -46,6 +46,7 @@ export interface IVpcSaveData extends IVpcBaseData {
 export default (cond: Cond) => {
   const { t } = useI18n();
   const router = useRouter();
+  const { isResourcePage, whereAmI } = useWhereAmI();
 
   const vendorDiffFormData = (vendor: string) => {
     const diff = {
@@ -53,7 +54,7 @@ export default (cond: Cond) => {
         ip_source_type: 0,
         subnet: {
           name: '',
-          ipv4_cidr: ['10', '0', '0', '0'] as string[],
+          ipv4_cidr: '10.0.0.0/8',
           zone: '',
         },
       },
@@ -68,14 +69,14 @@ export default (cond: Cond) => {
         firewall_enable: false,
         subnet: {
           name: '',
-          ipv4_cidr: ['10', '0', '0', '0'] as string[],
+          ipv4_cidr: '10.0.0.0/8',
         },
       },
       [VendorEnum.GCP]: {
         routing_mode: 'REGIONAL',
         subnet: {
           name: '',
-          ipv4_cidr: ['10', '0', '0', '0'] as string[],
+          ipv4_cidr: '10.0.0.0/8',
           private_ip_google_access: false,
           enable_flow_logs: false,
         },
@@ -85,7 +86,7 @@ export default (cond: Cond) => {
         subnet: {
           name: '',
           gateway_ip: '',
-          ipv4_cidr: ['10', '0', '0', '0'] as string[],
+          ipv4_cidr: '10.0.0.0/8',
           ipv6_enable: false,
         },
       },
@@ -95,11 +96,11 @@ export default (cond: Cond) => {
   const defaultFormData = (vendor: string) => {
     const base: IVpcFormData = {
       name: '',
-      ipv4_cidr: [10, 0, 0, 0],
+      ipv4_cidr: '10.0.0.0/8',
       bk_cloud_id: null,
       subnet: {
         name: '',
-        ipv4_cidr: [10, 0, 0, 0],
+        ipv4_cidr: '10.0.0.0/8',
       },
       memo: '',
     };
@@ -162,37 +163,33 @@ export default (cond: Cond) => {
       account_id: cond.cloudAccountId,
       region: cond.region,
     };
-
+    saveData.ipv4_cidr = formData.ipv4_cidr;
     if (cond.vendor === VendorEnum.TCLOUD) {
-      saveData.ipv4_cidr = `${ipv4_cidr.slice(0, 4).join('.')}/${formData.ipv4_cidr.slice(-1)}`;
       saveData.subnet = {
         name: subnet.name,
-        ipv4_cidr: `${(subnet.ipv4_cidr.slice(0, 4) as number[]).join('.')}/${subnet.ipv4_cidr.slice(-1)}`,
+        ipv4_cidr: formData.ipv4_cidr,
         zone: subnet.zone?.[0],
       };
     }
 
     if (cond.vendor === VendorEnum.AWS) {
-      saveData.ipv4_cidr = `${formData.ipv4_cidr.slice(0, 4).join('.')}/${formData.ipv4_cidr.slice(-1)}`;
       saveData.instance_tenancy = instance_tenancy;
     }
 
     if (cond.vendor === VendorEnum.HUAWEI) {
-      saveData.ipv4_cidr = `${ipv4_cidr.slice(0, 4).join('.')}/${formData.ipv4_cidr.slice(-1)}`;
       saveData.subnet = {
         name: subnet.name,
-        gateway_ip: `${(subnet.ipv4_cidr.slice(0, 3) as number[]).join('.')}.1`,
-        ipv4_cidr: `${(subnet.ipv4_cidr.slice(0, 4) as number[]).join('.')}/${subnet.ipv4_cidr.slice(-1)}`,
+        gateway_ip: `${(subnet.ipv4_cidr.split('.').slice(0, 3)).join('.')}.1`,
+        ipv4_cidr: formData.ipv4_cidr,
         ipv6_enable: subnet.ipv6_enable,
       };
     }
 
     if (cond.vendor === VendorEnum.AZURE) {
       saveData.resource_group_name = cond.resourceGroup;
-      saveData.ipv4_cidr = `${formData.ipv4_cidr.slice(0, 4).join('.')}/${formData.ipv4_cidr.slice(-1)}`;
       saveData.subnet = {
         name: subnet.name,
-        ipv4_cidr: `${(subnet.ipv4_cidr.slice(0, 4) as number[]).join('.')}/${subnet.ipv4_cidr.slice(-1)}`,
+        ipv4_cidr: formData.ipv4_cidr,
       };
     }
 
@@ -200,16 +197,19 @@ export default (cond: Cond) => {
       saveData.routing_mode = routing_mode;
       saveData.subnet = {
         name: subnet.name,
-        ipv4_cidr: `${(subnet.ipv4_cidr.slice(0, 4) as number[]).join('.')}/${subnet.ipv4_cidr.slice(-1)}`,
+        ipv4_cidr: formData.ipv4_cidr,
         private_ip_google_access: subnet.private_ip_google_access,
         enable_flow_logs: subnet.enable_flow_logs,
       };
     }
 
+    if(whereAmI.value === Senarios.resource) {
+      delete saveData.bk_biz_id;
+      delete saveData.bizId;
+    }
     return saveData;
   };
 
-  const { isResourcePage } = useWhereAmI();
   const submitting = ref(false);
   const handleFormSubmit = async () => {
     await formRef.value.validate();

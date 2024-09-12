@@ -1,6 +1,7 @@
 import { VendorEnum } from '@/common/constant';
 import { useSingleList } from '@/hooks/useSingleList';
 import { QueryRuleOPEnum } from '@/typings';
+import { decodeValueByAtob, encodeValueByBtoa } from '@/utils';
 import { SelectColumn } from '@blueking/ediatable';
 import { Select } from 'bkui-vue';
 import { isEqual } from 'lodash';
@@ -58,7 +59,7 @@ export default defineComponent({
       // async/await 避免因异步路由跳转导致取值错误
       if (props.urlKey) {
         await router.push({
-          query: { ...route.query, [props.urlKey]: val.length ? btoa(JSON.stringify(val)) : undefined },
+          query: { ...route.query, [props.urlKey]: val.length ? encodeValueByBtoa(val) : undefined },
         });
       }
       emit('update:modelValue', val);
@@ -77,7 +78,7 @@ export default defineComponent({
       dataList,
       () => {
         if (props.autoSelect && props.urlKey && route.query[props.urlKey]) {
-          selectedValue.value = JSON.parse(atob(route.query[props.urlKey] as string));
+          selectedValue.value = decodeValueByAtob(route.query[props.urlKey] as string);
           unwatch();
         }
       },

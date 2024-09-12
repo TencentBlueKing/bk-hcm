@@ -8,7 +8,7 @@ import PrimaryStandZoneSelector from '../../components/common/PrimaryStandZoneSe
 import RegionVpcSelector from '../../components/common/RegionVpcSelector';
 import SubnetSelector from '../../components/common/subnet-selector';
 import InputNumber from '@/components/input-number';
-import ConditionOptions from '../../components/common/condition-options.vue';
+import ConditionOptions from '../../components/common/condition-options/index.vue';
 import CommonCard from '@/components/CommonCard';
 import VpcReviewPopover from '../../components/common/VpcReviewPopover';
 import SelectedItemPreviewComp from '@/components/SelectedItemPreviewComp';
@@ -541,7 +541,7 @@ export default (formModel: ApplyClbModel) => {
         <Form class='apply-clb-form-container' formType='vertical' model={formModel} ref={formRef} rules={rules}>
           <ConditionOptions
             type={ResourceTypeEnum.CLB}
-            v-model:bizId={formModel.bk_biz_id}
+            bizs={formModel.bk_biz_id}
             v-model:cloudAccountId={formModel.account_id}
             v-model:vendor={formModel.vendor}
             v-model:region={formModel.region}

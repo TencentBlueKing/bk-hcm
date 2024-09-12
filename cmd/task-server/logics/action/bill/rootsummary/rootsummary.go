@@ -199,7 +199,7 @@ func (act *RootAccountSummaryAction) countMainAccount(
 }
 
 func (act *RootAccountSummaryAction) listAllMainSummary(
-	kt *kit.Kit, opt *RootAccountSummaryActionOption) ([]*bill.BillSummaryMainResult, error) {
+	kt *kit.Kit, opt *RootAccountSummaryActionOption) ([]*bill.BillSummaryMain, error) {
 
 	expressions := []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", opt.RootAccountID),
@@ -221,7 +221,7 @@ func (act *RootAccountSummaryAction) listAllMainSummary(
 		return nil, fmt.Errorf("empty count in result %+v", result)
 	}
 	logs.Infof("found %d main account summary for opt: %v, rid: %s", result.Count, opt, kt.Rid)
-	var mainSummaryList []*bill.BillSummaryMainResult
+	var mainSummaryList []*bill.BillSummaryMain
 	for offset := uint64(0); offset < result.Count; offset = offset + uint64(core.DefaultMaxPageLimit) {
 		result, err = actcli.GetDataService().Global.Bill.ListBillSummaryMain(
 			kt, &bill.BillSummaryMainListReq{

@@ -73,6 +73,18 @@ var (
 			},
 		},
 	}
+	billCloudVendorResource = []client.RelateResourceType{
+		{
+			SystemID: SystemIDHCM,
+			ID:       BillCloudVendor,
+			InstanceSelections: []client.RelatedInstanceSelection{
+				{
+					SystemID: SystemIDHCM,
+					ID:       BillCloudVendorSelection,
+				},
+			},
+		},
+	}
 )
 
 // GenerateStaticActions return need to register action.
@@ -504,6 +516,14 @@ func genPlatformManageActions() []client.ResourceAction {
 		NameEn:               "Account Bill Manage",
 		Type:                 View,
 		RelatedResourceTypes: nil,
+		RelatedActions:       nil,
+		Version:              1,
+	}, {
+		ID:                   AccountBillPull,
+		Name:                 ActionIDNameMap[AccountBillPull],
+		NameEn:               "Account Bill Pull",
+		Type:                 View,
+		RelatedResourceTypes: billCloudVendorResource,
 		RelatedActions:       nil,
 		Version:              1,
 	}, {

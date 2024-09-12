@@ -42,3 +42,14 @@ type GenerateTemporalUrlResult struct {
 	Token string `json:"token"`
 	URL   string `json:"url"`
 }
+
+// UploadFileReq ...
+type UploadFileReq struct {
+	Filename   string `json:"filename" validate:"required"`
+	FileBase64 string `json:"file_base64" validate:"required"`
+}
+
+// Validate ...
+func (r *UploadFileReq) Validate() error {
+	return validator.Validate.Struct(r)
+}

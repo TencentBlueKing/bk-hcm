@@ -107,7 +107,8 @@ import useBatchDeleteLB from '@/views/business/load-balancer/clb-view/all-clbs-m
 import { useI18n } from 'vue-i18n';
 import { asyncGetListenerCount } from '@/utils';
 import { getTableNewRowClass } from '@/common/util';
-import { useResourceStore } from '@/store';
+import { useResourceStore, useBusinessStore } from '@/store';
+
 const props = defineProps({
   filter: {
     type: Object as PropType<FilterType>,
@@ -125,6 +126,7 @@ const { whereAmI } = useWhereAmI();
 const { searchData, searchValue, filter } = useFilter(props);
 
 const resourceStore = useResourceStore();
+const businessStore = useBusinessStore();
 
 const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort, triggerApi } = useQueryList(
   { filter: filter.value },
@@ -132,7 +134,7 @@ const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, ha
   null,
   'list',
   {},
-  asyncGetListenerCount,
+  (dataList: any) => asyncGetListenerCount(businessStore.asyncGetListenerCount, dataList),
 );
 const { selections, handleSelectionChange, resetSelections } = useSelection();
 const { columns, settings } = useColumns('lb');

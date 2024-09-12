@@ -186,6 +186,8 @@ func getResourceIDField(resType client.TypeID) (string, error) {
 		return "id", nil
 	case sys.MainAccount:
 		return "id", nil
+	case sys.BillCloudVendor:
+		return "vendor", nil
 
 	default:
 		return "", errf.New(errf.InvalidParameter, "resource type not support")
@@ -201,6 +203,8 @@ func getResourceKeywordField(resType client.TypeID) (string, error) {
 		return "name", nil
 	case sys.MainAccount:
 		return "name", nil
+	case sys.BillCloudVendor:
+		return "vendor", nil
 	default:
 		return "", errf.New(errf.InvalidParameter, "resource type not support")
 	}

@@ -130,9 +130,9 @@ func (svc *lbSvc) buildRemoveTCloudTarget(kt *kit.Kit, body json.RawMessage, acc
 			}
 			targetIDs = append(targetIDs, item.TargetIDs...)
 		} else {
-			lbIDs = slice.Unique(slice.Map(ruleRelList, func(rel corelb.BaseTargetListenerRuleRel) string {
+			lbIDs = append(lbIDs, slice.Unique(slice.Map(ruleRelList, func(rel corelb.BaseTargetListenerRuleRel) string {
 				return rel.LbID
-			}))
+			}))...)
 			targetGroupIDMap[item.TargetGroupID] = append(targetGroupIDMap[item.TargetGroupID], item.TargetIDs...)
 		}
 	}
@@ -143,6 +143,7 @@ func (svc *lbSvc) buildRemoveTCloudTarget(kt *kit.Kit, body json.RawMessage, acc
 	}
 
 	// 目标组需要属于同一个负载均衡
+	lbIDs = slice.Unique(lbIDs)
 	if len(lbIDs) > 1 {
 		return nil, errf.New(errf.InvalidParameter, "target group need belong to the same load balancer")
 	}
@@ -184,18 +185,21 @@ func (svc *lbSvc) buildRemoveTCloudTargetTasks(kt *kit.Kit, accountID, lbID stri
 	// 预检测
 	_, err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
 	if err != nil {
+		logs.Errorf("check resource flow relation failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
 	// 创建Flow跟Task的初始化数据
 	flowID, err := svc.initFlowRemoveTargetByLbID(kt, accountID, lbID, tgMap)
 	if err != nil {
+		logs.Errorf("init flow batch remove target failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
 	// 锁定资源跟Flow的状态
 	err = svc.lockResFlowStatus(kt, lbID, enumor.LoadBalancerCloudResType, flowID, enumor.RemoveRSTaskType)
 	if err != nil {
+		logs.Errorf("lock resource flow status failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
@@ -228,7 +232,7 @@ func (svc *lbSvc) initFlowRemoveTargetByLbID(kt *kit.Kit, accountID string, lbID
 				Retry: &tableasync.Retry{
 					Enable: true,
 					Policy: &tableasync.RetryPolicy{
-						Count:        constant.FlowRetryMaxLimit,
+						Count:        500,
 						SleepRangeMS: [2]uint{100, 200},
 					},
 				},
@@ -311,6 +315,7 @@ func (svc *lbSvc) convTCloudOperateTargetReq(kt *kit.Kit, targetIDs []string, lb
 
 		rsReq.RsList = append(rsReq.RsList, &dataproto.TargetBaseReq{
 			ID:               item.ID,
+			IP:               item.IP,
 			InstType:         item.InstType,
 			CloudInstID:      item.CloudInstID,
 			Port:             item.Port,

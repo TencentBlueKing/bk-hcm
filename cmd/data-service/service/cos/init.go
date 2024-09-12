@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/dal/objectstore"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/encode"
 )
 
 // InitService initialize the raw bill service
@@ -38,6 +39,7 @@ func InitService(cap *capability.Capability) {
 	}
 	h := rest.NewHandler()
 	h.Add("GenerateTemporalUrl", http.MethodPost, "/cos/temporal_urls/{action}/generate", svc.GenerateTemporalUrl)
+	h.Add("UploadFile", http.MethodPost, "/cos/upload", svc.UploadFile)
 
 	h.Load(cap.WebService)
 }
@@ -68,4 +70,21 @@ func (s service) GenerateTemporalUrl(cts *rest.Contexts) (any, error) {
 		Token: cred.SessionToken,
 		URL:   url,
 	}, nil
+}
+
+// UploadFile uploads a file to COS.
+func (s service) UploadFile(cts *rest.Contexts) (interface{}, error) {
+	req := new(cos.UploadFileReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	reader := encode.Base64StrToReader(req.FileBase64)
+
+	if err := s.ostore.Upload(cts.Kit, req.Filename, reader); err != nil {
+		return nil, err
+	}
+	return nil, nil
 }

@@ -244,7 +244,7 @@ const handleAdd = () => {
   }
 };
 
-const handleTabChange = (val: 'group' | 'gcp' | 'template') => {
+const handleSecrityType = (val: 'group' | 'gcp' | 'template') => {
   securityType.value = val;
 };
 
@@ -313,7 +313,6 @@ watch(
 watch(activeTab, () => {
   router.replace({
     query: {
-      ...route.query,
       type: activeTab.value,
     },
   });
@@ -418,7 +417,17 @@ const handleBeforeClose = () => {
     handleCancel();
   }
 };
-
+const computedSecurityText = computed(() => {
+  if (!['security'].includes(activeTab.value)) return '新建';
+  switch (securityType.value) {
+    case 'template':
+      return '新建模板';
+    case 'gcp':
+      return '新建GCP防火墙规则';
+    default:
+      return '新建安全组';
+  }
+});
 onMounted(() => {
   getResourceAccountList();
 });
@@ -503,7 +512,7 @@ onMounted(() => {
               @auth="(val: string) => {
                 handleAuth(val)
               }"
-              @tabchange="handleTabChange"
+              @handleSecrityType="handleSecrityType"
               ref="componentRef"
               @edit="handleEdit"
               v-model:isFormDataChanged="isFormDataChanged"
@@ -511,8 +520,10 @@ onMounted(() => {
               <span v-if="['host', 'vpc', 'drive', 'security', 'subnet', 'ip', 'clb'].includes(activeTab)">
                 <bk-button
                   theme="primary"
-                  class="new-button"
-                  :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.iaas_resource_create }"
+                  :class="{
+                    'hcm-no-permision-btn': !authVerifyData?.permissionAction?.iaas_resource_create,
+                    'new-button': !['security'].includes(activeTab),
+                  }"
                   @click="
                     () => {
                       if (!authVerifyData?.permissionAction?.iaas_resource_create) {
@@ -523,57 +534,12 @@ onMounted(() => {
                     }
                   "
                 >
-                  {{ ['host', 'clb'].includes(activeTab) ? '购买' : '新建' }}
+                  {{ ['host', 'clb'].includes(activeTab) ? '购买' : computedSecurityText }}
                 </bk-button>
               </span>
             </component>
           </bk-tab-panel>
         </template>
-        <!-- <bk-tab-panel
-          v-for="item in tabs"
-          :key="item.name"
-          :name="item.name"
-          :label="item.type"
-        >
-          <component
-            v-if="item.name === activeTab"
-            :is="item.component"
-            :filter="filter"
-            :where-am-i="activeTab"
-            :is-resource-page="isResourcePage"
-            :auth-verify-data="authVerifyData"
-            @auth="(val: string) => {
-              handleAuth(val)
-            }"
-            @tabchange="handleTabChange"
-            ref="componentRef"
-            @edit="handleEdit"
-            @editTemplate="handleTemplateEdit"
-          >
-            <span
-              v-if="
-                ['host', 'vpc', 'drive', 'security', 'subnet', 'ip', 'clb'].includes(
-                  activeTab,
-                )
-              "
-            >
-              <bk-button
-                theme="primary"
-                class="new-button"
-                :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.iaas_resource_create }"
-                @click="() => {
-                  if (!authVerifyData?.permissionAction?.iaas_resource_create) {
-                    handleAuth('iaas_resource_create');
-                  } else {
-                    handleAdd();
-                  }
-                }"
-              >
-                {{ ['host', 'clb'].includes(activeTab) ? '购买' : '新建' }}
-              </bk-button>
-            </span>
-          </component>
-        </bk-tab-panel> -->
       </bk-tab>
 
       <bk-sideslider

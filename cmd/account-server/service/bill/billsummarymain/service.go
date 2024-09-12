@@ -17,38 +17,42 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
- package billsummarymain
+package billsummarymain
 
- import (
-	 "net/http"
- 
-	 "hcm/cmd/account-server/logics/audit"
-	 "hcm/cmd/account-server/service/capability"
-	 "hcm/pkg/client"
-	 "hcm/pkg/iam/auth"
-	 "hcm/pkg/rest"
- )
- 
- // InitService initial the main account service
- func InitService(c *capability.Capability) {
-	 svc := &service{
-		 client:     c.ApiClient,
-		 authorizer: c.Authorizer,
-		 audit:      c.Audit,
-	 }
- 
-	 h := rest.NewHandler()
- 
-	 // register handler
-	 h.Add("ListMainAccountSummary", http.MethodPost, "/bills/main-account-summarys/list", svc.ListMainAccountSummary)
-	 h.Add("SumMainAccountSummary", http.MethodPost, "/bills/main-account-summarys/sum", svc.SumMainAccountSummary)
- 
-	 h.Load(c.WebService)
- }
- 
- type service struct {
-	 client     *client.ClientSet
-	 authorizer auth.Authorizer
-	 audit      audit.Interface
- }
- 
+import (
+	"net/http"
+
+	"hcm/cmd/account-server/logics/audit"
+	"hcm/cmd/account-server/service/capability"
+	"hcm/pkg/client"
+	"hcm/pkg/iam/auth"
+	"hcm/pkg/rest"
+	"hcm/pkg/thirdparty/esb"
+)
+
+// InitService initial the main account service
+func InitService(c *capability.Capability) {
+	svc := &service{
+		client:     c.ApiClient,
+		authorizer: c.Authorizer,
+		audit:      c.Audit,
+		esbClient:  c.EsbClient,
+	}
+
+	h := rest.NewHandler()
+
+	// register handler
+	h.Add("ListMainAccountSummary", http.MethodPost, "/bills/main_account_summarys/list", svc.ListMainAccountSummary)
+	h.Add("SumMainAccountSummary", http.MethodPost, "/bills/main_account_summarys/sum", svc.SumMainAccountSummary)
+	h.Add("ExportMainAccountSummary", http.MethodPost,
+		"/bills/main_account_summarys/export", svc.ExportMainAccountSummary)
+
+	h.Load(c.WebService)
+}
+
+type service struct {
+	client     *client.ClientSet
+	authorizer auth.Authorizer
+	audit      audit.Interface
+	esbClient  esb.Client
+}

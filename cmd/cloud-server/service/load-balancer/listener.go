@@ -198,19 +198,26 @@ func (svc *lbSvc) listListenerMap(kt *kit.Kit, lblIDs []string) (map[string]core
 		return nil, nil
 	}
 
+	lblMap := make(map[string]corelb.BaseListener, 0)
 	lblReq := &core.ListReq{
 		Filter: tools.ContainersExpression("id", lblIDs),
 		Page:   core.NewDefaultBasePage(),
 	}
-	lblList, err := svc.client.DataService().Global.LoadBalancer.ListListener(kt, lblReq)
-	if err != nil {
-		logs.Errorf("[clb] list clb listener failed, lblIDs: %v, err: %v, rid: %s", lblIDs, err, kt.Rid)
-		return nil, err
-	}
+	for {
+		listLblResult, err := svc.client.DataService().Global.LoadBalancer.ListListener(kt, lblReq)
+		if err != nil {
+			logs.Errorf("[clb] list clb listener failed, lblIDs: %v, err: %v, rid: %s", lblIDs, err, kt.Rid)
+			return nil, err
+		}
+		for _, listenerItem := range listLblResult.Details {
+			lblMap[listenerItem.ID] = listenerItem
+		}
 
-	lblMap := make(map[string]corelb.BaseListener, len(lblList.Details))
-	for _, clbItem := range lblList.Details {
-		lblMap[clbItem.ID] = clbItem
+		if uint(len(listLblResult.Details)) < core.DefaultMaxPageLimit {
+			break
+		}
+
+		lblReq.Page.Start += uint32(core.DefaultMaxPageLimit)
 	}
 
 	return lblMap, nil

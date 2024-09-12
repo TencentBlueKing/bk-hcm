@@ -44,6 +44,8 @@ func (v ActionName) Validate() error {
 	case ActionDeleteLoadBalancer:
 	case ActionPullDailyRawBill, ActionMainAccountSummary, ActionRootAccountSummary,
 		ActionDailyAccountSplit, ActionDailyAccountSummary, ActionMonthTaskAction:
+	case ActionLoadBalancerDeleteUrlRule, ActionLoadBalancerDeleteListener:
+
 	default:
 		return fmt.Errorf("unsupported action name type: %s", v)
 	}
@@ -106,10 +108,12 @@ const (
 
 // 负载均衡相关Action
 const (
-	ActionTargetGroupAddRS        ActionName = "tg_add_rs"
-	ActionTargetGroupRemoveRS     ActionName = "tg_remove_rs"
-	ActionTargetGroupModifyPort   ActionName = "tg_modify_port"
-	ActionTargetGroupModifyWeight ActionName = "tg_modify_weight"
+	ActionTargetGroupAddRS           ActionName = "tg_add_rs"
+	ActionTargetGroupRemoveRS        ActionName = "tg_remove_rs"
+	ActionTargetGroupModifyPort      ActionName = "tg_modify_port"
+	ActionTargetGroupModifyWeight    ActionName = "tg_modify_weight"
+	ActionLoadBalancerDeleteUrlRule  ActionName = "load_balancer_delete_url_rule"
+	ActionLoadBalancerDeleteListener ActionName = "load_balancer_delete_listener"
 
 	// ActionListenerRuleAddTarget 直接将RS绑定到 监听器/规则 上
 	ActionListenerRuleAddTarget ActionName = "listener_rule_add_target"

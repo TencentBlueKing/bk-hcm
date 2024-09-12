@@ -78,6 +78,19 @@ func (req *BatchDeleteReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
+// ResourceDeleteReq raw delete request, only account_id is decoded, others are raw json.
+type ResourceDeleteReq struct {
+	AccountID string
+	Data      json.RawMessage
+}
+
+// UnmarshalJSON unmarshal raw json to RawCreateReq
+func (r *ResourceDeleteReq) UnmarshalJSON(raw []byte) error {
+	r.AccountID = gjson.GetBytes(raw, "account_id").String()
+	r.Data = raw
+	return nil
+}
+
 // -------------------------- Create --------------------------
 
 // RawCreateReq raw create request, only vendor is decoded, others are raw json.

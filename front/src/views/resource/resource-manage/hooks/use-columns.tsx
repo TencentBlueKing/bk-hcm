@@ -27,7 +27,7 @@ import { timeFormatter } from '@/common/util';
 import { IP_VERSION_MAP, LBRouteName, LB_NETWORK_TYPE_MAP, SCHEDULER_MAP } from '@/constants/clb';
 import { formatBillCost, getInstVip } from '@/utils';
 import { Spinner } from 'bkui-vue/lib/icon';
-import { APPLICATION_TYPE_MAP } from '@/views/service/apply-list/constants';
+import { APPLICATION_STATUS_MAP, APPLICATION_TYPE_MAP } from '@/views/service/apply-list/constants';
 import dayjs from 'dayjs';
 import { BILLS_ROOT_ACCOUNT_SUMMARY_STATE_MAP, BILL_TYPE__MAP_HW, CURRENCY_MAP } from '@/constants';
 import { BILL_VENDORS_MAP, BILL_SITE_TYPES_MAP } from '@/views/bill/account/account-manage/constants';
@@ -39,7 +39,7 @@ interface LinkFieldOptions {
   field?: string; // 字段
   idFiled?: string; // id字段
   onlyShowOnList?: boolean; // 只在列表中显示
-  onLinkInBusiness?: boolean; // 只在业务下可链接
+  linkable?: boolean | ((data: any) => boolean); // 可链接性
   render?: (data: any) => any; // 自定义渲染内容
   renderSuffix?: (data: any) => any; // 自定义后缀渲染内容
   contentClass?: string; // 内容class
@@ -64,13 +64,12 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'id',
       idFiled: 'id',
       onlyShowOnList: true,
-      onLinkInBusiness: false,
+      linkable: true,
       render: undefined,
       sort: true,
     });
 
-    const { type, label, field, idFiled, onlyShowOnList, onLinkInBusiness, render, renderSuffix, contentClass, sort } =
-      options;
+    const { type, label, field, idFiled, onlyShowOnList, linkable, render, renderSuffix, contentClass, sort } = options;
 
     return {
       label,
@@ -81,44 +80,31 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       isDefaultShow: true,
       render({ data }: { cell: string; data: any }) {
         if (data[idFiled] < 0 || !data[idFiled]) return '--';
-        // 如果设置了onLinkInBusiness=true, 则只在业务下可以链接至指定路由
-        if (onLinkInBusiness && whereAmI.value !== Senarios.business) {
+        // 是否可链接
+        if (!(typeof linkable === 'function' ? linkable(data) : linkable)) {
           return (
             <div class={contentClass}>
-              {render ? render(data) : data[field] || '--'}
+              {data[field] || '--'}
               {renderSuffix?.(data)}
             </div>
           );
         }
+
+        const defaultClickHandler = () => {
+          const routeInfo: any = { query: { ...route.query, id: data[idFiled], type: data.vendor } };
+          // 业务下
+          if (route.path.includes('business')) {
+            routeInfo.query.bizs = accountStore.bizs;
+            Object.assign(routeInfo, { name: `${type}BusinessDetail` });
+          } else {
+            Object.assign(routeInfo, { name: 'resourceDetail', params: { type } });
+          }
+          router.push(routeInfo);
+        };
+
         return (
           <div class={contentClass}>
-            <Button
-              text
-              theme='primary'
-              onClick={() => {
-                const routeInfo: any = {
-                  query: {
-                    ...route.query,
-                    id: data[idFiled],
-                    type: data.vendor,
-                  },
-                };
-                // 业务下
-                if (route.path.includes('business')) {
-                  routeInfo.query.bizs = accountStore.bizs;
-                  Object.assign(routeInfo, {
-                    name: `${type}BusinessDetail`,
-                  });
-                } else {
-                  Object.assign(routeInfo, {
-                    name: 'resourceDetail',
-                    params: {
-                      type,
-                    },
-                  });
-                }
-                router.push(routeInfo);
-              }}>
+            <Button text theme='primary' onClick={defaultClickHandler}>
               {render ? render(data) : data[field] || '--'}
             </Button>
             {renderSuffix?.(data)}
@@ -129,6 +115,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   };
 
   /**
+   * todo: 更换实现方式, 取消使用stopPropagation
    * 自定义 render field 的 push 导航
    * @param to 目标路由信息
    */
@@ -184,7 +171,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '是否分配',
       field: 'bk_biz_id',
       sort: true,
-      isOnlyShowInResource: true,
+      notDisplayedInBusiness: true,
       isDefaultShow: true,
       render: ({ data, cell }: { data: { bk_biz_id: number }; cell: number }) => (
         <bk-tag
@@ -201,7 +188,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '所属业务',
       field: 'bk_biz_id2',
-      isOnlyShowInResource: true,
+      notDisplayedInBusiness: true,
       render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
     },
     {
@@ -303,7 +290,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '是否分配',
       field: 'bk_biz_id',
       sort: true,
-      isOnlyShowInResource: true,
+      notDisplayedInBusiness: true,
       isDefaultShow: true,
       render: ({ data, cell }: { data: { bk_biz_id: number }; cell: number }) => (
         <bk-tag
@@ -320,7 +307,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '所属业务',
       field: 'bk_biz_id2',
-      isOnlyShowInResource: true,
+      notDisplayedInBusiness: true,
       render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
     },
     {
@@ -487,7 +474,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '是否分配',
       field: 'bk_biz_id',
       sort: true,
-      isOnlyShowInResource: true,
+      notDisplayedInBusiness: true,
       isDefaultShow: true,
       render: ({ data, cell }: { data: { bk_biz_id: number }; cell: number }) => (
         <bk-tag
@@ -656,7 +643,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '所属业务',
       field: 'bk_biz_id',
       sort: true,
-      isOnlyShowInResource: true,
+      notDisplayedInBusiness: true,
       render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
     },
     {
@@ -712,7 +699,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '所属业务',
       field: 'bk_biz_id',
-      isOnlyShowInResource: true,
+      notDisplayedInBusiness: true,
       sort: true,
       render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
     },
@@ -835,7 +822,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '是否分配',
       field: 'bk_biz_id',
       sort: true,
-      isOnlyShowInResource: true,
+      notDisplayedInBusiness: true,
       isDefaultShow: true,
       render: ({ data, cell }: { data: { bk_biz_id: number }; cell: number }) => (
         <bk-tag
@@ -853,7 +840,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '所属业务',
       field: 'bk_biz_id2',
-      isOnlyShowInResource: true,
+      notDisplayedInBusiness: true,
       render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
     },
     {
@@ -871,7 +858,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '实例规格',
       field: 'machine_type',
       sort: true,
-      isOnlyShowInResource: true,
     },
     {
       label: '操作系统',
@@ -1033,7 +1019,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '是否分配',
       field: 'bk_biz_id',
       sort: true,
-      isOnlyShowInResource: true,
+      notDisplayedInBusiness: true,
       isDefaultShow: true,
       render: ({ data, cell }: { data: { bk_biz_id: number }; cell: number }) => (
         <bk-tag
@@ -1050,7 +1036,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '所属业务',
       field: 'bk_biz_id2',
-      isOnlyShowInResource: true,
+      notDisplayedInBusiness: true,
       render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
     },
     {
@@ -1103,7 +1089,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '所属业务',
       field: 'bk_biz_id',
-      isOnlyShowInResource: true,
+      notDisplayedInBusiness: true,
       render: ({ cell }: { cell: number }) => businessMapStore.businessMap.get(cell) || '未分配',
     },
     // {
@@ -1127,7 +1113,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       type: 'lb',
       label: '负载均衡名称',
       field: 'name',
-      onLinkInBusiness: true,
+      linkable: () => whereAmI.value === Senarios.business,
       render: (data) => (
         <Button
           text
@@ -1184,7 +1170,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '分配状态',
       field: 'bk_biz_id',
       isDefaultShow: true,
-      isOnlyShowInResource: true,
+      notDisplayedInBusiness: true,
       render: ({ cell }: { cell: number }) => (
         <bk-tag
           v-bk-tooltips={{
@@ -1742,7 +1728,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '分配状态',
       field: 'bk_biz_id',
-      isOnlyShowInResource: true,
+      notDisplayedInBusiness: true,
       isDefaultShow: true,
       render: ({ data, cell }: { data: { bk_biz_id: number }; cell: number }) => (
         <bk-tag
@@ -1815,8 +1801,10 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       render: ({ cell }: any) => cell.join(','),
     },
     {
-      label: '业务',
-      field: 'op_product_id',
+      label: '业务名称',
+      field: 'bk_biz_id',
+      isDefaultShow: true,
+      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
     },
     {
       label: '备注',
@@ -1841,31 +1829,28 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '单据状态',
       field: 'status',
-      render({ data }: any) {
+      render({ cell }: any) {
         let icon = StatusAbnormal;
-        let txt = '审批拒绝';
-        switch (data.status) {
+        const txt = APPLICATION_STATUS_MAP[cell];
+        switch (cell) {
           case 'pending':
           case 'delivering':
             icon = StatusLoading;
-            txt = '审批中';
             break;
           case 'pass':
           case 'completed':
           case 'deliver_partial':
             icon = StatusSuccess;
-            txt = '审批通过';
             break;
           case 'rejected':
           case 'cancelled':
           case 'deliver_error':
             icon = StatusFailure;
-            txt = '审批拒绝';
             break;
         }
         return (
           <div class={'cvm-status-container'}>
-            {txt === '审批中' ? (
+            {icon === StatusLoading ? (
               <Spinner fill='#3A84FF' class={'mr6'} width={14} height={14} />
             ) : (
               <img src={icon} class={'mr6'} width={14} height={14} />
@@ -1906,13 +1891,19 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const billsRootAccountSummaryColumns = [
     {
       label: '一级账号ID',
-      field: 'root_account_id',
+      field: 'root_account_cloud_id',
       isDefaultShow: true,
     },
     {
       label: '一级账号名称',
       field: 'root_account_name',
       isDefaultShow: true,
+    },
+    {
+      label: '云厂商',
+      field: 'vendor',
+      isDefaultShow: true,
+      render: ({ cell }: { cell: VendorEnum }) => VendorMap[cell],
     },
     {
       label: '账号状态',
@@ -1991,8 +1982,14 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
     {
       label: '二级账号名称',
-      field: 'main_account_cloud_name',
+      field: 'main_account_name',
       isDefaultShow: true,
+    },
+    {
+      label: '云厂商',
+      field: 'vendor',
+      isDefaultShow: true,
+      render: ({ cell }: { cell: VendorEnum }) => VendorMap[cell],
     },
     {
       label: '一级账号名称',
@@ -2518,7 +2515,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   };
 
   let columns = (columnsMap[type] || []).filter((column: any) => !isSimpleShow || !column.onlyShowOnList);
-  if (whereAmI.value !== Senarios.resource) columns = columns.filter((column: any) => !column.isOnlyShowInResource);
+  if (whereAmI.value === Senarios.business) columns = columns.filter((column: any) => !column.notDisplayedInBusiness);
 
   type ColumnsType = typeof columns;
   const generateColumnsSettings = (columns: ColumnsType) => {
@@ -2530,12 +2527,12 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
           field: column.field,
           disabled: type !== 'cvms' && column.field === 'id',
           isDefaultShow: !!column.isDefaultShow,
-          isOnlyShowInResource: !!column.isOnlyShowInResource,
+          notDisplayedInBusiness: !!column.notDisplayedInBusiness,
         });
       }
     }
-    if (whereAmI.value !== Senarios.resource) {
-      fields = fields.filter((field) => !field.isOnlyShowInResource);
+    if (whereAmI.value === Senarios.business) {
+      fields = fields.filter((field) => !field.notDisplayedInBusiness);
     }
     const settings: Ref<Settings> = ref({
       fields,

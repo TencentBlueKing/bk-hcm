@@ -91,14 +91,14 @@ func convertToRawBill(recordList []billcore.GcpRawBillItem) ([]dsbill.RawBillIte
 }
 
 // Pull pull gcp bill
-func (gcp *Gcp) Pull(kt *kit.Kit, rootAccountID string, billYear, billMonth int, index uint64) (
+func (gcp *Gcp) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index uint64) (
 	[]dsbill.RawBillItem, bool, error) {
 
 	limit := gcp.GetBatchSize(kt)
 	hcCli := actcli.GetHCService()
 	req := &bill.GcpRootAccountBillListReq{
-		RootAccountID: rootAccountID,
-		Month:         fmt.Sprintf("%d%02d", billYear, billMonth),
+		RootAccountID: opt.RootAccountID,
+		Month:         fmt.Sprintf("%d%02d", opt.BillYear, opt.BillMonth),
 		Page: &typesbill.GcpBillPage{
 			Offset: index,
 			Limit:  limit,
@@ -128,16 +128,16 @@ func (gcp *Gcp) Pull(kt *kit.Kit, rootAccountID string, billYear, billMonth int,
 		return nil, true, nil
 	}
 
-	firstDay, err := times.GetFirstDayOfMonth(billYear, billMonth)
+	firstDay, err := times.GetFirstDayOfMonth(opt.BillYear, opt.BillMonth)
 	if err != nil {
 		return nil, false, fmt.Errorf("times.GetFirstDayOfMonth failed, err: %s", err.Error())
 	}
-	lastDay, err := times.GetLastDayOfMonth(billYear, billMonth)
+	lastDay, err := times.GetLastDayOfMonth(opt.BillYear, opt.BillMonth)
 	if err != nil {
 		return nil, false, fmt.Errorf("times.GetLastDayOfMonth failed, err: %s", err.Error())
 	}
-	beginDate := fmt.Sprintf("%d-%02d-%02dT00:00:00Z", billYear, billMonth, firstDay)
-	endDate := fmt.Sprintf("%d-%02d-%02dT23:59:59Z", billYear, billMonth, lastDay)
+	beginDate := fmt.Sprintf("%d-%02d-%02dT00:00:00Z", opt.BillYear, opt.BillMonth, firstDay)
+	endDate := fmt.Sprintf("%d-%02d-%02dT23:59:59Z", opt.BillYear, opt.BillMonth, lastDay)
 	var recordList []billcore.GcpRawBillItem
 	for _, item := range itemList {
 		respData, err := json.Marshal(item)
@@ -160,13 +160,13 @@ func (gcp *Gcp) Pull(kt *kit.Kit, rootAccountID string, billYear, billMonth int,
 }
 
 // Split split gcp bill
-func (gcp *Gcp) Split(kt *kit.Kit, rootAccountID string, billYear, billMonth int,
+func (gcp *Gcp) Split(kt *kit.Kit, opt *MonthTaskActionOption,
 	rawItemList []*dsbill.RawBillItem) ([]dsbill.BillItemCreateReq[json.RawMessage], error) {
 
 	if len(rawItemList) <= 0 {
 		return nil, nil
 	}
-	summaryMainList, err := gcp.getSummaryMainList(kt, rootAccountID, billYear, billMonth)
+	summaryMainList, err := gcp.getSummaryMainList(kt, opt.RootAccountID, opt.BillYear, opt.BillMonth)
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +184,7 @@ func (gcp *Gcp) Split(kt *kit.Kit, rootAccountID string, billYear, billMonth int
 	for _, summaryMain := range summaryMainList {
 		cost := batchCost.Mul(summaryMain.CurrentMonthCost).Div(summaryTotal)
 		costBillItem := dsbill.BillItemCreateReq[json.RawMessage]{
-			RootAccountID: rootAccountID,
+			RootAccountID: opt.RootAccountID,
 			MainAccountID: summaryMain.MainAccountID,
 			Vendor:        summaryMain.Vendor,
 			ProductID:     summaryMain.ProductID,
@@ -206,32 +206,34 @@ func (gcp *Gcp) Split(kt *kit.Kit, rootAccountID string, billYear, billMonth int
 }
 
 func (gcp *Gcp) getSummaryMainList(
-	kt *kit.Kit, rootAccountID string, billYear, billMonth int) ([]*dsbill.BillSummaryMainResult, error) {
+	kt *kit.Kit, rootAccountID string, billYear, billMonth int) ([]*dsbill.BillSummaryMain, error) {
 
 	filter := tools.ExpressionAnd(
 		tools.RuleEqual("root_account_id", rootAccountID),
 		tools.RuleEqual("bill_year", billYear),
 		tools.RuleEqual("bill_month", billMonth),
 	)
-	summaryMainCountResp, err := actcli.GetDataService().Global.Bill.ListBillSummaryMain(kt, &dsbill.BillSummaryMainListReq{
-		Filter: filter,
-		Page:   core.NewCountPage(),
-	})
+	summaryMainCountResp, err := actcli.GetDataService().Global.Bill.ListBillSummaryMain(kt,
+		&dsbill.BillSummaryMainListReq{
+			Filter: filter,
+			Page:   core.NewCountPage(),
+		})
 	if err != nil {
 		logs.Errorf(
 			"count gcp summary main list failed, err: %v, rootAccountID: %s, billYear: %d, billMonth: %d, rid: %s",
 			err, rootAccountID, billYear, billMonth, kt.Rid)
 		return nil, err
 	}
-	var summaryMainResultList []*dsbill.BillSummaryMainResult
+	var summaryMainResultList []*dsbill.BillSummaryMain
 	for offset := uint64(0); offset < summaryMainCountResp.Count; offset = offset + uint64(core.DefaultMaxPageLimit) {
-		summaryMainCountResp, err := actcli.GetDataService().Global.Bill.ListBillSummaryMain(kt, &dsbill.BillSummaryMainListReq{
-			Filter: filter,
-			Page: &core.BasePage{
-				Start: uint32(offset),
-				Limit: core.DefaultMaxPageLimit,
-			},
-		})
+		summaryMainCountResp, err := actcli.GetDataService().Global.Bill.ListBillSummaryMain(kt,
+			&dsbill.BillSummaryMainListReq{
+				Filter: filter,
+				Page: &core.BasePage{
+					Start: uint32(offset),
+					Limit: core.DefaultMaxPageLimit,
+				},
+			})
 		if err != nil {
 			logs.Errorf(
 				"get gcp summary main list failed, err: %v, rootAccountID: %s, billYear: %d, billMonth: %d, rid: %s",

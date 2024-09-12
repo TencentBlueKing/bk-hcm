@@ -11,6 +11,7 @@ import {
   useSecretExtension,
 } from '@/views/resource/resource-manage/account/createAccount/components/accountForm/useSecretExtension';
 import { SecretModel } from '@/typings/account';
+import useFormModel from '@/hooks/useFormModel';
 
 const { FormItem } = Form;
 
@@ -22,11 +23,11 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const detail = ref<IRootAccountDetail>({});
+    const { formModel: detail, setFormValues: setDetail } = useFormModel({} as IRootAccountDetail);
     const billStore = useBillStore();
     const getDetail = async () => {
       const { data } = await billStore.root_account_detail(props.accountId);
-      detail.value = data;
+      setDetail(data);
     };
     const isEditDialogShow = ref(false);
     const buttonLoading = ref(false);
@@ -38,11 +39,6 @@ export default defineComponent({
       subAccountId: '',
       iamUserName: '',
     };
-
-    const { curExtension, isValidateLoading, handleValidate, isValidateDiasbled } = useSecretExtension({
-      vendor: detail.value.vendor as VendorEnum,
-      isValidate: true,
-    });
 
     const secretModel = reactive<SecretModel>({
       ...initSecretModel,
@@ -58,78 +54,80 @@ export default defineComponent({
         deep: true,
       },
     );
+    const { curExtension, isValidateLoading, handleValidate, isValidateDiasbled } = useSecretExtension(detail, true);
+
     const computedExtension = computed(() => {
       let extension: any[] = [];
 
-      switch (detail.value.vendor) {
+      switch (detail.vendor) {
         case 'aws':
           extension = [
-            { prop: 'cloud_account_id', name: '一级账号ID', render: () => detail.value.extension?.cloud_account_id },
-            { prop: 'cloud_iam_username', name: 'IAM用户名', render: () => detail.value.extension?.cloud_iam_username },
-            { prop: 'cloud_secret_id', name: '密钥ID', render: () => detail.value.extension?.cloud_secret_id },
-            // { prop: 'cloud_secret_key', name: '密钥', render: () => detail.value.extension?.cloud_secret_key },
+            { prop: 'cloud_account_id', name: '一级账号ID', render: () => detail.extension?.cloud_account_id },
+            { prop: 'cloud_iam_username', name: 'IAM用户名', render: () => detail.extension?.cloud_iam_username },
+            { prop: 'cloud_secret_id', name: '密钥ID', render: () => detail.extension?.cloud_secret_id },
+            // { prop: 'cloud_secret_key', name: '密钥', render: () => detail.extension?.cloud_secret_key },
           ];
           break;
         case 'gcp':
           extension = [
-            { prop: 'email', name: '邮箱', render: () => detail.value.extension?.email },
-            { prop: 'cloud_project_id', name: '云项目ID', render: () => detail.value.extension?.cloud_project_id },
-            { prop: 'cloud_project_name', name: '云项目名', render: () => detail.value.extension?.cloud_project_name },
+            { prop: 'email', name: '邮箱', render: () => detail.extension?.email },
+            { prop: 'cloud_project_id', name: '云项目ID', render: () => detail.extension?.cloud_project_id },
+            { prop: 'cloud_project_name', name: '云项目名', render: () => detail.extension?.cloud_project_name },
             {
               prop: 'cloud_service_account_id',
               name: '服务账号ID',
-              render: () => detail.value.extension?.cloud_service_account_id,
+              render: () => detail.extension?.cloud_service_account_id,
             },
             {
               prop: 'cloud_service_account_name',
               name: '服务账号名',
-              render: () => detail.value.extension?.cloud_service_account_name,
+              render: () => detail.extension?.cloud_service_account_name,
             },
             {
               prop: 'cloud_service_secret_id',
               name: '服务密钥ID',
-              render: () => detail.value.extension?.cloud_service_secret_id,
+              render: () => detail.extension?.cloud_service_secret_id,
             },
             // {
             //   prop: 'cloud_service_secret_key',
             //   name: '服务密钥',
-            //   render: () => detail.value.extension?.cloud_service_secret_key,
+            //   render: () => detail.extension?.cloud_service_secret_key,
             // },
           ];
           break;
         case 'azure':
           extension = [
-            { prop: 'display_name_name', name: '显示名称', render: () => detail.value.extension?.display_name_name },
-            { prop: 'cloud_tenant_id', name: '租户ID', render: () => detail.value.extension?.cloud_tenant_id },
+            { prop: 'display_name_name', name: '显示名称', render: () => detail.extension?.display_name_name },
+            { prop: 'cloud_tenant_id', name: '租户ID', render: () => detail.extension?.cloud_tenant_id },
             {
               prop: 'cloud_subscription_id',
               name: '订阅ID',
-              render: () => detail.value.extension?.cloud_subscription_id,
+              render: () => detail.extension?.cloud_subscription_id,
             },
             {
               prop: 'cloud_subscription_name',
               name: '订阅名',
-              render: () => detail.value.extension?.cloud_subscription_name,
+              render: () => detail.extension?.cloud_subscription_name,
             },
             {
               prop: 'cloud_application_id',
               name: '应用ID',
-              render: () => detail.value.extension?.cloud_application_id,
+              render: () => detail.extension?.cloud_application_id,
             },
             {
               prop: 'cloud_application_name',
               name: '应用名',
-              render: () => detail.value.extension?.cloud_application_name,
+              render: () => detail.extension?.cloud_application_name,
             },
             {
               prop: 'cloud_client_secret_id',
               name: '客户端密钥ID',
-              render: () => detail.value.extension?.cloud_client_secret_id,
+              render: () => detail.extension?.cloud_client_secret_id,
             },
             // {
             //   prop: 'cloud_client_secret_key',
             //   name: '客户端密钥',
-            //   render: () => detail.value.extension?.cloud_client_secret_key,
+            //   render: () => detail.extension?.cloud_client_secret_key,
             // },
           ];
           break;
@@ -138,28 +136,28 @@ export default defineComponent({
             // {
             //   prop: 'cloud_main_account_name',
             //   name: '主账号名',
-            //   render: () => detail.value.extension?.cloud_main_account_name,
+            //   render: () => detail.extension?.cloud_main_account_name,
             // },
             {
               prop: 'cloud_sub_account_id',
               name: '子账号ID',
-              render: () => detail.value.extension?.cloud_sub_account_id,
+              render: () => detail.extension?.cloud_sub_account_id,
             },
             {
               prop: 'cloud_sub_account_name',
               name: '子账号名',
-              render: () => detail.value.extension?.cloud_sub_account_name,
+              render: () => detail.extension?.cloud_sub_account_name,
             },
-            { prop: 'cloud_secret_id', name: '密钥ID', render: () => detail.value.extension?.cloud_secret_id },
-            // { prop: 'cloud_secret_key', name: '密钥', render: () => detail.value.extension?.cloud_secret_key },
-            { prop: 'cloud_iam_user_id', name: 'IAM用户ID', render: () => detail.value.extension?.cloud_iam_user_id },
-            { prop: 'cloud_iam_username', name: 'IAM用户名', render: () => detail.value.extension?.cloud_iam_username },
+            { prop: 'cloud_secret_id', name: '密钥ID', render: () => detail.extension?.cloud_secret_id },
+            // { prop: 'cloud_secret_key', name: '密钥', render: () => detail.extension?.cloud_secret_key },
+            { prop: 'cloud_iam_user_id', name: 'IAM用户ID', render: () => detail.extension?.cloud_iam_user_id },
+            { prop: 'cloud_iam_username', name: 'IAM用户名', render: () => detail.extension?.cloud_iam_username },
           ];
           break;
         case 'zenlayer':
         case 'kaopu':
           extension = [
-            { prop: 'cloud_account_id', name: '一级账号ID', render: () => detail.value.extension?.cloud_account_id },
+            { prop: 'cloud_account_id', name: '一级账号ID', render: () => detail.extension?.cloud_account_id },
           ];
           break;
       }
@@ -180,7 +178,7 @@ export default defineComponent({
 
         <DetailInfo
           wide
-          detail={detail.value}
+          detail={detail}
           onChange={handleUpdate}
           fields={[
             { prop: 'name', name: '一级账号名称', edit: true },
@@ -191,13 +189,13 @@ export default defineComponent({
             { prop: 'memo', name: '备注', edit: true },
             { prop: 'creator', name: '创建者' },
             { prop: 'reviser', name: '修改者' },
-            { prop: 'created_at', name: '创建时间', render: () => timeFormatter(detail.value.created_at) },
-            { prop: 'updated_at', name: '修改时间', render: () => timeFormatter(detail.value.updated_at) },
+            { prop: 'created_at', name: '创建时间', render: () => timeFormatter(detail.created_at) },
+            { prop: 'updated_at', name: '修改时间', render: () => timeFormatter(detail.updated_at) },
           ]}
         />
         <p class={'sub-title'}>
           API 密钥
-          {![VendorEnum.KAOPU, VendorEnum.ZENLAYER].includes(detail.value.vendor as VendorEnum) && (
+          {![VendorEnum.KAOPU, VendorEnum.ZENLAYER].includes(detail.vendor as VendorEnum) && (
             <span
               class={'edit-icon'}
               onClick={() => {
@@ -209,13 +207,10 @@ export default defineComponent({
           )}
         </p>
         <div class={'detail-info'}>
-          <DetailInfo detail={detail.value} fields={computedExtension.value} wide />
+          <DetailInfo detail={detail} fields={computedExtension.value} wide />
         </div>
 
-        {/* <Dialog isShow={isEditDialogShow.value} title='编辑API密钥'>
-          1231
-        </Dialog> */}
-        <CommonDialog v-model:isShow={isEditDialogShow.value} title={'编辑API密钥'} dialogType='operation'>
+        <CommonDialog v-model:isShow={isEditDialogShow.value} title={'编辑API密钥'} dialogType='operation' width={680}>
           {{
             default: () => (
               <>
@@ -225,7 +220,7 @@ export default defineComponent({
                       <Input
                         v-model={curExtension.value.input[property].value}
                         type={
-                          property === 'cloud_service_secret_key' && detail.value.vendor === VendorEnum.GCP
+                          property === 'cloud_service_secret_key' && detail.vendor === VendorEnum.GCP
                             ? 'textarea'
                             : 'text'
                         }
@@ -246,6 +241,7 @@ export default defineComponent({
             footer: () => (
               <div class={'validate-btn-container'}>
                 <Button
+                  outline={curExtension.value.validatedStatus === ValidateStatus.YES}
                   theme='primary'
                   class={'validate-btn'}
                   loading={isValidateLoading.value}

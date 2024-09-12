@@ -3,10 +3,10 @@ import http from '@/http';
 import { reactive, ref, watch } from 'vue';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
-export interface IProp {
+export type IProp = {
   vendor: VendorEnum;
-  isValidate?: boolean;
-}
+  [key: string]: any;
+};
 export interface IExtensionItem {
   label: string;
   value: string;
@@ -24,7 +24,7 @@ export interface IExtension {
   validatedStatus: ValidateStatus; // 是否校验通过
   validateFailedReason?: string; // 不通过的理由
 }
-export const useSecretExtension = (props: IProp) => {
+export const useSecretExtension = (props: IProp, isValidate?: boolean) => {
   // 腾讯云
   const tcloudExtension: IExtension = reactive({
     output1: {
@@ -257,7 +257,11 @@ export const useSecretExtension = (props: IProp) => {
         (prev, [_key, { value }]) => prev || !value,
         false,
       );
-      extensionPayload.value = Object.entries(curExtension.value.input).reduce((prev, [key, { value }]) => {
+      extensionPayload.value = [
+        ...Object.entries(curExtension.value.input),
+        ...Object.entries(curExtension.value.output1),
+        ...Object.entries(curExtension.value.output2),
+      ].reduce((prev, [key, { value }]) => {
         prev[key] = value;
         return prev;
       }, {});
@@ -275,7 +279,7 @@ export const useSecretExtension = (props: IProp) => {
     try {
       const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${props.vendor}/accounts/secret`, {
         ...payload,
-        disable_check: props.isValidate || false,
+        disable_check: isValidate || false,
       });
       if (res.data) {
         Object.entries(res.data).forEach(([key, val]) => {

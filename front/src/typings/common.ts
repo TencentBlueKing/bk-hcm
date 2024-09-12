@@ -48,6 +48,11 @@ export interface IPageQuery {
   order?: string;
 }
 
+export type QueryBuilderType = {
+  filter: QueryFilterType;
+  page?: IPageQuery & { start: number; limit: number };
+};
+
 interface IBaseResData {
   code: number;
   message: string;

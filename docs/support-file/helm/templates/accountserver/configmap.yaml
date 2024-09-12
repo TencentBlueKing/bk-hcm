@@ -25,3 +25,16 @@ data:
       {{- toYaml .Values.accountserver.billAllocation | nindent 6 }}
     cmsi:
       {{- toYaml .Values.cmsi | nindent 6 }}
+    tmpFileDir: {{ .Values.tmpFileDir }}
+    esb:
+      endpoints:
+        - {{ .Values.bkComponentApiUrl }}
+      appCode: {{ .Values.appCode }}
+      appSecret: {{ .Values.appSecret }}
+      user: admin
+      tls:
+        insecureSkipVerify:
+        certFile:
+        keyFile:
+        caFile:
+        password:

@@ -1,6 +1,7 @@
 import { defineComponent } from 'vue';
 import { useRoute, useRouter, RouterView } from 'vue-router';
 import './index.scss';
+import { GLOBAL_BIZS_KEY } from '@/common/constant';
 
 export default defineComponent({
   name: 'LoadBalancer',
@@ -18,7 +19,7 @@ export default defineComponent({
     };
 
     const handleTabChange = (path: string) => {
-      router.push({ path, query: { bizs: route.query.bizs } });
+      router.push({ path, query: { [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY] } });
     };
 
     return () => (

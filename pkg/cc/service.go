@@ -411,6 +411,8 @@ type AccountServerSetting struct {
 	Controller     BillControllerOption `yaml:"controller"`
 	Log            LogOption            `yaml:"log"`
 	BillAllocation BillAllocationOption `yaml:"billAllocation"`
+	Esb            Esb                  `yaml:"esb"`
+	TmpFileDir     string               `yaml:"tmpFileDir"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -424,6 +426,9 @@ func (s *AccountServerSetting) trySetDefault() {
 	s.Service.trySetDefault()
 	s.Controller.trySetDefault()
 	s.Log.trySetDefault()
+	if s.TmpFileDir == "" {
+		s.TmpFileDir = "/tmp"
+	}
 }
 
 // Validate TaskServerSetting option.
@@ -434,6 +439,10 @@ func (s AccountServerSetting) Validate() error {
 	}
 
 	if err := s.Service.validate(); err != nil {
+		return err
+	}
+
+	if err := s.BillAllocation.validate(); err != nil {
 		return err
 	}
 

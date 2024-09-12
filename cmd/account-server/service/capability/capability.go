@@ -24,6 +24,7 @@ import (
 	"hcm/cmd/account-server/logics/audit"
 	"hcm/pkg/client"
 	"hcm/pkg/iam/auth"
+	"hcm/pkg/thirdparty/esb"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -34,4 +35,5 @@ type Capability struct {
 	ApiClient  *client.ClientSet
 	Authorizer auth.Authorizer
 	Audit      audit.Interface
+	EsbClient  esb.Client
 }

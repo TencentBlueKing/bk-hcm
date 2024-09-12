@@ -442,7 +442,7 @@ export interface IRootAccountDetailExtension {
 export interface IRootAccountDetail {
   id?: string;
   name?: string;
-  vendor?: string;
+  vendor: VendorEnum;
   cloud_id?: string;
   email?: string;
   managers?: string;

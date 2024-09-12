@@ -418,7 +418,6 @@ func (a *applicationSvc) CreateForCreateMainAccount(cts *rest.Contexts) (interfa
 	if err != nil {
 		return nil, err
 	}
-
 	commReq := new(proto.CreateCommonReq)
 	commReq.Remark = req.Memo
 

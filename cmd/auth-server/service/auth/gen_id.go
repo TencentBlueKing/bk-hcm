@@ -718,3 +718,21 @@ func genAccountBillResource(a *meta.ResourceAttribute) (client.ActionID, []clien
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }
+
+func genAccountBillThirdPartyResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	// TODO 改为 属性鉴权
+	res := client.Resource{
+		System: sys.SystemIDHCM,
+		Type:   sys.BillCloudVendor,
+	}
+	switch a.Basic.Action {
+	case meta.Find:
+		if a.Type != meta.AccountBillThirdParty {
+			return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm res type: %s", a.Basic.Type)
+		}
+		res.ID = a.ResourceID
+		return sys.AccountBillPull, []client.Resource{res}, nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+}

@@ -32,7 +32,7 @@ type MainAccountClient struct {
 	client rest.ClientInterface
 }
 
-// NewAccountClient create a new account api client.
+// NewMainAccountClient create a new account api client.
 func NewMainAccountClient(client rest.ClientInterface) *MainAccountClient {
 	return &MainAccountClient{
 		client: client,
