@@ -149,24 +149,35 @@ func (g GcpCreditMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption, rawIt
 			return nil, err
 		}
 		for _, credit := range gcpRaw.CreditInfos {
-			if creditToSummary[credit.ID] == nil {
-				continue
-			}
-			// if match credit return info return to owner account(negative cost) and usage account(positive cost)
-			usageSummary := summaryMap[cvt.PtrToVal(gcpRaw.ProjectID)]
 			creditOwnerSummary := creditToSummary[credit.ID]
-			usageItems, err := g.convCreditToUsageRaw(gcpRaw, credit, usageSummary)
-			if err != nil {
-				logs.Errorf("fail to conv credit to usage raw bill item, err: %v, rid: %s", err, kt.Rid)
-				return nil, err
+			if creditOwnerSummary == nil {
+				continue
 			}
 			ownerItems, err := g.convCreditToOwnerRaw(gcpRaw, credit, creditOwnerSummary)
 			if err != nil {
 				logs.Errorf("fail to conv credit to owner raw bill item, err: %v, rid: %s", err, kt.Rid)
 				return nil, err
 			}
-			result = append(result, usageItems...)
 			result = append(result, ownerItems...)
+			if cvt.PtrToVal(gcpRaw.ProjectID) == "" {
+				// cost do not belong to any project
+				continue
+			}
+			// if match credit return info return to owner account(negative cost) and usage account(positive cost)
+			usageSummary := summaryMap[cvt.PtrToVal(gcpRaw.ProjectID)]
+			if usageSummary == nil {
+				logs.Errorf("gcp credit usage summary for project %s not found, rid: %s",
+					cvt.PtrToVal(gcpRaw.ProjectID), kt.Rid)
+				return nil, fmt.Errorf("gcp credit usage summary for project %s not found",
+					cvt.PtrToVal(gcpRaw.ProjectID))
+			}
+			usageItems, err := g.convCreditToUsageRaw(gcpRaw, credit, usageSummary)
+			if err != nil {
+				logs.Errorf("fail to conv credit to usage raw bill item, err: %v, rid: %s", err, kt.Rid)
+				return nil, err
+			}
+			result = append(result, usageItems...)
+
 		}
 	}
 	return result, nil
