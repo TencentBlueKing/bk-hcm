@@ -661,16 +661,16 @@ func (svc *clbSvc) BatchModifyTCloudListenerTargetsWeight(cts *rest.Contexts) (a
 	}
 
 	// 过滤符合条件的RS列表
-	lblRsList, err := svc.filterListenerTargetList(cts.Kit, lbID, req.Details, req.NewRsWeight)
+	lblRsList, err := svc.filterListenerTargetWeightList(cts.Kit, lbID, req.Details, req.NewRsWeight)
 	if err != nil {
 		return nil, err
 	}
 	// 没有需要调整权重的RS，不用处理
 	if len(lblRsList) == 0 {
-		logs.Infof("modify listener rs weight no call api, need to modify rs weight, accountID: %s, lbID: %s, "+
+		logs.Infof("modify listener rs weight no call api, not need to modify rs weight, accountID: %s, lbID: %s, "+
 			"cloudLbID: %s, details: %+v, rid: %s",
 			req.AccountID, lbID, req.LoadBalancerCloudId, cvt.PtrToSlice(req.Details), cts.Kit.Rid)
-		return &protolb.BatchCreateResult{SuccessCloudIDs: []string{"REPEAT-EXEC"}}, nil
+		return &protolb.BatchCreateResult{SuccessCloudIDs: []string{"HAS-MODIFY-WEIGHT"}}, nil
 	}
 
 	tcloudAdpt, err := svc.ad.TCloud(cts.Kit, req.AccountID)
@@ -728,7 +728,7 @@ func (svc *clbSvc) BatchModifyTCloudListenerTargetsWeight(cts *rest.Contexts) (a
 	return &protolb.BatchCreateResult{SuccessCloudIDs: cloudRuleIDs}, nil
 }
 
-func (svc *clbSvc) filterListenerTargetList(kt *kit.Kit, lbID string,
+func (svc *clbSvc) filterListenerTargetWeightList(kt *kit.Kit, lbID string,
 	details []*dataproto.ListBatchListenerResult, newRsWeight int64) ([]*dataproto.ListBatchListenerResult, error) {
 
 	lblRsList := make([]*dataproto.ListBatchListenerResult, 0)

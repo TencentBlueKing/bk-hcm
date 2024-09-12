@@ -43,6 +43,9 @@ import (
 	"hcm/pkg/tools/slice"
 )
 
+// DefaultTaskManageResult 默认的任务管理结果
+const DefaultTaskManageResult = "NO_MATCHING_OR_HAS_DONE"
+
 func newBatchListenerModifyRsWeightExecutor(cli *dataservice.Client, taskCli *taskserver.Client,
 	vendor enumor.Vendor, bkBizID int64, accountID string, regionIDs []string) *BatchListenerModifyRsWeightExecutor {
 
@@ -91,21 +94,20 @@ func (c *BatchListenerModifyRsWeightExecutor) Execute(kt *kit.Kit, source enumor
 	// 过滤不符合的数据
 	c.filter()
 
-	// 获取符合条件的监听器列表
-	lblResp, err := c.dataServiceCli.Global.LoadBalancer.ListLoadBalancerListenerByRsIP(kt, c.params)
+	// 获取符合条件的监听器及RS列表
+	LblRsList, err := c.getNewListenerRsList(kt)
 	if err != nil {
-		logs.Errorf("list batch listener by rsip failed, lblReq: %+v, err: %v, rid: %s", c.params, err, kt.Rid)
 		return "", err
 	}
 
-	// 没查到符合的监听器，直接返回
-	if len(lblResp.Details) == 0 {
-		logs.Warnf("list batch listener by rsip is empty, lblReq: %+v, rid: %s", cvt.PtrToVal(c.params), kt.Rid)
-		return "", nil
+	// 没查到符合的监听器及RS，直接返回
+	if len(LblRsList) == 0 {
+		logs.Infof("list batch listener by rsip is empty, lblReq: %+v, rid: %s", cvt.PtrToVal(c.params), kt.Rid)
+		return DefaultTaskManageResult, nil
 	}
 
 	// 把符合条件的监听器列表赋值给details
-	c.details = lblResp.Details
+	c.details = LblRsList
 
 	taskID, err := c.Run(kt, source)
 	if err != nil {
@@ -113,6 +115,40 @@ func (c *BatchListenerModifyRsWeightExecutor) Execute(kt *kit.Kit, source enumor
 	}
 
 	return taskID, nil
+}
+
+func (c *BatchListenerModifyRsWeightExecutor) getNewListenerRsList(kt *kit.Kit) (
+	[]*dataproto.ListBatchListenerResult, error) {
+
+	// 获取符合条件的监听器列表
+	lblResp, err := c.dataServiceCli.Global.LoadBalancer.ListLoadBalancerListenerByRsIP(kt, c.params)
+	if err != nil {
+		logs.Errorf("list batch listener by rsip failed, lblReq: %+v, err: %v, rid: %s", c.params, err, kt.Rid)
+		return nil, err
+	}
+
+	// 检查RS的最新权重是否已更新
+	newLblRsList := make([]*dataproto.ListBatchListenerResult, 0)
+	for _, item := range lblResp.Details {
+		for _, rsItem := range item.RsList {
+			if cvt.PtrToVal(rsItem.Weight) != c.params.NewRsWeight {
+				newLblRsList = append(newLblRsList, &dataproto.ListBatchListenerResult{
+					ClbID:        item.ClbID,
+					CloudClbID:   item.CloudClbID,
+					ClbVipDomain: item.ClbVipDomain,
+					BkBizID:      item.BkBizID,
+					Region:       item.Region,
+					Vendor:       item.Vendor,
+					LblID:        item.LblID,
+					CloudLblID:   item.CloudLblID,
+					Protocol:     item.Protocol,
+					Port:         item.Port,
+					RsList:       item.RsList,
+				})
+			}
+		}
+	}
+	return newLblRsList, nil
 }
 
 // Run 执行器执行入口
@@ -124,7 +160,7 @@ func (c *BatchListenerModifyRsWeightExecutor) Run(kt *kit.Kit, source enumor.Tas
 		return "", err
 	}
 
-	// 优先创建Flow并锁定负载均衡
+	// 创建Flow
 	flowIDs, err := c.buildFlows(kt)
 	if err != nil {
 		logs.Errorf("build modify listener rs weight async flows failed, err: %v, source: %s, rid: %s",
@@ -336,7 +372,7 @@ func (c *BatchListenerModifyRsWeightExecutor) buildFlowTask(lbID string,
 	case enumor.TCloud:
 		return c.buildTCloudFlowTask(lbID, details)
 	default:
-		return nil, fmt.Errorf("build flow task failed, lbID: %s, vendor %s not supported", lbID, c.vendor)
+		return nil, fmt.Errorf("build flow task failed, lbID: %s, vendor: %s not supported", lbID, c.vendor)
 	}
 }
 
@@ -435,12 +471,14 @@ func (c *BatchListenerModifyRsWeightExecutor) updateTaskManagementAndDetails(kt 
 	flowIDs []string, taskID string) error {
 
 	if err := c.updateTaskManagement(kt, taskID, flowIDs); err != nil {
-		logs.Errorf("update task management failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("update task management failed, err: %v, taskID: %s, flowIDs: %v,rid: %s",
+			err, taskID, flowIDs, kt.Rid)
 		return err
 	}
 
 	if err := c.updateTaskDetails(kt); err != nil {
-		logs.Errorf("update task details failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("update task details failed, err: %v, taskID: %s, flowIDs: %v,rid: %s",
+			err, taskID, flowIDs, kt.Rid)
 		return err
 	}
 	return nil
