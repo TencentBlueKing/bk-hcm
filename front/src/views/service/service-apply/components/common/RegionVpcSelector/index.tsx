@@ -69,6 +69,13 @@ export default defineComponent({
       emit('update:modelValue', val);
     });
 
+    watch(
+      () => props.modelValue,
+      (val) => {
+        cloudVpcId.value = val;
+      },
+    );
+
     // 暴露方法给父组件, 用于数据刷新
     expose({ handleRefresh });
 
