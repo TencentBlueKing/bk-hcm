@@ -18,6 +18,7 @@ import i18n from '@/language/i18n';
 import { useCommonStore } from '@/store';
 import { useVerify } from '@/hooks';
 import { isArray, isRegExp, isString } from 'lodash';
+import { useBusinessMapStore } from '@/store/useBusinessMap';
 
 const { t } = i18n.global;
 
@@ -102,11 +103,22 @@ router.beforeEach((to: RouteLocationNormalized, from: RouteLocationNormalized, n
   //   window.location.reload();
   // }
   if (from.path === '/') {
-    // 刷新或者首次进入请求权限接口
-    const { getAuthVerifyData } = useVerify(); // 权限中心权限
-    getAuthVerifyData(pageAuthData).then(() => {
-      const { authVerifyData } = commonStore;
-      toCurrentPage(authVerifyData, currentFindAuthData as any, next, to);
+    const { fetchBusinessMap } = useBusinessMapStore();
+    fetchBusinessMap().then((_res: any) => {
+      const bizsPageAuthData = pageAuthData.map((e: any) => {
+        // eslint-disable-next-line no-prototype-builtins
+        if (e.hasOwnProperty('bk_biz_id')) {
+          e.bk_biz_id = useBusinessMapStore().firstBizId;
+        }
+        return e;
+      });
+      commonStore.updatePageAuthData(bizsPageAuthData);
+      // 刷新或者首次进入请求权限接口
+      const { getAuthVerifyData } = useVerify(); // 权限中心权限
+      getAuthVerifyData(pageAuthData).then(() => {
+        const { authVerifyData } = commonStore;
+        toCurrentPage(authVerifyData, currentFindAuthData as any, next, to);
+      });
     });
   } else if (['/scheme/recommendation', '/scheme/deployment/list'].includes(to.path)) {
     next();

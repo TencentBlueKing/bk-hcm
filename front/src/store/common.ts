@@ -3,14 +3,11 @@ import http from '@/http';
 // import { Department } from '@/typings';
 import { shallowRef } from 'vue';
 import { defineStore } from 'pinia';
-import { useWhereAmI } from '@/hooks/useWhereAmI';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 export const useCommonStore = defineStore({
   id: 'commonStore',
   state: () => {
-    const { getBizsId } = useWhereAmI();
-    const bizId = getBizsId();
     return {
       list: shallowRef([]),
       authVerifyData: null as any,
@@ -42,7 +39,7 @@ export const useCommonStore = defineStore({
         { type: 'account', action: 'update', id: 'account_edit' },
 
         // 业务访问权限
-        { type: 'biz', action: 'access', id: 'biz_access', path: /^\/business/, bk_biz_id: bizId },
+        { type: 'biz', action: 'access', id: 'biz_access', path: /^\/business/, bk_biz_id: 0 },
 
         // 目前资源下主机、vpc、子网、安全组、云硬盘、网络接口、弹性IP、路由表、镜像等都当作iaas统一鉴权，为了方便，使用cvm当作整个iaas鉴权
         { type: 'cvm', action: 'find', id: 'resource_find' }, // 业务 资源对应的路径
