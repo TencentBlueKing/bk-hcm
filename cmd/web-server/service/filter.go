@@ -118,7 +118,6 @@ func NewUserAuthenticateFilter(esbClient esb.Client, bkLoginUrl, bkLoginCookieNa
 		// 对于itsm 的回调请求，不能用户认证，而是处理请求时进行单独的Token认证，这里直接通过
 		if isITSMCallbackRequest(req) {
 			username = "itsm_callback"
-			req.Request.Header.Set(constant.RidKey, uuid.UUID())
 		} else {
 			ret, err := checkLogin(req)
 			if err != nil {
@@ -145,10 +144,6 @@ func NewUserAuthenticateFilter(esbClient esb.Client, bkLoginUrl, bkLoginCookieNa
 			}
 		}
 
-		// 请求通知中心的接口，自动补全rid
-		if isNoticeRequest(req) {
-			req.Request.Header.Set(constant.RidKey, uuid.UUID())
-		}
 		// 这里直接修改请求的Header，后面需要用，可以直接从Header头里取
 		req.Request.Header.Set(constant.UserKey, username)
 		req.Request.Header.Set(constant.AppCodeKey, "hcm-web-server")
@@ -192,10 +187,13 @@ func peekRequest(req *http.Request) (string, error) {
 	return "", nil
 }
 
-func isNoticeRequest(req *restful.Request) bool {
-	if strings.Contains(req.Request.RequestURI,
-		"/api/v1/web/notice/current_announcements") && req.Request.Method == http.MethodGet {
-		return true
+// NewCompleteRequestIDFilter creates a filter that adds a request ID if request ID is missing.
+func NewCompleteRequestIDFilter() restful.FilterFunction {
+	return func(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
+		rid := req.Request.Header.Get(constant.RidKey)
+		if rid == "" {
+			req.Request.Header.Set(constant.RidKey, uuid.UUID())
+		}
+		chain.ProcessFilter(req, resp)
 	}
-	return false
 }
