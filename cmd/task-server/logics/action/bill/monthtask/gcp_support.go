@@ -78,10 +78,8 @@ func convertToRawBill(recordList []billcore.GcpRawBillItem) ([]dsbill.RawBillIte
 			newBillItem.BillCurrency = enumor.CurrencyCode(*record.Currency)
 		}
 		if record.Cost != nil {
-			newBillItem.BillCost = *record.Cost
-		}
-		if record.ReturnCost != nil {
-			newBillItem.BillCost = newBillItem.BillCost.Add(*record.ReturnCost)
+			// use original cost with non promotion cost
+			newBillItem.BillCost = *record.TotalCost
 		}
 		newBillItem.Extension = types.JsonField(string(extensionBytes))
 		retList = append(retList, newBillItem)
@@ -174,9 +172,12 @@ func (gcp *GcpSupportMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption,
 	if err != nil {
 		return nil, err
 	}
+
+	billItems := make([]dsbill.BillItemCreateReq[json.RawMessage], 0, len(summaryMainList))
 	// 聚合本批次 账单总额，并分摊给每个主账号
 	batchCost := decimal.Zero
 	for _, item := range rawItemList {
+		// 不计算赠金的支出
 		cost := item.BillCost
 		gcpRaw := billcore.GcpRawBillItem{}
 		err := json.Unmarshal([]byte(item.Extension), &gcpRaw)
@@ -185,10 +186,9 @@ func (gcp *GcpSupportMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption,
 			return nil, err
 		}
 		for _, credit := range gcpRaw.CreditInfos {
-			if gcp.creditReturnMap[credit.ID] != "" {
-				//  去掉已经返还的credits, credit 金额为负数，直接相加
+			if gcp.creditReturnMap[credit.ID] == "" {
+				// 未返还的，正常抵扣即可, credit 金额为负数，直接相加
 				cost = cost.Add(cvt.PtrToVal(credit.Amount))
-				continue
 			}
 		}
 		batchCost = batchCost.Add(cost)
@@ -198,7 +198,6 @@ func (gcp *GcpSupportMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption,
 	for _, summaryMain := range summaryMainList {
 		summaryTotal = summaryTotal.Add(summaryMain.CurrentMonthCost)
 	}
-	billItems := make([]dsbill.BillItemCreateReq[json.RawMessage], 0, len(summaryMainList))
 	for _, summaryMain := range summaryMainList {
 		cost := batchCost.Mul(summaryMain.CurrentMonthCost).Div(summaryTotal)
 		costBillItem := dsbill.BillItemCreateReq[json.RawMessage]{

@@ -99,7 +99,7 @@ func (ds *GcpSplitter) DoSplit(kt *kit.Kit, opt *DailyAccountSplitActionOption, 
 			Currency:      item.BillCurrency,
 			Cost:          cvt.PtrToVal(credit.Amount),
 			HcProductCode: constant.GcpCreditReturnCost,
-			HcProductName: constant.GcpCreditReturnCost,
+			HcProductName: credit.ID,
 			Extension:     cvt.ValToPtr[rawjson.RawMessage](rawExt),
 		}
 		billItems = append(billItems, creditBillItem)

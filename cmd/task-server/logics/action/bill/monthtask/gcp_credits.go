@@ -88,6 +88,7 @@ func (g GcpCreditMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index 
 		record := billcore.GcpRawBillItem{
 			BillingAccountID:       item.BillingAccountId,
 			Cost:                   item.PromotionCredit,
+			TotalCost:              item.PromotionCredit,
 			Currency:               cvt.ValToPtr(item.Currency),
 			CurrencyConversionRate: item.CurrencyConversionRate,
 			Month:                  cvt.ValToPtr(item.Month),
@@ -120,8 +121,11 @@ func (g GcpCreditMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption, rawIt
 		return nil, err
 	}
 	summaryMainReq := &dsbill.BillSummaryMainListReq{
-		Filter: tools.ExpressionAnd(tools.RuleEqual("root_account_id", opt.RootAccountID)),
-		Page:   core.NewDefaultBasePage(),
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("bill_year", opt.BillYear),
+			tools.RuleEqual("bill_month", opt.BillMonth),
+			tools.RuleEqual("root_account_id", opt.RootAccountID)),
+		Page: core.NewDefaultBasePage(),
 	}
 	summaryMainResp, err := actcli.GetDataService().Global.Bill.ListBillSummaryMain(kt, summaryMainReq)
 	if err != nil {
@@ -160,7 +164,7 @@ func (g GcpCreditMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption, rawIt
 			}
 			result = append(result, ownerItems...)
 			if cvt.PtrToVal(gcpRaw.ProjectID) == "" {
-				// cost do not belong to any project
+				// cost do not belong to any project, handled by support month task
 				continue
 			}
 			// if match credit return info return to owner account(negative cost) and usage account(positive cost)

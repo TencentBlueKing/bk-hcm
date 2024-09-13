@@ -153,7 +153,7 @@ type GcpCredit struct {
 }
 
 func (c *GcpCredit) String() string {
-	return fmt.Sprintf("[%s]%s/%s/%s cost: %s", c.Type, c.ID, c.Name, c.FullName, c.Amount.String())
+	return fmt.Sprintf("[%s] cost: %s %s/%s/%s ", c.Amount.String(), c.Type, c.ID, c.Name, c.FullName)
 }
 
 // GcpBillItemExtension ...
