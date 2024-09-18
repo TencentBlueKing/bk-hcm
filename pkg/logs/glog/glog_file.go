@@ -208,11 +208,7 @@ func createLogDirs() {
 	dirs = append(dirs, os.TempDir())
 
 	for _, dir := range dirs {
-		head := new(fileBlock)
-		tail := new(fileBlock)
-		total := 0
-
-		logDirs = append(logDirs, &logKeeper{dir: dir, header: head, tail: tail, total: total})
+		logDirs = append(logDirs, &logKeeper{dir: dir, header: nil, tail: nil, total: 0})
 	}
 }
 
