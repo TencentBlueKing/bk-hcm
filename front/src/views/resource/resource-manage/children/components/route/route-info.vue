@@ -5,6 +5,7 @@ import { useResourceStore } from '@/store/resource';
 import { useRouter, useRoute } from 'vue-router';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { timeFormatter } from '@/common/util';
+import { FieldList } from '../../../common/info-list/types';
 
 const props = defineProps({
   detail: {
@@ -19,7 +20,7 @@ const route = useRoute();
 const { getRegionName } = useRegionsStore();
 
 // 基本信息字段配置
-const fileds = ref<any[]>([
+const fileds = ref<FieldList>([
   {
     name: '路由表名称',
     prop: 'name',
@@ -391,7 +392,7 @@ const handlePageSizeChange = (limit: number) => {
 
 <template>
   <bk-loading :loading="isLoading">
-    <detail-info :fields="fileds" :detail="detail"></detail-info>
+    <detail-info :fields="fileds" :detail="detail" global-copyable></detail-info>
     <bk-table
       class="mt20"
       row-hover="auto"

@@ -168,9 +168,9 @@ export const useBusinessStore = defineStore({
      * @returns 域名列表
      */
     getDomainListByListenerId(id: string) {
-      return http.post(`
-        ${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/tcloud/listeners/${id}/domains/list
-      `);
+      return http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/tcloud/listeners/${id}/domains/list`,
+      );
     },
     /**
      * 获取负载均衡基本信息

@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 import { reactive, ref, watchEffect } from 'vue';
+import { FieldList } from '../../../common/info-list/types';
 
 const props = defineProps({
   detail: {
@@ -8,7 +9,7 @@ const props = defineProps({
   },
 });
 
-const fields = ref([
+const fields = ref<FieldList>([
   {
     name: '网络安全组',
     prop: 'cloud_security_group_id',
@@ -25,5 +26,5 @@ watchEffect(() => {
 </script>
 
 <template>
-  <detail-info :detail="data" :fields="fields" />
+  <detail-info :detail="data" :fields="fields" global-copyable :col="1" />
 </template>

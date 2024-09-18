@@ -182,7 +182,7 @@ export default defineComponent({
           <p class={'title'}>账号信息</p>
           {statusMap[props.detail.status].tag === 'success' ? (
             <DetailInfo
-              wide
+              col={1}
               detail={resultInfo.value}
               fields={[
                 {

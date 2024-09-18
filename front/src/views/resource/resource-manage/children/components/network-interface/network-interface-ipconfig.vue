@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 import { ref, watch } from 'vue';
+import { FieldList } from '../../../common/info-list/types';
 
 const props = defineProps({
   detail: {
@@ -8,7 +9,7 @@ const props = defineProps({
   },
 });
 
-const fields = ref([
+const fields = ref<FieldList>([
   {
     name: 'IP转发',
     prop: 'enable_ip_forwarding',
@@ -83,7 +84,7 @@ watch(
 
 <template>
   <div class="ipconfig">
-    <detail-info :detail="detail" :fields="fields" />
+    <detail-info :detail="detail" :fields="fields" global-copyable />
     <bk-table class="mt20" row-hover="auto" :columns="columns" :data="ipConfigData" show-overflow-tooltip />
   </div>
 </template>

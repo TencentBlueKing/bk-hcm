@@ -1,3 +1,5 @@
+import { ConstantMapRecord } from '@/typings';
+
 // 全局业务id
 export const GLOBAL_BIZS_KEY = 'bizs';
 export const GLOBAL_BIZS_VERSION = '1.6.3';
@@ -271,7 +273,7 @@ export const HUAWEI_CLOUD_HOST_STATUS = {
   UNKNOWN: '未知状态',
 };
 
-export const CLOUD_HOST_STATUS = {
+export const CLOUD_HOST_STATUS: ConstantMapRecord = {
   PENDING: '创建中',
   LAUNCH_FAILED: '创建失败',
   RUNNING: '运行中',
@@ -288,7 +290,7 @@ export const CLOUD_HOST_STATUS = {
   ...HUAWEI_CLOUD_HOST_STATUS,
 };
 
-export const CLOUD_AREA_REGION_GCP = {
+export const CLOUD_AREA_REGION_GCP: ConstantMapRecord = {
   'northamerica-northeast1': '蒙特利尔',
   'northamerica-northeast2': '多伦多',
   'southamerica-east1': '圣保罗',
@@ -368,7 +370,7 @@ export const CLOUD_AREA_REGION_GCP_EN = {
   墨尔本: 'australia-southeast2',
 };
 
-export const CLOUD_AREA_REGION_AWS = {
+export const CLOUD_AREA_REGION_AWS: ConstantMapRecord = {
   'us-east-2': 'US East (Ohio)',
   'us-east-1': '美国东部（弗吉尼亚北部）',
   'us-west-1': '美国西部（加利福尼亚北部）',
@@ -428,14 +430,14 @@ export const CLOUD_AREA_REGION_AWS_EN = {
   '南美洲（圣保罗）': 'sa-east-1',
 };
 
-export const INSTANCE_CHARGE_MAP = {
+export const INSTANCE_CHARGE_MAP: ConstantMapRecord = {
   PREPAID: '包年包月',
   POSTPAID_BY_HOUR: '按量计费',
   CDHPAID: '专用宿主机付费',
   SPOTPAID: '竞价实例',
 };
 
-export const NET_CHARGE_MAP = {
+export const NET_CHARGE_MAP: ConstantMapRecord = {
   BANDWIDTH_PREPAID: '按带宽包年包月计费',
   TRAFFIC_POSTPAID_BY_HOUR: '按流量计费',
   BANDWIDTH_POSTPAID_BY_HOUR: '按带宽使用时长计费',
@@ -552,17 +554,17 @@ export const SYNC_STAUS_MAP = {
 
 export const TARGET_GROUP_PROTOCOLS = ['TCP', 'UDP', 'HTTP', 'HTTPS'];
 
-export const LB_TYPE_MAP = {
+export const LB_TYPE_MAP: ConstantMapRecord = {
   OPEN: '公网',
   INTERNAL: '内网',
 };
 
-export const CHARGE_TYPE = {
+export const CHARGE_TYPE: ConstantMapRecord = {
   PREPAID: '包年包月',
   POSTPAID_BY_HOUR: '按量计费',
 };
 
-export const LB_ISP = {
+export const LB_ISP: ConstantMapRecord = {
   CMCC: '中国移动',
   CUCC: '中国联通',
   CTCC: '中国电信',
@@ -570,7 +572,7 @@ export const LB_ISP = {
   INTERNAL: '内网流量',
 };
 
-export const CLB_SPECS = {
+export const CLB_SPECS: ConstantMapRecord = {
   'clb.c1.small': '简约型',
   'clb.c2.medium': '标准型规格',
   'clb.c3.small': '高阶型1规格',

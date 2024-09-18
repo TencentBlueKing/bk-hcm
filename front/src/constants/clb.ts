@@ -1,4 +1,5 @@
 import { NetworkAccountType } from '@/api/load_balancers/apply-clb/types';
+import { ConstantMapRecord } from '@/typings';
 
 // 负载均衡-路由组件名称
 export enum LBRouteName {
@@ -90,19 +91,19 @@ export const WHITE_LIST_REGION_PRIMARY_STAND_ZONE = [
 ];
 
 // 会话类型映射
-export const SESSION_TYPE_MAP = {
+export const SESSION_TYPE_MAP: ConstantMapRecord = {
   NORMAL: '基于源 IP ',
   QUIC_CID: '基于源端口',
 };
 
 // 证书认证方式映射
-export const SSL_MODE_MAP = {
+export const SSL_MODE_MAP: ConstantMapRecord = {
   UNIDIRECTIONAL: '单向认证',
   MUTUAL: '双向认证',
 };
 
 // 均衡方式映射
-export const SCHEDULER_MAP = {
+export const SCHEDULER_MAP: ConstantMapRecord = {
   WRR: '按权重轮询',
   LEAST_CONN: '最小连接数',
   IP_HASH: 'IP Hash',
@@ -220,7 +221,7 @@ export const TG_OPERATION_SCENE_MAP = {
 };
 
 // IP版本映射 - 前端展示使用
-export const IP_VERSION_MAP = {
+export const IP_VERSION_MAP: ConstantMapRecord = {
   ipv4: 'IPv4',
   ipv6: 'IPv6',
   ipv6_nat64: 'IPv6_NAT',

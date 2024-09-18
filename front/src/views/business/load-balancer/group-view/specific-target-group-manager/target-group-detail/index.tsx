@@ -5,6 +5,7 @@ import { Share } from 'bkui-vue/lib/icon';
 import RsConfigTable from '../../components/RsConfigTable';
 import AddOrUpdateTGSideslider from '../../components/AddOrUpdateTGSideslider';
 import AddRsDialog from '../../components/AddRsDialog';
+import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
 // import stores
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessStore } from '@/store';
@@ -39,14 +40,17 @@ export default defineComponent({
           {
             label: '云账号',
             value: props.detail.account_id,
+            copy: true,
           },
           {
             label: '地域',
             value: getRegionName(VendorEnum.TCLOUD, props.detail.region),
+            copy: true,
           },
           {
             label: '目标组名称',
             value: props.detail.name,
+            copy: true,
           },
           {
             label: '所属vpc',
@@ -61,14 +65,18 @@ export default defineComponent({
                 </div>
               </Link>
             ),
+            copy: true,
+            copyContent: props.detail.cloud_vpc_id,
           },
           {
             label: '协议端口',
             value: `${props.detail.protocol}:${props.detail.port}`,
+            copy: true,
           },
           {
             label: '创建时间',
             value: timeFormatter(props.detail.created_at),
+            copy: true,
           },
         ],
       },
@@ -106,9 +114,10 @@ export default defineComponent({
               <h3 class='info-title'>{title}</h3>
               <div class='info-content'>
                 {Array.isArray(content)
-                  ? content.map(({ label, value }) => (
+                  ? content.map(({ label, value, copyContent, copy }) => (
                       <div class='info-item'>
                         <span class='info-item-label'>{label}</span>:<span class='info-item-value'>{value}</span>
+                        {copy && <CopyToClipboard class='copy-btn' content={copyContent ?? String(value)} />}
                       </div>
                     ))
                   : content}
