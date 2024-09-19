@@ -12,7 +12,6 @@ GET /api/v1/web/notice/current_announcements
 
 | 参数名称      | 参数类型    | 必选 | 描述                  |
 |-----------|---------|----|---------------------|
-| language	 | string	 | 否	 | 获取指定语言的公告(en/zh-cn) |
 | limit	    | int	    | 否	 | 每页返回的结果数。           |
 | offset	   | int	    | 否	 | 返回结果的初始索引。          |
 
@@ -22,7 +21,7 @@ GET /api/v1/web/notice/current_announcements
 
 
 ```
-language=zh-cn&limit=10&offset=0
+limit=10&offset=0
 ```
 
 ### 响应示例

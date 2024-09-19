@@ -57,5 +57,7 @@ func (s service) GetCurrentAnnouncements(cts *rest.Contexts) (interface{}, error
 		params[key] = val[0]
 	}
 	params["platform"] = cc.WebServer().Notice.AppCode
+	language := rest.GetLanguageByHTTPRequest(cts.Request)
+	params["language"] = string(language)
 	return s.client.GetCurAnn(cts.Kit, params)
 }

@@ -22,7 +22,6 @@ package version
 
 import (
 	"fmt"
-	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -36,8 +35,6 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/version"
-
-	"github.com/emicklei/go-restful/v3"
 )
 
 // InitVersionService ...
@@ -60,7 +57,7 @@ type service struct {
 // GetVersionList get user info
 func (u *service) GetVersionList(cts *rest.Contexts) (interface{}, error) {
 
-	language := getLanguageByHTTPRequest(cts.Request)
+	language := rest.GetLanguageByHTTPRequest(cts.Request)
 	changelogFilepath := getVersionDirPath(language)
 	files, err := os.ReadDir(changelogFilepath)
 	if err != nil {
@@ -81,7 +78,7 @@ func (u *service) GetVersionList(cts *rest.Contexts) (interface{}, error) {
 func (u *service) GetVersion(cts *rest.Contexts) (interface{}, error) {
 	curVersion := cts.PathParameter("version").String()
 
-	language := getLanguageByHTTPRequest(cts.Request)
+	language := rest.GetLanguageByHTTPRequest(cts.Request)
 	versionFilePath, err := getVersionFilePath(getVersionDirPath(language), curVersion)
 	if err != nil {
 		// 找不到指定的版本数据则返回对应错误
@@ -232,19 +229,4 @@ func getVersionFilePath(changelogPath string, version string) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("no changelog file for " + version + " in " + changelogPath)
-}
-
-// getLanguageByHTTPRequest ...
-func getLanguageByHTTPRequest(req *restful.Request) constant.Language {
-
-	cookie, err := req.Request.Cookie(constant.BKHTTPCookieLanguageKey)
-	if err != nil {
-		return constant.Chinese
-	}
-	cookieLanguage, _ := url.QueryUnescape(cookie.Value)
-	if cookieLanguage == "" {
-		return constant.Chinese
-	}
-
-	return constant.Language(cookieLanguage)
 }
