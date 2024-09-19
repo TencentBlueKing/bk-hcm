@@ -450,7 +450,7 @@ export const SITE_TYPE_MAP = {
 };
 
 export const LANGUAGE_TYPE = {
-  zh_cn: 'zh_cn',
+  zh_cn: 'zh-cn',
   en: 'en',
 };
 
