@@ -72,12 +72,12 @@ func (c *ClbClient) Update(kt *kit.Kit, id string, req *hcproto.TCloudLBUpdateRe
 		kt, req, "/load_balancers/%s", id)
 }
 
-// CreateListener 创建监听器
-func (c *ClbClient) CreateListener(kt *kit.Kit, req *hcproto.ListenerWithRuleCreateReq) (
+// CreateListenerWithTargetGroup 创建监听器和规则并绑定目标组
+func (c *ClbClient) CreateListenerWithTargetGroup(kt *kit.Kit, req *hcproto.ListenerWithRuleCreateReq) (
 	*hcproto.ListenerWithRuleCreateResult, error) {
 
 	return common.Request[hcproto.ListenerWithRuleCreateReq, hcproto.ListenerWithRuleCreateResult](
-		c.client, http.MethodPost, kt, req, "/listeners/create")
+		c.client, http.MethodPost, kt, req, "/listeners/create_with_rule")
 }
 
 // UpdateListener 更新监听器
