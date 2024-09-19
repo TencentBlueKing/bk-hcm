@@ -406,7 +406,7 @@ webserver:
     en:
   # defines notice related settings.
   notice:
-    # enable is a flag to enable notice service.
+    # enable is a flag to enable notice service.如果需要启用消息通知，需要申请bk-notice的api网关权限
     enable: false
     # endpoints is a seed list of host:port addresses of notice api gateway nodes.
     endpoints:

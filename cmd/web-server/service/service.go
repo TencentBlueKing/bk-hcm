@@ -144,17 +144,19 @@ func NewService(dis serviced.Discover) (*Service, error) {
 
 func newNotificationClient() (pkgnotice.Client, error) {
 	noticeCfg := cc.WebServer().Notice
+	if !noticeCfg.Enable {
+		return nil, nil
+	}
 	noticeCli, err := pkgnotice.NewClient(&noticeCfg.ApiGateway, metrics.Register())
 	if err != nil {
 		logs.Errorf("failed to create notice client, err: %v", err)
 		return nil, err
 	}
-	if noticeCfg.Enable {
-		_, err := noticeCli.RegApp(kit.New())
-		if err != nil {
-			logs.Errorf("register notice app failed, err: %v", err)
-			return nil, err
-		}
+	_, err = noticeCli.RegApp(kit.New())
+	if err != nil {
+		// 无api gateway权限可能会导致注册失败，阻塞服务启动
+		logs.Errorf("register notice app failed, err: %v", err)
+		return nil, err
 	}
 	return noticeCli, nil
 }
@@ -268,7 +270,9 @@ func (s *Service) apiSet() *restful.WebService {
 	subnet.InitService(c)
 	itsm.InitService(c)
 	version.InitVersionService(c)
-	notice.InitService(c)
+	if cc.WebServer().Notice.Enable {
+		notice.InitService(c)
+	}
 
 	return ws
 }
