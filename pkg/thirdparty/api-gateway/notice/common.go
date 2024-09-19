@@ -17,25 +17,31 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package capability ...
-package capability
+package notice
 
-import (
-	"hcm/pkg/client"
-	"hcm/pkg/iam/auth"
-	"hcm/pkg/thirdparty/api-gateway/itsm"
-	"hcm/pkg/thirdparty/api-gateway/notice"
-	"hcm/pkg/thirdparty/esb"
+// GetCurAnnResp the response of the get current announcements
+type GetCurAnnResp = []CurAnnData
 
-	"github.com/emicklei/go-restful/v3"
-)
+// CurAnnData the data of the current announcements
+type CurAnnData struct {
+	ID           int64     `json:"id"`
+	Title        string    `json:"title"`
+	Content      string    `json:"content"`
+	ContentList  []Content `json:"content_list"`
+	AnnounceType string    `json:"announce_type"`
+	StartTime    string    `json:"start_time"`
+	EndTime      string    `json:"end_time"`
+}
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	EsbClient  esb.Client
-	Authorizer auth.Authorizer
-	ItsmCli    itsm.Client
-	NoticeCli  notice.Client
+// Content the content of the current announcements
+type Content struct {
+	Content  string `json:"content"`
+	Language string `json:"language"`
+}
+
+// RegAppData the data of the register application
+type RegAppData struct {
+	ID   int64  `json:"id"`
+	Code string `json:"code"`
+	Name string `json:"name"`
 }

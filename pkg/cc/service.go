@@ -321,6 +321,7 @@ type WebServerSetting struct {
 	Esb           Esb           `yaml:"esb"`
 	Itsm          ApiGateway    `yaml:"itsm"`
 	ChangeLogPath ChangeLogPath `yaml:"changeLogPath"`
+	Notice  	  Notice     	`yaml:"notice"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -357,6 +358,10 @@ func (s WebServerSetting) Validate() error {
 	}
 
 	if err := s.Itsm.validate(); err != nil {
+		return err
+	}
+
+	if err := s.Notice.validate(); err != nil {
 		return err
 	}
 

@@ -20,7 +20,14 @@ package apigateway
 
 import (
 	"fmt"
+	"net/http"
 	"sync"
+
+	"hcm/pkg/cc"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
+	"hcm/pkg/rest"
 )
 
 // Discovery used to third-party service discovery.
@@ -52,4 +59,83 @@ func (d *Discovery) GetServers() ([]string, error) {
 	}
 	d.index = 0
 	return append(d.Servers[num-1:], d.Servers[:num-1]...), nil
+}
+
+// ApiGatewayResp ...
+type ApiGatewayResp[T any] struct {
+	Result         bool   `json:"result"`
+	Code           int    `json:"code"`
+	BKErrorCode    int    `json:"bk_error_code"`
+	Message        string `json:"message"`
+	BKErrorMessage string `json:"bk_error_msg"`
+	Data           T      `json:"data"`
+}
+
+// ApiGatewayCall general call helper function for api gateway
+func ApiGatewayCall[IT any, OT any](cli rest.ClientInterface, cfg *cc.ApiGateway,
+	method rest.VerbType, kt *kit.Kit, req *IT, url string, urlParams ...any) (*OT, error) {
+
+	header := getCommonHeader(kt, cfg)
+	resp := new(ApiGatewayResp[*OT])
+	err := cli.Verb(method).
+		SubResourcef(url, urlParams...).
+		WithContext(kt.Ctx).
+		WithHeaders(header).
+		Body(req).
+		Do().Into(resp)
+
+	if err != nil {
+		logs.Errorf("fail to call api gateway api, err: %v, url: %s, rid: %s", err, url, kt.Rid)
+		return nil, err
+	}
+
+	if !resp.Result || resp.Code != 0 {
+		err := fmt.Errorf("failed to call api gateway, code: %d, msg: %s, bk_error_code: %d, bk_error_msg: %s",
+			resp.Code, resp.Message, resp.BKErrorCode, resp.BKErrorMessage)
+		logs.Errorf("api gateway returns error, url: %s, err: %v, rid: %s", url, err, kt.Rid)
+		return nil, err
+	}
+	return resp.Data, nil
+}
+
+// ApiGatewayCallWithoutReq general call helper function for api gateway
+func ApiGatewayCallWithoutReq[OT any](cli rest.ClientInterface, cfg *cc.ApiGateway,
+	method rest.VerbType, kt *kit.Kit, params map[string]string, url string, urlParams ...any) (*OT, error) {
+
+	header := getCommonHeader(kt, cfg)
+	resp := new(ApiGatewayResp[*OT])
+	err := cli.Verb(method).
+		SubResourcef(url, urlParams...).
+		WithContext(kt.Ctx).
+		WithHeaders(header).
+		WithParams(params).
+		Do().Into(resp)
+
+	if err != nil {
+		logs.Errorf("fail to call api gateway api, err: %v, url: %s, rid: %s", err, url, kt.Rid)
+		return nil, err
+	}
+
+	if !resp.Result || resp.Code != 0 {
+		err := fmt.Errorf("failed to call api gateway, code: %d, msg: %s, bk_error_code: %d, bk_error_msg: %s",
+			resp.Code, resp.Message, resp.BKErrorCode, resp.BKErrorMessage)
+		logs.Errorf("api gateway returns error, url: %s, err: %v, rid: %s", url, err, kt.Rid)
+		return nil, err
+	}
+	return resp.Data, nil
+}
+
+func getCommonHeader(kt *kit.Kit, cfg *cc.ApiGateway) http.Header {
+	header := kt.Header()
+	// 如果配置了指定用户，使用指定用户调用
+	user := kt.User
+	if len(cfg.User) > 0 {
+		user = cfg.User
+	}
+	// TODO: 目前调用方式和itsm 不同，后期改成统一的ApiGateWay 客户端
+	bkAuth := fmt.Sprintf(`{"bk_app_code": "%s", "bk_app_secret": "%s","bk_username":"%s"}`,
+		cfg.AppCode, cfg.AppSecret, user)
+	header.Set(constant.BKGWAuthKey, bkAuth)
+	header.Set(constant.RidKey, kt.Rid)
+	return header
 }

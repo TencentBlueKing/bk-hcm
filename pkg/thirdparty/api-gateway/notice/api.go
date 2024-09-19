@@ -17,25 +17,27 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package capability ...
-package capability
+package notice
 
 import (
-	"hcm/pkg/client"
-	"hcm/pkg/iam/auth"
-	"hcm/pkg/thirdparty/api-gateway/itsm"
-	"hcm/pkg/thirdparty/api-gateway/notice"
-	"hcm/pkg/thirdparty/esb"
-
-	"github.com/emicklei/go-restful/v3"
+	"hcm/pkg/kit"
+	"hcm/pkg/rest"
+	apigateway "hcm/pkg/thirdparty/api-gateway"
 )
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	EsbClient  esb.Client
-	Authorizer auth.Authorizer
-	ItsmCli    itsm.Client
-	NoticeCli  notice.Client
+// GetCurAnn get current announcements
+func (n *notice) GetCurAnn(kt *kit.Kit, params map[string]string) (GetCurAnnResp, error) {
+
+	resp, err := apigateway.ApiGatewayCallWithoutReq[GetCurAnnResp](n.client, n.config, rest.GET,
+		kt, params, "/announcement/get_current_announcements")
+	if err != nil {
+		return nil, err
+	}
+	return *resp, nil
+}
+
+// RegApp register application
+func (n *notice) RegApp(kt *kit.Kit) (*RegAppData, error) {
+	return apigateway.ApiGatewayCallWithoutReq[RegAppData](n.client, n.config, rest.POST,
+		kt, nil, "/register")
 }

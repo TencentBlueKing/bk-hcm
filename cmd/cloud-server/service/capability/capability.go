@@ -21,8 +21,6 @@
 package capability
 
 import (
-	"github.com/emicklei/go-restful/v3"
-
 	"hcm/cmd/cloud-server/logics"
 	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/pkg/client"
@@ -32,6 +30,8 @@ import (
 	"hcm/pkg/thirdparty/api-gateway/cmsi"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/thirdparty/esb"
+
+	"github.com/emicklei/go-restful/v3"
 )
 
 // Capability defines the service's capability
