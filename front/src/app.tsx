@@ -1,9 +1,7 @@
-import { defineComponent, onMounted, onUnmounted, provide, ref } from 'vue';
+import { defineComponent, onMounted, onUnmounted } from 'vue';
 import Home from '@/views/home';
-import NoticeComponent from '@blueking/notice-component';
+import Notice from '@/views/notice/index.vue';
 import { useUserStore } from '@/store';
-
-const { BK_HCM_AJAX_URL_PREFIX, ENABLE_NOTICE } = window.PROJECT_CONFIG;
 
 export default defineComponent({
   setup() {
@@ -24,14 +22,6 @@ export default defineComponent({
     const userStore = useUserStore();
     userStore.userInfo();
 
-    // 是否含有跑马灯类型公告， 如果有跑马灯， navigation的高度可能需要减去40px， 避免页面出现滚动条
-    const showAlert = ref(false);
-    // 公告列表change事件回调， isShow代表是否含有跑马灯类型公告
-    const showAlertChange = function (isShow: boolean) {
-      showAlert.value = isShow;
-    };
-    provide('isNoticeAlert', showAlert);
-
     onMounted(() => {
       calcRem();
       window.addEventListener('resize', calcRem, false);
@@ -41,12 +31,7 @@ export default defineComponent({
     });
     return () => (
       <div class='full-page flex-column'>
-        {ENABLE_NOTICE && (
-          <NoticeComponent
-            apiUrl={`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/notice/current_announcements`}
-            onShowAlertChange={showAlertChange}
-          />
-        )}
+        <Notice />
         <Home class='flex-1'></Home>
       </div>
     );
