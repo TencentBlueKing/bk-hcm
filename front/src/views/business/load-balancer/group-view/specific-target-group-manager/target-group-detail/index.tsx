@@ -110,7 +110,7 @@ export default defineComponent({
       <div class='target-group-detail-page'>
         <Button
           class='fixed-operate-btn'
-          style={{ top: calcTop }}
+          style={{ top: calcTop.value }}
           outline
           theme='primary'
           onClick={handleEditTargetGroup}>

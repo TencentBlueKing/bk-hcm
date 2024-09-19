@@ -3,7 +3,7 @@ import Home from '@/views/home';
 import NoticeComponent from '@blueking/notice-component';
 import { useUserStore } from '@/store';
 
-const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
+const { BK_HCM_AJAX_URL_PREFIX, ENABLE_NOTICE } = window.PROJECT_CONFIG;
 
 export default defineComponent({
   setup() {
@@ -41,10 +41,12 @@ export default defineComponent({
     });
     return () => (
       <div class='full-page flex-column'>
-        <NoticeComponent
-          apiUrl={`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/notice/current_announcements`}
-          onShowAlertChange={showAlertChange}
-        />
+        {ENABLE_NOTICE && (
+          <NoticeComponent
+            apiUrl={`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/notice/current_announcements`}
+            onShowAlertChange={showAlertChange}
+          />
+        )}
         <Home class='flex-1'></Home>
       </div>
     );
