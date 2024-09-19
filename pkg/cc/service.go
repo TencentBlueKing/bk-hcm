@@ -314,12 +314,13 @@ func (s AuthServerSetting) Validate() error {
 
 // WebServerSetting defines api server used setting options.
 type WebServerSetting struct {
-	Network Network    `yaml:"network"`
-	Service Service    `yaml:"service"`
-	Log     LogOption  `yaml:"log"`
-	Web     Web        `yaml:"web"`
-	Esb     Esb        `yaml:"esb"`
-	Itsm    ApiGateway `yaml:"itsm"`
+	Network       Network       `yaml:"network"`
+	Service       Service       `yaml:"service"`
+	Log           LogOption     `yaml:"log"`
+	Web           Web           `yaml:"web"`
+	Esb           Esb           `yaml:"esb"`
+	Itsm          ApiGateway    `yaml:"itsm"`
+	ChangeLogPath ChangeLogPath `yaml:"changeLogPath"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -447,4 +448,10 @@ func (s AccountServerSetting) Validate() error {
 	}
 
 	return nil
+}
+
+// ChangeLogPath ...
+type ChangeLogPath struct {
+	Chinese string `yaml:"ch"`
+	English string `yaml:"en"`
 }

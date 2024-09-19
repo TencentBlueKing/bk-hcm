@@ -39,6 +39,7 @@ import (
 	"hcm/cmd/web-server/service/cmdb"
 	"hcm/cmd/web-server/service/itsm"
 	"hcm/cmd/web-server/service/user"
+	"hcm/cmd/web-server/service/version"
 	"hcm/pkg/cc"
 	apiclient "hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
@@ -53,7 +54,7 @@ import (
 	pkgitsm "hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/thirdparty/esb"
 	"hcm/pkg/tools/ssl"
-	"hcm/pkg/version"
+	pkgversion "hcm/pkg/version"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -235,6 +236,7 @@ func (s *Service) apiSet() *restful.WebService {
 	vpc.InitVpcService(c)
 	subnet.InitService(c)
 	itsm.InitService(c)
+	version.InitVersionService(c)
 
 	return ws
 }
@@ -309,7 +311,7 @@ func (s *Service) indexHandleFunc(req *restful.Request, resp *restful.Response) 
 		"BK_COMPONENT_API_URL":        cc.WebServer().Web.BkComponentApiUrl,
 		"BK_ITSM_URL":                 cc.WebServer().Web.BkItsmUrl,
 		"BK_DOMAIN":                   cc.WebServer().Web.BkDomain,
-		"VERSION":                     version.VERSION,
+		"VERSION":                     pkgversion.VERSION,
 		"BK_CMDB_CREATE_BIZ_URL":      cc.WebServer().Web.BkCmdbCreateBizUrl,
 		"BK_CMDB_CREATE_BIZ_DOCS_URL": cc.WebServer().Web.BkCmdbCreateBizDocsUrl,
 		"ENABLE_CLOUD_SELECTION":      cc.WebServer().Web.EnableCloudSelection,
