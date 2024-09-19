@@ -1,4 +1,4 @@
-import { computed, defineComponent } from 'vue';
+import { defineComponent } from 'vue';
 import { Ediatable, HeadColumn } from '@blueking/ediatable';
 import { useI18n } from 'vue-i18n';
 export default defineComponent({

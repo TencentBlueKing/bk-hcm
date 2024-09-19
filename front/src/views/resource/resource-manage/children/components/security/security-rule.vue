@@ -1,19 +1,30 @@
 <!-- eslint-disable no-nested-ternary -->
 <script lang="ts" setup>
-import { ref, watch, h, reactive, PropType, inject, computed } from 'vue';
+import { ref, watch, h, reactive, PropType, inject, computed, withDirectives } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import { Button, Message } from 'bkui-vue';
+import { bkTooltips, Button, Message } from 'bkui-vue';
 
 import { useResourceStore } from '@/store';
 
 import { SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum } from '@/typings';
+import { VendorEnum } from '@/common/constant';
 
 import UseSecurityRule from '@/views/resource/resource-manage/hooks/use-security-rule';
 import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import bus from '@/common/bus';
 import { timeFormatter } from '@/common/util';
+import {
+  azureSourceAddressTypes,
+  AzureSourceTypeArr,
+  azureTargetAddressTypes,
+  AzureTargetTypeArr,
+} from './add-rule/vendors/azure';
+import { useRoute } from 'vue-router';
+import { awsSourceAddressTypes, AwsSourceTypeArr } from './add-rule/vendors/aws';
+import { tcloudSourceAddressTypes, TcloudSourceTypeArr } from './add-rule/vendors/tcloud';
+import { huaweiSourceAddressTypes } from './add-rule/vendors/huawei';
 const props = defineProps({
   filter: {
     type: Object as PropType<any>,
@@ -38,14 +49,14 @@ const { t } = useI18n();
 const { isShowSecurityRule, handleSecurityRule, SecurityRule } = UseSecurityRule();
 
 const resourceStore = useResourceStore();
+const route = useRoute();
 
 const activeType = ref('ingress');
 const deleteDialogShow = ref(false);
 const deleteId = ref(0);
 const securityRuleLoading = ref(false);
-const fetchUrl = ref<string>(`vendors/${props.vendor}/security_groups/${props.id}/rules/list`);
+const fetchUrl = ref<string>(`vendors/${route.query.vendor}/security_groups/${props.id}/rules/list`);
 const dataId = ref('');
-const AllData = ref({ ALL: 'ALL', '-1': '-1', '*': '*' });
 const azureDefaultList = ref([]);
 const azureDefaultColumns = ref([]);
 const authVerifyData: any = inject('authVerifyData');
@@ -55,16 +66,6 @@ const actionName = computed(() => {
   // 资源下没有业务ID
   return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
 });
-
-// 权限hook
-// const {
-//   showPermissionDialog,
-//   handlePermissionConfirm,
-//   handlePermissionDialog,
-//   handleAuth,
-//   permissionParams,
-//   authVerifyData,
-// } = useVerify();
 
 const state = reactive<any>({
   datas: [],
@@ -85,7 +86,7 @@ watch(
     state.isLoading = true;
     // eslint-disable-next-line vue/no-mutating-props
     props.filter.rules[0].value = v;
-    if (props.vendor === 'azure') {
+    if (route.query.vendor === 'azure') {
       getDefaultList(v);
     }
   },
@@ -100,7 +101,7 @@ const getDefaultList = async (type: string) => {
 const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, getList } = useQueryCommonList(
   props,
   fetchUrl,
-  props.vendor === 'tcloud' ? { sort: 'cloud_policy_index', order: 'ASC' } : '',
+  route.query.vendor === 'tcloud' ? { sort: 'cloud_policy_index', order: 'ASC' } : '',
 );
 
 state.datas = datas;
@@ -111,7 +112,7 @@ state.handlePageSizeChange = handlePageSizeChange;
 
 // 切换tab
 const handleSwtichType = async () => {
-  if (props.vendor === 'azure') {
+  if (route.query.vendor === 'azure') {
     getDefaultList(activeType.value);
   }
 };
@@ -120,7 +121,7 @@ const handleSwtichType = async () => {
 const handleDeleteConfirm = () => {
   securityRuleLoading.value = true;
   resourceStore
-    .delete(`vendors/${props.vendor}/security_groups/${props.id}/rules`, deleteId.value)
+    .delete(`vendors/${route.query.vendor}/security_groups/${props.id}/rules`, deleteId.value)
     .then(() => {
       Message({
         theme: 'success',
@@ -133,65 +134,8 @@ const handleDeleteConfirm = () => {
     });
 };
 
-// 提交规则
-const handleSubmitRule = async (tableData: any) => {
-  const data = JSON.parse(JSON.stringify(tableData));
-  securityRuleLoading.value = true;
-  if (props.vendor === 'aws') {
-    // aws 需要from_port 、to_port
-    data.forEach((e: any) => {
-      if (typeof e.port === 'string' && e?.port.includes('-')) {
-        // eslint-disable-next-line prefer-destructuring
-        e.from_port = Number(e.port.split('-')[0]);
-        // eslint-disable-next-line prefer-destructuring
-        e.to_port = Number(e.port.split('-')[1]);
-      } else {
-        e.from_port = e.port === 'ALL' ? -1 : Number(e.port);
-        e.to_port = e.port === 'ALL' ? -1 : Number(e.port);
-      }
-      delete e.port;
-    });
-  }
-  // 过滤没有值的字段
-  data.forEach((e: any) => {
-    if (e?.source_port_range?.includes(',')) {
-      e.source_port_ranges = e.source_port_range.split(',');
-      e.source_port_range = '';
-    }
-    if (e?.destination_port_range?.includes(',')) {
-      e.destination_port_ranges = e.destination_port_range.split(',');
-      e.destination_port_range = '';
-    }
-    e.port = AllData.value[e.protocol] ? AllData.value[e.protocol] : e.port;
-    Object.keys(e).forEach((item: any) => {
-      // 删除没有val的key
-      if (!e[item] || e[item] === 'huaweiAll') {
-        if (e[item] === 'huaweiAll') {
-          delete e.port;
-        }
-        delete e[item];
-      }
-    });
-    e.priority = +e.priority;
-  });
-  const params = {
-    [`${activeType.value}_rule_set`]: data,
-  };
-  try {
-    if (data[0].id) {
-      await resourceStore.update(`vendors/${props.vendor}/security_groups/${props.id}/rules`, data[0], data[0].id);
-    } else {
-      await resourceStore.add(`vendors/${props.vendor}/security_groups/${props.id}/rules/create`, params);
-    }
-    Message({
-      message: t(data[0].id ? t('更新成功') : t('添加成功')),
-      theme: 'success',
-    });
-    getList();
-    isShowSecurityRule.value = false;
-  } finally {
-    securityRuleLoading.value = false;
-  }
+const handleRuleSubmit = () => {
+  getList();
 };
 
 const handleSecurityRuleDialog = (data: any) => {
@@ -209,197 +153,207 @@ const showAuthDialog = (authActionName: string) => {
 handleSwtichType();
 getList();
 
-const inColumns = [
-  {
-    label: t('来源'),
-    render({ data }: any) {
-      return h('span', {}, [
-        data.cloud_address_group_id ||
-          data.cloud_address_id ||
-          data.cloud_service_group_id ||
-          data.cloud_target_security_group_id ||
-          data.ipv4_cidr ||
-          data.ipv6_cidr ||
-          data.cloud_remote_group_id ||
-          data.remote_ip_prefix ||
-          (data.source_address_prefix === '*' ? t('任何') : data.source_address_prefix) ||
-          data.source_address_prefixes ||
-          data.cloud_source_security_group_ids ||
-          data.destination_address_prefix ||
-          data.destination_address_prefixes ||
-          data.cloud_destination_security_group_ids ||
-          (data?.ethertype === 'IPv6' ? '::/0' : '0.0.0.0/0'),
-      ]);
+// 入站规则列字段
+const inColumns: any = computed(() =>
+  [
+    {
+      label: t('名称'),
+      field: 'name',
+      isShow: route.query.vendor === 'azure',
     },
-  },
-  {
-    label: t('协议端口'),
-    render({ data }: any) {
-      return h('span', {}, [
-        // eslint-disable-next-line no-nested-ternary
-        data.cloud_service_id ||
-          (props.vendor === 'aws' && data.protocol === '-1' && data.to_port === -1
-            ? t('全部')
-            : // eslint-disable-next-line no-nested-ternary
-            props.vendor === 'huawei' && !data.protocol && !data.port
-            ? t('全部')
-            : props.vendor === 'azure' && data.protocol === '*' && data.destination_port_range === '*'
-            ? t('全部')
-            : `${data.protocol}:${
-                data.port || data.to_port || data.destination_port_range || data.destination_port_ranges || '--'
-              }`),
-      ]);
+    {
+      label: t('优先级'),
+      field: 'priority',
+      isShow: route.query.vendor === 'huawei' || route.query.vendor === 'azure',
     },
-  },
-  {
-    label: t('策略'),
-    render({ data }: any) {
-      return h('span', {}, [
-        props.vendor === 'huawei'
-          ? HuaweiSecurityRuleEnum[data.action]
-          : props.vendor === 'azure'
-          ? AzureSecurityRuleEnum[data.access]
-          : props.vendor === 'aws'
-          ? t('允许')
-          : SecurityRuleEnum[data.action] || '--',
-      ]);
-    },
-  },
-  {
-    label: t('备注'),
-    field: 'memo',
-    render: ({ data }) => data.memo || '--',
-  },
-  {
-    label: t('修改时间'),
-    field: 'updated_at',
-    render: ({ cell }: { cell: string }) => timeFormatter(cell),
-  },
-  {
-    label: t('操作'),
-    field: 'operate',
-    render({ data }: any) {
-      return h('span', {}, [
-        props.vendor !== 'huawei' &&
-          h(
-            'span',
-            {
-              onClick() {
-                showAuthDialog(actionName.value);
-              },
-            },
-            [
-              h(
-                Button,
-                {
-                  text: true,
-                  theme: 'primary',
-                  disabled: !authVerifyData.value?.permissionAction[actionName.value],
-                  onClick() {
-                    handleSecurityRuleDialog(data);
-                  },
-                },
-                [t('编辑')],
-              ),
-            ],
-          ),
-        h(
-          'span',
-          {
-            onClick() {
-              showAuthDialog(actionName.value);
-            },
+    {
+      label: t('源地址类型'),
+      render({ data }: any) {
+        const vendor = (route.query.vendor as VendorEnum) || VendorEnum.TCLOUD;
+        const sourceMap: any = {
+          [VendorEnum.AWS]: {
+            types: awsSourceAddressTypes,
+            arr: AwsSourceTypeArr,
           },
-          [
-            h(
-              Button,
-              {
-                class: 'ml10',
-                text: true,
-                theme: 'primary',
-                disabled: !authVerifyData.value?.permissionAction[actionName.value],
-                onClick() {
-                  deleteDialogShow.value = true;
-                  deleteId.value = data.id;
-                },
-              },
-              [t('删除')],
-            ),
-          ],
-        ),
-      ]);
+          [VendorEnum.AZURE]: {
+            types: azureSourceAddressTypes,
+            arr: AzureSourceTypeArr,
+          },
+          [VendorEnum.HUAWEI]: {
+            types: huaweiSourceAddressTypes,
+            arr: TcloudSourceTypeArr,
+          },
+          [VendorEnum.TCLOUD]: {
+            types: tcloudSourceAddressTypes,
+            arr: TcloudSourceTypeArr,
+          },
+        };
+        const { types } = sourceMap[vendor];
+        const { arr } = sourceMap[vendor];
+        const map = new Map(types.map((item: { value: string; label: string }) => [item.value, item.label]));
+        let k = '';
+        arr.forEach((type: string) => data[type] && (k = type));
+        return map.get(k) || '--';
+      },
+      isShow: true,
     },
-  },
-];
+    {
+      label: t('源地址'),
+      render({ data }: any) {
+        return h('span', {}, [
+          data.cloud_address_group_id ||
+            data.cloud_address_id ||
+            data.cloud_service_group_id ||
+            data.cloud_target_security_group_id ||
+            data.ipv4_cidr ||
+            data.ipv6_cidr ||
+            data.cloud_remote_group_id ||
+            data.remote_ip_prefix ||
+            (data.source_address_prefix === '*' ? t('ALL') : data.source_address_prefix) ||
+            data.source_address_prefixes ||
+            data.cloud_source_security_group_ids ||
+            data.destination_address_prefix ||
+            data.destination_address_prefixes ||
+            data.cloud_destination_security_group_ids ||
+            (data?.ethertype === 'IPv6' ? '::/0' : '0.0.0.0/0'),
+        ]);
+      },
+      isShow: true,
+    },
+    {
+      label: t('源端口'),
+      render({ data }: any) {
+        return (data.source_port_range === '*' ? 'ALL' : data.source_port_range) || '--';
+      },
+      isShow: route.query.vendor === 'azure',
+    },
+    {
+      label: t('目标地址类型'),
+      render({ data }: any) {
+        const map = new Map(
+          azureTargetAddressTypes.map((item: { value: string; label: string }) => [item.value, item.label]),
+        );
+        let k = '';
+        AzureTargetTypeArr.forEach((type: string) => data[type] && (k = type));
+        return map.get(k) || '--';
+      },
+      isShow: route.query.vendor === 'azure',
+    },
+    {
+      label: t('类型'),
+      field: 'ethertype',
+      isShow: route.query.vendor === 'huawei',
+    },
 
-const outColumns = [
-  {
-    label: t('目标'),
-    render({ data }: any) {
-      return h('span', {}, [
-        data.cloud_address_group_id ||
-          data.cloud_address_id ||
-          data.cloud_service_group_id ||
-          data.cloud_target_security_group_id ||
-          data.ipv4_cidr ||
-          data.ipv6_cidr ||
-          data.cloud_remote_group_id ||
-          data.remote_ip_prefix ||
-          data.cloud_source_security_group_ids ||
-          (data.destination_address_prefix === '*' ? t('任何') : data.destination_address_prefix) ||
+    {
+      label: t('目标地址'),
+      render({ data }: any) {
+        return (
+          (data.destination_address_prefix === '*' ? t('ALL') : data.destination_address_prefix) ||
           data.destination_address_prefixes ||
-          data.cloud_destination_security_group_ids ||
-          (data?.ethertype === 'IPv6' ? '::/0' : '0.0.0.0/0'),
-      ]);
+          data.cloud_destination_security_group_ids
+        );
+      },
+      isShow: route.query.vendor === 'azure',
     },
-  },
-  {
-    label: t('协议端口'),
-    render({ data }: any) {
-      return h('span', {}, [
-        // eslint-disable-next-line no-nested-ternary
-        data.cloud_service_id ||
-          (props.vendor === 'aws' && data.protocol === '-1' && data.to_port === -1
-            ? t('全部')
-            : // eslint-disable-next-line no-nested-ternary
-            props.vendor === 'huawei' && !data.protocol && !data.port
-            ? t('全部')
-            : props.vendor === 'azure' && data.protocol === '*' && data.destination_port_range === '*'
-            ? t('全部')
-            : `${data.protocol}:${data.port || data.to_port || data.destination_port_range || '--'}`),
-      ]);
+    {
+      label: route.query.vendor === 'azure' ? t('目标端口协议类型') : t('协议'),
+      render({ data }: any) {
+        return h('span', {}, [
+          data.cloud_service_id ||
+            (route.query.vendor === 'aws' && data.protocol === '-1'
+              ? t('ALL')
+              : route.query.vendor === 'huawei' && !data.protocol
+              ? t('ALL')
+              : route.query.vendor === 'azure' && data.protocol === '*'
+              ? t('ALL')
+              : `${data.protocol}`),
+        ]);
+      },
+      isShow: true,
     },
-  },
-  {
-    label: t('策略'),
-    render({ data }: any) {
-      return h('span', {}, [
-        props.vendor === 'huawei'
-          ? HuaweiSecurityRuleEnum[data.action]
-          : props.vendor === 'azure'
-          ? AzureSecurityRuleEnum[data.access]
-          : props.vendor === 'aws'
-          ? t('允许')
-          : SecurityRuleEnum[data.action] || '--',
-      ]);
+    {
+      label: route.query.vendor === 'azure' ? t('目标协议端口') : t('端口'),
+      render({ data }: any) {
+        return h('span', {}, [
+          data.cloud_service_id ||
+            (route.query.vendor === 'aws' && data.to_port === -1
+              ? t('ALL')
+              : route.query.vendor === 'huawei' && !data.port
+              ? t('ALL')
+              : route.query.vendor === 'azure' && data.destination_port_range === '*'
+              ? t('ALL')
+              : `${data.port || data.to_port || data.destination_port_range || data.destination_port_ranges || '--'}`),
+        ]);
+      },
+      isShow: true,
     },
-  },
-  {
-    label: t('备注'),
-    field: 'memo',
-    render: ({ data }) => data.memo || '--',
-  },
-  {
-    label: t('修改时间'),
-    field: 'updated_at',
-    render: ({ cell }: { cell: string }) => timeFormatter(cell),
-  },
-  {
-    label: t('操作'),
-    field: 'operate',
-    render({ data }: any) {
-      return h('span', {}, [
-        props.vendor !== 'huawei' &&
+    {
+      label: t('策略'),
+      render({ data }: any) {
+        return h('span', {}, [
+          route.query.vendor === 'huawei'
+            ? HuaweiSecurityRuleEnum[data.action]
+            : route.query.vendor === 'azure'
+            ? AzureSecurityRuleEnum[data.access]
+            : route.query.vendor === 'aws'
+            ? t('允许')
+            : SecurityRuleEnum[data.action] || '--',
+        ]);
+      },
+      isShow: route.query.vendor !== 'aws',
+    },
+    {
+      label: t('备注'),
+      field: 'memo',
+      render: ({ data }) => data.memo || '--',
+      isShow: true,
+    },
+    {
+      label: t('修改时间'),
+      field: 'updated_at',
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
+      isShow: true,
+    },
+    {
+      label: t('操作'),
+      field: 'operate',
+      render({ data }: any) {
+        return h('span', {}, [
+          withDirectives(
+            h(
+              'span',
+              {
+                onClick() {
+                  showAuthDialog(actionName.value);
+                },
+              },
+              [
+                h(
+                  Button,
+                  {
+                    text: true,
+                    theme: 'primary',
+                    disabled:
+                      !authVerifyData.value?.permissionAction[actionName.value] || route.query.vendor === 'huawei',
+                    onClick() {
+                      handleSecurityRuleDialog(data);
+                    },
+                  },
+                  [t('编辑')],
+                ),
+              ],
+            ),
+            [
+              [
+                bkTooltips,
+                {
+                  content: '该功能当前未支持',
+                  disabled: route.query.vendor !== 'huawei',
+                },
+              ],
+            ],
+          ),
           h(
             'span',
             {
@@ -411,118 +365,277 @@ const outColumns = [
               h(
                 Button,
                 {
+                  class: 'ml10',
                   text: true,
                   theme: 'primary',
                   disabled: !authVerifyData.value?.permissionAction[actionName.value],
                   onClick() {
-                    handleSecurityRuleDialog(data);
+                    deleteDialogShow.value = true;
+                    deleteId.value = data.id;
                   },
                 },
-                [t('编辑')],
+                [t('删除')],
               ),
             ],
           ),
-        h(
-          'span',
-          {
-            onClick() {
-              showAuthDialog(actionName.value);
-            },
-          },
-          [
-            h(
-              Button,
-              {
-                class: 'ml10',
-                text: true,
-                theme: 'primary',
-                disabled: !authVerifyData.value?.permissionAction[actionName.value],
-                onClick() {
-                  deleteDialogShow.value = true;
-                  deleteId.value = data.id;
-                },
-              },
-              [t('删除')],
-            ),
-          ],
-        ),
-      ]);
+        ]);
+      },
+      isShow: true,
     },
-  },
-];
+  ].filter(({ isShow }) => !!isShow),
+);
+
+// 出站规则列字段
+const outColumns: any = computed(() =>
+  [
+    {
+      label: t('名称'),
+      field: 'name',
+      isShow: route.query.vendor === 'azure',
+    },
+    {
+      label: t('优先级'),
+      field: 'priority',
+      isShow: route.query.vendor === 'huawei' || route.query.vendor === 'azure',
+    },
+    {
+      label: t('源地址类型'),
+      render({ data }: any) {
+        const map = new Map(
+          azureSourceAddressTypes.map((item: { value: string; label: string }) => [item.value, item.label]),
+        );
+        let k = '';
+        AzureSourceTypeArr.forEach((type: string) => data[type] && (k = type));
+        return map.get(k) || '--';
+      },
+      isShow: route.query.vendor === 'azure',
+    },
+    {
+      label: t('源地址'),
+      render({ data }: any) {
+        return h('span', {}, [
+          data.cloud_address_group_id ||
+            data.cloud_address_id ||
+            data.cloud_service_group_id ||
+            data.cloud_target_security_group_id ||
+            data.ipv4_cidr ||
+            data.ipv6_cidr ||
+            data.cloud_remote_group_id ||
+            data.remote_ip_prefix ||
+            (data.source_address_prefix === '*' ? t('ALL') : data.source_address_prefix) ||
+            data.source_address_prefixes ||
+            data.cloud_source_security_group_ids ||
+            data.destination_address_prefix ||
+            data.destination_address_prefixes ||
+            data.cloud_destination_security_group_ids ||
+            (data?.ethertype === 'IPv6' ? '::/0' : '0.0.0.0/0'),
+        ]);
+      },
+      isShow: route.query.vendor === 'azure',
+    },
+    {
+      label: t('源端口'),
+      render({ data }: any) {
+        return (data.source_port_range === '*' ? 'ALL' : data.source_port_range) || '--';
+      },
+      isShow: route.query.vendor === 'azure',
+    },
+    {
+      label: t('目标地址类型'),
+      render({ data }: any) {
+        const vendor = route.query.vendor as VendorEnum;
+        const targetMap: any = {
+          [VendorEnum.AWS]: {
+            types: awsSourceAddressTypes,
+            arr: AwsSourceTypeArr,
+          },
+          [VendorEnum.AZURE]: {
+            types: azureTargetAddressTypes,
+            arr: AzureTargetTypeArr,
+          },
+          [VendorEnum.HUAWEI]: {
+            types: huaweiSourceAddressTypes,
+            arr: TcloudSourceTypeArr,
+          },
+          [VendorEnum.TCLOUD]: {
+            types: tcloudSourceAddressTypes,
+            arr: TcloudSourceTypeArr,
+          },
+        };
+        const { types } = targetMap[vendor];
+        const { arr } = targetMap[vendor];
+        const map = new Map(types.map((item: { value: string; label: string }) => [item.value, item.label]));
+        let k = '';
+        arr.forEach((type: string) => data[type] && (k = type));
+        return map.get(k) || '--';
+      },
+      isShow: true,
+    },
+    {
+      label: t('目标地址'),
+      render({ data }: any) {
+        return h('span', {}, [
+          data.cloud_address_group_id ||
+            data.cloud_address_id ||
+            data.cloud_service_group_id ||
+            data.cloud_target_security_group_id ||
+            data.ipv4_cidr ||
+            data.ipv6_cidr ||
+            data.cloud_remote_group_id ||
+            data.remote_ip_prefix ||
+            data.cloud_source_security_group_ids ||
+            (data.destination_address_prefix === '*' ? t('ALL') : data.destination_address_prefix) ||
+            data.destination_address_prefixes ||
+            data.cloud_destination_security_group_ids ||
+            (data?.ethertype === 'IPv6' ? '::/0' : '0.0.0.0/0'),
+        ]);
+      },
+      isShow: true,
+    },
+    {
+      label: t('类型'),
+      field: 'ethertype',
+      isShow: route.query.vendor === 'huawei',
+    },
+    {
+      label: route.query.vendor === 'azure' ? t('目标端口协议类型') : t('协议'),
+      render({ data }: any) {
+        return h('span', {}, [
+          data.cloud_service_id ||
+            (route.query.vendor === 'aws' && data.protocol === '-1'
+              ? t('ALL')
+              : route.query.vendor === 'huawei' && !data.protocol
+              ? t('ALL')
+              : route.query.vendor === 'azure' && data.protocol === '*'
+              ? t('ALL')
+              : `${data.protocol}`),
+        ]);
+      },
+      isShow: true,
+    },
+    {
+      label: route.query.vendor === 'azure' ? t('目标协议端口') : t('端口'),
+      render({ data }: any) {
+        return h('span', {}, [
+          data.cloud_service_id ||
+            (route.query.vendor === 'aws' && data.to_port === -1
+              ? t('ALL')
+              : route.query.vendor === 'huawei' && !data.port
+              ? t('ALL')
+              : route.query.vendor === 'azure' && data.destination_port_range === '*'
+              ? t('ALL')
+              : `${data.port || data.to_port || data.destination_port_range || '--'}`),
+        ]);
+      },
+      isShow: true,
+    },
+    {
+      label: t('策略'),
+      render({ data }: any) {
+        return h('span', {}, [
+          route.query.vendor === 'huawei'
+            ? HuaweiSecurityRuleEnum[data.action]
+            : route.query.vendor === 'azure'
+            ? AzureSecurityRuleEnum[data.access]
+            : route.query.vendor === 'aws'
+            ? t('允许')
+            : SecurityRuleEnum[data.action] || '--',
+        ]);
+      },
+      isShow: route.query.vendor !== 'aws',
+    },
+    {
+      label: t('备注'),
+      field: 'memo',
+      render: ({ data }) => data.memo || '--',
+      isShow: true,
+    },
+    {
+      label: t('修改时间'),
+      field: 'updated_at',
+      render: ({ cell }: { cell: string }) => timeFormatter(cell),
+      isShow: true,
+    },
+    {
+      label: t('操作'),
+      field: 'operate',
+      render({ data }: any) {
+        return h('span', {}, [
+          h(
+            'span',
+            {
+              onClick() {
+                showAuthDialog(actionName.value);
+              },
+            },
+            [
+              withDirectives(
+                h(
+                  Button,
+                  {
+                    text: true,
+                    theme: 'primary',
+                    disabled:
+                      !authVerifyData.value?.permissionAction[actionName.value] || route.query.vendor === 'huawei',
+                    onClick() {
+                      handleSecurityRuleDialog(data);
+                    },
+                  },
+                  [t('编辑')],
+                ),
+                [
+                  [
+                    bkTooltips,
+                    {
+                      content: '该功能当前未支持',
+                      disabled: route.query.vendor !== 'huawei',
+                    },
+                  ],
+                ],
+              ),
+            ],
+          ),
+          h(
+            'span',
+            {
+              onClick() {
+                showAuthDialog(actionName.value);
+              },
+            },
+            [
+              h(
+                Button,
+                {
+                  class: 'ml10',
+                  text: true,
+                  theme: 'primary',
+                  disabled: !authVerifyData.value?.permissionAction[actionName.value],
+                  onClick() {
+                    deleteDialogShow.value = true;
+                    deleteId.value = data.id;
+                  },
+                },
+                [t('删除')],
+              ),
+            ],
+          ),
+        ]);
+      },
+      isShow: true,
+    },
+  ].filter(({ isShow }) => !!isShow),
+);
+
+const defaultColumns = activeType.value === 'ingress' ? inColumns.value : outColumns.value;
+azureDefaultColumns.value = defaultColumns.filter(
+  (item: any) => item.field !== 'operate' && item.field !== 'updated_at',
+);
+
 // tab 信息
 const types = [
   { name: 'ingress', label: t('入站规则') },
   { name: 'egress', label: t('出站规则') },
 ];
-
-if (props.vendor === 'huawei') {
-  inColumns.unshift(
-    {
-      label: t('优先级'),
-      field: 'priority',
-    },
-    {
-      label: t('类型'),
-      field: 'ethertype',
-    },
-  );
-  outColumns.unshift(
-    {
-      label: t('优先级'),
-      field: 'priority',
-    },
-    {
-      label: t('类型'),
-      field: 'ethertype',
-    },
-  );
-} else if (props.vendor === 'azure') {
-  inColumns.unshift(
-    {
-      label: t('名称'),
-      field: 'name',
-    },
-    {
-      label: t('优先级'),
-      field: 'priority',
-    },
-    {
-      label: t('目标'),
-      render({ data }: any) {
-        return (
-          (data.destination_address_prefix === '*' ? t('任何') : data.destination_address_prefix) ||
-          data.destination_address_prefixes ||
-          data.cloud_destination_security_group_ids
-        );
-      },
-    },
-  );
-  outColumns.unshift(
-    {
-      label: t('名称'),
-      field: 'name',
-    },
-    {
-      label: t('优先级'),
-      field: 'priority',
-    },
-    {
-      label: t('来源'),
-      render({ data }: any) {
-        return (
-          (data.source_address_prefix === '*' ? t('任何') : data.source_address_prefix) ||
-          data.source_address_prefixes ||
-          data.cloud_source_security_group_ids
-        );
-      },
-    },
-  );
-  const defaultColumns = activeType.value === 'ingress' ? inColumns : outColumns;
-  azureDefaultColumns.value = defaultColumns.filter(
-    (item: any) => item.field !== 'operate' && item.field !== 'updated_at',
-  ); // azure默认规则没有操作和修改时间
-}
 </script>
 
 <template>
@@ -546,7 +659,7 @@ if (props.vendor === 'huawei') {
         </div>
       </section>
 
-      <div v-if="props.vendor === 'azure'" class="mb20">
+      <div v-if="route.query.vendor === 'azure'" class="mb20">
         <h4 class="mt10">Azure默认{{ activeType === 'ingress' ? t('入站') : t('出站') }}规则</h4>
         <bk-table
           class="mt10"
@@ -568,7 +681,7 @@ if (props.vendor === 'huawei') {
         </bk-table>
       </div>
 
-      <h4 v-if="props.vendor === 'azure'" class="mt10">
+      <h4 v-if="route.query.vendor === 'azure'" class="mt10">
         Azure{{ activeType === 'ingress' ? t('入站') : t('出站') }}规则
       </h4>
       <bk-table
@@ -623,6 +736,7 @@ if (props.vendor === 'huawei') {
     <security-rule
       v-model:isShow="isShowSecurityRule"
       :loading="securityRuleLoading"
+      :id="props.id"
       dialog-width="1680"
       :active-type="activeType"
       :title="
@@ -630,7 +744,7 @@ if (props.vendor === 'huawei') {
       "
       :is-edit="!!dataId"
       :vendor="vendor"
-      @submit="handleSubmitRule"
+      @submit="handleRuleSubmit"
       :related-security-groups="props.relatedSecurityGroups"
       :template-data="props.templateData"
     />
