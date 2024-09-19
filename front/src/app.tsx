@@ -3,6 +3,8 @@ import Home from '@/views/home';
 import Notice from '@/views/notice/index.vue';
 import { useUserStore } from '@/store';
 
+const { ENABLE_NOTICE } = window.PROJECT_CONFIG;
+
 export default defineComponent({
   setup() {
     // const router = useRouter();
@@ -31,7 +33,7 @@ export default defineComponent({
     });
     return () => (
       <div class='full-page flex-column'>
-        <Notice />
+        {ENABLE_NOTICE === 'true' && <Notice />}
         <Home class='flex-1'></Home>
       </div>
     );

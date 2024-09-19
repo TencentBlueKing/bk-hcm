@@ -2,7 +2,7 @@
 import { provide, ref } from 'vue';
 import NoticeComponent from '@blueking/notice-component';
 
-const { BK_HCM_AJAX_URL_PREFIX, ENABLE_NOTICE } = window.PROJECT_CONFIG;
+const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 // 是否含有跑马灯类型公告， 如果有跑马灯， navigation的高度可能需要减去40px， 避免页面出现滚动条
 const showAlert = ref(false);
@@ -15,7 +15,6 @@ provide('isNoticeAlert', showAlert);
 
 <template>
   <NoticeComponent
-    v-if="ENABLE_NOTICE === 'true'"
     :api-url="`${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/notice/current_announcements`"
     @show-alert-change="showAlertChange"
   />
