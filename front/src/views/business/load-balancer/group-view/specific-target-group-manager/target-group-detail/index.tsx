@@ -16,6 +16,7 @@ import { timeFormatter } from '@/common/util';
 import { VendorEnum } from '@/common/constant';
 import { QueryRuleOPEnum } from '@/typings';
 import './index.scss';
+import { useCalcTopWithNotice } from '@/views/home/hooks/useCalcTopWithNotice';
 
 export default defineComponent({
   name: 'TargetGroupDetail',
@@ -103,9 +104,16 @@ export default defineComponent({
       });
     };
 
+    const [calcTop] = useCalcTopWithNotice(192);
+
     return () => (
       <div class='target-group-detail-page'>
-        <Button class='fixed-operate-btn' outline theme='primary' onClick={handleEditTargetGroup}>
+        <Button
+          class='fixed-operate-btn'
+          style={{ top: calcTop }}
+          outline
+          theme='primary'
+          onClick={handleEditTargetGroup}>
           编辑
         </Button>
         <div class='detail-info-container'>
