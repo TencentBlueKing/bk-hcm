@@ -1,9 +1,9 @@
 import { Input, Select } from 'bkui-vue';
-import { defineComponent, ref, nextTick, watch, PropType, computed, inject } from 'vue';
+import { defineComponent, ref, nextTick, watch, PropType, computed, inject, Teleport } from 'vue';
 import { useI18n } from 'vue-i18n';
 import MemberSelect from '@/components/MemberSelect';
 import OrganizationSelect from '@/components/OrganizationSelect';
-import './index.scss';
+import cssModule from './index.module.scss';
 
 export default defineComponent({
   props: {
@@ -43,6 +43,7 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    teleportTargetId: String,
   },
   emits: ['update:modelValue', 'change', 'input', 'blur'],
   setup(props, ctx) {
@@ -119,7 +120,7 @@ export default defineComponent({
           return (
             <Input
               ref={inputRef}
-              class='w320'
+              class={cssModule.w320}
               placeholder={props.fromPlaceholder}
               modelValue={props.modelValue}
               onChange={handleChange}
@@ -130,7 +131,7 @@ export default defineComponent({
         case 'member':
           return (
             <MemberSelect
-              class='w320'
+              class={cssModule.w320}
               v-model={props.modelValue}
               defaultUserlist={computedDefaultUserlist.value}
               onChange={handleChange}
@@ -138,12 +139,12 @@ export default defineComponent({
             />
           );
         case 'department':
-          return <OrganizationSelect class='w320' v-model={props.modelValue} onChange={handleOrganChange} />;
+          return <OrganizationSelect class={cssModule.w320} v-model={props.modelValue} onChange={handleOrganChange} />;
         case 'textarea':
           return (
             <Input
               ref={inputRef}
-              class='w320'
+              class={cssModule.w320}
               placeholder={props.fromPlaceholder}
               type='textarea'
               modelValue={props.modelValue}
@@ -155,7 +156,7 @@ export default defineComponent({
           return (
             <Select
               ref={selectRef}
-              class='w320'
+              class={cssModule.w320}
               modelValue={props.modelValue}
               filterable
               multiple-mode='tag'
@@ -163,7 +164,7 @@ export default defineComponent({
               onChange={handleChange}
               onBlur={() => handleBlur(props.fromKey)}>
               {props.selectData.map((item: any) => (
-                <Option key={item.id} value={item.id} label={item.name}>
+                <Option key={item.id} id={item.id} name={item.name}>
                   {item.name}
                 </Option>
               ))}
@@ -173,7 +174,7 @@ export default defineComponent({
           return (
             <Input
               ref={inputRef}
-              class='w320'
+              class={cssModule.w320}
               placeholder={t('请输入')}
               modelValue={props.modelValue}
               onChange={handleChange}
@@ -186,9 +187,9 @@ export default defineComponent({
     const renderTextContent = (type: string) => {
       switch (type) {
         case 'input':
-          return <span>{props.modelValue}</span>;
+          return props.modelValue || '--';
         case 'member':
-          return props.modelValue.length ? <span>{props.modelValue.join(',')}</span> : '暂无';
+          return props.modelValue.length ? props.modelValue.join(',') : '暂无';
         case 'select':
           // eslint-disable-next-line no-case-declarations
           let selectModelValue;
@@ -201,32 +202,31 @@ export default defineComponent({
             selectModelValue = selectModelValue.map((e: any) => e.name);
           }
           // eslint-disable-next-line no-nested-ternary
-          return selectModelValue.length ? (
-            <span>{selectModelValue.join(',')}</span>
-          ) : props.modelValue.join(',') === '-1' ? (
-            '未分配'
-          ) : (
-            '暂无'
-          );
+          return selectModelValue.length
+            ? selectModelValue.join(',')
+            : props.modelValue.join(',') === '-1'
+            ? '未分配'
+            : '暂无';
         default:
-          return <span>{props.modelValue}</span>;
+          return props.modelValue;
       }
     };
     return () => (
-      <div class='flex-row align-items-center render-detail-edit-wrap'>
+      <>
         {renderEdit.value ? renderComponentsContent(props.fromType) : renderTextContent(props.fromType)}
-        {renderEdit.value || props.hideEdit ? (
-          ''
-        ) : (
-          <i
-            onClick={handleEdit}
-            class={`icon hcm-icon bkhcm-icon-bianji account-edit-icon ${
-              authId && !authVerifyData?.value?.permissionAction?.[authId] ? 'hcm-no-permision-text-btn' : ''
-            }`}
-            style={{ marginLeft: '10px', color: '#979BA5' }}
-          />
+        {!(renderEdit.value || props.hideEdit) && (
+          <Teleport to={props.teleportTargetId} disabled={!props.teleportTargetId} defer>
+            <i
+              onClick={handleEdit}
+              class={[
+                'icon hcm-icon bkhcm-icon-bianji',
+                cssModule['edit-icon'],
+                { 'hcm-no-permision-text-btn': authId && !authVerifyData?.value?.permissionAction?.[authId] },
+              ]}
+            />
+          </Teleport>
         )}
-      </div>
+      </>
     );
   },
 });

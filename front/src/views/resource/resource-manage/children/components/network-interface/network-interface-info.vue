@@ -3,6 +3,7 @@ import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info
 import { ref } from 'vue';
 import { CloudType } from '@/typings';
 import { useRegionsStore } from '@/store/useRegionsStore';
+import { FieldList } from '../../../common/info-list/types';
 
 const props = defineProps({
   detail: {
@@ -12,7 +13,7 @@ const props = defineProps({
 
 const { getRegionName } = useRegionsStore();
 
-const fields = ref([
+const fields = ref<FieldList>([
   {
     name: '资源 ID',
     prop: 'id',
@@ -24,7 +25,7 @@ const fields = ref([
   {
     name: '云厂商',
     prop: 'vendor',
-    render(cell: string) {
+    render(cell: keyof typeof CloudType) {
       return CloudType[cell] || '--';
     },
   },
@@ -118,6 +119,6 @@ switch (props?.detail.vendor) {
 
 <template>
   <div class="field-list">
-    <detail-info :detail="detail" :fields="fields" />
+    <detail-info :detail="detail" :fields="fields" global-copyable label-width="150px" />
   </div>
 </template>

@@ -6,6 +6,7 @@ import DetailTab from '../../../common/tab/detail-tab';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { timeFormatter } from '@/common/util';
+import { FieldList } from '../../../common/info-list/types';
 
 const props = defineProps({
   detail: Object,
@@ -64,7 +65,7 @@ const huaweiTabs = [
     value: 'detail',
   },
 ];
-const baseInfo = ref([
+const baseInfo = ref<FieldList>([
   {
     name: 'EIP名称',
     prop: 'name',
@@ -112,7 +113,7 @@ const baseInfo = ref([
     render: (val: string) => timeFormatter(val),
   },
 ]);
-const bindInfo = ref<any>([
+const bindInfo = ref<FieldList>([
   {
     name: '绑定的资源类型',
     prop: 'instance_type',
@@ -127,7 +128,7 @@ const bindInfo = ref<any>([
   },
 ]);
 const otherInfo = ref([]);
-const bandInfo = [
+const bandInfo: FieldList = [
   {
     name: '带宽名称',
     prop: 'bandwidth_name',
@@ -281,25 +282,25 @@ watch(
 <template>
   <detail-tab :tabs="baseTabs" class="auto-tab">
     <template #default>
-      <detail-list :fields="baseInfo" :detail="detail"></detail-list>
+      <detail-list :fields="baseInfo" :detail="detail" global-copyable></detail-list>
     </template>
   </detail-tab>
 
   <detail-tab :tabs="bindTabs" class="auto-tab">
     <template #default>
-      <detail-list :fields="bindInfo" :detail="detail"></detail-list>
+      <detail-list :fields="bindInfo" :detail="detail" global-copyable></detail-list>
     </template>
   </detail-tab>
 
   <detail-tab :tabs="otherTabs" class="auto-tab">
     <template #default>
-      <detail-list :fields="otherInfo" :detail="detail"></detail-list>
+      <detail-list :fields="otherInfo" :detail="detail" global-copyable></detail-list>
     </template>
   </detail-tab>
 
   <detail-tab v-if="detail.vendor === 'huawei'" :tabs="huaweiTabs" class="auto-tab">
     <template #default>
-      <detail-list :fields="bandInfo" :detail="detail"></detail-list>
+      <detail-list :fields="bandInfo" :detail="detail" global-copyable></detail-list>
     </template>
   </detail-tab>
 </template>

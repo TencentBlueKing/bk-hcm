@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-// import InfoList from '../../../common/info-list/info-list';
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 
 import { PropType } from 'vue';
@@ -7,6 +6,7 @@ import { TypeEnum, useRouteLinkBtn } from '@/hooks/useRouteLinkBtn';
 import { CLOUD_HOST_STATUS, VendorEnum } from '@/common/constant';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { timeFormatter } from '@/common/util';
+import { FieldList } from '@/views/resource/resource-manage/common/info-list/types';
 
 const { getRegionName } = useRegionsStore();
 
@@ -16,7 +16,7 @@ const props = defineProps({
   },
 });
 
-const cvmInfo = [
+const cvmInfo: FieldList = [
   {
     name: '实例名称',
     prop: 'name',
@@ -28,12 +28,8 @@ const cvmInfo = [
   {
     name: '账号',
     prop: 'account_id',
-    render: () =>
-      useRouteLinkBtn(props.data, {
-        id: 'account_id',
-        name: 'account_id',
-        type: TypeEnum.ACCOUNT,
-      }),
+    render: () => useRouteLinkBtn(props.data, { id: 'account_id', name: 'account_id', type: TypeEnum.ACCOUNT }),
+    copyContent: props.data?.account_id || '--',
   },
   {
     name: '云厂商',
@@ -82,7 +78,7 @@ const cvmInfo = [
   },
 ];
 
-const netInfo = [
+const netInfo: FieldList = [
   {
     name: '接口名称',
     prop: 'cloud_network_interface_ids',
@@ -110,22 +106,14 @@ const netInfo = [
   {
     name: '所属网络',
     prop: 'cloud_vpc_ids',
-    render: () =>
-      useRouteLinkBtn(props.data, {
-        id: 'vpc_ids',
-        name: 'cloud_vpc_ids',
-        type: TypeEnum.VPC,
-      }),
+    render: () => useRouteLinkBtn(props.data, { id: 'vpc_ids', name: 'cloud_vpc_ids', type: TypeEnum.VPC }),
+    copyContent: props.data?.cloud_vpc_ids || '--',
   },
   {
     name: '所属子网',
     prop: 'cloud_subnet_ids',
-    render: () =>
-      useRouteLinkBtn(props.data, {
-        id: 'subnet_ids',
-        name: 'cloud_subnet_ids',
-        type: TypeEnum.SUBNET,
-      }),
+    render: () => useRouteLinkBtn(props.data, { id: 'subnet_ids', name: 'cloud_subnet_ids', type: TypeEnum.SUBNET }),
+    copyContent: props.data?.cloud_subnet_ids || '--',
   },
   // {
   //   name: '网络层级',
@@ -139,7 +127,7 @@ const netInfo = [
   },
 ];
 
-const settingInfo = [
+const settingInfo: FieldList = [
   {
     name: '实例规格',
     prop: 'machine_type',
@@ -154,14 +142,14 @@ const settingInfo = [
 <template>
   <h3 class="info-title">实例信息</h3>
   <div class="wrap-info">
-    <detail-info :fields="cvmInfo" :detail="props.data"></detail-info>
+    <detail-info :fields="cvmInfo" :detail="props.data" global-copyable></detail-info>
   </div>
   <h3 class="info-title">网络信息</h3>
   <div class="wrap-info">
-    <detail-info :fields="netInfo" :detail="props.data"></detail-info>
+    <detail-info :fields="netInfo" :detail="props.data" global-copyable></detail-info>
   </div>
   <h3 class="info-title">配置信息</h3>
   <div class="wrap-info">
-    <detail-info :fields="settingInfo" :detail="props.data"></detail-info>
+    <detail-info :fields="settingInfo" :detail="props.data" global-copyable></detail-info>
   </div>
 </template>

@@ -18,6 +18,8 @@ import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import router from '@/router';
 import { timeFormatter } from '@/common/util';
+import { VendorEnum } from '@/common/constant';
+import { FieldList } from '../../common/info-list/types';
 
 const { getNameFromBusinessMap } = useBusinessMapStore();
 const { whereAmI } = useWhereAmI();
@@ -33,7 +35,7 @@ const hostTabs = ref<any[]>([
   },
 ]);
 
-const settingFields = ref<any[]>([
+const settingFields = ref<FieldList>([
   {
     name: '资源ID',
     prop: 'id',
@@ -61,7 +63,7 @@ const settingFields = ref<any[]>([
   {
     name: '云厂商',
     prop: 'vendor',
-    render(cell: string) {
+    render(cell: keyof typeof CloudType) {
       return CloudType[cell] || '--';
     },
   },
@@ -398,7 +400,13 @@ onBeforeMount(() => {
     <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
       <detail-tab :tabs="hostTabs">
         <template #default="type">
-          <detail-info v-if="type === 'detail'" :fields="settingFields" :detail="detail" />
+          <detail-info
+            v-if="type === 'detail'"
+            :fields="settingFields"
+            :detail="detail"
+            :label-width="[VendorEnum.AWS, VendorEnum.GCP].includes(detail.vendor) ? '180px' : '120px'"
+            global-copyable
+          />
           <subnet-route v-if="type === 'network'" :detail="detail" />
         </template>
       </detail-tab>

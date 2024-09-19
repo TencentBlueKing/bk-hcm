@@ -16,6 +16,7 @@ import { QueryRuleOPEnum } from '@/typings';
 import { useI18n } from 'vue-i18n';
 import { getInstVip } from '@/utils';
 import './index.scss';
+import { FieldList } from '@/views/resource/resource-manage/common/info-list/types';
 
 export default defineComponent({
   props: {
@@ -35,7 +36,7 @@ export default defineComponent({
     const listenerNum = ref(0);
     const vpcDetail = ref(null);
     const targetVpcDetail = ref(null);
-    const resourceFields = [
+    const resourceFields: FieldList = [
       {
         name: '名称',
         prop: 'name',
@@ -51,6 +52,7 @@ export default defineComponent({
             type: TypeEnum.VPC,
           });
         },
+        copyContent: props.detail?.cloud_vpc_id || '--',
       },
       {
         name: 'ID',
@@ -88,6 +90,7 @@ export default defineComponent({
               }}></i>
           </div>
         ),
+        copy: false,
       },
       {
         name: '状态',
@@ -99,6 +102,7 @@ export default defineComponent({
             </div>
           );
         },
+        copyContent: !props.detail.status ? t('创建中') : t('正常运行'),
       },
       {
         name: 'IP版本',
@@ -145,7 +149,7 @@ export default defineComponent({
       },
     ];
 
-    const configFields = [
+    const configFields: FieldList = [
       {
         name: '负载均衡域名',
         prop: 'domain',
@@ -315,11 +319,12 @@ export default defineComponent({
               await props.updateLb(payload);
               await props.getDetails(props.id);
             }}
+            globalCopyable
           />
         </div>
         <div>
           <p class={'clb-detail-info-title'}>{t('配置信息')}</p>
-          <DetailInfo fields={configFields} detail={props.detail} />
+          <DetailInfo fields={configFields} detail={props.detail} globalCopyable />
         </div>
         <div>
           <p class={'clb-detail-info-title'}>{t('跨域配置')}</p>

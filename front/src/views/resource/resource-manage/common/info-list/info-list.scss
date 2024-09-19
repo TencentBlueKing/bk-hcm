@@ -1,48 +1,52 @@
 .info-list-main {
-  &::after {
-    content: '';
-    display: table;
-    clear: both;
-  }
-}
+  display: grid;
+  column-gap: 24px;
 
-.info-list-item {
-  float: left;
-  width: 40%;
-  margin-right: 10px;
-  display: flex;
-  align-items: center;
-  line-height: 40px;
-  .item-field {
-    font-size: 14px;
-    width: 100px;
-    margin-right: 5px;
-    text-align: right;
-    color: #63656E;
-    &.has-tips span{
-      position: relative;
-      cursor: pointer;
+  .info-list-item {
+    display: flex;
+    align-items: center;
+    line-height: 40px;
+
+    .item-label {
+      font-size: 14px;
+      text-align: right;
+      color: #63656e;
+      flex-shrink: 0;
+
+      &.has-tips span {
+        position: relative;
+        cursor: pointer;
+
+        &::after {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          content: '';
+          width: 100%;
+          border-bottom: 1px dashed rgb(151, 155, 165);
+        }
+      }
+
       &::after {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        content: '';
-        width: 100%;
-        border-bottom: 1px dashed rgb(151, 155, 165);
+        content: ':';
+        margin: 0 10px 0 5px;
       }
     }
-  }
-  .item-value{
-    font-size: 14px;
-    margin-left: 10px;
-    color: #313238;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    -webkit-line-clamp: 1;
-    -webkit-box-orient: vertical;
-    word-break: break-all;
-    flex:1;
+
+    .item-value {
+      display: flex;
+      font-size: 14px;
+      color: #313238;
+    }
+
+    .copy-btn {
+      padding-left: 10px;
+      display: none;
+    }
+
+    &:hover .copy-btn {
+      display: block;
+    }
   }
 }
 
@@ -53,22 +57,15 @@
 
 .header-title-content {
   font-size: 14px;
-  color: #63656E;
-}
-
-.info-item-copy {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  color: #5594fa;
+  color: #63656e;
 }
 
 .status-stopped {
   color: #ea3636;
 }
-.status-RUNNING{
+.status-RUNNING {
   color: #2dcb56;
 }
-.status-STOPPING{
+.status-STOPPING {
   color: #ff9c01;
 }
