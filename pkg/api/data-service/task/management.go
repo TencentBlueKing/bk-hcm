@@ -20,8 +20,9 @@
 package task
 
 import (
+	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/task"
-	core "hcm/pkg/api/core/task"
+	coretask "hcm/pkg/api/core/task"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/rest"
@@ -60,7 +61,7 @@ type CreateManagementField struct {
 	Resource   enumor.TaskManagementResource `json:"resource" validate:"required"`
 	Operations []enumor.TaskOperation        `json:"operations" validate:"required"`
 	FlowIDs    []string                      `json:"flow_ids"`
-	Extension  *core.ManagementExt           `json:"extension"`
+	Extension  *coretask.ManagementExt       `json:"extension"`
 }
 
 // Validate CreateManagementField.
@@ -102,7 +103,7 @@ type UpdateTaskManagementField struct {
 	Resource   enumor.TaskManagementResource `json:"resource"`
 	Operations []enumor.TaskOperation        `json:"operations"`
 	FlowIDs    []string                      `json:"flow_ids"`
-	Extension  *core.ManagementExt           `json:"extension,omitempty"`
+	Extension  *coretask.ManagementExt       `json:"extension,omitempty"`
 }
 
 // Validate UpdateTaskDetailField.
@@ -123,10 +124,7 @@ func (req CancelReq) Validate() error {
 // -------------------------- List --------------------------
 
 // ListManagementResult defines list result.
-type ListManagementResult struct {
-	Count       uint64            `json:"count"`
-	Managements []task.Management `json:"details"`
-}
+type ListManagementResult = core.ListResultT[task.Management]
 
 // ManagementListResp defines list task management response.
 type ManagementListResp struct {

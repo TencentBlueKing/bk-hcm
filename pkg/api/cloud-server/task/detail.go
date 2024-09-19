@@ -28,18 +28,18 @@ type DetailStateCountReq struct {
 	IDs []string `json:"id" validate:"required,min=1,max=100"`
 }
 
-// Validate DetailStateCount.
+// Validate DetailStateSummary.
 func (req DetailStateCountReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
 // DetailStateCountResult defines task detail state count result.
 type DetailStateCountResult struct {
-	Details []DetailStateCount `json:"details"`
+	Details []DetailStateSummary `json:"details"`
 }
 
-// DetailStateCount defines task detail state count.
-type DetailStateCount struct {
+// DetailStateSummary defines task detail state summary.
+type DetailStateSummary struct {
 	ID      string `json:"id"`
 	Success int    `json:"success"`
 	Failed  int    `json:"failed"`

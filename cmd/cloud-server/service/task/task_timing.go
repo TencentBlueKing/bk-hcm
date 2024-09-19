@@ -55,7 +55,7 @@ func TimingHandleTaskMgmtState(c *client.ClientSet, sd serviced.State, interval 
 			continue
 		}
 
-		for _, management := range list.Managements {
+		for _, management := range list.Details {
 			if _, err = refreshTaskMgmtState(kt, c, management); err != nil {
 				logs.Errorf("refresh task management state failed, err: %v, data: %+v, rid: %s", err, management,
 					kt.Rid)

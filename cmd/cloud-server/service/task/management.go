@@ -136,7 +136,7 @@ func (svc *service) listTaskManagementState(cts *rest.Contexts, authHandler hand
 	}
 
 	details := make([]cloudtask.ManagementState, 0)
-	for _, management := range list.Managements {
+	for _, management := range list.Details {
 		// 由于任务管理的状态是根据后台协程周期同步更新的，所以可能会存在任务执行完，但是还没有更新最终状态的情况，因此需要刷新下获取最新状态
 		state, err := refreshTaskMgmtState(cts.Kit, svc.client, management)
 		if err != nil {

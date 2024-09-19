@@ -72,9 +72,9 @@ func (svc *service) countTaskDetailState(cts *rest.Contexts, handler handler.Lis
 
 	// todo 鉴权
 
-	countMap := make(map[string]cloudtask.DetailStateCount, len(req.IDs))
+	countMap := make(map[string]cloudtask.DetailStateSummary, len(req.IDs))
 	for _, id := range req.IDs {
-		countMap[id] = cloudtask.DetailStateCount{ID: id}
+		countMap[id] = cloudtask.DetailStateSummary{ID: id}
 	}
 
 	listReq := &core.ListReq{
@@ -115,7 +115,7 @@ func (svc *service) countTaskDetailState(cts *rest.Contexts, handler handler.Lis
 		listReq.Page.Start += uint32(core.DefaultMaxPageLimit)
 	}
 
-	details := make([]cloudtask.DetailStateCount, 0)
+	details := make([]cloudtask.DetailStateSummary, 0)
 	for _, detail := range countMap {
 		details = append(details, detail)
 	}

@@ -281,7 +281,7 @@ func (svc *service) ListTaskManagement(cts *rest.Contexts) (interface{}, error) 
 		})
 	}
 
-	return &task.ListManagementResult{Managements: managements}, nil
+	return &task.ListManagementResult{Details: managements}, nil
 }
 
 // CancelTaskManagement cancel task management.
@@ -303,12 +303,8 @@ func (svc *service) CancelTaskManagement(cts *rest.Contexts) (interface{}, error
 			return nil, fmt.Errorf("cancel task management failed, err: %v", err)
 		}
 
-		taskFilter, err := tools.And(tools.ContainersExpression("task_management_id", req.IDs),
-			tools.EqualExpression("state", enumor.TaskDetailInit))
-		if err != nil {
-			logs.Errorf("cancel task management failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
-			return nil, err
-		}
+		taskFilter := tools.ExpressionAnd(tools.RuleIn("task_management_id", req.IDs),
+			tools.RuleEqual("state", enumor.TaskDetailInit))
 		taskUpdate := &tabletask.DetailTable{State: enumor.TaskDetailCancel}
 		if err := svc.dao.TaskDetail().UpdateWithTx(cts.Kit, txn, taskFilter, taskUpdate); err != nil {
 			logs.Errorf("update task detail failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)

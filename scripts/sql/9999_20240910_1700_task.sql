@@ -44,7 +44,8 @@ create table if not exists `task_management`
     `reviser`             varchar(64)  not null,
     `created_at`          timestamp    not null default current_timestamp,
     `updated_at`          timestamp    not null default current_timestamp on update current_timestamp,
-    primary key (`id`)
+    primary key (`id`),
+    index `idx_state` (`state`)
     ) engine = innodb
     default charset = utf8mb4
     collate utf8mb4_bin comment ='任务管理表';
@@ -66,7 +67,8 @@ create table if not exists `task_detail`
     `reviser`             varchar(64)  not null,
     `created_at`          timestamp    not null default current_timestamp,
     `updated_at`          timestamp    not null default current_timestamp on update current_timestamp,
-    primary key (`id`)
+    primary key (`id`),
+    index `idx_task_management_id` (`task_management_id`)
     ) engine = innodb
     default charset = utf8mb4
     collate utf8mb4_bin comment ='任务详情表';
@@ -74,9 +76,6 @@ create table if not exists `task_detail`
 insert into id_generator(`resource`, `max_id`)
 values ('task_management', '0'),
        ('task_detail', '0');
-
-create index idx_state ON task_management (`state`);
-create index idx_task_management_id ON task_detail (`task_management_id`);
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
 SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;

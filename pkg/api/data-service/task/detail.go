@@ -20,11 +20,11 @@
 package task
 
 import (
+	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/task"
-	core "hcm/pkg/api/core/task"
+	coretask "hcm/pkg/api/core/task"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
-	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 )
 
@@ -52,15 +52,15 @@ func (req CreateDetailReq) Validate() error {
 
 // CreateDetailField define task detail create field.
 type CreateDetailField struct {
-	BkBizID          int64                  `json:"bk_biz_id" validate:"required"`
-	TaskManagementID string                 `json:"task_management_id" validate:"required"`
-	FlowID           string                 `json:"flow_id"`
-	TaskActionIDs    []string               `json:"task_action_ids"`
-	Operation        enumor.TaskOperation   `json:"operation" validate:"required"`
-	Param            interface{}            `json:"param" validate:"required"`
-	State            enumor.TaskDetailState `json:"state"`
-	Reason           string                 `json:"reason"`
-	Extension        *core.ManagementExt    `json:"extension"`
+	BkBizID          int64                   `json:"bk_biz_id" validate:"required"`
+	TaskManagementID string                  `json:"task_management_id" validate:"required"`
+	FlowID           string                  `json:"flow_id"`
+	TaskActionIDs    []string                `json:"task_action_ids"`
+	Operation        enumor.TaskOperation    `json:"operation" validate:"required"`
+	Param            interface{}             `json:"param" validate:"required"`
+	State            enumor.TaskDetailState  `json:"state"`
+	Reason           string                  `json:"reason"`
+	Extension        *coretask.ManagementExt `json:"extension"`
 }
 
 // Validate CreateDetailField.
@@ -72,22 +72,12 @@ func (req CreateDetailField) Validate() error {
 
 // UpdateDetailReq define update task detail request.
 type UpdateDetailReq struct {
-	Items []UpdateTaskDetailField `json:"items" validate:"required,min=1"`
+	Items []UpdateTaskDetailField `json:"items" validate:"required,min=1,dive,required"`
 }
 
 // Validate UpdateDetailReq.
 func (req UpdateDetailReq) Validate() error {
-	if err := validator.Validate.Struct(req); err != nil {
-		return err
-	}
-
-	for _, item := range req.Items {
-		if err := item.Validate(); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return validator.Validate.Struct(req)
 }
 
 // UpdateTaskDetailField define task detail update field.
@@ -102,7 +92,7 @@ type UpdateTaskDetailField struct {
 	Param            interface{}            `json:"param,omitempty"`
 	State            enumor.TaskDetailState `json:"state"`
 	Reason           string                 `json:"reason"`
-	Extension        *core.DetailExt        `json:"extension"`
+	Extension        *coretask.DetailExt    `json:"extension"`
 }
 
 // Validate UpdateTaskDetailField.
@@ -113,16 +103,7 @@ func (req UpdateTaskDetailField) Validate() error {
 // -------------------------- List --------------------------
 
 // ListDetailResult defines list result.
-type ListDetailResult struct {
-	Count   uint64        `json:"count"`
-	Details []task.Detail `json:"details"`
-}
-
-// DetailListResp defines list task detail response.
-type DetailListResp struct {
-	rest.BaseResp `json:",inline"`
-	Data          *ListDetailResult `json:"data"`
-}
+type ListDetailResult = core.ListResultT[task.Detail]
 
 // -------------------------- Delete --------------------------
 

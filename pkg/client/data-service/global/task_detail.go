@@ -21,7 +21,9 @@ package global
 
 import (
 	"hcm/pkg/api/core"
+	coretask "hcm/pkg/api/core/task"
 	"hcm/pkg/api/data-service/task"
+	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
@@ -40,25 +42,9 @@ func NewTaskDetailClient(client rest.ClientInterface) *TaskDetailClient {
 }
 
 // List task detail.
-func (t *TaskDetailClient) List(kt *kit.Kit, req *core.ListReq) (*task.ListDetailResult, error) {
-	resp := new(task.DetailListResp)
-
-	err := t.client.Post().
-		WithContext(kt.Ctx).
-		Body(req).
-		SubResourcef("/task_details/list").
-		WithHeaders(kt.Header()).
-		Do().
-		Into(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
+func (t *TaskDetailClient) List(kt *kit.Kit, req *core.ListReq) (*core.ListResultT[coretask.Detail], error) {
+	return common.Request[core.ListReq, core.ListResultT[coretask.Detail]](
+		t.client, rest.POST, kt, req, "/task_details/list")
 }
 
 // Create task detail.
