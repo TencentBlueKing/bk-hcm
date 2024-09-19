@@ -58,7 +58,7 @@ package: pre ui api ver changelog
 	@echo -e "\033[32;1mPackage All Success!\n\033[0m"
 
 # 容器化编译
-docker: pre ui ver
+docker: pre ui ver changelog
 	@echo -e "\033[34;1mMake Dockering...\n\033[0m"
 	@cp -rf ${PRO_DIR}/docs/support-file/docker/* ${OUTPUT_DIR}/
 	@mv ${OUTPUT_DIR}/front ${OUTPUT_DIR}/bk-hcm-webserver/
