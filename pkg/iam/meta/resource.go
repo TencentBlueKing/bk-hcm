@@ -104,4 +104,7 @@ const (
 
 	// AccountBillThirdParty 第三方账单拉取
 	AccountBillThirdParty ResourceType = "account_bill_third_party"
+
+	// TaskManagement defines task management's hcm auth resource type
+	TaskManagement ResourceType = "task_management"
 )

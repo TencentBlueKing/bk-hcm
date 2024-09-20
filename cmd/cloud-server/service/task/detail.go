@@ -25,6 +25,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/hooks/handler"
@@ -45,10 +46,21 @@ func (svc *service) listTaskDetail(cts *rest.Contexts, authHandler handler.ListA
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// todo 鉴权
+	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{
+		Authorizer: svc.authorizer,
+		ResType:    meta.TaskManagement,
+		Action:     meta.Find,
+		Filter:     req.Filter,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if noPermFlag {
+		return &core.ListResult{Count: 0, Details: make([]interface{}, 0)}, nil
+	}
 
 	listReq := &core.ListReq{
-		Filter: req.Filter,
+		Filter: expr,
 		Page:   req.Page,
 		Fields: req.Fields,
 	}
@@ -60,7 +72,9 @@ func (svc *service) CountBizTaskDetailState(cts *rest.Contexts) (interface{}, er
 	return svc.countTaskDetailState(cts, handler.ListBizAuthRes)
 }
 
-func (svc *service) countTaskDetailState(cts *rest.Contexts, handler handler.ListAuthResHandler) (interface{}, error) {
+func (svc *service) countTaskDetailState(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (interface{},
+	error) {
+
 	req := new(cloudtask.DetailStateCountReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -70,7 +84,18 @@ func (svc *service) countTaskDetailState(cts *rest.Contexts, handler handler.Lis
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// todo 鉴权
+	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{
+		Authorizer: svc.authorizer,
+		ResType:    meta.TaskManagement,
+		Action:     meta.Find,
+		Filter:     tools.ContainersExpression("task_management_id", req.IDs),
+	})
+	if err != nil {
+		return nil, err
+	}
+	if noPermFlag {
+		return &core.ListResult{Count: 0, Details: make([]interface{}, 0)}, nil
+	}
 
 	countMap := make(map[string]cloudtask.DetailStateSummary, len(req.IDs))
 	for _, id := range req.IDs {
@@ -78,7 +103,7 @@ func (svc *service) countTaskDetailState(cts *rest.Contexts, handler handler.Lis
 	}
 
 	listReq := &core.ListReq{
-		Filter: tools.ContainersExpression("task_management_id", req.IDs),
+		Filter: expr,
 		Fields: []string{"task_management_id", "state"},
 		Page:   core.NewDefaultBasePage(),
 	}

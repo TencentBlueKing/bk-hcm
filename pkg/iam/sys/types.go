@@ -120,6 +120,9 @@ const (
 	// BizOperationRecordFind biz operation record find action id to register iam.
 	BizOperationRecordFind client.ActionID = "biz_operation_record_find"
 
+	// BizTaskManagementOperate biz task management operate action id to register iam.
+	BizTaskManagementOperate client.ActionID = "biz_task_management_operate"
+
 	// AccountFind account find action id to register iam.
 	AccountFind client.ActionID = "account_find"
 	// AccountImport account import action id to register iam.
@@ -223,6 +226,8 @@ var ActionIDNameMap = map[client.ActionID]string{
 	BizRecycleBinOperate:   "业务-回收站操作",
 	BizRecycleBinConfig:    "业务-回收站配置",
 	BizOperationRecordFind: "业务-操作记录查看",
+
+	BizTaskManagementOperate: "业务-任务管理操作",
 
 	AccountFind:    "资源-账号查看",
 	AccountImport:  "资源-账号录入",

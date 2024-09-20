@@ -28,6 +28,8 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/dal/dao/types"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/hooks/handler"
@@ -50,10 +52,21 @@ func (svc *service) listTaskManagement(cts *rest.Contexts, authHandler handler.L
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// todo 鉴权
+	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{
+		Authorizer: svc.authorizer,
+		ResType:    meta.TaskManagement,
+		Action:     meta.Find,
+		Filter:     req.Filter,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if noPermFlag {
+		return &core.ListResult{Count: 0, Details: make([]interface{}, 0)}, nil
+	}
 
 	listReq := &core.ListReq{
-		Filter: req.Filter,
+		Filter: expr,
 		Page:   req.Page,
 		Fields: req.Fields,
 	}
@@ -65,7 +78,7 @@ func (svc *service) CancelBizTaskManagement(cts *rest.Contexts) (interface{}, er
 	return svc.cancelTaskManagement(cts, handler.BizOperateAuth)
 }
 
-func (svc *service) cancelTaskManagement(cts *rest.Contexts, authHandler handler.ValidWithAuthHandler) (interface{},
+func (svc *service) cancelTaskManagement(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},
 	error) {
 
 	req := new(task.CancelReq)
@@ -76,8 +89,6 @@ func (svc *service) cancelTaskManagement(cts *rest.Contexts, authHandler handler
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// todo 鉴权
-
 	filter, err := tools.And(tools.ContainersExpression("id", req.IDs),
 		tools.EqualExpression("state", enumor.TaskManagementRunning))
 	if err != nil {
@@ -86,16 +97,28 @@ func (svc *service) cancelTaskManagement(cts *rest.Contexts, authHandler handler
 	}
 	listReq := &core.ListReq{
 		Filter: filter,
-		Page:   core.NewCountPage(),
+		Fields: []string{"id", "bk_biz_id"},
+		Page:   core.NewDefaultBasePage(),
 	}
 	list, err := svc.client.DataService().Global.TaskManagement.List(cts.Kit, listReq)
 	if err != nil {
 		logs.Errorf("list task management failed, err: %v, req: %+v, rid: %s", err, listReq, cts.Kit.Rid)
 		return nil, err
 	}
-	if int(list.Count) != len(req.IDs) {
-		logs.Errorf("task management ids are invalid, req: %+v, count: %d", listReq, list.Count)
+	if len(list.Details) != len(req.IDs) {
+		logs.Errorf("task management ids are invalid, req: %+v, count: %d", listReq, len(list.Details))
 		return nil, fmt.Errorf("ids(%v) are invalid", req.IDs)
+	}
+
+	// validate biz and authorize
+	basicInfos := make(map[string]types.CloudResourceBasicInfo, len(list.Details))
+	for _, management := range list.Details {
+		basicInfos[management.ID] = types.CloudResourceBasicInfo{ID: management.ID, BkBizID: management.BkBizID}
+	}
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.TaskManagement,
+		Action: meta.Update, BasicInfos: basicInfos})
+	if err != nil {
+		return nil, err
 	}
 
 	if err = svc.client.DataService().Global.TaskManagement.Cancel(cts.Kit, req); err != nil {
@@ -122,10 +145,21 @@ func (svc *service) listTaskManagementState(cts *rest.Contexts, authHandler hand
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// todo 鉴权
+	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{
+		Authorizer: svc.authorizer,
+		ResType:    meta.TaskManagement,
+		Action:     meta.Find,
+		Filter:     tools.ContainersExpression("id", req.IDs),
+	})
+	if err != nil {
+		return nil, err
+	}
+	if noPermFlag {
+		return &core.ListResult{Count: 0, Details: make([]interface{}, 0)}, nil
+	}
 
 	listReq := &core.ListReq{
-		Filter: tools.ContainersExpression("id", req.IDs),
+		Filter: expr,
 		Fields: []string{"id", "state", "flow_ids"},
 		Page:   core.NewDefaultBasePage(),
 	}
