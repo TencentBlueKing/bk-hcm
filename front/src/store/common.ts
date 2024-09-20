@@ -74,6 +74,7 @@ export const useCommonStore = defineStore({
       { type: 'load_balancer', action: 'update', id: 'load_balancer_update' }, // 业务-负载均衡操作
       { type: 'load_balancer', action: 'delete', id: 'load_balancer_delete' }, // 业务-负载均衡删除
     ],
+    isNoticeAlert: false, // 消息通知的显示状态
   }),
   actions: {
     /**
@@ -107,6 +108,10 @@ export const useCommonStore = defineStore({
 
     async updatePageAuthData(data: any) {
       this.pageAuthData = data;
+    },
+
+    setIsNoticeAlert(val: boolean) {
+      this.isNoticeAlert = val;
     },
   },
 });
