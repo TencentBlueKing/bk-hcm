@@ -2,7 +2,6 @@ import { defineComponent, computed, watch, ref, nextTick, onMounted } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router';
 
 import { Menu, Navigation, Dropdown, Button } from 'bkui-vue';
-import '@blueking/notice-component/dist/style.css';
 import ReleaseNote from './release-note/index.vue';
 import Breadcrumb from './breadcrumb';
 import BusinessSelector from './business-selector';
