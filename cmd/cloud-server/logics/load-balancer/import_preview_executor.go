@@ -59,15 +59,15 @@ func NewImportPreviewExecutor(operationType OperationType, service *dataservice.
 
 	switch operationType {
 	case CreateLayer4Listener:
-		return newCreateLayer4ListenerExecutor(service, vendor, bkBizID, accountID, regionIDs), nil
+		return newCreateLayer4ListenerPreviewExecutor(service, vendor, bkBizID, accountID, regionIDs), nil
 	case CreateLayer7Listener:
-		return newCreateLayer7ListenerExecutor(service, vendor, bkBizID, accountID, regionIDs), nil
+		return newCreateLayer7ListenerPreviewExecutor(service, vendor, bkBizID, accountID, regionIDs), nil
 	case CreateUrlRule:
-		return newCreateUrlRuleExecutor(service, vendor, bkBizID, accountID, regionIDs), nil
+		return newCreateUrlRulePreviewExecutor(service, vendor, bkBizID, accountID, regionIDs), nil
 	case Layer4ListenerBindRs:
-		return newLayer4ListenerBindRSExecutor(service, vendor, bkBizID, accountID, regionIDs), nil
+		return newLayer4ListenerBindRSPreviewExecutor(service, vendor, bkBizID, accountID, regionIDs), nil
 	case Layer7ListenerBindRs:
-		return newLayer7ListenerBindRSExecutor(service, vendor, bkBizID, accountID, regionIDs), nil
+		return newLayer7ListenerBindRSPreviewExecutor(service, vendor, bkBizID, accountID, regionIDs), nil
 	default:
 		return nil, fmt.Errorf("unsupported operation type: %s", operationType)
 	}

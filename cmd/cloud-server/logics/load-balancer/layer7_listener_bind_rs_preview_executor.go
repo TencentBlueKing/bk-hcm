@@ -33,25 +33,25 @@ import (
 	"strings"
 )
 
-var _ ImportPreviewExecutor = (*Layer7ListenerBindRSExecutor)(nil)
+var _ ImportPreviewExecutor = (*Layer7ListenerBindRSPreviewExecutor)(nil)
 
-func newLayer7ListenerBindRSExecutor(cli *dataservice.Client, vendor enumor.Vendor, bkBizID int64,
-	accountID string, regionIDs []string) *Layer7ListenerBindRSExecutor {
+func newLayer7ListenerBindRSPreviewExecutor(cli *dataservice.Client, vendor enumor.Vendor, bkBizID int64,
+	accountID string, regionIDs []string) *Layer7ListenerBindRSPreviewExecutor {
 
-	return &Layer7ListenerBindRSExecutor{
+	return &Layer7ListenerBindRSPreviewExecutor{
 		basePreviewExecutor: newBasePreviewExecutor(cli, vendor, bkBizID, accountID, regionIDs),
 	}
 }
 
-// Layer7ListenerBindRSExecutor excel导入——创建四层监听器执行器
-type Layer7ListenerBindRSExecutor struct {
+// Layer7ListenerBindRSPreviewExecutor excel导入——创建四层监听器执行器
+type Layer7ListenerBindRSPreviewExecutor struct {
 	*basePreviewExecutor
 
 	details []*Layer7ListenerBindRSDetail
 }
 
 // Execute ...
-func (l *Layer7ListenerBindRSExecutor) Execute(kt *kit.Kit, rawData [][]string) (interface{}, error) {
+func (l *Layer7ListenerBindRSPreviewExecutor) Execute(kt *kit.Kit, rawData [][]string) (interface{}, error) {
 	err := l.convertDataToPreview(rawData)
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func (l *Layer7ListenerBindRSExecutor) Execute(kt *kit.Kit, rawData [][]string) 
 	return l.details, nil
 }
 
-func (l *Layer7ListenerBindRSExecutor) convertDataToPreview(rawData [][]string) error {
+func (l *Layer7ListenerBindRSPreviewExecutor) convertDataToPreview(rawData [][]string) error {
 	for _, data := range rawData {
 		data = trimSpaceForSlice(data)
 		detail := &Layer7ListenerBindRSDetail{}
@@ -101,7 +101,7 @@ func (l *Layer7ListenerBindRSExecutor) convertDataToPreview(rawData [][]string) 
 	return nil
 }
 
-func (l *Layer7ListenerBindRSExecutor) validate(kt *kit.Kit) error {
+func (l *Layer7ListenerBindRSPreviewExecutor) validate(kt *kit.Kit) error {
 	recordMap := make(map[string]int)
 	clbIDMap := make(map[string]struct{})
 	for cur, detail := range l.details {
@@ -129,7 +129,7 @@ func (l *Layer7ListenerBindRSExecutor) validate(kt *kit.Kit) error {
 	return nil
 }
 
-func (l *Layer7ListenerBindRSExecutor) validateWithDB(kt *kit.Kit, cloudIDs []string) error {
+func (l *Layer7ListenerBindRSPreviewExecutor) validateWithDB(kt *kit.Kit, cloudIDs []string) error {
 	loadBalancers, err := getLoadBalancers(kt, l.dataServiceCli, l.accountID, l.bkBizID, cloudIDs)
 	if err != nil {
 		return err
@@ -183,7 +183,7 @@ func (l *Layer7ListenerBindRSExecutor) validateWithDB(kt *kit.Kit, cloudIDs []st
 }
 
 // validateTarget 校验RS是否已经绑定到对应的监听器中, 如果已经绑定则校验权重是否一致. 没有绑定则直接返回.
-func (l *Layer7ListenerBindRSExecutor) validateTarget(kt *kit.Kit, detail *Layer7ListenerBindRSDetail,
+func (l *Layer7ListenerBindRSPreviewExecutor) validateTarget(kt *kit.Kit, detail *Layer7ListenerBindRSDetail,
 	ruleCloudID, instID string, port int) error {
 
 	if ruleCloudID == "" || instID == "" {
@@ -214,7 +214,7 @@ func (l *Layer7ListenerBindRSExecutor) validateTarget(kt *kit.Kit, detail *Layer
 	return nil
 }
 
-func (l *Layer7ListenerBindRSExecutor) validateRS(kt *kit.Kit,
+func (l *Layer7ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit,
 	curDetail *Layer7ListenerBindRSDetail, region, vpc string) (string, error) {
 
 	if curDetail.InstType == enumor.EniInstType {
@@ -247,7 +247,7 @@ func (l *Layer7ListenerBindRSExecutor) validateRS(kt *kit.Kit,
 	return cvm.CloudID, nil
 }
 
-func (l *Layer7ListenerBindRSExecutor) validateListener(kt *kit.Kit,
+func (l *Layer7ListenerBindRSPreviewExecutor) validateListener(kt *kit.Kit,
 	curDetail *Layer7ListenerBindRSDetail) (string, error) {
 
 	listener, err := getListener(kt, l.dataServiceCli, l.accountID,
@@ -270,7 +270,7 @@ func (l *Layer7ListenerBindRSExecutor) validateListener(kt *kit.Kit,
 	return listener.CloudID, nil
 }
 
-func (l *Layer7ListenerBindRSExecutor) validateURLRule(kt *kit.Kit, lbCloudID, lblCloudID string,
+func (l *Layer7ListenerBindRSPreviewExecutor) validateURLRule(kt *kit.Kit, lbCloudID, lblCloudID string,
 	detail *Layer7ListenerBindRSDetail) (string, error) {
 
 	rule, err := getURLRule(kt, l.dataServiceCli, l.vendor, lbCloudID, lblCloudID, detail.Domain, detail.URLPath)

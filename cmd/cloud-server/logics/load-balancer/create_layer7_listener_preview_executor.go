@@ -35,25 +35,25 @@ import (
 	"hcm/pkg/tools/slice"
 )
 
-var _ ImportPreviewExecutor = (*CreateLayer7ListenerExecutor)(nil)
+var _ ImportPreviewExecutor = (*CreateLayer7ListenerPreviewExecutor)(nil)
 
-func newCreateLayer7ListenerExecutor(cli *dataservice.Client, vendor enumor.Vendor, bkBizID int64,
-	accountID string, regionIDs []string) *CreateLayer7ListenerExecutor {
+func newCreateLayer7ListenerPreviewExecutor(cli *dataservice.Client, vendor enumor.Vendor, bkBizID int64,
+	accountID string, regionIDs []string) *CreateLayer7ListenerPreviewExecutor {
 
-	return &CreateLayer7ListenerExecutor{
+	return &CreateLayer7ListenerPreviewExecutor{
 		basePreviewExecutor: newBasePreviewExecutor(cli, vendor, bkBizID, accountID, regionIDs),
 	}
 }
 
-// CreateLayer7ListenerExecutor 创建七层监听器预览执行器
-type CreateLayer7ListenerExecutor struct {
+// CreateLayer7ListenerPreviewExecutor 创建七层监听器预览执行器
+type CreateLayer7ListenerPreviewExecutor struct {
 	*basePreviewExecutor
 
 	details []*CreateLayer7ListenerDetail
 }
 
 // Execute ...
-func (c *CreateLayer7ListenerExecutor) Execute(kt *kit.Kit, rawData [][]string) (interface{}, error) {
+func (c *CreateLayer7ListenerPreviewExecutor) Execute(kt *kit.Kit, rawData [][]string) (interface{}, error) {
 	err := c.convertDataToPreview(rawData)
 	if err != nil {
 		return nil, err
@@ -69,7 +69,7 @@ func (c *CreateLayer7ListenerExecutor) Execute(kt *kit.Kit, rawData [][]string) 
 
 var createLayer7ListenerDetailRefType = reflect.TypeOf(CreateLayer7ListenerDetail{})
 
-func (c *CreateLayer7ListenerExecutor) convertDataToPreview(rawData [][]string) error {
+func (c *CreateLayer7ListenerPreviewExecutor) convertDataToPreview(rawData [][]string) error {
 	for _, data := range rawData {
 		data = trimSpaceForSlice(data)
 
@@ -107,7 +107,7 @@ func (c *CreateLayer7ListenerExecutor) convertDataToPreview(rawData [][]string) 
 	return nil
 }
 
-func (c *CreateLayer7ListenerExecutor) validate(kt *kit.Kit) error {
+func (c *CreateLayer7ListenerPreviewExecutor) validate(kt *kit.Kit) error {
 
 	recordMap := make(map[string]int)
 	clbIDMap := make(map[string]struct{})
@@ -133,7 +133,7 @@ func (c *CreateLayer7ListenerExecutor) validate(kt *kit.Kit) error {
 	return nil
 }
 
-func (c *CreateLayer7ListenerExecutor) validateWithDB(kt *kit.Kit, cloudIDs []string) error {
+func (c *CreateLayer7ListenerPreviewExecutor) validateWithDB(kt *kit.Kit, cloudIDs []string) error {
 	loadBalancers, err := getLoadBalancers(kt, c.dataServiceCli, c.accountID, c.bkBizID, cloudIDs)
 	if err != nil {
 		return err
@@ -168,7 +168,7 @@ func (c *CreateLayer7ListenerExecutor) validateWithDB(kt *kit.Kit, cloudIDs []st
 	return nil
 }
 
-func (c *CreateLayer7ListenerExecutor) validateListener(kt *kit.Kit, idx int, lbID string) error {
+func (c *CreateLayer7ListenerPreviewExecutor) validateListener(kt *kit.Kit, idx int, lbID string) error {
 
 	switch c.vendor {
 	case enumor.TCloud:
@@ -185,7 +185,7 @@ func (c *CreateLayer7ListenerExecutor) validateListener(kt *kit.Kit, idx int, lb
 	}
 }
 
-func (c *CreateLayer7ListenerExecutor) validateTCloudListener(kt *kit.Kit, idx int,
+func (c *CreateLayer7ListenerPreviewExecutor) validateTCloudListener(kt *kit.Kit, idx int,
 	listener *corelb.Listener[corelb.TCloudListenerExtension]) error {
 
 	curDetail := c.details[idx]
@@ -219,8 +219,9 @@ func (c *CreateLayer7ListenerExecutor) validateTCloudListener(kt *kit.Kit, idx i
 	return nil
 }
 
-func (c *CreateLayer7ListenerExecutor) validateTCloudCert(kt *kit.Kit, listenerCert *corelb.TCloudCertificateInfo,
-	curDetail *CreateLayer7ListenerDetail, cloudLBID, lblID string) error {
+func (c *CreateLayer7ListenerPreviewExecutor) validateTCloudCert(kt *kit.Kit,
+	listenerCert *corelb.TCloudCertificateInfo, curDetail *CreateLayer7ListenerDetail,
+	cloudLBID, lblID string) error {
 
 	if listenerCert == nil {
 		logs.Errorf("listener(%s) cert is nil, rid: %s", lblID, kt.Rid)
@@ -247,7 +248,7 @@ func (c *CreateLayer7ListenerExecutor) validateTCloudCert(kt *kit.Kit, listenerC
 	return nil
 }
 
-func (c *CreateLayer7ListenerExecutor) getTCloudListener(kt *kit.Kit, lbCloudID string, port int) (
+func (c *CreateLayer7ListenerPreviewExecutor) getTCloudListener(kt *kit.Kit, lbCloudID string, port int) (
 	*corelb.Listener[corelb.TCloudListenerExtension], error) {
 
 	req := &core.ListReq{

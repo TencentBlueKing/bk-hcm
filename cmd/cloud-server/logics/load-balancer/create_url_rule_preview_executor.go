@@ -36,25 +36,25 @@ import (
 	"hcm/pkg/tools/slice"
 )
 
-var _ ImportPreviewExecutor = (*CreateLayer4ListenerExecutor)(nil)
+var _ ImportPreviewExecutor = (*CreateUrlRulePreviewExecutor)(nil)
 
-func newCreateLayer4ListenerExecutor(cli *dataservice.Client, vendor enumor.Vendor, bkBizID int64,
-	accountID string, regionIDs []string) *CreateLayer4ListenerExecutor {
+func newCreateUrlRulePreviewExecutor(cli *dataservice.Client, vendor enumor.Vendor, bkBizID int64,
+	accountID string, regionIDs []string) *CreateUrlRulePreviewExecutor {
 
-	return &CreateLayer4ListenerExecutor{
+	return &CreateUrlRulePreviewExecutor{
 		basePreviewExecutor: newBasePreviewExecutor(cli, vendor, bkBizID, accountID, regionIDs),
 	}
 }
 
-// CreateLayer4ListenerExecutor excel导入——创建四层监听器执行器
-type CreateLayer4ListenerExecutor struct {
+// CreateUrlRulePreviewExecutor 创建七层监听器预览执行器
+type CreateUrlRulePreviewExecutor struct {
 	*basePreviewExecutor
 
-	details []*CreateLayer4ListenerDetail
+	details []*CreateUrlRuleDetail
 }
 
-// Execute 执行
-func (c *CreateLayer4ListenerExecutor) Execute(kt *kit.Kit, rawData [][]string) (interface{}, error) {
+// Execute ...
+func (c *CreateUrlRulePreviewExecutor) Execute(kt *kit.Kit, rawData [][]string) (interface{}, error) {
 	err := c.convertDataToPreview(rawData)
 	if err != nil {
 		return nil, err
@@ -65,15 +65,14 @@ func (c *CreateLayer4ListenerExecutor) Execute(kt *kit.Kit, rawData [][]string) 
 		logs.Errorf("validate data failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
-
 	return c.details, nil
 }
 
-func (c *CreateLayer4ListenerExecutor) convertDataToPreview(rawData [][]string) error {
+func (c *CreateUrlRulePreviewExecutor) convertDataToPreview(rawData [][]string) error {
 	for _, data := range rawData {
 		data = trimSpaceForSlice(data)
 
-		detail := &CreateLayer4ListenerDetail{}
+		detail := &CreateUrlRuleDetail{}
 		detail.ClbVipDomain = data[0]
 		detail.CloudClbID = data[1]
 		detail.Protocol = enumor.ProtocolType(strings.ToUpper(data[2]))
@@ -81,27 +80,30 @@ func (c *CreateLayer4ListenerExecutor) convertDataToPreview(rawData [][]string) 
 		if err != nil {
 			return err
 		}
-		detail.ListenerPorts = ports
-		detail.Scheduler = enumor.Scheduler(data[4])
-		session, err := strconv.Atoi(data[5])
+		detail.ListenerPort = ports
+		detail.Domain = data[4]
+		detail.DefaultDomain = data[5] == "是"
+		detail.UrlPath = data[6]
+		detail.Scheduler = enumor.Scheduler(data[7])
+		session, err := strconv.Atoi(data[8])
 		detail.Session = session
-		detail.HealthCheck = data[6] == "enable"
-		if len(data) > 7 {
-			detail.UserRemark = data[7]
+		detail.HealthCheck = data[9] == "enable"
+		if len(data) > 10 {
+			detail.UserRemark = data[10]
 		}
 		c.details = append(c.details, detail)
 	}
 	return nil
 }
 
-func (c *CreateLayer4ListenerExecutor) validate(kt *kit.Kit) error {
-	// key: clbID+protocol+port value record index
+func (c *CreateUrlRulePreviewExecutor) validate(kt *kit.Kit) error {
 	recordMap := make(map[string]int)
 	clbIDMap := make(map[string]struct{})
 	for cur, detail := range c.details {
 		detail.validate()
 		// 检查记录是否重复
-		key := fmt.Sprintf("%s-%s-%v", detail.CloudClbID, detail.Protocol, detail.ListenerPorts)
+		key := fmt.Sprintf("%s-%s-%v-%s-%s", detail.CloudClbID,
+			detail.Protocol, detail.ListenerPort, detail.Domain, detail.UrlPath)
 		if i, ok := recordMap[key]; ok {
 			c.details[i].Status = NotExecutable
 			c.details[i].ValidateResult += fmt.Sprintf("存在重复记录, line: %d;", i+1)
@@ -112,7 +114,6 @@ func (c *CreateLayer4ListenerExecutor) validate(kt *kit.Kit) error {
 		recordMap[key] = cur
 		clbIDMap[detail.CloudClbID] = struct{}{}
 	}
-
 	err := c.validateWithDB(kt, converter.MapKeyToSlice(clbIDMap))
 	if err != nil {
 		logs.Errorf("validate with db failed, err: %v, rid: %s", err, kt.Rid)
@@ -122,7 +123,7 @@ func (c *CreateLayer4ListenerExecutor) validate(kt *kit.Kit) error {
 	return nil
 }
 
-func (c *CreateLayer4ListenerExecutor) validateWithDB(kt *kit.Kit, cloudIDs []string) error {
+func (c *CreateUrlRulePreviewExecutor) validateWithDB(kt *kit.Kit, cloudIDs []string) error {
 	loadBalancers, err := getLoadBalancers(kt, c.dataServiceCli, c.accountID, c.bkBizID, cloudIDs)
 	if err != nil {
 		return err
@@ -131,7 +132,6 @@ func (c *CreateLayer4ListenerExecutor) validateWithDB(kt *kit.Kit, cloudIDs []st
 	for _, balancer := range loadBalancers {
 		lbMap[balancer.CloudID] = balancer
 	}
-
 	for i, detail := range c.details {
 		lb, ok := lbMap[detail.CloudClbID]
 		if !ok {
@@ -154,28 +154,40 @@ func (c *CreateLayer4ListenerExecutor) validateWithDB(kt *kit.Kit, cloudIDs []st
 			return err
 		}
 	}
+
 	return nil
 }
 
-func (c *CreateLayer4ListenerExecutor) validateListener(kt *kit.Kit, idx int, cloudID string) error {
+func (c *CreateUrlRulePreviewExecutor) validateListener(kt *kit.Kit, idx int, cloudID string) error {
 	curDetail := c.details[idx]
 
-	listener, err := getListener(kt, c.dataServiceCli, c.accountID, cloudID, curDetail.ListenerPorts[0], c.bkBizID)
+	listener, err := c.getListener(kt, cloudID, curDetail.ListenerPort[0])
 	if err != nil {
 		return err
 	}
 	if listener == nil {
+		curDetail.Status = NotExecutable
+		curDetail.ValidateResult += fmt.Sprintf("lb(%s) listenerPort(%d) 不存在",
+			cloudID, curDetail.ListenerPort[0])
 		return nil
 	}
 
-	rule, err := c.getURLRule(kt, cloudID, listener.CloudID)
+	if curDetail.DefaultDomain && curDetail.Domain != listener.DefaultDomain {
+		curDetail.Status = NotExecutable
+		curDetail.ValidateResult += fmt.Sprintf("listener(%s) 默认域名(%s) 与导入记录(%s)不一致",
+			listener.ID, listener.DefaultDomain, curDetail.Domain)
+		return nil
+	}
+
+	rule, err := getURLRule(kt, c.dataServiceCli, c.vendor,
+		cloudID, listener.CloudID, curDetail.Domain, curDetail.UrlPath)
 	if err != nil {
 		return err
 	}
 	if rule == nil {
-		logs.Errorf("loadbalancer(%s) listener(%s) exist, but url rule not found", cloudID, listener.CloudID)
 		return nil
 	}
+
 	var ruleHealthCheck bool
 	if rule.HealthCheck != nil && rule.HealthCheck.HealthSwitch != nil {
 		ruleHealthCheck = *rule.HealthCheck.HealthSwitch == 1
@@ -186,11 +198,12 @@ func (c *CreateLayer4ListenerExecutor) validateListener(kt *kit.Kit, idx int, cl
 		rule.SessionExpire != int64(curDetail.Session) ||
 		ruleHealthCheck != curDetail.HealthCheck {
 
-		// 已存在监听器且配置与当前导入的记录不一致时, 设置当前记录为不可执行状态
+		// 已存在urlRule且配置与当前导入的记录不一致时, 设置当前记录为不可执行状态
 		curDetail.Status = NotExecutable
 		curDetail.ValidateResult += fmt.Sprintf(
-			"已存在监听器(%s)且配置不一致, port: %d, protocol: %s, scheduler: %s, session: %d, healthCheck: %v",
-			curDetail.CloudClbID, listener.Port, listener.Protocol,
+			"已存在URLRule(%s) 且配置不一致, port: %d, protocol: %s, domain: %s, "+
+				"url: %s, scheduler: %s, session: %d, healthCheck: %v",
+			rule.ID, listener.Port, listener.Protocol, rule.Domain, rule.URL,
 			rule.Scheduler, rule.SessionExpire, ruleHealthCheck)
 		return nil
 	}
@@ -203,7 +216,7 @@ func (c *CreateLayer4ListenerExecutor) validateListener(kt *kit.Kit, idx int, cl
 	return nil
 }
 
-func (c *CreateLayer4ListenerExecutor) getURLRule(kt *kit.Kit, lbCloudID, listenerCloudID string) (
+func (c *CreateUrlRulePreviewExecutor) getURLRule(kt *kit.Kit, lbCloudID, listenerCloudID, domain, url string) (
 	*corelb.TCloudLbUrlRule, error) {
 
 	switch c.vendor {
@@ -212,6 +225,8 @@ func (c *CreateLayer4ListenerExecutor) getURLRule(kt *kit.Kit, lbCloudID, listen
 			Filter: tools.ExpressionAnd(
 				tools.RuleEqual("cloud_lb_id", lbCloudID),
 				tools.RuleEqual("cloud_lbl_id", listenerCloudID),
+				tools.RuleEqual("domain", domain),
+				tools.RuleEqual("url", url),
 			),
 			Page: core.NewDefaultBasePage(),
 		}
@@ -229,22 +244,49 @@ func (c *CreateLayer4ListenerExecutor) getURLRule(kt *kit.Kit, lbCloudID, listen
 	return nil, nil
 }
 
-// CreateLayer4ListenerDetail 创建四层监听器预览记录
-type CreateLayer4ListenerDetail struct {
-	ClbVipDomain string `json:"clb_vip_domain"`
-	CloudClbID   string `json:"cloud_clb_id"`
+func (c *CreateUrlRulePreviewExecutor) getListener(kt *kit.Kit, lbCloudID string, port int) (
+	*corelb.BaseListener, error) {
 
-	Protocol       enumor.ProtocolType `json:"protocol"`
-	ListenerPorts  []int               `json:"listener_port"`
-	Scheduler      enumor.Scheduler    `json:"scheduler"`
-	Session        int                 `json:"session"`
-	HealthCheck    bool                `json:"health_check"`
-	UserRemark     string              `json:"user_remark"`
-	Status         ImportStatus        `json:"status"`
-	ValidateResult string              `json:"validate_result"`
+	req := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("account_id", c.accountID),
+			tools.RuleEqual("bk_biz_id", c.bkBizID),
+			tools.RuleEqual("cloud_lb_id", lbCloudID),
+			tools.RuleEqual("port", port),
+		),
+		Page: core.NewDefaultBasePage(),
+	}
+	resp, err := c.dataServiceCli.Global.LoadBalancer.ListListener(kt, req)
+	if err != nil {
+		logs.Errorf("list listener failed, error: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+	if len(resp.Details) > 0 {
+		return &resp.Details[0], nil
+	}
+	return nil, nil
 }
 
-func (c *CreateLayer4ListenerDetail) validate() {
+// CreateUrlRuleDetail ...
+type CreateUrlRuleDetail struct {
+	ClbVipDomain string              `json:"clb_vip_domain"`
+	CloudClbID   string              `json:"cloud_clb_id"`
+	Protocol     enumor.ProtocolType `json:"protocol"`
+	ListenerPort []int               `json:"listener_port"`
+
+	Domain        string           `json:"domain"`
+	DefaultDomain bool             `json:"default_domain"`
+	UrlPath       string           `json:"url_path"`
+	Scheduler     enumor.Scheduler `json:"scheduler"`
+	Session       int              `json:"session"`
+	HealthCheck   bool             `json:"health_check"`
+
+	UserRemark     string       `json:"user_remark"`
+	Status         ImportStatus `json:"status"`
+	ValidateResult string       `json:"validate_result"`
+}
+
+func (c *CreateUrlRuleDetail) validate() {
 	var err error
 	defer func() {
 		if err != nil {
@@ -254,41 +296,25 @@ func (c *CreateLayer4ListenerDetail) validate() {
 		}
 		c.Status = Executable
 	}()
-	if c.Protocol != enumor.UdpProtocol && c.Protocol != enumor.TcpProtocol {
+
+	if c.Protocol != enumor.HttpProtocol && c.Protocol != enumor.HttpsProtocol {
 		err = errors.New("协议类型错误")
 		return
 	}
-	err = validateScheduler(c.Scheduler)
-	if err != nil {
+	if len(c.Domain) == 0 || len(c.UrlPath) == 0 {
+		err = errors.New("域名 and url 为必填项")
 		return
 	}
 	err = validateSession(c.Session)
 	if err != nil {
 		return
 	}
-	err = validatePort(c.ListenerPorts)
+	err = validatePort(c.ListenerPort)
 	if err != nil {
 		return
 	}
-}
-
-func parsePort(portStr string) ([]int, error) {
-	if strings.HasPrefix(portStr, "[") && strings.HasSuffix(portStr, "]") {
-		portStr = portStr[1 : len(portStr)-1]
-		portStrs := strings.Split(portStr, ",")
-		ports := make([]int, 0)
-		for _, portStr := range portStrs {
-			port, err := strconv.Atoi(strings.TrimSpace(portStr))
-			if err != nil {
-				return nil, err
-			}
-			ports = append(ports, port)
-		}
-		return ports, nil
-	}
-	port, err := strconv.Atoi(portStr)
+	err = validateScheduler(c.Scheduler)
 	if err != nil {
-		return nil, err
+		return
 	}
-	return []int{port}, nil
 }

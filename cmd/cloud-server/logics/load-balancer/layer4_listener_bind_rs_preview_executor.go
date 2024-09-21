@@ -36,25 +36,25 @@ import (
 	"strings"
 )
 
-var _ ImportPreviewExecutor = (*Layer4ListenerBindRSExecutor)(nil)
+var _ ImportPreviewExecutor = (*Layer4ListenerBindRSPreviewExecutor)(nil)
 
-func newLayer4ListenerBindRSExecutor(cli *dataservice.Client, vendor enumor.Vendor, bkBizID int64,
-	accountID string, regionIDs []string) *Layer4ListenerBindRSExecutor {
+func newLayer4ListenerBindRSPreviewExecutor(cli *dataservice.Client, vendor enumor.Vendor, bkBizID int64,
+	accountID string, regionIDs []string) *Layer4ListenerBindRSPreviewExecutor {
 
-	return &Layer4ListenerBindRSExecutor{
+	return &Layer4ListenerBindRSPreviewExecutor{
 		basePreviewExecutor: newBasePreviewExecutor(cli, vendor, bkBizID, accountID, regionIDs),
 	}
 }
 
-// Layer4ListenerBindRSExecutor excel导入——创建四层监听器执行器
-type Layer4ListenerBindRSExecutor struct {
+// Layer4ListenerBindRSPreviewExecutor excel导入——创建四层监听器执行器
+type Layer4ListenerBindRSPreviewExecutor struct {
 	*basePreviewExecutor
 
 	details []*Layer4ListenerBindRSDetail
 }
 
 // Execute ...
-func (l *Layer4ListenerBindRSExecutor) Execute(kt *kit.Kit, rawData [][]string) (interface{}, error) {
+func (l *Layer4ListenerBindRSPreviewExecutor) Execute(kt *kit.Kit, rawData [][]string) (interface{}, error) {
 	err := l.convertDataToPreview(rawData)
 	if err != nil {
 		return nil, err
@@ -69,7 +69,7 @@ func (l *Layer4ListenerBindRSExecutor) Execute(kt *kit.Kit, rawData [][]string) 
 	return l.details, nil
 }
 
-func (l *Layer4ListenerBindRSExecutor) convertDataToPreview(rawData [][]string) error {
+func (l *Layer4ListenerBindRSPreviewExecutor) convertDataToPreview(rawData [][]string) error {
 	for _, data := range rawData {
 		data = trimSpaceForSlice(data)
 
@@ -103,7 +103,7 @@ func (l *Layer4ListenerBindRSExecutor) convertDataToPreview(rawData [][]string) 
 	return nil
 }
 
-func (l *Layer4ListenerBindRSExecutor) validate(kt *kit.Kit) error {
+func (l *Layer4ListenerBindRSPreviewExecutor) validate(kt *kit.Kit) error {
 	recordMap := make(map[string]int)
 	clbIDMap := make(map[string]struct{})
 	for cur, detail := range l.details {
@@ -130,7 +130,7 @@ func (l *Layer4ListenerBindRSExecutor) validate(kt *kit.Kit) error {
 	return nil
 }
 
-func (l *Layer4ListenerBindRSExecutor) validateWithDB(kt *kit.Kit, cloudIDs []string) error {
+func (l *Layer4ListenerBindRSPreviewExecutor) validateWithDB(kt *kit.Kit, cloudIDs []string) error {
 	loadBalancers, err := getLoadBalancers(kt, l.dataServiceCli, l.accountID, l.bkBizID, cloudIDs)
 	if err != nil {
 		return err
@@ -178,7 +178,7 @@ func (l *Layer4ListenerBindRSExecutor) validateWithDB(kt *kit.Kit, cloudIDs []st
 }
 
 // validateTarget 校验RS是否已经绑定到对应的监听器中, 如果已经绑定则校验权重是否一致. 没有绑定则直接返回.
-func (l *Layer4ListenerBindRSExecutor) validateTarget(kt *kit.Kit, detail *Layer4ListenerBindRSDetail,
+func (l *Layer4ListenerBindRSPreviewExecutor) validateTarget(kt *kit.Kit, detail *Layer4ListenerBindRSDetail,
 	lblCloudID, instID string, port int) error {
 
 	if lblCloudID == "" || instID == "" {
@@ -252,7 +252,7 @@ func getTargetGroupID(kt *kit.Kit, cli *dataservice.Client, ruleID string) (stri
 	return rel.Details[0].TargetGroupID, nil
 }
 
-func (l *Layer4ListenerBindRSExecutor) validateRS(kt *kit.Kit,
+func (l *Layer4ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit,
 	curDetail *Layer4ListenerBindRSDetail, region, vpc string) (string, error) {
 
 	if curDetail.InstType == enumor.EniInstType {
@@ -321,7 +321,7 @@ func getCvm(kt *kit.Kit, cli *dataservice.Client, ip string,
 	return nil, nil
 }
 
-func (l *Layer4ListenerBindRSExecutor) validateListener(kt *kit.Kit,
+func (l *Layer4ListenerBindRSPreviewExecutor) validateListener(kt *kit.Kit,
 	curDetail *Layer4ListenerBindRSDetail) (string, error) {
 
 	listener, err := getListener(kt, l.dataServiceCli, l.accountID,

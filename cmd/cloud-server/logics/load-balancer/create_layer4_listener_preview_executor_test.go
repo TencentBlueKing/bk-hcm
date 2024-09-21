@@ -26,32 +26,28 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCreateUrlRuleExecutor_convertDataToPreview(t *testing.T) {
+func TestCreateLayer4ListenerExecutor_convertDataToPreview(t *testing.T) {
 	type args struct {
 		i [][]string
 	}
 	tests := []struct {
 		name string
 		args args
-		want CreateUrlRuleDetail
+		want CreateLayer4ListenerDetail
 	}{
 		{
 			name: "test",
 			args: args{i: [][]string{
-				{"127.0.0.1", "lb-xxxxx1", "http", "8888",
-					"www.tencent.com", "是", "/", "WRR", "0", "enable", "用户的备注"},
+				{"127.0.0.1", "lb-xxxxx1", "tcp", "8888", "WRR", "0", "disable", "用户的备注"},
 			}},
-			want: CreateUrlRuleDetail{
+			want: CreateLayer4ListenerDetail{
 				ClbVipDomain:   "127.0.0.1",
 				CloudClbID:     "lb-xxxxx1",
-				Protocol:       enumor.HttpProtocol,
-				ListenerPort:   []int{8888},
-				Domain:         "www.tencent.com",
-				DefaultDomain:  true,
-				UrlPath:        "/",
+				Protocol:       enumor.TcpProtocol,
+				ListenerPorts:  []int{8888},
 				Scheduler:      "WRR",
 				Session:        0,
-				HealthCheck:    true,
+				HealthCheck:    false,
 				UserRemark:     "用户的备注",
 				Status:         "",
 				ValidateResult: "",
@@ -60,19 +56,16 @@ func TestCreateUrlRuleExecutor_convertDataToPreview(t *testing.T) {
 		{
 			name: "end_port",
 			args: args{i: [][]string{
-				{"127.0.0.1", "lb-xxxxx1", "tcp", "[8888, 8889]", "www.tencent.com", "是", "/", "WRR", "0", "disable"},
+				{"127.0.0.1", "lb-xxxxx1", "tcp", "[8888, 8889]", "WRR", "10", "enable"},
 			}},
-			want: CreateUrlRuleDetail{
+			want: CreateLayer4ListenerDetail{
 				ClbVipDomain:   "127.0.0.1",
 				CloudClbID:     "lb-xxxxx1",
 				Protocol:       enumor.TcpProtocol,
-				ListenerPort:   []int{8888, 8889},
-				Domain:         "www.tencent.com",
-				DefaultDomain:  true,
-				UrlPath:        "/",
+				ListenerPorts:  []int{8888, 8889},
 				Scheduler:      "WRR",
-				Session:        0,
-				HealthCheck:    false,
+				Session:        10,
+				HealthCheck:    true,
 				UserRemark:     "",
 				Status:         "",
 				ValidateResult: "",
@@ -82,40 +75,34 @@ func TestCreateUrlRuleExecutor_convertDataToPreview(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			executor := &CreateUrlRuleExecutor{}
+			executor := &CreateLayer4ListenerPreviewExecutor{}
 			_ = executor.convertDataToPreview(tt.args.i)
 			assert.Equal(t, tt.want, *executor.details[0])
 		})
 	}
 }
 
-func TestCreateUrlRuleDetail_validate(t *testing.T) {
+func TestCreateLayer4ListenerDetail_validate(t *testing.T) {
 	tests := []struct {
 		name       string
-		args       *CreateUrlRuleDetail
+		args       *CreateLayer4ListenerDetail
 		wantStatus ImportStatus
 	}{
 		{
 			name: "validate protocol executable",
-			args: &CreateUrlRuleDetail{
-				Protocol:      enumor.HttpProtocol,
-				ListenerPort:  []int{8888, 8889},
-				Domain:        "www.tencent.com",
-				DefaultDomain: true,
-				UrlPath:       "/",
+			args: &CreateLayer4ListenerDetail{
+				Protocol:      enumor.TcpProtocol,
+				ListenerPorts: []int{8888, 8889},
 				Scheduler:     "WRR",
 				Session:       30,
 			},
 			wantStatus: Executable,
 		},
 		{
-			name: "validate protocol not executable",
-			args: &CreateUrlRuleDetail{
-				Protocol:      enumor.QuicProtocol,
-				ListenerPort:  []int{8888, 8889},
-				Domain:        "www.tencent.com",
-				DefaultDomain: true,
-				UrlPath:       "/",
+			name: "validate protocol",
+			args: &CreateLayer4ListenerDetail{
+				Protocol:      enumor.HttpsProtocol,
+				ListenerPorts: []int{8888, 8889},
 				Scheduler:     "WRR",
 				Session:       30,
 			},
@@ -123,12 +110,9 @@ func TestCreateUrlRuleDetail_validate(t *testing.T) {
 		},
 		{
 			name: "validate Scheduler normal",
-			args: &CreateUrlRuleDetail{
-				Protocol:      enumor.HttpsProtocol,
-				ListenerPort:  []int{8888, 8889},
-				Domain:        "www.tencent.com",
-				DefaultDomain: true,
-				UrlPath:       "/",
+			args: &CreateLayer4ListenerDetail{
+				Protocol:      enumor.TcpProtocol,
+				ListenerPorts: []int{8888, 8889},
 				Scheduler:     enumor.WRR,
 				Session:       30,
 			},
@@ -136,85 +120,63 @@ func TestCreateUrlRuleDetail_validate(t *testing.T) {
 		},
 		{
 			name: "validate Scheduler wrong scheduler ",
-			args: &CreateUrlRuleDetail{
-				Protocol:      enumor.HttpProtocol,
-				ListenerPort:  []int{8888, 8889},
+			args: &CreateLayer4ListenerDetail{
+				Protocol:      enumor.TcpProtocol,
+				ListenerPorts: []int{8888, 8889},
 				Scheduler:     "WRR2",
 				Session:       30,
-				Domain:        "www.tencent.com",
-				DefaultDomain: true,
-				UrlPath:       "/",
 			},
 			wantStatus: NotExecutable,
 		},
 		{
 			name: "validate session less than 30",
-			args: &CreateUrlRuleDetail{
-				Protocol:      enumor.HttpProtocol,
-				ListenerPort:  []int{8888, 8889},
+			args: &CreateLayer4ListenerDetail{
+				Protocol:      enumor.TcpProtocol,
+				ListenerPorts: []int{8888, 8889},
 				Scheduler:     "WRR",
 				Session:       10,
-				Domain:        "www.tencent.com",
-				DefaultDomain: true,
-				UrlPath:       "/",
 			},
 			wantStatus: NotExecutable,
 		},
 		{
 			name: "validate session normal",
-			args: &CreateUrlRuleDetail{
-				Protocol:      enumor.HttpProtocol,
-				ListenerPort:  []int{8888, 8889},
+			args: &CreateLayer4ListenerDetail{
+				Protocol:      enumor.TcpProtocol,
+				ListenerPorts: []int{8888, 8889},
 				Scheduler:     "WRR",
 				Session:       0,
-				Domain:        "www.tencent.com",
-				DefaultDomain: true,
-				UrlPath:       "/",
 			},
 			wantStatus: Executable,
 		},
 		{
 			name: "validate port 3 ports",
-			args: &CreateUrlRuleDetail{
-				Protocol:      enumor.HttpProtocol,
-				ListenerPort:  []int{8888, 8889, 9000},
+			args: &CreateLayer4ListenerDetail{
+				Protocol:      enumor.TcpProtocol,
+				ListenerPorts: []int{8888, 8889, 9000},
 				Scheduler:     "WRR",
 				Session:       0,
-				Domain:        "www.tencent.com",
-				DefaultDomain: true,
-				UrlPath:       "/",
 			},
 			wantStatus: NotExecutable,
 		},
 		{
-			name: "validate domain is empty",
-			args: &CreateUrlRuleDetail{
-				Protocol:      enumor.HttpProtocol,
-				ListenerPort:  []int{8888},
+			name: "validate port out of range",
+			args: &CreateLayer4ListenerDetail{
+				Protocol:      enumor.TcpProtocol,
+				ListenerPorts: []int{8888, 65536},
 				Scheduler:     "WRR",
 				Session:       0,
-				Domain:        "",
-				DefaultDomain: true,
-				UrlPath:       "/",
 			},
 			wantStatus: NotExecutable,
 		},
 		{
-			name: "validate url path is empty",
-			args: &CreateUrlRuleDetail{
-				Protocol:      enumor.HttpProtocol,
-				ListenerPort:  []int{8888},
-				Scheduler:     "WRR",
-				Session:       0,
-				Domain:        "",
-				DefaultDomain: true,
-				UrlPath:       "/",
+			name: "validate port 0",
+			args: &CreateLayer4ListenerDetail{
+				Protocol:  enumor.TcpProtocol,
+				Scheduler: "WRR",
+				Session:   0,
 			},
 			wantStatus: NotExecutable,
 		},
-
-		//	wantStatus: NotExecutable,
-		//},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -20,34 +20,32 @@
 package lblogic
 
 import (
-	"hcm/pkg/criteria/enumor"
 	"testing"
+
+	"hcm/pkg/criteria/enumor"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestLayer7ListenerBindRSExecutor_convertDataToPreview(t *testing.T) {
+func TestLayer4ListenerBindRSExecutor_convertDataToPreview(t *testing.T) {
 	type args struct {
 		i [][]string
 	}
 	tests := []struct {
 		name string
 		args args
-		want Layer7ListenerBindRSDetail
+		want Layer4ListenerBindRSDetail
 	}{
 		{
 			name: "test",
 			args: args{i: [][]string{
-				{"127.0.0.1", "lb-xxxxx1", "tcp", "8888", "tencent.com", "/",
-					"CVM", "127.0.0.1", "8000", "50", "用户的备注"},
+				{"127.0.0.1", "lb-xxxxx1", "tcp", "8888", "CVM", "127.0.0.1", "8000", "50", "用户的备注"},
 			}},
-			want: Layer7ListenerBindRSDetail{
+			want: Layer4ListenerBindRSDetail{
 				ClbVipDomain:   "127.0.0.1",
 				CloudClbID:     "lb-xxxxx1",
 				Protocol:       enumor.TcpProtocol,
 				ListenerPort:   []int{8888},
-				Domain:         "tencent.com",
-				URLPath:        "/",
 				InstType:       enumor.CvmInstType,
 				RsIp:           "127.0.0.1",
 				RsPort:         []int{8000},
@@ -60,16 +58,13 @@ func TestLayer7ListenerBindRSExecutor_convertDataToPreview(t *testing.T) {
 		{
 			name: "end_port",
 			args: args{i: [][]string{
-				{"127.0.0.1", "lb-xxxxx1", "tcp", "[8888, 8889]", "tencent.com", "/",
-					"CVM", "127.0.0.1   ", "[8888, 8889]", "50"},
+				{"127.0.0.1", "lb-xxxxx1", "tcp", "[8888, 8889]", "CVM", "127.0.0.1", "[8888, 8889]", "50"},
 			}},
-			want: Layer7ListenerBindRSDetail{
+			want: Layer4ListenerBindRSDetail{
 				ClbVipDomain:   "127.0.0.1",
 				CloudClbID:     "lb-xxxxx1",
 				Protocol:       enumor.TcpProtocol,
 				ListenerPort:   []int{8888, 8889},
-				Domain:         "tencent.com",
-				URLPath:        "/",
 				InstType:       enumor.CvmInstType,
 				RsIp:           "127.0.0.1",
 				RsPort:         []int{8888, 8889},
@@ -83,26 +78,24 @@ func TestLayer7ListenerBindRSExecutor_convertDataToPreview(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			executor := &Layer7ListenerBindRSExecutor{}
+			executor := &Layer4ListenerBindRSPreviewExecutor{}
 			_ = executor.convertDataToPreview(tt.args.i)
 			assert.Equal(t, tt.want, *executor.details[0])
 		})
 	}
 }
 
-func TestLayer7ListenerBindRSDetail_validate(t *testing.T) {
+func TestLayer4ListenerBindRSDetail_validate(t *testing.T) {
 	tests := []struct {
 		name       string
-		args       *Layer7ListenerBindRSDetail
+		args       *Layer4ListenerBindRSDetail
 		wantStatus ImportStatus
 	}{
 		{
 			name: "validate protocol executable",
-			args: &Layer7ListenerBindRSDetail{
-				Protocol:     enumor.HttpProtocol,
+			args: &Layer4ListenerBindRSDetail{
+				Protocol:     enumor.TcpProtocol,
 				ListenerPort: []int{8888, 8889},
-				Domain:       "tencent.com",
-				URLPath:      "/",
 				InstType:     enumor.CvmInstType,
 				RsIp:         "127.0.0.1",
 				RsPort:       []int{8888, 8889},
@@ -112,11 +105,9 @@ func TestLayer7ListenerBindRSDetail_validate(t *testing.T) {
 		},
 		{
 			name: "validate protocol not executable",
-			args: &Layer7ListenerBindRSDetail{
-				Protocol:     enumor.TcpProtocol,
+			args: &Layer4ListenerBindRSDetail{
+				Protocol:     enumor.HttpsProtocol,
 				ListenerPort: []int{8888, 8889},
-				Domain:       "tencent.com",
-				URLPath:      "/",
 				InstType:     enumor.CvmInstType,
 				RsIp:         "127.0.0.1",
 				RsPort:       []int{8888, 8889},
@@ -126,11 +117,9 @@ func TestLayer7ListenerBindRSDetail_validate(t *testing.T) {
 		},
 		{
 			name: "validate port not executable",
-			args: &Layer7ListenerBindRSDetail{
-				Protocol:     enumor.HttpsProtocol,
+			args: &Layer4ListenerBindRSDetail{
+				Protocol:     enumor.TcpProtocol,
 				ListenerPort: []int{8888, 70000},
-				Domain:       "tencent.com",
-				URLPath:      "/",
 				InstType:     enumor.CvmInstType,
 				RsIp:         "127.0.0.1",
 				RsPort:       []int{8888, 8889},
@@ -140,11 +129,9 @@ func TestLayer7ListenerBindRSDetail_validate(t *testing.T) {
 		},
 		{
 			name: "validate rs port not executable",
-			args: &Layer7ListenerBindRSDetail{
-				Protocol:     enumor.HttpProtocol,
+			args: &Layer4ListenerBindRSDetail{
+				Protocol:     enumor.TcpProtocol,
 				ListenerPort: []int{8888, 8889},
-				Domain:       "tencent.com",
-				URLPath:      "/",
 				InstType:     enumor.CvmInstType,
 				RsIp:         "127.0.0.1",
 				RsPort:       []int{8888, 70000},
@@ -154,11 +141,9 @@ func TestLayer7ListenerBindRSDetail_validate(t *testing.T) {
 		},
 		{
 			name: "validate instType not executable",
-			args: &Layer7ListenerBindRSDetail{
-				Protocol:     enumor.HttpProtocol,
+			args: &Layer4ListenerBindRSDetail{
+				Protocol:     enumor.TcpProtocol,
 				ListenerPort: []int{8888, 8889},
-				Domain:       "tencent.com",
-				URLPath:      "/",
 				InstType:     "213",
 				RsIp:         "127.0.0.1",
 				RsPort:       []int{8888, 8889},
@@ -168,11 +153,9 @@ func TestLayer7ListenerBindRSDetail_validate(t *testing.T) {
 		},
 		{
 			name: "validate weight out of range 101",
-			args: &Layer7ListenerBindRSDetail{
-				Protocol:     enumor.HttpProtocol,
+			args: &Layer4ListenerBindRSDetail{
+				Protocol:     enumor.TcpProtocol,
 				ListenerPort: []int{8888, 8889},
-				Domain:       "tencent.com",
-				URLPath:      "/",
 				InstType:     enumor.EniInstType,
 				RsIp:         "127.0.0.1",
 				RsPort:       []int{8888, 8889},
@@ -182,11 +165,9 @@ func TestLayer7ListenerBindRSDetail_validate(t *testing.T) {
 		},
 		{
 			name: "端口段设置错误",
-			args: &Layer7ListenerBindRSDetail{
-				Protocol:     enumor.HttpProtocol,
+			args: &Layer4ListenerBindRSDetail{
+				Protocol:     enumor.TcpProtocol,
 				ListenerPort: []int{8888, 8889},
-				Domain:       "tencent.com",
-				URLPath:      "/",
 				InstType:     enumor.EniInstType,
 				RsIp:         "127.0.0.1",
 				RsPort:       []int{8888},
@@ -195,44 +176,14 @@ func TestLayer7ListenerBindRSDetail_validate(t *testing.T) {
 			wantStatus: NotExecutable,
 		},
 		{
-			name: "端口段设置错误,长度不一致",
-			args: &Layer7ListenerBindRSDetail{
-				Protocol:     enumor.HttpProtocol,
+			name: "端口段设置错误",
+			args: &Layer4ListenerBindRSDetail{
+				Protocol:     enumor.TcpProtocol,
 				ListenerPort: []int{8888, 8889},
 				InstType:     enumor.EniInstType,
-				Domain:       "tencent.com",
-				URLPath:      "/",
 				RsIp:         "127.0.0.1",
 				RsPort:       []int{8888, 9000},
 				Weight:       100,
-			},
-			wantStatus: NotExecutable,
-		},
-		{
-			name: "设置端口段, 权重为0",
-			args: &Layer7ListenerBindRSDetail{
-				Protocol:     enumor.HttpProtocol,
-				ListenerPort: []int{8888, 8889},
-				InstType:     enumor.EniInstType,
-				Domain:       "tencent.com",
-				URLPath:      "/",
-				RsIp:         "127.0.0.1",
-				RsPort:       []int{8888, 8889},
-				Weight:       0,
-			},
-			wantStatus: NotExecutable,
-		},
-		{
-			name: "domain为空",
-			args: &Layer7ListenerBindRSDetail{
-				Protocol:     enumor.HttpProtocol,
-				ListenerPort: []int{8888, 8889},
-				InstType:     enumor.EniInstType,
-				Domain:       "",
-				URLPath:      "/",
-				RsIp:         "127.0.0.1",
-				RsPort:       []int{8888, 8889},
-				Weight:       0,
 			},
 			wantStatus: NotExecutable,
 		},
@@ -243,4 +194,5 @@ func TestLayer7ListenerBindRSDetail_validate(t *testing.T) {
 			assert.Equal(t, tt.wantStatus, tt.args.Status)
 		})
 	}
+
 }

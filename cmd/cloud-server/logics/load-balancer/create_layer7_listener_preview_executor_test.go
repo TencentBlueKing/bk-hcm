@@ -77,7 +77,7 @@ func TestCreateLayer7ListenerExecutor_convertDataToPreview(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			executor := &CreateLayer7ListenerExecutor{}
+			executor := &CreateLayer7ListenerPreviewExecutor{}
 			_ = executor.convertDataToPreview(tt.args.i)
 			assert.Equal(t, tt.want, *executor.details[0])
 		})
