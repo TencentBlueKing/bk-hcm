@@ -21,9 +21,11 @@
 package lblogic
 
 import (
+	"fmt"
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
@@ -72,4 +74,55 @@ func GetListenerByID(kt *kit.Kit, cli *dataservice.Client, lblID string) (corelb
 	}
 
 	return lblList.Details[0], nil
+}
+
+func getListener(kt *kit.Kit, cli *dataservice.Client, accountID, lbCloudID string, port int, bkBizID int64) (
+	*corelb.BaseListener, error) {
+
+	req := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("account_id", accountID),
+			tools.RuleEqual("bk_biz_id", bkBizID),
+			tools.RuleEqual("cloud_lb_id", lbCloudID),
+			tools.RuleEqual("port", port),
+		),
+		Page: core.NewDefaultBasePage(),
+	}
+	resp, err := cli.Global.LoadBalancer.ListListener(kt, req)
+	if err != nil {
+		logs.Errorf("list listener failed, error: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+	if len(resp.Details) > 0 {
+		return &resp.Details[0], nil
+	}
+	return nil, nil
+}
+
+func getURLRule(kt *kit.Kit, cli *dataservice.Client, vendor enumor.Vendor, lbCloudID, listenerCloudID, domain, url string) (
+	*corelb.TCloudLbUrlRule, error) {
+
+	switch vendor {
+	case enumor.TCloud:
+		req := &core.ListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleEqual("cloud_lb_id", lbCloudID),
+				tools.RuleEqual("cloud_lbl_id", listenerCloudID),
+				tools.RuleEqual("domain", domain),
+				tools.RuleEqual("url", url),
+			),
+			Page: core.NewDefaultBasePage(),
+		}
+		rule, err := cli.TCloud.LoadBalancer.ListUrlRule(kt, req)
+		if err != nil {
+			logs.Errorf("list url rule failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+		if len(rule.Details) > 0 {
+			return &rule.Details[0], nil
+		}
+	default:
+		return nil, fmt.Errorf("vendor(%s) not support", vendor)
+	}
+	return nil, nil
 }

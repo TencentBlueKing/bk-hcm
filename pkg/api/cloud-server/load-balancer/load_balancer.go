@@ -798,3 +798,10 @@ type TCloudDeleteSnatIpReq struct {
 func (r *TCloudDeleteSnatIpReq) Validate() error {
 	return validator.Validate.Struct(r)
 }
+
+// UploadExcelFileBaseResp ...
+type UploadExcelFileBaseResp struct {
+	AccountID string      `json:"account_id"`
+	RegionIDs []string    `json:"region_ids"`
+	Details   interface{} `json:"details"`
+}
