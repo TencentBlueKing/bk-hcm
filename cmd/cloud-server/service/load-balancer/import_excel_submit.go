@@ -20,9 +20,54 @@
 
 package loadbalancer
 
-import "hcm/pkg/rest"
+import (
+	lblogic "hcm/cmd/cloud-server/logics/load-balancer"
+	cslb "hcm/pkg/api/cloud-server/load-balancer"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/dao/types"
+	"hcm/pkg/iam/meta"
+	"hcm/pkg/rest"
+	"hcm/pkg/tools/hooks/handler"
+)
 
 // SubmitImportData 提交excel导入的数据
 func (svc *lbSvc) SubmitImportData(cts *rest.Contexts) (interface{}, error) {
-	panic("implement me")
+	operationType := cts.PathParameter("operation_type").String()
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+
+	req := new(cslb.ImportExcelReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, err
+	}
+
+	handlerOpt := &handler.ValidWithAuthOption{
+		Authorizer: svc.authorizer,
+		ResType:    meta.LoadBalancer,
+		Action:     meta.Update,
+		BasicInfo:  &types.CloudResourceBasicInfo{AccountID: req.AccountID},
+	}
+	if err = handler.BizOperateAuth(cts, handlerOpt); err != nil {
+		return nil, err
+	}
+
+	executor, err := lblogic.NewImportExecutor(lblogic.OperationType(operationType),
+		svc.client.DataService(), svc.client.TaskServer(),
+		vendor, bizID, req.AccountID, req.RegionIDs)
+	if err != nil {
+		return nil, err
+	}
+	taskID, err := executor.Execute(cts.Kit, req.Source, req.Details)
+	if err != nil {
+		return nil, err
+	}
+
+	return struct {
+		TaskManagementID string `json:"task_management_id"`
+	}{
+		TaskManagementID: taskID,
+	}, nil
 }

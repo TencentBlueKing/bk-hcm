@@ -1,0 +1,72 @@
+/*
+ * TencentBlueKing is pleased to support the open source community by making
+ * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
+ * Copyright (C) 2022 THL A29 Limited,
+ * a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ *
+ * We undertake not to change the open source license (MIT license) applicable
+ *
+ * to the current version of the project delivered to anyone in the future.
+ */
+
+package lblogic
+
+import (
+	"encoding/json"
+	"fmt"
+	dataservice "hcm/pkg/client/data-service"
+	taskserver "hcm/pkg/client/task-server"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/kit"
+)
+
+// ImportExecutor 导入执行器
+type ImportExecutor interface {
+	Execute(*kit.Kit, string, json.RawMessage) (string, error)
+
+	unmarshalData(json.RawMessage) error
+	validate(*kit.Kit) error
+	// filter filter existing record
+	filter()
+	buildFlows(*kit.Kit) (string, error)
+	buildTask(*kit.Kit) (string, error)
+}
+
+// NewImportExecutor ...
+func NewImportExecutor(operationType OperationType, dataCli *dataservice.Client, taskCli *taskserver.Client, vendor enumor.Vendor, bkBizID int64, accountID string, regionIDs []string) (ImportExecutor, error) {
+
+	switch operationType {
+	case CreateLayer4Listener:
+		return newCreateLayer4ListenerExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
+	case CreateLayer7Listener:
+		return newCreateLayer7ListenerExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
+	case CreateUrlRule:
+		return newCreateUrlRuleExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
+	case Layer4ListenerBindRs:
+		return newLayer4ListenerBindRSExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
+	case Layer7ListenerBindRs:
+		return newLayer7ListenerBindRSExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
+	default:
+		return nil, fmt.Errorf("unsupported operation type: %s", operationType)
+	}
+}
+
+func unmarshalData(message json.RawMessage, data interface{}) error {
+	rawByte, err := message.MarshalJSON()
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(rawByte, &data)
+	if err != nil {
+		return err
+	}
+	return nil
+}

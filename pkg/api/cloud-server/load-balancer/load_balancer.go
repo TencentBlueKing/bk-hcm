@@ -20,6 +20,7 @@
 package cslb
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -804,4 +805,20 @@ type UploadExcelFileBaseResp struct {
 	AccountID string      `json:"account_id"`
 	RegionIDs []string    `json:"region_ids"`
 	Details   interface{} `json:"details"`
+}
+
+// ImportExcelReq ...
+type ImportExcelReq struct {
+	AccountID string          `json:"account_id" validate:"required"`
+	RegionIDs []string        `json:"region_ids" validate:"required,min=1,dive,required"`
+	Source    string          `json:"source"`
+	Details   json.RawMessage `json:"details"`
+}
+
+// Validate ...
+func (i *ImportExcelReq) Validate() error {
+	if i.Source != "excel" && i.Source != "sops" {
+		return errors.New("invalid source")
+	}
+	return validator.Validate.Struct(i)
 }

@@ -30,11 +30,12 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendor/{vendor}/load_balancers/operations/{o
 #### data参数解析
 
 
-| 参数名称       | 参数类型   | 描述        |
-|------------|--------|-----------|
-| account_id | string | 账户id      |
-| region_ids | array  | 云地域id列表   |
-| details    | array  | excel导入详情 |
+| 参数名称       | 参数类型   | 描述                                |
+|------------|--------|-----------------------------------|
+| account_id | string | 账户id                              |
+| region_ids | array  | 云地域id列表                           |
+| source     | string | 任务来源, 标准运维插件(sops)、excel导入(excel) |
+| details    | array  | excel导入详情                         |
 
 不同的operation_type对应的details不同, 具体查看 [上传excel文件接口](import_load_balancer_preview)
 将上传excel文件接口返回的data作为该接口的入参即可
@@ -44,6 +45,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendor/{vendor}/load_balancers/operations/{o
 {
   "account_id": "",
   "region_ids": ["",""],
+  "source": "excel",
   "details":[
     {
       "clb_vip_domain": "127.0.0.1",

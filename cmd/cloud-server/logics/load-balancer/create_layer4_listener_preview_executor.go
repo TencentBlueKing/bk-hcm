@@ -22,6 +22,7 @@ package lblogic
 import (
 	"errors"
 	"fmt"
+	"hcm/pkg/tools/converter"
 	"strconv"
 	"strings"
 
@@ -32,7 +33,6 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 )
 
@@ -95,7 +95,7 @@ func (c *CreateLayer4ListenerPreviewExecutor) convertDataToPreview(rawData [][]s
 }
 
 func (c *CreateLayer4ListenerPreviewExecutor) validate(kt *kit.Kit) error {
-	// key: clbID+protocol+port value record index
+	//key: clbID+protocol+port value record index
 	recordMap := make(map[string]int)
 	clbIDMap := make(map[string]struct{})
 	for cur, detail := range c.details {
