@@ -159,6 +159,23 @@ func (opt TCloudResetPwdOption) Validate() error {
 }
 
 // -------------------------- Create --------------------------
+//
+
+// TCloudInternetChargeType CVM网络计费类型.
+// 默认取值：非带宽包用户默认与子机付费类型保持一致，比如子机付费类型为预付费，网络计费类型默认为预付费；
+// 子机付费类型为后付费，网络计费类型默认为后付费
+type TCloudInternetChargeType string
+
+const (
+	// TCloudInternetBandwidthPrepaid BANDWIDTH_PREPAID 预付费按带宽结算
+	TCloudInternetBandwidthPrepaid TCloudInternetChargeType = "BANDWIDTH_PREPAID"
+	// TCloudInternetTrafficPostpaidByHour TRAFFIC_POSTPAID_BY_HOUR 流量按小时后付费
+	TCloudInternetTrafficPostpaidByHour TCloudInternetChargeType = "TRAFFIC_POSTPAID_BY_HOUR"
+	// TCloudInternetBandwidthPostpaidByHour BANDWIDTH_POSTPAID_BY_HOUR 带宽按小时后付费
+	TCloudInternetBandwidthPostpaidByHour TCloudInternetChargeType = "BANDWIDTH_POSTPAID_BY_HOUR"
+	// TCloudInternetBandwidthPackage BANDWIDTH_PACKAGE 带宽包用户
+	TCloudInternetBandwidthPackage TCloudInternetChargeType = "BANDWIDTH_PACKAGE"
+)
 
 // TCloudCreateOption defines options to create aws cvm instances.
 type TCloudCreateOption struct {
@@ -180,6 +197,8 @@ type TCloudCreateOption struct {
 	DataDisk                []TCloudDataDisk             `json:"data_disk" validate:"omitempty"`
 	PublicIPAssigned        bool                         `json:"public_ip_assigned" validate:"omitempty"`
 	InternetMaxBandwidthOut int64                        `json:"internet_max_bandwidth_out" validate:"omitempty"`
+	InternetChargeType      TCloudInternetChargeType     `json:"internet_charge_type" validate:"omitempty"`
+	BandwidthPackageID      *string                      `json:"bandwidth_package_id" validate:"omitempty"`
 }
 
 // Validate aws cvm operation option.

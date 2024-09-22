@@ -68,7 +68,8 @@ type TCloudCvmExtension struct {
 		- TRUE：表示开启实例保护，不允许通过api接口删除实例
 		- FALSE：表示关闭实例保护，允许通过api接口删除实例
 	*/
-	DisableApiTermination *bool `json:"disable_api_termination,omitempty"`
+	DisableApiTermination *bool   `json:"disable_api_termination,omitempty"`
+	BandwidthPackageID    *string `json:"bandwidth_package_id,omitempty"`
 }
 
 // TCloudPlacement 描述了实例的抽象位置，包括其所在的可用区，所属的项目，宿主机（仅专用宿主机产品可用），母机IP等。
