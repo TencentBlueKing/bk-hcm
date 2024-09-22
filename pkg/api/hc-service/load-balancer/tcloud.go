@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/tools/converter"
 )
@@ -283,6 +284,46 @@ func (r TCloudRuleDeleteByDomainReq) Validate() error {
 
 // --------------------------[创建监听器及规则]--------------------------
 
+// ListenerCreateReq listener only create req.
+type ListenerCreateReq struct {
+	Name          string                        `json:"name" validate:"required"`
+	BkBizID       int64                         `json:"bk_biz_id" validate:"omitempty"`
+	LbID          string                        `json:"lb_id" validate:"required"`
+	Protocol      enumor.ProtocolType           `json:"protocol" validate:"required"`
+	Port          int64                         `json:"port" validate:"required"`
+	Scheduler     string                        `json:"scheduler" validate:"required"`
+	SessionType   string                        `json:"session_type" validate:"required"`
+	SessionExpire int64                         `json:"session_expire" validate:"omitempty"`
+	SniSwitch     enumor.SniType                `json:"sni_switch" validate:"omitempty"`
+	Certificate   *corelb.TCloudCertificateInfo `json:"certificate" validate:"omitempty"`
+	EndPort       *int64                        `json:"end_port" validate:"omitempty,min=1"`
+}
+
+// Validate 校验创建监听器的参数
+func (req *ListenerCreateReq) Validate() error {
+
+	if req.SessionExpire > 0 && (req.SessionExpire < 30 || req.SessionExpire > 3600) {
+		return errors.New("session_expire must be '0' or between `30` and `3600`")
+	}
+
+	// 7层HTTPS 监听器 SNI开启，不能传入证书，SNI关闭时，需要传入证书
+	if req.Protocol == enumor.HttpsProtocol {
+		if req.SniSwitch == enumor.SniTypeClose && req.Certificate == nil {
+			return errf.New(errf.InvalidParameter, "certificate is required for non-sni https listener")
+		}
+		if req.SniSwitch == enumor.SniTypeClose && converter.PtrToVal(req.Certificate.CaCloudID) == "" && len(req.
+			Certificate.CertCloudIDs) == 0 {
+			return errf.New(errf.InvalidParameter,
+				"certificate.ca_cloud_id/certificate.cert_cloud_ids is required for non-sni https listener")
+		}
+		if req.SniSwitch == enumor.SniTypeOpen && req.Certificate != nil {
+			return errf.New(errf.InvalidParameter, "certificate should not exists for sni https listener")
+		}
+	}
+
+	return validator.Validate.Struct(req)
+}
+
 // ListenerWithRuleCreateReq listener with rule create req.
 type ListenerWithRuleCreateReq struct {
 	Name          string                        `json:"name" validate:"required"`
@@ -318,6 +359,12 @@ func (req *ListenerWithRuleCreateReq) Validate() error {
 type ListenerWithRuleCreateResult struct {
 	CloudLblID  string `json:"cloud_lbl_id"`
 	CloudRuleID string `json:"cloud_rule_id"`
+}
+
+// ListenerCreateResult 监听器创建结果
+type ListenerCreateResult struct {
+	LblID      string `json:"lbl_id"`
+	CloudLblID string `json:"cloud_lbl_id"`
 }
 
 // --------------------------[更新监听器]--------------------------

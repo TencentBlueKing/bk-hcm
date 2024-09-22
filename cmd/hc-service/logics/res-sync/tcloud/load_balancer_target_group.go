@@ -440,7 +440,7 @@ func (cli *client) listListenerWithRule(kt *kit.Kit, listenerCloudID string) (
 	if len(ruleResp.Details) == 0 {
 		logs.Errorf("rule of listener can not be found by id(%s), lbl_id: %s, lbl_cloud_id: %s, rid: %s ",
 			lbl.ID, lbl.CloudID, kt.Rid)
-		return nil, nil, fmt.Errorf("rule of listener  can not be found by id(%s) while target group syncing",
+		return nil, nil, fmt.Errorf("rule of listener can not be found by id(%s) while target group syncing",
 			listenerCloudID)
 	}
 	return cvt.ValToPtr(lbl), cvt.ValToPtr(ruleResp.Details[0]), nil

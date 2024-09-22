@@ -77,6 +77,8 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 	h.Add("UpdateTCloudListenerHealthCheck", http.MethodPatch,
 		"/vendors/tcloud/listeners/{lbl_id}/health_check", svc.UpdateTCloudListenerHealthCheck)
 	h.Add("DeleteTCloudListener", http.MethodDelete, "/vendors/tcloud/listeners/batch", svc.DeleteTCloudListener)
+	// 仅创建监听器
+	h.Add("CreateTCloudListener", http.MethodPost, "/vendors/tcloud/listeners/create", svc.CreateTCloudListener)
 
 	// 域名、规则
 	h.Add("UpdateTCloudDomainAttr", http.MethodPatch,
