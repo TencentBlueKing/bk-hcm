@@ -21,12 +21,12 @@ package lblogic
 
 import (
 	"fmt"
-	"hcm/pkg/tools/converter"
 	"strings"
 
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
+	"hcm/pkg/tools/converter"
 )
 
 // OperationType ...

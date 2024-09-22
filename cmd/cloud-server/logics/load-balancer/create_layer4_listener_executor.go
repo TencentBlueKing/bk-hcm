@@ -3,6 +3,7 @@ package lblogic
 import (
 	"encoding/json"
 	"fmt"
+
 	dataservice "hcm/pkg/client/data-service"
 	taskserver "hcm/pkg/client/task-server"
 	"hcm/pkg/criteria/enumor"
@@ -81,14 +82,14 @@ func (c *CreateLayer4ListenerExecutor) filter() {
 	})
 }
 
-func (c *CreateLayer4ListenerExecutor) buildFlows(kt *kit.Kit) (string, error) {
+func (c *CreateLayer4ListenerExecutor) buildFlows(kt *kit.Kit) ([]string, error) {
 	// group by clb
 	//TODO implement me
 
 	panic("")
 }
 
-func (c *CreateLayer4ListenerExecutor) buildTask(kt *kit.Kit) (string, error) {
+func (c *CreateLayer4ListenerExecutor) buildTask(kt *kit.Kit, strings []string) (string, error) {
 	//TODO implement me
 	panic("implement me")
 }

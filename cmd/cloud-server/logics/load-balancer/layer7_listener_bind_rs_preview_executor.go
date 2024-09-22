@@ -22,15 +22,15 @@ package lblogic
 import (
 	"errors"
 	"fmt"
-	corelb "hcm/pkg/api/core/cloud/load-balancer"
+	"strconv"
+	"strings"
+
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
-	"strconv"
-	"strings"
 )
 
 var _ ImportPreviewExecutor = (*Layer7ListenerBindRSPreviewExecutor)(nil)
@@ -130,13 +130,9 @@ func (l *Layer7ListenerBindRSPreviewExecutor) validate(kt *kit.Kit) error {
 }
 
 func (l *Layer7ListenerBindRSPreviewExecutor) validateWithDB(kt *kit.Kit, cloudIDs []string) error {
-	loadBalancers, err := getLoadBalancers(kt, l.dataServiceCli, l.accountID, l.bkBizID, cloudIDs)
+	lbMap, err := getLoadBalancersMapByCloudID(kt, l.dataServiceCli, l.accountID, l.bkBizID, cloudIDs)
 	if err != nil {
 		return err
-	}
-	lbMap := make(map[string]corelb.BaseLoadBalancer, len(loadBalancers))
-	for _, balancer := range loadBalancers {
-		lbMap[balancer.CloudID] = balancer
 	}
 
 	for _, detail := range l.details {

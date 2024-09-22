@@ -22,6 +22,7 @@ package lblogic
 
 import (
 	"fmt"
+
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataservice "hcm/pkg/client/data-service"
@@ -30,6 +31,7 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/slice"
 )
 
 // ListLoadBalancerMap 批量获取负载均衡列表信息
@@ -125,4 +127,72 @@ func getURLRule(kt *kit.Kit, cli *dataservice.Client, vendor enumor.Vendor, lbCl
 		return nil, fmt.Errorf("vendor(%s) not support", vendor)
 	}
 	return nil, nil
+}
+
+func getLoadBalancersMapByCloudID(kt *kit.Kit, cli *dataservice.Client, accountID string, bkBizID int64, cloudIDs []string) (
+	map[string]corelb.BaseLoadBalancer, error) {
+
+	result := make(map[string]corelb.BaseLoadBalancer, len(cloudIDs))
+	for _, ids := range slice.Split(cloudIDs, int(core.DefaultMaxPageLimit)) {
+		req := &core.ListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleEqual("account_id", accountID),
+				tools.RuleEqual("bk_biz_id", bkBizID),
+				tools.RuleIn("cloud_id", ids),
+			),
+			Page: core.NewDefaultBasePage(),
+		}
+		resp, err := cli.Global.LoadBalancer.ListLoadBalancer(kt, req)
+		if err != nil {
+			logs.Errorf("list load balancer failed, req: %v, error: %v, rid: %s", req, err, kt.Rid)
+			return nil, err
+		}
+		//result = append(result, resp.Details...)
+		for _, lb := range resp.Details {
+			result[lb.ID] = lb
+		}
+	}
+	return result, nil
+}
+
+func getTarget(kt *kit.Kit, cli *dataservice.Client, tgID, instID string, port int) (*corelb.BaseTarget, error) {
+
+	listReq := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("target_group_id", tgID),
+			tools.RuleEqual("cloud_inst_id", instID),
+			tools.RuleEqual("port", port),
+		),
+		Page: core.NewDefaultBasePage(),
+	}
+	targets, err := cli.Global.LoadBalancer.ListTarget(kt, listReq)
+	if err != nil {
+		logs.Errorf("list target failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+	if len(targets.Details) > 0 {
+		return &targets.Details[0], nil
+	}
+
+	return nil, nil
+}
+
+func getTargetGroupID(kt *kit.Kit, cli *dataservice.Client, ruleID string) (string, error) {
+	listReq := &core.ListReq{
+		Fields: []string{"target_group_id"},
+		Page:   core.NewDefaultBasePage(),
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("cloud_listener_rule_id", ruleID),
+		),
+	}
+	rel, err := cli.Global.LoadBalancer.ListTargetGroupListenerRel(kt, listReq)
+	if err != nil {
+		logs.Errorf("list target group listener rel failed, err: %v, rid: %s", err, kt.Rid)
+		return "", err
+	}
+
+	if len(rel.Details) == 0 {
+		return "", fmt.Errorf("target group not found")
+	}
+	return rel.Details[0].TargetGroupID, nil
 }

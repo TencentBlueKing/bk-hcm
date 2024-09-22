@@ -124,14 +124,11 @@ func (c *CreateUrlRulePreviewExecutor) validate(kt *kit.Kit) error {
 }
 
 func (c *CreateUrlRulePreviewExecutor) validateWithDB(kt *kit.Kit, cloudIDs []string) error {
-	loadBalancers, err := getLoadBalancers(kt, c.dataServiceCli, c.accountID, c.bkBizID, cloudIDs)
+	lbMap, err := getLoadBalancersMapByCloudID(kt, c.dataServiceCli, c.accountID, c.bkBizID, cloudIDs)
 	if err != nil {
 		return err
 	}
-	lbMap := make(map[string]corelb.BaseLoadBalancer, len(loadBalancers))
-	for _, balancer := range loadBalancers {
-		lbMap[balancer.CloudID] = balancer
-	}
+
 	for i, detail := range c.details {
 		lb, ok := lbMap[detail.CloudClbID]
 		if !ok {

@@ -134,13 +134,9 @@ func (c *CreateLayer7ListenerPreviewExecutor) validate(kt *kit.Kit) error {
 }
 
 func (c *CreateLayer7ListenerPreviewExecutor) validateWithDB(kt *kit.Kit, cloudIDs []string) error {
-	loadBalancers, err := getLoadBalancers(kt, c.dataServiceCli, c.accountID, c.bkBizID, cloudIDs)
+	lbMap, err := getLoadBalancersMapByCloudID(kt, c.dataServiceCli, c.accountID, c.bkBizID, cloudIDs)
 	if err != nil {
 		return err
-	}
-	lbMap := make(map[string]corelb.BaseLoadBalancer, len(loadBalancers))
-	for _, balancer := range loadBalancers {
-		lbMap[balancer.CloudID] = balancer
 	}
 
 	for i, detail := range c.details {
@@ -269,29 +265,6 @@ func (c *CreateLayer7ListenerPreviewExecutor) getTCloudListener(kt *kit.Kit, lbC
 		return &resp.Details[0], nil
 	}
 	return nil, nil
-}
-
-func getLoadBalancers(kt *kit.Kit, cli *dataservice.Client, accountID string, bkBizID int64, cloudIDs []string) (
-	[]corelb.BaseLoadBalancer, error) {
-
-	result := make([]corelb.BaseLoadBalancer, 0, len(cloudIDs))
-	for _, ids := range slice.Split(cloudIDs, int(core.DefaultMaxPageLimit)) {
-		req := &core.ListReq{
-			Filter: tools.ExpressionAnd(
-				tools.RuleEqual("account_id", accountID),
-				tools.RuleEqual("bk_biz_id", bkBizID),
-				tools.RuleIn("cloud_id", ids),
-			),
-			Page: core.NewDefaultBasePage(),
-		}
-		resp, err := cli.Global.LoadBalancer.ListLoadBalancer(kt, req)
-		if err != nil {
-			logs.Errorf("list load balancer failed, req: %v, error: %v, rid: %s", req, err, kt.Rid)
-			return nil, err
-		}
-		result = append(result, resp.Details...)
-	}
-	return result, nil
 }
 
 // CreateLayer7ListenerDetail 创建七层监听器预览记录

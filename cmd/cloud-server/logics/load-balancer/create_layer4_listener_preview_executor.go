@@ -22,7 +22,6 @@ package lblogic
 import (
 	"errors"
 	"fmt"
-	"hcm/pkg/tools/converter"
 	"strconv"
 	"strings"
 
@@ -33,6 +32,7 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 )
 
@@ -123,13 +123,9 @@ func (c *CreateLayer4ListenerPreviewExecutor) validate(kt *kit.Kit) error {
 }
 
 func (c *CreateLayer4ListenerPreviewExecutor) validateWithDB(kt *kit.Kit, cloudIDs []string) error {
-	loadBalancers, err := getLoadBalancers(kt, c.dataServiceCli, c.accountID, c.bkBizID, cloudIDs)
+	lbMap, err := getLoadBalancersMapByCloudID(kt, c.dataServiceCli, c.accountID, c.bkBizID, cloudIDs)
 	if err != nil {
 		return err
-	}
-	lbMap := make(map[string]corelb.BaseLoadBalancer, len(loadBalancers))
-	for _, balancer := range loadBalancers {
-		lbMap[balancer.CloudID] = balancer
 	}
 
 	for i, detail := range c.details {

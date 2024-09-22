@@ -20,8 +20,9 @@
 package lblogic
 
 import (
-	"hcm/pkg/criteria/enumor"
 	"testing"
+
+	"hcm/pkg/criteria/enumor"
 
 	"github.com/stretchr/testify/assert"
 )

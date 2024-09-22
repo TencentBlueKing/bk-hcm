@@ -22,9 +22,11 @@ package lblogic
 import (
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
+
 	"hcm/pkg/api/core"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
-	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
@@ -32,8 +34,6 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
-	"strconv"
-	"strings"
 )
 
 var _ ImportPreviewExecutor = (*Layer4ListenerBindRSPreviewExecutor)(nil)
@@ -131,13 +131,9 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validate(kt *kit.Kit) error {
 }
 
 func (l *Layer4ListenerBindRSPreviewExecutor) validateWithDB(kt *kit.Kit, cloudIDs []string) error {
-	loadBalancers, err := getLoadBalancers(kt, l.dataServiceCli, l.accountID, l.bkBizID, cloudIDs)
+	lbMap, err := getLoadBalancersMapByCloudID(kt, l.dataServiceCli, l.accountID, l.bkBizID, cloudIDs)
 	if err != nil {
 		return err
-	}
-	lbMap := make(map[string]corelb.BaseLoadBalancer, len(loadBalancers))
-	for _, balancer := range loadBalancers {
-		lbMap[balancer.CloudID] = balancer
 	}
 
 	for _, detail := range l.details {
@@ -210,48 +206,6 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateTarget(kt *kit.Kit, detail
 	return nil
 }
 
-func getTarget(kt *kit.Kit, cli *dataservice.Client, tgID, instID string, port int) (*corelb.BaseTarget, error) {
-
-	listReq := &core.ListReq{
-		Filter: tools.ExpressionAnd(
-			tools.RuleEqual("target_group_id", tgID),
-			tools.RuleEqual("cloud_inst_id", instID),
-			tools.RuleEqual("port", port),
-		),
-		Page: core.NewDefaultBasePage(),
-	}
-	targets, err := cli.Global.LoadBalancer.ListTarget(kt, listReq)
-	if err != nil {
-		logs.Errorf("list target failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
-	}
-	if len(targets.Details) > 0 {
-		return &targets.Details[0], nil
-	}
-
-	return nil, nil
-}
-
-func getTargetGroupID(kt *kit.Kit, cli *dataservice.Client, ruleID string) (string, error) {
-	listReq := &core.ListReq{
-		Fields: []string{"target_group_id"},
-		Page:   core.NewDefaultBasePage(),
-		Filter: tools.ExpressionAnd(
-			tools.RuleEqual("cloud_listener_rule_id", ruleID),
-		),
-	}
-	rel, err := cli.Global.LoadBalancer.ListTargetGroupListenerRel(kt, listReq)
-	if err != nil {
-		logs.Errorf("list target group listener rel failed, err: %v, rid: %s", err, kt.Rid)
-		return "", err
-	}
-
-	if len(rel.Details) == 0 {
-		return "", fmt.Errorf("target group not found")
-	}
-	return rel.Details[0].TargetGroupID, nil
-}
-
 func (l *Layer4ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit,
 	curDetail *Layer4ListenerBindRSDetail, region, vpc string) (string, error) {
 
@@ -288,6 +242,7 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit,
 func getCvm(kt *kit.Kit, cli *dataservice.Client, ip string,
 	vendor enumor.Vendor, bkBizID int64, accountID string) (*corecvm.BaseCvm, error) {
 
+	// TODO question: 一个云账号下面可以保证 内网ip是唯一的吗？还是需要有额外的逻辑保证这个函数查询出来的结果是唯一的，比如vpc？
 	expr, err := tools.And(
 		tools.ExpressionOr(
 			tools.RuleJSONContains("private_ipv4_addresses", ip),

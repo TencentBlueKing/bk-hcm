@@ -1,4 +1,4 @@
-# 创建四层监听器 参数说明
+# 四层监听器绑定RS 参数说明
 
 **operation-type=layer4_listener_bind_rs**
 

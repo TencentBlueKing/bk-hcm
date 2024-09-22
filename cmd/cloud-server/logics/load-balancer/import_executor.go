@@ -22,6 +22,8 @@ package lblogic
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
+
 	dataservice "hcm/pkg/client/data-service"
 	taskserver "hcm/pkg/client/task-server"
 	"hcm/pkg/criteria/enumor"
@@ -36,8 +38,8 @@ type ImportExecutor interface {
 	validate(*kit.Kit) error
 	// filter filter existing record
 	filter()
-	buildFlows(*kit.Kit) (string, error)
-	buildTask(*kit.Kit) (string, error)
+	buildFlows(*kit.Kit) ([]string, error)
+	buildTask(*kit.Kit, []string) (string, error)
 }
 
 // NewImportExecutor ...
@@ -69,4 +71,16 @@ func unmarshalData(message json.RawMessage, data interface{}) error {
 		return err
 	}
 	return nil
+}
+
+func newActionIDGenerator(init, base int) func() (cur string, prev string) {
+	current := init
+	return func() (cur string, prev string) {
+		cur = strconv.FormatInt(int64(current), base)
+		if current-1 >= init {
+			prev = strconv.FormatInt(int64(current-1), base)
+		}
+		current++
+		return cur, prev
+	}
 }
