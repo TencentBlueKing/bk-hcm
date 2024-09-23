@@ -32,6 +32,9 @@ export default defineComponent({
     const isDataRefresh = ref(false);
 
     const getBandwidthPackageList = async () => {
+      if (!props.region) {
+        return;
+      }
       isDataLoad.value = true;
       try {
         const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bandwidth_packages/query`, {
