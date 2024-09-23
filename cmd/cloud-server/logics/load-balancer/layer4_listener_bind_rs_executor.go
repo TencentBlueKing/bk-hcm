@@ -24,7 +24,8 @@ import (
 
 var _ ImportExecutor = (*Layer4ListenerBindRSExecutor)(nil)
 
-func newLayer4ListenerBindRSExecutor(cli *dataservice.Client, taskCli *taskserver.Client, vendor enumor.Vendor, bkBizID int64, accountID string, regionIDs []string) *Layer4ListenerBindRSExecutor {
+func newLayer4ListenerBindRSExecutor(cli *dataservice.Client, taskCli *taskserver.Client, vendor enumor.Vendor,
+	bkBizID int64, accountID string, regionIDs []string) *Layer4ListenerBindRSExecutor {
 
 	return &Layer4ListenerBindRSExecutor{
 		taskCli:             taskCli,
@@ -50,7 +51,9 @@ type layer4ListenerBindRSTaskDetail struct {
 }
 
 // Execute ...
-func (c *Layer4ListenerBindRSExecutor) Execute(kt *kit.Kit, source string, rawDetails json.RawMessage) (string, error) {
+func (c *Layer4ListenerBindRSExecutor) Execute(kt *kit.Kit, source string, rawDetails json.RawMessage) (
+	string, error) {
+
 	err := c.unmarshalData(rawDetails)
 	if err != nil {
 		return "", err
@@ -68,7 +71,7 @@ func (c *Layer4ListenerBindRSExecutor) Execute(kt *kit.Kit, source string, rawDe
 		return "", err
 	}
 
-	taskID, err := c.buildTask(kt, flowIDs)
+	taskID, err := c.buildTask(kt, flowIDs, source)
 	if err != nil {
 		logs.Errorf("build taskManagement task failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err
@@ -118,7 +121,8 @@ func (c *Layer4ListenerBindRSExecutor) buildFlows(kt *kit.Kit) ([]string, error)
 	for _, detail := range c.details {
 		clbToDetails[detail.CloudClbID] = append(clbToDetails[detail.CloudClbID], detail)
 	}
-	lbMap, err := getLoadBalancersMapByCloudID(kt, c.dataServiceCli, c.accountID, c.bkBizID, converter.MapKeyToSlice(clbToDetails))
+	lbMap, err := getLoadBalancersMapByCloudID(kt, c.dataServiceCli,
+		c.accountID, c.bkBizID, converter.MapKeyToSlice(clbToDetails))
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +141,8 @@ func (c *Layer4ListenerBindRSExecutor) buildFlows(kt *kit.Kit) ([]string, error)
 	return flowIDs, nil
 }
 
-func (c *Layer4ListenerBindRSExecutor) buildFlow(kt *kit.Kit, lb corelb.BaseLoadBalancer, details []*Layer4ListenerBindRSDetail) (string, error) {
+func (c *Layer4ListenerBindRSExecutor) buildFlow(kt *kit.Kit, lb corelb.BaseLoadBalancer,
+	details []*Layer4ListenerBindRSDetail) (string, error) {
 
 	// 将details根据targetGroupID进行分组，以targetGroupID的纬度创建flowTask
 	tgToDetails, err := c.createTaskDetailsGroupByTargetGroup(kt, lb.ID, details)
@@ -165,7 +170,8 @@ func (c *Layer4ListenerBindRSExecutor) buildFlow(kt *kit.Kit, lb corelb.BaseLoad
 	if err != nil {
 		return "", err
 	}
-	err = lockResFlowStatus(kt, c.dataServiceCli, c.taskCli, lb.ID, enumor.LoadBalancerCloudResType, flowID, enumor.AddRSTaskType)
+	err = lockResFlowStatus(kt, c.dataServiceCli, c.taskCli, lb.ID,
+		enumor.LoadBalancerCloudResType, flowID, enumor.AddRSTaskType)
 	if err != nil {
 		logs.Errorf("lock resource flow status failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err
@@ -190,7 +196,8 @@ func (c *Layer4ListenerBindRSExecutor) createTaskDetailsGroupByTargetGroup(kt *k
 			return nil, err
 		}
 		if listener == nil {
-			return nil, fmt.Errorf("loadbalancer(%s) listener(%v) not found", detail.CloudClbID, detail.ListenerPort)
+			return nil, fmt.Errorf("loadbalancer(%s) listener(%v) not found",
+				detail.CloudClbID, detail.ListenerPort)
 		}
 
 		targetGroupID, err := getTargetGroupID(kt, c.dataServiceCli, listener.CloudID)
@@ -204,7 +211,8 @@ func (c *Layer4ListenerBindRSExecutor) createTaskDetailsGroupByTargetGroup(kt *k
 	return tgToDetails, nil
 }
 
-func (c *Layer4ListenerBindRSExecutor) createFlowTask(kt *kit.Kit, lbID string, tgIDs []string, flowTasks []ts.CustomFlowTask) (string, error) {
+func (c *Layer4ListenerBindRSExecutor) createFlowTask(kt *kit.Kit, lbID string, tgIDs []string,
+	flowTasks []ts.CustomFlowTask) (string, error) {
 
 	addReq := &ts.AddCustomFlowReq{
 		Name: enumor.FlowTargetGroupAddRS,
@@ -246,8 +254,9 @@ func (c *Layer4ListenerBindRSExecutor) createFlowTask(kt *kit.Kit, lbID string, 
 	return flowID, nil
 }
 
-func (c *Layer4ListenerBindRSExecutor) buildFlowTask(kt *kit.Kit, lb corelb.BaseLoadBalancer, targetGroupID string,
-	details []*layer4ListenerBindRSTaskDetail, generator func() (cur string, prev string)) ([]ts.CustomFlowTask, error) {
+func (c *Layer4ListenerBindRSExecutor) buildFlowTask(kt *kit.Kit, lb corelb.BaseLoadBalancer,
+	targetGroupID string, details []*layer4ListenerBindRSTaskDetail,
+	generator func() (cur string, prev string)) ([]ts.CustomFlowTask, error) {
 
 	result := make([]ts.CustomFlowTask, 0)
 	for _, taskDetails := range slice.Split(details, constant.BatchAddRSCloudMaxLimit) {
@@ -274,7 +283,8 @@ func (c *Layer4ListenerBindRSExecutor) buildFlowTask(kt *kit.Kit, lb corelb.Base
 				TargetGroupID: targetGroupID,
 				CloudInstID:   cvm.CloudID,
 				InstName:      cvm.Name,
-				// TODO 需要确认是否加上ipv6的数据 ref: cmd/cloud-server/service/load-balancer/async_target_group_add_rs.go:331
+				// TODO 需要确认是否加上ipv6的数据
+				// ref: cmd/cloud-server/service/load-balancer/async_target_group_add_rs.go:331
 				PrivateIPAddress: cvm.PrivateIPv4Addresses,
 				PublicIPAddress:  cvm.PublicIPv4Addresses,
 				CloudVpcIDs:      cvm.CloudVpcIDs,
@@ -310,7 +320,7 @@ func (c *Layer4ListenerBindRSExecutor) buildFlowTask(kt *kit.Kit, lb corelb.Base
 	return result, nil
 }
 
-func (c *Layer4ListenerBindRSExecutor) buildTask(kt *kit.Kit, strings []string) (string, error) {
+func (c *Layer4ListenerBindRSExecutor) buildTask(kt *kit.Kit, strings []string, s string) (string, error) {
 	//TODO implement me
 	panic("implement me")
 }

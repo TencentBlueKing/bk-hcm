@@ -39,7 +39,7 @@ type ImportExecutor interface {
 	// filter filter existing record
 	filter()
 	buildFlows(*kit.Kit) ([]string, error)
-	buildTask(*kit.Kit, []string) (string, error)
+	buildTask(*kit.Kit, []string, string) (string, error)
 }
 
 // NewImportExecutor ...

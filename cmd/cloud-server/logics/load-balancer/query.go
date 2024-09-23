@@ -177,12 +177,12 @@ func getTarget(kt *kit.Kit, cli *dataservice.Client, tgID, instID string, port i
 	return nil, nil
 }
 
-func getTargetGroupID(kt *kit.Kit, cli *dataservice.Client, ruleID string) (string, error) {
+func getTargetGroupID(kt *kit.Kit, cli *dataservice.Client, ruleCloudID string) (string, error) {
 	listReq := &core.ListReq{
 		Fields: []string{"target_group_id"},
 		Page:   core.NewDefaultBasePage(),
 		Filter: tools.ExpressionAnd(
-			tools.RuleEqual("cloud_listener_rule_id", ruleID),
+			tools.RuleEqual("cloud_listener_rule_id", ruleCloudID),
 		),
 	}
 	rel, err := cli.Global.LoadBalancer.ListTargetGroupListenerRel(kt, listReq)

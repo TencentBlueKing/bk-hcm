@@ -90,7 +90,7 @@ func (c *CreateUrlRuleExecutor) buildFlows(kt *kit.Kit) ([]string, error) {
 	panic("")
 }
 
-func (c *CreateUrlRuleExecutor) buildTask(kt *kit.Kit, strings []string) (string, error) {
+func (c *CreateUrlRuleExecutor) buildTask(kt *kit.Kit, strings []string, s string) (string, error) {
 	//TODO implement me
 	panic("implement me")
 }

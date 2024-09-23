@@ -90,7 +90,7 @@ func (c *CreateLayer7ListenerExecutor) buildFlows(kt *kit.Kit) ([]string, error)
 	panic("")
 }
 
-func (c *CreateLayer7ListenerExecutor) buildTask(kt *kit.Kit, strings []string) (string, error) {
+func (c *CreateLayer7ListenerExecutor) buildTask(kt *kit.Kit, strings []string, s string) (string, error) {
 	//TODO implement me
 	panic("implement me")
 }
