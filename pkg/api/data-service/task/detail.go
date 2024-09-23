@@ -32,22 +32,12 @@ import (
 
 // CreateDetailReq define create task detail request.
 type CreateDetailReq struct {
-	Items []CreateDetailField `json:"items" validate:"required,min=1"`
+	Items []CreateDetailField `json:"items" validate:"required,min=1,dive,required"`
 }
 
 // Validate CreateDetailReq.
 func (req CreateDetailReq) Validate() error {
-	if err := validator.Validate.Struct(req); err != nil {
-		return err
-	}
-
-	for _, item := range req.Items {
-		if err := item.Validate(); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return validator.Validate.Struct(req)
 }
 
 // CreateDetailField define task detail create field.
@@ -58,6 +48,7 @@ type CreateDetailField struct {
 	TaskActionIDs    []string                `json:"task_action_ids"`
 	Operation        enumor.TaskOperation    `json:"operation" validate:"required"`
 	Param            interface{}             `json:"param" validate:"required"`
+	Result           interface{}             `json:"result"`
 	State            enumor.TaskDetailState  `json:"state"`
 	Reason           string                  `json:"reason"`
 	Extension        *coretask.ManagementExt `json:"extension"`
@@ -90,6 +81,7 @@ type UpdateTaskDetailField struct {
 	TaskActionIDs    []string               `json:"task_action_ids"`
 	Operation        enumor.TaskOperation   `json:"operation"`
 	Param            interface{}            `json:"param,omitempty"`
+	Result           interface{}            `json:"result,omitempty"`
 	State            enumor.TaskDetailState `json:"state"`
 	Reason           string                 `json:"reason"`
 	Extension        *coretask.DetailExt    `json:"extension"`

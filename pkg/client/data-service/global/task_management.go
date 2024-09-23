@@ -24,7 +24,6 @@ import (
 	coretask "hcm/pkg/api/core/task"
 	"hcm/pkg/api/data-service/task"
 	"hcm/pkg/client/common"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
@@ -49,88 +48,21 @@ func (t *TaskManagementClient) List(kt *kit.Kit, req *core.ListReq) (*task.ListM
 
 // Create task management.
 func (t *TaskManagementClient) Create(kt *kit.Kit, req *task.CreateManagementReq) (*core.BatchCreateResult, error) {
-	resp := new(core.BatchCreateResp)
-
-	err := t.client.Post().
-		WithContext(kt.Ctx).
-		Body(req).
-		SubResourcef("/task_managements/create").
-		WithHeaders(kt.Header()).
-		Do().
-		Into(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
+	return common.Request[task.CreateManagementReq, core.BatchCreateResult](
+		t.client, rest.POST, kt, req, "/task_managements/create")
 }
 
 // Update update task management.
 func (t *TaskManagementClient) Update(kt *kit.Kit, req *task.UpdateManagementReq) error {
-	resp := new(rest.BaseResp)
-
-	err := t.client.Patch().
-		WithContext(kt.Ctx).
-		Body(req).
-		SubResourcef("/task_managements/update").
-		WithHeaders(kt.Header()).
-		Do().
-		Into(resp)
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != errf.OK {
-		return errf.New(resp.Code, resp.Message)
-	}
-
-	return nil
+	return common.RequestNoResp[task.UpdateManagementReq](t.client, rest.PATCH, kt, req, "/task_managements/update")
 }
 
 // Delete task management.
 func (t *TaskManagementClient) Delete(kt *kit.Kit, req *task.DeleteManagementReq) error {
-	resp := new(rest.BaseResp)
-
-	err := t.client.Delete().
-		WithContext(kt.Ctx).
-		Body(req).
-		SubResourcef("/task_managements/delete").
-		WithHeaders(kt.Header()).
-		Do().
-		Into(resp)
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != errf.OK {
-		return errf.New(resp.Code, resp.Message)
-	}
-
-	return nil
+	return common.RequestNoResp[task.DeleteManagementReq](t.client, rest.DELETE, kt, req, "/task_managements/delete")
 }
 
 // Cancel task management.
 func (t *TaskManagementClient) Cancel(kt *kit.Kit, req *task.CancelReq) error {
-	resp := new(rest.BaseResp)
-
-	err := t.client.Patch().
-		WithContext(kt.Ctx).
-		Body(req).
-		SubResourcef("/task_managements/cancel").
-		WithHeaders(kt.Header()).
-		Do().
-		Into(resp)
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != errf.OK {
-		return errf.New(resp.Code, resp.Message)
-	}
-
-	return nil
+	return common.RequestNoResp[task.CancelReq](t.client, rest.PATCH, kt, req, "/task_managements/cancel")
 }

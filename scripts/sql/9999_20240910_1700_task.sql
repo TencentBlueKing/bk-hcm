@@ -65,6 +65,7 @@ create table if not exists `task_detail`
     `extension`           json         default NULL,
     `creator`             varchar(64)  not null,
     `reviser`             varchar(64)  not null,
+    `result`              json         default NULL,
     `created_at`          timestamp    not null default current_timestamp,
     `updated_at`          timestamp    not null default current_timestamp on update current_timestamp,
     primary key (`id`),

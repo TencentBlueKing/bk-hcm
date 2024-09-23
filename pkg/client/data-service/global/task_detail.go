@@ -24,7 +24,6 @@ import (
 	coretask "hcm/pkg/api/core/task"
 	"hcm/pkg/api/data-service/task"
 	"hcm/pkg/client/common"
-	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
@@ -49,66 +48,16 @@ func (t *TaskDetailClient) List(kt *kit.Kit, req *core.ListReq) (*core.ListResul
 
 // Create task detail.
 func (t *TaskDetailClient) Create(kt *kit.Kit, req *task.CreateDetailReq) (*core.BatchCreateResult, error) {
-	resp := new(core.BatchCreateResp)
-
-	err := t.client.Post().
-		WithContext(kt.Ctx).
-		Body(req).
-		SubResourcef("/task_details/create").
-		WithHeaders(kt.Header()).
-		Do().
-		Into(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
+	return common.Request[task.CreateDetailReq, core.BatchCreateResult](
+		t.client, rest.POST, kt, req, "/task_details/create")
 }
 
 // Update update task detail.
 func (t *TaskDetailClient) Update(kt *kit.Kit, req *task.UpdateDetailReq) error {
-	resp := new(rest.BaseResp)
-
-	err := t.client.Patch().
-		WithContext(kt.Ctx).
-		Body(req).
-		SubResourcef("/task_details/update").
-		WithHeaders(kt.Header()).
-		Do().
-		Into(resp)
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != errf.OK {
-		return errf.New(resp.Code, resp.Message)
-	}
-
-	return nil
+	return common.RequestNoResp[task.UpdateDetailReq](t.client, rest.PATCH, kt, req, "/task_details/update")
 }
 
 // Delete task detail.
 func (t *TaskDetailClient) Delete(kt *kit.Kit, req *task.DeleteDetailReq) error {
-	resp := new(rest.BaseResp)
-
-	err := t.client.Delete().
-		WithContext(kt.Ctx).
-		Body(req).
-		SubResourcef("/task_details/delete").
-		WithHeaders(kt.Header()).
-		Do().
-		Into(resp)
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != errf.OK {
-		return errf.New(resp.Code, resp.Message)
-	}
-
-	return nil
+	return common.RequestNoResp[task.DeleteDetailReq](t.client, rest.DELETE, kt, req, "/task_details/delete")
 }

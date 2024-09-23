@@ -41,6 +41,7 @@ var DetailColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "task_action_ids", NamedC: "task_action_ids", Type: enumor.Json},
 	{Column: "operation", NamedC: "operation", Type: enumor.String},
 	{Column: "param", NamedC: "param", Type: enumor.Json},
+	{Column: "result", NamedC: "result", Type: enumor.Json},
 	{Column: "state", NamedC: "state", Type: enumor.String},
 	{Column: "reason", NamedC: "reason", Type: enumor.String},
 	{Column: "extension", NamedC: "extension", Type: enumor.Json},
@@ -59,6 +60,7 @@ type DetailTable struct {
 	TaskActionIDs    types.StringArray      `db:"task_action_ids" json:"task_action_ids"`
 	Operation        enumor.TaskOperation   `db:"operation" validate:"lte=64" json:"operation"`
 	Param            types.JsonField        `db:"param" json:"param"`
+	Result           types.JsonField        `db:"result" json:"result"`
 	State            enumor.TaskDetailState `db:"state" validate:"lte=16" json:"state"`
 	Reason           string                 `db:"reason" validate:"lte=255" json:"reason"`
 	Extension        types.JsonField        `db:"extension" json:"extension"`

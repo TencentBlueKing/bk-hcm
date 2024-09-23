@@ -33,22 +33,12 @@ import (
 
 // CreateManagementReq define create task management request.
 type CreateManagementReq struct {
-	Items []CreateManagementField `json:"items" validate:"required,min=1"`
+	Items []CreateManagementField `json:"items" validate:"required,min=1,dive,required"`
 }
 
 // Validate CreateManagementReq.
 func (req CreateManagementReq) Validate() error {
-	if err := validator.Validate.Struct(req); err != nil {
-		return err
-	}
-
-	for _, item := range req.Items {
-		if err := item.Validate(); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return validator.Validate.Struct(req)
 }
 
 // CreateManagementField define task management create field.
@@ -73,22 +63,12 @@ func (req CreateManagementField) Validate() error {
 
 // UpdateManagementReq define update task management request.
 type UpdateManagementReq struct {
-	Items []UpdateTaskManagementField `json:"items" validate:"required,min=1"`
+	Items []UpdateTaskManagementField `json:"items" validate:"required,min=1,dive,required"`
 }
 
 // Validate UpdateManagementReq.
 func (req UpdateManagementReq) Validate() error {
-	if err := validator.Validate.Struct(req); err != nil {
-		return err
-	}
-
-	for _, item := range req.Items {
-		if err := item.Validate(); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return validator.Validate.Struct(req)
 }
 
 // UpdateTaskManagementField define task management update field.

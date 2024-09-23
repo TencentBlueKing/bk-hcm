@@ -77,6 +77,13 @@ func (svc *service) CreateTaskDetail(cts *rest.Contexts) (interface{}, error) {
 				}
 				model.Extension = tabletype.JsonField(extension)
 			}
+			if item.Result != nil {
+				result, err := json.MarshalToString(item.Result)
+				if err != nil {
+					return nil, errf.NewFromErr(errf.InvalidParameter, err)
+				}
+				model.Result = tabletype.JsonField(result)
+			}
 
 			models = append(models, model)
 		}
@@ -197,6 +204,13 @@ func (svc *service) UpdateTaskDetail(cts *rest.Contexts) (interface{}, error) {
 				}
 				detail.Param = tabletype.JsonField(merge)
 			}
+			if one.Result != nil {
+				merge, err := json.UpdateMerge(one.Result, string(existData.Result))
+				if err != nil {
+					return nil, fmt.Errorf("json UpdateMerge param failed, err: %v", err)
+				}
+				detail.Result = tabletype.JsonField(merge)
+			}
 
 			if one.Extension != nil {
 				merge, err := json.UpdateMerge(one.Extension, string(existData.Extension))
@@ -263,6 +277,7 @@ func (svc *service) ListTaskDetail(cts *rest.Contexts) (interface{}, error) {
 			TaskActionIDs:    one.TaskActionIDs,
 			Operation:        one.Operation,
 			Param:            one.Param,
+			Result:           one.Result,
 			State:            one.State,
 			Reason:           one.Reason,
 			Extension:        extension,

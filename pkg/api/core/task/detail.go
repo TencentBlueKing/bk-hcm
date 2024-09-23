@@ -34,6 +34,7 @@ type Detail struct {
 	TaskActionIDs    []string               `json:"task_action_ids"`
 	Operation        enumor.TaskOperation   `json:"operation"`
 	Param            types.JsonField        `json:"param"`
+	Result           types.JsonField        `json:"result"`
 	State            enumor.TaskDetailState `json:"state"`
 	Reason           string                 `json:"reason"`
 	Extension        *DetailExt             `json:"extension"`
