@@ -103,6 +103,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/task_details/list
 | task_action_ids    | string array | 关联的异步任务task的aciton id数组                                        |
 | operation          | string       | 操作                                                             |
 | param              | json         | 任务详情数据                                                         |
+| result             | json         | 任务详情执行结果                                                       |
 | state              | string       | 任务状态，如：init（待执行）、running（运行）、failed（失败）、success（成功）、cancel（取消） |
 | reason             | string       | 失败原因                                                           |
 | extension          | object       | 扩展字段                                                           |
@@ -176,7 +177,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/task_details/list
         "id": "00000001",
         "task_management_id": "00000001",
         "flow_id": "00000001",
-        "task_action_ids": "00000001",
+        "task_action_ids": ["00000001"],
         "operation": "create_layer4_listener",
         "param": {},
         "state": "failed",
@@ -229,6 +230,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/task_details/list
 | task_action_ids    | string array | 关联的异步任务task的aciton id数组                                        |
 | operation          | string       | 操作                                                             |
 | param              | json         | 任务详情数据                                                         |
+| result             | json         | 任务详情执行结果                                                       |
 | state              | string       | 任务状态，如：init（待执行）、running（运行）、failed（失败）、success（成功）、cancel（取消） |
 | reason             | string       | 失败原因                                                           |
 | extension          | object       | 扩展字段                                                           |
