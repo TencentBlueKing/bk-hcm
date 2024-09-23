@@ -205,7 +205,7 @@ func queryAndParseEndStateFlowByFlowID(kt *kit.Kit, cli *taskserver.Client, flow
 	flowResultMap := make(map[string]*hccvm.BatchCreateResult)
 	for _, task := range tasks {
 		tmp := new(hccvm.BatchCreateResult)
-		if err := json.UnmarshalFromString(string(task.Result), &tmp); err != nil {
+		if err := json.UnmarshalFromString(string(task.Result), tmp); err != nil {
 			logs.Errorf("unmarshal tasks result failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
 		}
