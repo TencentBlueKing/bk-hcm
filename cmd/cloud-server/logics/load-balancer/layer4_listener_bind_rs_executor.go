@@ -264,16 +264,6 @@ func (c *Layer4ListenerBindRSExecutor) buildFlowTask(kt *kit.Kit, lb corelb.Base
 
 		rsList := make([]*dataproto.TargetBaseReq, 0, len(taskDetails))
 		for _, detail := range taskDetails {
-			// TODO cmd/cloud-server/service/load-balancer/async_target_group_add_rs.go:320
-			// 如果传入ENI的信息，需要怎么处理，已有的实现没有看到ENI相关的逻辑
-			cvm, err := getCvm(kt, c.dataServiceCli, detail.detail.RsIp, c.vendor, c.bkBizID, c.accountID)
-			if err != nil {
-				return nil, err
-			}
-			if cvm == nil {
-				return nil, fmt.Errorf("rs(%s) not found", detail.detail.RsIp)
-			}
-
 			rs := &dataproto.TargetBaseReq{
 				IP:            detail.detail.RsIp,
 				InstType:      detail.detail.InstType,
@@ -281,15 +271,23 @@ func (c *Layer4ListenerBindRSExecutor) buildFlowTask(kt *kit.Kit, lb corelb.Base
 				Weight:        converter.ValToPtr(int64(detail.detail.Weight)),
 				AccountID:     c.accountID,
 				TargetGroupID: targetGroupID,
-				CloudInstID:   cvm.CloudID,
-				InstName:      cvm.Name,
-				// TODO 需要确认是否加上ipv6的数据
-				// ref: cmd/cloud-server/service/load-balancer/async_target_group_add_rs.go:331
-				PrivateIPAddress: cvm.PrivateIPv4Addresses,
-				PublicIPAddress:  cvm.PublicIPv4Addresses,
-				CloudVpcIDs:      cvm.CloudVpcIDs,
-				Zone:             cvm.Zone,
 			}
+			if detail.detail.InstType == enumor.CvmInstType {
+				cvm, err := getCvm(kt, c.dataServiceCli, detail.detail.RsIp, c.vendor, c.bkBizID, c.accountID)
+				if err != nil {
+					return nil, err
+				}
+				if cvm == nil {
+					return nil, fmt.Errorf("rs(%s) not found", detail.detail.RsIp)
+				}
+				rs.CloudInstID = cvm.CloudID
+				rs.InstName = cvm.Name
+				rs.PrivateIPAddress = cvm.PrivateIPv4Addresses
+				rs.PublicIPAddress = cvm.PublicIPv4Addresses
+				rs.CloudVpcIDs = cvm.CloudVpcIDs
+				rs.Zone = cvm.Zone
+			}
+
 			rsList = append(rsList, rs)
 		}
 

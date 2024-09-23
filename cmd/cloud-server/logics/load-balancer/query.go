@@ -24,6 +24,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	corecvm "hcm/pkg/api/core/cloud/cvm"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
@@ -194,4 +195,41 @@ func getTargetGroupID(kt *kit.Kit, cli *dataservice.Client, ruleCloudID string) 
 		return "", fmt.Errorf("target group not found")
 	}
 	return rel.Details[0].TargetGroupID, nil
+}
+
+func getCvm(kt *kit.Kit, cli *dataservice.Client, ip string,
+	vendor enumor.Vendor, bkBizID int64, accountID string) (*corecvm.BaseCvm, error) {
+
+	// TODO question: 一个云账号下面可以保证 内网ip是唯一的吗？还是需要有额外的逻辑保证这个函数查询出来的结果是唯一的，比如vpc？
+	expr, err := tools.And(
+		tools.ExpressionOr(
+			tools.RuleJSONContains("private_ipv4_addresses", ip),
+			tools.RuleJSONContains("private_ipv6_addresses", ip),
+			tools.RuleJSONContains("public_ipv4_addresses", ip),
+			tools.RuleJSONContains("public_ipv6_addresses", ip),
+		),
+		tools.RuleEqual("vendor", vendor),
+		tools.RuleEqual("bk_biz_id", bkBizID),
+		tools.RuleEqual("account_id", accountID),
+	)
+	if err != nil {
+		logs.Errorf("failed to create expression, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+	listReq := &core.ListReq{
+		Filter: expr,
+		Page: &core.BasePage{
+			Start: 0,
+			Limit: 1,
+		},
+	}
+	cvms, err := cli.Global.Cvm.ListCvm(kt, listReq)
+	if err != nil {
+		logs.Errorf("list cvm failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+	if len(cvms.Details) > 0 {
+		return &cvms.Details[0], nil
+	}
+	return nil, nil
 }
