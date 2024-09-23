@@ -62,8 +62,8 @@ func NewImportPreviewExecutor(operationType OperationType, service *dataservice.
 	vendor enumor.Vendor, bkBizID int64, accountID string, regionIDs []string) (ImportPreviewExecutor, error) {
 
 	switch operationType {
-	//case CreateLayer4Listener:
-	//	return newCreateLayer4ListenerPreviewExecutor(service, vendor, bkBizID, accountID, regionIDs), nil
+	case CreateLayer4Listener:
+		return newCreateLayer4ListenerPreviewExecutor(service, vendor, bkBizID, accountID, regionIDs), nil
 	case CreateLayer7Listener:
 		return newCreateLayer7ListenerPreviewExecutor(service, vendor, bkBizID, accountID, regionIDs), nil
 	//case CreateUrlRule:
