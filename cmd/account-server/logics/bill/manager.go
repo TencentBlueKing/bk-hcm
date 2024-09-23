@@ -60,15 +60,14 @@ func (bm *BillManager) Run(ctx context.Context) {
 }
 
 func (bm *BillManager) loopOnce() {
-	if bm.Sd.IsMaster() {
-		if err := bm.syncMainControllers(); err != nil {
-			logs.Errorf("sync main controllers failed, err: %s", err.Error())
-		}
-		if err := bm.syncRootControllers(); err != nil {
-			logs.Errorf("sync root controllers failed, err: %s", err.Error())
-		}
-	} else {
+	if !bm.Sd.IsMaster() {
 		bm.stopControllers()
+	}
+	if err := bm.syncMainControllers(); err != nil {
+		logs.Errorf("sync main controllers failed, err: %s", err.Error())
+	}
+	if err := bm.syncRootControllers(); err != nil {
+		logs.Errorf("sync root controllers failed, err: %s", err.Error())
 	}
 }
 

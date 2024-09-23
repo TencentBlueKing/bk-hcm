@@ -135,6 +135,7 @@ func (b bill) GcpGetRootAccountBillList(cts *rest.Contexts) (interface{}, error)
 		Month:         req.Month,
 		BeginDate:     req.BeginDate,
 		EndDate:       req.EndDate,
+		ProjectID:     req.ProjectID,
 	}
 	// 检查Main AccountID是否存在
 	if len(req.MainAccountID) != 0 {
@@ -147,10 +148,7 @@ func (b bill) GcpGetRootAccountBillList(cts *rest.Contexts) (interface{}, error)
 			return nil, fmt.Errorf("main account: %s cloud_project_id is empty", req.MainAccountID)
 		}
 		opt.ProjectID = mainAccountInfo.Extension.CloudProjectID
-	} else {
-		opt.ProjectID = req.ProjectID
 	}
-
 	if req.Page != nil {
 		opt.Page = &typesBill.GcpBillPage{
 			Offset: req.Page.Offset,
@@ -204,6 +202,7 @@ func (b bill) GcpQueryCreditList(cts *rest.Contexts) (interface{}, error) {
 		Month:         req.Month,
 		BeginDate:     req.BeginDate,
 		EndDate:       req.EndDate,
+		ProjectID:     req.ProjectID,
 	}
 	// 检查Main AccountID是否存在
 	if len(req.MainAccountID) != 0 {
@@ -216,8 +215,6 @@ func (b bill) GcpQueryCreditList(cts *rest.Contexts) (interface{}, error) {
 			return nil, fmt.Errorf("main account: %s cloud_project_id is empty", req.MainAccountID)
 		}
 		opt.ProjectID = mainAccountInfo.Extension.CloudProjectID
-	} else {
-		opt.ProjectID = req.ProjectID
 	}
 
 	if req.Page != nil {

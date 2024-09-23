@@ -114,7 +114,7 @@ func (msdc *MainDailySplitController) Start() error {
 func (msdc *MainDailySplitController) setAwsExtension(kt *kit.Kit) error {
 
 	billAllocation := cc.AccountServer().BillAllocation
-	// 	matching saving plan allocation option
+	// matching saving plan allocation option
 	for _, spOpt := range billAllocation.AwsSavingsPlans {
 		if spOpt.RootAccountCloudID != msdc.RootAccountCloudID {
 			continue

@@ -44,7 +44,7 @@ func (gcp *GcpMonthDescriber) GetTaskExtension(rootAccountCloudID string) (map[s
 	excludeCloudIds := cc.AccountServer().BillAllocation.GcpCommonExpense.ExcludeAccountCloudIDs
 	var creditReturnConfig string
 	var err error
-	// 	matching saving plan allocation option
+	// matching saving plan allocation option
 	for _, creditConfigs := range cc.AccountServer().BillAllocation.GcpCredits {
 		if creditConfigs.RootAccountCloudID != rootAccountCloudID {
 			continue

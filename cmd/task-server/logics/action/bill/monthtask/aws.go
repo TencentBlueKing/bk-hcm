@@ -124,14 +124,3 @@ func convAwsBillItemExtension(productName string, opt *MonthTaskActionOption, ro
 	}
 	return json.Marshal(ext)
 }
-
-// // BuildAwsMonthTaskOptionExtension build aws month task option extension
-// func BuildAwsMonthTaskOptionExtension(arnPrefix, spMainCloudID string,
-// 	excludeAccountCloudIds []string) map[string]string {
-//
-// 	return map[string]string{
-// 		AwsCommonExpenseExcludeCloudIDKey:          strings.Join(excludeAccountCloudIds, ","),
-// 		dailysplit.AwsSavingsPlanARNPrefixKey:      arnPrefix,
-// 		dailysplit.AwsSavingsPlanAccountCloudIDKey: spMainCloudID,
-// 	}
-// }

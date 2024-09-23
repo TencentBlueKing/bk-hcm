@@ -45,7 +45,7 @@ func (aws *AwsMonthDescriber) GetTaskExtension(rootAccountCloudID string) (map[s
 	// set exclude account id
 	excludeCloudIds := cc.AccountServer().BillAllocation.AwsCommonExpense.ExcludeAccountCloudIDs
 	var spArnPrefix, spAccountCloudID string
-	// 	matching saving plan allocation option
+	// matching saving plan allocation option
 	for _, spOpt := range cc.AccountServer().BillAllocation.AwsSavingsPlans {
 		if spOpt.RootAccountCloudID != rootAccountCloudID {
 			continue
