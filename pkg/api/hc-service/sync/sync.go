@@ -34,8 +34,9 @@ func (req *TCloudGlobalSyncReq) Validate() error {
 
 // TCloudSyncReq tcloud sync request
 type TCloudSyncReq struct {
-	AccountID string `json:"account_id" validate:"required"`
-	Region    string `json:"region" validate:"required"`
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIds  []string `json:"cloud_ids" validate:"omitempty,max=20"`
 }
 
 // Validate tcloud sync request.

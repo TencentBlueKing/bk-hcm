@@ -81,10 +81,10 @@ func (c *ClbClient) CreateListenerWithTargetGroup(kt *kit.Kit, req *hcproto.List
 }
 
 // CreateListener 创建监听器自身
-func (c *ClbClient) CreateListener(kt *kit.Kit, req *hcproto.ListenerCreateReq) (
+func (c *ClbClient) CreateListener(kt *kit.Kit, req *hcproto.TCloudListenerCreateReq) (
 	*hcproto.ListenerCreateResult, error) {
 
-	return common.Request[hcproto.ListenerCreateReq, hcproto.ListenerCreateResult](
+	return common.Request[hcproto.TCloudListenerCreateReq, hcproto.ListenerCreateResult](
 		c.client, http.MethodPost, kt, req, "/listeners/create")
 }
 

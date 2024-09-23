@@ -65,7 +65,7 @@ func (svc *clbSvc) QueryListenerTargetsByCloudIDs(cts *rest.Contexts) (any, erro
 // CreateTCloudListener 仅创建监听器自身
 func (svc *clbSvc) CreateTCloudListener(cts *rest.Contexts) (interface{}, error) {
 
-	req := new(protolb.ListenerCreateReq)
+	req := new(protolb.TCloudListenerCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -129,7 +129,7 @@ func (svc *clbSvc) CreateTCloudListener(cts *rest.Contexts) (interface{}, error)
 	return &protolb.ListenerCreateResult{CloudLblID: cloudLblID, LblID: id}, nil
 }
 
-func (svc *clbSvc) createListenerDB(kt *kit.Kit, req *protolb.ListenerCreateReq, lbInfo corelb.BaseLoadBalancer,
+func (svc *clbSvc) createListenerDB(kt *kit.Kit, req *protolb.TCloudListenerCreateReq, lbInfo corelb.BaseLoadBalancer,
 	cloudID string) (string, error) {
 
 	if req.Protocol.IsLayer7Protocol() {

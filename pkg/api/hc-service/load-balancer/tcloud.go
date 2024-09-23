@@ -284,8 +284,8 @@ func (r TCloudRuleDeleteByDomainReq) Validate() error {
 
 // --------------------------[创建监听器及规则]--------------------------
 
-// ListenerCreateReq listener only create req.
-type ListenerCreateReq struct {
+// TCloudListenerCreateReq listener only create req.
+type TCloudListenerCreateReq struct {
 	Name          string                        `json:"name" validate:"required"`
 	BkBizID       int64                         `json:"bk_biz_id" validate:"omitempty"`
 	LbID          string                        `json:"lb_id" validate:"required"`
@@ -300,7 +300,7 @@ type ListenerCreateReq struct {
 }
 
 // Validate 校验创建监听器的参数
-func (req *ListenerCreateReq) Validate() error {
+func (req *TCloudListenerCreateReq) Validate() error {
 
 	if req.SessionExpire > 0 && (req.SessionExpire < 30 || req.SessionExpire > 3600) {
 		return errors.New("session_expire must be '0' or between `30` and `3600`")
