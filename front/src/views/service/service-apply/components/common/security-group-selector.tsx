@@ -31,7 +31,7 @@ export default defineComponent({
   setup(props) {
     const { t } = useI18n();
     const resourceStore = useResourceStore();
-    const { isServicePage, whereAmI } = useWhereAmI();
+    const { isServicePage, whereAmI, getBusinessApiPath } = useWhereAmI();
 
     const isDialogShow = ref(false);
     const cache: any = { securityList: [], securityGroupRules: [] }; // 缓存：记录编辑前的状态
@@ -138,10 +138,13 @@ export default defineComponent({
         currentIndex.value = index;
         try {
           isRulesTableLoading.value = true;
-          const res = await http.post(`/api/v1/cloud/vendors/${props.vendor}/security_groups/${item.id}/rules/list`, {
-            filter: { op: 'and', rules: [] },
-            page: { count: false, start: 0, limit: 500 },
-          });
+          const res = await http.post(
+            `/api/v1/cloud/${getBusinessApiPath()}vendors/${props.vendor}/security_groups/${item.id}/rules/list`,
+            {
+              filter: { op: 'and', rules: [] },
+              page: { count: false, start: 0, limit: 500 },
+            },
+          );
           const arr = res.data?.details || [];
           securityGroupRules.value.push({ id: item.cloud_id, name: item.name, data: arr });
         } finally {
