@@ -11,6 +11,8 @@ export default (cond: Cond, formData: ICvmFormData) => {
 
   const billingModes = ref([]);
 
+  const internetChargeTypes = ref([]);
+
   const purchaseDurationUnits = [
     {
       id: 'm',
@@ -255,6 +257,27 @@ export default (cond: Cond, formData: ICvmFormData) => {
     ],
   };
 
+  const internetChargeTypeValues = {
+    [VendorEnum.TCLOUD]: [
+      {
+        id: 'BANDWIDTH_PREPAID',
+        name: '包月带宽',
+      },
+      {
+        id: 'BANDWIDTH_POSTPAID_BY_HOUR',
+        name: '按小时带宽',
+      },
+      {
+        id: 'TRAFFIC_POSTPAID_BY_HOUR',
+        name: '按流量计费',
+      },
+      {
+        id: 'BANDWIDTH_PACKAGE',
+        name: '共享带宽包',
+      },
+    ],
+  };
+
   watch(
     () => cond.vendor,
     (vendor) => {
@@ -263,6 +286,8 @@ export default (cond: Cond, formData: ICvmFormData) => {
       dataDiskTypes.value = dataDiskTypeValues[vendor] || [];
 
       billingModes.value = billingModeValues[vendor] || [];
+
+      internetChargeTypes.value = internetChargeTypeValues[vendor] || [];
     },
     {
       immediate: true,
@@ -458,10 +483,29 @@ export default (cond: Cond, formData: ICvmFormData) => {
     },
   );
 
+  watch(
+    () => formData.instance_charge_type,
+    (chargeType: string) => {
+      if (cond.vendor === VendorEnum.TCLOUD) {
+        if (chargeType === 'PREPAID') {
+          internetChargeTypes.value = internetChargeTypeValues[VendorEnum.TCLOUD].filter(
+            (item) => item.id !== 'BANDWIDTH_POSTPAID_BY_HOUR',
+          );
+        } else {
+          internetChargeTypes.value = internetChargeTypeValues[VendorEnum.TCLOUD].filter(
+            (item) => item.id !== 'BANDWIDTH_PREPAID',
+          );
+        }
+      }
+    },
+    { immediate: true },
+  );
+
   return {
     sysDiskTypes,
     dataDiskTypes,
     billingModes,
     purchaseDurationUnits,
+    internetChargeTypes,
   };
 };

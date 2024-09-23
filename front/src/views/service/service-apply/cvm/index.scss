@@ -28,7 +28,7 @@
   .sub-form-item-wrap {
     margin: 0 8px 0 0;
   }
-  
+
   .data-disk-wrap {
     .flex-row {
       .bk-form-item {
@@ -78,6 +78,7 @@
   padding: 16px 24px 0 0;
   background: #fafbfd;
   border: 1px solid #dcdee5;
+  z-index: 9999;
 
   .purchase-cvm-bottom-bar-form {
     display: flex;
@@ -195,4 +196,17 @@
       }
     }
   }
+}
+
+.slider-unit-suffix {
+  width: 55px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid #c4c6cc;
+  border-left-style: none;
+  border-radius: 2px 0 0 2px;
+  background-color: #fafbfd;
+  box-sizing: border-box;
+  text-align: center;
+  user-select: none;
 }
