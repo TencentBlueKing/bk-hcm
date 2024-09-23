@@ -79,8 +79,8 @@ func GetListenerByID(kt *kit.Kit, cli *dataservice.Client, lblID string) (corelb
 	return lblList.Details[0], nil
 }
 
-func getListener(kt *kit.Kit, cli *dataservice.Client, accountID, lbCloudID, protocol string, port int,
-	bkBizID int64, vendor enumor.Vendor) (*corelb.BaseListener, error) {
+func getListener(kt *kit.Kit, cli *dataservice.Client, accountID, lbCloudID string, protocol enumor.ProtocolType,
+	port int, bkBizID int64, vendor enumor.Vendor) (*corelb.BaseListener, error) {
 
 	req := &core.ListReq{
 		Filter: tools.ExpressionAnd(

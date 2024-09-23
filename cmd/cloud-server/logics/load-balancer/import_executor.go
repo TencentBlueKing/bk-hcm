@@ -22,7 +22,10 @@ package lblogic
 import (
 	"encoding/json"
 	"fmt"
+
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
+	taskCore "hcm/pkg/api/core/task"
+	"hcm/pkg/api/data-service/task"
 	"hcm/pkg/api/hc-service/sync"
 	ts "hcm/pkg/api/task-server"
 	"hcm/pkg/async/action"
@@ -31,6 +34,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 )
 
 // ImportExecutor 导入执行器
@@ -63,8 +67,8 @@ func NewImportExecutor(operationType OperationType, dataCli *dataservice.Client,
 	//	return newCreateLayer4ListenerExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
 	case CreateLayer7Listener:
 		return newCreateLayer7ListenerExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
-	//case CreateUrlRule:
-	//	return newCreateUrlRuleExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
+	case CreateUrlRule:
+		return newCreateUrlRuleExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
 	//case Layer4ListenerBindRs:
 	//	return newLayer4ListenerBindRSExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
 	//case Layer7ListenerBindRs:
@@ -89,4 +93,73 @@ func buildSyncClbFlowTask(lbCloudID, accountID, region string, generator func() 
 		Retry: tableasync.NewRetryWithPolicy(3, 100, 200),
 	}
 	return tmpTask
+}
+
+func createTaskManagement(kt *kit.Kit, cli *dataservice.Client, bkBizID int64, vendor enumor.Vendor, accountID string,
+	regionIDs []string, source enumor.TaskManagementSource, operation enumor.TaskOperation) (string, error) {
+
+	taskManagementCreateReq := &task.CreateManagementReq{
+		Items: []task.CreateManagementField{
+			{
+				BkBizID:    bkBizID,
+				Source:     source,
+				Vendor:     vendor,
+				AccountID:  accountID,
+				Resource:   enumor.TaskManagementResClb,
+				State:      enumor.TaskManagementRunning,
+				Operations: []enumor.TaskOperation{operation},
+				Extension:  &taskCore.ManagementExt{RegionIDs: regionIDs},
+			},
+		},
+	}
+
+	result, err := cli.Global.TaskManagement.Create(kt, taskManagementCreateReq)
+	if err != nil {
+		return "", err
+	}
+	if len(result.IDs) == 0 {
+		return "", fmt.Errorf("create task management failed")
+	}
+	return result.IDs[0], nil
+}
+
+func updateTaskManagement(kt *kit.Kit, cli *dataservice.Client, taskID string, flowIDs []string) error {
+
+	if len(flowIDs) == 0 {
+		return nil
+	}
+	updateItem := task.UpdateTaskManagementField{
+		ID:      taskID,
+		FlowIDs: flowIDs,
+	}
+	updateReq := &task.UpdateManagementReq{
+		Items: []task.UpdateTaskManagementField{updateItem},
+	}
+	err := cli.Global.TaskManagement.Update(kt, updateReq)
+	if err != nil {
+		logs.Errorf("update task management failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+	return nil
+}
+
+func updateTaskDetailState(kt *kit.Kit, cli *dataservice.Client, state enumor.TaskDetailState, ids []string,
+	reason string) error {
+
+	updateItems := make([]task.UpdateTaskDetailField, 0, len(ids))
+	for _, id := range ids {
+		updateItems = append(updateItems, task.UpdateTaskDetailField{
+			ID:     id,
+			State:  state,
+			Reason: reason,
+		})
+	}
+	updateDetailsReq := &task.UpdateDetailReq{
+		Items: updateItems,
+	}
+	err := cli.Global.TaskDetail.Update(kt, updateDetailsReq)
+	if err != nil {
+		return err
+	}
+	return nil
 }
