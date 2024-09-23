@@ -135,6 +135,8 @@ type TCloudBatchCreateReq struct {
 	DataDisk                []typecvm.TCloudDataDisk             `json:"data_disk" validate:"omitempty"`
 	PublicIPAssigned        bool                                 `json:"public_ip_assigned" validate:"omitempty"`
 	InternetMaxBandwidthOut int64                                `json:"internet_max_bandwidth_out" validate:"omitempty"`
+	InternetChargeType      typecvm.TCloudInternetChargeType     `json:"internet_charge_type" validate:"omitempty"`
+	BandwidthPackageID      *string                              `json:"bandwidth_package_id" validate:"omitempty"`
 }
 
 // Validate request.
