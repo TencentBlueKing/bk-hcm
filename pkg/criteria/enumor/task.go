@@ -50,7 +50,7 @@ type TaskManagementResource string
 
 const (
 	// TaskManagementResClb is a resource indicating that clb.
-	TaskManagementResClb TaskManagementSource = "clb"
+	TaskManagementResClb TaskManagementResource = "clb"
 )
 
 // TaskDetailState is task detail state.
