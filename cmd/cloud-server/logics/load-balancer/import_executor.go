@@ -67,8 +67,8 @@ func NewImportExecutor(operationType OperationType, dataCli *dataservice.Client,
 		return newCreateLayer4ListenerExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
 	case CreateLayer7Listener:
 		return newCreateLayer7ListenerExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
-	//case CreateUrlRule:
-	//	return newCreateUrlRuleExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
+	case CreateUrlRule:
+		return newCreateUrlRuleExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
 	//case Layer4ListenerBindRs:
 	//	return newLayer4ListenerBindRSExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
 	//case Layer7ListenerBindRs:
@@ -146,15 +146,18 @@ func updateTaskManagement(kt *kit.Kit, cli *dataservice.Client, taskID string, f
 	return nil
 }
 
-func updateTaskDetailState(kt *kit.Kit, cli *dataservice.Client, state enumor.TaskDetailState, ids []string) error {
-	updateItems := make([]task.UpdateTaskDetailField, 0, len(ids))
+func updateTaskDetailState(kt *kit.Kit, cli *dataservice.Client, state enumor.TaskDetailState, ids []string,
+	reason string) error {
+
 	if len(ids) == 0 {
 		return nil
 	}
+	updateItems := make([]task.UpdateTaskDetailField, 0, len(ids))
 	for _, id := range ids {
 		updateItems = append(updateItems, task.UpdateTaskDetailField{
-			ID:    id,
-			State: state,
+			ID:     id,
+			State:  state,
+			Reason: reason,
 		})
 	}
 	updateDetailsReq := &task.UpdateDetailReq{

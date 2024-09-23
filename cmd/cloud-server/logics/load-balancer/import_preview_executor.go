@@ -39,11 +39,11 @@ const (
 	// CreateLayer7Listener 创建七层监听器
 	CreateLayer7Listener = "create_layer7_listener"
 	// CreateUrlRule 创建URL规则
-	CreateUrlRule = "create_url_rule"
+	CreateUrlRule = "create_layer7_rule"
 	// Layer4ListenerBindRs 四层监听器绑定RS
-	Layer4ListenerBindRs = "layer4_listener_bind_rs"
+	Layer4ListenerBindRs = "binding_layer4_rs"
 	// Layer7ListenerBindRs 七层监听器绑定RS
-	Layer7ListenerBindRs = "layer7_listener_bind_rs"
+	Layer7ListenerBindRs = "binding_layer7_rs"
 )
 
 // ImportPreviewExecutor 导入预览执行器
@@ -66,8 +66,8 @@ func NewImportPreviewExecutor(operationType OperationType, service *dataservice.
 		return newCreateLayer4ListenerPreviewExecutor(service, vendor, bkBizID, accountID, regionIDs), nil
 	case CreateLayer7Listener:
 		return newCreateLayer7ListenerPreviewExecutor(service, vendor, bkBizID, accountID, regionIDs), nil
-	//case CreateUrlRule:
-	//	return newCreateUrlRulePreviewExecutor(service, vendor, bkBizID, accountID, regionIDs), nil
+	case CreateUrlRule:
+		return newCreateUrlRulePreviewExecutor(service, vendor, bkBizID, accountID, regionIDs), nil
 	//case Layer4ListenerBindRs:
 	//	return newLayer4ListenerBindRSPreviewExecutor(service, vendor, bkBizID, accountID, regionIDs), nil
 	//case Layer7ListenerBindRs:

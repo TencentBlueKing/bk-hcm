@@ -159,7 +159,7 @@ func (c *CreateLayer7ListenerPreviewExecutor) validateWithDB(kt *kit.Kit, cloudI
 		if detail.ClbVipDomain != lb.Domain && !slice.IsItemInSlice(ipSet, detail.ClbVipDomain) {
 			detail.Status.SetNotExecutable()
 			detail.ValidateResult = append(detail.ValidateResult,
-				fmt.Sprintf("clb.vip(%s) not match;", detail.ClbVipDomain))
+				fmt.Sprintf("clb.vip(%s) not match", detail.ClbVipDomain))
 		}
 		detail.RegionID = lb.Region
 

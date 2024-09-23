@@ -42,11 +42,11 @@ func validateScheduler(scheduler enumor.Scheduler) error {
 
 func validatePort(ports []int) error {
 	if len(ports) > 2 || len(ports) == 0 {
-		return errors.New("端口数量错误")
+		return errors.New("invalid ports count")
 	}
 	for _, port := range ports {
 		if port < 0 || port > 65535 {
-			return fmt.Errorf("端口范围错误: %d ", port)
+			return errors.New("invalid port, out of range")
 		}
 	}
 	return nil
@@ -61,18 +61,18 @@ func validateInstType(instType enumor.InstType) error {
 
 func validateWeight(weight int) error {
 	if weight < 0 || weight > 100 {
-		return errors.New("权重范围错误")
+		return fmt.Errorf("invalid weight: %d ", weight)
 	}
 	return nil
 }
 
 func validateEndPort(listenerPort, rsPort []int) error {
 	if len(listenerPort) != len(rsPort) {
-		return errors.New("监听器端口和RS端口数量不一致")
+		return errors.New("the number of listener ports and RS ports are inconsistent")
 	}
 
 	if len(listenerPort) == 2 && listenerPort[1]-listenerPort[0] != rsPort[1]-rsPort[0] {
-		return errors.New("监听器端口和RS端口 端口段长度不一致")
+		return errors.New("the length of the port range for listener ports and RS ports is inconsistent")
 	}
 
 	return nil
