@@ -83,6 +83,8 @@ func (svc *cvmSvc) InquiryPriceTCloudCvm(cts *rest.Contexts) (interface{}, error
 		DataDisk:                req.DataDisk,
 		PublicIPAssigned:        req.PublicIPAssigned,
 		InternetMaxBandwidthOut: req.InternetMaxBandwidthOut,
+		InternetChargeType:      req.InternetChargeType,
+		BandwidthPackageID:      req.BandwidthPackageID,
 	}
 	result, err := tcloud.InquiryPriceCvm(cts.Kit, createOpt)
 	if err != nil {

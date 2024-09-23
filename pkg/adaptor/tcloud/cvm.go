@@ -477,8 +477,11 @@ func (t *TCloudImpl) InquiryPriceCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOptio
 	req.InternetAccessible = &cvm.InternetAccessible{
 		PublicIpAssigned:        common.BoolPtr(opt.PublicIPAssigned),
 		InternetMaxBandwidthOut: common.Int64Ptr(opt.InternetMaxBandwidthOut),
+		BandwidthPackageId:      opt.BandwidthPackageID,
 	}
-
+	if len(opt.InternetChargeType) != 0 {
+		req.InternetAccessible.InternetChargeType = converter.ValToPtr(string(opt.InternetChargeType))
+	}
 	req.SystemDisk = &cvm.SystemDisk{
 		DiskId:   opt.SystemDisk.CloudDiskID,
 		DiskSize: opt.SystemDisk.DiskSizeGB,
