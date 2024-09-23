@@ -51,11 +51,14 @@ func listTaskDetail(kt *kit.Kit, ids []string) ([]coretask.Detail, error) {
 	return detailResp.Details, nil
 }
 
-func batchUpdateTaskDetailState(kt *kit.Kit, ids []string, state enumor.TaskDetailState) error {
+func batchUpdateTaskDetailState(kt *kit.Kit, ids []string, state enumor.TaskDetailState, reason error) error {
 
 	detailUpdates := make([]datatask.UpdateTaskDetailField, 0, len(ids))
 	for i := range ids {
 		field := datatask.UpdateTaskDetailField{ID: ids[i], State: state}
+		if reason != nil {
+			field.Reason = reason.Error()
+		}
 		detailUpdates = append(detailUpdates, field)
 	}
 	updateTaskReq := &datatask.UpdateDetailReq{Items: detailUpdates}

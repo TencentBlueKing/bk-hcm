@@ -85,7 +85,7 @@ func (act BatchTaskTCloudCreateListenerAction) Run(kt run.ExecuteKit, params any
 			// 更新为失败
 			targetState = enumor.TaskDetailFailed
 		}
-		err := batchUpdateTaskDetailState(kt.Kit(), []string{detailID}, targetState)
+		err := batchUpdateTaskDetailState(kt.Kit(), []string{detailID}, targetState, createErr)
 		if err != nil {
 			logs.Errorf("fail to set detail to %s after cloud operation finished, err: %v, rid: %s",
 				targetState, err, kt.Kit().Rid)
@@ -127,7 +127,7 @@ func (act BatchTaskTCloudCreateListenerAction) createSingleListener(kt *kit.Kit,
 	}
 
 	// 更新任务状态为 running
-	if err := batchUpdateTaskDetailState(kt, []string{detailId}, enumor.TaskDetailRunning); err != nil {
+	if err := batchUpdateTaskDetailState(kt, []string{detailId}, enumor.TaskDetailRunning, nil); err != nil {
 		return nil, fmt.Errorf("fail to update detail to running, err: %v", err)
 	}
 	lblResp, err := actcli.GetHCService().TCloud.Clb.CreateListener(kt, req)

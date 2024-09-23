@@ -117,7 +117,7 @@ func (act BatchTaskTCloudCreateL7RuleAction) Run(kt run.ExecuteKit, params any) 
 
 	// 进入创建
 	// 更新任务状态为 running
-	if err := batchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs, enumor.TaskDetailRunning); err != nil {
+	if err := batchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs, enumor.TaskDetailRunning, nil); err != nil {
 		return fmt.Sprintf("fail to update detail to running"), err
 	}
 
@@ -128,7 +128,7 @@ func (act BatchTaskTCloudCreateL7RuleAction) Run(kt run.ExecuteKit, params any) 
 			// 更新为失败
 			targetState = enumor.TaskDetailFailed
 		}
-		err := batchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs, targetState)
+		err := batchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs, targetState, taskErr)
 		if err != nil {
 			logs.Errorf("fail to set detail to %s after cloud operation finished, err: %v, rid: %s",
 				targetState, err, kt.Kit().Rid)
