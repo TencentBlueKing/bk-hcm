@@ -1,18 +1,18 @@
-import http from '@/http';
 import { computed, defineComponent, PropType, ref, TransitionGroup, watch } from 'vue';
-import { Button, Checkbox, Dialog, Input, Loading, Table } from 'bkui-vue';
-import { SECURITY_GROUP_RULE_TYPE, VendorEnum } from '@/common/constant';
-import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
-import './security-group-selector.scss';
-import { EditLine, Plus } from 'bkui-vue/lib/icon';
-import DraggableCard from './DraggableCard';
-import { type UseDraggableReturn, VueDraggable } from 'vue-draggable-plus';
+import { Button, Checkbox, Dialog, Exception, Input, Loading, Table } from 'bkui-vue';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
-import { QueryRuleOPEnum } from '@/typings';
-import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
-import { useResourceStore } from '@/store';
+import { EditLine, Plus } from 'bkui-vue/lib/icon';
+import { type UseDraggableReturn, VueDraggable } from 'vue-draggable-plus';
+import './security-group-selector.scss';
 
-const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
+import DraggableCard from './DraggableCard';
+
+import { useResourceStore } from '@/store';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
+import { SECURITY_GROUP_RULE_TYPE, VendorEnum } from '@/common/constant';
+import { QueryRuleOPEnum } from '@/typings';
+import http from '@/http';
 
 export default defineComponent({
   props: {
@@ -28,17 +28,16 @@ export default defineComponent({
   emits: ['update:modelValue'],
   setup(props) {
     const resourceStore = useResourceStore();
-    const list = ref([]);
+    const { isServicePage, whereAmI } = useWhereAmI();
+
+    const securityList = ref([]);
     const loading = ref(false);
-    const { isServicePage } = useWhereAmI();
     const isDialogShow = ref(false);
-    // const isScrollLoading = ref(false);
     const securityGroupRules = ref([]);
     const securityGroupKVMap = ref(new Map<string, string>());
     const isRulesTableLoading = ref(false);
     const el = ref<UseDraggableReturn>();
     const selectedSecurityType = ref(SECURITY_GROUP_RULE_TYPE.INGRESS);
-    const { whereAmI } = useWhereAmI();
 
     const computedDisabled = computed(() => {
       return !(props.accountId && props.vendor && props.region);
@@ -54,91 +53,37 @@ export default defineComponent({
     const securityRulesColumns = useColumns('securityCommon', false, props.vendor).columns.filter(
       ({ field }: { field: string }) => !['updated_at'].includes(field),
     );
-    // const securityRulesColumns = [
-    //   {
-    //     label: '目标',
-    //     field: 'target_ip',
-    //     render: ({ data }: any) => {
-    //       return data.ipv4_cidr || data.ipv6_cidr || '--';
-    //     },
-    //   },
-    //   {
-    //     label: '端口协议',
-    //     field: 'protocol_port',
-    //     render: ({ data }: any) => `${data.protocol}:${data.port}`,
-    //   },
-    //   {
-    //     label: '策略',
-    //     field: 'action',
-    //     render: ({ data }: any) => `${data.action || data.access || '--'}`,
-    //   },
-    // ];
 
     const selected = ref([]);
     const searchVal = ref('');
     const isAllExpand = ref(true);
 
-    // const isSelected = computed(() => {
-    //   if (selected.value) {
-    //     return !!Object.keys(selected.value).length;
-    //   }
-    //   return false;
-    // });
-
-    // const handleScrollBottom = () => {
-    //   isScrollLoading.value = true;
-    // };
-
     watch(
       [() => props.bizId, () => props.accountId, () => props.region, () => props.vpcId, () => searchVal.value],
       async ([bizId, accountId, region, vpcId]) => {
         if ((!bizId && isServicePage) || !accountId || !region) {
-          list.value = [];
+          securityList.value = [];
           return;
         }
         loading.value = true;
-        // const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bizs/${bizId}/security_groups/list`, {
         const rules = [
-          {
-            field: 'account_id',
-            op: 'eq',
-            value: accountId,
-          },
-          {
-            field: 'region',
-            op: 'eq',
-            value: region,
-          },
+          { field: 'account_id', op: 'eq', value: accountId },
+          { field: 'region', op: 'eq', value: region },
         ];
         if (searchVal.value.length) {
-          rules.push({
-            field: 'name',
-            op: QueryRuleOPEnum.CS,
-            value: searchVal.value,
-          });
+          rules.push({ field: 'name', op: QueryRuleOPEnum.CS, value: searchVal.value });
         }
         if (props.vendor === VendorEnum.AWS) {
-          rules.push({
-            field: 'extension.vpc_id',
-            op: 'json_eq',
-            value: vpcId,
-          });
+          rules.push({ field: 'extension.vpc_id', op: 'json_eq', value: vpcId });
         }
         const result = await resourceStore.getCommonList(
           {
-            filter: {
-              op: 'and',
-              rules,
-            },
-            page: {
-              count: false,
-              start: 0,
-              limit: 500,
-            },
+            filter: { op: 'and', rules },
+            page: { count: false, start: 0, limit: 500 },
           },
           'security_groups/list',
         );
-        list.value = result?.data?.details ?? [];
+        securityList.value = result?.data?.details ?? [];
         loading.value = false;
       },
     );
@@ -158,13 +103,10 @@ export default defineComponent({
       if (isSelected) {
         currentIndex.value = index;
         isRulesTableLoading.value = true;
-        const res = await http.post(
-          `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${props.vendor}/security_groups/${item.id}/rules/list`,
-          {
-            filter: { op: 'and', rules: [] },
-            page: { count: false, start: 0, limit: 500 },
-          },
-        );
+        const res = await http.post(`/api/v1/cloud/vendors/${props.vendor}/security_groups/${item.id}/rules/list`, {
+          filter: { op: 'and', rules: [] },
+          page: { count: false, start: 0, limit: 500 },
+        });
         const arr = res.data?.details || [];
         securityGroupRules.value.push({ id: item.cloud_id, data: arr });
         securityGroupKVMap.value.set(item.cloud_id, item.name);
@@ -195,13 +137,13 @@ export default defineComponent({
         {selected.value?.length ? null : (
           <Button
             onClick={() => (isDialogShow.value = true)}
-            disabled={computedDisabled.value || list.value.length === 0}>
+            disabled={computedDisabled.value || securityList.value.length === 0}>
             <Plus class='f20' />
             选择安全组
           </Button>
         )}
         <div>
-          {list.value.length || computedDisabled.value ? null : (
+          {securityList.value.length || computedDisabled.value ? null : (
             <div class={'security-selector-tips'}>
               无可用的安全组，可{' '}
               <Button
@@ -224,10 +166,8 @@ export default defineComponent({
           isShow={isDialogShow.value}
           onClosed={() => (isDialogShow.value = false)}
           onConfirm={() => {
-            // selected.value = [...Array.from(securityGroupKVMap.value).map(([k, _val]) => k)];
             selected.value = securityGroupRules.value.map(({ id }) => id);
             props.onSelectedChange(selected.value);
-            // props.onSelectedChange(props.vendor === VendorEnum.AZURE ? selected.value?.[0] : selected.value);
             isDialogShow.value = false;
           }}
           title='选择安全组'
@@ -244,8 +184,8 @@ export default defineComponent({
               />
               <Loading loading={loading.value} class={'mt8'}>
                 <div class={'security-search-list'}>
-                  {list.value.length ? (
-                    list.value.map((item, index) => (
+                  {securityList.value.length ? (
+                    securityList.value.map((item, index) => (
                       <div class={'security-search-item'}>
                         <Checkbox
                           disabled={
@@ -260,7 +200,7 @@ export default defineComponent({
                       </div>
                     ))
                   ) : (
-                    <bk-exception
+                    <Exception
                       class='exception-wrap-item exception-part'
                       type='search-empty'
                       scene='part'
@@ -270,7 +210,6 @@ export default defineComponent({
                 </div>
               </Loading>
             </div>
-            {/* <div class={'security-group-rules-container'}></div>*/}
             <div class={'security-group-rules-wrap'}>
               <Loading loading={isRulesTableLoading.value}>
                 <div class={'security-group-rules-container'}>
@@ -356,7 +295,7 @@ export default defineComponent({
                         ))}
                       </TransitionGroup>
                     ) : (
-                      <bk-exception
+                      <Exception
                         class='exception-wrap-item exception-part'
                         type='empty'
                         scene='part'
