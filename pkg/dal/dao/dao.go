@@ -59,6 +59,7 @@ import (
 	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
 	recyclerecord "hcm/pkg/dal/dao/recycle-record"
+	"hcm/pkg/dal/dao/task"
 	daouser "hcm/pkg/dal/dao/user"
 	"hcm/pkg/kit"
 	"hcm/pkg/metrics"
@@ -136,7 +137,8 @@ type Set interface {
 	SGCommonRel() sgcomrel.Interface
 	MainAccount() accountset.MainAccount
 	RootAccount() accountset.RootAccount
-
+	TaskDetail() task.Detail
+	TaskManagement() task.Management
 	Txn() *Txn
 }
 
@@ -747,4 +749,14 @@ func (s *set) RootAccount() accountset.RootAccount {
 		IDGen: s.idGen,
 		Audit: s.audit,
 	}
+}
+
+// TaskDetail return task detail dao.
+func (s *set) TaskDetail() task.Detail {
+	return task.NewDetailDao(s.orm, s.idGen, s.audit)
+}
+
+// TaskManagement return task management dao.
+func (s *set) TaskManagement() task.Management {
+	return task.NewManagementDao(s.orm, s.idGen, s.audit)
 }
