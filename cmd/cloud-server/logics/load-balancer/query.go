@@ -129,8 +129,8 @@ func getURLRule(kt *kit.Kit, cli *dataservice.Client, vendor enumor.Vendor, lbCl
 	return nil, nil
 }
 
-func getLoadBalancersMapByCloudID(kt *kit.Kit, cli *dataservice.Client, accountID string, bkBizID int64, cloudIDs []string) (
-	map[string]corelb.BaseLoadBalancer, error) {
+func getLoadBalancersMapByCloudID(kt *kit.Kit, cli *dataservice.Client,
+	accountID string, bkBizID int64, cloudIDs []string) (map[string]corelb.BaseLoadBalancer, error) {
 
 	result := make(map[string]corelb.BaseLoadBalancer, len(cloudIDs))
 	for _, ids := range slice.Split(cloudIDs, int(core.DefaultMaxPageLimit)) {
@@ -147,9 +147,8 @@ func getLoadBalancersMapByCloudID(kt *kit.Kit, cli *dataservice.Client, accountI
 			logs.Errorf("list load balancer failed, req: %v, error: %v, rid: %s", req, err, kt.Rid)
 			return nil, err
 		}
-		//result = append(result, resp.Details...)
 		for _, lb := range resp.Details {
-			result[lb.ID] = lb
+			result[lb.CloudID] = lb
 		}
 	}
 	return result, nil

@@ -147,7 +147,7 @@ func (c *Layer7ListenerBindRSExecutor) buildFlow(kt *kit.Kit, lb corelb.BaseLoad
 	details []*Layer7ListenerBindRSDetail) (string, error) {
 
 	// 将details根据targetGroupID进行分组，以targetGroupID的纬度创建flowTask
-	tgToDetails, err := c.createTaskDetailsGroupByTargetGroup(kt, lb.ID, details)
+	tgToDetails, err := c.createTaskDetailsGroupByTargetGroup(kt, lb.CloudID, details)
 	if err != nil {
 		logs.Errorf("create task details group by target group failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err
