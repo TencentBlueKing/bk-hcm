@@ -24,6 +24,7 @@ import (
 	"hcm/pkg/api/core/bill"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/dal/table/types"
 
 	"github.com/shopspring/decimal"
 )
@@ -71,7 +72,7 @@ type BillSyncRecordUpdateReq struct {
 	Count    *uint                `json:"count"  `
 	Cost     *decimal.Decimal     `json:"cost" validate:"omitempty"`
 	RMBCost  *decimal.Decimal     `json:"rmb_cost" validate:"omitempty"`
-	Detail   string               `json:"detail" validate:"omitempty"`
+	Detail   types.JsonField      `json:"detail" validate:"omitempty"`
 	Operator string               `json:"operator" validate:"max=64" `
 }
 

@@ -26,6 +26,7 @@ import (
 
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/logs"
 	"hcm/pkg/serviced"
 )
@@ -43,36 +44,30 @@ type BillManager struct {
 func (bm *BillManager) Run(ctx context.Context) {
 
 	logs.Infof("bill allocation config: %+v", cc.AccountServer().BillAllocation)
-	if bm.Sd.IsMaster() {
-		if err := bm.syncMainControllers(); err != nil {
-			logs.Warnf("sync main controllers failed, err: %s", err.Error())
-		}
-		if err := bm.syncRootControllers(); err != nil {
-			logs.Warnf("sync root controllers failed, err: %s", err.Error())
-		}
-	} else {
-		bm.stopControllers()
-	}
+	time.Sleep(time.Second * 5)
+	bm.loopOnce()
 
 	ticker := time.NewTicker(*cc.AccountServer().Controller.ControllerSyncDuration)
 	for {
 		select {
 		case <-ticker.C:
-			if bm.Sd.IsMaster() {
-				if err := bm.syncMainControllers(); err != nil {
-					logs.Warnf("sync main controllers failed, err: %s", err.Error())
-				}
-				if err := bm.syncRootControllers(); err != nil {
-					logs.Warnf("sync root controllers failed, err: %s", err.Error())
-				}
-			} else {
-				bm.stopControllers()
-			}
-
+			bm.loopOnce()
 		case <-ctx.Done():
 			logs.Infof("bill manager context done")
 			return
 		}
+	}
+}
+
+func (bm *BillManager) loopOnce() {
+	if !bm.Sd.IsMaster() {
+		bm.stopControllers()
+	}
+	if err := bm.syncMainControllers(); err != nil {
+		logs.Errorf("sync main controllers failed, err: %s", err.Error())
+	}
+	if err := bm.syncRootControllers(); err != nil {
+		logs.Errorf("sync root controllers failed, err: %s", err.Error())
 	}
 }
 
@@ -130,6 +125,11 @@ func (bm *BillManager) syncMainControllers() error {
 
 	existedAccountKeyMap := make(map[string]struct{})
 	for _, mainAccount := range mainAccounts {
+		if mainAccount.Status != enumor.MainAccountStatusRUNNING {
+			// 跳过非核算账号
+			continue
+		}
+
 		existedAccountKeyMap[mainAccount.Key()] = struct{}{}
 		_, ok := bm.CurrentMainControllers[mainAccount.Key()]
 		if ok {

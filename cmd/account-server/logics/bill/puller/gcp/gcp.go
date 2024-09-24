@@ -38,9 +38,6 @@ func init() {
 	puller.DailyPullerRegistry[enumor.Gcp] = &GcpPuller{
 		BillDelay: defaultGcpDelay,
 	}
-	puller.MonthPullerRegistry[enumor.Gcp] = &GcpPuller{
-		BillDelay: defaultGcpDelay,
-	}
 }
 
 // GcpPuller gcp puller
@@ -86,9 +83,4 @@ func (hp *GcpPuller) GetPullTaskList(kt *kit.Kit, client *client.ClientSet,
 		Client:        client,
 	}
 	return dp.GetPullTaskList(kt)
-}
-
-// HasMonthPullTask return if has month pull task
-func (hp *GcpPuller) HasMonthPullTask() bool {
-	return true
 }

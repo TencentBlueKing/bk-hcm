@@ -24,6 +24,7 @@ import (
 
 	asbillapi "hcm/pkg/api/account-server/bill"
 	"hcm/pkg/api/core"
+	billcore "hcm/pkg/api/core/bill"
 	"hcm/pkg/api/data-service/bill"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
@@ -72,7 +73,7 @@ func (s *service) ReaccountRootAccountSummary(cts *rest.Contexts) (interface{}, 
 func getRootSummary(
 	client *client.ClientSet, kt *kit.Kit,
 	rootAccountID string, billYear, billMonth int) (
-	*bill.BillSummaryRootResult, error) {
+	*billcore.SummaryRoot, error) {
 
 	expressions := []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", rootAccountID),

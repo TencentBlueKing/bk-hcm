@@ -38,9 +38,7 @@ func init() {
 	puller.DailyPullerRegistry[enumor.Azure] = &AzurePuller{
 		BillDelay: defaultAzureDelay,
 	}
-	puller.MonthPullerRegistry[enumor.Azure] = &AzurePuller{
-		BillDelay: defaultAzureDelay,
-	}
+
 }
 
 // AzurePuller huawei puller
@@ -87,9 +85,4 @@ func (hp *AzurePuller) GetPullTaskList(kt *kit.Kit, client *client.ClientSet,
 		Client:        client,
 	}
 	return dp.GetPullTaskList(kt)
-}
-
-// HasMonthPullTask return true if it has month pull task
-func (hp *AzurePuller) HasMonthPullTask() bool {
-	return false
 }

@@ -29,11 +29,12 @@ import (
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/rest"
 
+	"github.com/goccy/go-json"
 	"github.com/jmoiron/sqlx"
 )
 
-// UpdateBillMonthPullTask update bill puller with options
-func (svc *service) UpdateBillMonthPullTask(cts *rest.Contexts) (interface{}, error) {
+// UpdateBillMonthTask update bill puller with options
+func (svc *service) UpdateBillMonthTask(cts *rest.Contexts) (interface{}, error) {
 	req := new(dataservice.BillMonthTaskUpdateReq)
 
 	if err := cts.DecodeInto(req); err != nil {
@@ -54,14 +55,22 @@ func (svc *service) UpdateBillMonthPullTask(cts *rest.Contexts) (interface{}, er
 		SplitIndex:    req.SplitIndex,
 		SplitFlowID:   req.SplitFlowID,
 		SummaryFlowID: req.SummaryFlowID,
-		SummaryDetail: req.SummaryDetail,
 	}
+	if req.SummaryDetail != nil {
+		detailBytes, err := json.Marshal(req.SummaryDetail)
+		if err != nil {
+			return nil, fmt.Errorf("marshal summary detail failed, err: %w", err)
+		}
+		// 覆盖更新
+		monthTask.SummaryDetail = types.JsonField(detailBytes)
+	}
+
 	if req.Cost != nil {
 		monthTask.Cost = &types.Decimal{Decimal: *req.Cost}
 	}
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		if err := svc.dao.AccountBillMonthPullTask().UpdateByIDWithTx(
-			cts.Kit, txn, monthTask.ID, monthTask); err != nil {
+		err := svc.dao.AccountBillMonthPullTask().UpdateByIDWithTx(cts.Kit, txn, monthTask.ID, monthTask)
+		if err != nil {
 			return nil, fmt.Errorf("update bill month task failed, err: %v", err)
 		}
 		return nil, nil
