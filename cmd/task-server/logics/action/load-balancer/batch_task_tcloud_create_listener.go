@@ -24,6 +24,7 @@ import (
 
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	"hcm/pkg/api/core"
+	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	hclb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/async/action"
 	"hcm/pkg/async/action/run"
@@ -34,6 +35,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/assert"
+	cvt "hcm/pkg/tools/converter"
 )
 
 // --------------------------[创建TCloud监听器]-----------------------------
@@ -199,6 +201,9 @@ func (act BatchTaskTCloudCreateListenerAction) checkListenerExists(kt *kit.Kit,
 	}
 	// 对于四层需要继续查询规则
 
+	if err := act.checkL4RuleExists(kt, lbl, req); err != nil {
+		return false, fmt.Errorf("listener(%s) already exist, %v", lbl.CloudID, err)
+	}
 	return true, nil
 
 }
@@ -207,5 +212,38 @@ func (act BatchTaskTCloudCreateListenerAction) checkListenerExists(kt *kit.Kit,
 func (act BatchTaskTCloudCreateListenerAction) Rollback(kt run.ExecuteKit, params any) error {
 	logs.Infof(" ----------- BatchTaskTCloudCreateListenerAction Rollback -----------, params: %+v, rid: %s",
 		params, kt.Kit().Rid)
+	return nil
+}
+
+func (act BatchTaskTCloudCreateListenerAction) checkL4RuleExists(kt *kit.Kit,
+	lbl corelb.Listener[corelb.TCloudListenerExtension], req *hclb.TCloudListenerCreateReq) error {
+
+	ruleReq := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("lbl_id", lbl.ID),
+		),
+		Page: core.NewDefaultBasePage(),
+	}
+	ruleResp, err := actcli.GetDataService().TCloud.LoadBalancer.ListUrlRule(kt, ruleReq)
+	if err != nil {
+		return fmt.Errorf("fail to query listener rule, err: %v", err)
+	}
+	if len(ruleResp.Details) == 0 {
+		return fmt.Errorf("tcloud url rule not found for l4 listener, id: %s(%s)", lbl.CloudID, lbl.ID)
+	}
+	// 存在则判断是否和入参一致
+	rule := ruleResp.Details[0]
+	if len(req.Scheduler) > 0 && rule.Scheduler != req.Scheduler {
+		return fmt.Errorf("scheduler mismatch, want: %s, db: %s", req.Scheduler, rule.Scheduler)
+	}
+	if req.SessionExpire > 0 && rule.SessionExpire != req.SessionExpire {
+		return fmt.Errorf("session expire mismatch, want: %d, db: %d", req.SessionExpire, rule.SessionExpire)
+	}
+	if len(req.Scheduler) > 0 && rule.Scheduler != req.Scheduler {
+		return fmt.Errorf("scheduler mismatch, want: %s, db: %s", req.Scheduler, rule.Scheduler)
+	}
+	if req.SessionType != nil && rule.SessionType != cvt.PtrToVal(req.SessionType) {
+		return fmt.Errorf("session type mismatch, want: %s, db: %s", cvt.PtrToVal(req.SessionType), rule.SessionType)
+	}
 	return nil
 }
