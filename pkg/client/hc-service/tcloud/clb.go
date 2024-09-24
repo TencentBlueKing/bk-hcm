@@ -47,8 +47,12 @@ type ClbClient struct {
 
 // SyncLoadBalancer 同步负载均衡
 func (c *ClbClient) SyncLoadBalancer(kt *kit.Kit, req *sync.TCloudSyncReq) error {
-
 	return common.RequestNoResp[sync.TCloudSyncReq](c.client, http.MethodPost, kt, req, "/load_balancers/sync")
+}
+
+// SyncLoadBalancerListener 同步负载均衡下监听器
+func (c *ClbClient) SyncLoadBalancerListener(kt *kit.Kit, req *sync.TCloudListenerSyncReq) error {
+	return common.RequestNoResp[sync.TCloudListenerSyncReq](c.client, http.MethodPost, kt, req, "/listeners/sync")
 }
 
 // DescribeResources ...

@@ -64,8 +64,11 @@ func (hd *lbHandler) Prepare(cts *rest.Contexts) error {
 
 // Next ...
 func (hd *lbHandler) Next(kt *kit.Kit) ([]string, error) {
+
 	listOpt := &typeclb.TCloudListOption{
 		Region: hd.request.Region,
+		// 支持指定资源同步
+		CloudIDs: hd.request.CloudIDs,
 		Page: &typecore.TCloudPage{
 			Offset: hd.offset,
 			Limit:  typecore.TCloudQueryLimit,
