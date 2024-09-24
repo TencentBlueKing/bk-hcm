@@ -157,7 +157,6 @@ func (act BatchTaskTCloudCreateL7RuleAction) skipExistsRule(kt *kit.Kit, opt *Ba
 		// 查询是否已经存在对应规则
 		listRuleReq := &core.ListReq{
 			Filter: tools.ExpressionAnd(
-				tools.RuleEqual("vendor", enumor.TCloud),
 				tools.RuleEqual("lb_id", opt.LoadBalancerID),
 				tools.RuleEqual("lbl_id", opt.ListenerID),
 				tools.RuleEqual("domain", reqRule.Domains[0]),

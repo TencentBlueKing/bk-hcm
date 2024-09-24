@@ -291,11 +291,11 @@ type TCloudListenerCreateReq struct {
 	LbID          string                        `json:"lb_id" validate:"required"`
 	Protocol      enumor.ProtocolType           `json:"protocol" validate:"required"`
 	Port          int64                         `json:"port" validate:"required"`
-	Scheduler     string                        `json:"scheduler" validate:"required"`
-	SessionType   string                        `json:"session_type" validate:"required"`
+	Scheduler     string                        `json:"scheduler" validate:"omitempty"`
 	SessionExpire int64                         `json:"session_expire" validate:"omitempty"`
 	SniSwitch     enumor.SniType                `json:"sni_switch" validate:"omitempty"`
 	Certificate   *corelb.TCloudCertificateInfo `json:"certificate" validate:"omitempty"`
+	SessionType   *string                       `json:"session_type" validate:"omitempty"`
 	EndPort       *int64                        `json:"end_port" validate:"omitempty,min=1"`
 }
 

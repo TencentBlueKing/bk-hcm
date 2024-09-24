@@ -106,7 +106,7 @@ func (svc *clbSvc) CreateTCloudListener(cts *rest.Contexts) (interface{}, error)
 		SessionExpireTime: req.SessionExpire,
 		Scheduler:         req.Scheduler,
 		SniSwitch:         req.SniSwitch,
-		SessionType:       cvt.ValToPtr(req.SessionType),
+		SessionType:       req.SessionType,
 		Certificate:       req.Certificate,
 	}
 
@@ -176,7 +176,7 @@ func (svc *clbSvc) createListenerDB(kt *kit.Kit, req *protolb.TCloudListenerCrea
 			CloudRuleID:   cloudID,
 			Scheduler:     req.Scheduler,
 			RuleType:      enumor.Layer4RuleType,
-			SessionType:   req.SessionType,
+			SessionType:   cvt.PtrToVal(req.SessionType),
 			SessionExpire: req.SessionExpire,
 			SniSwitch:     req.SniSwitch,
 			Certificate:   req.Certificate,
