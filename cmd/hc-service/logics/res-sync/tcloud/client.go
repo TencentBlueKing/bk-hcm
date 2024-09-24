@@ -77,13 +77,14 @@ type Interface interface {
 	RemoveCertDeleteFromCloud(kt *kit.Kit, accountID string, region string) error
 
 	LoadBalancer(kt *kit.Kit, params *SyncBaseParams, opt *SyncLBOption) (*SyncResult, error)
-	RemoveLoadBalancerDeleteFromCloud(kt *kit.Kit, accountID string, region string) error
+	RemoveLoadBalancerDeleteFromCloud(kt *kit.Kit, params *SyncRemovedParams) error
 
 	// LoadBalancerWithListener 同步负载均衡及监听器
 	LoadBalancerWithListener(kt *kit.Kit, params *SyncBaseParams, opt *SyncLBOption) (*SyncResult, error)
 
 	// Listener 同步指定负载均衡下的指定云id 负载均衡
 	Listener(kt *kit.Kit, params *SyncBaseParams, opt *SyncListenerOption) (*SyncResult, error)
+	RemoveListenerDeleteFromCloud(kt *kit.Kit, params *ListenerSyncRemovedParams) error
 }
 
 var _ Interface = new(client)

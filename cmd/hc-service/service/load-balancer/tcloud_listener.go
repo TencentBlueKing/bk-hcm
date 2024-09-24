@@ -64,7 +64,6 @@ func (svc *clbSvc) QueryListenerTargetsByCloudIDs(cts *rest.Contexts) (any, erro
 
 // CreateTCloudListener 仅创建监听器自身
 func (svc *clbSvc) CreateTCloudListener(cts *rest.Contexts) (interface{}, error) {
-
 	req := new(protolb.TCloudListenerCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -116,6 +115,9 @@ func (svc *clbSvc) CreateTCloudListener(cts *rest.Contexts) (interface{}, error)
 			err, lblOpt, cvt.PtrToVal(lblOpt.Certificate), cts.Kit.Rid)
 		return nil, err
 	}
+	if len(result.SuccessCloudIDs) == 0 {
+		return nil, errors.New("create tcloud listener failed, no any listener being created")
+	}
 	cloudLblID := result.SuccessCloudIDs[0]
 
 	// 插入新的监听器、规则信息到DB
@@ -138,7 +140,7 @@ func (svc *clbSvc) createListenerDB(kt *kit.Kit, req *protolb.TCloudListenerCrea
 			Listeners: []dataproto.ListenersCreateReq[corelb.TCloudListenerExtension]{{
 				CloudID:   cloudID,
 				Name:      req.Name,
-				Vendor:    enumor.TCloud,
+				Vendor:    lbInfo.Vendor,
 				AccountID: lbInfo.AccountID,
 				BkBizID:   lbInfo.BkBizID,
 				LbID:      lbInfo.ID,
@@ -166,7 +168,7 @@ func (svc *clbSvc) createListenerDB(kt *kit.Kit, req *protolb.TCloudListenerCrea
 		ListenerWithRules: []dataproto.ListenerWithRuleCreateReq{{
 			CloudID:       cloudID,
 			Name:          req.Name,
-			Vendor:        enumor.TCloud,
+			Vendor:        lbInfo.Vendor,
 			AccountID:     lbInfo.AccountID,
 			BkBizID:       req.BkBizID,
 			LbID:          lbInfo.ID,

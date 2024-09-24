@@ -78,7 +78,7 @@ func (hd *lblHandler) Prepare(cts *rest.Contexts) error {
 	}
 	lbResp, err := hd.dataCli.TCloud.LoadBalancer.ListLoadBalancer(cts.Kit, listReq)
 	if err != nil {
-		logs.Errorf("fail to query laod balancer for sync listener, err: %v, listReq:%#v, rid: %s",
+		logs.Errorf("fail to query load balancer for sync listener, err: %v, listReq:%#v, rid: %s",
 			err, listReq, cts.Kit.Rid)
 		return err
 	}
@@ -140,7 +140,8 @@ func (hd *lblHandler) Sync(kt *kit.Kit, cloudIDs []string) error {
 		CachedLoadBalancer: hd.lbInfo,
 	}
 	if _, err := hd.syncCli.Listener(kt, params, opt); err != nil {
-		logs.Errorf("sync tcloud load balancer with rel failed, err: %v, opt: %v, rid: %s", err, params, kt.Rid)
+		logs.Errorf("sync tcloud load balancer with rel failed, err: %v, params: %v, opt: %v, rid: %s",
+			err, params, opt, kt.Rid)
 		return err
 	}
 
@@ -149,6 +150,21 @@ func (hd *lblHandler) Sync(kt *kit.Kit, cloudIDs []string) error {
 
 // RemoveDeleteFromCloud ...
 func (hd *lblHandler) RemoveDeleteFromCloud(kt *kit.Kit) error {
+	params := &tcloud.ListenerSyncRemovedParams{
+		AccountID:          hd.request.AccountID,
+		Region:             hd.request.Region,
+		CloudIDs:           hd.request.CloudIDs,
+		BizID:              hd.lbInfo.BkBizID,
+		LBID:               hd.lbInfo.ID,
+		CloudLBID:          hd.request.LoadBalancerCloudID,
+		CachedLoadBalancer: hd.lbInfo,
+	}
+	err := hd.syncCli.RemoveListenerDeleteFromCloud(kt, params)
+	if err != nil {
+		logs.Errorf("fail to remove deleted tcloud listener, err: %v, params: %v, rid: %s",
+			err, params, kt.Rid)
+		return err
+	}
 	return nil
 }
 
