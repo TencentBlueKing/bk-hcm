@@ -82,7 +82,7 @@ func (act BatchTaskTCloudCreateL7RuleAction) Run(kt run.ExecuteKit, params any) 
 	// 查询 负载均衡、监听器是否正确
 	lb, _, err := getListenerWithLb(kt.Kit(), opt.ListenerID)
 	if err != nil {
-		logs.Errorf("fail to get listener with lb, err: %v, rid: %s", err, kt.Kit().Rid)
+		logs.Errorf("fail to get listener with lb, err: %v, listner: %s, rid: %s", err, opt.ListenerID, kt.Kit().Rid)
 		return nil, err
 	}
 	if lb.ID != opt.LoadBalancerID {
@@ -141,7 +141,7 @@ func (act BatchTaskTCloudCreateL7RuleAction) Run(kt run.ExecuteKit, params any) 
 		return nil, err
 	}
 	// all success
-	return lblResp, err
+	return lblResp, nil
 }
 
 // 查询规则是否存在，返回不存在的规则入参。如果存在且参数一样跳过，如果存在但不符合入参则报错。

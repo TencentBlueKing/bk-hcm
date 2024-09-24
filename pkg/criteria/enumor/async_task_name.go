@@ -140,3 +140,10 @@ const (
 	// ActionBatchTaskTCloudCreateL7Rule ...
 	ActionBatchTaskTCloudCreateL7Rule = "batch_task_tcloud_create_l7_rule"
 )
+
+const (
+	// ActionSyncTCloudLoadBalancer ...
+	ActionSyncTCloudLoadBalancer = "sync_tcloud_load_balancer"
+	// SyncTCloudLoadBalancerListener ...
+	SyncTCloudLoadBalancerListener = "sync_tcloud_load_balancer_listener"
+)

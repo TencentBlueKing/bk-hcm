@@ -137,7 +137,7 @@ func (act BatchTaskTCloudCreateListenerAction) createSingleListener(kt *kit.Kit,
 		logs.Errorf("fail to call hc to create listener, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
-	return lblResp, err
+	return lblResp, nil
 }
 
 func (act BatchTaskTCloudCreateListenerAction) checkListenerExists(kt *kit.Kit,

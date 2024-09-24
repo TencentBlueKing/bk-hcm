@@ -20,54 +20,66 @@
 package actionlb
 
 import (
+	"fmt"
+
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	coretask "hcm/pkg/api/core/task"
 	datatask "hcm/pkg/api/data-service/task"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/assert"
+	"hcm/pkg/tools/slice"
 )
 
 func listTaskDetail(kt *kit.Kit, ids []string) ([]coretask.Detail, error) {
-	// 查询任务状态
-	detailListReq := &core.ListReq{
-		Filter: tools.ContainersExpression("id", ids),
-		Page:   core.NewDefaultBasePage(),
+	result := make([]coretask.Detail, 0, len(ids))
+	for _, idBatch := range slice.Split(ids, int(core.DefaultMaxPageLimit)) {
+		// 查询任务状态
+		detailListReq := &core.ListReq{
+			Filter: tools.ContainersExpression("id", idBatch),
+			Page:   core.NewDefaultBasePage(),
+		}
+		detailResp, err := actcli.GetDataService().Global.TaskDetail.List(kt, detailListReq)
+		if err != nil {
+			logs.Errorf("fail to query task detail, err: %v, ids: %s, rid: %s", err, ids, kt.Rid)
+			return nil, err
+		}
+		if len(detailResp.Details) != len(idBatch) {
+			return nil, fmt.Errorf("some of task management detail ids not found, want: %d, got: %s",
+				len(ids), len(detailResp.Details))
+		}
+		result = append(result, detailResp.Details...)
 	}
-	detailResp, err := actcli.GetDataService().Global.TaskDetail.List(kt, detailListReq)
-	if err != nil {
-		logs.Errorf("fail to query task detail, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
-	}
-	if len(detailResp.Details) != len(ids) {
 
-		return nil, errf.New(errf.InvalidParameter, "some of task management detail ids not found, want: %d, got: %s")
-	}
-	return detailResp.Details, nil
+	return result, nil
 }
 
 func batchUpdateTaskDetailState(kt *kit.Kit, ids []string, state enumor.TaskDetailState, reason error) error {
 
-	detailUpdates := make([]datatask.UpdateTaskDetailField, 0, len(ids))
-	for i := range ids {
-		field := datatask.UpdateTaskDetailField{ID: ids[i], State: state}
-		if reason != nil {
-			field.Reason = reason.Error()
+	detailUpdates := make([]datatask.UpdateTaskDetailField, min(len(ids), constant.BatchOperationMaxLimit))
+	for _, idBatch := range slice.Split(ids, constant.BatchOperationMaxLimit) {
+		for i := range idBatch {
+			field := datatask.UpdateTaskDetailField{ID: ids[i], State: state}
+			if reason != nil {
+				field.Reason = reason.Error()
+			}
+			detailUpdates[i] = field
 		}
-		detailUpdates = append(detailUpdates, field)
+		updateTaskReq := &datatask.UpdateDetailReq{Items: detailUpdates[:len(idBatch)]}
+		err := actcli.GetDataService().Global.TaskDetail.Update(kt, updateTaskReq)
+		if err != nil {
+			logs.Errorf("fail to update task detail state to %s, err: %v, ids: %s， rid: %s",
+				state, err, ids, kt.Rid)
+			return err
+		}
 	}
-	updateTaskReq := &datatask.UpdateDetailReq{Items: detailUpdates}
-	err := actcli.GetDataService().Global.TaskDetail.Update(kt, updateTaskReq)
-	if err != nil {
-		logs.Errorf("fail to update task detail state to %s, err: %v, ids: %s， rid: %s",
-			state, err, ids, kt.Rid)
-		return err
-	}
+
 	return nil
 }
 

@@ -56,7 +56,7 @@ func (act SyncTCloudLoadBalancerAction) ParameterNew() (params any) {
 
 // Name return action name
 func (act SyncTCloudLoadBalancerAction) Name() enumor.ActionName {
-	return enumor.ActionBatchTaskTCloudBindTarget
+	return enumor.ActionSyncTCloudLoadBalancer
 }
 
 // Run 将目标组中的RS绑定到监听器/规则中
