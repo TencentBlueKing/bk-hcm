@@ -78,16 +78,17 @@ func (act BatchTaskTCloudCreateListenerAction) Run(kt run.ExecuteKit, params any
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
 	}
 
-	results := make([]*hclb.ListenerCreateResult, 0, len(opt.Listeners))
+	results := make([]*core.CloudCreateResult, 0, len(opt.Listeners))
 	for i := range opt.Listeners {
 		detailID := opt.ManagementDetailIDs[i]
+		// 逐条更新结果
 		ret, createErr := act.createSingleListener(kt.Kit(), detailID, opt.Listeners[i]) // 结束后写回状态
 		targetState := enumor.TaskDetailSuccess
 		if createErr != nil {
 			// 更新为失败
 			targetState = enumor.TaskDetailFailed
 		}
-		err := batchUpdateTaskDetailState(kt.Kit(), []string{detailID}, targetState, createErr)
+		err := batchUpdateTaskDetailResultState(kt.Kit(), []string{detailID}, targetState, ret, createErr)
 		if err != nil {
 			logs.Errorf("fail to set detail to %s after cloud operation finished, err: %v, rid: %s",
 				targetState, err, kt.Kit().Rid)
@@ -104,7 +105,8 @@ func (act BatchTaskTCloudCreateListenerAction) Run(kt run.ExecuteKit, params any
 }
 
 func (act BatchTaskTCloudCreateListenerAction) createSingleListener(kt *kit.Kit, detailId string,
-	req *hclb.TCloudListenerCreateReq) (*hclb.ListenerCreateResult, error) {
+	req *hclb.TCloudListenerCreateReq) (*core.CloudCreateResult, error) {
+
 	detailList, err := listTaskDetail(kt, []string{detailId})
 	if err != nil {
 		logs.Errorf("fail to query task detail, err: %v, rid: %s", err, kt.Rid)
@@ -119,17 +121,17 @@ func (act BatchTaskTCloudCreateListenerAction) createSingleListener(kt *kit.Kit,
 		return nil, errf.Newf(errf.InvalidParameter, "task management detail(%s) status(%s) is not init",
 			detail.ID, detail.State)
 	}
-	exists, err := act.checkListenerExists(kt, req)
+	lbl, err := act.checkListenerExists(kt, req)
 	if err != nil {
 		return nil, err
 	}
-	if exists {
-		// 已存在跳过
-		return nil, nil
+	if lbl != nil {
+		// 已存在且参数一致，认为创建成功
+		return &core.CloudCreateResult{ID: lbl.ID, CloudID: lbl.CloudID}, nil
 	}
 
 	// 更新任务状态为 running
-	if err := batchUpdateTaskDetailState(kt, []string{detailId}, enumor.TaskDetailRunning, nil); err != nil {
+	if err := batchUpdateTaskDetailState(kt, []string{detailId}, enumor.TaskDetailRunning); err != nil {
 		return nil, fmt.Errorf("fail to update detail to running, err: %v", err)
 	}
 	lblResp, err := actcli.GetHCService().TCloud.Clb.CreateListener(kt, req)
@@ -137,11 +139,13 @@ func (act BatchTaskTCloudCreateListenerAction) createSingleListener(kt *kit.Kit,
 		logs.Errorf("fail to call hc to create listener, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
-	return lblResp, nil
+	return &core.CloudCreateResult{ID: lblResp.ID, CloudID: lblResp.CloudID}, nil
 }
 
-func (act BatchTaskTCloudCreateListenerAction) checkListenerExists(kt *kit.Kit,
-	req *hclb.TCloudListenerCreateReq) (exists bool, err error) {
+// 检查监听器是否存在，不存在，不返回错误。存在会返回数据库监听器实例，如果存在但是参数一直则不返回错误
+func (act BatchTaskTCloudCreateListenerAction) checkListenerExists(kt *kit.Kit, req *hclb.TCloudListenerCreateReq) (
+	lbl *corelb.TCloudListener, err error) {
+
 	// 查询是否已经存在对应监听器
 	lbReq := &core.ListReq{
 		Filter: tools.ExpressionAnd(
@@ -154,57 +158,58 @@ func (act BatchTaskTCloudCreateListenerAction) checkListenerExists(kt *kit.Kit,
 	}
 	lblResp, err := actcli.GetDataService().TCloud.LoadBalancer.ListListener(kt, lbReq)
 	if err != nil {
-		return false, fmt.Errorf("fail to query listener, err: %v", err)
+		return nil, fmt.Errorf("fail to query listener, err: %v", err)
 	}
 	if len(lblResp.Details) == 0 {
-		return false, nil
+		// 不存在，不返回错误
+		return nil, nil
 	}
 	// 存在则判断是否和入参一致
-	lbl := lblResp.Details[0]
+	lbl = cvt.ValToPtr(lblResp.Details[0])
 
 	if req.Name != lbl.Name {
-		return true, fmt.Errorf("listener(%s) already exist, name mismatch, want: %s, db: %s",
+		return lbl, fmt.Errorf("listener(%s) already exist, name mismatch, want: %s, db: %s",
 			lbl.CloudID, req.Name, lbl.Name)
 	}
 	if req.BkBizID != lbl.BkBizID {
-		return true, fmt.Errorf("listener(%s) already exist, biz id mismatch, want: %d, db: %d",
+		return lbl, fmt.Errorf("listener(%s) already exist, biz id mismatch, want: %d, db: %d",
 			lbl.CloudID, req.BkBizID, lbl.BkBizID)
 	}
 	if req.SniSwitch != lbl.SniSwitch {
-		return true, fmt.Errorf("listener(%s) already exist, sni switch mismatch, want: %t, db: %t",
+		return lbl, fmt.Errorf("listener(%s) already exist, sni switch mismatch, want: %d, db: %d",
 			lbl.CloudID, req.SniSwitch, lbl.SniSwitch)
 	}
 	if req.EndPort != nil {
 		if lbl.Extension == nil {
-			return true, fmt.Errorf("listener(%s) already exist, session expire mismatch, want: %d, db no ext",
+			return lbl, fmt.Errorf("listener(%s) already exist, session expire mismatch, want: %d, db no ext",
 				lbl.CloudID, req.SessionExpire)
 		}
 		if !assert.IsPtrInt64Equal(lbl.Extension.EndPort, req.EndPort) {
-			return true, fmt.Errorf("listener(%s) already exist, session expire mismatch, want: %+v, db: %+v",
+			return lbl, fmt.Errorf("listener(%s) already exist, session expire mismatch, want: %+v, db: %+v",
 				lbl.CloudID, req.SessionExpire, lbl.Extension.EndPort)
 		}
 	}
 	if req.Certificate != nil {
 		if lbl.Extension == nil {
-			return true, fmt.Errorf("listener(%s) already exist, cert mismatch, want: %+v, db no ext",
+			return lbl, fmt.Errorf("listener(%s) already exist, cert mismatch, want: %+v, db no ext",
 				lbl.CloudID, req.Certificate)
 		}
 		if isListenerCertChange(req.Certificate, lbl.Extension.Certificate) {
-			return true, fmt.Errorf("listener(%s) already exist, cert mismatch, want: %+v, got: %+v", lbl.CloudID,
+			return lbl, fmt.Errorf("listener(%s) already exist, cert mismatch, want: %+v, got: %+v", lbl.CloudID,
 				req.Certificate, lbl.Extension.Certificate)
 		}
 
 	}
 
 	if req.Protocol.IsLayer7Protocol() {
-		return true, nil
+		return lbl, nil
 	}
 	// 对于四层需要继续查询规则
 
 	if err := act.checkL4RuleExists(kt, lbl, req); err != nil {
-		return false, fmt.Errorf("listener(%s) already exist, %v", lbl.CloudID, err)
+		return lbl, fmt.Errorf("listener(%s) already exist, %v", lbl.CloudID, err)
 	}
-	return true, nil
+	return lbl, nil
 
 }
 
@@ -215,8 +220,8 @@ func (act BatchTaskTCloudCreateListenerAction) Rollback(kt run.ExecuteKit, param
 	return nil
 }
 
-func (act BatchTaskTCloudCreateListenerAction) checkL4RuleExists(kt *kit.Kit,
-	lbl corelb.Listener[corelb.TCloudListenerExtension], req *hclb.TCloudListenerCreateReq) error {
+func (act BatchTaskTCloudCreateListenerAction) checkL4RuleExists(kt *kit.Kit, lbl *corelb.TCloudListener,
+	req *hclb.TCloudListenerCreateReq) error {
 
 	ruleReq := &core.ListReq{
 		Filter: tools.ExpressionAnd(

@@ -128,7 +128,7 @@ func (svc *clbSvc) CreateTCloudListener(cts *rest.Contexts) (interface{}, error)
 		return nil, err
 	}
 
-	return &protolb.ListenerCreateResult{CloudLblID: cloudLblID, LblID: id}, nil
+	return &protolb.ListenerCreateResult{CloudID: cloudLblID, ID: id}, nil
 }
 
 func (svc *clbSvc) createListenerDB(kt *kit.Kit, req *protolb.TCloudListenerCreateReq, lbInfo corelb.BaseLoadBalancer,

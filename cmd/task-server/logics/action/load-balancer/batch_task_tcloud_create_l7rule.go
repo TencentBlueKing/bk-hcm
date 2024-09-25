@@ -20,6 +20,7 @@
 package actionlb
 
 import (
+	"errors"
 	"fmt"
 
 	actcli "hcm/cmd/task-server/logics/action/cli"
@@ -56,7 +57,7 @@ type BatchTaskTCloudCreateL7RuleOption struct {
 // Validate validate option.
 func (opt BatchTaskTCloudCreateL7RuleOption) Validate() error {
 	if len(opt.ManagementDetailIDs) != len(opt.TCloudRuleBatchCreateReq.Rules) {
-		return errf.Newf(errf.InvalidParameter, "management_detail_ids and rules length not match: %d! = %d",
+		return errf.Newf(errf.InvalidParameter, "management_detail_ids and rules length not match: %d != %d",
 			len(opt.ManagementDetailIDs), len(opt.TCloudRuleBatchCreateReq.Rules))
 	}
 	return validator.Validate.Struct(opt)
@@ -89,7 +90,7 @@ func (act BatchTaskTCloudCreateL7RuleAction) Run(kt run.ExecuteKit, params any) 
 		return nil, errf.Newf(errf.InvalidParameter, "loadbalancer id mismatch, want: %s, got: %s",
 			opt.LoadBalancerID, lb.ID)
 	}
-
+	// detail 状态检查
 	detailList, err := listTaskDetail(kt.Kit(), opt.ManagementDetailIDs)
 	if err != nil {
 		return fmt.Sprintf("task detail query failed"), err
@@ -104,54 +105,121 @@ func (act BatchTaskTCloudCreateL7RuleAction) Run(kt run.ExecuteKit, params any) 
 				detail.ID, detail.State)
 		}
 	}
-
-	nonExistsReq, err := act.skipExistsRule(kt.Kit(), opt)
+	// 规则检查
+	ruleCheckResult, err := act.checkExistsRule(kt.Kit(), opt)
 	if err != nil {
+		logs.Errorf("fail to check exists rule, err: %v, rid: %s", err, kt.Kit().Rid)
 		return nil, err
 	}
-	if len(nonExistsReq.Rules) == 0 {
-		// 已存在跳过
-		logs.Infof("all rule exists, skip, rid: %s", kt.Kit().Rid)
-		return "all rule exists", nil
-	}
-
-	// 进入创建
-	// 更新任务状态为 running
-	if err := batchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs, enumor.TaskDetailRunning, nil); err != nil {
-		return fmt.Sprintf("fail to update detail to running"), err
-	}
-
-	defer func() {
-		// 结束后写回状态
-		targetState := enumor.TaskDetailSuccess
-		if taskErr != nil {
-			// 更新为失败
-			targetState = enumor.TaskDetailFailed
-		}
-		err := batchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs, targetState, taskErr)
+	// 1. 有错误，写入错误信息
+	for i := range ruleCheckResult.Mismatch {
+		mismatch := ruleCheckResult.Mismatch[i]
+		ids := []string{mismatch.DetailID}
+		err := batchUpdateTaskDetailResultState(kt.Kit(), ids, enumor.TaskDetailFailed, nil, mismatch.Error)
 		if err != nil {
-			logs.Errorf("fail to set detail to %s after cloud operation finished, err: %v, rid: %s",
-				targetState, err, kt.Kit().Rid)
+			logs.Errorf("fail to set detail to %s, err: %v, detail: %s, rid: %s",
+				enumor.TaskDetailFailed, err, mismatch.DetailID, kt.Kit().Rid)
+			// 继续尝试处理其他情况
 		}
-	}()
-
-	lblResp, err := actcli.GetHCService().TCloud.Clb.BatchCreateUrlRule(kt.Kit(), lb.ID, nonExistsReq)
-	if err != nil {
-		logs.Errorf("fail to call hc to create tcloud l7 rules, err: %v, rid: %s", err, kt.Kit().Rid)
-		return nil, err
+		continue
 	}
-	// all success
+	// 2. 已存在直接成功，写入已存在的id
+	for i := range ruleCheckResult.Exists {
+		exists := ruleCheckResult.Exists[i]
+		ids := []string{exists.DetailID}
+		createResult := &core.CloudCreateResult{
+			ID:      exists.Rule.ID,
+			CloudID: exists.Rule.CloudID,
+		}
+		reason := errors.New("rule exists, skip")
+		err := batchUpdateTaskDetailResultState(kt.Kit(), ids, enumor.TaskDetailSuccess, createResult, reason)
+		if err != nil {
+			logs.Errorf("fail to set detail to success, err: %v, detail: %s, rid: %s",
+				err, exists.DetailID, kt.Kit().Rid)
+			// 继续尝试处理其他情况
+		}
+		continue
+	}
+	// 3. 创建不存在的规则
+	return act.createNonExists(kt.Kit(), ruleCheckResult.NonExists, opt, lb)
+}
+
+func (act BatchTaskTCloudCreateL7RuleAction) createNonExists(kt *kit.Kit, nonExists []RuleCheckInfo,
+	opt *BatchTaskTCloudCreateL7RuleOption, lb *corelb.BaseLoadBalancer) (any, error) {
+
+	if len(nonExists) == 0 {
+		return "no rule should be created", nil
+	}
+
+	nonExistIds := make([]string, len(nonExists))
+	ruleCreateReq := new(hclb.TCloudRuleBatchCreateReq)
+	for i := range nonExists {
+		nonExistIds[i] = nonExists[i].DetailID
+		ruleCreateReq.Rules = append(ruleCreateReq.Rules, opt.Rules[nonExists[i].Index])
+	}
+
+	// 更新任务状态为 running
+	if err := batchUpdateTaskDetailState(kt, nonExistIds, enumor.TaskDetailRunning); err != nil {
+		logs.Errorf("fail to update detail to running, err: %v, detail ids: %s, rid: %s",
+			err, nonExistIds, kt.Rid)
+		return fmt.Sprintf("fail to update detail state to running"), err
+	}
+
+	lblResp, createErr := actcli.GetHCService().TCloud.Clb.BatchCreateUrlRule(kt, lb.ID, ruleCreateReq)
+	// 更新为失败
+	if createErr != nil {
+		logs.Errorf("fail to call hc to create tcloud l7 rules, err: %v, req: %+v, rid: %s",
+			createErr, ruleCreateReq, kt.Rid)
+		err := batchUpdateTaskDetailResultState(kt, nonExistIds, enumor.TaskDetailFailed, lblResp, createErr)
+		if err != nil {
+			logs.Errorf("fail to set detail to failed after cloud operation, err: %v, rid: %s",
+				err, kt.Rid)
+		}
+		return lblResp, err
+	}
+	// 更新为成功
+	for i := range nonExists {
+		detailID := []string{nonExists[i].DetailID}
+		var ret = &core.CloudCreateResult{CloudID: lblResp.SuccessCloudIDs[i]}
+		err := batchUpdateTaskDetailResultState(kt, detailID, enumor.TaskDetailSuccess, ret, nil)
+		if err != nil {
+			logs.Errorf("fail to set detail to success after cloud operation, err: %v, rid: %s",
+				err, kt.Rid)
+			// 继续尝试更新其他结果
+		}
+	}
 	return lblResp, nil
 }
 
-// 查询规则是否存在，返回不存在的规则入参。如果存在且参数一样跳过，如果存在但不符合入参则报错。
-func (act BatchTaskTCloudCreateL7RuleAction) skipExistsRule(kt *kit.Kit, opt *BatchTaskTCloudCreateL7RuleOption) (
-	nonExistReq *hclb.TCloudRuleBatchCreateReq, err error) {
+// RuleCheckInfo ...
+type RuleCheckInfo struct {
+	Index    int
+	DetailID string
+	// rule queried from db
+	Rule *corelb.TCloudLbUrlRule
+	// error will be set if it doesn't match
+	Error error
+}
 
-	nonExistReq = &hclb.TCloudRuleBatchCreateReq{
-		Rules: make([]hclb.TCloudRuleCreate, 0, len(opt.Rules)),
-	}
+// GetDetailID ...
+func (r RuleCheckInfo) GetDetailID() string {
+	return r.DetailID
+}
+
+// RuleCheckSummary ...
+type RuleCheckSummary struct {
+	NonExists []RuleCheckInfo
+	Exists    []RuleCheckInfo
+	Mismatch  []RuleCheckInfo
+}
+
+// 查询规则是否存在，返回不存在的规则入参。如果存在且参数一样跳过，如果存在但不符合入参则报错。
+func (act BatchTaskTCloudCreateL7RuleAction) checkExistsRule(kt *kit.Kit, opt *BatchTaskTCloudCreateL7RuleOption) (
+	checkResult *RuleCheckSummary, err error) {
+
+	checkResult = new(RuleCheckSummary)
 	for i := range opt.Rules {
+		result := RuleCheckInfo{Index: i, DetailID: opt.ManagementDetailIDs[i]}
 		reqRule := opt.Rules[i]
 
 		// 查询是否已经存在对应规则
@@ -166,26 +234,27 @@ func (act BatchTaskTCloudCreateL7RuleAction) skipExistsRule(kt *kit.Kit, opt *Ba
 		}
 		ruleResp, err := actcli.GetDataService().TCloud.LoadBalancer.ListUrlRule(kt, listRuleReq)
 		if err != nil {
-			return nil, fmt.Errorf("fail to query listener, err: %v", err)
+			logs.Errorf("query url rule failed, err: %v, req: %+v, rid: %s", err, listRuleReq, kt.Rid)
+			return nil, fmt.Errorf("fail to query url rule, err: %v", err)
 		}
 
 		if len(ruleResp.Details) == 0 {
 			// 不存在直接创建
-			nonExistReq.Rules = append(nonExistReq.Rules, reqRule)
+			checkResult.NonExists = append(checkResult.NonExists, result)
 			continue
 		}
-		dbRule := ruleResp.Details[0]
-		if err := act.checkRuleMatch(reqRule, dbRule); err != nil {
-			return nil, fmt.Errorf("check rule exists failed, err: %v, idx: %d", err, i)
+		result.Rule = &ruleResp.Details[0]
+		if err := act.checkRuleMatch(reqRule, result.Rule); err != nil {
+			result.Error = fmt.Errorf("rule exist but %v", err)
+			checkResult.Mismatch = append(checkResult.Mismatch, result)
+			continue
 		}
-		// 存在但是不冲突也加入创建
-		nonExistReq.Rules = append(nonExistReq.Rules, reqRule)
+		checkResult.Exists = append(checkResult.Exists, result)
 	}
-
-	return nonExistReq, nil
+	return checkResult, nil
 }
 
-func (act BatchTaskTCloudCreateL7RuleAction) checkRuleMatch(req hclb.TCloudRuleCreate, db corelb.TCloudLbUrlRule) (
+func (act BatchTaskTCloudCreateL7RuleAction) checkRuleMatch(req hclb.TCloudRuleCreate, db *corelb.TCloudLbUrlRule) (
 	err error) {
 
 	if req.SessionExpireTime != nil && db.SessionExpire != cvt.PtrToVal(req.SessionExpireTime) {

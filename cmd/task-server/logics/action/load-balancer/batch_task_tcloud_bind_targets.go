@@ -91,7 +91,7 @@ func (act BatchTaskBindTargetAction) Run(kt run.ExecuteKit, params any) (result 
 		}
 	}
 	// 更新任务状态为 running
-	if err := batchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs, enumor.TaskDetailRunning, nil); err != nil {
+	if err := batchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs, enumor.TaskDetailRunning); err != nil {
 		return fmt.Sprintf("fail to update detail to running"), err
 	}
 
@@ -102,7 +102,7 @@ func (act BatchTaskBindTargetAction) Run(kt run.ExecuteKit, params any) (result 
 			// 更新为失败
 			targetState = enumor.TaskDetailFailed
 		}
-		err := batchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs, targetState, taskErr)
+		err := batchUpdateTaskDetailResultState(kt.Kit(), opt.ManagementDetailIDs, targetState, nil, taskErr)
 		if err != nil {
 			logs.Errorf("fail to set detail to %s after cloud operation finished, err: %v, rid: %s",
 				targetState, err, kt.Kit().Rid)

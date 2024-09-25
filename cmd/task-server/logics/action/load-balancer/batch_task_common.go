@@ -51,7 +51,7 @@ func listTaskDetail(kt *kit.Kit, ids []string) ([]coretask.Detail, error) {
 			return nil, err
 		}
 		if len(detailResp.Details) != len(idBatch) {
-			return nil, fmt.Errorf("some of task management detail ids not found, want: %d, got: %s",
+			return nil, fmt.Errorf("some of task management detail ids not found, want: %d, got: %d",
 				len(ids), len(detailResp.Details))
 		}
 		result = append(result, detailResp.Details...)
@@ -60,12 +60,32 @@ func listTaskDetail(kt *kit.Kit, ids []string) ([]coretask.Detail, error) {
 	return result, nil
 }
 
-func batchUpdateTaskDetailState(kt *kit.Kit, ids []string, state enumor.TaskDetailState, reason error) error {
+func batchUpdateTaskDetailState(kt *kit.Kit, ids []string, state enumor.TaskDetailState) error {
 
 	detailUpdates := make([]datatask.UpdateTaskDetailField, min(len(ids), constant.BatchOperationMaxLimit))
 	for _, idBatch := range slice.Split(ids, constant.BatchOperationMaxLimit) {
 		for i := range idBatch {
-			field := datatask.UpdateTaskDetailField{ID: ids[i], State: state}
+			detailUpdates[i] = datatask.UpdateTaskDetailField{ID: ids[i], State: state}
+		}
+		updateTaskReq := &datatask.UpdateDetailReq{Items: detailUpdates[:len(idBatch)]}
+		err := actcli.GetDataService().Global.TaskDetail.Update(kt, updateTaskReq)
+		if err != nil {
+			logs.Errorf("fail to update task detail state to %s, err: %v, ids: %s, rid: %s",
+				state, err, idBatch, kt.Rid)
+			return err
+		}
+	}
+
+	return nil
+}
+
+func batchUpdateTaskDetailResultState(kt *kit.Kit, ids []string, state enumor.TaskDetailState,
+	result any, reason error) error {
+
+	detailUpdates := make([]datatask.UpdateTaskDetailField, min(len(ids), constant.BatchOperationMaxLimit))
+	for _, idBatch := range slice.Split(ids, constant.BatchOperationMaxLimit) {
+		for i := range idBatch {
+			field := datatask.UpdateTaskDetailField{ID: ids[i], State: state, Result: result}
 			if reason != nil {
 				field.Reason = reason.Error()
 			}
@@ -74,8 +94,8 @@ func batchUpdateTaskDetailState(kt *kit.Kit, ids []string, state enumor.TaskDeta
 		updateTaskReq := &datatask.UpdateDetailReq{Items: detailUpdates[:len(idBatch)]}
 		err := actcli.GetDataService().Global.TaskDetail.Update(kt, updateTaskReq)
 		if err != nil {
-			logs.Errorf("fail to update task detail state to %s, err: %v, ids: %s， rid: %s",
-				state, err, ids, kt.Rid)
+			logs.Errorf("fail to update task detail result state to %s, err: %v, ids: %s, rid: %s",
+				state, err, idBatch, kt.Rid)
 			return err
 		}
 	}

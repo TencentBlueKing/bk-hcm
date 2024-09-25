@@ -25,6 +25,7 @@ import (
 
 	"hcm/pkg/adaptor/types/core"
 	typelb "hcm/pkg/adaptor/types/load-balancer"
+	apicore "hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	"hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/constant"
@@ -362,10 +363,7 @@ type ListenerWithRuleCreateResult struct {
 }
 
 // ListenerCreateResult 监听器创建结果
-type ListenerCreateResult struct {
-	LblID      string `json:"lbl_id"`
-	CloudLblID string `json:"cloud_lbl_id"`
-}
+type ListenerCreateResult = apicore.CloudCreateResult
 
 // --------------------------[更新监听器]--------------------------
 
