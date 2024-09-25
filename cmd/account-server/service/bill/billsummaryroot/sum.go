@@ -64,15 +64,16 @@ func (s *service) SumRootAccountSummary(cts *rest.Contexts) (interface{}, error)
 	if err != nil {
 		return nil, err
 	}
-	var rootSummaryList []*dsbillapi.BillSummaryRootResult
+	var rootSummaryList []*billcore.SummaryRoot
 	for offset := uint64(0); offset < *result.Count; offset = offset + uint64(core.DefaultMaxPageLimit) {
-		tmpResult, err := s.client.DataService().Global.Bill.ListBillSummaryRoot(cts.Kit, &dsbillapi.BillSummaryRootListReq{
-			Filter: bizFilter,
-			Page: &core.BasePage{
-				Start: uint32(offset),
-				Limit: core.DefaultMaxPageLimit,
-			},
-		})
+		tmpResult, err := s.client.DataService().Global.Bill.ListBillSummaryRoot(cts.Kit,
+			&dsbillapi.BillSummaryRootListReq{
+				Filter: bizFilter,
+				Page: &core.BasePage{
+					Start: uint32(offset),
+					Limit: core.DefaultMaxPageLimit,
+				},
+			})
 		if err != nil {
 			return nil, err
 		}
@@ -81,7 +82,7 @@ func (s *service) SumRootAccountSummary(cts *rest.Contexts) (interface{}, error)
 	return s.doCalcalcute(rootSummaryList, *result.Count)
 }
 
-func (s *service) doCalcalcute(rootSummaryList []*dsbillapi.BillSummaryRootResult, count uint64) (interface{}, error) {
+func (s *service) doCalcalcute(rootSummaryList []*billcore.SummaryRoot, count uint64) (interface{}, error) {
 	retMap := make(map[enumor.CurrencyCode]*billcore.CostWithCurrency)
 	for _, rootSummary := range rootSummaryList {
 		if _, ok := retMap[rootSummary.Currency]; !ok {

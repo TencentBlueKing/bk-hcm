@@ -72,7 +72,7 @@ type AccountBillSyncRecord struct {
 	// RMBCost 人民币账单
 	RMBCost *types.Decimal `db:"rmb_cost" json:"rmb_cost"`
 	// Detail 同步详情
-	Detail string `db:"detail" json:"detail"`
+	Detail types.JsonField `db:"detail" json:"detail"`
 	// Operator 操作人
 	Operator string `db:"operator" validate:"max=64" json:"operator"`
 

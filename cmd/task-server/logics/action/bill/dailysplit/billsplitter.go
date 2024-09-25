@@ -31,7 +31,7 @@ import (
 
 var vendorSplitterFunc = map[enumor.Vendor]func() RawBillSplitter{
 	enumor.Aws:      func() RawBillSplitter { return &AwsSplitter{} },
-	enumor.Gcp:      func() RawBillSplitter { return &DefaultSplitter{} },
+	enumor.Gcp:      func() RawBillSplitter { return &GcpSplitter{} },
 	enumor.HuaWei:   func() RawBillSplitter { return &DefaultSplitter{} },
 	enumor.Azure:    func() RawBillSplitter { return &DefaultSplitter{} },
 	enumor.Kaopu:    func() RawBillSplitter { return &DefaultSplitter{} },

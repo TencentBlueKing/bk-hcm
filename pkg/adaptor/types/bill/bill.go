@@ -485,7 +485,7 @@ type GcpRootAccountBillListOption struct {
 	// 截止时间戳，时间戳值表示绝对时间点，与任何时区或惯例（如夏令时）无关，可精确到微秒
 	EndDate string       `json:"end_date" validate:"omitempty"`
 	Page    *GcpBillPage `json:"page" validate:"omitempty"`
-	// ProjectID 账号所属的项目ID
+	// ProjectID 账号所属的项目ID 不传标识为 is NULL 用来查询不属于指定账号的费用
 	ProjectID string `json:"project_id" validate:"required"`
 }
 

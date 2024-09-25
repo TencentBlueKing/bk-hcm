@@ -21,8 +21,8 @@
 package monthtask
 
 import (
-	"encoding/json"
 	"fmt"
+	"path/filepath"
 
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	"hcm/pkg/api/core"
@@ -32,6 +32,7 @@ import (
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -44,11 +45,20 @@ import (
 // MonthTaskActionOption option for month task action
 type MonthTaskActionOption struct {
 	Type          enumor.MonthTaskType `json:"type" validate:"required"`
+	Step          enumor.MonthTaskStep `json:"stage" validate:"required"`
 	RootAccountID string               `json:"root_account_id" validate:"required"`
 	BillYear      int                  `json:"bill_year" validate:"required"`
 	BillMonth     int                  `json:"bill_month" validate:"required"`
 	Vendor        enumor.Vendor        `json:"vendor" validate:"required"`
 	Extension     map[string]string    `json:"extension"`
+}
+
+// Validate ...
+func (o MonthTaskActionOption) Validate() error {
+	return validator.Validate.Struct(o)
+}
+func (o MonthTaskActionOption) String() string {
+	return fmt.Sprintf("[%s]%s %s %d-%2d", o.Vendor, o.Type, o.RootAccountID, o.BillYear, o.BillMonth)
 }
 
 // MonthTaskAction month task action
@@ -70,44 +80,59 @@ func (act MonthTaskAction) Run(kt run.ExecuteKit, param interface{}) (interface{
 	if !ok {
 		return nil, errf.New(errf.InvalidParameter, "param type mismatch")
 	}
-	runner, err := GetRunner(opt.Vendor)
+	runner, err := GetRunner(opt.Vendor, opt.Type)
 	if err != nil {
 		return nil, err
 	}
-	switch opt.Type {
-	case enumor.MonthTaskTypePull:
+	switch opt.Step {
+	case enumor.MonthTaskStepPull:
 		if err := act.runPull(kt.Kit(), runner, opt); err != nil {
+			logs.Errorf("fail to pull month task, opt: %s, err: %v, rid: %s", opt.String(), err, kt.Kit().Rid)
 			return nil, err
 		}
 		return nil, nil
-	case enumor.MonthTaskTypeSplit:
+	case enumor.MonthTaskStepSplit:
 		if err := act.runSplit(kt.Kit(), runner, opt); err != nil {
+			logs.Errorf("fail to split month task, opt: %s, err: %v, rid: %s", opt.String(), err, kt.Kit().Rid)
 			return nil, err
 		}
 		return nil, nil
-	case enumor.MonthTaskTypeSummary:
-		if err := act.runSummary(kt.Kit(), opt); err != nil {
+	case enumor.MonthTaskStepSummary:
+		if err := act.runSummary(kt.Kit(), runner, opt); err != nil {
+			logs.Errorf("fail to summary month task, opt: %s, err: %v, rid: %s", opt.String(), err, kt.Kit().Rid)
 			return nil, err
 		}
 		return nil, nil
 	default:
 		return nil, errf.New(errf.InvalidParameter, fmt.Sprintf(
-			"invalid month task type %s", opt.Type))
+			"invalid month task type %s", opt.Step))
 	}
 }
 
 func (act MonthTaskAction) runPull(kt *kit.Kit, runner MonthTaskRunner, opt *MonthTaskActionOption) error {
+
+	// 清除原始账单
+	if err := act.cleanRawBills(kt, opt); err != nil {
+		logs.Errorf("fail to clean raw bills for pull month bill, err:%v, rid: %s", err, kt.Rid)
+		return err
+	}
+
 	for {
-		task, err := getMonthPullTask(kt, opt)
+		task, err := getMonthTask(kt, opt)
 		if err != nil {
 			return err
 		}
+
 		rawBillItemList, isFinished, err := runner.Pull(kt, opt, task.PullIndex)
 		if err != nil {
 			return err
 		}
 		lenRawBillItemList := len(rawBillItemList)
-		filename := fmt.Sprintf("%d-%d.csv", task.PullIndex, lenRawBillItemList)
+		if lenRawBillItemList == 0 {
+			logs.Infof("month task %s pulled 0 records, skip, rid: %s", task.String(), kt.Rid)
+			return nil
+		}
+		filename := getMonthTaskRawBillFilename(task, task.PullIndex, uint64(lenRawBillItemList))
 		storeReq := &bill.RawBillCreateReq{
 			RawBillPathParam: bill.RawBillPathParam{
 				Vendor:        opt.Vendor,
@@ -115,9 +140,10 @@ func (act MonthTaskAction) runPull(kt *kit.Kit, runner MonthTaskRunner, opt *Mon
 				MainAccountID: enumor.MonthRawBillPathName,
 				BillYear:      fmt.Sprintf("%d", task.BillYear),
 				BillMonth:     fmt.Sprintf("%02d", task.BillMonth),
-				BillDate:      enumor.MonthRawBillSpecialDatePathName,
-				Version:       fmt.Sprintf("%d", task.VersionID),
-				FileName:      filename,
+				// 将类型作为特殊日期
+				BillDate: string(task.Type),
+				Version:  fmt.Sprintf("%d", task.VersionID),
+				FileName: filename,
 			},
 
 			Items: rawBillItemList,
@@ -125,28 +151,30 @@ func (act MonthTaskAction) runPull(kt *kit.Kit, runner MonthTaskRunner, opt *Mon
 		databillCli := actcli.GetDataService().Global.Bill
 		_, err = databillCli.CreateRawBill(kt, storeReq)
 		if err != nil {
-			logs.Warnf("failed to create month raw bill, opt: %+v, err: %s, rid: %s", opt, err.Error(), kt.Rid)
+			logs.Errorf("failed to create month raw bill, opt: %+v, err: %s, rid: %s", opt, err.Error(), kt.Rid)
 			return fmt.Errorf("failed to create month raw bill, opt: %+v, err: %s", opt, err.Error())
 		}
 		logs.Infof("month task %+v pulled %d records, continue", opt, lenRawBillItemList)
 		if isFinished {
-			if err := databillCli.UpdateBillMonthPullTask(kt, &bill.BillMonthTaskUpdateReq{
+			updateToPulledReq := &bill.BillMonthTaskUpdateReq{
 				ID:        task.ID,
 				Count:     task.Count + uint64(lenRawBillItemList),
 				PullIndex: task.PullIndex + uint64(lenRawBillItemList),
 				State:     enumor.RootAccountMonthBillTaskStatePulled,
-			}); err != nil {
-				logs.Warnf("failed to update month pull task, opt: %+v, err: %s, rid: %s", opt, err.Error(), kt.Rid)
+			}
+			if err := databillCli.UpdateBillMonthTask(kt, updateToPulledReq); err != nil {
+				logs.Errorf("failed to update month pull task, opt: %+v, err: %s, rid: %s", opt, err.Error(), kt.Rid)
 				return err
 			}
 			return nil
 		}
-		if err := databillCli.UpdateBillMonthPullTask(kt, &bill.BillMonthTaskUpdateReq{
+		updateIdxReq := &bill.BillMonthTaskUpdateReq{
 			ID:        task.ID,
 			Count:     task.Count + uint64(lenRawBillItemList),
 			PullIndex: task.PullIndex + uint64(lenRawBillItemList),
-		}); err != nil {
-			logs.Warnf("failed to update month pull task, opt: %+v, err: %s, rid: %s", opt, err.Error(), kt.Rid)
+		}
+		if err := databillCli.UpdateBillMonthTask(kt, updateIdxReq); err != nil {
+			logs.Errorf("failed to update month pull task, opt: %+v, err: %s, rid: %s", opt, err.Error(), kt.Rid)
 			return err
 		}
 	}
@@ -154,14 +182,14 @@ func (act MonthTaskAction) runPull(kt *kit.Kit, runner MonthTaskRunner, opt *Mon
 
 func (act MonthTaskAction) runSplit(kt *kit.Kit, runner MonthTaskRunner, opt *MonthTaskActionOption) error {
 	// step1 清理原有月度任务的bill item，因为有可能之前存在中途失败的脏数据了
-	if err := act.cleanBillItem(kt, opt); err != nil {
+	if err := act.cleanBillItem(kt, runner, opt); err != nil {
 		return err
 	}
 	// step2 进行分账
 	var splitMainAccountMap = make(map[string]struct{})
 	curlIndex := uint64(0)
 	for {
-		task, err := getMonthPullTask(kt, opt)
+		task, err := getMonthTask(kt, opt)
 		if err != nil {
 			logs.Errorf("fail to get month task for splitting, err: %s, rid: %s", err.Error(), kt.Rid)
 			return err
@@ -182,21 +210,16 @@ func (act MonthTaskAction) runSplit(kt *kit.Kit, runner MonthTaskRunner, opt *Mo
 			for mainAccountID := range splitMainAccountMap {
 				itemList = append(itemList, billcore.MonthTaskSummaryDetailItem{MainAccountID: mainAccountID})
 			}
-			itemListJSON, err := json.Marshal(itemList)
-			if err != nil {
-				logs.Errorf("fail to marshal month task summary detail, err: %v, rid: %s", err, kt.Rid)
-				return err
-			}
-			mtUpdate.SummaryDetail = string(itemListJSON)
+			mtUpdate.SummaryDetail = itemList
 			mtUpdate.State = enumor.RootAccountMonthBillTaskStateSplit
-			if err := actcli.GetDataService().Global.Bill.UpdateBillMonthPullTask(kt, mtUpdate); err != nil {
+			if err := actcli.GetDataService().Global.Bill.UpdateBillMonthTask(kt, mtUpdate); err != nil {
 				logs.Warnf("failed to update month pull task to finished, opt: %+v, err: %s, rid: %s",
 					opt, err.Error(), kt.Rid)
 				return err
 			}
 			return nil
 		}
-		if err := actcli.GetDataService().Global.Bill.UpdateBillMonthPullTask(kt, mtUpdate); err != nil {
+		if err := actcli.GetDataService().Global.Bill.UpdateBillMonthTask(kt, mtUpdate); err != nil {
 			logs.Warnf("failed to update month pull task, opt: %+v, err: %s, rid: %s", opt, err.Error(), kt.Rid)
 			return err
 		}
@@ -204,7 +227,7 @@ func (act MonthTaskAction) runSplit(kt *kit.Kit, runner MonthTaskRunner, opt *Mo
 }
 
 func (act MonthTaskAction) split(kt *kit.Kit, runner MonthTaskRunner, opt *MonthTaskActionOption,
-	monthTask *bill.BillMonthTaskResult, accountMap map[string]struct{}, offset uint64) (
+	monthTask *billcore.MonthTask, accountMap map[string]struct{}, offset uint64) (
 	cnt int, finished bool, err error) {
 
 	limit := runner.GetBatchSize(kt)
@@ -217,7 +240,7 @@ func (act MonthTaskAction) split(kt *kit.Kit, runner MonthTaskRunner, opt *Month
 		isFinished = true
 	}
 
-	name := fmt.Sprintf("%d-%d.csv", offset, limit)
+	name := getMonthTaskRawBillFilename(monthTask, offset, limit)
 	tmpReq := &bill.RawBillItemQueryReq{
 		Vendor:        monthTask.Vendor,
 		RootAccountID: monthTask.RootAccountID,
@@ -225,17 +248,17 @@ func (act MonthTaskAction) split(kt *kit.Kit, runner MonthTaskRunner, opt *Month
 		BillYear:      fmt.Sprintf("%d", monthTask.BillYear),
 		BillMonth:     fmt.Sprintf("%02d", monthTask.BillMonth),
 		Version:       fmt.Sprintf("%d", monthTask.VersionID),
-		BillDate:      enumor.MonthRawBillSpecialDatePathName,
+		BillDate:      string(opt.Type),
 		FileName:      name,
 	}
 	resp, err := actcli.GetDataService().Global.Bill.QueryRawBillItems(kt, tmpReq)
 	if err != nil {
-		logs.Warnf("failed to get raw bill item for %v, err %s, rid: %s", tmpReq, err.Error(), kt.Rid)
+		logs.Errorf("failed to get raw bill item for %v, err: %v, rid: %s", tmpReq, err, kt.Rid)
 		return 0, false, fmt.Errorf("failed to get raw bill item for %v, err %s", tmpReq, err.Error())
 	}
 	tmpBillItemList, err := runner.Split(kt, opt, resp.Details)
 	if err != nil {
-		logs.Warnf("failed to split bill item, opt: %+v, err: %s, rid: %s", opt, err.Error(), kt.Rid)
+		logs.Errorf("failed to split bill item, opt: %+v, err: %v, rid: %s", opt, err, kt.Rid)
 		return 0, false, err
 	}
 	commonOpt := &bill.ItemCommonOpt{Vendor: opt.Vendor, Year: opt.BillYear, Month: opt.BillMonth}
@@ -248,9 +271,9 @@ func (act MonthTaskAction) split(kt *kit.Kit, runner MonthTaskRunner, opt *Month
 		createReq := &bill.BatchRawBillItemCreateReq{ItemCommonOpt: commonOpt, Items: itemsBatch}
 		_, err = actcli.GetDataService().Global.Bill.BatchCreateBillItem(kt, createReq)
 		if err != nil {
-			logs.Warnf("failed to batch create bill item of batch idx %d, err: %s, opt: %+v, rid: %s",
-				i, err.Error(), opt, kt.Rid)
-			return 0, false, fmt.Errorf("failed to batch create bill item, err: %s, opt: %+v", err.Error(), opt)
+			logs.Warnf("failed to batch create bill item of batch idx %d, err: %v, opt: %+v, rid: %s",
+				i, err, opt, kt.Rid)
+			return 0, false, fmt.Errorf("failed to batch create bill item, err: %v, opt: %+v", err, opt)
 		}
 	}
 
@@ -259,7 +282,12 @@ func (act MonthTaskAction) split(kt *kit.Kit, runner MonthTaskRunner, opt *Month
 	return len(resp.Details), isFinished, nil
 }
 
-func getCleanBillItemFilter(opt *MonthTaskActionOption) *filter.Expression {
+func getMonthTaskRawBillFilename(monthTask *billcore.MonthTask, offset uint64, limit uint64) string {
+	name := fmt.Sprintf("%s-%d-%d.csv", monthTask.Type, offset, limit)
+	return name
+}
+
+func getCleanBillItemFilter(opt *MonthTaskActionOption, productCodes []string) *filter.Expression {
 	expressions := []*filter.AtomRule{
 		// do not set main_account_id
 		tools.RuleEqual("root_account_id", opt.RootAccountID),
@@ -268,25 +296,27 @@ func getCleanBillItemFilter(opt *MonthTaskActionOption) *filter.Expression {
 		tools.RuleEqual("bill_month", opt.BillMonth),
 		// special day 0 for month bill
 		tools.RuleEqual("bill_day", enumor.MonthTaskSpecialBillDay),
+		tools.RuleIn("hc_product_code", productCodes),
 	}
 	return tools.ExpressionAnd(expressions...)
 }
 
-func (act MonthTaskAction) cleanBillItem(kt *kit.Kit, opt *MonthTaskActionOption) error {
+func (act MonthTaskAction) cleanBillItem(kt *kit.Kit, runner MonthTaskRunner, opt *MonthTaskActionOption) error {
+
 	batch := 0
 	commonOpt := &bill.ItemCommonOpt{Vendor: opt.Vendor, Year: opt.BillYear, Month: opt.BillMonth}
-
+	delFilter := getCleanBillItemFilter(opt, runner.GetHcProductCodes())
 	for {
 		listReq := &bill.BillItemListReq{
 			ItemCommonOpt: commonOpt,
-			ListReq:       &core.ListReq{Filter: getCleanBillItemFilter(opt), Page: core.NewCountPage()},
+			ListReq:       &core.ListReq{Filter: delFilter, Page: core.NewCountPage()},
 		}
 		result, err := actcli.GetDataService().Global.Bill.ListBillItem(kt, listReq)
 		if err != nil {
 			logs.Warnf("count bill item for %+v failed, err %s, rid %s", opt, err.Error(), kt.Rid)
 			return fmt.Errorf("count bill item for %+v failed, err %s", opt, err.Error())
 		}
-		delReq := &bill.BillItemDeleteReq{ItemCommonOpt: commonOpt, Filter: getCleanBillItemFilter(opt)}
+		delReq := &bill.BillItemDeleteReq{ItemCommonOpt: commonOpt, Filter: delFilter}
 		if result.Count > 0 {
 			if err := actcli.GetDataService().Global.Bill.BatchDeleteBillItem(kt, delReq); err != nil {
 				return fmt.Errorf("delete 100 of %d bill item for %+v failed, err %s",
@@ -303,22 +333,23 @@ func (act MonthTaskAction) cleanBillItem(kt *kit.Kit, opt *MonthTaskActionOption
 	return nil
 }
 
-func (act MonthTaskAction) runMainAccountSummary(kt *kit.Kit, opt *MonthTaskActionOption,
-	task *bill.BillMonthTaskResult, itemList []billcore.MonthTaskSummaryDetailItem) error {
+func (act MonthTaskAction) runMainAccountSummary(kt *kit.Kit, codes []string, task *billcore.MonthTask,
+	itemList []billcore.MonthTaskSummaryDetailItem) error {
 
-	commonOpt := &bill.ItemCommonOpt{Vendor: opt.Vendor, Year: opt.BillYear, Month: opt.BillMonth}
+	commonOpt := &bill.ItemCommonOpt{Vendor: task.Vendor, Year: task.BillYear, Month: task.BillMonth}
 	for i, item := range itemList {
 		if item.IsFinished {
 			continue
 		}
 		flt := tools.ExpressionAnd(
-			tools.RuleEqual("root_account_id", opt.RootAccountID),
+			tools.RuleEqual("root_account_id", task.RootAccountID),
 			tools.RuleEqual("main_account_id", item.MainAccountID),
-			tools.RuleEqual("bill_year", opt.BillYear),
-			tools.RuleEqual("bill_month", opt.BillMonth),
+			tools.RuleEqual("bill_year", task.BillYear),
+			tools.RuleEqual("bill_month", task.BillMonth),
 			tools.RuleEqual("vendor", task.Vendor),
 			// special day 0 for month bill
-			tools.RuleEqual("bill_day", 0),
+			tools.RuleEqual("bill_day", enumor.MonthTaskSpecialBillDay),
+			tools.RuleIn("hc_product_code", codes),
 		)
 		listReq := &bill.BillItemListReq{
 			ItemCommonOpt: commonOpt,
@@ -326,8 +357,8 @@ func (act MonthTaskAction) runMainAccountSummary(kt *kit.Kit, opt *MonthTaskActi
 		}
 		result, err := actcli.GetDataService().Global.Bill.ListBillItem(kt, listReq)
 		if err != nil {
-			logs.Warnf("count bill item for %+v %+v failed, err: %s, rid: %s", opt, item, err.Error(), kt.Rid)
-			return fmt.Errorf("count bill item for %+v %+v failed, err: %s", opt, item, err.Error())
+			logs.Warnf("count bill item for %s %+v failed, err: %v, rid: %s", task.String(), item, err, kt.Rid)
+			return fmt.Errorf("count bill item for %+v %+v failed, err: %v", task.String(), item, err)
 		}
 		currency := enumor.CurrencyUSD
 		cost := decimal.NewFromFloat(0)
@@ -342,8 +373,8 @@ func (act MonthTaskAction) runMainAccountSummary(kt *kit.Kit, opt *MonthTaskActi
 			}
 			result, err := actcli.GetDataService().Global.Bill.ListBillItem(kt, listReq)
 			if err != nil {
-				logs.Warnf("get %d-%d bill item for %+v %+v failed, err: %s, rid: %s",
-					start, limit, opt, item, err.Error(), kt.Rid)
+				logs.Warnf("get %d-%d bill item for %s %+v failed, err: %v, rid: %s",
+					start, limit, task.String(), item, err, kt.Rid)
 				return err
 			}
 			for _, item := range result.Details {
@@ -357,57 +388,48 @@ func (act MonthTaskAction) runMainAccountSummary(kt *kit.Kit, opt *MonthTaskActi
 		itemList[i].Currency = currency
 		itemList[i].Cost = cost
 		itemList[i].Count = count
-		marshalDetail, err := json.Marshal(itemList)
-		if err != nil {
-			logs.Warnf("marshal detail failed, err: %s, rid: %s", err.Error(), kt.Rid)
-			return err
-		}
-		if err := actcli.GetDataService().Global.Bill.UpdateBillMonthPullTask(kt, &bill.BillMonthTaskUpdateReq{
+
+		req := &bill.BillMonthTaskUpdateReq{
 			ID:            task.ID,
-			SummaryDetail: string(marshalDetail),
-		}); err != nil {
-			logs.Warnf("failed to update month pull task, opt: %+v, err: %s, rid: %s", opt, err.Error(), kt.Rid)
+			SummaryDetail: itemList,
+		}
+		if err := actcli.GetDataService().Global.Bill.UpdateBillMonthTask(kt, req); err != nil {
+			logs.Errorf("failed to update month pull task: %s, err: %v, rid: %s", task.String(), err, kt.Rid)
 			return err
 		}
 	}
 	return nil
 }
 
-func (act MonthTaskAction) runSummary(kt *kit.Kit, opt *MonthTaskActionOption) error {
-	task, err := getMonthPullTask(kt, opt)
+func (act MonthTaskAction) runSummary(kt *kit.Kit, runner MonthTaskRunner, opt *MonthTaskActionOption) error {
+	task, err := getMonthTask(kt, opt)
 	if err != nil {
 		return err
 	}
-	var itemList []billcore.MonthTaskSummaryDetailItem
-	if task.SummaryDetail != "" {
-		if err := json.Unmarshal([]byte(task.SummaryDetail), &itemList); err != nil {
-			logs.Warnf("decode %s to []billcore.MonthTaskSummaryDetailItem failed, err: %s, rid: %s",
-				task.SummaryDetail, err.Error(), kt.Rid)
-			return err
-		}
-	}
 
-	if err := act.runMainAccountSummary(kt, opt, task, itemList); err != nil {
+	if err := act.runMainAccountSummary(kt, runner.GetHcProductCodes(), task, task.SummaryDetail); err != nil {
 		return err
 	}
 
-	if err := actcli.GetDataService().Global.Bill.UpdateBillMonthPullTask(kt, &bill.BillMonthTaskUpdateReq{
+	req := &bill.BillMonthTaskUpdateReq{
 		ID:    task.ID,
 		State: enumor.RootAccountMonthBillTaskStateAccounted,
-	}); err != nil {
+	}
+	if err := actcli.GetDataService().Global.Bill.UpdateBillMonthTask(kt, req); err != nil {
 		logs.Warnf("failed to update month pull task, opt: %+v, err: %s, rid: %s", opt, err.Error(), kt.Rid)
 		return err
 	}
 	return nil
 }
 
-func getMonthPullTask(kt *kit.Kit, opt *MonthTaskActionOption) (*bill.BillMonthTaskResult, error) {
+func getMonthTask(kt *kit.Kit, opt *MonthTaskActionOption) (*billcore.MonthTask, error) {
 	expressions := []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", opt.RootAccountID),
 		tools.RuleEqual("bill_year", opt.BillYear),
 		tools.RuleEqual("bill_month", opt.BillMonth),
+		tools.RuleEqual("type", opt.Type),
 	}
-	result, err := actcli.GetDataService().Global.Bill.ListBillMonthPullTask(kt, &bill.BillMonthTaskListReq{
+	result, err := actcli.GetDataService().Global.Bill.ListBillMonthTask(kt, &bill.BillMonthTaskListReq{
 		Filter: tools.ExpressionAnd(expressions...),
 		Page: &core.BasePage{
 			Start: 0,
@@ -415,12 +437,57 @@ func getMonthPullTask(kt *kit.Kit, opt *MonthTaskActionOption) (*bill.BillMonthT
 		},
 	})
 	if err != nil {
-		logs.Warnf("get month pull task failed, opt: %+v, err: %s, rid: %s", err.Error(), kt.Rid)
-		return nil, fmt.Errorf("get month pull task failed, opt: %+v, err: %s", opt, err.Error())
+		logs.Warnf("get month task failed, opt: %+v, err: %v, rid: %s", opt, err, kt.Rid)
+		return nil, fmt.Errorf("get month task failed, opt: %+v, err: %s", opt, err.Error())
 	}
 	if len(result.Details) != 1 {
-		logs.Warnf("get invalid length month pull task, resp: %v, rid: %s", result, kt.Rid)
-		return nil, fmt.Errorf("get invalid length month pull task, resp: %v", result)
+		logs.Errorf("get invalid length month task, resp: %+v, rid: %s", result, kt.Rid)
+		return nil, fmt.Errorf("get invalid length month task, resp: %v", result)
 	}
 	return result.Details[0], nil
+}
+
+func (act MonthTaskAction) cleanRawBills(kt *kit.Kit, opt *MonthTaskActionOption) error {
+
+	task, err := getMonthTask(kt, opt)
+	if err != nil {
+		logs.Errorf("fail to list month task, err: %s, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	listResult, err := actcli.GetDataService().Global.Bill.ListRawBillFileNames(
+		kt, &bill.RawBillItemNameListReq{
+			Vendor:        task.Vendor,
+			RootAccountID: task.RootAccountID,
+			MainAccountID: enumor.MonthRawBillPathName,
+			BillYear:      fmt.Sprintf("%d", task.BillYear),
+			BillMonth:     fmt.Sprintf("%02d", task.BillMonth),
+			BillDate:      string(task.Type),
+			Version:       fmt.Sprintf("%d", task.VersionID),
+		})
+	if err != nil {
+		logs.Warnf("list raw bill filenames failed, err: %s, vendor: %s, rid: %s", err, task.Vendor, kt.Rid)
+		return err
+	}
+	for _, filename := range listResult.Filenames {
+		name := filepath.Base(filename)
+		req := &bill.RawBillDeleteReq{
+			RawBillPathParam: bill.RawBillPathParam{
+				Vendor:        task.Vendor,
+				RootAccountID: task.RootAccountID,
+				MainAccountID: enumor.MonthRawBillPathName,
+				BillYear:      fmt.Sprintf("%d", task.BillYear),
+				BillMonth:     fmt.Sprintf("%02d", task.BillMonth),
+				BillDate:      string(task.Type),
+				Version:       fmt.Sprintf("%d", task.VersionID),
+				FileName:      name,
+			},
+		}
+		if err := actcli.GetDataService().Global.Bill.DeleteRawBill(kt, req); err != nil {
+			logs.Warnf("delete raw bill %s failed, err: %s, vendor: %s, rid: %s",
+				filename, err.Error(), task.Vendor, kt.Rid)
+			return err
+		}
+	}
+	return nil
 }

@@ -415,10 +415,26 @@ func (t *TCloudImpl) DeleteLoadBalancer(kt *kit.Kit, opt *typelb.TCloudDeleteOpt
 
 	req.LoadBalancerIds = common.StringPtrs(opt.CloudIDs)
 
-	_, err = client.DeleteLoadBalancerWithContext(kt.Ctx, req)
+	resp, err := client.DeleteLoadBalancerWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("delete tcloud clb failed, opt: %+v, err: %v, rid: %s", opt, err, kt.Rid)
 		return err
+	}
+
+	// 轮询删除结果
+	respPoller := poller.Poller[*TCloudImpl, map[string]*clb.DescribeTaskStatusResponseParams, poller.BaseDoneResult]{
+		Handler: &taskStatusDefaultPollingHandler{opt.Region},
+	}
+
+	reqID := resp.Response.RequestId
+	result, err := respPoller.PollUntilDone(t, kt, []*string{reqID}, types.NewLoadBalancerDefaultPollerOption())
+	if err != nil {
+		return err
+	}
+
+	if len(result.SuccessCloudIDs) == 0 {
+		return errf.Newf(errf.CloudVendorError, "no any load balancer have been deleted, TencentCloudSDK RequestId: %s",
+			cvt.PtrToVal(reqID))
 	}
 
 	return nil

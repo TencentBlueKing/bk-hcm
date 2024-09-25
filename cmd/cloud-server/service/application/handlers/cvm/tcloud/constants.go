@@ -51,4 +51,11 @@ var (
 		typecvm.Spotpaid:       "竞价付费",
 		typecvm.Cdcpaid:        "专用集群付费",
 	}
+	// InternetChargeTypeNameMap TCloud cvm internet charge type
+	InternetChargeTypeNameMap = map[typecvm.TCloudInternetChargeType]string{
+		typecvm.TCloudInternetBandwidthPrepaid:        "预付费按带宽结算",
+		typecvm.TCloudInternetBandwidthPackage:        "带宽包用户",
+		typecvm.TCloudInternetTrafficPostpaidByHour:   "流量按小时后付费",
+		typecvm.TCloudInternetBandwidthPostpaidByHour: "带宽按小时后付费",
+	}
 )

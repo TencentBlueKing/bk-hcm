@@ -25,6 +25,7 @@ import (
 
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	"hcm/pkg/api/core"
+	billcore "hcm/pkg/api/core/bill"
 	"hcm/pkg/api/data-service/bill"
 	"hcm/pkg/async/action/run"
 	"hcm/pkg/criteria/enumor"
@@ -149,12 +150,12 @@ func (act RootAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 		logs.Warnf("failed to update root account bill summary %v, err %s, rid: %s", opt, err.Error(), kt.Kit().Rid)
 		return nil, fmt.Errorf("failed to update root account bill summary %v, err %s", opt, err.Error())
 	}
-	logs.Infof("sucessfully update root account bill summary %v", req)
+	logs.Infof("sucessfully update root account bill summary %+v,rid: %s", req, kt.Kit().Rid)
 	return nil, nil
 }
 
-func (act *RootAccountSummaryAction) getBillSummary(
-	kt *kit.Kit, opt *RootAccountSummaryActionOption) (*bill.BillSummaryRootResult, error) {
+func (act *RootAccountSummaryAction) getBillSummary(kt *kit.Kit, opt *RootAccountSummaryActionOption) (
+	*billcore.SummaryRoot, error) {
 
 	expressions := []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", opt.RootAccountID),

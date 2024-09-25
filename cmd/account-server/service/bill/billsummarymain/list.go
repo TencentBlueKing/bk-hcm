@@ -97,12 +97,12 @@ func (s *service) ListMainAccountSummary(cts *rest.Contexts) (interface{}, error
 		mainAccount, ok := mainMap[detail.MainAccountID]
 		if !ok {
 			return nil, fmt.Errorf("main account %s(%s) of summary main %s not found",
-				detail.MainAccountID, detail.MainAccountCloudID, detail.ID)
+				detail.MainAccountCloudID, detail.MainAccountID, detail.ID)
 		}
 		rootAccount, ok := rootMap[detail.RootAccountID]
 		if !ok {
 			return nil, fmt.Errorf("root account: %s(%s) of summary main %s not found",
-				detail.RootAccountID, detail.RootAccountCloudID, detail.ID)
+				detail.RootAccountCloudID, detail.RootAccountID, detail.ID)
 		}
 		tmp := &asbillapi.MainAccountSummaryResult{
 			BillSummaryMain: detail,

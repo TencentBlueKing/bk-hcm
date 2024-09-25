@@ -115,10 +115,8 @@ func convertToRawBill(recordList []billcore.GcpRawBillItem) ([]dsbill.RawBillIte
 			newBillItem.BillCurrency = enumor.CurrencyCode(*record.Currency)
 		}
 		if record.Cost != nil {
-			newBillItem.BillCost = *record.Cost
-		}
-		if record.ReturnCost != nil {
-			newBillItem.BillCost = newBillItem.BillCost.Add(*record.ReturnCost)
+			// use original cost with non promotion cost
+			newBillItem.BillCost = *record.TotalCost
 		}
 		newBillItem.Extension = types.JsonField(string(extensionBytes))
 		retList = append(retList, newBillItem)
@@ -196,7 +194,7 @@ func (gcp *GcpPuller) doPull(
 		},
 	})
 	if err != nil {
-		return 0, nil, fmt.Errorf("list gcp root account bill list for %+v, offset %d, limit %d, err %s",
+		return 0, nil, fmt.Errorf("fail to list gcp root account bill list for %+v, offset %d, limit %d, err %s",
 			opt, offset, limit, err.Error())
 	}
 	var itemList []interface{}

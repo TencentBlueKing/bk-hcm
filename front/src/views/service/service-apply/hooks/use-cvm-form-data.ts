@@ -38,7 +38,14 @@ export interface ICvmBaseData {
   password: string;
   confirmed_password: string;
   instance_charge_type?: 'PREPAID' | 'POSTPAID_BY_HOUR' | 'SPOTPAID' | 'prePaid' | 'postPaid';
+  internet_charge_type?:
+    | 'BANDWIDTH_PREPAID'
+    | 'TRAFFIC_POSTPAID_BY_HOUR'
+    | 'BANDWIDTH_POSTPAID_BY_HOUR'
+    | 'BANDWIDTH_PACKAGE';
   instance_charge_paid_period?: number;
+  internet_max_bandwidth_out?: number;
+  bandwidth_package_id?: string;
   auto_renew?: boolean;
   required_count: number;
   memo: string;
@@ -82,6 +89,9 @@ export default (cond: Cond) => {
     const diff = {
       [VendorEnum.TCLOUD]: {
         instance_charge_type: 'PREPAID',
+        internet_charge_type: 'BANDWIDTH_PREPAID',
+        internet_max_bandwidth_out: 1,
+        bandwidth_package_id: '',
         public_ip_assigned: false,
         cloud_security_group_ids: [] as string[],
         auto_renew: false,
@@ -151,6 +161,7 @@ export default (cond: Cond) => {
       'data_disk',
       'public_ip_assigned',
       'instance_charge_type',
+      'internet_charge_type',
       'auto_renew',
     ];
     keys.forEach((key) => resetFormItemData(key));
@@ -183,6 +194,13 @@ export default (cond: Cond) => {
     if (cond.vendor === VendorEnum.TCLOUD) {
       saveData.public_ip_assigned = public_ip_assigned;
       saveData.instance_charge_paid_period = purchase_duration.count * (purchase_duration.unit === 'y' ? 12 : 1);
+      if (!saveData.public_ip_assigned) {
+        Reflect.deleteProperty(saveData, 'internet_charge_type');
+        Reflect.deleteProperty(saveData, 'internet_max_bandwidth_out');
+        Reflect.deleteProperty(saveData, 'bandwidth_package_id');
+      } else if (saveData.internet_charge_type !== 'BANDWIDTH_PACKAGE') {
+        Reflect.deleteProperty(saveData, 'bandwidth_package_id');
+      }
     }
 
     if (cond.vendor === VendorEnum.HUAWEI) {

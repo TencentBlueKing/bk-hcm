@@ -20,7 +20,11 @@
 package bill
 
 import (
+	"hcm/pkg/api/core"
+	corebill "hcm/pkg/api/core/bill"
 	"hcm/pkg/rest"
+
+	"github.com/shopspring/decimal"
 )
 
 // -------------------------- List --------------------------
@@ -35,4 +39,21 @@ type GcpBillListResult struct {
 type GcpBillListResp struct {
 	rest.BaseResp `json:",inline"`
 	Data          *GcpBillListResult `json:"data"`
+}
+
+// GcpCreditListResult ...
+type GcpCreditListResult = core.ListResultT[GcpCreditUsage]
+
+// GcpCreditUsage ...
+type GcpCreditUsage struct {
+	ProjectId string               `json:"project_id"`
+	Credits   []corebill.GcpCredit `json:"credits"`
+
+	PromotionCredit        *decimal.Decimal `json:"promotion_credit"`
+	BillingAccountId       string           `json:"billing_account_id"`
+	Currency               string           `json:"currency"`
+	CurrencyConversionRate *decimal.Decimal `json:"currency_conversion_rate"`
+	Month                  string           `json:"month"`
+	ProjectName            string           `json:"project_name"`
+	ProjectNumber          string           `json:"project_number"`
 }

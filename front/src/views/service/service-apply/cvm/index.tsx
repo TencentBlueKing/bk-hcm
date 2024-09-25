@@ -1,7 +1,7 @@
 /* eslint-disable no-useless-escape */
 // eslint-disable
 import { computed, defineComponent, reactive, ref, watch } from 'vue';
-import { Form, Input, Select, Checkbox, Button, Radio } from 'bkui-vue';
+import { Form, Input, Select, Checkbox, Button, Radio, Switcher, Slider, Alert } from 'bkui-vue';
 import ConditionOptions from '../components/common/condition-options/index.vue';
 import ZoneSelector from '@/components/zone-selector/index.vue';
 import MachineTypeSelector from '../components/common/machine-type-selector';
@@ -10,6 +10,7 @@ import VpcSelector from '../components/common/vpc-selector';
 import SubnetSelector from '../components/common/subnet-selector';
 import SecurityGroupSelector from '../components/common/security-group-selector';
 import CloudAreaName from '../components/common/cloud-area-name';
+import BandwidthPackageSelector from '../components/common/BandwidthPackageSelector';
 import { Plus as PlusIcon } from 'bkui-vue/lib/icon';
 import GcpDataDiskFormDialog from './children/gcp-data-disk-form-dialog';
 import PwdInput from './children/PwdInput';
@@ -55,7 +56,10 @@ export default defineComponent({
       opSystemType,
       changeOpSystemType,
     } = useCvmFormData(cond);
-    const { sysDiskTypes, dataDiskTypes, billingModes, purchaseDurationUnits } = useCvmOptions(cond, formData);
+    const { sysDiskTypes, dataDiskTypes, billingModes, purchaseDurationUnits, internetChargeTypes } = useCvmOptions(
+      cond,
+      formData,
+    );
     const { t } = useI18n();
     const router = useRouter();
     const isSubmitBtnLoading = ref(false);
@@ -126,6 +130,11 @@ export default defineComponent({
       resetFormItemData('cloud_vpc_id');
       resetFormItemData('cloud_subnet_id');
       vpcId.value = '';
+    };
+    const handleInstanceChargeType = (type: string) => {
+      resetFormItemData('internet_max_bandwidth_out');
+      resetFormItemData('bandwidth_package_id');
+      formData.internet_charge_type = type === 'PREPAID' ? 'BANDWIDTH_PREPAID' : 'BANDWIDTH_POSTPAID_BY_HOUR';
     };
     const handleVpcChange = (vpc: any) => {
       vpcData.value = vpc;
@@ -485,9 +494,6 @@ export default defineComponent({
             property: 'cloud_subnet_id',
             content: () => (
               <>
-                <Checkbox class='automatic-allocation-checkbox' v-model={formData.public_ip_assigned} disabled>
-                  自动分配公网IP
-                </Checkbox>
                 <div class={'component-with-detail-container'}>
                   <SubnetSelector
                     class={'component-with-detail'}
@@ -561,6 +567,92 @@ export default defineComponent({
                   onSelectedChange={(val) => (formData.cloud_security_group_ids = val)}
                 />
               </div>
+            ),
+          },
+          {
+            label: '自动分配公网IP',
+            required: false,
+            property: 'public_ip_assigned',
+            tips: () =>
+              formData.public_ip_assigned && (
+                <Alert
+                  class={'mt4'}
+                  theme='warning'
+                  title='注意：已选择给主机分配公网IP地址，主机端口将对公网可访问，请仔细核对安全组配置'
+                />
+              ),
+            content: () => (
+              <Switcher
+                v-model={formData.public_ip_assigned}
+                theme='primary'
+                offText='已关闭'
+                onText='已开启'
+                showText
+                disabled={cond.vendor !== VendorEnum.TCLOUD}
+              />
+            ),
+          },
+          {
+            label: '网络计费模式',
+            display: formData.public_ip_assigned === true,
+            required: true,
+            property: 'internet_charge_type',
+            content: () => (
+              <RadioGroup
+                v-model={formData.internet_charge_type}
+                onChange={() => (formData.internet_max_bandwidth_out = 1)}>
+                {internetChargeTypes.value.map((item) => (
+                  <RadioButton label={item.id}>{item.name}</RadioButton>
+                ))}
+              </RadioGroup>
+            ),
+          },
+          {
+            label: '共享带宽包',
+            required: true,
+            property: 'bandwidth_package_id',
+            display: formData.internet_charge_type === 'BANDWIDTH_PACKAGE',
+            content: () => (
+              <BandwidthPackageSelector
+                v-model={formData.bandwidth_package_id}
+                region={cond.region}
+                accountId={cond.cloudAccountId}
+              />
+            ),
+          },
+          {
+            label: '带宽上限（Mbps）',
+            display: formData.public_ip_assigned === true,
+            required: true,
+            property: 'internet_max_bandwidth_out',
+            content: () => (
+              <Slider
+                v-model={formData.internet_max_bandwidth_out}
+                minValue={1}
+                maxValue={
+                  ['BANDWIDTH_PREPAID', 'BANDWIDTH_PACKAGE'].includes(formData.internet_charge_type) ? 1000 : 200
+                }
+                customContent={
+                  ['BANDWIDTH_PREPAID', 'BANDWIDTH_PACKAGE'].includes(formData.internet_charge_type)
+                    ? {
+                        1: { label: '1' },
+                        256: { label: '256' },
+                        512: { label: '512' },
+                        1000: { label: '1000' },
+                      }
+                    : {
+                        1: { label: '1' },
+                        20: { label: '20' },
+                        40: { label: '40' },
+                        200: { label: '200' },
+                      }
+                }
+                labelClick
+                showInput>
+                {{
+                  end: () => <div class='slider-unit-suffix'>Mbps</div>,
+                }}
+              </Slider>
             ),
           },
         ],
@@ -949,7 +1041,7 @@ export default defineComponent({
                     appendix: () =>
                       [VendorEnum.TCLOUD, VendorEnum.HUAWEI].includes(cond.vendor as VendorEnum) ? (
                         <FormItem label='计费模式' required property='instance_charge_type'>
-                          <RadioGroup v-model={formData.instance_charge_type}>
+                          <RadioGroup v-model={formData.instance_charge_type} onChange={handleInstanceChargeType}>
                             {billingModes.value.map((item) => (
                               <RadioButton label={item.id}>{item.name}</RadioButton>
                             ))}

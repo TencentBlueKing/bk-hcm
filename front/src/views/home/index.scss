@@ -2,6 +2,8 @@
     width: 100%;
     padding: 0 !important;
     overflow: hidden !important;
+    // 当内部有高zindex元素时不遮挡侧边导航
+    z-index: 1;
     .container-content {
       display: flex;
       flex-direction: column;
@@ -29,7 +31,7 @@
                     padding: 0!important;
                 }
             }
-            
+
         }
         .view-warp{
           flex: 1;
@@ -157,7 +159,7 @@
         }
     }
 
-    
+
 }
 
 .bk-hcm-app-selector {
@@ -180,14 +182,14 @@
     .bk-hcm-app-selector-item-star {
         margin-left: 1px;
     }
-    
+
 }
 .home-menu {
     .bk-app-select-menu {
-        background: #182233!important; 
+        background: #182233!important;
         border-color: #2F3847!important;
     }
-    
+
     .app-action {
         background: #394561!important;
         border-color: #2F3847!important;
@@ -209,7 +211,7 @@
             }
         }
     }
-    
+
     .app-filter input {
         color: #747E94!important;
     }
@@ -265,6 +267,7 @@
     width: 85%;
     margin-left: 15%;
     overflow-y: auto;
+    z-index: 1;
 
     .apply-clb-form-container {
       padding: 0 !important;

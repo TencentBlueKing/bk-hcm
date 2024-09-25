@@ -36,3 +36,34 @@ const (
 	// BillExportFolderPrefix 账单导出文件夹前缀
 	BillExportFolderPrefix = "bill_export"
 )
+
+const AwsSavingsPlanAccountCloudIDKey = "aws_savings_plan_account_cloud_id"
+const AwsSavingsPlanARNPrefixKey = "aws_savings_plan_arn_prefix"
+
+// AwsCommonExpenseExcludeCloudIDKey ...
+const AwsCommonExpenseExcludeCloudIDKey = "aws_common_expense_exclude_account_cloud_id"
+
+const GcpCommonExpenseExcludeCloudIDKey = "gcp_common_expense_exclude_account_cloud_id"
+const GcpCreditReturnConfigKey = "gcp_credit_return_config"
+
+// AwsLineItemTypeSavingPlanCoveredUsage aws savings plan cost line item type
+const AwsLineItemTypeSavingPlanCoveredUsage = "SavingsPlanCoveredUsage"
+
+const (
+
+	// BillCommonExpenseReverseName common expense reverse
+	BillCommonExpenseReverseName = "CommonExpenseReverse"
+	// BillCommonExpenseName common expense
+	BillCommonExpenseName = "CommonExpense"
+
+	// AwsSavingsPlansCostCode aws savings plans cost code,
+	AwsSavingsPlansCostCode = "SavingsPlanCost"
+	// AwsSavingsPlansCostCodeReverse aws savings plans cost code reverse
+	AwsSavingsPlansCostCodeReverse = "SavingsPlanCostReverse"
+
+	// GcpCreditReturnCost Gcp credit return cost, negative value, e.g. -10.00000
+	GcpCreditReturnCost = "Credit"
+
+	// GcpCreditReturnCostReverse Gcp credit return cost reverse, positive value, e.g. 10.00000
+	GcpCreditReturnCostReverse = "CreditReverse"
+)

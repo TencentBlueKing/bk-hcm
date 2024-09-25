@@ -50,7 +50,7 @@ func (svc *service) ListBillSummaryDaily(cts *rest.Contexts) (interface{}, error
 		return nil, err
 	}
 
-	details := make([]billcore.BillSummaryDaily, len(data.Details))
+	details := make([]billcore.SummaryDaily, len(data.Details))
 	for indx, d := range data.Details {
 		details[indx] = toProtoPullerResult(&d)
 	}
@@ -58,8 +58,8 @@ func (svc *service) ListBillSummaryDaily(cts *rest.Contexts) (interface{}, error
 	return &dataproto.BillSummaryDailyListResult{Details: details, Count: &data.Count}, nil
 }
 
-func toProtoPullerResult(m *tablebill.AccountBillSummaryDaily) billcore.BillSummaryDaily {
-	return billcore.BillSummaryDaily{
+func toProtoPullerResult(m *tablebill.AccountBillSummaryDaily) billcore.SummaryDaily {
+	return billcore.SummaryDaily{
 		ID:                 m.ID,
 		RootAccountID:      m.RootAccountID,
 		MainAccountID:      m.MainAccountID,

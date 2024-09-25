@@ -29,12 +29,12 @@ import (
 )
 
 // GetRunner return month task vendor runner
-func GetRunner(vendor enumor.Vendor) (MonthTaskRunner, error) {
+func GetRunner(vendor enumor.Vendor, taskType enumor.MonthTaskType) (MonthTaskRunner, error) {
 	switch vendor {
 	case enumor.Gcp:
-		return newGcpRunner(), nil
+		return newGcpRunner(taskType)
 	case enumor.Aws:
-		return newAwsRunner(), nil
+		return newAwsRunner(taskType)
 	default:
 		return nil, fmt.Errorf("vendor %s not support now", vendor)
 	}
@@ -47,4 +47,7 @@ type MonthTaskRunner interface {
 		itemList []bill.RawBillItem, isFinished bool, err error)
 	Split(kt *kit.Kit, opt *MonthTaskActionOption, rawItemList []*bill.RawBillItem) (
 		[]bill.BillItemCreateReq[rawjson.RawMessage], error)
+
+	// GetHcProductCodes return all hc product codes for this month task type
+	GetHcProductCodes() []string
 }

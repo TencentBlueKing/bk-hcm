@@ -33,8 +33,6 @@ import (
 var (
 	// DailyPullerRegistry puller registry
 	DailyPullerRegistry = make(map[enumor.Vendor]DailyPuller)
-	// MonthPullerRegistry month puller registry
-	MonthPullerRegistry = make(map[enumor.Vendor]MonthPuller)
 )
 
 // GetDailyPuller get puller by vendor
@@ -46,25 +44,10 @@ func GetDailyPuller(vendor enumor.Vendor) (DailyPuller, error) {
 	return puller, nil
 }
 
-// GetMonthPuller get puller by vendor
-func GetMonthPuller(vendor enumor.Vendor) (MonthPuller, error) {
-	puller, ok := MonthPullerRegistry[vendor]
-	if !ok {
-		return nil, fmt.Errorf("unsupported vendor %s for month puller", vendor)
-	}
-	return puller, nil
-}
-
 // DailyPuller puller interface
 type DailyPuller interface {
 	EnsurePullTask(kt *kit.Kit, client *client.ClientSet, billSummaryMain *dsbillapi.BillSummaryMain) error
 	// GetPullTaskList 返回的map的key表示某个二级账号某月所有应该同步的天数的账单状态
 	GetPullTaskList(kt *kit.Kit, client *client.ClientSet, billSummaryMain *dsbillapi.BillSummaryMain) (
 		[]*bill.BillDailyPullTaskResult, error)
-}
-
-// MonthPuller month puller interface
-type MonthPuller interface {
-	// HasMonthPullTask return true if it needs month pull task
-	HasMonthPullTask() bool
 }
