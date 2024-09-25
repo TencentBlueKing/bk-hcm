@@ -1,5 +1,4 @@
 /*
- *
  * TencentBlueKing is pleased to support the open source community by making
  * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
  * Copyright (C) 2024 THL A29 Limited,
@@ -22,7 +21,7 @@ package actionlb
 
 import (
 	actcli "hcm/cmd/task-server/logics/action/cli"
-	hclb "hcm/pkg/api/hc-service/load-balancer"
+	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/async/action"
 	"hcm/pkg/async/action/run"
 	"hcm/pkg/criteria/enumor"
@@ -31,56 +30,55 @@ import (
 	"hcm/pkg/logs"
 )
 
-// --------------------------[将目标组中的RS应用到监听器或者规则]-----------------------------
+// --------------------------[同步TCloud负载均衡监听器]-----------------------------
 
-var _ action.Action = new(ListenerRuleAddTargetAction)
-var _ action.ParameterAction = new(ListenerRuleAddTargetAction)
+var _ action.Action = new(SyncTCloudLoadBalancerListenerAction)
+var _ action.ParameterAction = new(SyncTCloudLoadBalancerListenerAction)
 
-// ListenerRuleAddTargetAction 将RS应用到监听器或者规则
-type ListenerRuleAddTargetAction struct{}
+// SyncTCloudLoadBalancerListenerAction 同步TCloud负载均衡监听器
+type SyncTCloudLoadBalancerListenerAction struct{}
 
-// ListenerRuleAddTargetOption ...
-type ListenerRuleAddTargetOption struct {
-	LoadBalancerID                     string `json:"lb_id" validate:"required"`
-	*hclb.BatchRegisterTCloudTargetReq `json:",inline"`
+// SyncTCloudLoadBalancerListenerOption ...
+type SyncTCloudLoadBalancerListenerOption struct {
+	*sync.TCloudListenerSyncReq `json:",inline" validate:"required"`
 }
 
 // Validate validate option.
-func (opt ListenerRuleAddTargetOption) Validate() error {
+func (opt SyncTCloudLoadBalancerListenerOption) Validate() error {
 
 	return validator.Validate.Struct(opt)
 }
 
 // ParameterNew return request params.
-func (act ListenerRuleAddTargetAction) ParameterNew() (params any) {
-	return new(ListenerRuleAddTargetOption)
+func (act SyncTCloudLoadBalancerListenerAction) ParameterNew() (params any) {
+	return new(SyncTCloudLoadBalancerListenerOption)
 }
 
 // Name return action name
-func (act ListenerRuleAddTargetAction) Name() enumor.ActionName {
-	return enumor.ActionListenerRuleAddTarget
+func (act SyncTCloudLoadBalancerListenerAction) Name() enumor.ActionName {
+	return enumor.SyncTCloudLoadBalancerListener
 }
 
 // Run 将目标组中的RS绑定到监听器/规则中
-func (act ListenerRuleAddTargetAction) Run(kt run.ExecuteKit, params any) (any, error) {
-	opt, ok := params.(*ListenerRuleAddTargetOption)
+func (act SyncTCloudLoadBalancerListenerAction) Run(kt run.ExecuteKit, params any) (result any, taskErr error) {
+	opt, ok := params.(*SyncTCloudLoadBalancerListenerOption)
 	if !ok {
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
 	}
 
-	err := actcli.GetHCService().TCloud.Clb.BatchRegisterTargetToListenerRule(
-		kt.Kit(), opt.LoadBalancerID, opt.BatchRegisterTCloudTargetReq)
+	err := actcli.GetHCService().TCloud.Clb.SyncLoadBalancerListener(kt.Kit(), opt.TCloudListenerSyncReq)
 	if err != nil {
-		logs.Errorf("fail to register target to listener rule, err: %v, rid: %s", err, kt.Kit().Rid)
+		logs.Errorf("fail to sync load balancer listener, err: %v, req: %v rid: %s",
+			err, opt.TCloudListenerSyncReq, kt.Kit().Rid)
 		return nil, err
 	}
 
-	return nil, err
+	return nil, nil
 }
 
-// Rollback 添加rs支持重入，无需回滚
-func (act ListenerRuleAddTargetAction) Rollback(kt run.ExecuteKit, params any) error {
-	logs.Infof(" ----------- ListenerRuleAddTargetAction Rollback -----------, params: %+v, rid: %s",
+// Rollback 支持重入，无需回滚
+func (act SyncTCloudLoadBalancerListenerAction) Rollback(kt run.ExecuteKit, params any) error {
+	logs.Infof(" ----------- SyncTCloudLoadBalancerListenerAction Rollback -----------, params: %+v, rid: %s",
 		params, kt.Kit().Rid)
 	return nil
 }
