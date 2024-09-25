@@ -928,6 +928,9 @@ type Notice struct {
 
 // Validate do validate
 func (c *Notice) validate() error {
+	if !c.Enable {
+		return nil
+	}
 	if err := c.ApiGateway.validate(); err != nil {
 		return err
 	}

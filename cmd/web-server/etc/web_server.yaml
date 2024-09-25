@@ -137,8 +137,8 @@ itsm:
     password:
 
 changeLogPath:
-  ch: ./changelog
-  en: ./changelog
+  ch: ../changelog/ch
+  en: ../changelog/en
 
 # defines notice related settings.
 notice:
