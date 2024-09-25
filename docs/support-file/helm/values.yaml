@@ -402,8 +402,8 @@ webserver:
   ## Pod对应提供服务的port 与service里的targetPort必须一致
   port: 80
   changeLogPath:
-    ch:
-    en:
+    ch: /data/hcm/changelog/ch
+    en: /data/hcm/changelog/en
   # defines notice related settings.
   notice:
     # enable is a flag to enable notice service.如果需要启用消息通知，需要申请bk-notice的api网关权限
