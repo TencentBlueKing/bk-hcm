@@ -266,7 +266,7 @@ func (mac *MainAccountController) runDailyRawBillLoop(kt *kit.Kit) {
 		logs.Warnf("sync daily raw bill for account (%s, %s, %s) failed, err %s, rid: %s",
 			mac.RootAccountID, mac.MainAccountID, mac.Vendor, err.Error(), kt.Rid)
 	}
-	ticker := time.NewTicker(defaultControllerSyncDuration)
+	ticker := time.NewTicker(*cc.AccountServer().Controller.DailySummarySyncDuration)
 	for {
 		select {
 		case <-ticker.C:

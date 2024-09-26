@@ -42,6 +42,10 @@ type BillManager struct {
 
 // Run bill manager
 func (bm *BillManager) Run(ctx context.Context) {
+	if cc.AccountServer().Controller.Disable {
+		logs.Infof("bill manager is disabled")
+		return
+	}
 
 	logs.Infof("bill allocation config: %+v", cc.AccountServer().BillAllocation)
 	time.Sleep(time.Second * 5)
@@ -62,6 +66,7 @@ func (bm *BillManager) Run(ctx context.Context) {
 func (bm *BillManager) loopOnce() {
 	if !bm.Sd.IsMaster() {
 		bm.stopControllers()
+		return
 	}
 	if err := bm.syncMainControllers(); err != nil {
 		logs.Errorf("sync main controllers failed, err: %s", err.Error())
