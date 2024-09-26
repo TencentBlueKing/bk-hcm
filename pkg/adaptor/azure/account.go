@@ -21,7 +21,6 @@ package azure
 
 import (
 	"fmt"
-	"strings"
 
 	"hcm/pkg/adaptor/types/account"
 	"hcm/pkg/api/core/cloud"
@@ -96,7 +95,7 @@ func (az *Azure) GetAccountInfoBySecret(kt *kit.Kit) (*cloud.AzureInfoBySecret, 
 	}
 	azInfo := new(cloud.AzureInfoBySecret)
 
-	// 1. 获取该账号可以访问的订阅，要求订阅数量刚好一个
+	// 1. 获取该账号可以访问的订阅
 	// https://learn.microsoft.com/en-us/rest/api/resources/subscriptions/list
 	pager := subClient.NewListPager(nil)
 	if !pager.More() {
@@ -106,21 +105,16 @@ func (az *Azure) GetAccountInfoBySecret(kt *kit.Kit) (*cloud.AzureInfoBySecret, 
 	if err != nil {
 		return nil, err
 	}
-
-	subscriptions := subscriptionListResp.Value
-	if len(subscriptions) == 0 {
+	if len(subscriptionListResp.Value) == 0 {
 		return nil, fmt.Errorf("no subscription found")
 	}
-	if len(subscriptions) > 1 {
-		subs := make([]string, len(subscriptions))
-		for i, sub := range subscriptions {
-			subs[i] = "(" + converter.PtrToVal(sub.SubscriptionID) + ")" + converter.PtrToVal(sub.DisplayName)
-		}
-		return nil, fmt.Errorf("more than one subscription found: " + strings.Join(subs, ","))
-	}
 
-	azInfo.CloudSubscriptionName = converter.PtrToVal(subscriptions[0].DisplayName)
-	azInfo.CloudSubscriptionID = converter.PtrToVal(subscriptions[0].SubscriptionID)
+	for _, subscription := range subscriptionListResp.Value {
+		azInfo.SubscriptionInfos = append(azInfo.SubscriptionInfos, cloud.AzureSubscriptionInfo{
+			CloudSubscriptionID:   converter.PtrToVal(subscription.SubscriptionID),
+			CloudSubscriptionName: converter.PtrToVal(subscription.DisplayName),
+		})
+	}
 
 	// 2. 获取应用信息 https://learn.microsoft.com/en-us/graph/api/application-list
 	resp, err := graphClient.Applications().Get(kt.Ctx, nil)
@@ -130,16 +124,10 @@ func (az *Azure) GetAccountInfoBySecret(kt *kit.Kit) (*cloud.AzureInfoBySecret, 
 	}
 
 	for _, one := range resp.GetValue() {
-		//	 过滤id
-		if converter.PtrToVal(one.GetAppId()) == az.clientSet.credential.CloudApplicationID {
-			azInfo.CloudApplicationName = converter.PtrToVal(one.GetDisplayName())
-			break
-		}
-
-	}
-	// 没有拿到应用id的情况
-	if len(azInfo.CloudApplicationName) == 0 {
-		return nil, fmt.Errorf("failed to get application name")
+		azInfo.ApplicationInfos = append(azInfo.ApplicationInfos, cloud.AzureApplicationInfo{
+			CloudApplicationID:   converter.PtrToVal(one.GetAppId()),
+			CloudApplicationName: converter.PtrToVal(one.GetDisplayName()),
+		})
 	}
 
 	return azInfo, nil

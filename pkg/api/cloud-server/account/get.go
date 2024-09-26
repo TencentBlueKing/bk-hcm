@@ -88,6 +88,13 @@ func (req *AzureAccountInfoBySecretReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
+// AzureAccountInfoBySecretResp ...
+type AzureAccountInfoBySecretResp struct {
+	CloudSubscriptionID   string `json:"cloud_subscription_id"`
+	CloudSubscriptionName string `json:"cloud_subscription_name"`
+	CloudApplicationName  string `json:"cloud_application_name"`
+}
+
 // GcpAccountInfoBySecretReq ...
 type GcpAccountInfoBySecretReq struct {
 	DisableCheck     bool `json:"disable_check" validate:"omitempty"`
