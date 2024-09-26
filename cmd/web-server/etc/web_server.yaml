@@ -137,8 +137,8 @@ itsm:
     password:
 
 changeLogPath:
-  ch: ./changelog
-  en: ./changelog
+  ch: ../changelog
+  en: ../changelog
 
 # defines notice related settings.
 notice:
@@ -169,3 +169,5 @@ notice:
     caFile:
     # the password to decrypt the certificate.
     password:
+
+templatePath: ../template
