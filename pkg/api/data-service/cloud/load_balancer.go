@@ -500,7 +500,7 @@ func (req *ListenerQueryItem) Validate() error {
 		return errors.New("rs_port and rs_ip num must be equal")
 	}
 	// 权重填写多个的话，必须和RSIP数量一致
-	if len(req.RsWeights) > 10 && len(req.RsWeights) != len(req.RsIPs) {
+	if len(req.RsWeights) > 0 && len(req.RsWeights) != len(req.RsIPs) {
 		return errors.New("rs_weight and rs_ip num must be equal")
 	}
 
@@ -514,17 +514,17 @@ type ListListenerByRsIPResp struct {
 
 // ListBatchListenerResult define list batch listener result.
 type ListBatchListenerResult struct {
-	ClbID        string                     `json:"clb_id"`
-	CloudClbID   string                     `json:"cloud_lb_id"`
-	ClbVipDomain string                     `json:"clb_vip_domain"`
-	BkBizID      int64                      `json:"bk_biz_id"`
-	Region       string                     `json:"region"`
-	Vendor       enumor.Vendor              `json:"vendor"`
-	LblID        string                     `json:"lbl_id"`
-	CloudLblID   string                     `json:"cloud_lbl_id"`
-	Protocol     enumor.ProtocolType        `json:"protocol"`
-	Port         int64                      `json:"port"`
-	RsList       []LoadBalancerTargetRsList `json:"rs_list"`
+	ClbID        string                      `json:"clb_id"`
+	CloudClbID   string                      `json:"cloud_lb_id"`
+	ClbVipDomain string                      `json:"clb_vip_domain"`
+	BkBizID      int64                       `json:"bk_biz_id"`
+	Region       string                      `json:"region"`
+	Vendor       enumor.Vendor               `json:"vendor"`
+	LblID        string                      `json:"lbl_id"`
+	CloudLblID   string                      `json:"cloud_lbl_id"`
+	Protocol     enumor.ProtocolType         `json:"protocol"`
+	Port         int64                       `json:"port"`
+	RsList       []*LoadBalancerTargetRsList `json:"rs_list"`
 }
 
 // LoadBalancerTargetRsList 负载均衡下的RS列表
@@ -555,4 +555,71 @@ type DomainUrlRuleInfo struct {
 	RuleType      enumor.RuleType `json:"rule_type"`
 	Domain        string          `json:"domain"`
 	Url           string          `json:"url"`
+}
+
+// BatchDeleteListenerReq listener batch delete request.
+type BatchDeleteListenerReq struct {
+	BkBizID           int64                `json:"bk_biz_id" validate:"required"`
+	Vendor            enumor.Vendor        `json:"vendor" validate:"required"`
+	AccountID         string               `json:"account_id" validate:"required"`
+	ListenerQueryList []*ListenerDeleteReq `json:"rule_query_list" validate:"required"`
+}
+
+func (req *BatchDeleteListenerReq) Validate() error {
+	if len(req.Vendor) == 0 {
+		return errors.New("vendor不能为空")
+	}
+	if err := req.Vendor.Validate(); err != nil {
+		return err
+	}
+	if len(req.AccountID) == 0 {
+		return errors.New("account_id不能为空")
+	}
+	if len(req.ListenerQueryList) == 0 {
+		return errors.New("rule_query_list不能为空")
+	}
+	for _, item := range req.ListenerQueryList {
+		if err := item.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return validator.Validate.Struct(req)
+}
+
+// ListenerDeleteReq listener delete request.
+type ListenerDeleteReq struct {
+	Region        string              `json:"region" validate:"required"`
+	ClbVipDomains []string            `json:"clb_vip_domains" validate:"required"`
+	CloudLbIDs    []string            `json:"cloud_lb_ids" validate:"required"`
+	Protocol      enumor.ProtocolType `json:"protocol" validate:"required"`
+	Ports         []int64             `json:"ports" validate:"required"`
+}
+
+// Validate request.
+func (req *ListenerDeleteReq) Validate() error {
+	if !req.Protocol.IsLayer4Protocol() && !req.Protocol.IsLayer7Protocol() {
+		return errors.New("protocol is illegal")
+	}
+	if len(req.ClbVipDomains) != len(req.CloudLbIDs) {
+		return errors.New("clb_vip_domains and cloud_lb_ids num must be equal")
+	}
+	if len(req.CloudLbIDs) > 50 {
+		return errors.New("cloud_lb_ids num must be less than 50")
+	}
+	if len(req.Ports) == 0 {
+		return fmt.Errorf("ports不能为空")
+	}
+	for _, port := range req.Ports {
+		if port < 0 {
+			return fmt.Errorf("ports must be greater than 0")
+		}
+	}
+
+	return validator.Validate.Struct(req)
+}
+
+// BatchListListenerResp define batch list listener resp.
+type BatchListListenerResp struct {
+	Details []*corelb.BaseListener `json:"details"`
 }

@@ -954,7 +954,7 @@ func (svc *lbSvc) convertListListenerByRsIP(lbMap map[string]tablelb.LoadBalance
 			CloudLblID:   item.CloudLblID,
 			Protocol:     lblInfo.Protocol,
 			Port:         lblInfo.Port,
-			RsList:       make([]protocloud.LoadBalancerTargetRsList, 0),
+			RsList:       make([]*protocloud.LoadBalancerTargetRsList, 0),
 		}
 		lblRsMap = svc.getRsListByTargetGroupIDs(item, targetGroupRsList, lblRsMap)
 	}
@@ -989,7 +989,7 @@ func (svc *lbSvc) getRsListByTargetGroupIDs(item protocloud.LoadBalancerUrlRuleR
 	for _, targetGroupID := range item.TargetGroupIDs {
 		for _, targetGroupItem := range targetGroupRsList[targetGroupID] {
 			lblRsMap[item.CloudLblID].RsList = append(lblRsMap[item.CloudLblID].RsList,
-				protocloud.LoadBalancerTargetRsList{
+				&protocloud.LoadBalancerTargetRsList{
 					BaseTarget:  targetGroupItem.BaseTarget,
 					RuleID:      item.TargetGrouRuleMap[targetGroupID].RuleID,
 					CloudRuleID: item.TargetGrouRuleMap[targetGroupID].CloudRuleID,
@@ -1157,7 +1157,7 @@ func (svc *lbSvc) listBizListenerByLbIDs(kt *kit.Kit, req *protocloud.ListListen
 	if len(lblReq.Ports) > 0 {
 		for _, port := range lblReq.Ports {
 			if _, ok := lblProtocolPortMap[fmt.Sprintf("%s_%d", lblReq.Protocol, port)]; !ok {
-				return nil, nil, nil, errf.Newf(errf.InvalidParameter, "listener protocol[%s] port[%d] is not found",
+				return nil, nil, nil, errf.Newf(errf.RecordNotFound, "listener protocol[%s] port[%d] is not found",
 					lblReq.Protocol, port)
 			}
 		}
@@ -1326,4 +1326,92 @@ func (svc *lbSvc) listTCloudLoadBalancerUrlRuleByTgIDs(kt *kit.Kit,
 		opt.Page.Start += uint32(core.DefaultMaxPageLimit)
 	}
 	return lblTargetList, nil
+}
+
+// ListBatchListeners list batch listener.
+func (svc *lbSvc) ListBatchListeners(cts *rest.Contexts) (any, error) {
+	req := new(protocloud.BatchDeleteListenerReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	listenerList := &protocloud.BatchListListenerResp{}
+	for _, item := range req.ListenerQueryList {
+		lblList, err := svc.batchQueryListeners(cts.Kit, req, item)
+		if err != nil {
+			return nil, err
+		}
+		listenerList.Details = append(listenerList.Details, lblList...)
+	}
+	return listenerList, nil
+}
+
+func (svc *lbSvc) batchQueryListeners(kt *kit.Kit, req *protocloud.BatchDeleteListenerReq,
+	lblReq *protocloud.ListenerDeleteReq) ([]*corelb.BaseListener, error) {
+
+	// 查询符合条件的负载均衡列表
+	lbReq := &protocloud.ListListenerByRsIPReq{
+		Vendor:    req.Vendor,
+		AccountID: req.AccountID,
+		BkBizID:   req.BkBizID,
+	}
+	listenerReq := protocloud.ListenerQueryItem{
+		Region:        lblReq.Region,
+		ClbVipDomains: lblReq.ClbVipDomains,
+		CloudLbIDs:    lblReq.CloudLbIDs,
+		Protocol:      lblReq.Protocol,
+		Ports:         lblReq.Ports,
+	}
+	cloudClbIDs, _, err := svc.listLoadBalancerListCheckVip(kt, lbReq, listenerReq)
+	if err != nil {
+		return nil, err
+	}
+
+	// 未查询到符合条件的负载均衡列表
+	if len(cloudClbIDs) == 0 {
+		logs.Errorf("check list load balancer empty, req: %+v, lblReq: %+v, rid: %s", cvt.PtrToVal(req), lblReq, kt.Rid)
+		return nil, nil
+	}
+
+	// 查询符合条件的监听器列表
+	_, _, lblList, err := svc.listBizListenerByLbIDs(kt, lbReq, listenerReq, cloudClbIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	// 未查询到符合的监听器列表
+	if len(lblList) == 0 {
+		logs.Errorf("list biz listener empty, req: %+v, lblReq: %+v, rid: %s", cvt.PtrToVal(req), lblReq, kt.Rid)
+		return nil, nil
+	}
+
+	return svc.convertBatchListListener(lblList)
+}
+
+func (svc *lbSvc) convertBatchListListener(lblList []tablelb.LoadBalancerListenerTable) (
+	[]*corelb.BaseListener, error) {
+
+	lblResult := make([]*corelb.BaseListener, 0)
+	for _, item := range lblList {
+		lblResult = append(lblResult, &corelb.BaseListener{
+			ID:            item.ID,
+			CloudID:       item.CloudID,
+			Name:          item.Name,
+			Vendor:        item.Vendor,
+			AccountID:     item.AccountID,
+			BkBizID:       item.BkBizID,
+			LbID:          item.LBID,
+			CloudLbID:     item.CloudLBID,
+			Protocol:      item.Protocol,
+			Port:          item.Port,
+			DefaultDomain: item.DefaultDomain,
+			Zones:         item.Zones,
+			SniSwitch:     item.SniSwitch,
+		})
+	}
+	return lblResult, nil
 }

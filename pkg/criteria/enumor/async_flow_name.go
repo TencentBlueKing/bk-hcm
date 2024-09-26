@@ -81,6 +81,7 @@ var loadBalancerFlowNameMap = map[FlowName]struct{}{
 	FlowDeleteLoadBalancer:             {},
 	FlowLoadBalancerDeleteRule:         {},
 	FlowLoadBalancerCreateListener:     {},
+	FlowBatchTaskDeleteListener:        {},
 }
 
 // ValidateLoadBalancer validate load balancer FlowName.
@@ -151,6 +152,8 @@ const (
 	FlowLoadBalancerDeleteRule FlowName = "load_balancer_delete_rule"
 
 	FlowLoadBalancerCreateListener FlowName = "load_balancer_create_listener"
+	// FlowBatchTaskDeleteListener 异步任务-批量删除监听器
+	FlowBatchTaskDeleteListener = "batch_task_tcloud_delete_listener"
 )
 
 // 账单相关Flow

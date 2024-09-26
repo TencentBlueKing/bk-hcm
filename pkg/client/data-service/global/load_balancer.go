@@ -226,3 +226,11 @@ func (cli *LoadBalancerClient) ListLoadBalancerListenerByRsIP(kt *kit.Kit, req *
 	return common.Request[dataproto.ListListenerByRsIPReq, dataproto.ListListenerByRsIPResp](cli.client,
 		rest.POST, kt, req, "/load_balancers/listeners/list/by/rsip")
 }
+
+// ListBatchListeners list batch listeners.
+func (cli *LoadBalancerClient) ListBatchListeners(kt *kit.Kit, req *dataproto.BatchDeleteListenerReq) (
+	*dataproto.BatchListListenerResp, error) {
+
+	return common.Request[dataproto.BatchDeleteListenerReq, dataproto.BatchListListenerResp](cli.client,
+		rest.POST, kt, req, "/load_balancers/listeners/batch/list")
+}
