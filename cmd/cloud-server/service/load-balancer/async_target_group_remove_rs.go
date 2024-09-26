@@ -318,6 +318,7 @@ func (svc *lbSvc) convTCloudOperateTargetReq(kt *kit.Kit, targetIDs []string, lb
 			IP:               item.IP,
 			InstType:         item.InstType,
 			CloudInstID:      item.CloudInstID,
+			IP:               item.IP,
 			Port:             item.Port,
 			Weight:           item.Weight,
 			AccountID:        accountID,

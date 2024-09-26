@@ -46,8 +46,14 @@ import (
 var _ action.Action = new(LoadBalancerOperateWatchAction)
 var _ action.ParameterAction = new(LoadBalancerOperateWatchAction)
 
+const (
+	maxRetryTimes = 3
+)
+
 // LoadBalancerOperateWatchAction define load balancer operate watch.
-type LoadBalancerOperateWatchAction struct{}
+type LoadBalancerOperateWatchAction struct {
+	retryTimes int
+}
 
 // LoadBalancerOperateWatchOption define load balancer operate watch option.
 type LoadBalancerOperateWatchOption struct {
@@ -70,17 +76,17 @@ func (opt LoadBalancerOperateWatchOption) Validate() error {
 }
 
 // ParameterNew return request params.
-func (act LoadBalancerOperateWatchAction) ParameterNew() (params interface{}) {
+func (act *LoadBalancerOperateWatchAction) ParameterNew() (params interface{}) {
 	return new(LoadBalancerOperateWatchOption)
 }
 
 // Name return action name
-func (act LoadBalancerOperateWatchAction) Name() enumor.ActionName {
+func (act *LoadBalancerOperateWatchAction) Name() enumor.ActionName {
 	return enumor.ActionLoadBalancerOperateWatch
 }
 
 // Run flow watch.
-func (act LoadBalancerOperateWatchAction) Run(kt run.ExecuteKit, params interface{}) (interface{}, error) {
+func (act *LoadBalancerOperateWatchAction) Run(kt run.ExecuteKit, params interface{}) (interface{}, error) {
 	opt, ok := params.(*LoadBalancerOperateWatchOption)
 	if !ok {
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
@@ -122,85 +128,109 @@ func (act LoadBalancerOperateWatchAction) Run(kt run.ExecuteKit, params interfac
 }
 
 // processResFlow 检查Flow是否终态状态、解锁资源跟Flow的状态
-func (act LoadBalancerOperateWatchAction) processResFlow(kt run.ExecuteKit, opt *LoadBalancerOperateWatchOption,
+func (act *LoadBalancerOperateWatchAction) processResFlow(kt run.ExecuteKit, opt *LoadBalancerOperateWatchOption,
 	flowInfo tableasync.AsyncFlowTable) (bool, error) {
 
 	switch flowInfo.State {
 	case enumor.FlowSuccess, enumor.FlowCancel:
-		var resStatus enumor.ResFlowStatus
-		if flowInfo.State == enumor.FlowSuccess {
-			resStatus = enumor.SuccessResFlowStatus
-		}
-		if flowInfo.State == enumor.FlowCancel {
-			resStatus = enumor.CancelResFlowStatus
-		}
-
-		if err := act.updateTargetGroupListenerRuleRelBindStatus(kt.Kit(), opt, flowInfo.State); err != nil {
-			return false, err
-		}
-
-		// 解锁资源
-		unlockReq := &dataproto.ResFlowLockReq{
-			ResID:   opt.ResID,
-			ResType: opt.ResType,
-			FlowID:  opt.FlowID,
-			Status:  resStatus,
-		}
-		return true, actcli.GetDataService().Global.LoadBalancer.ResFlowUnLock(kt.Kit(), unlockReq)
+		return act.handleSuccessOrCancel(kt, opt, flowInfo)
 	case enumor.FlowFailed:
-		// 当Flow失败时，检查资源锁定是否超时
-		resFlowLockList, err := act.queryResFlowLock(kt, opt)
-		if err != nil {
-			return false, err
-		}
-		if len(resFlowLockList) == 0 {
-			return true, nil
-		}
-
-		// 更新目标组与监听器的绑定状态
-		if err = act.updateTargetGroupListenerRuleRelBindStatus(kt.Kit(), opt, flowInfo.State); err != nil {
-			return false, err
-		}
-
-		createTime, err := time.Parse(constant.TimeStdFormat, string(resFlowLockList[0].CreatedAt))
-		if err != nil {
-			return false, err
-		}
-
-		nowTime := time.Now()
-		if nowTime.Sub(createTime).Hours() > constant.ResFlowLockExpireDays*24 {
-			timeoutReq := &dataproto.ResFlowLockReq{
-				ResID:   opt.ResID,
-				ResType: opt.ResType,
-				FlowID:  opt.FlowID,
-				Status:  enumor.TimeoutResFlowStatus,
-			}
-			return true, actcli.GetDataService().Global.LoadBalancer.ResFlowUnLock(kt.Kit(), timeoutReq)
-		}
-		return false, nil
+		return act.handleFailed(kt, opt, flowInfo)
 	case enumor.FlowInit:
-		// 需要检查资源是否已锁定
-		resFlowLockList, err := act.queryResFlowLock(kt, opt)
-		if err != nil {
-			return false, err
-		}
-		if len(resFlowLockList) == 0 {
-			return true, nil
-		}
-
-		// 如已锁定资源，则需要更新Flow状态为Pending
-		err = act.updateFlowStateByCAS(kt.Kit(), opt.FlowID, enumor.FlowInit, enumor.FlowPending)
-		if err != nil {
-			logs.Errorf("call taskserver to update flow state failed, err: %v, flowID: %s", err, opt.FlowID)
-			return false, err
-		}
-		return false, nil
+		return act.handleInit(kt, opt)
 	default:
 		return false, nil
 	}
 }
 
-func (act LoadBalancerOperateWatchAction) queryResFlowLock(kt run.ExecuteKit, opt *LoadBalancerOperateWatchOption) (
+func (act *LoadBalancerOperateWatchAction) handleSuccessOrCancel(kt run.ExecuteKit, opt *LoadBalancerOperateWatchOption,
+	flowInfo tableasync.AsyncFlowTable) (bool, error) {
+
+	var resStatus enumor.ResFlowStatus
+	if flowInfo.State == enumor.FlowSuccess {
+		resStatus = enumor.SuccessResFlowStatus
+	}
+	if flowInfo.State == enumor.FlowCancel {
+		resStatus = enumor.CancelResFlowStatus
+	}
+
+	if err := act.updateTargetGroupListenerRuleRelBindStatus(kt.Kit(), opt, flowInfo.State); err != nil {
+		return false, err
+	}
+
+	// 解锁资源
+	unlockReq := &dataproto.ResFlowLockReq{
+		ResID:   opt.ResID,
+		ResType: opt.ResType,
+		FlowID:  opt.FlowID,
+		Status:  resStatus,
+	}
+	return true, actcli.GetDataService().Global.LoadBalancer.ResFlowUnLock(kt.Kit(), unlockReq)
+}
+
+func (act *LoadBalancerOperateWatchAction) handleFailed(kt run.ExecuteKit, opt *LoadBalancerOperateWatchOption,
+	flowInfo tableasync.AsyncFlowTable) (bool, error) {
+
+	// 当Flow失败时，检查资源锁定是否超时
+	resFlowLockList, err := act.queryResFlowLock(kt, opt)
+	if err != nil {
+		return false, err
+	}
+	if len(resFlowLockList) == 0 {
+		return true, nil
+	}
+
+	// 更新目标组与监听器的绑定状态
+	if err = act.updateTargetGroupListenerRuleRelBindStatus(kt.Kit(), opt, flowInfo.State); err != nil {
+		return false, err
+	}
+
+	createTime, err := time.Parse(constant.TimeStdFormat, string(resFlowLockList[0].CreatedAt))
+	if err != nil {
+		return false, err
+	}
+
+	nowTime := time.Now()
+	if nowTime.Sub(createTime).Hours() > constant.ResFlowLockExpireDays*24 {
+		timeoutReq := &dataproto.ResFlowLockReq{
+			ResID:   opt.ResID,
+			ResType: opt.ResType,
+			FlowID:  opt.FlowID,
+			Status:  enumor.TimeoutResFlowStatus,
+		}
+		return true, actcli.GetDataService().Global.LoadBalancer.ResFlowUnLock(kt.Kit(), timeoutReq)
+	}
+	return false, nil
+}
+
+func (act *LoadBalancerOperateWatchAction) handleInit(kt run.ExecuteKit, opt *LoadBalancerOperateWatchOption) (bool, error) {
+
+	// 需要检查资源是否已锁定
+	resFlowLockList, err := act.queryResFlowLock(kt, opt)
+	if err != nil {
+		return false, err
+	}
+	if len(resFlowLockList) == 0 {
+		// 锁定资源不存在，会有两种case
+		// 1. Flow创建成功, 但尚未锁定资源, 此时应该返回false, 等待下次查询
+		// 2. Flow创建成功, 资源锁定失败, 此时应该返回true, WatchDog结束任务
+		if act.retryTimes >= maxRetryTimes {
+			return true, nil
+		}
+		act.retryTimes++
+		return false, nil
+	}
+
+	// 如已锁定资源，则需要更新Flow状态为Pending
+	err = act.updateFlowStateByCAS(kt.Kit(), opt.FlowID, enumor.FlowInit, enumor.FlowPending)
+	if err != nil {
+		logs.Errorf("call taskserver to update flow state failed, err: %v, flowID: %s", err, opt.FlowID)
+		return false, err
+	}
+	return false, nil
+}
+
+func (act *LoadBalancerOperateWatchAction) queryResFlowLock(kt run.ExecuteKit, opt *LoadBalancerOperateWatchOption) (
 	[]tablelb.ResourceFlowLockTable, error) {
 
 	// 当Flow失败时，检查资源锁定是否超时
@@ -220,7 +250,7 @@ func (act LoadBalancerOperateWatchAction) queryResFlowLock(kt run.ExecuteKit, op
 	return resFlowLockList.Details, nil
 }
 
-func (act LoadBalancerOperateWatchAction) updateFlowStateByCAS(kt *kit.Kit, flowID string,
+func (act *LoadBalancerOperateWatchAction) updateFlowStateByCAS(kt *kit.Kit, flowID string,
 	source, target enumor.FlowState) error {
 
 	_, err := actcli.GetDaoSet().Txn().AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
@@ -243,7 +273,7 @@ func (act LoadBalancerOperateWatchAction) updateFlowStateByCAS(kt *kit.Kit, flow
 }
 
 // updateTargetGroupListenerRuleRelBindStatus 更新目标组与监听器的绑定状态
-func (act LoadBalancerOperateWatchAction) updateTargetGroupListenerRuleRelBindStatus(kt *kit.Kit,
+func (act *LoadBalancerOperateWatchAction) updateTargetGroupListenerRuleRelBindStatus(kt *kit.Kit,
 	opt *LoadBalancerOperateWatchOption, flowState enumor.FlowState) error {
 
 	if opt == nil || opt.TaskType != enumor.ApplyTargetGroupType || opt.SubResType != enumor.TargetGroupCloudResType {
@@ -270,7 +300,7 @@ func (act LoadBalancerOperateWatchAction) updateTargetGroupListenerRuleRelBindSt
 }
 
 // Rollback Flow查询状态失败时的回滚Action，此处不需要回滚处理
-func (act LoadBalancerOperateWatchAction) Rollback(kt run.ExecuteKit, params interface{}) error {
+func (act *LoadBalancerOperateWatchAction) Rollback(kt run.ExecuteKit, params interface{}) error {
 	logs.Infof(" ----------- LoadBalancerOperateWatchAction Rollback -----------, params: %s, rid: %s",
 		params, kt.Kit().Rid)
 	return nil
