@@ -65,6 +65,8 @@ log:
 
 # bill controller
 controller:
+  # 关闭账单拉取
+  disable: false
   controllerSyncDuration:
   mainAccountSummarySyncDuration:
   rootAccountSummarySyncDuration:
