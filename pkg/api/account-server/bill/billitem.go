@@ -230,3 +230,8 @@ func (f *FileDownloadResp) ContentDisposition() string {
 func (f *FileDownloadResp) Filepath() string {
 	return f.FilePath
 }
+
+// IsDeleteFile is true, file will be deleted after download.
+func (f *FileDownloadResp) IsDeleteFile() bool {
+	return true
+}

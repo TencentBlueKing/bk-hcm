@@ -57,3 +57,4 @@ data:
       {{- toYaml .Values.webserver.changeLogPath | nindent 6 }}
     notice:
       {{- toYaml .Values.webserver.notice | nindent 6 }}
+    templatePath: {{ .Values.webserver.templatePath }}
