@@ -123,6 +123,8 @@ const (
 	DeleteRuleTaskType = TaskType(FlowLoadBalancerDeleteRule)
 	// CreateListenerTaskType 任务类型-新建监听器
 	CreateListenerTaskType = TaskType(FlowLoadBalancerCreateListener)
+	// ListenerUnbindRsTaskType 任务类型-监听器批量解绑RS
+	ListenerUnbindRsTaskType = TaskType(FlowBatchTaskListenerUnBindTarget)
 )
 
 // InstType 实例类型
