@@ -22,7 +22,6 @@ package lblogic
 import (
 	"encoding/json"
 	"fmt"
-	"hcm/pkg/dal/dao/tools"
 
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
 	actionflow "hcm/cmd/task-server/logics/flow"
@@ -35,10 +34,12 @@ import (
 	taskserver "hcm/pkg/client/task-server"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/dao/tools"
 	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/counter"
 	"hcm/pkg/tools/slice"
 )
 
@@ -71,8 +72,7 @@ type createLayer7ListenerTaskDetail struct {
 }
 
 // Execute 导入执行器的唯一入口
-func (c *CreateLayer7ListenerExecutor) Execute(kt *kit.Kit, source string, rawDetails json.RawMessage) (
-	string, error) {
+func (c *CreateLayer7ListenerExecutor) Execute(kt *kit.Kit, source enumor.TaskManagementSource, rawDetails json.RawMessage) (string, error) {
 
 	var err error
 	err = c.unmarshalData(rawDetails)
@@ -86,6 +86,9 @@ func (c *CreateLayer7ListenerExecutor) Execute(kt *kit.Kit, source string, rawDe
 		return "", err
 	}
 	c.filter()
+	if len(c.details) == 0 {
+		return "", fmt.Errorf("there are no details to be executed")
+	}
 
 	taskID, err := c.buildTaskManagementAndDetails(kt, source)
 	if err != nil {
@@ -95,6 +98,7 @@ func (c *CreateLayer7ListenerExecutor) Execute(kt *kit.Kit, source string, rawDe
 	flowIDs, err := c.buildFlows(kt)
 	if err != nil {
 		logs.Errorf("build async flows failed, err: %v, rid: %s", err, kt.Rid)
+		// TODO 需要确认产品预期, 对于部份创建失败的taskDetails 应该怎么进行处理
 		deleteErr := c.deleteTaskManagementAndDetails(kt, taskID)
 		if deleteErr != nil {
 			logs.Errorf("delete task management and details failed, err: %v, rid: %s", deleteErr, kt.Rid)
@@ -111,7 +115,7 @@ func (c *CreateLayer7ListenerExecutor) Execute(kt *kit.Kit, source string, rawDe
 }
 
 func (c *CreateLayer7ListenerExecutor) unmarshalData(rawDetail json.RawMessage) error {
-	err := unmarshalData(rawDetail, &c.details)
+	err := json.Unmarshal(rawDetail, &c.details)
 	if err != nil {
 		return err
 	}
@@ -160,7 +164,7 @@ func (c *CreateLayer7ListenerExecutor) buildFlows(kt *kit.Kit) ([]string, error)
 	flowIDs := make([]string, 0, len(clbToDetails))
 	for clbCloudID, details := range clbToDetails {
 		lb := lbMap[clbCloudID]
-		flowID, err := c.buildFlow(kt, lb.ID, details)
+		flowID, err := c.buildFlow(kt, lb.ID, lb.CloudID, lb.Region, details)
 		if err != nil {
 			logs.Errorf("build flow for clb(%s) failed, err: %v, rid: %s", clbCloudID, err, kt.Rid)
 			return nil, err
@@ -171,7 +175,9 @@ func (c *CreateLayer7ListenerExecutor) buildFlows(kt *kit.Kit) ([]string, error)
 	return flowIDs, nil
 }
 
-func (c *CreateLayer7ListenerExecutor) buildTaskManagementAndDetails(kt *kit.Kit, source string) (string, error) {
+func (c *CreateLayer7ListenerExecutor) buildTaskManagementAndDetails(kt *kit.Kit, source enumor.TaskManagementSource) (
+	string, error) {
+
 	taskID, err := c.createTaskManagement(kt, source)
 	if err != nil {
 		logs.Errorf("create task management failed, err: %v, rid: %s", err, kt.Rid)
@@ -218,12 +224,12 @@ func (c *CreateLayer7ListenerExecutor) createTaskDetails(kt *kit.Kit, taskID str
 	return nil
 }
 
-func (c *CreateLayer7ListenerExecutor) createTaskManagement(kt *kit.Kit, source string) (string, error) {
+func (c *CreateLayer7ListenerExecutor) createTaskManagement(kt *kit.Kit, source enumor.TaskManagementSource) (string, error) {
 	taskManagementCreateReq := &task.CreateManagementReq{
 		Items: []task.CreateManagementField{
 			{
 				BkBizID:    c.bkBizID,
-				Source:     enumor.TaskManagementSource(source),
+				Source:     source,
 				Vendor:     c.vendor,
 				AccountID:  c.accountID,
 				Resource:   enumor.TaskManagementResClb,
@@ -291,7 +297,7 @@ func (c *CreateLayer7ListenerExecutor) updateTaskDetails(kt *kit.Kit) error {
 	return nil
 }
 
-func (c *CreateLayer7ListenerExecutor) buildFlow(kt *kit.Kit, lbID string,
+func (c *CreateLayer7ListenerExecutor) buildFlow(kt *kit.Kit, lbID, lbCloudID, region string,
 	details []*createLayer7ListenerTaskDetail) (string, error) {
 
 	_, err := checkResFlowRel(kt, c.dataServiceCli, lbID, enumor.LoadBalancerCloudResType)
@@ -300,7 +306,7 @@ func (c *CreateLayer7ListenerExecutor) buildFlow(kt *kit.Kit, lbID string,
 		return "", err
 	}
 
-	flowTasks, err := c.buildFlowTask(lbID, details)
+	flowTasks, err := c.buildFlowTask(lbID, lbCloudID, region, details)
 	if err != nil {
 		logs.Errorf("build flow task failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err
@@ -324,22 +330,22 @@ func (c *CreateLayer7ListenerExecutor) buildFlow(kt *kit.Kit, lbID string,
 	return flowID, nil
 }
 
-func (c *CreateLayer7ListenerExecutor) buildFlowTask(lbID string,
+func (c *CreateLayer7ListenerExecutor) buildFlowTask(lbID, lbCloudID, region string,
 	details []*createLayer7ListenerTaskDetail) ([]ts.CustomFlowTask, error) {
 
 	switch c.vendor {
 	case enumor.TCloud:
-		return c.buildTCloudFlowTask(lbID, details)
+		return c.buildTCloudFlowTask(lbID, lbCloudID, region, details), nil
 	default:
 		return nil, fmt.Errorf("vendor %s not supported", c.vendor)
 	}
 }
 
-func (c *CreateLayer7ListenerExecutor) buildTCloudFlowTask(lbID string,
-	details []*createLayer7ListenerTaskDetail) ([]ts.CustomFlowTask, error) {
+func (c *CreateLayer7ListenerExecutor) buildTCloudFlowTask(lbID, lbCloudID, region string,
+	details []*createLayer7ListenerTaskDetail) []ts.CustomFlowTask {
 
-	result := make([]ts.CustomFlowTask, 0)
-	actionIDGenerator := newActionIDGenerator(1, 10)
+	actionIDGenerator := counter.NewNumberCounterWithPrev(1, 10)
+	result := []ts.CustomFlowTask{buildSyncClbFlowTask(lbCloudID, c.accountID, region, actionIDGenerator)}
 	for _, taskDetails := range slice.Split(details, constant.BatchTaskMaxLimit) {
 		cur, prev := actionIDGenerator()
 
@@ -391,7 +397,7 @@ func (c *CreateLayer7ListenerExecutor) buildTCloudFlowTask(lbID string,
 			detail.actionID = cur
 		}
 	}
-	return result, nil
+	return result
 }
 
 func (c *CreateLayer7ListenerExecutor) createFlowTask(kt *kit.Kit, lbID string,

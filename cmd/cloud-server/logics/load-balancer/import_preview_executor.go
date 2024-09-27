@@ -100,6 +100,22 @@ func newBasePreviewExecutor(cli *dataservice.Client, vendor enumor.Vendor, bkBiz
 // ImportStatus excel导入的数据状态
 type ImportStatus string
 
+func (i *ImportStatus) SetNotExecutable() {
+	*i = NotExecutable
+}
+
+func (i *ImportStatus) SetExisting() {
+	if *i != NotExecutable {
+		*i = Existing
+	}
+}
+
+func (i *ImportStatus) SetExecutable() {
+	if *i == "" {
+		*i = Executable
+	}
+}
+
 const (
 	// Executable ...
 	Executable ImportStatus = "executable"
@@ -117,7 +133,7 @@ func trimSpaceForSlice(strs []string) []string {
 }
 
 func parsePort(portStr string) ([]int, error) {
-	if strings.HasPrefix(portStr, "[") && strings.HasSuffix(portStr, "]") {
+	if len(portStr) > 2 && portStr[0] == '[' && portStr[len(portStr)-1] == ']' {
 		portStr = portStr[1 : len(portStr)-1]
 		portStrs := strings.Split(portStr, ",")
 		ports := make([]int, 0)

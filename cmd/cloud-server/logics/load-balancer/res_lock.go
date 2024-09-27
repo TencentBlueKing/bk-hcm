@@ -34,7 +34,8 @@ import (
 	"hcm/pkg/logs"
 )
 
-func lockResFlowStatus(kt *kit.Kit, dataCli *dataservice.Client, taskCli *taskserver.Client, resID string, resType enumor.CloudResourceType, flowID string, taskType enumor.TaskType) error {
+func lockResFlowStatus(kt *kit.Kit, dataCli *dataservice.Client, taskCli *taskserver.Client, resID string,
+	resType enumor.CloudResourceType, flowID string, taskType enumor.TaskType) error {
 
 	// 锁定资源跟Flow的状态
 	opt := &dataproto.ResFlowLockReq{

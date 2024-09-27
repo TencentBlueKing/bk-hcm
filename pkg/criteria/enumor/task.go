@@ -19,6 +19,10 @@
 
 package enumor
 
+import (
+	"fmt"
+)
+
 // TaskManagementState is task management state.
 type TaskManagementState string
 
@@ -37,6 +41,15 @@ const (
 
 // TaskManagementSource is task management source.
 type TaskManagementSource string
+
+func (t TaskManagementSource) Validate() error {
+	switch t {
+	case TaskManagementSourceSops, TaskManagementSourceExcel:
+		return nil
+	default:
+		return fmt.Errorf("invalid task management source: %s", t)
+	}
+}
 
 const (
 	// TaskManagementSourceSops is a source indicating that sops.

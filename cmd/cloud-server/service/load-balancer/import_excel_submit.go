@@ -31,8 +31,8 @@ import (
 	"hcm/pkg/tools/hooks/handler"
 )
 
-// ImportData CLB数据导入接口
-func (svc *lbSvc) ImportData(cts *rest.Contexts) (interface{}, error) {
+// ImportSubmit CLB数据导入接口
+func (svc *lbSvc) ImportSubmit(cts *rest.Contexts) (interface{}, error) {
 	operationType := cts.PathParameter("operation_type").String()
 	bizID, err := cts.PathParameter("bk_biz_id").Int64()
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
@@ -55,9 +55,8 @@ func (svc *lbSvc) ImportData(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	executor, err := lblogic.NewImportExecutor(lblogic.OperationType(operationType),
-		svc.client.DataService(), svc.client.TaskServer(),
-		vendor, bizID, req.AccountID, req.RegionIDs)
+	executor, err := lblogic.NewImportExecutor(lblogic.OperationType(operationType), svc.client.DataService(),
+		svc.client.TaskServer(), vendor, bizID, req.AccountID, req.RegionIDs)
 	if err != nil {
 		logs.Errorf("new ImportExecutor failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err

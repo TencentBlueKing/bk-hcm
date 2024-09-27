@@ -73,9 +73,6 @@ var createLayer7ListenerDetailRefType = reflect.TypeOf(CreateLayer7ListenerDetai
 func (c *CreateLayer7ListenerPreviewExecutor) convertDataToPreview(rawData [][]string) error {
 	for _, data := range rawData {
 		data = trimSpaceForSlice(data)
-		if len(data) > 8 {
-			return fmt.Errorf("excel table data format error")
-		}
 
 		detail := &CreateLayer7ListenerDetail{}
 		for i, value := range data {
@@ -117,14 +114,14 @@ func (c *CreateLayer7ListenerPreviewExecutor) validate(kt *kit.Kit) error {
 	clbIDMap := make(map[string]struct{})
 	for cur, detail := range c.details {
 		detail.validate()
-		// 检查记录是否重复
+		// 检查记录是否重复, 重复则设置状态为不可执行
 		key := fmt.Sprintf("%s-%s-%v", detail.CloudClbID, detail.Protocol, detail.ListenerPorts)
 		if i, ok := recordMap[key]; ok {
-			c.details[i].Status = NotExecutable
-			c.details[i].ValidateResult += fmt.Sprintf("存在重复记录, line: %d;", i+1)
+			c.details[i].Status.SetNotExecutable()
+			c.details[i].ValidateResult += fmt.Sprintf("Duplicate records exist, line: %d;", i+1)
 
-			detail.Status = NotExecutable
-			detail.ValidateResult += fmt.Sprintf("存在重复记录, line: %d;", cur+1)
+			detail.Status.SetNotExecutable()
+			detail.ValidateResult += fmt.Sprintf("Duplicate records exist, line: %d;", cur+1)
 		}
 		recordMap[key] = cur
 		clbIDMap[detail.CloudClbID] = struct{}{}
@@ -156,8 +153,8 @@ func (c *CreateLayer7ListenerPreviewExecutor) validateWithDB(kt *kit.Kit, cloudI
 		ipSet = append(ipSet, lb.PublicIPv4Addresses...)
 		ipSet = append(ipSet, lb.PublicIPv6Addresses...)
 		if detail.ClbVipDomain != lb.Domain && !slice.IsItemInSlice(ipSet, detail.ClbVipDomain) {
-			detail.Status = NotExecutable
-			detail.ValidateResult += fmt.Sprintf("clb的vip(%s)不匹配", detail.ClbVipDomain)
+			detail.Status.SetNotExecutable()
+			detail.ValidateResult += fmt.Sprintf("clb.vip(%s) not match", detail.ClbVipDomain)
 		}
 
 		if err = c.validateListener(kt, detail); err != nil {
@@ -190,25 +187,24 @@ func (c *CreateLayer7ListenerPreviewExecutor) validateTCloudListener(kt *kit.Kit
 
 	for _, listener := range listeners {
 		if listener.Protocol == enumor.UdpProtocol {
-			// udp协议可以和 http/https公用端口
+			// udp协议可以和 http/https共用端口
 			continue
 		}
 
-		if detail.Status != NotExecutable {
-			detail.Status = Existing
-		}
+		detail.Status.SetExisting()
 
 		if listener.SniSwitch == enumor.SniTypeOpen {
 			// sni开启时, 将不做重复检查, 直接返回不可执行
-			detail.Status = NotExecutable
-			detail.ValidateResult += fmt.Sprintf("clb(%s)的监听器(%d)已存在并开启SNI",
+			detail.Status.SetNotExecutable()
+			detail.ValidateResult += fmt.Sprintf("clb(%s) listener(%d) already exist, and SNI is enable\n",
 				listener.CloudLbID, detail.ListenerPorts[0])
 			return nil
 		}
 
 		if listener.Protocol != detail.Protocol {
-			detail.Status = NotExecutable
-			detail.ValidateResult += fmt.Sprintf("clb(%s)的监听器(%d)已存在, 且协议不匹配",
+			detail.Status.SetNotExecutable()
+			detail.ValidateResult += fmt.Sprintf("clb(%s) listener(%d) already exist, "+
+				"and the protocol does not match",
 				listener.CloudLbID, detail.ListenerPorts[0])
 			return nil
 		}
@@ -237,16 +233,18 @@ func (c *CreateLayer7ListenerPreviewExecutor) validateTCloudCert(kt *kit.Kit,
 		converter.PtrToVal(listenerCert.CaCloudID) != curDetail.CACloudID ||
 		len(listenerCert.CertCloudIDs) != len(curDetail.CertCloudIDs) {
 
-		curDetail.Status = NotExecutable
-		curDetail.ValidateResult += fmt.Sprintf("clb(%s)的监听器(%d)已存在, 且证书信息不匹配",
+		curDetail.Status.SetNotExecutable()
+		curDetail.ValidateResult += fmt.Sprintf("clb(%s) listener(%d) already exist,"+
+			" and the cert info dose not match",
 			cloudLBID, curDetail.ListenerPorts[0])
 		return nil
 	}
 
 	for _, id := range curDetail.CertCloudIDs {
 		if !slice.IsItemInSlice(listenerCert.CertCloudIDs, id) {
-			curDetail.Status = NotExecutable
-			curDetail.ValidateResult += fmt.Sprintf("clb(%s)的监听器(%d)已存在, 且证书信息不匹配",
+			curDetail.Status.SetNotExecutable()
+			curDetail.ValidateResult += fmt.Sprintf("clb(%s) listener(%d) already exist,"+
+				" and the cert info dose not match",
 				cloudLBID, curDetail.ListenerPorts[0])
 			return nil
 		}
@@ -298,7 +296,7 @@ type CreateLayer7ListenerDetail struct {
 func (c *CreateLayer7ListenerDetail) validate() {
 	err := validatePort(c.ListenerPorts)
 	if err != nil {
-		c.Status = NotExecutable
+		c.Status.SetNotExecutable()
 		c.ValidateResult = err.Error()
 		return
 	}
@@ -306,26 +304,26 @@ func (c *CreateLayer7ListenerDetail) validate() {
 	switch c.Protocol {
 	case enumor.HttpProtocol:
 		if len(c.SSLMode) > 0 || len(c.CertCloudIDs) > 0 || len(c.CACloudID) > 0 {
-			c.Status = NotExecutable
-			c.ValidateResult = "HTTP协议不支持填写证书信息"
+			c.Status.SetNotExecutable()
+			c.ValidateResult = "The HTTP protocol does not support filling in certificate information"
 			return
 		}
 	case enumor.HttpsProtocol:
 		if len(c.SSLMode) == 0 || len(c.CertCloudIDs) == 0 {
-			c.Status = NotExecutable
-			c.ValidateResult = "HTTPS协议必须填写证书信息"
+			c.Status.SetNotExecutable()
+			c.ValidateResult = "The HTTPS protocol must have certificate information filled in"
 			return
 		}
 		if c.SSLMode != "MUTUAL" && c.SSLMode != "UNIDIRECTIONAL" {
-			c.Status = NotExecutable
-			c.ValidateResult = "证书认证方式错误"
+			c.Status.SetNotExecutable()
+			c.ValidateResult = "Certificate authentication method error"
 			return
 		}
 	default:
-		c.Status = NotExecutable
-		c.ValidateResult = "协议类型错误"
+		c.Status.SetNotExecutable()
+		c.ValidateResult = "Protocol type error"
 		return
 	}
 
-	c.Status = Executable
+	c.Status.SetExecutable()
 }

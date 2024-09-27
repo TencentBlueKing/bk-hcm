@@ -24,11 +24,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"hcm/pkg/criteria/constant"
 	"io"
 
 	lblogic "hcm/cmd/cloud-server/logics/load-balancer"
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
@@ -70,10 +70,10 @@ func (svc *lbSvc) ImportPreview(cts *rest.Contexts) (interface{}, error) {
 	curVendor, rawData, err := parseExcelStr(file)
 	if err != nil {
 		logs.Errorf("parse excel failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
+		return nil, fmt.Errorf("parse excel failed, err: %v", err)
 	}
 	if len(rawData) > constant.ExcelImportRowLimit {
-		return nil, errors.New("rows count should less than 5000")
+		return nil, fmt.Errorf("rows count should less than %d", constant.ExcelImportRowLimit)
 	}
 	if vendor != curVendor {
 		return nil, errors.New("excel file vendor not match")
@@ -91,9 +91,7 @@ func (svc *lbSvc) ImportPreview(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 	return cslb.UploadExcelFileBaseResp{
-		AccountID: accountID,
-		RegionIDs: regionIDs,
-		Details:   result,
+		Details: result,
 	}, nil
 }
 
@@ -128,6 +126,9 @@ func parseExcelStr(reader io.Reader) (enumor.Vendor, [][]string, error) {
 		columns, err = rows.Columns()
 		if err != nil {
 			return "", nil, err
+		}
+		if len(columns) == 0 {
+			continue
 		}
 
 		result = append(result, columns)
