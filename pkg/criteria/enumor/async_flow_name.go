@@ -82,6 +82,7 @@ var loadBalancerFlowNameMap = map[FlowName]struct{}{
 	FlowLoadBalancerDeleteRule:         {},
 	FlowLoadBalancerCreateListener:     {},
 	FlowLoadBalancerCreateUrlRule:      {},
+	FlowBatchTaskListenerUnBindTarget:  {},
 }
 
 // ValidateLoadBalancer validate load balancer FlowName.
@@ -153,6 +154,8 @@ const (
 
 	FlowLoadBalancerCreateListener FlowName = "load_balancer_create_listener"
 	FlowLoadBalancerCreateUrlRule  FlowName = "load_balancer_create_url_rule"
+	// FlowBatchTaskListenerUnBindTarget 异步任务-监听器批量解绑RS
+	FlowBatchTaskListenerUnBindTarget = "batch_task_tcloud_listener_unbind_target"
 )
 
 // 账单相关Flow

@@ -21,6 +21,7 @@ package task
 
 import (
 	"hcm/pkg/api/core"
+	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 )
 
@@ -41,5 +42,6 @@ type Management struct {
 
 // ManagementExt management extension.
 type ManagementExt struct {
-	RegionIDs []string `json:"region_ids"`
+	RegionIDs     []string                              `json:"region_ids"`
+	LblTargetsReq *dataproto.ListListenerWithTargetsReq `json:"lbl_targets_req"`
 }

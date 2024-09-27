@@ -40,6 +40,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	cvt "hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 )
 
 func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
@@ -98,6 +99,8 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 
 	h.Add("RegisterTargetToListenerRule", http.MethodPost,
 		"/vendors/tcloud/load_balancers/{lb_id}/targets/create", svc.RegisterTargetToListenerRule)
+	h.Add("BatchRemoveTCloudListenerTargets", http.MethodDelete,
+		"/vendors/tcloud/load_balancers/{lb_id}/targets/batch", svc.BatchRemoveTCloudListenerTargets)
 
 	h.Add("QueryListenerTargetsByCloudIDs", http.MethodPost,
 		"/vendors/tcloud/targets/query_by_cloud_ids", svc.QueryListenerTargetsByCloudIDs)
@@ -588,6 +591,27 @@ func (svc *clbSvc) getTargetGroupByID(kt *kit.Kit, targetGroupID string) ([]core
 	}
 
 	return targetGroupInfo.Details, nil
+}
+
+func (svc *clbSvc) batchGetTargetGroupByID(kt *kit.Kit, targetGroupIDs []string) ([]corelb.BaseTargetGroup, error) {
+	result := make([]corelb.BaseTargetGroup, 0)
+	split := slice.Split(targetGroupIDs, int(core.DefaultMaxPageLimit))
+	for _, parts := range split {
+		tgReq := &core.ListReq{
+			Filter: tools.ContainersExpression("id", parts),
+			Page:   core.NewDefaultBasePage(),
+		}
+		targetGroupInfo, err := svc.dataCli.Global.LoadBalancer.ListTargetGroup(kt, tgReq)
+		if err != nil {
+			logs.Errorf("list target group db failed, partTgIDs: %v, err: %v, rid: %s", parts, err, kt.Rid)
+			return nil, err
+		}
+		if len(targetGroupInfo.Details) > 0 {
+			result = append(result, targetGroupInfo.Details...)
+		}
+	}
+
+	return result, nil
 }
 
 // UpdateTCloudListener 更新监听器信息
