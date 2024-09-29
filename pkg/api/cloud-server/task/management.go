@@ -26,7 +26,7 @@ import (
 
 // ManagementListStateReq list task management state request.
 type ManagementListStateReq struct {
-	IDs []string `json:"id" validate:"required,min=1,max=100"`
+	IDs []string `json:"ids" validate:"required,min=1,max=100"`
 }
 
 // Validate ManagementListStateReq.
