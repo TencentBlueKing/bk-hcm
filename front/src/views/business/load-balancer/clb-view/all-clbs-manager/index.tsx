@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { Button, Message } from 'bkui-vue';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
+import BatchImportComp from './batch-import-comp/index.vue';
 // import hooks
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
@@ -226,6 +227,8 @@ export default defineComponent({
                 <Button class='mw88' onClick={handleClickBatchDelete} disabled={selections.value.length === 0}>
                   批量删除
                 </Button>
+                {/* 批量导入 */}
+                <BatchImportComp />
               </>
             ),
           }}
