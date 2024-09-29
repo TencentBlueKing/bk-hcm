@@ -65,6 +65,7 @@ export interface IListResData<T> extends IBaseResData {
   data: { details: T; count: number };
 }
 
+// todo: 改名为 ICommonResData / APIResponse
 // query 接口响应
 export interface IQueryResData<T> extends IBaseResData {
   data: T;

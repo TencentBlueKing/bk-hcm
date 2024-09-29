@@ -1,4 +1,3 @@
-
 .font-large {
   font-size: $font-size-large;
 }
@@ -29,7 +28,7 @@
   line-height: 1;
 }
 
-.text-link{
+.text-link {
   color: #3a84ff;
   cursor: pointer;
 }
@@ -39,27 +38,27 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-.text-left{
+.text-left {
   text-align: left;
 }
-.text-center{
+.text-center {
   text-align: center;
 }
-.text-right{
+.text-right {
   text-align: right;
 }
 .nowrap {
   white-space: nowrap;
   word-break: keep-all;
 }
-.text-gray{
+.text-gray {
   color: #999;
 }
 .text-desc {
-  color: #979BA5;
+  color: #979ba5;
 }
 .text-light {
-  color: #C4C6CC;
+  color: #c4c6cc;
 }
 
 .text-deep {
@@ -74,3 +73,6 @@
   color: $danger-color;
 }
 
+.text-success {
+  color: $success-color;
+}
