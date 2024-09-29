@@ -75,6 +75,8 @@ func NewImportExecutor(operationType OperationType, dataCli *dataservice.Client,
 		return newLayer7ListenerBindRSExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
 	case LayerListenerUnbindRs:
 		return newBatchListenerUnbindRsExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
+	case LayerListenerRsWeight:
+		return newBatchListenerModifyRsWeightExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
 	default:
 		return nil, fmt.Errorf("unsupported operation type: %s", operationType)
 	}

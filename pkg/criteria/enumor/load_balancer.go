@@ -135,6 +135,9 @@ const (
 	CreateUrlRuleTaskType = TaskType(FlowLoadBalancerCreateUrlRule)
 	// ListenerUnbindRsTaskType 任务类型-监听器批量解绑RS
 	ListenerUnbindRsTaskType = TaskType(FlowBatchTaskListenerUnBindTarget)
+	// ListenerModifyRsWeightTaskType 任务类型-监听器批量调整RS权重
+	ListenerModifyRsWeightTaskType = TaskType(
+		FlowBatchTaskListenerModifyRsWeight)
 )
 
 // InstType 实例类型
