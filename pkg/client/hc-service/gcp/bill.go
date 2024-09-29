@@ -24,7 +24,9 @@ import (
 	"net/http"
 
 	hcbillservice "hcm/pkg/api/hc-service/bill"
+	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -66,8 +68,8 @@ func (v *BillClient) List(ctx context.Context, h http.Header, req *hcbillservice
 }
 
 // RootAccountBillList list root account bill list
-func (v *BillClient) RootAccountBillList(
-	ctx context.Context, h http.Header, req *hcbillservice.GcpRootAccountBillListReq) (
+func (v *BillClient) RootAccountBillList(ctx context.Context, h http.Header,
+	req *hcbillservice.GcpRootAccountBillListReq) (
 	*hcbillservice.GcpBillListResult, error) {
 
 	resp := new(hcbillservice.GcpBillListResp)
@@ -88,4 +90,13 @@ func (v *BillClient) RootAccountBillList(
 	}
 
 	return resp.Data, nil
+}
+
+// RootCreditUsageList list root account credit bill list
+func (v *BillClient) RootCreditUsageList(kt *kit.Kit, req *hcbillservice.GcpRootAccountBillListReq) (
+	*hcbillservice.GcpCreditListResult, error) {
+
+	return common.Request[hcbillservice.GcpRootAccountBillListReq, hcbillservice.GcpCreditListResult](v.client,
+		rest.POST, kt, req, "/root_account_bills/credits/list")
+
 }

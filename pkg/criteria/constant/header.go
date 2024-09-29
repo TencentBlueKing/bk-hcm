@@ -47,3 +47,8 @@ const (
 	// BKGWAuthKey is blueking api gateway authorization header key.
 	BKGWAuthKey = "X-Bkapi-Authorization"
 )
+
+const (
+	// BKHTTPCookieLanguageKey ...
+	BKHTTPCookieLanguageKey = "blueking_language"
+)

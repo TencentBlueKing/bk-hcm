@@ -215,7 +215,7 @@ func (act DailySummaryAction) syncDailySummary(kt run.ExecuteKit, opt *DailySumm
 				opt.MainAccountID, opt.MainAccountCloudID, billDay, err)
 		}
 		logs.Infof("[%s]create daily summary of %s(%s) day %d successfully cost %s count %d, rid: %s",
-			opt.Vendor, opt.MainAccountID, opt.MainAccountCloudID, billDay, cost.String(), count, kt.Kit().Rid)
+			opt.Vendor, opt.MainAccountCloudID, opt.MainAccountID, billDay, cost.String(), count, kt.Kit().Rid)
 		return nil
 	}
 	if len(result.Details) != 1 {

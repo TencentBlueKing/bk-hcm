@@ -5,6 +5,7 @@ import AccountForm from './components/accountForm';
 import AccountResource from './components/accountResource';
 import ResultPage from './components/resultPage';
 import { useAccountStore } from '@/store';
+import { useCalcTopWithNotice } from '@/views/home/hooks/useCalcTopWithNotice';
 
 export default defineComponent({
   props: {
@@ -39,8 +40,7 @@ export default defineComponent({
     const handleSubmit = async () => {
       isSubmitLoading.value = true;
       try {
-        const res = await accountStore.applyAccount(submitData.value);
-        console.log(res);
+        await accountStore.applyAccount(submitData.value);
       } catch (err: any) {
         errMsg.value = err.message;
       } finally {
@@ -52,6 +52,9 @@ export default defineComponent({
       await validateForm.value();
       step.value += 1;
     };
+
+    const [, isNoticeAlert] = useCalcTopWithNotice(52);
+
     return () => (
       <Dialog
         fullscreen
@@ -62,7 +65,7 @@ export default defineComponent({
           props.onCancel();
         }}
         title='云账号接入'
-        class={'create-account-dialog-container'}>
+        class={['create-account-dialog-container', { 'has-notice': isNoticeAlert.value }]}>
         {{
           default: () => (
             <div class={'create-account-dialog-content'}>

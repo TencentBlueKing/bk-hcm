@@ -34,8 +34,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// DeleteBillMonthPullTask delete bill month task with options
-func (svc *service) DeleteBillMonthPullTask(cts *rest.Contexts) (interface{}, error) {
+// DeleteBillMonthTask delete bill month task with options
+func (svc *service) DeleteBillMonthTask(cts *rest.Contexts) (interface{}, error) {
 	req := new(dataservice.BatchDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err

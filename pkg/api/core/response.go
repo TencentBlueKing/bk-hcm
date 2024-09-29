@@ -51,3 +51,11 @@ type BaseResp[T any] struct {
 	rest.BaseResp `json:",inline"`
 	Data          T `json:"data"`
 }
+
+// CloudCreateResult 调用云上接口创建结果
+type CloudCreateResult struct {
+	// 本地ID，可能为空
+	ID string `json:"id"`
+	// 云上ID
+	CloudID string `json:"cloud_id"`
+}

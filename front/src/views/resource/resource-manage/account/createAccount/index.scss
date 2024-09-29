@@ -82,4 +82,9 @@
       }
     }
   }
+
+  &.has-notice .bk-modal-wrapper {
+    margin-top: 92px;
+    height: calc(100% - 92px);
+  }
 }

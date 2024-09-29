@@ -118,7 +118,6 @@ func NewUserAuthenticateFilter(esbClient esb.Client, bkLoginUrl, bkLoginCookieNa
 		// 对于itsm 的回调请求，不能用户认证，而是处理请求时进行单独的Token认证，这里直接通过
 		if isITSMCallbackRequest(req) {
 			username = "itsm_callback"
-			req.Request.Header.Set(constant.RidKey, uuid.UUID())
 		} else {
 			ret, err := checkLogin(req)
 			if err != nil {
@@ -186,4 +185,15 @@ func peekRequest(req *http.Request) (string, error) {
 	}
 
 	return "", nil
+}
+
+// NewCompleteRequestIDFilter creates a filter that adds a request ID if request ID is missing.
+func NewCompleteRequestIDFilter() restful.FilterFunction {
+	return func(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
+		rid := req.Request.Header.Get(constant.RidKey)
+		if rid == "" {
+			req.Request.Header.Set(constant.RidKey, uuid.UUID())
+		}
+		chain.ProcessFilter(req, resp)
+	}
 }

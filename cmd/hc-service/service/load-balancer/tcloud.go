@@ -71,11 +71,14 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 		"/vendors/tcloud/listeners/{lbl_id}/rules/by/domain/batch", svc.TCloudBatchDeleteUrlRuleByDomain)
 
 	// 监听器
-	h.Add("CreateTCloudListener", http.MethodPost, "/vendors/tcloud/listeners/create", svc.CreateTCloudListener)
+	h.Add("CreateTCloudListenerWithTargetGroup", http.MethodPost,
+		"/vendors/tcloud/listeners/create_with_target_group", svc.CreateTCloudListenerWithTargetGroup)
 	h.Add("UpdateTCloudListener", http.MethodPatch, "/vendors/tcloud/listeners/{id}", svc.UpdateTCloudListener)
 	h.Add("UpdateTCloudListenerHealthCheck", http.MethodPatch,
 		"/vendors/tcloud/listeners/{lbl_id}/health_check", svc.UpdateTCloudListenerHealthCheck)
 	h.Add("DeleteTCloudListener", http.MethodDelete, "/vendors/tcloud/listeners/batch", svc.DeleteTCloudListener)
+	// 仅创建监听器
+	h.Add("CreateTCloudListener", http.MethodPost, "/vendors/tcloud/listeners/create", svc.CreateTCloudListener)
 
 	// 域名、规则
 	h.Add("UpdateTCloudDomainAttr", http.MethodPatch,
@@ -376,8 +379,8 @@ func (svc *clbSvc) getListenerWithLb(kt *kit.Kit, lblID string) (*corelb.BaseLoa
 	return &lb, &listener, nil
 }
 
-// CreateTCloudListener 创建监听器
-func (svc *clbSvc) CreateTCloudListener(cts *rest.Contexts) (interface{}, error) {
+// CreateTCloudListenerWithTargetGroup 创建监听器和规则附带目标组绑定信息
+func (svc *clbSvc) CreateTCloudListenerWithTargetGroup(cts *rest.Contexts) (interface{}, error) {
 	req := new(protolb.ListenerWithRuleCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)

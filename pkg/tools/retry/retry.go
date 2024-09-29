@@ -120,5 +120,5 @@ func (r *RetryPolicy) BaseExec(kt *kit.Kit, retryFunc func() error) error {
 		return nil
 	}
 
-	return fmt.Errorf("execute retry func over maximum number of retries: %d, lastErr: %v", r.immuneCount, lastErr)
+	return fmt.Errorf("execute failed after %d retries, lastErr: %v", r.immuneCount, lastErr)
 }

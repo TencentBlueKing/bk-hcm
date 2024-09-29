@@ -47,3 +47,20 @@ func (opt SyncBaseParams) Validate() error {
 type SyncResult struct {
 	CreatedIds []string
 }
+
+// SyncRemovedParams ...
+type SyncRemovedParams struct {
+	AccountID string `json:"account_id" validate:"required"`
+	Region    string `json:"region" validate:"required"`
+	// 为空表示所有
+	CloudIDs []string `json:"cloud_ids,omitempty" validate:"omitempty"`
+}
+
+// Validate ...
+func (opt SyncRemovedParams) Validate() error {
+
+	if len(opt.CloudIDs) > constant.CloudResourceSyncMaxLimit {
+		return fmt.Errorf("cloudIDs shuold <= %d", constant.CloudResourceSyncMaxLimit)
+	}
+	return validator.Validate.Struct(opt)
+}

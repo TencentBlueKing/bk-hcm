@@ -1,29 +1,12 @@
-import { defineComponent, PropType } from 'vue';
+import { computed, defineComponent, PropType } from 'vue';
 
+import { OverflowTitle } from 'bkui-vue';
 import { Share, Copy } from 'bkui-vue/lib/icon';
-
-import { Message } from 'bkui-vue';
-
 import RenderDetailEdit from '@/components/RenderDetailEdit';
-
-import { useI18n } from 'vue-i18n';
+import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
 
 import './info-list.scss';
-
-type Field = {
-  name: string;
-  value: string | any;
-  cls?: string | ((cell: string) => string);
-  link?: string | ((cell: string) => string);
-  copy?: boolean;
-  edit?: boolean;
-  type?: string;
-  prop?: string;
-  tipsContent?: string;
-  type?: string;
-  txtBtn?: (cell: string) => void;
-  render?: (cell: string) => void;
-};
+import { Field, FieldList } from './types';
 
 export default defineComponent({
   components: {
@@ -32,47 +15,26 @@ export default defineComponent({
   },
 
   props: {
-    fields: Array as PropType<Field[]>,
-    wide: {
-      type: Boolean,
-      default: false,
-    },
+    fields: Array as PropType<FieldList>,
+    col: { type: Number, default: 2 },
+    labelWidth: String,
+    globalCopyable: { type: Boolean, default: false },
   },
 
   emits: ['change'],
 
   setup(props, { emit }) {
-    const { t } = useI18n();
+    const gridTemplateColumnsStyle = computed(() => `repeat(${props.col}, calc(${100 / props.col}% - 12px))`);
+    // item 最大宽度至少需要减去 'column-gap'/'col', 避免出现横向滚动条
+    const itemMaxWidthBaseDecrement = computed(() => 24 / props.col);
 
-    const handleCopy = (val: string) => {
-      const handleSuccessCopy = () => {
-        Message({
-          message: t('复制成功'),
-          theme: 'success',
-        });
-      };
-
-      if (window.isSecureContext && navigator.clipboard) {
-        navigator.clipboard.writeText(val).then(handleSuccessCopy);
-      } else {
-        const input = document.createElement('input');
-        document.body.appendChild(input);
-        input.setAttribute('value', val);
-        input.select();
-        if (document.execCommand('copy')) {
-          document.execCommand('copy');
-          handleSuccessCopy();
-        }
-        document.body.removeChild(input);
-      }
-    };
-
-    const handleblur = async (val: any, key: string) => {
+    const handleBlur = async (val: any, key: string) => {
       emit('change', { [key]: val });
     };
     return {
-      handleCopy,
-      handleblur,
+      gridTemplateColumnsStyle,
+      itemMaxWidthBaseDecrement,
+      handleBlur,
       props,
     };
   },
@@ -80,18 +42,15 @@ export default defineComponent({
   render() {
     // 渲染纯文本
     const renderTxt = (field: Field) => {
-      const type = Object.prototype.toString.call(field.value);
-      switch (type) {
-        case '[object Array]':
-          return field.value.map((e: string, index: number) => (
-            <>
-              <span>{e}</span>
-              {field.value.length - 1 === index ? '' : ';'}
-            </>
-          ));
-        default:
-          return field.value || '--';
+      const { value } = field;
+      if (Array.isArray(value)) {
+        if (value.length === 0) return '--';
+        return value.join(',')?.concat(';');
       }
+      if (typeof value === 'number') {
+        return value;
+      }
+      return value || '--';
     };
 
     // 渲染可编辑文本
@@ -101,7 +60,8 @@ export default defineComponent({
         fromType={field.type}
         needValidate={false}
         fromKey={field.prop}
-        onChange={this.handleblur}></RenderDetailEdit>
+        teleportTargetId={`#edit-btn-${field.prop}`}
+        onChange={this.handleBlur}></RenderDetailEdit>
     );
 
     // 渲染链接
@@ -140,29 +100,56 @@ export default defineComponent({
     };
 
     return (
-      <ul class={`info-list-main g-scroller`}>
+      <ul class='info-list-main g-scroller' style={{ gridTemplateColumns: this.gridTemplateColumnsStyle }}>
         {this.fields.map((field) => {
+          const { prop, name, value, cls, render, edit, copy, copyContent, tipsContent } = field;
+
+          // copy配置的优先级：局部 > 全局
+          const resultCopyable = copy ?? this.globalCopyable;
+
+          // 处理copy内容，copy内容取值的优先级：field.copyContent > field.render > field.value > 默认值'--'
+          let resultCopyContent =
+            (typeof copyContent === 'function' ? copyContent(value) : copyContent) ?? (render ? render(value) : value);
+          if (Array.isArray(resultCopyContent)) {
+            resultCopyContent = resultCopyContent.join('\r');
+          } else if (typeof resultCopyContent === 'string') {
+            resultCopyContent = resultCopyContent || '--';
+          } else if (typeof resultCopyContent === 'number') {
+            resultCopyContent = resultCopyContent.toString();
+          } else {
+            resultCopyContent = '--';
+          }
+
+          let operationBtnWidth = 0;
+          if (resultCopyable) operationBtnWidth += 24;
+          if (edit) operationBtnWidth += 24;
+          const itemMaxWidth = `calc(100% - ${this.itemMaxWidthBaseDecrement + operationBtnWidth}px)`;
+          const valueMaxWidth = operationBtnWidth
+            ? `calc(100% - ${parseFloat(this.labelWidth) + operationBtnWidth}px)`
+            : `calc(100% - ${parseFloat(this.labelWidth)}px)`;
+
           return (
-            <>
-              <li class='info-list-item' style={this.props.wide ? { width: '80%' } : undefined}>
-                {field.tipsContent ? (
-                  <div class='item-field has-tips'>
-                    <span v-BkTooltips={{ content: field.tipsContent }}>{field.name}</span>
-                  </div>
-                ) : (
-                  <span class='item-field'>{field.name}</span>
-                )}
-                :
-                <span class={['item-value', typeof field.cls === 'function' ? field.cls(field.value) : field.cls]}>
-                  {renderField(field)}
+            <li class='info-list-item' style={{ maxWidth: itemMaxWidth }}>
+              {tipsContent ? (
+                <div class='item-label has-tips' style={{ width: this.labelWidth }}>
+                  <span v-BkTooltips={{ content: tipsContent }}>{name}</span>
+                </div>
+              ) : (
+                <span class='item-label' style={{ width: this.labelWidth }}>
+                  {name}
                 </span>
-                {field.copy ? (
-                  <copy class='info-item-copy ml5' onClick={() => this.handleCopy(field.value)}></copy>
-                ) : (
-                  ''
-                )}
-              </li>
-            </>
+              )}
+              <span
+                v-overflow-title
+                class={['item-value', typeof cls === 'function' ? cls(value) : cls]}
+                style={{ maxWidth: valueMaxWidth }}>
+                <OverflowTitle class='full-width' type='tips' content={renderField(field)}>
+                  {renderField(field)}
+                </OverflowTitle>
+              </span>
+              {edit && <div id={`edit-btn-${prop}`}></div>}
+              {resultCopyable && <CopyToClipboard class='copy-btn' content={resultCopyContent} />}
+            </li>
           );
         })}
       </ul>

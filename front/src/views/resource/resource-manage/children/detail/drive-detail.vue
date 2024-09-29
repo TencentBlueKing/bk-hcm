@@ -18,6 +18,7 @@ import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { timeFormatter } from '@/common/util';
+import { FieldList } from '../../common/info-list/types';
 
 const { getRegionName } = useRegionsStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
@@ -31,7 +32,7 @@ const hostTabs = [
   },
 ];
 
-const settingFields = ref<any[]>([
+const settingFields = ref<FieldList>([
   {
     name: 'ID',
     prop: 'id',
@@ -44,6 +45,7 @@ const settingFields = ref<any[]>([
       const value = cell.slice(index);
       return withDirectives(h('span', [value || '--']), [[bkTooltips, cell]]);
     },
+    copyContent: (cell) => cell,
   },
   {
     name: '资源名称',
@@ -68,7 +70,7 @@ const settingFields = ref<any[]>([
   {
     name: '云厂商',
     prop: 'vendor',
-    render(cell: string) {
+    render(cell: keyof typeof CloudType) {
       return CloudType[cell] || '--';
     },
   },
@@ -372,7 +374,7 @@ const bkTooltipsOptions = computed(() => {
     <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
       <detail-tab :tabs="hostTabs">
         <template #default>
-          <detail-info :fields="settingFields" :detail="detail" />
+          <detail-info :fields="settingFields" :detail="detail" global-copyable />
         </template>
       </detail-tab>
     </div>

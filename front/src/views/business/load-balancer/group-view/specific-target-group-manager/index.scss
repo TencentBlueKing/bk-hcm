@@ -12,7 +12,6 @@
 
   .fixed-operate-btn {
     position: fixed;
-    top: 192px;
     right: 51px;
     min-width: 64px;
   }
@@ -50,6 +49,17 @@
           padding-top: 0.7em;
           line-height: normal;
         }
+      }
+
+      .copy-btn {
+        padding-left: 10px;
+        display: none;
+        line-height: normal;
+      }
+
+      &:hover .copy-btn {
+        display: block;
+        color: #3a84ff;
       }
     }
     .detail-info-wrap:first-child {

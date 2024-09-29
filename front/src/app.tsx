@@ -1,5 +1,9 @@
 import { defineComponent, onMounted, onUnmounted } from 'vue';
 import Home from '@/views/home';
+import Notice from '@/views/notice/index.vue';
+
+const { ENABLE_NOTICE } = window.PROJECT_CONFIG;
+
 export default defineComponent({
   setup() {
     // const router = useRouter();
@@ -23,6 +27,11 @@ export default defineComponent({
     onUnmounted(() => {
       window.removeEventListener('resize', calcRem, false);
     });
-    return () => <Home></Home>;
+    return () => (
+      <div class='full-page flex-column'>
+        {ENABLE_NOTICE === 'true' && <Notice />}
+        <Home class='flex-1'></Home>
+      </div>
+    );
   },
 });

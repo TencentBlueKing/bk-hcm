@@ -13,7 +13,8 @@ const { Option } = Select;
 
 export default defineComponent({
   props: {
-    modelValue: String as PropType<string>,
+    modelValue: [String, Array] as PropType<string | string[]>,
+    multiple: Boolean,
     type: String as PropType<string>,
     vendor: String as PropType<string>,
     accountId: String as PropType<string>,
@@ -164,6 +165,7 @@ export default defineComponent({
 
     return () => (
       <Select
+        multiple={props.multiple}
         clearable={false}
         filterable={true}
         modelValue={selected.value}
@@ -172,7 +174,7 @@ export default defineComponent({
         disabled={props.isDisabled}
         {...{ attrs }}>
         {list.value.map(({ id, name }: IOption) => (
-          <Option key={id} value={id} label={name}></Option>
+          <Option key={id} id={id} name={name} />
         ))}
       </Select>
     );

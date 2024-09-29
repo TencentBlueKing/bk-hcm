@@ -41,6 +41,8 @@ import (
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
+
+	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
 )
 
 // SyncCvmOption ...
@@ -607,8 +609,7 @@ func isCvmChange(cloud typescvm.TCloudCvm, db corecvm.Cvm[cvm.TCloudCvmExtension
 		return true
 	}
 
-	if len(db.CloudSubnetIDs) == 0 || (db.CloudSubnetIDs[0] !=
-		converter.PtrToVal(cloud.VirtualPrivateCloud.SubnetId)) {
+	if len(db.CloudSubnetIDs) == 0 || (db.CloudSubnetIDs[0] != converter.PtrToVal(cloud.VirtualPrivateCloud.SubnetId)) {
 		return true
 	}
 
@@ -667,23 +668,30 @@ func isCvmChange(cloud typescvm.TCloudCvm, db corecvm.Cvm[cvm.TCloudCvmExtension
 		return true
 	}
 
-	if !assert.IsPtrInt64Equal(db.Extension.Placement.CloudProjectID, cloud.Placement.ProjectId) {
+	return isCvmExtensionChange(cloud, db.Extension)
+}
+
+func isCvmExtensionChange(cloud typescvm.TCloudCvm, ext *corecvm.TCloudCvmExtension) bool {
+	if ext == nil {
+		return true
+	}
+	if !assert.IsPtrInt64Equal(ext.Placement.CloudProjectID, cloud.Placement.ProjectId) {
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(db.Extension.InstanceChargeType, cloud.InstanceChargeType) {
+	if !assert.IsPtrStringEqual(ext.InstanceChargeType, cloud.InstanceChargeType) {
 		return true
 	}
 
-	if !assert.IsPtrInt64Equal(db.Extension.Cpu, cloud.CPU) {
+	if !assert.IsPtrInt64Equal(ext.Cpu, cloud.CPU) {
 		return true
 	}
 
-	if !assert.IsPtrInt64Equal(db.Extension.Memory, cloud.Memory) {
+	if !assert.IsPtrInt64Equal(ext.Memory, cloud.Memory) {
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(cloud.SystemDisk.DiskId, db.Extension.CloudSystemDiskID) {
+	if !assert.IsPtrStringEqual(cloud.SystemDisk.DiskId, ext.CloudSystemDiskID) {
 		return true
 	}
 
@@ -691,57 +699,70 @@ func isCvmChange(cloud typescvm.TCloudCvm, db corecvm.Cvm[cvm.TCloudCvmExtension
 	for _, one := range cloud.DataDisks {
 		dataDiskIds = append(dataDiskIds, converter.PtrToVal(one.DiskId))
 	}
-	if !assert.IsStringSliceEqual(dataDiskIds, db.Extension.CloudDataDiskIDs) {
+	if !assert.IsStringSliceEqual(dataDiskIds, ext.CloudDataDiskIDs) {
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(db.Extension.InternetAccessible.InternetChargeType,
-		cloud.InternetAccessible.InternetChargeType) {
+	if changed := isInternetInternetAccessibleChanged(cloud.InternetAccessible, ext.InternetAccessible); changed {
 		return true
 	}
 
-	if !assert.IsPtrInt64Equal(db.Extension.InternetAccessible.InternetMaxBandwidthOut,
-		cloud.InternetAccessible.InternetMaxBandwidthOut) {
+	if !assert.IsPtrBoolEqual(ext.VirtualPrivateCloud.AsVpcGateway, cloud.VirtualPrivateCloud.AsVpcGateway) {
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(db.Extension.InternetAccessible.CloudBandwidthPackageID,
-		cloud.InternetAccessible.BandwidthPackageId) {
+	if !assert.IsPtrStringEqual(ext.RenewFlag, cloud.RenewFlag) {
 		return true
 	}
 
-	if !assert.IsPtrBoolEqual(db.Extension.InternetAccessible.PublicIPAssigned,
-		cloud.InternetAccessible.PublicIpAssigned) {
+	if !assert.IsStringSliceEqual(ext.CloudSecurityGroupIDs, converter.PtrToSlice(cloud.SecurityGroupIds)) {
 		return true
 	}
 
-	if !assert.IsPtrBoolEqual(db.Extension.VirtualPrivateCloud.AsVpcGateway, cloud.VirtualPrivateCloud.AsVpcGateway) {
+	if !assert.IsPtrStringEqual(ext.StopChargingMode, cloud.StopChargingMode) {
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(db.Extension.RenewFlag, cloud.RenewFlag) {
+	if !assert.IsPtrStringEqual(ext.UUID, cloud.Uuid) {
 		return true
 	}
 
-	if !assert.IsStringSliceEqual(db.Extension.CloudSecurityGroupIDs, converter.PtrToSlice(cloud.SecurityGroupIds)) {
+	if !assert.IsPtrStringEqual(ext.IsolatedSource, cloud.IsolatedSource) {
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(db.Extension.StopChargingMode, cloud.StopChargingMode) {
+	if !assert.IsPtrBoolEqual(ext.DisableApiTermination, cloud.DisableApiTermination) {
+		return true
+	}
+	return false
+}
+
+func isInternetInternetAccessibleChanged(cloud *v20170312.InternetAccessible,
+	db *corecvm.TCloudInternetAccessible) bool {
+
+	if db == nil || cloud == nil {
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(db.Extension.UUID, cloud.Uuid) {
+	if !assert.IsPtrStringEqual(db.InternetChargeType, cloud.InternetChargeType) {
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(db.Extension.IsolatedSource, cloud.IsolatedSource) {
+	if !assert.IsPtrInt64Equal(db.InternetMaxBandwidthOut, cloud.InternetMaxBandwidthOut) {
 		return true
 	}
 
-	if !assert.IsPtrBoolEqual(db.Extension.DisableApiTermination, cloud.DisableApiTermination) {
+	if !assert.IsPtrStringEqual(db.CloudBandwidthPackageID, cloud.BandwidthPackageId) {
 		return true
 	}
 
+	if !assert.IsPtrBoolEqual(db.PublicIPAssigned, cloud.PublicIpAssigned) {
+		return true
+	}
+
+	// CVM查询接口 不返回带宽包id，这里无法比较
+	// if !assert.IsPtrStringEqual(db.CloudBandwidthPackageID, cloud.BandwidthPackageId) {
+	// 	return true
+	// }
 	return false
 }

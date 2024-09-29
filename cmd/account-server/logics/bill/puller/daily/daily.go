@@ -37,6 +37,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/times"
 
 	"github.com/shopspring/decimal"
 )
@@ -144,9 +145,9 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 				return err
 			}
 			logs.Infof("create pull task flow %s main account: %s(%s), %d-%02d-%02d:v%d, root: %s(%s), rid: %s",
-				billTask.Vendor, billTask.MainAccountID, billTask.MainAccountCloudID,
+				billTask.Vendor, billTask.MainAccountCloudID, billTask.MainAccountID,
 				billTask.BillYear, billTask.BillMonth, billTask.BillDay, billTask.VersionID,
-				billTask.RootAccountID, billTask.RootAccountCloudID, kt.Rid)
+				billTask.RootAccountCloudID, billTask.RootAccountID, kt.Rid)
 
 			continue
 		}
@@ -172,7 +173,7 @@ func (dp *DailyPuller) ensureDailyPulling(kt *kit.Kit, dayList []int) error {
 			// 如果不存在pull task数据，则创建新的pull task
 			if err := dp.createDailyPullTaskStub(kt, day); err != nil {
 				logs.Warnf("create dailed pull task for main account %s(%s) of %d-%02d-%02d failed, err: %s, rid: %s",
-					dp.MainAccountID, dp.MainAccountCloudID, dp.BillYear, dp.BillMonth, day, err.Error(), kt.Rid)
+					dp.MainAccountCloudID, dp.MainAccountID, dp.BillYear, dp.BillMonth, day, err.Error(), kt.Rid)
 			}
 			logs.Infof("create pull task for %v day %d successfully, rid: %s", dp, day, kt.Rid)
 		}
@@ -244,13 +245,15 @@ func (dp *DailyPuller) GetPullTaskList(kit *kit.Kit) ([]*bill.BillDailyPullTaskR
 
 func getBillDays(billYear, billMonth, billDelay int, now time.Time) []int {
 	timeBill := now.AddDate(0, 0, -billDelay)
-	var retList []int
-	for t := time.Date(
-		billYear, time.Month(billMonth), 1, 0, 0, 0, 0, now.Location()); t.Before(timeBill); t = t.AddDate(0, 0, 1) {
-		if t.After(timeBill) {
+	var retList = []int{}
+	t := time.Date(billYear, time.Month(billMonth), 1, 0, 0, 0, 0, now.Location())
+	days := times.DaysInMonth(billYear, time.Month(billMonth))
+	for i := 0; i < days; i++ {
+		if t.Unix() > timeBill.Unix() {
 			break
 		}
 		retList = append(retList, t.Day())
+		t = t.AddDate(0, 0, 1)
 	}
 	return retList
 }

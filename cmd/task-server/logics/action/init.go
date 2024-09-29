@@ -81,4 +81,8 @@ func register() {
 
 	action.RegisterAction(actionlb.DeleteURLRuleAction{})
 	action.RegisterAction(actionlb.DeleteListenerAction{})
+
+	action.RegisterAction(actionlb.BatchTaskBindTargetAction{})
+	action.RegisterAction(actionlb.BatchTaskTCloudCreateL7RuleAction{})
+	action.RegisterAction(actionlb.BatchTaskTCloudCreateListenerAction{})
 }

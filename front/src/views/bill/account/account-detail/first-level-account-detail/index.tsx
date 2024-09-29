@@ -23,6 +23,7 @@ export default defineComponent({
     },
   },
   setup(props) {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     const { formModel: detail, setFormValues: setDetail } = useFormModel({} as IRootAccountDetail);
     const billStore = useBillStore();
     const getDetail = async () => {
@@ -177,7 +178,7 @@ export default defineComponent({
         <p class={'sub-title'}>帐号信息</p>
 
         <DetailInfo
-          wide
+          col={1}
           detail={detail}
           onChange={handleUpdate}
           fields={[
@@ -207,7 +208,7 @@ export default defineComponent({
           )}
         </p>
         <div class={'detail-info'}>
-          <DetailInfo detail={detail} fields={computedExtension.value} wide />
+          <DetailInfo col={1} detail={detail} fields={computedExtension.value} />
         </div>
 
         <CommonDialog v-model:isShow={isEditDialogShow.value} title={'编辑API密钥'} dialogType='operation' width={680}>

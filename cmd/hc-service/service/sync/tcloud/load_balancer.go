@@ -66,6 +66,8 @@ func (hd *lbHandler) Prepare(cts *rest.Contexts) error {
 func (hd *lbHandler) Next(kt *kit.Kit) ([]string, error) {
 	listOpt := &typeclb.TCloudListOption{
 		Region: hd.request.Region,
+		// 支持指定资源同步
+		CloudIDs: hd.request.CloudIDs,
 		Page: &typecore.TCloudPage{
 			Offset: hd.offset,
 			Limit:  typecore.TCloudQueryLimit,
@@ -108,7 +110,13 @@ func (hd *lbHandler) Sync(kt *kit.Kit, cloudIDs []string) error {
 
 // RemoveDeleteFromCloud ...
 func (hd *lbHandler) RemoveDeleteFromCloud(kt *kit.Kit) error {
-	if err := hd.syncCli.RemoveLoadBalancerDeleteFromCloud(kt, hd.request.AccountID, hd.request.Region); err != nil {
+
+	params := &tcloud.SyncRemovedParams{
+		AccountID: hd.request.AccountID,
+		Region:    hd.request.Region,
+		CloudIDs:  hd.request.CloudIDs,
+	}
+	if err := hd.syncCli.RemoveLoadBalancerDeleteFromCloud(kt, params); err != nil {
 		logs.Errorf("remove load balancer delete from cloud failed, err: %v, accountID: %s, region: %s, rid: %s", err,
 			hd.request.AccountID, hd.request.Region, kt.Rid)
 		return err

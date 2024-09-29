@@ -39,6 +39,7 @@ var AccountBillMonthTaskDescriptor = utils.ColumnDescriptors{
 	{Column: "root_account_id", NamedC: "root_account_id", Type: enumor.String},
 	{Column: "root_account_cloud_id", NamedC: "root_account_cloud_id", Type: enumor.String},
 	{Column: "vendor", NamedC: "vendor", Type: enumor.String},
+	{Column: "type", NamedC: "type", Type: enumor.String},
 	{Column: "bill_year", NamedC: "bill_year", Type: enumor.Numeric},
 	{Column: "bill_month", NamedC: "bill_month", Type: enumor.Numeric},
 	{Column: "version_id", NamedC: "version_id", Type: enumor.Numeric},
@@ -68,6 +69,8 @@ type AccountBillMonthTask struct {
 	RootAccountCloudID string `db:"root_account_cloud_id" json:"root_account_cloud_id"`
 	// Vendor 云厂商
 	Vendor enumor.Vendor `db:"vendor" json:"vendor"`
+	// Type 任务类型
+	Type enumor.MonthTaskType `db:"type" json:"type"`
 	// BillYear 账单年份
 	BillYear int `db:"bill_year" json:"bill_year"`
 	// BillMonth 账单月份
@@ -93,7 +96,7 @@ type AccountBillMonthTask struct {
 	// SummaryFlowID summary flow id
 	SummaryFlowID string `db:"summary_flow_id" json:"summary_flow_id"`
 	// SummaryDetail detail of summary
-	SummaryDetail string `db:"summary_detail" json:"summary_detail"`
+	SummaryDetail types.JsonField `db:"summary_detail" json:"summary_detail"`
 	// Creator 创建者
 	Creator string `db:"creator" json:"creator"`
 	// Reviser 更新者
@@ -113,6 +116,30 @@ func (abs *AccountBillMonthTask) TableName() table.Name {
 func (abs *AccountBillMonthTask) InsertValidate() error {
 	if len(abs.ID) == 0 {
 		return errors.New("id is required")
+	}
+	if len(abs.RootAccountID) == 0 {
+		return errors.New("root_account_id is required")
+	}
+	if len(abs.RootAccountCloudID) == 0 {
+		return errors.New("root_account_cloud_id is required")
+	}
+	if abs.Vendor == "" {
+		return errors.New("vendor is required")
+	}
+	if len(abs.Type) == 0 {
+		return errors.New("type is required")
+	}
+	if abs.BillYear <= 0 {
+		return errors.New("bill_year is required")
+	}
+	if abs.BillMonth <= 0 {
+		return errors.New("bill_month is required")
+	}
+	if abs.BillMonth > 12 {
+		return errors.New("bill_month should be less than 12")
+	}
+	if abs.VersionID <= 0 {
+		return errors.New("version_id is required")
 	}
 	if err := validator.Validate.Struct(abs); err != nil {
 		return err

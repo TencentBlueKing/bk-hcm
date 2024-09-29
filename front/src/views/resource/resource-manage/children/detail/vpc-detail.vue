@@ -20,6 +20,7 @@ import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { VendorEnum } from '@/common/constant';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { timeFormatter } from '@/common/util';
+import { FieldList } from '../../common/info-list/types';
 
 const { getRegionName } = useRegionsStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
@@ -31,7 +32,7 @@ const hostTabs = [
     value: 'detail',
   },
 ];
-const VPCFields = ref([
+const VPCFields = ref<FieldList>([
   {
     name: '资源ID',
     prop: 'id',
@@ -39,7 +40,8 @@ const VPCFields = ref([
   {
     name: '云资源ID',
     prop: 'cloud_id',
-    render(cell = '') {
+    // eslint-disable-next-line @typescript-eslint/no-inferrable-types
+    render(cell: string = '') {
       const index = cell.lastIndexOf('/') <= 0 ? 0 : cell.lastIndexOf('/') + 1;
       const value = cell.slice(index);
       return value;
@@ -64,7 +66,7 @@ const VPCFields = ref([
   {
     name: '云厂商',
     prop: 'vendor',
-    render(cell: string) {
+    render(cell: keyof typeof CloudType) {
       return CloudType[cell] || '--';
     },
   },
@@ -213,7 +215,7 @@ const { loading, detail } = useDetail('vpcs', route.query.id as string, (detail:
           {
             name: 'DNS服务器',
             prop: 'dns_servers',
-            render(val: any[]) {
+            render(val: any) {
               return val.length > 0 ? val : 'Azure提供的DNS服务';
             },
           },
@@ -415,7 +417,12 @@ const handleDeleteVpc = (data: any) => {
     <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
       <detail-tab :tabs="hostTabs">
         <template #default>
-          <detail-info :detail="detail" :fields="VPCFields" />
+          <detail-info
+            :detail="detail"
+            :fields="VPCFields"
+            :label-width="VendorEnum.GCP === detail.vendor ? '200px' : '120px'"
+            global-copyable
+          />
         </template>
       </detail-tab>
 

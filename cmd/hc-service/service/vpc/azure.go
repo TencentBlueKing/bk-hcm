@@ -88,8 +88,9 @@ func (v vpc) AzureVpcCreate(cts *rest.Contexts) (interface{}, error) {
 		return core.CreateResult{ID: result.IDs[0]}, nil
 	}
 
+	// 业务下申请通过申请单的交付流程 转到对应业务id下，这里不处理
 	subnetSyncOpt := &subnetlogics.AzureSubnetSyncOptions{
-		BkBizID:       req.BkBizID,
+		BkBizID:       constant.UnassignedBiz,
 		AccountID:     req.AccountID,
 		CloudVpcID:    data.CloudID,
 		ResourceGroup: data.Extension.ResourceGroupName,

@@ -22,6 +22,7 @@ package tcloud
 
 import (
 	"errors"
+	"fmt"
 
 	"hcm/cmd/hc-service/logics/res-sync/common"
 	typeslb "hcm/pkg/adaptor/types/load-balancer"
@@ -83,8 +84,8 @@ func (cli *client) listenerByLbBatch(kt *kit.Kit, params *SyncListenerBatchOptio
 func (cli *client) Listener(kt *kit.Kit, params *SyncBaseParams, opt *SyncListenerOption) (
 	*SyncResult, error) {
 
-	if len(params.CloudIDs) == 0 {
-		return nil, errors.New("cloud id is required")
+	if err := params.Validate(); err != nil {
+		return nil, err
 	}
 	if err := opt.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -124,15 +125,17 @@ func (cli *client) listenerOfLoadBalancer(kt *kit.Kit, params *SyncBaseParams, o
 		logs.Errorf("fail to list listener for sync, err: %v, opt:%+v, rid: %s", err, opt, kt.Rid)
 		return nil, err
 	}
+
 	// 清理已删除监听器
-	if err := cli.deleteRemovedListener(kt, opt.LBID, cloudListeners); err != nil {
+	cloudListenerIds := slice.Map(cloudListeners, typeslb.TCloudListener.GetCloudID)
+	if err := cli.deleteRemovedListener(kt, opt.LBID, cloudListenerIds, nil); err != nil {
 		return nil, err
 	}
 
 	//  分批同步云上监听器
 	for _, listeners := range slice.Split(cloudListeners, constant.TCLBDescribeMax) {
 
-		cloudLblIds := slice.Map(listeners, func(l typeslb.TCloudListener) string { return cvt.PtrToVal(l.ListenerId) })
+		cloudLblIds := slice.Map(listeners, typeslb.TCloudListener.GetCloudID)
 		lblParam := &SyncBaseParams{
 			AccountID: params.AccountID,
 			Region:    params.Region,
@@ -145,18 +148,40 @@ func (cli *client) listenerOfLoadBalancer(kt *kit.Kit, params *SyncBaseParams, o
 	return nil, nil
 }
 
-func (cli *client) deleteRemovedListener(kt *kit.Kit, lbID string, cloudLblList []typeslb.TCloudListener) error {
+// RemoveListenerDeleteFromCloud ...
+func (cli *client) RemoveListenerDeleteFromCloud(kt *kit.Kit, params *ListenerSyncRemovedParams) error {
 
-	// 删除云上已删除监听器
-	allCloudIDMap := cvt.SliceToMap(cloudLblList, func(l typeslb.TCloudListener) (string, struct{}) {
-		return cvt.PtrToVal(l.ListenerId), struct{}{}
-	})
+	syncParam := &SyncBaseParams{
+		AccountID: params.AccountID,
+		Region:    params.Region,
+		CloudIDs:  params.CloudIDs,
+	}
+	opt := &SyncListenerOption{
+		BizID:              params.BizID,
+		LBID:               params.LBID,
+		CloudLBID:          params.CloudLBID,
+		CachedLoadBalancer: params.CachedLoadBalancer,
+	}
 
+	cloudListeners, err := cli.listListenerFromCloud(kt, syncParam, opt)
+	if err != nil {
+		logs.Errorf("fail to list listener for remove deleted, err: %v, opt:%+v, rid: %s", err, opt, kt.Rid)
+		return err
+	}
+
+	cloudListenerIds := slice.Map(cloudListeners, typeslb.TCloudListener.GetCloudID)
+	return cli.deleteRemovedListener(kt, opt.LBID, cloudListenerIds, params.CloudIDs)
+}
+
+// 删除云上已删除监听器 cloudCloudIDs 云上获取到的id列表，dbCloudIDs 本地获取到的id列表。
+func (cli *client) deleteRemovedListener(kt *kit.Kit, lbID string, cloudCloudIDs []string, dbCloudIDs []string) error {
+
+	allCloudIDMap := cvt.StringSliceToMap(cloudCloudIDs)
 	removedLblCloudIds := make([]string, 0)
 	// 获取本地数据
 	page := core.NewDefaultBasePage()
 	for {
-		dbListeners, err := cli.listListenerFromDB(kt, lbID, nil, page)
+		dbListeners, err := cli.listListenerFromDB(kt, lbID, dbCloudIDs, page)
 		if err != nil {
 			logs.Errorf("fail to list removed listener for sync, lbID: %s, err: %v, page:%+v, rid: %s",
 				lbID, err, page, kt.Rid)
@@ -639,4 +664,27 @@ type SyncListenerBatchOption struct {
 // Validate ...
 func (o *SyncListenerBatchOption) Validate() error {
 	return validator.Validate.Struct(o)
+}
+
+// ListenerSyncRemovedParams ...
+type ListenerSyncRemovedParams struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids,omitempty" validate:"omitempty"`
+
+	BizID int64 `json:"biz_id" validate:"required"`
+	// 对应的负载均衡
+	LBID      string `json:"lbid" validate:"required"`
+	CloudLBID string `json:"cloud_lbid" validate:"required"`
+
+	CachedLoadBalancer *corelb.TCloudLoadBalancer
+}
+
+// Validate ...
+func (opt ListenerSyncRemovedParams) Validate() error {
+
+	if len(opt.CloudIDs) > constant.CloudResourceSyncMaxLimit {
+		return fmt.Errorf("cloudIDs shuold <= %d", constant.CloudResourceSyncMaxLimit)
+	}
+	return validator.Validate.Struct(opt)
 }

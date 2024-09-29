@@ -40,6 +40,17 @@
             line-height: normal;
           }
         }
+
+        .copy-btn {
+          padding-left: 10px;
+          display: none;
+          line-height: normal;
+        }
+
+        &:hover .copy-btn {
+          display: block;
+          color: #3a84ff;
+        }
       }
     }
 

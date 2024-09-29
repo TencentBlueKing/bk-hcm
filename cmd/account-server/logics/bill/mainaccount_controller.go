@@ -28,6 +28,7 @@ import (
 	"hcm/cmd/account-server/logics/bill/puller"
 	"hcm/cmd/task-server/logics/action/bill/mainsummary"
 	"hcm/pkg/api/core"
+	"hcm/pkg/api/core/bill"
 	dsbillapi "hcm/pkg/api/data-service/bill"
 	taskserver "hcm/pkg/api/task-server"
 	"hcm/pkg/cc"
@@ -210,7 +211,7 @@ func (mac *MainAccountController) pollMainSummaryTask(subKit *kit.Kit, flowID st
 	if len(flowID) == 0 {
 		result, err := mac.createMainSummaryFlow(subKit, billYear, billMonth)
 		if err != nil {
-			logs.Warnf("create new main summary task for %s/%s/%s %d-%d failed, err %s, rid: %s",
+			logs.Errorf("create new main summary task for %s/%s/%s %d-%d failed, err %s, rid: %s",
 				mac.RootAccountID, mac.MainAccountID, mac.Vendor,
 				billYear, billMonth, err.Error(), subKit.Rid)
 			return flowID
@@ -223,16 +224,16 @@ func (mac *MainAccountController) pollMainSummaryTask(subKit *kit.Kit, flowID st
 	}
 	flow, err := mac.Client.TaskServer().GetFlow(subKit, flowID)
 	if err != nil {
-		logs.Warnf("get flow by id %s failed, err %s, rid: %s", flowID, err.Error(), subKit.Rid)
+		logs.Errorf("get flow by id %s failed, err %s, rid: %s", flowID, err.Error(), subKit.Rid)
 		return flowID
 	}
 	// 任务结束后继续发起summary 任务是为了重新计算，保证账单金额最新
 	if flow.State == enumor.FlowSuccess || flow.State == enumor.FlowFailed || flow.State == enumor.FlowCancel {
 		result, err := mac.createMainSummaryFlow(subKit, billYear, billMonth)
 		if err != nil {
-			logs.Warnf("create new main summary task for %s/%s/%s %d-%d failed, err %s, rid: %s",
-				mac.RootAccountID, mac.MainAccountID, mac.Vendor,
-				billYear, billMonth, err.Error(), subKit.Rid)
+			logs.Errorf("[%s] create new main summary task for %s/%s %d-%d failed, err: %v, rid: %s",
+				mac.Vendor, mac.RootAccountID, mac.MainAccountID,
+				billYear, billMonth, err, subKit.Rid)
 			return flowID
 		}
 
@@ -296,7 +297,8 @@ func (mac *MainAccountController) syncDailyRawBill(kt *kit.Kit) error {
 	err = mac.ensureDailyRawPullTask(kt, curBillYear, curBillMonth)
 	if err != nil {
 		logs.Errorf("fail to ensure current month  daily raw pull task, err: %v, vendor: %s, period: %d-%d, "+
-			"main account: %s, rid: %s", err, mac.Vendor, curBillYear, curBillMonth, mac.MainAccountID, kt.Rid)
+			"main account: %s(%s), rid: %s",
+			err, mac.Vendor, curBillYear, curBillMonth, mac.MainAccountCloudID, mac.MainAccountID, kt.Rid)
 		return err
 	}
 	return nil
@@ -308,8 +310,8 @@ func (mac *MainAccountController) ensureDailyRawPullTask(kt *kit.Kit, billYear i
 		return err
 	}
 	if lastBillSummaryMain.State == enumor.MainAccountBillSummaryStateAccounting {
-		logs.Infof("start sync daily raw bill for main_account %s, period: %d-%d, rid: %s",
-			mac.MainAccountID, billYear, billMonth, kt.Rid)
+		logs.Infof("[%s] start %s(%s) daily raw bill sync, period: %d-%d, rid: %s",
+			mac.Vendor, mac.MainAccountCloudID, mac.MainAccountID, billYear, billMonth, kt.Rid)
 		curPuller, err := puller.GetDailyPuller(lastBillSummaryMain.Vendor)
 		if err != nil {
 			return err
@@ -329,7 +331,7 @@ func (mac *MainAccountController) Stop() {
 }
 
 func (mac *MainAccountController) getRootBillSummary(
-	kt *kit.Kit, billYear, billMonth int) (*dsbillapi.BillSummaryRootResult, error) {
+	kt *kit.Kit, billYear, billMonth int) (*bill.SummaryRoot, error) {
 
 	var expressions []*filter.AtomRule
 	expressions = append(expressions, []*filter.AtomRule{
@@ -389,7 +391,7 @@ func (mac *MainAccountController) getMainBillSummary(
 }
 
 func (mac *MainAccountController) createNewBillSummary(
-	kt *kit.Kit, billYear, billMonth int, billSummary *dsbillapi.BillSummaryRootResult) error {
+	kt *kit.Kit, billYear, billMonth int, billSummary *bill.SummaryRoot) error {
 	_, err := mac.Client.DataService().Global.Bill.CreateBillSummaryMain(
 		kt, &dsbillapi.BillSummaryMainCreateReq{
 			RootAccountID:      mac.RootAccountID,

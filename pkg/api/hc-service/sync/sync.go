@@ -36,6 +36,8 @@ func (req *TCloudGlobalSyncReq) Validate() error {
 type TCloudSyncReq struct {
 	AccountID string `json:"account_id" validate:"required"`
 	Region    string `json:"region" validate:"required"`
+	// 传入指定资源id进行同步，仅特定资源支持
+	CloudIDs []string `json:"cloud_ids" validate:"omitempty,max=20"`
 }
 
 // Validate tcloud sync request.
@@ -207,10 +209,11 @@ func (req *AzureImageReq) Validate() error {
 
 // TCloudListenerSyncReq 监听器同步
 type TCloudListenerSyncReq struct {
-	AccountID           string   `json:"account_id" validate:"required"`
-	Region              string   `json:"region" validate:"required"`
-	LoadBalancerCloudID string   `json:"lb_cloud_id" validate:"required"`
-	ListenerCloudIds    []string `json:"lbl_cloud_ids" validate:"omitempty"`
+	AccountID           string `json:"account_id" validate:"required"`
+	Region              string `json:"region" validate:"required"`
+	LoadBalancerCloudID string `json:"lb_cloud_id" validate:"required"`
+	// 支持传入指定监听器id同步
+	CloudIDs []string `json:"lbl_cloud_ids" validate:"omitempty,max=20"`
 }
 
 // Validate ...

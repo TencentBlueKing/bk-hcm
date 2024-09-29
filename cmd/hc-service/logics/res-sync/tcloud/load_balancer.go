@@ -37,6 +37,7 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/assert"
 	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
@@ -130,12 +131,21 @@ func (cli *client) LoadBalancer(kt *kit.Kit, params *SyncBaseParams, opt *SyncLB
 }
 
 // RemoveLoadBalancerDeleteFromCloud 删除存在本地但是在云上被删除的数据
-func (cli *client) RemoveLoadBalancerDeleteFromCloud(kt *kit.Kit, accountID string, region string) error {
+func (cli *client) RemoveLoadBalancerDeleteFromCloud(kt *kit.Kit, params *SyncRemovedParams) error {
+
+	if err := params.Validate(); err != nil {
+		return err
+	}
+	rules := []*filter.AtomRule{
+		tools.RuleEqual("account_id", params.AccountID),
+		tools.RuleEqual("region", params.Region),
+	}
+	if len(params.CloudIDs) > 0 {
+		// 支持指定cloud id删除
+		rules = append(rules, tools.RuleIn("cloud_id", params.CloudIDs))
+	}
 	req := &core.ListReq{
-		Filter: tools.ExpressionAnd(
-			tools.RuleEqual("account_id", accountID),
-			tools.RuleEqual("region", region),
-		),
+		Filter: tools.ExpressionAnd(rules...),
 		Page: &core.BasePage{
 			Start: 0,
 			Limit: constant.BatchOperationMaxLimit,
@@ -158,14 +168,14 @@ func (cli *client) RemoveLoadBalancerDeleteFromCloud(kt *kit.Kit, accountID stri
 
 		var delCloudIDs []string
 
-		params := &SyncBaseParams{AccountID: accountID, Region: region, CloudIDs: cloudIDs}
+		params := &SyncBaseParams{AccountID: params.AccountID, Region: params.Region, CloudIDs: cloudIDs}
 		delCloudIDs, err = cli.listRemovedLBID(kt, params)
 		if err != nil {
 			return err
 		}
 
 		if len(delCloudIDs) != 0 {
-			if err = cli.deleteLoadBalancer(kt, accountID, region, delCloudIDs); err != nil {
+			if err = cli.deleteLoadBalancer(kt, params.AccountID, params.Region, delCloudIDs); err != nil {
 				return err
 			}
 		}

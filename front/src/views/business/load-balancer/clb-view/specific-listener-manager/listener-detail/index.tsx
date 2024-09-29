@@ -2,6 +2,7 @@ import { computed, defineComponent, onMounted, onUnmounted, reactive, ref, watch
 // import components
 import { Button, Loading, Tag } from 'bkui-vue';
 import StatusLoading from '@/assets/image/status_loading.png';
+import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
 // import stores
 import { useAccountStore, useLoadBalancerStore, useBusinessStore } from '@/store';
 // import hooks
@@ -87,6 +88,7 @@ export default defineComponent({
                 )}
               </div>
             ),
+            copyContent: listenerDetail.target_group_name,
             sub_hidden: ['HTTP', 'HTTPS'].includes(listenerDetail.protocol),
           },
           {
@@ -101,15 +103,15 @@ export default defineComponent({
         content: [
           {
             label: t('认证方式'),
-            value: SSL_MODE_MAP[listenerDetail.certificate?.ssl_mode],
+            value: SSL_MODE_MAP[listenerDetail.certificate?.ssl_mode] || '--',
           },
           {
             label: t('服务器证书'),
-            value: listenerDetail.certificate?.ca_cloud_id,
+            value: listenerDetail.certificate?.ca_cloud_id || '--',
           },
           {
             label: t('CA证书'),
-            value: listenerDetail.certificate?.cert_cloud_ids?.join(','),
+            value: listenerDetail.certificate?.cert_cloud_ids?.join(',') || '--',
           },
         ],
       },
@@ -137,7 +139,7 @@ export default defineComponent({
           },
           {
             label: t('检查端口'),
-            value: listenerDetail.health_check?.check_port,
+            value: listenerDetail.health_check?.check_port || '--',
           },
           {
             label: t('检查选型'),
@@ -219,7 +221,7 @@ export default defineComponent({
               </div>
               <div class='info-content'>
                 {open_state !== 0 &&
-                  content.map(({ label, value, sub_hidden }) => {
+                  content.map(({ label, value, sub_hidden, copyContent }) => {
                     if (sub_hidden) {
                       return null;
                     }
@@ -241,6 +243,7 @@ export default defineComponent({
                       <div class='info-item'>
                         <div class='info-item-label'>{label}</div>:
                         <div class={`info-item-content${Array.isArray(value) ? ' multiline' : ''}`}>{valueVNode}</div>
+                        <CopyToClipboard class='copy-btn' content={copyContent ?? String(value)} />
                       </div>
                     );
                   })}

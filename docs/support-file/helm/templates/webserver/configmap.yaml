@@ -53,3 +53,7 @@ data:
       enableAccountBill: {{ .Values.enableAccountBill }}
     itsm:
       {{- toYaml .Values.itsm | nindent 6 }}
+    changeLogPath:
+      {{- toYaml .Values.webserver.changeLogPath | nindent 6 }}
+    notice:
+      {{- toYaml .Values.webserver.notice | nindent 6 }}

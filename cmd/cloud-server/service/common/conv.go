@@ -78,6 +78,8 @@ func ConvTCloudCvmCreateReq(req *cscvm.TCloudCvmCreateReq) *hcproto.TCloudBatchC
 		DataDisk:                dataDisk,
 		PublicIPAssigned:        req.PublicIPAssigned,
 		InternetMaxBandwidthOut: req.InternetMaxBandwidthOut,
+		InternetChargeType:      req.InternetChargeType,
+		BandwidthPackageID:      req.BandwidthPackageID,
 	}
 
 	return createReq

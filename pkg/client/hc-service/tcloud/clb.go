@@ -47,8 +47,12 @@ type ClbClient struct {
 
 // SyncLoadBalancer 同步负载均衡
 func (c *ClbClient) SyncLoadBalancer(kt *kit.Kit, req *sync.TCloudSyncReq) error {
-
 	return common.RequestNoResp[sync.TCloudSyncReq](c.client, http.MethodPost, kt, req, "/load_balancers/sync")
+}
+
+// SyncLoadBalancerListener 同步负载均衡下监听器
+func (c *ClbClient) SyncLoadBalancerListener(kt *kit.Kit, req *sync.TCloudListenerSyncReq) error {
+	return common.RequestNoResp[sync.TCloudListenerSyncReq](c.client, http.MethodPost, kt, req, "/listeners/sync")
 }
 
 // DescribeResources ...
@@ -72,11 +76,19 @@ func (c *ClbClient) Update(kt *kit.Kit, id string, req *hcproto.TCloudLBUpdateRe
 		kt, req, "/load_balancers/%s", id)
 }
 
-// CreateListener 创建监听器
-func (c *ClbClient) CreateListener(kt *kit.Kit, req *hcproto.ListenerWithRuleCreateReq) (
+// CreateListenerWithTargetGroup 创建监听器和规则并绑定目标组
+func (c *ClbClient) CreateListenerWithTargetGroup(kt *kit.Kit, req *hcproto.ListenerWithRuleCreateReq) (
 	*hcproto.ListenerWithRuleCreateResult, error) {
 
 	return common.Request[hcproto.ListenerWithRuleCreateReq, hcproto.ListenerWithRuleCreateResult](
+		c.client, http.MethodPost, kt, req, "/listeners/create_with_rule")
+}
+
+// CreateListener 创建监听器自身
+func (c *ClbClient) CreateListener(kt *kit.Kit, req *hcproto.TCloudListenerCreateReq) (
+	*hcproto.ListenerCreateResult, error) {
+
+	return common.Request[hcproto.TCloudListenerCreateReq, hcproto.ListenerCreateResult](
 		c.client, http.MethodPost, kt, req, "/listeners/create")
 }
 

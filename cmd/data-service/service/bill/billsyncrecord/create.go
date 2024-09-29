@@ -57,7 +57,7 @@ func (svc *service) CreateBillSyncRecord(cts *rest.Contexts) (interface{}, error
 				Count:     cvt.ValToPtr(item.Count),
 				Cost:      &types.Decimal{Decimal: item.Cost},
 				RMBCost:   &types.Decimal{Decimal: item.RMBCost},
-				Detail:    "",
+				Detail:    "[]",
 				Operator:  cts.Kit.User,
 				Creator:   cts.Kit.User,
 				Reviser:   cts.Kit.User,
