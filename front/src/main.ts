@@ -8,6 +8,7 @@ import App from './app';
 import i18n from './language/i18n';
 import directive from '@/directive/index';
 import components from '@/components/index';
+import { useUserStore } from '@/store';
 import './style/index.scss';
 // 全量引入自定义图标
 import './assets/iconfont/style.css';
@@ -25,8 +26,15 @@ const pinia = createPinia();
 app.config.globalProperties.$bus = bus;
 app.config.globalProperties.$http = http;
 
-app.use(i18n).use(directive).use(router).use(components).use(pinia).use(bkui);
+app.use(i18n).use(directive).use(components).use(pinia).use(bkui);
 
-router.isReady().then(() => {
-  app.mount('#app');
-});
+const { userInfo } = useUserStore();
+
+userInfo()
+  .finally(() => {
+    app.use(router);
+    app.mount('#app');
+  })
+  .catch((err) => {
+    console.error(err);
+  });

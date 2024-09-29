@@ -1,36 +1,30 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue';
-import { useUserStore } from '@/store';
+import { computed } from 'vue';
 import MemberSelect from '@/components/MemberSelect';
 
 defineOptions({ name: 'hcm-search-user' });
 
-const props = withDefaults(defineProps<{ multiple: boolean; defaultCurrent: boolean }>(), {
+const props = withDefaults(defineProps<{ multiple: boolean }>(), {
   multiple: true,
-  defaultCurrent: true,
 });
 
-const userStore = useUserStore();
 const model = defineModel<string[]>();
 
-const defaultUserlist = computed(() => [
-  {
-    username: userStore.username,
-    display_name: userStore.username,
-  },
-]);
+const defaultUserlist = computed(() => localModel.value.map((item) => ({ username: item, display_name: item })));
 
-watch(
-  () => userStore.username,
-  (val) => {
-    if (props.defaultCurrent) {
-      model.value = [val];
+const localModel = computed({
+  get() {
+    if (props.multiple && !Array.isArray(model.value)) {
+      return [model.value];
     }
+    return model.value;
   },
-  { immediate: true },
-);
+  set(val) {
+    model.value = val;
+  },
+});
 </script>
 
 <template>
-  <MemberSelect v-model="model" :default-userlist="defaultUserlist" clearable />
+  <MemberSelect v-model="localModel" :default-userlist="defaultUserlist" clearable />
 </template>

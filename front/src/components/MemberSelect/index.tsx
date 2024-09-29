@@ -91,7 +91,7 @@ export default defineComponent({
         if (list.length) {
           nextTick(() => {
             const arr = [...userList.value, ...list, ...defaultUserlist];
-            const set = new Set(arr.map(({ username }) => username));
+            const set = new Set(arr.filter(({ username }) => username).map(({ username }) => username));
             userList.value = Array.from(set).map((name) => ({
               username: name,
               display_name: name,

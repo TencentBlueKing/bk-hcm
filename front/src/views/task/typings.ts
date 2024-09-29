@@ -1,4 +1,6 @@
+import { PaginationType } from '@/typings';
 import { ResourceTypeEnum } from '@/common/resource-constant';
+import { ITaskItem } from '@/store/task';
 
 export enum TaskType {
   CREATE_L4_LISTENER = 'create_layer4_listener',
@@ -32,4 +34,10 @@ export interface ISearchConditon {
 export interface ISearchProps {
   resource: ResourceTypeEnum;
   condition: ISearchConditon;
+}
+
+export interface IDataListProps {
+  resource: ResourceTypeEnum;
+  list: ITaskItem[];
+  pagination: PaginationType;
 }

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { type ResourceProperty } from '@/common/resource-constant';
+import { ModelProperty } from '@/model/typings';
 defineOptions({ name: 'hcm-search-enum' });
 
-withDefaults(defineProps<{ multiple: boolean; option: ResourceProperty['option'] }>(), {
+withDefaults(defineProps<{ multiple: boolean; option: ModelProperty['option'] }>(), {
   multiple: true,
   option: () => ({}),
 });

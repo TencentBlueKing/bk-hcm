@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { reactive } from 'vue';
-import { type ResourceProperty } from '@/common/resource-constant';
+import { ref, watch } from 'vue';
+import { ModelProperty } from '@/model/typings';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import GridContainer from '@/components/layout/grid-container/grid-container.vue';
 import GridItemFormElement from '@/components/layout/grid-container/grid-item-form-element.vue';
@@ -18,11 +18,12 @@ const emit = defineEmits<{
 const { getBizsId } = useWhereAmI();
 const { getConditionField } = conditionFactory();
 
-const values = reactive({ ...props.condition });
+const formValues = ref<ISearchConditon>({});
+let conditionInitValues: ISearchConditon;
 
 const fields = getConditionField(props.resource);
 
-const getSearchCompProps = (field: ResourceProperty) => {
+const getSearchCompProps = (field: ModelProperty) => {
   if (field.type === 'account') {
     return {
       bizId: getBizsId(),
@@ -34,18 +35,32 @@ const getSearchCompProps = (field: ResourceProperty) => {
 };
 
 const handleSearch = () => {
-  emit('search', values);
+  emit('search', formValues.value);
 };
+
 const handleReset = () => {
+  formValues.value = { ...conditionInitValues };
   emit('reset');
 };
+
+watch(
+  () => props.condition,
+  (condition) => {
+    formValues.value = { ...condition };
+    // 只记录第一次的condition值，重置时回到最开始的默认值
+    if (!conditionInitValues) {
+      conditionInitValues = { ...formValues.value };
+    }
+  },
+  { deep: true, immediate: true },
+);
 </script>
 
 <template>
   <div class="task-search">
     <grid-container layout="vertical" :column="4" :content-min-width="300" :gap="[16, 60]">
       <grid-item-form-element v-for="field in fields" :key="field.id" :label="field.name">
-        <component :is="`hcm-search-${field.type}`" v-bind="getSearchCompProps(field)" v-model="values[field.id]" />
+        <component :is="`hcm-search-${field.type}`" v-bind="getSearchCompProps(field)" v-model="formValues[field.id]" />
       </grid-item-form-element>
       <grid-item :span="4" class="row-action">
         <bk-button theme="primary" @click="handleSearch">查询</bk-button>
@@ -61,6 +76,8 @@ const handleReset = () => {
   box-shadow: 0 2px 4px 0 #1919290d;
   border-radius: 2px;
   padding: 16px 24px;
+  margin-bottom: 16px;
+
   .row-action {
     padding: 4px 0;
     :deep(.item-content) {

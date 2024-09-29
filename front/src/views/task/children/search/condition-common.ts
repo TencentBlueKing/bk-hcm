@@ -1,12 +1,13 @@
 import { ResourceTypeEnum } from '@/common/resource-constant';
-import { COMMON_PROPERTIES, TASK_BASE_PROPERIES } from '@/views/task/constants';
+import accountProperties from '@/model/account/properties';
+import taskProperties from '@/model/task/properties';
 
 const conditionFieldIds = new Map<ResourceTypeEnum, string[]>();
 const baseFieldIds = ['account_id', 'operations', 'state', 'source', 'created_at', 'creator'];
 const clbFieldIds = [...baseFieldIds];
 conditionFieldIds.set(ResourceTypeEnum.CLB, clbFieldIds);
 
-const taskColumns = [...COMMON_PROPERTIES, ...TASK_BASE_PROPERIES];
+const taskViewProperties = [...accountProperties, ...taskProperties];
 
 export const getConditionFieldIds = (resourceType: ResourceTypeEnum) => {
   return conditionFieldIds.get(resourceType);
@@ -14,7 +15,7 @@ export const getConditionFieldIds = (resourceType: ResourceTypeEnum) => {
 
 const getConditionField = (type: ResourceTypeEnum) => {
   const fieldIds = getConditionFieldIds(type);
-  const fields = fieldIds.map((id) => taskColumns.find((item) => item.id === id));
+  const fields = fieldIds.map((id) => taskViewProperties.find((item) => item.id === id));
   return fields;
 };
 

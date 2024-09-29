@@ -81,7 +81,7 @@
     "path": "^0.12.7",
     "pinia": "^2.0.13",
     "postcss": "^8.4.31",
-    "qs": "^6.10.5",
+    "qs": "^6.13.0",
     "screenfull": "^6.0.2",
     "tiny-emitter": "^2.1.0",
     "tvision-color": "^1.4.0",
