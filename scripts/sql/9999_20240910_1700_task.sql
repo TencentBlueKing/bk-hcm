@@ -61,7 +61,7 @@ create table if not exists `task_detail`
     `operation`           varchar(64)  not null,
     `param`               json         not null,
     `state`               varchar(16)  not null,
-    `reason`              varchar(255) default '',
+    `reason`              varchar(1024) default '',
     `extension`           json         default NULL,
     `creator`             varchar(64)  not null,
     `reviser`             varchar(64)  not null,

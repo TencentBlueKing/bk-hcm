@@ -62,7 +62,7 @@ type DetailTable struct {
 	Param            types.JsonField        `db:"param" json:"param"`
 	Result           types.JsonField        `db:"result" json:"result"`
 	State            enumor.TaskDetailState `db:"state" validate:"lte=16" json:"state"`
-	Reason           string                 `db:"reason" validate:"lte=255" json:"reason"`
+	Reason           string                 `db:"reason" validate:"lte=1024" json:"reason"`
 	Extension        types.JsonField        `db:"extension" json:"extension"`
 	Creator          string                 `db:"creator" validate:"max=64" json:"creator"`
 	Reviser          string                 `db:"reviser" validate:"max=64" json:"reviser"`

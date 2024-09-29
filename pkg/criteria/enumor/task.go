@@ -101,4 +101,7 @@ const (
 
 	// TaskCreateLayer7Rule is a task indicating that create layer7 rule.
 	TaskCreateLayer7Rule TaskOperation = "create_layer7_rule"
+
+	// TaskModifyListenerRsWeight is a task indicating that modify listener rs weight.
+	TaskModifyListenerRsWeight TaskOperation = "modify_listener_rs_weight"
 )

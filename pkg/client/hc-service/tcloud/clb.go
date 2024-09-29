@@ -236,3 +236,11 @@ func (c *ClbClient) DeleteSnatIp(kt *kit.Kit, req *hcproto.TCloudDeleteSnatIpReq
 	return common.RequestNoResp[hcproto.TCloudDeleteSnatIpReq](c.client, http.MethodDelete, kt, req,
 		"/load_balancers/snat_ips")
 }
+
+// BatchModifyListenerTargetsWeight 按负载均衡批量调整监听器的RS权重
+func (c *ClbClient) BatchModifyListenerTargetsWeight(kt *kit.Kit, lbID string,
+	req *hcproto.TCloudBatchModifyRsWeightReq) (*hcproto.BatchCreateResult, error) {
+
+	return common.Request[hcproto.TCloudBatchModifyRsWeightReq, hcproto.BatchCreateResult](
+		c.client, http.MethodPatch, kt, req, "/load_balancers/%s/targets/weight", lbID)
+}

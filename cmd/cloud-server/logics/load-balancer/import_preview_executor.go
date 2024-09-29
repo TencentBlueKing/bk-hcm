@@ -44,6 +44,8 @@ const (
 	Layer4ListenerBindRs = "layer4_listener_bind_rs"
 	// Layer7ListenerBindRs 七层监听器绑定RS
 	Layer7ListenerBindRs = "layer7_listener_bind_rs"
+	// Layer4ListenerRsWeight 监听器批量调整RS权重
+	Layer4ListenerRsWeight = "layer4_listener_rs_weight"
 )
 
 // ImportPreviewExecutor 导入预览执行器
