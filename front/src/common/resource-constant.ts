@@ -4,4 +4,5 @@ export enum ResourceTypeEnum {
   DISK = 'disk',
   SUBNET = 'subnet',
   CLB = 'clb',
+  ACCOUNT = 'account',
 }

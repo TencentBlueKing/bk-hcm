@@ -1,7 +1,6 @@
 import { defineComponent, onMounted, onUnmounted } from 'vue';
 import Home from '@/views/home';
 import Notice from '@/views/notice/index.vue';
-import { useUserStore } from '@/store';
 
 const { ENABLE_NOTICE } = window.PROJECT_CONFIG;
 
@@ -21,9 +20,6 @@ export default defineComponent({
       // 项目中没有做 rem 适配, 所以这里直接设置 rem 为 14px, 解决 MagicBox 适配 rem 失效问题
       docEl.style.fontSize = '14px';
     };
-    const userStore = useUserStore();
-    userStore.userInfo();
-
     onMounted(() => {
       calcRem();
       window.addEventListener('resize', calcRem, false);
