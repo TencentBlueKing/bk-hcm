@@ -42,6 +42,7 @@ const (
 // TaskManagementSource is task management source.
 type TaskManagementSource string
 
+// Validate ...
 func (t TaskManagementSource) Validate() error {
 	switch t {
 	case TaskManagementSourceSops, TaskManagementSourceExcel:

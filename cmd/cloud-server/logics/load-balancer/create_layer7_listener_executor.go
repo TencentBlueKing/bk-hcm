@@ -71,7 +71,8 @@ type createLayer7ListenerTaskDetail struct {
 }
 
 // Execute 导入执行器的唯一入口
-func (c *CreateLayer7ListenerExecutor) Execute(kt *kit.Kit, source enumor.TaskManagementSource, rawDetails json.RawMessage) (string, error) {
+func (c *CreateLayer7ListenerExecutor) Execute(kt *kit.Kit, source enumor.TaskManagementSource,
+	rawDetails json.RawMessage) (string, error) {
 
 	var err error
 	err = c.unmarshalData(rawDetails)
