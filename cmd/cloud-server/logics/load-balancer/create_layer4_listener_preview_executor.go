@@ -113,11 +113,11 @@ func (c *CreateLayer4ListenerPreviewExecutor) validate(kt *kit.Kit) error {
 		// 检查记录是否重复
 		key := fmt.Sprintf("%s-%s-%v", detail.CloudClbID, detail.Protocol, detail.ListenerPorts)
 		if i, ok := recordMap[key]; ok {
-			c.details[i].Status = NotExecutable
-			c.details[i].ValidateResult += fmt.Sprintf("存在重复记录, line: %d;", i+1)
+			c.details[i].Status.SetNotExecutable()
+			c.details[i].ValidateResult = append(c.details[i].ValidateResult, fmt.Sprintf("存在重复记录, line: %d;", i+1))
 
-			detail.Status = NotExecutable
-			detail.ValidateResult += fmt.Sprintf("存在重复记录, line: %d;", cur+1)
+			detail.Status.SetNotExecutable()
+			detail.ValidateResult = append(c.details[i].ValidateResult, fmt.Sprintf("存在重复记录, line: %d;", cur+1))
 		}
 		recordMap[key] = cur
 		clbIDMap[detail.CloudClbID] = struct{}{}
@@ -133,7 +133,7 @@ func (c *CreateLayer4ListenerPreviewExecutor) validate(kt *kit.Kit) error {
 }
 
 func (c *CreateLayer4ListenerPreviewExecutor) validateWithDB(kt *kit.Kit, cloudIDs []string) error {
-	lbMap, err := getLoadBalancersMapByCloudID(kt, c.dataServiceCli, c.accountID, c.bkBizID, cloudIDs)
+	lbMap, err := getLoadBalancersMapByCloudID(kt, c.dataServiceCli, c.vendor, c.accountID, c.bkBizID, cloudIDs)
 	if err != nil {
 		return err
 	}
@@ -151,8 +151,8 @@ func (c *CreateLayer4ListenerPreviewExecutor) validateWithDB(kt *kit.Kit, cloudI
 		ipSet = append(ipSet, lb.PublicIPv4Addresses...)
 		ipSet = append(ipSet, lb.PublicIPv6Addresses...)
 		if detail.ClbVipDomain != lb.Domain && !slice.IsItemInSlice(ipSet, detail.ClbVipDomain) {
-			detail.Status = NotExecutable
-			detail.ValidateResult += fmt.Sprintf("clb的vip(%s)不匹配", detail.ClbVipDomain)
+			detail.Status.SetNotExecutable()
+			detail.ValidateResult = append(detail.ValidateResult, fmt.Sprintf("clb的vip(%s)不匹配", detail.ClbVipDomain))
 		}
 
 		if err = c.validateListener(kt, detail); err != nil {
@@ -166,8 +166,8 @@ func (c *CreateLayer4ListenerPreviewExecutor) validateWithDB(kt *kit.Kit, cloudI
 func (c *CreateLayer4ListenerPreviewExecutor) validateListener(kt *kit.Kit,
 	curDetail *CreateLayer4ListenerDetail) error {
 
-	listener, err := getListener(kt, c.dataServiceCli, c.accountID, curDetail.Protocol, c.vendor,
-		curDetail.CloudClbID, curDetail.ListenerPorts[0], c.bkBizID)
+	listener, err := getListener(kt, c.dataServiceCli, c.accountID, curDetail.CloudClbID, curDetail.Protocol,
+		curDetail.ListenerPorts[0], c.bkBizID, c.vendor)
 	if err != nil {
 		return err
 	}
@@ -189,25 +189,21 @@ func (c *CreateLayer4ListenerPreviewExecutor) validateListener(kt *kit.Kit,
 		ruleHealthCheck = *rule.HealthCheck.HealthSwitch == 1
 	}
 
-	if listener.Protocol != curDetail.Protocol ||
-		enumor.Scheduler(rule.Scheduler) != curDetail.Scheduler ||
-		rule.SessionExpire != int64(curDetail.Session) ||
+	if enumor.Scheduler(rule.Scheduler) != curDetail.Scheduler || rule.SessionExpire != int64(curDetail.Session) ||
 		ruleHealthCheck != curDetail.HealthCheck {
 
 		// 已存在监听器且配置与当前导入的记录不一致时, 设置当前记录为不可执行状态
-		curDetail.Status = NotExecutable
-		curDetail.ValidateResult += fmt.Sprintf(
-			"已存在监听器(%s)且配置不一致, port: %d, protocol: %s, scheduler: %s, session: %d, healthCheck: %v",
-			curDetail.CloudClbID, listener.Port, listener.Protocol,
-			rule.Scheduler, rule.SessionExpire, ruleHealthCheck)
+		curDetail.Status.SetNotExecutable()
+		curDetail.ValidateResult = append(curDetail.ValidateResult,
+			fmt.Sprintf("已存在监听器(%s)且配置不一致, port: %d, protocol: %s, scheduler: %s, session: %d, healthCheck: %v",
+				curDetail.CloudClbID, listener.Port, listener.Protocol, rule.Scheduler, rule.SessionExpire, ruleHealthCheck))
 		return nil
 	}
 
-	if curDetail.Status != NotExecutable {
-		curDetail.Status = Existing
-		curDetail.ValidateResult += fmt.Sprintf("已存在监听器(%s), port: %d, protocol: %s",
-			curDetail.CloudClbID, listener.Port, listener.Protocol)
-	}
+	curDetail.Status.SetExisting()
+	curDetail.ValidateResult = append(curDetail.ValidateResult,
+		fmt.Sprintf("已存在监听器(%s), port: %d, protocol: %s", curDetail.CloudClbID, listener.Port, listener.Protocol))
+
 	return nil
 }
 
@@ -249,18 +245,18 @@ type CreateLayer4ListenerDetail struct {
 	HealthCheck    bool                `json:"health_check"`
 	UserRemark     string              `json:"user_remark"`
 	Status         ImportStatus        `json:"status"`
-	ValidateResult string              `json:"validate_result"`
+	ValidateResult []string            `json:"validate_result"`
 }
 
 func (c *CreateLayer4ListenerDetail) validate() {
 	var err error
 	defer func() {
 		if err != nil {
-			c.Status = NotExecutable
-			c.ValidateResult = err.Error()
+			c.Status.SetNotExecutable()
+			c.ValidateResult = append(c.ValidateResult, err.Error())
 			return
 		}
-		c.Status = Executable
+		c.Status.SetExecutable()
 	}()
 	if c.Protocol != enumor.UdpProtocol && c.Protocol != enumor.TcpProtocol {
 		err = errors.New("协议类型错误")

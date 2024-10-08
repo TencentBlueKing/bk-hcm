@@ -96,7 +96,7 @@ func TestCreateLayer4ListenerExecutor_convertDataToPreview(t *testing.T) {
 				HealthCheck:    false,
 				UserRemark:     "用户的备注",
 				Status:         "",
-				ValidateResult: "",
+				ValidateResult: []string{},
 			},
 		},
 		{
@@ -114,7 +114,7 @@ func TestCreateLayer4ListenerExecutor_convertDataToPreview(t *testing.T) {
 				HealthCheck:    true,
 				UserRemark:     "",
 				Status:         "",
-				ValidateResult: "",
+				ValidateResult: []string{},
 			},
 		},
 	}

@@ -94,19 +94,18 @@ func buildSyncClbFlowTask(lbCloudID, accountID, region string, generator func() 
 	return tmpTask
 }
 
-
-func createTaskManagement(kt *kit.Kit, cli *dataservice.Client,
-	bkBizID int64, vendor enumor.Vendor, accountID, source string,
-	operation enumor.TaskOperation) (string, error) {
+func createTaskManagement(kt *kit.Kit, cli *dataservice.Client, bkBizID int64, vendor enumor.Vendor, accountID string,
+	source enumor.TaskManagementSource, operation enumor.TaskOperation) (string, error) {
 
 	taskManagementCreateReq := &task.CreateManagementReq{
 		Items: []task.CreateManagementField{
 			{
 				BkBizID:    bkBizID,
-				Source:     enumor.TaskManagementSource(source),
+				Source:     source,
 				Vendor:     vendor,
 				AccountID:  accountID,
 				Resource:   enumor.TaskManagementResClb,
+				State:      enumor.TaskManagementRunning,
 				Operations: []enumor.TaskOperation{operation},
 			},
 		},
@@ -122,8 +121,7 @@ func createTaskManagement(kt *kit.Kit, cli *dataservice.Client,
 	return result.IDs[0], nil
 }
 
-func updateTaskManagement(kt *kit.Kit, cli *dataservice.Client,
-	taskID string, flowIDs []string) error {
+func updateTaskManagement(kt *kit.Kit, cli *dataservice.Client, taskID string, flowIDs []string) error {
 
 	updateItem := task.UpdateTaskManagementField{
 		ID:      taskID,
@@ -139,4 +137,3 @@ func updateTaskManagement(kt *kit.Kit, cli *dataservice.Client,
 	}
 	return nil
 }
-

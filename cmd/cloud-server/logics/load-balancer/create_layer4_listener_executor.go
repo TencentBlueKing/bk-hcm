@@ -1,3 +1,22 @@
+/*
+ * TencentBlueKing is pleased to support the open source community by making
+ * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
+ * Copyright (C) 2022 THL A29 Limited,
+ * a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ *
+ * We undertake not to change the open source license (MIT license) applicable
+ *
+ * to the current version of the project delivered to anyone in the future.
+ */
+
 package lblogic
 
 import (
@@ -18,6 +37,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/counter"
 	"hcm/pkg/tools/slice"
 )
 
@@ -39,6 +59,9 @@ type CreateLayer4ListenerExecutor struct {
 	taskCli     *taskserver.Client
 	details     []*CreateLayer4ListenerDetail
 	taskDetails []*createLayer4ListenerTaskDetail
+
+	// detail.Status == Existing 的集合, 用于创建一条任务管理详情
+	existingDetails []*CreateLayer4ListenerDetail
 }
 
 // 用于记录 detail - 异步任务flow&task - 任务管理 之间的关系
@@ -50,7 +73,7 @@ type createLayer4ListenerTaskDetail struct {
 }
 
 // Execute ...
-func (c *CreateLayer4ListenerExecutor) Execute(kt *kit.Kit, source string, rawDetails json.RawMessage) (
+func (c *CreateLayer4ListenerExecutor) Execute(kt *kit.Kit, source enumor.TaskManagementSource, rawDetails json.RawMessage) (
 	string, error) {
 
 	err := c.unmarshalData(rawDetails)
@@ -81,7 +104,7 @@ func (c *CreateLayer4ListenerExecutor) Execute(kt *kit.Kit, source string, rawDe
 }
 
 func (c *CreateLayer4ListenerExecutor) unmarshalData(rawDetail json.RawMessage) error {
-	err := unmarshalData(rawDetail, &c.details)
+	err := json.Unmarshal(rawDetail, &c.details)
 	if err != nil {
 		return err
 	}
@@ -111,6 +134,7 @@ func (c *CreateLayer4ListenerExecutor) filter() {
 		if detail.Status == Executable {
 			return true
 		}
+		c.existingDetails = append(c.existingDetails, detail)
 		return false
 	})
 }
@@ -121,8 +145,8 @@ func (c *CreateLayer4ListenerExecutor) buildFlows(kt *kit.Kit) ([]string, error)
 	for _, detail := range c.taskDetails {
 		clbToDetails[detail.CloudClbID] = append(clbToDetails[detail.CloudClbID], detail)
 	}
-	lbMap, err := getLoadBalancersMapByCloudID(kt, c.dataServiceCli,
-		c.accountID, c.bkBizID, converter.MapKeyToSlice(clbToDetails))
+	lbMap, err := getLoadBalancersMapByCloudID(kt, c.dataServiceCli, c.vendor, c.accountID, c.bkBizID,
+		converter.MapKeyToSlice(clbToDetails))
 	if err != nil {
 		return nil, err
 	}
@@ -130,10 +154,15 @@ func (c *CreateLayer4ListenerExecutor) buildFlows(kt *kit.Kit) ([]string, error)
 	flowIDs := make([]string, 0, len(clbToDetails))
 	for clbCloudID, details := range clbToDetails {
 		lb := lbMap[clbCloudID]
-		flowID, err := c.buildFlow(kt, lb.ID, details)
+		flowID, err := c.buildFlow(kt, lb.ID, lb.CloudID, lb.Region, details)
 		if err != nil {
 			logs.Errorf("build flow for clb(%s) failed, err: %v, rid: %s", clbCloudID, err, kt.Rid)
-			return nil, err
+			err := c.updateTaskDetailsState(kt, enumor.TaskDetailFailed, details)
+			if err != nil {
+				logs.Errorf("update task details status failed, err: %v, rid: %s", err, kt.Rid)
+				return nil, err
+			}
+			continue
 		}
 		flowIDs = append(flowIDs, flowID)
 	}
@@ -141,10 +170,10 @@ func (c *CreateLayer4ListenerExecutor) buildFlows(kt *kit.Kit) ([]string, error)
 	return flowIDs, nil
 }
 
-func (c *CreateLayer4ListenerExecutor) buildFlow(kt *kit.Kit, lbID string,
+func (c *CreateLayer4ListenerExecutor) buildFlow(kt *kit.Kit, lbID, lbCloudID, region string,
 	details []*createLayer4ListenerTaskDetail) (string, error) {
 
-	flowTasks, err := c.buildFlowTask(lbID, details)
+	flowTasks, err := c.buildFlowTask(lbID, lbCloudID, region, details)
 	if err != nil {
 		logs.Errorf("build flow task failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err
@@ -213,22 +242,22 @@ func (c *CreateLayer4ListenerExecutor) createFlowTask(kt *kit.Kit, lbID string,
 	return flowID, nil
 }
 
-func (c *CreateLayer4ListenerExecutor) buildFlowTask(lbID string,
+func (c *CreateLayer4ListenerExecutor) buildFlowTask(lbID, lbCloudID, region string,
 	details []*createLayer4ListenerTaskDetail) ([]ts.CustomFlowTask, error) {
 
 	switch c.vendor {
 	case enumor.TCloud:
-		return c.buildTCloudFlowTask(lbID, details)
+		return c.buildTCloudFlowTask(lbID, lbCloudID, region, details), nil
 	default:
 		return nil, fmt.Errorf("vendor %s not supported", c.vendor)
 	}
 }
 
-func (c *CreateLayer4ListenerExecutor) buildTCloudFlowTask(lbID string,
-	details []*createLayer4ListenerTaskDetail) ([]ts.CustomFlowTask, error) {
+func (c *CreateLayer4ListenerExecutor) buildTCloudFlowTask(lbID, lbCloudID, region string,
+	details []*createLayer4ListenerTaskDetail) []ts.CustomFlowTask {
 
-	result := make([]ts.CustomFlowTask, 0)
-	actionIDGenerator := newActionIDGenerator(1, 10)
+	actionIDGenerator := counter.NewNumberCounterWithPrev(1, 10)
+	result := []ts.CustomFlowTask{buildSyncClbFlowTask(lbCloudID, c.accountID, region, actionIDGenerator)}
 	for _, taskDetails := range slice.Split(details, constant.BatchTaskMaxLimit) {
 		cur, prev := actionIDGenerator()
 
@@ -270,7 +299,7 @@ func (c *CreateLayer4ListenerExecutor) buildTCloudFlowTask(lbID string,
 			detail.actionID = cur
 		}
 	}
-	return result, nil
+	return result
 }
 
 func (c *CreateLayer4ListenerExecutor) createTaskDetails(kt *kit.Kit, taskID string) error {
@@ -280,6 +309,7 @@ func (c *CreateLayer4ListenerExecutor) createTaskDetails(kt *kit.Kit, taskID str
 			BkBizID:          c.bkBizID,
 			TaskManagementID: taskID,
 			Operation:        enumor.TaskCreateLayer4Listener,
+			State:            enumor.TaskDetailInit,
 			Param:            detail,
 		})
 	}
@@ -303,7 +333,28 @@ func (c *CreateLayer4ListenerExecutor) createTaskDetails(kt *kit.Kit, taskID str
 	return nil
 }
 
-func (c *CreateLayer4ListenerExecutor) buildTaskManagementAndDetails(kt *kit.Kit, source string) (string, error) {
+func (c *CreateLayer4ListenerExecutor) createExistingTaskDetails(kt *kit.Kit, taskID string) error {
+	taskDetailsCreateReq := &task.CreateDetailReq{}
+	for _, detail := range c.existingDetails {
+		taskDetailsCreateReq.Items = append(taskDetailsCreateReq.Items, task.CreateDetailField{
+			BkBizID:          c.bkBizID,
+			TaskManagementID: taskID,
+			Operation:        enumor.TaskCreateLayer4Listener,
+			State:            enumor.TaskDetailSuccess,
+			Param:            detail,
+		})
+	}
+
+	_, err := c.dataServiceCli.Global.TaskDetail.Create(kt, taskDetailsCreateReq)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *CreateLayer4ListenerExecutor) buildTaskManagementAndDetails(kt *kit.Kit, source enumor.TaskManagementSource) (
+	string, error) {
+
 	taskID, err := createTaskManagement(kt, c.dataServiceCli, c.bkBizID, c.vendor, c.accountID,
 		source, enumor.TaskCreateLayer4Listener)
 	if err != nil {
@@ -314,6 +365,12 @@ func (c *CreateLayer4ListenerExecutor) buildTaskManagementAndDetails(kt *kit.Kit
 	err = c.createTaskDetails(kt, taskID)
 	if err != nil {
 		logs.Errorf("create task details failed, err: %v, rid: %s", err, kt.Rid)
+		return "", err
+	}
+
+	err = c.createExistingTaskDetails(kt, taskID)
+	if err != nil {
+		logs.Errorf("create existing task details failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err
 	}
 
@@ -350,6 +407,26 @@ func (c *CreateLayer4ListenerExecutor) updateTaskDetails(kt *kit.Kit) error {
 	err := c.dataServiceCli.Global.TaskDetail.Update(kt, updateDetailsReq)
 	if err != nil {
 		logs.Errorf("update task details failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+	return nil
+}
+
+func (c *CreateLayer4ListenerExecutor) updateTaskDetailsState(kt *kit.Kit, state enumor.TaskDetailState,
+	taskDetails []*createLayer4ListenerTaskDetail) error {
+
+	updateItems := make([]task.UpdateTaskDetailField, 0, len(taskDetails))
+	for _, detail := range taskDetails {
+		updateItems = append(updateItems, task.UpdateTaskDetailField{
+			ID:    detail.taskDetailID,
+			State: state,
+		})
+	}
+	updateDetailsReq := &task.UpdateDetailReq{
+		Items: updateItems,
+	}
+	err := c.dataServiceCli.Global.TaskDetail.Update(kt, updateDetailsReq)
+	if err != nil {
 		return err
 	}
 	return nil

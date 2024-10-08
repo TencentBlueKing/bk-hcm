@@ -60,6 +60,9 @@ type CreateLayer7ListenerExecutor struct {
 	taskCli     *taskserver.Client
 	details     []*CreateLayer7ListenerDetail
 	taskDetails []*createLayer7ListenerTaskDetail
+
+	// detail.Status == Existing 的集合, 用于创建一条任务管理详情
+	existingDetails []*CreateLayer7ListenerDetail
 }
 
 // 用于记录 detail - 异步任务flow&task - 任务管理 之间的关系
@@ -139,6 +142,7 @@ func (c *CreateLayer7ListenerExecutor) filter() {
 		if detail.Status == Executable {
 			return true
 		}
+		c.existingDetails = append(c.existingDetails, detail)
 		return false
 	})
 }
@@ -177,7 +181,8 @@ func (c *CreateLayer7ListenerExecutor) buildFlows(kt *kit.Kit) ([]string, error)
 func (c *CreateLayer7ListenerExecutor) buildTaskManagementAndDetails(kt *kit.Kit, source enumor.TaskManagementSource) (
 	string, error) {
 
-	taskID, err := c.createTaskManagement(kt, source)
+	taskID, err := createTaskManagement(kt, c.dataServiceCli, c.bkBizID, c.vendor, c.accountID, source,
+		enumor.TaskCreateLayer7Listener)
 	if err != nil {
 		logs.Errorf("create task management failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err
@@ -186,6 +191,12 @@ func (c *CreateLayer7ListenerExecutor) buildTaskManagementAndDetails(kt *kit.Kit
 	err = c.createTaskDetails(kt, taskID)
 	if err != nil {
 		logs.Errorf("create task details failed, err: %v, rid: %s", err, kt.Rid)
+		return "", err
+	}
+
+	err = c.createExistingTaskDetails(kt, taskID)
+	if err != nil {
+		logs.Errorf("create existing task details failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err
 	}
 
@@ -223,55 +234,34 @@ func (c *CreateLayer7ListenerExecutor) createTaskDetails(kt *kit.Kit, taskID str
 	return nil
 }
 
-func (c *CreateLayer7ListenerExecutor) createTaskManagement(kt *kit.Kit, source enumor.TaskManagementSource) (string, error) {
-	taskManagementCreateReq := &task.CreateManagementReq{
-		Items: []task.CreateManagementField{
-			{
-				BkBizID:    c.bkBizID,
-				Source:     source,
-				Vendor:     c.vendor,
-				AccountID:  c.accountID,
-				Resource:   enumor.TaskManagementResClb,
-				State:      enumor.TaskManagementRunning,
-				Operations: []enumor.TaskOperation{enumor.TaskCreateLayer7Listener},
-			},
-		},
+func (c *CreateLayer7ListenerExecutor) createExistingTaskDetails(kt *kit.Kit, taskID string) error {
+	taskDetailsCreateReq := &task.CreateDetailReq{}
+	for _, detail := range c.existingDetails {
+		taskDetailsCreateReq.Items = append(taskDetailsCreateReq.Items, task.CreateDetailField{
+			BkBizID:          c.bkBizID,
+			TaskManagementID: taskID,
+			Operation:        enumor.TaskCreateLayer4Listener,
+			State:            enumor.TaskDetailSuccess,
+			Param:            detail,
+		})
 	}
 
-	result, err := c.dataServiceCli.Global.TaskManagement.Create(kt, taskManagementCreateReq)
+	_, err := c.dataServiceCli.Global.TaskDetail.Create(kt, taskDetailsCreateReq)
 	if err != nil {
-		return "", err
-	}
-	if len(result.IDs) == 0 {
-		return "", fmt.Errorf("create task management failed")
-	}
-	return result.IDs[0], nil
-}
-
-func (c *CreateLayer7ListenerExecutor) updateTaskManagementAndDetails(kt *kit.Kit, flowIDs []string,
-	taskID string) error {
-
-	if err := c.updateTaskManagement(kt, taskID, flowIDs); err != nil {
-		logs.Errorf("update task management failed, err: %v, rid: %s", err, kt.Rid)
-		return err
-	}
-	if err := c.updateTaskDetails(kt); err != nil {
-		logs.Errorf("update task details failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 	return nil
 }
 
-func (c *CreateLayer7ListenerExecutor) updateTaskManagement(kt *kit.Kit, taskID string, flowIDs []string) error {
-	updateItem := task.UpdateTaskManagementField{
-		ID:      taskID,
-		FlowIDs: flowIDs,
+func (c *CreateLayer7ListenerExecutor) updateTaskManagementAndDetails(kt *kit.Kit, flowIDs []string,
+	taskID string) error {
+
+	if err := updateTaskManagement(kt, c.dataServiceCli, taskID, flowIDs); err != nil {
+		logs.Errorf("update task management failed, err: %v, rid: %s", err, kt.Rid)
+		return err
 	}
-	updateReq := &task.UpdateManagementReq{
-		Items: []task.UpdateTaskManagementField{updateItem},
-	}
-	err := c.dataServiceCli.Global.TaskManagement.Update(kt, updateReq)
-	if err != nil {
+	if err := c.updateTaskDetails(kt); err != nil {
+		logs.Errorf("update task details failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 	return nil
