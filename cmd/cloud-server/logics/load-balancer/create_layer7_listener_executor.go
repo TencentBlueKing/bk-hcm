@@ -34,7 +34,6 @@ import (
 	taskserver "hcm/pkg/client/task-server"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/dal/dao/tools"
 	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -98,12 +97,6 @@ func (c *CreateLayer7ListenerExecutor) Execute(kt *kit.Kit, source enumor.TaskMa
 	flowIDs, err := c.buildFlows(kt)
 	if err != nil {
 		logs.Errorf("build async flows failed, err: %v, rid: %s", err, kt.Rid)
-		// TODO 需要确认产品预期, 对于部份创建失败的taskDetails 应该怎么进行处理
-		deleteErr := c.deleteTaskManagementAndDetails(kt, taskID)
-		if deleteErr != nil {
-			logs.Errorf("delete task management and details failed, err: %v, rid: %s", deleteErr, kt.Rid)
-			return "", deleteErr
-		}
 		return "", err
 	}
 	err = c.updateTaskManagementAndDetails(kt, flowIDs, taskID)
@@ -167,7 +160,12 @@ func (c *CreateLayer7ListenerExecutor) buildFlows(kt *kit.Kit) ([]string, error)
 		flowID, err := c.buildFlow(kt, lb.ID, lb.CloudID, lb.Region, details)
 		if err != nil {
 			logs.Errorf("build flow for clb(%s) failed, err: %v, rid: %s", clbCloudID, err, kt.Rid)
-			return nil, err
+			err := c.updateTaskDetailsState(kt, enumor.TaskDetailFailed, details)
+			if err != nil {
+				logs.Errorf("update task details status failed, err: %v, rid: %s", err, kt.Rid)
+				return nil, err
+			}
+			continue
 		}
 		flowIDs = append(flowIDs, flowID)
 	}
@@ -441,30 +439,21 @@ func (c *CreateLayer7ListenerExecutor) createFlowTask(kt *kit.Kit, lbID string,
 	return flowID, nil
 }
 
-func (c *CreateLayer7ListenerExecutor) deleteTaskManagementAndDetails(kt *kit.Kit, taskID string) error {
-	deleteReq := &task.DeleteManagementReq{
-		Filter: tools.ExpressionAnd(
-			tools.RuleEqual("id", taskID),
-		),
-	}
-	err := c.dataServiceCli.Global.TaskManagement.Delete(kt, deleteReq)
-	if err != nil {
-		logs.Errorf("delete task management failed, err: %v, rid: %s", err, kt.Rid)
-		return err
-	}
+func (c *CreateLayer7ListenerExecutor) updateTaskDetailsState(kt *kit.Kit, state enumor.TaskDetailState,
+	taskDetails []*createLayer7ListenerTaskDetail) error {
 
-	taskDetailIDs := make([]string, 0, len(c.taskDetails))
-	for _, detail := range c.taskDetails {
-		taskDetailIDs = append(taskDetailIDs, detail.taskDetailID)
+	updateItems := make([]task.UpdateTaskDetailField, 0, len(taskDetails))
+	for _, detail := range taskDetails {
+		updateItems = append(updateItems, task.UpdateTaskDetailField{
+			ID:    detail.taskDetailID,
+			State: state,
+		})
 	}
-	deleteDetailsReq := &task.DeleteDetailReq{
-		Filter: tools.ExpressionAnd(
-			tools.RuleIn("id", taskDetailIDs),
-		),
+	updateDetailsReq := &task.UpdateDetailReq{
+		Items: updateItems,
 	}
-	err = c.dataServiceCli.Global.TaskDetail.Delete(kt, deleteDetailsReq)
+	err := c.dataServiceCli.Global.TaskDetail.Update(kt, updateDetailsReq)
 	if err != nil {
-		logs.Errorf("delete task details failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 	return nil

@@ -136,9 +136,9 @@ func bizService(h *rest.Handler, svc *lbSvc) {
 
 	// excel导入
 	h.Add("ImportPreview", http.MethodPost,
-		"/vendor/{vendor}/load_balancers/operations/{operation_type}/preview", svc.ImportPreview)
+		"/vendors/{vendor}/load_balancers/operations/{operation_type}/preview", svc.ImportPreview)
 	h.Add("ImportSubmit", http.MethodPost,
-		"/vendor/{vendor}/load_balancers/operations/{operation_type}/submit", svc.ImportSubmit)
+		"/vendors/{vendor}/load_balancers/operations/{operation_type}/submit", svc.ImportSubmit)
 }
 
 func bizURLRuleService(h *rest.Handler, svc *lbSvc) {

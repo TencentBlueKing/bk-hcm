@@ -53,7 +53,7 @@ func TestCreateLayer7ListenerExecutor_convertDataToPreview(t *testing.T) {
 
 				UserRemark:     "用户的备注",
 				Status:         "",
-				ValidateResult: "",
+				ValidateResult: []string{},
 			},
 		},
 		{
@@ -71,7 +71,7 @@ func TestCreateLayer7ListenerExecutor_convertDataToPreview(t *testing.T) {
 				CACloudID:      "",
 				UserRemark:     "",
 				Status:         "",
-				ValidateResult: "",
+				ValidateResult: []string{},
 			},
 		},
 	}

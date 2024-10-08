@@ -100,16 +100,19 @@ func newBasePreviewExecutor(cli *dataservice.Client, vendor enumor.Vendor, bkBiz
 // ImportStatus excel导入的数据状态
 type ImportStatus string
 
+// SetNotExecutable ...
 func (i *ImportStatus) SetNotExecutable() {
 	*i = NotExecutable
 }
 
+// SetExisting ...
 func (i *ImportStatus) SetExisting() {
 	if *i != NotExecutable {
 		*i = Existing
 	}
 }
 
+// SetExecutable ...
 func (i *ImportStatus) SetExecutable() {
 	if *i == "" {
 		*i = Executable
