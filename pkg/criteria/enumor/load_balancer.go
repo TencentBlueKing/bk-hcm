@@ -121,6 +121,8 @@ const (
 	ApplyTargetGroupType = TaskType(FlowApplyTargetGroupToListenerRule)
 	// DeleteRuleTaskType 任务类型-删除负载均衡规则
 	DeleteRuleTaskType = TaskType(FlowLoadBalancerDeleteRule)
+	// CreateListenerTaskType 任务类型-新建监听器
+	CreateListenerTaskType = TaskType(FlowLoadBalancerCreateListener)
 )
 
 // InstType 实例类型

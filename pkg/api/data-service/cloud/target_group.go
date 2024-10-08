@@ -367,7 +367,7 @@ type ListenerWithRuleCreateReq struct {
 	CloudRuleID        string                        `json:"cloud_rule_id" validate:"required"`
 	Scheduler          string                        `json:"scheduler" validate:"required"`
 	RuleType           enumor.RuleType               `json:"rule_type" validate:"required"`
-	SessionType        string                        `json:"session_type" validate:"required"`
+	SessionType        string                        `json:"session_type" validate:"omitempty"`
 	SessionExpire      int64                         `json:"session_expire" validate:"omitempty"`
 	TargetGroupID      string                        `json:"target_group_id" validate:"omitempty"`
 	CloudTargetGroupID string                        `json:"cloud_target_group_id" validate:"omitempty"`
