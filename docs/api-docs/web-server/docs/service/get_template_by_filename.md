@@ -6,7 +6,7 @@
 
 ### URL
 
-GET /api/v1/web/template/{filename}
+GET /api/v1/web/templates/{filename}
 
 
 ### 输入参数
