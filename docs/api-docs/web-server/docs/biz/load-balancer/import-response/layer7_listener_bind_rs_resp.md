@@ -9,8 +9,6 @@
   "code": 0,
   "message": "",
   "data": {
-    "account_id": "",
-    "region_ids": ["",""],
     "details":[
       {
         "clb_vip_domain": "127.0.0.1",
@@ -25,7 +23,7 @@
         "weight": 50,
         "user_remark": "this is a create listener item",
         "status": "executable",
-        "validate_result": "-"
+        "validate_result": []
       }
     ]
   }
@@ -45,28 +43,26 @@
 
 | 参数名称       | 参数类型   | 描述        |
 |------------|--------|-----------|
-| account_id | string | 账户id      |
-| region_ids | array  | 云地域id列表   |
 | details    | array  | excel导入详情 |
 
 
 #### details[n] 参数说明
 
-| 参数名称            | 参数类型   | 描述                           |
-|-----------------|--------|------------------------------|
-| clb_vip_domain  | string | 监听器绑定的vip或域名                 |
-| cloud_clb_id    | string | 监听器绑定的clb id                 |
-| protocol        | string | 监听器协议                        |
-| listener_port   | []int  | 监听器端口, 通常长度为1, 如果为端口段则长度为2   |
-| domain          | string | 监听器绑定的域名                     |
-| url_path        | string | 监听器绑定的url路径                  |
-| inst_type       | string | RS类型，CVM/ENI                 |
-| rs_ip           | string | rs ip                        |
-| rs_port         | []int  | rs 端口                        |
-| weight          | int    | 监听器绑定的目标权重, 权重范围：0-100       |
-| user_remark     | string | 用户备注                         |
-| validate_result | string | 参数校验详情, 当状态为不可执行时, 会有具体的报错原因 |
-| status          | string | 校验结果状态                       |
+| 参数名称            | 参数类型     | 描述                           |
+|-----------------|----------|------------------------------|
+| clb_vip_domain  | string   | 监听器绑定的vip或域名                 |
+| cloud_clb_id    | string   | 监听器绑定的clb id                 |
+| protocol        | string   | 监听器协议                        |
+| listener_port   | []int    | 监听器端口, 通常长度为1, 如果为端口段则长度为2   |
+| domain          | string   | 监听器绑定的域名                     |
+| url_path        | string   | 监听器绑定的url路径                  |
+| inst_type       | string   | RS类型，CVM/ENI                 |
+| rs_ip           | string   | rs ip                        |
+| rs_port         | []int    | rs 端口                        |
+| weight          | int      | 监听器绑定的目标权重, 权重范围：0-100       |
+| user_remark     | string   | 用户备注                         |
+| validate_result | []string | 参数校验详情, 当状态为不可执行时, 会有具体的报错原因 |
+| status          | string   | 校验结果状态                       |
 
 ##### status枚举
 
