@@ -37,7 +37,7 @@ func InitTemplateService(c *capability.Capability) {
 	}
 
 	h := rest.NewHandler()
-	h.Add("GetTemplate", "GET", "/template/{filename}", svr.GetTemplate)
+	h.Add("GetTemplate", "GET", "/templates/{filename}", svr.GetTemplate)
 
 	h.Load(c.WebService)
 }
@@ -52,6 +52,11 @@ func (u *service) GetTemplate(cts *rest.Contexts) (interface{}, error) {
 	filename := cts.PathParameter("filename").String()
 	if filename == "" {
 		return nil, fmt.Errorf("filename is empty")
+	}
+
+	if err := validateTemplateFilename(filename); err != nil {
+		logs.Errorf("failed to validate template filename: %s, err: %v, rid: %s", filename, err, cts.Kit.Rid)
+		return nil, err
 	}
 
 	templateDirPath := cc.WebServer().TemplatePath
