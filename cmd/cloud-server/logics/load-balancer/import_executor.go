@@ -137,3 +137,21 @@ func updateTaskManagement(kt *kit.Kit, cli *dataservice.Client, taskID string, f
 	}
 	return nil
 }
+
+func updateTaskDetailState(kt *kit.Kit, cli *dataservice.Client, state enumor.TaskDetailState, ids []string) error {
+	updateItems := make([]task.UpdateTaskDetailField, 0, len(ids))
+	for _, id := range ids {
+		updateItems = append(updateItems, task.UpdateTaskDetailField{
+			ID:    id,
+			State: state,
+		})
+	}
+	updateDetailsReq := &task.UpdateDetailReq{
+		Items: updateItems,
+	}
+	err := cli.Global.TaskDetail.Update(kt, updateDetailsReq)
+	if err != nil {
+		return err
+	}
+	return nil
+}
