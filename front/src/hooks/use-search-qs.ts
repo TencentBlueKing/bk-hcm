@@ -4,7 +4,11 @@ import { ModelProperty } from '@/model/typings';
 import { findProperty } from '@/model/utils';
 import routeQuery from '@/router/utils/query';
 import { convertValue } from '@/utils/search';
-// import { timeUTCFormatter } from '@/common/util';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 type useSearchQsParamsType = {
   properties: ModelProperty[];
@@ -18,9 +22,6 @@ export default function useSearchQs({ properties, key = 'filter', forceUpdate = 
       arrayFormat: 'comma',
       encode: false,
       allowEmptyArrays: true,
-      // serializeDate(d) {
-      //   return timeUTCFormatter(d as string);
-      // },
     });
     routeQuery.set(key, queryVal, forceUpdate);
   };

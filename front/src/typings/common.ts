@@ -54,6 +54,7 @@ export interface IPageQuery {
 export type QueryBuilderType = {
   filter: QueryFilterType;
   page?: IPageQuery;
+  fields?: string[];
 };
 
 interface IBaseResData {
@@ -87,3 +88,8 @@ export type SortType = {
 };
 
 export type Awaitable<T> = Promise<T> | T;
+
+export interface IBreadcrumb {
+  title: string;
+  display: boolean;
+}
