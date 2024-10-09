@@ -246,7 +246,7 @@ export default defineComponent({
           {{
             operation: () => (
               <>
-                <Button theme='primary' onClick={() => bus.$emit('showAddDomainSideslider')} class='mr12'>
+                <Button theme='primary' onClick={() => bus.$emit('showAddDomainSideslider')} class='mr8'>
                   <Plus class='f20' />
                   {t('新增域名')}
                 </Button>

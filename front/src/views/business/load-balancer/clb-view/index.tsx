@@ -2,7 +2,7 @@ import { computed, defineComponent } from 'vue';
 import { RouterView, useRoute } from 'vue-router';
 // import components
 import { ResizeLayout } from 'bkui-vue';
-import LbTree from './lb-tree';
+import LBTree from './lb-tree/index.vue';
 import LbBreadcrumb from '../components/lb-breadcrumb';
 import './index.scss';
 
@@ -18,13 +18,9 @@ export default defineComponent({
     });
 
     return () => (
-      <ResizeLayout class='clb-view-page' collapsible initialDivide={300}>
+      <ResizeLayout class='clb-view-page' collapsible initialDivide={300} min={300}>
         {{
-          aside: () => (
-            <div class='left-container'>
-              <LbTree />
-            </div>
-          ),
+          aside: () => <LBTree class='load-balancer-tree' />,
           main: () => (
             <div class='main-container'>
               {isBreadcrumbShow.value && <LbBreadcrumb />}

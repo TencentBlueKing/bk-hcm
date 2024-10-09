@@ -183,7 +183,7 @@ export default defineComponent({
         <CommonTable>
           {{
             operation: () => (
-              <div class={'flex-row align-item-center'}>
+              <>
                 <Button theme={'primary'} onClick={() => bus.$emit('showAddListenerSideslider')}>
                   <Plus class={'f20'} />
                   {t('新增监听器')}
@@ -191,7 +191,7 @@ export default defineComponent({
                 <Button disabled={selections.value.length === 0} onClick={handleBatchDeleteListener}>
                   {t('批量删除')}
                 </Button>
-              </div>
+              </>
             ),
           }}
         </CommonTable>
