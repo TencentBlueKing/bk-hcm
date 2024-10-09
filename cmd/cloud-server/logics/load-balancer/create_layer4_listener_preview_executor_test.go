@@ -43,24 +43,6 @@ func TestCreateLayer4ListenerExecutor_convertDataToPreview_validateFailed(t *tes
 			}},
 			wantErr: assert.Error,
 		},
-		//{
-		//	name: "end_port",
-		//	args: args{i: [][]string{
-		//		{"127.0.0.1", "lb-xxxxx1", "tcp", "[8888, 8889]", "WRR", "10", "enable"},
-		//	}},
-		//	want: CreateLayer4ListenerDetail{
-		//		ClbVipDomain:   "127.0.0.1",
-		//		CloudClbID:     "lb-xxxxx1",
-		//		Protocol:       enumor.TcpProtocol,
-		//		ListenerPorts:  []int{8888, 8889},
-		//		Scheduler:      "WRR",
-		//		Session:        10,
-		//		HealthCheck:    true,
-		//		UserRemark:     "",
-		//		Status:         "",
-		//		ValidateResult: "",
-		//	},
-		//},
 	}
 
 	for _, tt := range tests {

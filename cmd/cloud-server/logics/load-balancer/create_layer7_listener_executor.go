@@ -240,7 +240,7 @@ func (c *CreateLayer7ListenerExecutor) createExistingTaskDetails(kt *kit.Kit, ta
 		taskDetailsCreateReq.Items = append(taskDetailsCreateReq.Items, task.CreateDetailField{
 			BkBizID:          c.bkBizID,
 			TaskManagementID: taskID,
-			Operation:        enumor.TaskCreateLayer4Listener,
+			Operation:        enumor.TaskCreateLayer7Listener,
 			State:            enumor.TaskDetailSuccess,
 			Param:            detail,
 		})

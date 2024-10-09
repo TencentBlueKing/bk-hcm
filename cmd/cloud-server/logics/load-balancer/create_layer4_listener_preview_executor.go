@@ -76,7 +76,9 @@ func (c *CreateLayer4ListenerPreviewExecutor) convertDataToPreview(rawData [][]s
 			return fmt.Errorf("excel data length is too long")
 		}
 
-		detail := &CreateLayer4ListenerDetail{}
+		detail := &CreateLayer4ListenerDetail{
+			ValidateResult: make([]string, 0),
+		}
 		detail.ClbVipDomain = data[0]
 		detail.CloudClbID = data[1]
 		detail.Protocol = enumor.ProtocolType(strings.ToUpper(data[2]))
@@ -114,10 +116,12 @@ func (c *CreateLayer4ListenerPreviewExecutor) validate(kt *kit.Kit) error {
 		key := fmt.Sprintf("%s-%s-%v", detail.CloudClbID, detail.Protocol, detail.ListenerPorts)
 		if i, ok := recordMap[key]; ok {
 			c.details[i].Status.SetNotExecutable()
-			c.details[i].ValidateResult = append(c.details[i].ValidateResult, fmt.Sprintf("存在重复记录, line: %d;", i+1))
+			c.details[i].ValidateResult = append(c.details[i].ValidateResult,
+				fmt.Sprintf("Duplicate records exist, line: %d;", i+1))
 
 			detail.Status.SetNotExecutable()
-			detail.ValidateResult = append(c.details[i].ValidateResult, fmt.Sprintf("存在重复记录, line: %d;", cur+1))
+			detail.ValidateResult = append(c.details[i].ValidateResult,
+				fmt.Sprintf("Duplicate records exist, line: %d;", cur+1))
 		}
 		recordMap[key] = cur
 		clbIDMap[detail.CloudClbID] = struct{}{}
@@ -152,7 +156,7 @@ func (c *CreateLayer4ListenerPreviewExecutor) validateWithDB(kt *kit.Kit, cloudI
 		ipSet = append(ipSet, lb.PublicIPv6Addresses...)
 		if detail.ClbVipDomain != lb.Domain && !slice.IsItemInSlice(ipSet, detail.ClbVipDomain) {
 			detail.Status.SetNotExecutable()
-			detail.ValidateResult = append(detail.ValidateResult, fmt.Sprintf("clb的vip(%s)不匹配", detail.ClbVipDomain))
+			detail.ValidateResult = append(detail.ValidateResult, fmt.Sprintf("clb vip(%s)not match", detail.ClbVipDomain))
 		}
 
 		if err = c.validateListener(kt, detail); err != nil {
@@ -195,14 +199,16 @@ func (c *CreateLayer4ListenerPreviewExecutor) validateListener(kt *kit.Kit,
 		// 已存在监听器且配置与当前导入的记录不一致时, 设置当前记录为不可执行状态
 		curDetail.Status.SetNotExecutable()
 		curDetail.ValidateResult = append(curDetail.ValidateResult,
-			fmt.Sprintf("已存在监听器(%s)且配置不一致, port: %d, protocol: %s, scheduler: %s, session: %d, healthCheck: %v",
-				curDetail.CloudClbID, listener.Port, listener.Protocol, rule.Scheduler, rule.SessionExpire, ruleHealthCheck))
+			fmt.Sprintf("already exist listener(%s), and the configuration match, port: %d, protocol: %s,"+
+				" scheduler: %s, session: %d, healthCheck: %v", curDetail.CloudClbID, listener.Port, listener.Protocol,
+				rule.Scheduler, rule.SessionExpire, ruleHealthCheck))
 		return nil
 	}
 
 	curDetail.Status.SetExisting()
 	curDetail.ValidateResult = append(curDetail.ValidateResult,
-		fmt.Sprintf("已存在监听器(%s), port: %d, protocol: %s", curDetail.CloudClbID, listener.Port, listener.Protocol))
+		fmt.Sprintf("already exist listener(%s), port: %d, protocol: %s", curDetail.CloudClbID, listener.Port,
+			listener.Protocol))
 
 	return nil
 }
@@ -259,7 +265,7 @@ func (c *CreateLayer4ListenerDetail) validate() {
 		c.Status.SetExecutable()
 	}()
 	if c.Protocol != enumor.UdpProtocol && c.Protocol != enumor.TcpProtocol {
-		err = errors.New("协议类型错误")
+		err = errors.New("protocol type error")
 		return
 	}
 	err = validateScheduler(c.Scheduler)
