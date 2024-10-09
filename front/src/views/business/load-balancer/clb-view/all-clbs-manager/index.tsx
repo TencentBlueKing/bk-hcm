@@ -23,6 +23,7 @@ import './index.scss';
 import Confirm from '@/components/confirm';
 import { useVerify } from '@/hooks';
 import { useGlobalPermissionDialog } from '@/store/useGlobalPermissionDialog';
+import { VendorEnum, VendorMap } from '@/common/constant';
 export default defineComponent({
   name: 'AllClbsManager',
   setup() {
@@ -66,46 +67,40 @@ export default defineComponent({
     const { CommonTable, getListData } = useTable({
       searchOptions: {
         searchData: [
-          {
-            id: 'name',
-            name: '负载均衡名称',
-          },
-          {
-            id: 'domain',
-            name: '负载均衡域名',
-          },
-          // {
-          //   id: 'public_ipv4_addresses',
-          //   name: '负载均衡VIP',
-          // },
+          { id: 'name', name: '负载均衡名称' },
+          { id: 'domain', name: '负载均衡域名' },
+          { id: 'lb_vip', name: '负载均衡VIP' },
           {
             id: 'lb_type',
             name: '网络类型',
+            children: Object.keys(LB_NETWORK_TYPE_MAP).map((lbType) => ({
+              id: lbType,
+              name: LB_NETWORK_TYPE_MAP[lbType as keyof typeof LB_NETWORK_TYPE_MAP],
+            })),
           },
-          // {
-          //   id: 'listener_num',
-          //   name: '监听器数量',
-          // },
           {
             id: 'ip_version',
-            name: 'IP版本',
+            name: t('IP版本'),
+            children: [
+              { id: 'ipv4', name: 'IPv4' },
+              { id: 'ipv6', name: 'IPv6' },
+              { id: 'ipv6_dual_stack', name: 'IPv6DualStack' },
+              { id: 'ipv6_nat64', name: 'IPv6Nat64' },
+            ],
           },
           {
             id: 'vendor',
-            name: '云厂商',
+            name: t('云厂商'),
+            children: [{ id: VendorEnum.TCLOUD, name: VendorMap[VendorEnum.TCLOUD] }],
           },
+          { id: 'region', name: '地域' },
+          { id: 'zones', name: '可用区域' },
           {
-            id: 'region',
-            name: '地域',
+            id: 'status',
+            name: '状态',
+            children: Object.keys(CLB_STATUS_MAP).map((key) => ({ id: key, name: CLB_STATUS_MAP[key] })),
           },
-          {
-            id: 'zones',
-            name: '可用区域',
-          },
-          {
-            id: 'cloud_vpc_id',
-            name: '所属VPC',
-          },
+          { id: 'cloud_vpc_id', name: '所属VPC' },
         ],
       },
       tableOptions: {
@@ -114,6 +109,7 @@ export default defineComponent({
           {
             label: '操作',
             width: 120,
+            fixed: 'right',
             render: ({ data }: { data: any }) => {
               return (
                 <Button
@@ -155,14 +151,7 @@ export default defineComponent({
         type: 'load_balancers/with/delete_protection',
         sortOption: { sort: 'created_at', order: 'DESC' },
         async resolveDataListCb(dataList: any[]) {
-          return asyncGetListenerCount(
-            businessStore.asyncGetListenerCount,
-            dataList.map((item) => {
-              item.lb_type = LB_NETWORK_TYPE_MAP[item.lb_type];
-              item.status = CLB_STATUS_MAP[item.status];
-              return item;
-            }),
-          );
+          return asyncGetListenerCount(businessStore.asyncGetListenerCount, dataList);
         },
       },
     });
