@@ -21,6 +21,7 @@ import bus from '@/common/bus';
 // import types
 import { DoublePlainObject } from '@/typings';
 import './index.scss';
+import { TARGET_GROUP_PROTOCOLS } from '@/common/constant';
 
 export default defineComponent({
   props: { id: String },
@@ -50,34 +51,32 @@ export default defineComponent({
     const { CommonTable, getListData } = useTable({
       searchOptions: {
         searchData: [
-          {
-            name: '监听器名称',
-            id: 'name',
-          },
+          { name: '监听器名称', id: 'name' },
           {
             name: '协议',
             id: 'protocol',
+            children: TARGET_GROUP_PROTOCOLS.map((item) => ({ id: item, name: item })),
           },
-          {
-            name: '端口',
-            id: 'port',
-          },
-          {
-            name: '均衡方式',
-            id: 'scheduler',
-          },
-          {
-            name: '域名数量',
-            id: 'domain_num',
-          },
-          {
-            name: 'URL数量',
-            id: 'url_num',
-          },
-          {
-            name: '同步状态',
-            id: 'binding_status',
-          },
+          { name: '端口', id: 'port' },
+          // todo: 待后端支持
+          // {
+          //   name: '均衡方式',
+          //   id: 'scheduler',
+          //   children: Object.keys(SCHEDULER_MAP).map((scheduler) => ({
+          //     id: scheduler,
+          //     name: SCHEDULER_MAP[scheduler],
+          //   })),
+          // },
+          // { name: '域名数量', id: 'domain_num' },
+          // { name: 'URL数量', id: 'url_num' },
+          // {
+          //   name: '同步状态',
+          //   id: 'binding_status',
+          //   children: Object.keys(CLB_BINDING_STATUS).map((bindingStatus) => ({
+          //     id: bindingStatus,
+          //     name: CLB_BINDING_STATUS[bindingStatus],
+          //   })),
+          // },
         ],
       },
       tableOptions: {
