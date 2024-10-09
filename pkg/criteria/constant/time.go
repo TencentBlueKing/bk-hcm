@@ -19,10 +19,13 @@
 
 package constant
 
-import "regexp"
+import (
+	"regexp"
+)
 
 const (
-	// TimeStdFormat is the system's standard time format to store or to query.
+
+	// TimeStdFormat is the system's standard time format to store or to query, equal to time.RFC3339
 	TimeStdFormat = "2006-01-02T15:04:05Z07:00"
 	// DateLayout is the date layout with '%Y-%m-%d'
 	DateLayout = "2006-01-02"
@@ -30,6 +33,6 @@ const (
 	DateTimeLayout = "2006-01-02 15:04:05"
 )
 
-// TimeStdRegexp is a regular expression to match the TimeStdFormat
+// TimeStdRegexp is a regular expression to match the TimeStdFormat(RFC3339) with millisecond
 var TimeStdRegexp = regexp.
-	MustCompile(`^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[Z+]([0-9]{2}:[0-9]{2})*$`)
+	MustCompile(`^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.\d{3})?[Z+]([0-9]{2}:[0-9]{2})*$`)
