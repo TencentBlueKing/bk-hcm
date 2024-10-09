@@ -185,8 +185,8 @@ func (c *CreateLayer7ListenerExecutor) buildFlows(kt *kit.Kit) ([]string, error)
 func (c *CreateLayer7ListenerExecutor) buildTaskManagementAndDetails(kt *kit.Kit, source enumor.TaskManagementSource) (
 	string, error) {
 
-	taskID, err := createTaskManagement(kt, c.dataServiceCli, c.bkBizID, c.vendor, c.accountID, source,
-		enumor.TaskCreateLayer7Listener)
+	taskID, err := createTaskManagement(kt, c.dataServiceCli, c.bkBizID, c.vendor, c.accountID,
+		converter.MapKeyToSlice(c.regionIDMap), source, enumor.TaskCreateLayer7Listener)
 	if err != nil {
 		logs.Errorf("create task management failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err

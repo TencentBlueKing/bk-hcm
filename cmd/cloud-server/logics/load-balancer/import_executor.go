@@ -24,6 +24,7 @@ import (
 	"fmt"
 
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
+	taskCore "hcm/pkg/api/core/task"
 	"hcm/pkg/api/data-service/task"
 	"hcm/pkg/api/hc-service/sync"
 	ts "hcm/pkg/api/task-server"
@@ -95,7 +96,7 @@ func buildSyncClbFlowTask(lbCloudID, accountID, region string, generator func() 
 }
 
 func createTaskManagement(kt *kit.Kit, cli *dataservice.Client, bkBizID int64, vendor enumor.Vendor, accountID string,
-	source enumor.TaskManagementSource, operation enumor.TaskOperation) (string, error) {
+	regionIDs []string, source enumor.TaskManagementSource, operation enumor.TaskOperation) (string, error) {
 
 	taskManagementCreateReq := &task.CreateManagementReq{
 		Items: []task.CreateManagementField{
@@ -107,6 +108,7 @@ func createTaskManagement(kt *kit.Kit, cli *dataservice.Client, bkBizID int64, v
 				Resource:   enumor.TaskManagementResClb,
 				State:      enumor.TaskManagementRunning,
 				Operations: []enumor.TaskOperation{operation},
+				Extension:  &taskCore.ManagementExt{RegionIDs: regionIDs},
 			},
 		},
 	}

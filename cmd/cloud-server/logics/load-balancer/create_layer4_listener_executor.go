@@ -360,7 +360,7 @@ func (c *CreateLayer4ListenerExecutor) buildTaskManagementAndDetails(kt *kit.Kit
 	string, error) {
 
 	taskID, err := createTaskManagement(kt, c.dataServiceCli, c.bkBizID, c.vendor, c.accountID,
-		source, enumor.TaskCreateLayer4Listener)
+		converter.MapKeyToSlice(c.regionIDMap), source, enumor.TaskCreateLayer4Listener)
 	if err != nil {
 		logs.Errorf("create task management failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err
@@ -402,7 +402,6 @@ func (c *CreateLayer4ListenerExecutor) updateTaskDetails(kt *kit.Kit) error {
 			ID:            detail.taskDetailID,
 			FlowID:        detail.flowID,
 			TaskActionIDs: []string{detail.actionID},
-			State:         enumor.TaskDetailInit,
 		})
 	}
 	updateDetailsReq := &task.UpdateDetailReq{

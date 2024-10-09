@@ -161,6 +161,7 @@ func (c *CreateLayer7ListenerPreviewExecutor) validateWithDB(kt *kit.Kit, cloudI
 			detail.ValidateResult = append(detail.ValidateResult,
 				fmt.Sprintf("clb.vip(%s) not match;", detail.ClbVipDomain))
 		}
+		detail.RegionID = lb.Region
 
 		if err = c.validateListener(kt, detail); err != nil {
 			logs.Errorf("validate listener failed, err: %v, rid: %s", err, kt.Rid)
@@ -337,6 +338,8 @@ type CreateLayer7ListenerDetail struct {
 
 	Status         ImportStatus `json:"status"`
 	ValidateResult []string     `json:"validate_result"`
+
+	RegionID string `json:"region_id"`
 }
 
 func (c *CreateLayer7ListenerDetail) validate() {

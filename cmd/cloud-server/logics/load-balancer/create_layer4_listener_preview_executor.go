@@ -69,11 +69,13 @@ func (c *CreateLayer4ListenerPreviewExecutor) Execute(kt *kit.Kit, rawData [][]s
 	return c.details, nil
 }
 
+const createLayer4ListenerExcelTableLen = 7
+
 func (c *CreateLayer4ListenerPreviewExecutor) convertDataToPreview(rawData [][]string) error {
 	for _, data := range rawData {
 		data = trimSpaceForSlice(data)
-		if len(data) > 8 {
-			return fmt.Errorf("excel data length is too long")
+		if len(data) < createLayer4ListenerExcelTableLen {
+			return fmt.Errorf("invalid data")
 		}
 
 		detail := &CreateLayer4ListenerDetail{
@@ -98,7 +100,7 @@ func (c *CreateLayer4ListenerPreviewExecutor) convertDataToPreview(rawData [][]s
 		default:
 			return fmt.Errorf("HealthCheck: invalid input: %s", data[6])
 		}
-		if len(data) > 7 {
+		if len(data) > createLayer4ListenerExcelTableLen {
 			detail.UserRemark = data[7]
 		}
 		c.details = append(c.details, detail)
@@ -158,6 +160,7 @@ func (c *CreateLayer4ListenerPreviewExecutor) validateWithDB(kt *kit.Kit, cloudI
 			detail.Status.SetNotExecutable()
 			detail.ValidateResult = append(detail.ValidateResult, fmt.Sprintf("clb vip(%s)not match", detail.ClbVipDomain))
 		}
+		detail.RegionID = lb.Region
 
 		if err = c.validateListener(kt, detail); err != nil {
 			logs.Errorf("validate listener failed, err: %v, rid: %s", err, kt.Rid)
@@ -252,6 +255,8 @@ type CreateLayer4ListenerDetail struct {
 	UserRemark     string              `json:"user_remark"`
 	Status         ImportStatus        `json:"status"`
 	ValidateResult []string            `json:"validate_result"`
+
+	RegionID string `json:"region_id"`
 }
 
 func (c *CreateLayer4ListenerDetail) validate() {
