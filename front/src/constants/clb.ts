@@ -11,7 +11,7 @@ export enum LBRouteName {
   tg = 'specific-tg-manager',
 }
 // 负载均衡-路由组件名称映射
-export const LB_ROUTE_NAME_MAP = {
+export const LB_ROUTE_NAME_MAP: ConstantMapRecord = {
   all: 'all-lbs-manager',
   lb: 'specific-lb-manager',
   listener: 'specific-listener-manager',

@@ -338,15 +338,15 @@ export default defineComponent({
         <CommonTable>
           {{
             operation: () => (
-              <div class={'flex-row align-item-center'}>
-                <Button theme={'primary'} onClick={handleAddUrlSidesliderShow}>
+              <>
+                <Button theme={'primary'} onClick={handleAddUrlSidesliderShow} class='mr8'>
                   <Plus class={'f20'} />
                   {t('新增 URL 路径')}
                 </Button>
                 <Button onClick={handleBatchDeleteListener} disabled={!selections.value.length}>
                   {t('批量删除')}
                 </Button>
-              </div>
+              </>
             ),
           }}
         </CommonTable>
