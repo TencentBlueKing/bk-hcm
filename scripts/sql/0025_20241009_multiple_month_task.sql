@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0025,HCMVER=v1.6.8
 
     Notes:
     1. 修改`account_bill_month_task`表，增加`type`字段
@@ -49,7 +49,7 @@ ALTER TABLE  load_balancer_target ADD INDEX index_target_group_id(`target_group_
 
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.6.8' as `hcm_ver`, '0025' as `sql_ver`;
 
 COMMIT;
 
