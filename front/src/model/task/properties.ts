@@ -1,5 +1,5 @@
 import { ModelProperty } from '@/model/typings';
-import { TASKT_TYPE_NAME, TASKT_SOURCE_NAME, TASKT_STATUS_NAME } from '@/views/task/constants';
+import { TASK_TYPE_NAME, TASKT_SOURCE_NAME, TASKT_STATUS_NAME } from '@/views/task/constants';
 
 export default [
   {
@@ -13,7 +13,7 @@ export default [
     name: '任务类型',
     type: 'enum',
     index: 1,
-    option: TASKT_TYPE_NAME,
+    option: TASK_TYPE_NAME,
   },
   {
     id: 'source',
@@ -34,5 +34,10 @@ export default [
     type: 'enum',
     index: 1,
     option: TASKT_STATUS_NAME,
+    meta: {
+      display: {
+        appearance: 'status',
+      },
+    },
   },
 ] as ModelProperty[];

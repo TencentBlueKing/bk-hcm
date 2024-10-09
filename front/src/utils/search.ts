@@ -18,6 +18,8 @@ export const getDefaultRule: GetDefaultRule = (property, custom = { op: QueryRul
     datetime: { op: AND, value: [] },
     user: { op: IN, value: [] },
     account: { op: EQ, value: '' },
+    array: { op: IN, value: [] },
+    bool: { op: EQ, value: '' },
   };
 
   return {
@@ -53,7 +55,6 @@ export const convertValue = (
 
 export const transformSimpleCondition = (condition: Record<string, any>, properties: ModelProperty[]) => {
   const queryFilter: QueryFilterType = { op: 'and', rules: [] };
-
   for (const [id, value] of Object.entries(condition || {})) {
     const property = findProperty(id, properties);
     if (!property) {
@@ -102,6 +103,10 @@ export const enableCount = (params = {}, enable = false) => {
   }
   return merge({}, params, { page: { count: false } });
 };
+
+export const onePageParams = () => ({ start: 0, limit: 1 });
+
+export const maxPageParams = (max = 500) => ({ start: 0, limit: max });
 
 export const getDateRange = (key: keyof DateRangeType) => {
   const dateRange = {

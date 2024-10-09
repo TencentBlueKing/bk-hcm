@@ -32,7 +32,7 @@ export interface IGridContainerProps {
   gap?: (number | string)[] | number | string;
   labelAlign?: 'center' | 'left' | 'right';
   labelWidth?: number | string; // 上下布局时重置为100%
-  layout: 'horizontal' | 'vertical';
+  layout?: 'horizontal' | 'vertical';
 }
 
 defineOptions({
