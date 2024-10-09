@@ -820,3 +820,15 @@ func (i *ImportExcelReq) Validate() error {
 	}
 	return validator.Validate.Struct(i)
 }
+
+// ImportValidateReq ...
+type ImportValidateReq struct {
+	AccountID string          `json:"account_id" validate:"required"`
+	RegionIDs []string        `json:"region_ids" validate:"required,min=1,dive,required"`
+	Details   json.RawMessage `json:"details"`
+}
+
+// Validate ...
+func (i *ImportValidateReq) Validate() error {
+	return validator.Validate.Struct(i)
+}
