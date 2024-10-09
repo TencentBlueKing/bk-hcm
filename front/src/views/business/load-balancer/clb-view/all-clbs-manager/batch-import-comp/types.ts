@@ -36,7 +36,7 @@ interface BaseLbBatchImportPreviewItem {
   listener_port: number[];
   user_remark: string;
   status: Status; // 校验结果状态
-  validate_result: string; // 参数校验详情, 当状态为不可执行时, 会有具体的报错原因
+  validate_result: string[]; // 参数校验详情, 当状态为不可执行时, 会有具体的报错原因
 }
 interface CreateLayer4ListenerPreviewItem extends BaseLbBatchImportPreviewItem {
   scheduler: string;
@@ -83,8 +83,6 @@ export type LbBatchImportPreviewDetails = Array<LbBatchImportPreviewItem>;
 
 // 负载均衡批量导入预览 - 响应体
 export interface LbImportPreview {
-  account_id: string;
-  region_ids: string[];
   details: LbBatchImportPreviewDetails;
 }
 export type LbImportPreviewResData = IQueryResData<LbImportPreview>;

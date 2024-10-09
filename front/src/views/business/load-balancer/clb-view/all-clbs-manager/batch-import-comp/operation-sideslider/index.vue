@@ -94,10 +94,11 @@ const isSubmitLoading = ref(false);
 const handleSubmit = async () => {
   isSubmitLoading.value = true;
   try {
-    const { vendor, operation_type } = formModel;
+    const { account_id, region_ids, vendor, operation_type } = formModel;
+    const data = { account_id, region_ids, source: 'excel', ...previewData.value };
     const res = await http.post(
-      `/api/v1/cloud/${getBusinessApiPath()}vendor/${vendor}/load_balancers/operations/${operation_type}/submit`,
-      { ...previewData.value, source: 'excel' },
+      `/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/load_balancers/operations/${operation_type}/submit`,
+      data,
     );
     Message({ theme: 'success', message: t('提交成功') });
 

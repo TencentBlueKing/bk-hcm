@@ -25,7 +25,7 @@ const { getBusinessApiPath } = useWhereAmI();
 
 const url = computed(() => {
   const { vendor, operation_type } = props.formModel;
-  return `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendor/${vendor}/load_balancers/operations/${operation_type}/preview`;
+  return `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/load_balancers/operations/${operation_type}/preview`;
 });
 const formDataAttributes = computed(() => {
   const { account_id, region_ids } = props.formModel;
@@ -56,7 +56,7 @@ const handleDownloadTemplateFile = async () => {
     [Operation.layer4_listener_bind_rs]: '4_hcm_clb_bind_rs_tcp_udp_template.xlsx',
     [Operation.layer7_listener_bind_rs]: '5_hcm_clb_url_rule_http_https_template.xlsx',
   };
-  http.download({ url: `/api/v1/web/template/${filenameMap[props.formModel.operation_type]}`, method: 'get' });
+  http.download({ url: `/api/v1/web/templates/${filenameMap[props.formModel.operation_type]}`, method: 'get' });
 };
 </script>
 
