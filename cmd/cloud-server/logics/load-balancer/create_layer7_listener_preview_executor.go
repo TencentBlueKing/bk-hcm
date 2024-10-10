@@ -161,6 +161,7 @@ func (c *CreateLayer7ListenerPreviewExecutor) validateWithDB(kt *kit.Kit, cloudI
 			detail.ValidateResult = append(detail.ValidateResult,
 				fmt.Sprintf("clb.vip(%s) not match;", detail.ClbVipDomain))
 		}
+		detail.RegionID = lb.Region
 
 		if err = c.validateListener(kt, detail); err != nil {
 			logs.Errorf("validate listener failed, err: %v, rid: %s", err, kt.Rid)
@@ -222,6 +223,11 @@ func (c *CreateLayer7ListenerPreviewExecutor) validateTCloudListener(kt *kit.Kit
 		if err != nil {
 			return err
 		}
+
+		err = c.validateCert(kt, detail)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -252,6 +258,42 @@ func (c *CreateLayer7ListenerPreviewExecutor) validateTCloudCert(kt *kit.Kit,
 				fmt.Sprintf("clb(%s) listener(%d) already exist, and the cert info dose not match",
 					cloudLBID, curDetail.ListenerPorts[0]))
 			return nil
+		}
+	}
+	return nil
+}
+
+func (c *CreateLayer7ListenerPreviewExecutor) validateCert(kt *kit.Kit, curDetail *CreateLayer7ListenerDetail) error {
+
+	cloudIDs := curDetail.CertCloudIDs
+	if len(curDetail.CACloudID) > 0 {
+		cloudIDs = append(cloudIDs, curDetail.CACloudID)
+	}
+	if len(cloudIDs) == 0 {
+		return nil
+	}
+	listReq := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("account_id", c.accountID),
+			tools.RuleEqual("bk_biz_id", c.bkBizID),
+			tools.RuleEqual("vendor", c.vendor),
+			tools.RuleIn("cloud_id", cloudIDs),
+		),
+		Page: core.NewDefaultBasePage(),
+	}
+	certs, err := c.dataServiceCli.Global.ListCert(kt, listReq)
+	if err != nil {
+		logs.Errorf("list cert failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+	certCloudIDs := make(map[string]struct{})
+	for _, detail := range certs.Details {
+		certCloudIDs[detail.CloudID] = struct{}{}
+	}
+	for _, cloudID := range cloudIDs {
+		if _, ok := certCloudIDs[cloudID]; !ok {
+			curDetail.Status.SetNotExecutable()
+			curDetail.ValidateResult = append(curDetail.ValidateResult, fmt.Sprintf("cert(%s) not found", cloudID))
 		}
 	}
 	return nil
@@ -296,6 +338,8 @@ type CreateLayer7ListenerDetail struct {
 
 	Status         ImportStatus `json:"status"`
 	ValidateResult []string     `json:"validate_result"`
+
+	RegionID string `json:"region_id"`
 }
 
 func (c *CreateLayer7ListenerDetail) validate() {
