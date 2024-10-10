@@ -85,4 +85,5 @@ func register() {
 	action.RegisterAction(actionlb.BatchTaskBindTargetAction{})
 	action.RegisterAction(actionlb.BatchTaskTCloudCreateL7RuleAction{})
 	action.RegisterAction(actionlb.BatchTaskTCloudCreateListenerAction{})
+	action.RegisterAction(actionlb.BatchTaskUnBindTargetAction{})
 }

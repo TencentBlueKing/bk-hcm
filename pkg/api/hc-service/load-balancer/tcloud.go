@@ -573,3 +573,19 @@ type TCloudDeleteSnatIpReq struct {
 func (r *TCloudDeleteSnatIpReq) Validate() error {
 	return validator.Validate.Struct(r)
 }
+
+// --------------------------[按负载均衡批量解绑RS]--------------------------
+
+// TCloudBatchUnbindRsReq tcloud batch unbind rs req.
+type TCloudBatchUnbindRsReq struct {
+	AccountID           string                           `json:"account_id" validate:"required"`
+	Region              string                           `json:"region" validate:"required"`
+	Vendor              enumor.Vendor                    `json:"vendor" validate:"required"`
+	LoadBalancerCloudId string                           `json:"load_balancer_cloud_id" validate:"required"`
+	Details             []*cloud.ListBatchListenerResult `json:"details"`
+}
+
+// Validate validate tcloud batch unbind rs.
+func (req *TCloudBatchUnbindRsReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
