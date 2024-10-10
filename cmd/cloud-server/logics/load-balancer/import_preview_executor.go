@@ -44,6 +44,8 @@ const (
 	Layer4ListenerBindRs = "layer4_listener_bind_rs"
 	// Layer7ListenerBindRs 七层监听器绑定RS
 	Layer7ListenerBindRs = "layer7_listener_bind_rs"
+	// ListenerDelete 监听器删除
+	ListenerDelete = "listener_delete"
 )
 
 // ImportPreviewExecutor 导入预览执行器

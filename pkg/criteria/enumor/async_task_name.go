@@ -45,7 +45,8 @@ func (v ActionName) Validate() error {
 	case ActionPullDailyRawBill, ActionMainAccountSummary, ActionRootAccountSummary,
 		ActionDailyAccountSplit, ActionDailyAccountSummary, ActionMonthTaskAction:
 	case ActionLoadBalancerDeleteUrlRule, ActionLoadBalancerDeleteListener:
-	case ActionBatchTaskTCloudCreateL7Rule, ActionBatchTaskTCloudBindTarget, ActionBatchTaskTCloudCreateListener:
+	case ActionBatchTaskTCloudCreateL7Rule, ActionBatchTaskTCloudBindTarget, ActionBatchTaskTCloudCreateListener,
+		ActionBatchTaskDeleteListener:
 
 	default:
 		return fmt.Errorf("unsupported action name type: %s", v)
@@ -139,6 +140,8 @@ const (
 	ActionBatchTaskTCloudCreateListener = "batch_task_tcloud_create_listener"
 	// ActionBatchTaskTCloudCreateL7Rule ...
 	ActionBatchTaskTCloudCreateL7Rule = "batch_task_tcloud_create_l7_rule"
+	// ActionBatchTaskDeleteListener 异步任务-批量删除监听器
+	ActionBatchTaskDeleteListener ActionName = "batch_task_tcloud_delete_listener"
 )
 
 const (

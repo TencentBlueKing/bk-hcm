@@ -101,4 +101,7 @@ const (
 
 	// TaskCreateLayer7Rule is a task indicating that create layer7 rule.
 	TaskCreateLayer7Rule TaskOperation = "create_layer7_rule"
+
+	// TaskDeleteListener is a task indicating that delete listener.
+	TaskDeleteListener TaskOperation = "delete_listener"
 )

@@ -218,3 +218,19 @@ func (cli *LoadBalancerClient) ListLoadBalancerRaw(kt *kit.Kit, req *core.ListRe
 	return common.Request[core.ListReq, dataproto.LbRawListResult](cli.client,
 		rest.POST, kt, req, "/load_balancers/list_with_extension")
 }
+
+// ListLoadBalancerListenerByRsIP list load balancer listener by rsip.
+func (cli *LoadBalancerClient) ListLoadBalancerListenerByRsIP(kt *kit.Kit, req *dataproto.ListListenerByRsIPReq) (
+	*dataproto.ListListenerByRsIPResp, error) {
+
+	return common.Request[dataproto.ListListenerByRsIPReq, dataproto.ListListenerByRsIPResp](cli.client,
+		rest.POST, kt, req, "/load_balancers/listeners/list/by/rsip")
+}
+
+// ListBatchListeners list batch listeners.
+func (cli *LoadBalancerClient) ListBatchListeners(kt *kit.Kit, req *dataproto.BatchDeleteListenerReq) (
+	*dataproto.BatchListListenerResp, error) {
+
+	return common.Request[dataproto.BatchDeleteListenerReq, dataproto.BatchListListenerResp](cli.client,
+		rest.POST, kt, req, "/load_balancers/listeners/batch/list")
+}
