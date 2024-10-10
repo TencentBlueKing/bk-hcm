@@ -41,4 +41,5 @@ type Management struct {
 
 // ManagementExt management extension.
 type ManagementExt struct {
+	RegionIDs []string `json:"region_ids"`
 }

@@ -123,6 +123,8 @@ const (
 	DeleteRuleTaskType = TaskType(FlowLoadBalancerDeleteRule)
 	// CreateListenerTaskType 任务类型-新建监听器
 	CreateListenerTaskType = TaskType(FlowLoadBalancerCreateListener)
+	// CreateUrlRuleTaskType 任务类型-新建URL规则
+	CreateUrlRuleTaskType = TaskType(FlowLoadBalancerCreateUrlRule)
 )
 
 // InstType 实例类型

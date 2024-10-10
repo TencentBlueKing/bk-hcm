@@ -46,6 +46,7 @@ func (v ActionName) Validate() error {
 		ActionDailyAccountSplit, ActionDailyAccountSummary, ActionMonthTaskAction:
 	case ActionLoadBalancerDeleteUrlRule, ActionLoadBalancerDeleteListener:
 	case ActionBatchTaskTCloudCreateL7Rule, ActionBatchTaskTCloudBindTarget, ActionBatchTaskTCloudCreateListener:
+	case ActionSyncTCloudLoadBalancer, SyncTCloudLoadBalancerListener:
 
 	default:
 		return fmt.Errorf("unsupported action name type: %s", v)
