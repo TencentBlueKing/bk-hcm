@@ -7,15 +7,18 @@ import { TRANSPORT_LAYER_LIST } from '@/constants';
  */
 export default (typeMenuMap: any) => {
   const popInstance = ref();
+  const isDropdownShow = ref(false);
   const currentPopBoundaryNodeKey = ref(''); // 当前弹出层所在节点key
 
   // 显示popover时, 记录当前显示的节点key
   const handlePopShow = (node: any) => {
-    currentPopBoundaryNodeKey.value = node.id;
+    isDropdownShow.value = true;
+    currentPopBoundaryNodeKey.value = node.nodeKey;
   };
 
   // 隐藏popover时, 清空key
   const handlePopHide = () => {
+    isDropdownShow.value = false;
     currentPopBoundaryNodeKey.value = '';
   };
 
@@ -23,7 +26,10 @@ export default (typeMenuMap: any) => {
   const showDropdownList = (e: any, node: any) => {
     popInstance.value?.close();
     popInstance.value = $bkPopover({
-      trigger: 'click',
+      isShow: isDropdownShow.value,
+      // todo: 暂不支持 manual
+      trigger: 'manual',
+      forceClickoutside: true,
       theme: 'light',
       renderType: 'shown',
       placement: 'bottom-start',
@@ -36,11 +42,14 @@ export default (typeMenuMap: any) => {
           {typeMenuMap[node.type].map((item: any, index: number) => {
             if (node.type === 'listener' && TRANSPORT_LAYER_LIST.includes(node.protocol) && index === 0) return null;
             const disabled = typeof item.isDisabled === 'function' ? item.isDisabled(node) : false;
-            const tooltips = typeof item.tooltips === 'function' ? item.tooltips(node) : null;
+            const tooltips = typeof item.tooltips === 'function' ? item.tooltips(node) : { disabled: true };
             return (
               <div
                 class={`dropdown-item ${disabled ? 'disabled' : null}`}
-                onClick={() => !disabled && item.handler(node)}
+                onClick={() => {
+                  !disabled && item.handler(node);
+                  handlePopHide();
+                }}
                 v-bk-tooltips={tooltips}>
                 {item.label}
               </div>
@@ -58,6 +67,7 @@ export default (typeMenuMap: any) => {
 
   return {
     showDropdownList,
+    isDropdownShow,
     currentPopBoundaryNodeKey,
   };
 };

@@ -24,7 +24,15 @@ import { HOST_RUNNING_STATUS, HOST_SHUTDOWN_STATUS } from '../common/table/HostO
 import './use-columns.scss';
 import { defaults } from 'lodash';
 import { timeFormatter } from '@/common/util';
-import { IP_VERSION_MAP, LBRouteName, LB_NETWORK_TYPE_MAP, SCHEDULER_MAP } from '@/constants/clb';
+import {
+  APPLICATION_LAYER_LIST,
+  CLB_STATUS_MAP,
+  IP_VERSION_MAP,
+  LBRouteName,
+  LB_NETWORK_TYPE_MAP,
+  SCHEDULER_MAP,
+  TRANSPORT_LAYER_LIST,
+} from '@/constants/clb';
 import { formatBillCost, getInstVip } from '@/utils';
 import { Spinner } from 'bkui-vue/lib/icon';
 import { APPLICATION_STATUS_MAP, APPLICATION_TYPE_MAP } from '@/views/service/apply-list/constants';
@@ -40,6 +48,7 @@ interface LinkFieldOptions {
   idFiled?: string; // id字段
   onlyShowOnList?: boolean; // 只在列表中显示
   linkable?: boolean | ((data: any) => boolean); // 可链接性
+  width?: string | number; // 宽度
   render?: (data: any) => any; // 自定义渲染内容
   renderSuffix?: (data: any) => any; // 自定义后缀渲染内容
   contentClass?: string; // 内容class
@@ -65,17 +74,19 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       idFiled: 'id',
       onlyShowOnList: true,
       linkable: true,
+      width: 120,
       render: undefined,
       sort: true,
     });
 
-    const { type, label, field, idFiled, onlyShowOnList, linkable, render, renderSuffix, contentClass, sort } = options;
+    const { type, label, field, idFiled, onlyShowOnList, linkable, width, render, renderSuffix, contentClass, sort } =
+      options;
 
     return {
       label,
       field,
       sort,
-      width: label === 'ID' ? '120' : 'auto',
+      width,
       onlyShowOnList,
       isDefaultShow: true,
       render({ data }: { cell: string; data: any }) {
@@ -1114,6 +1125,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '负载均衡名称',
       field: 'name',
       linkable: () => whereAmI.value === Senarios.business,
+      width: 200,
       render: (data) => (
         <Button
           text
@@ -1137,12 +1149,14 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
         <span v-bk-tooltips={{ content: '用户通过该域名访问负载均衡流量', placement: 'top' }}>负载均衡域名</span>
       ),
       field: 'domain',
+      width: 150,
       isDefaultShow: true,
       render: ({ cell }: { cell: string }) => cell || '--',
     },
     {
       label: '负载均衡VIP',
       field: 'vip',
+      width: 150,
       isDefaultShow: true,
       render: ({ data }: any) => {
         return getInstVip(data);
@@ -1153,17 +1167,20 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'lb_type',
       isDefaultShow: true,
       sort: true,
+      width: 100,
       filter: {
         list: [
           { text: LB_NETWORK_TYPE_MAP.OPEN, value: LB_NETWORK_TYPE_MAP.OPEN },
           { text: LB_NETWORK_TYPE_MAP.INTERNAL, value: LB_NETWORK_TYPE_MAP.INTERNAL },
         ],
       },
+      render: ({ cell }: { cell: string }) => LB_NETWORK_TYPE_MAP[cell] || '--',
     },
     {
       label: '监听器数量',
       field: 'listenerNum',
       isDefaultShow: true,
+      width: 100,
       render: ({ cell }: { cell: number }) => cell || '0',
     },
     {
@@ -1200,6 +1217,14 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       isDefaultShow: true,
       render: ({ cell }: { cell: string }) => IP_VERSION_MAP[cell],
       sort: true,
+      filter: {
+        list: [
+          { value: 'ipv4', text: 'IPv4' },
+          { value: 'ipv6', text: 'IPv6' },
+          { value: 'ipv6_dual_stack', text: 'IPv6DualStack' },
+          { value: 'ipv6_nat64', text: 'IPv6Nat64' },
+        ],
+      },
     },
     {
       label: '云厂商',
@@ -1208,22 +1233,28 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
         return h('span', [CloudType[cell] || '--']);
       },
       sort: true,
+      filter: {
+        list: [{ value: VendorEnum.TCLOUD, text: VendorMap[VendorEnum.TCLOUD] }],
+      },
     },
     {
       label: '地域',
       field: 'region',
+      width: 120,
       render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell) || '--',
       sort: true,
     },
     {
       label: '可用区域',
       field: 'zones',
+      width: 120,
       render: ({ cell }: { cell: string[] }) => cell?.join(','),
       sort: true,
     },
     {
       label: '状态',
       field: 'status',
+      width: 120,
       sort: true,
       render: ({ cell }: { cell: string }) => {
         let icon = StatusSuccess;
@@ -1238,16 +1269,20 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
         return cell ? (
           <div class='status-column-cell'>
             <img class={`status-icon${cell === 'binding' ? ' spin-icon' : ''}`} src={icon} alt='' />
-            <span>{cell}</span>
+            <span>{CLB_STATUS_MAP[cell]}</span>
           </div>
         ) : (
           '--'
         );
       },
+      filter: {
+        list: Object.keys(CLB_STATUS_MAP).map((key) => ({ value: key, text: CLB_STATUS_MAP[key] })),
+      },
     },
     {
       label: '所属vpc',
       field: 'cloud_vpc_id',
+      width: 120,
       sort: true,
     },
   ];
@@ -1288,33 +1323,53 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '协议',
       field: 'protocol',
       isDefaultShow: true,
+      filter: {
+        list: [...TRANSPORT_LAYER_LIST, ...APPLICATION_LAYER_LIST].map((protocol) => ({
+          value: protocol,
+          text: protocol,
+        })),
+      },
     },
     {
       label: '端口',
       field: 'port',
       isDefaultShow: true,
+      sort: true,
       render: ({ data, cell }: any) => `${cell}${data.end_port ? `-${data.end_port}` : ''}`,
     },
     {
       label: '均衡方式',
       field: 'scheduler',
       isDefaultShow: true,
+      // sort: true,
+      filter: {
+        list: Object.keys(SCHEDULER_MAP).map((scheduler) => ({ value: scheduler, text: SCHEDULER_MAP[scheduler] })),
+      },
       render: ({ cell }: { cell: string }) => SCHEDULER_MAP[cell] || '--',
     },
     {
       label: '域名数量',
       field: 'domain_num',
+      // sort: true,
       isDefaultShow: true,
     },
     {
       label: 'URL数量',
       field: 'url_num',
+      // sort: true,
       isDefaultShow: true,
     },
     {
       label: '同步状态',
       field: 'binding_status',
       isDefaultShow: true,
+      // sort: true,
+      filter: {
+        list: Object.keys(CLB_BINDING_STATUS).map((bindingStatus) => ({
+          value: bindingStatus,
+          text: CLB_BINDING_STATUS[bindingStatus],
+        })),
+      },
       render: ({ cell }: { cell: string }) => {
         let icon = StatusSuccess;
         switch (cell) {
@@ -1345,6 +1400,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'name',
       idFiled: 'name',
       onlyShowOnList: false,
+      width: 200,
       render: ({ id, name }) => (
         <Button
           text
@@ -1366,6 +1422,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '关联的负载均衡',
       field: 'lb_name',
+      width: 200,
       isDefaultShow: true,
       render({ cell }: any) {
         return cell?.trim() || '--';
@@ -1374,6 +1431,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     {
       label: '绑定监听器数量',
       field: 'listener_num',
+      width: 120,
       isDefaultShow: true,
     },
     {
@@ -1385,18 +1443,40 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       isDefaultShow: true,
       sort: true,
       filter: {
-        list: [
-          { value: 'TCP', text: 'TCP' },
-          { value: 'UDP', text: 'UDP' },
-          { value: 'HTTP', text: 'HTTP' },
-          { value: 'HTTPS', text: 'HTTPS' },
-        ],
+        list: [...TRANSPORT_LAYER_LIST, ...APPLICATION_LAYER_LIST].map((protocol) => ({
+          value: protocol,
+          text: protocol,
+        })),
       },
     },
     {
       label: '端口',
       field: 'port',
       isDefaultShow: true,
+      sort: true,
+    },
+    {
+      label: '云厂商',
+      field: 'vendor',
+      render({ cell }: { cell: string }) {
+        return h('span', [CloudType[cell] || '--']);
+      },
+      sort: true,
+      filter: {
+        list: [{ value: VendorEnum.TCLOUD, text: VendorMap[VendorEnum.TCLOUD] }],
+      },
+    },
+    {
+      label: '地域',
+      field: 'region',
+      width: 120,
+      render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell) || '--',
+      sort: true,
+    },
+    {
+      label: '所属VPC',
+      field: 'cloud_vpc_id',
+      width: 120,
       sort: true,
     },
     {
@@ -1414,30 +1494,9 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       },
     },
     {
-      label: '云厂商',
-      field: 'vendor',
-      render({ cell }: { cell: string }) {
-        return h('span', [CloudType[cell] || '--']);
-      },
-      sort: true,
-      filter: {
-        list: [{ value: VendorEnum.TCLOUD, text: VendorMap[VendorEnum.TCLOUD] }],
-      },
-    },
-    {
-      label: '地域',
-      field: 'region',
-      render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell) || '--',
-      sort: true,
-    },
-    {
-      label: '所属VPC',
-      field: 'cloud_vpc_id',
-      sort: true,
-    },
-    {
       label: '健康检查端口',
       field: 'health_check',
+      width: 120,
       render: ({ cell }: any) => {
         const { health_num, un_health_num } = cell;
         const total = health_num + un_health_num;
@@ -1499,6 +1558,9 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       render: ({ data }: any) => {
         return data.machine_type || data.inst_type;
       },
+      filter: {
+        list: ['ENI', 'CVM'].map((type) => ({ value: type, text: type })),
+      },
     },
     {
       label: '所属VPC',
@@ -1519,6 +1581,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '同步状态',
       field: 'sync_status',
       isDefaultShow: true,
+      sort: true,
+      filter: {
+        list: Object.keys(CLB_BINDING_STATUS).map((bindingStatus) => ({
+          value: bindingStatus,
+          text: CLB_BINDING_STATUS[bindingStatus],
+        })),
+      },
       render: ({ cell }: { cell: string }) => {
         let icon = StatusSuccess;
         switch (cell) {
@@ -1546,6 +1615,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       type: 'targetGroup',
       label: '绑定的监听器',
       field: 'lbl_name',
+      width: 200,
       render: ({ lbl_id, lbl_name, protocol }: any) => (
         <Button
           text
@@ -1585,12 +1655,10 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'protocol',
       isDefaultShow: true,
       filter: {
-        list: [
-          { value: 'TCP', text: 'TCP' },
-          { value: 'UDP', text: 'UDP' },
-          { value: 'HTTP', text: 'HTTP' },
-          { value: 'HTTPS', text: 'HTTPS' },
-        ],
+        list: [...TRANSPORT_LAYER_LIST, ...APPLICATION_LAYER_LIST].map((protocol) => ({
+          value: protocol,
+          text: protocol,
+        })),
       },
     },
     {

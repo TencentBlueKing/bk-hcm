@@ -11,7 +11,7 @@ export enum LBRouteName {
   tg = 'specific-tg-manager',
 }
 // 负载均衡-路由组件名称映射
-export const LB_ROUTE_NAME_MAP = {
+export const LB_ROUTE_NAME_MAP: ConstantMapRecord = {
   all: 'all-lbs-manager',
   lb: 'specific-lb-manager',
   listener: 'specific-listener-manager',
@@ -109,7 +109,7 @@ export const SCHEDULER_MAP: ConstantMapRecord = {
   IP_HASH: 'IP Hash',
 };
 // 均衡方式映射 - 反向映射
-export const SCHEDULER_REVERSE_MAP = {
+export const SCHEDULER_REVERSE_MAP: ConstantMapRecord = {
   按权重轮询: 'WRR',
   最小连接数: 'LEAST_CONN',
   IP_HASH: 'IP_HASH',
@@ -121,19 +121,19 @@ export const TRANSPORT_LAYER_LIST = ['TCP', 'UDP'];
 export const APPLICATION_LAYER_LIST = ['HTTP', 'HTTPS'];
 
 // 负载均衡网络类型映射
-export const LB_NETWORK_TYPE_MAP = {
+export const LB_NETWORK_TYPE_MAP: ConstantMapRecord = {
   OPEN: '公网',
   INTERNAL: '内网',
 };
 
 // 负载均衡网络类型映射 - 反向映射
-export const LB_NETWORK_TYPE_REVERSE_MAP = {
+export const LB_NETWORK_TYPE_REVERSE_MAP: ConstantMapRecord = {
   公网: 'OPEN',
   内网: 'INTERNAL',
 };
 
 // 腾讯云负载均衡状态映射
-export const CLB_STATUS_MAP = {
+export const CLB_STATUS_MAP: ConstantMapRecord = {
   '1': '正常运行',
   '0': '创建中',
 };
@@ -203,7 +203,7 @@ export const CLB_SPEC_TYPE_COLUMNS_MAP = {
 };
 
 // 监听器同步状态映射 - 反向映射
-export const LISTENER_BINDING_STATUS_REVERSE_MAP = {
+export const LISTENER_BINDING_STATUS_REVERSE_MAP: ConstantMapRecord = {
   绑定中: 'binding',
   已绑定: 'success',
 };

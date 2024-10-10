@@ -11,6 +11,7 @@
 
   .main-container {
     flex: 1;
+    max-width: calc(100% - 300px);
     padding: 24px;
     background-color: #f5f7fb;
   }

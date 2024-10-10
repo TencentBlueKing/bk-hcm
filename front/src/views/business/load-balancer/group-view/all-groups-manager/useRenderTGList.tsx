@@ -12,12 +12,15 @@ import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 // import utils
 import { getTableNewRowClass } from '@/common/util';
 import bus from '@/common/bus';
+import { TARGET_GROUP_PROTOCOLS, VendorEnum, VendorMap } from '@/common/constant';
+import { useI18n } from 'vue-i18n';
 
 /**
  * 渲染目标组list
  */
 export default () => {
   // use hooks
+  const { t } = useI18n();
   const { columns, settings } = useColumns('targetGroup');
   const { selections, handleSelectionChange } = useSelection();
   // use stores
@@ -25,56 +28,39 @@ export default () => {
   const accountStore = useAccountStore();
 
   const searchData: ISearchItem[] = [
-    {
-      id: 'name',
-      name: '目标组名称',
-    },
-    // {
-    //   id: 'lb_name',
-    //   name: '关联的负载均衡',
-    // },
-    {
-      id: 'protocol',
-      name: '协议',
-    },
-    // {
-    //   id: 'port',
-    //   name: '端口',
-    // },
+    { id: 'name', name: t('目标组名称') },
+    { id: 'protocol', name: t('协议'), children: TARGET_GROUP_PROTOCOLS.map((item) => ({ id: item, name: item })) },
+    { id: 'port', name: t('端口') },
     {
       id: 'vendor',
-      name: '云厂商',
+      name: t('云厂商'),
+      children: [{ id: VendorEnum.TCLOUD, name: VendorMap[VendorEnum.TCLOUD] }],
     },
-    {
-      id: 'region',
-      name: '地域',
-    },
-    {
-      id: 'cloud_vpc_id',
-      name: '所属VPC',
-    },
+    { id: 'region', name: t('地域') },
+    { id: 'cloud_vpc_id', name: t('所属VPC') },
     {
       id: 'health_check.health_switch',
-      name: '健康检查',
+      name: t('健康检查'),
       children: [
-        { name: '已开启', id: 1 },
-        { name: '未开启', id: 0 },
+        { name: t('已开启'), id: 1 },
+        { name: t('未开启'), id: 0 },
       ],
     },
   ];
   const tableColumns = [
     ...columns,
     {
-      label: '操作',
+      label: t('操作'),
       width: 120,
+      fixed: 'right',
       render: ({ data }: any) => (
         <div>
           <Button text theme={'primary'} onClick={() => handleEditTargetGroup(data)}>
-            编辑
+            {t('编辑')}
           </Button>
           <span
             v-bk-tooltips={{
-              content: '已绑定了监听器的目标组不可删除',
+              content: t('已绑定了监听器的目标组不可删除'),
               disabled: data.listener_num === 0,
             }}>
             <Button
@@ -85,7 +71,7 @@ export default () => {
               onClick={() => {
                 handleDeleteTargetGroup(data.id, data.name);
               }}>
-              删除
+              {t('删除')}
             </Button>
           </span>
         </div>
@@ -133,7 +119,7 @@ export default () => {
 
   // 删除单个目标组
   const handleDeleteTargetGroup = (id: string, name: string) => {
-    Confirm('请确定删除目标组', `将删除目标组【${name}】`, () => {
+    Confirm(t('请确定删除目标组'), `${t('将删除目标组【')}${name}${t('】')}`, () => {
       businessStore
         .deleteTargetGroups({
           bk_biz_id: accountStore.bizs,
@@ -141,7 +127,7 @@ export default () => {
         })
         .then(() => {
           Message({
-            message: '删除成功',
+            message: t('删除成功'),
             theme: 'success',
           });
           // 刷新表格数据
