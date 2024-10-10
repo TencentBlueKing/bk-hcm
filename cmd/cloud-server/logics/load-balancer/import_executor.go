@@ -125,6 +125,9 @@ func createTaskManagement(kt *kit.Kit, cli *dataservice.Client, bkBizID int64, v
 
 func updateTaskManagement(kt *kit.Kit, cli *dataservice.Client, taskID string, flowIDs []string) error {
 
+	if len(flowIDs) == 0 {
+		return nil
+	}
 	updateItem := task.UpdateTaskManagementField{
 		ID:      taskID,
 		FlowIDs: flowIDs,
@@ -142,6 +145,9 @@ func updateTaskManagement(kt *kit.Kit, cli *dataservice.Client, taskID string, f
 
 func updateTaskDetailState(kt *kit.Kit, cli *dataservice.Client, state enumor.TaskDetailState, ids []string) error {
 	updateItems := make([]task.UpdateTaskDetailField, 0, len(ids))
+	if len(ids) == 0 {
+		return nil
+	}
 	for _, id := range ids {
 		updateItems = append(updateItems, task.UpdateTaskDetailField{
 			ID:    id,

@@ -307,6 +307,10 @@ func (c *CreateLayer4ListenerExecutor) buildTCloudFlowTask(lbID, lbCloudID, regi
 }
 
 func (c *CreateLayer4ListenerExecutor) createTaskDetails(kt *kit.Kit, taskID string) error {
+
+	if len(c.details) == 0 {
+		return nil
+	}
 	taskDetailsCreateReq := &task.CreateDetailReq{}
 	for _, detail := range c.details {
 		taskDetailsCreateReq.Items = append(taskDetailsCreateReq.Items, task.CreateDetailField{
@@ -338,6 +342,9 @@ func (c *CreateLayer4ListenerExecutor) createTaskDetails(kt *kit.Kit, taskID str
 }
 
 func (c *CreateLayer4ListenerExecutor) createExistingTaskDetails(kt *kit.Kit, taskID string) error {
+	if len(c.existingDetails) == 0 {
+		return nil
+	}
 	taskDetailsCreateReq := &task.CreateDetailReq{}
 	for _, detail := range c.existingDetails {
 		taskDetailsCreateReq.Items = append(taskDetailsCreateReq.Items, task.CreateDetailField{
@@ -396,6 +403,9 @@ func (c *CreateLayer4ListenerExecutor) updateTaskManagementAndDetails(kt *kit.Ki
 }
 
 func (c *CreateLayer4ListenerExecutor) updateTaskDetails(kt *kit.Kit) error {
+	if len(c.taskDetails) == 0 {
+		return nil
+	}
 	updateItems := make([]task.UpdateTaskDetailField, 0, len(c.taskDetails))
 	for _, detail := range c.taskDetails {
 		updateItems = append(updateItems, task.UpdateTaskDetailField{
