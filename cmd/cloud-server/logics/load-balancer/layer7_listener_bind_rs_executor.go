@@ -404,6 +404,9 @@ func (c *Layer7ListenerBindRSExecutor) buildTaskManagementAndDetails(kt *kit.Kit
 }
 
 func (c *Layer7ListenerBindRSExecutor) createTaskDetails(kt *kit.Kit, taskID string) error {
+	if len(c.details) == 0 {
+		return nil
+	}
 	taskDetailsCreateReq := &task.CreateDetailReq{}
 	for _, detail := range c.details {
 		taskDetailsCreateReq.Items = append(taskDetailsCreateReq.Items, task.CreateDetailField{
@@ -448,6 +451,9 @@ func (c *Layer7ListenerBindRSExecutor) updateTaskManagementAndDetails(kt *kit.Ki
 }
 
 func (c *Layer7ListenerBindRSExecutor) updateTaskDetails(kt *kit.Kit) error {
+	if len(c.taskDetails) == 0 {
+		return nil
+	}
 	updateItems := make([]task.UpdateTaskDetailField, 0, len(c.taskDetails))
 	for _, detail := range c.taskDetails {
 		updateItems = append(updateItems, task.UpdateTaskDetailField{
@@ -468,6 +474,9 @@ func (c *Layer7ListenerBindRSExecutor) updateTaskDetails(kt *kit.Kit) error {
 }
 
 func (c *Layer7ListenerBindRSExecutor) createExistingTaskDetails(kt *kit.Kit, taskID string) error {
+	if len(c.existingDetails) == 0 {
+		return nil
+	}
 	taskDetailsCreateReq := &task.CreateDetailReq{}
 	for _, detail := range c.existingDetails {
 		taskDetailsCreateReq.Items = append(taskDetailsCreateReq.Items, task.CreateDetailField{
