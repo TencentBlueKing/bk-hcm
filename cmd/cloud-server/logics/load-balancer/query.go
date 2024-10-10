@@ -22,7 +22,6 @@ package lblogic
 
 import (
 	"fmt"
-
 	"hcm/pkg/api/core"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
@@ -79,8 +78,8 @@ func GetListenerByID(kt *kit.Kit, cli *dataservice.Client, lblID string) (corelb
 	return lblList.Details[0], nil
 }
 
-func getListener(kt *kit.Kit, cli *dataservice.Client, accountID, lbCloudID, protocol string, port int,
-	bkBizID int64, vendor enumor.Vendor) (*corelb.BaseListener, error) {
+func getListener(kt *kit.Kit, cli *dataservice.Client, accountID, lbCloudID string, protocol enumor.ProtocolType,
+	port int, bkBizID int64, vendor enumor.Vendor) (*corelb.BaseListener, error) {
 
 	req := &core.ListReq{
 		Filter: tools.ExpressionAnd(
@@ -202,9 +201,8 @@ func getTargetGroupID(kt *kit.Kit, cli *dataservice.Client, ruleCloudID string) 
 }
 
 func getCvm(kt *kit.Kit, cli *dataservice.Client, ip string,
-	vendor enumor.Vendor, bkBizID int64, accountID string) (*corecvm.BaseCvm, error) {
+	vendor enumor.Vendor, bkBizID int64, accountID string, cloudVPCs []string) (*corecvm.BaseCvm, error) {
 
-	// TODO question: 一个云账号下面可以保证 内网ip是唯一的吗？还是需要有额外的逻辑保证这个函数查询出来的结果是唯一的，比如vpc？
 	expr, err := tools.And(
 		tools.ExpressionOr(
 			tools.RuleJSONContains("private_ipv4_addresses", ip),
@@ -215,6 +213,7 @@ func getCvm(kt *kit.Kit, cli *dataservice.Client, ip string,
 		tools.RuleEqual("vendor", vendor),
 		tools.RuleEqual("bk_biz_id", bkBizID),
 		tools.RuleEqual("account_id", accountID),
+		tools.RuleJsonOverlaps("cloud_vpc_ids", cloudVPCs),
 	)
 	if err != nil {
 		logs.Errorf("failed to create expression, err: %v, rid: %s", err, kt.Rid)
@@ -229,12 +228,22 @@ func getCvm(kt *kit.Kit, cli *dataservice.Client, ip string,
 	}
 	cvms, err := cli.Global.Cvm.ListCvm(kt, listReq)
 	if err != nil {
-		logs.Errorf("list cvm failed, vendor: %s, ip: %s, accountID: %s, err: %v, rid: %s",
-			vendor, ip, accountID, err, kt.Rid)
+		logs.Errorf("list cvm failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 	if len(cvms.Details) > 0 {
 		return &cvms.Details[0], nil
 	}
 	return nil, nil
+}
+
+func getTCloudLoadBalancer(kt *kit.Kit, cli *dataservice.Client, lbID string) (
+	*corelb.LoadBalancer[corelb.TCloudClbExtension], error) {
+
+	lb, err := cli.TCloud.LoadBalancer.Get(kt, lbID)
+	if err != nil {
+		logs.Errorf("get tcloud load balancer failed, lb(%s), err: %v, rid: %s", lbID, err, kt.Rid)
+		return nil, err
+	}
+	return lb, nil
 }
