@@ -107,7 +107,7 @@ func genResManagementActions() []client.ResourceAction {
 		NameEn:               "Access Biz",
 		Type:                 View,
 		RelatedResourceTypes: bizResource,
-		RelatedActions:       []client.ActionID{ResourceAssign},
+		RelatedActions:       nil,
 		Version:              1,
 	}, {
 		ID:                   BizIaaSResCreate,

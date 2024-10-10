@@ -833,6 +833,8 @@ var (
 
 // BillControllerOption bill controller option
 type BillControllerOption struct {
+	// 是否关闭整个账单同步，默认为不关闭
+	Disable                        bool           `yaml:"disable"`
 	ControllerSyncDuration         *time.Duration `yaml:"controllerSyncDuration,omitempty"`
 	MainAccountSummarySyncDuration *time.Duration `yaml:"mainAccountSummarySyncDuration,omitempty"`
 	RootAccountSummarySyncDuration *time.Duration `yaml:"rootAccountSummarySyncDuration,omitempty"`
@@ -972,6 +974,9 @@ type Notice struct {
 
 // Validate do validate
 func (c *Notice) validate() error {
+	if !c.Enable {
+		return nil
+	}
 	if err := c.ApiGateway.validate(); err != nil {
 		return err
 	}
