@@ -34,6 +34,14 @@ const (
 	Layer7RuleType RuleType = "layer_7"
 )
 
+// Validate 验证四层/七层监听器类型
+func (r RuleType) Validate() error {
+	if r != Layer4RuleType && r != Layer7RuleType {
+		return errors.New("rule_type is illegal")
+	}
+	return nil
+}
+
 // TargetGroupType 目标组类型
 type TargetGroupType string
 
@@ -123,6 +131,9 @@ const (
 	DeleteRuleTaskType = TaskType(FlowLoadBalancerDeleteRule)
 	// CreateListenerTaskType 任务类型-新建监听器
 	CreateListenerTaskType = TaskType(FlowLoadBalancerCreateListener)
+	// ListenerModifyRsWeightTaskType 任务类型-监听器批量调整RS权重
+	ListenerModifyRsWeightTaskType = TaskType(
+		FlowBatchTaskListenerModifyRsWeight)
 )
 
 // InstType 实例类型

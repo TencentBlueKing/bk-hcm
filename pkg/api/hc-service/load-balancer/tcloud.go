@@ -573,3 +573,20 @@ type TCloudDeleteSnatIpReq struct {
 func (r *TCloudDeleteSnatIpReq) Validate() error {
 	return validator.Validate.Struct(r)
 }
+
+// --------------------------[按负载均衡批量调整RS权重]--------------------------
+
+// TCloudBatchModifyRsWeightReq tcloud batch modify rs weight req.
+type TCloudBatchModifyRsWeightReq struct {
+	AccountID           string                           `json:"account_id" validate:"required"`
+	Region              string                           `json:"region" validate:"required"`
+	Vendor              enumor.Vendor                    `json:"vendor" validate:"required"`
+	LoadBalancerCloudId string                           `json:"load_balancer_cloud_id" validate:"required"`
+	Details             []*cloud.ListBatchListenerResult `json:"details"`
+	NewRsWeight         int64                            `json:"new_rs_weight" validate:"required"`
+}
+
+// Validate validate tcloud batch modify rs weight.
+func (req *TCloudBatchModifyRsWeightReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
