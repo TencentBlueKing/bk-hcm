@@ -23,6 +23,9 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	typescvm "hcm/pkg/adaptor/types/cvm"
+	cvt "hcm/pkg/tools/converter"
 )
 
 type formItem struct {
@@ -159,9 +162,19 @@ func (a *ApplicationOfCreateTCloudCvm) renderNetwork() ([]formItem, error) {
 	if req.PublicIPAssigned {
 		formItems = append(formItems, formItem{Label: "是否自动分配公网IP", Value: "是"})
 		formItems = append(formItems, formItem{Label: "EIP带宽大小", Value: strconv.FormatInt(
-			a.req.InternetMaxBandwidthOut, 64)})
+			a.req.InternetMaxBandwidthOut, 10)})
 	} else {
 		formItems = append(formItems, formItem{Label: "是否自动分配公网IP", Value: "否"})
+	}
+	if len(req.InternetChargeType) > 0 {
+		internetChargeType, ok := InternetChargeTypeNameMap[req.InternetChargeType]
+		if !ok {
+			internetChargeType = string(req.InternetChargeType)
+		}
+		formItems = append(formItems, formItem{Label: "网络计费模式", Value: internetChargeType})
+		if req.InternetChargeType == typescvm.TCloudInternetBandwidthPackage {
+			formItems = append(formItems, formItem{Label: "带宽包ID", Value: cvt.PtrToVal(req.BandwidthPackageID)})
+		}
 	}
 
 	// 所属的蓝鲸云区域

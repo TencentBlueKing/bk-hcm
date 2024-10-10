@@ -21,6 +21,7 @@ import { useI18n } from 'vue-i18n';
 import { ref, watch } from 'vue';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { timeFormatter } from '@/common/util';
+import { FieldList } from '../../common/info-list/types';
 
 const route = useRoute();
 const resourceStore = useResourceStore();
@@ -80,7 +81,7 @@ watch(
   },
 );
 
-const gcpFields = [
+const gcpFields: FieldList = [
   {
     name: t('资源ID'),
     prop: 'id',
@@ -269,7 +270,7 @@ const submit = async (data: any) => {
   <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
     <detail-tab :tabs="hostTabs">
       <template #default>
-        <detail-info :fields="gcpFields" :detail="gcpDetail" />
+        <detail-info :fields="gcpFields" :detail="gcpDetail" label-width="150px" global-copyable />
       </template>
     </detail-tab>
   </div>

@@ -77,6 +77,9 @@ type TCloudCvmCreateReq struct {
 	AutoRenew                *bool `json:"auto_renew" validate:"required"`
 	RequiredCount            int64 `json:"required_count" validate:"required,min=1,max=500"`
 
+	InternetChargeType typecvm.TCloudInternetChargeType `json:"internet_charge_type" validate:"omitempty"`
+	BandwidthPackageID *string                          `json:"bandwidth_package_id" validate:"omitempty"`
+
 	Memo *string `json:"memo" validate:"omitempty"`
 }
 

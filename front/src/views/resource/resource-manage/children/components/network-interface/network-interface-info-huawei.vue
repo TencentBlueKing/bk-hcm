@@ -4,6 +4,7 @@ import { h, ref, watchEffect } from 'vue';
 import { CloudType } from '@/typings';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
+import { FieldList } from '../../../common/info-list/types';
 
 const props = defineProps({
   detail: {
@@ -14,7 +15,7 @@ const props = defineProps({
 const { getRegionName } = useRegionsStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
 
-const fields = ref([
+const fields = ref<FieldList>([
   {
     name: '资源ID',
     prop: 'id',
@@ -26,7 +27,7 @@ const fields = ref([
   {
     name: '云厂商',
     prop: 'vendor',
-    render(cell: string) {
+    render(cell: keyof typeof CloudType) {
       return CloudType[cell] || '--';
     },
   },
@@ -59,29 +60,27 @@ const fields = ref([
     name: '所属VPC',
     prop: 'cloud_vpc_id',
     render(val: string) {
-      if (!val) {
-        return '--';
-      }
+      if (!val) return '--';
       return h(
         'div',
         { class: 'cell-content-list' },
         val?.split(';').map((item) => h('p', { class: 'cell-content-item' }, item?.split('/')?.pop())),
       );
     },
+    copyContent: (cell) => cell,
   },
   {
     name: '所属子网',
     prop: 'cloud_subnet_id',
     render(val: string) {
-      if (!val) {
-        return '--';
-      }
+      if (!val) return '--';
       return h(
         'div',
         { class: 'cell-content-list' },
         val?.split(';').map((item) => h('p', { class: 'cell-content-item' }, item?.split('/')?.pop())),
       );
     },
+    copyContent: (cell) => cell,
   },
   {
     name: '已关联到主机ID',
@@ -111,6 +110,6 @@ watchEffect(() => {
 
 <template>
   <div class="field-list">
-    <detail-info :detail="data" :fields="fields" />
+    <detail-info :detail="data" :fields="fields" global-copyable label-width="150px" />
   </div>
 </template>

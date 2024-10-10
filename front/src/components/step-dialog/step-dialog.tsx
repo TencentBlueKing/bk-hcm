@@ -44,6 +44,7 @@ export default defineComponent({
         return '720';
       },
     },
+    renderType: String as PropType<'if' | 'is'>,
   },
 
   emits: ['confirm', 'cancel', 'next'],
@@ -86,6 +87,7 @@ export default defineComponent({
     return (
       <>
         <bk-dialog
+          render-directive={this.renderType || undefined}
           class='step-dialog'
           width={this.dialogWidth}
           height={this.dialogHeight}
@@ -94,6 +96,8 @@ export default defineComponent({
           size={this.size}
           title={this.title}
           isShow={this.isShow}
+          quick-close={false}
+          close-icon={false}
           onClosed={this.handleClose}>
           {{
             default: () => {
@@ -141,7 +145,10 @@ export default defineComponent({
                   ) : (
                     ''
                   )}
-                  <bk-button class='dialog-button' onClick={this.handleClose}>
+                  <bk-button
+                    class='dialog-button'
+                    onClick={this.handleClose}
+                    loading={this.steps[this.curStep - 1].isConfirmLoading || this.loading}>
                     {this.t('取消')}
                   </bk-button>
                 </>

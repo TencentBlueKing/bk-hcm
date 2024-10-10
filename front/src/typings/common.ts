@@ -1,3 +1,5 @@
+// 常量映射类型
+export type ConstantMapRecord = Record<string, string>;
 export interface Verify {
   action: string;
   resource_type: string;

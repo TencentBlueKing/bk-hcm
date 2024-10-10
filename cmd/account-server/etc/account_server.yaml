@@ -65,6 +65,8 @@ log:
 
 # bill controller
 controller:
+  # 关闭账单拉取
+  disable: false
   controllerSyncDuration:
   mainAccountSummarySyncDuration:
   rootAccountSummarySyncDuration:
@@ -82,7 +84,15 @@ billAllocation:
   awsCommonExpense:
     excludeAccountCloudIDs:
 #      - 123456789
-
+  gcpCredits:
+#    - rootAccountCloudID: gcp_support_account
+#      returnConfigs:
+#        - creditId: "some_credit_id"
+#          creditName: "some_note"
+#          accountCloudID: "gcp_credit_account"
+  gcpCommonExpense:
+    excludeAccountCloudIDs:
+      # - "account_do_not_share_common_expense"
 # defines esb related settings.
 esb:
   # endpoints is a seed list of host:port addresses of esb nodes.

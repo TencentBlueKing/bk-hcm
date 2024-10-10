@@ -114,7 +114,7 @@ func (msdc *MainDailySplitController) Start() error {
 func (msdc *MainDailySplitController) setAwsExtension(kt *kit.Kit) error {
 
 	billAllocation := cc.AccountServer().BillAllocation
-	// 	matching saving plan allocation option
+	// matching saving plan allocation option
 	for _, spOpt := range billAllocation.AwsSavingsPlans {
 		if spOpt.RootAccountCloudID != msdc.RootAccountCloudID {
 			continue
@@ -187,8 +187,9 @@ func (msdc *MainDailySplitController) getBillSummary(
 
 func (msdc *MainDailySplitController) syncDailySplit(kt *kit.Kit, billYear, billMonth int) error {
 
-	logs.Infof("start daily split sync, vendor %s, period: %d-%d, root account %s, main account %s, rid: %s",
-		msdc.Vendor, billYear, billMonth, msdc.RootAccountID, msdc.MainAccountID, kt.Rid)
+	logs.Infof("[%s] start daily split sync, period: %d-%d, main %s(%s), root %s(%s), rid: %s",
+		msdc.Vendor, billYear, billMonth, msdc.MainAccountCloudID, msdc.MainAccountID,
+		msdc.RootAccountCloudID, msdc.RootAccountID, kt.Rid)
 
 	summary, err := msdc.getBillSummary(kt, billYear, billMonth)
 	if err != nil {

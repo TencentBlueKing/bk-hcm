@@ -14,8 +14,6 @@
 }
 
 .security-dialog-wrap {
-  height: 720px;
-
   .bk-modal-header {
     .bk-dialog-header {
       height: 52px;
@@ -45,7 +43,7 @@
     padding: 12px 16px 4px;
     flex-shrink: 0;
     width: 280px;
-    height: 100%;
+    max-height: 100%;
     background: #fafbfd;
 
     & > .bk-nested-loading {
@@ -69,6 +67,7 @@
 
       .security-group-rules-list {
         flex: 1;
+        max-height: 60vh;
 
         // .draggable-container {
         //   .draggable-card-container {

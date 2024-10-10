@@ -29,11 +29,24 @@ POST /api/v1/cloud/vendors/tcloud/applications/types/create_cvm
 | password                    | string        | 是  | 密码                                                                                                                   |
 | confirmed_password          | string        | 是  | 确认密码                                                                                                                 |
 | instance_charge_type        | string        | 是  | 实例计费模式（PREPAID：表示预付费，即包年包月、POSTPAID_BY_HOUR：表示后付费，即按量计费、CDHPAID：专用宿主机付费，即只对专用宿主机计费，不对专用宿主机上的实例计费。、SPOTPAID：表示竞价实例付费） |
+| internet_charge_type        | string        | 否  | (v1.6.7+)网络计费类型，见下文。                                                                                                 |
+| bandwidth_package_id        | string        | 否  | (v1.6.7+)带宽包id                                                                                                       |
 | instance_charge_paid_period | int64         | 是  | 实例计费支付周期                                                                                                             |
 | auto_renew                  | bool          | 是  | 是否自动续订                                                                                                               |
 | required_count              | int64         | 是  | 需要数量                                                                                                                 |
 | memo                        | string        | 否  | 备注                                                                                                                   |
 | remark                      | string        | 否  | 单据备注                                                                                                                 |
+
+#### internet_charge_type 网络计费类型 取值范围
+
+- BANDWIDTH_PREPAID：预付费按带宽结算
+- TRAFFIC_POSTPAID_BY_HOUR：流量按小时后付费
+- BANDWIDTH_POSTPAID_BY_HOUR：带宽按小时后付费
+- BANDWIDTH_PACKAGE：带宽包用户
+
+##### internet_charge_type 默认取值：
+
+非带宽包用户默认与子机付费类型保持一致，比如子机付费类型为预付费，网络计费类型默认为预付费；子机付费类型为后付费，网络计费类型默认为后付费。
 
 #### system_disk
 

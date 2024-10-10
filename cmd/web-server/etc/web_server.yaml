@@ -135,3 +135,37 @@ itsm:
     caFile:
     # the password to decrypt the certificate.
     password:
+
+changeLogPath:
+  ch: ../changelog/ch
+  en: ../changelog/en
+
+# defines notice related settings.
+notice:
+  # enable is a flag to enable notice service. 如果需要启用消息通知，需要申请bk-notice的api网关权限
+  enable: false
+  # endpoints is a seed list of host:port addresses of notice api gateway nodes.
+  endpoints:
+    - http://demo.com
+  # appCode is the BlueKing app code of hcm to request notice api gateway.
+  appCode: bk-hcm
+  # appSecret is the BlueKing app secret of hcm to request notice api gateway.
+  appSecret: xxxxxxxxx
+  # user is the BlueKing user of hcm to request notice api gateway.
+  user: bk-hcm
+  # bkTicket is the BlueKing access ticket of hcm to request notice api gateway.
+  bkTicket:
+  # bkToken is the BlueKing access token of hcm to request notice api gateway.
+  bkToken: xxxxxxxxx
+  # defines tls related options.
+  tls:
+    # server should be accessed without verifying the TLS certificate.
+    insecureSkipVerify:
+    # server requires TLS client certificate authentication.
+    certFile:
+    # server requires TLS client certificate authentication.
+    keyFile:
+    # trusted root certificates for server.
+    caFile:
+    # the password to decrypt the certificate.
+    password:

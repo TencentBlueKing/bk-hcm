@@ -27,7 +27,7 @@ const { loading, detail } = useDetail('route_tables', route.query.id as string);
 
 <template>
   <bk-loading :loading="loading">
-    <detail-header>路由表：（{{ detail.id }}）</detail-header>
+    <detail-header>路由表：ID（{{ detail.id }}）</detail-header>
     <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
       <detail-tab :tabs="routeTabs" class="route-tab">
         <template #default="type">

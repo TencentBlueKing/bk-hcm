@@ -98,6 +98,9 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .bkhcm-icon-jiantou_fanhui:before {
 	content: "\e14c";
 }
+.bkhcm-icon-cc-clear:before {
+	content: "\e16b";
+}
 .bkhcm-icon-arrows--right--line:before {
 	content: "\e106";
 }
@@ -136,6 +139,9 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 }
 .bkhcm-icon-yuyanqiehuanriwen:before {
 	content: "\e10f";
+}
+.bkhcm-icon-ticket:before {
+	content: "\e15c";
 }
 .bkhcm-icon-not-favorited:before {
 	content: "\e10b";
@@ -239,15 +245,6 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .bkhcm-icon-recyclebin:before {
 	content: "\e13c";
 }
-.bkhcm-icon-image:before {
-	content: "\e13d";
-}
-.bkhcm-icon-route-table:before {
-	content: "\e13f";
-}
-.bkhcm-icon-network-interface:before {
-	content: "\e140";
-}
 .bkhcm-icon-disk:before {
 	content: "\e141";
 }
@@ -269,6 +266,12 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .bkhcm-icon-alert:before {
 	content: "\e159";
 }
+.bkhcm-icon-close:before {
+	content: "\e15d";
+}
+.bkhcm-icon-release-note:before {
+	content: "\e16d";
+}
 .bkhcm-icon-jiebang:before {
 	content: "\e156";
 }
@@ -277,4 +280,46 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 }
 .bkhcm-icon-user-8:before {
 	content: "\e15a";
+}
+.bkhcm-icon-dissolve:before {
+	content: "\e15e";
+}
+.bkhcm-icon-cvm-type:before {
+	content: "\e160";
+}
+.bkhcm-icon-image:before {
+	content: "\e163";
+}
+.bkhcm-icon-route-table:before {
+	content: "\e161";
+}
+.bkhcm-icon-host-inventory:before {
+	content: "\e162";
+}
+.bkhcm-icon-network-interface:before {
+	content: "\e15f";
+}
+.bkhcm-icon-res-shelves:before {
+	content: "\e164";
+}
+.bkhcm-icon-cvm-produce:before {
+	content: "\e165";
+}
+.bkhcm-icon-bill-manage:before {
+	content: "\e166";
+}
+.bkhcm-icon-account-manage:before {
+	content: "\e167";
+}
+.bkhcm-icon-host-recycle:before {
+	content: "\e169";
+}
+.bkhcm-icon-host-application:before {
+	content: "\e168";
+}
+.bkhcm-icon-resource-plan:before {
+	content: "\e16a";
+}
+.bkhcm-icon-my-apply:before {
+	content: "\e16c";
 }

@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/api/core/audit"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
@@ -276,14 +277,14 @@ func (svc *lbSvc) batchCreateTargetWithGroupID(kt *kit.Kit, txn *sqlx.Tx, accoun
 
 	// 查询Cvm信息
 	cvmMap := make(map[string]tablecvm.Table)
-	if len(cloudCvmIDs) > 0 {
+	for _, batchIds := range slice.Split(cloudCvmIDs, constant.BatchOperationMaxLimit) {
 		cvmReq := &typesdao.ListOption{
-			Filter: tools.ContainersExpression("cloud_id", cloudCvmIDs),
+			Filter: tools.ContainersExpression("cloud_id", batchIds),
 			Page:   core.NewDefaultBasePage(),
 		}
 		cvmList, err := svc.dao.Cvm().List(kt, cvmReq)
 		if err != nil {
-			logs.Errorf("failed to list cvm, cloudIDs: %v, err: %v, rid: %s", cloudCvmIDs, err, kt.Rid)
+			logs.Errorf("failed to list cvm, cloudIDs: %v, err: %v, rid: %s", batchIds, err, kt.Rid)
 			return nil, err
 		}
 
@@ -330,7 +331,16 @@ func (svc *lbSvc) batchCreateTargetWithGroupID(kt *kit.Kit, txn *sqlx.Tx, accoun
 
 		rsModels = append(rsModels, tmpRs)
 	}
-	return svc.dao.LoadBalancerTarget().BatchCreateWithTx(kt, txn, rsModels)
+	ids := make([]string, 0, len(rsModels))
+	for batchIdx, rsBatch := range slice.Split(rsModels, constant.BatchOperationMaxLimit) {
+		batchCreated, err := svc.dao.LoadBalancerTarget().BatchCreateWithTx(kt, txn, rsBatch)
+		if err != nil {
+			logs.Errorf("batch create target failed, batch idx: %d, err: %v, rid: %s", batchIdx, err, kt.Rid)
+			return nil, err
+		}
+		ids = append(ids, batchCreated...)
+	}
+	return ids, nil
 }
 
 func getVpcMapByIDs(kt *kit.Kit, cloudIDs []string) (

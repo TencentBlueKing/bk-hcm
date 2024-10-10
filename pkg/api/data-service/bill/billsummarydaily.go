@@ -66,8 +66,8 @@ func (req *BillSummaryDailyListReq) Validate() error {
 
 // BillSummaryDailyListResult list result
 type BillSummaryDailyListResult struct {
-	Count   *uint64                     `json:"count,omitempty"`
-	Details []billcore.BillSummaryDaily `json:"details"`
+	Count   *uint64                 `json:"count,omitempty"`
+	Details []billcore.SummaryDaily `json:"details"`
 }
 
 // BillSummaryDailyUpdateReq update request

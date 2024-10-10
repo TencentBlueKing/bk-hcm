@@ -44,10 +44,11 @@ func (b bill) GcpGetBillList(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	// 查询aws账单基础表
+	// 查询账单信息表
 	billInfo, err := getBillInfo[cloud.GcpBillConfigExtension](cts.Kit, req.BillAccountID, b.cs.DataService())
 	if err != nil {
-		logs.Errorf("gcp bill config get base info db failed, billAccID: %s, err: %+v", req.BillAccountID, err)
+		logs.Errorf("gcp bill config get base info db failed, billAccID: %s, err: %+v, rid:%s",
+			req.BillAccountID, err, cts.Kit.Rid)
 		return nil, err
 	}
 	if billInfo == nil {
@@ -109,6 +110,73 @@ func (b bill) GcpGetRootAccountBillList(cts *rest.Contexts) (interface{}, error)
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	// 查询gcp账单配置表
+	billInfo, err := getRootAccountBillConfigInfo[billcore.GcpBillConfigExtension](
+		cts.Kit, req.RootAccountID, b.cs.DataService())
+	if err != nil {
+		logs.Errorf("gcp root account bill config get base info db failed, root account id: %s, err: %+v",
+			req.RootAccountID, err)
+		return nil, err
+	}
+	if billInfo == nil {
+		return nil, errf.Newf(
+			errf.RecordNotFound, "bill config for root_account_id: %s is not found", req.RootAccountID)
+	}
+
+	cli, err := b.ad.GcpRoot(cts.Kit, req.RootAccountID)
+	if err != nil {
+		logs.Errorf("gcp request adaptor client err, req: %+v, err: %+v", req, err)
+		return nil, err
+	}
+
+	opt := &typesBill.GcpRootAccountBillListOption{
+		RootAccountID: req.RootAccountID,
+		MainAccountID: req.MainAccountID,
+		Month:         req.Month,
+		BeginDate:     req.BeginDate,
+		EndDate:       req.EndDate,
+		ProjectID:     req.ProjectID,
+	}
+	// 检查Main AccountID是否存在
+	if len(req.MainAccountID) != 0 {
+		mainAccountInfo, err := b.cs.DataService().Gcp.MainAccount.Get(cts.Kit, req.MainAccountID)
+		if err != nil {
+			logs.Errorf("get gcp main account failed, main account id: %s, err: %+v", req.MainAccountID, err)
+			return nil, err
+		}
+		if mainAccountInfo.Extension == nil || mainAccountInfo.Extension.CloudProjectID == "" {
+			return nil, fmt.Errorf("main account: %s cloud_project_id is empty", req.MainAccountID)
+		}
+		opt.ProjectID = mainAccountInfo.Extension.CloudProjectID
+	}
+	if req.Page != nil {
+		opt.Page = &typesBill.GcpBillPage{
+			Offset: req.Page.Offset,
+			Limit:  req.Page.Limit,
+		}
+	}
+	resp, count, err := cli.GetRootAccountBillList(cts.Kit, opt, billInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	return &hcbillservice.GcpBillListResult{
+		Count:   count,
+		Details: resp,
+	}, nil
+}
+
+// GcpQueryCreditList get gcp credits list.
+func (b bill) GcpQueryCreditList(cts *rest.Contexts) (interface{}, error) {
+	req := new(hcbillservice.GcpRootAccountBillListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
 	// 查询aws账单基础表
 	billInfo, err := getRootAccountBillConfigInfo[billcore.GcpBillConfigExtension](
 		cts.Kit, req.RootAccountID, b.cs.DataService())
@@ -134,6 +202,7 @@ func (b bill) GcpGetRootAccountBillList(cts *rest.Contexts) (interface{}, error)
 		Month:         req.Month,
 		BeginDate:     req.BeginDate,
 		EndDate:       req.EndDate,
+		ProjectID:     req.ProjectID,
 	}
 	// 检查Main AccountID是否存在
 	if len(req.MainAccountID) != 0 {
@@ -146,8 +215,6 @@ func (b bill) GcpGetRootAccountBillList(cts *rest.Contexts) (interface{}, error)
 			return nil, fmt.Errorf("main account: %s cloud_project_id is empty", req.MainAccountID)
 		}
 		opt.ProjectID = mainAccountInfo.Extension.CloudProjectID
-	} else {
-		opt.ProjectID = req.ProjectID
 	}
 
 	if req.Page != nil {
@@ -156,13 +223,14 @@ func (b bill) GcpGetRootAccountBillList(cts *rest.Contexts) (interface{}, error)
 			Limit:  req.Page.Limit,
 		}
 	}
-	resp, count, err := cli.GetRootAccountBillList(cts.Kit, opt, billInfo)
+	resp, err := cli.QueryRootCreditList(cts.Kit, opt, billInfo)
 	if err != nil {
+		logs.Errorf("fail to query gcp root account bill credit list, req: %+v, err: %+v, rid: %s",
+			req, err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	return &hcbillservice.GcpBillListResult{
-		Count:   count,
 		Details: resp,
 	}, nil
 }

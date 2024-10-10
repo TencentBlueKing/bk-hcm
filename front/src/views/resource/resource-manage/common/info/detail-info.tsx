@@ -3,19 +3,7 @@ import { defineComponent, PropType } from 'vue';
 import InfoList from '../info-list/info-list';
 
 import './detail-info.scss';
-
-type Field = {
-  name: string;
-  value?: string;
-  cls?: string | ((cell: string) => string);
-  link?: string | ((cell: string) => string);
-  copy?: string | boolean;
-  edit?: boolean;
-  prop?: string;
-  tipsContent?: string;
-  type?: string;
-  render?: (cell: string | boolean) => void;
-};
+import { FieldList } from '../info-list/types';
 
 export default defineComponent({
   components: {
@@ -23,12 +11,11 @@ export default defineComponent({
   },
 
   props: {
-    fields: Array as PropType<Field[]>,
+    fields: Array as PropType<FieldList>,
     detail: Object,
-    wide: {
-      type: Boolean,
-      default: false,
-    },
+    col: { type: Number, default: 2 },
+    labelWidth: { type: String, default: () => '120px' },
+    globalCopyable: { type: Boolean, default: false },
   },
 
   emits: ['change'],
@@ -36,6 +23,7 @@ export default defineComponent({
     const handleChange = (val: any) => {
       emit('change', val);
     };
+
     return {
       handleChange,
       props,
@@ -47,7 +35,7 @@ export default defineComponent({
       return this.fields.map((field) => {
         return {
           ...field,
-          value: field.value || this.detail[field?.prop],
+          value: field.value || this.detail?.[field?.prop],
         };
       });
     },
@@ -55,11 +43,13 @@ export default defineComponent({
 
   render() {
     return (
-      <info-list
+      <InfoList
         class='detail-info-main g-scroller'
         fields={this.renderFields}
         onChange={this.handleChange}
-        wide={this.props.wide}
+        col={this.col}
+        labelWidth={this.labelWidth}
+        globalCopyable={this.globalCopyable}
       />
     );
   },

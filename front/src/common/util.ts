@@ -1,4 +1,8 @@
 import dayjs, { OpUnitType, QUnitType } from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+
+dayjs.extend(utc);
+
 // 获取 cookie object
 export function getCookies(strCookie = document.cookie): any {
   if (!strCookie) {
@@ -53,8 +57,18 @@ export function deepMerge(...objectArray: any) {
  * @param format 格式
  * @returns 格式化后的时间
  */
-export function timeFormatter(val: any, format = 'YYYY-MM-DD HH:mm:ss') {
-  return val ? dayjs(val).format(format) : '--';
+export function timeFormatter(val: any, format = 'YYYY-MM-DD HH:mm:ss', defaultVal = '--') {
+  return val ? dayjs(val).format(format) : defaultVal;
+}
+
+/**
+ * 格式化 UTC时间
+ * @param val 待格式化时间
+ * @param format 格式
+ * @returns 格式化后的时间
+ */
+export function timeUTCFormatter(val: string, format = 'YYYY-MM-DD HH:mm:ss', defaultVal = '--') {
+  return val ? dayjs.utc(val).format(format) : defaultVal;
 }
 
 /**

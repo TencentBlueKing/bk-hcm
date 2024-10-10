@@ -66,3 +66,82 @@ func TestGetBillDays(t *testing.T) {
 		assert.Equal(t, result, test.result, "result should be equal")
 	}
 }
+
+func Test_getBillDays(t *testing.T) {
+	type args struct {
+		billYear  int
+		billMonth int
+		billDelay int
+		now       time.Time
+	}
+	tests := []struct {
+		name string
+		args args
+		want []int
+	}{
+		{
+			name: "test_2024-04",
+			args: args{
+				billYear:  2024,
+				billMonth: 4,
+				billDelay: 1,
+				now:       time.Now(),
+			},
+			want: genIntSlice(1, 30),
+		},
+		{
+			name: "test_202402",
+			args: args{
+				billYear:  2024,
+				billMonth: 2,
+				billDelay: 1,
+				now:       time.Now(),
+			},
+			want: genIntSlice(1, 29),
+		},
+		{
+			name: "test_2023-02",
+			args: args{
+				billYear:  2023,
+				billMonth: 2,
+				billDelay: 1,
+				now:       time.Now(),
+			},
+			want: genIntSlice(1, 28),
+		},
+
+		{
+			name: "test_2023-06",
+			args: args{
+				billYear:  2023,
+				billMonth: 6,
+				billDelay: 1,
+				now:       time.Now(),
+			},
+			want: genIntSlice(1, 30),
+		},
+		{
+			name: "test_2024-06 at day 1",
+			args: args{
+				billYear:  2024,
+				billMonth: 6,
+				billDelay: 1,
+				now:       time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC),
+			},
+			want: genIntSlice(1, 0),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equalf(t, tt.want, getBillDays(tt.args.billYear, tt.args.billMonth, tt.args.billDelay, tt.args.now),
+				"getBillDays(%v, %v, %v, %v)", tt.args.billYear, tt.args.billMonth, tt.args.billDelay, tt.args.now)
+		})
+	}
+}
+func genIntSlice(start, end int) []int {
+	ret := make([]int, 0)
+	for i := start; i <= end; i++ {
+		ret = append(ret, i)
+	}
+	return ret
+}

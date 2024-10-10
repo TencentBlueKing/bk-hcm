@@ -190,30 +190,30 @@ func (b *BillClient) ListBillDailyPullTask(kt *kit.Kit, req *billproto.BillDaily
 
 // --- bill month task ---
 
-// CreateBillMonthPullTask create bill month task
-func (b *BillClient) CreateBillMonthPullTask(kt *kit.Kit, req *billproto.BillMonthTaskCreateReq) (
+// CreateBillMonthTask create bill month task
+func (b *BillClient) CreateBillMonthTask(kt *kit.Kit, req *billproto.BillMonthTaskCreateReq) (
 	*core.CreateResult, error) {
 	return common.Request[billproto.BillMonthTaskCreateReq, core.CreateResult](
-		b.client, rest.POST, kt, req, "/bills/monthpulltask")
+		b.client, rest.POST, kt, req, "/bills/month_tasks/create")
 }
 
-// DeleteBillMonthPullTask delete bill month task
-func (b *BillClient) DeleteBillMonthPullTask(kt *kit.Kit, req *dataservice.BatchDeleteReq) error {
+// DeleteBillMonthTask delete bill month task
+func (b *BillClient) DeleteBillMonthTask(kt *kit.Kit, req *dataservice.BatchDeleteReq) error {
 	return common.RequestNoResp[dataservice.BatchDeleteReq](
-		b.client, rest.DELETE, kt, req, "/bills/monthpulltask")
+		b.client, rest.DELETE, kt, req, "/bills/month_tasks/batch")
 }
 
-// UpdateBillMonthPullTask update bill month task
-func (b *BillClient) UpdateBillMonthPullTask(kt *kit.Kit, req *billproto.BillMonthTaskUpdateReq) error {
+// UpdateBillMonthTask update bill month task
+func (b *BillClient) UpdateBillMonthTask(kt *kit.Kit, req *billproto.BillMonthTaskUpdateReq) error {
 	return common.RequestNoResp[billproto.BillMonthTaskUpdateReq](
-		b.client, rest.PUT, kt, req, "/bills/monthpulltask")
+		b.client, rest.PUT, kt, req, "/bills/month_tasks")
 }
 
-// ListBillMonthPullTask update bill month task
-func (b *BillClient) ListBillMonthPullTask(kt *kit.Kit, req *billproto.BillMonthTaskListReq) (
+// ListBillMonthTask update bill month task
+func (b *BillClient) ListBillMonthTask(kt *kit.Kit, req *billproto.BillMonthTaskListReq) (
 	*billproto.BillMonthTaskListResult, error) {
 	return common.Request[billproto.BillMonthTaskListReq, billproto.BillMonthTaskListResult](
-		b.client, rest.GET, kt, req, "/bills/monthpulltask")
+		b.client, rest.GET, kt, req, "/bills/month_tasks/list")
 }
 
 // --- bill summary ---

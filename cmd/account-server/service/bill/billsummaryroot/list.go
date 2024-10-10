@@ -91,8 +91,8 @@ func (s *service) ListRootAccountSummary(cts *rest.Contexts) (interface{}, error
 	for idx := range summaryResp.Details {
 		summary := summaryResp.Details[idx]
 		details[idx] = asbillapi.BillSummaryRootResult{
-			BillSummaryRootResult: summary,
-			RootAccountName:       rootMap[summary.RootAccountID].Name,
+			SummaryRoot:     summary,
+			RootAccountName: cvt.PtrToVal(rootMap[summary.RootAccountID]).Name,
 		}
 	}
 

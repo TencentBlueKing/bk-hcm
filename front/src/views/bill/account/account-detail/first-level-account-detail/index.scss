@@ -38,3 +38,12 @@
     }
   }
 }
+
+.validate-btn-container {
+  width: 100%;
+  display: flex;
+  .validate-btn {
+    margin-right: auto;
+    min-width: 88px;
+  }
+}

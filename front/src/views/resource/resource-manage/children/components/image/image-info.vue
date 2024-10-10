@@ -2,6 +2,7 @@
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 import { PropType, ref } from 'vue';
 import useDetail from '../../../hooks/use-detail';
+import { FieldList } from '../../../common/info-list/types';
 
 const props = defineProps({
   id: {
@@ -12,7 +13,7 @@ const props = defineProps({
   },
 });
 
-const fields = ref([
+const fields = ref<FieldList>([
   {
     name: '实例ID',
     prop: 'cloud_id',
@@ -75,6 +76,6 @@ const { loading, detail } = useDetail(
 
 <template>
   <bk-loading :loading="loading">
-    <detail-info :detail="detail" :fields="fields" />
+    <detail-info :detail="detail" :fields="fields" global-copyable />
   </bk-loading>
 </template>

@@ -548,7 +548,8 @@ func (cli *client) listTargetsFromDB(kt *kit.Kit, param *SyncBaseParams, opt *Sy
 	for {
 		relRespTemp, err := cli.dbCli.Global.LoadBalancer.ListTargetGroupListenerRel(kt, listReq)
 		if err != nil {
-			logs.Errorf("fail to list target group listener rel, err: %v, req: %v, cloud_lbl_id: %s, rid: %s", err, listReq, param.CloudIDs, kt.Rid)
+			logs.Errorf("fail to list target group listener rel, err: %v, req: %v, cloud_lbl_id: %s, rid: %s", err,
+				listReq, param.CloudIDs, kt.Rid)
 			return nil, nil, err
 		}
 		relList = append(relList, relRespTemp.Details...)
@@ -577,20 +578,24 @@ func (cli *client) listTargetsFromDB(kt *kit.Kit, param *SyncBaseParams, opt *Sy
 	// 查询对应的rs列表
 	for _, tgID := range tgIDs {
 		// 按目标组查询
+		req := &core.ListReq{
+			Filter: tools.ExpressionAnd(tools.RuleEqual("target_group_id", tgID)),
+			Page:   core.NewDefaultBasePage(),
+		}
 		for {
 			// 查询对应的rs列表
-			rsList, err := cli.dbCli.Global.LoadBalancer.ListTarget(kt, &core.ListReq{
-				Filter: tools.ExpressionAnd(tools.RuleEqual("target_group_id", tgID)),
-				Page:   core.NewDefaultBasePage(),
-			})
+			rsList, err := cli.dbCli.Global.LoadBalancer.ListTarget(kt, req)
 			if err != nil {
 				logs.Errorf("fail to list targets of target group(id=%s), err: %v, rid: %s", tgID, err, kt.Rid)
 				return nil, nil, err
 			}
-			if len(rsList.Details) == 0 {
+			tgRsMap[tgID] = append(tgRsMap[tgID], rsList.Details...)
+
+			if uint(len(rsList.Details)) < core.DefaultMaxPageLimit {
 				break
 			}
-			tgRsMap[tgID] = append(tgRsMap[tgID], rsList.Details...)
+
+			req.Page.Start += uint32(core.DefaultMaxPageLimit)
 		}
 	}
 

@@ -27,6 +27,7 @@ import (
 	asbillapi "hcm/pkg/api/account-server/bill"
 	"hcm/pkg/api/core"
 	accountset "hcm/pkg/api/core/account-set"
+	billcore "hcm/pkg/api/core/bill"
 	dsbillapi "hcm/pkg/api/data-service/bill"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -112,7 +113,7 @@ func generateFileName() string {
 }
 
 func (s *service) fetchRootAccountSummary(cts *rest.Contexts, req *asbillapi.RootAccountSummaryExportReq) (
-	[]*dsbillapi.BillSummaryRootResult, error) {
+	[]*billcore.SummaryRoot, error) {
 
 	var expression = tools.ExpressionAnd(
 		tools.RuleEqual("bill_year", req.BillYear),
@@ -138,7 +139,7 @@ func (s *service) fetchRootAccountSummary(cts *rest.Contexts, req *asbillapi.Roo
 	}
 
 	exportLimit := min(*details.Count, req.ExportLimit)
-	result := make([]*dsbillapi.BillSummaryRootResult, 0, exportLimit)
+	result := make([]*billcore.SummaryRoot, 0, exportLimit)
 	for offset := uint64(0); offset < exportLimit; offset = offset + uint64(core.DefaultMaxPageLimit) {
 		left := exportLimit - offset
 		listReq := &dsbillapi.BillSummaryRootListReq{
@@ -158,7 +159,8 @@ func (s *service) fetchRootAccountSummary(cts *rest.Contexts, req *asbillapi.Roo
 	return result, nil
 }
 
-func toRawData(kt *kit.Kit, details []*dsbillapi.BillSummaryRootResult, accountMap map[string]*accountset.BaseRootAccount) ([][]string, error) {
+func toRawData(kt *kit.Kit, details []*billcore.SummaryRoot,
+	accountMap map[string]*accountset.BaseRootAccount) ([][]string, error) {
 	data := make([][]string, 0, len(details))
 	for _, detail := range details {
 		rootAccount, ok := accountMap[detail.RootAccountID]

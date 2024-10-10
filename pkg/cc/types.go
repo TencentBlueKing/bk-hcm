@@ -833,6 +833,8 @@ var (
 
 // BillControllerOption bill controller option
 type BillControllerOption struct {
+	// 是否关闭整个账单同步，默认为不关闭
+	Disable                        bool           `yaml:"disable"`
 	ControllerSyncDuration         *time.Duration `yaml:"controllerSyncDuration,omitempty"`
 	MainAccountSummarySyncDuration *time.Duration `yaml:"mainAccountSummarySyncDuration,omitempty"`
 	RootAccountSummarySyncDuration *time.Duration `yaml:"rootAccountSummarySyncDuration,omitempty"`
@@ -900,15 +902,59 @@ func (opt *AwsSavingsPlansOption) validate() error {
 	return nil
 }
 
-// AwsCommonExpense ...
-type AwsCommonExpense struct {
+// BillCommonExpense ...
+type BillCommonExpense struct {
 	ExcludeAccountCloudIDs []string `yaml:"excludeAccountCloudIDs" validate:"dive,required"`
+}
+
+// CreditReturn ...
+type CreditReturn struct {
+	CreditID string `yaml:"creditId" validate:"required"`
+	// which account this credit will return to
+	AccountCloudID string `yaml:"accountCloudID" validate:"required"`
+	CreditName     string `yaml:"creditName" `
+}
+
+// Validate ...
+func (r CreditReturn) Validate() error {
+	if r.CreditID == "" {
+		return errors.New("credit id cannot be empty")
+	}
+	if r.AccountCloudID == "" {
+		return errors.New("account cloud id cannot be empty")
+	}
+	return nil
+}
+
+// GcpCreditConfig ...
+type GcpCreditConfig struct {
+	// RootAccountCloudID which root account these savings plans belongs to
+	RootAccountCloudID string         `yaml:"rootAccountCloudID" validate:"required"`
+	ReturnConfigs      []CreditReturn `yaml:"returnConfigs" validate:"required,dive,required"`
+}
+
+// Validate ...
+func (opt *GcpCreditConfig) Validate() error {
+	if opt.RootAccountCloudID == "" {
+		return errors.New("root account cloud id cannot be empty for gcp credits config")
+	}
+	if len(opt.ReturnConfigs) == 0 {
+		return errors.New("return configs cannot be empty for gcp credits config")
+	}
+	for i := range opt.ReturnConfigs {
+		if err := opt.ReturnConfigs[i].Validate(); err != nil {
+			return errors.New(fmt.Sprintf("gcp credit return config index %d validation failed, %v", i, err))
+		}
+	}
+	return nil
 }
 
 // BillAllocationOption ...
 type BillAllocationOption struct {
 	AwsSavingsPlans  []AwsSavingsPlansOption `yaml:"awsSavingsPlans"`
-	AwsCommonExpense AwsCommonExpense        `yaml:"awsCommonExpense"`
+	AwsCommonExpense BillCommonExpense       `yaml:"awsCommonExpense"`
+	GcpCredits       []GcpCreditConfig       `yaml:"gcpCredits"`
+	GcpCommonExpense BillCommonExpense       `yaml:"gcpCommonExpense"`
 }
 
 func (opt *BillAllocationOption) validate() error {
@@ -917,5 +963,23 @@ func (opt *BillAllocationOption) validate() error {
 			return errors.New(fmt.Sprintf("aws savings plans index %d validation failed, %v", i, err))
 		}
 	}
+	return nil
+}
+
+// Notice ...
+type Notice struct {
+	Enable     bool `yaml:"enable"`
+	ApiGateway `yaml:"-,inline"`
+}
+
+// Validate do validate
+func (c *Notice) validate() error {
+	if !c.Enable {
+		return nil
+	}
+	if err := c.ApiGateway.validate(); err != nil {
+		return err
+	}
+
 	return nil
 }
