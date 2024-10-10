@@ -22,7 +22,6 @@ package lblogic
 import (
 	"encoding/json"
 	"fmt"
-	"hcm/pkg/tools/counter"
 
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
 	actionflow "hcm/cmd/task-server/logics/flow"
@@ -39,6 +38,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/counter"
 	"hcm/pkg/tools/slice"
 )
 
@@ -366,6 +366,9 @@ func (c *CreateUrlRuleExecutor) buildTaskManagementAndDetails(kt *kit.Kit, sourc
 }
 
 func (c *CreateUrlRuleExecutor) createTaskDetails(kt *kit.Kit, taskID string) error {
+	if len(c.details) == 0 {
+		return nil
+	}
 	taskDetailsCreateReq := &task.CreateDetailReq{}
 	for _, detail := range c.details {
 		taskDetailsCreateReq.Items = append(taskDetailsCreateReq.Items, task.CreateDetailField{
@@ -410,6 +413,9 @@ func (c *CreateUrlRuleExecutor) updateTaskManagementAndDetails(kt *kit.Kit, flow
 }
 
 func (c *CreateUrlRuleExecutor) updateTaskDetails(kt *kit.Kit) error {
+	if len(c.taskDetails) == 0 {
+		return nil
+	}
 	updateItems := make([]task.UpdateTaskDetailField, 0, len(c.taskDetails))
 	for _, detail := range c.taskDetails {
 		updateItems = append(updateItems, task.UpdateTaskDetailField{
