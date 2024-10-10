@@ -127,6 +127,7 @@ func (d *DetailDao) UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expressi
 	}
 
 	if effected == 0 {
+		logs.Errorf("sql: %v", sql)
 		logs.ErrorJson("update task detail, but data not found, filter: %v, rid: %v", expr, kt.Rid)
 		return errf.New(errf.RecordNotFound, orm.ErrRecordNotFound.Error())
 	}
