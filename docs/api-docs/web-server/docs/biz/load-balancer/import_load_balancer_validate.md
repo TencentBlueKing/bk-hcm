@@ -59,7 +59,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/load_balancers/operations/{
       "weight": 50,
       "user_remark": "this is a create listener item",
       "status": "executable",
-      "validate_result": "-"
+      "validate_result": []
     }
   ]
 }
@@ -69,11 +69,25 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/load_balancers/operations/{
 
 ```json
 {
-  "code": 0,
-  "message": "ok",
-  "data": {
-    "task_management_id": "xxxxxx"
-  }
+  "account_id": "",
+  "region_ids": ["",""],
+  "details":[
+    {
+      "clb_vip_domain": "127.0.0.1",
+      "cloud_clb_id": "lb-xxxxxxx1",
+      "protocol": "https",
+      "listener_port": [8888],
+      "domain": "www.tencent.com",
+      "url_path": "/",
+      "target_type": "ENI",
+      "rs_ip": "127.0.0.1",
+      "rs_port": 80,
+      "weight": 50,
+      "user_remark": "this is a create listener item",
+      "status": "executable",
+      "validate_result": []
+    }
+  ]
 }
 ```
 
@@ -88,6 +102,8 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/load_balancers/operations/{
 
 #### data参数说明
 
-| 参数名称    | 参数类型   | 描述     |
-|---------|--------|--------|
-| task_id | string | 任务管理id |
+| 参数名称       | 参数类型   | 描述        |
+|------------|--------|-----------|
+| details    | array  | excel导入详情 |
+
+不同的operation_type对应的details不同, 具体查看 [上传excel文件接口](import_load_balancer_preview)
