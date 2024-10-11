@@ -21,13 +21,13 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/load_balancers/operations/{
 
 #### operation_type 说明
 
-| 操作类型                    | 说明        |
-|-------------------------|-----------|
-| create_layer4_listener  | 创建四层监听器   |
-| create_layer7_listener  | 创建七层监听器   |
-| create_url_rule         | 创建URL规则   |
-| layer4_listener_bind_rs | 四层监听器绑定RS |
-| layer7_listener_bind_rs | 七层监听器绑定RS |
+| 操作类型                   | 说明        |
+|------------------------|-----------|
+| create_layer4_listener | 创建四层监听器   |
+| create_layer7_listener | 创建七层监听器   |
+| create_layer7_rule     | 创建URL规则   |
+| binding_layer4_rs      | 四层监听器绑定RS |
+| binding_layer7_rs      | 七层监听器绑定RS |
 
 
 ### 调用示例
@@ -47,11 +47,11 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/load_balancers/operations/{
 #### operation-type=create_layer7_listener
 [参数说明](import-response/create_layer7_listener_resp.md)
 
-#### operation-type=create_url_rule
-[参数说明](import-response/create_url_rule_resp.md)
+#### operation-type=create_layer7_rule
+[参数说明](import-response/create_layer7_rule_resp)
 
 #### operation-type=layer4_listener_bind_rs
-[参数说明](import-response/layer4_listener_bind_rs_resp.md)
+[参数说明](import-response/binding_layer4_rs_resp)
 
 #### operation-type=layer7_listener_bind_rs
-[参数说明](import-response/layer7_listener_bind_rs_resp.md)
+[参数说明](import-response/binding_layer7_rs_resp)

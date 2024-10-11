@@ -1,6 +1,6 @@
-# 七层监听器绑定RS 参数说明
+# 创建URL规则 参数说明
 
-**operation-type=layer7_listener_bind_rs**
+**operation-type=create_layer7_rule**
 
 ## 响应示例
 
@@ -16,11 +16,11 @@
         "protocol": "https",
         "listener_port": [8888],
         "domain": "www.tencent.com",
+        "default_domain": true,
         "url_path": "/",
-        "inst_type": "ENI",
-        "rs_ip": "127.0.0.1",
-        "rs_port": 80,
-        "weight": 50,
+        "scheduler": "LEAST_CONN",
+        "session": 60,
+        "health_check": false,
         "user_remark": "this is a create listener item",
         "status": "executable",
         "validate_result": []
@@ -55,11 +55,11 @@
 | protocol        | string   | 监听器协议                        |
 | listener_port   | []int    | 监听器端口, 通常长度为1, 如果为端口段则长度为2   |
 | domain          | string   | 监听器绑定的域名                     |
+| default_domain  | bool     | 是否为默认域名                      |
 | url_path        | string   | 监听器绑定的url路径                  |
-| inst_type       | string   | RS类型，CVM/ENI                 |
-| rs_ip           | string   | rs ip                        |
-| rs_port         | []int    | rs 端口                        |
-| weight          | int      | 监听器绑定的目标权重, 权重范围：0-100       |
+| scheduler       | string   | 负载均衡算法                       |
+| session         | int      | 会话保持时间                       |
+| health_check    | bool     | 是否开启健康检查                     |
 | user_remark     | string   | 用户备注                         |
 | validate_result | []string | 参数校验详情, 当状态为不可执行时, 会有具体的报错原因 |
 | status          | string   | 校验结果状态                       |

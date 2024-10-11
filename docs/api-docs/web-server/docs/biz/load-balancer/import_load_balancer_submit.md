@@ -18,13 +18,13 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/load_balancers/operations/{
 
 #### operation_type 说明
 
-| 操作类型                    | 说明        |
-|-------------------------|-----------|
-| create_layer4_listener  | 创建四层监听器   |
-| create_layer7_listener  | 创建七层监听器   |
-| create_url_rule         | 创建URL规则   |
-| layer4_listener_bind_rs | 四层监听器绑定RS |
-| layer7_listener_bind_rs | 七层监听器绑定RS |
+| 操作类型                   | 说明        |
+|------------------------|-----------|
+| create_layer4_listener | 创建四层监听器   |
+| create_layer7_listener | 创建七层监听器   |
+| create_layer7_rule     | 创建URL规则   |
+| binding_layer4_rs      | 四层监听器绑定RS |
+| binding_layer7_rs      | 七层监听器绑定RS |
 
 
 #### data参数解析

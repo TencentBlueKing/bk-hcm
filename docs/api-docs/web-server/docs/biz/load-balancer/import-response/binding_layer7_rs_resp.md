@@ -1,6 +1,6 @@
-# 四层监听器绑定RS 参数说明
+# 七层监听器绑定RS 参数说明
 
-**operation-type=layer4_listener_bind_rs**
+**operation-type=binding_layer7_rs**
 
 ## 响应示例
 
@@ -15,9 +15,11 @@
         "cloud_clb_id": "lb-xxxxxxx1",
         "protocol": "https",
         "listener_port": [8888],
+        "domain": "www.tencent.com",
+        "url_path": "/",
         "inst_type": "ENI",
         "rs_ip": "127.0.0.1",
-        "rs_port": [80],
+        "rs_port": 80,
         "weight": 50,
         "user_remark": "this is a create listener item",
         "status": "executable",
@@ -52,6 +54,8 @@
 | cloud_clb_id    | string   | 监听器绑定的clb id                 |
 | protocol        | string   | 监听器协议                        |
 | listener_port   | []int    | 监听器端口, 通常长度为1, 如果为端口段则长度为2   |
+| domain          | string   | 监听器绑定的域名                     |
+| url_path        | string   | 监听器绑定的url路径                  |
 | inst_type       | string   | RS类型，CVM/ENI                 |
 | rs_ip           | string   | rs ip                        |
 | rs_port         | []int    | rs 端口                        |
