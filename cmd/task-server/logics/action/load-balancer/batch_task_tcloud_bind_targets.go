@@ -72,11 +72,14 @@ func (act BatchTaskBindTargetAction) Name() enumor.ActionName {
 
 // Run 将目标组中的RS绑定到监听器/规则中
 func (act BatchTaskBindTargetAction) Run(kt run.ExecuteKit, params any) (result any, taskErr error) {
+
+	asyncKit := kt.AsyncKit()
+
 	opt, ok := params.(*BatchTaskBindTargetOption)
 	if !ok {
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
 	}
-	detailList, err := listTaskDetail(kt.Kit(), opt.ManagementDetailIDs)
+	detailList, err := listTaskDetail(asyncKit, opt.ManagementDetailIDs)
 	if err != nil {
 		return fmt.Sprintf("task detail query failed"), err
 	}
@@ -91,7 +94,7 @@ func (act BatchTaskBindTargetAction) Run(kt run.ExecuteKit, params any) (result 
 		}
 	}
 	// 更新任务状态为 running
-	if err := batchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs, enumor.TaskDetailRunning); err != nil {
+	if err := batchUpdateTaskDetailState(asyncKit, opt.ManagementDetailIDs, enumor.TaskDetailRunning); err != nil {
 		return fmt.Sprintf("fail to update detail to running"), err
 	}
 
@@ -102,17 +105,17 @@ func (act BatchTaskBindTargetAction) Run(kt run.ExecuteKit, params any) (result 
 			// 更新为失败
 			targetState = enumor.TaskDetailFailed
 		}
-		err := batchUpdateTaskDetailResultState(kt.Kit(), opt.ManagementDetailIDs, targetState, nil, taskErr)
+		err := batchUpdateTaskDetailResultState(asyncKit, opt.ManagementDetailIDs, targetState, nil, taskErr)
 		if err != nil {
 			logs.Errorf("fail to set detail to %s after cloud operation finished, err: %v, rid: %s",
-				targetState, err, kt.Kit().Rid)
+				targetState, err, asyncKit.Rid)
 		}
 	}()
 
-	err = actcli.GetHCService().TCloud.Clb.BatchRegisterTargetToListenerRule(kt.Kit(), opt.LoadBalancerID,
+	err = actcli.GetHCService().TCloud.Clb.BatchRegisterTargetToListenerRule(asyncKit, opt.LoadBalancerID,
 		opt.BatchRegisterTCloudTargetReq)
 	if err != nil {
-		logs.Errorf("fail to register target to listener rule, err: %v, rid: %s", err, kt.Kit().Rid)
+		logs.Errorf("fail to register target to listener rule, err: %v, rid: %s", err, asyncKit.Rid)
 		return nil, err
 	}
 

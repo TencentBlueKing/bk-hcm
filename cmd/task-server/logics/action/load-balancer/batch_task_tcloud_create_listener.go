@@ -78,20 +78,22 @@ func (act BatchTaskTCloudCreateListenerAction) Run(kt run.ExecuteKit, params any
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
 	}
 
+	asyncKit := kt.AsyncKit()
+
 	results := make([]*core.CloudCreateResult, 0, len(opt.Listeners))
 	for i := range opt.Listeners {
 		detailID := opt.ManagementDetailIDs[i]
 		// 逐条更新结果
-		ret, createErr := act.createSingleListener(kt.Kit(), detailID, opt.Listeners[i]) // 结束后写回状态
+		ret, createErr := act.createSingleListener(asyncKit, detailID, opt.Listeners[i]) // 结束后写回状态
 		targetState := enumor.TaskDetailSuccess
 		if createErr != nil {
 			// 更新为失败
 			targetState = enumor.TaskDetailFailed
 		}
-		err := batchUpdateTaskDetailResultState(kt.Kit(), []string{detailID}, targetState, ret, createErr)
+		err := batchUpdateTaskDetailResultState(asyncKit, []string{detailID}, targetState, ret, createErr)
 		if err != nil {
 			logs.Errorf("fail to set detail to %s after cloud operation finished, err: %v, rid: %s",
-				targetState, err, kt.Kit().Rid)
+				targetState, err, asyncKit.Rid)
 			return nil, err
 		}
 		if createErr != nil {

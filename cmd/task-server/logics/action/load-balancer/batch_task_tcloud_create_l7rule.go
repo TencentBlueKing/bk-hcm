@@ -80,8 +80,10 @@ func (act BatchTaskTCloudCreateL7RuleAction) Run(kt run.ExecuteKit, params any) 
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
 	}
 
+	asyncKit := kt.AsyncKit()
+
 	// 查询 负载均衡、监听器是否正确
-	lb, _, err := getListenerWithLb(kt.Kit(), opt.ListenerID)
+	lb, _, err := getListenerWithLb(asyncKit, opt.ListenerID)
 	if err != nil {
 		logs.Errorf("fail to get listener with lb, err: %v, listner: %s, rid: %s", err, opt.ListenerID, kt.Kit().Rid)
 		return nil, err
@@ -91,7 +93,7 @@ func (act BatchTaskTCloudCreateL7RuleAction) Run(kt run.ExecuteKit, params any) 
 			opt.LoadBalancerID, lb.ID)
 	}
 	// detail 状态检查
-	detailList, err := listTaskDetail(kt.Kit(), opt.ManagementDetailIDs)
+	detailList, err := listTaskDetail(asyncKit, opt.ManagementDetailIDs)
 	if err != nil {
 		return fmt.Sprintf("task detail query failed"), err
 	}
@@ -106,19 +108,19 @@ func (act BatchTaskTCloudCreateL7RuleAction) Run(kt run.ExecuteKit, params any) 
 		}
 	}
 	// 规则检查
-	ruleCheckResult, err := act.checkExistsRule(kt.Kit(), opt)
+	ruleCheckResult, err := act.checkExistsRule(asyncKit, opt)
 	if err != nil {
-		logs.Errorf("fail to check exists rule, err: %v, rid: %s", err, kt.Kit().Rid)
+		logs.Errorf("fail to check exists rule, err: %v, rid: %s", err, asyncKit.Rid)
 		return nil, err
 	}
 	// 1. 有错误，写入错误信息
 	for i := range ruleCheckResult.Mismatch {
 		mismatch := ruleCheckResult.Mismatch[i]
 		ids := []string{mismatch.DetailID}
-		err := batchUpdateTaskDetailResultState(kt.Kit(), ids, enumor.TaskDetailFailed, nil, mismatch.Error)
+		err := batchUpdateTaskDetailResultState(asyncKit, ids, enumor.TaskDetailFailed, nil, mismatch.Error)
 		if err != nil {
 			logs.Errorf("fail to set detail to %s, err: %v, detail: %s, rid: %s",
-				enumor.TaskDetailFailed, err, mismatch.DetailID, kt.Kit().Rid)
+				enumor.TaskDetailFailed, err, mismatch.DetailID, asyncKit.Rid)
 			// 继续尝试处理其他情况
 		}
 		continue
@@ -132,16 +134,16 @@ func (act BatchTaskTCloudCreateL7RuleAction) Run(kt run.ExecuteKit, params any) 
 			CloudID: exists.Rule.CloudID,
 		}
 		reason := errors.New("rule exists, skip")
-		err := batchUpdateTaskDetailResultState(kt.Kit(), ids, enumor.TaskDetailSuccess, createResult, reason)
+		err := batchUpdateTaskDetailResultState(asyncKit, ids, enumor.TaskDetailSuccess, createResult, reason)
 		if err != nil {
 			logs.Errorf("fail to set detail to success, err: %v, detail: %s, rid: %s",
-				err, exists.DetailID, kt.Kit().Rid)
+				err, exists.DetailID, asyncKit.Rid)
 			// 继续尝试处理其他情况
 		}
 		continue
 	}
 	// 3. 创建不存在的规则
-	return act.createNonExists(kt.Kit(), ruleCheckResult.NonExists, opt, lb)
+	return act.createNonExists(asyncKit, ruleCheckResult.NonExists, opt, lb)
 }
 
 func (act BatchTaskTCloudCreateL7RuleAction) createNonExists(kt *kit.Kit, nonExists []RuleCheckInfo,
