@@ -41,12 +41,12 @@ all: pre ui server suite
 	@echo -e "\033[32;1mBuild All Success!\n\033[0m"
 
 # 后端本地测试编译
-server: pre changelog
+server: pre changelog template
 	@cd ${PRO_DIR}/cmd && make
 	@echo -e "\033[32;1mBuild Server Success!\n\033[0m"
 
 # 二进制出包编译
-package: pre ui api ver changelog
+package: pre ui api ver changelog template
 	@echo -e "\033[34;1mPackaging...\n\033[0m"
 	@mkdir -p ${OUTPUT_DIR}/bin
 	@mkdir -p ${OUTPUT_DIR}/etc
@@ -58,11 +58,12 @@ package: pre ui api ver changelog
 	@echo -e "\033[32;1mPackage All Success!\n\033[0m"
 
 # 容器化编译
-docker: pre ui ver changelog
+docker: pre ui ver changelog template
 	@echo -e "\033[34;1mMake Dockering...\n\033[0m"
 	@cp -rf ${PRO_DIR}/docs/support-file/docker/* ${OUTPUT_DIR}/
 	@mv ${OUTPUT_DIR}/front ${OUTPUT_DIR}/bk-hcm-webserver/
 	@mv ${OUTPUT_DIR}/changelog ${OUTPUT_DIR}/bk-hcm-webserver/
+	@mv ${OUTPUT_DIR}/template ${OUTPUT_DIR}/bk-hcm-webserver/
 	@cp -rf ${PRO_DIR}/scripts/sql ${OUTPUT_DIR}/bk-hcm-dataservice/
 	@cd ${PRO_DIR}/cmd && make docker
 	@echo -e "\033[32;1mMake Docker All Success!\n\033[0m"
@@ -78,6 +79,11 @@ ui: pre
 changelog: pre
 	@cp -rf ${PRO_DIR}/docs/support-file/changelog ${OUTPUT_DIR}/
 	@echo -e "\033[32;1mPackaging ChangeLog Success!\n\033[0m"
+
+# 添加模板文件到编译文件中
+template: pre
+	@cp -rf ${PRO_DIR}/docs/support-file/template ${OUTPUT_DIR}/
+	@echo -e "\033[32;1mPackaging Template Success!\n\033[0m"
 
 # 添加Api文档到编译文件中
 api: pre

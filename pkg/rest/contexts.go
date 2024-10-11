@@ -147,7 +147,9 @@ func (c *Contexts) respFile(resp FileDownloadResp) {
 	filepath := resp.Filepath()
 	file, err := os.Open(filepath)
 	defer func() {
-		// 把文件流返回给前端后，将业务中创建的临时文件删除，业务如果需要保留文件，应当将相关的文件另外保存一份
+		if !resp.IsDeleteFile() {
+			return
+		}
 		err := os.Remove(filepath)
 		if err != nil {
 			logs.ErrorDepthf(1, "remove file failed, filepath: %s, err: %s, rid: %s",

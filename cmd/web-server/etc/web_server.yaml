@@ -169,3 +169,5 @@ notice:
     caFile:
     # the password to decrypt the certificate.
     password:
+
+templatePath: ../template

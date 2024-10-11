@@ -72,4 +72,5 @@ type FileDownloadResp interface {
 	ContentType() string
 	ContentDisposition() string
 	Filepath() string
+	IsDeleteFile() bool
 }
