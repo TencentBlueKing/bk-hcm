@@ -232,11 +232,25 @@ func (s DataServiceSetting) Validate() error {
 	return nil
 }
 
+// SyncConfig defines sync config.
+type SyncConfig struct {
+	// 腾讯云监听器同步并发数
+	TCloudLoadBalancerListenerSyncConcurrency uint `yaml:"tcloudLblConcurrency"`
+}
+
+func (s SyncConfig) trySetDefault() error {
+	if s.TCloudLoadBalancerListenerSyncConcurrency == 0 {
+		s.TCloudLoadBalancerListenerSyncConcurrency = 3
+	}
+	return nil
+}
+
 // HCServiceSetting defines hc service used setting options.
 type HCServiceSetting struct {
-	Network Network   `yaml:"network"`
-	Service Service   `yaml:"service"`
-	Log     LogOption `yaml:"log"`
+	Network    Network    `yaml:"network"`
+	Service    Service    `yaml:"service"`
+	Log        LogOption  `yaml:"log"`
+	SyncConfig SyncConfig `yaml:"sync_config"`
 }
 
 // trySetFlagBindIP try set flag bind ip.

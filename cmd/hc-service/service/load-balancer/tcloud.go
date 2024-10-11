@@ -465,7 +465,7 @@ func (svc *clbSvc) createListenerWithRule(kt *kit.Kit, req *protolb.ListenerWith
 	}
 	// 7层监听器，不管SNI开启还是关闭，都需要传入证书参数
 	// 7层监听器并且SNI开启时，创建监听器接口，不需要证书
-	if req.Protocol.IsLayer7Protocol() {
+	if req.Protocol == enumor.HttpsProtocol {
 		if req.Certificate == nil {
 			return "", "", errf.New(errf.InvalidParameter, "certificate is required when layer 7 listener")
 		}
