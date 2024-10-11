@@ -81,7 +81,7 @@ func (c *ClbClient) CreateListenerWithTargetGroup(kt *kit.Kit, req *hcproto.List
 	*hcproto.ListenerWithRuleCreateResult, error) {
 
 	return common.Request[hcproto.ListenerWithRuleCreateReq, hcproto.ListenerWithRuleCreateResult](
-		c.client, http.MethodPost, kt, req, "/listeners/create_with_rule")
+		c.client, http.MethodPost, kt, req, "/listeners/create_with_target_group")
 }
 
 // CreateListener 创建监听器自身
