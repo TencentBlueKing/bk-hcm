@@ -25,7 +25,7 @@ const { getBusinessApiPath } = useWhereAmI();
 
 const url = computed(() => {
   const { vendor, operation_type } = props.formModel;
-  return `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendor/${vendor}/load_balancers/operations/${operation_type}/preview`;
+  return `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/load_balancers/operations/${operation_type}/preview`;
 });
 const formDataAttributes = computed(() => {
   const { account_id, region_ids } = props.formModel;
@@ -52,11 +52,11 @@ const handleDownloadTemplateFile = async () => {
   const filenameMap = {
     [Operation.create_layer4_listener]: '1_hcm_clb_tcp_udp_listener_template.xlsx',
     [Operation.create_layer7_listener]: '2_hcm_clb_http_https_listener_template.xlsx',
-    [Operation.create_url_rule]: '3_hcm_clb_bind_rs_url_ruler_template.xlsx',
-    [Operation.layer4_listener_bind_rs]: '4_hcm_clb_bind_rs_tcp_udp_template.xlsx',
-    [Operation.layer7_listener_bind_rs]: '5_hcm_clb_url_rule_http_https_template.xlsx',
+    [Operation.create_layer7_rule]: '3_hcm_clb_bind_rs_url_ruler_template.xlsx',
+    [Operation.binding_layer4_rs]: '4_hcm_clb_bind_rs_tcp_udp_template.xlsx',
+    [Operation.binding_layer7_rs]: '5_hcm_clb_url_rule_http_https_template.xlsx',
   };
-  http.download({ url: `/api/v1/web/template/${filenameMap[props.formModel.operation_type]}`, method: 'get' });
+  http.download({ url: `/api/v1/web/templates/${filenameMap[props.formModel.operation_type]}`, method: 'get' });
 };
 </script>
 
