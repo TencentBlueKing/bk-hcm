@@ -21,6 +21,7 @@ package actionlb
 
 import (
 	"fmt"
+	"strings"
 
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	"hcm/pkg/api/core"
@@ -28,6 +29,7 @@ import (
 	hclb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/async/action"
 	"hcm/pkg/async/action/run"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
@@ -36,6 +38,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/assert"
 	cvt "hcm/pkg/tools/converter"
+	"hcm/pkg/tools/retry"
 )
 
 // --------------------------[创建TCloud监听器]-----------------------------
@@ -136,7 +139,27 @@ func (act BatchTaskTCloudCreateListenerAction) createSingleListener(kt *kit.Kit,
 	if err := batchUpdateTaskDetailState(kt, []string{detailId}, enumor.TaskDetailRunning); err != nil {
 		return nil, fmt.Errorf("fail to update detail to running, err: %v", err)
 	}
-	lblResp, err := actcli.GetHCService().TCloud.Clb.CreateListener(kt, req)
+
+	var lblResp *hclb.ListenerCreateResult
+	rangeMS := [2]uint{BatchTaskDefaultRetryDelayMinMS, BatchTaskDefaultRetryDelayMaxMS}
+	policy := retry.NewRetryPolicy(0, rangeMS)
+	for policy.RetryCount() < BatchTaskDefaultRetryTimes {
+
+		lblResp, err = actcli.GetHCService().TCloud.Clb.CreateListener(kt, req)
+		// 仅在碰到限频错误时进行重试
+		if err != nil && strings.Contains(err.Error(), constant.TCloudLimitExceededErrCode) {
+			if policy.RetryCount()+1 < BatchTaskDefaultRetryTimes {
+				// 	非最后一次重试，继续sleep
+				logs.Errorf("call tcloud reach rate limit, will sleep for retry, retry count: %d, err: %v, rid: %s",
+					policy.RetryCount(), err, kt.Rid)
+				policy.Sleep()
+				continue
+			}
+		}
+		// 其他情况都跳过
+		break
+	}
+
 	if err != nil {
 		logs.Errorf("fail to call hc to create listener, err: %v, rid: %s", err, kt.Rid)
 		return nil, err

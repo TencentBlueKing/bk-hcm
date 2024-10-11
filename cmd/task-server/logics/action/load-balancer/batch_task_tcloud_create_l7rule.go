@@ -22,6 +22,7 @@ package actionlb
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	"hcm/pkg/api/core"
@@ -29,6 +30,7 @@ import (
 	hclb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/async/action"
 	"hcm/pkg/async/action/run"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
@@ -36,6 +38,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	cvt "hcm/pkg/tools/converter"
+	"hcm/pkg/tools/retry"
 )
 
 // --------------------------[TCloud创建7层规则]-----------------------------
@@ -167,7 +170,26 @@ func (act BatchTaskTCloudCreateL7RuleAction) createNonExists(kt *kit.Kit, nonExi
 		return fmt.Sprintf("fail to update detail state to running"), err
 	}
 
-	lblResp, createErr := actcli.GetHCService().TCloud.Clb.BatchCreateUrlRule(kt, opt.ListenerID, ruleCreateReq)
+	var lblResp *hclb.BatchCreateResult
+	var createErr error
+	rangeMS := [2]uint{BatchTaskDefaultRetryDelayMinMS, BatchTaskDefaultRetryDelayMaxMS}
+	policy := retry.NewRetryPolicy(0, rangeMS)
+	for policy.RetryCount() < BatchTaskDefaultRetryTimes {
+
+		lblResp, createErr = actcli.GetHCService().TCloud.Clb.BatchCreateUrlRule(kt, opt.ListenerID, ruleCreateReq)
+		// 仅在碰到限频错误时进行重试
+		if createErr != nil && strings.Contains(createErr.Error(), constant.TCloudLimitExceededErrCode) {
+			if policy.RetryCount()+1 < BatchTaskDefaultRetryTimes {
+				// 	非最后一次重试，继续sleep
+				logs.Errorf("call tcloud reach rate limit, will sleep for retry, retry count: %d, err: %v, rid: %s",
+					policy.RetryCount(), createErr, kt.Rid)
+				policy.Sleep()
+				continue
+			}
+		}
+		// 其他情况都跳过
+		break
+	}
 	// 更新为失败
 	if createErr != nil {
 		logs.Errorf("fail to call hc to create tcloud l7 rules, err: %v, req: %+v, rid: %s",

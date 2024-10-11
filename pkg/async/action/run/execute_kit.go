@@ -49,6 +49,7 @@ type DefExecuteContext struct {
 	shareData ShareDataOperator
 }
 
+// AsyncKit Kit with async request source.
 func (ctx *DefExecuteContext) AsyncKit() *kit.Kit {
 	return ctx.kit.WithAsyncSource()
 }

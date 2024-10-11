@@ -37,6 +37,12 @@ import (
 	"hcm/pkg/tools/slice"
 )
 
+const (
+	BatchTaskDefaultRetryTimes      = 3
+	BatchTaskDefaultRetryDelayMinMS = 600
+	BatchTaskDefaultRetryDelayMaxMS = 1000
+)
+
 func listTaskDetail(kt *kit.Kit, ids []string) ([]coretask.Detail, error) {
 	result := make([]coretask.Detail, 0, len(ids))
 	for _, idBatch := range slice.Split(ids, int(core.DefaultMaxPageLimit)) {
