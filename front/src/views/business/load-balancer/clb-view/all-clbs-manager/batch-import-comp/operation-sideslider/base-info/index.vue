@@ -29,12 +29,12 @@ const operationTypes = computed(() => {
     return [
       { type: Operation.create_layer4_listener, label: t('创建TCP/UDP监听器') },
       { type: Operation.create_layer7_listener, label: t('创建HTTP/HTTPS监听器') },
-      { type: Operation.create_url_rule, label: t('创建URL规则') },
+      { type: Operation.create_layer7_rule, label: t('创建URL规则') },
     ];
   }
   return [
-    { type: Operation.layer4_listener_bind_rs, label: t('四层监听器绑定RS') },
-    { type: Operation.layer7_listener_bind_rs, label: t('七层监听器绑定RS') },
+    { type: Operation.binding_layer4_rs, label: t('四层监听器绑定RS') },
+    { type: Operation.binding_layer7_rs, label: t('七层监听器绑定RS') },
   ];
 });
 
@@ -43,7 +43,7 @@ watch(
   () => props.activeAction,
   (val) => {
     let defaultOperationType = Operation.create_layer4_listener;
-    if (val === Action.BIND_RS) defaultOperationType = Operation.layer4_listener_bind_rs;
+    if (val === Action.BIND_RS) defaultOperationType = Operation.binding_layer4_rs;
     formModel.operation_type = defaultOperationType;
   },
   { immediate: true },

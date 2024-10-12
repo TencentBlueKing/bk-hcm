@@ -44,10 +44,11 @@ const baseColumns: any[] = [
     label: t('参数校验结果'),
     field: 'validate_result',
     width: 350,
-    render: ({ cell, data }: { cell: string; data: any }) => {
+    render: ({ cell, data }: { cell: string[]; data: any }) => {
+      const display = cell?.join('; ');
       if (data?.status === Status.executable) return h('span', { class: 'text-success' }, t('校验通过'));
-      if (data?.status === Status.existing) return h('span', { class: 'text-warning' }, cell);
-      return h('span', { class: 'text-danger' }, h('span', { class: 'text-danger' }, cell));
+      if (data?.status === Status.existing) return h('span', { class: 'text-warning' }, display);
+      return h('span', { class: 'text-danger' }, h('span', { class: 'text-danger' }, display));
     },
   },
 ];
@@ -100,7 +101,7 @@ watch(
               isDefaultShow: true,
             },
           );
-        } else if (operationType === Operation.create_url_rule) {
+        } else if (operationType === Operation.create_layer7_rule) {
           renderColumns.splice(
             4,
             0,
@@ -120,7 +121,7 @@ watch(
             },
             { label: t('会话保持'), field: 'session' },
           );
-        } else if (operationType === Operation.layer4_listener_bind_rs) {
+        } else if (operationType === Operation.binding_layer4_rs) {
           renderColumns.splice(
             4,
             0,
