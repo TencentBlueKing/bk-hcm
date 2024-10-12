@@ -79,6 +79,8 @@ func NewService(dis serviced.Discover) (*Service, error) {
 	cliSet := client.NewClientSet(cli, dis)
 
 	cloudAdaptor := cloudadaptor.NewCloudAdaptorClient(cliSet.DataService())
+	tcloudLblSyncConcurrency := int(cc.HCService().SyncConfig.TCloudLoadBalancerListenerSyncConcurrency)
+	logs.Infof("tcloud loadbalancer listener sync concurrency: %d", tcloudLblSyncConcurrency)
 
 	svr := &Service{
 		clientSet:    cliSet,
