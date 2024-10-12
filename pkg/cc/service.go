@@ -238,11 +238,10 @@ type SyncConfig struct {
 	TCloudLoadBalancerListenerSyncConcurrency uint `yaml:"tcloudLblConcurrency"`
 }
 
-func (s SyncConfig) trySetDefault() error {
+func (s *SyncConfig) trySetDefault() {
 	if s.TCloudLoadBalancerListenerSyncConcurrency == 0 {
 		s.TCloudLoadBalancerListenerSyncConcurrency = 3
 	}
-	return nil
 }
 
 // HCServiceSetting defines hc service used setting options.
@@ -250,7 +249,7 @@ type HCServiceSetting struct {
 	Network    Network    `yaml:"network"`
 	Service    Service    `yaml:"service"`
 	Log        LogOption  `yaml:"log"`
-	SyncConfig SyncConfig `yaml:"sync_config"`
+	SyncConfig SyncConfig `yaml:"sync"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -263,6 +262,7 @@ func (s *HCServiceSetting) trySetDefault() {
 	s.Network.trySetDefault()
 	s.Service.trySetDefault()
 	s.Log.trySetDefault()
+	s.SyncConfig.trySetDefault()
 
 	return
 }
