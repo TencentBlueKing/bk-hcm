@@ -8,21 +8,27 @@ type DateRangeType = Record<'toady' | 'last7d' | 'last15d' | 'last30d', () => [D
 type RuleItemOpVal = Omit<RulesItem, 'field'>;
 type GetDefaultRule = (property: ModelProperty, custom?: RuleItemOpVal) => RuleItemOpVal;
 
-export const getDefaultRule: GetDefaultRule = (property, custom = { op: QueryRuleOPEnum.IN, value: [] }) => {
+export const getDefaultRule: GetDefaultRule = (property, custom) => {
   const { EQ, AND, IN } = QueryRuleOPEnum;
+  const searchOp = property?.meta?.search?.op;
 
   const defaultMap: Record<ModelPropertyType, RuleItemOpVal> = {
-    string: { op: EQ, value: [] },
-    number: { op: EQ, value: '' },
-    enum: { op: IN, value: [] },
+    string: { op: searchOp || EQ, value: [] },
+    number: { op: searchOp || EQ, value: '' },
+    enum: { op: searchOp || IN, value: [] },
     datetime: { op: AND, value: [] },
-    user: { op: IN, value: [] },
-    account: { op: EQ, value: '' },
+    user: { op: searchOp || IN, value: [] },
+    account: { op: searchOp || EQ, value: '' },
+    array: { op: searchOp || IN, value: [] },
+    bool: { op: searchOp || EQ, value: '' },
+    cert: { op: searchOp || IN, value: [] },
+    ca: { op: searchOp || EQ, value: '' },
+    region: { op: searchOp || IN, value: [] },
   };
 
   return {
-    ...custom,
     ...defaultMap[property.type],
+    ...custom,
   };
 };
 
@@ -32,6 +38,8 @@ export const convertValue = (
   operator?: QueryRuleOPEnum,
 ) => {
   const { type } = property || {};
+  const { IN, JSON_OVERLAPS } = QueryRuleOPEnum;
+
   if (type === 'number') {
     return Number(value);
   }
@@ -43,17 +51,17 @@ export const convertValue = (
     }
   }
 
-  if (operator === QueryRuleOPEnum.IN) {
+  if ([IN, JSON_OVERLAPS].includes(operator)) {
     if (!Array.isArray(value)) {
       return [value];
     }
   }
+
   return value;
 };
 
 export const transformSimpleCondition = (condition: Record<string, any>, properties: ModelProperty[]) => {
   const queryFilter: QueryFilterType = { op: 'and', rules: [] };
-
   for (const [id, value] of Object.entries(condition || {})) {
     const property = findProperty(id, properties);
     if (!property) {
@@ -72,7 +80,6 @@ export const transformSimpleCondition = (condition: Record<string, any>, propert
           {
             op: QueryRuleOPEnum.GTE,
             field: id,
-            // TODO: 时间格式不对
             value: convertValue(value?.[0], property, QueryRuleOPEnum.GTE) as RulesItem['value'],
           },
           {
@@ -102,6 +109,10 @@ export const enableCount = (params = {}, enable = false) => {
   }
   return merge({}, params, { page: { count: false } });
 };
+
+export const onePageParams = () => ({ start: 0, limit: 1 });
+
+export const maxPageParams = (max = 500) => ({ start: 0, limit: max });
 
 export const getDateRange = (key: keyof DateRangeType) => {
   const dateRange = {

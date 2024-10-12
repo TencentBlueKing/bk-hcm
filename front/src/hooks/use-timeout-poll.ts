@@ -2,7 +2,7 @@ import { getCurrentScope, onScopeDispose, ref } from 'vue';
 import type { Awaitable } from '@/typings';
 
 export default function useTimeoutPoll(fn: () => Awaitable<void>, interval: number, options?: { immediate?: boolean }) {
-  const { immediate = false } = options;
+  const { immediate = false } = options || {};
 
   const isActive = ref(false);
 
@@ -21,7 +21,7 @@ export default function useTimeoutPoll(fn: () => Awaitable<void>, interval: numb
       timer = null;
 
       loop();
-    }, interval);
+    }, interval ?? 5000);
   }
 
   async function loop() {
