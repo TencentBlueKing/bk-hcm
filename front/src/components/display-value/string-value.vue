@@ -1,7 +1,13 @@
 <script setup lang="ts">
-defineProps<{ value: string | number }>();
+import { computed } from 'vue';
+import { DisplayType } from './typings';
+
+const props = defineProps<{ value: string | number; display: DisplayType }>();
+
+const displayValue = computed(() => props.value || '--');
 </script>
 
 <template>
-  {{ value || '--' }}
+  <bk-overflow-title resizeable type="tips" v-if="display?.showOverflowTooltip">{{ displayValue }}</bk-overflow-title>
+  <span v-else>{{ displayValue }}</span>
 </template>

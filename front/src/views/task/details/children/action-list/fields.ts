@@ -2,17 +2,20 @@ import { ResourceTypeEnum } from '@/common/resource-constant';
 import type { DisplayType, DisplayAppearanceType, DisplayOnType } from '@/components/form/typings';
 import { type TaskType, TaskClbType } from '@/views/task/typings';
 
-export const baseFieldIds = ['created_at', 'ended_at', 'state', 'reason'];
+export const baseFieldIds = ['created_at', 'updated_at', 'state', 'reason'];
+
+const clbBaseFieldIds = [
+  'created_at',
+  'updated_at',
+  'param.clb_vip_domain',
+  'param.cloud_clb_id',
+  'param.protocol',
+  'param.listener_port',
+];
 
 const clbFieldIds = {
   [TaskClbType.CREATE_L4_LISTENER]: [
-    'created_at',
-    'ended_at',
-    'param.clb_vip_domain',
-    'param.cloud_clb_id',
-    'param.cloud_clb_name',
-    'param.protocol',
-    'param.listener_port',
+    ...clbBaseFieldIds,
     'param.scheduler',
     'param.health_check',
     'param.session',
@@ -20,27 +23,15 @@ const clbFieldIds = {
     'reason',
   ],
   [TaskClbType.CREATE_L7_LISTENER]: [
-    'created_at',
-    'ended_at',
-    'param.clb_vip_domain',
-    'param.cloud_clb_id',
-    'param.cloud_clb_name',
-    'param.protocol',
-    'param.listener_port',
+    ...clbBaseFieldIds,
     'param.ssl_mode',
     'param.cert_cloud_ids',
     'param.ca_cloud_id',
     'state',
     'reason',
   ],
-  [TaskClbType.CREATE_L7_FILTER]: [
-    'created_at',
-    'ended_at',
-    'param.clb_vip_domain',
-    'param.cloud_clb_id',
-    'param.cloud_clb_name',
-    'param.protocol',
-    'param.listener_port',
+  [TaskClbType.CREATE_L7_RULE]: [
+    ...clbBaseFieldIds,
     'param.domain',
     'param.url_path',
     'param.health_check',
@@ -48,28 +39,52 @@ const clbFieldIds = {
     'state',
     'reason',
   ],
+  [TaskClbType.BINDING_L4_RS]: [
+    ...clbBaseFieldIds,
+    'param.inst_type',
+    'param.rs_ip',
+    'param.rs_port',
+    'param.weight',
+    'state',
+    'reason',
+  ],
+  [TaskClbType.BINDING_L7_RS]: [
+    ...clbBaseFieldIds,
+    'param.inst_type',
+    'param.domain',
+    'param.url_path',
+    'param.rs_ip',
+    'param.rs_port',
+    'param.weight',
+    'state',
+    'reason',
+  ],
+};
+
+const clbBaseRerunParamFieldIds = {
+  'param.clb_vip_domain': {
+    editable: false,
+    display: {
+      on: 'cell' as DisplayOnType,
+    },
+  },
+  'param.cloud_clb_id': {
+    editable: false,
+    display: {},
+  },
+  'param.protocol': {
+    editable: false,
+    display: {},
+  },
+  'param.listener_port': {
+    editable: false,
+    display: {},
+  },
 };
 
 const clbRerunParamFieldIds = {
   [TaskClbType.CREATE_L4_LISTENER]: {
-    'param.clb_vip_domain': {
-      editable: false,
-      display: {
-        on: 'cell' as DisplayOnType,
-      },
-    },
-    'param.cloud_clb_id': {
-      editable: false,
-      display: {},
-    },
-    'param.protocol': {
-      editable: false,
-      display: {},
-    },
-    'param.listener_port': {
-      editable: false,
-      display: {},
-    },
+    ...clbBaseRerunParamFieldIds,
     'param.scheduler': {
       editable: true,
       display: {},
@@ -92,28 +107,13 @@ const clbRerunParamFieldIds = {
     },
     'param.validate_result': {
       editable: false,
-      display: {},
+      display: {
+        showOverflowTooltip: true,
+      },
     },
   },
   [TaskClbType.CREATE_L7_LISTENER]: {
-    'param.clb_vip_domain': {
-      editable: false,
-      display: {
-        on: 'cell' as DisplayOnType,
-      },
-    },
-    'param.cloud_clb_id': {
-      editable: false,
-      display: {},
-    },
-    'param.protocol': {
-      editable: false,
-      display: {},
-    },
-    'param.listener_port': {
-      editable: false,
-      display: {},
-    },
+    ...clbBaseRerunParamFieldIds,
     'param.ssl_mode': {
       editable: true,
       display: {},
@@ -128,35 +128,24 @@ const clbRerunParamFieldIds = {
     },
     'param.validate_result': {
       editable: false,
-      display: {},
-    },
-  },
-  [TaskClbType.CREATE_L7_FILTER]: {
-    'param.clb_vip_domain': {
-      editable: false,
       display: {
-        on: 'cell' as DisplayOnType,
+        showOverflowTooltip: true,
       },
     },
-    'param.cloud_clb_id': {
-      editable: false,
-      display: {},
-    },
-    'param.protocol': {
-      editable: false,
-      display: {},
-    },
-    'param.listener_port': {
-      editable: false,
-      display: {},
-    },
+  },
+  [TaskClbType.CREATE_L7_RULE]: {
+    ...clbBaseRerunParamFieldIds,
     'param.domain': {
       editable: true,
-      display: {},
+      display: {
+        showOverflowTooltip: true,
+      },
     },
     'param.url_path': {
       editable: true,
-      display: {},
+      display: {
+        showOverflowTooltip: true,
+      },
     },
     'param.scheduler': {
       editable: true,
@@ -164,7 +153,9 @@ const clbRerunParamFieldIds = {
     },
     'param.health_check': {
       editable: true,
-      display: {},
+      display: {
+        appearance: 'select' as DisplayAppearanceType,
+      },
     },
     'param.session': {
       editable: true,
@@ -172,7 +163,65 @@ const clbRerunParamFieldIds = {
     },
     'param.validate_result': {
       editable: false,
+      display: {
+        showOverflowTooltip: true,
+      },
+    },
+  },
+  [TaskClbType.BINDING_L4_RS]: {
+    ...clbBaseRerunParamFieldIds,
+    'param.inst_type': {
+      editable: true,
+    },
+    'param.rs_ip': {
+      editable: true,
+    },
+    'param.rs_port': {
+      editable: true,
       display: {},
+    },
+    'param.weight': {
+      editable: true,
+    },
+    'param.validate_result': {
+      editable: false,
+      display: {
+        showOverflowTooltip: true,
+      },
+    },
+  },
+  [TaskClbType.BINDING_L7_RS]: {
+    ...clbBaseRerunParamFieldIds,
+    'param.domain': {
+      editable: false,
+      display: {
+        showOverflowTooltip: true,
+      },
+    },
+    'param.url_path': {
+      editable: false,
+      display: {
+        showOverflowTooltip: true,
+      },
+    },
+    'param.inst_type': {
+      editable: true,
+    },
+    'param.rs_ip': {
+      editable: true,
+    },
+    'param.rs_port': {
+      editable: true,
+      display: {},
+    },
+    'param.weight': {
+      editable: true,
+    },
+    'param.validate_result': {
+      editable: false,
+      display: {
+        showOverflowTooltip: true,
+      },
     },
   },
 };
@@ -180,8 +229,13 @@ const clbRerunParamFieldIds = {
 export const fieldIdMap = new Map<ResourceTypeEnum, { [k in TaskType]?: string[] }>();
 export const fieldRerunIdMap = new Map<
   ResourceTypeEnum,
-  { [k in TaskType]?: Record<string, { editable: boolean; display: DisplayType; rules?: any[] }> }
+  { [k in TaskType]?: Record<string, { editable: boolean; display?: DisplayType; rules?: any[] }> }
+>();
+export const fieldRerunBaseIdMap = new Map<
+  ResourceTypeEnum,
+  Record<string, { editable: boolean; display: DisplayType; rules?: any[] }>
 >();
 
 fieldIdMap.set(ResourceTypeEnum.CLB, clbFieldIds);
 fieldRerunIdMap.set(ResourceTypeEnum.CLB, clbRerunParamFieldIds);
+fieldRerunBaseIdMap.set(ResourceTypeEnum.CLB, clbBaseRerunParamFieldIds);

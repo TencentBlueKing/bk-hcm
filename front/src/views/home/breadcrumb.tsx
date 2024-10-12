@@ -53,12 +53,13 @@ export default defineComponent({
     return (
       this.breadcrumb.display && (
         <div class='navigation-breadcrumb'>
-          <div class='bread-layout'>
+          <div class='breadcrumb-content'>
             {this.from && (
               <i onClick={this.handleBack} class={'icon hcm-icon bkhcm-icon-arrows--left-line pr10 back-icon'} />
             )}
-            <span class='bread-name'>{this.currentTitle}</span>
+            <span class='breadcrumb-name'>{this.currentTitle}</span>
           </div>
+          <div id='breadcrumbExtra' class='breadcrumb-extra'></div>
         </div>
       )
     );

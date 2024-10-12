@@ -40,6 +40,7 @@ export interface RouteMetaConfig {
   notMenu?: boolean;
   activeKey?: string;
   isShowBreadcrumb?: boolean;
+  icon?: string;
 }
 
 export default class Meta {

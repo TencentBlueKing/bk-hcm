@@ -28,7 +28,7 @@ const columns = ref(getColumns(props.resource));
 watch(
   () => props.detail?.operations,
   (operations) => {
-    // 根据操作列表动态生成列
+    // 根据操作类型动态生成列
     if (operations) {
       columns.value = getColumns(props.resource, props.detail.operations);
     }

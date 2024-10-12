@@ -13,7 +13,7 @@ export default [
     type: 'datetime',
   },
   {
-    id: 'ended_at',
+    id: 'updated_at',
     name: '结束时间',
     type: 'datetime',
   },
@@ -41,11 +41,6 @@ export default [
   {
     id: 'param.cloud_clb_id',
     name: 'CLB ID',
-    type: 'string',
-  },
-  {
-    id: 'param.cloud_clb_name',
-    name: '监听器名称',
     type: 'string',
   },
   {
@@ -112,13 +107,32 @@ export default [
     type: 'ca',
   },
   {
-    id: 'param.rsip',
+    id: 'param.rs_ip',
     name: 'RSIP',
     type: 'string',
   },
   {
+    id: 'param.inst_type',
+    name: 'RS类型',
+    type: 'enum',
+    option: {
+      CVM: 'CVM',
+      ENI: 'ENI',
+    },
+  },
+  {
+    id: 'param.rs_port',
+    name: 'RSPORT',
+    type: 'array',
+  },
+  {
+    id: 'param.weight',
+    name: 'RS权重',
+    type: 'number',
+  },
+  {
     id: 'param.validate_result',
     name: '参数校验',
-    type: 'string',
+    type: 'array',
   },
 ] as ModelProperty[];

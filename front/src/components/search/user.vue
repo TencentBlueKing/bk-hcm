@@ -26,5 +26,5 @@ const localModel = computed({
 </script>
 
 <template>
-  <MemberSelect v-model="localModel" :default-userlist="defaultUserlist" clearable />
+  <MemberSelect v-model="localModel" :allow-create="true" :default-userlist="defaultUserlist" clearable />
 </template>

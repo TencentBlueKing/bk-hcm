@@ -3,7 +3,7 @@ import { ResourceTypeEnum } from '@/common/resource-constant';
 import taskDetailsViewProperties from '@/model/task/detail.view';
 import { ITaskItem } from '@/store';
 import { type TaskType } from '@/views/task/typings';
-import { baseFieldIds, fieldIdMap, fieldRerunIdMap } from './fields';
+import { baseFieldIds, fieldIdMap, fieldRerunIdMap, fieldRerunBaseIdMap } from './fields';
 
 const taskActionViewProperties: ModelProperty[] = [...taskDetailsViewProperties];
 
@@ -21,7 +21,7 @@ const getColumns = (type: ResourceTypeEnum, operations?: ITaskItem['operations']
 const getRerunColumns = (type: ResourceTypeEnum, operations?: ITaskItem['operations']) => {
   const [operation] = operations || [];
   const fields = fieldRerunIdMap.get(type);
-  const opeartionFields = fields[operation as TaskType];
+  const opeartionFields = fields[operation as TaskType] || fieldRerunBaseIdMap;
 
   const columns = [];
   for (const [fieldId, setting] of Object.entries(opeartionFields)) {

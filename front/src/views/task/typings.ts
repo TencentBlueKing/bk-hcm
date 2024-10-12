@@ -5,9 +5,12 @@ import { ITaskItem, ITaskDetailItem } from '@/store/task';
 export enum TaskClbType {
   CREATE_L4_LISTENER = 'create_layer4_listener',
   CREATE_L7_LISTENER = 'create_layer7_listener',
-  CREATE_L7_FILTER = 'create_layer7_rule',
-  LAYER4_LISTENER_BIND_RS = 'layer4_listener_bind_rs',
-  LAYER7_LISTENER_BIND_RS = 'layer7_listener_bind_rs',
+  CREATE_L7_RULE = 'create_layer7_rule',
+  DELETE_LISTENER = 'listener_delete',
+  BINDING_L4_RS = 'binding_layer4_rs',
+  BINDING_L7_RS = 'binding_layer7_rs',
+  UNBIND_RS = 'layer_listener_unbind_rs',
+  MODIFY_RS_WEIGHT = 'layer_listener_rs_weight',
 }
 
 export type TaskType = TaskClbType;

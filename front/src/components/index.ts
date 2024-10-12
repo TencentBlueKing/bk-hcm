@@ -16,6 +16,8 @@ import FormEnum from './form/enum.vue';
 import FormString from './form/string.vue';
 import FormArray from './form/array.vue';
 import FormNumber from './form/number.vue';
+import FormCert from './form/cert.vue';
+import FormCa from './form/ca.vue';
 
 const components = [
   PermissionDialog,
@@ -29,6 +31,8 @@ const components = [
   FormString,
   FormArray,
   FormNumber,
+  FormCert,
+  FormCa,
 ];
 export default {
   install(app: App) {

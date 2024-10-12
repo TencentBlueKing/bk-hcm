@@ -3,9 +3,12 @@ import { TaskClbType, TaskStatus, TaskSource, TaskDetailStatus } from './typings
 export const TASKT_CLB_TYPE_NAME = {
   [TaskClbType.CREATE_L4_LISTENER]: '创建监听器-TCP/UDP',
   [TaskClbType.CREATE_L7_LISTENER]: '创建监听器-HTTP/HTTPS',
-  [TaskClbType.CREATE_L7_FILTER]: '创建URL规则-HTTP/HTTPS',
-  [TaskClbType.LAYER4_LISTENER_BIND_RS]: '绑定RS-TCP/UDP',
-  [TaskClbType.LAYER7_LISTENER_BIND_RS]: '绑定RS-HTTP/HTTPS',
+  [TaskClbType.CREATE_L7_RULE]: '创建URL规则-HTTP/HTTPS',
+  [TaskClbType.DELETE_LISTENER]: '删除监听器-TCP/UDP/HTTP/HTTPS',
+  [TaskClbType.BINDING_L4_RS]: '绑定RS-TCP/UDP',
+  [TaskClbType.BINDING_L7_RS]: '绑定RS-HTTP/HTTPS',
+  [TaskClbType.UNBIND_RS]: '解绑RS',
+  [TaskClbType.MODIFY_RS_WEIGHT]: '权重调整',
 };
 
 export const TASK_TYPE_NAME = {

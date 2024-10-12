@@ -81,11 +81,11 @@ watch(
 
     taskList.value = list;
 
-    // 获取数量和状态
-    fetchCountAndStatus();
-
     // 设置页码总条数
     pagination.count = count;
+
+    // 获取数量和状态
+    fetchCountAndStatus();
   },
   { immediate: true },
 );
@@ -108,7 +108,7 @@ const handleViewDetails = (id: string) => {
     {
       name: MENU_BUSINESS_TASK_MANAGEMENT_DETAILS,
       params: { id },
-      query: { bizs: route.query.bizs },
+      query: { bizs: getBizsId() },
     },
     {
       history: true,

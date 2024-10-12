@@ -7,6 +7,9 @@ import NumberValue from './number-value.vue';
 import DatetimeValue from './datetime-value.vue';
 import ArrayValue from './array-value.vue';
 import BoolValue from './bool-value.vue';
+import CertValue from './cert-value.vue';
+import CaValue from './ca-value.vue';
+import RegionValue from './region-value.vue';
 import { DisplayType } from './typings';
 
 defineOptions({ name: 'DisplayValue' });
@@ -26,7 +29,14 @@ const props = withDefaults(
 
 const valueComps: Record<
   ModelPropertyType,
-  typeof EnumValue | typeof StringValue | typeof DatetimeValue | typeof ArrayValue
+  | typeof EnumValue
+  | typeof StringValue
+  | typeof DatetimeValue
+  | typeof ArrayValue
+  | typeof BoolValue
+  | typeof CertValue
+  | typeof CaValue
+  | typeof RegionValue
 > = {
   enum: EnumValue,
   datetime: DatetimeValue,
@@ -36,6 +46,9 @@ const valueComps: Record<
   user: StringValue,
   array: ArrayValue,
   bool: BoolValue,
+  cert: CertValue,
+  ca: CaValue,
+  region: RegionValue,
 };
 
 const attrs = useAttrs();

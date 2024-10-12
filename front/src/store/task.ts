@@ -3,7 +3,7 @@ import { defineStore } from 'pinia';
 import http from '@/http';
 import { QueryRuleOPEnum, IListResData, QueryBuilderType } from '@/typings';
 import { VendorEnum } from '@/common/constant';
-import { enableCount, onePageParams } from '@/utils/search';
+import { enableCount, maxPageParams, onePageParams } from '@/utils/search';
 import { TaskDetailStatus, TaskStatus, TaskType } from '@/views/task/typings';
 
 export interface ITaskItem {
@@ -13,7 +13,7 @@ export interface ITaskItem {
   vendor: VendorEnum;
   state: TaskStatus;
   account_id: string;
-  operations: TaskType | TaskType[];
+  operations: TaskType[];
   flow_ids: string | string[];
   extension: Record<string, any>;
   creator: string;
@@ -41,17 +41,21 @@ export interface ITaskCountItem {
   total: number;
 }
 
-type ITaskDetailParam = {
+export interface ITaskDetailParam {
   clb_vip_domain?: string;
   cloud_clb_id?: string;
   protocol?: string;
-  listener_port: string[];
+  listener_port?: string[];
   ssl_mode?: string;
   domain?: string;
   url_path?: string;
   health_check?: boolean;
+  region_id?: string;
   session?: number;
-};
+  status?: 'executable' | 'not_executable' | 'existing';
+  validate_result?: string;
+  [k: string]: any;
+}
 
 export interface ITaskDetailItem {
   id: string;
@@ -71,17 +75,26 @@ export interface ITaskDetailItem {
   [k: string]: any;
 }
 
-export const useTaskStore = defineStore('task', () => {
-  const taskList = ref<ITaskItem[]>([]);
-  const taskDetailList = ref<ITaskDetailItem[]>([]);
-  const taskListCount = ref<number>(0);
-  const taskDetailListCount = ref<number>(0);
+export interface ITaskRerunParams {
+  bk_biz_id: number;
+  vendor: string;
+  operation_type: string;
+  data: {
+    account_id: string;
+    region_ids: string[];
+    source?: string;
+    details: ITaskDetailParam[];
+  };
+}
 
+export const useTaskStore = defineStore('task', () => {
   const taskListLoading = ref(false);
   const taskStatusLoading = ref(false);
   const taskCountLoading = ref(false);
   const taskDetailListLoading = ref(false);
   const taskDetailsLoading = ref(false);
+  const taskRerunValidateLoading = ref(false);
+  const taskRerunSubmitLoading = ref(false);
 
   const getTaskList = async (params: QueryBuilderType & { bk_biz_id: number }) => {
     const { bk_biz_id, ...data } = params;
@@ -138,11 +151,10 @@ export const useTaskStore = defineStore('task', () => {
         [Promise<IListResData<ITaskDetailItem[]>>, Promise<IListResData<ITaskDetailItem[]>>]
       >([http.post(api, enableCount(data, false)), http.post(api, enableCount(data, true))]);
       const [{ details: list = [] }, { count = 0 }] = [listRes?.data ?? {}, countRes?.data ?? {}];
-      taskDetailList.value = list;
-      taskDetailListCount.value = count;
-    } catch {
-      taskDetailList.value = [];
-      taskDetailListCount.value = 0;
+      return { list, count };
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
     } finally {
       taskDetailListLoading.value = false;
     }
@@ -168,19 +180,85 @@ export const useTaskStore = defineStore('task', () => {
     }
   };
 
+  const getTaskDetailListStatus = async (ids: ITaskItem['id'][], bizId: number): Promise<ITaskDetailItem[]> => {
+    try {
+      const res: IListResData<ITaskDetailItem[]> = await http.post(`/api/v1/cloud/bizs/${bizId}/task_details/list`, {
+        bk_biz_id: bizId,
+        filter: {
+          op: 'and',
+          rules: [{ field: 'id', op: QueryRuleOPEnum.IN, value: ids }],
+        },
+        fields: ['state'],
+        page: maxPageParams(),
+      });
+      return res?.data?.details;
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    }
+  };
+
+  const taskRerunValidate = async (params: ITaskRerunParams) => {
+    taskRerunValidateLoading.value = true;
+    const { bk_biz_id, vendor, operation_type, data } = params;
+    try {
+      const res = await http.post(
+        `/api/v1/cloud/bizs/${bk_biz_id}/vendors/${vendor}/load_balancers/operations/${operation_type}/validate`,
+        data,
+      );
+      return res?.data?.details;
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    } finally {
+      taskRerunValidateLoading.value = false;
+    }
+  };
+
+  const taskRerunSubmit = async (params: ITaskRerunParams) => {
+    taskRerunSubmitLoading.value = true;
+
+    const { bk_biz_id, vendor, operation_type, data } = params;
+    data.source = 'excel';
+
+    try {
+      const res = await http.post(
+        `/api/v1/cloud/bizs/${bk_biz_id}/vendors/${vendor}/load_balancers/operations/${operation_type}/submit`,
+        data,
+      );
+      return res?.data;
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    } finally {
+      taskRerunSubmitLoading.value = false;
+    }
+  };
+
+  const taskCancel = async (ids: ITaskItem['id'][], bizId: number) => {
+    try {
+      await http.post(`/api/v1/cloud/bizs/${bizId}/task_managements/cancel`, { ids });
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    }
+  };
+
   return {
-    taskList,
-    taskListCount,
     taskListLoading,
     taskStatusLoading,
     taskCountLoading,
-    taskDetailList,
-    taskDetailListCount,
     taskDetailListLoading,
+    taskRerunValidateLoading,
+    taskRerunSubmitLoading,
     getTaskList,
     getTaskStatus,
     getTaskCounts,
     getTaskDetails,
     getTaskDetailList,
+    getTaskDetailListStatus,
+    taskRerunValidate,
+    taskRerunSubmit,
+    taskCancel,
   };
 });

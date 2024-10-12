@@ -26,7 +26,7 @@ export default function useSearchQs({ properties, key = 'filter', forceUpdate = 
     routeQuery.set(key, queryVal, forceUpdate);
   };
 
-  const get = (query: LocationQuery, defaults: Record<string, any>) => {
+  const get = (query: LocationQuery, defaults?: Record<string, any>) => {
     if (!Object.hasOwn(query, key)) {
       return { ...defaults };
     }

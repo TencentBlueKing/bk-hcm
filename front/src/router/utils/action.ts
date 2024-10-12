@@ -13,7 +13,7 @@ export default {
   redirect(to: RouteLocationRaw, options?: IRedirectOptions) {
     const { query = {}, ...other } = { ...(to as RouteQueryAndHash) };
     const { currentRoute } = router;
-    const { reload = false, replace = false, back = false } = options || {};
+    const { reload = false, replace = false, history = false, back = false } = options || {};
 
     // 当前页非history模式则先清空历史记录
     if (!Object.hasOwn(currentRoute.value.query, '_f')) {

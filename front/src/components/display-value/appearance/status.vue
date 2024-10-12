@@ -39,7 +39,7 @@ const icon = computed(() => {
 
 <template>
   <div class="status">
-    <img :src="icon" class="icon" alt="icon" />
+    <img :src="icon" :class="['icon', props.value]" alt="icon" />
     <bk-overflow-title resizeable type="tips">
       <span class="text">{{ displayValue }}</span>
     </bk-overflow-title>
@@ -55,6 +55,11 @@ const icon = computed(() => {
     width: 14px;
     height: 14px;
     margin-right: 4px;
+
+    &.running {
+      width: 12px;
+      height: 12px;
+    }
   }
 }
 </style>

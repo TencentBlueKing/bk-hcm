@@ -18,6 +18,7 @@ export default [
         menu: {
           relative: MENU_BUSINESS_TASK_MANAGEMENT,
         },
+        icon: 'hcm-icon bkhcm-icon-bushu',
       }),
     },
   },

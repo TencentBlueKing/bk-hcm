@@ -1,5 +1,6 @@
 import { ModelProperty } from '@/model/typings';
 import { TASK_TYPE_NAME, TASKT_SOURCE_NAME, TASKT_STATUS_NAME } from '@/views/task/constants';
+import { QueryRuleOPEnum } from '@/typings';
 
 export default [
   {
@@ -14,6 +15,11 @@ export default [
     type: 'enum',
     index: 1,
     option: TASK_TYPE_NAME,
+    meta: {
+      search: {
+        op: QueryRuleOPEnum.JSON_OVERLAPS,
+      },
+    },
   },
   {
     id: 'source',
