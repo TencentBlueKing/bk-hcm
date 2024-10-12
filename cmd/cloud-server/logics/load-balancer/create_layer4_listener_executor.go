@@ -131,10 +131,12 @@ func (c *CreateLayer4ListenerExecutor) validate(kt *kit.Kit) error {
 }
 func (c *CreateLayer4ListenerExecutor) filter() {
 	c.details = slice.Filter[*CreateLayer4ListenerDetail](c.details, func(detail *CreateLayer4ListenerDetail) bool {
-		if detail.Status == Executable {
+		switch detail.Status {
+		case Executable:
 			return true
+		case Existing:
+			c.existingDetails = append(c.existingDetails, detail)
 		}
-		c.existingDetails = append(c.existingDetails, detail)
 		return false
 	})
 }
