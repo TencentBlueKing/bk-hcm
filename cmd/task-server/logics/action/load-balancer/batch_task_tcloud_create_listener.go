@@ -53,6 +53,8 @@ type BatchTaskTCloudCreateListenerAction struct{}
 type BatchTaskTCloudCreateListenerOption struct {
 	ManagementDetailIDs []string                        `json:"management_detail_ids" validate:"required,min=1,max=20"`
 	Listeners           []*hclb.TCloudListenerCreateReq `json:"Listeners,required,min=1,max=20,dive,required"`
+	// 是否在某个监听器创建失败的时候停止后续操作执行，默认不停止
+	AbortOnFailed bool `json:"abort_on_failed"`
 }
 
 // Validate validate option.
@@ -99,7 +101,7 @@ func (act BatchTaskTCloudCreateListenerAction) Run(kt run.ExecuteKit, params any
 				targetState, err, asyncKit.Rid)
 			return nil, err
 		}
-		if createErr != nil {
+		if targetState == enumor.TaskDetailFailed && opt.AbortOnFailed {
 			// abort
 			return nil, err
 		}

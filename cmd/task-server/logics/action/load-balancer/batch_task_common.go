@@ -34,6 +34,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/assert"
+	"hcm/pkg/tools/retry"
 	"hcm/pkg/tools/slice"
 )
 
@@ -74,9 +75,19 @@ func batchUpdateTaskDetailState(kt *kit.Kit, ids []string, state enumor.TaskDeta
 			detailUpdates[i] = datatask.UpdateTaskDetailField{ID: ids[i], State: state}
 		}
 		updateTaskReq := &datatask.UpdateDetailReq{Items: detailUpdates[:len(idBatch)]}
-		err := actcli.GetDataService().Global.TaskDetail.Update(kt, updateTaskReq)
+		rangeMS := [2]uint{BatchTaskDefaultRetryDelayMinMS, BatchTaskDefaultRetryDelayMaxMS}
+		policy := retry.NewRetryPolicy(0, rangeMS)
+		err := policy.BaseExec(kt, func() error {
+			err := actcli.GetDataService().Global.TaskDetail.Update(kt, updateTaskReq)
+			if err != nil {
+				logs.Errorf("fail to update task detail state to %s, err: %v, ids: %s, rid: %s",
+					state, err, idBatch, kt.Rid)
+				return err
+			}
+			return nil
+		})
 		if err != nil {
-			logs.Errorf("fail to update task detail state to %s, err: %v, ids: %s, rid: %s",
+			logs.Errorf("fail to update task detail state to %s after retry, err: %v, ids: %s, rid: %s",
 				state, err, idBatch, kt.Rid)
 			return err
 		}
@@ -98,14 +109,23 @@ func batchUpdateTaskDetailResultState(kt *kit.Kit, ids []string, state enumor.Ta
 			detailUpdates[i] = field
 		}
 		updateTaskReq := &datatask.UpdateDetailReq{Items: detailUpdates[:len(idBatch)]}
-		err := actcli.GetDataService().Global.TaskDetail.Update(kt, updateTaskReq)
+		rangeMS := [2]uint{BatchTaskDefaultRetryDelayMinMS, BatchTaskDefaultRetryDelayMaxMS}
+		policy := retry.NewRetryPolicy(0, rangeMS)
+		err := policy.BaseExec(kt, func() error {
+			err := actcli.GetDataService().Global.TaskDetail.Update(kt, updateTaskReq)
+			if err != nil {
+				logs.Errorf("fail to update task detail result state to %s, err: %v, ids: %s, rid: %s",
+					state, err, idBatch, kt.Rid)
+				return err
+			}
+			return nil
+		})
 		if err != nil {
-			logs.Errorf("fail to update task detail result state to %s, err: %v, ids: %s, rid: %s",
+			logs.Errorf("fail to update task detail result state to %s after retry, err: %v, ids: %s, rid: %s",
 				state, err, idBatch, kt.Rid)
 			return err
 		}
 	}
-
 	return nil
 }
 
@@ -202,14 +222,12 @@ func isHealthCheckChange(req *corelb.TCloudHealthCheckInfo, db *corelb.TCloudHea
 	if !assert.IsPtrStringEqual(req.HttpVersion, db.HttpVersion) {
 		return true
 	}
-
 	if !assert.IsPtrInt64Equal(req.SourceIpType, db.SourceIpType) {
 		return true
 	}
 	if !assert.IsPtrStringEqual(req.ExtendedCode, db.ExtendedCode) {
 		return true
 	}
-
 	return false
 }
 
