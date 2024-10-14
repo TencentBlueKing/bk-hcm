@@ -265,10 +265,22 @@ export const useTable = (props: IProp) => {
         return { field, op, value: regionsStore.getRegionNameEN(value as string) || value };
       case 'lb_type':
         return { field, op, value: LB_NETWORK_TYPE_REVERSE_MAP[value as string] || value };
+      case 'lb_vip':
+        return {
+          op: QueryRuleOPEnum.OR,
+          rules: [
+            { field: 'private_ipv4_addresses', op: QueryRuleOPEnum.JSON_OVERLAPS, value: [value] },
+            { field: 'private_ipv6_addresses', op: QueryRuleOPEnum.JSON_OVERLAPS, value: [value] },
+            { field: 'public_ipv4_addresses', op: QueryRuleOPEnum.JSON_OVERLAPS, value: [value] },
+            { field: 'public_ipv6_addresses', op: QueryRuleOPEnum.JSON_OVERLAPS, value: [value] },
+          ],
+        };
       case 'scheduler':
         return { field, op, value: SCHEDULER_REVERSE_MAP[value as string] || value };
       case 'binding_status':
         return { field, op, value: LISTENER_BINDING_STATUS_REVERSE_MAP[value as string] || value };
+      case 'port':
+        return { field, op, value: Number(value) };
       default:
         return { field, op, value };
     }

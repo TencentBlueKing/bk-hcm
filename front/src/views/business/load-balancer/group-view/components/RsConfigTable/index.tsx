@@ -240,38 +240,18 @@ export default defineComponent({
 
     const searchData = computed(() => {
       const tmpArr = [
-        {
-          id: 'private_ip_address',
-          name: '内网IP',
-        },
-        {
-          id: 'public_ip_address',
-          name: '公网IP',
-        },
-        {
-          id: 'inst_name',
-          name: '名称',
-        },
-        {
-          id: 'region',
-          name: '地域',
-        },
+        { id: 'private_ip_address', name: '内网IP' },
+        { id: 'public_ip_address', name: '公网IP' },
+        { id: 'inst_name', name: '名称' },
+        { id: 'region', name: '地域' },
         {
           id: 'inst_type',
           name: '资源类型',
+          children: ['ENI', 'CVM'].map((type) => ({ id: type, name: type })),
         },
-        {
-          id: 'cloud_vpc_ids',
-          name: '所属VPC',
-        },
-        {
-          id: 'port',
-          name: '端口',
-        },
-        {
-          id: 'weight',
-          name: '权重',
-        },
+        { id: 'cloud_vpc_ids', name: '所属VPC' },
+        { id: 'port', name: '端口' },
+        { id: 'weight', name: '权重' },
       ];
       if (!props.onlyShow)
         tmpArr.splice(
@@ -339,7 +319,12 @@ export default defineComponent({
           )}
         </div>
         <Loading loading={isTableLoading.value}>
-          <Table data={renderTableData.value} columns={rsTableColumns} settings={settings.value} showOverflowTooltip>
+          <Table
+            data={renderTableData.value}
+            columns={rsTableColumns}
+            settings={settings.value}
+            showOverflowTooltip
+            maxHeight={420}>
             {{
               empty: () => {
                 if (isTableLoading.value) return null;

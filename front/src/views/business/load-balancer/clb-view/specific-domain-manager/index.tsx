@@ -26,6 +26,7 @@ import useBatchDeleteListener from '../specific-clb-manager/listener-list/useBat
 import { getTableNewRowClass } from '@/common/util';
 import bus from '@/common/bus';
 import { QueryRuleOPEnum } from '@/typings';
+import { SCHEDULER_MAP } from '@/constants';
 
 const { FormItem } = Form;
 const { Option } = Select;
@@ -112,6 +113,13 @@ export default defineComponent({
         label: t('同步状态'),
         field: 'binding_status',
         isDefaultShow: true,
+        // sort: true,
+        filter: {
+          list: Object.keys(CLB_BINDING_STATUS).map((bindingStatus) => ({
+            value: bindingStatus,
+            text: CLB_BINDING_STATUS[bindingStatus],
+          })),
+        },
         render: ({ cell }: { cell: string }) => {
           let icon = StatusSuccess;
           switch (cell) {
@@ -188,21 +196,24 @@ export default defineComponent({
     const { CommonTable, getListData } = useTable({
       searchOptions: {
         searchData: [
-          {
-            name: 'URL路径',
-            id: 'url',
-          },
+          { name: 'URL路径', id: 'url' },
           {
             name: '轮询方式',
             id: 'scheduler',
+            children: Object.keys(SCHEDULER_MAP).map((scheduler) => ({
+              id: scheduler,
+              name: SCHEDULER_MAP[scheduler],
+            })),
           },
-          // {
-          //   name: '目标组',
-          //   id: 'target_group_id',
-          // },
+          // todo: 待后端支持
+          // { name: '目标组', id: 'target_group_id' },
           // {
           //   name: '同步状态',
           //   id: 'binding_status',
+          //   children: Object.keys(CLB_BINDING_STATUS).map((bindingStatus) => ({
+          //     id: bindingStatus,
+          //     name: CLB_BINDING_STATUS[bindingStatus],
+          //   })),
           // },
         ],
       },
@@ -338,15 +349,15 @@ export default defineComponent({
         <CommonTable>
           {{
             operation: () => (
-              <div class={'flex-row align-item-center'}>
-                <Button theme={'primary'} onClick={handleAddUrlSidesliderShow}>
+              <>
+                <Button theme={'primary'} onClick={handleAddUrlSidesliderShow} class='mr8'>
                   <Plus class={'f20'} />
                   {t('新增 URL 路径')}
                 </Button>
                 <Button onClick={handleBatchDeleteListener} disabled={!selections.value.length}>
                   {t('批量删除')}
                 </Button>
-              </div>
+              </>
             ),
           }}
         </CommonTable>
