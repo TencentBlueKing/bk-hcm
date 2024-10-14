@@ -75,9 +75,8 @@ type createLayer7ListenerTaskDetail struct {
 
 // Execute 导入执行器的唯一入口
 func (c *CreateLayer7ListenerExecutor) Execute(kt *kit.Kit, source enumor.TaskManagementSource,
-	rawDetails json.RawMessage) (string, error) {
+	rawDetails json.RawMessage) (taskID string, err error) {
 
-	var err error
 	err = c.unmarshalData(rawDetails)
 	if err != nil {
 		return "", err
@@ -93,7 +92,7 @@ func (c *CreateLayer7ListenerExecutor) Execute(kt *kit.Kit, source enumor.TaskMa
 		return "", fmt.Errorf("there are no details to be executed")
 	}
 
-	taskID, err := c.buildTaskManagementAndDetails(kt, source)
+	taskID, err = c.buildTaskManagementAndDetails(kt, source)
 	if err != nil {
 		logs.Errorf("create task management and details failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err
@@ -105,7 +104,8 @@ func (c *CreateLayer7ListenerExecutor) Execute(kt *kit.Kit, source enumor.TaskMa
 	}
 	err = c.updateTaskManagementAndDetails(kt, flowIDs, taskID)
 	if err != nil {
-		logs.Errorf("update task management and details failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("update task management and details failed, taskID: %s, flowIDs: %v, err: %v, rid: %s",
+			taskID, flowIDs, err, kt.Rid)
 		return "", err
 	}
 	return taskID, nil

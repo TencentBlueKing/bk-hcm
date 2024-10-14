@@ -91,6 +91,9 @@ func (c *CreateLayer4ListenerPreviewExecutor) convertDataToPreview(rawData [][]s
 		detail.ListenerPorts = ports
 		detail.Scheduler = enumor.Scheduler(data[4])
 		session, err := strconv.Atoi(data[5])
+		if err != nil {
+			return err
+		}
 		detail.Session = session
 		switch data[6] {
 		case "enable":
@@ -201,7 +204,7 @@ func (c *CreateLayer4ListenerPreviewExecutor) validateListener(kt *kit.Kit,
 		// 已存在监听器且配置与当前导入的记录不一致时, 设置当前记录为不可执行状态
 		curDetail.Status.SetNotExecutable()
 		curDetail.ValidateResult = append(curDetail.ValidateResult,
-			fmt.Sprintf("already exist listener(%s), and the configuration match, port: %d, protocol: %s,"+
+			fmt.Sprintf("already exist listener(%s), and the configuration mismatch, port: %d, protocol: %s,"+
 				" scheduler: %s, session: %d, healthCheck: %v", curDetail.CloudClbID, listener.Port, listener.Protocol,
 				rule.Scheduler, rule.SessionExpire, ruleHealthCheck))
 		return nil

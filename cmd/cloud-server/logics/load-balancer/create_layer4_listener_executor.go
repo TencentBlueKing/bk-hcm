@@ -73,10 +73,10 @@ type createLayer4ListenerTaskDetail struct {
 }
 
 // Execute ...
-func (c *CreateLayer4ListenerExecutor) Execute(kt *kit.Kit, source enumor.TaskManagementSource, rawDetails json.RawMessage) (
-	string, error) {
+func (c *CreateLayer4ListenerExecutor) Execute(kt *kit.Kit, source enumor.TaskManagementSource,
+	rawDetails json.RawMessage) (taskID string, err error) {
 
-	err := c.unmarshalData(rawDetails)
+	err = c.unmarshalData(rawDetails)
 	if err != nil {
 		return "", err
 	}
@@ -87,7 +87,7 @@ func (c *CreateLayer4ListenerExecutor) Execute(kt *kit.Kit, source enumor.TaskMa
 	}
 	c.filter()
 
-	taskID, err := c.buildTaskManagementAndDetails(kt, source)
+	taskID, err = c.buildTaskManagementAndDetails(kt, source)
 	if err != nil {
 		return "", err
 	}
@@ -97,7 +97,8 @@ func (c *CreateLayer4ListenerExecutor) Execute(kt *kit.Kit, source enumor.TaskMa
 	}
 	err = c.updateTaskManagementAndDetails(kt, flowIDs, taskID)
 	if err != nil {
-		logs.Errorf("update task management and details failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("update task management and details failed, taskID: %s, flowIDs: %v, err: %v, rid: %s",
+			taskID, flowIDs, err, kt.Rid)
 		return "", err
 	}
 	return taskID, nil
@@ -112,11 +113,11 @@ func (c *CreateLayer4ListenerExecutor) unmarshalData(rawDetail json.RawMessage) 
 }
 
 func (c *CreateLayer4ListenerExecutor) validate(kt *kit.Kit) error {
-	validator := &CreateLayer4ListenerPreviewExecutor{
+	executor := &CreateLayer4ListenerPreviewExecutor{
 		basePreviewExecutor: c.basePreviewExecutor,
 		details:             c.details,
 	}
-	err := validator.validate(kt)
+	err := executor.validate(kt)
 	if err != nil {
 		return err
 	}
@@ -135,6 +136,7 @@ func (c *CreateLayer4ListenerExecutor) filter() {
 		case Executable:
 			return true
 		case Existing:
+			// 已存在的也创建对应的detail数据
 			c.existingDetails = append(c.existingDetails, detail)
 		}
 		return false

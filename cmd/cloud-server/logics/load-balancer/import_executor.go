@@ -41,7 +41,7 @@ import (
 type ImportExecutor interface {
 	// Execute 导入执行器的唯一入口, 内部执行流程：unmarshalData -> validate -> filter
 	// -> buildTaskManagementAndDetails -> buildFlows -> updateTaskManagementAndDetails
-	Execute(*kit.Kit, enumor.TaskManagementSource, json.RawMessage) (string, error)
+	Execute(*kit.Kit, enumor.TaskManagementSource, json.RawMessage) (taskID string, err error)
 
 	// unmarshalData 传入json数据, 反序列化到预览数据结构中
 	unmarshalData(json.RawMessage) error
@@ -50,9 +50,9 @@ type ImportExecutor interface {
 	// filter filter existing record
 	filter()
 	// buildFlows 构建异步任务
-	buildFlows(*kit.Kit) ([]string, error)
+	buildFlows(*kit.Kit) (flowIDs []string, err error)
 	// buildTaskManagementAndDetails 创建任务管理&任务详情
-	buildTaskManagementAndDetails(kt *kit.Kit, source enumor.TaskManagementSource) (string, error)
+	buildTaskManagementAndDetails(kt *kit.Kit, source enumor.TaskManagementSource) (taskManageID string, err error)
 	// updateTaskManagementAndDetails 更新任务管理 flowID & 任务详情关于异步任务的详细数据
 	updateTaskManagementAndDetails(kt *kit.Kit, flowIDs []string, taskID string) error
 }
