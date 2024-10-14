@@ -187,9 +187,8 @@ func (c *CreateLayer4ListenerPreviewExecutor) validateListener(kt *kit.Kit,
 		return err
 	}
 	if rule == nil {
-		logs.Errorf("loadbalancer(%s) listener(%s) exist, but url rule not found",
-			curDetail.CloudClbID, listener.CloudID)
-		return nil
+		logs.Errorf("listener exist, but url rule not found, listener: %v, rid: %s", listener, kt.Rid)
+		return errors.New("listener exist, but url rule not found")
 	}
 	var ruleHealthCheck bool
 	if rule.HealthCheck != nil && rule.HealthCheck.HealthSwitch != nil {
