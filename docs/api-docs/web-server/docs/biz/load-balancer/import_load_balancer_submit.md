@@ -35,7 +35,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/load_balancers/operations/{
 | account_id | string | 账户id                              |
 | region_ids | array  | 云地域id列表                           |
 | source     | string | 任务来源, 标准运维插件(sops)、excel导入(excel) |
-| details    | array  | excel导入详情                         |
+| details    | object | excel导入详情                         |
 
 不同的operation_type对应的details不同, 具体查看 [上传excel文件接口](import_load_balancer_preview)
 将上传excel文件接口返回的data作为该接口的入参即可
