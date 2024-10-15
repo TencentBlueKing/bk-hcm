@@ -60,6 +60,9 @@ type CreateLayer7ListenerExecutor struct {
 	taskCli     *taskserver.Client
 	details     []*CreateLayer7ListenerDetail
 	taskDetails []*createLayer7ListenerTaskDetail
+
+	// detail.Status == Existing 的集合, 用于创建一条任务管理详情
+	existingDetails []*CreateLayer7ListenerDetail
 }
 
 // 用于记录 detail - 异步任务flow&task - 任务管理 之间的关系
@@ -72,9 +75,8 @@ type createLayer7ListenerTaskDetail struct {
 
 // Execute 导入执行器的唯一入口
 func (c *CreateLayer7ListenerExecutor) Execute(kt *kit.Kit, source enumor.TaskManagementSource,
-	rawDetails json.RawMessage) (string, error) {
+	rawDetails json.RawMessage) (taskID string, err error) {
 
-	var err error
 	err = c.unmarshalData(rawDetails)
 	if err != nil {
 		return "", err
@@ -90,7 +92,7 @@ func (c *CreateLayer7ListenerExecutor) Execute(kt *kit.Kit, source enumor.TaskMa
 		return "", fmt.Errorf("there are no details to be executed")
 	}
 
-	taskID, err := c.buildTaskManagementAndDetails(kt, source)
+	taskID, err = c.buildTaskManagementAndDetails(kt, source)
 	if err != nil {
 		logs.Errorf("create task management and details failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err
@@ -102,7 +104,8 @@ func (c *CreateLayer7ListenerExecutor) Execute(kt *kit.Kit, source enumor.TaskMa
 	}
 	err = c.updateTaskManagementAndDetails(kt, flowIDs, taskID)
 	if err != nil {
-		logs.Errorf("update task management and details failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("update task management and details failed, taskID: %s, flowIDs: %v, err: %v, rid: %s",
+			taskID, flowIDs, err, kt.Rid)
 		return "", err
 	}
 	return taskID, nil
@@ -128,7 +131,7 @@ func (c *CreateLayer7ListenerExecutor) validate(kt *kit.Kit) error {
 
 	for _, detail := range c.details {
 		if detail.Status == NotExecutable {
-			return fmt.Errorf("record(%v) is not executable", detail)
+			return fmt.Errorf("record is not executable: %+v", detail)
 		}
 	}
 	return nil
@@ -136,8 +139,11 @@ func (c *CreateLayer7ListenerExecutor) validate(kt *kit.Kit) error {
 
 func (c *CreateLayer7ListenerExecutor) filter() {
 	c.details = slice.Filter[*CreateLayer7ListenerDetail](c.details, func(detail *CreateLayer7ListenerDetail) bool {
-		if detail.Status == Executable {
+		switch detail.Status {
+		case Executable:
 			return true
+		case Existing:
+			c.existingDetails = append(c.existingDetails, detail)
 		}
 		return false
 	})
@@ -161,7 +167,11 @@ func (c *CreateLayer7ListenerExecutor) buildFlows(kt *kit.Kit) ([]string, error)
 		flowID, err := c.buildFlow(kt, lb.ID, lb.CloudID, lb.Region, details)
 		if err != nil {
 			logs.Errorf("build flow for clb(%s) failed, err: %v, rid: %s", clbCloudID, err, kt.Rid)
-			err := c.updateTaskDetailsState(kt, enumor.TaskDetailFailed, details)
+			ids := make([]string, 0, len(details))
+			for _, detail := range details {
+				ids = append(ids, detail.taskDetailID)
+			}
+			err := updateTaskDetailState(kt, c.dataServiceCli, enumor.TaskDetailFailed, ids)
 			if err != nil {
 				logs.Errorf("update task details status failed, err: %v, rid: %s", err, kt.Rid)
 				return nil, err
@@ -177,7 +187,8 @@ func (c *CreateLayer7ListenerExecutor) buildFlows(kt *kit.Kit) ([]string, error)
 func (c *CreateLayer7ListenerExecutor) buildTaskManagementAndDetails(kt *kit.Kit, source enumor.TaskManagementSource) (
 	string, error) {
 
-	taskID, err := c.createTaskManagement(kt, source)
+	taskID, err := createTaskManagement(kt, c.dataServiceCli, c.bkBizID, c.vendor, c.accountID,
+		converter.MapKeyToSlice(c.regionIDMap), source, enumor.TaskCreateLayer7Listener)
 	if err != nil {
 		logs.Errorf("create task management failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err
@@ -189,10 +200,19 @@ func (c *CreateLayer7ListenerExecutor) buildTaskManagementAndDetails(kt *kit.Kit
 		return "", err
 	}
 
+	err = c.createExistingTaskDetails(kt, taskID)
+	if err != nil {
+		logs.Errorf("create existing task details failed, err: %v, rid: %s", err, kt.Rid)
+		return "", err
+	}
+
 	return taskID, nil
 }
 
 func (c *CreateLayer7ListenerExecutor) createTaskDetails(kt *kit.Kit, taskID string) error {
+	if len(c.details) == 0 {
+		return nil
+	}
 	taskDetailsCreateReq := &task.CreateDetailReq{}
 	for _, detail := range c.details {
 		taskDetailsCreateReq.Items = append(taskDetailsCreateReq.Items, task.CreateDetailField{
@@ -223,35 +243,32 @@ func (c *CreateLayer7ListenerExecutor) createTaskDetails(kt *kit.Kit, taskID str
 	return nil
 }
 
-func (c *CreateLayer7ListenerExecutor) createTaskManagement(kt *kit.Kit, source enumor.TaskManagementSource) (string, error) {
-	taskManagementCreateReq := &task.CreateManagementReq{
-		Items: []task.CreateManagementField{
-			{
-				BkBizID:    c.bkBizID,
-				Source:     source,
-				Vendor:     c.vendor,
-				AccountID:  c.accountID,
-				Resource:   enumor.TaskManagementResClb,
-				State:      enumor.TaskManagementRunning,
-				Operations: []enumor.TaskOperation{enumor.TaskCreateLayer7Listener},
-			},
-		},
+func (c *CreateLayer7ListenerExecutor) createExistingTaskDetails(kt *kit.Kit, taskID string) error {
+	if len(c.existingDetails) == 0 {
+		return nil
+	}
+	taskDetailsCreateReq := &task.CreateDetailReq{}
+	for _, detail := range c.existingDetails {
+		taskDetailsCreateReq.Items = append(taskDetailsCreateReq.Items, task.CreateDetailField{
+			BkBizID:          c.bkBizID,
+			TaskManagementID: taskID,
+			Operation:        enumor.TaskCreateLayer7Listener,
+			State:            enumor.TaskDetailSuccess,
+			Param:            detail,
+		})
 	}
 
-	result, err := c.dataServiceCli.Global.TaskManagement.Create(kt, taskManagementCreateReq)
+	_, err := c.dataServiceCli.Global.TaskDetail.Create(kt, taskDetailsCreateReq)
 	if err != nil {
-		return "", err
+		return err
 	}
-	if len(result.IDs) == 0 {
-		return "", fmt.Errorf("create task management failed")
-	}
-	return result.IDs[0], nil
+	return nil
 }
 
 func (c *CreateLayer7ListenerExecutor) updateTaskManagementAndDetails(kt *kit.Kit, flowIDs []string,
 	taskID string) error {
 
-	if err := c.updateTaskManagement(kt, taskID, flowIDs); err != nil {
+	if err := updateTaskManagement(kt, c.dataServiceCli, taskID, flowIDs); err != nil {
 		logs.Errorf("update task management failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
@@ -262,22 +279,10 @@ func (c *CreateLayer7ListenerExecutor) updateTaskManagementAndDetails(kt *kit.Ki
 	return nil
 }
 
-func (c *CreateLayer7ListenerExecutor) updateTaskManagement(kt *kit.Kit, taskID string, flowIDs []string) error {
-	updateItem := task.UpdateTaskManagementField{
-		ID:      taskID,
-		FlowIDs: flowIDs,
-	}
-	updateReq := &task.UpdateManagementReq{
-		Items: []task.UpdateTaskManagementField{updateItem},
-	}
-	err := c.dataServiceCli.Global.TaskManagement.Update(kt, updateReq)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (c *CreateLayer7ListenerExecutor) updateTaskDetails(kt *kit.Kit) error {
+	if len(c.taskDetails) == 0 {
+		return nil
+	}
 	updateItems := make([]task.UpdateTaskDetailField, 0, len(c.taskDetails))
 	for _, detail := range c.taskDetails {
 		updateItems = append(updateItems, task.UpdateTaskDetailField{
@@ -396,6 +401,7 @@ func (c *CreateLayer7ListenerExecutor) buildTCloudFlowTask(lbID, lbCloudID, regi
 			detail.actionID = cur
 		}
 	}
+	result = append(result, buildSyncClbFlowTask(lbCloudID, c.accountID, region, actionIDGenerator))
 	return result
 }
 
