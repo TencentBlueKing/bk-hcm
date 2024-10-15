@@ -165,7 +165,7 @@ func (c *CreateLayer4ListenerExecutor) buildFlows(kt *kit.Kit) ([]string, error)
 			for _, detail := range details {
 				ids = append(ids, detail.taskDetailID)
 			}
-			err := updateTaskDetailState(kt, c.dataServiceCli, enumor.TaskDetailFailed, ids)
+			err := updateTaskDetailState(kt, c.dataServiceCli, enumor.TaskDetailFailed, ids, err.Error())
 			if err != nil {
 				logs.Errorf("update task details status failed, err: %v, rid: %s", err, kt.Rid)
 				return nil, err
