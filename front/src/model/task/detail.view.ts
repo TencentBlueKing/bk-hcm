@@ -44,12 +44,27 @@ export default [
     type: 'string',
   },
   {
+    id: 'param.clb_vip_domains',
+    name: 'CLB VIP/域名',
+    type: 'array',
+  },
+  {
+    id: 'param.cloud_lb_ids',
+    name: 'CLB ID',
+    type: 'array',
+  },
+  {
     id: 'param.protocol',
     name: '协议',
     type: 'string',
   },
   {
     id: 'param.listener_port',
+    name: '监听器端口',
+    type: 'array',
+  },
+  {
+    id: 'param.ports',
     name: '监听器端口',
     type: 'array',
   },

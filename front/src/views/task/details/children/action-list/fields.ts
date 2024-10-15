@@ -1,8 +1,21 @@
+import { ColumnConfig } from '@/model/typings';
 import { ResourceTypeEnum } from '@/common/resource-constant';
 import type { DisplayType, DisplayAppearanceType, DisplayOnType } from '@/components/form/typings';
 import { type TaskType, TaskClbType } from '@/views/task/typings';
 
 export const baseFieldIds = ['created_at', 'updated_at', 'state', 'reason'];
+
+export const baseColumnConfig: Record<string, ColumnConfig> = {
+  created_at: {
+    sort: true,
+  },
+  updated_at: {
+    sort: true,
+  },
+  state: {
+    sort: true,
+  },
+};
 
 const clbBaseFieldIds = [
   'created_at',
@@ -11,6 +24,14 @@ const clbBaseFieldIds = [
   'param.cloud_clb_id',
   'param.protocol',
   'param.listener_port',
+];
+const clbSopsBaseFieldIds = [
+  'created_at',
+  'updated_at',
+  'param.clb_vip_domains',
+  'param.cloud_lb_ids',
+  'param.protocol',
+  'param.ports',
 ];
 
 const clbFieldIds = {
@@ -59,6 +80,9 @@ const clbFieldIds = {
     'state',
     'reason',
   ],
+  [TaskClbType.DELETE_LISTENER]: [...clbSopsBaseFieldIds, 'state', 'reason'],
+  [TaskClbType.UNBIND_RS]: [...clbSopsBaseFieldIds, 'state', 'reason'],
+  [TaskClbType.MODIFY_RS_WEIGHT]: [...clbSopsBaseFieldIds, 'state', 'reason'],
 };
 
 const clbBaseRerunParamFieldIds = {
