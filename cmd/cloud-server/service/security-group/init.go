@@ -62,6 +62,8 @@ func InitSecurityGroupService(c *capability.Capability) {
 		"/vendors/{vendor}/security_groups/{security_group_id}/rules/list", svc.ListSecurityGroupRule)
 	h.Add("UpdateSecurityGroupRule", http.MethodPut,
 		"/vendors/{vendor}/security_groups/{security_group_id}/rules/{id}", svc.UpdateSecurityGroupRule)
+	h.Add("BatchUpdateSecurityGroupRule", http.MethodPut,
+		"/vendors/{vendor}/security_groups/{security_group_id}/rules/batch/update", svc.BatchUpdateSecurityGroupRule)
 	h.Add("DeleteSecurityGroupRule", http.MethodDelete,
 		"/vendors/{vendor}/security_groups/{security_group_id}/rules/{id}", svc.DeleteSecurityGroupRule)
 	h.Add("GetAzureDefaultSGRule", http.MethodGet, "/vendors/azure/default/security_groups/rules/{type}",
@@ -113,6 +115,8 @@ func bizService(h *rest.Handler, svc *securityGroupSvc) {
 		"/bizs/{bk_biz_id}/vendors/{vendor}/security_groups/{security_group_id}/rules/list", svc.ListBizSGRule)
 	h.Add("UpdateBizSGRule", http.MethodPut,
 		"/bizs/{bk_biz_id}/vendors/{vendor}/security_groups/{security_group_id}/rules/{id}", svc.UpdateBizSGRule)
+	h.Add("BatchUpdateBizSGRule", http.MethodPut,
+		"/bizs/{bk_biz_id}/vendors/{vendor}/security_groups/{security_group_id}/rules/batch/update", svc.BatchUpdateBizSGRule)
 	h.Add("DeleteBizSGRule", http.MethodDelete,
 		"/bizs/{bk_biz_id}/vendors/{vendor}/security_groups/{security_group_id}/rules/{id}", svc.DeleteBizSGRule)
 
