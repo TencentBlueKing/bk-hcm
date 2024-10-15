@@ -1,11 +1,11 @@
-import { ModelProperty } from '@/model/typings';
+import { ModelPropertyColumn } from '@/model/typings';
 import { ResourceTypeEnum } from '@/common/resource-constant';
 import taskDetailsViewProperties from '@/model/task/detail.view';
 import { ITaskItem } from '@/store';
 import { type TaskType } from '@/views/task/typings';
-import { baseFieldIds, fieldIdMap, fieldRerunIdMap, fieldRerunBaseIdMap } from './fields';
+import { baseFieldIds, fieldIdMap, fieldRerunIdMap, fieldRerunBaseIdMap, baseColumnConfig } from './fields';
 
-const taskActionViewProperties: ModelProperty[] = [...taskDetailsViewProperties];
+const taskActionViewProperties: ModelPropertyColumn[] = [...taskDetailsViewProperties];
 
 export const getColumnIds = (resourceType: ResourceTypeEnum, operation: TaskType) => {
   const resourceColumnIds = fieldIdMap.get(resourceType);
@@ -15,7 +15,10 @@ export const getColumnIds = (resourceType: ResourceTypeEnum, operation: TaskType
 const getColumns = (type: ResourceTypeEnum, operations?: ITaskItem['operations']) => {
   const [operation] = operations || [];
   const columnIds = getColumnIds(type, operation as TaskType);
-  return columnIds.map((id) => taskActionViewProperties.find((item) => item.id === id));
+  return columnIds.map((id) => ({
+    ...taskActionViewProperties.find((item) => item.id === id),
+    ...baseColumnConfig[id],
+  }));
 };
 
 const getRerunColumns = (type: ResourceTypeEnum, operations?: ITaskItem['operations']) => {

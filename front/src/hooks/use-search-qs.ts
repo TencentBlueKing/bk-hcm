@@ -14,16 +14,27 @@ type useSearchQsParamsType = {
   properties: ModelProperty[];
   key?: string;
   forceUpdate?: boolean;
+  resetPage?: boolean;
 };
 
-export default function useSearchQs({ properties, key = 'filter', forceUpdate = true }: useSearchQsParamsType) {
+export default function useSearchQs({
+  properties,
+  key = 'filter',
+  forceUpdate = true,
+  resetPage = true,
+}: useSearchQsParamsType) {
   const set = (value: Record<string, string | number | string[] | number[]>) => {
     const queryVal = qs.stringify(value, {
       arrayFormat: 'comma',
       encode: false,
       allowEmptyArrays: true,
     });
-    routeQuery.set(key, queryVal, forceUpdate);
+
+    const updateQuery = { [key]: queryVal };
+    if (resetPage) {
+      updateQuery.page = undefined;
+    }
+    routeQuery.set(updateQuery, null, forceUpdate);
   };
 
   const get = (query: LocationQuery, defaults?: Record<string, any>) => {

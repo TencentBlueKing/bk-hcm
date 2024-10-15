@@ -29,7 +29,13 @@ const columns = getColumns(props.resource);
       @column-sort="handleSort"
       row-key="id"
     >
-      <bk-table-column v-for="(column, index) in columns" :key="index" :prop="column.id" :label="column.name">
+      <bk-table-column
+        v-for="(column, index) in columns"
+        :key="index"
+        :prop="column.id"
+        :label="column.name"
+        :sort="column.sort"
+      >
         <template #default="{ row }">
           <display-value :property="column" :value="row[column.id]" :display="column?.meta?.display" />
         </template>

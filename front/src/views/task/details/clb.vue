@@ -27,7 +27,7 @@ const { setTitle } = useBreakcrumb();
 
 const searchQs = useSearchQs({ key: 'filter', properties: taskDetailsViewProperties });
 
-const { pagination, pageParams } = usePage(false);
+const { pagination, getPageParams } = usePage();
 
 const id = computed(() => String(route.params.id));
 const bizId = computed(() => getBizsId());
@@ -97,16 +97,23 @@ const taskStatusPoll = useTimeoutPoll(() => {
 }, 5000);
 
 watch(
-  [() => route.query, pageParams],
-  async ([query, page]) => {
+  () => route.query,
+  async (query) => {
     condition.value = searchQs.get(query);
     condition.value.task_management_id = id.value;
+
+    pagination.current = Number(query.page) || 1;
+    pagination.limit = Number(query.limit) || pagination.limit;
+
+    const sort = (query.sort || 'created_at') as string;
+    const order = (query.order || 'DESC') as string;
+
     taskDetails.value = await taskStore.getTaskDetails(id.value, bizId.value);
 
     const { list, count } = await taskStore.getTaskDetailList({
       bk_biz_id: bizId.value,
       filter: transformSimpleCondition(condition.value, taskDetailsViewProperties),
-      page,
+      page: getPageParams(pagination, { sort, order }),
     });
 
     taskDetailList.value = list;
@@ -136,7 +143,7 @@ const handleClickRerun = () => {
   rerunState.isShow = true;
 };
 
-const handleClickStatusCount = (status: TaskDetailStatus) => {
+const handleClickStatusCount = (status?: TaskDetailStatus) => {
   searchQs.set({
     state: status,
   });
@@ -164,7 +171,9 @@ onMounted(() => {
       <div class="stats">
         <span class="count-item">
           总数:
-          <em class="num">{{ counts?.total ?? '--' }}</em>
+          <bk-link theme="primary" class="num" @click.prevent="handleClickStatusCount()">
+            {{ counts?.total ?? '--' }}
+          </bk-link>
         </span>
         <span class="count-item">
           成功:

@@ -1,4 +1,4 @@
-import { ModelProperty } from '@/model/typings';
+import { ColumnConfig, ModelPropertyColumn } from '@/model/typings';
 import { ResourceTypeEnum } from '@/common/resource-constant';
 import accountProperties from '@/model/account/properties';
 import taskProperties from '@/model/task/properties';
@@ -18,11 +18,26 @@ const baseFieldIds = [
   'state',
 ];
 
+const columnConfig: Record<string, ColumnConfig> = {
+  created_at: {
+    sort: true,
+  },
+  vendor: {
+    sort: true,
+  },
+  creator: {
+    sort: true,
+  },
+  state: {
+    sort: true,
+  },
+};
+
 const clbFieldIds = [...baseFieldIds];
 
 columnIds.set(ResourceTypeEnum.CLB, clbFieldIds);
 
-const taskViewProperties: ModelProperty[] = [
+const taskViewProperties: ModelPropertyColumn[] = [
   ...accountProperties,
   ...taskProperties,
   { id: 'count_total', name: '总数', type: 'number' },
@@ -36,7 +51,10 @@ export const getColumnIds = (resourceType: ResourceTypeEnum) => {
 
 const getColumns = (type: ResourceTypeEnum) => {
   const columnIds = getColumnIds(type);
-  return columnIds.map((id) => taskViewProperties.find((item) => item.id === id));
+  return columnIds.map((id) => ({
+    ...taskViewProperties.find((item) => item.id === id),
+    ...columnConfig[id],
+  }));
 };
 
 const factory = {
