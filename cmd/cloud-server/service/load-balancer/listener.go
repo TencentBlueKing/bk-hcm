@@ -2,6 +2,7 @@ package loadbalancer
 
 import (
 	"errors"
+	"fmt"
 
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
@@ -383,5 +384,55 @@ func (svc *lbSvc) listListenerCountByLbIDs(cts *rest.Contexts,
 		return resList, nil
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "lbIDs: %v vendor: %s not support", req.LbIDs, basicInfo.Vendor)
+	}
+}
+
+// ListBizListenerWithTargets list biz listener with targets.
+func (svc *lbSvc) ListBizListenerWithTargets(cts *rest.Contexts) (any, error) {
+	return svc.listListenerWithTarget(cts, handler.ListBizAuthRes)
+}
+
+func (svc *lbSvc) listListenerWithTarget(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (any, error) {
+	req := new(dataproto.ListListenerWithTargetsReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// list authorized instances
+	_, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
+		ResType: meta.LoadBalancer, Action: meta.Find})
+	if err != nil {
+		logs.Errorf("list listener with targets auth failed, noPermFlag: %v, err: %v, rid: %s",
+			noPermFlag, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	resList := &dataproto.ListListenerWithTargetsResp{Details: make([]*dataproto.ListBatchListenerResult, 0)}
+	if noPermFlag {
+		logs.Errorf("list listener no perm auth, noPermFlag: %v, req: %+v, rid: %s", noPermFlag, req, cts.Kit.Rid)
+		return resList, nil
+	}
+
+	accountInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(
+		cts.Kit, enumor.AccountCloudResType, req.AccountID)
+	if err != nil {
+		logs.Errorf("get account basic info failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
+		return nil, fmt.Errorf("get account basic info failed, err: %v", err)
+	}
+
+	switch accountInfo.Vendor {
+	case enumor.TCloud:
+		resList, err = svc.client.DataService().Global.LoadBalancer.ListLoadBalancerListenerWithTargets(cts.Kit, req)
+		if err != nil {
+			logs.Errorf("tcloud list listener with targets failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
+			return nil, err
+		}
+		return resList, nil
+	default:
+		return nil, errf.Newf(errf.InvalidParameter, "req: %+v, vendor: %s not support", req, accountInfo.Vendor)
 	}
 }
