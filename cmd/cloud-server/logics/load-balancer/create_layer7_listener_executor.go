@@ -131,7 +131,7 @@ func (c *CreateLayer7ListenerExecutor) validate(kt *kit.Kit) error {
 
 	for _, detail := range c.details {
 		if detail.Status == NotExecutable {
-			return fmt.Errorf("record(%v) is not executable", detail)
+			return fmt.Errorf("record is not executable: %+v", detail)
 		}
 	}
 	return nil

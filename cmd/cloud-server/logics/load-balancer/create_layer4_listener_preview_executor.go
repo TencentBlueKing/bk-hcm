@@ -272,7 +272,7 @@ func (c *CreateLayer4ListenerDetail) validate() {
 		c.Status.SetExecutable()
 	}()
 	if c.Protocol != enumor.UdpProtocol && c.Protocol != enumor.TcpProtocol {
-		err = errors.New("protocol type error")
+		err = fmt.Errorf("unsupport listener protocol type: %s", c.Protocol)
 		return
 	}
 	err = validateScheduler(c.Scheduler)
