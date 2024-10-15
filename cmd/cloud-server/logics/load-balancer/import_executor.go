@@ -79,7 +79,7 @@ func NewImportExecutor(operationType OperationType, dataCli *dataservice.Client,
 }
 
 func buildSyncClbFlowTask(lbCloudID, accountID, region string, generator func() (cur string, prev string)) ts.CustomFlowTask {
-	cur, _ := generator()
+	cur, prev := generator()
 	tmpTask := ts.CustomFlowTask{
 		ActionID:   action.ActIDType(cur),
 		ActionName: enumor.ActionSyncTCloudLoadBalancer,
@@ -91,6 +91,9 @@ func buildSyncClbFlowTask(lbCloudID, accountID, region string, generator func() 
 			},
 		},
 		Retry: tableasync.NewRetryWithPolicy(3, 100, 200),
+	}
+	if prev != "" {
+		tmpTask.DependOn = []action.ActIDType{action.ActIDType(prev)}
 	}
 	return tmpTask
 }

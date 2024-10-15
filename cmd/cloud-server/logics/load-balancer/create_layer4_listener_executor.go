@@ -307,6 +307,7 @@ func (c *CreateLayer4ListenerExecutor) buildTCloudFlowTask(lbID, lbCloudID, regi
 			detail.actionID = cur
 		}
 	}
+	result = append(result, buildSyncClbFlowTask(lbCloudID, c.accountID, region, actionIDGenerator))
 	return result
 }
 
