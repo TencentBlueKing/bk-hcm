@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/core"
 	typelb "hcm/pkg/adaptor/types/load-balancer"
+	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -256,7 +257,7 @@ func (t *TCloudImpl) formatCreateClbRequest(opt *typelb.TCloudCreateClbOption) *
 	// 负载均衡后端目标设备所属的网络
 	req.VpcId = opt.VpcID
 	// 负载均衡实例的类型。1：通用的负载均衡实例，目前只支持传入1。
-	req.Forward = common.Int64Ptr(int64(typelb.DefaultLoadBalancerInstType))
+	req.Forward = common.Int64Ptr(int64(corelb.TCloudDefaultLoadBalancerType))
 	// 是否支持绑定跨地域/跨Vpc绑定IP的功能
 	req.SnatPro = opt.SnatPro
 	// Target是否放通来自CLB的流量。开启放通（true）：只验证CLB上的安全组；不开启放通（false）：需同时验证CLB和后端实例上的安全组
