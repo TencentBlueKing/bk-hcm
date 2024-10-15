@@ -34,9 +34,17 @@ export type ModelProperty = {
   index?: number;
 };
 
-export type ColumnConfig = {
+export type PropertyColumnConfig = {
   sort?: boolean;
+  defaultHidden?: boolean;
+};
+
+export type PropertyFormConfig = {
+  rules: object;
 };
 
 // 与列展示场景相关，联合列的配置属性
-export type ModelPropertyColumn = ModelProperty & ColumnConfig;
+export type ModelPropertyColumn = ModelProperty & PropertyColumnConfig;
+
+// 与列表单场景相关，联合表单的配置属性
+export type ModelPropertyForm = ModelProperty & PropertyFormConfig;

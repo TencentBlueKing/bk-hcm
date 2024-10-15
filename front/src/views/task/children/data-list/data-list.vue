@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { IDataListProps } from '@/views/task/typings';
 import usePage from '@/hooks/use-page';
+import useTableSettings from '@/hooks/use-table-settings';
 import columnFactory from './column-factory';
 const { getColumns } = columnFactory();
 
@@ -12,6 +13,8 @@ const emit = defineEmits<{
 
 const { handlePageChange, handlePageSizeChange, handleSort } = usePage();
 const columns = getColumns(props.resource);
+
+const { settings } = useTableSettings(columns);
 </script>
 
 <template>
@@ -22,6 +25,7 @@ const columns = getColumns(props.resource);
       :data="list"
       :pagination="pagination"
       :max-height="'calc(100vh - 401px)'"
+      :settings="settings"
       remote-pagination
       show-overflow-tooltip
       @page-limit-change="handlePageSizeChange"

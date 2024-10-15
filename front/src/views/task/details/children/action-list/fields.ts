@@ -1,11 +1,11 @@
-import { ColumnConfig } from '@/model/typings';
+import { PropertyColumnConfig } from '@/model/typings';
 import { ResourceTypeEnum } from '@/common/resource-constant';
 import type { DisplayType, DisplayAppearanceType, DisplayOnType } from '@/components/form/typings';
 import { type TaskType, TaskClbType } from '@/views/task/typings';
 
 export const baseFieldIds = ['created_at', 'updated_at', 'state', 'reason'];
 
-export const baseColumnConfig: Record<string, ColumnConfig> = {
+export const baseColumnConfig: Record<string, PropertyColumnConfig> = {
   created_at: {
     sort: true,
   },
