@@ -75,12 +75,16 @@ const handelEdit = (row: ITaskDetailItem) => {
     const val = get(row, col.field.id);
     editState.value[col.field.id] = col.field.type === 'bool' ? String(val) : val;
   });
+
+  isValidatePassed.value = false;
 };
 const handleRemove = (row: ITaskDetailItem) => {
   const listRowIndex = list.value.findIndex((item) => item.id === row.id);
   if (listRowIndex !== -1) {
     list.value.splice(listRowIndex, 1);
   }
+
+  isValidatePassed.value = false;
 };
 const handelDone = async (row: ITaskDetailItem) => {
   try {
@@ -91,9 +95,14 @@ const handelDone = async (row: ITaskDetailItem) => {
     const listRow = list.value.find((item) => item.id === row.id);
     columns.forEach((col) => {
       const val = editState.value[col.field.id];
-      editState.value[col.field.id] = col.field.type === 'bool' ? val === 'true' : val;
-      // eslint-disable-next-line no-nested-ternary
-      editState.value[col.field.id] = col.field.type === 'array' ? (Array.isArray(val) ? val : val?.split?.(',')) : val;
+      // bool类型使用select展示，需要转换值因为select不支持bool值选项，保存时转回bool值
+      if (col.field.type === 'bool') {
+        editState.value[col.field.id] = typeof val !== 'boolean' ? val === 'true' : val;
+      }
+      // 保存时转回数组值，当数组型的值使用input时约定为使用,分隔符填写
+      if (col.field.type === 'array') {
+        editState.value[col.field.id] = Array.isArray(val) ? val : val?.split?.(',');
+      }
     });
     Object.assign(listRow, editState.value);
 
@@ -130,6 +139,9 @@ const handleValidate = async () => {
   result?.forEach?.((item: ITaskDetailParam, index: number) => {
     list.value[index].param.status = item.status;
     list.value[index].param.validate_result = item.validate_result;
+    // 删除掉编辑时添加的字段，使get方法取值时读取到上面设置的字段
+    Reflect.deleteProperty(list.value[index], 'param.status');
+    Reflect.deleteProperty(list.value[index], 'param.validate_result');
   });
 
   if (result?.length) {
