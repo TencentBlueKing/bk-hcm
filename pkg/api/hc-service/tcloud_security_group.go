@@ -98,3 +98,45 @@ type SecurityGroupBatchAssociateCvmReq struct {
 func (opt SecurityGroupBatchAssociateCvmReq) Validate() error {
 	return validator.Validate.Struct(opt)
 }
+
+// TCloudSGRuleUpdateReqWithPolicyIndex define tcloud security group update request with policy index.
+type TCloudSGRuleUpdateReqWithPolicyIndex struct {
+	CloudPolicyIndex      *int64 `json:"cloud_policy_index" validate:"required"`
+	TCloudSGRuleUpdateReq `json:",inline"`
+}
+
+// Validate ...
+func (req *TCloudSGRuleUpdateReqWithPolicyIndex) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// TCloudSGRuleBatchUpdateReq define tcloud security group batch update request.
+type TCloudSGRuleBatchUpdateReq struct {
+	AccountID      string                                 `json:"account_id" validate:"required"`
+	EgressRuleSet  []TCloudSGRuleUpdateReqWithPolicyIndex `json:"egress_rule_set" validate:"omitempty"`
+	IngressRuleSet []TCloudSGRuleUpdateReqWithPolicyIndex `json:"ingress_rule_set" validate:"omitempty"`
+}
+
+// Validate tcloud security group rule update request.
+func (req *TCloudSGRuleBatchUpdateReq) Validate() error {
+	if len(req.EgressRuleSet) == 0 && len(req.IngressRuleSet) == 0 {
+		return errors.New("egress rule or ingress rule is required")
+	}
+
+	if len(req.EgressRuleSet) != 0 && len(req.IngressRuleSet) != 0 {
+		return errors.New("egress rule or ingress rule only one is allowed")
+	}
+	for _, item := range req.EgressRuleSet {
+		err := item.Validate()
+		if err != nil {
+			return err
+		}
+	}
+	for _, item := range req.IngressRuleSet {
+		err := item.Validate()
+		if err != nil {
+			return err
+		}
+	}
+	return validator.Validate.Struct(req)
+}

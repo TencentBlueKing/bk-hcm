@@ -21,6 +21,7 @@ package tcloud
 
 import (
 	"context"
+	"hcm/pkg/client/common"
 	"net/http"
 
 	"hcm/pkg/api/core"
@@ -185,6 +186,14 @@ func (cli *SecurityGroupClient) UpdateSecurityGroupRule(ctx context.Context, h h
 	}
 
 	return nil
+}
+
+// BatchUpdateSecurityGroupRule batch update security group rule.
+func (cli *SecurityGroupClient) BatchUpdateSecurityGroupRule(kt *kit.Kit, sgID string,
+	request *proto.TCloudSGRuleBatchUpdateReq) error {
+
+	return common.RequestNoResp[proto.TCloudSGRuleBatchUpdateReq](cli.client, rest.PUT, kt, request,
+		"/security_groups/%s/rules/batch/update", sgID)
 }
 
 // DeleteSecurityGroupRule delete security group rule.
