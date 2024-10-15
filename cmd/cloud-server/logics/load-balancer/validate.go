@@ -35,7 +35,7 @@ func validateSession(session int) error {
 
 func validateScheduler(scheduler enumor.Scheduler) error {
 	if scheduler != enumor.WRR && scheduler != enumor.LEAST_CONN {
-		return errors.New("负载均衡算法错误")
+		return fmt.Errorf("invalid scheduler: %s", scheduler)
 	}
 	return nil
 }
@@ -54,7 +54,7 @@ func validatePort(ports []int) error {
 
 func validateInstType(instType enumor.InstType) error {
 	if instType != enumor.CvmInstType && instType != enumor.EniInstType {
-		return errors.New("实例类型错误")
+		return fmt.Errorf("invalid instance type: %s", instType)
 	}
 	return nil
 }
