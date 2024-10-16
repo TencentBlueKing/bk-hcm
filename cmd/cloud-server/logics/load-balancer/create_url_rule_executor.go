@@ -112,11 +112,11 @@ func (c *CreateUrlRuleExecutor) unmarshalData(rawDetail json.RawMessage) error {
 }
 
 func (c *CreateUrlRuleExecutor) validate(kt *kit.Kit) error {
-	validator := &CreateUrlRulePreviewExecutor{
+	executor := &CreateUrlRulePreviewExecutor{
 		basePreviewExecutor: c.basePreviewExecutor,
 		details:             c.details,
 	}
-	err := validator.validate(kt)
+	err := executor.validate(kt)
 	if err != nil {
 		logs.Errorf("validate data failed, err: %v, rid: %s", err, kt.Rid)
 		return err

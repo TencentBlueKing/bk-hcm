@@ -120,11 +120,11 @@ func (c *CreateLayer7ListenerExecutor) unmarshalData(rawDetail json.RawMessage) 
 }
 
 func (c *CreateLayer7ListenerExecutor) validate(kt *kit.Kit) error {
-	validator := &CreateLayer7ListenerPreviewExecutor{
+	executor := &CreateLayer7ListenerPreviewExecutor{
 		basePreviewExecutor: c.basePreviewExecutor,
 		details:             c.details,
 	}
-	err := validator.validate(kt)
+	err := executor.validate(kt)
 	if err != nil {
 		return err
 	}
