@@ -27,6 +27,7 @@ const getSearchCompProps = (field: ModelProperty) => {
   if (field.type === 'account') {
     return {
       bizId: getBizsId(),
+      resourceType: props.resource,
     };
   }
   return {

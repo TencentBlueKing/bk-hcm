@@ -23,6 +23,7 @@ export type ModelPropertyMeta = {
   };
 };
 
+// 模型的基础字段，与业务场景无关
 export type ModelProperty = {
   id: string;
   name: string;
@@ -32,3 +33,18 @@ export type ModelProperty = {
   meta?: ModelPropertyMeta;
   index?: number;
 };
+
+export type PropertyColumnConfig = {
+  sort?: boolean;
+  defaultHidden?: boolean;
+};
+
+export type PropertyFormConfig = {
+  rules: object;
+};
+
+// 与列展示场景相关，联合列的配置属性
+export type ModelPropertyColumn = ModelProperty & PropertyColumnConfig;
+
+// 与列表单场景相关，联合表单的配置属性
+export type ModelPropertyForm = ModelProperty & PropertyFormConfig;

@@ -4,26 +4,32 @@ import { ModelProperty } from '@/model/typings';
 import { findProperty } from '@/model/utils';
 import routeQuery from '@/router/utils/query';
 import { convertValue } from '@/utils/search';
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
-import timezone from 'dayjs/plugin/timezone';
-dayjs.extend(utc);
-dayjs.extend(timezone);
 
 type useSearchQsParamsType = {
   properties: ModelProperty[];
   key?: string;
   forceUpdate?: boolean;
+  resetPage?: boolean;
 };
 
-export default function useSearchQs({ properties, key = 'filter', forceUpdate = true }: useSearchQsParamsType) {
+export default function useSearchQs({
+  properties,
+  key = 'filter',
+  forceUpdate = true,
+  resetPage = true,
+}: useSearchQsParamsType) {
   const set = (value: Record<string, string | number | string[] | number[]>) => {
     const queryVal = qs.stringify(value, {
       arrayFormat: 'comma',
       encode: false,
       allowEmptyArrays: true,
     });
-    routeQuery.set(key, queryVal, forceUpdate);
+
+    const updateQuery = { [key]: queryVal };
+    if (resetPage) {
+      updateQuery.page = undefined;
+    }
+    routeQuery.set(updateQuery, null, forceUpdate);
   };
 
   const get = (query: LocationQuery, defaults?: Record<string, any>) => {

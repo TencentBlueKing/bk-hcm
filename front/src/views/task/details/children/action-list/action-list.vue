@@ -12,7 +12,7 @@ const props = withDefaults(defineProps<IActionListProps>(), {});
 
 const emit = defineEmits<(e: 'select', data: any[]) => void>();
 
-const { handlePageChange, handlePageSizeChange, handleSort } = usePage(false, props.pagination);
+const { handlePageChange, handlePageSizeChange, handleSort } = usePage();
 
 const isRowSelectEnable = ({ row }: { row: ITaskDetailItem }) => {
   return [TaskDetailStatus.CANCEL, TaskDetailStatus.FAILED].includes(row.state);
@@ -62,7 +62,13 @@ watch(
     row-key="id"
   >
     <bk-table-column type="selection" align="center" min-width="30"></bk-table-column>
-    <bk-table-column v-for="(column, index) in columns" :key="index" :prop="column.id" :label="column.name">
+    <bk-table-column
+      v-for="(column, index) in columns"
+      :key="index"
+      :prop="column.id"
+      :label="column.name"
+      :sort="column.sort"
+    >
       <template #default="{ row }">
         <display-value :property="column" :value="get(row, column.id)" :display="column?.meta?.display" />
       </template>

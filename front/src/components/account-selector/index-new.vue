@@ -8,6 +8,7 @@ import { IAccountItem } from '@/typings';
 import { VendorEnum, ResourceTypeEnum, VendorMap } from '@/common/constant';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import dataFactory from './data-factory';
+import filterPlugin from './filter.plugin';
 
 export interface IAccountSelectorProps {
   vendor?: VendorEnum;
@@ -17,7 +18,11 @@ export interface IAccountSelectorProps {
   disabled?: boolean;
   filter?: (
     list: IAccountItem[],
-    options?: { route: RouteLocationNormalizedLoaded; whereAmI: ReturnType<typeof useWhereAmI> },
+    options?: {
+      route: RouteLocationNormalizedLoaded;
+      whereAmI: ReturnType<typeof useWhereAmI>;
+      resourceType?: ResourceTypeEnum;
+    },
   ) => IAccountItem[];
   placeholder?: string;
   optionDisabled?: (accountItem?: IAccountItem) => boolean;
@@ -39,6 +44,7 @@ const props = withDefaults(defineProps<IAccountSelectorProps>(), {
   disabled: false,
   popoverMaxHeight: 360,
   optionDisabled: () => false,
+  filter: filterPlugin.accountFilter.bind(filterPlugin),
 });
 
 const emit = defineEmits<(e: 'change', val: IAccountItem, oldVal: IAccountItem) => void>();
@@ -114,7 +120,7 @@ watch(
   (newList) => {
     let filteredList = newList;
     if (props.filter) {
-      filteredList = props.filter?.(newList, { route, whereAmI });
+      filteredList = props.filter?.(newList, { route, whereAmI, resourceType: props.resourceType });
     }
     vendorAccountMap.value.clear();
     filteredList.forEach((item) => {

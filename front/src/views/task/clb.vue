@@ -73,10 +73,13 @@ watch(
     pagination.current = Number(query.page) || 1;
     pagination.limit = Number(query.limit) || pagination.limit;
 
+    const sort = (query.sort || 'created_at') as string;
+    const order = (query.order || 'DESC') as string;
+
     const { list, count } = await taskStore.getTaskList({
       bk_biz_id: getBizsId(),
       filter: transformSimpleCondition(condition.value, taskViewProperties),
-      page: getPageParams(pagination, { sort: query.sort as string, order: query.order as string }),
+      page: getPageParams(pagination, { sort, order }),
     });
 
     taskList.value = list;
