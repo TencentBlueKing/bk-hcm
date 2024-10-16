@@ -22,6 +22,7 @@ package actionlb
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	"hcm/pkg/api/core"
@@ -29,6 +30,7 @@ import (
 	hclb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/async/action"
 	"hcm/pkg/async/action/run"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
@@ -36,6 +38,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	cvt "hcm/pkg/tools/converter"
+	"hcm/pkg/tools/retry"
 )
 
 // --------------------------[TCloud创建7层规则]-----------------------------
@@ -80,8 +83,10 @@ func (act BatchTaskTCloudCreateL7RuleAction) Run(kt run.ExecuteKit, params any) 
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
 	}
 
+	asyncKit := kt.AsyncKit()
+
 	// 查询 负载均衡、监听器是否正确
-	lb, _, err := getListenerWithLb(kt.Kit(), opt.ListenerID)
+	lb, _, err := getListenerWithLb(asyncKit, opt.ListenerID)
 	if err != nil {
 		logs.Errorf("fail to get listener with lb, err: %v, listner: %s, rid: %s", err, opt.ListenerID, kt.Kit().Rid)
 		return nil, err
@@ -91,7 +96,7 @@ func (act BatchTaskTCloudCreateL7RuleAction) Run(kt run.ExecuteKit, params any) 
 			opt.LoadBalancerID, lb.ID)
 	}
 	// detail 状态检查
-	detailList, err := listTaskDetail(kt.Kit(), opt.ManagementDetailIDs)
+	detailList, err := listTaskDetail(asyncKit, opt.ManagementDetailIDs)
 	if err != nil {
 		return fmt.Sprintf("task detail query failed"), err
 	}
@@ -106,19 +111,19 @@ func (act BatchTaskTCloudCreateL7RuleAction) Run(kt run.ExecuteKit, params any) 
 		}
 	}
 	// 规则检查
-	ruleCheckResult, err := act.checkExistsRule(kt.Kit(), opt)
+	ruleCheckResult, err := act.checkExistsRule(asyncKit, opt)
 	if err != nil {
-		logs.Errorf("fail to check exists rule, err: %v, rid: %s", err, kt.Kit().Rid)
+		logs.Errorf("fail to check exists rule, err: %v, rid: %s", err, asyncKit.Rid)
 		return nil, err
 	}
 	// 1. 有错误，写入错误信息
 	for i := range ruleCheckResult.Mismatch {
 		mismatch := ruleCheckResult.Mismatch[i]
 		ids := []string{mismatch.DetailID}
-		err := batchUpdateTaskDetailResultState(kt.Kit(), ids, enumor.TaskDetailFailed, nil, mismatch.Error)
+		err := batchUpdateTaskDetailResultState(asyncKit, ids, enumor.TaskDetailFailed, nil, mismatch.Error)
 		if err != nil {
 			logs.Errorf("fail to set detail to %s, err: %v, detail: %s, rid: %s",
-				enumor.TaskDetailFailed, err, mismatch.DetailID, kt.Kit().Rid)
+				enumor.TaskDetailFailed, err, mismatch.DetailID, asyncKit.Rid)
 			// 继续尝试处理其他情况
 		}
 		continue
@@ -132,16 +137,16 @@ func (act BatchTaskTCloudCreateL7RuleAction) Run(kt run.ExecuteKit, params any) 
 			CloudID: exists.Rule.CloudID,
 		}
 		reason := errors.New("rule exists, skip")
-		err := batchUpdateTaskDetailResultState(kt.Kit(), ids, enumor.TaskDetailSuccess, createResult, reason)
+		err := batchUpdateTaskDetailResultState(asyncKit, ids, enumor.TaskDetailSuccess, createResult, reason)
 		if err != nil {
 			logs.Errorf("fail to set detail to success, err: %v, detail: %s, rid: %s",
-				err, exists.DetailID, kt.Kit().Rid)
+				err, exists.DetailID, asyncKit.Rid)
 			// 继续尝试处理其他情况
 		}
 		continue
 	}
 	// 3. 创建不存在的规则
-	return act.createNonExists(kt.Kit(), ruleCheckResult.NonExists, opt, lb)
+	return act.createNonExists(asyncKit, ruleCheckResult.NonExists, opt, lb)
 }
 
 func (act BatchTaskTCloudCreateL7RuleAction) createNonExists(kt *kit.Kit, nonExists []RuleCheckInfo,
@@ -165,7 +170,26 @@ func (act BatchTaskTCloudCreateL7RuleAction) createNonExists(kt *kit.Kit, nonExi
 		return fmt.Sprintf("fail to update detail state to running"), err
 	}
 
-	lblResp, createErr := actcli.GetHCService().TCloud.Clb.BatchCreateUrlRule(kt, opt.ListenerID, ruleCreateReq)
+	var lblResp *hclb.BatchCreateResult
+	var createErr error
+	rangeMS := [2]uint{BatchTaskDefaultRetryDelayMinMS, BatchTaskDefaultRetryDelayMaxMS}
+	policy := retry.NewRetryPolicy(0, rangeMS)
+	for policy.RetryCount() < BatchTaskDefaultRetryTimes {
+
+		lblResp, createErr = actcli.GetHCService().TCloud.Clb.BatchCreateUrlRule(kt, opt.ListenerID, ruleCreateReq)
+		// 仅在碰到限频错误时进行重试
+		if createErr != nil && strings.Contains(createErr.Error(), constant.TCloudLimitExceededErrCode) {
+			if policy.RetryCount()+1 < BatchTaskDefaultRetryTimes {
+				// 	非最后一次重试，继续sleep
+				logs.Errorf("call tcloud reach rate limit, will sleep for retry, retry count: %d, err: %v, rid: %s",
+					policy.RetryCount(), createErr, kt.Rid)
+				policy.Sleep()
+				continue
+			}
+		}
+		// 其他情况都跳过
+		break
+	}
 	// 更新为失败
 	if createErr != nil {
 		logs.Errorf("fail to call hc to create tcloud l7 rules, err: %v, req: %+v, rid: %s",

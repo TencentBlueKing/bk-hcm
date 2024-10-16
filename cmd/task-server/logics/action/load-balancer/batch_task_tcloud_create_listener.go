@@ -21,6 +21,7 @@ package actionlb
 
 import (
 	"fmt"
+	"strings"
 
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	"hcm/pkg/api/core"
@@ -28,6 +29,7 @@ import (
 	hclb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/async/action"
 	"hcm/pkg/async/action/run"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
@@ -36,6 +38,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/assert"
 	cvt "hcm/pkg/tools/converter"
+	"hcm/pkg/tools/retry"
 )
 
 // --------------------------[创建TCloud监听器]-----------------------------
@@ -50,6 +53,8 @@ type BatchTaskTCloudCreateListenerAction struct{}
 type BatchTaskTCloudCreateListenerOption struct {
 	ManagementDetailIDs []string                        `json:"management_detail_ids" validate:"required,min=1,max=20"`
 	Listeners           []*hclb.TCloudListenerCreateReq `json:"Listeners,required,min=1,max=20,dive,required"`
+	// 是否在某个监听器创建失败的时候停止后续操作执行，默认不停止
+	AbortOnFailed bool `json:"abort_on_failed"`
 }
 
 // Validate validate option.
@@ -78,23 +83,25 @@ func (act BatchTaskTCloudCreateListenerAction) Run(kt run.ExecuteKit, params any
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
 	}
 
+	asyncKit := kt.AsyncKit()
+
 	results := make([]*core.CloudCreateResult, 0, len(opt.Listeners))
 	for i := range opt.Listeners {
 		detailID := opt.ManagementDetailIDs[i]
 		// 逐条更新结果
-		ret, createErr := act.createSingleListener(kt.Kit(), detailID, opt.Listeners[i]) // 结束后写回状态
+		ret, createErr := act.createSingleListener(asyncKit, detailID, opt.Listeners[i]) // 结束后写回状态
 		targetState := enumor.TaskDetailSuccess
 		if createErr != nil {
 			// 更新为失败
 			targetState = enumor.TaskDetailFailed
 		}
-		err := batchUpdateTaskDetailResultState(kt.Kit(), []string{detailID}, targetState, ret, createErr)
+		err := batchUpdateTaskDetailResultState(asyncKit, []string{detailID}, targetState, ret, createErr)
 		if err != nil {
 			logs.Errorf("fail to set detail to %s after cloud operation finished, err: %v, rid: %s",
-				targetState, err, kt.Kit().Rid)
+				targetState, err, asyncKit.Rid)
 			return nil, err
 		}
-		if createErr != nil {
+		if targetState == enumor.TaskDetailFailed && opt.AbortOnFailed {
 			// abort
 			return nil, err
 		}
@@ -134,7 +141,27 @@ func (act BatchTaskTCloudCreateListenerAction) createSingleListener(kt *kit.Kit,
 	if err := batchUpdateTaskDetailState(kt, []string{detailId}, enumor.TaskDetailRunning); err != nil {
 		return nil, fmt.Errorf("fail to update detail to running, err: %v", err)
 	}
-	lblResp, err := actcli.GetHCService().TCloud.Clb.CreateListener(kt, req)
+
+	var lblResp *hclb.ListenerCreateResult
+	rangeMS := [2]uint{BatchTaskDefaultRetryDelayMinMS, BatchTaskDefaultRetryDelayMaxMS}
+	policy := retry.NewRetryPolicy(0, rangeMS)
+	for policy.RetryCount() < BatchTaskDefaultRetryTimes {
+
+		lblResp, err = actcli.GetHCService().TCloud.Clb.CreateListener(kt, req)
+		// 仅在碰到限频错误时进行重试
+		if err != nil && strings.Contains(err.Error(), constant.TCloudLimitExceededErrCode) {
+			if policy.RetryCount()+1 < BatchTaskDefaultRetryTimes {
+				// 	非最后一次重试，继续sleep
+				logs.Errorf("call tcloud reach rate limit, will sleep for retry, retry count: %d, err: %v, rid: %s",
+					policy.RetryCount(), err, kt.Rid)
+				policy.Sleep()
+				continue
+			}
+		}
+		// 其他情况都跳过
+		break
+	}
+
 	if err != nil {
 		logs.Errorf("fail to call hc to create listener, err: %v, rid: %s", err, kt.Rid)
 		return nil, err

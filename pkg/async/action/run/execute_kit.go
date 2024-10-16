@@ -24,6 +24,7 @@ import "hcm/pkg/kit"
 // ExecuteKit is a kit using by action
 type ExecuteKit interface {
 	Kit() *kit.Kit
+	AsyncKit() *kit.Kit
 	ShareData() ShareDataOperator
 }
 
@@ -46,6 +47,11 @@ func NewExecuteContext(kt *kit.Kit, shareData ShareDataOperator) ExecuteKit {
 type DefExecuteContext struct {
 	kit       *kit.Kit
 	shareData ShareDataOperator
+}
+
+// AsyncKit Kit with async request source.
+func (ctx *DefExecuteContext) AsyncKit() *kit.Kit {
+	return ctx.kit.WithAsyncSource()
 }
 
 // Kit return kit.

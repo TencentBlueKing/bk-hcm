@@ -41,3 +41,8 @@ const (
 	// ApplicationDeliverFailed 申请单交付失败告警
 	ApplicationDeliverFailed WarnSign = "application_deliver_failed"
 )
+
+const (
+	// TCloudLimitExceededErrCode 腾讯云限频错误码
+	TCloudLimitExceededErrCode = "RequestLimitExceeded"
+)

@@ -82,6 +82,14 @@ func (kt *Kit) NewSubKitWithSuffix(suffix string) *Kit {
 	return newSubKit
 }
 
+// WithAsyncSource 生成子kit 设置对应的请求来源为 AsynchronousTasks
+func (kt *Kit) WithAsyncSource() *Kit {
+	newKit := converter.ValToPtr(*kt)
+	newKit.RequestSource = enumor.AsynchronousTasks
+	newKit.Ctx = context.WithValue(kt.Ctx, constant.RequestSourceKey, newKit.RequestSource)
+	return newKit
+}
+
 // GetRequestSource RequestSource为空，返回 ApiCall 类型。
 func (kt *Kit) GetRequestSource() enumor.RequestSourceType {
 	if len(kt.RequestSource) == 0 {

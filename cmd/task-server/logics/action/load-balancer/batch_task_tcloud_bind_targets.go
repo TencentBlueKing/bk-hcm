@@ -21,15 +21,18 @@ package actionlb
 
 import (
 	"fmt"
+	"strings"
 
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	hclb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/async/action"
 	"hcm/pkg/async/action/run"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/retry"
 )
 
 // --------------------------[批量操作-绑定RS]-----------------------------
@@ -72,11 +75,14 @@ func (act BatchTaskBindTargetAction) Name() enumor.ActionName {
 
 // Run 将目标组中的RS绑定到监听器/规则中
 func (act BatchTaskBindTargetAction) Run(kt run.ExecuteKit, params any) (result any, taskErr error) {
+
+	asyncKit := kt.AsyncKit()
+
 	opt, ok := params.(*BatchTaskBindTargetOption)
 	if !ok {
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
 	}
-	detailList, err := listTaskDetail(kt.Kit(), opt.ManagementDetailIDs)
+	detailList, err := listTaskDetail(asyncKit, opt.ManagementDetailIDs)
 	if err != nil {
 		return fmt.Sprintf("task detail query failed"), err
 	}
@@ -91,7 +97,7 @@ func (act BatchTaskBindTargetAction) Run(kt run.ExecuteKit, params any) (result 
 		}
 	}
 	// 更新任务状态为 running
-	if err := batchUpdateTaskDetailState(kt.Kit(), opt.ManagementDetailIDs, enumor.TaskDetailRunning); err != nil {
+	if err := batchUpdateTaskDetailState(asyncKit, opt.ManagementDetailIDs, enumor.TaskDetailRunning); err != nil {
 		return fmt.Sprintf("fail to update detail to running"), err
 	}
 
@@ -102,17 +108,34 @@ func (act BatchTaskBindTargetAction) Run(kt run.ExecuteKit, params any) (result 
 			// 更新为失败
 			targetState = enumor.TaskDetailFailed
 		}
-		err := batchUpdateTaskDetailResultState(kt.Kit(), opt.ManagementDetailIDs, targetState, nil, taskErr)
+		err := batchUpdateTaskDetailResultState(asyncKit, opt.ManagementDetailIDs, targetState, nil, taskErr)
 		if err != nil {
 			logs.Errorf("fail to set detail to %s after cloud operation finished, err: %v, rid: %s",
-				targetState, err, kt.Kit().Rid)
+				targetState, err, asyncKit.Rid)
 		}
 	}()
 
-	err = actcli.GetHCService().TCloud.Clb.BatchRegisterTargetToListenerRule(kt.Kit(), opt.LoadBalancerID,
-		opt.BatchRegisterTCloudTargetReq)
+	rangeMS := [2]uint{BatchTaskDefaultRetryDelayMinMS, BatchTaskDefaultRetryDelayMaxMS}
+	policy := retry.NewRetryPolicy(0, rangeMS)
+	for policy.RetryCount() < BatchTaskDefaultRetryTimes {
+
+		err = actcli.GetHCService().TCloud.Clb.BatchRegisterTargetToListenerRule(asyncKit,
+			opt.LoadBalancerID, opt.BatchRegisterTCloudTargetReq)
+		// 仅在碰到限频错误时进行重试
+		if err != nil && strings.Contains(err.Error(), constant.TCloudLimitExceededErrCode) {
+			if policy.RetryCount()+1 < BatchTaskDefaultRetryTimes {
+				// 	非最后一次重试，继续sleep
+				logs.Errorf("call cloud api reach rate limit, will sleep for retry, retry count: %d, err: %v, rid: %s",
+					policy.RetryCount(), err, asyncKit.Rid)
+				policy.Sleep()
+				continue
+			}
+		}
+		// 其他情况都跳过
+		break
+	}
 	if err != nil {
-		logs.Errorf("fail to register target to listener rule, err: %v, rid: %s", err, kt.Kit().Rid)
+		logs.Errorf("fail to register target to listener rule, err: %v, rid: %s", err, asyncKit.Rid)
 		return nil, err
 	}
 
