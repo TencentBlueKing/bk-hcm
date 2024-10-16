@@ -9,8 +9,8 @@ export enum TaskClbType {
   DELETE_LISTENER = 'listener_delete',
   BINDING_L4_RS = 'binding_layer4_rs',
   BINDING_L7_RS = 'binding_layer7_rs',
-  UNBIND_RS = 'layer_listener_unbind_rs',
-  MODIFY_RS_WEIGHT = 'layer_listener_rs_weight',
+  UNBIND_RS = 'listener_unbind_rs',
+  MODIFY_RS_WEIGHT = 'listener_rs_weight',
 }
 
 export type TaskType = TaskClbType;
