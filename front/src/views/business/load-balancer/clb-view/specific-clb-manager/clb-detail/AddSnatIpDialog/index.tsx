@@ -3,10 +3,11 @@ import { Button, Form, Input, Message } from 'bkui-vue';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import CommonDialog from '@/components/common-dialog';
 import SubnetSelector from '@/views/service/service-apply/components/common/subnet-selector';
-import { useAccountStore, useBusinessStore } from '@/store';
+import { useBusinessStore } from '@/store';
 import { useI18n } from 'vue-i18n';
 import { CLB_QUOTA_NAME } from '@/typings';
 import './index.scss';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 
 const { FormItem } = Form;
 
@@ -19,11 +20,11 @@ export default defineComponent({
   emits: ['update:isShow'],
   setup(props, { emit }) {
     const { t } = useI18n();
-    const accountStore = useAccountStore();
+    const { getBizsId } = useWhereAmI();
     const businessStore = useBusinessStore();
 
     const getDefaultFormData = () => ({
-      bk_biz_id: accountStore.bizs,
+      bk_biz_id: getBizsId(),
       cloud_subnet_id: '',
       type: '0', // 0 自动生成 1 手动录入
       ip_count: 0,
@@ -91,6 +92,7 @@ export default defineComponent({
         title='新增 SNAT IP'
         class='add-snat-ip-dialog'
         isShow={props.isShow}
+        width={600}
         onUpdate:isShow={(isShow) => emit('update:isShow', isShow)}>
         {{
           default: () => (
