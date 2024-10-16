@@ -196,15 +196,16 @@ func (c *CreateUrlRulePreviewExecutor) validateListener(kt *kit.Kit, curDetail *
 	}
 	if listener == nil {
 		curDetail.Status.SetNotExecutable()
-		curDetail.ValidateResult = append(curDetail.ValidateResult, fmt.Sprintf("lb(%s) listenerPort(%d) 不存在",
+		curDetail.ValidateResult = append(curDetail.ValidateResult, fmt.Sprintf("lb(%s) listenerPort(%d) does not exist",
 			curDetail.CloudClbID, curDetail.ListenerPort[0]))
 		return nil
 	}
 
 	if curDetail.DefaultDomain && curDetail.Domain != listener.DefaultDomain {
 		curDetail.Status.SetNotExecutable()
-		curDetail.ValidateResult = append(curDetail.ValidateResult, fmt.Sprintf("listener(%s) 默认域名(%s) 与导入记录(%s)不一致",
-			listener.ID, listener.DefaultDomain, curDetail.Domain))
+		curDetail.ValidateResult = append(curDetail.ValidateResult,
+			fmt.Sprintf("listener(%s) default domain name(%s) is inconsistent with input record(%s)",
+				listener.ID, listener.DefaultDomain, curDetail.Domain))
 		return nil
 	}
 
@@ -237,8 +238,9 @@ func (c *CreateUrlRulePreviewExecutor) validateListener(kt *kit.Kit, curDetail *
 	}
 
 	curDetail.Status.SetExisting()
-	curDetail.ValidateResult = append(curDetail.ValidateResult, fmt.Sprintf("已存在监听器(%s), port: %d, protocol: %s",
-		curDetail.CloudClbID, listener.Port, listener.Protocol))
+	curDetail.ValidateResult = append(curDetail.ValidateResult,
+		fmt.Sprintf("already exist listener(%s), port: %d, protocol: %s", curDetail.CloudClbID, listener.Port,
+			listener.Protocol))
 
 	return nil
 }
