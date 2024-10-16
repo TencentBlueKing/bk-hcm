@@ -39,8 +39,11 @@ import (
 )
 
 const (
-	BatchTaskDefaultRetryTimes      = 3
+	// BatchTaskDefaultRetryTimes 批量任务默认重试次数
+	BatchTaskDefaultRetryTimes = 3
+	// BatchTaskDefaultRetryDelayMinMS 批量任务默认重试最小延迟时间
 	BatchTaskDefaultRetryDelayMinMS = 600
+	// BatchTaskDefaultRetryDelayMaxMS 批量任务默认重试最大延迟时间
 	BatchTaskDefaultRetryDelayMaxMS = 1000
 )
 

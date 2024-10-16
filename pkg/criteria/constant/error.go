@@ -43,5 +43,6 @@ const (
 )
 
 const (
+	// TCloudLimitExceededErrCode 腾讯云限频错误码
 	TCloudLimitExceededErrCode = "RequestLimitExceeded"
 )
