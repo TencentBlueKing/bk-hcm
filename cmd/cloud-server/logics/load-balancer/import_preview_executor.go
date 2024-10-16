@@ -35,15 +35,15 @@ type OperationType string
 
 const (
 	// CreateLayer4Listener 创建四层监听器
-	CreateLayer4Listener = "create_layer4_listener"
+	CreateLayer4Listener = OperationType(enumor.TaskCreateLayer4Listener)
 	// CreateLayer7Listener 创建七层监听器
-	CreateLayer7Listener = "create_layer7_listener"
+	CreateLayer7Listener = OperationType(enumor.TaskCreateLayer7Listener)
 	// CreateUrlRule 创建URL规则
-	CreateUrlRule = "create_layer7_rule"
+	CreateUrlRule = OperationType(enumor.TaskCreateLayer7Rule)
 	// Layer4ListenerBindRs 四层监听器绑定RS
-	Layer4ListenerBindRs = "binding_layer4_rs"
+	Layer4ListenerBindRs = OperationType(enumor.TaskBindingLayer4RS)
 	// Layer7ListenerBindRs 七层监听器绑定RS
-	Layer7ListenerBindRs = "binding_layer7_rs"
+	Layer7ListenerBindRs = OperationType(enumor.TaskBindingLayer7RS)
 )
 
 // ImportPreviewExecutor 导入预览执行器
