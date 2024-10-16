@@ -165,7 +165,7 @@ func (act BatchTaskTCloudCreateL7RuleAction) createNonExists(kt *kit.Kit, nonExi
 		return fmt.Sprintf("fail to update detail state to running"), err
 	}
 
-	lblResp, createErr := actcli.GetHCService().TCloud.Clb.BatchCreateUrlRule(kt, lb.ID, ruleCreateReq)
+	lblResp, createErr := actcli.GetHCService().TCloud.Clb.BatchCreateUrlRule(kt, opt.ListenerID, ruleCreateReq)
 	// 更新为失败
 	if createErr != nil {
 		logs.Errorf("fail to call hc to create tcloud l7 rules, err: %v, req: %+v, rid: %s",

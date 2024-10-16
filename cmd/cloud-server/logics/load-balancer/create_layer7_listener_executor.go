@@ -120,11 +120,11 @@ func (c *CreateLayer7ListenerExecutor) unmarshalData(rawDetail json.RawMessage) 
 }
 
 func (c *CreateLayer7ListenerExecutor) validate(kt *kit.Kit) error {
-	validator := &CreateLayer7ListenerPreviewExecutor{
+	executor := &CreateLayer7ListenerPreviewExecutor{
 		basePreviewExecutor: c.basePreviewExecutor,
 		details:             c.details,
 	}
-	err := validator.validate(kt)
+	err := executor.validate(kt)
 	if err != nil {
 		return err
 	}
@@ -171,7 +171,7 @@ func (c *CreateLayer7ListenerExecutor) buildFlows(kt *kit.Kit) ([]string, error)
 			for _, detail := range details {
 				ids = append(ids, detail.taskDetailID)
 			}
-			err := updateTaskDetailState(kt, c.dataServiceCli, enumor.TaskDetailFailed, ids)
+			err := updateTaskDetailState(kt, c.dataServiceCli, enumor.TaskDetailFailed, ids, err.Error())
 			if err != nil {
 				logs.Errorf("update task details status failed, err: %v, rid: %s", err, kt.Rid)
 				return nil, err
