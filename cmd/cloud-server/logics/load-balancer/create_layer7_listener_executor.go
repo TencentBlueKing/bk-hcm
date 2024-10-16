@@ -306,7 +306,7 @@ func (c *CreateLayer7ListenerExecutor) buildFlow(kt *kit.Kit, lbID, lbCloudID, r
 
 	_, err := checkResFlowRel(kt, c.dataServiceCli, lbID, enumor.LoadBalancerCloudResType)
 	if err != nil {
-		logs.Errorf("check res flow rel failed, res(%s), err: %v, rid: %s", lbID, err, kt.Rid)
+		logs.Errorf("check resource flow relation failed, lbID: %s, err: %v, rid: %s", lbID, err, kt.Rid)
 		return "", err
 	}
 
@@ -324,7 +324,7 @@ func (c *CreateLayer7ListenerExecutor) buildFlow(kt *kit.Kit, lbID, lbCloudID, r
 	err = lockResFlowStatus(kt, c.dataServiceCli, c.taskCli, lbID,
 		enumor.LoadBalancerCloudResType, flowID, enumor.CreateListenerTaskType)
 	if err != nil {
-		logs.Errorf("lock resource flow status failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("lock resource flow status failed, lbID: %s, err: %v, rid: %s", lbID, err, kt.Rid)
 		return "", err
 	}
 

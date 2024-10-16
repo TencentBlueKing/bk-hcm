@@ -69,8 +69,8 @@ func NewImportExecutor(operationType OperationType, dataCli *dataservice.Client,
 		return newCreateLayer7ListenerExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
 	case CreateUrlRule:
 		return newCreateUrlRuleExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
-	//case Layer4ListenerBindRs:
-	//	return newLayer4ListenerBindRSExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
+	case Layer4ListenerBindRs:
+		return newLayer4ListenerBindRSExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
 	//case Layer7ListenerBindRs:
 	//	return newLayer7ListenerBindRSExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
 	default:
@@ -118,6 +118,7 @@ func createTaskManagement(kt *kit.Kit, cli *dataservice.Client, bkBizID int64, v
 
 	result, err := cli.Global.TaskManagement.Create(kt, taskManagementCreateReq)
 	if err != nil {
+		logs.Errorf("create task management failed, req: %v, err: %v, rid: %s", taskManagementCreateReq, err, kt.Rid)
 		return "", err
 	}
 	if len(result.IDs) == 0 {
@@ -165,6 +166,7 @@ func updateTaskDetailState(kt *kit.Kit, cli *dataservice.Client, state enumor.Ta
 	}
 	err := cli.Global.TaskDetail.Update(kt, updateDetailsReq)
 	if err != nil {
+		logs.Errorf("update task detail state failed, req: %v, err: %v, rid: %s", updateDetailsReq, err, kt.Rid)
 		return err
 	}
 	return nil

@@ -68,8 +68,8 @@ func NewImportPreviewExecutor(operationType OperationType, service *dataservice.
 		return newCreateLayer7ListenerPreviewExecutor(service, vendor, bkBizID, accountID, regionIDs), nil
 	case CreateUrlRule:
 		return newCreateUrlRulePreviewExecutor(service, vendor, bkBizID, accountID, regionIDs), nil
-	//case Layer4ListenerBindRs:
-	//	return newLayer4ListenerBindRSPreviewExecutor(service, vendor, bkBizID, accountID, regionIDs), nil
+	case Layer4ListenerBindRs:
+		return newLayer4ListenerBindRSPreviewExecutor(service, vendor, bkBizID, accountID, regionIDs), nil
 	//case Layer7ListenerBindRs:
 	//	return newLayer7ListenerBindRSPreviewExecutor(service, vendor, bkBizID, accountID, regionIDs), nil
 	default:

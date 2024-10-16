@@ -189,7 +189,7 @@ func (c *CreateLayer4ListenerExecutor) buildFlow(kt *kit.Kit, lbID, lbCloudID, r
 
 	_, err = checkResFlowRel(kt, c.dataServiceCli, lbID, enumor.LoadBalancerCloudResType)
 	if err != nil {
-		logs.Errorf("check resource flow relation failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("check resource flow relation failed, lbID: %s, err: %v, rid: %s", lbID, err, kt.Rid)
 		return "", err
 	}
 	flowID, err := c.createFlowTask(kt, lbID, flowTasks)
@@ -199,7 +199,7 @@ func (c *CreateLayer4ListenerExecutor) buildFlow(kt *kit.Kit, lbID, lbCloudID, r
 	err = lockResFlowStatus(kt, c.dataServiceCli, c.taskCli, lbID,
 		enumor.LoadBalancerCloudResType, flowID, enumor.AddRSTaskType)
 	if err != nil {
-		logs.Errorf("lock resource flow status failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("lock resource flow status failed, lbID: %s, err: %v, rid: %s", lbID, err, kt.Rid)
 		return "", err
 	}
 
