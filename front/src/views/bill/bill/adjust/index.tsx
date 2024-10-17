@@ -223,7 +223,9 @@ export default defineComponent({
                     <Plus style={{ fontSize: '22px' }} />
                     {t('新增调账')}
                   </Button>
-                  <Button>{t('导入')}</Button>
+                  <Button disabled v-bk-tooltips={{ content: t('该功能暂不支持') }}>
+                    {t('导入')}
+                  </Button>
                   <BillsExportButton
                     cb={() =>
                       exportBillsAdjustmentItems({
