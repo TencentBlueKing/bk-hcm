@@ -21,6 +21,7 @@ package tcloud
 
 import (
 	"context"
+	"hcm/pkg/client/common"
 	"net/http"
 
 	"hcm/pkg/api/core"
@@ -302,4 +303,26 @@ func (cli *SecurityGroupClient) DisassociateLb(ctx context.Context, h http.Heade
 	}
 
 	return nil
+}
+
+// BatchAssociateCloudCvm 根据cvm云id绑定安全组
+func (cli *SecurityGroupClient) BatchAssociateCloudCvm(kt *kit.Kit, sgID string, cloudCvmIDs []string) error {
+
+	req := &proto.SecurityGroupAssociateCloudCvmReq{
+		SecurityGroupID: sgID,
+		CloudCvmIDs:     cloudCvmIDs,
+	}
+	return common.RequestNoResp[proto.SecurityGroupAssociateCloudCvmReq](cli.client, rest.POST, kt, req,
+		"/security_groups/associate/cloud_cvms/batch")
+}
+
+// BatchDisassociateCloudCvm 根据cvm云id解绑安全组
+func (cli *SecurityGroupClient) BatchDisassociateCloudCvm(kt *kit.Kit, sgID string, cloudCvmIDs []string) error {
+
+	req := &proto.SecurityGroupAssociateCloudCvmReq{
+		SecurityGroupID: sgID,
+		CloudCvmIDs:     cloudCvmIDs,
+	}
+	return common.RequestNoResp[proto.SecurityGroupAssociateCloudCvmReq](cli.client, rest.POST, kt, req,
+		"/security_groups/disassociate/cloud_cvms/batch")
 }

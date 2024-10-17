@@ -533,3 +533,82 @@ func (g *securityGroup) getSecurityGroupMap(kt *kit.Kit, sgIDs []string) (
 
 	return sgMap, nil
 }
+
+// TCloudSGBatchAssociateCloudCvm 根据cvm云id 绑定安全组
+func (g *securityGroup) TCloudSGBatchAssociateCloudCvm(cts *rest.Contexts) (any, error) {
+
+	req := new(proto.SecurityGroupAssociateCloudCvmReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	sgMap, err := g.getSecurityGroupMap(cts.Kit, []string{req.SecurityGroupID})
+	if err != nil {
+		logs.Errorf("get security group map failed, sgID: %s, err: %v, rid: %s", req.SecurityGroupID, err, cts.Kit.Rid)
+		return nil, err
+	}
+	sg, ok := sgMap[req.SecurityGroupID]
+	if !ok {
+		return nil, errf.Newf(errf.RecordNotFound, "security group: %s not found", req.SecurityGroupID)
+	}
+
+	client, err := g.ad.TCloud(cts.Kit, sg.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := &securitygroup.TCloudBatchAssociateCvmOption{
+		Region:               sg.Region,
+		CloudSecurityGroupID: sg.CloudID,
+		CloudCvmIDs:          req.CloudCvmIDs,
+	}
+	if err = client.SecurityGroupCvmBatchAssociate(cts.Kit, opt); err != nil {
+		logs.Errorf("request adaptor to tcloud security group associate cvm failed, err: %v, opt: %v, rid: %s",
+			err, opt, cts.Kit.Rid)
+		return nil, err
+	}
+	return nil, nil
+}
+
+// TCloudSGBatchDisassociateCloudCvm  根据cvm云id 解绑安全组
+func (g *securityGroup) TCloudSGBatchDisassociateCloudCvm(cts *rest.Contexts) (any, error) {
+	req := new(proto.SecurityGroupAssociateCloudCvmReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	sgMap, err := g.getSecurityGroupMap(cts.Kit, []string{req.SecurityGroupID})
+	if err != nil {
+		logs.Errorf("get security group map failed, sgID: %s, err: %v, rid: %s", req.SecurityGroupID, err, cts.Kit.Rid)
+		return nil, err
+	}
+	sg, ok := sgMap[req.SecurityGroupID]
+	if !ok {
+		return nil, errf.Newf(errf.RecordNotFound, "security group: %s not found", req.SecurityGroupID)
+	}
+
+	client, err := g.ad.TCloud(cts.Kit, sg.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := &securitygroup.TCloudBatchAssociateCvmOption{
+		Region:               sg.Region,
+		CloudSecurityGroupID: sg.CloudID,
+		CloudCvmIDs:          req.CloudCvmIDs,
+	}
+	if err = client.SecurityGroupCvmBatchDisassociate(cts.Kit, opt); err != nil {
+		logs.Errorf("request adaptor to tcloud security group associate cvm failed, err: %v, opt: %v, rid: %s",
+			err, opt, cts.Kit.Rid)
+		return nil, err
+	}
+	return nil, nil
+}

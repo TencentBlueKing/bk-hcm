@@ -19,8 +19,15 @@
 
 package securitygroup
 
-import "hcm/pkg/rest"
+import (
+	"net/http"
+
+	"hcm/pkg/rest"
+)
 
 func initSecurityGroupServiceHooks(svc *securityGroupSvc, h *rest.Handler) {
-
+	h.Add("BatchAssociateBizCloudCvm", http.MethodPost,
+		"/bizs/{bk_biz_id}/security_groups/associate/cloud_cvms/batch", svc.BatchAssociateBizCloudCvm)
+	h.Add("BatchDisassociateBizCloudCvm", http.MethodPost,
+		"/bizs/{bk_biz_id}/security_groups/disassociate/cloud_cvms/batch", svc.BatchDisassociateBizCloudCvm)
 }
