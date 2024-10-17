@@ -140,6 +140,8 @@ func bizService(h *rest.Handler, svc *lbSvc) {
 		"/vendors/{vendor}/load_balancers/operations/{operation_type}/preview", svc.ImportPreview)
 	h.Add("ImportSubmit", http.MethodPost,
 		"/vendors/{vendor}/load_balancers/operations/{operation_type}/submit", svc.ImportSubmit)
+	h.Add("ImportValidate", http.MethodPost,
+		"/vendors/{vendor}/load_balancers/operations/{operation_type}/validate", svc.ImportValidate)
 }
 
 func bizURLRuleService(h *rest.Handler, svc *lbSvc) {
