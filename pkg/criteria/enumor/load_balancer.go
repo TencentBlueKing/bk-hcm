@@ -133,6 +133,8 @@ const (
 	CreateListenerTaskType = TaskType(FlowLoadBalancerCreateListener)
 	// CreateUrlRuleTaskType 任务类型-新建URL规则
 	CreateUrlRuleTaskType = TaskType(FlowLoadBalancerCreateUrlRule)
+	// ListenerUnbindRsTaskType 任务类型-监听器批量解绑RS
+	ListenerUnbindRsTaskType = TaskType(FlowBatchTaskListenerUnBindTarget)
 )
 
 // InstType 实例类型
@@ -193,4 +195,7 @@ const (
 const (
 	// ParameterWildcard 参数通配符
 	ParameterWildcard string = "ALL"
+
+	// NoMatchTaskManageResult 未匹配时的任务管理结果
+	NoMatchTaskManageResult = "NO_MATCHING_OR_HAS_DONE"
 )
