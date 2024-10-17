@@ -82,6 +82,14 @@ func (kt *Kit) NewSubKitWithSuffix(suffix string) *Kit {
 	return newSubKit
 }
 
+// NewSubKitWithRid 生成子kit, 指定rid, 继承 context
+func (kt *Kit) NewSubKitWithRid(subRid string) *Kit {
+	newSubKit := converter.ValToPtr(*kt)
+	newSubKit.Rid = subRid
+	newSubKit.Ctx = context.WithValue(kt.Ctx, constant.RidKey, subRid)
+	return newSubKit
+}
+
 // WithAsyncSource 生成子kit 设置对应的请求来源为 AsynchronousTasks
 func (kt *Kit) WithAsyncSource() *Kit {
 	newKit := converter.ValToPtr(*kt)
