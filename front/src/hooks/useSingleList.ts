@@ -85,8 +85,9 @@ export function useSingleList(options?: {
     isDataLoad.value = true;
     return apiMethod()
       .then(([detailRes, countRes]) => {
+        const increment = get(detailRes.data, options.path.data) || [];
         // 加载数据
-        dataList.value = [...dataList.value, ...get(detailRes.data, options.path.data, [])];
+        dataList.value = [...dataList.value, ...increment];
         // 更新分页参数
         pagination.count = get(countRes.data, options.path.count, 0);
         // 将加载数据后的 dataList 作为 then 函数的返回值, 用以支持对新的 dataList 做额外的处理

@@ -65,6 +65,7 @@ export default defineComponent({
       {
         label: t('更新时间'),
         field: 'updated_at',
+        width: 160,
         render: ({ cell }: any) => timeFormatter(cell),
       },
       {
@@ -79,6 +80,7 @@ export default defineComponent({
       {
         label: t('二级账号名称'),
         field: 'main_account_cloud_id',
+        width: 300,
       },
       {
         label: t('调账类型'),
@@ -101,6 +103,7 @@ export default defineComponent({
         field: 'currency',
         render: ({ cell }: any) => CURRENCY_MAP[cell] || '--',
       },
+      { label: t('备注'), field: 'memo', width: 200 },
       {
         label: t('调账状态'),
         field: 'state',
@@ -111,6 +114,8 @@ export default defineComponent({
       },
       {
         label: t('操作'),
+        width: 120,
+        fixed: 'right',
         render: ({ data }: any) => (
           <>
             <Button
@@ -223,7 +228,9 @@ export default defineComponent({
                     <Plus style={{ fontSize: '22px' }} />
                     {t('新增调账')}
                   </Button>
-                  <Button>{t('导入')}</Button>
+                  <Button disabled v-bk-tooltips={{ content: t('该功能暂不支持') }}>
+                    {t('导入')}
+                  </Button>
                   <BillsExportButton
                     cb={() =>
                       exportBillsAdjustmentItems({

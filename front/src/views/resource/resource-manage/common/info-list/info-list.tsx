@@ -1,4 +1,4 @@
-import { computed, defineComponent, PropType } from 'vue';
+import { computed, defineComponent, inject, PropType, useTemplateRef } from 'vue';
 
 import { OverflowTitle } from 'bkui-vue';
 import { Share, Copy } from 'bkui-vue/lib/icon';
@@ -24,18 +24,43 @@ export default defineComponent({
   emits: ['change'],
 
   setup(props, { emit }) {
+    // 注入预鉴权相关参数
+    const authAction = inject<any>('authAction');
+    // undefined：不校验权限；true：有权限；false：无权限
+    const isAuth = computed(() => {
+      if (authAction) {
+        const { authVerifyData, authId } = authAction;
+        return !(authId && !authVerifyData?.value?.permissionAction?.[authId]);
+      }
+      return undefined;
+    });
+
     const gridTemplateColumnsStyle = computed(() => `repeat(${props.col}, calc(${100 / props.col}% - 12px))`);
-    // item 最大宽度至少需要减去 'column-gap'/'col', 避免出现横向滚动条
-    const itemMaxWidthBaseDecrement = computed(() => 24 / props.col);
+    // item 最大宽度至少需要减去 column-gap * (col - 1), 避免出现横向滚动条
+    const itemMaxWidthBaseDecrement = computed(() => 12 * (props.col - 1));
 
     const handleBlur = async (val: any, key: string) => {
       emit('change', { [key]: val });
     };
+
+    const editCompRef = useTemplateRef<typeof RenderDetailEdit>('detail-edit-comp');
+    // 如果祖辈组件有 provide 预鉴权参数, 则需要对编辑操作进行预鉴权处理
+    const handleEdit = () => {
+      if (isAuth.value === false) {
+        // 无权限, 展示权限申请弹窗
+        const { authId, handleAuth } = authAction;
+        handleAuth(authId);
+      } else {
+        editCompRef.value.handleEdit();
+      }
+    };
+
     return {
       gridTemplateColumnsStyle,
       itemMaxWidthBaseDecrement,
       handleBlur,
-      props,
+      handleEdit,
+      isAuth,
     };
   },
 
@@ -56,11 +81,12 @@ export default defineComponent({
     // 渲染可编辑文本
     const renderEditTxt = (field: Field) => (
       <RenderDetailEdit
+        ref='detail-edit-comp'
         modelValue={field.value}
         fromType={field.type}
         needValidate={false}
         fromKey={field.prop}
-        teleportTargetId={`#edit-btn-${field.prop}`}
+        hideEdit={true}
         onChange={this.handleBlur}></RenderDetailEdit>
     );
 
@@ -102,7 +128,7 @@ export default defineComponent({
     return (
       <ul class='info-list-main g-scroller' style={{ gridTemplateColumns: this.gridTemplateColumnsStyle }}>
         {this.fields.map((field) => {
-          const { prop, name, value, cls, render, edit, copy, copyContent, tipsContent } = field;
+          const { name, value, cls, render, edit, copy, copyContent, tipsContent } = field;
 
           // copy配置的优先级：局部 > 全局
           const resultCopyable = copy ?? this.globalCopyable;
@@ -123,10 +149,8 @@ export default defineComponent({
           let operationBtnWidth = 0;
           if (resultCopyable) operationBtnWidth += 24;
           if (edit) operationBtnWidth += 24;
-          const itemMaxWidth = `calc(100% - ${this.itemMaxWidthBaseDecrement + operationBtnWidth}px)`;
-          const valueMaxWidth = operationBtnWidth
-            ? `calc(100% - ${parseFloat(this.labelWidth) + operationBtnWidth}px)`
-            : `calc(100% - ${parseFloat(this.labelWidth)}px)`;
+          const itemMaxWidth = `calc(100% - ${this.itemMaxWidthBaseDecrement}px)`;
+          const valueMaxWidth = `calc(100% - ${parseFloat(this.labelWidth) + operationBtnWidth}px)`;
 
           return (
             <li class='info-list-item' style={{ maxWidth: itemMaxWidth }}>
@@ -140,14 +164,23 @@ export default defineComponent({
                 </span>
               )}
               <span
-                v-overflow-title
                 class={['item-value', typeof cls === 'function' ? cls(value) : cls]}
                 style={{ maxWidth: valueMaxWidth }}>
                 <OverflowTitle class='full-width' type='tips' content={renderField(field)}>
                   {renderField(field)}
                 </OverflowTitle>
               </span>
-              {edit && <div id={`edit-btn-${prop}`}></div>}
+              {edit && (
+                <i
+                  onClick={this.handleEdit}
+                  class={[
+                    'icon hcm-icon bkhcm-icon-bianji edit-icon',
+                    {
+                      'hcm-no-permision-text-btn': this.isAuth === false,
+                    },
+                  ]}
+                />
+              )}
               {resultCopyable && <CopyToClipboard class='copy-btn' content={resultCopyContent} />}
             </li>
           );
