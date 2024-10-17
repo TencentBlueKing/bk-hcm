@@ -45,23 +45,23 @@ type CreateLayer4ListenerValidator struct {
 
 // Validate ...
 func (c *CreateLayer4ListenerValidator) Validate(kt *kit.Kit, rawData json.RawMessage) (interface{}, error) {
-	validator := &CreateLayer4ListenerPreviewExecutor{
+	executor := &CreateLayer4ListenerPreviewExecutor{
 		basePreviewExecutor: c.basePreviewExecutor,
 	}
-	err := json.Unmarshal(rawData, &validator.details)
+	err := json.Unmarshal(rawData, &executor.details)
 	if err != nil {
 		return nil, err
 	}
 
 	// reset status and validateResult
-	for _, detail := range validator.details {
+	for _, detail := range executor.details {
 		detail.Status = ""
 		detail.ValidateResult = make([]string, 0)
 	}
 
-	if err = validator.validate(kt); err != nil {
-		logs.Errorf("validate failed, err: %v, rid: %s", err, kt.Rid)
+	if err = executor.validate(kt); err != nil {
+		logs.Errorf("validate failed,operationType: %s, err: %v, rid: %s", CreateLayer4Listener, err, kt.Rid)
 		return nil, err
 	}
-	return validator.details, nil
+	return executor.details, nil
 }

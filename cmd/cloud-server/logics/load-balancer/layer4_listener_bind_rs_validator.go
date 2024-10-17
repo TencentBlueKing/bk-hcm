@@ -45,23 +45,23 @@ type Layer4ListenerBindRSValidator struct {
 
 // Validate ...
 func (c *Layer4ListenerBindRSValidator) Validate(kt *kit.Kit, rawData json.RawMessage) (interface{}, error) {
-	validator := &Layer4ListenerBindRSPreviewExecutor{
+	executor := &Layer4ListenerBindRSPreviewExecutor{
 		basePreviewExecutor: c.basePreviewExecutor,
 	}
-	err := json.Unmarshal(rawData, &validator.details)
+	err := json.Unmarshal(rawData, &executor.details)
 	if err != nil {
 		return nil, err
 	}
 
 	// reset status and validateResult
-	for _, detail := range validator.details {
+	for _, detail := range executor.details {
 		detail.Status = ""
 		detail.ValidateResult = make([]string, 0)
 	}
 
-	if err = validator.validate(kt); err != nil {
-		logs.Errorf("validate failed, err: %v, rid: %s", err, kt.Rid)
+	if err = executor.validate(kt); err != nil {
+		logs.Errorf("validate failed,operationType: %s, err: %v, rid: %s", Layer4ListenerBindRs, err, kt.Rid)
 		return nil, err
 	}
-	return validator.details, nil
+	return executor.details, nil
 }
