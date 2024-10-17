@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/cc"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -52,28 +53,28 @@ func (cli *client) listenerByLbBatch(kt *kit.Kit, params *SyncListenerBatchOptio
 	}
 
 	// 并发同步多个负载均衡下的监听器
+	syncConcurrency := int(cc.HCService().SyncConfig.TCloudLoadBalancerListenerSyncConcurrency)
 	var syncResult *SyncResult
-	err := concurrence.BaseExec(constant.CLBListenerSyncConcurrencyMaxLimit, params.LbInfos,
-		func(lb corelb.TCloudLoadBalancer) error {
-			newKit := kt.NewSubKit()
-			syncOpt := &SyncListenerOption{
-				BizID:              lb.BkBizID,
-				LBID:               lb.ID,
-				CloudLBID:          lb.CloudID,
-				CachedLoadBalancer: cvt.ValToPtr(lb),
-			}
-			param := &SyncBaseParams{
-				AccountID: params.AccountID,
-				Region:    params.Region,
-			}
-			var err error
-			if syncResult, err = cli.listenerOfLoadBalancer(newKit, param, syncOpt); err != nil {
-				logs.ErrorDepthf(1, "[%s] account: %s lb: %s sync listener failed, err: %v, rid: %s",
-					enumor.TCloud, params.AccountID, lb.CloudID, err, kt.Rid)
-				return err
-			}
-			return nil
-		})
+	err := concurrence.BaseExec(syncConcurrency, params.LbInfos, func(lb corelb.TCloudLoadBalancer) error {
+		newKit := kt.NewSubKit()
+		syncOpt := &SyncListenerOption{
+			BizID:              lb.BkBizID,
+			LBID:               lb.ID,
+			CloudLBID:          lb.CloudID,
+			CachedLoadBalancer: cvt.ValToPtr(lb),
+		}
+		param := &SyncBaseParams{
+			AccountID: params.AccountID,
+			Region:    params.Region,
+		}
+		var err error
+		if syncResult, err = cli.listenerOfLoadBalancer(newKit, param, syncOpt); err != nil {
+			logs.ErrorDepthf(1, "[%s] account: %s lb: %s sync listener failed, err: %v, rid: %s",
+				enumor.TCloud, params.AccountID, lb.CloudID, err, kt.Rid)
+			return err
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}

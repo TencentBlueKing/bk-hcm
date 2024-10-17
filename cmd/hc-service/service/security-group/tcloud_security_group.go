@@ -442,6 +442,10 @@ func (g *securityGroup) TCloudSecurityGroupDisassociateLoadBalancer(cts *rest.Co
 		if !ok {
 			continue
 		}
+		if sg.ID == req.SecurityGroupID {
+			// 跳过用户需要解绑的安全组ID
+			continue
+		}
 		sgCloudIDs = append(sgCloudIDs, sg.CloudID)
 	}
 
