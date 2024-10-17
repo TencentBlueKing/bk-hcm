@@ -138,6 +138,8 @@ const (
 	// ListenerModifyRsWeightTaskType 任务类型-监听器批量调整RS权重
 	ListenerModifyRsWeightTaskType = TaskType(
 		FlowBatchTaskListenerModifyRsWeight)
+	// DeleteListenerTaskType 任务类型-批量删除监听器
+	DeleteListenerTaskType = TaskType(FlowBatchTaskDeleteListener)
 )
 
 // InstType 实例类型

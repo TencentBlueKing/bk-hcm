@@ -84,6 +84,7 @@ var loadBalancerFlowNameMap = map[FlowName]struct{}{
 	FlowLoadBalancerCreateUrlRule:      {},
 	FlowBatchTaskListenerUnBindTarget:  {},
 	FlowBatchTaskListenerModifyRsWeight: {},
+	FlowBatchTaskDeleteListener:        {},
 }
 
 // ValidateLoadBalancer validate load balancer FlowName.
@@ -159,6 +160,8 @@ const (
 	FlowBatchTaskListenerUnBindTarget = "batch_task_tcloud_listener_unbind_target"
 	// FlowBatchTaskListenerModifyRsWeight 异步任务-监听器批量调整RS权重
 	FlowBatchTaskListenerModifyRsWeight = "batch_task_tcloud_listener_modify_rs_weight"
+	// FlowBatchTaskDeleteListener 异步任务-批量删除监听器
+	FlowBatchTaskDeleteListener = "batch_task_tcloud_delete_listener"
 )
 
 // 账单相关Flow

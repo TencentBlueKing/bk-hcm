@@ -267,3 +267,32 @@ func isListenerCertChange(want *corelb.TCloudCertificateInfo, db *corelb.TCloudC
 	}
 	return false
 }
+
+// batchListListenerByIDs 根据监听器ID数组，批量获取监听器列表
+func batchListListenerByIDs(kt *kit.Kit, lblIDs []string) ([]corelb.BaseListener, error) {
+	if len(lblIDs) == 0 {
+		return nil, errf.Newf(errf.InvalidParameter, "listener ids is required")
+	}
+
+	// 查询监听器列表
+	req := &core.ListReq{
+		Filter: tools.ContainersExpression("id", lblIDs),
+		Page:   core.NewDefaultBasePage(),
+	}
+	lblList := make([]corelb.BaseListener, 0)
+	for {
+		lblResp, err := actcli.GetDataService().Global.LoadBalancer.ListListener(kt, req)
+		if err != nil {
+			logs.Errorf("failed to list tcloud listener, err: %v, lblIDs: %v, rid: %s", err, lblIDs, kt.Rid)
+			return nil, err
+		}
+
+		lblList = append(lblList, lblResp.Details...)
+		if uint(len(lblResp.Details)) < core.DefaultMaxPageLimit {
+			break
+		}
+
+		req.Page.Start += uint32(core.DefaultMaxPageLimit)
+	}
+	return lblList, nil
+}
