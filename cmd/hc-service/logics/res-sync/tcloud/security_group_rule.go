@@ -50,6 +50,7 @@ func (opt SyncSGRuleOption) Validate() error {
 }
 
 // SecurityGroupRule 同步安全组规则唯一指定方法
+// TODO: params.CloudID 目前传入的是ID不是CloudID, 调用方需要关注这个信息。后续需要调整同步逻辑(用CloudID同步)
 func (cli *client) SecurityGroupRule(kt *kit.Kit, params *SyncBaseParams, opt *SyncSGRuleOption) (*SyncResult, error) {
 
 	if err := validator.ValidateTool(params, opt); err != nil {
