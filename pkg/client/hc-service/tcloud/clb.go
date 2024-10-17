@@ -244,3 +244,11 @@ func (c *ClbClient) BatchRemoveListenerTarget(kt *kit.Kit, lbID string, req *hcp
 	return common.Request[hcproto.TCloudBatchUnbindRsReq, hcproto.BatchCreateResult](
 		c.client, http.MethodDelete, kt, req, "/load_balancers/%s/targets/batch", lbID)
 }
+
+// BatchModifyListenerTargetsWeight 按负载均衡批量调整监听器的RS权重
+func (c *ClbClient) BatchModifyListenerTargetsWeight(kt *kit.Kit, lbID string,
+	req *hcproto.TCloudBatchModifyRsWeightReq) (*hcproto.BatchCreateResult, error) {
+
+	return common.Request[hcproto.TCloudBatchModifyRsWeightReq, hcproto.BatchCreateResult](
+		c.client, http.MethodPatch, kt, req, "/load_balancers/%s/targets/weight", lbID)
+}

@@ -101,6 +101,8 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 		"/vendors/tcloud/load_balancers/{lb_id}/targets/create", svc.RegisterTargetToListenerRule)
 	h.Add("BatchRemoveTCloudListenerTargets", http.MethodDelete,
 		"/vendors/tcloud/load_balancers/{lb_id}/targets/batch", svc.BatchRemoveTCloudListenerTargets)
+	h.Add("BatchModifyTCloudListenerTargetsWeight", http.MethodPatch,
+		"/vendors/tcloud/load_balancers/{lb_id}/targets/weight", svc.BatchModifyTCloudListenerTargetsWeight)
 
 	h.Add("QueryListenerTargetsByCloudIDs", http.MethodPost,
 		"/vendors/tcloud/targets/query_by_cloud_ids", svc.QueryListenerTargetsByCloudIDs)

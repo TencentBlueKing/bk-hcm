@@ -46,7 +46,7 @@ func (v ActionName) Validate() error {
 		ActionDailyAccountSplit, ActionDailyAccountSummary, ActionMonthTaskAction:
 	case ActionLoadBalancerDeleteUrlRule, ActionLoadBalancerDeleteListener:
 	case ActionBatchTaskTCloudCreateL7Rule, ActionBatchTaskTCloudBindTarget, ActionBatchTaskTCloudCreateListener,
-		ActionBatchTaskTCloudUnBindTarget:
+		ActionBatchTaskTCloudUnBindTarget, ActionBatchTaskTCloudModifyRsWeight:
 	case ActionSyncTCloudLoadBalancer, SyncTCloudLoadBalancerListener:
 
 	default:
@@ -143,6 +143,8 @@ const (
 	ActionBatchTaskTCloudCreateL7Rule = "batch_task_tcloud_create_l7_rule"
 	// ActionBatchTaskTCloudUnBindTarget 异步任务-监听器批量解绑RS
 	ActionBatchTaskTCloudUnBindTarget = "batch_task_tcloud_unbind_target"
+	// ActionBatchTaskTCloudModifyRsWeight 异步任务-监听器批量调整RS权重
+	ActionBatchTaskTCloudModifyRsWeight = "batch_task_tcloud_listener_modify_rs_weight"
 )
 
 const (

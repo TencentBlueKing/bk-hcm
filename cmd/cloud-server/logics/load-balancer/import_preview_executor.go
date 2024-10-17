@@ -46,6 +46,8 @@ const (
 	Layer7ListenerBindRs = OperationType(enumor.TaskBindingLayer7RS)
 	// LayerListenerUnbindRs 监听器批量解绑RS-TCP/UDP
 	LayerListenerUnbindRs = OperationType(enumor.TaskUnbindListenerRs)
+	// LayerListenerRsWeight 监听器批量调整RS权重
+	LayerListenerRsWeight = OperationType(enumor.TaskModifyListenerRsWeight)
 )
 
 // ImportPreviewExecutor 导入预览执行器

@@ -442,6 +442,7 @@ type ListListenerWithTargetsReq struct {
 	Vendor            enumor.Vendor       `json:"vendor" validate:"required,min=1"`
 	AccountID         string              `json:"account_id" validate:"required,min=1"`
 	ListenerQueryList []ListenerQueryItem `json:"rule_query_list" validate:"required,min=1,max=20"`
+	NewRsWeight       int64               `json:"new_rs_weight" validate:"omitempty"`
 }
 
 // Validate request.

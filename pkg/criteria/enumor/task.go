@@ -104,4 +104,7 @@ const (
 
 	// TaskUnbindListenerRs is a task indicating that unbind listener and rs.
 	TaskUnbindListenerRs TaskOperation = "listener_unbind_rs"
+
+	// TaskModifyListenerRsWeight is a task indicating that modify listener rs weight.
+	TaskModifyListenerRsWeight TaskOperation = "listener_rs_weight"
 )
