@@ -2,7 +2,7 @@ import { Form, Input, Select, Button, Radio, Message } from 'bkui-vue';
 import { reactive, defineComponent, ref, watch, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { ProjectModel, FormItems } from '@/typings';
-import { CLOUD_TYPE, ACCOUNT_TYPE, BUSINESS_TYPE, SITE_TYPE, DESC_ACCOUNT } from '@/constants';
+import { CLOUD_TYPE, BUSINESS_TYPE, SITE_TYPE, DESC_ACCOUNT } from '@/constants';
 import { useI18n } from 'vue-i18n';
 import MemberSelect from '@/components/MemberSelect';
 import { useAccountStore } from '@/store';
@@ -91,7 +91,8 @@ export default defineComponent({
         const params = {
           vendor: projectModel.vendor,
           type: projectModel.type,
-          name: projectModel.name,
+          // 最新修改名称不在页面输入且只支持tcloud，名称使用默认规则拼接
+          name: projectModel.name || ['hcm', projectModel.mainAccount, projectModel.subAccount].join('-'),
           managers: projectModel.managers,
           memo: projectModel.memo,
           site: projectModel.site,
@@ -165,7 +166,7 @@ export default defineComponent({
           path: '/service/my-apply', // 返回审批列表
         });
       } catch (error: any) {
-        console.log(error);
+        console.error(error);
       } finally {
         submitLoading.value = false;
       }
@@ -206,7 +207,7 @@ export default defineComponent({
               required: true,
               property: 'mainAccount',
               component: () => (
-                <Input class='w450' placeholder={t('请输入主账号')} v-model={projectModel.mainAccount} />
+                <Input class='w450' placeholder={t('请输入主账号')} v-model_trim={projectModel.mainAccount} />
               ),
             },
             {
@@ -215,7 +216,7 @@ export default defineComponent({
               required: true,
               property: 'subAccount',
               component: () => (
-                <Input class='w450' placeholder={t('请输入子账号ID')} v-model={projectModel.subAccount} />
+                <Input class='w450' placeholder={t('请输入子账号ID')} v-model_trim={projectModel.subAccount} />
               ),
             },
             {
@@ -224,7 +225,7 @@ export default defineComponent({
               required: true,
               property: 'subAccountName',
               component: () => (
-                <Input class='w450' placeholder={t('请输入子账号名称')} v-model={projectModel.subAccountName} />
+                <Input class='w450' placeholder={t('请输入子账号名称')} v-model_trim={projectModel.subAccountName} />
               ),
             },
             {
@@ -233,7 +234,7 @@ export default defineComponent({
               required: true,
               property: 'iamUserId',
               component: () => (
-                <Input class='w450' placeholder={t('请输入IAM用户ID')} v-model={projectModel.iamUserId} />
+                <Input class='w450' placeholder={t('请输入IAM用户ID')} v-model_trim={projectModel.iamUserId} />
               ),
             },
             {
@@ -241,7 +242,7 @@ export default defineComponent({
               required: true,
               property: 'iamUsername',
               component: () => (
-                <Input class='w450' placeholder={t('请输入IAM用户名称')} v-model={projectModel.iamUsername} />
+                <Input class='w450' placeholder={t('请输入IAM用户名称')} v-model_trim={projectModel.iamUsername} />
               ),
             },
             // {
@@ -284,14 +285,16 @@ export default defineComponent({
               noBorBottom: true,
               required: true,
               property: 'accountId',
-              component: () => <Input class='w450' placeholder={t('请输入账号ID')} v-model={projectModel.accountId} />,
+              component: () => (
+                <Input class='w450' placeholder={t('请输入账号ID')} v-model_trim={projectModel.accountId} />
+              ),
             },
             {
               label: t('IAM用户名称'),
               required: true,
               property: 'iamUsername',
               component: () => (
-                <Input class='w450' placeholder={t('请输入IAM用户名称')} v-model={projectModel.iamUsername} />
+                <Input class='w450' placeholder={t('请输入IAM用户名称')} v-model_trim={projectModel.iamUsername} />
               ),
             },
             // {
@@ -336,14 +339,16 @@ export default defineComponent({
               noBorBottom: true,
               required: true,
               property: 'projectId',
-              component: () => <Input class='w450' placeholder={t('请输入项目 ID')} v-model={projectModel.projectId} />,
+              component: () => (
+                <Input class='w450' placeholder={t('请输入项目 ID')} v-model_trim={projectModel.projectId} />
+              ),
             },
             {
               label: t('项目名称'),
               required: true,
               property: 'projectName',
               component: () => (
-                <Input class='w450' placeholder={t('请输入项目名称')} v-model={projectModel.projectName} />
+                <Input class='w450' placeholder={t('请输入项目名称')} v-model_trim={projectModel.projectName} />
               ),
             },
             // {
@@ -406,7 +411,9 @@ export default defineComponent({
               noBorBottom: true,
               required: true,
               property: 'tenantId',
-              component: () => <Input class='w450' placeholder={t('请输入租户 ID')} v-model={projectModel.tenantId} />,
+              component: () => (
+                <Input class='w450' placeholder={t('请输入租户 ID')} v-model_trim={projectModel.tenantId} />
+              ),
             },
             {
               label: t('订阅 ID'),
@@ -414,7 +421,7 @@ export default defineComponent({
               noBorBottom: true,
               property: 'subScriptionId',
               component: () => (
-                <Input class='w450' placeholder={t('请输入订阅 ID')} v-model={projectModel.subScriptionId} />
+                <Input class='w450' placeholder={t('请输入订阅 ID')} v-model_trim={projectModel.subScriptionId} />
               ),
             },
             {
@@ -422,7 +429,7 @@ export default defineComponent({
               required: true,
               property: 'subScriptionName',
               component: () => (
-                <Input class='w450' placeholder={t('请输入订阅名称')} v-model={projectModel.subScriptionName} />
+                <Input class='w450' placeholder={t('请输入订阅名称')} v-model_trim={projectModel.subScriptionName} />
               ),
             },
             // {
@@ -483,15 +490,19 @@ export default defineComponent({
               noBorBottom: true,
               required: true,
               property: 'mainAccount',
+              rules: [{ pattern: /^\d+$/, message: '必须为数值', trigger: 'change' }],
               component: () => (
-                <Input class='w450' placeholder={t('请输入主账号')} v-model={projectModel.mainAccount} />
+                <Input class='w450' placeholder={t('请输入主账号')} v-model_trim={projectModel.mainAccount} />
               ),
             },
             {
               label: t('子账号ID'),
               required: true,
               property: 'subAccount',
-              component: () => <Input class='w450' placeholder={t('请输入子账号')} v-model={projectModel.subAccount} />,
+              rules: [{ pattern: /^\d+$/, message: '必须为数值', trigger: 'change' }],
+              component: () => (
+                <Input class='w450' placeholder={t('请输入子账号')} v-model_trim={projectModel.subAccount} />
+              ),
             },
             // {
             //   label: 'SecretId',
@@ -520,7 +531,7 @@ export default defineComponent({
               required: true,
               property: 'mainAccount',
               component: () => (
-                <Input class='w450' placeholder={t('请输入主账号')} v-model={projectModel.mainAccount} />
+                <Input class='w450' placeholder={t('请输入主账号')} v-model_trim={projectModel.mainAccount} />
               ),
             },
             {
@@ -529,7 +540,7 @@ export default defineComponent({
               required: true,
               property: 'subAccount',
               component: () => (
-                <Input class='w450' placeholder={t('请输入子账号ID')} v-model={projectModel.subAccount} />
+                <Input class='w450' placeholder={t('请输入子账号ID')} v-model_trim={projectModel.subAccount} />
               ),
             },
             {
@@ -537,7 +548,7 @@ export default defineComponent({
               required: true,
               property: 'subAccountName',
               component: () => (
-                <Input class='w450' placeholder={t('请输入子账号名称')} v-model={projectModel.subAccountName} />
+                <Input class='w450' placeholder={t('请输入子账号名称')} v-model_trim={projectModel.subAccountName} />
               ),
             },
             {
@@ -546,21 +557,22 @@ export default defineComponent({
               noBorBottom: true,
               required: true,
               property: 'secretId',
-              component: () => <Input class='w450' placeholder={t('请输入SecretId')} v-model={projectModel.secretId} />,
+              component: () => (
+                <Input class='w450' placeholder={t('请输入SecretId')} v-model_trim={projectModel.secretId} />
+              ),
             },
             {
               label: 'SecretKey',
               required: true,
               property: 'secretKey',
               component: () => (
-                <Input class='w450' placeholder={t('请输入SecretKey')} v-model={projectModel.secretKey} />
+                <Input class='w450' placeholder={t('请输入SecretKey')} v-model_trim={projectModel.secretKey} />
               ),
             },
           ];
           break;
       }
       const interceLength = endIndex - startIndex - 1; // 需要删除的长度
-      console.log('insertFormData', insertFormData);
       formList.splice(startIndex + 1, interceLength, ...insertFormData);
     };
 
@@ -608,37 +620,6 @@ export default defineComponent({
 
     const formList = reactive<FormItems[]>([
       {
-        label: t('账号类型'),
-        formName: t('账号用途'),
-        required: false,
-        component: () => (
-          <Group v-model={projectModel.type}>
-            {ACCOUNT_TYPE.map((e) => (
-              <Radio label={e.value}>{t(e.label)}</Radio>
-            ))}
-          </Group>
-        ),
-      },
-      {
-        label: t('名称'),
-        formName: t('账号名称'),
-        required: true,
-        property: 'name',
-        description:
-          '必须以小写字母开头, 后面可跟小写字母、数字、连字符 - 或 下划线 _ , 但不能以连字符 - 或下划线 _ 结尾。名称长度不少于 3 个字符，且不多于 64 个字符',
-        rules: [
-          {
-            trigger: 'blur',
-            message:
-              '必须以小写字母开头, 后面可跟小写字母、数字、连字符 - 或 下划线 _ , 但不能以连字符 - 或下划线 _ 结尾。名称长度不少于 3 个字符，且不多于 64 个字符',
-            validator: (val: string) => {
-              return /^[a-z][a-z0-9-_]{1,62}[a-z0-9]$/.test(val);
-            },
-          },
-        ],
-        component: () => <Input class='w450' placeholder={t('请输入名称')} v-model={projectModel.name} />,
-      },
-      {
         label: t('云厂商'),
         formName: t('云厂商'),
         required: true,
@@ -646,7 +627,7 @@ export default defineComponent({
         component: () => (
           <RadioGroup v-model={projectModel.vendor}>
             {cloudType.map((item) => (
-              <RadioButton onChange={changeCloud} label={item.id}>
+              <RadioButton onChange={changeCloud} label={item.id} disabled={item.id !== 'tcloud'}>
                 {item.name}
               </RadioButton>
             ))}
