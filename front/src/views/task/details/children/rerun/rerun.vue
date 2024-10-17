@@ -231,6 +231,7 @@ const handleCancel = () => {
                       text
                       theme="primary"
                       @click.stop="handelEdit(row)"
+                      :disabled="row.param.status === 'executable' || !hasChecked"
                       v-bk-tooltips="{
                         content: hasChecked ? '校验通过，不可编辑' : '请先点击校验参数',
                         disabled: row.param.status !== 'executable',
