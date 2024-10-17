@@ -10,12 +10,12 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/load_balancers/operations/{
 
 ### 输入参数
 
-| 参数名称           | 参数类型   | 必选              | 描述      |
-|----------------|--------|-----------------|---------|
-| bk_biz_id      | int    | 是               | 业务ID    |
-| operation_type | string | 是               | 操作类型    |
-| vendor         | string | 供应商（枚举值：tcloud） |
-| data           | object | 是               | 批量导入的数据 |
+| 参数名称           | 参数类型   | 必选 | 描述              |
+|----------------|--------|----|-----------------|
+| bk_biz_id      | int    | 是  | 业务ID            |
+| operation_type | string | 是  | 操作类型            |
+| vendor         | string | 是  | 供应商（枚举值：tcloud） |
+| data           | object | 是  | 批量导入的数据         |
 
 #### operation_type 说明
 
@@ -104,6 +104,6 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/load_balancers/operations/{
 
 | 参数名称       | 参数类型   | 描述        |
 |------------|--------|-----------|
-| details    | array  | excel导入详情 |
+| details    | object | excel导入详情 |
 
 不同的operation_type对应的details不同, 具体查看 [上传excel文件接口](import_load_balancer_preview)
