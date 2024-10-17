@@ -60,15 +60,19 @@ func (act SyncTCloudLoadBalancerAction) Name() enumor.ActionName {
 }
 
 // Run 将目标组中的RS绑定到监听器/规则中
-func (act SyncTCloudLoadBalancerAction) Run(kt run.ExecuteKit, params any) (result any, taskErr error) {
+func (act SyncTCloudLoadBalancerAction) Run(et run.ExecuteKit, params any) (result any, taskErr error) {
 	opt, ok := params.(*SyncTCloudLoadBalancerOption)
 	if !ok {
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
 	}
 
-	err := actcli.GetHCService().TCloud.Clb.SyncLoadBalancer(kt.Kit(), opt.TCloudSyncReq)
+	// 这里如果不重设rid会导致rid长度超长
+	// TODO 改造rid模式，增加独立的spanid字段标记层次关系
+	kt := et.KitWithNewRid()
+	logs.Infof("reset rid to %s for sync load balancer, old rid: %s", kt.Rid, et.Kit().Rid)
+	err := actcli.GetHCService().TCloud.Clb.SyncLoadBalancer(kt, opt.TCloudSyncReq)
 	if err != nil {
-		logs.Errorf("fail to sync load balancer, err: %v, req: %v rid: %s", err, opt.TCloudSyncReq, kt.Kit().Rid)
+		logs.Errorf("fail to sync load balancer, err: %v, req: %v rid: %s", err, opt.TCloudSyncReq, kt.Rid)
 		return nil, err
 	}
 
