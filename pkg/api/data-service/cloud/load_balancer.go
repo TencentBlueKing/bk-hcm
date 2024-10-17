@@ -438,7 +438,7 @@ type TCloudRuleCreateResult struct {
 
 // ListListenerWithTargetsReq define list listener with targets req.
 type ListListenerWithTargetsReq struct {
-	BkBizID           int64               `json:"bk_biz_id" validate:"required,min=1"`
+	BkBizID           int64               `json:"bk_biz_id" validate:"omitempty"`
 	Vendor            enumor.Vendor       `json:"vendor" validate:"required,min=1"`
 	AccountID         string              `json:"account_id" validate:"required,min=1"`
 	ListenerQueryList []ListenerQueryItem `json:"rule_query_list" validate:"required,min=1,max=20"`
@@ -447,9 +447,6 @@ type ListListenerWithTargetsReq struct {
 
 // Validate request.
 func (req *ListListenerWithTargetsReq) Validate() error {
-	if req.BkBizID <= 0 {
-		return errors.New("bk_biz_id is illegal")
-	}
 	if err := req.Vendor.Validate(); err != nil {
 		return err
 	}
