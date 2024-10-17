@@ -117,7 +117,7 @@ export default defineComponent({
               v-model={formModel.main_account_id}
               ref={mainAccountRef}
               vendor={[props.vendor]}
-              rootAccountId={[props.rootAccountId]}
+              rootAccountId={props.rootAccountId ? [props.rootAccountId] : []}
             />
           </td>
           <td>
