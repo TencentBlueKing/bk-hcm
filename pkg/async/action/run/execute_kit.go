@@ -53,6 +53,7 @@ type DefExecuteContext struct {
 	shareData ShareDataOperator
 }
 
+// KitWithNewRid return kit with new rid.
 func (ctx *DefExecuteContext) KitWithNewRid() *kit.Kit {
 	return ctx.kit.NewSubKitWithRid(uuid.UUID())
 }
