@@ -55,7 +55,7 @@ func (cli *client) listenerByLbBatch(kt *kit.Kit, params *SyncListenerBatchOptio
 	var syncResult *SyncResult
 	err := concurrence.BaseExec(constant.CLBListenerSyncConcurrencyMaxLimit, params.LbInfos,
 		func(lb corelb.TCloudLoadBalancer) error {
-			newKit := kt
+			newKit := kt.NewSubKit()
 			syncOpt := &SyncListenerOption{
 				BizID:              lb.BkBizID,
 				LBID:               lb.ID,

@@ -25,6 +25,7 @@ import (
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 )
 
 var _ ImportValidator = (*CreateUrlRuleValidator)(nil)
@@ -59,6 +60,7 @@ func (c *CreateUrlRuleValidator) Validate(kt *kit.Kit, rawData json.RawMessage) 
 	}
 
 	if err = validator.validate(kt); err != nil {
+		logs.Errorf("validate failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 	return validator.details, nil
