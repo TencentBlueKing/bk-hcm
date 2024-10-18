@@ -26,6 +26,7 @@ import (
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
+	dataproto "hcm/pkg/api/data-service/cloud"
 	hclb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/async/action"
 	"hcm/pkg/async/action/run"
@@ -51,6 +52,7 @@ type BatchTaskTCloudCreateListenerAction struct{}
 
 // BatchTaskTCloudCreateListenerOption ...
 type BatchTaskTCloudCreateListenerOption struct {
+	Vendor              enumor.Vendor                   `json:"vendor" validate:"required"`
 	ManagementDetailIDs []string                        `json:"management_detail_ids" validate:"required,min=1,max=20"`
 	Listeners           []*hclb.TCloudListenerCreateReq `json:"Listeners,required,min=1,max=20,dive,required"`
 	// 是否在某个监听器创建失败的时候停止后续操作执行，默认不停止
@@ -59,6 +61,11 @@ type BatchTaskTCloudCreateListenerOption struct {
 
 // Validate validate option.
 func (opt BatchTaskTCloudCreateListenerOption) Validate() error {
+	switch opt.Vendor {
+	case enumor.TCloud:
+	default:
+		return fmt.Errorf("unsupport vendor for create listener: %s", opt.Vendor)
+	}
 	if len(opt.ManagementDetailIDs) != len(opt.Listeners) {
 		return errf.Newf(errf.InvalidParameter, "management_detail_ids and listeners length not match: %d! = %d",
 			len(opt.ManagementDetailIDs), len(opt.Listeners))
@@ -89,7 +96,7 @@ func (act BatchTaskTCloudCreateListenerAction) Run(kt run.ExecuteKit, params any
 	for i := range opt.Listeners {
 		detailID := opt.ManagementDetailIDs[i]
 		// 逐条更新结果
-		ret, createErr := act.createSingleListener(asyncKit, detailID, opt.Listeners[i]) // 结束后写回状态
+		ret, createErr := act.createSingleListener(asyncKit, opt.Vendor, detailID, opt.Listeners[i]) // 结束后写回状态
 		targetState := enumor.TaskDetailSuccess
 		if createErr != nil {
 			// 更新为失败
@@ -111,7 +118,7 @@ func (act BatchTaskTCloudCreateListenerAction) Run(kt run.ExecuteKit, params any
 	return results, nil
 }
 
-func (act BatchTaskTCloudCreateListenerAction) createSingleListener(kt *kit.Kit, detailId string,
+func (act BatchTaskTCloudCreateListenerAction) createSingleListener(kt *kit.Kit, vendor enumor.Vendor, detailId string,
 	req *hclb.TCloudListenerCreateReq) (*core.CloudCreateResult, error) {
 
 	detailList, err := listTaskDetail(kt, []string{detailId})
@@ -128,7 +135,7 @@ func (act BatchTaskTCloudCreateListenerAction) createSingleListener(kt *kit.Kit,
 		return nil, errf.Newf(errf.InvalidParameter, "task management detail(%s) status(%s) is not init",
 			detail.ID, detail.State)
 	}
-	lbl, err := act.checkListenerExists(kt, req)
+	lbl, err := act.checkListenerExists(kt, vendor, req)
 	if err != nil {
 		return nil, err
 	}
@@ -146,8 +153,12 @@ func (act BatchTaskTCloudCreateListenerAction) createSingleListener(kt *kit.Kit,
 	rangeMS := [2]uint{BatchTaskDefaultRetryDelayMinMS, BatchTaskDefaultRetryDelayMaxMS}
 	policy := retry.NewRetryPolicy(0, rangeMS)
 	for policy.RetryCount() < BatchTaskDefaultRetryTimes {
-
-		lblResp, err = actcli.GetHCService().TCloud.Clb.CreateListener(kt, req)
+		switch vendor {
+		case enumor.TCloud:
+			lblResp, err = actcli.GetHCService().TCloud.Clb.CreateListener(kt, req)
+		default:
+			return nil, fmt.Errorf("unsupport vendor for create listener: %s", vendor)
+		}
 		// 仅在碰到限频错误时进行重试
 		if err != nil && strings.Contains(err.Error(), constant.TCloudLimitExceededErrCode) {
 			if policy.RetryCount()+1 < BatchTaskDefaultRetryTimes {
@@ -170,74 +181,87 @@ func (act BatchTaskTCloudCreateListenerAction) createSingleListener(kt *kit.Kit,
 }
 
 // 检查监听器是否存在，不存在，不返回错误。存在会返回数据库监听器实例，如果存在但是参数一直则不返回错误
-func (act BatchTaskTCloudCreateListenerAction) checkListenerExists(kt *kit.Kit, req *hclb.TCloudListenerCreateReq) (
-	lbl *corelb.TCloudListener, err error) {
+func (act BatchTaskTCloudCreateListenerAction) checkListenerExists(kt *kit.Kit, vendor enumor.Vendor,
+	req *hclb.TCloudListenerCreateReq) (lbl *corelb.TCloudListener, err error) {
 
 	// 查询是否已经存在对应监听器
 	lbReq := &core.ListReq{
 		Filter: tools.ExpressionAnd(
-			tools.RuleEqual("vendor", enumor.TCloud),
+			tools.RuleEqual("vendor", vendor),
 			tools.RuleEqual("lb_id", req.LbID),
 			tools.RuleEqual("protocol", req.Protocol),
 			tools.RuleEqual("port", req.Port),
 		),
 		Page: core.NewDefaultBasePage(),
 	}
-	lblResp, err := actcli.GetDataService().TCloud.LoadBalancer.ListListener(kt, lbReq)
-	if err != nil {
-		return nil, fmt.Errorf("fail to query listener, err: %v", err)
-	}
-	if len(lblResp.Details) == 0 {
-		// 不存在，不返回错误
-		return nil, nil
-	}
-	// 存在则判断是否和入参一致
-	lbl = cvt.ValToPtr(lblResp.Details[0])
-
-	if req.Name != lbl.Name {
-		return lbl, fmt.Errorf("listener(%s) already exist, name mismatch, want: %s, db: %s",
-			lbl.CloudID, req.Name, lbl.Name)
-	}
-	if req.BkBizID != lbl.BkBizID {
-		return lbl, fmt.Errorf("listener(%s) already exist, biz id mismatch, want: %d, db: %d",
-			lbl.CloudID, req.BkBizID, lbl.BkBizID)
-	}
-	if req.SniSwitch != lbl.SniSwitch {
-		return lbl, fmt.Errorf("listener(%s) already exist, sni switch mismatch, want: %d, db: %d",
-			lbl.CloudID, req.SniSwitch, lbl.SniSwitch)
-	}
-	if req.EndPort != nil {
-		if lbl.Extension == nil {
-			return lbl, fmt.Errorf("listener(%s) already exist, session expire mismatch, want: %d, db no ext",
-				lbl.CloudID, req.SessionExpire)
+	switch vendor {
+	case enumor.TCloud:
+		lblResp, err := actcli.GetDataService().TCloud.LoadBalancer.ListListener(kt, lbReq)
+		if err != nil {
+			return nil, fmt.Errorf("fail to query listener, err: %v", err)
 		}
-		if !assert.IsPtrInt64Equal(lbl.Extension.EndPort, req.EndPort) {
-			return lbl, fmt.Errorf("listener(%s) already exist, session expire mismatch, want: %+v, db: %+v",
-				lbl.CloudID, req.SessionExpire, lbl.Extension.EndPort)
+		if len(lblResp.Details) == 0 {
+			// 不存在，不返回错误
+			return nil, nil
 		}
-	}
-	if req.Certificate != nil {
-		if lbl.Extension == nil {
-			return lbl, fmt.Errorf("listener(%s) already exist, cert mismatch, want: %+v, db no ext",
-				lbl.CloudID, req.Certificate)
-		}
-		if isListenerCertChange(req.Certificate, lbl.Extension.Certificate) {
-			return lbl, fmt.Errorf("listener(%s) already exist, cert mismatch, want: %+v, got: %+v", lbl.CloudID,
-				req.Certificate, lbl.Extension.Certificate)
-		}
-
+		// 存在则判断是否和入参一致
+		lbl = cvt.ValToPtr(lblResp.Details[0])
+	default:
+		return nil, fmt.Errorf("unsupport vendor for sync load balancer listener: %s", vendor)
 	}
 
+	if err := act.isL7Match(req, lbl); err != nil {
+		return nil, err
+	}
+	// 7层仅查询监听器
 	if req.Protocol.IsLayer7Protocol() {
 		return lbl, nil
 	}
 	// 对于四层需要继续查询规则
-
 	if err := act.checkL4RuleExists(kt, lbl, req); err != nil {
 		return lbl, fmt.Errorf("listener(%s) already exist, %v", lbl.CloudID, err)
 	}
 	return lbl, nil
 
+}
+
+func (act BatchTaskTCloudCreateListenerAction) isL7Match(req *hclb.TCloudListenerCreateReq,
+	lbl *corelb.TCloudListener) error {
+
+	if req.Name != lbl.Name {
+		return fmt.Errorf("listener(%s) already exist, name mismatch, want: %s, db: %s",
+			lbl.CloudID, req.Name, lbl.Name)
+	}
+	if req.BkBizID != lbl.BkBizID {
+		return fmt.Errorf("listener(%s) already exist, biz id mismatch, want: %d, db: %d",
+			lbl.CloudID, req.BkBizID, lbl.BkBizID)
+	}
+	if req.SniSwitch != lbl.SniSwitch {
+		return fmt.Errorf("listener(%s) already exist, sni switch mismatch, want: %d, db: %d",
+			lbl.CloudID, req.SniSwitch, lbl.SniSwitch)
+	}
+	if req.EndPort != nil {
+		if lbl.Extension == nil {
+			return fmt.Errorf("listener(%s) already exist, session expire mismatch, want: %d, db no ext",
+				lbl.CloudID, req.SessionExpire)
+		}
+		if !assert.IsPtrInt64Equal(lbl.Extension.EndPort, req.EndPort) {
+			return fmt.Errorf("listener(%s) already exist, session expire mismatch, want: %+v, db: %+v",
+				lbl.CloudID, req.SessionExpire, lbl.Extension.EndPort)
+		}
+	}
+	if req.Certificate != nil {
+		if lbl.Extension == nil {
+			return fmt.Errorf("listener(%s) already exist, cert mismatch, want: %+v, db no ext",
+				lbl.CloudID, req.Certificate)
+		}
+		if isListenerCertChange(req.Certificate, lbl.Extension.Certificate) {
+			return fmt.Errorf("listener(%s) already exist, cert mismatch, want: %+v, got: %+v", lbl.CloudID,
+				req.Certificate, lbl.Extension.Certificate)
+		}
+
+	}
+	return nil
 }
 
 // Rollback 支持重入，无需回滚
@@ -256,12 +280,19 @@ func (act BatchTaskTCloudCreateListenerAction) checkL4RuleExists(kt *kit.Kit, lb
 		),
 		Page: core.NewDefaultBasePage(),
 	}
-	ruleResp, err := actcli.GetDataService().TCloud.LoadBalancer.ListUrlRule(kt, ruleReq)
+	var ruleResp *dataproto.TCloudURLRuleListResult
+	var err error
+	switch lbl.Vendor {
+	case enumor.TCloud:
+		ruleResp, err = actcli.GetDataService().TCloud.LoadBalancer.ListUrlRule(kt, ruleReq)
+	default:
+		return fmt.Errorf("unsupport vendor for check l4 rule exists, vendor: %s", lbl.Vendor)
+	}
 	if err != nil {
-		return fmt.Errorf("fail to query listener rule, err: %v", err)
+		return fmt.Errorf("%s fail to query listener rule, err: %v", lbl.Vendor, err)
 	}
 	if len(ruleResp.Details) == 0 {
-		return fmt.Errorf("tcloud url rule not found for l4 listener, id: %s(%s)", lbl.CloudID, lbl.ID)
+		return fmt.Errorf("%s url rule not found for l4 listener, id: %s(%s)", lbl.Vendor, lbl.CloudID, lbl.ID)
 	}
 	// 存在则判断是否和入参一致
 	rule := ruleResp.Details[0]

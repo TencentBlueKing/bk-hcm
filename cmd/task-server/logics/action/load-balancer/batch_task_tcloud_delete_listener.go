@@ -54,6 +54,13 @@ type BatchTaskDeleteListenerOption struct {
 
 // Validate validate option.
 func (bdl BatchTaskDeleteListenerOption) Validate() error {
+
+	switch bdl.Vendor {
+	case enumor.TCloud:
+	default:
+		return fmt.Errorf("unsupport vendor for batch delete listener: %s", bdl.Vendor)
+	}
+
 	if bdl.BatchDeleteReq == nil {
 		return errf.New(errf.InvalidParameter, "batch_tcloud_delete_listener_req is required")
 	}

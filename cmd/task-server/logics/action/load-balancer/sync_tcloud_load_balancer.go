@@ -20,6 +20,8 @@
 package actionlb
 
 import (
+	"fmt"
+
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/async/action"
@@ -40,12 +42,17 @@ type SyncTCloudLoadBalancerAction struct{}
 
 // SyncTCloudLoadBalancerOption ...
 type SyncTCloudLoadBalancerOption struct {
+	Vendor              enumor.Vendor `json:"vendor" validate:"required"`
 	*sync.TCloudSyncReq `json:",inline" validate:"required"`
 }
 
 // Validate validate option.
 func (opt SyncTCloudLoadBalancerOption) Validate() error {
-
+	switch opt.Vendor {
+	case enumor.TCloud:
+	default:
+		return fmt.Errorf("unsupport vendor for sync load balancer: %s", opt.Vendor)
+	}
 	return validator.Validate.Struct(opt)
 }
 
@@ -70,10 +77,16 @@ func (act SyncTCloudLoadBalancerAction) Run(et run.ExecuteKit, params any) (resu
 	// TODO 改造rid模式，增加独立的spanid字段标记层次关系
 	kt := et.KitWithNewRid()
 	logs.Infof("reset rid to %s for sync load balancer, old rid: %s", kt.Rid, et.Kit().Rid)
-	err := actcli.GetHCService().TCloud.Clb.SyncLoadBalancer(kt, opt.TCloudSyncReq)
-	if err != nil {
-		logs.Errorf("fail to sync load balancer, err: %v, req: %v rid: %s", err, opt.TCloudSyncReq, kt.Rid)
-		return nil, err
+	switch opt.Vendor {
+	case enumor.TCloud:
+		taskErr = actcli.GetHCService().TCloud.Clb.SyncLoadBalancer(kt, opt.TCloudSyncReq)
+	default:
+		return nil, fmt.Errorf("unsupport vendor for sync load balancer: %s", opt.Vendor)
+	}
+	if taskErr != nil {
+		logs.Errorf("[%s] fail to sync load balancer, err: %v, req: %v rid: %s",
+			opt.Vendor, taskErr, opt.TCloudSyncReq, kt.Rid)
+		return nil, taskErr
 	}
 
 	return nil, nil

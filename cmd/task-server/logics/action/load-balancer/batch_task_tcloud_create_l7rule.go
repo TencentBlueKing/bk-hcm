@@ -27,6 +27,7 @@ import (
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
+	dataproto "hcm/pkg/api/data-service/cloud"
 	hclb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/async/action"
 	"hcm/pkg/async/action/run"
@@ -51,14 +52,22 @@ type BatchTaskTCloudCreateL7RuleAction struct{}
 
 // BatchTaskTCloudCreateL7RuleOption ...
 type BatchTaskTCloudCreateL7RuleOption struct {
-	LoadBalancerID                 string   `json:"lb_id" validate:"required"`
-	ListenerID                     string   `json:"listener_id" validate:"required"`
-	ManagementDetailIDs            []string `json:"management_detail_ids" validate:"required,min=1,max=20"`
+	Vendor                         enumor.Vendor `json:"vendor" validate:"required"`
+	LoadBalancerID                 string        `json:"lb_id" validate:"required"`
+	ListenerID                     string        `json:"listener_id" validate:"required"`
+	ManagementDetailIDs            []string      `json:"management_detail_ids" validate:"required,min=1,max=20"`
 	*hclb.TCloudRuleBatchCreateReq `json:"inline" validate:"required,dive,required"`
 }
 
 // Validate validate option.
 func (opt BatchTaskTCloudCreateL7RuleOption) Validate() error {
+
+	switch opt.Vendor {
+	case enumor.TCloud:
+	default:
+		return fmt.Errorf("unsupport vendor for create l7 rule: %s", opt.Vendor)
+	}
+
 	if len(opt.ManagementDetailIDs) != len(opt.TCloudRuleBatchCreateReq.Rules) {
 		return errf.Newf(errf.InvalidParameter, "management_detail_ids and rules length not match: %d != %d",
 			len(opt.ManagementDetailIDs), len(opt.TCloudRuleBatchCreateReq.Rules))
@@ -146,11 +155,11 @@ func (act BatchTaskTCloudCreateL7RuleAction) Run(kt run.ExecuteKit, params any) 
 		continue
 	}
 	// 3. 创建不存在的规则
-	return act.createNonExists(asyncKit, ruleCheckResult.NonExists, opt, lb)
+	return act.createNonExists(asyncKit, ruleCheckResult.NonExists, opt)
 }
 
 func (act BatchTaskTCloudCreateL7RuleAction) createNonExists(kt *kit.Kit, nonExists []RuleCheckInfo,
-	opt *BatchTaskTCloudCreateL7RuleOption, lb *corelb.BaseLoadBalancer) (any, error) {
+	opt *BatchTaskTCloudCreateL7RuleOption) (any, error) {
 
 	if len(nonExists) == 0 {
 		return "no rule should be created", nil
@@ -175,8 +184,12 @@ func (act BatchTaskTCloudCreateL7RuleAction) createNonExists(kt *kit.Kit, nonExi
 	rangeMS := [2]uint{BatchTaskDefaultRetryDelayMinMS, BatchTaskDefaultRetryDelayMaxMS}
 	policy := retry.NewRetryPolicy(0, rangeMS)
 	for policy.RetryCount() < BatchTaskDefaultRetryTimes {
-
-		lblResp, createErr = actcli.GetHCService().TCloud.Clb.BatchCreateUrlRule(kt, opt.ListenerID, ruleCreateReq)
+		switch opt.Vendor {
+		case enumor.TCloud:
+			lblResp, createErr = actcli.GetHCService().TCloud.Clb.BatchCreateUrlRule(kt, opt.ListenerID, ruleCreateReq)
+		default:
+			return nil, fmt.Errorf("unsupport vendor for check rule exist: %s", opt.Vendor)
+		}
 		// 仅在碰到限频错误时进行重试
 		if createErr != nil && strings.Contains(createErr.Error(), constant.TCloudLimitExceededErrCode) {
 			if policy.RetryCount()+1 < BatchTaskDefaultRetryTimes {
@@ -256,9 +269,15 @@ func (act BatchTaskTCloudCreateL7RuleAction) checkExistsRule(kt *kit.Kit, opt *B
 			),
 			Page: core.NewDefaultBasePage(),
 		}
-		ruleResp, err := actcli.GetDataService().TCloud.LoadBalancer.ListUrlRule(kt, listRuleReq)
+		var ruleResp *dataproto.TCloudURLRuleListResult
+		switch opt.Vendor {
+		case enumor.TCloud:
+			ruleResp, err = actcli.GetDataService().TCloud.LoadBalancer.ListUrlRule(kt, listRuleReq)
+		default:
+			return nil, fmt.Errorf("unsupport vendor for check rule exist: %s", opt.Vendor)
+		}
 		if err != nil {
-			logs.Errorf("query url rule failed, err: %v, req: %+v, rid: %s", err, listRuleReq, kt.Rid)
+			logs.Errorf("%s query url rule failed, err: %v, req: %+v, rid: %s", opt.Vendor, err, listRuleReq, kt.Rid)
 			return nil, fmt.Errorf("fail to query url rule, err: %v", err)
 		}
 

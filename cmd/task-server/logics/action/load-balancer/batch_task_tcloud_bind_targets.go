@@ -45,7 +45,8 @@ type BatchTaskBindTargetAction struct{}
 
 // BatchTaskBindTargetOption ...
 type BatchTaskBindTargetOption struct {
-	LoadBalancerID string `json:"lb_id" validate:"required"`
+	Vendor         enumor.Vendor `json:"vendor" validate:"required"`
+	LoadBalancerID string        `json:"lb_id" validate:"required"`
 	// ManagementDetailIDs 对应的详情行id列表，需要和批量绑定的Targets参数长度对应
 	ManagementDetailIDs                []string `json:"management_detail_ids" validate:"required,max=500"`
 	*hclb.BatchRegisterTCloudTargetReq `json:",inline"`
@@ -53,6 +54,13 @@ type BatchTaskBindTargetOption struct {
 
 // Validate validate option.
 func (opt BatchTaskBindTargetOption) Validate() error {
+
+	switch opt.Vendor {
+	case enumor.TCloud:
+	default:
+		return fmt.Errorf("unsupport vendor for bind target: %s", opt.Vendor)
+	}
+
 	if opt.BatchRegisterTCloudTargetReq == nil {
 		return errf.New(errf.InvalidParameter, "batch_register_tcloud_target_req is required")
 	}
@@ -118,9 +126,14 @@ func (act BatchTaskBindTargetAction) Run(kt run.ExecuteKit, params any) (result 
 	rangeMS := [2]uint{BatchTaskDefaultRetryDelayMinMS, BatchTaskDefaultRetryDelayMaxMS}
 	policy := retry.NewRetryPolicy(0, rangeMS)
 	for policy.RetryCount() < BatchTaskDefaultRetryTimes {
+		switch opt.Vendor {
+		case enumor.TCloud:
+			err = actcli.GetHCService().TCloud.Clb.BatchRegisterTargetToListenerRule(asyncKit,
+				opt.LoadBalancerID, opt.BatchRegisterTCloudTargetReq)
+		default:
+			return nil, fmt.Errorf("unsupport vendor for bind rule: %s", opt.Vendor)
+		}
 
-		err = actcli.GetHCService().TCloud.Clb.BatchRegisterTargetToListenerRule(asyncKit,
-			opt.LoadBalancerID, opt.BatchRegisterTCloudTargetReq)
 		// 仅在碰到限频错误时进行重试
 		if err != nil && strings.Contains(err.Error(), constant.TCloudLimitExceededErrCode) {
 			if policy.RetryCount()+1 < BatchTaskDefaultRetryTimes {
@@ -135,7 +148,7 @@ func (act BatchTaskBindTargetAction) Run(kt run.ExecuteKit, params any) (result 
 		break
 	}
 	if err != nil {
-		logs.Errorf("fail to register target to listener rule, err: %v, rid: %s", err, asyncKit.Rid)
+		logs.Errorf("%s fail to register target to listener rule, err: %v, rid: %s", opt.Vendor, err, asyncKit.Rid)
 		return nil, err
 	}
 
