@@ -7,14 +7,13 @@ import Amount from '../../components/amount';
 
 import { useI18n } from 'vue-i18n';
 import { useTable } from '@/hooks/useTable/useTable';
-import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import {
   exportBillsMainAccountSummary,
   reqBillsMainAccountSummaryList,
   reqBillsMainAccountSummarySum,
 } from '@/api/bill';
 import { RulesItem } from '@/typings';
-import pluginHandler from '@pluginHandler/bill-manage';
+import { getColumns, mountedCallback } from './load-data.plugin';
 
 export default defineComponent({
   name: 'SubAccountTabPanel',
@@ -27,10 +26,8 @@ export default defineComponent({
     const searchRef = ref();
     const amountRef = ref();
 
-    const { useSubHandler } = pluginHandler;
-    const { mountedCallback } = useSubHandler();
+    const columns = getColumns();
 
-    const { columns } = useColumns('billsMainAccountSummary');
     const { CommonTable, getListData, clearFilter, filter } = useTable({
       searchOptions: { disabled: true },
       tableOptions: {
