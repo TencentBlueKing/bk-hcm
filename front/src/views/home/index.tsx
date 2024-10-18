@@ -66,15 +66,29 @@ export default defineComponent({
     const { topMenuActiveItem, menus, curPath, handleHeaderMenuClick } = useChangeHeaderTab();
 
     const saveLanguage = async (val: string) => {
-      return new Promise((resovle) => {
-        const url = `${BK_COMPONENT_API_URL}/api/c/compapi/v2/usermanage/fe_update_user_language/language=${val}`;
+      return new Promise((resolve, reject) => {
+        const url = `${BK_COMPONENT_API_URL}/api/c/compapi/v2/usermanage/fe_update_user_language/`;
+        const callbackName = 'CALLBACK585231658';
+        const headEle = document.head || document.getElementsByTagName('head')[0];
 
-        const scriptTag = document.createElement('script');
-        scriptTag.setAttribute('type', 'text/javascript');
-        scriptTag.setAttribute('src', url);
-        const headTag = document.getElementsByTagName('head')[0];
-        headTag.appendChild(scriptTag);
-        resovle(val);
+        const JSONP = document.createElement('script');
+        JSONP.setAttribute('type', 'text/javascript');
+        JSONP.setAttribute('src', `${url}?callback=${callbackName}&language=${val}`);
+
+        window[callbackName] = (result: boolean) => {
+          resolve(result);
+          headEle.removeChild(JSONP);
+          delete window[callbackName];
+        };
+
+        // 错误处理
+        JSONP.onerror = (err) => {
+          reject(err);
+          headEle.removeChild(JSONP);
+          delete window[callbackName];
+        };
+
+        document.head.appendChild(JSONP);
       });
     };
 
