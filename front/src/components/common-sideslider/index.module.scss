@@ -3,6 +3,11 @@
     padding: 24px 40px;
   }
 
+  .renderIfContent {
+    height: calc(100vh - 51px);
+    overflow-y: scroll;
+  }
+
   .footer {
     :global(.bk-button) {
       min-width: 88px;
