@@ -363,6 +363,7 @@ func (c *Layer4ListenerBindRSExecutor) buildTCloudFlowTask(kt *kit.Kit, lb corel
 			ActionID:   action.ActIDType(cur),
 			ActionName: enumor.ActionBatchTaskTCloudBindTarget,
 			Params: &actionlb.BatchTaskBindTargetOption{
+				Vendor:                       c.vendor,
 				LoadBalancerID:               lb.ID,
 				ManagementDetailIDs:          managementDetailIDs,
 				BatchRegisterTCloudTargetReq: req,
