@@ -1902,78 +1902,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
   ];
 
-  const billsMainAccountSummaryColumns = [
-    {
-      label: '二级账号ID',
-      field: 'main_account_cloud_id',
-      isDefaultShow: true,
-    },
-    {
-      label: '二级账号名称',
-      field: 'main_account_name',
-      isDefaultShow: true,
-    },
-    {
-      label: '云厂商',
-      field: 'vendor',
-      isDefaultShow: true,
-      render: ({ cell }: { cell: VendorEnum }) => VendorMap[cell],
-    },
-    {
-      label: '一级账号名称',
-      field: 'root_account_name',
-      isDefaultShow: true,
-    },
-    {
-      label: '业务名称',
-      field: 'bk_biz_id',
-      isDefaultShow: true,
-      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
-    },
-    {
-      label: '已确认账单人民币（元）',
-      field: 'current_month_rmb_cost_synced',
-      isDefaultShow: true,
-      render: ({ cell }: any) => formatBillCost(cell),
-      sort: true,
-    },
-    {
-      label: '已确认账单美金（美元）',
-      field: 'current_month_cost_synced',
-      isDefaultShow: true,
-      render: ({ cell }: any) => formatBillCost(cell),
-      sort: true,
-    },
-    {
-      label: '当前账单人民币（元）',
-      field: 'current_month_rmb_cost',
-      isDefaultShow: true,
-      render: ({ cell }: any) => formatBillCost(cell),
-      sort: true,
-    },
-    {
-      label: '当前账单美金（美元）',
-      field: 'current_month_cost',
-      isDefaultShow: true,
-      render: ({ cell }: any) => formatBillCost(cell),
-      sort: true,
-    },
-    {
-      label: '调账人民币（元）',
-      field: 'adjustment_rmb_cost',
-      isDefaultShow: true,
-      render: ({ cell }: any) => formatBillCost(cell),
-      sort: true,
-    },
-    {
-      label: '调账美金（美元）',
-      field: 'adjustment_cost',
-      isDefaultShow: true,
-      render: ({ cell }: any) => formatBillCost(cell),
-      sort: true,
-    },
-  ];
-
   const billDetailAwsColumns = [
     {
       label: '核算日期',
@@ -2431,7 +2359,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     cert: certColumns,
     myApply: myApplyColumns,
     billsRootAccountSummary: billsRootAccountSummaryColumns,
-    billsMainAccountSummary: billsMainAccountSummaryColumns,
     billDetailAws: billDetailAwsColumns,
     billDetailAzure: billDetailAzureColumns,
     billDetailGcp: billDetailGcpColumns,
