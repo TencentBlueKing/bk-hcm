@@ -389,10 +389,20 @@ func (svc *lbSvc) listListenerCountByLbIDs(cts *rest.Contexts,
 
 // ListBizListenerWithTargets list biz listener with targets.
 func (svc *lbSvc) ListBizListenerWithTargets(cts *rest.Contexts) (any, error) {
-	return svc.listListenerWithTarget(cts, handler.ListBizAuthRes)
+	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+	if bkBizID <= 0 {
+		return nil, errf.Newf(errf.InvalidParameter, "bk_biz_id: %d is invalid", bkBizID)
+	}
+
+	return svc.listListenerWithTarget(cts, handler.ListBizAuthRes, bkBizID)
 }
 
-func (svc *lbSvc) listListenerWithTarget(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (any, error) {
+func (svc *lbSvc) listListenerWithTarget(cts *rest.Contexts, authHandler handler.ListAuthResHandler,
+	bkBizID int64) (any, error) {
+
 	req := new(dataproto.ListListenerWithTargetsReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -424,6 +434,7 @@ func (svc *lbSvc) listListenerWithTarget(cts *rest.Contexts, authHandler handler
 		return nil, fmt.Errorf("get account basic info failed, err: %v", err)
 	}
 
+	req.BkBizID = bkBizID
 	switch accountInfo.Vendor {
 	case enumor.TCloud:
 		resList, err = svc.client.DataService().Global.LoadBalancer.ListLoadBalancerListenerWithTargets(cts.Kit, req)
