@@ -153,18 +153,21 @@ func (svc *securityGroupSvc) ListSecurityGroup(cts *rest.Contexts) (interface{},
 	details := make([]corecloud.BaseSecurityGroup, 0, len(result.Details))
 	for _, one := range result.Details {
 		details = append(details, corecloud.BaseSecurityGroup{
-			ID:        one.ID,
-			Vendor:    one.Vendor,
-			CloudID:   one.CloudID,
-			BkBizID:   one.BkBizID,
-			Region:    one.Region,
-			Name:      one.Name,
-			Memo:      one.Memo,
-			AccountID: one.AccountID,
-			Creator:   one.Creator,
-			Reviser:   one.Reviser,
-			CreatedAt: one.CreatedAt.String(),
-			UpdatedAt: one.UpdatedAt.String(),
+			ID:               one.ID,
+			Vendor:           one.Vendor,
+			CloudID:          one.CloudID,
+			BkBizID:          one.BkBizID,
+			Region:           one.Region,
+			Name:             one.Name,
+			Memo:             one.Memo,
+			AccountID:        one.AccountID,
+			Creator:          one.Creator,
+			Reviser:          one.Reviser,
+			CreatedAt:        one.CreatedAt.String(),
+			UpdatedAt:        one.UpdatedAt.String(),
+			CloudCreatedTime: one.CloudCreatedTime,
+			CloudUpdateTime:  one.CloudUpdateTime,
+			Tags:             string(one.Tags),
 		})
 	}
 
@@ -290,18 +293,21 @@ func (svc *securityGroupSvc) GetSecurityGroup(cts *rest.Contexts) (interface{}, 
 
 func convTableToBaseSG(sgTable *tablecloud.SecurityGroupTable) *corecloud.BaseSecurityGroup {
 	return &corecloud.BaseSecurityGroup{
-		ID:        sgTable.ID,
-		Vendor:    sgTable.Vendor,
-		CloudID:   sgTable.CloudID,
-		BkBizID:   sgTable.BkBizID,
-		Region:    sgTable.Region,
-		Name:      sgTable.Name,
-		Memo:      sgTable.Memo,
-		AccountID: sgTable.AccountID,
-		Creator:   sgTable.Creator,
-		Reviser:   sgTable.Reviser,
-		CreatedAt: sgTable.CreatedAt.String(),
-		UpdatedAt: sgTable.UpdatedAt.String(),
+		ID:               sgTable.ID,
+		Vendor:           sgTable.Vendor,
+		CloudID:          sgTable.CloudID,
+		BkBizID:          sgTable.BkBizID,
+		Region:           sgTable.Region,
+		Name:             sgTable.Name,
+		Memo:             sgTable.Memo,
+		CloudCreatedTime: sgTable.CloudCreatedTime,
+		CloudUpdateTime:  sgTable.CloudUpdateTime,
+		Tags:             string(sgTable.Tags),
+		AccountID:        sgTable.AccountID,
+		Creator:          sgTable.Creator,
+		Reviser:          sgTable.Reviser,
+		CreatedAt:        sgTable.CreatedAt.String(),
+		UpdatedAt:        sgTable.UpdatedAt.String(),
 	}
 }
 
@@ -344,10 +350,12 @@ func batchUpdateSecurityGroup[T corecloud.SecurityGroupExtension](cts *rest.Cont
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		for _, sg := range req.SecurityGroups {
 			update := &tablecloud.SecurityGroupTable{
-				BkBizID: sg.BkBizID,
-				Name:    sg.Name,
-				Memo:    sg.Memo,
-				Reviser: cts.Kit.User,
+				BkBizID:          sg.BkBizID,
+				Name:             sg.Name,
+				Memo:             sg.Memo,
+				Reviser:          cts.Kit.User,
+				CloudCreatedTime: sg.CloudCreatedTime,
+				CloudUpdateTime:  sg.CloudUpdateTime,
 			}
 
 			if sg.Extension != nil {
@@ -361,6 +369,14 @@ func batchUpdateSecurityGroup[T corecloud.SecurityGroupExtension](cts *rest.Cont
 					return nil, fmt.Errorf("json UpdateMerge extension failed, err: %v", err)
 				}
 				update.Extension = tabletype.JsonField(merge)
+			}
+
+			if sg.Tags != nil {
+				tags, err := json.MarshalToString(sg.Tags)
+				if err != nil {
+					return nil, errf.NewFromErr(errf.InvalidParameter, err)
+				}
+				update.Tags = tabletype.JsonField(tags)
 			}
 
 			if err := svc.dao.SecurityGroup().UpdateByIDWithTx(cts.Kit, txn, sg.ID, update); err != nil {
@@ -439,18 +455,25 @@ func batchCreateSecurityGroup[T corecloud.SecurityGroupExtension](vendor enumor.
 			if err != nil {
 				return nil, errf.NewFromErr(errf.InvalidParameter, err)
 			}
+			tags, err := json.MarshalToString(sg.Tags)
+			if err != nil {
+				return nil, errf.NewFromErr(errf.InvalidParameter, err)
+			}
 
 			sgs = append(sgs, &tablecloud.SecurityGroupTable{
-				Vendor:    vendor,
-				CloudID:   sg.CloudID,
-				BkBizID:   sg.BkBizID,
-				Region:    sg.Region,
-				Name:      sg.Name,
-				Memo:      sg.Memo,
-				AccountID: sg.AccountID,
-				Extension: tabletype.JsonField(extension),
-				Creator:   cts.Kit.User,
-				Reviser:   cts.Kit.User,
+				Vendor:           vendor,
+				CloudID:          sg.CloudID,
+				BkBizID:          sg.BkBizID,
+				Region:           sg.Region,
+				Name:             sg.Name,
+				Memo:             sg.Memo,
+				AccountID:        sg.AccountID,
+				CloudCreatedTime: sg.CloudCreatedTime,
+				CloudUpdateTime:  sg.CloudUpdateTime,
+				Extension:        tabletype.JsonField(extension),
+				Tags:             tabletype.JsonField(tags),
+				Creator:          cts.Kit.User,
+				Reviser:          cts.Kit.User,
 			})
 		}
 
