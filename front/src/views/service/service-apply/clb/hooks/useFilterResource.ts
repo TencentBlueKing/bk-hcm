@@ -193,10 +193,13 @@ export default (formModel: ApplyClbModel) => {
   const inquiryPrices = async () => {
     isInquiryPricesLoading.value = true;
     try {
+      // eslint-disable-next-line prefer-const
+      let zones = formModel.zones ? [formModel.zones] : [];
+
       const { data } = await businessStore.lbPricesInquiry({
         ...formModel,
         bk_biz_id: isBusinessPage ? formModel.bk_biz_id : undefined,
-        zones: [formModel.zones],
+        zones,
         backup_zones: formModel.backup_zones ? [formModel.backup_zones] : undefined,
         bandwidthpkg_sub_type: formModel.vip_isp === 'BGP' ? 'BGP' : 'SINGLE_ISP',
         bandwidth_package_id: undefined,

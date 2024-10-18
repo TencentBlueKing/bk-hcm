@@ -117,7 +117,7 @@ export interface ApplyClbModel {
   internet_charge_type?: 'TRAFFIC_POSTPAID_BY_HOUR' | 'BANDWIDTH_POSTPAID_BY_HOUR' | 'BANDWIDTH_PACKAGE';
   // 最大出带宽，单位Mbps
   internet_max_bandwidth_out?: number;
-  // // 带宽包id，计费模式为带宽包计费时必填
+  // 带宽包id，计费模式为带宽包计费时必填
   bandwidth_package_id?: string;
   // 负载均衡规格类型: 性能容量型规格, 留空为共享型
   sla_type?: string;
