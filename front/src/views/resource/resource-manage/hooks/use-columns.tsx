@@ -29,7 +29,6 @@ import { Spinner } from 'bkui-vue/lib/icon';
 import { APPLICATION_STATUS_MAP, APPLICATION_TYPE_MAP } from '@/views/service/apply-list/constants';
 import dayjs from 'dayjs';
 import { BILLS_ROOT_ACCOUNT_SUMMARY_STATE_MAP, BILL_TYPE__MAP_HW, CURRENCY_MAP } from '@/constants';
-import { BILL_VENDORS_MAP, BILL_SITE_TYPES_MAP } from '@/views/bill/account/account-manage/constants';
 import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
 
 interface LinkFieldOptions {
@@ -1741,75 +1740,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
   ];
 
-  const firstAccountColumns = [
-    {
-      label: '一级帐号ID',
-      field: 'cloud_id',
-    },
-    {
-      label: '云厂商',
-      field: 'vendor',
-      render: ({ cell }: any) => BILL_VENDORS_MAP[cell] || '--',
-    },
-    {
-      label: '帐号邮箱',
-      field: 'email',
-    },
-    {
-      label: '主负责人',
-      field: 'managers',
-      render: ({ cell }: any) => cell.join(','),
-    },
-    // {
-    //   label: '组织架构',
-    //   field: 'dept_id',
-    // },
-    {
-      label: '备注',
-      field: 'memo',
-    },
-  ];
-
-  const secondaryAccountColumns = [
-    {
-      label: '二级账号ID',
-      field: 'cloud_id',
-    },
-    {
-      label: '所属一级帐号',
-      field: 'parent_account_name',
-    },
-    {
-      label: '云厂商',
-      field: 'vendor',
-      render: ({ cell }: any) => BILL_VENDORS_MAP[cell] || '--',
-    },
-    {
-      label: '站点类型',
-      field: 'site',
-      render: ({ cell }: any) => BILL_SITE_TYPES_MAP[cell],
-    },
-    {
-      label: '帐号邮箱',
-      field: 'email',
-    },
-    {
-      label: '主负责人',
-      field: 'managers',
-      render: ({ cell }: any) => cell.join(','),
-    },
-    {
-      label: '业务名称',
-      field: 'bk_biz_id',
-      isDefaultShow: true,
-      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
-    },
-    {
-      label: '备注',
-      field: 'memo',
-    },
-  ];
-
   const myApplyColumns = [
     // {
     //   label: '申请ID',
@@ -2499,8 +2429,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     url: urlColumns,
     targetGroupListener: targetGroupListenerColumns,
     cert: certColumns,
-    firstAccount: firstAccountColumns,
-    secondaryAccount: secondaryAccountColumns,
     myApply: myApplyColumns,
     billsRootAccountSummary: billsRootAccountSummaryColumns,
     billsMainAccountSummary: billsMainAccountSummaryColumns,
