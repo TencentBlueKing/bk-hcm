@@ -416,6 +416,7 @@ func (c *Layer4ListenerBindRSExecutor) createTaskDetails(kt *kit.Kit, taskID str
 			TaskManagementID: taskID,
 			Operation:        enumor.TaskBindingLayer4RS,
 			Param:            detail,
+			State:            enumor.TaskDetailInit,
 		})
 	}
 
