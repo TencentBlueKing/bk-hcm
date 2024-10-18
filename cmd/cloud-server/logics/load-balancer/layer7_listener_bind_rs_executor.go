@@ -278,9 +278,8 @@ func (c *Layer7ListenerBindRSExecutor) buildFlowTask(kt *kit.Kit, lb corelb.Base
 }
 
 func (c *Layer7ListenerBindRSExecutor) buildTCloudFlowTask(kt *kit.Kit, lb corelb.BaseLoadBalancer,
-	targetGroupID string, details []*layer7ListenerBindRSTaskDetail,
-	generator func() (cur string, prev string), tgToListenerCloudIDs map[string]string,
-	tgToCloudRuleIDs map[string]string) ([]ts.CustomFlowTask, error) {
+	targetGroupID string, details []*layer7ListenerBindRSTaskDetail, generator func() (cur string, prev string),
+	tgToListenerCloudIDs map[string]string, tgToCloudRuleIDs map[string]string) ([]ts.CustomFlowTask, error) {
 
 	tCloudLB, err := getTCloudLoadBalancer(kt, c.dataServiceCli, lb.ID)
 	if err != nil {
@@ -339,6 +338,7 @@ func (c *Layer7ListenerBindRSExecutor) buildTCloudFlowTask(kt *kit.Kit, lb corel
 			ActionID:   action.ActIDType(cur),
 			ActionName: enumor.ActionBatchTaskTCloudBindTarget,
 			Params: &actionlb.BatchTaskBindTargetOption{
+				Vendor:                       c.vendor,
 				LoadBalancerID:               lb.ID,
 				ManagementDetailIDs:          managementDetailIDs,
 				BatchRegisterTCloudTargetReq: req,

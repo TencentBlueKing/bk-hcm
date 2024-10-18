@@ -387,6 +387,7 @@ func (c *CreateLayer7ListenerExecutor) buildTCloudFlowTask(lbID, lbCloudID, regi
 			ActionID:   action.ActIDType(cur),
 			ActionName: enumor.ActionBatchTaskTCloudCreateListener,
 			Params: &actionlb.BatchTaskTCloudCreateListenerOption{
+				Vendor:              c.vendor,
 				ManagementDetailIDs: managementDetailIDs,
 				Listeners:           listeners,
 			},

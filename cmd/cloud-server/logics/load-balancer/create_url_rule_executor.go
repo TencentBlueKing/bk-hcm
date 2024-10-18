@@ -324,6 +324,7 @@ func (c *CreateUrlRuleExecutor) buildTCloudFlowTask(lbID, lblID string, details 
 			ActionID:   action.ActIDType(cur),
 			ActionName: enumor.ActionBatchTaskTCloudCreateL7Rule,
 			Params: &actionlb.BatchTaskTCloudCreateL7RuleOption{
+				Vendor:                   c.vendor,
 				LoadBalancerID:           lbID,
 				ListenerID:               lblID,
 				ManagementDetailIDs:      managementDetailIDs,
