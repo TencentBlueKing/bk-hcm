@@ -235,3 +235,72 @@ func (svc *securityGroupSvc) checkUpdateAzureSGRuleParams(req *hcproto.AzureSGRu
 
 	return nil
 }
+
+// BatchUpdateSecurityGroupRule batch update security group rule.
+func (svc *securityGroupSvc) BatchUpdateSecurityGroupRule(cts *rest.Contexts) (interface{}, error) {
+	return svc.batchUpdateSGRule(cts, handler.ResOperateAuth)
+}
+
+// BatchUpdateBizSGRule batch update biz security group rule.
+func (svc *securityGroupSvc) BatchUpdateBizSGRule(cts *rest.Contexts) (interface{}, error) {
+	return svc.batchUpdateSGRule(cts, handler.BizOperateAuth)
+}
+
+func (svc *securityGroupSvc) batchUpdateSGRule(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},
+	error) {
+
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if len(vendor) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "vendor is required")
+	}
+
+	sgID := cts.PathParameter("security_group_id").String()
+	if len(sgID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "security group id is required")
+	}
+
+	sgBaseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
+		enumor.SecurityGroupCloudResType, sgID)
+	if err != nil {
+		return nil, err
+	}
+
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroupRule,
+		Action: meta.Update, BasicInfo: sgBaseInfo})
+	if err != nil {
+		return nil, err
+	}
+
+	switch vendor {
+	case enumor.TCloud:
+		return svc.batchUpdateTCloudSGRule(cts, sgBaseInfo)
+	default:
+		return nil, errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
+	}
+}
+
+func (svc *securityGroupSvc) batchUpdateTCloudSGRule(cts *rest.Contexts, sgBaseInfo *types.CloudResourceBasicInfo) (
+	interface{}, error) {
+
+	req := new(proto.TCloudSGRuleBatchUpdateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	updateReq := &hcproto.TCloudSGRuleBatchUpdateReq{
+		AccountID:      sgBaseInfo.AccountID,
+		EgressRuleSet:  req.EgressRuleSet,
+		IngressRuleSet: req.IngressRuleSet,
+	}
+	err := svc.client.HCService().TCloud.SecurityGroup.BatchUpdateSecurityGroupRule(cts.Kit, sgBaseInfo.ID, updateReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}

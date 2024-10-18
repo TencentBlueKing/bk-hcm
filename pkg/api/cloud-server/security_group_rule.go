@@ -22,6 +22,7 @@ package cloudserver
 import (
 	"errors"
 	"fmt"
+	hcservice "hcm/pkg/api/hc-service"
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
@@ -68,6 +69,40 @@ type TCloudSGRuleUpdateReq struct {
 
 // Validate tcloud security group rule update request.
 func (req *TCloudSGRuleUpdateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// TCloudSGRuleUpdateReqWithPolicyIndex define tcloud security group update request with policy index.
+type TCloudSGRuleUpdateReqWithPolicyIndex = hcservice.TCloudSGRuleUpdateReqWithPolicyIndex
+
+// TCloudSGRuleBatchUpdateReq define tcloud security group rule batch update req.
+type TCloudSGRuleBatchUpdateReq struct {
+	EgressRuleSet  []TCloudSGRuleUpdateReqWithPolicyIndex `json:"egress_rule_set" validate:"omitempty"`
+	IngressRuleSet []TCloudSGRuleUpdateReqWithPolicyIndex `json:"ingress_rule_set" validate:"omitempty"`
+}
+
+// Validate tcloud security group rule batch update request.
+func (req *TCloudSGRuleBatchUpdateReq) Validate() error {
+	if len(req.EgressRuleSet) == 0 && len(req.IngressRuleSet) == 0 {
+		return errors.New("egress rule or ingress rule is required")
+	}
+
+	if len(req.EgressRuleSet) != 0 && len(req.IngressRuleSet) != 0 {
+		return errors.New("egress rule or ingress rule only one is allowed")
+	}
+
+	for _, item := range req.EgressRuleSet {
+		err := item.Validate()
+		if err != nil {
+			return err
+		}
+	}
+	for _, item := range req.IngressRuleSet {
+		err := item.Validate()
+		if err != nil {
+			return err
+		}
+	}
 	return validator.Validate.Struct(req)
 }
 
