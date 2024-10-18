@@ -20,6 +20,7 @@
 package tcloud
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -135,6 +136,9 @@ func (cli *client) updateSG(kt *kit.Kit, accountID string,
 			Extension: &cloudcore.TCloudSecurityGroupExtension{
 				CloudProjectID: one.ProjectId,
 			},
+			CloudCreatedTime: converter.PtrToVal(one.CreatedTime),
+			CloudUpdateTime:  converter.PtrToVal(one.UpdateTime),
+			Tags:             one.TagSet,
 		}
 
 		securityGroups = append(securityGroups, securityGroup)
@@ -178,6 +182,9 @@ func (cli *client) createSG(kt *kit.Kit, accountID string, region string,
 			Extension: &cloudcore.TCloudSecurityGroupExtension{
 				CloudProjectID: one.ProjectId,
 			},
+			CloudCreatedTime: converter.PtrToVal(one.CreatedTime),
+			CloudUpdateTime:  converter.PtrToVal(one.UpdateTime),
+			Tags:             one.TagSet,
 		}
 		createReq.SecurityGroups = append(createReq.SecurityGroups, securityGroup)
 	}
@@ -399,6 +406,19 @@ func isSGChange(cloud securitygroup.TCloudSG, db cloudcore.SecurityGroup[cloudco
 	}
 
 	if !assert.IsPtrStringEqual(cloud.ProjectId, db.Extension.CloudProjectID) {
+		return true
+	}
+
+	if converter.PtrToVal(cloud.CreatedTime) != db.BaseSecurityGroup.CloudCreatedTime {
+		return true
+	}
+
+	if converter.PtrToVal(cloud.UpdateTime) != db.BaseSecurityGroup.CloudUpdateTime {
+		return true
+	}
+
+	tags, _ := json.Marshal(cloud.TagSet)
+	if string(tags) != db.BaseSecurityGroup.Tags {
 		return true
 	}
 
