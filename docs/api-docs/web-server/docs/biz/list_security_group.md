@@ -18,7 +18,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/security_groups/list
 
 #### filter
 
-| 参数名称  | 参数类型        | 必选  | 描述                                                              |
+**| 参数名称  | 参数类型        | 必选  | 描述                                                              |
 |-------|-------------|-----|-----------------------------------------------------------------|
 | op    | enum string | 是   | 操作符（枚举值：and、or）。如果是and，则表示多个rule之间是且的关系；如果是or，则表示多个rule之间是或的关系。 |
 | rules | array       | 是   | 过滤规则，最多设置5个rules。如果rules为空数组，op（操作符）将没有作用，代表查询全部数据。             |
@@ -95,20 +95,22 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/security_groups/list
 
 #### 查询参数介绍：
 
-| 参数名称       | 参数类型   | 描述              |
-|------------|--------|-----------------|
-| id         | string | 安全组ID           |
-| vendor     | string | 云厂商             |
-| cloud_id   | string | 安全组云ID          |
-| bk_biz_id  | int64  | 业务ID, -1代表未分配业务 |
-| region     | string | 地域              |
-| name       | string | 安全组名称           |
-| memo       | string | 备注              |
-| account_id | string | 账号ID            |
-| creator    | string | 创建者             |
-| reviser    | string | 最后一次修改的修改者      |
-| created_at | string | 创建时间，标准格式：2006-01-02T15:04:05Z            |
-| updated_at | string | 最后一次修改时间，标准格式：2006-01-02T15:04:05Z        |
+| 参数名称               | 参数类型   | 描述                                 |
+|--------------------|--------|------------------------------------|
+| id                 | string | 安全组ID                              |
+| vendor             | string | 云厂商                                |
+| cloud_id           | string | 安全组云ID                             |
+| bk_biz_id          | int64  | 业务ID, -1代表未分配业务                    |
+| region             | string | 地域                                 |
+| name               | string | 安全组名称                              |
+| memo               | string | 备注                                 |
+| account_id         | string | 账号ID                               |
+| creator            | string | 创建者                                |
+| reviser            | string | 最后一次修改的修改者                         |
+| created_at         | string | 创建时间，标准格式：2006-01-02T15:04:05Z     |
+| updated_at         | string | 最后一次修改时间，标准格式：2006-01-02T15:04:05Z |
+| cloud_created_time | string | 安全组云上创建时间，标准格式：2006-01-02 15:04:05 |
+| cloud_update_time  | string | 安全组云上更新时间，标准格式：2006-01-02 15:04:05 |
 
 接口调用者可以根据以上参数自行根据查询场景设置查询规则。
 
@@ -192,7 +194,10 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/security_groups/list
         "creator": "tom",
         "reviser": "tom",
         "created_at": "2019-07-29 11:57:20",
-        "updated_at": "2019-07-29 11:57:20"
+        "updated_at": "2019-07-29 11:57:20",
+        "cloud_created_time": "2024-01-20 15:37:46",
+        "cloud_update_time": "2024-01-20 15:46:45",
+        "tags": "[{\"Key\": \"123\", \"Value\": \"123\"}]"
       }
     ]
   }
@@ -228,17 +233,27 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/security_groups/list
 
 #### data.details[n]
 
-| 参数名称       | 参数类型   | 描述              |
-|------------|--------|-----------------|
-| id         | string | 安全组ID           |
-| vendor     | string | 云厂商             |
-| cloud_id   | string | 安全组云ID          |
-| bk_biz_id  | int64  | 业务ID, -1代表未分配业务 |
-| region     | string | 地域              |
-| name       | string | 安全组名称           |
-| memo       | string | 备注              |
-| account_id | string | 账号ID            |
-| creator    | string | 创建者             |
-| reviser    | string | 最后一次修改的修改者      |
-| created_at | string | 创建时间，标准格式：2006-01-02T15:04:05Z            |
-| updated_at | string | 最后一次修改时间，标准格式：2006-01-02T15:04:05Z        |
+| 参数名称               | 参数类型   | 描述                                 |
+|--------------------|--------|------------------------------------|
+| id                 | string | 安全组ID                              |
+| vendor             | string | 云厂商                                |
+| cloud_id           | string | 安全组云ID                             |
+| bk_biz_id          | int64  | 业务ID, -1代表未分配业务                    |
+| region             | string | 地域                                 |
+| name               | string | 安全组名称                              |
+| memo               | string | 备注                                 |
+| account_id         | string | 账号ID                               |
+| creator            | string | 创建者                                |
+| reviser            | string | 最后一次修改的修改者                         |
+| created_at         | string | 创建时间，标准格式：2006-01-02T15:04:05Z     |
+| updated_at         | string | 最后一次修改时间，标准格式：2006-01-02T15:04:05Z |
+| tags               | object | 标签列表                               |
+| cloud_created_time | string | 安全组云上创建时间，标准格式：2006-01-02 15:04:05 |
+| cloud_update_time  | string | 安全组云上更新时间，标准格式：2006-01-02 15:04:05 |
+
+#### tags[n]
+
+| 参数名称  | 参数类型   | 描述  |
+|-------|--------|-----|
+| Key   | string | 标签键 |
+| Value | string | 标签值 |
