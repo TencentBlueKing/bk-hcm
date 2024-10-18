@@ -52,6 +52,13 @@ type BatchTaskUnBindTargetOption struct {
 
 // Validate validate option.
 func (opt BatchTaskUnBindTargetOption) Validate() error {
+
+	switch opt.Vendor {
+	case enumor.TCloud:
+	default:
+		return fmt.Errorf("unsupport vendor for batch unbind rs: %s", opt.Vendor)
+	}
+
 	if opt.LblList == nil {
 		return errf.New(errf.InvalidParameter, "lbl_list is required")
 	}

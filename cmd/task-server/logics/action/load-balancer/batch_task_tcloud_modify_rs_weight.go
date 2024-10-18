@@ -52,6 +52,13 @@ type BatchTaskModifyRsWeightOption struct {
 
 // Validate validate option.
 func (opt BatchTaskModifyRsWeightOption) Validate() error {
+
+	switch opt.Vendor {
+	case enumor.TCloud:
+	default:
+		return fmt.Errorf("unsupport vendor for batch modify rs weight: %s", opt.Vendor)
+	}
+
 	if opt.LblList == nil {
 		return errf.New(errf.InvalidParameter, "lbl_list is required")
 	}

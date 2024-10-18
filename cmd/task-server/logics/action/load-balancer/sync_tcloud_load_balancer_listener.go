@@ -20,6 +20,8 @@
 package actionlb
 
 import (
+	"fmt"
+
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/async/action"
@@ -40,12 +42,17 @@ type SyncTCloudLoadBalancerListenerAction struct{}
 
 // SyncTCloudLoadBalancerListenerOption ...
 type SyncTCloudLoadBalancerListenerOption struct {
+	Vendor                      enumor.Vendor `json:"vendor" validate:"required"`
 	*sync.TCloudListenerSyncReq `json:",inline" validate:"required"`
 }
 
 // Validate validate option.
 func (opt SyncTCloudLoadBalancerListenerOption) Validate() error {
-
+	switch opt.Vendor {
+	case enumor.TCloud:
+	default:
+		return fmt.Errorf("unsupport vendor for sync load balancer listener: %s", opt.Vendor)
+	}
 	return validator.Validate.Struct(opt)
 }
 
@@ -66,11 +73,16 @@ func (act SyncTCloudLoadBalancerListenerAction) Run(kt run.ExecuteKit, params an
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
 	}
 
-	err := actcli.GetHCService().TCloud.Clb.SyncLoadBalancerListener(kt.Kit(), opt.TCloudListenerSyncReq)
-	if err != nil {
-		logs.Errorf("fail to sync load balancer listener, err: %v, req: %v rid: %s",
-			err, opt.TCloudListenerSyncReq, kt.Kit().Rid)
-		return nil, err
+	switch opt.Vendor {
+	case enumor.TCloud:
+		taskErr = actcli.GetHCService().TCloud.Clb.SyncLoadBalancerListener(kt.Kit(), opt.TCloudListenerSyncReq)
+	default:
+		return nil, fmt.Errorf("unsupport vendor for sync load balancer listener: %s", opt.Vendor)
+	}
+	if taskErr != nil {
+		logs.Errorf("[%s] fail to sync load balancer listener, err: %v, req: %v rid: %s",
+			opt.Vendor, taskErr, opt.TCloudListenerSyncReq, kt.Kit().Rid)
+		return nil, taskErr
 	}
 
 	return nil, nil
