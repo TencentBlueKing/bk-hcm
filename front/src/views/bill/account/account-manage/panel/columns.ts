@@ -1,11 +1,11 @@
-import { type Columns } from 'bkui-vue/lib/table/props';
 import i18n from '@/language/i18n';
 import { BILL_SITE_TYPES_MAP, BILL_VENDORS_MAP } from '../constants';
+import { IColumns } from '@/views/resource/resource-manage/hooks/use-columns';
 
 const { t } = i18n.global;
 
 // 一级账号
-export const firstAccountColumns: Columns = [
+export const firstAccountColumns: IColumns = [
   { label: t('一级帐号ID'), field: 'cloud_id' },
   { label: t('云厂商'), field: 'vendor', render: ({ cell }: any) => BILL_VENDORS_MAP[cell] || '--' },
   { label: t('帐号邮箱'), field: 'email' },
@@ -14,7 +14,7 @@ export const firstAccountColumns: Columns = [
 ];
 
 // 二级账号
-export const secondaryAccountColumns = [
+export const secondaryAccountColumns: IColumns = [
   { label: t('二级账号ID'), field: 'cloud_id' },
   { label: t('所属一级帐号'), field: 'parent_account_name' },
   { label: t('云厂商'), field: 'vendor', render: ({ cell }: any) => BILL_VENDORS_MAP[cell] || '--' },

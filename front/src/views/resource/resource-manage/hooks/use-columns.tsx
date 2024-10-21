@@ -4,7 +4,7 @@ import i18n from '@/language/i18n';
 import { CloudType, SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum } from '@/typings';
 import { useAccountStore, useLoadBalancerStore } from '@/store';
 import { Button } from 'bkui-vue';
-import { type Settings } from 'bkui-vue/lib/table/props';
+import { Column, type Settings } from 'bkui-vue/lib/table/props';
 import { h, ref } from 'vue';
 import type { Ref } from 'vue';
 import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
@@ -43,6 +43,12 @@ interface LinkFieldOptions {
   contentClass?: string; // 内容class
   sort?: boolean; // 是否支持排序
 }
+
+type IColumn = Column & {
+  isDefaultShow?: boolean; // 是否默认显示
+  notDisplayInBusiness?: boolean; // 不在业务中显示
+};
+export type IColumns = Array<IColumn>;
 
 export default (type: string, isSimpleShow = false, vendor?: string) => {
   const router = useRouter();
