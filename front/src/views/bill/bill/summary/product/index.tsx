@@ -4,11 +4,11 @@ import { useRoute } from 'vue-router';
 import Amount from '../../components/amount';
 import Search from '../../components/search';
 
-import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import { useTable } from '@/hooks/useTable/useTable';
 import { reqBillsMainAccountSummarySum } from '@/api/bill';
 import { RulesItem } from '@/typings';
-import pluginHandler from '@pluginHandler/bill-manage';
+import { getColumns, extensionKey, apiMethod, mountedCallback, useSelectionIds } from './load-data.plugin';
+import { renderOperationComp } from './render-comp.plugin';
 
 export default defineComponent({
   name: 'OperationProductTabPanel',
@@ -20,24 +20,12 @@ export default defineComponent({
     const searchRef = ref();
     const amountRef = ref();
 
-    const { useProductHandler } = pluginHandler;
-    const {
-      selectedIds,
-      columnName,
-      getColumns,
-      extensionKey,
-      apiMethod,
-      reloadSelectedIds,
-      mountedCallback,
-      renderOperation,
-    } = useProductHandler();
+    const columns = getColumns();
+    const { selectedIds, reloadSelectedIds } = useSelectionIds();
 
-    const { columns } = useColumns(columnName);
     const { CommonTable, getListData, clearFilter, filter } = useTable({
       searchOptions: { disabled: true },
-      tableOptions: {
-        columns: getColumns(columns),
-      },
+      tableOptions: { columns },
       requestOption: {
         sortOption: {
           sort: 'current_month_rmb_cost',
@@ -77,7 +65,7 @@ export default defineComponent({
         <div class='p24' style={{ height: 'calc(100% - 162px)' }}>
           <CommonTable>
             {{
-              operation: () => renderOperation(bill_year.value, bill_month.value, searchRef),
+              operation: () => renderOperationComp(bill_year.value, bill_month.value, searchRef),
               operationBarEnd: () => (
                 <Amount
                   ref={amountRef}

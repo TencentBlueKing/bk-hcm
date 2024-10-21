@@ -8,9 +8,9 @@ import CommonSideslider from '@/components/common-sideslider';
 import ErrorPage from '@/views/error-pages/403';
 
 import { useI18n } from 'vue-i18n';
-import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import { useTable } from '@/hooks/useTable/useTable';
 import { AccountLevelEnum, searchData, secondarySearchData } from '../constants';
+import { getColumns } from './load-data.plugin';
 
 export default defineComponent({
   props: { accountLevel: String as PropType<AccountLevelEnum>, authVerifyData: Object },
@@ -26,7 +26,7 @@ export default defineComponent({
     const route = useRoute();
     const { t } = useI18n();
 
-    const { columns } = useColumns(props.accountLevel);
+    const columns = getColumns(props.accountLevel);
 
     const isSideSliderShow = ref(false);
     const curAccount = ref({});
