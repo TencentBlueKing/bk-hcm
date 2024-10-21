@@ -1,6 +1,8 @@
 import { defineComponent } from 'vue';
 import { Ediatable, HeadColumn } from '@blueking/ediatable';
 import { useI18n } from 'vue-i18n';
+import { getDiffModelLabel } from '../adjust-create-table.plugin';
+
 export default defineComponent({
   props: {
     edit: Boolean,
@@ -16,7 +18,7 @@ export default defineComponent({
                 {t('调整方式')}
               </HeadColumn>
               <HeadColumn required minWidth={120} width={450}>
-                {t('业务')}
+                {getDiffModelLabel()}
               </HeadColumn>
               <HeadColumn required minWidth={120} width={450}>
                 {t('二级账号')}
