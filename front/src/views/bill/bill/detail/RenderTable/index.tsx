@@ -6,11 +6,11 @@ import BillsExportButton from '../../components/bills-export-button';
 import ImportBillDetailDialog from '../ImportBillDetailDialog';
 
 import { useI18n } from 'vue-i18n';
-import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import { useTable } from '@/hooks/useTable/useTable';
 import { VendorEnum, VendorMap } from '@/common/constant';
 import { exportBillsItems, reqBillsItemList, reqBillsRootAccountSummaryList } from '@/api/bill';
 import { QueryRuleOPEnum, RulesItem } from '@/typings';
+import { getColumns } from './load-data.plugin';
 
 export default defineComponent({
   name: 'BillDetailRenderTable',
@@ -22,22 +22,7 @@ export default defineComponent({
 
     const importBillDetailDialogRef = ref();
 
-    const getColumnName = () => {
-      switch (props.vendor) {
-        case VendorEnum.AWS:
-          return 'billDetailAws';
-        case VendorEnum.AZURE:
-          return 'billDetailAzure';
-        case VendorEnum.GCP:
-          return 'billDetailGcp';
-        case VendorEnum.HUAWEI:
-          return 'billDetailHuawei';
-        case VendorEnum.ZENLAYER:
-          return 'billDetailZenlayer';
-      }
-    };
-
-    const { columns, settings } = useColumns(getColumnName());
+    const { columns, settings } = getColumns(props.vendor);
 
     const { CommonTable, getListData, clearFilter, filter } = useTable({
       tableOptions: {
