@@ -1,10 +1,10 @@
 import { PropType, defineComponent, ref, watch } from 'vue';
 import { InputColumn, OperationColumn, TextPlainColumn } from '@blueking/ediatable';
 import AdjustTypeSelector, { AdjustTypeEnum } from './components/AdjustTypeSelector';
-import BusinessSelector from '@/components/business-selector/index.vue';
 import SubAccountSelector from '../../../components/search/sub-account-selector';
 import { VendorEnum } from '@/common/constant';
 import useFormModel from '@/hooks/useFormModel';
+import { diffModelKey, getDiffSelectorComp } from '../adjust-create-table.plugin';
 
 export default defineComponent({
   props: {
@@ -35,7 +35,7 @@ export default defineComponent({
   setup(props, { emit, expose }) {
     const { formModel, resetForm, setFormValues } = useFormModel({
       type: AdjustTypeEnum.Increase,
-      bk_biz_id: '',
+      [diffModelKey]: '',
       main_account_id: '',
       cost: '',
       memo: '',
@@ -43,7 +43,7 @@ export default defineComponent({
 
     const costRef = ref();
     const memoRef = ref();
-    const bizIdRef = ref();
+    const selectorRef = ref();
     const mainAccountRef = ref();
 
     const handleAdd = () => {
@@ -108,9 +108,7 @@ export default defineComponent({
           <td>
             <AdjustTypeSelector v-model={formModel.type} />
           </td>
-          <td>
-            <BusinessSelector v-model={formModel.bk_biz_id} ref={bizIdRef} isEditable />
-          </td>
+          <td>{getDiffSelectorComp(formModel, selectorRef)}</td>
           <td>
             <SubAccountSelector
               isEditable={true}
