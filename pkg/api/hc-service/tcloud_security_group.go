@@ -87,3 +87,14 @@ type TCloudSGRuleUpdateReq struct {
 func (req *TCloudSGRuleUpdateReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
+
+// SecurityGroupBatchAssociateCvmReq define security group bind cvm option.
+type SecurityGroupBatchAssociateCvmReq struct {
+	SecurityGroupID string   `json:"security_group_id" validate:"required"`
+	CvmIDs          []string `json:"cvm_ids" validate:"required,max=100"`
+}
+
+// Validate security group cvm bind option.
+func (opt SecurityGroupBatchAssociateCvmReq) Validate() error {
+	return validator.Validate.Struct(opt)
+}
