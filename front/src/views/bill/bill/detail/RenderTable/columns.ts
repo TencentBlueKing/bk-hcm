@@ -3,10 +3,11 @@ import { timeFormatter } from '@/common/util';
 import { formatBillCost } from '@/utils';
 import { VendorEnum, VendorMap } from '@/common/constant';
 import { BILL_TYPE__MAP_HW, CURRENCY_MAP } from '@/constants';
+import { IColumns } from '@/views/resource/resource-manage/hooks/use-columns';
 
 const { t } = i18n.global;
 
-export const billDetailBaseColumns = [
+export const billDetailBaseColumns: IColumns = [
   {
     label: t('核算日期'),
     field: 'bill_date',
@@ -36,13 +37,13 @@ export const billDetailBaseColumns = [
   { label: t('预留实例使用单位'), field: 'res_amount_unit', isDefaultShow: true },
 ];
 
-export const billDetailAwsColumns = [...billDetailBaseColumns];
+export const billDetailAwsColumns: IColumns = [...billDetailBaseColumns];
 
-export const billDetailAzureColumns = [...billDetailBaseColumns];
+export const billDetailAzureColumns: IColumns = [...billDetailBaseColumns];
 
-export const billDetailGcpColumns = [...billDetailBaseColumns];
+export const billDetailGcpColumns: IColumns = [...billDetailBaseColumns];
 
-export const billDetailHuaweiColumns = [
+export const billDetailHuaweiColumns: IColumns = [
   ...billDetailBaseColumns,
   { label: t('使用量类型'), field: 'extension.usage_type' },
   { label: t('使用量'), field: 'extension.usage' },
@@ -57,4 +58,4 @@ export const billDetailHuaweiColumns = [
   { label: t('账单类型'), field: 'extension.bill_type', render: ({ cell }: any) => BILL_TYPE__MAP_HW[cell] },
 ];
 
-export const billDetailZenlayerColumns = [...billDetailBaseColumns];
+export const billDetailZenlayerColumns: IColumns = [...billDetailBaseColumns];
