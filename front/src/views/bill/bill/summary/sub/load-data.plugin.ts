@@ -1,22 +1,13 @@
 import { RouteLocationNormalizedLoaded } from 'vue-router';
-import { useI18n } from 'vue-i18n';
-import { useBusinessMapStore } from '@/store/useBusinessMap';
 
 import { billsMainAccountSummaryColumns } from './columns';
 import { QueryRuleOPEnum, RulesItem } from '@/typings';
-import { BillSearchRules } from '@/utils';
+import { BillSearchRules, injectBizField } from '@/utils';
 import { BILL_BIZS_KEY, BILL_MAIN_ACCOUNTS_KEY } from '@/constants';
 
 export const getColumns = () => {
-  const { t } = useI18n();
-  const businessMapStore = useBusinessMapStore();
-
   const columns = billsMainAccountSummaryColumns.slice();
-  columns.splice(4, 0, {
-    label: t('业务名称'),
-    field: 'bk_biz_id',
-    render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
-  });
+  injectBizField(columns, 4);
 
   return columns;
 };
