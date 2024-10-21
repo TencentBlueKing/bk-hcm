@@ -94,7 +94,7 @@ export default defineComponent({
     };
 
     const reset = (remove = true) => {
-      remove && uploadRef.value.handleRemove(uploadFile);
+      remove && uploadRef.value?.handleRemove(uploadFile);
       Object.assign(importPreviewInfo, { cost_map: null, count: 0 });
       importItems = [];
       uploadFile = null;
