@@ -1,6 +1,4 @@
-import { useI18n } from 'vue-i18n';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
-import { useBusinessMapStore } from '@/store/useBusinessMap';
 
 import { VendorEnum } from '@/common/constant';
 import {
@@ -10,11 +8,10 @@ import {
   billDetailHuaweiColumns,
   billDetailZenlayerColumns,
 } from './columns';
+import { injectBizField } from '@/utils';
 
 export const getColumns = (vendor: VendorEnum) => {
   let columns;
-  const { t } = useI18n();
-  const businessMapStore = useBusinessMapStore();
   const { generateColumnsSettings } = useColumns(null);
 
   switch (vendor) {
@@ -35,11 +32,7 @@ export const getColumns = (vendor: VendorEnum) => {
       break;
   }
 
-  columns.splice(5, 0, {
-    label: t('业务名称'),
-    field: 'bk_biz_id',
-    render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
-  });
+  injectBizField(columns, 5);
 
   const settings = generateColumnsSettings(columns);
 

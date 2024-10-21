@@ -1,5 +1,8 @@
+import { useI18n } from 'vue-i18n';
+import { useBusinessMapStore } from '@/store/useBusinessMap';
 import isIP from 'validator/es/lib/isIP';
 import { AddressDescription } from '@/typings';
+
 /**
  * 获取实例的ip地址
  * @param inst 实例
@@ -208,6 +211,22 @@ const isPortValid = (text: string) => {
   }
   return true;
 };
+
+/**
+ * 注入业务字段
+ */
+export const injectBizField = (columns: any[], start: number) => {
+  const { t } = useI18n();
+  const businessMapStore = useBusinessMapStore();
+
+  columns.splice(start, 0, {
+    label: t('业务名称'),
+    field: 'bk_biz_id',
+    render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || t('--'),
+    isDefaultShow: true,
+  });
+};
+
 export {
   getInstVip,
   splitIP,
