@@ -12,7 +12,7 @@ import { VendorEnum } from '@/common/constant';
 import { QueryRuleOPEnum, RulesItem } from '@/typings';
 import dayjs from 'dayjs';
 import { BILL_MAIN_ACCOUNTS_KEY } from '@/constants';
-import pluginHandler from '@pluginHandler/bill-manage';
+import { renderProductComp } from './render-comp.plugin';
 
 export interface ISearchModal {
   vendor: VendorEnum[];
@@ -49,9 +49,6 @@ export default defineComponent({
   emits: ['search'],
   setup(props, { emit, expose }) {
     const { t } = useI18n();
-
-    const { useSearchCompHandler } = pluginHandler;
-    const { productSearchLabel, renderProductComponent } = useSearchCompHandler();
 
     const getDefaultModal = (): ISearchModal => ({
       vendor: props.vendor,
@@ -92,6 +89,8 @@ export default defineComponent({
     const disabledSearch = computed(() => {
       return props.disableSearchHandler(rules.value);
     });
+
+    const { label, render } = renderProductComp(modal);
 
     const handleSearch = () => {
       // 如果搜索条件判定为空, 不触发搜索
@@ -136,8 +135,8 @@ export default defineComponent({
           )}
           {props.searchKeys.includes('product_id') && (
             <div>
-              <div class={cssModule['search-label']}>{productSearchLabel}</div>
-              {renderProductComponent(modal)}
+              <div class={cssModule['search-label']}>{label}</div>
+              {render()}
             </div>
           )}
           {props.searchKeys.includes('main_account_id') && (
