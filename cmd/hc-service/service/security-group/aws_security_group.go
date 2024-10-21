@@ -193,7 +193,11 @@ func (g *securityGroup) AwsSecurityGroupDisassociateCvm(cts *rest.Contexts) (int
 		return nil, err
 	}
 
-	deleteReq := buildSGCvmRelDeleteReq(req.SecurityGroupID, req.CvmID)
+	deleteReq, err := buildSGCvmRelDeleteReq(req.SecurityGroupID, req.CvmID)
+	if err != nil {
+		logs.Errorf("build sg cvm rel delete req failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
 	if err = g.dataCli.Global.SGCvmRel.BatchDeleteSgCvmRels(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
 		logs.Errorf("request dataservice delete security group cvm rels failed, err: %v, req: %+v, rid: %s",
 			err, deleteReq, cts.Kit.Rid)
