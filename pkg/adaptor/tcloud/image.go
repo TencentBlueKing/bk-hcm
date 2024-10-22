@@ -52,15 +52,15 @@ func (t *TCloudImpl) ListImage(kt *kit.Kit,
 		req.Limit = common.Uint64Ptr(uint64(core.TCloudQueryLimit))
 	}
 
+	if len(opt.Filters) != 0 {
+		for _, filter := range opt.Filters {
+			req.Filters = append(req.Filters, filter.ToCvmFilter())
+		}
+	}
+
 	if opt.Page != nil {
 		req.Offset = common.Uint64Ptr(opt.Page.Offset)
 		req.Limit = common.Uint64Ptr(opt.Page.Limit)
-		req.Filters = []*cvm.Filter{
-			{
-				Name:   common.StringPtr("image-type"),
-				Values: common.StringPtrs([]string{"PUBLIC_IMAGE"}),
-			},
-		}
 	}
 
 	resp, err := client.DescribeImagesWithContext(kt.Ctx, req)

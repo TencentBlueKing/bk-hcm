@@ -22,17 +22,26 @@ package account
 import (
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/hooks/handler"
 )
 
 // ListByBkBizID ...
 func (a *accountSvc) ListByBkBizID(cts *rest.Contexts) (interface{}, error) {
 	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
-	accountType := cts.Request.QueryParameter("account_type")
-
 	if err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
+	accountType := cts.Request.QueryParameter("account_type")
+
+	// validate biz and authorize
+	err = handler.BizOperateAuth(cts, &handler.ValidWithAuthOption{Authorizer: a.authorizer, ResType: meta.Biz,
+		Action: meta.Find})
+	if err != nil {
+		return nil, err
+	}
+
 	return a.client.DataService().Global.Account.ListAccountBizRelWithAccount(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
