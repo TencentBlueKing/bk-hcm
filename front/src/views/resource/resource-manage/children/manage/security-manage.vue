@@ -203,6 +203,10 @@ const isCurRowSelectEnable = (row: any) => {
     return row.bk_biz_id === -1;
   }
 };
+const parseTags = (data: any[]) => {
+  if (!data[0]) return '--';
+  return data.map((item) => `${item.Key}: ${item.Value}`).join(';');
+};
 const { selections, handleSelectionChange, resetSelections } = useSelection();
 
 const groupColumns = [
@@ -278,6 +282,12 @@ const groupColumns = [
     field: 'memo',
     isDefaultShow: true,
     render: ({ cell }: any) => (cell ? cell : '--'),
+  },
+  {
+    label: t('标签'),
+    field: 'tags',
+    isDefaultShow: true,
+    render: ({ cell }: any) => parseTags(JSON.parse(cell)),
   },
   {
     label: '是否分配',
