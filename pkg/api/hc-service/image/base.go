@@ -83,7 +83,7 @@ func (req *GcpImageSyncReq) Validate() error {
 // TCloudImageListOption ...
 type TCloudImageListOption struct {
 	AccountID                    string `json:"account_id" validate:"required"`
-	*image.TCloudImageListOption `json:",inline" validate:"required"`
+	*image.TCloudImageListOption `json:",inline"`
 }
 
 // Validate image list option.

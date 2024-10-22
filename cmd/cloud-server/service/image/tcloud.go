@@ -20,32 +20,20 @@
 package image
 
 import (
-	"net/http"
-
-	"hcm/cmd/cloud-server/service/capability"
-	"hcm/pkg/client"
-	"hcm/pkg/iam/auth"
+	"hcm/pkg/api/hc-service/image"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
 
-// InitImageService initialize the image service.
-func InitImageService(c *capability.Capability) {
-	svc := &imageSvc{
-		client:     c.ApiClient,
-		authorizer: c.Authorizer,
+// TCLoudListImage ...
+func (svc *imageSvc) TCLoudListImage(cts *rest.Contexts) (interface{}, error) {
+	req := new(image.TCloudImageListOption)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	h := rest.NewHandler()
-
-	h.Add("GetImage", http.MethodGet, "/vendors/{vendor}/images/{id}", svc.RetrieveImage)
-	h.Add("ListImage", http.MethodPost, "/images/list", svc.ListImage)
-
-	h.Add("TCLoudListImage", http.MethodPost, "/vendors/tcloud/images/list", svc.TCLoudListImage)
-
-	h.Load(c.WebService)
-}
-
-type imageSvc struct {
-	client     *client.ClientSet
-	authorizer auth.Authorizer
+	return svc.client.HCService().TCloud.Image.ListImage(cts.Kit, req)
 }
