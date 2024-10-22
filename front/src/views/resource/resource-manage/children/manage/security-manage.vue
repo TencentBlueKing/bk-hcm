@@ -331,13 +331,13 @@ const groupColumns = [
   // },
   {
     label: t('创建时间'),
-    field: 'created_at',
+    field: 'cloud_created_time',
     sort: true,
     render: ({ cell }: { cell: string }) => timeFormatter(cell),
   },
   {
     label: t('修改时间'),
-    field: 'updated_at',
+    field: 'cloud_update_time',
     sort: true,
     render({ cell }: { cell: string }) {
       return timeFormatter(cell);
