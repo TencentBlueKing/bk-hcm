@@ -25,6 +25,8 @@ import { useRoute } from 'vue-router';
 import { awsSourceAddressTypes, AwsSourceTypeArr } from './add-rule/vendors/aws';
 import { tcloudSourceAddressTypes, TcloudSourceTypeArr } from './add-rule/vendors/tcloud';
 import { huaweiSourceAddressTypes } from './add-rule/vendors/huawei';
+import RuleSort from './security-rule-sort.vue';
+
 const props = defineProps({
   filter: {
     type: Object as PropType<any>,
@@ -61,10 +63,16 @@ const azureDefaultList = ref([]);
 const azureDefaultColumns = ref([]);
 const authVerifyData: any = inject('authVerifyData');
 const isResourcePage: any = inject('isResourcePage');
+const show = ref<Boolean>(false);
 
 const actionName = computed(() => {
   // 资源下没有业务ID
   return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
+});
+// 排序功能目前只在公有云与业务下的自研云实现
+const showSort = computed(() => {
+  const { vendor } = route.query;
+  return vendor === VendorEnum.TCLOUD || (vendor === VendorEnum.ZIYAN && !isResourcePage.value);
 });
 
 const state = reactive<any>({
@@ -144,11 +152,19 @@ const handleSecurityRuleDialog = (data: any) => {
   handleSecurityRule();
 };
 
+// 规则排序抽屉
+const handleSecurityRuleSort = () => {
+  show.value = true;
+};
+
 // 权限弹窗 bus通知最外层弹出
 const showAuthDialog = (authActionName: string) => {
   bus.$emit('auth', authActionName);
 };
 
+const handelSortDone = () => {
+  state.handlePageChange(1);
+};
 // 初始化
 handleSwtichType();
 getList();
@@ -657,6 +673,10 @@ const types = [
             {{ t('新增规则') }}
           </bk-button>
         </div>
+
+        <bk-button icon="plus" v-if="showSort" @click="handleSecurityRuleSort">
+          {{ t('规则排序') }}
+        </bk-button>
       </section>
 
       <div v-if="route.query.vendor === 'azure'" class="mb20">
@@ -759,6 +779,18 @@ const types = [
     >
       <span>删除后不可恢复</span>
     </bk-dialog>
+
+    <bk-sideslider v-model:isShow="show" :title="t('规则排序')" width="640" quick-close>
+      <template #default>
+        <rule-sort
+          :id="props.id"
+          :filter="props.filter"
+          :type="activeType"
+          v-model:show="show"
+          @sort-done="handelSortDone"
+        ></rule-sort>
+      </template>
+    </bk-sideslider>
   </div>
 </template>
 
@@ -766,7 +798,7 @@ const types = [
 .rule-main {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 16px;
 }
 
 .security-empty-container {
