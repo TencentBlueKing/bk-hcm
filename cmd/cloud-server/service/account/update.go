@@ -32,8 +32,8 @@ import (
 	"hcm/pkg/tools/converter"
 )
 
-// Update ...
-func (a *accountSvc) Update(cts *rest.Contexts) (interface{}, error) {
+// UpdateAccount ...
+func (a *accountSvc) UpdateAccount(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AccountUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)

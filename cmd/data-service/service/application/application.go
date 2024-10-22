@@ -48,10 +48,10 @@ func InitApplicationService(cap *capability.Capability) {
 	}
 	h := rest.NewHandler()
 
-	h.Add("Create", "POST", "/applications/create", svc.Create)
-	h.Add("Update", "PATCH", "/applications/{application_id}", svc.Update)
-	h.Add("Get", "GET", "/applications/{application_id}", svc.Get)
-	h.Add("List", "POST", "/applications/list", svc.List)
+	h.Add("CreateApplication", "POST", "/applications/create", svc.CreateApplication)
+	h.Add("UpdateApplication", "PATCH", "/applications/{application_id}", svc.UpdateApplication)
+	h.Add("GetApplication", "GET", "/applications/{application_id}", svc.GetApplication)
+	h.Add("ListApplication", "POST", "/applications/list", svc.ListApplication)
 
 	h.Load(cap.WebService)
 }
@@ -60,7 +60,8 @@ type applicationSvc struct {
 	dao dao.Set
 }
 
-func (svc *applicationSvc) Create(cts *rest.Contexts) (interface{}, error) {
+// CreateApplication ...
+func (svc *applicationSvc) CreateApplication(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.ApplicationCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -104,7 +105,8 @@ func (svc *applicationSvc) Create(cts *rest.Contexts) (interface{}, error) {
 	return &core.CreateResult{ID: id}, nil
 }
 
-func (svc *applicationSvc) Update(cts *rest.Contexts) (interface{}, error) {
+// UpdateApplication ...
+func (svc *applicationSvc) UpdateApplication(cts *rest.Contexts) (interface{}, error) {
 	applicationID := cts.PathParameter("application_id").String()
 
 	req := new(proto.ApplicationUpdateReq)
@@ -155,7 +157,8 @@ func (svc *applicationSvc) convertToApplicationResp(
 	}
 }
 
-func (svc *applicationSvc) List(cts *rest.Contexts) (interface{}, error) {
+// ListApplication ...
+func (svc *applicationSvc) ListApplication(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.ApplicationListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -186,7 +189,8 @@ func (svc *applicationSvc) List(cts *rest.Contexts) (interface{}, error) {
 	return &proto.ApplicationListResult{Details: details}, nil
 }
 
-func (svc *applicationSvc) Get(cts *rest.Contexts) (interface{}, error) {
+// GetApplication ...
+func (svc *applicationSvc) GetApplication(cts *rest.Contexts) (interface{}, error) {
 	applicationID := cts.PathParameter("application_id").String()
 
 	opt := &types.ListOption{

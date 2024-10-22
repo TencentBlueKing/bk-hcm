@@ -28,8 +28,8 @@ import (
 	"hcm/pkg/rest"
 )
 
-// Get ...
-func (a *applicationSvc) Get(cts *rest.Contexts) (interface{}, error) {
+// GetApplication ...
+func (a *applicationSvc) GetApplication(cts *rest.Contexts) (interface{}, error) {
 	applicationID := cts.PathParameter("application_id").String()
 
 	application, err := a.client.DataService().Global.Application.Get(cts.Kit.Ctx, cts.Kit.Header(), applicationID)

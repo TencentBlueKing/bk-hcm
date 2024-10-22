@@ -27,8 +27,8 @@ import (
 	"hcm/pkg/rest"
 )
 
-// Cancel ...
-func (a *applicationSvc) Cancel(cts *rest.Contexts) (interface{}, error) {
+// CancelApplication ...
+func (a *applicationSvc) CancelApplication(cts *rest.Contexts) (interface{}, error) {
 	applicationID := cts.PathParameter("application_id").String()
 	application, err := a.client.DataService().Global.Application.Get(cts.Kit.Ctx, cts.Kit.Header(), applicationID)
 	if err != nil {

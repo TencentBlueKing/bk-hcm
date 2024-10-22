@@ -59,9 +59,9 @@ func InitApplicationService(c *capability.Capability, bkHcmUrl string) {
 	}
 	h := rest.NewHandler()
 	h.Add("ListApplications", "POST", "/applications/list", svc.ListApplications)
-	h.Add("Get", "GET", "/applications/{application_id}", svc.Get)
-	h.Add("Cancel", "PATCH", "/applications/{application_id}/cancel", svc.Cancel)
-	h.Add("Approve", "POST", "/applications/approve", svc.Approve)
+	h.Add("GetApplication", "GET", "/applications/{application_id}", svc.GetApplication)
+	h.Add("CancelApplication", "PATCH", "/applications/{application_id}/cancel", svc.CancelApplication)
+	h.Add("ApproveApplication", "POST", "/applications/approve", svc.ApproveApplication)
 
 	h.Add("CreateForAddAccount", "POST", "/applications/types/add_account", svc.CreateForAddAccount)
 	h.Add("CreateForCreateCvm", "POST", "/vendors/{vendor}/applications/types/create_cvm", svc.CreateForCreateCvm)
