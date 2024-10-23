@@ -31,11 +31,23 @@ export const base: ISearchItem[] = [
 
 export const cvm: ISearchItem[] = [
   {
+    name: '内网IP',
+    id: 'private_ip',
+  },
+  {
+    name: '公网IP',
+    id: 'public_ip',
+  },
+  {
     name: '主机ID',
     id: 'cloud_id',
   },
   ...base,
   ...[
+    {
+      name: '云地域',
+      id: 'region',
+    },
     {
       name: '管控区域',
       id: 'bk_cloud_id',
@@ -43,18 +55,6 @@ export const cvm: ISearchItem[] = [
     {
       name: '操作系统',
       id: 'os_name',
-    },
-    {
-      name: '云地域',
-      id: 'region',
-    },
-    {
-      name: '公网IP',
-      id: 'public_ip',
-    },
-    {
-      name: '内网IP',
-      id: 'private_ip',
     },
     {
       name: '所属VPC',
