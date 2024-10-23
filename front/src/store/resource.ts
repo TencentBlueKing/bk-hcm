@@ -28,6 +28,15 @@ export const useResourceStore = defineStore({
     setVendorOfCurrentResource(vendorName: VendorEnum) {
       this.vendorOfCurrentResource = vendorName;
     },
+    // 更新安全组规则排序
+    updateRulesSort(data: any, type: string, id: string) {
+      return http.put(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(
+          type,
+        )}vendors/${type}/security_groups/${id}/rules/batch/update`,
+        data,
+      );
+    },
     /**
      * @description: 获取资源列表
      * @param {any} data
