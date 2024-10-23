@@ -10,6 +10,7 @@ import useFormModel from '@/hooks/useFormModel';
 import { BILL_VENDORS_MAP } from '@/views/bill/account/account-manage/constants';
 import { SITE_TYPE_MAP } from '@/common/constant';
 import { VendorAccountNameMap } from './constants';
+import { useVerify } from '@/hooks';
 
 const { FormItem } = Form;
 const { Option } = Select;
@@ -90,23 +91,20 @@ export default defineComponent({
       extension: computedExtension.value, // 不同云厂商的信息
     });
 
+    const { authVerifyData } = useVerify();
+    const hasRootAccountFindPermission = computed(() => authVerifyData.value?.permissionAction?.root_account_find);
+
     onMounted(async () => {
-      const { data } = await billStore.root_accounts_list({
-        filter: {
-          op: 'and',
-          rules: [],
-        },
-        page: {
-          limit: 500,
-          start: 0,
-          count: false,
-        },
-      });
-      rootAccountList.value = data.details.map((v: any) => ({
-        name: v.name,
-        id: v.id,
-        key: v.id,
-      }));
+      // 有权限才获取列表
+      if (hasRootAccountFindPermission.value) {
+        const { data } = await billStore.root_accounts_list({
+          filter: { op: 'and', rules: [] },
+          page: { limit: 500, start: 0, count: false },
+        });
+        rootAccountList.value = data.details.map((v: any) => ({ name: v.name, id: v.id, key: v.id }));
+      } else {
+        rootAccountList.value = [];
+      }
     });
 
     return () => (
