@@ -2,12 +2,13 @@ import { RESOURCES_SYNC_STATUS_MAP, RESOURCE_TYPES_MAP } from '@/common/constant
 import http from '@/http';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { Loading, Table } from 'bkui-vue';
-import { defineComponent, ref, watch } from 'vue';
+import { defineComponent, ref, watch, onBeforeUnmount, reactive } from 'vue';
 import successStatus from '@/assets/image/success-account.png';
 import failedStatus from '@/assets/image/failed-account.png';
 import loadingStatus from '@/assets/image/status_loading.png';
 import './index.scss';
 import { timeFormatter } from '@/common/util';
+import interval from '@/utils/interval';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 export default defineComponent({
@@ -15,6 +16,11 @@ export default defineComponent({
     const resourceAccountStore = useResourceAccountStore();
     const statusList = ref([]);
     const isLoading = ref(false);
+    const timeInterval = reactive({
+      set: null,
+      clear: null,
+    });
+
     const tableColumns = [
       {
         label: '资源名称',
@@ -55,17 +61,33 @@ export default defineComponent({
         // rowspan: 7,
       },
     ];
+    const init = () => {
+      timeInterval.clear();
+      timeInterval.set();
+    };
+    const getList = async (account: any) => {
+      if (!account?.id) return;
+      isLoading.value = true;
+      try {
+        const res = await http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/sync_details/${account.id}`);
+        statusList.value = res.data.iass_res;
+      } finally {
+        isLoading.value = false;
+      }
+    };
+    onBeforeUnmount(() => {
+      timeInterval?.clear();
+    });
     watch(
       () => resourceAccountStore.resourceAccount,
       async (account) => {
-        if (!account?.id) return;
-        isLoading.value = true;
-        try {
-          const res = await http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/sync_details/${account.id}`);
-          statusList.value = res.data.iass_res;
-        } finally {
-          isLoading.value = false;
+        getList(account);
+        if (!timeInterval.set) {
+          const { clearTimeInterval, setTimeInterval } = interval(() => getList(account), 10000, 600000);
+          timeInterval.set = setTimeInterval;
+          timeInterval.clear = clearTimeInterval;
         }
+        init();
       },
       {
         immediate: true,
