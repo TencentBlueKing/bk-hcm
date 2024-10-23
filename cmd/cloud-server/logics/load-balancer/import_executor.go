@@ -84,12 +84,15 @@ func NewImportExecutor(operationType OperationType, dataCli *dataservice.Client,
 	}
 }
 
-func buildSyncClbFlowTask(lbCloudID, accountID, region string, generator func() (cur string, prev string)) ts.CustomFlowTask {
+func buildSyncClbFlowTask(vendor enumor.Vendor, lbCloudID, accountID, region string,
+	generator func() (cur string, prev string)) ts.CustomFlowTask {
+
 	cur, prev := generator()
 	tmpTask := ts.CustomFlowTask{
 		ActionID:   action.ActIDType(cur),
 		ActionName: enumor.ActionSyncTCloudLoadBalancer,
 		Params: &actionlb.SyncTCloudLoadBalancerOption{
+			Vendor: vendor,
 			TCloudSyncReq: &sync.TCloudSyncReq{
 				AccountID: accountID,
 				Region:    region,

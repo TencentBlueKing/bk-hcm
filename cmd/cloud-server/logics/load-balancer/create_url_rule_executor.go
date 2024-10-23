@@ -188,7 +188,7 @@ func (c *CreateUrlRuleExecutor) buildFlow(kt *kit.Kit, lb corelb.BaseLoadBalance
 	}
 
 	actionIDGenerator := counter.NewNumberCounterWithPrev(1, 10)
-	result := []ts.CustomFlowTask{buildSyncClbFlowTask(lb.CloudID, c.accountID, lb.Region, actionIDGenerator)}
+	result := []ts.CustomFlowTask{buildSyncClbFlowTask(c.vendor, lb.CloudID, c.accountID, lb.Region, actionIDGenerator)}
 	for lblID, taskDetails := range listenerToDetails {
 		tasks, err := c.buildFlowTask(lb.ID, lblID, taskDetails, actionIDGenerator)
 		if err != nil {
@@ -197,7 +197,7 @@ func (c *CreateUrlRuleExecutor) buildFlow(kt *kit.Kit, lb corelb.BaseLoadBalance
 		}
 		result = append(result, tasks...)
 	}
-	result = append(result, buildSyncClbFlowTask(lb.CloudID, c.accountID, lb.Region, actionIDGenerator))
+	result = append(result, buildSyncClbFlowTask(c.vendor, lb.CloudID, c.accountID, lb.Region, actionIDGenerator))
 
 	_, err = checkResFlowRel(kt, c.dataServiceCli, lb.ID, enumor.LoadBalancerCloudResType)
 	if err != nil {

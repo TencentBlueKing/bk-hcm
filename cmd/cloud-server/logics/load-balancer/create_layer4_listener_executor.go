@@ -265,7 +265,7 @@ func (c *CreateLayer4ListenerExecutor) buildTCloudFlowTask(lbID, lbCloudID, regi
 	details []*createLayer4ListenerTaskDetail) []ts.CustomFlowTask {
 
 	actionIDGenerator := counter.NewNumberCounterWithPrev(1, 10)
-	result := []ts.CustomFlowTask{buildSyncClbFlowTask(lbCloudID, c.accountID, region, actionIDGenerator)}
+	result := []ts.CustomFlowTask{buildSyncClbFlowTask(c.vendor, lbCloudID, c.accountID, region, actionIDGenerator)}
 	for _, taskDetails := range slice.Split(details, constant.BatchTaskMaxLimit) {
 		cur, prev := actionIDGenerator()
 
@@ -308,7 +308,7 @@ func (c *CreateLayer4ListenerExecutor) buildTCloudFlowTask(lbID, lbCloudID, regi
 			detail.actionID = cur
 		}
 	}
-	result = append(result, buildSyncClbFlowTask(lbCloudID, c.accountID, region, actionIDGenerator))
+	result = append(result, buildSyncClbFlowTask(c.vendor, lbCloudID, c.accountID, region, actionIDGenerator))
 	return result
 }
 
