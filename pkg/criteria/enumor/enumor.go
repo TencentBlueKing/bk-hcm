@@ -44,8 +44,9 @@ const (
 
 // RequestSourceEnums request type map.
 var RequestSourceEnums = map[RequestSourceType]bool{
-	ApiCall:        true,
-	BackgroundSync: true,
+	ApiCall:           true,
+	BackgroundSync:    true,
+	AsynchronousTasks: true,
 }
 
 // Exist judge enum value exist.
