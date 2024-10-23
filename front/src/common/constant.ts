@@ -12,7 +12,6 @@ export enum VendorEnum {
   GCP = 'gcp',
   HUAWEI = 'huawei',
   ZENLAYER = 'zenlayer',
-  ZIYAN = 'tcloud-ziyan',
   KAOPU = 'kaopu',
 }
 

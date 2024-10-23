@@ -72,7 +72,7 @@ const actionName = computed(() => {
 // 排序功能目前只在公有云与业务下的自研云实现
 const showSort = computed(() => {
   const { vendor } = route.query;
-  return vendor === VendorEnum.TCLOUD || (vendor === VendorEnum.ZIYAN && !isResourcePage.value);
+  return vendor === VendorEnum.TCLOUD;
 });
 
 const state = reactive<any>({
