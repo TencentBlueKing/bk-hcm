@@ -18,7 +18,7 @@ metadata:
       rewrite ^/api/(.*)$ /web/api/$1 last;
     {{- end }}
 spec:
-   rules:
+  rules:
     - host: {{ .Values.ingress.host }}
       http:
         paths:
