@@ -144,7 +144,7 @@ func (svc *securityGroupSvc) queryAssociateCvmCount(kt *kit.Kit, id string) (uin
 		Filter: tools.EqualExpression("security_group_id", id),
 		Page:   core.NewCountPage(),
 	}
-	cvmRelResult, err := svc.client.DataService().Global.SGCvmRel.List(kt.Ctx, kt.Header(), cvmRelOpt)
+	cvmRelResult, err := svc.client.DataService().Global.SGCvmRel.ListSgCvmRels(kt.Ctx, kt.Header(), cvmRelOpt)
 	if err != nil {
 		return 0, err
 	}

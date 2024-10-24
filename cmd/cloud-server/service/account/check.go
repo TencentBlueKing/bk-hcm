@@ -37,8 +37,8 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
-// Check account for RegistrationAccount，for backward compatibility
-func (a *accountSvc) Check(cts *rest.Contexts) (interface{}, error) {
+// CheckAccount account for RegistrationAccount，for backward compatibility
+func (a *accountSvc) CheckAccount(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.AccountCheckReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)

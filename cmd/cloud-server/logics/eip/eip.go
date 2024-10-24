@@ -347,7 +347,7 @@ func (e *eip) getIpNicMap(kt *kit.Kit, cvmIds []string) (map[string]string,
 		return map[string]string{}, nil
 	}
 	// 获取网卡ID
-	nicRelResp, err := e.client.DataService().Global.NetworkInterfaceCvmRel.List(kt,
+	nicRelResp, err := e.client.DataService().Global.NetworkInterfaceCvmRel.ListNetworkCvmRels(kt,
 		&core.ListReq{Filter: tools.ContainersExpression("cvm_id", cvmIds),
 			Page: core.NewDefaultBasePage()})
 	if err != nil {

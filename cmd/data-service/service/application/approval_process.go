@@ -46,9 +46,10 @@ func InitApprovalProcessService(cap *capability.Capability) {
 	}
 	h := rest.NewHandler()
 
-	h.Add("Create", "POST", "/approval_processes/create", svc.Create)
-	h.Add("Update", "PATCH", "/approval_processes/{approval_process_id}", svc.Update)
-	h.Add("List", "POST", "/approval_processes/list", svc.List)
+	h.Add("CreateApprovalProcesses", "POST", "/approval_processes/create", svc.CreateApprovalProcesses)
+	h.Add("UpdateApprovalProcesses", "PATCH", "/approval_processes/{approval_process_id}",
+		svc.UpdateApprovalProcesses)
+	h.Add("ListApprovalProcesses", "POST", "/approval_processes/list", svc.ListApprovalProcesses)
 
 	h.Load(cap.WebService)
 }
@@ -57,7 +58,8 @@ type approvalProcessSvc struct {
 	dao dao.Set
 }
 
-func (svc *approvalProcessSvc) Create(cts *rest.Contexts) (interface{}, error) {
+// CreateApprovalProcesses ...
+func (svc *approvalProcessSvc) CreateApprovalProcesses(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.ApprovalProcessCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -94,7 +96,8 @@ func (svc *approvalProcessSvc) Create(cts *rest.Contexts) (interface{}, error) {
 	return &core.CreateResult{ID: id}, nil
 }
 
-func (svc *approvalProcessSvc) Update(cts *rest.Contexts) (interface{}, error) {
+// UpdateApprovalProcesses ...
+func (svc *approvalProcessSvc) UpdateApprovalProcesses(cts *rest.Contexts) (interface{}, error) {
 	approvalProcessID := cts.PathParameter("approval_process_id").String()
 
 	req := new(proto.ApprovalProcessUpdateReq)
@@ -136,7 +139,8 @@ func (svc *approvalProcessSvc) convertToApprovalProcessResp(
 	}
 }
 
-func (svc *approvalProcessSvc) List(cts *rest.Contexts) (interface{}, error) {
+// ListApprovalProcesses ...
+func (svc *approvalProcessSvc) ListApprovalProcesses(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.ApprovalProcessListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err

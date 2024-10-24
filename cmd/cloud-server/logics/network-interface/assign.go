@@ -93,7 +93,7 @@ func ValidateBeforeAssign(kt *kit.Kit, cli *dataservice.Client, targetBizId int6
 		Filter: tools.ContainersExpression("network_interface_id", ids),
 		Page:   core.NewDefaultBasePage(),
 	}
-	listRelResp, err := cli.Global.NetworkInterfaceCvmRel.List(kt, listRelReq)
+	listRelResp, err := cli.Global.NetworkInterfaceCvmRel.ListNetworkCvmRels(kt, listRelReq)
 	if err != nil {
 		logs.Errorf("list network_interface cvm rel failed, err: %v, rid: %s", err, kt.Rid)
 		return err

@@ -151,7 +151,7 @@ func handleDeliverCvm(kt *kit.Kit, dsCli *dataservice.Client, tsCli *taskserver.
 		Status:         state,
 		DeliveryDetail: converter.ValToPtr(string(marshal)),
 	}
-	if _, err := dsCli.Global.Application.Update(kt, app.ID, req); err != nil {
+	if _, err := dsCli.Global.Application.UpdateApplication(kt, app.ID, req); err != nil {
 		logs.Errorf("update application failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
@@ -287,7 +287,7 @@ func queryDeliveringApplication(kt *kit.Kit, cli *dataservice.Client) ([]*ds.App
 		},
 		Page: core.NewDefaultBasePage(),
 	}
-	result, err := cli.Global.Application.List(kt, req)
+	result, err := cli.Global.Application.ListApplication(kt, req)
 	if err != nil {
 		logs.Errorf("list application failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err

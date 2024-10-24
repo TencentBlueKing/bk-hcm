@@ -42,17 +42,17 @@ func InitAccountService(c *capability.Capability) {
 
 	h := rest.NewHandler()
 	// 兼容登记账号校验，过渡方案，后期去除
-	h.Add("Check", http.MethodPost, "/accounts/check", svc.Check)
+	h.Add("CheckAccount", http.MethodPost, "/accounts/check", svc.CheckAccount)
 
 	h.Add("GetResCountBySecret", http.MethodPost, "/vendors/{vendor}/accounts/res_counts/by_secrets",
 		svc.GetResCountBySecret)
 	h.Add("GetAccountBySecret", http.MethodPost, "/vendors/{vendor}/accounts/secret", svc.GetAccountBySecret)
 	h.Add("CheckByID", http.MethodPost, "/accounts/{account_id}/check", svc.CheckByID)
-	h.Add("List", http.MethodPost, "/accounts/list", svc.List)
+	h.Add("ListAccount", http.MethodPost, "/accounts/list", svc.ListAccount)
 	h.Add("ResourceList", http.MethodPost, "/accounts/resources/accounts/list", svc.ResourceList)
-	h.Add("Get", http.MethodGet, "/accounts/{account_id}", svc.Get)
+	h.Add("GetAccount", http.MethodGet, "/accounts/{account_id}", svc.GetAccount)
 	h.Add("GetSyncDetail", http.MethodGet, "/accounts/sync_details/{account_id}", svc.GetSyncDetail)
-	h.Add("Update", http.MethodPatch, "/accounts/{account_id}", svc.Update)
+	h.Add("UpdateAccount", http.MethodPatch, "/accounts/{account_id}", svc.UpdateAccount)
 	h.Add("SyncCloudResource", http.MethodPost, "/accounts/{account_id}/sync", svc.SyncCloudResource)
 	h.Add("DeleteAccount", http.MethodDelete, "/accounts/{account_id}", svc.DeleteAccount)
 	h.Add("DeleteValidate", http.MethodPost, "/accounts/{account_id}/delete/validate", svc.DeleteValidate)

@@ -136,7 +136,7 @@ func GetCvmRelResIDs(kt *kit.Kit, cli *dataservice.Client, ids []string) (
 		Filter: tools.ContainersExpression("cvm_id", ids),
 		Page:   core.NewDefaultBasePage(),
 	}
-	niResp, err := cli.Global.NetworkInterfaceCvmRel.List(kt, listRelReq)
+	niResp, err := cli.Global.NetworkInterfaceCvmRel.ListNetworkCvmRels(kt, listRelReq)
 	if err != nil {
 		logs.Errorf("list network_interface cvm rel failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, nil, nil, err

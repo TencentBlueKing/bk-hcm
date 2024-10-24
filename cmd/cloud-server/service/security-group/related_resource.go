@@ -66,7 +66,7 @@ func (svc *securityGroupSvc) listResourceIdBySecurityGroup(cts *rest.Contexts, v
 		return nil, err
 	}
 
-	return svc.client.DataService().Global.SGCommonRel.List(cts.Kit, req)
+	return svc.client.DataService().Global.SGCommonRel.ListSgCommonRels(cts.Kit, req)
 }
 
 // ListCvmIdBySecurityGroup list cvm id by security group
@@ -106,5 +106,5 @@ func (svc *securityGroupSvc) listCvmIDBySecurityGroup(cts *rest.Contexts, validH
 		return nil, err
 	}
 
-	return svc.client.DataService().Global.SGCvmRel.List(cts.Kit.Ctx, cts.Kit.Header(), req)
+	return svc.client.DataService().Global.SGCvmRel.ListSgCvmRels(cts.Kit.Ctx, cts.Kit.Header(), req)
 }

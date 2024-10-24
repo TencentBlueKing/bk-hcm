@@ -57,7 +57,7 @@ func NewAzure(client *client.ClientSet, authorizer auth.Authorizer, audit audit.
 // AssociateEip associate eip.
 func (a *Azure) AssociateEip(cts *rest.Contexts, accountID string, req *cloudproto.AssociateReq) (interface{}, error) {
 
-	rels, err := a.client.DataService().Global.NetworkInterfaceCvmRel.List(
+	rels, err := a.client.DataService().Global.NetworkInterfaceCvmRel.ListNetworkCvmRels(
 		cts.Kit,
 		&core.ListReq{
 			Filter: tools.EqualExpression("network_interface_id", req.NetworkInterfaceID),
@@ -163,7 +163,7 @@ func (a *Azure) RetrieveEip(cts *rest.Contexts, eipID string, cvmID string) (*cl
 		return &cloudproto.AzureEipExtResult{EipExtResult: eipResp, CvmID: cvmID}, nil
 	}
 
-	rels, err := a.client.DataService().Global.NetworkInterfaceCvmRel.List(
+	rels, err := a.client.DataService().Global.NetworkInterfaceCvmRel.ListNetworkCvmRels(
 		cts.Kit,
 		&core.ListReq{Filter: tools.ContainersExpression("cvm_id", []string{cvmID}), Page: core.NewDefaultBasePage()},
 	)

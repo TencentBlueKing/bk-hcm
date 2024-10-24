@@ -41,8 +41,8 @@ func NewApprovalProcessClient(client rest.ClientInterface) *ApprovalProcessClien
 	}
 }
 
-// Create ...
-func (a *ApprovalProcessClient) Create(ctx context.Context, h http.Header, request *proto.ApplicationCreateReq) (
+// CreateApprovalProcesses ...
+func (a *ApprovalProcessClient) CreateApprovalProcesses(ctx context.Context, h http.Header, request *proto.ApplicationCreateReq) (
 	*core.CreateResult, error,
 ) {
 	resp := new(core.CreateResp)
@@ -65,8 +65,8 @@ func (a *ApprovalProcessClient) Create(ctx context.Context, h http.Header, reque
 	return resp.Data, nil
 }
 
-// Update ...
-func (a *ApprovalProcessClient) Update(ctx context.Context, h http.Header,
+// UpdateApprovalProcesses ...
+func (a *ApprovalProcessClient) UpdateApprovalProcesses(ctx context.Context, h http.Header,
 	approvalProcessID string, request *proto.ApprovalProcessUpdateReq) (
 	interface{}, error,
 ) {
@@ -90,8 +90,8 @@ func (a *ApprovalProcessClient) Update(ctx context.Context, h http.Header,
 	return resp.Data, nil
 }
 
-// List ...
-func (a *ApprovalProcessClient) List(ctx context.Context, h http.Header, request *proto.ApprovalProcessListReq) (
+// ListApprovalProcesses ...
+func (a *ApprovalProcessClient) ListApprovalProcesses(ctx context.Context, h http.Header, request *proto.ApprovalProcessListReq) (
 	*proto.ApprovalProcessListResult, error,
 ) {
 	resp := new(proto.ApprovalProcessListResp)

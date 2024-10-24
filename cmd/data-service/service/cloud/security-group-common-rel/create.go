@@ -35,8 +35,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// BatchCreate rels.
-func (svc *sgComRelSvc) BatchCreate(cts *rest.Contexts) (interface{}, error) {
+// BatchCreateSgCommonRels rels.
+func (svc *sgComRelSvc) BatchCreateSgCommonRels(cts *rest.Contexts) (interface{}, error) {
 	req := new(protocloud.SGCommonRelBatchCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -73,8 +73,8 @@ func (svc *sgComRelSvc) BatchCreate(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
-// BatchUpsert rels.
-func (svc *sgComRelSvc) BatchUpsert(cts *rest.Contexts) (interface{}, error) {
+// BatchUpsertSgCommonRels rels.
+func (svc *sgComRelSvc) BatchUpsertSgCommonRels(cts *rest.Contexts) (interface{}, error) {
 	req := new(protocloud.SGCommonRelBatchUpsertReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)

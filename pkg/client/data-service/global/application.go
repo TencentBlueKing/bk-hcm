@@ -42,8 +42,8 @@ func NewApplicationClient(client rest.ClientInterface) *ApplicationClient {
 	}
 }
 
-// Create ...
-func (a *ApplicationClient) Create(ctx context.Context, h http.Header, request *proto.ApplicationCreateReq) (
+// CreateApplication ...
+func (a *ApplicationClient) CreateApplication(ctx context.Context, h http.Header, request *proto.ApplicationCreateReq) (
 	*core.CreateResult, error,
 ) {
 	resp := new(core.CreateResp)
@@ -66,8 +66,8 @@ func (a *ApplicationClient) Create(ctx context.Context, h http.Header, request *
 	return resp.Data, nil
 }
 
-// Update ...
-func (a *ApplicationClient) Update(kt *kit.Kit, id string, request *proto.ApplicationUpdateReq) (interface{}, error) {
+// UpdateApplication ...
+func (a *ApplicationClient) UpdateApplication(kt *kit.Kit, id string, request *proto.ApplicationUpdateReq) (interface{}, error) {
 	resp := new(core.UpdateResp)
 
 	err := a.client.Patch().
@@ -88,8 +88,8 @@ func (a *ApplicationClient) Update(kt *kit.Kit, id string, request *proto.Applic
 	return resp.Data, nil
 }
 
-// Get ...
-func (a *ApplicationClient) Get(ctx context.Context, h http.Header, applicationID string) (
+// GetApplication ...
+func (a *ApplicationClient) GetApplication(ctx context.Context, h http.Header, applicationID string) (
 	*proto.ApplicationResp, error,
 ) {
 	resp := new(proto.ApplicationGetResp)
@@ -111,8 +111,8 @@ func (a *ApplicationClient) Get(ctx context.Context, h http.Header, applicationI
 	return resp.Data, nil
 }
 
-// List ...
-func (a *ApplicationClient) List(kt *kit.Kit, request *proto.ApplicationListReq) (
+// ListApplication ...
+func (a *ApplicationClient) ListApplication(kt *kit.Kit, request *proto.ApplicationListReq) (
 	*proto.ApplicationListResult, error,
 ) {
 	resp := new(proto.ApplicationListResp)

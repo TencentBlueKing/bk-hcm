@@ -43,8 +43,8 @@ type SGCvmRelClient struct {
 	client rest.ClientInterface
 }
 
-// BatchCreate security group cvm rels.
-func (cli *SGCvmRelClient) BatchCreate(ctx context.Context, h http.Header,
+// BatchCreateSgCvmRels security group cvm rels.
+func (cli *SGCvmRelClient) BatchCreateSgCvmRels(ctx context.Context, h http.Header,
 	request *protocloud.SGCvmRelBatchCreateReq) error {
 
 	resp := new(rest.BaseResp)
@@ -67,8 +67,8 @@ func (cli *SGCvmRelClient) BatchCreate(ctx context.Context, h http.Header,
 	return nil
 }
 
-// BatchDelete security group cvm rels.
-func (cli *SGCvmRelClient) BatchDelete(ctx context.Context, h http.Header, request *proto.BatchDeleteReq) error {
+// BatchDeleteSgCvmRels security group cvm rels.
+func (cli *SGCvmRelClient) BatchDeleteSgCvmRels(ctx context.Context, h http.Header, request *proto.BatchDeleteReq) error {
 
 	resp := new(rest.BaseResp)
 
@@ -90,8 +90,8 @@ func (cli *SGCvmRelClient) BatchDelete(ctx context.Context, h http.Header, reque
 	return nil
 }
 
-// List security group cvm rels.
-func (cli *SGCvmRelClient) List(ctx context.Context, h http.Header, request *core.ListReq) (
+// ListSgCvmRels security group cvm rels.
+func (cli *SGCvmRelClient) ListSgCvmRels(ctx context.Context, h http.Header, request *core.ListReq) (
 	*protocloud.SGCvmRelListResult, error) {
 
 	resp := new(protocloud.SGCvmRelListResp)

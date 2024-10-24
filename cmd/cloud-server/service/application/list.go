@@ -95,7 +95,7 @@ func (a *applicationSvc) ListBizApplications(cts *rest.Contexts) (interface{}, e
 }
 
 func (a *applicationSvc) listApplications(cts *rest.Contexts, req *proto.ApplicationListReq) (interface{}, error) {
-	resp, err := a.client.DataService().Global.Application.List(
+	resp, err := a.client.DataService().Global.Application.ListApplication(
 		cts.Kit,
 		&dataproto.ApplicationListReq{
 			Filter: req.Filter,

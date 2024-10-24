@@ -150,7 +150,7 @@ func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
 		bkBizIDs = handler.GetBkBizIDs()
 	}
 
-	result, err := a.client.DataService().Global.Application.Create(
+	result, err := a.client.DataService().Global.Application.CreateApplication(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&dataproto.ApplicationCreateReq{

@@ -57,8 +57,8 @@ import (
 	"hcm/pkg/tools/json"
 )
 
-// Approve ...
-func (a *applicationSvc) Approve(cts *rest.Contexts) (interface{}, error) {
+// ApproveApplication ...
+func (a *applicationSvc) ApproveApplication(cts *rest.Contexts) (interface{}, error) {
 	// Note: 由于该接口时给ITSM回调的，一般没什么反馈，这将任何错误到记录到日志里
 	_, err := a.approve(cts)
 	if err != nil {

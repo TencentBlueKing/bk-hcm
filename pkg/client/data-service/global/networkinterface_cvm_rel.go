@@ -43,8 +43,8 @@ type NetworkInterfaceCvmRelClient struct {
 	client rest.ClientInterface
 }
 
-// BatchCreate create networkinterface cvm rels.
-func (cli *NetworkInterfaceCvmRelClient) BatchCreate(ctx context.Context, h http.Header,
+// BatchCreateNetworkCvmRels create networkinterface cvm rels.
+func (cli *NetworkInterfaceCvmRelClient) BatchCreateNetworkCvmRels(ctx context.Context, h http.Header,
 	request *protocloud.NetworkInterfaceCvmRelBatchCreateReq) error {
 
 	resp := new(rest.BaseResp)
@@ -67,8 +67,8 @@ func (cli *NetworkInterfaceCvmRelClient) BatchCreate(ctx context.Context, h http
 	return nil
 }
 
-// BatchDelete delete networkinterface cvm rels.
-func (cli *NetworkInterfaceCvmRelClient) BatchDelete(ctx context.Context, h http.Header,
+// BatchDeleteNetworkCvmRels delete networkinterface cvm rels.
+func (cli *NetworkInterfaceCvmRelClient) BatchDeleteNetworkCvmRels(ctx context.Context, h http.Header,
 	request *proto.BatchDeleteReq) error {
 
 	resp := new(rest.BaseResp)
@@ -91,8 +91,8 @@ func (cli *NetworkInterfaceCvmRelClient) BatchDelete(ctx context.Context, h http
 	return nil
 }
 
-// List list networkinterface cvm rels.
-func (cli *NetworkInterfaceCvmRelClient) List(kt *kit.Kit, request *core.ListReq) (
+// ListNetworkCvmRels list networkinterface cvm rels.
+func (cli *NetworkInterfaceCvmRelClient) ListNetworkCvmRels(kt *kit.Kit, request *core.ListReq) (
 	*protocloud.NetworkInterfaceCvmRelListResult, error) {
 
 	resp := new(protocloud.NetworkInterfaceCvmRelListResp)
