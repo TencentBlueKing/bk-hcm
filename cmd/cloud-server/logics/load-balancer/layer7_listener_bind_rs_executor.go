@@ -189,7 +189,7 @@ func (c *Layer7ListenerBindRSExecutor) buildFlow(kt *kit.Kit, lb corelb.BaseLoad
 	}
 
 	actionIDGenerator := counter.NewNumberCounterWithPrev(1, 10)
-	flowTasks := []ts.CustomFlowTask{buildSyncClbFlowTask(lb.CloudID, c.accountID, lb.Region, actionIDGenerator)}
+	flowTasks := []ts.CustomFlowTask{buildSyncClbFlowTask(c.vendor, lb.CloudID, c.accountID, lb.Region, actionIDGenerator)}
 	for targetGroupID, detailList := range tgToDetails {
 		tmpTask, err := c.buildFlowTask(kt, lb, targetGroupID, detailList, actionIDGenerator,
 			tgToListenerCloudIDs, tgToCloudRuleIDs)
@@ -199,7 +199,7 @@ func (c *Layer7ListenerBindRSExecutor) buildFlow(kt *kit.Kit, lb corelb.BaseLoad
 		}
 		flowTasks = append(flowTasks, tmpTask...)
 	}
-	flowTasks = append(flowTasks, buildSyncClbFlowTask(lb.CloudID, c.accountID, lb.Region, actionIDGenerator))
+	flowTasks = append(flowTasks, buildSyncClbFlowTask(c.vendor, lb.CloudID, c.accountID, lb.Region, actionIDGenerator))
 
 	_, err = checkResFlowRel(kt, c.dataServiceCli, lb.ID, enumor.LoadBalancerCloudResType)
 	if err != nil {
