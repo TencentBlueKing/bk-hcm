@@ -75,7 +75,7 @@ func (hd *imageHandler) Next(kt *kit.Kit) ([]string, error) {
 		Filters: []image.TCloudImageFilter{
 			{
 				Name:   "image-type",
-				Values: common.StringPtrs([]string{string(enumor.PublicImage)}),
+				Values: common.StringPtrs([]string{string(enumor.TCloudPublicImage)}),
 			},
 		},
 	}

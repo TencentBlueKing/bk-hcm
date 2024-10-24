@@ -28,14 +28,14 @@ const (
 	OtherOsType   OsType = "Other"
 )
 
-// ImageType 镜像
-type ImageType string
+// TCloudImageTypeImageType 镜像
+type TCloudImageType string
 
 const (
-	// PrivateImage 私有镜像 (本账户创建的镜像)
-	PrivateImage ImageType = "PRIVATE_IMAGE"
-	// PublicImage 公共镜像 (腾讯云官方镜像)
-	PublicImage ImageType = "PUBLIC_IMAGE"
-	// SharedImage 共享镜像(其他账户共享给本账户的镜像)
-	SharedImage ImageType = "SHARED_IMAGE"
+	// TCloudPrivateImage 私有镜像 (本账户创建的镜像)
+	TCloudPrivateImage TCloudImageType = "PRIVATE_IMAGE"
+	// TCloudPublicImage 公共镜像 (腾讯云官方镜像)
+	TCloudPublicImage TCloudImageType = "PUBLIC_IMAGE"
+	// TCloudSharedImage 共享镜像(其他账户共享给本账户的镜像)
+	TCloudSharedImage TCloudImageType = "SHARED_IMAGE"
 )

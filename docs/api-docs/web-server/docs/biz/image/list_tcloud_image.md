@@ -6,11 +6,12 @@
 
 ### URL
 
-POST /api/v1/cloud/vendors/tcloud/images/query_from_cloud
+POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/tcloud/images/query_from_cloud
 
 ### 请求参数
 | 参数名称       | 参数类型         | 必选 | 描述                                   |
 |------------|--------------|----|--------------------------------------|
+| bk_biz_id  | int64        | 是  | 业务ID                                 |
 | account_id | string       | 是  | 账号ID                                 |
 | region_id  | string       | 是  | 地域ID（唯一标识）                           |
 | limit      | uint         | 否  | 数量限制，默认为20，最大值为100                   |

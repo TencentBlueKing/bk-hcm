@@ -40,7 +40,9 @@ func InitImageService(c *capability.Capability) {
 	h.Add("GetImage", http.MethodGet, "/vendors/{vendor}/images/{id}", svc.RetrieveImage)
 	h.Add("ListImage", http.MethodPost, "/images/list", svc.ListImage)
 
-	h.Add("TCLoudListImage", http.MethodPost, "/vendors/tcloud/images/list", svc.TCLoudListImage)
+	h.Add("TCLoudListImage", http.MethodPost, "/vendors/tcloud/images/query_from_cloud", svc.TCLoudListImage)
+	h.Add("TCLoudBizListImage", http.MethodPost, "/bizs/{bk_biz_id}/vendors/tcloud/images/query_from_cloud",
+		svc.TCLoudBizListImage)
 
 	h.Load(c.WebService)
 }
