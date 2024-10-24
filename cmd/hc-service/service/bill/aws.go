@@ -822,6 +822,63 @@ func (b bill) AwsGetRootAccountBillList(cts *rest.Contexts) (any, error) {
 	}, nil
 }
 
+// AwsListRootOutsideMonthBill 查询存储在当前账单月份，但是使用日期不在当前账单月份的账单条目
+func (b bill) AwsListRootOutsideMonthBill(cts *rest.Contexts) (any, error) {
+
+	req := new(hcbill.AwsRootOutsideMonthBillListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	if req.Page == nil {
+		req.Page = &hcbill.AwsBillListPage{Offset: 0, Limit: adcore.AwsQueryLimit}
+	}
+
+	rootAccount, err := b.cs.DataService().Global.RootAccount.GetBasicInfo(cts.Kit, req.RootAccountID)
+	if err != nil {
+		logs.Errorf("fait to find root account for outside month bill, err: %+v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// 查询aws账单基础表
+	billInfo, err := getRootAccountBillConfigInfo[billcore.AwsBillConfigExtension](cts.Kit, req.RootAccountID,
+		b.cs.DataService())
+	if err != nil {
+		logs.Errorf("failed to get aws root account bill config, root account: %s, err: %+v rid: %s",
+			req.RootAccountID, err, cts.Kit.Rid)
+		return nil, err
+	}
+	if billInfo == nil {
+		return nil, errf.Newf(errf.RecordNotFound, "bill config for root_account_id: %s is not found",
+			req.RootAccountID)
+	}
+
+	cli, err := b.ad.AwsRoot(cts.Kit, req.RootAccountID)
+	if err != nil {
+		logs.Errorf("aws request adaptor client err, req: %+v, err: %+v,rid: %s", req, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	opt := &typesBill.AwsMainOutsideMonthBillLitOpt{
+		PayerAccountID:  rootAccount.CloudID,
+		UsageAccountIDs: req.MainAccountCloudIds,
+		Year:            req.BillYear,
+		Month:           req.BillMonth,
+		Page:            &typesBill.AwsBillPage{Offset: req.Page.Offset, Limit: req.Page.Limit},
+	}
+	resp, err := cli.AwsListRootOutsideMonthBill(cts.Kit, opt, billInfo)
+	if err != nil {
+		logs.Errorf("fail to list main account outside month bill for aws, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return &hcbill.AwsBillListResult{
+		Details: resp,
+	}, nil
+}
+
 // AwsGetRootAccountSpTotalUsage ...
 func (b bill) AwsGetRootAccountSpTotalUsage(cts *rest.Contexts) (any, error) {
 
