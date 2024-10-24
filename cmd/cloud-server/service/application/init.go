@@ -123,7 +123,7 @@ func (a *applicationSvc) getApprovalProcessInfo(
 	// DB中添加4条记录，分别对应add_account、create_cvm、create_vpc、create_disk
 	// Note：目前4条记录对应一个itsm流程id，后续如果要使用其它流程可直接修改数据库适配
 	// 新增类型只需要增加对应的tye和DB记录
-	result, err := a.client.DataService().Global.ApprovalProcess.List(
+	result, err := a.client.DataService().Global.ApprovalProcess.ListApprovalProcesses(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&dataproto.ApprovalProcessListReq{
@@ -161,7 +161,7 @@ func (a *applicationSvc) updateStatusWithDetail(
 	if deliveryDetail != "" {
 		req.DeliveryDetail = &deliveryDetail
 	}
-	_, err := a.client.DataService().Global.Application.Update(cts.Kit, applicationID, req)
+	_, err := a.client.DataService().Global.Application.UpdateApplication(cts.Kit, applicationID, req)
 	return err
 }
 
@@ -174,7 +174,7 @@ func (a *applicationSvc) getApplicationBySN(cts *rest.Contexts, sn string) (*dat
 		},
 	}
 	// 查询
-	resp, err := a.client.DataService().Global.Application.List(
+	resp, err := a.client.DataService().Global.Application.ListApplication(
 		cts.Kit,
 		&dataproto.ApplicationListReq{
 			Filter: reqFilter,

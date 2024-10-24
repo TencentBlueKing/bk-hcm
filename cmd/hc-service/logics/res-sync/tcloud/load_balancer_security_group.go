@@ -52,7 +52,7 @@ func (cli *client) lbSgRel(kt *kit.Kit, params *SyncBaseParams, lbInfo []corelb.
 		tools.RuleEqual("res_type", enumor.LoadBalancerCloudResType),
 		tools.RuleNotIn("res_id", lbIDs),
 	)
-	err := cli.dbCli.Global.SGCommonRel.BatchDelete(kt, &dataservice.BatchDeleteReq{Filter: delFilter})
+	err := cli.dbCli.Global.SGCommonRel.BatchDeleteSgCommonRels(kt, &dataservice.BatchDeleteReq{Filter: delFilter})
 	if err != nil {
 		logs.Errorf("fail to del load balancer rel, err: %v, rid: %s", err, kt.Rid)
 		return err
@@ -144,7 +144,7 @@ func (cli *client) upsertSgRelForLb(kt *kit.Kit, lbId string, startIdx int, stay
 	}
 	if len(createDel.Rels) > 0 {
 		// 同时需要删除和创建
-		err := cli.dbCli.Global.SGCommonRel.BatchUpsert(kt, createDel)
+		err := cli.dbCli.Global.SGCommonRel.BatchUpsertSgCommonRels(kt, createDel)
 		if err != nil {
 			logs.Errorf("fail to upsert lb(%s) security group rel, err: %v, req: %+v, rid: %s",
 				lbId, err, createDel, kt.Rid)
@@ -154,7 +154,7 @@ func (cli *client) upsertSgRelForLb(kt *kit.Kit, lbId string, startIdx int, stay
 	}
 
 	// 只需要尝试删除多余关联关系即可
-	err := cli.dbCli.Global.SGCommonRel.BatchDelete(kt, createDel.DeleteReq)
+	err := cli.dbCli.Global.SGCommonRel.BatchDeleteSgCommonRels(kt, createDel.DeleteReq)
 	if err != nil {
 		logs.Errorf("fail to delete lb(%s) security group rel, err: %v, req: %+v, rid: %s",
 			lbId, err, createDel.DeleteReq, kt.Rid)

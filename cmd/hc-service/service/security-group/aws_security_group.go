@@ -150,7 +150,7 @@ func (g *securityGroup) AwsSecurityGroupAssociateCvm(cts *rest.Contexts) (interf
 			},
 		},
 	}
-	if err = g.dataCli.Global.SGCvmRel.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq); err != nil {
+	if err = g.dataCli.Global.SGCvmRel.BatchCreateSgCvmRels(cts.Kit.Ctx, cts.Kit.Header(), createReq); err != nil {
 		logs.Errorf("request dataservice create security group cvm rels failed, err: %v, req: %+v, rid: %s",
 			err, createReq, cts.Kit.Rid)
 		return nil, err
@@ -194,7 +194,7 @@ func (g *securityGroup) AwsSecurityGroupDisassociateCvm(cts *rest.Contexts) (int
 	}
 
 	deleteReq := buildSGCvmRelDeleteReq(req.SecurityGroupID, req.CvmID)
-	if err = g.dataCli.Global.SGCvmRel.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
+	if err = g.dataCli.Global.SGCvmRel.BatchDeleteSgCvmRels(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
 		logs.Errorf("request dataservice delete security group cvm rels failed, err: %v, req: %+v, rid: %s",
 			err, deleteReq, cts.Kit.Rid)
 		return nil, err

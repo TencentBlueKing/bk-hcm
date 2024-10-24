@@ -32,7 +32,7 @@ import (
 func (a *applicationSvc) GetApplication(cts *rest.Contexts) (interface{}, error) {
 	applicationID := cts.PathParameter("application_id").String()
 
-	application, err := a.client.DataService().Global.Application.Get(cts.Kit.Ctx, cts.Kit.Header(), applicationID)
+	application, err := a.client.DataService().Global.Application.GetApplication(cts.Kit.Ctx, cts.Kit.Header(), applicationID)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
