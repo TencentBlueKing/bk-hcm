@@ -30,6 +30,8 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+
+	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 )
 
 // SyncImage ....
@@ -69,6 +71,12 @@ func (hd *imageHandler) Next(kt *kit.Kit) ([]string, error) {
 		Page: &typecore.TCloudPage{
 			Offset: hd.offset,
 			Limit:  typecore.TCloudQueryLimit,
+		},
+		Filters: []image.TCloudImageFilter{
+			{
+				Name:   "image-type",
+				Values: common.StringPtrs([]string{string(enumor.TCloudPublicImage)}),
+			},
 		},
 	}
 

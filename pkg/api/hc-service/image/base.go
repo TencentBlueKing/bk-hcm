@@ -19,7 +19,10 @@
 
 package image
 
-import "hcm/pkg/criteria/validator"
+import (
+	"hcm/pkg/adaptor/types/image"
+	"hcm/pkg/criteria/validator"
+)
 
 // TCloudImageSyncReq image sync request
 type TCloudImageSyncReq struct {
@@ -75,4 +78,19 @@ type GcpImageSyncReq struct {
 // Validate image sync request.
 func (req *GcpImageSyncReq) Validate() error {
 	return validator.Validate.Struct(req)
+}
+
+// TCloudImageListOption ...
+type TCloudImageListOption struct {
+	AccountID                    string `json:"account_id" validate:"required"`
+	*image.TCloudImageListOption `json:",inline"`
+}
+
+// Validate image list option.
+func (opt *TCloudImageListOption) Validate() error {
+	err := opt.TCloudImageListOption.Validate()
+	if err != nil {
+		return err
+	}
+	return validator.Validate.Struct(opt)
 }

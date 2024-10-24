@@ -362,5 +362,9 @@ func isImageChange(cloud typesimage.TCloudImage, db coreimage.Image[coreimage.TC
 		return true
 	}
 
+	if cloud.Type != db.Type {
+		return true
+	}
+
 	return false
 }

@@ -40,6 +40,7 @@ import (
 	"hcm/cmd/hc-service/service/disk"
 	"hcm/cmd/hc-service/service/eip"
 	"hcm/cmd/hc-service/service/firewall"
+	"hcm/cmd/hc-service/service/image"
 	instancetype "hcm/cmd/hc-service/service/instance-type"
 	loadbalancer "hcm/cmd/hc-service/service/load-balancer"
 	mainaccount "hcm/cmd/hc-service/service/main-account"
@@ -176,6 +177,7 @@ func (s *Service) apiSet() *restful.Container {
 	cert.InitCertService(c)
 	bwpkg.InitBwPkgService(c)
 	mainaccount.InitService(c)
+	image.InitImageService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

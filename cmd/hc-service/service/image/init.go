@@ -17,25 +17,25 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package enumor
+package image
 
-// OsType define os type
-type OsType string
-
-const (
-	LinuxOsType   OsType = "Linux"
-	WindowsOsType OsType = "Windows"
-	OtherOsType   OsType = "Other"
+import (
+	cloudadaptor "hcm/cmd/hc-service/logics/cloud-adaptor"
+	"hcm/cmd/hc-service/service/capability"
+	dataservice "hcm/pkg/client/data-service"
 )
 
-// TCloudImageTypeImageType 镜像
-type TCloudImageType string
+// InitImageService initial the clb service.
+func InitImageService(cap *capability.Capability) {
+	svc := &imageSvc{
+		ad:      cap.CloudAdaptor,
+		dataCli: cap.ClientSet.DataService(),
+	}
 
-const (
-	// TCloudPrivateImage 私有镜像 (本账户创建的镜像)
-	TCloudPrivateImage TCloudImageType = "PRIVATE_IMAGE"
-	// TCloudPublicImage 公共镜像 (腾讯云官方镜像)
-	TCloudPublicImage TCloudImageType = "PUBLIC_IMAGE"
-	// TCloudSharedImage 共享镜像(其他账户共享给本账户的镜像)
-	TCloudSharedImage TCloudImageType = "SHARED_IMAGE"
-)
+	svc.initTCloudImageService(cap)
+}
+
+type imageSvc struct {
+	ad      *cloudadaptor.CloudAdaptorClient
+	dataCli *dataservice.Client
+}
