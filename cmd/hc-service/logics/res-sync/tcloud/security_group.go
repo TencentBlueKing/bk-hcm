@@ -129,6 +129,10 @@ func (cli *client) updateSG(kt *kit.Kit, accountID string,
 	securityGroups := make([]protocloud.SecurityGroupBatchUpdate[cloudcore.TCloudSecurityGroupExtension], 0)
 
 	for id, one := range updateMap {
+		tags, err := json.Marshal(one.TagSet)
+		if err != nil {
+			return err
+		}
 		securityGroup := protocloud.SecurityGroupBatchUpdate[cloudcore.TCloudSecurityGroupExtension]{
 			ID:   id,
 			Name: converter.PtrToVal(one.SecurityGroupName),
@@ -138,7 +142,7 @@ func (cli *client) updateSG(kt *kit.Kit, accountID string,
 			},
 			CloudCreatedTime: converter.PtrToVal(one.CreatedTime),
 			CloudUpdateTime:  converter.PtrToVal(one.UpdateTime),
-			Tags:             one.TagSet,
+			Tags:             tags,
 		}
 
 		securityGroups = append(securityGroups, securityGroup)
