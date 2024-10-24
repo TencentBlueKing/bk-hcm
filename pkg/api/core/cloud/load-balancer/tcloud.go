@@ -118,6 +118,13 @@ type TCloudClbExtension struct {
 	TargetRegion *string `json:"target_region,omitempty"`
 	// 跨域1.0 为0表示基础网络
 	TargetCloudVpcID *string `json:"target_vpc,omitempty"`
+	// 负载均衡类型，0 传统负载均衡，1 负载均衡
+	Forward *uint64 `json:"forward,omitempty"`
+}
+
+// IsTraditional 是否是传统型负载均衡
+func (ext *TCloudClbExtension) IsTraditional() bool {
+	return cvt.PtrToVal(ext.Forward) == uint64(TCloudTraditionalClbType)
 }
 
 // SnatIp ...
@@ -207,3 +214,13 @@ type TCloudListenerExtension struct {
 
 // TCloudListener ...
 type TCloudListener = Listener[TCloudListenerExtension]
+
+// TCloudLoadBalancerInstType 负载均衡实例的类型
+type TCloudLoadBalancerInstType int64
+
+const (
+	// TCloudDefaultLoadBalancerType 1:通用的负载均衡实例，目前只支持传入1
+	TCloudDefaultLoadBalancerType TCloudLoadBalancerInstType = 1
+	// TCloudTraditionalClbType 传统型负载均衡
+	TCloudTraditionalClbType TCloudLoadBalancerInstType = 0
+)

@@ -444,6 +444,7 @@ func convCloudToDBCreate(cloud typeslb.TCloudClb, accountID string, region strin
 
 func convertTCloudExtension(cloud typeslb.TCloudClb, region string) *corelb.TCloudClbExtension {
 	ext := &corelb.TCloudClbExtension{
+		Forward:                  cloud.Forward,
 		SlaType:                  cloud.SlaType,
 		VipIsp:                   cloud.VipIsp,
 		LoadBalancerPassToTarget: cloud.LoadBalancerPassToTarget,
@@ -508,6 +509,7 @@ func convCloudToDBUpdate(id string, cloud typeslb.TCloudClb, vpcMap map[string]*
 		SubnetID:         subnetMap[cloudSubnetID],
 		CloudSubnetID:    cloudSubnetID,
 		Extension: &corelb.TCloudClbExtension{
+			Forward:                  cloud.Forward,
 			SlaType:                  cloud.SlaType,
 			VipIsp:                   cloud.VipIsp,
 			LoadBalancerPassToTarget: cloud.LoadBalancerPassToTarget,
@@ -631,6 +633,10 @@ func isLBChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) bool {
 
 func isLBExtensionChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) bool {
 	if db.Extension == nil {
+		return true
+	}
+
+	if !assert.IsPtrUint64Equal(db.Extension.Forward, cloud.Forward) {
 		return true
 	}
 
