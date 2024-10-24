@@ -18,14 +18,17 @@ metadata:
       rewrite ^/api/(.*)$ /web/api/$1 last;
     {{- end }}
 spec:
-  defaultBackend:
-    {{- include "common.ingress.backend" (dict "serviceName" (printf "%s-webserver" (include "bk-hcm.fullname" . )) "servicePort" ((include "bk-hcm.getHttpServicePort" (dict "ports" .Values.webserver.service.ports )) | int) "context" $) | nindent 4 }}
   rules:
     - host: {{ .Values.ingress.host }}
       http:
         paths:
           {{- if .Values.ingress.webserver.enabled }}
           - path: "/web(/|$)(.*)"
+            {{- if eq "true" (include "common.ingress.supportsPathType" .) }}
+            pathType: ImplementationSpecific
+            {{- end }}
+            backend: {{- include "common.ingress.backend" (dict "serviceName" (printf "%s-webserver" (include "bk-hcm.fullname" . )) "servicePort" ((include "bk-hcm.getHttpServicePort" (dict "ports" .Values.webserver.service.ports )) | int) "context" $) | nindent 14 }}
+          - path: "/"
             {{- if eq "true" (include "common.ingress.supportsPathType" .) }}
             pathType: ImplementationSpecific
             {{- end }}
