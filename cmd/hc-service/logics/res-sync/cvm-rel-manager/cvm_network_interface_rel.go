@@ -79,8 +79,8 @@ func (mgr *CvmRelManger) deleteCvmNetworkInterfaceRel(kt *kit.Kit, ids []uint64)
 		batchDeleteReq := &dataproto.BatchDeleteReq{
 			Filter: tools.ContainersExpression("id", partIDs),
 		}
-
-		if err := mgr.dataCli.Global.NetworkInterfaceCvmRel.BatchDeleteNetworkCvmRels(kt.Ctx, kt.Header(), batchDeleteReq); err != nil {
+		err := mgr.dataCli.Global.NetworkInterfaceCvmRel.BatchDeleteNetworkCvmRels(kt.Ctx, kt.Header(), batchDeleteReq)
+		if err != nil {
 			logs.Errorf("batch delete ni_cvm_rel failed, err: %v, rid: %s", err, kt.Rid)
 			return err
 		}
@@ -108,7 +108,8 @@ func (mgr *CvmRelManger) createCvmNetworkInterfaceRel(kt *kit.Kit, addRels []cvm
 			Rels: lists,
 		}
 
-		if err := mgr.dataCli.Global.NetworkInterfaceCvmRel.BatchCreateNetworkCvmRels(kt.Ctx, kt.Header(), createReq); err != nil {
+		err := mgr.dataCli.Global.NetworkInterfaceCvmRel.BatchCreateNetworkCvmRels(kt.Ctx, kt.Header(), createReq)
+		if err != nil {
 			logs.Errorf("batch create ni_cvm_rel failed, err: %v, rid: %s", err, kt.Rid)
 			return err
 		}
