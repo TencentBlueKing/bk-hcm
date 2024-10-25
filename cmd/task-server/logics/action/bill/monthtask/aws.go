@@ -41,6 +41,8 @@ import (
 
 func newAwsRunner(taskType enumor.MonthTaskType) (MonthTaskRunner, error) {
 	switch taskType {
+	case enumor.AwsOutsideBillMonthTask:
+		return &AwsOutsideBillMonthTask{}, nil
 	case enumor.AwsSupportMonthTask:
 		return &AwsSupportMonthTask{}, nil
 	case enumor.AwsSavingsPlansMonthTask:

@@ -37,7 +37,11 @@ type AwsMonthDescriber struct {
 
 // GetMonthTaskTypes aws month tasks
 func (aws *AwsMonthDescriber) GetMonthTaskTypes() []enumor.MonthTaskType {
-	return []enumor.MonthTaskType{enumor.AwsSavingsPlansMonthTask, enumor.AwsSupportMonthTask}
+	return []enumor.MonthTaskType{
+		enumor.AwsOutsideBillMonthTask,
+		enumor.AwsSavingsPlansMonthTask,
+		enumor.AwsSupportMonthTask,
+	}
 }
 
 // GetTaskExtension extension for task
