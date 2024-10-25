@@ -289,22 +289,14 @@ func (svc *lbSvc) getTCloudListener(kt *kit.Kit, lblID string) (*cslb.GetTCloudL
 		CloudLblID:     listenerInfo.CloudID,
 		EndPort:        listenerInfo.Extension.EndPort,
 	}
-	if rule != nil {
-		result.TargetGroupID = rule.TargetGroupID
-		result.Scheduler = rule.Scheduler
-		result.SessionType = rule.SessionType
-		result.SessionExpire = rule.SessionExpire
-		result.HealthCheck = rule.HealthCheck
-	}
 	if listenerInfo.Protocol.IsLayer7Protocol() {
 		domains := cvt.SliceToMap(rules,
 			func(r corelb.TCloudLbUrlRule) (string, struct{}) { return r.Domain, struct{}{} })
 		result.DomainNum = int64(len(domains))
 		result.UrlNum = int64(len(rules))
 		// 只有SNI开启时，证书才会出现在域名上面，才需要返回Certificate字段
-		if listenerInfo.SniSwitch == enumor.SniTypeOpen && rule != nil {
-			result.Certificate = rule.Certificate
-			result.Extension.Certificate = nil
+		if listenerInfo.SniSwitch == enumor.SniTypeClose {
+			result.Certificate = result.Extension.Certificate
 		}
 	}
 
@@ -314,6 +306,12 @@ func (svc *lbSvc) getTCloudListener(kt *kit.Kit, lblID string) (*cslb.GetTCloudL
 			logs.Errorf("fail to find related rule fo lbl(%s),rid: %s", lblID, kt.Rid)
 			return nil, errors.New("related rule not found")
 		}
+		result.TargetGroupID = rule.TargetGroupID
+		result.Scheduler = rule.Scheduler
+		result.SessionType = rule.SessionType
+		result.SessionExpire = rule.SessionExpire
+		result.HealthCheck = rule.HealthCheck
+
 		tg, err := svc.getTargetGroupByID(kt, rule.TargetGroupID)
 		if err != nil {
 			return nil, err
