@@ -20,9 +20,15 @@
 package rest
 
 import (
+	"net/http"
+	"strings"
+	"time"
+
 	"hcm/pkg/metrics"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 )
 
 // restMetric is used to collect restfull metrics.
@@ -51,7 +57,20 @@ func initMetric() {
 			ConstLabels: labels,
 		}, []string{"alias", "biz"})
 	metrics.Register().MustRegister(m.errCounter)
+	ThirdLags = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace:   metrics.Namespace,
+		Subsystem:   "third",
+		Name:        "lag_seconds",
+		Help:        "请求第三方API延迟信息",
+		ConstLabels: labels,
+		Buckets:     []float64{0.01, 0.05, 0.1, 0.5, 1, 2, 3, 4, 5, 10, 30, 50, 100},
+	}, []string{"method", "code", "action", "region", "target"})
+	metrics.Register().MustRegister(ThirdLags)
 
+	if common.DefaultHttpClient == nil {
+		transport := &http.Transport{}
+		common.DefaultHttpClient = &http.Client{Transport: recordRoundTrip(transport)}
+	}
 	restMetric = m
 }
 
@@ -61,4 +80,30 @@ type metric struct {
 
 	// errCounter record the total error count when request restful API.
 	errCounter *prometheus.CounterVec
+}
+
+// ThirdLags 请求外部的延迟记录
+var ThirdLags *prometheus.HistogramVec
+
+func recordRoundTrip(next http.RoundTripper) promhttp.RoundTripperFunc {
+	return func(req *http.Request) (*http.Response, error) {
+		action := strings.Join(req.Header["X-TC-Action"], ",")
+		region := strings.Join(req.Header["X-TC-Region"], ",")
+		start := time.Now()
+		code := "nil"
+		ret, err := next.RoundTrip(req)
+		if ret != nil {
+			code = ret.Status
+		}
+		cost := time.Since(start).Seconds()
+		ThirdLags.
+			With(prometheus.Labels{
+				"action": action,
+				"method": req.Method,
+				"code":   code,
+				"region": region,
+				"target": req.Host}).
+			Observe(cost)
+		return ret, err
+	}
 }

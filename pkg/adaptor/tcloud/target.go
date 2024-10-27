@@ -21,12 +21,15 @@
 package tcloud
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 
 	typelb "hcm/pkg/adaptor/types/load-balancer"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/retry"
 
 	clb "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb/v20180317"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
@@ -65,12 +68,28 @@ func (t *TCloudImpl) ListTargets(kt *kit.Kit, opt *typelb.TCloudListTargetsOptio
 		req.Port = common.Int64Ptr(opt.Port)
 	}
 
-	resp, err := client.DescribeTargetsWithContext(kt.Ctx, req)
-	if err != nil {
-		logs.Errorf("list tcloud listener targets failed, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
+	policy := retry.NewRetryPolicy(0, [2]uint{700, 1500})
+	var resp *clb.DescribeTargetsResponse
+	for policy.RetryCount() < TCloudClientErrRetryTimes {
+		resp, err = client.DescribeTargetsWithContext(kt.Ctx, req)
+		if err == nil {
+			// success break
+			break
+		}
+		// retry for
+		if policy.RetryCount() < TCloudClientErrRetryTimes && (strings.Contains(err.Error(),
+			"Code=ClientError.NetworkError")) {
+			logs.Errorf("list tcloud clb targets failed, req: %+v, retry times: %d err: %v, rid: %s",
+				req, policy.RetryCount(), err, kt.Rid)
+			policy.Sleep()
+			continue
+		}
+		logs.Errorf("list tcloud clb targets, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
 		return nil, err
 	}
-
+	if resp == nil || resp.Response == nil {
+		return nil, errors.New("empty target response from tcloud")
+	}
 	listeners := make([]typelb.TCloudListenerTarget, 0, len(resp.Response.Listeners))
 	for _, one := range resp.Response.Listeners {
 		listeners = append(listeners, typelb.TCloudListenerTarget{ListenerBackend: one})
