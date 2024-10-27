@@ -171,8 +171,18 @@ const (
 type BillSyncState string
 
 const (
-	// BillSyncRecordStateSyncing 同步中
-	BillSyncRecordStateSyncing BillSyncState = "asyncing"
+
+	// BillSyncRecordStateNew 新增同步记录
+	BillSyncRecordStateNew BillSyncState = "new"
+
+	// BillSyncRecordStateSyncingBillItem 同步账单中
+	BillSyncRecordStateSyncingBillItem BillSyncState = "syncing_bill_item"
+
+	// BillSyncRecordStateSyncingAdjustment 同步调账中
+	BillSyncRecordStateSyncingAdjustment BillSyncState = "syncing_adjustment_item"
+
+	// BillSyncRecordStateWaitNotifying 同步等待通知
+	BillSyncRecordStateWaitNotifying BillSyncState = "wait_notifying"
 
 	// BillSyncRecordStateSynced 已同步
 	BillSyncRecordStateSynced BillSyncState = "synced"

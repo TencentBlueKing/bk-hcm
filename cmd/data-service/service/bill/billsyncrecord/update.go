@@ -28,6 +28,7 @@ import (
 	tablebill "hcm/pkg/dal/table/bill"
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/rest"
+	cvt "hcm/pkg/tools/converter"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -45,13 +46,16 @@ func (svc *service) UpdateBillSyncRecord(cts *rest.Contexts) (interface{}, error
 	}
 
 	billSyncRecord := &tablebill.AccountBillSyncRecord{
-		ID:       req.ID,
-		Operator: req.Operator,
-		Currency: req.Currency,
-		Count:    req.Count,
-		State:    req.State,
-		Detail:   req.Detail,
-		Reviser:  cts.Kit.User,
+		ID:               req.ID,
+		Operator:         req.Operator,
+		Currency:         req.Currency,
+		Count:            req.Count,
+		State:            req.State,
+		AdjustmentFlowID: req.AdjustmentFlowID,
+		Reviser:          cts.Kit.User,
+	}
+	if req.Detail != nil {
+		billSyncRecord.Detail = cvt.ValToPtr(types.JsonField(req.Detail))
 	}
 	if req.Cost != nil {
 		billSyncRecord.Cost = &types.Decimal{Decimal: *req.Cost}

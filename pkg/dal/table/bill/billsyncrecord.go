@@ -44,6 +44,7 @@ var AccountBillSyncRecordColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "count", NamedC: "count", Type: enumor.Numeric},
 	{Column: "rmb_cost", NamedC: "rmb_cost", Type: enumor.Numeric},
 	{Column: "detail", NamedC: "detail", Type: enumor.String},
+	{Column: "adjustment_flow_id", NamedC: "adjustment_flow_id", Type: enumor.String},
 	{Column: "state", NamedC: "state", Type: enumor.String},
 	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
@@ -72,7 +73,9 @@ type AccountBillSyncRecord struct {
 	// RMBCost 人民币账单
 	RMBCost *types.Decimal `db:"rmb_cost" json:"rmb_cost"`
 	// Detail 同步详情
-	Detail types.JsonField `db:"detail" json:"detail"`
+	Detail *types.JsonField `db:"detail" json:"detail"`
+	// 调账同步异步任务id
+	AdjustmentFlowID string `db:"adjustment_flow_id" json:"adjustment_flow_id"`
 	// Operator 操作人
 	Operator string `db:"operator" validate:"max=64" json:"operator"`
 

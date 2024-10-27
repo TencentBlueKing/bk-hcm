@@ -121,7 +121,9 @@ func (a AwsSavingsPlanMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption, 
 		logs.Errorf("failt to get root account info, err: %v, accountID: %s, rid: %s", err, opt.RootAccountID, kt.Rid)
 		return nil, err
 	}
-
+	if a.spArnPrefix == "" {
+		return nil, nil
+	}
 	// rootAsMainAccount 作为二级账号存在的根账号，将分摊后的账单抵冲该账号支出
 	mainAccountMap, _, err := a.listMainAccount(kt, rootAccount)
 	if err != nil {
