@@ -91,9 +91,9 @@ func (c *CreateUrlRulePreviewExecutor) convertDataToPreview(rawData [][]string) 
 		detail.Domain = data[4]
 
 		switch data[5] {
-		case "是":
+		case "TRUE":
 			detail.DefaultDomain = true
-		case "否":
+		case "FALSE":
 			detail.DefaultDomain = false
 		default:
 			return fmt.Errorf("DefaultDomain: invalid input: %s", data[5])

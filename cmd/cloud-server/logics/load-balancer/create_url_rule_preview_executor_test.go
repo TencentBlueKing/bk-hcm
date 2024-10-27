@@ -27,7 +27,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCreateLayer4ListenerExecutor_convertDataToPreview_validateFailed(t *testing.T) {
+func TestCreateURLRuleExecutor_convertDataToPreview_validateFailed(t *testing.T) {
 	type args struct {
 		i [][]string
 	}
@@ -40,7 +40,7 @@ func TestCreateLayer4ListenerExecutor_convertDataToPreview_validateFailed(t *tes
 			name: "test",
 			args: args{i: [][]string{
 				{"127.0.0.1", "lb-xxxxx1", "http", "8888",
-					"www.tencent.com", "是123", "/", "WRR", "0", "enable", "用户的备注"},
+					"www.tencent.com", "是", "/", "WRR", "0", "enable", "用户的备注"},
 			}},
 			wantErr: assert.Error,
 		},
@@ -68,7 +68,7 @@ func TestCreateUrlRuleExecutor_convertDataToPreview(t *testing.T) {
 			name: "test",
 			args: args{i: [][]string{
 				{"127.0.0.1", "lb-xxxxx1", "http", "8888",
-					"www.tencent.com", "是", "/", "WRR", "0", "enable", "用户的备注"},
+					"www.tencent.com", "TRUE", "/", "WRR", "0", "enable", "用户的备注"},
 			}},
 			want: CreateUrlRuleDetail{
 				ClbVipDomain:   "127.0.0.1",
@@ -89,7 +89,7 @@ func TestCreateUrlRuleExecutor_convertDataToPreview(t *testing.T) {
 		{
 			name: "end_port",
 			args: args{i: [][]string{
-				{"127.0.0.1", "lb-xxxxx1", "tcp", "[8888, 8889]", "www.tencent.com", "是", "/", "WRR", "0", "disable"},
+				{"127.0.0.1", "lb-xxxxx1", "tcp", "[8888, 8889]", "www.tencent.com", "TRUE", "/", "WRR", "0", "disable"},
 			}},
 			want: CreateUrlRuleDetail{
 				ClbVipDomain:   "127.0.0.1",
