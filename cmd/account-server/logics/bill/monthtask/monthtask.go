@@ -38,22 +38,29 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
+// MonthDescriberConstructor construct month task describer
+type MonthDescriberConstructor func(accountID string) MonthTaskDescriber
+
 // MonthTaskDescriberRegistry month task describe registry
-var monthTaskDescriberRegistry = make(map[enumor.Vendor]MonthTaskDescriber)
+var monthTaskDescriberRegistry = make(map[enumor.Vendor]MonthDescriberConstructor)
 
 // MonthTaskDescriber month task describe interface
 type MonthTaskDescriber interface {
-	// GetMonthTaskTypes return all month task types supported by this vendor
+	// GetMonthTaskTypes return all month task types supported by this vendor,
+	// month task should be executed by given order.
 	GetMonthTaskTypes() []enumor.MonthTaskType
 
 	// GetTaskExtension extension passed to task server
-	GetTaskExtension(rootAccountCloudID string) (map[string]string, error)
+	GetTaskExtension() (map[string]string, error)
 }
 
 // GetMonthTaskDescriber get describer by vendor
-func GetMonthTaskDescriber(vendor enumor.Vendor) (MonthTaskDescriber, bool) {
-	describer, ok := monthTaskDescriberRegistry[vendor]
-	return describer, ok
+func GetMonthTaskDescriber(vendor enumor.Vendor, accountCloudID string) MonthTaskDescriber {
+	constructor, ok := monthTaskDescriberRegistry[vendor]
+	if ok {
+		return constructor(accountCloudID)
+	}
+	return nil
 }
 
 // NewDefaultMonthTaskRunner ...
@@ -109,12 +116,13 @@ func (r *DefaultMonthTaskRunner) EnsureMonthTask(kt *kit.Kit, billYear, billMont
 	if err != nil {
 		return err
 	}
-	monthDescribe, ok := GetMonthTaskDescriber(r.vendor)
-	if !ok {
-		logs.Infof("no month pull task for root account (%s, %s), skip, rid: %s", r.rootAccountID, r.vendor, kt.Rid)
+	monthDescriber := GetMonthTaskDescriber(r.vendor, r.rootAccountCloudID)
+	if monthDescriber == nil {
+		logs.Infof("no month pull task for root account (%s/%s(%s)), skip, rid: %s",
+			r.vendor, r.rootAccountCloudID, r.rootAccountID, kt.Rid)
 		return nil
 	}
-	r.ext, err = monthDescribe.GetTaskExtension(r.rootAccountCloudID)
+	r.ext, err = monthDescriber.GetTaskExtension()
 	if err != nil {
 		logs.Errorf("fail got generate month task extension for root account (%s, %s), err: %v, rid: %s",
 			r.rootAccountID, r.vendor, err, kt.Rid)
@@ -144,7 +152,7 @@ func (r *DefaultMonthTaskRunner) EnsureMonthTask(kt *kit.Kit, billYear, billMont
 	for _, task := range monthTasks {
 		monthTaskTypeMap[task.Type] = task
 	}
-	monthTaskTypeOrders := monthDescribe.GetMonthTaskTypes()
+	monthTaskTypeOrders := monthDescriber.GetMonthTaskTypes()
 	for _, curType := range monthTaskTypeOrders {
 		monthTask := monthTaskTypeMap[curType]
 		if monthTask == nil {
