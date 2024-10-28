@@ -422,7 +422,7 @@ func isSGChange(cloud securitygroup.TCloudSG, db cloudcore.SecurityGroup[cloudco
 	}
 
 	tags, _ := json.Marshal(cloud.TagSet)
-	if string(tags) != db.BaseSecurityGroup.Tags {
+	if string(tags) != string(db.BaseSecurityGroup.Tags) {
 		return true
 	}
 
