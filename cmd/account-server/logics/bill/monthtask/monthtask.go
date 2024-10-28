@@ -128,7 +128,6 @@ func (r *DefaultMonthTaskRunner) EnsureMonthTask(kt *kit.Kit, billYear, billMont
 			r.rootAccountID, r.vendor, err, kt.Rid)
 		return err
 	}
-
 	logs.Infof("[%s] %s(%s) %d-%02d monthtask setting extension: %v, rid: %s",
 		r.vendor, r.rootAccountCloudID, r.rootAccountID, billYear, billMonth, r.ext, kt.Rid)
 
@@ -143,7 +142,13 @@ func (r *DefaultMonthTaskRunner) EnsureMonthTask(kt *kit.Kit, billYear, billMont
 		return nil
 	}
 	// 进入 月度任务执行阶段
-	monthTasks, err := r.listMonthPullTaskStub(kt, billYear, billMonth)
+	return r.executeMonthTask(kt, monthDescriber, rootSummary)
+}
+
+func (r *DefaultMonthTaskRunner) executeMonthTask(kt *kit.Kit, monthDescriber MonthTaskDescriber,
+	rootSummary *billcore.SummaryRoot) error {
+
+	monthTasks, err := r.listMonthPullTaskStub(kt, rootSummary.BillYear, rootSummary.BillMonth)
 	if err != nil {
 		logs.Errorf("list month task stub for ensuring month task failed, err: %v, rid: %s", err, kt.Rid)
 		return err
@@ -165,7 +170,7 @@ func (r *DefaultMonthTaskRunner) EnsureMonthTask(kt *kit.Kit, billYear, billMont
 		}
 		// 判断versionID是否一致，不一致，则重新创建month task
 		if monthTask.VersionID != rootSummary.CurrentVersion {
-			if err := r.deleteMonthPullTaskStub(kt, billYear, billMonth, curType); err != nil {
+			if err := r.deleteMonthPullTaskStub(kt, rootSummary.BillYear, rootSummary.BillMonth, curType); err != nil {
 				return err
 			}
 			return r.createMonthPullTaskStub(kt, rootSummary, curType)
@@ -191,7 +196,6 @@ func (r *DefaultMonthTaskRunner) EnsureMonthTask(kt *kit.Kit, billYear, billMont
 			continue
 		}
 	}
-
 	return nil
 }
 
