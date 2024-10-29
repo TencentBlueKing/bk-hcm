@@ -74,7 +74,6 @@ type BillAdjustmentItemUpdateReq struct {
 	ProductID     int64                     `json:"product_id" validate:"omitempty"`
 	BkBizID       int64                     `json:"bk_biz_id" validate:"omitempty"`
 	Type          enumor.BillAdjustmentType `json:"type"`
-	Currency      enumor.CurrencyCode       `json:"currency"`
 	Cost          *decimal.Decimal          `json:"cost"`
 	RmbCost       *decimal.Decimal          `json:"rmb_cost"`
 	Memo          *string                   `json:"memo"`

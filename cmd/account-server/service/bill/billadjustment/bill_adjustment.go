@@ -247,9 +247,7 @@ func (b *billAdjustmentSvc) UpdateBillAdjustmentItem(cts *rest.Contexts) (any, e
 		BkBizID:       req.BkBizID,
 		Type:          req.Type,
 		Memo:          req.Memo,
-		// 不能更新币种
-		// Currency:      req.Currency,
-		Cost: req.Cost,
+		Cost:          req.Cost,
 	}
 
 	err = b.client.DataService().Global.Bill.UpdateBillAdjustmentItem(cts.Kit, dsReq)
