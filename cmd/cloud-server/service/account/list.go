@@ -30,8 +30,8 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
-// List ...
-func (a *accountSvc) List(cts *rest.Contexts) (interface{}, error) {
+// ListAccount ...
+func (a *accountSvc) ListAccount(cts *rest.Contexts) (interface{}, error) {
 	return a.list(cts, meta.Account)
 }
 

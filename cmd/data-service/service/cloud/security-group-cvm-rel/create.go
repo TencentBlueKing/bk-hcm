@@ -32,8 +32,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// BatchCreate rels.
-func (svc *sgCvmRelSvc) BatchCreate(cts *rest.Contexts) (interface{}, error) {
+// BatchCreateSgCvmRels rels.
+func (svc *sgCvmRelSvc) BatchCreateSgCvmRels(cts *rest.Contexts) (interface{}, error) {
 	req := new(protocloud.SGCvmRelBatchCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)

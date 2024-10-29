@@ -63,7 +63,8 @@ func (svc *service) GetApprovalProcessServiceID(cts *rest.Contexts) (interface{}
 		// itsm 单据流程不可能超过500个，所以就不分页去查了。
 		Page: core.NewDefaultBasePage(),
 	}
-	result, err := svc.client.DataService().Global.ApprovalProcess.List(cts.Kit.Ctx, cts.Kit.Header(), req)
+	result, err := svc.client.DataService().Global.ApprovalProcess.ListApprovalProcesses(
+		cts.Kit.Ctx, cts.Kit.Header(), req)
 	if err != nil {
 		logs.Errorf("call data-service to list approval process failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
