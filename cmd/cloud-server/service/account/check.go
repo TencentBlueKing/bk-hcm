@@ -510,8 +510,8 @@ func (a *accountSvc) parseAndCheckAzureExtensionByID(
 func CheckDuplicateMainAccount(cts *rest.Contexts, client *client.ClientSet, vendor enumor.Vendor,
 	accountType enumor.AccountType, mainAccountIDFieldValue string) error {
 
-	// 只需要检查资源账号或安全审计账号的主账号是否重复，其他类型账号不检查
-	if accountType != enumor.ResourceAccount && accountType != enumor.SecurityAuditAccount {
+	// 只校验资源账号的主账号是否重复，其他类型账号不检查
+	if accountType != enumor.ResourceAccount {
 		return nil
 	}
 
