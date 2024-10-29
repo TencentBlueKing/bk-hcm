@@ -62,9 +62,8 @@ func (b *billAdjustmentSvc) CreateBillAdjustmentItem(cts *rest.Contexts) (any, e
 	}
 
 	// 1. 校验一级账号和二级账号是否存在并匹配
-
 	summaryRootListReq := &dsbill.BillSummaryRootListReq{
-		Filter: tools.ExpressionAnd(tools.RuleEqual("id", req.RootAccountID)),
+		Filter: tools.ExpressionAnd(tools.RuleEqual("root_account_id", req.RootAccountID)),
 		Page:   core.NewDefaultBasePage(),
 	}
 	summaryRootResp, err := b.client.DataService().Global.Bill.ListBillSummaryRoot(cts.Kit, summaryRootListReq)
@@ -248,8 +247,9 @@ func (b *billAdjustmentSvc) UpdateBillAdjustmentItem(cts *rest.Contexts) (any, e
 		BkBizID:       req.BkBizID,
 		Type:          req.Type,
 		Memo:          req.Memo,
-		Currency:      req.Currency,
-		Cost:          req.Cost,
+		// 不能更新币种
+		// Currency:      req.Currency,
+		Cost: req.Cost,
 	}
 
 	err = b.client.DataService().Global.Bill.UpdateBillAdjustmentItem(cts.Kit, dsReq)
