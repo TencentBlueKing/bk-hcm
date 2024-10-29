@@ -2,7 +2,7 @@ import { Form, Input, Select, Button, Radio, Message } from 'bkui-vue';
 import { reactive, defineComponent, ref, watch, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { ProjectModel, FormItems } from '@/typings';
-import { CLOUD_TYPE, BUSINESS_TYPE, SITE_TYPE, DESC_ACCOUNT } from '@/constants';
+import { CLOUD_TYPE, ACCOUNT_TYPE, BUSINESS_TYPE, SITE_TYPE, DESC_ACCOUNT } from '@/constants';
 import { useI18n } from 'vue-i18n';
 import MemberSelect from '@/components/MemberSelect';
 import { useAccountStore } from '@/store';
@@ -619,6 +619,18 @@ export default defineComponent({
     );
 
     const formList = reactive<FormItems[]>([
+      {
+        label: t('账号类型'),
+        formName: t('账号用途'),
+        required: false,
+        component: () => (
+          <Group v-model={projectModel.type}>
+            {ACCOUNT_TYPE.map((e) => (
+              <Radio label={e.value}>{t(e.label)}</Radio>
+            ))}
+          </Group>
+        ),
+      },
       {
         label: t('云厂商'),
         formName: t('云厂商'),
