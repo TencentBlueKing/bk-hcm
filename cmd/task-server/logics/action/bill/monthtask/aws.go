@@ -94,6 +94,9 @@ func (a awsMonthTaskBaseRunner) listMainAccount(kt *kit.Kit, rootAccount *datapr
 			rootAsMainAccount = account
 		}
 	}
+	if rootAsMainAccount == nil {
+		return nil, nil, errors.New("can not found root as main account " + rootAccount.CloudID)
+	}
 
 	return mainAccountMap, rootAsMainAccount, nil
 }
