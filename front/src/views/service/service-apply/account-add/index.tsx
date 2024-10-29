@@ -639,7 +639,7 @@ export default defineComponent({
         component: () => (
           <RadioGroup v-model={projectModel.vendor}>
             {cloudType.map((item) => (
-              <RadioButton onChange={changeCloud} label={item.id} disabled={item.id !== 'tcloud'}>
+              <RadioButton onChange={changeCloud} label={item.id}>
                 {item.name}
               </RadioButton>
             ))}
