@@ -87,12 +87,30 @@ export default defineComponent({
     const submit = async () => {
       await formRef.value?.validate();
       submitLoading.value = true;
+      const typeNamePrefix = {
+        registration: 'hcm',
+        security_audit: 'sec',
+      };
+      const vendorAccountMains = {
+        tcloud: projectModel.mainAccount,
+        aws: projectModel.accountId,
+      };
+      const vendorAccountSubs = {
+        tcloud: projectModel.subAccount,
+        aws: projectModel.iamUsername,
+      };
       try {
         const params = {
           vendor: projectModel.vendor,
           type: projectModel.type,
           // 最新修改名称不在页面输入且只支持tcloud，名称使用默认规则拼接
-          name: projectModel.name || ['hcm', projectModel.mainAccount, projectModel.subAccount].join('-'),
+          name:
+            projectModel.name ||
+            [
+              typeNamePrefix[projectModel.type],
+              vendorAccountMains[projectModel.vendor],
+              vendorAccountSubs[projectModel.vendor],
+            ].join('-'),
           managers: projectModel.managers,
           memo: projectModel.memo,
           site: projectModel.site,
@@ -639,7 +657,7 @@ export default defineComponent({
         component: () => (
           <RadioGroup v-model={projectModel.vendor}>
             {cloudType.map((item) => (
-              <RadioButton onChange={changeCloud} label={item.id}>
+              <RadioButton onChange={changeCloud} label={item.id} disabled={!['tcloud', 'aws'].includes(item.id)}>
                 {item.name}
               </RadioButton>
             ))}
