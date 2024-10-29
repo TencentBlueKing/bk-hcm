@@ -87,11 +87,30 @@ export default defineComponent({
     const submit = async () => {
       await formRef.value?.validate();
       submitLoading.value = true;
+      const typeNamePrefix = {
+        registration: 'hcm',
+        security_audit: 'sec',
+      };
+      const vendorAccountMains = {
+        tcloud: projectModel.mainAccount,
+        aws: projectModel.accountId,
+      };
+      const vendorAccountSubs = {
+        tcloud: projectModel.subAccount,
+        aws: projectModel.iamUsername,
+      };
       try {
         const params = {
           vendor: projectModel.vendor,
           type: projectModel.type,
-          name: projectModel.name,
+          // 最新修改名称不在页面输入且只支持tcloud，名称使用默认规则拼接
+          name:
+            projectModel.name ||
+            [
+              typeNamePrefix[projectModel.type],
+              vendorAccountMains[projectModel.vendor],
+              vendorAccountSubs[projectModel.vendor],
+            ].join('-'),
           managers: projectModel.managers,
           memo: projectModel.memo,
           site: projectModel.site,
@@ -165,7 +184,7 @@ export default defineComponent({
           path: '/service/my-apply', // 返回审批列表
         });
       } catch (error: any) {
-        console.log(error);
+        console.error(error);
       } finally {
         submitLoading.value = false;
       }
@@ -206,7 +225,7 @@ export default defineComponent({
               required: true,
               property: 'mainAccount',
               component: () => (
-                <Input class='w450' placeholder={t('请输入主账号')} v-model={projectModel.mainAccount} />
+                <Input class='w450' placeholder={t('请输入主账号')} v-model_trim={projectModel.mainAccount} />
               ),
             },
             {
@@ -215,7 +234,7 @@ export default defineComponent({
               required: true,
               property: 'subAccount',
               component: () => (
-                <Input class='w450' placeholder={t('请输入子账号ID')} v-model={projectModel.subAccount} />
+                <Input class='w450' placeholder={t('请输入子账号ID')} v-model_trim={projectModel.subAccount} />
               ),
             },
             {
@@ -224,7 +243,7 @@ export default defineComponent({
               required: true,
               property: 'subAccountName',
               component: () => (
-                <Input class='w450' placeholder={t('请输入子账号名称')} v-model={projectModel.subAccountName} />
+                <Input class='w450' placeholder={t('请输入子账号名称')} v-model_trim={projectModel.subAccountName} />
               ),
             },
             {
@@ -233,7 +252,7 @@ export default defineComponent({
               required: true,
               property: 'iamUserId',
               component: () => (
-                <Input class='w450' placeholder={t('请输入IAM用户ID')} v-model={projectModel.iamUserId} />
+                <Input class='w450' placeholder={t('请输入IAM用户ID')} v-model_trim={projectModel.iamUserId} />
               ),
             },
             {
@@ -241,7 +260,7 @@ export default defineComponent({
               required: true,
               property: 'iamUsername',
               component: () => (
-                <Input class='w450' placeholder={t('请输入IAM用户名称')} v-model={projectModel.iamUsername} />
+                <Input class='w450' placeholder={t('请输入IAM用户名称')} v-model_trim={projectModel.iamUsername} />
               ),
             },
             // {
@@ -273,7 +292,9 @@ export default defineComponent({
               component: () => (
                 <Group v-model={projectModel.site}>
                   {SITE_TYPE.map((e) => (
-                    <Radio label={e.value}>{t(e.label)}</Radio>
+                    <Radio label={e.value} disabled={e.value === 'china'}>
+                      {t(e.label)}
+                    </Radio>
                   ))}
                 </Group>
               ),
@@ -284,36 +305,40 @@ export default defineComponent({
               noBorBottom: true,
               required: true,
               property: 'accountId',
-              component: () => <Input class='w450' placeholder={t('请输入账号ID')} v-model={projectModel.accountId} />,
+              component: () => (
+                <Input class='w450' placeholder={t('请输入账号ID')} v-model_trim={projectModel.accountId} />
+              ),
             },
             {
               label: t('IAM用户名称'),
               required: true,
               property: 'iamUsername',
               component: () => (
-                <Input class='w450' placeholder={t('请输入IAM用户名称')} v-model={projectModel.iamUsername} />
+                <Input class='w450' placeholder={t('请输入IAM用户名称')} v-model_trim={projectModel.iamUsername} />
               ),
             },
-            // {
-            //   label: t('SecretId/密钥ID'),
-            //   formName: t('API 密钥'),
-            //   noBorBottom: true,
-            //   required: projectModel.type !== 'registration',
-            //   property: 'secretId',
-            //   component: () => (
-            //     <Input class='w450' placeholder={t('请输入SecretId/密钥ID')} v-model={projectModel.secretId} />
-            //   ),
-            // },
-            // {
-            //   label: 'SecretKey',
-            //   required: projectModel.type !== 'registration',
-            //   property: 'secretKey',
-            //   component: () => (
-            //     <Input class='w450' placeholder={t('请输入SecretKey')} v-model={projectModel.secretKey} />
-            //   ),
-            // },
+            {
+              label: t('SecretId/密钥ID'),
+              formName: t('API 密钥'),
+              noBorBottom: true,
+              required: projectModel.type !== 'registration',
+              hidden: projectModel.type === 'registration',
+              property: 'secretId',
+              component: () => (
+                <Input class='w450' placeholder={t('请输入SecretId/密钥ID')} v-model={projectModel.secretId} />
+              ),
+            },
+            {
+              label: 'SecretKey',
+              required: projectModel.type !== 'registration',
+              hidden: projectModel.type === 'registration',
+              property: 'secretKey',
+              component: () => (
+                <Input class='w450' placeholder={t('请输入SecretKey')} v-model={projectModel.secretKey} />
+              ),
+            },
           ];
-          projectModel.site = 'china';
+          projectModel.site = 'international';
           break;
         case 'gcp':
           insertFormData = [
@@ -336,14 +361,16 @@ export default defineComponent({
               noBorBottom: true,
               required: true,
               property: 'projectId',
-              component: () => <Input class='w450' placeholder={t('请输入项目 ID')} v-model={projectModel.projectId} />,
+              component: () => (
+                <Input class='w450' placeholder={t('请输入项目 ID')} v-model_trim={projectModel.projectId} />
+              ),
             },
             {
               label: t('项目名称'),
               required: true,
               property: 'projectName',
               component: () => (
-                <Input class='w450' placeholder={t('请输入项目名称')} v-model={projectModel.projectName} />
+                <Input class='w450' placeholder={t('请输入项目名称')} v-model_trim={projectModel.projectName} />
               ),
             },
             // {
@@ -406,7 +433,9 @@ export default defineComponent({
               noBorBottom: true,
               required: true,
               property: 'tenantId',
-              component: () => <Input class='w450' placeholder={t('请输入租户 ID')} v-model={projectModel.tenantId} />,
+              component: () => (
+                <Input class='w450' placeholder={t('请输入租户 ID')} v-model_trim={projectModel.tenantId} />
+              ),
             },
             {
               label: t('订阅 ID'),
@@ -414,7 +443,7 @@ export default defineComponent({
               noBorBottom: true,
               property: 'subScriptionId',
               component: () => (
-                <Input class='w450' placeholder={t('请输入订阅 ID')} v-model={projectModel.subScriptionId} />
+                <Input class='w450' placeholder={t('请输入订阅 ID')} v-model_trim={projectModel.subScriptionId} />
               ),
             },
             {
@@ -422,7 +451,7 @@ export default defineComponent({
               required: true,
               property: 'subScriptionName',
               component: () => (
-                <Input class='w450' placeholder={t('请输入订阅名称')} v-model={projectModel.subScriptionName} />
+                <Input class='w450' placeholder={t('请输入订阅名称')} v-model_trim={projectModel.subScriptionName} />
               ),
             },
             // {
@@ -483,15 +512,19 @@ export default defineComponent({
               noBorBottom: true,
               required: true,
               property: 'mainAccount',
+              rules: [{ pattern: /^\d+$/, message: '必须为数值', trigger: 'change' }],
               component: () => (
-                <Input class='w450' placeholder={t('请输入主账号')} v-model={projectModel.mainAccount} />
+                <Input class='w450' placeholder={t('请输入主账号')} v-model_trim={projectModel.mainAccount} />
               ),
             },
             {
               label: t('子账号ID'),
               required: true,
               property: 'subAccount',
-              component: () => <Input class='w450' placeholder={t('请输入子账号')} v-model={projectModel.subAccount} />,
+              rules: [{ pattern: /^\d+$/, message: '必须为数值', trigger: 'change' }],
+              component: () => (
+                <Input class='w450' placeholder={t('请输入子账号')} v-model_trim={projectModel.subAccount} />
+              ),
             },
             // {
             //   label: 'SecretId',
@@ -520,7 +553,7 @@ export default defineComponent({
               required: true,
               property: 'mainAccount',
               component: () => (
-                <Input class='w450' placeholder={t('请输入主账号')} v-model={projectModel.mainAccount} />
+                <Input class='w450' placeholder={t('请输入主账号')} v-model_trim={projectModel.mainAccount} />
               ),
             },
             {
@@ -529,7 +562,7 @@ export default defineComponent({
               required: true,
               property: 'subAccount',
               component: () => (
-                <Input class='w450' placeholder={t('请输入子账号ID')} v-model={projectModel.subAccount} />
+                <Input class='w450' placeholder={t('请输入子账号ID')} v-model_trim={projectModel.subAccount} />
               ),
             },
             {
@@ -537,7 +570,7 @@ export default defineComponent({
               required: true,
               property: 'subAccountName',
               component: () => (
-                <Input class='w450' placeholder={t('请输入子账号名称')} v-model={projectModel.subAccountName} />
+                <Input class='w450' placeholder={t('请输入子账号名称')} v-model_trim={projectModel.subAccountName} />
               ),
             },
             {
@@ -546,21 +579,22 @@ export default defineComponent({
               noBorBottom: true,
               required: true,
               property: 'secretId',
-              component: () => <Input class='w450' placeholder={t('请输入SecretId')} v-model={projectModel.secretId} />,
+              component: () => (
+                <Input class='w450' placeholder={t('请输入SecretId')} v-model_trim={projectModel.secretId} />
+              ),
             },
             {
               label: 'SecretKey',
               required: true,
               property: 'secretKey',
               component: () => (
-                <Input class='w450' placeholder={t('请输入SecretKey')} v-model={projectModel.secretKey} />
+                <Input class='w450' placeholder={t('请输入SecretKey')} v-model_trim={projectModel.secretKey} />
               ),
             },
           ];
           break;
       }
       const interceLength = endIndex - startIndex - 1; // 需要删除的长度
-      console.log('insertFormData', insertFormData);
       formList.splice(startIndex + 1, interceLength, ...insertFormData);
     };
 
@@ -585,6 +619,9 @@ export default defineComponent({
             if (optionalRequired.includes(e.property)) {
               e.required = false;
             }
+            if (projectModel.vendor === 'aws' && ['secretId', 'secretKey'].includes(e.property)) {
+              e.hidden = true;
+            }
           });
         } else if (val === 'resource') {
           // 资源账号
@@ -599,6 +636,9 @@ export default defineComponent({
             if (e.label && (e.property === 'memo' || e.property === 'bizIds')) {
               // 备注、使用业务不需必填
               e.required = false;
+            }
+            if (projectModel.vendor === 'aws' && ['secretId', 'secretKey'].includes(e.property)) {
+              e.hidden = false;
             }
           });
         }
@@ -620,25 +660,6 @@ export default defineComponent({
         ),
       },
       {
-        label: t('名称'),
-        formName: t('账号名称'),
-        required: true,
-        property: 'name',
-        description:
-          '必须以小写字母开头, 后面可跟小写字母、数字、连字符 - 或 下划线 _ , 但不能以连字符 - 或下划线 _ 结尾。名称长度不少于 3 个字符，且不多于 64 个字符',
-        rules: [
-          {
-            trigger: 'blur',
-            message:
-              '必须以小写字母开头, 后面可跟小写字母、数字、连字符 - 或 下划线 _ , 但不能以连字符 - 或下划线 _ 结尾。名称长度不少于 3 个字符，且不多于 64 个字符',
-            validator: (val: string) => {
-              return /^[a-z][a-z0-9-_]{1,62}[a-z0-9]$/.test(val);
-            },
-          },
-        ],
-        component: () => <Input class='w450' placeholder={t('请输入名称')} v-model={projectModel.name} />,
-      },
-      {
         label: t('云厂商'),
         formName: t('云厂商'),
         required: true,
@@ -646,7 +667,7 @@ export default defineComponent({
         component: () => (
           <RadioGroup v-model={projectModel.vendor}>
             {cloudType.map((item) => (
-              <RadioButton onChange={changeCloud} label={item.id}>
+              <RadioButton onChange={changeCloud} label={item.id} disabled={!['tcloud', 'aws'].includes(item.id)}>
                 {item.name}
               </RadioButton>
             ))}
@@ -755,28 +776,30 @@ export default defineComponent({
     return () => (
       <div class='form-container flex-row justify-content-between'>
         <Form class='form-warp' model={projectModel} labelWidth={140} rules={formRules} ref={formRef}>
-          {formList.map((item) => (
-            <>
-              {item.formName && <div class='mt10 mb10'>{item.formName}</div>}
-              <div
-                class={{
-                  'form-item-warp': true,
-                  'no-border-top': !item.formName,
-                  'no-border-bottom': item.noBorBottom || (item.property === 'vendor' && isChangeVendor.value),
-                  'no-border': item.type === 'button',
-                }}>
-                <FormItem
-                  class='account-form-item'
-                  label={item.label}
-                  required={item.required}
-                  property={item.property}
-                  description={item.description}
-                  rules={item.rules}>
-                  {item.component ? item.component() : item.content()}
-                </FormItem>
-              </div>
-            </>
-          ))}
+          {formList
+            .filter((item) => item.hidden !== true)
+            .map((item) => (
+              <>
+                {item.formName && <div class='mt10 mb10'>{item.formName}</div>}
+                <div
+                  class={{
+                    'form-item-warp': true,
+                    'no-border-top': !item.formName,
+                    'no-border-bottom': item.noBorBottom || (item.property === 'vendor' && isChangeVendor.value),
+                    'no-border': item.type === 'button',
+                  }}>
+                  <FormItem
+                    class='account-form-item'
+                    label={item.label}
+                    required={item.required}
+                    property={item.property}
+                    description={item.description}
+                    rules={item.rules}>
+                    {item.component ? item.component() : item.content()}
+                  </FormItem>
+                </div>
+              </>
+            ))}
         </Form>
         <div class='desc-container flex-1'>
           <div class='desc-item'>
