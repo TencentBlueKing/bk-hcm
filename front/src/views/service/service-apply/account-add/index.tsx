@@ -292,7 +292,9 @@ export default defineComponent({
               component: () => (
                 <Group v-model={projectModel.site}>
                   {SITE_TYPE.map((e) => (
-                    <Radio label={e.value}>{t(e.label)}</Radio>
+                    <Radio label={e.value} disabled={e.value === 'china'}>
+                      {t(e.label)}
+                    </Radio>
                   ))}
                 </Group>
               ),
@@ -315,26 +317,28 @@ export default defineComponent({
                 <Input class='w450' placeholder={t('请输入IAM用户名称')} v-model_trim={projectModel.iamUsername} />
               ),
             },
-            // {
-            //   label: t('SecretId/密钥ID'),
-            //   formName: t('API 密钥'),
-            //   noBorBottom: true,
-            //   required: projectModel.type !== 'registration',
-            //   property: 'secretId',
-            //   component: () => (
-            //     <Input class='w450' placeholder={t('请输入SecretId/密钥ID')} v-model={projectModel.secretId} />
-            //   ),
-            // },
-            // {
-            //   label: 'SecretKey',
-            //   required: projectModel.type !== 'registration',
-            //   property: 'secretKey',
-            //   component: () => (
-            //     <Input class='w450' placeholder={t('请输入SecretKey')} v-model={projectModel.secretKey} />
-            //   ),
-            // },
+            {
+              label: t('SecretId/密钥ID'),
+              formName: t('API 密钥'),
+              noBorBottom: true,
+              required: projectModel.type !== 'registration',
+              hidden: projectModel.type === 'registration',
+              property: 'secretId',
+              component: () => (
+                <Input class='w450' placeholder={t('请输入SecretId/密钥ID')} v-model={projectModel.secretId} />
+              ),
+            },
+            {
+              label: 'SecretKey',
+              required: projectModel.type !== 'registration',
+              hidden: projectModel.type === 'registration',
+              property: 'secretKey',
+              component: () => (
+                <Input class='w450' placeholder={t('请输入SecretKey')} v-model={projectModel.secretKey} />
+              ),
+            },
           ];
-          projectModel.site = 'china';
+          projectModel.site = 'international';
           break;
         case 'gcp':
           insertFormData = [
@@ -615,6 +619,9 @@ export default defineComponent({
             if (optionalRequired.includes(e.property)) {
               e.required = false;
             }
+            if (projectModel.vendor === 'aws' && ['secretId', 'secretKey'].includes(e.property)) {
+              e.hidden = true;
+            }
           });
         } else if (val === 'resource') {
           // 资源账号
@@ -629,6 +636,9 @@ export default defineComponent({
             if (e.label && (e.property === 'memo' || e.property === 'bizIds')) {
               // 备注、使用业务不需必填
               e.required = false;
+            }
+            if (projectModel.vendor === 'aws' && ['secretId', 'secretKey'].includes(e.property)) {
+              e.hidden = false;
             }
           });
         }
@@ -766,28 +776,30 @@ export default defineComponent({
     return () => (
       <div class='form-container flex-row justify-content-between'>
         <Form class='form-warp' model={projectModel} labelWidth={140} rules={formRules} ref={formRef}>
-          {formList.map((item) => (
-            <>
-              {item.formName && <div class='mt10 mb10'>{item.formName}</div>}
-              <div
-                class={{
-                  'form-item-warp': true,
-                  'no-border-top': !item.formName,
-                  'no-border-bottom': item.noBorBottom || (item.property === 'vendor' && isChangeVendor.value),
-                  'no-border': item.type === 'button',
-                }}>
-                <FormItem
-                  class='account-form-item'
-                  label={item.label}
-                  required={item.required}
-                  property={item.property}
-                  description={item.description}
-                  rules={item.rules}>
-                  {item.component ? item.component() : item.content()}
-                </FormItem>
-              </div>
-            </>
-          ))}
+          {formList
+            .filter((item) => item.hidden !== true)
+            .map((item) => (
+              <>
+                {item.formName && <div class='mt10 mb10'>{item.formName}</div>}
+                <div
+                  class={{
+                    'form-item-warp': true,
+                    'no-border-top': !item.formName,
+                    'no-border-bottom': item.noBorBottom || (item.property === 'vendor' && isChangeVendor.value),
+                    'no-border': item.type === 'button',
+                  }}>
+                  <FormItem
+                    class='account-form-item'
+                    label={item.label}
+                    required={item.required}
+                    property={item.property}
+                    description={item.description}
+                    rules={item.rules}>
+                    {item.component ? item.component() : item.content()}
+                  </FormItem>
+                </div>
+              </>
+            ))}
         </Form>
         <div class='desc-container flex-1'>
           <div class='desc-item'>
