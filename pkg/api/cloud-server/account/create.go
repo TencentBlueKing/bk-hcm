@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"unicode/utf8"
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
@@ -234,9 +235,36 @@ func (req *AccountCommonInfoCreateReq) Validate() error {
 		return err
 	}
 
+	// 登记账号类型仅
+	if req.Type == enumor.RegistrationAccount {
+		err := validateAccountMemo(req.Memo, false)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
 	// 校验备注
-	if err := validator.ValidateMemo(req.Memo, false, req.Type); err != nil {
+	if err := validator.ValidateMemo(req.Memo, false); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// validateAccountMemo 校验备注长度，不进行格式的校验
+func validateAccountMemo(memo *string, required bool) error {
+	// check data is nil and required.
+	if required && (memo == nil || len(*memo) == 0) {
+		return errors.New("memo is required, can not be empty")
+	}
+
+	if memo == nil || len(*memo) == 0 {
+		return nil
+	}
+
+	m := *memo
+	if utf8.RuneCountInString(m) > 255 {
+		return errors.New("invalid memo, length should less than 255")
 	}
 
 	return nil

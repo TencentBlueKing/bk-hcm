@@ -21,7 +21,6 @@ package validator
 
 import (
 	"errors"
-	"hcm/pkg/criteria/enumor"
 	"regexp"
 	"unicode/utf8"
 )
@@ -36,7 +35,7 @@ const (
 var qualifiedMemoRegexp = regexp.MustCompile("^" + qualifiedMemoFmt + "$")
 
 // ValidateMemo validate hcm resource memo's length and format.
-func ValidateMemo(memo *string, required bool, accountType enumor.AccountType) error {
+func ValidateMemo(memo *string, required bool) error {
 	// check data is nil and required.
 	if required && (memo == nil || len(*memo) == 0) {
 		return errors.New("memo is required, can not be empty")
@@ -52,7 +51,7 @@ func ValidateMemo(memo *string, required bool, accountType enumor.AccountType) e
 	}
 
 	// 只有非登记账号才校验 备注格式
-	if accountType != enumor.RegistrationAccount && !qualifiedMemoRegexp.MatchString(m) {
+	if !qualifiedMemoRegexp.MatchString(m) {
 		return errors.New("invalid memo, only allows include chinese、english、numbers、underscore (_)" +
 			"、hyphen (-)、space, and must start and end with an chinese、english、numbers")
 	}
