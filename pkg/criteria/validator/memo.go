@@ -50,7 +50,6 @@ func ValidateMemo(memo *string, required bool) error {
 		return errors.New("invalid memo, length should less than 255")
 	}
 
-	// 只有非登记账号才校验 备注格式
 	if !qualifiedMemoRegexp.MatchString(m) {
 		return errors.New("invalid memo, only allows include chinese、english、numbers、underscore (_)" +
 			"、hyphen (-)、space, and must start and end with an chinese、english、numbers")

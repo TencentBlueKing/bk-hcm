@@ -235,7 +235,6 @@ func (req *AccountCommonInfoCreateReq) Validate() error {
 		return err
 	}
 
-	// 登记账号类型仅
 	if req.Type == enumor.RegistrationAccount {
 		err := validateAccountMemo(req.Memo, false)
 		if err != nil {
