@@ -204,7 +204,7 @@ const isCurRowSelectEnable = (row: any) => {
   }
 };
 const parseTags = (data: any[]) => {
-  if (!data[0]) return '--';
+  if (!data?.[0]) return '--';
   return data.map((item) => `${item.Key}: ${item.Value}`).join(';');
 };
 const { selections, handleSelectionChange, resetSelections } = useSelection();
@@ -287,7 +287,7 @@ const groupColumns = [
     label: t('标签'),
     field: 'tags',
     isDefaultShow: true,
-    render: ({ cell }: any) => parseTags(JSON.parse(cell)),
+    render: ({ cell }: any) => parseTags(cell),
   },
   {
     label: '是否分配',
