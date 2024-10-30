@@ -86,8 +86,12 @@ func (d *Dispatcher) WatchPendingFlow() {
 // Do 监听处于Pending状态的流，并派发到指定节点。
 func (d *Dispatcher) Do(kt *kit.Kit) error {
 	input := &backend.ListInput{
-		Filter: tools.EqualExpression("state", enumor.FlowPending),
-		Page:   core.NewDefaultBasePage(),
+		Filter: tools.ExpressionAnd(
+			// 走worker,state 索引
+			tools.RuleEqual("worker", ""),
+			tools.RuleEqual("state", enumor.FlowPending),
+		),
+		Page: core.NewDefaultBasePage(),
 	}
 	flows, err := d.bd.ListFlow(kt, input)
 	if err != nil {

@@ -41,6 +41,8 @@ import (
 
 func newAwsRunner(taskType enumor.MonthTaskType) (MonthTaskRunner, error) {
 	switch taskType {
+	case enumor.AwsOutsideBillMonthTask:
+		return &AwsOutsideBillMonthTask{}, nil
 	case enumor.AwsSupportMonthTask:
 		return &AwsSupportMonthTask{}, nil
 	case enumor.AwsSavingsPlansMonthTask:
@@ -91,6 +93,9 @@ func (a awsMonthTaskBaseRunner) listMainAccount(kt *kit.Kit, rootAccount *datapr
 		if account.CloudID == rootAccount.CloudID {
 			rootAsMainAccount = account
 		}
+	}
+	if rootAsMainAccount == nil {
+		return nil, nil, errors.New("can not found root as main account " + rootAccount.CloudID)
 	}
 
 	return mainAccountMap, rootAsMainAccount, nil

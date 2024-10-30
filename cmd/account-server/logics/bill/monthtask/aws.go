@@ -28,35 +28,57 @@ import (
 )
 
 func init() {
-	monthTaskDescriberRegistry[enumor.Aws] = &AwsMonthDescriber{}
+	monthTaskDescriberRegistry[enumor.Aws] = NewAwsMonthDescriber
 }
 
-// AwsMonthDescriber aws month task describer
-type AwsMonthDescriber struct {
-}
-
-// GetMonthTaskTypes aws month tasks
-func (aws *AwsMonthDescriber) GetMonthTaskTypes() []enumor.MonthTaskType {
-	return []enumor.MonthTaskType{enumor.AwsSavingsPlansMonthTask, enumor.AwsSupportMonthTask}
-}
-
-// GetTaskExtension extension for task
-func (aws *AwsMonthDescriber) GetTaskExtension(rootAccountCloudID string) (map[string]string, error) {
+// NewAwsMonthDescriber ...
+func NewAwsMonthDescriber(rootAccountCloudID string) MonthTaskDescriber {
+	describer := &awsMonthDescriber{RootAccountCloudID: rootAccountCloudID}
 	// set exclude account id
-	excludeCloudIds := cc.AccountServer().BillAllocation.AwsCommonExpense.ExcludeAccountCloudIDs
-	var spArnPrefix, spAccountCloudID string
+	describer.CommonExpenseExcludeCloudIDs = cc.AccountServer().BillAllocation.AwsCommonExpense.ExcludeAccountCloudIDs
 	// matching saving plan allocation option
 	for _, spOpt := range cc.AccountServer().BillAllocation.AwsSavingsPlans {
 		if spOpt.RootAccountCloudID != rootAccountCloudID {
 			continue
 		}
-		spAccountCloudID = spOpt.SpPurchaseAccountCloudID
-		spArnPrefix = spOpt.SpArnPrefix
+		describer.SpAccountCloudID = spOpt.SpPurchaseAccountCloudID
+		describer.SpArnPrefix = spOpt.SpArnPrefix
 	}
 
+	return describer
+}
+
+// awsMonthDescriber aws month task describer
+type awsMonthDescriber struct {
+	RootAccountCloudID           string
+	SpArnPrefix                  string
+	SpAccountCloudID             string
+	CommonExpenseExcludeCloudIDs []string
+}
+
+// GetMonthTaskTypes aws month tasks
+func (aws *awsMonthDescriber) GetMonthTaskTypes() []enumor.MonthTaskType {
+	if aws.SpArnPrefix == "" {
+		return []enumor.MonthTaskType{
+			enumor.AwsOutsideBillMonthTask,
+			// 没有配置sp前缀则不生成对应的sp分账任务
+			// enumor.AwsSavingsPlansMonthTask,
+			enumor.AwsSupportMonthTask,
+		}
+	}
+	return []enumor.MonthTaskType{
+		enumor.AwsOutsideBillMonthTask,
+		enumor.AwsSavingsPlansMonthTask,
+		enumor.AwsSupportMonthTask,
+	}
+}
+
+// GetTaskExtension extension for task
+func (aws *awsMonthDescriber) GetTaskExtension() (map[string]string, error) {
+
 	return map[string]string{
-		constant.AwsCommonExpenseExcludeCloudIDKey: strings.Join(excludeCloudIds, ","),
-		constant.AwsSavingsPlanARNPrefixKey:        spArnPrefix,
-		constant.AwsSavingsPlanAccountCloudIDKey:   spAccountCloudID,
+		constant.AwsCommonExpenseExcludeCloudIDKey: strings.Join(aws.CommonExpenseExcludeCloudIDs, ","),
+		constant.AwsSavingsPlanARNPrefixKey:        aws.SpArnPrefix,
+		constant.AwsSavingsPlanAccountCloudIDKey:   aws.SpAccountCloudID,
 	}, nil
 }

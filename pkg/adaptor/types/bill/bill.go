@@ -21,6 +21,7 @@
 package bill
 
 import (
+	"errors"
 	"time"
 
 	"hcm/pkg/adaptor/types/core"
@@ -596,4 +597,21 @@ type AwsSpUsageTotalResult struct {
 	UnblendedCost *decimal.Decimal    `json:"unblended_cost"`
 	SpCost        *decimal.Decimal    `json:"sp_cost"`
 	SpNetCost     *decimal.Decimal    `json:"sp_net_cost"`
+}
+
+// AwsMainOutsideMonthBillLitOpt define aws root outside bill month bill list option.
+type AwsMainOutsideMonthBillLitOpt struct {
+	PayerAccountID  string       `json:"payer_account_id" validate:"required"`
+	UsageAccountIDs []string     `json:"usage_account_ids" validate:"max=20"`
+	Year            uint         `json:"year" validate:"required"`
+	Month           uint         `json:"month" validate:"required,min=1,max=12"`
+	Page            *AwsBillPage `json:"page" validate:"omitempty"`
+}
+
+// Validate ...
+func (opt *AwsMainOutsideMonthBillLitOpt) Validate() error {
+	if opt == nil {
+		return errors.New("opt for get outside month bill is required")
+	}
+	return validator.Validate.Struct(opt)
 }

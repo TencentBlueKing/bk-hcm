@@ -25,7 +25,7 @@ import (
 	"math/rand"
 	"time"
 
-	monthtask2 "hcm/cmd/account-server/logics/bill/monthtask"
+	monthtask "hcm/cmd/account-server/logics/bill/monthtask"
 	"hcm/cmd/task-server/logics/action/bill/rootsummary"
 	"hcm/pkg/api/core"
 	billcore "hcm/pkg/api/core/bill"
@@ -152,7 +152,7 @@ func (rac *RootAccountController) runMonthTaskLoop(kt *kit.Kit) {
 
 	ticker := time.NewTicker(*cc.AccountServer().Controller.RootAccountSummarySyncDuration)
 	for {
-		runner := monthtask2.NewDefaultMonthTaskRunner(kt,
+		runner := monthtask.NewDefaultMonthTaskRunner(kt,
 			rac.Vendor, rac.RootAccountID, rac.RootAccountCloudID, rac.Client)
 		select {
 		case <-ticker.C:

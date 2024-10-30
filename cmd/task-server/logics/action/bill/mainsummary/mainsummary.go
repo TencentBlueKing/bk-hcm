@@ -219,8 +219,9 @@ func (act *MainAccountSummaryAction) getExchangeRate(
 func (act *MainAccountSummaryAction) calculateMonthTaskStatus(kt *kit.Kit, summaryRoot *billcore.SummaryRoot,
 	summary *bill.BillSummaryMain) (extraCost decimal.Decimal, isFinished bool, err error) {
 
-	monthDescriber, ok := monthtask.GetMonthTaskDescriber(summaryRoot.Vendor)
-	if !ok {
+	monthDescriber := monthtask.GetMonthTaskDescriber(summaryRoot.Vendor, summaryRoot.RootAccountCloudID)
+	if monthDescriber == nil {
+		// unsupported, skip
 		return decimal.Zero, true, nil
 	}
 

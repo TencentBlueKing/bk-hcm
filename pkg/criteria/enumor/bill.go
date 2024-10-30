@@ -205,6 +205,8 @@ const (
 type MonthTaskType string
 
 const (
+	// AwsOutsideBillMonthTask usage start date outside current bill month
+	AwsOutsideBillMonthTask MonthTaskType = "outside_month_bill"
 	// AwsSavingsPlansMonthTask aws savings plans month task
 	AwsSavingsPlansMonthTask MonthTaskType = "savings_plans"
 	// AwsSupportMonthTask aws support month task
