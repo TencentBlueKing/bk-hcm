@@ -22,6 +22,7 @@ package tcloud
 import (
 	"time"
 
+	"hcm/pkg/adaptor/metric"
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/tools/rand"
@@ -88,7 +89,7 @@ func (c *clientSet) CamServiceClient(region string) (*cam.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	client.WithHttpTransport(metric.GetTCloudRecordRoundTripper(nil))
 	return client, nil
 }
 
@@ -98,7 +99,7 @@ func (c *clientSet) CvmClient(region string) (*cvm.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	client.WithHttpTransport(metric.GetTCloudRecordRoundTripper(nil))
 	return client, nil
 }
 
@@ -108,7 +109,7 @@ func (c *clientSet) CbsClient(region string) (*cbs.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	client.WithHttpTransport(metric.GetTCloudRecordRoundTripper(nil))
 	return client, nil
 }
 
@@ -118,6 +119,7 @@ func (c *clientSet) VpcClient(region string) (*vpc.Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	client.WithHttpTransport(metric.GetTCloudRecordRoundTripper(nil))
 
 	return client, nil
 }
@@ -128,6 +130,7 @@ func (c *clientSet) BillClient() (*billing.Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	client.WithHttpTransport(metric.GetTCloudRecordRoundTripper(nil))
 
 	return client, nil
 }
@@ -138,6 +141,7 @@ func (c *clientSet) ClbClient(region string) (*clb.Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	client.WithHttpTransport(metric.GetTCloudRecordRoundTripper(nil))
 
 	return client, nil
 }
@@ -148,6 +152,7 @@ func (c *clientSet) CertClient() (*ssl.Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	client.WithHttpTransport(metric.GetTCloudRecordRoundTripper(nil))
 
 	return client, nil
 }
