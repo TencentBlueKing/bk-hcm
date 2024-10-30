@@ -20,9 +20,8 @@
 package rootaccount
 
 import (
+	"errors"
 	"fmt"
-	"strings"
-
 	accountset "hcm/pkg/api/account-server/account-set"
 	"hcm/pkg/api/cloud-server/account"
 	"hcm/pkg/api/core"
@@ -156,16 +155,11 @@ func (s *service) getAzureAccountInfo(cts *rest.Contexts) (*account.AzureAccount
 		logs.Errorf("[getAzureAccountInfo] fail to get account info, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-
-	// TODO 将来需要考虑多订阅的问题
-	// 校验订阅数量，要求订阅数量刚好一个
-	if len(info.SubscriptionInfos) > 1 {
-		subs := make([]string, len(info.SubscriptionInfos))
-		for i, sub := range info.SubscriptionInfos {
-			subs[i] = "(" + sub.CloudSubscriptionID + ")" + sub.CloudSubscriptionName
-		}
-		return nil, fmt.Errorf("more than one subscription found: " + strings.Join(subs, ","))
+	if len(info.SubscriptionInfos) < 1 {
+		logs.Errorf("get azure account info failed, no subscription found")
+		return nil, errors.New("no subscription found")
 	}
+
 	subscription := info.SubscriptionInfos[0]
 	result := &account.AzureAccountInfoBySecretResp{
 		CloudSubscriptionID:   subscription.CloudSubscriptionID,
