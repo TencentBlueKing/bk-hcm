@@ -46,8 +46,8 @@ func (a *accountSvc) CheckAccount(cts *rest.Contexts) (interface{}, error) {
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-	if req.Type != enumor.RegistrationAccount {
-		return nil, errors.New("only support check registration account")
+	if req.Type != enumor.ResourceAccount && req.Type != enumor.SecurityAuditAccount {
+		return nil, errors.New("only support check account type of resource or security_audit ")
 	}
 
 	var err error
@@ -510,8 +510,8 @@ func (a *accountSvc) parseAndCheckAzureExtensionByID(
 func CheckDuplicateMainAccount(cts *rest.Contexts, client *client.ClientSet, vendor enumor.Vendor,
 	accountType enumor.AccountType, mainAccountIDFieldValue string) error {
 
-	// 只需要检查资源账号或安全审计账号的主账号是否重复，其他类型账号不检查
-	if accountType != enumor.ResourceAccount && accountType != enumor.SecurityAuditAccount {
+	// 只校验资源账号的主账号是否重复，其他类型账号不检查
+	if accountType != enumor.ResourceAccount {
 		return nil
 	}
 
