@@ -53,7 +53,7 @@ type BillAdjustmentItemCreateReq struct {
 	BillYear      int                       `json:"bill_year" validate:"omitempty"`
 	BillMonth     int                       `json:"bill_month" validate:"omitempty"`
 	Type          enumor.BillAdjustmentType `json:"type" validate:"required"`
-	Currency      string                    `json:"currency" validate:"required"`
+	Currency      enumor.CurrencyCode       `json:"currency" validate:"required"`
 	Cost          decimal.Decimal           `json:"cost" validate:"required"`
 	RmbCost       decimal.Decimal           `json:"rmb_cost" validate:"required"`
 	Memo          *string                   `json:"memo,omitempty"`
@@ -74,7 +74,6 @@ type BillAdjustmentItemUpdateReq struct {
 	ProductID     int64                     `json:"product_id" validate:"omitempty"`
 	BkBizID       int64                     `json:"bk_biz_id" validate:"omitempty"`
 	Type          enumor.BillAdjustmentType `json:"type"`
-	Currency      string                    `json:"currency"`
 	Cost          *decimal.Decimal          `json:"cost"`
 	RmbCost       *decimal.Decimal          `json:"rmb_cost"`
 	Memo          *string                   `json:"memo"`
