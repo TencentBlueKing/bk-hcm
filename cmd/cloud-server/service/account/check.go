@@ -46,8 +46,8 @@ func (a *accountSvc) CheckAccount(cts *rest.Contexts) (interface{}, error) {
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-	if req.Type != enumor.ResourceAccount && req.Type != enumor.SecurityAuditAccount {
-		return nil, errors.New("only support check account type of resource or security_audit ")
+	if req.Type != enumor.RegistrationAccount && req.Type != enumor.SecurityAuditAccount {
+		return nil, errors.New("only support check account type of registration or security_audit ")
 	}
 
 	var err error
