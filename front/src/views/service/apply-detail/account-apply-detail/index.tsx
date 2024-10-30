@@ -101,7 +101,7 @@ export default defineComponent({
           filter: { op: 'and', rules: [] },
           page: { limit: 500, start: 0, count: false },
         });
-        rootAccountList.value = data.details.map((v: any) => ({ name: v.name, id: v.id, key: v.id }));
+        rootAccountList.value = data.details.map((v: any) => ({ name: v.name, id: v.id, key: v.id, vendor: v.vendor }));
       } else {
         rootAccountList.value = [];
       }
