@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0026,HCMVER=v1.6.10
 
     Notes:
     1. 修改`async_flow`表，增加`worker`,`state`索引
@@ -39,7 +39,7 @@ alter table account_bill_item
 
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.6.10' as `hcm_ver`, '0026' as `sql_ver`;
 
 COMMIT;
 
