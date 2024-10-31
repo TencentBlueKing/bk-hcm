@@ -35,7 +35,7 @@ import (
 
 // SyncLoadBalancer 同步负载均衡接口
 func (svc *service) SyncLoadBalancer(cts *rest.Contexts) (interface{}, error) {
-	return nil, handler.ResourceSync(cts, &lbHandler{cli: svc.syncCli})
+	return nil, handler.ResourceSyncV2(cts, &lbHandler{cli: svc.syncCli})
 }
 
 // lbHandler lb sync handler.
@@ -49,7 +49,7 @@ type lbHandler struct {
 	offset  uint64
 }
 
-var _ handler.Handler = new(lbHandler)
+var _ handler.HandlerV2 = new(lbHandler)
 
 // Prepare ...
 func (hd *lbHandler) Prepare(cts *rest.Contexts) error {
@@ -131,6 +131,23 @@ func (hd *lbHandler) RemoveDeleteFromCloud(kt *kit.Kit) error {
 		return err
 	}
 
+	return nil
+}
+
+// RemoveDeleteFromCloudV2 清理云上已删除资源
+func (hd *lbHandler) RemoveDeleteFromCloudV2(kt *kit.Kit, allCloudIDMap map[string]struct{}) error {
+
+	params := &tcloud.SyncRemovedParams{
+		AccountID: hd.request.AccountID,
+		Region:    hd.request.Region,
+		CloudIDs:  hd.request.CloudIDs,
+	}
+	err := hd.syncCli.RemoveLoadBalancerDeleteFromCloudV2(kt, params, allCloudIDMap)
+	if err != nil {
+		logs.Errorf("remove sg delete from cloud failed, err: %v, accountID: %s, region: %s, rid: %s", err,
+			hd.request.AccountID, hd.request.Region, kt.Rid)
+		return err
+	}
 	return nil
 }
 

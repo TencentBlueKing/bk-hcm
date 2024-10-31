@@ -51,6 +51,7 @@ func (opt SyncSGOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
+// SecurityGroup ...
 func (cli *client) SecurityGroup(kt *kit.Kit, params *SyncBaseParams, opt *SyncSGOption) (*SyncResult, error) {
 	if err := validator.ValidateTool(params, opt); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -298,6 +299,48 @@ func (cli *client) listSGFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	return result.Details, nil
 }
 
+// RemoveSecurityGroupDeleteFromCloudV2 根据给定的云id删除数据库中多余的数据
+func (cli *client) RemoveSecurityGroupDeleteFromCloudV2(kt *kit.Kit, accountID string, region string,
+	allCloudIDMap map[string]struct{}) error {
+
+	req := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("account_id", accountID),
+			tools.RuleEqual("region", region),
+		),
+		Page: &core.BasePage{Start: 0, Limit: constant.BatchOperationMaxLimit},
+	}
+	for {
+		resultFromDB, err := cli.dbCli.TCloud.SecurityGroup.ListSecurityGroupExt(kt.Ctx, kt.Header(), req)
+		if err != nil {
+			logs.Errorf("[%s] request dataservice to list sg failed, err: %v, req: %v, rid: %s", enumor.TCloud,
+				err, req, kt.Rid)
+			return err
+		}
+
+		var delCloudIDs []string
+		for i := range resultFromDB.Details {
+			cloudId := resultFromDB.Details[i].CloudID
+			if _, ok := allCloudIDMap[cloudId]; !ok {
+				delCloudIDs = append(delCloudIDs, cloudId)
+			}
+		}
+
+		if len(delCloudIDs) != 0 {
+			if err = cli.deleteSG(kt, accountID, region, delCloudIDs); err != nil {
+				return err
+			}
+		}
+		if len(resultFromDB.Details) < constant.BatchOperationMaxLimit {
+			break
+		}
+		req.Page.Start += constant.BatchOperationMaxLimit
+	}
+
+	return nil
+}
+
+// RemoveSecurityGroupDeleteFromCloud ...
 func (cli *client) RemoveSecurityGroupDeleteFromCloud(kt *kit.Kit, accountID string, region string) error {
 	req := &core.ListReq{
 		Filter: &filter.Expression{

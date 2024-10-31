@@ -35,7 +35,7 @@ import (
 
 // SyncSecurityGroup ....
 func (svc *service) SyncSecurityGroup(cts *rest.Contexts) (interface{}, error) {
-	return nil, handler.ResourceSync(cts, &sgHandler{cli: svc.syncCli})
+	return nil, handler.ResourceSyncV2(cts, &sgHandler{cli: svc.syncCli})
 }
 
 // sgHandler sg sync handler.
@@ -48,7 +48,7 @@ type sgHandler struct {
 	offset  uint64
 }
 
-var _ handler.Handler = new(sgHandler)
+var _ handler.HandlerV2 = new(sgHandler)
 
 // Prepare ...
 func (hd *sgHandler) Prepare(cts *rest.Contexts) error {
@@ -110,6 +110,18 @@ func (hd *sgHandler) Sync(kt *kit.Kit, cloudIDs []string) error {
 // RemoveDeleteFromCloud ...
 func (hd *sgHandler) RemoveDeleteFromCloud(kt *kit.Kit) error {
 	if err := hd.syncCli.RemoveSecurityGroupDeleteFromCloud(kt, hd.request.AccountID, hd.request.Region); err != nil {
+		logs.Errorf("remove sg delete from cloud failed, err: %v, accountID: %s, region: %s, rid: %s", err,
+			hd.request.AccountID, hd.request.Region, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// RemoveDeleteFromCloudV2 ...
+func (hd *sgHandler) RemoveDeleteFromCloudV2(kt *kit.Kit, allCloudIDMap map[string]struct{}) error {
+	err := hd.syncCli.RemoveSecurityGroupDeleteFromCloudV2(kt, hd.request.AccountID, hd.request.Region, allCloudIDMap)
+	if err != nil {
 		logs.Errorf("remove sg delete from cloud failed, err: %v, accountID: %s, region: %s, rid: %s", err,
 			hd.request.AccountID, hd.request.Region, kt.Rid)
 		return err

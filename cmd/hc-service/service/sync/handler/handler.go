@@ -80,3 +80,60 @@ func ResourceSync(cts *rest.Contexts, handler Handler) error {
 
 	return nil
 }
+
+// HandlerV2 定义了全量同步操作函数。实验性全量同步
+type HandlerV2 interface {
+	// Prepare 解析请求体，构建同步所需客户端。
+	Prepare(cts *rest.Contexts) error
+	// Next 去云上分页查询资源云ID，用于同步，每次分页查询 constant.CloudResourceSyncMaxLimit 条数据。
+	Next(kt *kit.Kit) ([]string, error)
+	// Sync 同步传入的 cloudIDs 的资源数据。
+	Sync(kt *kit.Kit, cloudIDs []string) error
+
+	// RemoveDeleteFromCloudV2 进行db和云上数据的全量对比，删除已经从云上删除的数据。
+	RemoveDeleteFromCloudV2(kt *kit.Kit, allCloudIDMap map[string]struct{}) error
+
+	Name() enumor.CloudResourceType
+}
+
+// ResourceSyncV2 资源同步流程。
+func ResourceSyncV2(cts *rest.Contexts, handler HandlerV2) error {
+	kt := cts.Kit
+
+	// 解析请求参数到handler实现中，构建同步需要的客户端
+	if err := handler.Prepare(cts); err != nil {
+		logs.Errorf("%s sync handler to prepare failed, err: %v, rid: %s", handler.Name(), err, kt.Rid)
+		return err
+	}
+
+	allCloudIDMap := make(map[string]struct{}, 1024)
+	for {
+		cloudIDs, err := handler.Next(kt)
+		if err != nil {
+			logs.Errorf("%s sync handler to next failed, err: %v, rid: %s", handler.Name(), err, kt.Rid)
+			return err
+		}
+
+		if len(cloudIDs) == 0 {
+			break
+		}
+		for i := range cloudIDs {
+			allCloudIDMap[cloudIDs[i]] = struct{}{}
+		}
+
+		if err = handler.Sync(kt, cloudIDs); err != nil {
+			logs.Errorf("%s sync handler to sync failed, err: %v, rid: %s", handler.Name(), err, kt.Rid)
+			return err
+		}
+
+		if len(cloudIDs) < constant.CloudResourceSyncMaxLimit {
+			break
+		}
+	}
+	// 删除云上已删除数据
+	if err := handler.RemoveDeleteFromCloudV2(kt, allCloudIDMap); err != nil {
+		logs.Errorf("%s sync handler to removeDeleteFromCloud failed, err: %v, rid: %s", handler.Name(), err, kt.Rid)
+		return err
+	}
+	return nil
+}
