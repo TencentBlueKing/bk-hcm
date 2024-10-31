@@ -59,7 +59,10 @@ func CloudResourceSync(intervalMin time.Duration, sd serviced.ServiceDiscover, c
 		waitGroup.Add(len(syncers))
 		for _, vendorSyncer := range syncers {
 			go func(vendor account.VendorSyncer) {
-				allAccountSync(core.NewBackendKit(), cliSet, vendor)
+				kt := core.NewBackendKit()
+				// for retry
+				kt.RequestSource = enumor.AsynchronousTasks
+				allAccountSync(kt, cliSet, vendor)
 				waitGroup.Done()
 			}(vendorSyncer)
 		}
