@@ -95,8 +95,7 @@ func (cli *client) LoadBalancer(kt *kit.Kit, params *SyncBaseParams, opt *SyncLB
 	if err := validator.ValidateTool(params, opt); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-
-	lbFromCloud, err := cli.listLBFromCloud(kt, params)
+	lbFromCloud, err := cli.getWithPrefetchedCloudLB(kt, params, opt)
 	if err != nil {
 		return nil, err
 	}
@@ -128,6 +127,86 @@ func (cli *client) LoadBalancer(kt *kit.Kit, params *SyncBaseParams, opt *SyncLB
 		return nil, err
 	}
 	return new(SyncResult), nil
+}
+
+func (cli *client) getWithPrefetchedCloudLB(kt *kit.Kit, params *SyncBaseParams, opt *SyncLBOption) (
+	[]typeslb.TCloudClb, error) {
+
+	var err error
+	fetched := false
+	lbFromCloud := opt.PrefetchedLB
+	if len(lbFromCloud) == len(params.CloudIDs) {
+		fetched = true
+		for i := range params.CloudIDs {
+			if params.CloudIDs[i] == lbFromCloud[i].GetCloudID() {
+				continue
+			}
+			logs.Warnf("params.CloudIDs[%d] mismatch prefetched lb cloud id, params: %s, opt: %s, rid: %s",
+				i, params.CloudIDs[i], opt.PrefetchedLB[i].GetCloudID(), kt.Rid)
+			fetched = false
+			break
+		}
+	}
+	if fetched {
+		return lbFromCloud, nil
+	}
+	lbFromCloud, err = cli.listLBFromCloud(kt, params)
+	if err != nil {
+		return nil, err
+	}
+	return lbFromCloud, nil
+}
+
+// RemoveLoadBalancerDeleteFromCloudV2 清理云上已删除资源
+func (cli *client) RemoveLoadBalancerDeleteFromCloudV2(kt *kit.Kit, params *SyncRemovedParams,
+	allCloudIDMap map[string]struct{}) error {
+
+	if err := params.Validate(); err != nil {
+		return err
+	}
+	rules := []*filter.AtomRule{
+		tools.RuleEqual("account_id", params.AccountID),
+		tools.RuleEqual("region", params.Region),
+	}
+	if len(params.CloudIDs) > 0 {
+		// 支持指定cloud id删除
+		rules = append(rules, tools.RuleIn("cloud_id", params.CloudIDs))
+	}
+	req := &core.ListReq{
+		Filter: tools.ExpressionAnd(rules...),
+		Page:   &core.BasePage{Start: 0, Limit: constant.BatchOperationMaxLimit},
+	}
+	var delCloudIDs []string
+
+	for {
+		resultFromDB, err := cli.dbCli.TCloud.LoadBalancer.ListLoadBalancer(kt, req)
+		if err != nil {
+			logs.Errorf("[%s] request dataservice to list clb failed, err: %v, req: %v, rid: %s",
+				enumor.TCloud, err, req, kt.Rid)
+			return err
+		}
+
+		for i := range resultFromDB.Details {
+			cloudId := resultFromDB.Details[i].CloudID
+			if _, ok := allCloudIDMap[cloudId]; !ok {
+				delCloudIDs = append(delCloudIDs, cloudId)
+			}
+		}
+
+		if len(resultFromDB.Details) < constant.BatchOperationMaxLimit {
+			break
+		}
+		req.Page.Start += constant.BatchOperationMaxLimit
+	}
+	for _, idBatch := range slice.Split(delCloudIDs, constant.BatchOperationMaxLimit) {
+		if err := cli.deleteLoadBalancer(kt, params.AccountID, params.Region, idBatch); err != nil {
+			logs.Errorf("fail to delete removed clb, err: %s, account: %s, region: %s, cloudIds: %v, rid: %s",
+				err, params.AccountID, params.Region, idBatch, kt.Rid)
+			return err
+		}
+	}
+
+	return nil
 }
 
 // RemoveLoadBalancerDeleteFromCloud 删除存在本地但是在云上被删除的数据
@@ -743,6 +822,8 @@ func hashCloudSnatIP(ip *tclb.SnatIp) string {
 
 // SyncLBOption ...
 type SyncLBOption struct {
+	// optional cloud lb cache item, must have same order of SyncParams.
+	PrefetchedLB []typeslb.TCloudClb
 }
 
 // Validate ...

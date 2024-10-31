@@ -44,6 +44,8 @@ type lbHandler struct {
 
 	request *sync.TCloudSyncReq
 	syncCli tcloud.Interface
+	// 缓存负载均衡数据，避免反复调用云上接口拉数据
+	lbCache []typeclb.TCloudClb
 	offset  uint64
 }
 
@@ -64,10 +66,17 @@ func (hd *lbHandler) Prepare(cts *rest.Contexts) error {
 
 // Next ...
 func (hd *lbHandler) Next(kt *kit.Kit) ([]string, error) {
+
+	if len(hd.request.CloudIDs) > 0 {
+		// 指定资源同步的情况，直接返回指定资源id即可
+		return hd.request.CloudIDs, nil
+	}
+
+	cloudIDs := make([]string, 0, 100)
+	hd.lbCache = make([]typeclb.TCloudClb, 0, 100)
+
 	listOpt := &typeclb.TCloudListOption{
 		Region: hd.request.Region,
-		// 支持指定资源同步
-		CloudIDs: hd.request.CloudIDs,
 		Page: &typecore.TCloudPage{
 			Offset: hd.offset,
 			Limit:  typecore.TCloudQueryLimit,
@@ -76,7 +85,8 @@ func (hd *lbHandler) Next(kt *kit.Kit) ([]string, error) {
 
 	lbResult, err := hd.syncCli.CloudCli().ListLoadBalancer(kt, listOpt)
 	if err != nil {
-		logs.Errorf("request adaptor list tcloud load balancer failed, err: %v, opt: %v, rid: %s", err, listOpt, kt.Rid)
+		logs.Errorf("request adaptor list tcloud load balancer failed, err: %v, opt: %+v, rid: %s",
+			err, listOpt, kt.Rid)
 		return nil, err
 	}
 
@@ -84,12 +94,11 @@ func (hd *lbHandler) Next(kt *kit.Kit) ([]string, error) {
 		return nil, nil
 	}
 
-	cloudIDs := make([]string, 0, len(lbResult))
 	for _, one := range lbResult {
 		cloudIDs = append(cloudIDs, converter.PtrToVal(one.LoadBalancerId))
 	}
-
-	hd.offset += typecore.TCloudQueryLimit
+	hd.lbCache = append(hd.lbCache, lbResult...)
+	hd.offset += uint64(len(lbResult))
 	return cloudIDs, nil
 }
 
