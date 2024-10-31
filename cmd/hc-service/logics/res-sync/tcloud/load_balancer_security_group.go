@@ -47,17 +47,7 @@ func (cli *client) lbSgRel(kt *kit.Kit, params *SyncBaseParams, lbInfo []corelb.
 		lbIDs = append(lbIDs, lb.ID)
 		cloudIDLbMap[lb.CloudID] = lb.ID
 	}
-	// 1. 删除本地多余关联关系
-	delFilter := tools.ExpressionAnd(
-		tools.RuleEqual("res_type", enumor.LoadBalancerCloudResType),
-		tools.RuleNotIn("res_id", lbIDs),
-	)
-	err := cli.dbCli.Global.SGCommonRel.BatchDeleteSgCommonRels(kt, &dataservice.BatchDeleteReq{Filter: delFilter})
-	if err != nil {
-		logs.Errorf("fail to del load balancer rel, err: %v, rid: %s", err, kt.Rid)
-		return err
-	}
-	// 2. 获取云上安全组绑定信息
+
 	sgCloudLocalIdMap, lbSgCloudMap, err := cli.getCloudLbSgBinding(kt, params, lbInfo, cloudIDLbMap)
 	if err != nil {
 		logs.Errorf("fail to get cloud lb sg bind for rel sync, err: %v, rid: %s", err, kt.Rid)
