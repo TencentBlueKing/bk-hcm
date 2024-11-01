@@ -40,6 +40,7 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 )
 
 // SyncSGOption ...
@@ -308,17 +309,19 @@ func (cli *client) RemoveSecurityGroupDeleteFromCloudV2(kt *kit.Kit, accountID s
 			tools.RuleEqual("account_id", accountID),
 			tools.RuleEqual("region", region),
 		),
-		Page: &core.BasePage{Start: 0, Limit: constant.BatchOperationMaxLimit},
+		Page: &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
 	}
+
+	var delCloudIDs []string
+
 	for {
 		resultFromDB, err := cli.dbCli.TCloud.SecurityGroup.ListSecurityGroupExt(kt.Ctx, kt.Header(), req)
 		if err != nil {
-			logs.Errorf("[%s] request dataservice to list sg failed, err: %v, req: %v, rid: %s", enumor.TCloud,
-				err, req, kt.Rid)
+			logs.Errorf("[%s] request dataservice to list sg failed, err: %v, req: %+v, rid: %s",
+				enumor.TCloud, err, req, kt.Rid)
 			return err
 		}
 
-		var delCloudIDs []string
 		for i := range resultFromDB.Details {
 			cloudId := resultFromDB.Details[i].CloudID
 			if _, ok := allCloudIDMap[cloudId]; !ok {
@@ -326,17 +329,20 @@ func (cli *client) RemoveSecurityGroupDeleteFromCloudV2(kt *kit.Kit, accountID s
 			}
 		}
 
-		if len(delCloudIDs) != 0 {
-			if err = cli.deleteSG(kt, accountID, region, delCloudIDs); err != nil {
-				return err
-			}
-		}
-		if len(resultFromDB.Details) < constant.BatchOperationMaxLimit {
+		if uint(len(resultFromDB.Details)) < core.DefaultMaxPageLimit {
 			break
 		}
-		req.Page.Start += constant.BatchOperationMaxLimit
+		req.Page.Start += uint32(core.DefaultMaxPageLimit)
 	}
 
+	for _, idBatch := range slice.Split(delCloudIDs, constant.BatchOperationMaxLimit) {
+		if err := cli.deleteSG(kt, accountID, region, idBatch); err != nil {
+			logs.Errorf("fail to delete removed security group, err: %s, account: %s, region: %s, cloudIds: %v, "+
+				"rid: %s",
+				err, accountID, region, idBatch, kt.Rid)
+			return err
+		}
+	}
 	return nil
 }
 

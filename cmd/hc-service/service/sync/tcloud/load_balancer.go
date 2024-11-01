@@ -109,7 +109,10 @@ func (hd *lbHandler) Sync(kt *kit.Kit, cloudIDs []string) error {
 		Region:    hd.request.Region,
 		CloudIDs:  cloudIDs,
 	}
-	if _, err := hd.syncCli.LoadBalancerWithListener(kt, params, new(tcloud.SyncLBOption)); err != nil {
+	opt := &tcloud.SyncLBOption{
+		PrefetchedLB: hd.lbCache,
+	}
+	if _, err := hd.syncCli.LoadBalancerWithListener(kt, params, opt); err != nil {
 		logs.Errorf("sync tcloud load balancer with rel failed, err: %v, opt: %v, rid: %s", err, params, kt.Rid)
 		return err
 	}

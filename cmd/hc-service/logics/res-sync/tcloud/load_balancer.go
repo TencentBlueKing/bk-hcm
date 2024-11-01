@@ -174,14 +174,14 @@ func (cli *client) RemoveLoadBalancerDeleteFromCloudV2(kt *kit.Kit, params *Sync
 	}
 	req := &core.ListReq{
 		Filter: tools.ExpressionAnd(rules...),
-		Page:   &core.BasePage{Start: 0, Limit: constant.BatchOperationMaxLimit},
+		Page:   &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
 	}
 	var delCloudIDs []string
 
 	for {
 		resultFromDB, err := cli.dbCli.TCloud.LoadBalancer.ListLoadBalancer(kt, req)
 		if err != nil {
-			logs.Errorf("[%s] request dataservice to list clb failed, err: %v, req: %v, rid: %s",
+			logs.Errorf("[%s] request dataservice to list clb failed, err: %v, req: %+v, rid: %s",
 				enumor.TCloud, err, req, kt.Rid)
 			return err
 		}
@@ -193,10 +193,10 @@ func (cli *client) RemoveLoadBalancerDeleteFromCloudV2(kt *kit.Kit, params *Sync
 			}
 		}
 
-		if len(resultFromDB.Details) < constant.BatchOperationMaxLimit {
+		if uint(len(resultFromDB.Details)) < core.DefaultMaxPageLimit {
 			break
 		}
-		req.Page.Start += constant.BatchOperationMaxLimit
+		req.Page.Start += uint32(core.DefaultMaxPageLimit)
 	}
 	for _, idBatch := range slice.Split(delCloudIDs, constant.BatchOperationMaxLimit) {
 		if err := cli.deleteLoadBalancer(kt, params.AccountID, params.Region, idBatch); err != nil {
