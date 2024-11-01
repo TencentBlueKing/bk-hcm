@@ -2,7 +2,7 @@ import { defineComponent, reactive, ref, watchEffect } from 'vue';
 import './index.scss';
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import CommonCard from '@/components/CommonCard';
-import { Button, Form, Input, Message } from 'bkui-vue';
+import { Button, Form, Input, Message, Select } from 'bkui-vue';
 import { BILL_VENDORS_INFO } from '../constants';
 import { InfoLine, Success } from 'bkui-vue/lib/icon';
 import { VendorEnum } from '@/common/constant';
@@ -37,6 +37,7 @@ export default defineComponent({
       dept_id: -1, // 组织架构ID
       memo: '', // 备忘录
       extension: {}, // 扩展字段对象
+      entry: 'enterAccount',
     });
 
     watchEffect(() => {
@@ -66,6 +67,11 @@ export default defineComponent({
         theme: 'success',
       });
       router.go(-1);
+    };
+    const handleChange = (keyVal: any, property: string, follow: string) => {
+      curExtension.value.output1[property].value = keyVal;
+      const data = curExtension.value.selectParams[property].list.filter((item: any) => item[property] === keyVal);
+      curExtension.value.output1[follow].value = data[0][follow];
     };
 
     return () => (
@@ -187,7 +193,21 @@ export default defineComponent({
                 <div class={'account-form-card-content-grid-right'}>
                   {Object.entries(curExtension.value.output1).map(([property, { label, value, placeholder }]) => (
                     <FormItem label={label} property={property}>
-                      <Input v-model={value} readonly placeholder={placeholder} />
+                      {curExtension.value.formType === 'select' && curExtension.value.selectType.includes(property) ? (
+                        <Select
+                          v-model={value}
+                          placeholder={placeholder}
+                          list={curExtension.value.selectParams[property].list}
+                          idKey={curExtension.value.selectParams[property].idKey}
+                          displayKey={curExtension.value.selectParams[property].displayKey}
+                          clearable={false}
+                          onChange={(val) =>
+                            handleChange(val, property, curExtension.value.selectParams[property].follow)
+                          }
+                        />
+                      ) : (
+                        <Input v-model={value} readonly placeholder={placeholder} />
+                      )}
                     </FormItem>
                   ))}
                 </div>
@@ -199,7 +219,7 @@ export default defineComponent({
                   theme='primary'
                   outline={curExtension.value.validatedStatus === ValidateStatus.YES}
                   class={'account-validate-btn'}
-                  onClick={() => handleValidate()}
+                  onClick={() => handleValidate(() => ({}), 'root_accounts')}
                   disabled={isValidateDiasbled.value}
                   loading={isValidateLoading.value}>
                   账号校验
