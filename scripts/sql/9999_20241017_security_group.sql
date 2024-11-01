@@ -31,7 +31,7 @@ START TRANSACTION;
 ALTER TABLE security_group
     ADD COLUMN `cloud_update_time` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '云上修改时间' AFTER `association_template_id`,
     ADD COLUMN `cloud_created_time` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '云上创建时间' AFTER `association_template_id`,
-    ADD COLUMN `tags` json NOT NULL DEFAULT '{}' COMMENT '标签' AFTER `extension`;
+    ADD COLUMN `tags` json NOT NULL COMMENT '标签' AFTER `extension`;
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
 SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
