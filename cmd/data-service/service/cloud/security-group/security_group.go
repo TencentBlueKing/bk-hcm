@@ -167,7 +167,7 @@ func (svc *securityGroupSvc) ListSecurityGroup(cts *rest.Contexts) (interface{},
 			UpdatedAt:        one.UpdatedAt.String(),
 			CloudCreatedTime: one.CloudCreatedTime,
 			CloudUpdateTime:  one.CloudUpdateTime,
-			Tags:             one.Tags,
+			Tags:             core.TagMap(one.Tags),
 		})
 	}
 
@@ -302,7 +302,7 @@ func convTableToBaseSG(sgTable *tablecloud.SecurityGroupTable) *corecloud.BaseSe
 		Memo:             sgTable.Memo,
 		CloudCreatedTime: sgTable.CloudCreatedTime,
 		CloudUpdateTime:  sgTable.CloudUpdateTime,
-		Tags:             sgTable.Tags,
+		Tags:             core.TagMap(sgTable.Tags),
 		AccountID:        sgTable.AccountID,
 		Creator:          sgTable.Creator,
 		Reviser:          sgTable.Reviser,
@@ -356,6 +356,7 @@ func batchUpdateSecurityGroup[T corecloud.SecurityGroupExtension](cts *rest.Cont
 				Reviser:          cts.Kit.User,
 				CloudCreatedTime: sg.CloudCreatedTime,
 				CloudUpdateTime:  sg.CloudUpdateTime,
+				Tags:             tabletype.StringMap(sg.Tags),
 			}
 
 			if sg.Extension != nil {
@@ -369,14 +370,6 @@ func batchUpdateSecurityGroup[T corecloud.SecurityGroupExtension](cts *rest.Cont
 					return nil, fmt.Errorf("json UpdateMerge extension failed, err: %v", err)
 				}
 				update.Extension = tabletype.JsonField(merge)
-			}
-
-			if sg.Tags != nil {
-				tags, err := json.MarshalToString(sg.Tags)
-				if err != nil {
-					return nil, errf.NewFromErr(errf.InvalidParameter, err)
-				}
-				update.Tags = tabletype.JsonField(tags)
 			}
 
 			if err := svc.dao.SecurityGroup().UpdateByIDWithTx(cts.Kit, txn, sg.ID, update); err != nil {
@@ -455,10 +448,6 @@ func batchCreateSecurityGroup[T corecloud.SecurityGroupExtension](vendor enumor.
 			if err != nil {
 				return nil, errf.NewFromErr(errf.InvalidParameter, err)
 			}
-			tags, err := json.MarshalToString(sg.Tags)
-			if err != nil {
-				return nil, errf.NewFromErr(errf.InvalidParameter, err)
-			}
 
 			sgs = append(sgs, &tablecloud.SecurityGroupTable{
 				Vendor:           vendor,
@@ -471,7 +460,7 @@ func batchCreateSecurityGroup[T corecloud.SecurityGroupExtension](vendor enumor.
 				CloudCreatedTime: sg.CloudCreatedTime,
 				CloudUpdateTime:  sg.CloudUpdateTime,
 				Extension:        tabletype.JsonField(extension),
-				Tags:             tabletype.JsonField(tags),
+				Tags:             tabletype.StringMap(sg.Tags),
 				Creator:          cts.Kit.User,
 				Reviser:          cts.Kit.User,
 			})

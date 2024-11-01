@@ -65,7 +65,7 @@ type SecurityGroupTable struct {
 	CloudCreatedTime string          `db:"cloud_created_time" json:"cloud_created_time"`
 	CloudUpdateTime  string          `db:"cloud_update_time" json:"cloud_update_time"`
 	Extension        types.JsonField `db:"extension" json:"extension"`
-	Tags             types.JsonField `db:"tags" json:"tags"`
+	Tags             types.StringMap `db:"tags" json:"tags"`
 	Creator          string          `db:"creator" json:"creator" validate:"lte=64"`
 	Reviser          string          `db:"reviser" json:"reviser" validate:"lte=64"`
 	CreatedAt        types.Time      `db:"created_at" json:"created_at" validate:"excluded_unless"`

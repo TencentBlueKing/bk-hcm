@@ -20,7 +20,6 @@
 package cloud
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -50,7 +49,7 @@ type SecurityGroupBatchCreate[Extension cloud.SecurityGroupExtension] struct {
 	Extension        *Extension  `json:"extension" validate:"required"`
 	CloudCreatedTime string      `json:"cloud_created_time" validate:"required"`
 	CloudUpdateTime  string      `json:"cloud_update_time" validate:"required"`
-	Tags             interface{} `json:"tags" validate:"required"`
+	Tags             core.TagMap `json:"tags" validate:"required"`
 }
 
 // Validate security group create request.
@@ -71,14 +70,14 @@ type SecurityGroupBatchUpdateReq[Extension cloud.SecurityGroupExtension] struct 
 
 // SecurityGroupBatchUpdate define security group batch update.
 type SecurityGroupBatchUpdate[Extension cloud.SecurityGroupExtension] struct {
-	ID               string          `json:"id" validate:"required"`
-	Name             string          `json:"name" validate:"omitempty"`
-	BkBizID          int64           `json:"bk_biz_id" validate:"omitempty"`
-	Memo             *string         `json:"memo" validate:"omitempty"`
-	Extension        *Extension      `json:"extension" validate:"omitempty"`
-	CloudCreatedTime string          `json:"cloud_created_time" validate:"omitempty"`
-	CloudUpdateTime  string          `json:"cloud_update_time" validate:"omitempty"`
-	Tags             json.RawMessage `json:"tags" validate:"omitempty"`
+	ID               string      `json:"id" validate:"required"`
+	Name             string      `json:"name" validate:"omitempty"`
+	BkBizID          int64       `json:"bk_biz_id" validate:"omitempty"`
+	Memo             *string     `json:"memo" validate:"omitempty"`
+	Extension        *Extension  `json:"extension" validate:"omitempty"`
+	CloudCreatedTime string      `json:"cloud_created_time" validate:"omitempty"`
+	CloudUpdateTime  string      `json:"cloud_update_time" validate:"omitempty"`
+	Tags             core.TagMap `json:"tags" validate:"omitempty"`
 }
 
 // Validate security group update request.
