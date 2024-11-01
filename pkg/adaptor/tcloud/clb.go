@@ -287,8 +287,14 @@ func (t *TCloudImpl) formatCreateClbRequest(opt *typelb.TCloudCreateClbOption) *
 	req.MasterZoneId = opt.MasterZoneID
 
 	req.BandwidthPackageId = opt.BandwidthPackageID
-	req.Tags = opt.Tags
 	req.SnatIps = opt.SnatIps
+
+	for _, tag := range opt.Tags {
+		req.Tags = append(req.Tags, &clb.TagInfo{
+			TagKey:   cvt.ValToPtr(tag.Key),
+			TagValue: cvt.ValToPtr(tag.Value),
+		})
+	}
 
 	// 使用默认ISP时传递空即可
 	ispVal := cvt.PtrToVal(opt.VipIsp)

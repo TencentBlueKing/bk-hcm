@@ -143,7 +143,9 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 		ClientToken:        cvt.StrNilPtr(cts.Kit.Rid),
 
 		BandwidthpkgSubType: req.BandwidthpkgSubType,
+		Tags:                req.Tags,
 	}
+
 	if cvt.PtrToVal(req.CloudEipID) != "" {
 		createOpt.EipAddressID = req.CloudEipID
 	}
@@ -210,6 +212,7 @@ func (svc *clbSvc) createTCloudDBLoadBalancer(cts *rest.Contexts, req *protolb.T
 		dataReq.Lbs[i].IPVersion = req.AddressIPVersion.Convert()
 		dataReq.Lbs[i].Zones = req.Zones
 		dataReq.Lbs[i].BackupZones = req.BackupZones
+		dataReq.Lbs[i].Tags = cvt.SliceToMap(req.Tags, core.TagPair.GetKeyValue)
 
 	}
 	// 创建本地数据，保存业务信息

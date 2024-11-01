@@ -290,7 +290,7 @@ type TCloudCreateClbOption struct {
 	MasterZoneID             *string                           `json:"master_zone_id" validate:"omitempty"`
 	ZoneID                   *string                           `json:"zone_id" validate:"omitempty"`
 	VipIsp                   *string                           `json:"vip_isp" validate:"omitempty"`
-	Tags                     []*tclb.TagInfo                   `json:"tags" validate:"omitempty"`
+	Tags                     []apicore.TagPair                 `json:"tags" validate:"omitempty"`
 	Vip                      *string                           `json:"vip" validate:"omitempty"`
 	BandwidthPackageID       *string                           `json:"bandwidth_package_id" validate:"omitempty"`
 	ExclusiveCluster         *tclb.ExclusiveCluster            `json:"exclusive_cluster" validate:"omitempty"`

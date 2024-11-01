@@ -41,3 +41,14 @@ func (m TagMap) Map() map[string]string {
 	maps.Copy(m, dst)
 	return dst
 }
+
+// TagPair key-value Pair
+type TagPair struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
+// GetKeyValue ...
+func (t TagPair) GetKeyValue() (string, string) {
+	return t.Key, t.Value
+}
