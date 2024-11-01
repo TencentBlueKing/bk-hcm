@@ -501,6 +501,7 @@ func convCloudToDBCreate(cloud typeslb.TCloudClb, accountID string, region strin
 		CloudCreatedTime: cvt.PtrToVal(cloud.CreateTime),
 		CloudStatusTime:  cvt.PtrToVal(cloud.StatusTime),
 		CloudExpiredTime: cvt.PtrToVal(cloud.ExpireTime),
+		Tags:             cloud.GetTagMap(),
 		// 备注字段云上没有
 		Memo: nil,
 	}
@@ -594,6 +595,7 @@ func convCloudToDBUpdate(id string, cloud typeslb.TCloudClb, vpcMap map[string]*
 		CloudVpcID:       cloudVpcID,
 		SubnetID:         subnetMap[cloudSubnetID],
 		CloudSubnetID:    cloudSubnetID,
+		Tags:             cloud.GetTagMap(),
 		Extension:        convertTCloudExtension(cloud, region),
 	}
 	if len(cloud.LoadBalancerVips) != 0 {
@@ -613,6 +615,9 @@ func convCloudToDBUpdate(id string, cloud typeslb.TCloudClb, vpcMap map[string]*
 func isLBChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) bool {
 
 	if db.Name != cvt.PtrToVal(cloud.LoadBalancerName) {
+		return true
+	}
+	if isTagsChange(db.Tags, cloud.Tags) {
 		return true
 	}
 
@@ -742,6 +747,19 @@ func isLBExtensionChange(cloud typeslb.TCloudClb, db corelb.TCloudLoadBalancer) 
 		return true
 	}
 
+	return false
+}
+
+func isTagsChange(localTag core.TagMap, cloudTags []*tclb.TagInfo) bool {
+	if len(localTag) != len(cloudTags) {
+		return true
+	}
+	for _, cloud := range cloudTags {
+		key := cvt.PtrToVal(cloud.TagKey)
+		if v, ok := localTag.Get(key); !ok || cvt.PtrToVal(cloud.TagValue) != v {
+			return true
+		}
+	}
 	return false
 }
 

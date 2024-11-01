@@ -99,6 +99,7 @@ func batchUpdateLoadBalancer[T corelb.Extension](cts *rest.Contexts, svc *lbSvc)
 				CloudCreatedTime: lb.CloudCreatedTime,
 				CloudStatusTime:  lb.CloudStatusTime,
 				CloudExpiredTime: lb.CloudExpiredTime,
+				Tags:             tabletype.StringMap(lb.Tags),
 				Memo:             lb.Memo,
 				Reviser:          cts.Kit.User,
 			}

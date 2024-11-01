@@ -55,22 +55,23 @@ type LbBatchCreate[Extension corelb.Extension] struct {
 	LoadBalancerType string               `json:"load_balancer_type" validate:"required"`
 	IPVersion        enumor.IPAddressType `json:"ip_version" validate:"required"`
 
-	Region               string   `json:"region" validate:"omitempty"`
-	Zones                []string `json:"zones" `
-	BackupZones          []string `json:"backup_zones"`
-	VpcID                string   `json:"vpc_id" validate:"omitempty"`
-	CloudVpcID           string   `json:"cloud_vpc_id" validate:"omitempty"`
-	SubnetID             string   `json:"subnet_id" validate:"omitempty"`
-	CloudSubnetID        string   `json:"cloud_subnet_id" validate:"omitempty"`
-	PrivateIPv4Addresses []string `json:"private_ipv4_addresses"`
-	PrivateIPv6Addresses []string `json:"private_ipv6_addresses"`
-	PublicIPv4Addresses  []string `json:"public_ipv4_addresses"`
-	PublicIPv6Addresses  []string `json:"public_ipv6_addresses"`
-	Domain               string   `json:"domain"`
-	Status               string   `json:"status"`
-	CloudCreatedTime     string   `json:"cloud_created_time"`
-	CloudStatusTime      string   `json:"cloud_status_time"`
-	CloudExpiredTime     string   `json:"cloud_expired_time"`
+	Region               string      `json:"region" validate:"omitempty"`
+	Zones                []string    `json:"zones" `
+	BackupZones          []string    `json:"backup_zones"`
+	VpcID                string      `json:"vpc_id" validate:"omitempty"`
+	CloudVpcID           string      `json:"cloud_vpc_id" validate:"omitempty"`
+	SubnetID             string      `json:"subnet_id" validate:"omitempty"`
+	CloudSubnetID        string      `json:"cloud_subnet_id" validate:"omitempty"`
+	PrivateIPv4Addresses []string    `json:"private_ipv4_addresses"`
+	PrivateIPv6Addresses []string    `json:"private_ipv6_addresses"`
+	PublicIPv4Addresses  []string    `json:"public_ipv4_addresses"`
+	PublicIPv6Addresses  []string    `json:"public_ipv6_addresses"`
+	Domain               string      `json:"domain"`
+	Status               string      `json:"status"`
+	CloudCreatedTime     string      `json:"cloud_created_time"`
+	CloudStatusTime      string      `json:"cloud_status_time"`
+	CloudExpiredTime     string      `json:"cloud_expired_time"`
+	Tags                 core.TagMap `json:"tags,omitempty"`
 
 	Memo      *string    `json:"memo"`
 	Extension *Extension `json:"extension"`
@@ -95,20 +96,21 @@ type LoadBalancerExtUpdateReq[T corelb.Extension] struct {
 
 	IPVersion enumor.IPAddressType `json:"ip_version"`
 
-	VpcID                string   `json:"vpc_id"`
-	CloudVpcID           string   `json:"cloud_vpc_id"`
-	SubnetID             string   `json:"subnet_id"`
-	CloudSubnetID        string   `json:"cloud_subnet_id"`
-	PrivateIPv4Addresses []string `json:"private_ipv4_addresses"`
-	PrivateIPv6Addresses []string `json:"private_ipv6_addresses"`
-	PublicIPv4Addresses  []string `json:"public_ipv4_addresses"`
-	PublicIPv6Addresses  []string `json:"public_ipv6_addresses"`
-	Domain               string   `json:"domain"`
-	Status               string   `json:"status"`
-	CloudCreatedTime     string   `json:"cloud_created_time"`
-	CloudStatusTime      string   `json:"cloud_status_time"`
-	CloudExpiredTime     string   `json:"cloud_expired_time"`
-	Memo                 *string  `json:"memo"`
+	VpcID                string      `json:"vpc_id"`
+	CloudVpcID           string      `json:"cloud_vpc_id"`
+	SubnetID             string      `json:"subnet_id"`
+	CloudSubnetID        string      `json:"cloud_subnet_id"`
+	PrivateIPv4Addresses []string    `json:"private_ipv4_addresses"`
+	PrivateIPv6Addresses []string    `json:"private_ipv6_addresses"`
+	PublicIPv4Addresses  []string    `json:"public_ipv4_addresses"`
+	PublicIPv6Addresses  []string    `json:"public_ipv6_addresses"`
+	Domain               string      `json:"domain"`
+	Status               string      `json:"status"`
+	CloudCreatedTime     string      `json:"cloud_created_time"`
+	CloudStatusTime      string      `json:"cloud_status_time"`
+	CloudExpiredTime     string      `json:"cloud_expired_time"`
+	Tags                 core.TagMap `json:"tags,omitempty"`
+	Memo                 *string     `json:"memo"`
 
 	*core.Revision `json:",inline"`
 	Extension      *T `json:"extension"`

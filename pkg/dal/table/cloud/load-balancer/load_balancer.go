@@ -61,6 +61,7 @@ var LoadBalancerColumnsDescriptor = utils.ColumnDescriptors{
 	{Column: "cloud_created_time", NamedC: "cloud_created_time", Type: enumor.String},
 	{Column: "cloud_status_time", NamedC: "cloud_status_time", Type: enumor.String},
 	{Column: "cloud_expired_time", NamedC: "cloud_expired_time", Type: enumor.String},
+	{Column: "tags", NamedC: "tags", Type: enumor.Json},
 	{Column: "extension", NamedC: "extension", Type: enumor.Json},
 
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
@@ -96,6 +97,7 @@ type LoadBalancerTable struct {
 	CloudCreatedTime     string            `db:"cloud_created_time" json:"cloud_created_time"`
 	CloudStatusTime      string            `db:"cloud_status_time" json:"cloud_status_time"`
 	CloudExpiredTime     string            `db:"cloud_expired_time" json:"cloud_expired_time"`
+	Tags                 types.StringMap   `db:"tags" json:"tags"`
 	Extension            types.JsonField   `db:"extension" json:"extension"`
 
 	Creator   string     `db:"creator" validate:"lte=64" json:"creator"`

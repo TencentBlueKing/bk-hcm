@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	"hcm/pkg/adaptor/types/core"
+	apicore "hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -193,6 +194,18 @@ func (clb TCloudClb) GetIPVersion() enumor.IPAddressType {
 // IsTraditionalClb 是否是传统型CLB
 func (clb TCloudClb) IsTraditionalClb() bool {
 	return clb.LoadBalancer != nil && cvt.PtrToVal(clb.Forward) == uint64(corelb.TCloudTraditionalClbType)
+}
+
+// GetTagMap ...
+func (clb TCloudClb) GetTagMap() apicore.TagMap {
+	if len(clb.Tags) == 0 {
+		return nil
+	}
+	tagMap := make(apicore.TagMap, len(clb.Tags))
+	for _, tag := range clb.Tags {
+		tagMap.Set(cvt.PtrToVal(tag.TagKey), cvt.PtrToVal(tag.TagValue))
+	}
+	return tagMap
 }
 
 // -------------------------- List Listeners--------------------------

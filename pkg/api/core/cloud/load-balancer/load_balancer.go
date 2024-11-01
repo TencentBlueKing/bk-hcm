@@ -55,6 +55,8 @@ type BaseLoadBalancer struct {
 	CloudStatusTime      string   `json:"cloud_status_time"`
 	CloudExpiredTime     string   `json:"cloud_expired_time"`
 
+	Tags core.TagMap `json:"tags"`
+
 	Memo           *string `json:"memo"`
 	*core.Revision `json:",inline"`
 }
