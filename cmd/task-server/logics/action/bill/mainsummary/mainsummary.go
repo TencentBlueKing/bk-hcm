@@ -328,8 +328,9 @@ func (act *MainAccountSummaryAction) getDailyVersionCost(kt *kit.Kit, opt *MainA
 	return &totalCost, isAccounted, currencyCode, nil
 }
 
-func (act *MainAccountSummaryAction) getLastMonthSyncedCost(
-	kt *kit.Kit, opt *MainAccountSummaryActionOption) (*decimal.Decimal, *decimal.Decimal, error) {
+func (act *MainAccountSummaryAction) getLastMonthSyncedCost(kt *kit.Kit, opt *MainAccountSummaryActionOption) (
+	*decimal.Decimal, *decimal.Decimal, error) {
+
 	billYear, billMonth, err := times.GetLastMonth(opt.BillYear, opt.BillMonth)
 	if err != nil {
 		return nil, nil, fmt.Errorf("get last month failed, err %s", err.Error())

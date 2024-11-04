@@ -129,8 +129,7 @@ func (act MonthTaskAction) runPull(kt *kit.Kit, runner MonthTaskRunner, opt *Mon
 		}
 		lenRawBillItemList := len(rawBillItemList)
 		if lenRawBillItemList == 0 {
-			logs.Infof("month task %s pulled 0 records, skip, rid: %s", task.String(), kt.Rid)
-			return nil
+			logs.Warnf("month task pulled 0 records, task: %s, rid: %s", task.String(), kt.Rid)
 		}
 		filename := getMonthTaskRawBillFilename(task, task.PullIndex, uint64(lenRawBillItemList))
 		storeReq := &bill.RawBillCreateReq{
