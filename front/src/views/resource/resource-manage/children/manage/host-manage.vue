@@ -48,6 +48,8 @@ const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, ha
   { filter: filter.value },
   'cvms',
 );
+// 主机列表分页支持500条
+Object.assign(pagination.value, { 'limit-list': [10, 20, 50, 100, 500] });
 
 const { selections, handleSelectionChange, resetSelections } = useSelection();
 
