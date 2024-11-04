@@ -203,9 +203,12 @@ const isCurRowSelectEnable = (row: any) => {
     return row.bk_biz_id === -1;
   }
 };
-const parseTags = (data: any[]) => {
-  if (!data?.[0]) return '--';
-  return data.map((item) => `${item.Key}: ${item.Value}`).join(';');
+const parseTags = (data: { [k: string]: any }) => {
+  return (
+    Object.entries(data)
+      .map((item) => item.join(':'))
+      .join(';') || '--'
+  );
 };
 const { selections, handleSelectionChange, resetSelections } = useSelection();
 
