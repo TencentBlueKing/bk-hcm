@@ -30,33 +30,46 @@ import (
 )
 
 func init() {
-	monthTaskDescriberRegistry[enumor.Gcp] = &GcpMonthDescriber{}
+	monthTaskDescriberRegistry[enumor.Gcp] = NewGcpMonthTaskDescriber
 }
 
-// GcpMonthDescriber gcp month task describer
-type GcpMonthDescriber struct {
-}
-
-// GetTaskExtension ...
-func (gcp *GcpMonthDescriber) GetTaskExtension(rootAccountCloudID string) (map[string]string, error) {
+// NewGcpMonthTaskDescriber ...
+func NewGcpMonthTaskDescriber(rootAccountCloudID string) MonthTaskDescriber {
+	describer := &GcpMonthDescriber{RootAccountCloudID: rootAccountCloudID}
 
 	// set exclude account id
-	excludeCloudIds := cc.AccountServer().BillAllocation.GcpCommonExpense.ExcludeAccountCloudIDs
-	var creditReturnConfig string
-	var err error
-	// matching saving plan allocation option
+	describer.CommonExpenseExcludeCloudIDs = cc.AccountServer().BillAllocation.GcpCommonExpense.ExcludeAccountCloudIDs
+
+	// matching credit return option
 	for _, creditConfigs := range cc.AccountServer().BillAllocation.GcpCredits {
 		if creditConfigs.RootAccountCloudID != rootAccountCloudID {
 			continue
 		}
-		creditReturnConfig, err = json.MarshalToString(creditConfigs.ReturnConfigs)
-		if err != nil {
-			return nil, fmt.Errorf("fail to marshal gcp credit return config to json :%w", err)
-		}
+		describer.CreditReturnConfigs = creditConfigs.ReturnConfigs
+	}
+
+	return describer
+}
+
+// GcpMonthDescriber gcp month task describer
+type GcpMonthDescriber struct {
+	RootAccountCloudID           string
+	CommonExpenseExcludeCloudIDs []string
+	CreditReturnConfigs          []cc.CreditReturn
+}
+
+// GetTaskExtension ...
+func (gcp *GcpMonthDescriber) GetTaskExtension() (map[string]string, error) {
+
+	var creditReturnConfig string
+	var err error
+	creditReturnConfig, err = json.MarshalToString(gcp.CreditReturnConfigs)
+	if err != nil {
+		return nil, fmt.Errorf("fail to marshal gcp credit return config to json :%w", err)
 	}
 
 	return map[string]string{
-		constant.GcpCommonExpenseExcludeCloudIDKey: strings.Join(excludeCloudIds, ","),
+		constant.GcpCommonExpenseExcludeCloudIDKey: strings.Join(gcp.CommonExpenseExcludeCloudIDs, ","),
 		constant.GcpCreditReturnConfigKey:          creditReturnConfig,
 	}, nil
 }

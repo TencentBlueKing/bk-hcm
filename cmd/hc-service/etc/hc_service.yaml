@@ -61,3 +61,6 @@ log:
   alsoToStdErr: false
   # log level.
   verbosity: 0
+sync:
+  # 腾讯云负载均衡监听器同步并发数配置
+  tcloudLblConcurrency: 3

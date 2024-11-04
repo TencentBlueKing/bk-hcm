@@ -122,7 +122,7 @@ func (a *BaseApplicationHandler) GetEip(vendor enumor.Vendor, accountID string, 
 		return nil, err
 	}
 	if resp == nil || len(resp.Details) == 0 {
-		return nil, fmt.Errorf("not found %s eip by cloud_id(%s)", vendor, cloudEipID)
+		return nil, fmt.Errorf("%s eip not found by cloud_id(%s)", vendor, cloudEipID)
 	}
 
 	return resp.Details[0], nil

@@ -38,22 +38,29 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
+// MonthDescriberConstructor construct month task describer
+type MonthDescriberConstructor func(accountID string) MonthTaskDescriber
+
 // MonthTaskDescriberRegistry month task describe registry
-var monthTaskDescriberRegistry = make(map[enumor.Vendor]MonthTaskDescriber)
+var monthTaskDescriberRegistry = make(map[enumor.Vendor]MonthDescriberConstructor)
 
 // MonthTaskDescriber month task describe interface
 type MonthTaskDescriber interface {
-	// GetMonthTaskTypes return all month task types supported by this vendor
+	// GetMonthTaskTypes return all month task types supported by this vendor,
+	// month task should be executed by given order.
 	GetMonthTaskTypes() []enumor.MonthTaskType
 
 	// GetTaskExtension extension passed to task server
-	GetTaskExtension(rootAccountCloudID string) (map[string]string, error)
+	GetTaskExtension() (map[string]string, error)
 }
 
 // GetMonthTaskDescriber get describer by vendor
-func GetMonthTaskDescriber(vendor enumor.Vendor) (MonthTaskDescriber, bool) {
-	describer, ok := monthTaskDescriberRegistry[vendor]
-	return describer, ok
+func GetMonthTaskDescriber(vendor enumor.Vendor, accountCloudID string) MonthTaskDescriber {
+	constructor, ok := monthTaskDescriberRegistry[vendor]
+	if ok {
+		return constructor(accountCloudID)
+	}
+	return nil
 }
 
 // NewDefaultMonthTaskRunner ...
@@ -109,18 +116,18 @@ func (r *DefaultMonthTaskRunner) EnsureMonthTask(kt *kit.Kit, billYear, billMont
 	if err != nil {
 		return err
 	}
-	monthDescribe, ok := GetMonthTaskDescriber(r.vendor)
-	if !ok {
-		logs.Infof("no month pull task for root account (%s, %s), skip, rid: %s", r.rootAccountID, r.vendor, kt.Rid)
+	monthDescriber := GetMonthTaskDescriber(r.vendor, r.rootAccountCloudID)
+	if monthDescriber == nil {
+		logs.Infof("no month pull task for root account (%s/%s(%s)), skip, rid: %s",
+			r.vendor, r.rootAccountCloudID, r.rootAccountID, kt.Rid)
 		return nil
 	}
-	r.ext, err = monthDescribe.GetTaskExtension(r.rootAccountCloudID)
+	r.ext, err = monthDescriber.GetTaskExtension()
 	if err != nil {
 		logs.Errorf("fail got generate month task extension for root account (%s, %s), err: %v, rid: %s",
 			r.rootAccountID, r.vendor, err, kt.Rid)
 		return err
 	}
-
 	logs.Infof("[%s] %s(%s) %d-%02d monthtask setting extension: %v, rid: %s",
 		r.vendor, r.rootAccountCloudID, r.rootAccountID, billYear, billMonth, r.ext, kt.Rid)
 
@@ -135,7 +142,14 @@ func (r *DefaultMonthTaskRunner) EnsureMonthTask(kt *kit.Kit, billYear, billMont
 		return nil
 	}
 	// 进入 月度任务执行阶段
-	monthTasks, err := r.listMonthPullTaskStub(kt, billYear, billMonth)
+	return r.executeMonthTask(kt, monthDescriber, rootSummary)
+}
+
+func (r *DefaultMonthTaskRunner) executeMonthTask(kt *kit.Kit, monthDescriber MonthTaskDescriber,
+	rootSummary *billcore.SummaryRoot) error {
+
+	monthTaskTypeOrders := monthDescriber.GetMonthTaskTypes()
+	monthTasks, err := r.listMonthPullTaskStub(kt, rootSummary.BillYear, rootSummary.BillMonth, monthTaskTypeOrders)
 	if err != nil {
 		logs.Errorf("list month task stub for ensuring month task failed, err: %v, rid: %s", err, kt.Rid)
 		return err
@@ -144,7 +158,7 @@ func (r *DefaultMonthTaskRunner) EnsureMonthTask(kt *kit.Kit, billYear, billMont
 	for _, task := range monthTasks {
 		monthTaskTypeMap[task.Type] = task
 	}
-	monthTaskTypeOrders := monthDescribe.GetMonthTaskTypes()
+
 	for _, curType := range monthTaskTypeOrders {
 		monthTask := monthTaskTypeMap[curType]
 		if monthTask == nil {
@@ -157,7 +171,7 @@ func (r *DefaultMonthTaskRunner) EnsureMonthTask(kt *kit.Kit, billYear, billMont
 		}
 		// 判断versionID是否一致，不一致，则重新创建month task
 		if monthTask.VersionID != rootSummary.CurrentVersion {
-			if err := r.deleteMonthPullTaskStub(kt, billYear, billMonth, curType); err != nil {
+			if err := r.deleteMonthPullTaskStub(kt, rootSummary.BillYear, rootSummary.BillMonth, curType); err != nil {
 				return err
 			}
 			return r.createMonthPullTaskStub(kt, rootSummary, curType)
@@ -183,7 +197,6 @@ func (r *DefaultMonthTaskRunner) EnsureMonthTask(kt *kit.Kit, billYear, billMont
 			continue
 		}
 	}
-
 	return nil
 }
 
@@ -407,13 +420,14 @@ func (r *DefaultMonthTaskRunner) createMonthPullTaskStub(kt *kit.Kit, rootSummar
 	return nil
 }
 
-func (r *DefaultMonthTaskRunner) listMonthPullTaskStub(kt *kit.Kit, billYear, billMonth int) (
-	[]*billcore.MonthTask, error) {
+func (r *DefaultMonthTaskRunner) listMonthPullTaskStub(kt *kit.Kit, billYear, billMonth int,
+	types []enumor.MonthTaskType) ([]*billcore.MonthTask, error) {
 
 	expressions := []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", r.rootAccountID),
 		tools.RuleEqual("bill_year", billYear),
 		tools.RuleEqual("bill_month", billMonth),
+		tools.RuleIn("type", types),
 	}
 	req := &dsbillapi.BillMonthTaskListReq{
 		Filter: tools.ExpressionAnd(expressions...),

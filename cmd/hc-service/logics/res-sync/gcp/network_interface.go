@@ -412,7 +412,7 @@ func (cli *client) createNetworkInterface(kt *kit.Kit, accountID string, cvm *co
 	createRelReq := &datacloud.NetworkInterfaceCvmRelBatchCreateReq{
 		Rels: relLists,
 	}
-	if err = cli.dbCli.Global.NetworkInterfaceCvmRel.BatchCreate(kt.Ctx, kt.Header(), createRelReq); err != nil {
+	if err = cli.dbCli.Global.NetworkInterfaceCvmRel.BatchCreateNetworkCvmRels(kt.Ctx, kt.Header(), createRelReq); err != nil {
 		logs.Errorf("[%s] request dataservice to create cvm_ni_rel failed, err: %v, rid: %s",
 			enumor.HuaWei, err, kt.Rid)
 		return err
@@ -480,7 +480,7 @@ func (cli *client) listNetworkInterfaceFromDB(kt *kit.Kit, opt *syncNIOption) (
 		},
 		Page: core.NewDefaultBasePage(),
 	}
-	relResult, err := cli.dbCli.Global.NetworkInterfaceCvmRel.List(kt, listRelReq)
+	relResult, err := cli.dbCli.Global.NetworkInterfaceCvmRel.ListNetworkCvmRels(kt, listRelReq)
 	if err != nil {
 		logs.Errorf("[%s] list ni_cvm_rel failed, err: %v, rid: %s", enumor.Gcp, err, kt.Rid)
 		return nil, nil, err

@@ -129,3 +129,11 @@ func (v *BillClient) GetRootAccountSpTotalUsage(kt *kit.Kit, req *hcbill.AwsRoot
 		v.client, rest.GET, kt, req, "/root_account_bills/sp_usage_total")
 
 }
+
+// ListRootOutsideMonthBill query outside month bill
+func (v *BillClient) ListRootOutsideMonthBill(kt *kit.Kit, req *hcbill.AwsRootOutsideMonthBillListReq) (
+	*core.ListResultT[map[string]string], error) {
+
+	return common.Request[hcbill.AwsRootOutsideMonthBillListReq, core.ListResultT[map[string]string]](
+		v.client, rest.GET, kt, req, "/root_account_bills/list_outside_month_bills")
+}

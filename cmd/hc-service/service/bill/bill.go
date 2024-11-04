@@ -61,6 +61,8 @@ func InitBillService(cap *capability.Capability) {
 		"/vendors/azure/root_account_bills/list", v.AzureGetRootAccountBillList)
 	h.Add("AwsGetRootAccountSpTotalUsage", "GET",
 		"/vendors/aws/root_account_bills/sp_usage_total", v.AwsGetRootAccountSpTotalUsage)
+	h.Add("AwsListRootOutsideMonthBill", "GET",
+		"/vendors/aws/root_account_bills/list_outside_month_bills", v.AwsListRootOutsideMonthBill)
 
 	h.Load(cap.WebService)
 }

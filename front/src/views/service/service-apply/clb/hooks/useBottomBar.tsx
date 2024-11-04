@@ -70,13 +70,14 @@ export default (formModel: ApplyClbModel, formRef: any, isInquiryPricesLoading: 
       internet_charge_type: hasInternetChargeTypeConfig.value ? formModel.internet_charge_type : undefined,
       internet_max_bandwidth_out: hasInternetChargeTypeConfig.value ? formModel.internet_max_bandwidth_out : undefined,
       // 只有公网下ipv4以及内网下可以配置
-      zones: hasZonesConfig.value ? [formModel.zones] : undefined,
+      // eslint-disable-next-line no-nested-ternary
+      zones: hasZonesConfig.value ? (formModel.zones ? [formModel.zones] : []) : undefined,
       // 只有公网下ipv4可以配置
       // eslint-disable-next-line no-nested-ternary
       backup_zones: hasBackupZonesConfig.value ? (formModel.backup_zones ? [formModel.backup_zones] : []) : undefined,
       // 只有内网下可以配置
       cloud_subnet_id: !isOpen.value ? formModel.cloud_subnet_id : undefined,
-      cloud_eip_id: !isOpen.value ? formModel.cloud_eip_id : undefined,
+      cloud_eip_id: !isOpen.value ? formModel.cloud_eip_id ?? undefined : undefined,
       // 后端无用字段
       account_type: undefined,
       zoneType: undefined,

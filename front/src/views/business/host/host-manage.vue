@@ -36,6 +36,8 @@ const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, ha
   useTableListQuery({ filter: filter.value }, 'cvms', () => {
     resetSelections();
   });
+// 主机列表分页支持500条
+Object.assign(pagination.value, { 'limit-list': [10, 20, 50, 100, 500] });
 
 const hostOperationRef = ref(null);
 const tableRef = ref(null);

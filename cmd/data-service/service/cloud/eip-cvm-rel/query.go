@@ -32,8 +32,8 @@ import (
 	"hcm/pkg/rest"
 )
 
-// List ...
-func (svc *relSvc) List(cts *rest.Contexts) (interface{}, error) {
+// ListEipCvmRels ...
+func (svc *relSvc) ListEipCvmRels(cts *rest.Contexts) (interface{}, error) {
 	req := new(datarelproto.EipCvmRelListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err

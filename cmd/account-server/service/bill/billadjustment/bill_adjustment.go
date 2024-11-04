@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/api/account-server/bill"
 	"hcm/pkg/api/core"
 	accountset "hcm/pkg/api/core/account-set"
+	billcore "hcm/pkg/api/core/bill"
 	dataservice "hcm/pkg/api/data-service"
 	dsbill "hcm/pkg/api/data-service/bill"
 	"hcm/pkg/criteria/constant"
@@ -61,12 +62,21 @@ func (b *billAdjustmentSvc) CreateBillAdjustmentItem(cts *rest.Contexts) (any, e
 	}
 
 	// 1. 校验一级账号和二级账号是否存在并匹配
-	rootAccountInfo, err := b.client.DataService().Global.RootAccount.GetBasicInfo(cts.Kit, req.RootAccountID)
+	summaryRootListReq := &dsbill.BillSummaryRootListReq{
+		Filter: tools.ExpressionAnd(tools.RuleEqual("root_account_id", req.RootAccountID)),
+		Page:   core.NewDefaultBasePage(),
+	}
+	summaryRootResp, err := b.client.DataService().Global.Bill.ListBillSummaryRoot(cts.Kit, summaryRootListReq)
 	if err != nil {
+		logs.Errorf("fail to list summary root for create adjustment, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
+	if len(summaryRootResp.Details) == 0 {
+		return nil, fmt.Errorf("summary root not found for %s", req.RootAccountID)
+	}
+	summaryRoot := summaryRootResp.Details[0]
 
-	filledItems, err := b.convBillAdjustmentCreate(cts.Kit, rootAccountInfo.ID, req)
+	filledItems, err := b.convBillAdjustmentCreate(cts.Kit, summaryRoot, req)
 	if err != nil {
 		logs.Errorf("fail to check main account: err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
@@ -81,18 +91,22 @@ func (b *billAdjustmentSvc) CreateBillAdjustmentItem(cts *rest.Contexts) (any, e
 	return result, nil
 }
 
-func (b *billAdjustmentSvc) convBillAdjustmentCreate(kt *kit.Kit, rootAccountID string,
+func (b *billAdjustmentSvc) convBillAdjustmentCreate(kt *kit.Kit, summaryRoot *billcore.SummaryRoot,
 	req *bill.BatchBillAdjustmentItemCreateReq) ([]dsbill.BillAdjustmentItemCreateReq, error) {
 
 	dsReq := make([]dsbill.BillAdjustmentItemCreateReq, 0, len(req.Items))
 	mainAccountIdMap := make(map[string]struct{})
-	for _, item := range req.Items {
+	for i, item := range req.Items {
 		if item.RootAccountID == "" {
-			item.RootAccountID = rootAccountID
+			item.RootAccountID = summaryRoot.RootAccountID
 		}
-		if item.RootAccountID != rootAccountID {
+		if item.RootAccountID != summaryRoot.RootAccountID {
 			return nil, fmt.Errorf("root account id does not match, want: %s, given: %s",
-				rootAccountID, item.RootAccountID)
+				summaryRoot.RootAccountID, item.RootAccountID)
+		}
+		if item.Currency != summaryRoot.Currency {
+			return nil, fmt.Errorf("currency mismatch root account summary at idx %d, want: %s, got: %s",
+				i, summaryRoot.Currency, item.Currency)
 		}
 		dsReq = append(dsReq, dsbill.BillAdjustmentItemCreateReq{
 			RootAccountID: item.RootAccountID,
@@ -106,7 +120,7 @@ func (b *billAdjustmentSvc) convBillAdjustmentCreate(kt *kit.Kit, rootAccountID 
 			State:         enumor.BillAdjustmentStateUnconfirmed,
 			Type:          item.Type,
 			Operator:      kt.User,
-			Currency:      item.Currency,
+			Currency:      summaryRoot.Currency,
 			Cost:          item.Cost,
 			RMBCost:       item.RmbCost,
 			Memo:          item.Memo,
@@ -116,7 +130,7 @@ func (b *billAdjustmentSvc) convBillAdjustmentCreate(kt *kit.Kit, rootAccountID 
 	mainAccountReq := &core.ListReq{
 		Fields: []string{"id"},
 		Filter: tools.ExpressionAnd(
-			tools.RuleEqual("parent_account_id", rootAccountID),
+			tools.RuleEqual("parent_account_id", summaryRoot.RootAccountID),
 			tools.RuleIn("id", cvt.MapKeyToStringSlice(mainAccountIdMap)),
 		),
 		Page: core.NewDefaultBasePage(),
@@ -233,7 +247,6 @@ func (b *billAdjustmentSvc) UpdateBillAdjustmentItem(cts *rest.Contexts) (any, e
 		BkBizID:       req.BkBizID,
 		Type:          req.Type,
 		Memo:          req.Memo,
-		Currency:      req.Currency,
 		Cost:          req.Cost,
 	}
 

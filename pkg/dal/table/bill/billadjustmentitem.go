@@ -85,7 +85,7 @@ type AccountBillAdjustmentItem struct {
 	// Operator 操作人
 	Operator string `db:"operator" validate:"max=64" json:"operator"`
 	// Currency 币种
-	Currency string `db:"currency" json:"currency"`
+	Currency enumor.CurrencyCode `db:"currency" json:"currency"`
 	// Cost 费用
 	Cost *types.Decimal `db:"cost" json:"cost"`
 	// RMBCost 费用

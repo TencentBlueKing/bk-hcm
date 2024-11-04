@@ -384,6 +384,24 @@ type AwsRootBillListReq struct {
 	Page    *AwsBillListPage `json:"page" validate:"omitempty"`
 }
 
+// AwsRootOutsideMonthBillListReq defines aws bill record outside given bill month request.
+type AwsRootOutsideMonthBillListReq struct {
+	// 本地根账号
+	RootAccountID string `json:"root_account_id" validate:"required"`
+	// 筛选使用主账号云id，为空则不筛选
+	MainAccountCloudIds []string `json:"main_account_cloud_ids" validate:"max=20,dive,required"`
+
+	BillYear  uint `json:"bill_year" validate:"required"`
+	BillMonth uint `json:"bill_month" validate:"required,min=1,max=12"`
+
+	Page *AwsBillListPage `json:"page" validate:"omitempty"`
+}
+
+// Validate ...
+func (r *AwsRootOutsideMonthBillListReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
 // Validate ...
 func (r *AwsRootBillListReq) Validate() error {
 	return validator.Validate.Struct(r)

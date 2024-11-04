@@ -277,7 +277,7 @@ const groupColumns = [
     label: t('描述'),
     field: 'memo',
     isDefaultShow: true,
-    render: ({ ceil }: any) => (ceil ? ceil : '--'),
+    render: ({ cell }: any) => (cell ? cell : '--'),
   },
   {
     label: '是否分配',

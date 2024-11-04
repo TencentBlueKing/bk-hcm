@@ -52,9 +52,16 @@ type MainAccountSummaryActionOption struct {
 	Vendor        enumor.Vendor `json:"vendor" validate:"required"`
 }
 
+// String ...
+func (opt MainAccountSummaryActionOption) String() string {
+
+	return fmt.Sprintf("{%s/%s/%s %d-%02d}",
+		opt.Vendor, opt.RootAccountID, opt.MainAccountID, opt.BillYear, opt.BillMonth)
+}
+
 // Validate ...
-func (r *MainAccountSummaryActionOption) Validate() error {
-	return validator.Validate.Struct(r)
+func (opt *MainAccountSummaryActionOption) Validate() error {
+	return validator.Validate.Struct(opt)
 }
 
 // MainAccountSummaryAction define main account summary action
@@ -79,7 +86,7 @@ func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 	if err := opt.Validate(); err != nil {
 		return nil, err
 	}
-	rootSummary, summary, err := act.getBillSummary(kt.Kit(), opt)
+	rootSummary, summary, err := act.getRootSummary(kt.Kit(), opt)
 	if err != nil {
 		logs.Errorf("fail to get root summary for main summary, err: %v, rid: %s", err, kt.Kit().Rid)
 		return nil, err
@@ -126,7 +133,7 @@ func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 		}
 	}
 	// 计算调账成本
-	_, adjCost, err := act.getAdjustmenSummary(kt.Kit(), opt)
+	adjCost, err := act.getAdjustmenSummary(kt.Kit(), opt, currency)
 	if err != nil {
 		return nil, err
 	}
@@ -219,8 +226,9 @@ func (act *MainAccountSummaryAction) getExchangeRate(
 func (act *MainAccountSummaryAction) calculateMonthTaskStatus(kt *kit.Kit, summaryRoot *billcore.SummaryRoot,
 	summary *bill.BillSummaryMain) (extraCost decimal.Decimal, isFinished bool, err error) {
 
-	monthDescriber, ok := monthtask.GetMonthTaskDescriber(summaryRoot.Vendor)
-	if !ok {
+	monthDescriber := monthtask.GetMonthTaskDescriber(summaryRoot.Vendor, summaryRoot.RootAccountCloudID)
+	if monthDescriber == nil {
+		// unsupported, skip
 		return decimal.Zero, true, nil
 	}
 
@@ -283,9 +291,8 @@ func getMonthTask(kt *kit.Kit, summary *billcore.SummaryRoot, taskTypes []enumor
 	return result.Details, nil
 }
 
-func (act *MainAccountSummaryAction) getDailyVersionCost(
-	kt *kit.Kit, opt *MainAccountSummaryActionOption, versionID int) (
-	total *decimal.Decimal, isAccounted bool, currencyCode enumor.CurrencyCode, err error) {
+func (act *MainAccountSummaryAction) getDailyVersionCost(kt *kit.Kit, opt *MainAccountSummaryActionOption,
+	versionID int) (total *decimal.Decimal, isAccounted bool, currencyCode enumor.CurrencyCode, err error) {
 
 	expressions := []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", opt.RootAccountID),
@@ -355,8 +362,8 @@ func (act *MainAccountSummaryAction) getLastMonthSyncedCost(
 	return &lastMonthSummary.CurrentMonthCostSynced, &lastMonthSummary.CurrentMonthRMBCostSynced, nil
 }
 
-func (act *MainAccountSummaryAction) getAdjustmenSummary(kt *kit.Kit, opt *MainAccountSummaryActionOption) (
-	enumor.CurrencyCode, *decimal.Decimal, error) {
+func (act *MainAccountSummaryAction) getAdjustmenSummary(kt *kit.Kit, opt *MainAccountSummaryActionOption,
+	currency enumor.CurrencyCode) (*decimal.Decimal, error) {
 
 	expressions := []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", opt.RootAccountID),
@@ -364,6 +371,8 @@ func (act *MainAccountSummaryAction) getAdjustmenSummary(kt *kit.Kit, opt *MainA
 		tools.RuleEqual("vendor", opt.Vendor),
 		tools.RuleEqual("bill_year", opt.BillYear),
 		tools.RuleEqual("bill_month", opt.BillMonth),
+		// only confirmed adjustment is counted
+		tools.RuleEqual("state", enumor.BillAdjustmentStateConfirmed),
 	}
 	result, err := actcli.GetDataService().Global.Bill.ListBillAdjustmentItem(kt, &core.ListReq{
 		Filter: tools.ExpressionAnd(expressions...),
@@ -372,11 +381,10 @@ func (act *MainAccountSummaryAction) getAdjustmenSummary(kt *kit.Kit, opt *MainA
 		},
 	})
 	if err != nil {
-		return "", nil, fmt.Errorf("list adjustment item of %v failed, err %s", opt, err.Error())
+		return nil, fmt.Errorf("list adjustment item of %v failed, err %s", opt, err.Error())
 	}
 	logs.Infof("found %d adjustment item for opt %v, rid: %s", result.Count, opt, kt.Rid)
 	cost := decimal.NewFromFloat(0)
-	var currency enumor.CurrencyCode
 	for offset := uint64(0); offset < result.Count; offset = offset + uint64(core.DefaultMaxPageLimit) {
 		result, err = actcli.GetDataService().Global.Bill.ListBillAdjustmentItem(
 			kt, &core.ListReq{
@@ -387,19 +395,19 @@ func (act *MainAccountSummaryAction) getAdjustmenSummary(kt *kit.Kit, opt *MainA
 				},
 			})
 		if err != nil {
-			return "", nil, fmt.Errorf("list adjustment item of %v failed, err %s", opt, err.Error())
+			return nil, fmt.Errorf("list adjustment item of %v failed, err %s", opt, err.Error())
 		}
 		for _, item := range result.Details {
 			cost = cost.Add(item.Cost)
-			if len(item.Currency) == 0 {
-				currency = enumor.CurrencyCode(item.Currency)
+			if len(item.Currency) != 0 && currency != item.Currency {
+				return nil, fmt.Errorf("adjustment currency mismatch, want: %s ,got: %s", currency, item.Currency)
 			}
 		}
 	}
-	return currency, &cost, nil
+	return &cost, nil
 }
 
-func (act *MainAccountSummaryAction) getBillSummary(kt *kit.Kit, opt *MainAccountSummaryActionOption) (
+func (act *MainAccountSummaryAction) getRootSummary(kt *kit.Kit, opt *MainAccountSummaryActionOption) (
 	*billcore.SummaryRoot, *bill.BillSummaryMain, error) {
 
 	rootAccountExpr := []*filter.AtomRule{
@@ -417,7 +425,7 @@ func (act *MainAccountSummaryAction) getBillSummary(kt *kit.Kit, opt *MainAccoun
 			},
 		})
 	if err != nil {
-		return nil, nil, fmt.Errorf("get root account bill summary failed, opt %+v, err %s", opt, err.Error())
+		return nil, nil, fmt.Errorf("get root account bill summary failed, opt: %s, err %s", opt.String(), err.Error())
 	}
 	if len(rootResult.Details) != 1 {
 		return nil, nil, fmt.Errorf("get invalid length root account bill summary resp %v", rootResult)
@@ -439,10 +447,10 @@ func (act *MainAccountSummaryAction) getBillSummary(kt *kit.Kit, opt *MainAccoun
 			},
 		})
 	if err != nil {
-		return nil, nil, fmt.Errorf("get main account bill summary failed, opt %+v, err %s", opt, err.Error())
+		return nil, nil, fmt.Errorf("get main account bill summary failed, opt: %s, err: %v", opt.String(), err)
 	}
 	if len(result.Details) != 1 {
-		return nil, nil, fmt.Errorf("get invalid length main account bill summary resp %v", result)
+		return nil, nil, fmt.Errorf("get invalid length main account bill summary resp: %v", result)
 	}
 
 	return rootResult.Details[0], result.Details[0], nil

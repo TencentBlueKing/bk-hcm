@@ -34,11 +34,11 @@ func InitService(cap *capability.Capability) {
 	}
 
 	h := rest.NewHandler()
-	h.Add("BatchCreate", http.MethodPost, "/network_cvm_rels/batch/create", svc.BatchCreate)
-	h.Add("List", http.MethodPost, "/network_cvm_rels/list", svc.List)
+	h.Add("BatchCreateNetworkCvmRels", http.MethodPost, "/network_cvm_rels/batch/create", svc.BatchCreateNetworkCvmRels)
+	h.Add("ListNetworkCvmRels", http.MethodPost, "/network_cvm_rels/list", svc.ListNetworkCvmRels)
 	h.Add("ListWithExtension", http.MethodPost, "/vendors/{vendor}/network_cvm_rels/with/interfaces/list",
 		svc.ListWithExtension)
-	h.Add("BatchDelete", http.MethodDelete, "/network_cvm_rels/batch", svc.BatchDelete)
+	h.Add("BatchDeleteNetworkCvmRels", http.MethodDelete, "/network_cvm_rels/batch", svc.BatchDeleteNetworkCvmRels)
 
 	h.Load(cap.WebService)
 }

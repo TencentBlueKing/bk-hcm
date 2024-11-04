@@ -114,19 +114,24 @@ export default (getListData: (...args: any) => any, originPage: IOriginPage) => 
           account_id: listenerFormData.account_id,
           name: listenerFormData.name,
           sni_switch: listenerFormData.sni_switch,
-          extension: { certificate: listenerFormData.certificate },
+          extension: { certificate: listenerFormData.protocol === 'HTTPS' ? listenerFormData.certificate : undefined },
         });
         // 如果启用了SNI, 需要调用规则更新接口来更新证书信息
         if (listenerFormData.sni_switch) {
           await businessStore.updateDomains(listenerFormData.id, {
             lbl_id: listenerFormData.id,
             domain: (listenerFormData as any).default_domain,
-            certificate: listenerFormData.certificate,
+            certificate: listenerFormData.protocol === 'HTTPS' ? listenerFormData.certificate : undefined,
           });
         }
       } else {
         // 新增监听器
-        await businessStore.createListener(listenerFormData);
+        const params = {
+          ...listenerFormData,
+          // 只有https协议才需要传证书
+          certificate: listenerFormData.protocol === 'HTTPS' ? listenerFormData.certificate : undefined,
+        };
+        await businessStore.createListener(params);
       }
       Message({ theme: 'success', message: isEdit.value ? '更新成功' : '新增成功' });
       isSliderShow.value = false;

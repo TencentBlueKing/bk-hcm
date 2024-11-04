@@ -183,8 +183,9 @@ func (a *ApplicationOfCreateTCloudLB) renderNetwork() ([]formItem, error) {
 	formItems = append(formItems, formItem{Label: "子网", Value: subnetName})
 
 	// EIP信息
-	if req.CloudEipID != nil {
-		eipInfo, err := a.GetEip(a.Vendor(), req.AccountID, cvt.PtrToVal(req.CloudEipID))
+	eipID := cvt.PtrToVal(req.CloudEipID)
+	if len(eipID) > 0 {
+		eipInfo, err := a.GetEip(a.Vendor(), req.AccountID, eipID)
 		if err != nil {
 			return formItems, err
 		}

@@ -18,7 +18,7 @@ import { type ISubnetItem } from '../../cvm/children/SubnetPreviewDialog';
 import type { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
 // import constants
 import { CLB_SPECS, LB_ISP, ResourceTypeEnum } from '@/common/constant';
-import { LOAD_BALANCER_TYPE, ADDRESS_IP_VERSION, ZONE_TYPE, INTERNET_CHARGE_TYPE, ISP_TYPES } from '@/constants/clb';
+import { LOAD_BALANCER_TYPE, ADDRESS_IP_VERSION, ZONE_TYPE, INTERNET_CHARGE_TYPE } from '@/constants/clb';
 // import utils
 import bus from '@/common/bus';
 import { useI18n } from 'vue-i18n';
@@ -192,7 +192,7 @@ export default (formModel: ApplyClbModel) => {
                           content:
                             formModel.account_type === 'LEGACY' ? (
                               <span>
-                                {t('仅标准型账号支持主备可用区')}账号类型说明，参考{' '}
+                                {t('仅标准型账号支持主备可用区，账号类型说明参考')}
                                 <a
                                   href='https://cloud.tencent.com/document/product/1199/49090#judge'
                                   target='_blank'
@@ -276,25 +276,24 @@ export default (formModel: ApplyClbModel) => {
           label: '运营商类型',
           required: true,
           property: 'vip_isp',
-          hidden: isIntranet.value,
+          hidden: isIntranet.value || ispList.value?.length === 0,
           content: () => {
             return (
               <BkRadioGroup v-model={formModel.vip_isp}>
-                {ISP_TYPES.map((item) => (
-                  <BkRadioButton
-                    key={item}
-                    label={item}
-                    class='w110'
-                    disabled={!ispList.value?.includes(item)}
-                    v-bk-tooltips={(function () {
-                      if (!formModel.zones) {
-                        return { content: '请选择可用区', disabled: formModel.zones };
-                      }
-                      return { content: '当前地域不支持', disabled: ispList.value?.includes(item) };
-                    })()}>
-                    {LB_ISP[item]}
-                  </BkRadioButton>
-                ))}
+                {ispList.value.map(({ Isp, TypeSet }) => {
+                  const disabled = TypeSet.every(({ Availability }: any) => Availability === 'Unavailable');
+
+                  return (
+                    <BkRadioButton
+                      class='w110'
+                      key={Isp}
+                      label={Isp}
+                      disabled={disabled}
+                      v-bk-tooltips={{ content: '当前地域不支持', disabled: !disabled }}>
+                      {LB_ISP[Isp]}
+                    </BkRadioButton>
+                  );
+                })}
               </BkRadioGroup>
             );
           },

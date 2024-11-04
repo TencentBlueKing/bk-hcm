@@ -42,7 +42,10 @@ export default defineComponent({
         field: 'SpecType',
         render: ({ data }: any) => {
           return (
-            <Radio v-model={selectedLbSpecType.value} label={data.SpecType}>
+            <Radio
+              v-model={selectedLbSpecType.value}
+              label={data.SpecType}
+              disabled={data.Availability === 'Unavailable'}>
               <span class='font-small'>{CLB_SPECS[data.SpecType]}</span>
             </Radio>
           );
@@ -64,12 +67,20 @@ export default defineComponent({
         label: t('带宽上限（Mbps）'),
         field: 'bandwidthLimit',
       },
+      {
+        label: t('可用性'),
+        field: 'Availability',
+        render: ({ cell }: { cell: 'Available' | 'Unavailable' }) => {
+          return <bk-tag theme={cell === 'Available' ? 'success' : 'danger'}>{cell}</bk-tag>;
+        },
+      },
     ];
     // 表格数据
     const tableData = ref<Array<SpecAvailability>>([]);
 
     // click-handler - 点击表格row触发的钩子
     const handleRowClick = (row: SpecAvailability) => {
+      if (row.Availability === 'Unavailable') return;
       selectedLbSpecType.value = row.SpecType;
     };
 
