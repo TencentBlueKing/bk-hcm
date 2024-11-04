@@ -181,7 +181,7 @@ const handleSwtichType = async (type: string) => {
     state.params.columns = 'template';
   }
   emit('handleSecrityType', type);
-  router.replace({ query: { type: 'security', scene: type } });
+  router.replace({ query: Object.assign({}, route.query, { type: 'security', scene: type }) });
 };
 
 // 抛出请求数据的方法，新增成功使用
