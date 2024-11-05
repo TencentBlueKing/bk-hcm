@@ -257,7 +257,7 @@ func (svc *netSvc) getNetworkInterface(cts *rest.Contexts, validHandler handler.
 		Filter: tools.EqualExpression("network_interface_id", id),
 		Page:   core.NewDefaultBasePage(),
 	}
-	rels, err := svc.client.DataService().Global.NetworkInterfaceCvmRel.List(cts.Kit, niRelReq)
+	rels, err := svc.client.DataService().Global.NetworkInterfaceCvmRel.ListNetworkCvmRels(cts.Kit, niRelReq)
 	if err == nil && len(rels.Details) > 0 {
 		cvmID = rels.Details[0].CvmID
 	}

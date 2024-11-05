@@ -29,8 +29,8 @@ import (
 	"hcm/pkg/rest"
 )
 
-// List ...
-func (svc *relSvc) List(cts *rest.Contexts) (interface{}, error) {
+// ListNetworkCvmRels ...
+func (svc *relSvc) ListNetworkCvmRels(cts *rest.Contexts) (interface{}, error) {
 	req := new(datarelproto.NetworkInterfaceCvmRelListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err

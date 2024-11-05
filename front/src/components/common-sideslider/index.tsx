@@ -35,9 +35,12 @@ export default defineComponent({
       type: String as PropType<'show' | 'if'>,
       default: 'show',
     },
-    submitTooltipsOption: Object as PropType<{ content?: string; disabled: boolean }>,
+    submitTooltips: {
+      type: Object as PropType<{ content: string; disabled: boolean }>,
+      default: () => ({ content: '', disabled: true }),
+    },
   },
-  emits: ['update:isShow', 'handleSubmit'],
+  emits: ['update:isShow', 'handleSubmit', 'handleShown'],
   setup(props, ctx) {
     // use hooks
     const { t } = useI18n();
@@ -50,6 +53,10 @@ export default defineComponent({
       ctx.emit('handleSubmit');
     };
 
+    const handleShown = () => {
+      ctx.emit('handleShown');
+    };
+
     return () => (
       <Sideslider
         renderDirective={props.renderType}
@@ -60,9 +67,14 @@ export default defineComponent({
         onClosed={() => {
           triggerShow(false);
           props.handleClose?.();
-        }}>
+        }}
+        onShown={handleShown}>
         {{
-          default: () => <div class={cssModule.content}>{ctx.slots.default?.()}</div>,
+          default: () => (
+            <div class={[cssModule.content, props.renderType === 'if' ? cssModule.renderIfContent : undefined]}>
+              {ctx.slots.default?.()}
+            </div>
+          ),
           footer: !props.noFooter
             ? () => (
                 <div class={cssModule.footer}>
@@ -71,7 +83,7 @@ export default defineComponent({
                     onClick={handleSubmit}
                     disabled={props.isSubmitDisabled}
                     loading={props.isSubmitLoading}
-                    v-bk-tooltips={props.submitTooltipsOption}>
+                    v-bk-tooltips={props.submitTooltips}>
                     {t('提交')}
                   </Button>
                   <Button onClick={() => triggerShow(false)}>{t('取消')}</Button>

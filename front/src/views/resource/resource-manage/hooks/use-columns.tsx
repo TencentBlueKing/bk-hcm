@@ -19,11 +19,10 @@ import StatusUnknown from '@/assets/image/Status-unknown.png';
 import StatusSuccess from '@/assets/image/success-account.png';
 import StatusLoading from '@/assets/image/status_loading.png';
 import StatusFailure from '@/assets/image/failed-account.png';
-
 import { HOST_RUNNING_STATUS, HOST_SHUTDOWN_STATUS } from '../common/table/HostOperations';
 import './use-columns.scss';
 import { defaults } from 'lodash';
-import { timeFormatter } from '@/common/util';
+import { timeFormatter, timeUTCFormatter } from '@/common/util';
 import {
   APPLICATION_LAYER_LIST,
   CLB_STATUS_MAP,
@@ -65,7 +64,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
   const { whereAmI } = useWhereAmI();
   const businessMapStore = useBusinessMapStore();
   const cloudAreaStore = useCloudAreaStore();
-
   const getLinkField = (options: LinkFieldOptions) => {
     // 设置options的默认值
     defaults(options, {
@@ -1937,14 +1935,14 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '创建时间',
       field: 'created_at',
       render({ cell }: any) {
-        return timeFormatter(cell);
+        return timeUTCFormatter(cell);
       },
     },
     {
       label: '更新时间',
       field: 'updated_at',
       render({ cell }: any) {
-        return timeFormatter(cell);
+        return timeUTCFormatter(cell);
       },
     },
     {

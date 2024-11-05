@@ -31,8 +31,8 @@ import (
 	"hcm/pkg/rest"
 )
 
-// List rels.
-func (svc *sgComRelSvc) List(cts *rest.Contexts) (interface{}, error) {
+// ListSgCommonRels rels.
+func (svc *sgComRelSvc) ListSgCommonRels(cts *rest.Contexts) (interface{}, error) {
 	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err

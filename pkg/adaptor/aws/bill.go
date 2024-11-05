@@ -35,6 +35,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/math"
+	"hcm/pkg/tools/times"
 
 	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/service/athena"
@@ -791,4 +792,39 @@ func (a *Aws) GetRootSpTotalUsage(kt *kit.Kit, billInfo *billcore.AwsRootBillCon
 	ret.SpNetCost = converter.ValToPtr(spNetCost)
 
 	return ret, nil
+}
+
+// AwsListRootOutsideMonthBill get bill list outside given bill month for main account
+func (a *Aws) AwsListRootOutsideMonthBill(kt *kit.Kit, opt *typesBill.AwsMainOutsideMonthBillLitOpt,
+	billInfo *billcore.RootAccountBillConfig[billcore.AwsBillConfigExtension]) ([]map[string]string, error) {
+
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+	day1 := time.Date(int(opt.Year), time.Month(opt.Month), 1, 0, 0, 0, 0, time.UTC)
+	nextBillMonthYear, nextBillMonth := times.GetRelativeMonth(day1, 1)
+
+	// 拼接查询条件
+	var condition = fmt.Sprintf("WHERE bill_payer_account_id = '%s' ", opt.PayerAccountID)
+	condition += fmt.Sprintf(" AND year = '%d'", opt.Year)
+	condition += fmt.Sprintf(" AND month = '%d'", opt.Month)
+	condition += fmt.Sprintf(`AND (date(line_item_usage_start_date) < date '%d-%02d-01' 
+      	OR date(line_item_usage_start_date) >= date '%d-%02d-01')`,
+		opt.Year, opt.Month, nextBillMonthYear, nextBillMonth)
+
+	if len(opt.UsageAccountIDs) > 0 {
+		condition += fmt.Sprintf(" AND line_item_usage_account_id IN ('%s') ", strings.Join(opt.UsageAccountIDs, "','"))
+	}
+	sql := fmt.Sprintf(QueryBillSQL, QueryRootBillSelectField, billInfo.CloudDatabaseName, billInfo.CloudTableName,
+		condition)
+	sql += QueryRootBillGroupBySQL
+	sql += QueryRootBillOrderBySQL
+	if opt.Page != nil {
+		sql += fmt.Sprintf(" OFFSET %d LIMIT %d", opt.Page.Offset, opt.Page.Limit)
+	}
+	list, err := a.GetRootAccountAwsAthenaQuery(kt, sql, billInfo)
+	if err != nil {
+		return nil, err
+	}
+	return list, nil
 }

@@ -33,8 +33,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// BatchDelete ...
-func (svc *relSvc) BatchDelete(cts *rest.Contexts) (interface{}, error) {
+// BatchDeleteNetworkCvmRels ...
+func (svc *relSvc) BatchDeleteNetworkCvmRels(cts *rest.Contexts) (interface{}, error) {
 	req := new(datarelproto.NetworkInterfaceCvmRelDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err

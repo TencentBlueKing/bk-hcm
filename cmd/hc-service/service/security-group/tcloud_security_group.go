@@ -131,7 +131,7 @@ func (g *securityGroup) TCloudSecurityGroupAssociateCvm(cts *rest.Contexts) (int
 			},
 		},
 	}
-	if err = g.dataCli.Global.SGCvmRel.BatchCreate(cts.Kit.Ctx, cts.Kit.Header(), createReq); err != nil {
+	if err = g.dataCli.Global.SGCvmRel.BatchCreateSgCvmRels(cts.Kit.Ctx, cts.Kit.Header(), createReq); err != nil {
 		logs.Errorf("request dataservice create security group cvm rels failed, err: %v, req: %+v, rid: %s",
 			err, createReq, cts.Kit.Rid)
 		return nil, err
@@ -193,7 +193,7 @@ func (g *securityGroup) TCloudSecurityGroupDisassociateCvm(cts *rest.Contexts) (
 	}
 
 	deleteReq := buildSGCvmRelDeleteReq(req.SecurityGroupID, req.CvmID)
-	if err = g.dataCli.Global.SGCvmRel.BatchDelete(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
+	if err = g.dataCli.Global.SGCvmRel.BatchDeleteSgCvmRels(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
 		logs.Errorf("request dataservice delete security group cvm rels failed, err: %v, req: %+v, rid: %s",
 			err, deleteReq, cts.Kit.Rid)
 		return nil, err
@@ -343,7 +343,7 @@ func (g *securityGroup) TCloudSecurityGroupAssociateLoadBalancer(cts *rest.Conte
 		return nil, err
 	}
 
-	if err = g.dataCli.Global.SGCommonRel.BatchUpsert(cts.Kit, sgComReq); err != nil {
+	if err = g.dataCli.Global.SGCommonRel.BatchUpsertSgCommonRels(cts.Kit, sgComReq); err != nil {
 		logs.Errorf("request dataservice upsert security group lb rels failed, err: %v, req: %+v, rid: %s",
 			err, sgComReq, cts.Kit.Rid)
 		return nil, err
@@ -467,7 +467,7 @@ func (g *securityGroup) TCloudSecurityGroupDisassociateLoadBalancer(cts *rest.Co
 
 	deleteReq := buildSGCommonRelDeleteReq(
 		enumor.TCloud, req.LbID, []string{req.SecurityGroupID}, enumor.LoadBalancerCloudResType)
-	if err = g.dataCli.Global.SGCommonRel.BatchDelete(cts.Kit, deleteReq); err != nil {
+	if err = g.dataCli.Global.SGCommonRel.BatchDeleteSgCommonRels(cts.Kit, deleteReq); err != nil {
 		logs.Errorf("request dataservice tcloud delete security group lb rels failed, err: %v, req: %+v, rid: %s",
 			err, req, cts.Kit.Rid)
 		return nil, err
@@ -503,7 +503,7 @@ func (g *securityGroup) getLoadBalancerInfoAndSGComRels(kt *kit.Kit, lbID string
 		),
 		Page: &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit, Sort: "priority", Order: "ASC"},
 	}
-	sgComList, err := g.dataCli.Global.SGCommonRel.List(kt, sgcomReq)
+	sgComList, err := g.dataCli.Global.SGCommonRel.ListSgCommonRels(kt, sgcomReq)
 	if err != nil {
 		logs.Errorf("call dataserver to list sg common failed, lbID: %s, err: %v, rid: %s", lbID, err, kt.Rid)
 		return nil, nil, err

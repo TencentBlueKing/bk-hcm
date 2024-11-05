@@ -33,7 +33,7 @@ func (a *BaseApplicationHandler) ListNIIDByCvm(cvmIDs []string) ([]string, error
 		},
 	}
 	// 查询
-	resp, err := a.Client.DataService().Global.NetworkInterfaceCvmRel.List(
+	resp, err := a.Client.DataService().Global.NetworkInterfaceCvmRel.ListNetworkCvmRels(
 		a.Cts.Kit,
 		&core.ListReq{
 			Filter: reqFilter,

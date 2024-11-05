@@ -71,7 +71,7 @@ const previewRef = useTemplateRef<typeof Preview>('preview');
 const isSubmitDisabled = computed(
   () => isBaseInfoHasEmpty.value || !previewData.value || previewRef.value?.info.notExecutableCount !== 0,
 );
-const submitTooltipsOption = computed(() => {
+const submitTooltips = computed(() => {
   // 基本信息未录入
   if (isBaseInfoHasEmpty.value) {
     return { disabled: !isBaseInfoHasEmpty.value, content: t('请录入云账号、云地域、操作类型等信息') };
@@ -123,7 +123,7 @@ defineExpose({ show });
     :confirm-text="t('确认并提交')"
     :is-submit-loading="isSubmitLoading"
     :is-submit-disabled="isSubmitDisabled"
-    :submit-tooltips-option="submitTooltipsOption"
+    :submit-tooltips="submitTooltips"
     @handle-submit="handleSubmit"
   >
     <Form :model="formModel">

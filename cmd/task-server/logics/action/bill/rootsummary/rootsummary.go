@@ -85,6 +85,8 @@ func (act RootAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 	currentCostRMBSynced := decimal.NewFromFloat(0)
 	currentCost := decimal.NewFromFloat(0)
 	currentRMBCost := decimal.NewFromFloat(0)
+	adjustmentCost := decimal.NewFromFloat(0)
+	adjustmentRMBCost := decimal.NewFromFloat(0)
 	isAccounted := true
 	bkBizNum := uint64(0)
 	productNum := uint64(0)
@@ -100,6 +102,8 @@ func (act RootAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 		currentCostRMBSynced = currentCostRMBSynced.Add(mainSummary.CurrentMonthCostSynced)
 		currentCost = currentCost.Add(mainSummary.CurrentMonthCost)
 		currentRMBCost = currentRMBCost.Add(mainSummary.CurrentMonthRMBCost)
+		adjustmentCost = adjustmentCost.Add(mainSummary.AdjustmentCost)
+		adjustmentRMBCost = adjustmentRMBCost.Add(mainSummary.AdjustmentRMBCost)
 		if mainSummary.BkBizID > 0 {
 			bkBizNum = bkBizNum + 1
 		}
@@ -126,6 +130,8 @@ func (act RootAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 		CurrentMonthRMBCostSynced: &currentCostRMBSynced,
 		CurrentMonthCost:          &currentCost,
 		CurrentMonthRMBCost:       &currentRMBCost,
+		AdjustmentCost:            &adjustmentCost,
+		AdjustmentRMBCost:         &adjustmentRMBCost,
 		Rate:                      rate,
 		BkBizNum:                  bkBizNum,
 		ProductNum:                productNum,

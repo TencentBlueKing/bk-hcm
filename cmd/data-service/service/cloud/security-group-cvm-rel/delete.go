@@ -34,8 +34,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// BatchDelete rels.
-func (svc *sgCvmRelSvc) BatchDelete(cts *rest.Contexts) (interface{}, error) {
+// BatchDeleteSgCvmRels rels.
+func (svc *sgCvmRelSvc) BatchDeleteSgCvmRels(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.BatchDeleteReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err

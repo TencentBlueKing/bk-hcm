@@ -208,7 +208,7 @@ func toRawData(kt *kit.Kit, details []*billcore.AdjustmentItem, mainAccountMap m
 			AdjustType:      enumor.BillAdjustmentTypeNameMap[detail.Type],
 			Operator:        detail.Operator,
 			Cost:            detail.Cost.String(),
-			Currency:        detail.Currency,
+			Currency:        string(detail.Currency),
 			AdjustStatus:    enumor.BillAdjustmentStateNameMap[detail.State],
 		}
 		values, err := table.GetHeaderValues()

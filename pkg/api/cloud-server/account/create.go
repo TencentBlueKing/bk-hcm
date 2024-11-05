@@ -23,10 +23,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"unicode/utf8"
 
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/tools/assert"
+	cvt "hcm/pkg/tools/converter"
 )
 
 // TCloudAccountExtensionCreateReq ...
@@ -234,11 +236,11 @@ func (req *AccountCommonInfoCreateReq) Validate() error {
 		return err
 	}
 
-	// 校验备注
-	if err := validator.ValidateMemo(req.Memo, false); err != nil {
-		return err
+	if req.Memo != nil {
+		if utf8.RuneCountInString(cvt.PtrToVal(req.Memo)) > 255 {
+			return errors.New("invalid account memo, length should less than 255")
+		}
 	}
-
 	return nil
 }
 

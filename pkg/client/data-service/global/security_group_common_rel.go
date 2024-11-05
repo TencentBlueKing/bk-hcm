@@ -41,26 +41,26 @@ type SGCommonRelClient struct {
 	client rest.ClientInterface
 }
 
-// BatchCreate security group common rels.
-func (cli *SGCommonRelClient) BatchCreate(kt *kit.Kit, request *protocloud.SGCommonRelBatchCreateReq) error {
+// BatchCreateSgCommonRels security group common rels.
+func (cli *SGCommonRelClient) BatchCreateSgCommonRels(kt *kit.Kit, request *protocloud.SGCommonRelBatchCreateReq) error {
 	return common.RequestNoResp[protocloud.SGCommonRelBatchCreateReq](cli.client, rest.POST, kt, request,
 		"/security_group_common_rels/batch/create")
 }
 
-// BatchUpsert security group common rels.
-func (cli *SGCommonRelClient) BatchUpsert(kt *kit.Kit, request *protocloud.SGCommonRelBatchUpsertReq) error {
+// BatchUpsertSgCommonRels security group common rels.
+func (cli *SGCommonRelClient) BatchUpsertSgCommonRels(kt *kit.Kit, request *protocloud.SGCommonRelBatchUpsertReq) error {
 	return common.RequestNoResp[protocloud.SGCommonRelBatchUpsertReq](cli.client, rest.POST, kt, request,
 		"/security_group_common_rels/batch/upsert")
 }
 
-// BatchDelete security group common rels.
-func (cli *SGCommonRelClient) BatchDelete(kt *kit.Kit, request *proto.BatchDeleteReq) error {
+// BatchDeleteSgCommonRels security group common rels.
+func (cli *SGCommonRelClient) BatchDeleteSgCommonRels(kt *kit.Kit, request *proto.BatchDeleteReq) error {
 	return common.RequestNoResp[proto.BatchDeleteReq](cli.client, rest.DELETE, kt, request,
 		"/security_group_common_rels/batch")
 }
 
-// List security group common rels.
-func (cli *SGCommonRelClient) List(kt *kit.Kit, request *core.ListReq) (*protocloud.SGCommonRelListResult, error) {
+// ListSgCommonRels security group common rels.
+func (cli *SGCommonRelClient) ListSgCommonRels(kt *kit.Kit, request *core.ListReq) (*protocloud.SGCommonRelListResult, error) {
 	return common.Request[core.ListReq, protocloud.SGCommonRelListResult](cli.client, rest.POST, kt, request,
 		"/security_group_common_rels/list")
 }

@@ -6,7 +6,6 @@
     "experimentalDecorators": true,
     "importHelpers": true,
     "resolveJsonModule": true,
-    "suppressImplicitAnyIndexErrors": true,
     "allowJs": true,
 //    "noImplicitAny": false,
     "target": "esnext",/* 编译目标ES版本*/

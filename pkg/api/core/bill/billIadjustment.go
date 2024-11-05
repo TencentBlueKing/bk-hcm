@@ -39,7 +39,7 @@ type AdjustmentItem struct {
 	Type          enumor.BillAdjustmentType  `json:"type"`
 	Memo          string                     `json:"memo"`
 	Operator      string                     `json:"operator"`
-	Currency      string                     `json:"currency"`
+	Currency      enumor.CurrencyCode        `json:"currency"`
 	Cost          decimal.Decimal            `json:"cost"`
 	RMBCost       decimal.Decimal            `json:"rmb_cost"`
 	State         enumor.BillAdjustmentState `json:"state"`

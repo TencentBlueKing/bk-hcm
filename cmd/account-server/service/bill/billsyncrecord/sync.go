@@ -64,7 +64,7 @@ func (b *service) CreateSyncRecord(cts *rest.Contexts) (any, error) {
 				Vendor:    req.Vendor,
 				BillYear:  req.BillYear,
 				BillMonth: req.BillMonth,
-				State:     enumor.BillSyncRecordStateSyncing,
+				State:     enumor.BillSyncRecordStateNew,
 				Currency:  currency,
 				Cost:      *cost,
 				RMBCost:   *rmbCost,
@@ -79,6 +79,7 @@ func (b *service) CreateSyncRecord(cts *rest.Contexts) (any, error) {
 		return nil, err
 	}
 
+	// 触发重新核算
 	if err := b.client.DataService().Global.Bill.BatchSyncBillSummaryRoot(cts.Kit, &dsbill.BillSummaryBatchSyncReq{
 		Vendor:    req.Vendor,
 		BillYear:  req.BillYear,

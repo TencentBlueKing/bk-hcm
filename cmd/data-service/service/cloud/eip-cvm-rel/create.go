@@ -29,8 +29,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// BatchCreate ...
-func (svc *relSvc) BatchCreate(cts *rest.Contexts) (interface{}, error) {
+// BatchCreateEipCvmRels ...
+func (svc *relSvc) BatchCreateEipCvmRels(cts *rest.Contexts) (interface{}, error) {
 	req := new(datarelproto.EipCvmRelBatchCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)

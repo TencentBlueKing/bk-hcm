@@ -34,8 +34,8 @@ import (
 	"hcm/pkg/rest"
 )
 
-// Get create account with options
-func (a *accountSvc) Get(cts *rest.Contexts) (interface{}, error) {
+// GetAccount get account with options
+func (a *accountSvc) GetAccount(cts *rest.Contexts) (interface{}, error) {
 	accountID := cts.PathParameter("account_id").String()
 
 	// 校验用户有该账号的查看权限

@@ -34,12 +34,12 @@ func InitService(cap *capability.Capability) {
 	}
 
 	h := rest.NewHandler()
-	h.Add("BatchCreate", http.MethodPost, "/eip_cvm_rels/batch/create", svc.BatchCreate)
-	h.Add("List", http.MethodPost, "/eip_cvm_rels/list", svc.List)
+	h.Add("BatchCreateEipCvmRels", http.MethodPost, "/eip_cvm_rels/batch/create", svc.BatchCreateEipCvmRels)
+	h.Add("ListEipCvmRels", http.MethodPost, "/eip_cvm_rels/list", svc.ListEipCvmRels)
 	h.Add("ListEipWithoutCvm", http.MethodPost, "/eip_cvm_rels/with/eips/without/cvm/list", svc.ListEipWithoutCvm)
 	h.Add("ListWithEip", http.MethodPost, "/eip_cvm_rels/with/eips/list", svc.ListWithEip)
 	h.Add("ListWithEipExt", http.MethodPost, "/vendors/{vendor}/eip_cvm_rels/with/eips/list", svc.ListWithEipExt)
-	h.Add("BatchDelete", http.MethodDelete, "/eip_cvm_rels/batch", svc.BatchDelete)
+	h.Add("BatchDeleteEipCvmRels", http.MethodDelete, "/eip_cvm_rels/batch", svc.BatchDeleteEipCvmRels)
 
 	h.Load(cap.WebService)
 }

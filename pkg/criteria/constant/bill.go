@@ -50,7 +50,8 @@ const GcpCreditReturnConfigKey = "gcp_credit_return_config"
 const AwsLineItemTypeSavingPlanCoveredUsage = "SavingsPlanCoveredUsage"
 
 const (
-
+	// BillOutsideMonthBillName outside bill month bill
+	BillOutsideMonthBillName = "OutsideMonthBill"
 	// BillCommonExpenseReverseName common expense reverse
 	BillCommonExpenseReverseName = "CommonExpenseReverse"
 	// BillCommonExpenseName common expense

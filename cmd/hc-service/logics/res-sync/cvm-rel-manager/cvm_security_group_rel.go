@@ -85,7 +85,7 @@ func (mgr *CvmRelManger) getCvmSGRelMapFromDB(kt *kit.Kit, cvmIDs []string) (
 	}
 	result := make(map[string]map[string]cvmRelInfo)
 	for {
-		respResult, err := mgr.dataCli.Global.SGCvmRel.List(kt.Ctx, kt.Header(), listReq)
+		respResult, err := mgr.dataCli.Global.SGCvmRel.ListSgCvmRels(kt.Ctx, kt.Header(), listReq)
 		if err != nil {
 			logs.Errorf("list securityGroup cvm rel failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
@@ -118,7 +118,7 @@ func (mgr *CvmRelManger) deleteCvmSGRel(kt *kit.Kit, ids []uint64) error {
 			Filter: tools.ContainersExpression("id", partIDs),
 		}
 
-		if err := mgr.dataCli.Global.SGCvmRel.BatchDelete(kt.Ctx, kt.Header(), batchDeleteReq); err != nil {
+		if err := mgr.dataCli.Global.SGCvmRel.BatchDeleteSgCvmRels(kt.Ctx, kt.Header(), batchDeleteReq); err != nil {
 			logs.Errorf("batch delete securityGroup_cvm_rel failed, err: %v, rid: %s", err, kt.Rid)
 			return err
 		}
@@ -146,7 +146,7 @@ func (mgr *CvmRelManger) createCvmSGRel(kt *kit.Kit, addRels []cvmRelInfo) error
 			Rels: lists,
 		}
 
-		if err := mgr.dataCli.Global.SGCvmRel.BatchCreate(kt.Ctx, kt.Header(), createReq); err != nil {
+		if err := mgr.dataCli.Global.SGCvmRel.BatchCreateSgCvmRels(kt.Ctx, kt.Header(), createReq); err != nil {
 			logs.Errorf("batch create securityGroup_cvm_rel failed, err: %v, rid: %s", err, kt.Rid)
 			return err
 		}
