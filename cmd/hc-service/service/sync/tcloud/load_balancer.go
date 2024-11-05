@@ -147,8 +147,8 @@ func (hd *lbHandler) RemoveDeleteFromCloudV2(kt *kit.Kit, allCloudIDMap map[stri
 	}
 	err := hd.syncCli.RemoveLoadBalancerDeleteFromCloudV2(kt, params, allCloudIDMap)
 	if err != nil {
-		logs.Errorf("remove sg delete from cloud failed, err: %v, accountID: %s, region: %s, rid: %s", err,
-			hd.request.AccountID, hd.request.Region, kt.Rid)
+		logs.Errorf("remove clb delete from cloud failed, err: %v, cloud id: %v,account: %s, region: %s, rid: %s",
+			err, hd.request.CloudIDs, hd.request.AccountID, hd.request.Region, kt.Rid)
 		return err
 	}
 	return nil

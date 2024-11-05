@@ -68,7 +68,7 @@ func (t *TCloudImpl) ListTargets(kt *kit.Kit, opt *typelb.TCloudListTargetsOptio
 
 	resp, err := NetworkErrRetry(client.DescribeTargetsWithContext, kt, req)
 	if err != nil {
-		logs.Errorf("fail to describe clb targets from tcloud, err: %s, req: %+v, rid: %s", err, req, kt.Rid)
+		logs.Errorf("fail to describe clb targets from tcloud, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
 		return nil, err
 	}
 

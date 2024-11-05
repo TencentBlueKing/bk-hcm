@@ -73,8 +73,8 @@ func (cli *client) listenerByLbBatch(kt *kit.Kit, params *SyncListenerBatchOptio
 		}
 		var err error
 		if syncResult, err = cli.listenerOfLoadBalancer(newKit, param, syncOpt); err != nil {
-			logs.ErrorDepthf(1, "[%s] account: %s lb: %s sync listener failed, err: %v, rid: %s",
-				enumor.TCloud, params.AccountID, lb.CloudID, err, newKit.Rid)
+			logs.ErrorDepthf(1, "[%s] sync listener failed, err: %v, account: %s lb: %s, region :%s rid: %s",
+				enumor.TCloud, err, params.AccountID, lb.CloudID, params.Region, newKit.Rid)
 			return err
 		}
 		return nil

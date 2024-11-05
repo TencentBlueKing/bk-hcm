@@ -337,8 +337,7 @@ func (cli *client) RemoveSecurityGroupDeleteFromCloudV2(kt *kit.Kit, accountID s
 
 	for _, idBatch := range slice.Split(delCloudIDs, constant.BatchOperationMaxLimit) {
 		if err := cli.deleteSG(kt, accountID, region, idBatch); err != nil {
-			logs.Errorf("fail to delete removed security group, err: %s, account: %s, region: %s, cloudIds: %v, "+
-				"rid: %s",
+			logs.Errorf("delete removed security group failed, err: %v, account: %s, region: %s, cloudId: %v, rid: %s",
 				err, accountID, region, idBatch, kt.Rid)
 			return err
 		}

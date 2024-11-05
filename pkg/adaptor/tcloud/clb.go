@@ -67,7 +67,7 @@ func (t *TCloudImpl) ListLoadBalancer(kt *kit.Kit, opt *typelb.TCloudListOption)
 
 	resp, err := NetworkErrRetry(client.DescribeLoadBalancersWithContext, kt, req)
 	if err != nil {
-		logs.Errorf("fail to describe lodabalancer from tcloud, err: %s, req: %+v, rid: %s", err, req, kt.Rid)
+		logs.Errorf("fail to describe lodabalancer from tcloud, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
 		return nil, err
 	}
 

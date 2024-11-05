@@ -200,7 +200,7 @@ func (cli *client) RemoveLoadBalancerDeleteFromCloudV2(kt *kit.Kit, params *Sync
 	}
 	for _, idBatch := range slice.Split(delCloudIDs, constant.BatchOperationMaxLimit) {
 		if err := cli.deleteLoadBalancer(kt, params.AccountID, params.Region, idBatch); err != nil {
-			logs.Errorf("fail to delete removed clb, err: %s, account: %s, region: %s, cloudIds: %v, rid: %s",
+			logs.Errorf("fail to delete removed clb, err: %v, account: %s, region: %s, cloudIds: %v, rid: %s",
 				err, params.AccountID, params.Region, idBatch, kt.Rid)
 			return err
 		}
