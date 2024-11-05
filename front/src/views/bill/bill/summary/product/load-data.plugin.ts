@@ -9,7 +9,7 @@ import { BILL_BIZS_KEY } from '@/constants';
 
 export const getColumns = () => {
   const columns = billsProductSummaryColumns.slice();
-  injectBizField(columns, 1);
+  injectBizField(columns, 0);
 
   return columns;
 };
