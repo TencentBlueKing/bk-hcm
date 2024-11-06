@@ -194,6 +194,7 @@ func (opt TCloudListListenersOption) Validate() error {
 
 // TCloudListener for listener Instance
 type TCloudListener struct {
+	Region string
 	*tclb.Listener
 }
 
@@ -613,6 +614,7 @@ func (opt TCloudDeleteRuleOption) Validate() error {
 
 // TCloudUrlRule ...
 type TCloudUrlRule struct {
+	Region string
 	*tclb.RuleOutput
 }
 
@@ -724,6 +726,7 @@ type TargetWeightRule struct {
 
 // Backend ...
 type Backend struct {
+	TargetGroupRegion string
 	*tclb.Backend
 }
 
