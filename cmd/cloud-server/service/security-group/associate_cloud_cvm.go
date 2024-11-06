@@ -97,7 +97,6 @@ func (svc *securityGroupSvc) BatchDisassociateBizCvm(cts *rest.Contexts) (any, e
 }
 
 func (svc *securityGroupSvc) disassociateCloudCvm(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
-
 	any, error) {
 
 	req, sgInfo, err := svc.decodeAssociateReq(cts, validHandler, meta.Disassociate)
@@ -109,17 +108,10 @@ func (svc *securityGroupSvc) disassociateCloudCvm(cts *rest.Contexts, validHandl
 
 	case enumor.TCloud:
 		// create operation audit.
-		audit := protoaudit.CloudResourceOperationInfo{
-			ResType:           enumor.SecurityGroupRuleAuditResType,
-			ResID:             req.SecurityGroupID,
-			Action:            protoaudit.Disassociate,
-			AssociatedResType: enumor.CvmAuditResType,
-			AssociatedResID:   strings.Join(req.CvmIDs, ","),
-		}
-		if err = svc.audit.ResOperationAudit(cts.Kit, audit); err != nil {
-			logs.Errorf("create operation audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		if err = svc.createTCloudDisassociateCloudCvmAudit(cts, req); err != nil {
 			return nil, err
 		}
+
 		err := svc.client.HCService().TCloud.SecurityGroup.BatchDisassociateCloudCvm(cts.Kit,
 			req.SecurityGroupID, req.CvmIDs)
 		if err != nil {
@@ -128,11 +120,27 @@ func (svc *securityGroupSvc) disassociateCloudCvm(cts *rest.Contexts, validHandl
 			return nil, err
 		}
 		return nil, nil
-
 	default:
 		return nil, errf.Newf(errf.Unknown, "vendor: %s not support", sgInfo.Vendor)
 	}
 
+}
+
+func (svc *securityGroupSvc) createTCloudDisassociateCloudCvmAudit(cts *rest.Contexts,
+	req *hcproto.SecurityGroupBatchAssociateCvmReq) error {
+
+	audit := protoaudit.CloudResourceOperationInfo{
+		ResType:           enumor.SecurityGroupRuleAuditResType,
+		ResID:             req.SecurityGroupID,
+		Action:            protoaudit.Disassociate,
+		AssociatedResType: enumor.CvmAuditResType,
+		AssociatedResID:   strings.Join(req.CvmIDs, ","),
+	}
+	if err := svc.audit.ResOperationAudit(cts.Kit, audit); err != nil {
+		logs.Errorf("create operation audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return err
+	}
+	return nil
 }
 
 func (svc *securityGroupSvc) decodeAssociateReq(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler,
