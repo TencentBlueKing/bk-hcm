@@ -25,6 +25,7 @@ import (
 	"math/rand"
 	"time"
 
+	"hcm/cmd/account-server/logics/bill/monthtask"
 	"hcm/cmd/account-server/logics/bill/puller"
 	"hcm/cmd/task-server/logics/action/bill/mainsummary"
 	"hcm/pkg/api/core"
@@ -245,18 +246,25 @@ func (mac *MainAccountController) pollMainSummaryTask(subKit *kit.Kit, flowID st
 	return flowID
 }
 
-func (mac *MainAccountController) createMainSummaryFlow(
-	kt *kit.Kit, billYear, billMonth int) (*core.CreateResult, error) {
+func (mac *MainAccountController) createMainSummaryFlow(kt *kit.Kit, billYear, billMonth int) (
+	*core.CreateResult, error) {
 
 	memo := fmt.Sprintf("[%s] main %s(%.16s), %4d-%02d",
 		mac.Vendor, mac.MainAccountID, mac.MainAccountCloudID, billYear, billMonth)
+
+	monthTaskDescriber := monthtask.GetMonthTaskDescriber(mac.Vendor, mac.RootAccountCloudID)
+	var monthTaskTypes []enumor.MonthTaskType
+	// 如果为空表示不支持，传入空types数组即可
+	if monthTaskDescriber != nil {
+		monthTaskTypes = monthTaskDescriber.GetMonthTaskTypes()
+	}
 
 	return mac.Client.TaskServer().CreateCustomFlow(kt, &taskserver.AddCustomFlowReq{
 		Name: enumor.FlowBillMainAccountSummary,
 		Memo: memo,
 		Tasks: []taskserver.CustomFlowTask{
 			mainsummary.BuildMainSummaryTask(
-				mac.RootAccountID, mac.MainAccountID, mac.Vendor, billYear, billMonth),
+				mac.RootAccountID, mac.MainAccountID, mac.Vendor, billYear, billMonth, monthTaskTypes),
 		},
 	})
 }
