@@ -21,7 +21,6 @@ package tcloud
 
 import (
 	"context"
-	"hcm/pkg/client/common"
 	"net/http"
 
 	"hcm/pkg/api/core"

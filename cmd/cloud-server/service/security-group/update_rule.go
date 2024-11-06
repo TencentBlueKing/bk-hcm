@@ -276,7 +276,7 @@ func (svc *securityGroupSvc) batchUpdateSGRule(cts *rest.Contexts, validHandler 
 	case enumor.TCloud:
 		return svc.batchUpdateTCloudSGRule(cts, sgBaseInfo)
 	default:
-		return nil, errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
+		return nil, errf.Newf(errf.Unknown, "update SecurityGroup rule, vendor: %s not support", vendor)
 	}
 }
 

@@ -310,8 +310,8 @@ func (g *securityGroup) getTCloudSGRulesVersion(kt *kit.Kit, client tcloud.TClou
 	}
 	rules, err := client.ListSecurityGroupRule(kt, listOpt)
 	if err != nil {
-		logs.Errorf("[%s] request adaptor to list tcloud security group rule failed, err: %v, rid: %s", enumor.TCloud,
-			err, kt.Rid)
+		logs.Errorf("[%s] request adaptor to list tcloud security group rule failed,"+
+			" region: %s, sgCloudID: %s, err: %v, rid: %s", enumor.TCloud, region, sgCloudID, err, kt.Rid)
 		return "", err
 	}
 	return converter.PtrToVal(rules.Version), nil

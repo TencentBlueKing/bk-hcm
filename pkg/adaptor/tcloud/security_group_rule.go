@@ -329,7 +329,7 @@ func (t *TCloudImpl) BatchUpdateSecurityGroupRule(kt *kit.Kit, opt *securitygrou
 
 	_, err = client.ReplaceSecurityGroupPoliciesWithContext(kt.Ctx, req)
 	if err != nil {
-		logs.Errorf("replace tcloud security group rules failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("replace tcloud security group rules failed, opt: %+v, err: %v, rid: %s", opt, err, kt.Rid)
 		return err
 	}
 
