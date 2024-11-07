@@ -866,20 +866,3 @@ type TCloudDeleteSnatIpOpt struct {
 func (opt *TCloudDeleteSnatIpOpt) Validate() error {
 	return validator.Validate.Struct(opt)
 }
-
-// TCloudListImageReq ...
-type TCloudListImageReq struct {
-	RegistryId     string `json:"RegistryId" validate:"required"`
-	NamespaceName  string `json:"NamespaceName" validate:"required"`
-	RepositoryName string `json:"RepositoryName" validate:"required"`
-
-	ImageVersion *string          `json:"ImageVersion" validate:"omitempty"`
-	Digest       *string          `json:"Digest" validate:"omitempty"`
-	ExactMatch   bool             `json:"ExactMatch" validate:"omitempty"`
-	Page         *core.TCloudPage `json:"page" validate:"omitempty"`
-}
-
-// Validate ...
-func (opt *TCloudListImageReq) Validate() error {
-	return validator.Validate.Struct(opt)
-}
