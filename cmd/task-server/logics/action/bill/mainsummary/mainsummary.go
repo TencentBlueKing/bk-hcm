@@ -24,7 +24,6 @@ import (
 	"fmt"
 	"time"
 
-	"hcm/cmd/account-server/logics/bill/monthtask"
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	"hcm/pkg/api/core"
 	billcore "hcm/pkg/api/core/bill"
@@ -50,6 +49,8 @@ type MainAccountSummaryActionOption struct {
 	BillYear      int           `json:"bill_year" validate:"required"`
 	BillMonth     int           `json:"bill_month" validate:"required"`
 	Vendor        enumor.Vendor `json:"vendor" validate:"required"`
+
+	MonthTaskTypes []enumor.MonthTaskType `json:"month_task_types"`
 }
 
 // String ...
@@ -155,7 +156,7 @@ func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (
 
 	if isCurMonthAccounted {
 		// 如果当月所有日账单都已经分账，那么就获取月度账单状态
-		extraCost, isFinished, err := act.calculateMonthTaskStatus(kt.Kit(), rootSummary, summary)
+		extraCost, isFinished, err := act.calculateMonthTaskStatus(kt.Kit(), rootSummary, summary, opt.MonthTaskTypes)
 		if err != nil {
 			logs.Errorf("failed to check if month pull task finished, err: %v, rid: %s", err, kt.Kit().Rid)
 			return nil, err
@@ -224,25 +225,27 @@ func (act *MainAccountSummaryAction) getExchangeRate(
 }
 
 func (act *MainAccountSummaryAction) calculateMonthTaskStatus(kt *kit.Kit, summaryRoot *billcore.SummaryRoot,
-	summary *bill.BillSummaryMain) (extraCost decimal.Decimal, isFinished bool, err error) {
+	summary *bill.BillSummaryMain, monthTaskTypes []enumor.MonthTaskType) (extraCost decimal.Decimal, isFinished bool,
+	err error) {
 
-	monthDescriber := monthtask.GetMonthTaskDescriber(summaryRoot.Vendor, summaryRoot.RootAccountCloudID)
-	if monthDescriber == nil {
+	if len(monthTaskTypes) == 0 {
 		// unsupported, skip
+		logs.Infof("[%s] %s(%s)/%s(%s) do not support month task, skip, rid: %s ", summaryRoot.Vendor,
+			summary.RootAccountCloudID, summary.RootAccountID, summary.MainAccountCloudID, summary.MainAccountCloudID,
+			kt.Rid)
 		return decimal.Zero, true, nil
 	}
-
-	monthTasks, err := getMonthTask(kt, summaryRoot, monthDescriber.GetMonthTaskTypes())
+	monthTasks, err := getMonthTask(kt, summaryRoot, monthTaskTypes)
 	if err != nil {
 		return decimal.Zero, false, err
 	}
-	if len(monthTasks) != len(monthDescriber.GetMonthTaskTypes()) {
+	if len(monthTasks) != len(monthTaskTypes) {
 		logs.Infof("[%s] %s(%s) %d-%02d month task length not match, got: %d, want: %d, rid: %s",
 			summary.Vendor, summary.RootAccountCloudID, summary.RootAccountID,
-			summary.BillYear, summary.BillMonth, len(monthTasks), len(monthDescriber.GetMonthTaskTypes()), kt.Rid)
+			summary.BillYear, summary.BillMonth, len(monthTasks), len(monthTaskTypes), kt.Rid)
 		return decimal.Zero, false, nil
 	}
-	mtNameMap := make(map[enumor.MonthTaskType]struct{}, len(monthDescriber.GetMonthTaskTypes()))
+	mtNameMap := make(map[enumor.MonthTaskType]struct{}, len(monthTaskTypes))
 	for _, mt := range monthTasks {
 		mtNameMap[mt.Type] = struct{}{}
 	}
@@ -328,8 +331,9 @@ func (act *MainAccountSummaryAction) getDailyVersionCost(kt *kit.Kit, opt *MainA
 	return &totalCost, isAccounted, currencyCode, nil
 }
 
-func (act *MainAccountSummaryAction) getLastMonthSyncedCost(
-	kt *kit.Kit, opt *MainAccountSummaryActionOption) (*decimal.Decimal, *decimal.Decimal, error) {
+func (act *MainAccountSummaryAction) getLastMonthSyncedCost(kt *kit.Kit, opt *MainAccountSummaryActionOption) (
+	*decimal.Decimal, *decimal.Decimal, error) {
+
 	billYear, billMonth, err := times.GetLastMonth(opt.BillYear, opt.BillMonth)
 	if err != nil {
 		return nil, nil, fmt.Errorf("get last month failed, err %s", err.Error())

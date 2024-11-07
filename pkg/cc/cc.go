@@ -206,7 +206,7 @@ func AccountServer() AccountServerSetting {
 
 	s, ok := rt.settings.(*AccountServerSetting)
 	if !ok {
-		logs.ErrorDepthf(1, "current %s service can not get task server setting", ServiceName())
+		logs.ErrorDepthf(1, "current %s service can not get account server setting", ServiceName())
 		return AccountServerSetting{}
 	}
 

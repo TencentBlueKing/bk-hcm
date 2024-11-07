@@ -128,33 +128,32 @@ func (act MonthTaskAction) runPull(kt *kit.Kit, runner MonthTaskRunner, opt *Mon
 			return err
 		}
 		lenRawBillItemList := len(rawBillItemList)
-		if lenRawBillItemList == 0 {
-			logs.Infof("month task %s pulled 0 records, skip, rid: %s", task.String(), kt.Rid)
-			return nil
-		}
-		filename := getMonthTaskRawBillFilename(task, task.PullIndex, uint64(lenRawBillItemList))
-		storeReq := &bill.RawBillCreateReq{
-			RawBillPathParam: bill.RawBillPathParam{
-				Vendor:        opt.Vendor,
-				RootAccountID: task.RootAccountID,
-				MainAccountID: enumor.MonthRawBillPathName,
-				BillYear:      fmt.Sprintf("%d", task.BillYear),
-				BillMonth:     fmt.Sprintf("%02d", task.BillMonth),
-				// 将类型作为特殊日期
-				BillDate: string(task.Type),
-				Version:  fmt.Sprintf("%d", task.VersionID),
-				FileName: filename,
-			},
-
-			Items: rawBillItemList,
-		}
 		databillCli := actcli.GetDataService().Global.Bill
-		_, err = databillCli.CreateRawBill(kt, storeReq)
-		if err != nil {
-			logs.Errorf("failed to create month raw bill, opt: %+v, err: %s, rid: %s", opt, err.Error(), kt.Rid)
-			return fmt.Errorf("failed to create month raw bill, opt: %+v, err: %s", opt, err.Error())
+		if lenRawBillItemList != 0 {
+			filename := getMonthTaskRawBillFilename(task, task.PullIndex, uint64(lenRawBillItemList))
+			storeReq := &bill.RawBillCreateReq{
+				RawBillPathParam: bill.RawBillPathParam{
+					Vendor:        opt.Vendor,
+					RootAccountID: task.RootAccountID,
+					MainAccountID: enumor.MonthRawBillPathName,
+					BillYear:      fmt.Sprintf("%d", task.BillYear),
+					BillMonth:     fmt.Sprintf("%02d", task.BillMonth),
+					// 将类型作为特殊日期
+					BillDate: string(task.Type),
+					Version:  fmt.Sprintf("%d", task.VersionID),
+					FileName: filename,
+				},
+
+				Items: rawBillItemList,
+			}
+			_, err = databillCli.CreateRawBill(kt, storeReq)
+			if err != nil {
+				logs.Errorf("failed to create month raw bill, opt: %+v, err: %s, rid: %s", opt, err.Error(), kt.Rid)
+				return fmt.Errorf("failed to create month raw bill, opt: %+v, err: %s", opt, err.Error())
+			}
 		}
-		logs.Infof("month task %+v pulled %d records, continue", opt, lenRawBillItemList)
+
+		logs.Infof("month task %s pulled %d records, continue", opt.String(), lenRawBillItemList)
 		if isFinished {
 			updateToPulledReq := &bill.BillMonthTaskUpdateReq{
 				ID:        task.ID,
