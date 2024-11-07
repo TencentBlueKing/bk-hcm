@@ -587,34 +587,8 @@ func convCloudToDBUpdate(id string, cloud typeslb.TCloudClb, vpcMap map[string]*
 		CloudVpcID:       cloudVpcID,
 		SubnetID:         subnetMap[cloudSubnetID],
 		CloudSubnetID:    cloudSubnetID,
-		Extension: &corelb.TCloudClbExtension{
-			Forward:                  cloud.Forward,
-			SlaType:                  cloud.SlaType,
-			VipIsp:                   cloud.VipIsp,
-			LoadBalancerPassToTarget: cloud.LoadBalancerPassToTarget,
-			ChargeType:               cloud.ChargeType,
-
-			IPv6Mode: cloud.IPv6Mode,
-			Snat:     cloud.Snat,
-			SnatPro:  cloud.SnatPro,
-		},
+		Extension:        convertTCloudExtension(cloud, region),
 	}
-	if cloud.NetworkAttributes != nil {
-		lb.Extension.InternetMaxBandwidthOut = cloud.NetworkAttributes.InternetMaxBandwidthOut
-		lb.Extension.InternetChargeType = cloud.NetworkAttributes.InternetChargeType
-		lb.Extension.BandwidthpkgSubType = cloud.NetworkAttributes.BandwidthpkgSubType
-	}
-	if cloud.SnatIps != nil {
-		ipList := make([]corelb.SnatIp, 0, len(cloud.SnatIps))
-		for _, snatIP := range cloud.SnatIps {
-			if snatIP == nil {
-				continue
-			}
-			ipList = append(ipList, corelb.SnatIp{SubnetId: snatIP.SubnetId, Ip: snatIP.Ip})
-		}
-		lb.Extension.SnatIps = cvt.ValToPtr(ipList)
-	}
-
 	if len(cloud.LoadBalancerVips) != 0 {
 		switch typeslb.TCloudLoadBalancerType(cvt.PtrToVal(cloud.LoadBalancerType)) {
 		case typeslb.InternalLoadBalancerType:
@@ -625,26 +599,6 @@ func convCloudToDBUpdate(id string, cloud typeslb.TCloudClb, vpcMap map[string]*
 	}
 	if ipv6 := cvt.PtrToVal(cloud.AddressIPv6); len(ipv6) > 0 {
 		lb.PublicIPv6Addresses = []string{ipv6}
-	}
-
-	// AttributeFlags
-	flagMap := make(map[string]bool)
-	// 没有碰到的则默认是false
-	for _, flag := range cloud.AttributeFlags {
-		flagMap[cvt.PtrToVal(flag)] = true
-	}
-	// 逐个赋值flag
-	lb.Extension.DeleteProtect = cvt.ValToPtr(flagMap[constant.TCLBDeleteProtect])
-
-	if cloud.Egress != nil {
-		lb.Extension.Egress = cloud.Egress
-	}
-
-	// 跨域1.0 信息
-	if cvt.PtrToVal(cloud.TargetRegionInfo.Region) != region ||
-		!assert.IsPtrStringEqual(cloud.TargetRegionInfo.VpcId, cloud.VpcId) {
-		lb.Extension.TargetRegion = cloud.TargetRegionInfo.Region
-		lb.Extension.TargetCloudVpcID = cloud.TargetRegionInfo.VpcId
 	}
 	return &lb
 }

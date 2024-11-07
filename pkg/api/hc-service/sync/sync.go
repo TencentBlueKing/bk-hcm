@@ -38,6 +38,8 @@ type TCloudSyncReq struct {
 	Region    string `json:"region" validate:"required"`
 	// 传入指定资源id进行同步，仅特定资源支持
 	CloudIDs []string `json:"cloud_ids" validate:"omitempty,max=20"`
+	// 指定同步并发，仅特定资源支持
+	Concurrent uint `json:"concurrent"`
 }
 
 // Validate tcloud sync request.

@@ -74,6 +74,17 @@ func (t *TCloudImpl) SetRateLimitRetryWithRandomInterval(retry bool) {
 	}
 }
 
+func networkRetryable(err error) bool {
+	errStr := err.Error()
+	if !(strings.Contains(errStr, constant.TCloudNetworkErrorErrCode)) {
+		return false
+	}
+	if !strings.Contains(errStr, "http: ContentLength=") {
+		return false
+	}
+	return true
+}
+
 // NetworkErrRetry auto retry for "ClientError.NetworkError", for read only api
 func NetworkErrRetry[I any, O any](apiCall func(context.Context, *I) (*O, error), kt *kit.Kit, req *I) (resp *O,
 	err error) {
@@ -89,8 +100,7 @@ func NetworkErrRetry[I any, O any](apiCall func(context.Context, *I) (*O, error)
 			break
 		}
 		// retry for network error
-		if policy.RetryCount() < retryTime && (strings.Contains(err.Error(), constant.TCloudNetworkErrorErrCode)) {
-
+		if policy.RetryCount() < retryTime && networkRetryable(err) {
 			logs.ErrorDepthf(1, "call tcloud api failed, req: %+v, retry times: %d, err: %v, rid: %s",
 				req, policy.RetryCount(), err, kt.Rid)
 			policy.Sleep()

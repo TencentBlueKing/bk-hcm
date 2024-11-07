@@ -53,8 +53,7 @@ func NewClient(c *ssl.TLSConfig) (*http.Client, error) {
 		}).Dial,
 		MaxIdleConnsPerHost: 1000,
 		// TODO: 同步如果调整为异步，则调整为10min
-		// 针对时间较长的资源同步
-		ResponseHeaderTimeout: 5 * time.Hour,
+		ResponseHeaderTimeout: 30 * time.Minute,
 	}
 
 	client := new(http.Client)
