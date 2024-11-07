@@ -37,9 +37,9 @@ var ManagementColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
 	{Column: "bk_biz_id", NamedC: "bk_biz_id", Type: enumor.Numeric},
 	{Column: "source", NamedC: "source", Type: enumor.String},
-	{Column: "vendor", NamedC: "vendor", Type: enumor.String},
+	{Column: "vendors", NamedC: "vendors", Type: enumor.Json},
 	{Column: "state", NamedC: "state", Type: enumor.String},
-	{Column: "account_id", NamedC: "account_id", Type: enumor.String},
+	{Column: "account_ids", NamedC: "account_ids", Type: enumor.Json},
 	{Column: "resource", NamedC: "resource", Type: enumor.String},
 	{Column: "operations", NamedC: "operations", Type: enumor.Json},
 	{Column: "flow_ids", NamedC: "flow_ids", Type: enumor.Json},
@@ -55,9 +55,9 @@ type ManagementTable struct {
 	ID         string                        `db:"id" json:"id"`
 	BkBizID    int64                         `db:"bk_biz_id" json:"bk_biz_id"`
 	Source     enumor.TaskManagementSource   `db:"source" validate:"lte=16" json:"source"`
-	Vendor     enumor.Vendor                 `db:"vendor" validate:"lte=16" json:"vendor"`
+	Vendors    types.StringArray             `db:"vendors" json:"vendors"`
 	State      enumor.TaskManagementState    `db:"state" validate:"lte=16" json:"state"`
-	AccountID  string                        `db:"account_id" validate:"lte=64" json:"account_id"`
+	AccountIDs types.StringArray             `db:"account_ids" json:"account_ids"`
 	Resource   enumor.TaskManagementResource `db:"resource" validate:"lte=16" json:"resource"`
 	Operations types.StringArray             `db:"operations"  json:"operations"`
 	FlowIDs    types.StringArray             `db:"flow_ids"  json:"flow_ids"`

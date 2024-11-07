@@ -30,9 +30,9 @@ type Management struct {
 	ID            string                        `json:"id"`
 	BkBizID       int64                         `json:"bk_biz_id"`
 	Source        enumor.TaskManagementSource   `json:"source"`
-	Vendor        enumor.Vendor                 `json:"vendor"`
+	Vendors       []enumor.Vendor               `json:"vendors"`
 	State         enumor.TaskManagementState    `json:"state"`
-	AccountID     string                        `json:"account_id"`
+	AccountIDs    []string                      `json:"account_ids"`
 	Resource      enumor.TaskManagementResource `json:"resource"`
 	Operations    []enumor.TaskOperation        `json:"operations"`
 	FlowIDs       []string                      `json:"flow_ids"`
