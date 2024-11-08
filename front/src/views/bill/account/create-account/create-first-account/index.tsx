@@ -5,7 +5,7 @@ import CommonCard from '@/components/CommonCard';
 import { Button, Form, Input, Message, Select } from 'bkui-vue';
 import { BILL_VENDORS_INFO } from '../constants';
 import { InfoLine, Success } from 'bkui-vue/lib/icon';
-import { VendorEnum } from '@/common/constant';
+import { VendorEnum, AccountVerifyEnum } from '@/common/constant';
 import MemberSelect from '@/components/MemberSelect';
 import { useUserStore } from '@/store';
 import { useRouter } from 'vue-router';
@@ -37,7 +37,7 @@ export default defineComponent({
       dept_id: -1, // 组织架构ID
       memo: '', // 备忘录
       extension: {}, // 扩展字段对象
-      entry: 'enterAccount',
+      accountType: AccountVerifyEnum.ROOT,
     });
 
     watchEffect(() => {
@@ -193,7 +193,7 @@ export default defineComponent({
                 <div class={'account-form-card-content-grid-right'}>
                   {Object.entries(curExtension.value.output1).map(([property, { label, value, placeholder }]) => (
                     <FormItem label={label} property={property}>
-                      {curExtension.value.formType === 'select' && curExtension.value.selectType.includes(property) ? (
+                      {curExtension.value?.selectType?.includes(property) ? (
                         <Select
                           v-model={value}
                           placeholder={placeholder}
@@ -219,7 +219,7 @@ export default defineComponent({
                   theme='primary'
                   outline={curExtension.value.validatedStatus === ValidateStatus.YES}
                   class={'account-validate-btn'}
-                  onClick={() => handleValidate(() => ({}), 'root_accounts')}
+                  onClick={() => handleValidate()}
                   disabled={isValidateDiasbled.value}
                   loading={isValidateLoading.value}>
                   账号校验

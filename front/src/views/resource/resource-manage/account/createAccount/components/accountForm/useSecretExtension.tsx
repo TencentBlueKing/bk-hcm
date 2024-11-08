@@ -1,4 +1,4 @@
-import { VendorEnum } from '@/common/constant';
+import { VendorEnum, AccountVerifyEnum } from '@/common/constant';
 import http from '@/http';
 import { reactive, ref, watch } from 'vue';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
@@ -23,12 +23,11 @@ export interface IExtension {
   output2: Record<string, IExtensionItem>; // 不需要显眼的输出
   validatedStatus: ValidateStatus; // 是否校验通过
   validateFailedReason?: string; // 不通过的理由
-  formType?: string;
   selectType?: any[]; // 是选择类型的字段
   selectParams?: any;
 }
 export const useSecretExtension = (props: IProp, isValidate?: boolean) => {
-  const { entry = 'cloud' } = props;
+  const { accountType = AccountVerifyEnum.ACCOUNT } = props;
   // 腾讯云
   const tcloudExtension: IExtension = reactive({
     output1: {
@@ -125,7 +124,6 @@ export const useSecretExtension = (props: IProp, isValidate?: boolean) => {
   });
   // 谷歌云
   const gcpExtension: IExtension = reactive({
-    formType: entry === 'cloud' ? 'input' : 'select',
     selectType: ['cloud_project_id'],
     selectParams: {
       cloud_project_id: {
@@ -285,19 +283,22 @@ export const useSecretExtension = (props: IProp, isValidate?: boolean) => {
     },
   );
 
-  const handleValidate = async (callback: Function = undefined, type: String = 'accounts') => {
+  const handleValidate = async (callback?: (payload: any) => {}) => {
     isValidateLoading.value = true;
     const payload = extensionPayload.value;
     // props.changeExtension(payload);
     if (callback) callback?.(payload);
     try {
-      const server = type === 'accounts' ? 'cloud' : 'account';
-      const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/${server}/vendors/${props.vendor}/${type}/secret`, {
-        ...payload,
-        disable_check: isValidate || false,
-      });
+      const server = accountType === AccountVerifyEnum.ACCOUNT ? 'cloud' : 'account';
+      const res = await http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/${server}/vendors/${props.vendor}/${accountType}/secret`,
+        {
+          ...payload,
+          disable_check: isValidate || false,
+        },
+      );
 
-      const dataIsArray = res.data instanceof Array;
+      const dataIsArray = Array.isArray(res.data);
       const data = dataIsArray ? res.data[0] : res.data;
       if (data) {
         if (dataIsArray) {
