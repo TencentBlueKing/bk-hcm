@@ -66,8 +66,8 @@ func (hd *baseHandler) Describe() string {
 	return fmt.Sprintf("tcloud %s(region=%s,account=%s)", hd.Resource(), hd.request.Region, hd.request.AccountID)
 }
 
-// MaxConcurrent use request specified or 1
-func (hd *baseHandler) MaxConcurrent() uint {
+// SyncConcurrent use request specified or 1
+func (hd *baseHandler) SyncConcurrent() uint {
 	// TODO read from config
 	if hd.request != nil && hd.request.Concurrent != 0 {
 		return hd.request.Concurrent

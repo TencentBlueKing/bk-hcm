@@ -64,6 +64,8 @@ func (t *TCloudImpl) ListLoadBalancer(kt *kit.Kit, opt *typelb.TCloudListOption)
 		req.Offset = common.Int64Ptr(int64(opt.Page.Offset))
 		req.Limit = common.Int64Ptr(int64(opt.Page.Limit))
 	}
+	req.OrderBy = (*string)(opt.OrderBy)
+	req.OrderType = opt.OrderType
 
 	resp, err := NetworkErrRetry(client.DescribeLoadBalancersWithContext, kt, req)
 	if err != nil {

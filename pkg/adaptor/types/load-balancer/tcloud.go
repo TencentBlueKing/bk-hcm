@@ -115,6 +115,26 @@ const (
 	BandwidthPackage TCloudLoadBalancerNetworkChargeType = `BANDWIDTH_PACKAGE`
 )
 
+// TCloudClbListOrderByField clb list order by field
+type TCloudClbListOrderByField string
+
+const (
+	// TCloudOrderByLoadBalancerName order by load balancer name
+	TCloudOrderByLoadBalancerName TCloudClbListOrderByField = "LoadBalancerName"
+	// TCloudOrderByCreateTime order by create time
+	TCloudOrderByCreateTime TCloudClbListOrderByField = "CreateTime"
+	// TCloudOrderByDomain order by domain
+	TCloudOrderByDomain TCloudClbListOrderByField = "Domain"
+	// TCloudOrderByLoadBalancerType order by load balancer type
+	TCloudOrderByLoadBalancerType TCloudClbListOrderByField = "LoadBalancerType"
+)
+const (
+	// TCloudCLBOrderAscending 顺序
+	TCloudCLBOrderAscending int64 = 0
+	// TCloudCLBOrderDescending 倒序
+	TCloudCLBOrderDescending int64 = 1
+)
+
 // -------------------------- List Clb--------------------------
 
 // TCloudListOption defines options to list tcloud clb instances.
@@ -122,6 +142,9 @@ type TCloudListOption struct {
 	Region   string           `json:"region" validate:"required"`
 	CloudIDs []string         `json:"cloud_ids" validate:"omitempty,max=20"`
 	Page     *core.TCloudPage `json:"page" validate:"omitempty"`
+
+	OrderBy   *TCloudClbListOrderByField `json:"order_by"`
+	OrderType *int64                     `json:"order_type"`
 }
 
 // Validate tcloud clb list option.

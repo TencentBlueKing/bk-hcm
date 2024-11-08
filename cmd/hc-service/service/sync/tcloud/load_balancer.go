@@ -20,6 +20,8 @@
 package tcloud
 
 import (
+	"sync"
+
 	"hcm/cmd/hc-service/logics/res-sync/tcloud"
 	"hcm/cmd/hc-service/service/sync/handler"
 	typecore "hcm/pkg/adaptor/types/core"
@@ -28,7 +30,10 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
+
+	"golang.org/x/sync/errgroup"
 )
 
 // SyncLoadBalancer 同步负载均衡接口
@@ -53,28 +58,64 @@ var _ handler.HandlerV2[typeclb.TCloudClb] = new(lbHandler)
 // Next ...
 func (hd *lbHandler) Next(kt *kit.Kit) ([]typeclb.TCloudClb, error) {
 
-	listOpt := &typeclb.TCloudListOption{
-		Region:   hd.request.Region,
-		CloudIDs: hd.request.CloudIDs,
-		Page: &typecore.TCloudPage{
-			Offset: hd.offset,
-			Limit:  typecore.TCloudQueryLimit,
-		},
+	if len(hd.request.CloudIDs) > 0 {
+		// 指定id只处理一次
+		listOpt := &typeclb.TCloudListOption{
+			Region:   hd.request.Region,
+			CloudIDs: hd.request.CloudIDs,
+			Page: &typecore.TCloudPage{
+				Limit: typecore.TCloudQueryLimit,
+			},
+			OrderType: cvt.ValToPtr(typeclb.TCloudCLBOrderAscending),
+			OrderBy:   cvt.ValToPtr(typeclb.TCloudOrderByCreateTime),
+		}
+		lbResult, err := hd.syncCli.CloudCli().ListLoadBalancer(kt, listOpt)
+		if err != nil {
+			logs.Errorf("request adaptor list tcloud load balancer failed, err: %v, opt: %+v, rid: %s",
+				err, listOpt, kt.Rid)
+			return nil, err
+		}
+		return lbResult, nil
 	}
 
-	lbResult, err := hd.syncCli.CloudCli().ListLoadBalancer(kt, listOpt)
+	var eg, _ = errgroup.WithContext(kt.Ctx)
+	mu := &sync.Mutex{}
+	results := make([]typeclb.TCloudClb, 0, typecore.TCloudQueryLimit*hd.SyncConcurrent())
+	for i := uint(0); i < hd.SyncConcurrent(); i++ {
+		offset := hd.offset + uint64(typecore.TCloudQueryLimit*i)
+		eg.Go(func() error {
+			listOpt := &typeclb.TCloudListOption{
+				Region: hd.request.Region,
+				Page: &typecore.TCloudPage{
+					Offset: offset,
+					Limit:  typecore.TCloudQueryLimit,
+				},
+				OrderType: cvt.ValToPtr(typeclb.TCloudCLBOrderAscending),
+				OrderBy:   cvt.ValToPtr(typeclb.TCloudOrderByCreateTime),
+			}
+			lbResult, err := hd.syncCli.CloudCli().ListLoadBalancer(kt, listOpt)
+			if err != nil {
+				logs.Errorf("request adaptor list tcloud load balancer failed, err: %v, opt: %+v, rid: %s",
+					err, listOpt, kt.Rid)
+				return err
+			}
+			mu.Lock()
+			results = append(results, lbResult...)
+			mu.Unlock()
+			return nil
+		})
+
+	}
+	err := eg.Wait()
 	if err != nil {
-		logs.Errorf("request adaptor list tcloud load balancer failed, err: %v, opt: %+v, rid: %s",
-			err, listOpt, kt.Rid)
 		return nil, err
 	}
 
-	if len(lbResult) == 0 {
+	if len(results) == 0 {
 		return nil, nil
 	}
-
-	hd.offset += uint64(len(lbResult))
-	return lbResult, nil
+	hd.offset += uint64(len(results))
+	return results, nil
 }
 
 // Sync ...

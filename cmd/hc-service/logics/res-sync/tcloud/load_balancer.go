@@ -66,7 +66,7 @@ func (cli *client) LoadBalancerWithListener(kt *kit.Kit, params *SyncBaseParams,
 	}
 
 	// 同步对应安全组关联关系
-	err = cli.lbSgRel(kt, params, lbList)
+	err = cli.lbSgRel(kt, params, opt, lbList)
 	if err != nil {
 		logs.Errorf("fail to sync load balancer sg rel, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
@@ -137,14 +137,14 @@ func (cli *client) getWithPrefetchedCloudLB(kt *kit.Kit, params *SyncBaseParams,
 	lbFromCloud := opt.PrefetchedLB
 	if len(lbFromCloud) == len(params.CloudIDs) {
 		fetched = true
-		for i := range params.CloudIDs {
-			if params.CloudIDs[i] == lbFromCloud[i].GetCloudID() {
-				continue
-			}
-			logs.Warnf("params.CloudIDs[%d] mismatch prefetched lb cloud id, params: %s, opt: %s, rid: %s",
-				i, params.CloudIDs[i], opt.PrefetchedLB[i].GetCloudID(), kt.Rid)
+		wantedCloudIDMap := cvt.StringSliceToMap(params.CloudIDs)
+		for i := range lbFromCloud {
+			delete(wantedCloudIDMap, lbFromCloud[i].GetCloudID())
+		}
+		if len(wantedCloudIDMap) > 0 {
+			logs.Warnf("wanted lb not found by prefetched cache, not found: %v, rid: %s",
+				cvt.MapKeyToStringSlice(wantedCloudIDMap), kt.Rid)
 			fetched = false
-			break
 		}
 	}
 	if fetched {
@@ -198,6 +198,9 @@ func (cli *client) RemoveLoadBalancerDeleteFromCloudV2(kt *kit.Kit, params *Sync
 		}
 		req.Page.Start += uint32(core.DefaultMaxPageLimit)
 	}
+
+	logs.Infof("[%s] will remove %d deleted load balancer from cloud, account: %s, region: %s, rid: %s",
+		enumor.TCloud, len(delCloudIDs), params.AccountID, params.Region, kt.Rid)
 	for _, idBatch := range slice.Split(delCloudIDs, constant.BatchOperationMaxLimit) {
 		if err := cli.deleteLoadBalancer(kt, params.AccountID, params.Region, idBatch); err != nil {
 			logs.Errorf("fail to delete removed clb, err: %v, account: %s, region: %s, cloudIds: %v, rid: %s",
