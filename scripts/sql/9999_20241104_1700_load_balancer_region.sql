@@ -35,9 +35,9 @@ START TRANSACTION;
 
 -- 1. 修改负载均衡表唯一键索引为cloud_id, vendor, region
 alter table load_balancer
-drop key idx_uk_cloud_id_vendor;
-alter table load_balancer
     add constraint idx_uk_cloud_id_vendor_region unique (cloud_id, vendor, region);
+alter table load_balancer drop key idx_uk_cloud_id_vendor;
+
 
 -- 2. 负载均衡监听器表新增region字段
 alter table load_balancer_listener
@@ -45,15 +45,14 @@ alter table load_balancer_listener
 
 -- 3. 负载均衡监听器表修改唯一键索引为cloud_id, vendor, region
 alter table load_balancer_listener
-drop key idx_uk_cloud_id_vendor;
-alter table load_balancer_listener
     add constraint idx_uk_cloud_id_vendor_region unique (cloud_id, vendor, region);
+alter table load_balancer_listener drop key idx_uk_cloud_id_vendor;
+
 
 -- 4. 负载均衡目标组表修改唯一键索引为cloud_id, vendor, region
-alter table load_balancer_target_group
-drop key idx_uk_cloud_id_vendor;
 alter table load_balancer
     add constraint idx_uk_cloud_id_vendor_region unique (cloud_id, vendor, region);
+alter table load_balancer_target_group drop key idx_uk_cloud_id_vendor;
 
 -- 5. 腾讯云URL规则表新增region字段
 alter table tcloud_lb_url_rule
@@ -61,9 +60,8 @@ alter table tcloud_lb_url_rule
 
 -- 6. 腾讯云URL规则表修改唯一键索引为cloud_id, vendor, region
 alter table tcloud_lb_url_rule
-drop key idx_uk_cloud_id_lbl_id;
-alter table tcloud_lb_url_rule
     add constraint idx_uk_cloud_id_lbl_id_region unique (cloud_id, lbl_id, region);
+alter table tcloud_lb_url_rule drop key idx_uk_cloud_id_lbl_id;
 
 -- 7. 负载均衡target表新增target_group_region
 alter table load_balancer_target
@@ -71,10 +69,10 @@ alter table load_balancer_target
 
 -- 8. 负载均衡target表修改唯一键索引为cloud_target_group_id, ip, port, cloud_inst_id, target_group_region
 alter table load_balancer_target
-    drop key idx_uk_cloud_target_group_id_ip_port_cloud_inst_id;
-alter table load_balancer_target
     add constraint idx_uk_cloud_target_group_id_ip_port_target_group_region
         unique (cloud_target_group_id, ip, port, target_group_region);
+alter table load_balancer_target drop key idx_uk_cloud_target_group_id_ip_port_cloud_inst_id;
+
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
 SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
