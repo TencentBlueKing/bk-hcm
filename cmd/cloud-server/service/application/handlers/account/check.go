@@ -50,7 +50,10 @@ func (a *ApplicationOfAddAccount) CheckReq() error {
 	case enumor.TCloud:
 		_, err = accountsvc.ParseAndCheckTCloudExtension(a.Cts, a.Client, a.req.Type, extensionJson)
 	case enumor.Aws:
-		_, err = accountsvc.ParseAndCheckAwsExtension(a.Cts, a.Client, a.req.Type, extensionJson)
+		// 仅校验国际站, TODO 支持aws中国站
+		if a.req.Site == enumor.InternationalSite {
+			_, err = accountsvc.ParseAndCheckAwsExtension(a.Cts, a.Client, a.req.Type, extensionJson)
+		}
 	case enumor.HuaWei:
 		_, err = accountsvc.ParseAndCheckHuaWeiExtension(a.Cts, a.Client, a.req.Type, extensionJson)
 	case enumor.Gcp:
