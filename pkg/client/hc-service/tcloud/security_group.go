@@ -27,6 +27,7 @@ import (
 	proto "hcm/pkg/api/hc-service"
 	hclb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/api/hc-service/sync"
+	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
@@ -302,4 +303,26 @@ func (cli *SecurityGroupClient) DisassociateLb(ctx context.Context, h http.Heade
 	}
 
 	return nil
+}
+
+// BatchAssociateCloudCvm 批量绑定安全组
+func (cli *SecurityGroupClient) BatchAssociateCloudCvm(kt *kit.Kit, sgID string, cvmIDs []string) error {
+
+	req := &proto.SecurityGroupBatchAssociateCvmReq{
+		SecurityGroupID: sgID,
+		CvmIDs:          cvmIDs,
+	}
+	return common.RequestNoResp[proto.SecurityGroupBatchAssociateCvmReq](cli.client, rest.POST, kt, req,
+		"/security_groups/associate/cvms/batch")
+}
+
+// BatchDisassociateCloudCvm 批量解绑安全组
+func (cli *SecurityGroupClient) BatchDisassociateCloudCvm(kt *kit.Kit, sgID string, cvmIDs []string) error {
+
+	req := &proto.SecurityGroupBatchAssociateCvmReq{
+		SecurityGroupID: sgID,
+		CvmIDs:          cvmIDs,
+	}
+	return common.RequestNoResp[proto.SecurityGroupBatchAssociateCvmReq](cli.client, rest.POST, kt, req,
+		"/security_groups/disassociate/cvms/batch")
 }
