@@ -110,6 +110,8 @@ func AdaptAuthOptions(a *meta.ResourceAttribute) (client.ActionID, []client.Reso
 		return genApplicationResources(a)
 	case meta.AccountBillThirdParty:
 		return genAccountBillThirdPartyResource(a)
+	case meta.Image:
+		return genImageResource(a)
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm auth type: %s", a.Basic.Type)
 	}

@@ -17,25 +17,46 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package enumor
+package image
 
-// OsType define os type
-type OsType string
+import (
+	"net/http"
 
-const (
-	LinuxOsType   OsType = "Linux"
-	WindowsOsType OsType = "Windows"
-	OtherOsType   OsType = "Other"
+	"hcm/cmd/hc-service/service/capability"
+	"hcm/pkg/api/hc-service/image"
+	"hcm/pkg/logs"
+	"hcm/pkg/rest"
 )
 
-// TCloudImageTypeImageType 镜像
-type TCloudImageType string
+func (svc *imageSvc) initTCloudImageService(cap *capability.Capability) {
+	h := rest.NewHandler()
 
-const (
-	// TCloudPrivateImage 私有镜像 (本账户创建的镜像)
-	TCloudPrivateImage TCloudImageType = "PRIVATE_IMAGE"
-	// TCloudPublicImage 公共镜像 (腾讯云官方镜像)
-	TCloudPublicImage TCloudImageType = "PUBLIC_IMAGE"
-	// TCloudSharedImage 共享镜像(其他账户共享给本账户的镜像)
-	TCloudSharedImage TCloudImageType = "SHARED_IMAGE"
-)
+	h.Add("ListImage", http.MethodPost, "/vendors/tcloud/images/list", svc.ListImage)
+
+	h.Load(cap.WebService)
+}
+
+// ListImage ...
+func (svc *imageSvc) ListImage(cts *rest.Contexts) (interface{}, error) {
+
+	req := new(image.TCloudImageListOption)
+	err := cts.DecodeInto(req)
+	if err != nil {
+		return nil, err
+	}
+	err = req.Validate()
+	if err != nil {
+		return nil, err
+	}
+	cli, err := svc.ad.TCloud(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+	result, err := cli.ListImage(cts.Kit, req.TCloudImageListOption)
+	if err != nil {
+		logs.Errorf("list images failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return result, nil
+}
