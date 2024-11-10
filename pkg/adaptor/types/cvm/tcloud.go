@@ -351,3 +351,18 @@ type CvmWithCountResp struct {
 	TotalCount int64
 	Cvms       []TCloudCvm
 }
+
+// -------------------------- ResetInstance --------------------------
+
+// ResetInstanceOption defines options to reset cvm instance.
+type ResetInstanceOption struct {
+	Region   string `json:"region" validate:"required"`
+	CloudID  string `json:"cloud_id" validate:"required"`
+	ImageID  string `json:"image_id" validate:"required"`
+	Password string `json:"password" validate:"required,min=12,max=30"`
+}
+
+// Validate reset cvm instance option.
+func (opt ResetInstanceOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}

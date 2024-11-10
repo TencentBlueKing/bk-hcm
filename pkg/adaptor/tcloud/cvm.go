@@ -29,7 +29,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-	"hcm/pkg/tools/converter"
+	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
@@ -125,7 +125,7 @@ func (t *TCloudImpl) ListCvmWithCount(kt *kit.Kit, opt *typecvm.ListCvmWithCount
 	}
 
 	return &typecvm.CvmWithCountResp{
-		TotalCount: converter.PtrToVal(resp.Response.TotalCount),
+		TotalCount: cvt.PtrToVal(resp.Response.TotalCount),
 		Cvms:       cvms,
 	}, nil
 }
@@ -140,7 +140,7 @@ func (t *TCloudImpl) CountCvm(kt *kit.Kit, region string) (int32, error) {
 	}
 
 	req := cvm.NewDescribeInstancesRequest()
-	req.Limit = converter.ValToPtr(int64(1))
+	req.Limit = cvt.ValToPtr(int64(1))
 	resp, err := client.DescribeInstancesWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("count tcloud cvm failed, err: %v, region:%s, rid: %s", err, region, kt.Rid)
@@ -206,7 +206,7 @@ func (t *TCloudImpl) StartCvm(kt *kit.Kit, opt *typecvm.TCloudStartOption) error
 		opt.Region,
 	}
 	respPoller := poller.Poller[*TCloudImpl, []*cvm.Instance, poller.BaseDoneResult]{Handler: handler}
-	res, err := respPoller.PollUntilDone(t, kt, converter.SliceToPtr(opt.CloudIDs), types.NewBatchOperateCvmPollerOpt())
+	res, err := respPoller.PollUntilDone(t, kt, cvt.SliceToPtr(opt.CloudIDs), types.NewBatchOperateCvmPollerOpt())
 	if err != nil {
 		logs.Errorf("poll start cvm failed, err: %v, res: %#v, rid: %s", err, res, kt.Rid)
 		return err
@@ -247,7 +247,7 @@ func (t *TCloudImpl) StopCvm(kt *kit.Kit, opt *typecvm.TCloudStopOption) error {
 		opt.Region,
 	}
 	respPoller := poller.Poller[*TCloudImpl, []*cvm.Instance, poller.BaseDoneResult]{Handler: handler}
-	res, err := respPoller.PollUntilDone(t, kt, converter.SliceToPtr(opt.CloudIDs), types.NewBatchOperateCvmPollerOpt())
+	res, err := respPoller.PollUntilDone(t, kt, cvt.SliceToPtr(opt.CloudIDs), types.NewBatchOperateCvmPollerOpt())
 	if err != nil {
 		logs.Errorf("poll stop cvm failed, err: %v, res: %#v, rid: %s", err, res, kt.Rid)
 		return err
@@ -287,7 +287,7 @@ func (t *TCloudImpl) RebootCvm(kt *kit.Kit, opt *typecvm.TCloudRebootOption) err
 		opt.Region,
 	}
 	respPoller := poller.Poller[*TCloudImpl, []*cvm.Instance, poller.BaseDoneResult]{Handler: handler}
-	res, err := respPoller.PollUntilDone(t, kt, converter.SliceToPtr(opt.CloudIDs), types.NewBatchOperateCvmPollerOpt())
+	res, err := respPoller.PollUntilDone(t, kt, cvt.SliceToPtr(opt.CloudIDs), types.NewBatchOperateCvmPollerOpt())
 	if err != nil {
 		logs.Errorf("poll reboot cvm failed, err: %v, res: %#v, rid: %s", err, res, kt.Rid)
 		return err
@@ -329,7 +329,7 @@ func (t *TCloudImpl) ResetCvmPwd(kt *kit.Kit, opt *typecvm.TCloudResetPwdOption)
 		opt.Region,
 	}
 	respPoller := poller.Poller[*TCloudImpl, []*cvm.Instance, poller.BaseDoneResult]{Handler: handler}
-	res, err := respPoller.PollUntilDone(t, kt, converter.SliceToPtr(opt.CloudIDs), types.NewBatchOperateCvmPollerOpt())
+	res, err := respPoller.PollUntilDone(t, kt, cvt.SliceToPtr(opt.CloudIDs), types.NewBatchOperateCvmPollerOpt())
 	if err != nil {
 		logs.Errorf("poll reset pwd cvm failed, err: %v, res: %#v, rid: %s", err, res, kt.Rid)
 		return err
@@ -380,7 +380,7 @@ func (t *TCloudImpl) CreateCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOption) (*p
 		BandwidthPackageId:      opt.BandwidthPackageID,
 	}
 	if len(opt.InternetChargeType) != 0 {
-		req.InternetAccessible.InternetChargeType = converter.ValToPtr(string(opt.InternetChargeType))
+		req.InternetAccessible.InternetChargeType = cvt.ValToPtr(string(opt.InternetChargeType))
 	}
 
 	req.SystemDisk = &cvm.SystemDisk{
@@ -480,7 +480,7 @@ func (t *TCloudImpl) InquiryPriceCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOptio
 		BandwidthPackageId:      opt.BandwidthPackageID,
 	}
 	if len(opt.InternetChargeType) != 0 {
-		req.InternetAccessible.InternetChargeType = converter.ValToPtr(string(opt.InternetChargeType))
+		req.InternetAccessible.InternetChargeType = cvt.ValToPtr(string(opt.InternetChargeType))
 	}
 	req.SystemDisk = &cvm.SystemDisk{
 		DiskId:   opt.SystemDisk.CloudDiskID,
@@ -524,15 +524,15 @@ func (t *TCloudImpl) InquiryPriceCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOptio
 	result := new(typecvm.InquiryPriceResult)
 	switch opt.InstanceChargeType {
 	case typecvm.Prepaid:
-		result.OriginalPrice = converter.PtrToVal(resp.Response.Price.InstancePrice.OriginalPrice) +
-			converter.PtrToVal(resp.Response.Price.BandwidthPrice.OriginalPrice)
-		result.DiscountPrice = converter.PtrToVal(resp.Response.Price.InstancePrice.DiscountPrice) +
-			converter.PtrToVal(resp.Response.Price.BandwidthPrice.DiscountPrice)
+		result.OriginalPrice = cvt.PtrToVal(resp.Response.Price.InstancePrice.OriginalPrice) +
+			cvt.PtrToVal(resp.Response.Price.BandwidthPrice.OriginalPrice)
+		result.DiscountPrice = cvt.PtrToVal(resp.Response.Price.InstancePrice.DiscountPrice) +
+			cvt.PtrToVal(resp.Response.Price.BandwidthPrice.DiscountPrice)
 	case typecvm.PostpaidByHour, typecvm.Spotpaid:
-		result.OriginalPrice = converter.PtrToVal(resp.Response.Price.InstancePrice.UnitPrice) +
-			converter.PtrToVal(resp.Response.Price.BandwidthPrice.UnitPrice)
-		result.DiscountPrice = converter.PtrToVal(resp.Response.Price.InstancePrice.UnitPriceDiscount) +
-			converter.PtrToVal(resp.Response.Price.BandwidthPrice.UnitPriceDiscount)
+		result.OriginalPrice = cvt.PtrToVal(resp.Response.Price.InstancePrice.UnitPrice) +
+			cvt.PtrToVal(resp.Response.Price.BandwidthPrice.UnitPrice)
+		result.DiscountPrice = cvt.PtrToVal(resp.Response.Price.InstancePrice.UnitPriceDiscount) +
+			cvt.PtrToVal(resp.Response.Price.BandwidthPrice.UnitPriceDiscount)
 
 	default:
 		return nil, fmt.Errorf("charge type: %s not support", opt.InstanceChargeType)
@@ -603,7 +603,7 @@ func done(cvms []*cvm.Instance, succeed string) (bool, *poller.BaseDoneResult) {
 	flag := true
 	for _, instance := range cvms {
 		// not done
-		if converter.PtrToVal(instance.InstanceState) != succeed {
+		if cvt.PtrToVal(instance.InstanceState) != succeed {
 			flag = false
 			continue
 		}
@@ -621,7 +621,7 @@ func poll(client *TCloudImpl, kt *kit.Kit, region string, cloudIDs []*string) ([
 	for _, partIDs := range cloudIDSplit {
 		req := cvm.NewDescribeInstancesRequest()
 		req.InstanceIds = partIDs
-		req.Limit = converter.ValToPtr(int64(core.TCloudQueryLimit))
+		req.Limit = cvt.ValToPtr(int64(core.TCloudQueryLimit))
 
 		cvmCli, err := client.clientSet.CvmClient(region)
 		if err != nil {
@@ -654,16 +654,16 @@ func (h *createCvmPollingHandler) Done(cvms []*cvm.Instance) (bool, *poller.Base
 	flag := true
 	for _, instance := range cvms {
 		// 创建中
-		if converter.PtrToVal(instance.InstanceState) == "PENDING" {
+		if cvt.PtrToVal(instance.InstanceState) == "PENDING" {
 			flag = false
 			result.UnknownCloudIDs = append(result.UnknownCloudIDs, *instance.InstanceId)
 			continue
 		}
 
 		// 生产失败
-		if converter.PtrToVal(instance.InstanceState) == "LAUNCH_FAILED" {
+		if cvt.PtrToVal(instance.InstanceState) == "LAUNCH_FAILED" {
 			result.FailedCloudIDs = append(result.FailedCloudIDs, *instance.InstanceId)
-			result.FailedMessage = converter.PtrToVal(instance.LatestOperationErrorMsg)
+			result.FailedMessage = cvt.PtrToVal(instance.LatestOperationErrorMsg)
 			continue
 		}
 
@@ -682,7 +682,7 @@ func (h *createCvmPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloudIDs
 	for _, partIDs := range cloudIDSplit {
 		req := cvm.NewDescribeInstancesRequest()
 		req.InstanceIds = partIDs
-		req.Limit = converter.ValToPtr(int64(core.TCloudQueryLimit))
+		req.Limit = cvt.ValToPtr(int64(core.TCloudQueryLimit))
 
 		cvmCli, err := client.clientSet.CvmClient(h.region)
 		if err != nil {
@@ -705,3 +705,113 @@ func (h *createCvmPollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloudIDs
 }
 
 var _ poller.PollingHandler[*TCloudImpl, []*cvm.Instance, poller.BaseDoneResult] = new(createCvmPollingHandler)
+
+// ResetCvmInstance reset cvm instance.
+// reference: https://cloud.tencent.com/document/api/213/15724
+func (t *TCloudImpl) ResetCvmInstance(kt *kit.Kit, opt *typecvm.ResetInstanceOption) (*poller.BaseDoneResult, error) {
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "tcloud reset cvm instance option is required")
+	}
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.CvmClient(opt.Region)
+	if err != nil {
+		return nil, fmt.Errorf("tcloud new cvm client failed, region: %s, err: %v", opt.Region, err)
+	}
+
+	req := cvm.NewResetInstanceRequest()
+	req.InstanceId = common.StringPtr(opt.CloudID)
+	req.ImageId = common.StringPtr(opt.ImageID)
+	req.LoginSettings = &cvm.LoginSettings{
+		Password: common.StringPtr(opt.Password),
+	}
+
+	resp, err := client.ResetInstanceWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("tcloud reset instance failed, err: %v, opt: %+v, rid: %s", err, cvt.PtrToVal(opt), kt.Rid)
+		return nil, err
+	}
+
+	handler := &resetCvmInstancePollingHandler{
+		opt.Region,
+	}
+	cloudIDs := []*string{cvt.ValToPtr(opt.CloudID)}
+	respPoller := poller.Poller[*TCloudImpl, []*cvm.Instance, poller.BaseDoneResult]{Handler: handler}
+	result, err := respPoller.PollUntilDone(t, kt, cloudIDs, types.NewBatchResetCvmPollerOption())
+	if err != nil {
+		logs.Errorf("tcloud reset cvm instance query failed, err: %v, opt: %+v, tid: %s, rid: %s",
+			err, cvt.PtrToVal(opt), cvt.PtrToVal(resp.Response.RequestId), kt.Rid)
+		return nil, err
+	}
+	logs.Infof("tcloud reset cvm instance success, opt: %+v, result: %+v, tid: %s, rid: %s",
+		cvt.PtrToVal(opt), result, cvt.PtrToVal(resp.Response.RequestId), kt.Rid)
+
+	return result, nil
+}
+
+type resetCvmInstancePollingHandler struct {
+	region string
+}
+
+// Poll 轮询结果
+func (h *resetCvmInstancePollingHandler) Poll(client *TCloudImpl, kt *kit.Kit, cloudIDs []*string) (
+	[]*cvm.Instance, error) {
+
+	cloudIDSplit := slice.Split(cloudIDs, core.TCloudQueryLimit)
+
+	cvms := make([]*cvm.Instance, 0, len(cloudIDs))
+	for _, partIDs := range cloudIDSplit {
+		req := cvm.NewDescribeInstancesRequest()
+		req.InstanceIds = partIDs
+		req.Limit = cvt.ValToPtr(int64(core.TCloudQueryLimit))
+
+		cvmCli, err := client.clientSet.CvmClient(h.region)
+		if err != nil {
+			return nil, err
+		}
+
+		resp, err := cvmCli.DescribeInstancesWithContext(kt.Ctx, req)
+		if err != nil {
+			return nil, err
+		}
+
+		cvms = append(cvms, resp.Response.InstanceSet...)
+	}
+
+	if len(cvms) != len(cloudIDs) {
+		return nil, fmt.Errorf("query tcloud cvm count: %d not equal return count: %d", len(cloudIDs), len(cvms))
+	}
+
+	return cvms, nil
+}
+
+// Done poll 获取到数据后，用该方法判断是否符合预期
+func (h *resetCvmInstancePollingHandler) Done(cvms []*cvm.Instance) (bool, *poller.BaseDoneResult) {
+	result := &poller.BaseDoneResult{
+		SuccessCloudIDs: make([]string, 0),
+		FailedCloudIDs:  make([]string, 0),
+		UnknownCloudIDs: make([]string, 0),
+	}
+	flag := true
+	for _, instance := range cvms {
+		// 操作中
+		if cvt.PtrToVal(instance.LatestOperationState) == "OPERATING" {
+			flag = false
+			result.UnknownCloudIDs = append(result.UnknownCloudIDs, *instance.InstanceId)
+			continue
+		}
+
+		// 操作失败
+		if cvt.PtrToVal(instance.LatestOperationState) == "FAILED" {
+			result.FailedCloudIDs = append(result.FailedCloudIDs, *instance.InstanceId)
+			result.FailedMessage = cvt.PtrToVal(instance.LatestOperationErrorMsg)
+			continue
+		}
+
+		result.SuccessCloudIDs = append(result.SuccessCloudIDs, *instance.InstanceId)
+	}
+
+	return flag, result
+}
