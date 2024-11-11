@@ -194,7 +194,10 @@ func (dao LoadBalancerDao) List(kt *kit.Kit, opt *types.ListOption) (*typeslb.Li
 		return nil, errf.New(errf.InvalidParameter, "list options is nil")
 	}
 
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tablelb.LoadBalancerColumns.ColumnTypes())),
+	columnTypes := tablelb.LoadBalancerColumns.ColumnTypes()
+	columnTypes["tags.*"] = enumor.String
+
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
 		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
