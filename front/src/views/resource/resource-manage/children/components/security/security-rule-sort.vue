@@ -5,11 +5,8 @@ import { useI18n } from 'vue-i18n';
 import { Message } from 'bkui-vue';
 import { useResourceStore } from '@/store';
 import { SecurityRuleEnum } from '@/typings';
-import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { VueDraggable } from 'vue-draggable-plus';
 import { isEqual } from 'lodash';
-import rollRequest from '@blueking/roll-request';
-import http from '@/http';
 
 const props = defineProps({
   filter: {
@@ -32,7 +29,6 @@ const emit = defineEmits(['update:show', 'sortDone']);
 const { t } = useI18n();
 const route = useRoute();
 const resourceStore = useResourceStore();
-const { getBusinessApiPath } = useWhereAmI();
 
 const fetchUrl = `vendors/${route.query.vendor}/security_groups/${props.id}/rules/list`;
 const inColumns = ['排序', '源地址', '协议', '端口', '策略'];
@@ -65,20 +61,7 @@ const states = reactive<any>({
 
 const getList = async () => {
   try {
-    const list = await rollRequest({
-      httpClient: http,
-      pageEnableCountKey: 'count',
-    }).rollReqUseCount(
-      `api/v1/cloud/${getBusinessApiPath()}${fetchUrl}`,
-      {
-        filter: props.filter,
-      },
-      {
-        limit: 500,
-        countGetter: (res) => res.data.count,
-        listGetter: (res) => res.data.details,
-      },
-    );
+    const list = await resourceStore.getAllSort(props.filter, fetchUrl);
     states.datas = (list as any[])?.sort((after: any, prev: any) => after.cloud_policy_index - prev.cloud_policy_index);
     states.originDatas = [...states.datas];
     return list;

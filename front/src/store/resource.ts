@@ -3,6 +3,7 @@ import { defineStore } from 'pinia';
 
 import { useAccountStore } from '@/store';
 import { VendorEnum } from '@/common/constant';
+import rollRequest from '@blueking/roll-request';
 // import { json2Query } from '@/common/util';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
@@ -36,6 +37,24 @@ export const useResourceStore = defineStore({
         )}vendors/${type}/security_groups/${id}/rules/batch/update`,
         data,
       );
+    },
+    // 安全组规则排序获取所有规则
+    getAllSort(filter: any, fetchUrl: string) {
+      const list = rollRequest({
+        httpClient: http,
+        pageEnableCountKey: 'count',
+      }).rollReqUseCount(
+        `api/v1/cloud/${getBusinessApiPath()}${fetchUrl}`,
+        {
+          filter,
+        },
+        {
+          limit: 500,
+          countGetter: (res) => res.data.count,
+          listGetter: (res) => res.data.details,
+        },
+      );
+      return list;
     },
     /**
      * @description: 获取资源列表
