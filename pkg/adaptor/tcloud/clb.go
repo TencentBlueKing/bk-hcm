@@ -64,13 +64,18 @@ func (t *TCloudImpl) ListLoadBalancer(kt *kit.Kit, opt *typelb.TCloudListOption)
 		req.Offset = common.Int64Ptr(int64(opt.Page.Offset))
 		req.Limit = common.Int64Ptr(int64(opt.Page.Limit))
 	}
+	req.OrderBy = (*string)(opt.OrderBy)
+	req.OrderType = opt.OrderType
 
-	resp, err := client.DescribeLoadBalancersWithContext(kt.Ctx, req)
+	resp, err := NetworkErrRetry(client.DescribeLoadBalancersWithContext, kt, req)
 	if err != nil {
-		logs.Errorf("list tcloud clb failed, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
+		logs.Errorf("fail to describe lodabalancer from tcloud, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
 		return nil, err
 	}
 
+	if resp == nil || resp.Response == nil {
+		return nil, errors.New("empty lb response from tcloud")
+	}
 	clbs := make([]typelb.TCloudClb, 0, len(resp.Response.LoadBalancerSet))
 	for _, one := range resp.Response.LoadBalancerSet {
 		clbs = append(clbs, typelb.TCloudClb{LoadBalancer: one})
@@ -130,13 +135,15 @@ func (t *TCloudImpl) ListListener(kt *kit.Kit, opt *typelb.TCloudListListenersOp
 	if opt.Port > 0 {
 		req.Port = common.Int64Ptr(opt.Port)
 	}
-
-	resp, err := client.DescribeListenersWithContext(kt.Ctx, req)
+	resp, err := NetworkErrRetry(client.DescribeListenersWithContext, kt, req)
 	if err != nil {
-		logs.Errorf("list tcloud listeners failed, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
+		logs.Errorf("fail to describe listener from tcloud, err: %s, req: %+v, rid: %s", err, req, kt.Rid)
 		return nil, err
 	}
 
+	if resp == nil || resp.Response == nil {
+		return nil, errors.New("empty listener response from tcloud")
+	}
 	listeners := make([]typelb.TCloudListener, 0, len(resp.Response.Listeners))
 	for _, one := range resp.Response.Listeners {
 		listeners = append(listeners, typelb.TCloudListener{Listener: one})

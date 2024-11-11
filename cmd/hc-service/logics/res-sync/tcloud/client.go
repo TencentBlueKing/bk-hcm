@@ -44,6 +44,8 @@ type Interface interface {
 
 	SecurityGroup(kt *kit.Kit, params *SyncBaseParams, opt *SyncSGOption) (*SyncResult, error)
 	RemoveSecurityGroupDeleteFromCloud(kt *kit.Kit, accountID string, region string) error
+	RemoveSecurityGroupDeleteFromCloudV2(kt *kit.Kit, accountID string, region string,
+		allCloudIDMap map[string]struct{}) error
 
 	Subnet(kt *kit.Kit, params *SyncBaseParams, opt *SyncSubnetOption) (*SyncResult, error)
 	RemoveSubnetDeleteFromCloud(kt *kit.Kit, accountID string, region string) error
@@ -85,6 +87,7 @@ type Interface interface {
 	// Listener 同步指定负载均衡下的指定云id 负载均衡
 	Listener(kt *kit.Kit, params *SyncBaseParams, opt *SyncListenerOption) (*SyncResult, error)
 	RemoveListenerDeleteFromCloud(kt *kit.Kit, params *ListenerSyncRemovedParams) error
+	RemoveLoadBalancerDeleteFromCloudV2(kt *kit.Kit, param *SyncRemovedParams, allCloudIDMap map[string]struct{}) error
 }
 
 var _ Interface = new(client)

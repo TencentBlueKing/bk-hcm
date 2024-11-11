@@ -38,7 +38,8 @@ import (
 )
 
 // lbSgRel 同步于安全组的关联关系，按lb、有序
-func (cli *client) lbSgRel(kt *kit.Kit, params *SyncBaseParams, lbInfo []corelb.TCloudLoadBalancer) error {
+func (cli *client) lbSgRel(kt *kit.Kit, params *SyncBaseParams, opt *SyncLBOption,
+	lbInfo []corelb.TCloudLoadBalancer) error {
 
 	lbIDs := make([]string, 0, len(lbInfo))
 	// lb cloud id -> lb local id
@@ -47,18 +48,8 @@ func (cli *client) lbSgRel(kt *kit.Kit, params *SyncBaseParams, lbInfo []corelb.
 		lbIDs = append(lbIDs, lb.ID)
 		cloudIDLbMap[lb.CloudID] = lb.ID
 	}
-	// 1. 删除本地多余关联关系
-	delFilter := tools.ExpressionAnd(
-		tools.RuleEqual("res_type", enumor.LoadBalancerCloudResType),
-		tools.RuleNotIn("res_id", lbIDs),
-	)
-	err := cli.dbCli.Global.SGCommonRel.BatchDeleteSgCommonRels(kt, &dataservice.BatchDeleteReq{Filter: delFilter})
-	if err != nil {
-		logs.Errorf("fail to del load balancer rel, err: %v, rid: %s", err, kt.Rid)
-		return err
-	}
-	// 2. 获取云上安全组绑定信息
-	sgCloudLocalIdMap, lbSgCloudMap, err := cli.getCloudLbSgBinding(kt, params, lbInfo, cloudIDLbMap)
+
+	sgCloudLocalIdMap, lbSgCloudMap, err := cli.getCloudLbSgBinding(kt, params, opt, lbInfo, cloudIDLbMap)
 	if err != nil {
 		logs.Errorf("fail to get cloud lb sg bind for rel sync, err: %v, rid: %s", err, kt.Rid)
 		return err
@@ -165,15 +156,18 @@ func (cli *client) upsertSgRelForLb(kt *kit.Kit, lbId string, startIdx int, stay
 
 }
 
-func (cli *client) getCloudLbSgBinding(kt *kit.Kit, params *SyncBaseParams, lbInfo []corelb.TCloudLoadBalancer,
-	cloudIDLbMap map[string]string) (sgCloudLocalMap map[string]string, lbSgCloudMap map[string][]string, err error) {
+func (cli *client) getCloudLbSgBinding(kt *kit.Kit, params *SyncBaseParams, opt *SyncLBOption,
+	lbInfo []corelb.TCloudLoadBalancer, cloudIDLbMap map[string]string) (sgCloudLocalMap map[string]string,
+	lbSgCloudMap map[string][]string, err error) {
 
 	lbCloudIDs := slice.Map(lbInfo, func(lb corelb.TCloudLoadBalancer) string { return lb.CloudID })
-	cloudLBs, err := cli.listLBFromCloud(kt, &SyncBaseParams{
+	fetchParam := &SyncBaseParams{
 		AccountID: params.AccountID,
 		Region:    params.Region,
 		CloudIDs:  lbCloudIDs,
-	})
+	}
+	cloudLBs, err := cli.getWithPrefetchedCloudLB(kt, fetchParam, opt)
+
 	if err != nil {
 		logs.Errorf("fail to list cloud load balancers for sg rel sync, err: %v, rid: %s", err, kt.Rid)
 		return nil, nil, err

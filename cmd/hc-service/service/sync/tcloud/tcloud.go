@@ -21,9 +21,12 @@
 package tcloud
 
 import (
+	"fmt"
+
 	ressync "hcm/cmd/hc-service/logics/res-sync"
 	"hcm/cmd/hc-service/logics/res-sync/tcloud"
 	"hcm/pkg/api/hc-service/sync"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
 )
@@ -44,4 +47,48 @@ func defaultPrepare(cts *rest.Contexts, cli ressync.Interface) (*sync.TCloudSync
 	}
 
 	return req, syncCli, nil
+}
+
+// baseHandler ...
+type baseHandler struct {
+	resType enumor.CloudResourceType
+	request *sync.TCloudSyncReq
+	cli     ressync.Interface
+
+	syncCli tcloud.Interface
+}
+
+// Describe load_balancer
+func (hd *baseHandler) Describe() string {
+	if hd.request == nil {
+		return fmt.Sprintf("tcloud %s(-)", hd.Resource())
+	}
+	return fmt.Sprintf("tcloud %s(region=%s,account=%s)", hd.Resource(), hd.request.Region, hd.request.AccountID)
+}
+
+// SyncConcurrent use request specified or 1
+func (hd *baseHandler) SyncConcurrent() uint {
+	// TODO read from config
+	if hd.request != nil && hd.request.Concurrent != 0 {
+		return hd.request.Concurrent
+	}
+	return 1
+}
+
+// Resource return resource type of handler
+func (hd *baseHandler) Resource() enumor.CloudResourceType {
+	return hd.resType
+}
+
+// Prepare ...
+func (hd *baseHandler) Prepare(cts *rest.Contexts) error {
+	request, syncCli, err := defaultPrepare(cts, hd.cli)
+	if err != nil {
+		return err
+	}
+
+	hd.request = request
+	hd.syncCli = syncCli
+
+	return nil
 }

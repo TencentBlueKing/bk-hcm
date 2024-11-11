@@ -51,7 +51,6 @@ func (cli *client) listenerByLbBatch(kt *kit.Kit, params *SyncListenerBatchOptio
 	if err := validator.ValidateTool(params); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-
 	// 并发同步多个负载均衡下的监听器
 	syncConcurrency := int(cc.HCService().SyncConfig.TCloudLoadBalancerListenerSyncConcurrency)
 	var syncResult *SyncResult
@@ -74,8 +73,8 @@ func (cli *client) listenerByLbBatch(kt *kit.Kit, params *SyncListenerBatchOptio
 		}
 		var err error
 		if syncResult, err = cli.listenerOfLoadBalancer(newKit, param, syncOpt); err != nil {
-			logs.ErrorDepthf(1, "[%s] account: %s lb: %s sync listener failed, err: %v, rid: %s",
-				enumor.TCloud, params.AccountID, lb.CloudID, err, kt.Rid)
+			logs.ErrorDepthf(1, "[%s] sync listener failed, err: %v, account: %s lb: %s, region :%s rid: %s",
+				enumor.TCloud, err, params.AccountID, lb.CloudID, params.Region, newKit.Rid)
 			return err
 		}
 		return nil

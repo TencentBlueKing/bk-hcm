@@ -158,7 +158,7 @@ type TCloudHealthCheckInfo struct {
 	TimeOut *int64 `json:"time_out,omitempty" validate:"omitempty,min=2,max=60"`
 	// 健康检查探测间隔时间，默认值：5，IPv4 CLB实例的取值范围为：2-300，IPv6 CLB 实例的取值范围为：5-300。单位：秒
 	// 说明：部分老旧 IPv4 CLB实例的取值范围为：5-300
-	IntervalTime *int64 `json:"interval_time,omitempty" validate:"omitempty,min=5,max=300"`
+	IntervalTime *int64 `json:"interval_time,omitempty" validate:"omitempty,min=2,max=300"`
 	// 健康阈值，默认值：3，表示当连续探测三次健康则表示该转发正常，可选值：2~10，单位：次
 	HealthNum *int64 `json:"health_num,omitempty" validate:"omitempty,min=2,max=10"`
 	// 不健康阈值，默认值：3，表示当连续探测三次不健康则表示该转发异常，可选值：2~10，单位：次。

@@ -45,4 +45,10 @@ const (
 const (
 	// TCloudLimitExceededErrCode 腾讯云限频错误码
 	TCloudLimitExceededErrCode = "RequestLimitExceeded"
+
+	// TCloudNetworkErrorErrCode 腾讯云网络错误 错误码
+	TCloudNetworkErrorErrCode = "ClientError.NetworkError"
 )
+
+// TCloudClientErrRetryTimes ..
+const TCloudClientErrRetryTimes = 5

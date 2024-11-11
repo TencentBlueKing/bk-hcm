@@ -21,6 +21,7 @@
 package tcloud
 
 import (
+	"errors"
 	"fmt"
 
 	typelb "hcm/pkg/adaptor/types/load-balancer"
@@ -65,12 +66,15 @@ func (t *TCloudImpl) ListTargets(kt *kit.Kit, opt *typelb.TCloudListTargetsOptio
 		req.Port = common.Int64Ptr(opt.Port)
 	}
 
-	resp, err := client.DescribeTargetsWithContext(kt.Ctx, req)
+	resp, err := NetworkErrRetry(client.DescribeTargetsWithContext, kt, req)
 	if err != nil {
-		logs.Errorf("list tcloud listener targets failed, req: %+v, err: %v, rid: %s", req, err, kt.Rid)
+		logs.Errorf("fail to describe clb targets from tcloud, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
 		return nil, err
 	}
 
+	if resp == nil || resp.Response == nil {
+		return nil, errors.New("empty target response from tcloud")
+	}
 	listeners := make([]typelb.TCloudListenerTarget, 0, len(resp.Response.Listeners))
 	for _, one := range resp.Response.Listeners {
 		listeners = append(listeners, typelb.TCloudListenerTarget{ListenerBackend: one})

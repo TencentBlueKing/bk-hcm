@@ -39,11 +39,13 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/assert"
-	"hcm/pkg/tools/converter"
+	cvt "hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 )
 
 // SyncSGOption ...
 type SyncSGOption struct {
+	Prefetched []securitygroup.TCloudSG
 }
 
 // Validate ...
@@ -51,12 +53,13 @@ func (opt SyncSGOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
+// SecurityGroup ...
 func (cli *client) SecurityGroup(kt *kit.Kit, params *SyncBaseParams, opt *SyncSGOption) (*SyncResult, error) {
 	if err := validator.ValidateTool(params, opt); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	sgFromCloud, err := cli.listSGFromCloud(kt, params)
+	sgFromCloud, err := cli.getWithPrefetchedCloudSG(kt, params, opt)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +133,7 @@ func (cli *client) updateSG(kt *kit.Kit, accountID string,
 	for id, one := range updateMap {
 		securityGroup := protocloud.SecurityGroupBatchUpdate[cloudcore.TCloudSecurityGroupExtension]{
 			ID:   id,
-			Name: converter.PtrToVal(one.SecurityGroupName),
+			Name: cvt.PtrToVal(one.SecurityGroupName),
 			Memo: one.SecurityGroupDesc,
 			Extension: &cloudcore.TCloudSecurityGroupExtension{
 				CloudProjectID: one.ProjectId,
@@ -169,10 +172,10 @@ func (cli *client) createSG(kt *kit.Kit, accountID string, region string,
 
 	for _, one := range addSlice {
 		securityGroup := protocloud.SecurityGroupBatchCreate[cloudcore.TCloudSecurityGroupExtension]{
-			CloudID:   converter.PtrToVal(one.SecurityGroupId),
+			CloudID:   cvt.PtrToVal(one.SecurityGroupId),
 			BkBizID:   constant.UnassignedBiz,
 			Region:    region,
-			Name:      converter.PtrToVal(one.SecurityGroupName),
+			Name:      cvt.PtrToVal(one.SecurityGroupName),
 			Memo:      one.SecurityGroupDesc,
 			AccountID: accountID,
 			Extension: &cloudcore.TCloudSecurityGroupExtension{
@@ -229,6 +232,34 @@ func (cli *client) deleteSG(kt *kit.Kit, accountID string, region string, delClo
 		accountID, len(delCloudIDs), kt.Rid)
 
 	return nil
+}
+
+func (cli *client) getWithPrefetchedCloudSG(kt *kit.Kit, params *SyncBaseParams, opt *SyncSGOption) (
+	[]securitygroup.TCloudSG, error) {
+
+	var err error
+	fetched := false
+	cloudData := opt.Prefetched
+	if len(cloudData) == len(params.CloudIDs) {
+		fetched = true
+		wantedCloudIDMap := cvt.StringSliceToMap(params.CloudIDs)
+		for i := range cloudData {
+			delete(wantedCloudIDMap, cloudData[i].GetCloudID())
+		}
+		if len(wantedCloudIDMap) > 0 {
+			logs.Warnf("wanted sg not found by prefetched cache, not found: %v, rid: %s",
+				cvt.MapKeyToStringSlice(wantedCloudIDMap), kt.Rid)
+			fetched = false
+		}
+	}
+	if fetched {
+		return cloudData, nil
+	}
+	cloudData, err = cli.listSGFromCloud(kt, params)
+	if err != nil {
+		return nil, err
+	}
+	return cloudData, nil
 }
 
 func (cli *client) listSGFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]securitygroup.TCloudSG, error) {
@@ -298,6 +329,53 @@ func (cli *client) listSGFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	return result.Details, nil
 }
 
+// RemoveSecurityGroupDeleteFromCloudV2 根据给定的云id删除数据库中多余的数据
+func (cli *client) RemoveSecurityGroupDeleteFromCloudV2(kt *kit.Kit, accountID string, region string,
+	allCloudIDMap map[string]struct{}) error {
+
+	req := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("account_id", accountID),
+			tools.RuleEqual("region", region),
+		),
+		Page: &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
+	}
+
+	var delCloudIDs []string
+
+	for {
+		resultFromDB, err := cli.dbCli.TCloud.SecurityGroup.ListSecurityGroupExt(kt.Ctx, kt.Header(), req)
+		if err != nil {
+			logs.Errorf("[%s] request dataservice to list sg failed, err: %v, req: %+v, rid: %s",
+				enumor.TCloud, err, req, kt.Rid)
+			return err
+		}
+
+		for i := range resultFromDB.Details {
+			cloudId := resultFromDB.Details[i].CloudID
+			if _, ok := allCloudIDMap[cloudId]; !ok {
+				delCloudIDs = append(delCloudIDs, cloudId)
+			}
+		}
+
+		if uint(len(resultFromDB.Details)) < core.DefaultMaxPageLimit {
+			break
+		}
+		req.Page.Start += uint32(core.DefaultMaxPageLimit)
+	}
+	logs.Infof("[%s] will remove %d deleted security group from cloud, account: %s, region: %s, rid: %s",
+		enumor.TCloud, len(delCloudIDs), accountID, region, kt.Rid)
+	for _, idBatch := range slice.Split(delCloudIDs, constant.BatchOperationMaxLimit) {
+		if err := cli.deleteSG(kt, accountID, region, idBatch); err != nil {
+			logs.Errorf("delete removed security group failed, err: %v, account: %s, region: %s, cloudId: %v, rid: %s",
+				err, accountID, region, idBatch, kt.Rid)
+			return err
+		}
+	}
+	return nil
+}
+
+// RemoveSecurityGroupDeleteFromCloud ...
 func (cli *client) RemoveSecurityGroupDeleteFromCloud(kt *kit.Kit, accountID string, region string) error {
 	req := &core.ListReq{
 		Filter: &filter.Expression{
@@ -390,7 +468,7 @@ func (cli *client) listRemoveSGID(kt *kit.Kit, params *SyncBaseParams) ([]string
 
 func isSGChange(cloud securitygroup.TCloudSG, db cloudcore.SecurityGroup[cloudcore.TCloudSecurityGroupExtension]) bool {
 
-	if converter.PtrToVal(cloud.SecurityGroupName) != db.BaseSecurityGroup.Name {
+	if cvt.PtrToVal(cloud.SecurityGroupName) != db.BaseSecurityGroup.Name {
 		return true
 	}
 
