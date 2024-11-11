@@ -179,6 +179,7 @@ func (cli *client) listL7RuleFromDB(kt *kit.Kit, region, cloudLBLID string) ([]c
 		Filter: tools.ExpressionAnd(
 			tools.RuleEqual("cloud_lbl_id", cloudLBLID),
 			tools.RuleEqual("rule_type", enumor.Layer7RuleType),
+			tools.RuleEqual("region", region),
 		),
 		Page: core.NewDefaultBasePage(),
 	}

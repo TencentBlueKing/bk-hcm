@@ -568,6 +568,7 @@ func (svc *clbSvc) insertListenerWithRule(kt *kit.Kit, req *protolb.ListenerWith
 				Url:                url,
 				SniSwitch:          req.SniSwitch,
 				Certificate:        req.Certificate,
+				Region:             lbInfo.Region,
 			},
 		},
 	}

@@ -147,6 +147,7 @@ func (svc *clbSvc) createListenerDB(kt *kit.Kit, req *protolb.TCloudListenerCrea
 				CloudLbID: lbInfo.CloudID,
 				Protocol:  req.Protocol,
 				Port:      req.Port,
+				Region:    lbInfo.Region,
 				Extension: &corelb.TCloudListenerExtension{
 					Certificate: req.Certificate,
 					EndPort:     req.EndPort,
