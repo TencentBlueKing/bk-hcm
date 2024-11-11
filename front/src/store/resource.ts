@@ -4,9 +4,16 @@ import { defineStore } from 'pinia';
 import { useAccountStore } from '@/store';
 import { VendorEnum } from '@/common/constant';
 import rollRequest from '@blueking/roll-request';
+import { FilterType } from '@/typings';
 // import { json2Query } from '@/common/util';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
+export interface GetAllSortParams {
+  vendor: string | string[];
+  id: string;
+  filter: FilterType;
+}
+
 // 获取
 const getBusinessApiPath = (type?: string) => {
   const store = useAccountStore();
@@ -39,7 +46,9 @@ export const useResourceStore = defineStore({
       );
     },
     // 安全组规则排序获取所有规则
-    getAllSort(filter: any, fetchUrl: string) {
+    getAllSort(params: GetAllSortParams) {
+      const { vendor, id, filter } = params;
+      const fetchUrl = `vendors/${vendor}/security_groups/${id}/rules/list`;
       const list = rollRequest({
         httpClient: http,
         pageEnableCountKey: 'count',

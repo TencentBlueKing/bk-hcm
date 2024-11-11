@@ -30,7 +30,6 @@ const { t } = useI18n();
 const route = useRoute();
 const resourceStore = useResourceStore();
 
-const fetchUrl = `vendors/${route.query.vendor}/security_groups/${props.id}/rules/list`;
 const inColumns = ['排序', '源地址', '协议', '端口', '策略'];
 const outColumns = ['排序', '目标地址', '协议', '端口', '策略'];
 const updateFields = [
@@ -61,7 +60,11 @@ const states = reactive<any>({
 
 const getList = async () => {
   try {
-    const list = await resourceStore.getAllSort(props.filter, fetchUrl);
+    const list = await resourceStore.getAllSort({
+      id: props?.id,
+      vendor: route.query?.vendor,
+      filter: props?.filter,
+    });
     states.datas = (list as any[])?.sort((after: any, prev: any) => after.cloud_policy_index - prev.cloud_policy_index);
     states.originDatas = [...states.datas];
     return list;
