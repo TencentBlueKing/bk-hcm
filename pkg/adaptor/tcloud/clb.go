@@ -67,6 +67,13 @@ func (t *TCloudImpl) ListLoadBalancer(kt *kit.Kit, opt *typelb.TCloudListOption)
 	req.OrderBy = (*string)(opt.OrderBy)
 	req.OrderType = opt.OrderType
 
+	for k, v := range opt.TagFilters {
+		req.Filters = append(req.Filters, &clb.Filter{
+			Name:   cvt.ValToPtr("tag:" + k),
+			Values: cvt.SliceToPtr(v),
+		})
+	}
+
 	resp, err := NetworkErrRetry(client.DescribeLoadBalancersWithContext, kt, req)
 	if err != nil {
 		logs.Errorf("fail to describe lodabalancer from tcloud, err: %v, req: %+v, rid: %s", err, req, kt.Rid)

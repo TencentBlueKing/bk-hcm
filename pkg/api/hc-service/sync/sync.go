@@ -20,7 +20,10 @@
 // Package sync ...
 package sync
 
-import "hcm/pkg/criteria/validator"
+import (
+	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/validator"
+)
 
 // TCloudGlobalSyncReq tcloud sync request
 type TCloudGlobalSyncReq struct {
@@ -37,9 +40,11 @@ type TCloudSyncReq struct {
 	AccountID string `json:"account_id" validate:"required"`
 	Region    string `json:"region" validate:"required"`
 	// 传入指定资源id进行同步，仅特定资源支持
-	CloudIDs []string `json:"cloud_ids" validate:"omitempty,max=20"`
+	CloudIDs []string `json:"cloud_ids,omitempty" validate:"omitempty,max=20"`
 	// 指定同步并发，仅特定资源支持
-	Concurrent uint `json:"concurrent"`
+	Concurrent uint `json:"concurrent,omitempty"`
+	// 指定标签同步，仅特定资源支持
+	TagFilters core.MultiValueTagMap `json:"tag_filters,omitempty"`
 }
 
 // Validate tcloud sync request.

@@ -172,6 +172,9 @@ func (cli *client) RemoveLoadBalancerDeleteFromCloudV2(kt *kit.Kit, params *Sync
 		// 支持指定cloud id删除
 		rules = append(rules, tools.RuleIn("cloud_id", params.CloudIDs))
 	}
+	for k := range params.TagFilters {
+		rules = append(rules, tools.RuleJsonIn("tags."+k, params.TagFilters[k]))
+	}
 	req := &core.ListReq{
 		Filter: tools.ExpressionAnd(rules...),
 		Page:   &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},

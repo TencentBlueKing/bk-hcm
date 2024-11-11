@@ -19,7 +19,9 @@
 
 package core
 
-import "maps"
+import (
+	"maps"
+)
 
 // TagMap  tag collection for key-value pair
 type TagMap map[string]string
@@ -51,4 +53,27 @@ type TagPair struct {
 // GetKeyValue ...
 func (t TagPair) GetKeyValue() (string, string) {
 	return t.Key, t.Value
+}
+
+// MultiValueTagMap tags with  multiple values, for tag filter
+type MultiValueTagMap map[string][]string
+
+// Get ...
+func (m MultiValueTagMap) Get(k string) ([]string, bool) {
+	v, ok := m[k]
+	return v, ok
+}
+
+// Set ...
+func (m *MultiValueTagMap) Set(k string, v []string) {
+	(*m)[k] = v
+}
+
+// Map return copy of internal map
+func (m MultiValueTagMap) Map() map[string][]string {
+	var dst = make(map[string][]string, len(m))
+	for k := range m {
+		dst[k] = dst[k][:]
+	}
+	return dst
 }

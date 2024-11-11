@@ -146,6 +146,8 @@ type TCloudListOption struct {
 
 	OrderBy   *TCloudClbListOrderByField `json:"order_by"`
 	OrderType *int64                     `json:"order_type"`
+
+	TagFilters apicore.MultiValueTagMap `json:"tag_filters"`
 }
 
 // Validate tcloud clb list option.
