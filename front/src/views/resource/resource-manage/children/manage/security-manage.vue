@@ -203,6 +203,13 @@ const isCurRowSelectEnable = (row: any) => {
     return row.bk_biz_id === -1;
   }
 };
+const parseTags = (data: { [k: string]: any }) => {
+  return (
+    Object.entries(data)
+      .map((item) => item.join(':'))
+      .join(';') || '--'
+  );
+};
 const { selections, handleSelectionChange, resetSelections } = useSelection();
 
 const groupColumns = [
@@ -280,6 +287,12 @@ const groupColumns = [
     render: ({ cell }: any) => (cell ? cell : '--'),
   },
   {
+    label: t('标签'),
+    field: 'tags',
+    isDefaultShow: true,
+    render: ({ cell }: any) => parseTags(cell),
+  },
+  {
     label: '是否分配',
     field: 'bk_biz_id',
     sort: true,
@@ -331,13 +344,13 @@ const groupColumns = [
   // },
   {
     label: t('创建时间'),
-    field: 'created_at',
+    field: 'cloud_created_time',
     sort: true,
     render: ({ cell }: { cell: string }) => timeFormatter(cell),
   },
   {
     label: t('修改时间'),
-    field: 'updated_at',
+    field: 'cloud_update_time',
     sort: true,
     render({ cell }: { cell: string }) {
       return timeFormatter(cell);
