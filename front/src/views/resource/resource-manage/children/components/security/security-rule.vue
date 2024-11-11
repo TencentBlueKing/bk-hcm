@@ -26,6 +26,7 @@ import { awsSourceAddressTypes, AwsSourceTypeArr } from './add-rule/vendors/aws'
 import { tcloudSourceAddressTypes, TcloudSourceTypeArr } from './add-rule/vendors/tcloud';
 import { huaweiSourceAddressTypes } from './add-rule/vendors/huawei';
 import RuleSort from './security-rule-sort.vue';
+import { showSort } from './show-sort.plugin';
 
 const props = defineProps({
   filter: {
@@ -68,11 +69,6 @@ const show = ref<Boolean>(false);
 const actionName = computed(() => {
   // 资源下没有业务ID
   return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
-});
-// 排序功能目前只在公有云与业务下的自研云实现
-const showSort = computed(() => {
-  const { vendor } = route.query;
-  return vendor === VendorEnum.TCLOUD;
 });
 
 const state = reactive<any>({
@@ -674,7 +670,7 @@ const types = [
           </bk-button>
         </div>
 
-        <bk-button icon="plus" v-if="showSort" @click="handleSecurityRuleSort">
+        <bk-button icon="plus" v-if="showSort(route?.query?.vendor)" @click="handleSecurityRuleSort">
           {{ t('规则排序') }}
         </bk-button>
       </section>

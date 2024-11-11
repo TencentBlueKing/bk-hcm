@@ -158,10 +158,11 @@ watch(
             </template>
           </div>
           <VueDraggable v-model="states.datas" :animation="200" handle=".drag-body-tr" v-if="states.datas[0]">
-            <div v-for="data in states.datas" :key="data.id" class="drag-body-tr">
+            <div v-for="(data, index) in states.datas" :key="data.id" class="drag-body-tr">
               <div class="drag-body-cell">
                 <div>
-                  <i class="hcm-icon bkhcm-icon-grag-fill mr16 sort"></i>
+                  <i class="hcm-icon bkhcm-icon-grag-fill mr5 sort"></i>
+                  <span class="sort sort-number">{{ index + 1 }}</span>
                 </div>
                 <div class="address">
                   {{
@@ -246,6 +247,11 @@ watch(
 .drag-header {
   line-height: 42px;
 }
+.drag-body-tr {
+  &[draggable='true'] {
+    background: #eaebf0;
+  }
+}
 .drag-body-cell {
   line-height: 38px;
 }
@@ -263,6 +269,21 @@ watch(
   > div {
     flex: 1;
   }
+  :first-child {
+    flex: 0;
+    flex-basis: 50px;
+  }
+}
+.sort {
+  vertical-align: middle;
+  color: #c4c6cc;
+}
+.sort-number {
+  padding: 1px 8px;
+  background: white;
+  color: #979ba5;
+  border: 1px solid #dcdee5;
+  border-radius: 4px;
 }
 .footer {
   position: fixed;
