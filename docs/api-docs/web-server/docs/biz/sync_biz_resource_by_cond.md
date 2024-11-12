@@ -13,19 +13,17 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/accounts/{account_id}/resou
 | 参数名称       | 参数类型   | 必选 | 描述                            |
 |------------|--------|----|-------------------------------|
 | bk_biz_id  | int    | 是  | 同步业务                          |
-| vendor     | string | 是  | 云厂商                           |
+| vendor     | string | 是  | 云厂商，目前支持腾讯云(tcloud)           |
 | account_id | string | 是  | 账号ID                          |
 | res        | string | 是  | 资源名称 目前仅支持负载均衡(load_balancer) |
 
 #### vendor=tcloud
 
-| 参数名称        | 参数类型                | 必选 | 描述              |
-|-------------|---------------------|----|-----------------|
-| regions     | []string            | 否  | 指定资源同步地域        |
-| cloud_ids   | []string            | 否  | 资源id，数量上限20     |
-| tag_filters | map[string][]string | 否  | 指定同步标签过滤器标签，上限9 |
-
-### 调用示例
+| 参数名称        | 参数类型                | 必选 | 描述               |
+|-------------|---------------------|----|------------------|
+| regions     | []string            | 是  | 指定资源同步地域，最少1，最大5 |
+| cloud_ids   | []string            | 否  | 资源id，数量上限20      |
+| tag_filters | map[string][]string | 否  | 指定同步标签过滤器标签，上限5  |
 
 ### 调用示例
 
