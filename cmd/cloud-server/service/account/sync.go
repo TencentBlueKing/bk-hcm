@@ -27,12 +27,12 @@ import (
 	"hcm/cmd/cloud-server/logics/account"
 	"hcm/cmd/cloud-server/service/sync/lock"
 	"hcm/cmd/cloud-server/service/sync/tcloud"
+	cloudaccount "hcm/pkg/api/cloud-server/account"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud/region"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
@@ -99,19 +99,6 @@ func (a *accountSvc) SyncCloudResourceByCond(cts *rest.Contexts) (any, error) {
 	}
 }
 
-// TCloudResCondSyncReq ...
-type TCloudResCondSyncReq struct {
-	Regions  []string `json:"regions,omitempty" validate:"min=1,max=20"`
-	CloudIDs []string `json:"cloud_ids,omitempty" validate:"max=20"`
-
-	TagFilters core.MultiValueTagMap `json:"tag_filters,omitempty" validate:"max=10"`
-}
-
-// Validate ...
-func (r *TCloudResCondSyncReq) Validate() error {
-	return validator.Validate.Struct(r)
-}
-
 // SyncBizCloudResourceByCond sync cloud resource of biz by given condition
 func (a *accountSvc) SyncBizCloudResourceByCond(cts *rest.Contexts) (any, error) {
 	bkBizId, err := cts.PathParameter("bk_biz_id").Int64()
@@ -164,7 +151,7 @@ func (a *accountSvc) SyncBizCloudResourceByCond(cts *rest.Contexts) (any, error)
 func (a *accountSvc) tcloudCondSyncRes(cts *rest.Contexts, accountID string, resName enumor.CloudResourceType) (
 	any, error) {
 
-	req := &TCloudResCondSyncReq{}
+	req := &cloudaccount.TCloudResCondSyncReq{}
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
