@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=0025,HCMVER=v9.9.9
+    SQLVER=0027,HCMVER=v1.6.11
 
     Notes:
     1. 修改`security_group`表，增加`type`字段
@@ -34,7 +34,7 @@ ALTER TABLE security_group
     ADD COLUMN `tags` json NOT NULL COMMENT '标签' AFTER `extension`;
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.6.11' as `hcm_ver`, '0027' as `sql_ver`;
 
 COMMIT;
 
