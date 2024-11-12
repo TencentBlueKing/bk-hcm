@@ -20,23 +20,27 @@
 package cloud
 
 import (
+	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 )
 
 // BaseSecurityGroup define base security group.
 type BaseSecurityGroup struct {
-	ID        string        `json:"id"`
-	Vendor    enumor.Vendor `json:"vendor"`
-	CloudID   string        `json:"cloud_id"`
-	Region    string        `json:"region"`
-	Name      string        `json:"name"`
-	Memo      *string       `json:"memo"`
-	AccountID string        `json:"account_id"`
-	BkBizID   int64         `json:"bk_biz_id"`
-	Creator   string        `json:"creator"`
-	Reviser   string        `json:"reviser"`
-	CreatedAt string        `json:"created_at"`
-	UpdatedAt string        `json:"updated_at"`
+	ID               string        `json:"id"`
+	Vendor           enumor.Vendor `json:"vendor"`
+	CloudID          string        `json:"cloud_id"`
+	Region           string        `json:"region"`
+	Name             string        `json:"name"`
+	Memo             *string       `json:"memo"`
+	CloudCreatedTime string        `json:"cloud_created_time"`
+	CloudUpdateTime  string        `json:"cloud_update_time"`
+	Tags             core.TagMap   `json:"tags"`
+	AccountID        string        `json:"account_id"`
+	BkBizID          int64         `json:"bk_biz_id"`
+	Creator          string        `json:"creator"`
+	Reviser          string        `json:"reviser"`
+	CreatedAt        string        `json:"created_at"`
+	UpdatedAt        string        `json:"updated_at"`
 }
 
 // SecurityGroup define security group

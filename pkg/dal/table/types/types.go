@@ -25,6 +25,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
+	"hcm/pkg/tools/maps"
 )
 
 // JsonField 对应 db 的 json field 格式字段
@@ -144,4 +146,57 @@ func (i Int64Array) Value() (driver.Value, error) {
 	}
 
 	return json.Marshal(i)
+}
+
+// StringMap map of string->string for db
+type StringMap map[string]string
+
+// Value ...
+func (m StringMap) Value() (driver.Value, error) {
+	if m == nil {
+		return "null", nil
+	}
+	return json.Marshal(m)
+}
+
+// Scan is used to decode raw message which is read from db into StringMap.
+func (m StringMap) Scan(raw interface{}) error {
+	if m == nil || raw == nil {
+		return nil
+	}
+
+	switch v := raw.(type) {
+	case []byte:
+		if err := json.Unmarshal(v, &m); err != nil {
+			return fmt.Errorf("decode into string map failed, err: %v", err)
+		}
+		return nil
+
+	case string:
+		if err := json.Unmarshal([]byte(v), &m); err != nil {
+			return fmt.Errorf("decode into string map failed, err: %v", err)
+		}
+		return nil
+
+	default:
+		return fmt.Errorf("unsupported string map raw type: %T", v)
+	}
+}
+
+// Get ...
+func (m StringMap) Get(k string) (string, bool) {
+	v, ok := m[k]
+	return v, ok
+}
+
+// Set ...
+func (m *StringMap) Set(k, v string) {
+	(*m)[k] = v
+}
+
+// Map return copy of internal map
+func (m StringMap) Map() map[string]string {
+	var dst = make(map[string]string, len(m))
+	maps.Copy(m, dst)
+	return dst
 }

@@ -47,6 +47,12 @@ GET /api/v1/cloud/security_groups/{id}
     "cvm_count": 0,
     "extension": {
       "cloud_project_id": "0"
+    },
+    "cloud_created_time": "2024-01-20 15:37:46",
+    "cloud_update_time": "2024-01-20 15:46:45",
+    "tags": {
+      "abc": "123123",
+      "module": "vpc"
     }
   }
 }
@@ -62,25 +68,28 @@ GET /api/v1/cloud/security_groups/{id}
 
 #### data
 
-| 参数名称                    | 参数类型           | 描述                            |
-|-------------------------|----------------|-------------------------------|
-| id                      | string         | 安全组ID                         |
-| vendor                  | string         | 云厂商                           |
-| cloud_id                | string         | 安全组云ID                        |
-| bk_biz_id               | int64          | 业务ID                          |
-| region                  | string         | 地域                            |
-| name                    | string         | 安全组名称                         |
-| memo                    | string         | 备注                            |
-| account_id              | string         | 账号ID                          |
-| bk_biz_id               | int64          | 业务ID, -1代表未分配业务。              |
-| cvm_count               | uint64         | 关联虚拟机数量。（tcloud、aws、huawei专属） |
-| network_interface_count | uint64         | 关联网络接口数量。（azure专属）            |
-| subnet_count            | uint64         | 关联子网数量。（azure专属）              |
-| extension               | object[vendor] | 混合云差异字段                       |
-| creator                 | string         | 创建者                           |
-| reviser                 | string         | 最后一次修改的修改者                    |
-| created_at              | string         | 创建时间，标准格式：2006-01-02T15:04:05Z                          |
-| updated_at              | string         | 最后一次修改时间，标准格式：2006-01-02T15:04:05Z                      |
+| 参数名称                    | 参数类型              | 描述                                 |
+|-------------------------|-------------------|------------------------------------|
+| id                      | string            | 安全组ID                              |
+| vendor                  | string            | 云厂商                                |
+| cloud_id                | string            | 安全组云ID                             |
+| bk_biz_id               | int64             | 业务ID                               |
+| region                  | string            | 地域                                 |
+| name                    | string            | 安全组名称                              |
+| memo                    | string            | 备注                                 |
+| account_id              | string            | 账号ID                               |
+| bk_biz_id               | int64             | 业务ID, -1代表未分配业务。                   |
+| cvm_count               | uint64            | 关联虚拟机数量。（tcloud、aws、huawei专属）      |
+| network_interface_count | uint64            | 关联网络接口数量。（azure专属）                 |
+| subnet_count            | uint64            | 关联子网数量。（azure专属）                   |
+| extension               | object[vendor]    | 混合云差异字段                            |
+| creator                 | string            | 创建者                                |
+| reviser                 | string            | 最后一次修改的修改者                         |
+| created_at              | string            | 创建时间，标准格式：2006-01-02T15:04:05Z     |
+| updated_at              | string            | 最后一次修改时间，标准格式：2006-01-02T15:04:05Z |
+| tags                    | map[string]string | 标签字典                               |
+| cloud_created_time      | string            | 安全组云上创建时间，标准格式：2006-01-02 15:04:05 |
+| cloud_update_time       | string            | 安全组云上更新时间，标准格式：2006-01-02 15:04:05 |
 
 #### extension[tcloud]
 
@@ -113,3 +122,4 @@ GET /api/v1/cloud/security_groups/{id}
 |-----------------------------|--------|------------------------------------------------------------------|
 | cloud_project_id            | string | 安全组所属的项目ID。                                                      |
 | cloud_enterprise_project_id | string | 安全组所属的企业项目ID。取值范围：最大长度36字节，带“-”连字符的UUID格式，或者是字符串“0”。“0”表示默认企业项目。 |
+

@@ -24,6 +24,7 @@ import (
 
 	synctcloud "hcm/cmd/hc-service/logics/res-sync/tcloud"
 	"hcm/cmd/hc-service/service/capability"
+	"hcm/pkg/adaptor/types/cvm"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
@@ -32,6 +33,7 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	cvt "hcm/pkg/tools/converter"
 )
 
 func (svc *cvmSvc) initTCloudCvmService(cap *capability.Capability) {
@@ -44,6 +46,7 @@ func (svc *cvmSvc) initTCloudCvmService(cap *capability.Capability) {
 	h.Add("BatchRebootTCloudCvm", http.MethodPost, "/vendors/tcloud/cvms/batch/reboot", svc.BatchRebootTCloudCvm)
 	h.Add("BatchDeleteTCloudCvm", http.MethodDelete, "/vendors/tcloud/cvms/batch", svc.BatchDeleteTCloudCvm)
 	h.Add("BatchResetTCloudCvmPwd", http.MethodPost, "/vendors/tcloud/cvms/batch/reset/pwd", svc.BatchResetTCloudCvmPwd)
+	h.Add("BatchResetTCloudCvm", http.MethodPost, "/vendors/tcloud/cvms/reset", svc.BatchResetTCloudCvm)
 
 	h.Load(cap.WebService)
 }
@@ -453,6 +456,39 @@ func (svc *cvmSvc) BatchDeleteTCloudCvm(cts *rest.Contexts) (interface{}, error)
 		logs.Errorf("request dataservice delete tcloud cvm failed, err: %v, ids: %v, rid: %s", err, req.IDs,
 			cts.Kit.Rid)
 		return nil, err
+	}
+
+	return nil, nil
+}
+
+// BatchResetTCloudCvm 重装系统
+func (svc *cvmSvc) BatchResetTCloudCvm(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocvm.TCloudBatchResetReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := svc.ad.TCloud(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, cloudID := range req.CloudIDs {
+		opt := &cvm.ResetInstanceOption{
+			Region:   req.Region,
+			CloudID:  cloudID,
+			ImageID:  req.ImageID,
+			Password: req.Password,
+		}
+		if _, err = client.ResetCvmInstance(cts.Kit, opt); err != nil {
+			logs.Errorf("request adaptor to tcloud reset cvm instance failed, err: %v, opt: %+v, cloudID: %s, "+
+				"rid: %s", err, cvt.PtrToVal(req), cloudID, cts.Kit.Rid)
+			return nil, err
+		}
 	}
 
 	return nil, nil

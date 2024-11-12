@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	synctcloud "hcm/cmd/hc-service/logics/res-sync/tcloud"
+	"hcm/pkg/adaptor/tcloud"
 	securitygrouprule "hcm/pkg/adaptor/types/security-group-rule"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
@@ -34,6 +35,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 )
 
 // BatchCreateTCloudSGRule batch create tcloud security group rule.
@@ -122,6 +124,7 @@ func (g *securityGroup) BatchCreateTCloudSGRule(cts *rest.Contexts) (interface{}
 }
 
 // syncSGRule 调用同步客户端同步云上规则，返回新增的id
+// TODO: params.CloudID 目前传入的是ID不是CloudID, 调用方需要关注这个信息。后续需要调整同步逻辑(用CloudID同步)
 func (g *securityGroup) syncSGRule(kt *kit.Kit, syncParams *synctcloud.SyncBaseParams) ([]string, error) {
 
 	syncCli, err := g.syncCli.TCloud(kt, syncParams.AccountID)
@@ -217,6 +220,101 @@ func (g *securityGroup) UpdateTCloudSGRule(cts *rest.Contexts) (interface{}, err
 		return nil, syncErr
 	}
 	return nil, nil
+}
+
+// BatchUpdateTCloudSGRule update tcloud security group rule.
+func (g *securityGroup) BatchUpdateTCloudSGRule(cts *rest.Contexts) (interface{}, error) {
+	sgID := cts.PathParameter("security_group_id").String()
+	if len(sgID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "security_group_id is required")
+	}
+
+	req := new(hcservice.TCloudSGRuleBatchUpdateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := g.ad.TCloud(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	sgMap, err := g.getSecurityGroupMap(cts.Kit, []string{sgID})
+	if err != nil {
+		logs.Errorf("get security group map failed, sg: %s, err: %v, rid: %s", sgID, err, cts.Kit.Rid)
+		return nil, err
+	}
+	sg, ok := sgMap[sgID]
+	if !ok {
+		return nil, errf.New(errf.InvalidParameter, "security group not found")
+	}
+
+	syncParam := &synctcloud.SyncBaseParams{AccountID: req.AccountID, Region: sg.Region,
+		CloudIDs: []string{sgID},
+	}
+
+	version, err := g.getTCloudSGRulesVersion(cts.Kit, client, sg.Region, sg.CloudID)
+	if err != nil {
+		logs.Errorf("get tcloud security group rules version failed, sg: %s, err: %v, rid: %s", sgID, err, cts.Kit.Rid)
+		return nil, err
+	}
+	opt := &securitygrouprule.TCloudUpdateOption{Region: sg.Region, CloudSecurityGroupID: sg.CloudID, Version: version}
+
+	if len(req.EgressRuleSet) > 0 {
+		opt.EgressRuleSet = convertTCloudUpdateSpec(req.EgressRuleSet)
+	} else {
+		opt.IngressRuleSet = convertTCloudUpdateSpec(req.IngressRuleSet)
+	}
+
+	if err = client.BatchUpdateSecurityGroupRule(cts.Kit, opt); err != nil {
+		logs.Errorf("request adaptor to update tcloud security group rule failed, err: %v, opt: %v, rid: %s", err, opt,
+			cts.Kit.Rid)
+		_, _ = g.syncSGRule(cts.Kit, syncParam)
+		return nil, err
+	}
+	if _, syncErr := g.syncSGRule(cts.Kit, syncParam); syncErr != nil {
+		return nil, syncErr
+	}
+	return nil, nil
+}
+
+func convertTCloudUpdateSpec(items []hcservice.TCloudSGRuleUpdateReqWithPolicyIndex) []securitygrouprule.TCloudUpdateSpec {
+	result := make([]securitygrouprule.TCloudUpdateSpec, 0, len(items))
+	for _, item := range items {
+		result = append(result, securitygrouprule.TCloudUpdateSpec{
+			CloudPolicyIndex:           converter.PtrToVal(item.CloudPolicyIndex),
+			Protocol:                   item.Protocol,
+			Port:                       item.Port,
+			CloudServiceID:             item.CloudServiceID,
+			CloudServiceGroupID:        item.CloudServiceGroupID,
+			IPv4Cidr:                   item.IPv4Cidr,
+			IPv6Cidr:                   item.IPv6Cidr,
+			CloudAddressID:             item.CloudAddressID,
+			CloudAddressGroupID:        item.CloudAddressGroupID,
+			CloudTargetSecurityGroupID: item.CloudTargetSecurityGroupID,
+			Action:                     item.Action,
+			Description:                item.Memo,
+		})
+	}
+	return result
+}
+
+func (g *securityGroup) getTCloudSGRulesVersion(kt *kit.Kit, client tcloud.TCloud, region, sgCloudID string) (string, error) {
+
+	listOpt := &securitygrouprule.TCloudListOption{
+		Region:               region,
+		CloudSecurityGroupID: sgCloudID,
+	}
+	rules, err := client.ListSecurityGroupRule(kt, listOpt)
+	if err != nil {
+		logs.Errorf("[%s] request adaptor to list tcloud security group rule failed,"+
+			" region: %s, sgCloudID: %s, err: %v, rid: %s", enumor.TCloud, region, sgCloudID, err, kt.Rid)
+		return "", err
+	}
+	return converter.PtrToVal(rules.Version), nil
 }
 
 func (g *securityGroup) getTCloudSGRuleByID(cts *rest.Contexts, id string, sgID string) (*corecloud.

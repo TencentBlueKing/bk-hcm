@@ -27,6 +27,7 @@ import (
 	proto "hcm/pkg/api/hc-service"
 	hclb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/api/hc-service/sync"
+	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
@@ -186,6 +187,14 @@ func (cli *SecurityGroupClient) UpdateSecurityGroupRule(ctx context.Context, h h
 	return nil
 }
 
+// BatchUpdateSecurityGroupRule batch update security group rule.
+func (cli *SecurityGroupClient) BatchUpdateSecurityGroupRule(kt *kit.Kit, sgID string,
+	request *proto.TCloudSGRuleBatchUpdateReq) error {
+
+	return common.RequestNoResp[proto.TCloudSGRuleBatchUpdateReq](cli.client, rest.PUT, kt, request,
+		"/security_groups/%s/rules/batch/update", sgID)
+}
+
 // DeleteSecurityGroupRule delete security group rule.
 func (cli *SecurityGroupClient) DeleteSecurityGroupRule(ctx context.Context, h http.Header, sgID, id string) error {
 
@@ -302,4 +311,26 @@ func (cli *SecurityGroupClient) DisassociateLb(ctx context.Context, h http.Heade
 	}
 
 	return nil
+}
+
+// BatchAssociateCloudCvm 批量绑定安全组
+func (cli *SecurityGroupClient) BatchAssociateCloudCvm(kt *kit.Kit, sgID string, cvmIDs []string) error {
+
+	req := &proto.SecurityGroupBatchAssociateCvmReq{
+		SecurityGroupID: sgID,
+		CvmIDs:          cvmIDs,
+	}
+	return common.RequestNoResp[proto.SecurityGroupBatchAssociateCvmReq](cli.client, rest.POST, kt, req,
+		"/security_groups/associate/cvms/batch")
+}
+
+// BatchDisassociateCloudCvm 批量解绑安全组
+func (cli *SecurityGroupClient) BatchDisassociateCloudCvm(kt *kit.Kit, sgID string, cvmIDs []string) error {
+
+	req := &proto.SecurityGroupBatchAssociateCvmReq{
+		SecurityGroupID: sgID,
+		CvmIDs:          cvmIDs,
+	}
+	return common.RequestNoResp[proto.SecurityGroupBatchAssociateCvmReq](cli.client, rest.POST, kt, req,
+		"/security_groups/disassociate/cvms/batch")
 }

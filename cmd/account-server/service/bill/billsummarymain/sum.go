@@ -94,7 +94,9 @@ func (s *service) doCalcalcute(mainSummaryList []*dsbillapi.BillSummaryMain, cou
 			}
 		}
 		retMap[rootSummary.Currency].Cost = retMap[rootSummary.Currency].Cost.Add(rootSummary.CurrentMonthCost)
+		retMap[rootSummary.Currency].Cost = retMap[rootSummary.Currency].Cost.Add(rootSummary.AdjustmentCost)
 		retMap[rootSummary.Currency].RMBCost = retMap[rootSummary.Currency].RMBCost.Add(rootSummary.CurrentMonthRMBCost)
+		retMap[rootSummary.Currency].RMBCost = retMap[rootSummary.Currency].RMBCost.Add(rootSummary.AdjustmentRMBCost)
 	}
 	return &asbillapi.MainAccountSummarySumResult{
 		Count:   count,

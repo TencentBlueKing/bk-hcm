@@ -20,9 +20,14 @@
 package image
 
 import (
+	"errors"
+
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/tools/converter"
+
+	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
 )
 
 // TCloudImageListResult ...
@@ -51,9 +56,10 @@ func (image TCloudImage) GetCloudID() string {
 
 // TCloudImageListOption define tcloud image list option.
 type TCloudImageListOption struct {
-	Region   string           `json:"region" validate:"required"`
-	CloudIDs []string         `json:"cloud_ids" validate:"omitempty"`
-	Page     *core.TCloudPage `json:"page" validate:"omitempty"`
+	Region   string              `json:"region" validate:"required"`
+	CloudIDs []string            `json:"cloud_ids" validate:"omitempty"`
+	Page     *core.TCloudPage    `json:"page" validate:"omitempty"`
+	Filters  []TCloudImageFilter `json:"filters" validate:"omitempty,max=10"`
 }
 
 // Validate tcloud image option.
@@ -68,5 +74,37 @@ func (opt TCloudImageListOption) Validate() error {
 		}
 	}
 
+	if len(opt.Filters) > 0 && len(opt.CloudIDs) > 0 {
+		return errors.New("cloud_ids and filters can not be used at the same time")
+	}
+
+	for _, filter := range opt.Filters {
+		if err := filter.Validate(); err != nil {
+			return err
+		}
+	}
+
 	return nil
+}
+
+// TCloudImageFilter ...
+type TCloudImageFilter struct {
+	Name   string    `json:"name" validate:"required"`
+	Values []*string `json:"values" validate:"omitempty,max=5"`
+}
+
+// Validate tcloud image filter.
+func (t *TCloudImageFilter) Validate() error {
+	if err := validator.Validate.Struct(t); err != nil {
+		return err
+	}
+	return nil
+}
+
+// ToCvmFilter ...
+func (t *TCloudImageFilter) ToCvmFilter() *cvm.Filter {
+	return &cvm.Filter{
+		Name:   converter.ValToPtr(t.Name),
+		Values: t.Values,
+	}
 }

@@ -161,3 +161,17 @@ type BatchCreateResp struct {
 	rest.BaseResp `json:",inline"`
 	Data          *BatchCreateResult `json:"data"`
 }
+
+// TCloudBatchResetReq defines options to reset cvm request.
+type TCloudBatchResetReq struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids" validate:"required"`
+	ImageID   string   `json:"image_id" validate:"required"`
+	Password  string   `json:"password" validate:"required,min=12,max=30"`
+}
+
+// Validate reset cvm request.
+func (opt TCloudBatchResetReq) Validate() error {
+	return validator.Validate.Struct(opt)
+}

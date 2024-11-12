@@ -93,7 +93,9 @@ func (s *service) doCalcalcute(rootSummaryList []*billcore.SummaryRoot, count ui
 			}
 		}
 		retMap[rootSummary.Currency].Cost = retMap[rootSummary.Currency].Cost.Add(rootSummary.CurrentMonthCost)
+		retMap[rootSummary.Currency].Cost = retMap[rootSummary.Currency].Cost.Add(rootSummary.AdjustmentCost)
 		retMap[rootSummary.Currency].RMBCost = retMap[rootSummary.Currency].RMBCost.Add(rootSummary.CurrentMonthRMBCost)
+		retMap[rootSummary.Currency].RMBCost = retMap[rootSummary.Currency].RMBCost.Add(rootSummary.AdjustmentRMBCost)
 	}
 	return &asbillapi.RootAccountSummarySumResult{
 		Count:   count,

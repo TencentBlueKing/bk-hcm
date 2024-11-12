@@ -41,8 +41,11 @@ var SecurityGroupColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "region", NamedC: "region", Type: enumor.String},
 	{Column: "name", NamedC: "name", Type: enumor.String},
 	{Column: "memo", NamedC: "memo", Type: enumor.String},
+	{Column: "cloud_created_time", NamedC: "cloud_created_time", Type: enumor.String},
+	{Column: "cloud_update_time", NamedC: "cloud_update_time", Type: enumor.String},
 	{Column: "account_id", NamedC: "account_id", Type: enumor.String},
 	{Column: "extension", NamedC: "extension", Type: enumor.Json},
+	{Column: "tags", NamedC: "tags", Type: enumor.Json},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
@@ -51,19 +54,22 @@ var SecurityGroupColumnDescriptor = utils.ColumnDescriptors{
 
 // SecurityGroupTable define security group table.
 type SecurityGroupTable struct {
-	ID        string          `db:"id" json:"id" validate:"lte=64"`
-	Vendor    enumor.Vendor   `db:"vendor" json:"vendor" validate:"lte=16"`
-	CloudID   string          `db:"cloud_id" json:"cloud_id" validate:"lte=255"`
-	BkBizID   int64           `db:"bk_biz_id" json:"bk_biz_id"`
-	Region    string          `db:"region" json:"region" validate:"lte=20"`
-	Name      string          `db:"name" json:"name" validate:"lte=255"`
-	Memo      *string         `db:"memo" json:"memo" validate:"omitempty,lte=255"`
-	AccountID string          `db:"account_id" json:"account_id" validate:"lte=64"`
-	Extension types.JsonField `db:"extension" json:"extension"`
-	Creator   string          `db:"creator" json:"creator" validate:"lte=64"`
-	Reviser   string          `db:"reviser" json:"reviser" validate:"lte=64"`
-	CreatedAt types.Time      `db:"created_at" json:"created_at" validate:"excluded_unless"`
-	UpdatedAt types.Time      `db:"updated_at" json:"updated_at" validate:"excluded_unless"`
+	ID               string          `db:"id" json:"id" validate:"lte=64"`
+	Vendor           enumor.Vendor   `db:"vendor" json:"vendor" validate:"lte=16"`
+	CloudID          string          `db:"cloud_id" json:"cloud_id" validate:"lte=255"`
+	BkBizID          int64           `db:"bk_biz_id" json:"bk_biz_id"`
+	Region           string          `db:"region" json:"region" validate:"lte=20"`
+	Name             string          `db:"name" json:"name" validate:"lte=255"`
+	Memo             *string         `db:"memo" json:"memo" validate:"omitempty,lte=255"`
+	AccountID        string          `db:"account_id" json:"account_id" validate:"lte=64"`
+	CloudCreatedTime string          `db:"cloud_created_time" json:"cloud_created_time"`
+	CloudUpdateTime  string          `db:"cloud_update_time" json:"cloud_update_time"`
+	Extension        types.JsonField `db:"extension" json:"extension"`
+	Tags             types.StringMap `db:"tags" json:"tags"`
+	Creator          string          `db:"creator" json:"creator" validate:"lte=64"`
+	Reviser          string          `db:"reviser" json:"reviser" validate:"lte=64"`
+	CreatedAt        types.Time      `db:"created_at" json:"created_at" validate:"excluded_unless"`
+	UpdatedAt        types.Time      `db:"updated_at" json:"updated_at" validate:"excluded_unless"`
 }
 
 // TableName return security group table name.

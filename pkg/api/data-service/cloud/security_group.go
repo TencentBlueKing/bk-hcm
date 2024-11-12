@@ -40,13 +40,16 @@ type SecurityGroupBatchCreateReq[Extension cloud.SecurityGroupExtension] struct 
 
 // SecurityGroupBatchCreate define security group batch create.
 type SecurityGroupBatchCreate[Extension cloud.SecurityGroupExtension] struct {
-	CloudID   string     `json:"cloud_id" validate:"required"`
-	Region    string     `json:"region" validate:"required"`
-	Name      string     `json:"name" validate:"required"`
-	Memo      *string    `json:"memo" validate:"omitempty"`
-	AccountID string     `json:"account_id" validate:"required"`
-	BkBizID   int64      `json:"bk_biz_id" validate:"required"`
-	Extension *Extension `json:"extension" validate:"required"`
+	CloudID          string      `json:"cloud_id" validate:"required"`
+	Region           string      `json:"region" validate:"required"`
+	Name             string      `json:"name" validate:"required"`
+	Memo             *string     `json:"memo" validate:"omitempty"`
+	AccountID        string      `json:"account_id" validate:"required"`
+	BkBizID          int64       `json:"bk_biz_id" validate:"required"`
+	Extension        *Extension  `json:"extension" validate:"required"`
+	CloudCreatedTime string      `json:"cloud_created_time" validate:"required"`
+	CloudUpdateTime  string      `json:"cloud_update_time" validate:"required"`
+	Tags             core.TagMap `json:"tags" validate:"required"`
 }
 
 // Validate security group create request.
@@ -67,11 +70,14 @@ type SecurityGroupBatchUpdateReq[Extension cloud.SecurityGroupExtension] struct 
 
 // SecurityGroupBatchUpdate define security group batch update.
 type SecurityGroupBatchUpdate[Extension cloud.SecurityGroupExtension] struct {
-	ID        string     `json:"id" validate:"required"`
-	Name      string     `json:"name" validate:"omitempty"`
-	BkBizID   int64      `json:"bk_biz_id" validate:"omitempty"`
-	Memo      *string    `json:"memo" validate:"omitempty"`
-	Extension *Extension `json:"extension" validate:"omitempty"`
+	ID               string      `json:"id" validate:"required"`
+	Name             string      `json:"name" validate:"omitempty"`
+	BkBizID          int64       `json:"bk_biz_id" validate:"omitempty"`
+	Memo             *string     `json:"memo" validate:"omitempty"`
+	Extension        *Extension  `json:"extension" validate:"omitempty"`
+	CloudCreatedTime string      `json:"cloud_created_time" validate:"omitempty"`
+	CloudUpdateTime  string      `json:"cloud_update_time" validate:"omitempty"`
+	Tags             core.TagMap `json:"tags" validate:"omitempty"`
 }
 
 // Validate security group update request.

@@ -27,3 +27,15 @@ const (
 	WindowsOsType OsType = "Windows"
 	OtherOsType   OsType = "Other"
 )
+
+// TCloudImageTypeImageType 镜像
+type TCloudImageType string
+
+const (
+	// TCloudPrivateImage 私有镜像 (本账户创建的镜像)
+	TCloudPrivateImage TCloudImageType = "PRIVATE_IMAGE"
+	// TCloudPublicImage 公共镜像 (腾讯云官方镜像)
+	TCloudPublicImage TCloudImageType = "PUBLIC_IMAGE"
+	// TCloudSharedImage 共享镜像(其他账户共享给本账户的镜像)
+	TCloudSharedImage TCloudImageType = "SHARED_IMAGE"
+)

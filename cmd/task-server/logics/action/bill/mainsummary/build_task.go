@@ -27,9 +27,8 @@ import (
 )
 
 // BuildMainSummaryTask build main summary task
-func BuildMainSummaryTask(
-	rootAccountID, mainAccountID string, vendor enumor.Vendor,
-	billYear, billMonth int) ts.CustomFlowTask {
+func BuildMainSummaryTask(rootAccountID, mainAccountID string, vendor enumor.Vendor,
+	billYear, billMonth int, monthTaskTypes []enumor.MonthTaskType) ts.CustomFlowTask {
 
 	return ts.CustomFlowTask{
 		ActionID:   action.ActIDType(uuid.UUID()),
@@ -40,6 +39,8 @@ func BuildMainSummaryTask(
 			Vendor:        vendor,
 			BillYear:      billYear,
 			BillMonth:     billMonth,
+
+			MonthTaskTypes: monthTaskTypes,
 		},
 	}
 }

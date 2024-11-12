@@ -131,6 +131,11 @@ func (cli *client) updateSG(kt *kit.Kit, accountID string,
 	securityGroups := make([]protocloud.SecurityGroupBatchUpdate[cloudcore.TCloudSecurityGroupExtension], 0)
 
 	for id, one := range updateMap {
+		tagMap := core.TagMap{}
+		for _, tag := range one.TagSet {
+			tagMap.Set(cvt.PtrToVal(tag.Key), cvt.PtrToVal(tag.Value))
+		}
+
 		securityGroup := protocloud.SecurityGroupBatchUpdate[cloudcore.TCloudSecurityGroupExtension]{
 			ID:   id,
 			Name: cvt.PtrToVal(one.SecurityGroupName),
@@ -138,6 +143,9 @@ func (cli *client) updateSG(kt *kit.Kit, accountID string,
 			Extension: &cloudcore.TCloudSecurityGroupExtension{
 				CloudProjectID: one.ProjectId,
 			},
+			CloudCreatedTime: cvt.PtrToVal(one.CreatedTime),
+			CloudUpdateTime:  cvt.PtrToVal(one.UpdateTime),
+			Tags:             tagMap,
 		}
 
 		securityGroups = append(securityGroups, securityGroup)
@@ -171,6 +179,10 @@ func (cli *client) createSG(kt *kit.Kit, accountID string, region string,
 	}
 
 	for _, one := range addSlice {
+		tagMap := core.TagMap{}
+		for _, tag := range one.TagSet {
+			tagMap.Set(cvt.PtrToVal(tag.Key), cvt.PtrToVal(tag.Value))
+		}
 		securityGroup := protocloud.SecurityGroupBatchCreate[cloudcore.TCloudSecurityGroupExtension]{
 			CloudID:   cvt.PtrToVal(one.SecurityGroupId),
 			BkBizID:   constant.UnassignedBiz,
@@ -181,6 +193,9 @@ func (cli *client) createSG(kt *kit.Kit, accountID string, region string,
 			Extension: &cloudcore.TCloudSecurityGroupExtension{
 				CloudProjectID: one.ProjectId,
 			},
+			CloudCreatedTime: cvt.PtrToVal(one.CreatedTime),
+			CloudUpdateTime:  cvt.PtrToVal(one.UpdateTime),
+			Tags:             tagMap,
 		}
 		createReq.SecurityGroups = append(createReq.SecurityGroups, securityGroup)
 	}
@@ -478,6 +493,28 @@ func isSGChange(cloud securitygroup.TCloudSG, db cloudcore.SecurityGroup[cloudco
 
 	if !assert.IsPtrStringEqual(cloud.ProjectId, db.Extension.CloudProjectID) {
 		return true
+	}
+
+	if cvt.PtrToVal(cloud.CreatedTime) != db.BaseSecurityGroup.CloudCreatedTime {
+		return true
+	}
+
+	if cvt.PtrToVal(cloud.UpdateTime) != db.BaseSecurityGroup.CloudUpdateTime {
+		return true
+	}
+
+	if len(cloud.TagSet) != len(db.BaseSecurityGroup.Tags) {
+		return true
+	}
+
+	for _, tag := range cloud.TagSet {
+		value, ok := db.BaseSecurityGroup.Tags.Get(cvt.PtrToVal(tag.Key))
+		if !ok {
+			return true
+		}
+		if value != cvt.PtrToVal(tag.Value) {
+			return true
+		}
 	}
 
 	return false

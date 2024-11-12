@@ -110,6 +110,8 @@ func AdaptAuthOptions(a *meta.ResourceAttribute) (client.ActionID, []client.Reso
 		return genApplicationResources(a)
 	case meta.AccountBillThirdParty:
 		return genAccountBillThirdPartyResource(a)
+	case meta.Image:
+		return genImageResource(a)
 	case meta.TaskManagement:
 		return genTaskManagementResource(a)
 	default:
