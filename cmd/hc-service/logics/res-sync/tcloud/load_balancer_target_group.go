@@ -362,7 +362,7 @@ func convTarget(accountID, tgRegion string) func(cloudTarget *tclb.Backend) *dat
 func (cli *client) createLocalTargetGroupL4(kt *kit.Kit, opt *SyncListenerOption,
 	lb *corelb.TCloudLoadBalancer, listener typeslb.TCloudListenerTarget) error {
 
-	lbl, rule, err := cli.listListenerWithRule(kt, cvt.PtrToVal(listener.ListenerId), lb.Region)
+	lbl, rule, err := cli.listListenerWithRule(kt, cvt.PtrToVal(listener.ListenerId), lb.ID)
 	if err != nil {
 		logs.Errorf("fail to list listener with rule, err: %v, rid:%s", err, kt.Rid)
 		return err
@@ -413,13 +413,13 @@ func (cli *client) createLocalTargetGroupL4(kt *kit.Kit, opt *SyncListenerOption
 	return nil
 }
 
-func (cli *client) listListenerWithRule(kt *kit.Kit, listenerCloudID, region string) (
+func (cli *client) listListenerWithRule(kt *kit.Kit, listenerCloudID, lbID string) (
 	*corelb.Listener[corelb.TCloudListenerExtension], *corelb.TCloudLbUrlRule, error) {
 
 	listReq := &core.ListReq{
 		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("lb_id", lbID),
 			tools.RuleEqual("cloud_id", listenerCloudID),
-			tools.RuleEqual("region", region),
 		),
 		Page: core.NewDefaultBasePage(),
 	}
@@ -439,7 +439,7 @@ func (cli *client) listListenerWithRule(kt *kit.Kit, listenerCloudID, region str
 	// 获取对应规则
 	listReq.Filter = tools.ExpressionAnd(
 		tools.RuleEqual("cloud_id", lbl.CloudID),
-		tools.RuleEqual("lbl_id", lbl.ID),
+		tools.RuleEqual("cloud_lbl_id", lbl.CloudID),
 		tools.RuleEqual("region", lbl.Region),
 	)
 	ruleResp, err := cli.dbCli.TCloud.LoadBalancer.ListUrlRule(kt, listReq)
@@ -503,7 +503,8 @@ func (cli *client) updateRs(kt *kit.Kit, tgRegion string, updateMap map[string]t
 	return err
 }
 
-func (cli *client) createRs(kt *kit.Kit, accountID, tgId, tgRegion string, addSlice []typeslb.Backend) ([]string, error) {
+func (cli *client) createRs(kt *kit.Kit, accountID, tgId, tgRegion string, addSlice []typeslb.Backend) (
+	[]string, error) {
 
 	if len(addSlice) == 0 {
 		return nil, nil
