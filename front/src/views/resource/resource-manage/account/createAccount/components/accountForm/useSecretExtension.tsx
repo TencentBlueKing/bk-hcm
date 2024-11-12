@@ -290,8 +290,9 @@ export const useSecretExtension = (props: IProp, isValidate?: boolean) => {
     if (callback) callback?.(payload);
     try {
       const server = accountType === AccountVerifyEnum.ACCOUNT ? 'cloud' : 'account';
+      const secret = accountType === AccountVerifyEnum.ACCOUNT ? 'secret' : 'get_account_by_secret';
       const res = await http.post(
-        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/${server}/vendors/${props.vendor}/${accountType}/secret`,
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/${server}/vendors/${props.vendor}/${accountType}/${secret}`,
         {
           ...payload,
           disable_check: isValidate || false,
