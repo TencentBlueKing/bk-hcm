@@ -3,7 +3,7 @@ apiVersion: v2
 description: A full stack chart for HCM Enterprise products.
 type: application
 version: 1.0.22
-appVersion: v1.6.11-alpha.2
+appVersion: v1.6.11
 
 dependencies:
   - name: common

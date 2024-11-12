@@ -22,16 +22,14 @@
 
     Notes:
     1. 修改`security_group`表，增加`type`字段
-    2.
-    3.
 */
 
 START TRANSACTION;
 
 ALTER TABLE security_group
-    ADD COLUMN `cloud_update_time` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '云上修改时间' AFTER `association_template_id`,
+    ADD COLUMN `cloud_update_time`  VARCHAR(64) NOT NULL DEFAULT '' COMMENT '云上修改时间' AFTER `association_template_id`,
     ADD COLUMN `cloud_created_time` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '云上创建时间' AFTER `association_template_id`,
-    ADD COLUMN `tags` json NOT NULL COMMENT '标签' AFTER `extension`;
+    ADD COLUMN `tags`               json        NOT NULL COMMENT '标签' AFTER `extension`;
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
 SELECT 'v1.6.11' as `hcm_ver`, '0027' as `sql_ver`;
