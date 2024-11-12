@@ -409,7 +409,11 @@ func (cli *client) deleteLoadBalancer(kt *kit.Kit, accountID string, region stri
 	}
 
 	deleteReq := &protocloud.LoadBalancerBatchDeleteReq{
-		Filter: tools.ContainersExpression("cloud_id", delCloudIDs),
+		Filter: tools.ExpressionAnd(
+			tools.RuleIn("cloud_id", delCloudIDs),
+			tools.RuleEqual("region", region),
+			tools.RuleEqual("vendor", enumor.TCloud),
+		),
 	}
 	if err = cli.dbCli.Global.LoadBalancer.BatchDelete(kt, deleteReq); err != nil {
 		logs.Errorf("[%s] call data service to batch delete lb failed, err: %v, rid: %s",

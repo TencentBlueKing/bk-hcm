@@ -256,6 +256,7 @@ type TCloudUrlRuleCreate struct {
 	RuleType           enumor.RuleType               `json:"rule_type" validate:"required,lte=64"`
 	TargetGroupID      string                        `json:"target_group_id" validate:"lte=255"`
 	CloudTargetGroupID string                        `json:"cloud_target_group_id" validate:"lte=255"`
+	Region             string                        `json:"region" validate:"required,lte=20"`
 	Domain             string                        `json:"domain"`
 	URL                string                        `json:"url"`
 	Scheduler          string                        `json:"scheduler"`
@@ -291,6 +292,7 @@ type TCloudUrlRuleUpdate struct {
 	Name               string                        `json:"name" validate:"lte=255"`
 	TargetGroupID      string                        `json:"target_group_id" validate:"omitempty,lte=255"`
 	CloudTargetGroupID string                        `json:"cloud_target_group_id" validate:"omitempty,lte=255"`
+	Region             string                        `json:"region" validate:"lte=20"`
 	Domain             string                        `json:"domain"`
 	URL                string                        `json:"url"`
 	Scheduler          string                        `json:"scheduler"`
