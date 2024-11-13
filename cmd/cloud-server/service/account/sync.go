@@ -95,7 +95,7 @@ func (a *accountSvc) SyncCloudResourceByCond(cts *rest.Contexts) (any, error) {
 		return a.tcloudCondSyncRes(cts, accountID, resName)
 
 	default:
-		return nil, fmt.Errorf("conditional sync not supports vendor: %s", vendor)
+		return nil, fmt.Errorf("conditional sync doesnot support vendor: %s", vendor)
 	}
 }
 
@@ -161,7 +161,7 @@ func (a *accountSvc) tcloudCondSyncRes(cts *rest.Contexts, accountID string, res
 
 	syncFunc, ok := tcloud.GetCondSyncFunc(resName)
 	if !ok {
-		return nil, fmt.Errorf("tcloud conditional sync resource not supported: %s", resName)
+		return nil, fmt.Errorf("tcloud conditional sync resource does not support %s", resName)
 	}
 
 	var rules []*filter.AtomRule
@@ -180,7 +180,7 @@ func (a *accountSvc) tcloudCondSyncRes(cts *rest.Contexts, accountID string, res
 		return nil, err
 	}
 	if len(req.Regions) > 0 && len(regionResult.Details) != len(req.Regions) {
-		return nil, errors.New("request regions not match regions on db")
+		return nil, errors.New("request regions mismatch regions on db")
 	}
 	req.Regions = slice.Map(regionResult.Details, region.TCloudRegion.GetCloudID)
 
