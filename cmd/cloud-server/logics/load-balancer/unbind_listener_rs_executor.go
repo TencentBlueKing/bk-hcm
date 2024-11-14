@@ -233,8 +233,8 @@ func (c *BatchListenerUnbindRsExecutor) createTaskManagement(
 			{
 				BkBizID:    c.bkBizID,
 				Source:     source,
-				Vendor:     c.vendor,
-				AccountID:  c.accountID,
+				Vendors:    []enumor.Vendor{c.vendor},
+				AccountIDs: []string{c.accountID},
 				Resource:   enumor.TaskManagementResClb,
 				State:      enumor.TaskManagementRunning, // 默认:执行中
 				Operations: []enumor.TaskOperation{enumor.TaskUnbindListenerRs},

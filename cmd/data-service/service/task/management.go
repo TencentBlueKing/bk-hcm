@@ -54,6 +54,10 @@ func (svc *service) CreateTaskManagement(cts *rest.Contexts) (interface{}, error
 	managementIDs, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		models := make([]tabletask.ManagementTable, 0, len(req.Items))
 		for _, item := range req.Items {
+			vendors := make(tabletype.StringArray, 0, len(item.Vendors))
+			for _, vendor := range item.Vendors {
+				vendors = append(vendors, string(vendor))
+			}
 			operations := make([]string, len(item.Operations))
 			for i, operation := range item.Operations {
 				operations[i] = string(operation)
@@ -61,9 +65,9 @@ func (svc *service) CreateTaskManagement(cts *rest.Contexts) (interface{}, error
 			model := tabletask.ManagementTable{
 				BkBizID:    item.BkBizID,
 				Source:     item.Source,
-				Vendor:     item.Vendor,
+				Vendors:    vendors,
 				State:      item.State,
-				AccountID:  item.AccountID,
+				AccountIDs: item.AccountIDs,
 				Resource:   item.Resource,
 				Operations: operations,
 				FlowIDs:    item.FlowIDs,
@@ -181,14 +185,20 @@ func (svc *service) UpdateTaskManagement(cts *rest.Contexts) (interface{}, error
 			}
 
 			management := &tabletask.ManagementTable{
-				BkBizID:   one.BkBizID,
-				Source:    one.Source,
-				Vendor:    one.Vendor,
-				State:     one.State,
-				AccountID: one.AccountID,
-				Resource:  one.Resource,
-				FlowIDs:   one.FlowIDs,
-				Reviser:   cts.Kit.User,
+				BkBizID:    one.BkBizID,
+				Source:     one.Source,
+				State:      one.State,
+				AccountIDs: one.AccountIDs,
+				Resource:   one.Resource,
+				FlowIDs:    one.FlowIDs,
+				Reviser:    cts.Kit.User,
+			}
+			if len(one.Vendors) != 0 {
+				vendors := make(tabletype.StringArray, 0, len(one.Vendors))
+				for _, vendor := range one.Vendors {
+					vendors = append(vendors, string(vendor))
+				}
+				management.Vendors = vendors
 			}
 
 			if len(one.Operations) != 0 {
@@ -265,9 +275,9 @@ func (svc *service) ListTaskManagement(cts *rest.Contexts) (interface{}, error) 
 			ID:         one.ID,
 			BkBizID:    one.BkBizID,
 			Source:     one.Source,
-			Vendor:     one.Vendor,
+			Vendors:    one.Vendors.ToVendors(),
 			State:      one.State,
-			AccountID:  one.AccountID,
+			AccountIDs: one.AccountIDs,
 			Resource:   one.Resource,
 			Operations: operations,
 			FlowIDs:    one.FlowIDs,

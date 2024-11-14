@@ -45,9 +45,9 @@ func (req CreateManagementReq) Validate() error {
 type CreateManagementField struct {
 	BkBizID    int64                         `json:"bk_biz_id" validate:"required"`
 	Source     enumor.TaskManagementSource   `json:"source" validate:"required"`
-	Vendor     enumor.Vendor                 `json:"vendor" validate:"required"`
+	Vendors    []enumor.Vendor               `json:"vendors" validate:"required"`
 	State      enumor.TaskManagementState    `json:"state"`
-	AccountID  string                        `json:"account_id" validate:"required"`
+	AccountIDs []string                      `json:"account_ids" validate:"required"`
 	Resource   enumor.TaskManagementResource `json:"resource" validate:"required"`
 	Operations []enumor.TaskOperation        `json:"operations" validate:"required"`
 	FlowIDs    []string                      `json:"flow_ids"`
@@ -77,9 +77,9 @@ type UpdateTaskManagementField struct {
 
 	BkBizID    int64                         `json:"bk_biz_id"`
 	Source     enumor.TaskManagementSource   `json:"source"`
-	Vendor     enumor.Vendor                 `json:"vendor"`
+	Vendors    []enumor.Vendor               `json:"vendors"`
 	State      enumor.TaskManagementState    `json:"state"`
-	AccountID  string                        `json:"account_id"`
+	AccountIDs []string                      `json:"account_ids"`
 	Resource   enumor.TaskManagementResource `json:"resource"`
 	Operations []enumor.TaskOperation        `json:"operations"`
 	FlowIDs    []string                      `json:"flow_ids"`

@@ -115,8 +115,8 @@ func createTaskManagement(kt *kit.Kit, cli *dataservice.Client, bkBizID int64, v
 			{
 				BkBizID:    bkBizID,
 				Source:     source,
-				Vendor:     vendor,
-				AccountID:  accountID,
+				Vendors:    []enumor.Vendor{vendor},
+				AccountIDs: []string{accountID},
 				Resource:   enumor.TaskManagementResClb,
 				State:      enumor.TaskManagementRunning,
 				Operations: []enumor.TaskOperation{operation},
