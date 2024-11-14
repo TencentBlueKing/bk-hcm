@@ -23,9 +23,12 @@ import (
 	"context"
 	"net/http"
 
+	typesimage "hcm/pkg/adaptor/types/image"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/hc-service/image"
+	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -62,4 +65,11 @@ func (cli *ImageClient) SyncImage(ctx context.Context, h http.Header,
 	}
 
 	return nil
+}
+
+// ListImage list image.
+func (cli *ImageClient) ListImage(kt *kit.Kit, req *image.TCloudImageListOption) (
+	*typesimage.TCloudImageListResult, error) {
+
+	return common.Request[image.TCloudImageListOption, typesimage.TCloudImageListResult](cli.client, "POST", kt, req, "/images/list")
 }

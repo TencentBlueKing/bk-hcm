@@ -20,6 +20,7 @@
 package securitygroup
 
 import (
+	"errors"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
@@ -33,7 +34,10 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
-func buildSGCvmRelDeleteReq(sgID, cvmID string) *dataproto.BatchDeleteReq {
+func buildSGCvmRelDeleteReq(sgID string, cvmIDs ...string) (*dataproto.BatchDeleteReq, error) {
+	if len(cvmIDs) == 0 {
+		return nil, errors.New("cvmIDs is required")
+	}
 	return &dataproto.BatchDeleteReq{
 		Filter: &filter.Expression{
 			Op: filter.And,
@@ -45,12 +49,12 @@ func buildSGCvmRelDeleteReq(sgID, cvmID string) *dataproto.BatchDeleteReq {
 				},
 				&filter.AtomRule{
 					Field: "cvm_id",
-					Op:    filter.Equal.Factory(),
-					Value: cvmID,
+					Op:    filter.In.Factory(),
+					Value: cvmIDs,
 				},
 			},
 		},
-	}
+	}, nil
 }
 
 func buildSGCommonRelDeleteReq(vendor enumor.Vendor, resID string, sgIDs []string,

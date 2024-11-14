@@ -47,8 +47,14 @@ func InitSecurityGroupService(cap *capability.Capability) {
 		sg.BatchCreateTCloudSGRule)
 	h.Add("UpdateTCloudSGRule", "PUT", "/vendors/tcloud/security_groups/{security_group_id}/rules/{id}",
 		sg.UpdateTCloudSGRule)
+	h.Add("BatchUpdateTCloudSGRule", "PUT", "/vendors/tcloud/security_groups/{security_group_id}/rules/batch/update",
+		sg.BatchUpdateTCloudSGRule)
 	h.Add("DeleteTCloudSGRule", "DELETE", "/vendors/tcloud/security_groups/{security_group_id}/rules/{id}",
 		sg.DeleteTCloudSGRule)
+	h.Add("TCloudSGBatchAssociateCloudCvm", "POST",
+		"/vendors/tcloud/security_groups/associate/cvms/batch", sg.TCloudSGBatchAssociateCvm)
+	h.Add("TCloudSGBatchDisassociateCloudCvm", "POST",
+		"/vendors/tcloud/security_groups/disassociate/cvms/batch", sg.TCloudSGBatchDisassociateCvm)
 
 	h.Add("AwsSecurityGroupAssociateCvm", "POST", "/vendors/aws/security_groups/associate/cvms",
 		sg.AwsSecurityGroupAssociateCvm)

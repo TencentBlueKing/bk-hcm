@@ -5,6 +5,7 @@ import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { useAccountStore } from '@/store';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { ref, watch } from 'vue';
+import isEqual from 'lodash/isEqual';
 
 type SelectionType = {
   checked: boolean;
@@ -54,8 +55,10 @@ export default () => {
     }
     // 取消选择某一个
     if (!isAll && !selection.checked) {
-      const index = selections.value.findIndex((item) => item === selection.row);
-      selections.value.splice(index, 1);
+      const index = selections.value.findIndex((item) => isEqual(item, selection.row));
+      if (index !== -1) {
+        selections.value.splice(index, 1);
+      }
     }
   };
 

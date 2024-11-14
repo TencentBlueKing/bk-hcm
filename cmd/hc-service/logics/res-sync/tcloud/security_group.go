@@ -51,6 +51,7 @@ func (opt SyncSGOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
+// SecurityGroup ...
 func (cli *client) SecurityGroup(kt *kit.Kit, params *SyncBaseParams, opt *SyncSGOption) (*SyncResult, error) {
 	if err := validator.ValidateTool(params, opt); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -128,6 +129,11 @@ func (cli *client) updateSG(kt *kit.Kit, accountID string,
 	securityGroups := make([]protocloud.SecurityGroupBatchUpdate[cloudcore.TCloudSecurityGroupExtension], 0)
 
 	for id, one := range updateMap {
+		tagMap := core.TagMap{}
+		for _, tag := range one.TagSet {
+			tagMap.Set(converter.PtrToVal(tag.Key), converter.PtrToVal(tag.Value))
+		}
+
 		securityGroup := protocloud.SecurityGroupBatchUpdate[cloudcore.TCloudSecurityGroupExtension]{
 			ID:   id,
 			Name: converter.PtrToVal(one.SecurityGroupName),
@@ -135,6 +141,9 @@ func (cli *client) updateSG(kt *kit.Kit, accountID string,
 			Extension: &cloudcore.TCloudSecurityGroupExtension{
 				CloudProjectID: one.ProjectId,
 			},
+			CloudCreatedTime: converter.PtrToVal(one.CreatedTime),
+			CloudUpdateTime:  converter.PtrToVal(one.UpdateTime),
+			Tags:             tagMap,
 		}
 
 		securityGroups = append(securityGroups, securityGroup)
@@ -168,6 +177,10 @@ func (cli *client) createSG(kt *kit.Kit, accountID string, region string,
 	}
 
 	for _, one := range addSlice {
+		tagMap := core.TagMap{}
+		for _, tag := range one.TagSet {
+			tagMap.Set(converter.PtrToVal(tag.Key), converter.PtrToVal(tag.Value))
+		}
 		securityGroup := protocloud.SecurityGroupBatchCreate[cloudcore.TCloudSecurityGroupExtension]{
 			CloudID:   converter.PtrToVal(one.SecurityGroupId),
 			BkBizID:   constant.UnassignedBiz,
@@ -178,6 +191,9 @@ func (cli *client) createSG(kt *kit.Kit, accountID string, region string,
 			Extension: &cloudcore.TCloudSecurityGroupExtension{
 				CloudProjectID: one.ProjectId,
 			},
+			CloudCreatedTime: converter.PtrToVal(one.CreatedTime),
+			CloudUpdateTime:  converter.PtrToVal(one.UpdateTime),
+			Tags:             tagMap,
 		}
 		createReq.SecurityGroups = append(createReq.SecurityGroups, securityGroup)
 	}
@@ -298,6 +314,7 @@ func (cli *client) listSGFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	return result.Details, nil
 }
 
+// RemoveSecurityGroupDeleteFromCloud remove security group delete from cloud
 func (cli *client) RemoveSecurityGroupDeleteFromCloud(kt *kit.Kit, accountID string, region string) error {
 	req := &core.ListReq{
 		Filter: &filter.Expression{
@@ -400,6 +417,28 @@ func isSGChange(cloud securitygroup.TCloudSG, db cloudcore.SecurityGroup[cloudco
 
 	if !assert.IsPtrStringEqual(cloud.ProjectId, db.Extension.CloudProjectID) {
 		return true
+	}
+
+	if converter.PtrToVal(cloud.CreatedTime) != db.BaseSecurityGroup.CloudCreatedTime {
+		return true
+	}
+
+	if converter.PtrToVal(cloud.UpdateTime) != db.BaseSecurityGroup.CloudUpdateTime {
+		return true
+	}
+
+	if len(cloud.TagSet) != len(db.BaseSecurityGroup.Tags) {
+		return true
+	}
+
+	for _, tag := range cloud.TagSet {
+		value, ok := db.BaseSecurityGroup.Tags.Get(converter.PtrToVal(tag.Key))
+		if !ok {
+			return true
+		}
+		if value != converter.PtrToVal(tag.Value) {
+			return true
+		}
 	}
 
 	return false

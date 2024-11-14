@@ -3,9 +3,17 @@ import { defineStore } from 'pinia';
 
 import { useAccountStore } from '@/store';
 import { VendorEnum } from '@/common/constant';
+import rollRequest from '@blueking/roll-request';
+import { FilterType } from '@/typings';
 // import { json2Query } from '@/common/util';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
+export interface GetAllSortParams {
+  vendor: string | string[];
+  id: string;
+  filter: FilterType;
+}
+
 // 获取
 const getBusinessApiPath = (type?: string) => {
   const store = useAccountStore();
@@ -27,6 +35,35 @@ export const useResourceStore = defineStore({
     },
     setVendorOfCurrentResource(vendorName: VendorEnum) {
       this.vendorOfCurrentResource = vendorName;
+    },
+    // 更新安全组规则排序
+    updateRulesSort(data: any, type: string, id: string) {
+      return http.put(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(
+          type,
+        )}vendors/${type}/security_groups/${id}/rules/batch/update`,
+        data,
+      );
+    },
+    // 安全组规则排序获取所有规则
+    getAllSort(params: GetAllSortParams) {
+      const { vendor, id, filter } = params;
+      const fetchUrl = `vendors/${vendor}/security_groups/${id}/rules/list`;
+      const list = rollRequest({
+        httpClient: http,
+        pageEnableCountKey: 'count',
+      }).rollReqUseCount(
+        `api/v1/cloud/${getBusinessApiPath()}${fetchUrl}`,
+        {
+          filter,
+        },
+        {
+          limit: 500,
+          countGetter: (res) => res.data.count,
+          listGetter: (res) => res.data.details,
+        },
+      );
+      return list;
     },
     /**
      * @description: 获取资源列表

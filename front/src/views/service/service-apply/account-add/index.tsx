@@ -3,6 +3,7 @@ import { reactive, defineComponent, ref, watch, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router';
 import { ProjectModel, FormItems } from '@/typings';
 import { CLOUD_TYPE, ACCOUNT_TYPE, BUSINESS_TYPE, SITE_TYPE, DESC_ACCOUNT } from '@/constants';
+import { VendorEnum } from '@/common/constant';
 import { useI18n } from 'vue-i18n';
 import MemberSelect from '@/components/MemberSelect';
 import { useAccountStore } from '@/store';
@@ -21,7 +22,7 @@ export default defineComponent({
       id: 0,
       type: 'registration', // 账号类型
       name: '', // 名称
-      vendor: 'tcloud', // 云厂商
+      vendor: VendorEnum.TCLOUD, // 云厂商
       managers: [], // 责任人
       bizIds: [], // 使用业务
       memo: '', // 备注
@@ -169,11 +170,28 @@ export default defineComponent({
           default:
             break;
         }
-        await accountStore.testAccountConnection({
-          vendor: params.vendor,
-          type: projectModel.type,
-          extension: params.extension,
-        });
+
+        // 只有安全审计账号才需要密钥相关参数
+        if (projectModel.type !== 'security_audit') {
+          Reflect.deleteProperty(params.extension, 'cloud_secret_id');
+          Reflect.deleteProperty(params.extension, 'cloud_secret_key');
+        }
+
+        // 安全审计账号类型aws中国站不调用test
+        if (
+          !(
+            projectModel.type === 'security_audit' &&
+            projectModel.vendor === VendorEnum.AWS &&
+            projectModel.site === 'china'
+          )
+        ) {
+          await accountStore.testAccountConnection({
+            vendor: params.vendor,
+            type: projectModel.type,
+            extension: params.extension,
+          });
+        }
+
         await accountStore.applyAccount(params);
         Message({
           message: t('提交申请成功'),
@@ -292,9 +310,7 @@ export default defineComponent({
               component: () => (
                 <Group v-model={projectModel.site}>
                   {SITE_TYPE.map((e) => (
-                    <Radio label={e.value} disabled={e.value === 'china'}>
-                      {t(e.label)}
-                    </Radio>
+                    <Radio label={e.value}>{t(e.label)}</Radio>
                   ))}
                 </Group>
               ),
@@ -611,7 +627,7 @@ export default defineComponent({
 
     watch(
       () => projectModel.type,
-      (val) => {
+      (val, oldValue) => {
         formRef.value?.clearValidate(); // 切换清除表单检验
         if (val === 'registration') {
           // 登记账号
@@ -642,6 +658,16 @@ export default defineComponent({
             }
           });
         }
+
+        // 安全审计账号暂只支持aws
+        if (val === 'security_audit') {
+          projectModel.vendor = VendorEnum.AWS;
+        }
+
+        // 触发一次云厂商变更，因展示字段需要更新
+        if (oldValue !== undefined && val !== oldValue) {
+          changeCloud(projectModel.vendor);
+        }
       },
       { immediate: true },
     );
@@ -667,7 +693,13 @@ export default defineComponent({
         component: () => (
           <RadioGroup v-model={projectModel.vendor}>
             {cloudType.map((item) => (
-              <RadioButton onChange={changeCloud} label={item.id} disabled={!['tcloud', 'aws'].includes(item.id)}>
+              <RadioButton
+                onChange={changeCloud}
+                label={item.id}
+                disabled={
+                  !['tcloud', 'aws'].includes(item.id) ||
+                  (projectModel.type === 'security_audit' && item.id === 'tcloud')
+                }>
                 {item.name}
               </RadioButton>
             ))}
