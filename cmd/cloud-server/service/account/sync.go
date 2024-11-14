@@ -30,6 +30,7 @@ import (
 	cloudaccount "hcm/pkg/api/cloud-server/account"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud/region"
+	"hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -123,20 +124,23 @@ func (a *accountSvc) SyncBizCloudResourceByCond(cts *rest.Contexts) (any, error)
 	}
 
 	// 查询该账号对应的Vendor
-	baseInfo, err := a.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.AccountCloudResType, accountID)
+	bizRelReq := &cloud.AccountBizRelWithAccountListReq{BkBizIDs: []int64{bkBizId}}
+	accountWithBizList, err := a.client.DataService().Global.Account.ListAccountBizRelWithAccount(cts.Kit.Ctx,
+		cts.Kit.Header(), bizRelReq)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-	if baseInfo.Vendor != vendor {
-		return nil, errf.Newf(errf.InvalidParameter, "account not found by vendor: %s", vendor)
-	}
 
-	if baseInfo.BkBizID != bkBizId {
-		return nil, errors.New("account not found by biz")
+	found := false
+	for i := range accountWithBizList {
+		accountWithBiz := accountWithBizList[i]
+		if accountWithBiz.ID != accountID || accountWithBiz.Vendor != vendor {
+			continue
+		}
+		found = true
 	}
-
-	if err := vendor.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	if !found {
+		return nil, errors.New("account not found by biz or vendor")
 	}
 
 	switch vendor {
@@ -210,6 +214,7 @@ func (a *accountSvc) tcloudCondSyncRes(cts *rest.Contexts, accountID string, res
 					"err: %v, account: %s, leaseID: %d, rid: %s",
 					constant.AccountSyncFailed, err, accountID, leaseID, cts.Kit.Rid)
 			}
+
 		}()
 
 		err = syncFunc(cts.Kit, a.client, syncParams)
@@ -217,8 +222,9 @@ func (a *accountSvc) tcloudCondSyncRes(cts *rest.Contexts, accountID string, res
 			logs.Errorf("[%s] failed to perform conditional syncing on resource(%s), account: %s, req: %+v, rid: %s",
 				enumor.TCloud, resName, accountID, req, cts.Kit.Rid)
 		}
-
+		logs.Infof("[%s] succesfully to conditional syncing on resource(%s) for account: %s, req: %+v, rid: %s",
+			enumor.TCloud, resName, accountID, req, cts.Kit.Rid)
 	}(leaseID)
 
-	return nil, err
+	return "started", err
 }
