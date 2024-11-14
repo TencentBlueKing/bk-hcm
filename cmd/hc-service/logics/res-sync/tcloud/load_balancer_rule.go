@@ -62,7 +62,7 @@ func (cli *client) loadBalancerRule(kt *kit.Kit, params *SyncBaseParams, opt *Sy
 	for i, cloudListener := range cloudListeners {
 		lblCloudIDs[i] = cvt.PtrToVal(cloudListener.ListenerId)
 	}
-	dbListeners, err := cli.listListenerFromDB(kt, opt.LBID, params.Region, lblCloudIDs, core.NewDefaultBasePage())
+	dbListeners, err := cli.listListenerFromDB(kt, opt.LBID, lblCloudIDs, core.NewDefaultBasePage())
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func (cli *client) ListenerLayer7Rule(kt *kit.Kit, params *SyncBaseParams, opt *
 	cloudListener typeslb.TCloudListener) (*SyncResult, error) {
 
 	// 对于七层规则逐个监听器进行同步
-	dbRules, err := cli.listL7RuleFromDB(kt, params.Region, cvt.PtrToVal(cloudListener.ListenerId))
+	dbRules, err := cli.listL7RuleFromDB(kt, opt.ListenerID)
 	if err != nil {
 		return nil, err
 	}
@@ -173,24 +173,23 @@ func (cli *client) listL4RuleFromDB(kt *kit.Kit, lbID string) ([]corelb.TCloudLb
 	return ruleResp.Details, nil
 }
 
-func (cli *client) listL7RuleFromDB(kt *kit.Kit, region, cloudLBLID string) ([]corelb.TCloudLbUrlRule, error) {
-	// 查询监听下的七层规则，不需要加上region作为查询条件，否则历史数据会被过滤掉
+func (cli *client) listL7RuleFromDB(kt *kit.Kit, listenerID string) ([]corelb.TCloudLbUrlRule, error) {
 	listReq := &core.ListReq{
 		Filter: tools.ExpressionAnd(
-			tools.RuleEqual("cloud_lbl_id", cloudLBLID),
+			tools.RuleEqual("lbl_id", listenerID),
 			tools.RuleEqual("rule_type", enumor.Layer7RuleType),
-			tools.RuleEqual("region", region),
 		),
 		Page: core.NewDefaultBasePage(),
 	}
 
 	ruleResp, err := cli.dbCli.TCloud.LoadBalancer.ListUrlRule(kt, listReq)
 	if err != nil {
-		logs.Errorf("fail to list rule of lbl(%s) for sync, err: %v, rid: %s", cloudLBLID, err, kt.Rid)
+		logs.Errorf("fail to list rule of lbl(%s) for sync, err: %v, rid: %s", listenerID, err, kt.Rid)
 		return nil, err
 	}
 	return ruleResp.Details, nil
 }
+
 func (cli *client) updateLayer4Rule(kt *kit.Kit, updateMap map[string]typeslb.TCloudListener) error {
 
 	if len(updateMap) == 0 {

@@ -187,7 +187,7 @@ func (cli *client) deleteRemovedListener(kt *kit.Kit, lbID, region string, cloud
 	// 获取本地数据
 	page := core.NewDefaultBasePage()
 	for {
-		dbListeners, err := cli.listListenerFromDB(kt, lbID, region, dbCloudIDs, page)
+		dbListeners, err := cli.listListenerFromDB(kt, lbID, dbCloudIDs, page)
 		if err != nil {
 			logs.Errorf("fail to list removed listener for sync, lbID: %s, err: %v, page:%+v, rid: %s",
 				lbID, err, page, kt.Rid)
@@ -227,7 +227,7 @@ func (cli *client) listener(kt *kit.Kit, params *SyncBaseParams, opt *SyncListen
 		return errors.New("length of cloud_ids mismatches length of cloud_listeners")
 	}
 
-	dbListeners, err := cli.listListenerFromDB(kt, opt.LBID, params.Region, params.CloudIDs, core.NewDefaultBasePage())
+	dbListeners, err := cli.listListenerFromDB(kt, opt.LBID, params.CloudIDs, core.NewDefaultBasePage())
 	if err != nil {
 		return err
 	}
@@ -299,8 +299,7 @@ func (cli *client) listListenerFromCloud(kt *kit.Kit, params *SyncBaseParams, op
 }
 
 // 获取本地监听器列表
-func (cli *client) listListenerFromDB(kt *kit.Kit, lbID, region string, cloudIds []string, page *core.BasePage) (
-	[]corelb.TCloudListener, error) {
+func (cli *client) listListenerFromDB(kt *kit.Kit, lbID string, cloudIds []string, page *core.BasePage) ([]corelb.TCloudListener, error) {
 
 	// 在特定的load_balancer下 监听器理论上不会重复 因此这个查询不增加region的查询条件
 	// 如果加上会导致查不到历史数据
