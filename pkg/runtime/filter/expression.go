@@ -53,6 +53,9 @@ type ExprOption struct {
 	//    is in the RuleFields' key restricts.
 	// 2. all the expression's rule filed should be a sub-set
 	//    of the RuleFields' key.
+	// 3. to support json field wildcard, use single '*' as suffix,
+	//    for instance, 'tag.*' matches fields starts with 'tag.',
+	//    only last segment of a dot-separate field can be '*'.
 	RuleFields map[string]enumor.ColumnType
 	// MaxInLimit defines the max element of the in operator
 	// If not set, then use default value: DefaultMaxInLimit
@@ -483,6 +486,9 @@ func (ar AtomRule) Validate(opt *ExprOption) error {
 // only supports wildcard(single '*') in last part of a dot-separate field
 func (ar AtomRule) getWildcardColumnType(opt *ExprOption) (typ enumor.ColumnType, exist bool) {
 	dotIdx := strings.LastIndexByte(ar.Field, byte('.'))
+	if dotIdx == -1 {
+		return "", false
+	}
 	wildcardField := ar.Field[:dotIdx+1] + "*"
 	typ, exist = opt.RuleFields[wildcardField]
 	return typ, exist
