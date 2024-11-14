@@ -69,10 +69,11 @@ func (l *Layer7ListenerBindRSPreviewExecutor) Execute(kt *kit.Kit, rawData [][]s
 const layer7listenerBindRSExcelTableLen = 10
 
 func (l *Layer7ListenerBindRSPreviewExecutor) convertDataToPreview(rawData [][]string) error {
-	for _, data := range rawData {
+	for i, data := range rawData {
 		data = trimSpaceForSlice(data)
 		if len(data) < layer7listenerBindRSExcelTableLen {
-			return errors.New("invalid data")
+			return fmt.Errorf("line[%d] data length less than %d, got: %d, data: %v",
+				i+excelTableLineNumberOffset, layer7listenerBindRSExcelTableLen, len(data), data)
 		}
 		detail := &Layer7ListenerBindRSDetail{
 			ValidateResult: make([]string, 0),

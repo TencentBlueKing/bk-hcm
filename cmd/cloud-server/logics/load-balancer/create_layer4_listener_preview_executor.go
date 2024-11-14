@@ -69,13 +69,18 @@ func (c *CreateLayer4ListenerPreviewExecutor) Execute(kt *kit.Kit, rawData [][]s
 	return c.details, nil
 }
 
-const createLayer4ListenerExcelTableLen = 7
+const (
+	createLayer4ListenerExcelTableLen = 7
+	// excel表格行号偏移量, clb数据从第四行开始
+	excelTableLineNumberOffset = 4
+)
 
 func (c *CreateLayer4ListenerPreviewExecutor) convertDataToPreview(rawData [][]string) error {
-	for _, data := range rawData {
+	for i, data := range rawData {
 		data = trimSpaceForSlice(data)
 		if len(data) < createLayer4ListenerExcelTableLen {
-			return fmt.Errorf("invalid data")
+			return fmt.Errorf("line[%d] data length less than %d, got: %d, data: %v",
+				i+excelTableLineNumberOffset, createLayer4ListenerExcelTableLen, len(data), data)
 		}
 
 		detail := &CreateLayer4ListenerDetail{

@@ -70,10 +70,16 @@ func (c *CreateLayer7ListenerPreviewExecutor) Execute(kt *kit.Kit, rawData [][]s
 
 var createLayer7ListenerDetailRefType = reflect.TypeOf(CreateLayer7ListenerDetail{})
 
-func (c *CreateLayer7ListenerPreviewExecutor) convertDataToPreview(rawData [][]string) error {
-	for _, data := range rawData {
-		data = trimSpaceForSlice(data)
+// createLayer7ListenerExcelTableLen excel表格最小应填的列数, clbIP, clbCloudID, protocol, listenerPorts
+const createLayer7ListenerExcelTableLen = 4
 
+func (c *CreateLayer7ListenerPreviewExecutor) convertDataToPreview(rawData [][]string) error {
+	for i, data := range rawData {
+		data = trimSpaceForSlice(data)
+		if len(data) < createLayer7ListenerExcelTableLen {
+			return fmt.Errorf("line[%d] data length less than %d, got: %d, data: %v",
+				i+excelTableLineNumberOffset, createLayer7ListenerExcelTableLen, len(data), data)
+		}
 		detail := &CreateLayer7ListenerDetail{
 			ValidateResult: make([]string, 0),
 		}

@@ -71,9 +71,10 @@ func (c *CreateUrlRulePreviewExecutor) Execute(kt *kit.Kit, rawData [][]string) 
 const createURLRuleExcelTableLen = 10
 
 func (c *CreateUrlRulePreviewExecutor) convertDataToPreview(rawData [][]string) error {
-	for _, data := range rawData {
+	for i, data := range rawData {
 		if len(data) < createURLRuleExcelTableLen {
-			return fmt.Errorf("invalid data")
+			return fmt.Errorf("line[%d] data length less than %d, got: %d, data: %v",
+				i+excelTableLineNumberOffset, createURLRuleExcelTableLen, len(data), data)
 		}
 
 		data = trimSpaceForSlice(data)
