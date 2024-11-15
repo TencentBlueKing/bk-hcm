@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"hcm/cmd/cloud-server/logics/account"
 	"hcm/cmd/cloud-server/service/sync/lock"
@@ -166,13 +167,14 @@ func (a *accountSvc) tcloudCondSyncRes(cts *rest.Contexts, accountID string, res
 		}
 		return nil, err
 	}
-
+	logs.Infof("lock account sync key: %s, rid: %s", lock.Key(accountID), cts.Kit.Rid)
 	syncParams := &tcloud.CondSyncParams{
 		AccountID:  accountID,
 		Regions:    req.Regions,
 		CloudIDs:   req.CloudIDs,
 		TagFilters: req.TagFilters,
 	}
+	startAt := time.Now()
 	go func(leaseID etcd3.LeaseID) {
 		defer func() {
 			if err := lock.Manager.UnLock(leaseID); err != nil {
@@ -185,16 +187,18 @@ func (a *accountSvc) tcloudCondSyncRes(cts *rest.Contexts, accountID string, res
 					"err: %v, account: %s, leaseID: %d, rid: %s",
 					constant.AccountSyncFailed, err, accountID, leaseID, cts.Kit.Rid)
 			}
+			logs.Infof("unlock account sync key: %s, rid: %s", lock.Key(accountID), cts.Kit.Rid)
 
 		}()
 
 		err = syncFunc(cts.Kit, a.client, syncParams)
 		if err != nil {
-			logs.Errorf("[%s] conditional sync failed on resource(%s), err: %v, account: %s, req: %+v, rid: %s",
-				err, enumor.TCloud, resType, accountID, req, cts.Kit.Rid)
+			logs.Errorf("[%s] conditional sync failed on resource(%s), err: %v, account: %s, req: %+v, "+
+				"cost: %s, rid: %s", err, enumor.TCloud, resType, accountID, req, time.Since(startAt), cts.Kit.Rid)
+			return
 		}
-		logs.Infof("[%s] conditional sync succeed on resource(%s), account: %s, req: %+v, rid: %s",
-			enumor.TCloud, resType, accountID, req, cts.Kit.Rid)
+		logs.Infof("[%s] conditional sync succeed on resource(%s), account: %s, req: %+v, cost: %s, rid: %s",
+			enumor.TCloud, resType, accountID, req, time.Since(startAt), cts.Kit.Rid)
 	}(leaseID)
 
 	return "started", nil
