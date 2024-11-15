@@ -239,7 +239,6 @@ export default defineComponent({
           vendor,
           regions: [region],
           resource: 'load_balancer',
-          type: 'business',
         })
         .then(() => {
           Message({ theme: 'success', message: t('已提交同步任务，请等待同步结果') });

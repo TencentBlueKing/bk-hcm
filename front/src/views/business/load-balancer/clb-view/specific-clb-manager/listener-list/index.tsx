@@ -179,7 +179,6 @@ export default defineComponent({
             cloud_ids: [cloud_id],
             regions: [region],
             resource: 'load_balancer',
-            type: 'resource',
           })
           .then(() => {
             Message({ theme: 'success', message: t('已提交同步任务，请等待同步结果') });
