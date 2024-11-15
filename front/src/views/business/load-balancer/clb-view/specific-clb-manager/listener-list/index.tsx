@@ -6,7 +6,7 @@ import { Plus } from 'bkui-vue/lib/icon';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
 import Confirm from '@/components/confirm';
 // import stores
-import { useBusinessStore } from '@/store';
+import { useBusinessStore, useLoadBalancerStore, useResourceStore } from '@/store';
 // import custom hooks
 import { useTable } from '@/hooks/useTable/useTable';
 import { useI18n } from 'vue-i18n';
@@ -30,6 +30,7 @@ export default defineComponent({
     const { t } = useI18n();
     const { whereAmI } = useWhereAmI();
     const { selections, handleSelectionChange, resetSelections } = useSelection();
+    const loadBalancerStore = useLoadBalancerStore();
     let timer: string | number | NodeJS.Timeout;
     let counter = 0; // 初始化计数器
     const isRowSelectEnable = ({ row, isCheckAll }: DoublePlainObject) => {
@@ -45,6 +46,7 @@ export default defineComponent({
 
     // use stores
     const businessStore = useBusinessStore();
+    const resourceStore = useResourceStore();
 
     // listener - table
     const { columns, settings } = useColumns('listener');
@@ -164,6 +166,23 @@ export default defineComponent({
         });
       });
     };
+    // 拉取负载均衡
+    const handlePullResource = () => {
+      const { account_id, vendor, cloud_id, region } = loadBalancerStore.currentSelectedTreeNode;
+      Confirm(t('同步单个负载均衡'), t('从云上同步该负载均衡数据，包括负载均衡基本信息，监听器等'), () => {
+        resourceStore
+          .syncResource({
+            account_id,
+            vendor,
+            cloud_ids: [cloud_id],
+            regions: [region],
+            resource: 'load_balancer',
+          })
+          .then(() => {
+            Message({ theme: 'success', message: t('已提交同步任务，请等待同步结果') });
+          });
+      });
+    };
 
     // 批量删除监听器
     const {
@@ -189,6 +208,9 @@ export default defineComponent({
                 </Button>
                 <Button disabled={selections.value.length === 0} onClick={handleBatchDeleteListener}>
                   {t('批量删除')}
+                </Button>
+                <Button onClick={handlePullResource} class={'mr8'}>
+                  {t('同步刷新')}
                 </Button>
               </>
             ),
