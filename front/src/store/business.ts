@@ -18,6 +18,16 @@ const getBusinessApiPath = () => {
   return '';
 };
 
+export interface PullResourceParams {
+  type: 'business' | 'resource'; // business业务下 resource单个资源下
+  vendor: string | string[];
+  account_id: string;
+  resource: 'load_balancer';
+  regions: string[];
+  cloud_ids?: string[];
+  tag_filters?: string[];
+}
+
 export const useBusinessStore = defineStore({
   id: 'businessStore',
   state: () => ({}),
@@ -554,6 +564,17 @@ export const useBusinessStore = defineStore({
     // 操作主机相关
     cvmOperate(type: string, data: { ids: string[] }) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}cvms/batch/${type}`, data);
+    },
+    // 同步拉取资源
+    pullResource(params: PullResourceParams) {
+      const { vendor, account_id, resource, regions, cloud_ids, tag_filters, type } = params;
+      const bizUrl = type === 'business' ? `${getBusinessApiPath()}` : '';
+      const url = `/api/v1/cloud/${bizUrl}vendors/${vendor}/accounts/${account_id}/resources/${resource}/sync_by_cond`;
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}${url}`, {
+        regions,
+        cloud_ids,
+        tag_filters,
+      });
     },
   },
 });

@@ -1,7 +1,7 @@
-import { defineComponent } from 'vue';
+import { defineComponent, reactive, ref, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 // import components
-import { Button, Message } from 'bkui-vue';
+import { Button, Message, Form, Dialog } from 'bkui-vue';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
 // import hooks
@@ -22,6 +22,17 @@ import './index.scss';
 import Confirm from '@/components/confirm';
 import { useVerify } from '@/hooks';
 import { useGlobalPermissionDialog } from '@/store/useGlobalPermissionDialog';
+
+import AccountSelector from '@/components/account-selector/index-new.vue';
+import RegionSelector from '@/views/service/service-apply/components/common/region-selector';
+import { accountFilter } from './account-filter.plugin';
+
+export interface syncResourceForm {
+  account_id: string;
+  vendor: string;
+  region: string;
+  isShow: boolean;
+}
 export default defineComponent({
   name: 'AllClbsManager',
   setup() {
@@ -34,6 +45,8 @@ export default defineComponent({
     const { selections, handleSelectionChange, resetSelections } = useSelection();
     const { authVerifyData, handleAuth } = useVerify();
     const globalPermissionDialogStore = useGlobalPermissionDialog();
+    const formRef = ref(null);
+    const { FormItem } = Form;
 
     const isRowSelectEnable = ({ row, isCheckAll }: DoublePlainObject) => {
       if (isCheckAll) return true;
@@ -203,6 +216,37 @@ export default defineComponent({
       getListData,
     );
 
+    const formData = reactive<syncResourceForm>({
+      account_id: '',
+      vendor: '',
+      region: '',
+      isShow: false,
+    });
+
+    const handleSetFormDataInit = () => {
+      formData.account_id = '';
+      formData.vendor = '';
+      formData.region = '';
+      formData.isShow = false;
+      nextTick(() => formRef.value?.clearValidate());
+    };
+    const handleConfirm = async () => {
+      const { account_id, vendor, region } = formData;
+      await formRef.value?.validate();
+      businessStore
+        .pullResource({
+          account_id,
+          vendor,
+          regions: [region],
+          resource: 'load_balancer',
+          type: 'business',
+        })
+        .then(() => {
+          Message({ theme: 'success', message: t('已提交同步任务，请等待同步结果') });
+          handleSetFormDataInit();
+        });
+    };
+
     return () => (
       <div class='common-card-wrap'>
         {/* 负载均衡list */}
@@ -225,6 +269,9 @@ export default defineComponent({
                 </Button>
                 <Button class='mw88' onClick={handleClickBatchDelete} disabled={selections.value.length === 0}>
                   批量删除
+                </Button>
+                <Button class='mw88 mr8' onClick={() => (formData.isShow = true)}>
+                  {t('同步负载均衡')}
                 </Button>
               </>
             ),
@@ -260,6 +307,28 @@ export default defineComponent({
             ),
           }}
         </BatchOperationDialog>
+
+        {/* 拉取资源 */}
+        <Dialog
+          isShow={formData.isShow}
+          title={t('同步负载均衡列表')}
+          quick-close={false}
+          onConfirm={handleConfirm}
+          onClosed={handleSetFormDataInit}>
+          <Form form-type='vertical' ref={formRef} model={formData}>
+            <FormItem label={t('选择云账号')} required property='account_id'>
+              <AccountSelector
+                v-model={formData.account_id}
+                filter={accountFilter}
+                onChange={(resource) => (formData.vendor = resource.vendor)}
+              />
+            </FormItem>
+            <FormItem label={t('云地域')} required property='region'>
+              <RegionSelector v-model={formData.region} vendor={formData.vendor} account-id={formData.account_id} />
+            </FormItem>
+            <div>{t('从云上同步该业务的所有负载均衡数据，包括负载均衡，监听器等')}</div>
+          </Form>
+        </Dialog>
       </div>
     );
   },
