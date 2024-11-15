@@ -118,6 +118,7 @@ func (svc *lbSvc) ListLoadBalancerRaw(cts *rest.Contexts) (any, error) {
 }
 
 func convTableToBaseLB(one *tablelb.LoadBalancerTable) *corelb.BaseLoadBalancer {
+
 	return &corelb.BaseLoadBalancer{
 		ID:                   one.ID,
 		CloudID:              one.CloudID,
@@ -143,6 +144,7 @@ func convTableToBaseLB(one *tablelb.LoadBalancerTable) *corelb.BaseLoadBalancer 
 		CloudCreatedTime:     one.CloudCreatedTime,
 		CloudStatusTime:      one.CloudStatusTime,
 		CloudExpiredTime:     one.CloudExpiredTime,
+		Tags:                 core.TagMap(one.Tags),
 		Memo:                 one.Memo,
 		Revision: &core.Revision{
 			Creator:   one.Creator,
@@ -1143,7 +1145,8 @@ func (svc *lbSvc) listBizListenerByLbIDs(kt *kit.Kit, req *protocloud.ListListen
 	for {
 		loopLblList, err := svc.dao.LoadBalancerListener().List(kt, opt)
 		if err != nil {
-			logs.Errorf("list biz listener by clbIDs failed, err: %v, req: %+v, rid: %s", err, cvt.PtrToVal(req), kt.Rid)
+			logs.Errorf("list biz listener by clbIDs failed, err: %v, req: %+v, rid: %s",
+				err, cvt.PtrToVal(req), kt.Rid)
 			return nil, nil, nil, fmt.Errorf("list biz listener by clbIDs failed, err: %v", err)
 		}
 

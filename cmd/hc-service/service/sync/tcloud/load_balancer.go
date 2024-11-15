@@ -66,8 +66,9 @@ func (hd *lbHandler) Next(kt *kit.Kit) ([]typeclb.TCloudClb, error) {
 			Page: &typecore.TCloudPage{
 				Limit: typecore.TCloudQueryLimit,
 			},
-			OrderType: cvt.ValToPtr(typeclb.TCloudCLBOrderAscending),
-			OrderBy:   cvt.ValToPtr(typeclb.TCloudOrderByCreateTime),
+			OrderType:  cvt.ValToPtr(typeclb.TCloudCLBOrderAscending),
+			OrderBy:    cvt.ValToPtr(typeclb.TCloudOrderByCreateTime),
+			TagFilters: hd.request.TagFilters,
 		}
 		lbResult, err := hd.syncCli.CloudCli().ListLoadBalancer(kt, listOpt)
 		if err != nil {
@@ -90,8 +91,9 @@ func (hd *lbHandler) Next(kt *kit.Kit) ([]typeclb.TCloudClb, error) {
 					Offset: offset,
 					Limit:  typecore.TCloudQueryLimit,
 				},
-				OrderType: cvt.ValToPtr(typeclb.TCloudCLBOrderAscending),
-				OrderBy:   cvt.ValToPtr(typeclb.TCloudOrderByCreateTime),
+				OrderType:  cvt.ValToPtr(typeclb.TCloudCLBOrderAscending),
+				OrderBy:    cvt.ValToPtr(typeclb.TCloudOrderByCreateTime),
+				TagFilters: hd.request.TagFilters,
 			}
 			lbResult, err := hd.syncCli.CloudCli().ListLoadBalancer(kt, listOpt)
 			if err != nil {
@@ -122,9 +124,10 @@ func (hd *lbHandler) Next(kt *kit.Kit) ([]typeclb.TCloudClb, error) {
 func (hd *lbHandler) Sync(kt *kit.Kit, instances []typeclb.TCloudClb) error {
 
 	params := &tcloud.SyncBaseParams{
-		AccountID: hd.request.AccountID,
-		Region:    hd.request.Region,
-		CloudIDs:  slice.Map(instances, typeclb.TCloudClb.GetCloudID),
+		AccountID:  hd.request.AccountID,
+		Region:     hd.request.Region,
+		CloudIDs:   slice.Map(instances, typeclb.TCloudClb.GetCloudID),
+		TagFilters: hd.request.TagFilters,
 	}
 	opt := &tcloud.SyncLBOption{
 		PrefetchedLB: instances,
@@ -141,9 +144,10 @@ func (hd *lbHandler) Sync(kt *kit.Kit, instances []typeclb.TCloudClb) error {
 func (hd *lbHandler) RemoveDeleteFromCloud(kt *kit.Kit) error {
 
 	params := &tcloud.SyncRemovedParams{
-		AccountID: hd.request.AccountID,
-		Region:    hd.request.Region,
-		CloudIDs:  hd.request.CloudIDs,
+		AccountID:  hd.request.AccountID,
+		Region:     hd.request.Region,
+		CloudIDs:   hd.request.CloudIDs,
+		TagFilters: hd.request.TagFilters,
 	}
 	if err := hd.syncCli.RemoveLoadBalancerDeleteFromCloud(kt, params); err != nil {
 		logs.Errorf("remove load balancer delete from cloud failed, err: %v, accountID: %s, region: %s, rid: %s", err,
@@ -158,9 +162,10 @@ func (hd *lbHandler) RemoveDeleteFromCloud(kt *kit.Kit) error {
 func (hd *lbHandler) RemoveDeletedFromCloud(kt *kit.Kit, allCloudIDMap map[string]struct{}) error {
 
 	params := &tcloud.SyncRemovedParams{
-		AccountID: hd.request.AccountID,
-		Region:    hd.request.Region,
-		CloudIDs:  hd.request.CloudIDs,
+		AccountID:  hd.request.AccountID,
+		Region:     hd.request.Region,
+		CloudIDs:   hd.request.CloudIDs,
+		TagFilters: hd.request.TagFilters,
 	}
 	err := hd.syncCli.RemoveLoadBalancerDeleteFromCloudV2(kt, params, allCloudIDMap)
 	if err != nil {

@@ -170,7 +170,7 @@ func (dao LoadBalancerDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
 		return err
 	}
 
-	opts := utils.NewFieldOptions().AddBlankedFields("memo").AddIgnoredFields(types.DefaultIgnoredFields...)
+	opts := utils.NewFieldOptions().AddBlankedFields("memo", "tags").AddIgnoredFields(types.DefaultIgnoredFields...)
 	setExpr, toUpdate, err := utils.RearrangeSQLDataWithOption(model, opts)
 	if err != nil {
 		return fmt.Errorf("prepare parsed sql set filter expr failed, err: %v", err)
@@ -194,7 +194,10 @@ func (dao LoadBalancerDao) List(kt *kit.Kit, opt *types.ListOption) (*typeslb.Li
 		return nil, errf.New(errf.InvalidParameter, "list options is nil")
 	}
 
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(tablelb.LoadBalancerColumns.ColumnTypes())),
+	columnTypes := tablelb.LoadBalancerColumns.ColumnTypes()
+	columnTypes["tags.*"] = enumor.String
+
+	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
 		core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}

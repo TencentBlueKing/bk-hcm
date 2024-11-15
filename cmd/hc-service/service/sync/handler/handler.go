@@ -21,7 +21,9 @@
 package handler
 
 import (
+	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"hcm/cmd/hc-service/logics/res-sync/common"
@@ -168,9 +170,11 @@ func ResourceSyncV2[T common.CloudResType](cts *rest.Contexts, handler HandlerV2
 	syncWg := &sync.WaitGroup{}
 	syncInstCh := make(chan []T, syncQueueSize)
 	concurrent := int(max(handler.SyncConcurrent(), 1))
+	var successCnt, failedCnt = &atomic.Uint64{}, &atomic.Uint64{}
+
 	for i := 0; i < concurrent; i++ {
 		syncWg.Add(1)
-		go syncConsumer(kt, handler, i, syncWg, syncInstCh)
+		go syncConsumer(kt, handler, i, syncWg, syncInstCh, successCnt, failedCnt)
 	}
 	left := total
 	for i := range allInstanceList {
@@ -183,15 +187,19 @@ func ResourceSyncV2[T common.CloudResType](cts *rest.Contexts, handler HandlerV2
 	}
 	close(syncInstCh)
 	syncWg.Wait()
-	logs.Infof("%s sync done, cost: %s, rid: %s", handler.Describe(), time.Since(start), kt.Rid)
+	success, failed := successCnt.Load(), failedCnt.Load()
+	logs.Infof("%s sync done, total/success/failed: %d/%d/%d, cost: %s, rid: %s",
+		handler.Describe(), total, success, failed, time.Since(start), kt.Rid)
+	if failed != 0 {
+		return fmt.Errorf("%d load balancer sync failed", failed)
+	}
 	return nil
 }
 
 func syncConsumer[T common.CloudResType](kt *kit.Kit, handler HandlerV2[T], idx int,
-	wg *sync.WaitGroup, syncInstCh chan []T) {
+	wg *sync.WaitGroup, syncInstCh chan []T, globalSuccess, globalFailed *atomic.Uint64) {
 
 	var total, failed int
-
 	defer func() {
 		wg.Done()
 		logs.Infof("[sync_consumer] %s %d exit, synced total(failed): %d(%d), rid: %s",
@@ -203,13 +211,17 @@ func syncConsumer[T common.CloudResType](kt *kit.Kit, handler HandlerV2[T], idx 
 			if !ok {
 				return
 			}
+
 			logs.Infof("[sync_consumer] %s %d got: %d, rid: %s", handler.Describe(), idx, len(instanceList), kt.Rid)
 			for _, instances := range slice.Split(instanceList, constant.CloudResourceSyncMaxLimit) {
+				total += len(instances)
 				if err := handler.Sync(kt, instances); err != nil {
 					logs.Errorf("%s handler to sync failed, err: %v, rid: %s", handler.Describe(), err, kt.Rid)
 					failed += len(instances)
+					globalFailed.Add(uint64(len(instances)))
+					continue
 				}
-				total += len(instances)
+				globalSuccess.Add(uint64(len(instances)))
 			}
 		case <-kt.Ctx.Done():
 			return

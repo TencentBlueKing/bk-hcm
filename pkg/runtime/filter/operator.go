@@ -74,6 +74,10 @@ const (
 	Or LogicOperator = "or"
 	// SqlPlaceholder is sql placeholder.
 	SqlPlaceholder = ":"
+	// JSONFieldSeparator is the separator of json field
+	JSONFieldSeparator = "."
+	// WildcardPlaceholder is the wildcard char in rule field
+	WildcardPlaceholder = "*"
 )
 
 // LogicOperator defines the logic operator
@@ -742,7 +746,7 @@ func (op JSONEqualOp) SQLExprAndValue(field string, value interface{}) (string, 
 		return "", nil, errors.New("invalid value field")
 	}
 
-	placeholder := fieldPlaceholderName(strings.ReplaceAll(field, ".", ""))
+	placeholder := fieldPlaceholderName(strings.ReplaceAll(field, JSONFieldSeparator, ""))
 	return fmt.Sprintf(`%s = %s%s`, jsonFiledSqlFormat(field), SqlPlaceholder, placeholder),
 		map[string]interface{}{placeholder: value}, nil
 }
@@ -773,7 +777,7 @@ func (op JSONNotEqualOp) SQLExprAndValue(field string, value interface{}) (strin
 		return "", nil, errors.New("invalid value field")
 	}
 
-	placeholder := fieldPlaceholderName(strings.ReplaceAll(field, ".", ""))
+	placeholder := fieldPlaceholderName(strings.ReplaceAll(field, JSONFieldSeparator, ""))
 	return fmt.Sprintf(`%s != %s%s`, jsonFiledSqlFormat(field), SqlPlaceholder, placeholder),
 		map[string]interface{}{placeholder: value}, nil
 }
@@ -836,7 +840,7 @@ func (op JSONInOp) SQLExprAndValue(field string, value interface{}) (string, map
 		return "", nil, errors.New("in operator's value should be an array")
 	}
 
-	placeholder := fieldPlaceholderName(strings.ReplaceAll(field, ".", ""))
+	placeholder := fieldPlaceholderName(strings.ReplaceAll(field, JSONFieldSeparator, ""))
 	return fmt.Sprintf(`%s IN (%s%s)`, jsonFiledSqlFormat(field), SqlPlaceholder, placeholder),
 		map[string]interface{}{placeholder: value}, nil
 }
@@ -845,11 +849,11 @@ func (op JSONInOp) SQLExprAndValue(field string, value interface{}) (string, map
 // 1. 会将用户传入的 json 字段名由 "extension.vpc_id" 转为 `extension->>"$.vpc_id"`。
 // 2. 如果规则中不存在'.'，则不进行转换。
 func jsonFiledSqlFormat(field string) string {
-	if !strings.ContainsAny(field, ".") {
+	if !strings.ContainsAny(field, JSONFieldSeparator) {
 		return field
 	}
 
-	index := strings.Index(field, ".")
+	index := strings.Index(field, JSONFieldSeparator)
 	return fmt.Sprintf(`%s->>"$%s"`, field[0:index], field[index:])
 }
 
@@ -879,7 +883,7 @@ func (op JSONContainsOp) SQLExprAndValue(field string, value interface{}) (strin
 		return "", nil, errors.New("invalid value field")
 	}
 
-	placeholder := fieldPlaceholderName(strings.ReplaceAll(field, ".", ""))
+	placeholder := fieldPlaceholderName(strings.ReplaceAll(field, JSONFieldSeparator, ""))
 	return fmt.Sprintf("JSON_CONTAINS(%s, JSON_ARRAY(%s%s))", jsonFiledSqlFormat(field), SqlPlaceholder, placeholder),
 		map[string]interface{}{placeholder: value}, nil
 }
@@ -945,7 +949,7 @@ func (op JSONOverlapsOp) SQLExprAndValue(field string, value interface{}) (strin
 	arrayFunc := "JSON_ARRAY("
 	valueMap := make(map[string]interface{})
 	valueOf := reflect.ValueOf(value)
-	placeholder := fieldPlaceholderName(strings.ReplaceAll(field, ".", ""))
+	placeholder := fieldPlaceholderName(strings.ReplaceAll(field, JSONFieldSeparator, ""))
 	for i := 0; i < valueOf.Len(); i++ {
 		oneFieldName := fmt.Sprintf("%s_%d", placeholder, i)
 
@@ -1054,7 +1058,7 @@ func (op JSONLengthOp) SQLExprAndValue(field string, value interface{}) (string,
 		return "", nil, errors.New("invalid value field, value should number")
 	}
 
-	placeholder := fieldPlaceholderName(strings.ReplaceAll(field, ".", ""))
+	placeholder := fieldPlaceholderName(strings.ReplaceAll(field, JSONFieldSeparator, ""))
 	return fmt.Sprintf(`JSON_LENGTH(%s) = %s%s`, jsonFiledSqlFormat(field), SqlPlaceholder, placeholder),
 		map[string]interface{}{
 			placeholder: value,

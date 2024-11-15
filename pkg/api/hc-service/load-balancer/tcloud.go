@@ -64,6 +64,8 @@ type TCloudLoadBalancerCreateReq struct {
 	Memo         string  `json:"memo" validate:"omitempty"`
 
 	InternetChargeType *typelb.TCloudLoadBalancerNetworkChargeType `json:"internet_charge_type" validate:"omitempty"`
+
+	Tags []apicore.TagPair `json:"tags,omitempty"`
 }
 
 // Validate request.

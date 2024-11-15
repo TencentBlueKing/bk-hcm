@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	"hcm/pkg/adaptor/types/core"
+	apicore "hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
@@ -145,6 +146,8 @@ type TCloudListOption struct {
 
 	OrderBy   *TCloudClbListOrderByField `json:"order_by"`
 	OrderType *int64                     `json:"order_type"`
+
+	TagFilters apicore.MultiValueTagMap `json:"tag_filters"`
 }
 
 // Validate tcloud clb list option.
@@ -193,6 +196,18 @@ func (clb TCloudClb) GetIPVersion() enumor.IPAddressType {
 // IsTraditionalClb 是否是传统型CLB
 func (clb TCloudClb) IsTraditionalClb() bool {
 	return clb.LoadBalancer != nil && cvt.PtrToVal(clb.Forward) == uint64(corelb.TCloudTraditionalClbType)
+}
+
+// GetTagMap ...
+func (clb TCloudClb) GetTagMap() apicore.TagMap {
+	if len(clb.Tags) == 0 {
+		return nil
+	}
+	tagMap := make(apicore.TagMap, len(clb.Tags))
+	for _, tag := range clb.Tags {
+		tagMap.Set(cvt.PtrToVal(tag.TagKey), cvt.PtrToVal(tag.TagValue))
+	}
+	return tagMap
 }
 
 // -------------------------- List Listeners--------------------------
@@ -277,7 +292,7 @@ type TCloudCreateClbOption struct {
 	MasterZoneID             *string                           `json:"master_zone_id" validate:"omitempty"`
 	ZoneID                   *string                           `json:"zone_id" validate:"omitempty"`
 	VipIsp                   *string                           `json:"vip_isp" validate:"omitempty"`
-	Tags                     []*tclb.TagInfo                   `json:"tags" validate:"omitempty"`
+	Tags                     []apicore.TagPair                 `json:"tags" validate:"omitempty"`
 	Vip                      *string                           `json:"vip" validate:"omitempty"`
 	BandwidthPackageID       *string                           `json:"bandwidth_package_id" validate:"omitempty"`
 	ExclusiveCluster         *tclb.ExclusiveCluster            `json:"exclusive_cluster" validate:"omitempty"`

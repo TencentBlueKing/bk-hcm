@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/api/core"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -161,16 +162,16 @@ func (a *AccountClient) ListWithExtension(ctx context.Context, h http.Header, re
 }
 
 // ListAccountBizRelWithAccount ...
-func (a *AccountClient) ListAccountBizRelWithAccount(ctx context.Context, h http.Header,
-	request *protocloud.AccountBizRelWithAccountListReq) ([]*protocloud.AccountBizRelWithAccount, error) {
+func (a *AccountClient) ListAccountBizRelWithAccount(kt *kit.Kit, request *protocloud.AccountBizRelWithAccountListReq) (
+	[]*protocloud.AccountBizRelWithAccount, error) {
 
 	resp := new(protocloud.AccountBizRelWithAccountListResp)
 
 	err := a.client.Post().
-		WithContext(ctx).
+		WithContext(kt.Ctx).
 		Body(request).
 		SubResourcef("/account_biz_rels/with/accounts/list").
-		WithHeaders(h).
+		WithHeaders(kt.Header()).
 		Do().
 		Into(resp)
 	if err != nil {

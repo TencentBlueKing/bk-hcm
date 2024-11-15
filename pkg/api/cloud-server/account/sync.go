@@ -1,7 +1,7 @@
 /*
  * TencentBlueKing is pleased to support the open source community by making
  * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
- * Copyright (C) 2022 THL A29 Limited,
+ * Copyright (C) 2024 THL A29 Limited,
  * a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,31 +20,19 @@
 package account
 
 import (
-	protocloud "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/criteria/errf"
-	"hcm/pkg/iam/meta"
-	"hcm/pkg/rest"
-	"hcm/pkg/tools/hooks/handler"
+	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/validator"
 )
 
-// ListByBkBizID ...
-func (a *accountSvc) ListByBkBizID(cts *rest.Contexts) (interface{}, error) {
-	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
-	if err != nil {
-		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
-	}
-	accountType := cts.Request.QueryParameter("account_type")
+// TCloudResCondSyncReq sync condition
+type TCloudResCondSyncReq struct {
+	Regions  []string `json:"regions,omitempty" validate:"min=1,max=5"`
+	CloudIDs []string `json:"cloud_ids,omitempty" validate:"max=20"`
 
-	// validate biz and authorize
-	err = handler.BizOperateAuth(cts, &handler.ValidWithAuthOption{Authorizer: a.authorizer, ResType: meta.Biz,
-		Action: meta.Find})
-	if err != nil {
-		return nil, err
-	}
+	TagFilters core.MultiValueTagMap `json:"tag_filters,omitempty" validate:"max=5"`
+}
 
-	listReq := &protocloud.AccountBizRelWithAccountListReq{
-		BkBizIDs:    []int64{bkBizID},
-		AccountType: accountType,
-	}
-	return a.client.DataService().Global.Account.ListAccountBizRelWithAccount(cts.Kit, listReq)
+// Validate ...
+func (r *TCloudResCondSyncReq) Validate() error {
+	return validator.Validate.Struct(r)
 }

@@ -67,6 +67,13 @@ func (t *TCloudImpl) ListLoadBalancer(kt *kit.Kit, opt *typelb.TCloudListOption)
 	req.OrderBy = (*string)(opt.OrderBy)
 	req.OrderType = opt.OrderType
 
+	for k, v := range opt.TagFilters {
+		req.Filters = append(req.Filters, &clb.Filter{
+			Name:   getTagFilterKey(k),
+			Values: cvt.SliceToPtr(v),
+		})
+	}
+
 	resp, err := NetworkErrRetry(client.DescribeLoadBalancersWithContext, kt, req)
 	if err != nil {
 		logs.Errorf("fail to describe lodabalancer from tcloud, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
@@ -287,8 +294,14 @@ func (t *TCloudImpl) formatCreateClbRequest(opt *typelb.TCloudCreateClbOption) *
 	req.MasterZoneId = opt.MasterZoneID
 
 	req.BandwidthPackageId = opt.BandwidthPackageID
-	req.Tags = opt.Tags
 	req.SnatIps = opt.SnatIps
+
+	for _, tag := range opt.Tags {
+		req.Tags = append(req.Tags, &clb.TagInfo{
+			TagKey:   cvt.ValToPtr(tag.Key),
+			TagValue: cvt.ValToPtr(tag.Value),
+		})
+	}
 
 	// 使用默认ISP时传递空即可
 	ispVal := cvt.PtrToVal(opt.VipIsp)
