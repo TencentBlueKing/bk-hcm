@@ -54,7 +54,6 @@ func GetCondSyncFunc(res enumor.CloudResourceType) (syncFunc CondSyncFunc, ok bo
 func CondSyncLoadBalancer(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error {
 	syncReq := sync.TCloudSyncReq{
 		AccountID:  params.AccountID,
-		Region:     "",
 		CloudIDs:   params.CloudIDs,
 		TagFilters: params.TagFilters,
 	}

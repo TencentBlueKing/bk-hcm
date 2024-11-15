@@ -211,16 +211,17 @@ func syncConsumer[T common.CloudResType](kt *kit.Kit, handler HandlerV2[T], idx 
 			if !ok {
 				return
 			}
+
 			logs.Infof("[sync_consumer] %s %d got: %d, rid: %s", handler.Describe(), idx, len(instanceList), kt.Rid)
 			for _, instances := range slice.Split(instanceList, constant.CloudResourceSyncMaxLimit) {
+				total += len(instances)
 				if err := handler.Sync(kt, instances); err != nil {
 					logs.Errorf("%s handler to sync failed, err: %v, rid: %s", handler.Describe(), err, kt.Rid)
 					failed += len(instances)
 					globalFailed.Add(uint64(len(instances)))
-				} else {
-					globalSuccess.Add(uint64(len(instances)))
+					continue
 				}
-				total += len(instances)
+				globalSuccess.Add(uint64(len(instances)))
 			}
 		case <-kt.Ctx.Done():
 			return

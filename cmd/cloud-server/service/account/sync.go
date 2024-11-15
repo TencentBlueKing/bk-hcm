@@ -54,8 +54,7 @@ func (a *accountSvc) SyncCloudResource(cts *rest.Contexts) (interface{}, error) 
 	}
 
 	// 查询该账号对应的Vendor
-	baseInfo, err := a.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
-		enumor.AccountCloudResType, accountID)
+	baseInfo, err := a.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.AccountCloudResType, accountID)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
@@ -125,19 +124,19 @@ func (a *accountSvc) SyncBizCloudResourceByCond(cts *rest.Contexts) (any, error)
 
 	// 查询该账号对应的Vendor
 	bizRelReq := &cloud.AccountBizRelWithAccountListReq{BkBizIDs: []int64{bkBizId}}
-	accountWithBizList, err := a.client.DataService().Global.Account.ListAccountBizRelWithAccount(cts.Kit.Ctx,
-		cts.Kit.Header(), bizRelReq)
+	accountBizList, err := a.client.DataService().Global.Account.ListAccountBizRelWithAccount(cts.Kit, bizRelReq)
 	if err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
 	found := false
-	for i := range accountWithBizList {
-		accountWithBiz := accountWithBizList[i]
+	for i := range accountBizList {
+		accountWithBiz := accountBizList[i]
 		if accountWithBiz.ID != accountID || accountWithBiz.Vendor != vendor {
 			continue
 		}
 		found = true
+		break
 	}
 	if !found {
 		return nil, errors.New("account not found by biz or vendor")
@@ -155,7 +154,7 @@ func (a *accountSvc) SyncBizCloudResourceByCond(cts *rest.Contexts) (any, error)
 func (a *accountSvc) tcloudCondSyncRes(cts *rest.Contexts, accountID string, resName enumor.CloudResourceType) (
 	any, error) {
 
-	req := &cloudaccount.TCloudResCondSyncReq{}
+	req := new(cloudaccount.TCloudResCondSyncReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -177,16 +176,24 @@ func (a *accountSvc) tcloudCondSyncRes(cts *rest.Contexts, accountID string, res
 	regionListReq := &core.ListReq{
 		Filter: tools.ExpressionAnd(rules...),
 		Page:   core.NewDefaultBasePage(),
-		Fields: nil,
 	}
-	regionResult, err := a.client.DataService().TCloud.Region.ListRegion(cts.Kit.Ctx, cts.Kit.Header(), regionListReq)
-	if err != nil {
-		return nil, err
+	var regionList = make([]region.TCloudRegion, 0, len(req.Regions))
+	for {
+		regionResult, err := a.client.DataService().TCloud.Region.ListRegion(
+			cts.Kit.Ctx, cts.Kit.Header(), regionListReq)
+		if err != nil {
+			return nil, err
+		}
+		regionList = append(regionList, regionResult.Details...)
+		if uint(len(regionResult.Details)) < regionListReq.Page.Limit {
+			break
+		}
+		regionListReq.Page.Start += uint32(regionListReq.Page.Limit)
 	}
-	if len(req.Regions) > 0 && len(regionResult.Details) != len(req.Regions) {
+	if len(req.Regions) > 0 && len(regionList) != len(req.Regions) {
 		return nil, errors.New("request regions mismatch regions on db")
 	}
-	req.Regions = slice.Map(regionResult.Details, region.TCloudRegion.GetCloudID)
+	req.Regions = slice.Map(regionList, region.TCloudRegion.GetCloudID)
 
 	leaseID, err := lock.Manager.TryLock(lock.Key(accountID))
 	if err != nil {
@@ -195,13 +202,13 @@ func (a *accountSvc) tcloudCondSyncRes(cts *rest.Contexts, accountID string, res
 		}
 		return nil, err
 	}
+
 	syncParams := &tcloud.CondSyncParams{
 		AccountID:  accountID,
 		Regions:    req.Regions,
 		CloudIDs:   req.CloudIDs,
 		TagFilters: req.TagFilters,
 	}
-
 	go func(leaseID etcd3.LeaseID) {
 		defer func() {
 			if err := lock.Manager.UnLock(leaseID); err != nil {
@@ -219,12 +226,12 @@ func (a *accountSvc) tcloudCondSyncRes(cts *rest.Contexts, accountID string, res
 
 		err = syncFunc(cts.Kit, a.client, syncParams)
 		if err != nil {
-			logs.Errorf("[%s] failed to perform conditional syncing on resource(%s), account: %s, req: %+v, rid: %s",
-				enumor.TCloud, resName, accountID, req, cts.Kit.Rid)
+			logs.Errorf("[%s] conditional sync failed on resource(%s), err: %v, account: %s, req: %+v, rid: %s",
+				err, enumor.TCloud, resName, accountID, req, cts.Kit.Rid)
 		}
-		logs.Infof("[%s] succesfully to conditional syncing on resource(%s) for account: %s, req: %+v, rid: %s",
+		logs.Infof("[%s] conditional sync succeed on resource(%s), account: %s, req: %+v, rid: %s",
 			enumor.TCloud, resName, accountID, req, cts.Kit.Rid)
 	}(leaseID)
 
-	return "started", err
+	return "started", nil
 }

@@ -190,8 +190,8 @@ func (exp Expression) Validate(opt *ExprOption) (hitErr error) {
 
 // matchWildcard only supports wildcard(single '*') in last part of a dot-separate field
 func matchWildcard(field string, reminder map[string]bool) (ok bool) {
-	dotIdx := strings.LastIndexByte(field, byte('.'))
-	return dotIdx != -1 && reminder[field[:dotIdx+1]+"*"]
+	dotIdx := strings.LastIndex(field, JSONFieldSeparator)
+	return dotIdx != -1 && reminder[field[:dotIdx+1]+WildcardPlaceholder]
 }
 
 // IsEmpty when rules is empty or filter is null
@@ -485,11 +485,11 @@ func (ar AtomRule) Validate(opt *ExprOption) error {
 // getWildcardColumnType get column type by wildcard,
 // only supports wildcard(single '*') in last part of a dot-separate field
 func (ar AtomRule) getWildcardColumnType(opt *ExprOption) (typ enumor.ColumnType, exist bool) {
-	dotIdx := strings.LastIndexByte(ar.Field, byte('.'))
+	dotIdx := strings.LastIndex(ar.Field, JSONFieldSeparator)
 	if dotIdx == -1 {
 		return "", false
 	}
-	wildcardField := ar.Field[:dotIdx+1] + "*"
+	wildcardField := ar.Field[:dotIdx+1] + WildcardPlaceholder
 	typ, exist = opt.RuleFields[wildcardField]
 	return typ, exist
 }

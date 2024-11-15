@@ -173,7 +173,7 @@ func (cli *client) RemoveLoadBalancerDeleteFromCloudV2(kt *kit.Kit, params *Sync
 		rules = append(rules, tools.RuleIn("cloud_id", params.CloudIDs))
 	}
 	for k := range params.TagFilters {
-		rules = append(rules, tools.RuleJsonIn("tags."+k, params.TagFilters[k]))
+		rules = append(rules, tools.RuleJsonIn(getDatabaseTagKey(k), params.TagFilters[k]))
 	}
 	req := &core.ListReq{
 		Filter: tools.ExpressionAnd(rules...),

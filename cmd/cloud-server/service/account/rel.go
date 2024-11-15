@@ -37,17 +37,14 @@ func (a *accountSvc) ListByBkBizID(cts *rest.Contexts) (interface{}, error) {
 
 	// validate biz and authorize
 	err = handler.BizOperateAuth(cts, &handler.ValidWithAuthOption{Authorizer: a.authorizer, ResType: meta.Biz,
-		Action: meta.Find})
+		Action: meta.Access})
 	if err != nil {
 		return nil, err
 	}
 
-	return a.client.DataService().Global.Account.ListAccountBizRelWithAccount(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
-		&protocloud.AccountBizRelWithAccountListReq{
-			BkBizIDs:    []int64{bkBizID},
-			AccountType: accountType,
-		},
-	)
+	listReq := &protocloud.AccountBizRelWithAccountListReq{
+		BkBizIDs:    []int64{bkBizID},
+		AccountType: accountType,
+	}
+	return a.client.DataService().Global.Account.ListAccountBizRelWithAccount(cts.Kit, listReq)
 }

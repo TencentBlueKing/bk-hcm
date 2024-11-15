@@ -69,7 +69,7 @@ func (t *TCloudImpl) ListLoadBalancer(kt *kit.Kit, opt *typelb.TCloudListOption)
 
 	for k, v := range opt.TagFilters {
 		req.Filters = append(req.Filters, &clb.Filter{
-			Name:   cvt.ValToPtr("tag:" + k),
+			Name:   getTagFilterKey(k),
 			Values: cvt.SliceToPtr(v),
 		})
 	}

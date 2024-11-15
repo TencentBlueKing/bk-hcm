@@ -30,6 +30,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/retry"
 
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
@@ -112,4 +113,8 @@ func NetworkErrRetry[I any, O any](apiCall func(context.Context, *I) (*O, error)
 		return nil, errors.New("empty response from tcloud")
 	}
 	return resp, nil
+}
+
+func getTagFilterKey(k string) *string {
+	return cvt.ValToPtr("tag:" + k)
 }

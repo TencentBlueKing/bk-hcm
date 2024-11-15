@@ -67,3 +67,7 @@ func (opt SyncRemovedParams) Validate() error {
 	}
 	return validator.Validate.Struct(opt)
 }
+
+func getDatabaseTagKey(k string) string {
+	return "tags." + k
+}
