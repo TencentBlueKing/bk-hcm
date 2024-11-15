@@ -233,8 +233,8 @@ export default defineComponent({
     const handleConfirm = async () => {
       const { account_id, vendor, region } = formData;
       await formRef.value?.validate();
-      businessStore
-        .pullResource({
+      resourceStore
+        .syncResource({
           account_id,
           vendor,
           regions: [region],
@@ -308,7 +308,7 @@ export default defineComponent({
           }}
         </BatchOperationDialog>
 
-        {/* 拉取资源 */}
+        {/* 同步负载均衡 */}
         <Dialog
           isShow={formData.isShow}
           title={t('同步负载均衡列表')}

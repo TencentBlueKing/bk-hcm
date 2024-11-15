@@ -6,7 +6,7 @@ import { Plus } from 'bkui-vue/lib/icon';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
 import Confirm from '@/components/confirm';
 // import stores
-import { useBusinessStore, useLoadBalancerStore } from '@/store';
+import { useBusinessStore, useLoadBalancerStore, useResourceStore } from '@/store';
 // import custom hooks
 import { useTable } from '@/hooks/useTable/useTable';
 import { useI18n } from 'vue-i18n';
@@ -45,6 +45,7 @@ export default defineComponent({
 
     // use stores
     const businessStore = useBusinessStore();
+    const resourceStore = useResourceStore();
 
     // listener - table
     const { columns, settings } = useColumns('listener');
@@ -171,8 +172,8 @@ export default defineComponent({
     const handlePullResource = () => {
       const { account_id, vendor, cloud_id, region } = loadBalancerStore.currentSelectedTreeNode;
       Confirm(t('同步单个负载均衡'), t('从云上同步该负载均衡数据，包括负载均衡基本信息，监听器等'), () => {
-        businessStore
-          .pullResource({
+        resourceStore
+          .syncResource({
             account_id,
             vendor,
             cloud_ids: [cloud_id],
