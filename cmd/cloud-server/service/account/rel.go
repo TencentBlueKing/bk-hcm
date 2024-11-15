@@ -37,7 +37,7 @@ func (a *accountSvc) ListByBkBizID(cts *rest.Contexts) (interface{}, error) {
 
 	// validate biz and authorize
 	err = handler.BizOperateAuth(cts, &handler.ValidWithAuthOption{Authorizer: a.authorizer, ResType: meta.Biz,
-		Action: meta.Access})
+		Action: meta.Find})
 	if err != nil {
 		return nil, err
 	}

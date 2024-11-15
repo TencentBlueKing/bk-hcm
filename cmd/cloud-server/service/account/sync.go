@@ -151,49 +151,13 @@ func (a *accountSvc) SyncBizCloudResourceByCond(cts *rest.Contexts) (any, error)
 	}
 }
 
-func (a *accountSvc) tcloudCondSyncRes(cts *rest.Contexts, accountID string, resName enumor.CloudResourceType) (
+func (a *accountSvc) tcloudCondSyncRes(cts *rest.Contexts, accountID string, resType enumor.CloudResourceType) (
 	any, error) {
 
-	req := new(cloudaccount.TCloudResCondSyncReq)
-	if err := cts.DecodeInto(req); err != nil {
+	req, syncFunc, err := a.decodeTCloudCondSyncRequest(cts, resType)
+	if err != nil {
 		return nil, err
 	}
-	if err := req.Validate(); err != nil {
-		return nil, err
-	}
-
-	syncFunc, ok := tcloud.GetCondSyncFunc(resName)
-	if !ok {
-		return nil, fmt.Errorf("tcloud conditional sync resource does not support %s", resName)
-	}
-
-	var rules []*filter.AtomRule
-	if len(req.Regions) > 0 {
-		rules = append(rules, tools.RuleIn("region_id", req.Regions))
-	}
-
-	// check region
-	regionListReq := &core.ListReq{
-		Filter: tools.ExpressionAnd(rules...),
-		Page:   core.NewDefaultBasePage(),
-	}
-	var regionList = make([]region.TCloudRegion, 0, len(req.Regions))
-	for {
-		regionResult, err := a.client.DataService().TCloud.Region.ListRegion(
-			cts.Kit.Ctx, cts.Kit.Header(), regionListReq)
-		if err != nil {
-			return nil, err
-		}
-		regionList = append(regionList, regionResult.Details...)
-		if uint(len(regionResult.Details)) < regionListReq.Page.Limit {
-			break
-		}
-		regionListReq.Page.Start += uint32(regionListReq.Page.Limit)
-	}
-	if len(req.Regions) > 0 && len(regionList) != len(req.Regions) {
-		return nil, errors.New("request regions mismatch regions on db")
-	}
-	req.Regions = slice.Map(regionList, region.TCloudRegion.GetCloudID)
 
 	leaseID, err := lock.Manager.TryLock(lock.Key(accountID))
 	if err != nil {
@@ -227,11 +191,57 @@ func (a *accountSvc) tcloudCondSyncRes(cts *rest.Contexts, accountID string, res
 		err = syncFunc(cts.Kit, a.client, syncParams)
 		if err != nil {
 			logs.Errorf("[%s] conditional sync failed on resource(%s), err: %v, account: %s, req: %+v, rid: %s",
-				err, enumor.TCloud, resName, accountID, req, cts.Kit.Rid)
+				err, enumor.TCloud, resType, accountID, req, cts.Kit.Rid)
 		}
 		logs.Infof("[%s] conditional sync succeed on resource(%s), account: %s, req: %+v, rid: %s",
-			enumor.TCloud, resName, accountID, req, cts.Kit.Rid)
+			enumor.TCloud, resType, accountID, req, cts.Kit.Rid)
 	}(leaseID)
 
 	return "started", nil
+}
+
+func (a *accountSvc) decodeTCloudCondSyncRequest(cts *rest.Contexts, resType enumor.CloudResourceType) (
+	*cloudaccount.TCloudResCondSyncReq, tcloud.CondSyncFunc, error) {
+
+	req := new(cloudaccount.TCloudResCondSyncReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, nil, err
+	}
+
+	syncFunc, ok := tcloud.GetCondSyncFunc(resType)
+	if !ok {
+		return nil, nil, fmt.Errorf("tcloud conditional sync resource does not support %s", resType)
+	}
+
+	var rules []*filter.AtomRule
+	if len(req.Regions) > 0 {
+		rules = append(rules, tools.RuleIn("region_id", req.Regions))
+	}
+
+	// check region
+	regionListReq := &core.ListReq{
+		Filter: tools.ExpressionAnd(rules...),
+		Page:   core.NewDefaultBasePage(),
+	}
+	var regionList = make([]region.TCloudRegion, 0, len(req.Regions))
+	for {
+		regionResult, err := a.client.DataService().TCloud.Region.ListRegion(
+			cts.Kit.Ctx, cts.Kit.Header(), regionListReq)
+		if err != nil {
+			return nil, nil, err
+		}
+		regionList = append(regionList, regionResult.Details...)
+		if uint(len(regionResult.Details)) < regionListReq.Page.Limit {
+			break
+		}
+		regionListReq.Page.Start += uint32(regionListReq.Page.Limit)
+	}
+	if len(req.Regions) > 0 && len(regionList) != len(req.Regions) {
+		return nil, nil, errors.New("request regions mismatch regions on db")
+	}
+	req.Regions = slice.Map(regionList, region.TCloudRegion.GetCloudID)
+	return req, syncFunc, nil
 }
