@@ -854,7 +854,7 @@ func jsonFiledSqlFormat(field string) string {
 	}
 
 	index := strings.Index(field, JSONFieldSeparator)
-	return fmt.Sprintf(`%s->>"$%s"`, field[0:index], field[index:])
+	return fmt.Sprintf(`%s->>'$."%s"'`, field[0:index], field[index+1:])
 }
 
 // JSONContainsOp is json array field contain operator

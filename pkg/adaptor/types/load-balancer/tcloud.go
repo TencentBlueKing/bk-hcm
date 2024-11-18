@@ -210,6 +210,17 @@ func (clb TCloudClb) GetTagMap() apicore.TagMap {
 	return tagMap
 }
 
+// GetTags 返回Tag信息
+func (clb TCloudClb) GetTags() (tags []apicore.TagPair) {
+	for _, tag := range clb.Tags {
+		tags = append(tags, apicore.TagPair{
+			Key:   cvt.PtrToVal(tag.TagKey),
+			Value: cvt.PtrToVal(tag.TagValue),
+		})
+	}
+	return tags
+}
+
 // -------------------------- List Listeners--------------------------
 
 // TCloudListListenersOption defines options to list tcloud listeners instances.
@@ -244,6 +255,11 @@ func (clb TCloudListener) GetCloudID() string {
 // GetProtocol ...
 func (clb TCloudListener) GetProtocol() enumor.ProtocolType {
 	return cvt.PtrToVal((*enumor.ProtocolType)(clb.Protocol))
+}
+
+func (clb TCloudListener) String() string {
+	return fmt.Sprintf("{id:%s,name:%s,port:%d}",
+		cvt.PtrToVal(clb.ListenerId), cvt.PtrToVal(clb.ListenerName), cvt.PtrToVal(clb.Port))
 }
 
 // -------------------------- List Targets--------------------------

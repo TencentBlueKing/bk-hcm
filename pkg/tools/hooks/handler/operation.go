@@ -20,6 +20,8 @@
 package handler
 
 import (
+	"errors"
+
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -48,6 +50,9 @@ func BizOperateAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 	}
 	// batch authorize resource
 	total := len(opt.BasicInfos)
+	if total == 0 {
+		return errors.New("no resource to authorize")
+	}
 	authRes := make([]meta.ResourceAttribute, 0, total)
 	notMatchedIDs, recycledIDs, notRecycledIDS := make([]string, 0), make([]string, 0, total), make([]string, 0, total)
 	for id, info := range opt.BasicInfos {
@@ -94,6 +99,9 @@ func ResOperateAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 	}
 
 	total := len(opt.BasicInfos)
+	if total == 0 {
+		return errors.New("no resource to authorize")
+	}
 	// batch authorize resource
 	authRes := make([]meta.ResourceAttribute, 0, total)
 	typeAssignedIDMap, recycledIDs, notRecycledIDS := make(map[enumor.CloudResourceType][]string),
