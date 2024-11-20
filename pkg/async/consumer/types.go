@@ -46,7 +46,7 @@ const (
 	ErrSomeTaskExecFailed = "some tasks failed to be executed"
 
 	//  listScheduledFlowLimit 每次调度器查询分配给当前节点的任务流数量
-	listScheduledFlowLimit = 10
+	listScheduledFlowLimit = 20
 
 	// listExpiredTasksLimit 每次WatchDog查询超时任务的数量
 	listExpiredTasksLimit = 100
