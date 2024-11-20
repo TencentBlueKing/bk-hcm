@@ -218,3 +218,19 @@ func (cli *LoadBalancerClient) ListLoadBalancerRaw(kt *kit.Kit, req *core.ListRe
 	return common.Request[core.ListReq, dataproto.LbRawListResult](cli.client,
 		rest.POST, kt, req, "/load_balancers/list_with_extension")
 }
+
+// ListLoadBalancerListenerWithTargets list load balancer listener with targets.
+func (cli *LoadBalancerClient) ListLoadBalancerListenerWithTargets(kt *kit.Kit,
+	req *dataproto.ListListenerWithTargetsReq) (*dataproto.ListListenerWithTargetsResp, error) {
+
+	return common.Request[dataproto.ListListenerWithTargetsReq, dataproto.ListListenerWithTargetsResp](cli.client,
+		rest.POST, kt, req, "/load_balancers/listeners/with/targets/list")
+}
+
+// ListBatchListeners list batch listeners.
+func (cli *LoadBalancerClient) ListBatchListeners(kt *kit.Kit, req *dataproto.BatchDeleteListenerReq) (
+	*dataproto.BatchListListenerResp, error) {
+
+	return common.Request[dataproto.BatchDeleteListenerReq, dataproto.BatchListListenerResp](cli.client,
+		rest.POST, kt, req, "/load_balancers/listeners/batch/list")
+}

@@ -198,6 +198,10 @@ const (
 	AccountBillExchangeRateTable = "account_bill_exchange_rate"
 	// AccountBillSyncRecordTable 账单同步记录
 	AccountBillSyncRecordTable = "account_bill_sync_record"
+	// TaskDetailTable 任务详情表
+	TaskDetailTable = "task_detail"
+	// TaskManagementTable 任务管理表
+	TaskManagementTable = "task_management"
 )
 
 // Validate whether the table name is valid or not.
@@ -297,6 +301,9 @@ var TableMap = map[Name]struct{}{
 
 	MainAccountTable: {},
 	RootAccountTable: {},
+
+	TaskManagementTable: {},
+	TaskDetailTable:     {},
 }
 
 // Register 注册表名

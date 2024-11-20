@@ -40,6 +40,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	cvt "hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 )
 
 func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
@@ -71,11 +72,14 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 		"/vendors/tcloud/listeners/{lbl_id}/rules/by/domain/batch", svc.TCloudBatchDeleteUrlRuleByDomain)
 
 	// 监听器
-	h.Add("CreateTCloudListener", http.MethodPost, "/vendors/tcloud/listeners/create", svc.CreateTCloudListener)
+	h.Add("CreateTCloudListenerWithTargetGroup", http.MethodPost,
+		"/vendors/tcloud/listeners/create_with_target_group", svc.CreateTCloudListenerWithTargetGroup)
 	h.Add("UpdateTCloudListener", http.MethodPatch, "/vendors/tcloud/listeners/{id}", svc.UpdateTCloudListener)
 	h.Add("UpdateTCloudListenerHealthCheck", http.MethodPatch,
 		"/vendors/tcloud/listeners/{lbl_id}/health_check", svc.UpdateTCloudListenerHealthCheck)
 	h.Add("DeleteTCloudListener", http.MethodDelete, "/vendors/tcloud/listeners/batch", svc.DeleteTCloudListener)
+	// 仅创建监听器
+	h.Add("CreateTCloudListener", http.MethodPost, "/vendors/tcloud/listeners/create", svc.CreateTCloudListener)
 
 	// 域名、规则
 	h.Add("UpdateTCloudDomainAttr", http.MethodPatch,
@@ -95,6 +99,10 @@ func (svc *clbSvc) initTCloudClbService(cap *capability.Capability) {
 
 	h.Add("RegisterTargetToListenerRule", http.MethodPost,
 		"/vendors/tcloud/load_balancers/{lb_id}/targets/create", svc.RegisterTargetToListenerRule)
+	h.Add("BatchRemoveTCloudListenerTargets", http.MethodDelete,
+		"/vendors/tcloud/load_balancers/{lb_id}/targets/batch", svc.BatchRemoveTCloudListenerTargets)
+	h.Add("BatchModifyTCloudListenerTargetsWeight", http.MethodPatch,
+		"/vendors/tcloud/load_balancers/{lb_id}/targets/weight", svc.BatchModifyTCloudListenerTargetsWeight)
 
 	h.Add("QueryListenerTargetsByCloudIDs", http.MethodPost,
 		"/vendors/tcloud/targets/query_by_cloud_ids", svc.QueryListenerTargetsByCloudIDs)
@@ -135,7 +143,9 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 		ClientToken:        cvt.StrNilPtr(cts.Kit.Rid),
 
 		BandwidthpkgSubType: req.BandwidthpkgSubType,
+		Tags:                req.Tags,
 	}
+
 	if cvt.PtrToVal(req.CloudEipID) != "" {
 		createOpt.EipAddressID = req.CloudEipID
 	}
@@ -202,6 +212,7 @@ func (svc *clbSvc) createTCloudDBLoadBalancer(cts *rest.Contexts, req *protolb.T
 		dataReq.Lbs[i].IPVersion = req.AddressIPVersion.Convert()
 		dataReq.Lbs[i].Zones = req.Zones
 		dataReq.Lbs[i].BackupZones = req.BackupZones
+		dataReq.Lbs[i].Tags = cvt.SliceToMap(req.Tags, core.TagPair.GetKeyValue)
 
 	}
 	// 创建本地数据，保存业务信息
@@ -376,8 +387,8 @@ func (svc *clbSvc) getListenerWithLb(kt *kit.Kit, lblID string) (*corelb.BaseLoa
 	return &lb, &listener, nil
 }
 
-// CreateTCloudListener 创建监听器
-func (svc *clbSvc) CreateTCloudListener(cts *rest.Contexts) (interface{}, error) {
+// CreateTCloudListenerWithTargetGroup 创建监听器和规则附带目标组绑定信息
+func (svc *clbSvc) CreateTCloudListenerWithTargetGroup(cts *rest.Contexts) (interface{}, error) {
 	req := new(protolb.ListenerWithRuleCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -560,6 +571,7 @@ func (svc *clbSvc) insertListenerWithRule(kt *kit.Kit, req *protolb.ListenerWith
 				Url:                url,
 				SniSwitch:          req.SniSwitch,
 				Certificate:        req.Certificate,
+				Region:             lbInfo.Region,
 			},
 		},
 	}
@@ -585,6 +597,27 @@ func (svc *clbSvc) getTargetGroupByID(kt *kit.Kit, targetGroupID string) ([]core
 	}
 
 	return targetGroupInfo.Details, nil
+}
+
+func (svc *clbSvc) batchGetTargetGroupByID(kt *kit.Kit, targetGroupIDs []string) ([]corelb.BaseTargetGroup, error) {
+	result := make([]corelb.BaseTargetGroup, 0)
+	split := slice.Split(targetGroupIDs, int(core.DefaultMaxPageLimit))
+	for _, parts := range split {
+		tgReq := &core.ListReq{
+			Filter: tools.ContainersExpression("id", parts),
+			Page:   core.NewDefaultBasePage(),
+		}
+		targetGroupInfo, err := svc.dataCli.Global.LoadBalancer.ListTargetGroup(kt, tgReq)
+		if err != nil {
+			logs.Errorf("list target group db failed, partTgIDs: %v, err: %v, rid: %s", parts, err, kt.Rid)
+			return nil, err
+		}
+		if len(targetGroupInfo.Details) > 0 {
+			result = append(result, targetGroupInfo.Details...)
+		}
+	}
+
+	return result, nil
 }
 
 // UpdateTCloudListener 更新监听器信息

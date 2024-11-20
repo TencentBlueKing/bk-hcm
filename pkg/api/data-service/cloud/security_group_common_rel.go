@@ -58,7 +58,7 @@ func (req *SGCommonRelBatchCreateReq) Validate() error {
 
 // SGCommonRelBatchUpsertReq ...
 type SGCommonRelBatchUpsertReq struct {
-	Rels      []SGCommonRelCreate       `json:"rels" validate:"required,min=1"`
+	Rels      []SGCommonRelCreate       `json:"rels" validate:"required,min=1,dive"`
 	DeleteReq *dataproto.BatchDeleteReq `json:"delete_req"`
 }
 

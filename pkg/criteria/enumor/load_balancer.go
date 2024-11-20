@@ -34,6 +34,14 @@ const (
 	Layer7RuleType RuleType = "layer_7"
 )
 
+// Validate 验证四层/七层监听器类型
+func (r RuleType) Validate() error {
+	if r != Layer4RuleType && r != Layer7RuleType {
+		return errors.New("rule_type is illegal")
+	}
+	return nil
+}
+
 // TargetGroupType 目标组类型
 type TargetGroupType string
 
@@ -121,6 +129,17 @@ const (
 	ApplyTargetGroupType = TaskType(FlowApplyTargetGroupToListenerRule)
 	// DeleteRuleTaskType 任务类型-删除负载均衡规则
 	DeleteRuleTaskType = TaskType(FlowLoadBalancerDeleteRule)
+	// CreateListenerTaskType 任务类型-新建监听器
+	CreateListenerTaskType = TaskType(FlowLoadBalancerCreateListener)
+	// CreateUrlRuleTaskType 任务类型-新建URL规则
+	CreateUrlRuleTaskType = TaskType(FlowLoadBalancerCreateUrlRule)
+	// ListenerUnbindRsTaskType 任务类型-监听器批量解绑RS
+	ListenerUnbindRsTaskType = TaskType(FlowBatchTaskListenerUnBindTarget)
+	// ListenerModifyRsWeightTaskType 任务类型-监听器批量调整RS权重
+	ListenerModifyRsWeightTaskType = TaskType(
+		FlowBatchTaskListenerModifyRsWeight)
+	// DeleteListenerTaskType 任务类型-批量删除监听器
+	DeleteListenerTaskType = TaskType(FlowBatchTaskDeleteListener)
 )
 
 // InstType 实例类型
@@ -181,4 +200,7 @@ const (
 const (
 	// ParameterWildcard 参数通配符
 	ParameterWildcard string = "ALL"
+
+	// NoMatchTaskManageResult 未匹配时的任务管理结果
+	NoMatchTaskManageResult = "NO_MATCHING_OR_HAS_DONE"
 )

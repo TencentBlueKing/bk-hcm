@@ -45,6 +45,7 @@ var LoadBalancerTargetColumnsDescriptor = utils.ColumnDescriptors{
 
 	{Column: "cloud_inst_id", NamedC: "cloud_inst_id", Type: enumor.String},
 	{Column: "inst_name", NamedC: "inst_name", Type: enumor.String},
+	{Column: "target_group_region", NamedC: "target_group_region", Type: enumor.String},
 	{Column: "inst_type", NamedC: "inst_type", Type: enumor.String},
 	{Column: "inst_id", NamedC: "inst_id", Type: enumor.String},
 
@@ -74,6 +75,7 @@ type LoadBalancerTargetTable struct {
 	InstID             string            `db:"inst_id" validate:"lte=255" json:"inst_id"`
 	CloudInstID        string            `db:"cloud_inst_id" validate:"lte=255" json:"cloud_inst_id"`
 	InstName           string            `db:"inst_name" validate:"lte=255" json:"inst_name"`
+	TargetGroupRegion  string            `db:"target_group_region" validate:"lte=20" json:"target_group_region"`
 	PrivateIPAddress   types.StringArray `db:"private_ip_address" json:"private_ip_address"`
 	PublicIPAddress    types.StringArray `db:"public_ip_address" json:"public_ip_address"`
 	CloudVpcIDs        types.StringArray `db:"cloud_vpc_ids" json:"cloud_vpc_ids"`

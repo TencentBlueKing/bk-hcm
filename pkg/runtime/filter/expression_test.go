@@ -237,6 +237,67 @@ func TestExpressionValidateOption(t *testing.T) {
 	}
 }
 
+func TestWildcardExpressionValidateOption(t *testing.T) {
+	opt := &ExprOption{
+		RuleFields: map[string]enumor.ColumnType{
+			"extension.name":     enumor.String,
+			"extension.*.field2": enumor.String,
+		},
+		MaxInLimit:    0,
+		MaxNotInLimit: 0,
+		MaxRulesLimit: 10,
+	}
+	t.Run("single_dot", func(t *testing.T) {
+		expr := &Expression{
+			Op: And,
+			Rules: []RuleFactory{
+				&AtomRule{
+					Field: "extension.field1",
+					Op:    JSONEqual.Factory(),
+					Value: "hcm",
+				},
+			},
+		}
+
+		if err := expr.Validate(opt); !strings.Contains(err.Error(),
+			"expression rules filed(extension.field1) should not exist(not supported)") {
+			t.Errorf("validate field failed, err: %v", err)
+			return
+		}
+		opt.RuleFields["extension.*"] = enumor.String
+		if err := expr.Validate(opt); err != nil {
+			t.Errorf("validate wildcard expression failed, err: %v", err)
+			return
+		}
+		return
+	})
+
+	t.Run("second_dot_wildcard", func(t *testing.T) {
+		expr := &Expression{
+			Op: And,
+			Rules: []RuleFactory{
+				&AtomRule{
+					Field: "extension.field1.field2",
+					Op:    JSONEqual.Factory(),
+					Value: "hcm",
+				},
+			},
+		}
+		if err := expr.Validate(opt); !strings.Contains(err.Error(),
+			"expression rules filed(extension.field1.field2) should not exist(not supported)") {
+			t.Errorf("validate field failed, err: %v", err)
+			return
+		}
+
+		opt.RuleFields["extension.field1.*"] = enumor.String
+		if err := expr.Validate(opt); err != nil {
+			t.Errorf("validate wildcard expression failed, err: %v", err)
+			return
+		}
+	})
+
+}
+
 func TestCrownSQLWhereExpr(t *testing.T) {
 	expr := &Expression{
 		Op: And,

@@ -436,6 +436,7 @@ webserver:
       caFile:
       # the password to decrypt the certificate.
       password:
+  templatePath: /data/hcm/template
 
 taskserver:
   ## 镜像

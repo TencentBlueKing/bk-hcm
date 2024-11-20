@@ -62,6 +62,9 @@ func InitService(cap *capability.Capability) {
 	h.Add("CountListenerByLbIDs", http.MethodPost, "/load_balancers/listeners/count", svc.CountListenerByLbIDs)
 	h.Add("BatchUpdateListenerBizInfo", http.MethodPatch,
 		"/load_balancers/listeners/bizs/batch/update", svc.BatchUpdateListenerBizInfo)
+	h.Add("ListListenerWithTargets", http.MethodPost, "/load_balancers/listeners/with/targets/list",
+		svc.ListListenerWithTargets)
+	h.Add("ListBatchListeners", http.MethodPost, "/load_balancers/listeners/batch/list", svc.ListBatchListeners)
 
 	// url规则
 	h.Add("BatchCreateTCloudUrlRule",
@@ -97,6 +100,14 @@ func InitService(cap *capability.Capability) {
 	h.Add("BatchUpdateListenerRuleRelStatusByTGID", http.MethodPatch,
 		"/target_group_listener_rels/target_groups/{tg_id}/update", svc.BatchUpdateListenerRuleRelStatusByTGID)
 
+	// 资源与Flow相关的接口
+	resFlowRel(h)
+
+	h.Load(cap.WebService)
+}
+
+// resFlowRel 资源与Flow相关的接口
+func resFlowRel(h *rest.Handler) {
 	// 资源跟Flow锁定
 	h.Add("CreateResFlowLock", http.MethodPost, "/res_flow_locks/create", svc.CreateResFlowLock)
 	h.Add("DeleteResFlowLock", http.MethodDelete, "/res_flow_locks/batch", svc.DeleteResFlowLock)
@@ -109,8 +120,6 @@ func InitService(cap *capability.Capability) {
 	h.Add("BatchUpdateResFlowRel", http.MethodPatch, "/res_flow_rels/batch/update", svc.BatchUpdateResFlowRel)
 	h.Add("BatchDeleteResFlowRel", http.MethodDelete, "/res_flow_rels/batch", svc.BatchDeleteResFlowRel)
 	h.Add("ListResFlowRel", http.MethodPost, "/res_flow_rels/list", svc.ListResFlowRel)
-
-	h.Load(cap.WebService)
 }
 
 type lbSvc struct {

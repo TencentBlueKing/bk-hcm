@@ -45,6 +45,7 @@ var TCloudLbUrlRuleColumnsDescriptor = utils.ColumnDescriptors{
 	{Column: "cloud_lbl_id", NamedC: "cloud_lbl_id", Type: enumor.String},
 	{Column: "target_group_id", NamedC: "target_group_id", Type: enumor.String},
 	{Column: "cloud_target_group_id", NamedC: "cloud_target_group_id", Type: enumor.String},
+	{Column: "region", NamedC: "region", Type: enumor.String},
 	{Column: "domain", NamedC: "domain", Type: enumor.String},
 	{Column: "url", NamedC: "url", Type: enumor.String},
 	{Column: "scheduler", NamedC: "scheduler", Type: enumor.String},
@@ -73,6 +74,7 @@ type TCloudLbUrlRuleTable struct {
 	CloudLBLID         string          `db:"cloud_lbl_id" validate:"lte=255" json:"cloud_lbl_id"`
 	TargetGroupID      string          `db:"target_group_id" validate:"lte=255" json:"target_group_id"`
 	CloudTargetGroupID string          `db:"cloud_target_group_id" validate:"lte=255" json:"cloud_target_group_id"`
+	Region             string          `db:"region" validate:"lte=20" json:"region"`
 	Domain             string          `db:"domain" json:"domain"`
 	URL                string          `db:"url" json:"url"`
 	Scheduler          string          `db:"scheduler" json:"scheduler"`

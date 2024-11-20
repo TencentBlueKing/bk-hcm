@@ -41,3 +41,14 @@ const (
 	// ApplicationDeliverFailed 申请单交付失败告警
 	ApplicationDeliverFailed WarnSign = "application_deliver_failed"
 )
+
+const (
+	// TCloudLimitExceededErrCode 腾讯云限频错误码
+	TCloudLimitExceededErrCode = "RequestLimitExceeded"
+
+	// TCloudNetworkErrorErrCode 腾讯云网络错误 错误码
+	TCloudNetworkErrorErrCode = "ClientError.NetworkError"
+)
+
+// TCloudClientErrRetryTimes ..
+const TCloudClientErrRetryTimes = 5

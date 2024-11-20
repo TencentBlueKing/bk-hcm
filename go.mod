@@ -18,12 +18,12 @@ require (
 	github.com/aws/aws-sdk-go v1.44.334
 	github.com/emicklei/go-restful/v3 v3.10.2
 	github.com/go-playground/validator/v10 v10.11.2
-	github.com/go-sql-driver/mysql v1.7.1
+	github.com/go-sql-driver/mysql v1.8.1
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/golang/protobuf v1.5.4
 	github.com/huaweicloud/huaweicloud-sdk-go-v3 v0.1.40
-	github.com/jmoiron/sqlx v1.3.5
+	github.com/jmoiron/sqlx v1.4.0
 	github.com/json-iterator/go v1.1.12
 	github.com/microsoftgraph/msgraph-sdk-go v1.26.0
 	github.com/pborman/uuid v1.2.1
@@ -40,7 +40,7 @@ require (
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/ssl v1.0.908
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc v1.0.908
 	github.com/tencentyun/cos-go-sdk-v5 v0.7.48
-	github.com/tencentyun/qcloud-cos-sts-sdk v0.0.0-20240524051400-0402a4c50c2a
+	github.com/tencentyun/qcloud-cos-sts-sdk v0.0.0-20241118064430-63a76784514f
 	github.com/tidwall/gjson v1.14.4
 	github.com/xuri/excelize/v2 v2.8.1
 	go.etcd.io/etcd/api/v3 v3.5.13
@@ -92,6 +92,7 @@ require (
 )
 
 require (
+	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.5.2 // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
@@ -142,7 +143,7 @@ require (
 	golang.org/x/mod v0.13.0 // indirect
 	golang.org/x/net v0.22.0 // indirect
 	golang.org/x/oauth2 v0.18.0 // indirect
-	golang.org/x/sync v0.6.0 // indirect
+	golang.org/x/sync v0.6.0
 	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/tools v0.14.0 // indirect
@@ -153,3 +154,5 @@ require (
 	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )
+
+replace github.com/jmoiron/sqlx v1.4.0 => github.com/chenjr15/sqlx v0.0.0-20241120032801-68d4a8b60c27

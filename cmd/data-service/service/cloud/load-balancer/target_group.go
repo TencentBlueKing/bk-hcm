@@ -214,13 +214,14 @@ func (svc *lbSvc) BatchUpdateTarget(cts *rest.Contexts) (any, error) {
 	return svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (any, error) {
 		for _, target := range req.Targets {
 			update := &tablelb.LoadBalancerTargetTable{
-				InstName:         target.InstName,
-				Port:             target.Port,
-				Weight:           target.Weight,
-				PrivateIPAddress: target.PrivateIPAddress,
-				PublicIPAddress:  target.PublicIPAddress,
-				Memo:             target.Memo,
-				Reviser:          cts.Kit.User,
+				InstName:          target.InstName,
+				TargetGroupRegion: target.TargetGroupRegion,
+				Port:              target.Port,
+				Weight:            target.Weight,
+				PrivateIPAddress:  target.PrivateIPAddress,
+				PublicIPAddress:   target.PublicIPAddress,
+				Memo:              target.Memo,
+				Reviser:           cts.Kit.User,
 			}
 
 			if err := svc.dao.LoadBalancerTarget().UpdateByIDWithTx(cts.Kit, txn, target.ID, update); err != nil {

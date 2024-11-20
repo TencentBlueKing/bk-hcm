@@ -1,9 +1,10 @@
-import { defineComponent } from 'vue';
+import { defineComponent, reactive, ref, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 // import components
-import { Button, Message } from 'bkui-vue';
+import { Button, Message, Form, Dialog } from 'bkui-vue';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
+import BatchImportComp from './batch-import-comp/index.vue';
 // import hooks
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
@@ -22,6 +23,18 @@ import './index.scss';
 import Confirm from '@/components/confirm';
 import { useVerify } from '@/hooks';
 import { useGlobalPermissionDialog } from '@/store/useGlobalPermissionDialog';
+import { VendorEnum, VendorMap } from '@/common/constant';
+import AccountSelector from '@/components/account-selector/index-new.vue';
+import RegionSelector from '@/views/service/service-apply/components/common/region-selector';
+import { accountFilter } from './account-filter.plugin';
+
+export interface syncResourceForm {
+  account_id: string;
+  vendor: string;
+  region: string;
+  isShow: boolean;
+}
+
 export default defineComponent({
   name: 'AllClbsManager',
   setup() {
@@ -34,6 +47,8 @@ export default defineComponent({
     const { selections, handleSelectionChange, resetSelections } = useSelection();
     const { authVerifyData, handleAuth } = useVerify();
     const globalPermissionDialogStore = useGlobalPermissionDialog();
+    const formRef = ref(null);
+    const { FormItem } = Form;
 
     const isRowSelectEnable = ({ row, isCheckAll }: DoublePlainObject) => {
       if (isCheckAll) return true;
@@ -65,46 +80,40 @@ export default defineComponent({
     const { CommonTable, getListData } = useTable({
       searchOptions: {
         searchData: [
-          {
-            id: 'name',
-            name: '负载均衡名称',
-          },
-          {
-            id: 'domain',
-            name: '负载均衡域名',
-          },
-          // {
-          //   id: 'public_ipv4_addresses',
-          //   name: '负载均衡VIP',
-          // },
+          { id: 'name', name: '负载均衡名称' },
+          { id: 'domain', name: '负载均衡域名' },
+          { id: 'lb_vip', name: '负载均衡VIP' },
           {
             id: 'lb_type',
             name: '网络类型',
+            children: Object.keys(LB_NETWORK_TYPE_MAP).map((lbType) => ({
+              id: lbType,
+              name: LB_NETWORK_TYPE_MAP[lbType as keyof typeof LB_NETWORK_TYPE_MAP],
+            })),
           },
-          // {
-          //   id: 'listener_num',
-          //   name: '监听器数量',
-          // },
           {
             id: 'ip_version',
-            name: 'IP版本',
+            name: t('IP版本'),
+            children: [
+              { id: 'ipv4', name: 'IPv4' },
+              { id: 'ipv6', name: 'IPv6' },
+              { id: 'ipv6_dual_stack', name: 'IPv6DualStack' },
+              { id: 'ipv6_nat64', name: 'IPv6Nat64' },
+            ],
           },
           {
             id: 'vendor',
-            name: '云厂商',
+            name: t('云厂商'),
+            children: [{ id: VendorEnum.TCLOUD, name: VendorMap[VendorEnum.TCLOUD] }],
           },
+          { id: 'region', name: '地域' },
+          { id: 'zones', name: '可用区域' },
           {
-            id: 'region',
-            name: '地域',
+            id: 'status',
+            name: '状态',
+            children: Object.keys(CLB_STATUS_MAP).map((key) => ({ id: key, name: CLB_STATUS_MAP[key] })),
           },
-          {
-            id: 'zones',
-            name: '可用区域',
-          },
-          {
-            id: 'cloud_vpc_id',
-            name: '所属VPC',
-          },
+          { id: 'cloud_vpc_id', name: '所属VPC' },
         ],
       },
       tableOptions: {
@@ -113,6 +122,7 @@ export default defineComponent({
           {
             label: '操作',
             width: 120,
+            fixed: 'right',
             render: ({ data }: { data: any }) => {
               return (
                 <Button
@@ -154,14 +164,7 @@ export default defineComponent({
         type: 'load_balancers/with/delete_protection',
         sortOption: { sort: 'created_at', order: 'DESC' },
         async resolveDataListCb(dataList: any[]) {
-          return asyncGetListenerCount(
-            businessStore.asyncGetListenerCount,
-            dataList.map((item) => {
-              item.lb_type = LB_NETWORK_TYPE_MAP[item.lb_type];
-              item.status = CLB_STATUS_MAP[item.status];
-              return item;
-            }),
-          );
+          return asyncGetListenerCount(businessStore.asyncGetListenerCount, dataList);
         },
       },
     });
@@ -203,6 +206,36 @@ export default defineComponent({
       getListData,
     );
 
+    const formData = reactive<syncResourceForm>({
+      account_id: '',
+      vendor: '',
+      region: '',
+      isShow: false,
+    });
+
+    const handleSetFormDataInit = () => {
+      formData.account_id = '';
+      formData.vendor = '';
+      formData.region = '';
+      formData.isShow = false;
+      nextTick(() => formRef.value?.clearValidate());
+    };
+    const handleConfirm = async () => {
+      const { account_id, vendor, region } = formData;
+      await formRef.value?.validate();
+      resourceStore
+        .syncResource({
+          account_id,
+          vendor,
+          regions: [region],
+          resource: 'load_balancer',
+        })
+        .then(() => {
+          Message({ theme: 'success', message: t('已提交同步任务，请等待同步结果') });
+          handleSetFormDataInit();
+        });
+    };
+
     return () => (
       <div class='common-card-wrap'>
         {/* 负载均衡list */}
@@ -225,6 +258,14 @@ export default defineComponent({
                 </Button>
                 <Button class='mw88' onClick={handleClickBatchDelete} disabled={selections.value.length === 0}>
                   批量删除
+                </Button>
+                {/* 批量导入 */}
+                <BatchImportComp />
+                <Button
+                  class='mw88 mr8'
+                  onClick={() => (formData.isShow = true)}
+                  disabled={selections.value.length > 0}>
+                  {t('同步负载均衡')}
                 </Button>
               </>
             ),
@@ -260,6 +301,27 @@ export default defineComponent({
             ),
           }}
         </BatchOperationDialog>
+        {/* 同步负载均衡 */}
+        <Dialog
+          isShow={formData.isShow}
+          title={t('同步负载均衡列表')}
+          quick-close={false}
+          onConfirm={handleConfirm}
+          onClosed={handleSetFormDataInit}>
+          <Form form-type='vertical' ref={formRef} model={formData}>
+            <FormItem label={t('选择云账号')} required property='account_id'>
+              <AccountSelector
+                v-model={formData.account_id}
+                filter={accountFilter}
+                onChange={(resource) => (formData.vendor = resource.vendor)}
+              />
+            </FormItem>
+            <FormItem label={t('云地域')} required property='region'>
+              <RegionSelector v-model={formData.region} vendor={formData.vendor} account-id={formData.account_id} />
+            </FormItem>
+            <div>{t('从云上同步该业务的所有负载均衡数据，包括负载均衡，监听器等')}</div>
+          </Form>
+        </Dialog>
       </div>
     );
   },

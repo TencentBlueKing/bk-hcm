@@ -1,21 +1,20 @@
-.bread-layout{
-    display: flex;
-    align-items: center;
-    line-height: 52px;
-    background: #fff;
-    padding: 0 24px;
-    box-shadow: 0 3px 4px 0 rgba(0, 0, 0, 0.04);
+.breadcrumb-content {
+  display: flex;
+  align-items: center;
 
-    .bread-name {
-      font-size: 16px;
-      letter-spacing: 0;
-      color: #313238;
-    }
+  .breadcrumb-name {
+    font-size: 16px;
+    letter-spacing: 0;
+    color: #313238;
+  }
 
-    .back-icon{
-        font-weight: bold;
-        font-size: 16px;
-        color: #3a84ff;
-        cursor: pointer;
-    }
+  .back-icon {
+    font-weight: bold;
+    font-size: 16px;
+    color: #3a84ff;
+    cursor: pointer;
+  }
+}
+.breadcrumb-extra {
+  margin-left: auto;
 }

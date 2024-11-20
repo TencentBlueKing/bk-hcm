@@ -53,6 +53,9 @@ type ExprOption struct {
 	//    is in the RuleFields' key restricts.
 	// 2. all the expression's rule filed should be a sub-set
 	//    of the RuleFields' key.
+	// 3. to support json field wildcard, use single '*' as suffix,
+	//    for instance, 'tag.*' matches fields starts with 'tag.',
+	//    only last segment of a dot-separate field can be '*'.
 	RuleFields map[string]enumor.ColumnType
 	// MaxInLimit defines the max element of the in operator
 	// If not set, then use default value: DefaultMaxInLimit
@@ -165,7 +168,7 @@ func (exp Expression) Validate(opt *ExprOption) (hitErr error) {
 
 		// all the rule's filed should exist in the reminder.
 		for one := range fieldsReminder {
-			if exist := reminder[one]; !exist {
+			if exist := reminder[one]; !exist && !matchWildcard(one, reminder) {
 				return fmt.Errorf("expression rules filed(%s) should not exist(not supported)", one)
 			}
 		}
@@ -183,6 +186,12 @@ func (exp Expression) Validate(opt *ExprOption) (hitErr error) {
 	}
 
 	return nil
+}
+
+// matchWildcard only supports wildcard(single '*') in last part of a dot-separate field
+func matchWildcard(field string, reminder map[string]bool) (ok bool) {
+	dotIdx := strings.LastIndex(field, JSONFieldSeparator)
+	return dotIdx != -1 && reminder[field[:dotIdx+1]+WildcardPlaceholder]
 }
 
 // IsEmpty when rules is empty or filter is null
@@ -450,9 +459,13 @@ func (ar AtomRule) Validate(opt *ExprOption) error {
 	if opt != nil {
 		typ, exist := opt.RuleFields[ar.Field]
 		if !exist {
-			return fmt.Errorf("rule field: %s is not exist in the expr option", ar.Field)
+			// try match wildcard field again
+			typ, exist = ar.getWildcardColumnType(opt)
 		}
 
+		if !exist {
+			return fmt.Errorf("rule field: %s is not exist in the expr option", ar.Field)
+		}
 		if err := validateFieldValue(ar.Value, typ); err != nil {
 			return fmt.Errorf("invalid %s's value, %v", ar.Field, err)
 		}
@@ -467,6 +480,18 @@ func (ar AtomRule) Validate(opt *ExprOption) error {
 	}
 
 	return nil
+}
+
+// getWildcardColumnType get column type by wildcard,
+// only supports wildcard(single '*') in last part of a dot-separate field
+func (ar AtomRule) getWildcardColumnType(opt *ExprOption) (typ enumor.ColumnType, exist bool) {
+	dotIdx := strings.LastIndex(ar.Field, JSONFieldSeparator)
+	if dotIdx == -1 {
+		return "", false
+	}
+	wildcardField := ar.Field[:dotIdx+1] + WildcardPlaceholder
+	typ, exist = opt.RuleFields[wildcardField]
+	return typ, exist
 }
 
 func validateFieldValue(v interface{}, typ enumor.ColumnType) error {

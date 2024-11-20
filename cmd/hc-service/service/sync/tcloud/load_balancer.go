@@ -20,85 +20,119 @@
 package tcloud
 
 import (
-	ressync "hcm/cmd/hc-service/logics/res-sync"
+	"sync"
+
 	"hcm/cmd/hc-service/logics/res-sync/tcloud"
 	"hcm/cmd/hc-service/service/sync/handler"
 	typecore "hcm/pkg/adaptor/types/core"
 	typeclb "hcm/pkg/adaptor/types/load-balancer"
-	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/tools/converter"
+	cvt "hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
+
+	"golang.org/x/sync/errgroup"
 )
 
 // SyncLoadBalancer 同步负载均衡接口
 func (svc *service) SyncLoadBalancer(cts *rest.Contexts) (interface{}, error) {
-	return nil, handler.ResourceSync(cts, &lbHandler{cli: svc.syncCli})
+	hd := &lbHandler{
+		baseHandler: baseHandler{
+			resType: enumor.LoadBalancerCloudResType,
+			cli:     svc.syncCli,
+		},
+	}
+	return nil, handler.ResourceSyncV2(cts, hd)
 }
 
 // lbHandler lb sync handler.
 type lbHandler struct {
-	cli ressync.Interface
-
-	request *sync.TCloudSyncReq
-	syncCli tcloud.Interface
-	offset  uint64
+	baseHandler
+	offset uint64
 }
 
-var _ handler.Handler = new(lbHandler)
-
-// Prepare ...
-func (hd *lbHandler) Prepare(cts *rest.Contexts) error {
-	request, syncCli, err := defaultPrepare(cts, hd.cli)
-	if err != nil {
-		return err
-	}
-
-	hd.request = request
-	hd.syncCli = syncCli
-
-	return nil
-}
+var _ handler.HandlerV2[typeclb.TCloudClb] = new(lbHandler)
 
 // Next ...
-func (hd *lbHandler) Next(kt *kit.Kit) ([]string, error) {
-	listOpt := &typeclb.TCloudListOption{
-		Region: hd.request.Region,
-		Page: &typecore.TCloudPage{
-			Offset: hd.offset,
-			Limit:  typecore.TCloudQueryLimit,
-		},
+func (hd *lbHandler) Next(kt *kit.Kit) ([]typeclb.TCloudClb, error) {
+
+	if len(hd.request.CloudIDs) > 0 {
+		// 指定id只处理一次
+		listOpt := &typeclb.TCloudListOption{
+			Region:   hd.request.Region,
+			CloudIDs: hd.request.CloudIDs,
+			Page: &typecore.TCloudPage{
+				Limit: typecore.TCloudQueryLimit,
+			},
+			OrderType:  cvt.ValToPtr(typeclb.TCloudCLBOrderAscending),
+			OrderBy:    cvt.ValToPtr(typeclb.TCloudOrderByCreateTime),
+			TagFilters: hd.request.TagFilters,
+		}
+		lbResult, err := hd.syncCli.CloudCli().ListLoadBalancer(kt, listOpt)
+		if err != nil {
+			logs.Errorf("request adaptor list tcloud load balancer failed, err: %v, opt: %+v, rid: %s",
+				err, listOpt, kt.Rid)
+			return nil, err
+		}
+		return lbResult, nil
 	}
 
-	lbResult, err := hd.syncCli.CloudCli().ListLoadBalancer(kt, listOpt)
+	var eg, _ = errgroup.WithContext(kt.Ctx)
+	mu := &sync.Mutex{}
+	results := make([]typeclb.TCloudClb, 0, typecore.TCloudQueryLimit*hd.SyncConcurrent())
+	for i := uint(0); i < hd.SyncConcurrent(); i++ {
+		offset := hd.offset + uint64(typecore.TCloudQueryLimit*i)
+		eg.Go(func() error {
+			listOpt := &typeclb.TCloudListOption{
+				Region: hd.request.Region,
+				Page: &typecore.TCloudPage{
+					Offset: offset,
+					Limit:  typecore.TCloudQueryLimit,
+				},
+				OrderType:  cvt.ValToPtr(typeclb.TCloudCLBOrderAscending),
+				OrderBy:    cvt.ValToPtr(typeclb.TCloudOrderByCreateTime),
+				TagFilters: hd.request.TagFilters,
+			}
+			lbResult, err := hd.syncCli.CloudCli().ListLoadBalancer(kt, listOpt)
+			if err != nil {
+				logs.Errorf("request adaptor list tcloud load balancer failed, err: %v, opt: %+v, rid: %s",
+					err, listOpt, kt.Rid)
+				return err
+			}
+			mu.Lock()
+			results = append(results, lbResult...)
+			mu.Unlock()
+			return nil
+		})
+
+	}
+	err := eg.Wait()
 	if err != nil {
-		logs.Errorf("request adaptor list tcloud load balancer failed, err: %v, opt: %v, rid: %s", err, listOpt, kt.Rid)
 		return nil, err
 	}
 
-	if len(lbResult) == 0 {
+	if len(results) == 0 {
 		return nil, nil
 	}
-
-	cloudIDs := make([]string, 0, len(lbResult))
-	for _, one := range lbResult {
-		cloudIDs = append(cloudIDs, converter.PtrToVal(one.LoadBalancerId))
-	}
-
-	hd.offset += typecore.TCloudQueryLimit
-	return cloudIDs, nil
+	hd.offset += uint64(len(results))
+	return results, nil
 }
 
 // Sync ...
-func (hd *lbHandler) Sync(kt *kit.Kit, cloudIDs []string) error {
+func (hd *lbHandler) Sync(kt *kit.Kit, instances []typeclb.TCloudClb) error {
+
 	params := &tcloud.SyncBaseParams{
-		AccountID: hd.request.AccountID,
-		Region:    hd.request.Region,
-		CloudIDs:  cloudIDs,
+		AccountID:  hd.request.AccountID,
+		Region:     hd.request.Region,
+		CloudIDs:   slice.Map(instances, typeclb.TCloudClb.GetCloudID),
+		TagFilters: hd.request.TagFilters,
 	}
-	if _, err := hd.syncCli.LoadBalancerWithListener(kt, params, new(tcloud.SyncLBOption)); err != nil {
+	opt := &tcloud.SyncLBOption{
+		PrefetchedLB: instances,
+	}
+	if _, err := hd.syncCli.LoadBalancerWithListener(kt, params, opt); err != nil {
 		logs.Errorf("sync tcloud load balancer with rel failed, err: %v, opt: %v, rid: %s", err, params, kt.Rid)
 		return err
 	}
@@ -108,7 +142,14 @@ func (hd *lbHandler) Sync(kt *kit.Kit, cloudIDs []string) error {
 
 // RemoveDeleteFromCloud ...
 func (hd *lbHandler) RemoveDeleteFromCloud(kt *kit.Kit) error {
-	if err := hd.syncCli.RemoveLoadBalancerDeleteFromCloud(kt, hd.request.AccountID, hd.request.Region); err != nil {
+
+	params := &tcloud.SyncRemovedParams{
+		AccountID:  hd.request.AccountID,
+		Region:     hd.request.Region,
+		CloudIDs:   hd.request.CloudIDs,
+		TagFilters: hd.request.TagFilters,
+	}
+	if err := hd.syncCli.RemoveLoadBalancerDeleteFromCloud(kt, params); err != nil {
 		logs.Errorf("remove load balancer delete from cloud failed, err: %v, accountID: %s, region: %s, rid: %s", err,
 			hd.request.AccountID, hd.request.Region, kt.Rid)
 		return err
@@ -117,7 +158,20 @@ func (hd *lbHandler) RemoveDeleteFromCloud(kt *kit.Kit) error {
 	return nil
 }
 
-// Name load_balancer
-func (hd *lbHandler) Name() enumor.CloudResourceType {
-	return enumor.LoadBalancerCloudResType
+// RemoveDeletedFromCloud 清理云上已删除资源
+func (hd *lbHandler) RemoveDeletedFromCloud(kt *kit.Kit, allCloudIDMap map[string]struct{}) error {
+
+	params := &tcloud.SyncRemovedParams{
+		AccountID:  hd.request.AccountID,
+		Region:     hd.request.Region,
+		CloudIDs:   hd.request.CloudIDs,
+		TagFilters: hd.request.TagFilters,
+	}
+	err := hd.syncCli.RemoveLoadBalancerDeleteFromCloudV2(kt, params, allCloudIDMap)
+	if err != nil {
+		logs.Errorf("remove clb delete from cloud failed, err: %v, cloud id: %v,account: %s, region: %s, rid: %s",
+			err, hd.request.CloudIDs, hd.request.AccountID, hd.request.Region, kt.Rid)
+		return err
+	}
+	return nil
 }

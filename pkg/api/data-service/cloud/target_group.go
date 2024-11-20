@@ -66,21 +66,22 @@ func (req *TargetGroupCreateReq) Validate() error {
 
 // TargetBaseReq Target基本参数
 type TargetBaseReq struct {
-	ID               string          `json:"id" validate:"omitempty"`
-	IP               string          `json:"ip" validate:"omitempty"`
-	InstType         enumor.InstType `json:"inst_type" validate:"required"`
-	Port             int64           `json:"port" validate:"required"`
-	Weight           *int64          `json:"weight" validate:"required"`
-	AccountID        string          `json:"account_id,omitempty" validate:"omitempty"`
-	TargetGroupID    string          `json:"target_group_id,omitempty" validate:"omitempty"`
-	CloudInstID      string          `json:"cloud_inst_id" validate:"omitempty"`
-	InstName         string          `json:"inst_name,omitempty" validate:"omitempty"`
-	PrivateIPAddress []string        `json:"private_ip_address,omitempty" validate:"omitempty"`
-	PublicIPAddress  []string        `json:"public_ip_address,omitempty" validate:"omitempty"`
-	CloudVpcIDs      []string        `json:"cloud_vpc_ids,omitempty" validate:"omitempty"`
-	Zone             string          `json:"zone,omitempty" validate:"omitempty"`
-	NewPort          *int64          `json:"new_port,omitempty" validate:"omitempty"`
-	NewWeight        *int64          `json:"new_weight,omitempty" validate:"omitempty"`
+	ID                string          `json:"id" validate:"omitempty"`
+	IP                string          `json:"ip" validate:"omitempty"`
+	InstType          enumor.InstType `json:"inst_type" validate:"required"`
+	Port              int64           `json:"port" validate:"required"`
+	Weight            *int64          `json:"weight" validate:"required"`
+	AccountID         string          `json:"account_id,omitempty" validate:"omitempty"`
+	TargetGroupID     string          `json:"target_group_id,omitempty" validate:"omitempty"`
+	CloudInstID       string          `json:"cloud_inst_id" validate:"omitempty"`
+	InstName          string          `json:"inst_name,omitempty" validate:"omitempty"`
+	TargetGroupRegion string          `json:"target_group_region,omitempty" validate:"omitempty"`
+	PrivateIPAddress  []string        `json:"private_ip_address,omitempty" validate:"omitempty"`
+	PublicIPAddress   []string        `json:"public_ip_address,omitempty" validate:"omitempty"`
+	CloudVpcIDs       []string        `json:"cloud_vpc_ids,omitempty" validate:"omitempty"`
+	Zone              string          `json:"zone,omitempty" validate:"omitempty"`
+	NewPort           *int64          `json:"new_port,omitempty" validate:"omitempty"`
+	NewWeight         *int64          `json:"new_weight,omitempty" validate:"omitempty"`
 }
 
 // Validate ...
@@ -326,6 +327,7 @@ type ListenersCreateReq[Extension corelb.ListenerExtension] struct {
 	CloudLbID     string              `json:"cloud_lb_id" validate:"required"`
 	Protocol      enumor.ProtocolType `json:"protocol" validate:"required"`
 	Port          int64               `json:"port" validate:"required"`
+	Region        string              `json:"region" validate:"required"`
 	DefaultDomain string              `json:"default_domain" validate:"omitempty"`
 	Extension     *Extension          `json:"extension"`
 }
@@ -367,7 +369,7 @@ type ListenerWithRuleCreateReq struct {
 	CloudRuleID        string                        `json:"cloud_rule_id" validate:"required"`
 	Scheduler          string                        `json:"scheduler" validate:"required"`
 	RuleType           enumor.RuleType               `json:"rule_type" validate:"required"`
-	SessionType        string                        `json:"session_type" validate:"required"`
+	SessionType        string                        `json:"session_type" validate:"omitempty"`
 	SessionExpire      int64                         `json:"session_expire" validate:"omitempty"`
 	TargetGroupID      string                        `json:"target_group_id" validate:"omitempty"`
 	CloudTargetGroupID string                        `json:"cloud_target_group_id" validate:"omitempty"`
@@ -375,6 +377,7 @@ type ListenerWithRuleCreateReq struct {
 	Url                string                        `json:"url" validate:"omitempty"`
 	SniSwitch          enumor.SniType                `json:"sni_switch" validate:"omitempty"`
 	Certificate        *corelb.TCloudCertificateInfo `json:"certificate" validate:"omitempty"`
+	Region             string                        `json:"region" validate:"required"`
 }
 
 // Validate 验证监听器跟规则创建的参数
@@ -412,6 +415,7 @@ type ListenerUpdateReq[Extension corelb.ListenerExtension] struct {
 	BkBizID       int64          `json:"bk_biz_id" validate:"omitempty"`
 	SniSwitch     enumor.SniType `json:"sni_switch" validate:"omitempty"`
 	DefaultDomain string         `json:"default_domain" validate:"omitempty"`
+	Region        string         `json:"region" validate:"omitempty"`
 	Extension     *Extension     `json:"extension"`
 }
 
@@ -467,12 +471,13 @@ func (r *TargetBatchUpdateReq) Validate() error {
 type TargetUpdate struct {
 	ID string `json:"id" validate:"required,lte=255"`
 
-	InstName         string            `json:"inst_name"`
-	Port             int64             `json:"port"`
-	Weight           *int64            `json:"weight"`
-	PrivateIPAddress types.StringArray `json:"private_ip_address" validate:"omitempty,dive,ip"`
-	PublicIPAddress  types.StringArray `json:"public_ip_address" validate:"omitempty,dive,ip"`
-	Memo             *string           `json:"memo" validate:"omitempty,lte=255"`
+	InstName          string            `json:"inst_name"`
+	Port              int64             `json:"port"`
+	Weight            *int64            `json:"weight"`
+	TargetGroupRegion string            `json:"target_group_region"`
+	PrivateIPAddress  types.StringArray `json:"private_ip_address" validate:"omitempty,dive,ip"`
+	PublicIPAddress   types.StringArray `json:"public_ip_address" validate:"omitempty,dive,ip"`
+	Memo              *string           `json:"memo" validate:"omitempty,lte=255"`
 }
 
 // Validate ...

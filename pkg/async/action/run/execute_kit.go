@@ -19,11 +19,16 @@
 
 package run
 
-import "hcm/pkg/kit"
+import (
+	"hcm/pkg/kit"
+	"hcm/pkg/tools/uuid"
+)
 
 // ExecuteKit is a kit using by action
 type ExecuteKit interface {
 	Kit() *kit.Kit
+	AsyncKit() *kit.Kit
+	KitWithNewRid() *kit.Kit
 	ShareData() ShareDataOperator
 }
 
@@ -46,6 +51,16 @@ func NewExecuteContext(kt *kit.Kit, shareData ShareDataOperator) ExecuteKit {
 type DefExecuteContext struct {
 	kit       *kit.Kit
 	shareData ShareDataOperator
+}
+
+// KitWithNewRid return kit with new rid.
+func (ctx *DefExecuteContext) KitWithNewRid() *kit.Kit {
+	return ctx.kit.NewSubKitWithRid(uuid.UUID())
+}
+
+// AsyncKit Kit with async request source.
+func (ctx *DefExecuteContext) AsyncKit() *kit.Kit {
+	return ctx.kit.WithAsyncSource()
 }
 
 // Kit return kit.

@@ -7,6 +7,7 @@ import { VendorEnum } from '@/common/constant';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { ISubnetItem } from '../../cvm/children/SubnetPreviewDialog';
 import RightTurnLine from 'bkui-vue/lib/icon/right-turn-line';
+import { FilterType } from '@/typings';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -20,7 +21,7 @@ export default defineComponent({
     vendor: String as PropType<string>,
     region: String as PropType<string>,
     accountId: String as PropType<string>,
-    zone: String as PropType<string>,
+    zone: [String, Array<String>] as PropType<string | string[]>,
     resourceGroup: String as PropType<string>,
     handleChange: Function as PropType<(data: ISubnetItem) => void>,
     clearable: {
@@ -51,7 +52,7 @@ export default defineComponent({
       vendor: string,
       vpcId: string,
       accountId: string,
-      zone: string,
+      zone: string | string[],
     ) => {
       if ((!bizId && isServicePage) || !vpcId) {
         list.value = [];
@@ -60,7 +61,7 @@ export default defineComponent({
 
       loading.value = true;
 
-      const filter = {
+      const filter: FilterType = {
         op: 'and',
         rules: [
           {
@@ -81,12 +82,12 @@ export default defineComponent({
         ],
       };
 
-      if ([VendorEnum.TCLOUD, VendorEnum.AWS].includes(vendor)) {
-        filter.rules.push({
-          field: 'zone',
-          op: QueryRuleOPEnum.EQ,
-          value: zone,
-        });
+      if ([VendorEnum.TCLOUD, VendorEnum.AWS].includes(vendor as VendorEnum)) {
+        if (Array.isArray(zone)) {
+          zone.length > 0 && filter.rules.push({ field: 'zone', op: QueryRuleOPEnum.IN, value: zone });
+        } else {
+          filter.rules.push({ field: 'zone', op: QueryRuleOPEnum.EQ, value: zone });
+        }
       }
 
       // if (vendor === VendorEnum.AZURE) {

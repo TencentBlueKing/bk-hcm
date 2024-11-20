@@ -22,6 +22,7 @@ package tcloud
 
 import (
 	"errors"
+	"fmt"
 
 	"hcm/cmd/hc-service/logics/res-sync/common"
 	typeslb "hcm/pkg/adaptor/types/load-balancer"
@@ -50,12 +51,16 @@ func (cli *client) listenerByLbBatch(kt *kit.Kit, params *SyncListenerBatchOptio
 	if err := validator.ValidateTool(params); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-
 	// 并发同步多个负载均衡下的监听器
 	syncConcurrency := int(cc.HCService().SyncConfig.TCloudLoadBalancerListenerSyncConcurrency)
 	var syncResult *SyncResult
 	err := concurrence.BaseExec(syncConcurrency, params.LbInfos, func(lb corelb.TCloudLoadBalancer) error {
 		newKit := kt.NewSubKit()
+		if lb.Extension.IsTraditional() {
+			logs.Warnf("unsupported traditional load balancer, will skip, lb: %s at %s, rid: %s",
+				lb.CloudID, lb.Region, newKit.Rid)
+			return nil
+		}
 		syncOpt := &SyncListenerOption{
 			BizID:              lb.BkBizID,
 			LBID:               lb.ID,
@@ -68,8 +73,8 @@ func (cli *client) listenerByLbBatch(kt *kit.Kit, params *SyncListenerBatchOptio
 		}
 		var err error
 		if syncResult, err = cli.listenerOfLoadBalancer(newKit, param, syncOpt); err != nil {
-			logs.ErrorDepthf(1, "[%s] account: %s lb: %s sync listener failed, err: %v, rid: %s",
-				enumor.TCloud, params.AccountID, lb.CloudID, err, kt.Rid)
+			logs.ErrorDepthf(1, "[%s] sync listener failed, err: %v, account: %s lb: %s, region :%s rid: %s",
+				enumor.TCloud, err, params.AccountID, lb.CloudID, params.Region, newKit.Rid)
 			return err
 		}
 		return nil
@@ -84,8 +89,8 @@ func (cli *client) listenerByLbBatch(kt *kit.Kit, params *SyncListenerBatchOptio
 func (cli *client) Listener(kt *kit.Kit, params *SyncBaseParams, opt *SyncListenerOption) (
 	*SyncResult, error) {
 
-	if len(params.CloudIDs) == 0 {
-		return nil, errors.New("cloud id is required")
+	if err := params.Validate(); err != nil {
+		return nil, err
 	}
 	if err := opt.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -125,15 +130,17 @@ func (cli *client) listenerOfLoadBalancer(kt *kit.Kit, params *SyncBaseParams, o
 		logs.Errorf("fail to list listener for sync, err: %v, opt:%+v, rid: %s", err, opt, kt.Rid)
 		return nil, err
 	}
+
 	// 清理已删除监听器
-	if err := cli.deleteRemovedListener(kt, opt.LBID, cloudListeners); err != nil {
+	cloudListenerIds := slice.Map(cloudListeners, typeslb.TCloudListener.GetCloudID)
+	if err := cli.deleteRemovedListener(kt, opt.LBID, params.Region, cloudListenerIds, nil); err != nil {
 		return nil, err
 	}
 
 	//  分批同步云上监听器
 	for _, listeners := range slice.Split(cloudListeners, constant.TCLBDescribeMax) {
 
-		cloudLblIds := slice.Map(listeners, func(l typeslb.TCloudListener) string { return cvt.PtrToVal(l.ListenerId) })
+		cloudLblIds := slice.Map(listeners, typeslb.TCloudListener.GetCloudID)
 		lblParam := &SyncBaseParams{
 			AccountID: params.AccountID,
 			Region:    params.Region,
@@ -146,18 +153,41 @@ func (cli *client) listenerOfLoadBalancer(kt *kit.Kit, params *SyncBaseParams, o
 	return nil, nil
 }
 
-func (cli *client) deleteRemovedListener(kt *kit.Kit, lbID string, cloudLblList []typeslb.TCloudListener) error {
+// RemoveListenerDeleteFromCloud ...
+func (cli *client) RemoveListenerDeleteFromCloud(kt *kit.Kit, params *ListenerSyncRemovedParams) error {
 
-	// 删除云上已删除监听器
-	allCloudIDMap := cvt.SliceToMap(cloudLblList, func(l typeslb.TCloudListener) (string, struct{}) {
-		return cvt.PtrToVal(l.ListenerId), struct{}{}
-	})
+	syncParam := &SyncBaseParams{
+		AccountID: params.AccountID,
+		Region:    params.Region,
+		CloudIDs:  params.CloudIDs,
+	}
+	opt := &SyncListenerOption{
+		BizID:              params.BizID,
+		LBID:               params.LBID,
+		CloudLBID:          params.CloudLBID,
+		CachedLoadBalancer: params.CachedLoadBalancer,
+	}
 
+	cloudListeners, err := cli.listListenerFromCloud(kt, syncParam, opt)
+	if err != nil {
+		logs.Errorf("fail to list listener for remove deleted, err: %v, opt:%+v, rid: %s", err, opt, kt.Rid)
+		return err
+	}
+
+	cloudListenerIds := slice.Map(cloudListeners, typeslb.TCloudListener.GetCloudID)
+	return cli.deleteRemovedListener(kt, opt.LBID, params.Region, cloudListenerIds, params.CloudIDs)
+}
+
+// 删除云上已删除监听器 cloudCloudIDs 云上获取到的id列表，dbCloudIDs 本地获取到的id列表。
+func (cli *client) deleteRemovedListener(kt *kit.Kit, lbID, region string, cloudCloudIDs []string,
+	dbCloudIDs []string) error {
+
+	allCloudIDMap := cvt.StringSliceToMap(cloudCloudIDs)
 	removedLblCloudIds := make([]string, 0)
 	// 获取本地数据
 	page := core.NewDefaultBasePage()
 	for {
-		dbListeners, err := cli.listListenerFromDB(kt, lbID, nil, page)
+		dbListeners, err := cli.listListenerFromDB(kt, lbID, dbCloudIDs, page)
 		if err != nil {
 			logs.Errorf("fail to list removed listener for sync, lbID: %s, err: %v, page:%+v, rid: %s",
 				lbID, err, page, kt.Rid)
@@ -179,7 +209,7 @@ func (cli *client) deleteRemovedListener(kt *kit.Kit, lbID string, cloudLblList 
 	}
 
 	for _, cloudIds := range slice.Split(removedLblCloudIds, constant.BatchOperationMaxLimit) {
-		if err := cli.deleteListener(kt, cloudIds); err != nil {
+		if err := cli.deleteListener(kt, region, cloudIds); err != nil {
 			logs.Errorf("fail to delete removed listener for sync, err: %v, listener_cloud_ids: %v, lbID: %s, rid: %s",
 				err, cloudIds, lbID, kt.Rid)
 			return err
@@ -206,26 +236,29 @@ func (cli *client) listener(kt *kit.Kit, params *SyncBaseParams, opt *SyncListen
 		return nil
 	}
 
+	for i := range cloudListeners {
+		cloudListeners[i].Region = params.Region
+	}
 	addSlice, updateMap, delCloudIDs := common.Diff[typeslb.TCloudListener, corelb.TCloudListener](
 		cloudListeners, dbListeners, isListenerChange)
 
 	// 删除云上已经删除的监听器实例
-	if err = cli.deleteListener(kt, delCloudIDs); err != nil {
+	if err = cli.deleteListener(kt, params.Region, delCloudIDs); err != nil {
 		return err
 	}
 
 	// 创建云上新增监听器实例， 对于四层规则一起创建对应的规则
-	_, err = cli.createListener(kt, params.AccountID, opt, addSlice)
+	_, err = cli.createListener(kt, params.AccountID, params.Region, opt, addSlice)
 	if err != nil {
 		return err
 	}
 	// 更新变更监听器，不更新对应四层/七层 规则
-	if err = cli.updateListener(kt, opt.BizID, updateMap); err != nil {
+	if err = cli.updateListener(kt, opt.BizID, params.Region, updateMap); err != nil {
 		return err
 	}
 
 	// 同步监听器下的四层/七层规则
-	_, err = cli.loadBalancerRule(kt, opt, cloudListeners)
+	_, err = cli.loadBalancerRule(kt, params, opt, cloudListeners)
 	if err != nil {
 		logs.Errorf("fail to sync listener rule for sync listener, err: %v, opt: %+v, rid: %s", err, opt, kt.Rid)
 		return err
@@ -266,12 +299,16 @@ func (cli *client) listListenerFromCloud(kt *kit.Kit, params *SyncBaseParams, op
 }
 
 // 获取本地监听器列表
-func (cli *client) listListenerFromDB(kt *kit.Kit, lbID string, cloudIds []string, page *core.BasePage) (
-	[]corelb.TCloudListener, error) {
+func (cli *client) listListenerFromDB(kt *kit.Kit, lbID string, cloudIds []string, page *core.BasePage) ([]corelb.TCloudListener, error) {
 
+	// 在特定的load_balancer下 监听器理论上不会重复 因此这个查询不增加region的查询条件
+	// 如果加上会导致查不到历史数据
 	listReq := &core.ListReq{
-		Filter: tools.EqualExpression("lb_id", lbID),
-		Page:   page,
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("lb_id", lbID),
+			tools.RuleEqual("vendor", enumor.TCloud),
+		),
+		Page: page,
 	}
 	if len(cloudIds) > 0 {
 		listReq.Filter.Rules = append(listReq.Filter.Rules, tools.RuleIn("cloud_id", cloudIds))
@@ -286,11 +323,17 @@ func (cli *client) listListenerFromDB(kt *kit.Kit, lbID string, cloudIds []strin
 	return lblResp.Details, nil
 }
 
-func (cli *client) deleteListener(kt *kit.Kit, cloudIds []string) error {
+func (cli *client) deleteListener(kt *kit.Kit, region string, cloudIds []string) error {
 	if len(cloudIds) == 0 {
 		return nil
 	}
-	delReq := &dataproto.LoadBalancerBatchDeleteReq{Filter: tools.ContainersExpression("cloud_id", cloudIds)}
+	delReq := &dataproto.LoadBalancerBatchDeleteReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleIn("cloud_id", cloudIds),
+			tools.RuleEqual("vendor", enumor.TCloud),
+			tools.RuleEqual("region", region),
+		),
+	}
 	err := cli.dbCli.Global.LoadBalancer.DeleteListener(kt, delReq)
 	if err != nil {
 		logs.Errorf("fail to delete listeners(ids:%v) while sync, err: %v, rid: %s",
@@ -300,7 +343,7 @@ func (cli *client) deleteListener(kt *kit.Kit, cloudIds []string) error {
 	return nil
 }
 
-func (cli *client) createListener(kt *kit.Kit, accountID string, syncOpt *SyncListenerOption,
+func (cli *client) createListener(kt *kit.Kit, accountID, region string, syncOpt *SyncListenerOption,
 	addSlice []typeslb.TCloudListener) ([]string, error) {
 
 	if len(addSlice) == 0 {
@@ -311,11 +354,11 @@ func (cli *client) createListener(kt *kit.Kit, accountID string, syncOpt *SyncLi
 	for _, lbl := range addSlice {
 		if lbl.GetProtocol().IsLayer7Protocol() {
 			// for layer 7 only create listeners itself
-			dbListeners = append(dbListeners, convL7Listener(lbl, accountID, syncOpt))
+			dbListeners = append(dbListeners, convL7Listener(lbl, accountID, region, syncOpt))
 			continue
 		}
 		// layer 4 create with rule
-		dbRules = append(dbRules, convL4Listener(lbl, accountID, syncOpt))
+		dbRules = append(dbRules, convL4Listener(lbl, accountID, region, syncOpt))
 	}
 	createdIDs := make([]string, 0, len(addSlice))
 	if len(dbListeners) > 0 {
@@ -343,8 +386,9 @@ func (cli *client) createListener(kt *kit.Kit, accountID string, syncOpt *SyncLi
 	return createdIDs, nil
 }
 
-func convL4Listener(lbl typeslb.TCloudListener, accountID string,
+func convL4Listener(lbl typeslb.TCloudListener, accountID string, region string,
 	syncOpt *SyncListenerOption) dataproto.ListenerWithRuleCreateReq {
+
 	db := dataproto.ListenerWithRuleCreateReq{
 		CloudID:       lbl.GetCloudID(),
 		Name:          cvt.PtrToVal(lbl.ListenerName),
@@ -356,6 +400,7 @@ func convL4Listener(lbl typeslb.TCloudListener, accountID string,
 		Protocol:      lbl.GetProtocol(),
 		Port:          cvt.PtrToVal(lbl.Port),
 		CloudRuleID:   lbl.GetCloudID(),
+		Region:        region,
 		Scheduler:     cvt.PtrToVal(lbl.Scheduler),
 		RuleType:      enumor.Layer4RuleType,
 		SessionType:   cvt.PtrToVal(lbl.SessionType),
@@ -370,7 +415,7 @@ func convL4Listener(lbl typeslb.TCloudListener, accountID string,
 	return db
 }
 
-func convL7Listener(lbl typeslb.TCloudListener, accountID string,
+func convL7Listener(lbl typeslb.TCloudListener, accountID string, region string,
 	syncOpt *SyncListenerOption) dataproto.ListenersCreateReq[corelb.TCloudListenerExtension] {
 
 	// for layer 7 only create listeners itself
@@ -385,6 +430,7 @@ func convL7Listener(lbl typeslb.TCloudListener, accountID string,
 		Protocol:      lbl.GetProtocol(),
 		Port:          cvt.PtrToVal(lbl.Port),
 		DefaultDomain: getDefaultDomain(lbl),
+		Region:        region,
 		Extension: &corelb.TCloudListenerExtension{
 			Certificate: convCert(lbl.Certificate),
 			EndPort:     lbl.EndPort,
@@ -396,7 +442,8 @@ func convL7Listener(lbl typeslb.TCloudListener, accountID string,
 	return db
 }
 
-func (cli *client) updateListener(kt *kit.Kit, bizID int64, updateMap map[string]typeslb.TCloudListener) error {
+func (cli *client) updateListener(kt *kit.Kit, bizID int64, region string,
+	updateMap map[string]typeslb.TCloudListener) error {
 
 	if len(updateMap) == 0 {
 		return nil
@@ -411,6 +458,7 @@ func (cli *client) updateListener(kt *kit.Kit, bizID int64, updateMap map[string
 			BkBizID:       bizID,
 			SniSwitch:     enumor.SniType(cvt.PtrToVal(lbl.SniSwitch)),
 			DefaultDomain: getDefaultDomain(lbl),
+			Region:        region,
 			Extension: &corelb.TCloudListenerExtension{
 				Certificate: convCert(lbl.Certificate),
 				EndPort:     lbl.EndPort,
@@ -453,6 +501,10 @@ func isListenerChange(cloud typeslb.TCloudListener, db corelb.TCloudListener) bo
 		return true
 	}
 	if cvt.PtrToVal(cloud.EndPort) != cvt.PtrToVal(db.Extension.EndPort) {
+		return true
+	}
+	// listener表新增region字段, 需要通过同步更新region字段
+	if cloud.Region != db.Region {
 		return true
 	}
 	switch cloud.GetProtocol() {
@@ -640,4 +692,27 @@ type SyncListenerBatchOption struct {
 // Validate ...
 func (o *SyncListenerBatchOption) Validate() error {
 	return validator.Validate.Struct(o)
+}
+
+// ListenerSyncRemovedParams ...
+type ListenerSyncRemovedParams struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CloudIDs  []string `json:"cloud_ids,omitempty" validate:"omitempty"`
+
+	BizID int64 `json:"biz_id" validate:"required"`
+	// 对应的负载均衡
+	LBID      string `json:"lbid" validate:"required"`
+	CloudLBID string `json:"cloud_lbid" validate:"required"`
+
+	CachedLoadBalancer *corelb.TCloudLoadBalancer
+}
+
+// Validate ...
+func (opt ListenerSyncRemovedParams) Validate() error {
+
+	if len(opt.CloudIDs) > constant.CloudResourceSyncMaxLimit {
+		return fmt.Errorf("cloudIDs shuold <= %d", constant.CloudResourceSyncMaxLimit)
+	}
+	return validator.Validate.Struct(opt)
 }

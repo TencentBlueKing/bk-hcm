@@ -50,4 +50,9 @@ const (
 
 	// ExcelExportLimit two hundred thousands 二十万
 	ExcelExportLimit = 20_0000
+	// ExcelImportRowLimit five thousand 五千
+	ExcelImportRowLimit = 5000
+
+	// BatchTaskMaxLimit 批量操作最大的限制数量
+	BatchTaskMaxLimit = 20
 )
