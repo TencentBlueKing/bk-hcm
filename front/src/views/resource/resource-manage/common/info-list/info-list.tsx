@@ -1,4 +1,4 @@
-import { computed, defineComponent, inject, PropType, useTemplateRef } from 'vue';
+import { computed, defineComponent, inject, PropType, ref } from 'vue';
 
 import { OverflowTitle } from 'bkui-vue';
 import { Share, Copy } from 'bkui-vue/lib/icon';
@@ -43,15 +43,15 @@ export default defineComponent({
       emit('change', { [key]: val });
     };
 
-    const editCompRef = useTemplateRef<typeof RenderDetailEdit>('detail-edit-comp');
+    const editCompRefs = ref(new Map<string, any>());
     // 如果祖辈组件有 provide 预鉴权参数, 则需要对编辑操作进行预鉴权处理
-    const handleEdit = () => {
+    const handleEdit = (name: string) => {
       if (isAuth.value === false) {
         // 无权限, 展示权限申请弹窗
         const { authId, handleAuth } = authAction;
         handleAuth(authId);
       } else {
-        editCompRef.value.handleEdit();
+        editCompRefs.value.get(name).handleEdit();
       }
     };
 
@@ -61,6 +61,7 @@ export default defineComponent({
       handleBlur,
       handleEdit,
       isAuth,
+      editCompRefs,
     };
   },
 
@@ -81,7 +82,7 @@ export default defineComponent({
     // 渲染可编辑文本
     const renderEditTxt = (field: Field) => (
       <RenderDetailEdit
-        ref='detail-edit-comp'
+        ref={(el) => this.editCompRefs.set(field.name, el)}
         modelValue={field.value}
         fromType={field.type}
         needValidate={false}
@@ -172,7 +173,7 @@ export default defineComponent({
               </span>
               {edit && (
                 <i
-                  onClick={this.handleEdit}
+                  onClick={() => this.handleEdit(name)}
                   class={[
                     'icon hcm-icon bkhcm-icon-bianji edit-icon',
                     {
