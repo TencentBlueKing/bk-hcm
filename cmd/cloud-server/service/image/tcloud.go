@@ -23,6 +23,7 @@ import (
 	"hcm/cmd/cloud-server/service/common"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/hc-service/image"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
@@ -40,7 +41,7 @@ func (svc *imageSvc) TCloudQueryImage(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	return svc.tcloudQueryImage(cts, req, 0, handler.ResOperateAuth)
+	return svc.tcloudQueryImage(cts, req, constant.UnassignedBiz, handler.ResOperateAuth)
 }
 
 // TCLoudBizQueryImage ...
