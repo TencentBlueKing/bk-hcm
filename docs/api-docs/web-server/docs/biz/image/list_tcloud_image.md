@@ -13,12 +13,18 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/tcloud/images/query_from_cloud
 |------------|--------------|----|--------------------------------------|
 | bk_biz_id  | int64        | 是  | 业务ID                                 |
 | account_id | string       | 是  | 账号ID                                 |
-| region_id  | string       | 是  | 地域ID（唯一标识）                           |
-| limit      | uint         | 否  | 数量限制，默认为20，最大值为100                   |
-| offset     | uint         | 否  | 偏移量，默认为0                             |
+| region     | string       | 是  | 地域ID（唯一标识）                           |
 | cloud_ids  | string array | 否  | 镜像ID列表, 不能和filters同时使用               |
 | filters    | FilterExp    | 否  | 查询条件。不传时表示查询所有公共镜像, 不能和cloud_ids同时使用 |
+| page       | Page         | 是  | 分页设置                                 |
 
+
+#### Page
+
+| 参数名称   | 参数类型   | 必选 | 描述                  |
+|--------|--------|----|---------------------|
+| offset | uint32 | 否  | 记录开始位置，offset 起始值为0 |
+| limit  | uint32 | 否  | 偏移量, 默认为0, 最大值为100  |
 
 #### FilterExp
 
@@ -52,7 +58,11 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/tcloud/images/query_from_cloud
       "name": "image-type",
       "values": ["PRIVATE_IMAGE"]
     }
-  ]
+  ],
+  "page": {
+    "offset": 0,
+    "limit": 20
+  }
 }
 ```
 #### 返回参数示例
@@ -86,9 +96,10 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/tcloud/images/query_from_cloud
 | data    | Data   | 响应数据 |
 
 #### Data
-| 参数名称   | 参数类型        | 描述      |
-|--------|-------------|---------|
-| detail | Image Array | 查询返回的数据 |
+| 参数名称   | 参数类型        | 描述             |
+|--------|-------------|----------------|
+| count  | uint64      | 当前规则能匹配到的总记录条数 |
+| detail | Image Array | 查询返回的数据        |
 
 #### Image[n]
 
