@@ -67,6 +67,7 @@ export default defineComponent({
       type: Object as PropType<typeof _formModel>,
     },
     isFormDataChanged: Boolean,
+    show: Boolean,
   },
   emits: ['cancel', 'success', 'update:isFormDataChanged'],
   setup(props, { emit }) {
@@ -178,6 +179,7 @@ export default defineComponent({
           <FormSelect
             type={'security'}
             hidden={['region']}
+            show={props.show}
             onChange={(val: any) => {
               formModel.account_id = val.account_id;
               formModel.vendor = val.vendor;

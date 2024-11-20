@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { reactive, watch, ref, inject, nextTick, onUpdated } from 'vue';
+import { reactive, watch, ref, inject, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAccountStore, useResourceStore } from '@/store';
 import { BusinessFormFilter, QueryFilterType, QueryRuleOPEnum, IAccountItem } from '@/typings';
@@ -22,6 +22,7 @@ const props = defineProps({
       return '';
     },
   },
+  show: Boolean,
 });
 
 const { t } = useI18n();
@@ -203,13 +204,15 @@ const resetForm = () => {
   nextTick(() => formRef.value.clearValidate());
 };
 
-onUpdated(() => {
-  const ele = document.querySelector('.bussine-form').getClientRects();
-  if (ele.length === 0) {
-    return getAccountList();
-  }
-  return resetForm();
-});
+watch(
+  () => props.show,
+  (val) => {
+    if (val) {
+      return getAccountList();
+    }
+    return resetForm();
+  },
+);
 
 defineExpose([validate]);
 </script>
