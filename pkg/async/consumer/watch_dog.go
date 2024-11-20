@@ -328,7 +328,7 @@ func (wd *watchDog) handleRunningFlow(kt *kit.Kit, flow model.Flow) error {
 	}
 
 	// 如果树已经处于结束状态，则直接更新
-	state := root.ComputeState()
+	state := root.TreeState()
 	if state == enumor.FlowSuccess || state == enumor.FlowFailed {
 		if err = updateFlowState(kt, wd.bd, flow.ID, enumor.FlowRunning, state); err != nil {
 			logs.Errorf("update flow state to %s failed, err: %v, rid: %s", state, err, kt.Rid)
