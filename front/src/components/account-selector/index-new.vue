@@ -197,6 +197,8 @@ const handleVendorScrollRight = () => {
     updateScrollEnabled(finalLeft);
   }
 };
+
+defineExpose({ currentDisplayList });
 </script>
 
 <template>

@@ -1,12 +1,13 @@
 <script lang="ts" setup>
-import { reactive, watch, ref, inject } from 'vue';
+import { reactive, watch, ref, inject, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAccountStore, useResourceStore } from '@/store';
-import { BusinessFormFilter, QueryFilterType, QueryRuleOPEnum } from '@/typings';
+import { BusinessFormFilter, QueryFilterType, QueryRuleOPEnum, IAccountItem } from '@/typings';
 import { CLOUD_TYPE } from '@/constants';
 import { VendorEnum } from '@/common/constant';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
+import AccountSelector from '@/components/account-selector/index-new.vue';
 
 const props = defineProps({
   hidden: {
@@ -21,6 +22,7 @@ const props = defineProps({
       return '';
     },
   },
+  show: Boolean,
 });
 
 const { t } = useI18n();
@@ -32,6 +34,7 @@ const cloudRegionsList = ref([]);
 const accountLoading = ref(false);
 const cloudRegionsLoading = ref(false);
 const cloudAreaPage = ref(0);
+const accountSelector = ref(null);
 const { isResourcePage } = useWhereAmI();
 
 const securityType: any = inject('securityType');
@@ -137,57 +140,37 @@ watch(
 watch(
   () => state.filter.account_id,
   (val) => {
-    if (val) {
-      state.filter.vendor = accountList.value.find((e: any) => {
+    const vendor =
+      accountList.value.find((e: any) => {
         return e.id === val;
-      }).vendor;
-    }
+      })?.vendor || '';
+    state.filter.vendor = vendor;
+  },
+);
+watch(
+  () => accountSelector.value?.currentDisplayList,
+  (val) => {
+    val?.[0] && getAccountList();
   },
 );
 
-const getAccountList = async () => {
-  // const rulesData = [];
-  // if (state.filter.vendor) {
-  //   rulesData.push({ field: 'vendor', op: 'eq', value: state.filter.vendor });
-  // }
-  try {
-    accountLoading.value = true;
-    const payload = isResourcePage
-      ? {
-          page: {
-            count: false,
-            limit: 100,
-            start: 0,
-          },
-          filter: { op: 'and', rules: [] },
-        }
-      : {
-          params: {
-            account_type: 'resource',
-          },
-        };
-    const res = await accountStore.getAccountList(payload, accountStore.bizs);
-    if (resourceAccountStore.resourceAccount?.id) {
-      accountList.value = res.data?.details.filter(
-        ({ id }: { id: string }) => id === resourceAccountStore.resourceAccount.id,
-      );
-      // 自动填充当前账号
-      state.filter.account_id = accountList.value?.[0].id;
-      return;
+const getAccountList = () => {
+  accountLoading.value = true;
+  accountList.value = accountSelector.value?.currentDisplayList ?? [];
+  state.filter.account_id = resourceAccountStore.resourceAccount?.id ?? '';
+  setOptionDisabled();
+};
+const optionDisabled = ref<() => boolean>(() => false);
+const setOptionDisabled = () => {
+  if (props.type === 'security') {
+    // 安全组需要区分
+    if (securityType.value && securityType.value === 'gcp') {
+      optionDisabled.value = (account?: IAccountItem) => account.vendor !== 'gcp';
+    } else {
+      optionDisabled.value = (account?: IAccountItem) => account.vendor === 'gcp';
     }
-    accountList.value = isResourcePage ? res?.data?.details : res?.data;
-    if (props.type === 'security') {
-      // 安全组需要区分
-      if (securityType.value && securityType.value === 'gcp') {
-        accountList.value = accountList.value.filter((e) => e.vendor === 'gcp');
-      } else {
-        accountList.value = accountList.value.filter((e) => e.vendor !== 'gcp');
-      }
-    }
-  } catch (error) {
-    console.log(error);
-  } finally {
-    accountLoading.value = false;
+  } else {
+    optionDisabled.value = () => false;
   }
 };
 
@@ -216,16 +199,34 @@ const formRef = ref(null);
 const validate = () => {
   return formRef.value.validate();
 };
-defineExpose([validate]);
+const resetForm = () => {
+  state.filter.account_id = '';
+  nextTick(() => formRef.value.clearValidate());
+};
 
-getAccountList();
+watch(
+  () => props.show,
+  (val) => {
+    if (val) {
+      return getAccountList();
+    }
+    return resetForm();
+  },
+);
+
+defineExpose([validate]);
 </script>
 <template>
   <bk-form class="pt20 bussine-form" label-width="150" :model="state.filter" ref="formRef">
     <bk-form-item :label="t('云账号')" class="item-warp" required property="account_id">
-      <bk-select class="item-warp-component" :loading="accountLoading" v-model="state.filter.account_id">
-        <bk-option v-for="(item, index) in accountList" :key="index" :value="item.id" :label="item.name" />
-      </bk-select>
+      <AccountSelector
+        ref="accountSelector"
+        v-model="state.filter.account_id"
+        :biz-id="isResourcePage ? undefined : accountStore.bizs"
+        :disabled="isResourcePage"
+        :option-disabled="optionDisabled"
+        :placeholder="isResourcePage ? t('请在左侧选择账号') : undefined"
+      />
     </bk-form-item>
     <bk-form-item :label="t('云厂商')" class="item-warp" required property="vendor">
       <bk-select disabled class="item-warp-component" v-model="state.filter.vendor">
