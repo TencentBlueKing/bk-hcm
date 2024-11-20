@@ -20,23 +20,15 @@
 package filter
 
 import (
-	"encoding/base64"
 	"fmt"
-	"regexp"
 
 	"hcm/pkg/tools/rand"
 )
-
-var chineseSequenceRe = regexp.MustCompile(`\p{Han}+`)
 
 // fieldPlaceholderName 如果用户的查询条件中同时有两个相同的字段名的话，查询语句会出现两个相同占位符的语句，没办法将值赋进去。
 // 所以，需要随机生成一个后缀，避免这个问题的出现。
 // 问题语句: select * from test where time < :time and time < :time
 // 最终语句：select * from test where time < :time_abcd and time < :time_bdcs
 func fieldPlaceholderName(field string) string {
-	// sqlx do not support chinese field name, so we need to replace it with base64
-	safeField := chineseSequenceRe.ReplaceAllStringFunc(field, func(s string) string {
-		return base64.StdEncoding.EncodeToString([]byte(s))
-	})
-	return fmt.Sprintf("%s_%s", safeField, rand.String(4))
+	return fmt.Sprintf("%s_%s", field, rand.String(4))
 }
