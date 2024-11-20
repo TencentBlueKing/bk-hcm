@@ -20,8 +20,10 @@
 package image
 
 import (
+	"hcm/cmd/cloud-server/service/common"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/hc-service/image"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
@@ -39,7 +41,7 @@ func (svc *imageSvc) TCloudQueryImage(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	return svc.tcloudQueryImage(cts, req, handler.ResOperateAuth)
+	return svc.tcloudQueryImage(cts, req, constant.UnassignedBiz, handler.ResOperateAuth)
 }
 
 // TCLoudBizQueryImage ...
@@ -63,7 +65,8 @@ func (svc *imageSvc) TCLoudBizQueryImage(cts *rest.Contexts) (interface{}, error
 		),
 		Page: core.NewCountPage(),
 	}
-	result, err := svc.client.DataService().Global.Account.ListAccountBizRel(cts.Kit.Ctx, cts.Kit.Header(), accountBizReq)
+	result, err := svc.client.DataService().Global.Account.ListAccountBizRel(cts.Kit.Ctx, cts.Kit.Header(),
+		accountBizReq)
 	if err != nil {
 		logs.Errorf("list account biz rel failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
@@ -72,7 +75,7 @@ func (svc *imageSvc) TCLoudBizQueryImage(cts *rest.Contexts) (interface{}, error
 		return nil, errf.New(errf.PermissionDenied, "no permission")
 	}
 
-	return svc.tcloudQueryImage(cts, req, handler.BizOperateAuth)
+	return svc.tcloudQueryImage(cts, req, bizID, handler.BizOperateAuth)
 }
 
 func (svc *imageSvc) decodeAndValidateTCloudImageListOption(cts *rest.Contexts) (*image.TCloudImageListOption, error) {
@@ -87,12 +90,12 @@ func (svc *imageSvc) decodeAndValidateTCloudImageListOption(cts *rest.Contexts) 
 	return req, nil
 }
 
-func (svc *imageSvc) tcloudQueryImage(cts *rest.Contexts, req *image.TCloudImageListOption,
+func (svc *imageSvc) tcloudQueryImage(cts *rest.Contexts, req *image.TCloudImageListOption, bizID int64,
 	validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 
 	// validate biz and authorize
 	err := validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Image,
-		Action: meta.Find})
+		Action: meta.Find, BasicInfo: common.GetCloudResourceBasicInfo(req.AccountID, bizID)})
 	if err != nil {
 		return nil, err
 	}

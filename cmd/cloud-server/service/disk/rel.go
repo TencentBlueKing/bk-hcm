@@ -63,7 +63,7 @@ func (svc *diskSvc) listDiskExtByCvmID(cts *rest.Contexts, validHandler handler.
 	}
 
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer,
-		ResType: meta.Disk, Action: meta.Find})
+		ResType: meta.Disk, Action: meta.Find, BasicInfo: basicInfo})
 	if err != nil {
 		return nil, err
 	}
