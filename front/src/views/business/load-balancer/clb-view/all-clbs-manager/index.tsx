@@ -261,7 +261,10 @@ export default defineComponent({
                 </Button>
                 {/* 批量导入 */}
                 <BatchImportComp />
-                <Button class='mw88 mr8' onClick={() => (formData.isShow = true)}>
+                <Button
+                  class='mw88 mr8'
+                  onClick={() => (formData.isShow = true)}
+                  disabled={selections.value.length > 0}>
                   {t('同步负载均衡')}
                 </Button>
               </>
