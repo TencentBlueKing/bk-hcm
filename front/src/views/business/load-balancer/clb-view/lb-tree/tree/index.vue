@@ -370,7 +370,7 @@ defineExpose({ search });
     <!-- 全部负载均衡 -->
     <ITreeNode
       :display-value="t('全部负载均衡')"
-      :count="treeData.length"
+      :count="pagination.count"
       class="all-lbs-node"
       :class="{ 'is-selected': route.name === LBRouteName.allLbs, 'show-dropdown': currentPopBoundaryNodeKey === '-1' }"
       :handle-more-action-click="(e) => showDropdownList(e, allLBNode)"
