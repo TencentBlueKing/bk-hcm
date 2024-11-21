@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package metric is used to collect cloud api metrics.
 package metric
 
 import (
