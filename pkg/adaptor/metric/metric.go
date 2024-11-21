@@ -25,18 +25,20 @@ import (
 	"strings"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/metrics"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 // restMetric is used to collect cloud api metrics.
 var cloudApiMetric *metric
 
-func init() {
+// InitCloudApiMetrics ..
+func InitCloudApiMetrics(reg prometheus.Registerer) {
 	m := new(metric)
+
 	labels := prometheus.Labels{}
 
 	m.lagMS = prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -47,17 +49,17 @@ func init() {
 		ConstLabels: labels,
 		Buckets:     []float64{0.05, 0.075, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.7, 1, 2, 3, 4, 5, 10, 20, 30},
 	}, []string{"vendor", "http_code", "api_name", "region", "endpoint"})
-	metrics.Register().MustRegister(m.lagMS)
+	reg.MustRegister(m.lagMS)
 
 	m.errCounter = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Namespace:   metrics.Namespace,
-			Subsystem:   metrics.RestfulSubSys,
+			Subsystem:   metrics.CloudApiSubSys,
 			Name:        "total_err_count",
 			Help:        "the total error count to request the restful API",
 			ConstLabels: labels,
 		}, []string{"vendor", "http_code", "api_name", "region", "endpoint"})
-	metrics.Register().MustRegister(m.errCounter)
+	reg.MustRegister(m.errCounter)
 
 	cloudApiMetric = m
 }
@@ -83,6 +85,16 @@ func GetTCloudRecordRoundTripper(next http.RoundTripper) promhttp.RoundTripperFu
 		ret, err := next.RoundTrip(req)
 		if ret != nil {
 			code = ret.Status
+		}
+
+		if err != nil || (ret != nil && ret.StatusCode != http.StatusOK) {
+			cloudApiMetric.errCounter.With(prometheus.Labels{
+				"vendor":    string(enumor.TCloud),
+				"endpoint":  req.Host,
+				"region":    region,
+				"api_name":  action,
+				"http_code": code,
+			}).Inc()
 		}
 		cost := time.Since(start).Seconds()
 		cloudApiMetric.lagMS.With(

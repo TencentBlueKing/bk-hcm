@@ -27,6 +27,7 @@ import (
 
 	"hcm/cmd/hc-service/options"
 	"hcm/cmd/hc-service/service"
+	adptmetric "hcm/pkg/adaptor/metric"
 	mocktcloud "hcm/pkg/adaptor/mock/tcloud"
 	"hcm/pkg/cc"
 	"hcm/pkg/logs"
@@ -75,6 +76,7 @@ func (ds *hcService) prepare(opt *options.Option) error {
 	// init metrics
 	network := cc.HCService().Network
 	metrics.InitMetrics(net.JoinHostPort(network.BindIP, strconv.Itoa(int(network.Port))))
+	adptmetric.InitCloudApiMetrics(metrics.Register())
 
 	// register hc service.
 	svcOpt := serviced.NewServiceOption(cc.HCServiceName, cc.HCService().Network)
