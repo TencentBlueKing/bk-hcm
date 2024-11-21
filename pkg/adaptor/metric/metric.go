@@ -41,7 +41,7 @@ func InitCloudApiMetrics(reg prometheus.Registerer) {
 
 	labels := prometheus.Labels{}
 
-	m.lagMS = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	m.lagSec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace:   metrics.Namespace,
 		Subsystem:   metrics.CloudApiSubSys,
 		Name:        "lag_seconds",
@@ -49,7 +49,7 @@ func InitCloudApiMetrics(reg prometheus.Registerer) {
 		ConstLabels: labels,
 		Buckets:     []float64{0.05, 0.075, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.7, 1, 2, 3, 4, 5, 10, 20, 30},
 	}, []string{"vendor", "http_code", "api_name", "region", "endpoint"})
-	reg.MustRegister(m.lagMS)
+	reg.MustRegister(m.lagSec)
 
 	m.errCounter = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
@@ -65,8 +65,8 @@ func InitCloudApiMetrics(reg prometheus.Registerer) {
 }
 
 type metric struct {
-	// lagMS record the cost time of request cloud API.
-	lagMS *prometheus.HistogramVec
+	// lagSec record the cost time of request cloud API.
+	lagSec *prometheus.HistogramVec
 
 	// errCounter record the total error count request cloud API.
 	errCounter *prometheus.CounterVec
@@ -97,7 +97,7 @@ func GetTCloudRecordRoundTripper(next http.RoundTripper) promhttp.RoundTripperFu
 			}).Inc()
 		}
 		cost := time.Since(start).Seconds()
-		cloudApiMetric.lagMS.With(
+		cloudApiMetric.lagSec.With(
 			prometheus.Labels{
 				"vendor":    string(enumor.TCloud),
 				"endpoint":  req.Host,
