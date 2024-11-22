@@ -84,18 +84,15 @@ export default defineComponent({
       },
       {
         immediate: true,
-      }
-    )
-
-    watch(
-      [() => resourceAccountStore.resourceAccount.id, whereAmI.value, ],
-      () => {
-        if (whereAmI.value === Senarios.resource) {
-          curIpRef.value?.reset();
-          subIpRef.value?.reset();
-        }
-      }
+      },
     );
+
+    watch([() => resourceAccountStore.resourceAccount?.id, whereAmI.value], () => {
+      if (whereAmI.value === Senarios.resource) {
+        curIpRef.value?.reset();
+        subIpRef.value?.reset();
+      }
+    });
 
     const submitDisabled = computed(() => isEmptyCond.value);
 
