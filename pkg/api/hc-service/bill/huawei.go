@@ -20,7 +20,10 @@
 package bill
 
 import (
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/rest"
+
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/bssintl/v2/model"
 )
 
 // -------------------------- List --------------------------
@@ -36,4 +39,11 @@ type HuaWeiBillListResult struct {
 type HuaWeiBillListResp struct {
 	rest.BaseResp `json:",inline"`
 	Data          *HuaWeiBillListResult `json:"data"`
+}
+
+// HuaWeiRootBillListResult define huawei root bill list result.
+type HuaWeiRootBillListResult struct {
+	Count    int32                  `json:"count"`
+	Details  []model.ResFeeRecordV2 `json:"details"`
+	Currency enumor.CurrencyCode    `json:"currency"`
 }

@@ -33,7 +33,6 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/logs"
-	cvt "hcm/pkg/tools/converter"
 
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/bssintl/v2/model"
 	"github.com/shopspring/decimal"
@@ -99,7 +98,7 @@ func convertToRawBill(currency enumor.CurrencyCode, recordList []model.ResFeeRec
 		}
 		extensionBytes, err := json.Marshal(record)
 		if err != nil {
-			return nil, fmt.Errorf("marshal haiwei bill item %v failed", record)
+			return nil, fmt.Errorf("marshal huawei bill item %v failed", record)
 		}
 		newBillItem := dsbill.RawBillItem{}
 		if record.Region != nil {
@@ -150,40 +149,29 @@ func (hp *HuaweiPuller) createRawBill(
 	return nil
 }
 
-func (hp *HuaweiPuller) doPull(
-	kt run.ExecuteKit, opt *registry.PullDailyBillOption, offset *int32, limit *int32) (
+func (hp *HuaweiPuller) doPull(kt run.ExecuteKit, opt *registry.PullDailyBillOption, offset *int32, limit *int32) (
 	int, *registry.PullerResult, error) {
 
 	hcCli := actcli.GetHCService()
-	resp, err := hcCli.HuaWei.Bill.ListFeeRecord(kt.Kit().Ctx, kt.Kit().Header(), &hcbillservice.HuaWeiFeeRecordListReq{
-		AccountID:     opt.RootAccountID,
-		SubAccountID:  opt.MainAccountCloudID,
-		Month:         fmt.Sprintf("%d-%02d", opt.BillYear, opt.BillMonth),
-		BillDateBegin: fmt.Sprintf("%d-%02d-%02d", opt.BillYear, opt.BillMonth, opt.BillDay),
-		BillDateEnd:   fmt.Sprintf("%d-%02d-%02d", opt.BillYear, opt.BillMonth, opt.BillDay),
+	req := &hcbillservice.HuaWeiFeeRecordListReq{
+		RootAccountID:      opt.RootAccountID,
+		MainAccountCloudID: opt.MainAccountCloudID,
+		Month:              fmt.Sprintf("%d-%02d", opt.BillYear, opt.BillMonth),
+		BillDateBegin:      fmt.Sprintf("%d-%02d-%02d", opt.BillYear, opt.BillMonth, opt.BillDay),
+		BillDateEnd:        fmt.Sprintf("%d-%02d-%02d", opt.BillYear, opt.BillMonth, opt.BillDay),
 		Page: &adbilltypes.HuaWeiBillPage{
 			Offset: offset,
 			Limit:  limit,
 		},
-	})
+	}
+	resp, err := hcCli.HuaWei.Bill.ListFeeRecord(kt.Kit(), req)
 	if err != nil {
 		return 0, nil, fmt.Errorf("list fee record failed, err %s", err.Error())
 	}
 
-	if resp.Count == nil {
-		return 0, nil, fmt.Errorf("count in response is empty, resp %v", resp)
-	}
-	if resp.Details == nil {
-		return 0, nil, fmt.Errorf("details in response is empty, resp %v", resp)
-	}
-	currency := enumor.CurrencyCode(cvt.PtrToVal(resp.Currency))
-
-	itemList, ok := resp.Details.([]interface{})
-	if !ok {
-		logs.Warnf("response %v is not []model.ResFeeRecordV2", resp.Details)
-		return 0, nil, fmt.Errorf("response %v is not []model.ResFeeRecordV2", resp.Details)
-	}
-	itemLen := len(itemList)
+	currency := resp.Currency
+	recordList := resp.Details
+	itemLen := len(recordList)
 	if itemLen == 0 {
 		return 0, &registry.PullerResult{
 			Count:    int64(0),
@@ -192,18 +180,6 @@ func (hp *HuaweiPuller) doPull(
 		}, nil
 	}
 
-	var recordList []model.ResFeeRecordV2
-	for _, item := range itemList {
-		itemData, err := json.Marshal(item)
-		if err != nil {
-			return 0, nil, fmt.Errorf("marshal %v failed", itemData)
-		}
-		record := model.ResFeeRecordV2{}
-		if err := json.Unmarshal(itemData, &record); err != nil {
-			return 0, nil, fmt.Errorf("unmarshal %s failed", string(itemData))
-		}
-		recordList = append(recordList, record)
-	}
 	filename := fmt.Sprintf("%d-%d.csv", *offset, itemLen)
 	billItems, err := convertToRawBill(currency, recordList)
 	if err != nil {
@@ -214,7 +190,7 @@ func (hp *HuaweiPuller) doPull(
 		return 0, nil, err
 	}
 	return itemLen, &registry.PullerResult{
-		Count:    int64(*resp.Count),
+		Count:    int64(resp.Count),
 		Currency: currency,
 		Cost:     cost,
 	}, nil

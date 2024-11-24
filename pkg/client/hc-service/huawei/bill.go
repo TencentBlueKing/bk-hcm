@@ -24,7 +24,9 @@ import (
 	"net/http"
 
 	hcbillservice "hcm/pkg/api/hc-service/bill"
+	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -40,7 +42,7 @@ func NewBillClient(client rest.ClientInterface) *BillClient {
 	}
 }
 
-// List list bill.
+// List bill.
 func (v *BillClient) List(ctx context.Context, h http.Header, req *hcbillservice.HuaWeiBillListReq) (
 	*hcbillservice.HuaWeiBillListResult, error) {
 
@@ -66,26 +68,9 @@ func (v *BillClient) List(ctx context.Context, h http.Header, req *hcbillservice
 }
 
 // ListFeeRecord list fee record
-func (v *BillClient) ListFeeRecord(ctx context.Context, h http.Header, req *hcbillservice.HuaWeiFeeRecordListReq) (
-	*hcbillservice.HuaWeiBillListResult, error) {
+func (v *BillClient) ListFeeRecord(kt *kit.Kit, req *hcbillservice.HuaWeiFeeRecordListReq) (
+	*hcbillservice.HuaWeiRootBillListResult, error) {
 
-	resp := new(hcbillservice.HuaWeiBillListResp)
-
-	err := v.client.Post().
-		WithContext(ctx).
-		Body(req).
-		SubResourcef("/feerecords/list").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
+	return common.Request[hcbillservice.HuaWeiFeeRecordListReq, hcbillservice.HuaWeiRootBillListResult](v.client,
+		rest.POST, kt, req, "/feerecords/list")
 }

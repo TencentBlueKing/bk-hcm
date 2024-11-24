@@ -23,9 +23,11 @@ package bill
 import (
 	typesBill "hcm/pkg/adaptor/types/bill"
 	hcbillservice "hcm/pkg/api/hc-service/bill"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	cvt "hcm/pkg/tools/converter"
 
 	"github.com/golang/protobuf/proto"
 )
@@ -86,15 +88,15 @@ func (b bill) HuaWeiGetFeeRecordList(cts *rest.Contexts) (interface{}, error) {
 		req.Page = &typesBill.HuaWeiBillPage{Offset: proto.Int32(0), Limit: proto.Int32(typesBill.HuaWeiQueryLimit)}
 	}
 
-	cli, err := b.ad.HuaWeiRoot(cts.Kit, req.AccountID)
+	cli, err := b.ad.HuaWeiRoot(cts.Kit, req.RootAccountID)
 	if err != nil {
 		logs.Errorf("huawei request adaptor client err, req: %+v, err: %+v", req, err)
 		return nil, err
 	}
 
 	opt := &typesBill.HuaWeiFeeRecordListOption{
-		AccountID:     req.AccountID,
-		SubAccountID:  req.SubAccountID,
+		AccountID:     req.RootAccountID,
+		SubAccountID:  req.MainAccountCloudID,
 		Month:         req.Month,
 		BillDateBegin: req.BillDateBegin,
 		BillDateEnd:   req.BillDateEnd,
@@ -108,9 +110,9 @@ func (b bill) HuaWeiGetFeeRecordList(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	return &hcbillservice.HuaWeiBillListResult{
-		Count:    resp.TotalCount,
-		Details:  resp.FeeRecords,
-		Currency: resp.Currency,
+	return &hcbillservice.HuaWeiRootBillListResult{
+		Count:    cvt.PtrToVal(resp.TotalCount),
+		Details:  cvt.PtrToVal(resp.FeeRecords),
+		Currency: enumor.CurrencyCode(cvt.PtrToVal(resp.Currency)),
 	}, nil
 }
