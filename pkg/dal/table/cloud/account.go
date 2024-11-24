@@ -42,7 +42,7 @@ account.go:
 // AccountColumns defines all the account table's columns.
 var AccountColumns = utils.MergeColumns(nil, AccountColumnDescriptor)
 
-// AccountColumnDescriptor is RootAccountID's column descriptors.
+// AccountColumnDescriptor is AccountID's column descriptors.
 var AccountColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
 	{Column: "name", NamedC: "name", Type: enumor.String},

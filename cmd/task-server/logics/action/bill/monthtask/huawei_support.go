@@ -42,7 +42,7 @@ import (
 )
 
 // HuaweiSupportMonthTask
-// 1. 拉根账号下的support plan 账单 直接用根账号cloud_id 接口拉取，不用 分啊谈
+// 1. 拉根账号下的support plan 账单 直接用根账号cloud_id 接口拉取，再分摊到个各个账号下
 // 2. 分摊到子账号下
 type HuaweiSupportMonthTask struct {
 	huaweiMonthTaskBaseRunner
