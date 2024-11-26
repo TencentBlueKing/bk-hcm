@@ -749,6 +749,8 @@ externalEtcd:
   ## ETCD Client 证书配置
   ##
   tls:
+    ## tls开关
+    enabled: false
     ## ETCD Client 证书 CA
     ##
     caBase64Encoded: ""
