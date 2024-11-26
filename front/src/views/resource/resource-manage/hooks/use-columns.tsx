@@ -22,7 +22,7 @@ import StatusFailure from '@/assets/image/failed-account.png';
 import { HOST_RUNNING_STATUS, HOST_SHUTDOWN_STATUS } from '../common/table/HostOperations';
 import './use-columns.scss';
 import { defaults } from 'lodash';
-import { timeFormatter, timeUTCFormatter } from '@/common/util';
+import { timeFormatter, timeUTCFormatter, parseTags } from '@/common/util';
 import {
   APPLICATION_LAYER_LIST,
   CLB_STATUS_MAP,
@@ -1223,6 +1223,12 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
           { value: 'ipv6_nat64', text: 'IPv6Nat64' },
         ],
       },
+    },
+    {
+      label: '标签',
+      field: 'tags',
+      isDefaultShow: true,
+      render: ({ cell }: { cell: any }) => parseTags(cell),
     },
     {
       label: '云厂商',

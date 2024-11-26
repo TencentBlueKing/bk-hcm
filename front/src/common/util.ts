@@ -292,3 +292,12 @@ export const isEmpty = (value: unknown) => {
   }
   return false;
 };
+
+// 标签解析
+export const parseTags = (data: { [k: string]: any }) => {
+  return (
+    Object.entries(data ?? [])
+      .map((item) => item.join(':'))
+      .join(';') || '--'
+  );
+};
