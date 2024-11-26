@@ -62,7 +62,7 @@ apiserver:
   ## 在启用JWT情况apigateway公钥 base64字符串
   ##
   disableJwt: false
-  apigwPublicKey:
+  apigwPublicKey: "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KQUJDRGpBTkJna3Foa0x2V3piRXo4cmlVRkNTSGxCU3A2ME9hCmJRSURBUUFCCi0tLS0tRU5EIFBVQkxJQyBLRVktLS0tLQ=="
   ## pod配置
   ##
   replicas: 1
@@ -611,10 +611,10 @@ crypto:
   aesGcm:
     ## aes secret key, length should be 16 or 32 bytes
     ##
-    key:
+    key: "123456789abcdefg"
     ## gcm nonce, length should be 12 bytes
     ##
-    nonce:
+    nonce: "123456789abc"
 
 ## APIGateway Sync
 apigwSync:
@@ -739,6 +739,8 @@ externalEtcd:
   ## ETCD Client 证书配置
   ##
   tls:
+    ## tls开关
+    enabled: false
     ## ETCD Client 证书 CA
     ##
     caBase64Encoded: ""
