@@ -25,10 +25,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/bssintl/v2/model"
-
-	"github.com/shopspring/decimal"
-
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	"hcm/pkg/api/core"
 	protocore "hcm/pkg/api/core/account-set"
@@ -40,6 +36,9 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	cvt "hcm/pkg/tools/converter"
+
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/bssintl/v2/model"
+	"github.com/shopspring/decimal"
 )
 
 func newHuaweiRunner(taskType enumor.MonthTaskType) (MonthTaskRunner, error) {
