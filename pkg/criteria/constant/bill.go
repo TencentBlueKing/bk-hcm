@@ -77,3 +77,9 @@ const (
 	// GcpCreditReturnCostReverse Gcp credit return cost reverse, positive value, e.g. 10.00000
 	GcpCreditReturnCostReverse = "CreditReverse"
 )
+
+// HuaweiBillTypePurchase 华为账单类型-新购
+const HuaweiBillTypePurchase = int32(1)
+
+// HuaweiBillChargeModeMonthlyYearly 华为账单计费模式-包年包月
+const HuaweiBillChargeModeMonthlyYearly = "1"

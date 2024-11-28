@@ -192,8 +192,7 @@ func (a HuaweiSupportMonthTask) splitCommonExpense(kt *kit.Kit, opt *MonthTaskAc
 	for _, summary := range summaryList {
 		mainAccount := mainAccountMap[summary.MainAccountID]
 		cost := batchSum.Mul(summary.CurrentMonthCost).Div(summaryTotal)
-		extJson, err := convHuaweiBillItemExtension(constant.BillCommonExpenseName, opt, summary.RootAccountCloudID,
-			mainAccount.CloudID, summary.Currency, cost)
+		extJson, err := convHuaweiBillItemExtension(constant.BillCommonExpenseName, opt, mainAccount.CloudID, cost)
 		if err != nil {
 			logs.Errorf("fail to marshal huawei common expense extension to json, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
@@ -208,7 +207,7 @@ func (a HuaweiSupportMonthTask) splitCommonExpense(kt *kit.Kit, opt *MonthTaskAc
 		// 此处冲平根账号支出
 		reverseCost := cost.Neg()
 		reverseExtJson, err := convHuaweiBillItemExtension(constant.BillCommonExpenseReverseName, opt,
-			summary.RootAccountCloudID, mainAccount.CloudID, summary.Currency, reverseCost)
+			mainAccount.CloudID, reverseCost)
 		if err != nil {
 			logs.Errorf("fail to marshal huawei common expense reverse extension to json, err: %v, rid: %s",
 				err, kt.Rid)

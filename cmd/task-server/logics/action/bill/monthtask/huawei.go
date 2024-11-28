@@ -95,19 +95,19 @@ func (a huaweiMonthTaskBaseRunner) listMainAccount(kt *kit.Kit, rootAccount *dat
 	return mainAccountMap, rootAsMainAccount, nil
 }
 
-func convHuaweiBillItemExtension(productName string, opt *MonthTaskActionOption, rootAccountCloudID string,
-	mainAccountCloudID string, currencyCode enumor.CurrencyCode, cost decimal.Decimal) ([]byte, error) {
+func convHuaweiBillItemExtension(productName string, opt *MonthTaskActionOption, mainAccountCloudID string,
+	cost decimal.Decimal) ([]byte, error) {
 
 	record := model.ResFeeRecordV2{
 		BillDate:             cvt.ValToPtr(fmt.Sprintf("%d-%02d-%02d", opt.BillYear, opt.BillMonth, 1)),
-		BillType:             cvt.ValToPtr(int32(1)),
+		BillType:             cvt.ValToPtr(constant.HuaweiBillTypePurchase),
 		CustomerId:           cvt.ValToPtr(mainAccountCloudID),
 		CloudServiceType:     cvt.ValToPtr(productName),
 		ResourceType:         cvt.ValToPtr(productName),
 		CloudServiceTypeName: cvt.ValToPtr(productName),
 		ResourceTypeName:     cvt.ValToPtr(productName),
-		ChargeMode:           cvt.ValToPtr("1"),
-		CreditAmount:         cvt.ValToPtr(cost.InexactFloat64()),
+		ChargeMode:           cvt.ValToPtr(constant.HuaweiBillChargeModeMonthlyYearly),
+		DebtAmount:           cvt.ValToPtr(cost.InexactFloat64()),
 	}
 	ext := billcore.HuaweiRawBillItem{ResFeeRecordV2: record}
 	return json.Marshal(ext)
