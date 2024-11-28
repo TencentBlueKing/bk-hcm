@@ -10,7 +10,7 @@ import { PropType } from 'vue';
 import { Message } from 'bkui-vue';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
-import { timeFormatter, parseTags } from '@/common/util';
+import { timeFormatter, formatTags } from '@/common/util';
 import { FieldList } from '../../../common/info-list/types';
 
 const props = defineProps({
@@ -82,7 +82,7 @@ const settingInfo: FieldList = [
   {
     name: t('标签'),
     prop: 'tags',
-    render: (val: any) => parseTags(val),
+    render: (val: any) => formatTags(val),
   },
   {
     name: t('备注'),

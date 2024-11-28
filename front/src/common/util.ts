@@ -294,9 +294,9 @@ export const isEmpty = (value: unknown) => {
 };
 
 // 标签解析
-export const parseTags = (data: { [k: string]: any }) => {
+export const formatTags = (data: { [k: string]: any }) => {
   return (
-    Object.entries(data ?? [])
+    Object.entries(data ?? {})
       .map((item) => item.join(':'))
       .join(';') || '--'
   );
