@@ -951,10 +951,11 @@ func (opt *GcpCreditConfig) Validate() error {
 
 // BillAllocationOption ...
 type BillAllocationOption struct {
-	AwsSavingsPlans  []AwsSavingsPlansOption `yaml:"awsSavingsPlans"`
-	AwsCommonExpense BillCommonExpense       `yaml:"awsCommonExpense"`
-	GcpCredits       []GcpCreditConfig       `yaml:"gcpCredits"`
-	GcpCommonExpense BillCommonExpense       `yaml:"gcpCommonExpense"`
+	AwsSavingsPlans     []AwsSavingsPlansOption `yaml:"awsSavingsPlans"`
+	AwsCommonExpense    BillCommonExpense       `yaml:"awsCommonExpense"`
+	GcpCredits          []GcpCreditConfig       `yaml:"gcpCredits"`
+	GcpCommonExpense    BillCommonExpense       `yaml:"gcpCommonExpense"`
+	HuaweiCommonExpense BillCommonExpense       `yaml:"huaweiCommonExpense"`
 }
 
 func (opt *BillAllocationOption) validate() error {

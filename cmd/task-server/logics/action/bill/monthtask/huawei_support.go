@@ -24,6 +24,7 @@ import (
 	"fmt"
 
 	actcli "hcm/cmd/task-server/logics/action/cli"
+	adbilltypes "hcm/pkg/adaptor/types/bill"
 	"hcm/pkg/api/core"
 	protocore "hcm/pkg/api/core/account-set"
 	"hcm/pkg/api/data-service/bill"
@@ -40,17 +41,19 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// AwsSupportMonthTask ...
-type AwsSupportMonthTask struct {
-	awsMonthTaskBaseRunner
+// HuaweiSupportMonthTask
+// 1. 拉根账号下的support plan 账单 直接用根账号cloud_id 接口拉取，再分摊到个各个账号下
+// 2. 分摊到子账号下
+type HuaweiSupportMonthTask struct {
+	huaweiMonthTaskBaseRunner
 }
 
 // Pull support bill item
-func (a AwsSupportMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index uint64) (itemList []bill.RawBillItem,
-	isFinished bool, err error) {
+func (a HuaweiSupportMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index uint64) (
+	itemList []bill.RawBillItem, isFinished bool, err error) {
 
 	// 查询根账号信息
-	rootAccount, err := actcli.GetDataService().Aws.RootAccount.Get(kt, opt.RootAccountID)
+	rootAccount, err := actcli.GetDataService().HuaWei.RootAccount.Get(kt, opt.RootAccountID)
 	if err != nil {
 		return nil, false, err
 	}
@@ -58,18 +61,23 @@ func (a AwsSupportMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index
 	// 获取指定月份最后一天
 	lastDay, err := times.GetLastDayOfMonth(opt.BillYear, opt.BillMonth)
 	if err != nil {
-		logs.Errorf("fail get last day of month for aws month task, year: %d, month: %d, err: %v, rid: %s",
+		logs.Errorf("fail get last day of month for huawei month task, year: %d, month: %d, err: %v, rid: %s",
 			opt.BillYear, opt.BillMonth, err, kt.Rid)
 		return nil, false, err
 	}
-	rootBillReq := &hcbill.AwsRootBillListReq{
+
+	rootBillReq := &hcbill.HuaWeiFeeRecordListReq{
 		RootAccountID:      opt.RootAccountID,
 		MainAccountCloudID: rootAccount.CloudID,
-		BeginDate:          fmt.Sprintf("%d-%02d-%02d", opt.BillYear, opt.BillMonth, 1),
-		EndDate:            fmt.Sprintf("%d-%02d-%02d", opt.BillYear, opt.BillMonth, lastDay),
-		Page:               &hcbill.AwsBillListPage{Offset: index, Limit: a.GetBatchSize(kt)},
+		Month:              fmt.Sprintf("%d-%02d", opt.BillYear, opt.BillMonth),
+		BillDateBegin:      fmt.Sprintf("%d-%02d-%02d", opt.BillYear, opt.BillMonth, 1),
+		BillDateEnd:        fmt.Sprintf("%d-%02d-%02d", opt.BillYear, opt.BillMonth, lastDay),
+		Page: &adbilltypes.HuaWeiBillPage{
+			Offset: cvt.ValToPtr(int32(index)),
+			Limit:  cvt.ValToPtr(int32(a.GetBatchSize(kt))),
+		},
 	}
-	billResp, err := actcli.GetHCService().Aws.Bill.GetRootAccountBillList(kt, rootBillReq)
+	billResp, err := actcli.GetHCService().HuaWei.Bill.ListFeeRecord(kt, rootBillReq)
 	if err != nil {
 		return nil, false, err
 	}
@@ -77,36 +85,46 @@ func (a AwsSupportMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index
 		return nil, true, nil
 	}
 	for _, record := range billResp.Details {
-		cost, err := getDecimal(record, "line_item_net_unblended_cost")
-		if err != nil {
-			return nil, false, err
-		}
-		amount, err := getDecimal(record, "line_item_usage_amount")
-		if err != nil {
-			return nil, false, err
-		}
 
+		creditCost := decimal.NewFromFloat(0)
+		if record.CreditAmount != nil {
+			creditCost = decimal.NewFromFloat(*record.CreditAmount)
+		}
+		debtCost := decimal.NewFromFloat(0)
+		if record.DebtAmount != nil {
+			debtCost = decimal.NewFromFloat(*record.DebtAmount)
+		}
 		extensionBytes, err := json.Marshal(record)
 		if err != nil {
-			return nil, false, fmt.Errorf("marshal aws bill item %v failed, err: %w", record, err)
+			return nil, false, fmt.Errorf("marshal huawei support bill item %v failed", record)
 		}
-		itemList = append(itemList, bill.RawBillItem{
-			Region:        record["product_region"],
-			HcProductCode: record["line_item_product_code"],
-			HcProductName: record["product_product_name"],
-			BillCurrency:  enumor.CurrencyCode(record["line_item_currency_code"]),
-			BillCost:      cvt.PtrToVal(cost),
-			ResAmount:     cvt.PtrToVal(amount),
-			ResAmountUnit: record["pricing_unit"],
-			Extension:     types.JsonField(extensionBytes),
-		})
+		newBillItem := bill.RawBillItem{}
+		if record.Region != nil {
+			newBillItem.Region = *record.Region
+		}
+		if record.CloudServiceType != nil {
+			newBillItem.HcProductCode = *record.CloudServiceType
+		}
+		if record.CloudServiceTypeName != nil {
+			newBillItem.HcProductName = *record.CloudServiceTypeName
+		}
+		newBillItem.BillCurrency = billResp.Currency
+		newBillItem.BillCost = creditCost.Add(debtCost)
+		if record.Usage != nil {
+			newBillItem.ResAmount = decimal.NewFromFloat(*record.Usage)
+		}
+		if record.UsageMeasureId != nil {
+			newBillItem.ResAmountUnit = fmt.Sprintf("%d", *record.UsageMeasureId)
+		}
+		newBillItem.Extension = types.JsonField(extensionBytes)
+		itemList = append(itemList, newBillItem)
 	}
 	supportDone := uint64(len(billResp.Details)) < a.GetBatchSize(kt)
 	return itemList, supportDone, nil
 }
 
-// Split aws support fee to main account
-func (a AwsSupportMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption,
+// Split huawei support fee to main account
+func (a HuaweiSupportMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption,
 	rawItemList []*bill.RawBillItem) ([]bill.BillItemCreateReq[json.RawMessage], error) {
 
 	if len(rawItemList) == 0 {
@@ -115,7 +133,7 @@ func (a AwsSupportMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption,
 	a.initExtension(opt)
 
 	// 查询根账号信息
-	rootAccount, err := actcli.GetDataService().Aws.RootAccount.Get(kt, opt.RootAccountID)
+	rootAccount, err := actcli.GetDataService().HuaWei.RootAccount.Get(kt, opt.RootAccountID)
 	if err != nil {
 		logs.Errorf("failt to get root account info, err: %v, accountID: %s, rid: %s", err, opt.RootAccountID, kt.Rid)
 		return nil, err
@@ -124,21 +142,21 @@ func (a AwsSupportMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption,
 	// rootAsMainAccount 作为二级账号存在的根账号，将分摊后的账单抵冲该账号支出
 	mainAccountMap, rootAsMainAccount, err := a.listMainAccount(kt, rootAccount)
 	if err != nil {
-		logs.Errorf("fail to list main account for aws month task split step, err: %v, opt: %#v, rid: %s",
+		logs.Errorf("fail to list main account for huawei month task split step, err: %v, opt: %#v, rid: %s",
 			err, opt, kt.Rid)
 		return nil, err
 	}
 
 	commonItems, err := a.splitCommonExpense(kt, opt, mainAccountMap, rootAsMainAccount, rawItemList)
 	if err != nil {
-		logs.Errorf("fail to split common expense for aws month task split step, err: %v, opt: %#v, rid: %s",
+		logs.Errorf("fail to split common expense for huawei month task split step, err: %v, opt: %#v, rid: %s",
 			err, opt, kt.Rid)
 		return nil, err
 	}
 	return commonItems, nil
 }
 
-func (a AwsSupportMonthTask) splitCommonExpense(kt *kit.Kit, opt *MonthTaskActionOption,
+func (a HuaweiSupportMonthTask) splitCommonExpense(kt *kit.Kit, opt *MonthTaskActionOption,
 	mainAccountMap map[string]*protocore.BaseMainAccount, rootAsMainAccount *protocore.BaseMainAccount,
 	rawItemList []*bill.RawBillItem) ([]bill.BillItemCreateReq[json.RawMessage], error) {
 
@@ -155,12 +173,12 @@ func (a AwsSupportMonthTask) splitCommonExpense(kt *kit.Kit, opt *MonthTaskActio
 	var summaryList []*bill.BillSummaryMain
 	summaryList, err := a.listSummaryMainForSupport(kt, opt, mainAccountMap, rootAsMainAccount.CloudID)
 	if err != nil {
-		logs.Errorf("fail to get summary main list for aws month task split step, err: %v, opt: %#v, rid: %s",
+		logs.Errorf("fail to get summary main list for huawei month task split step, err: %v, opt: %#v, rid: %s",
 			err, opt, kt.Rid)
 		return nil, err
 	}
 	if len(summaryList) == 0 {
-		logs.Warnf("no main account for aws month task common expense, opt: %#v, rid: %s", opt, kt.Rid)
+		logs.Warnf("no main account for huawei month task common expense, opt: %#v, rid: %s", opt, kt.Rid)
 		return nil, nil
 	}
 
@@ -174,10 +192,9 @@ func (a AwsSupportMonthTask) splitCommonExpense(kt *kit.Kit, opt *MonthTaskActio
 	for _, summary := range summaryList {
 		mainAccount := mainAccountMap[summary.MainAccountID]
 		cost := batchSum.Mul(summary.CurrentMonthCost).Div(summaryTotal)
-		extJson, err := convAwsBillItemExtension(constant.BillCommonExpenseName, opt, summary.RootAccountCloudID,
-			mainAccount.CloudID, summary.Currency, cost)
+		extJson, err := convHuaweiBillItemExtension(constant.BillCommonExpenseName, opt, mainAccount.CloudID, cost)
 		if err != nil {
-			logs.Errorf("fail to marshal aws common expense extension to json, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("fail to marshal huawei common expense extension to json, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
 		}
 		costBillItem := convSummaryToCommonExpense(summary, cost, extJson)
@@ -189,10 +206,11 @@ func (a AwsSupportMonthTask) splitCommonExpense(kt *kit.Kit, opt *MonthTaskActio
 		}
 		// 此处冲平根账号支出
 		reverseCost := cost.Neg()
-		reverseExtJson, err := convAwsBillItemExtension(constant.BillCommonExpenseReverseName,
-			opt, summary.RootAccountCloudID, mainAccount.CloudID, summary.Currency, reverseCost)
+		reverseExtJson, err := convHuaweiBillItemExtension(constant.BillCommonExpenseReverseName, opt,
+			mainAccount.CloudID, reverseCost)
 		if err != nil {
-			logs.Errorf("fail to marshal aws common expense reverse extension to json, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("fail to marshal huawei common expense reverse extension to json, err: %v, rid: %s",
+				err, kt.Rid)
 			return nil, err
 		}
 
@@ -203,7 +221,7 @@ func (a AwsSupportMonthTask) splitCommonExpense(kt *kit.Kit, opt *MonthTaskActio
 }
 
 // 不包含根账号自身以及用户设定的排除账号的 二级账号汇总信息
-func (a AwsSupportMonthTask) listSummaryMainForSupport(kt *kit.Kit, opt *MonthTaskActionOption,
+func (a HuaweiSupportMonthTask) listSummaryMainForSupport(kt *kit.Kit, opt *MonthTaskActionOption,
 	mainAccountMap map[string]*protocore.BaseMainAccount, rootCloudID string) ([]*bill.BillSummaryMain, error) {
 
 	mainAccountIDs := make([]string, 0, len(mainAccountMap))
@@ -228,56 +246,18 @@ func (a AwsSupportMonthTask) listSummaryMainForSupport(kt *kit.Kit, opt *MonthTa
 	summaryMainResp, err := actcli.GetDataService().Global.Bill.ListBillSummaryMain(kt, summaryListReq)
 	if err != nil {
 		logs.Errorf("failt to list main account bill summary for %s month task, err: %v, rid: %s",
-			enumor.Aws, err, kt.Rid)
+			enumor.HuaWei, err, kt.Rid)
 		return nil, err
 	}
 	return summaryMainResp.Details, nil
 }
 
-func convSummaryToCommonReverse(mainAccount *protocore.BaseMainAccount, summary *bill.BillSummaryMain,
-	cost decimal.Decimal, extension []byte) bill.BillItemCreateReq[json.RawMessage] {
-
-	reverseBillItem := bill.BillItemCreateReq[json.RawMessage]{
-		RootAccountID: mainAccount.ParentAccountID,
-		MainAccountID: mainAccount.ID,
-		Vendor:        mainAccount.Vendor,
-		ProductID:     mainAccount.OpProductID,
-		BkBizID:       mainAccount.BkBizID,
-		BillYear:      summary.BillYear,
-		BillMonth:     summary.BillMonth,
-		BillDay:       enumor.MonthTaskSpecialBillDay,
-		VersionID:     summary.CurrentVersion,
-		Currency:      summary.Currency,
-		Cost:          cost,
-		HcProductCode: constant.BillCommonExpenseReverseName,
-		HcProductName: constant.BillCommonExpenseReverseName,
-		Extension:     cvt.ValToPtr[json.RawMessage](extension),
-	}
-	return reverseBillItem
-}
-
-func convSummaryToCommonExpense(summary *bill.BillSummaryMain,
-	cost decimal.Decimal, extJson []byte) bill.BillItemCreateReq[json.RawMessage] {
-
-	return bill.BillItemCreateReq[json.RawMessage]{
-		RootAccountID: summary.RootAccountID,
-		MainAccountID: summary.MainAccountID,
-		Vendor:        summary.Vendor,
-		ProductID:     summary.ProductID,
-		BkBizID:       summary.BkBizID,
-		BillYear:      summary.BillYear,
-		BillMonth:     summary.BillMonth,
-		BillDay:       enumor.MonthTaskSpecialBillDay,
-		VersionID:     summary.CurrentVersion,
-		Currency:      summary.Currency,
-		Cost:          cost,
-		HcProductCode: constant.BillCommonExpenseName,
-		HcProductName: constant.BillCommonExpenseName,
-		Extension:     cvt.ValToPtr[json.RawMessage](extJson),
-	}
-}
-
 // GetHcProductCodes hc product code ranges
-func (a *AwsSupportMonthTask) GetHcProductCodes() []string {
+func (a *HuaweiSupportMonthTask) GetHcProductCodes() []string {
 	return []string{constant.BillCommonExpenseName, constant.BillCommonExpenseReverseName}
+}
+
+// GetBatchSize ...
+func (a HuaweiSupportMonthTask) GetBatchSize(kt *kit.Kit) uint64 {
+	return 1000
 }

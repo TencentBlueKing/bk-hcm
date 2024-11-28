@@ -35,6 +35,8 @@ func GetRunner(vendor enumor.Vendor, taskType enumor.MonthTaskType) (MonthTaskRu
 		return newGcpRunner(taskType)
 	case enumor.Aws:
 		return newAwsRunner(taskType)
+	case enumor.HuaWei:
+		return newHuaweiRunner(taskType)
 	default:
 		return nil, fmt.Errorf("vendor %s not support now", vendor)
 	}
