@@ -44,6 +44,15 @@ func (m TagMap) Map() map[string]string {
 	return dst
 }
 
+// NewTagMap return new tag map, initialized by tag pairs if given
+func NewTagMap(tagPairs ...TagPair) TagMap {
+	tagMap := make(map[string]string, len(tagPairs))
+	for _, tagPair := range tagPairs {
+		tagMap[tagPair.Key] = tagPair.Value
+	}
+	return tagMap
+}
+
 // TagPair key-value Pair
 type TagPair struct {
 	Key   string `json:"key"`
