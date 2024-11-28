@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0029,HCMVER=v1.7.0
 
     Notes:
     1. 修改负载均衡表唯一键索引为cloud_id, vendor, region
@@ -36,22 +36,25 @@ START TRANSACTION;
 -- 1. 修改负载均衡表唯一键索引为cloud_id, vendor, region
 alter table load_balancer
     add constraint idx_uk_cloud_id_vendor_region unique (cloud_id, vendor, region);
-alter table load_balancer drop key idx_uk_cloud_id_vendor;
+alter table load_balancer
+    drop key idx_uk_cloud_id_vendor;
 
 
--- 2. 负载均衡监听器表新增region字段
+-- 2. 负载均衡监听器表新增region字段, 并补充索引 (vendor, account_id, bk_biz_id, cloud_lb_id)
 alter table load_balancer_listener
     add column region varchar(20) default '' not null after `default_domain`;
 
--- 3. 负载均衡监听器表修改唯一键索引为(cloud_id, vendor, region)，并增加(lb_id,cloud_id)索引
+
+-- 3. 负载均衡监听器表 修改唯一键索引为(cloud_id, vendor, region)，并增加(lb_id,cloud_id)索引
 alter table load_balancer_listener
     add constraint idx_uk_cloud_id_vendor_region unique (cloud_id, vendor, region);
 alter table load_balancer_listener
     drop key idx_uk_cloud_id_vendor;
 alter table load_balancer_listener
     add index idx_lb_id_cloud_id (lb_id, cloud_id, id);
+
 alter table load_balancer_listener
-    drop index idx_lb_id;
+    add index idx_vendor_account_id_bk_biz_id_cloud_lb_id (vendor, account_id, bk_biz_id, cloud_lb_id);
 
 -- 4. 负载均衡目标组表修改唯一键索引为cloud_id, vendor, region
 alter table load_balancer_target_group
@@ -59,19 +62,30 @@ alter table load_balancer_target_group
 alter table load_balancer_target_group
     drop key idx_uk_cloud_id_vendor;
 
+alter table load_balancer_target_group
+    add index idx_bk_biz_id (bk_biz_id, id);
+
 -- 5. 腾讯云URL规则表新增region字段
 alter table tcloud_lb_url_rule
     add column region varchar(20) default '' not null after `cloud_target_group_id`;
 
--- 6. 腾讯云URL规则表修改唯一键索引为cloud_id, vendor, region
+-- 6. 腾讯云URL规则表修改唯一键索引为cloud_id, vendor, region, 增加索引(lbl_id, rule_type)、(lb_id, rule_type)
 alter table tcloud_lb_url_rule
     add constraint idx_uk_cloud_id_cloud_lbl_id_region unique (cloud_id, cloud_lbl_id, region);
 alter table tcloud_lb_url_rule
     drop key idx_uk_cloud_id_lbl_id;
 
--- 7. 负载均衡target表新增target_group_region
+alter table tcloud_lb_url_rule
+    add index idx_cloud_lbl_id_rule_type (lbl_id, rule_type);
+alter table tcloud_lb_url_rule
+    add index idx_lb_id_rule_type (lb_id, rule_type);
+
+-- 7. 负载均衡target表新增target_group_region，并增加索引target_group_id
 alter table load_balancer_target
     add column target_group_region varchar(20) default '' not null after `inst_name`;
+
+alter table load_balancer_target
+    add index idx_target_group_id (target_group_id, id);
 
 -- 8. 负载均衡target表修改唯一键索引为cloud_target_group_id, ip, port, cloud_inst_id, target_group_region
 alter table load_balancer_target
@@ -80,9 +94,27 @@ alter table load_balancer_target
 alter table load_balancer_target
     drop key idx_uk_cloud_target_group_id_ip_port_cloud_inst_id;
 
+-- 9. 负载均衡表新增tags字段
+alter table load_balancer
+    add tags JSON null after cloud_expired_time;
+
+-- 10. 目标组规则关系表 target_group_listener_rule_rel 增加索引
+alter table target_group_listener_rule_rel
+    add index idx_listener_rule_id (listener_rule_id);
+alter table target_group_listener_rule_rel
+    add index idx_lb_id_cloud_rule_id (lb_id, cloud_listener_rule_id);
+alter table target_group_listener_rule_rel
+    add index idx_lb_id_cloud_lbl_id (lb_id, cloud_lbl_id, id);
+alter table target_group_listener_rule_rel
+    add index idx_lbl_id (lbl_id, id);
+
+-- 11. audit审计表增加业务id索引
+alter table audit
+    add index idx_bk_biz_id (bk_biz_id, id);
+
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.7.0' as `hcm_ver`, '0029' as `sql_ver`;
 
 
 COMMIT
