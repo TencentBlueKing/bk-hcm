@@ -324,3 +324,35 @@ func (t *TCloudImpl) SecurityGroupCvmBatchDisassociate(kt *kit.Kit,
 
 	return nil
 }
+
+// DescribeSecurityGroupAssociationStatistics describe security group association statistics.
+// reference: https://cloud.tencent.com/document/api/215/17799
+func (t *TCloudImpl) DescribeSecurityGroupAssociationStatistics(kt *kit.Kit, opt *securitygroup.TCloudListOption) (
+	[]securitygroup.TCloudSecurityGroupAssociationStatistic, error) {
+
+	client, err := t.clientSet.VpcClient(opt.Region)
+	if err != nil {
+		return nil, fmt.Errorf("new tcloud vpc client failed, err: %v", err)
+	}
+
+	req := vpc.NewDescribeSecurityGroupAssociationStatisticsRequest()
+	for _, cloudID := range opt.CloudIDs {
+		req.SecurityGroupIds = append(req.SecurityGroupIds, common.StringPtr(cloudID))
+	}
+	resp, err := client.DescribeSecurityGroupAssociationStatisticsWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("describe tcloud security group association statistics failed, err: %v， resp: %v, rid: %s",
+			err, resp, kt.Rid)
+		return nil, err
+	}
+
+	result := make([]securitygroup.TCloudSecurityGroupAssociationStatistic,
+		0, len(resp.Response.SecurityGroupAssociationStatisticsSet))
+	for _, statistics := range resp.Response.SecurityGroupAssociationStatisticsSet {
+		result = append(result, securitygroup.TCloudSecurityGroupAssociationStatistic{
+			SecurityGroupAssociationStatistics: statistics,
+		})
+	}
+
+	return result, nil
+}
