@@ -160,3 +160,20 @@ type CvmRelatedInfo struct {
 	EipCount  int      `json:"eip_count"`
 	Eip       []string `json:"eip"`
 }
+
+// BatchGetCvmSecurityGroupsReq ...
+type BatchGetCvmSecurityGroupsReq struct {
+	CvmIDs []string `json:"cvm_ids" validate:"required,min=1,max=500"`
+}
+
+// Validate ...
+func (req BatchGetCvmSecurityGroupsReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// BatchGetCvmSecurityGroupsRespItem ...
+type BatchGetCvmSecurityGroupsRespItem struct {
+	ID      string `json:"id"`
+	CloudId string `json:"cloud_id"`
+	Name    string `json:"name"`
+}
