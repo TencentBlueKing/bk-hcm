@@ -39,6 +39,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/slice"
 )
 
 // CreateTCloudSecurityGroup create tcloud security group.
@@ -650,22 +651,27 @@ func (g *securityGroup) TCloudListSecurityGroupStatistic(cts *rest.Contexts) (an
 
 func (g *securityGroup) getCvms(kt *kit.Kit, cvmIDs []string) ([]cvm.BaseCvm, error) {
 
-	listReq := &core.ListReq{
-		Filter: tools.ExpressionAnd(
-			tools.RuleIn("id", cvmIDs),
-		),
-		Page: core.NewDefaultBasePage(),
+	result := make([]cvm.BaseCvm, 0, len(cvmIDs))
+	for _, ids := range slice.Split(cvmIDs, int(core.DefaultMaxPageLimit)) {
+		listReq := &core.ListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleIn("id", ids),
+			),
+			Page: core.NewDefaultBasePage(),
+		}
+		resp, err := g.dataCli.Global.Cvm.ListCvm(kt, listReq)
+		if err != nil {
+			logs.Errorf("list cvm failed, req: %+v, err: %v, rid: %s", listReq, err, kt.Rid)
+			return nil, err
+		}
+		result = append(result, resp.Details...)
 	}
-	result, err := g.dataCli.Global.Cvm.ListCvm(kt, listReq)
-	if err != nil {
-		logs.Errorf("list cvm failed, req: %+v, err: %v, rid: %s", listReq, err, kt.Rid)
-		return nil, err
+
+	if len(result) != len(cvmIDs) {
+		logs.Errorf("list cvm failed, got %d, but expect %d, rid: %s", len(result), len(cvmIDs), kt.Rid)
+		return nil, fmt.Errorf("list cvm failed, got %d, but expect %d", len(result), len(cvmIDs))
 	}
-	if len(result.Details) != len(cvmIDs) {
-		logs.Errorf("list cvm failed, got %d, but expect %d, rid: %s", len(result.Details), len(cvmIDs), kt.Rid)
-		return nil, fmt.Errorf("list cvm failed, got %d, but expect %d", len(result.Details), len(cvmIDs))
-	}
-	return result.Details, nil
+	return result, nil
 }
 
 // TCloudSGBatchDisassociateCvm  批量解绑安全组
