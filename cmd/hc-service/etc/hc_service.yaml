@@ -62,5 +62,11 @@ log:
   # log level.
   verbosity: 0
 sync:
-  # 腾讯云负载均衡监听器同步并发数配置
-  tcloudLblConcurrency: 3
+  # resource synchronization current config,
+  # rule match by order, rule syntax: vendor/resource/region, use '*' for match any
+  concurrentRules:
+    - rule: tcloud/load_balancer/*
+      syncConcurrent: 1
+      listConcurrent: 1
+  # if no any rule matched, use this default config
+  defaultConcurrent: 1

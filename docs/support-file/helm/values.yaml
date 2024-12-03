@@ -360,8 +360,14 @@ hcservice:
         nodePort:
   port: 80
   sync:
-    # 负载均衡下监听器同步并发数
-    tcloudLblConcurrency: 3
+    # resource synchronization current config,
+    # rule match by order, rule syntax: vendor/resource/region, use '*' for match any
+    concurrentRules:
+      - rule: tcloud/load_balancer/*
+        syncConcurrent: 1
+        listConcurrent: 1
+    # if no any rule matched, use this default config
+    defaultConcurrent: 1
 
 webserver:
   ## 镜像
