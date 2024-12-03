@@ -1022,7 +1022,7 @@ func (s SyncConfig) GetSyncConcurrent(vendor enumor.Vendor, resource enumor.Clou
 
 	for _, c := range s.ConcurrentRules {
 		if c.Match(vendor, resource, region) {
-			return c.SyncConcurrent, c.ListConcurrent
+			return c.ListConcurrent, c.SyncConcurrent
 		}
 	}
 	return s.DefaultConcurrent, s.DefaultConcurrent
