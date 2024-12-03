@@ -6,13 +6,12 @@
 
 ### URL
 
-POST /api/v1/cloud/bizs/{bk_biz_id}/cvms/security_groups/batch
+POST /api/v1/cloud/cvms/security_groups/batch
 
 ### 输入参数
 
 | 参数名称      | 参数类型         | 必选 | 描述                  |
 |-----------|--------------|----|---------------------|
-| bk_biz_id | int64        | 是  | 业务ID                |
 | cvm_ids   | string array | 是  | 云主机ID列表, 最多传入500个ID |
 
 
