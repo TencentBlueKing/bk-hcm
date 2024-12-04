@@ -999,7 +999,11 @@ func (s *SyncConfig) trySetDefault() {
 		s.DefaultConcurrent = 1
 	}
 	for i := range s.ConcurrentRules {
-		s.ConcurrentRules[i].init()
+		r := &s.ConcurrentRules[i]
+		r.trySetDefault()
+		if r.ListConcurrent == 0 {
+			r.ListConcurrent = r.SyncConcurrent
+		}
 	}
 }
 
@@ -1016,7 +1020,7 @@ func (s SyncConfig) Validate() error {
 	return nil
 }
 
-// GetSyncConcurrent 按顺序匹配，一旦匹配立即返回
+// GetSyncConcurrent 获取同步并发，按顺序匹配，一旦匹配立即返回
 func (s SyncConfig) GetSyncConcurrent(vendor enumor.Vendor, resource enumor.CloudResourceType, region string) (
 	listing, syncing uint) {
 
@@ -1036,7 +1040,7 @@ type SyncConcurrentRule struct {
 	region   string                   `yaml:"region"`
 	// for syncing resource
 	SyncConcurrent uint `yaml:"syncConcurrent"`
-	// for listing resource from cloud
+	// for listing resource from cloud if not set will be set to SyncConcurrent
 	ListConcurrent uint `yaml:"listConcurrent"`
 }
 
@@ -1065,7 +1069,7 @@ func (r *SyncConcurrentRule) Match(vendor enumor.Vendor, resource enumor.CloudRe
 	return true
 }
 
-func (r *SyncConcurrentRule) init() {
+func (r *SyncConcurrentRule) trySetDefault() {
 	if r.Rule == "" {
 		return
 	}
@@ -1080,6 +1084,7 @@ func (r *SyncConcurrentRule) init() {
 	if len(parts) > 2 {
 		r.region = parts[2]
 	}
+
 }
 
 // Validate ...

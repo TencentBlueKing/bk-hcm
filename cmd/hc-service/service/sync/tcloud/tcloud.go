@@ -74,7 +74,7 @@ func (hd *baseHandler) SyncConcurrent() uint {
 	}
 	// read from config file
 	_, syncing := cc.HCService().SyncConfig.GetSyncConcurrent(enumor.TCloud, hd.resType, hd.request.Region)
-	return min(syncing, 1)
+	return max(syncing, 1)
 }
 
 // Resource return resource type of handler
