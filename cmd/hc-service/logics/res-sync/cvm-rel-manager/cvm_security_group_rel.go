@@ -105,6 +105,7 @@ func (mgr *CvmRelManger) getCvmSGRelMapFromDB(kt *kit.Kit, cvmIDs []string) (
 		if len(respResult.Details) < int(core.DefaultMaxPageLimit) {
 			break
 		}
+		listReq.Page.Start += uint32(len(respResult.Details))
 	}
 
 	return result, nil
