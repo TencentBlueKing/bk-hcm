@@ -56,6 +56,7 @@ import (
 	daosubaccount "hcm/pkg/dal/dao/cloud/sub-account"
 	daosync "hcm/pkg/dal/dao/cloud/sync"
 	"hcm/pkg/dal/dao/cloud/zone"
+	globalconfig "hcm/pkg/dal/dao/global-config"
 	idgenerator "hcm/pkg/dal/dao/id-generator"
 	"hcm/pkg/dal/dao/orm"
 	recyclerecord "hcm/pkg/dal/dao/recycle-record"
@@ -139,6 +140,8 @@ type Set interface {
 	RootAccount() accountset.RootAccount
 	TaskDetail() task.Detail
 	TaskManagement() task.Management
+	GlobalConfig() globalconfig.Interface
+
 	Txn() *Txn
 }
 
@@ -759,4 +762,12 @@ func (s *set) TaskDetail() task.Detail {
 // TaskManagement return task management dao.
 func (s *set) TaskManagement() task.Management {
 	return task.NewManagementDao(s.orm, s.idGen, s.audit)
+}
+
+// GlobalConfig return dao.
+func (s *set) GlobalConfig() globalconfig.Interface {
+	return &globalconfig.Dao{
+		Orm:   s.orm,
+		IDGen: s.idGen,
+	}
 }
