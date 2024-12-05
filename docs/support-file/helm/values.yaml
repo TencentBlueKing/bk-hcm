@@ -360,8 +360,12 @@ hcservice:
         nodePort:
   port: 80
   sync:
-    # resource synchronization current config,
-    # rule match by order, rule syntax: vendor/resource/region, use '*' for match any
+    # resource synchronization concurrent config,
+    # rule syntax: vendor/resource/region, use '*' to match any.
+    # rules are matched from top to bottom, if matched, the rule will be used immediately.
+    # exact match rule should be placed at the top of wildcard rules.
+    # 资源同步并发配置，规则语法：vendor/resource/region，支持使用字符`*`表示通配某个字段
+    # 规则自上而下匹配，会使用第一条匹配到规则，因此精确匹配的规则应该放在通配规则前面
     concurrentRules:
       - rule: tcloud/load_balancer/*
         syncConcurrent: 1
