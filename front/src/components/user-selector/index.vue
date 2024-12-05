@@ -93,13 +93,28 @@ watchEffect(async () => {
 
   // 只获取不存在列表中的新用户
   if (newUsers.length) {
-    let newUserList = await userStore.getUserByName(newUsers);
+    // 在全局store中查询，存在则直接使用，不存在则请求
+    const searchUsers: string[] = [];
+    const existUserList: IUserItem[] = [];
+    newUsers.forEach((username: string) => {
+      const user = userStore.userList.find((oldItem) => oldItem.username === username);
+      if (user) {
+        existUserList.push(user);
+      } else {
+        searchUsers.push(username);
+      }
+    });
 
-    // allowCreate为true时，允许输入不存在的用户，为了防止重复请求需要创建数据放入到列表中
-    if (!newUserList.length) {
-      newUserList = newUsers.map((username) => ({ username, display_name: username }));
+    let newUserList: IUserItem[] = [];
+    if (searchUsers.length) {
+      newUserList = await userStore.getUserByName(searchUsers);
+      // allowCreate为true时，允许输入不存在的用户，此时查询结果为空，为了防止重复请求需要创建数据放入到列表中
+      if (!newUserList.length) {
+        newUserList = searchUsers.map((username) => ({ username, display_name: username }));
+      }
     }
-    userList.value = [...userList.value, ...newUserList];
+
+    userList.value = [...userList.value, ...existUserList, ...newUserList];
   }
 });
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, watchEffect } from 'vue';
+import CombineRequest from '@blueking/combine-request';
 import { useUserStore } from '@/store/user';
 
 const props = defineProps<{ value: string | string[] }>();
@@ -13,6 +14,7 @@ const localValue = computed(() => {
 
 const displayValue = computed(() => {
   const names = localValue.value.map((username) => {
+    // 每次从全局store中查询获取
     const user = userStore.userList.find((user) => user.username === username);
     if (!user) {
       return '--';
@@ -24,6 +26,11 @@ const displayValue = computed(() => {
 
 const userStore = useUserStore();
 
+const combineRequest = CombineRequest.setup(Symbol.for('user-value'), (users) => {
+  const uniqueUsers = [...new Set((users as string[][]).reduce((acc, cur) => acc.concat(cur), []))];
+  userStore.getUserByName(uniqueUsers);
+});
+
 watchEffect(() => {
   if (!localValue.value.length) {
     return;
@@ -33,9 +40,8 @@ watchEffect(() => {
     (username) => !userStore.userList.some((item) => item.username === username),
   );
 
-  // TODO: 合并请求
   if (newUsers.length) {
-    userStore.getUserByName(newUsers);
+    combineRequest.add(newUsers);
   }
 });
 </script>
