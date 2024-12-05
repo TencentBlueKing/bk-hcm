@@ -1,5 +1,9 @@
 # 版本历史
 
+## 1.0.23
+
+- 修复 deployment模板tolerations、affinity、nodeSelector缩进错误
+
 ## 1.0.21
 
 - 去除ingress defaultBackend配置
