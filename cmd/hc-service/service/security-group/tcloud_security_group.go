@@ -65,7 +65,7 @@ func (g *securityGroup) CreateTCloudSecurityGroup(cts *rest.Contexts) (interface
 	}
 	sg, err := client.CreateSecurityGroup(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("request adaptor to create tcloud security group failed, err: %v, opt: %v, rid: %s",
+		logs.Errorf("request adaptor to create tcloud security group failed, err: %v, opt: %+v, rid: %s",
 			err, opt, cts.Kit.Rid)
 		return nil, err
 	}
