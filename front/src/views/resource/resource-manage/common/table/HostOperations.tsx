@@ -1,14 +1,12 @@
-import { Button, Checkbox, Dialog, Dropdown, Loading, Message } from 'bkui-vue';
+import { Button, Checkbox, Dialog, Loading, Message } from 'bkui-vue';
 import { PropType, computed, defineComponent, reactive, ref, watch } from 'vue';
 import './index.scss';
 import { usePreviousState } from '@/hooks/usePreviousState';
 import { useResourceStore } from '@/store';
-import { AngleDown } from 'bkui-vue/lib/icon';
-import { BkDropdownItem, BkDropdownMenu } from 'bkui-vue/lib/dropdown';
-import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
 import CommonLocalTable from '../commonLocalTable';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
 import http from '@/http';
+import DropDownMenu from '@/components/drop-down-menu/index.vue';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 export enum Operations {
@@ -387,40 +385,25 @@ export default defineComponent({
 
     return () => (
       <>
-        <div class={'host_operations_container'}>
-          <Dropdown disabled={operationsDisabled.value}>
-            {{
-              default: () => (
-                <Button disabled={operationsDisabled.value}>
-                  批量操作
-                  <AngleDown class={'f26'}></AngleDown>
-                </Button>
-              ),
-              content: () => (
-                <BkDropdownMenu>
-                  {Object.entries(OperationsMap).map(([opType, opName]) => (
-                    <BkDropdownItem
-                      onClick={() => {
-                        operationType.value = opType as Operations;
-                      }}>
-                      {`批量${opName}`}
-                    </BkDropdownItem>
-                  ))}
-                  <CopyToClipboard
-                    type='dropdown-item'
-                    text='复制内网IP'
-                    content={selectedRowPrivateIPs.value?.join?.(',')}
-                  />
-                  <CopyToClipboard
-                    type='dropdown-item'
-                    text='复制公网IP'
-                    content={selectedRowPublicIPs.value?.join?.(',')}
-                  />
-                </BkDropdownMenu>
-              ),
-            }}
-          </Dropdown>
-        </div>
+        <DropDownMenu
+          itemValue={OperationsMap}
+          disabled={operationsDisabled.value}
+          onClickItemVal={(value) => (operationType.value = value as Operations)}></DropDownMenu>
+
+        <DropDownMenu
+          btnText={'复制'}
+          type={'copy'}
+          itemValue={[
+            {
+              name: '复制内网IP',
+              value: selectedRowPrivateIPs?.value?.join?.(','),
+            },
+            {
+              name: '复制公网IP',
+              value: selectedRowPublicIPs?.value?.join?.(','),
+            },
+          ]}
+          disabled={operationsDisabled.value}></DropDownMenu>
 
         <Dialog
           isShow={isDialogShow.value}
