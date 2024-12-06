@@ -91,6 +91,32 @@ func (opt *CountOption) Validate(eo *filter.ExprOption) error {
 	return nil
 }
 
+// ValidateExcludeFilter validate list option, Filter is allowed to be empty.
+func (opt ListOption) ValidateExcludeFilter(eo *filter.ExprOption, po *core.PageOption) error {
+	if opt.Filter != nil {
+		if eo == nil {
+			return errf.New(errf.InvalidParameter, "filter expr option is required")
+		}
+		if err := opt.Filter.Validate(eo); err != nil {
+			return err
+		}
+	}
+
+	if opt.Page == nil {
+		return errf.New(errf.InvalidParameter, "page is required")
+	}
+
+	if po == nil {
+		return errf.New(errf.InvalidParameter, "page option is required")
+	}
+
+	if err := opt.Page.Validate(po); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // CountResult defines count resources with group by options result.
 type CountResult struct {
 	GroupField string `db:"group_field" json:"group_field"`
