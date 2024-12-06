@@ -127,7 +127,7 @@ func ResourceSyncV2[T common.CloudResType](cts *rest.Contexts, handler HandlerV2
 		return err
 	}
 	// 2. 获取云上实例列表
-	logs.Infof("%s sync start with concorrent %d start, rid: %s", handler.Describe(), handler.SyncConcurrent(), kt.Rid)
+	logs.Infof("%s sync start with concurrent %d start, rid: %s", handler.Describe(), handler.SyncConcurrent(), kt.Rid)
 	allCloudIDMap := make(map[string]struct{}, 1024)
 	allInstanceList := make([][]T, 0)
 	start := time.Now()

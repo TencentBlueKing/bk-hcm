@@ -26,6 +26,7 @@ import (
 	ressync "hcm/cmd/hc-service/logics/res-sync"
 	"hcm/cmd/hc-service/logics/res-sync/tcloud"
 	"hcm/pkg/api/hc-service/sync"
+	"hcm/pkg/cc"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
@@ -68,11 +69,12 @@ func (hd *baseHandler) Describe() string {
 
 // SyncConcurrent use request specified or 1
 func (hd *baseHandler) SyncConcurrent() uint {
-	// TODO read from config
 	if hd.request != nil && hd.request.Concurrent != 0 {
 		return hd.request.Concurrent
 	}
-	return 1
+	// read from config file
+	_, syncing := cc.HCService().SyncConfig.GetSyncConcurrent(enumor.TCloud, hd.resType, hd.request.Region)
+	return max(syncing, 1)
 }
 
 // Resource return resource type of handler
