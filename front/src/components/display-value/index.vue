@@ -10,6 +10,7 @@ import BoolValue from './bool-value.vue';
 import CertValue from './cert-value.vue';
 import CaValue from './ca-value.vue';
 import RegionValue from './region-value.vue';
+import UserValue from './user-value.vue';
 import { DisplayType } from './typings';
 
 defineOptions({ name: 'DisplayValue' });
@@ -18,7 +19,7 @@ const props = withDefaults(
   defineProps<{
     value: any;
     property: ModelProperty;
-    display: DisplayType;
+    display?: DisplayType;
   }>(),
   {
     display: () => ({
@@ -37,13 +38,14 @@ const valueComps: Record<
   | typeof CertValue
   | typeof CaValue
   | typeof RegionValue
+  | typeof UserValue
 > = {
   enum: EnumValue,
   datetime: DatetimeValue,
   number: NumberValue,
   string: StringValue,
   account: StringValue,
-  user: StringValue,
+  user: UserValue,
   array: ArrayValue,
   bool: BoolValue,
   cert: CertValue,
