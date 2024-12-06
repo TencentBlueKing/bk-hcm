@@ -84,8 +84,3 @@ func (hp *HuaweiPuller) GetPullTaskList(kt *kit.Kit, client *client.ClientSet,
 	}
 	return dp.GetPullTaskList(kt)
 }
-
-// HasMonthPullTask return if has month pull task
-func (hp *HuaweiPuller) HasMonthPullTask() bool {
-	return false
-}

@@ -30,7 +30,8 @@ import (
 )
 
 // -------------------------- Create --------------------------
-// RootAccountCreateReq main account extension create req.
+
+// RootAccountExtensionCreateReq main account extension create req.
 type RootAccountExtensionCreateReq interface {
 	AwsRootAccountExtensionCreateReq | GcpRootAccountExtensionCreateReq |
 		AzureRootAccountExtensionCreateReq | HuaWeiRootAccountExtensionCreateReq |
@@ -253,7 +254,7 @@ func (u *RootAccountUpdateReq[T]) Validate() error {
 
 // -------------------------- Get --------------------------
 
-// RootAccountGetBaseResult
+// RootAccountGetBaseResult ...
 type RootAccountGetBaseResult struct {
 	protocore.BaseRootAccount `json:",inline"`
 }
@@ -280,6 +281,9 @@ type RootAccountGetResult[T RootAccountExtensionGetResp] struct {
 // AwsRootAccount ...
 type AwsRootAccount = RootAccountGetResult[protocore.AwsRootAccountExtension]
 
+// HuaweiRootAccount ...
+type HuaweiRootAccount = RootAccountGetResult[protocore.HuaWeiRootAccountExtension]
+
 // RootAccountGetResp ...
 type RootAccountGetResp[T RootAccountExtensionGetResp] struct {
 	rest.BaseResp `json:",inline"`
@@ -301,14 +305,14 @@ type RootAccountListResp struct {
 
 // -------------------------- Secret Encrypt And Decrypt --------------------------
 
-// SecretEncryptor 用于加密"泛型"Extension密钥
+// RootSecretEncryptor ... 用于加密"泛型"Extension密钥
 type RootSecretEncryptor[T RootAccountExtensionCreateReq | RootAccountExtensionUpdateReq] interface {
 	// EncryptSecretKey 加密约束，将密钥进行加密设置
 	EncryptSecretKey(cryptography.Crypto)
 	*T
 }
 
-// SecretDecryptor 用于解密"泛型"Extension密钥
+// RootSecretDecryptor 用于解密"泛型"Extension密钥
 type RootSecretDecryptor[T RootAccountExtensionGetResp] interface {
 	// DecryptSecretKey 解密约束，需要支持将加密的密钥还原成明文
 	DecryptSecretKey(cryptography.Crypto) error

@@ -80,6 +80,11 @@ var loadBalancerFlowNameMap = map[FlowName]struct{}{
 	FlowApplyTargetGroupToListenerRule: {},
 	FlowDeleteLoadBalancer:             {},
 	FlowLoadBalancerDeleteRule:         {},
+	FlowLoadBalancerCreateListener:     {},
+	FlowLoadBalancerCreateUrlRule:      {},
+	FlowBatchTaskListenerUnBindTarget:  {},
+	FlowBatchTaskListenerModifyRsWeight: {},
+	FlowBatchTaskDeleteListener:        {},
 }
 
 // ValidateLoadBalancer validate load balancer FlowName.
@@ -148,6 +153,15 @@ const (
 	FlowDeleteLoadBalancer FlowName = "delete_load_balancer"
 
 	FlowLoadBalancerDeleteRule FlowName = "load_balancer_delete_rule"
+
+	FlowLoadBalancerCreateListener FlowName = "load_balancer_create_listener"
+	FlowLoadBalancerCreateUrlRule  FlowName = "load_balancer_create_url_rule"
+	// FlowBatchTaskListenerUnBindTarget 异步任务-监听器批量解绑RS
+	FlowBatchTaskListenerUnBindTarget = "batch_task_tcloud_listener_unbind_target"
+	// FlowBatchTaskListenerModifyRsWeight 异步任务-监听器批量调整RS权重
+	FlowBatchTaskListenerModifyRsWeight = "batch_task_tcloud_listener_modify_rs_weight"
+	// FlowBatchTaskDeleteListener 异步任务-批量删除监听器
+	FlowBatchTaskDeleteListener = "batch_task_tcloud_delete_listener"
 )
 
 // 账单相关Flow

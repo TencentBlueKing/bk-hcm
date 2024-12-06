@@ -6,7 +6,7 @@ import { Plus } from 'bkui-vue/lib/icon';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
 import Confirm from '@/components/confirm';
 // import stores
-import { useBusinessStore } from '@/store';
+import { useBusinessStore, useLoadBalancerStore, useResourceStore } from '@/store';
 // import custom hooks
 import { useTable } from '@/hooks/useTable/useTable';
 import { useI18n } from 'vue-i18n';
@@ -21,6 +21,7 @@ import bus from '@/common/bus';
 // import types
 import { DoublePlainObject } from '@/typings';
 import './index.scss';
+import { TARGET_GROUP_PROTOCOLS } from '@/common/constant';
 
 export default defineComponent({
   props: { id: String },
@@ -29,6 +30,7 @@ export default defineComponent({
     const { t } = useI18n();
     const { whereAmI } = useWhereAmI();
     const { selections, handleSelectionChange, resetSelections } = useSelection();
+    const loadBalancerStore = useLoadBalancerStore();
     let timer: string | number | NodeJS.Timeout;
     let counter = 0; // 初始化计数器
     const isRowSelectEnable = ({ row, isCheckAll }: DoublePlainObject) => {
@@ -44,40 +46,39 @@ export default defineComponent({
 
     // use stores
     const businessStore = useBusinessStore();
+    const resourceStore = useResourceStore();
 
     // listener - table
     const { columns, settings } = useColumns('listener');
     const { CommonTable, getListData } = useTable({
       searchOptions: {
         searchData: [
-          {
-            name: '监听器名称',
-            id: 'name',
-          },
+          { name: '监听器名称', id: 'name' },
           {
             name: '协议',
             id: 'protocol',
+            children: TARGET_GROUP_PROTOCOLS.map((item) => ({ id: item, name: item })),
           },
-          {
-            name: '端口',
-            id: 'port',
-          },
-          {
-            name: '均衡方式',
-            id: 'scheduler',
-          },
-          {
-            name: '域名数量',
-            id: 'domain_num',
-          },
-          {
-            name: 'URL数量',
-            id: 'url_num',
-          },
-          {
-            name: '同步状态',
-            id: 'binding_status',
-          },
+          { name: '端口', id: 'port' },
+          // todo: 待后端支持
+          // {
+          //   name: '均衡方式',
+          //   id: 'scheduler',
+          //   children: Object.keys(SCHEDULER_MAP).map((scheduler) => ({
+          //     id: scheduler,
+          //     name: SCHEDULER_MAP[scheduler],
+          //   })),
+          // },
+          // { name: '域名数量', id: 'domain_num' },
+          // { name: 'URL数量', id: 'url_num' },
+          // {
+          //   name: '同步状态',
+          //   id: 'binding_status',
+          //   children: Object.keys(CLB_BINDING_STATUS).map((bindingStatus) => ({
+          //     id: bindingStatus,
+          //     name: CLB_BINDING_STATUS[bindingStatus],
+          //   })),
+          // },
         ],
       },
       tableOptions: {
@@ -165,6 +166,23 @@ export default defineComponent({
         });
       });
     };
+    // 拉取负载均衡
+    const handlePullResource = () => {
+      const { account_id, vendor, cloud_id, region } = loadBalancerStore.currentSelectedTreeNode;
+      Confirm(t('同步单个负载均衡'), t('从云上同步该负载均衡数据，包括负载均衡基本信息，监听器等'), () => {
+        resourceStore
+          .syncResource({
+            account_id,
+            vendor,
+            cloud_ids: [cloud_id],
+            regions: [region],
+            resource: 'load_balancer',
+          })
+          .then(() => {
+            Message({ theme: 'success', message: t('已提交同步任务，请等待同步结果') });
+          });
+      });
+    };
 
     // 批量删除监听器
     const {
@@ -183,7 +201,7 @@ export default defineComponent({
         <CommonTable>
           {{
             operation: () => (
-              <div class={'flex-row align-item-center'}>
+              <>
                 <Button theme={'primary'} onClick={() => bus.$emit('showAddListenerSideslider')}>
                   <Plus class={'f20'} />
                   {t('新增监听器')}
@@ -191,7 +209,10 @@ export default defineComponent({
                 <Button disabled={selections.value.length === 0} onClick={handleBatchDeleteListener}>
                   {t('批量删除')}
                 </Button>
-              </div>
+                <Button onClick={handlePullResource} class={'mr8'}>
+                  {t('同步刷新')}
+                </Button>
+              </>
             ),
           }}
         </CommonTable>

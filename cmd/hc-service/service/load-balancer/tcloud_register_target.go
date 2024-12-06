@@ -85,7 +85,7 @@ func (svc *clbSvc) RegisterTargetToListenerRule(cts *rest.Contexts) (any, error)
 		case enumor.CvmInstType:
 			tmpRs.InstanceId = cvt.ValToPtr(target.CloudInstID)
 		case enumor.EniInstType:
-			// 跨域rs 通过指定为 ip
+			// 跨域rs 通过EniIp参数指定为 ip
 			tmpRs.EniIp = cvt.ValToPtr(target.EniIp)
 		default:
 			return nil, errors.New(string("invalid target type: " + target.TargetType))

@@ -22,9 +22,9 @@ package constant
 
 const (
 	// MaxRetries maximum number of retries
-	MaxRetries = 300
+	MaxRetries = 6
 	// MinRetryInterval maximum retry interval
-	MinRetryInterval = 200
+	MinRetryInterval = 600
 	// MaxRetryInterval minimum retry interval
-	MaxRetryInterval = 800
+	MaxRetryInterval = 1000
 )

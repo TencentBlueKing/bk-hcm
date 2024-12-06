@@ -22,15 +22,17 @@ package tcloud
 import (
 	"fmt"
 
+	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 )
 
 // SyncBaseParams ...
 type SyncBaseParams struct {
-	AccountID string   `json:"account_id" validate:"required"`
-	Region    string   `json:"region" validate:"required"`
-	CloudIDs  []string `json:"cloud_ids" validate:"required,min=1"`
+	AccountID  string                `json:"account_id" validate:"required"`
+	Region     string                `json:"region" validate:"required"`
+	CloudIDs   []string              `json:"cloud_ids" validate:"required,min=1"`
+	TagFilters core.MultiValueTagMap `json:"tag_filters,omitempty" validate:"max=10"`
 }
 
 // Validate ...
@@ -46,4 +48,26 @@ func (opt SyncBaseParams) Validate() error {
 // SyncResult sync result.
 type SyncResult struct {
 	CreatedIds []string
+}
+
+// SyncRemovedParams ...
+type SyncRemovedParams struct {
+	AccountID string `json:"account_id" validate:"required"`
+	Region    string `json:"region" validate:"required"`
+	// 为空表示所有
+	CloudIDs   []string              `json:"cloud_ids,omitempty" validate:"omitempty"`
+	TagFilters core.MultiValueTagMap `json:"tag_filters,omitempty"`
+}
+
+// Validate ...
+func (opt SyncRemovedParams) Validate() error {
+
+	if len(opt.CloudIDs) > constant.CloudResourceSyncMaxLimit {
+		return fmt.Errorf("cloudIDs shuold <= %d", constant.CloudResourceSyncMaxLimit)
+	}
+	return validator.Validate.Struct(opt)
+}
+
+func getDatabaseTagKey(k string) string {
+	return "tags." + k
 }

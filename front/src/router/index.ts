@@ -5,13 +5,15 @@ import {
   createWebHashHistory,
   RouteLocationNormalized,
 } from 'vue-router';
+import { MENU_BUSINESS } from '@/constants/menu-symbol';
+import { businessViews } from '@/views';
 import common from './module/common';
 import workbench from './module/workbench';
 import resource from './module/resource';
 import resourceInside from './module/resource-inside';
 import service from './module/service';
 import serviceInside from './module/service-inside';
-import business from './module/business';
+// import business from './module/business';
 import scheme from './module/scheme';
 import bill from './module/bill';
 import i18n from '@/language/i18n';
@@ -28,7 +30,7 @@ const routes: RouteRecordRaw[] = [
   ...resourceInside,
   ...service,
   ...serviceInside,
-  ...business,
+  // ...business,
   ...scheme,
   ...bill,
   {
@@ -42,6 +44,11 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/403',
     redirect: '/403',
+  },
+  {
+    name: MENU_BUSINESS,
+    path: '/business',
+    children: businessViews,
   },
 ];
 
@@ -95,6 +102,7 @@ router.beforeEach((to: RouteLocationNormalized, from: RouteLocationNormalized, n
     if (isString(path)) return path === to.path;
     if (isArray(path)) return path.includes(to.path);
     if (isRegExp(path)) return path.test(to.path);
+    return undefined;
   });
 
   // if (to.path === '/service/my-approval') {

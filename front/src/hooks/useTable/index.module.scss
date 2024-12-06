@@ -12,10 +12,10 @@
 
       :global(.bk-button) {
         min-width: 88px;
+      }
 
-        + :global(.bk-button) {
-          margin-left: 8px;
-        }
+      & > *:not(:last-child) {
+        margin-right: 8px;
       }
     }
 

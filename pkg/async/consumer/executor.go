@@ -190,18 +190,18 @@ func (exec *executor) workerDo(task *Task) (err error) {
 			return
 		}
 		err = runErr
-		logs.Errorf("task run failed, err: %v, task: %+v, result: %+v, rid: %s",
-			runErr, task, failedRet, exec.kt.Rid)
+		logs.Errorf("task %s run failed, err: %v, task: %+v, result: %+v, rid: %s",
+			task.ID, runErr, task, failedRet, exec.kt.Rid)
 		if errf.IsContextCanceled(runErr) {
 			task.State = enumor.TaskCancel
 			return
 		}
 		nextState := enumor.TaskFailed
 		if patchErr := exec.UpdateTask(task, nextState, runErr.Error(), failedRet); patchErr != nil {
-			logs.Errorf("task set %s state failed after run failed, err: %v, patchErr: %v, exeRid: %s, "+
-				"taskRid: %s", nextState, runErr, patchErr, exec.kt.Rid, task.Kit.Rid)
-			err = fmt.Errorf("task set %s state failed, after run failed, err: %v, patchErr: %v",
-				nextState, runErr, patchErr)
+			logs.Errorf("task %s set %s state failed after run failed, err: %v, patchErr: %v, exeRid: %s, taskRid: %s",
+				task.ID, nextState, runErr, patchErr, exec.kt.Rid, task.Kit.Rid)
+			err = fmt.Errorf("task %s set %s state failed, after run failed, err: %v, patchErr: %v",
+				task.ID, nextState, runErr, patchErr)
 			return
 		}
 		return

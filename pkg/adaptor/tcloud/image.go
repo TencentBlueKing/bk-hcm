@@ -83,7 +83,7 @@ func (t *TCloudImpl) ListImage(kt *kit.Kit,
 		})
 	}
 
-	return &image.TCloudImageListResult{Details: images}, nil
+	return &image.TCloudImageListResult{Details: images, Count: common.Uint64Ptr(uint64(*resp.Response.TotalCount))}, nil
 }
 
 func changeArchitecture(architecture *string) string {

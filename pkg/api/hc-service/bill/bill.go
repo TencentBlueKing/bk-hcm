@@ -237,8 +237,8 @@ func (opt HuaWeiBillListReq) Validate() error {
 
 // HuaWeiFeeRecordListReq defines huawei fee record list request.
 type HuaWeiFeeRecordListReq struct {
-	AccountID    string `json:"account_id" validate:"required"`
-	SubAccountID string `json:"sub_account_id" validate:"required"`
+	RootAccountID      string `json:"root_account_id" validate:"required"`
+	MainAccountCloudID string `json:"main_account_cloud_id" validate:"required"`
 	// 查询的资源详单所在账期,东八区时间,格式为YYYY-MM。 示例:2019-01 说明: 不支持2019年1月份之前的资源详单。
 	Month string `json:"month" validate:"required"`
 	// 查询的资源消费记录的开始日期,格式为YYYY-MM-DD

@@ -52,7 +52,13 @@ type leader struct {
 // CurrNode return current node key.
 func (al *leader) CurrNode() string {
 	split := strings.Split(al.sd.CurrentNodeKey(), "/")
-	return split[len(split)-1]
+
+	if len(split) > 0 {
+		return split[len(split)-1]
+	}
+
+	// this should not be happened
+	return ""
 }
 
 // AliveNodes return current node key.

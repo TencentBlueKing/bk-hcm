@@ -16,6 +16,7 @@ import { Message } from 'bkui-vue';
 // define props
 const props = defineProps<{
   isFormDataChanged: boolean;
+  show: boolean;
 }>();
 // define emits
 const emits = defineEmits(['cancel', 'success', 'update:isFormDataChanged']);
@@ -81,7 +82,7 @@ const handleCancel = () => {
 </script>
 
 <template>
-  <form-select @change="handleFormFilter"></form-select>
+  <form-select @change="handleFormFilter" :show="props.show"></form-select>
   <component
     class="mb20 pdr20"
     ref="formRef"

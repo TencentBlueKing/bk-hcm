@@ -336,6 +336,7 @@ type WebServerSetting struct {
 	Itsm          ApiGateway    `yaml:"itsm"`
 	ChangeLogPath ChangeLogPath `yaml:"changeLogPath"`
 	Notice        Notice        `yaml:"notice"`
+	TemplatePath  string        `yaml:"templatePath"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -348,6 +349,10 @@ func (s *WebServerSetting) trySetDefault() {
 	s.Network.trySetDefault()
 	s.Service.trySetDefault()
 	s.Log.trySetDefault()
+	s.ChangeLogPath.trySetDefault()
+	if len(s.TemplatePath) == 0 {
+		s.TemplatePath = "template"
+	}
 
 	return
 }
@@ -473,4 +478,13 @@ func (s AccountServerSetting) Validate() error {
 type ChangeLogPath struct {
 	Chinese string `yaml:"ch"`
 	English string `yaml:"en"`
+}
+
+func (c *ChangeLogPath) trySetDefault() {
+	if c.Chinese == "" {
+		c.Chinese = "changelog/ch"
+	}
+	if c.English == "" {
+		c.English = "changelog/en"
+	}
 }

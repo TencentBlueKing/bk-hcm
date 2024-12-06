@@ -53,11 +53,14 @@ export default (formModel: ApplyClbModel, formRef: any, isInquiryPricesLoading: 
 
   const isOpen = computed(() => formModel.load_balancer_type === 'OPEN');
   const isIpv4 = computed(() => formModel.address_ip_version === 'IPV4');
-  const hasZonesConfig = computed(() => (isOpen.value && isIpv4.value) || formModel.load_balancer_type === 'INTERNAL');
+  const hasZonesConfig = computed(() => (isOpen.value && isIpv4.value) || !isOpen.value);
   const hasBackupZonesConfig = computed(() => isOpen.value && isIpv4.value);
   const hasInternetChargeTypeConfig = computed(() => isOpen.value && formModel.account_type !== 'LEGACY');
 
   const handleParams = () => {
+    // eslint-disable-next-line no-nested-ternary, prefer-const
+    let zones = hasZonesConfig.value ? (formModel.zones ? [formModel.zones] : []) : undefined;
+
     return {
       ...formModel,
       bk_biz_id: isBusinessPage ? formModel.bk_biz_id : undefined,
@@ -70,8 +73,7 @@ export default (formModel: ApplyClbModel, formRef: any, isInquiryPricesLoading: 
       internet_charge_type: hasInternetChargeTypeConfig.value ? formModel.internet_charge_type : undefined,
       internet_max_bandwidth_out: hasInternetChargeTypeConfig.value ? formModel.internet_max_bandwidth_out : undefined,
       // 只有公网下ipv4以及内网下可以配置
-      // eslint-disable-next-line no-nested-ternary
-      zones: hasZonesConfig.value ? (formModel.zones ? [formModel.zones] : []) : undefined,
+      zones,
       // 只有公网下ipv4可以配置
       // eslint-disable-next-line no-nested-ternary
       backup_zones: hasBackupZonesConfig.value ? (formModel.backup_zones ? [formModel.backup_zones] : []) : undefined,
@@ -79,8 +81,9 @@ export default (formModel: ApplyClbModel, formRef: any, isInquiryPricesLoading: 
       cloud_subnet_id: !isOpen.value ? formModel.cloud_subnet_id : undefined,
       cloud_eip_id: !isOpen.value ? formModel.cloud_eip_id ?? undefined : undefined,
       // 后端无用字段
-      account_type: undefined,
-      zoneType: undefined,
+      account_type: undefined as undefined,
+      zoneType: undefined as undefined,
+      slaType: undefined as undefined,
     };
   };
 
@@ -91,7 +94,7 @@ export default (formModel: ApplyClbModel, formRef: any, isInquiryPricesLoading: 
       // 整理参数
       applyLoading.value = true;
       const url = isBusinessPage
-        ? `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/tcloud/applications/types/create_load_balancer`
+        ? `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${formModel.vendor}/applications/types/create_load_balancer`
         : `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/load_balancers/create`;
       await http.post(url, handleParams());
       Message({ theme: 'success', message: '购买成功' });

@@ -20,51 +20,36 @@
 package tcloud
 
 import (
-	ressync "hcm/cmd/hc-service/logics/res-sync"
 	"hcm/cmd/hc-service/logics/res-sync/tcloud"
 	"hcm/cmd/hc-service/service/sync/handler"
 	typecore "hcm/pkg/adaptor/types/core"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
-	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 )
 
 // SyncSecurityGroup ....
 func (svc *service) SyncSecurityGroup(cts *rest.Contexts) (interface{}, error) {
-	return nil, handler.ResourceSync(cts, &sgHandler{cli: svc.syncCli})
+	hd := &sgHandler{baseHandler: baseHandler{
+		resType: enumor.SecurityGroupCloudResType,
+		cli:     svc.syncCli,
+	}}
+	return nil, handler.ResourceSyncV2(cts, hd)
 }
 
 // sgHandler sg sync handler.
 type sgHandler struct {
-	cli ressync.Interface
-
-	// Perpare 构建参数
-	request *sync.TCloudSyncReq
-	syncCli tcloud.Interface
-	offset  uint64
+	baseHandler
+	offset uint64
 }
 
-var _ handler.Handler = new(sgHandler)
-
-// Prepare ...
-func (hd *sgHandler) Prepare(cts *rest.Contexts) error {
-	request, syncCli, err := defaultPrepare(cts, hd.cli)
-	if err != nil {
-		return err
-	}
-
-	hd.request = request
-	hd.syncCli = syncCli
-
-	return nil
-}
+var _ handler.HandlerV2[securitygroup.TCloudSG] = new(sgHandler)
 
 // Next ...
-func (hd *sgHandler) Next(kt *kit.Kit) ([]string, error) {
+func (hd *sgHandler) Next(kt *kit.Kit) ([]securitygroup.TCloudSG, error) {
 	listOpt := &securitygroup.TCloudListOption{
 		Region: hd.request.Region,
 		Page: &typecore.TCloudPage{
@@ -83,21 +68,16 @@ func (hd *sgHandler) Next(kt *kit.Kit) ([]string, error) {
 		return nil, nil
 	}
 
-	cloudIDs := make([]string, 0, len(sgResult))
-	for _, one := range sgResult {
-		cloudIDs = append(cloudIDs, converter.PtrToVal(one.SecurityGroupId))
-	}
-
 	hd.offset += typecore.TCloudQueryLimit
-	return cloudIDs, nil
+	return sgResult, nil
 }
 
 // Sync ...
-func (hd *sgHandler) Sync(kt *kit.Kit, cloudIDs []string) error {
+func (hd *sgHandler) Sync(kt *kit.Kit, instances []securitygroup.TCloudSG) error {
 	params := &tcloud.SyncBaseParams{
 		AccountID: hd.request.AccountID,
 		Region:    hd.request.Region,
-		CloudIDs:  cloudIDs,
+		CloudIDs:  slice.Map(instances, securitygroup.TCloudSG.GetCloudID),
 	}
 	if _, err := hd.syncCli.SecurityGroup(kt, params, new(tcloud.SyncSGOption)); err != nil {
 		logs.Errorf("sync tcloud sg failed, err: %v, opt: %v, rid: %s", err, params, kt.Rid)
@@ -118,7 +98,14 @@ func (hd *sgHandler) RemoveDeleteFromCloud(kt *kit.Kit) error {
 	return nil
 }
 
-// Name ...
-func (hd *sgHandler) Name() enumor.CloudResourceType {
-	return enumor.SecurityGroupCloudResType
+// RemoveDeletedFromCloud ...
+func (hd *sgHandler) RemoveDeletedFromCloud(kt *kit.Kit, allCloudIDMap map[string]struct{}) error {
+	err := hd.syncCli.RemoveSecurityGroupDeleteFromCloudV2(kt, hd.request.AccountID, hd.request.Region, allCloudIDMap)
+	if err != nil {
+		logs.Errorf("remove sg delete from cloud failed, err: %v, accountID: %s, region: %s, rid: %s", err,
+			hd.request.AccountID, hd.request.Region, kt.Rid)
+		return err
+	}
+
+	return nil
 }

@@ -21,8 +21,17 @@
 package tcloud
 
 import (
+	"context"
+	"errors"
+	"strings"
+
 	"hcm/pkg/adaptor/types"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
+	cvt "hcm/pkg/tools/converter"
+	"hcm/pkg/tools/retry"
 
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
 )
@@ -64,4 +73,48 @@ func (t *TCloudImpl) SetRateLimitRetryWithRandomInterval(retry bool) {
 	if retry {
 		t.clientSet.SetRateLimitRetryWithConstInterval()
 	}
+}
+
+func networkRetryable(err error) bool {
+	errStr := err.Error()
+	if !(strings.Contains(errStr, constant.TCloudNetworkErrorErrCode)) {
+		return false
+	}
+	if !strings.Contains(errStr, "http: ContentLength=") {
+		return false
+	}
+	return true
+}
+
+// NetworkErrRetry auto retry for "ClientError.NetworkError", for read only api
+func NetworkErrRetry[I any, O any](apiCall func(context.Context, *I) (*O, error), kt *kit.Kit, req *I) (resp *O,
+	err error) {
+
+	var retryTime uint32 = constant.TCloudClientErrRetryTimes
+	var sleepMin, sleepMax uint = 700, 1500
+
+	policy := retry.NewRetryPolicy(0, [2]uint{sleepMin, sleepMax})
+	for policy.RetryCount() < retryTime {
+		resp, err = apiCall(kt.Ctx, req)
+		if err == nil {
+			// break on success
+			break
+		}
+		// retry for network error
+		if policy.RetryCount() < retryTime && networkRetryable(err) {
+			logs.ErrorDepthf(1, "call tcloud api failed, req: %+v, retry times: %d, err: %v, rid: %s",
+				req, policy.RetryCount(), err, kt.Rid)
+			policy.Sleep()
+			continue
+		}
+		return nil, err
+	}
+	if resp == nil {
+		return nil, errors.New("empty response from tcloud")
+	}
+	return resp, nil
+}
+
+func getTagFilterKey(k string) *string {
+	return cvt.ValToPtr("tag:" + k)
 }

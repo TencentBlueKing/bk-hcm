@@ -24,15 +24,15 @@ spec:
       serviceAccountName: {{ template "bk-hcm.serviceAccountName" . }}
       {{- with .Values.hcservice.nodeSelector }}
       nodeSelector:
-      {{ toYaml . | indent 8 }}
+      {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.hcservice.affinity }}
       affinity:
-        {{ toYaml . | indent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.hcservice.tolerations }}
       tolerations:
-        {{ toYaml . | indent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.image.pullSecrets }}
       imagePullSecrets:

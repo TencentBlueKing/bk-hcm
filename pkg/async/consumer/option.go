@@ -19,7 +19,11 @@
 
 package consumer
 
-import "hcm/pkg/criteria/validator"
+import (
+	"time"
+
+	"hcm/pkg/criteria/validator"
+)
 
 // Option defines consumer run option.
 type Option struct {
@@ -76,4 +80,24 @@ type WatchDogOption struct {
 // Validate WatchDogOption
 func (opt WatchDogOption) Validate() error {
 	return validator.Validate.Struct(opt)
+}
+
+// SleepPolicy defines the policy of loop interval with different scenario.
+type SleepPolicy struct {
+	baseInterval time.Duration
+}
+
+// ShortSleep sleep with a short time
+func (sp SleepPolicy) ShortSleep() {
+	time.Sleep(sp.baseInterval / 3)
+}
+
+// ExceptionSleep sleep when the exception occurs.
+func (sp SleepPolicy) ExceptionSleep() {
+	time.Sleep(sp.baseInterval + sp.baseInterval/2)
+}
+
+// NormalSleep sleep with the default interval.
+func (sp SleepPolicy) NormalSleep() {
+	time.Sleep(sp.baseInterval)
 }

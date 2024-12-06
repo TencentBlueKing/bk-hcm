@@ -153,7 +153,7 @@ func (cli *client) ListenerTargets(kt *kit.Kit, param *SyncBaseParams, opt *Sync
 		}
 
 		// 存在则比较
-		return cli.compareTargetsChange(kt, param.AccountID, tgId, cloudTargets, tgRsMap[tgId])
+		return cli.compareTargetsChange(kt, param.AccountID, tgId, param.Region, cloudTargets, tgRsMap[tgId])
 	}
 	// 遍历云上的监听器、规则
 	for _, listener := range cloudListenerTargets {
@@ -238,12 +238,15 @@ func (cli *client) listTargetRelated(kt *kit.Kit, param *SyncBaseParams, opt *Sy
 	return cloudListenerTargets, relMap, tgRsMap, cvt.ValToPtr(lbResp[0]), nil
 }
 
-func (cli *client) compareTargetsChange(kt *kit.Kit, accountID, tgID string, cloudTargets []*tclb.Backend,
+func (cli *client) compareTargetsChange(kt *kit.Kit, accountID, tgID, tgRegion string, cloudTargets []*tclb.Backend,
 	dbRsList []corelb.BaseTarget) (err error) {
 
+	if len(cloudTargets) == 0 && len(dbRsList) == 0 {
+		return nil
+	}
 	// 增加包裹类型
 	cloudRsList := slice.Map(cloudTargets, func(rs *tclb.Backend) typeslb.Backend {
-		return typeslb.Backend{Backend: rs}
+		return typeslb.Backend{Backend: rs, TargetGroupRegion: tgRegion}
 	})
 	addSlice, updateMap, delLocalIDs := diff[typeslb.Backend, corelb.BaseTarget](cloudRsList, dbRsList, isRsChange)
 
@@ -251,10 +254,10 @@ func (cli *client) compareTargetsChange(kt *kit.Kit, accountID, tgID string, clo
 		return err
 	}
 
-	if err = cli.updateRs(kt, updateMap); err != nil {
+	if err = cli.updateRs(kt, tgRegion, updateMap); err != nil {
 		return err
 	}
-	if _, err = cli.createRs(kt, accountID, tgID, addSlice); err != nil {
+	if _, err = cli.createRs(kt, accountID, tgID, tgRegion, addSlice); err != nil {
 		return err
 	}
 
@@ -269,7 +272,9 @@ func (cli *client) createLocalTargetGroupL7(kt *kit.Kit, opt *SyncListenerOption
 	listReq := &core.ListReq{
 		Filter: tools.ExpressionAnd(
 			tools.RuleEqual("cloud_id", cloudRule.LocationId),
-			tools.RuleEqual("cloud_lbl_id", listener.ListenerId)),
+			tools.RuleEqual("cloud_lbl_id", listener.ListenerId),
+			tools.RuleEqual("region", lb.Region),
+		),
 		Page: core.NewDefaultBasePage(),
 	}
 
@@ -305,7 +310,7 @@ func (cli *client) createLocalTargetGroupL7(kt *kit.Kit, opt *SyncListenerOption
 			Weight:          0,
 			HealthCheck:     types.JsonField(healthcheck),
 			Memo:            cvt.ValToPtr("auto created for rule " + cvt.PtrToVal(cloudRule.LocationId)),
-			RsList:          slice.Map(cloudRule.Targets, convTarget(lb.AccountID)),
+			RsList:          slice.Map(cloudRule.Targets, convTarget(lb.AccountID, lb.Region)),
 		},
 		ListenerRuleID:      dbRule.ID,
 		CloudListenerRuleID: dbRule.CloudID,
@@ -328,19 +333,20 @@ func (cli *client) createLocalTargetGroupL7(kt *kit.Kit, opt *SyncListenerOption
 	return nil
 }
 
-func convTarget(accountID string) func(cloudTarget *tclb.Backend) *dataproto.TargetBaseReq {
+func convTarget(accountID, tgRegion string) func(cloudTarget *tclb.Backend) *dataproto.TargetBaseReq {
 	return func(cloudTarget *tclb.Backend) *dataproto.TargetBaseReq {
 		localTarget := typeslb.Backend{Backend: cloudTarget}
 		target := &dataproto.TargetBaseReq{
-			InstName:         cvt.PtrToVal(cloudTarget.InstanceName),
-			InstType:         cvt.PtrToVal((*enumor.InstType)(cloudTarget.Type)),
-			CloudInstID:      cvt.PtrToVal(cloudTarget.InstanceId),
-			Port:             cvt.PtrToVal(cloudTarget.Port),
-			Weight:           cloudTarget.Weight,
-			AccountID:        accountID,
-			PrivateIPAddress: cvt.PtrToSlice(cloudTarget.PrivateIpAddresses),
-			PublicIPAddress:  cvt.PtrToSlice(cloudTarget.PublicIpAddresses),
-			IP:               localTarget.GetIP(),
+			InstName:          cvt.PtrToVal(cloudTarget.InstanceName),
+			InstType:          cvt.PtrToVal((*enumor.InstType)(cloudTarget.Type)),
+			CloudInstID:       cvt.PtrToVal(cloudTarget.InstanceId),
+			Port:              cvt.PtrToVal(cloudTarget.Port),
+			Weight:            cloudTarget.Weight,
+			AccountID:         accountID,
+			TargetGroupRegion: tgRegion,
+			PrivateIPAddress:  cvt.PtrToSlice(cloudTarget.PrivateIpAddresses),
+			PublicIPAddress:   cvt.PtrToSlice(cloudTarget.PublicIpAddresses),
+			IP:                localTarget.GetIP(),
 		}
 		if enumor.InstType(cvt.PtrToVal(cloudTarget.Type)) == enumor.CcnInstType {
 			target.CloudInstID = localTarget.GetCloudID()
@@ -356,7 +362,7 @@ func convTarget(accountID string) func(cloudTarget *tclb.Backend) *dataproto.Tar
 func (cli *client) createLocalTargetGroupL4(kt *kit.Kit, opt *SyncListenerOption,
 	lb *corelb.TCloudLoadBalancer, listener typeslb.TCloudListenerTarget) error {
 
-	lbl, rule, err := cli.listListenerWithRule(kt, cvt.PtrToVal(listener.ListenerId))
+	lbl, rule, err := cli.listListenerWithRule(kt, cvt.PtrToVal(listener.ListenerId), lb.ID)
 	if err != nil {
 		logs.Errorf("fail to list listener with rule, err: %v, rid:%s", err, kt.Rid)
 		return err
@@ -382,7 +388,7 @@ func (cli *client) createLocalTargetGroupL4(kt *kit.Kit, opt *SyncListenerOption
 			Weight:          0,
 			HealthCheck:     types.JsonField(healthcheck),
 			Memo:            cvt.ValToPtr("auto created for listener " + cvt.PtrToVal(listener.ListenerId)),
-			RsList:          slice.Map(listener.Targets, convTarget(lb.AccountID)),
+			RsList:          slice.Map(listener.Targets, convTarget(lb.AccountID, lb.Region)),
 		},
 		// 需要用4层对应的规则id
 		ListenerRuleID:      rule.ID,
@@ -407,12 +413,15 @@ func (cli *client) createLocalTargetGroupL4(kt *kit.Kit, opt *SyncListenerOption
 	return nil
 }
 
-func (cli *client) listListenerWithRule(kt *kit.Kit, listenerCloudID string) (
+func (cli *client) listListenerWithRule(kt *kit.Kit, listenerCloudID, lbID string) (
 	*corelb.Listener[corelb.TCloudListenerExtension], *corelb.TCloudLbUrlRule, error) {
 
 	listReq := &core.ListReq{
-		Filter: tools.EqualExpression("cloud_id", listenerCloudID),
-		Page:   core.NewDefaultBasePage(),
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("lb_id", lbID),
+			tools.RuleEqual("cloud_id", listenerCloudID),
+		),
+		Page: core.NewDefaultBasePage(),
 	}
 	lblResp, err := cli.dbCli.TCloud.LoadBalancer.ListListener(kt, listReq)
 	if err != nil {
@@ -430,7 +439,9 @@ func (cli *client) listListenerWithRule(kt *kit.Kit, listenerCloudID string) (
 	// 获取对应规则
 	listReq.Filter = tools.ExpressionAnd(
 		tools.RuleEqual("cloud_id", lbl.CloudID),
-		tools.RuleEqual("lbl_id", lbl.ID))
+		tools.RuleEqual("cloud_lbl_id", lbl.CloudID),
+		tools.RuleEqual("region", lbl.Region),
+	)
 	ruleResp, err := cli.dbCli.TCloud.LoadBalancer.ListUrlRule(kt, listReq)
 	if err != nil {
 		logs.Errorf("fail to list rule of l4 listener, err: %v, lbl_id: %s, lbl_cloud_id: %s, rid: %s",
@@ -440,7 +451,7 @@ func (cli *client) listListenerWithRule(kt *kit.Kit, listenerCloudID string) (
 	if len(ruleResp.Details) == 0 {
 		logs.Errorf("rule of listener can not be found by id(%s), lbl_id: %s, lbl_cloud_id: %s, rid: %s ",
 			lbl.ID, lbl.CloudID, kt.Rid)
-		return nil, nil, fmt.Errorf("rule of listener  can not be found by id(%s) while target group syncing",
+		return nil, nil, fmt.Errorf("rule of listener can not be found by id(%s) while target group syncing",
 			listenerCloudID)
 	}
 	return cvt.ValToPtr(lbl), cvt.ValToPtr(ruleResp.Details[0]), nil
@@ -464,7 +475,7 @@ func (cli *client) deleteRs(kt *kit.Kit, localIds []string) error {
 }
 
 // 更新rs中的信息
-func (cli *client) updateRs(kt *kit.Kit, updateMap map[string]typeslb.Backend) (err error) {
+func (cli *client) updateRs(kt *kit.Kit, tgRegion string, updateMap map[string]typeslb.Backend) (err error) {
 
 	if len(updateMap) == 0 {
 		return nil
@@ -472,12 +483,13 @@ func (cli *client) updateRs(kt *kit.Kit, updateMap map[string]typeslb.Backend) (
 	updates := make([]*dataproto.TargetUpdate, 0, len(updateMap))
 	for id, backend := range updateMap {
 		updates = append(updates, &dataproto.TargetUpdate{
-			ID:               id,
-			Port:             cvt.PtrToVal(backend.Port),
-			Weight:           backend.Weight,
-			PrivateIPAddress: cvt.PtrToSlice(backend.PrivateIpAddresses),
-			PublicIPAddress:  cvt.PtrToSlice(backend.PublicIpAddresses),
-			InstName:         cvt.PtrToVal(backend.InstanceName),
+			ID:                id,
+			Port:              cvt.PtrToVal(backend.Port),
+			Weight:            backend.Weight,
+			PrivateIPAddress:  cvt.PtrToSlice(backend.PrivateIpAddresses),
+			PublicIPAddress:   cvt.PtrToSlice(backend.PublicIpAddresses),
+			InstName:          cvt.PtrToVal(backend.InstanceName),
+			TargetGroupRegion: tgRegion,
 		})
 	}
 
@@ -491,7 +503,8 @@ func (cli *client) updateRs(kt *kit.Kit, updateMap map[string]typeslb.Backend) (
 	return err
 }
 
-func (cli *client) createRs(kt *kit.Kit, accountID, tgId string, addSlice []typeslb.Backend) ([]string, error) {
+func (cli *client) createRs(kt *kit.Kit, accountID, tgId, tgRegion string, addSlice []typeslb.Backend) (
+	[]string, error) {
 
 	if len(addSlice) == 0 {
 		return nil, nil
@@ -503,7 +516,7 @@ func (cli *client) createRs(kt *kit.Kit, accountID, tgId string, addSlice []type
 	for _, targetBatch := range slice.Split(addSlice, constant.BatchOperationMaxLimit) {
 		targets = targets[:0]
 		for _, backend := range targetBatch {
-			rs := convTarget(accountID)(backend.Backend)
+			rs := convTarget(accountID, tgRegion)(backend.Backend)
 			rs.TargetGroupID = tgId
 			targets = append(targets, rs)
 		}
@@ -623,6 +636,10 @@ func isRsChange(cloud typeslb.Backend, db corelb.BaseTarget) bool {
 	}
 
 	if !assert.IsStringSliceEqual(cvt.PtrToSlice(cloud.PublicIpAddresses), db.PublicIPAddress) {
+		return true
+	}
+
+	if cloud.TargetGroupRegion != db.TargetGroupRegion {
 		return true
 	}
 	return false

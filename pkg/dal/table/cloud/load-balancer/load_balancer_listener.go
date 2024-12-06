@@ -46,6 +46,7 @@ var LoadBalancerListenerColumnsDescriptor = utils.ColumnDescriptors{
 	{Column: "protocol", NamedC: "protocol", Type: enumor.String},
 	{Column: "port", NamedC: "port", Type: enumor.Numeric},
 	{Column: "default_domain", NamedC: "default_domain", Type: enumor.String},
+	{Column: "region", NamedC: "region", Type: enumor.String},
 	{Column: "zones", NamedC: "zones", Type: enumor.Json},
 	{Column: "memo", NamedC: "memo", Type: enumor.String},
 	{Column: "sni_switch", NamedC: "sni_switch", Type: enumor.Numeric},
@@ -71,6 +72,7 @@ type LoadBalancerListenerTable struct {
 	Protocol      enumor.ProtocolType `db:"protocol" json:"protocol"`
 	Port          int64               `db:"port" json:"port"`
 	DefaultDomain string              `db:"default_domain" json:"default_domain"`
+	Region        string              `db:"region" json:"region"`
 	Zones         types.StringArray   `db:"zones" json:"zones"`
 	Memo          *string             `db:"memo" json:"memo"`
 	SniSwitch     enumor.SniType      `db:"sni_switch" json:"sni_switch"`

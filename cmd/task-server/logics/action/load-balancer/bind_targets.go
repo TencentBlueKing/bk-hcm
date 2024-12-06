@@ -36,7 +36,7 @@ import (
 var _ action.Action = new(ListenerRuleAddTargetAction)
 var _ action.ParameterAction = new(ListenerRuleAddTargetAction)
 
-// ListenerRuleAddTargetAction 将目标组中的RS应用到监听器或者规则
+// ListenerRuleAddTargetAction 将RS应用到监听器或者规则
 type ListenerRuleAddTargetAction struct{}
 
 // ListenerRuleAddTargetOption ...
@@ -71,7 +71,7 @@ func (act ListenerRuleAddTargetAction) Run(kt run.ExecuteKit, params any) (any, 
 	err := actcli.GetHCService().TCloud.Clb.BatchRegisterTargetToListenerRule(
 		kt.Kit(), opt.LoadBalancerID, opt.BatchRegisterTCloudTargetReq)
 	if err != nil {
-		logs.Errorf("fail to create register target to listener rule, err: %v, rid: %s", err, kt.Kit().Rid)
+		logs.Errorf("fail to register target to listener rule, err: %v, rid: %s", err, kt.Kit().Rid)
 		return nil, err
 	}
 

@@ -18,6 +18,7 @@ import bus from '@/common/bus';
 // import constants
 import { APPLICATION_LAYER_LIST, LBRouteName } from '@/constants';
 import './index.scss';
+import { CLB_BINDING_STATUS } from '@/common/constant';
 
 export default defineComponent({
   name: 'DomainList',
@@ -40,17 +41,15 @@ export default defineComponent({
     const isLoading = ref(false);
     // 搜索相关
     const searchData = [
-      {
-        name: t('域名'),
-        id: 'domain',
-      },
-      {
-        name: t('URL数量'),
-        id: 'url_count',
-      },
+      { name: t('域名'), id: 'domain' },
+      { name: t('URL数量'), id: 'url_count' },
       {
         name: t('同步状态'),
         id: 'sync_status',
+        children: Object.keys(CLB_BINDING_STATUS).map((bindingStatus) => ({
+          id: bindingStatus,
+          name: CLB_BINDING_STATUS[bindingStatus],
+        })),
       },
     ];
     // 表格相关
@@ -246,7 +245,7 @@ export default defineComponent({
           {{
             operation: () => (
               <>
-                <Button theme='primary' onClick={() => bus.$emit('showAddDomainSideslider')} class='mr12'>
+                <Button theme='primary' onClick={() => bus.$emit('showAddDomainSideslider')} class='mr8'>
                   <Plus class='f20' />
                   {t('新增域名')}
                 </Button>

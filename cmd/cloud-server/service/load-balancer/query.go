@@ -304,8 +304,12 @@ func (svc *lbSvc) listTargetsHealthByTGID(cts *rest.Contexts, validHandler handl
 		}
 		// 查询对应负载均衡信息
 		lbReq := &core.ListReq{
-			Filter: tools.ExpressionAnd(tools.RuleIn("cloud_id", newCloudLbIDs),
-				tools.RuleEqual("account_id", tgInfo.AccountID)),
+			Filter: tools.ExpressionAnd(
+				tools.RuleIn("cloud_id", newCloudLbIDs),
+				tools.RuleEqual("region", tgInfo.Region),
+				tools.RuleEqual("vendor", tgInfo.Vendor),
+				tools.RuleEqual("account_id", tgInfo.AccountID),
+			),
 			Page: core.NewDefaultBasePage(),
 		}
 

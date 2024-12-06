@@ -59,8 +59,7 @@ type Scheduler interface {
 
 // scheduler 定义任务流调度器
 type scheduler struct {
-	workerNumber     uint
-	watchIntervalSec time.Duration
+	workerNumber uint
 
 	taskTrees   sync.Map
 	workerQueue chan *Task
@@ -70,6 +69,7 @@ type scheduler struct {
 	executor Executor
 	leader   leader.Leader
 
+	sp      SleepPolicy
 	closeCh chan struct{}
 }
 
@@ -77,50 +77,63 @@ type scheduler struct {
 func NewScheduler(bd backend.Backend, exec Executor, ld leader.Leader, opt *SchedulerOption) Scheduler {
 
 	return &scheduler{
-		closeCh:          make(chan struct{}),
-		workerWg:         sync.WaitGroup{},
-		workerQueue:      make(chan *Task, 10),
-		workerNumber:     opt.WorkerNumber,
-		watchIntervalSec: time.Duration(opt.WatchIntervalSec) * time.Second,
-		backend:          bd,
-		executor:         exec,
-		leader:           ld,
+		closeCh:      make(chan struct{}),
+		workerWg:     sync.WaitGroup{},
+		workerQueue:  make(chan *Task, 10),
+		workerNumber: opt.WorkerNumber,
+		sp:           SleepPolicy{baseInterval: time.Duration(opt.WatchIntervalSec) * time.Second},
+		backend:      bd,
+		executor:     exec,
+		leader:       ld,
 	}
 }
 
 // Start 初始化调度器并启动执行
 func (sch *scheduler) Start() {
 
-	logs.Infof("scheduler start, worker number: %d, interval: %v", sch.workerNumber, sch.watchIntervalSec)
+	logs.Infof("scheduler start, worker number: %d, default loop interval: %s", sch.workerNumber,
+		sch.sp.baseInterval.String())
 
 	// 定期获取等待执行的任务流
-	sch.workerWg.Add(2)
 	go sch.scheduledFlowWatcher()
 	go sch.canceledFlowWatcher()
 
 	// 启动workerNumber个协程进行任务流解析
 	for i := 0; i < int(sch.workerNumber); i++ {
-		sch.workerWg.Add(1)
 		go sch.goWorker()
 	}
 }
 
 // flowWatcher 定期查询调度到该节点的flow
 func (sch *scheduler) scheduledFlowWatcher() {
+	sch.workerWg.Add(1)
+
+stopLoop:
 	for {
 		select {
 		case <-sch.closeCh:
-			break
+			logs.Infof("received stop signal, stop watch scheduled flow job success.")
+			break stopLoop
+
 		default:
 		}
-		// Kit: Kit initiate, 每次执行创建新kit
+
 		kt := NewKit()
-		if err := sch.runScheduledFlow(kt); err != nil {
+		working, err := sch.runScheduledFlow(kt)
+		if err != nil {
 			logs.Errorf("%s: scheduler watch scheduled flow  failed, err: %v, rid: %s",
 				constant.AsyncTaskWarnSign, err, kt.Rid)
+			sch.sp.ExceptionSleep()
+			continue
 		}
 
-		time.Sleep(sch.watchIntervalSec)
+		if working {
+			// there are flows waiting to be executed, do a short sleep.
+			sch.sp.ShortSleep()
+			continue
+		}
+
+		sch.sp.NormalSleep()
 	}
 
 	sch.workerWg.Done()
@@ -152,37 +165,52 @@ func (sch *scheduler) queryCurrNodeFlow(kt *kit.Kit, state enumor.FlowState, lim
 
 // canceledFlowWatcher 查询当前节点上被取消的flow并执行task取消操作
 func (sch *scheduler) canceledFlowWatcher() {
+	sch.workerWg.Add(1)
+
+stopLoop:
 	for {
 		select {
 		case <-sch.closeCh:
-			break
+			logs.Infof("received stop signal, stop watch canceled flow job success.")
+			break stopLoop
 		default:
 		}
-		// Kit: Kit initiate, 每次执行创建新kit
+
 		kt := NewKit()
-		if err := sch.handleCanceledFlow(kt); err != nil {
+		working, err := sch.handleCanceledFlow(kt)
+		if err != nil {
 			logs.Errorf("%s: scheduler watch canceled failed, err: %v, rid: %s",
 				constant.AsyncTaskWarnSign, err, kt.Rid)
+			sch.sp.ExceptionSleep()
+			continue
 		}
 
-		time.Sleep(sch.watchIntervalSec)
+		if working {
+			sch.sp.ShortSleep()
+			continue
+		}
+
+		sch.sp.NormalSleep()
 	}
 
 	sch.workerWg.Done()
 }
 
-func (sch *scheduler) handleCanceledFlow(kt *kit.Kit) error {
+func (sch *scheduler) handleCanceledFlow(kt *kit.Kit) (working bool, err error) {
 
 	dbFlows, err := sch.queryCurrNodeFlow(kt, enumor.FlowCancel, listScheduledFlowLimit)
 	if err != nil {
 		logs.Errorf("fail to list canceled flow, err: %v, rid: %s", err, kt.Rid)
-		return err
+		return false, err
 	}
+
 	if len(dbFlows) == 0 {
-		return nil
+		return false, nil
 	}
+
 	for _, flow := range dbFlows {
-		logs.Infof("canceling flow: %s", flow.ID)
+		logs.Infof("canceling flow: %s, rid: %s", flow.ID, kt.Rid)
+
 		// 清空任务树，阻止继续调度
 		sch.DeleteFlowTaskTree(flow.ID)
 		err = updateFlowToCancel(kt, sch.backend, flow.ID, cvt.PtrToVal(flow.Worker), enumor.FlowCancel)
@@ -193,12 +221,17 @@ func (sch *scheduler) handleCanceledFlow(kt *kit.Kit) error {
 			continue
 		}
 
-		if err := sch.executor.CancelFlow(kt, flow.ID); err != nil {
+		err := sch.executor.CancelFlow(kt, flow.ID)
+		if err != nil {
 			logs.Errorf("fail to handle flow canceling, err: %v, flow id: %s, rid: %s", err, flow.ID, kt.Rid)
 			// keep canceling other flow
+			continue
 		}
+
+		logs.Infof("cancel flow: %s success, rid: %s", flow.ID, kt.Rid)
 	}
-	return nil
+
+	return true, nil
 }
 
 // listTaskByFlowID 查询当前FlowID全部的任务节点
@@ -303,7 +336,7 @@ func (sch *scheduler) parseFlowAndPushTask(kt *kit.Kit, flow *Flow) error {
 	// 获取可执行的节点
 	executableTaskNodes := taskTree.Root.GetExecutableTasks()
 	if len(executableTaskNodes) == 0 {
-		state := taskTree.Root.ComputeState()
+		state := taskTree.Root.TreeState()
 
 		if state == enumor.FlowSuccess {
 			if err = updateFlowState(kt, sch.backend, flow.ID, enumor.FlowRunning, state); err != nil {
@@ -402,43 +435,51 @@ func updateFlowToCancel(kt *kit.Kit, bd backend.Backend, flowId, oldWorkerID str
 }
 
 // watchScheduledFlow 查询主节点分配给当前节点的的flow，并执行
-func (sch *scheduler) runScheduledFlow(kt *kit.Kit) error {
+func (sch *scheduler) runScheduledFlow(kt *kit.Kit) (working bool, err error) {
 
-	// 从DB中获取一条待执行的任务流并更新状态为执行中
-	dbFlows, err := sch.queryCurrNodeFlow(kt, enumor.FlowScheduled, listScheduledFlowLimit)
+	// 从DB中获取一批"待执行"的任务流并更新状态为"执行中"，开始对flow中的任务进行执行
+	flowList, err := sch.queryCurrNodeFlow(kt, enumor.FlowScheduled, listScheduledFlowLimit)
 	if err != nil {
-		logs.Errorf("")
-		return err
+		logs.Errorf("list flows failed, err: %v, rid: %s", err, kt.Rid)
+		return false, err
 	}
 
-	flows := slice.Map(dbFlows, func(one model.Flow) *Flow {
+	if len(flowList) == 0 {
+		logs.V(3).Infof("current node: %s not found scheduled flow to handleRunningFlow, rid: %s",
+			sch.leader.CurrNode(), kt.Rid)
+		return false, nil
+	}
+
+	ids := make([]string, 0)
+	flows := slice.Map(flowList, func(one model.Flow) *Flow {
+		ids = append(ids, one.ID)
 		// Note: first sub kit, scheduler.watcher -> flow
 		return &Flow{Flow: one, Kit: kt.NewSubKit()}
 	})
 
-	if len(flows) == 0 {
-		logs.V(3).Infof("current node: %s not found scheduled flow to handleRunningFlow, rid: %s",
-			sch.leader.CurrNode(), kt.Rid)
-		return nil
-	}
+	logs.V(3).Infof("list %d flows, try to run them, ids: %v, rid: %s", len(flowList), ids, kt.Rid)
 
 	for _, flow := range flows {
 		if err = updateFlowState(flow.Kit, sch.backend, flow.ID, enumor.FlowScheduled, enumor.FlowRunning); err != nil {
 			logs.Errorf("update flow state failed, err: %v, rid: %s", err, flow.Kit.Rid)
-			return err
+			return false, err
 		}
 
 		if err = sch.parseFlowAndPushTask(flow.Kit, flow); err != nil {
 			logs.Errorf("parse flow and push task failed, err: %v, rid: %s", err, flow.Kit.Rid)
-			return err
+			return false, err
 		}
 	}
 
-	return nil
+	logs.V(3).Infof("update all the flows to running state success. rid: %s", kt.Rid)
+
+	return true, nil
 }
 
 // 任务流解析协程
 func (sch *scheduler) goWorker() {
+	sch.workerWg.Add(1)
+
 	for task := range sch.workerQueue {
 		if err := sch.executeNext(task.Flow.Kit, task); err != nil {
 			logs.Errorf("%s: scheduler exec executeNext failed, err: %v, rid: %s", constant.AsyncTaskWarnSign,
@@ -465,7 +506,7 @@ func (sch *scheduler) executeNext(kt *kit.Kit, task *Task) error {
 	executableIds := tree.Root.GetNextExecutableTaskNodes(task)
 	if len(executableIds) == 0 {
 		// 没有可执行的节点了，计算整棵树的执行状态，更新flow结果
-		state := tree.Root.ComputeState()
+		state := tree.Root.TreeState()
 		switch state {
 		case enumor.FlowSuccess:
 			if err := updateFlowState(kt, sch.backend, task.FlowID, enumor.FlowRunning, state); err != nil {
@@ -541,7 +582,7 @@ func (sch *scheduler) Close() {
 
 	sch.workerWg.Wait()
 
-	logs.Infof("scheduler receive close cmd, start to close")
+	logs.Infof("scheduler receive close cmd, close success!")
 
 }
 

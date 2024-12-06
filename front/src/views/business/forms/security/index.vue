@@ -24,6 +24,7 @@ const filter = ref<any>({
 const useBusiness = useBusinessStore();
 const props = defineProps<{
   isFormDataChanged: boolean;
+  show: boolean;
 }>();
 const emit = defineEmits(['cancel', 'success', 'update:isFormDataChanged']);
 const handleFormFilter = (value: BusinessFormFilter) => {
@@ -111,7 +112,7 @@ const { datas, isLoading } = useQueryList(filter.value, 'vpcs'); // 只查aws的
 
 <template>
   <div class="business-dialog-warp">
-    <form-select @change="handleFormFilter" type="security" ref="formSelectRef"></form-select>
+    <form-select @change="handleFormFilter" type="security" ref="formSelectRef" :show="props.show"></form-select>
     <bk-form class="form-subnet" label-width="150" :model="formData" :rules="rules" ref="formRef">
       <bk-form-item :label="t('名称')" class="item-warp" required property="name">
         <bk-input class="item-warp-component" v-model="formData.name" :placeholder="t('请输入安全组名称')" />

@@ -535,7 +535,7 @@ export const VendorMap = {
   [VendorEnum.KAOPU]: '靠谱云',
 };
 
-export const VendorReverseMap = {
+export const VendorReverseMap: ConstantMapRecord = {
   亚马逊云: VendorEnum.AWS,
   微软云: VendorEnum.AZURE,
   谷歌云: VendorEnum.GCP,
@@ -583,7 +583,7 @@ export const CLB_SPECS: ConstantMapRecord = {
   'clb.c4.xlarge': '超强型4规格',
 };
 
-export const CLB_BINDING_STATUS = {
+export const CLB_BINDING_STATUS: ConstantMapRecord = {
   binding: '绑定中',
   success: '已绑定',
   failed: '未绑定',

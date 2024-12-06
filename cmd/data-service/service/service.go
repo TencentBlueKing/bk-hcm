@@ -73,6 +73,7 @@ import (
 	"hcm/cmd/data-service/service/cloud/zone"
 	"hcm/cmd/data-service/service/cos"
 	recyclerecord "hcm/cmd/data-service/service/recycle-record"
+	"hcm/cmd/data-service/service/task"
 	"hcm/cmd/data-service/service/user"
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/errf"
@@ -269,6 +270,8 @@ func (s *Service) apiSet() *restful.Container {
 
 	billexchangerate.InitService(capability)
 	billsyncrecord.InitService(capability)
+
+	task.InitService(capability)
 
 	return restful.NewContainer().Add(capability.WebService)
 }

@@ -573,6 +573,7 @@ func (t *TCloudImpl) DeleteRule(kt *kit.Kit, opt *typelb.TCloudDeleteRuleOption)
 
 // RegisterTargets 批量绑定虚拟主机或弹性网卡 reference: https://cloud.tencent.com/document/api/214/38303
 // 批量绑定的资源数量上限为500。只支持VPC网络负载均衡。
+// 支持重入，但是如果已绑定RS数量+待绑定数量 大于限额会报错，即使待绑定的rs是已经绑定的rs重复绑定
 // 返回绑定失败的监听器ID，如为空表示全部绑定成功。
 func (t *TCloudImpl) RegisterTargets(kt *kit.Kit, opt *typelb.TCloudRegisterTargetsOption) ([]string, error) {
 	if opt == nil {

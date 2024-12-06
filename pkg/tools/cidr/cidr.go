@@ -27,6 +27,7 @@ import (
 	"fmt"
 	"math"
 	"net"
+	"regexp"
 	"sort"
 
 	"hcm/pkg/criteria/enumor"
@@ -165,4 +166,24 @@ func NextAvailableNet(outer net.IPNet, used []net.IPNet, masklen int) (net.IPNet
 	}
 	return nextAvailable, nil
 
+}
+
+// IsIPv4 检查字符串是否包含 IPv4 地址
+func IsIPv4(s string) bool {
+	ip := net.ParseIP(s)
+	return ip != nil && ip.To4() != nil
+}
+
+// IsIPv6 检查字符串是否包含 IPv6 地址
+func IsIPv6(s string) bool {
+	ip := net.ParseIP(s)
+	return ip != nil && ip.To4() == nil && ip.To16() != nil
+}
+
+// IsDomainName 检查字符串是否包含域名
+func IsDomainName(s string) bool {
+	// 使用正则表达式检查域名
+	domainRegex := `^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$`
+	matched, _ := regexp.MatchString(domainRegex, s)
+	return matched
 }

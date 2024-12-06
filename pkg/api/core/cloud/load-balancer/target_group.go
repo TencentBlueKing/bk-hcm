@@ -79,6 +79,7 @@ type BaseTarget struct {
 	InstID             string          `json:"inst_id"`
 	CloudInstID        string          `json:"cloud_inst_id"`
 	InstName           string          `json:"inst_name"`
+	TargetGroupRegion  string          `json:"target_group_region"`
 	TargetGroupID      string          `json:"target_group_id"`
 	CloudTargetGroupID string          `json:"cloud_target_group_id"`
 	PrivateIPAddress   []string        `json:"private_ip_address"`

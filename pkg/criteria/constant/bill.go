@@ -37,17 +37,26 @@ const (
 	BillExportFolderPrefix = "bill_export"
 )
 
+// AwsSavingsPlanAccountCloudIDKey ...
 const AwsSavingsPlanAccountCloudIDKey = "aws_savings_plan_account_cloud_id"
+
+// AwsSavingsPlanARNPrefixKey ...
 const AwsSavingsPlanARNPrefixKey = "aws_savings_plan_arn_prefix"
 
 // AwsCommonExpenseExcludeCloudIDKey ...
 const AwsCommonExpenseExcludeCloudIDKey = "aws_common_expense_exclude_account_cloud_id"
 
+// GcpCommonExpenseExcludeCloudIDKey ...
 const GcpCommonExpenseExcludeCloudIDKey = "gcp_common_expense_exclude_account_cloud_id"
+
+// GcpCreditReturnConfigKey ...
 const GcpCreditReturnConfigKey = "gcp_credit_return_config"
 
 // AwsLineItemTypeSavingPlanCoveredUsage aws savings plan cost line item type
 const AwsLineItemTypeSavingPlanCoveredUsage = "SavingsPlanCoveredUsage"
+
+// HuaweiCommonExpenseExcludeCloudIDKey ...
+const HuaweiCommonExpenseExcludeCloudIDKey = "huawei_common_expense_exclude_account_cloud_id"
 
 const (
 	// BillOutsideMonthBillName outside bill month bill
@@ -68,3 +77,9 @@ const (
 	// GcpCreditReturnCostReverse Gcp credit return cost reverse, positive value, e.g. 10.00000
 	GcpCreditReturnCostReverse = "CreditReverse"
 )
+
+// HuaweiBillTypePurchase 华为账单类型-新购
+const HuaweiBillTypePurchase = int32(1)
+
+// HuaweiBillChargeModeMonthlyYearly 华为账单计费模式-包年包月
+const HuaweiBillChargeModeMonthlyYearly = "1"

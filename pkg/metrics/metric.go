@@ -62,6 +62,9 @@ const (
 
 	// OrmCmdSubSys defines all the orm command related sub system.
 	OrmCmdSubSys = "orm"
+
+	// CloudApiSubSys defines all cloud api related subsystem
+	CloudApiSubSys = "cloudapi"
 )
 
 // labels

@@ -38,12 +38,15 @@ const (
 	ApiCall RequestSourceType = "api_call"
 	// BackgroundSync 同步云上数据而发出的请求。
 	BackgroundSync RequestSourceType = "background_sync"
+	// AsynchronousTasks 异步任务请求，比如云的批量异步操作，会设置腾讯云接口调用的超限重试
+	AsynchronousTasks RequestSourceType = "asynchronous_tasks"
 )
 
 // RequestSourceEnums request type map.
 var RequestSourceEnums = map[RequestSourceType]bool{
-	ApiCall:        true,
-	BackgroundSync: true,
+	ApiCall:           true,
+	BackgroundSync:    true,
+	AsynchronousTasks: true,
 }
 
 // Exist judge enum value exist.

@@ -226,6 +226,9 @@ const (
 	GcpCreditsMonthTask MonthTaskType = "credits"
 	// GcpSupportMonthTask gcp support month task
 	GcpSupportMonthTask MonthTaskType = "support"
+
+	// HuaweiSupportMonthTask 华为support plan
+	HuaweiSupportMonthTask MonthTaskType = "support"
 )
 
 // MonthTaskStep 月度任务步骤

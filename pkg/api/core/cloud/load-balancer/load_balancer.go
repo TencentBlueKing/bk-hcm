@@ -55,6 +55,8 @@ type BaseLoadBalancer struct {
 	CloudStatusTime      string   `json:"cloud_status_time"`
 	CloudExpiredTime     string   `json:"cloud_expired_time"`
 
+	Tags core.TagMap `json:"tags"`
+
 	Memo           *string `json:"memo"`
 	*core.Revision `json:",inline"`
 }
@@ -106,6 +108,7 @@ type BaseListener struct {
 	Protocol      enumor.ProtocolType `json:"protocol"`
 	Port          int64               `json:"port"`
 	DefaultDomain string              `json:"default_domain"`
+	Region        string              `json:"region"`
 	Zones         []string            `json:"zones"`
 	// 腾讯云 CLB 的七层 HTTPS 监听器支持 SNI，即支持绑定多个证书，监听规则中的不同域名可使用不同证书。
 	// SNI关闭，证书在监听器上；SNI关闭，证书在对应规则上
@@ -149,6 +152,7 @@ type TCloudLbUrlRule struct {
 	CloudLBLID         string          `json:"cloud_lbl_id"`
 	TargetGroupID      string          `json:"target_group_id"`
 	CloudTargetGroupID string          `json:"cloud_target_group_id"`
+	Region             string          `json:"region"`
 	Domain             string          `json:"domain"`
 	URL                string          `json:"url"`
 	Scheduler          string          `json:"scheduler"`

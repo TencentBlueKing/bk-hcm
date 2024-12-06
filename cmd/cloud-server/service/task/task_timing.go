@@ -1,0 +1,178 @@
+/*
+ * TencentBlueKing is pleased to support the open source community by making
+ * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
+ * Copyright (C) 2022 THL A29 Limited,
+ * a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ *
+ * We undertake not to change the open source license (MIT license) applicable
+ *
+ * to the current version of the project delivered to anyone in the future.
+ */
+
+package task
+
+import (
+	"time"
+
+	"hcm/pkg/api/core"
+	coretask "hcm/pkg/api/core/task"
+	datatask "hcm/pkg/api/data-service/task"
+	"hcm/pkg/client"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
+	"hcm/pkg/serviced"
+	"hcm/pkg/tools/slice"
+)
+
+// TimingHandleTaskMgmtState 定时更新任务管理数据状态
+func TimingHandleTaskMgmtState(c *client.ClientSet, sd serviced.State, interval time.Duration) {
+	for {
+		time.Sleep(interval)
+
+		if !sd.IsMaster() {
+			continue
+		}
+
+		kt := core.NewBackendKit()
+		listReq := &core.ListReq{
+			Filter: tools.EqualExpression("state", enumor.TaskManagementRunning),
+			Fields: []string{"id", "state", "flow_ids"},
+			Page:   core.NewDefaultBasePage(),
+		}
+		list, err := c.DataService().Global.TaskManagement.List(kt, listReq)
+		if err != nil {
+			logs.Errorf("list task management failed, err: %v, req: %+v, rid: %s", err, listReq, kt.Rid)
+			continue
+		}
+
+		for _, management := range list.Details {
+			if _, err = refreshTaskMgmtState(kt, c, management); err != nil {
+				logs.Errorf("refresh task management state failed, err: %v, data: %+v, rid: %s", err, management,
+					kt.Rid)
+				continue
+			}
+		}
+	}
+}
+
+// refreshTaskMgmtState 刷新任务管理数据状态，按照下面步骤执行:
+// 1. 先判断任务管理数据对应的状态，如果状态处于未完结状态（即处于running），则返回；
+// 2. 如果有处于running的数据，根据flow id查询下面的flow是否都已经执行完了，未执行完则返回；
+// 3. 如果都已经执行完了，判断任务详情里的数据结果，根据结果更新任务管理数据状态，返回结果。
+func refreshTaskMgmtState(kt *kit.Kit, c *client.ClientSet, data coretask.Management) (enumor.TaskManagementState,
+	error) {
+
+	if data.State != enumor.TaskManagementRunning {
+		return data.State, nil
+	}
+
+	isDone, err := isFlowDone(kt, c, data.FlowIDs)
+	if err != nil {
+		logs.Errorf("failed to determine whether flow ends, err: %v, flow ids: %v, rid: %s", err, data.FlowIDs, kt.Rid)
+		return "", err
+	}
+
+	if !isDone {
+		return enumor.TaskManagementRunning, nil
+	}
+
+	var sum, success, failed, cancel int
+	req := &core.ListReq{
+		Filter: tools.EqualExpression("task_management_id", data.ID),
+		Fields: []string{"state"},
+		Page:   core.NewDefaultBasePage(),
+	}
+	for {
+		list, err := c.DataService().Global.TaskDetail.List(kt, req)
+		if err != nil {
+			logs.Errorf("list task detail failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
+			return "", err
+		}
+		sum += len(list.Details)
+
+		for _, detail := range list.Details {
+			switch detail.State {
+			case enumor.TaskDetailSuccess:
+				success++
+			case enumor.TaskDetailFailed:
+				failed++
+			case enumor.TaskDetailCancel:
+				cancel++
+
+			}
+		}
+
+		if len(list.Details) < int(core.DefaultMaxPageLimit) {
+			break
+		}
+
+		req.Page.Start += uint32(core.DefaultMaxPageLimit)
+	}
+
+	if success+failed+cancel != sum {
+		return enumor.TaskManagementRunning, nil
+	}
+
+	var finalState enumor.TaskManagementState
+	if success != 0 {
+		finalState = enumor.TaskManagementSuccess
+
+		if failed != 0 {
+			finalState = enumor.TaskManagementDeliverPartial
+		}
+	}
+	if failed == sum {
+		finalState = enumor.TaskManagementFailed
+	}
+	if cancel != 0 {
+		finalState = enumor.TaskManagementCancel
+	}
+	if finalState == "" {
+		return data.State, nil
+	}
+
+	updateReq := &datatask.UpdateManagementReq{
+		Items: []datatask.UpdateTaskManagementField{{ID: data.ID, State: finalState}},
+	}
+	if err := c.DataService().Global.TaskManagement.Update(kt, updateReq); err != nil {
+		logs.Errorf("update task management failed, err: %v, req: %+v, rid: %s", err, updateReq, kt.Rid)
+		return "", err
+	}
+
+	return finalState, nil
+}
+
+func isFlowDone(kt *kit.Kit, c *client.ClientSet, flowIDs []string) (bool, error) {
+	isDone := true
+	for _, batch := range slice.Split(flowIDs, int(core.DefaultMaxPageLimit)) {
+		req := &core.ListReq{
+			Filter: tools.ContainersExpression("id", batch),
+			Fields: []string{"id", "state"},
+			Page:   core.NewDefaultBasePage(),
+		}
+
+		list, err := c.TaskServer().ListFlow(kt, req)
+		if err != nil {
+			logs.Errorf("list flow failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
+			return false, err
+		}
+		for _, flow := range list.Details {
+			if flow.State != enumor.FlowCancel && flow.State != enumor.FlowSuccess && flow.State != enumor.FlowFailed {
+				isDone = false
+				break
+			}
+		}
+	}
+
+	return isDone, nil
+}

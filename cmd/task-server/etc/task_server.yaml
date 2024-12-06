@@ -88,25 +88,25 @@ database:
 async:
   # scheduler 公共组件，负责获取分配给当前节点的任务流，并解析成任务树后，派发当前要执行的任务给executor执行
   scheduler:
-    # watchIntervalSec 查看是否有分配给当前节点处于Scheduled状态任务的周期
+    # watchIntervalSec 查看是否有分配给当前节点处于Scheduled状态任务的周期间隔，单位秒，正整数
     watchIntervalSec: 1
-    # workerNumber 负责解析当前节点的子节点，并派发子节点任务到executor执行的协程数量
+    # workerNumber 负责解析当前节点的子节点，并派发子节点任务到executor执行的协程数量，非零正整数值
     workerNumber: 5
   # executor 公共组件，负责执行异步任务
   executor:
-    # workerNumber 负责处理异步任务的协程数量
+    # workerNumber 负责处理异步任务的协程数量，非零正整数值
     workerNumber: 5
-    # taskExecTimeoutSec 异步任务执行超时时间，是整个异步任务执行流程的总时间，包括运行、回滚、重试。
+    # taskExecTimeoutSec 异步任务执行超时时间，是整个异步任务执行流程的总时间，包括运行、回滚、重试。，非零正整数值
     taskExecTimeoutSec: 120
   # dispatcher 主节点组件，负责派发任务
   dispatcher:
-    # watchIntervalSec 查看是否有Pending状态任务的周期
+    # watchIntervalSec 查看是否有Pending状态任务的周期，单位秒，正整数
     watchIntervalSec: 1
   # watchDog 主节点组件，负责异常任务修正（超时任务，任务处理节点已经挂掉的任务等）
   watchDog:
-    # watchIntervalSec 查看是否有异常任务的周期
+    # watchIntervalSec 查看是否有异常任务的周期，单位秒，正整数
     watchIntervalSec: 1
-    # taskTimeoutSec 判断任务执行超时时间
+    # taskTimeoutSec 判断任务执行超时时间，非零正整数值
     taskTimeoutSec: 300
 
 # defines log's related configuration

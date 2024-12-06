@@ -27,6 +27,8 @@ import { headRouteConfig } from '@/router/header-config';
 import logo from '@/assets/image/logo.png';
 import './index.scss';
 
+import { MENU_BUSINESS_TASK_MANAGEMENT } from '@/constants/menu-symbol';
+
 // import { CogShape } from 'bkui-vue/lib/icon';
 // import { useProjectList } from '@/hooks';
 // import AddProjectDialog from '@/components/AddProjectDialog';
@@ -76,6 +78,14 @@ export default defineComponent({
         headTag.appendChild(scriptTag);
         resovle(val);
       });
+    };
+
+    // 过渡方式，最终希望所有路由通过name跳转
+    const getRouteLinkParams = (config: any) => {
+      if ([MENU_BUSINESS_TASK_MANAGEMENT].includes(config.name)) {
+        return { name: config.name };
+      }
+      return { path: config.path };
     };
 
     // 切换路由
@@ -270,7 +280,7 @@ export default defineComponent({
                             return (
                               <RouterLink
                                 to={{
-                                  path: child.path,
+                                  ...getRouteLinkParams(child),
                                   query: {
                                     [GLOBAL_BIZS_KEY]:
                                       whereAmI.value === Senarios.business ? accountStore.bizs : undefined,
@@ -313,7 +323,7 @@ export default defineComponent({
 
                       // 正常显示菜单
                       return (
-                        <RouterLink to={`${menuItem.path}`}>
+                        <RouterLink to={getRouteLinkParams(menuItem)}>
                           <Menu.Item key={menuItem.meta.activeKey as string}>
                             {{
                               icon: () => <i class={menuItem.meta.icon} />,

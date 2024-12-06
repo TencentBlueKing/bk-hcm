@@ -38,3 +38,16 @@ func NewNumberCounter(init int) func() int {
 		return r
 	}
 }
+
+// NewNumberCounterWithPrev decimal counter in int format with previous value
+func NewNumberCounterWithPrev(init, base int) func() (cur string, prev string) {
+	current := init
+	return func() (cur string, prev string) {
+		cur = strconv.FormatInt(int64(current), base)
+		if current-1 >= init {
+			prev = strconv.FormatInt(int64(current-1), base)
+		}
+		current++
+		return cur, prev
+	}
+}

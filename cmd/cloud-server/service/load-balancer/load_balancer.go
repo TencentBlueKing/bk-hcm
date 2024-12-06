@@ -133,7 +133,15 @@ func bizService(h *rest.Handler, svc *lbSvc) {
 	h.Add("UpdateBizListener", http.MethodPatch, "/listeners/{id}", svc.UpdateBizListener)
 	h.Add("DeleteBizListener", http.MethodDelete, "/listeners/batch", svc.DeleteBizListener)
 	h.Add("UpdateBizDomainAttr", http.MethodPatch, "/listeners/{lbl_id}/domains", svc.UpdateBizDomainAttr)
+	h.Add("ListBizListenerWithTargets", http.MethodPost, "/listeners/with/targets/list", svc.ListBizListenerWithTargets)
 
+	// excel导入
+	h.Add("ImportPreview", http.MethodPost,
+		"/vendors/{vendor}/load_balancers/operations/{operation_type}/preview", svc.ImportPreview)
+	h.Add("ImportSubmit", http.MethodPost,
+		"/vendors/{vendor}/load_balancers/operations/{operation_type}/submit", svc.ImportSubmit)
+	h.Add("ImportValidate", http.MethodPost,
+		"/vendors/{vendor}/load_balancers/operations/{operation_type}/validate", svc.ImportValidate)
 }
 
 func bizURLRuleService(h *rest.Handler, svc *lbSvc) {

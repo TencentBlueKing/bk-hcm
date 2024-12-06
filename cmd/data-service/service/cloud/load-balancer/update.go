@@ -99,6 +99,7 @@ func batchUpdateLoadBalancer[T corelb.Extension](cts *rest.Contexts, svc *lbSvc)
 				CloudCreatedTime: lb.CloudCreatedTime,
 				CloudStatusTime:  lb.CloudStatusTime,
 				CloudExpiredTime: lb.CloudExpiredTime,
+				Tags:             tabletype.StringMap(lb.Tags),
 				Memo:             lb.Memo,
 				Reviser:          cts.Kit.User,
 			}
@@ -299,6 +300,7 @@ func (svc *lbSvc) BatchUpdateTCloudUrlRule(cts *rest.Contexts) (any, error) {
 		for _, rule := range req.UrlRules {
 			update := &tablelb.TCloudLbUrlRuleTable{
 				Name:               rule.Name,
+				Region:             rule.Region,
 				Domain:             rule.Domain,
 				URL:                rule.URL,
 				TargetGroupID:      rule.TargetGroupID,
@@ -410,6 +412,7 @@ func batchUpdateListener[T corelb.ListenerExtension](cts *rest.Contexts) (any, e
 				BkBizID:       item.BkBizID,
 				SniSwitch:     item.SniSwitch,
 				DefaultDomain: item.DefaultDomain,
+				Region:        item.Region,
 				Extension:     extensionJSON,
 				Reviser:       cts.Kit.User,
 			}

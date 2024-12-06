@@ -20,6 +20,7 @@
 package cslb
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -797,4 +798,37 @@ type TCloudDeleteSnatIpReq struct {
 // Validate ...
 func (r *TCloudDeleteSnatIpReq) Validate() error {
 	return validator.Validate.Struct(r)
+}
+
+// UploadExcelFileBaseResp ...
+type UploadExcelFileBaseResp struct {
+	Details interface{} `json:"details"`
+}
+
+// ImportExcelReq ...
+type ImportExcelReq struct {
+	AccountID string                      `json:"account_id" validate:"required"`
+	RegionIDs []string                    `json:"region_ids" validate:"required,min=1,dive,required"`
+	Source    enumor.TaskManagementSource `json:"source"`
+	Details   json.RawMessage             `json:"details"`
+}
+
+// Validate ...
+func (i *ImportExcelReq) Validate() error {
+	if err := i.Source.Validate(); err != nil {
+		return err
+	}
+	return validator.Validate.Struct(i)
+}
+
+// ImportValidateReq ...
+type ImportValidateReq struct {
+	AccountID string          `json:"account_id" validate:"required"`
+	RegionIDs []string        `json:"region_ids" validate:"required,min=1,dive,required"`
+	Details   json.RawMessage `json:"details"`
+}
+
+// Validate ...
+func (i *ImportValidateReq) Validate() error {
+	return validator.Validate.Struct(i)
 }

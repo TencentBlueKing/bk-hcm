@@ -420,3 +420,8 @@ type AwsRawBillItem struct {
 	SavingsPlanUsedCommitment                                string `json:"savings_plan_used_commitment,omitempty"`
 	Year                                                     string `json:"year,omitempty"`
 }
+
+// HuaweiRawBillItem ...
+type HuaweiRawBillItem struct {
+	model.ResFeeRecordV2
+}

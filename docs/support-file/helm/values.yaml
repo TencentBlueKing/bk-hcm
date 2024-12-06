@@ -12,7 +12,7 @@ image:
   registry: hub.bktencent.com
   pullPolicy: IfNotPresent
   pullSecrets: []
-  tag: 1.6.11
+  tag: 1.7.0
 
 serviceAccount:
   create: true
@@ -436,6 +436,7 @@ webserver:
       caFile:
       # the password to decrypt the certificate.
       password:
+  templatePath: /data/hcm/template
 
 taskserver:
   ## 镜像

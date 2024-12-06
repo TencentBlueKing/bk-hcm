@@ -2,6 +2,7 @@ package loadbalancer
 
 import (
 	"errors"
+	"fmt"
 
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
@@ -276,39 +277,43 @@ func (svc *lbSvc) getTCloudListener(kt *kit.Kit, lblID string) (*cslb.GetTCloudL
 		return nil, err
 	}
 	rules := urlRuleMap[listenerInfo.ID]
-	if len(rules) == 0 {
-		logs.Errorf("fail to find related rule fo lbl(%s),rid: %s", lblID, kt.Rid)
-		return nil, errors.New("related rule not found")
+	var rule *corelb.TCloudLbUrlRule
+	if len(rules) > 0 {
+		rule = &rules[0]
 	}
-	rule := rules[0]
-	targetGroupID := rule.TargetGroupID
+
 	result := &cslb.GetTCloudListenerDetail{
 		TCloudListener: *listenerInfo,
 		LblID:          listenerInfo.ID,
 		LblName:        listenerInfo.Name,
 		CloudLblID:     listenerInfo.CloudID,
-		TargetGroupID:  targetGroupID,
 		EndPort:        listenerInfo.Extension.EndPort,
-		Scheduler:      rule.Scheduler,
-		SessionType:    rule.SessionType,
-		SessionExpire:  rule.SessionExpire,
-		HealthCheck:    rule.HealthCheck,
 	}
 	if listenerInfo.Protocol.IsLayer7Protocol() {
 		domains := cvt.SliceToMap(rules,
 			func(r corelb.TCloudLbUrlRule) (string, struct{}) { return r.Domain, struct{}{} })
 		result.DomainNum = int64(len(domains))
 		result.UrlNum = int64(len(rules))
-		// 只有SNI开启时，证书才会出现在域名上面，才需要返回Certificate字段
-		if listenerInfo.SniSwitch == enumor.SniTypeOpen {
-			result.Certificate = rule.Certificate
-			result.Extension.Certificate = nil
+		// SNI关闭，证书在在监听器上，需要返回监听器自己的证书信息
+		// SNI打开，证书在域名（规则）上
+		if listenerInfo.SniSwitch == enumor.SniTypeClose {
+			result.Certificate = result.Extension.Certificate
 		}
 	}
 
 	// 只有4层监听器才显示目标组信息
 	if !listenerInfo.Protocol.IsLayer7Protocol() {
-		tg, err := svc.getTargetGroupByID(kt, targetGroupID)
+		if rule == nil {
+			logs.Errorf("fail to find related rule fo lbl(%s),rid: %s", lblID, kt.Rid)
+			return nil, errors.New("related rule not found")
+		}
+		result.TargetGroupID = rule.TargetGroupID
+		result.Scheduler = rule.Scheduler
+		result.SessionType = rule.SessionType
+		result.SessionExpire = rule.SessionExpire
+		result.HealthCheck = rule.HealthCheck
+
+		tg, err := svc.getTargetGroupByID(kt, rule.TargetGroupID)
 		if err != nil {
 			return nil, err
 		}
@@ -383,5 +388,66 @@ func (svc *lbSvc) listListenerCountByLbIDs(cts *rest.Contexts,
 		return resList, nil
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "lbIDs: %v vendor: %s not support", req.LbIDs, basicInfo.Vendor)
+	}
+}
+
+// ListBizListenerWithTargets list biz listener with targets.
+func (svc *lbSvc) ListBizListenerWithTargets(cts *rest.Contexts) (any, error) {
+	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+	if bkBizID <= 0 {
+		return nil, errf.Newf(errf.InvalidParameter, "bk_biz_id: %d is invalid", bkBizID)
+	}
+
+	return svc.listListenerWithTarget(cts, handler.ListBizAuthRes, bkBizID)
+}
+
+func (svc *lbSvc) listListenerWithTarget(cts *rest.Contexts, authHandler handler.ListAuthResHandler,
+	bkBizID int64) (any, error) {
+
+	req := new(dataproto.ListListenerWithTargetsReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	// list authorized instances
+	_, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
+		ResType: meta.LoadBalancer, Action: meta.Find})
+	if err != nil {
+		logs.Errorf("list listener with targets auth failed, noPermFlag: %v, err: %v, rid: %s",
+			noPermFlag, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	resList := &dataproto.ListListenerWithTargetsResp{Details: make([]*dataproto.ListBatchListenerResult, 0)}
+	if noPermFlag {
+		logs.Errorf("list listener no perm auth, noPermFlag: %v, req: %+v, rid: %s", noPermFlag, req, cts.Kit.Rid)
+		return resList, nil
+	}
+
+	accountInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(
+		cts.Kit, enumor.AccountCloudResType, req.AccountID)
+	if err != nil {
+		logs.Errorf("get account basic info failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
+		return nil, fmt.Errorf("get account basic info failed, err: %v", err)
+	}
+
+	req.BkBizID = bkBizID
+	switch accountInfo.Vendor {
+	case enumor.TCloud:
+		resList, err = svc.client.DataService().Global.LoadBalancer.ListLoadBalancerListenerWithTargets(cts.Kit, req)
+		if err != nil {
+			logs.Errorf("tcloud list listener with targets failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
+			return nil, err
+		}
+		return resList, nil
+	default:
+		return nil, errf.Newf(errf.InvalidParameter, "req: %+v, vendor: %s not support", req, accountInfo.Vendor)
 	}
 }
