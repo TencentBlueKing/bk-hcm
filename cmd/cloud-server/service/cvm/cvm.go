@@ -71,6 +71,8 @@ func InitCvmService(c *capability.Capability) {
 	h.Add("BatchStopBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/cvms/batch/stop", svc.BatchStopBizCvm)
 	h.Add("BatchRebootBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/cvms/batch/reboot", svc.BatchRebootBizCvm)
 	h.Add("QueryBizCvmRelatedRes", http.MethodPost, "/bizs/{bk_biz_id}/cvms/rel_res/batch", svc.QueryBizCvmRelatedRes)
+	h.Add("ListCvmSecurityGroupRules", http.MethodPost,
+		"/bizs/{bk_biz_id}/cvms/{cvm_id}/security_groups/{security_group_id}/rules/list", svc.ListCvmSecurityGroupRules)
 
 	// 业务下回收接口
 	h.Add("RecycleBizCvm", http.MethodPost, "/bizs/{bk_biz_id}/cvms/recycle", svc.RecycleBizCvm)
