@@ -27,7 +27,7 @@ const (
 	// SystemNameHCMEn is hcm system english name in iam.
 	SystemNameHCMEn = "hcmv2"
 	// SystemNameHCM is hcm system name in iam.
-	SystemNameHCM = "海垒v2"
+	SystemNameHCM = "海垒(HCM)"
 
 	// SystemIDCMDB is cmdb system id in iam.
 	SystemIDCMDB = "bk_cmdb"
