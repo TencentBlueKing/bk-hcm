@@ -114,7 +114,8 @@ type HandlerV2[T common.CloudResType] interface {
 }
 
 const (
-	syncQueueSize = 10
+	syncQueueSize              = 10
+	lastNBatchToSplitMiniBatch = 2
 )
 
 // ResourceSyncV2 资源同步，包含三个流程：1. 准备请求 2. 获取云上实例列表 3. 清理云上已删除实例 4. 同步实例详情
@@ -177,11 +178,26 @@ func ResourceSyncV2[T common.CloudResType](cts *rest.Contexts, handler HandlerV2
 		go syncConsumer(kt, handler, i, syncWg, syncInstCh, successCnt, failedCnt)
 	}
 	left := total
-	for i := range allInstanceList {
+	// 倒序同步，因为新建的往往按序插入，所以倒序同步可以保证新建的实例先同步。
+	for i := len(allInstanceList) - 1; i >= 0; i-- {
 		// 单次拉取数量可能大于 constant.CloudResourceSyncMaxLimit，取决于并发数
-		for _, instSubList := range slice.Split(allInstanceList[i], constant.CloudResourceSyncMaxLimit) {
-			left -= len(instSubList)
-			syncInstCh <- instSubList
+		batchs := slice.Split(allInstanceList[i], constant.CloudResourceSyncMaxLimit)
+		for j, instBatch := range batchs {
+			if i == 0 && j >= len(batchs)-lastNBatchToSplitMiniBatch && concurrent > 1 {
+				// 如果是最后几批，按并发数再拆开，充分利用并发
+				miniBatchSize := max(len(instBatch)/(concurrent/lastNBatchToSplitMiniBatch), 10)
+				logs.Infof("%s handiling last batch, left: %d, mini batch: %d, rid: %s",
+					handler.Describe(), left, miniBatchSize, kt.Rid)
+				for _, miniBatch := range slice.Split(instBatch, miniBatchSize) {
+					left -= len(miniBatch)
+					syncInstCh <- miniBatch
+					logs.Infof("%s sync queue left %d, rid: %s", handler.Describe(), left, kt.Rid)
+				}
+				continue
+			}
+			// 不是最后几批则直接分批处理
+			left -= len(instBatch)
+			syncInstCh <- instBatch
 			logs.Infof("%s sync queue left %d, rid: %s", handler.Describe(), left, kt.Rid)
 		}
 	}
@@ -199,12 +215,15 @@ func ResourceSyncV2[T common.CloudResType](cts *rest.Contexts, handler HandlerV2
 func syncConsumer[T common.CloudResType](kt *kit.Kit, handler HandlerV2[T], idx int,
 	wg *sync.WaitGroup, syncInstCh chan []T, globalSuccess, globalFailed *atomic.Uint64) {
 
+	start := time.Now()
 	var total, failed int
 	defer func() {
+		cost := time.Since(start)
 		wg.Done()
-		logs.Infof("[sync_consumer] %s %d exit, synced total(failed): %d(%d), rid: %s",
-			handler.Describe(), idx, total, failed, kt.Rid)
+		logs.Infof("[sync_consumer] %s %d exit, synced total(failed): %d(%d), avg: %.2f res/sec, cost: %s, rid: %s",
+			handler.Describe(), idx, total, failed, float64(total)/cost.Seconds(), cost, kt.Rid)
 	}()
+
 	for {
 		select {
 		case instanceList, ok := <-syncInstCh:
@@ -217,7 +236,8 @@ func syncConsumer[T common.CloudResType](kt *kit.Kit, handler HandlerV2[T], idx 
 			for _, instances := range slice.Split(instanceList, constant.CloudResourceSyncMaxLimit) {
 				total += len(instances)
 				if err := handler.Sync(kt, instances); err != nil {
-					logs.Errorf("%s handler to sync failed, err: %v, rid: %s", handler.Describe(), err, kt.Rid)
+					logs.Errorf("[sync_consumer] %s %d handler to sync failed, err: %v, rid: %s",
+						handler.Describe(), idx, err, kt.Rid)
 					failed += len(instances)
 					globalFailed.Add(uint64(len(instances)))
 					continue
