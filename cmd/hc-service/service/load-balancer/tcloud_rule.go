@@ -126,6 +126,7 @@ func convURLRuleCreateReq(createReq *protolb.TCloudRuleCreate, lb *corelb.BaseLo
 		HealthCheck:        createReq.HealthCheck,
 		Certificate:        createReq.Certificates,
 		Memo:               createReq.Memo,
+		Region:             listener.Region,
 	}
 }
 
