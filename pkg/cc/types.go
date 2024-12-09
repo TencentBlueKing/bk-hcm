@@ -1096,13 +1096,13 @@ func (r *SyncConcurrentRule) Validate() error {
 		return errors.New("empty sync concurrent rule")
 	}
 	if r.vendor == "" {
-		return errors.New("invalid sync current rule: empty vendor")
+		return errors.New("invalid sync concurrent rule: empty vendor")
 	}
 	if r.resource == "" {
-		return errors.New("invalid sync current rule: empty resource")
+		return errors.New("invalid sync concurrent rule: empty resource")
 	}
 	if r.region == "" {
-		return errors.New("invalid sync current rule: empty region")
+		return errors.New("invalid sync concurrent rule: empty region")
 	}
 
 	if r.ListConcurrent == 0 {
