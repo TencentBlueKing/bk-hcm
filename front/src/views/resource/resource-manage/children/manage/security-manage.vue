@@ -23,7 +23,7 @@ import { BatchDistribution, DResourceType } from '@/views/resource/resource-mana
 import { TemplateTypeMap } from '../dialog/template-dialog';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import http from '@/http';
-import { timeFormatter } from '@/common/util';
+import { timeFormatter, formatTags } from '@/common/util';
 import { storeToRefs } from 'pinia';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
@@ -203,13 +203,6 @@ const isCurRowSelectEnable = (row: any) => {
     return row.bk_biz_id === -1;
   }
 };
-const parseTags = (data: { [k: string]: any }) => {
-  return (
-    Object.entries(data)
-      .map((item) => item.join(':'))
-      .join(';') || '--'
-  );
-};
 const { selections, handleSelectionChange, resetSelections } = useSelection();
 
 const groupColumns = [
@@ -290,7 +283,7 @@ const groupColumns = [
     label: t('标签'),
     field: 'tags',
     isDefaultShow: true,
-    render: ({ cell }: any) => parseTags(cell),
+    render: ({ cell }: any) => formatTags(cell),
   },
   {
     label: '是否分配',
