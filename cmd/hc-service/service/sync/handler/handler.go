@@ -182,23 +182,20 @@ func ResourceSyncV2[T common.CloudResType](cts *rest.Contexts, handler HandlerV2
 	for i := len(allInstanceList) - 1; i >= 0; i-- {
 		// 单次拉取数量可能大于 constant.CloudResourceSyncMaxLimit，取决于并发数
 		batchs := slice.Split(allInstanceList[i], constant.CloudResourceSyncMaxLimit)
-		for j, instBatch := range batchs {
-			if i == 0 && j >= len(batchs)-lastNBatchToSplitMiniBatch && concurrent > 1 {
-				// 如果是最后几批，按并发数再拆开，充分利用并发
-				miniBatchSize := max(len(instBatch)/(concurrent/lastNBatchToSplitMiniBatch), 10)
-				logs.Infof("%s handiling last batch, left: %d, mini batch: %d, rid: %s",
-					handler.Describe(), left, miniBatchSize, kt.Rid)
-				for _, miniBatch := range slice.Split(instBatch, miniBatchSize) {
-					left -= len(miniBatch)
-					syncInstCh <- miniBatch
-					logs.Infof("%s sync queue left %d, rid: %s", handler.Describe(), left, kt.Rid)
-				}
+		for _, instBatch := range batchs {
+			if i > 0 || concurrent < 2 {
+				left -= len(instBatch)
+				syncInstCh <- instBatch
+				logs.Infof("%s sync queue left %d, rid: %s", handler.Describe(), left, kt.Rid)
 				continue
 			}
-			// 不是最后几批则直接分批处理
-			left -= len(instBatch)
-			syncInstCh <- instBatch
-			logs.Infof("%s sync queue left %d, rid: %s", handler.Describe(), left, kt.Rid)
+			logs.Infof("%s handiling last batch, left: %d, rid: %s", handler.Describe(), left, kt.Rid)
+			// 如果是最后一批，按并发数的一半再拆开
+			for _, miniBatch := range slice.Split(instBatch, min(len(instBatch)/(concurrent/2), 10)) {
+				left -= len(miniBatch)
+				syncInstCh <- miniBatch
+				logs.Infof("%s sync queue left %d, rid: %s", handler.Describe(), left, kt.Rid)
+			}
 		}
 	}
 	close(syncInstCh)
