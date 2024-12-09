@@ -21,7 +21,6 @@ package handler
 
 import (
 	"fmt"
-	"math/rand"
 	"sync"
 	"testing"
 	"time"
@@ -66,20 +65,18 @@ func (t *TestHandler) Next(kt *kit.Kit) ([]common.TestCloudRes, error) {
 		payload = append(payload, common.TestCloudRes{CloudID: resCloudID})
 		t.idx++
 	}
-	time.Sleep(time.Duration(rand.Intn(5)) * time.Millisecond)
-
+	time.Sleep(5 * time.Millisecond)
 	return payload, nil
 }
 
 func (t *TestHandler) Sync(kt *kit.Kit, instances []common.TestCloudRes) error {
-	// logs.Infof("sync got :%d", len(instances))
 	for _, instance := range instances {
 		_, loaded := t.waitSynced.LoadAndDelete(instance.CloudID)
 		if !loaded {
 			return fmt.Errorf("instance not found for sync: %s", instance.CloudID)
 		}
 	}
-	time.Sleep(time.Duration(rand.Intn(5)*len(instances)) * time.Millisecond)
+	time.Sleep(5 * time.Millisecond)
 	return nil
 }
 
@@ -120,7 +117,21 @@ func TestResourceSyncV2(t *testing.T) {
 		Verbosity:          3,
 	}
 	logs.InitLogger(logCfg)
-
+	th := &TestHandler{
+		idx:            0,
+		total:          20,
+		listBatchSize:  200,
+		syncConcurrent: uint(6),
+	}
+	cts := &rest.Contexts{Kit: kit.New()}
+	t.Run(th.TestName(), func(t *testing.T) {
+		if err := ResourceSyncV2[common.TestCloudRes](cts, th); err != nil {
+			t.Errorf("ResourceSyncV2() error = %v, handler: %s", err, th)
+		}
+		if th.WaitSyncCount() != 0 {
+			t.Errorf("synced count not match, handler: %s", th)
+		}
+	})
 	for _, total := range []int{10, 100, 120, 250, 340, 1130} {
 		for _, batch := range []int{100, 200, 2000} {
 			for _, concurrent := range []int{1, 3, 5, 8, 10} {
