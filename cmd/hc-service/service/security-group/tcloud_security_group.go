@@ -61,11 +61,12 @@ func (g *securityGroup) CreateTCloudSecurityGroup(cts *rest.Contexts) (interface
 		Region:      req.Region,
 		Name:        req.Name,
 		Description: req.Memo,
+		Tags:        req.Tags,
 	}
 	sg, err := client.CreateSecurityGroup(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("request adaptor to create tcloud security group failed, err: %v, opt: %v, rid: %s", err, opt,
-			cts.Kit.Rid)
+		logs.Errorf("request adaptor to create tcloud security group failed, err: %v, opt: %+v, rid: %s",
+			err, opt, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -81,8 +82,8 @@ func (g *securityGroup) CreateTCloudSecurityGroup(cts *rest.Contexts) (interface
 				Extension: &corecloud.TCloudSecurityGroupExtension{
 					CloudProjectID: sg.ProjectId,
 				},
-			},
-		},
+				Tags: core.NewTagMap(req.Tags...),
+			}},
 	}
 	result, err := g.dataCli.TCloud.SecurityGroup.BatchCreateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), createReq)
 	if err != nil {

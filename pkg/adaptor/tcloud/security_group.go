@@ -29,7 +29,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-	"hcm/pkg/tools/converter"
+	cvt "hcm/pkg/tools/converter"
 
 	common "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
@@ -57,7 +57,13 @@ func (t *TCloudImpl) CreateSecurityGroup(kt *kit.Kit, opt *securitygroup.TCloudC
 	req := vpc.NewCreateSecurityGroupRequest()
 	req.GroupName = common.StringPtr(opt.Name)
 	req.GroupDescription = opt.Description
-
+	for _, tag := range opt.Tags {
+		vpcTag := &vpc.Tag{
+			Key:   cvt.ValToPtr(tag.Key),
+			Value: cvt.ValToPtr(tag.Value),
+		}
+		req.Tags = append(req.Tags, vpcTag)
+	}
 	resp, err := vpcCli.CreateSecurityGroupWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("create tcloud security group failed, err: %v, rid: %s", err, kt.Rid)
@@ -152,7 +158,7 @@ func (t *TCloudImpl) ListSecurityGroupNew(kt *kit.Kit, opt *securitygroup.TCloud
 	req := vpc.NewDescribeSecurityGroupsRequest()
 	if len(opt.CloudIDs) != 0 {
 		req.SecurityGroupIds = common.StringPtrs(opt.CloudIDs)
-		req.Limit = converter.ValToPtr(strconv.FormatUint(core.TCloudQueryLimit, 10))
+		req.Limit = cvt.ValToPtr(strconv.FormatUint(core.TCloudQueryLimit, 10))
 	}
 
 	if opt.Page != nil {
@@ -183,7 +189,7 @@ func (t *TCloudImpl) CountSecurityGroup(kt *kit.Kit, region string) (int32, erro
 	}
 
 	req := vpc.NewDescribeSecurityGroupsRequest()
-	req.Limit = converter.ValToPtr("1")
+	req.Limit = cvt.ValToPtr("1")
 	resp, err := client.DescribeSecurityGroupsWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("count tcloud security group failed, err: %v, region: %s, rid: %s", err, region, kt.Rid)

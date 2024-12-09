@@ -22,6 +22,7 @@ package hcservice
 import (
 	"fmt"
 
+	apicore "hcm/pkg/api/core"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 )
@@ -35,6 +36,8 @@ type TCloudSecurityGroupCreateReq struct {
 	Memo      *string `json:"memo" validate:"omitempty"`
 	AccountID string  `json:"account_id" validate:"required"`
 	BkBizID   int64   `json:"bk_biz_id" validate:"required"`
+
+	Tags []apicore.TagPair `json:"tags,omitempty"`
 }
 
 // Validate tcloud security group create request.
