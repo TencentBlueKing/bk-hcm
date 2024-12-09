@@ -79,10 +79,10 @@ func InitCvmService(c *capability.Capability) {
 	h.Add("BatchDeleteBizRecycledCvm", http.MethodDelete, "/bizs/{bk_biz_id}/recycled/cvms/batch",
 		svc.BatchDeleteBizRecycledCvm)
 
-	h.Add("BatchGetCvmSecurityGroups", http.MethodPost, "/cvms/security_groups/batch",
-		svc.BatchGetCvmSecurityGroups)
-	h.Add("BizBatchGetCvmSecurityGroups", http.MethodPost, "/bizs/{bk_biz_id}/cvms/security_groups/batch",
-		svc.BizBatchGetCvmSecurityGroups)
+	h.Add("BatchListCvmSecurityGroups", http.MethodPost, "/cvms/security_groups/batch/list",
+		svc.BatchListCvmSecurityGroups)
+	h.Add("BizBatchListCvmSecurityGroups", http.MethodPost, "/bizs/{bk_biz_id}/cvms/security_groups/batch/list",
+		svc.BizBatchListCvmSecurityGroups)
 
 	initCvmServiceHooks(svc, h)
 

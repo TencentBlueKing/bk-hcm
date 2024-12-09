@@ -171,8 +171,14 @@ func (req BatchGetCvmSecurityGroupsReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
-// BatchGetCvmSecurityGroupsRespItem ...
-type BatchGetCvmSecurityGroupsRespItem struct {
+// BatchListCvmSecurityGroupsResp ...
+type BatchListCvmSecurityGroupsResp struct {
+	CvmID          string                               `json:"cvm_id"`
+	SecurityGroups []BatchListCvmSecurityGroupsRespItem `json:"security_groups"`
+}
+
+// BatchListCvmSecurityGroupsRespItem ...
+type BatchListCvmSecurityGroupsRespItem struct {
 	ID      string `json:"id"`
 	CloudId string `json:"cloud_id"`
 	Name    string `json:"name"`

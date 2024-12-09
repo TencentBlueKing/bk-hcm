@@ -245,13 +245,13 @@ func (svc *cvmSvc) queryCvmRelatedRes(cts *rest.Contexts, validHandler handler.V
 	return relatedInfos, nil
 }
 
-// BatchGetCvmSecurityGroups ...
-func (svc *cvmSvc) BatchGetCvmSecurityGroups(cts *rest.Contexts) (interface{}, error) {
+// BatchListCvmSecurityGroups ...
+func (svc *cvmSvc) BatchListCvmSecurityGroups(cts *rest.Contexts) (interface{}, error) {
 	return svc.listCvmSecurityGroups(cts, handler.ResOperateAuth)
 }
 
-// BizBatchGetCvmSecurityGroups ...
-func (svc *cvmSvc) BizBatchGetCvmSecurityGroups(cts *rest.Contexts) (interface{}, error) {
+// BizBatchListCvmSecurityGroups ...
+func (svc *cvmSvc) BizBatchListCvmSecurityGroups(cts *rest.Contexts) (interface{}, error) {
 	return svc.listCvmSecurityGroups(cts, handler.BizOperateAuth)
 }
 
@@ -294,21 +294,29 @@ func (svc *cvmSvc) listCvmSecurityGroups(cts *rest.Contexts, authHandler handler
 		return nil, err
 	}
 
-	itemMap := convertToBatchGetCvmSecurityGroupsRespItem(securityGroupsMap)
-	result := make(map[string][]cscvm.BatchGetCvmSecurityGroupsRespItem, len(req.CvmIDs))
+	itemMap := convertToBatchListCvmSecurityGroupsRespItem(securityGroupsMap)
+	cvmToSgMap := make(map[string][]cscvm.BatchListCvmSecurityGroupsRespItem, len(req.CvmIDs))
 	for _, rel := range rels {
-		result[rel.CvmID] = append(result[rel.CvmID], itemMap[rel.SecurityGroupID])
+		cvmToSgMap[rel.CvmID] = append(cvmToSgMap[rel.CvmID], itemMap[rel.SecurityGroupID])
+	}
+
+	result := make([]cscvm.BatchListCvmSecurityGroupsResp, len(req.CvmIDs))
+	for i, cvmID := range req.CvmIDs {
+		result[i] = cscvm.BatchListCvmSecurityGroupsResp{
+			CvmID:          cvmID,
+			SecurityGroups: cvmToSgMap[cvmID],
+		}
 	}
 
 	return result, nil
 }
 
-func convertToBatchGetCvmSecurityGroupsRespItem(
-	m map[string]cloud.BaseSecurityGroup) map[string]cscvm.BatchGetCvmSecurityGroupsRespItem {
+func convertToBatchListCvmSecurityGroupsRespItem(
+	m map[string]cloud.BaseSecurityGroup) map[string]cscvm.BatchListCvmSecurityGroupsRespItem {
 
-	result := make(map[string]cscvm.BatchGetCvmSecurityGroupsRespItem, len(m))
+	result := make(map[string]cscvm.BatchListCvmSecurityGroupsRespItem, len(m))
 	for id, sg := range m {
-		result[id] = cscvm.BatchGetCvmSecurityGroupsRespItem{
+		result[id] = cscvm.BatchListCvmSecurityGroupsRespItem{
 			ID:      sg.ID,
 			Name:    sg.Name,
 			CloudId: sg.CloudID,
