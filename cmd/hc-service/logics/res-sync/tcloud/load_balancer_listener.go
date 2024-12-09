@@ -52,9 +52,10 @@ func (cli *client) listenerByLbBatch(kt *kit.Kit, params *SyncListenerBatchOptio
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 	// 并发同步多个负载均衡下的监听器
-	syncConcurrency := int(cc.HCService().SyncConfig.TCloudLoadBalancerListenerSyncConcurrency)
+	_, syncConcurrency := cc.HCService().SyncConfig.GetSyncConcurrent(
+		enumor.TCloud, enumor.ListenerCloudResType, params.Region)
 	var syncResult *SyncResult
-	err := concurrence.BaseExec(syncConcurrency, params.LbInfos, func(lb corelb.TCloudLoadBalancer) error {
+	err := concurrence.BaseExec(int(syncConcurrency), params.LbInfos, func(lb corelb.TCloudLoadBalancer) error {
 		newKit := kt.NewSubKit()
 		if lb.Extension.IsTraditional() {
 			logs.Warnf("unsupported traditional load balancer, will skip, lb: %s at %s, rid: %s",
@@ -137,8 +138,8 @@ func (cli *client) listenerOfLoadBalancer(kt *kit.Kit, params *SyncBaseParams, o
 		return nil, err
 	}
 
-	//  分批同步云上监听器
-	for _, listeners := range slice.Split(cloudListeners, constant.TCLBDescribeMax) {
+	//  分批同步云上监听器, 下面需要调用查看监听器rs，支持的单次数量为100
+	for _, listeners := range slice.Split(cloudListeners, 100) {
 
 		cloudLblIds := slice.Map(listeners, typeslb.TCloudListener.GetCloudID)
 		lblParam := &SyncBaseParams{
@@ -299,7 +300,8 @@ func (cli *client) listListenerFromCloud(kt *kit.Kit, params *SyncBaseParams, op
 }
 
 // 获取本地监听器列表
-func (cli *client) listListenerFromDB(kt *kit.Kit, lbID string, cloudIds []string, page *core.BasePage) ([]corelb.TCloudListener, error) {
+func (cli *client) listListenerFromDB(kt *kit.Kit, lbID string, cloudIds []string,
+	page *core.BasePage) ([]corelb.TCloudListener, error) {
 
 	// 在特定的load_balancer下 监听器理论上不会重复 因此这个查询不增加region的查询条件
 	// 如果加上会导致查不到历史数据

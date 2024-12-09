@@ -185,6 +185,8 @@ func (exec *executor) workerDo(task *Task) (err error) {
 		return err
 	}
 
+	logs.Infof("start execute task %s, action: %s, flow: %s, rid: %s",
+		task.ID, task.ActionName, task.FlowID, task.Kit.Rid)
 	defer func() {
 		if runErr == nil {
 			return

@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package cc ...
 package cc
 
 import (
@@ -25,6 +26,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strings"
 	"time"
 
 	"hcm/pkg/criteria/enumor"
@@ -982,5 +984,132 @@ func (c *Notice) validate() error {
 		return err
 	}
 
+	return nil
+}
+
+// SyncConfig defines sync config.
+type SyncConfig struct {
+	DefaultConcurrent uint `yaml:"defaultConcurrent"`
+	// 并发配置
+	ConcurrentRules []SyncConcurrentRule `yaml:"concurrentRules"`
+}
+
+func (s *SyncConfig) trySetDefault() {
+	if s.DefaultConcurrent == 0 {
+		s.DefaultConcurrent = 1
+	}
+	for i := range s.ConcurrentRules {
+		r := &s.ConcurrentRules[i]
+		r.trySetDefault()
+		if r.ListConcurrent == 0 {
+			r.ListConcurrent = r.SyncConcurrent
+		}
+	}
+}
+
+// Validate ...
+func (s SyncConfig) Validate() error {
+	if s.DefaultConcurrent == 0 {
+		return errors.New("defaultConcurrent is not set")
+	}
+	for _, c := range s.ConcurrentRules {
+		if err := c.Validate(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// GetSyncConcurrent 获取同步并发，按顺序匹配，一旦匹配立即返回
+func (s SyncConfig) GetSyncConcurrent(vendor enumor.Vendor, resource enumor.CloudResourceType, region string) (
+	listing, syncing uint) {
+
+	for _, c := range s.ConcurrentRules {
+		if c.Match(vendor, resource, region) {
+			return c.ListConcurrent, c.SyncConcurrent
+		}
+	}
+	return s.DefaultConcurrent, s.DefaultConcurrent
+}
+
+// SyncConcurrentRule 同步并发配置
+type SyncConcurrentRule struct {
+	Rule     string                   `yaml:"rule"`
+	vendor   enumor.Vendor            `yaml:"vendor"`
+	resource enumor.CloudResourceType `yaml:"resource"`
+	region   string                   `yaml:"region"`
+	// for syncing resource
+	SyncConcurrent uint `yaml:"syncConcurrent"`
+	// for listing resource from cloud if not set will be set to SyncConcurrent
+	ListConcurrent uint `yaml:"listConcurrent"`
+}
+
+// String ...
+func (s SyncConcurrentRule) String() string {
+	return fmt.Sprintf("rule: %s, syncConcurrent: %d, listConcurrent: %d", s.Rule, s.SyncConcurrent, s.ListConcurrent)
+}
+
+// ConcurrentWildcard 通配关键字
+const ConcurrentWildcard = "*"
+
+// Match ...
+func (r *SyncConcurrentRule) Match(vendor enumor.Vendor, resource enumor.CloudResourceType, region string) bool {
+	if r == nil {
+		return false
+	}
+	if r.vendor != ConcurrentWildcard && r.vendor != vendor {
+		return false
+	}
+	if r.resource != ConcurrentWildcard && r.resource != resource {
+		return false
+	}
+	if r.region != ConcurrentWildcard && r.region != region {
+		return false
+	}
+	return true
+}
+
+func (r *SyncConcurrentRule) trySetDefault() {
+	if r.Rule == "" {
+		return
+	}
+	parts := strings.Split(r.Rule, "/")
+	if len(parts) > 0 {
+		r.vendor = enumor.Vendor(parts[0])
+	}
+
+	if len(parts) > 1 {
+		r.resource = enumor.CloudResourceType(parts[1])
+	}
+	if len(parts) > 2 {
+		r.region = parts[2]
+	}
+
+}
+
+// Validate ...
+func (r *SyncConcurrentRule) Validate() error {
+	if r == nil {
+		return errors.New("sync concurrent rule is nil")
+	}
+	if len(r.Rule) == 0 {
+		return errors.New("empty sync concurrent rule")
+	}
+	if r.vendor == "" {
+		return errors.New("invalid sync concurrent rule: empty vendor")
+	}
+	if r.resource == "" {
+		return errors.New("invalid sync concurrent rule: empty resource")
+	}
+	if r.region == "" {
+		return errors.New("invalid sync concurrent rule: empty region")
+	}
+
+	if r.ListConcurrent == 0 {
+		return errors.New("invalid list concurrent number")
+	}
+	if r.SyncConcurrent == 0 {
+		return errors.New("invalid sync concurrent number")
+	}
 	return nil
 }
