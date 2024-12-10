@@ -23,6 +23,7 @@ package accountset
 import (
 	"encoding/json"
 
+	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 )
@@ -173,4 +174,56 @@ func (req *KaopuRootAccountExtensionUpdateReq) Validate() error {
 	}
 
 	return nil
+}
+
+// GcpAccountInfoBySecretReq ...
+type GcpAccountInfoBySecretReq struct {
+	*cloud.GcpSecret `json:",inline" validate:"required"`
+}
+
+// Validate ...
+func (req *GcpAccountInfoBySecretReq) Validate() error {
+	if err := req.GcpSecret.Validate(); err != nil {
+		return err
+	}
+	return validator.Validate.Struct(req)
+}
+
+// AwsAccountInfoBySecretReq ...
+type AwsAccountInfoBySecretReq struct {
+	*cloud.AwsSecret `json:",inline" validate:"required"`
+}
+
+// Validate ...
+func (req *AwsAccountInfoBySecretReq) Validate() error {
+	if err := req.AwsSecret.Validate(); err != nil {
+		return err
+	}
+	return validator.Validate.Struct(req)
+}
+
+// HuaWeiAccountInfoBySecretReq ...
+type HuaWeiAccountInfoBySecretReq struct {
+	*cloud.HuaWeiSecret `json:",inline" validate:"required"`
+}
+
+// Validate ...
+func (req *HuaWeiAccountInfoBySecretReq) Validate() error {
+	if err := req.HuaWeiSecret.Validate(); err != nil {
+		return err
+	}
+	return validator.Validate.Struct(req)
+}
+
+// AzureAccountInfoBySecretReq ...
+type AzureAccountInfoBySecretReq struct {
+	*cloud.AzureSecret `json:",inline" validate:"required"`
+}
+
+// Validate ...
+func (req *AzureAccountInfoBySecretReq) Validate() error {
+	if err := req.AzureSecret.Validate(); err != nil {
+		return err
+	}
+	return validator.Validate.Struct(req)
 }
