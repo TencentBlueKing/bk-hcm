@@ -75,6 +75,9 @@ type TCloud interface {
 	SecurityGroupCvmDisassociate(kt *kit.Kit, opt *securitygroup.TCloudAssociateCvmOption) error
 	SecurityGroupCvmBatchAssociate(kt *kit.Kit, opt *securitygroup.TCloudBatchAssociateCvmOption) error
 	SecurityGroupCvmBatchDisassociate(kt *kit.Kit, opt *securitygroup.TCloudBatchAssociateCvmOption) error
+	DescribeSecurityGroupAssociationStatistics(kt *kit.Kit, opt *securitygroup.TCloudListOption) (
+		[]securitygroup.TCloudSecurityGroupAssociationStatistic, error)
+
 	ListAccount(kt *kit.Kit) ([]account.TCloudAccount, error)
 	CountAccount(kt *kit.Kit) (int32, error)
 	GetAccountZoneQuota(kt *kit.Kit, opt *account.GetTCloudAccountZoneQuotaOption) (
@@ -109,6 +112,7 @@ type TCloud interface {
 	BatchUpdateSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.TCloudUpdateOption) error
 	ListSecurityGroupRule(kt *kit.Kit, opt *securitygrouprule.TCloudListOption) (
 		*v20170312.SecurityGroupPolicySet, error)
+
 	CreateVpc(kt *kit.Kit, opt *types.TCloudVpcCreateOption) (*types.TCloudVpc, error)
 	UpdateVpc(_ *kit.Kit, _ *types.TCloudVpcUpdateOption) error
 	DeleteVpc(kt *kit.Kit, opt *core.BaseRegionalDeleteOption) error
