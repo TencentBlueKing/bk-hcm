@@ -131,3 +131,8 @@ type TCloudSG struct {
 func (sg TCloudSG) GetCloudID() string {
 	return converter.PtrToVal(sg.SecurityGroupId)
 }
+
+// TCloudSecurityGroupAssociationStatistic for vpc SecurityGroupAssociationStatistics
+type TCloudSecurityGroupAssociationStatistic struct {
+	*vpc.SecurityGroupAssociationStatistics
+}
