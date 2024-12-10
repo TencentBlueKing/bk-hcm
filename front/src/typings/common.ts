@@ -93,8 +93,3 @@ export interface IBreadcrumb {
   title: string;
   display: boolean;
 }
-
-export interface DropDownPopover {
-  trigger: 'manual' | 'click' | 'hover';
-  forceClickoutside: boolean;
-}

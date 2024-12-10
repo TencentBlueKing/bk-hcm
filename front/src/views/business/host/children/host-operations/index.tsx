@@ -1,10 +1,13 @@
 import { PropType, defineComponent, reactive, ref, watch, computed, toRefs } from 'vue';
 import { Button, Dialog, Loading } from 'bkui-vue';
 import cssModule from './index.module.scss';
+import { AngleDown } from 'bkui-vue/lib/icon';
+import { BkDropdownItem } from 'bkui-vue/lib/dropdown';
 import CommonLocalTable from '@/components/LocalTable';
+import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
 import useBatchOperation from './use-batch-operation';
-import DropDownMenu from '@/components/drop-down-menu/index.vue';
+import DropDownMenu from '@/components/dropdown-menu/index.vue';
 
 export const HOST_SHUTDOWN_STATUS = [
   'TERMINATED',
@@ -68,14 +71,6 @@ export const operationMap = {
   },
 };
 
-const validOperationMap = Object.entries(operationMap)
-  .filter(([opType]) => opType !== OperationActions.NONE)
-  .reduce((prev: any, cur) => {
-    const [key, value] = cur;
-    prev[key] = value?.label ?? '';
-    return prev;
-  }, {});
-
 export default defineComponent({
   props: {
     selections: {
@@ -95,6 +90,7 @@ export default defineComponent({
   },
   setup(props) {
     const dialogRef = ref(null);
+    const operationRef = ref(null);
 
     const { selections } = toRefs(props);
 
@@ -155,26 +151,58 @@ export default defineComponent({
     return () => (
       <>
         <DropDownMenu
-          className={cssModule.host_operations_container}
-          itemValue={validOperationMap}
-          disabled={operationsDisabled.value}
-          onClickItemVal={(value) => (operationType.value = value as OperationActions)}></DropDownMenu>
+          ref={operationRef}
+          class={cssModule.host_operations_container}
+          disabled={operationsDisabled.value}>
+          {{
+            default: () => (
+              <>
+                批量操作
+                <AngleDown class={cssModule.f26}></AngleDown>
+              </>
+            ),
+            menuItem: () => (
+              <>
+                {Object.entries(operationMap)
+                  .filter(([opType]) => opType !== OperationActions.NONE)
+                  .map(([opType, opData]) => (
+                    <BkDropdownItem
+                      onClick={() => {
+                        operationType.value = opType as OperationActions;
+                        operationRef.value?.hidePopover();
+                      }}>
+                      {`批量${opData.label}`}
+                    </BkDropdownItem>
+                  ))}
+              </>
+            ),
+          }}
+        </DropDownMenu>
 
-        <DropDownMenu
-          className={cssModule.host_operations_container}
-          btnText={'复制'}
-          type={'copy'}
-          itemValue={[
-            {
-              name: '复制内网IP',
-              value: selectedRowPrivateIPs?.value?.join?.(','),
-            },
-            {
-              name: '复制公网IP',
-              value: selectedRowPublicIPs?.value?.join?.(','),
-            },
-          ]}
-          disabled={operationsDisabled.value}></DropDownMenu>
+        <DropDownMenu class={cssModule.host_operations_container} disabled={operationsDisabled.value}>
+          {{
+            default: () => (
+              <>
+                复制
+                <AngleDown class={cssModule.f26}></AngleDown>
+              </>
+            ),
+            menuItem: () => (
+              <>
+                <CopyToClipboard
+                  type='dropdown-item'
+                  text='复制内网IP'
+                  content={selectedRowPrivateIPs.value?.join?.(',')}
+                />
+                <CopyToClipboard
+                  type='dropdown-item'
+                  text='复制公网IP'
+                  content={selectedRowPublicIPs.value?.join?.(',')}
+                />
+              </>
+            ),
+          }}
+        </DropDownMenu>
 
         <Dialog
           isShow={isDialogShow.value}
