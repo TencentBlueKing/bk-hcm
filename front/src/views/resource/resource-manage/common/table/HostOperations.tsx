@@ -9,7 +9,7 @@ import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
 import CommonLocalTable from '../commonLocalTable';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
 import http from '@/http';
-import DropDownMenu from '@/components/hcm-dropdown/index.vue';
+import HcmDropdown from '@/components/hcm-dropdown/index.vue';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 export enum Operations {
@@ -63,8 +63,8 @@ export default defineComponent({
   setup(props) {
     const operationType = ref<Operations>(Operations.None);
     const dialogRef = ref(null);
-    const operationRef = ref(null);
-    const copyRef = ref(null);
+    const dropdownOperationRef = ref(null);
+    const dropdownCopyRef = ref(null);
     const isConfirmDisabled = ref(true);
     const targetHost = ref([]);
     const unTargetHost = ref([]);
@@ -390,7 +390,7 @@ export default defineComponent({
 
     return () => (
       <>
-        <DropDownMenu class={'host_operations_container'} ref={operationRef} disabled={operationsDisabled.value}>
+        <HcmDropdown class={'host_operations_container'} ref={dropdownOperationRef} disabled={operationsDisabled.value}>
           {{
             default: () => (
               <>
@@ -404,7 +404,7 @@ export default defineComponent({
                   <BkDropdownItem
                     onClick={() => {
                       operationType.value = opType as Operations;
-                      operationRef.value?.hidePopover();
+                      dropdownOperationRef.value?.hidePopover();
                     }}>
                     {`批量${opName}`}
                   </BkDropdownItem>
@@ -412,9 +412,9 @@ export default defineComponent({
               </>
             ),
           }}
-        </DropDownMenu>
+        </HcmDropdown>
 
-        <DropDownMenu class={'host_operations_container'} ref={copyRef} disabled={operationsDisabled.value}>
+        <HcmDropdown class={'host_operations_container'} ref={dropdownCopyRef} disabled={operationsDisabled.value}>
           {{
             default: () => (
               <>
@@ -428,18 +428,18 @@ export default defineComponent({
                   type='dropdown-item'
                   text='复制内网IP'
                   content={selectedRowPrivateIPs.value?.join?.(',')}
-                  onSuccess={() => copyRef.value?.hidePopover()}
+                  onSuccess={() => dropdownCopyRef.value?.hidePopover()}
                 />
                 <CopyToClipboard
                   type='dropdown-item'
                   text='复制公网IP'
                   content={selectedRowPublicIPs.value?.join?.(',')}
-                  onSuccess={() => copyRef.value?.hidePopover()}
+                  onSuccess={() => dropdownCopyRef.value?.hidePopover()}
                 />
               </>
             ),
           }}
-        </DropDownMenu>
+        </HcmDropdown>
 
         <Dialog
           isShow={isDialogShow.value}

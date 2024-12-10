@@ -7,7 +7,7 @@ import CommonLocalTable from '@/components/LocalTable';
 import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
 import useBatchOperation from './use-batch-operation';
-import DropDownMenu from '@/components/hcm-dropdown/index.vue';
+import HcmDropdown from '@/components/hcm-dropdown/index.vue';
 
 export const HOST_SHUTDOWN_STATUS = [
   'TERMINATED',
@@ -90,8 +90,8 @@ export default defineComponent({
   },
   setup(props) {
     const dialogRef = ref(null);
-    const operationRef = ref(null);
-    const copyRef = ref(null);
+    const dropdownOperationRef = ref(null);
+    const dropdownCopyRef = ref(null);
 
     const { selections } = toRefs(props);
 
@@ -151,8 +151,8 @@ export default defineComponent({
 
     return () => (
       <>
-        <DropDownMenu
-          ref={operationRef}
+        <HcmDropdown
+          ref={dropdownOperationRef}
           class={cssModule.host_operations_container}
           disabled={operationsDisabled.value}>
           {{
@@ -170,7 +170,7 @@ export default defineComponent({
                     <BkDropdownItem
                       onClick={() => {
                         operationType.value = opType as OperationActions;
-                        operationRef.value?.hidePopover();
+                        dropdownOperationRef.value?.hidePopover();
                       }}>
                       {`批量${opData.label}`}
                     </BkDropdownItem>
@@ -178,9 +178,12 @@ export default defineComponent({
               </>
             ),
           }}
-        </DropDownMenu>
+        </HcmDropdown>
 
-        <DropDownMenu ref={copyRef} class={cssModule.host_operations_container} disabled={operationsDisabled.value}>
+        <HcmDropdown
+          ref={dropdownCopyRef}
+          class={cssModule.host_operations_container}
+          disabled={operationsDisabled.value}>
           {{
             default: () => (
               <>
@@ -194,18 +197,18 @@ export default defineComponent({
                   type='dropdown-item'
                   text='复制内网IP'
                   content={selectedRowPrivateIPs.value?.join?.(',')}
-                  onSuccess={() => copyRef.value?.hidePopover()}
+                  onSuccess={() => dropdownCopyRef.value?.hidePopover()}
                 />
                 <CopyToClipboard
                   type='dropdown-item'
                   text='复制公网IP'
                   content={selectedRowPublicIPs.value?.join?.(',')}
-                  onSuccess={() => copyRef.value?.hidePopover()}
+                  onSuccess={() => dropdownCopyRef.value?.hidePopover()}
                 />
               </>
             ),
           }}
-        </DropDownMenu>
+        </HcmDropdown>
 
         <Dialog
           isShow={isDialogShow.value}
