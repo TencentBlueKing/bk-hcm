@@ -45,23 +45,22 @@ POST /api/v1/cloud/cvms/security_groups/batch/list
   ]
 }
 ```
-
 ### 响应参数说明
 
-| 参数名称    | 参数类型   | 描述   |
-|---------|--------|------|
-| code    | int32  | 状态码  |
-| message | string | 请求信息 |
-| data    | object | 响应数据 |
+| 参数名称    | 参数类型         | 描述   |
+|---------|--------------|------|
+| code    | int32        | 状态码  |
+| message | string       | 请求信息 |
+| data    | object array | 响应数据 |
 
-#### data参数说明
+#### data[i] 参数说明
 
 | 参数名称            | 参数类型         | 描述    |
 |-----------------|--------------|-------|
 | cvm_id          | string       | 云主机ID |
 | security_groups | object array | 安全组列表 |
 
-#### security_groups[n] 参数说明
+#### security_groups[i] 参数说明
 
 | 参数名称     | 参数类型   | 描述    |
 |----------|--------|-------|
