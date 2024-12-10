@@ -3,7 +3,6 @@ import { ref } from 'vue';
 
 export interface DropDownPopover {
   trigger: 'manual' | 'click' | 'hover';
-  forceClickoutside: boolean;
 }
 export interface DropDownMenuProps {
   isShow: boolean;
@@ -11,13 +10,12 @@ export interface DropDownMenuProps {
   popoverOptions: DropDownPopover;
 }
 
-defineOptions({ name: 'DropDownMenu' });
+defineOptions({ name: 'hcm-dropdown' });
 
 const props = withDefaults(defineProps<DropDownMenuProps>(), {
   isShow: false,
   popoverOptions: () => ({
     trigger: 'manual',
-    forceClickoutside: true,
   }),
 });
 
@@ -60,13 +58,13 @@ defineExpose({ hidePopover });
 
 <template>
   <div @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave">
-    <bk-dropdown :disabled="props.disabled" :is-show="show" :popover-options="props.popoverOptions" @hide="hidePopover">
-      <bk-button :disabled="props.disabled" @click="showPopover">
+    <bk-dropdown :disabled="disabled" :is-show="show" :popover-options="popoverOptions" @hide="hidePopover">
+      <bk-button :disabled="disabled" @click="showPopover">
         <slot></slot>
       </bk-button>
       <template #content>
         <bk-dropdown-menu @mouseenter="handleContentEnter" @mouseleave="handleContentLeave">
-          <slot name="menuItem"></slot>
+          <slot name="menus"></slot>
         </bk-dropdown-menu>
       </template>
     </bk-dropdown>

@@ -3,13 +3,13 @@ import { PropType, computed, defineComponent, reactive, ref, watch } from 'vue';
 import './index.scss';
 import { usePreviousState } from '@/hooks/usePreviousState';
 import { useResourceStore } from '@/store';
-import CommonLocalTable from '../commonLocalTable';
-import { BkButtonGroup } from 'bkui-vue/lib/button';
-import http from '@/http';
-import DropDownMenu from '@/components/dropdown-menu/index.vue';
 import { AngleDown } from 'bkui-vue/lib/icon';
 import { BkDropdownItem } from 'bkui-vue/lib/dropdown';
 import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
+import CommonLocalTable from '../commonLocalTable';
+import { BkButtonGroup } from 'bkui-vue/lib/button';
+import http from '@/http';
+import DropDownMenu from '@/components/hcm-dropdown/index.vue';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 export enum Operations {
@@ -64,6 +64,7 @@ export default defineComponent({
     const operationType = ref<Operations>(Operations.None);
     const dialogRef = ref(null);
     const operationRef = ref(null);
+    const copyRef = ref(null);
     const isConfirmDisabled = ref(true);
     const targetHost = ref([]);
     const unTargetHost = ref([]);
@@ -397,7 +398,7 @@ export default defineComponent({
                 <AngleDown class={'f26'}></AngleDown>
               </>
             ),
-            menuItem: () => (
+            menus: () => (
               <>
                 {Object.entries(OperationsMap).map(([opType, opName]) => (
                   <BkDropdownItem
@@ -413,7 +414,7 @@ export default defineComponent({
           }}
         </DropDownMenu>
 
-        <DropDownMenu class={'host_operations_container'} disabled={operationsDisabled.value}>
+        <DropDownMenu class={'host_operations_container'} ref={copyRef} disabled={operationsDisabled.value}>
           {{
             default: () => (
               <>
@@ -421,17 +422,19 @@ export default defineComponent({
                 <AngleDown class={'f26'}></AngleDown>
               </>
             ),
-            menuItem: () => (
+            menus: () => (
               <>
                 <CopyToClipboard
                   type='dropdown-item'
                   text='复制内网IP'
                   content={selectedRowPrivateIPs.value?.join?.(',')}
+                  onSuccess={() => copyRef.value?.hidePopover()}
                 />
                 <CopyToClipboard
                   type='dropdown-item'
                   text='复制公网IP'
                   content={selectedRowPublicIPs.value?.join?.(',')}
+                  onSuccess={() => copyRef.value?.hidePopover()}
                 />
               </>
             ),

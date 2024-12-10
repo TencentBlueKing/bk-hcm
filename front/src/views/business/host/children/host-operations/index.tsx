@@ -7,7 +7,7 @@ import CommonLocalTable from '@/components/LocalTable';
 import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
 import useBatchOperation from './use-batch-operation';
-import DropDownMenu from '@/components/dropdown-menu/index.vue';
+import DropDownMenu from '@/components/hcm-dropdown/index.vue';
 
 export const HOST_SHUTDOWN_STATUS = [
   'TERMINATED',
@@ -91,6 +91,7 @@ export default defineComponent({
   setup(props) {
     const dialogRef = ref(null);
     const operationRef = ref(null);
+    const copyRef = ref(null);
 
     const { selections } = toRefs(props);
 
@@ -161,7 +162,7 @@ export default defineComponent({
                 <AngleDown class={cssModule.f26}></AngleDown>
               </>
             ),
-            menuItem: () => (
+            menus: () => (
               <>
                 {Object.entries(operationMap)
                   .filter(([opType]) => opType !== OperationActions.NONE)
@@ -179,7 +180,7 @@ export default defineComponent({
           }}
         </DropDownMenu>
 
-        <DropDownMenu class={cssModule.host_operations_container} disabled={operationsDisabled.value}>
+        <DropDownMenu ref={copyRef} class={cssModule.host_operations_container} disabled={operationsDisabled.value}>
           {{
             default: () => (
               <>
@@ -187,17 +188,19 @@ export default defineComponent({
                 <AngleDown class={cssModule.f26}></AngleDown>
               </>
             ),
-            menuItem: () => (
+            menus: () => (
               <>
                 <CopyToClipboard
                   type='dropdown-item'
                   text='复制内网IP'
                   content={selectedRowPrivateIPs.value?.join?.(',')}
+                  onSuccess={() => copyRef.value?.hidePopover()}
                 />
                 <CopyToClipboard
                   type='dropdown-item'
                   text='复制公网IP'
                   content={selectedRowPublicIPs.value?.join?.(',')}
+                  onSuccess={() => copyRef.value?.hidePopover()}
                 />
               </>
             ),
