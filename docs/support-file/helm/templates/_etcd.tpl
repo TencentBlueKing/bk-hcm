@@ -12,11 +12,13 @@
 {{- end -}}
 
 {{- define "bk-hcm.etcdSecretName" -}}
-{{- if .Values.externalEtcd.tls.certBase64Encoded }}
-    {{- printf "%s-etcd-certs" (include "bk-hcm.fullname" .) -}}
-{{- else }}
-    {{- .Values.externalEtcd.tls.existingSecret -}}
-{{- end }}
+{{- if .Values.externalEtcd.tls.enabled -}}
+    {{- if .Values.externalEtcd.tls.certBase64Encoded }}
+        {{- printf "%s-etcd-certs" (include "bk-hcm.fullname" .) -}}
+    {{- else }}
+        {{- .Values.externalEtcd.tls.existingSecret -}}
+    {{- end -}}
+{{- end -}}
 {{- end -}}
 
 {{/*
@@ -41,11 +43,13 @@ endpoints:
 dialTimeoutMS:
 username: {{ .Values.externalEtcd.username }}
 password: {{ .Values.externalEtcd.password }}
+{{- if .Values.externalEtcd.tls.enabled -}}
 tls:
   insecureSkipVerify: {{ .Values.externalEtcd.tls.insecureSkipVerify }}
   certFile: "/data/hcm/etc/certs/{{ .Values.externalEtcd.tls.certFileName }}"
   keyFile: "/data/hcm/etc/certs/{{ .Values.externalEtcd.tls.keyFileName }}"
   caFile: "/data/hcm/etc/certs/{{ .Values.externalEtcd.tls.caCertFileName }}"
   password:
+{{- end -}}
 {{- end -}}
 {{- end -}}
