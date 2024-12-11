@@ -36,25 +36,7 @@ func InitSecurityGroupService(cap *capability.Capability) {
 	}
 
 	h := rest.NewHandler()
-	h.Add("TCloudSecurityGroupAssociateCvm", "POST", "/vendors/tcloud/security_groups/associate/cvms",
-		sg.TCloudSecurityGroupAssociateCvm)
-	h.Add("TCloudSecurityGroupDisassociateCvm", "POST", "/vendors/tcloud/security_groups/disassociate/cvms",
-		sg.TCloudSecurityGroupDisassociateCvm)
-	h.Add("CreateTCloudSecurityGroup", "POST", "/vendors/tcloud/security_groups/create", sg.CreateTCloudSecurityGroup)
-	h.Add("DeleteTCloudSecurityGroup", "DELETE", "/vendors/tcloud/security_groups/{id}", sg.DeleteTCloudSecurityGroup)
-	h.Add("UpdateTCloudSecurityGroup", "PATCH", "/vendors/tcloud/security_groups/{id}", sg.UpdateTCloudSecurityGroup)
-	h.Add("BatchCreateTCloudSGRule", "POST", "/vendors/tcloud/security_groups/{security_group_id}/rules/batch/create",
-		sg.BatchCreateTCloudSGRule)
-	h.Add("UpdateTCloudSGRule", "PUT", "/vendors/tcloud/security_groups/{security_group_id}/rules/{id}",
-		sg.UpdateTCloudSGRule)
-	h.Add("BatchUpdateTCloudSGRule", "PUT", "/vendors/tcloud/security_groups/{security_group_id}/rules/batch/update",
-		sg.BatchUpdateTCloudSGRule)
-	h.Add("DeleteTCloudSGRule", "DELETE", "/vendors/tcloud/security_groups/{security_group_id}/rules/{id}",
-		sg.DeleteTCloudSGRule)
-	h.Add("TCloudSGBatchAssociateCloudCvm", "POST",
-		"/vendors/tcloud/security_groups/associate/cvms/batch", sg.TCloudSGBatchAssociateCvm)
-	h.Add("TCloudSGBatchDisassociateCloudCvm", "POST",
-		"/vendors/tcloud/security_groups/disassociate/cvms/batch", sg.TCloudSGBatchDisassociateCvm)
+	tcloudService(h, sg)
 
 	h.Add("AwsSecurityGroupAssociateCvm", "POST", "/vendors/aws/security_groups/associate/cvms",
 		sg.AwsSecurityGroupAssociateCvm)
@@ -108,6 +90,30 @@ func InitSecurityGroupService(cap *capability.Capability) {
 	initSecurityGroupServiceHooks(sg, h)
 
 	h.Load(cap.WebService)
+}
+
+func tcloudService(h *rest.Handler, sg *securityGroup) {
+	h.Add("TCloudSecurityGroupAssociateCvm", "POST", "/vendors/tcloud/security_groups/associate/cvms",
+		sg.TCloudSecurityGroupAssociateCvm)
+	h.Add("TCloudSecurityGroupDisassociateCvm", "POST", "/vendors/tcloud/security_groups/disassociate/cvms",
+		sg.TCloudSecurityGroupDisassociateCvm)
+	h.Add("CreateTCloudSecurityGroup", "POST", "/vendors/tcloud/security_groups/create", sg.CreateTCloudSecurityGroup)
+	h.Add("DeleteTCloudSecurityGroup", "DELETE", "/vendors/tcloud/security_groups/{id}", sg.DeleteTCloudSecurityGroup)
+	h.Add("UpdateTCloudSecurityGroup", "PATCH", "/vendors/tcloud/security_groups/{id}", sg.UpdateTCloudSecurityGroup)
+	h.Add("BatchCreateTCloudSGRule", "POST", "/vendors/tcloud/security_groups/{security_group_id}/rules/batch/create",
+		sg.BatchCreateTCloudSGRule)
+	h.Add("UpdateTCloudSGRule", "PUT", "/vendors/tcloud/security_groups/{security_group_id}/rules/{id}",
+		sg.UpdateTCloudSGRule)
+	h.Add("BatchUpdateTCloudSGRule", "PUT", "/vendors/tcloud/security_groups/{security_group_id}/rules/batch/update",
+		sg.BatchUpdateTCloudSGRule)
+	h.Add("DeleteTCloudSGRule", "DELETE", "/vendors/tcloud/security_groups/{security_group_id}/rules/{id}",
+		sg.DeleteTCloudSGRule)
+	h.Add("TCloudSGBatchAssociateCloudCvm", "POST",
+		"/vendors/tcloud/security_groups/associate/cvms/batch", sg.TCloudSGBatchAssociateCvm)
+	h.Add("TCloudSGBatchDisassociateCloudCvm", "POST",
+		"/vendors/tcloud/security_groups/disassociate/cvms/batch", sg.TCloudSGBatchDisassociateCvm)
+	h.Add("TCloudListSecurityGroupStatistic", "POST", "/vendors/tcloud/security_groups/statistic",
+		sg.TCloudListSecurityGroupStatistic)
 }
 
 type securityGroup struct {

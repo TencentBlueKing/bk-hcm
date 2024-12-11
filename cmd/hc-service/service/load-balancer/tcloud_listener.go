@@ -183,6 +183,7 @@ func (svc *clbSvc) createListenerDB(kt *kit.Kit, req *protolb.TCloudListenerCrea
 			SessionExpire: req.SessionExpire,
 			SniSwitch:     req.SniSwitch,
 			Certificate:   req.Certificate,
+			Region:        lbInfo.Region,
 		}}}
 	created, err := svc.dataCli.TCloud.LoadBalancer.BatchCreateTCloudListenerWithRule(kt, ruleCreateReq)
 	if err != nil {

@@ -109,7 +109,7 @@ func (svc *securityGroupSvc) listSGRule(cts *rest.Contexts, validHandler handler
 			listReq, sgID)
 
 	default:
-		return nil, errf.Newf(errf.Unknown, "vendor: %s not support", vendor)
+		return nil, errf.Newf(errf.Unknown, "vendor: %s not support for list security group rule", vendor)
 	}
 }
 

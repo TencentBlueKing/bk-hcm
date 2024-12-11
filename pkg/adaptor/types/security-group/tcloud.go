@@ -21,6 +21,7 @@ package securitygroup
 
 import (
 	"hcm/pkg/adaptor/types/core"
+	apicore "hcm/pkg/api/core"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/tools/converter"
 
@@ -34,6 +35,8 @@ type TCloudCreateOption struct {
 	Region      string  `json:"region" validate:"required"`
 	Name        string  `json:"name" validate:"required,lte=60"`
 	Description *string `json:"description" validate:"omitempty,lte=100"`
+
+	Tags []apicore.TagPair `json:"tags" validate:"omitempty"`
 }
 
 // Validate security group create option.
@@ -127,4 +130,9 @@ type TCloudSG struct {
 // GetCloudID ...
 func (sg TCloudSG) GetCloudID() string {
 	return converter.PtrToVal(sg.SecurityGroupId)
+}
+
+// TCloudSecurityGroupAssociationStatistic for vpc SecurityGroupAssociationStatistics
+type TCloudSecurityGroupAssociationStatistic struct {
+	*vpc.SecurityGroupAssociationStatistics
 }

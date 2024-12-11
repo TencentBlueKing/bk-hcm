@@ -140,3 +140,15 @@ func (req *TCloudSGRuleBatchUpdateReq) Validate() error {
 	}
 	return validator.Validate.Struct(req)
 }
+
+// TCloudListSecurityGroupStatisticReq define tcloud list security group statistic request.
+type TCloudListSecurityGroupStatisticReq struct {
+	SecurityGroupIDs []string `json:"security_group_ids" validate:"required,max=100,min=1"`
+	Region           string   `json:"region" validate:"required"`
+	AccountID        string   `json:"account_id" validate:"required"`
+}
+
+// Validate tcloud list security group statistic request.
+func (req *TCloudListSecurityGroupStatisticReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

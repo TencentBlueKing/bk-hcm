@@ -268,18 +268,14 @@ func (clb TCloudListener) String() string {
 type TCloudListTargetsOption struct {
 	Region         string              `json:"region" validate:"required"`
 	LoadBalancerId string              `json:"load_balancer_id" validate:"required"`
-	ListenerIds    []string            `json:"cloud_ids" validate:"omitempty"`
+	ListenerIds    []string            `json:"cloud_ids" validate:"max=20,dive,required"`
 	Protocol       enumor.ProtocolType `json:"protocol" validate:"omitempty"`
 	Port           int64               `json:"port" validate:"omitempty"`
 }
 
 // Validate tcloud targets list option.
 func (opt TCloudListTargetsOption) Validate() error {
-	if err := validator.Validate.Struct(opt); err != nil {
-		return nil
-	}
-
-	return nil
+	return validator.Validate.Struct(opt)
 }
 
 // TCloudListenerTarget for listener target Instance

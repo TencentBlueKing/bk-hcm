@@ -201,13 +201,14 @@ func (svc *lbSvc) batchCreateTargetDb(kt *kit.Kit, targets []*dataproto.TargetBa
 	rsReq := &dataproto.TargetBatchCreateReq{}
 	for _, item := range addRsParams.RsList {
 		rsReq.Targets = append(rsReq.Targets, &dataproto.TargetBaseReq{
-			AccountID:     accountID,
-			TargetGroupID: item.TargetGroupID,
-			InstType:      item.InstType,
-			CloudInstID:   item.CloudInstID,
-			IP:            item.IP,
-			Port:          item.Port,
-			Weight:        item.Weight,
+			AccountID:         accountID,
+			TargetGroupID:     item.TargetGroupID,
+			InstType:          item.InstType,
+			CloudInstID:       item.CloudInstID,
+			IP:                item.IP,
+			Port:              item.Port,
+			Weight:            item.Weight,
+			TargetGroupRegion: item.TargetGroupRegion,
 		})
 	}
 	return svc.client.DataService().Global.LoadBalancer.BatchCreateTCloudTarget(kt, rsReq)

@@ -6,17 +6,12 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import cookie from 'cookie';
 import { Message } from 'bkui-vue';
-// import { uuid } from 'vue-uuid';
+import { defaults } from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
 import { showLoginModal } from '@blueking/login-modal';
 import bus from '@/common/bus';
 import CachedPromise from './cached-promise';
 import RequestQueue from './request-queue';
-import { defaults } from 'lodash';
-// import { bus } from '@/common/bus';
-// import { messageError } from '@/common/bkmagic';
-// import UrlParse from 'url-parse';
-// import queryString from 'query-string';
 
 interface HttpApi {
   [key: string]: any;
@@ -36,21 +31,6 @@ const axiosInstance: AxiosInstance = axios.create({
  */
 axiosInstance.interceptors.request.use(
   (config: any) => {
-    // const urlObj = new UrlParse(config.url);
-    // const query = queryString.parse(urlObj.query as any);
-    // if (query[AJAX_MOCK_PARAM]) {
-    //   // 直接根路径没有 pathname，例如 http://localhost:LOCAL_DEV_PORT/?mock-file=index&invoke=btn1&btn=btn1
-    //   // axios get 请求不会请求到 devserver，因此在 pathname 不存在或者为 / 时，加上一个 /mock 的 pathname
-    //   if (!urlObj.pathname) {
-    //     config.url = `${LOCAL_DEV_URL}:${LOCAL_DEV_PORT}/mock/${urlObj.query}`;
-    //   } else if (urlObj.pathname === '/') {
-    //     config.url = `${LOCAL_DEV_URL}:${LOCAL_DEV_PORT}/mock/${urlObj.query}`;
-    //   } else if (LOCAL_DEV_URL && LOCAL_DEV_PORT) {
-    //     config.url = `${LOCAL_DEV_URL}:${LOCAL_DEV_PORT}${urlObj.pathname}${urlObj.query}`;
-    //   } else if (LOCAL_DEV_URL) {
-    //     config.url = `${LOCAL_DEV_URL}${urlObj.pathname}${urlObj.query}`;
-    //   }
-    // }
     // 设置uuid
     const uuid = uuidv4();
     axiosInstance.defaults.headers['X-Bkapi-Request-Id'] = uuid;
@@ -339,8 +319,6 @@ function getCancelToken() {
   };
 }
 
-export default http;
-
 /**
  * 向 http header 注入 CSRFToken，CSRFToken key 值与后端一起协商制定
  */
@@ -367,3 +345,7 @@ export function InvalidLogin() {
   const loginUrl = `${loginBaseUrl}/plain/?c_url=${encodeURIComponent(successUrl)}`;
   showLoginModal({ loginUrl });
 }
+
+export * from './jsonp';
+
+export default http;

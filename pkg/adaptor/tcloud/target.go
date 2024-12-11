@@ -34,7 +34,7 @@ import (
 )
 
 // ListTargets 获取监听器后端绑定的机器列表信息.
-// reference: https://cloud.tencent.com/document/api/214/30686
+// reference: https://cloud.tencent.com/document/api/214/30684
 func (t *TCloudImpl) ListTargets(kt *kit.Kit, opt *typelb.TCloudListTargetsOption) (
 	[]typelb.TCloudListenerTarget, error) {
 

@@ -29,7 +29,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-	"hcm/pkg/tools/converter"
+	cvt "hcm/pkg/tools/converter"
 
 	common "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
@@ -57,7 +57,13 @@ func (t *TCloudImpl) CreateSecurityGroup(kt *kit.Kit, opt *securitygroup.TCloudC
 	req := vpc.NewCreateSecurityGroupRequest()
 	req.GroupName = common.StringPtr(opt.Name)
 	req.GroupDescription = opt.Description
-
+	for _, tag := range opt.Tags {
+		vpcTag := &vpc.Tag{
+			Key:   cvt.ValToPtr(tag.Key),
+			Value: cvt.ValToPtr(tag.Value),
+		}
+		req.Tags = append(req.Tags, vpcTag)
+	}
 	resp, err := vpcCli.CreateSecurityGroupWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("create tcloud security group failed, err: %v, rid: %s", err, kt.Rid)
@@ -152,7 +158,7 @@ func (t *TCloudImpl) ListSecurityGroupNew(kt *kit.Kit, opt *securitygroup.TCloud
 	req := vpc.NewDescribeSecurityGroupsRequest()
 	if len(opt.CloudIDs) != 0 {
 		req.SecurityGroupIds = common.StringPtrs(opt.CloudIDs)
-		req.Limit = converter.ValToPtr(strconv.FormatUint(core.TCloudQueryLimit, 10))
+		req.Limit = cvt.ValToPtr(strconv.FormatUint(core.TCloudQueryLimit, 10))
 	}
 
 	if opt.Page != nil {
@@ -183,7 +189,7 @@ func (t *TCloudImpl) CountSecurityGroup(kt *kit.Kit, region string) (int32, erro
 	}
 
 	req := vpc.NewDescribeSecurityGroupsRequest()
-	req.Limit = converter.ValToPtr("1")
+	req.Limit = cvt.ValToPtr("1")
 	resp, err := client.DescribeSecurityGroupsWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("count tcloud security group failed, err: %v, region: %s, rid: %s", err, region, kt.Rid)
@@ -323,4 +329,36 @@ func (t *TCloudImpl) SecurityGroupCvmBatchDisassociate(kt *kit.Kit,
 	}
 
 	return nil
+}
+
+// DescribeSecurityGroupAssociationStatistics describe security group association statistics.
+// reference: https://cloud.tencent.com/document/api/215/17799
+func (t *TCloudImpl) DescribeSecurityGroupAssociationStatistics(kt *kit.Kit, opt *securitygroup.TCloudListOption) (
+	[]securitygroup.TCloudSecurityGroupAssociationStatistic, error) {
+
+	client, err := t.clientSet.VpcClient(opt.Region)
+	if err != nil {
+		return nil, fmt.Errorf("new tcloud vpc client failed, err: %v", err)
+	}
+
+	req := vpc.NewDescribeSecurityGroupAssociationStatisticsRequest()
+	for _, cloudID := range opt.CloudIDs {
+		req.SecurityGroupIds = append(req.SecurityGroupIds, common.StringPtr(cloudID))
+	}
+	resp, err := client.DescribeSecurityGroupAssociationStatisticsWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("describe tcloud security group association statistics failed, err: %v， resp: %v, rid: %s",
+			err, resp, kt.Rid)
+		return nil, err
+	}
+
+	result := make([]securitygroup.TCloudSecurityGroupAssociationStatistic,
+		0, len(resp.Response.SecurityGroupAssociationStatisticsSet))
+	for _, statistics := range resp.Response.SecurityGroupAssociationStatisticsSet {
+		result = append(result, securitygroup.TCloudSecurityGroupAssociationStatistic{
+			SecurityGroupAssociationStatistics: statistics,
+		})
+	}
+
+	return result, nil
 }

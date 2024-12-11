@@ -314,21 +314,22 @@ func (svc *lbSvc) convTCloudOperateTargetReq(kt *kit.Kit, targetIDs []string, lb
 		}
 
 		rsReq.RsList = append(rsReq.RsList, &dataproto.TargetBaseReq{
-			ID:               item.ID,
-			IP:               item.IP,
-			InstType:         item.InstType,
-			CloudInstID:      item.CloudInstID,
-			Port:             item.Port,
-			Weight:           item.Weight,
-			AccountID:        accountID,
-			TargetGroupID:    targetGroupID,
-			InstName:         item.InstName,
-			PrivateIPAddress: item.PrivateIPAddress,
-			PublicIPAddress:  item.PublicIPAddress,
-			CloudVpcIDs:      item.CloudVpcIDs,
-			Zone:             item.Zone,
-			NewPort:          newPort,
-			NewWeight:        newWeight,
+			ID:                item.ID,
+			IP:                item.IP,
+			InstType:          item.InstType,
+			CloudInstID:       item.CloudInstID,
+			Port:              item.Port,
+			Weight:            item.Weight,
+			AccountID:         accountID,
+			TargetGroupID:     targetGroupID,
+			InstName:          item.InstName,
+			PrivateIPAddress:  item.PrivateIPAddress,
+			PublicIPAddress:   item.PublicIPAddress,
+			CloudVpcIDs:       item.CloudVpcIDs,
+			Zone:              item.Zone,
+			NewPort:           newPort,
+			NewWeight:         newWeight,
+			TargetGroupRegion: item.TargetGroupRegion,
 		})
 	}
 	return rsReq, nil

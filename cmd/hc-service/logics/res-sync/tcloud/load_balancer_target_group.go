@@ -539,9 +539,23 @@ func (cli *client) listTargetsFromCloud(kt *kit.Kit, param *SyncBaseParams,
 	listOpt := &typeslb.TCloudListTargetsOption{
 		Region:         param.Region,
 		LoadBalancerId: opt.CloudLBID,
-		ListenerIds:    param.CloudIDs,
 	}
-	return cli.cloudCli.ListTargets(kt, listOpt)
+	if len(param.CloudIDs) == 0 {
+		return cli.cloudCli.ListTargets(kt, listOpt)
+	}
+	allTargets := make([]typeslb.TCloudListenerTarget, 0)
+	// 指定id的情况
+	for i, lblIDBatch := range slice.Split(param.CloudIDs, constant.TCLBDescribeMax) {
+		listOpt.ListenerIds = lblIDBatch
+		targets, err := cli.cloudCli.ListTargets(kt, listOpt)
+		if err != nil {
+			logs.Errorf("fail to list targets from cloud, err: %v, idx: %d, cloud_id: %v, rid: %s",
+				err, i, lblIDBatch, kt.Rid)
+			return nil, err
+		}
+		allTargets = append(allTargets, targets...)
+	}
+	return allTargets, nil
 }
 
 // 获取云上监听器列表

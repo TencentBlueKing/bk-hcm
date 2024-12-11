@@ -59,7 +59,9 @@ import (
 type CloudResType interface {
 	GetCloudID() string
 
-	typesregion.HuaWeiRegionModel |
+	TestCloudRes |
+
+		typesregion.HuaWeiRegionModel |
 		typesregion.AzureRegion |
 		typesregion.TCloudRegion |
 		typesregion.AwsRegion |
@@ -153,6 +155,16 @@ type CloudResType interface {
 		typeslb.TCloudListener |
 		typeslb.TCloudUrlRule |
 		typeslb.Backend
+}
+
+// TestCloudRes 测试云资源类型
+type TestCloudRes struct {
+	CloudID string
+}
+
+// GetCloudID ...
+func (t TestCloudRes) GetCloudID() string {
+	return t.CloudID
 }
 
 // DBResType 本地资源类型
