@@ -116,7 +116,7 @@ func (req *FindReq) Validate() error {
 	return nil
 }
 
-// GlobalConfig define cvm table.
+// GlobalConfig ...
 type GlobalConfig struct {
 	// ID global config id
 	ID string `json:"id"`
