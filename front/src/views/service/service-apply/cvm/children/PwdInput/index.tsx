@@ -1,4 +1,4 @@
-import { computed, defineComponent, ref } from 'vue';
+import { computed, defineComponent, PropType, ref } from 'vue';
 import cssModule from './index.module.scss';
 
 import { Button, Input } from 'bkui-vue';
@@ -11,6 +11,7 @@ import { useFormItem } from 'bkui-vue/lib/form';
 export default defineComponent({
   props: {
     modelValue: { type: String },
+    generateFn: { type: Function as PropType<(...args: any) => string> },
   },
   emits: ['update:modelValue'],
   setup(props, { emit }) {
@@ -32,21 +33,24 @@ export default defineComponent({
       },
     });
 
-    const generatePassword = (length = 20) => {
+    // 默认规则：密码长度不少于8位且不多于20位，至少包含一个小写字母、一个大写字母、一个数字和一个特殊符号（仅限@、# 、+、_、-、[、]、{、}
+    const defaultGenerateFn = (length = 20) => {
       const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
       const lower = 'abcdefghijklmnopqrstuvwxyz';
-      const digitsAndSpecial = '0123456789!@$%^-_=+[{}]:,./?';
+      const digits = '0123456789';
+      const special = '@#+_-[]{}';
 
-      // 确保密码包含至少一个大写字母、小写字母和数字或特殊字符
+      // 确保密码包含至少一个大写字母、小写字母和数字和特殊字符
       let password = [
         upper[Math.floor(Math.random() * upper.length)],
         lower[Math.floor(Math.random() * lower.length)],
-        digitsAndSpecial[Math.floor(Math.random() * digitsAndSpecial.length)],
+        digits[Math.floor(Math.random() * digits.length)],
+        special[Math.floor(Math.random() * special.length)],
       ];
 
       // 随机选择剩余的字符
-      const allChars = upper + lower + digitsAndSpecial;
-      for (let i = 3; i < length; i++) {
+      const allChars = upper + lower + digits + special;
+      for (let i = 4; i < length; i++) {
         password.push(allChars[Math.floor(Math.random() * allChars.length)]);
       }
 
@@ -58,7 +62,7 @@ export default defineComponent({
 
     const handleClick = () => {
       toggleInputType('text');
-      pwd.value = generatePassword();
+      pwd.value = props.generateFn ? props.generateFn() : defaultGenerateFn();
       validate();
     };
 
