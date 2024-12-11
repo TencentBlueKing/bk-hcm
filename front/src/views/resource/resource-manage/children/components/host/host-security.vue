@@ -22,7 +22,7 @@ const activeType = ref('ingress');
 const tableData = ref([]);
 const isShow = ref(false);
 const securityId = ref(0);
-const fetchUrl = ref<string>(`vendors/${props.data.vendor}/security_groups/${securityId.value}/rules/list`);
+const fetchUrl = ref<string>(`cvms/${props.data.id}/security_groups/${securityId.value}/rules/list`);
 const fetchFilter = reactive({
   op: QueryRuleOPEnum.AND,
   rules: [{ field: 'type', op: 'eq', value: activeType.value }],
@@ -296,7 +296,7 @@ const {
 const showRuleDialog = async () => {
   isShow.value = true;
   // 获取列表数据
-  fetchUrl.value = `vendors/${props.data.vendor}/security_groups/${securityId.value}/rules/list`;
+  fetchUrl.value = `cvms/${props.data.id}/security_groups/${securityId.value}/rules/list`;
   fetchFilter.rules = [{ field: 'type', op: 'eq', value: activeType.value }];
   if (props.data.vendor === 'huawei') {
     const huaweiColummns = [
@@ -440,14 +440,14 @@ getSecurityGroupsList();
       :theme="'primary'"
       :dialog-type="'show'"
     >
+      <section class="mt20">
+        <bk-radio-group v-model="activeType">
+          <bk-radio-button v-for="item in types" :key="item.name" :label="item.name">
+            {{ item.label }}
+          </bk-radio-button>
+        </bk-radio-group>
+      </section>
       <bk-loading :loading="state.isLoading">
-        <section class="mt20">
-          <bk-radio-group v-model="activeType">
-            <bk-radio-button v-for="item in types" :key="item.name" :label="item.name">
-              {{ item.label }}
-            </bk-radio-button>
-          </bk-radio-group>
-        </section>
         <bk-table
           class="mt20"
           row-hover="auto"
