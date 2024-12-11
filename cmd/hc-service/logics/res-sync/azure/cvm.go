@@ -427,6 +427,7 @@ func (cli *client) getVpcMap(kt *kit.Kit, accountID string, cloudVpcIDsMap map[s
 			Rules: []filter.RuleFactory{
 				&filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: accountID},
 				&filter.AtomRule{Field: "cloud_id", Op: filter.In.Factory(), Value: cloudVpcIDs},
+				&filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: enumor.Azure},
 			},
 		},
 		Page: core.NewDefaultBasePage(),
@@ -520,6 +521,7 @@ func (cli *client) getSubnetMap(kt *kit.Kit, accountID string, cloudSubnetsIDsMa
 			Rules: []filter.RuleFactory{
 				&filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: accountID},
 				&filter.AtomRule{Field: "cloud_id", Op: filter.In.Factory(), Value: cloudSubnetsIDs},
+				&filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: enumor.Azure},
 			},
 		},
 		Page: core.NewDefaultBasePage(),

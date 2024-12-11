@@ -345,6 +345,7 @@ func (mgr *CvmRelManger) getCvmMap(kt *kit.Kit) (map[string]string, error) {
 	cvmMap := make(map[string]string)
 	split := slice.Split(cloudIDs, int(core.DefaultMaxPageLimit))
 	for _, partCloudIDs := range split {
+		// TODO 上下文信息不足以传入region参数
 		req := &core.ListReq{
 			Fields: []string{"id", "cloud_id"},
 			Filter: tools.ContainersExpression("cloud_id", partCloudIDs),

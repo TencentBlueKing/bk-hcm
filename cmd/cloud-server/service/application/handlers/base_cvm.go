@@ -23,32 +23,31 @@ import (
 	"hcm/pkg/api/core"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/runtime/filter"
+	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/tools/slice"
 )
 
 // ListCvm 查询主机列表
 func (a *BaseApplicationHandler) ListCvm(
-	vendor enumor.Vendor, accountID string, cloudCvmIDs []string,
+	vendor enumor.Vendor, accountID, region string, cloudCvmIDs []string,
 ) ([]corecvm.BaseCvm, error) {
-	reqFilter := &filter.Expression{
-		Op: filter.And,
-		Rules: []filter.RuleFactory{
-			filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: vendor},
-			filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: accountID},
-			filter.AtomRule{Field: "cloud_id", Op: filter.In.Factory(), Value: cloudCvmIDs},
-		},
-	}
-	// 查询
-	resp, err := a.Client.DataService().Global.Cvm.ListCvm(
-		a.Cts.Kit,
-		&core.ListReq{
-			Filter: reqFilter,
-			Page:   &core.BasePage{Count: false, Start: 0, Limit: uint(len(cloudCvmIDs))},
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
 
-	return resp.Details, nil
+	result := make([]corecvm.BaseCvm, 0)
+	for _, ids := range slice.Split(cloudCvmIDs, int(core.DefaultMaxPageLimit)) {
+		listReq := &core.ListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleEqual("vendor", vendor),
+				tools.RuleEqual("account_id", accountID),
+				tools.RuleIn("cloud_id", ids),
+				tools.RuleEqual("region", region),
+			),
+			Page: core.NewDefaultBasePage(),
+		}
+		resp, err := a.Client.DataService().Global.Cvm.ListCvm(a.Cts.Kit, listReq)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, resp.Details...)
+	}
+	return result, nil
 }

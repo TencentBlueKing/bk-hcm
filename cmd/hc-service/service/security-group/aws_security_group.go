@@ -27,6 +27,7 @@ import (
 	corecloud "hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	proto "hcm/pkg/api/hc-service"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
@@ -79,7 +80,7 @@ func (g *securityGroup) CreateAwsSecurityGroup(cts *rest.Contexts) (interface{},
 		return nil, fmt.Errorf("create aws security group succeeds, but query failed")
 	}
 
-	vpcID, err := g.getVpcIDByCloudVpcID(cts.Kit, req.CloudVpcID)
+	vpcID, err := g.getVpcIDByCloudVpcID(cts.Kit, req.CloudVpcID, req.Region)
 	if err != nil {
 		return nil, err
 	}
@@ -209,9 +210,13 @@ func (g *securityGroup) AwsSecurityGroupDisassociateCvm(cts *rest.Contexts) (int
 	return nil, nil
 }
 
-func (g *securityGroup) getVpcIDByCloudVpcID(kt *kit.Kit, cloudVpcID string) (string, error) {
+func (g *securityGroup) getVpcIDByCloudVpcID(kt *kit.Kit, cloudVpcID, region string) (string, error) {
 	req := &core.ListReq{
-		Filter: tools.EqualExpression("cloud_id", cloudVpcID),
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("cloud_id", cloudVpcID),
+			tools.RuleEqual("region", region),
+			tools.RuleEqual("vendor", enumor.Aws),
+		),
 		Page:   core.NewDefaultBasePage(),
 		Fields: []string{"id"},
 	}

@@ -141,14 +141,14 @@ func (a *ApplicationOfCreateHuaWeiCvm) renderNetwork() ([]formItem, error) {
 	formItems := make([]formItem, 0)
 
 	// VPC
-	vpcInfo, err := a.GetVpc(a.Vendor(), req.AccountID, req.CloudVpcID)
+	vpcInfo, err := a.GetVpc(a.Vendor(), req.AccountID, req.CloudVpcID, req.Region)
 	if err != nil {
 		return formItems, err
 	}
 	formItems = append(formItems, formItem{Label: "VPC", Value: vpcInfo.Name})
 
 	// 子网
-	subnetInfo, err := a.GetSubnet(a.Vendor(), req.AccountID, req.CloudVpcID, req.CloudSubnetID)
+	subnetInfo, err := a.GetSubnet(a.Vendor(), req.AccountID, req.CloudVpcID, req.CloudSubnetID, req.Region)
 	if err != nil {
 		return formItems, err
 	}
@@ -172,7 +172,7 @@ func (a *ApplicationOfCreateHuaWeiCvm) renderNetwork() ([]formItem, error) {
 	formItems = append(formItems, formItem{Label: "所属的蓝鲸云区域", Value: bkCloudAreaName})
 
 	// 安全组
-	securityGroups, err := a.ListSecurityGroup(a.Vendor(), req.AccountID, req.CloudSecurityGroupIDs)
+	securityGroups, err := a.ListSecurityGroup(a.Vendor(), req.AccountID, req.Region, req.CloudSecurityGroupIDs)
 	securityGroupNames := make([]string, 0, len(req.CloudSecurityGroupIDs))
 	for _, s := range securityGroups {
 		securityGroupNames = append(securityGroupNames, s.Name)

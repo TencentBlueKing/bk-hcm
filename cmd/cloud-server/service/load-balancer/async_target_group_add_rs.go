@@ -318,7 +318,13 @@ func (svc *lbSvc) initFlowAddTargetByLbID(kt *kit.Kit, accountID, lbID string,
 func (svc *lbSvc) convTCloudAddTargetReq(kt *kit.Kit, targets []*dataproto.TargetBaseReq, lbID, targetGroupID,
 	accountID string) (*hcproto.TCloudBatchOperateTargetReq, error) {
 
-	instMap, err := svc.getInstWithTargetMap(kt, targets)
+	tg, err := svc.getTargetGroupByID(kt, targetGroupID)
+	if err != nil {
+		logs.Errorf("get target group by id failed, err: %v, tgID: %s, rid: %s", err, targetGroupID, kt.Rid)
+		return nil, err
+	}
+
+	instMap, err := svc.getInstWithTargetMap(kt, targets, tg.Region, tg.Vendor)
 	if err != nil {
 		return nil, err
 	}
@@ -337,8 +343,8 @@ func (svc *lbSvc) convTCloudAddTargetReq(kt *kit.Kit, targets []*dataproto.Targe
 	return rsReq, nil
 }
 
-func (svc *lbSvc) getInstWithTargetMap(kt *kit.Kit, targets []*dataproto.TargetBaseReq) (
-	map[string]corecvm.BaseCvm, error) {
+func (svc *lbSvc) getInstWithTargetMap(kt *kit.Kit, targets []*dataproto.TargetBaseReq, region string,
+	vendor enumor.Vendor) (map[string]corecvm.BaseCvm, error) {
 
 	cloudCvmIDs := make([]string, 0)
 	for _, item := range targets {
@@ -351,8 +357,12 @@ func (svc *lbSvc) getInstWithTargetMap(kt *kit.Kit, targets []*dataproto.TargetB
 	cvmMap := make(map[string]corecvm.BaseCvm)
 	if len(cloudCvmIDs) > 0 {
 		cvmReq := &core.ListReq{
-			Filter: tools.ContainersExpression("cloud_id", cloudCvmIDs),
-			Page:   core.NewDefaultBasePage(),
+			Filter: tools.ExpressionAnd(
+				tools.RuleIn("cloud_id", cloudCvmIDs),
+				tools.RuleEqual("region", region),
+				tools.RuleEqual("vendor", vendor),
+			),
+			Page: core.NewDefaultBasePage(),
 		}
 		cvmList, err := svc.client.DataService().Global.Cvm.ListCvm(kt, cvmReq)
 		if err != nil {

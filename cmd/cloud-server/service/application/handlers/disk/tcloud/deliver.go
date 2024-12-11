@@ -35,5 +35,5 @@ func (a *ApplicationOfCreateTCloudDisk) Deliver() (enumor.ApplicationStatus, map
 	}
 
 	return logics.CheckResultAndAssign(a.Cts.Kit, a.Client.DataService(), result, a.req.DiskCount,
-		a.req.BkBizID, a.Audit)
+		a.req.BkBizID, a.Audit, a.req.Region, enumor.TCloud)
 }

@@ -192,7 +192,10 @@ func (cli *client) deleteSubnet(kt *kit.Kit, accountID, resGroupName, cloudVpcID
 	}
 
 	deleteReq := &dataservice.BatchDeleteReq{
-		Filter: tools.ContainersExpression("cloud_id", delCloudIDs),
+		Filter: tools.ExpressionAnd(
+			tools.RuleIn("cloud_id", delCloudIDs),
+			tools.RuleEqual("vendor", enumor.Azure),
+		),
 	}
 	if err = cli.dbCli.Global.Subnet.BatchDelete(kt.Ctx, kt.Header(), deleteReq); err != nil {
 		logs.Errorf("[%s] request dataservice to batch delete subnet failed, err: %v, rid: %s",
@@ -348,6 +351,7 @@ func (cli *client) listSubnetFromDB(kt *kit.Kit, params *SyncBaseParams, cloudVp
 				&filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: params.AccountID},
 				&filter.AtomRule{Field: "cloud_id", Op: filter.In.Factory(), Value: params.CloudIDs},
 				&filter.AtomRule{Field: "cloud_vpc_id", Op: filter.Equal.Factory(), Value: cloudVpcID},
+				&filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: enumor.Azure},
 				&filter.AtomRule{Field: "extension.resource_group_name", Op: filter.JSONEqual.Factory(),
 					Value: params.ResourceGroupName},
 			},
@@ -376,6 +380,7 @@ func (cli *client) listSubnetFromDBForCvm(kt *kit.Kit, params *SyncBaseParams) (
 			Op: filter.And,
 			Rules: []filter.RuleFactory{
 				&filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: params.AccountID},
+				&filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: enumor.Azure},
 				&filter.AtomRule{Field: "cloud_id", Op: filter.In.Factory(), Value: params.CloudIDs},
 				&filter.AtomRule{Field: "extension.resource_group_name", Op: filter.JSONEqual.Factory(),
 					Value: params.ResourceGroupName},

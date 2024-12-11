@@ -161,7 +161,7 @@ func (a *ApplicationOfCreateTCloudLB) renderNetwork() ([]formItem, error) {
 	// VPC
 	vpcName := "未指定-默认VPC"
 	if req.CloudVpcID != nil {
-		vpcInfo, err := a.GetVpc(a.Vendor(), req.AccountID, cvt.PtrToVal(req.CloudVpcID))
+		vpcInfo, err := a.GetVpc(a.Vendor(), req.AccountID, cvt.PtrToVal(req.CloudVpcID), req.Region)
 		if err != nil {
 			return formItems, err
 		}
@@ -174,7 +174,7 @@ func (a *ApplicationOfCreateTCloudLB) renderNetwork() ([]formItem, error) {
 	if req.CloudVpcID != nil && req.CloudSubnetID != nil {
 		// 子网
 		subnetInfo, err := a.GetSubnet(a.Vendor(), req.AccountID, cvt.PtrToVal(req.CloudVpcID),
-			cvt.PtrToVal(req.CloudSubnetID))
+			cvt.PtrToVal(req.CloudSubnetID), req.Region)
 		if err != nil {
 			return formItems, err
 		}

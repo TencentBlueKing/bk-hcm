@@ -35,8 +35,8 @@ import (
 
 // CheckResultAndAssign ...
 func CheckResultAndAssign(kt *kit.Kit, cli *dataservice.Client, result *hcproto.BatchCreateResult,
-	diskCount uint32, bkBizID int64,
-	audit audit.Interface) (enumor.ApplicationStatus, map[string]interface{}, error) {
+	diskCount uint32, bkBizID int64, audit audit.Interface, region string, vendor enumor.Vendor) (
+	enumor.ApplicationStatus, map[string]interface{}, error) {
 
 	deliverDetail := map[string]interface{}{"result": result}
 
@@ -53,7 +53,11 @@ func CheckResultAndAssign(kt *kit.Kit, cli *dataservice.Client, result *hcproto.
 	}
 
 	listReq := &core.ListReq{
-		Filter: tools.ContainersExpression("cloud_id", result.SuccessCloudIDs),
+		Filter: tools.ExpressionAnd(
+			tools.RuleIn("cloud_id", result.SuccessCloudIDs),
+			tools.RuleEqual("region", region),
+			tools.RuleEqual("vendor", vendor),
+		),
 		Page:   core.NewDefaultBasePage(),
 		Fields: []string{"id"},
 	}

@@ -104,6 +104,7 @@ func (cli *client) RemoveVpcDeleteFromCloud(kt *kit.Kit, accountID string, regio
 			Rules: []filter.RuleFactory{
 				&filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: accountID},
 				&filter.AtomRule{Field: "region", Op: filter.Equal.Factory(), Value: region},
+				&filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: enumor.HuaWei},
 			},
 		},
 		Page: &core.BasePage{
@@ -186,7 +187,11 @@ func (cli *client) deleteVpc(kt *kit.Kit, accountID string, region string, delCl
 	}
 
 	deleteReq := &dataservice.BatchDeleteReq{
-		Filter: tools.ContainersExpression("cloud_id", delCloudIDs),
+		Filter: tools.ExpressionAnd(
+			tools.RuleIn("cloud_id", delCloudIDs),
+			tools.RuleEqual("region", region),
+			tools.RuleEqual("vendor", enumor.HuaWei),
+		),
 	}
 	if err = cli.dbCli.Global.Vpc.BatchDelete(kt.Ctx, kt.Header(), deleteReq); err != nil {
 		logs.Errorf("[%s] request dataservice to batch delete vpc failed, err: %v, rid: %s", enumor.HuaWei, err, kt.Rid)
@@ -346,6 +351,11 @@ func (cli *client) listVpcFromDB(kt *kit.Kit, params *SyncBaseParams) (
 					Field: "region",
 					Op:    filter.Equal.Factory(),
 					Value: params.Region,
+				},
+				&filter.AtomRule{
+					Field: "vendor",
+					Op:    filter.Equal.Factory(),
+					Value: enumor.HuaWei,
 				},
 			},
 		},

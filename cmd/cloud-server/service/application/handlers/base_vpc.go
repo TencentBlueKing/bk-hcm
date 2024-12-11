@@ -31,7 +31,7 @@ import (
 )
 
 // GetVpc 查询VPC
-func (a *BaseApplicationHandler) GetVpc(vendor enumor.Vendor, accountID, cloudVpcID string) (
+func (a *BaseApplicationHandler) GetVpc(vendor enumor.Vendor, accountID, cloudVpcID, region string) (
 	*corecloud.BaseVpc, error) {
 
 	reqFilter := &filter.Expression{
@@ -40,6 +40,7 @@ func (a *BaseApplicationHandler) GetVpc(vendor enumor.Vendor, accountID, cloudVp
 			filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: vendor},
 			filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: accountID},
 			filter.AtomRule{Field: "cloud_id", Op: filter.Equal.Factory(), Value: cloudVpcID},
+			filter.AtomRule{Field: "region", Op: filter.Equal.Factory(), Value: region},
 		},
 	}
 	// 查询

@@ -506,8 +506,13 @@ func (cli *client) deleteCvm(kt *kit.Kit, accountID string, region string, delCl
 	}
 
 	deleteReq := &dataproto.CvmBatchDeleteReq{
-		Filter: tools.ContainersExpression("cloud_id", delCloudIDs),
+		Filter: tools.ExpressionAnd(
+			tools.RuleIn("cloud_id", delCloudIDs),
+			tools.RuleEqual("region", region),
+			tools.RuleEqual("vendor", enumor.Aws),
+		),
 	}
+
 	if err = cli.dbCli.Global.Cvm.BatchDeleteCvm(kt.Ctx, kt.Header(), deleteReq); err != nil {
 		logs.Errorf("[%s] request dataservice to batch delete cvm failed, err: %v, rid: %s", enumor.Aws,
 			err, kt.Rid)
@@ -583,6 +588,7 @@ func (cli *client) listCvmFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	return result.Details, nil
 }
 
+// RemoveCvmDeleteFromCloud ...
 func (cli *client) RemoveCvmDeleteFromCloud(kt *kit.Kit, accountID string, region string) error {
 	req := &protocloud.CvmListReq{
 		Field: []string{"id", "cloud_id"},

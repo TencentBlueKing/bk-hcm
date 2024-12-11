@@ -118,7 +118,11 @@ func (cli *client) deleteSubnet(kt *kit.Kit, accountID string, region string, de
 	}
 
 	deleteReq := &dataservice.BatchDeleteReq{
-		Filter: tools.ContainersExpression("cloud_id", delCloudIDs),
+		Filter: tools.ExpressionAnd(
+			tools.RuleIn("cloud_id", delCloudIDs),
+			tools.RuleEqual("region", region),
+			tools.RuleEqual("vendor", enumor.Aws),
+		),
 	}
 	if err := cli.dbCli.Global.Subnet.BatchDelete(kt.Ctx, kt.Header(), deleteReq); err != nil {
 		logs.Errorf("[%s] request dataservice to batch delete subnet failed, err: %v, rid: %s", enumor.Aws, err, kt.Rid)
@@ -445,6 +449,11 @@ func (cli *client) listSubnetFromDB(kt *kit.Kit, params *SyncBaseParams) (
 					Field: "region",
 					Op:    filter.Equal.Factory(),
 					Value: params.Region,
+				},
+				&filter.AtomRule{
+					Field: "vendor",
+					Op:    filter.Equal.Factory(),
+					Value: enumor.Aws,
 				},
 			},
 		},

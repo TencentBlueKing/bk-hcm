@@ -64,6 +64,7 @@ func SyncSubnet(kt *kit.Kit, cliSet *client.ClientSet, accountID string, sd *det
 		accountRegionRules := []filter.RuleFactory{
 			&filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: accountID},
 			&filter.AtomRule{Field: "region", Op: filter.Equal.Factory(), Value: region},
+			&filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: enumor.HuaWei},
 		}
 		listReq := &core.ListReq{
 			Filter: &filter.Expression{Op: filter.And, Rules: accountRegionRules},

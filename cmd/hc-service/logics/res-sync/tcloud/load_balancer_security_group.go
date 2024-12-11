@@ -185,9 +185,13 @@ func (cli *client) getCloudLbSgBinding(kt *kit.Kit, params *SyncBaseParams, opt 
 	}
 	// 2. 获取本地id 映射
 	sgReq := &protocloud.SecurityGroupListReq{
-		Field:  []string{"id", "cloud_id"},
-		Filter: tools.ExpressionAnd(tools.RuleIn("cloud_id", allSgCloudIDs)),
-		Page:   core.NewDefaultBasePage(),
+		Field: []string{"id", "cloud_id"},
+		Filter: tools.ExpressionAnd(
+			tools.RuleIn("cloud_id", allSgCloudIDs),
+			tools.RuleEqual("region", params.Region),
+			tools.RuleEqual("vendor", enumor.TCloud),
+		),
+		Page: core.NewDefaultBasePage(),
 	}
 	sgResp, err := cli.dbCli.Global.SecurityGroup.ListSecurityGroup(kt.Ctx, kt.Header(), sgReq)
 	if err != nil {

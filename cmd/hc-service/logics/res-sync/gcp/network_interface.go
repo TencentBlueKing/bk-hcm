@@ -457,6 +457,8 @@ func (cli *client) listNetworkInterfaceFromDB(kt *kit.Kit, opt *syncNIOption) (
 				&filter.AtomRule{Field: "cloud_id", Op: filter.Equal.Factory(), Value: opt.CloudCvmID},
 				&filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: opt.AccountID},
 				&filter.AtomRule{Field: "zone", Op: filter.Equal.Factory(), Value: opt.Zone},
+				&filter.AtomRule{Field: "region", Op: filter.Equal.Factory(), Value: opt.Region},
+				&filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: enumor.Gcp},
 			},
 		},
 		Page: core.NewDefaultBasePage(),

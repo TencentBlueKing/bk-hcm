@@ -32,6 +32,7 @@ import (
 	protocloud "hcm/pkg/api/data-service/cloud"
 	proto "hcm/pkg/api/hc-service"
 	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
@@ -324,8 +325,11 @@ func (f *firewall) createFirewallRule(cts *rest.Contexts, req *proto.GcpFirewall
 
 func (f *firewall) getVpcByCloudID(kt *kit.Kit, cloudVpcID string) (*corecloud.Vpc[corecloud.GcpVpcExtension], error) {
 	req := &core.ListReq{
-		Filter: tools.EqualExpression("cloud_id", cloudVpcID),
-		Page:   core.NewDefaultBasePage(),
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("cloud_id", cloudVpcID),
+			tools.RuleEqual("vendor", enumor.Gcp),
+		),
+		Page: core.NewDefaultBasePage(),
 	}
 	result, err := f.dataCli.Gcp.Vpc.ListVpcExt(kt, req)
 	if err != nil {

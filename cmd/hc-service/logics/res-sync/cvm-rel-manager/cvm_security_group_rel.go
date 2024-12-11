@@ -164,6 +164,7 @@ func (mgr *CvmRelManger) getSGMap(kt *kit.Kit) (map[string]string, error) {
 	sgMap := make(map[string]string)
 	split := slice.Split(cloudIDs, int(core.DefaultMaxPageLimit))
 	for _, partCloudIDs := range split {
+		// TODO 上下文信息不足以传入region
 		req := &datacloud.SecurityGroupListReq{
 			Field:  []string{"id", "cloud_id"},
 			Filter: tools.ContainersExpression("cloud_id", partCloudIDs),

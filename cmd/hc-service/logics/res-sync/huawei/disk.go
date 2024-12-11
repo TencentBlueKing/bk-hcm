@@ -124,7 +124,11 @@ func (cli *client) deleteDisk(kt *kit.Kit, accountID string, region string, delC
 	}
 
 	deleteReq := &disk.DiskDeleteReq{
-		Filter: tools.ContainersExpression("cloud_id", delCloudIDs),
+		Filter: tools.ExpressionAnd(
+			tools.RuleIn("cloud_id", delCloudIDs),
+			tools.RuleEqual("region", region),
+			tools.RuleEqual("vendor", enumor.HuaWei),
+		),
 	}
 	if _, err = cli.dbCli.Global.DeleteDisk(kt.Ctx, kt.Header(), deleteReq); err != nil {
 		logs.Errorf("[%s] request dataservice to batch delete disk failed, err: %v, rid: %s", enumor.HuaWei,

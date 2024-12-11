@@ -29,14 +29,16 @@ import (
 
 // ListSecurityGroup 查询安全组列表
 func (a *BaseApplicationHandler) ListSecurityGroup(
-	vendor enumor.Vendor, accountID string, cloudSecurityGroupIDs []string,
+	vendor enumor.Vendor, accountID, region string, cloudSecurityGroupIDs []string,
 ) ([]corecloud.BaseSecurityGroup, error) {
+
 	reqFilter := &filter.Expression{
 		Op: filter.And,
 		Rules: []filter.RuleFactory{
 			filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: vendor},
 			filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: accountID},
 			filter.AtomRule{Field: "cloud_id", Op: filter.In.Factory(), Value: cloudSecurityGroupIDs},
+			filter.AtomRule{Field: "region", Op: filter.Equal.Factory(), Value: region},
 		},
 	}
 	// 查询
