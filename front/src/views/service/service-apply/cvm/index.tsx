@@ -802,7 +802,8 @@ export default defineComponent({
           {
             label: '密码',
             required: true,
-            description: '密码必须包含3种组合：1.大写字母，2.小写字母，3. 数字或特殊字符（!@$%^-_=+[{}]:,./?）',
+            description:
+              '密码长度不少于8位且不多于20位，至少包含一个小写字母、一个大写字母、一个数字和一个特殊符号（仅限@、# 、+、_、-、[、]、{、}',
             content: [
               {
                 property: 'username',
@@ -885,13 +886,13 @@ export default defineComponent({
       ],
       password: [
         {
-          validator: (value: string) => value.length >= 8 && value.length <= 30,
-          message: '密码长度需要在8-30个字符之间',
+          validator: (value: string) => value.length >= 8 && value.length <= 20,
+          message: '密码长度需要在8-20个字符之间',
           trigger: 'blur',
         },
         {
           validator: (value: string) => {
-            const pattern = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d|.*[!@$%^\-_=+[{}\]:,./?])[A-Za-z\d!@$%^\-_=+[{}\]:,./?]+$/;
+            const pattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#+_\-\[\]{}])[A-Za-z\d@#+_\-\[\]{}]{8,20}$/;
             return pattern.test(value);
           },
           message: '密码不符合复杂度要求',
@@ -899,7 +900,6 @@ export default defineComponent({
         },
         {
           validator: (value: string) => {
-            // formRef.value.clearValidate('confirmed_password');
             if (formData.confirmed_password.length) {
               return value === formData.confirmed_password;
             }
@@ -911,13 +911,13 @@ export default defineComponent({
       ],
       confirmed_password: [
         {
-          validator: (value: string) => value.length >= 8 && value.length <= 30,
-          message: '密码长度需要在8-30个字符之间',
+          validator: (value: string) => value.length >= 8 && value.length <= 20,
+          message: '密码长度需要在8-20个字符之间',
           trigger: 'blur',
         },
         {
           validator: (value: string) => {
-            const pattern = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d|.*[!@$%^\-_=+[{}\]:,./?])[A-Za-z\d!@$%^\-_=+[{}\]:,./?]+$/;
+            const pattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#+_\-\[\]{}])[A-Za-z\d@#+_\-\[\]{}]{8,20}$/;
             return pattern.test(value);
           },
           message: '密码不符合复杂度要求',
@@ -925,7 +925,6 @@ export default defineComponent({
         },
         {
           validator: (value: string) => {
-            // formRef.value.clearValidate('password');
             return formData.password.length && value === formData.password;
           },
           message: '两次输入的密码不一致',
