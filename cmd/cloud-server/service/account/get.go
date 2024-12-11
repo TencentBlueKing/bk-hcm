@@ -250,7 +250,7 @@ func (a *accountSvc) getAndCheckAzureAccountInfo(cts *rest.Contexts) (*account.A
 	return result, nil
 }
 
-func (a *accountSvc) getAndCheckGcpAccountInfo(cts *rest.Contexts) (*cloud.CloudProjectInfo, error) {
+func (a *accountSvc) getAndCheckGcpAccountInfo(cts *rest.Contexts) (*cloud.GcpProjectInfo, error) {
 	req := new(account.GcpAccountInfoBySecretReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)

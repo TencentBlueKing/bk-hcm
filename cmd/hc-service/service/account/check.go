@@ -169,7 +169,7 @@ func (svc *service) GcpAccountCheck(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	var projectInfo cloud.CloudProjectInfo
+	var projectInfo cloud.GcpProjectInfo
 	for _, info := range infoBySecret.CloudProjectInfos {
 		if info.CloudProjectID == req.CloudProjectID {
 			projectInfo = info

@@ -50,11 +50,11 @@ type HuaWeiInfoBySecret struct {
 
 // GcpInfoBySecret GCP 根据秘钥获取的字段
 type GcpInfoBySecret struct {
-	CloudProjectInfos []CloudProjectInfo `json:"cloud_project_infos"`
+	CloudProjectInfos []GcpProjectInfo `json:"cloud_project_infos"`
 }
 
-// CloudProjectInfo GCP 单个project的字段信息
-type CloudProjectInfo struct {
+// GcpProjectInfo GCP 单个project的字段信息
+type GcpProjectInfo struct {
 	Email                   string `json:"email"`
 	CloudProjectID          string `json:"cloud_project_id"`
 	CloudProjectName        string `json:"cloud_project_name"`

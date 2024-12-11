@@ -22,6 +22,7 @@ package rootaccount
 import (
 	"errors"
 	"fmt"
+
 	accountset "hcm/pkg/api/account-server/account-set"
 	"hcm/pkg/api/cloud-server/account"
 	"hcm/pkg/api/core"
@@ -61,8 +62,8 @@ func CheckDuplicateRootAccount(cts *rest.Contexts, client *client.ClientSet, ven
 	return nil
 }
 
-// GetAccountBySecret 根据秘钥获取账号信息
-func (s *service) GetAccountBySecret(cts *rest.Contexts) (interface{}, error) {
+// GetRootAccountBySecret 根据秘钥获取账号信息
+func (s *service) GetRootAccountBySecret(cts *rest.Contexts) (interface{}, error) {
 	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -83,7 +84,7 @@ func (s *service) GetAccountBySecret(cts *rest.Contexts) (interface{}, error) {
 	case enumor.Gcp:
 		return s.getGcpAccountInfo(cts)
 	default:
-		return nil, fmt.Errorf("unsupported vendor: %s", vendor)
+		return nil, fmt.Errorf("unsupported vendor: %s, for get root account info", vendor)
 	}
 }
 
@@ -98,7 +99,7 @@ func (s *service) getHuaWeiAccountInfo(cts *rest.Contexts) (*cloud.HuaWeiInfoByS
 
 	info, err := s.client.HCService().HuaWei.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req.HuaWeiSecret)
 	if err != nil {
-		logs.Errorf("fail to get account info, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("fail to get huawei account info, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -116,14 +117,14 @@ func (s *service) getAwsAccountInfo(cts *rest.Contexts) (*cloud.AwsInfoBySecret,
 
 	info, err := s.client.HCService().Aws.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req.AwsSecret)
 	if err != nil {
-		logs.Errorf("fail to get account info, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("fail to get aws account info, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	return info, nil
 }
 
-func (s *service) getGcpAccountInfo(cts *rest.Contexts) ([]cloud.CloudProjectInfo, error) {
+func (s *service) getGcpAccountInfo(cts *rest.Contexts) ([]cloud.GcpProjectInfo, error) {
 	req := new(accountset.GcpAccountInfoBySecretReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -134,7 +135,7 @@ func (s *service) getGcpAccountInfo(cts *rest.Contexts) ([]cloud.CloudProjectInf
 
 	info, err := s.client.HCService().Gcp.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req.GcpSecret)
 	if err != nil {
-		logs.Errorf("fail to get account info, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("fail to get gcp account info, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -152,7 +153,7 @@ func (s *service) getAzureAccountInfo(cts *rest.Contexts) (*account.AzureAccount
 
 	info, err := s.client.HCService().Azure.Account.GetBySecret(cts.Kit.Ctx, cts.Kit.Header(), req.AzureSecret)
 	if err != nil {
-		logs.Errorf("[getAzureAccountInfo] fail to get account info, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("fail to get azure account info, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 	if len(info.SubscriptionInfos) < 1 {

@@ -192,7 +192,7 @@ func (g *Gcp) GetAccountInfoBySecret(kit *kit.Kit, cloudSecretKeyString string) 
 		return nil, err
 	}
 
-	projectInfos := make([]cloud.CloudProjectInfo, 0)
+	projectInfos := make([]cloud.GcpProjectInfo, 0)
 	for _, project := range projectList.Projects {
 		serviceAccount, err := iamClient.Projects.ServiceAccounts.Get(
 			fmt.Sprintf("projects/%s/serviceAccounts/%s", project.ProjectId, sk.ClientEmail),
@@ -200,7 +200,7 @@ func (g *Gcp) GetAccountInfoBySecret(kit *kit.Kit, cloudSecretKeyString string) 
 		if err != nil {
 			return nil, err
 		}
-		projectInfos = append(projectInfos, cloud.CloudProjectInfo{
+		projectInfos = append(projectInfos, cloud.GcpProjectInfo{
 			Email:                   serviceAccount.Email,
 			CloudProjectID:          project.ProjectId,
 			CloudProjectName:        project.DisplayName,
