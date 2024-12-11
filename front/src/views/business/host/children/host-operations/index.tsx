@@ -195,13 +195,13 @@ export default defineComponent({
               <>
                 <CopyToClipboard
                   type='dropdown-item'
-                  text='复制内网IP'
+                  text='内网IP'
                   content={selectedRowPrivateIPs.value?.join?.(',')}
                   onSuccess={() => dropdownCopyRef.value?.hidePopover()}
                 />
                 <CopyToClipboard
                   type='dropdown-item'
-                  text='复制公网IP'
+                  text='公网IP'
                   content={selectedRowPublicIPs.value?.join?.(',')}
                   onSuccess={() => dropdownCopyRef.value?.hidePopover()}
                 />

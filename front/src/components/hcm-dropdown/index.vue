@@ -21,11 +21,16 @@ const props = withDefaults(defineProps<DropDownMenuProps>(), {
 
 const show = ref<boolean>(props.isShow);
 let popHideTimerId: ReturnType<typeof setTimeout> | null = null;
-const popShowTimerId: ReturnType<typeof setTimeout> | null = null;
+let popShowTimerId: ReturnType<typeof setTimeout> | null = null;
 let isMouseenter = false;
 
 const showPopover = () => {
-  show.value = true;
+  popShowTimerId = setTimeout(() => {
+    if (popHideTimerId) {
+      clearTimeout(popHideTimerId);
+    }
+    show.value = true;
+  });
 };
 const hidePopover = () => {
   show.value = false;
