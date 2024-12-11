@@ -202,6 +202,8 @@ const (
 	TaskDetailTable = "task_detail"
 	// TaskManagementTable 任务管理表
 	TaskManagementTable = "task_management"
+	//	GlobalConfigTable 全局配置表
+	GlobalConfigTable = "global_config"
 )
 
 // Validate whether the table name is valid or not.
@@ -304,6 +306,8 @@ var TableMap = map[Name]struct{}{
 
 	TaskManagementTable: {},
 	TaskDetailTable:     {},
+
+	GlobalConfigTable: {},
 }
 
 // Register 注册表名
