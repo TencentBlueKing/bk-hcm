@@ -15,6 +15,7 @@ package util
 
 import (
 	"fmt"
+	"reflect"
 )
 
 // GetStrByInterface interface to string
@@ -22,5 +23,24 @@ func GetStrByInterface(a interface{}) string {
 	if nil == a {
 		return ""
 	}
-	return fmt.Sprintf("%v", a)
+
+	typeOf := reflect.TypeOf(a)
+	for typeOf.Kind() == reflect.Ptr {
+		typeOf = typeOf.Elem()
+	}
+
+	switch typeOf.Kind() {
+	case reflect.String:
+		return a.(string)
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return fmt.Sprintf("%d", a)
+
+	case reflect.Float32, reflect.Float64:
+		return fmt.Sprintf("%f", a)
+	case reflect.Slice, reflect.Array:
+		return fmt.Sprintf("%v", a)
+	}
+
+	return ""
 }
