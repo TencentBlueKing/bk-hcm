@@ -30,6 +30,7 @@ import (
 	tablecert "hcm/pkg/dal/table/cloud/cert"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 )
 
 func (ad Audit) certAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.CloudResourceAssignInfo) (
@@ -134,7 +135,7 @@ func (ad Audit) listCert(kt *kit.Kit, ids []string) (map[string]*tablecert.SslCe
 
 	result := make(map[string]*tablecert.SslCertTable, len(list.Details))
 	for _, one := range list.Details {
-		result[one.ID] = &one
+		result[one.ID] = converter.ValToPtr(one)
 	}
 
 	return result, nil
