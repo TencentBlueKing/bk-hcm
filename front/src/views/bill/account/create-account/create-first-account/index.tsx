@@ -82,21 +82,7 @@ export default defineComponent({
 
         <CommonCard title={() => '基础信息'} class={'info-card'}>
           <div class={'account-form-card-content'}>
-            <Form
-              formType='vertical'
-              model={formModel}
-              ref={formRef}
-              rules={{
-                name: [
-                  {
-                    trigger: 'change',
-                    message: '账号名称只能包括小写字母和数字，并且仅能以小写字母开头，长度为6-20个字符',
-                    validator: (val: string) => {
-                      return /^[a-z][a-z0-9]{5,19}$/.test(val);
-                    },
-                  },
-                ],
-              }}>
+            <Form formType='vertical' model={formModel}>
               <FormItem label='云厂商' required property='vendor'>
                 <div class={'account-vendor-selector'}>
                   {BILL_VENDORS_INFO.map(({ vendor, name, icon }) => (
@@ -124,7 +110,22 @@ export default defineComponent({
 
         <CommonCard title={() => '账号信息'} class={'info-card'}>
           <div class={'account-form-card-content'}>
-            <Form formType='vertical' model={formModel} auto-check>
+            <Form
+              formType='vertical'
+              model={formModel}
+              auto-check
+              ref={formRef}
+              rules={{
+                name: [
+                  {
+                    trigger: 'change',
+                    message: '账号名称只能包括小写字母和数字，并且仅能以小写字母开头，长度为6-20个字符',
+                    validator: (val: string) => {
+                      return /^[a-z][a-z0-9]{5,19}$/.test(val);
+                    },
+                  },
+                ],
+              }}>
               <FormItem label='帐号名称' required property='name'>
                 <Input v-model={formModel.name} placeholder='请输入账号名称'></Input>
               </FormItem>
