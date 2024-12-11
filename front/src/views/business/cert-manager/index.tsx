@@ -11,7 +11,7 @@ import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import CommonSideslider from '@/components/common-sideslider';
-import AccountSelector from '@/components/account-selector/index.vue';
+import AccountSelector from '@/components/account-selector/index-new.vue';
 import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
 import Confirm from '@/components/confirm';
 import { getTableNewRowClass } from '@/common/util';
@@ -173,14 +173,7 @@ export default defineComponent({
         label: '云账号',
         property: 'account_id',
         required: true,
-        content: () => (
-          <AccountSelector
-            v-model={formModel.account_id}
-            disabled={!!resourceAccountStore?.resourceAccount?.id}
-            mustBiz={!isResourcePage}
-            bizId={accountStore.bizs}
-            type='resource'></AccountSelector>
-        ),
+        content: () => <AccountSelector v-model={formModel.account_id} bizId={accountStore.bizs}></AccountSelector>,
       },
       {
         label: '证书名称',
