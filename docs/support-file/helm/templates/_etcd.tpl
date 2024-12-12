@@ -43,13 +43,13 @@ endpoints:
 dialTimeoutMS:
 username: {{ .Values.externalEtcd.username }}
 password: {{ .Values.externalEtcd.password }}
-{{- if .Values.externalEtcd.tls.enabled -}}
+{{- if .Values.externalEtcd.tls.enabled }}
 tls:
   insecureSkipVerify: {{ .Values.externalEtcd.tls.insecureSkipVerify }}
   certFile: "/data/hcm/etc/certs/{{ .Values.externalEtcd.tls.certFileName }}"
   keyFile: "/data/hcm/etc/certs/{{ .Values.externalEtcd.tls.keyFileName }}"
   caFile: "/data/hcm/etc/certs/{{ .Values.externalEtcd.tls.caCertFileName }}"
   password:
-{{- end -}}
+{{- end }}
 {{- end -}}
 {{- end -}}
