@@ -60,6 +60,7 @@ func (opt SyncCvmOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
+// Cvm ...
 func (cli *client) Cvm(kt *kit.Kit, params *SyncBaseParams, opt *SyncCvmOption) (*SyncResult, error) {
 	if err := validator.ValidateTool(params, opt); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -570,7 +571,11 @@ func (cli *client) deleteCvm(kt *kit.Kit, accountID string, region string, delCl
 	}
 
 	deleteReq := &dataproto.CvmBatchDeleteReq{
-		Filter: tools.ContainersExpression("cloud_id", delCloudIDs),
+		Filter: tools.ExpressionAnd(
+			tools.RuleIn("cloud_id", delCloudIDs),
+			tools.RuleEqual("region", region),
+			tools.RuleEqual("vendor", enumor.HuaWei),
+		),
 	}
 	if err = cli.dbCli.Global.Cvm.BatchDeleteCvm(kt.Ctx, kt.Header(), deleteReq); err != nil {
 		logs.Errorf("[%s] request dataservice to batch delete cvm failed, err: %v, rid: %s", enumor.HuaWei,
@@ -651,6 +656,7 @@ func (cli *client) listCvmFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	return result.Details, nil
 }
 
+// RemoveCvmDeleteFromCloud ...
 func (cli *client) RemoveCvmDeleteFromCloud(kt *kit.Kit, accountID string, region string) error {
 	req := &protocloud.CvmListReq{
 		Field: []string{"id", "cloud_id"},
@@ -659,6 +665,7 @@ func (cli *client) RemoveCvmDeleteFromCloud(kt *kit.Kit, accountID string, regio
 			Rules: []filter.RuleFactory{
 				&filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: accountID},
 				&filter.AtomRule{Field: "region", Op: filter.Equal.Factory(), Value: region},
+				&filter.AtomRule{Field: "vendor", Op: filter.Equal.Factory(), Value: enumor.HuaWei},
 			},
 		},
 		Page: &core.BasePage{

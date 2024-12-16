@@ -183,7 +183,10 @@ func (cli *client) deleteVpc(kt *kit.Kit, accountID string, delCloudIDs []string
 	}
 
 	deleteReq := &dataservice.BatchDeleteReq{
-		Filter: tools.ContainersExpression("cloud_id", delCloudIDs),
+		Filter: tools.ExpressionAnd(
+			tools.RuleIn("cloud_id", delCloudIDs),
+			tools.RuleEqual("vendor", enumor.Gcp),
+		),
 	}
 	if err = cli.dbCli.Global.Vpc.BatchDelete(kt.Ctx, kt.Header(), deleteReq); err != nil {
 		logs.Errorf("[%s] request dataservice to batch delete vpc failed, err: %v, rid: %s", enumor.Gcp, err, kt.Rid)
@@ -343,6 +346,11 @@ func (cli *client) listVpcFromDB(kt *kit.Kit, params *SyncBaseParams) (
 					Field: "cloud_id",
 					Op:    filter.In.Factory(),
 					Value: params.CloudIDs,
+				},
+				&filter.AtomRule{
+					Field: "vendor",
+					Op:    filter.Equal.Factory(),
+					Value: enumor.Gcp,
 				},
 			},
 		},

@@ -67,7 +67,7 @@ func (a *ApplicationOfCreateTCloudCvm) Deliver() (enumor.ApplicationStatus, map[
 func (a *ApplicationOfCreateTCloudCvm) assignToBiz(cloudCvmIDs []string) ([]string, error) {
 	req := a.req
 	// 云ID查询主机
-	cvmInfo, err := a.ListCvm(a.Vendor(), req.AccountID, cloudCvmIDs)
+	cvmInfo, err := a.ListCvm(a.Vendor(), req.AccountID, req.Region, cloudCvmIDs)
 	if err != nil {
 		return []string{}, err
 	}
