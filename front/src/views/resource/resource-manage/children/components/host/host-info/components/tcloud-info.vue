@@ -157,7 +157,7 @@ const priceInfo: FieldList = [
   {
     name: '实例计费模式',
     prop: 'instance_charge_type',
-    render: () => INSTANCE_CHARGE_MAP[props?.data?.extension?.instance_charge_type],
+    render: () => INSTANCE_CHARGE_MAP[props?.data?.extension?.instance_charge_type] || '--',
   },
   {
     name: '创建时间',
@@ -169,7 +169,7 @@ const priceInfo: FieldList = [
   {
     name: '网络计费模式',
     prop: 'internet_charge_type',
-    render: () => NET_CHARGE_MAP[props?.data?.extension?.internet_accessible?.internet_charge_type],
+    render: () => NET_CHARGE_MAP[props?.data?.extension?.internet_accessible?.internet_charge_type] || '--',
   },
   {
     name: '到期时间',
