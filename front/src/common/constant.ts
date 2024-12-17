@@ -5,6 +5,11 @@ export const GLOBAL_BIZS_KEY = 'bizs';
 export const GLOBAL_BIZS_VERSION = '1.6.3';
 export const GLOBAL_BIZS_VERSION_KEY = 'bizs_version';
 
+// 账号校验接口类型
+export enum AccountVerifyEnum {
+  ROOT = 'root_accounts',
+  ACCOUNT = 'accounts',
+}
 export enum VendorEnum {
   TCLOUD = 'tcloud',
   AWS = 'aws',
