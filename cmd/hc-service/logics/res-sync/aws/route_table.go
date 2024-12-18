@@ -52,6 +52,7 @@ func (opt SyncRouteTableOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
+// RouteTable ...
 func (cli *client) RouteTable(kt *kit.Kit, params *SyncBaseParams, opt *SyncRouteTableOption) (*SyncResult, error) {
 	if err := validator.ValidateTool(params, opt); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -79,11 +80,13 @@ func (cli *client) RouteTable(kt *kit.Kit, params *SyncBaseParams, opt *SyncRout
 	if len(delCloudIDs) > 0 {
 		err = common.CancelRouteTableSubnetRel(kt, cli.dbCli, enumor.Aws, delCloudIDs)
 		if err != nil {
-			logs.Errorf("[%s] routetable batch cancel subnet rel failed. deleteIDs: %v, err: %v",
-				enumor.Aws, delCloudIDs, err)
+			logs.Errorf("[%s] routetable batch cancel subnet rel failed. deleteIDs: %v, err: %v, rid: %s",
+				enumor.Aws, delCloudIDs, err, kt.Rid)
 			return nil, err
 		}
 		if err = cli.deleteRouteTable(kt, params.AccountID, params.Region, delCloudIDs); err != nil {
+			logs.Errorf("delete aws routeTable failed, err: %v, account: %s, region: %s, delCloudIDs: %v, rid: %s",
+				err, params.AccountID, params.Region, delCloudIDs, kt.Rid)
 			return nil, err
 		}
 	}
@@ -350,6 +353,7 @@ func (cli *client) listRouteTableFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	return routeTables, nil
 }
 
+// RemoveRouteTableDeleteFromCloud ...
 func (cli *client) RemoveRouteTableDeleteFromCloud(kt *kit.Kit, accountID string, region string) error {
 	req := &core.ListReq{
 		Filter: &filter.Expression{
@@ -390,12 +394,22 @@ func (cli *client) RemoveRouteTableDeleteFromCloud(kt *kit.Kit, accountID string
 			}
 			delCloudIDs, err = cli.listRemoveRouteTableID(kt, params)
 			if err != nil {
+				logs.Errorf("list remove routeTableID failed, err: %v, opt: %v, rid: %s", err, params, kt.Rid)
 				return err
 			}
 		}
 
+		err = common.CancelRouteTableSubnetRel(kt, cli.dbCli, enumor.Aws, delCloudIDs)
+		if err != nil {
+			logs.Errorf("[%s] routetable batch cancel subnet rel failed. deleteIDs: %v, err: %v, rid: %s",
+				enumor.Aws, delCloudIDs, err, kt.Rid)
+			return err
+		}
+
 		if len(delCloudIDs) != 0 {
 			if err = cli.deleteRouteTable(kt, accountID, region, delCloudIDs); err != nil {
+				logs.Errorf("delete aws routeTable failed, err: %v, account: %s, region: %s, delCloudIDs: %v, rid: %s",
+					err, accountID, region, delCloudIDs, kt.Rid)
 				return err
 			}
 		}

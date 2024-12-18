@@ -52,6 +52,7 @@ func (opt SyncRouteTableOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
+// RouteTable ...
 func (cli *client) RouteTable(kt *kit.Kit, params *SyncBaseParams, opt *SyncRouteTableOption) (*SyncResult, error) {
 	if err := validator.ValidateTool(params, opt); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -79,11 +80,13 @@ func (cli *client) RouteTable(kt *kit.Kit, params *SyncBaseParams, opt *SyncRout
 	if len(delCloudIDs) > 0 {
 		err = common.CancelRouteTableSubnetRel(kt, cli.dbCli, enumor.TCloud, delCloudIDs)
 		if err != nil {
-			logs.Errorf("[%s] routetable batch cancel subnet rel failed. deleteIDs: %v, err: %v",
-				enumor.TCloud, delCloudIDs, err)
+			logs.Errorf("[%s] routetable batch cancel subnet rel failed. deleteIDs: %v, err: %v, rid: %s",
+				enumor.TCloud, delCloudIDs, err, kt.Rid)
 			return nil, err
 		}
 		if err = cli.deleteRouteTable(kt, params.AccountID, params.Region, delCloudIDs); err != nil {
+			logs.Errorf("delete tcloud routeTable failed, err: %v, account: %s, region: %s, delCloudIDs: %v, rid: %s",
+				err, params.AccountID, params.Region, delCloudIDs, kt.Rid)
 			return nil, err
 		}
 	}
@@ -352,6 +355,7 @@ func (cli *client) listRouteTableFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	return routeTables, nil
 }
 
+// RemoveRouteTableDeleteFromCloud ...
 func (cli *client) RemoveRouteTableDeleteFromCloud(kt *kit.Kit, accountID string, region string) error {
 	req := &core.ListReq{
 		Filter: &filter.Expression{
@@ -397,7 +401,15 @@ func (cli *client) RemoveRouteTableDeleteFromCloud(kt *kit.Kit, accountID string
 		}
 
 		if len(delCloudIDs) != 0 {
+			err = common.CancelRouteTableSubnetRel(kt, cli.dbCli, enumor.TCloud, delCloudIDs)
+			if err != nil {
+				logs.Errorf("[%s] routetable batch cancel subnet rel failed. deleteIDs: %v, err: %v, rid: %s",
+					enumor.TCloud, delCloudIDs, err, kt.Rid)
+				return err
+			}
 			if err = cli.deleteRouteTable(kt, accountID, region, delCloudIDs); err != nil {
+				logs.Errorf("delete tcloud routeTable failed, err: %v, account: %s, region: %s, delCloudIDs: %v, rid: %s",
+					err, accountID, region, delCloudIDs, kt.Rid)
 				return err
 			}
 		}
