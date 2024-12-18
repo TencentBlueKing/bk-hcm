@@ -78,12 +78,12 @@ func (cli *client) RouteTable(kt *kit.Kit, params *SyncBaseParams, opt *SyncRout
 	if len(delCloudIDs) > 0 {
 		err = common.CancelRouteTableSubnetRel(kt, cli.dbCli, enumor.Azure, delCloudIDs)
 		if err != nil {
-			logs.Errorf("[%s] routetable batch cancel subnet rel failed. deleteIDs: %v, err: %v",
-				enumor.Azure, delCloudIDs, err)
+			logs.Errorf("[%s] routetable batch cancel subnet rel failed. deleteIDs: %v, err: %v, rid: %s",
+				enumor.Azure, delCloudIDs, err, kt.Rid)
 			return nil, err
 		}
 		if err = cli.deleteRouteTable(kt, params.AccountID, params.ResourceGroupName, delCloudIDs); err != nil {
-			logs.Errorf("delete routeTable failed, err: %v, account: %s, region: %s, delCloudIDs: %v, rid: %s",
+			logs.Errorf("delete azure routeTable failed, err: %v, account: %s, region: %s, delCloudIDs: %v, rid: %s",
 				err, params.AccountID, params.ResourceGroupName, delCloudIDs, kt.Rid)
 			return nil, err
 		}
@@ -401,12 +401,12 @@ func (cli *client) RemoveRouteTableDeleteFromCloud(kt *kit.Kit, accountID string
 			delCloudIDs := converter.MapKeyToStringSlice(cloudIDMap)
 			err = common.CancelRouteTableSubnetRel(kt, cli.dbCli, enumor.Azure, delCloudIDs)
 			if err != nil {
-				logs.Errorf("[%s] routetable batch cancel subnet rel failed. deleteIDs: %v, err: %v",
-					enumor.Azure, delCloudIDs, err)
+				logs.Errorf("[%s] routetable batch cancel subnet rel failed. deleteIDs: %v, err: %v, rid: %s",
+					enumor.Azure, delCloudIDs, err, kt.Rid)
 				return err
 			}
 			if err = cli.deleteRouteTable(kt, accountID, resGroupName, delCloudIDs); err != nil {
-				logs.Errorf("delete routeTable failed, err: %v, account: %s, region: %s, delCloudIDs: %v, rid: %s",
+				logs.Errorf("delete azure routeTable failed, err: %v, account: %s, region: %s, delCloudIDs: %v, rid: %s",
 					err, accountID, resGroupName, delCloudIDs, kt.Rid)
 				return err
 			}
