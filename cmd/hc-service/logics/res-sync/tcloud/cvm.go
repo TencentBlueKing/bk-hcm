@@ -41,8 +41,6 @@ import (
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
-
-	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
 )
 
 // SyncCvmOption ...
@@ -144,11 +142,7 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 			imageID = id
 		}
 
-		dataDiskIDs := make([]string, 0)
-		for _, disk := range one.DataDisks {
-			dataDiskIDs = append(dataDiskIDs, *disk.DiskId)
-		}
-
+		extension := BuildCVMExtension(one)
 		updateOne := dataproto.CvmBatchUpdate[corecvm.TCloudCvmExtension]{
 			ID:             id,
 			Name:           converter.PtrToVal(one.InstanceName),
@@ -167,31 +161,7 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 			// 云上该字段没有
 			CloudLaunchedTime: "",
 			CloudExpiredTime:  converter.PtrToVal(one.ExpiredTime),
-			Extension: &corecvm.TCloudCvmExtension{
-				Placement: &corecvm.TCloudPlacement{
-					CloudProjectID: one.Placement.ProjectId,
-				},
-				InstanceChargeType: one.InstanceChargeType,
-				Cpu:                one.CPU,
-				Memory:             one.Memory,
-				CloudSystemDiskID:  one.SystemDisk.DiskId,
-				CloudDataDiskIDs:   dataDiskIDs,
-				InternetAccessible: &corecvm.TCloudInternetAccessible{
-					InternetChargeType:      one.InternetAccessible.InternetChargeType,
-					InternetMaxBandwidthOut: one.InternetAccessible.InternetMaxBandwidthOut,
-					PublicIPAssigned:        one.InternetAccessible.PublicIpAssigned,
-					CloudBandwidthPackageID: one.InternetAccessible.BandwidthPackageId,
-				},
-				VirtualPrivateCloud: &corecvm.TCloudVirtualPrivateCloud{
-					AsVpcGateway: one.VirtualPrivateCloud.AsVpcGateway,
-				},
-				RenewFlag:             one.RenewFlag,
-				CloudSecurityGroupIDs: converter.PtrToSlice(one.SecurityGroupIds),
-				StopChargingMode:      one.StopChargingMode,
-				UUID:                  one.Uuid,
-				IsolatedSource:        one.IsolatedSource,
-				DisableApiTermination: one.DisableApiTermination,
-			},
+			Extension:         extension,
 		}
 
 		if len(one.IPv6Addresses) != 0 {
@@ -267,11 +237,7 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 			imageID = id
 		}
 
-		dataDiskIDs := make([]string, 0)
-		for _, disk := range one.DataDisks {
-			dataDiskIDs = append(dataDiskIDs, *disk.DiskId)
-		}
-
+		extension := BuildCVMExtension(one)
 		addOne := dataproto.CvmBatchCreate[corecvm.TCloudCvmExtension]{
 			CloudID:        converter.PtrToVal(one.InstanceId),
 			Name:           converter.PtrToVal(one.InstanceName),
@@ -297,31 +263,7 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 			// 该字段云上没有
 			CloudLaunchedTime: "",
 			CloudExpiredTime:  converter.PtrToVal(one.ExpiredTime),
-			Extension: &corecvm.TCloudCvmExtension{
-				Placement: &corecvm.TCloudPlacement{
-					CloudProjectID: one.Placement.ProjectId,
-				},
-				InstanceChargeType: one.InstanceChargeType,
-				Cpu:                one.CPU,
-				Memory:             one.Memory,
-				CloudSystemDiskID:  one.SystemDisk.DiskId,
-				CloudDataDiskIDs:   dataDiskIDs,
-				InternetAccessible: &corecvm.TCloudInternetAccessible{
-					InternetChargeType:      one.InternetAccessible.InternetChargeType,
-					InternetMaxBandwidthOut: one.InternetAccessible.InternetMaxBandwidthOut,
-					PublicIPAssigned:        one.InternetAccessible.PublicIpAssigned,
-					CloudBandwidthPackageID: one.InternetAccessible.BandwidthPackageId,
-				},
-				VirtualPrivateCloud: &corecvm.TCloudVirtualPrivateCloud{
-					AsVpcGateway: one.VirtualPrivateCloud.AsVpcGateway,
-				},
-				RenewFlag:             one.RenewFlag,
-				CloudSecurityGroupIDs: converter.PtrToSlice(one.SecurityGroupIds),
-				StopChargingMode:      one.StopChargingMode,
-				UUID:                  one.Uuid,
-				IsolatedSource:        one.IsolatedSource,
-				DisableApiTermination: one.DisableApiTermination,
-			},
+			Extension:         extension,
 		}
 
 		if len(one.IPv6Addresses) != 0 {
@@ -594,6 +536,51 @@ func (cli *client) RemoveCvmDeleteFromCloud(kt *kit.Kit, accountID string, regio
 	return nil
 }
 
+// BuildCVMExtension build extension
+func BuildCVMExtension(one typescvm.TCloudCvm) *corecvm.TCloudCvmExtension {
+	dataDiskIDs := make([]string, 0)
+	for _, disk := range one.DataDisks {
+		dataDiskIDs = append(dataDiskIDs, *disk.DiskId)
+	}
+
+	extension := &corecvm.TCloudCvmExtension{
+		Placement: &corecvm.TCloudPlacement{
+			CloudProjectID: one.Placement.ProjectId,
+		},
+		InstanceChargeType:    one.InstanceChargeType,
+		Cpu:                   one.CPU,
+		Memory:                one.Memory,
+		CloudDataDiskIDs:      dataDiskIDs,
+		RenewFlag:             one.RenewFlag,
+		CloudSecurityGroupIDs: converter.PtrToSlice(one.SecurityGroupIds),
+		StopChargingMode:      one.StopChargingMode,
+		UUID:                  one.Uuid,
+		IsolatedSource:        one.IsolatedSource,
+		DisableApiTermination: one.DisableApiTermination,
+	}
+
+	if one.SystemDisk != nil {
+		extension.CloudSystemDiskID = one.SystemDisk.DiskId
+	}
+
+	if one.InternetAccessible != nil {
+		extension.InternetAccessible = &corecvm.TCloudInternetAccessible{
+			InternetChargeType:      one.InternetAccessible.InternetChargeType,
+			InternetMaxBandwidthOut: one.InternetAccessible.InternetMaxBandwidthOut,
+			PublicIPAssigned:        one.InternetAccessible.PublicIpAssigned,
+			CloudBandwidthPackageID: one.InternetAccessible.BandwidthPackageId,
+		}
+	}
+
+	if one.VirtualPrivateCloud != nil {
+		extension.VirtualPrivateCloud = &corecvm.TCloudVirtualPrivateCloud{
+			AsVpcGateway: one.VirtualPrivateCloud.AsVpcGateway,
+		}
+	}
+
+	return extension
+}
+
 func isCvmChange(cloud typescvm.TCloudCvm, db corecvm.Cvm[cvm.TCloudCvmExtension]) bool {
 
 	if db.CloudID != converter.PtrToVal(cloud.InstanceId) {
@@ -668,76 +655,76 @@ func isCvmChange(cloud typescvm.TCloudCvm, db corecvm.Cvm[cvm.TCloudCvmExtension
 		return true
 	}
 
-	return isCvmExtensionChange(cloud, db.Extension)
+	cloudExt := BuildCVMExtension(cloud)
+	return IsCvmExtensionChange(cloudExt, db.Extension)
 }
 
-func isCvmExtensionChange(cloud typescvm.TCloudCvm, ext *corecvm.TCloudCvmExtension) bool {
-	if ext == nil {
-		return true
-	}
-	if !assert.IsPtrInt64Equal(ext.Placement.CloudProjectID, cloud.Placement.ProjectId) {
-		return true
-	}
-
-	if !assert.IsPtrStringEqual(ext.InstanceChargeType, cloud.InstanceChargeType) {
+// IsCvmExtensionChange check if the extension of cloudCvm is changed
+func IsCvmExtensionChange(cloud *corecvm.TCloudCvmExtension, db *corecvm.TCloudCvmExtension) bool {
+	if cloud == nil || db == nil {
 		return true
 	}
 
-	if !assert.IsPtrInt64Equal(ext.Cpu, cloud.CPU) {
+	if !assert.IsPtrInt64Equal(db.Placement.CloudProjectID, cloud.Placement.CloudProjectID) {
 		return true
 	}
 
-	if !assert.IsPtrInt64Equal(ext.Memory, cloud.Memory) {
+	if !assert.IsPtrStringEqual(db.InstanceChargeType, cloud.InstanceChargeType) {
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(cloud.SystemDisk.DiskId, ext.CloudSystemDiskID) {
+	if !assert.IsPtrInt64Equal(db.Cpu, cloud.Cpu) {
 		return true
 	}
 
-	dataDiskIds := make([]string, 0, len(cloud.DataDisks))
-	for _, one := range cloud.DataDisks {
-		dataDiskIds = append(dataDiskIds, converter.PtrToVal(one.DiskId))
-	}
-	if !assert.IsStringSliceEqual(dataDiskIds, ext.CloudDataDiskIDs) {
+	if !assert.IsPtrInt64Equal(db.Memory, cloud.Memory) {
 		return true
 	}
 
-	if changed := isInternetInternetAccessibleChanged(cloud.InternetAccessible, ext.InternetAccessible); changed {
+	if !assert.IsPtrStringEqual(cloud.CloudSystemDiskID, db.CloudSystemDiskID) {
 		return true
 	}
 
-	if !assert.IsPtrBoolEqual(ext.VirtualPrivateCloud.AsVpcGateway, cloud.VirtualPrivateCloud.AsVpcGateway) {
+	if !assert.IsStringSliceEqual(cloud.CloudDataDiskIDs, db.CloudDataDiskIDs) {
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(ext.RenewFlag, cloud.RenewFlag) {
+	if changed := isInternetInternetAccessibleChanged(cloud.InternetAccessible, db.InternetAccessible); changed {
 		return true
 	}
 
-	if !assert.IsStringSliceEqual(ext.CloudSecurityGroupIDs, converter.PtrToSlice(cloud.SecurityGroupIds)) {
+	if !assert.IsPtrBoolEqual(db.VirtualPrivateCloud.AsVpcGateway, cloud.VirtualPrivateCloud.AsVpcGateway) {
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(ext.StopChargingMode, cloud.StopChargingMode) {
+	if !assert.IsPtrStringEqual(db.RenewFlag, cloud.RenewFlag) {
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(ext.UUID, cloud.Uuid) {
+	if !assert.IsStringSliceEqual(db.CloudSecurityGroupIDs, cloud.CloudSecurityGroupIDs) {
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(ext.IsolatedSource, cloud.IsolatedSource) {
+	if !assert.IsPtrStringEqual(db.StopChargingMode, cloud.StopChargingMode) {
 		return true
 	}
 
-	if !assert.IsPtrBoolEqual(ext.DisableApiTermination, cloud.DisableApiTermination) {
+	if !assert.IsPtrStringEqual(db.UUID, cloud.UUID) {
 		return true
 	}
+
+	if !assert.IsPtrStringEqual(db.IsolatedSource, cloud.IsolatedSource) {
+		return true
+	}
+
+	if !assert.IsPtrBoolEqual(db.DisableApiTermination, cloud.DisableApiTermination) {
+		return true
+	}
+
 	return false
 }
 
-func isInternetInternetAccessibleChanged(cloud *v20170312.InternetAccessible,
+func isInternetInternetAccessibleChanged(cloud *corecvm.TCloudInternetAccessible,
 	db *corecvm.TCloudInternetAccessible) bool {
 
 	if db == nil || cloud == nil {
@@ -752,11 +739,11 @@ func isInternetInternetAccessibleChanged(cloud *v20170312.InternetAccessible,
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(db.CloudBandwidthPackageID, cloud.BandwidthPackageId) {
+	if !assert.IsPtrStringEqual(db.CloudBandwidthPackageID, cloud.CloudBandwidthPackageID) {
 		return true
 	}
 
-	if !assert.IsPtrBoolEqual(db.PublicIPAssigned, cloud.PublicIpAssigned) {
+	if !assert.IsPtrBoolEqual(db.PublicIPAssigned, cloud.PublicIPAssigned) {
 		return true
 	}
 
