@@ -173,6 +173,7 @@ func (svc *service) GcpAccountCheck(cts *rest.Contexts) (interface{}, error) {
 	for _, info := range infoBySecret.CloudProjectInfos {
 		if info.CloudProjectID == req.CloudProjectID {
 			projectInfo = info
+			break
 		}
 	}
 	if projectInfo.CloudProjectID != req.CloudProjectID {
@@ -228,6 +229,7 @@ func (svc *service) AzureAccountCheck(cts *rest.Contexts) (interface{}, error) {
 	for _, subscription := range infoBySecret.SubscriptionInfos {
 		if subscription.CloudSubscriptionID == req.CloudSubscriptionID {
 			curSubscription = subscription
+			break
 		}
 	}
 	if curSubscription.CloudSubscriptionID != req.CloudSubscriptionID {
@@ -243,6 +245,7 @@ func (svc *service) AzureAccountCheck(cts *rest.Contexts) (interface{}, error) {
 	for _, application := range infoBySecret.ApplicationInfos {
 		if application.CloudApplicationID == req.CloudApplicationID {
 			curApplication = application
+			break
 		}
 	}
 	if curApplication.CloudApplicationName != req.CloudApplicationName {
