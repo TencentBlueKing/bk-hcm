@@ -32,8 +32,8 @@ import (
 	"hcm/pkg/rest"
 )
 
-// Update update root account with options
-func (s *service) Update(cts *rest.Contexts) (interface{}, error) {
+// UpdateRootAccount update root account with options
+func (s *service) UpdateRootAccount(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.RootAccountUpdateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
