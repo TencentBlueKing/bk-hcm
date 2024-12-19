@@ -21,6 +21,7 @@ package account
 
 import (
 	"hcm/pkg/adaptor/types"
+	"hcm/pkg/api/core/cloud"
 	proto "hcm/pkg/api/hc-service/account"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/rest"
@@ -168,28 +169,34 @@ func (svc *service) GcpAccountCheck(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	if infoBySecret.CloudProjectID != req.CloudProjectID {
+	var projectInfo cloud.GcpProjectInfo
+	for _, info := range infoBySecret.CloudProjectInfos {
+		if info.CloudProjectID == req.CloudProjectID {
+			projectInfo = info
+			break
+		}
+	}
+	if projectInfo.CloudProjectID != req.CloudProjectID {
 		return nil, errf.New(errf.InvalidParameter,
 			"CloudProjectID does not match the account to which the secret belongs")
 	}
-	if infoBySecret.CloudProjectName != req.CloudProjectName {
+	if projectInfo.CloudProjectName != req.CloudProjectName {
 		return nil, errf.New(errf.InvalidParameter,
 			"CloudProjectName does not match the account to which the secret belongs")
 	}
-	if infoBySecret.CloudServiceAccountID != req.CloudServiceAccountID {
+	if projectInfo.CloudServiceAccountID != req.CloudServiceAccountID {
 		return nil, errf.New(errf.InvalidParameter,
 			"CloudServiceAccountID does not match the account to which the secret belongs")
 	}
-	if infoBySecret.CloudServiceAccountName != req.CloudServiceAccountName {
+	if projectInfo.CloudServiceAccountName != req.CloudServiceAccountName {
 		return nil, errf.New(errf.InvalidParameter,
 			"CloudServiceAccountName does not match the account to which the secret belongs")
 	}
-	if infoBySecret.CloudServiceSecretID != req.CloudServiceSecretID {
+	if projectInfo.CloudServiceSecretID != req.CloudServiceSecretID {
 		return nil, errf.New(errf.InvalidParameter,
 			"CloudServiceSecretID does not match the account to which the secret belongs")
 	}
-
-	return nil, err
+	return nil, nil
 }
 
 // AzureAccountCheck ...
@@ -218,15 +225,30 @@ func (svc *service) AzureAccountCheck(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	if infoBySecret.CloudSubscriptionID != req.CloudSubscriptionID {
+	var curSubscription cloud.AzureSubscriptionInfo
+	for _, subscription := range infoBySecret.SubscriptionInfos {
+		if subscription.CloudSubscriptionID == req.CloudSubscriptionID {
+			curSubscription = subscription
+			break
+		}
+	}
+	if curSubscription.CloudSubscriptionID != req.CloudSubscriptionID {
 		return nil, errf.New(errf.InvalidParameter,
 			"CloudSubscriptionID does not match the account to which the secret belongs")
 	}
-	if infoBySecret.CloudSubscriptionName != req.CloudSubscriptionName {
+	if curSubscription.CloudSubscriptionName != req.CloudSubscriptionName {
 		return nil, errf.New(errf.InvalidParameter,
 			"CloudSubscriptionName does not match the account to which the secret belongs")
 	}
-	if infoBySecret.CloudApplicationName != req.CloudApplicationName {
+
+	var curApplication cloud.AzureApplicationInfo
+	for _, application := range infoBySecret.ApplicationInfos {
+		if application.CloudApplicationID == req.CloudApplicationID {
+			curApplication = application
+			break
+		}
+	}
+	if curApplication.CloudApplicationName != req.CloudApplicationName {
 		return nil, errf.New(errf.InvalidParameter,
 			"CloudApplicationName does not match the account to which the secret belongs")
 	}

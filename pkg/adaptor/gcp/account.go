@@ -176,41 +176,42 @@ func (g *Gcp) GetAccountInfoBySecret(kit *kit.Kit, cloudSecretKeyString string) 
 		logs.Errorf("search project failed, err: %v, rid: %s", err, kit.Rid)
 		return nil, err
 	}
-	// 2. 只能有一个对应的project，多project报错。
-	if len(projectList.Projects) > 1 {
-		projects := make([]string, len(projectList.Projects))
-		for i, project := range projectList.Projects {
-			projects[i] = "(" + project.ProjectId + ")" + project.DisplayName
-		}
-
-		return nil, fmt.Errorf("more than one project found:" + strings.Join(projects, ","))
-	}
 	if len(projectList.Projects) == 0 {
 		return nil, fmt.Errorf("not project avaiable, please check the permission of given screct")
 	}
-	projectId := projectList.Projects[0].ProjectId
+
 	iamClient, err := g.clientSet.iamServiceClient(kit)
 	if err != nil {
 		return nil, err
 	}
 
-	// 3. 根据秘钥信息获取服务账号信息
+	// 2. 根据秘钥信息获取服务账号信息
 	// https://cloud.google.com/iam/docs/reference/rest/v1/projects.serviceAccounts/get
 	sk, err := account.DecodeGcpSecretKey(cloudSecretKeyString)
-	serviceAccount, err := iamClient.Projects.ServiceAccounts.Get(
-		fmt.Sprintf("projects/%s/serviceAccounts/%s", projectId, sk.ClientEmail),
-	).Do()
 	if err != nil {
 		return nil, err
 	}
 
+	projectInfos := make([]cloud.GcpProjectInfo, 0)
+	for _, project := range projectList.Projects {
+		serviceAccount, err := iamClient.Projects.ServiceAccounts.Get(
+			fmt.Sprintf("projects/%s/serviceAccounts/%s", project.ProjectId, sk.ClientEmail),
+		).Do()
+		if err != nil {
+			return nil, err
+		}
+		projectInfos = append(projectInfos, cloud.GcpProjectInfo{
+			Email:                   serviceAccount.Email,
+			CloudProjectID:          project.ProjectId,
+			CloudProjectName:        project.DisplayName,
+			CloudServiceAccountID:   serviceAccount.UniqueId,
+			CloudServiceAccountName: serviceAccount.DisplayName,
+			CloudServiceSecretID:    sk.PrivateKeyID,
+		})
+	}
+
 	accountInfo := &cloud.GcpInfoBySecret{
-		Email:                   serviceAccount.Email,
-		CloudProjectID:          projectList.Projects[0].ProjectId,
-		CloudProjectName:        projectList.Projects[0].DisplayName,
-		CloudServiceAccountID:   serviceAccount.UniqueId,
-		CloudServiceAccountName: serviceAccount.DisplayName,
-		CloudServiceSecretID:    sk.PrivateKeyID,
+		CloudProjectInfos: projectInfos,
 	}
 	return accountInfo, nil
 }
