@@ -311,7 +311,7 @@ func (cli *client) RemoveImageDeleteFromCloud(kt *kit.Kit, accountID string, reg
 		}
 
 		if len(delCloudIDs) != 0 {
-			if err = cli.deleteDisk(kt, accountID, region, delCloudIDs); err != nil {
+			if err = cli.deleteImage(kt, accountID, region, delCloudIDs); err != nil {
 				return err
 			}
 		}

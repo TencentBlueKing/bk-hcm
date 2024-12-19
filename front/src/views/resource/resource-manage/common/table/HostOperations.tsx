@@ -1,14 +1,15 @@
-import { Button, Checkbox, Dialog, Dropdown, Loading, Message } from 'bkui-vue';
+import { Button, Checkbox, Dialog, Loading, Message } from 'bkui-vue';
 import { PropType, computed, defineComponent, reactive, ref, watch } from 'vue';
 import './index.scss';
 import { usePreviousState } from '@/hooks/usePreviousState';
 import { useResourceStore } from '@/store';
 import { AngleDown } from 'bkui-vue/lib/icon';
-import { BkDropdownItem, BkDropdownMenu } from 'bkui-vue/lib/dropdown';
+import { BkDropdownItem } from 'bkui-vue/lib/dropdown';
 import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
 import CommonLocalTable from '../commonLocalTable';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
 import http from '@/http';
+import HcmDropdown from '@/components/hcm-dropdown/index.vue';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 export enum Operations {
@@ -62,6 +63,8 @@ export default defineComponent({
   setup(props) {
     const operationType = ref<Operations>(Operations.None);
     const dialogRef = ref(null);
+    const dropdownOperationRef = ref(null);
+    const dropdownCopyRef = ref(null);
     const isConfirmDisabled = ref(true);
     const targetHost = ref([]);
     const unTargetHost = ref([]);
@@ -387,40 +390,56 @@ export default defineComponent({
 
     return () => (
       <>
-        <div class={'host_operations_container'}>
-          <Dropdown disabled={operationsDisabled.value}>
-            {{
-              default: () => (
-                <Button disabled={operationsDisabled.value}>
-                  批量操作
-                  <AngleDown class={'f26'}></AngleDown>
-                </Button>
-              ),
-              content: () => (
-                <BkDropdownMenu>
-                  {Object.entries(OperationsMap).map(([opType, opName]) => (
-                    <BkDropdownItem
-                      onClick={() => {
-                        operationType.value = opType as Operations;
-                      }}>
-                      {`批量${opName}`}
-                    </BkDropdownItem>
-                  ))}
-                  <CopyToClipboard
-                    type='dropdown-item'
-                    text='复制内网IP'
-                    content={selectedRowPrivateIPs.value?.join?.(',')}
-                  />
-                  <CopyToClipboard
-                    type='dropdown-item'
-                    text='复制公网IP'
-                    content={selectedRowPublicIPs.value?.join?.(',')}
-                  />
-                </BkDropdownMenu>
-              ),
-            }}
-          </Dropdown>
-        </div>
+        <HcmDropdown class={'host_operations_container'} ref={dropdownOperationRef} disabled={operationsDisabled.value}>
+          {{
+            default: () => (
+              <>
+                批量操作
+                <AngleDown class={'f26'}></AngleDown>
+              </>
+            ),
+            menus: () => (
+              <>
+                {Object.entries(OperationsMap).map(([opType, opName]) => (
+                  <BkDropdownItem
+                    onClick={() => {
+                      operationType.value = opType as Operations;
+                      dropdownOperationRef.value?.hidePopover();
+                    }}>
+                    {`批量${opName}`}
+                  </BkDropdownItem>
+                ))}
+              </>
+            ),
+          }}
+        </HcmDropdown>
+
+        <HcmDropdown class={'host_operations_container'} ref={dropdownCopyRef} disabled={operationsDisabled.value}>
+          {{
+            default: () => (
+              <>
+                复制
+                <AngleDown class={'f26'}></AngleDown>
+              </>
+            ),
+            menus: () => (
+              <>
+                <CopyToClipboard
+                  type='dropdown-item'
+                  text='内网IP'
+                  content={selectedRowPrivateIPs.value?.join?.(',')}
+                  onSuccess={() => dropdownCopyRef.value?.hidePopover()}
+                />
+                <CopyToClipboard
+                  type='dropdown-item'
+                  text='公网IP'
+                  content={selectedRowPublicIPs.value?.join?.(',')}
+                  onSuccess={() => dropdownCopyRef.value?.hidePopover()}
+                />
+              </>
+            ),
+          }}
+        </HcmDropdown>
 
         <Dialog
           isShow={isDialogShow.value}

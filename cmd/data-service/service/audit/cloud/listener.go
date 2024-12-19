@@ -29,6 +29,7 @@ import (
 	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 )
 
 func (ad Audit) listenerDeleteAuditBuild(kt *kit.Kit, deletes []protoaudit.CloudResourceDeleteInfo) (
@@ -86,7 +87,7 @@ func (ad Audit) listListener(kt *kit.Kit, ids []string) (map[string]*tablelb.Loa
 
 	result := make(map[string]*tablelb.LoadBalancerListenerTable, len(list.Details))
 	for _, one := range list.Details {
-		result[one.ID] = &one
+		result[one.ID] = converter.ValToPtr(one)
 	}
 
 	return result, nil

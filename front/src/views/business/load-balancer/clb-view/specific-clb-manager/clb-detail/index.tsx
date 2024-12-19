@@ -7,7 +7,7 @@ import Confirm from '@/components/confirm';
 import { useRouteLinkBtn, TypeEnum, IDetail } from '@/hooks/useRouteLinkBtn';
 import StatusNormal from '@/assets/image/Status-normal.png';
 import StatusUnknown from '@/assets/image/Status-unknown.png';
-import { timeFormatter } from '@/common/util';
+import { timeFormatter, formatTags } from '@/common/util';
 import { CHARGE_TYPE, CLB_SPECS, LB_ISP, LB_TYPE_MAP } from '@/common/constant';
 import { useBusinessStore } from '@/store';
 import { useRegionsStore } from '@/store/useRegionsStore';
@@ -145,6 +145,13 @@ export default defineComponent({
             ?.map((zone: string) => `${regionStore.getZoneName(zone, props.detail.vendor)}-(备)`)
             .join(',');
           return `${mainsStr}${backupsStr?.length ? `,${backupsStr}` : ''}`;
+        },
+      },
+      {
+        name: '标签',
+        prop: 'tags',
+        render(val) {
+          return formatTags(val);
         },
       },
     ];

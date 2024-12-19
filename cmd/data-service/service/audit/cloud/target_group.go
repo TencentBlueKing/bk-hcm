@@ -30,6 +30,7 @@ import (
 	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 )
 
 func (ad Audit) targetGroupAssignAuditBuild(kt *kit.Kit, assigns []protoaudit.CloudResourceAssignInfo) (
@@ -134,7 +135,7 @@ func (ad Audit) listTargetGroup(kt *kit.Kit, ids []string) (map[string]*tablelb.
 
 	result := make(map[string]*tablelb.LoadBalancerTargetGroupTable, len(list.Details))
 	for _, one := range list.Details {
-		result[one.ID] = &one
+		result[one.ID] = converter.ValToPtr(one)
 	}
 
 	return result, nil

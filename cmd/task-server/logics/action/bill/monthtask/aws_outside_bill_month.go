@@ -120,7 +120,7 @@ func (a AwsOutsideBillMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption,
 		}
 		usageBillItem := bill.BillItemCreateReq[json.RawMessage]{
 			RootAccountID: opt.RootAccountID,
-			MainAccountID: summaryMain.MainAccountCloudID,
+			MainAccountID: summaryMain.MainAccountID,
 			Vendor:        opt.Vendor,
 			ProductID:     summaryMain.ProductID,
 			BkBizID:       summaryMain.BkBizID,

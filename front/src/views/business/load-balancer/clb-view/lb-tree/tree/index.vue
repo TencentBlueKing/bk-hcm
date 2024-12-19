@@ -100,10 +100,9 @@ const loadLoadBalancerList = async (rules: RulesItem[] = []) => {
   }
 };
 // 重置数据
-const reset = (rules: RulesItem[] = []) => {
+const reset = () => {
   treeData.value = [];
   Object.assign(pagination, { start: 0, count: 0 });
-  loadLoadBalancerList(rules);
 };
 
 /**
@@ -236,6 +235,7 @@ const handleDeleteLB = (node: any) => {
       Message({ theme: 'success', message: '删除成功' });
       // 本期暂时先重新拉取lb列表
       reset();
+      loadLoadBalancerList();
       // 导航至全部负载均衡
       router.push({ name: LBRouteName.allLbs, query: { [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY] } });
     });
@@ -249,6 +249,7 @@ const handleDeleteListener = (node: any) => {
       Message({ theme: 'success', message: '删除成功' });
       // 本期暂时先重新拉取lb列表
       reset();
+      loadLoadBalancerList();
       // 导航至全部负载均衡
       router.push({ name: LBRouteName.allLbs, query: { [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY] } });
     });
@@ -262,6 +263,7 @@ const handleDeleteDomain = (node: any) => {
     Message({ theme: 'success', message: '删除成功' });
     // 本期暂时先重新拉取lb列表
     reset();
+    loadLoadBalancerList();
     // 导航至全部负载均衡
     router.push({ name: LBRouteName.allLbs, query: { [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY] } });
   });
@@ -347,15 +349,19 @@ const intersectionObserverCallback = async (args: any) => {
 // 搜索高亮
 const searchValue = ref('');
 const search = (rules: RulesItem[], value: string) => {
-  reset(rules);
   searchValue.value = value;
+  reset();
+  loadLoadBalancerList(rules);
 };
 
 onMounted(() => {
   // 组件挂载，加载第一页负载均衡列表
   loadLoadBalancerList();
 
-  bus.$on('resetLbTree', reset);
+  bus.$on('resetLbTree', (rules: RulesItem[]) => {
+    reset();
+    loadLoadBalancerList(rules);
+  });
 });
 
 onUnmounted(() => {

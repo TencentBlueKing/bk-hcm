@@ -288,7 +288,7 @@ func (cli *client) listDiskFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]ada
 			return make([]adaptordisk.AwsDisk, 0), nil
 		}
 
-		logs.Errorf("[%s] list vpc from cloud failed, err: %v, account: %s, opt: %v, rid: %s", enumor.Aws, err,
+		logs.Errorf("[%s] list disk from cloud failed, err: %v, account: %s, opt: %v, rid: %s", enumor.Aws, err,
 			params.AccountID, opt, kt.Rid)
 		return nil, err
 	}

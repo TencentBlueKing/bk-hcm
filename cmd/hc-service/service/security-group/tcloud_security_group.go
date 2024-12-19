@@ -39,6 +39,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/slice"
 )
 
 // CreateTCloudSecurityGroup create tcloud security group.
@@ -61,11 +62,12 @@ func (g *securityGroup) CreateTCloudSecurityGroup(cts *rest.Contexts) (interface
 		Region:      req.Region,
 		Name:        req.Name,
 		Description: req.Memo,
+		Tags:        req.Tags,
 	}
 	sg, err := client.CreateSecurityGroup(cts.Kit, opt)
 	if err != nil {
-		logs.Errorf("request adaptor to create tcloud security group failed, err: %v, opt: %v, rid: %s", err, opt,
-			cts.Kit.Rid)
+		logs.Errorf("request adaptor to create tcloud security group failed, err: %v, opt: %+v, rid: %s",
+			err, opt, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -81,8 +83,8 @@ func (g *securityGroup) CreateTCloudSecurityGroup(cts *rest.Contexts) (interface
 				Extension: &corecloud.TCloudSecurityGroupExtension{
 					CloudProjectID: sg.ProjectId,
 				},
-			},
-		},
+				Tags: core.NewTagMap(req.Tags...),
+			}},
 	}
 	result, err := g.dataCli.TCloud.SecurityGroup.BatchCreateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), createReq)
 	if err != nil {
@@ -603,6 +605,51 @@ func (g *securityGroup) TCloudSGBatchAssociateCvm(cts *rest.Contexts) (any, erro
 	return nil, nil
 }
 
+// TCloudListSecurityGroupStatistic ...
+func (g *securityGroup) TCloudListSecurityGroupStatistic(cts *rest.Contexts) (any, error) {
+	req := new(proto.TCloudListSecurityGroupStatisticReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	sgMap, err := g.getSecurityGroupMap(cts.Kit, req.SecurityGroupIDs)
+	if err != nil {
+		logs.Errorf("get security group map failed, sgID: %v, err: %v, rid: %s", req.SecurityGroupIDs, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	cloudIDs := make([]string, 0, len(req.SecurityGroupIDs))
+	for _, sgID := range req.SecurityGroupIDs {
+		sg, ok := sgMap[sgID]
+		if !ok {
+			return nil, fmt.Errorf("security group: %s not found", sgID)
+		}
+		cloudIDs = append(cloudIDs, sg.CloudID)
+	}
+
+	client, err := g.ad.TCloud(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := &securitygroup.TCloudListOption{
+		Region:   req.Region,
+		CloudIDs: cloudIDs,
+	}
+	resp, err := client.DescribeSecurityGroupAssociationStatistics(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("request adaptor to tcloud security group statistic failed, err: %v, opt: %v, rid: %s",
+			err, opt, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return resp, nil
+}
+
 // TCloudSGBatchDisassociateCvm  批量解绑安全组
 func (g *securityGroup) TCloudSGBatchDisassociateCvm(cts *rest.Contexts) (any, error) {
 	req := new(proto.SecurityGroupBatchAssociateCvmReq)
@@ -665,20 +712,25 @@ func (g *securityGroup) TCloudSGBatchDisassociateCvm(cts *rest.Contexts) (any, e
 
 func (g *securityGroup) getCvms(kt *kit.Kit, cvmIDs []string) ([]cvm.BaseCvm, error) {
 
-	listReq := &core.ListReq{
-		Filter: tools.ExpressionAnd(
-			tools.RuleIn("id", cvmIDs),
-		),
-		Page: core.NewDefaultBasePage(),
+	result := make([]cvm.BaseCvm, 0, len(cvmIDs))
+	for _, ids := range slice.Split(cvmIDs, int(core.DefaultMaxPageLimit)) {
+		listReq := &core.ListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleIn("id", ids),
+			),
+			Page: core.NewDefaultBasePage(),
+		}
+		resp, err := g.dataCli.Global.Cvm.ListCvm(kt, listReq)
+		if err != nil {
+			logs.Errorf("list cvm failed, req: %+v, err: %v, rid: %s", listReq, err, kt.Rid)
+			return nil, err
+		}
+		result = append(result, resp.Details...)
 	}
-	result, err := g.dataCli.Global.Cvm.ListCvm(kt, listReq)
-	if err != nil {
-		logs.Errorf("list cvm failed, req: %+v, err: %v, rid: %s", listReq, err, kt.Rid)
-		return nil, err
+
+	if len(result) != len(cvmIDs) {
+		logs.Errorf("list cvm failed, got %d, but expect %d, rid: %s", len(result), len(cvmIDs), kt.Rid)
+		return nil, fmt.Errorf("list cvm failed, got %d, but expect %d", len(result), len(cvmIDs))
 	}
-	if len(result.Details) != len(cvmIDs) {
-		logs.Errorf("list cvm failed, got %d, but expect %d, rid: %s", len(result.Details), len(cvmIDs), kt.Rid)
-		return nil, fmt.Errorf("list cvm failed, got %d, but expect %d", len(result.Details), len(cvmIDs))
-	}
-	return result.Details, nil
+	return result, nil
 }

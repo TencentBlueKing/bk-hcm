@@ -1,30 +1,14 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import MemberSelect from '@/components/MemberSelect';
+import { useAttrs } from 'vue';
+import UserSelector from '@/components/user-selector/index.vue';
 
 defineOptions({ name: 'hcm-search-user' });
 
-const props = withDefaults(defineProps<{ multiple: boolean }>(), {
-  multiple: true,
-});
+const model = defineModel<string | string[]>();
 
-const model = defineModel<string[]>();
-
-const defaultUserlist = computed(() => localModel.value.map((item) => ({ username: item, display_name: item })));
-
-const localModel = computed({
-  get() {
-    if (props.multiple && !Array.isArray(model.value)) {
-      return [model.value];
-    }
-    return model.value;
-  },
-  set(val) {
-    model.value = val;
-  },
-});
+const attrs = useAttrs();
 </script>
 
 <template>
-  <MemberSelect v-model="localModel" :allow-create="true" :default-userlist="defaultUserlist" clearable />
+  <user-selector v-model="model" :collapse-tags="true" :allow-create="true" :multiple="true" v-bind="attrs" />
 </template>

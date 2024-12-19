@@ -1,5 +1,13 @@
 # 版本历史
 
+## 9.9.9
+
+- 修复外部etcd的tls配置的错误缩进
+
+## 1.0.24
+
+- 增加外部etcd的tls开关配置
+
 ## 1.0.23
 
 - 修复 deployment模板tolerations、affinity、nodeSelector缩进错误

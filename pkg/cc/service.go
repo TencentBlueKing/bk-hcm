@@ -232,18 +232,6 @@ func (s DataServiceSetting) Validate() error {
 	return nil
 }
 
-// SyncConfig defines sync config.
-type SyncConfig struct {
-	// 腾讯云监听器同步并发数
-	TCloudLoadBalancerListenerSyncConcurrency uint `yaml:"tcloudLblConcurrency"`
-}
-
-func (s *SyncConfig) trySetDefault() {
-	if s.TCloudLoadBalancerListenerSyncConcurrency == 0 {
-		s.TCloudLoadBalancerListenerSyncConcurrency = 3
-	}
-}
-
 // HCServiceSetting defines hc service used setting options.
 type HCServiceSetting struct {
 	Network    Network    `yaml:"network"`
@@ -277,7 +265,9 @@ func (s HCServiceSetting) Validate() error {
 	if err := s.Service.validate(); err != nil {
 		return err
 	}
-
+	if err := s.SyncConfig.Validate(); err != nil {
+		return fmt.Errorf("syncConfig validate error: %w", err)
+	}
 	return nil
 }
 
