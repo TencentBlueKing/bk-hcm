@@ -20,6 +20,8 @@
 // Package core ...
 package core
 
+import "encoding/json"
+
 // GlobalConfig ...
 type GlobalConfig struct {
 	// ID global config id
@@ -27,7 +29,7 @@ type GlobalConfig struct {
 	// ConfigKey global config key, key+type is unique
 	ConfigKey string `json:"config_key"`
 	// ConfigValue global config value, json format
-	ConfigValue interface{} `json:"config_value"`
+	ConfigValue json.RawMessage `json:"config_value"`
 	// ConfigType global config type
 	ConfigType string `json:"config_type"`
 	// Memo global config memo
