@@ -439,6 +439,36 @@ func (t *TCloudImpl) CreateCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOption) (*p
 	return result, nil
 }
 
+// BatchCvmAssociateSecurityGroups Cvm批量绑定安全组
+// ref: https://cloud.tencent.com/document/api/213/15739
+func (t *TCloudImpl) BatchCvmAssociateSecurityGroups(kt *kit.Kit,
+	opt *typecvm.TCloudAssociateSecurityGroupsOption) error {
+
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := t.clientSet.CvmClient(opt.Region)
+	if err != nil {
+		return fmt.Errorf("init tencent cloud client failed, err: %v", err)
+	}
+
+	request := cvm.NewModifyInstancesAttributeRequest()
+	request.SecurityGroups = common.StringPtrs(opt.CloudSecurityGroupIDs)
+	request.InstanceIds = []*string{common.StringPtr(opt.CloudCvmID)}
+
+	_, err = client.ModifyInstancesAttributeWithContext(kt.Ctx, request)
+	if err != nil {
+		logs.Errorf("modify cvm instance's security group failed, err: %v, req: %v,rid: %s", err, request, kt.Rid)
+		return err
+	}
+	return nil
+}
+
 // InquiryPriceCvm reference: https://cloud.tencent.com/document/api/213/15726
 func (t *TCloudImpl) InquiryPriceCvm(kt *kit.Kit, opt *typecvm.TCloudCreateOption) (
 	*typecvm.InquiryPriceResult, error) {

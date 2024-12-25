@@ -366,3 +366,15 @@ type ResetInstanceOption struct {
 func (opt ResetInstanceOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
+
+// TCloudAssociateSecurityGroupsOption defines options to associate security groups to cvm instance.
+type TCloudAssociateSecurityGroupsOption struct {
+	Region                string   `json:"region" validate:"required"`
+	CloudSecurityGroupIDs []string `json:"cloud_security_group_ids" validate:"required"`
+	CloudCvmID            string   `json:"cloud_cvm_id" validate:"required"`
+}
+
+// Validate ...
+func (opt TCloudAssociateSecurityGroupsOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}

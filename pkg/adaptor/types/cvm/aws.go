@@ -186,3 +186,15 @@ type AwsCvm struct {
 func (cvm AwsCvm) GetCloudID() string {
 	return converter.PtrToVal(cvm.InstanceId)
 }
+
+// AwsAssociateSecurityGroupsOption defines options to associate security groups to cvm instance.
+type AwsAssociateSecurityGroupsOption struct {
+	Region                string   `json:"region" validate:"required"`
+	CloudSecurityGroupIDs []string `json:"cloud_security_group_ids" validate:"required"`
+	CloudCvmID            string   `json:"cloud_cvm_id" validate:"required"`
+}
+
+// Validate ...
+func (opt AwsAssociateSecurityGroupsOption) Validate() error {
+	return validator.Validate.Struct(opt)
+}
