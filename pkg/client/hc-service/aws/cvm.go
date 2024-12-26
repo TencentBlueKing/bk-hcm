@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/api/core"
 	protocvm "hcm/pkg/api/hc-service/cvm"
 	"hcm/pkg/api/hc-service/sync"
+	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
@@ -180,4 +181,12 @@ func (cli *CvmClient) BatchCreateCvm(kt *kit.Kit, request *protocvm.AwsBatchCrea
 	}
 
 	return resp.Data, nil
+}
+
+// ListCvmNetworkInterface ....
+func (cli *CvmClient) ListCvmNetworkInterface(kt *kit.Kit, request *protocvm.ListCvmNetworkInterfaceReq) (
+	*protocvm.ListCvmNetworkInterfaceResp, error) {
+
+	return common.Request[protocvm.ListCvmNetworkInterfaceReq, protocvm.ListCvmNetworkInterfaceResp](
+		cli.client, rest.POST, kt, request, "/cvms/network_interfaces/list")
 }

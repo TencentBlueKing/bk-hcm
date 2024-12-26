@@ -22,16 +22,24 @@ package cvm
 import (
 	"net/http"
 
+	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
+
 	syncaws "hcm/cmd/hc-service/logics/res-sync/aws"
 	"hcm/cmd/hc-service/service/capability"
+	typecore "hcm/pkg/adaptor/types/core"
 	typecvm "hcm/pkg/adaptor/types/cvm"
+	typesnetwork "hcm/pkg/adaptor/types/network-interface"
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	protocvm "hcm/pkg/api/hc-service/cvm"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 )
 
 func (svc *cvmSvc) initAwsCvmService(cap *capability.Capability) {
@@ -43,9 +51,13 @@ func (svc *cvmSvc) initAwsCvmService(cap *capability.Capability) {
 	h.Add("BatchRebootAwsCvm", http.MethodPost, "/vendors/aws/cvms/batch/reboot", svc.BatchRebootAwsCvm)
 	h.Add("BatchDeleteAwsCvm", http.MethodDelete, "/vendors/aws/cvms/batch", svc.BatchDeleteAwsCvm)
 
+	h.Add("ListAwsCvmNetworkInterface", http.MethodPost, "/vendors/aws/cvms/network_interfaces/list",
+		svc.ListAwsCvmNetworkInterface)
+
 	h.Load(cap.WebService)
 }
 
+// BatchCreateAwsCvm ...
 func (svc *cvmSvc) BatchCreateAwsCvm(cts *rest.Contexts) (interface{}, error) {
 	req := new(protocvm.AwsBatchCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -336,4 +348,81 @@ func (svc *cvmSvc) BatchDeleteAwsCvm(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return nil, nil
+}
+
+// ListAwsCvmNetworkInterface 返回一个map，key为cvmID，value为cvm的网卡信息 ListCvmNetworkInterfaceResp
+func (svc *cvmSvc) ListAwsCvmNetworkInterface(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocvm.ListCvmNetworkInterfaceReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	cvmList, err := svc.getCvms(cts.Kit, enumor.Aws, req.Region, req.CvmIDs)
+	if err != nil {
+		logs.Errorf("get cvms failed, err: %v, cvmIDs: %v, rid: %s", err, req.CvmIDs, cts.Kit.Rid)
+		return nil, err
+	}
+	cloudIDToIDMap := make(map[string]string)
+	for _, baseCvm := range cvmList {
+		cloudIDToIDMap[baseCvm.CloudID] = baseCvm.ID
+	}
+
+	result, err := svc.listAwsCvmNetworkInterfaceFromCloud(cts.Kit, req.Region, req.AccountID, cloudIDToIDMap)
+	if err != nil {
+		logs.Errorf("list aws cvm network interface failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	return result, nil
+}
+
+func (svc *cvmSvc) listAwsCvmNetworkInterfaceFromCloud(kt *kit.Kit, region, accountID string,
+	cloudIDToIDMap map[string]string) (map[string]*protocvm.ListCvmNetworkInterfaceRespItem, error) {
+
+	cli, err := svc.ad.Aws(kt, accountID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]*protocvm.ListCvmNetworkInterfaceRespItem)
+	var nextToken *string
+	for {
+		opt := &typesnetwork.AwsNetworkInterfaceListOption{
+			Region: region,
+			Page: &typecore.AwsPage{
+				NextToken:  nextToken,
+				MaxResults: converter.ValToPtr(int64(typecore.AwsQueryLimit)),
+			},
+			Filters: []*ec2.Filter{
+				{
+					Name:   common.StringPtr("attachment.instance-id"),
+					Values: common.StringPtrs(converter.MapKeyToSlice(cloudIDToIDMap)),
+				},
+			},
+		}
+
+		resp, err := cli.DescribeNetworkInterfaces(kt, opt)
+		if err != nil {
+			logs.Errorf("describe network interfaces failed, err: %v, cloudIDs: %v, rid: %s",
+				err, converter.MapKeyToSlice(cloudIDToIDMap), kt.Rid)
+			return nil, err
+		}
+		for _, detail := range resp.Details {
+			cloudID := converter.PtrToVal(detail.Attachment.InstanceId)
+			id := cloudIDToIDMap[cloudID]
+			if _, ok := result[id]; !ok {
+				result[id] = &protocvm.ListCvmNetworkInterfaceRespItem{}
+			}
+			result[id].MacAddresses = append(result[id].MacAddresses, converter.PtrToVal(detail.MacAddress))
+			result[id].PrivateIpAddresses = append(result[id].PrivateIpAddresses,
+				converter.PtrToVal(detail.PrivateIpAddress))
+		}
+		if resp.NextToken == nil {
+			break
+		}
+		nextToken = resp.NextToken
+	}
+	return result, nil
 }
