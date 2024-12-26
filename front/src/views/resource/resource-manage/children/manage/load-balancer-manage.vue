@@ -15,9 +15,10 @@
           }
         "
       />
-      <Button class="mw88" @click="handleClickBatchDelete" :disabled="selections.length === 0">
+      <Button class="mw88 mr8" @click="handleClickBatchDelete" :disabled="selections.length === 0">
         {{ t('批量删除') }}
       </Button>
+      <all-load-balancer :disabled="selections.length > 0" />
       <div class="flex-row align-items-center justify-content-arround search-selector-container">
         <bk-search-select class="w500" clearable :conditions="[]" :data="clbsSearchData" v-model="searchValue" />
         <slot name="recycleHistory"></slot>
@@ -108,6 +109,7 @@ import { useI18n } from 'vue-i18n';
 import { asyncGetListenerCount } from '@/utils';
 import { getTableNewRowClass } from '@/common/util';
 import { useResourceStore, useBusinessStore } from '@/store';
+import AllLoadBalancer from '@/components/sync-clb/all.vue';
 
 const props = defineProps({
   filter: {
