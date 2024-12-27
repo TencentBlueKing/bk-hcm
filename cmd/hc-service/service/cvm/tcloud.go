@@ -568,7 +568,7 @@ func (svc *cvmSvc) listTCloudNetworkInterfaceFromCloud(kt *kit.Kit, region, acco
 			id := cloudIDToIDMap[cloudID]
 			if _, ok := result[id]; !ok {
 				result[id] = &protocvm.ListCvmNetworkInterfaceRespItem{
-					MapAddressToPrivateIpAddresses: make(map[string][]string),
+					MacAddressToPrivateIpAddresses: make(map[string][]string),
 				}
 			}
 
@@ -576,7 +576,7 @@ func (svc *cvmSvc) listTCloudNetworkInterfaceFromCloud(kt *kit.Kit, region, acco
 			for _, set := range detail.PrivateIpAddressSet {
 				privateIPs = append(privateIPs, cvt.PtrToVal(set.PrivateIpAddress))
 			}
-			result[id].MapAddressToPrivateIpAddresses[cvt.PtrToVal(detail.MacAddress)] = privateIPs
+			result[id].MacAddressToPrivateIpAddresses[cvt.PtrToVal(detail.MacAddress)] = privateIPs
 
 		}
 		if len(resp.Details) < adcore.TCloudQueryLimit {

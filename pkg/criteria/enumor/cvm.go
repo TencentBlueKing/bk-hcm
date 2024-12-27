@@ -17,36 +17,16 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package csvpc
+package enumor
 
-import (
-	"errors"
+// CvmMatchType cvm匹配类型
+type CvmMatchType string
 
-	"hcm/pkg/criteria/validator"
+const (
+	// AutoMatchCvm 自动匹配cvm
+	AutoMatchCvm CvmMatchType = "auto"
+	// ManualMatchCvm 手动匹配cvm
+	ManualMatchCvm CvmMatchType = "manual"
+	// NoMatchCvm 待关联cvm
+	NoMatchCvm = "no_match"
 )
-
-// AwsVpcCreateReq ...
-type AwsVpcCreateReq struct {
-	BkBizID   int64  `json:"bk_biz_id" validate:"omitempty"`
-	AccountID string `json:"account_id" validate:"required"`
-	Region    string `json:"region" validate:"required"`
-	Name      string `json:"name" validate:"required,min=1,max=60"`
-	IPv4Cidr  string `json:"ipv4_cidr" validate:"required,cidrv4"`
-
-	InstanceTenancy string `json:"instance_tenancy" validate:"required,oneof=default dedicated"`
-
-	Memo *string `json:"memo" validate:"omitempty"`
-}
-
-// Validate ...
-func (req *AwsVpcCreateReq) Validate(bizRequired bool) error {
-	if err := validator.Validate.Struct(req); err != nil {
-		return err
-	}
-
-	if bizRequired && req.BkBizID == 0 {
-		return errors.New("bk_biz_id is required")
-	}
-
-	return nil
-}

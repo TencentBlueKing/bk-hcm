@@ -54,7 +54,8 @@ type cvmSvc struct {
 	client  *client.ClientSet
 }
 
-func (svc *cvmSvc) getCvms(kt *kit.Kit, vendor enumor.Vendor, region string, cvmIDs []string) ([]corecvm.BaseCvm, error) {
+func (svc *cvmSvc) getCvms(kt *kit.Kit, vendor enumor.Vendor, region string, cvmIDs []string) ([]corecvm.BaseCvm,
+	error) {
 	if len(cvmIDs) == 0 {
 		return nil, nil
 	}
@@ -65,7 +66,7 @@ func (svc *cvmSvc) getCvms(kt *kit.Kit, vendor enumor.Vendor, region string, cvm
 			Filter: tools.ExpressionAnd(
 				tools.RuleEqual("vendor", vendor),
 				tools.RuleEqual("region", region),
-				tools.RuleIn("cvm_id", ids),
+				tools.RuleIn("id", ids),
 			),
 			Page: core.NewDefaultBasePage(),
 		}

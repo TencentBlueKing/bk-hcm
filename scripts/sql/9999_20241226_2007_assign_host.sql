@@ -17,36 +17,21 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package csvpc
+/*
+    SQLVER=9999,HCMVER=v9.9.9
 
-import (
-	"errors"
+    Notes:
+    1. 删除vpc表的bk_cloud_id字段
+    2. cvm表添加bk_host_id字段
+*/
 
-	"hcm/pkg/criteria/validator"
-)
+START TRANSACTION;
 
-// AwsVpcCreateReq ...
-type AwsVpcCreateReq struct {
-	BkBizID   int64  `json:"bk_biz_id" validate:"omitempty"`
-	AccountID string `json:"account_id" validate:"required"`
-	Region    string `json:"region" validate:"required"`
-	Name      string `json:"name" validate:"required,min=1,max=60"`
-	IPv4Cidr  string `json:"ipv4_cidr" validate:"required,cidrv4"`
+alter table vpc drop column bk_cloud_id;
 
-	InstanceTenancy string `json:"instance_tenancy" validate:"required,oneof=default dedicated"`
+alter table cvm add column bk_host_id bigint DEFAULT -1 COMMENT '主机ID';
 
-	Memo *string `json:"memo" validate:"omitempty"`
-}
+CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
+SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
 
-// Validate ...
-func (req *AwsVpcCreateReq) Validate(bizRequired bool) error {
-	if err := validator.Validate.Struct(req); err != nil {
-		return err
-	}
-
-	if bizRequired && req.BkBizID == 0 {
-		return errors.New("bk_biz_id is required")
-	}
-
-	return nil
-}
+COMMIT;
