@@ -109,6 +109,7 @@ import { useI18n } from 'vue-i18n';
 import { asyncGetListenerCount } from '@/utils';
 import { getTableNewRowClass } from '@/common/util';
 import { useResourceStore, useBusinessStore } from '@/store';
+import { VendorEnum } from '@/common/constant';
 import AllLoadBalancer from '@/components/sync-clb/all.vue';
 
 const props = defineProps({
@@ -165,6 +166,7 @@ const renderColumns = [
           h(
             Button,
             {
+              class: 'mr10',
               text: true,
               theme: 'primary',
               disabled: data.bk_biz_id !== -1 || data.listenerNum > 0 || data.delete_protect,
@@ -188,6 +190,16 @@ const renderColumns = [
               })(),
             ],
           ],
+        ),
+        h(
+          Button,
+          {
+            text: true,
+            theme: 'primary',
+            disabled: data.vendor !== VendorEnum.TCLOUD,
+            onClick: () => handlePullResource(data),
+          },
+          '同步',
         ),
       ]),
   },
@@ -275,6 +287,23 @@ const handleSingleDistributionConfirm = async () => {
     isDialogShow.value = false;
     isDialogBtnLoading.value = false;
   }
+};
+// 同步单个负载均衡
+const handlePullResource = (data: any) => {
+  const { vendor, cloud_id, region, account_id } = data;
+  Confirm(t('同步单个负载均衡'), t('从云上同步该负载均衡数据，包括负载均衡基本信息，监听器等'), () => {
+    resourceStore
+      .syncResource({
+        account_id,
+        vendor,
+        cloud_ids: [cloud_id],
+        regions: [region],
+        resource: 'load_balancer',
+      })
+      .then(() => {
+        Message({ theme: 'success', message: t('已提交同步任务，请等待同步结果') });
+      });
+  });
 };
 </script>
 
