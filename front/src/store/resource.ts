@@ -21,6 +21,10 @@ export interface SyncResourceParams {
   cloud_ids?: string[];
   tag_filters?: string[];
 }
+export interface BatchBindSecurityInfoParams {
+  cvm_id: string;
+  security_group_ids: string[];
+}
 
 // 获取
 const getBusinessApiPath = (type?: string) => {
@@ -234,6 +238,14 @@ export const useResourceStore = defineStore({
       );
     },
 
+    // 绑定主机安全组信息（主机批量关联安全组(仅支持: tcloud、aws)）
+    batchBindSecurityInfo(params: BatchBindSecurityInfoParams) {
+      const { cvm_id, security_group_ids } = params;
+      return http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}cvms/${cvm_id}/security_groups/batch_associate`,
+        { security_group_ids },
+      );
+    },
     // 解绑主机安全组信息
     unBindSecurityInfo(type: string, data: any) {
       return http.post(
