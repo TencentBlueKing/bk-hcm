@@ -3,6 +3,7 @@
 ## 9.9.9
 
 - 修复外部etcd的tls配置的错误缩进
+- 增加etcd dialTimeoutMS 配置
 
 ## 1.0.24
 

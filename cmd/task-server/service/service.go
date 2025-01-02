@@ -234,7 +234,7 @@ func (s *Service) apiSet() *restful.Container {
 }
 
 // Healthz check whether the service is healthy.
-func (s *Service) Healthz(w http.ResponseWriter, _ *http.Request) {
+func (s *Service) Healthz(w http.ResponseWriter, r *http.Request) {
 	if shutdown.IsShuttingDown() {
 		logs.Errorf("service healthz check failed, current service is shutting down")
 		w.WriteHeader(http.StatusServiceUnavailable)
@@ -242,7 +242,7 @@ func (s *Service) Healthz(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 
-	if err := serviced.Healthz(cc.TaskServer().Service); err != nil {
+	if err := serviced.Healthz(r.Context(), cc.TaskServer().Service); err != nil {
 		logs.Errorf("serviced healthz check failed, err: %v", err)
 		rest.WriteResp(w, rest.NewBaseResp(errf.UnHealthy, "serviced healthz error, "+err.Error()))
 		return

@@ -102,7 +102,7 @@ var etcdCli *etcd3.Client
 var initOnce sync.Once
 
 // Healthz checks the service discovery middleware health state.
-func Healthz(config cc.Service) error {
+func Healthz(ctx context.Context, config cc.Service) error {
 	var err error
 	initOnce.Do(func() {
 		var cfg etcd3.Config
@@ -118,14 +118,13 @@ func Healthz(config cc.Service) error {
 		}
 	})
 	if err != nil {
-		logs.Errorf("init healthz etcd client failed, err: %v")
+		logs.Errorf("init healthz etcd client failed, err: %v", err)
 		return err
 	}
 
 	for _, endpoint := range etcdCli.Endpoints() {
-		ctx, _ := context.WithTimeout(context.Background(), time.Second)
 		if _, err = etcdCli.Status(ctx, endpoint); err != nil {
-			logs.Errorf("etcd healthz check failed, err: %v", err)
+			logs.Errorf("etcd healthz check status failed, endpoint: %s, err: %v", endpoint, err)
 			return err
 		}
 	}

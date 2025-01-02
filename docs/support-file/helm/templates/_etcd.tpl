@@ -28,7 +28,7 @@
 {{- if .Values.etcd.enabled -}}
 endpoints:
   - {{ include "bk-hcm.etcdName" . }}:2379
-dialTimeoutMS:
+dialTimeoutMS: {{ .Values.etcd.dialTimeoutMS}}
 username: root
 password: {{ .Values.etcd.auth.rbac.rootPassword }}
 tls:
@@ -40,7 +40,7 @@ tls:
 {{- else -}}
 endpoints:
   - {{ .Values.externalEtcd.host }}:{{ .Values.externalEtcd.port }}
-dialTimeoutMS:
+dialTimeoutMS: {{ .Values.externalEtcd.dialTimeoutMS}}
 username: {{ .Values.externalEtcd.username }}
 password: {{ .Values.externalEtcd.password }}
 {{- if .Values.externalEtcd.tls.enabled }}
