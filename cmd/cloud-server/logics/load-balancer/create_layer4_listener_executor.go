@@ -285,6 +285,8 @@ func (c *CreateLayer4ListenerExecutor) buildTCloudFlowTask(lbID, lbCloudID, regi
 			}
 			if detail.HealthCheck {
 				req.HealthCheck.HealthSwitch = converter.ValToPtr(int64(1))
+			} else {
+				req.HealthCheck.HealthSwitch = converter.ValToPtr(int64(0))
 			}
 
 			if len(detail.ListenerPorts) > 1 {
