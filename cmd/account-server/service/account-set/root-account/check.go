@@ -62,8 +62,8 @@ func CheckDuplicateRootAccount(cts *rest.Contexts, client *client.ClientSet, ven
 	return nil
 }
 
-// GetRootAccountBySecret 根据秘钥获取账号信息
-func (s *service) GetRootAccountBySecret(cts *rest.Contexts) (interface{}, error) {
+// QueryRootAccountBySecret 根据秘钥获取账号信息
+func (s *service) QueryRootAccountBySecret(cts *rest.Contexts) (interface{}, error) {
 	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)

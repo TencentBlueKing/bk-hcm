@@ -6,7 +6,7 @@
 
 ### URL
 
-POST /api/v1/account/vendors/{vendor}/root_accounts/get_account_by_secret
+POST /api/v1/account/vendors/{vendor}/root_accounts/query_account_by_secret
 
 #### 路径参数说明
 

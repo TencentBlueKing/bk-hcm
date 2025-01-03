@@ -48,8 +48,8 @@ func InitService(c *capability.Capability) {
 	h.Add("UpdateRootAccount", http.MethodPatch, "/root_accounts/{account_id}", svc.Update)
 	h.Add("AddRootAccount", http.MethodPost, "/root_accounts/add", svc.Add)
 
-	h.Add("GetRootAccountBySecret", http.MethodPost, "/vendors/{vendor}/root_accounts/get_account_by_secret",
-		svc.GetRootAccountBySecret)
+	h.Add("QueryRootAccountBySecret", http.MethodPost, "/vendors/{vendor}/root_accounts/query_account_by_secret",
+		svc.QueryRootAccountBySecret)
 
 	h.Load(c.WebService)
 }
