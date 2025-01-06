@@ -167,7 +167,7 @@ func (s *service) addForGcp(cts *rest.Contexts, req *proto.RootAccountAddReq) (s
 			Site:        req.Site,
 			DeptID:      req.DeptID,
 			Memo:        req.Memo,
-			Extension:   &dataproto.GcpRootAccountExtensionCreateReq{},
+			Extension:   extension,
 		},
 	)
 	if err != nil {

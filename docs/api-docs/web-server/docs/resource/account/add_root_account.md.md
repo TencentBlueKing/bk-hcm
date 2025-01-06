@@ -9,17 +9,17 @@
 POST /api/v1/account/root_accounts/add
 
 ### 请求参数
-| 参数名称         | 参数类型   | 必选 | 描述     |
-|--------------|--------|----|--------|
-| name         | string | 是  | 名字     |
-| vendor       | string | 是  | 云厂商    |
-| email        | string | 是  | 邮箱     |
-| managers     | string | 是  | 负责人    |
-| bak_managers | string | 是  | 备份负责人  |
-| site         | string | 是  | 站点     |
-| dept_id      | int    | 是  | 组织架构ID |
-| memo         | string | 否  | 备忘录    |
-| extension    | object | 否  | 扩展字段   |
+| 参数名称         | 参数类型         | 必选 | 描述     |
+|--------------|--------------|----|--------|
+| name         | string       | 是  | 名字     |
+| vendor       | string       | 是  | 云厂商    |
+| email        | string       | 是  | 邮箱     |
+| managers     | string array | 是  | 负责人    |
+| bak_managers | string array | 是  | 备份负责人  |
+| site         | string       | 是  | 站点     |
+| dept_id      | int          | 是  | 组织架构ID |
+| memo         | string       | 否  | 备忘录    |
+| extension    | object       | 否  | 扩展字段   |
 
 #### extension字段说明
 

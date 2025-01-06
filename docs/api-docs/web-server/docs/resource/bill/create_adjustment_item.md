@@ -10,11 +10,11 @@ POST /api/v1/account/vendors/{vendor}/bills/adjustment_items/create
 
 ### 输入参数
 
-| 参数名称            | 参数类型                  | 必选 | 描述      |
-|-----------------|-----------------------|----|---------|
-| root_account_id | string                | 是  | 所属根账号id |
-| vendor          | string                | 是  | 所属厂商    |
-| items           | adjustment_item array | 是  | 调账明细列表  |
+| 参数名称            | 参数类型                  | 必选 | 描述                    |
+|-----------------|-----------------------|----|-----------------------|
+| root_account_id | string                | 是  | 所属根账号id               |
+| vendor          | string                | 是  | 所属厂商                  |
+| items           | adjustment_item array | 是  | 调账明细列表, min=1,max=100 |
 
 ### adjustment_item
 
