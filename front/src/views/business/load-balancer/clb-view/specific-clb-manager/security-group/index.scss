@@ -13,10 +13,6 @@
     padding: 0 16px;
     cursor: pointer;
     border: 1px solid #ffffff00;
-
-    .disabled-button {
-      cursor: not-allowed;
-    }
   }
 
   .rs-check-selector-active {
@@ -25,12 +21,15 @@
     border-radius: 2px;
   }
 
+  .disabled-button {
+    cursor: not-allowed;
+  }
 }
 
 .line {
   width: 100%;
   height: 1px;
-  background-color: #EAEBF0;
+  background-color: #eaebf0;
   margin: 0 auto;
   margin-bottom: 25px;
 }
@@ -95,7 +94,6 @@
   }
 
   .config-item-wrapper {
-
     .config-security-item,
     .config-security-item-new {
       height: 40px;
@@ -188,7 +186,7 @@
 .config-res-wrapper {
   display: flex;
   align-items: center;
-  color: #63656E;
+  color: #63656e;
 
   .edit-icon {
     cursor: pointer;
