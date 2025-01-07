@@ -240,5 +240,5 @@ func (cli *CvmClient) BatchAssociateSecurityGroup(kt *kit.Kit,
 	req *protocvm.TCloudCvmBatchAssociateSecurityGroupReq) error {
 
 	return common.RequestNoResp[protocvm.TCloudCvmBatchAssociateSecurityGroupReq](
-		cli.client, http.MethodPost, kt, req, "/cvms/batch/associate/security_groups")
+		cli.client, http.MethodPost, kt, req, "/cvms/security_groups/batch/associate")
 }

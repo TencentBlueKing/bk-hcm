@@ -50,7 +50,7 @@ func (svc *cvmSvc) initTCloudCvmService(cap *capability.Capability) {
 	h.Add("BatchResetTCloudCvmPwd", http.MethodPost, "/vendors/tcloud/cvms/batch/reset/pwd", svc.BatchResetTCloudCvmPwd)
 	h.Add("BatchResetTCloudCvm", http.MethodPost, "/vendors/tcloud/cvms/reset", svc.BatchResetTCloudCvm)
 
-	h.Add("BatchAssociateTCloudSecurityGroup", http.MethodPost, "/vendors/tcloud/cvms/batch/associate/security_groups",
+	h.Add("BatchAssociateTCloudSecurityGroup", http.MethodPost, "/vendors/tcloud/cvms/security_groups/batch/associate",
 		svc.BatchAssociateTCloudSecurityGroup)
 
 	h.Load(cap.WebService)
@@ -63,6 +63,10 @@ func (svc *cvmSvc) BatchAssociateTCloudSecurityGroup(cts *rest.Contexts) (interf
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
 	tcloud, err := svc.ad.TCloud(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err

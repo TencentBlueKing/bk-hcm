@@ -183,3 +183,8 @@ type TCloudCvmBatchAssociateSecurityGroupReq struct {
 	SecurityGroupIDs []string `json:"security_group_ids" validate:"required"`
 	CvmID            string   `json:"cvm_id" validate:"required"`
 }
+
+// Validate associate security group to cvm request.
+func (opt TCloudCvmBatchAssociateSecurityGroupReq) Validate() error {
+	return validator.Validate.Struct(opt)
+}

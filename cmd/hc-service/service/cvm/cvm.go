@@ -21,6 +21,8 @@
 package cvm
 
 import (
+	"fmt"
+
 	cloudadaptor "hcm/cmd/hc-service/logics/cloud-adaptor"
 	"hcm/cmd/hc-service/service/capability"
 	"hcm/pkg/api/core"
@@ -80,7 +82,7 @@ func (svc *cvmSvc) listCvms(kt *kit.Kit, cvmIDs ...string) ([]corecvm.BaseCvm, e
 
 func (svc *cvmSvc) listSecurityGroupMap(kt *kit.Kit, sgIDs ...string) (map[string]cloud.BaseSecurityGroup, error) {
 	if len(sgIDs) == 0 {
-		return nil, nil
+		return nil, fmt.Errorf("security group ids is empty")
 	}
 
 	result := make(map[string]cloud.BaseSecurityGroup)

@@ -377,6 +377,9 @@ func (a *Aws) CreateCvm(kt *kit.Kit, opt *typecvm.AwsCreateOption) (*poller.Base
 // BatchAssociateSecurityGroup batch associate security group.
 // reference: https://docs.amazonaws.cn/en_us/AWSEC2/latest/APIReference/API_ModifyInstanceAttribute.html
 func (a *Aws) BatchAssociateSecurityGroup(kt *kit.Kit, opt *typecvm.AwsAssociateSecurityGroupsOption) error {
+	if opt == nil {
+		return errf.New(errf.InvalidParameter, "option is required")
+	}
 	client, err := a.clientSet.ec2Client(opt.Region)
 	if err != nil {
 		return err

@@ -186,5 +186,5 @@ func (cli *CvmClient) BatchCreateCvm(kt *kit.Kit, request *protocvm.AwsBatchCrea
 // BatchAssociateSecurityGroup ....
 func (cli *CvmClient) BatchAssociateSecurityGroup(kt *kit.Kit, request *protocvm.AwsCvmBatchAssociateSecurityGroupReq) error {
 	return common.RequestNoResp[protocvm.AwsCvmBatchAssociateSecurityGroupReq](
-		cli.client, http.MethodPost, kt, request, "/cvms/batch/associate/security_groups")
+		cli.client, http.MethodPost, kt, request, "/cvms/security_groups/batch/associate")
 }

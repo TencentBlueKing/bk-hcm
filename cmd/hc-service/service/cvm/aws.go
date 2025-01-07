@@ -45,7 +45,7 @@ func (svc *cvmSvc) initAwsCvmService(cap *capability.Capability) {
 	h.Add("BatchRebootAwsCvm", http.MethodPost, "/vendors/aws/cvms/batch/reboot", svc.BatchRebootAwsCvm)
 	h.Add("BatchDeleteAwsCvm", http.MethodDelete, "/vendors/aws/cvms/batch", svc.BatchDeleteAwsCvm)
 
-	h.Add("BatchAssociateAwsSecurityGroup", http.MethodPost, "/vendors/aws/cvms/batch/associate/security_groups",
+	h.Add("BatchAssociateAwsSecurityGroup", http.MethodPost, "/vendors/aws/cvms/security_groups/batch/associate",
 		svc.BatchAssociateAwsSecurityGroup)
 
 	h.Load(cap.WebService)
@@ -58,6 +58,10 @@ func (svc *cvmSvc) BatchAssociateAwsSecurityGroup(cts *rest.Contexts) (interface
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
 	awsCli, err := svc.ad.Aws(cts.Kit, req.AccountID)
 	if err != nil {
 		return nil, err
@@ -115,6 +119,7 @@ func (svc *cvmSvc) BatchAssociateAwsSecurityGroup(cts *rest.Contexts) (interface
 	return nil, nil
 }
 
+// BatchCreateAwsCvm ...
 func (svc *cvmSvc) BatchCreateAwsCvm(cts *rest.Contexts) (interface{}, error) {
 	req := new(protocvm.AwsBatchCreateReq)
 	if err := cts.DecodeInto(req); err != nil {

@@ -147,3 +147,8 @@ type AwsCvmBatchAssociateSecurityGroupReq struct {
 	SecurityGroupIDs []string `json:"security_group_ids" validate:"required"`
 	CvmID            string   `json:"cvm_id" validate:"required"`
 }
+
+// Validate ...
+func (req *AwsCvmBatchAssociateSecurityGroupReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
