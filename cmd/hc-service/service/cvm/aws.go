@@ -22,9 +22,6 @@ package cvm
 import (
 	"net/http"
 
-	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
-
 	syncaws "hcm/cmd/hc-service/logics/res-sync/aws"
 	"hcm/cmd/hc-service/service/capability"
 	typecore "hcm/pkg/adaptor/types/core"
@@ -40,6 +37,9 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
+
+	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 )
 
 func (svc *cvmSvc) initAwsCvmService(cap *capability.Capability) {
@@ -415,9 +415,12 @@ func (svc *cvmSvc) listAwsCvmNetworkInterfaceFromCloud(kt *kit.Kit, region, acco
 			if _, ok := result[id]; !ok {
 				result[id] = &protocvm.ListCvmNetworkInterfaceRespItem{}
 			}
-			result[id].MacAddresses = append(result[id].MacAddresses, converter.PtrToVal(detail.MacAddress))
-			result[id].PrivateIpAddresses = append(result[id].PrivateIpAddresses,
-				converter.PtrToVal(detail.PrivateIpAddress))
+
+			privateIPs := make([]string, 0)
+			for _, set := range detail.PrivateIpAddresses {
+				privateIPs = append(privateIPs, converter.PtrToVal(set.PrivateIpAddress))
+			}
+			result[id].MapAddressToPrivateIpAddresses[converter.PtrToVal(detail.MacAddress)] = privateIPs
 		}
 		if resp.NextToken == nil {
 			break

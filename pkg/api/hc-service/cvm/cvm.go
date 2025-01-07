@@ -70,6 +70,5 @@ type ListCvmNetworkInterfaceResp = map[string]*ListCvmNetworkInterfaceRespItem
 
 // ListCvmNetworkInterfaceRespItem defines list cvm mac address response item.
 type ListCvmNetworkInterfaceRespItem struct {
-	MacAddresses       []string `json:"mac_addresses"`
-	PrivateIpAddresses []string `json:"private_ip_addresses"`
+	MapAddressToPrivateIpAddresses map[string][]string `json:"map_address_to_private_ip"`
 }
