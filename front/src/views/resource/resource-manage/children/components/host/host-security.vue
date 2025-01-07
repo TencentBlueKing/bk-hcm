@@ -94,7 +94,7 @@ const isResourcePage = computed(() => {
   return !accountStore.bizs;
 });
 
-const { selections /* handleSelectionChange*/ } = useSelection();
+const { selections } = useSelection();
 
 watch(
   () => activeType.value,
@@ -391,6 +391,7 @@ getSecurityGroupsList();
         :region="props.data.region"
         :multiple="multiple"
         :vendor="props.data.vendor"
+        :bound-secruity="tableData"
         @selectedChange="(ids) => handleSelectSecurity(ids)"
         ref="secuRef"
       >

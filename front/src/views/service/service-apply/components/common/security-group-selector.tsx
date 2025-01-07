@@ -19,6 +19,7 @@ import http from '@/http';
 export default defineComponent({
   props: {
     type: String as PropType<string>,
+    boundSecruity: Array as PropType<string[]>,
     modelValue: String as PropType<string | string[]>,
     bizId: Number as PropType<number | string>,
     accountId: String as PropType<string>,
@@ -112,6 +113,16 @@ export default defineComponent({
         }
       },
     );
+    watch(
+      () => props.boundSecruity,
+      (val) => {
+        val.forEach((item) => getSecurityInfo(item));
+        // 将已经绑定的安全组置灰并勾选
+        securityList.value.forEach((item) => {
+          if (boundId.value.includes(item.id)) item.isChecked = true;
+        });
+      },
+    );
 
     const securityGroupRules = ref([]);
     const isRulesTableLoading = ref(false);
@@ -130,32 +141,37 @@ export default defineComponent({
       }));
     });
 
+    const boundId = computed(() => props.boundSecruity.map((item: any) => item.id));
+
     const securityRulesColumns = useColumns('securityCommon', false, props.vendor).columns.filter(
       ({ field }: { field: string }) => !['updated_at'].includes(field),
     );
 
-    const isAllExpand = ref(true);
+    const isAllExpand = ref(false);
 
     const currentIndex = ref(-1);
-    const handleSecurityGroupChange = async (isSelected: boolean, item: any, index: number) => {
+    const handleSecurityGroupChange = (isSelected: boolean, item: any, index: number) => {
       if (isSelected) {
         currentIndex.value = index;
-        try {
-          isRulesTableLoading.value = true;
-          const res = await http.post(
-            `/api/v1/cloud/${getBusinessApiPath()}vendors/${props.vendor}/security_groups/${item.id}/rules/list`,
-            {
-              filter: { op: 'and', rules: [] },
-              page: { count: false, start: 0, limit: 500 },
-            },
-          );
-          const arr = res.data?.details || [];
-          securityGroupRules.value.push({ id: getId(item), name: item.name, data: arr });
-        } finally {
-          isRulesTableLoading.value = false;
-        }
+        getSecurityInfo(item);
       } else {
         securityGroupRules.value = securityGroupRules.value.filter(({ id }) => id !== getId(item));
+      }
+    };
+    const getSecurityInfo = async (item: any) => {
+      try {
+        isRulesTableLoading.value = true;
+        const res = await http.post(
+          `/api/v1/cloud/${getBusinessApiPath()}vendors/${props.vendor}/security_groups/${item.id}/rules/list`,
+          {
+            filter: { op: 'and', rules: [] },
+            page: { count: false, start: 0, limit: 500 },
+          },
+        );
+        const arr = res.data?.details || [];
+        securityGroupRules.value.unshift({ id: getId(item), name: item.name, data: arr });
+      } finally {
+        isRulesTableLoading.value = false;
       }
     };
     const getId = (item: any) => {
@@ -248,9 +264,10 @@ export default defineComponent({
                         <Checkbox
                           v-model={item.isChecked}
                           disabled={
-                            (props.vendor === VendorEnum.AZURE || !props.multiple) &&
-                            securityGroupRules.value.length > 0 &&
-                            currentIndex.value !== index
+                            boundId.value.includes(item.id) ||
+                            ((props.vendor === VendorEnum.AZURE || !props.multiple) &&
+                              securityGroupRules.value.length > 0 &&
+                              currentIndex.value !== index)
                           }
                           label={'data.cloud_id'}
                           onChange={(isSelected: boolean) => handleSecurityGroupChange(isSelected, item, index)}>

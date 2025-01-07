@@ -18,7 +18,7 @@ export default defineComponent({
     },
   },
   setup(props, { slots }) {
-    const isExpand = ref(true);
+    const isExpand = ref(props.isAllExpand);
     watch(
       () => props.isAllExpand,
       (val) => (isExpand.value = val),
