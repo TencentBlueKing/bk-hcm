@@ -373,7 +373,7 @@ func (s *Service) Healthz(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := serviced.Healthz(cc.WebServer().Service); err != nil {
+	if err := serviced.Healthz(r.Context(), cc.WebServer().Service); err != nil {
 		logs.Errorf("serviced healthz check failed, err: %v", err)
 		rest.WriteResp(w, rest.NewBaseResp(errf.UnHealthy, "serviced healthz error, "+err.Error()))
 		return
