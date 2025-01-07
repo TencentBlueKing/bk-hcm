@@ -12,7 +12,6 @@ import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import { useLoadBalancerStore } from '@/store/loadbalancer';
 import ExpandCard from './expand-card';
 import { QueryRuleOPEnum } from '@/typings';
-import { VendorEnum } from '@/common/constant';
 import { IDetail } from '@/hooks/useRouteLinkBtn';
 import { VueDraggable } from 'vue-draggable-plus';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
@@ -146,12 +145,6 @@ export default defineComponent({
       tableOptions: {
         columns: tableColumns,
         extra: {
-          // onSelectionChange: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable),
-          // onSelectAll: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true),
-          // isRowSelectEnable,
-          // isSelectedFn: ({ row }: any) => {
-          //   return selectedSecuirtyGroupsSet.value.has(row.id);
-          // },
           isRowSelectEnable,
           onSelectionChange: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable),
           onSelectAll: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true),
@@ -165,12 +158,12 @@ export default defineComponent({
             {
               field: 'vendor',
               op: QueryRuleOPEnum.EQ,
-              value: VendorEnum.TCLOUD,
+              value: props.detail.vendor,
             },
             {
               field: 'region',
               op: QueryRuleOPEnum.EQ,
-              value: loadBalancerStore.currentSelectedTreeNode.region,
+              value: props.detail.region,
             },
           ],
           // 属性里传入一个配置，选择是不是要模糊查询
