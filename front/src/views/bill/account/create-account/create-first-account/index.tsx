@@ -2,10 +2,10 @@ import { defineComponent, reactive, ref, watchEffect } from 'vue';
 import './index.scss';
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import CommonCard from '@/components/CommonCard';
-import { Button, Form, Input, Message } from 'bkui-vue';
+import { Button, Form, Input, Message, Select } from 'bkui-vue';
 import { BILL_VENDORS_INFO } from '../constants';
 import { InfoLine, Success } from 'bkui-vue/lib/icon';
-import { VendorEnum } from '@/common/constant';
+import { VendorEnum, AccountVerifyEnum } from '@/common/constant';
 import MemberSelect from '@/components/MemberSelect';
 import { useUserStore } from '@/store';
 import { useRouter } from 'vue-router';
@@ -37,6 +37,7 @@ export default defineComponent({
       dept_id: -1, // 组织架构ID
       memo: '', // 备忘录
       extension: {}, // 扩展字段对象
+      accountType: AccountVerifyEnum.ROOT,
     });
 
     watchEffect(() => {
@@ -67,6 +68,11 @@ export default defineComponent({
       });
       router.go(-1);
     };
+    const handleChange = (keyVal: any, property: string, follow: string) => {
+      curExtension.value.output1[property].value = keyVal;
+      const data = curExtension.value.selectParams[property].list.filter((item: any) => item[property] === keyVal);
+      curExtension.value.output1[follow].value = data[0][follow];
+    };
 
     return () => (
       <div class={'create-first-account-wrapper'}>
@@ -76,21 +82,7 @@ export default defineComponent({
 
         <CommonCard title={() => '基础信息'} class={'info-card'}>
           <div class={'account-form-card-content'}>
-            <Form
-              formType='vertical'
-              model={formModel}
-              ref={formRef}
-              rules={{
-                name: [
-                  {
-                    trigger: 'change',
-                    message: '账号名称只能包括小写字母和数字，并且仅能以小写字母开头，长度为6-20个字符',
-                    validator: (val: string) => {
-                      return /^[a-z][a-z0-9]{5,19}$/.test(val);
-                    },
-                  },
-                ],
-              }}>
+            <Form formType='vertical' model={formModel}>
               <FormItem label='云厂商' required property='vendor'>
                 <div class={'account-vendor-selector'}>
                   {BILL_VENDORS_INFO.map(({ vendor, name, icon }) => (
@@ -118,7 +110,22 @@ export default defineComponent({
 
         <CommonCard title={() => '账号信息'} class={'info-card'}>
           <div class={'account-form-card-content'}>
-            <Form formType='vertical' model={formModel} auto-check>
+            <Form
+              formType='vertical'
+              model={formModel}
+              auto-check
+              ref={formRef}
+              rules={{
+                name: [
+                  {
+                    trigger: 'change',
+                    message: '账号名称只能包括小写字母和数字，并且仅能以小写字母开头，长度为6-20个字符',
+                    validator: (val: string) => {
+                      return /^[a-z][a-z0-9]{5,19}$/.test(val);
+                    },
+                  },
+                ],
+              }}>
               <FormItem label='帐号名称' required property='name'>
                 <Input v-model={formModel.name} placeholder='请输入账号名称'></Input>
               </FormItem>
@@ -187,7 +194,21 @@ export default defineComponent({
                 <div class={'account-form-card-content-grid-right'}>
                   {Object.entries(curExtension.value.output1).map(([property, { label, value, placeholder }]) => (
                     <FormItem label={label} property={property}>
-                      <Input v-model={value} readonly placeholder={placeholder} />
+                      {curExtension.value?.selectType?.includes(property) ? (
+                        <Select
+                          v-model={value}
+                          placeholder={placeholder}
+                          list={curExtension.value.selectParams[property].list}
+                          idKey={curExtension.value.selectParams[property].idKey}
+                          displayKey={curExtension.value.selectParams[property].displayKey}
+                          clearable={false}
+                          onChange={(val) =>
+                            handleChange(val, property, curExtension.value.selectParams[property].follow)
+                          }
+                        />
+                      ) : (
+                        <Input v-model={value} readonly placeholder={placeholder} />
+                      )}
                     </FormItem>
                   ))}
                 </div>
