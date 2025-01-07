@@ -21,6 +21,7 @@ package account
 
 import (
 	"fmt"
+	"strings"
 
 	"hcm/pkg/api/cloud-server/account"
 	"hcm/pkg/api/core/cloud"
@@ -198,7 +199,7 @@ func (a *accountSvc) getAndCheckAwsAccountInfo(cts *rest.Contexts) (*cloud.AwsIn
 	return info, nil
 }
 
-func (a *accountSvc) getAndCheckAzureAccountInfo(cts *rest.Contexts) (*cloud.AzureInfoBySecret, error) {
+func (a *accountSvc) getAndCheckAzureAccountInfo(cts *rest.Contexts) (*account.AzureAccountInfoBySecretResp, error) {
 	req := new(account.AzureAccountInfoBySecretReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -212,18 +213,46 @@ func (a *accountSvc) getAndCheckAzureAccountInfo(cts *rest.Contexts) (*cloud.Azu
 		logs.Errorf("fail to get account info, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
+
+	// 校验订阅数量，要求订阅数量刚好一个
+	if len(info.SubscriptionInfos) > 1 {
+		subs := make([]string, len(info.SubscriptionInfos))
+		for i, sub := range info.SubscriptionInfos {
+			subs[i] = "(" + sub.CloudSubscriptionID + ")" + sub.CloudSubscriptionName
+		}
+		logs.Errorf("more than one subscription found: %s, rid: %s", strings.Join(subs, ","), cts.Kit.Rid)
+		return nil, fmt.Errorf("more than one subscription found: %s", strings.Join(subs, ","))
+	}
+	subscription := info.SubscriptionInfos[0]
+	result := &account.AzureAccountInfoBySecretResp{
+		CloudSubscriptionID:   subscription.CloudSubscriptionID,
+		CloudSubscriptionName: subscription.CloudSubscriptionName,
+	}
+	// 补全ApplicationName
+	for _, one := range info.ApplicationInfos {
+		if one.CloudApplicationID == req.CloudApplicationID {
+			result.CloudApplicationName = one.CloudApplicationName
+			break
+		}
+	}
+	// 没有拿到应用id的情况
+	if len(result.CloudApplicationName) == 0 {
+		logs.Errorf("failed to get application name, rid: %s", cts.Kit.Rid)
+		return nil, fmt.Errorf("failed to get application name")
+	}
+
 	if req.DisableCheck {
-		return info, nil
+		return result, nil
 	}
 	if err = CheckDuplicateMainAccount(cts, a.client, enumor.Azure, enumor.ResourceAccount,
-		info.CloudSubscriptionID); err != nil {
+		subscription.CloudSubscriptionID); err != nil {
 		logs.Errorf("check whether main account duplicate fail, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-	return info, nil
+	return result, nil
 }
 
-func (a *accountSvc) getAndCheckGcpAccountInfo(cts *rest.Contexts) (*cloud.GcpInfoBySecret, error) {
+func (a *accountSvc) getAndCheckGcpAccountInfo(cts *rest.Contexts) (*cloud.GcpProjectInfo, error) {
 	req := new(account.GcpAccountInfoBySecretReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -237,15 +266,28 @@ func (a *accountSvc) getAndCheckGcpAccountInfo(cts *rest.Contexts) (*cloud.GcpIn
 		logs.Errorf("fail to get account info, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-	if req.DisableCheck {
-		return info, nil
+
+	// 只能有一个对应的project，多project报错。
+	if len(info.CloudProjectInfos) > 1 {
+		projects := make([]string, len(info.CloudProjectInfos))
+		for i, project := range info.CloudProjectInfos {
+			projects[i] = "(" + project.CloudProjectID + ")" + project.CloudProjectName
+		}
+		logs.Errorf("more than one project found: %s, rid: %s", strings.Join(projects, ","), cts.Kit.Rid)
+		return nil, fmt.Errorf("more than one project found: %s", strings.Join(projects, ","))
 	}
+	result := info.CloudProjectInfos[0]
+
+	if req.DisableCheck {
+		return &result, nil
+	}
+
 	if err = CheckDuplicateMainAccount(cts, a.client, enumor.Gcp, enumor.ResourceAccount,
-		info.CloudProjectID); err != nil {
+		result.CloudProjectID); err != nil {
 		logs.Errorf("check whether main account duplicate fail, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-	return info, nil
+	return &result, nil
 }
 
 func (a *accountSvc) getAndCheckHuaWeiAccountInfo(cts *rest.Contexts) (*cloud.HuaWeiInfoBySecret, error) {
