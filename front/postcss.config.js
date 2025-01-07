@@ -1,6 +1,32 @@
+const fs = require('fs');
+const path = require('path');
+const { CachedInputFileSystem, ResolverFactory } = require('enhanced-resolve');
+
+const myResolver = ResolverFactory.createResolver({
+  alias: {
+    '@': path.resolve(__dirname, './src'),
+  },
+  preferRelative: true,
+  fileSystem: new CachedInputFileSystem(fs, 4000),
+  useSyncFileSystemCalls: true,
+  extensions: ['.css', '.scss'],
+});
+
 module.exports = {
   plugins: [
-    require('autoprefixer'),
-    require('postcss-import'),
+    [
+      'postcss-import',
+      {
+        resolve(id, baseDir) {
+          return myResolver.resolveSync({}, baseDir, id);
+        },
+      },
+    ],
+    'postcss-simple-vars',
+    'postcss-mixins',
+    'postcss-nested-ancestors',
+    'postcss-nested',
+    'postcss-preset-env',
+    'postcss-url',
   ],
 };

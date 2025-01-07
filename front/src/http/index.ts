@@ -4,7 +4,7 @@
  */
 
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
-import cookie from 'cookie';
+import Cookies from 'js-cookie';
 import { Message } from 'bkui-vue';
 import { defaults } from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
@@ -329,7 +329,7 @@ function getCancelToken() {
  * 向 http header 注入 CSRFToken，CSRFToken key 值与后端一起协商制定
  */
 export function injectCSRFTokenToHeaders() {
-  const CSRFToken = cookie.parse(document.cookie)[`${window.PROJECT_CONFIG.BKPAAS_APP_ID}_csrftoken`];
+  const CSRFToken = Cookies.get(`${window.PROJECT_CONFIG.BKPAAS_APP_ID}_csrftoken`);
   if (CSRFToken !== undefined) {
     axiosInstance.defaults.headers.common['X-CSRFToken'] = CSRFToken;
   } else {

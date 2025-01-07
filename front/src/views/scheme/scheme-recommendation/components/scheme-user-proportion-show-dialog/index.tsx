@@ -11,7 +11,7 @@ export default defineComponent({
       default: false,
     },
     treeData: {
-      type: Array<IAreaInfo> as PropType<Array<IAreaInfo>>,
+      type: Array as PropType<IAreaInfo[]>,
     },
   },
   emits: ['update:isShow'],
@@ -69,7 +69,8 @@ export default defineComponent({
         class='user-proportion-detail-dialog'
         isShow={props.isShow}
         title='分布权重占比'
-        onClosed={() => toggleShow(false)}>
+        onClosed={() => toggleShow(false)}
+      >
         <div class='tips-wrap mb16'>
           <i class='hcm-icon bkhcm-icon-info-line'></i>
           <div class='tips-text'>
@@ -86,7 +87,8 @@ export default defineComponent({
           selectable={false}
           indent={30}
           line-height={36}
-          prefixIcon={getPrefixIcon}>
+          prefixIcon={getPrefixIcon}
+        >
           {{
             nodeAppend: getNodeAppend,
           }}
