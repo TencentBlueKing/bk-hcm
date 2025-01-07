@@ -1,7 +1,7 @@
-import { defineComponent, reactive, ref, nextTick } from 'vue';
+import { defineComponent } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 // import components
-import { Button, Message, Form, Dialog } from 'bkui-vue';
+import { Button, Message } from 'bkui-vue';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
 import BatchImportComp from './batch-import-comp/index.vue';
@@ -24,16 +24,7 @@ import Confirm from '@/components/confirm';
 import { useVerify } from '@/hooks';
 import { useGlobalPermissionDialog } from '@/store/useGlobalPermissionDialog';
 import { VendorEnum, VendorMap } from '@/common/constant';
-import AccountSelector from '@/components/account-selector/index-new.vue';
-import RegionSelector from '@/views/service/service-apply/components/common/region-selector';
-import { accountFilter } from './account-filter.plugin';
-
-export interface syncResourceForm {
-  account_id: string;
-  vendor: string;
-  region: string;
-  isShow: boolean;
-}
+import AllLoadBalancer from '@/components/sync-clb/all.vue';
 
 export default defineComponent({
   name: 'AllClbsManager',
@@ -47,8 +38,6 @@ export default defineComponent({
     const { selections, handleSelectionChange, resetSelections } = useSelection();
     const { authVerifyData, handleAuth } = useVerify();
     const globalPermissionDialogStore = useGlobalPermissionDialog();
-    const formRef = ref(null);
-    const { FormItem } = Form;
 
     const isRowSelectEnable = ({ row, isCheckAll }: DoublePlainObject) => {
       if (isCheckAll) return true;
@@ -206,36 +195,6 @@ export default defineComponent({
       getListData,
     );
 
-    const formData = reactive<syncResourceForm>({
-      account_id: '',
-      vendor: '',
-      region: '',
-      isShow: false,
-    });
-
-    const handleSetFormDataInit = () => {
-      formData.account_id = '';
-      formData.vendor = '';
-      formData.region = '';
-      formData.isShow = false;
-      nextTick(() => formRef.value?.clearValidate());
-    };
-    const handleConfirm = async () => {
-      const { account_id, vendor, region } = formData;
-      await formRef.value?.validate();
-      resourceStore
-        .syncResource({
-          account_id,
-          vendor,
-          regions: [region],
-          resource: 'load_balancer',
-        })
-        .then(() => {
-          Message({ theme: 'success', message: t('已提交同步任务，请等待同步结果') });
-          handleSetFormDataInit();
-        });
-    };
-
     return () => (
       <div class='common-card-wrap'>
         {/* 负载均衡list */}
@@ -261,12 +220,7 @@ export default defineComponent({
                 </Button>
                 {/* 批量导入 */}
                 <BatchImportComp />
-                <Button
-                  class='mw88 mr8'
-                  onClick={() => (formData.isShow = true)}
-                  disabled={selections.value.length > 0}>
-                  {t('同步负载均衡')}
-                </Button>
+                <AllLoadBalancer disabled={selections.value.length > 0} />
               </>
             ),
           }}
@@ -301,27 +255,6 @@ export default defineComponent({
             ),
           }}
         </BatchOperationDialog>
-        {/* 同步负载均衡 */}
-        <Dialog
-          isShow={formData.isShow}
-          title={t('同步负载均衡列表')}
-          quick-close={false}
-          onConfirm={handleConfirm}
-          onClosed={handleSetFormDataInit}>
-          <Form form-type='vertical' ref={formRef} model={formData}>
-            <FormItem label={t('选择云账号')} required property='account_id'>
-              <AccountSelector
-                v-model={formData.account_id}
-                filter={accountFilter}
-                onChange={(resource) => (formData.vendor = resource.vendor)}
-              />
-            </FormItem>
-            <FormItem label={t('云地域')} required property='region'>
-              <RegionSelector v-model={formData.region} vendor={formData.vendor} account-id={formData.account_id} />
-            </FormItem>
-            <div>{t('从云上同步该业务的所有负载均衡数据，包括负载均衡，监听器等')}</div>
-          </Form>
-        </Dialog>
       </div>
     );
   },
