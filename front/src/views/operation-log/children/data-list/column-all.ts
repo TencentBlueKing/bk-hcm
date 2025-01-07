@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { Model, Column } from '@/decorator';
+import { Model } from '@/decorator';
 import { TableColumn } from './column';
 
 @Model('operation-log/table-column-all')
