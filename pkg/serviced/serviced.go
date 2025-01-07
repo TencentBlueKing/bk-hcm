@@ -24,7 +24,6 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"time"
 
 	"hcm/pkg/cc"
 	"hcm/pkg/logs"
@@ -111,7 +110,6 @@ func Healthz(ctx context.Context, config cc.Service) error {
 			return
 		}
 
-		cfg.DialTimeout = time.Second
 		etcdCli, err = etcd3.New(cfg)
 		if err != nil {
 			return
