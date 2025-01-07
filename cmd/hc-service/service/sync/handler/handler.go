@@ -293,7 +293,7 @@ func (sw *syncWorker[T]) start() {
 				sw.failed += len(instances)
 				logs.Errorf("[ResourceSyncV2] %s consumer[%d] sync failed, err: %v, rid: %s",
 					sw.handler.Describe(), sw.idx, err, sw.kt.Rid)
-				if sw.err != nil {
+				if sw.err == nil {
 					// 失败后继续尽力同步其他资源
 					sw.err = err
 				}
