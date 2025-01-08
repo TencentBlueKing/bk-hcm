@@ -12,7 +12,7 @@ PATCH /api/v1/account/root_accounts/{account_id}
 
 | 参数名称         | 是否必选 | 类型           | 描述              |
 |--------------|------|--------------|-----------------|
-| account_id   | 是    | string       | 二级账号ID          |
+| account_id   | 是    | string       | 一级账号ID          |
 | name         | 否    | string       | 名称              |
 | managers     | 否    | string array | 主账号管理者列表，最大5个   |
 | bak_managers | 否    | string array | 主账号备份管理者列表，最大5个 |

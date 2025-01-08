@@ -12,7 +12,7 @@ GET /api/v1/account/root_accounts/{account_id}
 
 | 参数名称       | 是否必选 | 类型     | 描述     |
 |------------|------|--------|--------|
-| account_id | 是    | string | 二级账号ID |
+| account_id | 是    | string | 一级账号ID |
 
 
 ### 响应数据
