@@ -314,6 +314,8 @@ func (c *CreateUrlRuleExecutor) buildTCloudFlowTask(lbID, lblID string, details 
 			}
 			if detail.HealthCheck {
 				req.HealthCheck.HealthSwitch = converter.ValToPtr(int64(1))
+			} else {
+				req.HealthCheck.HealthSwitch = converter.ValToPtr(int64(0))
 			}
 
 			rules = append(rules, req)
