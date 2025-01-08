@@ -21,9 +21,9 @@
 package handler
 
 import (
+	"errors"
 	"fmt"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"hcm/cmd/hc-service/logics/res-sync/common"
@@ -114,12 +114,12 @@ type HandlerV2[T common.CloudResType] interface {
 }
 
 const (
-	syncQueueSize              = 10
-	lastNBatchToSplitMiniBatch = 2
+	syncQueueSize = 10
 )
 
 // ResourceSyncV2 资源同步，包含三个流程：1. 准备请求 2. 获取云上实例列表 3. 清理云上已删除实例 4. 同步实例详情
 func ResourceSyncV2[T common.CloudResType](cts *rest.Contexts, handler HandlerV2[T]) error {
+
 	kt := cts.Kit
 
 	// 1. 解析请求参数到handler实现中，构建同步需要的客户端
@@ -129,11 +129,11 @@ func ResourceSyncV2[T common.CloudResType](cts *rest.Contexts, handler HandlerV2
 		return err
 	}
 	// 2. 获取云上实例列表
-	logs.Infof("[ResourceSyncV2] %s sync start with concurrent %d start, rid: %s",
+	logs.Infof("[ResourceSyncV2] %s sync Start with %d workers, rid: %s",
 		handler.Describe(), handler.SyncConcurrent(), kt.Rid)
 	allCloudIDMap := make(map[string]struct{}, 1024)
 	allInstanceList := make([][]T, 0)
-	start := time.Now()
+	startedAt := time.Now()
 	total := 0
 	for {
 		startBatch := time.Now()
@@ -160,8 +160,9 @@ func ResourceSyncV2[T common.CloudResType](cts *rest.Contexts, handler HandlerV2
 			break
 		}
 	}
-	logs.Infof("[ResourceSyncV2] %s pull all cost: %s, count: %d, rid: %s", handler.Describe(), time.Since(start),
-		total, kt.Rid)
+
+	logs.Infof("[ResourceSyncV2] %s pull all cost: %s, res count: %d, rid: %s",
+		handler.Describe(), time.Since(startedAt), total, kt.Rid)
 
 	// 3. 删除云上已删除数据
 	if err := handler.RemoveDeletedFromCloud(kt, allCloudIDMap); err != nil {
@@ -171,22 +172,36 @@ func ResourceSyncV2[T common.CloudResType](cts *rest.Contexts, handler HandlerV2
 	}
 	logs.Infof("[ResourceSyncV2] %s remove deleted done, rid: %s", handler.Describe(), kt.Rid)
 
+	// 4. 同步实例详情
+	success, failed, errs := syncResourcesDetail(kt, handler, total, allInstanceList)
+	cost := time.Since(startedAt)
+	logs.Infof("[ResourceSyncV2] %s sync done, total/success/failed: %d/%d/%d, avg: %.2f res/s, cost: %s, rid: %s",
+		handler.Describe(), total, success, failed, float64(total)/cost.Seconds(), cost, kt.Rid)
+	if failed != 0 {
+		return fmt.Errorf("%s %d res sync failed, errs: %v", handler.Describe(), failed, errs)
+	}
+	return nil
+}
+
+func syncResourcesDetail[T common.CloudResType](kt *kit.Kit, handler HandlerV2[T], total int, allInstances [][]T) (
+	success int, failed int, err error) {
+
 	// 并发同步资源实例
 	syncWg := &sync.WaitGroup{}
 	syncInstCh := make(chan []T, syncQueueSize)
 	concurrent := int(max(handler.SyncConcurrent(), 1))
-	var successCnt, failedCnt = &atomic.Uint64{}, &atomic.Uint64{}
-
+	workers := make([]syncWorker[T], concurrent)
 	for i := 0; i < concurrent; i++ {
 		syncWg.Add(1)
-		go syncConsumer(kt, handler, i, syncWg, syncInstCh, successCnt, failedCnt)
+		workers[i] = newSyncWorker[T](kt, handler, i, syncInstCh, syncWg)
+		go workers[i].Start()
 	}
 	left := total
 	// 倒序同步，因为新建的往往按序插入，所以倒序同步可以保证新建的实例先同步。
-	for i := len(allInstanceList) - 1; i >= 0; i-- {
+	for i := len(allInstances) - 1; i >= 0; i-- {
 		// 单次拉取数量可能大于 constant.CloudResourceSyncMaxLimit，取决于并发数
-		batchs := slice.Split(allInstanceList[i], constant.CloudResourceSyncMaxLimit)
-		for _, instBatch := range batchs {
+		batches := slice.Split(allInstances[i], constant.CloudResourceSyncMaxLimit)
+		for _, instBatch := range batches {
 			if i > 0 || concurrent < 2 {
 				left -= len(instBatch)
 				syncInstCh <- instBatch
@@ -205,49 +220,90 @@ func ResourceSyncV2[T common.CloudResType](cts *rest.Contexts, handler HandlerV2
 	}
 	close(syncInstCh)
 	syncWg.Wait()
-	success, failed := successCnt.Load(), failedCnt.Load()
-	cost := time.Since(start)
-	logs.Infof("[ResourceSyncV2] %s sync done, total/success/failed: %d/%d/%d, avg: %.2f res/s, cost: %s, rid: %s",
-		handler.Describe(), total, success, failed, float64(total)/cost.Seconds(), cost, kt.Rid)
-	if failed != 0 {
-		return fmt.Errorf("%d load balancer sync failed", failed)
+	var errs []error
+	// 统计同步结果
+	for i := range workers {
+		_, workerSuccess, workerFailed, workerErr := workers[i].GetResult()
+		success += workerSuccess
+		failed += workerFailed
+		// 收集错误
+		if workerErr != nil {
+			errs = append(errs, workerErr)
+		}
 	}
-	return nil
+	err = nil
+	if len(errs) > 0 {
+		err = errors.Join(errs...)
+	}
+
+	return success, failed, err
 }
 
-func syncConsumer[T common.CloudResType](kt *kit.Kit, handler HandlerV2[T], idx int,
-	wg *sync.WaitGroup, syncInstCh chan []T, globalSuccess, globalFailed *atomic.Uint64) {
+// newSyncWorker 创建同步执行器
+func newSyncWorker[T common.CloudResType](kt *kit.Kit, handler HandlerV2[T], idx int, syncInstCh chan []T,
+	wg *sync.WaitGroup) syncWorker[T] {
+
+	return syncWorker[T]{
+		kt:         kt,
+		handler:    handler,
+		idx:        idx,
+		wg:         wg,
+		syncInstCh: syncInstCh,
+	}
+}
+
+// syncWorker 同步执行器
+type syncWorker[T common.CloudResType] struct {
+	kt         *kit.Kit
+	handler    HandlerV2[T]
+	idx        int
+	wg         *sync.WaitGroup
+	syncInstCh chan []T
+	err        error
+	total      int
+	failed     int
+}
+
+// GetResult 获取同步结果
+func (sw *syncWorker[T]) GetResult() (total, success, failed int, err error) {
+	return sw.total, sw.total - sw.failed, sw.failed, sw.err
+}
+
+// Start worker
+func (sw *syncWorker[T]) Start() {
 
 	start := time.Now()
-	var total, failed int
 	defer func() {
 		cost := time.Since(start)
-		wg.Done()
+		sw.wg.Done()
 		logs.Infof("[ResourceSyncV2] consumer[%d] %s exit, total(failed): %d(%d), avg: %.2f res/s, cost: %s, rid: %s",
-			idx, handler.Describe(), total, failed, float64(total)/cost.Seconds(), cost, kt.Rid)
+			sw.idx, sw.handler.Describe(), sw.total, sw.failed, float64(sw.total)/cost.Seconds(), cost, sw.kt.Rid)
 	}()
 
 	for {
 		select {
-		case instanceList, ok := <-syncInstCh:
+		case instanceList, ok := <-sw.syncInstCh:
 			if !ok {
 				return
 			}
 
-			logs.Infof("[ResourceSyncV2] consumer[%d] %s got: %d, queue: %d, rid: %s",
-				idx, handler.Describe(), len(instanceList), len(syncInstCh), kt.Rid)
+			logs.Infof("[ResourceSyncV2] %s consumer[%d] got: %d, queue: %d, rid: %s",
+				sw.handler.Describe(), sw.idx, len(instanceList), len(sw.syncInstCh), sw.kt.Rid)
 			for _, instances := range slice.Split(instanceList, constant.CloudResourceSyncMaxLimit) {
-				total += len(instances)
-				if err := handler.Sync(kt, instances); err != nil {
-					logs.Errorf("[ResourceSyncV2] consumer[%d] %s handler to sync failed, err: %v, rid: %s",
-						idx, handler.Describe(), err, kt.Rid)
-					failed += len(instances)
-					globalFailed.Add(uint64(len(instances)))
+				sw.total += len(instances)
+				err := sw.handler.Sync(sw.kt, instances)
+				if err == nil {
 					continue
 				}
-				globalSuccess.Add(uint64(len(instances)))
+				sw.failed += len(instances)
+				logs.Errorf("[ResourceSyncV2] %s consumer[%d] sync failed, err: %v, rid: %s",
+					sw.handler.Describe(), sw.idx, err, sw.kt.Rid)
+				if sw.err == nil {
+					// 失败后继续尽力同步其他资源
+					sw.err = err
+				}
 			}
-		case <-kt.Ctx.Done():
+		case <-sw.kt.Ctx.Done():
 			return
 		}
 	}

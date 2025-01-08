@@ -26,6 +26,11 @@ import (
 // TCloudLoadBalancer ...
 type TCloudLoadBalancer = LoadBalancer[TCloudClbExtension]
 
+// SupportCrossRegionV1 是否支持跨地域1.0
+func (ext *TCloudClbExtension) SupportCrossRegionV1() bool {
+	return ext != nil && cvt.PtrToVal(ext.TargetRegion) != "" && cvt.PtrToVal(ext.TargetCloudVpcID) != ""
+}
+
 // TCloudClbExtension tcloud clb extension.
 type TCloudClbExtension struct {
 	/*
