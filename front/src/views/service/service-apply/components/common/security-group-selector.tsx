@@ -18,6 +18,8 @@ import http from '@/http';
 
 export default defineComponent({
   props: {
+    type: String as PropType<string>,
+    boundSecruity: Array as PropType<string[]>,
     modelValue: String as PropType<string | string[]>,
     bizId: Number as PropType<number | string>,
     accountId: String as PropType<string>,
@@ -26,13 +28,13 @@ export default defineComponent({
     vendor: String as PropType<string>,
     vpcId: String as PropType<string>,
     onSelectedChange: Function as PropType<(val: string[]) => void>,
+    onConfirm: Function as PropType<() => void>,
   },
   emits: ['update:modelValue'],
-  setup(props) {
+  setup(props, { slots, expose }) {
     const { t } = useI18n();
     const resourceStore = useResourceStore();
     const { isServicePage, whereAmI, getBusinessApiPath } = useWhereAmI();
-
     const isDialogShow = ref(false);
     const cache: any = { securityList: [], securityGroupRules: [] }; // 缓存：记录编辑前的状态
     const updateCache = () => {
@@ -99,6 +101,9 @@ export default defineComponent({
         }
         getSecurityList(accountId, region);
       },
+      {
+        immediate: true,
+      },
     );
     watch(
       () => props.vpcId,
@@ -106,6 +111,16 @@ export default defineComponent({
         if (VendorEnum.AWS === props.vendor && val) {
           getSecurityList(props.accountId, props.region, val);
         }
+      },
+    );
+    watch(
+      () => props.boundSecruity,
+      (val) => {
+        val.forEach((item) => getSecurityInfo(item));
+        // 将已经绑定的安全组置灰并勾选
+        securityList.value.forEach((item) => {
+          if (boundId.value.includes(item.id)) item.isChecked = true;
+        });
       },
     );
 
@@ -126,33 +141,42 @@ export default defineComponent({
       }));
     });
 
+    const boundId = computed(() => props.boundSecruity.map((item: any) => item.id));
+
     const securityRulesColumns = useColumns('securityCommon', false, props.vendor).columns.filter(
       ({ field }: { field: string }) => !['updated_at'].includes(field),
     );
 
-    const isAllExpand = ref(true);
+    const isAllExpand = ref(false);
 
     const currentIndex = ref(-1);
-    const handleSecurityGroupChange = async (isSelected: boolean, item: any, index: number) => {
+    const handleSecurityGroupChange = (isSelected: boolean, item: any, index: number) => {
       if (isSelected) {
         currentIndex.value = index;
-        try {
-          isRulesTableLoading.value = true;
-          const res = await http.post(
-            `/api/v1/cloud/${getBusinessApiPath()}vendors/${props.vendor}/security_groups/${item.id}/rules/list`,
-            {
-              filter: { op: 'and', rules: [] },
-              page: { count: false, start: 0, limit: 500 },
-            },
-          );
-          const arr = res.data?.details || [];
-          securityGroupRules.value.push({ id: item.cloud_id, name: item.name, data: arr });
-        } finally {
-          isRulesTableLoading.value = false;
-        }
+        getSecurityInfo(item);
       } else {
-        securityGroupRules.value = securityGroupRules.value.filter(({ id }) => id !== item.cloud_id);
+        securityGroupRules.value = securityGroupRules.value.filter(({ id }) => id !== getId(item));
       }
+    };
+    const getSecurityInfo = async (item: any) => {
+      try {
+        isRulesTableLoading.value = true;
+        const res = await http.post(
+          `/api/v1/cloud/${getBusinessApiPath()}vendors/${props.vendor}/security_groups/${item.id}/rules/list`,
+          {
+            filter: { op: 'and', rules: [] },
+            page: { count: false, start: 0, limit: 500 },
+          },
+        );
+        const arr = res.data?.details || [];
+        securityGroupRules.value.unshift({ id: getId(item), name: item.name, data: arr });
+      } finally {
+        isRulesTableLoading.value = false;
+      }
+    };
+    const getId = (item: any) => {
+      if (props.type === 'bind') return item.id;
+      return item.cloud_id;
     };
 
     const initialState = () => {
@@ -173,38 +197,48 @@ export default defineComponent({
       hide(false);
     };
 
+    expose({ show });
+
     return () => (
       <div>
-        {confirmedSecurityGroupCloudList.value.length > 0 ? (
-          // 回显已确认选择的安全组
-          <div class={'image-selector-selected-block-container'}>
-            <div class={'selected-block mr8'}>
-              {confirmedSecurityGroupCloudList.value.map(({ id, name }) => (
-                <p key={id}>{name}</p>
-              ))}
-            </div>
-            <EditLine class='cursor' fill='#3A84FF' width={13.5} height={13.5} onClick={show} />
-          </div>
+        {slots.default ? (
+          slots.default()
         ) : (
-          <Button onClick={show} disabled={computedDisabled.value || securityList.value.length === 0}>
-            <Plus class='f20' />
-            {t('选择安全组')}
-          </Button>
-        )}
-        {securityList.value.length || computedDisabled.value ? null : (
-          <div class={'security-selector-tips'}>
-            {t('无可用的安全组，可')}
-            <Button
-              theme='primary'
-              text
-              onClick={() => {
-                const url =
-                  whereAmI.value === Senarios.business ? '/#/business/security' : '/#/resource/resource?type=security';
-                window.open(url, '_blank');
-              }}>
-              {t('新建安全组')}
-            </Button>
-          </div>
+          <>
+            {confirmedSecurityGroupCloudList.value.length > 0 ? (
+              // 回显已确认选择的安全组
+              <div class={'image-selector-selected-block-container'}>
+                <div class={'selected-block mr8'}>
+                  {confirmedSecurityGroupCloudList.value.map(({ id, name }) => (
+                    <p key={id}>{name}</p>
+                  ))}
+                </div>
+                <EditLine class='cursor' fill='#3A84FF' width={13.5} height={13.5} onClick={show} />
+              </div>
+            ) : (
+              <Button onClick={show} disabled={computedDisabled.value || securityList.value.length === 0}>
+                <Plus class='f20' />
+                {t('选择安全组')}
+              </Button>
+            )}
+            {securityList.value.length || computedDisabled.value ? null : (
+              <div class={'security-selector-tips'}>
+                {t('无可用的安全组，可')}
+                <Button
+                  theme='primary'
+                  text
+                  onClick={() => {
+                    const url =
+                      whereAmI.value === Senarios.business
+                        ? '/#/business/security'
+                        : '/#/resource/resource?type=security';
+                    window.open(url, '_blank');
+                  }}>
+                  {t('新建安全组')}
+                </Button>
+              </div>
+            )}
+          </>
         )}
         <Dialog
           class={'security-dialog-wrap'}
@@ -230,9 +264,10 @@ export default defineComponent({
                         <Checkbox
                           v-model={item.isChecked}
                           disabled={
-                            props.vendor === VendorEnum.AZURE &&
-                            securityGroupRules.value.length > 0 &&
-                            currentIndex.value !== index
+                            boundId.value.includes(item.id) ||
+                            ((props.vendor === VendorEnum.AZURE || !props.multiple) &&
+                              securityGroupRules.value.length > 0 &&
+                              currentIndex.value !== index)
                           }
                           label={'data.cloud_id'}
                           onChange={(isSelected: boolean) => handleSecurityGroupChange(isSelected, item, index)}>
