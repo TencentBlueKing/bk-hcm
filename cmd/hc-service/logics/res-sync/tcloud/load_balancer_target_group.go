@@ -327,7 +327,7 @@ func (cli *client) createLocalTargetGroupL7(kt *kit.Kit, opt *SyncListenerOption
 	}
 	if lb.Extension.SupportCrossRegionV1() {
 		tgCreate.TargetGroup.CloudVpcID = cvt.PtrToVal(lb.Extension.TargetCloudVpcID)
-		tgCreate.TargetGroup.Region = cvt.PtrToVal(lb.Extension.TargetCloudVpcID)
+		tgCreate.TargetGroup.Region = cvt.PtrToVal(lb.Extension.TargetRegion)
 	} else {
 		tgCreate.TargetGroup.CloudVpcID = lb.CloudVpcID
 		tgCreate.TargetGroup.Region = lb.Region
@@ -413,7 +413,7 @@ func (cli *client) createLocalTargetGroupL4(kt *kit.Kit, opt *SyncListenerOption
 
 	if lb.Extension.SupportCrossRegionV1() {
 		tgCreate.TargetGroup.CloudVpcID = cvt.PtrToVal(lb.Extension.TargetCloudVpcID)
-		tgCreate.TargetGroup.Region = cvt.PtrToVal(lb.Extension.TargetCloudVpcID)
+		tgCreate.TargetGroup.Region = cvt.PtrToVal(lb.Extension.TargetRegion)
 	} else {
 		tgCreate.TargetGroup.CloudVpcID = lb.CloudVpcID
 		tgCreate.TargetGroup.Region = lb.Region
