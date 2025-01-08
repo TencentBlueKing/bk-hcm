@@ -79,15 +79,19 @@ spec:
             - mountPath: /data/hcm/etc
               name: config
             {{- if not .Values.etcd.enabled }}
+            {{- if .Values.externalEtcd.tls.enabled }}
             - mountPath: /data/hcm/etc/certs
               name:  etcd-certs
+            {{- end }}
             {{- end }}
       volumes:
         - name: config
           configMap:
             name: {{ template "bk-hcm.fullname" . }}-cloudserver-config
       {{- if not .Values.etcd.enabled }}
+      {{- if .Values.externalEtcd.tls.enabled }}
         - name: etcd-certs
           secret:
             secretName: {{ template "bk-hcm.etcdSecretName" . }}
+      {{- end }}
       {{- end }}
