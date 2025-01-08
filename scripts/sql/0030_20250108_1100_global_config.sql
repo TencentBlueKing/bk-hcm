@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0030,HCMVER=v1.7.2
 
     Notes:
     1. 添加全局配置表 global_config
