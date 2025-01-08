@@ -129,7 +129,7 @@ func ResourceSyncV2[T common.CloudResType](cts *rest.Contexts, handler HandlerV2
 		return err
 	}
 	// 2. 获取云上实例列表
-	logs.Infof("[ResourceSyncV2] %s sync start with %d workers, rid: %s",
+	logs.Infof("[ResourceSyncV2] %s sync Start with %d workers, rid: %s",
 		handler.Describe(), handler.SyncConcurrent(), kt.Rid)
 	allCloudIDMap := make(map[string]struct{}, 1024)
 	allInstanceList := make([][]T, 0)
@@ -194,7 +194,7 @@ func syncResourcesDetail[T common.CloudResType](kt *kit.Kit, handler HandlerV2[T
 	for i := 0; i < concurrent; i++ {
 		syncWg.Add(1)
 		workers[i] = newSyncWorker[T](kt, handler, i, syncInstCh, syncWg)
-		go workers[i].start()
+		go workers[i].Start()
 	}
 	left := total
 	// 倒序同步，因为新建的往往按序插入，所以倒序同步可以保证新建的实例先同步。
@@ -223,12 +223,12 @@ func syncResourcesDetail[T common.CloudResType](kt *kit.Kit, handler HandlerV2[T
 	var errs []error
 	// 统计同步结果
 	for i := range workers {
-		worker := &workers[i]
-		success += worker.total - worker.failed
-		failed += worker.failed
+		_, workerSuccess, workerFailed, workerErr := workers[i].GetResult()
+		success += workerSuccess
+		failed += workerFailed
 		// 收集错误
-		if worker.err != nil {
-			errs = append(errs, worker.err)
+		if workerErr != nil {
+			errs = append(errs, workerErr)
 		}
 	}
 	err = nil
@@ -264,8 +264,13 @@ type syncWorker[T common.CloudResType] struct {
 	failed     int
 }
 
+// GetResult 获取同步结果
+func (sw *syncWorker[T]) GetResult() (total, success, failed int, err error) {
+	return sw.total, sw.total - sw.failed, sw.failed, sw.err
+}
+
 // Start worker
-func (sw *syncWorker[T]) start() {
+func (sw *syncWorker[T]) Start() {
 
 	start := time.Now()
 	defer func() {
