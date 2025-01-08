@@ -49,11 +49,13 @@ func (svc *cvmSvc) BizBatchAssociateSecurityGroups(cts *rest.Contexts) (interfac
 	return svc.batchAssociateSecurityGroups(cts, handler.BizOperateAuth)
 }
 
-func (svc *cvmSvc) batchAssociateSecurityGroups(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
+func (svc *cvmSvc) batchAssociateSecurityGroups(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+	interface{}, error) {
 
 	cvmID, sgIDs, err := svc.decodeAndValidateBatchAssociateSecurityGroupsReq(cts, meta.Associate, validHandler)
 	if err != nil {
-		logs.Errorf("decode and validate batch associate security groups req failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("decode and validate batch associate security groups req failed, err: %v, rid: %s",
+			err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -75,7 +77,8 @@ func (svc *cvmSvc) batchAssociateSecurityGroups(cts *rest.Contexts, validHandler
 	// delete security group and cvm relationship
 	err = svc.deleteSecurityGroupAndCvmRelationship(cts.Kit, cvmID, sgIDs)
 	if err != nil {
-		logs.Errorf("delete security group and cvm relationship failed, err: %v, cvm_id: %s, sg_ids: %v, rid: %s", err, cvmID, sgIDs, cts.Kit.Rid)
+		logs.Errorf("delete security group and cvm relationship failed, err: %v, cvm_id: %s, sg_ids: %v, rid: %s",
+			err, cvmID, sgIDs, cts.Kit.Rid)
 		return nil, err
 	}
 

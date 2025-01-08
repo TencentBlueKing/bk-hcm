@@ -184,6 +184,7 @@ type BatchListCvmSecurityGroupsRespItem struct {
 	Name    string `json:"name"`
 }
 
+// BatchAssociateSecurityGroupsReq ...
 type BatchAssociateSecurityGroupsReq struct {
 	SecurityGroupIDs []string `json:"security_group_ids" validate:"required,min=1,max=500"`
 }
