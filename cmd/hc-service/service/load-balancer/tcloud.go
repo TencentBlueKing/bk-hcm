@@ -522,9 +522,9 @@ func (svc *clbSvc) createListenerWithRule(kt *kit.Kit, req *protolb.ListenerWith
 			HealthCheck:       &corelb.TCloudHealthCheckInfo{},
 		}
 		if tgInfo.HealthCheck != nil {
-			lblOpt.HealthCheck.HealthSwitch = tgInfo.HealthCheck.HealthSwitch
+			oneRule.HealthCheck.HealthSwitch = tgInfo.HealthCheck.HealthSwitch
 		} else {
-			lblOpt.HealthCheck.HealthSwitch = cvt.ValToPtr(int64(0))
+			oneRule.HealthCheck.HealthSwitch = cvt.ValToPtr(int64(0))
 		}
 		if len(req.Domain) > 0 {
 			oneRule.Domain = cvt.ValToPtr(req.Domain)
