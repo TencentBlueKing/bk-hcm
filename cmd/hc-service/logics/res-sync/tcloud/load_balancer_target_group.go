@@ -141,6 +141,13 @@ func (cli *client) ListenerTargets(kt *kit.Kit, param *SyncBaseParams, opt *Sync
 		logs.Errorf("fail to list related res during targets syncing, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
+
+	if lb.VpcID == "" && !lb.Extension.SupportCrossRegionV1() {
+		// 对于不支持跨域1.0 且 没有本地VPC ID的情况，直接跳过。对于公网clb，腾讯云允许删除对应的vpc，导致本地无法找到对应的vpc
+		logs.Errorf("lb %s has no valid vpc, skip target syncing, rid: %s", lb.CloudID, kt.Rid)
+		return nil
+	}
+
 	// 一个目标组只处理一次
 	isTGHandled := genExists[string]()
 	compareWrapper := func(rel *corelb.BaseTargetListenerRuleRel, cloudTargets []*tclb.Backend) error {
@@ -301,11 +308,8 @@ func (cli *client) createLocalTargetGroupL7(kt *kit.Kit, opt *SyncListenerOption
 			Vendor:          enumor.TCloud,
 			AccountID:       lb.AccountID,
 			BkBizID:         opt.BizID,
-			Region:          lb.Region,
 			Protocol:        listener.GetProtocol(),
 			Port:            cvt.PtrToVal(listener.Port),
-			VpcID:           lb.VpcID,
-			CloudVpcID:      lb.CloudVpcID,
 			TargetGroupType: enumor.LocalTargetGroupType,
 			Weight:          0,
 			HealthCheck:     types.JsonField(healthcheck),
@@ -320,6 +324,13 @@ func (cli *client) createLocalTargetGroupL7(kt *kit.Kit, opt *SyncListenerOption
 		LblID:               dbRule.LblID,
 		CloudLblID:          dbRule.CloudLBLID,
 		BindingStatus:       enumor.SuccessBindingStatus,
+	}
+	if lb.Extension.SupportCrossRegionV1() {
+		tgCreate.TargetGroup.CloudVpcID = cvt.PtrToVal(lb.Extension.TargetCloudVpcID)
+		tgCreate.TargetGroup.Region = cvt.PtrToVal(lb.Extension.TargetRegion)
+	} else {
+		tgCreate.TargetGroup.CloudVpcID = lb.CloudVpcID
+		tgCreate.TargetGroup.Region = lb.Region
 	}
 
 	tgCreateReq := &dataproto.TCloudBatchCreateTgWithRelReq{
@@ -373,6 +384,7 @@ func (cli *client) createLocalTargetGroupL4(kt *kit.Kit, opt *SyncListenerOption
 		logs.Errorf("fail to marshal rule health check to string, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
+
 	tgCreate := dataproto.CreateTargetGroupWithRel[corelb.TCloudTargetGroupExtension]{
 		TargetGroup: dataproto.TargetGroupBatchCreate[corelb.TCloudTargetGroupExtension]{
 			Name:            genTargetGroupNameL4(lbl),
@@ -382,8 +394,6 @@ func (cli *client) createLocalTargetGroupL4(kt *kit.Kit, opt *SyncListenerOption
 			Region:          lb.Region,
 			Protocol:        lbl.Protocol,
 			Port:            lbl.Port,
-			VpcID:           lb.VpcID,
-			CloudVpcID:      lb.CloudVpcID,
 			TargetGroupType: enumor.LocalTargetGroupType,
 			Weight:          0,
 			HealthCheck:     types.JsonField(healthcheck),
@@ -399,6 +409,14 @@ func (cli *client) createLocalTargetGroupL4(kt *kit.Kit, opt *SyncListenerOption
 		LblID:               lbl.ID,
 		CloudLblID:          lbl.CloudID,
 		BindingStatus:       enumor.SuccessBindingStatus,
+	}
+
+	if lb.Extension.SupportCrossRegionV1() {
+		tgCreate.TargetGroup.CloudVpcID = cvt.PtrToVal(lb.Extension.TargetCloudVpcID)
+		tgCreate.TargetGroup.Region = cvt.PtrToVal(lb.Extension.TargetRegion)
+	} else {
+		tgCreate.TargetGroup.CloudVpcID = lb.CloudVpcID
+		tgCreate.TargetGroup.Region = lb.Region
 	}
 
 	tgCreateReq := &dataproto.TCloudBatchCreateTgWithRelReq{
