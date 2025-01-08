@@ -33,7 +33,6 @@ import (
 	dtypes "hcm/pkg/dal/table/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/tools/util"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -57,7 +56,7 @@ func (svc *service) BatchCreateGlobalConfigs(cts *rest.Contexts) (interface{}, e
 		for index, config := range req.Configs {
 			globalConfigs[index] = tablegconf.GlobalConfigTable{
 				ConfigKey:   config.ConfigKey,
-				ConfigValue: dtypes.JsonField(util.GetStrByInterface(config.ConfigValue)),
+				ConfigValue: dtypes.JsonField(config.ConfigValue),
 				ConfigType:  config.ConfigType,
 				Memo:        config.Memo,
 				Creator:     cts.Kit.User,
@@ -133,7 +132,7 @@ func (svc *service) BatchUpdateGlobalConfigs(cts *rest.Contexts) (interface{}, e
 			}
 
 			if config.ConfigValue != nil {
-				record.ConfigValue = dtypes.JsonField(util.GetStrByInterface(config.ConfigValue))
+				record.ConfigValue = dtypes.JsonField(config.ConfigValue)
 			}
 
 			if config.Memo != nil {
