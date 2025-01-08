@@ -1,6 +1,6 @@
 # 版本历史
 
-## 9.9.9
+## 1.0.25
 
 - 修复外部etcd的tls配置的错误缩进
 - 增加etcd dialTimeoutMS 配置

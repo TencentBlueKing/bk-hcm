@@ -48,6 +48,6 @@ insert into id_generator(`resource`, `max_id`)
 values ('global_config', '0');
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.7.2' as `hcm_ver`, '9999' as `sql_ver`;
 
 COMMIT;
