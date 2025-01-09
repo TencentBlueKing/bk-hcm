@@ -87,8 +87,10 @@ spec:
               subPath: apigw_public.key
             {{- end }}
             {{- if not .Values.etcd.enabled }}
+            {{- if .Values.externalEtcd.tls.enabled }}
             - mountPath: /data/hcm/etc/certs
               name:  etcd-certs
+            {{- end }}
             {{- end }}
 
       volumes:
@@ -103,7 +105,9 @@ spec:
                 path: apigw_public.key
             {{- end }}
       {{- if not .Values.etcd.enabled }}
+      {{- if .Values.externalEtcd.tls.enabled }}
         - name: etcd-certs
           secret:
             secretName: {{ template "bk-hcm.etcdSecretName" . }}
+      {{- end }}
       {{- end }}
