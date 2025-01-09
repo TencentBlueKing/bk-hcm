@@ -119,7 +119,8 @@ func (svc *cvmSvc) deleteSecurityGroupAndCvmRelationship(kt *kit.Kit, cvmID stri
 	}
 	err := svc.client.DataService().Global.SGCvmRel.BatchDeleteSgCvmRels(kt.Ctx, kt.Header(), batchDeleteReq)
 	if err != nil {
-		logs.Errorf("delete security group and cvm relationship failed, err: %v, req: %+v, rid: %s", err, batchDeleteReq, kt.Rid)
+		logs.Errorf("delete security group and cvm relationship failed, err: %v, req: %+v, rid: %s",
+			err, batchDeleteReq, kt.Rid)
 		return err
 	}
 	return nil

@@ -86,10 +86,10 @@ func InitCvmService(c *capability.Capability) {
 	h.Add("BizBatchListCvmSecurityGroups", http.MethodPost, "/bizs/{bk_biz_id}/cvms/security_groups/batch/list",
 		svc.BizBatchListCvmSecurityGroups)
 
-	h.Add("BatchAssociateSecurityGroups", http.MethodPost, "/cvms/{cvm_id}/security_groups/batch_associate",
-		svc.BatchAssociateSecurityGroups)
-	h.Add("BizBatchAssociateSecurityGroups", http.MethodPost, "/bizs/{bk_biz_id}/cvms/{cvm_id}/security_groups/batch_associate",
-		svc.BizBatchAssociateSecurityGroups)
+	h.Add("BatchAssociateSecurityGroups", http.MethodPost,
+		"/cvms/{cvm_id}/security_groups/batch_associate", svc.BatchAssociateSecurityGroups)
+	h.Add("BizBatchAssociateSecurityGroups", http.MethodPost,
+		"/bizs/{bk_biz_id}/cvms/{cvm_id}/security_groups/batch_associate", svc.BizBatchAssociateSecurityGroups)
 
 	initCvmServiceHooks(svc, h)
 
