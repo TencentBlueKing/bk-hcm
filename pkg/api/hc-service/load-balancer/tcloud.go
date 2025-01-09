@@ -298,6 +298,7 @@ type TCloudListenerCreateReq struct {
 	SessionExpire int64                         `json:"session_expire" validate:"omitempty"`
 	SniSwitch     enumor.SniType                `json:"sni_switch" validate:"omitempty"`
 	Certificate   *corelb.TCloudCertificateInfo `json:"certificate" validate:"omitempty"`
+	HealthCheck   *corelb.TCloudHealthCheckInfo `json:"health_check,omitempty"`
 	SessionType   *string                       `json:"session_type" validate:"omitempty"`
 	EndPort       *int64                        `json:"end_port" validate:"omitempty,min=1"`
 }

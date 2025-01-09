@@ -440,7 +440,7 @@ func (svc *clbSvc) CreateTCloudListenerWithTargetGroup(cts *rest.Contexts) (inte
 	}
 
 	// 创建云端监听器、规则
-	cloudLblID, cloudRuleID, err := svc.createListenerWithRule(cts.Kit, req, lbInfo)
+	cloudLblID, cloudRuleID, err := svc.createListenerWithRule(cts.Kit, req, lbInfo, targetGroupInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -455,7 +455,7 @@ func (svc *clbSvc) CreateTCloudListenerWithTargetGroup(cts *rest.Contexts) (inte
 }
 
 func (svc *clbSvc) createListenerWithRule(kt *kit.Kit, req *protolb.ListenerWithRuleCreateReq,
-	lbInfo corelb.BaseLoadBalancer) (string, string, error) {
+	lbInfo corelb.BaseLoadBalancer, tgInfo corelb.BaseTargetGroup) (string, string, error) {
 
 	tcloudAdpt, err := svc.ad.TCloud(kt, lbInfo.AccountID)
 	if err != nil {
@@ -474,6 +474,15 @@ func (svc *clbSvc) createListenerWithRule(kt *kit.Kit, req *protolb.ListenerWith
 		SessionType:       cvt.ValToPtr(req.SessionType),
 		Certificate:       req.Certificate,
 	}
+	if req.Protocol.IsLayer4Protocol() {
+		lblOpt.HealthCheck = &corelb.TCloudHealthCheckInfo{}
+		if tgInfo.HealthCheck != nil {
+			lblOpt.HealthCheck.HealthSwitch = tgInfo.HealthCheck.HealthSwitch
+		} else {
+			lblOpt.HealthCheck.HealthSwitch = cvt.ValToPtr(int64(0))
+		}
+	}
+
 	// 7层监听器，不管SNI开启还是关闭，都需要传入证书参数
 	// 7层监听器并且SNI开启时，创建监听器接口，不需要证书
 	if req.Protocol == enumor.HttpsProtocol {
@@ -488,6 +497,7 @@ func (svc *clbSvc) createListenerWithRule(kt *kit.Kit, req *protolb.ListenerWith
 			lblOpt.Certificate = nil
 		}
 	}
+
 	result, err := tcloudAdpt.CreateListener(kt, lblOpt)
 	if err != nil {
 		logs.Errorf("create tcloud listener api failed, err: %v, lblOpt: %+v, cert: %+v, rid: %s",
@@ -509,6 +519,12 @@ func (svc *clbSvc) createListenerWithRule(kt *kit.Kit, req *protolb.ListenerWith
 			Url:               cvt.ValToPtr(req.Url),
 			SessionExpireTime: cvt.ValToPtr(req.SessionExpire),
 			DefaultServer:     cvt.ValToPtr(true),
+			HealthCheck:       &corelb.TCloudHealthCheckInfo{},
+		}
+		if tgInfo.HealthCheck != nil {
+			oneRule.HealthCheck.HealthSwitch = tgInfo.HealthCheck.HealthSwitch
+		} else {
+			oneRule.HealthCheck.HealthSwitch = cvt.ValToPtr(int64(0))
 		}
 		if len(req.Domain) > 0 {
 			oneRule.Domain = cvt.ValToPtr(req.Domain)

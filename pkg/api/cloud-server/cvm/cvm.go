@@ -183,3 +183,13 @@ type BatchListCvmSecurityGroupsRespItem struct {
 	CloudId string `json:"cloud_id"`
 	Name    string `json:"name"`
 }
+
+// BatchAssociateSecurityGroupsReq ...
+type BatchAssociateSecurityGroupsReq struct {
+	SecurityGroupIDs []string `json:"security_group_ids" validate:"required,min=1,max=500"`
+}
+
+// Validate ...
+func (req BatchAssociateSecurityGroupsReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

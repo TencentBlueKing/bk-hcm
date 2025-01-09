@@ -131,7 +131,6 @@ func (svc *service) GcpGetInfoBySecret(cts *rest.Contexts) (interface{}, error) 
 	}
 	// 2. 云上信息获取
 	return client.GetAccountInfoBySecret(cts.Kit, req.CloudServiceSecretKey)
-
 }
 
 // AzureGetInfoBySecret 根据秘钥信息去云上获取账号信息

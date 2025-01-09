@@ -107,6 +107,7 @@ func (svc *clbSvc) CreateTCloudListener(cts *rest.Contexts) (interface{}, error)
 		SniSwitch:         req.SniSwitch,
 		SessionType:       req.SessionType,
 		Certificate:       req.Certificate,
+		HealthCheck:       req.HealthCheck,
 	}
 
 	result, err := tcloudAdpt.CreateListener(cts.Kit, lblOpt)

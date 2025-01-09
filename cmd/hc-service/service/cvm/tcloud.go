@@ -20,6 +20,7 @@
 package cvm
 
 import (
+	"fmt"
 	"net/http"
 
 	synctcloud "hcm/cmd/hc-service/logics/res-sync/tcloud"
@@ -28,6 +29,7 @@ import (
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
+	protocloud "hcm/pkg/api/data-service/cloud"
 	protocvm "hcm/pkg/api/hc-service/cvm"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -48,7 +50,79 @@ func (svc *cvmSvc) initTCloudCvmService(cap *capability.Capability) {
 	h.Add("BatchResetTCloudCvmPwd", http.MethodPost, "/vendors/tcloud/cvms/batch/reset/pwd", svc.BatchResetTCloudCvmPwd)
 	h.Add("BatchResetTCloudCvm", http.MethodPost, "/vendors/tcloud/cvms/reset", svc.BatchResetTCloudCvm)
 
+	h.Add("BatchAssociateTCloudSecurityGroup", http.MethodPost, "/vendors/tcloud/cvms/security_groups/batch/associate",
+		svc.BatchAssociateTCloudSecurityGroup)
+
 	h.Load(cap.WebService)
+}
+
+// BatchAssociateTCloudSecurityGroup batch associate tcloud security group.
+func (svc *cvmSvc) BatchAssociateTCloudSecurityGroup(cts *rest.Contexts) (interface{}, error) {
+
+	req := new(protocvm.TCloudCvmBatchAssociateSecurityGroupReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	tcloud, err := svc.ad.TCloud(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	cvmList, err := svc.listCvms(cts.Kit, req.CvmID)
+	if err != nil {
+		logs.Errorf("get cvms failed, err: %v, cvmID: %s, rid: %s", err, req.CvmID, cts.Kit.Rid)
+		return nil, err
+	}
+	if len(cvmList) == 0 {
+		logs.Errorf("cvm not found, cvmID: %s, rid: %s", req.CvmID, cts.Kit.Rid)
+		return nil, fmt.Errorf("cvm (%s) not found", req.CvmID)
+	}
+	cvmCloudID := cvmList[0].CloudID
+
+	sgMap, err := svc.listSecurityGroupMap(cts.Kit, req.SecurityGroupIDs...)
+	if err != nil {
+		logs.Errorf("list security groups failed, err: %v, sgIDs: %v, rid: %s", err, req.SecurityGroupIDs, cts.Kit.Rid)
+		return nil, err
+	}
+	sgCloudIDs := make([]string, 0, len(req.SecurityGroupIDs))
+	for _, id := range req.SecurityGroupIDs {
+		sg, ok := sgMap[id]
+		if !ok {
+			logs.Errorf("security group not found, sgID: %s, rid: %s", id, cts.Kit.Rid)
+			return nil, fmt.Errorf("security group (%s) not found", id)
+		}
+		sgCloudIDs = append(sgCloudIDs, sg.CloudID)
+	}
+
+	opt := &typecvm.TCloudAssociateSecurityGroupsOption{
+		Region:                req.Region,
+		CloudSecurityGroupIDs: sgCloudIDs,
+		CloudCvmID:            cvmCloudID,
+	}
+
+	err = tcloud.BatchCvmAssociateSecurityGroups(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("batch associate security group failed, err: %v, opt: %v, rid: %s", err, opt, cts.Kit.Rid)
+		return nil, err
+	}
+
+	createReq := &protocloud.SGCvmRelBatchCreateReq{}
+	for _, sgID := range req.SecurityGroupIDs {
+		createReq.Rels = append(createReq.Rels, protocloud.SGCvmRelCreate{
+			SecurityGroupID: sgID,
+			CvmID:           req.CvmID,
+		})
+	}
+	if err = svc.dataCli.Global.SGCvmRel.BatchCreateSgCvmRels(cts.Kit.Ctx, cts.Kit.Header(), createReq); err != nil {
+		logs.Errorf("request dataservice create security group cvm rels failed, err: %v, req: %+v, rid: %s",
+			err, createReq, cts.Kit.Rid)
+		return nil, err
+	}
+	return nil, nil
 }
 
 // InquiryPriceTCloudCvm inquiry price tcloud cvm.

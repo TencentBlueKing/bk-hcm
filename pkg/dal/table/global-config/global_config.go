@@ -31,10 +31,10 @@ import (
 	"hcm/pkg/dal/table/utils"
 )
 
-// GlobalConfigTableColumns defines all the cvm table's columns.
+// GlobalConfigTableColumns defines all the global config table's columns.
 var GlobalConfigTableColumns = utils.MergeColumns(nil, GlobalConfigTableColumnDescriptors)
 
-// GlobalConfigTableColumnDescriptors is cvm table column descriptors.
+// GlobalConfigTableColumnDescriptors is global config table column descriptors.
 var GlobalConfigTableColumnDescriptors = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.String},
 	{Column: "config_key", NamedC: "config_key", Type: enumor.String},
@@ -47,7 +47,7 @@ var GlobalConfigTableColumnDescriptors = utils.ColumnDescriptors{
 	{Column: "updated_at", NamedC: "updated_at", Type: enumor.String},
 }
 
-// GlobalConfigTable define cvm table.
+// GlobalConfigTable define global config table.
 type GlobalConfigTable struct {
 	// ID global config id
 	ID string `db:"id" json:"id"`
@@ -69,27 +69,27 @@ type GlobalConfigTable struct {
 	UpdatedAt types.Time `db:"updated_at" json:"updated_at"`
 }
 
-// UniqueKey returns the unique key of BizOrgRel table.
+// UniqueKey returns the unique key of global config table.
 func (t GlobalConfigTable) UniqueKey() string {
 	return fmt.Sprintf("(%s,%s)", t.ConfigType, t.ConfigKey)
 }
 
-// Columns return cvm table columns.
+// Columns return global config table columns.
 func (t GlobalConfigTable) Columns() *utils.Columns {
 	return GlobalConfigTableColumns
 }
 
-// ColumnDescriptors define cvm table column descriptor.
+// ColumnDescriptors define global config table column descriptor.
 func (t GlobalConfigTable) ColumnDescriptors() utils.ColumnDescriptors {
 	return GlobalConfigTableColumnDescriptors
 }
 
-// TableName return cvm table name.
+// TableName return global config table name.
 func (t GlobalConfigTable) TableName() table.Name {
 	return table.GlobalConfigTable
 }
 
-// InsertValidate cvm table when insert.
+// InsertValidate global config table when insert.
 func (t GlobalConfigTable) InsertValidate() error {
 	// length validate.
 	if err := validator.Validate.Struct(t); err != nil {
@@ -127,7 +127,7 @@ func (t GlobalConfigTable) InsertValidate() error {
 	return nil
 }
 
-// UpdateValidate cvm table when update.
+// UpdateValidate global config table when update.
 func (t GlobalConfigTable) UpdateValidate() error {
 	if err := validator.Validate.Struct(t); err != nil {
 		return err

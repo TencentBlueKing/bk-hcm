@@ -1,4 +1,4 @@
-import { VendorEnum } from '@/common/constant';
+import { VendorEnum, AccountVerifyEnum } from '@/common/constant';
 import http from '@/http';
 import { reactive, ref, watch } from 'vue';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
@@ -23,8 +23,11 @@ export interface IExtension {
   output2: Record<string, IExtensionItem>; // 不需要显眼的输出
   validatedStatus: ValidateStatus; // 是否校验通过
   validateFailedReason?: string; // 不通过的理由
+  selectType?: any[]; // 是选择类型的字段
+  selectParams?: any;
 }
 export const useSecretExtension = (props: IProp, isValidate?: boolean) => {
+  const { accountType = AccountVerifyEnum.ACCOUNT } = props;
   // 腾讯云
   const tcloudExtension: IExtension = reactive({
     output1: {
@@ -121,6 +124,15 @@ export const useSecretExtension = (props: IProp, isValidate?: boolean) => {
   });
   // 谷歌云
   const gcpExtension: IExtension = reactive({
+    selectType: ['cloud_project_id'],
+    selectParams: {
+      cloud_project_id: {
+        idKey: 'cloud_project_id',
+        displayKey: 'cloud_project_id',
+        list: [],
+        follow: 'cloud_project_name',
+      },
+    },
     output1: {
       cloud_project_id: {
         label: '云项目ID',
@@ -271,18 +283,32 @@ export const useSecretExtension = (props: IProp, isValidate?: boolean) => {
     },
   );
 
-  const handleValidate = async (callback: Function = undefined) => {
+  const handleValidate = async (callback?: (payload: any) => {}) => {
     isValidateLoading.value = true;
     const payload = extensionPayload.value;
     // props.changeExtension(payload);
     if (callback) callback?.(payload);
     try {
-      const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${props.vendor}/accounts/secret`, {
-        ...payload,
-        disable_check: isValidate || false,
-      });
-      if (res.data) {
-        Object.entries(res.data).forEach(([key, val]) => {
+      const server = accountType === AccountVerifyEnum.ACCOUNT ? 'cloud' : 'account';
+      const secret = accountType === AccountVerifyEnum.ACCOUNT ? 'secret' : 'query_account_by_secret';
+      const res = await http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/${server}/vendors/${props.vendor}/${accountType}/${secret}`,
+        {
+          ...payload,
+          disable_check: isValidate || false,
+        },
+      );
+
+      const dataIsArray = Array.isArray(res.data);
+      const data = dataIsArray ? res.data[0] : res.data;
+      if (data) {
+        if (dataIsArray) {
+          const { selectType = [], selectParams = {} } = curExtension.value;
+          selectType.forEach((key) => {
+            selectParams[key].list = res.data;
+          });
+        }
+        Object.entries(data).forEach(([key, val]) => {
           if (curExtension.value.output1[key]) curExtension.value.output1[key].value = val as string;
           if (curExtension.value.output2[key]) curExtension.value.output2[key].value = val as string;
         });

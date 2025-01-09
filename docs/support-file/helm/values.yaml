@@ -12,7 +12,7 @@ image:
   registry: hub.bktencent.com
   pullPolicy: IfNotPresent
   pullSecrets: []
-  tag: 1.7.1
+  tag: 1.7.2
 
 serviceAccount:
   create: true
@@ -733,6 +733,7 @@ etcd:
   ##
   persistence:
     enabled: false
+  dialTimeoutMS: 1500
 
 externalEtcd:
   ## ETCD 配置
@@ -746,6 +747,7 @@ externalEtcd:
   ##
   username: ""
   password: ""
+  dialTimeoutMS: 1500
   ## ETCD Client 证书配置
   ##
   tls:

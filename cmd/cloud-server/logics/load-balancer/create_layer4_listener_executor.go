@@ -25,6 +25,7 @@ import (
 
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
 	actionflow "hcm/cmd/task-server/logics/flow"
+	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	"hcm/pkg/api/data-service/task"
 	hclb "hcm/pkg/api/hc-service/load-balancer"
 	ts "hcm/pkg/api/task-server"
@@ -280,6 +281,12 @@ func (c *CreateLayer4ListenerExecutor) buildTCloudFlowTask(lbID, lbCloudID, regi
 				Port:          int64(detail.ListenerPorts[0]),
 				Scheduler:     string(detail.Scheduler),
 				SessionExpire: int64(detail.Session),
+				HealthCheck:   &corelb.TCloudHealthCheckInfo{},
+			}
+			if detail.HealthCheck {
+				req.HealthCheck.HealthSwitch = converter.ValToPtr(int64(1))
+			} else {
+				req.HealthCheck.HealthSwitch = converter.ValToPtr(int64(0))
 			}
 
 			if len(detail.ListenerPorts) > 1 {

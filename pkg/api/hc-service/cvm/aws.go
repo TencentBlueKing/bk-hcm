@@ -139,3 +139,16 @@ func (req *AwsBatchCreateReq) Validate() error {
 
 	return validator.Validate.Struct(req)
 }
+
+// AwsCvmBatchAssociateSecurityGroupReq aws batch associate security group req.
+type AwsCvmBatchAssociateSecurityGroupReq struct {
+	AccountID        string   `json:"account_id" validate:"required"`
+	Region           string   `json:"region" validate:"required"`
+	SecurityGroupIDs []string `json:"security_group_ids" validate:"required"`
+	CvmID            string   `json:"cvm_id" validate:"required"`
+}
+
+// Validate ...
+func (req *AwsCvmBatchAssociateSecurityGroupReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

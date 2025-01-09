@@ -12,7 +12,6 @@ import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import { useLoadBalancerStore } from '@/store/loadbalancer';
 import ExpandCard from './expand-card';
 import { QueryRuleOPEnum } from '@/typings';
-import { VendorEnum } from '@/common/constant';
 import { IDetail } from '@/hooks/useRouteLinkBtn';
 import { VueDraggable } from 'vue-draggable-plus';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
@@ -32,7 +31,7 @@ export default defineComponent({
     id: String,
   },
   setup(props) {
-    const rsCheckRes = ref(false);
+    const isPassToTarget = ref(false);
     const securityRuleType = ref(SecurityRuleDirection.in);
     const isSideSliderShow = ref(false);
     const businessStore = useBusinessStore();
@@ -46,7 +45,7 @@ export default defineComponent({
     const isUpdating = ref(false);
     const isSubmitLoading = ref(false);
     const isConfigDialogShow = ref(false);
-    const tmpRsCheckRes = ref(rsCheckRes.value);
+    const tmpIsPassToTarget = ref(isPassToTarget.value);
     const securityGroups = ref([]);
     const isDialogShow = ref(false);
     const bindedSet = reactive(new Set());
@@ -146,12 +145,6 @@ export default defineComponent({
       tableOptions: {
         columns: tableColumns,
         extra: {
-          // onSelectionChange: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable),
-          // onSelectAll: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true),
-          // isRowSelectEnable,
-          // isSelectedFn: ({ row }: any) => {
-          //   return selectedSecuirtyGroupsSet.value.has(row.id);
-          // },
           isRowSelectEnable,
           onSelectionChange: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable),
           onSelectAll: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true),
@@ -165,12 +158,12 @@ export default defineComponent({
             {
               field: 'vendor',
               op: QueryRuleOPEnum.EQ,
-              value: VendorEnum.TCLOUD,
+              value: props.detail.vendor,
             },
             {
               field: 'region',
               op: QueryRuleOPEnum.EQ,
-              value: loadBalancerStore.currentSelectedTreeNode.region,
+              value: props.detail.region,
             },
           ],
           // 属性里传入一个配置，选择是不是要模糊查询
@@ -230,8 +223,9 @@ export default defineComponent({
     watch(
       () => props.detail.extension,
       () => {
-        rsCheckRes.value = !!props.detail?.extension?.load_balancer_pass_to_target;
-        tmpRsCheckRes.value = rsCheckRes.value;
+        // load_balancer_pass_to_target = false, 不放通，检测2次
+        isPassToTarget.value = !!props.detail?.extension?.load_balancer_pass_to_target;
+        tmpIsPassToTarget.value = isPassToTarget.value;
       },
       {
         deep: true,
@@ -249,7 +243,7 @@ export default defineComponent({
     return () => (
       <div>
         <div class={'config-res-wrapper mb24'}>
-          {rsCheckRes.value ? (
+          {!isPassToTarget.value ? (
             <div>
               <Tag theme='warning' class={'mr16'}>
                 2 次检测
@@ -452,38 +446,40 @@ export default defineComponent({
             default: () => (
               <div class={'rs-check-selector-container'}>
                 <div
-                  class={`${tmpRsCheckRes.value ? 'rs-check-selector-active' : 'rs-check-selector'} ${
-                    isUpdating.value ? 'disabled-button' : ''
-                  }`}
+                  class={[
+                    'rs-check-selector',
+                    { 'rs-check-selector-active': !tmpIsPassToTarget.value, 'disabled-button': isUpdating.value },
+                  ]}
                   onClick={async () => {
-                    if (tmpRsCheckRes.value || isUpdating.value) return;
-                    tmpRsCheckRes.value = true;
+                    if (!tmpIsPassToTarget.value || isUpdating.value) return;
+                    tmpIsPassToTarget.value = false;
                   }}>
                   <Tag theme='warning'>2 次检测</Tag>
                   <span>依次经过负载均衡和RS的安全组 2 次检测</span>
                   <Success
+                    v-show={!tmpIsPassToTarget.value}
                     width={14}
                     height={14}
                     fill='#3A84FF'
-                    style={{ visibility: !tmpRsCheckRes.value ? 'hidden' : 'visible' }}
                     class={'rs-check-icon'}
                   />
                 </div>
                 <div
-                  class={`${!tmpRsCheckRes.value ? 'rs-check-selector-active' : 'rs-check-selector'}  ${
-                    isUpdating.value ? 'disabled-button' : ''
-                  }`}
+                  class={[
+                    'rs-check-selector',
+                    { 'rs-check-selector-active': tmpIsPassToTarget.value, 'disabled-button': isUpdating.value },
+                  ]}
                   onClick={() => {
-                    if (!tmpRsCheckRes.value || isUpdating.value) return;
-                    tmpRsCheckRes.value = false;
+                    if (tmpIsPassToTarget.value || isUpdating.value) return;
+                    tmpIsPassToTarget.value = true;
                   }}>
                   <Tag theme='warning'>1 次检测</Tag>
                   <span>只经过负载均衡的安全组 1 次检测，忽略后端RS的安全组检测</span>
                   <Success
+                    v-show={tmpIsPassToTarget.value}
                     width={14}
                     height={14}
                     fill='#3A84FF'
-                    style={{ visibility: tmpRsCheckRes.value ? 'hidden' : 'visible' }}
                     class={'rs-check-icon'}
                   />
                 </div>
@@ -499,7 +495,7 @@ export default defineComponent({
                     isUpdating.value = true;
                     try {
                       await props.updateLb({
-                        load_balancer_pass_to_target: tmpRsCheckRes.value,
+                        load_balancer_pass_to_target: tmpIsPassToTarget.value,
                       });
                       isConfigDialogShow.value = false;
                     } finally {

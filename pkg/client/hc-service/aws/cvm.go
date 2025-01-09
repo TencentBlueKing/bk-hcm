@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/api/core"
 	protocvm "hcm/pkg/api/hc-service/cvm"
 	"hcm/pkg/api/hc-service/sync"
+	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
@@ -180,4 +181,10 @@ func (cli *CvmClient) BatchCreateCvm(kt *kit.Kit, request *protocvm.AwsBatchCrea
 	}
 
 	return resp.Data, nil
+}
+
+// BatchAssociateSecurityGroup ....
+func (cli *CvmClient) BatchAssociateSecurityGroup(kt *kit.Kit, request *protocvm.AwsCvmBatchAssociateSecurityGroupReq) error {
+	return common.RequestNoResp[protocvm.AwsCvmBatchAssociateSecurityGroupReq](
+		cli.client, http.MethodPost, kt, request, "/cvms/security_groups/batch/associate")
 }
