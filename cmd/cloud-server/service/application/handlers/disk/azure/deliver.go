@@ -36,5 +36,5 @@ func (a *ApplicationOfCreateAzureDisk) Deliver() (status enumor.ApplicationStatu
 	}
 
 	return logics.CheckResultAndAssign(a.Cts.Kit, a.Client.DataService(), result, uint32(a.req.DiskCount),
-		a.req.BkBizID, a.Audit)
+		a.req.BkBizID, a.Audit, a.req.Region, enumor.Azure)
 }

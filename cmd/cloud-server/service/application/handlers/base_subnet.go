@@ -29,9 +29,8 @@ import (
 )
 
 // GetSubnet 查询子网
-func (a *BaseApplicationHandler) GetSubnet(
-	vendor enumor.Vendor, accountID, cloudVpcID, cloudSubnetID string,
-) (*corecloud.BaseSubnet, error) {
+func (a *BaseApplicationHandler) GetSubnet(vendor enumor.Vendor, accountID, cloudVpcID, cloudSubnetID,
+	region string) (*corecloud.BaseSubnet, error) {
 	reqFilter := &filter.Expression{
 		Op: filter.And,
 		Rules: []filter.RuleFactory{
@@ -39,6 +38,7 @@ func (a *BaseApplicationHandler) GetSubnet(
 			filter.AtomRule{Field: "account_id", Op: filter.Equal.Factory(), Value: accountID},
 			filter.AtomRule{Field: "cloud_vpc_id", Op: filter.Equal.Factory(), Value: cloudVpcID},
 			filter.AtomRule{Field: "cloud_id", Op: filter.Equal.Factory(), Value: cloudSubnetID},
+			filter.AtomRule{Field: "region", Op: filter.Equal.Factory(), Value: region},
 		},
 	}
 	// 查询

@@ -235,7 +235,11 @@ func (cli *client) deleteSG(kt *kit.Kit, accountID string, region string, delClo
 	}
 
 	deleteReq := &protocloud.SecurityGroupBatchDeleteReq{
-		Filter: tools.ContainersExpression("cloud_id", delCloudIDs),
+		Filter: tools.ExpressionAnd(
+			tools.RuleIn("cloud_id", delCloudIDs),
+			tools.RuleEqual("region", region),
+			tools.RuleEqual("vendor", enumor.TCloud),
+		),
 	}
 	if err = cli.dbCli.Global.SecurityGroup.BatchDeleteSecurityGroup(kt.Ctx, kt.Header(), deleteReq); err != nil {
 		logs.Errorf("[%s] request dataservice to batch delete sg failed, err: %v, rid: %s", enumor.TCloud,

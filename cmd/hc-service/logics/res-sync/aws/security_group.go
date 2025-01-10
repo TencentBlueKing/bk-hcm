@@ -51,6 +51,7 @@ func (opt SyncSGOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
+// SecurityGroup ...
 func (cli *client) SecurityGroup(kt *kit.Kit, params *SyncBaseParams, opt *SyncSGOption) (*SyncResult, error) {
 	if err := validator.ValidateTool(params, opt); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -255,7 +256,11 @@ func (cli *client) deleteSG(kt *kit.Kit, accountID string, region string, delClo
 	}
 
 	deleteReq := &protocloud.SecurityGroupBatchDeleteReq{
-		Filter: tools.ContainersExpression("cloud_id", delCloudIDs),
+		Filter: tools.ExpressionAnd(
+			tools.RuleIn("cloud_id", delCloudIDs),
+			tools.RuleEqual("region", region),
+			tools.RuleEqual("vendor", enumor.Aws),
+		),
 	}
 	if err = cli.dbCli.Global.SecurityGroup.BatchDeleteSecurityGroup(kt.Ctx, kt.Header(), deleteReq); err != nil {
 		logs.Errorf("[%s] request dataservice to batch delete sg failed, err: %v, rid: %s", enumor.Aws,
@@ -332,6 +337,7 @@ func (cli *client) listSGFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	return result.Details, nil
 }
 
+// RemoveSecurityGroupDeleteFromCloud ...
 func (cli *client) RemoveSecurityGroupDeleteFromCloud(kt *kit.Kit, accountID string, region string) error {
 	req := &core.ListReq{
 		Filter: &filter.Expression{

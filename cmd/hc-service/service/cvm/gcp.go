@@ -31,6 +31,7 @@ import (
 	coreimage "hcm/pkg/api/core/cloud/image"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	protocvm "hcm/pkg/api/hc-service/cvm"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
@@ -66,12 +67,12 @@ func (svc *cvmSvc) BatchCreateGcpCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	vpcSelfLink, err := svc.getVpcSelfLinkByCloudID(cts.Kit, req.CloudVpcID)
+	vpcSelfLink, err := svc.getVpcSelfLinkByCloudID(cts.Kit, req.CloudVpcID, req.Region)
 	if err != nil {
 		return nil, err
 	}
 
-	subnetSelfLink, err := svc.getSubnetSelfLinkByCloudID(cts.Kit, req.CloudSubnetID)
+	subnetSelfLink, err := svc.getSubnetSelfLinkByCloudID(cts.Kit, req.CloudSubnetID, req.Region)
 	if err != nil {
 		return nil, err
 	}
@@ -155,9 +156,13 @@ func (svc *cvmSvc) getImageByCloudID(kt *kit.Kit, cloudID string) (
 	return images.Details[0], nil
 }
 
-func (svc *cvmSvc) getSubnetSelfLinkByCloudID(kt *kit.Kit, cloudID string) (string, error) {
+func (svc *cvmSvc) getSubnetSelfLinkByCloudID(kt *kit.Kit, cloudID, region string) (string, error) {
 	req := &core.ListReq{
-		Filter: tools.EqualExpression("cloud_id", cloudID),
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("cloud_id", cloudID),
+			tools.RuleEqual("region", region),
+			tools.RuleEqual("vendor", enumor.Gcp),
+		),
 		Page:   core.NewDefaultBasePage(),
 		Fields: []string{"extension"},
 	}
@@ -173,9 +178,13 @@ func (svc *cvmSvc) getSubnetSelfLinkByCloudID(kt *kit.Kit, cloudID string) (stri
 	return subnets.Details[0].Extension.SelfLink, nil
 }
 
-func (svc *cvmSvc) getVpcSelfLinkByCloudID(kt *kit.Kit, cloudID string) (string, error) {
+func (svc *cvmSvc) getVpcSelfLinkByCloudID(kt *kit.Kit, cloudID, region string) (string, error) {
 	req := &core.ListReq{
-		Filter: tools.EqualExpression("cloud_id", cloudID),
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("cloud_id", cloudID),
+			tools.RuleEqual("region", region),
+			tools.RuleEqual("vendor", enumor.Gcp),
+		),
 		Page:   core.NewDefaultBasePage(),
 		Fields: []string{"extension"},
 	}

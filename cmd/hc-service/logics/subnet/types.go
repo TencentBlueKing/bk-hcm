@@ -289,6 +289,8 @@ func QuerySecurityGroupIDsAndSync(kt *kit.Kit, adaptor *cloudclient.CloudAdaptor
 
 	cloudIDs := slice.Unique(opt.CloudSecurityGroupIDs)
 
+	// TODO opt.Region为非必填字段，目前调用方的上下文没有region信息，需要后续补充
+	// 调用方只有azure, 影响范围暂时可控, 不存在cloud_id重复的情况
 	listReq := &protocloud.SecurityGroupListReq{
 		Filter: tools.ContainersExpression("cloud_id", cloudIDs),
 		Page:   core.NewDefaultBasePage(),

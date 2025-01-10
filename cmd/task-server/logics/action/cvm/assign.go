@@ -82,9 +82,13 @@ func (act AssignCvmAction) Run(kt run.ExecuteKit, params interface{}) (result in
 	split := slice.Split(cloudIDs, constant.BatchOperationMaxLimit)
 	cvmIDs := make([]string, 0, len(cloudIDs))
 	for _, partIDs := range split {
+		// TODO action的上游传入region信息有一定难度，各个流程耦合有点深暂时不太好处理
 		listReq := &core.ListReq{
-			Filter: tools.ContainersExpression("cloud_id", partIDs),
-			Page:   core.NewDefaultBasePage(),
+			Filter: tools.ExpressionAnd(
+				tools.RuleIn("cloud_id", partIDs),
+				//tools.RuleEqual("region", region),
+			),
+			Page: core.NewDefaultBasePage(),
 		}
 		listResult, err := cli.Global.Cvm.ListCvm(kt.Kit(), listReq)
 		if err != nil {

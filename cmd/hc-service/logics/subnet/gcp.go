@@ -32,6 +32,7 @@ import (
 	"hcm/pkg/api/data-service/cloud"
 	hcservice "hcm/pkg/api/hc-service/subnet"
 	dataclient "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/dao/tools"
@@ -54,7 +55,11 @@ func (s *Subnet) GcpSubnetCreate(kt *kit.Kit, opt *SubnetCreateOptions[hcservice
 
 	// get gcp vpc self link by cloud id
 	vpcReq := &core.ListReq{
-		Filter: tools.EqualExpression("cloud_id", opt.CloudVpcID),
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("cloud_id", opt.CloudVpcID),
+			tools.RuleEqual("region", opt.Region),
+			tools.RuleEqual("vendor", enumor.Gcp),
+		),
 		Page:   core.NewDefaultBasePage(),
 		Fields: []string{"extension"},
 	}
