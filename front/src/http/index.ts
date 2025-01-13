@@ -148,11 +148,9 @@ async function getPromise(method: HttpMethodType, url: string, data: object | nu
     return promise;
   }
 
-  // eslint-disable-next-line no-async-promise-executor, @typescript-eslint/no-misused-promises
   promise = new Promise(async (resolve, reject) => {
     const axiosRequest = methodsWithData.includes(method)
-      ? // @ts-ignore
-      axiosInstance[method](url, data, config)
+      ? axiosInstance[method](url, data, config)
       : axiosInstance[method](url, config);
 
     try {
