@@ -6,7 +6,7 @@
 
 ### URL
 
-POST /api/v1/cloud/assign/match/hosts/list
+POST /api/v1/cloud/cvms/assign/hosts/match/list
 
 ### 输入参数
 
