@@ -12,7 +12,8 @@ export type ModelPropertyType =
   | 'bool'
   | 'cert'
   | 'ca'
-  | 'region';
+  | 'region'
+  | 'business';
 
 export type ModelPropertyMeta = {
   display: {
