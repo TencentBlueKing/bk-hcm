@@ -10,6 +10,7 @@ import BoolValue from './bool-value.vue';
 import CertValue from './cert-value.vue';
 import CaValue from './ca-value.vue';
 import RegionValue from './region-value.vue';
+import BusinessValue from './business-value.vue';
 import UserValue from './user-value.vue';
 import { DisplayType } from './typings';
 
@@ -38,6 +39,7 @@ const valueComps: Record<
   | typeof CertValue
   | typeof CaValue
   | typeof RegionValue
+  | typeof BusinessValue
   | typeof UserValue
 > = {
   enum: EnumValue,
@@ -51,6 +53,7 @@ const valueComps: Record<
   cert: CertValue,
   ca: CaValue,
   region: RegionValue,
+  business: BusinessValue,
 };
 
 const attrs = useAttrs();
