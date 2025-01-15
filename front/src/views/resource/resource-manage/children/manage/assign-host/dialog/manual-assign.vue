@@ -44,9 +44,10 @@ const { formModel, resetForm } = useFormModel({
   bk_biz_id: undefined as number,
 });
 
-const cloudAreaOption = computed(() => {
-  return Object.fromEntries(cloudAreaMap.value);
-});
+const cloudAreaOption = computed(() =>
+  // 暂不支持0管控区
+  Object.fromEntries(Array.from(cloudAreaMap.value.entries()).filter(([key]) => key !== 0)),
+);
 const businessOptionList = computed(() => {
   return businessFullList.value.filter((item) => props.cvm?.bk_biz_ids.includes(item.id));
 });

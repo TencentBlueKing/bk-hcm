@@ -40,6 +40,8 @@ const handleDelete = () => {
   selected.value = undefined;
 };
 const handleRowClick = (row: IMatchHostsItem) => {
+  // 暂不支持0管控区
+  if (row.bk_cloud_id === 0) return;
   selected.value = row.bk_host_id;
 };
 
@@ -106,11 +108,12 @@ const columns = [
       show-overflow-tooltip
       pagination
       @row-click="(_:any, row: any) => handleRowClick(row)"
-      v-bkloading="{ loading: hostStore.isAssignHostsMatchLoading, size: 'small' }"
+      v-bkloading="{ loading: hostStore.isAssignHostsMatchLoading }"
     >
       <bk-table-column prop="radio" width="50" min-width="50">
         <template #default="{ row }">
-          <bk-radio v-model="selected" :label="row.bk_host_id" class="no-label" />
+          <!-- 暂不支持0管控区 -->
+          <bk-radio v-model="selected" :label="row.bk_host_id" :disabled="row.bk_cloud_id === 0" class="no-label" />
         </template>
       </bk-table-column>
       <bk-table-column

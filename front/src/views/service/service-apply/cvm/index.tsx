@@ -991,9 +991,10 @@ export default defineComponent({
     };
 
     // 业务下，可以选择管控区域
-    const cloudAreaOption = computed(() => {
-      return Object.fromEntries(cloudAreaMap.value);
-    });
+    const cloudAreaOption = computed(() =>
+      // 暂不支持0管控区
+      Object.fromEntries(Array.from(cloudAreaMap.value.entries()).filter(([key]) => key !== 0)),
+    );
     const handleCloudAreaChange = (val: string) => {
       if (!val) {
         localStorage.removeItem(bizApplyCvmCloudAreaSelectedKey);
