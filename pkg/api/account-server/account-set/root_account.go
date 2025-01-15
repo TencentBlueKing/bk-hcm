@@ -49,7 +49,7 @@ type RootAccountCommonAddReq struct {
 // RootAccountAddReq ...
 type RootAccountAddReq struct {
 	RootAccountCommonAddReq `json:",inline"`
-	Extension               map[string]string `json:"extension" validate:"omitempty"`
+	Extension               map[string]string `json:"extension" validate:"required"`
 }
 
 // Validate ...

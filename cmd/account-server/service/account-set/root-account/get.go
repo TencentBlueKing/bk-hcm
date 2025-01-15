@@ -28,8 +28,8 @@ import (
 	"hcm/pkg/rest"
 )
 
-// Get get root account with options
-func (s *service) Get(cts *rest.Contexts) (interface{}, error) {
+// GetRootAccount get root account with options
+func (s *service) GetRootAccount(cts *rest.Contexts) (interface{}, error) {
 	accountID := cts.PathParameter("account_id").String()
 
 	// 校验用户有一级账号管理权限
