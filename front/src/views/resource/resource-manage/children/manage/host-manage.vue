@@ -344,7 +344,11 @@ const showSingleAssignHost = (cvm: ICvmItem) => {
 
   <!-- 单个分配主机 -->
   <template v-if="!singleAssignHostOptions.isHidden">
-    <single-assign :cvm="singleAssignHostOptions.cvm" :reload-table="triggerApi" />
+    <single-assign
+      :cvm="singleAssignHostOptions.cvm"
+      :reload-table="triggerApi"
+      @hidden="singleAssignHostOptions.isHidden = true"
+    />
   </template>
 </template>
 

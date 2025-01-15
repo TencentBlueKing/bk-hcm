@@ -45,26 +45,6 @@ const handleRowClick = (row: IMatchHostsItem) => {
   selected.value = row.bk_host_id;
 };
 
-const handleClosed = () => {
-  model.value = false;
-};
-
-const handleConfirm = async () => {
-  if (props.action === 'backfill') {
-    // 批量分配
-    emit('backfill', props.cvm, selectedHost.value.bk_biz_id, selectedHost.value.bk_cloud_id);
-  } else {
-    // 单个分配
-    emit('submit', {
-      cvm_id: props.cvm.id,
-      bk_biz_id: selectedHost.value.bk_biz_id,
-      bk_cloud_id: selectedHost.value.bk_cloud_id,
-    });
-  }
-  handleDelete();
-  handleClosed();
-};
-
 const columns = [
   { id: 'private_ip_address', name: t('内网IP'), type: 'string' },
   { id: 'public_ip_address', name: t('内网IP'), type: 'string' },
@@ -81,18 +61,32 @@ const columns = [
     render: ({ cell }: any) => timeFormatter(cell),
   },
 ];
+
+const handleConfirm = async () => {
+  if (props.action === 'backfill') {
+    // 批量分配
+    emit('backfill', props.cvm, selectedHost.value.bk_biz_id, selectedHost.value.bk_cloud_id);
+  } else {
+    // 单个分配
+    emit('submit', {
+      cvm_id: props.cvm.id,
+      bk_biz_id: selectedHost.value.bk_biz_id,
+      bk_cloud_id: selectedHost.value.bk_cloud_id,
+    });
+  }
+  handleClosed();
+};
+
+const handleClosed = () => {
+  selected.value = undefined;
+  model.value = false;
+};
+
+defineExpose({ handleClosed });
 </script>
 
 <template>
-  <bk-dialog
-    :is-show="model"
-    :title="t('关联配置平台主机')"
-    width="1280"
-    :confirm-text="t('关联所选主机')"
-    :is-loading="hostStore.isAssignCvmsToBizsLoading"
-    @confirm="handleConfirm"
-    @closed="handleClosed"
-  >
+  <bk-dialog :is-show="model" :title="t('关联配置平台主机')" width="1280" @closed="handleClosed">
     <div class="selected-preview-wrap">
       <span class="label">{{ t('已选') }}</span>
       <span v-if="selected" class="value">
@@ -139,6 +133,21 @@ const columns = [
       {{ t('没有找到想要关联的主机？可尝试') }}
       <bk-button class="button" text @click="emit('manual-assign')">{{ t('手动分配') }}</bk-button>
     </div>
+
+    <template #footer>
+      <bk-button
+        theme="primary"
+        :loading="hostStore.isAssignCvmsToBizsLoading"
+        :disabled="!selectedHost"
+        v-bk-tooltips="{ content: t('未选择主机'), disabled: selectedHost }"
+        @click="handleConfirm"
+      >
+        {{ t('关联所选主机') }}
+      </bk-button>
+      <bk-button class="ml8" :disabled="hostStore.isAssignCvmsToBizsLoading" @click="handleClosed">
+        {{ t('取消') }}
+      </bk-button>
+    </template>
   </bk-dialog>
 </template>
 

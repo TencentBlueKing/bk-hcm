@@ -39,9 +39,9 @@ const { businessFullList } = storeToRefs(businessGlobalStore);
 
 const isPreviewScene = computed(() => props.cvm?.match_type === 'auto' && props.action === 'submit');
 
-const { formModel, resetForm } = useFormModel({
-  bk_cloud_id: undefined as number,
-  bk_biz_id: undefined as number,
+const { formModel, resetForm } = useFormModel<{ bk_cloud_id: number; bk_biz_id: number }>({
+  bk_cloud_id: undefined,
+  bk_biz_id: undefined,
 });
 
 const cloudAreaOption = computed(() =>
@@ -100,6 +100,7 @@ const cvmPreviewFields: FieldList = [
 ];
 
 const handleClosed = () => {
+  resetForm();
   model.value = false;
 };
 
@@ -116,7 +117,6 @@ const handleConfirm = async () => {
       emit('submit', { cvm_id: props.cvm.id, bk_biz_id: formModel.bk_biz_id, bk_cloud_id: +formModel.bk_cloud_id });
     }
   }
-  resetForm();
   handleClosed();
 };
 

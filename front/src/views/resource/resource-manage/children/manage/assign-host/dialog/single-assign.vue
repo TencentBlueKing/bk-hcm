@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watchEffect } from 'vue';
+import { ref, useTemplateRef, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { CvmsAssignPreviewItem, useHostStore } from '@/store';
 
@@ -18,8 +18,10 @@ const currentCvm = ref<CvmsAssignPreviewItem>(null);
 const isManualAssignShow = ref(false);
 
 const isMatchHostShow = ref(false);
+const matchHostDialogRef = useTemplateRef('match-host-dialog');
 const handleManualAssign = () => {
-  isMatchHostShow.value = false;
+  // 手动关联且手动分配，关闭弹框并清空form
+  matchHostDialogRef.value.handleClosed();
   isManualAssignShow.value = true;
 };
 
@@ -62,6 +64,7 @@ watchEffect(async () => {
   <!-- 关联配置平台主机 -->
   <match-host
     v-model="isMatchHostShow"
+    ref="match-host-dialog"
     action="submit"
     :cvm="currentCvm"
     @manual-assign="handleManualAssign"

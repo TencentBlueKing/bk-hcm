@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, Fragment, h, ref, watchEffect } from 'vue';
+import { computed, Fragment, h, ref, useTemplateRef, watch, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { groupBy } from 'lodash';
 
@@ -36,6 +36,16 @@ const { t } = useI18n();
 const hostStore = useHostStore();
 
 const previewOpList = ref<CvmBatchAssignOpItem[]>([]);
+const activeIndex = ref([]);
+
+const findCvmIndex = (accountName: string, cloudVpcId: string, cvmId: string) => {
+  const outerIdx = previewOpList.value.findIndex(
+    ({ account_name, cloud_vpc_id }) => account_name === accountName && cloud_vpc_id === cloudVpcId,
+  );
+  const innerIdx = previewOpList.value[outerIdx].tableData.findIndex(({ id }) => id === cvmId);
+
+  return [outerIdx, innerIdx];
+};
 
 const unConfirmFilterFn = (d: CvmsAssignPreviewItem) =>
   d.match_type !== 'auto' && (d.bk_biz_id === undefined || d.bk_cloud_id === undefined);
@@ -69,21 +79,42 @@ const hasUnConfirmedHost = computed(() => previewOpList.value.some((item) => ite
 watchEffect(() => {
   // 根据账户ID和云VPC ID分组数据（一个主机只能属于一个 vpc）
   const groupedData = groupBy(props.previewList, (item) => `${item.account_id}-${item.cloud_vpc_ids[0]}`);
-  // 更新响应式数据列表
-  previewOpList.value = Object.values(groupedData).map((group) => ({
+  const list = Object.values(groupedData).map((group) => ({
     account_name: group[0].account_name,
     cloud_vpc_id: group[0].cloud_vpc_ids[0],
     onlyShowUnConfirmed: false,
     tableData: group,
   }));
+  // 更新响应式数据列表
+  previewOpList.value = list;
 });
+
+// 面板交互
+const handleDeleteCollapsePanel = (index: number) => {
+  previewOpList.value.splice(index, 1);
+  // 如果删除的是最后一个面板，则关闭弹窗
+  if (previewOpList.value.length === 0) {
+    handleClosed();
+  }
+};
+watch(
+  previewOpList,
+  (list) => {
+    // 默认展开存有未确认主机的面板
+    activeIndex.value = list.reduce((prev, curr, index) => {
+      if (curr.tableData.some(unConfirmFilterFn)) prev.push(index);
+      return prev;
+    }, []);
+  },
+  { once: true },
+);
 
 // 表格配置
 const columns = [
   { id: 'private_ip_address', name: t('内网IP'), type: 'string', width: 150 },
   { id: 'public_ip_address', name: t('公网IP'), type: 'string', width: 150 },
-  { id: 'bk_cloud_id', name: t('管控区域'), type: 'cloud-area' },
-  { id: 'bk_biz_id', name: t('分配的目标业务'), type: 'business' },
+  { id: 'bk_cloud_id', name: t('管控区域'), type: 'cloud-area', width: 150 },
+  { id: 'bk_biz_id', name: t('分配的目标业务'), type: 'business', width: 120 },
   {
     id: 'match_type',
     name: t('是否与配置平台关联'),
@@ -129,13 +160,14 @@ const columns = [
       ]);
     },
   },
-  { id: 'region', name: t('地域'), type: 'region' },
-  { id: 'cloud_vpc_ids', name: t('所属vpc'), type: 'string', render: ({ cell }: any) => cell?.join(',') },
-  { id: 'name', name: t('主机名称'), type: 'string' },
+  { id: 'region', name: t('地域'), type: 'region', width: 150 },
+  { id: 'cloud_vpc_ids', name: t('所属vpc'), type: 'string', width: 150, render: ({ cell }: any) => cell?.join(',') },
+  { id: 'name', name: t('主机名称'), type: 'string', width: 150 },
   {
     id: 'status',
     name: t('主机状态'),
     type: 'string',
+    width: 120,
     render: ({ cell }: any) => {
       // eslint-disable-next-line no-nested-ternary
       const src = HOST_SHUTDOWN_STATUS.includes(cell)
@@ -152,30 +184,24 @@ const columns = [
       ]);
     },
   },
-  { id: 'machine_type', name: t('实例规格'), type: 'string' },
+  { id: 'machine_type', name: t('实例规格'), type: 'string', width: 120 },
   { id: 'os_name', name: t('操作系统'), type: 'string', width: 200 },
   { id: 'created_at', name: t('创建时间'), type: 'string', width: 180, render: ({ cell }: any) => timeFormatter(cell) },
 ];
 
-const activeIndex = ref([0]);
-const findCvmIndex = (accountName: string, cloudVpcId: string, cvmId: string) => {
-  const outerIdx = previewOpList.value.findIndex(
-    ({ account_name, cloud_vpc_id }) => account_name === accountName && cloud_vpc_id === cloudVpcId,
-  );
-  const innerIdx = previewOpList.value[outerIdx].tableData.findIndex(({ id }) => id === cvmId);
-
-  return [outerIdx, innerIdx];
-};
-
 // 关联配置平台主机
 const isMatchHostShow = ref(false);
+const matchHostDialogRef = useTemplateRef('match-host-dialog');
 const currentCvm = ref<CvmsAssignPreviewItem>(null);
 const handleBackfill = (cvm: CvmsAssignPreviewItem, bkBizId: number, bkCloudId: number) => {
   const [outerIdx, innerIdx] = findCvmIndex(cvm.account_name, cvm.cloud_vpc_ids[0], cvm.id);
   previewOpList.value[outerIdx].tableData[innerIdx].bk_biz_id = bkBizId;
   previewOpList.value[outerIdx].tableData[innerIdx].bk_cloud_id = bkCloudId;
-  // 关闭弹框
-  isMatchHostShow.value = false;
+
+  // 手动关联且手动分配，关闭弹框并清空form
+  if (cvm.match_type === 'manual' && isMatchHostShow.value) {
+    matchHostDialogRef.value.handleClosed();
+  }
 };
 const handleManualAssign = () => {
   isManualAssignShow.value = true;
@@ -247,7 +273,7 @@ const handleClosed = () => {
                   <span class="info-value">{{ item.bkCloudCount }}</span>
                 </span>
               </span>
-              <bk-button class="delete-btn" text @click.stop="previewOpList.splice(index, 1)">
+              <bk-button class="delete-btn" text @click.stop="handleDeleteCollapsePanel(index)">
                 <i class="hcm-icon bkhcm-icon-delete"></i>
               </bk-button>
             </span>
@@ -278,7 +304,7 @@ const handleClosed = () => {
                     />
                   </template>
                 </bk-table-column>
-                <bk-table-column :label="t('操作')">
+                <bk-table-column :label="t('操作')" fixed="right" width="100">
                   <template #default="{ row }">
                     <bk-button
                       class="button"
@@ -326,6 +352,7 @@ const handleClosed = () => {
   <!-- 关联配置平台主机 -->
   <match-host
     v-model="isMatchHostShow"
+    ref="match-host-dialog"
     action="backfill"
     :cvm="currentCvm"
     @backfill="handleBackfill"
