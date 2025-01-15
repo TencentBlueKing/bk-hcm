@@ -204,6 +204,9 @@ const (
 	TaskManagementTable = "task_management"
 	//	GlobalConfigTable 全局配置表
 	GlobalConfigTable = "global_config"
+
+	// ResBizRelTable 资源-使用业务关联表
+	ResBizRelTable = "res_usage_biz_rel"
 )
 
 // Validate whether the table name is valid or not.
@@ -308,6 +311,8 @@ var TableMap = map[Name]struct{}{
 	TaskDetailTable:     {},
 
 	GlobalConfigTable: {},
+
+	ResBizRelTable: {},
 }
 
 // Register 注册表名
