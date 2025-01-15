@@ -13,7 +13,8 @@ export type ModelPropertyType =
   | 'cert'
   | 'ca'
   | 'region'
-  | 'business';
+  | 'business'
+  | 'cloud-area';
 
 export type ModelPropertyMeta = {
   display: {
