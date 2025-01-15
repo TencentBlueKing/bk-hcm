@@ -28,6 +28,7 @@ import logo from '@/assets/image/logo.png';
 import './index.scss';
 
 import { MENU_BUSINESS_TASK_MANAGEMENT } from '@/constants/menu-symbol';
+import { jsonp } from '@/http';
 
 // import { CogShape } from 'bkui-vue/lib/icon';
 // import { useProjectList } from '@/hooks';
@@ -67,17 +68,8 @@ export default defineComponent({
 
     const { topMenuActiveItem, menus, curPath, handleHeaderMenuClick } = useChangeHeaderTab();
 
-    const saveLanguage = async (val: string) => {
-      return new Promise((resovle) => {
-        const url = `${BK_COMPONENT_API_URL}/api/c/compapi/v2/usermanage/fe_update_user_language/language=${val}`;
-
-        const scriptTag = document.createElement('script');
-        scriptTag.setAttribute('type', 'text/javascript');
-        scriptTag.setAttribute('src', url);
-        const headTag = document.getElementsByTagName('head')[0];
-        headTag.appendChild(scriptTag);
-        resovle(val);
-      });
+    const saveLanguage = async (language: string) => {
+      return jsonp(`${BK_COMPONENT_API_URL}/api/c/compapi/v2/usermanage/fe_update_user_language`, { language });
     };
 
     // 过渡方式，最终希望所有路由通过name跳转
