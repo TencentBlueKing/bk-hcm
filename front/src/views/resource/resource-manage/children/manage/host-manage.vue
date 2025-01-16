@@ -273,10 +273,16 @@ const batchAssignHostOptions = reactive({
   previewList: [],
 });
 const showBatchAssignHost = async (cvms: ICvmItem[]) => {
-  batchAssignHostOptions.isShow = true;
-  batchAssignHostOptions.isHidden = false;
-  // 获取预览数据
-  batchAssignHostOptions.previewList = await hostStore.getAssignPreviewList(cvms);
+  try {
+    batchAssignHostOptions.isShow = true;
+    batchAssignHostOptions.isHidden = false;
+    // 获取预览数据
+    batchAssignHostOptions.previewList = await hostStore.getAssignPreviewList(cvms);
+  } catch (error) {
+    console.error(error);
+    batchAssignHostOptions.isShow = false;
+    batchAssignHostOptions.isHidden = true;
+  }
 };
 
 // 主机分配（单个）

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, h, watchEffect } from 'vue';
+import { computed, h, onBeforeMount, watchEffect } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import useFormModel from '@/hooks/useFormModel';
@@ -37,21 +37,8 @@ const hostStore = useHostStore();
 const { cloudAreaMap } = storeToRefs(cloudAreaStore);
 const { businessFullList } = storeToRefs(businessGlobalStore);
 
+// 预览
 const isPreviewScene = computed(() => props.cvm?.match_type === 'auto' && props.action === 'submit');
-
-const { formModel, resetForm } = useFormModel<{ bk_cloud_id: number; bk_biz_id: number }>({
-  bk_cloud_id: undefined,
-  bk_biz_id: undefined,
-});
-
-const cloudAreaOption = computed(() =>
-  // 暂不支持0管控区
-  Object.fromEntries(Array.from(cloudAreaMap.value.entries()).filter(([key]) => key !== 0)),
-);
-const businessOptionList = computed(() => {
-  return businessFullList.value.filter((item) => props.cvm?.bk_biz_ids.includes(item.id));
-});
-
 const cvmPreviewFields: FieldList = [
   { name: t('内网IP'), prop: 'private_ip_address' },
   { name: t('地域'), prop: 'region' },
@@ -99,6 +86,21 @@ const cvmPreviewFields: FieldList = [
   { name: t('创建时间'), prop: 'created_at', render: (val: string) => timeFormatter(val) },
 ];
 
+// 表单
+const { formModel, resetForm } = useFormModel<{ bk_cloud_id: number; bk_biz_id: number }>({
+  bk_cloud_id: undefined,
+  bk_biz_id: undefined,
+});
+const isFormModelHasEmpty = computed(() => formModel.bk_biz_id === undefined || formModel.bk_cloud_id === undefined);
+const hasFooter = computed(() => !(props.isLoading || props.cvm?.match_type === 'auto'));
+const cloudAreaOption = computed(() =>
+  // 暂不支持0管控区
+  Object.fromEntries(Array.from(cloudAreaMap.value.entries()).filter(([key]) => key !== 0)),
+);
+const businessOptionList = computed(() => {
+  return businessFullList.value.filter((item) => props.cvm?.bk_biz_ids.includes(item.id));
+});
+
 const handleClosed = () => {
   resetForm();
   model.value = false;
@@ -121,7 +123,12 @@ const handleConfirm = async () => {
 };
 
 watchEffect(() => {
-  if (isPreviewScene.value) return;
+  formModel.bk_biz_id = props.cvm?.bk_biz_id;
+  formModel.bk_cloud_id = props.cvm?.bk_cloud_id;
+});
+
+onBeforeMount(() => {
+  // 加载管控区域list
   cloudAreaStore.fetchAllCloudAreas();
 });
 </script>
@@ -130,11 +137,8 @@ watchEffect(() => {
   <bk-dialog
     :is-show="model"
     :title="isLoading ? '' : t('分配主机')"
-    :dialog-type="isLoading || props.cvm?.match_type === 'auto' ? 'show' : 'operation'"
+    :dialog-type="hasFooter ? 'operation' : 'show'"
     :width="isLoading ? 400 : 480"
-    :confirm-text="t('确认分配')"
-    :is-loading="hostStore.isAssignCvmsToBizsLoading"
-    @confirm="handleConfirm"
     @closed="handleClosed"
   >
     <template v-if="isLoading">
@@ -160,6 +164,20 @@ watchEffect(() => {
           </bk-form-item>
         </bk-form>
       </div>
+    </template>
+
+    <template v-if="hasFooter" #footer>
+      <bk-button
+        theme="primary"
+        :loading="hostStore.isAssignCvmsToBizsLoading"
+        :disabled="isFormModelHasEmpty"
+        @click="handleConfirm"
+      >
+        {{ t('确认分配') }}
+      </bk-button>
+      <bk-button class="ml8" :disabled="hostStore.isAssignCvmsToBizsLoading" @click="handleClosed">
+        {{ t('取消') }}
+      </bk-button>
     </template>
   </bk-dialog>
 </template>

@@ -54,8 +54,15 @@ const unConfirmFilterFn = (d: CvmsAssignPreviewItem) =>
 const calculateUnConfirmedCount = (tableData: CvmsAssignPreviewItem[]) => tableData.filter(unConfirmFilterFn).length;
 
 // 计算不同云区域的数量
-const calculateBkCloudCount = (tableData: CvmsAssignPreviewItem[]) => new Set(tableData.map((d) => d.bk_cloud_id)).size;
-
+const calculateBkCloudCount = (tableData: CvmsAssignPreviewItem[]) => {
+  const bkCloudIdSet = tableData.reduce((prev, curr) => {
+    if (curr.bk_cloud_id !== undefined && !prev.has(curr.bk_cloud_id)) {
+      prev.add(curr.bk_cloud_id);
+    }
+    return prev;
+  }, new Set());
+  return bkCloudIdSet.size;
+};
 // 根据条件过滤表格数据
 const filterTableData = (onlyShowUnConfirmed: boolean, tableData: CvmsAssignPreviewItem[]) =>
   onlyShowUnConfirmed ? tableData.filter(unConfirmFilterFn) : tableData;
@@ -132,7 +139,7 @@ const columns = [
           theme: 'danger',
           clickHandler: () => {
             isManualAssignShow.value = true;
-            currentCvm.value = data;
+            currentCvm.value = { ...data };
           },
         },
         manual: {
@@ -140,7 +147,7 @@ const columns = [
           theme: 'warning',
           clickHandler: () => {
             isMatchHostShow.value = true;
-            currentCvm.value = data;
+            currentCvm.value = { ...data };
           },
         },
         auto: { text: t('自动关联'), theme: 'success' },

@@ -47,7 +47,7 @@ const handleRowClick = (row: IMatchHostsItem) => {
 
 const columns = [
   { id: 'private_ip_address', name: t('内网IP'), type: 'string' },
-  { id: 'public_ip_address', name: t('内网IP'), type: 'string' },
+  { id: 'public_ip_address', name: t('公网IP'), type: 'string' },
   { id: 'bk_cloud_id', name: t('管控区域'), type: 'cloud-area' },
   { id: 'bk_biz_id', name: t('所属业务'), type: 'business' },
   { id: 'region', name: t('地域'), type: 'region' },
