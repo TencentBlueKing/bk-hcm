@@ -6,7 +6,7 @@
 
 ### URL
 
-PATCH /api/v1/cloud/security_groups/{id}/management_attrs
+PATCH /api/v1/cloud/security_groups/{id}/mgmt_attrs
 
 ### 输入参数
 
