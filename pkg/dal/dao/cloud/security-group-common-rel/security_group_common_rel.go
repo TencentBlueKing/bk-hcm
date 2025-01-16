@@ -21,6 +21,7 @@ package sgcomrel
 
 import (
 	"fmt"
+	"strings"
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
@@ -42,7 +43,7 @@ type Interface interface {
 	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []cloud.SecurityGroupCommonRelTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*types.ListSecurityGroupCommonRelDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
-	ListJoinSecurityGroup(kt *kit.Kit, resIDs []string, resType enumor.CloudResourceType) (
+	ListJoinSecurityGroup(kt *kit.Kit, sgIDs, resIDs []string, resType enumor.CloudResourceType) (
 		*types.ListSGCommonRelsJoinSGDetails, error)
 }
 
@@ -54,27 +55,41 @@ type Dao struct {
 }
 
 // ListJoinSecurityGroup rels with security groups.
-func (dao Dao) ListJoinSecurityGroup(kt *kit.Kit, resIDs []string, resType enumor.CloudResourceType) (
+func (dao Dao) ListJoinSecurityGroup(kt *kit.Kit, sgIDs, resIDs []string, resType enumor.CloudResourceType) (
 	*types.ListSGCommonRelsJoinSGDetails, error) {
 
-	if len(resIDs) == 0 {
-		return nil, errf.Newf(errf.InvalidParameter, "res ids is required")
+	if len(resIDs) == 0 && len(sgIDs) == 0 {
+		return nil, errf.Newf(errf.InvalidParameter, "res_ids or sg_ids is required")
 	}
 
 	var withoutFields = []string{"vendor", "reviser", "updated_at"}
 	withoutFields = append(withoutFields, types.DefaultRelJoinWithoutField...)
+
+	whereExprMaps := make([]string, 0)
+	updateMap := make(map[string]interface{})
+	if len(resIDs) > 0 {
+		whereExprMaps = append(whereExprMaps, " res_id IN (:res_ids) AND res_type = :res_type ")
+		updateMap["res_ids"] = resIDs
+		updateMap["res_type"] = resType
+	}
+
+	if len(sgIDs) > 0 {
+		whereExprMaps = append(whereExprMaps, " sg.id IN (:sg_ids) ")
+		updateMap["sg_ids"] = sgIDs
+	}
+
 	sql := fmt.Sprintf(`SELECT %s, %s, sg.vendor AS vendor,sg.reviser AS reviser,sg.updated_at AS updated_at,
 		rel.res_type,rel.priority FROM %s AS rel LEFT JOIN %s AS sg ON rel.security_group_id = sg.id 
-		WHERE res_id IN (:res_ids) AND res_type = :res_type`,
+		WHERE %s`,
 		cloud.SecurityGroupColumns.FieldsNamedExprWithout(withoutFields),
 		tools.BaseRelJoinSqlBuild("rel", "sg", "id", "res_id"),
-		table.SecurityGroupCommonRelTable, table.SecurityGroupTable)
+		table.SecurityGroupCommonRelTable, table.SecurityGroupTable,
+		strings.Join(whereExprMaps, " AND "))
 
 	details := make([]types.SecurityGroupWithCommonID, 0)
-	updateMap := map[string]interface{}{"res_ids": resIDs, "res_type": resType}
 	if err := dao.Orm.Do().Select(kt.Ctx, &details, sql, updateMap); err != nil {
-		logs.Errorf("select sg common rels join sg failed, err: %v, sql: (%s), resIDs: %v, resType: %s, rid: %s",
-			err, resIDs, resType, sql, kt.Rid)
+		logs.Errorf("select sg common rels join sg failed, err: %v, sql: (%s), sgIDs: %v, resIDs: %v, "+
+			"resType: %s, rid: %s", err, sql, sgIDs, resIDs, resType, kt.Rid)
 		return nil, err
 	}
 

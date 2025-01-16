@@ -23,6 +23,7 @@ import (
 	"net/http"
 
 	"hcm/cmd/cloud-server/logics/audit"
+	securitygroup "hcm/cmd/cloud-server/logics/security-group"
 	"hcm/cmd/cloud-server/service/capability"
 	"hcm/pkg/client"
 	"hcm/pkg/iam/auth"
@@ -35,6 +36,7 @@ func InitSecurityGroupService(c *capability.Capability) {
 		client:     c.ApiClient,
 		authorizer: c.Authorizer,
 		audit:      c.Audit,
+		sgLogic:    c.Logics.SecurityGroup,
 	}
 
 	h := rest.NewHandler()
@@ -68,10 +70,13 @@ func InitSecurityGroupService(c *capability.Capability) {
 		"/vendors/{vendor}/security_groups/{security_group_id}/rules/{id}", svc.DeleteSecurityGroupRule)
 	h.Add("GetAzureDefaultSGRule", http.MethodGet, "/vendors/azure/default/security_groups/rules/{type}",
 		svc.GetAzureDefaultSGRule)
+
 	h.Add("ListResourceIdBySecurityGroup", http.MethodPost,
 		"/security_group/{id}/common/list", svc.ListResourceIdBySecurityGroup)
 	h.Add("ListCvmIdBySecurityGroup", http.MethodPost,
 		"/security_group/{id}/cvm/list", svc.ListCvmIdBySecurityGroup)
+	h.Add("ListSecurityGroupRelBusiness", http.MethodPost,
+		"/security_groups/{security_group_id}/related_resources/bizs/list", svc.ListSecurityGroupRelBusiness)
 
 	bizService(h, svc)
 	initSecurityGroupServiceHooks(svc, h)
@@ -116,7 +121,8 @@ func bizService(h *rest.Handler, svc *securityGroupSvc) {
 	h.Add("UpdateBizSGRule", http.MethodPut,
 		"/bizs/{bk_biz_id}/vendors/{vendor}/security_groups/{security_group_id}/rules/{id}", svc.UpdateBizSGRule)
 	h.Add("BatchUpdateBizSGRule", http.MethodPut,
-		"/bizs/{bk_biz_id}/vendors/{vendor}/security_groups/{security_group_id}/rules/batch/update", svc.BatchUpdateBizSGRule)
+		"/bizs/{bk_biz_id}/vendors/{vendor}/security_groups/{security_group_id}/rules/batch/update",
+		svc.BatchUpdateBizSGRule)
 	h.Add("DeleteBizSGRule", http.MethodDelete,
 		"/bizs/{bk_biz_id}/vendors/{vendor}/security_groups/{security_group_id}/rules/{id}", svc.DeleteBizSGRule)
 
@@ -124,10 +130,14 @@ func bizService(h *rest.Handler, svc *securityGroupSvc) {
 		"/bizs/{bk_biz_id}/security_group/{id}/common/list", svc.ListBizResourceIDBySecurityGroup)
 	h.Add("ListBizCvmIdBySecurityGroup", http.MethodPost,
 		"/bizs/{bk_biz_id}/security_group/{id}/cvm/list", svc.ListBizCvmIdBySecurityGroup)
+	h.Add("ListBizSecurityGroupRelBusiness", http.MethodPost,
+		"/bizs/{bk_biz_id}/security_groups/{security_group_id}/related_resources/bizs/list",
+		svc.ListBizSecurityGroupRelBusiness)
 }
 
 type securityGroupSvc struct {
 	client     *client.ClientSet
 	authorizer auth.Authorizer
 	audit      audit.Interface
+	sgLogic    securitygroup.Interface
 }

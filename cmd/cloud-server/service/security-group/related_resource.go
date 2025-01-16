@@ -39,7 +39,9 @@ func (svc *securityGroupSvc) ListBizResourceIDBySecurityGroup(cts *rest.Contexts
 	return svc.listResourceIdBySecurityGroup(cts, handler.BizOperateAuth)
 }
 
-func (svc *securityGroupSvc) listResourceIdBySecurityGroup(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
+func (svc *securityGroupSvc) listResourceIdBySecurityGroup(cts *rest.Contexts,
+	validHandler handler.ValidWithAuthHandler) (interface{}, error) {
+
 	id := cts.PathParameter("id").String()
 	if len(id) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
@@ -110,4 +112,36 @@ func (svc *securityGroupSvc) listCvmIDBySecurityGroup(cts *rest.Contexts, validH
 	}
 
 	return svc.client.DataService().Global.SGCvmRel.ListSgCvmRels(cts.Kit.Ctx, cts.Kit.Header(), req)
+}
+
+func (svc *securityGroupSvc) ListSecurityGroupRelBusiness(cts *rest.Contexts) (interface{}, error) {
+	return svc.listSecurityGroupRelBusiness(cts, handler.ResOperateAuth)
+}
+
+func (svc *securityGroupSvc) ListBizSecurityGroupRelBusiness(cts *rest.Contexts) (interface{}, error) {
+	return svc.listSecurityGroupRelBusiness(cts, handler.BizOperateAuth)
+}
+
+func (svc *securityGroupSvc) listSecurityGroupRelBusiness(cts *rest.Contexts,
+	validHandler handler.ValidWithAuthHandler) (interface{}, error) {
+
+	sgID := cts.PathParameter("security_group_id").String()
+	if len(sgID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "security_group_id is required")
+	}
+
+	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
+		enumor.SecurityGroupCloudResType, sgID)
+	if err != nil {
+		logs.Errorf("get security group vendor failed, id: %s, err: %v, rid: %s", sgID, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
+		Action: meta.Find, BasicInfo: baseInfo})
+	if err != nil {
+		return nil, err
+	}
+
+	return svc.sgLogic.ListSGRelBusiness(cts.Kit, sgID)
 }

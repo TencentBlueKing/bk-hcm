@@ -81,8 +81,9 @@ type SGCommonRelListResult struct {
 
 // SGCommonRelWithSecurityGroupListReq ...
 type SGCommonRelWithSecurityGroupListReq struct {
-	ResIDs  []string                 `json:"res_ids" validate:"required,min=1"`
-	ResType enumor.CloudResourceType `json:"res_type" validate:"required"`
+	ResIDs  []string                 `json:"res_ids" validate:"omitempty"`
+	ResType enumor.CloudResourceType `json:"res_type" validate:"omitempty"`
+	SGIDs   []string                 `json:"sg_ids" validate:"omitempty"`
 }
 
 // Validate SGCommonRelWithSecurityGroupListReq.
@@ -91,12 +92,22 @@ func (req *SGCommonRelWithSecurityGroupListReq) Validate() error {
 		return err
 	}
 
+	if len(req.ResIDs) == 0 && len(req.SGIDs) == 0 {
+		return fmt.Errorf("res_ids or sg_ids is required")
+	}
+
+	if len(req.SGIDs) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("sg_ids count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
 	if len(req.ResIDs) > constant.BatchOperationMaxLimit {
 		return fmt.Errorf("res_ids count should <= %d", constant.BatchOperationMaxLimit)
 	}
 
-	if len(req.ResType) == 0 {
-		return fmt.Errorf("res_type is required")
+	if len(req.ResIDs) > 0 {
+		if len(req.ResType) == 0 {
+			return fmt.Errorf("res_type is required")
+		}
 	}
 
 	return nil
