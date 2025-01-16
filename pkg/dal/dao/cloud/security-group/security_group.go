@@ -21,6 +21,7 @@ package securitygroup
 
 import (
 	"fmt"
+	"strings"
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
@@ -67,6 +68,7 @@ func (s SecurityGroupDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, sgs []*clo
 	if err != nil {
 		return nil, err
 	}
+
 	for index, sg := range sgs {
 		sg.ID = ids[index]
 
@@ -190,11 +192,23 @@ func (s SecurityGroupDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListS
 		return nil, errf.New(errf.InvalidParameter, "list security group options is nil")
 	}
 
+	// 去除field中的使用业务id字段
+	newFields := make([]string, 0, len(opt.Fields))
+	for i := range opt.Fields {
+		if opt.Fields[i] == "usage_biz_ids" || opt.Fields[i] == "usage_biz_id" {
+			continue
+		}
+		newFields = append(newFields, opt.Fields[i])
+	}
+	opt.Fields = newFields
+
 	columnTypes := cloud.SecurityGroupColumns.ColumnTypes()
 	columnTypes["extension.resource_group_name"] = enumor.String
 	columnTypes["extension.vpc_id"] = enumor.String
-	if err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)),
-		core.NewDefaultPageOption()); err != nil {
+	columnTypes["rel.res_type"] = enumor.String
+	columnTypes["usage_biz_id"] = enumor.Numeric
+	err := opt.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)), core.NewDefaultPageOption())
+	if err != nil {
 		return nil, err
 	}
 
@@ -202,10 +216,23 @@ func (s SecurityGroupDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListS
 	if err != nil {
 		return nil, err
 	}
+	if strings.Contains(whereExpr, "usage_biz_id") {
+		// 如果用户传了usage_biz_id，则需要补充res_type条件，保证筛选结果的正确性
+		opt.Filter, err = tools.And(tools.EqualExpression("rel.res_type", "security_group"), opt.Filter)
+		if err != nil {
+			logs.Errorf("fail to merge res_type expression, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+		whereExpr, whereValue, err = opt.Filter.SQLWhereExpr(tools.DefaultSqlWhereOption)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	if opt.Page.Count {
 		// this is a count request, then do count operation only.
-		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.SecurityGroupTable, whereExpr)
+		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s AS sg LEFT JOIN %s AS rel ON sg.id = rel.res_id %s`,
+			table.SecurityGroupTable, table.ResBizRelTable, whereExpr)
 
 		count, err := s.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
@@ -221,8 +248,9 @@ func (s SecurityGroupDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListS
 		return nil, err
 	}
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, cloud.SecurityGroupColumns.FieldsNamedExpr(opt.Fields),
-		table.SecurityGroupTable, whereExpr, pageExpr)
+	sql := fmt.Sprintf(`SELECT %s FROM %s AS sg LEFT JOIN %s AS rel ON sg.id = rel.res_id %s %s`,
+		cloud.SecurityGroupColumns.FieldsNamedExpr(opt.Fields), table.SecurityGroupTable, table.ResBizRelTable,
+		whereExpr, pageExpr)
 
 	details := make([]cloud.SecurityGroupTable, 0)
 	if err = s.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {

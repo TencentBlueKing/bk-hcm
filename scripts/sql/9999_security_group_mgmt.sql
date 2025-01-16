@@ -34,6 +34,7 @@ CREATE TABLE `res_usage_biz_rel`
     `res_type`     varchar(64)     NOT NULL COMMENT '资源类型',
     `res_id`       varchar(64)     NOT NULL COMMENT '资源ID',
     `usage_biz_id` bigint          NOT NULL COMMENT '使用业务ID',
+    `res_cloud_id` varchar(64)     NOT NULL DEFAULT '' COMMENT '云资源ID',
     `creator`      varchar(64)     not null comment '创建者',
     `reviser`      varchar(64)     not null comment '更新者',
     `created_at`   timestamp       not null default current_timestamp comment '创建时间',
@@ -43,16 +44,18 @@ CREATE TABLE `res_usage_biz_rel`
     KEY idx_res_type_res_id_usage_biz_id (res_type, res_id, usage_biz_id)
 );
 
-alter table security_group
-    add column mgmt_type varchar(64) NOT NULL DEFAULT '' COMMENT '管理类型' AFTER account_id;
-alter table security_group
-    add column mgmt_biz_id bigint NOT NULL DEFAULT -1 COMMENT '管理业务ID' AFTER mgmt_type;
-alter table security_group
-    add column manager varchar(64) NOT NULL DEFAULT '' COMMENT '负责人' AFTER mgmt_biz_id;
-alter table security_group
-    add column bak_manager varchar(64) NOT NULL DEFAULT '' COMMENT '备份负责人' AFTER manager;
 
+ALTER TABLE security_group
+    ADD COLUMN mgmt_type varchar(64) NOT NULL DEFAULT '' COMMENT '管理类型' AFTER account_id;
+ALTER TABLE security_group
+    ADD COLUMN mgmt_biz_id bigint NOT NULL DEFAULT -1 COMMENT '管理业务ID' AFTER mgmt_type;
+ALTER TABLE security_group
+    ADD COLUMN manager varchar(64) NOT NULL DEFAULT '' COMMENT '负责人' AFTER mgmt_biz_id;
+ALTER TABLE security_group
+    ADD COLUMN bak_manager varchar(64) NOT NULL DEFAULT '' COMMENT '备份负责人' AFTER manager;
 
+ALTER TABLE security_group_common_rel
+    ADD INDEX idx_security_group_id (security_group_id);
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
 SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;

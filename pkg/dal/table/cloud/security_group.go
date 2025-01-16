@@ -80,6 +80,11 @@ type SecurityGroupTable struct {
 	UpdatedAt        types.Time      `db:"updated_at" json:"updated_at" validate:"excluded_unless"`
 }
 
+// GetID return security group table's id.
+func (t SecurityGroupTable) GetID() string {
+	return t.ID
+}
+
 // TableName return security group table name.
 func (t SecurityGroupTable) TableName() table.Name {
 	return table.SecurityGroupTable

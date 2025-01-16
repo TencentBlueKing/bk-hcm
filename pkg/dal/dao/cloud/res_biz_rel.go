@@ -37,24 +37,24 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// ResBizRel cloud resource biz relation
-type ResBizRel interface {
+// ResUsageBizRel cloud resource biz relation
+type ResUsageBizRel interface {
 	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*cloud.ResBizRelTable) error
 	List(kt *kit.Kit, opt *types.ListOption) (*types.ListResBizRelDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error
-
-	ListResUsageBizs(kt *kit.Kit, resType enumor.CloudResourceType, resIDs []string) (*types.ListResBizsDetail, error)
+	// ListUsageBizs 查询指定资源关联业务id，保证返回的数组和传入resIDs的顺序以及数量一致
+	ListUsageBizs(kt *kit.Kit, resType enumor.CloudResourceType, resIDs []string) ([]types.ResBizInfo, error)
 }
 
-var _ ResBizRel = new(ResBizRelDao)
+var _ ResUsageBizRel = new(ResUsageBizRelDao)
 
-// ResBizRelDao cloud resource biz relation dao.
-type ResBizRelDao struct {
+// ResUsageBizRelDao cloud resource biz relation dao.
+type ResUsageBizRelDao struct {
 	Orm orm.Interface
 }
 
-// BatchCreateWithTx ResBizRel with tx.
-func (a ResBizRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*cloud.ResBizRelTable) error {
+// BatchCreateWithTx ResUsageBizRel with tx.
+func (a ResUsageBizRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*cloud.ResBizRelTable) error {
 	if len(rels) == 0 {
 		return errf.New(errf.InvalidParameter, "res_biz_rel is required")
 	}
@@ -70,8 +70,8 @@ func (a ResBizRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*cloud.
 	return nil
 }
 
-// List ResBizRel list.
-func (a ResBizRelDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListResBizRelDetails, error) {
+// List ResUsageBizRel list.
+func (a ResUsageBizRelDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListResBizRelDetails, error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list res_biz_rel options is nil")
@@ -116,8 +116,8 @@ func (a ResBizRelDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListResBi
 	return &types.ListResBizRelDetails{Count: 0, Details: details}, nil
 }
 
-// DeleteWithTx ResBizRel with tx.
-func (a ResBizRelDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error {
+// DeleteWithTx ResUsageBizRel with tx.
+func (a ResUsageBizRelDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error {
 	if filterExpr == nil {
 		return errf.New(errf.InvalidParameter, "filter expr is required")
 	}
@@ -136,13 +136,13 @@ func (a ResBizRelDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.
 	return nil
 }
 
-// ListResUsageBizs ...
-func (a ResBizRelDao) ListResUsageBizs(kt *kit.Kit, resType enumor.CloudResourceType, resIDs []string) (
-	*types.ListResBizsDetail, error) {
+// ListUsageBizs 查询指定资源关联业务id，保证返回的数组和传入resIDs的顺序以及数量一致
+func (a ResUsageBizRelDao) ListUsageBizs(kt *kit.Kit, resType enumor.CloudResourceType, resIDs []string) (
+	[]types.ResBizInfo, error) {
 
 	sql := fmt.Sprintf(`SELECT * FROM %s WHERE res_type = :res_type and res_id IN (:res_ids)`, table.ResBizRelTable)
 	relTables := make([]cloud.ResBizRelTable, 0)
-	args := map[string]interface{}{"res_type": resType, "bk_biz_ids": resIDs}
+	args := map[string]interface{}{"res_type": resType, "res_ids": resIDs}
 	if err := a.Orm.Do().Select(kt.Ctx, &relTables, sql, args); err != nil {
 		logs.Errorf("delete res_biz_rel failed, err: %v, res_type: %s, res_id: %s, rid: %s",
 			err, resType, resIDs, kt.Rid)
@@ -152,13 +152,14 @@ func (a ResBizRelDao) ListResUsageBizs(kt *kit.Kit, resType enumor.CloudResource
 	for i := range relTables {
 		resBizMap[relTables[i].ResID] = append(resBizMap[relTables[i].ResID], relTables[i].UsageBizID)
 	}
-	details := make([]types.ResBizInfo, len(resIDs))
+
+	resBizInfos := make([]types.ResBizInfo, len(resIDs))
 	for i := range resIDs {
-		details[i] = types.ResBizInfo{
+		resBizInfos[i] = types.ResBizInfo{
 			ResType: resType,
 			ResID:   resIDs[i],
 			BizIDs:  resBizMap[resIDs[i]],
 		}
 	}
-	return &types.ListResBizsDetail{Count: 0, Details: details}, nil
+	return resBizInfos, nil
 }

@@ -36,9 +36,9 @@ var ResBizRelColumns = utils.MergeColumns(nil, ResBizRelColumnDescriptor)
 var ResBizRelColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "rel_id", NamedC: "rel_id", Type: enumor.Numeric},
 	{Column: "res_id", NamedC: "res_id", Type: enumor.String},
+	{Column: "res_cloud_id", NamedC: "res_cloud_id", Type: enumor.String},
 	{Column: "res_type", NamedC: "res_type", Type: enumor.String},
-	{Column: "priority", NamedC: "priority", Type: enumor.Numeric},
-	{Column: "security_group_id", NamedC: "security_group_id", Type: enumor.String},
+	{Column: "usage_biz_id", NamedC: "usage_biz_id", Type: enumor.String},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
 	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
@@ -47,9 +47,10 @@ var ResBizRelColumnDescriptor = utils.ColumnDescriptors{
 
 // ResBizRelTable define resource biz relation table.
 type ResBizRelTable struct {
-	ID         uint64                   `db:"id" json:"id"`
+	RelID      uint64                   `db:"rel_id" json:"rel_id"`
 	ResType    enumor.CloudResourceType `db:"res_type" validate:"required,lte=64" json:"res_type"`
 	ResID      string                   `db:"res_id" validate:"lte=64" json:"res_id"`
+	ResCloudID string                   `db:"res_cloud_id" validate:"lte=64" json:"res_cloud_id"`
 	UsageBizID int64                    `db:"usage_biz_id" validate:"required,neq=0" json:"usage_biz_id"`
 	Creator    string                   `db:"creator" validate:"lte=64" json:"creator"`
 	Reviser    string                   `db:"reviser" validate:"lte=64" json:"reviser"`
