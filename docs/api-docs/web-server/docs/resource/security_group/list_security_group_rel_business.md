@@ -30,7 +30,7 @@ POST /api/v1/cloud/security_groups/{security_group_id}/related_resources/bizs/li
       123,
       234
     ],
-    "clb": [
+    "load_balancer": [
       123
     ]
   }
@@ -47,7 +47,7 @@ POST /api/v1/cloud/security_groups/{security_group_id}/related_resources/bizs/li
 
 #### data
 
-| 参数名称 | 参数类型      | 描述               |
-|------|-----------|------------------|
-| cvm  | int array | 安全组关联的CVM所属的业务列表 |
-| clb  | int array | 安全组关联的CLB所属的业务列表 |
+| 参数名称          | 参数类型      | 描述                         |
+|---------------|-----------|----------------------------|
+| cvm           | int array | 安全组关联的CVM所属的业务列表           |
+| load_balancer | int array | 安全组关联的load balancer所属的业务列表 |
