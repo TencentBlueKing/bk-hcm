@@ -231,7 +231,7 @@ func (s SecurityGroupDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListS
 
 	if opt.Page.Count {
 		// this is a count request, then do count operation only.
-		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s AS sg LEFT JOIN %s AS rel ON sg.id = rel.res_id %s`,
+		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s AS sg LEFT JOIN %s AS rel ON sg.id = rel.res_id %s GROUP BY sg.id`,
 			table.SecurityGroupTable, table.ResBizRelTable, whereExpr)
 
 		count, err := s.Orm.Do().Count(kt.Ctx, sql, whereValue)
@@ -248,7 +248,7 @@ func (s SecurityGroupDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListS
 		return nil, err
 	}
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s AS sg LEFT JOIN %s AS rel ON sg.id = rel.res_id %s %s`,
+	sql := fmt.Sprintf(`SELECT %s FROM %s AS sg LEFT JOIN %s AS rel ON sg.id = rel.res_id %s GROUP BY sg.id %s`,
 		cloud.SecurityGroupColumns.FieldsNamedExpr(opt.Fields), table.SecurityGroupTable, table.ResBizRelTable,
 		whereExpr, pageExpr)
 
