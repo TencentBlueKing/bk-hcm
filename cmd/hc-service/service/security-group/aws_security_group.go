@@ -22,16 +22,21 @@ package securitygroup
 import (
 	"fmt"
 
+	"hcm/pkg/adaptor/aws"
+	typecvm "hcm/pkg/adaptor/types/cvm"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
+	corecvm "hcm/pkg/api/core/cloud/cvm"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	proto "hcm/pkg/api/hc-service"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 )
 
 // CreateAwsSecurityGroup create aws security group.
@@ -142,23 +147,61 @@ func (g *securityGroup) AwsSecurityGroupAssociateCvm(cts *rest.Contexts) (interf
 		return nil, err
 	}
 
-	createReq := &protocloud.SGCvmRelBatchCreateReq{
-		Rels: []protocloud.SGCvmRelCreate{
-			{
-				SecurityGroupID: req.SecurityGroupID,
-				CvmID:           req.CvmID,
-			},
-		},
-	}
-	if err = g.dataCli.Global.SGCvmRel.BatchCreateSgCvmRels(cts.Kit.Ctx, cts.Kit.Header(), createReq); err != nil {
-		logs.Errorf("request dataservice create security group cvm rels failed, err: %v, req: %+v, rid: %s",
-			err, createReq, cts.Kit.Rid)
+	err = g.createSGCommonRelsForAws(cts.Kit, client, sg.Region, cvm)
+	if err != nil {
+		logs.Errorf("create security group common rels failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	// TODO: 同步主机数据
 
 	return nil, nil
+}
+
+func (g *securityGroup) createSGCommonRelsForAws(kt *kit.Kit, client *aws.Aws, region string,
+	cvm *corecvm.BaseCvm) error {
+
+	huaweiCvmFromCloud, err := g.listAwsCvmFromCloud(kt, client, region, cvm)
+	if err != nil {
+		logs.Errorf("request adaptor to list cvm from cloud failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	sgCloudIDs := make([]string, 0, len(huaweiCvmFromCloud[0].SecurityGroups))
+	for _, cur := range huaweiCvmFromCloud[0].SecurityGroups {
+		sgCloudIDs = append(sgCloudIDs, converter.PtrToVal(cur.GroupId))
+	}
+
+	sgCloudIDToIDMap, err := g.getSecurityGroupMapByCloudIDs(kt, enumor.Aws, sgCloudIDs)
+	if err != nil {
+		logs.Errorf("get security group map by cloud ids failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	err = g.createSGCommonRels(kt, enumor.Aws, cvm.ID, sgCloudIDs, sgCloudIDToIDMap)
+	if err != nil {
+		logs.Errorf("create security group common rels failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+	return nil
+}
+
+func (g *securityGroup) listAwsCvmFromCloud(kt *kit.Kit, client *aws.Aws, region string, cvm *corecvm.BaseCvm) (
+	[]typecvm.AwsCvm, error) {
+	listOpt := &typecvm.AwsListOption{
+		Region:   region,
+		CloudIDs: []string{cvm.CloudID},
+	}
+	awsCvms, _, err := client.ListCvm(kt, listOpt)
+	if err != nil {
+		logs.Errorf("list aws cvm failed, err: %v, opt: %v, rid: %s", err, listOpt, kt.Rid)
+		return nil, err
+	}
+	if len(awsCvms) == 0 {
+		logs.Errorf("aws cvm(%s) not found, rid: %s", kt.Rid, cvm.CloudID)
+		return nil, fmt.Errorf("aws cvm(%s) not found", cvm.CloudID)
+	}
+	return awsCvms, nil
 }
 
 // AwsSecurityGroupDisassociateCvm ...
@@ -193,12 +236,8 @@ func (g *securityGroup) AwsSecurityGroupDisassociateCvm(cts *rest.Contexts) (int
 		return nil, err
 	}
 
-	deleteReq, err := buildSGCvmRelDeleteReq(req.SecurityGroupID, req.CvmID)
-	if err != nil {
-		logs.Errorf("build sg cvm rel delete req failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-	if err = g.dataCli.Global.SGCvmRel.BatchDeleteSgCvmRels(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
+	deleteReq := buildSGCommonRelDeleteReq(enumor.Aws, req.CvmID, []string{req.SecurityGroupID}, enumor.CvmCloudResType)
+	if err = g.dataCli.Global.SGCommonRel.BatchDeleteSgCommonRels(cts.Kit, deleteReq); err != nil {
 		logs.Errorf("request dataservice delete security group cvm rels failed, err: %v, req: %+v, rid: %s",
 			err, deleteReq, cts.Kit.Rid)
 		return nil, err

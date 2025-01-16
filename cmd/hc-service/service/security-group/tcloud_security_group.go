@@ -23,6 +23,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
+
+	"hcm/pkg/adaptor/tcloud"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	typelb "hcm/pkg/adaptor/types/load-balancer"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
@@ -39,6 +42,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 )
 
@@ -127,20 +131,11 @@ func (g *securityGroup) TCloudSecurityGroupAssociateCvm(cts *rest.Contexts) (int
 		return nil, err
 	}
 
-	createReq := &protocloud.SGCvmRelBatchCreateReq{
-		Rels: []protocloud.SGCvmRelCreate{
-			{
-				SecurityGroupID: req.SecurityGroupID,
-				CvmID:           req.CvmID,
-			},
-		},
-	}
-	if err = g.dataCli.Global.SGCvmRel.BatchCreateSgCvmRels(cts.Kit.Ctx, cts.Kit.Header(), createReq); err != nil {
-		logs.Errorf("request dataservice create security group cvm rels failed, err: %v, req: %+v, rid: %s",
-			err, createReq, cts.Kit.Rid)
+	err = g.createSGCommonRelsForTCloud(cts.Kit, client, sg.Region, map[string]string{cvm.CloudID: cvm.ID})
+	if err != nil {
+		logs.Errorf("create security group cvm rels failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-
 	// TODO: 同步主机数据
 
 	return nil, nil
@@ -196,12 +191,9 @@ func (g *securityGroup) TCloudSecurityGroupDisassociateCvm(cts *rest.Contexts) (
 		return nil, err
 	}
 
-	deleteReq, err := buildSGCvmRelDeleteReq(req.SecurityGroupID, req.CvmID)
-	if err != nil {
-		logs.Errorf("build sg cvm rel delete req failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-	if err = g.dataCli.Global.SGCvmRel.BatchDeleteSgCvmRels(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
+	deleteReq := buildSGCommonRelDeleteReq(
+		enumor.TCloud, req.CvmID, []string{req.SecurityGroupID}, enumor.CvmCloudResType)
+	if err = g.dataCli.Global.SGCommonRel.BatchDeleteSgCommonRels(cts.Kit, deleteReq); err != nil {
 		logs.Errorf("request dataservice delete security group cvm rels failed, err: %v, req: %+v, rid: %s",
 			err, deleteReq, cts.Kit.Rid)
 		return nil, err
@@ -568,9 +560,9 @@ func (g *securityGroup) TCloudSGBatchAssociateCvm(cts *rest.Contexts) (any, erro
 	if err != nil {
 		return nil, err
 	}
-	cloudCvmIDs := make([]string, 0, len(req.CvmIDs))
+	cvmCloudIDToIDMap := make(map[string]string, len(req.CvmIDs))
 	for _, baseCvm := range cvmList {
-		cloudCvmIDs = append(cloudCvmIDs, baseCvm.CloudID)
+		cvmCloudIDToIDMap[baseCvm.CloudID] = baseCvm.ID
 	}
 
 	client, err := g.ad.TCloud(cts.Kit, sg.AccountID)
@@ -581,7 +573,7 @@ func (g *securityGroup) TCloudSGBatchAssociateCvm(cts *rest.Contexts) (any, erro
 	opt := &securitygroup.TCloudBatchAssociateCvmOption{
 		Region:               sg.Region,
 		CloudSecurityGroupID: sg.CloudID,
-		CloudCvmIDs:          cloudCvmIDs,
+		CloudCvmIDs:          converter.MapKeyToSlice(cvmCloudIDToIDMap),
 	}
 	if err = client.SecurityGroupCvmBatchAssociate(cts.Kit, opt); err != nil {
 		logs.Errorf("request adaptor to tcloud security group associate cvm failed, err: %v, opt: %v, rid: %s",
@@ -589,20 +581,66 @@ func (g *securityGroup) TCloudSGBatchAssociateCvm(cts *rest.Contexts) (any, erro
 		return nil, err
 	}
 
-	createReq := &protocloud.SGCvmRelBatchCreateReq{}
-	for _, cvmID := range req.CvmIDs {
-		createReq.Rels = append(createReq.Rels, protocloud.SGCvmRelCreate{
-			SecurityGroupID: req.SecurityGroupID,
-			CvmID:           cvmID,
-		})
-	}
-
-	if err = g.dataCli.Global.SGCvmRel.BatchCreateSgCvmRels(cts.Kit.Ctx, cts.Kit.Header(), createReq); err != nil {
-		logs.Errorf("request dataservice create security group cvm rels failed, err: %v, req: %+v, rid: %s",
-			err, createReq, cts.Kit.Rid)
+	err = g.createSGCommonRelsForTCloud(cts.Kit, client, sg.Region, cvmCloudIDToIDMap)
+	if err != nil {
+		logs.Errorf("create sg common rels failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
+
 	return nil, nil
+}
+
+func (g *securityGroup) createSGCommonRelsForTCloud(kt *kit.Kit, client tcloud.TCloud, region string,
+	cvmCloudIDToIDMap map[string]string) error {
+
+	cloudCvms, err := g.listTCloudCvmFromCloud(kt, client, region, converter.MapKeyToSlice(cvmCloudIDToIDMap))
+	if err != nil {
+		logs.Errorf("list cvm from cloud failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	sgCloudIDs := make([]string, 0)
+	for _, one := range cloudCvms {
+		sgCloudIDs = append(sgCloudIDs, common.StringValues(one.SecurityGroupIds)...)
+	}
+
+	sgCloudIDToIDMap, err := g.getSecurityGroupMapByCloudIDs(kt, enumor.TCloud, sgCloudIDs)
+	if err != nil {
+		logs.Errorf("get security group map by cloud ids failed, err: %v, cloudIDs: %v, rid: %s",
+			err, sgCloudIDs, kt.Rid)
+		return err
+	}
+
+	for _, one := range cloudCvms {
+		cvmID, ok := cvmCloudIDToIDMap[converter.PtrToVal(one.InstanceId)]
+		if !ok {
+			logs.Errorf("cvm cloud id to id not found, cvmID: %s, rid: %s", converter.PtrToVal(one.InstanceId), kt.Rid)
+			return fmt.Errorf("cvm cloud id to id not found, cvmID: %s", converter.PtrToVal(one.InstanceId))
+		}
+		err = g.createSGCommonRels(kt, enumor.TCloud, cvmID, sgCloudIDs, sgCloudIDToIDMap)
+		if err != nil {
+			// 不抛出err, 尽最大努力交付
+			logs.Errorf("create sg common rels failed, err: %v, rid: %s", err, kt.Rid)
+		}
+	}
+
+	return nil
+}
+
+func (g *securityGroup) listTCloudCvmFromCloud(kt *kit.Kit, client tcloud.TCloud, region string, cvmCloudIDs []string) (
+	[]typecvm.TCloudCvm, error) {
+
+	listOpt := &typecvm.TCloudListOption{
+		CloudIDs: cvmCloudIDs,
+		Region:   region,
+	}
+	cloudCvms, err := client.ListCvm(kt, listOpt)
+	if err != nil {
+		logs.Errorf("request adaptor to list cvm failed, err: %v, opt: %v, rid: %s", err, listOpt, kt.Rid)
+		return nil, nil
+	}
+
+	return cloudCvms, err
 }
 
 // TCloudListSecurityGroupStatistic ...
@@ -696,12 +734,13 @@ func (g *securityGroup) TCloudSGBatchDisassociateCvm(cts *rest.Contexts) (any, e
 		return nil, err
 	}
 
-	deleteReq, err := buildSGCvmRelDeleteReq(req.SecurityGroupID, req.CvmIDs...)
+	deleteReq, err := buildSGCommonRelDeleteReqForMultiResource(enumor.TCloud, enumor.CvmCloudResType,
+		req.SecurityGroupID, req.CvmIDs...)
 	if err != nil {
 		logs.Errorf("build sg cvm rel delete req failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-	if err = g.dataCli.Global.SGCvmRel.BatchDeleteSgCvmRels(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
+	if err = g.dataCli.Global.SGCommonRel.BatchDeleteSgCommonRels(cts.Kit, deleteReq); err != nil {
 		logs.Errorf("request dataservice delete security group cvm rels failed, err: %v, req: %+v, rid: %s",
 			err, deleteReq, cts.Kit.Rid)
 		return nil, err

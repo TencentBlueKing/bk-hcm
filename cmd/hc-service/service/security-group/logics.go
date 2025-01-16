@@ -21,6 +21,7 @@ package securitygroup
 
 import (
 	"errors"
+
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
@@ -32,28 +33,22 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/slice"
 )
 
-func buildSGCvmRelDeleteReq(sgID string, cvmIDs ...string) (*dataproto.BatchDeleteReq, error) {
-	if len(cvmIDs) == 0 {
+func buildSGCommonRelDeleteReqForMultiResource(vendor enumor.Vendor, resType enumor.CloudResourceType,
+	sgID string, resIDs ...string) (*dataproto.BatchDeleteReq, error) {
+
+	if len(resIDs) == 0 {
 		return nil, errors.New("cvmIDs is required")
 	}
 	return &dataproto.BatchDeleteReq{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{
-					Field: "security_group_id",
-					Op:    filter.Equal.Factory(),
-					Value: sgID,
-				},
-				&filter.AtomRule{
-					Field: "cvm_id",
-					Op:    filter.In.Factory(),
-					Value: cvmIDs,
-				},
-			},
-		},
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("security_group_id", sgID),
+			tools.RuleIn("res_id", resIDs),
+			tools.RuleEqual("res_type", resType),
+			tools.RuleEqual("vendor", vendor),
+		),
 	}, nil
 }
 
@@ -122,4 +117,62 @@ func (g *securityGroup) getSecurityGroupAndCvm(kt *kit.Kit, sgID, cvmID string) 
 	}
 
 	return &sgResult.Details[0], &cvmResult.Details[0], nil
+}
+
+// createSGCommonRels 先删除cvmID关联的安全组关系，再创建新的安全组关系
+// sgCloudIDs的入参顺序决定新建的关联关系的优先级
+func (g *securityGroup) createSGCommonRels(kt *kit.Kit, vendor enumor.Vendor, cvmID string, sgCloudIDs []string,
+	sgCloudIDToIDMap map[string]string) error {
+
+	createReq := &protocloud.SGCommonRelBatchUpsertReq{
+		DeleteReq: &dataproto.BatchDeleteReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleEqual("res_id", cvmID),
+				tools.RuleEqual("res_type", enumor.CvmCloudResType),
+				tools.RuleEqual("vendor", vendor),
+			),
+		},
+	}
+
+	for i, cloudID := range sgCloudIDs {
+		createReq.Rels = append(createReq.Rels, protocloud.SGCommonRelCreate{
+			SecurityGroupID: sgCloudIDToIDMap[cloudID],
+			Vendor:          vendor,
+			ResID:           cvmID,
+			ResType:         enumor.CvmCloudResType,
+			Priority:        int64(i) + 1,
+		})
+	}
+	if err := g.dataCli.Global.SGCommonRel.BatchUpsertSgCommonRels(kt, createReq); err != nil {
+		logs.Errorf("request dataservice create security group cvm rels failed, err: %v, req: %+v, rid: %s",
+			err, createReq, kt.Rid)
+		return err
+	}
+	return nil
+}
+
+func (g *securityGroup) getSecurityGroupMapByCloudIDs(kt *kit.Kit, vendor enumor.Vendor, cloudIDs []string) (
+	map[string]string, error) {
+
+	cloudIDs = slice.Unique(cloudIDs)
+	m := make(map[string]string)
+	for _, ids := range slice.Split(cloudIDs, int(core.DefaultMaxPageLimit)) {
+		req := &protocloud.SecurityGroupListReq{
+			Field: []string{"id", "cloud_id"},
+			Filter: tools.ExpressionAnd(
+				tools.RuleIn("cloud_id", ids),
+				tools.RuleEqual("vendor", vendor),
+			),
+			Page: core.NewDefaultBasePage(),
+		}
+		resp, err := g.dataCli.Global.SecurityGroup.ListSecurityGroup(kt.Ctx, kt.Header(), req)
+		if err != nil {
+			logs.Errorf("request dataservice list security group failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
+			return nil, err
+		}
+		for _, one := range resp.Details {
+			m[one.CloudID] = one.ID
+		}
+	}
+	return m, nil
 }

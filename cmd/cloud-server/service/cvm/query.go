@@ -297,7 +297,7 @@ func (svc *cvmSvc) listCvmSecurityGroups(cts *rest.Contexts, authHandler handler
 	itemMap := convertToBatchListCvmSecurityGroupsRespItem(securityGroupsMap)
 	cvmToSgMap := make(map[string][]cscvm.BatchListCvmSecurityGroupsRespItem, len(req.CvmIDs))
 	for _, rel := range rels {
-		cvmToSgMap[rel.CvmID] = append(cvmToSgMap[rel.CvmID], itemMap[rel.SecurityGroupID])
+		cvmToSgMap[rel.ResID] = append(cvmToSgMap[rel.ResID], itemMap[rel.SecurityGroupID])
 	}
 
 	result := make([]cscvm.BatchListCvmSecurityGroupsResp, len(req.CvmIDs))
@@ -346,26 +346,27 @@ func (svc *cvmSvc) getSecurityGroupsMap(kt *kit.Kit, sgIDs []string) (map[string
 	return result, nil
 }
 
-func (svc *cvmSvc) listCvmSecurityGroupRels(kt *kit.Kit, cvmIDs []string) ([]cloud.SecurityGroupCvmRel, error) {
+func (svc *cvmSvc) listCvmSecurityGroupRels(kt *kit.Kit, cvmIDs []string) ([]cloud.SecurityGroupCommonRel, error) {
 
-	result := make([]cloud.SecurityGroupCvmRel, 0)
+	result := make([]cloud.SecurityGroupCommonRel, 0)
 
 	req := &core.ListReq{
-		Filter: tools.ContainersExpression("cvm_id", cvmIDs),
-		Page:   core.NewDefaultBasePage(),
+		Filter: tools.ExpressionAnd(
+			tools.RuleIn("res_id", cvmIDs),
+			tools.RuleEqual("res_type", enumor.CvmCloudResType),
+		),
+		Page: core.NewDefaultBasePage(),
 	}
 
 	for {
-		sgCvmRels, err := svc.client.DataService().Global.SGCvmRel.ListSgCvmRels(kt.Ctx, kt.Header(), req)
+		sgCvmRels, err := svc.client.DataService().Global.SGCommonRel.ListSgCommonRels(kt, req)
 		if err != nil {
 			return nil, err
 		}
 		if len(sgCvmRels.Details) == 0 {
 			break
 		}
-		for _, detail := range sgCvmRels.Details {
-			result = append(result, detail)
-		}
+		result = append(result, sgCvmRels.Details...)
 		req.Page.Start += uint32(core.DefaultMaxPageLimit)
 	}
 

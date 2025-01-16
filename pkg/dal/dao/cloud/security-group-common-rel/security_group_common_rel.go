@@ -25,8 +25,6 @@ import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao/cloud/load-balancer"
-	securitygroup "hcm/pkg/dal/dao/cloud/security-group"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
@@ -35,7 +33,6 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
-	"hcm/pkg/tools/converter"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -86,41 +83,12 @@ func (dao Dao) ListJoinSecurityGroup(kt *kit.Kit, resIDs []string, resType enumo
 
 // BatchCreateWithTx rels.
 func (dao Dao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []cloud.SecurityGroupCommonRelTable) error {
-	// 校验关联资源是否存在
-	sgIDs := make([]string, 0)
-	resIDs := make([]string, 0)
-	for _, rel := range rels {
-		sgIDs = append(sgIDs, rel.SecurityGroupID)
-		resIDs = append(resIDs, rel.ResID)
-	}
-
-	sgMap, err := securitygroup.ListSecurityGroup(kt, dao.Orm, sgIDs)
-	if err != nil {
-		logs.Errorf("list security group failed, err: %v, ids: %v, rid: %s", err, sgIDs, kt.Rid)
-		return err
-	}
-
-	if len(sgMap) != len(converter.StringSliceToMap(sgIDs)) {
-		logs.Errorf("get security group count not right, ids: %v, count: %d, rid: %s", sgIDs, len(sgMap), kt.Rid)
-		return fmt.Errorf("get security group count not right")
-	}
-
-	resMap, err := loadbalancer.ListLbByIDs(kt, dao.Orm, resIDs)
-	if err != nil {
-		logs.Errorf("list clb by ids failed, err: %v, sgIDs: %v, resIDs: %v, rid: %s", err, sgIDs, resIDs, kt.Rid)
-		return err
-	}
-
-	if len(resMap) != len(converter.StringSliceToMap(resIDs)) {
-		logs.Errorf("get clb count not right, err: %v, ids: %v, count: %d, rid: %s", err, resIDs, len(resMap), kt.Rid)
-		return fmt.Errorf("get clb count not right")
-	}
 
 	tableName := table.SecurityGroupCommonRelTable
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, tableName,
 		cloud.SecurityGroupCommonRelColumns.ColumnExpr(), cloud.SecurityGroupCommonRelColumns.ColonNameExpr())
 
-	if err = dao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, rels); err != nil {
+	if err := dao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, rels); err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", tableName, err, kt.Rid)
 		return fmt.Errorf("insert %s failed, err: %v", tableName, err)
 	}
