@@ -10,26 +10,17 @@ POST /api/v1/cloud/security_groups/assign/bizs/batch
 
 ### 输入参数
 
-| 参数名称            | 参数类型         | 必选 | 描述       |
-|-----------------|--------------|----|----------|
-| security_groups | object array | 是  | 分配的安全组列表 |
-
-#### security_groups[n]
-
-| 参数名称              | 参数类型   | 必选 | 描述    |
-|-------------------|--------|----|-------|
-| security_group_id | string | 是  | 安全组ID |
-| bk_biz_id         | int64  | 是  | 业务ID  |
+| 参数名称   | 参数类型         | 必选 | 描述                           |
+|--------|--------------|----|------------------------------|
+| sg_ids | string array | 是  | 需要分配的安全组ID列表，安全组会被默认分配到管理业务下 |
 
 ### 调用示例
 
 ```json
 {
-  "security_groups": [
-    {
-      "security_group_ids": "00000001",
-      "bk_biz_id": 100
-    }
+  "sg_ids": [
+    "00000001",
+    "00000002"
   ]
 }
 ```

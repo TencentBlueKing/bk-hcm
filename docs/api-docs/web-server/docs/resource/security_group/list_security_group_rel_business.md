@@ -47,6 +47,8 @@ POST /api/v1/cloud/security_groups/{security_group_id}/related_resources/bizs/li
 
 #### data
 
+##### 说明：返回的业务列表中，一定包含当前业务，且一定排在第一个
+
 | 参数名称          | 参数类型      | 描述                         |
 |---------------|-----------|----------------------------|
 | cvm           | int array | 安全组关联的CVM所属的业务列表           |
