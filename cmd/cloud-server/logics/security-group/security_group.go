@@ -32,13 +32,12 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
-	"hcm/pkg/tools/maps"
 	"hcm/pkg/tools/slice"
 )
 
 // Interface define disk interface.
 type Interface interface {
-	ListSGRelBusiness(kt *kit.Kit, sgID string) (*cssgproto.ListSGRelBusinessResp, error)
+	ListSGRelBusiness(kt *kit.Kit, currentBizID int64, sgID string) (*cssgproto.ListSGRelBusinessResp, error)
 }
 
 type securityGroup struct {
@@ -56,7 +55,9 @@ func NewSecurityGroup(client *client.ClientSet, audit audit.Interface) Interface
 
 // ListSGRelBusiness List the biz IDs that have resources associated with the security group. Group by resource type.
 // Use sg_ID to query res_IDs in the rel table, then use res_IDs to query res bizs.
-func (s *securityGroup) ListSGRelBusiness(kt *kit.Kit, sgID string) (*cssgproto.ListSGRelBusinessResp, error) {
+func (s *securityGroup) ListSGRelBusiness(kt *kit.Kit, currentBizID int64, sgID string) (
+	*cssgproto.ListSGRelBusinessResp, error) {
+
 	relListReq := &dataproto.SGCommonRelWithSecurityGroupListReq{
 		SGIDs: []string{sgID},
 	}
@@ -90,13 +91,13 @@ func (s *securityGroup) ListSGRelBusiness(kt *kit.Kit, sgID string) (*cssgproto.
 	}
 
 	// list business ids associated with CVM and load balancer resources.
-	cvmRelBizs, err := s.listRelBizsWithCVM(kt, cvmIDs)
+	cvmRelBizs, err := s.listRelBizsWithCVM(kt, currentBizID, cvmIDs)
 	if err != nil {
 		logs.Errorf("list security group rel cvm bizs failed, err: %v, id: %s, rid: %s", err, sgID, kt.Rid)
 		return nil, err
 	}
 
-	lbRelBizs, err := s.listRelBizsWithLB(kt, lbIDs)
+	lbRelBizs, err := s.listRelBizsWithLB(kt, currentBizID, lbIDs)
 	if err != nil {
 		logs.Errorf("list security group rel lb bizs failed, err: %v, id: %s, rid: %s", err, sgID, kt.Rid)
 		return nil, err
@@ -108,8 +109,8 @@ func (s *securityGroup) ListSGRelBusiness(kt *kit.Kit, sgID string) (*cssgproto.
 	}, nil
 }
 
-func (s *securityGroup) listRelBizsWithCVM(kt *kit.Kit, cvmIDs []string) ([]int64, error) {
-	relBizs := make(map[int64]interface{})
+func (s *securityGroup) listRelBizsWithCVM(kt *kit.Kit, currentBizID int64, cvmIDs []string) ([]int64, error) {
+	relBizMap := make(map[int64]interface{})
 	for _, batch := range slice.Split(cvmIDs, int(core.DefaultMaxPageLimit)) {
 		req := &core.ListReq{
 			Filter: tools.ContainersExpression("id", batch),
@@ -123,15 +124,28 @@ func (s *securityGroup) listRelBizsWithCVM(kt *kit.Kit, cvmIDs []string) ([]int6
 		}
 
 		for _, item := range res.Details {
-			relBizs[item.BkBizID] = struct{}{}
+			relBizMap[item.BkBizID] = struct{}{}
 		}
 	}
 
-	return maps.Keys(relBizs), nil
+	if _, ok := relBizMap[currentBizID]; ok {
+		delete(relBizMap, currentBizID)
+	}
+
+	// 当前业务必须在列表的第一个
+	relBizs := make([]int64, 0, len(relBizMap)+1)
+	if currentBizID != 0 {
+		relBizs[0] = currentBizID
+	}
+	for bizID := range relBizMap {
+		relBizs = append(relBizs, bizID)
+	}
+
+	return relBizs, nil
 }
 
-func (s *securityGroup) listRelBizsWithLB(kt *kit.Kit, lbIDs []string) ([]int64, error) {
-	relBizs := make(map[int64]interface{})
+func (s *securityGroup) listRelBizsWithLB(kt *kit.Kit, currentBizID int64, lbIDs []string) ([]int64, error) {
+	relBizMap := make(map[int64]interface{})
 	for _, batch := range slice.Split(lbIDs, int(core.DefaultMaxPageLimit)) {
 		req := &core.ListReq{
 			Filter: tools.ContainersExpression("id", batch),
@@ -146,9 +160,22 @@ func (s *securityGroup) listRelBizsWithLB(kt *kit.Kit, lbIDs []string) ([]int64,
 		}
 
 		for _, item := range res.Details {
-			relBizs[item.BkBizID] = struct{}{}
+			relBizMap[item.BkBizID] = struct{}{}
 		}
 	}
 
-	return maps.Keys(relBizs), nil
+	if _, ok := relBizMap[currentBizID]; ok {
+		delete(relBizMap, currentBizID)
+	}
+
+	// 当前业务必须在列表的第一个
+	relBizs := make([]int64, 0, len(relBizMap)+1)
+	if currentBizID != 0 {
+		relBizs[0] = currentBizID
+	}
+	for bizID := range relBizMap {
+		relBizs = append(relBizs, bizID)
+	}
+
+	return relBizs, nil
 }

@@ -115,14 +115,19 @@ func (svc *securityGroupSvc) listCvmIDBySecurityGroup(cts *rest.Contexts, validH
 }
 
 func (svc *securityGroupSvc) ListSecurityGroupRelBusiness(cts *rest.Contexts) (interface{}, error) {
-	return svc.listSecurityGroupRelBusiness(cts, handler.ResOperateAuth)
+	return svc.listSecurityGroupRelBusiness(cts, 0, handler.ResOperateAuth)
 }
 
 func (svc *securityGroupSvc) ListBizSecurityGroupRelBusiness(cts *rest.Contexts) (interface{}, error) {
-	return svc.listSecurityGroupRelBusiness(cts, handler.BizOperateAuth)
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, errf.New(errf.InvalidParameter, "bk_biz_id must be int64")
+	}
+
+	return svc.listSecurityGroupRelBusiness(cts, bizID, handler.BizOperateAuth)
 }
 
-func (svc *securityGroupSvc) listSecurityGroupRelBusiness(cts *rest.Contexts,
+func (svc *securityGroupSvc) listSecurityGroupRelBusiness(cts *rest.Contexts, bizID int64,
 	validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 
 	sgID := cts.PathParameter("security_group_id").String()
@@ -143,5 +148,5 @@ func (svc *securityGroupSvc) listSecurityGroupRelBusiness(cts *rest.Contexts,
 		return nil, err
 	}
 
-	return svc.sgLogic.ListSGRelBusiness(cts.Kit, sgID)
+	return svc.sgLogic.ListSGRelBusiness(cts.Kit, bizID, sgID)
 }
