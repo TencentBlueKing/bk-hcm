@@ -45,7 +45,7 @@ func canListAccountExtension(appCode string) error {
 
 // ListWithExtension 该接口返回了Extension，不包括SecretKey，只提供给安全使用
 func (a *accountSvc) ListWithExtension(cts *rest.Contexts) (interface{}, error) {
-	req := new(proto.AccountListReq)
+	req := new(proto.AccountListWithExtReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}

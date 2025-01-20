@@ -101,13 +101,18 @@ func (a *accountSvc) GetAccount(cts *rest.Contexts) (interface{}, error) {
 func accountDetailFullFill[T protocloud.AccountExtensionGetResp](svc *accountSvc, cts *rest.Contexts,
 	acc *protocloud.AccountGetResult[T]) (*protocloud.AccountGetResult[T], error) {
 	acc.RecycleReserveTime = convertRecycleReverseTime(acc.RecycleReserveTime)
-	status, failedReason, err := svc.getAccountSyncDetail(cts, acc.ID, string(acc.Vendor))
+	syncDetails, err := svc.getAccountsSyncDetail(cts, acc.ID)
 	if err != nil {
 		logs.Errorf("fail to get account sync detail, accountID: %s, rid: %s", acc.ID, cts.Kit.Rid)
 		return nil, err
 	}
-	acc.SyncStatus = status
-	acc.SyncFailedReason = failedReason
+	for _, detail := range syncDetails[acc.ID] {
+		acc.SyncStatus = detail.ResStatus
+		if detail.ResStatus == string(enumor.SyncFailed) {
+			acc.SyncFailedReason = string(detail.ResFailedReason)
+			break
+		}
+	}
 	return acc, nil
 }
 

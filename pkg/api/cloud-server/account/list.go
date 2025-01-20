@@ -28,11 +28,32 @@ import (
 // AccountListReq ...
 type AccountListReq struct {
 	Filter *filter.Expression `json:"filter" validate:"omitempty"`
-	Page   *core.BasePage     `json:"page" validate:"required"`
 }
 
 // Validate ...
 func (req *AccountListReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AccountListResourceReq ...
+type AccountListResourceReq struct {
+	Filter *filter.Expression `json:"filter" validate:"omitempty"`
+	Page   *core.BasePage     `json:"page" validate:"required"`
+}
+
+// Validate ...
+func (req *AccountListResourceReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AccountListWithExtReq ...
+type AccountListWithExtReq struct {
+	Filter *filter.Expression `json:"filter" validate:"omitempty"`
+	Page   *core.BasePage     `json:"page" validate:"required"`
+}
+
+// Validate ...
+func (req *AccountListWithExtReq) Validate() error {
 	return validator.Validate.Struct(req)
 }
 

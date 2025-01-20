@@ -20,18 +20,26 @@
 package rand
 
 import (
+	cryptoRand "crypto/rand"
+	"math/big"
 	"math/rand"
 	"time"
+
+	"hcm/pkg/logs"
 )
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 // String randomly generate a string of specified length.
 func String(n int) string {
-	randX := rand.New(rand.NewSource(time.Now().UnixNano()))
 	b := make([]rune, n)
 	for i := range b {
-		b[i] = letterRunes[randX.Intn(len(letterRunes))]
+		num, err := cryptoRand.Int(cryptoRand.Reader, big.NewInt(int64(len(letterRunes))))
+		if err != nil {
+			logs.Errorf("rand.Int failed: %v", err)
+			num = big.NewInt(0)
+		}
+		b[i] = letterRunes[num.Int64()]
 	}
 
 	return string(b)
