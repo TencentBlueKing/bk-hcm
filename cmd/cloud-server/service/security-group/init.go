@@ -77,6 +77,11 @@ func InitSecurityGroupService(c *capability.Capability) {
 		"/security_group/{id}/cvm/list", svc.ListCvmIdBySecurityGroup)
 	h.Add("ListSecurityGroupRelBusiness", http.MethodPost,
 		"/security_groups/{security_group_id}/related_resources/bizs/list", svc.ListSecurityGroupRelBusiness)
+	h.Add("ListSGRelCVMByBizID", http.MethodPost,
+		"/security_groups/{sg_id}/related_resources/biz_resources/{res_biz_id}/cvms/list", svc.ListSGRelCVMByBizID)
+	h.Add("ListSGRelLBByBizID", http.MethodPost,
+		"/security_groups/{sg_id}/related_resources/biz_resources/{res_biz_id}/load_balancers/list",
+		svc.ListSGRelLBByBizID)
 
 	bizService(h, svc)
 	initSecurityGroupServiceHooks(svc, h)
@@ -133,6 +138,12 @@ func bizService(h *rest.Handler, svc *securityGroupSvc) {
 	h.Add("ListBizSecurityGroupRelBusiness", http.MethodPost,
 		"/bizs/{bk_biz_id}/security_groups/{security_group_id}/related_resources/bizs/list",
 		svc.ListBizSecurityGroupRelBusiness)
+	h.Add("ListBizSGRelCVMByBizID", http.MethodPost,
+		"/bizs/{bk_biz_id}/security_groups/{sg_id}/related_resources/biz_resources/{res_biz_id}/cvms/list",
+		svc.ListBizSGRelCVMByBizID)
+	h.Add("ListBizSGRelLBByBizID", http.MethodPost,
+		"/bizs/{bk_biz_id}/security_groups/{sg_id}/related_resources/biz_resources/{res_biz_id}/load_balancers/list",
+		svc.ListBizSGRelLBByBizID)
 }
 
 type securityGroupSvc struct {

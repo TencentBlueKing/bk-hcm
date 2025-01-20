@@ -32,11 +32,16 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/slice"
 )
 
 // Interface define disk interface.
 type Interface interface {
+	ListSGRelCVM(kt *kit.Kit, sgID string, resBizID int64, listReq *core.ListReq) (
+		*dataproto.SGCommonRelWithCVMListResp, error)
+	ListSGRelLoadBalancer(kt *kit.Kit, sgID string, resBizID int64, oriReq *core.ListReq) (
+		*dataproto.SGCommonRelWithLBListResp, error)
 	ListSGRelBusiness(kt *kit.Kit, currentBizID int64, sgID string) (*cssgproto.ListSGRelBusinessResp, error)
 }
 
@@ -51,6 +56,56 @@ func NewSecurityGroup(client *client.ClientSet, audit audit.Interface) Interface
 		client: client,
 		audit:  audit,
 	}
+}
+
+// ListSGRelCVM list security group rel cvm.
+// only summary information will be return to avoid the risk of exceeding authority.
+func (s *securityGroup) ListSGRelCVM(kt *kit.Kit, sgID string, resBizID int64, oriReq *core.ListReq) (
+	*dataproto.SGCommonRelWithCVMListResp, error) {
+
+	listFilter := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			oriReq.Filter,
+			tools.RuleEqual("bk_biz_id", resBizID),
+		},
+	}
+
+	listReq := &dataproto.SGCommonRelListReq{
+		SGIDs: []string{sgID},
+		ListReq: core.ListReq{
+			Filter: listFilter,
+			Page:   oriReq.Page,
+			Fields: oriReq.Fields,
+		},
+	}
+
+	return s.client.DataService().Global.SGCommonRel.ListWithCVMSummary(kt, listReq)
+}
+
+// ListSGRelLoadBalancer list security group rel load balancer.
+// only summary information will be return to avoid the risk of exceeding authority.
+func (s *securityGroup) ListSGRelLoadBalancer(kt *kit.Kit, sgID string, resBizID int64, oriReq *core.ListReq) (
+	*dataproto.SGCommonRelWithLBListResp, error) {
+
+	listFilter := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			oriReq.Filter,
+			tools.RuleEqual("bk_biz_id", resBizID),
+		},
+	}
+
+	listReq := &dataproto.SGCommonRelListReq{
+		SGIDs: []string{sgID},
+		ListReq: core.ListReq{
+			Filter: listFilter,
+			Page:   oriReq.Page,
+			Fields: oriReq.Fields,
+		},
+	}
+
+	return s.client.DataService().Global.SGCommonRel.ListWithLBSummary(kt, listReq)
 }
 
 // ListSGRelBusiness List the biz IDs that have resources associated with the security group. Group by resource type.

@@ -22,6 +22,7 @@ package cloud
 import (
 	"fmt"
 
+	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	dataproto "hcm/pkg/api/data-service"
 	"hcm/pkg/criteria/constant"
@@ -108,6 +109,35 @@ func (req *SGCommonRelWithSecurityGroupListReq) Validate() error {
 		if len(req.ResType) == 0 {
 			return fmt.Errorf("res_type is required")
 		}
+	}
+
+	return nil
+}
+
+// SGCommonRelWithCVMListResp ...
+type SGCommonRelWithCVMListResp core.ListResultT[corecloud.SGCommonRelWithCVMSummary]
+
+// SGCommonRelWithLBListResp ...
+type SGCommonRelWithLBListResp core.ListResultT[corecloud.SGCommonRelWithLBSummary]
+
+// SGCommonRelListReq ...
+type SGCommonRelListReq struct {
+	SGIDs        []string `json:"sg_ids" validate:"required,min=1"`
+	core.ListReq `json:",inline"`
+}
+
+// Validate SGCommonRelListReq.
+func (req SGCommonRelListReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	if err := req.ListReq.Validate(); err != nil {
+		return err
+	}
+
+	if len(req.SGIDs) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("sg_ids count should <= %d", constant.BatchOperationMaxLimit)
 	}
 
 	return nil
