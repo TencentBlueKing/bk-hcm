@@ -30,15 +30,14 @@ START TRANSACTION;
 --  1. 增加资源使用范围表
 CREATE TABLE `res_usage_biz_rel`
 (
-    `rel_id`       bigint unsigned NOT NULL AUTO_INCREMENT,
-    `res_type`     varchar(64)     NOT NULL COMMENT '资源类型',
-    `res_id`       varchar(64)     NOT NULL COMMENT '资源ID',
-    `usage_biz_id` bigint          NOT NULL COMMENT '使用业务ID',
-    `res_cloud_id` varchar(64)     NOT NULL DEFAULT '' COMMENT '云资源ID',
-    `creator`      varchar(64)     not null comment '创建者',
-    `reviser`      varchar(64)     not null comment '更新者',
-    `created_at`   timestamp       not null default current_timestamp comment '创建时间',
-    `updated_at`   timestamp       not null default current_timestamp on update current_timestamp comment '更新时间',
+    `rel_id`         bigint unsigned NOT NULL AUTO_INCREMENT,
+    `res_type`       varchar(64)     NOT NULL COMMENT '资源类型',
+    `res_id`         varchar(64)     NOT NULL COMMENT '资源ID',
+    `usage_biz_id`   bigint          NOT NULL COMMENT '使用业务ID',
+    `res_vendor`     varchar(64)     NOT NULL DEFAULT '' COMMENT '云资源厂商',
+    `res_cloud_id`   varchar(64)     NOT NULL DEFAULT '' COMMENT '云资源ID',
+    `rel_creator`    varchar(64)     not null comment '创建者',
+    `rel_created_at` timestamp       not null default current_timestamp comment '创建时间',
     PRIMARY KEY (`rel_id`),
     UNIQUE KEY `idx_uk_res_type_usage_biz_id_res_id` (`res_type`, `usage_biz_id`, `res_id`),
     KEY idx_res_type_res_id_usage_biz_id (res_type, res_id, usage_biz_id)

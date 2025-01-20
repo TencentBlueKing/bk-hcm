@@ -59,6 +59,15 @@ func (a ResUsageBizRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*c
 		return errf.New(errf.InvalidParameter, "res_biz_rel is required")
 	}
 
+	for i := range rels {
+		if rels[i] == nil {
+			return fmt.Errorf("res_biz_rel is nil at index %d", i)
+		}
+		if err := rels[i].InsertValidate(); err != nil {
+			return fmt.Errorf("validate res_biz_rel failed at idx %d, err: %w", i, err)
+		}
+	}
+
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.ResBizRelTable,
 		cloud.ResBizRelColumns.ColumnExpr(), cloud.ResBizRelColumns.ColonNameExpr())
 

@@ -30,32 +30,30 @@ import (
 )
 
 // ResBizRelColumns defines resource biz relation table's columns.
-var ResBizRelColumns = utils.MergeColumns(nil, ResBizRelColumnDescriptor)
+var ResBizRelColumns = utils.MergeColumns(utils.InsertWithoutPrimaryID, ResBizRelColumnDescriptor)
 
 // ResBizRelColumnDescriptor defines resource biz relation table's column descriptors.
 var ResBizRelColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "rel_id", NamedC: "rel_id", Type: enumor.Numeric},
 	{Column: "res_id", NamedC: "res_id", Type: enumor.String},
-	{Column: "res_cloud_id", NamedC: "res_cloud_id", Type: enumor.String},
 	{Column: "res_type", NamedC: "res_type", Type: enumor.String},
 	{Column: "usage_biz_id", NamedC: "usage_biz_id", Type: enumor.String},
-	{Column: "creator", NamedC: "creator", Type: enumor.String},
-	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
-	{Column: "created_at", NamedC: "created_at", Type: enumor.Time},
-	{Column: "updated_at", NamedC: "updated_at", Type: enumor.Time},
+	{Column: "res_vendor", NamedC: "res_vendor", Type: enumor.String},
+	{Column: "res_cloud_id", NamedC: "res_cloud_id", Type: enumor.String},
+	{Column: "rel_creator", NamedC: "rel_creator", Type: enumor.String},
+	{Column: "rel_created_at", NamedC: "rel_created_at", Type: enumor.Time},
 }
 
 // ResBizRelTable define resource biz relation table.
 type ResBizRelTable struct {
-	RelID      uint64                   `db:"rel_id" json:"rel_id"`
-	ResType    enumor.CloudResourceType `db:"res_type" validate:"required,lte=64" json:"res_type"`
-	ResID      string                   `db:"res_id" validate:"lte=64" json:"res_id"`
-	ResCloudID string                   `db:"res_cloud_id" validate:"lte=64" json:"res_cloud_id"`
-	UsageBizID int64                    `db:"usage_biz_id" validate:"required,neq=0" json:"usage_biz_id"`
-	Creator    string                   `db:"creator" validate:"lte=64" json:"creator"`
-	Reviser    string                   `db:"reviser" validate:"lte=64" json:"reviser"`
-	CreatedAt  types.Time               `db:"created_at" validate:"excluded_unless" json:"created_at"`
-	UpdatedAt  types.Time               `db:"updated_at" validate:"excluded_unless" json:"updated_at"`
+	RelID        uint64                   `db:"rel_id" json:"rel_id"`
+	ResType      enumor.CloudResourceType `db:"res_type" validate:"required,lte=64" json:"res_type"`
+	ResID        string                   `db:"res_id" validate:"lte=64" json:"res_id"`
+	UsageBizID   int64                    `db:"usage_biz_id" validate:"required" json:"usage_biz_id"`
+	ResVendor    enumor.Vendor            `db:"res_vendor" validate:"lte=64" json:"res_vendor"`
+	ResCloudID   string                   `db:"res_cloud_id" validate:"lte=64" json:"res_cloud_id"`
+	RelCreator   string                   `db:"rel_creator" valida te:"lte=64" json:"creator"`
+	RelCreatedAt types.Time               `db:"rel_created_at" validate:"excluded_unless" json:"created_at"`
 }
 
 // TableName return resource biz relation table name.
@@ -78,13 +76,10 @@ func (t ResBizRelTable) InsertValidate() error {
 		return errors.New("res_type is required")
 	}
 
-	if len(t.Creator) == 0 {
+	if len(t.RelCreator) == 0 {
 		return errors.New("creator is required")
 	}
 
-	if len(t.Reviser) == 0 {
-		return errors.New("reviser is required")
-	}
 	// length validate.
 	if err := validator.Validate.Struct(t); err != nil {
 		return err
@@ -95,10 +90,10 @@ func (t ResBizRelTable) InsertValidate() error {
 // UpdateValidate resource biz relation table when updated.
 func (t ResBizRelTable) UpdateValidate() error {
 
-	if len(t.Creator) != 0 {
+	if len(t.RelCreator) != 0 {
 		return errors.New("creator can not update")
 	}
-	if len(t.CreatedAt) > 0 {
+	if len(t.RelCreatedAt) > 0 {
 		return errors.New("created_at can not update")
 	}
 	// length validate.
