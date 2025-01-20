@@ -21,6 +21,12 @@ package securitygroup
 
 // ListSGRelBusinessResp response data of list security group related business
 type ListSGRelBusinessResp struct {
-	CVM          []int64 `json:"cvm"`
-	LoadBalancer []int64 `json:"load_balancer"`
+	CVM          []ListSGRelBusinessItem `json:"cvm"`
+	LoadBalancer []ListSGRelBusinessItem `json:"load_balancer"`
+}
+
+// ListSGRelBusinessItem item of list security group related business
+type ListSGRelBusinessItem struct {
+	BkBizID  int64 `json:"bk_biz_id"`
+	ResCount int64 `json:"res_count"`
 }
