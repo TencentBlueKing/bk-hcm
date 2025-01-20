@@ -97,21 +97,26 @@ POST /security_groups/{sg_id}/related_resources/biz_resources/{res_biz_id}/load_
 
 #### 查询参数介绍：
 
-| 参数名称         | 参数类型   | 描述                                   |
-|--------------|--------|--------------------------------------|
-| cloud_id     | string | 云资源ID                                |
-| name         | string | 名称                                   |
-| vendor       | string | 供应商（枚举值：tcloud、aws、azure、gcp、huawei） |
-| bk_biz_id    | int64  | 业务ID                                 |
-| region       | string | 地域                                   |
-| main_zones   | string | 主可用区                                 |
-| backup_zones | string | 备可用区                                 |
-| cloud_vpc_id | string | 云vpcID                               |
-| vpc_id       | string | vpcID                                |
-| network_type | string | 网络类型                                 |
-| memo         | string | 备注                                   |
-| status       | string | 状态                                   |
-| domain       | string | 域名                                   |
+| 参数名称               | 参数类型   | 描述                                  |
+|--------------------|--------|-------------------------------------|
+| cloud_id           | string | 云资源ID                               |
+| name               | string | 名称                                  |
+| region             | string | 地域                                  |
+| zones              | string | 可用区                                 |
+| backup_zones       | string | 备可用区                                |
+| cloud_vpc_id       | string | 云vpcID                              |
+| vpc_id             | string | vpcID                               |
+| lb_type            | string | 网络类型                                |
+| memo               | string | 备注                                  |
+| status             | string | 状态                                  |
+| domain             | string | 域名                                  |
+| cloud_created_time | string | lb在云上创建时间，标准格式：2006-01-02T15:04:05Z |
+| cloud_status_time  | string | lb状态变更时间，标准格式：2006-01-02T15:04:05Z  |
+| cloud_expired_time | string | lb过期时间，标准格式：2006-01-02T15:04:05Z    |
+| creator            | string | 创建者                                 |
+| reviser            | string | 修改者                                 |
+| created_at         | string | 创建时间，标准格式：2006-01-02T15:04:05Z      |
+| updated_at         | string | 修改时间，标准格式：2006-01-02T15:04:05Z      |
 
 接口调用者可以根据以上参数自行根据查询场景设置查询规则。
 
@@ -237,27 +242,26 @@ POST /security_groups/{sg_id}/related_resources/biz_resources/{res_biz_id}/load_
 
 #### data.details[n]
 
-| 参数名称                   | 参数类型         | 描述                                   |
-|------------------------|--------------|--------------------------------------|
-| id                     | string       | 资源ID                                 |
-| cloud_id               | string       | 云资源ID                                |
-| name                   | string       | 名称                                   |
-| vendor                 | string       | 供应商（枚举值：tcloud、aws、azure、gcp、huawei） |
-| bk_biz_id              | int64        | 业务ID                                 |
-| account_id             | string       | 账号ID                                 |
-| region                 | string       | 地域                                   |
-| main_zones             | string       | 主可用区                                 |
-| backup_zones           | string       | 备可用区                                 |
-| cloud_vpc_id           | string       | 云vpcID                               |
-| vpc_id                 | string       | vpcID                                |
-| network_type           | string       | 网络类型                                 |
-| memo                   | string       | 备注                                   |
-| status                 | string       | 状态                                   |
-| domain                 | string       | 域名                                   |
-| private_ipv4_addresses | string array | 内网ipv4地址                             |
-| private_ipv6_addresses | string array | 内网ipv6地址                             |
-| public_ipv4_addresses  | string array | 外网ipv4地址                             |
-| public_ipv6_addresses  | string array | 外网ipv6地址                             |
+| 参数名称                   | 参数类型         | 描述       |
+|------------------------|--------------|----------|
+| id                     | string       | 资源ID     |
+| cloud_id               | string       | 云资源ID    |
+| name                   | string       | 名称       |
+| bk_biz_id              | int64        | 业务ID     |
+| region                 | string       | 地域       |
+| zones                  | string       | 主可用区     |
+| backup_zones           | string       | 备可用区     |
+| cloud_vpc_id           | string       | 云vpcID   |
+| vpc_id                 | string       | vpcID    |
+| lb_type                | string       | 负载均衡类型   |
+| ip_version             | string       | IP版本     |
+| memo                   | string       | 备注       |
+| status                 | string       | 状态       |
+| domain                 | string       | 域名       |
+| private_ipv4_addresses | string array | 内网ipv4地址 |
+| private_ipv6_addresses | string array | 内网ipv6地址 |
+| public_ipv4_addresses  | string array | 外网ipv4地址 |
+| public_ipv6_addresses  | string array | 外网ipv6地址 |
 
 ##### TCloud status 状态含义：
 

@@ -27,11 +27,20 @@ POST /api/v1/cloud/security_groups/{security_group_id}/related_resources/bizs/li
   "message": "ok",
   "data": {
     "cvm": [
-      123,
-      234
+      {
+        "bk_biz_id": 123,
+        "res_count": 0
+      },
+      {
+        "bk_biz_id": 234,
+        "res_count": 10
+      }
     ],
     "load_balancer": [
-      123
+      {
+        "bk_biz_id": 123,
+        "res_count": 600
+      }
     ]
   }
 }
@@ -49,7 +58,14 @@ POST /api/v1/cloud/security_groups/{security_group_id}/related_resources/bizs/li
 
 ##### 说明：返回的业务列表中，一定包含当前业务，且一定排在第一个
 
-| 参数名称          | 参数类型      | 描述                         |
-|---------------|-----------|----------------------------|
-| cvm           | int array | 安全组关联的CVM所属的业务列表           |
-| load_balancer | int array | 安全组关联的load balancer所属的业务列表 |
+| 参数名称          | 参数类型         | 描述                         |
+|---------------|--------------|----------------------------|
+| cvm           | object array | 安全组关联的CVM所属的业务列表           |
+| load_balancer | object array | 安全组关联的load balancer所属的业务列表 |
+
+cvm[n] && load_balancer[n]
+
+| 参数名称      | 参数类型 | 描述              |
+|-----------|------|-----------------|
+| bk_biz_id | int  | 资源所属业务ID        |
+| res_count | int  | 该业务下的CVM或LB资源总数 |

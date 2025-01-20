@@ -97,15 +97,27 @@ POST /security_groups/{sg_id}/related_resources/biz_resources/{res_biz_id}/cvms/
 
 #### 查询参数介绍：
 
-| 参数名称      | 参数类型   | 描述                                   |
-|-----------|--------|--------------------------------------|
-| cloud_id  | string | 云资源ID                                |
-| name      | string | 名称                                   |
-| vendor    | string | 供应商（枚举值：tcloud、aws、azure、gcp、huawei） |
-| bk_biz_id | int64  | 业务ID                                 |
-| region    | string | 地域                                   |
-| zone      | string | 可用区                                  |
-| status    | string | 状态                                   |
+| 参数名称                | 参数类型   | 描述                                   |
+|---------------------|--------|--------------------------------------|
+| cloud_id            | string | 云资源ID                                |
+| name                | string | 名称                                   |
+| bk_cloud_id         | int64  | 云区域ID                                |
+| account_id          | string | 账号ID                                 |
+| region              | string | 地域                                   |
+| zone                | string | 可用区                                  |
+| cloud_image_id      | string | 云镜像ID                                |
+| os_name             | string | 操作系统名称                               |
+| memo                | string | 备注                                   |
+| status              | string | 状态                                   |
+| recycle_status      | string | 回收状态                                 |
+| machine_type        | string | 设备类型                                 |
+| cloud_created_time  | string | Cvm在云上创建时间，标准格式：2006-01-02T15:04:05Z |
+| cloud_launched_time | string | Cvm启动时间，标准格式：2006-01-02T15:04:05Z    |
+| cloud_expired_time  | string | Cvm过期时间，标准格式：2006-01-02T15:04:05Z    |
+| creator             | string | 创建者                                  |
+| reviser             | string | 修改者                                  |
+| created_at          | string | 创建时间，标准格式：2006-01-02T15:04:05Z       |
+| updated_at          | string | 修改时间，标准格式：2006-01-02T15:04:05Z       |
 
 接口调用者可以根据以上参数自行根据查询场景设置查询规则。
 
