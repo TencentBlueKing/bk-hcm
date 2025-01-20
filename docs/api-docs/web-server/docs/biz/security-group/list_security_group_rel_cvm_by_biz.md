@@ -10,14 +10,14 @@ POST /bizs/{bk_biz_id}/security_groups/{sg_id}/related_resources/biz_resources/{
 
 ### 输入参数
 
-| 参数名称       | 参数类型     | 必选 | 描述                                         |
-|------------|----------|----|--------------------------------------------|
-| bk_biz_id  | int64    | 是  | 安全组业务ID                                    |
-| sg_id      | string   | 是  | 安全组ID                                      |
-| res_biz_id | int64    | 是  | 关联资源业务ID                                   |
-| page       | object   | 是  | 分页设置                                       |
-| filter     | object   | 是  | 查询过滤条件                                     |
-| fields     | []string | 否  | 查询条件Field名称，具体可使用的用于查询的字段及其说明请看下面 - 查询参数介绍 |
+| 参数名称       | 参数类型     | 必选 | 描述                                                |
+|------------|----------|----|---------------------------------------------------|
+| bk_biz_id  | int64    | 是  | 安全组业务ID                                           |
+| sg_id      | string   | 是  | 安全组ID                                             |
+| res_biz_id | int64    | 是  | 关联资源业务ID，当前业务为安全组管理业务时，可以任意关联资源业务id，否则只能指定当前业务id。 |
+| page       | object   | 是  | 分页设置                                              |
+| filter     | object   | 是  | 查询过滤条件                                            |
+| fields     | []string | 否  | 查询条件Field名称，具体可使用的用于查询的字段及其说明请看下面 - 查询参数介绍        |
 
 #### filter
 
@@ -96,15 +96,12 @@ POST /bizs/{bk_biz_id}/security_groups/{sg_id}/related_resources/biz_resources/{
 | sort  | string | 否  | 排序字段，返回数据将按该字段进行排序                                                                                                                                  |
 | order | string | 否  | 排序顺序（枚举值：ASC、DESC）                                                                                                                                  |
 
-
 #### 查询参数介绍：
 
 | 参数名称                | 参数类型   | 描述                                   |
 |---------------------|--------|--------------------------------------|
 | cloud_id            | string | 云资源ID                                |
 | name                | string | 名称                                   |
-| vendor              | string | 供应商（枚举值：tcloud、aws、azure、gcp、huawei） |
-| bk_biz_id           | int64  | 业务ID                                 |
 | bk_cloud_id         | int64  | 云区域ID                                |
 | account_id          | string | 账号ID                                 |
 | region              | string | 地域                                   |
@@ -194,6 +191,7 @@ POST /bizs/{bk_biz_id}/security_groups/{sg_id}/related_resources/biz_resources/{
 
 | 参数名称                   | 参数类型         | 描述                                   |
 |------------------------|--------------|--------------------------------------|
+| id                     | string       | 资源ID                                 |
 | cloud_id               | string       | 云资源ID                                |
 | name                   | string       | 名称                                   |
 | vendor                 | string       | 供应商（枚举值：tcloud、aws、azure、gcp、huawei） |
