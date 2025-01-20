@@ -109,8 +109,10 @@ func (s *securityGroup) ListSGRelBusiness(kt *kit.Kit, currentBizID int64, sgID 
 	}, nil
 }
 
-func (s *securityGroup) listRelBizsWithCVM(kt *kit.Kit, currentBizID int64, cvmIDs []string) ([]int64, error) {
-	relBizMap := make(map[int64]interface{})
+func (s *securityGroup) listRelBizsWithCVM(kt *kit.Kit, currentBizID int64, cvmIDs []string) (
+	[]cssgproto.ListSGRelBusinessItem, error) {
+
+	relBizMap := make(map[int64]int64)
 	for _, batch := range slice.Split(cvmIDs, int(core.DefaultMaxPageLimit)) {
 		req := &core.ListReq{
 			Filter: tools.ContainersExpression("id", batch),
@@ -124,28 +126,17 @@ func (s *securityGroup) listRelBizsWithCVM(kt *kit.Kit, currentBizID int64, cvmI
 		}
 
 		for _, item := range res.Details {
-			relBizMap[item.BkBizID] = struct{}{}
+			relBizMap[item.BkBizID] += 1
 		}
 	}
 
-	if _, ok := relBizMap[currentBizID]; ok {
-		delete(relBizMap, currentBizID)
-	}
-
-	// 当前业务必须在列表的第一个
-	relBizs := make([]int64, 0, len(relBizMap)+1)
-	if currentBizID != 0 {
-		relBizs[0] = currentBizID
-	}
-	for bizID := range relBizMap {
-		relBizs = append(relBizs, bizID)
-	}
-
-	return relBizs, nil
+	return tidySGRelBusiness(currentBizID, relBizMap), nil
 }
 
-func (s *securityGroup) listRelBizsWithLB(kt *kit.Kit, currentBizID int64, lbIDs []string) ([]int64, error) {
-	relBizMap := make(map[int64]interface{})
+func (s *securityGroup) listRelBizsWithLB(kt *kit.Kit, currentBizID int64, lbIDs []string) (
+	[]cssgproto.ListSGRelBusinessItem, error) {
+
+	relBizMap := make(map[int64]int64)
 	for _, batch := range slice.Split(lbIDs, int(core.DefaultMaxPageLimit)) {
 		req := &core.ListReq{
 			Filter: tools.ContainersExpression("id", batch),
@@ -160,22 +151,34 @@ func (s *securityGroup) listRelBizsWithLB(kt *kit.Kit, currentBizID int64, lbIDs
 		}
 
 		for _, item := range res.Details {
-			relBizMap[item.BkBizID] = struct{}{}
+			relBizMap[item.BkBizID] += 1
 		}
 	}
 
-	if _, ok := relBizMap[currentBizID]; ok {
+	return tidySGRelBusiness(currentBizID, relBizMap), nil
+}
+
+func tidySGRelBusiness(currentBizID int64, relBizMap map[int64]int64) []cssgproto.ListSGRelBusinessItem {
+	var currentBizResC int64
+	if resCount, ok := relBizMap[currentBizID]; ok {
+		currentBizResC = resCount
 		delete(relBizMap, currentBizID)
 	}
 
 	// 当前业务必须在列表的第一个
-	relBizs := make([]int64, 0, len(relBizMap)+1)
+	relBizs := make([]cssgproto.ListSGRelBusinessItem, 0, len(relBizMap)+1)
 	if currentBizID != 0 {
-		relBizs[0] = currentBizID
+		relBizs[0] = cssgproto.ListSGRelBusinessItem{
+			BkBizID:  currentBizID,
+			ResCount: currentBizResC,
+		}
 	}
-	for bizID := range relBizMap {
-		relBizs = append(relBizs, bizID)
+	for bizID, count := range relBizMap {
+		relBizs = append(relBizs, cssgproto.ListSGRelBusinessItem{
+			BkBizID:  bizID,
+			ResCount: count,
+		})
 	}
 
-	return relBizs, nil
+	return relBizs
 }
