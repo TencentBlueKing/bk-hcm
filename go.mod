@@ -36,10 +36,10 @@ require (
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam v1.0.908
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cbs v1.0.908
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb v1.0.908
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.908
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.1081
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm v1.0.908
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/ssl v1.0.908
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc v1.0.908
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc v1.0.1081
 	github.com/tencentyun/cos-go-sdk-v5 v0.7.48
 	github.com/tencentyun/qcloud-cos-sts-sdk v0.0.0-20241118064430-63a76784514f
 	github.com/tidwall/gjson v1.14.4

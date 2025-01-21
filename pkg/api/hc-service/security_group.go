@@ -165,3 +165,19 @@ type AzureSecurityGroupAssociateNIReq struct {
 func (opt AzureSecurityGroupAssociateNIReq) Validate() error {
 	return validator.Validate.Struct(opt)
 }
+
+// -------------------------- Clone --------------------------
+
+// TCloudSecurityGroupCloneReq tcloud security group clone request.
+type TCloudSecurityGroupCloneReq struct {
+	Region          string `json:"region" validate:"required"`
+	SecurityGroupID string `json:"security_group_id" validate:"required"`
+	Manager         string `json:"manager" validate:"required"`
+	BakManager      string `json:"bak_manager" validate:"required"`
+	ManagementBizID int64  `json:"mgmt_biz_id" validate:"required"`
+}
+
+// Validate tcloud security group clone request.
+func (req *TCloudSecurityGroupCloneReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

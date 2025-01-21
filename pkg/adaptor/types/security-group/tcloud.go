@@ -136,3 +136,10 @@ func (sg TCloudSG) GetCloudID() string {
 type TCloudSecurityGroupAssociationStatistic struct {
 	*vpc.SecurityGroupAssociationStatistics
 }
+
+// TCloudSecurityGroupCloneOption ...
+type TCloudSecurityGroupCloneOption struct {
+	Region          string            `json:"region" validate:"required"`
+	SecurityGroupID string            `json:"security_group_id" validate:"required"`
+	Tags            []apicore.TagPair `json:"tags" validate:"required,min=1"`
+}

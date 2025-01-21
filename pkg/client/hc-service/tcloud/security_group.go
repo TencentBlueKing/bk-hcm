@@ -334,3 +334,11 @@ func (cli *SecurityGroupClient) BatchDisassociateCloudCvm(kt *kit.Kit, sgID stri
 	return common.RequestNoResp[proto.SecurityGroupBatchAssociateCvmReq](cli.client, rest.POST, kt, req,
 		"/security_groups/disassociate/cvms/batch")
 }
+
+// CloneSecurityGroup 克隆安全组
+func (cli *SecurityGroupClient) CloneSecurityGroup(kt *kit.Kit, req *proto.TCloudSecurityGroupCloneReq) (
+	*core.CreateResult, error) {
+
+	return common.Request[proto.TCloudSecurityGroupCloneReq, core.CreateResult](cli.client, rest.POST, kt, req,
+		"/security_groups/clone")
+}
