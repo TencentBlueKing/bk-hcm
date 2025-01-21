@@ -81,13 +81,8 @@ export default defineComponent({
       ...initProjectModel,
     });
 
-    const {
-      curExtension,
-      isValidateLoading,
-      handleValidate,
-      isValidateDiasbled,
-      extensionPayload,
-    } = useSecretExtension(projectModel, true);
+    const { curExtension, isValidateLoading, handleValidate, isValidateDiasbled, extensionPayload } =
+      useSecretExtension(projectModel, true);
 
     const secretModel = reactive<SecretModel>({
       ...initSecretModel,
@@ -362,7 +357,6 @@ export default defineComponent({
     };
 
     const check = (val: any): boolean => {
-      console.log('check', check);
       return /^[a-z][a-z-z0-9_-]*$/.test(val);
     };
 
@@ -397,8 +391,6 @@ export default defineComponent({
           message: t('更新成功'),
           theme: 'success',
         });
-      } catch (error) {
-        console.log(error);
       } finally {
         isOrganizationDetail.value = true; // 改为详情展示态
         getDetail(); // 请求数据
@@ -451,8 +443,6 @@ export default defineComponent({
         });
         projectModel.extension = extension;
         onClosed();
-      } catch (error) {
-        console.log(error);
       } finally {
         buttonLoading.value = false;
       }
@@ -684,26 +674,17 @@ export default defineComponent({
       },
     ]);
 
-    // const dialogForm = reactive([
-    //   {
-    //     label: 'Secret ID',
-    //     required: true,
-    //     property: 'secretId',
-    //     component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretId} />,
-    //   },
-    //   {
-    //     label: 'Secret Key',
-    //     required: true,
-    //     property: 'secretKey',
-    //     component: () => <Input class="w450" placeholder={t('请输入')} v-model={secretModel.secretKey} />,
-    //   },
-    // ]);
-
-    // const test = () => {
-    //   console.log('1111333');
-    // };
-
-    // console.log('formBaseInfo', formBaseInfo);
+    const isSyncLoading = ref(false);
+    const handleSync = async () => {
+      isSyncLoading.value = true;
+      try {
+        await accountStore.accountSync(projectModel.id);
+        Message({ message: t('本次同步任务触发成功。如需再次同步，请在20分钟后重试'), theme: 'success' });
+      } catch (error) {
+      } finally {
+        isSyncLoading.value = false;
+      }
+    };
 
     return () =>
       isLoading.value ? (
@@ -713,8 +694,23 @@ export default defineComponent({
           {!route.path.includes('resource/resource/account/detail') && (
             <>
               <DetailHeader>
-                <span class='header-title-prefix'>账号详情</span>
-                <span class='header-title-content'>&nbsp;- ID {projectModel.id}</span>
+                {{
+                  default: () => (
+                    <>
+                      <span class='header-title-prefix'>{t('账号详情')}</span>
+                      <span class='header-title-content'>&nbsp;- ID {projectModel.id}</span>
+                    </>
+                  ),
+                  right:
+                    projectModel.type === 'resource' ? (
+                      <bk-pop-confirm
+                        content={t('同步该账号下的资源，点击确定后，立即触发同步任务')}
+                        trigger='click'
+                        onConfirm={handleSync}>
+                        <bk-button loading={isSyncLoading.value}>{t('同步')}</bk-button>
+                      </bk-pop-confirm>
+                    ) : undefined,
+                }}
               </DetailHeader>
               <div class='h16'></div>
             </>
