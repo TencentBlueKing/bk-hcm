@@ -342,3 +342,11 @@ func (cli *SecurityGroupClient) ListSecurityGroupStatistic(kt *kit.Kit, req *pro
 	return common.Request[proto.ListSecurityGroupStatisticReq, proto.ListSecurityGroupStatisticResp](
 		cli.client, rest.POST, kt, req, "/security_groups/statistic")
 }
+
+// CloneSecurityGroup 克隆安全组
+func (cli *SecurityGroupClient) CloneSecurityGroup(kt *kit.Kit, req *proto.TCloudSecurityGroupCloneReq) (
+	*core.CreateResult, error) {
+
+	return common.Request[proto.TCloudSecurityGroupCloneReq, core.CreateResult](cli.client, rest.POST, kt, req,
+		"/security_groups/clone")
+}

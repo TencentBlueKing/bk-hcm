@@ -124,6 +124,9 @@ func bizService(h *rest.Handler, svc *securityGroupSvc) {
 		"/bizs/{bk_biz_id}/security_group/{id}/common/list", svc.ListBizResourceIDBySecurityGroup)
 	h.Add("ListBizCvmIdBySecurityGroup", http.MethodPost,
 		"/bizs/{bk_biz_id}/security_group/{id}/cvm/list", svc.ListBizCvmIdBySecurityGroup)
+
+	h.Add("CloneBizSecurityGroup", http.MethodPost,
+		"/bizs/{bk_biz_id}/security_groups/{id}/clone", svc.CloneBizSecurityGroup)
 }
 
 type securityGroupSvc struct {

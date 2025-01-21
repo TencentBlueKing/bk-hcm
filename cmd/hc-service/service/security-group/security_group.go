@@ -120,6 +120,8 @@ func tcloudService(h *rest.Handler, sg *securityGroup) {
 		"/vendors/tcloud/security_groups/disassociate/cvms/batch", sg.TCloudSGBatchDisassociateCvm)
 	h.Add("TCloudListSecurityGroupStatistic", "POST", "/vendors/tcloud/security_groups/statistic",
 		sg.TCloudListSecurityGroupStatistic)
+	h.Add("TCloudCloneSecurityGroup", "POST", "/vendors/tcloud/security_groups/clone",
+		sg.TCloudCloneSecurityGroup)
 }
 
 type securityGroup struct {
