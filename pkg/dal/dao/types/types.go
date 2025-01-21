@@ -124,7 +124,7 @@ type CountResult struct {
 }
 
 // DefaultIgnoredFields is default ignored field.
-var DefaultIgnoredFields = []string{"id", "creator", "created_at", "tenant_id"}
+var DefaultIgnoredFields = []string{"id", "creator", "created_at", "tenant_id", "rel_created_at"}
 
 // DefaultPageSQLOption define default page sql option.
 var DefaultPageSQLOption = &PageSQLOption{Sort: SortOption{Sort: "id", IfNotPresent: true}}

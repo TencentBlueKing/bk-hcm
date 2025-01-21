@@ -160,8 +160,9 @@ type mergeColumnOption struct {
 }
 
 var timeFieldFilter = map[string]bool{
-	"created_at": true,
-	"updated_at": true,
+	"created_at":     true,
+	"rel_created_at": true,
+	"updated_at":     true,
 }
 
 // MergeColumns merge table columns together.

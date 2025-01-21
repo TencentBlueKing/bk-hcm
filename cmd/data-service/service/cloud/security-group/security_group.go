@@ -40,6 +40,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/json"
+	"hcm/pkg/tools/slice"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -150,24 +151,42 @@ func (svc *securityGroupSvc) ListSecurityGroup(cts *rest.Contexts) (interface{},
 		return &protocloud.SecurityGroupListResult{Count: result.Count}, nil
 	}
 
+	// 查询使用范围
+	sgDetails := result.Details
+	var sgBizInfo []types.ResBizInfo
+	if len(sgDetails) > 0 {
+		sgIDs := slice.Map(sgDetails, tablecloud.SecurityGroupTable.GetID)
+		sgBizInfo, err = svc.dao.ResUsageBizRel().ListUsageBizs(cts.Kit, enumor.SecurityGroupCloudResType, sgIDs)
+		if err != nil {
+			logs.Errorf("fail to get security group usage bizs, err: %v, sg: %v, rid: %s", err, sgIDs, cts.Kit.Rid)
+			return nil, fmt.Errorf("fail to get security group usage bizs, err: %w", err)
+		}
+	}
+
 	details := make([]corecloud.BaseSecurityGroup, 0, len(result.Details))
-	for _, one := range result.Details {
+	for i := range sgDetails {
+		sg := sgDetails[i]
 		details = append(details, corecloud.BaseSecurityGroup{
-			ID:               one.ID,
-			Vendor:           one.Vendor,
-			CloudID:          one.CloudID,
-			BkBizID:          one.BkBizID,
-			Region:           one.Region,
-			Name:             one.Name,
-			Memo:             one.Memo,
-			AccountID:        one.AccountID,
-			Creator:          one.Creator,
-			Reviser:          one.Reviser,
-			CreatedAt:        one.CreatedAt.String(),
-			UpdatedAt:        one.UpdatedAt.String(),
-			CloudCreatedTime: one.CloudCreatedTime,
-			CloudUpdateTime:  one.CloudUpdateTime,
-			Tags:             core.TagMap(one.Tags),
+			ID:               sg.ID,
+			Vendor:           sg.Vendor,
+			CloudID:          sg.CloudID,
+			BkBizID:          sg.BkBizID,
+			Region:           sg.Region,
+			Name:             sg.Name,
+			Memo:             sg.Memo,
+			AccountID:        sg.AccountID,
+			MgmtType:         sg.MgmtType,
+			MgmtBizID:        sg.MgmtBizID,
+			Manager:          sg.Manager,
+			BakManager:       sg.BakManager,
+			UsageBizIDs:      sgBizInfo[i].BizIDs,
+			Creator:          sg.Creator,
+			Reviser:          sg.Reviser,
+			CreatedAt:        sg.CreatedAt.String(),
+			UpdatedAt:        sg.UpdatedAt.String(),
+			CloudCreatedTime: sg.CloudCreatedTime,
+			CloudUpdateTime:  sg.CloudUpdateTime,
+			Tags:             core.TagMap(sg.Tags),
 		})
 	}
 
@@ -207,6 +226,16 @@ func (svc *securityGroupSvc) BatchDeleteSecurityGroup(cts *rest.Contexts) (inter
 
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		if err := svc.deleteSecurityGroupRule(cts.Kit, txn, listResp.Details); err != nil {
+			logs.Errorf("delete security group rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+
+		// 删除使用业务
+		resUsageBizFilter := tools.ExpressionAnd(
+			tools.RuleIn("res_id", delIDs),
+			tools.RuleEqual("res_type", enumor.SecurityGroupCloudResType))
+		if err := svc.dao.ResUsageBizRel().DeleteWithTx(cts.Kit, txn, resUsageBizFilter); err != nil {
+			logs.Errorf("delete security group usage failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
 		}
 
@@ -276,7 +305,14 @@ func (svc *securityGroupSvc) GetSecurityGroup(cts *rest.Contexts) (interface{}, 
 		return nil, err
 	}
 
-	base := convTableToBaseSG(sgTable)
+	sgBizInfo, err := svc.dao.ResUsageBizRel().ListUsageBizs(cts.Kit, enumor.SecurityGroupCloudResType,
+		[]string{sgTable.ID})
+	if err != nil {
+		logs.Errorf("fail to get security group usage bizs, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("fail to get security group usage bizs, err: %w", err)
+	}
+
+	base := convTableToBaseSG(sgTable, sgBizInfo[0])
 	switch sgTable.Vendor {
 	case enumor.TCloud:
 		return convertToSGResult[corecloud.TCloudSecurityGroupExtension](base, sgTable.Extension)
@@ -291,7 +327,7 @@ func (svc *securityGroupSvc) GetSecurityGroup(cts *rest.Contexts) (interface{}, 
 	}
 }
 
-func convTableToBaseSG(sgTable *tablecloud.SecurityGroupTable) *corecloud.BaseSecurityGroup {
+func convTableToBaseSG(sgTable *tablecloud.SecurityGroupTable, bizInfo types.ResBizInfo) *corecloud.BaseSecurityGroup {
 	return &corecloud.BaseSecurityGroup{
 		ID:               sgTable.ID,
 		Vendor:           sgTable.Vendor,
@@ -304,6 +340,11 @@ func convTableToBaseSG(sgTable *tablecloud.SecurityGroupTable) *corecloud.BaseSe
 		CloudUpdateTime:  sgTable.CloudUpdateTime,
 		Tags:             core.TagMap(sgTable.Tags),
 		AccountID:        sgTable.AccountID,
+		MgmtType:         sgTable.MgmtType,
+		MgmtBizID:        sgTable.MgmtBizID,
+		Manager:          sgTable.Manager,
+		BakManager:       sgTable.BakManager,
+		UsageBizIDs:      bizInfo.BizIDs,
 		Creator:          sgTable.Creator,
 		Reviser:          sgTable.Reviser,
 		CreatedAt:        sgTable.CreatedAt.String(),
@@ -353,10 +394,14 @@ func batchUpdateSecurityGroup[T corecloud.SecurityGroupExtension](cts *rest.Cont
 				BkBizID:          sg.BkBizID,
 				Name:             sg.Name,
 				Memo:             sg.Memo,
-				Reviser:          cts.Kit.User,
+				MgmtType:         sg.MgmtType,
+				MgmtBizID:        sg.MgmtBizID,
+				Manager:          sg.Manager,
+				BakManager:       sg.BakManager,
 				CloudCreatedTime: sg.CloudCreatedTime,
 				CloudUpdateTime:  sg.CloudUpdateTime,
 				Tags:             tabletype.StringMap(sg.Tags),
+				Reviser:          cts.Kit.User,
 			}
 
 			if sg.Extension != nil {
@@ -457,6 +502,10 @@ func batchCreateSecurityGroup[T corecloud.SecurityGroupExtension](vendor enumor.
 				Name:             sg.Name,
 				Memo:             sg.Memo,
 				AccountID:        sg.AccountID,
+				MgmtType:         sg.MgmtType,
+				MgmtBizID:        sg.MgmtBizID,
+				Manager:          sg.Manager,
+				BakManager:       sg.BakManager,
 				CloudCreatedTime: sg.CloudCreatedTime,
 				CloudUpdateTime:  sg.CloudUpdateTime,
 				Extension:        tabletype.JsonField(extension),
@@ -529,39 +578,58 @@ func (svc *securityGroupSvc) ListSecurityGroupExt(cts *rest.Contexts) (interface
 		Page:   req.Page,
 		Fields: req.Fields,
 	}
+
 	listResp, err := svc.dao.SecurityGroup().List(cts.Kit, opt)
 	if err != nil {
 		logs.Errorf("list security group failed, err: %v, opt: %v, rid: %s", err, opt, cts.Kit.Rid)
 		return nil, err
 	}
 
+	// 查询使用范围
+	sgDetails := listResp.Details
+	var sgBizInfo []types.ResBizInfo
+	if req.Page.Count {
+		return &protocloud.SecurityGroupListResult{Count: listResp.Count}, nil
+	}
+	if len(sgDetails) == 0 {
+		return listResp, nil
+	}
+	sgIDs := slice.Map(sgDetails, tablecloud.SecurityGroupTable.GetID)
+	sgBizInfo, err = svc.dao.ResUsageBizRel().ListUsageBizs(cts.Kit, enumor.SecurityGroupCloudResType, sgIDs)
+	if err != nil {
+		logs.Errorf("fail to get security group usage bizs, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("fail to get security group usage bizs, err: %w", err)
+	}
 	switch vendor {
 	case enumor.TCloud:
-		return convSecurityGroupExtListResult[corecloud.TCloudSecurityGroupExtension](listResp.Details)
+		return convSecurityGroupExtListResult[corecloud.TCloudSecurityGroupExtension](sgDetails, sgBizInfo)
 	case enumor.Aws:
-		return convSecurityGroupExtListResult[corecloud.AwsSecurityGroupExtension](listResp.Details)
+		return convSecurityGroupExtListResult[corecloud.AwsSecurityGroupExtension](sgDetails, sgBizInfo)
 	case enumor.Azure:
-		return convSecurityGroupExtListResult[corecloud.AzureSecurityGroupExtension](listResp.Details)
+		return convSecurityGroupExtListResult[corecloud.AzureSecurityGroupExtension](sgDetails, sgBizInfo)
 	case enumor.HuaWei:
-		return convSecurityGroupExtListResult[corecloud.HuaWeiSecurityGroupExtension](listResp.Details)
+		return convSecurityGroupExtListResult[corecloud.HuaWeiSecurityGroupExtension](sgDetails, sgBizInfo)
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
 	}
 }
 
-func convSecurityGroupExtListResult[T corecloud.SecurityGroupExtension](tables []tablecloud.SecurityGroupTable) (
-	*protocloud.SecurityGroupExtListResult[T], error) {
+func convSecurityGroupExtListResult[T corecloud.SecurityGroupExtension](tables []tablecloud.SecurityGroupTable,
+	bizInfos []types.ResBizInfo) (*protocloud.SecurityGroupExtListResult[T], error) {
 
 	details := make([]corecloud.SecurityGroup[T], 0, len(tables))
-	for _, one := range tables {
-		extension := new(T)
-		err := json.UnmarshalFromString(string(one.Extension), &extension)
-		if err != nil {
-			return nil, fmt.Errorf("UnmarshalFromString security group json extension failed, err: %v", err)
+	for i, one := range tables {
+		var extension *T
+		if one.Extension != "" {
+			extension = new(T)
+			err := json.UnmarshalFromString(string(one.Extension), &extension)
+			if err != nil {
+				return nil, fmt.Errorf("unmarshal security group json extension failed, err: %v", err)
+			}
 		}
 
 		details = append(details, corecloud.SecurityGroup[T]{
-			BaseSecurityGroup: *convTableToBaseSG(&one),
+			BaseSecurityGroup: *convTableToBaseSG(&one, bizInfos[i]),
 			Extension:         extension,
 		})
 	}

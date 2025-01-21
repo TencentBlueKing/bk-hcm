@@ -46,6 +46,10 @@ type SecurityGroupBatchCreate[Extension cloud.SecurityGroupExtension] struct {
 	Memo             *string     `json:"memo" validate:"omitempty"`
 	AccountID        string      `json:"account_id" validate:"required"`
 	BkBizID          int64       `json:"bk_biz_id" validate:"required"`
+	MgmtType         string      `json:"mgmt_type" validate:"lte=64"`
+	MgmtBizID        int64       `json:"mgmt_biz_id" `
+	Manager          string      `json:"manager" validate:"lte=64"`
+	BakManager       string      `json:"bak_manager" validate:"lte=64"`
 	Extension        *Extension  `json:"extension" validate:"required"`
 	CloudCreatedTime string      `json:"cloud_created_time" validate:"required"`
 	CloudUpdateTime  string      `json:"cloud_update_time" validate:"required"`
@@ -73,6 +77,10 @@ type SecurityGroupBatchUpdate[Extension cloud.SecurityGroupExtension] struct {
 	ID               string      `json:"id" validate:"required"`
 	Name             string      `json:"name" validate:"omitempty"`
 	BkBizID          int64       `json:"bk_biz_id" validate:"omitempty"`
+	MgmtType         string      `json:"mgmt_type" validate:"lte=64"`
+	MgmtBizID        int64       `json:"mgmt_biz_id" validate:"omitempty"`
+	Manager          string      `json:"manager" validate:"lte=64"`
+	BakManager       string      `json:"bak_manager" validate:"lte=64"`
 	Memo             *string     `json:"memo" validate:"omitempty"`
 	Extension        *Extension  `json:"extension" validate:"omitempty"`
 	CloudCreatedTime string      `json:"cloud_created_time" validate:"omitempty"`

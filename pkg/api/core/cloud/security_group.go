@@ -37,6 +37,11 @@ type BaseSecurityGroup struct {
 	Tags             core.TagMap   `json:"tags"`
 	AccountID        string        `json:"account_id"`
 	BkBizID          int64         `json:"bk_biz_id"`
+	MgmtType         string        `json:"mgmt_type" `
+	MgmtBizID        int64         `json:"mgmt_biz_id" `
+	Manager          string        `json:"manager" `
+	BakManager       string        `json:"bak_manager"`
+	UsageBizIDs      []int64       `json:"usage_biz_ids"`
 	Creator          string        `json:"creator"`
 	Reviser          string        `json:"reviser"`
 	CreatedAt        string        `json:"created_at"`
