@@ -15,7 +15,7 @@ import { timeFormatter } from '@/common/util';
 
 import { Button, Message } from 'bkui-vue';
 
-interface State {
+interface IState {
   loading: boolean;
   dataList: IAccountItem[];
   isAccurate: boolean;
@@ -39,7 +39,7 @@ const searchData = [
 const searchVal = ref([]);
 
 const columns = [
-  { id: 'id', name: 'ID', type: 'number', width: 100 },
+  { id: 'id', name: 'ID', type: 'number', width: 80 },
   {
     id: 'name',
     name: t('名称'),
@@ -56,53 +56,53 @@ const columns = [
         },
         cell,
       ),
-    width: 200,
+    width: 120,
   },
   {
     id: 'type',
     name: t('账号类型'),
     type: 'enum',
     option: ACCOUNT_TYPES.reduce<{ [key: string]: string }>((acc, cur) => ({ ...acc, [cur.id]: cur.name }), {}),
-    width: 100,
+    width: 90,
   },
-  { id: 'vendor', name: t('云厂商'), type: 'enum', option: VendorMap, width: 120 },
-  { id: 'site', name: t('站点类型'), type: 'enum', option: SITE_TYPE_MAP, width: 100 },
+  { id: 'vendor', name: t('云厂商'), type: 'enum', option: VendorMap, width: 90 },
+  { id: 'site', name: t('站点类型'), type: 'enum', option: SITE_TYPE_MAP, width: 90 },
   {
     id: 'bk_biz_ids',
     name: t('所属业务'),
     type: 'array',
     render: ({ cell }: { cell: number[] }) =>
-      cell?.map((v: number) => (v === -1 ? '--' : getNameFromBusinessMap(v)))?.join(','),
+      cell?.map((v: number) => (v === -1 ? '--' : getNameFromBusinessMap(v)))?.join(',') ?? '--',
     width: 120,
   },
-  { id: 'managers', name: t('负责人'), type: 'array', width: 150 },
-  { id: 'creator', name: t('创建人'), type: 'user', width: 150 },
-  { id: 'reviser', name: t('修改人'), type: 'user', width: 150 },
+  { id: 'managers', name: t('负责人'), type: 'user', width: 120 },
+  { id: 'creator', name: t('创建人'), type: 'user', width: 120, defaultHidden: true },
+  { id: 'reviser', name: t('修改人'), type: 'user', width: 120 },
   {
     id: 'created_at',
     name: t('创建时间'),
     type: 'string',
     render: ({ cell }: { cell: string }) => timeFormatter(cell),
-    width: 180,
+    width: 150,
   },
   {
     id: 'updated_at',
     name: t('修改时间'),
     type: 'string',
     render: ({ cell }: { cell: string }) => timeFormatter(cell),
-    width: 180,
+    width: 150,
   },
-  { id: 'memo', name: t('备注'), type: 'string', width: 120 },
+  { id: 'memo', name: t('备注'), type: 'string', width: 100 },
 ];
 const { settings } = useTableSettings(columns as ModelPropertyColumn[]);
 const { pagination, getDefaultPagination } = usePage();
 
-const state = reactive<State>({ loading: false, dataList: [], isAccurate: false, filter: { op: 'and', rules: [] } });
+const state = reactive<IState>({ loading: false, dataList: [], isAccurate: false, filter: { op: 'and', rules: [] } });
 const dataList = ref([]);
 const getAccountList = async () => {
   state.loading = true;
   try {
-    const res: IListResData<IAccountItem[]> = await accountStore.getAccountList({ filter: state.filter, page: {} });
+    const res: IListResData<IAccountItem[]> = await accountStore.getAccountList({ filter: state.filter });
     state.dataList = res.data.details;
   } catch (error) {
     console.error(error);
