@@ -23,20 +23,24 @@ import (
 	"fmt"
 
 	"hcm/pkg/adaptor/aws"
+	typescore "hcm/pkg/adaptor/types/core"
 	typecvm "hcm/pkg/adaptor/types/cvm"
+	networkinterface "hcm/pkg/adaptor/types/network-interface"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
-	corecvm "hcm/pkg/api/core/cloud/cvm"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	proto "hcm/pkg/api/hc-service"
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
+	corecvm "hcm/pkg/api/core/cloud/cvm"
+	"hcm/pkg/criteria/enumor"
+
+	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
 // CreateAwsSecurityGroup create aws security group.
@@ -316,4 +320,118 @@ func (g *securityGroup) DeleteAwsSecurityGroup(cts *rest.Contexts) (interface{},
 	}
 
 	return nil, nil
+}
+
+// AwsListSecurityGroupStatistic ...
+func (g *securityGroup) AwsListSecurityGroupStatistic(cts *rest.Contexts) (any, error) {
+	req := new(proto.ListSecurityGroupStatisticReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	sgMap, err := g.getSecurityGroupMap(cts.Kit, req.SecurityGroupIDs)
+	if err != nil {
+		logs.Errorf("get security group map failed, sgID: %v, err: %v, rid: %s", req.SecurityGroupIDs, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	cloudIDToSgIDMap := make(map[string]string)
+	for _, sgID := range req.SecurityGroupIDs {
+		sg, ok := sgMap[sgID]
+		if !ok {
+			return nil, fmt.Errorf("aws security group: %s not found", sgID)
+		}
+		cloudIDToSgIDMap[sg.CloudID] = sgID
+	}
+
+	resp, err := g.listAwsCvmNetworkInterfaceFromCloud(cts.Kit, req.Region, req.AccountID, cloudIDToSgIDMap)
+	if err != nil {
+		logs.Errorf("list aws cvm network interface from cloud failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	sgIDToResourceCountMap, err := g.countAwsSecurityGroupStatistic(cts.Kit, resp, cloudIDToSgIDMap)
+	if err != nil {
+		logs.Errorf("count aws security group statistic failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	return resourceCountMapToSecurityGroupStatisticItem(sgIDToResourceCountMap), nil
+}
+
+func (g *securityGroup) countAwsSecurityGroupStatistic(kt *kit.Kit, details []networkinterface.AwsNetworkInterface,
+	cloudIDToSgIDMap map[string]string) (map[string]map[string]int64, error) {
+
+	sgIDToResourceCountMap := make(map[string]map[string]int64)
+	for _, one := range details {
+		/**
+		InterfaceType 可选值:
+		api_gateway_managed | aws_codestar_connections_managed | branch | ec2_instance_connect_endpoint |
+		efa | efa-only | efs | gateway_load_balancer | gateway_load_balancer_endpoint | global_accelerator_managed |
+		interface | iot_rules_managed | lambda | load_balancer | nat_gateway | network_load_balancer | quicksight |
+		transit_gateway | trunk | vpc_endpoint
+		*/
+		interfaceType := converter.PtrToVal(one.InterfaceType)
+		for _, group := range one.Groups {
+			sgID, ok := cloudIDToSgIDMap[converter.PtrToVal(group.GroupId)]
+			if !ok {
+				logs.Errorf("cloud id: %s not found in cloud id to sg id map, rid: %s",
+					group.GroupId, kt.Rid)
+				continue
+			}
+			m, ok := sgIDToResourceCountMap[sgID]
+			if !ok {
+				m = make(map[string]int64)
+				sgIDToResourceCountMap[sgID] = m
+			}
+			m[interfaceType]++
+		}
+	}
+	return sgIDToResourceCountMap, nil
+}
+
+func (g *securityGroup) listAwsCvmNetworkInterfaceFromCloud(kt *kit.Kit, region, accountID string,
+	cloudIDToIDMap map[string]string) ([]networkinterface.AwsNetworkInterface, error) {
+
+	cli, err := g.ad.Aws(kt, accountID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]networkinterface.AwsNetworkInterface, 0)
+	var nextToken *string
+	for {
+		opt := &networkinterface.AwsNetworkInterfaceListOption{
+			Region: region,
+			Page: &typescore.AwsPage{
+				NextToken:  nextToken,
+				MaxResults: converter.ValToPtr(int64(typescore.AwsQueryLimit)),
+			},
+			Filters: []*ec2.Filter{
+				{
+					Name:   converter.ValToPtr("group-id"),
+					Values: converter.SliceToPtr(converter.MapKeyToSlice(cloudIDToIDMap)),
+				},
+			},
+		}
+
+		resp, err := cli.DescribeNetworkInterfaces(kt, opt)
+		if err != nil {
+			logs.Errorf("describe network interfaces failed, err: %v, sgCloudIDs: %v, rid: %s",
+				err, converter.MapKeyToSlice(cloudIDToIDMap), kt.Rid)
+			return nil, err
+		}
+		for _, detail := range resp.Details {
+			result = append(result, detail)
+		}
+		if resp.NextToken == nil {
+			break
+		}
+		nextToken = resp.NextToken
+	}
+
+	return result, nil
 }

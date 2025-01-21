@@ -50,6 +50,8 @@ func InitSecurityGroupService(cap *capability.Capability) {
 		sg.UpdateAwsSGRule)
 	h.Add("DeleteAwsSGRule", "DELETE", "/vendors/aws/security_groups/{security_group_id}/rules/{id}",
 		sg.DeleteAwsSGRule)
+	h.Add("AwsListSecurityGroupStatistic", "POST", "/vendors/aws/security_groups/statistic",
+		sg.AwsListSecurityGroupStatistic)
 
 	h.Add("HuaWeiSecurityGroupAssociateCvm", "POST", "/vendors/huawei/security_groups/associate/cvms",
 		sg.HuaWeiSecurityGroupAssociateCvm)
@@ -62,6 +64,8 @@ func InitSecurityGroupService(cap *capability.Capability) {
 		sg.CreateHuaWeiSGRule)
 	h.Add("DeleteAwsSGRule", "DELETE", "/vendors/huawei/security_groups/{security_group_id}/rules/{id}",
 		sg.DeleteHuaWeiSGRule)
+	h.Add("HuaweiListSecurityGroupStatistic", "POST", "/vendors/huawei/security_groups/statistic",
+		sg.HuaweiListSecurityGroupStatistic)
 
 	h.Add("AzureSecurityGroupAssociateSubnet", "POST", "/vendors/azure/security_groups/associate/subnets",
 		sg.AzureSecurityGroupAssociateSubnet)
@@ -80,6 +84,8 @@ func InitSecurityGroupService(cap *capability.Capability) {
 		sg.UpdateAzureSGRule)
 	h.Add("DeleteAzureSGRule", "DELETE", "/vendors/azure/security_groups/{security_group_id}/rules/{id}",
 		sg.DeleteAzureSGRule)
+	h.Add("AzureListSecurityGroupStatistic", "POST", "/vendors/azure/security_groups/statistic",
+		sg.AzureListSecurityGroupStatistic)
 
 	// CLB负载均衡
 	h.Add("TCloudSecurityGroupAssociateLoadBalancer", "POST",

@@ -334,3 +334,11 @@ func (cli *SecurityGroupClient) BatchDisassociateCloudCvm(kt *kit.Kit, sgID stri
 	return common.RequestNoResp[proto.SecurityGroupBatchAssociateCvmReq](cli.client, rest.POST, kt, req,
 		"/security_groups/disassociate/cvms/batch")
 }
+
+// ListSecurityGroupStatistic 查询安全组关联的云上资源数量
+func (cli *SecurityGroupClient) ListSecurityGroupStatistic(kt *kit.Kit, req *proto.ListSecurityGroupStatisticReq) (
+	*proto.ListSecurityGroupStatisticResp, error) {
+
+	return common.Request[proto.ListSecurityGroupStatisticReq, proto.ListSecurityGroupStatisticResp](
+		cli.client, rest.POST, kt, req, "/security_groups/statistic")
+}
