@@ -154,7 +154,7 @@ func (a ResUsageBizRelDao) ListUsageBizs(kt *kit.Kit, resType enumor.CloudResour
 	relTables := make([]cloud.ResUsageBizRelTable, 0)
 	args := map[string]interface{}{"res_type": resType, "res_ids": resIDs}
 	if err := a.Orm.Do().Select(kt.Ctx, &relTables, sql, args); err != nil {
-		logs.Errorf("delete res_biz_rel failed, err: %v, res_type: %s, res_id: %s, rid: %s",
+		logs.Errorf("list res_biz_rel failed, err: %v, res_type: %s, res_id: %s, rid: %s",
 			err, resType, resIDs, kt.Rid)
 		return nil, err
 	}

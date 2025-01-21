@@ -77,7 +77,7 @@ func (r *service) SetResUsageBizRel(cts *rest.Contexts) (interface{}, error) {
 	})
 	if err != nil {
 		logs.Errorf("update res usage biz rel failed, err: %v, res_type: %s, res_id: %s, usage bizs: %v, rid: %s",
-			err, resID, resType, req.UsageBizIDs, cts.Kit.Rid)
+			err, resType, resID, req.UsageBizIDs, cts.Kit.Rid)
 		return nil, err
 	}
 

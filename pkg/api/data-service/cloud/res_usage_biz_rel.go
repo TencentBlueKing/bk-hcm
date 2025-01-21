@@ -20,18 +20,18 @@
 package cloud
 
 import (
+	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
-	"hcm/pkg/dal/dao/types"
 )
 
 // ListResUsageBizRelResult ...
-type ListResUsageBizRelResult = types.ListResult[corecloud.ResUsageBizRel]
+type ListResUsageBizRelResult = core.ListResultT[corecloud.ResUsageBizRel]
 
 // ResUsageBizRelUpdateReq 覆盖更新
 type ResUsageBizRelUpdateReq struct {
-	UsageBizIDs []int64       `json:"usage_biz_ids" validate:"required"`
+	UsageBizIDs []int64       `json:"usage_biz_ids" validate:"required,max=3000"`
 	ResCloudID  string        `json:"res_cloud_id" validate:"omitempty,max=64"`
 	ResVendor   enumor.Vendor `json:"res_vendor" validate:"omitempty,max=64"`
 }

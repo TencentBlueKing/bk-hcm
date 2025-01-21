@@ -158,7 +158,7 @@ func (svc *securityGroupSvc) ListSecurityGroup(cts *rest.Contexts) (interface{},
 		sgIDs := slice.Map(sgDetails, tablecloud.SecurityGroupTable.GetID)
 		sgBizInfo, err = svc.dao.ResUsageBizRel().ListUsageBizs(cts.Kit, enumor.SecurityGroupCloudResType, sgIDs)
 		if err != nil {
-			logs.Errorf("fail to get security group usage bizs, err: %v, rid: %s", err, cts.Kit.Rid)
+			logs.Errorf("fail to get security group usage bizs, err: %v, sg: %v, rid: %s", err, sgIDs, cts.Kit.Rid)
 			return nil, fmt.Errorf("fail to get security group usage bizs, err: %w", err)
 		}
 	}
@@ -588,15 +588,18 @@ func (svc *securityGroupSvc) ListSecurityGroupExt(cts *rest.Contexts) (interface
 	// 查询使用范围
 	sgDetails := listResp.Details
 	var sgBizInfo []types.ResBizInfo
-	if len(sgDetails) > 0 {
-		sgIDs := slice.Map(sgDetails, tablecloud.SecurityGroupTable.GetID)
-		sgBizInfo, err = svc.dao.ResUsageBizRel().ListUsageBizs(cts.Kit, enumor.SecurityGroupCloudResType, sgIDs)
-		if err != nil {
-			logs.Errorf("fail to get security group usage bizs, err: %v, rid: %s", err, cts.Kit.Rid)
-			return nil, fmt.Errorf("fail to get security group usage bizs, err: %w", err)
-		}
+	if req.Page.Count {
+		return &protocloud.SecurityGroupListResult{Count: listResp.Count}, nil
 	}
-
+	if len(sgDetails) == 0 {
+		return listResp, nil
+	}
+	sgIDs := slice.Map(sgDetails, tablecloud.SecurityGroupTable.GetID)
+	sgBizInfo, err = svc.dao.ResUsageBizRel().ListUsageBizs(cts.Kit, enumor.SecurityGroupCloudResType, sgIDs)
+	if err != nil {
+		logs.Errorf("fail to get security group usage bizs, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("fail to get security group usage bizs, err: %w", err)
+	}
 	switch vendor {
 	case enumor.TCloud:
 		return convSecurityGroupExtListResult[corecloud.TCloudSecurityGroupExtension](sgDetails, sgBizInfo)
