@@ -40,8 +40,8 @@ type ResUsageBizRelClient struct {
 	client rest.ClientInterface
 }
 
-// Update resource usage biz rels.
-func (cli *ResUsageBizRelClient) Update(kt *kit.Kit, resType enumor.CloudResourceType, resID string,
+// SetBizRels resource usage biz rels.
+func (cli *ResUsageBizRelClient) SetBizRels(kt *kit.Kit, resType enumor.CloudResourceType, resID string,
 	req *apidata.ResUsageBizRelUpdateReq) error {
 
 	return common.RequestNoResp[apidata.ResUsageBizRelUpdateReq](cli.client, rest.PUT, kt, req,

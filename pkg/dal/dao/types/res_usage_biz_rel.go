@@ -24,10 +24,10 @@ import (
 	"hcm/pkg/dal/table/cloud"
 )
 
-// ListResBizRelDetails ...
-type ListResBizRelDetails struct {
-	Count   uint64                 `json:"count,omitempty"`
-	Details []cloud.ResBizRelTable `json:"details,omitempty"`
+// ListResUsageBizRelDetails ...
+type ListResUsageBizRelDetails struct {
+	Count   uint64                      `json:"count,omitempty"`
+	Details []cloud.ResUsageBizRelTable `json:"details,omitempty"`
 }
 
 // ListResBizsDetail ...

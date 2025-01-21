@@ -39,8 +39,8 @@ import (
 
 // ResUsageBizRel cloud resource biz relation
 type ResUsageBizRel interface {
-	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*cloud.ResBizRelTable) error
-	List(kt *kit.Kit, opt *types.ListOption) (*types.ListResBizRelDetails, error)
+	BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*cloud.ResUsageBizRelTable) error
+	List(kt *kit.Kit, opt *types.ListOption) (*types.ListResUsageBizRelDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error
 	// ListUsageBizs 查询指定资源关联业务id，保证返回的数组和传入resIDs的顺序以及数量一致
 	ListUsageBizs(kt *kit.Kit, resType enumor.CloudResourceType, resIDs []string) ([]types.ResBizInfo, error)
@@ -54,7 +54,7 @@ type ResUsageBizRelDao struct {
 }
 
 // BatchCreateWithTx ResUsageBizRel with tx.
-func (a ResUsageBizRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*cloud.ResBizRelTable) error {
+func (a ResUsageBizRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*cloud.ResUsageBizRelTable) error {
 	if len(rels) == 0 {
 		return errf.New(errf.InvalidParameter, "res_biz_rel is required")
 	}
@@ -68,25 +68,25 @@ func (a ResUsageBizRelDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, rels []*c
 		}
 	}
 
-	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.ResBizRelTable,
-		cloud.ResBizRelColumns.ColumnExpr(), cloud.ResBizRelColumns.ColonNameExpr())
+	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.ResUsageBizRelTable,
+		cloud.ResUsageBizRelColumns.ColumnExpr(), cloud.ResUsageBizRelColumns.ColonNameExpr())
 
 	err := a.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, rels)
 	if err != nil {
-		return fmt.Errorf("insert %s failed, err: %v", table.ResBizRelTable, err)
+		return fmt.Errorf("insert %s failed, err: %v", table.ResUsageBizRelTable, err)
 	}
 
 	return nil
 }
 
 // List ResUsageBizRel list.
-func (a ResUsageBizRelDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListResBizRelDetails, error) {
+func (a ResUsageBizRelDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListResUsageBizRelDetails, error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list res_biz_rel options is nil")
 	}
 
-	exprOpt := filter.NewExprOption(filter.RuleFields(cloud.ResBizRelColumns.ColumnTypes()))
+	exprOpt := filter.NewExprOption(filter.RuleFields(cloud.ResUsageBizRelColumns.ColumnTypes()))
 	if err := opt.Validate(exprOpt, core.NewDefaultPageOption()); err != nil {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func (a ResUsageBizRelDao) List(kt *kit.Kit, opt *types.ListOption) (*types.List
 
 	if opt.Page.Count {
 		// this is a count request, then do count operation only.
-		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.ResBizRelTable, whereExpr)
+		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.ResUsageBizRelTable, whereExpr)
 
 		count, err := a.Orm.Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
@@ -106,7 +106,7 @@ func (a ResUsageBizRelDao) List(kt *kit.Kit, opt *types.ListOption) (*types.List
 			return nil, err
 		}
 
-		return &types.ListResBizRelDetails{Count: count}, nil
+		return &types.ListResUsageBizRelDetails{Count: count}, nil
 	}
 
 	pageExpr, err := types.PageSQLExpr(opt.Page, types.DefaultPageSQLOption)
@@ -114,15 +114,15 @@ func (a ResUsageBizRelDao) List(kt *kit.Kit, opt *types.ListOption) (*types.List
 		return nil, err
 	}
 
-	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, cloud.ResBizRelColumns.FieldsNamedExpr(opt.Fields),
-		table.ResBizRelTable, whereExpr, pageExpr)
+	sql := fmt.Sprintf(`SELECT %s FROM %s %s %s`, cloud.ResUsageBizRelColumns.FieldsNamedExpr(opt.Fields),
+		table.ResUsageBizRelTable, whereExpr, pageExpr)
 
-	details := make([]cloud.ResBizRelTable, 0)
+	details := make([]cloud.ResUsageBizRelTable, 0)
 	if err = a.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}
 
-	return &types.ListResBizRelDetails{Count: 0, Details: details}, nil
+	return &types.ListResUsageBizRelDetails{Count: 0, Details: details}, nil
 }
 
 // DeleteWithTx ResUsageBizRel with tx.
@@ -136,7 +136,7 @@ func (a ResUsageBizRelDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *fi
 		return err
 	}
 
-	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.ResBizRelTable, whereExpr)
+	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.ResUsageBizRelTable, whereExpr)
 	if _, err := a.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
 		logs.ErrorJson("delete res_biz_rel failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
 		return err
@@ -149,8 +149,9 @@ func (a ResUsageBizRelDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *fi
 func (a ResUsageBizRelDao) ListUsageBizs(kt *kit.Kit, resType enumor.CloudResourceType, resIDs []string) (
 	[]types.ResBizInfo, error) {
 
-	sql := fmt.Sprintf(`SELECT * FROM %s WHERE res_type = :res_type and res_id IN (:res_ids)`, table.ResBizRelTable)
-	relTables := make([]cloud.ResBizRelTable, 0)
+	sql := fmt.Sprintf(`SELECT * FROM %s WHERE res_type = :res_type and res_id IN (:res_ids)`,
+		table.ResUsageBizRelTable)
+	relTables := make([]cloud.ResUsageBizRelTable, 0)
 	args := map[string]interface{}{"res_type": resType, "res_ids": resIDs}
 	if err := a.Orm.Do().Select(kt.Ctx, &relTables, sql, args); err != nil {
 		logs.Errorf("delete res_biz_rel failed, err: %v, res_type: %s, res_id: %s, rid: %s",

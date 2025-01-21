@@ -205,8 +205,8 @@ const (
 	//	GlobalConfigTable 全局配置表
 	GlobalConfigTable = "global_config"
 
-	// ResBizRelTable 资源-使用业务关联表
-	ResBizRelTable = "res_usage_biz_rel"
+	// ResUsageBizRelTable 资源-使用业务关联表
+	ResUsageBizRelTable = "res_usage_biz_rel"
 )
 
 // Validate whether the table name is valid or not.
@@ -312,7 +312,7 @@ var TableMap = map[Name]struct{}{
 
 	GlobalConfigTable: {},
 
-	ResBizRelTable: {},
+	ResUsageBizRelTable: {},
 }
 
 // Register 注册表名

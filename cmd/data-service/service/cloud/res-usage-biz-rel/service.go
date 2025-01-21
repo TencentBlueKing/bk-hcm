@@ -33,8 +33,8 @@ func InitService(cap *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	h.Add("UpdateResUsageBizRel", "PUT",
-		"/res_usage_biz_rels/res_types/{res_type}/{res_id}", svc.UpdateResUsageBizRel)
+	h.Add("SetResUsageBizRel", "PUT",
+		"/res_usage_biz_rels/res_types/{res_type}/{res_id}", svc.SetResUsageBizRel)
 	h.Add("ListResUsageBizRel", "POST", "/res_usage_biz_rels/list", svc.ListResUsageBizRel)
 
 	h.Load(cap.WebService)

@@ -141,7 +141,7 @@ type Set interface {
 	TaskDetail() task.Detail
 	TaskManagement() task.Management
 	GlobalConfig() globalconfig.Interface
-	ResBizRel() cloud.ResUsageBizRel
+	ResUsageBizRel() cloud.ResUsageBizRel
 
 	Txn() *Txn
 }
@@ -773,8 +773,8 @@ func (s *set) GlobalConfig() globalconfig.Interface {
 	}
 }
 
-// ResBizRel return resource biz relation dao.
-func (s *set) ResBizRel() cloud.ResUsageBizRel {
+// ResUsageBizRel return resource biz relation dao.
+func (s *set) ResUsageBizRel() cloud.ResUsageBizRel {
 	return &cloud.ResUsageBizRelDao{
 		Orm: s.orm,
 	}

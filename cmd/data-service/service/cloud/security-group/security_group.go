@@ -156,7 +156,7 @@ func (svc *securityGroupSvc) ListSecurityGroup(cts *rest.Contexts) (interface{},
 	var sgBizInfo []types.ResBizInfo
 	if len(sgDetails) > 0 {
 		sgIDs := slice.Map(sgDetails, tablecloud.SecurityGroupTable.GetID)
-		sgBizInfo, err = svc.dao.ResBizRel().ListUsageBizs(cts.Kit, enumor.SecurityGroupCloudResType, sgIDs)
+		sgBizInfo, err = svc.dao.ResUsageBizRel().ListUsageBizs(cts.Kit, enumor.SecurityGroupCloudResType, sgIDs)
 		if err != nil {
 			logs.Errorf("fail to get security group usage bizs, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, fmt.Errorf("fail to get security group usage bizs, err: %w", err)
@@ -234,7 +234,7 @@ func (svc *securityGroupSvc) BatchDeleteSecurityGroup(cts *rest.Contexts) (inter
 		resUsageBizFilter := tools.ExpressionAnd(
 			tools.RuleIn("res_id", delIDs),
 			tools.RuleEqual("res_type", enumor.SecurityGroupCloudResType))
-		if err := svc.dao.ResBizRel().DeleteWithTx(cts.Kit, txn, resUsageBizFilter); err != nil {
+		if err := svc.dao.ResUsageBizRel().DeleteWithTx(cts.Kit, txn, resUsageBizFilter); err != nil {
 			logs.Errorf("delete security group usage failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
 		}
@@ -305,7 +305,7 @@ func (svc *securityGroupSvc) GetSecurityGroup(cts *rest.Contexts) (interface{}, 
 		return nil, err
 	}
 
-	sgBizInfo, err := svc.dao.ResBizRel().ListUsageBizs(cts.Kit, enumor.SecurityGroupCloudResType,
+	sgBizInfo, err := svc.dao.ResUsageBizRel().ListUsageBizs(cts.Kit, enumor.SecurityGroupCloudResType,
 		[]string{sgTable.ID})
 	if err != nil {
 		logs.Errorf("fail to get security group usage bizs, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -590,7 +590,7 @@ func (svc *securityGroupSvc) ListSecurityGroupExt(cts *rest.Contexts) (interface
 	var sgBizInfo []types.ResBizInfo
 	if len(sgDetails) > 0 {
 		sgIDs := slice.Map(sgDetails, tablecloud.SecurityGroupTable.GetID)
-		sgBizInfo, err = svc.dao.ResBizRel().ListUsageBizs(cts.Kit, enumor.SecurityGroupCloudResType, sgIDs)
+		sgBizInfo, err = svc.dao.ResUsageBizRel().ListUsageBizs(cts.Kit, enumor.SecurityGroupCloudResType, sgIDs)
 		if err != nil {
 			logs.Errorf("fail to get security group usage bizs, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, fmt.Errorf("fail to get security group usage bizs, err: %w", err)

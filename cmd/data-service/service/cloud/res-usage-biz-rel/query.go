@@ -46,7 +46,7 @@ func (r *service) ListResUsageBizRel(cts *rest.Contexts) (any, error) {
 		Page:   req.Page,
 	}
 
-	data, err := r.dao.ResBizRel().List(cts.Kit, opt)
+	data, err := r.dao.ResUsageBizRel().List(cts.Kit, opt)
 	if err != nil {
 		logs.Errorf("list resUsage biz relations failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
 		return nil, err

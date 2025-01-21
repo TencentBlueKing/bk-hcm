@@ -34,8 +34,8 @@ import (
 	"hcm/pkg/rest"
 )
 
-// UpdateResUsageBizRel update resUsage biz rel. 全量覆盖更新
-func (r *service) UpdateResUsageBizRel(cts *rest.Contexts) (interface{}, error) {
+// SetResUsageBizRel update resUsage biz rel. 全量覆盖更新
+func (r *service) SetResUsageBizRel(cts *rest.Contexts) (interface{}, error) {
 
 	resType := cts.PathParameter("res_type").String()
 	resID := cts.PathParameter("res_id").String()
@@ -54,13 +54,13 @@ func (r *service) UpdateResUsageBizRel(cts *rest.Contexts) (interface{}, error) 
 			tools.RuleEqual("res_id", resID),
 			tools.RuleEqual("res_type", resType))
 
-		if err := r.dao.ResBizRel().DeleteWithTx(cts.Kit, txn, ftr); err != nil {
+		if err := r.dao.ResUsageBizRel().DeleteWithTx(cts.Kit, txn, ftr); err != nil {
 			return nil, fmt.Errorf("delete res usage biz rels failed, err: %v", err)
 		}
 
-		rels := make([]*tablecloud.ResBizRelTable, len(req.UsageBizIDs))
+		rels := make([]*tablecloud.ResUsageBizRelTable, len(req.UsageBizIDs))
 		for index, bizID := range req.UsageBizIDs {
-			rels[index] = &tablecloud.ResBizRelTable{
+			rels[index] = &tablecloud.ResUsageBizRelTable{
 				UsageBizID: bizID,
 				ResID:      resID,
 				ResType:    enumor.CloudResourceType(resType),
@@ -69,7 +69,7 @@ func (r *service) UpdateResUsageBizRel(cts *rest.Contexts) (interface{}, error) 
 				RelCreator: cts.Kit.User,
 			}
 		}
-		if err := r.dao.ResBizRel().BatchCreateWithTx(cts.Kit, txn, rels); err != nil {
+		if err := r.dao.ResUsageBizRel().BatchCreateWithTx(cts.Kit, txn, rels); err != nil {
 			return nil, fmt.Errorf("batch create res usage biz rels failed, err: %v", err)
 		}
 
