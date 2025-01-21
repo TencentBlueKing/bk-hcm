@@ -253,7 +253,7 @@ func (s SecurityGroupDao) listWithUsageBiz(kt *kit.Kit, opt *types.ListOption, w
 	whereValue map[string]interface{}) (*types.ListSecurityGroupDetails, error) {
 
 	// 用户传了usage_biz_id，则需要补充res_type条件，保证筛选结果的正确性
-	opt.Filter, err = tools.And(tools.EqualExpression("rel.res_type", "security_group"), opt.Filter)
+	opt.Filter, err = tools.And(tools.EqualExpression("rel.res_type", enumor.SecurityGroupCloudResType), opt.Filter)
 	if err != nil {
 		logs.Errorf("fail to merge res_type expression, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
