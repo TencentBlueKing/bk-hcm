@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package azure
+package aws
 
 import (
 	"time"
@@ -30,35 +30,39 @@ import (
 	"hcm/pkg/logs"
 )
 
-// SyncSubAccount sync sub account
-func SyncSubAccount(kt *kit.Kit, cliSet *client.ClientSet, accountID string, _ []string, sd *detail.SyncDetail) error {
+// SyncSGUsageBizRel ...
+func SyncSGUsageBizRel(kt *kit.Kit, cliSet *client.ClientSet, accountID string, regions []string,
+	sd *detail.SyncDetail) error {
 
 	// 重新设置rid方便定位
 	kt = kt.NewSubKit()
 
 	start := time.Now()
-	logs.V(3).Infof("azure account[%s] sync sub account start, time: %v, rid: %s", accountID, start, kt.Rid)
+	logs.V(3).Infof("aws account[%s] sync sg usage biz rel start, time: %v, rid: %s", accountID, start, kt.Rid)
 
 	// 同步中
-	if err := sd.ResSyncStatusSyncing(enumor.SubAccountCloudResType); err != nil {
+	if err := sd.ResSyncStatusSyncing(enumor.SecurityGroupUsageBizRelResType); err != nil {
 		return err
 	}
 
 	defer func() {
-		logs.V(3).Infof("azure account[%s] sync sub account end, cost: %v, rid: %s", accountID,
-			time.Since(start), kt.Rid)
+		logs.V(3).Infof("aws account[%s] sync sg usage biz rel end, cost: %v, rid: %s",
+			accountID, time.Since(start), kt.Rid)
 	}()
 
-	req := &sync.AzureGlobalSyncReq{
-		AccountID: accountID,
-	}
-	if err := cliSet.HCService().Azure.Account.SyncSubAccount(kt, req); err != nil {
-		logs.Errorf("sync azure sub account failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
-		return err
+	for _, region := range regions {
+		req := &sync.AwsSyncReq{
+			AccountID: accountID,
+			Region:    region,
+		}
+		if err := cliSet.HCService().Aws.SecurityGroup.SyncSecurityGroupUsageBizRel(kt, req); err != nil {
+			logs.Errorf("sync aws sg usage biz rel failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+			return err
+		}
 	}
 
 	// 同步成功
-	if err := sd.ResSyncStatusSuccess(enumor.SubAccountCloudResType); err != nil {
+	if err := sd.ResSyncStatusSuccess(enumor.SecurityGroupUsageBizRelResType); err != nil {
 		return err
 	}
 

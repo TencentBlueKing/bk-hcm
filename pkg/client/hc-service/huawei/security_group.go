@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/api/core"
 	proto "hcm/pkg/api/hc-service"
 	"hcm/pkg/api/hc-service/sync"
+	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
@@ -229,4 +230,10 @@ func (cli *SecurityGroupClient) DisassociateCvm(ctx context.Context, h http.Head
 	}
 
 	return nil
+}
+
+// SyncSecurityGroupUsageBizRel ...
+func (cli *SecurityGroupClient) SyncSecurityGroupUsageBizRel(kt *kit.Kit, req *sync.HuaWeiSyncReq) error {
+	return common.RequestNoResp[sync.HuaWeiSyncReq](cli.client, rest.POST, kt, req,
+		"/security_groups/usage_biz_rels/sync")
 }
