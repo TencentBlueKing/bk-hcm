@@ -47,7 +47,6 @@ func buildSGCommonRelDeleteReqForMultiResource(vendor enumor.Vendor, resType enu
 			tools.RuleEqual("security_group_id", sgID),
 			tools.RuleIn("res_id", resIDs),
 			tools.RuleEqual("res_type", resType),
-			tools.RuleEqual("vendor", vendor),
 		),
 	}, nil
 }
@@ -121,25 +120,24 @@ func (g *securityGroup) getSecurityGroupAndCvm(kt *kit.Kit, sgID, cvmID string) 
 
 // createSGCommonRels 先删除cvmID关联的安全组关系，再创建新的安全组关系
 // sgCloudIDs的入参顺序决定新建的关联关系的优先级
-func (g *securityGroup) createSGCommonRels(kt *kit.Kit, vendor enumor.Vendor, cvmID string, sgCloudIDs []string,
-	sgCloudIDToIDMap map[string]string) error {
+func (g *securityGroup) createSGCommonRels(kt *kit.Kit, vendor enumor.Vendor, resType enumor.CloudResourceType,
+	cvmID string, sgIDs []string) error {
 
 	createReq := &protocloud.SGCommonRelBatchUpsertReq{
 		DeleteReq: &dataproto.BatchDeleteReq{
 			Filter: tools.ExpressionAnd(
 				tools.RuleEqual("res_id", cvmID),
-				tools.RuleEqual("res_type", enumor.CvmCloudResType),
-				tools.RuleEqual("vendor", vendor),
+				tools.RuleEqual("res_type", resType),
 			),
 		},
 	}
 
-	for i, cloudID := range sgCloudIDs {
+	for i, sgID := range sgIDs {
 		createReq.Rels = append(createReq.Rels, protocloud.SGCommonRelCreate{
-			SecurityGroupID: sgCloudIDToIDMap[cloudID],
+			SecurityGroupID: sgID,
 			Vendor:          vendor,
 			ResID:           cvmID,
-			ResType:         enumor.CvmCloudResType,
+			ResType:         resType,
 			Priority:        int64(i) + 1,
 		})
 	}
@@ -151,8 +149,8 @@ func (g *securityGroup) createSGCommonRels(kt *kit.Kit, vendor enumor.Vendor, cv
 	return nil
 }
 
-func (g *securityGroup) getSecurityGroupMapByCloudIDs(kt *kit.Kit, vendor enumor.Vendor, cloudIDs []string) (
-	map[string]string, error) {
+func (g *securityGroup) getSecurityGroupMapByCloudIDs(kt *kit.Kit, vendor enumor.Vendor, region string,
+	cloudIDs []string) (map[string]string, error) {
 
 	cloudIDs = slice.Unique(cloudIDs)
 	m := make(map[string]string)
@@ -161,6 +159,7 @@ func (g *securityGroup) getSecurityGroupMapByCloudIDs(kt *kit.Kit, vendor enumor
 			Field: []string{"id", "cloud_id"},
 			Filter: tools.ExpressionAnd(
 				tools.RuleIn("cloud_id", ids),
+				tools.RuleEqual("region", region),
 				tools.RuleEqual("vendor", vendor),
 			),
 			Page: core.NewDefaultBasePage(),

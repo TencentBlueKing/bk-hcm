@@ -145,10 +145,11 @@ func (svc *cvmSvc) createSGCommonRelsForAws(kt *kit.Kit, client *aws.Aws, region
 		sgIDs = append(sgIDs, sgID)
 	}
 
-	err = svc.createSGCommonRels(kt, enumor.Aws, cvm.ID, sgIDs)
+	err = svc.createSGCommonRels(kt, enumor.Aws, enumor.CvmCloudResType, cvm.ID, sgIDs)
 	if err != nil {
 		// 不抛出err, 尽最大努力交付
-		logs.Errorf("create sg common rels failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("create sg common rels failed, err: %v, cvmID: %s, sgIDs: %v, rid: %s",
+			err, cvm.ID, sgIDs, kt.Rid)
 	}
 
 	return nil
@@ -167,7 +168,7 @@ func (svc *cvmSvc) listAwsCvmFromCloud(kt *kit.Kit, client *aws.Aws, region stri
 		return nil, err
 	}
 	if len(awsCvms) == 0 {
-		logs.Errorf("aws cvm(%s) not found, rid: %s", kt.Rid, cvm.CloudID)
+		logs.Errorf("aws cvm(%s) not found, rid: %s", cvm.CloudID, kt.Rid)
 		return nil, fmt.Errorf("aws cvm(%s) not found", cvm.CloudID)
 	}
 	return awsCvms, nil

@@ -111,10 +111,11 @@ func (svc *cvmSvc) BatchAssociateTCloudSecurityGroup(cts *rest.Contexts) (interf
 		return nil, err
 	}
 
-	err = svc.createSGCommonRels(cts.Kit, enumor.TCloud, req.CvmID, req.SecurityGroupIDs)
+	err = svc.createSGCommonRels(cts.Kit, enumor.TCloud, enumor.CvmCloudResType, req.CvmID, req.SecurityGroupIDs)
 	if err != nil {
 		// 不抛出err, 尽最大努力交付
-		logs.Errorf("create sg common rels failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("create sg common rels failed, err: %v, cvmID: %s, sgIDs: %v, rid: %s",
+			err, req.CvmID, req.SecurityGroupIDs, cts.Kit.Rid)
 	}
 	return nil, nil
 }

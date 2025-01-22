@@ -161,24 +161,34 @@ func (g *securityGroup) AwsSecurityGroupAssociateCvm(cts *rest.Contexts) (interf
 func (g *securityGroup) createSGCommonRelsForAws(kt *kit.Kit, client *aws.Aws, region string,
 	cvm *corecvm.BaseCvm) error {
 
-	huaweiCvmFromCloud, err := g.listAwsCvmFromCloud(kt, client, region, cvm)
+	awsCvmFromCloud, err := g.listAwsCvmFromCloud(kt, client, region, cvm)
 	if err != nil {
 		logs.Errorf("request adaptor to list cvm from cloud failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 
-	sgCloudIDs := make([]string, 0, len(huaweiCvmFromCloud[0].SecurityGroups))
-	for _, cur := range huaweiCvmFromCloud[0].SecurityGroups {
+	sgCloudIDs := make([]string, 0, len(awsCvmFromCloud[0].SecurityGroups))
+	for _, cur := range awsCvmFromCloud[0].SecurityGroups {
 		sgCloudIDs = append(sgCloudIDs, converter.PtrToVal(cur.GroupId))
 	}
 
-	sgCloudIDToIDMap, err := g.getSecurityGroupMapByCloudIDs(kt, enumor.Aws, sgCloudIDs)
+	sgCloudIDToIDMap, err := g.getSecurityGroupMapByCloudIDs(kt, enumor.Aws, region, sgCloudIDs)
 	if err != nil {
 		logs.Errorf("get security group map by cloud ids failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 
-	err = g.createSGCommonRels(kt, enumor.Aws, cvm.ID, sgCloudIDs, sgCloudIDToIDMap)
+	sgIDs := make([]string, 0, len(sgCloudIDs))
+	for _, cur := range sgCloudIDs {
+		sgID, ok := sgCloudIDToIDMap[cur]
+		if !ok {
+			logs.Errorf("cloud id(%s) not found in security group map, rid: %s", cur, kt.Rid)
+			return fmt.Errorf("cloud id(%s) not found in security group map", cur)
+		}
+		sgIDs = append(sgIDs, sgID)
+	}
+
+	err = g.createSGCommonRels(kt, enumor.Aws, enumor.CvmCloudResType, cvm.ID, sgIDs)
 	if err != nil {
 		logs.Errorf("create security group common rels failed, err: %v, rid: %s", err, kt.Rid)
 		return err
@@ -198,7 +208,7 @@ func (g *securityGroup) listAwsCvmFromCloud(kt *kit.Kit, client *aws.Aws, region
 		return nil, err
 	}
 	if len(awsCvms) == 0 {
-		logs.Errorf("aws cvm(%s) not found, rid: %s", kt.Rid, cvm.CloudID)
+		logs.Errorf("aws cvm(%s) not found, rid: %s", cvm.CloudID, kt.Rid)
 		return nil, fmt.Errorf("aws cvm(%s) not found", cvm.CloudID)
 	}
 	return awsCvms, nil

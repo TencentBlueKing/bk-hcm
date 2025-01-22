@@ -149,13 +149,23 @@ func (g *securityGroup) createSGCommonRelsForHuawei(kt *kit.Kit, client *huawei.
 		sgCloudIDs = append(sgCloudIDs, cur.Id)
 	}
 
-	sgCloudIDToIDMap, err := g.getSecurityGroupMapByCloudIDs(kt, enumor.HuaWei, sgCloudIDs)
+	sgCloudIDToIDMap, err := g.getSecurityGroupMapByCloudIDs(kt, enumor.HuaWei, region, sgCloudIDs)
 	if err != nil {
 		logs.Errorf("get security group map by cloud ids failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 
-	err = g.createSGCommonRels(kt, enumor.HuaWei, cvm.ID, sgCloudIDs, sgCloudIDToIDMap)
+	sgIDs := make([]string, 0, len(sgCloudIDs))
+	for _, sgCloudID := range sgCloudIDs {
+		sgID, ok := sgCloudIDToIDMap[sgCloudID]
+		if !ok {
+			logs.Errorf("cloud id(%s) not found in security group map, rid: %s", sgCloudID, kt.Rid)
+			return fmt.Errorf("cloud id(%s) not found in security group map", sgCloudID)
+		}
+		sgIDs = append(sgIDs, sgID)
+	}
+
+	err = g.createSGCommonRels(kt, enumor.HuaWei, enumor.CvmCloudResType, cvm.ID, sgIDs)
 	if err != nil {
 		logs.Errorf("create security group common rels failed, err: %v, rid: %s", err, kt.Rid)
 		return err

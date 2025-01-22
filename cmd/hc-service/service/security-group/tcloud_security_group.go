@@ -23,8 +23,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
-
 	"hcm/pkg/adaptor/tcloud"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	typelb "hcm/pkg/adaptor/types/load-balancer"
@@ -601,10 +599,10 @@ func (g *securityGroup) createSGCommonRelsForTCloud(kt *kit.Kit, client tcloud.T
 
 	sgCloudIDs := make([]string, 0)
 	for _, one := range cloudCvms {
-		sgCloudIDs = append(sgCloudIDs, common.StringValues(one.SecurityGroupIds)...)
+		sgCloudIDs = append(sgCloudIDs, converter.PtrToSlice(one.SecurityGroupIds)...)
 	}
 
-	sgCloudIDToIDMap, err := g.getSecurityGroupMapByCloudIDs(kt, enumor.TCloud, sgCloudIDs)
+	sgCloudIDToIDMap, err := g.getSecurityGroupMapByCloudIDs(kt, enumor.TCloud, region, sgCloudIDs)
 	if err != nil {
 		logs.Errorf("get security group map by cloud ids failed, err: %v, cloudIDs: %v, rid: %s",
 			err, sgCloudIDs, kt.Rid)
@@ -617,10 +615,22 @@ func (g *securityGroup) createSGCommonRelsForTCloud(kt *kit.Kit, client tcloud.T
 			logs.Errorf("cvm cloud id to id not found, cvmID: %s, rid: %s", converter.PtrToVal(one.InstanceId), kt.Rid)
 			return fmt.Errorf("cvm cloud id to id not found, cvmID: %s", converter.PtrToVal(one.InstanceId))
 		}
-		err = g.createSGCommonRels(kt, enumor.TCloud, cvmID, sgCloudIDs, sgCloudIDToIDMap)
+
+		sgIDs := make([]string, 0, len(one.SecurityGroupIds))
+		for _, sgCloudID := range converter.PtrToSlice(one.SecurityGroupIds) {
+			sgID, ok := sgCloudIDToIDMap[sgCloudID]
+			if !ok {
+				logs.Errorf("cloud id(%s) not found in security group map, rid: %s", sgCloudID, kt.Rid)
+				return fmt.Errorf("cloud id(%s) not found in security group map", sgCloudID)
+			}
+			sgIDs = append(sgIDs, sgID)
+		}
+
+		err = g.createSGCommonRels(kt, enumor.TCloud, enumor.CvmCloudResType, cvmID, sgIDs)
 		if err != nil {
 			// 不抛出err, 尽最大努力交付
-			logs.Errorf("create sg common rels failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("create sg common rels failed, err: %v, cvmID: %s, sgIDs: %v, rid: %s",
+				err, cvmID, converter.MapValueToSlice(sgCloudIDToIDMap), kt.Rid)
 		}
 	}
 
