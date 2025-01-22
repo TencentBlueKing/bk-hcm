@@ -31,8 +31,7 @@ import (
 )
 
 // SyncSubAccount sync sub account
-func SyncSubAccount(kt *kit.Kit, cliSet *client.ClientSet, accountID string,
-	sd *detail.SyncDetail) error {
+func SyncSubAccount(kt *kit.Kit, cliSet *client.ClientSet, accountID string, _ []string, sd *detail.SyncDetail) error {
 
 	// 重新设置rid方便定位
 	kt = kt.NewSubKit()
