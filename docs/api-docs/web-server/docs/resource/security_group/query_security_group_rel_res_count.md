@@ -34,10 +34,24 @@ POST /api/v1/cloud/security_groups/related_resources/query_count
   "data": [
     {
       "id": "00000001",
-      "cvm": 10,
-      "clb": 2,
-      "db": 0,
-      "container": 0
+      "resources": [
+        {
+          "res_name": "cvm",
+          "count": 10
+        },
+        {
+          "res_name": "load_balancer",
+          "count": 2
+        },
+        {
+          "res_name": "db",
+          "count": 0
+        },
+        {
+          "res_name": "container",
+          "count": 0
+        }
+      ]
     }
   ]
 }
@@ -53,10 +67,14 @@ POST /api/v1/cloud/security_groups/related_resources/query_count
 
 #### data[n]
 
-| 参数名称      | 参数类型   | 描述          |
-|-----------|--------|-------------|
-| id        | string | 安全组ID       |
-| cvm       | int    | 安全组关联的CVM数量 |
-| clb       | int    | 安全组关联的CLB数量 |
-| db        | int    | 安全组关联的DB数量  |
-| container | int    | 安全组关联的容器数量  |
+| 参数名称      | 参数类型         | 描述         |
+|-----------|--------------|------------|
+| id        | string       | 安全组ID      |
+| resources | object array | 安全组关联的资源数量 |
+
+#### resource[n]
+
+| 参数名称     | 参数类型   | 描述      |
+|----------|--------|---------|
+| res_name | string | 关联的资源名称 |
+| count    | int    | 关联的资源数量 |
