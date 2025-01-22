@@ -48,6 +48,11 @@ type BaseSecurityGroup struct {
 	UpdatedAt        string          `json:"updated_at"`
 }
 
+// GetID return id
+func (sg BaseSecurityGroup) GetID() string {
+	return sg.ID
+}
+
 // SecurityGroup define security group
 type SecurityGroup[Extension SecurityGroupExtension] struct {
 	BaseSecurityGroup `json:",inline"`
