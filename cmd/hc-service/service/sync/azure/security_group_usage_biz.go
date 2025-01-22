@@ -94,7 +94,7 @@ func (h *SGUsageBizRelSyncHandler) nextSGID(kt *kit.Kit) ([]corecloud.BaseSecuri
 		Field: []string{"id", "cloud_id", "region", "vendor", "usage_biz_ids"},
 		Filter: tools.ExpressionAnd(
 			tools.RuleEqual("account_id", h.accountID),
-			tools.RuleEqual("extension.resource_group_name", h.resourceGroupName),
+			tools.RuleJSONEqual("extension.resource_group_name", h.resourceGroupName),
 		),
 		Page: &core.BasePage{
 			Start: uint32(h.offset),

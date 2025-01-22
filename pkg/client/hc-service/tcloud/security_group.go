@@ -334,3 +334,9 @@ func (cli *SecurityGroupClient) BatchDisassociateCloudCvm(kt *kit.Kit, sgID stri
 	return common.RequestNoResp[proto.SecurityGroupBatchAssociateCvmReq](cli.client, rest.POST, kt, req,
 		"/security_groups/disassociate/cvms/batch")
 }
+
+// SyncSecurityGroupUsageBizRel ...
+func (cli *SecurityGroupClient) SyncSecurityGroupUsageBizRel(kt *kit.Kit, req *sync.TCloudSyncReq) error {
+	return common.RequestNoResp[sync.TCloudSyncReq](cli.client, rest.POST, kt, req,
+		"/security_groups/usage_biz_rels/sync")
+}

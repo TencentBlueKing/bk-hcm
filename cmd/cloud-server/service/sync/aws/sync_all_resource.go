@@ -123,6 +123,9 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet,
 	if hitErr = SyncRouteTable(kt, cliSet, opt.AccountID, regions, sd); hitErr != nil {
 		return enumor.SubAccountCloudResType, hitErr
 	}
+	if hitErr = SyncSGUsageBizRel(kt, cliSet, opt.AccountID, regions, sd); hitErr != nil {
+		return enumor.SecurityGroupUsageBizRelResType, hitErr
+	}
 
 	return "", nil
 }

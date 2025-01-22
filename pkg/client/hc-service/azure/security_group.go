@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/api/core"
 	proto "hcm/pkg/api/hc-service"
 	"hcm/pkg/api/hc-service/sync"
+	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
@@ -301,4 +302,10 @@ func (cli *SecurityGroupClient) DisassociateNetworkInterface(ctx context.Context
 	}
 
 	return nil
+}
+
+// SyncSecurityGroupUsageBizRel ...
+func (cli *SecurityGroupClient) SyncSecurityGroupUsageBizRel(kt *kit.Kit, req *sync.AzureSyncReq) error {
+	return common.RequestNoResp[sync.AzureSyncReq](cli.client, rest.POST, kt, req,
+		"/security_groups/usage_biz_rels/sync")
 }
