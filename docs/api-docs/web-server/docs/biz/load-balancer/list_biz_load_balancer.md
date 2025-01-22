@@ -187,7 +187,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/list
         "bk_biz_id": -1,
         "account_id": "0000001",
         "region": "ap-hk",
-        "main_zones": [
+        "zones": [
           "ap-hk-1"
         ],
         "backup_zones": [
@@ -196,7 +196,8 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/list
         ],
         "cloud_vpc_id": "vpc-123",
         "vpc_id": "00000002",
-        "network_type": "ipv4",
+        "ip_version": "ipv4",
+        "lb_type": "OPEN",
         "domain": "",
         "memo": "lb test",
         "status": "init",
@@ -259,11 +260,12 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/list
 | bk_biz_id              | int64        | 业务ID                                  |
 | account_id             | string       | 账号ID                                  |
 | region                 | string       | 地域                                    |
-| main_zones             | string       | 主可用区                                  |
+| zones                  | string       | 主可用区                                  |
 | backup_zones           | string       | 备可用区                                  |
 | cloud_vpc_id           | string       | 云vpcID                                |
 | vpc_id                 | string       | vpcID                                 |
-| network_type           | string       | 网络类型                                  |
+| lb_type                | string       | 负载均衡类型                                |
+| ip_version             | string       | 负载均衡网络版本                              |
 | memo                   | string       | 备注                                    |
 | status                 | string       | 状态                                    |
 | domain                 | string       | 域名                                    |

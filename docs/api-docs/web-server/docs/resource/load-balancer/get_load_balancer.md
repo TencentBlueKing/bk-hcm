@@ -82,11 +82,12 @@ POST /api/v1/cloud/load_balancers/{id}
 | bk_biz_id              | int64        | 业务ID                                 |
 | account_id             | string       | 账号ID                                 |
 | region                 | string       | 地域                                   |
-| main_zones             | string       | 主可用区                                 |
+| zones                  | string       | 主可用区                                 |
 | backup_zones           | string       | 备可用区                                 |
 | cloud_vpc_id           | string       | 云vpcID                               |
 | vpc_id                 | string       | vpcID                                |
-| network_type           | string       | 网络类型                                 |
+| lb_type                | string       | 负载均衡类型                               |
+| ip_version             | string       | 负载均衡网络版本                             |
 | memo                   | string       | 备注                                   |
 | status                 | string       | 状态                                   |
 | domain                 | string       | 域名                                   |
