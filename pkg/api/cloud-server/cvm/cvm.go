@@ -69,7 +69,7 @@ func (req *AssignCvmToBizData) Validate() error {
 	}
 
 	// todo 本期暂不支持管控区域为0
-	if req.BkCloudID != nil && converter.PtrToVal(req.BkCloudID) == 0 {
+	if converter.PtrToVal(req.BkCloudID) == 0 {
 		return errors.New("bk_cloud_id should != 0")
 	}
 

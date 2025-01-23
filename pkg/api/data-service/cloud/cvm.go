@@ -134,6 +134,7 @@ func (req *CvmCommonInfoBatchUpdateReq) Validate() error {
 	return nil
 }
 
+// CvmCommonInfoBatchUpdateData define cvm common info batch update data.
 type CvmCommonInfoBatchUpdateData struct {
 	ID        string `json:"id" validate:"required"`
 	BkBizID   int64  `json:"bk_biz_id"`

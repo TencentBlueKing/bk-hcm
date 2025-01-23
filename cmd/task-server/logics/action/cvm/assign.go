@@ -35,6 +35,7 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 )
 
@@ -102,7 +103,7 @@ func (act AssignCvmAction) Run(kt run.ExecuteKit, params interface{}) (result in
 			assignedCvmInfo = append(assignedCvmInfo, cvm.AssignedCvmInfo{
 				CvmID:     id,
 				BkBizID:   opt.BizID,
-				BkCloudID: *opt.BkCloudID,
+				BkCloudID: converter.PtrToVal(opt.BkCloudID),
 			})
 		}
 		if err = cvm.Assign(kt.Kit(), cli, assignedCvmInfo); err != nil {
