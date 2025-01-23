@@ -147,7 +147,7 @@ func (svc *cvmSvc) createSGCommonRels(kt *kit.Kit, vendor enumor.Vendor, resType
 	for i, sgID := range sgIDs {
 		createReq.Rels = append(createReq.Rels, protocloud.SGCommonRelCreate{
 			SecurityGroupID: sgID,
-			Vendor:          vendor,
+			ResVendor:       vendor,
 			ResID:           cvmID,
 			ResType:         resType,
 			Priority:        int64(i) + 1,

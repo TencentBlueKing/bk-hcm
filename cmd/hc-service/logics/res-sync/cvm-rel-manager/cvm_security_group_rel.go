@@ -115,7 +115,7 @@ func (mgr *CvmRelManger) upsertSgRelForCvm(kt *kit.Kit, cvmID string, startIdx i
 	for i, sgID := range sgIDs {
 		createDel.Rels = append(createDel.Rels, datacloud.SGCommonRelCreate{
 			SecurityGroupID: sgID,
-			Vendor:          vendor,
+			ResVendor:       vendor,
 			ResID:           cvmID,
 			ResType:         enumor.CvmCloudResType,
 			Priority:        int64(i + startIdx + 1),

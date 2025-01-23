@@ -54,7 +54,7 @@ func (svc *sgComRelSvc) BatchCreateSgCommonRels(cts *rest.Contexts) (interface{}
 		models := make([]tablecloud.SecurityGroupCommonRelTable, 0, len(req.Rels))
 		for _, one := range req.Rels {
 			models = append(models, tablecloud.SecurityGroupCommonRelTable{
-				Vendor:          one.Vendor,
+				ResVendor:       one.ResVendor,
 				ResID:           one.ResID,
 				ResType:         one.ResType,
 				SecurityGroupID: one.SecurityGroupID,
@@ -126,7 +126,7 @@ func (svc *sgComRelSvc) BatchUpsertSgCommonRels(cts *rest.Contexts) (interface{}
 		models := make([]tablecloud.SecurityGroupCommonRelTable, 0, len(req.Rels))
 		for _, one := range req.Rels {
 			models = append(models, tablecloud.SecurityGroupCommonRelTable{
-				Vendor:          one.Vendor,
+				ResVendor:       one.ResVendor,
 				ResID:           one.ResID,
 				ResType:         one.ResType,
 				SecurityGroupID: one.SecurityGroupID,

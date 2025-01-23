@@ -36,8 +36,8 @@ import (
 	"hcm/pkg/tools/slice"
 )
 
-func buildSGCommonRelDeleteReqForMultiResource(vendor enumor.Vendor, resType enumor.CloudResourceType,
-	sgID string, resIDs ...string) (*dataproto.BatchDeleteReq, error) {
+func buildSGCommonRelDeleteReqForMultiResource(resType enumor.CloudResourceType, sgID string, resIDs ...string) (
+	*dataproto.BatchDeleteReq, error) {
 
 	if len(resIDs) == 0 {
 		return nil, errors.New("cvmIDs is required")
@@ -59,7 +59,7 @@ func buildSGCommonRelDeleteReq(vendor enumor.Vendor, resID string, sgIDs []strin
 			Op: filter.And,
 			Rules: []filter.RuleFactory{
 				&filter.AtomRule{
-					Field: "vendor",
+					Field: "res_vendor",
 					Op:    filter.Equal.Factory(),
 					Value: vendor,
 				},
@@ -135,7 +135,7 @@ func (g *securityGroup) createSGCommonRels(kt *kit.Kit, vendor enumor.Vendor, re
 	for i, sgID := range sgIDs {
 		createReq.Rels = append(createReq.Rels, protocloud.SGCommonRelCreate{
 			SecurityGroupID: sgID,
-			Vendor:          vendor,
+			ResVendor:       vendor,
 			ResID:           cvmID,
 			ResType:         resType,
 			Priority:        int64(i) + 1,

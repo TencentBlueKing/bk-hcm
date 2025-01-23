@@ -371,7 +371,7 @@ func (g *securityGroup) getUpsertSGIDsParams(kt *kit.Kit, req *hclb.TCloudSetLbS
 		tmpPriority++
 		sgComReq.Rels = append(sgComReq.Rels, protocloud.SGCommonRelCreate{
 			SecurityGroupID: newSGID,
-			Vendor:          enumor.TCloud,
+			ResVendor:       enumor.TCloud,
 			ResID:           req.LbID,
 			ResType:         enumor.LoadBalancerCloudResType,
 			Priority:        tmpPriority,
@@ -495,7 +495,7 @@ func (g *securityGroup) getLoadBalancerInfoAndSGComRels(kt *kit.Kit, lbID string
 	// 查询目前绑定的安全组
 	sgcomReq := &core.ListReq{
 		Filter: tools.ExpressionAnd(
-			tools.RuleEqual("vendor", lbInfo.Vendor),
+			tools.RuleEqual("res_vendor", lbInfo.Vendor),
 			tools.RuleEqual("res_id", lbID),
 			tools.RuleEqual("res_type", enumor.LoadBalancerCloudResType),
 		),
@@ -744,8 +744,7 @@ func (g *securityGroup) TCloudSGBatchDisassociateCvm(cts *rest.Contexts) (any, e
 		return nil, err
 	}
 
-	deleteReq, err := buildSGCommonRelDeleteReqForMultiResource(enumor.TCloud, enumor.CvmCloudResType,
-		req.SecurityGroupID, req.CvmIDs...)
+	deleteReq, err := buildSGCommonRelDeleteReqForMultiResource(enumor.CvmCloudResType, req.SecurityGroupID, req.CvmIDs...)
 	if err != nil {
 		logs.Errorf("build sg cvm rel delete req failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err

@@ -61,7 +61,7 @@ func (svc *sgComRelSvc) ListSgCommonRels(cts *rest.Contexts) (interface{}, error
 	for _, one := range result.Details {
 		details = append(details, corecloud.SecurityGroupCommonRel{
 			ID:              one.ID,
-			Vendor:          one.Vendor,
+			ResVendor:       one.ResVendor,
 			ResID:           one.ResID,
 			ResType:         one.ResType,
 			Priority:        one.Priority,
