@@ -12,7 +12,7 @@ POST /api/v1/cloud/cvms/assign/bizs
 
 | 参数名称      | 参数类型         | 必选  | 描述       |
 |-----------|--------------|-----|----------|
-| cvms   | string array | 是   | 分配的虚拟机列表 |
+| cvms   | object array | 是   | 分配的虚拟机列表 |
 
 #### cvms
 | 参数名称        | 参数类型   | 必选 | 描述      |
