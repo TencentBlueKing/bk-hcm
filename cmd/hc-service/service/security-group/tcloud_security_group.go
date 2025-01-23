@@ -39,6 +39,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 )
 
@@ -607,7 +608,7 @@ func (g *securityGroup) TCloudSGBatchAssociateCvm(cts *rest.Contexts) (any, erro
 
 // TCloudListSecurityGroupStatistic ...
 func (g *securityGroup) TCloudListSecurityGroupStatistic(cts *rest.Contexts) (any, error) {
-	req := new(proto.TCloudListSecurityGroupStatisticReq)
+	req := new(proto.ListSecurityGroupStatisticReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -622,13 +623,13 @@ func (g *securityGroup) TCloudListSecurityGroupStatistic(cts *rest.Contexts) (an
 		return nil, err
 	}
 
-	cloudIDs := make([]string, 0, len(req.SecurityGroupIDs))
+	cloudIDToSgIDMap := make(map[string]string)
 	for _, sgID := range req.SecurityGroupIDs {
 		sg, ok := sgMap[sgID]
 		if !ok {
 			return nil, fmt.Errorf("security group: %s not found", sgID)
 		}
-		cloudIDs = append(cloudIDs, sg.CloudID)
+		cloudIDToSgIDMap[sg.CloudID] = sgID
 	}
 
 	client, err := g.ad.TCloud(cts.Kit, req.AccountID)
@@ -638,7 +639,7 @@ func (g *securityGroup) TCloudListSecurityGroupStatistic(cts *rest.Contexts) (an
 
 	opt := &securitygroup.TCloudListOption{
 		Region:   req.Region,
-		CloudIDs: cloudIDs,
+		CloudIDs: converter.MapKeyToSlice(cloudIDToSgIDMap),
 	}
 	resp, err := client.DescribeSecurityGroupAssociationStatistics(cts.Kit, opt)
 	if err != nil {
@@ -647,7 +648,25 @@ func (g *securityGroup) TCloudListSecurityGroupStatistic(cts *rest.Contexts) (an
 		return nil, err
 	}
 
-	return resp, nil
+	sgIDToResourceCountMap := make(map[string]map[string]int64)
+	for _, one := range resp {
+		sgID := cloudIDToSgIDMap[converter.PtrToVal(one.SecurityGroupId)]
+		sgIDToResourceCountMap[sgID] = tcloudSGAssociateStatisticToResourceCountMap(one)
+	}
+
+	return resourceCountMapToSecurityGroupStatisticItem(sgIDToResourceCountMap), nil
+}
+
+func tcloudSGAssociateStatisticToResourceCountMap(
+	statistic securitygroup.TCloudSecurityGroupAssociationStatistic) map[string]int64 {
+
+	return map[string]int64{
+		"CVM": int64(converter.PtrToVal(statistic.CVM)),
+		"CDB": int64(converter.PtrToVal(statistic.CDB)),
+		"ENI": int64(converter.PtrToVal(statistic.ENI)),
+		"SG":  int64(converter.PtrToVal(statistic.SG)),
+		"CLB": int64(converter.PtrToVal(statistic.CLB)),
+	}
 }
 
 // TCloudSGBatchDisassociateCvm  批量解绑安全组

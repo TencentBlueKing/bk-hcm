@@ -22,6 +22,11 @@ package securitygroup
 import (
 	"fmt"
 
+	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
+
+	typescore "hcm/pkg/adaptor/types/core"
+	networkinterface "hcm/pkg/adaptor/types/network-interface"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
@@ -32,6 +37,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 )
 
 // CreateAwsSecurityGroup create aws security group.
@@ -267,4 +273,108 @@ func (g *securityGroup) DeleteAwsSecurityGroup(cts *rest.Contexts) (interface{},
 	}
 
 	return nil, nil
+}
+
+// AwsListSecurityGroupStatistic ...
+func (g *securityGroup) AwsListSecurityGroupStatistic(cts *rest.Contexts) (any, error) {
+	req := new(proto.ListSecurityGroupStatisticReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	sgMap, err := g.getSecurityGroupMap(cts.Kit, req.SecurityGroupIDs)
+	if err != nil {
+		logs.Errorf("get security group map failed, sgID: %v, err: %v, rid: %s", req.SecurityGroupIDs, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	cloudIDToSgIDMap := make(map[string]string)
+	for _, sgID := range req.SecurityGroupIDs {
+		sg, ok := sgMap[sgID]
+		if !ok {
+			return nil, fmt.Errorf("security group: %s not found", sgID)
+		}
+		cloudIDToSgIDMap[sg.CloudID] = sgID
+	}
+
+	resp, err := g.listAwsCvmNetworkInterfaceFromCloud(cts.Kit, req.Region, req.AccountID, cloudIDToSgIDMap)
+	if err != nil {
+		logs.Errorf("list aws cvm network interface from cloud failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	sgIDToResourceCountMap := make(map[string]map[string]int64)
+	for _, one := range resp {
+		/**
+		InterfaceType 可选值:
+		api_gateway_managed | aws_codestar_connections_managed | branch | ec2_instance_connect_endpoint |
+		efa | efa-only | efs | gateway_load_balancer | gateway_load_balancer_endpoint | global_accelerator_managed |
+		interface | iot_rules_managed | lambda | load_balancer | nat_gateway | network_load_balancer | quicksight |
+		transit_gateway | trunk | vpc_endpoint
+		*/
+		interfaceType := converter.PtrToVal(one.InterfaceType)
+		for _, group := range one.Groups {
+			sgID, ok := cloudIDToSgIDMap[converter.PtrToVal(group.GroupId)]
+			if !ok {
+				logs.Errorf("cloud id: %s not found in cloud id to sg id map, rid: %s",
+					group.GroupId, cts.Kit.Rid)
+				continue
+			}
+			m, ok := sgIDToResourceCountMap[sgID]
+			if !ok {
+				m = make(map[string]int64)
+				sgIDToResourceCountMap[sgID] = m
+			}
+			m[interfaceType]++
+		}
+	}
+
+	return resourceCountMapToSecurityGroupStatisticItem(sgIDToResourceCountMap), nil
+}
+
+func (g *securityGroup) listAwsCvmNetworkInterfaceFromCloud(kt *kit.Kit, region, accountID string,
+	cloudIDToIDMap map[string]string) ([]networkinterface.AwsNetworkInterface, error) {
+
+	cli, err := g.ad.Aws(kt, accountID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]networkinterface.AwsNetworkInterface, 0)
+	var nextToken *string
+	for {
+		opt := &networkinterface.AwsNetworkInterfaceListOption{
+			Region: region,
+			Page: &typescore.AwsPage{
+				NextToken:  nextToken,
+				MaxResults: converter.ValToPtr(int64(typescore.AwsQueryLimit)),
+			},
+			Filters: []*ec2.Filter{
+				{
+					Name:   common.StringPtr("group-id"),
+					Values: common.StringPtrs(converter.MapKeyToSlice(cloudIDToIDMap)),
+				},
+			},
+		}
+
+		resp, err := cli.DescribeNetworkInterfaces(kt, opt)
+		if err != nil {
+			logs.Errorf("describe network interfaces failed, err: %v, sgCloudIDs: %v, rid: %s",
+				err, converter.MapKeyToSlice(cloudIDToIDMap), kt.Rid)
+			return nil, err
+		}
+		for _, detail := range resp.Details {
+			result = append(result, detail)
+		}
+		if resp.NextToken == nil {
+			break
+		}
+		nextToken = resp.NextToken
+	}
+
+	return result, nil
 }
