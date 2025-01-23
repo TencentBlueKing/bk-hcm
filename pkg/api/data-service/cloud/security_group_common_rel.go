@@ -39,7 +39,7 @@ type SGCommonRelBatchCreateReq struct {
 // SGCommonRelCreate ...
 type SGCommonRelCreate struct {
 	SecurityGroupID string                   `json:"security_group_id" validate:"required"`
-	Vendor          enumor.Vendor            `json:"vendor" validate:"required"`
+	ResVendor       enumor.Vendor            `json:"res_vendor" validate:"required"`
 	ResID           string                   `json:"res_id" validate:"required"`
 	ResType         enumor.CloudResourceType `json:"res_type" validate:"omitempty"`
 	Priority        int64                    `json:"priority" validate:"omitempty"`

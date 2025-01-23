@@ -102,7 +102,7 @@ POST /api/v1/cloud/security_group/{id}/common/list
 | 参数名称              | 参数类型   | 描述                             |
 |-------------------|--------|--------------------------------|
 | id                | string | 主键ID                           |
-| vendor            | string | 云厂商                            |
+| res_vendor        | string | 云厂商                            |
 | res_id            | string | 资源ID                           |
 | res_type          | string | 资源类型                           |
 | security_group_id | string | 安全组ID                          |

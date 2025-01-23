@@ -115,9 +115,13 @@ func (svc *cvmSvc) batchAssociateSecurityGroups(cts *rest.Contexts, validHandler
 
 func (svc *cvmSvc) deleteSecurityGroupAndCvmRelationship(kt *kit.Kit, cvmID string, sgIDs []string) error {
 	batchDeleteReq := &proto.BatchDeleteReq{
-		Filter: tools.ExpressionAnd(tools.RuleEqual("cvm_id", cvmID), tools.RuleIn("security_group_id", sgIDs)),
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("res_id", cvmID),
+			tools.RuleEqual("res_type", enumor.CvmCloudResType),
+			tools.RuleIn("security_group_id", sgIDs),
+		),
 	}
-	err := svc.client.DataService().Global.SGCvmRel.BatchDeleteSgCvmRels(kt.Ctx, kt.Header(), batchDeleteReq)
+	err := svc.client.DataService().Global.SGCommonRel.BatchDeleteSgCommonRels(kt, batchDeleteReq)
 	if err != nil {
 		logs.Errorf("delete security group and cvm relationship failed, err: %v, req: %+v, rid: %s",
 			err, batchDeleteReq, kt.Rid)

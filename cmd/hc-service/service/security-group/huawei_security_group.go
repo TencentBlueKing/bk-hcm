@@ -21,15 +21,20 @@ package securitygroup
 
 import (
 	"errors"
+	"fmt"
 
+	"hcm/pkg/adaptor/huawei"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
+	corecvm "hcm/pkg/api/core/cloud/cvm"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	proto "hcm/pkg/api/hc-service"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
@@ -119,23 +124,71 @@ func (g *securityGroup) HuaWeiSecurityGroupAssociateCvm(cts *rest.Contexts) (int
 		return nil, err
 	}
 
-	createReq := &protocloud.SGCvmRelBatchCreateReq{
-		Rels: []protocloud.SGCvmRelCreate{
-			{
-				SecurityGroupID: req.SecurityGroupID,
-				CvmID:           req.CvmID,
-			},
-		},
-	}
-	if err = g.dataCli.Global.SGCvmRel.BatchCreateSgCvmRels(cts.Kit.Ctx, cts.Kit.Header(), createReq); err != nil {
-		logs.Errorf("request dataservice create security group cvm rels failed, err: %v, req: %+v, rid: %s",
-			err, createReq, cts.Kit.Rid)
+	err = g.createSGCommonRelsForHuawei(cts.Kit, client, sg.Region, cvm)
+	if err != nil {
+		logs.Errorf("create security group common rels failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	// TODO: 同步主机数据
 
 	return nil, nil
+}
+
+func (g *securityGroup) createSGCommonRelsForHuawei(kt *kit.Kit, client *huawei.HuaWei, region string,
+	cvm *corecvm.BaseCvm) error {
+
+	huaweiCvmFromCloud, err := g.listHuaweiCvmFromCloud(kt, client, region, cvm.CloudID)
+	if err != nil {
+		logs.Errorf("request adaptor to list cvm from cloud failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	sgCloudIDs := make([]string, 0, len(huaweiCvmFromCloud[0].SecurityGroups))
+	for _, cur := range huaweiCvmFromCloud[0].SecurityGroups {
+		sgCloudIDs = append(sgCloudIDs, cur.Id)
+	}
+
+	sgCloudIDToIDMap, err := g.getSecurityGroupMapByCloudIDs(kt, enumor.HuaWei, region, sgCloudIDs)
+	if err != nil {
+		logs.Errorf("get security group map by cloud ids failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	sgIDs := make([]string, 0, len(sgCloudIDs))
+	for _, sgCloudID := range sgCloudIDs {
+		sgID, ok := sgCloudIDToIDMap[sgCloudID]
+		if !ok {
+			logs.Errorf("cloud id(%s) not found in security group map, rid: %s", sgCloudID, kt.Rid)
+			return fmt.Errorf("cloud id(%s) not found in security group map", sgCloudID)
+		}
+		sgIDs = append(sgIDs, sgID)
+	}
+
+	err = g.createSGCommonRels(kt, enumor.HuaWei, enumor.CvmCloudResType, cvm.ID, sgIDs)
+	if err != nil {
+		logs.Errorf("create security group common rels failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+	return nil
+}
+
+func (g *securityGroup) listHuaweiCvmFromCloud(kt *kit.Kit, client *huawei.HuaWei, region, cvmCloudID string) (
+	[]typecvm.HuaWeiCvm, error) {
+
+	listOpt := &typecvm.HuaWeiListOption{
+		Region:   region,
+		CloudIDs: []string{cvmCloudID},
+	}
+	cvms, err := client.ListCvm(kt, listOpt)
+	if err != nil {
+		logs.Errorf("request adaptor to list cvm failed, err: %v, opt: %v, rid: %s", err, listOpt, kt.Rid)
+		return nil, err
+	}
+	if len(cvms) == 0 {
+		return nil, fmt.Errorf("cvm(%s) not found from cloud", cvmCloudID)
+	}
+	return cvms, nil
 }
 
 // HuaWeiSecurityGroupDisassociateCvm ...
@@ -189,12 +242,9 @@ func (g *securityGroup) HuaWeiSecurityGroupDisassociateCvm(cts *rest.Contexts) (
 		return nil, err
 	}
 
-	deleteReq, err := buildSGCvmRelDeleteReq(req.SecurityGroupID, req.CvmID)
-	if err != nil {
-		logs.Errorf("build sg cvm rel delete req failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-	if err = g.dataCli.Global.SGCvmRel.BatchDeleteSgCvmRels(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
+	deleteReq := buildSGCommonRelDeleteReq(
+		enumor.HuaWei, req.CvmID, []string{req.SecurityGroupID}, enumor.CvmCloudResType)
+	if err = g.dataCli.Global.SGCommonRel.BatchDeleteSgCommonRels(cts.Kit, deleteReq); err != nil {
 		logs.Errorf("request dataservice delete security group cvm rels failed, err: %v, req: %+v, rid: %s",
 			err, deleteReq, cts.Kit.Rid)
 		return nil, err

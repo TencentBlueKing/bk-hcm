@@ -55,6 +55,8 @@ ALTER TABLE security_group
 
 ALTER TABLE security_group_common_rel
     ADD INDEX idx_security_group_id (security_group_id);
+ALTER TABLE security_group_common_rel
+    CHANGE COLUMN vendor res_vendor varchar(16) ;
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
 SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;

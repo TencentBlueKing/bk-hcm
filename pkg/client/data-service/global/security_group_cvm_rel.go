@@ -44,6 +44,7 @@ type SGCvmRelClient struct {
 }
 
 // BatchCreateSgCvmRels security group cvm rels.
+// Deprecated: use SGCommonRelClient's BatchCreateSgCommonRels instead.
 func (cli *SGCvmRelClient) BatchCreateSgCvmRels(ctx context.Context, h http.Header,
 	request *protocloud.SGCvmRelBatchCreateReq) error {
 
@@ -68,6 +69,7 @@ func (cli *SGCvmRelClient) BatchCreateSgCvmRels(ctx context.Context, h http.Head
 }
 
 // BatchDeleteSgCvmRels security group cvm rels.
+// Deprecated: use SGCommonRelClient's BatchDeleteSgCommonRels instead.
 func (cli *SGCvmRelClient) BatchDeleteSgCvmRels(ctx context.Context, h http.Header, request *proto.BatchDeleteReq) error {
 
 	resp := new(rest.BaseResp)
@@ -91,6 +93,7 @@ func (cli *SGCvmRelClient) BatchDeleteSgCvmRels(ctx context.Context, h http.Head
 }
 
 // ListSgCvmRels security group cvm rels.
+// Deprecated: use SGCommonRelClient's ListSgCommonRels instead.
 func (cli *SGCvmRelClient) ListSgCvmRels(ctx context.Context, h http.Header, request *core.ListReq) (
 	*protocloud.SGCvmRelListResult, error) {
 
@@ -115,6 +118,7 @@ func (cli *SGCvmRelClient) ListSgCvmRels(ctx context.Context, h http.Header, req
 }
 
 // ListWithSecurityGroup security group cvm rels with security group.
+// Deprecated: use SGCommonRelClient's ListWithSecurityGroup instead.
 func (cli *SGCvmRelClient) ListWithSecurityGroup(ctx context.Context, h http.Header,
 	request *protocloud.SGCvmRelWithSecurityGroupListReq) ([]corecloud.SGCvmRelWithBaseSecurityGroup, error) {
 

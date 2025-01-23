@@ -26,7 +26,7 @@ import (
 // SecurityGroupCommonRel define security group common rel.
 type SecurityGroupCommonRel struct {
 	ID              uint64                   `json:"id"`
-	Vendor          enumor.Vendor            `json:"vendor"`
+	ResVendor       enumor.Vendor            `json:"res_vendor"`
 	ResID           string                   `json:"res_id"`
 	ResType         enumor.CloudResourceType `json:"res_type"`
 	Priority        int64                    `json:"priority"`

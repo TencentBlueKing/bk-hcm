@@ -36,7 +36,7 @@ var SecurityGroupCommonRelColumns = utils.MergeColumns(
 // SecurityGroupCommonRelColumnDescriptor is security group common rel table column descriptors.
 var SecurityGroupCommonRelColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "id", NamedC: "id", Type: enumor.Numeric},
-	{Column: "vendor", NamedC: "vendor", Type: enumor.String},
+	{Column: "res_vendor", NamedC: "res_vendor", Type: enumor.String},
 	{Column: "res_id", NamedC: "res_id", Type: enumor.String},
 	{Column: "res_type", NamedC: "res_type", Type: enumor.String},
 	{Column: "priority", NamedC: "priority", Type: enumor.Numeric},
@@ -50,7 +50,7 @@ var SecurityGroupCommonRelColumnDescriptor = utils.ColumnDescriptors{
 // SecurityGroupCommonRelTable define security group common rel table.
 type SecurityGroupCommonRelTable struct {
 	ID              uint64                   `db:"id" json:"id"`
-	Vendor          enumor.Vendor            `db:"vendor" validate:"lte=16" json:"vendor"`
+	ResVendor       enumor.Vendor            `db:"res_vendor" validate:"lte=16" json:"res_vendor"`
 	ResID           string                   `db:"res_id" validate:"lte=64" json:"res_id"`
 	ResType         enumor.CloudResourceType `db:"res_type" validate:"required,lte=64" json:"res_type"`
 	Priority        int64                    `db:"priority" validate:"min=0,max=65535" json:"priority"`
@@ -72,7 +72,7 @@ func (t SecurityGroupCommonRelTable) InsertValidate() error {
 		return err
 	}
 
-	if len(t.Vendor) == 0 {
+	if len(t.ResVendor) == 0 {
 		return errors.New("vendor is required")
 	}
 
