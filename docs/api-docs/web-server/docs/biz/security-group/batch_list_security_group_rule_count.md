@@ -10,10 +10,10 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/security_groups/rules/count
 
 ### 输入参数
 
-| 参数名称               | 参数类型         | 必选 | 描述    |
-|--------------------|--------------|----|-------|
-| bk_biz_id          | int64        | 是  | 业务ID  |
-| security_group_ids | array string | 是  | 安全组ID |
+| 参数名称               | 参数类型         | 必选 | 描述                  |
+|--------------------|--------------|----|---------------------|
+| bk_biz_id          | int64        | 是  | 业务ID                |
+| security_group_ids | array string | 是  | 安全组ID, 单次请求限制500个id |
 
 ### 请求示例
 
