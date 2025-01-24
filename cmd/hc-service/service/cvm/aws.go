@@ -413,14 +413,16 @@ func (svc *cvmSvc) listAwsCvmNetworkInterfaceFromCloud(kt *kit.Kit, region, acco
 			cloudID := converter.PtrToVal(detail.Attachment.InstanceId)
 			id := cloudIDToIDMap[cloudID]
 			if _, ok := result[id]; !ok {
-				result[id] = &protocvm.ListCvmNetworkInterfaceRespItem{}
+				result[id] = &protocvm.ListCvmNetworkInterfaceRespItem{
+					MacAddressToPrivateIpAddresses: make(map[string][]string),
+				}
 			}
 
 			privateIPs := make([]string, 0)
 			for _, set := range detail.PrivateIpAddresses {
 				privateIPs = append(privateIPs, converter.PtrToVal(set.PrivateIpAddress))
 			}
-			result[id].MapAddressToPrivateIpAddresses[converter.PtrToVal(detail.MacAddress)] = privateIPs
+			result[id].MacAddressToPrivateIpAddresses[converter.PtrToVal(detail.MacAddress)] = privateIPs
 		}
 		if resp.NextToken == nil {
 			break

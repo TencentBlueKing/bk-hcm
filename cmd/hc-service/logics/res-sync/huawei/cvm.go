@@ -170,7 +170,6 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 		cvm := dataproto.CvmBatchUpdate[corecvm.HuaWeiCvmExtension]{
 			ID:                   id,
 			Name:                 one.Name,
-			BkCloudID:            vpcMap[one.Metadata["vpc_id"]].BkCloudID,
 			CloudVpcIDs:          []string{one.Metadata["vpc_id"]},
 			VpcIDs:               []string{vpcMap[one.Metadata["vpc_id"]].VpcID},
 			CloudSubnetIDs:       cloudSubnetIDs,
@@ -327,7 +326,8 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 			CloudID:              one.Id,
 			Name:                 one.Name,
 			BkBizID:              constant.UnassignedBiz,
-			BkCloudID:            vpcMap[one.Metadata["vpc_id"]].BkCloudID,
+			BkHostID:             constant.UnBindBkHostID,
+			BkCloudID:            constant.UnassignedBkCloudID,
 			AccountID:            accountID,
 			Region:               region,
 			Zone:                 one.OSEXTAZavailabilityZone,
@@ -468,8 +468,7 @@ func (cli *client) getVpcMap(kt *kit.Kit, accountID string, region string,
 
 		for _, vpc := range vpcFromDB {
 			vpcMap[vpc.CloudID] = &common.VpcDB{
-				VpcID:     vpc.ID,
-				BkCloudID: vpc.BkCloudID,
+				VpcID: vpc.ID,
 			}
 		}
 	}

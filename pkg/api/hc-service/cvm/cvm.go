@@ -65,10 +65,7 @@ func (r *ListCvmNetworkInterfaceReq) Validate() error {
 	return validator.Validate.Struct(r)
 }
 
-// ListCvmNetworkInterfaceResp defines list cvm mac address response.
-type ListCvmNetworkInterfaceResp = map[string]*ListCvmNetworkInterfaceRespItem
-
 // ListCvmNetworkInterfaceRespItem defines list cvm mac address response item.
 type ListCvmNetworkInterfaceRespItem struct {
-	MapAddressToPrivateIpAddresses map[string][]string `json:"map_address_to_private_ip"`
+	MacAddressToPrivateIpAddresses map[string][]string `json:"mac_address_to_private_ip"`
 }

@@ -31,6 +31,7 @@ type BaseCvm struct {
 	Name      string        `json:"name"`
 	Vendor    enumor.Vendor `json:"vendor"`
 	BkBizID   int64         `json:"bk_biz_id"`
+	BkHostID  int64         `json:"bk_host_id"`
 	BkCloudID int64         `json:"bk_cloud_id"`
 	AccountID string        `json:"account_id"`
 	Region    string        `json:"region"`

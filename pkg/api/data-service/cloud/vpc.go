@@ -38,7 +38,6 @@ type VpcCreateReq[T VpcCreateExtension] struct {
 	AccountID string             `json:"account_id" validate:"required"`
 	CloudID   string             `json:"cloud_id" validate:"required"`
 	BkBizID   int64              `json:"bk_biz_id" validate:"required"`
-	BkCloudID int64              `json:"bk_cloud_id" validate:"required"`
 	Name      *string            `json:"name,omitempty" validate:"omitempty"`
 	Region    string             `json:"region" validate:"omitempty"`
 	Category  enumor.VpcCategory `json:"category" validate:"required"`
@@ -120,11 +119,10 @@ type VpcUpdateReq[T VpcUpdateExtension] struct {
 
 // VpcUpdateBaseInfo defines update vpc request base info.
 type VpcUpdateBaseInfo struct {
-	Name      *string            `json:"name,omitempty" validate:"omitempty"`
-	Category  enumor.VpcCategory `json:"category,omitempty" validate:"omitempty"`
-	Memo      *string            `json:"memo,omitempty" validate:"omitempty"`
-	BkCloudID int64              `json:"bk_cloud_id,omitempty" validate:"omitempty"`
-	BkBizID   int64              `json:"bk_biz_id,omitempty" validate:"omitempty"`
+	Name     *string            `json:"name,omitempty" validate:"omitempty"`
+	Category enumor.VpcCategory `json:"category,omitempty" validate:"omitempty"`
+	Memo     *string            `json:"memo,omitempty" validate:"omitempty"`
+	BkBizID  int64              `json:"bk_biz_id,omitempty" validate:"omitempty"`
 }
 
 // VpcUpdateExtension defines vpc update request extensional info.
