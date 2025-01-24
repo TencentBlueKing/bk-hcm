@@ -7,8 +7,9 @@ import { DisplayType } from './typings';
 defineOptions({ name: 'hcm-form-enum' });
 
 const props = withDefaults(
-  defineProps<{ multiple: boolean; option: ModelProperty['option']; display?: DisplayType }>(),
+  defineProps<{ clearable: boolean; multiple: boolean; option: ModelProperty['option']; display?: DisplayType }>(),
   {
+    clearable: false,
     multiple: false,
     option: () => ({}),
   },
@@ -38,6 +39,7 @@ defineExpose({
     v-model="model"
     ref="selectColumnRef"
     :list="selectList"
+    :clearable="clearable"
     :multiple="multiple"
     :multiple-mode="multiple ? 'tag' : 'default'"
     v-bind="attrs"

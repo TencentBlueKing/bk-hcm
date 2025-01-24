@@ -8,7 +8,7 @@ import App from './app';
 import i18n from './language/i18n';
 import directive from '@/directive/index';
 import components from '@/components/index';
-import { useUserStore } from '@/store';
+import { preload } from '@/store';
 import './style/index.scss';
 // 全量引入自定义图标
 import './assets/iconfont/style.css';
@@ -28,9 +28,7 @@ app.config.globalProperties.$http = http;
 
 app.use(i18n).use(directive).use(components).use(pinia).use(bkui);
 
-const { userInfo } = useUserStore();
-
-userInfo()
+preload()
   .finally(() => {
     app.use(router);
     app.mount('#app');
