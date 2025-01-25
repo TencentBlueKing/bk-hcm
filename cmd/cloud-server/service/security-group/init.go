@@ -73,6 +73,9 @@ func InitSecurityGroupService(c *capability.Capability) {
 	h.Add("ListCvmIdBySecurityGroup", http.MethodPost,
 		"/security_group/{id}/cvm/list", svc.ListCvmIdBySecurityGroup)
 
+	h.Add("ListSecurityGroupRulesCount", http.MethodPost, "/security_groups/rules/count",
+		svc.ListSecurityGroupRulesCount)
+
 	bizService(h, svc)
 	initSecurityGroupServiceHooks(svc, h)
 
@@ -124,6 +127,9 @@ func bizService(h *rest.Handler, svc *securityGroupSvc) {
 		"/bizs/{bk_biz_id}/security_group/{id}/common/list", svc.ListBizResourceIDBySecurityGroup)
 	h.Add("ListBizCvmIdBySecurityGroup", http.MethodPost,
 		"/bizs/{bk_biz_id}/security_group/{id}/cvm/list", svc.ListBizCvmIdBySecurityGroup)
+
+	h.Add("ListBizSecurityGroupRulesCount", http.MethodPost, "/bizs/{bk_biz_id}/security_groups/rules/count",
+		svc.ListBizSecurityGroupRulesCount)
 }
 
 type securityGroupSvc struct {

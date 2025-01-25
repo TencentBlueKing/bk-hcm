@@ -21,11 +21,15 @@ package global
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"hcm/pkg/api/core"
 	protocloud "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/client/common"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -111,4 +115,30 @@ func (cli *SecurityGroupClient) BatchUpdateSecurityGroupCommonInfo(ctx context.C
 	}
 
 	return nil
+}
+
+// ListSecurityGroupRulesCount list security group rules count.
+func (cli *SecurityGroupClient) ListSecurityGroupRulesCount(kt *kit.Kit, vendor enumor.Vendor, ids []string) (
+	protocloud.ListSecurityGroupRuleCountResp, error) {
+
+	req := &protocloud.ListSecurityGroupRuleCountReq{
+		SecurityGroupIDs: ids,
+	}
+
+	resp, err := common.Request[protocloud.ListSecurityGroupRuleCountReq, protocloud.ListSecurityGroupRuleCountResp](
+		cli.client, http.MethodPost, kt, req, "/vendors/%s/security_groups/rule/count", vendor)
+	if err != nil {
+		return nil, err
+	}
+	if resp == nil {
+		return nil, fmt.Errorf("ListSecurityGroupRulesCount response is nil")
+	}
+	return *resp, nil
+	return map[string]int64{
+		"00000001": 1,
+		"00000003": 1,
+		"00000004": 1,
+		"00000012": 1,
+		"00000021": 1,
+	}, nil
 }

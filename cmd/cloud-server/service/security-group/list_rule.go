@@ -25,6 +25,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
@@ -226,4 +227,62 @@ var azureDefaultSGRuleMap = map[enumor.SecurityGroupRuleType][]AzureDefaultSGRul
 			Type:                     enumor.Ingress,
 		},
 	},
+}
+
+// ListSecurityGroupRulesCount list security group rules count.
+func (svc *securityGroupSvc) ListSecurityGroupRulesCount(cts *rest.Contexts) (interface{}, error) {
+	return svc.listSGRulesCount(cts, handler.ResOperateAuth)
+}
+
+// ListBizSecurityGroupRulesCount list biz security group rules count.
+func (svc *securityGroupSvc) ListBizSecurityGroupRulesCount(cts *rest.Contexts) (interface{}, error) {
+	return svc.listSGRulesCount(cts, handler.BizOperateAuth)
+}
+
+func (svc *securityGroupSvc) listSGRulesCount(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+	interface{}, error) {
+
+	req := new(proto.ListSecurityGroupRuleCountReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	listBasicInfoReq := dataproto.ListResourceBasicInfoReq{
+		ResourceType: enumor.SecurityGroupCloudResType,
+		IDs:          req.SecurityGroupIDs,
+	}
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, listBasicInfoReq)
+	if err != nil {
+		return nil, err
+	}
+
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroupRule,
+		Action: meta.Find, BasicInfos: basicInfoMap})
+	if err != nil {
+		return nil, err
+	}
+
+	vendorToSGIDMap := make(map[enumor.Vendor][]string)
+	for _, info := range basicInfoMap {
+		vendorToSGIDMap[info.Vendor] = append(vendorToSGIDMap[info.Vendor], info.ID)
+	}
+
+	result := make(map[string]int64)
+	for vendor, ids := range vendorToSGIDMap {
+		resp, err := svc.client.DataService().Global.SecurityGroup.ListSecurityGroupRulesCount(cts.Kit, vendor, ids)
+		if err != nil {
+			logs.Errorf("list security group rules count from data service failed, err: %v, vendor: %s, ids: %v, rid: %s",
+				err, vendor, ids, cts.Kit.Rid)
+			return nil, err
+		}
+
+		for sgID, count := range resp {
+			result[sgID] = count
+		}
+	}
+	return result, nil
 }
