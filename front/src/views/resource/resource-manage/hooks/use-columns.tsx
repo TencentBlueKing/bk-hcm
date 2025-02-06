@@ -1984,6 +1984,11 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       render: ({ cell }: any) => BILLS_ROOT_ACCOUNT_SUMMARY_STATE_MAP[cell],
     },
     {
+      label: '账单版本',
+      field: 'current_version',
+      isDefaultShow: true,
+    },
+    {
       label: '定帐(人民币-元)',
       isDefaultShow: true,
       children: [
@@ -2076,6 +2081,11 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       field: 'vendor',
       isDefaultShow: true,
       render: ({ cell }: { cell: VendorEnum }) => VendorMap[cell],
+    },
+    {
+      label: '账单版本',
+      field: 'current_version',
+      isDefaultShow: true,
     },
     {
       label: '一级账号名称',
