@@ -24,7 +24,7 @@ import (
 	"fmt"
 
 	"hcm/cmd/cloud-server/logics/audit"
-	cssgproto "hcm/pkg/api/cloud-server/security-group"
+	proto "hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
 	dataproto "hcm/pkg/api/data-service/cloud"
@@ -44,7 +44,7 @@ type Interface interface {
 		*dataproto.SGCommonRelWithCVMListResp, error)
 	ListSGRelLoadBalancer(kt *kit.Kit, sgID string, resBizID int64, oriReq *core.ListReq) (
 		*dataproto.SGCommonRelWithLBListResp, error)
-	ListSGRelBusiness(kt *kit.Kit, currentBizID int64, sgID string) (*cssgproto.ListSGRelBusinessResp, error)
+	ListSGRelBusiness(kt *kit.Kit, currentBizID int64, sgID string) (*proto.ListSGRelBusinessResp, error)
 }
 
 type securityGroup struct {
@@ -140,7 +140,7 @@ func (s *securityGroup) listAllSGRel(kt *kit.Kit, listFilter *filter.Expression,
 // ListSGRelBusiness List the biz IDs that have resources associated with the security group. Group by resource type.
 // Use sg_ID to query res_IDs in the rel table, then use res_IDs to query res bizs.
 func (s *securityGroup) ListSGRelBusiness(kt *kit.Kit, currentBizID int64, sgID string) (
-	*cssgproto.ListSGRelBusinessResp, error) {
+	*proto.ListSGRelBusinessResp, error) {
 
 	relListFilter := tools.EqualExpression("", sgID)
 	relListFields := []string{"res_id", "res_type"}
@@ -187,14 +187,14 @@ func (s *securityGroup) ListSGRelBusiness(kt *kit.Kit, currentBizID int64, sgID 
 		return nil, err
 	}
 
-	return &cssgproto.ListSGRelBusinessResp{
+	return &proto.ListSGRelBusinessResp{
 		CVM:          cvmRelBizs,
 		LoadBalancer: lbRelBizs,
 	}, nil
 }
 
 func (s *securityGroup) listRelBizsWithCVM(kt *kit.Kit, currentBizID int64, cvmIDs []string) (
-	[]cssgproto.ListSGRelBusinessItem, error) {
+	[]proto.ListSGRelBusinessItem, error) {
 
 	relBizMap := make(map[int64]int64)
 	for _, batch := range slice.Split(cvmIDs, int(core.DefaultMaxPageLimit)) {
@@ -219,7 +219,7 @@ func (s *securityGroup) listRelBizsWithCVM(kt *kit.Kit, currentBizID int64, cvmI
 }
 
 func (s *securityGroup) listRelBizsWithLB(kt *kit.Kit, currentBizID int64, lbIDs []string) (
-	[]cssgproto.ListSGRelBusinessItem, error) {
+	[]proto.ListSGRelBusinessItem, error) {
 
 	relBizMap := make(map[int64]int64)
 	for _, batch := range slice.Split(lbIDs, int(core.DefaultMaxPageLimit)) {
@@ -244,7 +244,7 @@ func (s *securityGroup) listRelBizsWithLB(kt *kit.Kit, currentBizID int64, lbIDs
 	return tidySGRelBusiness(currentBizID, relBizMap), nil
 }
 
-func tidySGRelBusiness(currentBizID int64, relBizMap map[int64]int64) []cssgproto.ListSGRelBusinessItem {
+func tidySGRelBusiness(currentBizID int64, relBizMap map[int64]int64) []proto.ListSGRelBusinessItem {
 	var currentBizResC int64
 	if resCount, ok := relBizMap[currentBizID]; ok {
 		currentBizResC = resCount
@@ -252,15 +252,15 @@ func tidySGRelBusiness(currentBizID int64, relBizMap map[int64]int64) []cssgprot
 	}
 
 	// 当前业务必须在列表的第一个
-	relBizs := make([]cssgproto.ListSGRelBusinessItem, 0, len(relBizMap)+1)
+	relBizs := make([]proto.ListSGRelBusinessItem, 0, len(relBizMap)+1)
 	if currentBizID != constant.UnassignedBiz {
-		relBizs[0] = cssgproto.ListSGRelBusinessItem{
+		relBizs[0] = proto.ListSGRelBusinessItem{
 			BkBizID:  currentBizID,
 			ResCount: currentBizResC,
 		}
 	}
 	for bizID, count := range relBizMap {
-		relBizs = append(relBizs, cssgproto.ListSGRelBusinessItem{
+		relBizs = append(relBizs, proto.ListSGRelBusinessItem{
 			BkBizID:  bizID,
 			ResCount: count,
 		})
