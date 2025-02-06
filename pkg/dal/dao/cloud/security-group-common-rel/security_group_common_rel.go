@@ -48,8 +48,8 @@ type Interface interface {
 	ListJoinSecurityGroup(kt *kit.Kit, sgIDs, resIDs []string, resType enumor.CloudResourceType) (
 		*types.ListSGCommonRelsJoinSGDetails, error)
 	ListJoinCVM(kt *kit.Kit, sgIDs []string, opt *types.ListOption) (*types.ListSGCommonRelJoinCVMDetails, error)
-	ListJoinLoadBalancer(kt *kit.Kit, sgIDs []string, opt *types.ListOption) (*types.ListSGCommonRelJoinLBDetails,
-		error)
+	ListJoinLoadBalancer(kt *kit.Kit, sgIDs []string, opt *types.ListOption) (
+		*types.ListSGCommonRelJoinLBDetails, error)
 }
 
 var _ Interface = new(Dao)

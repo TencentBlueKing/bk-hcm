@@ -26,8 +26,10 @@ import (
 	"hcm/cmd/cloud-server/logics/audit"
 	cssgproto "hcm/pkg/api/cloud-server/security-group"
 	"hcm/pkg/api/core"
+	"hcm/pkg/api/core/cloud"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/client"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
@@ -36,7 +38,7 @@ import (
 	"hcm/pkg/tools/slice"
 )
 
-// Interface define disk interface.
+// Interface define security group interface.
 type Interface interface {
 	ListSGRelCVM(kt *kit.Kit, sgID string, resBizID int64, listReq *core.ListReq) (
 		*dataproto.SGCommonRelWithCVMListResp, error)
@@ -108,17 +110,44 @@ func (s *securityGroup) ListSGRelLoadBalancer(kt *kit.Kit, sgID string, resBizID
 	return s.client.DataService().Global.SGCommonRel.ListWithLBSummary(kt, listReq)
 }
 
+func (s *securityGroup) listAllSGRel(kt *kit.Kit, listFilter *filter.Expression, listFields []string) (
+	[]cloud.SecurityGroupCommonRel, error) {
+
+	listReq := &core.ListReq{
+		Fields: listFields,
+		Filter: listFilter,
+		Page:   core.NewDefaultBasePage(),
+	}
+
+	sgRels := make([]cloud.SecurityGroupCommonRel, 0)
+	for {
+		rst, err := s.client.DataService().Global.SGCommonRel.ListSgCommonRels(kt, listReq)
+		if err != nil {
+			logs.Errorf("list security group rel failed, filter: %+v, err: %v, rid: %s", listFilter, err, kt.Rid)
+			return nil, err
+		}
+
+		sgRels = append(sgRels, rst.Details...)
+		if len(rst.Details) < int(listReq.Page.Limit) {
+			break
+		}
+		listReq.Page.Start += uint32(listReq.Page.Limit)
+	}
+
+	return sgRels, nil
+}
+
 // ListSGRelBusiness List the biz IDs that have resources associated with the security group. Group by resource type.
 // Use sg_ID to query res_IDs in the rel table, then use res_IDs to query res bizs.
 func (s *securityGroup) ListSGRelBusiness(kt *kit.Kit, currentBizID int64, sgID string) (
 	*cssgproto.ListSGRelBusinessResp, error) {
 
-	relListReq := &dataproto.SGCommonRelWithSecurityGroupListReq{
-		SGIDs: []string{sgID},
-	}
+	relListFilter := tools.EqualExpression("", sgID)
+	relListFields := []string{"res_id", "res_type"}
 
 	// list security group rel resources
-	sgRelResources, err := s.client.DataService().Global.SGCommonRel.ListWithSecurityGroup(kt, relListReq)
+	// sgRelResources, err := s.client.DataService().Global.SGCommonRel.ListWithSecurityGroup(kt, relListReq)
+	sgRelResources, err := s.listAllSGRel(kt, relListFilter, relListFields)
 	if err != nil {
 		logs.Errorf("list security group rel resources failed, id: %s, err: %v, rid: %s", sgID, err, kt.Rid)
 		return nil, err
@@ -132,7 +161,7 @@ func (s *securityGroup) ListSGRelBusiness(kt *kit.Kit, currentBizID int64, sgID 
 	cvmIDs := make([]string, 0)
 	lbIDs := make([]string, 0)
 
-	for _, relRes := range *sgRelResources {
+	for _, relRes := range sgRelResources {
 		switch relRes.ResType {
 		case enumor.CvmCloudResType:
 			cvmIDs = append(cvmIDs, relRes.ResID)
@@ -170,6 +199,7 @@ func (s *securityGroup) listRelBizsWithCVM(kt *kit.Kit, currentBizID int64, cvmI
 	relBizMap := make(map[int64]int64)
 	for _, batch := range slice.Split(cvmIDs, int(core.DefaultMaxPageLimit)) {
 		req := &core.ListReq{
+			Fields: []string{"bk_biz_id"},
 			Filter: tools.ContainersExpression("id", batch),
 			Page:   core.NewDefaultBasePage(),
 		}
@@ -194,6 +224,7 @@ func (s *securityGroup) listRelBizsWithLB(kt *kit.Kit, currentBizID int64, lbIDs
 	relBizMap := make(map[int64]int64)
 	for _, batch := range slice.Split(lbIDs, int(core.DefaultMaxPageLimit)) {
 		req := &core.ListReq{
+			Fields: []string{"bk_biz_id"},
 			Filter: tools.ContainersExpression("id", batch),
 			Page:   core.NewDefaultBasePage(),
 		}
@@ -222,7 +253,7 @@ func tidySGRelBusiness(currentBizID int64, relBizMap map[int64]int64) []cssgprot
 
 	// 当前业务必须在列表的第一个
 	relBizs := make([]cssgproto.ListSGRelBusinessItem, 0, len(relBizMap)+1)
-	if currentBizID != 0 {
+	if currentBizID != constant.UnassignedBiz {
 		relBizs[0] = cssgproto.ListSGRelBusinessItem{
 			BkBizID:  currentBizID,
 			ResCount: currentBizResC,

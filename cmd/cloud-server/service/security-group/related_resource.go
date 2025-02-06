@@ -21,6 +21,7 @@ package securitygroup
 
 import (
 	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
@@ -116,7 +117,7 @@ func (svc *securityGroupSvc) listCvmIDBySecurityGroup(cts *rest.Contexts, validH
 
 // ListSecurityGroupRelBusiness list security group rel business
 func (svc *securityGroupSvc) ListSecurityGroupRelBusiness(cts *rest.Contexts) (interface{}, error) {
-	return svc.listSecurityGroupRelBusiness(cts, 0, handler.ResOperateAuth)
+	return svc.listSecurityGroupRelBusiness(cts, constant.UnassignedBiz, handler.ResOperateAuth)
 }
 
 // ListBizSecurityGroupRelBusiness list biz security group rel business
