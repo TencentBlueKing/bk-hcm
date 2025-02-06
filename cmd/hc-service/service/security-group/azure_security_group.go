@@ -77,6 +77,8 @@ func (g *securityGroup) CreateAzureSecurityGroup(cts *rest.Contexts) (interface{
 					ResourceGUID:      sg.ResourceGUID,
 				},
 				// Tags:        core.NewTagMap(req.Tags...),
+				MgmtType:    req.MgmtType,
+				MgmtBizID:   req.MgmtBizID,
 				Manager:     req.Manager,
 				BakManager:  req.BakManager,
 				UsageBizIds: req.UsageBizIds},

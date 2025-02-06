@@ -72,6 +72,13 @@ func (svc *securityGroupSvc) createSecurityGroup(cts *rest.Contexts, bizID int64
 		if bizID != req.UsageBizIds[0] || len(req.UsageBizIds) > 1 {
 			return nil, errf.New(errf.InvalidParameter, "usage biz id can only be current biz")
 		}
+		// 业务下只能创建业务管理的安全组 for biz created sg can only be managed by its creator
+		req.MgmtType = enumor.MgmtTypeBiz
+		req.MgmtBizID = bizID
+	} else {
+		// 资源下只能创建平台管理类型
+		req.MgmtType = enumor.MgmtTypePlatform
+		req.MgmtBizID = constant.UnassignedBiz
 	}
 	// check is biz out of account biz scope
 	if err := svc.checkAccountBizScope(cts.Kit, req.AccountID, req.UsageBizIds); err != nil {
@@ -112,6 +119,8 @@ func (svc *securityGroupSvc) createTCloudSecurityGroup(cts *rest.Contexts, bizID
 		Manager:     req.Manager,
 		BakManager:  req.BakManager,
 		UsageBizIds: req.UsageBizIds,
+		MgmtType:    req.MgmtType,
+		MgmtBizID:   req.MgmtBizID,
 	}
 	result, err := svc.client.HCService().TCloud.SecurityGroup.CreateSecurityGroup(cts.Kit.Ctx,
 		cts.Kit.Header(), createReq)
@@ -139,6 +148,8 @@ func (svc *securityGroupSvc) createAwsSecurityGroup(cts *rest.Contexts, bizID in
 		BkBizID:    bizID,
 		CloudVpcID: extension.CloudVpcID,
 		// Tags:        req.Tags,
+		MgmtType:    req.MgmtType,
+		MgmtBizID:   req.MgmtBizID,
 		Manager:     req.Manager,
 		BakManager:  req.BakManager,
 		UsageBizIds: req.UsageBizIds,
@@ -163,6 +174,8 @@ func (svc *securityGroupSvc) createHuaWeiSecurityGroup(cts *rest.Contexts, bizID
 		AccountID: req.AccountID,
 		BkBizID:   bizID,
 		// Tags:        req.Tags,
+		MgmtType:    req.MgmtType,
+		MgmtBizID:   req.MgmtBizID,
 		Manager:     req.Manager,
 		BakManager:  req.BakManager,
 		UsageBizIds: req.UsageBizIds,
@@ -198,6 +211,8 @@ func (svc *securityGroupSvc) createAzureSecurityGroup(cts *rest.Contexts, bizID 
 		BkBizID:           bizID,
 		ResourceGroupName: extension.ResourceGroupName,
 		// Tags:        req.Tags,
+		MgmtType:    req.MgmtType,
+		MgmtBizID:   req.MgmtBizID,
 		Manager:     req.Manager,
 		BakManager:  req.BakManager,
 		UsageBizIds: req.UsageBizIds,

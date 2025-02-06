@@ -76,6 +76,8 @@ func (g *securityGroup) CreateHuaWeiSecurityGroup(cts *rest.Contexts) (interface
 					CloudEnterpriseProjectID: sg.EnterpriseProjectId,
 				},
 				// Tags:        core.NewTagMap(req.Tags...),
+				MgmtType:    req.MgmtType,
+				MgmtBizID:   req.MgmtBizID,
 				Manager:     req.Manager,
 				BakManager:  req.BakManager,
 				UsageBizIds: req.UsageBizIds,

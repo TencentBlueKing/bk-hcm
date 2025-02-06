@@ -84,6 +84,8 @@ func (g *securityGroup) CreateTCloudSecurityGroup(cts *rest.Contexts) (interface
 					CloudProjectID: sg.ProjectId,
 				},
 				Tags:        core.NewTagMap(req.Tags...),
+				MgmtType:    req.MgmtType,
+				MgmtBizID:   req.MgmtBizID,
 				Manager:     req.Manager,
 				BakManager:  req.BakManager,
 				UsageBizIds: req.UsageBizIds,

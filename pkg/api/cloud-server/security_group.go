@@ -47,6 +47,9 @@ type SecurityGroupCreateReq struct {
 	BakManager  string         `json:"bak_manager" validate:"required"`
 	UsageBizIds []int64        `json:"usage_biz_ids" validate:"omitempty"`
 	Tags        []core.TagPair `json:"tags,omitempty"`
+	// internal fields
+	MgmtType  enumor.MgmtType `json:"-" validate:"omitempty"`
+	MgmtBizID int64           `json:"-" validate:"omitempty"`
 }
 
 // Validate security group create request.

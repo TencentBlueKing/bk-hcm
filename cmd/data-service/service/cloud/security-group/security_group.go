@@ -515,11 +515,12 @@ func batchCreateSecurityGroup[T corecloud.SecurityGroupExtension](vendor enumor.
 				Reviser:          cts.Kit.User,
 			})
 		}
-		// 创建使用业务关联关系
 		ids, err := svc.dao.SecurityGroup().BatchCreateWithTx(cts.Kit, txn, sgs)
 		if err != nil {
 			return nil, fmt.Errorf("create security group failed, err: %v", err)
 		}
+
+		// 创建使用业务关联关系
 		for i := range ids {
 			id := ids[i]
 			sg := req.SecurityGroups[i]
@@ -534,8 +535,10 @@ func batchCreateSecurityGroup[T corecloud.SecurityGroupExtension](vendor enumor.
 				})
 			}
 		}
-		if err := svc.dao.ResUsageBizRel().BatchCreateWithTx(cts.Kit, txn, usageRels); err != nil {
-			return nil, fmt.Errorf("create security group usage biz rel failed, err: %v", err)
+		if len(usageRels) > 0 {
+			if err := svc.dao.ResUsageBizRel().BatchCreateWithTx(cts.Kit, txn, usageRels); err != nil {
+				return nil, fmt.Errorf("create security group usage biz rel failed, err: %v", err)
+			}
 		}
 		return ids, nil
 	})
