@@ -22,11 +22,14 @@ package securitygroup
 import (
 	"hcm/cmd/cloud-server/service/common"
 	proto "hcm/pkg/api/cloud-server"
+	"hcm/pkg/api/core"
 	hcproto "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/assert"
@@ -60,6 +63,21 @@ func (svc *securityGroupSvc) createSecurityGroup(cts *rest.Contexts, bizID int64
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	if bizID > 0 {
+		// ensure usage biz id is empty or contains only current biz id
+		if len(req.UsageBizIds) == 0 {
+			// prepend current biz id to usage biz ids list
+			req.UsageBizIds = []int64{bizID}
+		}
+		if bizID != req.UsageBizIds[0] || len(req.UsageBizIds) > 1 {
+			return nil, errf.New(errf.InvalidParameter, "usage biz id can only be current biz")
+		}
+	}
+	// check is biz out of account biz scope
+	if err := svc.checkAccountBizScope(cts.Kit, req.AccountID, req.UsageBizIds); err != nil {
+		return nil, err
+	}
+
 	// validate  authorize
 	err := validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
 		Action: meta.Create, BasicInfo: common.GetCloudResourceBasicInfo(req.AccountID, bizID)})
@@ -85,11 +103,15 @@ func (svc *securityGroupSvc) createTCloudSecurityGroup(cts *rest.Contexts, bizID
 	req *proto.SecurityGroupCreateReq) (interface{}, error) {
 
 	createReq := &hcproto.TCloudSecurityGroupCreateReq{
-		Region:    req.Region,
-		Name:      req.Name,
-		Memo:      req.Memo,
-		AccountID: req.AccountID,
-		BkBizID:   bizID,
+		Region:      req.Region,
+		Name:        req.Name,
+		Memo:        req.Memo,
+		AccountID:   req.AccountID,
+		BkBizID:     bizID,
+		Tags:        req.Tags,
+		Manager:     req.Manager,
+		BakManager:  req.BakManager,
+		UsageBizIds: req.UsageBizIds,
 	}
 	result, err := svc.client.HCService().TCloud.SecurityGroup.CreateSecurityGroup(cts.Kit.Ctx,
 		cts.Kit.Header(), createReq)
@@ -116,6 +138,10 @@ func (svc *securityGroupSvc) createAwsSecurityGroup(cts *rest.Contexts, bizID in
 		AccountID:  req.AccountID,
 		BkBizID:    bizID,
 		CloudVpcID: extension.CloudVpcID,
+		// Tags:        req.Tags,
+		Manager:     req.Manager,
+		BakManager:  req.BakManager,
+		UsageBizIds: req.UsageBizIds,
 	}
 	result, err := svc.client.HCService().Aws.SecurityGroup.CreateSecurityGroup(cts.Kit.Ctx,
 		cts.Kit.Header(), createReq)
@@ -136,6 +162,10 @@ func (svc *securityGroupSvc) createHuaWeiSecurityGroup(cts *rest.Contexts, bizID
 		Memo:      req.Memo,
 		AccountID: req.AccountID,
 		BkBizID:   bizID,
+		// Tags:        req.Tags,
+		Manager:     req.Manager,
+		BakManager:  req.BakManager,
+		UsageBizIds: req.UsageBizIds,
 	}
 	result, err := svc.client.HCService().HuaWei.SecurityGroup.CreateSecurityGroup(cts.Kit.Ctx,
 		cts.Kit.Header(), createReq)
@@ -167,6 +197,10 @@ func (svc *securityGroupSvc) createAzureSecurityGroup(cts *rest.Contexts, bizID 
 		AccountID:         req.AccountID,
 		BkBizID:           bizID,
 		ResourceGroupName: extension.ResourceGroupName,
+		// Tags:        req.Tags,
+		Manager:     req.Manager,
+		BakManager:  req.BakManager,
+		UsageBizIds: req.UsageBizIds,
 	}
 	result, err := svc.client.HCService().Azure.SecurityGroup.CreateSecurityGroup(cts.Kit.Ctx,
 		cts.Kit.Header(), createReq)
@@ -192,5 +226,47 @@ func (svc *securityGroupSvc) checkAzureSGParams(req *proto.SecurityGroupCreateRe
 		return errf.New(errf.InvalidParameter, "resource_group_name can only be lowercase")
 	}
 
+	return nil
+}
+
+// check given bizIDs in given account biz scope, return error if any given bizIDs not in account biz scope
+func (svc *securityGroupSvc) checkAccountBizScope(kt *kit.Kit, accountID string, bizIDs []int64) error {
+
+	reqBizMap := make(map[int64]struct{}, len(bizIDs))
+	for _, bizID := range bizIDs {
+		reqBizMap[bizID] = struct{}{}
+	}
+
+	bizRelReq := &core.ListReq{
+		Filter: tools.EqualExpression("account_id", accountID),
+		Page:   core.NewDefaultBasePage(),
+	}
+	for {
+		relResp, err := svc.client.DataService().Global.Account.ListAccountBizRel(kt.Ctx, kt.Header(), bizRelReq)
+		if err != nil {
+			return err
+		}
+		for i := range relResp.Details {
+			rel := relResp.Details[i]
+			if rel.BkBizID == constant.UnassignedBiz {
+				// for -1 means no biz restriction, should match any given usage biz
+				return nil
+			}
+			if _, ok := reqBizMap[rel.BkBizID]; ok {
+				delete(reqBizMap, rel.BkBizID)
+			}
+			if len(reqBizMap) == 0 {
+				// all requested biz in account's biz scope, return no error
+				return nil
+			}
+		}
+
+		if uint(len(relResp.Details)) < bizRelReq.Page.Limit {
+			break
+		}
+	}
+	if len(reqBizMap) > 0 {
+		return errf.Newf(errf.InvalidParameter, "some biz not in account %s's biz scope", accountID)
+	}
 	return nil
 }

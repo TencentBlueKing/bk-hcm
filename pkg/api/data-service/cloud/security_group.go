@@ -51,6 +51,7 @@ type SecurityGroupBatchCreate[Extension cloud.SecurityGroupExtension] struct {
 	Manager          string      `json:"manager" validate:"lte=64"`
 	BakManager       string      `json:"bak_manager" validate:"lte=64"`
 	Extension        *Extension  `json:"extension" validate:"required"`
+	UsageBizIds      []int64     `json:"usage_biz_ids" validate:"omitempty"`
 	CloudCreatedTime string      `json:"cloud_created_time" validate:"required"`
 	CloudUpdateTime  string      `json:"cloud_update_time" validate:"required"`
 	Tags             core.TagMap `json:"tags" validate:"required"`
