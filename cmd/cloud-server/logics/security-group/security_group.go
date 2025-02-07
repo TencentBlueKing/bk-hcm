@@ -142,11 +142,10 @@ func (s *securityGroup) listAllSGRel(kt *kit.Kit, listFilter *filter.Expression,
 func (s *securityGroup) ListSGRelBusiness(kt *kit.Kit, currentBizID int64, sgID string) (
 	*proto.ListSGRelBusinessResp, error) {
 
-	relListFilter := tools.EqualExpression("", sgID)
+	relListFilter := tools.EqualExpression("security_group_id", sgID)
 	relListFields := []string{"res_id", "res_type"}
 
 	// list security group rel resources
-	// sgRelResources, err := s.client.DataService().Global.SGCommonRel.ListWithSecurityGroup(kt, relListReq)
 	sgRelResources, err := s.listAllSGRel(kt, relListFilter, relListFields)
 	if err != nil {
 		logs.Errorf("list security group rel resources failed, id: %s, err: %v, rid: %s", sgID, err, kt.Rid)
