@@ -72,11 +72,11 @@ func (svc *securityGroupSvc) createSecurityGroup(cts *rest.Contexts, bizID int64
 		if bizID != req.UsageBizIds[0] || len(req.UsageBizIds) > 1 {
 			return nil, errf.New(errf.InvalidParameter, "usage biz id can only be current biz")
 		}
-		// 业务下只能创建业务管理的安全组 for biz created sg can only be managed by its creator
+		// 业务下只能创建业务管理的安全组 only business-managed security groups can be created under business
 		req.MgmtType = enumor.MgmtTypeBiz
 		req.MgmtBizID = bizID
 	} else {
-		// 资源下只能创建平台管理类型
+		// 资源下只能创建平台管理类型 only platform-managed security groups can be created under resource
 		req.MgmtType = enumor.MgmtTypePlatform
 		req.MgmtBizID = constant.UnassignedBiz
 	}
@@ -279,6 +279,7 @@ func (svc *securityGroupSvc) checkAccountBizScope(kt *kit.Kit, accountID string,
 		if uint(len(relResp.Details)) < bizRelReq.Page.Limit {
 			break
 		}
+		bizRelReq.Page.Start += uint32(bizRelReq.Page.Limit)
 	}
 	if len(reqBizMap) > 0 {
 		return errf.Newf(errf.InvalidParameter, "some biz not in account %s's biz scope", accountID)
