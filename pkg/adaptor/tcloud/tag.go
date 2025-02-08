@@ -32,7 +32,7 @@ import (
 
 // ListTags list tag list
 // reference: https://cloud.tencent.com/document/api/651/72275
-func (t *TCloudImpl) ListTags(kt *kit.Kit, listOpt typestag.TCloudTagListOpt) (*typestag.TCloudTagListResult, error) {
+func (t *TCloudImpl) ListTags(kt *kit.Kit, listOpt *typestag.TCloudTagListOpt) (*typestag.TCloudTagListResult, error) {
 	tagClient, err := t.clientSet.TagClient()
 	if err != nil {
 		return nil, fmt.Errorf("new tag client failed, err: %v", err)
@@ -58,9 +58,10 @@ func (t *TCloudImpl) ListTags(kt *kit.Kit, listOpt typestag.TCloudTagListOpt) (*
 	return &typestag.TCloudTagListResult{PaginationToken: resp.Response.PaginationToken, Details: details}, nil
 }
 
-// TagResources 为指定的多个云产品的多个云资源统一创建并绑定标签。给多个资源-打多个标签，已有同名key会覆盖对应values
+// TagResources 为指定的多个云产品的多个云资源统一创建并绑定标签。给多个资源-打多个标签，已有标签会用新的值覆盖，不存在的标签或者值会自动创建
+// 注：该接口需绑定标签的资源不存在也不会报错
 // reference: https://cloud.tencent.com/document/api/651/72280
-func (t *TCloudImpl) TagResources(kt *kit.Kit, tagOpt typestag.TCloudTagResourcesReq) (
+func (t *TCloudImpl) TagResources(kt *kit.Kit, tagOpt *typestag.TCloudTagResOpt) (
 	*typestag.TCloudTagResourcesResp, error) {
 
 	tagClient, err := t.clientSet.TagClient()

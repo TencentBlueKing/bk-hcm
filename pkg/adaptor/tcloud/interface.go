@@ -199,6 +199,6 @@ type TCloud interface {
 
 	BatchCvmAssociateSecurityGroups(kt *kit.Kit, opt *cvm.TCloudAssociateSecurityGroupsOption) error
 
-	ListTags(kt *kit.Kit, listOpt typestag.TCloudTagListOpt) (*typestag.TCloudTagListResult, error)
-	TagResources(kt *kit.Kit, tagOpt typestag.TCloudTagResourcesReq) (*typestag.TCloudTagResourcesResp, error)
+	ListTags(kt *kit.Kit, listOpt *typestag.TCloudTagListOpt) (*typestag.TCloudTagListResult, error)
+	TagResources(kt *kit.Kit, tagOpt *typestag.TCloudTagResOpt) (*typestag.TCloudTagResourcesResp, error)
 }

@@ -44,8 +44,8 @@ type TCloudTagListResult struct {
 	PaginationToken *string     `json:"pagination_token,omitempty"`
 }
 
-// TCloudTagResourcesReq tag resources request
-type TCloudTagResourcesReq struct {
+// TCloudTagResOpt tag resources option
+type TCloudTagResOpt struct {
 
 	// 待绑定的云资源，用标准的资源六段式表示。正确的资源六段式请参考：
 	// [标准的资源六段式](https://cloud.tencent.com/document/product/598/10606)和
