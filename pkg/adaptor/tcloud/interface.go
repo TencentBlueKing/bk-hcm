@@ -201,6 +201,6 @@ type TCloud interface {
 
 	CloneSecurityGroup(kt *kit.Kit, opt *securitygroup.TCloudSecurityGroupCloneOption) (*v20170312.SecurityGroup, error)
 
-	ListTags(kt *kit.Kit, listOpt typestag.TCloudTagListOpt) (*typestag.TCloudTagListResult, error)
-	TagResources(kt *kit.Kit, tagOpt typestag.TCloudTagResourcesReq) (*typestag.TCloudTagResourcesResp, error)
+	ListTags(kt *kit.Kit, listOpt *typestag.TCloudTagListOpt) (*typestag.TCloudTagListResult, error)
+	TagResources(kt *kit.Kit, tagOpt *typestag.TCloudTagResOpt) (*typestag.TCloudTagResourcesResp, error)
 }
