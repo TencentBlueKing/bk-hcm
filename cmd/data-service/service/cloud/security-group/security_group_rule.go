@@ -33,8 +33,8 @@ import (
 	"hcm/pkg/tools/slice"
 )
 
-// ListSecurityGroupRulesCount list security group rules count
-func (svc *securityGroupSvc) ListSecurityGroupRulesCount(cts *rest.Contexts) (interface{}, error) {
+// CountSecurityGroupRules list security group rules count
+func (svc *securityGroupSvc) CountSecurityGroupRules(cts *rest.Contexts) (interface{}, error) {
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -58,7 +58,7 @@ func (svc *securityGroupSvc) ListSecurityGroupRulesCount(cts *rest.Contexts) (in
 	case enumor.Azure:
 		return svc.listAzureSecurityGroupRulesCount(cts.Kit, req.SecurityGroupIDs)
 	default:
-		return nil, fmt.Errorf("unsupport %s vendor for ListSecurityGroupRulesCount", vendor)
+		return nil, fmt.Errorf("unsupport %s vendor for CountSecurityGroupRules", vendor)
 	}
 }
 

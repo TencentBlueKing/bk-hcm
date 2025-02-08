@@ -229,13 +229,13 @@ var azureDefaultSGRuleMap = map[enumor.SecurityGroupRuleType][]AzureDefaultSGRul
 	},
 }
 
-// ListSecurityGroupRulesCount list security group rules count.
-func (svc *securityGroupSvc) ListSecurityGroupRulesCount(cts *rest.Contexts) (interface{}, error) {
+// CountSecurityGroupRules list security group rules count.
+func (svc *securityGroupSvc) CountSecurityGroupRules(cts *rest.Contexts) (interface{}, error) {
 	return svc.listSGRulesCount(cts, handler.ResOperateAuth)
 }
 
-// ListBizSecurityGroupRulesCount list biz security group rules count.
-func (svc *securityGroupSvc) ListBizSecurityGroupRulesCount(cts *rest.Contexts) (interface{}, error) {
+// CountBizSecurityGroupRules list biz security group rules count.
+func (svc *securityGroupSvc) CountBizSecurityGroupRules(cts *rest.Contexts) (interface{}, error) {
 	return svc.listSGRulesCount(cts, handler.BizOperateAuth)
 }
 
@@ -273,7 +273,7 @@ func (svc *securityGroupSvc) listSGRulesCount(cts *rest.Contexts, validHandler h
 
 	result := make(map[string]int64)
 	for vendor, ids := range vendorToSGIDMap {
-		resp, err := svc.client.DataService().Global.SecurityGroup.ListSecurityGroupRulesCount(cts.Kit, vendor, ids)
+		resp, err := svc.client.DataService().Global.SecurityGroup.CountSecurityGroupRules(cts.Kit, vendor, ids)
 		if err != nil {
 			logs.Errorf("list security group rules count from data service failed, err: %v, vendor: %s, ids: %v, rid: %s",
 				err, vendor, ids, cts.Kit.Rid)

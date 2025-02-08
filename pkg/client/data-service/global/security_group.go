@@ -117,8 +117,8 @@ func (cli *SecurityGroupClient) BatchUpdateSecurityGroupCommonInfo(ctx context.C
 	return nil
 }
 
-// ListSecurityGroupRulesCount list security group rules count.
-func (cli *SecurityGroupClient) ListSecurityGroupRulesCount(kt *kit.Kit, vendor enumor.Vendor, ids []string) (
+// CountSecurityGroupRules list security group rules count.
+func (cli *SecurityGroupClient) CountSecurityGroupRules(kt *kit.Kit, vendor enumor.Vendor, ids []string) (
 	protocloud.ListSecurityGroupRuleCountResp, error) {
 
 	req := &protocloud.ListSecurityGroupRuleCountReq{
@@ -131,14 +131,7 @@ func (cli *SecurityGroupClient) ListSecurityGroupRulesCount(kt *kit.Kit, vendor 
 		return nil, err
 	}
 	if resp == nil {
-		return nil, fmt.Errorf("ListSecurityGroupRulesCount response is nil")
+		return nil, fmt.Errorf("CountSecurityGroupRules response is nil")
 	}
 	return *resp, nil
-	return map[string]int64{
-		"00000001": 1,
-		"00000003": 1,
-		"00000004": 1,
-		"00000012": 1,
-		"00000021": 1,
-	}, nil
 }
