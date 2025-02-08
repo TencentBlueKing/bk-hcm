@@ -110,12 +110,13 @@ func (svc *cvmSvc) listCvmSecurityGroupRules(kt *kit.Kit, vendor enumor.Vendor, 
 func (svc *cvmSvc) checkCvmAndSecurityGroupRel(kt *kit.Kit, cvmID, sgID string) error {
 	checkReq := &core.ListReq{
 		Filter: tools.ExpressionAnd(
-			tools.RuleEqual("cvm_id", cvmID),
+			tools.RuleEqual("res_id", cvmID),
 			tools.RuleEqual("security_group_id", sgID),
+			tools.RuleEqual("res_type", enumor.CvmCloudResType),
 		),
 		Page: core.NewCountPage(),
 	}
-	rels, err := svc.client.DataService().Global.SGCvmRel.ListSgCvmRels(kt.Ctx, kt.Header(), checkReq)
+	rels, err := svc.client.DataService().Global.SGCommonRel.ListSgCommonRels(kt, checkReq)
 	if err != nil {
 		logs.Errorf("check cvm and security group relation failed, err: %v, rid: %s", err, kt.Rid)
 		return err

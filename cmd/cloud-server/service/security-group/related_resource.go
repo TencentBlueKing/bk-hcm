@@ -70,15 +70,18 @@ func (svc *securityGroupSvc) listResourceIdBySecurityGroup(cts *rest.Contexts, v
 }
 
 // ListCvmIdBySecurityGroup list cvm id by security group
+// Deprecated: table[security_group_cvm_rel] is deprecated. Use ListResourceIdBySecurityGroup instead.
 func (svc *securityGroupSvc) ListCvmIdBySecurityGroup(cts *rest.Contexts) (interface{}, error) {
 	return svc.listCvmIDBySecurityGroup(cts, handler.ResOperateAuth)
 }
 
 // ListBizCvmIdBySecurityGroup list biz cvm id by security group
+// Deprecated: table[security_group_cvm_rel] is deprecated. Use ListBizResourceIDBySecurityGroup instead.
 func (svc *securityGroupSvc) ListBizCvmIdBySecurityGroup(cts *rest.Contexts) (interface{}, error) {
 	return svc.listCvmIDBySecurityGroup(cts, handler.BizOperateAuth)
 }
 
+// Deprecated: table[security_group_cvm_rel] is deprecated.
 func (svc *securityGroupSvc) listCvmIDBySecurityGroup(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 	id := cts.PathParameter("id").String()
 	if len(id) == 0 {
