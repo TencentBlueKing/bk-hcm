@@ -34,9 +34,11 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/traces"
 
 	"github.com/emicklei/go-restful/v3"
 	prm "github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel/codes"
 )
 
 var once sync.Once
@@ -137,15 +139,22 @@ func (r *Handler) wrapperAction(action *action) func(req *restful.Request, resp 
 			return
 		}
 
+		cts.Kit = kt
+		req.Request = req.Request.WithContext(kt.Ctx)
+
+		ctx, span := traces.StartReq(req, action.Alias)
+		kt.Ctx = ctx
+		defer span.End()
+
 		defer func() {
 			if fatalErr := recover(); fatalErr != nil {
+				span.SetStatus(codes.Error, fmt.Sprintf("%v", fatalErr))
+
 				cts.respError(fmt.Errorf("panic err: %v", fatalErr))
 				logs.Errorf("[hcm server panic], err: %v, rid: %s, debug strace: %s", fatalErr, kt.Rid, debug.Stack())
 				logs.CloseLogs()
 			}
 		}()
-
-		cts.Kit = kt
 
 		// print request log when log level is 4 or request is write request
 		if (bool(logs.V(4)) || (!strings.Contains(req.Request.URL.Path, "/list/") &&
@@ -184,11 +193,13 @@ func (r *Handler) wrapperAction(action *action) func(req *restful.Request, resp 
 				cts.respError(err)
 			}
 
+			span.SetStatus(codes.Error, err.Error())
 			restMetric.errCounter.With(prm.Labels{"alias": action.Alias, "biz": cts.bizID}).Inc()
 			return
 		}
 
 		cts.respEntity(reply)
+		span.SetStatus(codes.Ok, "")
 
 		restMetric.lagMS.With(prm.Labels{"alias": action.Alias, "biz": cts.bizID}).
 			Observe(float64(time.Since(start).Milliseconds()))

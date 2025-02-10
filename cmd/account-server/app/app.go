@@ -21,6 +21,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"strconv"
@@ -33,12 +34,13 @@ import (
 	"hcm/pkg/runtime/ctl"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
+	"hcm/pkg/traces"
 )
 
 // Run start the account server.
-func Run(opt *options.Option) error {
+func Run(ctx context.Context, opt *options.Option) error {
 	as := new(accountServer)
-	if err := as.prepare(opt); err != nil {
+	if err := as.prepare(ctx, opt); err != nil {
 		return err
 	}
 
@@ -61,7 +63,7 @@ type accountServer struct {
 }
 
 // prepare do prepare jobs before run api discover.
-func (ds *accountServer) prepare(opt *options.Option) error {
+func (ds *accountServer) prepare(ctx context.Context, opt *options.Option) error {
 	// load settings from config file.
 	if err := cc.LoadSettings(opt.Sys); err != nil {
 		return fmt.Errorf("load settings from config files failed, err: %v", err)
@@ -70,6 +72,15 @@ func (ds *accountServer) prepare(opt *options.Option) error {
 	logs.InitLogger(cc.AccountServer().Log.Logs())
 
 	logs.Infof("load settings from config file success.")
+
+	// init trace
+	if cc.AccountServer().Trace.Enabled {
+		if err := traces.InitTracer(ctx, cc.AccountServer().Trace.ToTraceOption()); err != nil {
+			logs.Errorf("init tracer failed, err: %v", err)
+			return err
+		}
+		logs.Infof("init tracer success.")
+	}
 
 	// init metrics
 	network := cc.AccountServer().Network
