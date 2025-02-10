@@ -76,7 +76,12 @@ func (g *securityGroup) CreateAzureSecurityGroup(cts *rest.Contexts) (interface{
 					FlushConnection:   sg.FlushConnection,
 					ResourceGUID:      sg.ResourceGUID,
 				},
-			},
+				// Tags:        core.NewTagMap(req.Tags...),
+				MgmtType:    req.MgmtType,
+				MgmtBizID:   req.MgmtBizID,
+				Manager:     req.Manager,
+				BakManager:  req.BakManager,
+				UsageBizIds: req.UsageBizIds},
 		},
 	}
 	result, err := g.dataCli.Azure.SecurityGroup.BatchCreateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), createReq)

@@ -85,7 +85,12 @@ func (g *securityGroup) CreateTCloudSecurityGroup(cts *rest.Contexts) (interface
 				Extension: &corecloud.TCloudSecurityGroupExtension{
 					CloudProjectID: sg.ProjectId,
 				},
-				Tags: core.NewTagMap(req.Tags...),
+				Tags:        core.NewTagMap(req.Tags...),
+				MgmtType:    req.MgmtType,
+				MgmtBizID:   req.MgmtBizID,
+				Manager:     req.Manager,
+				BakManager:  req.BakManager,
+				UsageBizIds: req.UsageBizIds,
 			}},
 	}
 	result, err := g.dataCli.TCloud.SecurityGroup.BatchCreateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), createReq)

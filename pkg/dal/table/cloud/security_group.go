@@ -66,7 +66,7 @@ type SecurityGroupTable struct {
 	Name             string          `db:"name" json:"name" validate:"lte=255"`
 	Memo             *string         `db:"memo" json:"memo" validate:"omitempty,lte=255"`
 	AccountID        string          `db:"account_id" json:"account_id" validate:"lte=64"`
-	MgmtType         string          `db:"mgmt_type" json:"mgmt_type" validate:"lte=64"`
+	MgmtType         enumor.MgmtType `db:"mgmt_type" json:"mgmt_type" validate:"lte=64"`
 	MgmtBizID        int64           `db:"mgmt_biz_id" json:"mgmt_biz_id" `
 	Manager          string          `db:"manager" json:"manager" validate:"lte=64"`
 	BakManager       string          `db:"bak_manager" json:"bak_manager" validate:"lte=64"`

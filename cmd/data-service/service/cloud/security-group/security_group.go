@@ -488,6 +488,7 @@ func batchCreateSecurityGroup[T corecloud.SecurityGroupExtension](vendor enumor.
 
 	result, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		sgs := make([]*tablecloud.SecurityGroupTable, 0, len(req.SecurityGroups))
+		usageRels := make([]*tablecloud.ResUsageBizRelTable, 0, len(req.SecurityGroups))
 		for _, sg := range req.SecurityGroups {
 			extension, err := json.MarshalToString(sg.Extension)
 			if err != nil {
@@ -514,12 +515,31 @@ func batchCreateSecurityGroup[T corecloud.SecurityGroupExtension](vendor enumor.
 				Reviser:          cts.Kit.User,
 			})
 		}
-
 		ids, err := svc.dao.SecurityGroup().BatchCreateWithTx(cts.Kit, txn, sgs)
 		if err != nil {
 			return nil, fmt.Errorf("create security group failed, err: %v", err)
 		}
 
+		// 创建使用业务关联关系
+		for i := range ids {
+			id := ids[i]
+			sg := req.SecurityGroups[i]
+			for _, bizId := range sg.UsageBizIds {
+				usageRels = append(usageRels, &tablecloud.ResUsageBizRelTable{
+					ResType:    enumor.SecurityGroupCloudResType,
+					ResID:      id,
+					UsageBizID: bizId,
+					ResVendor:  vendor,
+					ResCloudID: sg.CloudID,
+					RelCreator: cts.Kit.User,
+				})
+			}
+		}
+		if len(usageRels) > 0 {
+			if err := svc.dao.ResUsageBizRel().BatchCreateWithTx(cts.Kit, txn, usageRels); err != nil {
+				return nil, fmt.Errorf("create security group usage biz rel failed, err: %v", err)
+			}
+		}
 		return ids, nil
 	})
 	if err != nil {
@@ -560,6 +580,7 @@ func (svc *securityGroupSvc) BatchUpdateSecurityGroupCommonInfo(cts *rest.Contex
 // ListSecurityGroupExt list security group with extension.
 func (svc *securityGroupSvc) ListSecurityGroupExt(cts *rest.Contexts) (interface{}, error) {
 	vendor := enumor.Vendor(cts.Request.PathParameter("vendor"))
+
 	if err := vendor.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}

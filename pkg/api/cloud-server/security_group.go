@@ -42,6 +42,14 @@ type SecurityGroupCreateReq struct {
 	Name      string          `json:"name" validate:"required"`
 	Memo      *string         `json:"memo" validate:"omitempty"`
 	Extension json.RawMessage `json:"extension" validate:"omitempty"`
+
+	Manager     string         `json:"manager" validate:"required"`
+	BakManager  string         `json:"bak_manager" validate:"required"`
+	UsageBizIds []int64        `json:"usage_biz_ids" validate:"omitempty"`
+	Tags        []core.TagPair `json:"tags,omitempty"`
+	// internal fields
+	MgmtType  enumor.MgmtType `json:"-" validate:"omitempty"`
+	MgmtBizID int64           `json:"-" validate:"omitempty"`
 }
 
 // Validate security group create request.

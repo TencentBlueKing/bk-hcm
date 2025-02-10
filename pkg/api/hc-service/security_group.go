@@ -24,6 +24,7 @@ import (
 
 	apicore "hcm/pkg/api/core"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 )
 
@@ -38,6 +39,12 @@ type TCloudSecurityGroupCreateReq struct {
 	BkBizID   int64   `json:"bk_biz_id" validate:"required"`
 
 	Tags []apicore.TagPair `json:"tags,omitempty"`
+
+	MgmtType    enumor.MgmtType `json:"mgmt_type" validate:"required"`
+	MgmtBizID   int64           `json:"mgmt_biz_id" validate:"required"`
+	Manager     string          `json:"manager" validate:"required"`
+	BakManager  string          `json:"bak_manager" validate:"required"`
+	UsageBizIds []int64         `json:"usage_biz_ids" validate:"omitempty"`
 }
 
 // Validate tcloud security group create request.
@@ -52,6 +59,12 @@ type HuaWeiSecurityGroupCreateReq struct {
 	Memo      *string `json:"memo" validate:"omitempty"`
 	AccountID string  `json:"account_id" validate:"required"`
 	BkBizID   int64   `json:"bk_biz_id" validate:"required"`
+
+	MgmtType    enumor.MgmtType `json:"mgmt_type" validate:"required"`
+	MgmtBizID   int64           `json:"mgmt_biz_id" validate:"required"`
+	Manager     string          `json:"manager" validate:"required"`
+	BakManager  string          `json:"bak_manager" validate:"required"`
+	UsageBizIds []int64         `json:"usage_biz_ids" validate:"omitempty"`
 }
 
 // Validate tcloud security group create request.
@@ -67,6 +80,13 @@ type AwsSecurityGroupCreateReq struct {
 	AccountID  string  `json:"account_id" validate:"required"`
 	BkBizID    int64   `json:"bk_biz_id" validate:"required"`
 	CloudVpcID string  `json:"cloud_vpc_id" validate:"required"`
+
+	MgmtType    enumor.MgmtType   `json:"mgmt_type" validate:"required"`
+	MgmtBizID   int64             `json:"mgmt_biz_id" validate:"required"`
+	Manager     string            `json:"manager" validate:"required"`
+	BakManager  string            `json:"bak_manager" validate:"required"`
+	UsageBizIds []int64           `json:"usage_biz_ids" validate:"omitempty"`
+	Tags        []apicore.TagPair `json:"tags,omitempty"`
 }
 
 // Validate tcloud security group create request.
@@ -82,6 +102,13 @@ type AzureSecurityGroupCreateReq struct {
 	AccountID         string  `json:"account_id" validate:"required"`
 	BkBizID           int64   `json:"bk_biz_id" validate:"required"`
 	ResourceGroupName string  `json:"resource_group_name" validate:"required"`
+
+	MgmtType    enumor.MgmtType   `json:"mgmt_type" validate:"required"`
+	MgmtBizID   int64             `json:"mgmt_biz_id" validate:"required"`
+	Manager     string            `json:"manager" validate:"required"`
+	BakManager  string            `json:"bak_manager" validate:"required"`
+	UsageBizIds []int64           `json:"usage_biz_ids" validate:"omitempty"`
+	Tags        []apicore.TagPair `json:"tags,omitempty"`
 }
 
 // Validate tcloud security group create request.
