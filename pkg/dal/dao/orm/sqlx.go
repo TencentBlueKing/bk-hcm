@@ -23,10 +23,15 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
+
+	"hcm/pkg/tools/runtimes"
+	"hcm/pkg/traces"
 
 	"github.com/jmoiron/sqlx"
 	prm "github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel/codes"
 )
 
 var (
@@ -34,6 +39,11 @@ var (
 	// Occurs only when attempting to query the database with a struct,
 	// querying with a slice won't return this error.
 	ErrRecordNotFound = sql.ErrNoRows
+)
+
+const (
+	// ormRuntimeSkip is the runtimes skip value, for getting the caller of ORM functions.
+	ormRuntimeSkip = 1
 )
 
 var _ DoOrm = new(do)
@@ -44,10 +54,22 @@ type do struct {
 }
 
 // Select a collection of data, and decode into dest *[]struct{}.
-func (do *do) Select(ctx context.Context, dest interface{}, expr string, arg map[string]interface{}) error {
-	if err := do.ro.tryAccept(); err != nil {
+func (do *do) Select(ctx context.Context, dest interface{}, expr string, arg map[string]interface{}) (err error) {
+	if err = do.ro.tryAccept(); err != nil {
 		return err
 	}
+
+	// tracing
+	_, span := traces.StartCtx(ctx, fmt.Sprintf("%s.%s", runtimes.StructName(1), runtimes.FuncName(1)))
+	defer func() {
+		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
+		} else {
+			span.SetStatus(codes.Ok, "")
+		}
+
+		span.End()
+	}()
 
 	start := time.Now()
 
@@ -81,10 +103,24 @@ func (do *do) Select(ctx context.Context, dest interface{}, expr string, arg map
 }
 
 // Count the number of the filtered resource.
-func (do *do) Count(ctx context.Context, expr string, arg map[string]interface{}) (uint64, error) {
-	if err := do.ro.tryAccept(); err != nil {
+func (do *do) Count(ctx context.Context, expr string, arg map[string]interface{}) (count uint64, err error) {
+	if err = do.ro.tryAccept(); err != nil {
 		return 0, err
 	}
+
+	// tracing, if the function stacks are changed, remember to change the "skip" value
+	_, span := traces.StartCtx(ctx, fmt.Sprintf("%s.%s", runtimes.StructName(ormRuntimeSkip),
+		runtimes.FuncName(ormRuntimeSkip)))
+
+	defer func() {
+		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
+		} else {
+			span.SetStatus(codes.Ok, "")
+		}
+
+		span.End()
+	}()
 
 	start := time.Now()
 
@@ -106,7 +142,7 @@ func (do *do) Count(ctx context.Context, expr string, arg map[string]interface{}
 		return 0, err
 	}
 
-	count := uint64(0)
+	count = uint64(0)
 	for rows.Next() {
 		if err := rows.Scan(&count); err != nil {
 			do.ro.mc.errCounter.With(prm.Labels{"cmd": "count"}).Inc()
@@ -121,10 +157,23 @@ func (do *do) Count(ctx context.Context, expr string, arg map[string]interface{}
 }
 
 // Delete a collection of data.
-func (do *do) Delete(ctx context.Context, expr string, arg map[string]interface{}) (int64, error) {
+func (do *do) Delete(ctx context.Context, expr string, arg map[string]interface{}) (rowsAffected int64, err error) {
 	if err := do.ro.tryAccept(); err != nil {
 		return 0, err
 	}
+
+	// tracing, if the function stacks are changed, remember to change the "skip" value
+	_, span := traces.StartCtx(ctx, fmt.Sprintf("%s.%s", runtimes.StructName(ormRuntimeSkip),
+		runtimes.FuncName(ormRuntimeSkip)))
+	defer func() {
+		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
+		} else {
+			span.SetStatus(codes.Ok, "")
+		}
+
+		span.End()
+	}()
 
 	start := time.Now()
 
@@ -146,7 +195,7 @@ func (do *do) Delete(ctx context.Context, expr string, arg map[string]interface{
 		return 0, err
 	}
 
-	rowsAffected, err := result.RowsAffected()
+	rowsAffected, err = result.RowsAffected()
 	if err != nil {
 		do.ro.mc.errCounter.With(prm.Labels{"cmd": "delete"}).Inc()
 		return 0, err
@@ -159,14 +208,27 @@ func (do *do) Delete(ctx context.Context, expr string, arg map[string]interface{
 }
 
 // Update a collection of data
-func (do *do) Update(ctx context.Context, expr string, arg map[string]interface{}) (int64, error) {
+func (do *do) Update(ctx context.Context, expr string, arg map[string]interface{}) (rowsAffected int64, err error) {
 	if arg == nil {
 		return 0, errors.New("update args is required")
 	}
 
-	if err := do.ro.tryAccept(); err != nil {
+	if err = do.ro.tryAccept(); err != nil {
 		return 0, err
 	}
+
+	// tracing, if the function stacks are changed, remember to change the "skip" value
+	_, span := traces.StartCtx(ctx, fmt.Sprintf("%s.%s", runtimes.StructName(ormRuntimeSkip),
+		runtimes.FuncName(ormRuntimeSkip)))
+	defer func() {
+		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
+		} else {
+			span.SetStatus(codes.Ok, "")
+		}
+
+		span.End()
+	}()
 
 	start := time.Now()
 
@@ -188,7 +250,7 @@ func (do *do) Update(ctx context.Context, expr string, arg map[string]interface{
 		return 0, err
 	}
 
-	rowsAffected, err := result.RowsAffected()
+	rowsAffected, err = result.RowsAffected()
 	if err != nil {
 		do.ro.mc.errCounter.With(prm.Labels{"cmd": "update"}).Inc()
 		return 0, err
@@ -201,14 +263,27 @@ func (do *do) Update(ctx context.Context, expr string, arg map[string]interface{
 }
 
 // Insert a row data to db
-func (do *do) Insert(ctx context.Context, expr string, data interface{}) error {
-	if err := do.ro.tryAccept(); err != nil {
+func (do *do) Insert(ctx context.Context, expr string, data interface{}) (err error) {
+	if err = do.ro.tryAccept(); err != nil {
 		return err
 	}
 
+	// tracing, if the function stacks are changed, remember to change the "skip" value
+	_, span := traces.StartCtx(ctx, fmt.Sprintf("%s.%s", runtimes.StructName(ormRuntimeSkip),
+		runtimes.FuncName(ormRuntimeSkip)))
+	defer func() {
+		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
+		} else {
+			span.SetStatus(codes.Ok, "")
+		}
+
+		span.End()
+	}()
+
 	start := time.Now()
 
-	_, err := do.db.NamedExecContext(ctx, expr, data)
+	_, err = do.db.NamedExecContext(ctx, expr, data)
 	if err != nil {
 		do.ro.mc.errCounter.With(prm.Labels{"cmd": "insert"}).Inc()
 		return err
@@ -221,10 +296,23 @@ func (do *do) Insert(ctx context.Context, expr string, data interface{}) error {
 }
 
 // Exec a command
-func (do *do) Exec(ctx context.Context, expr string) (int64, error) {
-	if err := do.ro.tryAccept(); err != nil {
+func (do *do) Exec(ctx context.Context, expr string) (effected int64, err error) {
+	if err = do.ro.tryAccept(); err != nil {
 		return 0, err
 	}
+
+	// tracing, if the function stacks are changed, remember to change the "skip" value
+	_, span := traces.StartCtx(ctx, fmt.Sprintf("%s.%s", runtimes.StructName(ormRuntimeSkip),
+		runtimes.FuncName(ormRuntimeSkip)))
+	defer func() {
+		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
+		} else {
+			span.SetStatus(codes.Ok, "")
+		}
+
+		span.End()
+	}()
 
 	start := time.Now()
 
@@ -234,7 +322,7 @@ func (do *do) Exec(ctx context.Context, expr string) (int64, error) {
 		return 0, err
 	}
 
-	effected, err := result.RowsAffected()
+	effected, err = result.RowsAffected()
 	if err != nil {
 		do.ro.mc.errCounter.With(prm.Labels{"cmd": "exec"}).Inc()
 		return 0, err
@@ -248,14 +336,27 @@ func (do *do) Exec(ctx context.Context, expr string) (int64, error) {
 
 // BulkInsert insert multiple data at one time, the order in which ids is returned
 // is the same as the order in which data is inserted.
-func (do *do) BulkInsert(ctx context.Context, expr string, args interface{}) error {
-	if err := do.ro.tryAccept(); err != nil {
+func (do *do) BulkInsert(ctx context.Context, expr string, args interface{}) (err error) {
+	if err = do.ro.tryAccept(); err != nil {
 		return err
 	}
 
+	// tracing, if the function stacks are changed, remember to change the "skip" value
+	_, span := traces.StartCtx(ctx, fmt.Sprintf("%s.%s", runtimes.StructName(ormRuntimeSkip),
+		runtimes.FuncName(ormRuntimeSkip)))
+	defer func() {
+		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
+		} else {
+			span.SetStatus(codes.Ok, "")
+		}
+
+		span.End()
+	}()
+
 	start := time.Now()
 
-	_, err := do.db.NamedExecContext(ctx, expr, args)
+	_, err = do.db.NamedExecContext(ctx, expr, args)
 	if err != nil {
 		do.ro.mc.errCounter.With(prm.Labels{"cmd": "bulk-insert"}).Inc()
 		return err
@@ -275,10 +376,23 @@ type doTxn struct {
 }
 
 // Count the number of the filtered resource.
-func (do *doTxn) Count(ctx context.Context, expr string, arg map[string]interface{}) (uint64, error) {
-	if err := do.ro.tryAccept(); err != nil {
+func (do *doTxn) Count(ctx context.Context, expr string, arg map[string]interface{}) (count uint64, err error) {
+	if err = do.ro.tryAccept(); err != nil {
 		return 0, err
 	}
+
+	// tracing, if the function stacks are changed, remember to change the "skip" value
+	_, span := traces.StartCtx(ctx, fmt.Sprintf("%s.%s", runtimes.StructName(ormRuntimeSkip),
+		runtimes.FuncName(ormRuntimeSkip)))
+	defer func() {
+		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
+		} else {
+			span.SetStatus(codes.Ok, "")
+		}
+
+		span.End()
+	}()
 
 	start := time.Now()
 
@@ -300,7 +414,7 @@ func (do *doTxn) Count(ctx context.Context, expr string, arg map[string]interfac
 		return 0, err
 	}
 
-	count := uint64(0)
+	count = uint64(0)
 	for rows.Next() {
 		if err := rows.Scan(&count); err != nil {
 			do.ro.mc.errCounter.With(prm.Labels{"cmd": "count"}).Inc()
@@ -315,10 +429,23 @@ func (do *doTxn) Count(ctx context.Context, expr string, arg map[string]interfac
 }
 
 // Select a collection of data, and decode into dest *[]struct{}.
-func (do *doTxn) Select(ctx context.Context, dest interface{}, expr string, arg map[string]interface{}) error {
-	if err := do.ro.tryAccept(); err != nil {
+func (do *doTxn) Select(ctx context.Context, dest interface{}, expr string, arg map[string]interface{}) (err error) {
+	if err = do.ro.tryAccept(); err != nil {
 		return err
 	}
+
+	// tracing, if the function stacks are changed, remember to change the "skip" value
+	_, span := traces.StartCtx(ctx, fmt.Sprintf("%s.%s", runtimes.StructName(ormRuntimeSkip),
+		runtimes.FuncName(ormRuntimeSkip)))
+	defer func() {
+		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
+		} else {
+			span.SetStatus(codes.Ok, "")
+		}
+
+		span.End()
+	}()
 
 	start := time.Now()
 
@@ -352,10 +479,23 @@ func (do *doTxn) Select(ctx context.Context, dest interface{}, expr string, arg 
 }
 
 // Delete a collection of data with transaction.
-func (do *doTxn) Delete(ctx context.Context, expr string, arg map[string]interface{}) (int64, error) {
-	if err := do.ro.tryAccept(); err != nil {
+func (do *doTxn) Delete(ctx context.Context, expr string, arg map[string]interface{}) (rowsAffected int64, err error) {
+	if err = do.ro.tryAccept(); err != nil {
 		return 0, err
 	}
+
+	// tracing, if the function stacks are changed, remember to change the "skip" value
+	_, span := traces.StartCtx(ctx, fmt.Sprintf("%s.%s", runtimes.StructName(ormRuntimeSkip),
+		runtimes.FuncName(ormRuntimeSkip)))
+	defer func() {
+		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
+		} else {
+			span.SetStatus(codes.Ok, "")
+		}
+
+		span.End()
+	}()
 
 	start := time.Now()
 
@@ -377,7 +517,7 @@ func (do *doTxn) Delete(ctx context.Context, expr string, arg map[string]interfa
 		return 0, err
 	}
 
-	rowsAffected, err := result.RowsAffected()
+	rowsAffected, err = result.RowsAffected()
 	if err != nil {
 		do.ro.mc.errCounter.With(prm.Labels{"cmd": "delete"}).Inc()
 		return 0, err
@@ -390,18 +530,31 @@ func (do *doTxn) Delete(ctx context.Context, expr string, arg map[string]interfa
 }
 
 // Insert data with transaction
-func (do *doTxn) Insert(ctx context.Context, expr string, args interface{}) error {
+func (do *doTxn) Insert(ctx context.Context, expr string, args interface{}) (err error) {
 	if args == nil {
 		return errors.New("insert args is required")
 	}
 
-	if err := do.ro.tryAccept(); err != nil {
+	if err = do.ro.tryAccept(); err != nil {
 		return err
 	}
 
+	// tracing, if the function stacks are changed, remember to change the "skip" value
+	_, span := traces.StartCtx(ctx, fmt.Sprintf("%s.%s", runtimes.StructName(ormRuntimeSkip),
+		runtimes.FuncName(ormRuntimeSkip)))
+	defer func() {
+		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
+		} else {
+			span.SetStatus(codes.Ok, "")
+		}
+
+		span.End()
+	}()
+
 	start := time.Now()
 
-	_, err := do.tx.NamedExecContext(ctx, expr, args)
+	_, err = do.tx.NamedExecContext(ctx, expr, args)
 	if err != nil {
 		do.ro.mc.errCounter.With(prm.Labels{"cmd": "insert"}).Inc()
 		return err
@@ -415,14 +568,27 @@ func (do *doTxn) Insert(ctx context.Context, expr string, args interface{}) erro
 
 // BulkInsert insert data batch with transaction, the order in which ids is
 // returned is the same as the order in which data is inserted.
-func (do *doTxn) BulkInsert(ctx context.Context, expr string, args interface{}) error {
-	if err := do.ro.tryAccept(); err != nil {
+func (do *doTxn) BulkInsert(ctx context.Context, expr string, args interface{}) (err error) {
+	if err = do.ro.tryAccept(); err != nil {
 		return err
 	}
 
+	// tracing, if the function stacks are changed, remember to change the "skip" value
+	_, span := traces.StartCtx(ctx, fmt.Sprintf("%s.%s", runtimes.StructName(ormRuntimeSkip),
+		runtimes.FuncName(ormRuntimeSkip)))
+	defer func() {
+		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
+		} else {
+			span.SetStatus(codes.Ok, "")
+		}
+
+		span.End()
+	}()
+
 	start := time.Now()
 
-	_, err := do.tx.NamedExecContext(ctx, expr, args)
+	_, err = do.tx.NamedExecContext(ctx, expr, args)
 	if err != nil {
 		do.ro.mc.errCounter.With(prm.Labels{"cmd": "bulk-insert"}).Inc()
 		return err
@@ -435,14 +601,27 @@ func (do *doTxn) BulkInsert(ctx context.Context, expr string, args interface{}) 
 }
 
 // Update with transaction
-func (do *doTxn) Update(ctx context.Context, expr string, arg map[string]interface{}) (int64, error) {
+func (do *doTxn) Update(ctx context.Context, expr string, arg map[string]interface{}) (rowsAffected int64, err error) {
 	if arg == nil {
 		return 0, errors.New("update args is required")
 	}
 
-	if err := do.ro.tryAccept(); err != nil {
+	if err = do.ro.tryAccept(); err != nil {
 		return 0, err
 	}
+
+	// tracing, if the function stacks are changed, remember to change the "skip" value
+	_, span := traces.StartCtx(ctx, fmt.Sprintf("%s.%s", runtimes.StructName(ormRuntimeSkip),
+		runtimes.FuncName(ormRuntimeSkip)))
+	defer func() {
+		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
+		} else {
+			span.SetStatus(codes.Ok, "")
+		}
+
+		span.End()
+	}()
 
 	start := time.Now()
 
@@ -464,7 +643,7 @@ func (do *doTxn) Update(ctx context.Context, expr string, arg map[string]interfa
 		return 0, err
 	}
 
-	rowsAffected, err := result.RowsAffected()
+	rowsAffected, err = result.RowsAffected()
 	if err != nil {
 		do.ro.mc.errCounter.With(prm.Labels{"cmd": "update"}).Inc()
 		return 0, err

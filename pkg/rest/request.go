@@ -40,8 +40,14 @@ import (
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest/client"
+	"hcm/pkg/tools/runtimes"
+	"hcm/pkg/traces"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // VerbType http request verb type
@@ -377,7 +383,7 @@ func (r *Request) Do() *Result {
 }
 
 // doWithHost http request do with specific host.
-func (r *Request) doWithHost(client client.HTTPClient, host string, retries int, rid string) (*Result, bool) {
+func (r *Request) doWithHost(client client.HTTPClient, host string, retries int, rid string) (result *Result, ok bool) {
 	contentType := r.contentType
 
 	switch r.contentType {
@@ -393,6 +399,32 @@ func (r *Request) doWithHost(client client.HTTPClient, host string, retries int,
 	if err != nil {
 		return &Result{Err: err, Rid: rid}, true
 	}
+
+	if r.ctx != nil {
+		req = req.WithContext(r.ctx)
+	}
+
+	// span kind client (caller), if the function stacks are changed, remember to change the "skip" value
+	ctx, span := traces.StartCtx(req.Context(), runtimes.FuncName(2), trace.WithSpanKind(trace.SpanKindClient))
+	req = req.WithContext(ctx)
+	defer func() {
+		if ok {
+			span.SetStatus(codes.Ok, "")
+		} else {
+			var description string
+			if result != nil && result.Err != nil {
+				description = result.Err.Error()
+			}
+
+			span.SetStatus(codes.Error, description)
+		}
+
+		span.End()
+	}()
+
+	// inject trace context into request header
+	propagator := otel.GetTextMapPropagator()
+	propagator.Inject(req.Context(), propagation.HeaderCarrier(req.Header))
 
 	if retries > 0 {
 		r.tryThrottle(url)
@@ -415,39 +447,9 @@ func (r *Request) doWithHost(client client.HTTPClient, host string, retries int,
 		return nil, false
 	}
 
-	// collect request metrics
-	if r.client.requestDuration != nil {
-		labels := prometheus.Labels{
-			"handler":     r.subPath,
-			"status_code": strconv.Itoa(resp.StatusCode),
-			"dimension":   r.metricDimension,
-		}
-
-		r.client.requestDuration.With(labels).Observe(float64(time.Since(start) / time.Millisecond))
-	}
-
-	// record latency if needed
-	r.checkToleranceLatency(&start, url, rid)
-
-	var body []byte
-	if resp.Body != nil {
-		data, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			if err == io.ErrUnexpectedEOF {
-				// retry now
-				time.Sleep(20 * time.Millisecond)
-				return nil, false
-			}
-			logs.Errorf("http request %s %s with body %s, err: %v, rid: %s", string(r.verb), url, r.body,
-				err, rid)
-			return &Result{Err: err, Rid: rid}, true
-		}
-		body = data
-	}
-
-	if logs.V(4) {
-		logs.Infof("http request cost: %dms, %s %s with body %s, response status: %s, response body: %s, rid: "+
-			"%s", time.Since(start)/time.Millisecond, string(r.verb), url, r.body, resp.Status, body, rid)
+	body, isComplete, err := r.doRespWithHost(resp, start, url, rid)
+	if err != nil {
+		return nil, isComplete
 	}
 
 	return &Result{
@@ -457,6 +459,40 @@ func (r *Request) doWithHost(client client.HTTPClient, host string, retries int,
 		Status:     resp.Status,
 		Header:     resp.Header,
 	}, true
+}
+
+func (r *Request) doRespWithHost(resp *http.Response, start time.Time, url string, rid string) ([]byte, bool, error) {
+	// collect request metrics
+	if r.client.requestDuration != nil {
+		labels := prometheus.Labels{
+			"handler":     r.subPath,
+			"status_code": strconv.Itoa(resp.StatusCode),
+			"dimension":   r.metricDimension,
+		}
+		r.client.requestDuration.With(labels).Observe(float64(time.Since(start) / time.Millisecond))
+	}
+	// record latency if needed
+	r.checkToleranceLatency(&start, url, rid)
+	var body []byte
+	if resp.Body != nil {
+		data, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			if err == io.ErrUnexpectedEOF {
+				// retry now
+				time.Sleep(20 * time.Millisecond)
+				return nil, false, err
+			}
+			logs.Errorf("http request %s %s with body %s, err: %v, rid: %s", string(r.verb), url, r.body, err, rid)
+			return nil, true, err
+		}
+		body = data
+	}
+
+	if logs.V(4) {
+		logs.Infof("http request cost: %dms, %s %s with body %s, response status: %s, response body: %s, rid: "+
+			"%s", time.Since(start)/time.Millisecond, string(r.verb), url, r.body, resp.Status, body, rid)
+	}
+	return body, true, nil
 }
 
 func (r *Request) getRequest(url string, contentType ContentType) (*http.Request, error) {

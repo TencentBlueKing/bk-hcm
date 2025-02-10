@@ -21,6 +21,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"strconv"
@@ -34,12 +35,13 @@ import (
 	"hcm/pkg/runtime/ctl"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
+	"hcm/pkg/traces"
 )
 
 // Run start the cloud server.
-func Run(opt *options.Option) error {
+func Run(ctx context.Context, opt *options.Option) error {
 	ds := new(cloudServer)
-	if err := ds.prepare(opt); err != nil {
+	if err := ds.prepare(ctx, opt); err != nil {
 		return err
 	}
 
@@ -62,7 +64,7 @@ type cloudServer struct {
 }
 
 // prepare do prepare jobs before run api discover.
-func (ds *cloudServer) prepare(opt *options.Option) error {
+func (ds *cloudServer) prepare(ctx context.Context, opt *options.Option) error {
 	// load settings from config file.
 	if err := cc.LoadSettings(opt.Sys); err != nil {
 		return fmt.Errorf("load settings from config files failed, err: %v", err)
@@ -71,6 +73,15 @@ func (ds *cloudServer) prepare(opt *options.Option) error {
 	logs.InitLogger(cc.CloudServer().Log.Logs())
 
 	logs.Infof("load settings from config file success.")
+
+	// init trace
+	if cc.CloudServer().Trace.Enabled {
+		if err := traces.InitTracer(ctx, cc.CloudServer().Trace.ToTraceOption()); err != nil {
+			logs.Errorf("init tracer failed, err: %v", err)
+			return err
+		}
+		logs.Infof("init tracer success.")
+	}
 
 	// init metrics
 	network := cc.CloudServer().Network

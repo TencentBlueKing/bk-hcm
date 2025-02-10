@@ -19,5 +19,7 @@ data:
         {{- include "common.tplvalues.render" (dict "value" (include "bk-hcm.etcdConfig" .) "context" $) | nindent 8 }}
     log:
       {{- toYaml .Values.hcservice.log | nindent 6 }}
+    trace:
+      {{- toYaml .Values.trace | nindent 6 }}
     sync:
       {{- toYaml .Values.hcservice.sync | nindent 6 }}
