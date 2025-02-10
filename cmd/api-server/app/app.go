@@ -21,6 +21,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"strconv"
@@ -35,12 +36,13 @@ import (
 	"hcm/pkg/runtime/gwparser"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
+	"hcm/pkg/traces"
 )
 
 // Run start the api server
-func Run(opt *options.Option) error {
+func Run(ctx context.Context, opt *options.Option) error {
 	as := new(apiService)
-	if err := as.prepare(opt); err != nil {
+	if err := as.prepare(ctx, opt); err != nil {
 		return err
 	}
 
@@ -64,7 +66,7 @@ type apiService struct {
 }
 
 // prepare do prepare jobs before run api server.
-func (as *apiService) prepare(opt *options.Option) error {
+func (as *apiService) prepare(ctx context.Context, opt *options.Option) error {
 	// load settings from config file.
 	if err := cc.LoadSettings(opt.Sys); err != nil {
 		return fmt.Errorf("load settings from config files failed, err: %v", err)
@@ -75,6 +77,15 @@ func (as *apiService) prepare(opt *options.Option) error {
 	logs.Infof("load settings from config file success.")
 	logs.Infof("start service %s with option: env: %s, labels: %v, disable election: %v \n",
 		cc.APIServerName, opt.Sys.Environment, opt.Sys.Labels, opt.Sys.DisableElection)
+
+	// init trace
+	if cc.ApiServer().Trace.Enabled {
+		if err := traces.InitTracer(ctx, cc.ApiServer().Trace.ToTraceOption()); err != nil {
+			logs.Errorf("init tracer failed, err: %v", err)
+			return err
+		}
+		logs.Infof("init tracer success.")
+	}
 
 	if err := gwparser.Init(opt.DisableJWT, opt.PublicKey); err != nil {
 		return err

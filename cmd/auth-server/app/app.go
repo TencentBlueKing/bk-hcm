@@ -21,6 +21,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"strconv"
@@ -35,12 +36,13 @@ import (
 	"hcm/pkg/runtime/ctl/cmd"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
+	"hcm/pkg/traces"
 )
 
 // Run start the auth server
-func Run(opt *options.Option) error {
+func Run(ctx context.Context, opt *options.Option) error {
 	as := new(authService)
-	if err := as.prepare(opt); err != nil {
+	if err := as.prepare(ctx, opt); err != nil {
 		return err
 	}
 
@@ -73,7 +75,7 @@ type authService struct {
 }
 
 // prepare do prepare jobs before run auth server.
-func (as *authService) prepare(opt *options.Option) error {
+func (as *authService) prepare(ctx context.Context, opt *options.Option) error {
 	// load settings from config file.
 	if err := cc.LoadSettings(opt.Sys); err != nil {
 		return fmt.Errorf("load settings from config files failed, err: %v", err)
@@ -82,6 +84,16 @@ func (as *authService) prepare(opt *options.Option) error {
 	logs.InitLogger(cc.AuthServer().Log.Logs())
 
 	logs.Infof("load settings from config file success.")
+
+	// init trace
+	if cc.AuthServer().Trace.Enabled {
+		if err := traces.InitTracer(ctx, cc.AuthServer().Trace.ToTraceOption()); err != nil {
+			logs.Errorf("init tracer failed, err: %v", err)
+			return err
+
+		}
+		logs.Infof("init tracer success.")
+	}
 
 	// init metrics
 	network := cc.AuthServer().Network
