@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type {
+  DoublePlainObject,
   // PlainObject,
   FilterType,
 } from '@/typings/resource';
-import { GcpTypeEnum, CloudType } from '@/typings';
+import { GcpTypeEnum } from '@/typings';
 import { Button, InfoBox, Message, Tag, bkTooltips } from 'bkui-vue';
 import { useResourceStore, useAccountStore } from '@/store';
 import { ref, h, PropType, watch, reactive, defineExpose, computed, withDirectives } from 'vue';
@@ -26,6 +27,11 @@ import http from '@/http';
 import { timeFormatter, formatTags } from '@/common/util';
 import { storeToRefs } from 'pinia';
 
+import ChangeEffectConfirmDialog from './security/dialog/change-effect-confirm.vue';
+import SecurityGroupDeleteDialog from './security/dialog/delete.vue';
+import { MGMT_TYPE_MAP } from './security/constants';
+import { ISgOperateItem, useSecurityGroupStore } from '@/store/security-group';
+
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 const props = defineProps({
@@ -47,6 +53,8 @@ const props = defineProps({
 const { t } = useI18n();
 
 const { getRegionName } = useRegionsStore();
+const securityGroupStore = useSecurityGroupStore();
+const { getNameFromBusinessMap } = useBusinessMapStore();
 const router = useRouter();
 const route = useRoute();
 const { whereAmI } = useWhereAmI();
@@ -61,7 +69,6 @@ const fetchUrl = ref<string>('security_groups/list');
 
 const emit = defineEmits(['auth', 'handleSecrityType', 'edit', 'editTemplate']);
 const { columns, generateColumnsSettings } = useColumns('group');
-const businessMapStore = useBusinessMapStore();
 
 const state = reactive<any>({
   datas: [],
@@ -90,6 +97,26 @@ const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, ge
     filter: filter.value,
   },
   fetchUrl,
+  // {
+  //   handleAsyncRequest: async (data: any[]) => {
+  //     // 安全组需要异步加载一些关联资源数据
+  //     if (activeType.value !== 'group') return;
+
+  //     const security_group_ids: string[] = data.map((item: any) => item.id);
+  //     const [relResList, ruleCountMap] = await Promise.all([
+  //       securityGroupStore.querySgRelatedResources(security_group_ids),
+  //       securityGroupStore.batchQuerySgRuleCount(security_group_ids),
+  //     ]);
+
+  //     return data.map((item) => {
+  //       const relResItem = relResList.find((relRes) => relRes.id === item.id);
+  //       const rel_res_count = relResItem.resources.reduce((acc, cur) => acc + cur.count, 0);
+  //       const res_res_types = relResItem.resources.flatMap(({ res_name }) => res_name);
+  //       const rule_count = ruleCountMap[item.id];
+  //       return { ...item, rel_res_count, res_res_types, rule_count };
+  //     });
+  //   },
+  // },
 );
 
 const selectSearchData = computed(() => {
@@ -210,8 +237,6 @@ const groupColumns = [
   {
     label: '安全组 ID',
     field: 'cloud_id',
-    width: '120',
-    sort: true,
     isDefaultShow: true,
     render({ data }: any) {
       return h(
@@ -221,26 +246,13 @@ const groupColumns = [
           theme: 'primary',
           disabled: data.bk_biz_id !== -1 && props.isResourcePage,
           onClick() {
-            const routeInfo: any = {
-              query: {
-                ...route.query,
-                id: data.id,
-                vendor: data.vendor,
-              },
-            };
+            const routeInfo: any = { query: { ...route.query, id: data.id, vendor: data.vendor } };
             // 业务下
             if (route.path.includes('business')) {
               routeInfo.query.bizs = accountStore.bizs;
-              Object.assign(routeInfo, {
-                name: 'securityBusinessDetail',
-              });
+              Object.assign(routeInfo, { name: 'securityBusinessDetail' });
             } else {
-              Object.assign(routeInfo, {
-                name: 'resourceDetail',
-                params: {
-                  type: 'security',
-                },
-              });
+              Object.assign(routeInfo, { name: 'resourceDetail', params: { type: 'security' } });
             }
             router.push(routeInfo);
           },
@@ -248,187 +260,184 @@ const groupColumns = [
         [data.cloud_id || '--'],
       );
     },
+    width: 120,
   },
   {
-    label: '安全组名称',
+    label: '名称',
     field: 'name',
-    sort: true,
     isDefaultShow: true,
-  },
-  {
-    label: t('云厂商'),
-    field: 'vendor',
-    sort: true,
-    isDefaultShow: true,
-    render({ data }: any) {
-      return h('span', {}, [CloudType[data.vendor]]);
-    },
+    width: 120,
   },
   {
     label: t('地域'),
     field: 'region',
-    sort: true,
     isDefaultShow: true,
-    render: ({ data }: { data: { vendor: VendorEnum; region: string } }) => {
+    render: ({ data }: any) => {
       return getRegionName(data.vendor, data.region);
     },
+    width: 150,
   },
   {
-    label: t('描述'),
+    label: t('云厂商'),
+    field: 'vendor',
+    filter: {
+      list: Object.entries(VendorMap).map(([value, text]) => ({ value, text })),
+    },
+    render: ({ cell }: any) => VendorMap[cell],
+    width: 90,
+  },
+  {
+    label: t('备注'),
     field: 'memo',
     isDefaultShow: true,
     render: ({ cell }: any) => (cell ? cell : '--'),
+    width: 120,
+  },
+  {
+    label: t('规则个数'),
+    field: 'rule_count',
+    width: 90,
+  },
+  {
+    label: t('关联实例数'),
+    field: 'rel_res_count',
+    width: 120,
+  },
+  {
+    label: t('关联的资源类型'),
+    field: 'res_res_types',
+    filter: true,
+    width: 150,
+    render: ({ cell }: { cell: string[] }) => (cell ? cell.map((res_name) => h(Tag, null, res_name)) : '--'),
+  },
+  {
+    label: t('使用业务'),
+    field: 'usage_biz_ids',
+    filter: true,
+    isDefaultShow: true,
+    width: 100,
+    render: ({ cell }: any) => cell?.join(',') ?? '--',
+  },
+  {
+    label: t('管理类型'),
+    field: 'mgmt_type',
+    filter: {
+      list: Object.entries(MGMT_TYPE_MAP).map(([value, text]) => ({ value, text })),
+    },
+    isDefaultShow: true,
+    width: 100,
+    render: ({ cell }: any) => {
+      let theme: '' | 'info' | 'warning';
+      theme = cell === 'biz' ? 'info' : '';
+      if (!cell) theme = 'warning';
+      return h(Tag, { theme, radius: '11px' }, MGMT_TYPE_MAP[cell]);
+    },
+  },
+  {
+    label: t('管理业务'),
+    field: 'mgmt_biz_id',
+    filter: true,
+    isDefaultShow: true,
+    width: 100,
+    render: ({ cell }: any) => (cell ? getNameFromBusinessMap(cell) : '--'),
+  },
+  {
+    label: t('主负责人'),
+    field: 'manager',
+    width: 100,
+  },
+  {
+    label: t('备份负责人'),
+    field: 'bak_manager',
+    width: 100,
   },
   {
     label: t('标签'),
     field: 'tags',
     isDefaultShow: true,
     render: ({ cell }: any) => formatTags(cell),
+    width: 100,
   },
   {
     label: '是否分配',
     field: 'bk_biz_id',
-    sort: true,
     notDisplayedInBusiness: true,
     isDefaultShow: true,
-    render: ({ data, cell }: { data: { bk_biz_id: number }; cell: number }) => {
-      return withDirectives(
-        h(
-          Tag,
-          {
-            theme: data.bk_biz_id === -1 ? false : 'success',
-          },
-          [data.bk_biz_id === -1 ? '未分配' : '已分配'],
-        ),
-        [
-          [
-            bkTooltips,
-            {
-              content: businessMapStore.businessMap.get(cell),
-              disabled: !cell || cell === -1,
-              theme: 'light',
-            },
-          ],
-        ],
-      );
+    render: ({ data, cell }: { data: any; cell: number }) => {
+      const { mgmt_type } = data;
+
+      let displayValue = cell === -1 ? t('未分配') : t('已分配');
+      let theme: '' | 'success' | 'danger' = cell === -1 ? '' : 'success';
+
+      // 不可分配的情况
+      if (theme === '' && (!mgmt_type || mgmt_type === 'platform')) {
+        displayValue = t('不允许分配');
+        theme = 'danger';
+      }
+
+      return withDirectives(h(Tag, { theme }, displayValue), [
+        [bkTooltips, { content: getNameFromBusinessMap(cell), disabled: theme !== 'success', theme: 'light' }],
+      ]);
     },
-  },
-  {
-    label: '所属业务',
-    field: 'bk_biz_id2',
-    notDisplayedInBusiness: true,
-    render({ data }: any) {
-      return h('span', {}, [data.bk_biz_id === -1 ? t('未分配') : businessMapStore.businessMap.get(data.bk_biz_id)]);
-    },
-  },
-  {
-    label: t('账号 ID'),
-    field: 'account_id',
-    sort: true,
-  },
-  // {
-  //   label: t('资源 ID'),
-  //   field: 'cloud_id',
-  //   sort: true,
-  // },
-  // {
-  //   label: t('关联模板'),
-  //   field: '',
-  // },
-  {
-    label: t('创建时间'),
-    field: 'cloud_created_time',
-    sort: true,
-    render: ({ cell }: { cell: string }) => timeFormatter(cell),
-  },
-  {
-    label: t('修改时间'),
-    field: 'cloud_update_time',
-    sort: true,
-    render({ cell }: { cell: string }) {
-      return timeFormatter(cell);
-    },
+    width: 120,
   },
   {
     label: t('操作'),
     field: 'operate',
     isDefaultShow: true,
+    width: 120,
+    fixed: 'right',
     render({ data }: any) {
-      return h('span', {}, [
-        h(
-          'span',
-          {
-            onClick() {
-              emit('auth', props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate');
-            },
+      const isAssigned = data.bk_biz_id !== -1 && props.isResourcePage;
+
+      const authMap = {
+        rule: props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate',
+        clone: props.isResourcePage ? 'iaas_resource_create' : 'biz_iaas_resource_create',
+        delete: props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete',
+      };
+
+      const operationList = [
+        {
+          type: 'rule',
+          name: t('配置规则'),
+          auth: authMap.rule,
+          disabled: !props.authVerifyData?.permissionAction[authMap.rule] || isAssigned,
+          handleClick: async () => {
+            isChangeEffectConfirmDialogShow.value = true;
+            const resData = await securityGroupStore.querySgRelatedResources([data.id]);
+            const { resources } = resData[0] ?? {};
+            currentSgDetail.value = { ...data, resources };
           },
-          [
-            h(
-              Button,
-              {
-                text: true,
-                disabled:
-                  !props.authVerifyData?.permissionAction[
-                    props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate'
-                  ] ||
-                  (data.bk_biz_id !== -1 && props.isResourcePage),
-                theme: 'primary',
-                onClick() {
-                  const routeInfo: any = {
-                    query: {
-                      activeTab: 'rule',
-                      id: data.id,
-                      vendor: data.vendor,
-                    },
-                  };
-                  // 业务下
-                  if (route.path.includes('business')) {
-                    Object.assign(routeInfo, {
-                      name: 'securityBusinessDetail',
-                    });
-                  } else {
-                    Object.assign(routeInfo, {
-                      name: 'resourceDetail',
-                      params: {
-                        type: 'security',
-                      },
-                    });
-                  }
-                  router.push(routeInfo);
-                },
-              },
-              [t('配置规则')],
-            ),
-          ],
-        ),
-        h(
-          'span',
-          {
-            onClick() {
-              emit('auth', props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete');
-            },
-          },
-          [
-            h(
-              Button,
-              {
-                class: 'ml10',
-                disabled:
-                  !props.authVerifyData?.permissionAction[
-                    props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete'
-                  ] ||
-                  (data.bk_biz_id !== -1 && props.isResourcePage),
-                text: true,
-                theme: 'primary',
-                onClick() {
-                  securityHandleShowDelete(data);
-                },
-              },
-              [t('删除')],
-            ),
-          ],
-        ),
-      ]);
+        },
+        {
+          type: 'clone',
+          name: t('克隆'),
+          auth: authMap.clone,
+          disabled: !props.authVerifyData?.permissionAction[authMap.clone] || isAssigned,
+          handleClick: () => {},
+          hidden: props.isResourcePage,
+        },
+        {
+          type: 'delete',
+          name: t('删除'),
+          auth: authMap.delete,
+          disabled: !props.authVerifyData?.permissionAction[authMap.delete] || isAssigned,
+          handleClick: () => handleDeleteSG(data),
+        },
+      ];
+
+      return h(
+        'div',
+        { class: 'operation-cell' },
+        operationList.map(({ name, auth, disabled, handleClick, hidden }) => {
+          if (hidden) return null;
+          return h(
+            'span',
+            { onClick: () => emit('auth', auth) },
+            h(Button, { text: true, theme: 'primary', disabled, onClick: handleClick }, name),
+          );
+        }),
+      );
     },
   },
 ].filter((item) => {
@@ -569,7 +578,7 @@ const gcpColumns = [
           [
             bkTooltips,
             {
-              content: businessMapStore.businessMap.get(cell),
+              content: getNameFromBusinessMap(cell),
               disabled: !cell || cell === -1,
               theme: 'light',
             },
@@ -583,7 +592,7 @@ const gcpColumns = [
     field: 'bk_biz_id2',
     notDisplayedInBusiness: true,
     render({ data }: any) {
-      return h('span', {}, [data.bk_biz_id === -1 ? t('未分配') : businessMapStore.businessMap.get(data.bk_biz_id)]);
+      return h('span', {}, [data.bk_biz_id === -1 ? t('未分配') : getNameFromBusinessMap(data.bk_biz_id)]);
     },
   },
   {
@@ -750,7 +759,7 @@ const templateColumns = [
           [
             bkTooltips,
             {
-              content: businessMapStore.businessMap.get(data.bk_biz_id),
+              content: getNameFromBusinessMap(data.bk_biz_id),
               disabled: !data.bk_biz_id || data.bk_biz_id === -1,
               theme: 'light',
             },
@@ -858,23 +867,33 @@ watch(
   },
 );
 
-// const computedSettings = computed(() => {
-//   const fields = [];
-//   const columns = securityType.value === 'group' ? groupColumns : gcpColumns;
-//   for (const column of columns) {
-//     if (column.field && column.label) {
-//       fields.push({
-//         label: column.label,
-//         field: column.field,
-//         disabled: column.field === 'id',
-//       });
-//     }
-//   }
-//   return {
-//     fields,
-//     checked: fields.map(field => field.field),
-//   };
-// });
+const isChangeEffectConfirmDialogShow = ref(false);
+const handleChangeEffectConfirm = () => {
+  const routeInfo: any = {
+    query: { activeTab: 'rule', id: currentSgDetail.value.id, vendor: currentSgDetail.value.vendor },
+  };
+  // 业务下
+  if (route.path.includes('business')) {
+    Object.assign(routeInfo, { name: 'securityBusinessDetail' });
+  } else {
+    Object.assign(routeInfo, { name: 'resourceDetail', params: { type: 'security' } });
+  }
+  router.push(routeInfo);
+};
+
+const currentSgDetail = ref<ISgOperateItem>(null);
+
+const isSgDeleteDialogShow = ref(false);
+const handleDeleteSG = async (rowData: any) => {
+  isSgDeleteDialogShow.value = true;
+  const [relResList, ruleCountMap] = await Promise.all([
+    securityGroupStore.querySgRelatedResources([rowData.id]),
+    securityGroupStore.batchQuerySgRuleCount([rowData.id]),
+  ]);
+  const rule_count = ruleCountMap[rowData.id] ?? 0;
+  const { resources } = relResList[0] ?? {};
+  currentSgDetail.value = { ...rowData, resources, rule_count };
+};
 
 const securityHandleShowDelete = (data: any) => {
   InfoBox({
@@ -915,7 +934,7 @@ const securityHandleShowDelete = (data: any) => {
 <template>
   <div class="security-manager-page">
     <section>
-      <section class="flex-row align-items-center mt20">
+      <section class="flex-row align-items-center">
         <bk-radio-group v-model="activeType" :disabled="state.isLoading">
           <bk-radio-button v-for="item in types" :key="item.name" :label="item.name">
             {{ item.label }}
@@ -940,6 +959,7 @@ const securityHandleShowDelete = (data: any) => {
             }
           "
         />
+        <!-- todo: 批量添加资产归属按钮 -->
         <bk-search-select
           class="search-filter search-selector-container"
           clearable
@@ -1002,6 +1022,21 @@ const securityHandleShowDelete = (data: any) => {
         @column-sort="state.handleSort"
       />
     </bk-loading>
+
+    <!-- 变更影响确认 -->
+    <change-effect-confirm-dialog
+      v-model="isChangeEffectConfirmDialogShow"
+      :loading="securityGroupStore.isQuerySgRelatedResourcesLoading"
+      :detail="currentSgDetail"
+      @confirm="handleChangeEffectConfirm"
+    />
+
+    <!-- 删除安全组 -->
+    <security-group-delete-dialog
+      v-model="isSgDeleteDialogShow"
+      :loading="securityGroupStore.isQuerySgRelatedResourcesLoading"
+      :detail="currentSgDetail"
+    />
   </div>
 </template>
 
@@ -1031,6 +1066,12 @@ const securityHandleShowDelete = (data: any) => {
     height: calc(100% - 100px);
     .bk-table {
       max-height: 100%;
+
+      .operation-cell {
+        display: flex;
+        align-self: center;
+        gap: 8px;
+      }
     }
   }
 }
