@@ -2007,7 +2007,6 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
         {
           label: '环比',
           sort: true,
-          field: 'aaa',
           render: ({ data }: any) => {
             const { current_month_rmb_cost_synced, last_month_rmb_cost_synced } = data;
             const value = formatBillRatio(last_month_rmb_cost_synced, current_month_rmb_cost_synced);
