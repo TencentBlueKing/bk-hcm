@@ -45,6 +45,8 @@ type Interface interface {
 	ListSGRelLoadBalancer(kt *kit.Kit, sgID string, resBizID int64, oriReq *core.ListReq) (
 		*dataproto.SGCommonRelWithLBListResp, error)
 	ListSGRelBusiness(kt *kit.Kit, currentBizID int64, sgID string) (*proto.ListSGRelBusinessResp, error)
+	UpdateSGMgmtAttr(kt *kit.Kit, mgmtAttr *proto.SecurityGroupUpdateMgmtAttrReq, sgID string) error
+	BatchUpdateSGMgmtAttr(kt *kit.Kit, mgmtAttrs []proto.BatchUpdateSGMgmtAttrItem) error
 }
 
 type securityGroup struct {
@@ -58,6 +60,26 @@ func NewSecurityGroup(client *client.ClientSet, audit audit.Interface) Interface
 		client: client,
 		audit:  audit,
 	}
+}
+
+func (s *securityGroup) listBaseSecurityGroups(kt *kit.Kit, sgIDs []string) ([]cloud.BaseSecurityGroup, error) {
+	baseSG := make([]cloud.BaseSecurityGroup, 0)
+	for _, ids := range slice.Split(sgIDs, int(core.DefaultMaxPageLimit)) {
+		listReq := &dataproto.SecurityGroupListReq{
+			Filter: tools.ExpressionAnd(tools.RuleIn("id", ids)),
+			Page:   core.NewDefaultBasePage(),
+		}
+
+		listRst, err := s.client.DataService().Global.SecurityGroup.ListSecurityGroup(kt.Ctx, kt.Header(), listReq)
+		if err != nil {
+			logs.Errorf("list security group failed, err: %v, ids: %v, rid: %s", err, ids, kt.Rid)
+			return nil, err
+		}
+
+		baseSG = append(baseSG, listRst.Details...)
+	}
+
+	return baseSG, nil
 }
 
 // ListSGRelCVM list security group rel cvm.
@@ -266,4 +288,126 @@ func tidySGRelBusiness(currentBizID int64, relBizMap map[int64]int64) []proto.Li
 	}
 
 	return relBizs
+}
+
+// UpdateSGMgmtAttr update security group management attributes
+func (s *securityGroup) UpdateSGMgmtAttr(kt *kit.Kit, mgmtAttr *proto.SecurityGroupUpdateMgmtAttrReq,
+	sgID string) error {
+
+	sgs, err := s.listBaseSecurityGroups(kt, []string{sgID})
+	if err != nil {
+		logs.Errorf("list base security group failed, err: %v, sg_id: %s, rid: %s", err, sgID, kt.Rid)
+		return err
+	}
+
+	if len(sgs) != 1 {
+		logs.Errorf("list base security group failed, len: %d, sg_id: %s, rid: %s", len(sgs), sgID, kt.Rid)
+		return errors.New("security group not found")
+	}
+
+	sg := sgs[0]
+	// 管理类型已确定的不能修改
+	if sg.MgmtType.Validate() == nil && sg.MgmtType != mgmtAttr.MgmtType {
+		logs.Errorf("security group mgmt type cannot be modified, sg_id: %s, old_type: %s, new_type: %s, rid: %s",
+			sg.ID, sg.MgmtType, mgmtAttr.MgmtType, kt.Rid)
+		return fmt.Errorf("security group: %s mgmt type cannot be modified", sg.ID)
+	}
+
+	// 平台管理不可修改管理业务
+	if sg.MgmtType == enumor.MgmtTypePlatform {
+		if mgmtAttr.MgmtBizID != constant.UnassignedBiz && mgmtAttr.MgmtBizID != 0 {
+			logs.Errorf("security group: %s cannot be assigned to a business, rid: %s", sg.ID, kt.Rid)
+			return fmt.Errorf("security group: %s cannot be assigned to a business", sg.ID)
+		}
+	}
+
+	// 更新管理属性
+	updateItems := make([]dataproto.BatchUpdateSGMgmtAttrItem, 0)
+	updateItems = append(updateItems, dataproto.BatchUpdateSGMgmtAttrItem{
+		ID:         sg.ID,
+		MgmtType:   mgmtAttr.MgmtType,
+		MgmtBizID:  mgmtAttr.MgmtBizID,
+		Manager:    mgmtAttr.Manager,
+		BakManager: mgmtAttr.BakManager,
+	})
+
+	updateReq := &dataproto.BatchUpdateSecurityGroupMgmtAttrReq{
+		SecurityGroups: updateItems,
+	}
+
+	if err := s.client.DataService().Global.SecurityGroup.BatchUpdateSecurityGroupMgmtAttr(kt.Ctx, kt.Header(),
+		updateReq); err != nil {
+		logs.Errorf("batch update security group management attributes failed, err: %v, rid: %s", err,
+			kt.Rid)
+		return err
+	}
+
+	// 更新使用业务列表
+	setRelReq := &dataproto.ResUsageBizRelUpdateReq{
+		UsageBizIDs: mgmtAttr.UsageBizIDs,
+		ResCloudID:  sg.CloudID,
+		ResVendor:   sg.Vendor,
+	}
+	err = s.client.DataService().Global.ResUsageBizRel.SetBizRels(kt, enumor.SecurityGroupCloudResType, sgID, setRelReq)
+	if err != nil {
+		logs.Errorf("set security group usage biz rel failed, err: %v, sg_id: %s, rid: %s", err, sgID, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// BatchUpdateSGMgmtAttr batch update security group management attributes
+func (s *securityGroup) BatchUpdateSGMgmtAttr(kt *kit.Kit, mgmtAttrs []proto.BatchUpdateSGMgmtAttrItem) error {
+	// 获取变更安全组当前的基本信息
+	sgIDs := make([]string, len(mgmtAttrs))
+	for i, sgAttr := range mgmtAttrs {
+		sgIDs[i] = sgAttr.ID
+	}
+
+	sgs, err := s.listBaseSecurityGroups(kt, sgIDs)
+	if err != nil {
+		logs.Errorf("list base security group failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	// 仅当所有管理属性均不存在时才允许批量编辑，平台管理不可批量编辑
+	for _, sg := range sgs {
+		if sg.MgmtType == enumor.MgmtTypePlatform {
+			logs.Errorf("platform security group cannot be batch updated, sg_id: %s, rid: %s", sg.ID, kt.Rid)
+			return fmt.Errorf("platform security group cannot be batch updated, id: %s", sg.ID)
+		}
+
+		if sg.MgmtBizID != constant.UnassignedBiz || sg.Manager != "" || sg.BakManager != "" {
+			logs.Errorf("security group management attributes already exist, sg_id: %s, rid: %s", sg.ID, kt.Rid)
+			return fmt.Errorf("security group: %s management attributes already exist", sg.ID)
+		}
+	}
+
+	for _, batch := range slice.Split(mgmtAttrs, constant.BatchOperationMaxLimit) {
+		updateItems := make([]dataproto.BatchUpdateSGMgmtAttrItem, len(batch))
+		for i, attr := range batch {
+			updateItems[i] = dataproto.BatchUpdateSGMgmtAttrItem{
+				ID: attr.ID,
+				// 批量更新默认更新为业务管理
+				MgmtType:   enumor.MgmtTypeBiz,
+				MgmtBizID:  attr.MgmtBizID,
+				Manager:    attr.Manager,
+				BakManager: attr.BakManager,
+			}
+		}
+
+		updateReq := &dataproto.BatchUpdateSecurityGroupMgmtAttrReq{
+			SecurityGroups: updateItems,
+		}
+
+		if err := s.client.DataService().Global.SecurityGroup.BatchUpdateSecurityGroupMgmtAttr(kt.Ctx, kt.Header(),
+			updateReq); err != nil {
+			logs.Errorf("batch update security group management attributes failed, err: %v, rid: %s", err,
+				kt.Rid)
+			return err
+		}
+	}
+
+	return nil
 }

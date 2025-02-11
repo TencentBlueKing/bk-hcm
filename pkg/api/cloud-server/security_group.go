@@ -172,6 +172,69 @@ type AssignBizPreviewResp struct {
 	AssignedBizID int64  `json:"assigned_biz_id"`
 }
 
+// SecurityGroupUpdateMgmtAttrReq security group update management attribute request.
+type SecurityGroupUpdateMgmtAttrReq struct {
+	MgmtType    enumor.MgmtType `json:"mgmt_type"`
+	Manager     string          `json:"manager"`
+	BakManager  string          `json:"bak_manager"`
+	UsageBizIDs []int64         `json:"usage_biz_ids"`
+	MgmtBizID   int64           `json:"mgmt_biz_id"`
+}
+
+// Validate security group update management attribute request.
+func (req SecurityGroupUpdateMgmtAttrReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	if req.MgmtType != "" {
+		if err := req.MgmtType.Validate(); err != nil {
+			return err
+		}
+	}
+
+	// 平台管理不可修改管理业务
+	if req.MgmtType == enumor.MgmtTypePlatform {
+		if req.MgmtBizID != constant.UnassignedBiz && req.MgmtBizID != 0 {
+			return errors.New("platform security group can't be assigned to a management business")
+		}
+	}
+
+	return nil
+}
+
+// BatchUpdateSecurityGroupMgmtAttrReq security group update management attribute request.
+type BatchUpdateSecurityGroupMgmtAttrReq struct {
+	SecurityGroups []BatchUpdateSGMgmtAttrItem `json:"security_groups" validate:"required,min=1"`
+}
+
+// Validate security group batch update management attribute request.
+func (req BatchUpdateSecurityGroupMgmtAttrReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	for _, item := range req.SecurityGroups {
+		if err := item.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// BatchUpdateSGMgmtAttrItem security group update management attribute item.
+type BatchUpdateSGMgmtAttrItem struct {
+	ID         string `json:"id" validate:"required"`
+	Manager    string `json:"manager" validate:"required"`
+	BakManager string `json:"bak_manager" validate:"required"`
+	MgmtBizID  int64  `json:"mgmt_biz_id" validate:"required"`
+}
+
+func (i BatchUpdateSGMgmtAttrItem) Validate() error {
+	return validator.Validate.Struct(i)
+}
+
 // -------------------------- Delete --------------------------
 
 // SecurityGroupBatchDeleteReq security group update request.
