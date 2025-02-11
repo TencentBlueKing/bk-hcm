@@ -381,7 +381,7 @@ func (g *securityGroup) countAwsSecurityGroupStatistic(kt *kit.Kit, details []ne
 		for _, group := range one.Groups {
 			sgID, ok := cloudIDToSgIDMap[converter.PtrToVal(group.GroupId)]
 			if !ok {
-				logs.Errorf("cloud id: %s not found in cloud id to sg id map, rid: %s",
+				logs.Infof("cloud id: %s not found in cloud id to sg id map, rid: %s",
 					group.GroupId, kt.Rid)
 				continue
 			}

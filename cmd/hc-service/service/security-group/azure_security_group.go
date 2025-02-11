@@ -465,8 +465,8 @@ func (g *securityGroup) countAzureSecurityGroupStatistic(details []*armnetwork.S
 		cloudID := strings.ToLower(converter.PtrToVal(one.ID))
 		sgID, ok := cloudIDToSgIDMap[cloudID]
 		if !ok {
-			logs.Errorf("azure security group: %s not found in cloudIDToSgIDMap", cloudID)
-			return fmt.Errorf("azure security group: %s not found in cloudIDToSgIDMap", cloudID)
+			logs.Infof("azure security group: %s not found in cloudIDToSgIDMap", cloudID)
+			continue
 		}
 		for _, networkInterface := range one.Properties.NetworkInterfaces {
 			if networkInterface == nil {
