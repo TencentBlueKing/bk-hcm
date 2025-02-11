@@ -266,12 +266,13 @@ func (svc *securityGroupSvc) listSGRulesCount(cts *rest.Contexts, validHandler h
 		return nil, err
 	}
 
+	result := make(map[string]int64)
 	vendorToSGIDMap := make(map[enumor.Vendor][]string)
 	for _, info := range basicInfoMap {
+		result[info.ID] = 0
 		vendorToSGIDMap[info.Vendor] = append(vendorToSGIDMap[info.Vendor], info.ID)
 	}
 
-	result := make(map[string]int64)
 	for vendor, ids := range vendorToSGIDMap {
 		resp, err := svc.client.DataService().Global.SecurityGroup.CountSecurityGroupRules(cts.Kit, vendor, ids)
 		if err != nil {
