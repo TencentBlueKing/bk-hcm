@@ -29,16 +29,16 @@ import (
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
+	corecvm "hcm/pkg/api/core/cloud/cvm"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	proto "hcm/pkg/api/hc-service"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
-	corecvm "hcm/pkg/api/core/cloud/cvm"
-	"hcm/pkg/criteria/enumor"
 
 	"github.com/aws/aws-sdk-go/service/ec2"
 )
@@ -366,6 +366,9 @@ func (g *securityGroup) countAwsSecurityGroupStatistic(kt *kit.Kit, details []ne
 	cloudIDToSgIDMap map[string]string) (map[string]map[string]int64, error) {
 
 	sgIDToResourceCountMap := make(map[string]map[string]int64)
+	for _, sgID := range cloudIDToSgIDMap {
+		sgIDToResourceCountMap[sgID] = make(map[string]int64)
+	}
 	for _, one := range details {
 		/**
 		InterfaceType 可选值:
@@ -382,12 +385,7 @@ func (g *securityGroup) countAwsSecurityGroupStatistic(kt *kit.Kit, details []ne
 					group.GroupId, kt.Rid)
 				continue
 			}
-			m, ok := sgIDToResourceCountMap[sgID]
-			if !ok {
-				m = make(map[string]int64)
-				sgIDToResourceCountMap[sgID] = m
-			}
-			m[interfaceType]++
+			sgIDToResourceCountMap[sgID][interfaceType]++
 		}
 	}
 	return sgIDToResourceCountMap, nil

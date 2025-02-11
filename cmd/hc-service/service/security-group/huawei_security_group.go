@@ -404,6 +404,9 @@ func (g *securityGroup) countHuaweiSecurityGroupStatistic(kt *kit.Kit, ports []m
 	cloudIDToSgIDMap map[string]string) (map[string]map[string]int64, error) {
 
 	sgIDToResourceCountMap := make(map[string]map[string]int64)
+	for _, sgID := range cloudIDToSgIDMap {
+		sgIDToResourceCountMap[sgID] = make(map[string]int64)
+	}
 	for _, port := range ports {
 		for _, cloudID := range port.SecurityGroups {
 			sgID, ok := cloudIDToSgIDMap[cloudID]
@@ -412,12 +415,7 @@ func (g *securityGroup) countHuaweiSecurityGroupStatistic(kt *kit.Kit, ports []m
 					cloudID, enumor.HuaWei, kt.Rid)
 				return nil, fmt.Errorf("cloudID: %s not found in cloudIDToSgIDMap", cloudID)
 			}
-			m, ok := sgIDToResourceCountMap[sgID]
-			if !ok {
-				m = make(map[string]int64)
-				sgIDToResourceCountMap[sgID] = m
-			}
-			m[port.DeviceOwner.Value()]++
+			sgIDToResourceCountMap[sgID][port.DeviceOwner.Value()]++
 		}
 	}
 	return sgIDToResourceCountMap, nil

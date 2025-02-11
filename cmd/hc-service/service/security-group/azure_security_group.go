@@ -424,6 +424,7 @@ func (g *securityGroup) AzureListSecurityGroupStatistic(cts *rest.Contexts) (any
 
 	cloudIDToSgIDMap := make(map[string]string)
 	resGroupToCloudIDsMap := make(map[string][]string)
+	sgIDToResourceCountMap := make(map[string]map[string]int64)
 	for _, sgID := range req.SecurityGroupIDs {
 		sg, ok := sgMap[sgID]
 		if !ok {
@@ -432,6 +433,7 @@ func (g *securityGroup) AzureListSecurityGroupStatistic(cts *rest.Contexts) (any
 		cloudIDToSgIDMap[sg.CloudID] = sgID
 		ResGroupName := sg.Extension.ResourceGroupName
 		resGroupToCloudIDsMap[ResGroupName] = append(resGroupToCloudIDsMap[ResGroupName], sg.CloudID)
+		sgIDToResourceCountMap[sgID] = make(map[string]int64)
 	}
 
 	client, err := g.ad.Azure(cts.Kit, req.AccountID)
@@ -439,7 +441,6 @@ func (g *securityGroup) AzureListSecurityGroupStatistic(cts *rest.Contexts) (any
 		return nil, err
 	}
 
-	sgIDToResourceCountMap := make(map[string]map[string]int64)
 	for resourceGroupName, cloudIDs := range resGroupToCloudIDsMap {
 		resp, err := g.listAzureSecurityGroupFromCloud(cts.Kit, client, resourceGroupName, cloudIDs)
 		if err != nil {
@@ -467,7 +468,6 @@ func (g *securityGroup) countAzureSecurityGroupStatistic(details []*armnetwork.S
 			logs.Errorf("azure security group: %s not found in cloudIDToSgIDMap", cloudID)
 			return fmt.Errorf("azure security group: %s not found in cloudIDToSgIDMap", cloudID)
 		}
-		sgIDToResourceCountMap[sgID] = make(map[string]int64)
 		for _, networkInterface := range one.Properties.NetworkInterfaces {
 			if networkInterface == nil {
 				continue
