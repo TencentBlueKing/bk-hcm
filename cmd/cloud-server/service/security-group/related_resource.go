@@ -20,13 +20,22 @@
 package securitygroup
 
 import (
+	"fmt"
+	"strings"
+
+	cloudserver "hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
+	"hcm/pkg/api/core/cloud"
+	dataproto "hcm/pkg/api/data-service/cloud"
+	hcservice "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/classifier"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -113,6 +122,122 @@ func (svc *securityGroupSvc) listCvmIDBySecurityGroup(cts *rest.Contexts, validH
 	}
 
 	return svc.client.DataService().Global.SGCvmRel.ListSgCvmRels(cts.Kit.Ctx, cts.Kit.Header(), req)
+}
+
+// QueryBizRelatedResourceCount query biz related resource count
+func (svc *securityGroupSvc) QueryBizRelatedResourceCount(cts *rest.Contexts) (interface{}, error) {
+	return svc.queryRelatedResourceCount(cts, handler.ResOperateAuth)
+}
+
+// QueryRelatedResourceCount query related resource count
+func (svc *securityGroupSvc) QueryRelatedResourceCount(cts *rest.Contexts) (interface{}, error) {
+	return svc.queryRelatedResourceCount(cts, handler.ResOperateAuth)
+}
+
+func (svc *securityGroupSvc) queryRelatedResourceCount(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+	interface{}, error) {
+
+	req := new(cloudserver.SecurityGroupQueryRelatedResourceCountReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	basicInfoReq := dataproto.ListResourceBasicInfoReq{
+		ResourceType: enumor.SecurityGroupCloudResType,
+		IDs:          req.IDs,
+	}
+	basicInfos, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, basicInfoReq)
+	if err != nil {
+		logs.Errorf("list security group basic info failed, ids: %v, err: %v, rid: %s", req.IDs, err, cts.Kit.Rid)
+		return nil, err
+	}
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
+		Action: meta.Find, BasicInfos: basicInfos})
+	if err != nil {
+		return nil, err
+	}
+
+	securityGroups, err := svc.listSecurityGroupByIDs(cts.Kit, req.IDs)
+	if err != nil {
+		logs.Errorf("list security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return svc.queryRelatedResourceCountFromCloud(cts.Kit, securityGroups)
+}
+
+func (svc *securityGroupSvc) queryRelatedResourceCountFromCloud(kt *kit.Kit,
+	securityGroups []cloud.BaseSecurityGroup) (*hcservice.ListSecurityGroupStatisticResp, error) {
+
+	sgByVendor := classifier.ClassifySlice(securityGroups, func(sg cloud.BaseSecurityGroup) string {
+		// key: vendor+accountID+region
+		return fmt.Sprintf("%s,%s,%s", sg.Vendor, sg.AccountID, sg.Region)
+	})
+	resultMap := make(map[string]*hcservice.SecurityGroupStatisticItem)
+	for key, groups := range sgByVendor {
+		arr := strings.Split(key, ",")
+		vendor := enumor.Vendor(arr[0])
+
+		accountID, region := arr[1], arr[2]
+		listFunc, err := svc.chooseListSecurityGroupStatisticFunc(vendor)
+		if err != nil {
+			logs.Errorf("choose list security group statistic func failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+
+		ids := make([]string, 0, len(groups))
+		for _, info := range groups {
+			ids = append(ids, info.ID)
+		}
+		req := &hcservice.ListSecurityGroupStatisticReq{
+			SecurityGroupIDs: ids,
+			Region:           region,
+			AccountID:        accountID,
+		}
+		resp, err := listFunc(kt, req)
+		if err != nil {
+			logs.Errorf("list security group statistic failed, err: %v, req: %v, rid: %s",
+				err, req, kt.Rid)
+			return nil, err
+		}
+		for _, detail := range resp.Details {
+			resultMap[detail.ID] = detail
+		}
+	}
+	result := &hcservice.ListSecurityGroupStatisticResp{}
+	for _, group := range securityGroups {
+		statistic, ok := resultMap[group.ID]
+		if !ok {
+			logs.Errorf("security group %s statistic not found, rid: %s", group.ID, kt.Rid)
+			return nil, fmt.Errorf("security group %s statistic not found", group.ID)
+		}
+		result.Details = append(result.Details, statistic)
+	}
+
+	return result, nil
+}
+
+type callListSecurityGroupStatisticFunc func(kt *kit.Kit, req *hcservice.ListSecurityGroupStatisticReq) (
+	*hcservice.ListSecurityGroupStatisticResp, error)
+
+func (svc *securityGroupSvc) chooseListSecurityGroupStatisticFunc(vendor enumor.Vendor) (
+	callListSecurityGroupStatisticFunc, error) {
+
+	switch vendor {
+	case enumor.TCloud:
+		return svc.client.HCService().TCloud.SecurityGroup.ListSecurityGroupStatistic, nil
+	case enumor.Aws:
+		return svc.client.HCService().Aws.SecurityGroup.ListSecurityGroupStatistic, nil
+	case enumor.HuaWei:
+		return svc.client.HCService().HuaWei.SecurityGroup.ListSecurityGroupStatistic, nil
+	case enumor.Azure:
+		return svc.client.HCService().Azure.SecurityGroup.ListSecurityGroupStatistic, nil
+	default:
+		return nil, fmt.Errorf("vendor: %s not support for ListSecurityGroupStatistic", vendor)
+	}
 }
 
 // ListSecurityGroupRelBusiness list security group rel business
