@@ -2,14 +2,14 @@
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useResourceStore } from '@/store';
-import { ISgOperateItem } from '@/store/security-group';
+import { type ISecurityGroupOperateItem } from '@/store/security-group';
 
 import { Message } from 'bkui-vue';
-import DetailDisplay from '../children/detail-display.vue';
+import DetailSimple from '../../components/security/detail-simple.vue';
 import hintIcon from '@/assets/image/hint.svg';
 
 defineOptions({ name: 'security-group-delete-dialog' });
-const props = defineProps<{ detail: ISgOperateItem; loading: boolean }>();
+const props = defineProps<{ detail: ISecurityGroupOperateItem; loading: boolean }>();
 const model = defineModel<boolean>();
 
 const { t } = useI18n();
@@ -51,7 +51,7 @@ const handleClosed = () => {
         {{ t('无法删除。') }}
       </bk-alert>
 
-      <detail-display :field-ids="filedIds" :detail="detail" />
+      <detail-simple :field-ids="filedIds" :detail="detail" />
     </template>
 
     <template #footer>

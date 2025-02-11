@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, h } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { ISgOperateItem } from '@/store/security-group';
+import { type ISecurityGroupOperateItem } from '@/store/security-group';
 
 import GridContainer from '@/components/layout/grid-container/grid-container.vue';
 import GridItem from '@/components/layout/grid-container/grid-item.vue';
 
-const props = defineProps<{ fieldIds: string[]; detail: ISgOperateItem }>();
+const props = defineProps<{ fieldIds: string[]; detail: ISecurityGroupOperateItem }>();
 
 const { t } = useI18n();
 

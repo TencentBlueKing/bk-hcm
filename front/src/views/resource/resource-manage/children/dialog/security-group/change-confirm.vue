@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { ISgOperateItem } from '@/store/security-group';
+import { type ISecurityGroupOperateItem } from '@/store/security-group';
 
-import DetailDisplay from '../children/detail-display.vue';
+import DetailSimple from '../../components/security/detail-simple.vue';
 import hintIcon from '@/assets/image/hint.svg';
 
-defineProps<{ detail: ISgOperateItem; loading: boolean }>();
+defineProps<{ detail: ISecurityGroupOperateItem; loading: boolean }>();
 const emit = defineEmits(['confirm']);
 const model = defineModel<boolean>();
 
@@ -31,7 +31,7 @@ const handleClosed = () => {
       </bk-loading>
     </template>
     <template v-else>
-      <detail-display class="mt16 mb16" :field-ids="fieldIds" :detail="detail" />
+      <detail-simple class="mt16 mb16" :field-ids="fieldIds" :detail="detail" />
 
       <bk-alert theme="danger" :show-icon="false">
         {{

@@ -6,7 +6,7 @@ import { IListResData, IQueryResData, QueryBuilderType } from '@/typings';
 import { enableCount } from '@/utils/search';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 
-export interface ISgItem {
+export interface ISecurityGroupItem {
   id: string;
   vendor: VendorEnum;
   cloud_id: string;
@@ -29,21 +29,21 @@ export interface ISgItem {
   cloud_update_time: string;
 }
 
-interface ISgAssignBizsPreviewItem {
+interface ISecurityGroupAssignBizsPreviewItem {
   id: string;
   assignable: boolean;
   reason: string;
   assigned_biz_id: number;
 }
 
-type SgRelType = 'cvm' | 'load_balancer';
+type SecurityGroupRelType = 'cvm' | 'load_balancer';
 interface IBizResourceCount {
   bk_biz_id: number;
   res_count: number;
 }
-type ISgRelBusiness = Record<SgRelType, IBizResourceCount[]>;
+type ISecurityGroupRelBusiness = Record<SecurityGroupRelType, IBizResourceCount[]>;
 
-type SgRelCvmCommonFields = {
+type SecurityGroupRelCvmCommonFields = {
   id: string;
   cloud_id: string;
   name: string;
@@ -57,12 +57,12 @@ type SgRelCvmCommonFields = {
   public_ipv4_addresses: string[];
   public_ipv6_addresses: string[];
 };
-interface ISgRelCvmByBizItem extends SgRelCvmCommonFields {
+interface ISecurityGroupRelCvmByBizItem extends SecurityGroupRelCvmCommonFields {
   zone: string;
   cloud_vpc_ids: string[];
   cloud_subnet_ids: string[];
 }
-interface ISgRelLoadBalancerByBizItem extends SgRelCvmCommonFields {
+interface ISecurityGroupRelLoadBalancerByBizItem extends SecurityGroupRelCvmCommonFields {
   main_zones: string[];
   backup_zones: string[];
   cloud_vpc_id: string;
@@ -72,7 +72,7 @@ interface ISgRelLoadBalancerByBizItem extends SgRelCvmCommonFields {
   memo: string;
 }
 
-interface ISgRelResCountItem {
+interface ISecurityGroupRelResCountItem {
   id: string;
   resources: Array<{
     res_name: 'cvm' | 'load_balancer' | 'db' | 'container';
@@ -80,7 +80,8 @@ interface ISgRelResCountItem {
   }>;
 }
 // 安全组单个操作项的类型
-export type ISgOperateItem = ISgItem & ISgRelResCountItem & { rule_count?: number } & { [key: string]: any };
+export type ISecurityGroupOperateItem = ISecurityGroupItem &
+  ISecurityGroupRelResCountItem & { rule_count?: number } & { [key: string]: any };
 
 export const useSecurityGroupStore = defineStore('security-group', () => {
   const { getBusinessApiPath } = useWhereAmI();
@@ -90,7 +91,7 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
   const queryAssignBizsPreview = async (ids: string[]) => {
     isQueryAssignBizsPreviewLoading.value = true;
     try {
-      const res: IQueryResData<ISgAssignBizsPreviewItem[]> = await http.post(
+      const res: IQueryResData<ISecurityGroupAssignBizsPreviewItem[]> = await http.post(
         '/api/v1/cloud/security_groups/assign/bizs/preview',
         { ids },
       );
@@ -104,37 +105,37 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
   };
 
   // 批量分配安全组到业务
-  const isBatchAssignSgToBizLoading = ref(false);
-  const batchAssignSgToBiz = async (sg_ids: string[]) => {
-    isBatchAssignSgToBizLoading.value = true;
+  const isBatchAssignToBizLoading = ref(false);
+  const batchAssignToBiz = async (sg_ids: string[]) => {
+    isBatchAssignToBizLoading.value = true;
     try {
       await http.post('/api/v1/cloud/security_groups/assign/bizs', { sg_ids });
     } finally {
-      isBatchAssignSgToBizLoading.value = false;
+      isBatchAssignToBizLoading.value = false;
     }
   };
 
   // 批量更新安全组管理属性，仅当所有管理属性均不存在时才允许编辑，所有管理属性都要提供
   // 注意：通过该接口更新的安全组会被默认设置为业务管理类型，不可再更改为平台管理类型
-  const isBatchUpdateSgMgmtAttrLoading = ref(false);
-  const batchUpdateSgMgmtAttr = async (
+  const isBatchUpdateMgmtAttrLoading = ref(false);
+  const batchUpdateMgmtAttr = async (
     security_groups: Array<{ id: string; manager: string; bak_manager: string[]; mgmt_biz_id: number }>,
   ) => {
-    isBatchUpdateSgMgmtAttrLoading.value = true;
+    isBatchUpdateMgmtAttrLoading.value = true;
     try {
       await http.patch('/api/v1/cloud/security_groups/mgmt_attrs/batch', { security_groups });
     } finally {
-      isBatchUpdateSgMgmtAttrLoading.value = false;
+      isBatchUpdateMgmtAttrLoading.value = false;
     }
   };
 
   // 查询安全组关联资源所属的业务列表，目前仅支持查询关联的CVM和CLB资源。
   // 返回的业务列表中，一定包含当前业务，且一定排在第一个
-  const isQuerySgRelBusinessLoading = ref(false);
-  const querySgRelBusiness = async (security_group_id: string) => {
-    isQuerySgRelBusinessLoading.value = true;
+  const isQueryRelBusinessLoading = ref(false);
+  const queryRelBusiness = async (security_group_id: string) => {
+    isQueryRelBusinessLoading.value = true;
     try {
-      const res: IQueryResData<ISgRelBusiness> = await http.post(
+      const res: IQueryResData<ISecurityGroupRelBusiness> = await http.post(
         `/api/v1/cloud/security_groups/${security_group_id}/related_resources/bizs/list`,
         { security_group_id },
       );
@@ -143,18 +144,18 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
       console.error(error);
       return Promise.reject(error);
     } finally {
-      isQuerySgRelBusinessLoading.value = false;
+      isQueryRelBusinessLoading.value = false;
     }
   };
 
   // 查询安全组关联的cvm列表，仅展示cvm摘要信息
-  const isQuerySgRelCvmByBizLoading = ref(false);
-  const querySgRelCvmByBiz = async (sg_id: string, res_biz_id: number, payload: QueryBuilderType) => {
-    isQuerySgRelCvmByBizLoading.value = true;
+  const isQueryRelCvmByBizLoading = ref(false);
+  const queryRelCvmByBiz = async (sg_id: string, res_biz_id: number, payload: QueryBuilderType) => {
+    isQueryRelCvmByBizLoading.value = true;
     const api = `/security_groups/${sg_id}/related_resources/biz_resources/${res_biz_id}/cvms/list`;
     try {
       const [listRes, countRes] = await Promise.all<
-        [Promise<IListResData<ISgRelCvmByBizItem[]>>, Promise<IListResData<ISgRelCvmByBizItem[]>>]
+        [Promise<IListResData<ISecurityGroupRelCvmByBizItem[]>>, Promise<IListResData<ISecurityGroupRelCvmByBizItem[]>>]
       >([http.post(api, enableCount(payload, false)), http.post(api, enableCount(payload, true))]);
       const [{ details: list = [] }, { count = 0 }] = [listRes?.data ?? {}, countRes?.data ?? {}];
       return { list, count };
@@ -162,18 +163,21 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
       console.error(error);
       return Promise.reject(error);
     } finally {
-      isQuerySgRelCvmByBizLoading.value = false;
+      isQueryRelCvmByBizLoading.value = false;
     }
   };
 
   // 查询安全组关联的负载均衡列表，仅展示负载均衡摘要信息。
-  const isQuerySgRelLoadBalancerByBizLoading = ref(false);
-  const querySgRelLoadBalancerByBiz = async (sg_id: string, res_biz_id: number, payload: QueryBuilderType) => {
-    isQuerySgRelLoadBalancerByBizLoading.value = true;
+  const isQueryRelLoadBalancerByBizLoading = ref(false);
+  const queryRelLoadBalancerByBiz = async (sg_id: string, res_biz_id: number, payload: QueryBuilderType) => {
+    isQueryRelLoadBalancerByBizLoading.value = true;
     const api = `/security_groups/${sg_id}/related_resources/biz_resources/${res_biz_id}/load_balancers/list`;
     try {
       const [listRes, countRes] = await Promise.all<
-        [Promise<IListResData<ISgRelLoadBalancerByBizItem[]>>, Promise<IListResData<ISgRelLoadBalancerByBizItem[]>>]
+        [
+          Promise<IListResData<ISecurityGroupRelLoadBalancerByBizItem[]>>,
+          Promise<IListResData<ISecurityGroupRelLoadBalancerByBizItem[]>>,
+        ]
       >([http.post(api, enableCount(payload, false)), http.post(api, enableCount(payload, true))]);
       const [{ details: list = [] }, { count = 0 }] = [listRes?.data ?? {}, countRes?.data ?? {}];
       return { list, count };
@@ -181,16 +185,16 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
       console.error(error);
       return Promise.reject(error);
     } finally {
-      isQuerySgRelLoadBalancerByBizLoading.value = false;
+      isQueryRelLoadBalancerByBizLoading.value = false;
     }
   };
 
   // 查询安全组关联的云上资源数量
-  const isQuerySgRelatedResourcesLoading = ref(false);
-  const querySgRelatedResources = async (ids: string[]) => {
-    isQuerySgRelatedResourcesLoading.value = true;
+  const isQueryRelatedResourcesLoading = ref(false);
+  const queryRelatedResources = async (ids: string[]) => {
+    isQueryRelatedResourcesLoading.value = true;
     try {
-      const res: IQueryResData<ISgRelResCountItem[]> = await http.post(
+      const res: IQueryResData<ISecurityGroupRelResCountItem[]> = await http.post(
         '/api/v1/cloud/security_groups/related_resources/query_count',
         { ids },
       );
@@ -199,13 +203,13 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
       console.error(error);
       return Promise.reject(error);
     } finally {
-      isQuerySgRelatedResourcesLoading.value = false;
+      isQueryRelatedResourcesLoading.value = false;
     }
   };
 
   // 更新安全组管理属性
-  const isUpdateSgMgmtAttrLoading = ref(false);
-  const updateSgMgmtAttr = async (
+  const isUpdateMgmtAttrLoading = ref(false);
+  const updateMgmtAttr = async (
     id: string,
     payload?: Array<{
       mgmt_type?: string;
@@ -215,18 +219,18 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
       mgmt_biz_id?: number;
     }>,
   ) => {
-    isUpdateSgMgmtAttrLoading.value = true;
+    isUpdateMgmtAttrLoading.value = true;
     try {
       await http.patch(`/api/v1/cloud/security_groups/${id}/mgmt_attrs`, payload);
     } finally {
-      isUpdateSgMgmtAttrLoading.value = false;
+      isUpdateMgmtAttrLoading.value = false;
     }
   };
 
   // 批量查询安全组规则数量
-  const isBatchQuerySgRuleCountLoading = ref(false);
-  const batchQuerySgRuleCount = async (security_group_ids: string[]) => {
-    isBatchQuerySgRuleCountLoading.value = true;
+  const isBatchQueryRuleCountLoading = ref(false);
+  const batchQueryRuleCount = async (security_group_ids: string[]) => {
+    isBatchQueryRuleCountLoading.value = true;
     try {
       const res: IQueryResData<Record<string, number>> = await http.post(
         `/api/v1/cloud/${getBusinessApiPath()}security_groups/rules/count`,
@@ -237,28 +241,28 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
       console.error(error);
       return Promise.reject(error);
     } finally {
-      isBatchQuerySgRuleCountLoading.value = false;
+      isBatchQueryRuleCountLoading.value = false;
     }
   };
 
   return {
     isQueryAssignBizsPreviewLoading,
     queryAssignBizsPreview,
-    isBatchAssignSgToBizLoading,
-    batchAssignSgToBiz,
-    isBatchUpdateSgMgmtAttrLoading,
-    batchUpdateSgMgmtAttr,
-    isQuerySgRelBusinessLoading,
-    querySgRelBusiness,
-    isQuerySgRelCvmByBizLoading,
-    querySgRelCvmByBiz,
-    isQuerySgRelLoadBalancerByBizLoading,
-    querySgRelLoadBalancerByBiz,
-    isQuerySgRelatedResourcesLoading,
-    querySgRelatedResources,
-    isUpdateSgMgmtAttrLoading,
-    updateSgMgmtAttr,
-    isBatchQuerySgRuleCountLoading,
-    batchQuerySgRuleCount,
+    isBatchAssignToBizLoading,
+    batchAssignToBiz,
+    isBatchUpdateMgmtAttrLoading,
+    batchUpdateMgmtAttr,
+    isQueryRelBusinessLoading,
+    queryRelBusiness,
+    isQueryRelCvmByBizLoading,
+    queryRelCvmByBiz,
+    isQueryRelLoadBalancerByBizLoading,
+    queryRelLoadBalancerByBiz,
+    isQueryRelatedResourcesLoading,
+    queryRelatedResources,
+    isUpdateMgmtAttrLoading,
+    updateMgmtAttr,
+    isBatchQueryRuleCountLoading,
+    batchQueryRuleCount,
   };
 });

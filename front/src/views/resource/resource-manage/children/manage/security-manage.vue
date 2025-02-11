@@ -27,10 +27,10 @@ import http from '@/http';
 import { timeFormatter, formatTags } from '@/common/util';
 import { storeToRefs } from 'pinia';
 
-import ChangeEffectConfirmDialog from './security/dialog/change-effect-confirm.vue';
-import SecurityGroupDeleteDialog from './security/dialog/delete.vue';
-import { MGMT_TYPE_MAP } from './security/constants';
-import { ISgOperateItem, useSecurityGroupStore } from '@/store/security-group';
+import SecurityGroupChangeConfirmDialog from '../dialog/security-group/change-confirm.vue';
+import SecurityGroupSingleDeleteDialog from '../dialog/security-group/single-delete.vue';
+import { MGMT_TYPE_MAP } from '@/constants/security-group';
+import { ISecurityGroupOperateItem, useSecurityGroupStore } from '@/store/security-group';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -104,8 +104,8 @@ const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, ge
 
   //     const security_group_ids: string[] = data.map((item: any) => item.id);
   //     const [relResList, ruleCountMap] = await Promise.all([
-  //       securityGroupStore.querySgRelatedResources(security_group_ids),
-  //       securityGroupStore.batchQuerySgRuleCount(security_group_ids),
+  //       securityGroupStore.queryRelatedResources(security_group_ids),
+  //       securityGroupStore.batchQueryRuleCount(security_group_ids),
   //     ]);
 
   //     return data.map((item) => {
@@ -404,9 +404,9 @@ const groupColumns = [
           disabled: !props.authVerifyData?.permissionAction[authMap.rule] || isAssigned,
           handleClick: async () => {
             isChangeEffectConfirmDialogShow.value = true;
-            const resData = await securityGroupStore.querySgRelatedResources([data.id]);
+            const resData = await securityGroupStore.queryRelatedResources([data.id]);
             const { resources } = resData[0] ?? {};
-            currentSgDetail.value = { ...data, resources };
+            currentSecurityGroup.value = { ...data, resources };
           },
         },
         {
@@ -870,7 +870,7 @@ watch(
 const isChangeEffectConfirmDialogShow = ref(false);
 const handleChangeEffectConfirm = () => {
   const routeInfo: any = {
-    query: { activeTab: 'rule', id: currentSgDetail.value.id, vendor: currentSgDetail.value.vendor },
+    query: { activeTab: 'rule', id: currentSecurityGroup.value.id, vendor: currentSecurityGroup.value.vendor },
   };
   // 业务下
   if (route.path.includes('business')) {
@@ -881,18 +881,18 @@ const handleChangeEffectConfirm = () => {
   router.push(routeInfo);
 };
 
-const currentSgDetail = ref<ISgOperateItem>(null);
+const currentSecurityGroup = ref<ISecurityGroupOperateItem>(null);
 
-const isSgDeleteDialogShow = ref(false);
+const isSecurityGroupSingleDeleteDialogShow = ref(false);
 const handleDeleteSG = async (rowData: any) => {
-  isSgDeleteDialogShow.value = true;
+  isSecurityGroupSingleDeleteDialogShow.value = true;
   const [relResList, ruleCountMap] = await Promise.all([
-    securityGroupStore.querySgRelatedResources([rowData.id]),
-    securityGroupStore.batchQuerySgRuleCount([rowData.id]),
+    securityGroupStore.queryRelatedResources([rowData.id]),
+    securityGroupStore.batchQueryRuleCount([rowData.id]),
   ]);
   const rule_count = ruleCountMap[rowData.id] ?? 0;
   const { resources } = relResList[0] ?? {};
-  currentSgDetail.value = { ...rowData, resources, rule_count };
+  currentSecurityGroup.value = { ...rowData, resources, rule_count };
 };
 
 const securityHandleShowDelete = (data: any) => {
@@ -1024,18 +1024,18 @@ const securityHandleShowDelete = (data: any) => {
     </bk-loading>
 
     <!-- 变更影响确认 -->
-    <change-effect-confirm-dialog
+    <security-group-change-confirm-dialog
       v-model="isChangeEffectConfirmDialogShow"
-      :loading="securityGroupStore.isQuerySgRelatedResourcesLoading"
-      :detail="currentSgDetail"
+      :loading="securityGroupStore.isQueryRelatedResourcesLoading"
+      :detail="currentSecurityGroup"
       @confirm="handleChangeEffectConfirm"
     />
 
     <!-- 删除安全组 -->
-    <security-group-delete-dialog
-      v-model="isSgDeleteDialogShow"
-      :loading="securityGroupStore.isQuerySgRelatedResourcesLoading"
-      :detail="currentSgDetail"
+    <security-group-single-delete-dialog
+      v-model="isSecurityGroupSingleDeleteDialogShow"
+      :loading="securityGroupStore.isQueryRelatedResourcesLoading"
+      :detail="currentSecurityGroup"
     />
   </div>
 </template>
