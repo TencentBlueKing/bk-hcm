@@ -14,8 +14,13 @@ type SortType = {
 type PropsType = {
   filter?: FilterType;
 };
+type ExtraConfigType = {
+  sort?: 'string';
+  order?: 'ASC' | 'DESC';
+  handleAsyncRequest?: (data: any) => Promise<any[]>; // 传入接口返回的数据list，返回异步请求处理后的数据list
+};
 
-export default (props: PropsType, url: Ref<string>, extraConfig?: any) => {
+export default (props: PropsType, url: Ref<string>, extraConfig?: ExtraConfigType) => {
   // 接口
   const resourceStore = useResourceStore();
   const businessStore = useBusinessStore();
@@ -32,48 +37,48 @@ export default (props: PropsType, url: Ref<string>, extraConfig?: any) => {
   const order = ref('DESC');
 
   // 更新数据
-  const triggerApi = () => {
+  const triggerApi = async () => {
     const method = whereAmI.value === Senarios.business ? businessStore.getCommonList : resourceStore.getCommonList;
+
     isLoading.value = true;
-    Promise.all([
-      method(
-        {
-          page: {
-            count: false,
-            start: (pagination.value.current - 1) * pagination.value.limit,
-            limit: pagination.value.limit,
-            sort: extraConfig?.sort ? extraConfig.sort : sort.value,
-            order: extraConfig?.order ? extraConfig.order : order.value,
+    try {
+      const [listResult, countResult] = await Promise.all([
+        method(
+          {
+            page: {
+              count: false,
+              start: (pagination.value.current - 1) * pagination.value.limit,
+              limit: pagination.value.limit,
+              sort: extraConfig?.sort ? extraConfig.sort : sort.value,
+              order: extraConfig?.order ? extraConfig.order : order.value,
+            },
+            filter: props.filter,
           },
-          filter: props.filter,
-        },
-        url.value,
-      ),
-      method(
-        {
-          page: {
-            count: true,
-          },
-          filter: props.filter,
-        },
-        url.value,
-      ),
-    ])
-      .then(([listResult, countResult]: [any, any]) => {
-        datas.value = (listResult?.data?.details || []).map((item: any) => {
-          return {
-            ...item,
-            ...item.spec,
-            ...item.attachment,
-            ...item.revision,
-            ...item.extension,
-          };
-        });
-        pagination.value.count = countResult?.data?.count || 0;
-      })
-      .finally(() => {
-        isLoading.value = false;
+          url.value,
+        ),
+        method({ page: { count: true }, filter: props.filter }, url.value),
+      ]);
+
+      let { details = [] } = listResult.data;
+      const { count = 0 } = countResult.data;
+
+      if (extraConfig?.handleAsyncRequest) {
+        details = await extraConfig.handleAsyncRequest(details);
+      }
+
+      datas.value = details.map((item: any) => {
+        return { ...item, ...item.spec, ...item.attachment, ...item.revision, ...item.extension };
       });
+      pagination.value.count = count;
+
+      return details;
+    } catch (error) {
+      console.error(error);
+      datas.value = [];
+      pagination.value.count = 0;
+    } finally {
+      isLoading.value = false;
+    }
   };
 
   // 页码变化发生的事件

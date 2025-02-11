@@ -530,7 +530,7 @@ export enum SECURITY_GROUP_RULE_TYPE {
   EGRESS = 'egress',
 }
 
-export const VendorMap = {
+export const VendorMap: Record<string, string> = {
   [VendorEnum.AWS]: '亚马逊云',
   [VendorEnum.AZURE]: '微软云',
   [VendorEnum.GCP]: '谷歌云',
