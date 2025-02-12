@@ -162,6 +162,11 @@ func RuleJsonOverlaps[T any](fieldName string, values []T) *filter.AtomRule {
 	return &filter.AtomRule{Field: fieldName, Op: filter.JSONOverlaps.Factory(), Value: values}
 }
 
+// RuleJsonLengthGreaterThan 生成资源字段等于查询的AtomRule，即fieldName > value
+func RuleJsonLengthGreaterThan(fieldName string, value int) *filter.AtomRule {
+	return &filter.AtomRule{Field: fieldName, Op: filter.JSONLengthGreaterThan.Factory(), Value: value}
+}
+
 // RuleJSONContains 生成资源字段等于查询的AtomRule，即values in fieldName
 func RuleJSONContains[T any](fieldName string, values T) *filter.AtomRule {
 	return &filter.AtomRule{Field: fieldName, Op: filter.JSONContains.Factory(), Value: values}
