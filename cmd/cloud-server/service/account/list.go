@@ -135,7 +135,6 @@ func (a *accountSvc) listAccount(cts *rest.Contexts, typ meta.ResourceType) (*da
 		return nil, err
 	}
 
-	isAny = false
 	if isAny {
 		accounts, err := a.listAccountByFilter(cts.Kit, req.Filter)
 		if err != nil {
