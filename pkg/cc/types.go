@@ -35,6 +35,7 @@ import (
 	"hcm/pkg/version"
 
 	etcd3 "go.etcd.io/etcd/client/v3"
+	"google.golang.org/grpc"
 )
 
 // Service defines Setting related runtime.
@@ -111,6 +112,10 @@ func (es Etcd) ToConfig() (etcd3.Config, error) {
 		PermitWithoutStream:  false,
 	}
 
+	// set grpc.WithBlock() to make sure quick fail when etcd endpoint is unavailable.
+	// if not, etcd client may wait forever for incorrect(or unavailable) etcd endpoint
+	// ref: https://github.com/etcd-io/etcd/issues/9877
+	c.DialOptions = append(c.DialOptions, grpc.WithBlock())
 	return c, nil
 }
 
