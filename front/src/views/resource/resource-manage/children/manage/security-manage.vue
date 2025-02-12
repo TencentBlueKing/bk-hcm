@@ -100,7 +100,7 @@ const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, ge
   {
     handleAsyncRequest: async (data: any[]) => {
       // 安全组需要异步加载一些关联资源数据
-      if (activeType.value !== 'group') return;
+      if (activeType.value !== 'group' || !data.length) return [];
 
       const security_group_ids: string[] = data.map((item: any) => item.id);
       const { ruleCountMap, relatedResourcesList } = await securityGroupStore.queryRuleCountAndRelatedResources(
