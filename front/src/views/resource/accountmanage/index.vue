@@ -103,7 +103,8 @@ const getAccountList = async () => {
   state.loading = true;
   try {
     const res: IListResData<IAccountItem[]> = await accountStore.getAccountList({ filter: state.filter });
-    state.dataList = res.data.details;
+    state.dataList =
+      res.data?.details?.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) ?? [];
   } catch (error) {
     console.error(error);
     dataList.value = [];
