@@ -72,7 +72,7 @@ interface ISecurityGroupRelLoadBalancerByBizItem extends SecurityGroupRelCvmComm
   memo: string;
 }
 
-interface ISecurityGroupRelResCountItem {
+export interface ISecurityGroupRelResCountItem {
   id: string;
   resources: Array<{
     res_name: 'cvm' | 'load_balancer' | 'db' | 'container';
@@ -194,11 +194,12 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
   const queryRelatedResources = async (ids: string[]) => {
     isQueryRelatedResourcesLoading.value = true;
     try {
-      const res: IQueryResData<ISecurityGroupRelResCountItem[]> = await http.post(
+      const res: IListResData<ISecurityGroupRelResCountItem[]> = await http.post(
         '/api/v1/cloud/security_groups/related_resources/query_count',
         { ids },
       );
-      return res.data;
+      const { details = [] } = res.data ?? {};
+      return details;
     } catch (error) {
       console.error(error);
       return Promise.reject(error);
@@ -245,6 +246,23 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
     }
   };
 
+  const isQueryRuleCountAndRelatedResourcesLoading = ref(false);
+  const queryRuleCountAndRelatedResources = async (ids: string[]) => {
+    isQueryRuleCountAndRelatedResourcesLoading.value = true;
+    try {
+      const [ruleCountMap, relatedResourcesList] = await Promise.all([
+        batchQueryRuleCount(ids),
+        queryRelatedResources(ids),
+      ]);
+      return { ruleCountMap, relatedResourcesList };
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    } finally {
+      isQueryRuleCountAndRelatedResourcesLoading.value = false;
+    }
+  };
+
   return {
     isQueryAssignBizsPreviewLoading,
     queryAssignBizsPreview,
@@ -264,5 +282,7 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
     updateMgmtAttr,
     isBatchQueryRuleCountLoading,
     batchQueryRuleCount,
+    isQueryRuleCountAndRelatedResourcesLoading,
+    queryRuleCountAndRelatedResources,
   };
 });
