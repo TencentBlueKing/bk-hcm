@@ -134,7 +134,7 @@ export const useAccountStore = defineStore({
      * @param {number} id
      * @return {*}
      */
-    async accountDelete(id: number) {
+    async accountDelete(id: string) {
       return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/${id}`);
     },
     /**
@@ -142,7 +142,7 @@ export const useAccountStore = defineStore({
      * @param {number} id
      * @return {*}
      */
-    async accountDeleteValidate(id: number) {
+    async accountDeleteValidate(id: string) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/${id}/delete/validate`);
     },
     /**
@@ -187,12 +187,10 @@ export const useAccountStore = defineStore({
     },
 
     async updateAccountList(data: any) {
-      console.log('data', data);
       this.accountList = data?.map(({ id, name }: { id: string; name: string }) => ({
         id,
         name,
       }));
-      console.log('this.accountList', this.accountList);
     },
 
     /**
