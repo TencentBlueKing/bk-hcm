@@ -32,14 +32,14 @@ require (
 	github.com/shopspring/decimal v1.4.0
 	github.com/smartystreets/goconvey v1.8.1
 	github.com/spf13/pflag v1.0.5
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/billing v1.0.908
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam v1.0.908
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cbs v1.0.908
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb v1.0.908
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.908
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm v1.0.908
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/ssl v1.0.908
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc v1.0.908
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/billing v1.0.1096
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cam v1.0.1096
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cbs v1.0.1096
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb v1.0.1096
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.1096
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm v1.0.1096
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/ssl v1.0.1096
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc v1.0.1096
 	github.com/tencentyun/cos-go-sdk-v5 v0.7.48
 	github.com/tencentyun/qcloud-cos-sts-sdk v0.0.0-20241118064430-63a76784514f
 	github.com/tidwall/gjson v1.14.4
