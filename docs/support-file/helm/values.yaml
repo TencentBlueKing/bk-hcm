@@ -12,7 +12,7 @@ image:
   registry: hub.bktencent.com
   pullPolicy: IfNotPresent
   pullSecrets: []
-  tag: 1.7.3-alpha.1
+  tag: 1.7.3
 
 serviceAccount:
   create: true
