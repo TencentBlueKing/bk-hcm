@@ -147,6 +147,7 @@ func (svc *service) ListAccount(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	opt := &types.ListOption{
+		Fields: req.Fields,
 		Filter: req.Filter,
 		Page:   req.Page,
 	}
