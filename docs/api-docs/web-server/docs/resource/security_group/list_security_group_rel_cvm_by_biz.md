@@ -6,7 +6,7 @@
 
 ### URL
 
-POST /security_groups/{sg_id}/related_resources/biz_resources/{res_biz_id}/cvms/list
+POST /api/v1/cloud/security_groups/{sg_id}/related_resources/biz_resources/{res_biz_id}/cvms/list
 
 ### 输入参数
 
