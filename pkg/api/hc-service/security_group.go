@@ -168,13 +168,19 @@ func (opt AzureSecurityGroupAssociateNIReq) Validate() error {
 
 // ListSecurityGroupStatisticReq define tcloud list security group statistic request.
 type ListSecurityGroupStatisticReq struct {
-	SecurityGroupIDs []string `json:"security_group_ids" validate:"required,max=100,min=1"`
+	SecurityGroupIDs []string `json:"security_group_ids" validate:"required"`
 	Region           string   `json:"region" validate:"required"`
 	AccountID        string   `json:"account_id" validate:"required"`
 }
 
 // Validate tcloud list security group statistic request.
 func (req *ListSecurityGroupStatisticReq) Validate() error {
+	if len(req.SecurityGroupIDs) == 0 {
+		return fmt.Errorf("security group ids should not be empty")
+	}
+	if len(req.SecurityGroupIDs) > constant.CloudResourceSyncMaxLimit {
+		return fmt.Errorf("security group ids count should <= %d", constant.CloudResourceSyncMaxLimit)
+	}
 	return validator.Validate.Struct(req)
 }
 

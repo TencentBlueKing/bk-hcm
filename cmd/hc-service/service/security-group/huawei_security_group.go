@@ -397,7 +397,7 @@ func (g *securityGroup) HuaweiListSecurityGroupStatistic(cts *rest.Contexts) (an
 		return nil, err
 	}
 
-	return resourceCountMapToSecurityGroupStatisticItem(sgIDToResourceCountMap), nil
+	return resCountMapToSGStatisticResp(sgIDToResourceCountMap), nil
 }
 
 func (g *securityGroup) countHuaweiSecurityGroupStatistic(kt *kit.Kit, ports []model.Port,
@@ -411,7 +411,7 @@ func (g *securityGroup) countHuaweiSecurityGroupStatistic(kt *kit.Kit, ports []m
 		for _, cloudID := range port.SecurityGroups {
 			sgID, ok := cloudIDToSgIDMap[cloudID]
 			if !ok {
-				logs.Infof("cloudID: %s not found in cloudIDToSgIDMap, vendor: %s, rid: %s",
+				logs.Warnf("cloudID: %s not found in cloudIDToSgIDMap, vendor: %s, rid: %s",
 					cloudID, enumor.HuaWei, kt.Rid)
 				continue
 			}
@@ -419,30 +419,6 @@ func (g *securityGroup) countHuaweiSecurityGroupStatistic(kt *kit.Kit, ports []m
 		}
 	}
 	return sgIDToResourceCountMap, nil
-}
-
-func resourceCountMapToSecurityGroupStatisticItem(
-	sgIDToResourceCountMap map[string]map[string]int64) *proto.ListSecurityGroupStatisticResp {
-
-	result := &proto.ListSecurityGroupStatisticResp{
-		Details: make([]proto.SecurityGroupStatisticItem, 0, len(sgIDToResourceCountMap)),
-	}
-	for sgID, resourceMap := range sgIDToResourceCountMap {
-		one := proto.SecurityGroupStatisticItem{
-			ID:        sgID,
-			Resources: make([]proto.SecurityGroupStatisticResource, 0, len(resourceMap)),
-		}
-		for resName, count := range resourceMap {
-			one.Resources = append(one.Resources,
-				proto.SecurityGroupStatisticResource{
-					ResName: resName,
-					Count:   count,
-				},
-			)
-		}
-		result.Details = append(result.Details, one)
-	}
-	return result
 }
 
 func (g *securityGroup) listHuaweiPorts(kt *kit.Kit, region, accountID string, cloudIDToSgIDMap map[string]string) (

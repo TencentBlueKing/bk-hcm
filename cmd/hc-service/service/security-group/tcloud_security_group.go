@@ -701,18 +701,26 @@ func (g *securityGroup) TCloudListSecurityGroupStatistic(cts *rest.Contexts) (an
 		sgIDToResourceCountMap[sgID] = tcloudSGAssociateStatisticToResourceCountMap(one)
 	}
 
-	return resourceCountMapToSecurityGroupStatisticItem(sgIDToResourceCountMap), nil
+	return resCountMapToSGStatisticResp(sgIDToResourceCountMap), nil
 }
+
+const (
+	tcloudStatisticResTypeCVM = "CVM"
+	tcloudStatisticResTypeCDB = "CDB"
+	tcloudStatisticResTypeENI = "ENI"
+	tcloudStatisticResTypeSG  = "SG"
+	tcloudStatisticResTypeCLB = "CLB"
+)
 
 func tcloudSGAssociateStatisticToResourceCountMap(
 	statistic securitygroup.TCloudSecurityGroupAssociationStatistic) map[string]int64 {
 
 	return map[string]int64{
-		"CVM": int64(converter.PtrToVal(statistic.CVM)),
-		"CDB": int64(converter.PtrToVal(statistic.CDB)),
-		"ENI": int64(converter.PtrToVal(statistic.ENI)),
-		"SG":  int64(converter.PtrToVal(statistic.SG)),
-		"CLB": int64(converter.PtrToVal(statistic.CLB)),
+		tcloudStatisticResTypeCVM: int64(converter.PtrToVal(statistic.CVM)),
+		tcloudStatisticResTypeCDB: int64(converter.PtrToVal(statistic.CDB)),
+		tcloudStatisticResTypeENI: int64(converter.PtrToVal(statistic.ENI)),
+		tcloudStatisticResTypeSG:  int64(converter.PtrToVal(statistic.SG)),
+		tcloudStatisticResTypeCLB: int64(converter.PtrToVal(statistic.CLB)),
 	}
 }
 

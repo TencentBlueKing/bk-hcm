@@ -455,7 +455,7 @@ func (g *securityGroup) AzureListSecurityGroupStatistic(cts *rest.Contexts) (any
 		}
 	}
 
-	return resourceCountMapToSecurityGroupStatisticItem(sgIDToResourceCountMap), nil
+	return resCountMapToSGStatisticResp(sgIDToResourceCountMap), nil
 }
 
 func (g *securityGroup) countAzureSecurityGroupStatistic(details []*armnetwork.SecurityGroup,
@@ -465,7 +465,7 @@ func (g *securityGroup) countAzureSecurityGroupStatistic(details []*armnetwork.S
 		cloudID := strings.ToLower(converter.PtrToVal(one.ID))
 		sgID, ok := cloudIDToSgIDMap[cloudID]
 		if !ok {
-			logs.Infof("azure security group: %s not found in cloudIDToSgIDMap", cloudID)
+			logs.Warnf("azure security group: %s not found in cloudIDToSgIDMap", cloudID)
 			continue
 		}
 		for _, networkInterface := range one.Properties.NetworkInterfaces {

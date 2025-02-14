@@ -359,7 +359,7 @@ func (g *securityGroup) AwsListSecurityGroupStatistic(cts *rest.Contexts) (any, 
 		logs.Errorf("count aws security group statistic failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-	return resourceCountMapToSecurityGroupStatisticItem(sgIDToResourceCountMap), nil
+	return resCountMapToSGStatisticResp(sgIDToResourceCountMap), nil
 }
 
 func (g *securityGroup) countAwsSecurityGroupStatistic(kt *kit.Kit, details []networkinterface.AwsNetworkInterface,
@@ -381,7 +381,7 @@ func (g *securityGroup) countAwsSecurityGroupStatistic(kt *kit.Kit, details []ne
 		for _, group := range one.Groups {
 			sgID, ok := cloudIDToSgIDMap[converter.PtrToVal(group.GroupId)]
 			if !ok {
-				logs.Infof("cloud id: %s not found in cloud id to sg id map, rid: %s",
+				logs.Warnf("cloud id: %s not found in cloud id to sg id map, rid: %s",
 					group.GroupId, kt.Rid)
 				continue
 			}
