@@ -389,6 +389,10 @@ func (t *TCloudImpl) CloneSecurityGroup(kt *kit.Kit, opt *securitygroup.TCloudSe
 		})
 	}
 
+	if opt.RemoteRegion != "" {
+		req.RemoteRegion = cvt.ValToPtr(opt.RemoteRegion)
+	}
+
 	resp, err := client.CloneSecurityGroupWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("clone tcloud security group failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)

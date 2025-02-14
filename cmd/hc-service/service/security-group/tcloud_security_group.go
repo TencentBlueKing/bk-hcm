@@ -97,7 +97,8 @@ func (g *securityGroup) CreateTCloudSecurityGroup(cts *rest.Contexts) (interface
 	}
 	result, err := g.dataCli.TCloud.SecurityGroup.BatchCreateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), createReq)
 	if err != nil {
-		logs.Errorf("request dataservice to create tcloud security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("request dataservice to create tcloud security group failed, err: %v, req: %v, rid: %s",
+			err, req, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -894,7 +895,8 @@ func (g *securityGroup) createSecurityGroupForData(kt *kit.Kit, req *proto.TClou
 	}
 	result, err := g.dataCli.TCloud.SecurityGroup.BatchCreateSecurityGroup(kt.Ctx, kt.Header(), createReq)
 	if err != nil {
-		logs.Errorf("request dataservice to create tcloud security group failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("request dataservice to create tcloud security group failed, err: %v, req: %v, rid: %s",
+			err, createReq, kt.Rid)
 		return "", err
 	}
 	return result.IDs[0], nil

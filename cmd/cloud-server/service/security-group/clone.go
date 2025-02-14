@@ -60,13 +60,13 @@ func (svc *securityGroupSvc) CloneBizSecurityGroup(cts *rest.Contexts) (interfac
 
 	sg, err := svc.getSecurityGroupFromDB(cts.Kit, sgID)
 	if err != nil {
-		logs.Errorf("get security group from db failed, err: %v, rid: %s", err, sgID)
+		logs.Errorf("get security group from db failed, err: %v, sgID: %s, rid: %s", err, sgID, cts.Kit.Rid)
 		return nil, err
 	}
-	// validate  authorize
-	err = handler.BizOperateAuth(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
-		Action: meta.Create, BasicInfo: common.GetCloudResourceBasicInfo(sg.AccountID, bizID)})
+
+	err = svc.authorizeCloneSecurityGroup(cts, sg.AccountID, bizID)
 	if err != nil {
+		logs.Errorf("authorize clone security group failed, err: %v, sgID: %s, rid: %s", err, sgID, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -83,8 +83,33 @@ func (svc *securityGroupSvc) CloneBizSecurityGroup(cts *rest.Contexts) (interfac
 	}
 }
 
-func (svc *securityGroupSvc) tcloudCloneSecurityGroup(kt *kit.Kit, bizID int64, sg *cloud.BaseSecurityGroup,
-	req *cloudserver.SecurityGroupCloneReq) (*core.CreateResult, error) {
+func (svc *securityGroupSvc) authorizeCloneSecurityGroup(cts *rest.Contexts, accountID string, bizID int64) error {
+	// validate  create permission
+	err := handler.BizOperateAuth(cts,
+		&handler.ValidWithAuthOption{
+			Authorizer: svc.authorizer, ResType: meta.SecurityGroup, Action: meta.Create,
+			BasicInfo: common.GetCloudResourceBasicInfo(accountID, bizID)},
+	)
+	if err != nil {
+		return err
+	}
+
+	// validate find permission
+	_, noPerm, err := handler.ListBizAuthRes(cts,
+		&handler.ListAuthResOption{
+			Authorizer: svc.authorizer, ResType: meta.SecurityGroup, Action: meta.Find,
+		},
+	)
+	if err != nil {
+		return err
+	}
+	if noPerm {
+		return errf.New(errf.PermissionDenied, "permission denied for access security group")
+	}
+	return nil
+}
+
+func (svc *securityGroupSvc) tcloudCloneSecurityGroup(kt *kit.Kit, bizID int64, sg *cloud.BaseSecurityGroup, req *cloudserver.SecurityGroupCloneReq) (*core.CreateResult, error) {
 
 	cloneReq := &proto.TCloudSecurityGroupCloneReq{
 		Region:          sg.Region,
