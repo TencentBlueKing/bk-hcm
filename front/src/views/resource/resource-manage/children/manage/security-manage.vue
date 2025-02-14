@@ -29,8 +29,17 @@ import { storeToRefs } from 'pinia';
 
 import SecurityGroupChangeConfirmDialog from '../dialog/security-group/change-confirm.vue';
 import SecurityGroupSingleDeleteDialog from '../dialog/security-group/single-delete.vue';
+import { CloneSecurity } from '../dialog/clone-security';
 import { MGMT_TYPE_MAP } from '@/constants/security-group';
 import { ISecurityGroupOperateItem, useSecurityGroupStore } from '@/store/security-group';
+
+interface IData {
+  [key: string]: any;
+}
+export interface ICloneSecurityProps {
+  isShow: boolean;
+  data: IData;
+}
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -85,6 +94,11 @@ const state = reactive<any>({
     fetchUrl: 'security_groups',
     columns: 'group',
   },
+});
+
+const cloneSecurityData = reactive<ICloneSecurityProps>({
+  isShow: false,
+  data: {},
 });
 
 const templateData = ref([]);
@@ -387,7 +401,7 @@ const groupColumns = [
     isDefaultShow: true,
     width: 120,
     fixed: 'right',
-    render({ data }: any) {
+    render({ data }: IData) {
       const isAssigned = data.bk_biz_id !== -1 && props.isResourcePage;
 
       const authMap = {
@@ -414,7 +428,7 @@ const groupColumns = [
           name: t('克隆'),
           auth: authMap.clone,
           disabled: !props.authVerifyData?.permissionAction[authMap.clone] || isAssigned,
-          handleClick: () => {},
+          handleClick: () => securityHandleShowClone(data),
           hidden: props.isResourcePage,
         },
         {
@@ -895,6 +909,10 @@ const handleDeleteSG = async (rowData: any) => {
   currentSecurityGroup.value = { ...rowData, resources, rule_count };
 };
 
+const securityHandleShowClone = (data: IData) => {
+  cloneSecurityData.isShow = true;
+  cloneSecurityData.data = data;
+};
 const securityHandleShowDelete = (data: any) => {
   InfoBox({
     title: '请确认是否删除',
@@ -1037,6 +1055,9 @@ const securityHandleShowDelete = (data: any) => {
       :loading="securityGroupStore.isQueryRelatedResourcesLoading"
       :detail="currentSecurityGroup"
     />
+
+    <!-- 克隆安全组弹窗 -->
+    <CloneSecurity v-model:isShow="cloneSecurityData.isShow" :data="cloneSecurityData.data" />
   </div>
 </template>
 

@@ -2,10 +2,20 @@
 import { ref } from 'vue';
 import UserSelector from '@/components/user-selector/index.vue';
 
+export interface IChargeSelectorProps {
+  manager?: string;
+  bakManager?: string;
+}
+
 defineOptions({ name: 'ChargePersonSelector' });
 
+const props = withDefaults(defineProps<IChargeSelectorProps>(), {
+  manager: '',
+  bakManager: '',
+});
+
 const formRef = ref(null);
-const formData = ref({ manager: '', bak_manager: '' });
+const formData = ref({ manager: props.manager, bak_manager: props.bakManager });
 
 const validate = () => {
   return formRef.value.validate();
