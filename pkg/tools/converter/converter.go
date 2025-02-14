@@ -98,6 +98,18 @@ func StringSliceToUint64Slice(source []string) []uint64 {
 	return target
 }
 
+// StringSliceToInt64Slice []string to []int64.
+func StringSliceToInt64Slice(source []string) []int64 {
+	target := make([]int64, len(source))
+	for index := range source {
+		int64Tmp, err := strconv.ParseInt(source[index], 10, 64)
+		if err == nil {
+			target[index] = int64Tmp
+		}
+	}
+	return target
+}
+
 // SliceToMap convert slice to map, use kvFunc to get key value pair for map.
 //
 //	k, v := kvFunc(one)

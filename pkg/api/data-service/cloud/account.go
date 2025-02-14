@@ -256,15 +256,7 @@ type AccountGetResp[T AccountExtensionGetResp] struct {
 // -------------------------- List --------------------------
 
 // AccountListReq ...
-type AccountListReq struct {
-	Filter *filter.Expression `json:"filter" validate:"required"`
-	Page   *core.BasePage     `json:"page" validate:"required"`
-}
-
-// Validate ...
-func (l *AccountListReq) Validate() error {
-	return validator.Validate.Struct(l)
-}
+type AccountListReq = core.ListReq
 
 // BaseAccountListResp ...
 type BaseAccountListResp struct {

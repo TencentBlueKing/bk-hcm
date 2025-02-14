@@ -190,7 +190,7 @@ func (c *CreateLayer4ListenerPreviewExecutor) validateListener(kt *kit.Kit,
 		return nil
 	}
 
-	rule, err := c.getURLRule(kt, curDetail.CloudClbID, listener.CloudID)
+	rule, err := c.getURLRule(kt, listener.LbID, listener.ID)
 	if err != nil {
 		return err
 	}
@@ -223,15 +223,15 @@ func (c *CreateLayer4ListenerPreviewExecutor) validateListener(kt *kit.Kit,
 	return nil
 }
 
-func (c *CreateLayer4ListenerPreviewExecutor) getURLRule(kt *kit.Kit, lbCloudID, listenerCloudID string) (
+func (c *CreateLayer4ListenerPreviewExecutor) getURLRule(kt *kit.Kit, lbID, listenerID string) (
 	*corelb.TCloudLbUrlRule, error) {
 
 	switch c.vendor {
 	case enumor.TCloud:
 		req := &core.ListReq{
 			Filter: tools.ExpressionAnd(
-				tools.RuleEqual("cloud_lb_id", lbCloudID),
-				tools.RuleEqual("cloud_lbl_id", listenerCloudID),
+				tools.RuleEqual("lb_id", lbID),
+				tools.RuleEqual("lbl_id", listenerID),
 			),
 			Page: core.NewDefaultBasePage(),
 		}

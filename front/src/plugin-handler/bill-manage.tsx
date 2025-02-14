@@ -52,7 +52,7 @@ const useProductHandler = () => {
   // table 相关状态
   const selectedIds = ref<number[]>([]);
   const columnName = 'billsMainAccountSummary';
-  const getColumns = (columns: any[]) => columns.slice(3);
+  const getColumns = (columns: any[]) => columns.slice(4);
   const apiMethod: (...args: any) => Promise<any> = reqBillsBizSummaryList;
   const extensionKey = 'bk_biz_ids';
 
