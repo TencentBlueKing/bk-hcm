@@ -60,7 +60,7 @@ func (svc *securityGroupSvc) CloneBizSecurityGroup(cts *rest.Contexts) (interfac
 
 	sg, err := svc.getSecurityGroupFromDB(cts.Kit, sgID)
 	if err != nil {
-		logs.Errorf("get security group from db failed, err: %v, rid: %s", err, sgID)
+		logs.Errorf("get security group from db failed, err: %v, sgID: %s, rid: %s", err, sgID, cts.Kit.Rid)
 		return nil, err
 	}
 	// validate  authorize
