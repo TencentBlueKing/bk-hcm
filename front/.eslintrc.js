@@ -15,5 +15,8 @@ module.exports = {
     'no-console': ['error', { allow: ['warn', 'error'] }],
     'no-debugger': 'error',
     'linebreak-style': 0,
+    'vue/require-explicit-emits': ['error', {
+      allowTypedFunctionParams: true, // 允许 TypeScript 类型参数
+    }],
   },
 };

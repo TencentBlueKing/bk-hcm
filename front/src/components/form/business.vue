@@ -7,10 +7,10 @@ defineOptions({ name: 'hcm-form-business' });
 
 const props = withDefaults(
   defineProps<{
-    multiple: boolean;
-    clearable: boolean;
-    filterable: boolean;
-    collapseTags: boolean;
+    multiple?: boolean;
+    clearable?: boolean;
+    filterable?: boolean;
+    collapseTags?: boolean;
     optionDisabled?: (item: IBusinessItem) => boolean;
   }>(),
   {
