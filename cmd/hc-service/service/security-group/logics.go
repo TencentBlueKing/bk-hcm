@@ -27,6 +27,7 @@ import (
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	dataproto "hcm/pkg/api/data-service"
 	protocloud "hcm/pkg/api/data-service/cloud"
+	proto "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
@@ -174,4 +175,28 @@ func (g *securityGroup) getSecurityGroupMapByCloudIDs(kt *kit.Kit, vendor enumor
 		}
 	}
 	return m, nil
+}
+
+func resCountMapToSGStatisticResp(
+	sgIDToResourceCountMap map[string]map[string]int64) *proto.ListSecurityGroupStatisticResp {
+
+	result := &proto.ListSecurityGroupStatisticResp{
+		Details: make([]proto.SecurityGroupStatisticItem, 0, len(sgIDToResourceCountMap)),
+	}
+	for sgID, resourceMap := range sgIDToResourceCountMap {
+		one := proto.SecurityGroupStatisticItem{
+			ID:        sgID,
+			Resources: make([]proto.SecurityGroupStatisticResource, 0, len(resourceMap)),
+		}
+		for resName, count := range resourceMap {
+			one.Resources = append(one.Resources,
+				proto.SecurityGroupStatisticResource{
+					ResName: resName,
+					Count:   count,
+				},
+			)
+		}
+		result.Details = append(result.Details, one)
+	}
+	return result
 }

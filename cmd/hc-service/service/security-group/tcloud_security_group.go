@@ -660,7 +660,7 @@ func (g *securityGroup) listTCloudCvmFromCloud(kt *kit.Kit, client tcloud.TCloud
 
 // TCloudListSecurityGroupStatistic ...
 func (g *securityGroup) TCloudListSecurityGroupStatistic(cts *rest.Contexts) (any, error) {
-	req := new(proto.TCloudListSecurityGroupStatisticReq)
+	req := new(proto.ListSecurityGroupStatisticReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -675,13 +675,13 @@ func (g *securityGroup) TCloudListSecurityGroupStatistic(cts *rest.Contexts) (an
 		return nil, err
 	}
 
-	cloudIDs := make([]string, 0, len(req.SecurityGroupIDs))
+	cloudIDToSgIDMap := make(map[string]string)
 	for _, sgID := range req.SecurityGroupIDs {
 		sg, ok := sgMap[sgID]
 		if !ok {
-			return nil, fmt.Errorf("security group: %s not found", sgID)
+			return nil, fmt.Errorf("tcloud security group: %s not found", sgID)
 		}
-		cloudIDs = append(cloudIDs, sg.CloudID)
+		cloudIDToSgIDMap[sg.CloudID] = sgID
 	}
 
 	client, err := g.ad.TCloud(cts.Kit, req.AccountID)
@@ -691,7 +691,7 @@ func (g *securityGroup) TCloudListSecurityGroupStatistic(cts *rest.Contexts) (an
 
 	opt := &securitygroup.TCloudListOption{
 		Region:   req.Region,
-		CloudIDs: cloudIDs,
+		CloudIDs: converter.MapKeyToSlice(cloudIDToSgIDMap),
 	}
 	resp, err := client.DescribeSecurityGroupAssociationStatistics(cts.Kit, opt)
 	if err != nil {
@@ -700,7 +700,33 @@ func (g *securityGroup) TCloudListSecurityGroupStatistic(cts *rest.Contexts) (an
 		return nil, err
 	}
 
-	return resp, nil
+	sgIDToResourceCountMap := make(map[string]map[string]int64)
+	for _, one := range resp {
+		sgID := cloudIDToSgIDMap[converter.PtrToVal(one.SecurityGroupId)]
+		sgIDToResourceCountMap[sgID] = tcloudSGAssociateStatisticToResourceCountMap(one)
+	}
+
+	return resCountMapToSGStatisticResp(sgIDToResourceCountMap), nil
+}
+
+const (
+	tcloudStatisticResTypeCVM = "CVM"
+	tcloudStatisticResTypeCDB = "CDB"
+	tcloudStatisticResTypeENI = "ENI"
+	tcloudStatisticResTypeSG  = "SG"
+	tcloudStatisticResTypeCLB = "CLB"
+)
+
+func tcloudSGAssociateStatisticToResourceCountMap(
+	statistic securitygroup.TCloudSecurityGroupAssociationStatistic) map[string]int64 {
+
+	return map[string]int64{
+		tcloudStatisticResTypeCVM: int64(converter.PtrToVal(statistic.CVM)),
+		tcloudStatisticResTypeCDB: int64(converter.PtrToVal(statistic.CDB)),
+		tcloudStatisticResTypeENI: int64(converter.PtrToVal(statistic.ENI)),
+		tcloudStatisticResTypeSG:  int64(converter.PtrToVal(statistic.SG)),
+		tcloudStatisticResTypeCLB: int64(converter.PtrToVal(statistic.CLB)),
+	}
 }
 
 // TCloudSGBatchDisassociateCvm  批量解绑安全组
