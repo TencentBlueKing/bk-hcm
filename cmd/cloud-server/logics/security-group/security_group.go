@@ -343,6 +343,9 @@ func (s *securityGroup) UpdateSGMgmtAttr(kt *kit.Kit, mgmtAttr *proto.SecurityGr
 	}
 
 	// 更新使用业务列表
+	if len(mgmtAttr.UsageBizIDs) <= 0 {
+		return nil
+	}
 	setRelReq := &dataproto.ResUsageBizRelUpdateReq{
 		UsageBizIDs: mgmtAttr.UsageBizIDs,
 		ResCloudID:  sg.CloudID,
