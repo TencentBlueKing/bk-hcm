@@ -31,6 +31,7 @@ import SecurityGroupChangeConfirmDialog from '../dialog/security-group/change-co
 import SecurityGroupSingleDeleteDialog from '../dialog/security-group/single-delete.vue';
 import { MGMT_TYPE_MAP } from '@/constants/security-group';
 import { ISecurityGroupOperateItem, useSecurityGroupStore } from '@/store/security-group';
+import FlexTag from '@/components/flex-tag/index.vue';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -316,7 +317,12 @@ const groupColumns = [
     filter: true,
     isDefaultShow: true,
     width: 100,
-    render: ({ cell }: any) => cell?.join(',') ?? '--',
+    showOverflowTooltip: false,
+    render: ({ cell }: any) => {
+      if (!cell || cell.length === 0) return '--';
+      const names = cell.map((id: number) => ({ name: getNameFromBusinessMap(id) }));
+      return h(FlexTag, { list: names, isTagStyle: true });
+    },
   },
   {
     label: t('管理类型'),
@@ -1044,26 +1050,34 @@ const securityHandleShowDelete = (data: any) => {
 .w100 {
   width: 100px;
 }
+
 .w60 {
   width: 60px;
 }
+
 .mt20 {
   margin-top: 20px;
 }
+
 .search-filter {
   width: 500px;
 }
+
 .search-selector-container {
   margin-left: auto;
 }
+
 .ml10 {
   margin-left: 10px;
 }
+
 .security-manager-page {
   height: 100%;
+
   :deep(.bk-nested-loading) {
     margin-top: 16px;
     height: calc(100% - 100px);
+
     .bk-table {
       max-height: 100%;
 
