@@ -307,17 +307,19 @@ func (s *securityGroup) UpdateSGMgmtAttr(kt *kit.Kit, mgmtAttr *proto.SecurityGr
 
 	sg := sgs[0]
 	// 管理类型已确定的不能修改
-	if sg.MgmtType.Validate() == nil && sg.MgmtType != mgmtAttr.MgmtType {
-		logs.Errorf("security group mgmt type cannot be modified, sg_id: %s, old_type: %s, new_type: %s, rid: %s",
-			sg.ID, sg.MgmtType, mgmtAttr.MgmtType, kt.Rid)
-		return fmt.Errorf("security group: %s mgmt type cannot be modified", sg.ID)
+	if sg.MgmtType != "" {
+		if mgmtAttr.MgmtType != "" && sg.MgmtType != mgmtAttr.MgmtType {
+			logs.Errorf("security group mgmt type cannot be modified, sg_id: %s, old_type: %s, new_type: %s, rid: %s",
+				sg.ID, sg.MgmtType, mgmtAttr.MgmtType, kt.Rid)
+			return fmt.Errorf("security group: %s mgmt type cannot be modified", sg.ID)
+		}
 	}
 
-	// 平台管理不可修改管理业务
-	if sg.MgmtType == enumor.MgmtTypePlatform {
-		if mgmtAttr.MgmtBizID != constant.UnassignedBiz && mgmtAttr.MgmtBizID != 0 {
-			logs.Errorf("security group: %s cannot be assigned to a business, rid: %s", sg.ID, kt.Rid)
-			return fmt.Errorf("security group: %s cannot be assigned to a business", sg.ID)
+	// 已分配的安全组，不可修改管理业务
+	if sg.BkBizID != constant.UnassignedBiz {
+		if mgmtAttr.MgmtBizID != 0 {
+			logs.Errorf("security group: %s cannot modify the assigned business, rid: %s", sg.ID, kt.Rid)
+			return fmt.Errorf("security group: %s cannot modify the assigned business", sg.ID)
 		}
 	}
 
