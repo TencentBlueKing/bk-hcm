@@ -12,6 +12,8 @@ export enum SecurityGroupManageType {
   UNKNOWN = '',
 }
 
+export type SecurityGroupMgmtAttrSingleType = 'manager' | 'bak_manager' | 'mgmt_biz_id' | 'usage_biz_ids';
+
 export interface ISecurityGroupItem {
   id: string;
   vendor: VendorEnum;
@@ -217,17 +219,17 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
   const isUpdateMgmtAttrLoading = ref(false);
   const updateMgmtAttr = async (
     id: string,
-    payload?: Array<{
+    payload?: {
       mgmt_type?: string;
       manager?: string;
       bak_manager?: string;
       usage_biz_ids?: number[];
       mgmt_biz_id?: number;
-    }>,
+    },
   ) => {
     isUpdateMgmtAttrLoading.value = true;
     try {
-      await http.patch(`/api/v1/cloud/security_groups/${id}/mgmt_attrs`, payload);
+      await http.patch(`/api/v1/cloud/${getBusinessApiPath()}security_groups/${id}/mgmt_attrs`, payload);
     } finally {
       isUpdateMgmtAttrLoading.value = false;
     }

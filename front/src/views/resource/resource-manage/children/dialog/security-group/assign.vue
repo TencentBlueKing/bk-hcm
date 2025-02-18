@@ -73,7 +73,7 @@ const assignableColumns: ModelPropertyColumn[] = [
 const nonAssignableColumns: ModelPropertyColumn[] = [
   ...baseColumns,
   {
-    id: 'assign_preview.reason',
+    id: 'reason',
     name: '不可分配原因',
     type: 'string',
   },
@@ -199,7 +199,7 @@ const handleRemove = (id: ISecurityGroupItem['id']) => {
       :min-height="190"
       row-hover="auto"
       show-overflow-tooltip
-      v-bkloading="{ loading: securityGroupStore.isAssignPreviewLoading, size: 'small' }"
+      v-bkloading="{ loading: securityGroupStore.isAssignPreviewLoading }"
     >
       <bk-table-column
         v-for="(column, index) in displayColumns"

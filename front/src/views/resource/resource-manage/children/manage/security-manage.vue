@@ -246,7 +246,6 @@ const groupColumns = [
         {
           text: true,
           theme: 'primary',
-          disabled: data.bk_biz_id !== -1 && props.isResourcePage,
           onClick() {
             const routeInfo: any = { query: { ...route.query, id: data.id, vendor: data.vendor } };
             // 业务下

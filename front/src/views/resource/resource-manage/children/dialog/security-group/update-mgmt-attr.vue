@@ -35,11 +35,14 @@ const updateDefaultValue = () => ({
 const list = ref([]);
 const accountBizIds = ref<number[]>([]);
 const accountBizList = ref<IBusinessItem[]>([]);
+const isAccountDetailLoading = ref(false);
 
 watchEffect(async () => {
   const { account_id: accountId } = props.selections[0];
 
   list.value = props.selections.slice();
+
+  isAccountDetailLoading.value = true;
 
   // 账号业务列表等于-1时，管理业务使用全部业务，否则限定为账号业务列表
   const accountDetailRes = await accountStore.getAccountDetail(accountId);
@@ -47,6 +50,8 @@ watchEffect(async () => {
   if (accountBizIds.value?.[0] !== -1) {
     accountBizList.value = businessGlobalStore.businessFullList.filter((item) => accountBizIds.value.includes(item.id));
   }
+
+  isAccountDetailLoading.value = false;
 });
 
 const isUpdateValueValid = computed(() => {
@@ -183,7 +188,14 @@ const handleRemove = (id: ISecurityGroupItem['id']) => {
     <div class="toolbar">
       <bk-input type="search" placeholder="请输入 安全组ID/安全组名称 搜索" @enter="handleSearch" />
     </div>
-    <bk-table :data="list" :max-height="500" :min-height="190" row-hover="auto" show-overflow-tooltip>
+    <bk-table
+      :data="list"
+      :max-height="500"
+      :min-height="190"
+      row-hover="auto"
+      show-overflow-tooltip
+      v-bkloading="{ loading: isAccountDetailLoading }"
+    >
       <bk-table-column
         v-for="(column, index) in columns"
         :key="index"
