@@ -52,6 +52,7 @@ func (h *HuaWei) ListZone(kt *kit.Kit, opt *typeszone.HuaWeiZoneListOption) ([]t
 	resp, err := client.ListAvailableZones(req)
 	if err != nil {
 		logs.Errorf("list huawei zone failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
 	}
 
 	if resp == nil {
