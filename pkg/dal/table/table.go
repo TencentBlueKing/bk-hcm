@@ -204,6 +204,8 @@ const (
 	TaskManagementTable = "task_management"
 	//	GlobalConfigTable 全局配置表
 	GlobalConfigTable = "global_config"
+	//	OrgTopoTable 组织拓扑表
+	OrgTopoTable = "org_topo"
 )
 
 // Validate whether the table name is valid or not.
@@ -308,6 +310,7 @@ var TableMap = map[Name]struct{}{
 	TaskDetailTable:     {},
 
 	GlobalConfigTable: {},
+	OrgTopoTable:      {},
 }
 
 // Register 注册表名

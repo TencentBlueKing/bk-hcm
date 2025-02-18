@@ -51,6 +51,7 @@ import (
 	instancetype "hcm/cmd/cloud-server/service/instance-type"
 	loadbalancer "hcm/cmd/cloud-server/service/load-balancer"
 	networkinterface "hcm/cmd/cloud-server/service/network-interface"
+	"hcm/cmd/cloud-server/service/org-topo"
 	"hcm/cmd/cloud-server/service/recycle"
 	"hcm/cmd/cloud-server/service/region"
 	resourcegroup "hcm/cmd/cloud-server/service/resource-group"
@@ -79,6 +80,7 @@ import (
 	"hcm/pkg/thirdparty/api-gateway/bkbase"
 	"hcm/pkg/thirdparty/api-gateway/cmsi"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
+	"hcm/pkg/thirdparty/api-gateway/usermgr"
 	"hcm/pkg/thirdparty/esb"
 	"hcm/pkg/tools/ssl"
 
@@ -98,6 +100,7 @@ type Service struct {
 	itsmCli   itsm.Client
 	bkBaseCli bkbase.Client
 	cmsiCli   cmsi.Client
+	userMgrCli usermgr.Client
 }
 
 // NewService create a service instance.
@@ -131,6 +134,11 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 	go appcvm.TimingHandleDeliverApplication(svr.client, 2*time.Second)
 
 	go task.TimingHandleTaskMgmtState(apiClientSet, sd, time.Second)
+
+	if cc.CloudServer().OrgTopoConfig.Enable {
+		interval := time.Duration(cc.CloudServer().OrgTopoConfig.SyncIntervalMin) * time.Minute
+		go orgtopo.OrgTopoTiming(apiClientSet, sd, interval)
+	}
 
 	return svr, nil
 }
@@ -193,6 +201,13 @@ func getCloudClientSvr(sd serviced.ServiceDiscover) (*client.ClientSet, esb.Clie
 		return nil, nil, nil, err
 	}
 
+	userMgrCfg := cc.CloudServer().UserMgr
+	userMgrCli, err := usermgr.NewClient(&userMgrCfg, metrics.Register())
+	if err != nil {
+		logs.Errorf("failed to create usermgr client, err: %v", err)
+		return nil, nil, nil, err
+	}
+
 	svr := &Service{
 		client:     apiClientSet,
 		authorizer: authorizer,
@@ -202,6 +217,7 @@ func getCloudClientSvr(sd serviced.ServiceDiscover) (*client.ClientSet, esb.Clie
 		itsmCli:    itsmCli,
 		bkBaseCli:  bkbaseCli,
 		cmsiCli:    cmsiCli,
+		userMgrCli: userMgrCli,
 	}
 
 	return apiClientSet, esbClient, svr, nil
@@ -287,6 +303,7 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 		ItsmCli:    s.itsmCli,
 		BKBaseCli:  s.bkBaseCli,
 		CmsiCli:    s.cmsiCli,
+		UserMgrCli: s.userMgrCli,
 	}
 
 	account.InitAccountService(c)
@@ -324,6 +341,7 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 	bandwidthpackage.InitService(c)
 
 	task.InitService(c)
+	orgtopo.InitService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }
