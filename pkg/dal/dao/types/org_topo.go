@@ -17,37 +17,12 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package capability ...
-package capability
+package types
 
 import (
-	"hcm/cmd/cloud-server/logics"
-	"hcm/cmd/cloud-server/logics/audit"
-	"hcm/pkg/client"
-	"hcm/pkg/cryptography"
-	"hcm/pkg/iam/auth"
-	"hcm/pkg/thirdparty/api-gateway/bkbase"
-	"hcm/pkg/thirdparty/api-gateway/cmdb"
-	"hcm/pkg/thirdparty/api-gateway/cmsi"
-	"hcm/pkg/thirdparty/api-gateway/itsm"
-	"hcm/pkg/thirdparty/api-gateway/usermgr"
-	"hcm/pkg/thirdparty/esb"
-
-	"github.com/emicklei/go-restful/v3"
+	"hcm/pkg/api/core"
+	"hcm/pkg/dal/table/org-topo"
 )
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	Authorizer auth.Authorizer
-	Audit      audit.Interface
-	Cipher     cryptography.Crypto
-	EsbClient  esb.Client
-	Logics     *logics.Logics
-	ItsmCli    itsm.Client
-	BKBaseCli  bkbase.Client
-	CmsiCli    cmsi.Client
-	CmdbCli    cmdb.Client
-	UserMgrCli usermgr.Client
-}
+// ListOrgTopoResult org topo list result.
+type ListOrgTopoResult = core.ListResultT[orgtopo.OrgTopo]

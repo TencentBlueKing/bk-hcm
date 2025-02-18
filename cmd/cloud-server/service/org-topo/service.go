@@ -17,37 +17,52 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package capability ...
-package capability
+// Package orgtopo ...
+package orgtopo
 
 import (
-	"hcm/cmd/cloud-server/logics"
-	"hcm/cmd/cloud-server/logics/audit"
-	"hcm/pkg/client"
-	"hcm/pkg/cryptography"
-	"hcm/pkg/iam/auth"
-	"hcm/pkg/thirdparty/api-gateway/bkbase"
-	"hcm/pkg/thirdparty/api-gateway/cmdb"
-	"hcm/pkg/thirdparty/api-gateway/cmsi"
-	"hcm/pkg/thirdparty/api-gateway/itsm"
-	"hcm/pkg/thirdparty/api-gateway/usermgr"
-	"hcm/pkg/thirdparty/esb"
+	"net/http"
 
-	"github.com/emicklei/go-restful/v3"
+	"hcm/cmd/cloud-server/logics/audit"
+	"hcm/cmd/cloud-server/service/capability"
+	"hcm/pkg/client"
+	"hcm/pkg/iam/auth"
+	"hcm/pkg/logs"
+	"hcm/pkg/rest"
+	"hcm/pkg/serviced"
+	"hcm/pkg/thirdparty/api-gateway/usermgr"
 )
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	Authorizer auth.Authorizer
-	Audit      audit.Interface
-	Cipher     cryptography.Crypto
-	EsbClient  esb.Client
-	Logics     *logics.Logics
-	ItsmCli    itsm.Client
-	BKBaseCli  bkbase.Client
-	CmsiCli    cmsi.Client
-	CmdbCli    cmdb.Client
-	UserMgrCli usermgr.Client
+// InitService initialize service.
+func InitService(c *capability.Capability) {
+	svc := &orgTopoSvc{
+		client:     c.ApiClient,
+		authorizer: c.Authorizer,
+		audit:      c.Audit,
+		userMgrCli: c.UserMgrCli,
+	}
+
+	h := rest.NewHandler()
+
+	h.Add("SyncOrgTopos", http.MethodPost, "/org_topos/sync", svc.SyncOrgTopos)
+
+	h.Load(c.WebService)
+}
+
+type orgTopoSvc struct {
+	client     *client.ClientSet
+	authorizer auth.Authorizer
+	audit      audit.Interface
+	state      serviced.State
+	userMgrCli usermgr.Client
+}
+
+// SyncOrgTopos sync org topos.
+func (ots *orgTopoSvc) SyncOrgTopos(cts *rest.Contexts) (any, error) {
+	if err := ots.SyncOrgTopo(cts.Kit); err != nil {
+		logs.Errorf("sync usermgr org topo resource failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
 }

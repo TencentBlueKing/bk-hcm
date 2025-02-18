@@ -74,6 +74,7 @@ import (
 	"hcm/cmd/data-service/service/cloud/zone"
 	"hcm/cmd/data-service/service/cos"
 	globalconfig "hcm/cmd/data-service/service/global-config"
+	orgtopo "hcm/cmd/data-service/service/org-topo"
 	recyclerecord "hcm/cmd/data-service/service/recycle-record"
 	"hcm/cmd/data-service/service/task"
 	"hcm/cmd/data-service/service/tenant"
@@ -272,6 +273,7 @@ func (s *Service) apiSet() *restful.Container {
 	billexchangerate.InitService(capability)
 	billsyncrecord.InitService(capability)
 	globalconfig.InitService(capability)
+	orgtopo.InitService(capability)
 
 	task.InitService(capability)
 	tenant.InitService(capability)

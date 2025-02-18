@@ -209,6 +209,8 @@ const (
 
 	// ResUsageBizRelTable 资源-使用业务关联表
 	ResUsageBizRelTable = "res_usage_biz_rel"
+	//	OrgTopoTable 组织拓扑表
+	OrgTopoTable = "org_topo"
 )
 
 // Validate whether the table name is valid or not.
@@ -322,6 +324,7 @@ var TableMap = map[Name]TableConfig{
 	GlobalConfigTable: {},
 
 	ResUsageBizRelTable: {},
+	OrgTopoTable:      {},
 }
 
 // Register 注册表名

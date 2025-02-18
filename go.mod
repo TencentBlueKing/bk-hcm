@@ -16,6 +16,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/subscription/armsubscription v1.0.0
 	github.com/TencentBlueKing/gopkg v1.1.0
 	github.com/aws/aws-sdk-go v1.44.334
+	github.com/bluele/gcache v0.0.2
 	github.com/emicklei/go-restful/v3 v3.10.2
 	github.com/go-playground/validator/v10 v10.11.2
 	// go-sql-driver/mysql v1.8.1 may casuse error: connection.go:49: unexpected EOF

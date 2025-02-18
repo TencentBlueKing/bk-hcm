@@ -17,37 +17,36 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package capability ...
-package capability
+// Package orgtopo org topo service
+package orgtopo
 
 import (
-	"hcm/cmd/cloud-server/logics"
-	"hcm/cmd/cloud-server/logics/audit"
-	"hcm/pkg/client"
-	"hcm/pkg/cryptography"
-	"hcm/pkg/iam/auth"
-	"hcm/pkg/thirdparty/api-gateway/bkbase"
-	"hcm/pkg/thirdparty/api-gateway/cmdb"
-	"hcm/pkg/thirdparty/api-gateway/cmsi"
-	"hcm/pkg/thirdparty/api-gateway/itsm"
-	"hcm/pkg/thirdparty/api-gateway/usermgr"
-	"hcm/pkg/thirdparty/esb"
+	"net/http"
 
-	"github.com/emicklei/go-restful/v3"
+	"hcm/cmd/data-service/service/capability"
+	"hcm/pkg/dal/dao"
+	"hcm/pkg/rest"
 )
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	Authorizer auth.Authorizer
-	Audit      audit.Interface
-	Cipher     cryptography.Crypto
-	EsbClient  esb.Client
-	Logics     *logics.Logics
-	ItsmCli    itsm.Client
-	BKBaseCli  bkbase.Client
-	CmsiCli    cmsi.Client
-	CmdbCli    cmdb.Client
-	UserMgrCli usermgr.Client
+// InitService initial the service
+func InitService(cap *capability.Capability) {
+	svc := &service{
+		dao: cap.Dao,
+	}
+
+	h := rest.NewHandler()
+
+	// common api
+	h.Add("ListOrgTopo", http.MethodPost, "/org_topos/list", svc.ListOrgTopo)
+	h.Add("ListOrgTopoByDeptIDs", http.MethodPost, "/org_topos/list/by/dept_ids", svc.ListOrgTopoByDeptIDs)
+	h.Add("BatchCreateOrgTopo", http.MethodPost, "/org_topos/batch/create", svc.BatchCreateOrgTopo)
+	h.Add("BatchUpdateOrgTopo", http.MethodPatch, "/org_topos/batch", svc.BatchUpdateOrgTopo)
+	h.Add("BatchDeleteOrgTopo", http.MethodDelete, "/org_topos/batch", svc.BatchDeleteOrgTopo)
+	h.Add("BatchUpsertOrgTopo", http.MethodPost, "/org_topos/batch/upsert", svc.BatchUpsertOrgTopo)
+
+	h.Load(cap.WebService)
+}
+
+type service struct {
+	dao dao.Set
 }
