@@ -269,8 +269,14 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .bkhcm-icon-close:before {
 	content: "\e15d";
 }
+.bkhcm-icon-delete:before {
+	content: "\e173";
+}
 .bkhcm-icon-release-note:before {
 	content: "\e16d";
+}
+.bkhcm-icon-configuration:before {
+	content: "\e174";
 }
 .bkhcm-icon-jiebang:before {
 	content: "\e156";
@@ -322,4 +328,19 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 }
 .bkhcm-icon-my-apply:before {
 	content: "\e16c";
+}
+.bkhcm-icon-regular:before {
+	content: "\e16e";
+}
+.bkhcm-icon-rolling-server:before {
+	content: "\e16f";
+}
+.bkhcm-icon-lantern:before {
+	content: "\e170";
+}
+.bkhcm-icon-green-channel-rocket:before {
+	content: "\e171";
+}
+.bkhcm-icon-host-multi:before {
+	content: "\e172";
 }
