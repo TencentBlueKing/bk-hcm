@@ -161,7 +161,7 @@ func (act DailySummaryAction) doDailySummary(kt run.ExecuteKit, opt *DailySummar
 				start, limit, opt, billDay, err.Error())
 		}
 		for _, item := range result.Details {
-			if len(item.Currency) != 0 && len(currency) == 0 {
+			if len(item.Currency) != 0 {
 				currency = item.Currency
 			}
 			cost = cost.Add(item.Cost)
