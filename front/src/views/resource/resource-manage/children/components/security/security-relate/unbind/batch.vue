@@ -1,0 +1,160 @@
+<script setup lang="ts">
+import { ref, useAttrs, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { type SecurityGroupRelResourceByBizItem, useSecurityGroupStore } from '@/store/security-group';
+import columnFactory from '../data-list/column-factory';
+import { RELATED_RES_KEY_MAP } from '../constants';
+import { ITab } from '../typings';
+
+const props = withDefaults(
+  defineProps<{
+    selections: SecurityGroupRelResourceByBizItem[];
+    disabled?: boolean;
+    tabActive: ITab;
+    handleConfirm: (ids: string[]) => Promise<void>;
+  }>(),
+  { disabled: false },
+);
+
+const { t } = useI18n();
+const attrs: any = useAttrs();
+const securityGroupStore = useSecurityGroupStore();
+
+const isShow = ref(false);
+const handleClosed = () => {
+  isShow.value = false;
+};
+
+const types = [
+  { label: t('可解绑'), value: 'target' },
+  { label: t('不可解绑'), value: 'unTarget' },
+];
+const selectedType = ref<'target' | 'unTarget'>('target');
+
+const { getColumns } = columnFactory();
+const columns = ref(getColumns(`${props.tabActive}-unbind`));
+const listMap = ref<Record<'target' | 'unTarget', SecurityGroupRelResourceByBizItem[]>>({
+  target: [],
+  unTarget: [],
+});
+
+watch(isShow, async (val) => {
+  if (!val) return;
+  const res = await securityGroupStore.pullSecurityGroup(RELATED_RES_KEY_MAP[props.tabActive], props.selections);
+
+  const target = res.filter((item) => item.security_groups.length > 1);
+  const unTarget = res.filter((item) => item.security_groups.length <= 1);
+
+  listMap.value = { target, unTarget };
+  selectedType.value = unTarget.length > 0 ? 'unTarget' : 'target';
+});
+
+const handleConfirm = async () => {
+  await props.handleConfirm(listMap.value.target.map((item) => item.id));
+  handleClosed();
+};
+</script>
+
+<template>
+  <bk-button @click="isShow = true" :disabled="disabled" v-bind="attrs">{{ t('批量解绑') }}</bk-button>
+  <bk-dialog v-model:isShow="isShow" :title="t('批量解绑')" :width="1280" @closed="handleClosed">
+    <div class="tips">
+      {{ t('已选择') }}
+      <span class="number primary">{{ selections.length }}</span>
+      {{ t('个资源，其中可解绑') }}
+      <span class="number success">{{ listMap.target.length }}</span>
+      {{ t('个，不可解绑') }}
+      <span class="number danger">{{ listMap.unTarget.length }}</span>
+      {{ t('个。请确认后再操作。') }}
+    </div>
+
+    <div class="tools">
+      <bk-radio-group v-model="selectedType">
+        <bk-radio-button v-for="{ label, value } in types" :key="value" :label="value">{{ label }}</bk-radio-button>
+      </bk-radio-group>
+      <span class="tips">
+        <i class="hcm-icon bkhcm-icon-info-line"></i>
+        <span>{{ t('仅绑定1个安全组的资源不允许进行批量解绑') }}</span>
+      </span>
+      <!-- TODO：本地搜索 -->
+      <bk-search-select class="search" />
+    </div>
+
+    <bk-table
+      v-bkloading="{ loading: securityGroupStore.isBatchQuerySecurityGroupByResIdsLoading }"
+      ref="tableRef"
+      row-hover="auto"
+      :data="listMap[selectedType]"
+      :max-height="'calc(100vh - 401px)'"
+      show-overflow-tooltip
+      row-key="id"
+    >
+      <bk-table-column
+        v-for="(column, index) in columns"
+        :key="index"
+        :prop="column.id"
+        :label="column.name"
+        :render="column.render"
+      >
+        <template #default="{ row }">
+          <display-value :property="column" :value="row[column.id]" :display="column?.meta?.display" />
+        </template>
+      </bk-table-column>
+    </bk-table>
+
+    <template #footer>
+      <bk-button
+        class="mr8"
+        theme="danger"
+        :disabled="!listMap.target.length"
+        :loading="securityGroupStore.isBatchDisassociateCvmsLoading"
+        @click="handleConfirm"
+      >
+        {{ t('解绑') }}
+      </bk-button>
+      <bk-button @click="isShow = false" theme="primary" :disabled="securityGroupStore.isBatchDisassociateCvmsLoading">
+        {{ t('取消') }}
+      </bk-button>
+    </template>
+  </bk-dialog>
+</template>
+
+<style scoped lang="scss">
+.tips {
+  color: #313238;
+
+  .number {
+    font-weight: 700;
+
+    &.primary {
+      color: #3a84ff;
+    }
+    &.success {
+      color: #299e56;
+    }
+    &.danger {
+      color: #ea3636;
+    }
+  }
+}
+
+.tools {
+  margin: 16px 0;
+  display: flex;
+  align-items: center;
+  .tips {
+    margin-left: 16px;
+    font-size: 12px;
+    color: #4d4f56;
+
+    .hcm-icon {
+      margin-right: 4px;
+      font-size: 14px;
+    }
+  }
+  .search {
+    margin-left: auto;
+    width: 400px;
+  }
+}
+</style>

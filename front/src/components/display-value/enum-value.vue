@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { ModelProperty } from '@/model/typings';
 import { AppearanceType, DisplayType } from './typings';
 import Status from './appearance/status.vue';
+import CvmStatus from './appearance/cvm-status.vue';
 
 const props = defineProps<{
   value: string | number | string[] | number[];
@@ -20,6 +21,7 @@ const displayValue = computed(() => {
 
 const appearanceComps: Record<AppearanceType, any> = {
   status: Status,
+  'cvm-status': CvmStatus,
 };
 </script>
 

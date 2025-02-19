@@ -1,0 +1,113 @@
+<script setup lang="ts">
+import { ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import hintIcon from '@/assets/image/hint.svg';
+import { useSecurityGroupStore, type SecurityGroupRelResourceByBizItem } from '@/store/security-group';
+import { getPrivateIPs } from '@/utils';
+import { RELATED_RES_KEY_MAP, RELATED_RES_NAME_MAP } from '../constants';
+import { ITab } from '../typings';
+
+const props = defineProps<{ row: SecurityGroupRelResourceByBizItem; tabActive: ITab }>();
+const emit = defineEmits(['confirm']);
+
+const { t } = useI18n();
+const securityGroupStore = useSecurityGroupStore();
+
+const isShow = ref(false);
+const info = ref<SecurityGroupRelResourceByBizItem>(props.row);
+const resName = RELATED_RES_NAME_MAP[props.tabActive];
+
+watch(isShow, async (val) => {
+  if (!val) return;
+  const res = await securityGroupStore.pullSecurityGroup(RELATED_RES_KEY_MAP[props.tabActive], [props.row]);
+  [info.value] = res;
+});
+</script>
+
+<template>
+  <bk-button theme="primary" text @click="isShow = true">
+    {{ t('解绑') }}
+  </bk-button>
+  <bk-dialog v-model:isShow="isShow" dialog-type="show" class="unbind-dialog">
+    <div class="hint-wrap">
+      <img :src="hintIcon" />
+      <div>{{ t('确认与该主机解绑') }}</div>
+    </div>
+
+    <bk-loading loading v-if="securityGroupStore.isBatchQuerySecurityGroupByResIdsLoading">
+      <div style="width: 100%; height: 100px" />
+    </bk-loading>
+
+    <template v-else>
+      <div class="mt16 mb16">
+        <span>{{ t('内网 IP') }}：</span>
+        <span>{{ getPrivateIPs(info) }}</span>
+      </div>
+
+      <div class="tips" v-if="info.security_groups">
+        <template v-if="info.security_groups.length > 1">
+          {{ t(`请确保${resName}上绑定的其他安全组是有效的，避免出现${resName}安全风险。`) }}
+        </template>
+        <template v-else>
+          <span class="text-danger">{{ t('解绑被限制') }}</span>
+          <span>
+            {{
+              t(`，您的${resName}当前只绑定了${info.security_groups.length ?? 0}个安全组，为了确保您的${resName}安全，`)
+            }}
+          </span>
+          <span class="text-danger">{{ t('请至少保留1个以上的安全组，并确保安全组规则有效。') }}</span>
+        </template>
+      </div>
+
+      <div class="operate-wrap">
+        <bk-button
+          class="button"
+          theme="danger"
+          :disabled="info.security_groups?.length <= 1"
+          :loading="securityGroupStore.isBatchDisassociateCvmsLoading"
+          @click="emit('confirm')"
+        >
+          {{ t('解绑') }}
+        </bk-button>
+        <bk-button class="button" :disabled="securityGroupStore.isBatchDisassociateCvmsLoading" @click="isShow = false">
+          {{ t('取消') }}
+        </bk-button>
+      </div>
+    </template>
+  </bk-dialog>
+</template>
+
+<style scoped lang="scss">
+.hint-wrap {
+  margin-top: -35px;
+  text-align: center;
+
+  img {
+    width: 42px;
+    height: 42px;
+  }
+
+  div {
+    font-size: 20px;
+    color: #313238;
+  }
+}
+
+.tips {
+  padding: 12px 16px;
+  background: #f5f6fa;
+  border-radius: 2px;
+}
+
+.operate-wrap {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+
+  .button {
+    min-width: 88px;
+  }
+}
+</style>
