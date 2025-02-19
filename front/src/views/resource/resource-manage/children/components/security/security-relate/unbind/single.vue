@@ -5,9 +5,9 @@ import hintIcon from '@/assets/image/hint.svg';
 import { useSecurityGroupStore, type SecurityGroupRelResourceByBizItem } from '@/store/security-group';
 import { getPrivateIPs } from '@/utils';
 import { RELATED_RES_KEY_MAP, RELATED_RES_NAME_MAP } from '../constants';
-import { ITab } from '../typings';
+import { RelatedResourceType } from '../typings';
 
-const props = defineProps<{ row: SecurityGroupRelResourceByBizItem; tabActive: ITab }>();
+const props = defineProps<{ row: SecurityGroupRelResourceByBizItem; tabActive: RelatedResourceType }>();
 const emit = defineEmits(['confirm']);
 
 const { t } = useI18n();

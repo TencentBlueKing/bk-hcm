@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeMount, ref } from 'vue';
+import { computed, onBeforeMount, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   type ISecurityGroupDetail,
@@ -12,9 +12,8 @@ import { useBusinessGlobalStore } from '@/store/business-global';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import usePage from '@/hooks/use-page';
 import { transformSimpleCondition } from '@/utils/search';
-import { RELATED_RES_KEY_MAP } from './constants';
-import securityGroupRelatedResourcesViewProperties from '@/model/security-group/related-resources.view';
-import type { ITab } from './typings';
+import { RELATED_RES_KEY_MAP, RELATED_RES_PROPERTIES_MAP } from './constants';
+import type { RelatedResourceType } from './typings';
 
 import { Message } from 'bkui-vue';
 import { Plus } from 'bkui-vue/lib/icon';
@@ -35,7 +34,7 @@ const { getBizsId, isBusinessPage } = useWhereAmI();
 const { getBusinessNames } = useBusinessGlobalStore();
 const securityGroupStore = useSecurityGroupStore();
 
-const tabActive = ref<ITab>('CVM');
+const tabActive = ref<RelatedResourceType>('CVM');
 // 当前业务所关联资源
 const currentBizRelatedResources = computed(
   () =>
@@ -53,6 +52,7 @@ const condition = ref<Record<string, any>>({});
 // 账号下的平台管理：拉取所有业务所关联的实例列表
 const loading = ref(false);
 const getList = async (sort = 'created_at', order = 'DESC') => {
+  loading.value = true;
   try {
     const { id } = props.detail;
     const api =
@@ -64,7 +64,7 @@ const getList = async (sort = 'created_at', order = 'DESC') => {
     const res = await Promise.all(
       bizIds.map((bk_biz_id) =>
         api(id, bk_biz_id, {
-          filter: transformSimpleCondition(condition.value, securityGroupRelatedResourcesViewProperties),
+          filter: transformSimpleCondition(condition.value, RELATED_RES_PROPERTIES_MAP[tabActive.value]),
           page: getPageParams(pagination, { sort, order }),
         }),
       ),
@@ -93,6 +93,10 @@ const handleBatchUnbind = async (ids: string[]) => {
   Message({ theme: 'success', message: t('解绑成功') });
   getList();
 };
+
+watch(tabActive, () => {
+  getList();
+});
 
 onBeforeMount(() => {
   getList();
@@ -138,8 +142,9 @@ onBeforeMount(() => {
     <div class="rel-res-display-wrap">
       <data-list
         v-bkloading="{ loading }"
+        :resource-type="tabActive"
+        operation="base"
         :list="list"
-        :column-key="`${tabActive}-base`"
         :pagination="pagination"
         @select="(selections) => (selected = selections)"
       >

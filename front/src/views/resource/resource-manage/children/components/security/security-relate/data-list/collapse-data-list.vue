@@ -10,9 +10,8 @@ import {
 } from '@/store/security-group';
 import { useBusinessGlobalStore } from '@/store/business-global';
 import { transformSimpleCondition } from '@/utils/search';
-import { RELATED_RES_NAME_MAP } from '../constants';
-import securityGroupRelatedResourcesViewProperties from '@/model/security-group/related-resources.view';
-import { ITab } from '../typings';
+import { RELATED_RES_NAME_MAP, RELATED_RES_PROPERTIES_MAP } from '../constants';
+import { RelatedResourceType } from '../typings';
 
 import { Message } from 'bkui-vue';
 import dataList from './index.vue';
@@ -23,7 +22,7 @@ import singleUnbind from '../unbind/single.vue';
 const props = defineProps<{
   detail: ISecurityGroupDetail;
   bkBizId: number;
-  tabActive: ITab;
+  tabActive: RelatedResourceType;
   resCount: number;
 }>();
 
@@ -57,7 +56,7 @@ const getList = async (sort = 'created_at', order = 'DESC') => {
       props.tabActive === 'CVM' ? securityGroupStore.queryRelCvmByBiz : securityGroupStore.queryRelLoadBalancerByBiz;
 
     const res = await api(props.detail.id, props.bkBizId, {
-      filter: transformSimpleCondition(condition.value, securityGroupRelatedResourcesViewProperties),
+      filter: transformSimpleCondition(condition.value, RELATED_RES_PROPERTIES_MAP[props.tabActive]),
       page: getPageParams(pagination, { sort, order }),
     });
 
@@ -116,8 +115,9 @@ onBeforeMount(() => {
     <data-list
       v-show="isExpand"
       v-bkloading="{ loading }"
+      :resource-type="tabActive"
+      operation="base"
       :list="relResList"
-      :column-key="`${tabActive}-base`"
       :pagination="pagination"
       :has-selections="isCurrentBusiness"
       :has-settings="isCurrentBusiness"

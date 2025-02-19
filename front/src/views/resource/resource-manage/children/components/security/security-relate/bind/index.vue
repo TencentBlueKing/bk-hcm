@@ -4,8 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import usePage from '@/hooks/use-page';
 import { ISecurityGroupDetail, SecurityGroupRelResourceByBizItem, useSecurityGroupStore } from '@/store/security-group';
-import securityGroupRelatedResourcesViewProperties from '@/model/security-group/related-resources.view';
-import { RELATED_RES_KEY_MAP } from '../constants';
+import { RELATED_RES_KEY_MAP, RELATED_RES_PROPERTIES_MAP } from '../constants';
 import { enableCount, transformSimpleCondition } from '@/utils/search';
 import { getPrivateIPs } from '@/utils';
 import http from '@/http';
@@ -32,7 +31,7 @@ const getList = async (sort = 'created_at', order = 'DESC') => {
   try {
     const api = `/api/v1/cloud/${getBusinessApiPath()}${RELATED_RES_KEY_MAP[props.tabActive]}s/list`;
     const data = {
-      filter: transformSimpleCondition(condition.value, securityGroupRelatedResourcesViewProperties),
+      filter: transformSimpleCondition(condition.value, RELATED_RES_PROPERTIES_MAP[props.tabActive]),
       page: getPageParams(pagination, { sort, order }),
     };
 
@@ -102,7 +101,8 @@ const handleConfirm = () => {
             v-bkloading="{ loading }"
             ref="data-list"
             :list="list"
-            :column-key="`${tabActive}-bind`"
+            :resource-type="tabActive"
+            operation="bind"
             :pagination="pagination"
             :is-row-select-enable="isToBindCvmsRowSelectEnable"
             :has-settings="false"

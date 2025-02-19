@@ -4,13 +4,13 @@ import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import type { ISecurityGroupDetail, ISecurityGroupRelResCountItem } from '@/store/security-group';
 import { VendorEnum } from '@/common/constant';
-import { ITab } from '../typings';
+import { RelatedResourceType } from '../typings';
 
 const props = defineProps<{
   detail: ISecurityGroupDetail;
   relatedResourcesCountList: ISecurityGroupRelResCountItem[];
 }>();
-const model = defineModel<ITab>();
+const model = defineModel<RelatedResourceType>();
 
 const route = useRoute();
 const router = useRouter();

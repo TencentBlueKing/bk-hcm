@@ -4,13 +4,13 @@ import { useI18n } from 'vue-i18n';
 import { type SecurityGroupRelResourceByBizItem, useSecurityGroupStore } from '@/store/security-group';
 import columnFactory from '../data-list/column-factory';
 import { RELATED_RES_KEY_MAP } from '../constants';
-import { ITab } from '../typings';
+import { RelatedResourceType } from '../typings';
 
 const props = withDefaults(
   defineProps<{
     selections: SecurityGroupRelResourceByBizItem[];
     disabled?: boolean;
-    tabActive: ITab;
+    tabActive: RelatedResourceType;
     handleConfirm: (ids: string[]) => Promise<void>;
   }>(),
   { disabled: false },
@@ -32,7 +32,7 @@ const types = [
 const selectedType = ref<'target' | 'unTarget'>('target');
 
 const { getColumns } = columnFactory();
-const columns = ref(getColumns(`${props.tabActive}-unbind`));
+const columns = ref(getColumns(props.tabActive, 'unbind'));
 const listMap = ref<Record<'target' | 'unTarget', SecurityGroupRelResourceByBizItem[]>>({
   target: [],
   unTarget: [],

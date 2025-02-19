@@ -1,17 +1,19 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, watchEffect } from 'vue';
 import usePage from '@/hooks/use-page';
 import useTableSettings from '@/hooks/use-table-settings';
 import useTableSelection from '@/hooks/use-table-selection';
 import { SecurityGroupRelResourceByBizItem } from '@/store/security-group';
 import columnFactory from './column-factory';
 import { PaginationType } from '@/typings';
+import { RelatedResourceType } from '../typings';
 
 const { getColumns } = columnFactory();
 
 const props = withDefaults(
   defineProps<{
-    columnKey: string;
+    resourceType: RelatedResourceType;
+    operation: string;
     list: SecurityGroupRelResourceByBizItem[];
     pagination: PaginationType;
     hasSelections?: boolean;
@@ -26,7 +28,7 @@ const props = withDefaults(
 );
 const emit = defineEmits<(e: 'select', data: any[]) => void>();
 
-const columns = ref(getColumns(props.columnKey));
+const columns = ref(getColumns(props.resourceType, props.operation));
 const { settings } = useTableSettings(columns.value);
 const { handlePageChange, handlePageSizeChange, handleSort } = usePage();
 const { selections, handleSelectAll, handleSelectChange, resetSelections } = useTableSelection({
@@ -57,15 +59,12 @@ const handleDelete = (cloud_id: string) => {
   }
 };
 
-watch(
-  () => props.columnKey,
-  (columnKey) => {
-    // 根据操作类型动态生成列
-    if (columnKey) {
-      columns.value = getColumns(columnKey);
-    }
-  },
-);
+watchEffect(() => {
+  // 根据操作类型动态生成列
+  if (props.resourceType && props.operation) {
+    columns.value = getColumns(props.resourceType, props.operation);
+  }
+});
 
 watch(
   selections,

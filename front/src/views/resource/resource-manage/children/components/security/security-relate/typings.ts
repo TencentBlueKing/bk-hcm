@@ -5,4 +5,4 @@ export enum SecurityGroupManageType {
   business = 'business',
 }
 
-export type ITab = ISecurityGroupRelResCountItem['resources'][1]['res_name'];
+export type RelatedResourceType = ISecurityGroupRelResCountItem['resources'][1]['res_name'];
