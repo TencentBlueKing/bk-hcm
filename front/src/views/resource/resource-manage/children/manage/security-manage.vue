@@ -97,26 +97,25 @@ const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, ge
     filter: filter.value,
   },
   fetchUrl,
-  // {
-  //   handleAsyncRequest: async (data: any[]) => {
-  //     // 安全组需要异步加载一些关联资源数据
-  //     if (activeType.value !== 'group') return;
+  {
+    handleAsyncRequest: async (data: any[]) => {
+      // 安全组需要异步加载一些关联资源数据
+      if (activeType.value !== 'group' || !data.length) return [];
 
-  //     const security_group_ids: string[] = data.map((item: any) => item.id);
-  //     const [relResList, ruleCountMap] = await Promise.all([
-  //       securityGroupStore.queryRelatedResources(security_group_ids),
-  //       securityGroupStore.batchQueryRuleCount(security_group_ids),
-  //     ]);
+      const security_group_ids: string[] = data.map((item: any) => item.id);
+      const { ruleCountMap, relatedResourcesList } = await securityGroupStore.queryRuleCountAndRelatedResources(
+        security_group_ids,
+      );
 
-  //     return data.map((item) => {
-  //       const relResItem = relResList.find((relRes) => relRes.id === item.id);
-  //       const rel_res_count = relResItem.resources.reduce((acc, cur) => acc + cur.count, 0);
-  //       const res_res_types = relResItem.resources.flatMap(({ res_name }) => res_name);
-  //       const rule_count = ruleCountMap[item.id];
-  //       return { ...item, rel_res_count, res_res_types, rule_count };
-  //     });
-  //   },
-  // },
+      return data.map((item) => {
+        const relResItem = relatedResourcesList.find((relRes) => relRes.id === item.id);
+        const rel_res_count = relResItem.resources.reduce((acc, cur) => acc + cur.count, 0);
+        const rel_res = relResItem.resources.filter(({ count }) => count > 0);
+        const rule_count = ruleCountMap[item.id];
+        return { ...item, rel_res_count, rel_res, rule_count };
+      });
+    },
+  },
 );
 
 const selectSearchData = computed(() => {
@@ -216,9 +215,6 @@ const fetchComponentsData = () => {
   getList();
 };
 
-// 初始化
-getList();
-
 defineExpose({ fetchComponentsData });
 const isRowSelectEnable = ({ row, isCheckAll }: DoublePlainObject) => {
   if (isCheckAll) return true;
@@ -290,7 +286,7 @@ const groupColumns = [
     label: t('备注'),
     field: 'memo',
     isDefaultShow: true,
-    render: ({ cell }: any) => (cell ? cell : '--'),
+    render: ({ cell }: any) => cell || '--',
     width: 120,
   },
   {
@@ -305,10 +301,17 @@ const groupColumns = [
   },
   {
     label: t('关联的资源类型'),
-    field: 'res_res_types',
+    field: 'rel_res',
     filter: true,
-    width: 150,
-    render: ({ cell }: { cell: string[] }) => (cell ? cell.map((res_name) => h(Tag, null, res_name)) : '--'),
+    width: 200,
+    render: ({ cell }: { cell: { res_name: string; count: number }[] }) => {
+      if (cell && cell.length > 0) {
+        return cell.map(({ res_name, count }) =>
+          withDirectives(h(Tag, { class: 'mr4' }, res_name), [[bkTooltips, { content: String(count) }]]),
+        );
+      }
+      return '--';
+    },
   },
   {
     label: t('使用业务'),
@@ -316,7 +319,7 @@ const groupColumns = [
     filter: true,
     isDefaultShow: true,
     width: 100,
-    render: ({ cell }: any) => cell?.join(',') ?? '--',
+    render: ({ cell }: any) => cell?.join(',') || '--',
   },
   {
     label: t('管理类型'),
@@ -339,17 +342,22 @@ const groupColumns = [
     filter: true,
     isDefaultShow: true,
     width: 100,
-    render: ({ cell }: any) => (cell ? getNameFromBusinessMap(cell) : '--'),
+    render: ({ cell }: any) => {
+      if (!cell || cell === -1) return '--';
+      return getNameFromBusinessMap(cell);
+    },
   },
   {
     label: t('主负责人'),
     field: 'manager',
     width: 100,
+    render: ({ cell }: any) => cell || '--',
   },
   {
     label: t('备份负责人'),
     field: 'bak_manager',
     width: 100,
+    render: ({ cell }: any) => cell || '--',
   },
   {
     label: t('标签'),
@@ -402,12 +410,7 @@ const groupColumns = [
           name: t('配置规则'),
           auth: authMap.rule,
           disabled: !props.authVerifyData?.permissionAction[authMap.rule] || isAssigned,
-          handleClick: async () => {
-            isChangeEffectConfirmDialogShow.value = true;
-            const resData = await securityGroupStore.queryRelatedResources([data.id]);
-            const { resources } = resData[0] ?? {};
-            currentSecurityGroup.value = { ...data, resources };
-          },
+          handleClick: () => handleFillCurrentSecurityGroup(data, 'rule'),
         },
         {
           type: 'clone',
@@ -422,7 +425,7 @@ const groupColumns = [
           name: t('删除'),
           auth: authMap.delete,
           disabled: !props.authVerifyData?.permissionAction[authMap.delete] || isAssigned,
-          handleClick: () => handleDeleteSG(data),
+          handleClick: () => handleFillCurrentSecurityGroup(data, 'delete'),
         },
       ];
 
@@ -867,7 +870,21 @@ watch(
   },
 );
 
+// 配置规则&删除安全组
+const currentSecurityGroup = ref<ISecurityGroupOperateItem>(null);
 const isChangeEffectConfirmDialogShow = ref(false);
+const isSecurityGroupSingleDeleteDialogShow = ref(false);
+const handleFillCurrentSecurityGroup = async (rowData: ISecurityGroupOperateItem, type: 'rule' | 'delete') => {
+  if (type === 'rule') isChangeEffectConfirmDialogShow.value = true;
+  else isSecurityGroupSingleDeleteDialogShow.value = true;
+
+  const { ruleCountMap, relatedResourcesList } = await securityGroupStore.queryRuleCountAndRelatedResources([
+    rowData.id,
+  ]);
+  const rule_count = ruleCountMap[rowData.id] ?? 0;
+  const { resources } = relatedResourcesList[0] ?? {};
+  currentSecurityGroup.value = { ...rowData, resources, rule_count };
+};
 const handleChangeEffectConfirm = () => {
   const routeInfo: any = {
     query: { activeTab: 'rule', id: currentSecurityGroup.value.id, vendor: currentSecurityGroup.value.vendor },
@@ -879,20 +896,6 @@ const handleChangeEffectConfirm = () => {
     Object.assign(routeInfo, { name: 'resourceDetail', params: { type: 'security' } });
   }
   router.push(routeInfo);
-};
-
-const currentSecurityGroup = ref<ISecurityGroupOperateItem>(null);
-
-const isSecurityGroupSingleDeleteDialogShow = ref(false);
-const handleDeleteSG = async (rowData: any) => {
-  isSecurityGroupSingleDeleteDialogShow.value = true;
-  const [relResList, ruleCountMap] = await Promise.all([
-    securityGroupStore.queryRelatedResources([rowData.id]),
-    securityGroupStore.batchQueryRuleCount([rowData.id]),
-  ]);
-  const rule_count = ruleCountMap[rowData.id] ?? 0;
-  const { resources } = relResList[0] ?? {};
-  currentSecurityGroup.value = { ...rowData, resources, rule_count };
 };
 
 const securityHandleShowDelete = (data: any) => {
@@ -1026,7 +1029,7 @@ const securityHandleShowDelete = (data: any) => {
     <!-- 变更影响确认 -->
     <security-group-change-confirm-dialog
       v-model="isChangeEffectConfirmDialogShow"
-      :loading="securityGroupStore.isQueryRelatedResourcesLoading"
+      :loading="securityGroupStore.isQueryRuleCountAndRelatedResourcesLoading"
       :detail="currentSecurityGroup"
       @confirm="handleChangeEffectConfirm"
     />
@@ -1034,7 +1037,7 @@ const securityHandleShowDelete = (data: any) => {
     <!-- 删除安全组 -->
     <security-group-single-delete-dialog
       v-model="isSecurityGroupSingleDeleteDialogShow"
-      :loading="securityGroupStore.isQueryRelatedResourcesLoading"
+      :loading="securityGroupStore.isQueryRuleCountAndRelatedResourcesLoading"
       :detail="currentSecurityGroup"
     />
   </div>

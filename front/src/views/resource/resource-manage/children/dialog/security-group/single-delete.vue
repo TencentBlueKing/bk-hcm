@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, h, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useResourceStore } from '@/store';
 import { type ISecurityGroupOperateItem } from '@/store/security-group';
 
 import { Message } from 'bkui-vue';
-import DetailSimple from '../../components/security/detail-simple.vue';
+import { TagThemeEnum } from 'bkui-vue/lib/shared';
+import GridContainer from '@/components/layout/grid-container/grid-container.vue';
+import GridItem from '@/components/layout/grid-container/grid-item.vue';
+import RelResourcesDisplay from '../../components/security/rel-resources-display.vue';
 import hintIcon from '@/assets/image/hint.svg';
 
 defineOptions({ name: 'security-group-delete-dialog' });
@@ -15,7 +18,27 @@ const model = defineModel<boolean>();
 const { t } = useI18n();
 const resourceStore = useResourceStore();
 
-const filedIds = ['name', 'rule_count', 'rel_res', 'manager', 'bak_manager', 'mgmt_biz_id', 'usage_biz_ids'];
+const boundResources = computed(() => props.detail?.resources?.filter(({ count }) => count > 0) ?? []);
+
+const fields = [
+  { id: 'name', name: t('安全组名称'), type: 'string' },
+  { id: 'rule_count', name: t('规则数'), render: () => `${props.detail?.rule_count} ${t('个')}` },
+  {
+    id: 'rel_res',
+    name: t('绑定实例'),
+    render: () => {
+      const { resources = [] } = props.detail ?? {};
+      const displayResources = resources.filter(({ count }) => count > 0);
+
+      if (!displayResources.length) return '--';
+      return h(RelResourcesDisplay, { resources: displayResources, tagTheme: TagThemeEnum.DANGER });
+    },
+  },
+  { id: 'manager', name: t('主负责人'), type: 'user' },
+  { id: 'bak_manager', name: t('备份负责人'), type: 'user' },
+  { id: 'mgmt_biz_id', name: t('管理业务'), type: 'business' },
+  { id: 'usage_biz_ids', name: t('使用业务'), type: 'business' },
+];
 
 const isConfirmLoading = ref(false);
 const handleDelete = async () => {
@@ -45,18 +68,32 @@ const handleClosed = () => {
       </bk-loading>
     </template>
     <template v-else>
-      <bk-alert theme="danger" class="mt16 mb16">
+      <bk-alert v-if="boundResources.length > 0" theme="danger" class="mt16 mb16">
         {{ t('当前安全组绑定了') }}
-        <!-- todo: 遍历 resources 展示各资源数量 -->
-        {{ t('无法删除。') }}
+        {{ boundResources.map(({ res_name: resName, count }) => `${count} 个${resName}资源`).join('，') }}
+        {{ t('，无法删除。') }}
       </bk-alert>
 
-      <detail-simple :field-ids="filedIds" :detail="detail" />
+      <grid-container class="detail-preview-wrap" :column="1" :label-width="120">
+        <grid-item v-for="field in fields" :key="field.id" :label="field.name">
+          <template v-if="field.render">
+            <component :is="field.render" />
+          </template>
+          <display-value v-else :property="field" :value="detail?.[field.id]" :display="{ on: 'info' }" />
+        </grid-item>
+      </grid-container>
     </template>
 
     <template #footer>
       <div class="footer">
-        <bk-button theme="primary" @click="handleDelete" :loading="isConfirmLoading">{{ t('删除') }}</bk-button>
+        <bk-button
+          theme="primary"
+          @click="handleDelete"
+          :loading="isConfirmLoading"
+          :disabled="boundResources.length > 0"
+        >
+          {{ t('删除') }}
+        </bk-button>
         <bk-button :disabled="isConfirmLoading" @click="handleClosed">{{ t('取消') }}</bk-button>
       </div>
     </template>
@@ -79,30 +116,26 @@ const handleClosed = () => {
   }
 }
 
-.detail-wrap {
+.detail-preview-wrap {
   :deep(.rel-res-wrap) {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
+    row-gap: 4px;
 
-    .number {
-      padding: 0 8px;
-      display: inline-block;
-      height: 16px;
-      line-height: 16px;
-      background: #eaebf0;
-      border-radius: 2px;
-      font-size: 12px;
-      color: #4d4f56;
+    .rel-res-item {
+      display: flex;
+      align-items: center;
 
-      &.danger {
-        background: #ea3636;
-        color: #fff;
+      .number {
+        padding: 0 4px;
+        font-size: 12px;
       }
-    }
 
-    & > span:not(:last-of-type)::after {
-      content: ';';
-      margin: 0 4px;
+      &:not(:last-of-type)::after {
+        content: '|';
+        margin: 0 4px;
+      }
     }
   }
 }
