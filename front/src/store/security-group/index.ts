@@ -6,6 +6,14 @@ import { IListResData, IQueryResData, QueryBuilderType } from '@/typings';
 import { enableCount } from '@/utils/search';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 
+export enum SecurityGroupManageType {
+  BIZ = 'biz',
+  PLATFORM = 'platform',
+  UNKNOWN = '',
+}
+
+export type SecurityGroupMgmtAttrSingleType = 'manager' | 'bak_manager' | 'mgmt_biz_id' | 'usage_biz_ids';
+
 export interface ISecurityGroupItem {
   id: string;
   vendor: VendorEnum;
@@ -16,7 +24,7 @@ export interface ISecurityGroupItem {
   bak_manager: string;
   usage_biz_ids: number[];
   mgmt_biz_id: number;
-  mgmt_type: string;
+  mgmt_type: SecurityGroupManageType;
   memo: string;
   account_id: string;
   bk_biz_id: number;
@@ -29,7 +37,7 @@ export interface ISecurityGroupItem {
   cloud_update_time: string;
 }
 
-interface ISecurityGroupAssignBizsPreviewItem {
+interface ISecurityGroupAssignPreviewItem {
   id: string;
   assignable: boolean;
   reason: string;
@@ -72,7 +80,7 @@ interface ISecurityGroupRelLoadBalancerByBizItem extends SecurityGroupRelCvmComm
   memo: string;
 }
 
-interface ISecurityGroupRelResCountItem {
+export interface ISecurityGroupRelResCountItem {
   id: string;
   resources: Array<{
     res_name: 'cvm' | 'load_balancer' | 'db' | 'container';
@@ -87,11 +95,11 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
   const { getBusinessApiPath } = useWhereAmI();
 
   // 预览安全组分配到业务的结果，是否可分配
-  const isQueryAssignBizsPreviewLoading = ref(false);
-  const queryAssignBizsPreview = async (ids: string[]) => {
-    isQueryAssignBizsPreviewLoading.value = true;
+  const isAssignPreviewLoading = ref(false);
+  const getAssignPreview = async (ids: string[]) => {
+    isAssignPreviewLoading.value = true;
     try {
-      const res: IQueryResData<ISecurityGroupAssignBizsPreviewItem[]> = await http.post(
+      const res: IQueryResData<ISecurityGroupAssignPreviewItem[]> = await http.post(
         '/api/v1/cloud/security_groups/assign/bizs/preview',
         { ids },
       );
@@ -100,16 +108,16 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
       console.error(error);
       return Promise.reject(error);
     } finally {
-      isQueryAssignBizsPreviewLoading.value = false;
+      isAssignPreviewLoading.value = false;
     }
   };
 
   // 批量分配安全组到业务
   const isBatchAssignToBizLoading = ref(false);
-  const batchAssignToBiz = async (sg_ids: string[]) => {
+  const batchAssignToBiz = async (ids: string[]) => {
     isBatchAssignToBizLoading.value = true;
     try {
-      await http.post('/api/v1/cloud/security_groups/assign/bizs', { sg_ids });
+      await http.post('/api/v1/cloud/security_groups/assign/bizs/batch', { ids });
     } finally {
       isBatchAssignToBizLoading.value = false;
     }
@@ -119,7 +127,7 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
   // 注意：通过该接口更新的安全组会被默认设置为业务管理类型，不可再更改为平台管理类型
   const isBatchUpdateMgmtAttrLoading = ref(false);
   const batchUpdateMgmtAttr = async (
-    security_groups: Array<{ id: string; manager: string; bak_manager: string[]; mgmt_biz_id: number }>,
+    security_groups: Array<{ id: string; manager: string; bak_manager: string; mgmt_biz_id: number }>,
   ) => {
     isBatchUpdateMgmtAttrLoading.value = true;
     try {
@@ -194,11 +202,12 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
   const queryRelatedResources = async (ids: string[]) => {
     isQueryRelatedResourcesLoading.value = true;
     try {
-      const res: IQueryResData<ISecurityGroupRelResCountItem[]> = await http.post(
+      const res: IListResData<ISecurityGroupRelResCountItem[]> = await http.post(
         '/api/v1/cloud/security_groups/related_resources/query_count',
         { ids },
       );
-      return res.data;
+      const { details = [] } = res.data ?? {};
+      return details;
     } catch (error) {
       console.error(error);
       return Promise.reject(error);
@@ -211,17 +220,17 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
   const isUpdateMgmtAttrLoading = ref(false);
   const updateMgmtAttr = async (
     id: string,
-    payload?: Array<{
+    payload?: {
       mgmt_type?: string;
       manager?: string;
       bak_manager?: string;
       usage_biz_ids?: number[];
       mgmt_biz_id?: number;
-    }>,
+    },
   ) => {
     isUpdateMgmtAttrLoading.value = true;
     try {
-      await http.patch(`/api/v1/cloud/security_groups/${id}/mgmt_attrs`, payload);
+      await http.patch(`/api/v1/cloud/${getBusinessApiPath()}security_groups/${id}/mgmt_attrs`, payload);
     } finally {
       isUpdateMgmtAttrLoading.value = false;
     }
@@ -245,9 +254,26 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
     }
   };
 
+  const isQueryRuleCountAndRelatedResourcesLoading = ref(false);
+  const queryRuleCountAndRelatedResources = async (ids: string[]) => {
+    isQueryRuleCountAndRelatedResourcesLoading.value = true;
+    try {
+      const [ruleCountMap, relatedResourcesList] = await Promise.all([
+        batchQueryRuleCount(ids),
+        queryRelatedResources(ids),
+      ]);
+      return { ruleCountMap, relatedResourcesList };
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    } finally {
+      isQueryRuleCountAndRelatedResourcesLoading.value = false;
+    }
+  };
+
   return {
-    isQueryAssignBizsPreviewLoading,
-    queryAssignBizsPreview,
+    isAssignPreviewLoading,
+    getAssignPreview,
     isBatchAssignToBizLoading,
     batchAssignToBiz,
     isBatchUpdateMgmtAttrLoading,
@@ -264,5 +290,7 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
     updateMgmtAttr,
     isBatchQueryRuleCountLoading,
     batchQueryRuleCount,
+    isQueryRuleCountAndRelatedResourcesLoading,
+    queryRuleCountAndRelatedResources,
   };
 });

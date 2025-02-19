@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, h, ref, watchEffect } from 'vue';
+import { computed, h, ref, watchEffect, useId } from 'vue';
 import debounce from 'lodash/debounce';
 import { useUserStore, type IUserItem } from '@/store/user';
 import { userSelectorRecentSelectedKey } from '@/constants/storage-symbols';
@@ -26,6 +26,9 @@ const props = withDefaults(defineProps<IUserSelectorProps>(), {
   collapseTags: true,
   placeholder: '请输入',
 });
+
+const id = useId();
+const activeSearchId = ref<string | null>(null);
 
 const model = defineModel<string | string[]>();
 
@@ -63,6 +66,8 @@ const localModel = computed<string[]>({
 });
 
 const userList = ref<IUserItem[]>([]);
+
+const tagInputRef = ref(null);
 
 const listTpl = (node: IUserItem, hl: (value: string) => string) => {
   const innerHTML = `${hl(node.username)}${node.display_name ? `(${hl(node.display_name)})` : ''}`;
@@ -114,7 +119,16 @@ watchEffect(async () => {
       }
     }
 
-    userList.value = [...userList.value, ...existUserList, ...newUserList];
+    // 需要再次去重
+    const totalUserList = [...userList.value, ...existUserList, ...newUserList];
+    const uniqueUserList = totalUserList.reduce((acc, cur) => {
+      if (!acc.some((item) => item.username === cur.username)) {
+        acc.push(cur);
+      }
+      return acc;
+    }, []);
+
+    userList.value = uniqueUserList;
   }
 });
 
@@ -129,9 +143,13 @@ const handleInput = debounce(async (inputValue: string) => {
     return;
   }
 
+  activeSearchId.value = id;
+
   const list = await userStore.search(value);
   const newList = list.filter((item) => !userList.value.some((oldItem) => oldItem.username === item.username));
   userList.value = [...userList.value, ...newList];
+
+  activeSearchId.value = null;
 }, 500);
 
 const handleClickMe = () => {
@@ -142,6 +160,9 @@ const handleClickMe = () => {
   } else {
     localModel.value = [userStore.username];
   }
+
+  // blur触发强制隐藏，由于组件的实现问题，不隐藏当只有一个“我”选项时会出现一个空白
+  tagInputRef.value?.handleBlur();
 };
 </script>
 
@@ -149,6 +170,7 @@ const handleClickMe = () => {
   <bk-tag-input
     class="user-selector"
     v-model="localModel"
+    ref="tagInputRef"
     :list="userList"
     :tpl="listTpl"
     :tag-tpl="tagTpl"
@@ -171,8 +193,10 @@ const handleClickMe = () => {
   >
     <template #suffix>
       <div class="suffix">
-        <div class="me" v-show="!userStore.searchLoading" @click="handleClickMe">我</div>
-        <div class="loading" v-show="userStore.searchLoading">
+        <div class="me" v-show="!(activeSearchId === id && userStore.searchLoading)" @click.stop="handleClickMe">
+          我
+        </div>
+        <div class="loading" v-show="activeSearchId === id && userStore.searchLoading">
           <bk-loading :loading="userStore.searchLoading" mode="spin" size="mini" />
         </div>
       </div>
@@ -187,11 +211,13 @@ const handleClickMe = () => {
     margin-right: 5px;
     display: flex;
     align-items: center;
+
     .me {
       color: $default-color;
       cursor: pointer;
       z-index: 1;
     }
+
     .loading {
       transform: scale(0.75);
     }
