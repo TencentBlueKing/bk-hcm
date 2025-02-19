@@ -7,7 +7,7 @@ import type {
 import { GcpTypeEnum } from '@/typings';
 import { Button, InfoBox, Message, Tag, bkTooltips } from 'bkui-vue';
 import { useResourceStore, useAccountStore } from '@/store';
-import { ref, h, PropType, watch, reactive, defineExpose, computed, withDirectives } from 'vue';
+import { ref, h, PropType, watch, reactive, defineExpose, computed, withDirectives, nextTick } from 'vue';
 
 import { useI18n } from 'vue-i18n';
 import { useRouter, useRoute } from 'vue-router';
@@ -29,8 +29,10 @@ import { storeToRefs } from 'pinia';
 
 import SecurityGroupChangeConfirmDialog from '../dialog/security-group/change-confirm.vue';
 import SecurityGroupSingleDeleteDialog from '../dialog/security-group/single-delete.vue';
+import SecurityGroupAssignDialog from '../dialog/security-group/assign.vue';
+import SecurityGroupUpdateMgmtAttrDialog from '../dialog/security-group/update-mgmt-attr.vue';
 import { MGMT_TYPE_MAP } from '@/constants/security-group';
-import { ISecurityGroupOperateItem, useSecurityGroupStore } from '@/store/security-group';
+import { ISecurityGroupOperateItem, useSecurityGroupStore, SecurityGroupManageType } from '@/store/security-group';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -240,7 +242,6 @@ const groupColumns = [
         {
           text: true,
           theme: 'primary',
-          disabled: data.bk_biz_id !== -1 && props.isResourcePage,
           onClick() {
             const routeInfo: any = { query: { ...route.query, id: data.id, vendor: data.vendor } };
             // 业务下
@@ -932,29 +933,89 @@ const securityHandleShowDelete = (data: any) => {
     },
   });
 };
+
+const securityGroupSelectedState = computed(() => {
+  const state = {
+    bizTypeCount: 0,
+    unknownTypeCount: 0,
+    accountUnique: true,
+    mgmtAttrEmptyCount: 0,
+  };
+  selections.value.forEach((item) => {
+    state.bizTypeCount += item.mgmt_type === SecurityGroupManageType.BIZ ? 1 : 0;
+    state.unknownTypeCount += item.mgmt_type === SecurityGroupManageType.UNKNOWN ? 1 : 0;
+    state.mgmtAttrEmptyCount +=
+      item.manager || item.bak_manager || item.usage_biz_id || item.mgmt_biz_id !== -1 ? 0 : 1;
+    if (state.accountUnique) {
+      state.accountUnique = item.account_id === selections.value[0].account_id;
+    }
+  });
+  return state;
+});
+const isAllBizType = computed(() => securityGroupSelectedState.value.bizTypeCount === selections.value.length);
+const assignButtonDisabled = computed(() => !selections.value.length || !isAllBizType.value);
+const isAllUnknownType = computed(() => securityGroupSelectedState.value.unknownTypeCount === selections.value.length);
+const isAllMgmtAttrEmpty = computed(
+  () => securityGroupSelectedState.value.mgmtAttrEmptyCount === selections.value.length,
+);
+const isSameAccount = computed(() => securityGroupSelectedState.value.accountUnique);
+const updateMgmtAttrButtonDisabled = computed(
+  () => !selections.value.length || !isAllUnknownType.value || !isAllMgmtAttrEmpty.value || !isSameAccount.value,
+);
+
+const securityGroupAssignDialogState = reactive({
+  isShow: false,
+  isHidden: true,
+});
+const handleSecurityGroupAssign = () => {
+  securityGroupAssignDialogState.isShow = true;
+  securityGroupAssignDialogState.isHidden = false;
+};
+
+const securityGroupMgmtAttrEditDialogState = reactive({
+  isShow: false,
+  isHidden: true,
+});
+const handleSecurityGroupUpdateMgmtAttr = () => {
+  securityGroupMgmtAttrEditDialogState.isShow = true;
+  securityGroupMgmtAttrEditDialogState.isHidden = false;
+};
+
+const handleSecurityGroupOperationSuccess = () => {
+  getList();
+
+  // 确保dialog销毁后再清空selections数据，避免dialog中依赖selections的逻辑被非预期执行
+  nextTick(() => {
+    resetSelections();
+  });
+};
 </script>
 
 <template>
   <div class="security-manager-page">
-    <section>
-      <section class="flex-row align-items-center">
-        <bk-radio-group v-model="activeType" :disabled="state.isLoading">
-          <bk-radio-button v-for="item in types" :key="item.name" :label="item.name">
-            {{ item.label }}
-          </bk-radio-button>
-        </bk-radio-group>
-        <div class="ml12">
-          <slot></slot>
-        </div>
+    <div class="flex-row align-items-center toolbar">
+      <bk-radio-group v-model="activeType" :disabled="state.isLoading">
+        <bk-radio-button v-for="item in types" :key="item.name" :label="item.name">
+          {{ item.label }}
+        </bk-radio-button>
+      </bk-radio-group>
+      <slot></slot>
+      <template v-if="isResourcePage">
+        <bk-button
+          v-if="activeType === 'group'"
+          :disabled="assignButtonDisabled"
+          v-bk-tooltips="{
+            content: '管理类型需全部为“业务管理”',
+            disabled: !selections.length || !assignButtonDisabled,
+          }"
+          @click="handleSecurityGroupAssign"
+        >
+          批量分配
+        </bk-button>
         <BatchDistribution
+          v-else
           :selections="selections"
-          :type="
-            activeType === 'group'
-              ? DResourceType.security_groups
-              : activeType === 'template'
-              ? DResourceType.templates
-              : DResourceType.firewall
-          "
+          :type="activeType === 'template' ? DResourceType.templates : DResourceType.firewall"
           :get-data="
             () => {
               getList();
@@ -962,16 +1023,30 @@ const securityHandleShowDelete = (data: any) => {
             }
           "
         />
-        <!-- todo: 批量添加资产归属按钮 -->
-        <bk-search-select
-          class="search-filter search-selector-container"
-          clearable
-          :conditions="[]"
-          :data="selectSearchData"
-          v-model="searchValue"
-        />
-      </section>
-    </section>
+        <bk-button
+          v-if="activeType === 'group'"
+          :disabled="updateMgmtAttrButtonDisabled"
+          v-bk-tooltips="{
+            content: !isAllUnknownType
+              ? '管理类型需全部为“未确认”'
+              : !isAllMgmtAttrEmpty
+              ? '资产归属字段需全为空'
+              : '必须属于同一账号',
+            disabled: !selections.length || !updateMgmtAttrButtonDisabled,
+          }"
+          @click="handleSecurityGroupUpdateMgmtAttr"
+        >
+          批量添加资产归属
+        </bk-button>
+      </template>
+      <bk-search-select
+        class="search-filter search-selector-container"
+        clearable
+        :conditions="[]"
+        :data="selectSearchData"
+        v-model="searchValue"
+      />
+    </div>
 
     <bk-loading :key="activeType" :loading="state.isLoading" opacity="1">
       <bk-table
@@ -1040,6 +1115,26 @@ const securityHandleShowDelete = (data: any) => {
       :loading="securityGroupStore.isQueryRuleCountAndRelatedResourcesLoading"
       :detail="currentSecurityGroup"
     />
+
+    <!-- 批量分配 -->
+    <template v-if="!securityGroupAssignDialogState.isHidden">
+      <security-group-assign-dialog
+        v-model="securityGroupAssignDialogState.isShow"
+        :selections="selections"
+        @hidden="securityGroupAssignDialogState.isHidden = true"
+        @success="handleSecurityGroupOperationSuccess"
+      />
+    </template>
+
+    <!-- 批量添加资产归属 -->
+    <template v-if="!securityGroupMgmtAttrEditDialogState.isHidden">
+      <security-group-update-mgmt-attr-dialog
+        v-model="securityGroupMgmtAttrEditDialogState.isShow"
+        :selections="selections"
+        @hidden="securityGroupMgmtAttrEditDialogState.isHidden = true"
+        @success="handleSecurityGroupOperationSuccess"
+      />
+    </template>
   </div>
 </template>
 
@@ -1047,26 +1142,38 @@ const securityHandleShowDelete = (data: any) => {
 .w100 {
   width: 100px;
 }
+
 .w60 {
   width: 60px;
 }
+
 .mt20 {
   margin-top: 20px;
 }
+
 .search-filter {
   width: 500px;
 }
+
 .search-selector-container {
   margin-left: auto;
 }
+
 .ml10 {
   margin-left: 10px;
 }
+
+.toolbar {
+  gap: 10px;
+}
+
 .security-manager-page {
   height: 100%;
+
   :deep(.bk-nested-loading) {
     margin-top: 16px;
     height: calc(100% - 100px);
+
     .bk-table {
       max-height: 100%;
 

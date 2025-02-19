@@ -20,6 +20,7 @@ import FormNumber from './form/number.vue';
 import FormCert from './form/cert.vue';
 import FormCa from './form/ca.vue';
 import FormBusiness from './form/business.vue';
+import FormUser from './form/user.vue';
 
 const components = [
   PermissionDialog,
@@ -37,6 +38,7 @@ const components = [
   FormCert,
   FormCa,
   FormBusiness,
+  FormUser,
 ];
 export default {
   install(app: App) {
