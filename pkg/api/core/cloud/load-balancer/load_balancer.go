@@ -32,6 +32,7 @@ type SummaryBalancer struct {
 	ID               string               `json:"id"`
 	CloudID          string               `json:"cloud_id"`
 	Name             string               `json:"name"`
+	Vendor           enumor.Vendor        `json:"vendor"`
 	BkBizID          int64                `json:"bk_biz_id"`
 	IPVersion        enumor.IPAddressType `json:"ip_version"`
 	LoadBalancerType string               `json:"lb_type"`
