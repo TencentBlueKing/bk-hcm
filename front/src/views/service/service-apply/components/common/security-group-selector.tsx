@@ -56,16 +56,16 @@ export default defineComponent({
       isDialogShow.value = false;
       // 应用缓存, 恢复编辑前的状态
       apply && applyCache();
-      otherBisnessId.value.clear();
+      otherBusinessIdSet.value.clear();
     };
 
     const securityList = ref([]);
     const isSecurityListLoading = ref(false);
     const confirmedSecurityGroupCloudList = ref([]);
     const searchVal = ref('');
-    const otherBisnessId = ref(new Set());
+    const otherBusinessIdSet = ref(new Set());
 
-    const otherBusiness = (bizId: number) => {
+    const isOtherBusiness = (bizId: number) => {
       return accountStore.bizs !== bizId;
     };
     const getSecurityList = async (accountId: string, region: string, vpcId?: string) => {
@@ -150,7 +150,7 @@ export default defineComponent({
 
     const boundId = computed(() => props.boundSecruity?.map((item: any) => item.id) ?? []);
 
-    const showAlertInfo = computed(() => otherBisnessId.value.size > 0);
+    const showAlertInfo = computed(() => otherBusinessIdSet.value.size > 0);
 
     const securityRulesColumns = useColumns('securityCommon', false, props.vendor).columns.filter(
       ({ field }: { field: string }) => !['updated_at'].includes(field),
@@ -162,11 +162,11 @@ export default defineComponent({
     const handleSecurityGroupChange = (isSelected: boolean, item: any, index: number) => {
       const { id, bk_biz_id } = item;
       if (isSelected) {
-        if (otherBusiness(bk_biz_id)) otherBisnessId.value.add(id);
+        if (isOtherBusiness(bk_biz_id)) otherBusinessIdSet.value.add(id);
         currentIndex.value = index;
         getSecurityInfo(item);
       } else {
-        otherBisnessId.value.delete(id);
+        otherBusinessIdSet.value.delete(id);
         securityGroupRules.value = securityGroupRules.value.filter(({ id }) => id !== getId(item));
       }
     };
@@ -284,7 +284,7 @@ export default defineComponent({
                           label={'data.cloud_id'}
                           onChange={(isSelected: boolean) => handleSecurityGroupChange(isSelected, item, index)}>
                           <span class={'security-search-name'}>{item.name}</span>
-                          {otherBusiness(item.bk_biz_id) ? (
+                          {isOtherBusiness(item.bk_biz_id) ? (
                             <bk-tag theme={'success'} radius={'11px'} type={'filled'} size={'small'}>
                               {t('跨业务')}
                             </bk-tag>
@@ -352,7 +352,7 @@ export default defineComponent({
                         {computedSecurityGroupRules.value.map(({ name, data, bizId }, idx) => (
                           <DraggableCard key={idx} title={name} index={idx + 1} isAllExpand={isAllExpand.value}>
                             {{
-                              tag: otherBusiness(bizId)
+                              tag: isOtherBusiness(bizId)
                                 ? () => (
                                     <bk-tag theme={'success'} radius={'11px'} type={'filled'} size={'small'}>
                                       {t('跨业务')}

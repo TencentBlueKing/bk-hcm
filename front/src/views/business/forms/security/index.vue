@@ -2,7 +2,7 @@
 // import { defineComponent, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Message } from 'bkui-vue';
-import { ref, watch } from 'vue';
+import { ref, watch, nextTick } from 'vue';
 import FormSelect from '@/views/business/components/form-select.vue';
 import ResourceGroup from '@/components/resource-group/index.vue';
 import { BusinessFormFilter } from '@/typings';
@@ -10,15 +10,15 @@ import { useBusinessStore, useAccountStore } from '@/store';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import useQueryList from '@/views/resource/resource-manage/hooks/use-query-list';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
-import { useBusinessMapStore } from '@/store/useBusinessMap';
-import ChargePersonSelector from '@/components/charge-person-selector/index.vue';
+import { useBusinessGlobalStore, type IBusinessItem } from '@/store/business-global';
+import SecurityGroupManagerSelector from '@/views/resource/resource-manage/children/components/security/manager-selector/index.vue';
 import BusinessSelector from '@/components/business-selector/business.vue';
 
 const { t } = useI18n();
 const useBusiness = useBusinessStore();
 const accountStore = useAccountStore();
 const resourceAccountStore = useResourceAccountStore();
-const { getNameFromBusinessMap } = useBusinessMapStore();
+const businessGlobalStore = useBusinessGlobalStore();
 
 const formRef = ref(null);
 const formSelectRef = ref(null);
@@ -30,7 +30,7 @@ const submitLoading = ref(false);
 const filter = ref<any>({
   filter: { op: 'and', rules: [{ field: 'vendor', op: 'eq', value: 'aws' }] },
 });
-const usaBizs = ref([]);
+const usaBizs = ref<IBusinessItem[]>([]);
 
 const props = defineProps<{
   isFormDataChanged: boolean;
@@ -55,6 +55,17 @@ const rules = {
 };
 const { isResourcePage } = useWhereAmI();
 
+const reset = () => {
+  formData.value.name = '';
+  formData.value.memo = '';
+  formData.value.resource_group_name = '';
+  formData.value.usage_biz_ids = [];
+  nextTick(() => formRef.value.clearValidate());
+};
+const resetAll = () => {
+  reset();
+  personSelectorRef?.value?.reset?.();
+};
 const cancel = async () => {
   emit('cancel');
 };
@@ -95,14 +106,14 @@ const getAccountList = async () => {
 
   const res = await accountStore.getAccountDetail(accountId);
   const { bk_biz_ids } = res?.data;
-  // 可以使用全部业务
-  if (bk_biz_ids.toString() === '-1') {
-    formData.value.usage_biz_ids = [];
-    usaBizs.value = [];
+  // 账号业务列表等于-1时，管理业务使用全部业务，否则限定为账号业务列表
+  if (bk_biz_ids?.[0] !== -1) {
+    formData.value.usage_biz_ids = bk_biz_ids;
+    usaBizs.value = businessGlobalStore.businessFullList.filter((item: any) => bk_biz_ids.includes(item.id));
     return;
   }
-  formData.value.usage_biz_ids = bk_biz_ids;
-  usaBizs.value = bk_biz_ids?.map((id: number) => ({ id, name: getNameFromBusinessMap(id) }));
+  formData.value.usage_biz_ids = [];
+  usaBizs.value = [];
 };
 
 watch(
@@ -135,9 +146,20 @@ watch(
   { deep: true },
 );
 
-const { datas, isLoading } = useQueryList(filter.value, 'vpcs'); // 只查aws的vpcs
+watch(
+  () => props.show,
+  (val) => {
+    if (val) {
+      return getAccountList();
+    }
+    resetAll();
+  },
+  {
+    immediate: true,
+  },
+);
 
-getAccountList();
+const { datas, isLoading } = useQueryList(filter.value, 'vpcs'); // 只查aws的vpcs
 </script>
 
 <template>
@@ -195,7 +217,7 @@ getAccountList();
           :data="usaBizs[0] ? usaBizs : undefined"
         />
       </bk-form-item>
-      <charge-person-selector ref="personSelectorRef" />
+      <security-group-manager-selector ref="personSelectorRef" />
 
       <bk-form-item label-width="150" class="item-warp">
         <bk-button class="item-warp-button" theme="primary" @click="submit" :loading="submitLoading">

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref } from 'vue';
+import { ref, nextTick, watch } from 'vue';
 import UserSelector from '@/components/user-selector/index.vue';
 
 export interface IChargeSelectorProps {
@@ -7,7 +7,7 @@ export interface IChargeSelectorProps {
   bakManager?: string;
 }
 
-defineOptions({ name: 'ChargePersonSelector' });
+defineOptions({ name: 'SecurityGroupManagerSelector' });
 
 const props = withDefaults(defineProps<IChargeSelectorProps>(), {
   manager: '',
@@ -21,11 +21,26 @@ const validate = () => {
   return formRef.value.validate();
 };
 
-defineExpose({ validate, formData });
+const reset = () => {
+  formData.value.manager = '';
+  formData.value.bak_manager = '';
+  nextTick(() => formRef.value.clearValidate());
+};
+
+watch(
+  () => [props.manager, props.bakManager],
+  (val) => {
+    const [manager, bakManager] = val;
+    formData.value.manager = manager;
+    formData.value.bak_manager = bakManager;
+  },
+);
+
+defineExpose({ validate, formData, reset });
 </script>
 
 <template>
-  <bk-form class="chargePerson" label-width="150" form-type="vertical" :model="formData" ref="formRef">
+  <bk-form class="manager-selector" label-width="150" form-type="vertical" :model="formData" ref="formRef">
     <bk-form-item label="主负责人" property="manager" required>
       <user-selector :multiple="false" v-model="formData.manager"></user-selector>
     </bk-form-item>
@@ -36,7 +51,7 @@ defineExpose({ validate, formData });
 </template>
 
 <style lang="scss" scoped>
-.chargePerson {
+.manager-selector {
   display: flex;
   justify-content: space-around;
   gap: 24px;

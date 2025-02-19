@@ -548,7 +548,6 @@ onMounted(() => {
         width="800"
         title="新增"
         quick-close
-        render-directive="if"
         :before-close="handleBeforeClose"
       >
         <template #default>

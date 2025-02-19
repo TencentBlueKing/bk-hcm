@@ -29,17 +29,9 @@ import { storeToRefs } from 'pinia';
 
 import SecurityGroupChangeConfirmDialog from '../dialog/security-group/change-confirm.vue';
 import SecurityGroupSingleDeleteDialog from '../dialog/security-group/single-delete.vue';
-import { CloneSecurity } from '../dialog/clone-security';
+import CloneSecurity, { IData, ICloneSecurityProps } from '../dialog/clone-security/index.vue';
 import { MGMT_TYPE_MAP } from '@/constants/security-group';
 import { ISecurityGroupOperateItem, useSecurityGroupStore } from '@/store/security-group';
-
-interface IData {
-  [key: string]: any;
-}
-export interface ICloneSecurityProps {
-  isShow: boolean;
-  data: IData;
-}
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
