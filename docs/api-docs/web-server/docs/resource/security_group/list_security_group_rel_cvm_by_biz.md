@@ -147,7 +147,6 @@ POST /api/v1/cloud/security_groups/{sg_id}/related_resources/biz_resources/{res_
         "name": "cvm-test",
         "vendor": "tcloud",
         "bk_biz_id": -1,
-        "account_id": "0000001",
         "region": "ap-hk",
         "zone": "ap-hk-1",
         "cloud_vpc_ids": [
