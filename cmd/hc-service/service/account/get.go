@@ -80,7 +80,7 @@ func (svc *service) AwsGetInfoBySecret(cts *rest.Contexts) (interface{}, error) 
 		&types.BaseSecret{
 			CloudSecretID:  req.CloudSecretID,
 			CloudSecretKey: req.CloudSecretKey,
-		}, "")
+		}, "", req.Site)
 	if err != nil {
 		return nil, err
 	}
@@ -504,8 +504,8 @@ func (svc *service) AwsGetResCountBySecret(cts *rest.Contexts) (interface{}, err
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	awsClient, err := svc.ad.Adaptor().Aws(&types.BaseSecret{CloudSecretID: req.CloudSecretID,
-		CloudSecretKey: req.CloudSecretKey}, "")
+	secret := &types.BaseSecret{CloudSecretID: req.CloudSecretID, CloudSecretKey: req.CloudSecretKey}
+	awsClient, err := svc.ad.Adaptor().Aws(secret, "", req.Site)
 	if err != nil {
 		return nil, err
 	}

@@ -16,46 +16,46 @@ POST /api/v1/account/vendors/{vendor}/root_accounts/query_account_by_secret
 
 ### 输入参数
 
-
 #### AWS
 
-| 参数名称             | 参数类型   | 必选 | 描述        |
-|------------------|--------|----|-----------|
-| cloud_secret_id  | string | 是  | 云加密ID     |
-| cloud_secret_key | string | 是  | 云密钥       |
+| 参数名称             | 参数类型   | 必选 | 描述                                  |
+|------------------|--------|----|-------------------------------------|
+| cloud_secret_id  | string | 是  | 云加密ID                               |
+| cloud_secret_key | string | 是  | 云密钥                                 |
+| site             | string | 是  | 站点（枚举值：china:中国站、international:国际站） |
 
 #### Azure
 
-| 参数名称                    | 参数类型   | 必选 | 描述        |
-|-------------------------|--------|----|-----------|
-| cloud_tenant_id         | string | 是  | 云租户ID     |
-| cloud_application_id    | string | 是  | 云应用ID     |
-| cloud_client_secret_key | string | 是  | 云客户端密钥    |
+| 参数名称                    | 参数类型   | 必选 | 描述     |
+|-------------------------|--------|----|--------|
+| cloud_tenant_id         | string | 是  | 云租户ID  |
+| cloud_application_id    | string | 是  | 云应用ID  |
+| cloud_client_secret_key | string | 是  | 云客户端密钥 |
 
 #### GCP
 
-| 参数名称                     | 参数类型   | 必选 | 描述        |
-|--------------------------|--------|----|-----------|
-| cloud_service_secret_key | string | 是  | 云服务密钥     |
+| 参数名称                     | 参数类型   | 必选 | 描述    |
+|--------------------------|--------|----|-------|
+| cloud_service_secret_key | string | 是  | 云服务密钥 |
 
 #### Huawei
 
-| 参数名称             | 参数类型   | 必选 | 描述        |
-|------------------|--------|----|-----------|
-| cloud_secret_id  | string | 是  | 云加密ID     |
-| cloud_secret_key | string | 是  | 云密钥       |
+| 参数名称             | 参数类型   | 必选 | 描述    |
+|------------------|--------|----|-------|
+| cloud_secret_id  | string | 是  | 云加密ID |
+| cloud_secret_key | string | 是  | 云密钥   |
 
 ### 调用示例
 
 #### TCloud
-
 
 #### Aws
 
 ```json
 {
   "cloud_secret_id": "xxxx",
-  "cloud_secret_key": "xxxx"
+  "cloud_secret_key": "xxxx",
+  "site": "china"
 }
 ```
 
@@ -98,8 +98,6 @@ POST /api/v1/account/vendors/{vendor}/root_accounts/query_account_by_secret
   }
 }
 ```
-
-
 
 ### aws 响应参数说明
 

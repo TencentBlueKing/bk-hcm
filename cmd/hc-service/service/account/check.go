@@ -79,7 +79,7 @@ func (svc *service) AwsAccountCheck(cts *rest.Contexts) (interface{}, error) {
 		&types.BaseSecret{
 			CloudSecretID:  req.CloudSecretID,
 			CloudSecretKey: req.CloudSecretKey,
-		}, req.CloudAccountID)
+		}, req.CloudAccountID, req.Site)
 	if err != nil {
 		return nil, err
 	}

@@ -78,7 +78,7 @@ func (c *clientSet) ec2Client(region string) (*ec2.EC2, error) {
 	return ec2.New(sess), nil
 }
 
-func (c *clientSet) stsClient() (*sts.STS, error) {
+func (c *clientSet) stsClient(region *string) (*sts.STS, error) {
 	cfg := &aws.Config{
 		Credentials: c.credentials,
 		DisableSSL:  nil,
@@ -88,6 +88,7 @@ func (c *clientSet) stsClient() (*sts.STS, error) {
 		MaxRetries:  nil,
 		Retryer:     nil,
 		SleepDelay:  nil,
+		Region:      region,
 	}
 
 	sess, err := session.NewSession(cfg)
