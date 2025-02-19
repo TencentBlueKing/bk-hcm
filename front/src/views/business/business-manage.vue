@@ -289,7 +289,6 @@ const handleEditTemplate = (payload: any) => {
       width="800"
       title="新增"
       quick-close
-      render-directive="if"
       :before-close="handleBeforeClose"
     >
       <template #default>
@@ -300,6 +299,7 @@ const handleEditTemplate = (payload: any) => {
           @success="handleSuccess"
           :detail="formDetail"
           :is-edit="isEdit"
+          :show="isShowSideSlider"
           v-model:isFormDataChanged="isFormDataChanged"
         ></component>
       </template>
