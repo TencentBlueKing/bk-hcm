@@ -25,8 +25,7 @@ watchEffect(async () => {
 
 const businessOptionDisabled = computed(() => {
   return (option: IBusinessItem) => {
-    const isMgmtBiz =
-      model.value && model.value.includes(props.detail.mgmt_biz_id) && option.id === props.detail.mgmt_biz_id;
+    const isMgmtBiz = model.value?.includes?.(props.detail.mgmt_biz_id) && option.id === props.detail.mgmt_biz_id;
     const hasRel = relBizIdList.value.length && relBizIdList.value.includes(option.id);
 
     // 管理业务或存在关联实例的业务

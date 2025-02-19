@@ -33,6 +33,7 @@ import SecurityGroupAssignDialog from '../dialog/security-group/assign.vue';
 import SecurityGroupUpdateMgmtAttrDialog from '../dialog/security-group/update-mgmt-attr.vue';
 import { MGMT_TYPE_MAP } from '@/constants/security-group';
 import { ISecurityGroupOperateItem, useSecurityGroupStore, SecurityGroupManageType } from '@/store/security-group';
+import FlexTag from '@/components/flex-tag/index.vue';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -320,7 +321,12 @@ const groupColumns = [
     filter: true,
     isDefaultShow: true,
     width: 100,
-    render: ({ cell }: any) => cell?.join(',') || '--',
+    showOverflowTooltip: false,
+    render: ({ cell }: any) => {
+      if (!cell || cell.length === 0) return '--';
+      const names = cell.map((id: number) => ({ name: getNameFromBusinessMap(id) }));
+      return h(FlexTag, { list: names, isTagStyle: true });
+    },
   },
   {
     label: t('管理类型'),

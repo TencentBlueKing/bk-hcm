@@ -219,7 +219,7 @@ const handleClickMe = () => {
     }
 
     .loading {
-      transform: scale(.75);
+      transform: scale(0.75);
     }
   }
 }
