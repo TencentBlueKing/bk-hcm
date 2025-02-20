@@ -196,7 +196,7 @@ POST /bizs/{bk_biz_id}/security_groups/{sg_id}/related_resources/biz_resources/{
         ],
         "cloud_vpc_id": "vpc-123",
         "vpc_id": "00000002",
-        "network_type": "open",
+        "lb_type": "xxx",
         "ip_version": "ipv4",
         "domain": "",
         "memo": "lb test",

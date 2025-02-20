@@ -82,7 +82,6 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/security_groups/{id}
 | id                      | string            | 安全组ID                                               |
 | vendor                  | string            | 云厂商                                                 |
 | cloud_id                | string            | 安全组云ID                                              |
-| bk_biz_id               | int64             | 业务ID                                                |
 | region                  | string            | 地域                                                  |
 | name                    | string            | 安全组名称                                               |
 | memo                    | string            | 备注                                                  |
