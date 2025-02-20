@@ -24,6 +24,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/adaptor/huawei"
+	"hcm/pkg/adaptor/types"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/api/core"
@@ -37,6 +38,9 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
+
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v2/model"
 )
 
 // CreateHuaWeiSecurityGroup create huawei security group.
@@ -360,4 +364,95 @@ func (g *securityGroup) UpdateHuaWeiSecurityGroup(cts *rest.Contexts) (interface
 	}
 
 	return nil, nil
+}
+
+// HuaweiListSecurityGroupStatistic result a list of *proto.HuaweiListSecurityGroupStatisticItem.
+func (g *securityGroup) HuaweiListSecurityGroupStatistic(cts *rest.Contexts) (any, error) {
+	req := new(proto.ListSecurityGroupStatisticReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	sgMap, err := g.getSecurityGroupMap(cts.Kit, req.SecurityGroupIDs)
+	if err != nil {
+		logs.Errorf("get security group map failed, sgID: %v, err: %v, rid: %s", req.SecurityGroupIDs, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	cloudIDToSgIDMap := make(map[string]string)
+	for _, sgID := range req.SecurityGroupIDs {
+		sg, ok := sgMap[sgID]
+		if !ok {
+			return nil, fmt.Errorf("huawei security group: %s not found", sgID)
+		}
+		cloudIDToSgIDMap[sg.CloudID] = sgID
+	}
+
+	ports, err := g.listHuaweiPorts(cts.Kit, req.Region, req.AccountID, cloudIDToSgIDMap)
+	if err != nil {
+		logs.Errorf("list ports failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	sgIDToResourceCountMap, err := g.countHuaweiSecurityGroupStatistic(cts.Kit, ports, cloudIDToSgIDMap)
+	if err != nil {
+		logs.Errorf("count huawei security group statistic failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return resCountMapToSGStatisticResp(sgIDToResourceCountMap), nil
+}
+
+func (g *securityGroup) countHuaweiSecurityGroupStatistic(kt *kit.Kit, ports []model.Port,
+	cloudIDToSgIDMap map[string]string) (map[string]map[string]int64, error) {
+
+	sgIDToResourceCountMap := make(map[string]map[string]int64)
+	for _, sgID := range cloudIDToSgIDMap {
+		sgIDToResourceCountMap[sgID] = make(map[string]int64)
+	}
+	for _, port := range ports {
+		for _, cloudID := range port.SecurityGroups {
+			sgID, ok := cloudIDToSgIDMap[cloudID]
+			if !ok {
+				logs.Warnf("cloudID: %s not found in cloudIDToSgIDMap, vendor: %s, rid: %s",
+					cloudID, enumor.HuaWei, kt.Rid)
+				continue
+			}
+			sgIDToResourceCountMap[sgID][port.DeviceOwner.Value()]++
+		}
+	}
+	return sgIDToResourceCountMap, nil
+}
+
+func (g *securityGroup) listHuaweiPorts(kt *kit.Kit, region, accountID string, cloudIDToSgIDMap map[string]string) (
+	[]model.Port, error) {
+
+	client, err := g.ad.HuaWei(kt, accountID)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := &types.HuaweiListPortOption{
+		Region:           region,
+		SecurityGroupIDs: converter.MapKeyToSlice(cloudIDToSgIDMap),
+	}
+
+	result := make([]model.Port, 0)
+	for {
+		resp, err := client.ListPorts(kt, opt)
+		if err != nil {
+			logs.Errorf("request adaptor to huawei security group statistic failed, err: %v, opt: %v, rid: %s",
+				err, opt, kt.Rid)
+			return nil, err
+		}
+		if len(resp) == 0 {
+			break
+		}
+		result = append(result, resp...)
+		opt.Marker = resp[len(resp)-1].Id
+	}
+	return result, nil
 }

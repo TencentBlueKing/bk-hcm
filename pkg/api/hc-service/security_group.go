@@ -192,3 +192,38 @@ type AzureSecurityGroupAssociateNIReq struct {
 func (opt AzureSecurityGroupAssociateNIReq) Validate() error {
 	return validator.Validate.Struct(opt)
 }
+
+// ListSecurityGroupStatisticReq define tcloud list security group statistic request.
+type ListSecurityGroupStatisticReq struct {
+	SecurityGroupIDs []string `json:"security_group_ids" validate:"required"`
+	Region           string   `json:"region" validate:"required"`
+	AccountID        string   `json:"account_id" validate:"required"`
+}
+
+// Validate tcloud list security group statistic request.
+func (req *ListSecurityGroupStatisticReq) Validate() error {
+	if len(req.SecurityGroupIDs) == 0 {
+		return fmt.Errorf("security group ids should not be empty")
+	}
+	if len(req.SecurityGroupIDs) > constant.CloudResourceSyncMaxLimit {
+		return fmt.Errorf("security group ids count should <= %d", constant.CloudResourceSyncMaxLimit)
+	}
+	return validator.Validate.Struct(req)
+}
+
+// ListSecurityGroupStatisticResp ...
+type ListSecurityGroupStatisticResp struct {
+	Details []SecurityGroupStatisticItem `json:"details"`
+}
+
+// SecurityGroupStatisticItem ...
+type SecurityGroupStatisticItem struct {
+	ID        string                           `json:"id"`
+	Resources []SecurityGroupStatisticResource `json:"resources"`
+}
+
+// SecurityGroupStatisticResource ...
+type SecurityGroupStatisticResource struct {
+	ResName string `json:"res_name"`
+	Count   int64  `json:"count"`
+}

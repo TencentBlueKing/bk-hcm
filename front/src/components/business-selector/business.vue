@@ -13,6 +13,7 @@ export interface IBusinessSelectorProps {
   showAll?: boolean;
   showSelectAll?: boolean;
   collapseTags?: boolean;
+  multipleMode?: 'tag' | 'default';
   allOptionId?: number;
   emptySelectAll?: boolean;
   scope?: BusinessScopeType;
@@ -63,7 +64,7 @@ const localModel = computed({
     if (props.multiple && model.value && !Array.isArray(model.value)) {
       return [model.value];
     }
-    return model.value;
+    return model.value || (props.multiple ? [] : null);
   },
   set(val) {
     model.value = val;
@@ -83,7 +84,7 @@ const localModel = computed({
     :show-all="showAll"
     :all-option-id="allOptionId"
     :show-select-all="showSelectAll"
-    :multiple-mode="multiple ? 'tag' : 'default'"
+    :multiple-mode="multipleMode ? multipleMode : multiple ? 'tag' : 'default'"
   >
     <!-- fix “全部”回显 -->
     <template #tag v-if="showAll && localModel?.[0] === allOptionId">

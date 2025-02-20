@@ -23,7 +23,7 @@ type HttpMethodType = 'delete' | 'get' | 'head' | 'options' | 'post' | 'put' | '
 const axiosInstance: AxiosInstance = axios.create({
   baseURL: window.PROJECT_CONFIG.BK_HCM_AJAX_URL_PREFIX,
   withCredentials: true,
-  headers: { 'X-REQUESTED-WITH': 'XMLHttpRequest', 'X-Bkapi-Request-Id': uuidv4() },
+  headers: { 'X-REQUESTED-WITH': 'XMLHttpRequest' },
 });
 
 /**
@@ -31,9 +31,7 @@ const axiosInstance: AxiosInstance = axios.create({
  */
 axiosInstance.interceptors.request.use(
   (config: any) => {
-    // 设置uuid
-    const uuid = uuidv4();
-    axiosInstance.defaults.headers['X-Bkapi-Request-Id'] = uuid;
+    config.headers['X-Bkapi-Request-Id'] = uuidv4();
     // 在发起请求前，注入CSRFToken，解决跨域
     injectCSRFTokenToHeaders();
     return config;
@@ -150,11 +148,9 @@ async function getPromise(method: HttpMethodType, url: string, data: object | nu
     return promise;
   }
 
-  // eslint-disable-next-line no-async-promise-executor, @typescript-eslint/no-misused-promises
   promise = new Promise(async (resolve, reject) => {
     const axiosRequest = methodsWithData.includes(method)
-      ? // @ts-ignore
-        axiosInstance[method](url, data, config)
+      ? axiosInstance[method](url, data, config)
       : axiosInstance[method](url, config);
 
     try {

@@ -32,7 +32,7 @@ import {
   SCHEDULER_MAP,
   TRANSPORT_LAYER_LIST,
 } from '@/constants/clb';
-import { formatBillCost, getInstVip } from '@/utils';
+import { formatBillCost, getInstVip, formatBillRatio, formatBillRatioClass } from '@/utils';
 import { Spinner } from 'bkui-vue/lib/icon';
 import { APPLICATION_STATUS_MAP, APPLICATION_TYPE_MAP } from '@/views/service/apply-list/constants';
 import dayjs from 'dayjs';
@@ -1984,65 +1984,83 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       render: ({ cell }: any) => BILLS_ROOT_ACCOUNT_SUMMARY_STATE_MAP[cell],
     },
     {
-      label: '账单同步（人民币-元）当月',
-      field: 'current_month_rmb_cost_synced',
-      isDefaultShow: true,
-      render: ({ cell }: any) => formatBillCost(cell),
-      sort: true,
-    },
-    {
-      label: '账单同步（人民币-元）上月',
-      field: 'last_month_rmb_cost_synced',
-      isDefaultShow: true,
-      render: ({ cell }: any) => formatBillCost(cell),
-      sort: true,
-    },
-    {
-      label: '账单同步（美金-美元）当月',
-      field: 'current_month_cost_synced',
-      isDefaultShow: true,
-      render: ({ cell }: any) => formatBillCost(cell),
-      sort: true,
-    },
-    {
-      label: '账单同步（美金-美元）上月',
-      field: 'last_month_cost_synced',
-      isDefaultShow: true,
-      render: ({ cell }: any) => formatBillCost(cell),
-      sort: true,
-    },
-    {
-      label: '账单同步环比',
-      field: 'month_on_month_value',
+      label: '账单版本',
+      field: 'current_version',
       isDefaultShow: true,
     },
     {
-      label: '当前账单人民币（元）',
-      field: 'current_month_rmb_cost',
+      label: '定帐(人民币-元)',
       isDefaultShow: true,
-      render: ({ cell }: any) => formatBillCost(cell),
-      sort: true,
+      children: [
+        {
+          field: 'current_month_rmb_cost_synced',
+          label: '当月',
+          sort: true,
+          render: ({ cell }: any) => formatBillCost(cell),
+        },
+        {
+          label: '上月',
+          sort: true,
+          field: 'last_month_rmb_cost_synced',
+          render: ({ cell }: any) => formatBillCost(cell),
+        },
+        {
+          label: '环比',
+          sort: true,
+          render: ({ data }: any) => {
+            const { current_month_rmb_cost_synced, last_month_rmb_cost_synced } = data;
+            const value = formatBillRatio(last_month_rmb_cost_synced, current_month_rmb_cost_synced);
+            const className = formatBillRatioClass(last_month_rmb_cost_synced, current_month_rmb_cost_synced);
+            return <span class={className}>{value}</span>;
+          },
+        },
+      ],
     },
     {
-      label: '当前账单美金（美元）',
-      field: 'current_month_cost',
+      label: '定帐(美金-美元)',
       isDefaultShow: true,
-      render: ({ cell }: any) => formatBillCost(cell),
-      sort: true,
+      children: [
+        {
+          label: '当月',
+          sort: true,
+          field: 'current_month_cost_synced',
+          render: ({ cell }: any) => formatBillCost(cell),
+        },
+        {
+          label: '上月',
+          sort: true,
+          field: 'last_month_cost_synced',
+          render: ({ cell }: any) => formatBillCost(cell),
+        },
+        {
+          label: '环比',
+          sort: true,
+          render: ({ data }: any) => {
+            const { last_month_cost_synced, current_month_cost_synced } = data;
+            const value = formatBillRatio(last_month_cost_synced, current_month_cost_synced);
+            const className = formatBillRatioClass(last_month_cost_synced, current_month_cost_synced);
+            return <span class={className}>{value}</span>;
+          },
+        },
+      ],
     },
     {
-      label: '调账人民币（元）',
-      field: 'adjustment_rmb_cost',
+      label: '调帐',
       isDefaultShow: true,
-      render: ({ cell }: any) => formatBillCost(cell),
-      sort: true,
-    },
-    {
-      label: '调账美金（美元）',
-      field: 'adjustment_cost',
-      isDefaultShow: true,
-      render: ({ cell }: any) => formatBillCost(cell),
-      sort: true,
+      children: [
+        {
+          label: '人民币（元）',
+          sort: true,
+          field: 'adjustment_rmb_cost',
+          render: ({ cell }: any) => formatBillCost(cell),
+        },
+        {
+          label: '美金（美元）',
+          field: 'adjustment_cost',
+          sort: true,
+          render: ({ cell }: any) => formatBillCost(cell),
+        },
+      ],
     },
   ];
 
@@ -2064,6 +2082,11 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       render: ({ cell }: { cell: VendorEnum }) => VendorMap[cell],
     },
     {
+      label: '账单版本',
+      field: 'current_version',
+      isDefaultShow: true,
+    },
+    {
       label: '一级账号名称',
       field: 'root_account_name',
       isDefaultShow: true,
@@ -2075,46 +2098,58 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
     },
     {
-      label: '已确认账单人民币（元）',
-      field: 'current_month_rmb_cost_synced',
+      label: '已确认账单',
       isDefaultShow: true,
-      render: ({ cell }: any) => formatBillCost(cell),
-      sort: true,
+      children: [
+        {
+          label: '人民币（元）',
+          sort: true,
+          field: 'current_month_rmb_cost_synced',
+          render: ({ cell }: any) => formatBillCost(cell),
+        },
+        {
+          label: '美金（美元）',
+          field: 'current_month_cost_synced',
+          sort: true,
+          render: ({ cell }: any) => formatBillCost(cell),
+        },
+      ],
     },
     {
-      label: '已确认账单美金（美元）',
-      field: 'current_month_cost_synced',
+      label: '当前账单',
       isDefaultShow: true,
-      render: ({ cell }: any) => formatBillCost(cell),
-      sort: true,
+      children: [
+        {
+          label: '人民币（元）',
+          sort: true,
+          field: 'current_month_rmb_cost',
+          render: ({ cell }: any) => formatBillCost(cell),
+        },
+        {
+          label: '美金（美元）',
+          field: 'current_month_cost',
+          sort: true,
+          render: ({ cell }: any) => formatBillCost(cell),
+        },
+      ],
     },
     {
-      label: '当前账单人民币（元）',
-      field: 'current_month_rmb_cost',
+      label: '调账',
       isDefaultShow: true,
-      render: ({ cell }: any) => formatBillCost(cell),
-      sort: true,
-    },
-    {
-      label: '当前账单美金（美元）',
-      field: 'current_month_cost',
-      isDefaultShow: true,
-      render: ({ cell }: any) => formatBillCost(cell),
-      sort: true,
-    },
-    {
-      label: '调账人民币（元）',
-      field: 'adjustment_rmb_cost',
-      isDefaultShow: true,
-      render: ({ cell }: any) => formatBillCost(cell),
-      sort: true,
-    },
-    {
-      label: '调账美金（美元）',
-      field: 'adjustment_cost',
-      isDefaultShow: true,
-      render: ({ cell }: any) => formatBillCost(cell),
-      sort: true,
+      children: [
+        {
+          label: '人民币（元）',
+          sort: true,
+          field: 'adjustment_rmb_cost',
+          render: ({ cell }: any) => formatBillCost(cell),
+        },
+        {
+          label: '美金（美元）',
+          field: 'adjustment_cost',
+          sort: true,
+          render: ({ cell }: any) => formatBillCost(cell),
+        },
+      ],
     },
   ];
 
