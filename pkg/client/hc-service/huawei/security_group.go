@@ -239,3 +239,9 @@ func (cli *SecurityGroupClient) ListSecurityGroupStatistic(kt *kit.Kit, req *pro
 	return common.Request[proto.ListSecurityGroupStatisticReq, proto.ListSecurityGroupStatisticResp](
 		cli.client, rest.POST, kt, req, "/security_groups/statistic")
 }
+
+// SyncSecurityGroupUsageBizRel ...
+func (cli *SecurityGroupClient) SyncSecurityGroupUsageBizRel(kt *kit.Kit, req *sync.HuaWeiSyncReq) error {
+	return common.RequestNoResp[sync.HuaWeiSyncReq](cli.client, rest.POST, kt, req,
+		"/security_groups/usage_biz_rels/sync")
+}

@@ -117,6 +117,8 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet,
 	if hitErr = SyncSubAccount(kt, cliSet, opt.AccountID, sd); hitErr != nil {
 		return enumor.SubAccountCloudResType, hitErr
 	}
-
+	if hitErr = SyncSGUsageBizRel(kt, cliSet, opt.AccountID, sd); hitErr != nil {
+		return enumor.SecurityGroupUsageBizRelResType, hitErr
+	}
 	return "", nil
 }
