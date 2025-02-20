@@ -30,6 +30,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/thirdparty/esb/cmdb"
 )
 
 // -------------------------- Create --------------------------
@@ -198,4 +199,20 @@ type SecurityGroup[Extension cloud.SecurityGroupExtension] struct {
 	NetworkInterfaceCount   uint64     `json:"network_interface_count"`
 	SubnetCount             uint64     `json:"subnet_count"`
 	Extension               *Extension `json:"extension"`
+}
+
+// ListSGUsageBizMaintainerReq define list security group usage biz maintainer request.
+type ListSGUsageBizMaintainerReq struct {
+	SecurityGroupIDs []string `json:"security_group_ids" validate:"required,min=1,max=500"`
+}
+
+// Validate ...
+func (req *ListSGUsageBizMaintainerReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// ListSGUsageBizMaintainerResult define list security group usage biz maintainer result.
+type ListSGUsageBizMaintainerResult struct {
+	ID      string     `json:"id"`
+	Details []cmdb.Biz `json:"details"`
 }
