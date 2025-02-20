@@ -6,6 +6,9 @@ import columnFactory from '../data-list/column-factory';
 import { RELATED_RES_KEY_MAP } from '../constants';
 import { RelatedResourceType } from '../typings';
 
+import { ThemeEnum } from 'bkui-vue/lib/shared';
+import dialogFooter from '@/components/common-dialog/dialog-footer.vue';
+
 const props = withDefaults(
   defineProps<{
     selections: SecurityGroupRelResourceByBizItem[];
@@ -103,18 +106,14 @@ const handleConfirm = async () => {
     </bk-table>
 
     <template #footer>
-      <bk-button
-        class="mr8"
-        theme="danger"
+      <dialog-footer
         :disabled="!listMap.target.length"
         :loading="securityGroupStore.isBatchDisassociateCvmsLoading"
-        @click="handleConfirm"
-      >
-        {{ t('解绑') }}
-      </bk-button>
-      <bk-button @click="isShow = false" theme="primary" :disabled="securityGroupStore.isBatchDisassociateCvmsLoading">
-        {{ t('取消') }}
-      </bk-button>
+        :confirm-text="t('解绑')"
+        :confirm-button-theme="ThemeEnum.DANGER"
+        @confirm="handleConfirm"
+        @closed="handleClosed"
+      />
     </template>
   </bk-dialog>
 </template>

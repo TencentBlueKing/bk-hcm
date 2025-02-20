@@ -10,6 +10,7 @@ import { getPrivateIPs } from '@/utils';
 import http from '@/http';
 
 import dataList from '../data-list/index.vue';
+import dialogFooter from '@/components/common-dialog/dialog-footer.vue';
 
 const props = defineProps<{ tabActive: string; detail: ISecurityGroupDetail }>();
 const emit = defineEmits(['confirm']);
@@ -61,7 +62,9 @@ const dataListRef = useTemplateRef('data-list');
 const selected = ref<SecurityGroupRelResourceByBizItem[]>([]);
 const isToBindCvmsRowSelectEnable = ({ row, isCheckAll }: any) => {
   if (isCheckAll) return true;
-  return !row?.security_group?.flatMap((item: any) => item.cloud_id)?.includes(props.detail.cloud_id);
+  return !(row as SecurityGroupRelResourceByBizItem)?.security_groups
+    ?.flatMap(({ cloud_id }) => cloud_id)
+    ?.includes(props.detail.cloud_id);
 };
 const handleClear = () => {
   dataListRef.value.handleClear();
@@ -74,6 +77,10 @@ const handleConfirm = () => {
   const ids = selected.value.map((item) => item.id);
   emit('confirm', ids);
 };
+const handleClosed = () => {
+  isShow.value = false;
+  handleClear();
+};
 </script>
 
 <template>
@@ -81,20 +88,12 @@ const handleConfirm = () => {
     <slot name="icon"></slot>
     {{ t('新增绑定') }}
   </bk-button>
-  <bk-dialog
-    v-model:isShow="isShow"
-    :width="1280"
-    :close-icon="false"
-    class="bind-dialog"
-    :is-loading="securityGroupStore.isBatchAssociateCvmsLoading"
-    @confirm="handleConfirm"
-    @closed="isShow = false"
-  >
+  <bk-dialog class="bind-dialog" v-model:isShow="isShow" :width="1280" :close-icon="false" @closed="handleClosed">
     <bk-resize-layout initial-divide="25%" placement="right" min="300" class="bind-dialog-content">
       <template #main>
         <div class="main">
           <bk-alert theme="warning" class="mb16">
-            新绑定的安全组为最高优先级。如主机上已绑定的安全组为「安全组1」,新绑定的安全组为「安全组2」,则依次生效安全组顺序为：安全组2，安全组1
+            '新绑定的安全组为最高优先级。如主机上已绑定的安全组为「安全组1」,新绑定的安全组为「安全组2」,则依次生效安全组顺序为：安全组2，安全组1'
           </bk-alert>
           <bk-search-select :placeholder="t('请输入IP')" class="mb16" />
           <data-list
@@ -137,6 +136,15 @@ const handleConfirm = () => {
         </div>
       </template>
     </bk-resize-layout>
+
+    <template #footer>
+      <dialog-footer
+        :disabled="!selected.length"
+        :loading="securityGroupStore.isBatchAssociateCvmsLoading"
+        @confirm="handleConfirm"
+        @closed="handleClosed"
+      />
+    </template>
   </bk-dialog>
 </template>
 

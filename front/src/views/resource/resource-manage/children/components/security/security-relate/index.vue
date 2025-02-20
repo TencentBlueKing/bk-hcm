@@ -10,7 +10,7 @@ import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { SecurityGroupManageType } from './typings';
 
 import platform from './platform.vue';
-import business from './business.vue';
+import biz from './biz.vue';
 
 const props = defineProps<{ detail: ISecurityGroupDetail }>();
 
@@ -21,11 +21,11 @@ const manageType = computed<SecurityGroupManageType>(() => {
   let type = SecurityGroupManageType.platform;
   // 业务管理：业务下，安全组的管理业务id与全局业务id相同
   if (whereAmI.value === Senarios.business && props.detail?.mgmt_biz_id === getBizsId()) {
-    type = SecurityGroupManageType.business;
+    type = SecurityGroupManageType.biz;
   }
   return type;
 });
-const comps: Record<SecurityGroupManageType, any> = { platform, business };
+const comps: Record<SecurityGroupManageType, any> = { platform, biz };
 
 const relatedResourcesCountList = ref<ISecurityGroupRelResCountItem[]>([]);
 const relatedBiz = ref<ISecurityGroupRelBusiness>(null);

@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import hintIcon from '@/assets/image/hint.svg';
 import { useSecurityGroupStore, type SecurityGroupRelResourceByBizItem } from '@/store/security-group';
 import { getPrivateIPs } from '@/utils';
 import { RELATED_RES_KEY_MAP, RELATED_RES_NAME_MAP } from '../constants';
 import { RelatedResourceType } from '../typings';
+
+import { ThemeEnum } from 'bkui-vue/lib/shared';
+import hintIcon from '@/assets/image/hint.svg';
+import dialogFooter from '@/components/common-dialog/dialog-footer.vue';
 
 const props = defineProps<{ row: SecurityGroupRelResourceByBizItem; tabActive: RelatedResourceType }>();
 const emit = defineEmits(['confirm']);
@@ -16,6 +19,10 @@ const securityGroupStore = useSecurityGroupStore();
 const isShow = ref(false);
 const info = ref<SecurityGroupRelResourceByBizItem>(props.row);
 const resName = RELATED_RES_NAME_MAP[props.tabActive];
+
+const handleClosed = () => {
+  isShow.value = false;
+};
 
 watch(isShow, async (val) => {
   if (!val) return;
@@ -28,7 +35,7 @@ watch(isShow, async (val) => {
   <bk-button theme="primary" text @click="isShow = true">
     {{ t('解绑') }}
   </bk-button>
-  <bk-dialog v-model:isShow="isShow" dialog-type="show" class="unbind-dialog">
+  <bk-dialog class="unbind-dialog" v-model:isShow="isShow" dialog-type="show" @closed="handleClosed">
     <div class="hint-wrap">
       <img :src="hintIcon" />
       <div>{{ t('确认与该主机解绑') }}</div>
@@ -60,18 +67,14 @@ watch(isShow, async (val) => {
       </div>
 
       <div class="operate-wrap">
-        <bk-button
-          class="button"
-          theme="danger"
-          :disabled="info.security_groups?.length <= 1"
+        <dialog-footer
+          :disabled="!info.security_groups || info.security_groups?.length <= 1"
           :loading="securityGroupStore.isBatchDisassociateCvmsLoading"
-          @click="emit('confirm')"
-        >
-          {{ t('解绑') }}
-        </bk-button>
-        <bk-button class="button" :disabled="securityGroupStore.isBatchDisassociateCvmsLoading" @click="isShow = false">
-          {{ t('取消') }}
-        </bk-button>
+          :confirm-text="t('解绑')"
+          :confirm-button-theme="ThemeEnum.DANGER"
+          @confirm="emit('confirm')"
+          @closed="handleClosed"
+        />
       </div>
     </template>
   </bk-dialog>
@@ -106,7 +109,7 @@ watch(isShow, async (val) => {
   align-items: center;
   gap: 8px;
 
-  .button {
+  :deep(.bk-button) {
     min-width: 88px;
   }
 }
