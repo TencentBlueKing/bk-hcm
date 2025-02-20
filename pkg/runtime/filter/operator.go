@@ -65,6 +65,7 @@ func init() {
 	opFactory[JSONContainsPath.Factory()] = JSONContainsPathOp(JSONContainsPath)
 	opFactory[JSONNotContainsPath.Factory()] = JSONNotContainsPathOp(JSONNotContainsPath)
 	opFactory[JSONLength.Factory()] = JSONLengthOp(JSONLength)
+	opFactory[JSONLengthGreaterThan.Factory()] = JSONLengthGreaterThanOp(JSONLengthGreaterThan)
 }
 
 const (
@@ -162,6 +163,8 @@ const (
 	JSONNotContainsPath OpType = "json_not_contains_path"
 	// JSONLength 获取 json 数组长度
 	JSONLength OpType = "json_length"
+	// JSONLengthGreaterThan 获取 json 数组长度
+	JSONLengthGreaterThan OpType = "json_length_greater_than"
 )
 
 // OpType defines the operators supported by mysql.
@@ -177,7 +180,7 @@ func (op OpType) Validate() error {
 		ContainsSensitive, ContainsInsensitive:
 
 	case JSONEqual, JSONNotEqual, JSONIn, JSONContains, JSONOverlaps,
-		JSONContainsPath, JSONNotContainsPath, JSONLength:
+		JSONContainsPath, JSONNotContainsPath, JSONLength, JSONLengthGreaterThan:
 
 	case IDGreaterThan:
 
@@ -1060,6 +1063,43 @@ func (op JSONLengthOp) SQLExprAndValue(field string, value interface{}) (string,
 
 	placeholder := fieldPlaceholderName(strings.ReplaceAll(field, JSONFieldSeparator, ""))
 	return fmt.Sprintf(`JSON_LENGTH(%s) = %s%s`, jsonFiledSqlFormat(field), SqlPlaceholder, placeholder),
+		map[string]interface{}{
+			placeholder: value,
+		}, nil
+}
+
+// JSONLengthGreaterThanOp is json field json length greater than operator
+type JSONLengthGreaterThanOp OpType
+
+// Name is json field json contain path operator
+func (op JSONLengthGreaterThanOp) Name() OpType {
+	return JSONLengthGreaterThan
+}
+
+// ValidateValue validate json field equal's value
+func (op JSONLengthGreaterThanOp) ValidateValue(v interface{}, opt *ExprOption) error {
+
+	if !assert.IsNumeric(v) {
+		return errors.New("invalid value field, value should number")
+	}
+
+	return nil
+}
+
+// SQLExprAndValue convert this operator's field and value to a mysql's sub query expression.
+func (op JSONLengthGreaterThanOp) SQLExprAndValue(field string, value interface{}) (string, map[string]interface{},
+	error) {
+
+	if len(field) == 0 {
+		return "", nil, errors.New("field is empty")
+	}
+
+	if !assert.IsNumeric(value) {
+		return "", nil, errors.New("invalid value field, value should number")
+	}
+
+	placeholder := fieldPlaceholderName(strings.ReplaceAll(field, JSONFieldSeparator, ""))
+	return fmt.Sprintf(`JSON_LENGTH(%s) > %s%s`, jsonFiledSqlFormat(field), SqlPlaceholder, placeholder),
 		map[string]interface{}{
 			placeholder: value,
 		}, nil
