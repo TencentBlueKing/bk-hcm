@@ -1,8 +1,7 @@
 import { PropertyColumnConfig } from '@/model/typings';
 import { getInstVip, getPrivateIPs, getPublicIPs } from '@/utils';
-import { IResourceBoundSecurityGroupItem } from '@/store/security-group';
-import { RELATED_RES_PROPERTIES_MAP } from '../constants';
-import { RelatedResourceType } from '../typings';
+import { IResourceBoundSecurityGroupItem, SecurityGroupRelatedResourceName } from '@/store/security-group';
+import { RELATED_RES_PROPERTIES_MAP } from '@/constants/security-group';
 
 const columnIds = new Map<string, string[]>();
 
@@ -47,11 +46,11 @@ export const getColumnIds = (key: string) => {
   return columnIds.get(key);
 };
 
-const getColumns = (resourceType: RelatedResourceType, operation: string) => {
-  const key = `${resourceType}-${operation}`;
+const getColumns = (resourceName: SecurityGroupRelatedResourceName, operation: string) => {
+  const key = `${resourceName}-${operation}`;
   const columnIds = getColumnIds(key);
   return columnIds.map((id) => ({
-    ...RELATED_RES_PROPERTIES_MAP[resourceType].find((item) => item.id === id),
+    ...RELATED_RES_PROPERTIES_MAP[resourceName].find((item) => item.id === id),
     ...columnConfig[id],
   }));
 };

@@ -1,16 +1,19 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useSecurityGroupStore, type SecurityGroupRelResourceByBizItem } from '@/store/security-group';
+import {
+  useSecurityGroupStore,
+  type SecurityGroupRelResourceByBizItem,
+  type SecurityGroupRelatedResourceName,
+} from '@/store/security-group';
 import { getPrivateIPs } from '@/utils';
-import { RELATED_RES_KEY_MAP, RELATED_RES_NAME_MAP } from '../constants';
-import { RelatedResourceType } from '../typings';
+import { RELATED_RES_KEY_MAP, RELATED_RES_NAME_MAP } from '@/constants/security-group';
 
 import { ThemeEnum } from 'bkui-vue/lib/shared';
 import hintIcon from '@/assets/image/hint.svg';
 import dialogFooter from '@/components/common-dialog/dialog-footer.vue';
 
-const props = defineProps<{ row: SecurityGroupRelResourceByBizItem; tabActive: RelatedResourceType }>();
+const props = defineProps<{ row: SecurityGroupRelResourceByBizItem; tabActive: SecurityGroupRelatedResourceName }>();
 const emit = defineEmits(['confirm']);
 
 const { t } = useI18n();

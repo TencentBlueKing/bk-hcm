@@ -3,8 +3,13 @@ import { ref, useAttrs, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import usePage from '@/hooks/use-page';
-import { ISecurityGroupDetail, SecurityGroupRelResourceByBizItem, useSecurityGroupStore } from '@/store/security-group';
-import { RELATED_RES_KEY_MAP, RELATED_RES_PROPERTIES_MAP } from '../constants';
+import {
+  type ISecurityGroupDetail,
+  type SecurityGroupRelatedResourceName,
+  type SecurityGroupRelResourceByBizItem,
+  useSecurityGroupStore,
+} from '@/store/security-group';
+import { RELATED_RES_KEY_MAP, RELATED_RES_PROPERTIES_MAP } from '@/constants/security-group';
 import { enableCount, transformSimpleCondition } from '@/utils/search';
 import { getPrivateIPs } from '@/utils';
 import http from '@/http';
@@ -12,7 +17,7 @@ import http from '@/http';
 import dataList from '../data-list/index.vue';
 import dialogFooter from '@/components/common-dialog/dialog-footer.vue';
 
-const props = defineProps<{ tabActive: string; detail: ISecurityGroupDetail }>();
+const props = defineProps<{ tabActive: SecurityGroupRelatedResourceName; detail: ISecurityGroupDetail }>();
 const emit = defineEmits(['confirm']);
 const attrs: any = useAttrs();
 
@@ -100,7 +105,7 @@ const handleClosed = () => {
             v-bkloading="{ loading }"
             ref="data-list"
             :list="list"
-            :resource-type="tabActive"
+            :resource-name="tabActive"
             operation="bind"
             :pagination="pagination"
             :is-row-select-enable="isToBindCvmsRowSelectEnable"

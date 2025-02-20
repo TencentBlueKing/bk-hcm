@@ -2,33 +2,36 @@
 import { computed, ref, watchEffect } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import type { ISecurityGroupDetail, ISecurityGroupRelResCountItem } from '@/store/security-group';
+import {
+  ISecurityGroupDetail,
+  ISecurityGroupRelResCountItem,
+  SecurityGroupRelatedResourceName,
+} from '@/store/security-group';
 import { VendorEnum } from '@/common/constant';
-import { RelatedResourceType } from '../typings';
 
 const props = defineProps<{
   detail: ISecurityGroupDetail;
   relatedResourcesCountList: ISecurityGroupRelResCountItem[];
 }>();
-const model = defineModel<RelatedResourceType>();
+const model = defineModel<SecurityGroupRelatedResourceName>();
 
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 
-const tabRelRes = ref([
-  { name: 'CVM', label: t('云主机'), count: 0, disabled: false },
-  { name: 'CLB', label: t('负载均衡'), count: 0, disabled: false },
+const tabRelRes = ref<{ name: SecurityGroupRelatedResourceName; label: string; count: number; disabled: boolean }[]>([
+  { name: SecurityGroupRelatedResourceName.CVM, label: t('云主机'), count: 0, disabled: false },
+  { name: SecurityGroupRelatedResourceName.CLB, label: t('负载均衡'), count: 0, disabled: false },
 ]);
 const otherRelRes = ref([]);
 const otherRelResCount = computed(() => otherRelRes.value.reduce((prev, curr) => prev + curr.count, 0));
 const tabActive = computed({
   get() {
-    return (model.value || route.query.resourceType || tabRelRes.value[0].name) as string;
+    return (model.value || route.query.resourceName || tabRelRes.value[0].name) as SecurityGroupRelatedResourceName;
   },
   set(value) {
     model.value = value;
-    router.push({ query: { ...route.query, resourceType: value } });
+    router.push({ query: { ...route.query, resourceName: value } });
   },
 });
 

@@ -6,12 +6,12 @@ import { useWhereAmI } from '@/hooks/useWhereAmI';
 import {
   type ISecurityGroupDetail,
   type SecurityGroupRelResourceByBizItem,
+  type SecurityGroupRelatedResourceName,
   useSecurityGroupStore,
 } from '@/store/security-group';
 import { useBusinessGlobalStore } from '@/store/business-global';
 import { transformSimpleCondition } from '@/utils/search';
-import { RELATED_RES_NAME_MAP, RELATED_RES_PROPERTIES_MAP } from '../constants';
-import { RelatedResourceType } from '../typings';
+import { RELATED_RES_NAME_MAP, RELATED_RES_PROPERTIES_MAP } from '@/constants/security-group';
 
 import { Message } from 'bkui-vue';
 import dataList from './index.vue';
@@ -22,7 +22,7 @@ import singleUnbind from '../unbind/single.vue';
 const props = defineProps<{
   detail: ISecurityGroupDetail;
   bkBizId: number;
-  tabActive: RelatedResourceType;
+  tabActive: SecurityGroupRelatedResourceName;
   resCount: number;
 }>();
 
@@ -115,12 +115,13 @@ onBeforeMount(() => {
     <data-list
       v-show="isExpand"
       v-bkloading="{ loading }"
-      :resource-type="tabActive"
+      :resource-name="tabActive"
       operation="base"
       :list="relResList"
       :pagination="pagination"
       :has-selections="isCurrentBusiness"
       :has-settings="isCurrentBusiness"
+      :is-row-select-enable="() => true"
       @select="(selections) => (selected = selections)"
     >
       <template v-if="tabActive === 'CVM' && isCurrentBusiness" #operate>

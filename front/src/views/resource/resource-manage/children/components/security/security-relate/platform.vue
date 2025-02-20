@@ -6,14 +6,14 @@ import {
   type ISecurityGroupRelBusiness,
   type ISecurityGroupRelResCountItem,
   type SecurityGroupRelResourceByBizItem,
+  SecurityGroupRelatedResourceName,
   useSecurityGroupStore,
 } from '@/store/security-group';
 import { useBusinessGlobalStore } from '@/store/business-global';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import usePage from '@/hooks/use-page';
 import { transformSimpleCondition } from '@/utils/search';
-import { RELATED_RES_KEY_MAP, RELATED_RES_PROPERTIES_MAP } from './constants';
-import type { RelatedResourceType } from './typings';
+import { RELATED_RES_KEY_MAP, RELATED_RES_NAME_MAP, RELATED_RES_PROPERTIES_MAP } from '@/constants/security-group';
 
 import { Message } from 'bkui-vue';
 import { Plus } from 'bkui-vue/lib/icon';
@@ -34,7 +34,7 @@ const { getBizsId, isBusinessPage } = useWhereAmI();
 const { getBusinessNames } = useBusinessGlobalStore();
 const securityGroupStore = useSecurityGroupStore();
 
-const tabActive = ref<RelatedResourceType>('CVM');
+const tabActive = ref<SecurityGroupRelatedResourceName>(SecurityGroupRelatedResourceName.CVM);
 // 当前业务所关联资源
 const currentBizRelatedResources = computed(
   () =>
@@ -129,7 +129,7 @@ onBeforeMount(() => {
     <div v-if="isBusinessPage" class="overview">
       {{ t(`当前业务（${getBusinessNames(getBizsId())}）下共有`) }}
       <span class="number">{{ currentBizRelatedResources?.res_count }}</span>
-      {{ t(`台${RELATED_RES_KEY_MAP[tabActive]}，还有`) }}
+      {{ t(`台${RELATED_RES_NAME_MAP[tabActive]}，还有`) }}
       <span class="number">
         {{
           relatedBiz?.[RELATED_RES_KEY_MAP[tabActive]]?.filter(({ bk_biz_id: bkBizId }) => bkBizId !== getBizsId())
@@ -142,10 +142,11 @@ onBeforeMount(() => {
     <div class="rel-res-display-wrap">
       <data-list
         v-bkloading="{ loading }"
-        :resource-type="tabActive"
+        :resource-name="tabActive"
         operation="base"
         :list="list"
         :pagination="pagination"
+        :is-row-select-enable="() => true"
         @select="(selections) => (selected = selections)"
       >
         <template v-if="tabActive === 'CVM'" #operate>

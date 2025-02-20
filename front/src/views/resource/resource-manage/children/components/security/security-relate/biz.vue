@@ -5,9 +5,9 @@ import {
   type ISecurityGroupDetail,
   type ISecurityGroupRelBusiness,
   type ISecurityGroupRelResCountItem,
+  SecurityGroupRelatedResourceName,
 } from '@/store/security-group';
-import { RELATED_RES_KEY_MAP } from './constants';
-import type { RelatedResourceType } from './typings';
+import { RELATED_RES_KEY_MAP } from '@/constants/security-group';
 
 import tab from './tab/index.vue';
 import collapseDataList from './data-list/collapse-data-list.vue';
@@ -20,7 +20,7 @@ defineProps<{
 
 const { t } = useI18n();
 
-const tabActive = ref<RelatedResourceType>('CVM');
+const tabActive = ref<SecurityGroupRelatedResourceName>(SecurityGroupRelatedResourceName.CVM);
 </script>
 
 <template>

@@ -12,6 +12,11 @@ export enum SecurityGroupManageType {
   UNKNOWN = '',
 }
 
+export enum SecurityGroupRelatedResourceName {
+  CVM = 'CVM',
+  CLB = 'CLB',
+}
+
 export type SecurityGroupMgmtAttrSingleType = 'manager' | 'bak_manager' | 'mgmt_biz_id' | 'usage_biz_ids';
 
 export interface ISecurityGroupItem {
@@ -118,10 +123,11 @@ export type SecurityGroupRelResourceByBizItem = (
 export interface ISecurityGroupRelResCountItem {
   id: string;
   resources: Array<{
-    res_name: 'CVM' | 'CLB' | string;
+    res_name: SecurityGroupRelatedResourceName;
     count: number;
   }>;
 }
+
 // 安全组单个操作项的类型
 export type ISecurityGroupOperateItem = ISecurityGroupItem &
   ISecurityGroupRelResCountItem & { rule_count?: number } & { [key: string]: any };

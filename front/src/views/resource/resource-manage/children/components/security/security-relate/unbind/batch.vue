@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { ref, useAttrs, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { type SecurityGroupRelResourceByBizItem, useSecurityGroupStore } from '@/store/security-group';
+import {
+  type SecurityGroupRelResourceByBizItem,
+  type SecurityGroupRelatedResourceName,
+  useSecurityGroupStore,
+} from '@/store/security-group';
 import columnFactory from '../data-list/column-factory';
-import { RELATED_RES_KEY_MAP } from '../constants';
-import { RelatedResourceType } from '../typings';
+import { RELATED_RES_KEY_MAP } from '@/constants/security-group';
 
 import { ThemeEnum } from 'bkui-vue/lib/shared';
 import dialogFooter from '@/components/common-dialog/dialog-footer.vue';
@@ -13,7 +16,7 @@ const props = withDefaults(
   defineProps<{
     selections: SecurityGroupRelResourceByBizItem[];
     disabled?: boolean;
-    tabActive: RelatedResourceType;
+    tabActive: SecurityGroupRelatedResourceName;
     handleConfirm: (ids: string[]) => Promise<void>;
   }>(),
   { disabled: false },
