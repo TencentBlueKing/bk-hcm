@@ -22,8 +22,11 @@ package types
 import (
 	"time"
 
+	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/table/cloud"
+	"hcm/pkg/dal/table/cloud/cvm"
+	lbtable "hcm/pkg/dal/table/cloud/load-balancer"
 )
 
 // ListSecurityGroupCommonRelDetails list security group and common relation details.
@@ -46,4 +49,26 @@ type SecurityGroupWithCommonID struct {
 	Priority                 int64                    `db:"priority" json:"priority"`
 	RelCreator               string                   `db:"rel_creator" json:"rel_creator"`
 	RelCreatedAt             *time.Time               `db:"rel_created_at" json:"rel_created_at"`
+}
+
+// ListSGCommonRelJoinCVMDetails list security group common relation join cvm details.
+type ListSGCommonRelJoinCVMDetails core.ListResultT[SGCommonRelWithCVM]
+
+// SGCommonRelWithCVM security group common relation with cvm.
+type SGCommonRelWithCVM struct {
+	cvm.Table       `db:",inline" json:",inline"`
+	SecurityGroupID string     `db:"security_group_id" json:"security_group_id"`
+	RelCreator      string     `db:"rel_creator" json:"rel_creator"`
+	RelCreatedAt    *time.Time `db:"rel_created_at" json:"rel_created_at"`
+}
+
+// ListSGCommonRelJoinLBDetails list security group common relation join load balancer details.
+type ListSGCommonRelJoinLBDetails core.ListResultT[SGCommonRelWithLB]
+
+// SGCommonRelWithLB security group common relation with load balancer.
+type SGCommonRelWithLB struct {
+	lbtable.LoadBalancerTable `db:",inline" json:",inline"`
+	SecurityGroupID           string     `db:"security_group_id" json:"security_group_id"`
+	RelCreator                string     `db:"rel_creator" json:"rel_creator"`
+	RelCreatedAt              *time.Time `db:"rel_created_at" json:"rel_created_at"`
 }

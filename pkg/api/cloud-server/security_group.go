@@ -86,6 +86,18 @@ type SecurityGroupListResult struct {
 	Details []cloud.BaseSecurityGroup `json:"details,omitempty"`
 }
 
+// ListSGRelBusinessResp response data of list security group related business
+type ListSGRelBusinessResp struct {
+	CVM          []ListSGRelBusinessItem `json:"cvm"`
+	LoadBalancer []ListSGRelBusinessItem `json:"load_balancer"`
+}
+
+// ListSGRelBusinessItem item of list security group related business
+type ListSGRelBusinessItem struct {
+	BkBizID  int64 `json:"bk_biz_id"`
+	ResCount int64 `json:"res_count"`
+}
+
 // -------------------------- Update --------------------------
 
 // SecurityGroupUpdateReq security group update request.

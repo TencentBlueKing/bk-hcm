@@ -20,6 +20,8 @@
 package cloud
 
 import (
+	"hcm/pkg/api/core/cloud/cvm"
+	"hcm/pkg/api/core/cloud/load-balancer"
 	"hcm/pkg/criteria/enumor"
 )
 
@@ -45,4 +47,20 @@ type SGCommonRelWithBaseSecurityGroup struct {
 	Priority          int64                    `json:"priority"`
 	RelCreator        string                   `db:"rel_creator" json:"rel_creator"`
 	RelCreatedAt      string                   `db:"rel_created_at" json:"rel_created_at"`
+}
+
+// SGCommonRelWithCVMSummary define security group with cvm summary.
+type SGCommonRelWithCVMSummary struct {
+	cvm.SummaryCVM  `json:",inline"`
+	SecurityGroupId string `db:"security_group_id" json:"security_group_id"`
+	RelCreator      string `db:"rel_creator" json:"rel_creator"`
+	RelCreatedAt    string `db:"rel_created_at" json:"rel_created_at"`
+}
+
+// SGCommonRelWithLBSummary define security group with lb summary.
+type SGCommonRelWithLBSummary struct {
+	loadbalancer.SummaryBalancer `json:",inline"`
+	SecurityGroupId              string `db:"security_group_id" json:"security_group_id"`
+	RelCreator                   string `db:"rel_creator" json:"rel_creator"`
+	RelCreatedAt                 string `db:"rel_created_at" json:"rel_created_at"`
 }
