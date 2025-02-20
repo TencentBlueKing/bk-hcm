@@ -2,7 +2,7 @@
 import DetailHeader from '../../common/header/detail-header';
 import DetailTab from '../../common/tab/detail-tab';
 import SecurityInfo from '../components/security/security-info.vue';
-import SecurityRelate from '../components/security/security-relate';
+import SecurityRelate from '../components/security/security-relate/index.vue';
 import SecurityRule from '../components/security/security-rule.vue';
 import { useI18n } from 'vue-i18n';
 
@@ -159,7 +159,7 @@ const getTemplateData = async (detail: { account_id: string }) => {
           :related-security-groups="relatedSecurityGroups"
           :template-data="templateData"
         />
-        <security-relate v-else />
+        <security-relate v-else :detail="detail" />
       </template>
     </detail-tab>
   </div>

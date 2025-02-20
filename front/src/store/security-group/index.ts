@@ -12,6 +12,11 @@ export enum SecurityGroupManageType {
   UNKNOWN = '',
 }
 
+export enum SecurityGroupRelatedResourceName {
+  CVM = 'CVM',
+  CLB = 'CLB',
+}
+
 export type SecurityGroupMgmtAttrSingleType = 'manager' | 'bak_manager' | 'mgmt_biz_id' | 'usage_biz_ids';
 
 export interface ISecurityGroupItem {
@@ -37,6 +42,35 @@ export interface ISecurityGroupItem {
   cloud_update_time: string;
 }
 
+export interface ISecurityGroupDetail extends ISecurityGroupItem {
+  cvm_count?: number; // tcloud、aws、huawei专属
+  network_interface_count?: number; // azure专属
+  subnet_count?: number; // azure专属
+  extension?:
+    | { cloud_project_id: string } // tcloud
+    | {
+        // aws
+        vpc_id: string;
+        cloud_vpc_id: string;
+        cloud_owner_id: string;
+      }
+    | {
+        // azure
+        etag: string;
+        flush_connection: string;
+        resource_guid: string;
+        provisioning_state: string;
+        cloud_network_interface_ids: string[];
+        cloud_subnet_ids: string[];
+      }
+    | {
+        // huawei
+        cloud_project_id: string;
+        cloud_enterprise_project_id: string;
+      };
+  // ;
+}
+
 interface ISecurityGroupAssignPreviewItem {
   id: string;
   assignable: boolean;
@@ -44,12 +78,12 @@ interface ISecurityGroupAssignPreviewItem {
   assigned_biz_id: number;
 }
 
-type SecurityGroupRelType = 'cvm' | 'load_balancer';
-interface IBizResourceCount {
+type SecurityGroupRelType = 'cvm' | 'load_balancer' | string;
+export interface IBizRelatedResource {
   bk_biz_id: number;
   res_count: number;
 }
-type ISecurityGroupRelBusiness = Record<SecurityGroupRelType, IBizResourceCount[]>;
+export type ISecurityGroupRelBusiness = Record<SecurityGroupRelType, IBizRelatedResource[]>;
 
 type SecurityGroupRelCvmCommonFields = {
   id: string;
@@ -65,31 +99,43 @@ type SecurityGroupRelCvmCommonFields = {
   public_ipv4_addresses: string[];
   public_ipv6_addresses: string[];
 };
-interface ISecurityGroupRelCvmByBizItem extends SecurityGroupRelCvmCommonFields {
-  zone: string;
-  cloud_vpc_ids: string[];
-  cloud_subnet_ids: string[];
+export interface ISecurityGroupRelCvmByBizItem extends SecurityGroupRelCvmCommonFields {
+  zone?: string;
+  cloud_vpc_ids?: string[];
+  cloud_subnet_ids?: string[];
 }
-interface ISecurityGroupRelLoadBalancerByBizItem extends SecurityGroupRelCvmCommonFields {
-  main_zones: string[];
-  backup_zones: string[];
-  cloud_vpc_id: string;
-  vpc_id: string;
-  network_type: string;
-  domain: string;
-  memo: string;
+export interface ISecurityGroupRelLoadBalancerByBizItem extends SecurityGroupRelCvmCommonFields {
+  main_zones?: string[];
+  backup_zones?: string[];
+  cloud_vpc_id?: string;
+  vpc_id?: string;
+  network_type?: string;
+  domain?: string;
+  memo?: string;
 }
+export type SecurityGroupRelResourceByBizItem = (
+  | ISecurityGroupRelCvmByBizItem
+  | ISecurityGroupRelLoadBalancerByBizItem
+) & {
+  security_groups?: IResourceBoundSecurityGroupItem['security_groups'];
+};
 
 export interface ISecurityGroupRelResCountItem {
   id: string;
   resources: Array<{
-    res_name: 'cvm' | 'load_balancer' | 'db' | 'container';
+    res_name: SecurityGroupRelatedResourceName;
     count: number;
   }>;
 }
+
 // 安全组单个操作项的类型
 export type ISecurityGroupOperateItem = ISecurityGroupItem &
   ISecurityGroupRelResCountItem & { rule_count?: number } & { [key: string]: any };
+
+export interface IResourceBoundSecurityGroupItem {
+  res_id: string;
+  security_groups: { id: string; cloud_id: string; name: string }[];
+}
 
 export const useSecurityGroupStore = defineStore('security-group', () => {
   const { getBusinessApiPath } = useWhereAmI();
@@ -131,7 +177,7 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
   ) => {
     isBatchUpdateMgmtAttrLoading.value = true;
     try {
-      await http.patch('/api/v1/cloud/security_groups/mgmt_attrs/batch', { security_groups });
+      await http.patch(`/api/v1/cloud/${getBusinessApiPath()}security_groups/mgmt_attrs/batch`, { security_groups });
     } finally {
       isBatchUpdateMgmtAttrLoading.value = false;
     }
@@ -144,7 +190,7 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
     isQueryRelBusinessLoading.value = true;
     try {
       const res: IQueryResData<ISecurityGroupRelBusiness> = await http.post(
-        `/api/v1/cloud/security_groups/${security_group_id}/related_resources/bizs/list`,
+        `/api/v1/cloud/${getBusinessApiPath()}security_groups/${security_group_id}/related_resources/bizs/list`,
         { security_group_id },
       );
       return res.data;
@@ -160,7 +206,7 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
   const isQueryRelCvmByBizLoading = ref(false);
   const queryRelCvmByBiz = async (sg_id: string, res_biz_id: number, payload: QueryBuilderType) => {
     isQueryRelCvmByBizLoading.value = true;
-    const api = `/security_groups/${sg_id}/related_resources/biz_resources/${res_biz_id}/cvms/list`;
+    const api = `/api/v1/cloud/${getBusinessApiPath()}security_groups/${sg_id}/related_resources/biz_resources/${res_biz_id}/cvms/list`;
     try {
       const [listRes, countRes] = await Promise.all<
         [Promise<IListResData<ISecurityGroupRelCvmByBizItem[]>>, Promise<IListResData<ISecurityGroupRelCvmByBizItem[]>>]
@@ -179,7 +225,7 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
   const isQueryRelLoadBalancerByBizLoading = ref(false);
   const queryRelLoadBalancerByBiz = async (sg_id: string, res_biz_id: number, payload: QueryBuilderType) => {
     isQueryRelLoadBalancerByBizLoading.value = true;
-    const api = `/security_groups/${sg_id}/related_resources/biz_resources/${res_biz_id}/load_balancers/list`;
+    const api = `/api/v1/cloud/${getBusinessApiPath()}security_groups/${sg_id}/related_resources/biz_resources/${res_biz_id}/load_balancers/list`;
     try {
       const [listRes, countRes] = await Promise.all<
         [
@@ -198,12 +244,12 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
   };
 
   // 查询安全组关联的云上资源数量
-  const isQueryRelatedResourcesLoading = ref(false);
-  const queryRelatedResources = async (ids: string[]) => {
-    isQueryRelatedResourcesLoading.value = true;
+  const isQueryRelatedResourcesCountLoading = ref(false);
+  const queryRelatedResourcesCount = async (ids: string[]) => {
+    isQueryRelatedResourcesCountLoading.value = true;
     try {
       const res: IListResData<ISecurityGroupRelResCountItem[]> = await http.post(
-        '/api/v1/cloud/security_groups/related_resources/query_count',
+        `/api/v1/cloud/${getBusinessApiPath()}security_groups/related_resources/query_count`,
         { ids },
       );
       const { details = [] } = res.data ?? {};
@@ -212,7 +258,7 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
       console.error(error);
       return Promise.reject(error);
     } finally {
-      isQueryRelatedResourcesLoading.value = false;
+      isQueryRelatedResourcesCountLoading.value = false;
     }
   };
 
@@ -260,7 +306,7 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
     try {
       const [ruleCountMap, relatedResourcesList] = await Promise.all([
         batchQueryRuleCount(ids),
-        queryRelatedResources(ids),
+        queryRelatedResourcesCount(ids),
       ]);
       return { ruleCountMap, relatedResourcesList };
     } catch (error) {
@@ -268,6 +314,56 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
       return Promise.reject(error);
     } finally {
       isQueryRuleCountAndRelatedResourcesLoading.value = false;
+    }
+  };
+
+  // 查询资源关联的安全组信息
+  const isBatchQuerySecurityGroupByResIdsLoading = ref(false);
+  const batchQuerySecurityGroupByResIds = async (res_type: 'cvm' | 'loadbalancer' | string, res_ids: string[]) => {
+    isBatchQuerySecurityGroupByResIdsLoading.value = true;
+    try {
+      const res: IQueryResData<IResourceBoundSecurityGroupItem[]> = await http.post(
+        `/api/v1/cloud/${getBusinessApiPath()}security_groups/res/${res_type}/batch`,
+        { res_ids },
+      );
+      return res.data;
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    } finally {
+      isBatchQuerySecurityGroupByResIdsLoading.value = false;
+    }
+  };
+
+  // 查询资源关联的安全组信息，并合并
+  const pullSecurityGroup = async (res_type: string, originList: SecurityGroupRelResourceByBizItem[]) => {
+    if (!originList.length) return originList;
+    const res_ids = originList.map((item) => item.id);
+    const securityGroups = await batchQuerySecurityGroupByResIds(res_type, res_ids);
+    return originList.map((item) => {
+      return { ...item, security_groups: securityGroups.find((sg) => sg.res_id === item.id)?.security_groups || [] };
+    });
+  };
+
+  // 安全组批量绑定CVM
+  const isBatchAssociateCvmsLoading = ref(false);
+  const batchAssociateCvms = async (data: { security_group_id: string; cvm_ids: string[] }) => {
+    isBatchAssociateCvmsLoading.value = true;
+    try {
+      await http.post(`/api/v1/cloud/${getBusinessApiPath()}security_groups/associate/cvms/batch`, data);
+    } finally {
+      isBatchAssociateCvmsLoading.value = false;
+    }
+  };
+
+  // 安全组批量解绑主机
+  const isBatchDisassociateCvmsLoading = ref(false);
+  const batchDisassociateCvms = async (data: { security_group_id: string; cvm_ids: string[] }) => {
+    isBatchDisassociateCvmsLoading.value = true;
+    try {
+      await http.post(`/api/v1/cloud/${getBusinessApiPath()}security_groups/disassociate/cvms/batch`, data);
+    } finally {
+      isBatchDisassociateCvmsLoading.value = false;
     }
   };
 
@@ -284,13 +380,20 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
     queryRelCvmByBiz,
     isQueryRelLoadBalancerByBizLoading,
     queryRelLoadBalancerByBiz,
-    isQueryRelatedResourcesLoading,
-    queryRelatedResources,
+    isQueryRelatedResourcesCountLoading,
+    queryRelatedResourcesCount,
     isUpdateMgmtAttrLoading,
     updateMgmtAttr,
     isBatchQueryRuleCountLoading,
     batchQueryRuleCount,
     isQueryRuleCountAndRelatedResourcesLoading,
     queryRuleCountAndRelatedResources,
+    isBatchQuerySecurityGroupByResIdsLoading,
+    batchQuerySecurityGroupByResIds,
+    pullSecurityGroup,
+    isBatchAssociateCvmsLoading,
+    batchAssociateCvms,
+    isBatchDisassociateCvmsLoading,
+    batchDisassociateCvms,
   };
 });
