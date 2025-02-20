@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/client"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/rest"
+	"hcm/pkg/thirdparty/esb"
 )
 
 // InitSecurityGroupService initial the security group service
@@ -35,6 +36,7 @@ func InitSecurityGroupService(c *capability.Capability) {
 		client:     c.ApiClient,
 		authorizer: c.Authorizer,
 		audit:      c.Audit,
+		esb:        c.EsbClient,
 	}
 
 	h := rest.NewHandler()
@@ -124,10 +126,13 @@ func bizService(h *rest.Handler, svc *securityGroupSvc) {
 		"/bizs/{bk_biz_id}/security_group/{id}/common/list", svc.ListBizResourceIDBySecurityGroup)
 	h.Add("ListBizCvmIdBySecurityGroup", http.MethodPost,
 		"/bizs/{bk_biz_id}/security_group/{id}/cvm/list", svc.ListBizCvmIdBySecurityGroup)
+	h.Add("BizListSGUsageBizMaintainers", http.MethodPost, "/bizs/{bk_biz_id}/security_groups/usage_biz_maintainers/list",
+		svc.BizListSGUsageBizMaintainers)
 }
 
 type securityGroupSvc struct {
 	client     *client.ClientSet
 	authorizer auth.Authorizer
 	audit      audit.Interface
+	esb        esb.Client
 }
