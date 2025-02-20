@@ -2,7 +2,6 @@ import type { VNode } from 'vue';
 import type { Column as TableColumn } from 'bkui-vue/lib/table/props';
 import { RulesItem, QueryRuleOPEnum } from '@/typings';
 import type { ResourceTypeEnum } from '@/common/resource-constant';
-import { RenderFunctionString } from 'bkui-vue/lib/table/props';
 
 export type ModelPropertyType =
   | 'string'
@@ -53,7 +52,6 @@ export type PropertyColumnConfig = {
   width?: number | string;
   minWidth?: number | string;
   defaultHidden?: boolean;
-  render?: RenderFunctionString;
 };
 
 export type PropertyFormConfig = {
