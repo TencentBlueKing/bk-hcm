@@ -1,4 +1,4 @@
-export type AppearanceType = 'status' | 'cvm-status';
+export type AppearanceType = 'status' | 'cvm-status' | 'clb-status';
 
 export type DisplayType = {
   on?: 'cell' | 'info' | 'search';

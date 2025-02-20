@@ -1,5 +1,5 @@
 import { ModelProperty } from '@/model/typings';
-import { IP_VERSION_MAP, LB_NETWORK_TYPE_MAP } from '@/constants';
+import { CLB_STATUS_MAP, IP_VERSION_MAP, LB_NETWORK_TYPE_MAP } from '@/constants';
 
 export default [
   {
@@ -63,7 +63,13 @@ export default [
   {
     id: 'status',
     name: '状态',
-    type: 'enum', // TODO: clb-status
+    type: 'enum',
+    option: CLB_STATUS_MAP,
+    meta: {
+      display: {
+        appearance: 'clb-status',
+      },
+    },
   },
   {
     id: 'cloud_vpc_id',
