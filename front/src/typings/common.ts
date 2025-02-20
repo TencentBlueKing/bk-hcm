@@ -93,3 +93,5 @@ export interface IBreadcrumb {
   title: string;
   display: boolean;
 }
+
+export type ISearchSelectValue = Array<{ id: string; name: string; values: { id: string; name: string }[] }>;

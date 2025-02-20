@@ -1,16 +1,31 @@
+import { h } from 'vue';
 import { PropertyColumnConfig } from '@/model/typings';
 import { getInstVip, getPrivateIPs, getPublicIPs } from '@/utils';
 import { IResourceBoundSecurityGroupItem, SecurityGroupRelatedResourceName } from '@/store/security-group';
 import { RELATED_RES_PROPERTIES_MAP } from '@/constants/security-group';
 
+import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
+
 const columnIds = new Map<string, string[]>();
 
 const columnConfig: Record<string, PropertyColumnConfig> = {
-  private_ip: {
-    render: ({ data }: any) => getPrivateIPs(data),
+  private_ipv4_addresses: {
+    render: ({ data }: any) => {
+      const content = getPrivateIPs(data);
+      return h('div', { class: 'flex-row align-items-center' }, [
+        content,
+        content !== '--' ? h(CopyToClipboard, { content, class: 'ml4' }) : null,
+      ]);
+    },
   },
-  public_ip: {
-    render: ({ data }: any) => getPublicIPs(data),
+  public_ipv4_addresses: {
+    render: ({ data }: any) => {
+      const content = getPublicIPs(data);
+      return h('div', { class: 'flex-row align-items-center' }, [
+        content,
+        content !== '--' ? h(CopyToClipboard, { content, class: 'ml4' }) : null,
+      ]);
+    },
   },
   vip: {
     render: ({ data }: any) => getInstVip(data),
@@ -23,12 +38,27 @@ const columnConfig: Record<string, PropertyColumnConfig> = {
   },
 };
 
-const relCvmFields = ['private_ip', 'public_ip', 'region', 'zone', 'name', 'status', 'cloud_vpc_ids'];
+const relCvmFields = [
+  'private_ipv4_addresses',
+  'public_ipv4_addresses',
+  'region',
+  'zone',
+  'name',
+  'status',
+  'cloud_vpc_ids',
+];
 const relClbFields = ['name', 'domain', 'vip', 'lb_type', 'ip_version', 'region', 'zones', 'status', 'cloud_vpc_id'];
-const bindCvmFields = ['private_ip', 'public_ip', 'name', 'cloud_vpc_ids', 'status', 'security_group_names'];
+const bindCvmFields = [
+  'private_ipv4_addresses',
+  'public_ipv4_addresses',
+  'name',
+  'cloud_vpc_ids',
+  'status',
+  'security_group_names',
+];
 const unbindCvmFields = [
-  'private_ip',
-  'public_ip',
+  'private_ipv4_addresses',
+  'public_ipv4_addresses',
   'name',
   'cloud_vpc_ids',
   'status',

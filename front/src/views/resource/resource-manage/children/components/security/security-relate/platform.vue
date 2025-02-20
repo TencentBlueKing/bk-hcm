@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeMount, ref, watch } from 'vue';
+import { computed, ref, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   type ISecurityGroupDetail,
@@ -10,16 +10,19 @@ import {
   useSecurityGroupStore,
 } from '@/store/security-group';
 import { useBusinessGlobalStore } from '@/store/business-global';
+import { useRegionsStore } from '@/store/useRegionsStore';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import usePage from '@/hooks/use-page';
-import { transformSimpleCondition } from '@/utils/search';
+import { getSimpleConditionBySearchSelect, transformSimpleCondition } from '@/utils/search';
 import { RELATED_RES_KEY_MAP, RELATED_RES_NAME_MAP, RELATED_RES_PROPERTIES_MAP } from '@/constants/security-group';
+import { ISearchSelectValue } from '@/typings';
 
 import { Message } from 'bkui-vue';
 import { Plus } from 'bkui-vue/lib/icon';
 import tab from './tab/index.vue';
 import bind from './bind/index.vue';
 import batchUnbind from './unbind/batch.vue';
+import search from './search/index.vue';
 import dataList from './data-list/index.vue';
 import singleUnbind from './unbind/single.vue';
 
@@ -33,6 +36,7 @@ const { t } = useI18n();
 const { getBizsId, isBusinessPage } = useWhereAmI();
 const { getBusinessNames } = useBusinessGlobalStore();
 const securityGroupStore = useSecurityGroupStore();
+const regionStore = useRegionsStore();
 
 const tabActive = ref<SecurityGroupRelatedResourceName>(SecurityGroupRelatedResourceName.CVM);
 // 当前业务所关联资源
@@ -94,13 +98,25 @@ const handleBatchUnbind = async (ids: string[]) => {
   getList();
 };
 
+const searchRef = useTemplateRef('relate-resource-search');
+const handleSearch = (searchValue: ISearchSelectValue) => {
+  condition.value = getSimpleConditionBySearchSelect(searchValue, [
+    { field: 'region', formatter: (val: string) => regionStore.getRegionNameEN(val) },
+  ]);
+};
+
 watch(tabActive, () => {
-  getList();
+  // 切换tab时，清空搜索条件，触发搜索
+  searchRef.value?.clear();
 });
 
-onBeforeMount(() => {
-  getList();
-});
+watch(
+  condition,
+  () => {
+    getList();
+  },
+  { immediate: true },
+);
 </script>
 
 <template>
@@ -123,7 +139,13 @@ onBeforeMount(() => {
         />
       </div>
 
-      <bk-search-select class="search" :placeholder="t('请输入IP/主机名称等搜索')" />
+      <search
+        class="search"
+        ref="relate-resource-search"
+        :resource-name="tabActive"
+        operation="base"
+        @search="handleSearch"
+      />
     </div>
 
     <div v-if="isBusinessPage" class="overview">

@@ -1,5 +1,6 @@
 import { CLOUD_HOST_STATUS } from '@/common/constant';
 import { ModelProperty } from '@/model/typings';
+import { QueryRuleOPEnum } from '@/typings';
 
 export default [
   {
@@ -8,14 +9,24 @@ export default [
     type: 'string',
   },
   {
-    id: 'private_ip',
+    id: 'private_ipv4_addresses',
     name: '内网IP',
-    type: 'string',
+    type: 'array',
+    meta: {
+      search: {
+        op: QueryRuleOPEnum.JSON_OVERLAPS,
+      },
+    },
   },
   {
-    id: 'public_ip',
+    id: 'public_ipv4_addresses',
     name: '公网IP',
-    type: 'string',
+    type: 'array',
+    meta: {
+      search: {
+        op: QueryRuleOPEnum.JSON_OVERLAPS,
+      },
+    },
   },
   {
     id: 'cloud_vpc_ids',
@@ -36,6 +47,11 @@ export default [
     id: 'name',
     name: '主机名称',
     type: 'string',
+    meta: {
+      search: {
+        op: QueryRuleOPEnum.CS,
+      },
+    },
   },
   {
     id: 'status',

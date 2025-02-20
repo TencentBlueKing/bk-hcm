@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, useAttrs, watch } from 'vue';
+import { computed, ref, useAttrs, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   type SecurityGroupRelResourceByBizItem,
@@ -8,8 +8,11 @@ import {
 } from '@/store/security-group';
 import columnFactory from '../data-list/column-factory';
 import { RELATED_RES_KEY_MAP } from '@/constants/security-group';
+import { ISearchSelectValue } from '@/typings';
+import { getLocalFilterFnBySearchSelect } from '@/utils/search';
 
 import { ThemeEnum } from 'bkui-vue/lib/shared';
+import search from '../search/index.vue';
 import dialogFooter from '@/components/common-dialog/dialog-footer.vue';
 
 const props = withDefaults(
@@ -43,6 +46,10 @@ const listMap = ref<Record<'target' | 'unTarget', SecurityGroupRelResourceByBizI
   target: [],
   unTarget: [],
 });
+const filterFn = ref<(item: any) => boolean>(() => true);
+const renderList = computed(() => {
+  return listMap.value[selectedType.value].filter(filterFn.value);
+});
 
 watch(isShow, async (val) => {
   if (!val) return;
@@ -54,6 +61,10 @@ watch(isShow, async (val) => {
   listMap.value = { target, unTarget };
   selectedType.value = unTarget.length > 0 ? 'unTarget' : 'target';
 });
+
+const handleSearch = (searchValue: ISearchSelectValue) => {
+  filterFn.value = getLocalFilterFnBySearchSelect(searchValue);
+};
 
 const handleConfirm = async () => {
   await props.handleConfirm(listMap.value.target.map((item) => item.id));
@@ -83,14 +94,14 @@ const handleConfirm = async () => {
         <span>{{ t('仅绑定1个安全组的资源不允许进行批量解绑') }}</span>
       </span>
       <!-- TODO：本地搜索 -->
-      <bk-search-select class="search" />
+      <search class="search" :resource-name="tabActive" operation="unbind" @search="handleSearch" />
     </div>
 
     <bk-table
       v-bkloading="{ loading: securityGroupStore.isBatchQuerySecurityGroupByResIdsLoading }"
       ref="tableRef"
       row-hover="auto"
-      :data="listMap[selectedType]"
+      :data="renderList"
       :max-height="'calc(100vh - 401px)'"
       show-overflow-tooltip
       row-key="id"

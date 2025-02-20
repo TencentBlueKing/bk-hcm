@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, useAttrs, useTemplateRef, watch } from 'vue';
+import { nextTick, ref, useAttrs, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import usePage from '@/hooks/use-page';
@@ -10,10 +10,12 @@ import {
   useSecurityGroupStore,
 } from '@/store/security-group';
 import { RELATED_RES_KEY_MAP, RELATED_RES_PROPERTIES_MAP } from '@/constants/security-group';
-import { enableCount, transformSimpleCondition } from '@/utils/search';
+import { ISearchSelectValue } from '@/typings';
+import { enableCount, getSimpleConditionBySearchSelect, transformSimpleCondition } from '@/utils/search';
 import { getPrivateIPs } from '@/utils';
 import http from '@/http';
 
+import search from '../search/index.vue';
 import dataList from '../data-list/index.vue';
 import dialogFooter from '@/components/common-dialog/dialog-footer.vue';
 
@@ -57,10 +59,21 @@ const getList = async (sort = 'created_at', order = 'DESC') => {
 };
 
 watch(isShow, (val) => {
-  if (val) {
+  nextTick(() => {
+    if (val) searchRef.value?.clear();
+  });
+});
+
+const searchRef = useTemplateRef('bind-related-resource-search');
+const handleSearch = (searchValue: ISearchSelectValue) => {
+  if (!searchValue.length) {
     condition.value = { account_id: props.detail.account_id, region: props.detail.region, vendor: props.detail.vendor };
-    getList();
   }
+  condition.value = { ...condition.value, ...getSimpleConditionBySearchSelect(searchValue) };
+};
+
+watch(condition, () => {
+  getList();
 });
 
 const dataListRef = useTemplateRef('data-list');
@@ -100,7 +113,13 @@ const handleClosed = () => {
           <bk-alert theme="warning" class="mb16">
             '新绑定的安全组为最高优先级。如主机上已绑定的安全组为「安全组1」,新绑定的安全组为「安全组2」,则依次生效安全组顺序为：安全组2，安全组1'
           </bk-alert>
-          <bk-search-select :placeholder="t('请输入IP')" class="mb16" />
+          <search
+            class="mb16"
+            ref="bind-related-resource-search"
+            :resource-name="tabActive"
+            operation="bind"
+            @search="handleSearch"
+          />
           <data-list
             v-bkloading="{ loading }"
             ref="data-list"
