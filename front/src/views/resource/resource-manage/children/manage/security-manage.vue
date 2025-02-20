@@ -29,6 +29,7 @@ import { storeToRefs } from 'pinia';
 
 import SecurityGroupChangeConfirmDialog from '../dialog/security-group/change-confirm.vue';
 import SecurityGroupSingleDeleteDialog from '../dialog/security-group/single-delete.vue';
+import CloneSecurity, { IData, ICloneSecurityProps } from '../dialog/clone-security/index.vue';
 import SecurityGroupAssignDialog from '../dialog/security-group/assign.vue';
 import SecurityGroupUpdateMgmtAttrDialog from '../dialog/security-group/update-mgmt-attr.vue';
 import { MGMT_TYPE_MAP } from '@/constants/security-group';
@@ -88,6 +89,11 @@ const state = reactive<any>({
     fetchUrl: 'security_groups',
     columns: 'group',
   },
+});
+
+const cloneSecurityData = reactive<ICloneSecurityProps>({
+  isShow: false,
+  data: {},
 });
 
 const templateData = ref([]);
@@ -402,7 +408,7 @@ const groupColumns = [
     isDefaultShow: true,
     width: 120,
     fixed: 'right',
-    render({ data }: any) {
+    render({ data }: IData) {
       const isAssigned = data.bk_biz_id !== -1 && props.isResourcePage;
 
       const authMap = {
@@ -424,7 +430,7 @@ const groupColumns = [
           name: t('克隆'),
           auth: authMap.clone,
           disabled: !props.authVerifyData?.permissionAction[authMap.clone] || isAssigned,
-          handleClick: () => {},
+          handleClick: () => securityHandleShowClone(data),
           hidden: props.isResourcePage,
         },
         {
@@ -1122,6 +1128,8 @@ const handleSecurityGroupOperationSuccess = () => {
       :detail="currentSecurityGroup"
     />
 
+    <!-- 克隆安全组弹窗 -->
+    <CloneSecurity v-model:isShow="cloneSecurityData.isShow" :data="cloneSecurityData.data" />
     <!-- 批量分配 -->
     <template v-if="!securityGroupAssignDialogState.isHidden">
       <security-group-assign-dialog
