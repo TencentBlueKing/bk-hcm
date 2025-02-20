@@ -43,10 +43,10 @@ func InitService(c *capability.Capability) {
 	h := rest.NewHandler()
 
 	// register handler
-	h.Add("GetRootAccount", http.MethodGet, "/root_accounts/{account_id}", svc.Get)
-	h.Add("ListRootAccount", http.MethodPost, "/root_accounts/list", svc.List)
-	h.Add("UpdateRootAccount", http.MethodPatch, "/root_accounts/{account_id}", svc.Update)
-	h.Add("AddRootAccount", http.MethodPost, "/root_accounts/add", svc.Add)
+	h.Add("GetRootAccount", http.MethodGet, "/root_accounts/{account_id}", svc.GetRootAccount)
+	h.Add("ListRootAccount", http.MethodPost, "/root_accounts/list", svc.ListRootAccount)
+	h.Add("UpdateRootAccount", http.MethodPatch, "/root_accounts/{account_id}", svc.UpdateRootAccount)
+	h.Add("AddRootAccount", http.MethodPost, "/root_accounts/add", svc.AddRootAccount)
 
 	h.Add("QueryRootAccountBySecret", http.MethodPost, "/vendors/{vendor}/root_accounts/query_account_by_secret",
 		svc.QueryRootAccountBySecret)

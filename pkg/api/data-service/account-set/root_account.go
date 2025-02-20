@@ -42,8 +42,13 @@ type RootAccountExtensionCreateReq interface {
 type AwsRootAccountExtensionCreateReq struct {
 	CloudAccountID   string `json:"cloud_account_id" validate:"required"`
 	CloudIamUsername string `json:"cloud_iam_username" validate:"required"`
-	CloudSecretID    string `json:"cloud_secret_id" validate:"omitempty"`
-	CloudSecretKey   string `json:"cloud_secret_key" validate:"omitempty"`
+	CloudSecretID    string `json:"cloud_secret_id" validate:"required"`
+	CloudSecretKey   string `json:"cloud_secret_key" validate:"required"`
+}
+
+// Validate ...
+func (req *AwsRootAccountExtensionCreateReq) Validate() error {
+	return validator.Validate.Struct(req)
 }
 
 // EncryptSecretKey encrypt secret key
@@ -53,13 +58,18 @@ func (req *AwsRootAccountExtensionCreateReq) EncryptSecretKey(cipher cryptograph
 
 // GcpRootAccountExtensionCreateReq ...
 type GcpRootAccountExtensionCreateReq struct {
-	Email                   string `json:"email" validate:"omitempty"`
+	Email                   string `json:"email" validate:"required"`
 	CloudProjectID          string `json:"cloud_project_id" validate:"required"`
 	CloudProjectName        string `json:"cloud_project_name" validate:"required"`
-	CloudServiceAccountID   string `json:"cloud_service_account_id" validate:"omitempty"`
-	CloudServiceAccountName string `json:"cloud_service_account_name" validate:"omitempty"`
-	CloudServiceSecretID    string `json:"cloud_service_secret_id" validate:"omitempty"`
-	CloudServiceSecretKey   string `json:"cloud_service_secret_key" validate:"omitempty"`
+	CloudServiceAccountID   string `json:"cloud_service_account_id" validate:"required"`
+	CloudServiceAccountName string `json:"cloud_service_account_name" validate:"required"`
+	CloudServiceSecretID    string `json:"cloud_service_secret_id" validate:"required"`
+	CloudServiceSecretKey   string `json:"cloud_service_secret_key" validate:"required"`
+}
+
+// Validate ...
+func (req *GcpRootAccountExtensionCreateReq) Validate() error {
+	return validator.Validate.Struct(req)
 }
 
 // EncryptSecretKey encrypt secret key
@@ -73,9 +83,14 @@ type AzureRootAccountExtensionCreateReq struct {
 	CloudTenantID         string `json:"cloud_tenant_id" validate:"required"`
 	CloudSubscriptionID   string `json:"cloud_subscription_id" validate:"required"`
 	CloudSubscriptionName string `json:"cloud_subscription_name" validate:"required"`
-	CloudApplicationID    string `json:"cloud_application_id" validate:"omitempty"`
-	CloudApplicationName  string `json:"cloud_application_name" validate:"omitempty"`
-	CloudClientSecretKey  string `json:"cloud_client_secret_key" validate:"omitempty"`
+	CloudApplicationID    string `json:"cloud_application_id" validate:"required"`
+	CloudApplicationName  string `json:"cloud_application_name" validate:"required"`
+	CloudClientSecretKey  string `json:"cloud_client_secret_key" validate:"required"`
+}
+
+// Validate ...
+func (req *AzureRootAccountExtensionCreateReq) Validate() error {
+	return validator.Validate.Struct(req)
 }
 
 // EncryptSecretKey encrypt secret key
@@ -87,10 +102,15 @@ func (req *AzureRootAccountExtensionCreateReq) EncryptSecretKey(cipher cryptogra
 type HuaWeiRootAccountExtensionCreateReq struct {
 	CloudSubAccountID   string `json:"cloud_sub_account_id" validate:"required"`
 	CloudSubAccountName string `json:"cloud_sub_account_name" validate:"required"`
-	CloudSecretID       string `json:"cloud_secret_id" validate:"omitempty"`
-	CloudSecretKey      string `json:"cloud_secret_key" validate:"omitempty"`
+	CloudSecretID       string `json:"cloud_secret_id" validate:"required"`
+	CloudSecretKey      string `json:"cloud_secret_key" validate:"required"`
 	CloudIamUserID      string `json:"cloud_iam_user_id" validate:"required"`
 	CloudIamUsername    string `json:"cloud_iam_username" validate:"required"`
+}
+
+// Validate ...
+func (req *HuaWeiRootAccountExtensionCreateReq) Validate() error {
+	return validator.Validate.Struct(req)
 }
 
 // EncryptSecretKey ...
@@ -103,6 +123,11 @@ type ZenlayerRootAccountExtensionCreateReq struct {
 	CloudAccountID string `json:"cloud_account_id" validate:"required"`
 }
 
+// Validate ...
+func (req *ZenlayerRootAccountExtensionCreateReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
 // EncryptSecretKey ...
 func (req *ZenlayerRootAccountExtensionCreateReq) EncryptSecretKey(cipher cryptography.Crypto) {
 
@@ -111,6 +136,11 @@ func (req *ZenlayerRootAccountExtensionCreateReq) EncryptSecretKey(cipher crypto
 // KaopuRootAccountExtensionCreateReq ...
 type KaopuRootAccountExtensionCreateReq struct {
 	CloudAccountID string `json:"cloud_account_id" validate:"required"`
+}
+
+// Validate ...
+func (req *KaopuRootAccountExtensionCreateReq) Validate() error {
+	return validator.Validate.Struct(req)
 }
 
 // EncryptSecretKey ...

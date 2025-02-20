@@ -26,8 +26,8 @@ import (
 	"hcm/pkg/rest"
 )
 
-// List list root account with options
-func (s *service) List(cts *rest.Contexts) (interface{}, error) {
+// ListRootAccount list root account with options
+func (s *service) ListRootAccount(cts *rest.Contexts) (interface{}, error) {
 	req := new(core.ListWithoutFieldReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
