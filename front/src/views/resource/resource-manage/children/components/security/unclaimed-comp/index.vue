@@ -15,6 +15,9 @@ const props = defineProps<{ data: ISecurityGroupItem }>();
 const { t } = useI18n();
 const { getBusinessNames } = useBusinessGlobalStore();
 
+const tipsDesc = t(
+  '该安全组在多个业务中使用，当前处于未分配状态，不能在业务下进行管理配置安全组规则。如需管理规则，建议和各负责人拉群沟通后，确认所属业务后，再由账号负责人分配到业务中进行管理。',
+);
 const mgmtBusinessName = computed(() => getBusinessNames(props.data?.mgmt_biz_id)?.[0] ?? '--');
 const usageBusinessName = computed(() => getBusinessNames(props.data?.usage_biz_ids)?.join('、') ?? '--');
 const usageBizMaintainersContent = computed(() =>
@@ -33,13 +36,7 @@ const usageBizMaintainersContent = computed(() =>
       <template #content>
         <div class="tips-header">
           <exclamation-circle-shape fill="#EA3636" class="icon" />
-          <span>
-            {{
-              t(
-                '该安全组在多个业务中使用，当前处于未分配状态，不能在业务下进行管理配置安全组规则。如需管理规则，建议和各负责人拉群沟通后，确认所属业务后，再由账号负责人分配到业务中进行管理。',
-              )
-            }}
-          </span>
+          <span>{{ tipsDesc }}</span>
         </div>
         <div class="tips-info">
           <div class="info-item">
@@ -100,6 +97,8 @@ const usageBizMaintainersContent = computed(() =>
     align-items: flex-start;
 
     .label {
+      width: 80px;
+      text-align: right;
       flex-shrink: 0;
     }
 
