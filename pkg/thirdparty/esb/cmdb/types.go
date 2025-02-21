@@ -132,8 +132,9 @@ type SearchBizResult struct {
 
 // Biz is cmdb biz info.
 type Biz struct {
-	BizID   int64  `json:"bk_biz_id"`
-	BizName string `json:"bk_biz_name"`
+	BizID         int64  `json:"bk_biz_id"`
+	BizName       string `json:"bk_biz_name"`
+	BizMaintainer string `json:"bk_biz_maintainer"`
 }
 
 // -------------------------- cloud area --------------------------
