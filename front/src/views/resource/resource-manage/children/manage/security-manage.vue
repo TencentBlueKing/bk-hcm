@@ -24,7 +24,7 @@ import { BatchDistribution, DResourceType } from '@/views/resource/resource-mana
 import { TemplateTypeMap } from '../dialog/template-dialog';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import http from '@/http';
-import { timeFormatter, formatTags } from '@/common/util';
+import { timeFormatter } from '@/common/util';
 import { storeToRefs } from 'pinia';
 
 import SecurityGroupChangeConfirmDialog from '../dialog/security-group/change-confirm.vue';
@@ -32,8 +32,15 @@ import SecurityGroupSingleDeleteDialog from '../dialog/security-group/single-del
 import CloneSecurity, { IData, ICloneSecurityProps } from '../dialog/clone-security/index.vue';
 import SecurityGroupAssignDialog from '../dialog/security-group/assign.vue';
 import SecurityGroupUpdateMgmtAttrDialog from '../dialog/security-group/update-mgmt-attr.vue';
+import UnclaimedComp from '../components/security/unclaimed-comp/index.vue';
 import { MGMT_TYPE_MAP } from '@/constants/security-group';
-import { ISecurityGroupOperateItem, useSecurityGroupStore, SecurityGroupManageType } from '@/store/security-group';
+import {
+  ISecurityGroupOperateItem,
+  useSecurityGroupStore,
+  SecurityGroupManageType,
+  ISecurityGroupUsageBizMaintainerItem,
+  SecurityGroupRuleCountAndRelatedResourcesResult,
+} from '@/store/security-group';
 import FlexTag from '@/components/flex-tag/index.vue';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
@@ -61,7 +68,7 @@ const securityGroupStore = useSecurityGroupStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
 const router = useRouter();
 const route = useRoute();
-const { whereAmI } = useWhereAmI();
+const { whereAmI, getBizsId } = useWhereAmI();
 
 const resourceAccountStore = useResourceAccountStore();
 const { currentVendor, currentAccountVendor } = storeToRefs(resourceAccountStore);
@@ -108,20 +115,42 @@ const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, ge
   fetchUrl,
   {
     handleAsyncRequest: async (data: any[]) => {
-      // 安全组需要异步加载一些关联资源数据
+      // 安全组需要异步加载一些关联资源数
       if (activeType.value !== 'group' || !data.length) return [];
 
-      const security_group_ids: string[] = data.map((item: any) => item.id);
-      const { ruleCountMap, relatedResourcesList } = await securityGroupStore.queryRuleCountAndRelatedResources(
-        security_group_ids,
-      );
+      const sgIds = data.map((item) => item.id);
+      const unclaimedSgIds = data.filter((sg) => sg.mgmt_type === 'biz' && sg.bk_biz_id === -1).map((sg) => sg.id);
 
-      return data.map((item) => {
-        const relResItem = relatedResourcesList.find((relRes) => relRes.id === item.id);
-        const rel_res_count = relResItem.resources.reduce((acc, cur) => acc + cur.count, 0);
-        const rel_res = relResItem.resources.filter(({ count }) => count > 0);
-        const rule_count = ruleCountMap[item.id];
-        return { ...item, rel_res_count, rel_res, rule_count };
+      const requests: Promise<
+        SecurityGroupRuleCountAndRelatedResourcesResult | ISecurityGroupUsageBizMaintainerItem[]
+      >[] = [securityGroupStore.queryRuleCountAndRelatedResources(sgIds)];
+
+      if (whereAmI.value === Senarios.business && unclaimedSgIds.length) {
+        requests.push(securityGroupStore.queryUsageBizMaintainers(unclaimedSgIds));
+      }
+
+      const [res1, res2] = await Promise.allSettled(requests);
+
+      const { ruleCountMap, relatedResourcesList } =
+        (res1 as PromiseFulfilledResult<SecurityGroupRuleCountAndRelatedResourcesResult>).value ?? {};
+      const maintainers = (res2 as PromiseFulfilledResult<ISecurityGroupUsageBizMaintainerItem[]>)?.value ?? [];
+
+      return data.map((sg) => {
+        const { resources } = relatedResourcesList.find((relRes) => relRes.id === sg.id) ?? {};
+        const { managers, details } = maintainers.find((maintainer) => maintainer.id === sg.id) ?? {};
+
+        const relResCount = resources.reduce((acc, cur) => acc + cur.count, 0);
+        const relatedResources = resources.filter(({ count }) => count > 0);
+        const ruleCount = ruleCountMap[sg.id];
+
+        return {
+          ...sg,
+          rel_res_count: relResCount,
+          rel_res: relatedResources,
+          rule_count: ruleCount,
+          account_managers: managers,
+          usage_biz_maintainers: details,
+        };
       });
     },
   },
@@ -355,8 +384,12 @@ const groupColumns = [
     filter: true,
     isDefaultShow: true,
     width: 100,
-    render: ({ cell }: any) => {
+    render: ({ cell, data }: any) => {
       if (!cell || cell === -1) return '--';
+      const { mgmt_type, bk_biz_id } = data;
+      if (mgmt_type === 'biz' && bk_biz_id === -1 && whereAmI.value === Senarios.business) {
+        return h(UnclaimedComp, { data });
+      }
       return getNameFromBusinessMap(cell);
     },
   },
@@ -371,13 +404,6 @@ const groupColumns = [
     field: 'bak_manager',
     width: 100,
     render: ({ cell }: any) => cell || '--',
-  },
-  {
-    label: t('标签'),
-    field: 'tags',
-    isDefaultShow: true,
-    render: ({ cell }: any) => formatTags(cell),
-    width: 100,
   },
   {
     label: '是否分配',
@@ -409,48 +435,64 @@ const groupColumns = [
     width: 120,
     fixed: 'right',
     render({ data }: IData) {
-      const isAssigned = data.bk_biz_id !== -1 && props.isResourcePage;
+      // 资源下：状态=未分配，才可以操作
+      // 业务下：管理业务=当前业务 && 状态=已分配，才可以配置规则、删除
+      const isAssigned = data.bk_biz_id !== -1;
+      const isCurrentBizManage = whereAmI.value === Senarios.business && data.mgmt_biz_id === getBizsId();
 
-      const authMap = {
+      const authMap: Record<string, string> = {
         rule: props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate',
         clone: props.isResourcePage ? 'iaas_resource_create' : 'biz_iaas_resource_create',
         delete: props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete',
+      };
+
+      const handleAuthClick = (type: string) => {
+        const permission = props.authVerifyData?.permissionAction[authMap[type]];
+        if (permission) {
+          if (type === 'clone') {
+            securityHandleShowClone(data);
+          } else {
+            handleFillCurrentSecurityGroup(data, type);
+          }
+        } else {
+          emit('auth', authMap[type]);
+        }
       };
 
       const operationList = [
         {
           type: 'rule',
           name: t('配置规则'),
-          auth: authMap.rule,
-          disabled: !props.authVerifyData?.permissionAction[authMap.rule] || isAssigned,
-          handleClick: () => handleFillCurrentSecurityGroup(data, 'rule'),
+          disabled: (props.isResourcePage && isAssigned) || !(isCurrentBizManage && isAssigned),
         },
         {
           type: 'clone',
           name: t('克隆'),
-          auth: authMap.clone,
-          disabled: !props.authVerifyData?.permissionAction[authMap.clone] || isAssigned,
-          handleClick: () => securityHandleShowClone(data),
+          disabled: props.isResourcePage && isAssigned,
           hidden: props.isResourcePage,
         },
         {
           type: 'delete',
           name: t('删除'),
-          auth: authMap.delete,
-          disabled: !props.authVerifyData?.permissionAction[authMap.delete] || isAssigned,
-          handleClick: () => handleFillCurrentSecurityGroup(data, 'delete'),
+          disabled: (props.isResourcePage && isAssigned) || !(isCurrentBizManage && isAssigned),
         },
       ];
 
       return h(
         'div',
         { class: 'operation-cell' },
-        operationList.map(({ name, auth, disabled, handleClick, hidden }) => {
+        operationList.map(({ type, name, disabled, hidden }) => {
           if (hidden) return null;
           return h(
-            'span',
-            { onClick: () => emit('auth', auth) },
-            h(Button, { text: true, theme: 'primary', disabled, onClick: handleClick }, name),
+            Button,
+            {
+              class: { 'hcm-no-permision-text-btn': !props.authVerifyData?.permissionAction[authMap[type]] },
+              text: true,
+              theme: 'primary',
+              disabled,
+              onClick: () => handleAuthClick(type),
+            },
+            name,
           );
         }),
       );
@@ -887,7 +929,7 @@ watch(
 const currentSecurityGroup = ref<ISecurityGroupOperateItem>(null);
 const isChangeEffectConfirmDialogShow = ref(false);
 const isSecurityGroupSingleDeleteDialogShow = ref(false);
-const handleFillCurrentSecurityGroup = async (rowData: ISecurityGroupOperateItem, type: 'rule' | 'delete') => {
+const handleFillCurrentSecurityGroup = async (rowData: ISecurityGroupOperateItem, type: string) => {
   if (type === 'rule') isChangeEffectConfirmDialogShow.value = true;
   else isSecurityGroupSingleDeleteDialogShow.value = true;
 
