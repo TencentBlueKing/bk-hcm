@@ -40,6 +40,8 @@ export interface ISecurityGroupItem {
   tags: Record<string, string>;
   cloud_created_time: string;
   cloud_update_time: string;
+  account_managers?: string[];
+  usage_biz_maintainers?: ISecurityGroupUsageBizMaintainerItem['details'];
 }
 
 export interface ISecurityGroupDetail extends ISecurityGroupItem {
@@ -135,6 +137,16 @@ export type ISecurityGroupOperateItem = ISecurityGroupItem &
 export interface IResourceBoundSecurityGroupItem {
   res_id: string;
   security_groups: { id: string; cloud_id: string; name: string }[];
+}
+
+export interface ISecurityGroupUsageBizMaintainerItem {
+  id: string;
+  managers: string[];
+  details: Array<{
+    bk_biz_id: number;
+    bk_biz_name: string;
+    bk_biz_maintainer: string;
+  }>;
 }
 
 export const useSecurityGroupStore = defineStore('security-group', () => {
@@ -367,6 +379,24 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
     }
   };
 
+  // 批量查询安全组使用业务负责人列表
+  const isQueryUsageBizMaintainersLoading = ref(false);
+  const queryUsageBizMaintainers = async (security_group_ids: string[]) => {
+    isQueryUsageBizMaintainersLoading.value = true;
+    try {
+      const res: IQueryResData<ISecurityGroupUsageBizMaintainerItem[]> = await http.post(
+        `/api/v1/cloud/${getBusinessApiPath()}security_groups/usage_biz_maintainers/list`,
+        { security_group_ids },
+      );
+      return res.data;
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    } finally {
+      isQueryUsageBizMaintainersLoading.value = false;
+    }
+  };
+
   return {
     isAssignPreviewLoading,
     getAssignPreview,
@@ -395,5 +425,7 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
     batchAssociateCvms,
     isBatchDisassociateCvmsLoading,
     batchDisassociateCvms,
+    isQueryUsageBizMaintainersLoading,
+    queryUsageBizMaintainers,
   };
 });

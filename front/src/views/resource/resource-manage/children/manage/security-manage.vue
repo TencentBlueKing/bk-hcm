@@ -32,6 +32,7 @@ import SecurityGroupSingleDeleteDialog from '../dialog/security-group/single-del
 import CloneSecurity, { IData, ICloneSecurityProps } from '../dialog/clone-security/index.vue';
 import SecurityGroupAssignDialog from '../dialog/security-group/assign.vue';
 import SecurityGroupUpdateMgmtAttrDialog from '../dialog/security-group/update-mgmt-attr.vue';
+import UnclaimedComp from '../components/security/unclaimed-comp/index.vue';
 import { MGMT_TYPE_MAP } from '@/constants/security-group';
 import { ISecurityGroupOperateItem, useSecurityGroupStore, SecurityGroupManageType } from '@/store/security-group';
 import FlexTag from '@/components/flex-tag/index.vue';
@@ -108,13 +109,25 @@ const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, ge
   fetchUrl,
   {
     handleAsyncRequest: async (data: any[]) => {
-      // 安全组需要异步加载一些关联资源数据
+      // 安全组需要异步加载一些关联资源数
       if (activeType.value !== 'group' || !data.length) return [];
 
       const security_group_ids: string[] = data.map((item: any) => item.id);
       const { ruleCountMap, relatedResourcesList } = await securityGroupStore.queryRuleCountAndRelatedResources(
         security_group_ids,
       );
+
+      // 异步加载未认领安全组的负责人信息
+      const unclaimedSgIds = data.filter((sg) => sg.bk_biz_id === -1).map((sg) => sg.id);
+      if (unclaimedSgIds.length) {
+        securityGroupStore.queryUsageBizMaintainers(unclaimedSgIds).then((maintainers) => {
+          datas.value = datas.value.map((sg) => {
+            const { managers: account_managers, details: usage_biz_maintainers } =
+              maintainers.find((maintainer) => maintainer.id === sg.id) ?? {};
+            return { ...sg, account_managers, usage_biz_maintainers };
+          });
+        });
+      }
 
       return data.map((item) => {
         const relResItem = relatedResourcesList.find((relRes) => relRes.id === item.id);
@@ -355,8 +368,12 @@ const groupColumns = [
     filter: true,
     isDefaultShow: true,
     width: 100,
-    render: ({ cell }: any) => {
+    render: ({ cell, data }: any) => {
       if (!cell || cell === -1) return '--';
+      const { mgmt_type, bk_biz_id } = data;
+      if (mgmt_type === 'biz' && bk_biz_id === -1 && whereAmI.value === Senarios.business) {
+        return h(UnclaimedComp, { data });
+      }
       return getNameFromBusinessMap(cell);
     },
   },
