@@ -1,19 +1,23 @@
 ### 描述
 
-- 该接口提供版本：v1.5.0+。
-- 该接口所需权限：资源查看。
-- 该接口功能描述：查询负载均衡列表。
+- 该接口提供版本：v9.9.9+。
+- 该接口所需权限：业务访问。
+- 该接口功能描述：查询安全组关联的cvm列表。
 
 ### URL
 
-POST /api/v1/cloud/load_balancers/list
+POST /bizs/{bk_biz_id}/security_groups/{sg_id}/related_resources/biz_resources/{res_biz_id}/cvms/list
 
 ### 输入参数
 
-| 参数名称   | 参数类型   | 必选 | 描述     |
-|--------|--------|----|--------|
-| filter | object | 是  | 查询过滤条件 |
-| page   | object | 是  | 分页设置   |
+| 参数名称       | 参数类型     | 必选 | 描述                                                |
+|------------|----------|----|---------------------------------------------------|
+| bk_biz_id  | int64    | 是  | 安全组业务ID                                           |
+| sg_id      | string   | 是  | 安全组ID                                             |
+| res_biz_id | int64    | 是  | 关联资源业务ID，当前业务为安全组管理业务时，可以任意关联资源业务id，否则只能指定当前业务id。 |
+| page       | object   | 是  | 分页设置                                              |
+| filter     | object   | 是  | 查询过滤条件                                            |
+| fields     | []string | 否  | 查询条件Field名称，具体可使用的用于查询的字段及其说明请看下面 - 查询参数介绍        |
 
 #### filter
 
@@ -94,52 +98,34 @@ POST /api/v1/cloud/load_balancers/list
 
 #### 查询参数介绍：
 
-| 参数名称               | 参数类型   | 描述                                   |
-|--------------------|--------|--------------------------------------|
-| id                 | string | 资源ID                                 |
-| cloud_id           | string | 云资源ID                                |
-| name               | string | 名称                                   |
-| vendor             | string | 供应商（枚举值：tcloud、aws、azure、gcp、huawei） |
-| bk_biz_id          | int64  | 业务ID                                 |
-| account_id         | string | 账号ID                                 |
-| region             | string | 地域                                   |
-| zones              | string | 主可用区                                 |
-| backup_zones       | string | 备可用区                                 |
-| cloud_vpc_id       | string | 云vpcID                               |
-| vpc_id             | string | vpcID                                |
-| lb_type            | string | 负载均衡类型                               |
-| ip_version         | string | 负载均衡网络版本                             |
-| memo               | string | 备注                                   |
-| status             | string | 状态                                   |
-| domain             | string | 域名                                   |
-| cloud_created_time | string | lb在云上创建时间，标准格式：2006-01-02T15:04:05Z  |
-| cloud_status_time  | string | lb状态变更时间，标准格式：2006-01-02T15:04:05Z   |
-| cloud_expired_time | string | lb过期时间，标准格式：2006-01-02T15:04:05Z     |
-| creator            | string | 创建者                                  |
-| reviser            | string | 修改者                                  |
-| created_at         | string | 创建时间，标准格式：2006-01-02T15:04:05Z       |
-| updated_at         | string | 修改时间，标准格式：2006-01-02T15:04:05Z       |
+| 参数名称                | 参数类型   | 描述                                   |
+|---------------------|--------|--------------------------------------|
+| cloud_id            | string | 云资源ID                                |
+| name                | string | 名称                                   |
+| bk_cloud_id         | int64  | 云区域ID                                |
+| account_id          | string | 账号ID                                 |
+| region              | string | 地域                                   |
+| zone                | string | 可用区                                  |
+| cloud_image_id      | string | 云镜像ID                                |
+| os_name             | string | 操作系统名称                               |
+| memo                | string | 备注                                   |
+| status              | string | 状态                                   |
+| recycle_status      | string | 回收状态                                 |
+| machine_type        | string | 设备类型                                 |
+| cloud_created_time  | string | Cvm在云上创建时间，标准格式：2006-01-02T15:04:05Z |
+| cloud_launched_time | string | Cvm启动时间，标准格式：2006-01-02T15:04:05Z    |
+| cloud_expired_time  | string | Cvm过期时间，标准格式：2006-01-02T15:04:05Z    |
+| creator             | string | 创建者                                  |
+| reviser             | string | 修改者                                  |
+| created_at          | string | 创建时间，标准格式：2006-01-02T15:04:05Z       |
+| updated_at          | string | 修改时间，标准格式：2006-01-02T15:04:05Z       |
 
 接口调用者可以根据以上参数自行根据查询场景设置查询规则。
 
 ### 调用示例
 
-#### 获取详细信息请求参数示例
-
-查询创建者是Jim的Cvm列表。
-
 ```json
 {
-  "filter": {
-    "op": "and",
-    "rules": [
-      {
-        "field": "created_at",
-        "op": "eq",
-        "value": "Jim"
-      }
-    ]
-  },
   "page": {
     "count": false,
     "start": 0,
@@ -148,31 +134,7 @@ POST /api/v1/cloud/load_balancers/list
 }
 ```
 
-#### 获取数量请求参数示例
-
-查询创建者是Jim的Cvm数量。
-
-```json
-{
-  "filter": {
-    "op": "and",
-    "rules": [
-      {
-        "field": "created_at",
-        "op": "eq",
-        "value": "Jim"
-      }
-    ]
-  },
-  "page": {
-    "count": true
-  }
-}
-```
-
 ### 响应示例
-
-#### 获取详细信息返回结果示例
 
 ```json
 {
@@ -182,24 +144,19 @@ POST /api/v1/cloud/load_balancers/list
     "details": [
       {
         "id": "00000001",
-        "cloud_id": "lb-123",
-        "name": "lb-test",
+        "cloud_id": "cvm-123",
+        "name": "cvm-test",
         "vendor": "tcloud",
         "bk_biz_id": -1,
         "account_id": "0000001",
         "region": "ap-hk",
-        "main_zones": [
-          "ap-hk-1"
+        "zone": "ap-hk-1",
+        "cloud_vpc_ids": [
+          "vpc-123"
         ],
-        "backup_zones": [
-          "ap-hk-2",
-          "ap-hk-3"
+        "cloud_subnet_ids": [
+          "subnet-123"
         ],
-        "cloud_vpc_id": "vpc-123",
-        "vpc_id": "00000002",
-        "network_type": "ipv4",
-        "domain": "",
-        "memo": "lb test",
         "status": "init",
         "private_ipv4_addresses": [
           "127.0.0.1"
@@ -208,28 +165,9 @@ POST /api/v1/cloud/load_balancers/list
         "public_ipv4_addresses": [
           "127.0.0.2"
         ],
-        "public_ipv6_addresses": [],
-        "cloud_created_time": "2023-02-12T14:47:39Z",
-        "cloud_status_time": "2023-02-12T14:47:39Z",
-        "cloud_expired_time": "2023-02-12T14:47:39Z",
-        "creator": "Jim",
-        "reviser": "Jim",
-        "created_at": "2023-02-12T14:47:39Z",
-        "updated_at": "2023-02-12T14:55:40Z"
+        "public_ipv6_addresses": []
       }
     ]
-  }
-}
-```
-
-#### 获取数量返回结果示例
-
-```json
-{
-  "code": 0,
-  "message": "ok",
-  "data": {
-    "count": 1
   }
 }
 ```
@@ -258,33 +196,14 @@ POST /api/v1/cloud/load_balancers/list
 | name                   | string       | 名称                                   |
 | vendor                 | string       | 供应商（枚举值：tcloud、aws、azure、gcp、huawei） |
 | bk_biz_id              | int64        | 业务ID                                 |
-| account_id             | string       | 账号ID                                 |
 | region                 | string       | 地域                                   |
-| zones                  | string       | 主可用区                                 |
-| backup_zones           | string       | 备可用区                                 |
-| cloud_vpc_id           | string       | 云vpcID                               |
-| vpc_id                 | string       | vpcID                                |
-| lb_type                | string       | 负载均衡类型                               |
-| ip_version             | string       | 负载均衡网络版本                             |
-| memo                   | string       | 备注                                   |
+| zone                   | string       | 可用区                                  |
+| cloud_vpc_ids          | string array | 云VpcID列表                             |
+| cloud_subnet_ids       | string array | 云子网ID列表                              |
 | status                 | string       | 状态                                   |
-| domain                 | string       | 域名                                   |
-| private_ipv4_addresses | string array | 内网ipv4地址                             |
-| private_ipv6_addresses | string array | 内网ipv6地址                             |
-| public_ipv4_addresses  | string array | 外网ipv4地址                             |
-| public_ipv6_addresses  | string array | 外网ipv6地址                             |
-| cloud_created_time     | string       | lb在云上创建时间，标准格式：2006-01-02T15:04:05Z  |
-| cloud_status_time      | string       | lb状态变更时间，标准格式：2006-01-02T15:04:05Z   |
-| cloud_expired_time     | string       | lb过期时间，标准格式：2006-01-02T15:04:05Z     |
-| creator                | string       | 创建者                                  |
-| reviser                | string       | 修改者                                  |
-| created_at             | string       | 创建时间，标准格式：2006-01-02T15:04:05Z       |
-| updated_at             | string       | 修改时间，标准格式：2006-01-02T15:04:05Z       |
+| private_ipv4_addresses | string array | 内网IPv4地址                             |
+| private_ipv6_addresses | string array | 内网IPv6地址                             |
+| public_ipv4_addresses  | string array | 公网IPv4地址                             |
+| public_ipv6_addresses  | string array | 公网IPv6地址                             |
 
-##### TCloud status 状态含义：
-
-| 状态值 | 含义   |
-|-----|------|
-| 0   | 创建中  |
-| 1   | 正常运行 |
 
