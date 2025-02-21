@@ -103,7 +103,7 @@ func (h *SGUsageBizRelSyncHandler) nextSGID(kt *kit.Kit) ([]corecloud.BaseSecuri
 	}
 	sgResp, err := h.dbCli.Global.SecurityGroup.ListSecurityGroup(kt.Ctx, kt.Header(), listReq)
 	if err != nil {
-		logs.Errorf("list sg of TCLoud %s at %s failed, err: %v, rid: %s", err, h.accountID, h.region, kt.Rid)
+		logs.Errorf("list sg of TCLoud %s at %s failed, err: %v, rid: %s", h.accountID, h.region, err, kt.Rid)
 		return nil, err
 	}
 
