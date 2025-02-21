@@ -130,6 +130,11 @@ export interface ISecurityGroupRelResCountItem {
   }>;
 }
 
+export type SecurityGroupRuleCountAndRelatedResourcesResult = {
+  ruleCountMap: Record<string, number>;
+  relatedResourcesList: ISecurityGroupRelResCountItem[];
+};
+
 // 安全组单个操作项的类型
 export type ISecurityGroupOperateItem = ISecurityGroupItem &
   ISecurityGroupRelResCountItem & { rule_count?: number } & { [key: string]: any };

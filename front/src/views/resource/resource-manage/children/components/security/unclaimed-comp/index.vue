@@ -32,7 +32,6 @@ const usageBizMaintainersContent = computed(() =>
     <span class="text">{{ mgmtBusinessName }}</span>
     <bk-popover width="480" placement="top" theme="light">
       <img class="unclaimed-icon" :src="unclaimedIcon" alt="unclaimed" />
-
       <template #content>
         <div class="tips-header">
           <exclamation-circle-shape fill="#EA3636" class="icon" />
