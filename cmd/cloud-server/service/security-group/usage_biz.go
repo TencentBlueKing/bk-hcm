@@ -23,24 +23,24 @@ import (
 	"fmt"
 
 	cloudserver "hcm/pkg/api/cloud-server"
+	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
+	proto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/thirdparty/esb/cmdb"
 	"hcm/pkg/tools/hooks/handler"
+	"hcm/pkg/tools/slice"
 )
 
 // BizListSGUsageBizMaintainers list security group usage biz maintainers.
 func (svc *securityGroupSvc) BizListSGUsageBizMaintainers(cts *rest.Contexts) (interface{}, error) {
 
-	bizID, err := cts.PathParameter("bk_biz_id").Int64()
-	if err != nil {
-		return nil, err
-	}
 	req := new(cloudserver.ListSGUsageBizMaintainerReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -65,17 +65,21 @@ func (svc *securityGroupSvc) BizListSGUsageBizMaintainers(cts *rest.Contexts) (i
 	}
 	sgMap := make(map[string]cloud.BaseSecurityGroup, len(securityGroups))
 	usageBizIDs := make([]int64, 0, len(securityGroups))
+	accountIDs := make([]string, 0, len(securityGroups))
 	for _, sg := range securityGroups {
-		if sg.MgmtBizID != bizID {
-			logs.Errorf("security group %s is not in biz %d, rid: %s", sg.ID, bizID, cts.Kit.Rid)
-			return nil, fmt.Errorf("security group %s is not in biz %d", sg.ID, bizID)
-		}
 		if sg.BkBizID != constant.UnassignedBiz {
 			logs.Errorf("security group %s has been assigned to biz %d, rid: %s", sg.ID, sg.BkBizID, cts.Kit.Rid)
 			return nil, fmt.Errorf("security group %s has been assigned to biz %d", sg.ID, sg.BkBizID)
 		}
 		usageBizIDs = append(usageBizIDs, sg.UsageBizIDs...)
+		accountIDs = append(accountIDs, sg.AccountID)
 		sgMap[sg.ID] = sg
+	}
+
+	accountMap, err := svc.listAccountMapByIDs(cts.Kit, accountIDs)
+	if err != nil {
+		logs.Errorf("list account by ids failed, err: %v, ids: %v, rid: %s", err, accountIDs, cts.Kit.Rid)
+		return nil, err
 	}
 
 	bizMap, err := svc.searchBusinessByBizIDs(cts.Kit, usageBizIDs)
@@ -84,13 +88,41 @@ func (svc *securityGroupSvc) BizListSGUsageBizMaintainers(cts *rest.Contexts) (i
 		return nil, err
 	}
 
-	return buildSGUsageBizMaintainerResult(cts.Kit, req.SecurityGroupIDs, sgMap, bizMap)
+	return buildSGUsageBizMaintainerResult(cts.Kit, req.SecurityGroupIDs, sgMap, bizMap, accountMap)
+}
+
+func (svc *securityGroupSvc) listAccountMapByIDs(kt *kit.Kit, accountIDs []string) (
+	map[string]*cloud.BaseAccount, error) {
+
+	accountIDs = slice.Unique(accountIDs)
+	accountMap := make(map[string]*cloud.BaseAccount, len(accountIDs))
+	for _, ids := range slice.Split(accountIDs, int(core.DefaultMaxPageLimit)) {
+		listReq := &proto.AccountListReq{
+			Filter: tools.ContainersExpression("id", ids),
+			Page:   core.NewDefaultBasePage(),
+		}
+		resp, err := svc.client.DataService().Global.Account.List(kt.Ctx, kt.Header(), listReq)
+		if err != nil {
+			logs.Errorf("list account failed, err: %v, ids: %v, rid: %s", err, ids, kt.Rid)
+			return nil, err
+		}
+		for _, account := range resp.Details {
+			accountMap[account.ID] = account
+		}
+	}
+	for _, id := range accountIDs {
+		if _, ok := accountMap[id]; !ok {
+			logs.Errorf("account %s not found, rid: %s", id, kt.Rid)
+			return nil, fmt.Errorf("account %s not found", id)
+		}
+	}
+
+	return accountMap, nil
 }
 
 // buildSGUsageBizMaintainerResult 构建安全组使用业务运维列表结果
-func buildSGUsageBizMaintainerResult(kit *kit.Kit, sgIDs []string,
-	sgMap map[string]cloud.BaseSecurityGroup, bizMap map[int64]cmdb.Biz) (
-	[]*cloudserver.ListSGUsageBizMaintainerResult, error) {
+func buildSGUsageBizMaintainerResult(kit *kit.Kit, sgIDs []string, sgMap map[string]cloud.BaseSecurityGroup,
+	bizMap map[int64]cmdb.Biz, accountMap map[string]*cloud.BaseAccount) ([]*cloudserver.ListSGUsageBizMaintainerResult, error) {
 
 	result := make([]*cloudserver.ListSGUsageBizMaintainerResult, 0, len(sgIDs))
 	for _, sgID := range sgIDs {
@@ -99,8 +131,14 @@ func buildSGUsageBizMaintainerResult(kit *kit.Kit, sgIDs []string,
 			logs.Errorf("security group %s not found, rid: %s", sgID, kit.Rid)
 			return nil, fmt.Errorf("security group %s not found", sgID)
 		}
+		account, ok := accountMap[sg.AccountID]
+		if !ok {
+			logs.Errorf("account %s not found, rid: %s", sg.AccountID, kit.Rid)
+			return nil, fmt.Errorf("account %s not found", sg.AccountID)
+		}
 		one := &cloudserver.ListSGUsageBizMaintainerResult{
-			ID: sgID,
+			ID:       sgID,
+			Managers: account.Managers,
 		}
 		for _, usageBizID := range sg.UsageBizIDs {
 			biz, ok := bizMap[usageBizID]

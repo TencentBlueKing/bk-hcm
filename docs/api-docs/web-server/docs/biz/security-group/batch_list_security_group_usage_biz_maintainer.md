@@ -23,7 +23,6 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/security_groups/usage_biz_maintainers/list
 }
 ```
 
-- 传入的安全组对应的管理业务需与bk_biz_id一致。
 - 已分配的安全组无法查询
 
 ### 响应示例
@@ -35,6 +34,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/security_groups/usage_biz_maintainers/list
   "data": [
     {
       "id": "00000001",
+      "managers": "zhangsan",
       "details": [
         {
           "bk_biz_id": 1,
@@ -50,6 +50,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/security_groups/usage_biz_maintainers/list
     },
     {
       "id": "00000002",
+      "managers": "zhangsan",
       "details": [
         {
           "bk_biz_id": 1,
@@ -72,10 +73,11 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/security_groups/usage_biz_maintainers/list
 
 #### data[n]
 
-| 参数名称    | 参数类型   | 描述     |
-|---------|--------|--------|
-| id      | string | 安全组ID  |
-| details | array  | 使用业务详情 |
+| 参数名称    | 参数类型     | 描述      |
+|---------|----------|---------|
+| id      | string   | 安全组ID   |
+| manager | []string | 账号负责人列表 |
+| details | array    | 使用业务详情  |
 
 #### details[n]
 
