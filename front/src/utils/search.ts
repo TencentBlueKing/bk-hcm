@@ -163,7 +163,7 @@ export const getSimpleConditionBySearchSelect = (
   searchValue: ISearchSelectValue,
   options: Array<{ field: string; formatter: Function }> = [],
 ) => {
-  // 非数组，直接返回空函数，不过滤
+  // 非数组，直接返回空
   if (!Array.isArray(searchValue)) return null;
 
   const applyFormatters = (value: string, field: string) =>
@@ -184,7 +184,10 @@ export const getLocalFilterFnBySearchSelect = (
   searchValue: ISearchSelectValue,
   options: Array<{ field: string; formatter: Function }> = [],
 ) => {
-  const condition = getSimpleConditionBySearchSelect(searchValue, options) ?? {};
+  // 非数组，直接返回空函数，不过滤
+  if (!Array.isArray(searchValue)) return () => true;
+
+  const condition = getSimpleConditionBySearchSelect(searchValue, options);
   const rules = Object.entries(condition).map(([key, values]) => ({ key, values }));
 
   // 构建过滤函数

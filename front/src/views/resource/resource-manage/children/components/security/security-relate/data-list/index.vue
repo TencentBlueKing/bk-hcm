@@ -31,6 +31,7 @@ const columns = ref(getColumns(props.resourceName, props.operation));
 const { settings } = useTableSettings(columns.value);
 const { handlePageChange, handlePageSizeChange, handleSort } = usePage();
 const { selections, handleSelectAll, handleSelectChange, resetSelections } = useTableSelection({
+  rowKey: 'cloud_id',
   isRowSelectable: props.isRowSelectEnable,
 });
 
