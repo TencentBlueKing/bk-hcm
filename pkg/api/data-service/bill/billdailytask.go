@@ -46,7 +46,7 @@ type BillDailyPullTaskCreateReq struct {
 	VersionID          int                         `json:"version_id" validate:"required"`
 	State              enumor.MainRawBillPullState `json:"state" validate:"required"`
 	Count              int64                       `json:"count" validate:"omitempty"`
-	Currency           string                      `json:"currency" validate:"omitempty"`
+	Currency           enumor.CurrencyCode         `json:"currency" validate:"omitempty"`
 	Cost               decimal.Decimal             `json:"cost" validate:"omitempty"`
 	FlowID             string                      `json:"flow_id" validate:"omitempty"`
 	SplitFlowID        string                      `json:"split_flow_id" validate:"omitempty"`
