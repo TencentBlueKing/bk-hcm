@@ -438,7 +438,7 @@ const groupColumns = [
       // 资源下：状态=未分配，才可以操作
       // 业务下：管理业务=当前业务 && 状态=已分配，才可以配置规则、删除
       const isAssigned = data.bk_biz_id !== -1;
-      const isCurrentBizManage = whereAmI.value === Senarios.business && data.mgmt_biz_id === getBizsId();
+      const isCurrentBizManage = data.mgmt_biz_id === getBizsId();
 
       const authMap: Record<string, string> = {
         rule: props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate',
@@ -463,26 +463,30 @@ const groupColumns = [
         {
           type: 'rule',
           name: t('配置规则'),
-          disabled: (props.isResourcePage && isAssigned) || !(isCurrentBizManage && isAssigned),
+          resourcePageDisabled: isAssigned,
+          businessPageDisabled: !(isCurrentBizManage && isAssigned),
         },
         {
           type: 'clone',
           name: t('克隆'),
-          disabled: props.isResourcePage && isAssigned,
+          resourcePageDisabled: isAssigned,
           hidden: props.isResourcePage,
         },
         {
           type: 'delete',
           name: t('删除'),
-          disabled: (props.isResourcePage && isAssigned) || !(isCurrentBizManage && isAssigned),
+          resourcePageDisabled: isAssigned,
+          businessPageDisabled: !(isCurrentBizManage && isAssigned),
         },
       ];
 
       return h(
         'div',
         { class: 'operation-cell' },
-        operationList.map(({ type, name, disabled, hidden }) => {
+        operationList.map(({ type, name, resourcePageDisabled, businessPageDisabled, hidden }) => {
           if (hidden) return null;
+          const disabled = props.isResourcePage ? resourcePageDisabled : businessPageDisabled;
+
           return h(
             Button,
             {
