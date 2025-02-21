@@ -213,6 +213,7 @@ func (req *ListSGUsageBizMaintainerReq) Validate() error {
 
 // ListSGUsageBizMaintainerResult define list security group usage biz maintainer result.
 type ListSGUsageBizMaintainerResult struct {
-	ID      string     `json:"id"`
-	Details []cmdb.Biz `json:"details"`
+	ID       string     `json:"id"`
+	Managers []string   `json:"managers"`
+	Details  []cmdb.Biz `json:"details"`
 }
