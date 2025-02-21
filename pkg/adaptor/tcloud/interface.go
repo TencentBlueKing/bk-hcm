@@ -197,4 +197,6 @@ type TCloud interface {
 	ResetCvmInstance(kt *kit.Kit, opt *cvm.ResetInstanceOption) (*poller.BaseDoneResult, error)
 
 	BatchCvmAssociateSecurityGroups(kt *kit.Kit, opt *cvm.TCloudAssociateSecurityGroupsOption) error
+
+	CloneSecurityGroup(kt *kit.Kit, opt *securitygroup.TCloudSecurityGroupCloneOption) (*v20170312.SecurityGroup, error)
 }
