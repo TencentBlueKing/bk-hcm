@@ -40,6 +40,7 @@ import (
 	"hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/adaptor/types/security-group-rule"
 	"hcm/pkg/adaptor/types/subnet"
+	typestag "hcm/pkg/adaptor/types/tag"
 	"hcm/pkg/adaptor/types/zone"
 	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/kit"
@@ -197,4 +198,7 @@ type TCloud interface {
 	ResetCvmInstance(kt *kit.Kit, opt *cvm.ResetInstanceOption) (*poller.BaseDoneResult, error)
 
 	BatchCvmAssociateSecurityGroups(kt *kit.Kit, opt *cvm.TCloudAssociateSecurityGroupsOption) error
+
+	ListTags(kt *kit.Kit, listOpt *typestag.TCloudTagListOpt) (*typestag.TCloudTagListResult, error)
+	TagResources(kt *kit.Kit, tagOpt *typestag.TCloudTagResOpt) (*typestag.TCloudTagResourcesResp, error)
 }
