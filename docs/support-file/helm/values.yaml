@@ -538,7 +538,7 @@ accountserver:
     mainAccountSummarySyncDuration:
     rootAccountSummarySyncDuration:
     dailySummarySyncDuration:
-
+    monthTaskSyncDuration:
   billAllocation:
     # aws savings plans allocation option
     awsSavingsPlans:

@@ -836,6 +836,7 @@ var (
 	defaultMainAccountSummarySyncDuration = 10 * time.Minute
 	defaultRootAccountSummarySyncDuration = 10 * time.Minute
 	defaultDailySummarySyncDuration       = 30 * time.Second
+	defaultMonthTaskSyncDuration          = 30 * time.Second
 )
 
 // BillControllerOption bill controller option
@@ -845,6 +846,7 @@ type BillControllerOption struct {
 	ControllerSyncDuration         *time.Duration `yaml:"controllerSyncDuration,omitempty"`
 	MainAccountSummarySyncDuration *time.Duration `yaml:"mainAccountSummarySyncDuration,omitempty"`
 	RootAccountSummarySyncDuration *time.Duration `yaml:"rootAccountSummarySyncDuration,omitempty"`
+	MonthTaskSyncDuration          *time.Duration `yaml:"monthTaskSyncDuration,omitempty"`
 	DailySummarySyncDuration       *time.Duration `yaml:"dailySummarySyncDuration,omitempty"`
 }
 
@@ -857,6 +859,9 @@ func (bco *BillControllerOption) trySetDefault() {
 	}
 	if bco.RootAccountSummarySyncDuration == nil {
 		bco.RootAccountSummarySyncDuration = &defaultRootAccountSummarySyncDuration
+	}
+	if bco.MonthTaskSyncDuration == nil {
+		bco.MonthTaskSyncDuration = &defaultMonthTaskSyncDuration
 	}
 	if bco.DailySummarySyncDuration == nil {
 		bco.DailySummarySyncDuration = &defaultDailySummarySyncDuration

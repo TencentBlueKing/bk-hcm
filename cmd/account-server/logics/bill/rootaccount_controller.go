@@ -150,7 +150,7 @@ func (rac *RootAccountController) runCalculateBillSummaryLoop(kt *kit.Kit) {
 
 func (rac *RootAccountController) runMonthTaskLoop(kt *kit.Kit) {
 
-	ticker := time.NewTicker(*cc.AccountServer().Controller.RootAccountSummarySyncDuration)
+	ticker := time.NewTicker(*cc.AccountServer().Controller.MonthTaskSyncDuration)
 	for {
 		runner := monthtask.NewDefaultMonthTaskRunner(kt,
 			rac.Vendor, rac.RootAccountID, rac.RootAccountCloudID, rac.Client)

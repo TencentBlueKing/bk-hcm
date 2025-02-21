@@ -71,6 +71,7 @@ controller:
   mainAccountSummarySyncDuration:
   rootAccountSummarySyncDuration:
   dailySummarySyncDuration:
+  monthTaskSyncDuration: 
 
 # tmp file dir, default: /tmp
 tmpFileDir: /tmp
