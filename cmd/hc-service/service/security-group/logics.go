@@ -181,10 +181,10 @@ func resCountMapToSGStatisticResp(
 	sgIDToResourceCountMap map[string]map[string]int64) *proto.ListSecurityGroupStatisticResp {
 
 	result := &proto.ListSecurityGroupStatisticResp{
-		Details: make([]proto.SecurityGroupStatisticItem, 0, len(sgIDToResourceCountMap)),
+		Details: make([]*proto.SecurityGroupStatisticItem, 0, len(sgIDToResourceCountMap)),
 	}
 	for sgID, resourceMap := range sgIDToResourceCountMap {
-		one := proto.SecurityGroupStatisticItem{
+		one := &proto.SecurityGroupStatisticItem{
 			ID:        sgID,
 			Resources: make([]proto.SecurityGroupStatisticResource, 0, len(resourceMap)),
 		}
