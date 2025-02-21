@@ -911,6 +911,11 @@ const handleChangeEffectConfirm = () => {
   router.push(routeInfo);
 };
 
+const securityHandleShowClone = (data: IData) => {
+  cloneSecurityData.isShow = true;
+  cloneSecurityData.data = data;
+};
+
 const securityHandleShowDelete = (data: any) => {
   InfoBox({
     title: '请确认是否删除',
