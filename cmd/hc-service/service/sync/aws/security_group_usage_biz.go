@@ -91,7 +91,8 @@ func (h *SGUsageBizRelSyncHandler) Sync(kt *kit.Kit) error {
 func (h *SGUsageBizRelSyncHandler) nextSGID(kt *kit.Kit) ([]corecloud.BaseSecurityGroup, error) {
 
 	listReq := &cloud.SecurityGroupListReq{
-		Field: []string{"id", "cloud_id", "region", "vendor", "usage_biz_ids"},
+		Field: []string{"id", "cloud_id", "region", "vendor",
+			"usage_biz_ids", "mgmt_biz_id", "mgmt_type", "bk_biz_id", "manager", "bak_manager"},
 		Filter: tools.ExpressionAnd(
 			tools.RuleEqual("account_id", h.accountID),
 			tools.RuleEqual("region", h.region),

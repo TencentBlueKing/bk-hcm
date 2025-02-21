@@ -202,7 +202,7 @@ func (cli *client) getSGCloudIDToLocalIDMap(kt *kit.Kit, allSgCloudIDs []string)
 		}
 		sgResp, err := cli.dbCli.Global.SecurityGroup.ListSecurityGroup(kt.Ctx, kt.Header(), sgReq)
 		if err != nil {
-			logs.Errorf("fail to get sg list, err: %v, sg ids: %s rid: %s", err, idxBatch, kt.Rid)
+			logs.Errorf("fail to get sg list, err: %v, sg ids: %v rid: %s", err, idxBatch, kt.Rid)
 			return nil, err
 		}
 

@@ -50,7 +50,7 @@ func NewUsageBizRelManager(dbCli *dataservice.Client) *UsageBizRelManager {
 
 // SyncSecurityGroupUsageBiz 同步安全组使用业务
 func (mgr *UsageBizRelManager) SyncSecurityGroupUsageBiz(kt *kit.Kit, sg *cloudcore.BaseSecurityGroup) error {
-	if slice.IsItemInSlice(sg.UsageBizIDs, -1) {
+	if slice.IsItemInSlice(sg.UsageBizIDs, constant.AttachedAllBiz) {
 		// 已经是最大范围了
 		return nil
 	}
@@ -76,11 +76,14 @@ func (mgr *UsageBizRelManager) SyncSecurityGroupUsageBiz(kt *kit.Kit, sg *cloudc
 	return nil
 }
 
-func (mgr *UsageBizRelManager) querySGIDMap(kt *kit.Kit, sg *cloudcore.BaseSecurityGroup) (
-	[]int64, error) {
+func (mgr *UsageBizRelManager) querySGIDMap(kt *kit.Kit, sg *cloudcore.BaseSecurityGroup) ([]int64, error) {
 
 	var usageBizResCountMap = make(map[int64]int, len(sg.UsageBizIDs))
 	for i := range sg.UsageBizIDs {
+		if sg.UsageBizIDs[i] == sg.MgmtBizID {
+			// 跳过管理业务
+			continue
+		}
 		usageBizResCountMap[sg.UsageBizIDs[i]] = 0
 	}
 
@@ -126,6 +129,10 @@ func (mgr *UsageBizRelManager) querySGIDMap(kt *kit.Kit, sg *cloudcore.BaseSecur
 					// 跳过无效业务id
 					continue
 				}
+				if basicInfo[resID].BkBizID == sg.MgmtBizID {
+					// 跳过管理业务id
+					continue
+				}
 				usageBizResCountMap[basicInfo[resID].BkBizID] += 1
 			}
 		}
@@ -138,7 +145,7 @@ func (mgr *UsageBizRelManager) querySGIDMap(kt *kit.Kit, sg *cloudcore.BaseSecur
 	})
 	if sg.MgmtBizID > 0 {
 		// 保证管理业务id在第一位
-		newBizList := make([]int64, 0, len(bizList)+1)
+		newBizList := make([]int64, len(usageBizResCountMap)+1)
 		newBizList[0] = sg.MgmtBizID
 		copy(newBizList[1:], bizList)
 		bizList = newBizList
