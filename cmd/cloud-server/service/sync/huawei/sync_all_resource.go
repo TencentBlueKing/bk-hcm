@@ -33,6 +33,9 @@ import (
 
 var syncConcurrencyCount = 10
 
+// ResSyncFunc sync resource func
+type ResSyncFunc func(kt *kit.Kit, cliSet *client.ClientSet, accountID string, sd *detail.SyncDetail) error
+
 // SyncAllResourceOption ...
 type SyncAllResourceOption struct {
 	AccountID string `json:"account_id" validate:"required"`
@@ -86,37 +89,34 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet,
 		Vendor:    string(enumor.HuaWei),
 	}
 
-	if hitErr = SyncDisk(kt, cliSet, opt.AccountID, sd); hitErr != nil {
-		return enumor.DiskCloudResType, hitErr
-	}
-
-	if hitErr = SyncVpc(kt, cliSet, opt.AccountID, sd); hitErr != nil {
-		return enumor.VpcCloudResType, hitErr
-	}
-
-	if hitErr = SyncSubnet(kt, cliSet, opt.AccountID, sd); hitErr != nil {
-		return enumor.SubnetCloudResType, hitErr
-	}
-
-	if hitErr = SyncEip(kt, cliSet, opt.AccountID, sd); hitErr != nil {
-		return enumor.EipCloudResType, hitErr
-	}
-
-	if hitErr = SyncSG(kt, cliSet, opt.AccountID, sd); hitErr != nil {
-		return enumor.SecurityGroupCloudResType, hitErr
-	}
-
-	if hitErr = SyncCvm(kt, cliSet, opt.AccountID, sd); hitErr != nil {
-		return enumor.CvmCloudResType, hitErr
-	}
-
-	if hitErr = SyncRouteTable(kt, cliSet, opt.AccountID, sd); hitErr != nil {
-		return enumor.RouteTableCloudResType, hitErr
-	}
-
-	if hitErr = SyncSubAccount(kt, cliSet, opt.AccountID, sd); hitErr != nil {
-		return enumor.SubAccountCloudResType, hitErr
+	for _, resType := range syncOrder {
+		if hitErr = syncFuncMap[resType](kt, cliSet, opt.AccountID, sd); hitErr != nil {
+			return resType, hitErr
+		}
 	}
 
 	return "", nil
+}
+
+var syncOrder = []enumor.CloudResourceType{
+	enumor.DiskCloudResType,
+	enumor.VpcCloudResType,
+	enumor.SubnetCloudResType,
+	enumor.EipCloudResType,
+	enumor.SecurityGroupCloudResType,
+	enumor.CvmCloudResType,
+	enumor.RouteTableCloudResType,
+	enumor.SubAccountCloudResType,
+	enumor.SecurityGroupUsageBizRelResType,
+}
+var syncFuncMap = map[enumor.CloudResourceType]ResSyncFunc{
+	enumor.DiskCloudResType:                SyncDisk,
+	enumor.VpcCloudResType:                 SyncVpc,
+	enumor.SubnetCloudResType:              SyncSubnet,
+	enumor.EipCloudResType:                 SyncEip,
+	enumor.SecurityGroupCloudResType:       SyncSG,
+	enumor.CvmCloudResType:                 SyncCvm,
+	enumor.RouteTableCloudResType:          SyncRouteTable,
+	enumor.SubAccountCloudResType:          SyncSubAccount,
+	enumor.SecurityGroupUsageBizRelResType: SyncSGUsageBizRel,
 }

@@ -252,7 +252,9 @@ cloudserver:
         caFile:
         # the password to decrypt the certificate.
         password:
-
+  taskManagement:
+    # disable task management loop, debug purpose only
+    disable: false
 
   ## pod配置
   ##

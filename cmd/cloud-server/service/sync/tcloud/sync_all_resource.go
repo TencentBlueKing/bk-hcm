@@ -91,17 +91,18 @@ func SyncAllResource(kt *kit.Kit, cliSet *client.ClientSet,
 	}
 
 	syncFuncMap := map[enumor.CloudResourceType]ResSyncFunc{
-		enumor.DiskCloudResType:          SyncDisk,
-		enumor.VpcCloudResType:           SyncVpc,
-		enumor.SubnetCloudResType:        SyncSubnet,
-		enumor.EipCloudResType:           SyncEip,
-		enumor.ArgumentTemplateResType:   SyncArgsTpl,
-		enumor.SecurityGroupCloudResType: SyncSG,
-		enumor.CvmCloudResType:           SyncCvm,
-		enumor.CertCloudResType:          SyncCert,
-		enumor.LoadBalancerCloudResType:  SyncLoadBalancer,
-		enumor.RouteTableCloudResType:    SyncRouteTable,
-		enumor.SubAccountCloudResType:    SyncSubAccount,
+		enumor.DiskCloudResType:                SyncDisk,
+		enumor.VpcCloudResType:                 SyncVpc,
+		enumor.SubnetCloudResType:              SyncSubnet,
+		enumor.EipCloudResType:                 SyncEip,
+		enumor.ArgumentTemplateResType:         SyncArgsTpl,
+		enumor.SecurityGroupCloudResType:       SyncSG,
+		enumor.CvmCloudResType:                 SyncCvm,
+		enumor.CertCloudResType:                SyncCert,
+		enumor.LoadBalancerCloudResType:        SyncLoadBalancer,
+		enumor.RouteTableCloudResType:          SyncRouteTable,
+		enumor.SubAccountCloudResType:          SyncSubAccount,
+		enumor.SecurityGroupUsageBizRelResType: SyncSGUsageBizRel,
 	}
 
 	for _, resType := range getSyncOrder() {
@@ -126,5 +127,6 @@ func getSyncOrder() []enumor.CloudResourceType {
 		enumor.LoadBalancerCloudResType,
 		enumor.RouteTableCloudResType,
 		enumor.SubAccountCloudResType,
+		enumor.SecurityGroupUsageBizRelResType,
 	}
 }
