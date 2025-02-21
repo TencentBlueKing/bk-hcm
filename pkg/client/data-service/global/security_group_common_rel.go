@@ -42,13 +42,15 @@ type SGCommonRelClient struct {
 }
 
 // BatchCreateSgCommonRels security group common rels.
-func (cli *SGCommonRelClient) BatchCreateSgCommonRels(kt *kit.Kit, request *protocloud.SGCommonRelBatchCreateReq) error {
+func (cli *SGCommonRelClient) BatchCreateSgCommonRels(kt *kit.Kit,
+	request *protocloud.SGCommonRelBatchCreateReq) error {
 	return common.RequestNoResp[protocloud.SGCommonRelBatchCreateReq](cli.client, rest.POST, kt, request,
 		"/security_group_common_rels/batch/create")
 }
 
 // BatchUpsertSgCommonRels security group common rels.
-func (cli *SGCommonRelClient) BatchUpsertSgCommonRels(kt *kit.Kit, request *protocloud.SGCommonRelBatchUpsertReq) error {
+func (cli *SGCommonRelClient) BatchUpsertSgCommonRels(kt *kit.Kit,
+	request *protocloud.SGCommonRelBatchUpsertReq) error {
 	return common.RequestNoResp[protocloud.SGCommonRelBatchUpsertReq](cli.client, rest.POST, kt, request,
 		"/security_group_common_rels/batch/upsert")
 }
@@ -60,7 +62,8 @@ func (cli *SGCommonRelClient) BatchDeleteSgCommonRels(kt *kit.Kit, request *prot
 }
 
 // ListSgCommonRels security group common rels.
-func (cli *SGCommonRelClient) ListSgCommonRels(kt *kit.Kit, request *core.ListReq) (*protocloud.SGCommonRelListResult, error) {
+func (cli *SGCommonRelClient) ListSgCommonRels(kt *kit.Kit, request *core.ListReq) (*protocloud.SGCommonRelListResult,
+	error) {
 	return common.Request[core.ListReq, protocloud.SGCommonRelListResult](cli.client, rest.POST, kt, request,
 		"/security_group_common_rels/list")
 }
@@ -71,4 +74,20 @@ func (cli *SGCommonRelClient) ListWithSecurityGroup(kt *kit.Kit,
 
 	return common.Request[protocloud.SGCommonRelWithSecurityGroupListReq, []corecloud.SGCommonRelWithBaseSecurityGroup](
 		cli.client, rest.POST, kt, request, "/security_group_common_rels/with/security_group/list")
+}
+
+// ListWithCVMSummary security group common rels with cvm summary.
+func (cli *SGCommonRelClient) ListWithCVMSummary(kt *kit.Kit, request *protocloud.SGCommonRelListReq) (
+	*protocloud.SGCommonRelWithCVMListResp, error) {
+
+	return common.Request[protocloud.SGCommonRelListReq, protocloud.SGCommonRelWithCVMListResp](
+		cli.client, rest.POST, kt, request, "/security_group_common_rels/with/cvm/list")
+}
+
+// ListWithLBSummary security group common rels with load balancer summary.
+func (cli *SGCommonRelClient) ListWithLBSummary(kt *kit.Kit, request *protocloud.SGCommonRelListReq) (
+	*protocloud.SGCommonRelWithLBListResp, error) {
+
+	return common.Request[protocloud.SGCommonRelListReq, protocloud.SGCommonRelWithLBListResp](
+		cli.client, rest.POST, kt, request, "/security_group_common_rels/with/load_balancer/list")
 }
