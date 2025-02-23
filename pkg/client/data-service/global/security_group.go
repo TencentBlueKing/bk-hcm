@@ -113,6 +113,7 @@ func (cli *SecurityGroupClient) BatchUpdateSecurityGroupCommonInfo(ctx context.C
 	return nil
 }
 
+// BatchUpdateSecurityGroupMgmtAttr batch update security group management attribute.
 func (cli *SecurityGroupClient) BatchUpdateSecurityGroupMgmtAttr(ctx context.Context, h http.Header,
 	request *protocloud.BatchUpdateSecurityGroupMgmtAttrReq) error {
 
