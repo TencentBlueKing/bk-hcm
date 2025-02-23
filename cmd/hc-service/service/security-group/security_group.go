@@ -62,7 +62,7 @@ func InitSecurityGroupService(cap *capability.Capability) {
 	h.Add("UpdateHuaWeiSecurityGroup", "PATCH", "/vendors/huawei/security_groups/{id}", sg.UpdateHuaWeiSecurityGroup)
 	h.Add("CreateHuaWeiSGRule", "POST", "/vendors/huawei/security_groups/{security_group_id}/rules/create",
 		sg.CreateHuaWeiSGRule)
-	h.Add("DeleteAwsSGRule", "DELETE", "/vendors/huawei/security_groups/{security_group_id}/rules/{id}",
+	h.Add("DeleteHuaWeiSGRule", "DELETE", "/vendors/huawei/security_groups/{security_group_id}/rules/{id}",
 		sg.DeleteHuaWeiSGRule)
 	h.Add("HuaweiListSecurityGroupStatistic", "POST", "/vendors/huawei/security_groups/statistic",
 		sg.HuaweiListSecurityGroupStatistic)
