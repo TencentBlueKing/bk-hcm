@@ -377,6 +377,11 @@ func (s WebServerSetting) Validate() error {
 	return nil
 }
 
+// LabelSwitch switch for labels
+type LabelSwitch struct {
+	AwsCN bool `json:"awsCN" yaml:"awsCN"`
+}
+
 // TaskServerSetting defines task server used setting options.
 type TaskServerSetting struct {
 	Network  Network   `yaml:"network"`
@@ -384,6 +389,8 @@ type TaskServerSetting struct {
 	Database DataBase  `yaml:"database"`
 	Log      LogOption `yaml:"log"`
 	Async    Async     `yaml:"async"`
+
+	UseLabel LabelSwitch `yaml:"useLabel"`
 }
 
 // trySetFlagBindIP try set flag bind ip.

@@ -77,7 +77,7 @@ func (ds *cloudServer) prepare(opt *options.Option) error {
 	metrics.InitMetrics(net.JoinHostPort(network.BindIP, strconv.Itoa(int(network.Port))))
 
 	// init service discovery.
-	svcOpt := serviced.NewServiceOption(cc.CloudServerName, cc.CloudServer().Network)
+	svcOpt := serviced.NewServiceOption(cc.CloudServerName, cc.CloudServer().Network, opt.Sys)
 	discOpt := serviced.DiscoveryOption{
 		Services: []cc.Name{cc.DataServiceName, cc.HCServiceName, cc.AuthServerName, cc.TaskServerName},
 	}

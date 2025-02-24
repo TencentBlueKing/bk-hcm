@@ -82,7 +82,7 @@ func (ds *dataService) prepare(opt *options.Option) error {
 	ds.svc = svc
 
 	// register data service.
-	svcOpt := serviced.NewServiceOption(cc.DataServiceName, cc.DataService().Network)
+	svcOpt := serviced.NewServiceOption(cc.DataServiceName, cc.DataService().Network, opt.Sys)
 	sd, err := serviced.NewService(cc.DataService().Service, svcOpt)
 	if err != nil {
 		return fmt.Errorf("new service discovery failed, err: %v", err)
