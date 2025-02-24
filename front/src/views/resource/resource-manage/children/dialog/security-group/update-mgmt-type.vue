@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import { Message } from 'bkui-vue';
 import { useSecurityGroupStore, type ISecurityGroupItem, SecurityGroupManageType } from '@/store/security-group';
 
@@ -22,6 +22,11 @@ const formData = reactive({
   manager: undefined,
   bak_manager: undefined,
 });
+const alertTitle = computed(() =>
+  formData.mgmt_type === SecurityGroupManageType.PLATFORM
+    ? '注意：当前正在将安全组的管理类型设置为平台管理。管理操作仅允许在平台管理，如修改负责人，规则管理等；在业务只读，可绑定解绑实例，不允许管理修改。配置后，不允许切换管理类型。'
+    : '注意：当前正在将安全组的管理类型设置为业务管理。将在业务下进行管理，如负责人修改，规则管理等。',
+);
 
 const formRef = ref(null);
 
@@ -50,11 +55,7 @@ const handleDialogConfirm = async () => {
     @closed="closeDialog"
     @confirm="handleDialogConfirm"
   >
-    <bk-alert
-      class="update-alert"
-      theme="error"
-      title="我是提示我是提示我是提示我是提示我是提示我是提示我是提示我是提示我是提示我是提示"
-    />
+    <bk-alert class="update-alert" theme="error" :title="alertTitle" />
     <bk-form form-type="vertical" :model="formData" ref="formRef">
       <bk-form-item property="mgmt_type">
         <bk-radio-group v-model="formData.mgmt_type" type="card">

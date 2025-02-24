@@ -2,7 +2,7 @@
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 import { useResourceStore } from '@/store';
 import { useI18n } from 'vue-i18n';
-import { inject, PropType, h, withDirectives, reactive } from 'vue';
+import { inject, PropType, h, withDirectives, reactive, computed } from 'vue';
 import { bkTooltips, Message, Tag, Button } from 'bkui-vue';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
@@ -15,7 +15,7 @@ import UpdateMgmtTypeDialog from '../../dialog/security-group/update-mgmt-type.v
 import UpdateMgmtAttrSingleDialog from '../../dialog/security-group/update-mgmt-attr-single.vue';
 import { SecurityGroupMgmtAttrSingleType } from '@/store/security-group';
 import { useVerify } from '@/hooks/useVerify';
-import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 
 const props = defineProps({
   id: {
@@ -42,11 +42,13 @@ const isResourcePage = inject('isResourcePage');
 const resourceStore = useResourceStore();
 const { getRegionName } = useRegionsStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
+const { whereAmI } = useWhereAmI();
 
 const { handleAuth, authVerifyData } = useVerify();
-const whereAmI = useWhereAmI();
 
-const authAction = whereAmI.isBusinessPage ? 'biz_iaas_resource_operate' : 'iaas_resource_operate';
+const authAction = computed(() =>
+  whereAmI.value === Senarios.business ? 'biz_iaas_resource_operate' : 'iaas_resource_operate',
+);
 
 const mgmtAttrFields: FieldList = [
   {
@@ -295,8 +297,8 @@ const mgmtAttrSingleDialogState = reactive<{
   field: undefined,
 });
 const handleUpdateMgmtAttrSingle = (field: SecurityGroupMgmtAttrSingleType) => {
-  if (!authVerifyData.value?.permissionAction?.[authAction]) {
-    handleAuth(authAction);
+  if (!authVerifyData.value?.permissionAction?.[authAction.value]) {
+    handleAuth(authAction.value);
     return;
   }
   mgmtAttrSingleDialogState.isShow = true;
