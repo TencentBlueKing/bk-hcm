@@ -63,6 +63,7 @@ func (h *HuaWei) ListZone(kt *kit.Kit, opt *typeszone.HuaWeiZoneListOption) ([]t
 	}
 	result, ok := resp.(*model.ListAvailableZonesResponse)
 	if !ok {
+		logs.Errorf("list huawei zone failed, invalid response: %v, rid: %s", resp, kt.Rid)
 		return nil, fmt.Errorf("list huawei zone failed, invalid response, rid: %s", kt.Rid)
 	}
 
