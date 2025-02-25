@@ -128,8 +128,8 @@ func (svc *securityGroupSvc) batchDeleteSecurityGroup(cts *rest.Contexts, validH
 	return result, nil
 }
 
-type statSGFunc func(kt *kit.Kit,
-	req *hcservice.ListSecurityGroupStatisticReq) (*hcservice.ListSecurityGroupStatisticResp, error)
+type statSGFunc func(kt *kit.Kit, req *hcservice.ListSecurityGroupStatisticReq) (
+	*hcservice.ListSecurityGroupStatisticResp, error)
 
 // check if sg is binding to any resource, if yes, return error.
 func (svc *securityGroupSvc) checkSGBinding(kt *kit.Kit, sgInfos map[string]types.CloudResourceBasicInfo) error {
