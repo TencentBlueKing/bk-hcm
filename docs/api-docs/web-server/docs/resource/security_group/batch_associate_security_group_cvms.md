@@ -20,7 +20,7 @@ POST /api/v1/cloud/security_groups/associate/cvms/batch
 ```json
 {
   "security_group_id": "00001111",
-  "cvm_ids": ["ins-xxx"]
+  "cvm_ids": ["00000001"]
 }
 ```
 
