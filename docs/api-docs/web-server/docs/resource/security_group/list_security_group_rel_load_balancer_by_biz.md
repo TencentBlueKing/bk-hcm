@@ -1,19 +1,22 @@
 ### 描述
 
-- 该接口提供版本：v1.0.0+。
+- 该接口提供版本：v9.9.9+。
 - 该接口所需权限：资源-资源查看。
-- 该接口功能描述：查询安全组列表。
+- 该接口功能描述：查询安全组关联的负载均衡列表，仅展示负载均衡摘要信息。
 
 ### URL
 
-POST /api/v1/cloud/security_groups/list
+POST /api/v1/cloud/security_groups/{sg_id}/related_resources/biz_resources/{res_biz_id}/load_balancers/list
 
 ### 输入参数
 
-| 参数名称   | 参数类型   | 必选 | 描述     |
-|--------|--------|----|--------|
-| filter | object | 是  | 查询过滤条件 |
-| page   | object | 是  | 分页设置   |
+| 参数名称       | 参数类型     | 必选 | 描述                                         |
+|------------|----------|----|--------------------------------------------|
+| sg_id      | string   | 是  | 安全组ID                                      |
+| res_biz_id | int64    | 是  | 关联资源业务ID                                   |
+| page       | object   | 是  | 分页设置                                       |
+| filter     | object   | 是  | 查询过滤条件                                     |
+| fields     | []string | 否  | 查询条件Field名称，具体可使用的用于查询的字段及其说明请看下面 - 查询参数介绍 |
 
 #### filter
 
@@ -94,27 +97,26 @@ POST /api/v1/cloud/security_groups/list
 
 #### 查询参数介绍：
 
-| 参数名称               | 参数类型   | 描述                                             |
-|--------------------|--------|------------------------------------------------|
-| id                 | string | 安全组ID                                          |
-| vendor             | string | 云厂商                                            |
-| cloud_id           | string | 安全组云ID                                         |
-| bk_biz_id          | int64  | 业务ID, -1代表未分配业务                                |
-| region             | string | 地域                                             |
-| name               | string | 安全组名称                                          |
-| manager            | string | 负责人                                            |
-| bak_manager        | string | 备份负责人                                          |
-| usage_biz_id       | int    | 使用业务ID，-1代表全部业务可使用                             |
-| mgmt_biz_id        | int    | 管理业务ID                                         |
-| mgmt_type          | string | 管理类型，枚举值：biz（业务管理）、platform（平台管理）。未确定管理类型的不可筛选 |
-| memo               | string | 备注                                             |
-| account_id         | string | 账号ID                                           |
-| creator            | string | 创建者                                            |
-| reviser            | string | 最后一次修改的修改者                                     |
-| created_at         | string | 创建时间，标准格式：2006-01-02T15:04:05Z                 |
-| updated_at         | string | 最后一次修改时间，标准格式：2006-01-02T15:04:05Z             |
-| cloud_created_time | string | 安全组云上创建时间，标准格式：2006-01-02 15:04:05             |
-| cloud_update_time  | string | 安全组云上更新时间，标准格式：2006-01-02 15:04:05             |
+| 参数名称               | 参数类型   | 描述                                  |
+|--------------------|--------|-------------------------------------|
+| cloud_id           | string | 云资源ID                               |
+| name               | string | 名称                                  |
+| region             | string | 地域                                  |
+| zones              | string | 可用区                                 |
+| backup_zones       | string | 备可用区                                |
+| cloud_vpc_id       | string | 云vpcID                              |
+| vpc_id             | string | vpcID                               |
+| lb_type            | string | 网络类型                                |
+| memo               | string | 备注                                  |
+| status             | string | 状态                                  |
+| domain             | string | 域名                                  |
+| cloud_created_time | string | lb在云上创建时间，标准格式：2006-01-02T15:04:05Z |
+| cloud_status_time  | string | lb状态变更时间，标准格式：2006-01-02T15:04:05Z  |
+| cloud_expired_time | string | lb过期时间，标准格式：2006-01-02T15:04:05Z    |
+| creator            | string | 创建者                                 |
+| reviser            | string | 修改者                                 |
+| created_at         | string | 创建时间，标准格式：2006-01-02T15:04:05Z      |
+| updated_at         | string | 修改时间，标准格式：2006-01-02T15:04:05Z      |
 
 接口调用者可以根据以上参数自行根据查询场景设置查询规则。
 
@@ -122,7 +124,7 @@ POST /api/v1/cloud/security_groups/list
 
 #### 获取详细信息请求参数示例
 
-如查询已分配的腾讯云安全组列表。
+查询创建者是Jim的Cvm列表。
 
 ```json
 {
@@ -130,14 +132,9 @@ POST /api/v1/cloud/security_groups/list
     "op": "and",
     "rules": [
       {
-        "field": "assigned",
+        "field": "created_at",
         "op": "eq",
-        "value": true
-      },
-      {
-        "field": "vendor",
-        "op": "eq",
-        "value": "tcloud"
+        "value": "Jim"
       }
     ]
   },
@@ -151,7 +148,7 @@ POST /api/v1/cloud/security_groups/list
 
 #### 获取数量请求参数示例
 
-如查询已分配的腾讯云安全组数量。
+查询创建者是Jim的Cvm数量。
 
 ```json
 {
@@ -159,14 +156,9 @@ POST /api/v1/cloud/security_groups/list
     "op": "and",
     "rules": [
       {
-        "field": "assigned",
+        "field": "created_at",
         "op": "eq",
-        "value": true
-      },
-      {
-        "field": "vendor",
-        "op": "eq",
-        "value": "tcloud"
+        "value": "Jim"
       }
     ]
   },
@@ -183,36 +175,38 @@ POST /api/v1/cloud/security_groups/list
 ```json
 {
   "code": 0,
-  "message": "ok",
+  "message": "",
   "data": {
     "details": [
       {
-        "id": 1,
+        "id": "00000001",
+        "cloud_id": "lb-123",
+        "name": "lb-test",
         "vendor": "tcloud",
-        "cloud_id": "sg-xxxxxx",
-        "region": "ap-guangzhou",
-        "name": "sg-default",
-        "manager": "lihua",
-        "bak_manager": "hanmeimei",
-        "usage_biz_ids": [
-          123,
-          234
-        ],
-        "mgmt_biz_id": 213,
-        "mgmt_type": "biz",
-        "memo": "default security group",
-        "account_id": "1",
         "bk_biz_id": -1,
-        "creator": "tom",
-        "reviser": "tom",
-        "created_at": "2019-07-29 11:57:20",
-        "updated_at": "2019-07-29 11:57:20",
-        "cloud_created_time": "2024-01-20 15:37:46",
-        "cloud_update_time": "2024-01-20 15:46:45",
-        "tags": {
-          "abc": "123123",
-          "module": "vpc"
-        }
+        "region": "ap-hk",
+        "zones": [
+          "ap-hk-1"
+        ],
+        "backup_zones": [
+          "ap-hk-2",
+          "ap-hk-3"
+        ],
+        "cloud_vpc_id": "vpc-123",
+        "vpc_id": "00000002",
+        "lb_type": "xxx",
+        "ip_version": "ipv4",
+        "domain": "",
+        "memo": "lb test",
+        "status": "init",
+        "private_ipv4_addresses": [
+          "127.0.0.1"
+        ],
+        "private_ipv6_addresses": [],
+        "public_ipv4_addresses": [
+          "127.0.0.2"
+        ],
+        "public_ipv6_addresses": []
       }
     ]
   }
@@ -248,26 +242,33 @@ POST /api/v1/cloud/security_groups/list
 
 #### data.details[n]
 
-| 参数名称               | 参数类型              | 描述                                                  |
-|--------------------|-------------------|-----------------------------------------------------|
-| id                 | string            | 安全组ID                                               |
-| vendor             | string            | 云厂商                                                 |
-| cloud_id           | string            | 安全组云ID                                              |
-| bk_biz_id          | int64             | 分配业务ID, -1代表未分配业务                                   |
-| region             | string            | 地域                                                  |
-| name               | string            | 安全组名称                                               |
-| manager            | string            | 负责人                                                 |
-| bak_manager        | string            | 备份负责人                                               |
-| usage_biz_ids      | int array         | 使用业务ID列表，-1代表全部业务可使用                                |
-| mgmt_biz_id        | int               | 管理业务ID                                              |
-| mgmt_type          | string            | 管理类型，枚举值：biz（业务管理）、platform（平台管理）。该字段可能为空，表示未确定管理类型 |
-| memo               | string            | 备注                                                  |
-| account_id         | string            | 账号ID                                                |
-| creator            | string            | 创建者                                                 |
-| reviser            | string            | 最后一次修改的修改者                                          |
-| created_at         | string            | 创建时间，标准格式：2006-01-02T15:04:05Z                      |
-| updated_at         | string            | 最后一次修改时间，标准格式：2006-01-02T15:04:05Z                  |
-| tags               | map[string]string | 标签字典                                                |
-| cloud_created_time | string            | 安全组云上创建时间，标准格式：2006-01-02 15:04:05                  |
-| cloud_update_time  | string            | 安全组云上更新时间，标准格式：2006-01-02 15:04:05                  |
+| 参数名称                   | 参数类型         | 描述                                   |
+|------------------------|--------------|--------------------------------------|
+| id                     | string       | 资源ID                                 |
+| cloud_id               | string       | 云资源ID                                |
+| name                   | string       | 名称                                   |
+| vendor                 | string       | 供应商（枚举值：tcloud、aws、azure、gcp、huawei） |
+| bk_biz_id              | int64        | 业务ID                                 |
+| region                 | string       | 地域                                   |
+| zones                  | string       | 主可用区                                 |
+| backup_zones           | string       | 备可用区                                 |
+| cloud_vpc_id           | string       | 云vpcID                               |
+| vpc_id                 | string       | vpcID                                |
+| lb_type                | string       | 负载均衡类型                               |
+| ip_version             | string       | IP版本                                 |
+| memo                   | string       | 备注                                   |
+| status                 | string       | 状态                                   |
+| domain                 | string       | 域名                                   |
+| private_ipv4_addresses | string array | 内网ipv4地址                             |
+| private_ipv6_addresses | string array | 内网ipv6地址                             |
+| public_ipv4_addresses  | string array | 外网ipv4地址                             |
+| public_ipv6_addresses  | string array | 外网ipv6地址                             |
+
+##### TCloud status 状态含义：
+
+| 状态值 | 含义   |
+|-----|------|
+| 0   | 创建中  |
+| 1   | 正常运行 |
+
 
