@@ -316,11 +316,9 @@ func (s *securityGroup) UpdateSGMgmtAttr(kt *kit.Kit, mgmtAttr *proto.SecurityGr
 	}
 
 	// 已分配的安全组，不可修改管理业务
-	if sg.BkBizID != constant.UnassignedBiz {
-		if mgmtAttr.MgmtBizID != 0 {
-			logs.Errorf("security group: %s cannot modify the assigned business, rid: %s", sg.ID, kt.Rid)
-			return fmt.Errorf("security group: %s cannot modify the assigned business", sg.ID)
-		}
+	if sg.BkBizID != constant.UnassignedBiz && mgmtAttr.MgmtBizID != 0 {
+		logs.Errorf("security group: %s cannot modify the assigned business, rid: %s", sg.ID, kt.Rid)
+		return fmt.Errorf("security group: %s cannot modify the assigned business", sg.ID)
 	}
 
 	// 更新管理属性

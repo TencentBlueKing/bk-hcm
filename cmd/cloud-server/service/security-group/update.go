@@ -219,7 +219,7 @@ func (svc *securityGroupSvc) batchUpdateSGMgmtAttr(cts *rest.Contexts, validHand
 
 	// validate biz and authorize
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
-		Action: meta.Delete, BasicInfos: basicInfoMap})
+		Action: meta.Update, BasicInfos: basicInfoMap})
 	if err != nil {
 		return nil, err
 	}

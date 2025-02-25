@@ -214,6 +214,10 @@ func (req BatchUpdateSecurityGroupMgmtAttrReq) Validate() error {
 		return err
 	}
 
+	if len(req.SecurityGroups) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("update data cannot exceed %d items", constant.BatchOperationMaxLimit)
+	}
+
 	for _, item := range req.SecurityGroups {
 		if err := item.Validate(); err != nil {
 			return err

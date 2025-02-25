@@ -579,6 +579,7 @@ func (svc *securityGroupSvc) BatchUpdateSecurityGroupCommonInfo(cts *rest.Contex
 	return nil, nil
 }
 
+// BatchUpdateSecurityGroupMgmtAttr batch update security group mgmt attr.
 func (svc *securityGroupSvc) BatchUpdateSecurityGroupMgmtAttr(cts *rest.Contexts) (interface{}, error) {
 	req := new(protocloud.BatchUpdateSecurityGroupMgmtAttrReq)
 	if err := cts.DecodeInto(req); err != nil {
