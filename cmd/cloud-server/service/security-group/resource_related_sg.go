@@ -22,7 +22,7 @@ package securitygroup
 import (
 	"fmt"
 
-	cscvm "hcm/pkg/api/cloud-server/cvm"
+	cloudserver "hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
 	dataproto "hcm/pkg/api/data-service/cloud"
@@ -49,16 +49,16 @@ func (svc *securityGroupSvc) BizBatchListResSecurityGroups(cts *rest.Contexts) (
 }
 
 func (svc *securityGroupSvc) listResSecurityGroups(cts *rest.Contexts, authHandler handler.ValidWithAuthHandler) (
-	[]cscvm.BatchListResSecurityGroupsResp, error) {
+	[]cloudserver.ResSGRel, error) {
 
 	resType := enumor.CloudResourceType(cts.PathParameter("res_type").String())
 	if len(resType) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "res_type is required")
 	} else if resType != enumor.CvmCloudResType && resType != enumor.LoadBalancerCloudResType {
-		return nil, errf.New(errf.InvalidParameter, "invalid res_type")
+		return nil, errf.New(errf.InvalidParameter, fmt.Sprintf("invalid res_type %s", resType))
 	}
 
-	req := new(cscvm.BatchGetCvmSecurityGroupsReq)
+	req := new(cloudserver.BatchGetResRelatedSecurityGroupsReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
@@ -80,9 +80,10 @@ func (svc *securityGroupSvc) listResSecurityGroups(cts *rest.Contexts, authHandl
 		return nil, err
 	}
 
-	rels, err := svc.listCvmSecurityGroupRels(cts.Kit, resType, req.ResIDs)
+	rels, err := svc.listSGCommonRels(cts.Kit, resType, req.ResIDs)
 	if err != nil {
-		logs.Errorf("list cvm security group rels failed, err: %v, cvm_ids: %v, rid: %s", err, req.ResIDs, cts.Kit.Rid)
+		logs.Errorf("list cvm security group rels failed, err: %v, cvm_ids: %v, rid: %s",
+			err, req.ResIDs, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -95,8 +96,8 @@ func (svc *securityGroupSvc) listResSecurityGroups(cts *rest.Contexts, authHandl
 		return nil, err
 	}
 
-	itemMap := convertToBatchListResSecurityGroupsRespItem(securityGroupsMap)
-	cvmToSgMap := make(map[string][]cscvm.BatchListResSecurityGroupsRespItem, len(req.ResIDs))
+	itemMap := convSGInfo(securityGroupsMap)
+	cvmToSgMap := make(map[string][]cloudserver.SGInfo, len(req.ResIDs))
 	for _, rel := range rels {
 		cvmToSgMap[rel.ResID] = append(cvmToSgMap[rel.ResID], itemMap[rel.SecurityGroupID])
 	}
@@ -105,15 +106,15 @@ func (svc *securityGroupSvc) listResSecurityGroups(cts *rest.Contexts, authHandl
 }
 
 func buildBatchListResSecurityGroupsResp(resIDs []string,
-	cvmToSgMap map[string][]cscvm.BatchListResSecurityGroupsRespItem) []cscvm.BatchListResSecurityGroupsResp {
+	cvmToSgMap map[string][]cloudserver.SGInfo) []cloudserver.ResSGRel {
 
-	result := make([]cscvm.BatchListResSecurityGroupsResp, len(resIDs))
+	result := make([]cloudserver.ResSGRel, len(resIDs))
 	for i, resID := range resIDs {
 		sgList, ok := cvmToSgMap[resID]
 		if !ok {
-			sgList = make([]cscvm.BatchListResSecurityGroupsRespItem, 0)
+			sgList = make([]cloudserver.SGInfo, 0)
 		}
-		result[i] = cscvm.BatchListResSecurityGroupsResp{
+		result[i] = cloudserver.ResSGRel{
 			ResID:          resID,
 			SecurityGroups: sgList,
 		}
@@ -121,12 +122,12 @@ func buildBatchListResSecurityGroupsResp(resIDs []string,
 	return result
 }
 
-func convertToBatchListResSecurityGroupsRespItem(
-	m map[string]cloud.BaseSecurityGroup) map[string]cscvm.BatchListResSecurityGroupsRespItem {
+func convSGInfo(
+	m map[string]cloud.BaseSecurityGroup) map[string]cloudserver.SGInfo {
 
-	result := make(map[string]cscvm.BatchListResSecurityGroupsRespItem, len(m))
+	result := make(map[string]cloudserver.SGInfo, len(m))
 	for id, sg := range m {
-		result[id] = cscvm.BatchListResSecurityGroupsRespItem{
+		result[id] = cloudserver.SGInfo{
 			ID:      sg.ID,
 			Name:    sg.Name,
 			CloudId: sg.CloudID,
@@ -135,7 +136,8 @@ func convertToBatchListResSecurityGroupsRespItem(
 	return result
 }
 
-func (svc *securityGroupSvc) getSecurityGroupsMap(kt *kit.Kit, sgIDs []string) (map[string]cloud.BaseSecurityGroup, error) {
+func (svc *securityGroupSvc) getSecurityGroupsMap(kt *kit.Kit, sgIDs []string) (
+	map[string]cloud.BaseSecurityGroup, error) {
 
 	result := make(map[string]cloud.BaseSecurityGroup, len(sgIDs))
 	for _, ids := range slice.Split(sgIDs, int(core.DefaultMaxPageLimit)) {
@@ -164,7 +166,7 @@ func (svc *securityGroupSvc) getSecurityGroupsMap(kt *kit.Kit, sgIDs []string) (
 	return result, nil
 }
 
-func (svc *securityGroupSvc) listCvmSecurityGroupRels(kt *kit.Kit, resType enumor.CloudResourceType, resIDs []string) (
+func (svc *securityGroupSvc) listSGCommonRels(kt *kit.Kit, resType enumor.CloudResourceType, resIDs []string) (
 	[]cloud.SecurityGroupCommonRel, error) {
 
 	result := make([]cloud.SecurityGroupCommonRel, 0)

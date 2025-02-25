@@ -161,29 +161,6 @@ type CvmRelatedInfo struct {
 	Eip       []string `json:"eip"`
 }
 
-// BatchGetCvmSecurityGroupsReq ...
-type BatchGetCvmSecurityGroupsReq struct {
-	ResIDs []string `json:"res_ids" validate:"required,min=1,max=500"`
-}
-
-// Validate ...
-func (req BatchGetCvmSecurityGroupsReq) Validate() error {
-	return validator.Validate.Struct(req)
-}
-
-// BatchListResSecurityGroupsResp ...
-type BatchListResSecurityGroupsResp struct {
-	ResID          string                               `json:"res_id"`
-	SecurityGroups []BatchListResSecurityGroupsRespItem `json:"security_groups"`
-}
-
-// BatchListResSecurityGroupsRespItem ...
-type BatchListResSecurityGroupsRespItem struct {
-	ID      string `json:"id"`
-	CloudId string `json:"cloud_id"`
-	Name    string `json:"name"`
-}
-
 // BatchAssociateSecurityGroupsReq ...
 type BatchAssociateSecurityGroupsReq struct {
 	SecurityGroupIDs []string `json:"security_group_ids" validate:"required,min=1,max=500"`
