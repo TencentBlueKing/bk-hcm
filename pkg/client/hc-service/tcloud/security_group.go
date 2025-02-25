@@ -313,8 +313,8 @@ func (cli *SecurityGroupClient) DisassociateLb(ctx context.Context, h http.Heade
 	return nil
 }
 
-// BatchAssociateCloudCvm 批量绑定安全组
-func (cli *SecurityGroupClient) BatchAssociateCloudCvm(kt *kit.Kit, sgID string, cvmIDs []string) error {
+// BatchAssociateCvm 批量绑定安全组
+func (cli *SecurityGroupClient) BatchAssociateCvm(kt *kit.Kit, sgID string, cvmIDs []string) error {
 
 	req := &proto.SecurityGroupBatchAssociateCvmReq{
 		SecurityGroupID: sgID,
@@ -324,8 +324,8 @@ func (cli *SecurityGroupClient) BatchAssociateCloudCvm(kt *kit.Kit, sgID string,
 		"/security_groups/associate/cvms/batch")
 }
 
-// BatchDisassociateCloudCvm 批量解绑安全组
-func (cli *SecurityGroupClient) BatchDisassociateCloudCvm(kt *kit.Kit, sgID string, cvmIDs []string) error {
+// BatchDisassociateCvm 批量解绑安全组
+func (cli *SecurityGroupClient) BatchDisassociateCvm(kt *kit.Kit, sgID string, cvmIDs []string) error {
 
 	req := &proto.SecurityGroupBatchAssociateCvmReq{
 		SecurityGroupID: sgID,
