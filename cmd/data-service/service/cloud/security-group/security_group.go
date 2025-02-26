@@ -75,7 +75,7 @@ func initSecurityGroupService(cap *capability.Capability) {
 	h.Add("BatchDeleteSecurityGroup", http.MethodDelete, "/security_groups/batch", svc.BatchDeleteSecurityGroup)
 	h.Add("BatchUpdateSecurityGroupCommonInfo", http.MethodPatch, "/security_groups/common/info/batch/update",
 		svc.BatchUpdateSecurityGroupCommonInfo)
-	h.Add("BatchUpdateSecurityGroupMgmtAttr", http.MethodPatch, "/security_groups/mgmt/attr/batch/update",
+	h.Add("BatchUpdateSecurityGroupMgmtAttr", http.MethodPatch, "/security_groups/mgmt_attrs/batch/update",
 		svc.BatchUpdateSecurityGroupMgmtAttr)
 
 	h.Load(cap.WebService)

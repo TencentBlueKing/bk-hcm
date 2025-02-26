@@ -25,7 +25,9 @@ import (
 
 	"hcm/pkg/api/core"
 	protocloud "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -114,25 +116,9 @@ func (cli *SecurityGroupClient) BatchUpdateSecurityGroupCommonInfo(ctx context.C
 }
 
 // BatchUpdateSecurityGroupMgmtAttr batch update security group management attribute.
-func (cli *SecurityGroupClient) BatchUpdateSecurityGroupMgmtAttr(ctx context.Context, h http.Header,
-	request *protocloud.BatchUpdateSecurityGroupMgmtAttrReq) error {
+func (cli *SecurityGroupClient) BatchUpdateSecurityGroupMgmtAttr(kt *kit.Kit,
+	req *protocloud.BatchUpdateSecurityGroupMgmtAttrReq) error {
 
-	resp := new(rest.BaseResp)
-
-	err := cli.client.Patch().
-		WithContext(ctx).
-		Body(request).
-		SubResourcef("/security_groups/mgmt/attr/batch/update").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	if err != nil {
-		return err
-	}
-
-	if resp.Code != errf.OK {
-		return errf.New(resp.Code, resp.Message)
-	}
-
-	return nil
+	return common.RequestNoResp[protocloud.BatchUpdateSecurityGroupMgmtAttrReq](
+		cli.client, rest.PATCH, kt, req, "/security_groups/mgmt_attrs/batch/update")
 }

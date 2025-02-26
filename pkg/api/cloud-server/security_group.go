@@ -235,6 +235,7 @@ type BatchUpdateSGMgmtAttrItem struct {
 	MgmtBizID  int64  `json:"mgmt_biz_id" validate:"required"`
 }
 
+// Validate security group update management attribute item.
 func (i BatchUpdateSGMgmtAttrItem) Validate() error {
 	return validator.Validate.Struct(i)
 }
