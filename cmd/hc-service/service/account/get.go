@@ -495,7 +495,6 @@ func (svc *service) TCloudGetResCountBySecret(cts *rest.Contexts) (interface{}, 
 
 // AwsGetResCountBySecret 根据秘钥获取云上资源数量
 func (svc *service) AwsGetResCountBySecret(cts *rest.Contexts) (interface{}, error) {
-
 	req := new(cloud.AwsSecret)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
