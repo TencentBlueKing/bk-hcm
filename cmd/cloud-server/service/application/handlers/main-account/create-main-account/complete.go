@@ -423,8 +423,8 @@ func (a *ApplicationOfCreateMainAccount) sendMail(account *dataproto.MainAccount
 
 	err := a.SendMail(mail)
 	if err != nil {
-		logs.Errorf("send email failed for main account, id: %s, cloud_id: %s, name: %s, error: %v", account.ID,
-			account.CloudID, account.Name, err)
+		logs.Errorf("send email failed for main account, id: %s, cloud_id: %s, name: %s, err: %v, rid: %s",
+			account.ID, account.CloudID, account.Name, err, a.Cts.Kit.Rid)
 		return
 	}
 
