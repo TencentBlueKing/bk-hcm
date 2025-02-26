@@ -267,3 +267,14 @@ cmsi:
     caFile:
     # the password to decrypt the certificate.
     password:
+
+# defines trace's related configuration
+trace:
+  # trace enable
+  enable: false
+  # service name of APM in bk-monitor
+  serviceName:
+  # trace endpoint in bk-monitor
+  endpoint:
+  # token of APM in bk-monitor
+  token:
