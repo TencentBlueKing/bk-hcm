@@ -466,6 +466,13 @@ type SysOption struct {
 	BindIP net.IP
 	// Versioned Setting if show current version info.
 	Versioned bool
+
+	// current env for service discovery
+	Environment string
+	// service label for service discovery
+	Labels []string
+	// if true always be follower
+	DisableElection bool
 }
 
 // CheckV check if show current version info.

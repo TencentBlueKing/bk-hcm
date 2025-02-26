@@ -45,5 +45,8 @@ func SysFlags(fs *pflag.FlagSet) *cc.SysOption {
 	fs.IPVarP(&opt.BindIP, "bind-ip", "h", []byte{}, "which IP the server is listen to")
 	fs.BoolVarP(&opt.Versioned, "version", "v", false, "show version")
 
+	fs.StringVarP(&opt.Environment, "env", "e", "", "the environment of the server")
+	fs.StringSliceVarP(&opt.Labels, "label", "l", nil, "the service labels")
+	fs.BoolVarP(&opt.DisableElection, "disable-election", "d", false, "disable leader election")
 	return opt
 }

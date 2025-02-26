@@ -21,6 +21,7 @@ package serviced
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
@@ -132,7 +133,18 @@ func (s *service) Register() error {
 		Scheme: s.svcOpt.Scheme,
 		Host:   net.JoinHostPort(s.svcOpt.IP, strconv.Itoa(int(s.svcOpt.Port))),
 	}
-	value := serverPath.String()
+	si := ServerInfo{
+		URL:             serverPath.String(),
+		Labels:          s.svcOpt.Labels,
+		DisableElection: s.svcOpt.DisableElection,
+		Env:             s.svcOpt.Env,
+	}
+	valueBytes, err := json.Marshal(si)
+	if err != nil {
+		logs.Errorf("marshal server info failed, err: %v, server info: %+v", err, si)
+		return err
+	}
+	value := string(valueBytes)
 
 	// grant lease, and put kv with lease.
 	lease := etcd3.NewLease(s.cli)
@@ -321,8 +333,10 @@ func (s *service) isMaster(srvPath, srvKey string) (bool, error) {
 	cr := resp.Kvs[0].CreateRevision
 
 	// get first service instance version info.
-	opts := etcd3.WithFirstCreate()
-	opts = append(opts, etcd3.WithSerializable())
+	opts := []etcd3.OpOption{
+		etcd3.WithSort(etcd3.SortByCreateRevision, etcd3.SortAscend),
+		etcd3.WithPrefix(),
+		etcd3.WithSerializable()}
 	resp, err = s.cli.Get(context.Background(), srvPath, opts...)
 	if err != nil {
 		return false, err
@@ -330,7 +344,21 @@ func (s *service) isMaster(srvPath, srvKey string) (bool, error) {
 	if len(resp.Kvs) == 0 {
 		return false, errors.New("current service not register, service path: " + srvPath)
 	}
-	firstCR := resp.Kvs[0].CreateRevision
+
+	var firstCR int64
+	for i := range resp.Kvs {
+		kv := resp.Kvs[i]
+		si := &ServerInfo{}
+		if err := json.Unmarshal(kv.Value, si); err != nil {
+			logs.Errorf("unmarshal service instance(%s) info failed, err: %v", string(kv.Value), err)
+			continue
+		}
+		if si.DisableElection {
+			continue
+		}
+		firstCR = kv.CreateRevision
+		break
+	}
 
 	logs.V(7).Infof("current service(%s) master state: %v", srvKey, cr == firstCR)
 

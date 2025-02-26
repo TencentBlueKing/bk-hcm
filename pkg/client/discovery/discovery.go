@@ -48,17 +48,22 @@ func NewAPIDiscovery(service cc.Name, discover serviced.Discover) *APIDiscovery 
 
 // GetServers get esb server host.
 func (d *APIDiscovery) GetServers() ([]string, error) {
+	return d.GetServersWithLabel()
+}
+
+// GetServersWithLabel get esb server host.
+func (d *APIDiscovery) GetServersWithLabel(labels ...string) ([]string, error) {
 	d.Lock()
 	defer d.Unlock()
 
-	servers, err := d.discover.Discover(d.service)
+	servers, err := d.discover.ByLabels(labels).Discover(d.service)
 	if err != nil {
 		return nil, err
 	}
 
 	num := len(servers)
 	if num == 0 {
-		return []string{}, fmt.Errorf("there is no server can be used for %s", d.service)
+		return []string{}, fmt.Errorf("there is no server can be used for %s with label %s", d.service, labels)
 	}
 
 	// move the servers in a round-robin way, e.g. last servers are [A, B, C], next server sequence is [B, C, A].

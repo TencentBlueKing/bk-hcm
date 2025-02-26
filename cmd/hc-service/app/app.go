@@ -79,7 +79,7 @@ func (ds *hcService) prepare(opt *options.Option) error {
 	adptmetric.InitCloudApiMetrics(metrics.Register())
 
 	// register hc service.
-	svcOpt := serviced.NewServiceOption(cc.HCServiceName, cc.HCService().Network)
+	svcOpt := serviced.NewServiceOption(cc.HCServiceName, cc.HCService().Network, opt.Sys)
 	disOpt := serviced.DiscoveryOption{
 		Services: []cc.Name{cc.DataServiceName},
 	}
