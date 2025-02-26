@@ -57,6 +57,7 @@ func InitSecurityGroupService(c *capability.Capability) {
 		svc.AssociateNetworkInterface)
 	h.Add("DisAssociateNetworkInterface", http.MethodPost, "/security_groups/disassociate/network_interfaces",
 		svc.DisAssociateNetworkInterface)
+	h.Add("AssignBizPreview", http.MethodPost, "/security_groups/assign/bizs/preview", svc.AssignBizPreview)
 
 	h.Add("CreateSecurityGroupRule", http.MethodPost,
 		"/vendors/{vendor}/security_groups/{security_group_id}/rules/create", svc.CreateSecurityGroupRule)

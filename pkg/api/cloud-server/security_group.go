@@ -154,6 +154,24 @@ func (req *AssignSecurityGroupToBizReq) Validate() error {
 	return nil
 }
 
+// BatchAssignBizReq define batch assign security group to biz req.
+type BatchAssignBizReq struct {
+	IDs []string `json:"ids" validate:"required,min=1,max=100"`
+}
+
+// Validate assign security group to biz request.
+func (req *BatchAssignBizReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// AssignBizPreviewResp define batch assign biz preview response.
+type AssignBizPreviewResp struct {
+	ID            string `json:"id"`
+	Assignable    bool   `json:"assignable"`
+	Reason        string `json:"reason"`
+	AssignedBizID int64  `json:"assigned_biz_id"`
+}
+
 // -------------------------- Delete --------------------------
 
 // SecurityGroupBatchDeleteReq security group update request.
