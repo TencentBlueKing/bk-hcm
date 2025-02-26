@@ -357,6 +357,7 @@ func (s *service) isMaster(srvPath, srvKey string) (bool, error) {
 			continue
 		}
 		firstCR = kv.CreateRevision
+		break
 	}
 
 	logs.V(7).Infof("current service(%s) master state: %v", srvKey, cr == firstCR)
