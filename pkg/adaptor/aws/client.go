@@ -78,6 +78,7 @@ func (c *clientSet) ec2Client(region string) (*ec2.EC2, error) {
 	return ec2.New(sess), nil
 }
 
+// sts client, if region is nil, use sdk default region
 func (c *clientSet) stsClient(region *string) (*sts.STS, error) {
 	cfg := &aws.Config{
 		Credentials: c.credentials,

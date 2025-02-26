@@ -109,6 +109,7 @@ func (a *Aws) CountAccount(kt *kit.Kit) (int32, error) {
 // reference: https://docs.aws.amazon.com/STS/latest/APIReference/API_GetCallerIdentity.html
 func (a *Aws) GetAccountInfoBySecret(kt *kit.Kit) (*cloud.AwsInfoBySecret, error) {
 	var defaultRegion *string = nil
+	// else use nil to indicate sdk default region
 	if a.IsChinaSite() {
 		defaultRegion = converter.ValToPtr(a.DefaultRegion())
 	}
