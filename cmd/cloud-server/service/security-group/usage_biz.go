@@ -122,7 +122,8 @@ func (svc *securityGroupSvc) listAccountMapByIDs(kt *kit.Kit, accountIDs []strin
 
 // buildSGUsageBizMaintainerResult 构建安全组使用业务运维列表结果
 func buildSGUsageBizMaintainerResult(kit *kit.Kit, sgIDs []string, sgMap map[string]cloud.BaseSecurityGroup,
-	bizMap map[int64]cmdb.Biz, accountMap map[string]*cloud.BaseAccount) ([]*cloudserver.ListSGUsageBizMaintainerResult, error) {
+	bizMap map[int64]cmdb.Biz, accountMap map[string]*cloud.BaseAccount) (
+	[]*cloudserver.ListSGUsageBizMaintainerResult, error) {
 
 	result := make([]*cloudserver.ListSGUsageBizMaintainerResult, 0, len(sgIDs))
 	for _, sgID := range sgIDs {
