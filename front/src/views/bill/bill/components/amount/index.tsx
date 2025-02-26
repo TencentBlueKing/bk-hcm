@@ -52,7 +52,7 @@ export default defineComponent({
           {t('人民币+美金（合人民币）')}：
           <Loading loading={isLoading.value} opacity={1} style={{ minWidth: '80px' }} size='small'>
             <span class={cssModule.money}>
-              {`￥${formatBillCost(getMoney('CNY', 'RMBCost') + getMoney('USD', 'RMBCost'))}`}
+              {`￥${formatBillCost(String(Number(getMoney('CNY', 'RMBCost')) + Number(getMoney('USD', 'RMBCost'))))}`}
             </span>
           </Loading>
         </span>

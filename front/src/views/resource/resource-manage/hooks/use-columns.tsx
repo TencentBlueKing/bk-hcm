@@ -1992,6 +1992,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '已确认账单',
       field: 'current_month_rmb_cost_synced',
       isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
     },
     {
       label: '币种',
@@ -2077,11 +2078,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '已确认账单',
       field: 'current_month_rmb_cost_synced',
       isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
     },
     {
       label: '当前账单',
       field: 'current_month_cost',
       isDefaultShow: true,
+      render: ({ cell }: any) => formatBillCost(cell),
     },
   ];
 
