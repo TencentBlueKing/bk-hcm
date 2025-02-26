@@ -31,12 +31,15 @@ import (
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/classifier"
 	"hcm/pkg/tools/hooks/handler"
+	"hcm/pkg/tools/slice"
 )
 
 // ListResourceIdBySecurityGroup list resource id by security group
@@ -126,15 +129,15 @@ func (svc *securityGroupSvc) listCvmIDBySecurityGroup(cts *rest.Contexts, validH
 
 // QueryBizRelatedResourceCount query biz related resource count
 func (svc *securityGroupSvc) QueryBizRelatedResourceCount(cts *rest.Contexts) (interface{}, error) {
-	return svc.queryRelatedResourceCount(cts, handler.ResOperateAuth)
+	return svc.queryRelatedResourceCount(cts, handler.ListBizAuthRes)
 }
 
 // QueryRelatedResourceCount query related resource count
 func (svc *securityGroupSvc) QueryRelatedResourceCount(cts *rest.Contexts) (interface{}, error) {
-	return svc.queryRelatedResourceCount(cts, handler.ResOperateAuth)
+	return svc.queryRelatedResourceCount(cts, handler.ListResourceAuthRes)
 }
 
-func (svc *securityGroupSvc) queryRelatedResourceCount(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+func (svc *securityGroupSvc) queryRelatedResourceCount(cts *rest.Contexts, validHandler handler.ListAuthResHandler) (
 	interface{}, error) {
 
 	req := new(cloudserver.SecurityGroupQueryRelatedResourceCountReq)
@@ -145,28 +148,55 @@ func (svc *securityGroupSvc) queryRelatedResourceCount(cts *rest.Contexts, valid
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	basicInfoReq := dataproto.ListResourceBasicInfoReq{
-		ResourceType: enumor.SecurityGroupCloudResType,
-		IDs:          req.IDs,
-	}
-	basicInfos, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, basicInfoReq)
-	if err != nil {
-		logs.Errorf("list security group basic info failed, ids: %v, err: %v, rid: %s", req.IDs, err, cts.Kit.Rid)
-		return nil, err
-	}
-	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
-		Action: meta.Find, BasicInfos: basicInfos})
+	authFilter, noPerm, err := validHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
+		Action: meta.Find})
 	if err != nil {
 		return nil, err
+	}
+	if noPerm {
+		return nil, errf.New(errf.PermissionDenied, "permission denied for query related resource count")
 	}
 
-	securityGroups, err := svc.listSecurityGroupByIDs(cts.Kit, req.IDs)
+	securityGroups, err := svc.listSecurityGroupByIDsAndFilter(cts.Kit, req.IDs, authFilter)
 	if err != nil {
 		logs.Errorf("list security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	return svc.queryRelatedResourceCountFromCloud(cts.Kit, securityGroups)
+}
+
+func (svc *securityGroupSvc) listSecurityGroupByIDsAndFilter(kt *kit.Kit, ids []string, authFilter *filter.Expression) ([]cloud.BaseSecurityGroup, error) {
+	resultMap := make(map[string]cloud.BaseSecurityGroup, len(ids))
+	for _, sgIDs := range slice.Split(ids, int(core.DefaultMaxPageLimit)) {
+		finalFilter, err := tools.And(authFilter, tools.ContainersExpression("id", sgIDs))
+		if err != nil {
+			logs.Errorf("build filter failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+		listReq := &dataproto.SecurityGroupListReq{
+			Filter: finalFilter,
+			Page:   core.NewDefaultBasePage(),
+		}
+		resp, err := svc.client.DataService().Global.SecurityGroup.ListSecurityGroup(kt.Ctx, kt.Header(), listReq)
+		if err != nil {
+			logs.Errorf("ListSecurityGroup failed, err: %v, ids: %v, rid: %s", err, sgIDs, kt.Rid)
+			return nil, err
+		}
+		for _, detail := range resp.Details {
+			resultMap[detail.ID] = detail
+		}
+	}
+	result := make([]cloud.BaseSecurityGroup, 0, len(ids))
+	for _, id := range ids {
+		item, ok := resultMap[id]
+		if !ok {
+			logs.Errorf("security group %s not found, rid: %s", id, kt.Rid)
+			return nil, fmt.Errorf("security group %s not found", id)
+		}
+		result = append(result, item)
+	}
+	return result, nil
 }
 
 func (svc *securityGroupSvc) queryRelatedResourceCountFromCloud(kt *kit.Kit,
