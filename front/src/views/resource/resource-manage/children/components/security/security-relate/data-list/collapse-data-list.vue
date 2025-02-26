@@ -69,6 +69,12 @@ const getList = async (sort = 'created_at', order = 'DESC') => {
 };
 
 const selected = ref<SecurityGroupRelResourceByBizItem[]>([]);
+const handleBind = async (ids: string[]) => {
+  // TODO：当前只支持CVM
+  await securityGroupStore.batchAssociateCvms({ security_group_id: props.detail.id, cvm_ids: ids });
+  Message({ theme: 'success', message: t('绑定成功') });
+  getList();
+};
 const handleBatchUnbind = async (ids: string[]) => {
   // TODO：当前只支持CVM
   await securityGroupStore.batchDisassociateCvms({ security_group_id: props.detail.id, cvm_ids: ids });
@@ -89,7 +95,7 @@ onBeforeMount(() => {
       <!-- 只允许对本业务的实例进行绑定和解绑 -->
       <template v-if="isCurrentBusiness">
         <bk-tag v-if="isCurrentBusiness" class="tag" theme="success" type="filled">{{ t('当前业务') }}</bk-tag>
-        <bind :tab-active="tabActive" :detail="detail" text>
+        <bind :tab-active="tabActive" :detail="detail" text @confirm="handleBind">
           <template #icon>
             <i class="hcm-icon bkhcm-icon-plus-circle-shape mr2"></i>
           </template>
