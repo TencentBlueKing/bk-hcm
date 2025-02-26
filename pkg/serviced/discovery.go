@@ -214,9 +214,6 @@ outside:
 		if addressInfo.env != d.discOpt.Env {
 			continue
 		}
-		if len(labels) == 0 && len(addressInfo.labels) == 0 {
-			break
-		}
 
 		// if request has no label want, skip labeled service, avoid normal request match labeled service
 		if len(labels) == 0 && len(addressInfo.labels) > 0 {
