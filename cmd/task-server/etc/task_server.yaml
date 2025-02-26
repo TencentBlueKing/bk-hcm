@@ -127,3 +127,8 @@ log:
   alsoToStdErr: false
   # log level.
   verbosity: 0
+
+# whether to use label to filter service.
+useLabel:
+  # use label when pull aws china site bills
+  awsCN: true
