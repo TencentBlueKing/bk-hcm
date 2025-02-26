@@ -69,5 +69,5 @@ func (a *Aws) DefaultRegion() string {
 	if a.IsChinaSite() {
 		return "cn-north-1"
 	}
-	return "us-east-1"
+	return "ap-northeast-1"
 }
