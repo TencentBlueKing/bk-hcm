@@ -327,7 +327,7 @@ func (mac *MainAccountController) ensureDailyRawPullTask(kt *kit.Kit, billYear i
 		if err != nil {
 			return err
 		}
-		if err := curPuller.EnsurePullTask(kt, mac.Client, lastBillSummaryMain); err != nil {
+		if err := curPuller.EnsurePullTask(kt, mac.Client, lastBillSummaryMain, mac.DefaultCurrency); err != nil {
 			return err
 		}
 	}
