@@ -227,3 +227,20 @@ type SecurityGroupStatisticResource struct {
 	ResName string `json:"res_name"`
 	Count   int64  `json:"count"`
 }
+
+// -------------------------- Clone --------------------------
+
+// TCloudSecurityGroupCloneReq tcloud security group clone request.
+type TCloudSecurityGroupCloneReq struct {
+	SecurityGroupID string            `json:"security_group_id" validate:"required"`
+	Manager         string            `json:"manager" validate:"required"`
+	BakManager      string            `json:"bak_manager" validate:"required"`
+	ManagementBizID int64             `json:"mgmt_biz_id" validate:"required"`
+	Tags            []apicore.TagPair `json:"tags" validate:"omitempty"`
+	TargetRegion    string            `json:"target_region" validate:"omitempty"`
+}
+
+// Validate tcloud security group clone request.
+func (req *TCloudSecurityGroupCloneReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

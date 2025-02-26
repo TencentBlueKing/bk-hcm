@@ -42,6 +42,8 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
+
+	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )
 
 // CreateTCloudSecurityGroup create tcloud security group.
@@ -95,7 +97,8 @@ func (g *securityGroup) CreateTCloudSecurityGroup(cts *rest.Contexts) (interface
 	}
 	result, err := g.dataCli.TCloud.SecurityGroup.BatchCreateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), createReq)
 	if err != nil {
-		logs.Errorf("request dataservice to create tcloud security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("request dataservice to create tcloud security group failed, err: %v, req: %v, rid: %s",
+			err, req, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -812,4 +815,95 @@ func (g *securityGroup) getCvms(kt *kit.Kit, cvmIDs []string) ([]cvm.BaseCvm, er
 		return nil, fmt.Errorf("list cvm failed, got %d, but expect %d", len(result), len(cvmIDs))
 	}
 	return result, nil
+}
+
+// TCloudCloneSecurityGroup ...
+func (g *securityGroup) TCloudCloneSecurityGroup(cts *rest.Contexts) (any, error) {
+
+	req := new(proto.TCloudSecurityGroupCloneReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	securityGroupMap, err := g.getSecurityGroupMap(cts.Kit, []string{req.SecurityGroupID})
+	if err != nil {
+		logs.Errorf("get security group map failed, sgID: %s, err: %v, rid: %s", req.SecurityGroupID, err, cts.Kit.Rid)
+		return nil, err
+	}
+	sg, ok := securityGroupMap[req.SecurityGroupID]
+	if !ok {
+		return nil, errf.Newf(errf.RecordNotFound, "security group: %s not found", req.SecurityGroupID)
+	}
+
+	client, err := g.ad.TCloud(cts.Kit, sg.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 如果目标地域为空，则默认指定为源安全组的地域
+	if req.TargetRegion == "" {
+		req.TargetRegion = sg.Region
+	}
+	opt := &securitygroup.TCloudSecurityGroupCloneOption{
+		Region:          req.TargetRegion,
+		SecurityGroupID: sg.CloudID,
+		Tags:            req.Tags,
+		RemoteRegion:    sg.Region,
+	}
+
+	newSecurityGroup, err := client.CloneSecurityGroup(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("request adaptor to clone tcloud security group failed, err: %v, opt: %v, rid: %s",
+			err, opt, cts.Kit.Rid)
+		return nil, err
+	}
+	sgID, err := g.createSecurityGroupForData(cts.Kit, req, sg.AccountID, newSecurityGroup)
+	if err != nil {
+		logs.Errorf("create security group for data-service failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return core.CreateResult{ID: sgID}, nil
+}
+
+func (g *securityGroup) createSecurityGroupForData(kt *kit.Kit, req *proto.TCloudSecurityGroupCloneReq, accountID string, sg *vpc.SecurityGroup) (string, error) {
+
+	tags := make([]core.TagPair, 0, len(sg.TagSet))
+	for _, tag := range sg.TagSet {
+		tags = append(tags, core.TagPair{
+			Key:   converter.PtrToVal(tag.Key),
+			Value: converter.PtrToVal(tag.Value),
+		})
+	}
+
+	createReq := &protocloud.SecurityGroupBatchCreateReq[corecloud.TCloudSecurityGroupExtension]{
+		SecurityGroups: []protocloud.SecurityGroupBatchCreate[corecloud.TCloudSecurityGroupExtension]{
+			{
+				CloudID:   *sg.SecurityGroupId,
+				BkBizID:   req.ManagementBizID,
+				Region:    req.TargetRegion,
+				Name:      *sg.SecurityGroupName,
+				Memo:      sg.SecurityGroupDesc,
+				AccountID: accountID,
+				Extension: &corecloud.TCloudSecurityGroupExtension{
+					CloudProjectID: sg.ProjectId,
+				},
+				Tags:        core.NewTagMap(tags...),
+				Manager:     req.Manager,
+				BakManager:  req.BakManager,
+				MgmtType:    enumor.MgmtTypeBiz,
+				MgmtBizID:   req.ManagementBizID,
+				UsageBizIds: []int64{req.ManagementBizID},
+			}},
+	}
+	result, err := g.dataCli.TCloud.SecurityGroup.BatchCreateSecurityGroup(kt.Ctx, kt.Header(), createReq)
+	if err != nil {
+		logs.Errorf("request dataservice to create tcloud security group failed, err: %v, req: %v, rid: %s",
+			err, createReq, kt.Rid)
+		return "", err
+	}
+	return result.IDs[0], nil
 }

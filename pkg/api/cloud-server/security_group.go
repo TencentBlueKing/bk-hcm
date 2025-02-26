@@ -229,3 +229,17 @@ type SecurityGroup[Extension cloud.SecurityGroupExtension] struct {
 	SubnetCount             uint64     `json:"subnet_count"`
 	Extension               *Extension `json:"extension"`
 }
+
+// -------------------------- Clone --------------------------
+
+// SecurityGroupCloneReq security group clone req.
+type SecurityGroupCloneReq struct {
+	Manager      string `json:"manager" validate:"required"`
+	BakManager   string `json:"bak_manager" validate:"required"`
+	TargetRegion string `json:"target_region" validate:"omitempty"`
+}
+
+// Validate ...
+func (req *SecurityGroupCloneReq) Validate() error {
+	return validator.Validate.Struct(req)
+}

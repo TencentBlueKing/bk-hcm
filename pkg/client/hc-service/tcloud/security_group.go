@@ -348,3 +348,11 @@ func (cli *SecurityGroupClient) SyncSecurityGroupUsageBizRel(kt *kit.Kit, req *s
 	return common.RequestNoResp[sync.TCloudSyncReq](cli.client, rest.POST, kt, req,
 		"/security_groups/usage_biz_rels/sync")
 }
+
+// CloneSecurityGroup 克隆安全组
+func (cli *SecurityGroupClient) CloneSecurityGroup(kt *kit.Kit, req *proto.TCloudSecurityGroupCloneReq) (
+	*core.CreateResult, error) {
+
+	return common.Request[proto.TCloudSecurityGroupCloneReq, core.CreateResult](cli.client, rest.POST, kt, req,
+		"/security_groups/clone")
+}
