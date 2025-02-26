@@ -33,8 +33,8 @@ import (
 	"hcm/pkg/rest"
 )
 
-// Add get root account with options
-func (s *service) Add(cts *rest.Contexts) (interface{}, error) {
+// AddRootAccount get root account with options
+func (s *service) AddRootAccount(cts *rest.Contexts) (interface{}, error) {
 	req := new(proto.RootAccountAddReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -104,6 +104,15 @@ func (s *service) isDuplicateName(cts *rest.Contexts, name string) error {
 }
 
 func (s *service) addForAws(cts *rest.Contexts, req *proto.RootAccountAddReq) (string, error) {
+	extension := &dataproto.AwsRootAccountExtensionCreateReq{
+		CloudAccountID:   req.Extension["cloud_account_id"],
+		CloudIamUsername: req.Extension["cloud_iam_username"],
+		CloudSecretID:    req.Extension["cloud_secret_id"],
+		CloudSecretKey:   req.Extension["cloud_secret_key"],
+	}
+	if err := extension.Validate(); err != nil {
+		return "", err
+	}
 	result, err := s.client.DataService().Aws.RootAccount.Create(
 		cts.Kit,
 		&dataproto.RootAccountCreateReq[dataproto.AwsRootAccountExtensionCreateReq]{
@@ -115,12 +124,7 @@ func (s *service) addForAws(cts *rest.Contexts, req *proto.RootAccountAddReq) (s
 			Site:        req.Site,
 			DeptID:      req.DeptID,
 			Memo:        req.Memo,
-			Extension: &dataproto.AwsRootAccountExtensionCreateReq{
-				CloudAccountID:   req.Extension["cloud_account_id"],
-				CloudIamUsername: req.Extension["cloud_iam_username"],
-				CloudSecretID:    req.Extension["cloud_secret_id"],
-				CloudSecretKey:   req.Extension["cloud_secret_key"],
-			},
+			Extension:   extension,
 		},
 	)
 	if err != nil {
@@ -139,6 +143,19 @@ func (s *service) addForGcp(cts *rest.Contexts, req *proto.RootAccountAddReq) (s
 		return "", fmt.Errorf("request email [%s] and extension email [%s] should be same", req.Email, email)
 	}
 
+	extension := &dataproto.GcpRootAccountExtensionCreateReq{
+		Email:                   email,
+		CloudProjectID:          req.Extension["cloud_project_id"],
+		CloudProjectName:        req.Extension["cloud_project_name"],
+		CloudServiceAccountID:   req.Extension["cloud_service_account_id"],
+		CloudServiceAccountName: req.Extension["cloud_service_account_name"],
+		CloudServiceSecretID:    req.Extension["cloud_service_secret_id"],
+		CloudServiceSecretKey:   req.Extension["cloud_service_secret_key"],
+	}
+	if err := extension.Validate(); err != nil {
+		return "", err
+	}
+
 	result, err := s.client.DataService().Gcp.RootAccount.Create(
 		cts.Kit,
 		&dataproto.RootAccountCreateReq[dataproto.GcpRootAccountExtensionCreateReq]{
@@ -150,15 +167,7 @@ func (s *service) addForGcp(cts *rest.Contexts, req *proto.RootAccountAddReq) (s
 			Site:        req.Site,
 			DeptID:      req.DeptID,
 			Memo:        req.Memo,
-			Extension: &dataproto.GcpRootAccountExtensionCreateReq{
-				Email:                   email,
-				CloudProjectID:          req.Extension["cloud_project_id"],
-				CloudProjectName:        req.Extension["cloud_project_name"],
-				CloudServiceAccountID:   req.Extension["cloud_service_account_id"],
-				CloudServiceAccountName: req.Extension["cloud_service_account_name"],
-				CloudServiceSecretID:    req.Extension["cloud_service_secret_id"],
-				CloudServiceSecretKey:   req.Extension["cloud_service_secret_key"],
-			},
+			Extension:   extension,
 		},
 	)
 	if err != nil {
@@ -168,6 +177,19 @@ func (s *service) addForGcp(cts *rest.Contexts, req *proto.RootAccountAddReq) (s
 }
 
 func (s *service) addForAzure(cts *rest.Contexts, req *proto.RootAccountAddReq) (string, error) {
+
+	extension := &dataproto.AzureRootAccountExtensionCreateReq{
+		DisplayNameName:       req.Extension["display_name_name"],
+		CloudTenantID:         req.Extension["cloud_tenant_id"],
+		CloudSubscriptionID:   req.Extension["cloud_subscription_id"],
+		CloudSubscriptionName: req.Extension["cloud_subscription_name"],
+		CloudApplicationID:    req.Extension["cloud_application_id"],
+		CloudApplicationName:  req.Extension["cloud_application_name"],
+		CloudClientSecretKey:  req.Extension["cloud_client_secret_key"],
+	}
+	if err := extension.Validate(); err != nil {
+		return "", err
+	}
 	result, err := s.client.DataService().Azure.RootAccount.Create(
 		cts.Kit,
 		&dataproto.RootAccountCreateReq[dataproto.AzureRootAccountExtensionCreateReq]{
@@ -179,15 +201,7 @@ func (s *service) addForAzure(cts *rest.Contexts, req *proto.RootAccountAddReq) 
 			Site:        req.Site,
 			DeptID:      req.DeptID,
 			Memo:        req.Memo,
-			Extension: &dataproto.AzureRootAccountExtensionCreateReq{
-				DisplayNameName:       req.Extension["display_name_name"],
-				CloudTenantID:         req.Extension["cloud_tenant_id"],
-				CloudSubscriptionID:   req.Extension["cloud_subscription_id"],
-				CloudSubscriptionName: req.Extension["cloud_subscription_name"],
-				CloudApplicationID:    req.Extension["cloud_application_id"],
-				CloudApplicationName:  req.Extension["cloud_application_name"],
-				CloudClientSecretKey:  req.Extension["cloud_client_secret_key"],
-			},
+			Extension:   extension,
 		},
 	)
 	if err != nil {
@@ -197,6 +211,18 @@ func (s *service) addForAzure(cts *rest.Contexts, req *proto.RootAccountAddReq) 
 }
 
 func (s *service) addForHuaWei(cts *rest.Contexts, req *proto.RootAccountAddReq) (string, error) {
+	extension := &dataproto.HuaWeiRootAccountExtensionCreateReq{
+		CloudSubAccountID:   req.Extension["cloud_sub_account_id"],
+		CloudSubAccountName: req.Extension["cloud_sub_account_name"],
+		CloudSecretID:       req.Extension["cloud_secret_id"],
+		CloudSecretKey:      req.Extension["cloud_secret_key"],
+		CloudIamUserID:      req.Extension["cloud_iam_user_id"],
+		CloudIamUsername:    req.Extension["cloud_iam_username"],
+	}
+	if err := extension.Validate(); err != nil {
+		return "", err
+	}
+
 	result, err := s.client.DataService().HuaWei.RootAccount.Create(
 		cts.Kit,
 		&dataproto.RootAccountCreateReq[dataproto.HuaWeiRootAccountExtensionCreateReq]{
@@ -208,14 +234,7 @@ func (s *service) addForHuaWei(cts *rest.Contexts, req *proto.RootAccountAddReq)
 			Site:        req.Site,
 			DeptID:      req.DeptID,
 			Memo:        req.Memo,
-			Extension: &dataproto.HuaWeiRootAccountExtensionCreateReq{
-				CloudSubAccountID:   req.Extension["cloud_sub_account_id"],
-				CloudSubAccountName: req.Extension["cloud_sub_account_name"],
-				CloudSecretID:       req.Extension["cloud_secret_id"],
-				CloudSecretKey:      req.Extension["cloud_secret_key"],
-				CloudIamUserID:      req.Extension["cloud_iam_user_id"],
-				CloudIamUsername:    req.Extension["cloud_iam_username"],
-			},
+			Extension:   extension,
 		},
 	)
 	if err != nil {
@@ -225,6 +244,12 @@ func (s *service) addForHuaWei(cts *rest.Contexts, req *proto.RootAccountAddReq)
 }
 
 func (s *service) addForZenlayer(cts *rest.Contexts, req *proto.RootAccountAddReq) (string, error) {
+	extension := &dataproto.ZenlayerRootAccountExtensionCreateReq{
+		CloudAccountID: req.Extension["cloud_account_id"],
+	}
+	if err := extension.Validate(); err != nil {
+		return "", err
+	}
 	result, err := s.client.DataService().Zenlayer.RootAccount.Create(
 		cts.Kit,
 		&dataproto.RootAccountCreateReq[dataproto.ZenlayerRootAccountExtensionCreateReq]{
@@ -236,9 +261,7 @@ func (s *service) addForZenlayer(cts *rest.Contexts, req *proto.RootAccountAddRe
 			Site:        req.Site,
 			DeptID:      req.DeptID,
 			Memo:        req.Memo,
-			Extension: &dataproto.ZenlayerRootAccountExtensionCreateReq{
-				CloudAccountID: req.Extension["cloud_account_id"],
-			},
+			Extension:   extension,
 		},
 	)
 	if err != nil {
@@ -248,6 +271,12 @@ func (s *service) addForZenlayer(cts *rest.Contexts, req *proto.RootAccountAddRe
 }
 
 func (s *service) addForKaopu(cts *rest.Contexts, req *proto.RootAccountAddReq) (string, error) {
+	extension := &dataproto.KaopuRootAccountExtensionCreateReq{
+		CloudAccountID: req.Extension["cloud_account_id"],
+	}
+	if err := extension.Validate(); err != nil {
+		return "", err
+	}
 	result, err := s.client.DataService().Kaopu.RootAccount.Create(
 		cts.Kit,
 		&dataproto.RootAccountCreateReq[dataproto.KaopuRootAccountExtensionCreateReq]{
@@ -259,9 +288,7 @@ func (s *service) addForKaopu(cts *rest.Contexts, req *proto.RootAccountAddReq) 
 			Site:        req.Site,
 			DeptID:      req.DeptID,
 			Memo:        req.Memo,
-			Extension: &dataproto.KaopuRootAccountExtensionCreateReq{
-				CloudAccountID: req.Extension["cloud_account_id"],
-			},
+			Extension:   extension,
 		},
 	)
 	if err != nil {

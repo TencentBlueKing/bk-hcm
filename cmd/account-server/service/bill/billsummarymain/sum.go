@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 
@@ -42,6 +43,12 @@ func (s *service) SumMainAccountSummary(cts *rest.Contexts) (interface{}, error)
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
+
+	authParam := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.AccountBill, Action: meta.Find}}
+	if err := s.authorizer.AuthorizeWithPerm(cts.Kit, authParam); err != nil {
+		return nil, err
+	}
+
 	expressions := []filter.RuleFactory{
 		tools.RuleEqual("bill_year", req.BillYear),
 		tools.RuleEqual("bill_month", req.BillMonth),
