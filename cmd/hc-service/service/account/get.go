@@ -504,6 +504,9 @@ func (svc *service) AwsGetResCountBySecret(cts *rest.Contexts) (interface{}, err
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	if req.Site == "" {
+		req.Site = enumor.InternationalSite
+	}
 	secret := &types.BaseSecret{CloudSecretID: req.CloudSecretID, CloudSecretKey: req.CloudSecretKey}
 	awsClient, err := svc.ad.Adaptor().Aws(secret, "", req.Site)
 	if err != nil {

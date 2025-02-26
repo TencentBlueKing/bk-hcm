@@ -103,7 +103,7 @@ func (sk TCloudSecret) Validate() error {
 type AwsSecret struct {
 	CloudSecretID  string                 `json:"cloud_secret_id" validate:"required"`
 	CloudSecretKey string                 `json:"cloud_secret_key" validate:"required"`
-	Site           enumor.AccountSiteType `json:"site" validate:"required"`
+	Site           enumor.AccountSiteType `json:"site" validate:"omitempty"`
 }
 
 // Validate ...

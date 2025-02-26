@@ -160,7 +160,7 @@ func (a *ApplicationOfCreateMainAccount) createForAws(rootAccount *protocore.Bas
 		},
 	)
 	if err != nil {
-		return "", fmt.Errorf("create main account in cloud success, but create main account in db failed, cloud_id: %s err: %v, rid: %s",
+		return "", fmt.Errorf("create aws main account in db failed, cloud_id: %s, err: %v, rid: %s",
 			accountResp.AccountID, err, a.Cts.Kit.Rid)
 	}
 
@@ -222,7 +222,7 @@ func (a *ApplicationOfCreateMainAccount) createForGcp(rootAccount *protocore.Bas
 		},
 	)
 	if err != nil {
-		return "", fmt.Errorf("create main account in cloud success, but create main account in db failed, cloud_id: %s err: %v, rid: %s",
+		return "", fmt.Errorf("create gcp main account in db failed, cloud_id: %s, err: %v, rid: %s",
 			accountResp.ProjectID, err, a.Cts.Kit.Rid)
 	}
 
