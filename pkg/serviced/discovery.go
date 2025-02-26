@@ -26,12 +26,12 @@ import (
 	"strings"
 	"sync"
 
-	"go.etcd.io/etcd/api/v3/mvccpb"
-	etcd3 "go.etcd.io/etcd/client/v3"
-
 	"hcm/pkg/cc"
 	"hcm/pkg/logs"
 	cvt "hcm/pkg/tools/converter"
+
+	"go.etcd.io/etcd/api/v3/mvccpb"
+	etcd3 "go.etcd.io/etcd/client/v3"
 )
 
 // ServerInfo server node info
@@ -84,12 +84,12 @@ type discoveryLabelWrapper struct {
 
 // Discover ...
 func (d *discoveryLabelWrapper) Discover(name cc.Name) ([]string, error) {
-	return d.discoverWithLabel(name, d.labels)
+	return d.discoverByLabels(name, d.labels)
 }
 
-// WithLabels ...
-func (d *discoveryLabelWrapper) WithLabels(labels []string) Discover {
-	if len(labels) != 0 {
+// ByLabels reset labels
+func (d *discoveryLabelWrapper) ByLabels(labels []string) Discover {
+	if labels != nil {
 		return &discoveryLabelWrapper{discovery: d.discovery, labels: labels}
 	}
 	return d
@@ -99,7 +99,10 @@ func (d *discoveryLabelWrapper) WithLabels(labels []string) Discover {
 type Discover interface {
 	Discover(cc.Name) ([]string, error)
 	Services() []cc.Name
-	WithLabels([]string) Discover
+	// ByLabels return a discovery wrapper filtered by the given labels.
+	// if labels is nil, return the original discovery instance (no modified)
+	// if labels is not nil, the discovery labels will be overridden by given labels.
+	ByLabels([]string) Discover
 	Node
 }
 
@@ -151,8 +154,8 @@ type discovery struct {
 	cancel context.CancelFunc
 }
 
-// WithLabels return a discovery wrapper with labels.
-func (d *discovery) WithLabels(labels []string) Discover {
+// ByLabels return a discovery wrapper by labels.
+func (d *discovery) ByLabels(labels []string) Discover {
 	if labels != nil {
 		return &discoveryLabelWrapper{discovery: d, labels: labels}
 	}
@@ -182,11 +185,11 @@ func (d *discovery) Services() []cc.Name {
 
 // Discover service addresses by service name.
 func (d *discovery) Discover(name cc.Name) ([]string, error) {
-	return d.discoverWithLabel(name, nil)
+	return d.discoverByLabels(name, nil)
 }
 
-// Discover service addresses by service name with labels, if overrideLabels is nil, use default labels.
-func (d *discovery) discoverWithLabel(name cc.Name, overrideLabels []string) ([]string, error) {
+// Discover service addresses by service name and labels
+func (d *discovery) discoverByLabels(name cc.Name, labels []string) ([]string, error) {
 	nameExists := false
 	for _, service := range d.discOpt.Services {
 		if name == service {
@@ -204,10 +207,6 @@ func (d *discovery) discoverWithLabel(name cc.Name, overrideLabels []string) ([]
 	d.addressesRwMux.RUnlock()
 
 	addresses := make([]string, 0)
-	wantLabels := d.discOpt.Labels
-	if overrideLabels != nil {
-		wantLabels = overrideLabels
-	}
 
 outside:
 	for _, addressInfo := range addressInfos {
@@ -215,16 +214,20 @@ outside:
 		if addressInfo.env != d.discOpt.Env {
 			continue
 		}
+		if len(labels) == 0 && len(addressInfo.labels) == 0 {
+			break
+		}
+
 		// if request has no label want, skip labeled service, avoid normal request match labeled service
-		if len(wantLabels) == 0 && len(addressInfo.labels) > 0 {
+		if len(labels) == 0 && len(addressInfo.labels) > 0 {
 			continue
 		}
-		if len(wantLabels) > len(addressInfo.labels) {
+		if len(labels) > len(addressInfo.labels) {
 			continue
 		}
-		if len(wantLabels) > 0 {
-			for i := range wantLabels {
-				if _, ok := addressInfo.labels[wantLabels[i]]; !ok {
+		if len(labels) > 0 {
+			for i := range labels {
+				if _, ok := addressInfo.labels[labels[i]]; !ok {
 					// skip address with any want label not match
 					continue outside
 				}

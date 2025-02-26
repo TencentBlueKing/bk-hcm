@@ -56,7 +56,7 @@ func (d *APIDiscovery) GetServersWithLabel(labels ...string) ([]string, error) {
 	d.Lock()
 	defer d.Unlock()
 
-	servers, err := d.discover.WithLabels(labels).Discover(d.service)
+	servers, err := d.discover.ByLabels(labels).Discover(d.service)
 	if err != nil {
 		return nil, err
 	}
