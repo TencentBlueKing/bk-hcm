@@ -109,14 +109,15 @@ func (svc *securityGroupSvc) authorizeCloneSecurityGroup(cts *rest.Contexts, acc
 	return nil
 }
 
-func (svc *securityGroupSvc) tcloudCloneSecurityGroup(kt *kit.Kit, bizID int64, sg *cloud.BaseSecurityGroup, req *cloudserver.SecurityGroupCloneReq) (*core.CreateResult, error) {
+func (svc *securityGroupSvc) tcloudCloneSecurityGroup(kt *kit.Kit, bizID int64, sg *cloud.BaseSecurityGroup,
+	req *cloudserver.SecurityGroupCloneReq) (*core.CreateResult, error) {
 
 	cloneReq := &proto.TCloudSecurityGroupCloneReq{
-		Region:          sg.Region,
 		SecurityGroupID: sg.ID,
 		Manager:         req.Manager,
 		BakManager:      req.BakManager,
 		ManagementBizID: bizID,
+		TargetRegion:    req.TargetRegion,
 	}
 	result, err := svc.client.HCService().TCloud.SecurityGroup.CloneSecurityGroup(kt, cloneReq)
 	if err != nil {

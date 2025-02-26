@@ -843,11 +843,17 @@ func (g *securityGroup) TCloudCloneSecurityGroup(cts *rest.Contexts) (any, error
 		return nil, err
 	}
 
+	// 如果目标地域为空，则默认指定为源安全组的地域
+	if req.TargetRegion == "" {
+		req.TargetRegion = sg.Region
+	}
 	opt := &securitygroup.TCloudSecurityGroupCloneOption{
-		Region:          sg.Region,
+		Region:          req.TargetRegion,
 		SecurityGroupID: sg.CloudID,
 		Tags:            req.Tags,
+		RemoteRegion:    sg.Region,
 	}
+
 	newSecurityGroup, err := client.CloneSecurityGroup(cts.Kit, opt)
 	if err != nil {
 		logs.Errorf("request adaptor to clone tcloud security group failed, err: %v, opt: %v, rid: %s",
@@ -878,7 +884,7 @@ func (g *securityGroup) createSecurityGroupForData(kt *kit.Kit, req *proto.TClou
 			{
 				CloudID:   *sg.SecurityGroupId,
 				BkBizID:   req.ManagementBizID,
-				Region:    req.Region,
+				Region:    req.TargetRegion,
 				Name:      *sg.SecurityGroupName,
 				Memo:      sg.SecurityGroupDesc,
 				AccountID: accountID,

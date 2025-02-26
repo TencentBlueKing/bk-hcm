@@ -10,12 +10,13 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/security_groups/{id}/clone
 
 ### 输入参数
 
-| 参数名称        | 参数类型   | 必选 | 描述       |
-|-------------|--------|----|----------|
-| bk_biz_id   | int64  | 是  | 业务ID     |
-| id          | string | 是  | 被克隆安全组ID |
-| manager     | string | 是  | 主负责人     |
-| bak_manager | string | 是  | 备份负责人    |
+| 参数名称          | 参数类型   | 必选 | 描述                         |
+|---------------|--------|----|----------------------------|
+| bk_biz_id     | int64  | 是  | 业务ID                       |
+| id            | string | 是  | 被克隆安全组ID                   |
+| manager       | string | 是  | 主负责人                       |
+| bak_manager   | string | 是  | 备份负责人                      |
+| target_region | string | 否  | 新克隆的安全组的目标地域,如果不传入则与源目标组一致 |
 
 ### 业务逻辑说明
 
