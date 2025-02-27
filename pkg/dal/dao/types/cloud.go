@@ -39,3 +39,6 @@ var CommonBasicInfoFields = []string{"id", "vendor", "account_id", "bk_biz_id"}
 
 // ResWithRecycleBasicFields 可以进行回收的资源基础字段
 var ResWithRecycleBasicFields = []string{"id", "vendor", "account_id", "bk_biz_id", "recycle_status"}
+
+// CommonFieldsWithRegion defines common cloud resource basic info fields and region field
+var CommonFieldsWithRegion = []string{"id", "vendor", "account_id", "bk_biz_id", "region"}
