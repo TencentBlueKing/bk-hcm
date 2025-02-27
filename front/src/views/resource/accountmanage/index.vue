@@ -120,6 +120,7 @@ const getAccountList = async () => {
 };
 
 const updateBkBizIdsFilter = (datalist: IAccountItem[]) => {
+  if (!datalist.length) return;
   const bkBizIdsColumn = columns.find((col) => col.id === 'bk_biz_ids');
   if (bkBizIdsColumn) {
     const uniqueBkBizIds = [...new Set(datalist.flatMap((item) => item.bk_biz_ids))];
