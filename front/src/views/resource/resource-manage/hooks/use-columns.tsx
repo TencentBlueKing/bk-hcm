@@ -1998,7 +1998,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '币种',
       field: 'currency',
       isDefaultShow: true,
-      render: ({ cell }: any) => CURRENCY_MAP[cell],
+      render: ({ cell }: any) => CURRENCY_MAP[cell] ?? '--',
     },
     {
       label: '当前账单',
@@ -2066,7 +2066,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '币种',
       field: 'currency',
       isDefaultShow: true,
-      render: ({ cell }: any) => CURRENCY_MAP[cell],
+      render: ({ cell }: any) => CURRENCY_MAP[cell] ?? '--',
     },
     {
       label: '业务名称',
@@ -2126,7 +2126,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '币种',
       field: 'currency',
       isDefaultShow: true,
-      render: ({ cell }: any) => CURRENCY_MAP[cell],
+      render: ({ cell }: any) => CURRENCY_MAP[cell] ?? '--',
     },
     {
       label: '本期应付金额',
@@ -2195,7 +2195,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '币种',
       field: 'currency',
       isDefaultShow: true,
-      render: ({ cell }: any) => CURRENCY_MAP[cell],
+      render: ({ cell }: any) => CURRENCY_MAP[cell] ?? '--',
     },
     {
       label: '本期应付金额',
@@ -2264,7 +2264,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '币种',
       field: 'currency',
       isDefaultShow: true,
-      render: ({ cell }: any) => CURRENCY_MAP[cell],
+      render: ({ cell }: any) => CURRENCY_MAP[cell] ?? '--',
     },
     {
       label: '本期应付金额',
@@ -2333,7 +2333,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '币种',
       field: 'currency',
       isDefaultShow: true,
-      render: ({ cell }: any) => CURRENCY_MAP[cell],
+      render: ({ cell }: any) => CURRENCY_MAP[cell] ?? '--',
     },
     {
       label: '本期应付金额',
@@ -2447,7 +2447,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '币种',
       field: 'currency',
       isDefaultShow: true,
-      render: ({ cell }: any) => CURRENCY_MAP[cell],
+      render: ({ cell }: any) => CURRENCY_MAP[cell] ?? '--',
     },
     {
       label: '本期应付金额',
