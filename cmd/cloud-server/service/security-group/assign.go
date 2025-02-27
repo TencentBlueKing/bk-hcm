@@ -36,6 +36,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/classifier"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
 	"hcm/pkg/tools/slice"
@@ -134,6 +135,63 @@ func (svc *securityGroupSvc) checkSGUnAssign(kt *kit.Kit, req *proto.AssignSecur
 		return fmt.Errorf("security group%v already assigned", ids)
 	}
 
+	return nil
+}
+
+// BatchAssignBiz batch assign biz.
+func (svc *securityGroupSvc) BatchAssignBiz(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.BatchAssignBizReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	if err := svc.authorizeAssignSecurityGroupPermission(cts, req.IDs); err != nil {
+		logs.Errorf("authorizeAssignSecurityGroupPermission failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	previewResult, err := svc.checkSecurityGroupAssignable(cts.Kit, req.IDs)
+	if err != nil {
+		logs.Errorf("checkSecurityGroupAssignable failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	for _, one := range previewResult {
+		if !one.Assignable {
+			logs.Errorf("security group %s not assignable, reason: %s, rid: %s", one.ID, one.Reason, cts.Kit.Rid)
+			return nil, fmt.Errorf("security group %s not assignable, reason: %s", one.ID, one.Reason)
+		}
+	}
+
+	if err = svc.batchAssignBiz(cts.Kit, previewResult); err != nil {
+		logs.Errorf("batchAssignBiz failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	return nil, nil
+}
+
+func (svc *securityGroupSvc) batchAssignBiz(kt *kit.Kit, items []*proto.AssignBizPreviewResp) error {
+	itemsByBizID := classifier.ClassifySlice(items, func(item *proto.AssignBizPreviewResp) int64 {
+		return item.AssignedBizID
+	})
+	for bizID, securityGroups := range itemsByBizID {
+		ids := make([]string, 0, len(securityGroups))
+		for _, one := range securityGroups {
+			ids = append(ids, one.ID)
+		}
+		update := &dataproto.SecurityGroupCommonInfoBatchUpdateReq{
+			IDs:     ids,
+			BkBizID: bizID,
+		}
+		err := svc.client.DataService().Global.SecurityGroup.BatchUpdateSecurityGroupCommonInfo(kt.Ctx, kt.Header(), update)
+		if err != nil {
+			logs.Errorf("BatchUpdateSecurityGroupCommonInfo failed, err: %v, req: %v, rid: %s", err, update,
+				kt.Rid)
+			return err
+		}
+	}
 	return nil
 }
 
