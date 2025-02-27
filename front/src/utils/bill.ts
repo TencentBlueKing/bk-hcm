@@ -17,26 +17,25 @@ export function formatBillCost(value: string, fixed = 3): string {
   return num % 1 === 0 ? num.toString() : num.toFixed(fixed);
 }
 
-export function calcBillData(last: string, current: string): number {
+export function calcBillData(last: string, current: string): string {
   const lastCost = parseFloat(formatBillCost(last));
   const currentCost = parseFloat(formatBillCost(current));
   const balance = currentCost - lastCost;
-  const ratio = parseFloat(((balance / lastCost) * 100).toFixed(2));
-
-  if (balance === 0) return 0;
-  if (lastCost === 0) return currentCost * 100;
+  const ratio = formatBillCost(String((balance / lastCost) * 100));
+  if (balance === 0) return '0';
+  if (lastCost === 0) return formatBillCost(String(currentCost * 100));
   return ratio;
 }
 // 环比计算
 export function formatBillRatio(last: string, current: string): string {
   const ratio = calcBillData(last, current);
-  return ratio > 0 ? `+${ratio}%` : `${ratio}%`;
+  return +ratio > 0 ? `+${ratio}%` : `${ratio}%`;
 }
 
 export function formatBillRatioClass(last: string, current: string): string {
   let className = 'red';
   const ratio = calcBillData(last, current);
-  if (ratio < 30 && ratio > -30) {
+  if (+ratio < 30 && +ratio > -30) {
     className = 'green';
   }
   return className;
