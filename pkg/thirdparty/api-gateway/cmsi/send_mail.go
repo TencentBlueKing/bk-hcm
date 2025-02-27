@@ -59,7 +59,7 @@ func (c *cmsi) SendMail(kt *kit.Kit, req *CmsiMail) error {
 	}
 
 	// 邮件默认抄送给平台管理员
-	if req.Cc == "" {
+	if req.Cc == "" && req.CcUserName == "" {
 		req.Cc = strings.Join(c.cc, ",")
 	}
 
