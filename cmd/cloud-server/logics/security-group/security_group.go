@@ -335,8 +335,7 @@ func (s *securityGroup) UpdateSGMgmtAttr(kt *kit.Kit, mgmtAttr *proto.SecurityGr
 		SecurityGroups: updateItems,
 	}
 
-	if err := s.client.DataService().Global.SecurityGroup.BatchUpdateSecurityGroupMgmtAttr(kt.Ctx, kt.Header(),
-		updateReq); err != nil {
+	if err := s.client.DataService().Global.SecurityGroup.BatchUpdateSecurityGroupMgmtAttr(kt, updateReq); err != nil {
 		logs.Errorf("batch update security group management attributes failed, err: %v, rid: %s", err,
 			kt.Rid)
 		return err
@@ -404,7 +403,7 @@ func (s *securityGroup) BatchUpdateSGMgmtAttr(kt *kit.Kit, mgmtAttrs []proto.Bat
 			SecurityGroups: updateItems,
 		}
 
-		if err := s.client.DataService().Global.SecurityGroup.BatchUpdateSecurityGroupMgmtAttr(kt.Ctx, kt.Header(),
+		if err := s.client.DataService().Global.SecurityGroup.BatchUpdateSecurityGroupMgmtAttr(kt,
 			updateReq); err != nil {
 			logs.Errorf("batch update security group management attributes failed, err: %v, rid: %s", err,
 				kt.Rid)
