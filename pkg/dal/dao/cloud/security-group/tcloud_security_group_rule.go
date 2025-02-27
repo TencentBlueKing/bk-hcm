@@ -49,6 +49,7 @@ type TCloudSGRule interface {
 	Delete(kt *kit.Kit, expr *filter.Expression) error
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 	ListExt(kt *kit.Kit, opt *types.ListOption) (*types.ListTCloudSGRuleDetails, error)
+	CountBySecurityGroupIDs(kt *kit.Kit, expr *filter.Expression) (map[string]int64, error)
 }
 
 var _ TCloudSGRule = new(TCloudSGRuleDao)
@@ -389,4 +390,36 @@ func (dao *TCloudSGRuleDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.
 	}
 
 	return nil
+}
+
+// CountBySecurityGroupIDs count rules by security group ids.
+func (dao *TCloudSGRuleDao) CountBySecurityGroupIDs(kt *kit.Kit, expr *filter.Expression) (map[string]int64, error) {
+
+	if expr == nil {
+		return nil, errf.New(errf.InvalidParameter, "filter expr is required")
+	}
+
+	whereExpr, whereValue, err := expr.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	if err != nil {
+		return nil, err
+	}
+	sql := fmt.Sprintf(`SELECT security_group_id, COUNT(*) AS rule_count FROM %s %s GROUP BY security_group_id;`,
+		table.TCloudSecurityGroupRuleTable, whereExpr)
+
+	details := make([]struct {
+		SecurityGroupID string `db:"security_group_id"`
+		RuleCount       int64  `db:"rule_count"`
+	}, 0)
+
+	err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]int64)
+	for _, detail := range details {
+		result[detail.SecurityGroupID] = detail.RuleCount
+	}
+
+	return result, nil
 }
