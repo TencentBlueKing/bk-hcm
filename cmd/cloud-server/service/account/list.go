@@ -95,6 +95,9 @@ func (a *accountSvc) listResource(cts *rest.Contexts, typ meta.ResourceType) (in
 		logs.Errorf("list account failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
+	if req.Page.Count {
+		return accounts, nil
+	}
 
 	respIDs := make([]string, 0, len(accounts.Details))
 	for _, one := range accounts.Details {
