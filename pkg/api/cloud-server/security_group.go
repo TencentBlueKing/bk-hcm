@@ -86,6 +86,16 @@ type SecurityGroupListResult struct {
 	Details []cloud.BaseSecurityGroup `json:"details,omitempty"`
 }
 
+// SecurityGroupQueryRelatedResourceCountReq security group query related resource count req.
+type SecurityGroupQueryRelatedResourceCountReq struct {
+	IDs []string `json:"ids" validate:"required,min=1,max=100"`
+}
+
+// Validate security group query related resource count request.
+func (req *SecurityGroupQueryRelatedResourceCountReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
 // ListSGRelBusinessResp response data of list security group related business
 type ListSGRelBusinessResp struct {
 	CVM          []ListSGRelBusinessItem `json:"cvm"`

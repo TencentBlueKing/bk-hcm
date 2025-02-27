@@ -76,6 +76,8 @@ func InitSecurityGroupService(c *capability.Capability) {
 		"/security_group/{id}/common/list", svc.ListResourceIdBySecurityGroup)
 	h.Add("ListCvmIdBySecurityGroup", http.MethodPost,
 		"/security_group/{id}/cvm/list", svc.ListCvmIdBySecurityGroup)
+	h.Add("QueryRelatedResourceCount", http.MethodPost,
+		"/security_groups/related_resources/query_count", svc.QueryRelatedResourceCount)
 	h.Add("ListSecurityGroupRelBusiness", http.MethodPost,
 		"/security_groups/{security_group_id}/related_resources/bizs/list", svc.ListSecurityGroupRelBusiness)
 	h.Add("ListSGRelCVMByBizID", http.MethodPost,
@@ -136,6 +138,8 @@ func bizService(h *rest.Handler, svc *securityGroupSvc) {
 		"/bizs/{bk_biz_id}/security_group/{id}/common/list", svc.ListBizResourceIDBySecurityGroup)
 	h.Add("ListBizCvmIdBySecurityGroup", http.MethodPost,
 		"/bizs/{bk_biz_id}/security_group/{id}/cvm/list", svc.ListBizCvmIdBySecurityGroup)
+	h.Add("QueryBizRelatedResourceCount", http.MethodPost,
+		"/bizs/{bk_biz_id}/security_groups/related_resources/query_count", svc.QueryBizRelatedResourceCount)
 	h.Add("ListBizSecurityGroupRelBusiness", http.MethodPost,
 		"/bizs/{bk_biz_id}/security_groups/{security_group_id}/related_resources/bizs/list",
 		svc.ListBizSecurityGroupRelBusiness)

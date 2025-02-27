@@ -213,7 +213,7 @@ func (req *ListSecurityGroupStatisticReq) Validate() error {
 
 // ListSecurityGroupStatisticResp ...
 type ListSecurityGroupStatisticResp struct {
-	Details []SecurityGroupStatisticItem `json:"details"`
+	Details []*SecurityGroupStatisticItem `json:"details"`
 }
 
 // SecurityGroupStatisticItem ...
