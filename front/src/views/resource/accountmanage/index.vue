@@ -126,7 +126,11 @@ const updateBkBizIdsFilter = (datalist: IAccountItem[]) => {
     const uniqueBkBizIds = [...new Set(datalist.flatMap((item) => item.bk_biz_ids))];
     Object.assign(bkBizIdsColumn, {
       filter: {
-        list: uniqueBkBizIds.map((v) => ({ text: getNameFromBusinessMap(v), value: v })),
+        list: uniqueBkBizIds.map((v) => {
+          const name = getNameFromBusinessMap(v);
+          // TODO：组件库2.0.1-beta.34只匹配了label、value，没有匹配text
+          return { text: name, value: v, label: name };
+        }),
         filterFn: (checked: number[], row: IAccountItem) => checked.some((v) => row.bk_biz_ids?.includes(v)),
       },
     });
