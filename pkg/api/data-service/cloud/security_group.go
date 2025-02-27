@@ -130,6 +130,44 @@ func (req *SecurityGroupCommonInfoBatchUpdateReq) Validate() error {
 	return nil
 }
 
+// BatchUpdateSecurityGroupMgmtAttrReq security group update management attribute request.
+type BatchUpdateSecurityGroupMgmtAttrReq struct {
+	SecurityGroups []BatchUpdateSGMgmtAttrItem `json:"security_groups" validate:"required,min=1"`
+}
+
+// Validate security group batch update management attribute request.
+func (req BatchUpdateSecurityGroupMgmtAttrReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	if len(req.SecurityGroups) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("security group count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	for _, item := range req.SecurityGroups {
+		if err := item.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// BatchUpdateSGMgmtAttrItem security group update management attribute item.
+type BatchUpdateSGMgmtAttrItem struct {
+	ID         string          `json:"id" validate:"required"`
+	MgmtType   enumor.MgmtType `json:"mgmt_type"`
+	MgmtBizID  int64           `json:"mgmt_biz_id"`
+	Manager    string          `json:"manager"`
+	BakManager string          `json:"bak_manager"`
+}
+
+// Validate security group update management attribute item.
+func (i BatchUpdateSGMgmtAttrItem) Validate() error {
+	return validator.Validate.Struct(i)
+}
+
 // -------------------------- List --------------------------
 
 // SecurityGroupListReq security group list req.

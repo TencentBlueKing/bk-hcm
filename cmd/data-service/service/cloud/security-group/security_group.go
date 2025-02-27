@@ -75,6 +75,8 @@ func initSecurityGroupService(cap *capability.Capability) {
 	h.Add("BatchDeleteSecurityGroup", http.MethodDelete, "/security_groups/batch", svc.BatchDeleteSecurityGroup)
 	h.Add("BatchUpdateSecurityGroupCommonInfo", http.MethodPatch, "/security_groups/common/info/batch/update",
 		svc.BatchUpdateSecurityGroupCommonInfo)
+	h.Add("BatchUpdateSecurityGroupMgmtAttr", http.MethodPatch, "/security_groups/mgmt_attrs/batch/update",
+		svc.BatchUpdateSecurityGroupMgmtAttr)
 
 	h.Load(cap.WebService)
 }
@@ -571,6 +573,45 @@ func (svc *securityGroupSvc) BatchUpdateSecurityGroupCommonInfo(cts *rest.Contex
 		BkBizID: req.BkBizID,
 	}
 	if err := svc.dao.SecurityGroup().Update(cts.Kit, updateFilter, updateFiled); err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+// BatchUpdateSecurityGroupMgmtAttr batch update security group mgmt attr.
+func (svc *securityGroupSvc) BatchUpdateSecurityGroupMgmtAttr(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocloud.BatchUpdateSecurityGroupMgmtAttrReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		for _, sg := range req.SecurityGroups {
+			update := &tablecloud.SecurityGroupTable{
+				MgmtType:   sg.MgmtType,
+				MgmtBizID:  sg.MgmtBizID,
+				Manager:    sg.Manager,
+				BakManager: sg.BakManager,
+				Reviser:    cts.Kit.User,
+			}
+
+			if err := svc.dao.SecurityGroup().UpdateByIDWithTx(cts.Kit, txn, sg.ID, update); err != nil {
+				logs.Errorf("update security group by id failed, err: %v, id: %s, rid: %s", err, sg.ID,
+					cts.Kit.Rid)
+				return nil, fmt.Errorf("update security group failed, err: %v", err)
+			}
+		}
+
+		return nil, nil
+	})
+
+	if err != nil {
+		logs.Errorf("batch update security group mgmt attr failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 

@@ -45,6 +45,10 @@ func InitSecurityGroupService(c *capability.Capability) {
 	h.Add("CreateSecurityGroup", http.MethodPost, "/security_groups/create", svc.CreateSecurityGroup)
 	h.Add("GetSecurityGroup", http.MethodGet, "/security_groups/{id}", svc.GetSecurityGroup)
 	h.Add("BatchUpdateSecurityGroup", http.MethodPatch, "/security_groups/{id}", svc.UpdateSecurityGroup)
+	h.Add("UpdateSecurityGroupMgmtAttr", http.MethodPatch, "/security_groups/{id}/mgmt_attrs",
+		svc.UpdateSGMgmtAttr)
+	h.Add("BatchUpdateSGMgmtAttr", http.MethodPatch, "/security_groups/mgmt_attrs/batch",
+		svc.BatchUpdateSGMgmtAttr)
 	h.Add("BatchDeleteSecurityGroup", http.MethodDelete, "/security_groups/batch", svc.BatchDeleteSecurityGroup)
 	h.Add("ListSecurityGroup", http.MethodPost, "/security_groups/list", svc.ListSecurityGroup)
 	h.Add("ListSecurityGroupsByCvmID", http.MethodGet, "/security_groups/cvms/{cvm_id}", svc.ListSecurityGroupsByCvmID)
@@ -100,6 +104,8 @@ func bizService(h *rest.Handler, svc *securityGroupSvc) {
 	h.Add("GetBizSecurityGroup", http.MethodGet, "/bizs/{bk_biz_id}/security_groups/{id}", svc.GetBizSecurityGroup)
 	h.Add("UpdateBizSecurityGroup", http.MethodPatch, "/bizs/{bk_biz_id}/security_groups/{id}",
 		svc.UpdateBizSecurityGroup)
+	h.Add("UpdateSecurityGroupMgmtAttr", http.MethodPatch, "/bizs/{bk_biz_id}/security_groups/{id}/mgmt_attrs",
+		svc.UpdateBizSGMgmtAttr)
 	h.Add("BatchDeleteBizSecurityGroup", http.MethodDelete, "/bizs/{bk_biz_id}/security_groups/batch",
 		svc.BatchDeleteBizSecurityGroup)
 	h.Add("ListBizSecurityGroup", http.MethodPost, "/bizs/{bk_biz_id}/security_groups/list", svc.ListBizSecurityGroup)
