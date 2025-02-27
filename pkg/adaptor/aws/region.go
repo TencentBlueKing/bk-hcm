@@ -32,7 +32,8 @@ import (
 // reference: https://docs.aws.amazon.com/goto/WebAPI/ec2-2016-11-15/DescribeRegions
 // Managing AWS Regions: https://docs.aws.amazon.com/general/latest/gr/rande-manage.html
 func (a *Aws) ListRegion(kt *kit.Kit) (*typesRegion.AwsRegionListResult, error) {
-	client, err := a.clientSet.ec2Client("ap-northeast-1")
+
+	client, err := a.clientSet.ec2Client(a.DefaultRegion())
 	if err != nil {
 		return nil, err
 	}

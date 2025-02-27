@@ -158,6 +158,7 @@ func (bm *BillManager) syncMainControllers() error {
 
 			RootAccountCloudID: rootAccount.CloudID,
 			MainAccountCloudID: mainAccount.CloudID,
+			DefaultCurrency:    rootAccount.DefaultCurrency(),
 		}
 		ctrl, err := NewMainAccountController(&opt)
 		if err != nil {

@@ -47,7 +47,7 @@ type HuaweiPuller struct {
 
 // EnsurePullTask 检查拉取任务，如果失败、不存在，则新建
 func (hp *HuaweiPuller) EnsurePullTask(kt *kit.Kit, client *client.ClientSet,
-	billSummaryMain *dsbillapi.BillSummaryMain) error {
+	billSummaryMain *dsbillapi.BillSummaryMain, defaultCurrency enumor.CurrencyCode) error {
 
 	dp := &daily.DailyPuller{
 		RootAccountID:      billSummaryMain.RootAccountID,
@@ -62,6 +62,7 @@ func (hp *HuaweiPuller) EnsurePullTask(kt *kit.Kit, client *client.ClientSet,
 		Version:            billSummaryMain.CurrentVersion,
 		BillDelay:          hp.BillDelay,
 		Client:             client,
+		DefaultCurrency:    defaultCurrency,
 	}
 	return dp.EnsurePullTask(kt)
 }

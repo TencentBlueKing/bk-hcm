@@ -108,8 +108,13 @@ func (a *Aws) CountAccount(kt *kit.Kit) (int32, error) {
 // GetAccountInfoBySecret 根据秘钥获取账号信息
 // reference: https://docs.aws.amazon.com/STS/latest/APIReference/API_GetCallerIdentity.html
 func (a *Aws) GetAccountInfoBySecret(kt *kit.Kit) (*cloud.AwsInfoBySecret, error) {
+	var defaultRegion *string = nil
+	// else use nil to indicate sdk default region
+	if a.IsChinaSite() {
+		defaultRegion = converter.ValToPtr(a.DefaultRegion())
+	}
+	client, err := a.clientSet.stsClient(defaultRegion)
 
-	client, err := a.clientSet.stsClient()
 	if err != nil {
 		return nil, fmt.Errorf("init aws client failed, err: %v", err)
 	}

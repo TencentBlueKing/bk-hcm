@@ -17,26 +17,29 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package aws adaptor
 package aws
 
 import (
 	"hcm/pkg/adaptor/types"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 )
 
 // NewAws new aws.
-func NewAws(s *types.BaseSecret, cloudAccountID string) (*Aws, error) {
+func NewAws(s *types.BaseSecret, cloudAccountID string, site enumor.AccountSiteType) (*Aws, error) {
 	if err := validateSecret(s); err != nil {
 		return nil, err
 	}
 
-	return &Aws{clientSet: newClientSet(s), cloudAccountID: cloudAccountID}, nil
+	return &Aws{clientSet: newClientSet(s), cloudAccountID: cloudAccountID, site: site}, nil
 }
 
 // Aws is aws operator.
 type Aws struct {
 	clientSet      *clientSet
 	cloudAccountID string
+	site           enumor.AccountSiteType
 }
 
 func validateSecret(s *types.BaseSecret) error {
@@ -54,4 +57,17 @@ func validateSecret(s *types.BaseSecret) error {
 // CloudAccountID return cloud account id.
 func (a *Aws) CloudAccountID() string {
 	return a.cloudAccountID
+}
+
+// IsChinaSite is china site.
+func (a *Aws) IsChinaSite() bool {
+	return a.site == enumor.ChinaSite
+}
+
+// DefaultRegion return default region.
+func (a *Aws) DefaultRegion() string {
+	if a.IsChinaSite() {
+		return "cn-north-1"
+	}
+	return "ap-northeast-1"
 }

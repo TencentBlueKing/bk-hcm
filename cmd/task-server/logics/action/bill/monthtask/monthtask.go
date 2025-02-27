@@ -58,7 +58,7 @@ func (o MonthTaskActionOption) Validate() error {
 	return validator.Validate.Struct(o)
 }
 func (o MonthTaskActionOption) String() string {
-	return fmt.Sprintf("[%s]%s %s %d-%2d", o.Vendor, o.Type, o.RootAccountID, o.BillYear, o.BillMonth)
+	return fmt.Sprintf("[%s]%s %s %d-%02d", o.Vendor, o.Type, o.RootAccountID, o.BillYear, o.BillMonth)
 }
 
 // MonthTaskAction month task action

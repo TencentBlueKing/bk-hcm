@@ -150,7 +150,7 @@ func (rac *RootAccountController) runCalculateBillSummaryLoop(kt *kit.Kit) {
 
 func (rac *RootAccountController) runMonthTaskLoop(kt *kit.Kit) {
 
-	ticker := time.NewTicker(*cc.AccountServer().Controller.RootAccountSummarySyncDuration)
+	ticker := time.NewTicker(*cc.AccountServer().Controller.MonthTaskSyncDuration)
 	for {
 		runner := monthtask.NewDefaultMonthTaskRunner(kt,
 			rac.Vendor, rac.RootAccountID, rac.RootAccountCloudID, rac.Client)
@@ -192,7 +192,7 @@ func (rac *RootAccountController) pollRootSummaryTask(subKit *kit.Kit, flowID st
 	}
 	flow, err := rac.Client.TaskServer().GetFlow(subKit, flowID)
 	if err != nil {
-		logs.Warnf("get flow by id %s failed, err %s, rid: %s", flowID, err.Error(), subKit.Rid)
+		logs.Errorf("get flow by id %s failed, err %s, rid: %s", flowID, err.Error(), subKit.Rid)
 		return flowID
 	}
 	if flow.State == enumor.FlowSuccess || flow.State == enumor.FlowFailed || flow.State == enumor.FlowCancel {

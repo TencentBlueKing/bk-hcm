@@ -80,7 +80,7 @@ func (svc *service) AwsGetInfoBySecret(cts *rest.Contexts) (interface{}, error) 
 		&types.BaseSecret{
 			CloudSecretID:  req.CloudSecretID,
 			CloudSecretKey: req.CloudSecretKey,
-		}, "")
+		}, "", req.Site)
 	if err != nil {
 		return nil, err
 	}
@@ -495,7 +495,6 @@ func (svc *service) TCloudGetResCountBySecret(cts *rest.Contexts) (interface{}, 
 
 // AwsGetResCountBySecret 根据秘钥获取云上资源数量
 func (svc *service) AwsGetResCountBySecret(cts *rest.Contexts) (interface{}, error) {
-
 	req := new(cloud.AwsSecret)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -504,8 +503,11 @@ func (svc *service) AwsGetResCountBySecret(cts *rest.Contexts) (interface{}, err
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	awsClient, err := svc.ad.Adaptor().Aws(&types.BaseSecret{CloudSecretID: req.CloudSecretID,
-		CloudSecretKey: req.CloudSecretKey}, "")
+	if req.Site == "" {
+		req.Site = enumor.InternationalSite
+	}
+	secret := &types.BaseSecret{CloudSecretID: req.CloudSecretID, CloudSecretKey: req.CloudSecretKey}
+	awsClient, err := svc.ad.Adaptor().Aws(secret, "", req.Site)
 	if err != nil {
 		return nil, err
 	}

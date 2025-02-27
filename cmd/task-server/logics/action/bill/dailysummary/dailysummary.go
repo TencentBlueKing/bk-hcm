@@ -40,17 +40,18 @@ import (
 
 // DailySummaryOption option for daily summary
 type DailySummaryOption struct {
-	RootAccountID      string        `json:"root_account_id" validate:"required"`
-	MainAccountID      string        `json:"main_account_id" validate:"required"`
-	RootAccountCloudID string        `json:"root_account_cloud_id" validate:"required"`
-	MainAccountCloudID string        `json:"main_account_cloud_id" validate:"required"`
-	ProductID          int64         `json:"product_id" validate:"required"`
-	BkBizID            int64         `json:"bk_biz_id" validate:"required"`
-	BillYear           int           `json:"bill_year" validate:"required"`
-	BillMonth          int           `json:"bill_month" validate:"required"`
-	BillDay            int           `json:"bill_day" validate:"required"`
-	VersionID          int           `json:"version_id" validate:"required"`
-	Vendor             enumor.Vendor `json:"vendor" validate:"required"`
+	RootAccountID      string              `json:"root_account_id" validate:"required"`
+	MainAccountID      string              `json:"main_account_id" validate:"required"`
+	RootAccountCloudID string              `json:"root_account_cloud_id" validate:"required"`
+	MainAccountCloudID string              `json:"main_account_cloud_id" validate:"required"`
+	ProductID          int64               `json:"product_id" validate:"required"`
+	BkBizID            int64               `json:"bk_biz_id" validate:"required"`
+	BillYear           int                 `json:"bill_year" validate:"required"`
+	BillMonth          int                 `json:"bill_month" validate:"required"`
+	BillDay            int                 `json:"bill_day" validate:"required"`
+	VersionID          int                 `json:"version_id" validate:"required"`
+	Vendor             enumor.Vendor       `json:"vendor" validate:"required"`
+	DefaultCurrency    enumor.CurrencyCode `json:"default_currency,omitempty" validate:"omitempty"`
 }
 
 var _ action.Action = new(DailySummaryAction)
@@ -140,7 +141,7 @@ func (act DailySummaryAction) doDailySummary(kt run.ExecuteKit, opt *DailySummar
 		return fmt.Errorf("count bill item for %v day %d failed, err %s", opt, billDay, err.Error())
 	}
 
-	currency := enumor.CurrencyUSD
+	currency := opt.DefaultCurrency
 	cost := decimal.NewFromFloat(0)
 	count := result.Count
 
@@ -161,7 +162,7 @@ func (act DailySummaryAction) doDailySummary(kt run.ExecuteKit, opt *DailySummar
 				start, limit, opt, billDay, err.Error())
 		}
 		for _, item := range result.Details {
-			if len(item.Currency) != 0 && len(currency) == 0 {
+			if len(item.Currency) != 0 {
 				currency = item.Currency
 			}
 			cost = cost.Add(item.Cost)

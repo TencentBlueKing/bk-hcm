@@ -43,6 +43,7 @@ import (
 // SyncRegionOption ...
 type SyncRegionOption struct {
 	AccountID string `json:"account_id" validate:"required"`
+	AwsCN     bool   `json:"aws_cn"`
 }
 
 // Validate ...
