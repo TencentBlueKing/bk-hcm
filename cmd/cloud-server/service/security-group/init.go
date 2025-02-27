@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/client"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/rest"
+	"hcm/pkg/thirdparty/esb"
 )
 
 // InitSecurityGroupService initial the security group service
@@ -37,6 +38,7 @@ func InitSecurityGroupService(c *capability.Capability) {
 		authorizer: c.Authorizer,
 		audit:      c.Audit,
 		sgLogic:    c.Logics.SecurityGroup,
+		esb:        c.EsbClient,
 	}
 
 	h := rest.NewHandler()
@@ -150,6 +152,8 @@ func bizService(h *rest.Handler, svc *securityGroupSvc) {
 	h.Add("ListBizSGRelLBByBizID", http.MethodPost,
 		"/bizs/{bk_biz_id}/security_groups/{sg_id}/related_resources/biz_resources/{res_biz_id}/load_balancers/list",
 		svc.ListBizSGRelLBByBizID)
+	h.Add("BizListSGUsageBizMaintainers", http.MethodPost, "/bizs/{bk_biz_id}/security_groups/usage_biz_maintainers/list",
+		svc.BizListSGUsageBizMaintainers)
 
 	h.Add("CloneBizSecurityGroup", http.MethodPost,
 		"/bizs/{bk_biz_id}/security_groups/{id}/clone", svc.CloneBizSecurityGroup)
@@ -159,5 +163,6 @@ type securityGroupSvc struct {
 	client     *client.ClientSet
 	authorizer auth.Authorizer
 	audit      audit.Interface
+	esb        esb.Client
 	sgLogic    securitygroup.Interface
 }

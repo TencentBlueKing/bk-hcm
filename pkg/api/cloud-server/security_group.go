@@ -30,6 +30,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/thirdparty/esb/cmdb"
 )
 
 // -------------------------- Create --------------------------
@@ -252,4 +253,21 @@ type SecurityGroupCloneReq struct {
 // Validate ...
 func (req *SecurityGroupCloneReq) Validate() error {
 	return validator.Validate.Struct(req)
+}
+
+// ListSGUsageBizMaintainerReq define list security group usage biz maintainer request.
+type ListSGUsageBizMaintainerReq struct {
+	SecurityGroupIDs []string `json:"security_group_ids" validate:"required,min=1,max=500"`
+}
+
+// Validate ...
+func (req *ListSGUsageBizMaintainerReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// ListSGUsageBizMaintainerResult define list security group usage biz maintainer result.
+type ListSGUsageBizMaintainerResult struct {
+	ID       string     `json:"id"`
+	Managers []string   `json:"managers"`
+	Details  []cmdb.Biz `json:"details"`
 }
