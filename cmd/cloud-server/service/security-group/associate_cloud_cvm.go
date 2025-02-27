@@ -35,15 +35,15 @@ import (
 
 // BatchAssociateCvm 关联安全组，安全组本地id，cvm 云id
 func (svc *securityGroupSvc) BatchAssociateCvm(cts *rest.Contexts) (any, error) {
-	return svc.associateCloudCvm(cts, handler.ResOperateAuth)
+	return svc.batchAssociateCvms(cts, handler.ResOperateAuth)
 }
 
 // BatchAssociateBizCvm 业务下关联安全组，安全组本地id，cvm 云id
 func (svc *securityGroupSvc) BatchAssociateBizCvm(cts *rest.Contexts) (any, error) {
-	return svc.associateCloudCvm(cts, handler.BizOperateAuth)
+	return svc.batchAssociateCvms(cts, handler.BizOperateAuth)
 }
 
-func (svc *securityGroupSvc) associateCloudCvm(cts *rest.Contexts,
+func (svc *securityGroupSvc) batchAssociateCvms(cts *rest.Contexts,
 	validHandler handler.ValidWithAuthHandler) (any, error) {
 
 	req, sgInfo, err := svc.decodeAssociateReq(cts, validHandler, meta.Associate)
@@ -66,17 +66,17 @@ func (svc *securityGroupSvc) associateCloudCvm(cts *rest.Contexts,
 
 	switch sgInfo.Vendor {
 	case enumor.TCloud:
-		return svc.associateTCloudCloudCvm(cts, req)
+		return svc.batchAssociateTCloudCvms(cts, req)
 	default:
-		return nil, errf.Newf(errf.Unknown, "vendor: %s not support", sgInfo.Vendor)
+		return nil, errf.Newf(errf.Unknown, "vendor: %s not support for batch associate cvm", sgInfo.Vendor)
 	}
 
 }
 
-func (svc *securityGroupSvc) associateTCloudCloudCvm(cts *rest.Contexts,
+func (svc *securityGroupSvc) batchAssociateTCloudCvms(cts *rest.Contexts,
 	req *hcproto.SecurityGroupBatchAssociateCvmReq) (any, error) {
 
-	err := svc.client.HCService().TCloud.SecurityGroup.BatchAssociateCloudCvm(cts.Kit, req.SecurityGroupID,
+	err := svc.client.HCService().TCloud.SecurityGroup.BatchAssociateCvm(cts.Kit, req.SecurityGroupID,
 		req.CvmIDs)
 	if err != nil {
 		logs.Errorf("fail to call hc service associate cloud cvm, err: %v, sg_id: %s, cloud_cvm_ids: %v, rid:%s",
@@ -88,15 +88,15 @@ func (svc *securityGroupSvc) associateTCloudCloudCvm(cts *rest.Contexts,
 
 // BatchDisassociateCvm disassociate cvm.
 func (svc *securityGroupSvc) BatchDisassociateCvm(cts *rest.Contexts) (any, error) {
-	return svc.disassociateCloudCvm(cts, handler.ResOperateAuth)
+	return svc.batchDisassociateCvm(cts, handler.ResOperateAuth)
 }
 
 // BatchDisassociateBizCvm disassociate biz cvm.
 func (svc *securityGroupSvc) BatchDisassociateBizCvm(cts *rest.Contexts) (any, error) {
-	return svc.disassociateCloudCvm(cts, handler.BizOperateAuth)
+	return svc.batchDisassociateCvm(cts, handler.BizOperateAuth)
 }
 
-func (svc *securityGroupSvc) disassociateCloudCvm(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+func (svc *securityGroupSvc) batchDisassociateCvm(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
 	any, error) {
 
 	req, sgInfo, err := svc.decodeAssociateReq(cts, validHandler, meta.Disassociate)
@@ -108,11 +108,11 @@ func (svc *securityGroupSvc) disassociateCloudCvm(cts *rest.Contexts, validHandl
 
 	case enumor.TCloud:
 		// create operation audit.
-		if err = svc.createTCloudDisassociateCloudCvmAudit(cts, req); err != nil {
+		if err = svc.createTCloudDisassociateCvmAudit(cts, req); err != nil {
 			return nil, err
 		}
 
-		err := svc.client.HCService().TCloud.SecurityGroup.BatchDisassociateCloudCvm(cts.Kit,
+		err := svc.client.HCService().TCloud.SecurityGroup.BatchDisassociateCvm(cts.Kit,
 			req.SecurityGroupID, req.CvmIDs)
 		if err != nil {
 			logs.Errorf("fail to call hc service dissociate cloud cvm, err: %v, sg_id: %s, cloud_cvm_ids: %v, rid:%s",
@@ -126,7 +126,7 @@ func (svc *securityGroupSvc) disassociateCloudCvm(cts *rest.Contexts, validHandl
 
 }
 
-func (svc *securityGroupSvc) createTCloudDisassociateCloudCvmAudit(cts *rest.Contexts,
+func (svc *securityGroupSvc) createTCloudDisassociateCvmAudit(cts *rest.Contexts,
 	req *hcproto.SecurityGroupBatchAssociateCvmReq) error {
 
 	audit := protoaudit.CloudResourceOperationInfo{
