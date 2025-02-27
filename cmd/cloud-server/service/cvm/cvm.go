@@ -81,11 +81,6 @@ func InitCvmService(c *capability.Capability) {
 	h.Add("BatchDeleteBizRecycledCvm", http.MethodDelete, "/bizs/{bk_biz_id}/recycled/cvms/batch",
 		svc.BatchDeleteBizRecycledCvm)
 
-	h.Add("BatchListCvmSecurityGroups", http.MethodPost, "/cvms/security_groups/batch/list",
-		svc.BatchListCvmSecurityGroups)
-	h.Add("BizBatchListCvmSecurityGroups", http.MethodPost, "/bizs/{bk_biz_id}/cvms/security_groups/batch/list",
-		svc.BizBatchListCvmSecurityGroups)
-
 	h.Add("BatchAssociateSecurityGroups", http.MethodPost,
 		"/cvms/{cvm_id}/security_groups/batch_associate", svc.BatchAssociateSecurityGroups)
 	h.Add("BizBatchAssociateSecurityGroups", http.MethodPost,

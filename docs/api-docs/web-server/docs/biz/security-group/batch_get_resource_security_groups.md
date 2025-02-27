@@ -2,27 +2,28 @@
 
 - 该接口提供版本：v1.7.1+。
 - 该接口所需权限：业务访问。
-- 该接口功能描述：查询虚拟机绑定的安全组列表。
+- 该接口功能描述：查询指定资源绑定的安全组列表。
 
 ### URL
 
-POST /api/v1/cloud/bizs/{bk_biz_id}/cvms/security_groups/batch/list
+POST /api/v1/cloud/bizs/{bk_biz_id}/security_groups/res/{res_type}/batch
 
 ### 输入参数
 
-| 参数名称      | 参数类型         | 必选 | 描述                  |
-|-----------|--------------|----|---------------------|
-| bk_biz_id | int64        | 是  | 业务ID                |
-| cvm_ids   | string array | 是  | 云主机ID列表, 最多传入500个ID |
+| 参数名称      | 参数类型         | 必选                           | 描述                 |
+|-----------|--------------|------------------------------|--------------------|
+| bk_biz_id | int64        | 是                            | 业务ID               |
+| res_type  | string       | 资源类型, 可选值：cvm, load_balancer |
+| res_ids   | string array | 是                            | 资源ID列表, 最多传入500个ID |
 
 ###  调用示例
 
 ```json
 
 {
-  "cvm_ids": [
-    "xxxxx",
-    "xxxxxx"
+  "res_ids": [
+    "000001",
+    "000002"
   ]
 }
 
@@ -34,7 +35,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/cvms/security_groups/batch/list
   "message": "success",
   "data": [
     {
-      "cvm_id": "xxxxx",
+      "res_id": "000001",
       "security_groups": [
         {
           "id": "Xxxxx",
@@ -42,6 +43,10 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/cvms/security_groups/batch/list
           "name": "default"
         }
       ]
+    },
+    {
+        "res_id": "000002",
+        "security_groups": []
     }
   ]
 }
@@ -59,7 +64,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/cvms/security_groups/batch/list
 
 | 参数名称            | 参数类型         | 描述    |
 |-----------------|--------------|-------|
-| cvm_id          | string       | 云主机ID |
+| res_id          | string       | 资源ID  |
 | security_groups | object array | 安全组列表 |
 
 #### security_groups[i] 参数说明
