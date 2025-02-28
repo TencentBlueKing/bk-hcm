@@ -64,7 +64,7 @@ const localModel = computed({
     if (props.multiple && model.value && !Array.isArray(model.value)) {
       return [model.value];
     }
-    return model.value || (props.multiple ? [] : null);
+    return model.value || (props.multiple ? [] : undefined);
   },
   set(val) {
     model.value = val;

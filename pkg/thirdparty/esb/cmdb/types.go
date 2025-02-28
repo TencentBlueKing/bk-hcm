@@ -236,6 +236,19 @@ type ListBizHostResult struct {
 	Info  []Host `json:"info"`
 }
 
+// ListHostWithoutBizParams is esb list cmdb host without biz parameter.
+type ListHostWithoutBizParams struct {
+	Fields             []string     `json:"fields"`
+	Page               BasePage     `json:"page"`
+	HostPropertyFilter *QueryFilter `json:"host_property_filter,omitempty"`
+}
+
+// ListHostWithoutBizResult is cmdb list cmdb host without biz result.
+type ListHostWithoutBizResult struct {
+	Count int64  `json:"count"`
+	Info  []Host `json:"info"`
+}
+
 // Host defines cmdb host info.
 type Host struct {
 	BkHostID          int64           `json:"bk_host_id"`
@@ -249,10 +262,13 @@ type Host struct {
 	BkHostOuterIP   string  `json:"bk_host_outerip"`
 	BkHostInnerIPv6 string  `json:"bk_host_innerip_v6"`
 	BkHostOuterIPv6 string  `json:"bk_host_outerip_v6"`
-	Operator        string  `json:"operator"`
-	BkBakOperator   string  `json:"bk_bak_operator"`
+	Operator        string  `json:"operator,omitempty"`
+	BkBakOperator   string  `json:"bk_bak_operator,omitempty"`
 	BkHostName      string  `json:"bk_host_name"`
 	BkComment       *string `json:"bk_comment,omitempty"`
+	BkOSName        string  `json:"bk_os_name,omitempty"`
+	BkMac           string  `json:"bk_mac,omitempty"`
+	CreateTime      string  `json:"create_time,omitempty"`
 }
 
 // HostFields cmdb common fields
@@ -463,6 +479,16 @@ var HuaWeiCmdbStatusMap = map[string]CloudHostStatus{
 	"SHELVED_OFFLOADED": UnknownCloudHostStatus,
 	"UNKNOWN":           UnknownCloudHostStatus,
 }
+
+// BkAddressing cc主机寻址方式.
+type BkAddressing string
+
+const (
+	// StaticAddressing 静态寻址
+	StaticAddressing BkAddressing = "static"
+	// DynamicAddressing 动态寻址
+	DynamicAddressing BkAddressing = "dynamic"
+)
 
 // EventType is cmdb watch event type.
 type EventType string

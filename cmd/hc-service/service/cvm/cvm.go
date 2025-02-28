@@ -160,3 +160,30 @@ func (svc *cvmSvc) createSGCommonRels(kt *kit.Kit, vendor enumor.Vendor, resType
 	}
 	return nil
 }
+
+func (svc *cvmSvc) getCvms(kt *kit.Kit, vendor enumor.Vendor, region string, cvmIDs []string) ([]corecvm.BaseCvm,
+	error) {
+	if len(cvmIDs) == 0 {
+		return nil, nil
+	}
+
+	result := make([]corecvm.BaseCvm, 0, len(cvmIDs))
+	for _, ids := range slice.Split(cvmIDs, int(core.DefaultMaxPageLimit)) {
+		listReq := &core.ListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleEqual("vendor", vendor),
+				tools.RuleEqual("region", region),
+				tools.RuleIn("id", ids),
+			),
+			Page: core.NewDefaultBasePage(),
+		}
+		listResp, err := svc.dataCli.Global.Cvm.ListCvm(kt, listReq)
+		if err != nil {
+			logs.Errorf("request dataservice list cvm failed, err: %v, ids: %v, rid: %s", err, cvmIDs, kt.Rid)
+			return nil, err
+		}
+		result = append(result, listResp.Details...)
+	}
+
+	return result, nil
+}
