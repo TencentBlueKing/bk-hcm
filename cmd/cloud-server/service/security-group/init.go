@@ -98,6 +98,9 @@ func InitSecurityGroupService(c *capability.Capability) {
 	h.Add("BatchDisassociateCvm", http.MethodPost,
 		"/security_groups/disassociate/cvms/batch", svc.BatchDisassociateCvm)
 
+	h.Add("BatchListResSecurityGroups", http.MethodPost, "/security_groups/res/{res_type}/batch",
+		svc.BatchListResSecurityGroups)
+
 	bizService(h, svc)
 	initSecurityGroupServiceHooks(svc, h)
 
@@ -172,6 +175,9 @@ func bizService(h *rest.Handler, svc *securityGroupSvc) {
 		"/bizs/{bk_biz_id}/security_groups/associate/cvms/batch", svc.BatchAssociateBizCvm)
 	h.Add("BatchDisassociateBizCvm", http.MethodPost,
 		"/bizs/{bk_biz_id}/security_groups/disassociate/cvms/batch", svc.BatchDisassociateBizCvm)
+
+	h.Add("BizBatchListResSecurityGroups", http.MethodPost, "/bizs/{bk_biz_id}/security_groups/res/{res_type}/batch",
+		svc.BizBatchListResSecurityGroups)
 }
 
 type securityGroupSvc struct {

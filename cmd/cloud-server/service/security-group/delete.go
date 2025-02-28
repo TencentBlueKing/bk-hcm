@@ -185,7 +185,7 @@ func (svc *securityGroupSvc) getSGBingResFunc(vendor enumor.Vendor) (statSGFunc,
 	return statSGBindingRes, nil
 }
 
-func checkStat(stats []hcservice.SecurityGroupStatisticItem) error {
+func checkStat(stats []*hcservice.SecurityGroupStatisticItem) error {
 	for i := range stats {
 		stat := stats[i]
 		for j := range stat.Resources {

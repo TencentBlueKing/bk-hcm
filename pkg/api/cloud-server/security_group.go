@@ -308,6 +308,29 @@ type SecurityGroup[Extension cloud.SecurityGroupExtension] struct {
 	Extension               *Extension `json:"extension"`
 }
 
+// BatchGetResRelatedSecurityGroupsReq ...
+type BatchGetResRelatedSecurityGroupsReq struct {
+	ResIDs []string `json:"res_ids" validate:"required,min=1,max=500"`
+}
+
+// Validate ...
+func (req BatchGetResRelatedSecurityGroupsReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// ResSGRel ...
+type ResSGRel struct {
+	ResID          string   `json:"res_id"`
+	SecurityGroups []SGInfo `json:"security_groups"`
+}
+
+// SGInfo ...
+type SGInfo struct {
+	ID      string `json:"id"`
+	CloudId string `json:"cloud_id"`
+	Name    string `json:"name"`
+}
+
 // -------------------------- Clone --------------------------
 
 // SecurityGroupCloneReq security group clone req.
