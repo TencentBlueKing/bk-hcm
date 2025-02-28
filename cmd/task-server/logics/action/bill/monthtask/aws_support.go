@@ -114,7 +114,7 @@ func (a AwsSupportMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption,
 	if len(rawItemList) == 0 {
 		return nil, nil
 	}
-	a.initExtension(opt)
+	a.initExtension(kt, opt)
 
 	// 查询根账号信息
 	rootAccount, err := actcli.GetDataService().Aws.RootAccount.Get(kt, opt.RootAccountID)

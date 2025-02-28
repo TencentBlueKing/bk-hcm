@@ -25,49 +25,77 @@ import (
 
 	actbill "hcm/cmd/task-server/logics/action/bill/common"
 	actcli "hcm/cmd/task-server/logics/action/cli"
-	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/bill"
 	hcbill "hcm/pkg/api/hc-service/bill"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	cvt "hcm/pkg/tools/converter"
+	"hcm/pkg/tools/times"
 
 	"github.com/tidwall/gjson"
 )
 
-// AwsOutsideBillMonthTask ...
-type AwsOutsideBillMonthTask struct {
+// AwsDeductMonthTask ...
+type AwsDeductMonthTask struct {
 	awsMonthTaskBaseRunner
 }
 
-// Pull outside bill month item
-func (a AwsOutsideBillMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index uint64) (
+// Pull deduct bill item
+func (a AwsDeductMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index uint64) (
 	itemList []bill.RawBillItem, isFinished bool, err error) {
+
+	a.initExtension(kt, opt)
+	// 检查当前root账号是否有抵扣项配置
+	if len(a.deductItemTypes) == 0 || a.deductItemTypes[opt.RootAccountID] == nil {
+		logs.Infof("skip aws deduct month task, root account: %s, deductItemTypes: %+v, reason: not need deduct, "+
+			"opt: %+v, rid: %s", opt.RootAccountID, a.deductItemTypes, cvt.PtrToVal(opt), kt.Rid)
+		return nil, true, nil
+	}
+
+	logs.V(3).Infof("[%s] deduct month task pull start, opt: %+v, index: %d, deductItemTypes: %+v, rid: %s", enumor.Aws,
+		cvt.PtrToVal(opt), index, a.deductItemTypes, kt.Rid)
+
+	// 解析当前root账号需要查询的字段及值
+	fieldsMap := make(map[string][]string)
+	for fieldKey, fieldValues := range a.deductItemTypes[opt.RootAccountID] {
+		fieldsMap[fieldKey] = fieldValues
+	}
+
+	// 获取指定月份最后一天
+	lastDay, err := times.GetLastDayOfMonth(opt.BillYear, opt.BillMonth)
+	if err != nil {
+		logs.Errorf("fail get last day of month for aws month task, year: %d, month: %d, err: %v, rid: %s",
+			opt.BillYear, opt.BillMonth, err, kt.Rid)
+		return nil, false, err
+	}
 
 	rootInfo, err := actcli.GetDataService().Global.RootAccount.GetBasicInfo(kt, opt.RootAccountID)
 	if err != nil {
-		logs.Errorf("fail to get root account(%s), err: %v, rid: %s", opt.RootAccountID, err, kt.Rid)
-		return nil, false, fmt.Errorf("fail to get root account, err: %w", err)
+		logs.Errorf("fail to get deduct root account(%s), err: %v, rid: %s", opt.RootAccountID, err, kt.Rid)
+		return nil, false, fmt.Errorf("fail to get deduct root account, err: %w", err)
 	}
 
 	hcCli := actbill.GetHCServiceByAwsSite(rootInfo.Site)
-	rootBillReq := &hcbill.AwsRootOutsideMonthBillListReq{
+	billReq := &hcbill.AwsRootBillItemsListReq{
 		RootAccountID: opt.RootAccountID,
-		BillYear:      uint(opt.BillYear),
-		BillMonth:     uint(opt.BillMonth),
+		Year:          uint(opt.BillYear),
+		Month:         uint(opt.BillMonth),
+		BeginDate:     fmt.Sprintf("%d-%02d-%02d", opt.BillYear, opt.BillMonth, 1),
+		EndDate:       fmt.Sprintf("%d-%02d-%02d", opt.BillYear, opt.BillMonth, lastDay),
+		FieldsMap:     fieldsMap,
 		Page:          &hcbill.AwsBillListPage{Offset: index, Limit: a.GetBatchSize(kt)},
 	}
-	billResp, err := hcCli.Aws.Bill.ListRootOutsideMonthBill(kt, rootBillReq)
+	billResp, err := hcCli.Aws.Bill.ListRootBillItems(kt, billReq)
 	if err != nil {
 		return nil, false, err
 	}
 	if len(billResp.Details) == 0 {
 		return nil, true, nil
 	}
+
 	for _, record := range billResp.Details {
 		cost, err := getDecimal(record, "line_item_net_unblended_cost")
 		if err != nil {
@@ -80,7 +108,7 @@ func (a AwsOutsideBillMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, i
 
 		extensionBytes, err := json.Marshal(record)
 		if err != nil {
-			return nil, false, fmt.Errorf("marshal aws bill item %v failed, err: %w", record, err)
+			return nil, false, fmt.Errorf("marshal aws cloud bill item failed, record: %v, err: %w", record, err)
 		}
 		itemList = append(itemList, bill.RawBillItem{
 			Region:        record["product_region"],
@@ -93,12 +121,12 @@ func (a AwsOutsideBillMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, i
 			Extension:     types.JsonField(extensionBytes),
 		})
 	}
-	supportDone := uint64(len(billResp.Details)) < a.GetBatchSize(kt)
-	return itemList, supportDone, nil
+	deductDone := uint64(len(billResp.Details)) < a.GetBatchSize(kt)
+	return itemList, deductDone, nil
 }
 
-// Split aws support fee to main account
-func (a AwsOutsideBillMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption,
+// Split aws deduct to main account
+func (a AwsDeductMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption,
 	rawItemList []*bill.RawBillItem) ([]bill.BillItemCreateReq[json.RawMessage], error) {
 
 	if len(rawItemList) == 0 {
@@ -108,23 +136,28 @@ func (a AwsOutsideBillMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption,
 
 	cloudIdSummaryMainMap, err := listSummaryMains(kt, opt)
 	if err != nil {
-		logs.Errorf("fail to list summary main for spilt outside bill month, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("fail to list summary main for spilt deduct bill month, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
-	// 按实际使用账号分摊到对应账号下即可
+	// 按实际使用账号抵消到对应账号下即可
 	billItems := make([]bill.BillItemCreateReq[json.RawMessage], 0, len(rawItemList))
 	for i := range rawItemList {
 		item := rawItemList[i]
+		// 抵消的账单金额为0，跳过，不再写入account_bill_item表
+		if item.BillCost.IsZero() {
+			continue
+		}
+
 		accountCloudId := gjson.Get(string(item.Extension), "line_item_usage_account_id").String()
 		if len(accountCloudId) == 0 {
+			logs.Errorf("empty line item usage account id for aws deduct, idx: %d, item: %+v, rid: %s", i, item, kt.Rid)
 			return nil, fmt.Errorf("empty line item usage account id for idx: %d", i)
 		}
 		summaryMain := cloudIdSummaryMainMap[accountCloudId]
 		if summaryMain == nil {
-			logs.Errorf("can not found main account(%s) for aws outside month bill split, rid: %s",
-				accountCloudId, kt.Rid)
-			return nil, fmt.Errorf("can not found main account(%s) for aws outside month bill split", accountCloudId)
+			logs.Errorf("can not found main account(%s) for aws deduct bill split, rid: %s", accountCloudId, kt.Rid)
+			return nil, fmt.Errorf("can not found main account(%s) for aws deduct bill split", accountCloudId)
 		}
 		usageBillItem := bill.BillItemCreateReq[json.RawMessage]{
 			RootAccountID: opt.RootAccountID,
@@ -137,8 +170,8 @@ func (a AwsOutsideBillMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption,
 			BillDay:       enumor.MonthTaskSpecialBillDay,
 			VersionID:     summaryMain.CurrentVersion,
 			Currency:      item.BillCurrency,
-			Cost:          item.BillCost,
-			HcProductCode: constant.BillOutsideMonthBillName,
+			Cost:          item.BillCost.Neg(),
+			HcProductCode: constant.AwsDeductCostCodeReverse,
 			HcProductName: item.HcProductName,
 			ResAmount:     item.ResAmount,
 			ResAmountUnit: item.ResAmountUnit,
@@ -150,32 +183,7 @@ func (a AwsOutsideBillMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption,
 	return billItems, nil
 }
 
-// 获取summary信息
-func listSummaryMains(kt *kit.Kit, opt *MonthTaskActionOption) (map[string]*bill.BillSummaryMain, error) {
-
-	summaryListReq := &bill.BillSummaryMainListReq{
-		Filter: tools.ExpressionAnd(
-			tools.RuleEqual("root_account_id", opt.RootAccountID),
-			tools.RuleEqual("bill_year", opt.BillYear),
-			tools.RuleEqual("bill_month", opt.BillMonth),
-		),
-		Page: core.NewDefaultBasePage(),
-	}
-	summaryMainResp, err := actcli.GetDataService().Global.Bill.ListBillSummaryMain(kt, summaryListReq)
-	if err != nil {
-		logs.Errorf("failt to list main account bill summary for %s month task, err: %v, rid: %s",
-			enumor.Aws, err, kt.Rid)
-		return nil, err
-	}
-	summaryMap := make(map[string]*bill.BillSummaryMain, len(summaryMainResp.Details))
-	for i := range summaryMainResp.Details {
-		s := summaryMainResp.Details[i]
-		summaryMap[s.MainAccountCloudID] = s
-	}
-	return summaryMap, nil
-}
-
 // GetHcProductCodes hc product code ranges
-func (a *AwsOutsideBillMonthTask) GetHcProductCodes() []string {
-	return []string{constant.BillOutsideMonthBillName}
+func (a *AwsDeductMonthTask) GetHcProductCodes() []string {
+	return []string{constant.AwsDeductCostCodeReverse}
 }

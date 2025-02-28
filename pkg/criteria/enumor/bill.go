@@ -221,6 +221,8 @@ const (
 	AwsSavingsPlansMonthTask MonthTaskType = "savings_plans"
 	// AwsSupportMonthTask aws support month task
 	AwsSupportMonthTask MonthTaskType = "support"
+	// DeductMonthTask deduct month task
+	DeductMonthTask MonthTaskType = "deduct"
 
 	// GcpCreditsMonthTask gcp credits month task
 	GcpCreditsMonthTask MonthTaskType = "credits"
