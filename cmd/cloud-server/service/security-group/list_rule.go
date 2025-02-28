@@ -69,6 +69,12 @@ func (svc *securityGroupSvc) listSGRule(cts *rest.Contexts, validHandler handler
 		return nil, err
 	}
 
+	usageBizIDs, err := svc.sgLogic.ListSGUsageBizRel(cts.Kit, []string{sgID})
+	if err != nil {
+		return nil, err
+	}
+	basicInfo.UsageBizIDs = usageBizIDs[sgID]
+
 	// validate biz and authorize
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroupRule,
 		Action: meta.Find, BasicInfo: basicInfo})

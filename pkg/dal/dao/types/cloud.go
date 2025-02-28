@@ -30,8 +30,9 @@ type CloudResourceBasicInfo struct {
 	AccountID string                   `json:"account_id" db:"account_id"`
 	BkBizID   int64                    `json:"bk_biz_id" db:"bk_biz_id"`
 	// these fields are basic info for some resource, needs to be specified explicitly.
-	Region        string `json:"region" db:"region"`
-	RecycleStatus string `json:"recycle_status" db:"recycle_status"`
+	Region        string  `json:"region" db:"region"`
+	RecycleStatus string  `json:"recycle_status" db:"recycle_status"`
+	UsageBizIDs   []int64 `json:"usage_biz_ids"`
 }
 
 // CommonBasicInfoFields defines common cloud resource basic info fields.
