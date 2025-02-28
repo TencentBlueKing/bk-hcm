@@ -47,6 +47,8 @@ func newAwsRunner(taskType enumor.MonthTaskType) (MonthTaskRunner, error) {
 		return &AwsSupportMonthTask{}, nil
 	case enumor.AwsSavingsPlansMonthTask:
 		return &AwsSavingsPlanMonthTask{}, nil
+	case enumor.AwsDeductMonthTask:
+		return &AwsDeductMonthTask{}, nil
 	default:
 		return nil, errors.New("not support task type of aws: " + string(taskType))
 	}
@@ -56,6 +58,7 @@ type awsMonthTaskBaseRunner struct {
 	spArnPrefix            string
 	spMainAccountCloudID   string
 	excludeAccountCloudIds []string
+	deductItemTypes        []string // 需要抵扣的账单明细项目类型列表，比如税费Tax
 }
 
 func (a *awsMonthTaskBaseRunner) initExtension(opt *MonthTaskActionOption) {
@@ -70,9 +73,13 @@ func (a *awsMonthTaskBaseRunner) initExtension(opt *MonthTaskActionOption) {
 		excluded := strings.Split(excludeCloudIDStr, ",")
 		a.excludeAccountCloudIds = excluded
 	}
+	if opt.Extension[constant.AwsCommonExpenseDeductItemTypesKey] != "" {
+		deductItemTypesValueStr := opt.Extension[constant.AwsCommonExpenseDeductItemTypesKey]
+		a.deductItemTypes = strings.Split(deductItemTypesValueStr, ",")
+	}
 }
 
-// listMainAccount rootAsMainAccount 作为二级账号存在的根账号，将分摊后的账单抵冲该账号支出
+// listMainAccount rootAsMainAccount 获取对应的二级账号，将分摊后的账单抵冲该账号支出
 func (a awsMonthTaskBaseRunner) listMainAccount(kt *kit.Kit, rootAccount *dataproto.AwsRootAccount) (
 	mainAccountMap map[string]*protocore.BaseMainAccount, rootAsMainAccount *protocore.BaseMainAccount, err error) {
 
