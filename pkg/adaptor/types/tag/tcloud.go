@@ -20,9 +20,9 @@
 package tag
 
 import (
-	tag "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/tag/v20180813"
-
 	"hcm/pkg/api/core"
+
+	tag "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/tag/v20180813"
 )
 
 // TCloudTag tcloud tag
