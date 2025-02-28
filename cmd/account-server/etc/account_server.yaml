@@ -85,6 +85,8 @@ billAllocation:
   awsCommonExpense:
     excludeAccountCloudIDs:
 #      - 123456789
+    deductItemTypes:
+      - tax
   gcpCredits:
 #    - rootAccountCloudID: gcp_support_account
 #      returnConfigs:
