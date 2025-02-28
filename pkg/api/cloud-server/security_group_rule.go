@@ -50,6 +50,16 @@ type SecurityGroupRuleListResult[T cloud.SecurityGroupRule] struct {
 	Details []T    `json:"details,omitempty"`
 }
 
+// ListSecurityGroupRuleCountReq define security group list count request.
+type ListSecurityGroupRuleCountReq struct {
+	SecurityGroupIDs []string `json:"security_group_ids" validate:"required,min=1,max=500"`
+}
+
+// Validate security group list request.
+func (req *ListSecurityGroupRuleCountReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
 // -------------------------- Update --------------------------
 
 // TCloudSGRuleUpdateReq define tcloud security group rule update req.

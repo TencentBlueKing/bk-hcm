@@ -78,6 +78,9 @@ func initSecurityGroupService(cap *capability.Capability) {
 	h.Add("BatchUpdateSecurityGroupMgmtAttr", http.MethodPatch, "/security_groups/mgmt_attrs/batch/update",
 		svc.BatchUpdateSecurityGroupMgmtAttr)
 
+	h.Add("CountSecurityGroupRules", http.MethodPost, "/vendors/{vendor}/security_groups/rules/count",
+		svc.CountSecurityGroupRules)
+
 	h.Load(cap.WebService)
 }
 

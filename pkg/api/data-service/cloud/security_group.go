@@ -225,3 +225,16 @@ type SecurityGroupGetResp[T cloud.SecurityGroupExtension] struct {
 	rest.BaseResp `json:",inline"`
 	Data          *cloud.SecurityGroup[T] `json:"data"`
 }
+
+// CountSecurityGroupRuleReq ...
+type CountSecurityGroupRuleReq struct {
+	SecurityGroupIDs []string `json:"security_group_ids" validate:"required,min=1"`
+}
+
+// Validate list security group rule count req.
+func (req *CountSecurityGroupRuleReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// CountSecurityGroupRuleResp define list security group rule count resp.
+type CountSecurityGroupRuleResp = map[string]int64
