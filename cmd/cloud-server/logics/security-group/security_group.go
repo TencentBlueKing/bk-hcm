@@ -47,6 +47,7 @@ type Interface interface {
 	ListSGRelBusiness(kt *kit.Kit, currentBizID int64, sgID string) (*proto.ListSGRelBusinessResp, error)
 	UpdateSGMgmtAttr(kt *kit.Kit, mgmtAttr *proto.SecurityGroupUpdateMgmtAttrReq, sgID string) error
 	BatchUpdateSGMgmtAttr(kt *kit.Kit, mgmtAttrs []proto.BatchUpdateSGMgmtAttrItem) error
+	ListSGUsageBizRel(kt *kit.Kit, sgIDs []string) (map[string][]int64, error)
 }
 
 type securityGroup struct {
@@ -412,4 +413,38 @@ func (s *securityGroup) BatchUpdateSGMgmtAttr(kt *kit.Kit, mgmtAttrs []proto.Bat
 	}
 
 	return nil
+}
+
+// ListSGUsageBizRel list security group usage biz rel
+func (s *securityGroup) ListSGUsageBizRel(kt *kit.Kit, sgIDs []string) (map[string][]int64, error) {
+	listReq := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("res_type", enumor.SecurityGroupCloudResType),
+			tools.RuleIn("res_id", sgIDs),
+		),
+		Page:   core.NewDefaultBasePage(),
+		Fields: []string{"res_id", "usage_biz_id"},
+	}
+	listReq.Page.Sort = "res_id"
+
+	usageBizIDs := make(map[string][]int64, 0)
+	for {
+		rst, err := s.client.DataService().Global.ResUsageBizRel.ListResUsageBizRel(kt, listReq)
+		if err != nil {
+			logs.Errorf("failed to list res usage biz rel, err: %v, sg_ids: %v, rid: %s", err, sgIDs, kt.Rid)
+			return nil, err
+		}
+
+		for _, item := range rst.Details {
+			usageBizIDs[item.ResID] = append(usageBizIDs[item.ResID], item.UsageBizID)
+		}
+
+		if len(rst.Details) < int(listReq.Page.Limit) {
+			break
+		}
+
+		listReq.Page.Start += uint32(listReq.Page.Limit)
+	}
+
+	return usageBizIDs, nil
 }

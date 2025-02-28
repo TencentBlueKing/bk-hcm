@@ -27,6 +27,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/hooks/handler"
@@ -55,18 +56,8 @@ func (svc *securityGroupSvc) associateLb(cts *rest.Contexts, validHandler handle
 	}
 
 	// 鉴权和校验资源分配状态和回收状态
-	basicReq := &cloud.BatchListResourceBasicInfoReq{
-		Items: []cloud.ListResourceBasicInfoReq{
-			{ResourceType: enumor.SecurityGroupCloudResType, IDs: req.SecurityGroupIDs,
-				Fields: types.CommonBasicInfoFields},
-			{ResourceType: enumor.LoadBalancerCloudResType, IDs: []string{req.LbID},
-				Fields: types.CommonBasicInfoFields},
-		},
-	}
-
-	basicInfos, err := svc.client.DataService().Global.Cloud.BatchListResBasicInfo(cts.Kit, basicReq)
+	basicInfos, err := svc.getAssociateLBValidBasicInfos(cts.Kit, req.SecurityGroupIDs, []string{req.LbID})
 	if err != nil {
-		logs.Errorf("batch list lb resource basic info failed, err: %v, req: %+v, rid: %s", err, basicReq, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -74,7 +65,7 @@ func (svc *securityGroupSvc) associateLb(cts *rest.Contexts, validHandler handle
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
 		Action: meta.Associate, BasicInfos: basicInfos})
 	if err != nil {
-		logs.Errorf("batch list lb resource basic info failed, err: %v, req: %+v, rid: %s", err, basicReq, cts.Kit.Rid)
+		logs.Errorf("batch list lb resource basic info failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -137,18 +128,8 @@ func (svc *securityGroupSvc) disassociateLb(cts *rest.Contexts, validHandler han
 	}
 
 	// 鉴权和校验资源分配状态和回收状态
-	basicReq := &cloud.BatchListResourceBasicInfoReq{
-		Items: []cloud.ListResourceBasicInfoReq{
-			{ResourceType: enumor.SecurityGroupCloudResType, IDs: []string{req.SecurityGroupID},
-				Fields: types.CommonBasicInfoFields},
-			{ResourceType: enumor.LoadBalancerCloudResType,
-				IDs: []string{req.LbID}, Fields: types.CommonBasicInfoFields},
-		},
-	}
-
-	basicInfos, err := svc.client.DataService().Global.Cloud.BatchListResBasicInfo(cts.Kit, basicReq)
+	basicInfos, err := svc.getAssociateLBValidBasicInfos(cts.Kit, []string{req.SecurityGroupID}, []string{req.LbID})
 	if err != nil {
-		logs.Errorf("batch list lb resource basic info failed, err: %v, req: %+v, rid: %s", err, basicReq, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -156,7 +137,7 @@ func (svc *securityGroupSvc) disassociateLb(cts *rest.Contexts, validHandler han
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
 		Action: meta.Disassociate, BasicInfos: basicInfos})
 	if err != nil {
-		logs.Errorf("batch list lb resource basic info failed, err: %v, req: %+v, rid: %s", err, basicReq, cts.Kit.Rid)
+		logs.Errorf("batch list lb resource basic info failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -192,4 +173,38 @@ func (svc *securityGroupSvc) disassociateLb(cts *rest.Contexts, validHandler han
 	}
 
 	return nil, nil
+}
+
+func (svc *securityGroupSvc) getAssociateLBValidBasicInfos(kt *kit.Kit, sgIDs []string, lbIDs []string) (
+	map[string]types.CloudResourceBasicInfo, error) {
+
+	basicReq := &cloud.BatchListResourceBasicInfoReq{
+		Items: []cloud.ListResourceBasicInfoReq{
+			{ResourceType: enumor.SecurityGroupCloudResType, IDs: sgIDs,
+				Fields: types.CommonBasicInfoFields},
+			{ResourceType: enumor.LoadBalancerCloudResType, IDs: lbIDs,
+				Fields: types.CommonBasicInfoFields},
+		},
+	}
+
+	basicInfos, err := svc.client.DataService().Global.Cloud.BatchListResBasicInfo(kt, basicReq)
+	if err != nil {
+		logs.Errorf("batch list lb resource basic info failed, err: %v, req: %+v, rid: %s", err, basicReq, kt.Rid)
+		return nil, err
+	}
+
+	for key, info := range basicInfos {
+		if info.ResType != enumor.SecurityGroupCloudResType {
+			continue
+		}
+
+		usageBizIDs, err := svc.sgLogic.ListSGUsageBizRel(kt, []string{info.ID})
+		if err != nil {
+			return nil, err
+		}
+		info.UsageBizIDs = usageBizIDs[info.ID]
+		basicInfos[key] = info
+	}
+
+	return basicInfos, nil
 }

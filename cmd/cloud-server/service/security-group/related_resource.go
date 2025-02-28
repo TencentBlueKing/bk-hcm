@@ -97,7 +97,8 @@ func (svc *securityGroupSvc) ListBizCvmIdBySecurityGroup(cts *rest.Contexts) (in
 }
 
 // Deprecated: table[security_group_cvm_rel] is deprecated.
-func (svc *securityGroupSvc) listCvmIDBySecurityGroup(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{}, error) {
+func (svc *securityGroupSvc) listCvmIDBySecurityGroup(cts *rest.Contexts,
+	validHandler handler.ValidWithAuthHandler) (interface{}, error) {
 	id := cts.PathParameter("id").String()
 	if len(id) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "id is required")
@@ -164,6 +165,7 @@ func (svc *securityGroupSvc) queryRelatedResourceCount(cts *rest.Contexts, valid
 	}
 
 	return svc.queryRelatedResourceCountFromCloud(cts.Kit, securityGroups)
+
 }
 
 func (svc *securityGroupSvc) listSecurityGroupByIDsAndFilter(kt *kit.Kit, ids []string,
@@ -302,15 +304,21 @@ func (svc *securityGroupSvc) listSecurityGroupRelBusiness(cts *rest.Contexts, bi
 		return nil, errf.New(errf.InvalidParameter, "security_group_id is required")
 	}
 
-	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.SecurityGroupCloudResType, sgID)
 	if err != nil {
 		logs.Errorf("get security group vendor failed, id: %s, err: %v, rid: %s", sgID, err, cts.Kit.Rid)
 		return nil, err
 	}
 
+	usageBizIDs, err := svc.sgLogic.ListSGUsageBizRel(cts.Kit, []string{sgID})
+	if err != nil {
+		return nil, err
+	}
+	basicInfo.UsageBizIDs = usageBizIDs[sgID]
+
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
-		Action: meta.Find, BasicInfo: baseInfo})
+		Action: meta.Find, BasicInfo: basicInfo})
 	if err != nil {
 		return nil, err
 	}
@@ -349,15 +357,35 @@ func (svc *securityGroupSvc) listSGRelCVMByBizID(cts *rest.Contexts, validHandle
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.SecurityGroupCloudResType, sgID)
 	if err != nil {
 		logs.Errorf("get security group vendor failed, id: %s, err: %v, rid: %s", sgID, err, cts.Kit.Rid)
 		return nil, err
 	}
 
+	// 非管理业务，不允许查看其他业务的绑定资源详情
+	bizIDStr := cts.PathParameter("bk_biz_id")
+	if bizIDStr != "" {
+		bizID, err := bizIDStr.Int64()
+		if err != nil {
+			return nil, errf.New(errf.InvalidParameter, "bk_biz_id need be int")
+		}
+
+		if basicInfo.BkBizID != bizID && resBizID != bizID {
+			return nil, errf.New(errf.InvalidParameter,
+				"non-management business can only list its own resources")
+		}
+	}
+
+	usageBizIDs, err := svc.sgLogic.ListSGUsageBizRel(cts.Kit, []string{sgID})
+	if err != nil {
+		return nil, err
+	}
+	basicInfo.UsageBizIDs = usageBizIDs[sgID]
+
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
-		Action: meta.Find, BasicInfo: baseInfo})
+		Action: meta.Find, BasicInfo: basicInfo})
 	if err != nil {
 		return nil, err
 	}
@@ -396,15 +424,35 @@ func (svc *securityGroupSvc) listSGRelLBByBizID(cts *rest.Contexts, validHandler
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.SecurityGroupCloudResType, sgID)
 	if err != nil {
 		logs.Errorf("get security group vendor failed, id: %s, err: %v, rid: %s", sgID, err, cts.Kit.Rid)
 		return nil, err
 	}
 
+	// 非管理业务，不允许查看其他业务的绑定资源详情
+	bizIDStr := cts.PathParameter("bk_biz_id")
+	if bizIDStr != "" {
+		bizID, err := bizIDStr.Int64()
+		if err != nil {
+			return nil, errf.New(errf.InvalidParameter, "bk_biz_id need be int")
+		}
+
+		if basicInfo.BkBizID != bizID && resBizID != bizID {
+			return nil, errf.New(errf.InvalidParameter,
+				"non-management business can only list its own resources")
+		}
+	}
+
+	usageBizIDs, err := svc.sgLogic.ListSGUsageBizRel(cts.Kit, []string{sgID})
+	if err != nil {
+		return nil, err
+	}
+	basicInfo.UsageBizIDs = usageBizIDs[sgID]
+
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
-		Action: meta.Find, BasicInfo: baseInfo})
+		Action: meta.Find, BasicInfo: basicInfo})
 	if err != nil {
 		return nil, err
 	}

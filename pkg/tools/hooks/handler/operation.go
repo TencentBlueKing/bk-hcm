@@ -30,6 +30,28 @@ import (
 	"hcm/pkg/rest"
 )
 
+func checkBizMatch(opBizID int64, bkBizID int64, usageBizIDs []int64) bool {
+	if opBizID == 0 {
+		return true
+	}
+
+	// 检查分配业务和操作业务是否匹配
+	if bkBizID == 0 || bkBizID == opBizID {
+		return true
+	}
+
+	// 检查使用业务和操作业务是否匹配
+	if len(usageBizIDs) > 0 {
+		for _, id := range usageBizIDs {
+			if id == opBizID {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
 // BizOperateAuth 业务下校验操作合法性, 校验传入的basicInfo是否在url中的业务下
 func BizOperateAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 	bizID, err := cts.PathParameter("bk_biz_id").Int64()
@@ -56,7 +78,7 @@ func BizOperateAuth(cts *rest.Contexts, opt *ValidWithAuthOption) error {
 	authRes := make([]meta.ResourceAttribute, 0, total)
 	notMatchedIDs, recycledIDs, notRecycledIDS := make([]string, 0), make([]string, 0, total), make([]string, 0, total)
 	for id, info := range opt.BasicInfos {
-		if info.BkBizID != 0 && bizID != 0 && info.BkBizID != bizID {
+		if !checkBizMatch(bizID, info.BkBizID, info.UsageBizIDs) {
 			notMatchedIDs = append(notMatchedIDs, id)
 		}
 		if info.RecycleStatus == enumor.RecycleStatus {
