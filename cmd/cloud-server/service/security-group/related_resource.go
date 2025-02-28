@@ -148,8 +148,8 @@ func (svc *securityGroupSvc) queryRelatedResourceCount(cts *rest.Contexts, valid
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	authFilter, noPerm, err := validHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
-		Action: meta.Find})
+	authFilter, noPerm, err := validHandler(cts, &handler.ListAuthResOption{Authorizer: svc.authorizer,
+		ResType: meta.SecurityGroup, Action: meta.Find})
 	if err != nil {
 		return nil, err
 	}
@@ -166,14 +166,23 @@ func (svc *securityGroupSvc) queryRelatedResourceCount(cts *rest.Contexts, valid
 	return svc.queryRelatedResourceCountFromCloud(cts.Kit, securityGroups)
 }
 
-func (svc *securityGroupSvc) listSecurityGroupByIDsAndFilter(kt *kit.Kit, ids []string, authFilter *filter.Expression) ([]cloud.BaseSecurityGroup, error) {
+func (svc *securityGroupSvc) listSecurityGroupByIDsAndFilter(kt *kit.Kit, ids []string,
+	authFilter *filter.Expression) ([]cloud.BaseSecurityGroup, error) {
+
 	resultMap := make(map[string]cloud.BaseSecurityGroup, len(ids))
 	for _, sgIDs := range slice.Split(ids, int(core.DefaultMaxPageLimit)) {
-		finalFilter, err := tools.And(authFilter, tools.ContainersExpression("id", sgIDs))
-		if err != nil {
-			logs.Errorf("build filter failed, err: %v, rid: %s", err, kt.Rid)
-			return nil, err
+		var finalFilter *filter.Expression
+		var err error
+		if authFilter != nil {
+			finalFilter, err = tools.And(authFilter, tools.ContainersExpression("id", sgIDs))
+			if err != nil {
+				logs.Errorf("build filter failed, err: %v, rid: %s", err, kt.Rid)
+				return nil, err
+			}
+		} else {
+			finalFilter = tools.ContainersExpression("id", sgIDs)
 		}
+
 		listReq := &dataproto.SecurityGroupListReq{
 			Filter: finalFilter,
 			Page:   core.NewDefaultBasePage(),
