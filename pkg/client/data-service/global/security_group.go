@@ -21,11 +21,13 @@ package global
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"hcm/pkg/api/core"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/client/common"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
@@ -121,4 +123,23 @@ func (cli *SecurityGroupClient) BatchUpdateSecurityGroupMgmtAttr(kt *kit.Kit,
 
 	return common.RequestNoResp[protocloud.BatchUpdateSecurityGroupMgmtAttrReq](
 		cli.client, rest.PATCH, kt, req, "/security_groups/mgmt_attrs/batch/update")
+}
+
+// CountSecurityGroupRules list security group rules count.
+func (cli *SecurityGroupClient) CountSecurityGroupRules(kt *kit.Kit, vendor enumor.Vendor, ids []string) (
+	protocloud.CountSecurityGroupRuleResp, error) {
+
+	req := &protocloud.CountSecurityGroupRuleReq{
+		SecurityGroupIDs: ids,
+	}
+
+	resp, err := common.Request[protocloud.CountSecurityGroupRuleReq, protocloud.CountSecurityGroupRuleResp](
+		cli.client, http.MethodPost, kt, req, "/vendors/%s/security_groups/rules/count", vendor)
+	if err != nil {
+		return nil, err
+	}
+	if resp == nil {
+		return nil, fmt.Errorf("CountSecurityGroupRules response is nil")
+	}
+	return *resp, nil
 }

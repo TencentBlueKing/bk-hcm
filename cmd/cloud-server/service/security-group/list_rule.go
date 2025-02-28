@@ -25,6 +25,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
@@ -226,4 +227,63 @@ var azureDefaultSGRuleMap = map[enumor.SecurityGroupRuleType][]AzureDefaultSGRul
 			Type:                     enumor.Ingress,
 		},
 	},
+}
+
+// CountSecurityGroupRules list security group rules count.
+func (svc *securityGroupSvc) CountSecurityGroupRules(cts *rest.Contexts) (interface{}, error) {
+	return svc.listSGRulesCount(cts, handler.ResOperateAuth)
+}
+
+// CountBizSecurityGroupRules list biz security group rules count.
+func (svc *securityGroupSvc) CountBizSecurityGroupRules(cts *rest.Contexts) (interface{}, error) {
+	return svc.listSGRulesCount(cts, handler.BizOperateAuth)
+}
+
+func (svc *securityGroupSvc) listSGRulesCount(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+	interface{}, error) {
+
+	req := new(proto.ListSecurityGroupRuleCountReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	listBasicInfoReq := dataproto.ListResourceBasicInfoReq{
+		ResourceType: enumor.SecurityGroupCloudResType,
+		IDs:          req.SecurityGroupIDs,
+	}
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, listBasicInfoReq)
+	if err != nil {
+		return nil, err
+	}
+
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroupRule,
+		Action: meta.Find, BasicInfos: basicInfoMap})
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]int64)
+	vendorToSGIDMap := make(map[enumor.Vendor][]string)
+	for _, info := range basicInfoMap {
+		result[info.ID] = 0
+		vendorToSGIDMap[info.Vendor] = append(vendorToSGIDMap[info.Vendor], info.ID)
+	}
+
+	for vendor, ids := range vendorToSGIDMap {
+		resp, err := svc.client.DataService().Global.SecurityGroup.CountSecurityGroupRules(cts.Kit, vendor, ids)
+		if err != nil {
+			logs.Errorf("list security group rules count from data service failed, err: %v, vendor: %s, ids: %v, rid: %s",
+				err, vendor, ids, cts.Kit.Rid)
+			return nil, err
+		}
+
+		for sgID, count := range resp {
+			result[sgID] = count
+		}
+	}
+	return result, nil
 }

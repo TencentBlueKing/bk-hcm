@@ -41,6 +41,7 @@ import (
 	"hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/adaptor/types/security-group-rule"
 	"hcm/pkg/adaptor/types/subnet"
+	typestag "hcm/pkg/adaptor/types/tag"
 	"hcm/pkg/adaptor/types/zone"
 	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/kit"
@@ -204,4 +205,6 @@ type TCloud interface {
 	DescribeNetworkInterfaces(kt *kit.Kit,
 		opt *networkinterface.TCloudNetworkInterfaceListOption) (
 		*networkinterface.TCloudNetworkInterfaceWithCountResp, error)
+	ListTags(kt *kit.Kit, listOpt *typestag.TCloudTagListOpt) (*typestag.TCloudTagListResult, error)
+	TagResources(kt *kit.Kit, tagOpt *typestag.TCloudTagResOpt) (*typestag.TCloudTagResourcesResp, error)
 }

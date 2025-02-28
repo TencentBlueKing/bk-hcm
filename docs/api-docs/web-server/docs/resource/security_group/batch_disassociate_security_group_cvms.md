@@ -1,18 +1,17 @@
 ### 描述
 
-- 该接口提供版本：v1.6.11+。
-- 该接口所需权限：IaaS资源操作。
-- 该接口功能描述：安全组批量绑定CVM
+- 该接口提供版本：v9.9.9+。
+- 该接口所需权限：业务-IaaS资源操作。
+- 该接口功能描述：安全组批量解绑主机
 
 ### URL
 
-POST /api/v1/cloud/bizs/{bk_biz_id}/security_groups/associate/cvms/batch
+POST /api/v1/cloud/security_groups/disassociate/cvms/batch
 
 ### 输入参数
 
 | 参数名称              | 参数类型         | 必选 | 描述     |
 |-------------------|--------------|----|--------|
-| bk_biz_id         | int64        | 是  | 业务id   |
 | security_group_id | string       | 是  | 安全组ID  |
 | cvm_ids           | string array | 是  | 主机ID列表 |
 
@@ -21,7 +20,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/security_groups/associate/cvms/batch
 ```json
 {
   "security_group_id": "00001111",
-  "cvm_ids": ["00000001"]
+  "cvm_ids": ["ins-xxxx"]
 }
 ```
 
