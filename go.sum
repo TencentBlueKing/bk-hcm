@@ -322,6 +322,8 @@ github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm v1.0.1096/go.mod h1
 github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/kms v1.0.563/go.mod h1:uom4Nvi9W+Qkom0exYiJ9VWJjXwyxtPYTkKkaLMlfE0=
 github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/ssl v1.0.1096 h1:7ZmPusU52i5bT9bf5xBeqJclyBx75zFGEIOmiXme9YU=
 github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/ssl v1.0.1096/go.mod h1:aMpGcDskqqhXtfMaeo2egO61tgh/zt07L1ohSPwmjWk=
+github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/tag v1.0.1096 h1:Ka0Zo5oTl5hLXGhiRnsgIHcpuZwKu20wpNKv3Pi/ylE=
+github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/tag v1.0.1096/go.mod h1:ixwa8IjVeThr5gte1mnzHXqmheU4t1zaGH733r4ymvw=
 github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc v1.0.1096 h1:IMarg9Yavf49+8vsF58e1vu+OOt3NLrI+1ZF9AMJKyo=
 github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc v1.0.1096/go.mod h1:9N6lmYxAZ1DOX8Vy+yq9ev+GCUwCeJ05EFzWTaoxv8g=
 github.com/tencentyun/cos-go-sdk-v5 v0.7.48 h1:kx+jQrvz87zlxjkJ0yytzf7Nm+JQmUTPBRZDYqyG88E=
