@@ -137,7 +137,8 @@ const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, ge
 
       return data.map((sg) => {
         const { resources } = relatedResourcesList.find((relRes) => relRes.id === sg.id) ?? {};
-        const { managers, details } = maintainers.find((maintainer) => maintainer.id === sg.id) ?? {};
+        const { managers, usage_biz_infos: usageBizInfos } =
+          maintainers.find((maintainer) => maintainer.id === sg.id) ?? {};
 
         const relResCount = resources.reduce((acc, cur) => acc + cur.count, 0);
         const relatedResources = resources.filter(({ count }) => count > 0);
@@ -149,7 +150,7 @@ const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, ge
           rel_res: relatedResources,
           rule_count: ruleCount,
           account_managers: managers,
-          usage_biz_maintainers: details,
+          usage_biz_infos: usageBizInfos,
         };
       });
     },
