@@ -25,6 +25,8 @@ import (
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/logs"
+	"hcm/pkg/tools/json"
 )
 
 func init() {
@@ -44,6 +46,11 @@ func NewAwsMonthDescriber(rootAccountCloudID string) MonthTaskDescriber {
 		describer.SpAccountCloudID = spOpt.SpPurchaseAccountCloudID
 		describer.SpArnPrefix = spOpt.SpArnPrefix
 	}
+	awsDeductItemTypes, err := json.Marshal(cc.AccountServer().BillAllocation.AwsDeductAccountItems.DeductItemTypes)
+	if err != nil {
+		logs.Warnf("fail to json marshal awsDeductAccountItems config, err: %v", err)
+	}
+	describer.DeductItemTypes = string(awsDeductItemTypes)
 
 	return describer
 }
@@ -54,6 +61,7 @@ type awsMonthDescriber struct {
 	SpArnPrefix                  string
 	SpAccountCloudID             string
 	CommonExpenseExcludeCloudIDs []string
+	DeductItemTypes              string // 需要抵扣的账单明细项目类型列表，比如税费Tax
 }
 
 // GetMonthTaskTypes aws month tasks
@@ -61,6 +69,7 @@ func (aws *awsMonthDescriber) GetMonthTaskTypes() []enumor.MonthTaskType {
 	if aws.SpArnPrefix == "" {
 		return []enumor.MonthTaskType{
 			enumor.AwsOutsideBillMonthTask,
+			enumor.DeductMonthTask,
 			// 没有配置sp前缀则不生成对应的sp分账任务
 			// enumor.AwsSavingsPlansMonthTask,
 			enumor.AwsSupportMonthTask,
@@ -69,6 +78,7 @@ func (aws *awsMonthDescriber) GetMonthTaskTypes() []enumor.MonthTaskType {
 	return []enumor.MonthTaskType{
 		enumor.AwsOutsideBillMonthTask,
 		enumor.AwsSavingsPlansMonthTask,
+		enumor.DeductMonthTask,
 		enumor.AwsSupportMonthTask,
 	}
 }
@@ -80,5 +90,6 @@ func (aws *awsMonthDescriber) GetTaskExtension() (map[string]string, error) {
 		constant.AwsCommonExpenseExcludeCloudIDKey: strings.Join(aws.CommonExpenseExcludeCloudIDs, ","),
 		constant.AwsSavingsPlanARNPrefixKey:        aws.SpArnPrefix,
 		constant.AwsSavingsPlanAccountCloudIDKey:   aws.SpAccountCloudID,
+		constant.AwsAccountDeductItemTypesKey:      aws.DeductItemTypes,
 	}, nil
 }

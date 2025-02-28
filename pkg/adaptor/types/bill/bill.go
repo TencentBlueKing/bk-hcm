@@ -615,3 +615,25 @@ func (opt *AwsMainOutsideMonthBillLitOpt) Validate() error {
 	}
 	return validator.Validate.Struct(opt)
 }
+
+// AwsRootDeductBillListOpt defines aws root deduct bill list opt.
+type AwsRootDeductBillListOpt struct {
+	Year           uint   `json:"year" validate:"required"`
+	Month          uint   `json:"month" validate:"required,min=1,max=12"`
+	PayerAccountID string `json:"payer_account_id" validate:"omitempty"`
+	// 项目涵盖的费用类型（需要查询的字段名、值）
+	FieldsMap map[string][]string `json:"fields_map" validate:"omitempty"`
+	// 起始日期，格式为yyyy-mm-dd，不支持跨月查询
+	BeginDate string `json:"begin_date" validate:"omitempty"`
+	// 截止日期，格式为yyyy-mm-dd，不支持跨月查询
+	EndDate string       `json:"end_date" validate:"omitempty"`
+	Page    *AwsBillPage `json:"page" validate:"omitempty"`
+}
+
+// Validate ...
+func (opt *AwsRootDeductBillListOpt) Validate() error {
+	if opt == nil {
+		return errors.New("opt for aws get root deduct bill is required")
+	}
+	return validator.Validate.Struct(opt)
+}
