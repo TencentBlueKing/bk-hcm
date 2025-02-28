@@ -46,6 +46,9 @@ const AwsSavingsPlanARNPrefixKey = "aws_savings_plan_arn_prefix"
 // AwsCommonExpenseExcludeCloudIDKey ...
 const AwsCommonExpenseExcludeCloudIDKey = "aws_common_expense_exclude_account_cloud_id"
 
+// AwsCommonExpenseDeductItemTypesKey AWS需要抵扣的账单明细项目类型列表，比如税费Tax
+const AwsCommonExpenseDeductItemTypesKey = "aws_common_expense_deduct_item_types"
+
 // GcpCommonExpenseExcludeCloudIDKey ...
 const GcpCommonExpenseExcludeCloudIDKey = "gcp_common_expense_exclude_account_cloud_id"
 
@@ -70,6 +73,8 @@ const (
 	AwsSavingsPlansCostCode = "SavingsPlanCost"
 	// AwsSavingsPlansCostCodeReverse aws savings plans cost code reverse
 	AwsSavingsPlansCostCodeReverse = "SavingsPlanCostReverse"
+	// AwsDeductPlanCostCodeReverse aws deduct plans cost code reverse
+	AwsDeductPlanCostCodeReverse = "DeductPlanCostReverse"
 
 	// GcpCreditReturnCost Gcp credit return cost, negative value, e.g. -10.00000
 	GcpCreditReturnCost = "Credit"

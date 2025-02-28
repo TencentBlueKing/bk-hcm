@@ -54,6 +54,7 @@ type awsMonthDescriber struct {
 	SpArnPrefix                  string
 	SpAccountCloudID             string
 	CommonExpenseExcludeCloudIDs []string
+	DeductItemTypes              []string // 需要抵扣的账单明细项目类型列表，比如税费Tax
 }
 
 // GetMonthTaskTypes aws month tasks
@@ -61,6 +62,7 @@ func (aws *awsMonthDescriber) GetMonthTaskTypes() []enumor.MonthTaskType {
 	if aws.SpArnPrefix == "" {
 		return []enumor.MonthTaskType{
 			enumor.AwsOutsideBillMonthTask,
+			enumor.AwsDeductMonthTask,
 			// 没有配置sp前缀则不生成对应的sp分账任务
 			// enumor.AwsSavingsPlansMonthTask,
 			enumor.AwsSupportMonthTask,
@@ -69,6 +71,7 @@ func (aws *awsMonthDescriber) GetMonthTaskTypes() []enumor.MonthTaskType {
 	return []enumor.MonthTaskType{
 		enumor.AwsOutsideBillMonthTask,
 		enumor.AwsSavingsPlansMonthTask,
+		enumor.AwsDeductMonthTask,
 		enumor.AwsSupportMonthTask,
 	}
 }
@@ -77,8 +80,9 @@ func (aws *awsMonthDescriber) GetMonthTaskTypes() []enumor.MonthTaskType {
 func (aws *awsMonthDescriber) GetTaskExtension() (map[string]string, error) {
 
 	return map[string]string{
-		constant.AwsCommonExpenseExcludeCloudIDKey: strings.Join(aws.CommonExpenseExcludeCloudIDs, ","),
-		constant.AwsSavingsPlanARNPrefixKey:        aws.SpArnPrefix,
-		constant.AwsSavingsPlanAccountCloudIDKey:   aws.SpAccountCloudID,
+		constant.AwsCommonExpenseExcludeCloudIDKey:  strings.Join(aws.CommonExpenseExcludeCloudIDs, ","),
+		constant.AwsSavingsPlanARNPrefixKey:         aws.SpArnPrefix,
+		constant.AwsSavingsPlanAccountCloudIDKey:    aws.SpAccountCloudID,
+		constant.AwsCommonExpenseDeductItemTypesKey: strings.Join(aws.DeductItemTypes, ","),
 	}, nil
 }

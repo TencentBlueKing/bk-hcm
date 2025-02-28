@@ -924,6 +924,7 @@ func (opt *AwsSavingsPlansOption) validate() error {
 // BillCommonExpense ...
 type BillCommonExpense struct {
 	ExcludeAccountCloudIDs []string `yaml:"excludeAccountCloudIDs" validate:"dive,required"`
+	DeductItemTypes        []string `yaml:"deductItemTypes" validate:"dive,required"`
 }
 
 // CreditReturn ...
