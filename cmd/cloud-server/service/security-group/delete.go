@@ -160,6 +160,8 @@ func (svc *securityGroupSvc) checkSGBinding(kt *kit.Kit, sgInfos map[string]type
 					return fmt.Errorf("stat %s security group binding failed", vendor)
 				}
 				if err := checkStat(stats.Details); err != nil {
+					logs.Errorf("stat %s security group binding failed, err: %v, req: %+v, rid: %s",
+						vendor, err, statReq, kt.Rid)
 					return err
 				}
 			}
