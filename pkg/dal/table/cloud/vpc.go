@@ -43,7 +43,6 @@ var VpcColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "category", NamedC: "category", Type: enumor.String},
 	{Column: "memo", NamedC: "memo", Type: enumor.String},
 	{Column: "extension", NamedC: "extension", Type: enumor.Json},
-	{Column: "bk_cloud_id", NamedC: "bk_cloud_id", Type: enumor.Numeric},
 	{Column: "bk_biz_id", NamedC: "bk_biz_id", Type: enumor.Numeric},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
 	{Column: "reviser", NamedC: "reviser", Type: enumor.String},
@@ -71,8 +70,6 @@ type VpcTable struct {
 	Memo *string `db:"memo" validate:"omitempty,max=255" json:"memo"`
 	// Extension 云厂商差异扩展字段
 	Extension types.JsonField `db:"extension" validate:"-" json:"extension"`
-	// BkCloudID 云区域ID
-	BkCloudID int64 `db:"bk_cloud_id" validate:"min=-1" json:"bk_cloud_id"`
 	// BkBizID 业务ID
 	BkBizID int64 `db:"bk_biz_id" validate:"min=-1" json:"bk_biz_id"`
 	// Creator 创建者
@@ -112,10 +109,6 @@ func (v VpcTable) InsertValidate() error {
 		return err
 	}
 
-	if v.BkCloudID == 0 {
-		return errors.New("blueking cloud id can not be empty")
-	}
-
 	if v.BkBizID == 0 {
 		return errors.New("biz id can not be empty")
 	}
@@ -133,8 +126,7 @@ func (v VpcTable) UpdateValidate() error {
 		return err
 	}
 
-	if v.Name == nil && len(v.Category) == 0 && len(v.Extension) == 0 && v.BkCloudID == 0 && v.BkBizID == 0 &&
-		v.Memo == nil {
+	if v.Name == nil && len(v.Category) == 0 && len(v.Extension) == 0 && v.BkBizID == 0 && v.Memo == nil {
 		return errors.New("at least one of the update fields must be set")
 	}
 

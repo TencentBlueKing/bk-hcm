@@ -48,6 +48,7 @@ var (
 type AzureCvmCreateReq struct {
 	BkBizID               int64    `json:"bk_biz_id" validate:"omitempty"`
 	AccountID             string   `json:"account_id" validate:"required"`
+	BkCloudID             *int64   `json:"bk_cloud_id" validate:"required"`
 	ResourceGroupName     string   `json:"resource_group_name" validate:"required,lowercase"`
 	Region                string   `json:"region" validate:"required,lowercase"`
 	Zone                  string   `json:"zone" validate:"omitempty,lowercase"`
@@ -84,13 +85,17 @@ type AzureCvmCreateReq struct {
 }
 
 // Validate ...
-func (req *AzureCvmCreateReq) Validate(bizRequired bool) error {
+func (req *AzureCvmCreateReq) Validate(isFromBiz bool) error {
 	if err := validator.Validate.Struct(req); err != nil {
 		return err
 	}
 
-	if bizRequired && req.BkBizID == 0 {
+	if isFromBiz && req.BkBizID == 0 {
 		return errors.New("bk_biz_id is required")
+	}
+
+	if isFromBiz && req.BkCloudID == nil {
+		return errors.New("bk_cloud_id is required")
 	}
 
 	if err := validator.ValidateCvmName(enumor.Azure, req.Name); err != nil {

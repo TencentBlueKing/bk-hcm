@@ -112,13 +112,6 @@ func (a *ApplicationOfCreateGcpVpc) renderVpc() ([]formItem, error) {
 	// 名称
 	formItems = append(formItems, formItem{Label: "名称", Value: req.Name})
 
-	// 所属的蓝鲸云区域
-	bkCloudAreaName, err := a.GetCloudAreaName(req.BkCloudID)
-	if err != nil {
-		return formItems, err
-	}
-	formItems = append(formItems, formItem{Label: "所属的蓝鲸云区域", Value: bkCloudAreaName})
-
 	// 动态路由模式
 	RoutingModeNameMap := map[string]string{"REGIONAL": "区域", "GLOBAL": "全局"}
 	formItems = append(formItems, formItem{Label: "动态路由模式", Value: RoutingModeNameMap[req.RoutingMode]})

@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	typecvm "hcm/pkg/adaptor/types/cvm"
+	"hcm/pkg/tools/converter"
 )
 
 type formItem struct {
@@ -160,7 +161,7 @@ func (a *ApplicationOfCreateGcpCvm) renderNetwork() ([]formItem, error) {
 	}
 
 	// 所属的蓝鲸云区域
-	bkCloudAreaName, err := a.GetCloudAreaName(vpcInfo.BkCloudID)
+	bkCloudAreaName, err := a.GetCloudAreaName(converter.PtrToVal(req.BkCloudID))
 	if err != nil {
 		return formItems, err
 	}

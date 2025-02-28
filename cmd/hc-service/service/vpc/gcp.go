@@ -218,7 +218,6 @@ func convertGcpVpcCreateReq(req *hcservice.VpcCreateReq[hcservice.GcpVpcCreateEx
 		AccountID: req.AccountID,
 		CloudID:   data.CloudID,
 		BkBizID:   constant.UnassignedBiz,
-		BkCloudID: req.BkCloudID,
 		Name:      &data.Name,
 		Region:    data.Region,
 		Category:  req.Category,

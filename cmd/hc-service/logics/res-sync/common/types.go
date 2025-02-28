@@ -23,7 +23,6 @@ package common
 type VpcDB struct {
 	VpcCloudID string
 	VpcID      string
-	BkCloudID  int64
 }
 
 // OrderedRel 有序关系，用于比较类似于多个安全组但是有序的情况

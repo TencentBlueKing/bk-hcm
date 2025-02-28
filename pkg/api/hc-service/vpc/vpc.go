@@ -39,7 +39,6 @@ type BaseVpcCreateReq struct {
 	Name      string             `json:"name" validate:"required"`
 	Category  enumor.VpcCategory `json:"category" validate:"required"`
 	Memo      *string            `json:"memo,omitempty" validate:"omitempty"`
-	BkCloudID int64              `json:"bk_cloud_id" validate:"required"`
 	BkBizID   int64              `json:"bk_biz_id" validate:"omitempty"`
 }
 

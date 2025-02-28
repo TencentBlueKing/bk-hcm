@@ -23,8 +23,6 @@ import (
 	"fmt"
 
 	actioncvm "hcm/cmd/task-server/logics/action/cvm"
-	protocloud "hcm/pkg/api/data-service/cloud"
-	protodisk "hcm/pkg/api/data-service/cloud/disk"
 	ts "hcm/pkg/api/task-server"
 	"hcm/pkg/async/action"
 	"hcm/pkg/criteria/constant"
@@ -35,8 +33,8 @@ import (
 // Deliver 执行资源交付
 func (a *ApplicationOfCreateTCloudCvm) Deliver() (enumor.ApplicationStatus, map[string]interface{}, error) {
 	req := a.toHcProtoTCloudBatchCreateReq(false)
-
-	tasks := actioncvm.BuildCreateCvmTasks(req.RequiredCount, a.req.BkBizID, constant.BatchCreateCvmFromCloudMaxLimit,
+	opt := &actioncvm.AssignCvmOption{BizID: a.req.BkBizID, BkCloudID: a.req.BkCloudID}
+	tasks := actioncvm.BuildCreateCvmTasks(req.RequiredCount, constant.BatchCreateCvmFromCloudMaxLimit, opt,
 		func(actionID action.ActIDType, count int64) ts.CustomFlowTask {
 			req.RequiredCount = count
 			return ts.CustomFlowTask{
@@ -62,60 +60,4 @@ func (a *ApplicationOfCreateTCloudCvm) Deliver() (enumor.ApplicationStatus, map[
 	deliverDetail := map[string]interface{}{"flow_id": result.ID}
 
 	return enumor.Delivering, deliverDetail, nil
-}
-
-func (a *ApplicationOfCreateTCloudCvm) assignToBiz(cloudCvmIDs []string) ([]string, error) {
-	req := a.req
-	// 云ID查询主机
-	cvmInfo, err := a.ListCvm(a.Vendor(), req.AccountID, cloudCvmIDs)
-	if err != nil {
-		return []string{}, err
-	}
-	cvmIDs := make([]string, 0, len(cvmInfo))
-	for _, cvm := range cvmInfo {
-		cvmIDs = append(cvmIDs, cvm.ID)
-	}
-
-	// 主机交付给业务
-	err = a.Client.DataService().Global.Cvm.BatchUpdateCvmCommonInfo(
-		a.Cts.Kit,
-		&protocloud.CvmCommonInfoBatchUpdateReq{IDs: cvmIDs, BkBizID: req.BkBizID},
-	)
-	if err != nil {
-		return cvmIDs, err
-	}
-
-	// create deliver audit
-	err = a.Audit.ResDeliverAudit(a.Cts.Kit, enumor.CvmAuditResType, cvmIDs, int64(req.BkBizID))
-	if err != nil {
-		logs.Errorf("create deliver cvm audit failed, err: %v, rid: %s", err, a.Cts.Kit)
-		return nil, err
-	}
-
-	// 主机关联资源分配给业务，目前只有硬盘是一同创建出来的
-	diskIDs, err := a.ListDiskIDByCvm(cvmIDs)
-	if err != nil {
-		return cvmIDs, err
-	}
-	if len(diskIDs) > 0 {
-		// 硬盘分配给业务
-		_, err = a.Client.DataService().Global.BatchUpdateDisk(
-			a.Cts.Kit,
-			&protodisk.DiskBatchUpdateReq{
-				IDs:     diskIDs,
-				BkBizID: uint64(req.BkBizID),
-			},
-		)
-		if err != nil {
-			return cvmIDs, err
-		}
-
-		// create deliver audit
-		err = a.Audit.ResDeliverAudit(a.Cts.Kit, enumor.DiskAuditResType, diskIDs, int64(req.BkBizID))
-		if err != nil {
-			logs.Errorf("create deliver disk audit failed, err: %v, rid: %s", err, a.Cts.Kit)
-			return nil, err
-		}
-	}
-	return cvmIDs, nil
 }

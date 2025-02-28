@@ -63,7 +63,6 @@ func InitVpcService(c *capability.Capability) {
 	h.Add("UpdateVpc", "PATCH", "/vpcs/{id}", svc.UpdateVpc)
 	h.Add("DeleteVpc", "DELETE", "/vpcs/{id}", svc.DeleteVpc)
 	h.Add("AssignVpcToBiz", "POST", "/vpcs/assign/bizs", svc.AssignVpcToBiz)
-	h.Add("BindVpcWithCloudArea", "POST", "/vpcs/bind/cloud_areas", svc.BindVpcWithCloudArea)
 	h.Add("ListResVpcExt", "POST", "/vendors/{vendor}/vpcs/list", svc.ListResVpcExt)
 
 	// vpc apis in biz
@@ -532,7 +531,6 @@ func (svc *vpcSvc) AssignVpcToBiz(cts *rest.Contexts) (interface{}, error) {
 			Rules: []filter.RuleFactory{
 				&filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: req.VpcIDs},
 				&filter.AtomRule{Field: "bk_biz_id", Op: filter.Equal.Factory(), Value: constant.UnassignedBiz},
-				&filter.AtomRule{Field: "bk_cloud_id", Op: filter.NotEqual.Factory(), Value: constant.UnbindBkCloudID},
 			},
 		},
 		Page: core.NewCountPage(),
@@ -566,86 +564,6 @@ func (svc *vpcSvc) AssignVpcToBiz(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	err = svc.client.DataService().Global.Vpc.BatchUpdateBaseInfo(cts.Kit.Ctx, cts.Kit.Header(), createReq)
-	if err != nil {
-		return nil, err
-	}
-
-	return nil, nil
-}
-
-// BindVpcWithCloudArea bind vpcs with cloud areas.
-func (svc *vpcSvc) BindVpcWithCloudArea(cts *rest.Contexts) (interface{}, error) {
-	req := make(csvpc.BindVpcWithCloudAreaReq, 0)
-	if err := cts.DecodeInto(&req); err != nil {
-		return nil, err
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	// authorize
-	ids := make([]string, 0, len(req))
-	for _, rel := range req {
-		ids = append(ids, rel.VpcID)
-	}
-
-	err := svc.authorizeVpcBatchOp(cts.Kit, meta.Update, ids, 0)
-	if err != nil {
-		return nil, err
-	}
-
-	// check if all vpcs are not assigned to biz, cannot operate biz resource in account api
-	vpcFilter := &filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: ids}
-	err = svc.checkVpcsInBiz(cts.Kit, vpcFilter, constant.UnassignedBiz)
-	if err != nil {
-		return nil, err
-	}
-
-	// check if all vpcs are not assigned
-	assignedReq := &core.ListReq{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{Field: "id", Op: filter.In.Factory(), Value: ids},
-				&filter.AtomRule{Field: "bk_cloud_id", Op: filter.NotEqual.Factory(), Value: constant.UnbindBkCloudID},
-			},
-		},
-		Page: &core.BasePage{Count: true},
-	}
-	result, err := svc.client.DataService().Global.Vpc.List(cts.Kit.Ctx, cts.Kit.Header(), assignedReq)
-	if err != nil {
-		logs.Errorf("count assigned vpc failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	if result.Count != 0 {
-		return nil, fmt.Errorf("%d vpcs are already assigned", result.Count)
-	}
-
-	// create assign audit.
-	auditOpt := make([]audit.ResCloudAreaBindOption, 0, len(req))
-	for _, info := range req {
-		auditOpt = append(auditOpt, audit.ResCloudAreaBindOption{ResID: info.VpcID, CloudID: info.BkCloudID})
-	}
-	err = svc.audit.ResCloudAreaBindAudit(cts.Kit, enumor.VpcCloudAuditResType, auditOpt)
-	if err != nil {
-		logs.Errorf("create assign audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	// update vpc cloud area relations
-	updateReqs := make([]cloud.VpcBaseInfoUpdateReq, 0, len(req))
-	for _, rel := range req {
-		updateReqs = append(updateReqs, cloud.VpcBaseInfoUpdateReq{
-			IDs:  []string{rel.VpcID},
-			Data: &cloud.VpcUpdateBaseInfo{BkCloudID: rel.BkCloudID},
-		})
-	}
-
-	batchUpdateReq := &cloud.VpcBaseInfoBatchUpdateReq{Vpcs: updateReqs}
-
-	err = svc.client.DataService().Global.Vpc.BatchUpdateBaseInfo(cts.Kit.Ctx, cts.Kit.Header(), batchUpdateReq)
 	if err != nil {
 		return nil, err
 	}

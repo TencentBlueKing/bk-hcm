@@ -24,6 +24,7 @@ import (
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/table/cloud/cvm"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -50,10 +51,26 @@ func upsertCmdbHosts[T corecvm.Extension](svc *cvmSvc, kt *kit.Kit, vendor enumo
 
 	for bizID, hosts := range bizHostMap {
 		addCmdbReq := &cmdb.AddCloudHostToBizReq[T]{Vendor: vendor, BizID: bizID, Hosts: hosts}
-		if err := cmdb.AddCloudHostToBiz[T](svc.cmdbLogics, kt, addCmdbReq); err != nil {
+		hostIDs, err := cmdb.AddCloudHostToBiz[T](svc.cmdbLogics, kt, addCmdbReq)
+		if err != nil {
 			logs.Errorf("[%s] add cmdb cloud hosts failed, err: %v, req: %+v, rid: %s", constant.CmdbSyncFailed, err,
 				addCmdbReq, kt.Rid)
 			return err
+		}
+
+		if len(hostIDs) != len(hosts) {
+			logs.Errorf("[%s] add cmdb cloud hosts len(hostIDs[%d]) != len(hosts[%d]), req: %+v, rid: %s",
+				constant.CmdbSyncFailed, len(hostIDs), len(hosts), addCmdbReq, kt.Rid)
+			return err
+		}
+		for i, host := range hosts {
+			updateFilter := tools.EqualExpression("id", host.ID)
+			updateField := &cvm.Table{BkHostID: hostIDs[i]}
+			if err = svc.dao.Cvm().Update(kt, updateFilter, updateField); err != nil {
+				logs.Errorf("[%s] update cvm failed, err: %v, filter: %+v, field: %+v, rid: %s",
+					constant.CmdbSyncFailed, err, *updateFilter, updateField, kt.Rid)
+				return err
+			}
 		}
 	}
 
@@ -75,10 +92,27 @@ func upsertBaseCmdbHosts(svc *cvmSvc, kt *kit.Kit, models []*cvm.Table) error {
 
 	for bizID, hosts := range bizHostMap {
 		addCmdbReq := &cmdb.AddBaseCloudHostToBizReq{BizID: bizID, Hosts: hosts}
-		if err := cmdb.AddBaseCloudHostToBiz(svc.cmdbLogics, kt, addCmdbReq); err != nil {
+		hostIDs, err := cmdb.AddBaseCloudHostToBiz(svc.cmdbLogics, kt, addCmdbReq)
+		if err != nil {
 			logs.Errorf("[%s] add cmdb base cloud hosts failed, err: %v, req: %+v, rid: %s", constant.CmdbSyncFailed,
 				err, addCmdbReq, kt.Rid)
 			return err
+		}
+
+		if len(hostIDs) != len(hosts) {
+			logs.Errorf("[%s] add cmdb base cloud hosts len(hostIDs[%d]) != len(hosts[%d]), req: %+v, rid: %s",
+				constant.CmdbSyncFailed, len(hostIDs), len(hosts), addCmdbReq, kt.Rid)
+			return err
+		}
+
+		for i, host := range hosts {
+			updateFilter := tools.EqualExpression("id", host.ID)
+			updateField := &cvm.Table{BkHostID: hostIDs[i]}
+			if err = svc.dao.Cvm().Update(kt, updateFilter, updateField); err != nil {
+				logs.Errorf("[%s] update cvm failed, err: %v, filter: %+v, field: %+v, rid: %s",
+					constant.CmdbSyncFailed, err, *updateFilter, updateField, kt.Rid)
+				return err
+			}
 		}
 	}
 

@@ -18,7 +18,6 @@ POST /api/v1/cloud/vpcs/create
 | region      | string | 是  | 地域                |
 | name        | string | 是  | 名称                |
 | ipv4_cidr   | string | 是  | IPv4 CIDR         |
-| bk_cloud_id | int64  | 是  | 云区域ID，-1表示没有绑定云区域 |
 | subnet      | object | 是  | 子网                |
 | memo        | string | 否  | 备注                |
 
@@ -37,7 +36,6 @@ POST /api/v1/cloud/vpcs/create
 | region            | string | 是  | 地域                        |
 | name              | string | 是  | 名称                        |
 | ipv4_cidr         | string | 是  | IPv4 CIDR                 |
-| bk_cloud_id       | int64  | 是  | 云区域ID，-1表示没有绑定云区域         |
 | instance_tenancy  | string | 是  | 租期（枚举值：default、dedicated） |
 | memo              | string | 否  | 备注                        |
 
@@ -49,7 +47,6 @@ POST /api/v1/cloud/vpcs/create
 | region      | string | 是  | 地域                |
 | name        | string | 是  | 名称                |
 | ipv4_cidr   | string | 是  | IPv4 CIDR         |
-| bk_cloud_id | int64  | 是  | 云区域ID，-1表示没有绑定云区域 |
 | subnet      | object | 是  | 子网                |
 | memo        | string | 否  | 备注                |
 
@@ -70,7 +67,6 @@ POST /api/v1/cloud/vpcs/create
 | region               | string | 是  | 地域                |
 | name                 | string | 是  | 名称                |
 | ipv4_cidr            | string | 是  | IPv4 CIDR         |
-| bk_cloud_id          | int64  | 是  | 云区域ID，-1表示没有绑定云区域 |
 | subnet               | object | 是  | 子网                |
 | memo                 | string | 否  | 备注                |
 
@@ -88,7 +84,6 @@ POST /api/v1/cloud/vpcs/create
 | account_id    | string | 是  | 账号ID                        |
 | region        | string | 是  | 地域                          |
 | name          | string | 是  | 名称                          |
-| bk_cloud_id   | int64  | 是  | 云区域ID，-1表示没有绑定云区域           |
 | routing_mode  | string | 是  | 动态路由模式（枚举值：REGIONAL、GLOBAL） |
 | subnet        | object | 是  | 子网                          |
 | memo          | string | 否  | 备注                          |
@@ -112,7 +107,6 @@ POST /api/v1/cloud/vpcs/create
   "region": "ap-hk",
   "name": "xxx",
   "ipv4_cidr": "127.0.0.0/16",
-  "bk_cloud_id": 1000,
   "subnet": {
     "name": "xxxxx",
     "ipv4_cidr": "127.0.0.0/16",
@@ -129,7 +123,6 @@ POST /api/v1/cloud/vpcs/create
   "region": "ap-hk",
   "name": "xxx",
   "ipv4_cidr": "127.0.0.0/16",
-  "bk_cloud_id": 1000,
   "instance_tenancy": "default",
   "memo": ""
 }
@@ -143,7 +136,6 @@ POST /api/v1/cloud/vpcs/create
   "region": "ap-hk",
   "name": "xxx",
   "ipv4_cidr": "127.0.0.0/16",
-  "bk_cloud_id": 1000,
   "subnet": {
     "name": "xxxxx",
     "ipv4_cidr": "127.0.0.0/16"
@@ -160,7 +152,6 @@ POST /api/v1/cloud/vpcs/create
   "region": "ap-hk",
   "name": "xxx",
   "ipv4_cidr": "127.0.0.0/16",
-  "bk_cloud_id": 1000,
   "subnet": {
     "name": "xxxxx",
     "ipv4_cidr": "127.0.0.0/16",
@@ -179,7 +170,6 @@ POST /api/v1/cloud/vpcs/create
   "account_id": "0000001",
   "region": "ap-hk",
   "name": "xxx",
-  "bk_cloud_id": 1000,
   "routing_mode": "REGIONAL",
   "subnet": {
     "name": "xxxxx",

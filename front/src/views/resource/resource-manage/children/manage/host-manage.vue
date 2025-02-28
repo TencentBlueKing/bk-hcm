@@ -5,21 +5,23 @@ import type {
   FilterType,
 } from '@/typings/resource';
 import { Button, Dropdown, Message, Checkbox, bkTooltips } from 'bkui-vue';
-import { PropType, h, ref, withDirectives } from 'vue';
+import { PropType, h, reactive, ref, withDirectives } from 'vue';
 import { useI18n } from 'vue-i18n';
 import useQueryList from '../../hooks/use-query-list';
 import useSelection from '../../hooks/use-selection';
 import useColumns from '../../hooks/use-columns';
 import useFilterHost from '@/views/resource/resource-manage/hooks/use-filter-host';
-import { useResourceStore } from '@/store';
+import { useHostStore, useResourceStore } from '@/store';
 import HostOperations, { HOST_RUNNING_STATUS, HOST_SHUTDOWN_STATUS } from '../../common/table/HostOperations';
-import BusinessSelector from '@/components/business-selector/index.vue';
-import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import Confirm, { confirmInstance } from '@/components/confirm';
 import { CLOUD_HOST_STATUS } from '@/common/constant';
 import { ResourceTypeEnum } from '@/common/resource-constant';
 import ResourceSearchSelect from '@/components/resource-search-select/index.vue';
+// 主机分配
+import BatchAssign from './assign-host/dialog/batch-assign.vue';
+import SingleAssign from './assign-host/dialog/single-assign.vue';
+import type { ICvmItem } from '@/store';
 
 const { DropdownMenu, DropdownItem } = Dropdown;
 
@@ -37,9 +39,6 @@ const props = defineProps({
   },
 });
 
-const isLoadingCloudAreas = ref(false);
-const cloudAreaPage = ref(0);
-const cloudAreas = ref([]);
 const { whereAmI, isResourcePage, isBusinessPage } = useWhereAmI();
 
 const { searchValue, filter } = useFilterHost(props);
@@ -53,11 +52,7 @@ Object.assign(pagination.value, { 'limit-list': [10, 20, 50, 100, 500] });
 
 const { selections, handleSelectionChange, resetSelections } = useSelection();
 
-const currentOperateCvm = ref(null);
 const { columns, generateColumnsSettings } = useColumns('cvms');
-const isDialogShow = ref(false);
-const isDialogBtnLoading = ref(false);
-const selectedBizId = ref(0);
 const resourceStore = useResourceStore();
 
 const operationDropdownList = [
@@ -68,7 +63,7 @@ const operationDropdownList = [
 ];
 const currentOperateRowIndex = ref(-1);
 // 操作的相关信息
-const cvmInfo = ref({
+const cvmInfo = ref<Record<string, any>>({
   start: { op: '开机', loading: false, status: HOST_RUNNING_STATUS },
   stop: {
     op: '关机',
@@ -112,7 +107,7 @@ const tableColumns = [
               class: 'mr10',
               onClick: () => {
                 // isResourcePage && 主机分配
-                isResourcePage && handleSingleDistribution(data);
+                isResourcePage && showSingleAssignHost(data);
                 // isBusinessPage && 主机回收
                 isBusinessPage && handleCvmOperate('回收', 'recycle', data);
               },
@@ -270,46 +265,35 @@ const isCurRowSelectEnable = (row: any) => {
   }
 };
 
-const getCloudAreas = () => {
-  if (isLoadingCloudAreas.value) return;
-  isLoadingCloudAreas.value = true;
-  resourceStore
-    .getCloudAreas({
-      page: {
-        start: cloudAreaPage.value,
-        limit: 100,
-      },
-    })
-    .then((res: any) => {
-      cloudAreaPage.value += 1;
-      cloudAreas.value.push(...(res?.data?.info || []));
-    })
-    .finally(() => {
-      isLoadingCloudAreas.value = false;
-    });
-};
-
-// 主机相关操作 - 分配业务
-const handleSingleDistribution = (cvm: any) => {
-  isDialogShow.value = true;
-  currentOperateCvm.value = cvm;
-};
-const handleSingleDistributionConfirm = async () => {
-  isDialogBtnLoading.value = true;
+// 主机分配（批量）
+const hostStore = useHostStore();
+const batchAssignHostOptions = reactive({
+  isShow: false,
+  isHidden: true,
+  previewList: [],
+});
+const showBatchAssignHost = async (cvms: ICvmItem[]) => {
   try {
-    await resourceStore.assignBusiness('cvms', {
-      cvm_ids: [currentOperateCvm.value.id],
-      bk_biz_id: selectedBizId.value,
-    });
-    Message({ message: t('操作成功'), theme: 'success' });
-    triggerApi();
-  } finally {
-    isDialogShow.value = false;
-    isDialogBtnLoading.value = false;
+    batchAssignHostOptions.isShow = true;
+    batchAssignHostOptions.isHidden = false;
+    // 获取预览数据
+    batchAssignHostOptions.previewList = await hostStore.getAssignPreviewList(cvms);
+  } catch (error) {
+    console.error(error);
+    batchAssignHostOptions.isShow = false;
+    batchAssignHostOptions.isHidden = true;
   }
 };
 
-getCloudAreas();
+// 主机分配（单个）
+const singleAssignHostOptions = reactive({
+  isHidden: true,
+  cvm: null,
+});
+const showSingleAssignHost = (cvm: ICvmItem) => {
+  singleAssignHostOptions.isHidden = false;
+  singleAssignHostOptions.cvm = { ...cvm };
+};
 </script>
 
 <template>
@@ -319,16 +303,9 @@ getCloudAreas();
       :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'"
     >
       <slot></slot>
-      <BatchDistribution
-        :selections="selections"
-        :type="DResourceType.cvms"
-        :get-data="
-          () => {
-            triggerApi();
-            resetSelections();
-          }
-        "
-      />
+      <bk-button class="ml8 mr8" :disabled="!selections.length" @click="showBatchAssignHost(selections)">
+        {{ t('批量分配') }}
+      </bk-button>
       <HostOperations
         :selections="selections"
         :on-finished="(type: 'confirm' | 'cancel' = 'confirm') => {
@@ -359,43 +336,29 @@ getCloudAreas();
       @column-sort="handleSort"
       row-key="id"
     />
-
-    <bk-dialog
-      :is-show="isDialogShow"
-      title="主机分配"
-      :theme="'primary'"
-      quick-close
-      @closed="() => (isDialogShow = false)"
-      @confirm="handleSingleDistributionConfirm"
-      :is-loading="isDialogBtnLoading"
-    >
-      <p class="selected-host-info">当前操作主机为：{{ currentOperateCvm.name }}</p>
-      <p class="mb6">请选择所需分配的目标业务</p>
-      <business-selector v-model="selectedBizId" :authed="true" class="mb32" :auto-select="true"></business-selector>
-    </bk-dialog>
   </bk-loading>
+
+  <!-- 批量分配主机 -->
+  <template v-if="!batchAssignHostOptions.isHidden">
+    <batch-assign
+      v-model="batchAssignHostOptions.isShow"
+      :preview-list="batchAssignHostOptions.previewList"
+      :reload-table="triggerApi"
+      @hidden="batchAssignHostOptions.isHidden = true"
+    />
+  </template>
+
+  <!-- 单个分配主机 -->
+  <template v-if="!singleAssignHostOptions.isHidden">
+    <single-assign
+      :cvm="singleAssignHostOptions.cvm"
+      :reload-table="triggerApi"
+      @hidden="singleAssignHostOptions.isHidden = true"
+    />
+  </template>
 </template>
 
 <style lang="scss" scoped>
-.w100 {
-  width: 100px;
-}
-.w60 {
-  width: 60px;
-}
-.mt20 {
-  margin-top: 20px;
-}
-.mb32 {
-  margin-bottom: 32px;
-}
-.distribution-cls {
-  display: flex;
-  align-items: center;
-}
-.mr10 {
-  margin-right: 10px;
-}
 .search-selector-container {
   margin-left: auto;
 }
@@ -432,9 +395,6 @@ getCloudAreas();
       cursor: not-allowed;
     }
   }
-}
-.selected-host-info {
-  margin-bottom: 16px;
 }
 </style>
 

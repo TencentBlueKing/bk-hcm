@@ -23,15 +23,17 @@ import (
 	"errors"
 	"fmt"
 
+	"hcm/pkg/api/core"
 	rr "hcm/pkg/api/core/recycle-record"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
+	"hcm/pkg/tools/converter"
 )
 
 // AssignCvmToBizReq define assign cvm to biz req.
 type AssignCvmToBizReq struct {
-	BkBizID int64    `json:"bk_biz_id" validate:"required"`
-	CvmIDs  []string `json:"cvm_ids" validate:"required"`
+	Cvms []AssignCvmToBizData `json:"cvms" validate:"required,min=1,max=500"`
 }
 
 // Validate assign cvm to biz request.
@@ -40,19 +42,98 @@ func (req *AssignCvmToBizReq) Validate() error {
 		return err
 	}
 
+	for _, cvm := range req.Cvms {
+		if err := cvm.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// AssignCvmToBizData define assign cvm to biz data.
+type AssignCvmToBizData struct {
+	CvmID     string `json:"cvm_id" validate:"required"`
+	BkBizID   int64  `json:"bk_biz_id" validate:"required"`
+	BkCloudID *int64 `json:"bk_cloud_id" validate:"required"`
+}
+
+// Validate assign cvm to biz data.
+func (req *AssignCvmToBizData) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
 	if req.BkBizID <= 0 {
 		return errors.New("bk_biz_id should >= 0")
 	}
 
+	// todo 本期暂不支持管控区域为0
+	if converter.PtrToVal(req.BkCloudID) == 0 {
+		return errors.New("bk_cloud_id should != 0")
+	}
+
+	return nil
+}
+
+// AssignCvmToBizPreviewReq define assign cvm to biz preview req.
+type AssignCvmToBizPreviewReq struct {
+	CvmIDs []string `json:"cvm_ids"`
+}
+
+// Validate assign cvm to biz preview request.
+func (req *AssignCvmToBizPreviewReq) Validate() error {
 	if len(req.CvmIDs) == 0 {
 		return errors.New("cvm ids is required")
 	}
 
-	if len(req.CvmIDs) > constant.BatchOperationMaxLimit {
-		return fmt.Errorf("cvm ids should <= %d", constant.BatchOperationMaxLimit)
+	if len(req.CvmIDs) > int(core.DefaultMaxPageLimit) {
+		return fmt.Errorf("cvm ids length should <= %d", core.DefaultMaxPageLimit)
 	}
 
 	return nil
+}
+
+// AssignCvmToBizPreviewData define assign cvm to biz preview data.
+type AssignCvmToBizPreviewData struct {
+	Details []AssignCvmToBizPreviewDetail `json:"details"`
+}
+
+// AssignCvmToBizPreviewDetail define assign cvm to biz preview detail.
+type AssignCvmToBizPreviewDetail struct {
+	CvmID     string              `json:"cvm_id"`
+	MatchType enumor.CvmMatchType `json:"match_type"`
+	BizID     int64               `json:"bk_biz_id,omitempty"`
+	BkCloudID *int64              `json:"bk_cloud_id,omitempty"`
+}
+
+// ListAssignedCvmMatchHostReq list assigned cvm match host req.
+type ListAssignedCvmMatchHostReq struct {
+	AccountID            string   `json:"account_id" validate:"required"`
+	PrivateIPv4Addresses []string `json:"private_ipv4_addresses" validate:"required,min=1,max=10"`
+}
+
+// Validate list assigned cvm match host request.
+func (req *ListAssignedCvmMatchHostReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// ListAssignedCvmMatchHostData define list assigned cvm match host data.
+type ListAssignedCvmMatchHostData struct {
+	Details []ListAssignedCvmMatchHostDetail `json:"details"`
+}
+
+// ListAssignedCvmMatchHostDetail define list assigned cvm match host detail.
+type ListAssignedCvmMatchHostDetail struct {
+	BkHostID             int64    `json:"bk_host_id"`
+	PrivateIPv4Addresses []string `json:"private_ipv4_addresses"`
+	PublicIPv4Addresses  []string `json:"public_ipv4_addresses"`
+	BkCloudID            int64    `json:"bk_cloud_id"`
+	BkBizID              int64    `json:"bk_biz_id"`
+	Region               string   `json:"region"`
+	BkHostName           string   `json:"bk_host_name"`
+	BkOsName             string   `json:"bk_os_name"`
+	CreateTime           string   `json:"create_time"`
 }
 
 // BatchStartCvmReq batch start cvm req.

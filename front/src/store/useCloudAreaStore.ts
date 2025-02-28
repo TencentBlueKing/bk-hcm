@@ -4,7 +4,7 @@ import { useAccountStore } from './account';
 
 export const useCloudAreaStore = defineStore('useCloudAreaStore', () => {
   const cloudAreaMap = ref<Map<number, string>>(new Map());
-  const cloudAreaList = ref([]);
+  const cloudAreaList = ref<{ id: number; name: string }[]>([]);
   const { getAllCloudAreas } = useAccountStore();
 
   const fetchAllCloudAreas = async () => {

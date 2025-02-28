@@ -118,13 +118,6 @@ func (a *ApplicationOfCreateAzureVpc) renderVpc() ([]formItem, error) {
 	// IPv4 CIDR
 	formItems = append(formItems, formItem{Label: "IPv4 CIDR", Value: req.IPv4Cidr})
 
-	// 所属的蓝鲸云区域
-	bkCloudAreaName, err := a.GetCloudAreaName(req.BkCloudID)
-	if err != nil {
-		return formItems, err
-	}
-	formItems = append(formItems, formItem{Label: "所属的蓝鲸云区域", Value: bkCloudAreaName})
-
 	return formItems, nil
 }
 

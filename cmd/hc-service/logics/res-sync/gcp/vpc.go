@@ -206,11 +206,10 @@ func (cli *client) updateVpc(kt *kit.Kit, accountID string, updateMap map[string
 		tmpRes := cloud.VpcUpdateReq[cloud.GcpVpcUpdateExt]{
 			ID: id,
 			VpcUpdateBaseInfo: cloud.VpcUpdateBaseInfo{
-				Name:      converter.ValToPtr(item.Name),
-				Category:  enumor.BizVpcCategory,
-				Memo:      item.Memo,
-				BkCloudID: 0,
-				BkBizID:   0,
+				Name:     converter.ValToPtr(item.Name),
+				Category: enumor.BizVpcCategory,
+				Memo:     item.Memo,
+				BkBizID:  0,
 			},
 			Extension: &cloud.GcpVpcUpdateExt{
 				EnableUlaInternalIpv6: converter.ValToPtr(item.Extension.EnableUlaInternalIpv6),
@@ -250,7 +249,6 @@ func (cli *client) createVpc(kt *kit.Kit, accountID string, addVpc []types.GcpVp
 			AccountID: accountID,
 			CloudID:   item.CloudID,
 			BkBizID:   constant.UnassignedBiz,
-			BkCloudID: constant.UnbindBkCloudID,
 			Name:      converter.ValToPtr(item.Name),
 			Category:  enumor.BizVpcCategory,
 			Memo:      item.Memo,

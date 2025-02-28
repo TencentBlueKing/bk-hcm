@@ -34,6 +34,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 )
 
@@ -132,7 +133,8 @@ func convTableToBaseCvm(one *tablecvm.Table) *corecvm.BaseCvm {
 		Name:                 one.Name,
 		Vendor:               one.Vendor,
 		BkBizID:              one.BkBizID,
-		BkCloudID:            one.BkCloudID,
+		BkHostID:             one.BkHostID,
+		BkCloudID:            converter.PtrToVal(one.BkCloudID),
 		AccountID:            one.AccountID,
 		Region:               one.Region,
 		Zone:                 one.Zone,

@@ -28,7 +28,7 @@ import (
 )
 
 // BuildCreateCvmTasks build create cvm tasks.
-func BuildCreateCvmTasks(totalCount int64, bizID int64, limit int64,
+func BuildCreateCvmTasks(totalCount int64, limit int64, assignCvmOpt *AssignCvmOption,
 	convTask func(actionID action.ActIDType, count int64) ts.CustomFlowTask) []ts.CustomFlowTask {
 
 	ctrFunc := counter.NewNumStringCounter(1, 10)
@@ -48,14 +48,12 @@ func BuildCreateCvmTasks(totalCount int64, bizID int64, limit int64,
 	}
 
 	// 如果业务ID大于0，代表要分配主机到业务下
-	if bizID > 0 {
+	if assignCvmOpt != nil && assignCvmOpt.BizID > 0 {
 		tasks = append(tasks, ts.CustomFlowTask{
 			ActionID:   action.ActIDType(uuid.UUID()),
 			ActionName: enumor.ActionAssignCvm,
-			Params: &AssignCvmOption{
-				BizID: bizID,
-			},
-			DependOn: actionIDs,
+			Params:     assignCvmOpt,
+			DependOn:   actionIDs,
 		})
 	}
 

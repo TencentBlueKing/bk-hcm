@@ -35,6 +35,7 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 )
 
@@ -46,7 +47,8 @@ type AssignCvmAction struct{}
 
 // AssignCvmOption assign cvm option.
 type AssignCvmOption struct {
-	BizID int64 `json:"bk_biz_id" validate:"required"`
+	BizID     int64  `json:"bk_biz_id" validate:"required"`
+	BkCloudID *int64 `json:"bk_cloud_id" validate:"required"`
 }
 
 // Validate AssignCvmOption.
@@ -96,11 +98,19 @@ func (act AssignCvmAction) Run(kt run.ExecuteKit, params interface{}) (result in
 			return cvm.ID
 		})
 
-		cvmIDs = append(cvmIDs, ids...)
-		if err = cvm.Assign(kt.Kit(), cli, ids, opt.BizID); err != nil {
+		assignedCvmInfo := make([]cvm.AssignedCvmInfo, 0, len(ids))
+		for _, id := range ids {
+			assignedCvmInfo = append(assignedCvmInfo, cvm.AssignedCvmInfo{
+				CvmID:     id,
+				BkBizID:   opt.BizID,
+				BkCloudID: converter.PtrToVal(opt.BkCloudID),
+			})
+		}
+		if err = cvm.Assign(kt.Kit(), cli, assignedCvmInfo); err != nil {
 			logs.Errorf("assign cvm failed, err: %v, ids: %+v, rid: %s", err, ids, kt.Kit().Rid)
 			return nil, err
 		}
+		cvmIDs = append(cvmIDs, ids...)
 	}
 
 	return &AssignCvmResult{IDs: cvmIDs}, nil

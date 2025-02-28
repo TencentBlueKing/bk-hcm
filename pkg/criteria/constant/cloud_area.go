@@ -20,8 +20,8 @@
 package constant
 
 const (
-	// UnbindBkCloudID defines default value for unbind vpc's cloud id.
-	UnbindBkCloudID int64 = -1
+	// UnassignedBkCloudID defines default value for unassign cvm's cloud id.
+	UnassignedBkCloudID int64 = -1
 	// TCloudDefaultRegion defineds default value for tcloud region.
 	TCloudDefaultRegion = "ap-guangzhou"
 )

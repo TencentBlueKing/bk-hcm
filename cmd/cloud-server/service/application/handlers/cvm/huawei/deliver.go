@@ -23,9 +23,6 @@ import (
 	"fmt"
 
 	actioncvm "hcm/cmd/task-server/logics/action/cvm"
-	protocloud "hcm/pkg/api/data-service/cloud"
-	protodisk "hcm/pkg/api/data-service/cloud/disk"
-	protoni "hcm/pkg/api/data-service/cloud/network-interface"
 	ts "hcm/pkg/api/task-server"
 	"hcm/pkg/async/action"
 	"hcm/pkg/criteria/constant"
@@ -37,8 +34,8 @@ import (
 func (a *ApplicationOfCreateHuaWeiCvm) Deliver() (enumor.ApplicationStatus, map[string]interface{}, error) {
 
 	req := a.toHcProtoHuaWeiBatchCreateReq(false)
-	tasks := actioncvm.BuildCreateCvmTasks(int64(req.RequiredCount), a.req.BkBizID,
-		constant.BatchCreateCvmFromCloudMaxLimit,
+	opt := &actioncvm.AssignCvmOption{BizID: a.req.BkBizID, BkCloudID: a.req.BkCloudID}
+	tasks := actioncvm.BuildCreateCvmTasks(int64(req.RequiredCount), constant.BatchCreateCvmFromCloudMaxLimit, opt,
 		func(actionID action.ActIDType, count int64) ts.CustomFlowTask {
 			req.RequiredCount = int32(count)
 			return ts.CustomFlowTask{
@@ -63,85 +60,4 @@ func (a *ApplicationOfCreateHuaWeiCvm) Deliver() (enumor.ApplicationStatus, map[
 	deliverDetail := map[string]interface{}{"flow_id": result.ID}
 
 	return enumor.Delivering, deliverDetail, nil
-}
-
-func (a *ApplicationOfCreateHuaWeiCvm) assignToBiz(cloudCvmIDs []string) ([]string, error) {
-	req := a.req
-	// 云ID查询主机
-	cvmInfo, err := a.ListCvm(a.Vendor(), req.AccountID, cloudCvmIDs)
-	if err != nil {
-		return []string{}, err
-	}
-	cvmIDs := make([]string, 0, len(cvmInfo))
-	for _, cvm := range cvmInfo {
-		cvmIDs = append(cvmIDs, cvm.ID)
-	}
-
-	// 主机分配给业务
-	err = a.Client.DataService().Global.Cvm.BatchUpdateCvmCommonInfo(
-		a.Cts.Kit,
-		&protocloud.CvmCommonInfoBatchUpdateReq{IDs: cvmIDs, BkBizID: req.BkBizID},
-	)
-	if err != nil {
-		return cvmIDs, err
-	}
-
-	// create deliver audit
-	err = a.Audit.ResDeliverAudit(a.Cts.Kit, enumor.CvmAuditResType, cvmIDs, int64(req.BkBizID))
-	if err != nil {
-		logs.Errorf("create deliver cvm audit failed, err: %v, rid: %s", err, a.Cts.Kit)
-		return nil, err
-	}
-
-	// 主机关联资源硬盘分配给业务
-	diskIDs, err := a.ListDiskIDByCvm(cvmIDs)
-	if err != nil {
-		return cvmIDs, err
-	}
-	if len(diskIDs) > 0 {
-		_, err = a.Client.DataService().Global.BatchUpdateDisk(
-			a.Cts.Kit,
-			&protodisk.DiskBatchUpdateReq{
-				IDs:     diskIDs,
-				BkBizID: uint64(req.BkBizID),
-			},
-		)
-		if err != nil {
-			return cvmIDs, err
-		}
-
-		// create deliver audit
-		err = a.Audit.ResDeliverAudit(a.Cts.Kit, enumor.DiskAuditResType, diskIDs, int64(req.BkBizID))
-		if err != nil {
-			logs.Errorf("create deliver disk audit failed, err: %v, rid: %s", err, a.Cts.Kit)
-			return nil, err
-		}
-	}
-
-	// 主机关联资源网络接口分配给业务
-	niIDs, err := a.ListNIIDByCvm(cvmIDs)
-	if err != nil {
-		return cvmIDs, err
-	}
-	if len(niIDs) > 0 {
-		err = a.Client.DataService().Global.NetworkInterface.BatchUpdateNICommonInfo(
-			a.Cts.Kit,
-			&protoni.NetworkInterfaceCommonInfoBatchUpdateReq{
-				IDs:     niIDs,
-				BkBizID: int64(req.BkBizID),
-			},
-		)
-		if err != nil {
-			return cvmIDs, err
-		}
-
-		// create deliver audit
-		err = a.Audit.ResDeliverAudit(a.Cts.Kit, enumor.NetworkInterfaceAuditResType, niIDs, int64(req.BkBizID))
-		if err != nil {
-			logs.Errorf("create deliver ni audit failed, err: %v, rid: %s", err, a.Cts.Kit)
-			return nil, err
-		}
-	}
-
-	return cvmIDs, nil
 }

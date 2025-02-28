@@ -31,7 +31,6 @@ type GcpVpcCreateReq struct {
 	AccountID   string `json:"account_id" validate:"required"`
 	Region      string `json:"region" validate:"required"`
 	Name        string `json:"name" validate:"required,min=1,max=60"`
-	BkCloudID   int64  `json:"bk_cloud_id" validate:"required,min=1"`
 	RoutingMode string `json:"routing_mode" validate:"required,oneof=REGIONAL GLOBAL"`
 
 	Subnet struct {

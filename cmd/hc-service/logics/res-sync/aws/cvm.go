@@ -166,7 +166,8 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 			CloudID:        converter.PtrToVal(one.InstanceId),
 			Name:           converter.PtrToVal(aws.GetCvmNameFromTags(one.Tags)),
 			BkBizID:        constant.UnassignedBiz,
-			BkCloudID:      vpcMap[converter.PtrToVal(one.VpcId)].BkCloudID,
+			BkHostID:       constant.UnBindBkHostID,
+			BkCloudID:      constant.UnassignedBkCloudID,
 			AccountID:      accountID,
 			Region:         region,
 			Zone:           converter.PtrToVal(one.Placement.AvailabilityZone),
@@ -310,7 +311,6 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 		cvm := dataproto.CvmBatchUpdate[corecvm.AwsCvmExtension]{
 			ID:             id,
 			Name:           converter.PtrToVal(aws.GetCvmNameFromTags(one.Tags)),
-			BkCloudID:      vpcMap[converter.PtrToVal(one.VpcId)].BkCloudID,
 			CloudVpcIDs:    []string{converter.PtrToVal(one.VpcId)},
 			VpcIDs:         []string{vpcMap[converter.PtrToVal(one.VpcId)].VpcID},
 			CloudSubnetIDs: []string{converter.PtrToVal(one.SubnetId)},
@@ -426,7 +426,6 @@ func (cli *client) getVpcMap(kt *kit.Kit, accountID string, region string,
 			vpcMap[vpc.CloudID] = &common.VpcDB{
 				VpcCloudID: vpc.CloudID,
 				VpcID:      vpc.ID,
-				BkCloudID:  vpc.BkCloudID,
 			}
 		}
 	}
@@ -807,11 +806,13 @@ func isCvmChange(cloud typescvm.AwsCvm, db corecvm.Cvm[cvm.AwsCvmExtension]) boo
 		return true
 	}
 
-	if !assert.IsPtrBoolEqual(db.Extension.PrivateDnsNameOptions.EnableResourceNameDnsARecord, cloud.PrivateDnsNameOptions.EnableResourceNameDnsARecord) {
+	if !assert.IsPtrBoolEqual(db.Extension.PrivateDnsNameOptions.EnableResourceNameDnsARecord,
+		cloud.PrivateDnsNameOptions.EnableResourceNameDnsARecord) {
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(db.Extension.PrivateDnsNameOptions.HostnameType, cloud.PrivateDnsNameOptions.HostnameType) {
+	if !assert.IsPtrStringEqual(db.Extension.PrivateDnsNameOptions.HostnameType,
+		cloud.PrivateDnsNameOptions.HostnameType) {
 		return true
 	}
 

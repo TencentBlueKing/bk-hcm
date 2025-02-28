@@ -368,7 +368,6 @@ func ConvHuaWeiVpcCreateReq(req *csvpc.HuaWeiVpcCreateReq) *hcprotovpc.VpcCreate
 			Name:      req.Name,
 			Category:  enumor.BizVpcCategory,
 			Memo:      req.Memo,
-			BkCloudID: req.BkCloudID,
 			BkBizID:   req.BkBizID,
 		},
 		Extension: &hcprotovpc.HuaWeiVpcCreateExt{
@@ -402,7 +401,6 @@ func ConvGcpVpcCreateReq(req *csvpc.GcpVpcCreateReq) *hcprotovpc.VpcCreateReq[hc
 			Name:      req.Name,
 			Category:  enumor.BizVpcCategory,
 			Memo:      req.Memo,
-			BkCloudID: req.BkCloudID,
 			BkBizID:   req.BkBizID,
 		},
 		Extension: &hcprotovpc.GcpVpcCreateExt{
@@ -436,7 +434,6 @@ func ConvAzureVpcCreateReq(req *csvpc.AzureVpcCreateReq) *hcprotovpc.VpcCreateRe
 			Name:      req.Name,
 			Category:  enumor.BizVpcCategory,
 			Memo:      req.Memo,
-			BkCloudID: req.BkCloudID,
 			BkBizID:   req.BkBizID,
 		},
 		Extension: &hcprotovpc.AzureVpcCreateExt{
@@ -469,7 +466,6 @@ func ConvAwsVpcCreateReq(req *csvpc.AwsVpcCreateReq) *hcprotovpc.VpcCreateReq[hc
 			Name:      req.Name,
 			Category:  enumor.BizVpcCategory,
 			Memo:      req.Memo,
-			BkCloudID: req.BkCloudID,
 			BkBizID:   req.BkBizID,
 		},
 		Extension: &hcprotovpc.AwsVpcCreateExt{
@@ -489,7 +485,6 @@ func ConvTCloudVpcCreateReq(req *csvpc.TCloudVpcCreateReq) *hcprotovpc.VpcCreate
 			Name:      req.Name,
 			Category:  enumor.BizVpcCategory,
 			Memo:      req.Memo,
-			BkCloudID: req.BkCloudID,
 			BkBizID:   req.BkBizID,
 		},
 		Extension: &hcprotovpc.TCloudVpcCreateExt{

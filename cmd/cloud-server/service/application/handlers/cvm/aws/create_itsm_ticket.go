@@ -22,6 +22,8 @@ package aws
 import (
 	"fmt"
 	"strings"
+
+	"hcm/pkg/tools/converter"
 )
 
 type formItem struct {
@@ -158,7 +160,7 @@ func (a *ApplicationOfCreateAwsCvm) renderNetwork() ([]formItem, error) {
 	}
 
 	// 所属的蓝鲸云区域
-	bkCloudAreaName, err := a.GetCloudAreaName(vpcInfo.BkCloudID)
+	bkCloudAreaName, err := a.GetCloudAreaName(converter.PtrToVal(req.BkCloudID))
 	if err != nil {
 		return formItems, err
 	}

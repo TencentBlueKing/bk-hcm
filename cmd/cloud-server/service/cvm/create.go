@@ -36,6 +36,7 @@ import (
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 )
 
 // CreateCvm create cvm.
@@ -105,7 +106,11 @@ func (svc *cvmSvc) buildCreateAzureCvmTasks(body json.RawMessage) ([]ts.CustomFl
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	tasks := actioncvm.BuildCreateCvmTasks(req.RequiredCount, constant.UnassignedBiz, 1,
+	opt := &actioncvm.AssignCvmOption{
+		BizID:     constant.UnassignedBiz,
+		BkCloudID: converter.ValToPtr(constant.UnassignedBkCloudID),
+	}
+	tasks := actioncvm.BuildCreateCvmTasks(req.RequiredCount, 1, opt,
 		func(actionID action.ActIDType, count int64) ts.CustomFlowTask {
 			req.RequiredCount = count
 			return ts.CustomFlowTask{
@@ -132,8 +137,11 @@ func (svc *cvmSvc) buildCreateHuaWeiCvmTasks(body json.RawMessage) ([]ts.CustomF
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	tasks := actioncvm.BuildCreateCvmTasks(req.RequiredCount, constant.UnassignedBiz,
-		constant.BatchCreateCvmFromCloudMaxLimit,
+	opt := &actioncvm.AssignCvmOption{
+		BizID:     constant.UnassignedBiz,
+		BkCloudID: converter.ValToPtr(constant.UnassignedBkCloudID),
+	}
+	tasks := actioncvm.BuildCreateCvmTasks(req.RequiredCount, constant.BatchCreateCvmFromCloudMaxLimit, opt,
 		func(actionID action.ActIDType, count int64) ts.CustomFlowTask {
 			req.RequiredCount = count
 			return ts.CustomFlowTask{
@@ -160,8 +168,11 @@ func (svc *cvmSvc) buildCreateGcpCvmTasks(body json.RawMessage) ([]ts.CustomFlow
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	tasks := actioncvm.BuildCreateCvmTasks(req.RequiredCount, constant.UnassignedBiz,
-		constant.BatchCreateCvmFromCloudMaxLimit,
+	opt := &actioncvm.AssignCvmOption{
+		BizID:     constant.UnassignedBiz,
+		BkCloudID: converter.ValToPtr(constant.UnassignedBkCloudID),
+	}
+	tasks := actioncvm.BuildCreateCvmTasks(req.RequiredCount, constant.BatchCreateCvmFromCloudMaxLimit, opt,
 		func(actionID action.ActIDType, count int64) ts.CustomFlowTask {
 			req.RequiredCount = count
 			return ts.CustomFlowTask{
@@ -188,8 +199,11 @@ func (svc *cvmSvc) buildCreateAwsCvmTasks(body json.RawMessage) ([]ts.CustomFlow
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	tasks := actioncvm.BuildCreateCvmTasks(req.RequiredCount, constant.UnassignedBiz,
-		constant.BatchCreateCvmFromCloudMaxLimit,
+	opt := &actioncvm.AssignCvmOption{
+		BizID:     constant.UnassignedBiz,
+		BkCloudID: converter.ValToPtr(constant.UnassignedBkCloudID),
+	}
+	tasks := actioncvm.BuildCreateCvmTasks(req.RequiredCount, constant.BatchCreateCvmFromCloudMaxLimit, opt,
 		func(actionID action.ActIDType, count int64) ts.CustomFlowTask {
 			req.RequiredCount = count
 			return ts.CustomFlowTask{
@@ -216,8 +230,11 @@ func (svc *cvmSvc) buildCreateTCloudCvmTasks(body json.RawMessage) ([]ts.CustomF
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	tasks := actioncvm.BuildCreateCvmTasks(req.RequiredCount, constant.UnassignedBiz,
-		constant.BatchCreateCvmFromCloudMaxLimit,
+	opt := &actioncvm.AssignCvmOption{
+		BizID:     constant.UnassignedBiz,
+		BkCloudID: converter.ValToPtr(constant.UnassignedBkCloudID),
+	}
+	tasks := actioncvm.BuildCreateCvmTasks(req.RequiredCount, constant.BatchCreateCvmFromCloudMaxLimit, opt,
 		func(actionID action.ActIDType, count int64) ts.CustomFlowTask {
 			req.RequiredCount = count
 			return ts.CustomFlowTask{

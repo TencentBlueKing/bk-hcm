@@ -146,7 +146,6 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 		updateOne := dataproto.CvmBatchUpdate[corecvm.TCloudCvmExtension]{
 			ID:             id,
 			Name:           converter.PtrToVal(one.InstanceName),
-			BkCloudID:      vpcMap[converter.PtrToVal(one.VirtualPrivateCloud.VpcId)].BkCloudID,
 			CloudVpcIDs:    []string{converter.PtrToVal(one.VirtualPrivateCloud.VpcId)},
 			VpcIDs:         []string{vpcMap[converter.PtrToVal(one.VirtualPrivateCloud.VpcId)].VpcID},
 			CloudSubnetIDs: []string{converter.PtrToVal(one.VirtualPrivateCloud.SubnetId)},
@@ -242,7 +241,8 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 			CloudID:        converter.PtrToVal(one.InstanceId),
 			Name:           converter.PtrToVal(one.InstanceName),
 			BkBizID:        constant.UnassignedBiz,
-			BkCloudID:      vpcMap[converter.PtrToVal(one.VirtualPrivateCloud.VpcId)].BkCloudID,
+			BkHostID:       constant.UnBindBkHostID,
+			BkCloudID:      constant.UnassignedBkCloudID,
 			AccountID:      accountID,
 			Region:         region,
 			Zone:           converter.PtrToVal(one.Placement.Zone),
@@ -313,8 +313,7 @@ func (cli *client) getVpcMap(kt *kit.Kit, accountID string, region string,
 
 		for _, vpc := range vpcFromDB {
 			vpcMap[vpc.CloudID] = &common.VpcDB{
-				VpcID:     vpc.ID,
-				BkCloudID: vpc.BkCloudID,
+				VpcID: vpc.ID,
 			}
 		}
 	}

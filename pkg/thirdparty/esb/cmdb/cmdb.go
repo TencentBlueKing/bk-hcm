@@ -33,6 +33,7 @@ type Client interface {
 	AddCloudHostToBiz(kt *kit.Kit, params *AddCloudHostToBizParams) (*BatchCreateResult, error)
 	DeleteCloudHostFromBiz(kt *kit.Kit, params *DeleteCloudHostFromBizParams) error
 	ListBizHost(kt *kit.Kit, params *ListBizHostParams) (*ListBizHostResult, error)
+	ListHostWithoutBiz(kt *kit.Kit, req *ListHostWithoutBizParams) (*ListHostWithoutBizResult, error)
 	GetBizBriefCacheTopo(kt *kit.Kit, params *GetBizBriefCacheTopoParams) (*GetBizBriefCacheTopoResult, error)
 	FindHostTopoRelation(kt *kit.Kit, params *FindHostTopoRelationParams) (*HostTopoRelationResult, error)
 	SearchModule(kt *kit.Kit, params *SearchModuleParams) (*ModuleInfoResult, error)
@@ -90,6 +91,13 @@ func (c *cmdb) ListBizHost(kt *kit.Kit, params *ListBizHostParams) (*ListBizHost
 
 	return types.EsbCall[ListBizHostParams, ListBizHostResult](c.client, c.config, rest.POST, kt, params,
 		"/cc/list_biz_hosts/")
+}
+
+// ListHostWithoutBiz list cmdb host without biz.
+func (c *cmdb) ListHostWithoutBiz(kt *kit.Kit, params *ListHostWithoutBizParams) (*ListHostWithoutBizResult, error) {
+
+	return types.EsbCall[ListHostWithoutBizParams, ListHostWithoutBizResult](c.client, c.config, rest.POST, kt, params,
+		"/cc/list_hosts_without_biz/")
 }
 
 // FindHostTopoRelation 获取主机拓扑
