@@ -20,8 +20,8 @@ const tipsDesc = t(
 );
 const mgmtBusinessName = computed(() => getBusinessNames(props.data?.mgmt_biz_id)?.[0] ?? '--');
 const usageBusinessName = computed(() => getBusinessNames(props.data?.usage_biz_ids)?.join('、') ?? '--');
-const usageBizMaintainersContent = computed(() =>
-  props.data?.usage_biz_maintainers
+const usageBizInfosContent = computed(() =>
+  props.data?.usage_biz_infos
     ?.map(({ bk_biz_name, bk_biz_maintainer }) => `${bk_biz_name}：${bk_biz_maintainer}`)
     ?.join('\n'),
 );
@@ -44,7 +44,7 @@ const usageBizMaintainersContent = computed(() =>
           </div>
           <div class="info-item">
             <span class="label">{{ t('业务负责人：') }}</span>
-            <copy-to-clipboard class="copy" :content="usageBizMaintainersContent">
+            <copy-to-clipboard class="copy" :content="usageBizInfosContent">
               <bk-button theme="primary" text>{{ t('一键复制') }}</bk-button>
             </copy-to-clipboard>
           </div>

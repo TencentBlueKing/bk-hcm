@@ -41,7 +41,7 @@ export interface ISecurityGroupItem {
   cloud_created_time: string;
   cloud_update_time: string;
   account_managers?: string[];
-  usage_biz_maintainers?: ISecurityGroupUsageBizMaintainerItem['details'];
+  usage_biz_infos?: ISecurityGroupUsageBizMaintainerItem['usage_biz_infos'];
 }
 
 export interface ISecurityGroupDetail extends ISecurityGroupItem {
@@ -147,7 +147,7 @@ export interface IResourceBoundSecurityGroupItem {
 export interface ISecurityGroupUsageBizMaintainerItem {
   id: string;
   managers: string[];
-  details: Array<{
+  usage_biz_infos: Array<{
     bk_biz_id: number;
     bk_biz_name: string;
     bk_biz_maintainer: string;
@@ -390,7 +390,7 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
     isQueryUsageBizMaintainersLoading.value = true;
     try {
       const res: IQueryResData<ISecurityGroupUsageBizMaintainerItem[]> = await http.post(
-        `/api/v1/cloud/${getBusinessApiPath()}security_groups/usage_biz_maintainers/list`,
+        `/api/v1/cloud/${getBusinessApiPath()}security_groups/maintainers_info/list`,
         { security_group_ids },
       );
       return res.data;
