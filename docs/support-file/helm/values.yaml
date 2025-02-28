@@ -515,7 +515,8 @@ taskserver:
   # whether to use label to filter service.
   useLabel:
     # use label when pull aws china site bills
-    awsCN: true
+    # if true, you should deploy the service with option: "--label AWSCN" to pull aws china site bills.
+    awsCN: false
 
 accountserver:
   ## 镜像
