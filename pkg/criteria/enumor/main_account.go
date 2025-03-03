@@ -47,14 +47,14 @@ var (
 	}
 )
 
-// AccountSiteType is site type.
-type MainAccountSiteType string
+// MainAccountSiteType is site type of main account, should be same as its root account
+type MainAccountSiteType = RootAccountSiteType
 
 const (
 	// MainAccountChinaSite is china site.
-	MainAccountChinaSite MainAccountSiteType = "china"
+	MainAccountChinaSite = RootAccountChinaSite
 	// MainAccountInternationalSite is international site.
-	MainAccountInternationalSite MainAccountSiteType = "international"
+	MainAccountInternationalSite = RootAccountInternationalSite
 )
 
 var (
@@ -64,19 +64,6 @@ var (
 		MainAccountInternationalSite: "国际站",
 	}
 )
-
-// Validate the AccountSiteType is valid or not
-func (a MainAccountSiteType) Validate() error {
-	switch a {
-	case MainAccountChinaSite:
-	case MainAccountInternationalSite:
-	default:
-		return fmt.Errorf("unsupported main account site type: %s", a)
-
-	}
-
-	return nil
-}
 
 // GetMainAccountSiteTypeName get the main account site type name
 func (a MainAccountSiteType) GetMainAccountSiteTypeName() string {

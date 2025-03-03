@@ -25,13 +25,12 @@ import (
 	"errors"
 	"fmt"
 
+	actbill "hcm/cmd/task-server/logics/action/bill/common"
 	"hcm/cmd/task-server/logics/action/bill/dailypull/registry"
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	dsbill "hcm/pkg/api/data-service/bill"
 	hcbill "hcm/pkg/api/hc-service/bill"
 	"hcm/pkg/async/action/run"
-	"hcm/pkg/cc"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/table/types"
 	"hcm/pkg/logs"
@@ -89,11 +88,7 @@ func (hp *AwsPuller) doPull(kt run.ExecuteKit, opt *registry.PullDailyBillOption
 		return 0, nil, err
 	}
 
-	var labels []string
-	if cc.TaskServer().UseLabel.AwsCN && mainAccountInfo.Site == enumor.MainAccountChinaSite {
-		labels = []string{constant.AwsCNServiceLabel}
-	}
-	hcCli := actcli.GetHCService(labels...)
+	hcCli := actbill.GetHCServiceByAwsSite(mainAccountInfo.Site)
 
 	req := &hcbill.AwsRootBillListReq{
 		RootAccountID:      opt.RootAccountID,

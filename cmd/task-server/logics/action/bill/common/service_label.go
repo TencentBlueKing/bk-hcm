@@ -1,7 +1,7 @@
 /*
  * TencentBlueKing is pleased to support the open source community by making
  * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
- * Copyright (C) 2022 THL A29 Limited,
+ * Copyright (C) 2024 THL A29 Limited,
  * a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,29 +17,25 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package enumor
+package actbill
 
-import "fmt"
-
-// RootAccountSiteType is site type of root account.
-type RootAccountSiteType string
-
-// Validate the AccountSiteType is valid or not
-func (a RootAccountSiteType) Validate() error {
-	switch a {
-	case RootAccountChinaSite:
-	case RootAccountInternationalSite:
-	default:
-		return fmt.Errorf("unsupported account site type: %s", a)
-
-	}
-
-	return nil
-}
-
-const (
-	// RootAccountChinaSite is china site.
-	RootAccountChinaSite RootAccountSiteType = "china"
-	// RootAccountInternationalSite is international site.
-	RootAccountInternationalSite RootAccountSiteType = "international"
+import (
+	actcli "hcm/cmd/task-server/logics/action/cli"
+	"hcm/pkg/cc"
+	hcservice "hcm/pkg/client/hc-service"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 )
+
+// GetHCServiceByAwsSite for aws account, use constant.AwsCNServiceLabel label for enumor.MainAccountChinaSite
+func GetHCServiceByAwsSite(site enumor.RootAccountSiteType) *hcservice.Client {
+	if !cc.TaskServer().UseLabel.AwsCN {
+		return actcli.GetHCService()
+	}
+	var labels []string
+	if site == enumor.MainAccountChinaSite {
+		labels = []string{constant.AwsCNServiceLabel}
+	}
+	hcCli := actcli.GetHCService(labels...)
+	return hcCli
+}
