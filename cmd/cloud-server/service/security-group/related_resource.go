@@ -360,7 +360,7 @@ func (svc *securityGroupSvc) listSGRelCVMByBizID(cts *rest.Contexts, validHandle
 
 	// 非管理业务，不允许查看其他业务的绑定资源详情
 	bizID, err := cts.PathParameter("bk_biz_id").Int64()
-	if err != nil {
+	if err == nil {
 		if basicInfo.BkBizID != bizID && resBizID != bizID {
 			return nil, errf.New(errf.InvalidParameter,
 				"non-management business can only list its own resources")
