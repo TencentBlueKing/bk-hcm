@@ -55,7 +55,9 @@ func ListBizAuthRes(cts *rest.Contexts, opt *ListAuthResOption) (*filter.Express
 	bizRules := make([]*filter.AtomRule, 0)
 	bizRules = append(bizRules, tools.RuleEqual("bk_biz_id", bizID))
 	if opt.ResType == meta.SecurityGroup {
+		// 安全组允许使用业务访问，TODO 后续需要以更通用的方式扩展到其他资源
 		bizRules = append(bizRules, tools.RuleEqual("usage_biz_id", bizID))
+		// -1 表示使用业务为全部业务
 		bizRules = append(bizRules, tools.RuleEqual("usage_biz_id", constant.UnassignedBiz))
 	}
 	bizFilter := tools.ExpressionOr(bizRules...)

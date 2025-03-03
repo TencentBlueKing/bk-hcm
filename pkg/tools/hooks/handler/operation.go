@@ -30,20 +30,16 @@ import (
 	"hcm/pkg/rest"
 )
 
-func checkBizMatch(opBizID int64, bkBizID int64, usageBizIDs []int64) bool {
-	if opBizID == 0 {
+func checkBizMatch(urlBizID int64, resBizID int64, usageBizIDs []int64) bool {
+	// 检查分配业务和访问业务是否匹配
+	if resBizID == urlBizID {
 		return true
 	}
 
-	// 检查分配业务和操作业务是否匹配
-	if bkBizID == 0 || bkBizID == opBizID {
-		return true
-	}
-
-	// 检查使用业务和操作业务是否匹配
+	// 检查使用业务和访问业务是否匹配
 	if len(usageBizIDs) > 0 {
 		for _, id := range usageBizIDs {
-			if id == opBizID {
+			if id == urlBizID {
 				return true
 			}
 		}
