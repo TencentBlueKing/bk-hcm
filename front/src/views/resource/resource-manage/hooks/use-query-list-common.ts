@@ -17,7 +17,7 @@ type PropsType = {
 type ExtraConfigType = {
   sort?: 'string';
   order?: 'ASC' | 'DESC';
-  handleAsyncRequest?: (data: any) => Promise<any[]>; // 传入接口返回的数据list，返回异步请求处理后的数据list
+  asyncRequestApiMethod?: (data: any) => Promise<any[]>; // 传入接口返回的数据list，返回异步请求处理后的数据list
 };
 
 export default (props: PropsType, url: Ref<string>, extraConfig?: ExtraConfigType) => {
@@ -59,17 +59,27 @@ export default (props: PropsType, url: Ref<string>, extraConfig?: ExtraConfigTyp
         method({ page: { count: true }, filter: props.filter }, url.value),
       ]);
 
-      let { details = [] } = listResult.data;
+      const { details = [] } = listResult.data;
       const { count = 0 } = countResult.data;
 
-      if (extraConfig?.handleAsyncRequest) {
-        details = await extraConfig.handleAsyncRequest(details);
-      }
+      const displayDatalist = details.map((item: any) => ({
+        ...item,
+        ...item.spec,
+        ...item.attachment,
+        ...item.revision,
+        ...item.extension,
+      }));
 
-      datas.value = details.map((item: any) => {
-        return { ...item, ...item.spec, ...item.attachment, ...item.revision, ...item.extension };
-      });
+      // 基础list请求
+      datas.value = displayDatalist;
       pagination.value.count = count;
+
+      // 异步请求方法
+      if (extraConfig?.asyncRequestApiMethod) {
+        extraConfig.asyncRequestApiMethod(displayDatalist).then((newDatalist) => {
+          datas.value = newDatalist;
+        });
+      }
 
       return details;
     } catch (error) {
