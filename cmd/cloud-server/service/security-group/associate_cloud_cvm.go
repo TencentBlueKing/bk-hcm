@@ -163,13 +163,6 @@ func (svc *securityGroupSvc) decodeAssociateReq(cts *rest.Contexts, validHandler
 		return nil, nil, err
 	}
 
-	usageBizIDs, err := svc.sgLogic.ListSGUsageBizRel(cts.Kit, []string{req.SecurityGroupID})
-	if err != nil {
-		logs.Errorf("failed to list sg usage biz rel, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, nil, err
-	}
-	sgInfo.UsageBizIDs = usageBizIDs[req.SecurityGroupID]
-
 	// validate biz and authorize
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
 		Action: action, BasicInfo: sgInfo})

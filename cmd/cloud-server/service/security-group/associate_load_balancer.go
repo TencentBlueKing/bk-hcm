@@ -193,18 +193,5 @@ func (svc *securityGroupSvc) getAssociateLBValidBasicInfos(kt *kit.Kit, sgIDs []
 		return nil, err
 	}
 
-	for key, info := range basicInfos {
-		if info.ResType != enumor.SecurityGroupCloudResType {
-			continue
-		}
-
-		usageBizIDs, err := svc.sgLogic.ListSGUsageBizRel(kt, []string{info.ID})
-		if err != nil {
-			return nil, err
-		}
-		info.UsageBizIDs = usageBizIDs[info.ID]
-		basicInfos[key] = info
-	}
-
 	return basicInfos, nil
 }

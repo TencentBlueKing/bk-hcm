@@ -196,19 +196,6 @@ func (svc *securityGroupSvc) decodeAndValidateAssocCvmReq(cts *rest.Contexts, ac
 		return nil, "", err
 	}
 
-	for key, info := range basicInfos {
-		if info.ResType != enumor.SecurityGroupCloudResType {
-			continue
-		}
-
-		usageBizIDs, err := svc.sgLogic.ListSGUsageBizRel(cts.Kit, []string{info.ID})
-		if err != nil {
-			return nil, "", err
-		}
-		info.UsageBizIDs = usageBizIDs[info.ID]
-		basicInfos[key] = info
-	}
-
 	// validate biz and authorize
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
 		Action: action, BasicInfos: basicInfos})

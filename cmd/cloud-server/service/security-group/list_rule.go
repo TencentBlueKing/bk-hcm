@@ -69,12 +69,6 @@ func (svc *securityGroupSvc) listSGRule(cts *rest.Contexts, validHandler handler
 		return nil, err
 	}
 
-	usageBizIDs, err := svc.sgLogic.ListSGUsageBizRel(cts.Kit, []string{sgID})
-	if err != nil {
-		return nil, err
-	}
-	basicInfo.UsageBizIDs = usageBizIDs[sgID]
-
 	// validate biz and authorize
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroupRule,
 		Action: meta.Find, BasicInfo: basicInfo})
@@ -263,16 +257,6 @@ func (svc *securityGroupSvc) listSGRulesCount(cts *rest.Contexts, validHandler h
 	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, listBasicInfoReq)
 	if err != nil {
 		return nil, err
-	}
-
-	usageBizIDs, err := svc.sgLogic.ListSGUsageBizRel(cts.Kit, req.SecurityGroupIDs)
-	if err != nil {
-		return nil, err
-	}
-	for sgID := range usageBizIDs {
-		basicInfo := basicInfoMap[sgID]
-		basicInfo.UsageBizIDs = usageBizIDs[sgID]
-		basicInfoMap[sgID] = basicInfo
 	}
 
 	// validate biz and authorize

@@ -311,12 +311,6 @@ func (svc *securityGroupSvc) listSecurityGroupRelBusiness(cts *rest.Contexts, bi
 		return nil, err
 	}
 
-	usageBizIDs, err := svc.sgLogic.ListSGUsageBizRel(cts.Kit, []string{sgID})
-	if err != nil {
-		return nil, err
-	}
-	basicInfo.UsageBizIDs = usageBizIDs[sgID]
-
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
 		Action: meta.Find, BasicInfo: basicInfo})
 	if err != nil {
@@ -378,12 +372,6 @@ func (svc *securityGroupSvc) listSGRelCVMByBizID(cts *rest.Contexts, validHandle
 		}
 	}
 
-	usageBizIDs, err := svc.sgLogic.ListSGUsageBizRel(cts.Kit, []string{sgID})
-	if err != nil {
-		return nil, err
-	}
-	basicInfo.UsageBizIDs = usageBizIDs[sgID]
-
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
 		Action: meta.Find, BasicInfo: basicInfo})
 	if err != nil {
@@ -444,12 +432,6 @@ func (svc *securityGroupSvc) listSGRelLBByBizID(cts *rest.Contexts, validHandler
 				"non-management business can only list its own resources")
 		}
 	}
-
-	usageBizIDs, err := svc.sgLogic.ListSGUsageBizRel(cts.Kit, []string{sgID})
-	if err != nil {
-		return nil, err
-	}
-	basicInfo.UsageBizIDs = usageBizIDs[sgID]
 
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
 		Action: meta.Find, BasicInfo: basicInfo})

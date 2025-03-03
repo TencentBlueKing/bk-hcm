@@ -146,12 +146,6 @@ func (svc *securityGroupSvc) decodeAndValidateAssocNIReq(cts *rest.Contexts, act
 		return nil, errf.Newf(errf.InvalidParameter, "associate network interface only support azure")
 	}
 
-	usageBizIDs, err := svc.sgLogic.ListSGUsageBizRel(cts.Kit, []string{req.SecurityGroupID})
-	if err != nil {
-		return nil, err
-	}
-	basicInfo.UsageBizIDs = usageBizIDs[req.SecurityGroupID]
-
 	// validate biz and authorize
 	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
 		Action: action, BasicInfo: basicInfo})
