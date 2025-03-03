@@ -18,7 +18,7 @@ spec:
       annotations:
         checksum/configmap: {{ include (print $.Template.BasePath "/cloudserver/configmap.yaml") . | sha256sum }}
       {{- if .Values.cloudserver.podAnnotations }}
-        {{ toYaml .Values.cloudserver.podAnnotations | indent 8 }}
+        {{- toYaml .Values.cloudserver.podAnnotations | nindent 8 }}
       {{- end }}
     spec:
       serviceAccountName: {{ template "bk-hcm.serviceAccountName" . }}
