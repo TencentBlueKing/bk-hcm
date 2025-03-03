@@ -39,20 +39,21 @@ func NewCmdbLogics(client cmdb.Client) *CmdbLogics {
 }
 
 // AddCloudHostToBiz add cmdb cloud host to biz, update cmdb host if exists.
-func AddCloudHostToBiz[T cvm.Extension](c *CmdbLogics, kt *kit.Kit, req *AddCloudHostToBizReq[T]) error {
+func AddCloudHostToBiz[T cvm.Extension](c *CmdbLogics, kt *kit.Kit, req *AddCloudHostToBizReq[T]) ([]int64, error) {
 	if err := req.Validate(); err != nil {
-		return err
+		return nil, err
 	}
 
 	vendorCmdbHostStatusMap, exists := cmdb.HcmCmdbHostStatusMap[req.Vendor]
 	if !exists {
-		return errf.Newf(errf.InvalidParameter, "vendor %s is invalid", req.Vendor)
+		return nil, errf.Newf(errf.InvalidParameter, "vendor %s is invalid", req.Vendor)
 	}
 
 	hosts := make([]cmdb.Host, 0, len(req.Hosts))
 	for _, host := range req.Hosts {
 		if host.Vendor != "" && req.Vendor != host.Vendor {
-			return errf.Newf(errf.InvalidParameter, "host vendor %s not match req vendor %s", host.Vendor, req.Vendor)
+			return nil, errf.Newf(errf.InvalidParameter, "host vendor %s not match req vendor %s", host.Vendor,
+				req.Vendor)
 		}
 		if host.Vendor == "" {
 			host.Vendor = req.Vendor
@@ -81,24 +82,24 @@ func AddCloudHostToBiz[T cvm.Extension](c *CmdbLogics, kt *kit.Kit, req *AddClou
 		BizID:    req.BizID,
 		HostInfo: hosts,
 	}
-	_, err := c.client.AddCloudHostToBiz(kt, params)
+	result, err := c.client.AddCloudHostToBiz(kt, params)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return result.IDs, nil
 }
 
 // AddBaseCloudHostToBiz add cmdb cloud host basic info to biz, update cmdb host if exists.
-func AddBaseCloudHostToBiz(c *CmdbLogics, kt *kit.Kit, req *AddBaseCloudHostToBizReq) error {
+func AddBaseCloudHostToBiz(c *CmdbLogics, kt *kit.Kit, req *AddBaseCloudHostToBizReq) ([]int64, error) {
 	if err := req.Validate(); err != nil {
-		return err
+		return nil, err
 	}
 
 	hosts := make([]cmdb.Host, 0, len(req.Hosts))
 	for _, host := range req.Hosts {
 		if err := host.Vendor.Validate(); err != nil {
-			return err
+			return nil, err
 		}
 
 		status, exists := cmdb.HcmCmdbHostStatusMap[host.Vendor][host.Status]
@@ -124,12 +125,12 @@ func AddBaseCloudHostToBiz(c *CmdbLogics, kt *kit.Kit, req *AddBaseCloudHostToBi
 		BizID:    req.BizID,
 		HostInfo: hosts,
 	}
-	_, err := c.client.AddCloudHostToBiz(kt, params)
+	result, err := c.client.AddCloudHostToBiz(kt, params)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return result.IDs, nil
 }
 
 // DeleteCloudHostFromBiz delete cmdb cloud host from biz.

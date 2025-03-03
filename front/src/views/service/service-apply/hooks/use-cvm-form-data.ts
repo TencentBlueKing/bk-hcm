@@ -29,6 +29,7 @@ export interface ICvmBaseData {
   instance_type: string;
   cloud_image_id: string;
   cloud_vpc_id: string;
+  bk_cloud_id: number;
   cloud_subnet_id: string;
   public_ip_assigned?: boolean;
   cloud_security_group_ids?: string | string[];
@@ -129,6 +130,7 @@ export default (cond: Cond) => {
         disk_type: '',
         disk_size_gb: 50,
       },
+      bk_cloud_id: undefined,
       data_disk: [],
       password: '',
       confirmed_password: '',

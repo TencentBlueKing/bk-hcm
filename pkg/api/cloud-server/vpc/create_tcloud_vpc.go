@@ -34,7 +34,6 @@ type TCloudVpcCreateReq struct {
 	Region    string `json:"region" validate:"required"`
 	Name      string `json:"name" validate:"required,min=1,max=60"`
 	IPv4Cidr  string `json:"ipv4_cidr" validate:"required,cidrv4"`
-	BkCloudID int64  `json:"bk_cloud_id" validate:"required,min=1"`
 
 	Subnet struct {
 		Name     string `json:"name" validate:"required,min=1,max=60"`
