@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import type { ISecurityGroupItem } from '@/store/security-group';
+import { type ISecurityGroupItem } from '@/store/security-group';
 import { useBusinessGlobalStore } from '@/store/business-global';
 
 import exclamationCircleShape from 'bkui-vue/lib/icon/exclamation-circle-shape';
@@ -103,7 +103,7 @@ const usageBizInfosContent = computed(() =>
 
     .copy {
       :deep(.bk-button-text) {
-        line-height: normal;
+        line-height: inherit;
       }
     }
   }
