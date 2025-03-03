@@ -12,7 +12,7 @@ image:
   registry: hub.bktencent.com
   pullPolicy: IfNotPresent
   pullSecrets: []
-  tag: 1.7.4-alpha.1
+  tag: 1.7.4-alpha.2
 
 serviceAccount:
   create: true
@@ -515,7 +515,8 @@ taskserver:
   # whether to use label to filter service.
   useLabel:
     # use label when pull aws china site bills
-    awsCN: true
+    # if true, you should deploy at least one hc service with option: "--label AWSCN" to pull aws china site bills.
+    awsCN: false
 
 accountserver:
   ## 镜像
