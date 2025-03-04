@@ -114,7 +114,7 @@ const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, ge
   },
   fetchUrl,
   {
-    handleAsyncRequest: async (data: any[]) => {
+    asyncRequestApiMethod: async (data: any[]) => {
       // 安全组需要异步加载一些关联资源数
       if (activeType.value !== 'group' || !data.length) return [];
 
