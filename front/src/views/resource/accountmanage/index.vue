@@ -38,7 +38,7 @@ const searchData = [
 ];
 const searchVal = ref([]);
 
-const columns = [
+const columns = reactive([
   { id: 'id', name: 'ID', type: 'number', width: 80 },
   {
     id: 'name',
@@ -74,6 +74,7 @@ const columns = [
     render: ({ cell }: { cell: number[] }) =>
       cell?.map((v: number) => (v === -1 ? '--' : getNameFromBusinessMap(v)))?.join(',') ?? '--',
     width: 120,
+    filter: { list: [] },
   },
   { id: 'managers', name: t('负责人'), type: 'user', width: 120 },
   { id: 'creator', name: t('创建人'), type: 'user', width: 120, defaultHidden: true },
@@ -93,7 +94,7 @@ const columns = [
     width: 150,
   },
   { id: 'memo', name: t('备注'), type: 'string', width: 100 },
-];
+]);
 const { settings } = useTableSettings(columns as ModelPropertyColumn[]);
 const { pagination, getDefaultPagination } = usePage();
 
@@ -103,14 +104,36 @@ const getAccountList = async () => {
   state.loading = true;
   try {
     const res: IListResData<IAccountItem[]> = await accountStore.getAccountList({ filter: state.filter });
-    state.dataList =
+    const datalist =
       res.data?.details?.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) ?? [];
+    state.dataList = datalist;
+
+    // 给业务columns添加filter
+    updateBkBizIdsFilter(datalist);
   } catch (error) {
     console.error(error);
     dataList.value = [];
     Object.assign(pagination, getDefaultPagination());
   } finally {
     state.loading = false;
+  }
+};
+
+const updateBkBizIdsFilter = (datalist: IAccountItem[]) => {
+  if (!datalist.length) return;
+  const bkBizIdsColumn = columns.find((col) => col.id === 'bk_biz_ids');
+  if (bkBizIdsColumn) {
+    const uniqueBkBizIds = [...new Set(datalist.flatMap((item) => item.bk_biz_ids))];
+    Object.assign(bkBizIdsColumn, {
+      filter: {
+        list: uniqueBkBizIds.map((v) => {
+          const name = getNameFromBusinessMap(v);
+          // TODO：组件库2.0.1-beta.34只匹配了label、value，没有匹配text
+          return { text: name, value: v, label: name };
+        }),
+        filterFn: (checked: number[], row: IAccountItem) => checked.some((v) => row.bk_biz_ids?.includes(v)),
+      },
+    });
   }
 };
 
@@ -209,6 +232,7 @@ const {
           :prop="column.id"
           :render="column.render"
           :width="column.width"
+          :filter="column.filter"
         >
           <template #default="{ row }">
             <display-value :property="column" :value="row[column.id]" :vendor="row?.vendor" />
