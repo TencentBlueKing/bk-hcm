@@ -275,10 +275,10 @@ func tidySGRelBusiness(currentBizID int64, relBizMap map[int64]int64) []proto.Li
 	// 当前业务必须在列表的第一个
 	relBizs := make([]proto.ListSGRelBusinessItem, 0, len(relBizMap)+1)
 	if currentBizID != constant.UnassignedBiz {
-		relBizs[0] = proto.ListSGRelBusinessItem{
+		relBizs = append(relBizs, proto.ListSGRelBusinessItem{
 			BkBizID:  currentBizID,
 			ResCount: currentBizResC,
-		}
+		})
 	}
 	for bizID, count := range relBizMap {
 		relBizs = append(relBizs, proto.ListSGRelBusinessItem{
@@ -341,12 +341,24 @@ func (s *securityGroup) UpdateSGMgmtAttr(kt *kit.Kit, mgmtAttr *proto.SecurityGr
 		return err
 	}
 
+	// 管理业务变更时需强制加入使用业务列表
+	newUsageBizIDs := mgmtAttr.UsageBizIDs
+	if mgmtAttr.MgmtBizID != 0 {
+		var err error
+		newUsageBizIDs, err = s.addMgmtBizIDIntoUsageBizs(kt, sgID, mgmtAttr.MgmtBizID, mgmtAttr.UsageBizIDs)
+		if err != nil {
+			logs.Errorf("add security group management business into usage biz failed, err: %v, sg_id: %s, rid: %s",
+				err, sgID, kt.Rid)
+			return err
+		}
+	}
+
 	// 更新使用业务列表
-	if len(mgmtAttr.UsageBizIDs) <= 0 {
+	if len(newUsageBizIDs) <= 0 {
 		return nil
 	}
 	setRelReq := &dataproto.ResUsageBizRelUpdateReq{
-		UsageBizIDs: mgmtAttr.UsageBizIDs,
+		UsageBizIDs: newUsageBizIDs,
 		ResCloudID:  sg.CloudID,
 		ResVendor:   sg.Vendor,
 	}
@@ -357,6 +369,50 @@ func (s *securityGroup) UpdateSGMgmtAttr(kt *kit.Kit, mgmtAttr *proto.SecurityGr
 	}
 
 	return nil
+}
+
+func (s *securityGroup) addMgmtBizIDIntoUsageBizs(kt *kit.Kit, sgID string, mgmtBizID int64, usageBizIDs []int64) (
+	[]int64, error) {
+
+	newUsageBizIDs := make([]int64, 0, len(usageBizIDs)+1)
+	newUsageBizIDs = append(newUsageBizIDs, mgmtBizID)
+
+	if len(usageBizIDs) > 0 {
+		for _, usageBizID := range usageBizIDs {
+			newUsageBizIDs = append(newUsageBizIDs, usageBizID)
+		}
+		return slice.Unique(newUsageBizIDs), nil
+	}
+
+	listReq := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("res_type", enumor.SecurityGroupCloudResType),
+			tools.RuleEqual("res_id", sgID),
+		),
+		Page:   core.NewDefaultBasePage(),
+		Fields: []string{"usage_biz_id"},
+	}
+	listReq.Page.Sort = "rel_id"
+
+	for {
+		rst, err := s.client.DataService().Global.ResUsageBizRel.ListResUsageBizRel(kt, listReq)
+		if err != nil {
+			logs.Errorf("list security group usage biz rel failed, sgID: %s, err: %v, rid: %s", err, sgID, kt.Rid)
+			return nil, err
+		}
+
+		for _, item := range rst.Details {
+			newUsageBizIDs = append(newUsageBizIDs, item.UsageBizID)
+		}
+
+		if len(rst.Details) < int(listReq.Page.Limit) {
+			break
+		}
+
+		listReq.Page.Start += uint32(listReq.Page.Limit)
+	}
+
+	return slice.Unique(newUsageBizIDs), nil
 }
 
 // BatchUpdateSGMgmtAttr batch update security group management attributes
