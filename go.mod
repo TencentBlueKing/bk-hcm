@@ -16,6 +16,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/subscription/armsubscription v1.0.0
 	github.com/TencentBlueKing/gopkg v1.1.0
 	github.com/aws/aws-sdk-go v1.44.334
+	github.com/bluele/gcache v0.0.2
 	github.com/emicklei/go-restful/v3 v3.10.2
 	github.com/go-playground/validator/v10 v10.11.2
 	// go-sql-driver/mysql v1.8.1 may casuse error: connection.go:49: unexpected EOF
@@ -150,7 +151,7 @@ require (
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto v0.0.0-20240227224415-6ceb2ff114de // indirect
-	google.golang.org/grpc v1.63.2 // indirect
+	google.golang.org/grpc v1.63.2
 	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )
