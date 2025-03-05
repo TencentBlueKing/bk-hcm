@@ -435,6 +435,7 @@ const groupColumns = [
     isDefaultShow: true,
     width: 120,
     fixed: 'right',
+    showOverflowTooltip: false,
     render({ data }: IData) {
       // 资源下：状态=未分配，才可以操作
       // 业务下：管理业务=当前业务 && 状态=已分配，才可以配置规则、删除

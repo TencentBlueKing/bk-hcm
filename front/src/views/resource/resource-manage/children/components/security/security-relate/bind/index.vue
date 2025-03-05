@@ -70,9 +70,15 @@ const handleSearch = (searchValue: ISearchSelectValue) => {
     condition.value = { account_id: props.detail.account_id, region: props.detail.region, vendor: props.detail.vendor };
   }
   condition.value = { ...condition.value, ...getSimpleConditionBySearchSelect(searchValue) };
+
+  if (pagination.current === 1) {
+    getList();
+  } else {
+    pagination.current = 1;
+  }
 };
 
-watch(condition, () => {
+watch([() => pagination.current, () => pagination.limit], () => {
   getList();
 });
 
@@ -110,9 +116,15 @@ const handleClosed = () => {
     <bk-resize-layout initial-divide="25%" placement="right" min="300" class="bind-dialog-content">
       <template #main>
         <div class="main">
-          <bk-alert theme="warning" class="mb16">
-            '新绑定的安全组为最高优先级。如主机上已绑定的安全组为「安全组1」,新绑定的安全组为「安全组2」,则依次生效安全组顺序为：安全组2，安全组1'
-          </bk-alert>
+          <bk-alert
+            theme="warning"
+            class="mb16"
+            :title="
+              t(
+                '新绑定的安全组为最高优先级。如主机上已绑定的安全组为「安全组1」，新绑定的安全组为「安全组2」，则依次生效安全组顺序为：安全组2，安全组1。',
+              )
+            "
+          />
           <search
             class="mb16"
             ref="bind-related-resource-search"

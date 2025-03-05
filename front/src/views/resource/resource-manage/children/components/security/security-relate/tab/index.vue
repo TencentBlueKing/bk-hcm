@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref, watchEffect } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import {
   ISecurityGroupDetail,
@@ -15,8 +14,6 @@ const props = defineProps<{
 }>();
 const model = defineModel<SecurityGroupRelatedResourceName>();
 
-const route = useRoute();
-const router = useRouter();
 const { t } = useI18n();
 
 const tabRelRes = ref<{ name: SecurityGroupRelatedResourceName; label: string; count: number; disabled: boolean }[]>([
@@ -27,11 +24,10 @@ const otherRelRes = ref([]);
 const otherRelResCount = computed(() => otherRelRes.value.reduce((prev, curr) => prev + curr.count, 0));
 const tabActive = computed({
   get() {
-    return (model.value || route.query.resourceName || tabRelRes.value[0].name) as SecurityGroupRelatedResourceName;
+    return (model.value || tabRelRes.value[0].name) as SecurityGroupRelatedResourceName;
   },
   set(value) {
     model.value = value;
-    router.push({ query: { ...route.query, resourceName: value } });
   },
 });
 

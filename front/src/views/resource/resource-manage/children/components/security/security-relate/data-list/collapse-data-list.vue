@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeMount, ref } from 'vue';
+import { computed, onBeforeMount, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import usePage from '@/hooks/use-page';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
@@ -24,6 +24,7 @@ const props = defineProps<{
   bkBizId: number;
   tabActive: SecurityGroupRelatedResourceName;
   resCount: number;
+  condition: Record<string, any>;
 }>();
 
 const { t } = useI18n();
@@ -39,8 +40,6 @@ const isCurrentBusiness = computed(() => getBizsId() === props.bkBizId);
 const relResList = ref<SecurityGroupRelResourceByBizItem[]>([]);
 const { pagination, getPageParams } = usePage();
 
-const condition = ref<Record<string, any>>({});
-
 const handleToggle = async () => {
   isExpand.value = !isExpand.value;
   if (isExpand.value) {
@@ -49,14 +48,19 @@ const handleToggle = async () => {
 };
 
 const loading = ref(false);
-const getList = async (sort = 'created_at', order = 'DESC') => {
+const getList = async (
+  tabActive = props.tabActive,
+  condition = props.condition,
+  sort = 'created_at',
+  order = 'DESC',
+) => {
   loading.value = true;
   try {
     const api =
-      props.tabActive === 'CVM' ? securityGroupStore.queryRelCvmByBiz : securityGroupStore.queryRelLoadBalancerByBiz;
+      tabActive === 'CVM' ? securityGroupStore.queryRelCvmByBiz : securityGroupStore.queryRelLoadBalancerByBiz;
 
     const res = await api(props.detail.id, props.bkBizId, {
-      filter: transformSimpleCondition(condition.value, RELATED_RES_PROPERTIES_MAP[props.tabActive]),
+      filter: transformSimpleCondition(condition, RELATED_RES_PROPERTIES_MAP[props.tabActive]),
       page: getPageParams(pagination, { sort, order }),
     });
 
@@ -82,9 +86,23 @@ const handleBatchUnbind = async (ids: string[]) => {
   getList();
 };
 
+const reload = (tabActive: SecurityGroupRelatedResourceName, condition: Record<string, any>) => {
+  if (pagination.current === 1) {
+    getList(tabActive, condition);
+  } else {
+    pagination.current = 1;
+  }
+};
+
+watch([() => pagination.current, () => pagination.limit], () => {
+  getList();
+});
+
 onBeforeMount(() => {
   if (isCurrentBusiness.value) getList();
 });
+
+defineExpose({ isExpand, reload });
 </script>
 
 <template>

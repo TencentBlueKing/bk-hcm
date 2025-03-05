@@ -15,12 +15,14 @@ const props = withDefaults(
     operation: string;
     list: SecurityGroupRelResourceByBizItem[];
     pagination: PaginationType;
+    enableQuery?: boolean;
     hasSelections?: boolean;
     isRowSelectEnable?: (args: { row: any }) => boolean;
     hasSettings?: boolean;
     maxHeight?: string;
   }>(),
   {
+    enableQuery: false,
     hasSelections: true,
     hasSettings: true,
   },
@@ -29,7 +31,7 @@ const emit = defineEmits<(e: 'select', data: any[]) => void>();
 
 const columns = ref(getColumns(props.resourceName, props.operation));
 const { settings } = useTableSettings(columns.value);
-const { handlePageChange, handlePageSizeChange, handleSort } = usePage();
+const { handlePageChange, handlePageSizeChange, handleSort } = usePage(props.enableQuery, props.pagination);
 const { selections, handleSelectAll, handleSelectChange, resetSelections } = useTableSelection({
   rowKey: 'cloud_id',
   isRowSelectable: props.isRowSelectEnable,
