@@ -869,11 +869,8 @@ func (g *securityGroup) TCloudCloneSecurityGroup(cts *rest.Contexts) (any, error
 	syncParam := &synctcloud.SyncBaseParams{AccountID: sg.AccountID, Region: req.TargetRegion, CloudIDs: []string{sgID}}
 	_, syncErr := g.syncSGRule(cts.Kit, syncParam)
 	if syncErr != nil {
-		logs.Errorf("sync security group rule failed, err: %v, sg: %s, rid: %s", syncErr, sgID, cts.Kit.Rid)
-		return nil, fmt.Errorf("clone security group success, but sync security group rule failed, createSGID: %s, err: %v",
-			sgID, syncErr)
+		logs.Warnf("sync security group rule failed, err: %v, sg: %s, rid: %s", syncErr, sgID, cts.Kit.Rid)
 	}
-
 	return core.CreateResult{ID: sgID}, nil
 }
 
