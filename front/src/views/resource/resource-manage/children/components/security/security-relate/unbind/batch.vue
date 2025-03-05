@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, useAttrs, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useVerify } from '@/hooks';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import {
   type SecurityGroupRelResourceByBizItem,
   type SecurityGroupRelatedResourceName,
@@ -26,10 +28,24 @@ const props = withDefaults(
 );
 
 const { t } = useI18n();
+const { whereAmI } = useWhereAmI();
 const attrs: any = useAttrs();
 const securityGroupStore = useSecurityGroupStore();
 
+// 预鉴权
+const { handleAuth, authVerifyData } = useVerify();
+const authAction = computed(() => {
+  return whereAmI.value === Senarios.business ? 'biz_iaas_resource_operate' : 'iaas_resource_operate';
+});
+
 const isShow = ref(false);
+const handleShow = () => {
+  if (!authVerifyData.value?.permissionAction?.[authAction.value]) {
+    handleAuth(authAction.value);
+    return;
+  }
+  isShow.value = true;
+};
 const handleClosed = () => {
   isShow.value = false;
 };
@@ -73,7 +89,14 @@ const handleConfirm = async () => {
 </script>
 
 <template>
-  <bk-button @click="isShow = true" :disabled="disabled" v-bind="attrs">{{ t('批量解绑') }}</bk-button>
+  <bk-button
+    :class="{ 'hcm-no-permision-btn': !disabled && !authVerifyData?.permissionAction?.[authAction] }"
+    :disabled="disabled"
+    @click="handleShow"
+    v-bind="attrs"
+  >
+    {{ t('批量解绑') }}
+  </bk-button>
   <bk-dialog v-model:isShow="isShow" :title="t('批量解绑')" :width="1280" @closed="handleClosed">
     <div class="tips">
       {{ t('已选择') }}
