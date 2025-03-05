@@ -103,6 +103,12 @@ const handleSearch = (searchValue: ISearchSelectValue) => {
   condition.value = getSimpleConditionBySearchSelect(searchValue, [
     { field: 'region', formatter: (val: string) => regionStore.getRegionNameEN(val) },
   ]);
+
+  if (pagination.current === 1) {
+    getList();
+  } else {
+    pagination.current = 1;
+  }
 };
 
 watch(tabActive, () => {
@@ -111,7 +117,7 @@ watch(tabActive, () => {
 });
 
 watch(
-  condition,
+  [() => pagination.current, () => pagination.limit],
   () => {
     getList();
   },

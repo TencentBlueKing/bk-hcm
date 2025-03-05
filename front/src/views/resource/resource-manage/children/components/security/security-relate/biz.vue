@@ -1,16 +1,19 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useI18n } from 'vue-i18n';
+import { ref, useTemplateRef, watch } from 'vue';
+import { useRegionsStore } from '@/store/useRegionsStore';
 import {
   type ISecurityGroupDetail,
   type ISecurityGroupRelBusiness,
   type ISecurityGroupRelResCountItem,
   SecurityGroupRelatedResourceName,
 } from '@/store/security-group';
+import { getSimpleConditionBySearchSelect } from '@/utils/search';
 import { RELATED_RES_KEY_MAP } from '@/constants/security-group';
+import { ISearchSelectValue } from '@/typings';
 
 import tab from './tab/index.vue';
 import collapseDataList from './data-list/collapse-data-list.vue';
+import search from './search/index.vue';
 
 defineProps<{
   detail: ISecurityGroupDetail;
@@ -18,26 +21,54 @@ defineProps<{
   relatedBiz: ISecurityGroupRelBusiness;
 }>();
 
-const { t } = useI18n();
+const regionStore = useRegionsStore();
 
 const tabActive = ref<SecurityGroupRelatedResourceName>(SecurityGroupRelatedResourceName.CVM);
+
+const searchRef = useTemplateRef('relate-resource-search');
+const collapseDataListRef = useTemplateRef('collapse-data-list');
+const condition = ref<Record<string, any>>({});
+const handleSearch = (searchValue: ISearchSelectValue) => {
+  condition.value = getSimpleConditionBySearchSelect(searchValue, [
+    { field: 'region', formatter: (val: string) => regionStore.getRegionNameEN(val) },
+  ]);
+
+  collapseDataListRef.value?.forEach((compRef) => {
+    if (compRef.isExpand) {
+      compRef.reload(tabActive.value, condition.value);
+    }
+  });
+};
+
+watch(tabActive, () => {
+  // 切换tab时，清空搜索条件，触发搜索
+  searchRef.value?.clear();
+});
 </script>
 
 <template>
   <div class="business-manage-module">
     <div class="tools-bar">
       <tab v-model="tabActive" :detail="detail" :related-resources-count-list="relatedResourcesCountList" />
-      <bk-search-select class="search" :placeholder="t('请输入IP/主机名称等搜索')" />
+      <search
+        class="search"
+        ref="relate-resource-search"
+        :resource-name="tabActive"
+        operation="base"
+        @search="handleSearch"
+      />
     </div>
 
     <div class="rel-res-display-wrap">
       <collapse-data-list
         v-for="{ bk_biz_id: bkBizId, res_count: resCount } in relatedBiz?.[RELATED_RES_KEY_MAP[tabActive]]"
+        ref="collapse-data-list"
         :key="bkBizId"
         :detail="detail"
         :bk-biz-id="bkBizId"
         :tab-active="tabActive"
         :res-count="resCount"
+        :condition="condition"
       />
     </div>
   </div>
