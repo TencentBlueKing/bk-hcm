@@ -36,6 +36,7 @@ import (
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/slice"
 )
 
 // GetAccount get account with options
@@ -101,68 +102,51 @@ func (a *accountSvc) GetAccount(cts *rest.Contexts) (interface{}, error) {
 }
 
 func (a *accountSvc) checkGetAccountPermission(cts *rest.Contexts, accountID string) error {
-	// 账号查看权限校验
-	err := a.checkPermission(cts, meta.Find, accountID)
-	if err == nil {
-		return nil
-	}
-	logs.Errorf("check account permission failed, err: %v, account: %s, rid: %s", err, accountID, cts.Kit.Rid)
-
-	// 账号关联的业务查看权限 校验
-	err = a.checkBizsAccessPermission(cts, accountID)
-	if err != nil {
-		logs.Errorf("check account bizs access permission failed, err: %v, account: %s, rid: %s",
-			err, accountID, cts.Kit.Rid)
-		return err
-	}
-	return nil
-}
-
-func (a *accountSvc) checkBizsAccessPermission(cts *rest.Contexts, accountID string) error {
-
-	bizIDs, isAny, err := a.listAuthorized(cts, meta.Access, meta.Biz)
-	if err != nil {
-		logs.Errorf("list biz of access permission failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return err
-	}
-	if isAny {
-		return nil
-	}
-	bizIDMap := make(map[int64]struct{}, len(bizIDs))
-	for _, id := range bizIDs {
-		// string to int64
-		bizID, err := strconv.ParseInt(id, 10, 64)
-		if err != nil {
-			logs.Errorf("parse biz id failed, err: %v, id: %s, rid: %s", err, id, cts.Kit.Rid)
-		}
-		bizIDMap[bizID] = struct{}{}
-	}
-
-	// 校验业务的访问权限
 	listReq := &core.ListReq{
-		Filter: tools.ExpressionAnd(tools.RuleEqual("account_id", accountID)),
+		Filter: tools.EqualExpression("id", accountID),
 		Page:   core.NewDefaultBasePage(),
-		Fields: []string{"bk_biz_id", "account_id"},
 	}
-	for {
-		rels, err := a.client.DataService().Global.Account.ListAccountBizRel(cts.Kit.Ctx, cts.Kit.Header(), listReq)
-		if err != nil {
-			logs.Errorf("list account biz rel failed, err: %v, req: %v, rid: %s", err, listReq, cts.Kit.Rid)
-			return err
-		}
-		for _, detail := range rels.Details {
-			_, ok := bizIDMap[detail.BkBizID]
-			if ok {
-				return nil
-			}
-		}
-		if len(rels.Details) < int(core.DefaultMaxPageLimit) {
-			break
-		}
-		listReq.Page.Start += uint32(core.DefaultMaxPageLimit)
+	accounts, err := a.client.DataService().Global.Account.List(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+	if err != nil {
+		logs.Errorf("list account failed, err: %v, req: %v, rid: %s", err, listReq, cts.Kit.Rid)
+		return err
+	}
+	if len(accounts.Details) == 0 {
+		return fmt.Errorf("account not found: %s", accountID)
+	}
+	if slice.IsItemInSlice(accounts.Details[0].Managers, cts.Kit.User) {
+		return nil
 	}
 
-	return fmt.Errorf("can not access account: %s, no permission for biz access", accountID)
+	// 账号查看权限校验 & 业务访问权限
+	resources := []meta.ResourceAttribute{
+		{
+			Basic: &meta.Basic{
+				Type:       meta.Account,
+				Action:     meta.Find,
+				ResourceID: accountID,
+			},
+		},
+	}
+	for _, bkBizID := range accounts.Details[0].BkBizIDs {
+		resources = append(resources, meta.ResourceAttribute{
+			Basic: &meta.Basic{
+				Type:       meta.Biz,
+				Action:     meta.Access,
+				ResourceID: strconv.FormatInt(bkBizID, 10),
+			},
+		})
+	}
+	decisions, authorized, err := a.authorizer.Authorize(cts.Kit, resources...)
+	if authorized {
+		return nil
+	}
+	for i := range decisions {
+		if decisions[i].Authorized {
+			return nil
+		}
+	}
+	return fmt.Errorf("no permission for access account %s", accountID)
 }
 
 // 补充回收详情，转换回收时间
