@@ -62,12 +62,13 @@ func NewMainSummaryDailyController(opt *MainAccountControllerOption) (*MainSumma
 		return nil, fmt.Errorf("vendor cannot be empty")
 	}
 	return &MainSummaryDailyController{
-		Client:        opt.Client,
-		RootAccountID: opt.RootAccountID,
-		MainAccountID: opt.MainAccountID,
-		ProductID:     opt.ProductID,
-		BkBizID:       opt.BkBizID,
-		Vendor:        opt.Vendor,
+		Client:          opt.Client,
+		RootAccountID:   opt.RootAccountID,
+		MainAccountID:   opt.MainAccountID,
+		ProductID:       opt.ProductID,
+		BkBizID:         opt.BkBizID,
+		Vendor:          opt.Vendor,
+		DefaultCurrency: opt.DefaultCurrency,
 
 		RootAccountCloudID: opt.RootAccountCloudID,
 		MainAccountCloudID: opt.MainAccountCloudID,
@@ -76,13 +77,14 @@ func NewMainSummaryDailyController(opt *MainAccountControllerOption) (*MainSumma
 
 // MainSummaryDailyController main account daily summary controller
 type MainSummaryDailyController struct {
-	Client        *client.ClientSet
-	RootAccountID string
-	MainAccountID string
-	Version       int
-	ProductID     int64
-	BkBizID       int64
-	Vendor        enumor.Vendor
+	Client          *client.ClientSet
+	RootAccountID   string
+	MainAccountID   string
+	Version         int
+	ProductID       int64
+	BkBizID         int64
+	Vendor          enumor.Vendor
+	DefaultCurrency enumor.CurrencyCode
 
 	RootAccountCloudID string
 	MainAccountCloudID string
@@ -247,6 +249,7 @@ func (msdc *MainSummaryDailyController) createDailySummaryTask(
 		BillMonth:          billMonth,
 		BillDay:            billDay,
 		VersionID:          summary.CurrentVersion,
+		DefaultCurrency:    msdc.DefaultCurrency,
 	}
 	taskReq := &taskserver.AddCustomFlowReq{
 		Name:  enumor.FlowBillDailySummary,

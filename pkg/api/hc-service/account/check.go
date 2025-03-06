@@ -20,6 +20,7 @@
 package hsaccount
 
 import (
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 )
 
@@ -45,6 +46,8 @@ type AwsAccountCheckReq struct {
 
 	CloudAccountID   string `json:"cloud_account_id" validate:"required"`
 	CloudIamUsername string `json:"cloud_iam_username" validate:"required"`
+
+	Site enumor.AccountSiteType `json:"site"`
 }
 
 // Validate ...

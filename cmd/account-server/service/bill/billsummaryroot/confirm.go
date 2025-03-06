@@ -25,6 +25,7 @@ import (
 	asbillapi "hcm/pkg/api/account-server/bill"
 	"hcm/pkg/api/data-service/bill"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
@@ -35,6 +36,13 @@ func (s *service) ConfirmRootAccountSummary(cts *rest.Contexts) (interface{}, er
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
+
+	err := s.authorizer.AuthorizeWithPerm(cts.Kit,
+		meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.AccountBill, Action: meta.Update}})
+	if err != nil {
+		return nil, err
+	}
+
 	rootSummary, err := getRootSummary(s.client, cts.Kit, req.RootAccountID, req.BillYear, req.BillMonth)
 	if err != nil {
 		return nil, err

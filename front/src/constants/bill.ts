@@ -40,6 +40,7 @@ export const BILL_ADJUSTMENT_TYPE__MAP = {
 export const CURRENCY_MAP = {
   USD: '美元',
   RMB: '人民币',
+  CNY: '人民币',
 };
 
 // 一级账号账单汇总状态

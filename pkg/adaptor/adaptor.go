@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/adaptor/huawei"
 	"hcm/pkg/adaptor/tcloud"
 	"hcm/pkg/adaptor/types"
+	"hcm/pkg/criteria/enumor"
 )
 
 // Adaptor holds all the supported operations by the adaptor.
@@ -46,8 +47,8 @@ func (a *Adaptor) TCloud(s *types.BaseSecret) (tcloud.TCloud, error) {
 }
 
 // Aws returns Aws operations.
-func (a *Adaptor) Aws(s *types.BaseSecret, cloudAccountID string) (*aws.Aws, error) {
-	return aws.NewAws(s, cloudAccountID)
+func (a *Adaptor) Aws(s *types.BaseSecret, cloudAccountID string, site enumor.AccountSiteType) (*aws.Aws, error) {
+	return aws.NewAws(s, cloudAccountID, site)
 }
 
 // Gcp returns Gcp operations.

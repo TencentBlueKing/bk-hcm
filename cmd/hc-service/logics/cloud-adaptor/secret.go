@@ -67,30 +67,31 @@ func (cli *SecretClient) TCloudSecret(kt *kit.Kit, accountID string) (*types.Bas
 }
 
 // AwsSecret get aws secret and validate secret.
-func (cli *SecretClient) AwsSecret(kt *kit.Kit, accountID string) (*types.BaseSecret, string, error) {
+func (cli *SecretClient) AwsSecret(kt *kit.Kit, accountID string) (
+	*types.BaseSecret, string, enumor.AccountSiteType, error) {
+
 	account, err := cli.data.Aws.Account.Get(kt.Ctx, kt.Header(), accountID)
 	if err != nil {
-		return nil, "", fmt.Errorf("get aws account failed, err: %v", err)
+		return nil, "", "", fmt.Errorf("get aws account failed, err: %v", err)
 	}
 
 	if account.Type != enumor.ResourceAccount {
-		return nil, "", fmt.Errorf("account: %s not resource account type", accountID)
+		return nil, "", "", fmt.Errorf("account: %s not resource account type", accountID)
 	}
 
 	if account.Extension == nil {
-		return nil, "", errors.New("aws account extension is nil")
+		return nil, "", "", errors.New("aws account extension is nil")
 	}
 
 	secret := &types.BaseSecret{
 		CloudSecretID:  account.Extension.CloudSecretID,
 		CloudSecretKey: account.Extension.CloudSecretKey,
 	}
-
 	if err := secret.Validate(); err != nil {
-		return nil, "", err
+		return nil, "", "", err
 	}
 
-	return secret, account.Extension.CloudAccountID, nil
+	return secret, account.Extension.CloudAccountID, account.Site, nil
 }
 
 // HuaWeiSecret get huawei secret and validate secret.
@@ -200,14 +201,16 @@ func (cli *SecretClient) GcpRegisterCredential(kt *kit.Kit, accountID string) (*
 }
 
 // AwsRootSecret get aws secret and validate secret.
-func (cli *SecretClient) AwsRootSecret(kt *kit.Kit, accountID string) (*types.BaseSecret, string, error) {
+func (cli *SecretClient) AwsRootSecret(kt *kit.Kit, accountID string) (*types.BaseSecret, string,
+	enumor.RootAccountSiteType, error) {
+
 	account, err := cli.data.Aws.RootAccount.Get(kt, accountID)
 	if err != nil {
-		return nil, "", fmt.Errorf("get aws root account failed, err: %v", err)
+		return nil, "", "", fmt.Errorf("get aws root account failed, err: %v", err)
 	}
 
 	if account.Extension == nil {
-		return nil, "", errors.New("aws root account extension is nil")
+		return nil, "", "", errors.New("aws root account extension is nil")
 	}
 
 	secret := &types.BaseSecret{
@@ -216,10 +219,10 @@ func (cli *SecretClient) AwsRootSecret(kt *kit.Kit, accountID string) (*types.Ba
 	}
 
 	if err := secret.Validate(); err != nil {
-		return nil, "", err
+		return nil, "", "", err
 	}
 
-	return secret, account.Extension.CloudAccountID, nil
+	return secret, account.Extension.CloudAccountID, account.Site, nil
 }
 
 // GcpRootCredential get gcp credential and validate credential.

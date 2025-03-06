@@ -25,10 +25,11 @@ POST /api/v1/cloud/vendors/{vendor}/accounts/res_counts/by_secrets
 
 #### AWS
 
-| 参数名称             | 参数类型   | 必选 | 描述    |
-|------------------|--------|----|-------|
-| cloud_secret_id  | string | 是  | 云加密ID |
-| cloud_secret_key | string | 是  | 云密钥   |
+| 参数名称             | 参数类型   | 必选 | 描述                                  |
+|------------------|--------|----|-------------------------------------|
+| cloud_secret_id  | string | 是  | 云加密ID                               |
+| cloud_secret_key | string | 是  | 云密钥                                 |
+| site             | string | 是  | 站点（枚举值：china:中国站、international:国际站） |
 
 #### Azure
 

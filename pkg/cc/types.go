@@ -466,6 +466,13 @@ type SysOption struct {
 	BindIP net.IP
 	// Versioned Setting if show current version info.
 	Versioned bool
+
+	// current env for service discovery
+	Environment string
+	// service label for service discovery
+	Labels []string
+	// if true always be follower
+	DisableElection bool
 }
 
 // CheckV check if show current version info.
@@ -836,6 +843,7 @@ var (
 	defaultMainAccountSummarySyncDuration = 10 * time.Minute
 	defaultRootAccountSummarySyncDuration = 10 * time.Minute
 	defaultDailySummarySyncDuration       = 30 * time.Second
+	defaultMonthTaskSyncDuration          = 30 * time.Second
 )
 
 // BillControllerOption bill controller option
@@ -845,6 +853,7 @@ type BillControllerOption struct {
 	ControllerSyncDuration         *time.Duration `yaml:"controllerSyncDuration,omitempty"`
 	MainAccountSummarySyncDuration *time.Duration `yaml:"mainAccountSummarySyncDuration,omitempty"`
 	RootAccountSummarySyncDuration *time.Duration `yaml:"rootAccountSummarySyncDuration,omitempty"`
+	MonthTaskSyncDuration          *time.Duration `yaml:"monthTaskSyncDuration,omitempty"`
 	DailySummarySyncDuration       *time.Duration `yaml:"dailySummarySyncDuration,omitempty"`
 }
 
@@ -857,6 +866,9 @@ func (bco *BillControllerOption) trySetDefault() {
 	}
 	if bco.RootAccountSummarySyncDuration == nil {
 		bco.RootAccountSummarySyncDuration = &defaultRootAccountSummarySyncDuration
+	}
+	if bco.MonthTaskSyncDuration == nil {
+		bco.MonthTaskSyncDuration = &defaultMonthTaskSyncDuration
 	}
 	if bco.DailySummarySyncDuration == nil {
 		bco.DailySummarySyncDuration = &defaultDailySummarySyncDuration

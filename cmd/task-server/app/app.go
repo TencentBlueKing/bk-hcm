@@ -72,13 +72,14 @@ func (ds *taskServer) prepare(opt *options.Option) error {
 	logs.InitLogger(cc.TaskServer().Log.Logs())
 
 	logs.Infof("load settings from config file success.")
+	logs.Infof("use label: %+v", cc.TaskServer().UseLabel)
 
 	// init metrics
 	network := cc.TaskServer().Network
 	metrics.InitMetrics(net.JoinHostPort(network.BindIP, strconv.Itoa(int(network.Port))))
 
 	// init service discovery.
-	svcOpt := serviced.NewServiceOption(cc.TaskServerName, cc.TaskServer().Network)
+	svcOpt := serviced.NewServiceOption(cc.TaskServerName, cc.TaskServer().Network, opt.Sys)
 	discOpt := serviced.DiscoveryOption{
 		Services: []cc.Name{cc.DataServiceName, cc.HCServiceName},
 	}

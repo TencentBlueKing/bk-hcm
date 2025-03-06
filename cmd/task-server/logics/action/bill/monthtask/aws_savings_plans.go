@@ -22,8 +22,10 @@ package monthtask
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strconv"
 
+	actbill "hcm/cmd/task-server/logics/action/bill/common"
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	"hcm/pkg/api/core"
 	protocore "hcm/pkg/api/core/account-set"
@@ -63,6 +65,15 @@ func (a AwsSavingsPlanMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, i
 			opt.BillYear, opt.BillMonth, err, kt.Rid)
 		return nil, false, err
 	}
+
+	rootInfo, err := actcli.GetDataService().Global.RootAccount.GetBasicInfo(kt, opt.RootAccountID)
+	if err != nil {
+		logs.Errorf("fail to get root account(%s), err: %v, rid: %s", opt.RootAccountID, err, kt.Rid)
+		return nil, false, fmt.Errorf("fail to get root account, err: %w", err)
+	}
+
+	hcCli := actbill.GetHCServiceByAwsSite(rootInfo.Site)
+
 	// 拉取 sp 分账金额
 	spReq := &hcbill.AwsRootSpUsageTotalReq{
 		RootAccountID: opt.RootAccountID,
@@ -73,7 +84,7 @@ func (a AwsSavingsPlanMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, i
 		EndDay:        uint(lastDay),
 	}
 
-	spUsage, err := actcli.GetHCService().Aws.Bill.GetRootAccountSpTotalUsage(kt, spReq)
+	spUsage, err := hcCli.Aws.Bill.GetRootAccountSpTotalUsage(kt, spReq)
 	if err != nil {
 		logs.Errorf("get root account sp usage failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, false, err

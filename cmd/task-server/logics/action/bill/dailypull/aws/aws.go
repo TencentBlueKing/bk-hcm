@@ -25,6 +25,7 @@ import (
 	"errors"
 	"fmt"
 
+	actbill "hcm/cmd/task-server/logics/action/bill/common"
 	"hcm/cmd/task-server/logics/action/bill/dailypull/registry"
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	dsbill "hcm/pkg/api/data-service/bill"
@@ -80,18 +81,26 @@ func (hp *AwsPuller) Pull(kt run.ExecuteKit, opt *registry.PullDailyBillOption) 
 func (hp *AwsPuller) doPull(kt run.ExecuteKit, opt *registry.PullDailyBillOption, offset *int32, limit *int32) (
 	int, *registry.PullerResult, error) {
 
-	hcCli := actcli.GetHCService()
-	resp, err := hcCli.Aws.Bill.GetRootAccountBillList(kt.Kit(),
-		&hcbill.AwsRootBillListReq{
-			RootAccountID:      opt.RootAccountID,
-			MainAccountCloudID: opt.MainAccountCloudID,
-			BeginDate:          fmt.Sprintf("%d-%02d-%02d", opt.BillYear, opt.BillMonth, opt.BillDay),
-			EndDate:            fmt.Sprintf("%d-%02d-%02d", opt.BillYear, opt.BillMonth, opt.BillDay),
-			Page: &hcbill.AwsBillListPage{
-				Offset: uint64(cvt.PtrToVal(offset)),
-				Limit:  uint64(cvt.PtrToVal(limit)),
-			},
-		})
+	mainAccountInfo, err := actcli.GetDataService().Global.MainAccount.GetBasicInfo(kt.Kit(), opt.MainAccountID)
+	if err != nil {
+		logs.Errorf("fail to get main account for pull aws bill, err: %v, account: %s, rid: %s",
+			err, opt.MainAccountID, kt.Kit().Rid)
+		return 0, nil, err
+	}
+
+	hcCli := actbill.GetHCServiceByAwsSite(mainAccountInfo.Site)
+
+	req := &hcbill.AwsRootBillListReq{
+		RootAccountID:      opt.RootAccountID,
+		MainAccountCloudID: opt.MainAccountCloudID,
+		BeginDate:          fmt.Sprintf("%d-%02d-%02d", opt.BillYear, opt.BillMonth, opt.BillDay),
+		EndDate:            fmt.Sprintf("%d-%02d-%02d", opt.BillYear, opt.BillMonth, opt.BillDay),
+		Page: &hcbill.AwsBillListPage{
+			Offset: uint64(cvt.PtrToVal(offset)),
+			Limit:  uint64(cvt.PtrToVal(limit)),
+		},
+	}
+	resp, err := hcCli.Aws.Bill.GetRootAccountBillList(kt.Kit(), req)
 	if err != nil {
 		return 0, nil, fmt.Errorf("list aws bill failed, err %w", err)
 	}

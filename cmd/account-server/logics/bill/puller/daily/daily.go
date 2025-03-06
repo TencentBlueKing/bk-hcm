@@ -61,8 +61,9 @@ type DailyPuller struct {
 	BillMonth int
 	Version   int
 	// 账单延迟查询时间
-	BillDelay int
-	Client    *client.ClientSet
+	BillDelay       int
+	Client          *client.ClientSet
+	DefaultCurrency enumor.CurrencyCode
 }
 
 func (dp *DailyPuller) getFilter(billDay int) *filter.Expression {
@@ -104,7 +105,7 @@ func (dp *DailyPuller) createDailyPullTaskStub(kt *kit.Kit, billDay int) error {
 		VersionID:          dp.Version,
 		State:              enumor.MainAccountRawBillPullStatePulling,
 		Count:              0,
-		Currency:           "",
+		Currency:           dp.DefaultCurrency,
 		Cost:               decimal.NewFromFloat(0),
 		FlowID:             "",
 	}

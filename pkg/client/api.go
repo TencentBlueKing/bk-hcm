@@ -57,9 +57,25 @@ func NewClientSet(client client.HTTPClient, discover serviced.Discover) *ClientS
 	return cs
 }
 
-func (cs *ClientSet) discovery(nm cc.Name) rdisc.Interface {
+type discoveryLabelWrapper struct {
+	*discovery.APIDiscovery
+	labels []string
+}
+
+// GetServers ...
+func (w *discoveryLabelWrapper) GetServers() ([]string, error) {
+	return w.APIDiscovery.GetServersWithLabel(w.labels...)
+}
+
+func (cs *ClientSet) discovery(nm cc.Name, labels ...string) rdisc.Interface {
 	sd, exist := cs.apiDiscovery[nm]
 	if exist {
+		if labels != nil {
+			return &discoveryLabelWrapper{
+				APIDiscovery: sd,
+				labels:       labels,
+			}
+		}
 		return sd
 	} else {
 		return rdisc.DeniedServers(nm)
@@ -86,10 +102,10 @@ func (cs *ClientSet) DataService() *dataservice.Client {
 }
 
 // HCService get hc-service client.
-func (cs *ClientSet) HCService() *hcservice.Client {
+func (cs *ClientSet) HCService(labels ...string) *hcservice.Client {
 	c := &client.Capability{
 		Client:   cs.client,
-		Discover: cs.discovery(cc.HCServiceName),
+		Discover: cs.discovery(cc.HCServiceName, labels...),
 	}
 	return hcservice.NewClient(c, cs.version)
 }
@@ -104,7 +120,7 @@ func (cs *ClientSet) AuthServer() *authserver.Client {
 }
 
 // TaskServer get task-server client.
-func (cs *ClientSet) TaskServer() *taskserver.Client {
+func (cs *ClientSet) TaskServer(labels ...string) *taskserver.Client {
 	c := &client.Capability{
 		Client:   cs.client,
 		Discover: cs.discovery(cc.TaskServerName),

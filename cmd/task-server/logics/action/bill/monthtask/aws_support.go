@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	actbill "hcm/cmd/task-server/logics/action/bill/common"
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	"hcm/pkg/api/core"
 	protocore "hcm/pkg/api/core/account-set"
@@ -62,6 +63,7 @@ func (a AwsSupportMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index
 			opt.BillYear, opt.BillMonth, err, kt.Rid)
 		return nil, false, err
 	}
+	hcCli := actbill.GetHCServiceByAwsSite(rootAccount.Site)
 	rootBillReq := &hcbill.AwsRootBillListReq{
 		RootAccountID:      opt.RootAccountID,
 		MainAccountCloudID: rootAccount.CloudID,
@@ -69,7 +71,7 @@ func (a AwsSupportMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index
 		EndDate:            fmt.Sprintf("%d-%02d-%02d", opt.BillYear, opt.BillMonth, lastDay),
 		Page:               &hcbill.AwsBillListPage{Offset: index, Limit: a.GetBatchSize(kt)},
 	}
-	billResp, err := actcli.GetHCService().Aws.Bill.GetRootAccountBillList(kt, rootBillReq)
+	billResp, err := hcCli.Aws.Bill.GetRootAccountBillList(kt, rootBillReq)
 	if err != nil {
 		return nil, false, err
 	}

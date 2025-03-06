@@ -88,7 +88,7 @@ func (as *authService) prepare(opt *options.Option) error {
 	metrics.InitMetrics(net.JoinHostPort(network.BindIP, strconv.Itoa(int(network.Port))))
 
 	// init auth server's service discovery.
-	svcOpt := serviced.NewServiceOption(cc.AuthServerName, cc.AuthServer().Network)
+	svcOpt := serviced.NewServiceOption(cc.AuthServerName, cc.AuthServer().Network, opt.Sys)
 	discOpt := serviced.DiscoveryOption{Services: []cc.Name{cc.DataServiceName}}
 	sd, err := serviced.NewServiceD(cc.AuthServer().Service, svcOpt, discOpt)
 	if err != nil {

@@ -73,6 +73,8 @@ func (as *apiService) prepare(opt *options.Option) error {
 	logs.InitLogger(cc.ApiServer().Log.Logs())
 
 	logs.Infof("load settings from config file success.")
+	logs.Infof("start service %s with option: env: %s, labels: %v, disable election: %v \n",
+		cc.APIServerName, opt.Sys.Environment, opt.Sys.Labels, opt.Sys.DisableElection)
 
 	if err := gwparser.Init(opt.DisableJWT, opt.PublicKey); err != nil {
 		return err

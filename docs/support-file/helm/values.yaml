@@ -12,7 +12,7 @@ image:
   registry: hub.bktencent.com
   pullPolicy: IfNotPresent
   pullSecrets: []
-  tag: 1.7.3
+  tag: 1.7.4
 
 serviceAccount:
   create: true
@@ -512,6 +512,11 @@ taskserver:
       watchIntervalSec: 1
       # taskTimeoutSec 判断任务执行超时时间
       taskTimeoutSec: 300
+  # whether to use label to filter service.
+  useLabel:
+    # use label when pull aws china site bills
+    # if true, you should deploy at least one hc service with option: "--label AWSCN" to pull aws china site bills.
+    awsCN: false
 
 accountserver:
   ## 镜像
@@ -538,7 +543,7 @@ accountserver:
     mainAccountSummarySyncDuration:
     rootAccountSummarySyncDuration:
     dailySummarySyncDuration:
-
+    monthTaskSyncDuration:
   billAllocation:
     # aws savings plans allocation option
     awsSavingsPlans:

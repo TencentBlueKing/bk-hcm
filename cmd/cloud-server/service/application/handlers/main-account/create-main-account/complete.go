@@ -61,6 +61,12 @@ func (a *ApplicationOfCreateMainAccount) Complete() (enumor.ApplicationStatus, m
 		err := fmt.Errorf("root account's vendor not match main account's vendor")
 		return enumor.Delivering, map[string]interface{}{"error": err.Error()}, err
 	}
+	// 校验site是否匹配
+	if enumor.MainAccountSiteType(rootAccount.Site) != a.req.Site {
+		err := fmt.Errorf("root account's site(%s) not match main account's site (%s)",
+			rootAccount.Site, a.req.Site)
+		return enumor.Delivering, map[string]interface{}{"error": err.Error()}, err
+	}
 
 	var (
 		accountID string
@@ -109,7 +115,8 @@ func (a *ApplicationOfCreateMainAccount) Complete() (enumor.ApplicationStatus, m
 	go a.sendMail(account)
 
 	// 交付成功，记录交付的账号ID
-	return enumor.Completed, map[string]interface{}{"account_id": accountID, "cloud_account_name": account.Name, "cloud_account_id": account.CloudID}, nil
+	return enumor.Completed, map[string]interface{}{"account_id": accountID, "cloud_account_name": account.Name,
+		"cloud_account_id": account.CloudID}, nil
 }
 
 func (a *ApplicationOfCreateMainAccount) createForAws(rootAccount *protocore.BaseRootAccount) (string, error) {
@@ -121,7 +128,8 @@ func (a *ApplicationOfCreateMainAccount) createForAws(rootAccount *protocore.Bas
 		CloudAccountName: req.Extension[req.Vendor.GetMainAccountNameFieldName()],
 	})
 	if err != nil {
-		return "", fmt.Errorf("create aws main account [%s] failed, err: %v, rid: %s", req.Extension[req.Vendor.GetMainAccountNameFieldName()], err, a.Cts.Kit.Rid)
+		return "", fmt.Errorf("create aws main account [%s] failed, err: %v, rid: %s",
+			req.Extension[req.Vendor.GetMainAccountNameFieldName()], err, a.Cts.Kit.Rid)
 	}
 
 	// create aws main account in dbs
@@ -152,7 +160,8 @@ func (a *ApplicationOfCreateMainAccount) createForAws(rootAccount *protocore.Bas
 		},
 	)
 	if err != nil {
-		return "", fmt.Errorf("create main account in cloud success, but create main account in db failed, cloud_id: %s err: %v, rid: %s", accountResp.AccountID, err, a.Cts.Kit.Rid)
+		return "", fmt.Errorf("create aws main account in db failed, cloud_id: %s, err: %v, rid: %s",
+			accountResp.AccountID, err, a.Cts.Kit.Rid)
 	}
 
 	return result.ID, nil
@@ -181,7 +190,8 @@ func (a *ApplicationOfCreateMainAccount) createForGcp(rootAccount *protocore.Bas
 		CloudOrganization:   organization,
 	})
 	if err != nil {
-		return "", fmt.Errorf("create gcp main account [%s] failed, err: %v, rid: %s", req.Extension[req.Vendor.GetMainAccountNameFieldName()], err, a.Cts.Kit.Rid)
+		return "", fmt.Errorf("create gcp main account [%s] failed, err: %v, rid: %s",
+			req.Extension[req.Vendor.GetMainAccountNameFieldName()], err, a.Cts.Kit.Rid)
 	}
 
 	// create gcp main account in dbs
@@ -212,7 +222,8 @@ func (a *ApplicationOfCreateMainAccount) createForGcp(rootAccount *protocore.Bas
 		},
 	)
 	if err != nil {
-		return "", fmt.Errorf("create main account in cloud success, but create main account in db failed, cloud_id: %s err: %v, rid: %s", accountResp.ProjectID, err, a.Cts.Kit.Rid)
+		return "", fmt.Errorf("create gcp main account in db failed, cloud_id: %s, err: %v, rid: %s",
+			accountResp.ProjectID, err, a.Cts.Kit.Rid)
 	}
 
 	return result.ID, nil
@@ -412,9 +423,11 @@ func (a *ApplicationOfCreateMainAccount) sendMail(account *dataproto.MainAccount
 
 	err := a.SendMail(mail)
 	if err != nil {
-		logs.Errorf("send email failed for main account, id: %s, cloud_id: %s, name: %s, error: %v", account.ID, account.CloudID, account.Name, err)
+		logs.Errorf("send email failed for main account, id: %s, cloud_id: %s, name: %s, err: %v, rid: %s",
+			account.ID, account.CloudID, account.Name, err, a.Cts.Kit.Rid)
 		return
 	}
 
-	logs.Infof("send email success for main account, id: %s, cloud_id: %s, name: %s, rid: %s", account.ID, account.CloudID, account.Name, a.Cts.Kit.Rid)
+	logs.Infof("send email success for main account, id: %s, cloud_id: %s, name: %s, rid: %s", account.ID,
+		account.CloudID, account.Name, a.Cts.Kit.Rid)
 }
