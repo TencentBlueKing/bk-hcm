@@ -87,6 +87,9 @@ watch(isShow, (val) => {
 
 const searchRef = useTemplateRef('bind-related-resource-search');
 const handleSearch = (searchValue: ISearchSelectValue) => {
+  // 搜索条件变更后，重置勾选
+  handleClear();
+
   if (!searchValue.length) {
     condition.value = { account_id: props.detail.account_id, region: props.detail.region, vendor: props.detail.vendor };
   }
