@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 
+	synctcloud "hcm/cmd/hc-service/logics/res-sync/tcloud"
 	"hcm/pkg/adaptor/tcloud"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	typelb "hcm/pkg/adaptor/types/load-balancer"
@@ -853,7 +854,6 @@ func (g *securityGroup) TCloudCloneSecurityGroup(cts *rest.Contexts) (any, error
 		Tags:            req.Tags,
 		RemoteRegion:    sg.Region,
 	}
-
 	newSecurityGroup, err := client.CloneSecurityGroup(cts.Kit, opt)
 	if err != nil {
 		logs.Errorf("request adaptor to clone tcloud security group failed, err: %v, opt: %v, rid: %s",
@@ -866,6 +866,11 @@ func (g *securityGroup) TCloudCloneSecurityGroup(cts *rest.Contexts) (any, error
 		return nil, err
 	}
 
+	syncParam := &synctcloud.SyncBaseParams{AccountID: sg.AccountID, Region: req.TargetRegion, CloudIDs: []string{sgID}}
+	_, syncErr := g.syncSGRule(cts.Kit, syncParam)
+	if syncErr != nil {
+		logs.Warnf("sync security group rule failed, err: %v, sg: %s, rid: %s", syncErr, sgID, cts.Kit.Rid)
+	}
 	return core.CreateResult{ID: sgID}, nil
 }
 
