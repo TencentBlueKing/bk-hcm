@@ -27,6 +27,7 @@ import (
 	"hcm/cmd/data-service/service/audit/cloud"
 	"hcm/cmd/data-service/service/capability"
 	"hcm/cmd/data-service/service/cloud/cvm"
+	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/audit"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/constant"
@@ -69,6 +70,47 @@ type cloudSvc struct {
 	audit *cloud.Audit
 }
 
+// listResUsageBizRel list resource usage biz rel
+func (svc cloudSvc) listResUsageBizRel(kt *kit.Kit, resType enumor.CloudResourceType, resIDs []string) (
+	map[string][]int64, error) {
+
+	usageBizIDs := make(map[string][]int64, 0)
+	for _, batch := range slice.Split(resIDs, int(core.DefaultMaxPageLimit)) {
+		listReq := &core.ListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleEqual("res_type", resType),
+				tools.RuleIn("res_id", batch),
+			),
+			Page:   core.NewDefaultBasePage(),
+			Fields: []string{"res_id", "usage_biz_id"},
+		}
+		listReq.Page.Sort = "res_id"
+
+		listOpt := &types.ListOption{
+			Filter: tools.ExpressionAnd(
+				tools.RuleEqual("res_type", resType),
+				tools.RuleIn("res_id", batch),
+			),
+			Page:   core.NewDefaultBasePage(),
+			Fields: []string{"res_id", "usage_biz_id"},
+		}
+		listOpt.Page.Sort = "res_id"
+
+		rst, err := svc.dao.ResUsageBizRel().List(kt, listOpt)
+		if err != nil {
+			logs.Errorf("failed to list res usage biz rel, err: %v, res_type: %s, res_ids: %v, rid: %s",
+				err, resType, resIDs, kt.Rid)
+			return nil, err
+		}
+
+		for _, item := range rst.Details {
+			usageBizIDs[item.ResID] = append(usageBizIDs[item.ResID], item.UsageBizID)
+		}
+	}
+
+	return usageBizIDs, nil
+}
+
 // GetResourceBasicInfo get resource basic info.
 func (svc cloudSvc) GetResourceBasicInfo(cts *rest.Contexts) (interface{}, error) {
 	resourceType := cts.PathParameter("type").String()
@@ -106,7 +148,17 @@ func (svc cloudSvc) GetResourceBasicInfo(cts *rest.Contexts) (interface{}, error
 		return nil, fmt.Errorf("list resource basic info return count not right")
 	}
 
-	return list[0], nil
+	usageBizIDs, err := svc.listResUsageBizRel(cts.Kit, enumor.CloudResourceType(resourceType), []string{id})
+	if err != nil {
+		logs.Errorf("failed to list res usage biz rel, err: %v, res_type: %s, res_id: %s, rid: %s",
+			err, resourceType, id, cts.Kit.Rid)
+		return nil, err
+	}
+
+	basicInfo := list[0]
+	basicInfo.UsageBizIDs = usageBizIDs[id]
+
+	return basicInfo, nil
 }
 
 // ListResourceBasicInfo list resource basic info.
@@ -129,8 +181,16 @@ func (svc cloudSvc) ListResourceBasicInfo(cts *rest.Contexts) (interface{}, erro
 		return nil, errf.Newf(errf.RecordNotFound, "%s not found resource: %v", req.ResourceType, req.IDs)
 	}
 
+	usageBizIDs, err := svc.listResUsageBizRel(cts.Kit, req.ResourceType, req.IDs)
+	if err != nil {
+		logs.Errorf("failed to list res usage biz rel, err: %v, res_type: %s, res_ids: %v, rid: %s",
+			err, req.ResourceType, req.IDs, cts.Kit.Rid)
+		return nil, err
+	}
+
 	result := make(map[string]types.CloudResourceBasicInfo, len(list))
 	for _, info := range list {
+		info.UsageBizIDs = usageBizIDs[info.ID]
 		result[info.ID] = info
 	}
 
@@ -159,7 +219,15 @@ func (svc cloudSvc) BatchListResourceBasicInfo(cts *rest.Contexts) (interface{},
 			return nil, errf.Newf(errf.RecordNotFound, "%s not found resource: %v", item.ResourceType, item.IDs)
 		}
 
+		usageBizIDs, err := svc.listResUsageBizRel(cts.Kit, item.ResourceType, item.IDs)
+		if err != nil {
+			logs.Errorf("failed to list res usage biz rel, err: %v, res_type: %s, res_ids: %v, rid: %s",
+				err, item.ResourceType, item.IDs, cts.Kit.Rid)
+			return nil, err
+		}
+
 		for _, info := range list {
+			info.UsageBizIDs = usageBizIDs[info.ID]
 			result[info.ID] = info
 		}
 	}
