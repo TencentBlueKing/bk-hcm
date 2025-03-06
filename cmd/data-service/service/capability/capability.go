@@ -21,12 +21,12 @@
 package capability
 
 import (
+	"github.com/emicklei/go-restful/v3"
+
 	"hcm/pkg/cryptography"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/objectstore"
-	"hcm/pkg/thirdparty/esb"
-
-	"github.com/emicklei/go-restful/v3"
+	"hcm/pkg/thirdparty/api-gateway/cmdb"
 )
 
 // Capability defines the service's capability
@@ -34,6 +34,6 @@ type Capability struct {
 	WebService  *restful.WebService
 	Dao         dao.Set
 	Cipher      cryptography.Crypto
-	EsbClient   esb.Client
 	ObjectStore objectstore.Storage
+	CmdbClient  cmdb.Client
 }

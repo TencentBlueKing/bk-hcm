@@ -26,7 +26,7 @@ import (
 	"hcm/pkg/client"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/rest"
-	"hcm/pkg/thirdparty/esb"
+	"hcm/pkg/thirdparty/api-gateway/cmdb"
 )
 
 // InitBillItemService 注册账单明细服务
@@ -35,7 +35,7 @@ func InitBillItemService(c *capability.Capability) {
 		client:     c.ApiClient,
 		authorizer: c.Authorizer,
 		audit:      c.Audit,
-		esbClient:  c.EsbClient,
+		cmdbCli:    c.CmdbClient,
 	}
 
 	h := rest.NewHandler()
@@ -59,5 +59,5 @@ type billItemSvc struct {
 	client     *client.ClientSet
 	authorizer auth.Authorizer
 	audit      audit.Interface
-	esbClient  esb.Client
+	cmdbCli    cmdb.Client
 }

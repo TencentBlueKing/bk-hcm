@@ -24,7 +24,7 @@ import (
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/criteria/validator"
-	"hcm/pkg/thirdparty/esb/cmdb"
+	"hcm/pkg/thirdparty/api-gateway/cmdb"
 )
 
 // ListCloudAreaOption is list cmdb cloud area option.
@@ -81,9 +81,9 @@ type CloudArea struct {
 
 // CloudHostListReq define cloud host list request.
 type CloudHostListReq struct {
-	BkSetIDs    []int64       `json:"bk_set_ids" validate:"omitempty"`
-	BkModuleIDs []int64       `json:"bk_module_ids" validate:"omitempty"`
-	Page        cmdb.BasePage `json:"page" validate:"required"`
+	BkSetIDs    []int64        `json:"bk_set_ids" validate:"omitempty"`
+	BkModuleIDs []int64        `json:"bk_module_ids" validate:"omitempty"`
+	Page        *cmdb.BasePage `json:"page" validate:"required"`
 }
 
 // Validate CloudHostListReq.

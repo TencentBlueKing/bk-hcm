@@ -39,3 +39,5 @@ data:
         nonce: {{ .Values.crypto.aesGcm.nonce }}
     objectstore:
       {{- toYaml .Values.objectstore | nindent 6 }}
+    cmdb:
+      {{- toYaml .Values.cmdbApiGateway | nindent 6 }}

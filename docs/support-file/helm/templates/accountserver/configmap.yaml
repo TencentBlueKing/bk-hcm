@@ -38,3 +38,5 @@ data:
         keyFile:
         caFile:
         password:
+    cmdb:
+      {{- toYaml .Values.cmdbApiGateway | nindent 6 }}

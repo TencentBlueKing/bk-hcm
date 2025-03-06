@@ -27,7 +27,7 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/thirdparty/esb/cmdb"
+	"hcm/pkg/thirdparty/api-gateway/cmdb"
 	"hcm/pkg/tools/slice"
 )
 
@@ -66,7 +66,7 @@ func (c *cmdbSvc) ListCloudHost(cts *rest.Contexts) (interface{}, error) {
 			},
 		},
 	}
-	result, err := c.esbClient.Cmdb().ListBizHost(cts.Kit, params)
+	result, err := c.cmdbClient.ListBizHost(cts.Kit, params)
 	if err != nil {
 		logs.Errorf("call cmdb to list biz host failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
 		return nil, err
