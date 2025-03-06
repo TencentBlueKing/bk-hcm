@@ -183,13 +183,9 @@ const handleClosed = () => {
               </span>
             </div>
             <div class="list-wrap">
-              <div class="list-item" v-for="(item, index) in selected" :key="item.cloud_id">
+              <div class="list-item" v-for="item in selected" :key="item.cloud_id">
                 <span>{{ getPrivateIPs(item) }}</span>
-                <i
-                  v-if="index === selected.length - 1"
-                  class="hcm-icon bkhcm-icon-close close-btn"
-                  @click="handleDelete(item.cloud_id)"
-                ></i>
+                <i class="hcm-icon bkhcm-icon-close close-btn" @click="handleDelete(item.cloud_id)"></i>
               </div>
             </div>
           </div>
