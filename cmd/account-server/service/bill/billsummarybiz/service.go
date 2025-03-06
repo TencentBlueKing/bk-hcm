@@ -27,7 +27,7 @@ import (
 	"hcm/pkg/client"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/rest"
-	"hcm/pkg/thirdparty/esb"
+	"hcm/pkg/thirdparty/api-gateway/cmdb"
 )
 
 // InitService initial the main account service
@@ -36,7 +36,7 @@ func InitService(c *capability.Capability) {
 		client:     c.ApiClient,
 		authorizer: c.Authorizer,
 		audit:      c.Audit,
-		esbClient:  c.EsbClient,
+		cmdbCli:    c.CmdbClient,
 	}
 
 	h := rest.NewHandler()
@@ -52,5 +52,5 @@ type service struct {
 	client     *client.ClientSet
 	authorizer auth.Authorizer
 	audit      audit.Interface
-	esbClient  esb.Client
+	cmdbCli    cmdb.Client
 }

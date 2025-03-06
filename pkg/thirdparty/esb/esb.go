@@ -53,7 +53,7 @@ func EsbClient() Client {
 
 // Client esb client
 type Client interface {
-	Cmdb() cmdb.Client
+	//Cmdb() cmdb.Client
 	Login() login.Client
 	Iam() iam.Client
 }

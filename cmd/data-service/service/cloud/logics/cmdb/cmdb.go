@@ -25,7 +25,7 @@ import (
 	"hcm/pkg/api/core/cloud/cvm"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
-	"hcm/pkg/thirdparty/esb/cmdb"
+	"hcm/pkg/thirdparty/api-gateway/cmdb"
 )
 
 // CmdbLogics defines cmdb logics.
@@ -161,7 +161,7 @@ func (c *CmdbLogics) DeleteCloudHostFromBiz(kt *kit.Kit, req *DeleteCloudHostFro
 	listParams := &cmdb.ListBizHostParams{
 		BizID:  req.BizID,
 		Fields: []string{"bk_host_id"},
-		Page:   cmdb.BasePage{Limit: 500},
+		Page:   &cmdb.BasePage{Limit: 500},
 		HostPropertyFilter: &cmdb.QueryFilter{
 			Rule: &cmdb.CombinedRule{
 				Condition: "OR",

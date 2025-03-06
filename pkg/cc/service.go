@@ -124,6 +124,7 @@ type CloudServerSetting struct {
 	Itsm           ApiGateway     `yaml:"itsm"`
 	CloudSelection CloudSelection `yaml:"cloudSelection"`
 	Cmsi           CMSI           `yaml:"cmsi"`
+	Cmdb           ApiGateway     `yaml:"cmdb"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -158,6 +159,10 @@ func (s CloudServerSetting) Validate() error {
 		return err
 	}
 
+	if err := s.Cmdb.validate(); err != nil {
+		return err
+	}
+
 	if s.BkHcmUrl == "" {
 		return fmt.Errorf("bkHcmUrl should not be empty")
 	}
@@ -189,7 +194,7 @@ type DataServiceSetting struct {
 	Database    DataBase    `yaml:"database"`
 	Objectstore ObjectStore `yaml:"objectstore"`
 	Crypto      Crypto      `yaml:"crypto"`
-	Esb         Esb         `yaml:"esb"`
+	Cmdb        ApiGateway  `yaml:"cmdb"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -225,7 +230,7 @@ func (s DataServiceSetting) Validate() error {
 		return err
 	}
 
-	if err := s.Esb.validate(); err != nil {
+	if err := s.Cmdb.validate(); err != nil {
 		return err
 	}
 
@@ -273,10 +278,11 @@ func (s HCServiceSetting) Validate() error {
 
 // AuthServerSetting defines auth server used setting options.
 type AuthServerSetting struct {
-	Network Network   `yaml:"network"`
-	Service Service   `yaml:"service"`
-	Log     LogOption `yaml:"log"`
-	Esb     Esb       `yaml:"esb"`
+	Network Network    `yaml:"network"`
+	Service Service    `yaml:"service"`
+	Log     LogOption  `yaml:"log"`
+	Esb     Esb        `yaml:"esb"`
+	Cmdb    ApiGateway `yaml:"cmdb"`
 
 	IAM IAM `yaml:"iam"`
 }
@@ -309,6 +315,10 @@ func (s AuthServerSetting) Validate() error {
 		return err
 	}
 
+	if err := s.Cmdb.validate(); err != nil {
+		return err
+	}
+
 	if err := s.IAM.validate(); err != nil {
 		return err
 	}
@@ -327,6 +337,7 @@ type WebServerSetting struct {
 	ChangeLogPath ChangeLogPath `yaml:"changeLogPath"`
 	Notice        Notice        `yaml:"notice"`
 	TemplatePath  string        `yaml:"templatePath"`
+	Cmdb          ApiGateway    `yaml:"cmdb"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -363,6 +374,10 @@ func (s WebServerSetting) Validate() error {
 	}
 
 	if err := s.Esb.validate(); err != nil {
+		return err
+	}
+
+	if err := s.Cmdb.validate(); err != nil {
 		return err
 	}
 
@@ -433,8 +448,8 @@ type AccountServerSetting struct {
 	Controller     BillControllerOption `yaml:"controller"`
 	Log            LogOption            `yaml:"log"`
 	BillAllocation BillAllocationOption `yaml:"billAllocation"`
-	Esb            Esb                  `yaml:"esb"`
 	TmpFileDir     string               `yaml:"tmpFileDir"`
+	Cmdb           ApiGateway           `yaml:"cmdb"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -465,6 +480,10 @@ func (s AccountServerSetting) Validate() error {
 	}
 
 	if err := s.BillAllocation.validate(); err != nil {
+		return err
+	}
+
+	if err := s.Cmdb.validate(); err != nil {
 		return err
 	}
 

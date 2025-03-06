@@ -37,7 +37,7 @@ func InitService(cap *capability.Capability) {
 		dao: cap.Dao,
 	}
 
-	svc.cmdbLogics = cmdb.NewCmdbLogics(cap.EsbClient.Cmdb())
+	svc.cmdbLogics = cmdb.NewCmdbLogics(cap.CmdbClient)
 
 	h := rest.NewHandler()
 
