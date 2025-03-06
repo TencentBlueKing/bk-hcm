@@ -78,9 +78,9 @@ import (
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
 	"hcm/pkg/thirdparty/api-gateway/bkbase"
+	"hcm/pkg/thirdparty/api-gateway/cmdb"
 	"hcm/pkg/thirdparty/api-gateway/cmsi"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
-	"hcm/pkg/thirdparty/esb"
 	"hcm/pkg/tools/ssl"
 
 	"github.com/emicklei/go-restful/v3"
@@ -93,17 +93,16 @@ type Service struct {
 	authorizer auth.Authorizer
 	audit      logicaudit.Interface
 	cipher     cryptography.Crypto
-	// EsbClient 调用接入ESB的第三方系统API集合
-	esbClient esb.Client
 	// itsmCli itsm client.
 	itsmCli   itsm.Client
 	bkBaseCli bkbase.Client
 	cmsiCli   cmsi.Client
+	cmdbCli   cmdb.Client
 }
 
 // NewService create a service instance.
 func NewService(sd serviced.ServiceDiscover) (*Service, error) {
-	apiClientSet, esbClient, svr, err := getCloudClientSvr(sd)
+	apiClientSet, svr, err := getCloudClientSvr(sd)
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +126,7 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 		go bill.CloudBillConfigCreate(interval, sd, apiClientSet)
 	}
 
-	recycle.RecycleTiming(apiClientSet, sd, cc.CloudServer().Recycle, esbClient)
+	recycle.RecycleTiming(apiClientSet, sd, cc.CloudServer().Recycle, svr.cmdbCli)
 
 	go appcvm.TimingHandleDeliverApplication(svr.client, 2*time.Second)
 
@@ -136,7 +135,7 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 	return svr, nil
 }
 
-func getCloudClientSvr(sd serviced.ServiceDiscover) (*client.ClientSet, esb.Client, *Service, error) {
+func getCloudClientSvr(sd serviced.ServiceDiscover) (*client.ClientSet, *Service, error) {
 	tls := cc.CloudServer().Network.TLS
 	var tlsConfig *ssl.TLSConfig
 	if tls.Enable() {
@@ -152,45 +151,45 @@ func getCloudClientSvr(sd serviced.ServiceDiscover) (*client.ClientSet, esb.Clie
 	// initiate system api client set.
 	restCli, err := restcli.NewClient(tlsConfig)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 	apiClientSet := client.NewClientSet(restCli, sd)
 	authorizer, err := auth.NewAuthorizer(sd, tls)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	// 加解密器
 	cipher, err := newCipherFromConfig(cc.CloudServer().Crypto)
 	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	// 创建ESB Client
-	esbConfig := cc.CloudServer().Esb
-	if err = esb.InitEsbClient(&esbConfig, metrics.Register()); err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	itsmCfg := cc.CloudServer().Itsm
 	itsmCli, err := itsm.NewClient(&itsmCfg, metrics.Register())
 	if err != nil {
 		logs.Errorf("failed to create itsm client, err: %v", err)
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	bkbaseCfg := cc.CloudServer().CloudSelection.BkBase
 	bkbaseCli, err := bkbase.NewClient(&bkbaseCfg.ApiGateway, metrics.Register())
 	if err != nil {
 		logs.Errorf("failed to create bkbase client, err: %v", err)
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	cmsiCfg := cc.CloudServer().Cmsi
 	cmsiCli, err := cmsi.NewClient(&cmsiCfg, metrics.Register())
 	if err != nil {
 		logs.Errorf("failed to create cmsi client, err: %v", err)
-		return nil, nil, nil, err
+		return nil, nil, err
+	}
+
+	cmdbCfg := cc.CloudServer().Cmdb
+	cmdbCli, err := cmdb.NewClient(&cmdbCfg, metrics.Register())
+	if err != nil {
+		return nil, nil, err
 	}
 
 	svr := &Service{
@@ -198,13 +197,13 @@ func getCloudClientSvr(sd serviced.ServiceDiscover) (*client.ClientSet, esb.Clie
 		authorizer: authorizer,
 		audit:      logicaudit.NewAudit(apiClientSet.DataService()),
 		cipher:     cipher,
-		esbClient:  esb.EsbClient(),
 		itsmCli:    itsmCli,
 		bkBaseCli:  bkbaseCli,
 		cmsiCli:    cmsiCli,
+		cmdbCli:    cmdbCli,
 	}
 
-	return apiClientSet, esb.EsbClient(), svr, nil
+	return apiClientSet, svr, nil
 }
 
 // newCipherFromConfig 根据配置文件里的加密配置，选择配置的算法并生成对应的加解密器
@@ -282,11 +281,11 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 		Authorizer: s.authorizer,
 		Audit:      s.audit,
 		Cipher:     s.cipher,
-		EsbClient:  s.esbClient,
-		Logics:     logics.NewLogics(s.client, s.esbClient),
+		Logics:     logics.NewLogics(s.client, s.cmdbCli),
 		ItsmCli:    s.itsmCli,
 		BKBaseCli:  s.bkBaseCli,
 		CmsiCli:    s.cmsiCli,
+		CmdbCli:    s.cmdbCli,
 	}
 
 	account.InitAccountService(c)

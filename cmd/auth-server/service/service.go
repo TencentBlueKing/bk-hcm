@@ -39,6 +39,7 @@ import (
 	"hcm/pkg/metrics"
 	restcli "hcm/pkg/rest/client"
 	"hcm/pkg/serviced"
+	"hcm/pkg/thirdparty/api-gateway/cmdb"
 	"hcm/pkg/thirdparty/esb"
 	"hcm/pkg/tools/ssl"
 )
@@ -139,6 +140,9 @@ func newClientSet(sd serviced.Discover, iamSettings cc.IAM, esbSettings cc.Esb, 
 	}
 
 	esbClient, err := esb.NewClient(&esbSettings, metrics.Register())
+
+	cmdbCfg := cc.AuthServer().Cmdb
+	cmdbCli, err := cmdb.NewClient(&cmdbCfg, metrics.Register())
 	if err != nil {
 		return nil, err
 	}
@@ -150,10 +154,10 @@ func newClientSet(sd serviced.Discover, iamSettings cc.IAM, esbSettings cc.Esb, 
 	logs.Infof("initialize iam auth sdk success.")
 
 	cs := &ClientSet{
-		ds:     apiClientSet.DataService(),
-		sys:    iamSys,
-		auth:   authSdk,
-		esbCli: esbClient,
+		ds:      apiClientSet.DataService(),
+		sys:     iamSys,
+		auth:    authSdk,
+		cmdbCli: cmdbCli,
 	}
 	logs.Infof("initialize the client set success.")
 	return cs, nil
@@ -167,8 +171,8 @@ type ClientSet struct {
 	sys *sys.Sys
 	// auth related operate.
 	auth pkgauth.Authorizer
-	// esb client.
-	esbCli esb.Client
+	// cmdb client.
+	cmdbCli cmdb.Client
 }
 
 // initLogicModule init logic module.
@@ -185,7 +189,7 @@ func (s *Service) initLogicModule() error {
 		return err
 	}
 
-	s.auth, err = auth.NewAuth(s.client.auth, s.client.ds, s.disableAuth, s.client.esbCli, s.disableWriteOpt)
+	s.auth, err = auth.NewAuth(s.client.auth, s.client.ds, s.disableAuth, s.client.cmdbCli, s.disableWriteOpt)
 	if err != nil {
 		return err
 	}

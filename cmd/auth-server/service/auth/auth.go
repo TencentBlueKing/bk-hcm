@@ -41,8 +41,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/thirdparty/esb"
-	"hcm/pkg/thirdparty/esb/cmdb"
+	"hcm/pkg/thirdparty/api-gateway/cmdb"
 )
 
 // Auth related operate.
@@ -55,12 +54,12 @@ type Auth struct {
 	disableAuth bool
 	// disableWriteOpt defines which biz's write operation needs to be disabled
 	disableWriteOpt *options.DisableWriteOption
-	// esb client.
-	esbCli esb.Client
+	// cmdb client.
+	cmdbCli cmdb.Client
 }
 
 // NewAuth new auth.
-func NewAuth(auth auth.Authorizer, ds *dataservice.Client, disableAuth bool, esbCli esb.Client,
+func NewAuth(auth auth.Authorizer, ds *dataservice.Client, disableAuth bool, cmdbCli cmdb.Client,
 	disableWriteOpt *options.DisableWriteOption) (*Auth, error) {
 
 	if auth == nil {
@@ -80,7 +79,7 @@ func NewAuth(auth auth.Authorizer, ds *dataservice.Client, disableAuth bool, esb
 		ds:              ds,
 		disableAuth:     disableAuth,
 		disableWriteOpt: disableWriteOpt,
-		esbCli:          esbCli,
+		cmdbCli:         cmdbCli,
 	}
 
 	return i, nil
@@ -492,7 +491,7 @@ func (a *Auth) getBizIDNameMap(kt *kit.Kit, rawIDs []string) (map[string]string,
 			},
 		},
 	}
-	bizResp, err := a.esbCli.Cmdb().SearchBusiness(kt, bizReq)
+	bizResp, err := a.cmdbCli.SearchBusiness(kt, bizReq)
 	if err != nil {
 		return nil, err
 	}

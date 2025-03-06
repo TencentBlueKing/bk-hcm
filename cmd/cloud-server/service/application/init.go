@@ -40,6 +40,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/thirdparty/api-gateway/cmdb"
 	"hcm/pkg/thirdparty/api-gateway/cmsi"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/thirdparty/esb"
@@ -56,6 +57,7 @@ func InitApplicationService(c *capability.Capability, bkHcmUrl string) {
 		esbCli:     c.EsbClient,
 		bkHcmUrl:   bkHcmUrl,
 		cmsiCli:    c.CmsiCli,
+		cmdbCli:    c.CmdbCli,
 	}
 	h := rest.NewHandler()
 	h.Add("ListApplications", "POST", "/applications/list", svc.ListApplications)
@@ -99,6 +101,7 @@ type applicationSvc struct {
 	esbCli     esb.Client
 	bkHcmUrl   string
 	cmsiCli    cmsi.Client
+	cmdbCli    cmdb.Client
 }
 
 func (a *applicationSvc) getCallbackUrl() string {
@@ -107,13 +110,13 @@ func (a *applicationSvc) getCallbackUrl() string {
 
 func (a *applicationSvc) getHandlerOption(cts *rest.Contexts) *handlers.HandlerOption {
 	return &handlers.HandlerOption{
-		Cts:       cts,
-		Client:    a.client,
-		ItsmCli:   a.itsmCli,
-		EsbClient: a.esbCli,
-		Cipher:    a.cipher,
-		Audit:     a.audit,
-		CmsiCli:   a.cmsiCli,
+		Cts:     cts,
+		Client:  a.client,
+		ItsmCli: a.itsmCli,
+		Cipher:  a.cipher,
+		Audit:   a.audit,
+		CmsiCli: a.cmsiCli,
+		CmdbCli: a.cmdbCli,
 	}
 }
 

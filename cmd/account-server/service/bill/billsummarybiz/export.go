@@ -34,7 +34,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
-	"hcm/pkg/thirdparty/esb/cmdb"
+	"hcm/pkg/thirdparty/api-gateway/cmdb"
 	"hcm/pkg/tools/slice"
 
 	"github.com/TencentBlueKing/gopkg/conv"
@@ -217,7 +217,7 @@ func (s *service) listBiz(kt *kit.Kit, ids []int64) (map[int64]string, error) {
 		BizPropertyFilter: expression,
 		Fields:            []string{"bk_biz_id", "bk_biz_name"},
 	}
-	resp, err := s.esbClient.Cmdb().SearchBusiness(kt, params)
+	resp, err := s.cmdbCli.SearchBusiness(kt, params)
 	if err != nil {
 		logs.Errorf("call cmdb search business api failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, fmt.Errorf("call cmdb search business api failed, err: %v", err)
