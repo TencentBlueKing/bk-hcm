@@ -149,7 +149,8 @@ func (r *DefaultMonthTaskRunner) executeMonthTask(kt *kit.Kit, monthDescriber Mo
 	rootSummary *billcore.SummaryRoot) error {
 
 	monthTaskTypeOrders := monthDescriber.GetMonthTaskTypes()
-	monthTasks, err := r.listMonthPullTaskStub(kt, rootSummary.BillYear, rootSummary.BillMonth, monthTaskTypeOrders)
+	monthTasks, err := r.listMonthPullTaskStub(kt, rootSummary.BillYear, rootSummary.BillMonth,
+		rootSummary.CurrentVersion, monthTaskTypeOrders)
 	if err != nil {
 		logs.Errorf("list month task stub for ensuring month task failed, err: %v, rid: %s", err, kt.Rid)
 		return err
@@ -161,20 +162,11 @@ func (r *DefaultMonthTaskRunner) executeMonthTask(kt *kit.Kit, monthDescriber Mo
 
 	for _, curType := range monthTaskTypeOrders {
 		monthTask := monthTaskTypeMap[curType]
-		if monthTask == nil {
-			if err := r.createMonthPullTaskStub(kt, rootSummary, curType); err != nil {
-				logs.Errorf("fail to create [%s] month task, type: %s, err: %v, rid: %s",
-					r.vendor, curType, err, kt.Rid)
-				return err
-			}
-			return nil
-		}
-		// 判断versionID是否一致，不一致，则重新创建month task
-		if monthTask.VersionID != rootSummary.CurrentVersion {
-			if err := r.deleteMonthPullTaskStub(kt, rootSummary.BillYear, rootSummary.BillMonth, curType); err != nil {
-				return err
-			}
-			return r.createMonthPullTaskStub(kt, rootSummary, curType)
+		monthTask, err = r.ensureMonthTaskStub(kt, monthTask, rootSummary, curType)
+		if err != nil {
+			logs.Errorf("fail to ensure month task stub for [%s] %s(%s), type: %s, err: %v, rid: %s",
+				r.vendor, r.rootAccountCloudID, r.rootAccountID, curType, err, kt.Rid)
+			return err
 		}
 		switch monthTask.State {
 		case enumor.RootAccountMonthBillTaskStatePulling:
@@ -198,6 +190,32 @@ func (r *DefaultMonthTaskRunner) executeMonthTask(kt *kit.Kit, monthDescriber Mo
 		}
 	}
 	return nil
+}
+
+func (r *DefaultMonthTaskRunner) ensureMonthTaskStub(kt *kit.Kit, monthTask *billcore.MonthTask,
+	rootSummary *billcore.SummaryRoot, curType enumor.MonthTaskType) (*billcore.MonthTask, error) {
+
+	if monthTask != nil {
+		return monthTask, nil
+	}
+	if err := r.createMonthPullTaskStub(kt, rootSummary, curType); err != nil {
+		logs.Errorf("fail to create [%s] month task, type: %s, err: %v, rid: %s",
+			r.vendor, curType, err, kt.Rid)
+		return nil, err
+	}
+	// get after create
+	monthTasks, err := r.listMonthPullTaskStub(kt, rootSummary.BillYear, rootSummary.BillMonth,
+		rootSummary.CurrentVersion, []enumor.MonthTaskType{curType})
+	if err != nil {
+		logs.Errorf("fail to list %s month task stub after create, type: %s, err: %v, rid: %s",
+			r.vendor, curType, err, kt.Rid)
+		return nil, err
+	}
+	if len(monthTasks) != 1 {
+		logs.Errorf("month task stub after create count is not 1, type: %s, count: %d, rid: %s",
+			r.vendor, len(monthTasks), kt.Rid)
+	}
+	return monthTasks[0], nil
 }
 
 // return true if all main account state of current root version is in `accounted` or `wait_month_task` state
@@ -420,13 +438,14 @@ func (r *DefaultMonthTaskRunner) createMonthPullTaskStub(kt *kit.Kit, rootSummar
 	return nil
 }
 
-func (r *DefaultMonthTaskRunner) listMonthPullTaskStub(kt *kit.Kit, billYear, billMonth int,
+func (r *DefaultMonthTaskRunner) listMonthPullTaskStub(kt *kit.Kit, billYear, billMonth int, version int,
 	types []enumor.MonthTaskType) ([]*billcore.MonthTask, error) {
 
 	expressions := []*filter.AtomRule{
 		tools.RuleEqual("root_account_id", r.rootAccountID),
 		tools.RuleEqual("bill_year", billYear),
 		tools.RuleEqual("bill_month", billMonth),
+		tools.RuleEqual("version_id", version),
 		tools.RuleIn("type", types),
 	}
 	req := &dsbillapi.BillMonthTaskListReq{

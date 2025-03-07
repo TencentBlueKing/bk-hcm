@@ -157,3 +157,28 @@ func (r *BillItemDeleteReq) Validate() error {
 
 // ItemCommonOpt general option for all bill item operations
 type ItemCommonOpt = typesbill.ItemCommonOpt
+
+// BillItemSumReq ...
+type BillItemSumReq struct {
+	*ItemCommonOpt `json:",inline" validate:"required"`
+	Filter         *filter.Expression `json:"filter" validate:"required"`
+}
+
+// Validate ...
+func (r *BillItemSumReq) Validate() error {
+
+	if r.Filter == nil {
+		return errf.New(errf.InvalidParameter, "filter is required")
+	}
+	if r.ItemCommonOpt == nil {
+		return errf.New(errf.InvalidParameter, "item common option is required")
+	}
+	return r.ItemCommonOpt.Validate()
+}
+
+// BillItemSumResult sum bill item result
+type BillItemSumResult struct {
+	Count    uint64              `json:"count,omitempty"`
+	Cost     decimal.Decimal     `json:"cost"`
+	Currency enumor.CurrencyCode `json:"currency"`
+}

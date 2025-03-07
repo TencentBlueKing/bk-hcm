@@ -23,6 +23,8 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	tablebill "hcm/pkg/dal/table/bill"
+
+	"github.com/shopspring/decimal"
 )
 
 // ListAccountBillSummaryMainDetails list account bill config details.
@@ -116,4 +118,11 @@ func (p *ItemCommonOpt) Validate() error {
 		return errf.New(errf.InvalidParameter, "month must between 1 and 12")
 	}
 	return nil
+}
+
+// SumCostDetail bill item cost group by main
+type SumCostDetail struct {
+	Count    uint64              `json:"count,omitempty"`
+	Cost     decimal.Decimal     `json:"cost"`
+	Currency enumor.CurrencyCode `json:"currency"`
 }

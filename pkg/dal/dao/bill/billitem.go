@@ -48,6 +48,9 @@ type AccountBillItem interface {
 	List(kt *kit.Kit, commonOpt *typesbill.ItemCommonOpt, opt *types.ListOption) (
 		*typesbill.ListAccountBillItemDetails, error)
 
+	SumCost(kt *kit.Kit, commonOpt *typesbill.ItemCommonOpt, queryFilter *filter.Expression) (
+		*typesbill.SumCostDetail, error)
+
 	UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, commonOpt *typesbill.ItemCommonOpt, billID string,
 		updateData *tablebill.AccountBillItem) error
 
@@ -171,6 +174,49 @@ func (a AccountBillItemDao) List(kt *kit.Kit, commonOpt *typesbill.ItemCommonOpt
 		return nil, err
 	}
 	return &typesbill.ListAccountBillItemDetails{Details: details}, nil
+}
+
+// SumCost sum cost by given filter
+func (a AccountBillItemDao) SumCost(kt *kit.Kit, commonOpt *typesbill.ItemCommonOpt,
+	queryFilter *filter.Expression) (*typesbill.SumCostDetail, error) {
+
+	if commonOpt == nil {
+		return nil, errf.New(errf.InvalidParameter, "common options is nil")
+	}
+	if queryFilter == nil {
+		return nil, errf.New(errf.InvalidParameter, "sum cost of account bill item options is nil")
+	}
+	columnTypes := tablebill.AccountBillItemColumns.ColumnTypes()
+	err := queryFilter.Validate(filter.NewExprOption(filter.RuleFields(columnTypes)))
+	if err != nil {
+		return nil, err
+	}
+
+	whereExpr, whereValue, err := queryFilter.SQLWhereExpr(tools.DefaultSqlWhereOption)
+	if err != nil {
+		return nil, err
+	}
+
+	tableName := table.AccountBillItemTable
+	shardingOpt, err := convertShardingOpt(tableName, commonOpt)
+	if err != nil {
+		return nil, err
+	}
+
+	sql := fmt.Sprintf(`SELECT ANY_VALUE(currency) currency,COUNT(*) AS count, SUM(COST) AS cost  FROM %s %s`,
+		tableName, whereExpr)
+	details := make([]*typesbill.SumCostDetail, 0)
+	if err = a.Orm.TableSharding(shardingOpt).Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+		logs.Errorf("fail to select bill item cost sum, err: %v, table: %s, filter: %+v, rid: %s",
+			err, tableName, queryFilter, kt.Rid)
+		return nil, err
+	}
+	if len(details) == 0 {
+		logs.Errorf("no result found for bill item cost sum, table: %s, filter: %+v, rid: %s",
+			tableName, queryFilter, kt.Rid)
+		return nil, errors.New("no result found for sum cost")
+	}
+	return details[0], nil
 }
 
 // UpdateByIDWithTx update account bill item.
