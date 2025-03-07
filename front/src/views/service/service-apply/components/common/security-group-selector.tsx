@@ -9,7 +9,7 @@ import DraggableCard from './DraggableCard';
 
 import { useI18n } from 'vue-i18n';
 import { cloneDeep } from 'lodash';
-import { useResourceStore, useAccountStore } from '@/store';
+import { useResourceStore } from '@/store';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import { SECURITY_GROUP_RULE_TYPE, VendorEnum } from '@/common/constant';
@@ -34,7 +34,6 @@ export default defineComponent({
   setup(props, { slots, expose }) {
     const { t } = useI18n();
     const resourceStore = useResourceStore();
-    const accountStore = useAccountStore();
     const { isServicePage, whereAmI, getBusinessApiPath } = useWhereAmI();
     const isDialogShow = ref(false);
     const cache: any = { securityList: [], securityGroupRules: [] }; // 缓存：记录编辑前的状态
@@ -65,8 +64,8 @@ export default defineComponent({
     const searchVal = ref('');
     const otherBusinessIdSet = ref(new Set());
 
-    const isOtherBusiness = (bizId: number) => {
-      return accountStore.bizs !== bizId;
+    const isOtherBusiness = (useagBizIDs: Array<number[]>) => {
+      return useagBizIDs?.length > 1;
     };
     const getSecurityList = async (accountId: string, region: string, vpcId?: string) => {
       isSecurityListLoading.value = true;
@@ -140,10 +139,10 @@ export default defineComponent({
     });
 
     const computedSecurityGroupRules = computed(() => {
-      return securityGroupRules.value.map(({ id, name, data, bizId }) => ({
+      return securityGroupRules.value.map(({ id, name, data, usage_biz_ids }) => ({
         id,
         name,
-        bizId,
+        usage_biz_ids,
         data: data.filter(({ type }: any) => type === selectedSecurityType.value),
       }));
     });
@@ -160,9 +159,9 @@ export default defineComponent({
 
     const currentIndex = ref(-1);
     const handleSecurityGroupChange = (isSelected: boolean, item: any, index: number) => {
-      const { id, bk_biz_id } = item;
+      const { id, usage_biz_ids } = item;
       if (isSelected) {
-        if (isOtherBusiness(bk_biz_id)) otherBusinessIdSet.value.add(id);
+        if (isOtherBusiness(usage_biz_ids)) otherBusinessIdSet.value.add(id);
         currentIndex.value = index;
         getSecurityInfo(item);
       } else {
@@ -181,7 +180,12 @@ export default defineComponent({
           },
         );
         const arr = res.data?.details || [];
-        securityGroupRules.value.unshift({ id: getId(item), name: item.name, data: arr, bizId: item.bk_biz_id });
+        securityGroupRules.value.unshift({
+          id: getId(item),
+          name: item.name,
+          data: arr,
+          usage_biz_ids: item.usage_biz_ids,
+        });
       } finally {
         isRulesTableLoading.value = false;
       }
@@ -284,7 +288,7 @@ export default defineComponent({
                           label={'data.cloud_id'}
                           onChange={(isSelected: boolean) => handleSecurityGroupChange(isSelected, item, index)}>
                           <span class={'security-search-name'}>{item.name}</span>
-                          {isOtherBusiness(item.bk_biz_id) ? (
+                          {isOtherBusiness(item.usage_biz_ids) ? (
                             <bk-tag theme={'success'} radius={'11px'} type={'filled'} size={'small'}>
                               {t('跨业务')}
                             </bk-tag>
@@ -349,10 +353,10 @@ export default defineComponent({
                     class={'security-group-rules-list g-scroller'}>
                     {computedSecurityGroupRules.value.length ? (
                       <TransitionGroup type='transition' name='fade'>
-                        {computedSecurityGroupRules.value.map(({ name, data, bizId }, idx) => (
+                        {computedSecurityGroupRules.value.map(({ name, data, usage_biz_ids }, idx) => (
                           <DraggableCard key={idx} title={name} index={idx + 1} isAllExpand={isAllExpand.value}>
                             {{
-                              tag: isOtherBusiness(bizId)
+                              tag: isOtherBusiness(usage_biz_ids)
                                 ? () => (
                                     <bk-tag theme={'success'} radius={'11px'} type={'filled'} size={'small'}>
                                       {t('跨业务')}
