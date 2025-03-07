@@ -152,6 +152,13 @@ const handleInput = debounce(async (inputValue: string) => {
   activeSearchId.value = null;
 }, 500);
 
+const handleSelect = () => {
+  // 临时修复单选时，如果输入框中有值，失焦后不隐藏下拉列表的问题
+  if (!props.multiple) {
+    tagInputRef.value?.handleBlur();
+  }
+};
+
 const handleClickMe = () => {
   if (props.multiple) {
     if (!localModel.value.includes(userStore.username)) {
@@ -190,6 +197,7 @@ const handleClickMe = () => {
     :save-key="'username'"
     :search-key="['username', 'display_name']"
     @input="handleInput"
+    @select="handleSelect"
   >
     <template #suffix>
       <div class="suffix">

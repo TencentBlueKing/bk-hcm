@@ -1,6 +1,6 @@
 <!-- eslint-disable no-nested-ternary -->
 <script lang="ts" setup>
-import { ref, watch, h, reactive, PropType, inject, computed, withDirectives } from 'vue';
+import { ref, watch, h, reactive, PropType, inject, computed, withDirectives, ComputedRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { bkTooltips, Button, Message } from 'bkui-vue';
@@ -53,6 +53,8 @@ const { isShowSecurityRule, handleSecurityRule, SecurityRule } = UseSecurityRule
 
 const resourceStore = useResourceStore();
 const route = useRoute();
+
+const hasEditScopeInBusiness = inject<ComputedRef<boolean>>('hasEditScopeInBusiness');
 
 const activeType = ref('ingress');
 const deleteDialogShow = ref(false);
@@ -347,7 +349,9 @@ const inColumns: any = computed(() =>
                     text: true,
                     theme: 'primary',
                     disabled:
-                      !authVerifyData.value?.permissionAction[actionName.value] || route.query.vendor === 'huawei',
+                      !authVerifyData.value?.permissionAction[actionName.value] ||
+                      route.query.vendor === 'huawei' ||
+                      (!isResourcePage.value && !hasEditScopeInBusiness.value),
                     onClick() {
                       handleSecurityRuleDialog(data);
                     },
@@ -380,7 +384,9 @@ const inColumns: any = computed(() =>
                   class: 'ml10',
                   text: true,
                   theme: 'primary',
-                  disabled: !authVerifyData.value?.permissionAction[actionName.value],
+                  disabled:
+                    !authVerifyData.value?.permissionAction[actionName.value] ||
+                    (!isResourcePage.value && !hasEditScopeInBusiness.value),
                   onClick() {
                     deleteDialogShow.value = true;
                     deleteId.value = data.id;
@@ -662,7 +668,11 @@ const types = [
 
         <div @click="showAuthDialog(actionName)">
           <bk-button
-            :disabled="!authVerifyData?.permissionAction[actionName]"
+            :disabled="!authVerifyData?.permissionAction[actionName] || (!isResourcePage && !hasEditScopeInBusiness)"
+            v-bk-tooltips="{
+              content: t('该安全组不在当前业务管理，不允许编辑'),
+              disabled: isResourcePage || hasEditScopeInBusiness,
+            }"
             theme="primary"
             @click="handleSecurityRuleDialog({})"
           >
@@ -670,7 +680,16 @@ const types = [
           </bk-button>
         </div>
 
-        <bk-button icon="plus" v-if="showSort(route?.query?.vendor)" @click="handleSecurityRuleSort">
+        <bk-button
+          icon="plus"
+          :disabled="!isResourcePage && !hasEditScopeInBusiness"
+          v-bk-tooltips="{
+            content: t('该安全组不在当前业务管理，不允许编辑'),
+            disabled: isResourcePage || hasEditScopeInBusiness,
+          }"
+          v-if="showSort(route?.query?.vendor)"
+          @click="handleSecurityRuleSort"
+        >
           {{ t('规则排序') }}
         </bk-button>
       </section>

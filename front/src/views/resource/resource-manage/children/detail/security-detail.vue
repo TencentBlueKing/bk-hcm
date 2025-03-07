@@ -6,13 +6,14 @@ import SecurityRelate from '../components/security/security-relate/index.vue';
 import SecurityRule from '../components/security/security-rule.vue';
 import { useI18n } from 'vue-i18n';
 
-import { watch, ref, reactive } from 'vue';
+import { watch, ref, reactive, computed, provide } from 'vue';
 
 import { useRoute } from 'vue-router';
 import useDetail from '../../hooks/use-detail';
 import { QueryRuleOPEnum } from '@/typings';
 import { useResourceStore } from '@/store';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { SecurityGroupManageType } from '@/store/security-group';
 
 const { t } = useI18n();
 
@@ -29,7 +30,7 @@ const templateData = reactive({
   portList: [],
   portGroupList: [],
 });
-const { whereAmI } = useWhereAmI();
+const { whereAmI, getBizsId } = useWhereAmI();
 const resoureStore = useResourceStore();
 
 const { loading, detail, getDetail } = useDetail('security_groups', securityId.value as string);
@@ -59,6 +60,13 @@ watch(
     getRelatedSecurityGroups(val);
     getTemplateData(val);
   },
+);
+
+const hasEditScopeInBusiness = computed(
+  () =>
+    whereAmI.value === Senarios.business &&
+    detail.value?.mgmt_type === SecurityGroupManageType.BIZ &&
+    detail.value?.mgmt_biz_id === getBizsId(),
 );
 
 const getRelatedSecurityGroups = async (detail: { account_id: string; region: string }) => {
@@ -135,6 +143,8 @@ const getTemplateData = async (detail: { account_id: string }) => {
   templateData.portList = res[2]?.data?.details;
   templateData.portGroupList = res[3]?.data?.details;
 };
+
+provide('hasEditScopeInBusiness', hasEditScopeInBusiness);
 </script>
 
 <template>
