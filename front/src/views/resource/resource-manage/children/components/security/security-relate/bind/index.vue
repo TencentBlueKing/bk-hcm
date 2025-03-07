@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { nextTick, ref, useAttrs, useTemplateRef, watch } from 'vue';
+import { computed, nextTick, ref, useAttrs, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { useVerify } from '@/hooks';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import usePage from '@/hooks/use-page';
 import {
   type ISecurityGroupDetail,
@@ -19,15 +20,35 @@ import search from '../search/index.vue';
 import dataList from '../data-list/index.vue';
 import dialogFooter from '@/components/common-dialog/dialog-footer.vue';
 
-const props = defineProps<{ tabActive: SecurityGroupRelatedResourceName; detail: ISecurityGroupDetail }>();
+const props = defineProps<{
+  textButton?: boolean;
+  tabActive: SecurityGroupRelatedResourceName;
+  detail: ISecurityGroupDetail;
+}>();
 const emit = defineEmits(['confirm']);
 const attrs: any = useAttrs();
 
 const { t } = useI18n();
-const { getBusinessApiPath } = useWhereAmI();
+const { getBusinessApiPath, whereAmI } = useWhereAmI();
 const securityGroupStore = useSecurityGroupStore();
 
+const { handleAuth, authVerifyData } = useVerify();
+const authAction = computed(() => {
+  return whereAmI.value === Senarios.business ? 'biz_iaas_resource_operate' : 'iaas_resource_operate';
+});
+const buttonCls = computed(() => {
+  const buttonClsName = props.textButton ? 'hcm-no-permision-text-btn' : 'hcm-no-permision-btn';
+  return { [buttonClsName]: !authVerifyData.value?.permissionAction?.[authAction.value] };
+});
+
 const isShow = ref(false);
+const handleShow = () => {
+  if (!authVerifyData.value?.permissionAction?.[authAction.value]) {
+    handleAuth(authAction.value);
+    return;
+  }
+  isShow.value = true;
+};
 
 const list = ref<SecurityGroupRelResourceByBizItem[]>([]);
 const { pagination, getPageParams } = usePage();
@@ -66,6 +87,9 @@ watch(isShow, (val) => {
 
 const searchRef = useTemplateRef('bind-related-resource-search');
 const handleSearch = (searchValue: ISearchSelectValue) => {
+  // 搜索条件变更后，重置勾选
+  handleClear();
+
   if (!searchValue.length) {
     condition.value = { account_id: props.detail.account_id, region: props.detail.region, vendor: props.detail.vendor };
   }
@@ -108,7 +132,7 @@ const handleClosed = () => {
 </script>
 
 <template>
-  <bk-button theme="primary" @click="isShow = true" v-bind="attrs">
+  <bk-button theme="primary" :text="textButton" :class="buttonCls" @click="handleShow" v-bind="attrs">
     <slot name="icon"></slot>
     {{ t('新增绑定') }}
   </bk-button>
@@ -159,13 +183,9 @@ const handleClosed = () => {
               </span>
             </div>
             <div class="list-wrap">
-              <div class="list-item" v-for="(item, index) in selected" :key="item.cloud_id">
+              <div class="list-item" v-for="item in selected" :key="item.cloud_id">
                 <span>{{ getPrivateIPs(item) }}</span>
-                <i
-                  v-if="index === selected.length - 1"
-                  class="hcm-icon bkhcm-icon-close close-btn"
-                  @click="handleDelete(item.cloud_id)"
-                ></i>
+                <i class="hcm-icon bkhcm-icon-close close-btn" @click="handleDelete(item.cloud_id)"></i>
               </div>
             </div>
           </div>

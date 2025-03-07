@@ -42,6 +42,8 @@ import {
   SecurityGroupRuleCountAndRelatedResourcesResult,
 } from '@/store/security-group';
 import FlexTag from '@/components/flex-tag/index.vue';
+import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
+import { useBusinessGlobalStore } from '@/store/business-global';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -74,6 +76,7 @@ const resourceAccountStore = useResourceAccountStore();
 const { currentVendor, currentAccountVendor } = storeToRefs(resourceAccountStore);
 const resourceStore = useResourceStore();
 const accountStore = useAccountStore();
+const businessGlobalStore = useBusinessGlobalStore();
 
 const activeType = ref('group');
 const fetchUrl = ref<string>('security_groups/list');
@@ -114,80 +117,90 @@ const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, ge
   },
   fetchUrl,
   {
-    asyncRequestApiMethod: async (data: any[]) => {
+    asyncRequestApiMethod: async (datalist: any[]) => {
       // 安全组需要异步加载一些关联资源数
-      if (activeType.value !== 'group' || !data.length) return [];
+      if (activeType.value !== 'group' || !datalist.length) return [];
 
-      const sgIds = data.map((item) => item.id);
-      const unclaimedSgIds = data.filter((sg) => sg.mgmt_type === 'biz' && sg.bk_biz_id === -1).map((sg) => sg.id);
-
-      const requests: Promise<
-        SecurityGroupRuleCountAndRelatedResourcesResult | ISecurityGroupUsageBizMaintainerItem[]
-      >[] = [securityGroupStore.queryRuleCountAndRelatedResources(sgIds)];
-
-      if (whereAmI.value === Senarios.business && unclaimedSgIds.length) {
-        requests.push(securityGroupStore.queryUsageBizMaintainers(unclaimedSgIds));
-      }
-
-      const [res1, res2] = await Promise.allSettled(requests);
-
-      const { ruleCountMap, relatedResourcesList } =
-        (res1 as PromiseFulfilledResult<SecurityGroupRuleCountAndRelatedResourcesResult>).value ?? {};
-      const maintainers = (res2 as PromiseFulfilledResult<ISecurityGroupUsageBizMaintainerItem[]>)?.value ?? [];
-
-      return data.map((sg) => {
-        const { resources } = relatedResourcesList.find((relRes) => relRes.id === sg.id) ?? {};
-        const { managers, usage_biz_infos: usageBizInfos } =
-          maintainers.find((maintainer) => maintainer.id === sg.id) ?? {};
-
-        const relResCount = resources.reduce((acc, cur) => acc + cur.count, 0);
-        const relatedResources = resources.filter(({ count }) => count > 0);
-        const ruleCount = ruleCountMap[sg.id];
-
-        return {
-          ...sg,
-          rel_res_count: relResCount,
-          rel_res: relatedResources,
-          rule_count: ruleCount,
-          account_managers: managers,
-          usage_biz_infos: usageBizInfos,
-        };
-      });
+      return await fetchSecurityGroupExtraFields(datalist);
     },
   },
 );
 
-const selectSearchData = computed(() => {
-  let searchName = '安全组 ID';
-  switch (activeType.value) {
-    case 'group': {
-      searchName = '安全组 ID';
-      break;
-    }
-    case 'gcp': {
-      searchName = '防火墙 ID';
-      break;
-    }
-    case 'template': {
-      searchName = '模板 ID';
-      break;
-    }
+// 异步加载安全组字段：关联资源、规则数、负责人信息
+const fetchSecurityGroupExtraFields = async (datalist: ISecurityGroupOperateItem[]) => {
+  const sgIds = datalist.map((item) => item.id);
+  const unclaimedSgIds = datalist.filter((sg) => sg.mgmt_type === 'biz' && sg.bk_biz_id === -1).map((sg) => sg.id);
+
+  const requests: Promise<SecurityGroupRuleCountAndRelatedResourcesResult | ISecurityGroupUsageBizMaintainerItem[]>[] =
+    [securityGroupStore.queryRuleCountAndRelatedResources(sgIds)];
+
+  if (whereAmI.value === Senarios.business && unclaimedSgIds.length) {
+    requests.push(securityGroupStore.queryUsageBizMaintainers(unclaimedSgIds));
   }
-  return [
-    {
-      name: searchName,
-      id: 'cloud_id',
+
+  const [res1, res2] = await Promise.allSettled(requests);
+
+  const { ruleCountMap, relatedResourcesList } =
+    (res1 as PromiseFulfilledResult<SecurityGroupRuleCountAndRelatedResourcesResult>).value ?? {};
+  const maintainers = (res2 as PromiseFulfilledResult<ISecurityGroupUsageBizMaintainerItem[]>)?.value ?? [];
+
+  return datalist.map((sg) => {
+    const { resources } = relatedResourcesList.find((relRes) => relRes.id === sg.id) ?? {};
+    const { managers, usage_biz_infos: usageBizInfos } =
+      maintainers.find((maintainer) => maintainer.id === sg.id) ?? {};
+
+    const relResCount = resources.reduce((acc, cur) => acc + cur.count, 0);
+    const relatedResources = resources.filter(({ count }) => count > 0);
+    const ruleCount = ruleCountMap[sg.id];
+
+    return {
+      ...sg,
+      rel_res_count: relResCount,
+      rel_res: relatedResources,
+      rule_count: ruleCount,
+      account_managers: managers,
+      usage_biz_infos: usageBizInfos,
+    };
+  });
+};
+
+const selectSearchData = computed(() => {
+  const map: Record<string, { idName: string; searchData: ISearchItem[] }> = {
+    group: {
+      idName: t('安全组ID'),
+      searchData: [
+        { name: t('云地域'), id: 'region' },
+        {
+          name: t('使用业务'),
+          id: 'usage_biz_id',
+          children: businessGlobalStore.businessFullList.map(({ id, name }) => ({ id, name })),
+        },
+        {
+          name: t('管理类型'),
+          id: 'mgmt_type',
+          children: Object.entries(MGMT_TYPE_MAP).map(([id, name]) => ({ id, name })),
+          multiple: true,
+        },
+        {
+          name: t('管理业务'),
+          id: 'mgmt_biz_id',
+          children: businessGlobalStore.businessFullList.map(({ id, name }) => ({ id, name })),
+        },
+      ],
     },
-    ...searchData.value,
-    ...(activeType.value === 'template'
-      ? []
-      : [
-          {
-            name: '云地域',
-            id: 'region',
-          },
-        ]),
-  ];
+    gcp: {
+      idName: t('防火墙ID'),
+      searchData: [{ name: t('云地域'), id: 'region' }],
+    },
+    template: {
+      idName: t('模板ID'),
+      searchData: [],
+    },
+  };
+
+  const baseSearchData = [{ name: map[activeType.value].idName, id: 'cloud_id' }, ...searchData.value];
+
+  return [...baseSearchData, ...map[activeType.value].searchData];
 });
 
 // eslint-disable-next-line max-len
@@ -354,7 +367,6 @@ const groupColumns = [
   {
     label: t('使用业务'),
     field: 'usage_biz_ids',
-    filter: true,
     isDefaultShow: true,
     width: 100,
     showOverflowTooltip: false,
@@ -367,9 +379,6 @@ const groupColumns = [
   {
     label: t('管理类型'),
     field: 'mgmt_type',
-    filter: {
-      list: Object.entries(MGMT_TYPE_MAP).map(([value, text]) => ({ value, text })),
-    },
     isDefaultShow: true,
     width: 100,
     render: ({ cell }: any) => {
@@ -382,7 +391,6 @@ const groupColumns = [
   {
     label: t('管理业务'),
     field: 'mgmt_biz_id',
-    filter: true,
     isDefaultShow: true,
     width: 100,
     render: ({ cell, data }: any) => {

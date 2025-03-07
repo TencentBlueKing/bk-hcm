@@ -113,7 +113,7 @@ defineExpose({ isExpand, reload });
       <!-- 只允许对本业务的实例进行绑定和解绑 -->
       <template v-if="isCurrentBusiness">
         <bk-tag v-if="isCurrentBusiness" class="tag" theme="success" type="filled">{{ t('当前业务') }}</bk-tag>
-        <bind :tab-active="tabActive" :detail="detail" text @confirm="handleBind">
+        <bind :tab-active="tabActive" :detail="detail" text-button @confirm="handleBind">
           <template #icon>
             <i class="hcm-icon bkhcm-icon-plus-circle-shape mr2"></i>
           </template>

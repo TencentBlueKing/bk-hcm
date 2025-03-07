@@ -100,6 +100,9 @@ const handleBatchUnbind = async (ids: string[]) => {
 
 const searchRef = useTemplateRef('relate-resource-search');
 const handleSearch = (searchValue: ISearchSelectValue) => {
+  // 搜索条件变更后，重置勾选
+  handleClear();
+
   condition.value = getSimpleConditionBySearchSelect(searchValue, [
     { field: 'region', formatter: (val: string) => regionStore.getRegionNameEN(val) },
   ]);
@@ -109,6 +112,11 @@ const handleSearch = (searchValue: ISearchSelectValue) => {
   } else {
     pagination.current = 1;
   }
+};
+
+const dataListRef = useTemplateRef('data-list');
+const handleClear = () => {
+  dataListRef.value.handleClear();
 };
 
 watch(tabActive, () => {
@@ -170,6 +178,7 @@ watch(
     <div class="rel-res-display-wrap">
       <data-list
         v-bkloading="{ loading }"
+        ref="data-list"
         :resource-name="tabActive"
         operation="base"
         :list="list"

@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useVerify } from '@/hooks';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import {
   useSecurityGroupStore,
   type SecurityGroupRelResourceByBizItem,
@@ -17,12 +19,26 @@ const props = defineProps<{ row: SecurityGroupRelResourceByBizItem; tabActive: S
 const emit = defineEmits(['confirm']);
 
 const { t } = useI18n();
+const { whereAmI } = useWhereAmI();
 const securityGroupStore = useSecurityGroupStore();
+
+// 预鉴权
+const { handleAuth, authVerifyData } = useVerify();
+const authAction = computed(() => {
+  return whereAmI.value === Senarios.business ? 'biz_iaas_resource_operate' : 'iaas_resource_operate';
+});
 
 const isShow = ref(false);
 const info = ref<SecurityGroupRelResourceByBizItem>(props.row);
 const resName = RELATED_RES_NAME_MAP[props.tabActive];
 
+const handleShow = () => {
+  if (!authVerifyData.value?.permissionAction?.[authAction.value]) {
+    handleAuth(authAction.value);
+    return;
+  }
+  isShow.value = true;
+};
 const handleClosed = () => {
   isShow.value = false;
 };
@@ -35,7 +51,12 @@ watch(isShow, async (val) => {
 </script>
 
 <template>
-  <bk-button theme="primary" text @click="isShow = true">
+  <bk-button
+    theme="primary"
+    text
+    :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.[authAction] }"
+    @click="handleShow"
+  >
     {{ t('解绑') }}
   </bk-button>
   <bk-dialog class="unbind-dialog" v-model:isShow="isShow" dialog-type="show" @closed="handleClosed">
