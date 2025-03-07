@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/hooks/handler"
@@ -51,16 +52,8 @@ func (svc *securityGroupSvc) batchAssociateCvms(cts *rest.Contexts,
 		return nil, err
 	}
 
-	// create operation audit.
-	audit := protoaudit.CloudResourceOperationInfo{
-		ResType:           enumor.SecurityGroupAuditResType,
-		ResID:             req.SecurityGroupID,
-		Action:            protoaudit.Associate,
-		AssociatedResType: enumor.CvmAuditResType,
-		AssociatedResID:   strings.Join(req.CvmIDs, ","),
-	}
-	if err := svc.audit.ResOperationAudit(cts.Kit, audit); err != nil {
-		logs.Errorf("create operation audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+	if err = svc.createBatchAssociateCvmAudit(cts.Kit, req.SecurityGroupID, req.CvmIDs); err != nil {
+		logs.Errorf("create associate cvm audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -71,6 +64,26 @@ func (svc *securityGroupSvc) batchAssociateCvms(cts *rest.Contexts,
 		return nil, errf.Newf(errf.Unknown, "vendor: %s not support for batch associate cvm", sgInfo.Vendor)
 	}
 
+}
+
+func (svc *securityGroupSvc) createBatchAssociateCvmAudit(kt *kit.Kit, sgID string, cvmIDs []string) error {
+	// create operation audit.
+	audits := make([]protoaudit.CloudResourceOperationInfo, 0, len(cvmIDs))
+	for _, cvmID := range cvmIDs {
+		audits = append(audits, protoaudit.CloudResourceOperationInfo{
+			ResType:           enumor.SecurityGroupAuditResType,
+			ResID:             sgID,
+			Action:            protoaudit.Associate,
+			AssociatedResType: enumor.CvmAuditResType,
+			AssociatedResID:   cvmID,
+		})
+	}
+
+	if err := svc.audit.BatchResOperationAudit(kt, audits); err != nil {
+		logs.Errorf("create operation audit failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+	return nil
 }
 
 func (svc *securityGroupSvc) batchAssociateTCloudCvms(cts *rest.Contexts,
