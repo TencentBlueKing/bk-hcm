@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { computed, h, reactive, ref, watchEffect } from 'vue';
+import { computed, h, reactive } from 'vue';
 import { Message } from 'bkui-vue';
 import { ModelPropertyColumn } from '@/model/typings';
 import { useSecurityGroupStore, type ISecurityGroupItem } from '@/store/security-group';
-import { useAccountStore } from '@/store/account';
-import { useBusinessGlobalStore, type IBusinessItem } from '@/store/business-global';
 import HcmFormUser from '@/components/form/user.vue';
 import HcmFormBusiness from '@/components/form/business.vue';
+import { useAccountBusiness } from './use-account-business';
 
 const props = defineProps<{ selections: ISecurityGroupItem[] }>();
 
@@ -15,8 +14,6 @@ const emit = defineEmits<{
 }>();
 
 const securityGroupStore = useSecurityGroupStore();
-const accountStore = useAccountStore();
-const businessGlobalStore = useBusinessGlobalStore();
 
 const model = defineModel<boolean>();
 
@@ -32,27 +29,11 @@ const updateDefaultValue = () => ({
   mgmt_biz_id: undefined as number,
 });
 
-const list = ref([]);
-const accountBizIds = ref<number[]>([]);
-const accountBizList = ref<IBusinessItem[]>([]);
-const isAccountDetailLoading = ref(false);
+const list = computed(() => props.selections.slice());
 
-watchEffect(async () => {
-  const { account_id: accountId } = props.selections[0];
+const accountId = computed(() => list.value?.[0].account_id);
 
-  list.value = props.selections.slice();
-
-  isAccountDetailLoading.value = true;
-
-  // 账号业务列表等于-1时，管理业务使用全部业务，否则限定为账号业务列表
-  const accountDetailRes = await accountStore.getAccountDetail(accountId);
-  accountBizIds.value = accountDetailRes?.data?.bk_biz_ids;
-  if (accountBizIds.value?.[0] !== -1) {
-    accountBizList.value = businessGlobalStore.businessFullList.filter((item) => accountBizIds.value.includes(item.id));
-  }
-
-  isAccountDetailLoading.value = false;
-});
+const { accountBizList, isAccountDetailLoading } = useAccountBusiness(accountId.value);
 
 const isUpdateValueValid = computed(() => {
   return list.value.every((item) => {
@@ -137,7 +118,7 @@ const columns: ModelPropertyColumn[] = [
     render: ({ row }: { row?: ISecurityGroupItem }) =>
       h(HcmFormBusiness, {
         multiple: false,
-        ...{ data: accountBizIds.value?.[0] === -1 ? null : accountBizList.value },
+        ...{ data: accountBizList.value },
         modelValue: updateValues[row.id]?.mgmt_biz_id,
         'onUpdate:modelValue': (val: number | number[]) => {
           if (!updateValues[row.id]) {

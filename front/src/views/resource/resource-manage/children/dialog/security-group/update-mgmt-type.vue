@@ -2,9 +2,9 @@
 import { computed, reactive, ref } from 'vue';
 import { Message } from 'bkui-vue';
 import { useSecurityGroupStore, type ISecurityGroupItem, SecurityGroupManageType } from '@/store/security-group';
-
 import HcmFormUser from '@/components/form/user.vue';
 import HcmFormBusiness from '@/components/form/business.vue';
+import { useAccountBusiness } from './use-account-business';
 
 const props = defineProps<{ detail: ISecurityGroupItem }>();
 
@@ -13,6 +13,8 @@ const emit = defineEmits<{
 }>();
 
 const securityGroupStore = useSecurityGroupStore();
+
+const { accountBizList } = useAccountBusiness(props.detail.account_id);
 
 const model = defineModel<boolean>();
 
@@ -65,7 +67,7 @@ const handleDialogConfirm = async () => {
       </bk-form-item>
       <template v-if="formData.mgmt_type === SecurityGroupManageType.BIZ">
         <bk-form-item label="管理业务" property="mgmt_biz_id">
-          <hcm-form-business v-model="formData.mgmt_biz_id" />
+          <hcm-form-business :data="accountBizList" v-model="formData.mgmt_biz_id" />
         </bk-form-item>
         <bk-form-item label="主负责人" property="manager">
           <hcm-form-user :multiple="false" v-model="formData.manager" />

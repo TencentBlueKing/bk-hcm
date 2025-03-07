@@ -2,7 +2,7 @@
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 import { useResourceStore } from '@/store';
 import { useI18n } from 'vue-i18n';
-import { inject, PropType, h, withDirectives, reactive, computed } from 'vue';
+import { inject, PropType, h, withDirectives, reactive, computed, ComputedRef } from 'vue';
 import { bkTooltips, Message, Tag, Button } from 'bkui-vue';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
@@ -37,7 +37,8 @@ const props = defineProps({
 
 const { t } = useI18n();
 
-const isResourcePage = inject('isResourcePage');
+const isResourcePage = inject<ComputedRef<boolean>>('isResourcePage');
+const hasEditScopeInBusiness = inject<ComputedRef<boolean>>('hasEditScopeInBusiness');
 
 const resourceStore = useResourceStore();
 const { getRegionName } = useRegionsStore();
@@ -173,6 +174,17 @@ const businessMgmtAttrFields: FieldList = [
     copy: false,
   },
   {
+    name: '管理类型',
+    prop: 'mgmt_type',
+    render: (val: string) => {
+      let theme: '' | 'info' | 'warning';
+      theme = val === 'biz' ? 'info' : '';
+      if (!val) theme = 'warning';
+      return h('div', [h(Tag, { theme, radius: '11px' }, MGMT_TYPE_MAP[val])]);
+    },
+    copy: false,
+  },
+  {
     name: t('管理业务'),
     prop: 'mgmt_biz_id',
     render: (val: number) => h(BusinessValue, { value: val }),
@@ -192,7 +204,9 @@ const settingInfo: FieldList = [
   {
     name: t('资源名称'),
     prop: 'name',
-    edit: props.vendor !== 'azure' && props.vendor !== 'aws',
+    edit: !isResourcePage.value
+      ? hasEditScopeInBusiness.value && !['azure', 'aws'].includes(props.vendor)
+      : !['azure', 'aws'].includes(props.vendor),
   },
   {
     name: t('云资源ID'),
@@ -225,7 +239,7 @@ const settingInfo: FieldList = [
   {
     name: t('备注'),
     prop: 'memo',
-    edit: props.vendor !== 'aws',
+    edit: !isResourcePage.value ? hasEditScopeInBusiness.value && props.vendor !== 'aws' : props.vendor !== 'aws',
   },
 ];
 
@@ -347,7 +361,9 @@ const handleChange = async (val: any) => {
           size="small"
           theme="primary"
           style="font-weight: 400; margin-left: 12px"
+          :disabled="!hasEditScopeInBusiness"
           :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.[authAction] }"
+          v-bk-tooltips="{ content: t('该安全组不在当前业务管理，不允许编辑'), disabled: hasEditScopeInBusiness }"
           @click="handleUpdateMgmtAttrSingle('usage_biz_ids')"
         >
           <i class="icon hcm-icon bkhcm-icon-bianji edit-icon" />

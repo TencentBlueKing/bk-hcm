@@ -10,6 +10,7 @@ import {
   type SecurityGroupMgmtAttrSingleType,
 } from '@/store/security-group';
 import UsageBizFormItem from './usage-biz-form-item.vue';
+import { useAccountBusiness } from './use-account-business';
 
 const props = defineProps<{
   detail: ISecurityGroupItem;
@@ -23,10 +24,12 @@ const emit = defineEmits<{
 const whereAmI = useWhereAmI();
 const securityGroupStore = useSecurityGroupStore();
 
+const { accountBizList } = useAccountBusiness(props.detail.account_id);
+
 const model = defineModel<boolean>();
 
 const formData = reactive<Record<SecurityGroupMgmtAttrSingleType, any>>({
-  mgmt_biz_id: props.detail.mgmt_biz_id,
+  mgmt_biz_id: props.detail.mgmt_biz_id === -1 ? undefined : props.detail.mgmt_biz_id,
   manager: props.detail.manager,
   bak_manager: props.detail.bak_manager,
   usage_biz_ids: props.detail.usage_biz_ids,
@@ -76,7 +79,7 @@ const handleDialogConfirm = async () => {
   >
     <bk-form form-type="vertical" :model="formData">
       <bk-form-item label="管理业务" property="mgmt_biz_id" v-if="field === 'mgmt_biz_id'">
-        <hcm-form-business v-model="formData.mgmt_biz_id" />
+        <hcm-form-business :data="accountBizList" v-model="formData.mgmt_biz_id" />
       </bk-form-item>
       <bk-form-item label="主负责人" property="manager" v-if="field === 'manager'">
         <hcm-form-user :multiple="false" v-model="formData.manager" />
@@ -84,7 +87,12 @@ const handleDialogConfirm = async () => {
       <bk-form-item label="备份负责人" property="bak_manager" v-if="field === 'bak_manager'">
         <hcm-form-user :multiple="false" v-model="formData.bak_manager" />
       </bk-form-item>
-      <usage-biz-form-item v-model="formData.usage_biz_ids" :detail="detail" v-if="isEditUsageBiz" />
+      <usage-biz-form-item
+        :detail="detail"
+        :account-biz-list="accountBizList"
+        v-model="formData.usage_biz_ids"
+        v-if="isEditUsageBiz"
+      />
     </bk-form>
     <template #footer>
       <div class="dialog-custom-footer">

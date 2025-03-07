@@ -6,6 +6,7 @@ import { useSecurityGroupStore, type ISecurityGroupItem } from '@/store/security
 
 const props = defineProps<{
   detail: ISecurityGroupItem;
+  accountBizList: IBusinessItem[];
 }>();
 
 const model = defineModel<number[]>();
@@ -50,7 +51,13 @@ watch(model, (val) => {
 
 <template>
   <bk-form-item label="使用业务">
-    <hcm-form-business multiple :multiple-mode="'default'" v-model="model" :option-disabled="businessOptionDisabled" />
+    <hcm-form-business
+      multiple
+      :multiple-mode="'default'"
+      :data="accountBizList"
+      v-model="model"
+      :option-disabled="businessOptionDisabled"
+    />
   </bk-form-item>
   <div class="data-diff">
     <dl class="biz-list before">
