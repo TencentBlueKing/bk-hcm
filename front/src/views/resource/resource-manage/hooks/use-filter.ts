@@ -132,7 +132,7 @@ const useFilter = (props: PropsType) => {
       const getQueryOperator = (field: string, value: unknown): QueryRuleOPEnum => {
         if (field === 'cloud_vpc_ids') return QueryRuleOPEnum.JSON_CONTAINS;
         if (Array.isArray(value)) return QueryRuleOPEnum.IN;
-        if (typeof value === 'number' || field === 'vendor') return QueryRuleOPEnum.EQ;
+        if (typeof value === 'number' || ['vendor', 'mgmt_type'].includes(field)) return QueryRuleOPEnum.EQ;
         return QueryRuleOPEnum.CS;
       };
 
