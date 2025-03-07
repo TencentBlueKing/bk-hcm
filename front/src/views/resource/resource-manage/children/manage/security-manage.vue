@@ -344,6 +344,7 @@ const groupColumns = [
     label: t('规则个数'),
     field: 'rule_count',
     width: 90,
+    isDefaultShow: true,
     render: ({ cell }: any) => {
       if (securityGroupStore.isQueryRuleCountAndRelatedResourcesLoading) {
         return h(Loading, { loading: true, theme: 'primary', mode: 'spin', size: 'mini' });
@@ -355,6 +356,7 @@ const groupColumns = [
     label: t('关联实例数'),
     field: 'rel_res_count',
     width: 120,
+    isDefaultShow: true,
     render: ({ cell }: any) => {
       if (securityGroupStore.isQueryRuleCountAndRelatedResourcesLoading) {
         return h(Loading, { loading: true, theme: 'primary', mode: 'spin', size: 'mini' });
@@ -367,6 +369,7 @@ const groupColumns = [
     field: 'rel_res',
     filter: true,
     width: 200,
+    isDefaultShow: true,
     render: ({ cell }: { cell: { res_name: string; count: number }[] }) => {
       if (securityGroupStore.isQueryRuleCountAndRelatedResourcesLoading) {
         return h(Loading, { loading: true, theme: 'primary', mode: 'spin', size: 'mini' });
