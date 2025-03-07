@@ -5,7 +5,7 @@ import type {
   FilterType,
 } from '@/typings/resource';
 import { GcpTypeEnum } from '@/typings';
-import { Button, InfoBox, Message, Tag, bkTooltips } from 'bkui-vue';
+import { Button, InfoBox, Loading, Message, Tag, bkTooltips } from 'bkui-vue';
 import { useResourceStore, useAccountStore } from '@/store';
 import { ref, h, PropType, watch, reactive, defineExpose, computed, withDirectives, nextTick } from 'vue';
 
@@ -344,11 +344,23 @@ const groupColumns = [
     label: t('规则个数'),
     field: 'rule_count',
     width: 90,
+    render: ({ cell }: any) => {
+      if (securityGroupStore.isQueryRuleCountAndRelatedResourcesLoading) {
+        return h(Loading, { loading: true, theme: 'primary', mode: 'spin', size: 'mini' });
+      }
+      return cell;
+    },
   },
   {
     label: t('关联实例数'),
     field: 'rel_res_count',
     width: 120,
+    render: ({ cell }: any) => {
+      if (securityGroupStore.isQueryRuleCountAndRelatedResourcesLoading) {
+        return h(Loading, { loading: true, theme: 'primary', mode: 'spin', size: 'mini' });
+      }
+      return cell;
+    },
   },
   {
     label: t('关联的资源类型'),
@@ -356,6 +368,9 @@ const groupColumns = [
     filter: true,
     width: 200,
     render: ({ cell }: { cell: { res_name: string; count: number }[] }) => {
+      if (securityGroupStore.isQueryRuleCountAndRelatedResourcesLoading) {
+        return h(Loading, { loading: true, theme: 'primary', mode: 'spin', size: 'mini' });
+      }
       if (cell && cell.length > 0) {
         return cell.map(({ res_name, count }) =>
           withDirectives(h(Tag, { class: 'mr4' }, res_name), [[bkTooltips, { content: String(count) }]]),
