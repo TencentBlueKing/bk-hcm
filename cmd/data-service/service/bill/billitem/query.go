@@ -96,6 +96,24 @@ func (svc *service) ListBillItem(cts *rest.Contexts) (interface{}, error) {
 	return &dataproto.BillItemBaseListResult{Details: details, Count: data.Count}, nil
 }
 
+// SumBillItemCost sum bill item with given filter
+func (svc *service) SumBillItemCost(cts *rest.Contexts) (interface{}, error) {
+	req := new(dataproto.BillItemSumReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	data, err := svc.dao.AccountBillItem().SumCost(cts.Kit, req.ItemCommonOpt, req.Filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return dataproto.BillItemSumResult{Count: data.Count, Cost: data.Cost, Currency: data.Currency}, nil
+}
+
 // ListBillItemExt ...
 func (svc *service) ListBillItemExt(cts *rest.Contexts) (any, error) {
 

@@ -37,6 +37,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 
 	"github.com/shopspring/decimal"
@@ -336,6 +337,9 @@ func (act MonthTaskAction) runMainAccountSummary(kt *kit.Kit, codes []string, ta
 	itemList []billcore.MonthTaskSummaryDetailItem) error {
 
 	commonOpt := &bill.ItemCommonOpt{Vendor: task.Vendor, Year: task.BillYear, Month: task.BillMonth}
+	totalCost := decimal.Zero
+	var totalCount uint64 = 0
+	currency := enumor.CurrencyUSD
 	for i, item := range itemList {
 		if item.IsFinished {
 			continue
@@ -359,7 +363,6 @@ func (act MonthTaskAction) runMainAccountSummary(kt *kit.Kit, codes []string, ta
 			logs.Warnf("count bill item for %s %+v failed, err: %v, rid: %s", task.String(), item, err, kt.Rid)
 			return fmt.Errorf("count bill item for %+v %+v failed, err: %v", task.String(), item, err)
 		}
-		currency := enumor.CurrencyUSD
 		cost := decimal.NewFromFloat(0)
 		count := result.Count
 		limit := uint64(500)
@@ -387,15 +390,19 @@ func (act MonthTaskAction) runMainAccountSummary(kt *kit.Kit, codes []string, ta
 		itemList[i].Currency = currency
 		itemList[i].Cost = cost
 		itemList[i].Count = count
-
-		req := &bill.BillMonthTaskUpdateReq{
-			ID:            task.ID,
-			SummaryDetail: itemList,
-		}
-		if err := actcli.GetDataService().Global.Bill.UpdateBillMonthTask(kt, req); err != nil {
-			logs.Errorf("failed to update month pull task: %s, err: %v, rid: %s", task.String(), err, kt.Rid)
-			return err
-		}
+		totalCost = totalCost.Add(cost)
+		totalCount += count
+	}
+	req := &bill.BillMonthTaskUpdateReq{
+		ID:            task.ID,
+		SummaryDetail: itemList,
+		Cost:          cvt.ValToPtr(totalCost),
+		Count:         totalCount,
+		Currency:      currency,
+	}
+	if err := actcli.GetDataService().Global.Bill.UpdateBillMonthTask(kt, req); err != nil {
+		logs.Errorf("failed to update month pull task: %s, err: %v, rid: %s", task.String(), err, kt.Rid)
+		return err
 	}
 	return nil
 }

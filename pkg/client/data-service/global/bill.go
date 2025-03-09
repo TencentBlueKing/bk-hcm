@@ -476,6 +476,7 @@ func (b *BillClient) ListExchangeRate(kt *kit.Kit, req *core.ListReq) (*billprot
 // BatchCreateBillSyncRecord create bill adjustment item
 func (b *BillClient) BatchCreateBillSyncRecord(kt *kit.Kit, req *billproto.BatchBillSyncRecordCreateReq) (
 	*core.BatchCreateResult, error) {
+
 	return common.Request[billproto.BatchBillSyncRecordCreateReq, core.BatchCreateResult](
 		b.client, rest.POST, kt, req, "/bills/sync_records/create")
 }
@@ -495,6 +496,15 @@ func (b *BillClient) UpdateBillSyncRecord(kt *kit.Kit, req *billproto.BillSyncRe
 // ListBillSyncRecord list bill adjustment item
 func (b *BillClient) ListBillSyncRecord(kt *kit.Kit, req *billproto.BillSyncRecordListReq) (
 	*billproto.BillSyncRecordListResult, error) {
+
 	return common.Request[billproto.BillSyncRecordListReq, billproto.BillSyncRecordListResult](
 		b.client, rest.POST, kt, req, "/bills/sync_records/list")
+}
+
+// SumBillItemCost sum bill item
+func (b *BillClient) SumBillItemCost(kt *kit.Kit, req *billproto.BillItemSumReq) (
+	*billproto.BillItemSumResult, error) {
+
+	return common.Request[billproto.BillItemSumReq, billproto.BillItemSumResult](b.client, rest.POST, kt, req,
+		"/bills/items/sum")
 }
