@@ -32,7 +32,9 @@ const props = withDefaults(defineProps<IFlexTagProps>(), {
   fontSize: '12px',
   gap: '4px',
   height: '22px',
-  popoverOptions: () => ({}),
+  popoverOptions: () => ({
+    appendTo: () => document.body,
+  }),
   popoverMaxHeight: '280px',
   forceShowOne: false,
 });

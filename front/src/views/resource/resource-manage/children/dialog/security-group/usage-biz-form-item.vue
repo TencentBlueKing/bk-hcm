@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, watch, toRaw, ref, watchEffect } from 'vue';
 import { ArrowsRight } from 'bkui-vue/lib/icon';
+import isEqual from 'lodash/isEqual';
 import { type IBusinessItem } from '@/store/business-global';
 import { useSecurityGroupStore, type ISecurityGroupItem } from '@/store/security-group';
 
@@ -35,7 +36,11 @@ const businessOptionDisabled = computed(() => {
 });
 
 const afterList = ref([]);
-watch(model, (val) => {
+const hasChanged = ref(false);
+
+watch(model, (val, oldVal) => {
+  hasChanged.value = !isEqual(val, oldVal);
+
   afterList.value = [];
 
   // 删除的
@@ -59,7 +64,7 @@ watch(model, (val) => {
       :option-disabled="businessOptionDisabled"
     />
   </bk-form-item>
-  <div class="data-diff">
+  <div class="data-diff" v-show="hasChanged">
     <dl class="biz-list before">
       <dt class="list-title">变更前</dt>
       <dd class="list-item" v-for="bizId in beforeModel" :key="bizId">
