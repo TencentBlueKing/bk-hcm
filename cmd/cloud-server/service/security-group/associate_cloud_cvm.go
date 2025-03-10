@@ -20,8 +20,6 @@
 package securitygroup
 
 import (
-	"strings"
-
 	protoaudit "hcm/pkg/api/data-service/audit"
 	hcproto "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/enumor"
@@ -142,14 +140,18 @@ func (svc *securityGroupSvc) batchDisassociateCvm(cts *rest.Contexts, validHandl
 func (svc *securityGroupSvc) createTCloudDisassociateCvmAudit(cts *rest.Contexts,
 	req *hcproto.SecurityGroupBatchAssociateCvmReq) error {
 
-	audit := protoaudit.CloudResourceOperationInfo{
-		ResType:           enumor.SecurityGroupRuleAuditResType,
-		ResID:             req.SecurityGroupID,
-		Action:            protoaudit.Disassociate,
-		AssociatedResType: enumor.CvmAuditResType,
-		AssociatedResID:   strings.Join(req.CvmIDs, ","),
+	audits := make([]protoaudit.CloudResourceOperationInfo, 0, len(req.CvmIDs))
+	for _, cvmID := range req.CvmIDs {
+		audits = append(audits, protoaudit.CloudResourceOperationInfo{
+			ResType:           enumor.SecurityGroupRuleAuditResType,
+			ResID:             req.SecurityGroupID,
+			Action:            protoaudit.Disassociate,
+			AssociatedResType: enumor.CvmAuditResType,
+			AssociatedResID:   cvmID,
+		})
 	}
-	if err := svc.audit.ResOperationAudit(cts.Kit, audit); err != nil {
+
+	if err := svc.audit.BatchResOperationAudit(cts.Kit, audits); err != nil {
 		logs.Errorf("create operation audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return err
 	}
