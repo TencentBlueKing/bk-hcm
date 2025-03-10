@@ -52,6 +52,8 @@ type Interface interface {
 	ResOperationAudit(kt *kit.Kit, info protoaudit.CloudResourceOperationInfo) error
 	// ResRecycleAudit 资源回收/恢复审计
 	ResRecycleAudit(kt *kit.Kit, req *protoaudit.CloudResourceRecycleAuditReq) error
+	// BatchResOperationAudit 资源操作审计，如绑定、解绑、挂载、卸载等。
+	BatchResOperationAudit(kt *kit.Kit, infos []protoaudit.CloudResourceOperationInfo) error
 }
 
 var _ Interface = new(audit)
@@ -256,6 +258,24 @@ func (a audit) ResOperationAudit(kt *kit.Kit, info protoaudit.CloudResourceOpera
 		Operations: []protoaudit.CloudResourceOperationInfo{
 			info,
 		},
+	}
+
+	if err := a.dataCli.Global.Audit.CloudResourceOperationAudit(kt.Ctx, kt.Header(), req); err != nil {
+		logs.Errorf("request dataservice CloudResourceOperationAudit failed, err: %v, req: %v, rid: %s", err,
+			req, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+// BatchResOperationAudit batch resource operation audit.
+func (a audit) BatchResOperationAudit(kt *kit.Kit, infos []protoaudit.CloudResourceOperationInfo) error {
+	if len(infos) == 0 {
+		return nil
+	}
+	req := &protoaudit.CloudResourceOperationAuditReq{
+		Operations: infos,
 	}
 
 	if err := a.dataCli.Global.Audit.CloudResourceOperationAudit(kt.Ctx, kt.Header(), req); err != nil {
