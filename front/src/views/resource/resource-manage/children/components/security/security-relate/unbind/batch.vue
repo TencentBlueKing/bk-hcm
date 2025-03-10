@@ -20,6 +20,7 @@ import dialogFooter from '@/components/common-dialog/dialog-footer.vue';
 const props = withDefaults(
   defineProps<{
     selections: SecurityGroupRelResourceByBizItem[];
+    textButton?: boolean;
     disabled?: boolean;
     tabActive: SecurityGroupRelatedResourceName;
     handleConfirm: (ids: string[]) => Promise<void>;
@@ -36,6 +37,10 @@ const securityGroupStore = useSecurityGroupStore();
 const { handleAuth, authVerifyData } = useVerify();
 const authAction = computed(() => {
   return whereAmI.value === Senarios.business ? 'biz_iaas_resource_operate' : 'iaas_resource_operate';
+});
+const buttonCls = computed(() => {
+  const buttonClsName = props.textButton ? 'hcm-no-permision-text-btn' : 'hcm-no-permision-btn';
+  return { [buttonClsName]: !authVerifyData.value?.permissionAction?.[authAction.value] };
 });
 
 const isShow = ref(false);
@@ -89,15 +94,10 @@ const handleConfirm = async () => {
 </script>
 
 <template>
-  <bk-button
-    :class="{ 'hcm-no-permision-btn': !disabled && !authVerifyData?.permissionAction?.[authAction] }"
-    :disabled="disabled"
-    @click="handleShow"
-    v-bind="attrs"
-  >
+  <bk-button :text="textButton" :class="buttonCls" :disabled="disabled" @click="handleShow" v-bind="attrs">
     {{ t('批量解绑') }}
   </bk-button>
-  <bk-dialog v-model:isShow="isShow" :title="t('批量解绑')" :width="1280" @closed="handleClosed">
+  <bk-dialog v-model:is-show="isShow" :title="t('批量解绑')" :width="1280" @closed="handleClosed">
     <div class="tips">
       {{ t('已选择') }}
       <span class="number primary">{{ selections.length }}</span>

@@ -84,10 +84,12 @@ const getList = async (sort = 'created_at', order = 'DESC') => {
 
 const selected = ref<SecurityGroupRelResourceByBizItem[]>([]);
 
+const bindRef = useTemplateRef('bind-comp');
 const handleBind = async (ids: string[]) => {
   // TODO：当前只支持CVM
   await securityGroupStore.batchAssociateCvms({ security_group_id: props.detail.id, cvm_ids: ids });
   Message({ theme: 'success', message: t('绑定成功') });
+  bindRef.value.handleClosed();
   getList();
 };
 
@@ -96,6 +98,12 @@ const handleBatchUnbind = async (ids: string[]) => {
   await securityGroupStore.batchDisassociateCvms({ security_group_id: props.detail.id, cvm_ids: ids });
   Message({ theme: 'success', message: t('解绑成功') });
   getList();
+};
+// 单个删除的组件ref需要通过map储存
+const singleUnbindRefMap = ref(new Map<string, InstanceType<typeof singleUnbind>>(null));
+const handleSingleUnbind = async (id: string) => {
+  await handleBatchUnbind([id]);
+  singleUnbindRefMap.value.get(id)?.handleClosed();
 };
 
 const searchRef = useTemplateRef('relate-resource-search');
@@ -140,7 +148,7 @@ watch(
 
       <!-- TODO：目前只支持CVM -->
       <div class="operate-btn-wrap" v-if="tabActive === 'CVM'">
-        <bind :tab-active="tabActive" :detail="detail" @confirm="handleBind">
+        <bind ref="bind-comp" :tab-active="tabActive" :detail="detail" @confirm="handleBind">
           <template #icon>
             <plus width="26" height="26" />
           </template>
@@ -186,12 +194,13 @@ watch(
         :is-row-select-enable="() => true"
         @select="(selections) => (selected = selections)"
       >
-        <template v-if="tabActive === 'CVM'" #operate>
-          <bk-table-column :label="'操作'">
-            <template #default="{ row }">
-              <single-unbind :row="row" :tab-active="tabActive" @confirm="handleBatchUnbind([row.id])" />
-            </template>
-          </bk-table-column>
+        <template v-if="tabActive === 'CVM'" #operate="{ row }">
+          <single-unbind
+            :ref="(e) => singleUnbindRefMap.set(row.id, e)"
+            :row="row"
+            :tab-active="tabActive"
+            @confirm="handleSingleUnbind(row.id)"
+          />
         </template>
       </data-list>
     </div>
