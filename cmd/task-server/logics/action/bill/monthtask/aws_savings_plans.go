@@ -57,7 +57,7 @@ func (a awsMonthTaskBaseRunner) GetBatchSize(kt *kit.Kit) uint64 {
 func (a AwsSavingsPlanMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index uint64) (
 	itemList []bill.RawBillItem, isFinished bool, err error) {
 
-	a.initExtension(opt)
+	a.initExtension(kt, opt)
 	// 获取指定月份最后一天
 	lastDay, err := times.GetLastDayOfMonth(opt.BillYear, opt.BillMonth)
 	if err != nil {
@@ -124,7 +124,7 @@ func (a AwsSavingsPlanMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption, 
 	if len(rawItemList) == 0 {
 		return nil, nil
 	}
-	a.initExtension(opt)
+	a.initExtension(kt, opt)
 
 	// 查询根账号信息
 	rootAccount, err := actcli.GetDataService().Aws.RootAccount.Get(kt, opt.RootAccountID)
