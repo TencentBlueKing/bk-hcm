@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, watchEffect } from 'vue';
+import { ref, useSlots, watch, watchEffect } from 'vue';
 import usePage from '@/hooks/use-page';
 import useTableSettings from '@/hooks/use-table-settings';
 import useTableSelection from '@/hooks/use-table-selection';
@@ -28,6 +28,7 @@ const props = withDefaults(
   },
 );
 const emit = defineEmits<(e: 'select', data: any[]) => void>();
+const slots = useSlots();
 
 const columns = ref(getColumns(props.resourceName, props.operation));
 const { settings } = useTableSettings(columns.value);
@@ -118,7 +119,11 @@ defineExpose({ handleClear, handleDelete });
       </template>
     </bk-table-column>
     <!-- 操作列 -->
-    <slot name="operate"></slot>
+    <bk-table-column v-if="slots.operate" :label="'操作'">
+      <template #default="{ row }">
+        <slot name="operate" :row="row"></slot>
+      </template>
+    </bk-table-column>
   </bk-table>
 </template>
 

@@ -129,6 +129,8 @@ const handleClosed = () => {
   isShow.value = false;
   handleClear();
 };
+
+defineExpose({ handleClosed });
 </script>
 
 <template>
@@ -136,7 +138,7 @@ const handleClosed = () => {
     <slot name="icon"></slot>
     {{ t('新增绑定') }}
   </bk-button>
-  <bk-dialog class="bind-dialog" v-model:isShow="isShow" :width="1280" :close-icon="false" @closed="handleClosed">
+  <bk-dialog class="bind-dialog" v-model:is-show="isShow" :width="1500" :close-icon="false" @closed="handleClosed">
     <bk-resize-layout initial-divide="25%" placement="right" min="300" class="bind-dialog-content">
       <template #main>
         <div class="main">

@@ -48,6 +48,8 @@ watch(isShow, async (val) => {
   const res = await securityGroupStore.pullSecurityGroup(RELATED_RES_KEY_MAP[props.tabActive], [props.row]);
   [info.value] = res;
 });
+
+defineExpose({ handleClosed });
 </script>
 
 <template>
@@ -59,7 +61,7 @@ watch(isShow, async (val) => {
   >
     {{ t('解绑') }}
   </bk-button>
-  <bk-dialog class="unbind-dialog" v-model:isShow="isShow" dialog-type="show" @closed="handleClosed">
+  <bk-dialog class="unbind-dialog" v-model:is-show="isShow" dialog-type="show" @closed="handleClosed">
     <div class="hint-wrap">
       <img :src="hintIcon" />
       <div>{{ t('确认与该主机解绑') }}</div>

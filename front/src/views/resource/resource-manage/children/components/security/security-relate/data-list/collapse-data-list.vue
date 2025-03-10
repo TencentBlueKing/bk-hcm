@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeMount, ref, watch } from 'vue';
+import { computed, onBeforeMount, ref, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import usePage from '@/hooks/use-page';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
@@ -72,11 +72,13 @@ const getList = async (
   }
 };
 
+const bindRef = useTemplateRef('bind-comp');
 const selected = ref<SecurityGroupRelResourceByBizItem[]>([]);
 const handleBind = async (ids: string[]) => {
   // TODO：当前只支持CVM
   await securityGroupStore.batchAssociateCvms({ security_group_id: props.detail.id, cvm_ids: ids });
   Message({ theme: 'success', message: t('绑定成功') });
+  bindRef.value.handleClosed();
   getList();
 };
 const handleBatchUnbind = async (ids: string[]) => {
@@ -84,6 +86,12 @@ const handleBatchUnbind = async (ids: string[]) => {
   await securityGroupStore.batchDisassociateCvms({ security_group_id: props.detail.id, cvm_ids: ids });
   Message({ theme: 'success', message: t('解绑成功') });
   getList();
+};
+// 单个删除的组件ref需要通过map储存
+const singleUnbindRefMap = ref(new Map<string, InstanceType<typeof singleUnbind>>(null));
+const handleSingleUnbind = async (id: string) => {
+  await handleBatchUnbind([id]);
+  singleUnbindRefMap.value.get(id)?.handleClosed();
 };
 
 const reload = (tabActive: SecurityGroupRelatedResourceName, condition: Record<string, any>) => {
@@ -113,7 +121,7 @@ defineExpose({ isExpand, reload });
       <!-- 只允许对本业务的实例进行绑定和解绑 -->
       <template v-if="isCurrentBusiness">
         <bk-tag v-if="isCurrentBusiness" class="tag" theme="success" type="filled">{{ t('当前业务') }}</bk-tag>
-        <bind :tab-active="tabActive" :detail="detail" text-button @confirm="handleBind">
+        <bind ref="bind-comp" :tab-active="tabActive" :detail="detail" text-button @confirm="handleBind">
           <template #icon>
             <i class="hcm-icon bkhcm-icon-plus-circle-shape mr2"></i>
           </template>
@@ -121,7 +129,7 @@ defineExpose({ isExpand, reload });
         <batch-unbind
           class="unbind-btn"
           theme="primary"
-          text
+          text-button
           :selections="selected"
           :disabled="!selected.length"
           :tab-active="tabActive"
@@ -148,12 +156,13 @@ defineExpose({ isExpand, reload });
       :is-row-select-enable="() => true"
       @select="(selections) => (selected = selections)"
     >
-      <template v-if="tabActive === 'CVM' && isCurrentBusiness" #operate>
-        <bk-table-column :label="'操作'">
-          <template #default="{ row }">
-            <single-unbind :row="row" :tab-active="tabActive" @confirm="handleBatchUnbind([row.id])" />
-          </template>
-        </bk-table-column>
+      <template v-if="tabActive === 'CVM' && isCurrentBusiness" #operate="{ row }">
+        <single-unbind
+          :ref="(e) => singleUnbindRefMap.set(row.id, e)"
+          :row="row"
+          :tab-active="tabActive"
+          @confirm="handleSingleUnbind(row.id)"
+        />
       </template>
     </data-list>
   </div>
