@@ -17,7 +17,7 @@ type PropsType = {
 type ExtraConfigType = {
   sort?: 'string';
   order?: 'ASC' | 'DESC';
-  asyncRequestApiMethod?: (data: any) => Promise<any[]>; // 传入接口返回的数据list，返回异步请求处理后的数据list
+  asyncRequestApiMethod?: (datalist: any[], datalistRef: Ref<any[]>) => Promise<void>; // 处理异步请求
 };
 
 export default (props: PropsType, url: Ref<string>, extraConfig?: ExtraConfigType) => {
@@ -76,9 +76,7 @@ export default (props: PropsType, url: Ref<string>, extraConfig?: ExtraConfigTyp
 
       // 异步请求方法
       if (extraConfig?.asyncRequestApiMethod) {
-        extraConfig.asyncRequestApiMethod(displayDatalist).then((newDatalist) => {
-          datas.value = newDatalist;
-        });
+        extraConfig.asyncRequestApiMethod(displayDatalist, datas);
       }
 
       return details;
