@@ -64,8 +64,8 @@ export default defineComponent({
     const searchVal = ref('');
     const otherBusinessIdSet = ref(new Set());
 
-    const isOtherBusiness = (useagBizIDs: Array<number[]>) => {
-      return useagBizIDs?.length > 1;
+    const isOtherBusiness = (useagBizIds: number[]) => {
+      return useagBizIds?.length > 1;
     };
     const getSecurityList = async (accountId: string, region: string, vpcId?: string) => {
       isSecurityListLoading.value = true;
