@@ -55,7 +55,7 @@ interface LinkFieldOptions {
 }
 
 export default (type: string, isSimpleShow = false, vendor?: string, options?: any) => {
-  const { getColElement } = options;
+  const { customRender } = options;
   const router = useRouter();
   const route = useRoute();
   const accountStore = useAccountStore();
@@ -1993,10 +1993,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '已确认账单',
       field: 'current_month_cost_synced',
       isDefaultShow: true,
-      render: ({ data }: any) => {
-        const { current_month_cost_synced, currency, current_month_rmb_cost_synced } = data;
-        return getColElement?.(current_month_cost_synced, current_month_rmb_cost_synced, currency);
-      },
+      render: (args: any) => customRender(args, 'current_month_cost_synced'),
     },
     {
       label: '币种',
@@ -2015,19 +2012,13 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
           label: '当月',
           sort: true,
           field: 'current_month_cost',
-          render: ({ data }: any) => {
-            const { current_month_cost, currency, current_month_rmb_cost } = data;
-            return getColElement?.(current_month_cost, current_month_rmb_cost, currency);
-          },
+          render: (args: any) => customRender(args, 'current_month_cost'),
         },
         {
           label: '上月',
           sort: true,
           field: 'last_month_cost_synced',
-          render: ({ data }: any) => {
-            const { last_month_cost_synced, currency, last_month_rmb_cost_synced } = data;
-            return getColElement?.(last_month_cost_synced, last_month_rmb_cost_synced, currency);
-          },
+          render: (args: any) => customRender(args, 'last_month_cost_synced'),
         },
         {
           label: '环比',
@@ -2045,10 +2036,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '调账',
       field: 'adjustment_cost',
       isDefaultShow: true,
-      render: ({ data }: any) => {
-        const { adjustment_cost, currency, adjustment_rmb_cost } = data;
-        return getColElement?.(adjustment_cost, adjustment_rmb_cost, currency);
-      },
+      render: (args: any) => customRender(args, 'adjustment_cost'),
     },
   ];
 
@@ -2095,19 +2083,13 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '已确认账单',
       field: 'current_month_cost_synced',
       isDefaultShow: true,
-      render: ({ data }: any) => {
-        const { current_month_cost_synced, currency, current_month_rmb_cost_synced } = data;
-        return getColElement?.(current_month_cost_synced, current_month_rmb_cost_synced, currency);
-      },
+      render: (args: any) => customRender(args, 'current_month_cost_synced'),
     },
     {
       label: '当前账单',
       field: 'current_month_cost',
       isDefaultShow: true,
-      render: ({ data }: any) => {
-        const { current_month_cost, currency, current_month_rmb_cost } = data;
-        return getColElement?.(current_month_cost, current_month_rmb_cost, currency);
-      },
+      render: (args: any) => customRender(args, 'current_month_cost'),
     },
   ];
 

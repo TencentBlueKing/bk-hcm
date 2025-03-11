@@ -8,7 +8,7 @@ import Amount from '../../components/amount';
 import { useI18n } from 'vue-i18n';
 import { useTable } from '@/hooks/useTable/useTable';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
-import changeCurrency from '../change-currency';
+import useChangeCurrency from '../../use-change-currency';
 import {
   exportBillsMainAccountSummary,
   reqBillsMainAccountSummaryList,
@@ -32,8 +32,8 @@ export default defineComponent({
     const { useSubHandler } = pluginHandler;
     const { mountedCallback } = useSubHandler();
 
-    const { handleChangeCurrencyChecked, getColElement } = changeCurrency();
-    const { columns } = useColumns('billsMainAccountSummary', false, '', { getColElement });
+    const { handleChangeCurrencyChecked, customRender } = useChangeCurrency();
+    const { columns } = useColumns('billsMainAccountSummary', false, '', { customRender });
     const { CommonTable, getListData, clearFilter, filter } = useTable({
       searchOptions: { disabled: true },
       tableOptions: {

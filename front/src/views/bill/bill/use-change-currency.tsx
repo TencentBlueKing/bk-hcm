@@ -3,11 +3,21 @@ import { ArrowsRight } from 'bkui-vue/lib/icon';
 import { formatBillSymbol } from '@/utils';
 import { CURRENCY_ALIAS_MAP } from '@/constants';
 
+const FIELD_MAP = {
+  current_month_cost_synced: ['current_month_cost_synced', 'current_month_rmb_cost_synced'],
+  current_month_cost: ['current_month_cost', 'current_month_rmb_cost'],
+  last_month_cost_synced: ['last_month_cost_synced', 'last_month_rmb_cost_synced'],
+  adjustment_cost: ['adjustment_cost', 'adjustment_rmb_cost'],
+};
+
 export default () => {
   const changeCurrencyChecked = ref(false);
 
-  const getColElement = (money: string, converted: string, currency: string) => {
-    const normalData = formatBillSymbol(money, currency);
+  const customRender = (args: any, field: string) => {
+    const { data } = args;
+    const [money, converted] = FIELD_MAP[field];
+    const { currency } = data;
+    const normalData = formatBillSymbol(data[money], currency);
     if (!changeCurrencyChecked.value || currency !== CURRENCY_ALIAS_MAP.USD) {
       return normalData;
     }
@@ -15,7 +25,7 @@ export default () => {
       <div class={'current-currency'}>
         <span class={'dollar'}>{normalData}</span>
         <ArrowsRight class={'arrow-right'} />
-        <span> {formatBillSymbol(converted, CURRENCY_ALIAS_MAP.CNY)} </span>
+        <span> {formatBillSymbol(data[converted], CURRENCY_ALIAS_MAP.CNY)} </span>
       </div>
     );
   };
@@ -26,6 +36,6 @@ export default () => {
 
   return {
     handleChangeCurrencyChecked,
-    getColElement,
+    customRender,
   };
 };
