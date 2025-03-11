@@ -161,6 +161,8 @@ type BatchUpdateSGMgmtAttrItem struct {
 	MgmtBizID  int64           `json:"mgmt_biz_id"`
 	Manager    string          `json:"manager"`
 	BakManager string          `json:"bak_manager"`
+	Vendor     enumor.Vendor   `json:"vendor"`
+	CloudID    string          `json:"cloud_id"`
 }
 
 // Validate security group update management attribute item.

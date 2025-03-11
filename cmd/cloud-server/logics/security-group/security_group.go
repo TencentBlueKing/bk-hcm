@@ -329,6 +329,8 @@ func (s *securityGroup) UpdateSGMgmtAttr(kt *kit.Kit, mgmtAttr *proto.SecurityGr
 		MgmtBizID:  mgmtAttr.MgmtBizID,
 		Manager:    mgmtAttr.Manager,
 		BakManager: mgmtAttr.BakManager,
+		Vendor:     sg.Vendor,
+		CloudID:    sg.CloudID,
 	})
 
 	updateReq := &dataproto.BatchUpdateSecurityGroupMgmtAttrReq{
@@ -341,24 +343,12 @@ func (s *securityGroup) UpdateSGMgmtAttr(kt *kit.Kit, mgmtAttr *proto.SecurityGr
 		return err
 	}
 
-	// 管理业务变更时需强制加入使用业务列表
-	newUsageBizIDs := mgmtAttr.UsageBizIDs
-	if mgmtAttr.MgmtBizID != 0 {
-		var err error
-		newUsageBizIDs, err = s.getUsageBizsContainsMgmtBizID(kt, sgID, mgmtAttr.MgmtBizID, mgmtAttr.UsageBizIDs)
-		if err != nil {
-			logs.Errorf("add security group management business into usage biz failed, err: %v, sg_id: %s, rid: %s",
-				err, sgID, kt.Rid)
-			return err
-		}
-	}
-
 	// 更新使用业务列表
-	if len(newUsageBizIDs) <= 0 {
+	if len(mgmtAttr.UsageBizIDs) <= 0 {
 		return nil
 	}
 	setRelReq := &dataproto.ResUsageBizRelUpdateReq{
-		UsageBizIDs: newUsageBizIDs,
+		UsageBizIDs: mgmtAttr.UsageBizIDs,
 		ResCloudID:  sg.CloudID,
 		ResVendor:   sg.Vendor,
 	}
@@ -369,50 +359,6 @@ func (s *securityGroup) UpdateSGMgmtAttr(kt *kit.Kit, mgmtAttr *proto.SecurityGr
 	}
 
 	return nil
-}
-
-func (s *securityGroup) getUsageBizsContainsMgmtBizID(kt *kit.Kit, sgID string, mgmtBizID int64, usageBizIDs []int64) (
-	[]int64, error) {
-
-	newUsageBizIDs := make([]int64, 0, len(usageBizIDs)+1)
-	newUsageBizIDs = append(newUsageBizIDs, mgmtBizID)
-
-	if len(usageBizIDs) > 0 {
-		for _, usageBizID := range usageBizIDs {
-			newUsageBizIDs = append(newUsageBizIDs, usageBizID)
-		}
-		return slice.Unique(newUsageBizIDs), nil
-	}
-
-	listReq := &core.ListReq{
-		Filter: tools.ExpressionAnd(
-			tools.RuleEqual("res_type", enumor.SecurityGroupCloudResType),
-			tools.RuleEqual("res_id", sgID),
-		),
-		Page:   core.NewDefaultBasePage(),
-		Fields: []string{"usage_biz_id"},
-	}
-	listReq.Page.Sort = "rel_id"
-
-	for {
-		rst, err := s.client.DataService().Global.ResUsageBizRel.ListResUsageBizRel(kt, listReq)
-		if err != nil {
-			logs.Errorf("list security group usage biz rel failed, sgID: %s, err: %v, rid: %s", err, sgID, kt.Rid)
-			return nil, err
-		}
-
-		for _, item := range rst.Details {
-			newUsageBizIDs = append(newUsageBizIDs, item.UsageBizID)
-		}
-
-		if len(rst.Details) < int(listReq.Page.Limit) {
-			break
-		}
-
-		listReq.Page.Start += uint32(listReq.Page.Limit)
-	}
-
-	return slice.Unique(newUsageBizIDs), nil
 }
 
 // BatchUpdateSGMgmtAttr batch update security group management attributes
@@ -429,6 +375,13 @@ func (s *securityGroup) BatchUpdateSGMgmtAttr(kt *kit.Kit, mgmtAttrs []proto.Bat
 		return err
 	}
 
+	if len(sgs) != len(mgmtAttrs) {
+		logs.Errorf("security group count not match, sgIDs count: %d, mgmtAttrs count: %d, rid: %s",
+			len(sgIDs), len(mgmtAttrs), kt.Rid)
+		return errors.New("security group count not match")
+	}
+
+	sgInfos := make(map[string]cloud.BaseSecurityGroup)
 	// 仅当所有管理属性均不存在时才允许批量编辑，平台管理不可批量编辑
 	for _, sg := range sgs {
 		if sg.MgmtType == enumor.MgmtTypePlatform {
@@ -440,12 +393,14 @@ func (s *securityGroup) BatchUpdateSGMgmtAttr(kt *kit.Kit, mgmtAttrs []proto.Bat
 			logs.Errorf("security group management attributes already exist, sg_id: %s, rid: %s", sg.ID, kt.Rid)
 			return fmt.Errorf("security group: %s management attributes already exist", sg.ID)
 		}
+
+		sgInfos[sg.ID] = sg
 	}
 
 	for _, batch := range slice.Split(mgmtAttrs, constant.BatchOperationMaxLimit) {
 		updateItems := make([]dataproto.BatchUpdateSGMgmtAttrItem, len(batch))
 		for i, attr := range batch {
-			updateItems[i] = dataproto.BatchUpdateSGMgmtAttrItem{
+			updateItem := dataproto.BatchUpdateSGMgmtAttrItem{
 				ID: attr.ID,
 				// 批量更新默认更新为业务管理
 				MgmtType:   enumor.MgmtTypeBiz,
@@ -453,6 +408,13 @@ func (s *securityGroup) BatchUpdateSGMgmtAttr(kt *kit.Kit, mgmtAttrs []proto.Bat
 				Manager:    attr.Manager,
 				BakManager: attr.BakManager,
 			}
+
+			if _, ok := sgInfos[attr.ID]; ok {
+				updateItem.Vendor = sgInfos[attr.ID].Vendor
+				updateItem.CloudID = sgInfos[attr.ID].CloudID
+			}
+
+			updateItems[i] = updateItem
 		}
 
 		updateReq := &dataproto.BatchUpdateSecurityGroupMgmtAttrReq{
