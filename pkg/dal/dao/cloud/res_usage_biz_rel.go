@@ -152,7 +152,7 @@ func (a ResUsageBizRelDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *fi
 func (a ResUsageBizRelDao) ListUsageBizs(kt *kit.Kit, resType enumor.CloudResourceType, resIDs []string) (
 	[]types.ResBizInfo, error) {
 
-	sql := fmt.Sprintf(`SELECT * FROM %s WHERE res_type = :res_type and res_id IN (:res_ids)`,
+	sql := fmt.Sprintf(`SELECT * FROM %s WHERE res_type = :res_type and res_id IN (:res_ids) ORDER BY rel_id`,
 		table.ResUsageBizRelTable)
 	relTables := make([]cloud.ResUsageBizRelTable, 0)
 	args := map[string]interface{}{"res_type": resType, "res_ids": resIDs}
