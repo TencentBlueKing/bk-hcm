@@ -275,10 +275,10 @@ func tidySGRelBusiness(currentBizID int64, relBizMap map[int64]int64) []proto.Li
 	// 当前业务必须在列表的第一个
 	relBizs := make([]proto.ListSGRelBusinessItem, 0, len(relBizMap)+1)
 	if currentBizID != constant.UnassignedBiz {
-		relBizs[0] = proto.ListSGRelBusinessItem{
+		relBizs = append(relBizs, proto.ListSGRelBusinessItem{
 			BkBizID:  currentBizID,
 			ResCount: currentBizResC,
-		}
+		})
 	}
 	for bizID, count := range relBizMap {
 		relBizs = append(relBizs, proto.ListSGRelBusinessItem{
@@ -329,6 +329,8 @@ func (s *securityGroup) UpdateSGMgmtAttr(kt *kit.Kit, mgmtAttr *proto.SecurityGr
 		MgmtBizID:  mgmtAttr.MgmtBizID,
 		Manager:    mgmtAttr.Manager,
 		BakManager: mgmtAttr.BakManager,
+		Vendor:     sg.Vendor,
+		CloudID:    sg.CloudID,
 	})
 
 	updateReq := &dataproto.BatchUpdateSecurityGroupMgmtAttrReq{
@@ -373,6 +375,13 @@ func (s *securityGroup) BatchUpdateSGMgmtAttr(kt *kit.Kit, mgmtAttrs []proto.Bat
 		return err
 	}
 
+	if len(sgs) != len(mgmtAttrs) {
+		logs.Errorf("security group count not match, sgIDs count: %d, mgmtAttrs count: %d, rid: %s",
+			len(sgIDs), len(mgmtAttrs), kt.Rid)
+		return errors.New("security group count not match")
+	}
+
+	sgInfos := make(map[string]cloud.BaseSecurityGroup)
 	// 仅当所有管理属性均不存在时才允许批量编辑，平台管理不可批量编辑
 	for _, sg := range sgs {
 		if sg.MgmtType == enumor.MgmtTypePlatform {
@@ -384,12 +393,14 @@ func (s *securityGroup) BatchUpdateSGMgmtAttr(kt *kit.Kit, mgmtAttrs []proto.Bat
 			logs.Errorf("security group management attributes already exist, sg_id: %s, rid: %s", sg.ID, kt.Rid)
 			return fmt.Errorf("security group: %s management attributes already exist", sg.ID)
 		}
+
+		sgInfos[sg.ID] = sg
 	}
 
 	for _, batch := range slice.Split(mgmtAttrs, constant.BatchOperationMaxLimit) {
 		updateItems := make([]dataproto.BatchUpdateSGMgmtAttrItem, len(batch))
 		for i, attr := range batch {
-			updateItems[i] = dataproto.BatchUpdateSGMgmtAttrItem{
+			updateItem := dataproto.BatchUpdateSGMgmtAttrItem{
 				ID: attr.ID,
 				// 批量更新默认更新为业务管理
 				MgmtType:   enumor.MgmtTypeBiz,
@@ -397,6 +408,13 @@ func (s *securityGroup) BatchUpdateSGMgmtAttr(kt *kit.Kit, mgmtAttrs []proto.Bat
 				Manager:    attr.Manager,
 				BakManager: attr.BakManager,
 			}
+
+			if _, ok := sgInfos[attr.ID]; ok {
+				updateItem.Vendor = sgInfos[attr.ID].Vendor
+				updateItem.CloudID = sgInfos[attr.ID].CloudID
+			}
+
+			updateItems[i] = updateItem
 		}
 
 		updateReq := &dataproto.BatchUpdateSecurityGroupMgmtAttrReq{

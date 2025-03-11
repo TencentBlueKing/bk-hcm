@@ -44,6 +44,9 @@ type ResUsageBizRel interface {
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error
 	// ListUsageBizs 查询指定资源关联业务id，保证返回的数组和传入resIDs的顺序以及数量一致
 	ListUsageBizs(kt *kit.Kit, resType enumor.CloudResourceType, resIDs []string) ([]types.ResBizInfo, error)
+	// UpsertUsageBizs 当指定的关联业务不存在时，新增关联；否则不进行任何操作
+	UpsertUsageBizs(kt *kit.Kit, tx *sqlx.Tx, resType enumor.CloudResourceType, resID string,
+		resVendor enumor.Vendor, resCloudID string, upsertBizIDs []int64) error
 }
 
 var _ ResUsageBizRel = new(ResUsageBizRelDao)
@@ -172,4 +175,52 @@ func (a ResUsageBizRelDao) ListUsageBizs(kt *kit.Kit, resType enumor.CloudResour
 		}
 	}
 	return resBizInfos, nil
+}
+
+// UpsertUsageBizs 不存在时新增指定资源的关联业务
+func (a ResUsageBizRelDao) UpsertUsageBizs(kt *kit.Kit, tx *sqlx.Tx, resType enumor.CloudResourceType, resID string,
+	resVendor enumor.Vendor, resCloudID string, upsertBizIDs []int64) error {
+
+	sql := fmt.Sprintf(`SELECT * FROM %s WHERE res_type = :res_type and res_id = :res_id`,
+		table.ResUsageBizRelTable)
+	relTables := make([]cloud.ResUsageBizRelTable, 0)
+	args := map[string]interface{}{"res_type": resType, "res_id": resID}
+	if err := a.Orm.Txn(tx).Select(kt.Ctx, &relTables, sql, args); err != nil {
+		logs.Errorf("list res_biz_rel failed, err: %v, res_type: %s, res_id: %s, rid: %s",
+			err, resType, resID, kt.Rid)
+		return err
+	}
+
+	existsBizIDs := make(map[int64]interface{})
+	for i := range relTables {
+		existsBizIDs[relTables[i].UsageBizID] = struct{}{}
+	}
+
+	insertRels := make([]cloud.ResUsageBizRelTable, 0)
+	for _, bizID := range upsertBizIDs {
+		if _, ok := existsBizIDs[bizID]; !ok {
+			insertRels = append(insertRels, cloud.ResUsageBizRelTable{
+				UsageBizID: bizID,
+				ResID:      resID,
+				ResType:    resType,
+				ResVendor:  resVendor,
+				ResCloudID: resCloudID,
+				RelCreator: kt.User,
+			})
+		}
+	}
+
+	if len(insertRels) == 0 {
+		return nil
+	}
+
+	insertSql := fmt.Sprintf(`INSERT INTO %s (%s)  VALUES(%s)`, table.ResUsageBizRelTable,
+		cloud.ResUsageBizRelColumns.ColumnExpr(), cloud.ResUsageBizRelColumns.ColonNameExpr())
+
+	err := a.Orm.Txn(tx).BulkInsert(kt.Ctx, insertSql, insertRels)
+	if err != nil {
+		return fmt.Errorf("upsert %s failed, err: %v", table.ResUsageBizRelTable, err)
+	}
+
+	return nil
 }

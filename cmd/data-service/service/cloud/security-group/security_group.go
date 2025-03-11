@@ -608,6 +608,17 @@ func (svc *securityGroupSvc) BatchUpdateSecurityGroupMgmtAttr(cts *rest.Contexts
 					cts.Kit.Rid)
 				return nil, fmt.Errorf("update security group failed, err: %v", err)
 			}
+
+			// 将管理业务追加入使用业务
+			if sg.MgmtBizID == 0 {
+				continue
+			}
+			err := svc.dao.ResUsageBizRel().UpsertUsageBizs(cts.Kit, txn, enumor.SecurityGroupCloudResType, sg.ID,
+				sg.Vendor, sg.CloudID, []int64{sg.MgmtBizID})
+			if err != nil {
+				logs.Errorf("upsert sg usage bizs rel failed, err: %v, id: %s, rid: %s", err, sg.ID, cts.Kit.Rid)
+				return nil, fmt.Errorf("upsert sg usage bizs rel failed, err: %v", err)
+			}
 		}
 
 		return nil, nil
