@@ -2,6 +2,7 @@ import { localStorageActions } from '@/common/util';
 import { QueryRuleOPEnum, RulesItem } from '@/typings';
 import { RouteLocationNormalizedLoaded } from 'vue-router';
 import { decodeValueByAtob } from './common';
+import { CURRENCY_SYMBOL_MAP } from '@/constants';
 
 // 将输入的字符串形式的数字转换并格式化为指定精度的字符串表示
 export function formatBillCost(value: string, fixed = 3): string {
@@ -39,6 +40,10 @@ export function formatBillRatioClass(last: string, current: string): string {
     className = 'green';
   }
   return className;
+}
+
+export function formatBillSymbol(money: string, currency: string): string {
+  return (CURRENCY_SYMBOL_MAP[currency] ?? '') + formatBillCost(money);
 }
 
 // 账单查询规则类

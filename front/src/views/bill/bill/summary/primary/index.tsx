@@ -25,11 +25,12 @@ export default defineComponent({
     const { usePrimaryHandler } = pluginHandler;
     const { renderOperation } = usePrimaryHandler();
 
-    const { columns, settings } = useColumns('billsRootAccountSummary');
+    const { columns, settings, handleChangeCurrencyChecked } = useColumns('billsRootAccountSummary');
 
     const confirmBillDialogRef = ref();
     const recalculateBillDialogRef = ref();
     const amountRef = ref();
+    const isChecked = ref(false);
 
     const canConfirmBill = (state: BillsRootAccountSummaryState) => {
       return ![BillsRootAccountSummaryState.accounting, BillsRootAccountSummaryState.syncing].includes(state);
@@ -46,6 +47,9 @@ export default defineComponent({
     };
     const handleRecalculate = (data: any) => {
       recalculateBillDialogRef.value.triggerShow(true, data);
+    };
+    const handleChange = (val: boolean) => {
+      handleChangeCurrencyChecked(val);
     };
 
     const { CommonTable, getListData, filter } = useTable({
@@ -125,7 +129,14 @@ export default defineComponent({
       <div class='full-height p24'>
         <CommonTable>
           {{
-            operation: () => renderOperation(bill_year.value, bill_month.value, filter),
+            operation: () => (
+              <div>
+                {renderOperation(bill_year.value, bill_month.value, filter)}
+                <bk-checkbox class='change-currency' v-model={isChecked} onChange={handleChange}>
+                  {t('美元转人民币')}
+                </bk-checkbox>
+              </div>
+            ),
             operationBarEnd: () => (
               <Button theme='primary' text onClick={goOperationRecord}>
                 <i class='hcm-icon bkhcm-icon-lishijilu mr4'></i>

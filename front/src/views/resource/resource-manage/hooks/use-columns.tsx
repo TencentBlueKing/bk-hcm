@@ -32,11 +32,11 @@ import {
   SCHEDULER_MAP,
   TRANSPORT_LAYER_LIST,
 } from '@/constants/clb';
-import { formatBillCost, getInstVip, formatBillRatio, formatBillRatioClass } from '@/utils';
-import { Spinner } from 'bkui-vue/lib/icon';
+import { formatBillCost, getInstVip, formatBillRatio, formatBillRatioClass, formatBillSymbol } from '@/utils';
+import { Spinner, ArrowsRight } from 'bkui-vue/lib/icon';
 import { APPLICATION_STATUS_MAP, APPLICATION_TYPE_MAP } from '@/views/service/apply-list/constants';
 import dayjs from 'dayjs';
-import { BILLS_ROOT_ACCOUNT_SUMMARY_STATE_MAP, BILL_TYPE__MAP_HW, CURRENCY_MAP } from '@/constants';
+import { BILLS_ROOT_ACCOUNT_SUMMARY_STATE_MAP, BILL_TYPE__MAP_HW, CURRENCY_MAP, CURRENCY_ALIAS_MAP } from '@/constants';
 import { BILL_VENDORS_MAP, BILL_SITE_TYPES_MAP } from '@/views/bill/account/account-manage/constants';
 import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
 
@@ -55,6 +55,7 @@ interface LinkFieldOptions {
 }
 
 export default (type: string, isSimpleShow = false, vendor?: string) => {
+  const changeCurrencyChecked = ref(false);
   const router = useRouter();
   const route = useRoute();
   const accountStore = useAccountStore();
@@ -123,6 +124,19 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     };
   };
 
+  const getColElement = (money: string, converted: string, currency: string) => {
+    const normalData = formatBillSymbol(money, currency);
+    if (!changeCurrencyChecked.value || currency !== CURRENCY_ALIAS_MAP.USD) {
+      return normalData;
+    }
+    return (
+      <div class={'current-currency'}>
+        <span class={'dollar'}>{normalData}</span>
+        <ArrowsRight class={'arrow-right'} />
+        <span> {formatBillSymbol(converted, CURRENCY_ALIAS_MAP.CNY)} </span>
+      </div>
+    );
+  };
   /**
    * todo: 更换实现方式, 取消使用stopPropagation
    * 自定义 render field 的 push 导航
@@ -1990,15 +2004,21 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
     {
       label: '已确认账单',
-      field: 'current_month_rmb_cost_synced',
+      field: 'current_month_cost_synced',
       isDefaultShow: true,
-      render: ({ cell }: any) => formatBillCost(cell),
+      render: ({ data }: any) => {
+        const { current_month_cost_synced, currency, current_month_rmb_cost_synced } = data;
+        return getColElement(current_month_cost_synced, current_month_rmb_cost_synced, currency);
+      },
     },
     {
       label: '币种',
       field: 'currency',
       isDefaultShow: true,
-      render: ({ cell }: any) => CURRENCY_MAP[cell] ?? '--',
+      render: ({ cell }: any) => {
+        const value = CURRENCY_MAP[cell] ?? '--';
+        return <span class={['currency', cell.toLowerCase()]}>{value}</span>;
+      },
     },
     {
       label: '当前账单',
@@ -2008,13 +2028,19 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
           label: '当月',
           sort: true,
           field: 'current_month_cost',
-          render: ({ cell }: any) => formatBillCost(cell),
+          render: ({ data }: any) => {
+            const { current_month_cost, currency, current_month_rmb_cost } = data;
+            return getColElement(current_month_cost, current_month_rmb_cost, currency);
+          },
         },
         {
           label: '上月',
           sort: true,
           field: 'last_month_cost_synced',
-          render: ({ cell }: any) => formatBillCost(cell),
+          render: ({ data }: any) => {
+            const { last_month_cost_synced, currency, last_month_rmb_cost_synced } = data;
+            return getColElement(last_month_cost_synced, last_month_rmb_cost_synced, currency);
+          },
         },
         {
           label: '环比',
@@ -2032,6 +2058,10 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '调账',
       field: 'adjustment_cost',
       isDefaultShow: true,
+      render: ({ data }: any) => {
+        const { adjustment_cost, currency, adjustment_rmb_cost } = data;
+        return getColElement(adjustment_cost, adjustment_rmb_cost, currency);
+      },
     },
   ];
 
@@ -2076,15 +2106,21 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
     {
       label: '已确认账单',
-      field: 'current_month_rmb_cost_synced',
+      field: 'current_month_cost_synced',
       isDefaultShow: true,
-      render: ({ cell }: any) => formatBillCost(cell),
+      render: ({ data }: any) => {
+        const { current_month_cost_synced, currency, current_month_rmb_cost_synced } = data;
+        return getColElement(current_month_cost_synced, current_month_rmb_cost_synced, currency);
+      },
     },
     {
       label: '当前账单',
       field: 'current_month_cost',
       isDefaultShow: true,
-      render: ({ cell }: any) => formatBillCost(cell),
+      render: ({ data }: any) => {
+        const { current_month_cost, currency, current_month_rmb_cost } = data;
+        return getColElement(current_month_cost, current_month_rmb_cost, currency);
+      },
     },
   ];
 
@@ -2586,9 +2622,14 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
 
   const settings = generateColumnsSettings(columns);
 
+  const handleChangeCurrencyChecked = (val: boolean) => {
+    changeCurrencyChecked.value = val;
+  };
+
   return {
     columns,
     settings,
     generateColumnsSettings,
+    handleChangeCurrencyChecked,
   };
 };
