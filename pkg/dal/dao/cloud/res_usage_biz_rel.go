@@ -44,6 +44,7 @@ type ResUsageBizRel interface {
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error
 	// ListUsageBizs 查询指定资源关联业务id，保证返回的数组和传入resIDs的顺序以及数量一致
 	ListUsageBizs(kt *kit.Kit, resType enumor.CloudResourceType, resIDs []string) ([]types.ResBizInfo, error)
+	// UpsertUsageBizs 当指定的关联业务不存在时，新增关联；否则不进行任何操作
 	UpsertUsageBizs(kt *kit.Kit, tx *sqlx.Tx, resType enumor.CloudResourceType, resID string,
 		resVendor enumor.Vendor, resCloudID string, upsertBizIDs []int64) error
 }
@@ -207,6 +208,10 @@ func (a ResUsageBizRelDao) UpsertUsageBizs(kt *kit.Kit, tx *sqlx.Tx, resType enu
 				RelCreator: kt.User,
 			})
 		}
+	}
+
+	if len(insertRels) == 0 {
+		return nil
 	}
 
 	insertSql := fmt.Sprintf(`INSERT INTO %s (%s)  VALUES(%s)`, table.ResUsageBizRelTable,
