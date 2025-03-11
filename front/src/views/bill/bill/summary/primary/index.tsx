@@ -9,6 +9,7 @@ import RecalculateBillDialog from './recalculate';
 import { useI18n } from 'vue-i18n';
 import { useTable } from '@/hooks/useTable/useTable';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
+import changeCurrency from '../change-currency';
 import { reqBillsRootAccountSummaryList, reqBillsRootAccountSummarySum } from '@/api/bill';
 import { BillsRootAccountSummaryState } from '@/typings/bill';
 import { BILLS_ROOT_ACCOUNT_SUMMARY_STATE_MAP } from '@/constants';
@@ -25,7 +26,8 @@ export default defineComponent({
     const { usePrimaryHandler } = pluginHandler;
     const { renderOperation } = usePrimaryHandler();
 
-    const { columns, settings, handleChangeCurrencyChecked } = useColumns('billsRootAccountSummary');
+    const { handleChangeCurrencyChecked, getColElement } = changeCurrency();
+    const { columns, settings } = useColumns('billsRootAccountSummary', false, '', { getColElement });
 
     const confirmBillDialogRef = ref();
     const recalculateBillDialogRef = ref();
