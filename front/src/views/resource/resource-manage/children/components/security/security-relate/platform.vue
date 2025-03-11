@@ -11,8 +11,9 @@ import {
 } from '@/store/security-group';
 import { useBusinessGlobalStore } from '@/store/business-global';
 import { useRegionsStore } from '@/store/useRegionsStore';
-import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import usePage from '@/hooks/use-page';
+import { useVerify } from '@/hooks';
 import { getSimpleConditionBySearchSelect, transformSimpleCondition } from '@/utils/search';
 import { RELATED_RES_KEY_MAP, RELATED_RES_NAME_MAP, RELATED_RES_PROPERTIES_MAP } from '@/constants/security-group';
 import { ISearchSelectValue } from '@/typings';
@@ -33,10 +34,16 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
-const { getBizsId, isBusinessPage } = useWhereAmI();
+const { getBizsId, isBusinessPage, whereAmI } = useWhereAmI();
 const { getBusinessNames } = useBusinessGlobalStore();
 const securityGroupStore = useSecurityGroupStore();
 const regionStore = useRegionsStore();
+
+// 预鉴权
+const { handleAuth, authVerifyData } = useVerify();
+const authAction = computed(() => {
+  return whereAmI.value === Senarios.business ? 'biz_iaas_resource_operate' : 'iaas_resource_operate';
+});
 
 const tabActive = ref<SecurityGroupRelatedResourceName>(SecurityGroupRelatedResourceName.CVM);
 // 当前业务所关联资源
@@ -99,11 +106,19 @@ const handleBatchUnbind = async (ids: string[]) => {
   Message({ theme: 'success', message: t('解绑成功') });
   getList();
 };
-// 单个删除的组件ref需要通过map储存
-const singleUnbindRefMap = ref(new Map<string, InstanceType<typeof singleUnbind>>(null));
-const handleSingleUnbind = async (id: string) => {
-  await handleBatchUnbind([id]);
-  singleUnbindRefMap.value.get(id)?.handleClosed();
+const singleUnbindVisible = ref(false);
+const singleUnbindOperateInfo = ref<SecurityGroupRelResourceByBizItem>(null);
+const handleShowSingleUnbind = async (row: SecurityGroupRelResourceByBizItem) => {
+  if (!authVerifyData.value?.permissionAction?.[authAction.value]) {
+    handleAuth(authAction.value);
+    return;
+  }
+  singleUnbindVisible.value = true;
+  const res = await securityGroupStore.pullSecurityGroup(RELATED_RES_KEY_MAP[tabActive.value], [row]);
+  [singleUnbindOperateInfo.value] = res;
+};
+const handleSingleUnbind = async () => {
+  await handleBatchUnbind([singleUnbindOperateInfo.value.id]);
 };
 
 const searchRef = useTemplateRef('relate-resource-search');
@@ -195,15 +210,26 @@ watch(
         @select="(selections) => (selected = selections)"
       >
         <template v-if="tabActive === 'CVM'" #operate="{ row }">
-          <single-unbind
-            :ref="(e) => singleUnbindRefMap.set(row.id, e)"
-            :row="row"
-            :tab-active="tabActive"
-            @confirm="handleSingleUnbind(row.id)"
-          />
+          <bk-button
+            theme="primary"
+            text
+            :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.[authAction] }"
+            @click="handleShowSingleUnbind(row)"
+          >
+            {{ t('解绑') }}
+          </bk-button>
         </template>
       </data-list>
     </div>
+
+    <single-unbind
+      v-model="singleUnbindVisible"
+      :res-name="RELATED_RES_NAME_MAP[tabActive]"
+      :info="singleUnbindOperateInfo"
+      :loading="securityGroupStore.isBatchQuerySecurityGroupByResIdsLoading"
+      :handle-confirm="handleSingleUnbind"
+      :confirm-loading="securityGroupStore.isBatchDisassociateCvmsLoading"
+    />
   </div>
 </template>
 
