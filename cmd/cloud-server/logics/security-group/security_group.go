@@ -345,7 +345,7 @@ func (s *securityGroup) UpdateSGMgmtAttr(kt *kit.Kit, mgmtAttr *proto.SecurityGr
 	newUsageBizIDs := mgmtAttr.UsageBizIDs
 	if mgmtAttr.MgmtBizID != 0 {
 		var err error
-		newUsageBizIDs, err = s.addMgmtBizIDIntoUsageBizs(kt, sgID, mgmtAttr.MgmtBizID, mgmtAttr.UsageBizIDs)
+		newUsageBizIDs, err = s.getUsageBizsContainsMgmtBizID(kt, sgID, mgmtAttr.MgmtBizID, mgmtAttr.UsageBizIDs)
 		if err != nil {
 			logs.Errorf("add security group management business into usage biz failed, err: %v, sg_id: %s, rid: %s",
 				err, sgID, kt.Rid)
@@ -371,7 +371,7 @@ func (s *securityGroup) UpdateSGMgmtAttr(kt *kit.Kit, mgmtAttr *proto.SecurityGr
 	return nil
 }
 
-func (s *securityGroup) addMgmtBizIDIntoUsageBizs(kt *kit.Kit, sgID string, mgmtBizID int64, usageBizIDs []int64) (
+func (s *securityGroup) getUsageBizsContainsMgmtBizID(kt *kit.Kit, sgID string, mgmtBizID int64, usageBizIDs []int64) (
 	[]int64, error) {
 
 	newUsageBizIDs := make([]int64, 0, len(usageBizIDs)+1)
