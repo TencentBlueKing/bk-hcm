@@ -50,6 +50,24 @@ func NewUsageBizRelManager(dbCli *dataservice.Client) *UsageBizRelManager {
 
 // SyncSecurityGroupUsageBiz 同步安全组使用业务
 func (mgr *UsageBizRelManager) SyncSecurityGroupUsageBiz(kt *kit.Kit, sg *cloudcore.BaseSecurityGroup) error {
+
+	// upgrade old version data
+	if sg.BkBizID > 0 && sg.MgmtBizID <= 0 {
+		req := &protocloud.BatchUpdateSecurityGroupMgmtAttrReq{
+			SecurityGroups: []protocloud.BatchUpdateSGMgmtAttrItem{{
+				ID:        sg.ID,
+				MgmtType:  enumor.MgmtTypeBiz,
+				MgmtBizID: sg.BkBizID,
+				Vendor:    sg.Vendor,
+			}},
+		}
+		err := mgr.dbCli.Global.SecurityGroup.BatchUpdateSecurityGroupMgmtAttr(kt, req)
+		if err != nil {
+			logs.Errorf("update security group mgmt biz and type failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+	}
+
 	if slice.IsItemInSlice(sg.UsageBizIDs, constant.AttachedAllBiz) {
 		// 已经是最大范围了
 		return nil
