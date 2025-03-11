@@ -11,6 +11,7 @@ const props = defineProps<{ selections: ISecurityGroupItem[] }>();
 
 const emit = defineEmits<{
   success: [];
+  closed: [];
 }>();
 
 const securityGroupStore = useSecurityGroupStore();
@@ -133,6 +134,7 @@ const columns: ModelPropertyColumn[] = [
 
 const closeDialog = () => {
   model.value = false;
+  emit('closed');
 };
 
 const handleDialogConfirm = async () => {

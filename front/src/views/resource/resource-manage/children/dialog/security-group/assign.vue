@@ -9,6 +9,7 @@ const props = defineProps<{ selections: ISecurityGroupItem[] }>();
 
 const emit = defineEmits<{
   success: [];
+  closed: [];
 }>();
 
 const securityGroupStore = useSecurityGroupStore();
@@ -81,6 +82,7 @@ const nonAssignableColumns: ModelPropertyColumn[] = [
 
 const closeDialog = () => {
   model.value = false;
+  emit('closed');
 };
 
 const tipsContent = h('dl', { class: 'tips-content' }, [
@@ -110,7 +112,7 @@ watchEffect(async () => {
     }
   });
 
-  setCurrentView(DataView.Assignable);
+  setCurrentView(assignableList.value.length > 0 ? DataView.Assignable : DataView.NonAssignable);
 });
 
 const confirmButtonDisabled = computed(
