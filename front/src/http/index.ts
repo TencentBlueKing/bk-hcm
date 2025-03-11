@@ -265,6 +265,16 @@ function handleCustomErrorCode(error: any) {
   // zenlayer 账单导入错误码
   if ([2000015, 2000016, 2000017].includes(error.code)) return;
 
+  // bk_ticket失效后的登录弹框
+  if (
+    error.code === 2000000 &&
+    ["bk_ticket cookie don't exists", "bk_token cookie don't exists"].includes(error.message)
+  ) {
+    // 打开节流阀
+    isLoginValid = true;
+    InvalidLogin();
+  }
+
   if (error.code !== 0 && error.code !== 2000009) Message({ theme: 'error', message: error.message });
 }
 
@@ -339,7 +349,13 @@ export function InvalidLogin() {
     return;
   }
   const loginUrl = `${loginBaseUrl}/plain/?c_url=${encodeURIComponent(successUrl)}`;
-  showLoginModal({ loginUrl });
+  showLoginModal({
+    loginUrl,
+    onFail: () => {
+      const loginPageUrl = `${loginBaseUrl}/?c_url=${encodeURIComponent(window.location.href)}`;
+      location.href = loginPageUrl;
+    },
+  });
 }
 
 export * from './jsonp';
