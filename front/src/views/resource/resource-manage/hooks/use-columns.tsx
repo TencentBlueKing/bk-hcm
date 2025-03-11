@@ -54,7 +54,8 @@ interface LinkFieldOptions {
   sort?: boolean; // 是否支持排序
 }
 
-export default (type: string, isSimpleShow = false, vendor?: string) => {
+export default (type: string, isSimpleShow = false, vendor?: string, options?: any) => {
+  const { customRender } = options;
   const router = useRouter();
   const route = useRoute();
   const accountStore = useAccountStore();
@@ -1990,15 +1991,18 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
     {
       label: '已确认账单',
-      field: 'current_month_rmb_cost_synced',
+      field: 'current_month_cost_synced',
       isDefaultShow: true,
-      render: ({ cell }: any) => formatBillCost(cell),
+      render: (args: any) => customRender(args, 'current_month_cost_synced'),
     },
     {
       label: '币种',
       field: 'currency',
       isDefaultShow: true,
-      render: ({ cell }: any) => CURRENCY_MAP[cell] ?? '--',
+      render: ({ cell }: any) => {
+        const value = CURRENCY_MAP[cell] ?? '--';
+        return <span class={['currency', cell.toLowerCase()]}>{value}</span>;
+      },
     },
     {
       label: '当前账单',
@@ -2008,13 +2012,13 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
           label: '当月',
           sort: true,
           field: 'current_month_cost',
-          render: ({ cell }: any) => formatBillCost(cell),
+          render: (args: any) => customRender(args, 'current_month_cost'),
         },
         {
           label: '上月',
           sort: true,
           field: 'last_month_cost_synced',
-          render: ({ cell }: any) => formatBillCost(cell),
+          render: (args: any) => customRender(args, 'last_month_cost_synced'),
         },
         {
           label: '环比',
@@ -2032,6 +2036,7 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
       label: '调账',
       field: 'adjustment_cost',
       isDefaultShow: true,
+      render: (args: any) => customRender(args, 'adjustment_cost'),
     },
   ];
 
@@ -2076,15 +2081,15 @@ export default (type: string, isSimpleShow = false, vendor?: string) => {
     },
     {
       label: '已确认账单',
-      field: 'current_month_rmb_cost_synced',
+      field: 'current_month_cost_synced',
       isDefaultShow: true,
-      render: ({ cell }: any) => formatBillCost(cell),
+      render: (args: any) => customRender(args, 'current_month_cost_synced'),
     },
     {
       label: '当前账单',
       field: 'current_month_cost',
       isDefaultShow: true,
-      render: ({ cell }: any) => formatBillCost(cell),
+      render: (args: any) => customRender(args, 'current_month_cost'),
     },
   ];
 
