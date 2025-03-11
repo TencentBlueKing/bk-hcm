@@ -167,7 +167,7 @@ func (req *AssignSecurityGroupToBizReq) Validate() error {
 
 // BatchAssignBizReq define batch assign security group to biz req.
 type BatchAssignBizReq struct {
-	IDs []string `json:"ids" validate:"required,min=1,max=100"`
+	IDs []string `json:"ids" validate:"required,min=1,max=100,unique"`
 }
 
 // Validate assign security group to biz request.
