@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0032,HCMVER=v1.8.0
 
     Notes:
     1. 删除vpc表的bk_cloud_id字段
@@ -27,11 +27,13 @@
 
 START TRANSACTION;
 
-alter table vpc drop column bk_cloud_id;
+alter table vpc
+    drop column bk_cloud_id;
 
-alter table cvm add column bk_host_id bigint DEFAULT -1 COMMENT '主机ID';
+alter table cvm
+    add column bk_host_id bigint DEFAULT -1 COMMENT '主机ID';
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.8.0' as `hcm_ver`, '0032' as `sql_ver`;
 
 COMMIT;

@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0031,HCMVER=v1.8.0
 
     Notes:
     1. 增加资源使用范围表
@@ -56,20 +56,20 @@ ALTER TABLE security_group
 ALTER TABLE security_group_common_rel
     ADD INDEX idx_security_group_id (security_group_id);
 ALTER TABLE security_group_common_rel
-    CHANGE COLUMN vendor res_vendor varchar(16) ;
+    CHANGE COLUMN vendor res_vendor varchar(16);
 
 alter table tcloud_security_group_rule
     ADD INDEX
-        idx_security_group_id_cloud_target_security_group_id_region(security_group_id,cloud_target_security_group_id,region);
+        idx_security_group_id_cloud_target_security_group_id_region (security_group_id, cloud_target_security_group_id, region);
 alter table huawei_security_group_rule
     ADD INDEX
-        idx_security_group_id_cloud_remote_group_id_region(security_group_id,cloud_remote_group_id,region);
+        idx_security_group_id_cloud_remote_group_id_region (security_group_id, cloud_remote_group_id, region);
 alter table aws_security_group_rule
     ADD INDEX
-        idx_security_group_id_cloud_target_security_group_id_region(security_group_id,cloud_target_security_group_id,region);
+        idx_security_group_id_cloud_target_security_group_id_region (security_group_id, cloud_target_security_group_id, region);
 
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.8.0' as `hcm_ver`, '0031' as `sql_ver`;
 
 COMMIT;
