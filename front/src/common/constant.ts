@@ -517,6 +517,7 @@ export const RESOURCE_TYPES_MAP = {
   argument_template: '参数模板',
   cert: '证书',
   load_balancer: '负载均衡',
+  security_group_usage_biz_rel: '安全组使用业务',
 };
 
 export const RESOURCES_SYNC_STATUS_MAP = {
