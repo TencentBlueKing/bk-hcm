@@ -2,7 +2,8 @@
 import { computed, onBeforeMount, ref, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import usePage from '@/hooks/use-page';
-import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { useVerify } from '@/hooks';
 import {
   type ISecurityGroupDetail,
   type SecurityGroupRelResourceByBizItem,
@@ -11,7 +12,7 @@ import {
 } from '@/store/security-group';
 import { useBusinessGlobalStore } from '@/store/business-global';
 import { transformSimpleCondition } from '@/utils/search';
-import { RELATED_RES_NAME_MAP, RELATED_RES_PROPERTIES_MAP } from '@/constants/security-group';
+import { RELATED_RES_KEY_MAP, RELATED_RES_NAME_MAP, RELATED_RES_PROPERTIES_MAP } from '@/constants/security-group';
 
 import { Message } from 'bkui-vue';
 import dataList from './index.vue';
@@ -28,9 +29,15 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
-const { getBizsId } = useWhereAmI();
+const { getBizsId, whereAmI } = useWhereAmI();
 const securityGroupStore = useSecurityGroupStore();
 const { getBusinessNames } = useBusinessGlobalStore();
+
+// 预鉴权
+const { handleAuth, authVerifyData } = useVerify();
+const authAction = computed(() => {
+  return whereAmI.value === Senarios.business ? 'biz_iaas_resource_operate' : 'iaas_resource_operate';
+});
 
 const isExpand = ref(props.bkBizId === getBizsId());
 const iconClass = computed(() => (isExpand.value ? 'bkhcm-icon-angle-up-fill' : 'bkhcm-icon-right-shape'));
@@ -87,14 +94,24 @@ const handleBatchUnbind = async (ids: string[]) => {
   Message({ theme: 'success', message: t('解绑成功') });
   getList();
 };
-// 单个删除的组件ref需要通过map储存
-const singleUnbindRefMap = ref(new Map<string, InstanceType<typeof singleUnbind>>(null));
-const handleSingleUnbind = async (id: string) => {
-  await handleBatchUnbind([id]);
-  singleUnbindRefMap.value.get(id)?.handleClosed();
+const singleUnbindVisible = ref(false);
+const singleUnbindOperateInfo = ref<SecurityGroupRelResourceByBizItem>(null);
+const handleShowSingleUnbind = async (row: SecurityGroupRelResourceByBizItem) => {
+  if (!authVerifyData.value?.permissionAction?.[authAction.value]) {
+    handleAuth(authAction.value);
+    return;
+  }
+  singleUnbindVisible.value = true;
+  const res = await securityGroupStore.pullSecurityGroup(RELATED_RES_KEY_MAP[props.tabActive], [row]);
+  [singleUnbindOperateInfo.value] = res;
+};
+const handleSingleUnbind = async () => {
+  await handleBatchUnbind([singleUnbindOperateInfo.value.id]);
 };
 
+const datalistRef = useTemplateRef('data-list');
 const reload = (tabActive: SecurityGroupRelatedResourceName, condition: Record<string, any>) => {
+  datalistRef.value.handleClear();
   if (pagination.current === 1) {
     getList(tabActive, condition);
   } else {
@@ -145,6 +162,7 @@ defineExpose({ isExpand, reload });
       </template>
     </div>
     <data-list
+      ref="data-list"
       v-show="isExpand"
       v-bkloading="{ loading }"
       :resource-name="tabActive"
@@ -157,14 +175,27 @@ defineExpose({ isExpand, reload });
       @select="(selections) => (selected = selections)"
     >
       <template v-if="tabActive === 'CVM' && isCurrentBusiness" #operate="{ row }">
-        <single-unbind
-          :ref="(e) => singleUnbindRefMap.set(row.id, e)"
-          :row="row"
-          :tab-active="tabActive"
-          @confirm="handleSingleUnbind(row.id)"
-        />
+        <bk-button
+          theme="primary"
+          text
+          :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.[authAction] }"
+          @click="handleShowSingleUnbind(row)"
+        >
+          {{ t('解绑') }}
+        </bk-button>
       </template>
     </data-list>
+
+    <template v-if="singleUnbindVisible && isCurrentBusiness">
+      <single-unbind
+        v-model="singleUnbindVisible"
+        :res-name="RELATED_RES_NAME_MAP[tabActive]"
+        :info="singleUnbindOperateInfo"
+        :loading="securityGroupStore.isBatchQuerySecurityGroupByResIdsLoading"
+        :handle-confirm="handleSingleUnbind"
+        :confirm-loading="securityGroupStore.isBatchDisassociateCvmsLoading"
+      />
+    </template>
   </div>
 </template>
 

@@ -1,107 +1,80 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useVerify } from '@/hooks';
-import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
-import {
-  useSecurityGroupStore,
-  type SecurityGroupRelResourceByBizItem,
-  type SecurityGroupRelatedResourceName,
-} from '@/store/security-group';
+import { type SecurityGroupRelResourceByBizItem } from '@/store/security-group';
 import { getPrivateIPs } from '@/utils';
-import { RELATED_RES_KEY_MAP, RELATED_RES_NAME_MAP } from '@/constants/security-group';
 
 import { ThemeEnum } from 'bkui-vue/lib/shared';
 import hintIcon from '@/assets/image/hint.svg';
 import dialogFooter from '@/components/common-dialog/dialog-footer.vue';
 
-const props = defineProps<{ row: SecurityGroupRelResourceByBizItem; tabActive: SecurityGroupRelatedResourceName }>();
-const emit = defineEmits(['confirm']);
+const props = defineProps<{
+  resName: string;
+  info: SecurityGroupRelResourceByBizItem;
+  loading: boolean;
+  handleConfirm: () => Promise<void>;
+  confirmLoading: boolean;
+}>();
+const model = defineModel<boolean>();
 
 const { t } = useI18n();
-const { whereAmI } = useWhereAmI();
-const securityGroupStore = useSecurityGroupStore();
 
-// 预鉴权
-const { handleAuth, authVerifyData } = useVerify();
-const authAction = computed(() => {
-  return whereAmI.value === Senarios.business ? 'biz_iaas_resource_operate' : 'iaas_resource_operate';
-});
-
-const isShow = ref(false);
-const info = ref<SecurityGroupRelResourceByBizItem>(props.row);
-const resName = RELATED_RES_NAME_MAP[props.tabActive];
-
-const handleShow = () => {
-  if (!authVerifyData.value?.permissionAction?.[authAction.value]) {
-    handleAuth(authAction.value);
-    return;
-  }
-  isShow.value = true;
+const handleConfirm = async () => {
+  await props.handleConfirm();
+  handleClosed();
 };
 const handleClosed = () => {
-  isShow.value = false;
+  model.value = false;
 };
-
-watch(isShow, async (val) => {
-  if (!val) return;
-  const res = await securityGroupStore.pullSecurityGroup(RELATED_RES_KEY_MAP[props.tabActive], [props.row]);
-  [info.value] = res;
-});
-
-defineExpose({ handleClosed });
 </script>
 
 <template>
-  <bk-button
-    theme="primary"
-    text
-    :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.[authAction] }"
-    @click="handleShow"
-  >
-    {{ t('解绑') }}
-  </bk-button>
-  <bk-dialog class="unbind-dialog" v-model:is-show="isShow" dialog-type="show" @closed="handleClosed">
+  <bk-dialog class="unbind-dialog" v-model:is-show="model" dialog-type="show" @closed="handleClosed">
     <div class="hint-wrap">
       <img :src="hintIcon" />
       <div>{{ t('确认与该主机解绑') }}</div>
     </div>
 
-    <bk-loading loading v-if="securityGroupStore.isBatchQuerySecurityGroupByResIdsLoading">
+    <bk-loading loading v-if="loading">
       <div style="width: 100%; height: 100px" />
     </bk-loading>
 
     <template v-else>
-      <div class="mt16 mb16">
-        <span>{{ t('内网 IP') }}：</span>
-        <span>{{ getPrivateIPs(info) }}</span>
-      </div>
+      <template v-if="info">
+        <div class="mt16 mb16">
+          <span>{{ t('内网 IP') }}：</span>
+          <span>{{ getPrivateIPs(info) }}</span>
+        </div>
 
-      <div class="tips" v-if="info.security_groups">
-        <template v-if="info.security_groups.length > 1">
-          {{ t(`请确保${resName}上绑定的其他安全组是有效的，避免出现${resName}安全风险。`) }}
-        </template>
-        <template v-else>
-          <span class="text-danger">{{ t('解绑被限制') }}</span>
-          <span>
-            {{
-              t(`，您的${resName}当前只绑定了${info.security_groups.length ?? 0}个安全组，为了确保您的${resName}安全，`)
-            }}
-          </span>
-          <span class="text-danger">{{ t('请至少保留1个以上的安全组，并确保安全组规则有效。') }}</span>
-        </template>
-      </div>
+        <div class="tips" v-if="info.security_groups">
+          <template v-if="info.security_groups.length > 1">
+            {{ t(`请确保${resName}上绑定的其他安全组是有效的，避免出现${resName}安全风险。`) }}
+          </template>
+          <template v-else>
+            <span class="text-danger">{{ t('解绑被限制') }}</span>
+            <span>
+              {{
+                t(
+                  `，您的${resName}当前只绑定了${
+                    info.security_groups.length ?? 0
+                  }个安全组，为了确保您的${resName}安全，`,
+                )
+              }}
+            </span>
+            <span class="text-danger">{{ t('请至少保留1个以上的安全组，并确保安全组规则有效。') }}</span>
+          </template>
+        </div>
 
-      <div class="operate-wrap">
-        <dialog-footer
-          :disabled="!info.security_groups || info.security_groups?.length <= 1"
-          :loading="securityGroupStore.isBatchDisassociateCvmsLoading"
-          :confirm-text="t('解绑')"
-          :confirm-button-theme="ThemeEnum.DANGER"
-          @confirm="emit('confirm')"
-          @closed="handleClosed"
-        />
-      </div>
+        <div class="operate-wrap">
+          <dialog-footer
+            :disabled="!info.security_groups || info.security_groups?.length <= 1"
+            :loading="confirmLoading"
+            :confirm-text="t('解绑')"
+            :confirm-button-theme="ThemeEnum.DANGER"
+            @confirm="handleConfirm"
+            @closed="handleClosed"
+          />
+        </div>
+      </template>
     </template>
   </bk-dialog>
 </template>

@@ -5,7 +5,7 @@ import type {
   FilterType,
 } from '@/typings/resource';
 import { GcpTypeEnum } from '@/typings';
-import { Button, InfoBox, Loading, Message, Tag, bkTooltips } from 'bkui-vue';
+import { Button, InfoBox, Loading, Message, Table, Tag, bkTooltips } from 'bkui-vue';
 import { useResourceStore, useAccountStore } from '@/store';
 import {
   ref,
@@ -20,6 +20,7 @@ import {
   Ref,
   Fragment,
   vShow,
+  useTemplateRef,
 } from 'vue';
 
 import { useI18n } from 'vue-i18n';
@@ -1071,6 +1072,13 @@ const updateMgmtAttrButtonDisabled = computed(
   () => !selections.value.length || !isAllUnknownType.value || !isAllMgmtAttrEmpty.value || !isSameAccount.value,
 );
 
+const securityGroupTableRef = useTemplateRef<typeof Table>('security-group-table');
+const handleClearSecurityGroupSelections = () => {
+  nextTick(() => {
+    resetSelections();
+    securityGroupTableRef.value.clearSelection();
+  });
+};
 const securityGroupAssignDialogState = reactive({
   isShow: false,
   isHidden: true,
@@ -1159,6 +1167,7 @@ const handleSecurityGroupOperationSuccess = () => {
     <bk-loading :key="activeType" :loading="state.isLoading" opacity="1">
       <bk-table
         v-if="activeType === 'group'"
+        ref="security-group-table"
         :settings="groupSettings"
         row-hover="auto"
         remote-pagination
@@ -1233,6 +1242,7 @@ const handleSecurityGroupOperationSuccess = () => {
         :selections="selections"
         @hidden="securityGroupAssignDialogState.isHidden = true"
         @success="handleSecurityGroupOperationSuccess"
+        @closed="handleClearSecurityGroupSelections"
       />
     </template>
 
@@ -1243,6 +1253,7 @@ const handleSecurityGroupOperationSuccess = () => {
         :selections="selections"
         @hidden="securityGroupMgmtAttrEditDialogState.isHidden = true"
         @success="handleSecurityGroupOperationSuccess"
+        @closed="handleClearSecurityGroupSelections"
       />
     </template>
   </div>
