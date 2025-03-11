@@ -21,7 +21,7 @@ package enumor
 
 import "fmt"
 
-// AccountSiteType is site type.
+// RootAccountSiteType is site type of root account.
 type RootAccountSiteType string
 
 // Validate the AccountSiteType is valid or not
@@ -30,7 +30,7 @@ func (a RootAccountSiteType) Validate() error {
 	case RootAccountChinaSite:
 	case RootAccountInternationalSite:
 	default:
-		return fmt.Errorf("unsupported main account site type: %s", a)
+		return fmt.Errorf("unsupported account site type: %s", a)
 
 	}
 

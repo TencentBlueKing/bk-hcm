@@ -40,6 +40,14 @@ type BaseRootAccount struct {
 	core.Revision `json:",inline"`
 }
 
+// DefaultCurrency return default currency
+func (a *BaseRootAccount) DefaultCurrency() enumor.CurrencyCode {
+	if a.Site == enumor.RootAccountChinaSite {
+		return enumor.CurrencyCNY
+	}
+	return enumor.CurrencyUSD
+}
+
 // AwsRootAccountExtension 云主账号/云二级账号扩展字段
 type AwsRootAccountExtension struct {
 	CloudAccountID   string `json:"cloud_account_id"`

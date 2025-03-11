@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
@@ -41,6 +42,13 @@ func (s *service) ReaccountRootAccountSummary(cts *rest.Contexts) (interface{}, 
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
+
+	err := s.authorizer.AuthorizeWithPerm(cts.Kit,
+		meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.AccountBill, Action: meta.Update}})
+	if err != nil {
+		return nil, err
+	}
+
 	rootSummary, err := getRootSummary(s.client, cts.Kit, req.RootAccountID, req.BillYear, req.BillMonth)
 	if err != nil {
 		return nil, err

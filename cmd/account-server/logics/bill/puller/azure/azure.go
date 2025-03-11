@@ -47,8 +47,8 @@ type AzurePuller struct {
 }
 
 // EnsurePullTask ...
-func (hp *AzurePuller) EnsurePullTask(kt *kit.Kit, client *client.ClientSet,
-	billSummaryMain *dsbillapi.BillSummaryMain) error {
+func (hp *AzurePuller) EnsurePullTask(kt *kit.Kit, client *client.ClientSet, billSummaryMain *dsbillapi.BillSummaryMain,
+	defaultCurrency enumor.CurrencyCode) error {
 
 	dp := &daily.DailyPuller{
 		RootAccountID:      billSummaryMain.RootAccountID,
@@ -63,6 +63,7 @@ func (hp *AzurePuller) EnsurePullTask(kt *kit.Kit, client *client.ClientSet,
 		Version:            billSummaryMain.CurrentVersion,
 		BillDelay:          hp.BillDelay,
 		Client:             client,
+		DefaultCurrency:    defaultCurrency,
 	}
 	return dp.EnsurePullTask(kt)
 }

@@ -191,8 +191,14 @@ func calRMBCost(req *bill.BillSummaryMainUpdateReq, exchangeRate *decimal.Decima
 	return req
 }
 
-func (act *MainAccountSummaryAction) getExchangeRate(
-	kt *kit.Kit, fromCurrency, toCurrency enumor.CurrencyCode, billYear, billMonth int) (*decimal.Decimal, error) {
+func (act *MainAccountSummaryAction) getExchangeRate(kt *kit.Kit, fromCurrency, toCurrency enumor.CurrencyCode,
+	billYear, billMonth int) (*decimal.Decimal, error) {
+
+	if fromCurrency == toCurrency {
+		one := decimal.NewFromInt(1)
+		return &one, nil
+	}
+
 	expressions := []*filter.AtomRule{
 		tools.RuleEqual("from_currency", fromCurrency),
 		tools.RuleEqual("to_currency", toCurrency),

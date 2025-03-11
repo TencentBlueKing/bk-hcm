@@ -3,6 +3,7 @@
   display: flex;
   justify-content: flex-end;
   align-items: center;
+  gap: 32px;
 
   .item {
     display: flex;
@@ -14,10 +15,6 @@
       color: #ff9c01;
       line-height: 24px;
     }
-  }
-
-  > .item:first-of-type {
-    margin-right: 32px;
   }
 
   &.vertical {

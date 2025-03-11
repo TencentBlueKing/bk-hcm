@@ -53,6 +53,7 @@ type MainAccountControllerOption struct {
 	BkBizID             int64
 	Client              *client.ClientSet
 	AwsSavingPlanOption cc.AwsSavingsPlansOption
+	DefaultCurrency     enumor.CurrencyCode
 }
 
 // NewMainAccountController create new main account controller
@@ -101,17 +102,19 @@ func NewMainAccountController(opt *MainAccountControllerOption) (*MainAccountCon
 		splitCtrl:           splitCtrl,
 		dailySummaryCtrl:    dailySummaryCtrl,
 		AwsSavingPlanOption: opt.AwsSavingPlanOption,
+		DefaultCurrency:     opt.DefaultCurrency,
 	}, nil
 }
 
 // MainAccountController main account controller
 type MainAccountController struct {
-	Client        *client.ClientSet
-	RootAccountID string
-	MainAccountID string
-	ProductID     int64
-	BkBizID       int64
-	Vendor        enumor.Vendor
+	Client          *client.ClientSet
+	RootAccountID   string
+	MainAccountID   string
+	ProductID       int64
+	BkBizID         int64
+	Vendor          enumor.Vendor
+	DefaultCurrency enumor.CurrencyCode
 
 	RootAccountCloudID string
 	MainAccountCloudID string
@@ -324,7 +327,7 @@ func (mac *MainAccountController) ensureDailyRawPullTask(kt *kit.Kit, billYear i
 		if err != nil {
 			return err
 		}
-		if err := curPuller.EnsurePullTask(kt, mac.Client, lastBillSummaryMain); err != nil {
+		if err := curPuller.EnsurePullTask(kt, mac.Client, lastBillSummaryMain, mac.DefaultCurrency); err != nil {
 			return err
 		}
 	}
@@ -414,6 +417,7 @@ func (mac *MainAccountController) createNewBillSummary(
 			LastSyncedVersion:  billSummary.LastSyncedVersion,
 			CurrentVersion:     billSummary.CurrentVersion,
 			State:              enumor.MainAccountBillSummaryStateAccounting,
+			Currency:           mac.DefaultCurrency,
 		})
 	if err != nil {
 		return fmt.Errorf("failed to create bill summary for main account (%s, %s, %s) in in (%d, %02d), err %s",

@@ -42,8 +42,8 @@ func GetClientSet() *client.ClientSet {
 }
 
 // GetHCService get hc service.
-func GetHCService() *hcservice.Client {
-	return cliSet.HCService()
+func GetHCService(labels ...string) *hcservice.Client {
+	return cliSet.HCService(labels...)
 }
 
 // GetDataService get data service.

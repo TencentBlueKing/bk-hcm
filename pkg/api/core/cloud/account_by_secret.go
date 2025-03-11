@@ -20,6 +20,7 @@
 package cloud
 
 import (
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 )
 
@@ -100,8 +101,9 @@ func (sk TCloudSecret) Validate() error {
 
 // AwsSecret AWS 秘钥
 type AwsSecret struct {
-	CloudSecretID  string `json:"cloud_secret_id" validate:"required"`
-	CloudSecretKey string `json:"cloud_secret_key" validate:"required"`
+	CloudSecretID  string                 `json:"cloud_secret_id" validate:"required"`
+	CloudSecretKey string                 `json:"cloud_secret_key" validate:"required"`
+	Site           enumor.AccountSiteType `json:"site" validate:"omitempty"`
 }
 
 // Validate ...

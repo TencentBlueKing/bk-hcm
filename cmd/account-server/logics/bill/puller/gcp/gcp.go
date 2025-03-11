@@ -46,8 +46,8 @@ type GcpPuller struct {
 }
 
 // EnsurePullTask ...
-func (hp *GcpPuller) EnsurePullTask(kt *kit.Kit, client *client.ClientSet,
-	billSummaryMain *dsbillapi.BillSummaryMain) error {
+func (hp *GcpPuller) EnsurePullTask(kt *kit.Kit, client *client.ClientSet, billSummaryMain *dsbillapi.BillSummaryMain,
+	currency enumor.CurrencyCode) error {
 
 	dp := &daily.DailyPuller{
 		RootAccountID:      billSummaryMain.RootAccountID,
@@ -62,6 +62,7 @@ func (hp *GcpPuller) EnsurePullTask(kt *kit.Kit, client *client.ClientSet,
 		Version:            billSummaryMain.CurrentVersion,
 		BillDelay:          hp.BillDelay,
 		Client:             client,
+		DefaultCurrency:    currency,
 	}
 	return dp.EnsurePullTask(kt)
 }

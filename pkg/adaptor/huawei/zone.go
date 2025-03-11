@@ -28,7 +28,12 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
 
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/invoker/retry"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/dcs/v2/model"
+)
+
+const (
+	listZoneRetryCount = 3
 )
 
 // ListZone list zone.
@@ -49,9 +54,17 @@ func (h *HuaWei) ListZone(kt *kit.Kit, opt *typeszone.HuaWeiZoneListOption) ([]t
 	}
 
 	req := &model.ListAvailableZonesRequest{}
-	resp, err := client.ListAvailableZones(req)
+	resp, err := client.ListAvailableZonesInvoker(req).WithRetry(listZoneRetryCount, func(i interface{}, err error) bool {
+		return err != nil
+	}, new(retry.None)).Invoke()
 	if err != nil {
 		logs.Errorf("list huawei zone failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+	result, ok := resp.(*model.ListAvailableZonesResponse)
+	if !ok {
+		logs.Errorf("list huawei zone failed, invalid response: %v, rid: %s", resp, kt.Rid)
+		return nil, fmt.Errorf("list huawei zone failed, invalid response, rid: %s", kt.Rid)
 	}
 
 	if resp == nil {
@@ -59,7 +72,7 @@ func (h *HuaWei) ListZone(kt *kit.Kit, opt *typeszone.HuaWeiZoneListOption) ([]t
 	}
 
 	results := make([]typeszone.HuaWeiZone, 0)
-	for _, one := range converter.PtrToVal(resp.AvailableZones) {
+	for _, one := range converter.PtrToVal(result.AvailableZones) {
 		results = append(results, typeszone.HuaWeiZone{one})
 	}
 

@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"hcm/pkg/cc"
+	"hcm/pkg/logs"
 	"hcm/pkg/tools/uuid"
 )
 
@@ -46,7 +47,10 @@ type ServiceOption struct {
 	Port   uint
 	Scheme string
 	// Uid is a service's unique identity.
-	Uid string
+	Uid             string
+	Env             string
+	Labels          []string
+	DisableElection bool
 }
 
 // Validate the service option
@@ -71,12 +75,15 @@ func (so ServiceOption) Validate() error {
 }
 
 // NewServiceOption generate a service option.
-func NewServiceOption(name cc.Name, network cc.Network) ServiceOption {
+func NewServiceOption(name cc.Name, network cc.Network, sysOpt *cc.SysOption) ServiceOption {
 	opt := ServiceOption{
-		Name: name,
-		IP:   network.BindIP,
-		Port: network.Port,
-		Uid:  uuid.UUID(),
+		Name:            name,
+		IP:              network.BindIP,
+		Port:            network.Port,
+		Uid:             uuid.UUID(),
+		Env:             sysOpt.Environment,
+		Labels:          sysOpt.Labels,
+		DisableElection: sysOpt.DisableElection,
 	}
 
 	if network.TLS.Enable() {
@@ -84,6 +91,9 @@ func NewServiceOption(name cc.Name, network cc.Network) ServiceOption {
 	} else {
 		opt.Scheme = "http"
 	}
+
+	logs.Infof("start service %s with option: env: %s, labels: %v, disable election: %v \n",
+		name, opt.Env, opt.Labels, opt.DisableElection)
 
 	return opt
 }
@@ -93,6 +103,8 @@ func NewServiceOption(name cc.Name, network cc.Network) ServiceOption {
 type DiscoveryOption struct {
 	// Services defines all the services to discover
 	Services []cc.Name
+	Env      string
+	Labels   []string
 }
 
 // Validate the service option

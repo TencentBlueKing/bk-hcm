@@ -127,3 +127,9 @@ log:
   alsoToStdErr: false
   # log level.
   verbosity: 0
+
+# whether to use label to filter service.
+useLabel:
+  # use label when pull aws china site bills,
+  # if true, you should deploy at least one hc service with option: "--label AWSCN" to pull aws china site bills.
+  awsCN: false

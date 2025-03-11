@@ -4,6 +4,11 @@
 
 - 增加task management 开关
 
+## 1.0.27
+
+- 增加AWS中国站账单拉取服务发现标签选项
+- Deployment 模板中podAnnotations字段格式错误问题
+
 ## 1.0.26
 
 - 优化etcd的tls开关逻辑

@@ -48,7 +48,7 @@ type ZenlayerPuller struct {
 
 // EnsurePullTask 空实现，PullTask的创建由账单导入模块完成
 func (hp *ZenlayerPuller) EnsurePullTask(kt *kit.Kit, client *client.ClientSet,
-	billSummaryMain *dsbillapi.BillSummaryMain) error {
+	billSummaryMain *dsbillapi.BillSummaryMain, defaultCurrency enumor.CurrencyCode) error {
 
 	return nil
 }

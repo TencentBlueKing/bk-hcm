@@ -21,20 +21,88 @@ package serviced
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 
 	"hcm/pkg/cc"
 	"hcm/pkg/logs"
+	cvt "hcm/pkg/tools/converter"
 
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	etcd3 "go.etcd.io/etcd/client/v3"
 )
 
+// ServerInfo server node info
+type ServerInfo struct {
+	// url endpoint of the server
+	URL string `json:"url"`
+	// labels of the server, will be used to match services, if not any labels match, use all others server
+	Labels []string `json:"labels"`
+	// DisableElection disable election, if true, will not election leader, always be follower
+	DisableElection bool `json:"disable_election"`
+	// Env filter of current server, only servers with given env will be used
+	Env string `json:"env"`
+}
+
+func (s *ServerInfo) String() string {
+	if s == nil {
+		return "[nil]"
+	}
+	builder := strings.Builder{}
+	builder.WriteString(s.URL)
+	if len(s.Labels) != 0 || s.Env != "" || s.DisableElection {
+		builder.WriteString("(")
+		if len(s.Labels) != 0 {
+			builder.WriteString("labels:")
+			builder.WriteString(s.Labels[0])
+			for _, label := range s.Labels[1:] {
+				builder.WriteString(",")
+				builder.WriteString(label)
+			}
+			builder.WriteString(";")
+		}
+		if s.Env != "" {
+			builder.WriteString("env:")
+			builder.WriteString(s.Env)
+			builder.WriteString(";")
+		}
+		if s.DisableElection {
+			builder.WriteString("disable_election")
+		}
+		builder.WriteString(")")
+	}
+
+	return builder.String()
+}
+
+type discoveryLabelWrapper struct {
+	*discovery
+	labels []string
+}
+
+// Discover ...
+func (d *discoveryLabelWrapper) Discover(name cc.Name) ([]string, error) {
+	return d.discoverByLabels(name, d.labels)
+}
+
+// ByLabels reset labels
+func (d *discoveryLabelWrapper) ByLabels(labels []string) Discover {
+	if labels != nil {
+		return &discoveryLabelWrapper{discovery: d.discovery, labels: labels}
+	}
+	return d
+}
+
 // Discover defines service discovery related operations.
 type Discover interface {
 	Discover(cc.Name) ([]string, error)
 	Services() []cc.Name
+	// ByLabels return a discovery wrapper filtered by the given labels.
+	// if labels is nil, return the original discovery instance (no modified)
+	// if labels is not nil, the discovery labels will be overridden by given labels.
+	ByLabels([]string) Discover
 	Node
 }
 
@@ -86,6 +154,14 @@ type discovery struct {
 	cancel context.CancelFunc
 }
 
+// ByLabels return a discovery wrapper by labels.
+func (d *discovery) ByLabels(labels []string) Discover {
+	if labels != nil {
+		return &discoveryLabelWrapper{discovery: d, labels: labels}
+	}
+	return d
+}
+
 // GetServiceAllNodeKeys 获取当前服务全部节点Key
 func (d *discovery) GetServiceAllNodeKeys(name cc.Name) ([]string, error) {
 
@@ -109,6 +185,11 @@ func (d *discovery) Services() []cc.Name {
 
 // Discover service addresses by service name.
 func (d *discovery) Discover(name cc.Name) ([]string, error) {
+	return d.discoverByLabels(name, nil)
+}
+
+// Discover service addresses by service name and labels
+func (d *discovery) discoverByLabels(name cc.Name, labels []string) ([]string, error) {
 	nameExists := false
 	for _, service := range d.discOpt.Services {
 		if name == service {
@@ -126,7 +207,30 @@ func (d *discovery) Discover(name cc.Name) ([]string, error) {
 	d.addressesRwMux.RUnlock()
 
 	addresses := make([]string, 0)
+
+outside:
 	for _, addressInfo := range addressInfos {
+		// skip address with different env
+		if addressInfo.env != d.discOpt.Env {
+			continue
+		}
+
+		// if request has no label want, skip labeled service, avoid normal request match labeled service
+		if len(labels) == 0 && len(addressInfo.labels) > 0 {
+			continue
+		}
+		if len(labels) > len(addressInfo.labels) {
+			continue
+		}
+		if len(labels) > 0 {
+			for i := range labels {
+				if _, ok := addressInfo.labels[labels[i]]; !ok {
+					// skip address with any want label not match
+					continue outside
+				}
+			}
+		}
+
 		addresses = append(addresses, addressInfo.address)
 	}
 
@@ -157,7 +261,12 @@ func (d *discovery) watcher(service cc.Name) {
 
 	if err == nil {
 		for _, kv := range resp.Kvs {
-			d.setAddress(service, string(kv.Key), string(kv.Value))
+			serverInfo := new(ServerInfo)
+			if err := json.Unmarshal(kv.Value, serverInfo); err != nil {
+				logs.Errorf("unmarshal server info failed, service: %s, etcd key: %s, err: %v", service, kv.Key, err)
+				continue
+			}
+			d.setAddress(service, string(kv.Key), serverInfo)
 		}
 		opts = append(opts, etcd3.WithRev(resp.Header.Revision+1))
 	}
@@ -170,7 +279,13 @@ func (d *discovery) watcher(service cc.Name) {
 			for _, event := range response.Events {
 				switch event.Type {
 				case mvccpb.PUT:
-					d.setAddress(service, string(event.Kv.Key), string(event.Kv.Value))
+					serverInfo := new(ServerInfo)
+					if err := json.Unmarshal(event.Kv.Value, serverInfo); err != nil {
+						logs.Errorf("unmarshal server info on put envent failed, service: %s, etcd key: %s, err: %v",
+							service, event.Kv, err)
+						continue
+					}
+					d.setAddress(service, string(event.Kv.Key), serverInfo)
 				case mvccpb.DELETE:
 					d.delAddress(service, string(event.Kv.Key))
 				default:
@@ -183,7 +298,7 @@ func (d *discovery) watcher(service cc.Name) {
 }
 
 // setAddress set etcdResolver addressed.
-func (d *discovery) setAddress(service cc.Name, key, address string) {
+func (d *discovery) setAddress(service cc.Name, key string, server *ServerInfo) {
 	d.addressesRwMux.Lock()
 	defer d.addressesRwMux.Unlock()
 
@@ -193,19 +308,25 @@ func (d *discovery) setAddress(service cc.Name, key, address string) {
 	for idx := range addresses {
 		if addresses[idx].key == key {
 			exists = true
-			addresses[idx].address = address
+			addresses[idx].address = server.URL
+			addresses[idx].labels = cvt.StringSliceToMap(server.Labels)
+			addresses[idx].env = server.Env
+			addresses[idx].disableElection = server.DisableElection
 			break
 		}
 	}
 
 	if !exists {
 		addresses = append(addresses, serviceAddress{
-			address: address,
-			key:     key,
+			address:         server.URL,
+			key:             key,
+			labels:          cvt.StringSliceToMap(server.Labels),
+			disableElection: server.DisableElection,
+			env:             server.Env,
 		})
 	}
 
-	logs.Infof("after set new address[%s:%s], service: %s has address: %+v", key, address, service, addresses)
+	logs.Infof("after set new address[%s:%s], service: %s has address: %+v", key, server.String(), service, addresses)
 	d.addresses[service] = addresses
 }
 

@@ -93,6 +93,12 @@ type serviced struct {
 type serviceAddress struct {
 	address string
 	key     string
+	// labels of the server, will be used to match services, if not any labels match, use all others server
+	labels map[string]struct{}
+	// disableElection disable election, if true, will not election leader, always be follower
+	disableElection bool
+	// env filter of server, only servers with given env will be used
+	env string
 }
 
 // etcdCli 用于etcd healthz 检查
