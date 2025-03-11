@@ -106,7 +106,7 @@ watchEffect(async () => {
   props.selections.forEach((item) => {
     const preview = previewList.value.find((previewItem) => item.id === previewItem.id);
     if (preview.assignable) {
-      assignableList.value.push({ ...item, assign_biz_id: item.mgmt_biz_id });
+      assignableList.value.push({ ...item, assign_biz_id: item.mgmt_biz_id, visible: true });
     } else {
       nonAssignableList.value.push({ ...item, reason: preview.reason });
     }
@@ -119,9 +119,15 @@ const confirmButtonDisabled = computed(
   () => activeView.value !== DataView.Assignable || displayList.value.length === 0,
 );
 
+const getDisplayList = (view: DataView) => {
+  return view === DataView.Assignable
+    ? assignableList.value.slice().filter((item) => item.visible)
+    : nonAssignableList.value.slice();
+};
+
 const setCurrentView = (view: DataView) => {
   activeView.value = view;
-  displayList.value = view === DataView.Assignable ? assignableList.value.slice() : nonAssignableList.value.slice();
+  displayList.value = getDisplayList(view);
   displayColumns.value = view === DataView.Assignable ? assignableColumns : nonAssignableColumns;
 };
 
@@ -135,7 +141,7 @@ const handleDialogConfirm = async () => {
   }
 
   // “确定”操作限制为只在可分配视图下进行，当前展示的数据即为最终分配数据，否则需要注意分配数据的正确性
-  const ids = displayList.value.map((item) => item.id);
+  const ids = assignableList.value.filter((item) => item.visible).map((item) => item.id);
   await securityGroupStore.batchAssignToBiz(ids);
 
   emit('success');
@@ -145,19 +151,20 @@ const handleDialogConfirm = async () => {
 
 const handleSearch = (keyword: string) => {
   if (!keyword) {
-    displayList.value =
-      activeView.value === DataView.Assignable ? assignableList.value.slice() : nonAssignableList.value.slice();
+    displayList.value = getDisplayList(activeView.value);
     return;
   }
-  displayList.value = displayList.value.filter(
+  displayList.value = getDisplayList(activeView.value).filter(
     (item) => item.name.includes(keyword) || item.cloud_id.includes(keyword),
   );
 };
 
+// 只有可分配视图可进行移除操作
 const handleRemove = (id: ISecurityGroupItem['id']) => {
-  const index = displayList.value.findIndex((item) => item.id === id);
+  const index = assignableList.value.findIndex((item) => item.id === id);
   if (index > -1) {
-    displayList.value.splice(index, 1);
+    assignableList.value[index].visible = false;
+    displayList.value = getDisplayList(activeView.value);
   }
 };
 </script>
@@ -217,7 +224,7 @@ const handleRemove = (id: ISecurityGroupItem['id']) => {
           <display-value :property="column" :value="row[column.id]" :display="column?.meta?.display" />
         </template>
       </bk-table-column>
-      <bk-table-column :label="'操作'">
+      <bk-table-column :label="'操作'" v-if="activeView === DataView.Assignable">
         <template #default="{ row }">
           <bk-button text @click="handleRemove(row.id)">
             <i class="hcm-icon bkhcm-icon-minus-circle-shape"></i>
