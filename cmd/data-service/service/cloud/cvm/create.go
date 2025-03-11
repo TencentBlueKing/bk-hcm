@@ -139,3 +139,12 @@ func batchCreateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 
 	return &core.BatchCreateResult{IDs: ids}, nil
 }
+
+// InitCvm init cvm 仅验证建表使用，方案一不需要建表
+func (svc *cvmSvc) InitCvm(cts *rest.Contexts) (any, error) {
+	if err := svc.dao.Cvm().InitCreateTable(cts.Kit); err != nil {
+		logs.Errorf("fail to init create cvm, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("init create cvm failed, err: %v", err)
+	}
+	return nil, nil
+}

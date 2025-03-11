@@ -51,4 +51,10 @@ const (
 const (
 	// BKHTTPCookieLanguageKey ...
 	BKHTTPCookieLanguageKey = "blueking_language"
+	// DefaultTenantID 默认的租户id
+	DefaultTenantID = "default"
+	// TenantIDField 租户id字段
+	TenantIDField = "tenant_id"
+	// TenantEnable 租户启用状态
+	TenantEnable = true
 )

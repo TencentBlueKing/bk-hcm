@@ -22,6 +22,8 @@ package cvm
 
 import (
 	"fmt"
+	"reflect"
+	"strings"
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/criteria/enumor"
@@ -33,6 +35,7 @@ import (
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/table"
 	tableaudit "hcm/pkg/dal/table/audit"
+	tablebill "hcm/pkg/dal/table/bill"
 	tablecvm "hcm/pkg/dal/table/cloud/cvm"
 	"hcm/pkg/dal/table/utils"
 	"hcm/pkg/kit"
@@ -50,6 +53,7 @@ type Interface interface {
 	List(kt *kit.Kit, opt *types.ListOption) (*types.ListCvmDetails, error)
 	ListWithTx(kt *kit.Kit, tx *sqlx.Tx, opt *types.ListOption) (*types.ListCvmDetails, error)
 	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
+	InitCreateTable(kt *kit.Kit) error
 }
 
 var _ Interface = new(Dao)
@@ -79,7 +83,7 @@ func (dao Dao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablecvm.Ta
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.CvmTable,
 		tablecvm.TableColumns.ColumnExpr(), tablecvm.TableColumns.ColonNameExpr())
 
-	if err = dao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, models); err != nil {
+	if err = dao.Orm.InjectTenant(kt).Txn(tx).BulkInsert(kt.Ctx, sql, models); err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", table.CvmTable, err, kt.Rid)
 		return nil, fmt.Errorf("insert %s failed, err: %v", table.CvmTable, err)
 	}
@@ -138,7 +142,7 @@ func (dao Dao) Update(kt *kit.Kit, expr *filter.Expression, model *tablecvm.Tabl
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, model.TableName(), setExpr, whereExpr)
 
 	_, err = dao.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		effected, err := dao.Orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
+		effected, err := dao.Orm.InjectTenant(kt).Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if err != nil {
 			logs.ErrorJson("update cvm failed, err: %v, filter: %s, rid: %v", err, expr, kt.Rid)
 			return nil, err
@@ -176,7 +180,7 @@ func (dao Dao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *tabl
 	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, model.TableName(), setExpr)
 
 	toUpdate["id"] = id
-	_, err = dao.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
+	_, err = dao.Orm.InjectTenant(kt).Txn(tx).Update(kt.Ctx, sql, toUpdate)
 	if err != nil {
 		logs.ErrorJson("update cvm failed, err: %v, id: %s, rid: %v", err, id, kt.Rid)
 		return err
@@ -208,7 +212,7 @@ func (dao Dao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListCvmDetails, 
 		// this is a count request, then do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.CvmTable, whereExpr)
 
-		count, err := dao.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := dao.Orm.InjectTenant(kt).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count cvm failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -226,7 +230,7 @@ func (dao Dao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListCvmDetails, 
 		table.CvmTable, whereExpr, pageExpr)
 
 	details := make([]tablecvm.Table, 0)
-	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	if err = dao.Orm.InjectTenant(kt).Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}
 
@@ -256,7 +260,7 @@ func (dao Dao) ListWithTx(kt *kit.Kit, tx *sqlx.Tx, opt *types.ListOption) (*typ
 		// this is a count request, then do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.CvmTable, whereExpr)
 
-		count, err := dao.Orm.Txn(tx).Count(kt.Ctx, sql, whereValue)
+		count, err := dao.Orm.InjectTenant(kt).Txn(tx).Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count cvm failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -274,7 +278,7 @@ func (dao Dao) ListWithTx(kt *kit.Kit, tx *sqlx.Tx, opt *types.ListOption) (*typ
 		table.CvmTable, whereExpr, pageExpr)
 
 	details := make([]tablecvm.Table, 0)
-	if err = dao.Orm.Txn(tx).Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	if err = dao.Orm.InjectTenant(kt).Txn(tx).Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}
 
@@ -293,7 +297,7 @@ func (dao Dao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) e
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.CvmTable, whereExpr)
-	if _, err = dao.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+	if _, err = dao.Orm.InjectTenant(kt).Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
 		logs.ErrorJson("delete cvm failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
 		return err
 	}
@@ -307,7 +311,7 @@ func ListCvm(kt *kit.Kit, orm orm.Interface, ids []string) (map[string]tablecvm.
 		table.CvmTable)
 
 	cvms := make([]tablecvm.Table, 0)
-	if err := orm.Do().Select(kt.Ctx, &cvms, sql, map[string]interface{}{"ids": ids}); err != nil {
+	if err := orm.InjectTenant(kt).Do().Select(kt.Ctx, &cvms, sql, map[string]interface{}{"ids": ids}); err != nil {
 		return nil, err
 	}
 
@@ -317,4 +321,44 @@ func ListCvm(kt *kit.Kit, orm orm.Interface, ids []string) (map[string]tablecvm.
 	}
 
 	return idCvmMap, nil
+}
+
+// InitCreateTable init cvm table. 仅验证建表使用
+func (dao Dao) InitCreateTable(kt *kit.Kit) error {
+	sql := parseCreateSQL(string(table.CvmTable))
+	if _, err := dao.Orm.Do().Exec(kt.Ctx, sql); err != nil {
+		logs.Errorf("init cvm table failed, err: %v, shardingOpt: %s, sql: %s, rid: %s",
+			err, sql, kt.Rid)
+		return err
+	}
+	return nil
+}
+
+func parseCreateSQL(tableName string) string {
+	t := tablebill.AccountBillItem{}
+	tType := reflect.TypeOf(t)
+	var fields []string
+	for i := 0; i < tType.NumField(); i++ {
+		field := tType.Field(i)
+		dbTag := field.Tag.Get("db")
+		if dbTag == "" {
+			continue
+		}
+		var dbType string
+		switch field.Type.Name() {
+		case "int":
+			dbType = "INT"
+		case "string":
+			dbType = "VARCHAR(255)"
+		case "JsonField":
+			dbType = "JSON"
+		case "Time":
+			dbType = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+		default:
+			dbType = "VARCHAR(255)"
+		}
+		fields = append(fields, fmt.Sprintf("%s %s", dbTag, dbType))
+	}
+	sql := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s);", tableName, strings.Join(fields, ", "))
+	return sql
 }

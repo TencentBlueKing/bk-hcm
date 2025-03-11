@@ -23,21 +23,25 @@ package orm
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math/rand"
+	"reflect"
 	"regexp"
 	"strings"
 	"time"
 
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/table"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 
+	"golang.org/x/time/rate"
+
 	"github.com/jmoiron/sqlx"
 	prm "github.com/prometheus/client_golang/prometheus"
-	"golang.org/x/time/rate"
 )
 
 // DoOrm defines all the orm method.
@@ -70,6 +74,8 @@ type Interface interface {
 	AutoTxn(kt *kit.Kit, run TxnFunc) (interface{}, error)
 	// TableSharding at least one TableSharding option
 	TableSharding(opts ...TableShardingOpt) Interface
+	// InjectTenant inject tenant
+	InjectTenant(kt *kit.Kit) Interface
 }
 
 // InitOrm return orm operations.
@@ -110,6 +116,7 @@ type runtimeOrm struct {
 	logLimiter     *rate.Limiter
 	mc             *metric
 	slowRequestMS  time.Duration
+	kt             *kit.Kit
 }
 
 func (o *runtimeOrm) logSlowCmd(ctx context.Context, sql string, latency time.Duration) {
@@ -248,25 +255,42 @@ func (o *runtimeOrm) TableSharding(opts ...TableShardingOpt) Interface {
 
 }
 
+// InjectTenant ...
+func (o *runtimeOrm) InjectTenant(kt *kit.Kit) Interface {
+	return &tableShardingOrm{
+		orm: o,
+		kt:  kt,
+	}
+}
+
 // tableShardingOrm orm for table sharding, it replaces table name in sql query
 type tableShardingOrm struct {
 	orm               *runtimeOrm
 	tableShardingOpts []TableShardingOpt
+	kt                *kit.Kit
 }
 
 type tableShardingDo struct {
 	do                *do
 	tableShardingOpts []TableShardingOpt
+	kt                *kit.Kit
 }
 
 type tableShardingDoTxn struct {
 	doTxn             DoOrmWithTransaction
 	tableShardingOpts []TableShardingOpt
+	kt                *kit.Kit
 }
 
 // Count ...
 func (dt *tableShardingDoTxn) Count(ctx context.Context, expr string, arg map[string]interface{}) (uint64, error) {
 	replaced := replaceFromJoinTableName(dt.tableShardingOpts, expr)
+
+	// 租户开关开启
+	if dt.kt.TenantEnable && dt.kt.TenantID != "" && dt.kt.TenantID != constant.DefaultTenantID {
+		replaced, arg = injectJoinTenantID(replaced, arg, dt.kt.TenantID)
+	}
+
 	return dt.doTxn.Count(ctx, replaced, arg)
 }
 
@@ -275,48 +299,96 @@ func (dt *tableShardingDoTxn) Select(ctx context.Context, dest interface{}, expr
 	arg map[string]interface{}) error {
 
 	replaced := replaceFromJoinTableName(dt.tableShardingOpts, expr)
+
+	// 租户开关开启
+	if dt.kt.TenantEnable && dt.kt.TenantID != "" && dt.kt.TenantID != constant.DefaultTenantID {
+		replaced, arg = injectJoinTenantID(replaced, arg, dt.kt.TenantID)
+	}
+
 	return dt.doTxn.Select(ctx, dest, replaced, arg)
 }
 
 // Delete ...
 func (dt *tableShardingDoTxn) Delete(ctx context.Context, expr string, arg map[string]interface{}) (int64, error) {
 	replaced := replaceFromJoinTableName(dt.tableShardingOpts, expr)
+
+	// 租户开关开启
+	if dt.kt.TenantEnable && dt.kt.TenantID != "" && dt.kt.TenantID != constant.DefaultTenantID {
+		replaced, arg = injectJoinTenantID(replaced, arg, dt.kt.TenantID)
+	}
+
 	return dt.doTxn.Delete(ctx, replaced, arg)
 }
 
 // Update ...
 func (dt *tableShardingDoTxn) Update(ctx context.Context, expr string, arg map[string]interface{}) (int64, error) {
 	replaced := replaceUpdateTableName(dt.tableShardingOpts, expr)
+
+	// 租户开关开启
+	if dt.kt.TenantEnable && dt.kt.TenantID != "" && dt.kt.TenantID != constant.DefaultTenantID {
+		replaced, arg = injectUpdateTenantID(replaced, arg, dt.kt.TenantID)
+	}
+
 	return dt.doTxn.Update(ctx, replaced, arg)
 }
 
 // Insert ...
 func (dt *tableShardingDoTxn) Insert(ctx context.Context, expr string, data interface{}) error {
 	replaced := replaceInsertTableName(dt.tableShardingOpts, expr)
+
+	// 租户开关开启
+	if dt.kt.TenantEnable && dt.kt.TenantID != "" && dt.kt.TenantID != constant.DefaultTenantID {
+		replaced, data = injectInsertTenantID(replaced, data, dt.kt.TenantID)
+	}
+
 	return dt.doTxn.BulkInsert(ctx, replaced, data)
 }
 
 // BulkInsert ...
 func (dt *tableShardingDoTxn) BulkInsert(ctx context.Context, expr string, args interface{}) error {
 	replaced := replaceInsertTableName(dt.tableShardingOpts, expr)
+
+	// 租户开关开启
+	if dt.kt.TenantEnable && dt.kt.TenantID != "" && dt.kt.TenantID != constant.DefaultTenantID {
+		replaced, args = injectInsertTenantID(replaced, args, dt.kt.TenantID)
+	}
+
 	return dt.doTxn.BulkInsert(ctx, replaced, args)
 }
 
 // Count ...
 func (ds *tableShardingDo) Count(ctx context.Context, expr string, arg map[string]interface{}) (uint64, error) {
 	replaced := replaceFromJoinTableName(ds.tableShardingOpts, expr)
+
+	// 租户开关开启
+	if ds.kt.TenantEnable && ds.kt.TenantID != "" && ds.kt.TenantID != constant.DefaultTenantID {
+		replaced, arg = injectJoinTenantID(replaced, arg, ds.kt.TenantID)
+	}
+
 	return ds.do.Count(ctx, replaced, arg)
 }
 
 // Delete ...
 func (ds *tableShardingDo) Delete(ctx context.Context, expr string, arg map[string]interface{}) (int64, error) {
 	replaced := replaceFromJoinTableName(ds.tableShardingOpts, expr)
+
+	// 租户开关开启
+	if ds.kt.TenantEnable && ds.kt.TenantID != "" && ds.kt.TenantID != constant.DefaultTenantID {
+		replaced, arg = injectJoinTenantID(replaced, arg, ds.kt.TenantID)
+	}
+
 	return ds.do.Delete(ctx, replaced, arg)
 }
 
 // Update ...
 func (ds *tableShardingDo) Update(ctx context.Context, expr string, arg map[string]interface{}) (int64, error) {
 	replaced := replaceUpdateTableName(ds.tableShardingOpts, expr)
+
+	// 租户开关开启
+	if ds.kt.TenantEnable && ds.kt.TenantID != "" && ds.kt.TenantID != constant.DefaultTenantID {
+		replaced, arg = injectUpdateTenantID(replaced, arg, ds.kt.TenantID)
+	}
+
 	return ds.do.Update(ctx, replaced, arg)
 }
 
@@ -335,12 +407,23 @@ func (ds *tableShardingDo) Exec(ctx context.Context, expr string) (int64, error)
 func (ds *tableShardingDo) Insert(ctx context.Context, expr string, data interface{}) error {
 	replaced := replaceInsertTableName(ds.tableShardingOpts, expr)
 
+	// 租户开关开启
+	if ds.kt.TenantEnable && ds.kt.TenantID != "" && ds.kt.TenantID != constant.DefaultTenantID {
+		replaced, data = injectInsertTenantID(replaced, data, ds.kt.TenantID)
+	}
+
 	return ds.do.BulkInsert(ctx, replaced, data)
 }
 
 // BulkInsert ...
 func (ds *tableShardingDo) BulkInsert(ctx context.Context, expr string, args interface{}) error {
 	replaced := replaceInsertTableName(ds.tableShardingOpts, expr)
+
+	// 租户开关开启
+	if ds.kt.TenantEnable && ds.kt.TenantID != "" && ds.kt.TenantID != constant.DefaultTenantID {
+		replaced, args = injectInsertTenantID(replaced, args, ds.kt.TenantID)
+	}
+
 	return ds.do.BulkInsert(ctx, replaced, args)
 }
 
@@ -349,6 +432,11 @@ func (ds *tableShardingDo) Select(ctx context.Context, dest interface{}, expr st
 	arg map[string]interface{}) error {
 
 	replaced := replaceFromJoinTableName(ds.tableShardingOpts, expr)
+
+	// 租户开关开启
+	if ds.kt.TenantEnable && ds.kt.TenantID != "" && ds.kt.TenantID != constant.DefaultTenantID {
+		replaced, arg = injectJoinTenantID(replaced, arg, ds.kt.TenantID)
+	}
 
 	return ds.do.Select(ctx, dest, replaced, arg)
 }
@@ -362,6 +450,7 @@ func (t tableShardingOrm) Do() DoOrm {
 			ro: t.orm,
 		},
 		tableShardingOpts: t.tableShardingOpts,
+		kt:                t.kt,
 	}
 }
 
@@ -370,6 +459,7 @@ func (t tableShardingOrm) Txn(tx *sqlx.Tx) DoOrmWithTransaction {
 	return &tableShardingDoTxn{
 		doTxn:             t.orm.Txn(tx),
 		tableShardingOpts: t.tableShardingOpts,
+		kt:                t.kt,
 	}
 }
 
@@ -383,6 +473,12 @@ func (t tableShardingOrm) TableSharding(opts ...TableShardingOpt) Interface {
 
 	t.tableShardingOpts = append(t.tableShardingOpts, opts...)
 
+	return t
+}
+
+// InjectTenant ...
+func (t tableShardingOrm) InjectTenant(kt *kit.Kit) Interface {
+	t.kt = kt
 	return t
 }
 
@@ -489,3 +585,300 @@ var (
 	updateTableNameRe = regexp.MustCompile("(?i)update\\s+(`?\\w+`?\\.)?`?\\w+`?")
 	insertTableNameRe = regexp.MustCompile("(?i)insert\\s+into\\s+(`?\\w+`?\\.)?`?\\w+`?")
 )
+
+// injectInsertTenantID Insert使用
+func injectInsertTenantID(expr string, args interface{}, tenantID string) (string, interface{}) {
+	// 如果不是INSERT语句，直接返回
+	if !insertTableNameRe.MatchString(expr) {
+		return expr, args
+	}
+
+	// 使用正则表达式匹配表名
+	tableMatch := insertTableNameRe.FindString(expr)
+	if tableMatch != "" {
+		// 去掉 "INSERT INTO " 前缀
+		tableMatch = tableMatch[12:] // "INSERT INTO " 长度为 12
+		// 去掉可能的反引号
+		tableName := extractTableName(tableMatch)
+		// 该表不支持多租户
+		isTenant, ok := table.TableMap[table.Name(tableName)]
+		logs.Infof("injectInsertTenantID: 表名: %s, isTenant: %v, ok: %v", tableName, isTenant, ok)
+		if !ok || !isTenant {
+			return expr, args
+		}
+	}
+
+	// 找到第一个左括号（字段列表开始）
+	firstLeftParen := strings.Index(expr, "(")
+	if firstLeftParen == -1 {
+		return expr, args
+	}
+
+	// 找到字段列表的右括号
+	fieldsStr := expr[firstLeftParen+1:]
+	fieldsEnd := strings.Index(fieldsStr, ")")
+	if fieldsEnd == -1 {
+		return expr, args
+	}
+
+	// 提取字段列表
+	fields := fieldsStr[:fieldsEnd]
+
+	// 找到VALUES关键字
+	remainder := fieldsStr[fieldsEnd+1:]
+	valuesIdx := strings.Index(strings.ToUpper(remainder), "VALUES")
+	if valuesIdx == -1 {
+		return expr, args
+	}
+
+	// 找到VALUES后的左括号(6 是 "VALUES" 的长度)
+	valuesStr := remainder[valuesIdx+6:]
+	valuesStart := strings.Index(valuesStr, "(")
+	if valuesStart == -1 {
+		return expr, args
+	}
+
+	// 找到匹配的右括号（考虑嵌套括号）
+	valueContent := valuesStr[valuesStart+1:]
+	valuesEnd := findMatchingParenthesis(valueContent)
+	if valuesEnd == -1 {
+		return expr, args
+	}
+
+	// 构建新的字段列表
+	newFields := fields
+	if !strings.Contains(strings.ToLower(fields), constant.TenantIDField) {
+		if len(fields) > 0 {
+			newFields += ", "
+		}
+		newFields += constant.TenantIDField
+	}
+
+	// 构建新的值列表
+	values := valueContent[:valuesEnd]
+	if !strings.Contains(strings.ToLower(values), constant.TenantIDField) {
+		if len(values) > 0 {
+			values += ", "
+		}
+		values += fmt.Sprintf(":%s", constant.TenantIDField)
+	}
+
+	// 组装最终的SQL
+	newExpr := fmt.Sprintf("%s(%s) VALUES(%s)",
+		expr[:firstLeftParen],
+		newFields,
+		values,
+	)
+
+	logs.Infof("injectInsertTenantID:expr, tenantID: %s, expr: %s", tenantID, expr)
+	logs.Infof("injectInsertTenantID:newExpr, tenantID: %s, newFields: %s, newExpr: %s", tenantID, newFields, newExpr)
+
+	// 处理参数
+	args, skip := parseArgsAndSetTenant(args, tenantID)
+	if skip {
+		return newExpr, args
+	}
+
+	argsJson, _ := json.Marshal(args)
+	logs.Infof("injectInsertTenantID:end:669, tenantID: %s, argsJson: %s", tenantID, argsJson)
+
+	return newExpr, args
+}
+
+func findMatchingParenthesis(s string) int {
+	count := 1
+	for i := 0; i < len(s); i++ {
+		switch s[i] {
+		case '(':
+			count++
+		case ')':
+			count--
+			if count == 0 {
+				return i
+			}
+		}
+	}
+	return -1
+}
+
+// toCamelCase 蛇形命名转驼峰
+func toCamelCase(s string) string {
+	slice := strings.Split(s, "_")
+	for i := 0; i < len(slice); i++ {
+		if i == len(slice)-1 {
+			slice[i] = strings.ToUpper(slice[i])
+		} else {
+			slice[i] = strings.Title(slice[i])
+		}
+	}
+	return strings.Join(slice, "")
+}
+
+// parseTableName 从 SQL 片段中提取表名或别名
+func parseTableName(sqlPart string) string {
+	parts := strings.Fields(sqlPart)
+	var tableName string
+
+	// 查找最后一个单词，它可能是表名或别名
+	for i := len(parts) - 1; i >= 0; i-- {
+		part := parts[i]
+		// 跳过 AS 关键字
+		if strings.ToUpper(part) == "AS" {
+			continue
+		}
+		// 移除可能的反引号
+		part = strings.Trim(part, "`")
+		// 如果包含点号，取最后一部分
+		if strings.Contains(part, ".") {
+			parts = strings.Split(part, ".")
+			tableName = parts[len(parts)-1]
+		} else {
+			tableName = part
+		}
+		break
+	}
+
+	return tableName
+}
+
+func parseArgsAndSetTenant(args interface{}, tenantID string) (interface{}, bool) {
+	rv := reflect.ValueOf(args)
+	if rv.Kind() != reflect.Slice {
+		return args, true
+	}
+
+	// 处理切片类型
+	skip := false
+	for i := 0; i < rv.Len(); i++ {
+		elem := rv.Index(i)
+		if elem.Kind() != reflect.Ptr || elem.IsNil() {
+			skip = true
+			continue
+		}
+		// 获取指针指向的结构体
+		structValue := elem.Elem()
+		if structValue.Kind() != reflect.Struct {
+			skip = true
+			continue
+		}
+		// 查找并设置 TenantID 字段
+		fieldTenantID := toCamelCase(constant.TenantIDField)
+		field := structValue.FieldByName(fieldTenantID)
+		if field.IsValid() && field.CanSet() {
+			field.SetString(tenantID)
+		}
+	}
+	return args, skip
+}
+
+// injectJoinTenantID Delete、List、Count使用
+func injectJoinTenantID(expr string, arg map[string]interface{}, tenantID string) (string, map[string]interface{}) {
+	if arg == nil {
+		arg = make(map[string]interface{})
+	}
+
+	// 获取主表名
+	fromMatches := fromTableNameRe.FindAllString(expr, -1)
+	// 获取 JOIN 表名
+	joinMatches := joinTableNameRe.FindAllString(expr, -1)
+
+	// 构建 tenant_id 条件
+	conditions := make([]string, 0)
+
+	// 处理主表条件
+	if len(fromMatches) > 0 {
+		// 提取主表名或别名
+		mainTable := parseTableName(fromMatches[0])
+		// 该表不支持多租户
+		isTenant, ok := table.TableMap[table.Name(mainTable)]
+		logs.Infof("injectJoinTenantID: 表名: %s, isTenant: %v, ok: %v, expr: %s", mainTable, isTenant, ok, expr)
+		if !ok || !isTenant {
+			return expr, arg
+		}
+		conditions = append(conditions, fmt.Sprintf("%s.%s = :%s", mainTable,
+			constant.TenantIDField, constant.TenantIDField))
+	}
+
+	// 处理 JOIN 表条件
+	for _, joinMatch := range joinMatches {
+		joinTable := parseTableName(joinMatch)
+		conditions = append(conditions, fmt.Sprintf("%s.%s = :%s", joinTable,
+			constant.TenantIDField, constant.TenantIDField))
+	}
+
+	// 注入条件到 WHERE 子句
+	whereIndex := strings.Index(strings.ToUpper(expr), "WHERE")
+	if whereIndex == -1 {
+		// 查找其他可能的子句
+		orderIndex := strings.Index(strings.ToUpper(expr), "ORDER BY")
+		limitIndex := strings.Index(strings.ToUpper(expr), "LIMIT")
+		groupIndex := strings.Index(strings.ToUpper(expr), "GROUP BY")
+
+		insertPos := len(expr)
+		if orderIndex != -1 {
+			insertPos = orderIndex
+		} else if groupIndex != -1 {
+			insertPos = groupIndex
+		} else if limitIndex != -1 {
+			insertPos = limitIndex
+		}
+
+		// 在合适的位置插入 WHERE 子句
+		tenantCond := " WHERE " + strings.Join(conditions, " AND ")
+		expr = expr[:insertPos] + tenantCond + expr[insertPos:]
+	} else {
+		// 在现有 WHERE 子句后添加条件
+		tenantCond := strings.Join(conditions, " AND ") + " AND "
+		expr = expr[:whereIndex+6] + tenantCond + expr[whereIndex+6:]
+	}
+
+	// 添加参数
+	arg[constant.TenantIDField] = tenantID
+
+	logs.Infof("injectJoinTenantID:end, tenantID: %s, conditions: %v, ====expr: %s, ====arg: %+v",
+		tenantID, conditions, expr, arg)
+
+	return expr, arg
+}
+
+// injectUpdateTenantID Update使用
+func injectUpdateTenantID(expr string, arg map[string]interface{}, tenantID string) (string, map[string]interface{}) {
+	if arg == nil {
+		arg = make(map[string]interface{})
+	}
+
+	// 使用正则表达式匹配表名
+	tableMatch := updateTableNameRe.FindStringSubmatch(expr)
+	if len(tableMatch) == 0 {
+		return expr, arg
+	}
+
+	// 提取表名或别名
+	tableName := extractTableName(tableMatch[0][6:]) // 去掉 "UPDATE " 前缀
+
+	// 该表不支持多租户
+	isTenant, ok := table.TableMap[table.Name(tableName)]
+	logs.Infof("injectUpdateTenantID: 表名: %s, isTenant: %v, ok: %v", tableName, isTenant, ok)
+	if !ok || !isTenant {
+		return expr, arg
+	}
+
+	// 查找 WHERE 子句位置
+	whereIndex := strings.Index(strings.ToUpper(expr), "WHERE")
+	if whereIndex == -1 {
+		// 如果没有 WHERE 子句，添加一个
+		expr += " WHERE " + fmt.Sprintf("%s.%s = :%s", tableName, constant.TenantIDField, constant.TenantIDField)
+	} else {
+		// 在现有 WHERE 子句后添加 AND
+		expr = expr[:whereIndex+6] + fmt.Sprintf("%s.%s = :%s AND ", tableName,
+			constant.TenantIDField, constant.TenantIDField) + expr[whereIndex+6:]
+	}
+
+	// 添加 tenant_id 参数
+	arg[constant.TenantIDField] = tenantID
+
+	logs.Infof("injectUpdateTenantID:end, tenantID: %s, tableName: %s, ====expr: %s, ====arg: %+v",
+		tenantID, tableName, expr, arg)
+
+	return expr, arg
+}

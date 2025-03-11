@@ -129,7 +129,7 @@ func (dao *SubAccountDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx,
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.SubAccountTable, tablesubaccount.Columns.ColumnExpr(),
 		tablesubaccount.Columns.ColonNameExpr())
 
-	err = dao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, models)
+	err = dao.Orm.InjectTenant(kt).Txn(tx).BulkInsert(kt.Ctx, sql, models)
 	if err != nil {
 		logs.Errorf("insert %s failed, err: %v, sql: %s, rid: %s", table.SubAccountTable, err, sql, kt.Rid)
 		return nil, fmt.Errorf("insert %s failed, err: %v", table.SubAccountTable, err)
@@ -231,7 +231,7 @@ func (dao *SubAccountDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListS
 		// this is dao count request, then do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.SubAccountTable, whereExpr)
 
-		count, err := dao.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := dao.Orm.InjectTenant(kt).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count sub accounts failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -249,7 +249,7 @@ func (dao *SubAccountDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListS
 		table.SubAccountTable, whereExpr, pageExpr)
 
 	details := make([]tablesubaccount.Table, 0)
-	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	if err = dao.Orm.InjectTenant(kt).Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
 		logs.ErrorJson("select sub account failed, err: %v, sql: %s, filter: %v, rid: %s", err, sql, opt.Filter, kt.Rid)
 		return nil, err
 	}

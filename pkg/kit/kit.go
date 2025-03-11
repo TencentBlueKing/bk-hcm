@@ -56,6 +56,9 @@ type Kit struct {
 	// AppCode is app code.
 	AppCode string
 
+	// TenantEnable is tenant enable.
+	TenantEnable bool
+
 	// TenantID is tenant id.
 	TenantID string
 
@@ -177,6 +180,7 @@ func FromHeader(ctx context.Context, header http.Header) (*Kit, error) {
 		User:          header.Get(constant.UserKey),
 		Rid:           header.Get(constant.RidKey),
 		AppCode:       header.Get(constant.AppCodeKey),
+		TenantEnable:  constant.TenantEnable,
 		TenantID:      header.Get(constant.TenantIDKey),
 		RequestSource: enumor.RequestSourceType(header.Get(constant.RequestSourceKey)),
 	}

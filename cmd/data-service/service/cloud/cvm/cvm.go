@@ -49,6 +49,8 @@ func InitService(cap *capability.Capability) {
 	h.Add("BatchDeleteCvm", http.MethodDelete, "/cvms/batch", svc.BatchDeleteCvm)
 	h.Add("BatchUpdateCvmCommonInfo", http.MethodPatch, "/cvms/common/info/batch/update", svc.BatchUpdateCvmCommonInfo)
 
+	h.Add("InitCvm", http.MethodPost, "/cvms/init", svc.InitCvm)
+
 	h.Load(cap.WebService)
 }
 
