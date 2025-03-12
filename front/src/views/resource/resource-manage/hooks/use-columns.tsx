@@ -1406,7 +1406,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       idFiled: 'name',
       onlyShowOnList: false,
       width: 200,
-      render: ({ id, name }) => (
+      render: ({ id, name, vendor }) => (
         <Button
           text
           theme='primary'
@@ -1414,7 +1414,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
             {
               name: LBRouteName.tg,
               params: { id },
-              query: { ...route.query, type: 'detail' },
+              query: { ...route.query, type: 'detail', vendor },
             },
             () => {
               loadBalancerStore.setTgSearchTarget(name);
