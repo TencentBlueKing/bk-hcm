@@ -55,7 +55,7 @@ func (a AwsSupportMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index
 	mainAccounts, err := actcli.GetDataService().Global.MainAccount.List(kt, &core.ListReq{
 		Filter: tools.EqualExpression("cloud_id", rootAccount.CloudID),
 		Page:   core.NewDefaultBasePage(),
-		Fields: []string{"cloud_id", "id"},
+		Fields: []string{"id"},
 	})
 	if err != nil {
 		return nil, false, err
@@ -63,7 +63,7 @@ func (a AwsSupportMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index
 	if len(mainAccounts.Details) != 1 {
 		return nil, false, fmt.Errorf("root account(%s) as main not found for pull support", rootAccount.CloudID)
 	}
-	rootAsMain := mainAccounts.Details[0]
+	rootAsMainID := mainAccounts.Details[0].ID
 
 	req := &bill.BillItemSumReq{
 		ItemCommonOpt: &bill.ItemCommonOpt{
@@ -73,7 +73,7 @@ func (a AwsSupportMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index
 		},
 		Filter: tools.ExpressionAnd(
 			tools.RuleEqual("root_account_id", opt.RootAccountID),
-			tools.RuleEqual("main_account_id", rootAsMain.ID),
+			tools.RuleEqual("main_account_id", rootAsMainID),
 			// filter out bills produced by previous support month task
 			tools.RuleNotIn("hc_product_name", []string{constant.BillCommonExpenseReverseName}),
 		),
@@ -82,7 +82,7 @@ func (a AwsSupportMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index
 	if err != nil {
 		return nil, false, err
 	}
-	logs.V(4).Infof("supprot bills: %+v, req: %+v, rid: %s", billSum, req, kt.Rid)
+	logs.V(5).Infof("support bills: %+v, req: %+v, rid: %s", billSum, req, kt.Rid)
 
 	itemList = append(itemList, bill.RawBillItem{
 		HcProductCode: constant.BillCommonExpenseName,

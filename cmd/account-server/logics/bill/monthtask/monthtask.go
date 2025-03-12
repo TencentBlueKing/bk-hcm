@@ -221,8 +221,8 @@ func (r *DefaultMonthTaskRunner) ensureMonthTaskStub(kt *kit.Kit, monthTask *bil
 		return nil, err
 	}
 	if len(monthTasks) != 1 {
-		logs.Errorf("month task stub after create count is not 1, type: %s, count: %d, rid: %s",
-			r.vendor, len(monthTasks), kt.Rid)
+		logs.Errorf("month task stub after create count is not 1, vendor: %s, type: %s, count: %d, rid: %s",
+			r.vendor, curType, len(monthTasks), kt.Rid)
 	}
 	return monthTasks[0], nil
 }
