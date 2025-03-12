@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, useAttrs, useTemplateRef, watch } from 'vue';
+import { nextTick, ref, useTemplateRef, watch, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useVerify } from '@/hooks';
-import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 import usePage from '@/hooks/use-page';
 import {
   type ISecurityGroupDetail,
@@ -16,6 +15,7 @@ import { enableCount, getSimpleConditionBySearchSelect, transformSimpleCondition
 import { getPrivateIPs } from '@/utils';
 import http from '@/http';
 
+import { Message } from 'bkui-vue';
 import search from '../search/index.vue';
 import dataList from '../data-list/index.vue';
 import dialogFooter from '@/components/common-dialog/dialog-footer.vue';
@@ -25,30 +25,12 @@ const props = defineProps<{
   tabActive: SecurityGroupRelatedResourceName;
   detail: ISecurityGroupDetail;
 }>();
-const emit = defineEmits(['confirm']);
-const attrs: any = useAttrs();
+const emit = defineEmits(['success']);
+const model = defineModel<boolean>();
 
 const { t } = useI18n();
-const { getBusinessApiPath, whereAmI } = useWhereAmI();
+const { getBusinessApiPath } = useWhereAmI();
 const securityGroupStore = useSecurityGroupStore();
-
-const { handleAuth, authVerifyData } = useVerify();
-const authAction = computed(() => {
-  return whereAmI.value === Senarios.business ? 'biz_iaas_resource_operate' : 'iaas_resource_operate';
-});
-const buttonCls = computed(() => {
-  const buttonClsName = props.textButton ? 'hcm-no-permision-text-btn' : 'hcm-no-permision-btn';
-  return { [buttonClsName]: !authVerifyData.value?.permissionAction?.[authAction.value] };
-});
-
-const isShow = ref(false);
-const handleShow = () => {
-  if (!authVerifyData.value?.permissionAction?.[authAction.value]) {
-    handleAuth(authAction.value);
-    return;
-  }
-  isShow.value = true;
-};
 
 const list = ref<SecurityGroupRelResourceByBizItem[]>([]);
 const { pagination, getPageParams } = usePage();
@@ -79,9 +61,9 @@ const getList = async (sort = 'created_at', order = 'DESC') => {
   }
 };
 
-watch(isShow, (val) => {
+watchEffect(() => {
   nextTick(() => {
-    if (val) searchRef.value?.clear();
+    if (model.value) searchRef.value?.clear();
   });
 });
 
@@ -121,12 +103,15 @@ const handleDelete = (cloud_id: string) => {
   dataListRef.value.handleDelete(cloud_id);
 };
 
-const handleConfirm = () => {
+const handleConfirm = async () => {
   const ids = selected.value.map((item) => item.id);
-  emit('confirm', ids);
+  await securityGroupStore.batchAssociateCvms({ security_group_id: props.detail.id, cvm_ids: ids });
+  Message({ theme: 'success', message: t('绑定成功') });
+  handleClosed();
+  emit('success');
 };
 const handleClosed = () => {
-  isShow.value = false;
+  model.value = false;
   handleClear();
 };
 
@@ -134,11 +119,7 @@ defineExpose({ handleClosed });
 </script>
 
 <template>
-  <bk-button theme="primary" :text="textButton" :class="buttonCls" @click="handleShow" v-bind="attrs">
-    <slot name="icon"></slot>
-    {{ t('新增绑定') }}
-  </bk-button>
-  <bk-dialog class="bind-dialog" v-model:is-show="isShow" :width="1500" :close-icon="false" @closed="handleClosed">
+  <bk-dialog class="bind-dialog" v-model:is-show="model" :width="1500" :close-icon="false" @closed="handleClosed">
     <bk-resize-layout initial-divide="25%" placement="right" min="300" class="bind-dialog-content">
       <template #main>
         <div class="main">

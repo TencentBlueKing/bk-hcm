@@ -1,26 +1,49 @@
 <script setup lang="ts">
+import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { type SecurityGroupRelResourceByBizItem } from '@/store/security-group';
+import {
+  ISecurityGroupDetail,
+  SecurityGroupRelatedResourceName,
+  useSecurityGroupStore,
+  type SecurityGroupRelResourceByBizItem,
+} from '@/store/security-group';
 import { getPrivateIPs } from '@/utils';
+import { RELATED_RES_KEY_MAP, RELATED_RES_NAME_MAP } from '@/constants/security-group';
 
 import { ThemeEnum } from 'bkui-vue/lib/shared';
 import hintIcon from '@/assets/image/hint.svg';
 import dialogFooter from '@/components/common-dialog/dialog-footer.vue';
 
 const props = defineProps<{
-  resName: string;
-  info: SecurityGroupRelResourceByBizItem;
-  loading: boolean;
-  handleConfirm: () => Promise<void>;
-  confirmLoading: boolean;
+  row: SecurityGroupRelResourceByBizItem;
+  detail: ISecurityGroupDetail;
+  tabActive: SecurityGroupRelatedResourceName;
 }>();
 const model = defineModel<boolean>();
+const emit = defineEmits(['success']);
 
 const { t } = useI18n();
+const securityGroupStore = useSecurityGroupStore();
+
+const resName = RELATED_RES_NAME_MAP[props.tabActive];
+
+const info = ref<SecurityGroupRelResourceByBizItem>(props.row);
+watch(
+  model,
+  async () => {
+    const res = await securityGroupStore.pullSecurityGroup(RELATED_RES_KEY_MAP[props.tabActive], [props.row]);
+    [info.value] = res;
+  },
+  { immediate: true },
+);
 
 const handleConfirm = async () => {
-  await props.handleConfirm();
+  await securityGroupStore.batchDisassociateCvms({
+    security_group_id: props.detail.id,
+    cvm_ids: [props.row.id],
+  });
   handleClosed();
+  emit('success');
 };
 const handleClosed = () => {
   model.value = false;
@@ -34,7 +57,7 @@ const handleClosed = () => {
       <div>{{ t('确认与该主机解绑') }}</div>
     </div>
 
-    <bk-loading loading v-if="loading">
+    <bk-loading loading v-if="securityGroupStore.isBatchQuerySecurityGroupByResIdsLoading">
       <div style="width: 100%; height: 100px" />
     </bk-loading>
 
@@ -67,7 +90,7 @@ const handleClosed = () => {
         <div class="operate-wrap">
           <dialog-footer
             :disabled="!info.security_groups || info.security_groups?.length <= 1"
-            :loading="confirmLoading"
+            :loading="securityGroupStore.isBatchDisassociateCvmsLoading"
             :confirm-text="t('解绑')"
             :confirm-button-theme="ThemeEnum.DANGER"
             @confirm="handleConfirm"

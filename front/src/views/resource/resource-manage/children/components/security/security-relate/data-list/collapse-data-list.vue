@@ -7,14 +7,13 @@ import { useVerify } from '@/hooks';
 import {
   type ISecurityGroupDetail,
   type SecurityGroupRelResourceByBizItem,
-  type SecurityGroupRelatedResourceName,
+  SecurityGroupRelatedResourceName,
   useSecurityGroupStore,
 } from '@/store/security-group';
 import { useBusinessGlobalStore } from '@/store/business-global';
 import { transformSimpleCondition } from '@/utils/search';
-import { RELATED_RES_KEY_MAP, RELATED_RES_NAME_MAP, RELATED_RES_PROPERTIES_MAP } from '@/constants/security-group';
+import { RELATED_RES_NAME_MAP, RELATED_RES_PROPERTIES_MAP } from '@/constants/security-group';
 
-import { Message } from 'bkui-vue';
 import dataList from './index.vue';
 import bind from '../bind/index.vue';
 import batchUnbind from '../unbind/batch.vue';
@@ -27,6 +26,7 @@ const props = defineProps<{
   resCount: number;
   condition: Record<string, any>;
 }>();
+const emit = defineEmits(['operate-success']);
 
 const { t } = useI18n();
 const { getBizsId, whereAmI } = useWhereAmI();
@@ -41,7 +41,10 @@ const authAction = computed(() => {
 
 const isExpand = ref(props.bkBizId === getBizsId());
 const iconClass = computed(() => (isExpand.value ? 'bkhcm-icon-angle-up-fill' : 'bkhcm-icon-right-shape'));
-const businessName = computed(() => getBusinessNames(props.bkBizId)?.[0]);
+const businessName = computed(() => {
+  if (props.bkBizId === -1) return t('未分配');
+  return getBusinessNames(props.bkBizId)?.[0];
+});
 const isCurrentBusiness = computed(() => getBizsId() === props.bkBizId);
 
 const relResList = ref<SecurityGroupRelResourceByBizItem[]>([]);
@@ -79,34 +82,37 @@ const getList = async (
   }
 };
 
-const bindRef = useTemplateRef('bind-comp');
 const selected = ref<SecurityGroupRelResourceByBizItem[]>([]);
-const handleBind = async (ids: string[]) => {
-  // TODO：当前只支持CVM
-  await securityGroupStore.batchAssociateCvms({ security_group_id: props.detail.id, cvm_ids: ids });
-  Message({ theme: 'success', message: t('绑定成功') });
-  bindRef.value.handleClosed();
-  getList();
-};
-const handleBatchUnbind = async (ids: string[]) => {
-  // TODO：当前只支持CVM
-  await securityGroupStore.batchDisassociateCvms({ security_group_id: props.detail.id, cvm_ids: ids });
-  Message({ theme: 'success', message: t('解绑成功') });
-  getList();
-};
+const operateVisible = computed(() => {
+  return isCurrentBusiness.value && props.tabActive === SecurityGroupRelatedResourceName.CVM;
+});
+const bindVisible = ref(false);
+const batchUnbindVisible = ref(false);
 const singleUnbindVisible = ref(false);
-const singleUnbindOperateInfo = ref<SecurityGroupRelResourceByBizItem>(null);
-const handleShowSingleUnbind = async (row: SecurityGroupRelResourceByBizItem) => {
+const singleUnbindOperateRow = ref<SecurityGroupRelResourceByBizItem>(null);
+const handleShowOperateDialog = (
+  operate: 'bind' | 'single-unbind' | 'batch-unbind',
+  row?: SecurityGroupRelResourceByBizItem,
+) => {
   if (!authVerifyData.value?.permissionAction?.[authAction.value]) {
     handleAuth(authAction.value);
     return;
   }
-  singleUnbindVisible.value = true;
-  const res = await securityGroupStore.pullSecurityGroup(RELATED_RES_KEY_MAP[props.tabActive], [row]);
-  [singleUnbindOperateInfo.value] = res;
+  switch (operate) {
+    case 'bind':
+      bindVisible.value = true;
+      break;
+    case 'single-unbind':
+      singleUnbindVisible.value = true;
+      singleUnbindOperateRow.value = row;
+      break;
+    case 'batch-unbind':
+      batchUnbindVisible.value = true;
+      break;
+  }
 };
-const handleSingleUnbind = async () => {
-  await handleBatchUnbind([singleUnbindOperateInfo.value.id]);
+const handleOperateSuccess = () => {
+  emit('operate-success');
 };
 
 const datalistRef = useTemplateRef('data-list');
@@ -137,21 +143,28 @@ defineExpose({ isExpand, reload });
       <span class="name">{{ businessName }}</span>
       <!-- 只允许对本业务的实例进行绑定和解绑 -->
       <template v-if="isCurrentBusiness">
-        <bk-tag v-if="isCurrentBusiness" class="tag" theme="success" type="filled">{{ t('当前业务') }}</bk-tag>
-        <bind ref="bind-comp" :tab-active="tabActive" :detail="detail" text-button @confirm="handleBind">
-          <template #icon>
-            <i class="hcm-icon bkhcm-icon-plus-circle-shape mr2"></i>
-          </template>
-        </bind>
-        <batch-unbind
-          class="unbind-btn"
+        <bk-tag class="tag" theme="success" type="filled">{{ t('当前业务') }}</bk-tag>
+        <bk-button
+          v-if="operateVisible"
           theme="primary"
-          text-button
-          :selections="selected"
+          text
+          :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.[authAction] }"
+          @click="handleShowOperateDialog('bind')"
+        >
+          <i class="hcm-icon bkhcm-icon-plus-circle-shape mr2"></i>
+          {{ t('新增绑定') }}
+        </bk-button>
+        <bk-button
+          v-if="operateVisible"
+          theme="primary"
+          class="unbind-btn"
+          text
+          :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.[authAction] }"
           :disabled="!selected.length"
-          :tab-active="tabActive"
-          :handle-confirm="handleBatchUnbind"
-        />
+          @click="handleShowOperateDialog('batch-unbind')"
+        >
+          {{ t('批量解绑') }}
+        </bk-button>
       </template>
       <!-- 其他业务的实例，在当前业务只读，不可以操作 -->
       <template v-else>
@@ -174,26 +187,39 @@ defineExpose({ isExpand, reload });
       :is-row-select-enable="() => true"
       @select="(selections) => (selected = selections)"
     >
-      <template v-if="tabActive === 'CVM' && isCurrentBusiness" #operate="{ row }">
+      <template v-if="operateVisible" #operate="{ row }">
         <bk-button
           theme="primary"
           text
           :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.[authAction] }"
-          @click="handleShowSingleUnbind(row)"
+          @click="handleShowOperateDialog('single-unbind', row)"
         >
           {{ t('解绑') }}
         </bk-button>
       </template>
     </data-list>
 
-    <template v-if="singleUnbindVisible && isCurrentBusiness">
+    <template v-if="bindVisible">
+      <bind v-model="bindVisible" :tab-active="tabActive" :detail="detail" @success="handleOperateSuccess" />
+    </template>
+
+    <template v-if="batchUnbindVisible">
+      <batch-unbind
+        v-model="batchUnbindVisible"
+        :selections="selected"
+        :tab-active="tabActive"
+        :detail="detail"
+        @success="handleOperateSuccess"
+      />
+    </template>
+
+    <template v-if="singleUnbindVisible && operateVisible">
       <single-unbind
         v-model="singleUnbindVisible"
-        :res-name="RELATED_RES_NAME_MAP[tabActive]"
-        :info="singleUnbindOperateInfo"
-        :loading="securityGroupStore.isBatchQuerySecurityGroupByResIdsLoading"
-        :handle-confirm="handleSingleUnbind"
-        :confirm-loading="securityGroupStore.isBatchDisassociateCvmsLoading"
+        :row="singleUnbindOperateRow"
+        :tab-active="tabActive"
+        :detail="detail"
+        @success="handleOperateSuccess"
       />
     </template>
   </div>
@@ -221,7 +247,7 @@ defineExpose({ isExpand, reload });
       height: 16px;
     }
 
-    :deep(.unbind-btn) {
+    .unbind-btn {
       margin-left: auto;
     }
 
