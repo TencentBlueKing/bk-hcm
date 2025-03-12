@@ -47,6 +47,8 @@ func newAwsRunner(taskType enumor.MonthTaskType) (MonthTaskRunner, error) {
 		return &AwsSupportMonthTask{}, nil
 	case enumor.AwsSavingsPlansMonthTask:
 		return &AwsSavingsPlanMonthTask{}, nil
+	case enumor.DeductMonthTask:
+		return &AwsDeductMonthTask{}, nil
 	default:
 		return nil, errors.New("not support task type of aws: " + string(taskType))
 	}
@@ -56,9 +58,10 @@ type awsMonthTaskBaseRunner struct {
 	spArnPrefix            string
 	spMainAccountCloudID   string
 	excludeAccountCloudIds []string
+	deductItemTypes        map[string]map[string][]string // 需要抵扣的账单明细项目类型列表，比如税费Tax
 }
 
-func (a *awsMonthTaskBaseRunner) initExtension(opt *MonthTaskActionOption) {
+func (a *awsMonthTaskBaseRunner) initExtension(kt *kit.Kit, opt *MonthTaskActionOption) {
 	if opt.Extension == nil {
 		return
 	}
@@ -70,9 +73,18 @@ func (a *awsMonthTaskBaseRunner) initExtension(opt *MonthTaskActionOption) {
 		excluded := strings.Split(excludeCloudIDStr, ",")
 		a.excludeAccountCloudIds = excluded
 	}
+	if opt.Extension[constant.AwsAccountDeductItemTypesKey] != "" {
+		deductItemTypesValueStr := opt.Extension[constant.AwsAccountDeductItemTypesKey]
+		err := json.Unmarshal([]byte(deductItemTypesValueStr), &a.deductItemTypes)
+		if err != nil {
+			logs.Errorf("fail to unmarshal init extension deduct item types, err: %v, deductItemTypesValueStr: %s, "+
+				"rid: %s", err, deductItemTypesValueStr, kt.Rid)
+			return
+		}
+	}
 }
 
-// listMainAccount rootAsMainAccount 作为二级账号存在的根账号，将分摊后的账单抵冲该账号支出
+// listMainAccount rootAsMainAccount 获取对应的二级账号，将分摊后的账单抵冲该账号支出
 func (a awsMonthTaskBaseRunner) listMainAccount(kt *kit.Kit, rootAccount *dataproto.AwsRootAccount) (
 	mainAccountMap map[string]*protocore.BaseMainAccount, rootAsMainAccount *protocore.BaseMainAccount, err error) {
 

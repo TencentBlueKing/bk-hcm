@@ -137,3 +137,11 @@ func (v *BillClient) ListRootOutsideMonthBill(kt *kit.Kit, req *hcbill.AwsRootOu
 	return common.Request[hcbill.AwsRootOutsideMonthBillListReq, core.ListResultT[map[string]string]](
 		v.client, rest.GET, kt, req, "/root_account_bills/list_outside_month_bills")
 }
+
+// ListRootBillItems list root bill items list
+func (v *BillClient) ListRootBillItems(kt *kit.Kit,
+	req *hcbill.AwsRootBillItemsListReq) (*core.ListResultT[map[string]string], error) {
+
+	return common.Request[hcbill.AwsRootBillItemsListReq, core.ListResultT[map[string]string]](
+		v.client, rest.POST, kt, req, "/root_account_bills/list_items")
+}
