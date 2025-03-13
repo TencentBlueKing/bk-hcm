@@ -964,11 +964,13 @@ watch(types, () => {
 watch(
   () => activeType.value,
   (v) => {
-    state.isLoading = true;
-    state.pagination.current = 1;
-    state.pagination.limit = 10;
-    handleSwtichType(v);
-    resetSelections();
+    setTimeout(() => {
+      state.isLoading = true;
+      state.pagination.current = 1;
+      state.pagination.limit = 10;
+      handleSwtichType(v);
+      resetSelections();
+    });
   },
   {
     immediate: true,
