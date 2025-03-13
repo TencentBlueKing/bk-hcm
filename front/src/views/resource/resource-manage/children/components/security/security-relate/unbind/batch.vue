@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { computed, ref, useAttrs, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useVerify } from '@/hooks';
-import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import {
+  ISecurityGroupDetail,
   type SecurityGroupRelResourceByBizItem,
   type SecurityGroupRelatedResourceName,
   useSecurityGroupStore,
@@ -13,47 +12,21 @@ import { RELATED_RES_KEY_MAP } from '@/constants/security-group';
 import { ISearchSelectValue } from '@/typings';
 import { getLocalFilterFnBySearchSelect } from '@/utils/search';
 
+import { Message } from 'bkui-vue';
 import { ThemeEnum } from 'bkui-vue/lib/shared';
 import search from '../search/index.vue';
 import dialogFooter from '@/components/common-dialog/dialog-footer.vue';
 
-const props = withDefaults(
-  defineProps<{
-    selections: SecurityGroupRelResourceByBizItem[];
-    textButton?: boolean;
-    disabled?: boolean;
-    tabActive: SecurityGroupRelatedResourceName;
-    handleConfirm: (ids: string[]) => Promise<void>;
-  }>(),
-  { disabled: false },
-);
+const props = defineProps<{
+  selections: SecurityGroupRelResourceByBizItem[];
+  tabActive: SecurityGroupRelatedResourceName;
+  detail: ISecurityGroupDetail;
+}>();
+const emit = defineEmits(['success']);
+const model = defineModel<boolean>();
 
 const { t } = useI18n();
-const { whereAmI } = useWhereAmI();
-const attrs: any = useAttrs();
 const securityGroupStore = useSecurityGroupStore();
-
-// 预鉴权
-const { handleAuth, authVerifyData } = useVerify();
-const authAction = computed(() => {
-  return whereAmI.value === Senarios.business ? 'biz_iaas_resource_operate' : 'iaas_resource_operate';
-});
-const buttonCls = computed(() => {
-  const buttonClsName = props.textButton ? 'hcm-no-permision-text-btn' : 'hcm-no-permision-btn';
-  return { [buttonClsName]: !authVerifyData.value?.permissionAction?.[authAction.value] };
-});
-
-const isShow = ref(false);
-const handleShow = () => {
-  if (!authVerifyData.value?.permissionAction?.[authAction.value]) {
-    handleAuth(authAction.value);
-    return;
-  }
-  isShow.value = true;
-};
-const handleClosed = () => {
-  isShow.value = false;
-};
 
 const types = [
   { label: t('可解绑'), value: 'target' },
@@ -72,32 +45,42 @@ const renderList = computed(() => {
   return listMap.value[selectedType.value].filter(filterFn.value);
 });
 
-watch(isShow, async (val) => {
-  if (!val) return;
-  const res = await securityGroupStore.pullSecurityGroup(RELATED_RES_KEY_MAP[props.tabActive], props.selections);
+watch(
+  model,
+  async (val) => {
+    if (!val) return;
+    const res = await securityGroupStore.pullSecurityGroup(RELATED_RES_KEY_MAP[props.tabActive], props.selections);
 
-  const target = res.filter((item) => item.security_groups.length > 1);
-  const unTarget = res.filter((item) => item.security_groups.length <= 1);
+    const target = res.filter((item) => item.security_groups.length > 1);
+    const unTarget = res.filter((item) => item.security_groups.length <= 1);
 
-  listMap.value = { target, unTarget };
-  selectedType.value = unTarget.length > 0 ? 'unTarget' : 'target';
-});
+    listMap.value = { target, unTarget };
+    selectedType.value = unTarget.length > 0 ? 'unTarget' : 'target';
+  },
+  { immediate: true },
+);
 
 const handleSearch = (searchValue: ISearchSelectValue) => {
   filterFn.value = getLocalFilterFnBySearchSelect(searchValue);
 };
 
 const handleConfirm = async () => {
-  await props.handleConfirm(listMap.value.target.map((item) => item.id));
+  await securityGroupStore.batchDisassociateCvms({
+    security_group_id: props.detail.id,
+    cvm_ids: listMap.value.target.map((item) => item.id),
+  });
+  Message({ theme: 'success', message: t('解绑成功') });
   handleClosed();
+  emit('success');
+};
+
+const handleClosed = () => {
+  model.value = false;
 };
 </script>
 
 <template>
-  <bk-button :text="textButton" :class="buttonCls" :disabled="disabled" @click="handleShow" v-bind="attrs">
-    {{ t('批量解绑') }}
-  </bk-button>
-  <bk-dialog v-model:is-show="isShow" :title="t('批量解绑')" :width="1280" @closed="handleClosed">
+  <bk-dialog v-model:is-show="model" :title="t('批量解绑')" :width="1280" @closed="handleClosed">
     <div class="tips">
       {{ t('已选择') }}
       <span class="number primary">{{ selections.length }}</span>

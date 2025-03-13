@@ -44,7 +44,7 @@ const isConfirmLoading = ref(false);
 const handleDelete = async () => {
   isConfirmLoading.value = true;
   try {
-    await resourceStore.deleteBatch('security_group', [props.detail.id]);
+    await resourceStore.deleteBatch('security_groups', [props.detail.id]);
     Message({ theme: 'success', message: t('删除成功') });
   } finally {
     isConfirmLoading.value = false;

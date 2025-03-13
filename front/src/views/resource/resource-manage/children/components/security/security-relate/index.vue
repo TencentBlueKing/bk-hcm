@@ -35,16 +35,19 @@ const relatedResourcesCountList = ref<ISecurityGroupRelResCountItem[]>([]);
 const relatedBiz = ref<ISecurityGroupRelBusiness>(null);
 
 const isLoading = ref(false);
+const getRelatedInfo = async () => {
+  const { id } = props.detail;
+  isLoading.value = true;
+  try {
+    relatedResourcesCountList.value = await securityGroupStore.queryRelatedResourcesCount([id]);
+    relatedBiz.value = await securityGroupStore.queryRelBusiness(id);
+  } finally {
+    isLoading.value = false;
+  }
+};
 onBeforeMount(async () => {
   if (props.detail) {
-    const { id } = props.detail;
-    isLoading.value = true;
-    try {
-      relatedResourcesCountList.value = await securityGroupStore.queryRelatedResourcesCount([id]);
-      relatedBiz.value = await securityGroupStore.queryRelBusiness(id);
-    } finally {
-      isLoading.value = false;
-    }
+    getRelatedInfo();
   }
 });
 </script>
@@ -59,6 +62,7 @@ onBeforeMount(async () => {
       :detail="props.detail"
       :related-resources-count-list="relatedResourcesCountList"
       :related-biz="relatedBiz"
+      :get-related-info="getRelatedInfo"
     />
   </div>
 </template>

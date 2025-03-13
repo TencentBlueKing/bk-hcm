@@ -15,15 +15,20 @@ import tab from './tab/index.vue';
 import collapseDataList from './data-list/collapse-data-list.vue';
 import search from './search/index.vue';
 
-defineProps<{
+const props = defineProps<{
   detail: ISecurityGroupDetail;
   relatedResourcesCountList: ISecurityGroupRelResCountItem[];
   relatedBiz: ISecurityGroupRelBusiness;
+  getRelatedInfo: () => Promise<void>;
 }>();
 
 const regionStore = useRegionsStore();
 
 const tabActive = ref<SecurityGroupRelatedResourceName>(SecurityGroupRelatedResourceName.CVM);
+
+const handleOperateSuccess = () => {
+  props.getRelatedInfo();
+};
 
 const searchRef = useTemplateRef('relate-resource-search');
 const collapseDataListRef = useTemplateRef('collapse-data-list');
@@ -69,6 +74,7 @@ watch(tabActive, () => {
         :tab-active="tabActive"
         :res-count="resCount"
         :condition="condition"
+        @operate-success="handleOperateSuccess"
       />
     </div>
   </div>
