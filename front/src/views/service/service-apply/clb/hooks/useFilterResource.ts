@@ -199,7 +199,7 @@ export default (formModel: ApplyClbModel) => {
         bk_biz_id: isBusinessPage ? formModel.bk_biz_id : undefined,
         zones,
         backup_zones: formModel.backup_zones ? [formModel.backup_zones] : undefined,
-        bandwidthpkg_sub_type: formModel.vip_isp === 'BGP' ? 'BGP' : 'SINGLE_ISP',
+        bandwidthpkg_sub_type: formModel.vip_isp === 'BGP' ? 'BGP' : 'SINGLEISP',
         bandwidth_package_id: undefined,
       });
       prices.value = data;
