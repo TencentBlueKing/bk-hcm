@@ -32,7 +32,7 @@ import (
 
 func checkBizMatch(urlBizID int64, resBizID int64, usageBizIDs []int64) bool {
 	// 检查分配业务和访问业务是否匹配
-	if resBizID == urlBizID {
+	if resBizID == 0 || resBizID == urlBizID {
 		return true
 	}
 
