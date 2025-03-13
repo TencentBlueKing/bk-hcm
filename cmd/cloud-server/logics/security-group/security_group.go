@@ -267,14 +267,15 @@ func (s *securityGroup) listRelBizsWithLB(kt *kit.Kit, currentBizID int64, lbIDs
 
 func tidySGRelBusiness(currentBizID int64, relBizMap map[int64]int64) []proto.ListSGRelBusinessItem {
 	var currentBizResC int64
-	if resCount, ok := relBizMap[currentBizID]; ok {
-		currentBizResC = resCount
-		delete(relBizMap, currentBizID)
-	}
-
 	// 当前业务必须在列表的第一个
 	relBizs := make([]proto.ListSGRelBusinessItem, 0, len(relBizMap)+1)
+
 	if currentBizID != constant.UnassignedBiz {
+		if resCount, ok := relBizMap[currentBizID]; ok {
+			currentBizResC = resCount
+			delete(relBizMap, currentBizID)
+		}
+
 		relBizs = append(relBizs, proto.ListSGRelBusinessItem{
 			BkBizID:  currentBizID,
 			ResCount: currentBizResC,
