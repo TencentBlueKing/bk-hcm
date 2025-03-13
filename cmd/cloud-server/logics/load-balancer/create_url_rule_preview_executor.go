@@ -25,11 +25,8 @@ import (
 	"strconv"
 	"strings"
 
-	"hcm/pkg/api/core"
-	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
-	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
@@ -244,34 +241,6 @@ func (c *CreateUrlRulePreviewExecutor) validateListener(kt *kit.Kit, curDetail *
 			listener.Protocol))
 
 	return nil
-}
-
-func (c *CreateUrlRulePreviewExecutor) getURLRule(kt *kit.Kit, lbCloudID, listenerCloudID, domain, url string) (
-	*corelb.TCloudLbUrlRule, error) {
-
-	switch c.vendor {
-	case enumor.TCloud:
-		req := &core.ListReq{
-			Filter: tools.ExpressionAnd(
-				tools.RuleEqual("cloud_lb_id", lbCloudID),
-				tools.RuleEqual("cloud_lbl_id", listenerCloudID),
-				tools.RuleEqual("domain", domain),
-				tools.RuleEqual("url", url),
-			),
-			Page: core.NewDefaultBasePage(),
-		}
-		rule, err := c.dataServiceCli.TCloud.LoadBalancer.ListUrlRule(kt, req)
-		if err != nil {
-			logs.Errorf("list url rule failed, err: %v, rid: %s", err, kt.Rid)
-			return nil, err
-		}
-		if len(rule.Details) > 0 {
-			return &rule.Details[0], nil
-		}
-	default:
-		return nil, fmt.Errorf("vendor(%s) not support", c.vendor)
-	}
-	return nil, nil
 }
 
 // CreateUrlRuleDetail ...

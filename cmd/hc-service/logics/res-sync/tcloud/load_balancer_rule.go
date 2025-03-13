@@ -256,6 +256,7 @@ func (cli *client) createLayer7Rule(kt *kit.Kit, region string, opt *SyncLayer7R
 		dbRules = dbRules[:0]
 		for _, cloud := range addSliceBatch {
 			dbRules = append(dbRules, dataproto.TCloudUrlRuleCreate{
+				Vendor:     enumor.TCloud,
 				LbID:       opt.LBID,
 				CloudLbID:  opt.CloudLBID,
 				LblID:      opt.ListenerID,

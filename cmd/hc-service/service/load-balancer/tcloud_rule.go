@@ -110,6 +110,7 @@ func convURLRuleCreateReq(createReq *protolb.TCloudRuleCreate, lb *corelb.BaseLo
 	}
 
 	return cloud.TCloudUrlRuleCreate{
+		Vendor:             lb.Vendor,
 		LbID:               lb.ID,
 		CloudLbID:          lb.CloudID,
 		LblID:              listener.ID,
