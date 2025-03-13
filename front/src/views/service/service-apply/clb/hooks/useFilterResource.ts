@@ -8,6 +8,7 @@ import { ApplyClbModel, SpecAvailability } from '@/api/load_balancers/apply-clb/
 import { reqResourceListOfCurrentRegion } from '@/api/load_balancers/apply-clb';
 import { ClbQuota, LbPrice } from '@/typings';
 import { cloneDeep, debounce, uniqBy } from 'lodash';
+import { VendorEnum } from '@/common/constant';
 
 // 当云地域变更时, 获取用户在当前地域支持可用区列表和资源列表
 export default (formModel: ApplyClbModel) => {
@@ -21,7 +22,7 @@ export default (formModel: ApplyClbModel) => {
   const quotas = ref<ClbQuota[]>([]); // 配额
   const isInquiryPricesLoading = ref(false); // 是否正在询价
   const isInquiryPrices = computed(() => {
-    // 内网下, account_id, region, zones, cloud_vpc_id, cloud_subnet_id, require_count, name 不为空时才询价一次
+    // 内网下, account_id, region, cloud_vpc_id, cloud_subnet_id, require_count, name 不为空时才询价一次
     if (formModel.load_balancer_type === 'INTERNAL') {
       return Boolean(
         formModel.account_id &&
@@ -33,7 +34,7 @@ export default (formModel: ApplyClbModel) => {
           /^[a-zA-Z0-9]([-a-zA-Z0-9]{0,58})[a-zA-Z0-9]$/.test(formModel.name),
       );
     }
-    // 公网下, 如果账号类型为传统类型, 则 account_id, region, address_ip_version, zones, cloud_vpc_id, vip_isp, sla_type, require_count, name 不为空时才询价一次
+    // 公网下, 如果账号类型为传统类型, 则 account_id, region, address_ip_version, cloud_vpc_id, vip_isp, sla_type, require_count, name 不为空时才询价一次
     if (formModel.account_type === 'LEGACY') {
       return Boolean(
         formModel.account_id &&
@@ -47,7 +48,7 @@ export default (formModel: ApplyClbModel) => {
           /^[a-zA-Z0-9]([-a-zA-Z0-9]{0,58})[a-zA-Z0-9]$/.test(formModel.name),
       );
     }
-    // 公网下, 如果账号类型为标准类型, 则 account_id, region, address_ip_version, zones, cloud_vpc_id, vip_isp, sla_type, internet_charge_type, internet_max_bandwidth_out, require_count, name 不为空时才询价一次
+    // 公网下, 如果账号类型为标准类型, 则 account_id, region, address_ip_version, cloud_vpc_id, vip_isp, sla_type, internet_charge_type, internet_max_bandwidth_out, require_count, name 不为空时才询价一次
     return Boolean(
       formModel.account_id &&
         formModel.region &&
@@ -75,14 +76,11 @@ export default (formModel: ApplyClbModel) => {
    * 获取当前地域「可用区列表和资源列表的映射关系」
    * @param region 地域
    */
-  const getResourceListOfCurrentRegion = async (params: any) => {
+  const getResourceListOfCurrentRegion = async (vendor: VendorEnum, params: any) => {
     isResourceListLoading.value = true;
     try {
-      const { data } = await reqResourceListOfCurrentRegion(params);
+      const { data } = await reqResourceListOfCurrentRegion(vendor, params);
       const { ZoneResourceSet } = data;
-
-      // 重置资源映射
-      currentResourceListMap.value = {};
 
       // 构建资源列表映射
       ZoneResourceSet.forEach(({ MasterZone, SlaveZone, ResourceSet }) => {
@@ -222,6 +220,8 @@ export default (formModel: ApplyClbModel) => {
   watch(
     [() => formModel.region, () => formModel.zones, () => formModel.address_ip_version],
     ([region, zones, address_ip_version]) => {
+      // 重置资源映射
+      currentResourceListMap.value = {};
       // 内网下不需要选择运营商类型
       if (!region || formModel.load_balancer_type === 'INTERNAL') return;
 
@@ -235,24 +235,24 @@ export default (formModel: ApplyClbModel) => {
       };
 
       // 获取当前地域「可用区列表和资源列表的映射关系」
-      getResourceListOfCurrentRegion(params);
+      getResourceListOfCurrentRegion(formModel.vendor, params);
     },
     { deep: true },
   );
 
   watch(
-    currentResourceListMap,
-    (val) => {
-      const { zones, backup_zones, address_ip_version, region } = formModel;
+    [currentResourceListMap, () => formModel.backup_zones],
+    ([map, backup_zones]) => {
+      const { zones, address_ip_version, region } = formModel;
       if (!zones && !backup_zones) {
         // 只选择地域
-        ispList.value = val.noZone?.ispList?.filter(({ Isp }: { Isp: string }) => Isp !== 'INTERNAL') || [];
+        ispList.value = map.noZone?.ispList?.filter(({ Isp }: { Isp: string }) => Isp !== 'INTERNAL') || [];
       } else {
         // 拼接key, 用于定位对应的 isp 列表
         const zonesRule = address_ip_version !== 'IPV4' ? region : zones;
         const key = `${zonesRule || ''}|${backup_zones || ''}`.toLowerCase();
         // 内网下的 isp 选项不显示
-        ispList.value = val[key]?.ispList?.filter(({ Isp }: { Isp: string }) => Isp !== 'INTERNAL') || [];
+        ispList.value = map[key]?.ispList?.filter(({ Isp }: { Isp: string }) => Isp !== 'INTERNAL') || [];
       }
     },
     {
@@ -333,6 +333,7 @@ export default (formModel: ApplyClbModel) => {
     ispList,
     isResourceListLoading,
     quotas,
+    isInquiryPrices,
     isInquiryPricesLoading,
   };
 };

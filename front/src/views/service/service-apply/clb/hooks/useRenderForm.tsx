@@ -70,7 +70,8 @@ export default (formModel: ApplyClbModel) => {
   };
 
   // use custom hooks
-  const { ispList, isResourceListLoading, quotas, isInquiryPricesLoading } = useFilterResource(formModel);
+  const { ispList, isResourceListLoading, quotas, isInquiryPrices, isInquiryPricesLoading } =
+    useFilterResource(formModel);
 
   // 当前地域下负载均衡的配额
   const currentLbQuota = computed(() => {
@@ -310,22 +311,27 @@ export default (formModel: ApplyClbModel) => {
             description:
               '共享型实例：按照规格提供性能保障，单实例最大支持并发连接数5万、每秒新建连接数5000、每秒查询数（QPS）5000。\n性能容量型实例：按照规格提供性能保障，单实例最大可支持并发连接数1000万、每秒新建连接数100万、每秒查询数（QPS）30万。',
             hidden: isIntranet.value,
-            content: () => (
-              <Select
-                v-model={formModel.slaType}
-                filterable={false}
-                clearable={false}
-                class='w220'
-                onChange={handleSlaTypeChange}>
-                <Option id='0' name={t('共享型')} />
-                <Option
-                  id='1'
-                  name={t('性能容量型')}
-                  disabled={!formModel.vip_isp}
-                  v-bk-tooltips={{ content: '请选择运营商类型', disabled: !!formModel.vip_isp, boundary: 'parent' }}
-                />
-              </Select>
-            ),
+            content: () => {
+              const tooltips = { content: t('请选择运营商类型'), disabled: !!formModel.vip_isp, boundary: 'parent' };
+              if (!ispList.value.length) {
+                Object.assign(tooltips, {
+                  content: t('当前地域/可用区无可用的运营商'),
+                  disabled: ispList.value.length,
+                  boundary: 'parent',
+                });
+              }
+              return (
+                <Select
+                  v-model={formModel.slaType}
+                  filterable={false}
+                  clearable={false}
+                  class='w220'
+                  onChange={handleSlaTypeChange}>
+                  <Option id='0' name={t('共享型')} />
+                  <Option id='1' name={t('性能容量型')} disabled={!formModel.vip_isp} v-bk-tooltips={tooltips} />
+                </Select>
+              );
+            },
           },
           {
             label: '实例规格',
@@ -604,7 +610,7 @@ export default (formModel: ApplyClbModel) => {
     () => formModel.account_id,
     (val) => {
       // 当云账号变更时, 查询用户网络类型
-      reqAccountNetworkType(val).then(({ data: { NetworkAccountType } }) => {
+      reqAccountNetworkType(formModel.vendor, val).then(({ data: { NetworkAccountType } }) => {
         formModel.account_type = NetworkAccountType;
       });
     },
@@ -616,6 +622,7 @@ export default (formModel: ApplyClbModel) => {
     isSubnetPreviewDialogShow,
     ApplyClbForm,
     formRef,
+    isInquiryPrices,
     isInquiryPricesLoading,
   };
 };
