@@ -38,7 +38,7 @@ const props = withDefaults(defineProps<ICloneSecurityProps>(), {
   filter: { op: 'and', rules: [{ field: 'type', op: 'eq', value: 'ingress' }] },
 });
 
-const emit = defineEmits(['update:isShow']);
+const emit = defineEmits(['update:isShow', 'success']);
 const { t } = useI18n();
 const store = useAccountStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
@@ -424,6 +424,7 @@ const handleConfirm = async () => {
       message: t('克隆成功！'),
     });
     handleClose();
+    emit('success');
   } catch (error) {
     Message({
       theme: 'error',
@@ -499,6 +500,7 @@ watch(
         :columns="activeType === 'ingress' ? inColumns : outColumns"
         :data="states.datas"
         show-overflow-tooltip
+        max-height="300"
       >
         <template #empty>
           <div class="security-empty-container">

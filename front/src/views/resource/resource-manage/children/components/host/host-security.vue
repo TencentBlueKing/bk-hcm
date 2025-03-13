@@ -26,7 +26,7 @@ const activeType = ref('ingress');
 const tableData = ref([]);
 const isShow = ref(false);
 const securityId = ref(0);
-const fetchUrl = ref<string>(`cvms/${props.data.id}/security_groups/${securityId.value}/rules/list`);
+const fetchUrl = ref<string>(`vendors/${props.data.vendor}/security_groups/${securityId.value}/rules/list`);
 const fetchFilter = reactive({
   op: QueryRuleOPEnum.AND,
   rules: [{ field: 'type', op: 'eq', value: activeType.value }],
@@ -275,7 +275,7 @@ if (isResourcePage.value) {
 const showRuleDialog = async () => {
   isShow.value = true;
   // 获取列表数据
-  fetchUrl.value = `cvms/${props.data.id}/security_groups/${securityId.value}/rules/list`;
+  fetchUrl.value = `vendors/${props.data.vendor}/security_groups/${securityId.value}/rules/list`;
   fetchFilter.rules = [{ field: 'type', op: 'eq', value: activeType.value }];
   if (props.data.vendor === 'huawei') {
     const huaweiColummns = [
