@@ -104,9 +104,10 @@ export type ListenerListResData = IListResData<Listeners>;
 export interface Domain extends ITreeNodeConfig<never> {
   domain: string; // 监听的域名
   url_count: number; // url数量
-  id: string; // todo: 资源ID，用于路由跳转。接口中没有该字段，需要在程序中构建该关系。
-  isDefault: boolean; // todo: 是否为默认域名。接口中没有该字段，需要在程序中构建该关系
-  listener_id: string; // todo: 所属监听器ID。接口中没有该字段，需要在程序中构建该关系
+  id: string; //* 资源ID，用于路由跳转。
+  isDefault: boolean; //* 是否为默认域名。
+  listener_id: string; //* 所属监听器ID。
+  vendor: VendorEnum; //* 所属监听器云厂商。
 }
 export type Domains = Array<Domain>;
 export type DomainListResData = IQueryResData<{

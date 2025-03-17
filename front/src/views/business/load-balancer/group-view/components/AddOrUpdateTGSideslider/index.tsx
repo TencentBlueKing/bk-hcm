@@ -77,7 +77,7 @@ export default defineComponent({
           page: { limit: 1, start: 0, count: false },
           filter: { op: 'and', rules: [] },
         },
-        `vendors/tcloud/target_groups/${targetGroup.id}/rules`,
+        `vendors/${targetGroup.vendor}/target_groups/${targetGroup.id}/rules`,
       );
       const listenerItem = rulesRes.data.details[0];
       if (!listenerItem) return;

@@ -1,4 +1,5 @@
 import { defineComponent, watch } from 'vue';
+import { useRoute } from 'vue-router';
 // import hooks
 import { useTable } from '@/hooks/useTable/useTable';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
@@ -10,6 +11,7 @@ import './index.scss';
 export default defineComponent({
   name: 'ListenerList',
   setup() {
+    const route = useRoute();
     // use stores
     const loadBalancerStore = useLoadBalancerStore();
     const businessStore = useBusinessStore();
@@ -90,7 +92,7 @@ export default defineComponent({
         },
       },
       requestOption: {
-        type: `vendors/tcloud/target_groups/${loadBalancerStore.targetGroupId}/rules`,
+        type: `vendors/${route.query.vendor}/target_groups/${loadBalancerStore.targetGroupId}/rules`,
         async resolveDataListCb(dataList: any[]) {
           return asyncGetListenerDetail(dataList).then((dataList) => asyncGetTargetsHealth(dataList));
         },
@@ -101,7 +103,7 @@ export default defineComponent({
       () => loadBalancerStore.targetGroupId,
       (val) => {
         if (!val) return;
-        getListData([], `vendors/tcloud/target_groups/${val}/rules`);
+        getListData([], `vendors/${route.query.vendor}/target_groups/${val}/rules`);
       },
     );
 

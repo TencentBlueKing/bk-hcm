@@ -5,7 +5,7 @@ import ListenerList from './listener-list';
 import TargetGroupDetail from './target-group-detail';
 import HealthCheckupPage from './health-checkup';
 // import stores
-import { useBusinessStore, useLoadBalancerStore } from '@/store';
+import { ITargetGroupDetail, useBusinessStore, useLoadBalancerStore } from '@/store';
 // import hooks
 import useActiveTab from '@/hooks/useActiveTab';
 import './index.scss';
@@ -24,7 +24,7 @@ export default defineComponent({
   setup(props) {
     const businessStore = useBusinessStore();
     const loadBalancerStore = useLoadBalancerStore();
-    const tgDetail = ref({});
+    const tgDetail = ref<Partial<ITargetGroupDetail>>({});
     const { activeTab, handleActiveTabChange } = useActiveTab(TabType.list);
     const tabList = [
       { name: TabType.list, label: '绑定的监听器', component: ListenerList },
@@ -41,14 +41,15 @@ export default defineComponent({
       tgDetail.value = res.data;
     };
 
-    const getListenerDetail = async (tgId: any) => {
+    const getListenerDetail = async () => {
+      const { id, vendor } = tgDetail.value;
       // 请求绑定的监听器规则
       const rulesRes = await businessStore.list(
         {
           page: { limit: 1, start: 0, count: false },
           filter: { op: 'and', rules: [] },
         },
-        `vendors/tcloud/target_groups/${tgId}/rules`,
+        `vendors/${vendor}/target_groups/${id}/rules`,
       );
       const listenerItem = rulesRes.data.details[0];
       if (!listenerItem) return;
@@ -59,12 +60,12 @@ export default defineComponent({
 
     watch(
       () => props.id,
-      (id) => {
+      async (id) => {
         if (!id) return;
         // 目标组id状态保持
         loadBalancerStore.setTargetGroupId(id);
-        getTargetGroupDetail(id);
-        getListenerDetail(id);
+        await getTargetGroupDetail(id);
+        await getListenerDetail();
       },
       {
         immediate: true,
