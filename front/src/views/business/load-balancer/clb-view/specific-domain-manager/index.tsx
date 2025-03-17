@@ -40,6 +40,7 @@ export default defineComponent({
     const { data: listenerDetail } = await businessStore.detail('listeners', to.query.listener_id as string);
     // 负载均衡详情
     const { data: lbDetail } = await businessStore.detail('load_balancers', listenerDetail.lb_id);
+    // 当前节点为：监听器
     loadBalancerStore.setCurrentSelectedTreeNode({ ...listenerDetail, lb: lbDetail });
     next();
   },
@@ -96,7 +97,7 @@ export default defineComponent({
                   <Link
                     class='target-group-name-btn'
                     theme='primary'
-                    href={`/#/business/loadbalancer/group-view/${data.target_group_id}?bizs=${accountStore.bizs}&type=detail`}
+                    href={`/#/business/loadbalancer/group-view/${data.target_group_id}?bizs=${accountStore.bizs}&type=detail&vendor=${loadBalancerStore.currentSelectedTreeNode.vendor}`}
                     onClick={() => loadBalancerStore.setTgSearchTarget(cell)}>
                     {cell || '--'}
                   </Link>
@@ -177,7 +178,10 @@ export default defineComponent({
     const deleteRulesBatch = async (ids: string[]) => {
       isSubmitLoading.value = true;
       try {
-        await businessStore.deleteRules(props.listener_id, { lbl_id: props.listener_id, rule_ids: ids });
+        await businessStore.deleteRules(loadBalancerStore.currentSelectedTreeNode.vendor, props.listener_id, {
+          lbl_id: props.listener_id,
+          rule_ids: ids,
+        });
         isBatchDeleteDialogShow.value = false;
         Message({ message: '删除成功', theme: 'success' });
         await getListData();
@@ -227,7 +231,7 @@ export default defineComponent({
         },
       },
       requestOption: {
-        type: `vendors/tcloud/listeners/${props.listener_id}/rules`,
+        type: `vendors/${loadBalancerStore.currentSelectedTreeNode.vendor}/listeners/${props.listener_id}/rules`,
         sortOption: { sort: 'created_at', order: 'DESC' },
         filterOption: {
           rules: [{ field: 'domain', op: QueryRuleOPEnum.EQ, value: props.id }],
@@ -277,7 +281,7 @@ export default defineComponent({
                 value: domain,
               },
             ],
-            `vendors/tcloud/listeners/${id}/rules`,
+            `vendors/${loadBalancerStore.currentSelectedTreeNode.vendor}/listeners/${id}/rules`,
           );
       },
     );
@@ -285,21 +289,12 @@ export default defineComponent({
     const handleSubmit = async () => {
       await formInstance.value.validate();
       isSubmitLoading.value = true;
+      const lbl_id = props.listener_id;
+      const { rule_id, url, scheduler, target_group_id } = formData;
+      const { vendor } = loadBalancerStore.currentSelectedTreeNode;
       const promise = isEdit.value
-        ? businessStore.updateUrl({
-            lbl_id: props.listener_id,
-            rule_id: formData.rule_id,
-            url: formData.url,
-            scheduler: formData.scheduler,
-            target_group_id: formData.target_group_id,
-          })
-        : businessStore.createRules({
-            lbl_id: props.listener_id,
-            url: formData.url,
-            scheduler: formData.scheduler,
-            domains: [props.id],
-            target_group_id: formData.target_group_id,
-          });
+        ? businessStore.updateUrl({ lbl_id, rule_id, url, scheduler, target_group_id, vendor })
+        : businessStore.createRules({ lbl_id, url, scheduler, domains: [props.id], target_group_id, vendor });
       try {
         await promise;
         Message({

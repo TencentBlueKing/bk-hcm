@@ -64,7 +64,7 @@ export default defineComponent({
           formData.type === '0'
             ? Array.from({ length: formData.ip_count }, () => ({ subnet_id: formData.cloud_subnet_id }))
             : formData.ip_list.map((ip) => ({ subnet_id: formData.cloud_subnet_id, ip }));
-        await businessStore.createSnatIps(props.lbInfo?.id, { snat_ips });
+        await businessStore.createSnatIps(props.lbInfo?.id, props.lbInfo?.vendor, { snat_ips });
         Message({ theme: 'success', message: '新增成功' });
         await props.reloadLbDetail(props.lbInfo?.id);
       } finally {

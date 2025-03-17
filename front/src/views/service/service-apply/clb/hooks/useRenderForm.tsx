@@ -333,17 +333,19 @@ export default (formModel: ApplyClbModel) => {
             property: 'sla_type',
             hidden: formModel.slaType !== '1',
             content: () => {
+              let eventName = '';
+              eventName = 'showLbSpecTypeSelectDialog';
               if (formModel.sla_type !== 'shared') {
                 return (
                   <SelectedItemPreviewComp
                     content={CLB_SPECS[formModel.sla_type]}
-                    onClick={() => bus.$emit('showLbSpecTypeSelectDialog')}
+                    onClick={() => bus.$emit(eventName)}
                   />
                 );
               }
               return (
                 <Button
-                  onClick={() => bus.$emit('showLbSpecTypeSelectDialog')}
+                  onClick={() => bus.$emit(eventName)}
                   disabled={!formModel.vip_isp}
                   v-bk-tooltips={{ content: '请选择运营商类型', disabled: !!formModel.vip_isp }}>
                   <Plus class='f24' />

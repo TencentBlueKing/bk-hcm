@@ -17,6 +17,42 @@ export type TGOperationScene =
   | 'port' // 批量修改端口
   | 'weight'; // 批量修改权重
 
+export interface ITargetGroupDetail {
+  id: string;
+  cloud_id: string;
+  name: string;
+  vendor: string;
+  account_id: string;
+  bk_biz_id: number;
+  target_group_type: string;
+  vpc_id: string;
+  cloud_vpc_id: string;
+  region: string;
+  protocol: string;
+  port: number;
+  weight: number;
+  health_check: {
+    health_switch: number;
+    time_out: number;
+    interval_time: number;
+    health_num: number;
+    un_health_num: number;
+    http_code: number;
+    check_type: string;
+    http_check_path: string;
+    http_check_domain: string;
+    http_check_method: string;
+    source_ip_type: number;
+    extended_code: string;
+  };
+  memo: string;
+  creator: string;
+  reviser: string;
+  created_at: string;
+  updated_at: string;
+  target_list: any[];
+}
+
 export const useLoadBalancerStore = defineStore('load-balancer', () => {
   // state - 目标组id
   const targetGroupId = ref('');

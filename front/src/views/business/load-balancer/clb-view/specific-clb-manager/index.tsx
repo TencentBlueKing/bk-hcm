@@ -61,7 +61,7 @@ export default defineComponent({
       loadBalancerStore.setCurrentSelectedTreeNode(detail.value);
     };
     const updateLb = async (payload: Record<string, any>) => {
-      await businessStore.updateLbDetail({
+      await businessStore.updateLbDetail(detail.value.vendor, {
         id: detail.value.id,
         ...payload,
       });

@@ -302,7 +302,7 @@ export default defineComponent({
                   class='ml10 link-text-btn'
                   onClick={() => {
                     window.open(
-                      `/#/business/loadbalancer/group-view/${listenerFormData.target_group_id}?bizs=${accountStore.bizs}&type=detail`,
+                      `/#/business/loadbalancer/group-view/${listenerFormData.target_group_id}?bizs=${accountStore.bizs}&type=detail&vendor=${listenerFormData.vendor}`,
                       '_blank',
                       'noopener,noreferrer',
                     );
