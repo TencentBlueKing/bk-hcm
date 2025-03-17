@@ -205,7 +205,6 @@ func (r *DefaultMonthTaskRunner) ensureMonthTaskStub(kt *kit.Kit, monthTask *bil
 				r.vendor, curType, monthTask.ID, err, kt.Rid)
 			return nil, err
 		}
-		monthTask = nil
 	}
 	if err := r.createMonthPullTaskStub(kt, rootSummary, curType); err != nil {
 		logs.Errorf("fail to create [%s] month task, type: %s, err: %v, rid: %s",
