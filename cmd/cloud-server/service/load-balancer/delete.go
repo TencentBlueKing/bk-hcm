@@ -21,7 +21,6 @@
 package loadbalancer
 
 import (
-	"errors"
 	"fmt"
 
 	"hcm/cmd/cloud-server/logics/async"
@@ -183,14 +182,10 @@ func (svc *lbSvc) batchDeleteLoadBalancer(cts *rest.Contexts, validHandler handl
 		return nil, err
 	}
 	for _, lbID := range req.IDs {
-		info, exist := lbInfoMap[lbID]
+		_, exist := lbInfoMap[lbID]
 		if !exist {
 			return nil, fmt.Errorf("load balancer(%s) not found", lbID)
 		}
-		if info.Vendor != enumor.TCloud {
-			return nil, errors.New("only supports tcloud")
-		}
-
 	}
 
 	// 业务校验、鉴权
