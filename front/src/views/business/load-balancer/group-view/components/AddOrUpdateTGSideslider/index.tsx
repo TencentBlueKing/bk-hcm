@@ -313,7 +313,9 @@ export default defineComponent({
                     <Button
                       text
                       theme='primary'
-                      onClick={() => goAsyncTaskDetail(businessStore.list, lastAsyncTaskInfo.flowId)}>
+                      onClick={() =>
+                        goAsyncTaskDetail(businessStore.list, lastAsyncTaskInfo.flowId, formData.bk_biz_id)
+                      }>
                       查看任务
                     </Button>
                     。
@@ -326,7 +328,7 @@ export default defineComponent({
                   <Button
                     text
                     theme='primary'
-                    onClick={() => goAsyncTaskDetail(businessStore.list, lastAsyncTaskInfo.flowId)}>
+                    onClick={() => goAsyncTaskDetail(businessStore.list, lastAsyncTaskInfo.flowId, formData.bk_biz_id)}>
                     查看任务
                   </Button>
                   。
