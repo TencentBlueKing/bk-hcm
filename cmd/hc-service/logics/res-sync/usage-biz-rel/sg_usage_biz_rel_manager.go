@@ -69,8 +69,22 @@ func (mgr *UsageBizRelManager) SyncSecurityGroupUsageBiz(kt *kit.Kit, sg *cloudc
 	}
 
 	if slice.IsItemInSlice(sg.UsageBizIDs, constant.AttachedAllBiz) {
-		// 已经是最大范围了
-		return nil
+		// already max biz range
+		if len(sg.UsageBizIDs) == 1 {
+			return nil
+		}
+		// if UsageBizIDs contains -1 and other bizs,
+		// reset UsageBizIDs to []int64{constant.AttachedAllBiz} as required
+		req := &protocloud.ResUsageBizRelUpdateReq{
+			UsageBizIDs: []int64{constant.AttachedAllBiz},
+			ResCloudID:  sg.CloudID,
+			ResVendor:   sg.Vendor,
+		}
+		err := mgr.dbCli.Global.ResUsageBizRel.SetBizRels(kt, enumor.SecurityGroupCloudResType, sg.ID, req)
+		if err != nil {
+			logs.Errorf("reset sg(%s/%s) res usage biz to -1 failed, err: %v, rid: %s", sg.Vendor, sg.ID, err, kt.Rid)
+			return err
+		}
 	}
 	bizIDList, err := mgr.querySGIDMap(kt, sg)
 	if err != nil {
