@@ -376,8 +376,10 @@ func (s *securityGroup) UpdateSGMgmtAttr(kt *kit.Kit, mgmtAttr *proto.SecurityGr
 	if len(mgmtAttr.UsageBizIDs) <= 0 {
 		return nil
 	}
+	// 管理业务加入使用业务
+	mgmtAttr.UsageBizIDs = append(mgmtAttr.UsageBizIDs, mgmtAttr.MgmtBizID)
 	setRelReq := &dataproto.ResUsageBizRelUpdateReq{
-		UsageBizIDs: mgmtAttr.UsageBizIDs,
+		UsageBizIDs: slice.Unique(mgmtAttr.UsageBizIDs),
 		ResCloudID:  sg.CloudID,
 		ResVendor:   sg.Vendor,
 	}
@@ -490,6 +492,11 @@ func (s *securityGroup) batchUpdateSecurityGroupMgmtAttr(kt *kit.Kit, mgmtAttrs 
 func (s *securityGroup) isBizsBelongToAccount(kt *kit.Kit, accountID string, mgmtBiz int64, usageBizs []int64) (
 	bool, error) {
 
+	// 管理业务不可修改为未分配
+	if mgmtBiz == constant.UnassignedBiz {
+		return false, errors.New("cannot update security group management business to unassigned")
+	}
+
 	accountBizs := make([]int64, 0)
 	listReq := &core.ListReq{
 		Filter: tools.EqualExpression("account_id", accountID),
@@ -504,6 +511,10 @@ func (s *securityGroup) isBizsBelongToAccount(kt *kit.Kit, accountID string, mgm
 		}
 
 		for _, bizID := range rst.Details {
+			// 帐号全业务可见时，直接返回true
+			if bizID.BkBizID == constant.UnassignedBiz {
+				return true, nil
+			}
 			accountBizs = append(accountBizs, bizID.BkBizID)
 		}
 
