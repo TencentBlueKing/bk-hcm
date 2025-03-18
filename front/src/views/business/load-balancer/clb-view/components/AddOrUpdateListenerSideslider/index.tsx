@@ -107,8 +107,11 @@ export default defineComponent({
     // 当侧边栏显示或协议变更时, 刷新目标组select-option-list
     watch([isSliderShow, () => listenerFormData.protocol], ([isSliderShow]) => {
       if (!isSliderShow || isEdit.value) return;
+      // 重置目标组
+      listenerFormData.target_group_id = '';
       nextTick(() => {
         targetGroupSelectorRef.value.handleRefresh();
+        formRef.value?.clearValidate();
       });
     });
 
