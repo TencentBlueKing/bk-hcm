@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
@@ -204,11 +205,20 @@ func (req SecurityGroupUpdateMgmtAttrReq) Validate() error {
 		}
 	}
 
+	if req.MgmtBizID == constant.UnassignedBiz {
+		return errors.New("mgmt_biz_id should not be update to unassigned")
+	}
+
 	// 平台管理不可修改管理业务
 	if req.MgmtType == enumor.MgmtTypePlatform {
 		if req.MgmtBizID != constant.UnassignedBiz && req.MgmtBizID != 0 {
 			return errors.New("platform security group can't be assigned to a management business")
 		}
+	}
+
+	// 使用业务如果包含-1，则必须只能有-1
+	if slices.Contains(req.UsageBizIDs, constant.AttachedAllBiz) && len(req.UsageBizIDs) > 1 {
+		return errors.New("usage business has included all [-1], can not specify to include other business")
 	}
 
 	return nil
@@ -248,6 +258,10 @@ type BatchUpdateSGMgmtAttrItem struct {
 
 // Validate security group update management attribute item.
 func (i BatchUpdateSGMgmtAttrItem) Validate() error {
+	if i.MgmtBizID == constant.UnassignedBiz {
+		return errors.New("mgmt_biz_id should not be update to unassigned")
+	}
+
 	return validator.Validate.Struct(i)
 }
 

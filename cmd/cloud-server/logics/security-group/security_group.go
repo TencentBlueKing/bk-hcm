@@ -291,6 +291,33 @@ func tidySGRelBusiness(currentBizID int64, relBizMap map[int64]int64) []proto.Li
 	return relBizs
 }
 
+func isSGMgmtModifiable(kt *kit.Kit, sg cloud.BaseSecurityGroup, mgmtType enumor.MgmtType, mgmtBizID int64) error {
+	// 管理类型已确定的不能修改
+	if sg.MgmtType != "" {
+		if mgmtType != "" && sg.MgmtType != mgmtType {
+			logs.Errorf("security group mgmt type cannot be modified, sg_id: %s, old_type: %s, new_type: %s, rid: %s",
+				sg.ID, sg.MgmtType, mgmtType, kt.Rid)
+			return fmt.Errorf("security group: %s mgmt type cannot be modified", sg.ID)
+		}
+	}
+
+	// 已分配的安全组，不可修改管理业务
+	if sg.BkBizID != constant.UnassignedBiz && mgmtBizID != 0 {
+		logs.Errorf("security group: %s is assigned, cannot modify the assigned business, rid: %s", sg.ID, kt.Rid)
+		return fmt.Errorf("security group: %s is assigned, cannot modify the assigned business", sg.ID)
+	}
+
+	// 管理类型未确认的安全组，不可修改管理业务
+	if sg.MgmtType == "" && mgmtBizID != 0 {
+		logs.Errorf("security group: %s mgmt_type is unconfirmed, cannot modify the assigned business, rid: %s",
+			sg.ID, kt.Rid)
+		return fmt.Errorf("security group: %s mgmt_type is unconfirmed, cannot modify the assigned business",
+			sg.ID)
+	}
+
+	return nil
+}
+
 // UpdateSGMgmtAttr update security group management attributes
 func (s *securityGroup) UpdateSGMgmtAttr(kt *kit.Kit, mgmtAttr *proto.SecurityGroupUpdateMgmtAttrReq,
 	sgID string) error {
@@ -307,19 +334,22 @@ func (s *securityGroup) UpdateSGMgmtAttr(kt *kit.Kit, mgmtAttr *proto.SecurityGr
 	}
 
 	sg := sgs[0]
-	// 管理类型已确定的不能修改
-	if sg.MgmtType != "" {
-		if mgmtAttr.MgmtType != "" && sg.MgmtType != mgmtAttr.MgmtType {
-			logs.Errorf("security group mgmt type cannot be modified, sg_id: %s, old_type: %s, new_type: %s, rid: %s",
-				sg.ID, sg.MgmtType, mgmtAttr.MgmtType, kt.Rid)
-			return fmt.Errorf("security group: %s mgmt type cannot be modified", sg.ID)
-		}
+	err = isSGMgmtModifiable(kt, sg, mgmtAttr.MgmtType, mgmtAttr.MgmtBizID)
+	if err != nil {
+		return err
 	}
 
-	// 已分配的安全组，不可修改管理业务
-	if sg.BkBizID != constant.UnassignedBiz && mgmtAttr.MgmtBizID != 0 {
-		logs.Errorf("security group: %s cannot modify the assigned business, rid: %s", sg.ID, kt.Rid)
-		return fmt.Errorf("security group: %s cannot modify the assigned business", sg.ID)
+	// 管理业务和使用业务必须在帐号下的业务列表中
+	belongTo, err := s.isBizsBelongToAccount(kt, sg.AccountID, mgmtAttr.MgmtBizID, mgmtAttr.UsageBizIDs)
+	if err != nil {
+		logs.Errorf("check bizs belong to account failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+	if !belongTo {
+		logs.Errorf("bizs: %d, %v are not belong to account: %s, sec_group: %s, rid: %s", mgmtAttr.MgmtBizID,
+			mgmtAttr.UsageBizIDs, sg.AccountID, sg.ID, kt.Rid)
+		return fmt.Errorf("bizs: %d, %v are not belong to account: %s", mgmtAttr.MgmtBizID, mgmtAttr.UsageBizIDs,
+			sg.AccountID)
 	}
 
 	// 更新管理属性
@@ -333,11 +363,9 @@ func (s *securityGroup) UpdateSGMgmtAttr(kt *kit.Kit, mgmtAttr *proto.SecurityGr
 		Vendor:     sg.Vendor,
 		CloudID:    sg.CloudID,
 	})
-
 	updateReq := &dataproto.BatchUpdateSecurityGroupMgmtAttrReq{
 		SecurityGroups: updateItems,
 	}
-
 	if err := s.client.DataService().Global.SecurityGroup.BatchUpdateSecurityGroupMgmtAttr(kt, updateReq); err != nil {
 		logs.Errorf("batch update security group management attributes failed, err: %v, rid: %s", err,
 			kt.Rid)
@@ -348,8 +376,12 @@ func (s *securityGroup) UpdateSGMgmtAttr(kt *kit.Kit, mgmtAttr *proto.SecurityGr
 	if len(mgmtAttr.UsageBizIDs) <= 0 {
 		return nil
 	}
+	// 使用业务非全部时，将管理业务加入使用业务
+	if mgmtAttr.MgmtBizID != 0 && mgmtAttr.UsageBizIDs[0] != constant.AttachedAllBiz {
+		mgmtAttr.UsageBizIDs = append(mgmtAttr.UsageBizIDs, mgmtAttr.MgmtBizID)
+	}
 	setRelReq := &dataproto.ResUsageBizRelUpdateReq{
-		UsageBizIDs: mgmtAttr.UsageBizIDs,
+		UsageBizIDs: slice.Unique(mgmtAttr.UsageBizIDs),
 		ResCloudID:  sg.CloudID,
 		ResVendor:   sg.Vendor,
 	}
@@ -398,6 +430,32 @@ func (s *securityGroup) BatchUpdateSGMgmtAttr(kt *kit.Kit, mgmtAttrs []proto.Bat
 		sgInfos[sg.ID] = sg
 	}
 
+	// 管理业务和使用业务必须在帐号下的业务列表中
+	for _, attr := range mgmtAttrs {
+		sg := sgInfos[attr.ID]
+		belongTo, err := s.isBizsBelongToAccount(kt, sg.AccountID, attr.MgmtBizID, []int64{})
+		if err != nil {
+			logs.Errorf("check bizs belong to account failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+		if !belongTo {
+			logs.Errorf("biz: %d are not belong to account: %s, sec_group: %s, rid: %s", attr.MgmtBizID,
+				sg.AccountID, sg.ID, kt.Rid)
+			return fmt.Errorf("biz: %d are not belong to account: %s", attr.MgmtBizID, sg.AccountID)
+		}
+	}
+
+	if err := s.batchUpdateSecurityGroupMgmtAttr(kt, mgmtAttrs, sgInfos); err != nil {
+		logs.Errorf("batch update security group management attributes failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+func (s *securityGroup) batchUpdateSecurityGroupMgmtAttr(kt *kit.Kit, mgmtAttrs []proto.BatchUpdateSGMgmtAttrItem,
+	sgInfos map[string]cloud.BaseSecurityGroup) error {
+
 	for _, batch := range slice.Split(mgmtAttrs, constant.BatchOperationMaxLimit) {
 		updateItems := make([]dataproto.BatchUpdateSGMgmtAttrItem, len(batch))
 		for i, attr := range batch {
@@ -431,4 +489,55 @@ func (s *securityGroup) BatchUpdateSGMgmtAttr(kt *kit.Kit, mgmtAttrs []proto.Bat
 	}
 
 	return nil
+}
+
+func (s *securityGroup) isBizsBelongToAccount(kt *kit.Kit, accountID string, mgmtBiz int64, usageBizs []int64) (
+	bool, error) {
+
+	// 管理业务不可修改为未分配
+	if mgmtBiz == constant.UnassignedBiz {
+		return false, errors.New("cannot update security group management business to unassigned")
+	}
+
+	accountBizs := make([]int64, 0)
+	listReq := &core.ListReq{
+		Filter: tools.EqualExpression("account_id", accountID),
+		Page:   core.NewDefaultBasePage(),
+		Fields: []string{"account_id", "bk_biz_id"},
+	}
+	for {
+		rst, err := s.client.DataService().Global.Account.ListAccountBizRel(kt.Ctx, kt.Header(), listReq)
+		if err != nil {
+			logs.Errorf("list account biz rel failed, err: %v, rid: %s", err, kt.Rid)
+			return false, err
+		}
+
+		for _, bizID := range rst.Details {
+			// 帐号全业务可见时，直接返回true
+			if bizID.BkBizID == constant.AttachedAllBiz {
+				return true, nil
+			}
+			accountBizs = append(accountBizs, bizID.BkBizID)
+		}
+
+		if len(rst.Details) < int(listReq.Page.Limit) {
+			break
+		}
+
+		listReq.Page.Start += uint32(listReq.Page.Limit)
+	}
+
+	if mgmtBiz != 0 {
+		if !slice.IsItemInSlice(accountBizs, mgmtBiz) {
+			return false, nil
+		}
+	}
+
+	for _, bizID := range usageBizs {
+		if !slice.IsItemInSlice(accountBizs, bizID) {
+			return false, nil
+		}
+	}
+
+	return true, nil
 }
