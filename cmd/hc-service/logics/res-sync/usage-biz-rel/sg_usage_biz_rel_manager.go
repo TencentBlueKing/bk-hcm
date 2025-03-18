@@ -85,6 +85,7 @@ func (mgr *UsageBizRelManager) SyncSecurityGroupUsageBiz(kt *kit.Kit, sg *cloudc
 			logs.Errorf("reset sg(%s/%s) res usage biz to -1 failed, err: %v, rid: %s", sg.Vendor, sg.ID, err, kt.Rid)
 			return err
 		}
+		return nil
 	}
 	bizIDList, err := mgr.querySGIDMap(kt, sg)
 	if err != nil {
