@@ -14,7 +14,7 @@ import useAddOrUpdateListener from './useAddOrUpdateListener';
 import bus from '@/common/bus';
 import { goAsyncTaskDetail } from '@/utils';
 // import constants
-import { APPLICATION_LAYER_LIST } from '@/constants';
+import { APPLICATION_LAYER_LIST, TRANSPORT_LAYER_LIST } from '@/constants';
 import { IOriginPage } from '@/typings';
 import './index.scss';
 
@@ -235,6 +235,7 @@ export default defineComponent({
               </FormItem>
             </>
           )}
+          {/* 新增监听器 */}
           {!isEdit.value && (
             <>
               <FormItem label={t('均衡方式')} required property='scheduler'>
@@ -272,6 +273,7 @@ export default defineComponent({
                     </div>
                   )
               }
+              {/* 四层、七层都支持绑定目标组：四层绑定在监听器上，七层绑定在url上 */}
               <FormItem label={t('目标组')} required property='target_group_id'>
                 <TargetGroupSelector
                   ref={targetGroupSelectorRef}
@@ -297,7 +299,8 @@ export default defineComponent({
               </FormItem>
             </>
           )}
-          {isEdit.value && (
+          {/* 编辑监听器，四层监听器显示目标组信息、七层不显示 */}
+          {isEdit.value && TRANSPORT_LAYER_LIST.includes(listenerFormData.protocol) && (
             <div class='binded-target-group-show-container'>
               <span class='label'>{t('已绑定的目标组')}</span>:
               {listenerFormData.target_group_id ? (
