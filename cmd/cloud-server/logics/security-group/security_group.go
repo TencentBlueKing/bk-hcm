@@ -376,8 +376,8 @@ func (s *securityGroup) UpdateSGMgmtAttr(kt *kit.Kit, mgmtAttr *proto.SecurityGr
 	if len(mgmtAttr.UsageBizIDs) <= 0 {
 		return nil
 	}
-	// 管理业务加入使用业务
-	if mgmtAttr.MgmtBizID != 0 {
+	// 使用业务非全部时，将管理业务加入使用业务
+	if mgmtAttr.MgmtBizID != 0 && mgmtAttr.UsageBizIDs[0] != constant.AttachedAllBiz {
 		mgmtAttr.UsageBizIDs = append(mgmtAttr.UsageBizIDs, mgmtAttr.MgmtBizID)
 	}
 	setRelReq := &dataproto.ResUsageBizRelUpdateReq{
