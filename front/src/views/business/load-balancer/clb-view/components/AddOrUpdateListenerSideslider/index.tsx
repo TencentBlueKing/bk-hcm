@@ -10,6 +10,7 @@ import { useLoadBalancerStore, useAccountStore, useBusinessStore } from '@/store
 // import hooks
 import { useI18n } from 'vue-i18n';
 import useAddOrUpdateListener from './useAddOrUpdateListener';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 // import utils
 import bus from '@/common/bus';
 import { goAsyncTaskDetail } from '@/utils';
@@ -35,7 +36,11 @@ export default defineComponent({
     const protocolButtonList = ['TCP', 'UDP', 'HTTP', 'HTTPS'];
     // use hooks
     const { t } = useI18n();
+    const { getBizsId } = useWhereAmI();
 
+    const currentBusinessId = computed(() => {
+      return loadBalancerStore.currentSelectedTreeNode?.bk_biz_id ?? getBizsId();
+    });
     const computedProtocol = computed(() => listenerFormData.protocol);
     const targetGroupSelectorRef = ref();
     const svrCertSelectorRef = ref();
@@ -136,7 +141,9 @@ export default defineComponent({
             <Button
               text
               theme='primary'
-              onClick={() => goAsyncTaskDetail(businessStore.list, lockedLbInfo.value.flow_id)}>
+              onClick={() =>
+                goAsyncTaskDetail(businessStore.list, lockedLbInfo.value.flow_id, currentBusinessId.value)
+              }>
               查看当前任务
             </Button>
             。

@@ -54,24 +54,30 @@ const getLocalFilterConditions = (searchVal: any[], resolveRuleValue: (rule: any
  * 当负载均衡被锁定时, 可以链接至异步任务详情页面
  * @param flowId 异步任务id
  */
-const goAsyncTaskDetail = async (api: (data: any, type: string) => any, flowId: string) => {
-  // 1. 点击后, 先查询到 audit_id
-  const { data } = await api(
-    {
-      page: { limit: 1, start: 0, count: false },
-      filter: {
-        op: 'and',
-        rules: [{ field: 'detail.data.res_flow.flow_id', op: 'json_eq', value: flowId }],
+const goAsyncTaskDetail = async (api: (data: any, type: string) => any, flowId: string, bkBizId: number) => {
+  try {
+    // 1. 点击后, 先查询到 audit_id
+    const { data } = await api(
+      {
+        page: { limit: 1, start: 0, count: false },
+        filter: {
+          op: 'and',
+          rules: [{ field: 'detail.data.res_flow.flow_id', op: 'json_eq', value: flowId }],
+        },
       },
-    },
-    'audits',
-  );
-  const { id, res_name: name, res_id, bk_biz_id } = data.details[0];
-  // 2. 新开页面查看异步任务详情
-  window.open(
-    `/#/business/record/detail?record_id=${id}&name=${name}&res_id=${res_id}&bizs=${bk_biz_id}&flow=${flowId}`,
-    '_blank',
-  );
+      'audits',
+    );
+    const { id, res_name: name, res_id, bk_biz_id } = data.details[0];
+    // 2. 新开页面查看异步任务详情
+    window.open(
+      `/#/business/record/detail?record_id=${id}&name=${name}&res_id=${res_id}&bizs=${bk_biz_id}&flow=${flowId}`,
+      '_blank',
+    );
+  } catch (error) {
+    console.error(error);
+    // 如果查询失败, 则新开页面查看操作记录列表
+    window.open(`/#/business/record?bizs=${bkBizId}`, '_blank');
+  }
 };
 
 export { asyncGetListenerCount, getLocalFilterConditions, goAsyncTaskDetail };
