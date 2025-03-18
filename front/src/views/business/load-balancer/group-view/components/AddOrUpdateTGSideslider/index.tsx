@@ -206,6 +206,7 @@ export default defineComponent({
       await formRef.value.validate();
       let promise;
       let message;
+      let isAsyncTask = false;
       switch (loadBalancerStore.currentScene) {
         case 'add':
           promise = businessStore.createTargetGroups(resolveFormDataForAdd());
@@ -218,24 +219,45 @@ export default defineComponent({
         case 'AddRs':
           promise = businessStore.batchAddTargets(resolveFormDataForAddRs());
           message = 'RS添加异步任务已提交';
+          isAsyncTask = true;
           break;
         case 'port':
           promise = businessStore.batchUpdateRsPort(formData.id, resolveFormDataForBatchUpdate('port'));
           message = '批量修改端口异步任务已提交';
+          isAsyncTask = true;
           break;
         case 'weight':
           promise = businessStore.batchUpdateRsWeight(formData.id, resolveFormDataForBatchUpdate('weight'));
           message = '批量修改权重异步任务已提交';
+          isAsyncTask = true;
           break;
         case 'BatchDeleteRs':
           promise = businessStore.batchDeleteTargets(resolveFormDataForBatchDeleteRs());
           message = '批量移除RS异步任务已提交';
+          isAsyncTask = true;
           break;
       }
       try {
         isSubmitLoading.value = true;
         const { data } = await promise;
-        Message({ message, theme: 'success' });
+        // 异步任务，需要引导用户查看任务
+        Message({
+          theme: 'success',
+          message: isAsyncTask ? (
+            <>
+              <span>{message}</span>
+              <Button
+                class='ml4'
+                text
+                theme='primary'
+                onClick={() => goAsyncTaskDetail(businessStore.list, data?.flow_id, formData.bk_biz_id)}>
+                查看当前任务
+              </Button>
+            </>
+          ) : (
+            message
+          ),
+        });
         // 异步任务非结束状态, 记录异步任务flow_id以及当前操作目标组id
         if (data?.flow_id) {
           Object.assign(lastAsyncTaskInfo, { tgId: formData.id, flowId: data.flow_id, state: 'pending' });
