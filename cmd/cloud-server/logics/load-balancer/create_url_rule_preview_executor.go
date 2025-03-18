@@ -304,7 +304,7 @@ func (c *CreateUrlRulePreviewExecutor) validateDefaultDomain(kt *kit.Kit) error 
 				}
 			}
 		}
-		if newDefaultDomain == "" {
+		if listener.DefaultDomain == "" && newDefaultDomain == "" {
 			for _, detail := range details {
 				detail.Status.SetNotExecutable()
 				detail.ValidateResult = append(detail.ValidateResult,
