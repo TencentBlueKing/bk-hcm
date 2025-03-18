@@ -377,7 +377,9 @@ func (s *securityGroup) UpdateSGMgmtAttr(kt *kit.Kit, mgmtAttr *proto.SecurityGr
 		return nil
 	}
 	// 管理业务加入使用业务
-	mgmtAttr.UsageBizIDs = append(mgmtAttr.UsageBizIDs, mgmtAttr.MgmtBizID)
+	if mgmtAttr.MgmtBizID != 0 {
+		mgmtAttr.UsageBizIDs = append(mgmtAttr.UsageBizIDs, mgmtAttr.MgmtBizID)
+	}
 	setRelReq := &dataproto.ResUsageBizRelUpdateReq{
 		UsageBizIDs: slice.Unique(mgmtAttr.UsageBizIDs),
 		ResCloudID:  sg.CloudID,
@@ -512,7 +514,7 @@ func (s *securityGroup) isBizsBelongToAccount(kt *kit.Kit, accountID string, mgm
 
 		for _, bizID := range rst.Details {
 			// 帐号全业务可见时，直接返回true
-			if bizID.BkBizID == constant.UnassignedBiz {
+			if bizID.BkBizID == constant.AttachedAllBiz {
 				return true, nil
 			}
 			accountBizs = append(accountBizs, bizID.BkBizID)
