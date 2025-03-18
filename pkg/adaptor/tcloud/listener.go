@@ -32,8 +32,9 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
 
-	clb "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb/v20180317"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
+
+	clb "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb/v20180317"
 )
 
 // CreateListener 创建监听器 reference: https://cloud.tencent.com/document/api/214/30693
@@ -371,6 +372,7 @@ func (t *TCloudImpl) formatCreateRuleRequest(opt *typelb.TCloudCreateRuleOption)
 			SessionExpireTime: item.SessionExpireTime,
 			Scheduler:         item.Scheduler,
 			Domains:           item.Domains,
+			DefaultServer:     item.DefaultServer,
 		}
 
 		if item.HealthCheck != nil {
