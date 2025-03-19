@@ -55,7 +55,7 @@ interface LinkFieldOptions {
 }
 
 export default (type: string, isSimpleShow = false, vendor?: string, options?: any) => {
-  const { customRender } = options;
+  const customRender = options?.customRender ?? (() => {});
   const router = useRouter();
   const route = useRoute();
   const accountStore = useAccountStore();
