@@ -853,8 +853,9 @@ func jsonFiledSqlFormat(field string) string {
 		return field
 	}
 
-	index := strings.Index(field, JSONFieldSeparator)
-	return fmt.Sprintf(`%s->>'$."%s"'`, field[0:index], field[index+1:])
+	fields := strings.Split(field, ".")
+	// use  JSON_UNQUOTE and JSON_EXTRACT function to support mariadb
+	return fmt.Sprintf(`JSON_UNQUOTE(JSON_EXTRACT(%s,'$."%s"'))`, fields[0], strings.Join(fields[1:], `"."`))
 }
 
 // JSONContainsOp is json array field contain operator
