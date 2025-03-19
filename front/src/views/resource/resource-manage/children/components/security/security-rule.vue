@@ -628,68 +628,69 @@ const types = [
 
 <template>
   <div>
-    <bk-loading :loading="state.isLoading">
-      <section class="rule-main">
-        <bk-radio-group v-model="activeType" :disabled="state.isLoading">
-          <bk-radio-button v-for="item in types" :key="item.name" :label="item.name">
-            {{ item.label }}
-          </bk-radio-button>
-        </bk-radio-group>
+    <section class="rule-main">
+      <bk-radio-group v-model="activeType" :disabled="state.isLoading">
+        <bk-radio-button v-for="item in types" :key="item.name" :label="item.name">
+          {{ item.label }}
+        </bk-radio-button>
+      </bk-radio-group>
 
-        <div @click="showAuthDialog(actionName)">
-          <bk-button
-            :disabled="!isResourcePage && !hasEditScopeInBusiness"
-            v-bk-tooltips="{
-              content: t('该安全组不在当前业务管理，不允许编辑'),
-              disabled: isResourcePage || hasEditScopeInBusiness,
-            }"
-            theme="primary"
-            :class="{ 'hcm-no-permision-btn': !authVerifyData.value?.permissionAction?.[actionName.value] }"
-            @click="handleSecurityRuleDialog({})"
-          >
-            {{ t('新增规则') }}
-          </bk-button>
-        </div>
-
+      <div @click="showAuthDialog(actionName)">
         <bk-button
-          icon="plus"
           :disabled="!isResourcePage && !hasEditScopeInBusiness"
           v-bk-tooltips="{
             content: t('该安全组不在当前业务管理，不允许编辑'),
             disabled: isResourcePage || hasEditScopeInBusiness,
           }"
-          v-if="showSort(route?.query?.vendor)"
-          @click="handleSecurityRuleSort"
+          theme="primary"
+          :class="{ 'hcm-no-permision-btn': !authVerifyData.value?.permissionAction?.[actionName] }"
+          @click="handleSecurityRuleDialog({})"
         >
-          {{ t('规则排序') }}
+          {{ t('新增规则') }}
         </bk-button>
-      </section>
-
-      <div v-if="route.query.vendor === 'azure'" class="mb20">
-        <h4 class="mt10">Azure默认{{ activeType === 'ingress' ? t('入站') : t('出站') }}规则</h4>
-        <bk-table
-          class="mt10"
-          row-hover="auto"
-          :columns="azureDefaultColumns"
-          :data="azureDefaultList"
-          show-overflow-tooltip
-        >
-          <template #empty>
-            <div class="security-empty-container">
-              <bk-exception
-                class="exception-wrap-item exception-part"
-                type="empty"
-                scene="part"
-                description="无规则，默认拒绝所有流量"
-              />
-            </div>
-          </template>
-        </bk-table>
       </div>
 
-      <h4 v-if="route.query.vendor === 'azure'" class="mt10">
-        Azure{{ activeType === 'ingress' ? t('入站') : t('出站') }}规则
-      </h4>
+      <bk-button
+        icon="plus"
+        :disabled="!isResourcePage && !hasEditScopeInBusiness"
+        v-bk-tooltips="{
+          content: t('该安全组不在当前业务管理，不允许编辑'),
+          disabled: isResourcePage || hasEditScopeInBusiness,
+        }"
+        v-if="showSort(route?.query?.vendor)"
+        @click="handleSecurityRuleSort"
+      >
+        {{ t('规则排序') }}
+      </bk-button>
+    </section>
+
+    <div v-if="route.query.vendor === 'azure'" class="mb20">
+      <h4 class="mt10">Azure默认{{ activeType === 'ingress' ? t('入站') : t('出站') }}规则</h4>
+      <bk-table
+        class="mt10"
+        row-hover="auto"
+        :columns="azureDefaultColumns"
+        :data="azureDefaultList"
+        show-overflow-tooltip
+      >
+        <template #empty>
+          <div class="security-empty-container">
+            <bk-exception
+              class="exception-wrap-item exception-part"
+              type="empty"
+              scene="part"
+              description="无规则，默认拒绝所有流量"
+            />
+          </div>
+        </template>
+      </bk-table>
+    </div>
+
+    <h4 v-if="route.query.vendor === 'azure'" class="mt10">
+      Azure{{ activeType === 'ingress' ? t('入站') : t('出站') }}规则
+    </h4>
+
+    <bk-loading :loading="state.isLoading">
       <bk-table
         v-if="activeType === 'ingress'"
         class="mt20"

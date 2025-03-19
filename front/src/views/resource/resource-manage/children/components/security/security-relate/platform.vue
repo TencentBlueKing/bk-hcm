@@ -53,6 +53,12 @@ const currentBizRelatedResources = computed(
       res_count: 0,
     },
 );
+// 其他业务数
+const otherBusinessCount = computed(
+  () =>
+    props.relatedBiz?.[RELATED_RES_KEY_MAP[tabActive.value]]?.filter((item) => item.bk_biz_id !== getBizsId()).length ||
+    0,
+);
 
 // 关联资源table
 const list = ref<SecurityGroupRelResourceByBizItem[]>([]);
@@ -151,9 +157,11 @@ watch(tabActive, () => {
 });
 
 watch(
-  [() => pagination.current, () => pagination.limit],
+  [() => pagination.current, () => pagination.limit, () => props.relatedBiz],
   () => {
-    getList();
+    if (props.relatedBiz) {
+      getList();
+    }
   },
   { immediate: true },
 );
@@ -199,12 +207,7 @@ watch(
       {{ t(`当前业务（${getBusinessNames(getBizsId())}）下共有`) }}
       <span class="number">{{ currentBizRelatedResources?.res_count }}</span>
       {{ t(`台${RELATED_RES_NAME_MAP[tabActive]}，还有`) }}
-      <span class="number">
-        {{
-          relatedBiz?.[RELATED_RES_KEY_MAP[tabActive]]?.filter(({ bk_biz_id: bkBizId }) => bkBizId !== getBizsId())
-            .length
-        }}
-      </span>
+      <span class="number">{{ otherBusinessCount }}</span>
       {{ t(`个业务也在使用`) }}
     </div>
 
