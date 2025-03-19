@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
@@ -193,6 +194,10 @@ func (a ResUsageBizRelDao) UpsertUsageBizs(kt *kit.Kit, tx *sqlx.Tx, resType enu
 
 	existsBizIDs := make(map[int64]interface{})
 	for i := range relTables {
+		// 使用业务包含全部业务时，跳过
+		if relTables[i].UsageBizID == constant.AttachedAllBiz {
+			return nil
+		}
 		existsBizIDs[relTables[i].UsageBizID] = struct{}{}
 	}
 

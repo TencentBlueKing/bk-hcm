@@ -104,6 +104,9 @@ const getAccountList = () => {
 
   const { accountBizList } = useAccountBusiness(accountId);
   usageBizList = accountBizList;
+
+  // 默认填充后，清除表单校验结果
+  nextTick(() => formRef.value.clearValidate());
 };
 
 watch(
@@ -139,10 +142,10 @@ watch(
 watch(
   () => props.show,
   (val) => {
-    if (val) {
-      return getAccountList();
-    }
     resetAll();
+    if (val) {
+      getAccountList();
+    }
   },
   {
     immediate: true,

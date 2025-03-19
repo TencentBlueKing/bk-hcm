@@ -125,7 +125,7 @@ const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, ge
   },
   fetchUrl,
   {
-    asyncRequestApiMethod: async (datalist: any[], datalistRef: Ref<any[]>) => {
+    asyncRequestApiMethod: (datalist: any[], datalistRef: Ref<any[]>) => {
       // 安全组需要异步加载一些关联资源数
       if (activeType.value !== 'group' || !datalist.length) return [];
 
@@ -144,29 +144,38 @@ const fetchSecurityGroupExtraFields = async (
     .filter((sg) => sg.mgmt_type === 'biz' && sg.bk_biz_id === -1 && sg.usage_biz_ids?.[0] !== -1)
     .map((sg) => sg.id);
 
+  // 创建映射表提升查找效率, 都采用局部数据变更, 不整个替换表格数据, 避免表格整个刷新
+  const createIdMap = <T extends { id: string }>(items: T[]): Map<string, T> =>
+    new Map(items.map((item) => [item.id, item]));
+
   // 并行发起所有请求
   const ruleCountPromise = securityGroupStore.batchQueryRuleCount(sgIds).then((ruleRes) => {
-    datalistRef.value = datalistRef.value.map((sg) => {
-      return { ...sg, rule_count: ruleRes[sg.id] };
+    datalistRef.value.forEach((sg) => {
+      sg.rule_count = ruleRes[sg.id];
     });
   });
 
   const relatedResourcesPromise = securityGroupStore.queryRelatedResourcesCount(sgIds).then((relatedResourcesList) => {
-    datalistRef.value = datalistRef.value.map((sg) => {
-      const { resources } = relatedResourcesList.find((relRes) => relRes.id === sg.id) ?? {};
-      const relResCount = resources.reduce((acc, cur) => acc + cur.count, 0);
-      const relatedResources = resources.filter(({ count }) => count > 0);
-      return { ...sg, rel_res_count: relResCount, rel_res: relatedResources };
+    const resMap = createIdMap(relatedResourcesList);
+    datalistRef.value.forEach((sg) => {
+      const entry = resMap.get(sg.id);
+      if (entry) {
+        sg.rel_res_count = entry.resources.reduce((acc, cur) => acc + cur.count, 0);
+        sg.rel_res = entry.resources.filter(({ count }) => count > 0);
+      }
     });
   });
 
   const maintainerPromise =
     whereAmI.value === Senarios.business && unclaimedSgIds.length
       ? securityGroupStore.queryUsageBizMaintainers(unclaimedSgIds).then((maintainers) => {
-          datalistRef.value = datalistRef.value.map((sg) => {
-            const { managers, usage_biz_infos: usageBizInfos } =
-              maintainers.find((maintainer) => maintainer.id === sg.id) ?? {};
-            return { ...sg, account_managers: managers, usage_biz_infos: usageBizInfos };
+          const maintainerMap = createIdMap(maintainers);
+          datalistRef.value.forEach((sg) => {
+            const entry = maintainerMap.get(sg.id);
+            if (entry) {
+              sg.account_managers = entry.managers;
+              sg.usage_biz_infos = entry.usage_biz_infos;
+            }
           });
         })
       : Promise.resolve();
@@ -1102,9 +1111,17 @@ const handleSecurityGroupOperationSuccess = () => {
 
   // 确保dialog销毁后再清空selections数据，避免dialog中依赖selections的逻辑被非预期执行
   nextTick(() => {
-    resetSelections();
+    handleClearSecurityGroupSelections();
   });
 };
+
+// 当table数据整个替换时, 需要清空勾选项, 确保勾选态及selections数据正确
+watch(
+  () => datas.value,
+  () => {
+    handleClearSecurityGroupSelections();
+  },
+);
 </script>
 
 <template>
@@ -1246,7 +1263,6 @@ const handleSecurityGroupOperationSuccess = () => {
         :selections="selections"
         @hidden="securityGroupAssignDialogState.isHidden = true"
         @success="handleSecurityGroupOperationSuccess"
-        @closed="handleClearSecurityGroupSelections"
       />
     </template>
 
@@ -1257,7 +1273,6 @@ const handleSecurityGroupOperationSuccess = () => {
         :selections="selections"
         @hidden="securityGroupMgmtAttrEditDialogState.isHidden = true"
         @success="handleSecurityGroupOperationSuccess"
-        @closed="handleClearSecurityGroupSelections"
       />
     </template>
   </div>

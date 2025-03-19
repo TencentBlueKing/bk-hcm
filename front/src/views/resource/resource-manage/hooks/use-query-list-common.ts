@@ -17,7 +17,7 @@ type PropsType = {
 type ExtraConfigType = {
   sort?: 'string';
   order?: 'ASC' | 'DESC';
-  asyncRequestApiMethod?: (datalist: any[], datalistRef: Ref<any[]>) => Promise<void>; // 处理异步请求
+  asyncRequestApiMethod?: (datalist: any[], datalistRef: Ref<any[]>) => void; // 处理异步请求
 };
 
 export default (props: PropsType, url: Ref<string>, extraConfig?: ExtraConfigType) => {
