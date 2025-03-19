@@ -110,10 +110,12 @@ const getAccountList = async () => {
   if (bk_biz_ids?.[0] !== -1) {
     formData.value.usage_biz_ids = bk_biz_ids;
     usaBizs.value = businessGlobalStore.businessFullList.filter((item: any) => bk_biz_ids.includes(item.id));
-    return;
+  } else {
+    formData.value.usage_biz_ids = [];
+    usaBizs.value = [];
   }
-  formData.value.usage_biz_ids = [];
-  usaBizs.value = [];
+  // 默认填充后，清除表单校验结果
+  nextTick(() => formRef.value.clearValidate());
 };
 
 watch(
@@ -149,10 +151,10 @@ watch(
 watch(
   () => props.show,
   (val) => {
-    if (val) {
-      return getAccountList();
-    }
     resetAll();
+    if (val) {
+      getAccountList();
+    }
   },
   {
     immediate: true,
