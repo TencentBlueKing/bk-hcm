@@ -321,8 +321,8 @@ func Test_jsonFiledSqlFormat(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := jsonFiledSqlFormat(tt.args.field); got != tt.want {
-				t.Errorf("jsonFiledSqlFormat() = %v, want %v", got, tt.want)
+			if got := jsonFieldSqlFormat(tt.args.field); got != tt.want {
+				t.Errorf("jsonFieldSqlFormat() = %v, want %v", got, tt.want)
 			}
 		})
 	}
