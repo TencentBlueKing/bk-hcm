@@ -235,6 +235,11 @@ func (svc *securityGroupSvc) BatchDeleteSecurityGroup(cts *rest.Contexts) (inter
 			return nil, err
 		}
 
+		if err := svc.deleteSecurityGroupCommonRels(cts.Kit, txn, delIDs); err != nil {
+			logs.Errorf("delete security group common rels failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+
 		// 删除使用业务
 		resUsageBizFilter := tools.ExpressionAnd(
 			tools.RuleIn("res_id", delIDs),
@@ -290,6 +295,15 @@ func (svc *securityGroupSvc) deleteSecurityGroupRule(kt *kit.Kit, txn *sqlx.Tx,
 		}
 	}
 
+	return nil
+}
+
+func (svc *securityGroupSvc) deleteSecurityGroupCommonRels(kt *kit.Kit, txn *sqlx.Tx, delIDs []string) error {
+	err := svc.dao.SGCommonRel().DeleteWithTx(kt, txn, tools.ContainersExpression("security_group_id", delIDs))
+	if err != nil {
+		logs.Errorf("delete security group common rels failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
 	return nil
 }
 
