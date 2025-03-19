@@ -210,7 +210,7 @@ func (svc *lbSvc) batchDeleteLoadBalancer(cts *rest.Contexts, validHandler handl
 	}
 
 	// 按账号+地域分列表
-	tasks := buildTCloudLBDeletionTasks(lbInfoMap)
+	tasks := buildLBDeletionTasks(lbInfoMap)
 	flowReq := &ts.AddCustomFlowReq{
 		Name:        enumor.FlowDeleteLoadBalancer,
 		ShareData:   nil,
@@ -262,33 +262,31 @@ func (svc *lbSvc) loadBalancerDeleteCheck(kt *kit.Kit, lbIDs []string) error {
 	return nil
 }
 
-func buildTCloudLBDeletionTasks(infoMap map[string]types.CloudResourceBasicInfo) (tasks []ts.CustomFlowTask) {
-
-	tcloudReqMap := make(map[string]*hcproto.TCloudBatchDeleteLoadbalancerReq, len(infoMap))
-	// TODO: 后期支持多vendor
+func buildLBDeletionTasks(infoMap map[string]types.CloudResourceBasicInfo) (tasks []ts.CustomFlowTask) {
+	reqMap := make(map[string]*actionlb.DeleteLoadBalancerOption, len(infoMap))
 	for id, info := range infoMap {
 		key := genAccountRegionKey(info)
-		if tcloudReqMap[key] == nil {
-			tcloudReqMap[key] = &hcproto.TCloudBatchDeleteLoadbalancerReq{
-				AccountID: info.AccountID,
-				Region:    info.Region,
-				IDs:       []string{},
+		if reqMap[key] == nil {
+			reqMap[key] = &actionlb.DeleteLoadBalancerOption{
+				BatchDeleteLoadBalancerReq: hcproto.BatchDeleteLoadBalancerReq{
+					AccountID: info.AccountID,
+					Region:    info.Region,
+					IDs:       []string{},
+				},
+				Vendor: info.Vendor,
 			}
 
 		}
-		req := tcloudReqMap[key]
+		req := reqMap[key]
 		req.IDs = append(req.IDs, id)
 	}
 	getNextID := counter.NewNumStringCounter(1, 10)
-	for _, req := range tcloudReqMap {
+	for _, req := range reqMap {
 		tasks = append(tasks, ts.CustomFlowTask{
 			ActionID:   action.ActIDType(getNextID()),
 			ActionName: enumor.ActionDeleteLoadBalancer,
-			Params: actionlb.DeleteLoadBalancerOption{
-				Vendor:                           enumor.TCloud,
-				TCloudBatchDeleteLoadbalancerReq: cvt.PtrToVal(req),
-			},
-			Retry: tableasync.NewRetryWithPolicy(3, 1000, 5000),
+			Params:     cvt.PtrToVal(req),
+			Retry:      tableasync.NewRetryWithPolicy(3, 1000, 5000),
 		})
 
 	}
@@ -296,5 +294,5 @@ func buildTCloudLBDeletionTasks(infoMap map[string]types.CloudResourceBasicInfo)
 }
 
 func genAccountRegionKey(info types.CloudResourceBasicInfo) string {
-	return info.AccountID + "_" + info.Region
+	return info.AccountID + "_" + string(info.Vendor) + "_" + info.Region
 }
