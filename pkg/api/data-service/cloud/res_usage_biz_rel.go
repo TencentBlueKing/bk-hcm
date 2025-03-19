@@ -32,7 +32,7 @@ type ListResUsageBizRelResult = core.ListResultT[corecloud.ResUsageBizRel]
 // ResUsageBizRelUpdateReq 覆盖更新
 type ResUsageBizRelUpdateReq struct {
 	UsageBizIDs []int64       `json:"usage_biz_ids" validate:"required,max=3000"`
-	ResCloudID  string        `json:"res_cloud_id" validate:"omitempty,max=64"`
+	ResCloudID  string        `json:"res_cloud_id" validate:"omitempty,max=255"`
 	ResVendor   enumor.Vendor `json:"res_vendor" validate:"omitempty,max=64"`
 }
 
