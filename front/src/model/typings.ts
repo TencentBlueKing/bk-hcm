@@ -53,6 +53,7 @@ export type PropertyColumnConfig = {
   width?: number | string;
   minWidth?: number | string;
   defaultHidden?: boolean;
+  showOverflowTooltip?: boolean;
 };
 
 export type PropertyFormConfig = {

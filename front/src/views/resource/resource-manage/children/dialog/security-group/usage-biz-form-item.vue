@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watch, toRaw, ref, watchEffect } from 'vue';
+import { computed, watch, toRaw, ref, watchEffect, inject } from 'vue';
 import { ArrowsRight } from 'bkui-vue/lib/icon';
 import isEqual from 'lodash/isEqual';
 import { type IBusinessItem } from '@/store/business-global';
@@ -13,6 +13,8 @@ const props = defineProps<{
 const model = defineModel<number[]>();
 
 const securityGroupStore = useSecurityGroupStore();
+
+const isBusinessEditUsageBiz = inject('isBusinessEditUsageBiz');
 
 const beforeModel = structuredClone(toRaw(model.value || []));
 
@@ -56,26 +58,33 @@ watch(model, (val, oldVal) => {
 
 <template>
   <bk-form-item label="使用业务">
+    <!-- 业务下编辑且为当前使用业务为全部业务时禁用 -->
     <hcm-form-business
+      class="usage-biz-selector"
       multiple
-      :multiple-mode="'default'"
       :data="accountBizList"
       v-model="model"
       :option-disabled="businessOptionDisabled"
+      :show-all="accountBizList ? false : true"
+      :all-option-id="-1"
+      :disabled="isBusinessEditUsageBiz && detail.usage_biz_ids?.[0] === -1"
     />
   </bk-form-item>
   <div class="data-diff" v-show="hasChanged">
     <dl class="biz-list before">
       <dt class="list-title">变更前</dt>
       <dd class="list-item" v-for="bizId in beforeModel" :key="bizId">
-        <display-value :property="{ type: 'business' }" :value="bizId" />
+        <span v-if="bizId === -1">全部业务</span>
+        <display-value v-else :property="{ type: 'business' }" :value="bizId" />
       </dd>
     </dl>
     <arrows-right class="right-icon" />
     <div class="biz-list after">
       <dt class="list-title">变更后</dt>
       <dd v-for="item in afterList" :key="item.bizId" :class="['list-item', { remove: item.remove, new: item.new }]">
+        <span v-if="item.bizId === -1">全部业务</span>
         <display-value
+          v-else
           class="diff-name"
           :property="{ type: 'business' }"
           :display="{ showOverflowTooltip: true }"
@@ -180,6 +189,17 @@ watch(model, (val, oldVal) => {
   .right-icon {
     font-size: 24px;
     color: #3a84ff;
+  }
+}
+
+// hack 避免禁用的option会被tag的close去掉
+.usage-biz-selector {
+  :deep(.bk-select-trigger) {
+    .bk-tag-closable {
+      .bk-tag-close {
+        display: none !important;
+      }
+    }
   }
 }
 </style>

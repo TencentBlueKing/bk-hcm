@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
+import { computed, provide, reactive, ref } from 'vue';
 import { isEqual } from 'lodash';
 import { Message } from 'bkui-vue';
 import { isEmpty } from '@/common/util';
@@ -10,7 +10,7 @@ import {
   type SecurityGroupMgmtAttrSingleType,
 } from '@/store/security-group';
 import UsageBizFormItem from './usage-biz-form-item.vue';
-import { useAccountBusiness } from './use-account-business';
+import { useAccountBusiness } from '@/views/resource/resource-manage/hooks/use-account-business';
 
 const props = defineProps<{
   detail: ISecurityGroupItem;
@@ -67,6 +67,8 @@ const handleDialogConfirm = async () => {
   closeDialog();
   emit('success');
 };
+
+provide('isBusinessEditUsageBiz', isBusinessEditUsageBiz);
 </script>
 
 <template>

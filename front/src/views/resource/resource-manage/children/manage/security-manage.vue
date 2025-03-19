@@ -49,9 +49,9 @@ import SecurityGroupUpdateMgmtAttrDialog from '../dialog/security-group/update-m
 import UnclaimedComp from '../components/security/unclaimed-comp/index.vue';
 import { MGMT_TYPE_MAP } from '@/constants/security-group';
 import { ISecurityGroupOperateItem, useSecurityGroupStore, SecurityGroupManageType } from '@/store/security-group';
-import FlexTag from '@/components/flex-tag/index.vue';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import { useBusinessGlobalStore } from '@/store/business-global';
+import UsageBizValue from '@/views/resource/resource-manage/children/components/security/usage-biz-value.vue';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -140,7 +140,9 @@ const fetchSecurityGroupExtraFields = async (
   datalistRef: Ref<ISecurityGroupOperateItem[]>,
 ) => {
   const sgIds = datalist.map((item) => item.id);
-  const unclaimedSgIds = datalist.filter((sg) => sg.mgmt_type === 'biz' && sg.bk_biz_id === -1).map((sg) => sg.id);
+  const unclaimedSgIds = datalist
+    .filter((sg) => sg.mgmt_type === 'biz' && sg.bk_biz_id === -1 && sg.usage_biz_ids?.[0] !== -1)
+    .map((sg) => sg.id);
 
   // 并行发起所有请求
   const ruleCountPromise = securityGroupStore.batchQueryRuleCount(sgIds).then((ruleRes) => {
@@ -366,7 +368,7 @@ const groupColumns = [
   {
     label: t('关联实例数'),
     field: 'rel_res_count',
-    width: 120,
+    width: 110,
     isDefaultShow: true,
     render: ({ cell }: any) => {
       return h(Fragment, null, [
@@ -406,11 +408,7 @@ const groupColumns = [
     isDefaultShow: true,
     width: 100,
     showOverflowTooltip: false,
-    render: ({ cell }: any) => {
-      if (!cell || cell.length === 0) return '--';
-      const names = cell.map((id: number) => ({ name: getNameFromBusinessMap(id) }));
-      return h(FlexTag, { list: names, isTagStyle: true });
-    },
+    render: ({ cell }: any) => h(UsageBizValue, { value: cell }),
   },
   {
     label: t('管理类型'),
@@ -432,7 +430,7 @@ const groupColumns = [
     render: ({ cell, data }: any) => {
       if (!cell || cell === -1) return '--';
       const { mgmt_type, bk_biz_id } = data;
-      if (mgmt_type === 'biz' && bk_biz_id === -1 && whereAmI.value === Senarios.business) {
+      if (mgmt_type === SecurityGroupManageType.BIZ && bk_biz_id === -1 && whereAmI.value === Senarios.business) {
         return h(UnclaimedComp, { data });
       }
       return getNameFromBusinessMap(cell);
@@ -477,7 +475,7 @@ const groupColumns = [
     label: t('操作'),
     field: 'operate',
     isDefaultShow: true,
-    width: 120,
+    width: 150,
     fixed: 'right',
     showOverflowTooltip: false,
     render({ data }: IData) {

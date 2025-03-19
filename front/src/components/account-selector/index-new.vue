@@ -67,9 +67,6 @@ const selected = computed({
     return model.value || undefined;
   },
   set(val) {
-    const account = list.value.find((item) => item.id === val);
-    const oldAccount = list.value.find((item) => item.id === model.value);
-    emit('change', account, oldAccount);
     model.value = val;
   },
 });
@@ -134,6 +131,12 @@ watch(
   },
   { deep: true },
 );
+
+watch([model, list], ([newVal, newList], [oldVal]) => {
+  const account = newList.find((item) => item.id === newVal);
+  const oldAccount = list.value.find((item) => item.id === oldVal);
+  emit('change', account, oldAccount);
+});
 
 watchEffect(() => {
   currentDisplayList.value = getDisplayList(activeVendor.value);
@@ -297,6 +300,7 @@ defineExpose({ currentDisplayList });
 <style lang="scss" scoped>
 .account-selector {
   font-size: 12px;
+
   .selected-title {
     display: flex;
     justify-content: space-between;
@@ -310,6 +314,7 @@ defineExpose({ currentDisplayList });
       border-radius: 12px;
       font-size: 12px;
       padding: 2px 4px;
+
       .vendor-icon {
         width: 16px;
       }
@@ -347,10 +352,12 @@ defineExpose({ currentDisplayList });
           content: '';
           background: #fff;
         }
+
         &::before {
           left: 22px;
           mask-image: linear-gradient(90deg, #000 0%, transparent);
         }
+
         &::after {
           right: 22px;
           mask-image: linear-gradient(-90deg, #000 0%, transparent);
@@ -378,6 +385,7 @@ defineExpose({ currentDisplayList });
           border-radius: 2px;
           padding: 0 4px;
         }
+
         .vendor-icon {
           width: 16px;
         }
@@ -386,6 +394,7 @@ defineExpose({ currentDisplayList });
           color: #3a8aff;
           background: #e1ecff;
           border: 1px solid #a3c5fd;
+
           .account-count {
             color: #3a8aff;
             background: #f0f5ff;
@@ -423,6 +432,7 @@ defineExpose({ currentDisplayList });
             }
           }
         }
+
         &.right-enabled {
           .vendor-list {
             &::after {
@@ -442,6 +452,7 @@ defineExpose({ currentDisplayList });
       align-items: center;
       justify-content: space-between;
       width: 100%;
+
       .option-vendor {
         display: flex;
         align-items: center;
@@ -450,6 +461,7 @@ defineExpose({ currentDisplayList });
         height: 22px;
         border-radius: 50%;
         background: #fff;
+
         .vendor-icon {
           width: 16px;
         }

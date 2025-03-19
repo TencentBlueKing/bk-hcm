@@ -13,9 +13,10 @@ import BusinessValue from '@/components/display-value/business-value.vue';
 import UserValue from '@/components/display-value/user-value.vue';
 import UpdateMgmtTypeDialog from '../../dialog/security-group/update-mgmt-type.vue';
 import UpdateMgmtAttrSingleDialog from '../../dialog/security-group/update-mgmt-attr-single.vue';
-import { SecurityGroupMgmtAttrSingleType } from '@/store/security-group';
+import { SecurityGroupMgmtAttrSingleType, SecurityGroupManageType } from '@/store/security-group';
 import { useVerify } from '@/hooks/useVerify';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import UsageBizValue from '@/views/resource/resource-manage/children/components/security/usage-biz-value.vue';
 
 const props = defineProps({
   id: {
@@ -82,7 +83,7 @@ const mgmtAttrFields: FieldList = [
     prop: 'mgmt_biz_id',
     render: (val: number) => {
       const { bk_biz_id, mgmt_type } = props.detail;
-      const editEnabled = bk_biz_id === -1 && mgmt_type !== 'platform';
+      const editEnabled = bk_biz_id === -1 && mgmt_type === SecurityGroupManageType.BIZ;
       return h('div', [
         val === -1 ? '--' : h(BusinessValue, { value: val }),
         editEnabled &&
@@ -99,7 +100,7 @@ const mgmtAttrFields: FieldList = [
     prop: 'bk_biz_id',
     render: (val: number) => {
       const { mgmt_type } = props.detail;
-      if (mgmt_type === 'platform') {
+      if (mgmt_type === SecurityGroupManageType.PLATFORM) {
         return h(Tag, { theme: 'danger' }, '不允许分配');
       }
       if (val === -1) {
@@ -117,8 +118,8 @@ const mgmtAttrFields: FieldList = [
     render: (val: number[]) => {
       const { bk_biz_id } = props.detail;
       const unassigned = bk_biz_id === -1;
-      return h('div', [
-        h(BusinessValue, { value: val }),
+      return h('div', { style: { display: 'flex', alignItems: 'center', width: '100%' } }, [
+        h(UsageBizValue, { value: val, style: { width: 'calc(100% - 24px)', flex: 0 } }),
         unassigned &&
           h('i', {
             class: 'icon hcm-icon bkhcm-icon-bianji edit-icon',
@@ -127,6 +128,7 @@ const mgmtAttrFields: FieldList = [
       ]);
     },
     copy: false,
+    showOverflowTips: false,
   },
   {
     name: t('主负责人'),
@@ -170,7 +172,7 @@ const businessMgmtAttrFields: FieldList = [
   {
     name: t('使用业务'),
     prop: 'usage_biz_ids',
-    render: (val: number[]) => h(BusinessValue, { value: val }),
+    render: (val: number[]) => h(UsageBizValue, { value: val }),
     copy: false,
   },
   {

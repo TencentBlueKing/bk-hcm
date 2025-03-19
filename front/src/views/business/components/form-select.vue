@@ -276,6 +276,7 @@ defineExpose([validate]);
 .bussine-form {
   padding-right: 20px;
 }
+
 .group-bussine-form {
   display: flex;
   align-items: center;
@@ -283,6 +284,7 @@ defineExpose([validate]);
   gap: 24px;
   padding-right: 0;
 }
+
 .item-warp {
   flex-basis: 50%;
 }

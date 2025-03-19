@@ -4,7 +4,7 @@ import { Message } from 'bkui-vue';
 import { useSecurityGroupStore, type ISecurityGroupItem, SecurityGroupManageType } from '@/store/security-group';
 import HcmFormUser from '@/components/form/user.vue';
 import HcmFormBusiness from '@/components/form/business.vue';
-import { useAccountBusiness } from './use-account-business';
+import { useAccountBusiness } from '@/views/resource/resource-manage/hooks/use-account-business';
 
 const props = defineProps<{ detail: ISecurityGroupItem }>();
 

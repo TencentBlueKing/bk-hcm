@@ -87,7 +87,7 @@ const localModel = computed({
     :multiple-mode="multipleMode ? multipleMode : multiple ? 'tag' : 'default'"
   >
     <!-- fix “全部”回显 -->
-    <template #tag v-if="showAll && localModel?.[0] === allOptionId">
+    <template #tag v-if="showAll && (localModel as number[])?.[0] === allOptionId">
       <span class="all-option-name">全部</span>
     </template>
     <bk-option
