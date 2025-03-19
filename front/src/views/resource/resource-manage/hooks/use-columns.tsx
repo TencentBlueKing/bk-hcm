@@ -1990,12 +1990,6 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       isDefaultShow: true,
     },
     {
-      label: '已确认账单',
-      field: 'current_month_cost_synced',
-      isDefaultShow: true,
-      render: (args: any) => customRender(args, 'current_month_cost_synced'),
-    },
-    {
       label: '币种',
       field: 'currency',
       isDefaultShow: true,
@@ -2005,6 +1999,13 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       },
     },
     {
+      label: '已确认账单',
+      field: 'current_month_cost_synced',
+      isDefaultShow: true,
+      align: 'right',
+      render: (args: any) => customRender(args, 'current_month_cost_synced'),
+    },
+    {
       label: '当前账单',
       isDefaultShow: true,
       children: [
@@ -2012,17 +2013,20 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
           label: '当月',
           sort: true,
           field: 'current_month_cost',
+          align: 'right',
           render: (args: any) => customRender(args, 'current_month_cost'),
         },
         {
           label: '上月',
           sort: true,
           field: 'last_month_cost_synced',
+          align: 'right',
           render: (args: any) => customRender(args, 'last_month_cost_synced'),
         },
         {
           label: '环比',
           sort: true,
+          align: 'right',
           render: ({ data }: any) => {
             const { last_month_cost_synced, current_month_cost } = data;
             const value = formatBillRatio(last_month_cost_synced, current_month_cost);
@@ -2036,6 +2040,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '调账',
       field: 'adjustment_cost',
       isDefaultShow: true,
+      align: 'right',
       render: (args: any) => customRender(args, 'adjustment_cost'),
     },
   ];
@@ -2083,12 +2088,14 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '已确认账单',
       field: 'current_month_cost_synced',
       isDefaultShow: true,
+      align: 'right',
       render: (args: any) => customRender(args, 'current_month_cost_synced'),
     },
     {
       label: '当前账单',
       field: 'current_month_cost',
       isDefaultShow: true,
+      align: 'right',
       render: (args: any) => customRender(args, 'current_month_cost'),
     },
   ];
