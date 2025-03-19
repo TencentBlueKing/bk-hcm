@@ -58,6 +58,7 @@
   .current-currency {
     display: flex;
     align-items: center;
+    justify-content: end;
     gap: 4px;
 
     .dollar {
