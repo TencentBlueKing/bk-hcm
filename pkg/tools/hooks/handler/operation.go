@@ -39,6 +39,10 @@ func checkBizMatch(urlBizID int64, resBizID int64, usageBizIDs []int64) bool {
 	// 检查使用业务和访问业务是否匹配
 	if len(usageBizIDs) > 0 {
 		for _, id := range usageBizIDs {
+			// 使用业务为全部业务，均可访问
+			if id == constant.AttachedAllBiz {
+				return true
+			}
 			if id == urlBizID {
 				return true
 			}
