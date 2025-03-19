@@ -204,15 +204,6 @@ func (c *CreateUrlRulePreviewExecutor) validateListener(kt *kit.Kit, curDetail *
 		return nil
 	}
 
-	// validate DefaultDomain
-	if listener.DefaultDomain != "" && curDetail.DefaultDomain && curDetail.Domain != listener.DefaultDomain {
-		curDetail.Status.SetNotExecutable()
-		curDetail.ValidateResult = append(curDetail.ValidateResult,
-			fmt.Sprintf("listener(%s) default domain name(%s) is inconsistent with input record(%s)",
-				listener.ID, listener.DefaultDomain, curDetail.Domain))
-		return nil
-	}
-
 	rule, err := getURLRule(kt, c.dataServiceCli, c.vendor,
 		curDetail.CloudClbID, listener.CloudID, curDetail.Domain, curDetail.UrlPath)
 	if err != nil {
@@ -253,15 +244,7 @@ const (
 )
 
 func (c *CreateUrlRulePreviewExecutor) validateDefaultDomain(kt *kit.Kit) error {
-	classifySlice := classifier.ClassifySlice(c.details, func(detail *CreateUrlRuleDetail) string {
-		return strings.Join(
-			[]string{
-				detail.CloudClbID,
-				string(detail.Protocol),
-				strconv.Itoa(detail.ListenerPort[0]),
-			}, listenerDefaultSep)
-	})
-
+	classifySlice := classifier.ClassifySlice(c.details, classifyFunc)
 	for key, details := range classifySlice {
 		cloudClbID, protocol, listenerPort, err := decodeClassifyKey(key)
 		if err != nil {
@@ -315,6 +298,15 @@ func (c *CreateUrlRulePreviewExecutor) validateDefaultDomain(kt *kit.Kit) error 
 		}
 	}
 	return nil
+}
+
+func classifyFunc(detail *CreateUrlRuleDetail) string {
+	port := ""
+	if len(detail.ListenerPort) > 0 {
+		port = strconv.Itoa(detail.ListenerPort[0])
+	}
+	args := []string{detail.CloudClbID, string(detail.Protocol), port}
+	return strings.Join(args, listenerDefaultSep)
 }
 
 func decodeClassifyKey(key string) (string, enumor.ProtocolType, int, error) {
