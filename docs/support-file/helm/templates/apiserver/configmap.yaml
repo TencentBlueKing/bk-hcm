@@ -23,3 +23,5 @@ data:
   apigw_public.key: |-
       {{- .Values.apiserver.apigwPublicKey | b64dec | nindent 6 }}
   {{- end }}
+    tenant:
+      {{- toYaml .Values.tenant | nindent 6 }}

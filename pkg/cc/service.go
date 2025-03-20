@@ -77,9 +77,10 @@ type Setting interface {
 
 // ApiServerSetting defines api server used setting options.
 type ApiServerSetting struct {
-	Network Network   `yaml:"network"`
-	Service Service   `yaml:"service"`
-	Log     LogOption `yaml:"log"`
+	Network Network      `yaml:"network"`
+	Service Service      `yaml:"service"`
+	Log     LogOption    `yaml:"log"`
+	Tenant  TenantConfig `yaml:"tenant"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -124,6 +125,7 @@ type CloudServerSetting struct {
 	Itsm           ApiGateway     `yaml:"itsm"`
 	CloudSelection CloudSelection `yaml:"cloudSelection"`
 	Cmsi           CMSI           `yaml:"cmsi"`
+	Tenant         TenantConfig   `yaml:"tenant"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -183,13 +185,14 @@ func (s CloudServerSetting) Validate() error {
 
 // DataServiceSetting defines data service used setting options.
 type DataServiceSetting struct {
-	Network     Network     `yaml:"network"`
-	Service     Service     `yaml:"service"`
-	Log         LogOption   `yaml:"log"`
-	Database    DataBase    `yaml:"database"`
-	Objectstore ObjectStore `yaml:"objectstore"`
-	Crypto      Crypto      `yaml:"crypto"`
-	Esb         Esb         `yaml:"esb"`
+	Network     Network      `yaml:"network"`
+	Service     Service      `yaml:"service"`
+	Log         LogOption    `yaml:"log"`
+	Database    DataBase     `yaml:"database"`
+	Objectstore ObjectStore  `yaml:"objectstore"`
+	Crypto      Crypto       `yaml:"crypto"`
+	Esb         Esb          `yaml:"esb"`
+	Tenant      TenantConfig `yaml:"tenant"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -234,10 +237,11 @@ func (s DataServiceSetting) Validate() error {
 
 // HCServiceSetting defines hc service used setting options.
 type HCServiceSetting struct {
-	Network    Network    `yaml:"network"`
-	Service    Service    `yaml:"service"`
-	Log        LogOption  `yaml:"log"`
-	SyncConfig SyncConfig `yaml:"sync"`
+	Network    Network      `yaml:"network"`
+	Service    Service      `yaml:"service"`
+	Log        LogOption    `yaml:"log"`
+	SyncConfig SyncConfig   `yaml:"sync"`
+	Tenant     TenantConfig `yaml:"tenant"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -273,10 +277,11 @@ func (s HCServiceSetting) Validate() error {
 
 // AuthServerSetting defines auth server used setting options.
 type AuthServerSetting struct {
-	Network Network   `yaml:"network"`
-	Service Service   `yaml:"service"`
-	Log     LogOption `yaml:"log"`
-	Esb     Esb       `yaml:"esb"`
+	Network Network      `yaml:"network"`
+	Service Service      `yaml:"service"`
+	Log     LogOption    `yaml:"log"`
+	Esb     Esb          `yaml:"esb"`
+	Tenant  TenantConfig `yaml:"tenant"`
 
 	IAM IAM `yaml:"iam"`
 }
@@ -327,6 +332,7 @@ type WebServerSetting struct {
 	ChangeLogPath ChangeLogPath `yaml:"changeLogPath"`
 	Notice        Notice        `yaml:"notice"`
 	TemplatePath  string        `yaml:"templatePath"`
+	Tenant        TenantConfig  `yaml:"tenant"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -384,11 +390,12 @@ type LabelSwitch struct {
 
 // TaskServerSetting defines task server used setting options.
 type TaskServerSetting struct {
-	Network  Network   `yaml:"network"`
-	Service  Service   `yaml:"service"`
-	Database DataBase  `yaml:"database"`
-	Log      LogOption `yaml:"log"`
-	Async    Async     `yaml:"async"`
+	Network  Network      `yaml:"network"`
+	Service  Service      `yaml:"service"`
+	Database DataBase     `yaml:"database"`
+	Log      LogOption    `yaml:"log"`
+	Async    Async        `yaml:"async"`
+	Tenant   TenantConfig `yaml:"tenant"`
 
 	UseLabel LabelSwitch `yaml:"useLabel"`
 }
@@ -435,6 +442,7 @@ type AccountServerSetting struct {
 	BillAllocation BillAllocationOption `yaml:"billAllocation"`
 	Esb            Esb                  `yaml:"esb"`
 	TmpFileDir     string               `yaml:"tmpFileDir"`
+	Tenant         TenantConfig         `yaml:"tenant"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
