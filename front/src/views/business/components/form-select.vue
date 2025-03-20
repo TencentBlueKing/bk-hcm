@@ -137,7 +137,7 @@ watch(
 );
 
 const handleChange = (account: IAccountItem) => getAccountList(account);
-const getAccountList = (account: IAccountItem) => {
+const getAccountList = (account: Partial<IAccountItem>) => {
   accountLoading.value = true;
   state.filter.account_id = account?.id ?? '';
   state.filter.vendor = account?.vendor ?? '';
@@ -192,9 +192,10 @@ watch(
   () => props.show,
   (val) => {
     if (val) {
+      // 业务下或资源未选择指定账号情况下为空
       return getAccountList({
-        vendor: resourceAccountStore.resourceAccount?.vendor ?? '',
-        id: resourceAccountStore.resourceAccount?.id ?? '',
+        vendor: resourceAccountStore.resourceAccount?.vendor,
+        id: resourceAccountStore.resourceAccount?.id,
       });
     }
     return resetForm();
