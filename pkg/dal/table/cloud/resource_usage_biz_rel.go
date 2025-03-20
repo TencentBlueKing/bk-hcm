@@ -51,7 +51,7 @@ type ResUsageBizRelTable struct {
 	ResID        string                   `db:"res_id" validate:"lte=64" json:"res_id"`
 	UsageBizID   int64                    `db:"usage_biz_id" validate:"" json:"usage_biz_id"`
 	ResVendor    enumor.Vendor            `db:"res_vendor" validate:"lte=64" json:"res_vendor"`
-	ResCloudID   string                   `db:"res_cloud_id" validate:"lte=64" json:"res_cloud_id"`
+	ResCloudID   string                   `db:"res_cloud_id" validate:"lte=255" json:"res_cloud_id"`
 	RelCreator   string                   `db:"rel_creator" validate:"lte=64" json:"rel_creator"`
 	RelCreatedAt types.Time               `db:"rel_created_at" json:"rel_created_at"`
 }

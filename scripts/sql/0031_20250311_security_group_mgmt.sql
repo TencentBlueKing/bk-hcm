@@ -35,7 +35,7 @@ CREATE TABLE `res_usage_biz_rel`
     `res_id`         varchar(64)     NOT NULL COMMENT '资源ID',
     `usage_biz_id`   bigint          NOT NULL COMMENT '使用业务ID',
     `res_vendor`     varchar(64)     NOT NULL DEFAULT '' COMMENT '云资源厂商',
-    `res_cloud_id`   varchar(64)     NOT NULL DEFAULT '' COMMENT '云资源ID',
+    `res_cloud_id`   varchar(255)    NOT NULL DEFAULT '' COMMENT '云资源ID',
     `rel_creator`    varchar(64)     not null comment '创建者',
     `rel_created_at` timestamp       not null default current_timestamp comment '创建时间',
     PRIMARY KEY (`rel_id`),
