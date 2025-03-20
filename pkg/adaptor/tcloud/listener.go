@@ -371,6 +371,7 @@ func (t *TCloudImpl) formatCreateRuleRequest(opt *typelb.TCloudCreateRuleOption)
 			SessionExpireTime: item.SessionExpireTime,
 			Scheduler:         item.Scheduler,
 			Domains:           item.Domains,
+			DefaultServer:     item.DefaultServer,
 		}
 
 		if item.HealthCheck != nil {

@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/classifier"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 )
@@ -163,7 +164,7 @@ func (c *CreateUrlRulePreviewExecutor) validateWithDB(kt *kit.Kit, cloudIDs []st
 			return fmt.Errorf("clb(%s) not exist", detail.CloudClbID)
 		}
 		if _, ok = c.regionIDMap[lb.Region]; !ok {
-			return fmt.Errorf("clb region not match, clb.region: %s, input: %v", lb.Region, c.regionIDMap)
+			return fmt.Errorf("clb region not match, clb.region: %s, input: %+v", lb.Region, c.regionIDMap)
 		}
 
 		ipSet := append(lb.PrivateIPv4Addresses, lb.PrivateIPv6Addresses...)
@@ -181,6 +182,10 @@ func (c *CreateUrlRulePreviewExecutor) validateWithDB(kt *kit.Kit, cloudIDs []st
 			return err
 		}
 	}
+	if err = c.validateDefaultDomain(kt); err != nil {
+		logs.Errorf("validate default domain failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
 
 	return nil
 }
@@ -196,14 +201,6 @@ func (c *CreateUrlRulePreviewExecutor) validateListener(kt *kit.Kit, curDetail *
 		curDetail.Status.SetNotExecutable()
 		curDetail.ValidateResult = append(curDetail.ValidateResult, fmt.Sprintf("lb(%s) listenerPort(%d) does not exist",
 			curDetail.CloudClbID, curDetail.ListenerPort[0]))
-		return nil
-	}
-
-	if curDetail.DefaultDomain && curDetail.Domain != listener.DefaultDomain {
-		curDetail.Status.SetNotExecutable()
-		curDetail.ValidateResult = append(curDetail.ValidateResult,
-			fmt.Sprintf("listener(%s) default domain name(%s) is inconsistent with input record(%s)",
-				listener.ID, listener.DefaultDomain, curDetail.Domain))
 		return nil
 	}
 
@@ -239,8 +236,91 @@ func (c *CreateUrlRulePreviewExecutor) validateListener(kt *kit.Kit, curDetail *
 	curDetail.ValidateResult = append(curDetail.ValidateResult,
 		fmt.Sprintf("already exist listener(%s), port: %d, protocol: %s", curDetail.CloudClbID, listener.Port,
 			listener.Protocol))
-
 	return nil
+}
+
+const (
+	listenerDefaultSep = "/"
+)
+
+func (c *CreateUrlRulePreviewExecutor) validateDefaultDomain(kt *kit.Kit) error {
+	classifySlice := classifier.ClassifySlice(c.details, classifyFunc)
+	for key, details := range classifySlice {
+		cloudClbID, protocol, listenerPort, err := decodeClassifyKey(key)
+		if err != nil {
+			logs.Errorf("decode classify key failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+		listener, err := getListener(kt, c.dataServiceCli, c.accountID, cloudClbID, protocol, int(listenerPort), c.bkBizID, c.vendor)
+		if err != nil {
+			logs.Errorf("get listener failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+		if listener == nil {
+			continue
+		}
+
+		newDefaultDomain := ""
+		for _, detail := range details {
+			if listener.DefaultDomain != "" {
+				if detail.DefaultDomain && detail.Domain != listener.DefaultDomain {
+					detail.Status.SetNotExecutable()
+					detail.ValidateResult = append(detail.ValidateResult,
+						fmt.Sprintf("listener(%s) default domain: %s, but got: %s",
+							listener.ID, listener.DefaultDomain, detail.Domain))
+				}
+				continue
+			}
+
+			// 监听器没有配置default domain的情况
+			if detail.DefaultDomain {
+				if newDefaultDomain == "" {
+					newDefaultDomain = detail.Domain
+					continue
+				}
+				if detail.Domain != newDefaultDomain {
+					detail.Status.SetNotExecutable()
+					detail.ValidateResult = append(detail.ValidateResult,
+						fmt.Sprintf("listener(%s) multiple records have been set as default domain, current: %s, previous: %s",
+							listener.ID, detail.Domain, newDefaultDomain),
+					)
+				}
+			}
+		}
+		if listener.DefaultDomain == "" && newDefaultDomain == "" {
+			for _, detail := range details {
+				detail.Status.SetNotExecutable()
+				detail.ValidateResult = append(detail.ValidateResult,
+					fmt.Sprintf("listener(%s) does not have a default domain, and no default domain is set",
+						listener.ID),
+				)
+			}
+		}
+	}
+	return nil
+}
+
+func classifyFunc(detail *CreateUrlRuleDetail) string {
+	port := ""
+	if len(detail.ListenerPort) > 0 {
+		port = strconv.Itoa(detail.ListenerPort[0])
+	}
+	args := []string{detail.CloudClbID, string(detail.Protocol), port}
+	return strings.Join(args, listenerDefaultSep)
+}
+
+func decodeClassifyKey(key string) (string, enumor.ProtocolType, int, error) {
+	arr := strings.Split(key, listenerDefaultSep)
+	if len(arr) != 3 {
+		return "", "", 0, fmt.Errorf("invalid key: %s", key)
+	}
+	cloudClbID := arr[0]
+	protocol := enumor.ProtocolType(arr[1])
+	listenerPort, err := strconv.Atoi(arr[2])
+	if err != nil {
+		return "", "", 0, err
+	}
+	return cloudClbID, protocol, listenerPort, nil
 }
 
 // CreateUrlRuleDetail ...
