@@ -1966,33 +1966,39 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '一级账号ID',
       field: 'root_account_cloud_id',
       isDefaultShow: true,
+      width: 95,
     },
     {
       label: '一级账号名称',
       field: 'root_account_name',
       isDefaultShow: true,
+      width: 110,
     },
     {
       label: '云厂商',
       field: 'vendor',
       isDefaultShow: true,
+      width: 80,
       render: ({ cell }: { cell: VendorEnum }) => VendorMap[cell],
     },
     {
       label: '账号状态',
       field: 'state',
       isDefaultShow: true,
+      width: 85,
       render: ({ cell }: any) => BILLS_ROOT_ACCOUNT_SUMMARY_STATE_MAP[cell],
     },
     {
       label: '账单版本',
       field: 'current_version',
       isDefaultShow: true,
+      width: 85,
     },
     {
       label: '币种',
       field: 'currency',
       isDefaultShow: true,
+      width: 80,
       render: ({ cell }: any) => {
         const value = CURRENCY_MAP[cell] ?? '--';
         return <span class={['currency', cell.toLowerCase()]}>{value}</span>;
@@ -2003,6 +2009,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       field: 'current_month_cost_synced',
       isDefaultShow: true,
       align: 'right',
+      width: 200,
       render: (args: any) => customRender(args, 'current_month_cost_synced'),
     },
     {
@@ -2014,6 +2021,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
           sort: true,
           field: 'current_month_cost',
           align: 'right',
+          width: 200,
           render: (args: any) => customRender(args, 'current_month_cost'),
         },
         {
@@ -2021,12 +2029,14 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
           sort: true,
           field: 'last_month_cost_synced',
           align: 'right',
+          width: 200,
           render: (args: any) => customRender(args, 'last_month_cost_synced'),
         },
         {
           label: '环比',
           sort: true,
           align: 'right',
+          width: 120,
           render: ({ data }: any) => {
             const { last_month_cost_synced, current_month_cost } = data;
             const value = formatBillRatio(last_month_cost_synced, current_month_cost);
@@ -2041,6 +2051,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       field: 'adjustment_cost',
       isDefaultShow: true,
       align: 'right',
+      width: 130,
       render: (args: any) => customRender(args, 'adjustment_cost'),
     },
   ];
@@ -2050,38 +2061,45 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '二级账号ID',
       field: 'main_account_cloud_id',
       isDefaultShow: true,
+      width: 95,
     },
     {
       label: '二级账号名称',
       field: 'main_account_name',
       isDefaultShow: true,
+      width: 110,
     },
     {
       label: '云厂商',
       field: 'vendor',
       isDefaultShow: true,
+      width: 80,
       render: ({ cell }: { cell: VendorEnum }) => VendorMap[cell],
     },
     {
       label: '账单版本',
       field: 'current_version',
       isDefaultShow: true,
+      width: 85,
     },
     {
       label: '一级账号名称',
       field: 'root_account_name',
       isDefaultShow: true,
+      width: 110,
     },
     {
       label: '币种',
       field: 'currency',
       isDefaultShow: true,
+      width: 80,
       render: ({ cell }: any) => CURRENCY_MAP[cell] ?? '--',
     },
     {
       label: '业务名称',
       field: 'bk_biz_id',
       isDefaultShow: true,
+      width: 85,
       render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
     },
     {
@@ -2089,6 +2107,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       field: 'current_month_cost_synced',
       isDefaultShow: true,
       align: 'right',
+      width: 200,
       render: (args: any) => customRender(args, 'current_month_cost_synced'),
     },
     {
@@ -2096,6 +2115,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       field: 'current_month_cost',
       isDefaultShow: true,
       align: 'right',
+      width: 200,
       render: (args: any) => customRender(args, 'current_month_cost'),
     },
   ];
