@@ -849,3 +849,72 @@ func (svc *lbSvc) BatchDeleteBizUrlRuleByDomain(cts *rest.Contexts) (any, error)
 		return nil, fmt.Errorf("unsupport vendor for delete rule: %s", vendor)
 	}
 }
+
+// ListRuleBindingStatus 获取规则绑定目标组状态
+func (svc *lbSvc) ListRuleBindingStatus(cts *rest.Contexts) (any, error) {
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	lblID := cts.PathParameter("lbl_id").String()
+	if len(lblID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "listener is required")
+	}
+	req := new(cslb.RuleBindingStatusListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.ListenerCloudResType, lblID)
+	if err != nil {
+		return nil, err
+	}
+	// 业务校验、鉴权
+	err = handler.BizOperateAuth(cts, &handler.ValidWithAuthOption{
+		Authorizer: svc.authorizer,
+		ResType:    meta.Listener,
+		Action:     meta.Find,
+		BasicInfo:  basicInfo,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	ruleRelReq := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("vendor", vendor),
+			tools.RuleEqual("lbl_id", lblID),
+			tools.RuleIn("listener_rule_id", req.RuleIDs),
+		),
+		Fields: []string{"listener_rule_id", "binding_status"},
+		Page:   core.NewDefaultBasePage(),
+	}
+	ruleRelResp, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroupListenerRel(cts.Kit, ruleRelReq)
+	if err != nil {
+		logs.Errorf("list target group listener rule rel failed, err: %v, lblID: %s, ruleIDs: %v, rid: %s", err,
+			lblID, req.RuleIDs, cts.Kit.Rid)
+		return nil, err
+	}
+	ruleBindingStatusMap := make(map[string]enumor.BindingStatus)
+	for _, rel := range ruleRelResp.Details {
+		ruleBindingStatusMap[rel.ListenerRuleID] = rel.BindingStatus
+	}
+
+	resp := new(cslb.RuleBindingStatusListResp)
+	for _, ruleID := range req.RuleIDs {
+		bindStatus, ok := ruleBindingStatusMap[ruleID]
+		if !ok {
+			return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("rule %s not found", ruleID))
+		}
+
+		resp.Details = append(resp.Details, cslb.RuleBindingStatus{
+			RuleID:     ruleID,
+			BindStatus: bindStatus,
+		})
+	}
+
+	return resp, nil
+}

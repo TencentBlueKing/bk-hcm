@@ -832,3 +832,24 @@ type ImportValidateReq struct {
 func (i *ImportValidateReq) Validate() error {
 	return validator.Validate.Struct(i)
 }
+
+// RuleBindingStatusListReq ...
+type RuleBindingStatusListReq struct {
+	RuleIDs []string `json:"rule_ids" validate:"required,min=1,max=100"`
+}
+
+// Validate ...
+func (i *RuleBindingStatusListReq) Validate() error {
+	return validator.Validate.Struct(i)
+}
+
+// RuleBindingStatusListResp ...
+type RuleBindingStatusListResp struct {
+	Details []RuleBindingStatus `json:"details"`
+}
+
+// RuleBindingStatus ...
+type RuleBindingStatus struct {
+	RuleID     string               `json:"rule_id"`
+	BindStatus enumor.BindingStatus `json:"binding_status"`
+}
