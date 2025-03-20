@@ -29,7 +29,6 @@ const { t } = useI18n();
 const accountStore = useAccountStore();
 const resourceStore = useResourceStore();
 const emit = defineEmits(['change']);
-const accountList = ref([]);
 const cloudRegionsList = ref([]);
 const accountLoading = ref(false);
 const cloudRegionsLoading = ref(false);
@@ -137,27 +136,11 @@ watch(
   },
 );
 
-watch(
-  () => state.filter.account_id,
-  (val) => {
-    const vendor =
-      accountList.value.find((e: any) => {
-        return e.id === val;
-      })?.vendor || '';
-    state.filter.vendor = vendor;
-  },
-);
-watch(
-  () => accountSelector.value?.currentDisplayList,
-  (val) => {
-    val?.[0] && getAccountList();
-  },
-);
-
-const getAccountList = () => {
+const handleChange = (account: IAccountItem) => getAccountList(account);
+const getAccountList = (account: IAccountItem) => {
   accountLoading.value = true;
-  accountList.value = accountSelector.value?.currentDisplayList ?? [];
-  state.filter.account_id = resourceAccountStore.resourceAccount?.id ?? '';
+  state.filter.account_id = account?.id ?? '';
+  state.filter.vendor = account?.vendor ?? '';
   setOptionDisabled();
 };
 const optionDisabled = ref<() => boolean>(() => false);
@@ -201,6 +184,7 @@ const validate = () => {
 };
 const resetForm = () => {
   state.filter.account_id = '';
+  state.filter.vendor = '';
   nextTick(() => formRef.value.clearValidate());
 };
 
@@ -208,9 +192,15 @@ watch(
   () => props.show,
   (val) => {
     if (val) {
-      return getAccountList();
+      return getAccountList({
+        vendor: resourceAccountStore.resourceAccount?.vendor ?? '',
+        id: resourceAccountStore.resourceAccount?.id ?? '',
+      });
     }
     return resetForm();
+  },
+  {
+    immediate: true,
   },
 );
 
@@ -235,6 +225,7 @@ defineExpose([validate]);
         :disabled="isResourcePage"
         :option-disabled="optionDisabled"
         :placeholder="isResourcePage ? t('请在左侧选择账号') : undefined"
+        @change="handleChange"
       />
     </bk-form-item>
     <bk-form-item
