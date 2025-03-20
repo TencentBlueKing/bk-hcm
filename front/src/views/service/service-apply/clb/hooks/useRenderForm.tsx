@@ -4,7 +4,7 @@ import { Button, Form, Input, Select, Slider } from 'bkui-vue';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import { EditLine, Plus } from 'bkui-vue/lib/icon';
 import ZoneSelector from '@/components/zone-selector/index.vue';
-import PrimaryStandZoneSelector from '../../components/common/PrimaryStandZoneSelector';
+import PrimaryStandZoneSelector from '../../components/common/PrimaryStandZoneSelector/index.vue';
 import RegionVpcSelector from '../../components/common/RegionVpcSelector';
 import SubnetSelector from '../../components/common/subnet-selector';
 import InputNumber from '@/components/input-number';
@@ -18,7 +18,13 @@ import { type ISubnetItem } from '../../cvm/children/SubnetPreviewDialog';
 import type { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
 // import constants
 import { CLB_SPECS, LB_ISP, ResourceTypeEnum } from '@/common/constant';
-import { LOAD_BALANCER_TYPE, ADDRESS_IP_VERSION, ZONE_TYPE, INTERNET_CHARGE_TYPE } from '@/constants/clb';
+import {
+  LOAD_BALANCER_TYPE,
+  ADDRESS_IP_VERSION,
+  ZONE_TYPE,
+  INTERNET_CHARGE_TYPE,
+  LOADBALANCER_BANDWIDTH_PACKAGE_NETWORK_TYPES_MAP,
+} from '@/constants/clb';
 // import utils
 import bus from '@/common/bus';
 import { useI18n } from 'vue-i18n';
@@ -70,7 +76,7 @@ export default (formModel: ApplyClbModel) => {
   };
 
   // use custom hooks
-  const { ispList, isResourceListLoading, quotas, isInquiryPrices, isInquiryPricesLoading } =
+  const { ispList, isResourceListLoading, quotas, isInquiryPrices, isInquiryPricesLoading, currentResourceListMap } =
     useFilterResource(formModel);
 
   // 当前地域下负载均衡的配额
@@ -237,6 +243,7 @@ export default (formModel: ApplyClbModel) => {
                       v-model:backupZones={formModel.backup_zones}
                       vendor={formModel.vendor}
                       region={formModel.region}
+                      currentResourceListMap={currentResourceListMap.value}
                     />
                   );
                 }
@@ -418,15 +425,15 @@ export default (formModel: ApplyClbModel) => {
               onChange={(val) => {
                 if (val !== 'BANDWIDTH_PACKAGE') formModel.bandwidth_package_id = undefined;
               }}>
-              {INTERNET_CHARGE_TYPE.map(({ label, value }) => (
+              {INTERNET_CHARGE_TYPE.map(({ label, value, isDisabled, tipsContent }) => (
                 <BkRadioButton
                   key={value}
                   label={value}
                   class='w88'
-                  disabled={!value}
+                  disabled={isDisabled(formModel.vip_isp)}
                   v-bk-tooltips={{
-                    content: '云平台当前API接口暂不支持包月参数',
-                    disabled: value,
+                    content: tipsContent,
+                    disabled: !isDisabled(formModel.vip_isp),
                   }}>
                   {t(label)}
                 </BkRadioButton>
@@ -442,8 +449,11 @@ export default (formModel: ApplyClbModel) => {
           content: () => (
             <BandwidthPackageSelector
               v-model={formModel.bandwidth_package_id}
+              resourceType={ResourceTypeEnum.CLB}
               accountId={formModel.account_id}
               region={formModel.region}
+              zones={formModel.zones as string}
+              networkTypes={LOADBALANCER_BANDWIDTH_PACKAGE_NETWORK_TYPES_MAP[formModel.vip_isp]}
             />
           ),
         },
