@@ -25,4 +25,5 @@ data:
       {{- toYaml .Values.taskserver.async | nindent 6 }}
     useLabel:
       {{- toYaml .Values.taskserver.useLabel | nindent 6 }}
-
+    tenant:
+      {{- toYaml .Values.tenant | nindent 6 }}

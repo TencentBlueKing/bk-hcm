@@ -50,3 +50,5 @@ data:
       {{- toYaml .Values.cloudserver.cloudSelection | nindent 6 }}
     taskManagement:
       {{- toYaml .Values.cloudserver.taskManagement | nindent 6 }}
+    tenant:
+      {{- toYaml .Values.tenant | nindent 6 }}

@@ -38,9 +38,26 @@ var (
 
 var _ DoOrm = new(do)
 
+// DoOrmImpl 实现DoOrm接口
+type DoOrmImpl interface {
+	DoOrm
+	// 获取底层DB实例
+	getDB() *sqlx.DB
+	// 获取runtimeOrm实例
+	getRuntimeOrm() *runtimeOrm
+}
+
 type do struct {
 	db *sqlx.DB
 	ro *runtimeOrm
+}
+
+func (do *do) getDB() *sqlx.DB {
+	return do.db
+}
+
+func (do *do) getRuntimeOrm() *runtimeOrm {
+	return do.ro
 }
 
 // Select a collection of data, and decode into dest *[]struct{}.
