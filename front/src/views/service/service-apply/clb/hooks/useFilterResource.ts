@@ -81,13 +81,26 @@ export default (formModel: ApplyClbModel) => {
       const { data } = await reqResourceListOfCurrentRegion(params);
       const { ZoneResourceSet } = data;
 
-      // 重置资源映射
-      currentResourceListMap.value = {};
+      // 构建主备可用区映射
+      const zoneMapping: Record<string, string[]> = {};
+      ZoneResourceSet.forEach(({ MasterZone, SlaveZone }) => {
+        if (!zoneMapping[MasterZone]) {
+          zoneMapping[MasterZone] = [];
+        }
+        if (SlaveZone) {
+          zoneMapping[MasterZone].push(SlaveZone);
+        }
+      });
 
       // 构建资源列表映射
       ZoneResourceSet.forEach(({ MasterZone, SlaveZone, ResourceSet }) => {
         const key = `${MasterZone}|${SlaveZone || ''}`.toLowerCase();
-        const resource = currentResourceListMap.value[key] || { ispList: [] };
+        const resource = currentResourceListMap.value[key] || {
+          ispList: [],
+          masterZone: MasterZone,
+          slaveZone: SlaveZone || null,
+          slaveZoneOptions: zoneMapping[MasterZone] || [], // 添加备可用区选项
+        };
 
         ResourceSet?.forEach(({ Isp, TypeSet, AvailabilitySet }) => {
           const ispEntries = AvailabilitySet
@@ -99,7 +112,9 @@ export default (formModel: ApplyClbModel) => {
           // 存储性能容量型资源
           resource[Isp] = resource[Isp] || [];
           TypeSet?.forEach(({ SpecAvailabilitySet }) => {
-            resource[Isp].push(...SpecAvailabilitySet);
+            // 过滤掉 clb.c1.small 规格
+            const filteredSpecs = SpecAvailabilitySet.filter((spec) => spec.SpecType !== 'clb.c1.small');
+            resource[Isp].push(...filteredSpecs);
           });
         });
 
@@ -115,7 +130,6 @@ export default (formModel: ApplyClbModel) => {
 
       // 构建 noZone 对象
       const noZone = constructNoZone(currentResourceListMap.value);
-
       currentResourceListMap.value.noZone = noZone;
     } finally {
       isResourceListLoading.value = false;
@@ -152,7 +166,7 @@ export default (formModel: ApplyClbModel) => {
 
       Object.keys(target).forEach((subKey) => {
         noZone[subKey] = noZone[subKey] || [];
-        noZone[subKey].push(...target[subKey]);
+        noZone[subKey].push(...(target[subKey] || []));
       });
     });
 
@@ -221,15 +235,21 @@ export default (formModel: ApplyClbModel) => {
 
   watch(
     [() => formModel.region, () => formModel.zones, () => formModel.address_ip_version],
-    ([region, zones, address_ip_version]) => {
+    ([newRegion, zones, address_ip_version], [oldRegion]) => {
+      // 重置资源映射
+      currentResourceListMap.value = {};
       // 内网下不需要选择运营商类型
-      if (!region || formModel.load_balancer_type === 'INTERNAL') return;
+      if (!newRegion || formModel.load_balancer_type === 'INTERNAL') return;
 
       let master_zone;
       if (zones) master_zone = Array.isArray(zones) && zones.length > 0 ? zones : [zones];
+      // TODO：之前遗留的设计问题，这里需要手动再清一下 zones 的值
+      if (newRegion !== oldRegion) {
+        master_zone = undefined;
+      }
       const params = {
         account_id: formModel.account_id,
-        region,
+        region: newRegion,
         master_zone,
         ip_version: [ipVersionMap[address_ip_version]],
       };
@@ -262,8 +282,16 @@ export default (formModel: ApplyClbModel) => {
 
   watch(
     ispList,
-    () => {
-      formModel.vip_isp = ispList.value.length ? 'BGP' : '';
+    (val) => {
+      // 如果有可用的BGP, 则默认选择BGP；没有的话，选择第一个可用的
+      const availableBGP = val.some(
+        ({ Isp, TypeSet }) => Isp === 'BGP' && TypeSet?.some(({ Availability }: any) => Availability === 'Available'),
+      );
+      const firstAvailableISP = val.find(({ TypeSet }) => {
+        return TypeSet?.some(({ Availability }: any) => Availability === 'Available');
+      })?.Isp;
+
+      formModel.vip_isp = val.length && availableBGP ? 'BGP' : firstAvailableISP ?? '';
       formModel.slaType = '0';
       formModel.sla_type = 'shared';
     },
@@ -287,6 +315,12 @@ export default (formModel: ApplyClbModel) => {
         const key = `${zonesRule || ''}|${backup_zones || ''}`.toLowerCase();
         // 公有云TypeSet数组暂时取第一个元素, 忽略 Type 的作用, 直接取 SpecAvailabilitySet 作为性能容量型的机型选择
         specAvailabilitySet.value = currentResourceListMap.value[key][vip_isp];
+      }
+      // clb运营商选三网（电信、移动、联通）时，只能选共享带宽包
+      if (vip_isp === 'BGP') {
+        formModel.internet_charge_type = 'TRAFFIC_POSTPAID_BY_HOUR';
+      } else {
+        formModel.internet_charge_type = 'BANDWIDTH_PACKAGE';
       }
     },
   );
@@ -334,5 +368,6 @@ export default (formModel: ApplyClbModel) => {
     isResourceListLoading,
     quotas,
     isInquiryPricesLoading,
+    currentResourceListMap,
   };
 };

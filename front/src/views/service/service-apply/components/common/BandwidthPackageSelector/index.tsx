@@ -1,4 +1,4 @@
-import { defineComponent, onMounted, reactive, ref } from 'vue';
+import { defineComponent, PropType, reactive, ref, watch } from 'vue';
 import { Divider, Select } from 'bkui-vue';
 import { Plus, RightTurnLine, Spinner } from 'bkui-vue/lib/icon';
 import http from '@/http';
@@ -7,10 +7,28 @@ import {
   BANDWIDTH_PACKAGE_NETWORK_TYPE_MAP,
   BANDWIDTH_PACKAGE_STATUS,
 } from '@/constants';
+import { IQueryResData } from '@/typings';
+import { ResourceTypeEnum } from '@/common/resource-constant';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 
 const { Option } = Select;
 
-const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
+interface IBandwidthPackage {
+  id: string;
+  name: string;
+  network_type: string;
+  charge_type: string;
+  status: string;
+  bandwidth: number;
+  egress: string;
+  create_time: string;
+  deadline: string;
+  resource_set: {
+    resource_type: string;
+    resource_id: string;
+    address_ip: string;
+  }[];
+}
 
 /**
  * 共享带宽包选择器
@@ -21,27 +39,38 @@ export default defineComponent({
   props: {
     accountId: String,
     region: String,
+    // 带宽包的运营商（network_type字段）要和clb的运营商一致，其中如果是SINGLEISP，代表 电信/联通/移动都可以（先确定clb的运营商、过滤带宽包）
+    networkTypes: Object as PropType<string[]>,
+    // 带宽包是同region下的zone可用，上海的南昌一区特殊处理，通过带宽包的egress字段，只能选择值前缀为edge的带宽包；反过来说，上海的可用区也不能选择这个特殊的带宽包。
+    zones: String,
+    resourceType: Object as PropType<ResourceTypeEnum>,
   },
   setup(props) {
     const getDefaultPage = () => ({ offset: 0, limit: 50 });
+    const { getBusinessApiPath } = useWhereAmI();
 
-    const bandwidthPackageList = ref([]);
+    const bandwidthPackageList = ref<IBandwidthPackage[]>([]);
     const totalCount = ref(0);
     const page = reactive(getDefaultPage());
     const isDataLoad = ref(false);
     const isDataRefresh = ref(false);
 
     const getBandwidthPackageList = async () => {
-      if (!props.region) {
-        return;
-      }
+      const { accountId, region, networkTypes } = props;
+      if (!accountId || !region) return;
+
       isDataLoad.value = true;
       try {
-        const res = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/bandwidth_packages/query`, {
-          account_id: props.accountId,
-          region: props.region,
-          page,
-        });
+        const res: IQueryResData<{ packages: IBandwidthPackage[]; total_count: number }> = await http.post(
+          `/api/v1/cloud/${getBusinessApiPath()}bandwidth_packages/query`,
+          {
+            account_id: accountId,
+            region,
+            network_types: networkTypes,
+            page,
+          },
+        );
+
         bandwidthPackageList.value = res.data.packages;
         totalCount.value = res.data.total_count;
       } finally {
@@ -67,9 +96,28 @@ export default defineComponent({
       isDataRefresh.value = false;
     };
 
-    onMounted(() => {
-      getBandwidthPackageList();
-    });
+    // 检查带宽包可用性
+    const checkBandwidthPackageAvailable = (egress: string) => {
+      if (props.resourceType !== ResourceTypeEnum.CLB) return true;
+
+      // 只对CLB资源的上海可用区进行判断
+      const isShanghai = props.region === 'ap-shanghai';
+      const isNanchangZone = props.zones === 'ap-shanghai-ez-nanchang-1';
+
+      if (isShanghai) {
+        return isNanchangZone ? egress.startsWith('edge') : !egress.startsWith('edge');
+      }
+
+      return true;
+    };
+
+    watch(
+      [() => props.accountId, () => props.region, () => props.networkTypes],
+      () => {
+        getBandwidthPackageList();
+      },
+      { immediate: true },
+    );
 
     return () => (
       <Select
@@ -79,14 +127,14 @@ export default defineComponent({
         scrollLoading={isDataLoad.value}>
         {{
           default: () =>
-            bandwidthPackageList.value.map(({ id, name, charge_type, network_type, status }) => (
+            bandwidthPackageList.value.map(({ id, name, charge_type, network_type, status, egress }) => (
               <Option
                 key={id}
                 id={id}
-                name={`${name}(${BANDWIDTH_PACKAGE_CHARGE_TYPE_MAP[charge_type] || charge_type} ${
+                name={`${name}(${id}) (${BANDWIDTH_PACKAGE_CHARGE_TYPE_MAP[charge_type] || charge_type} ${
                   BANDWIDTH_PACKAGE_NETWORK_TYPE_MAP[network_type]
                 })`}
-                disabled={status !== BANDWIDTH_PACKAGE_STATUS.CREATED}
+                disabled={status !== BANDWIDTH_PACKAGE_STATUS.CREATED || !checkBandwidthPackageAvailable(egress)}
               />
             )),
           extension: () => (

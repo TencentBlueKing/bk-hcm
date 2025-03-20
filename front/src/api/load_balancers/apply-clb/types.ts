@@ -135,4 +135,5 @@ export interface ApplyClbModel {
   account_type: NetworkAccountType;
   // 负载均衡规格类型, 0：共享型 1：性能容量型（仅前端使用）
   slaType: '0' | '1';
+  [key: string]: any;
 }
