@@ -9,13 +9,9 @@ import { useRoute, useRouter } from 'vue-router';
 const { TabPanel } = Tab;
 export default defineComponent({
   setup() {
-    const applyType = ref('all');
     const { columns } = useColumns('myApply');
     const router = useRouter();
     const route = useRoute();
-    const computedRules = computed(() => {
-      return APPLY_TYPES.find(({ name }) => name === applyType.value).rules;
-    });
     const { CommonTable, getListData } = useTable({
       searchOptions: {
         searchData,
@@ -35,6 +31,7 @@ export default defineComponent({
                     query: {
                       ...route.query,
                       id: data.id,
+                      type: data.type,
                     },
                   });
                 }}>
@@ -47,17 +44,35 @@ export default defineComponent({
       },
       requestOption: {
         type: 'applications',
+        immediate: false,
       },
     });
+
+    const applyType = ref(route.query?.type || 'all');
+
+    const computedRules = computed(() => {
+      return APPLY_TYPES.find(({ name }) => name === applyType.value).rules;
+    });
+
+    const saveActiveType = (val: string) => {
+      router.replace({ query: { type: val } });
+    };
+
     watch(
       () => applyType.value,
       () => {
         getListData(applyType.value === 'all' ? [] : computedRules.value, 'applications', true);
       },
+      { immediate: true },
     );
+
     return () => (
       <div class={'apply-list-wrapper'}>
-        <Tab type='unborder-card' v-model:active={applyType.value} class={'header-tab'}>
+        <Tab
+          type='unborder-card'
+          v-model:active={applyType.value}
+          class={'header-tab'}
+          onUpdate:active={saveActiveType}>
           {APPLY_TYPES.map(({ label, name }) => (
             <TabPanel name={name} label={label} />
           ))}
