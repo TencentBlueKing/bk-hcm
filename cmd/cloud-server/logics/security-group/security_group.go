@@ -307,8 +307,8 @@ func isSGMgmtModifiable(kt *kit.Kit, sg cloud.BaseSecurityGroup, mgmtType enumor
 		return fmt.Errorf("security group: %s is assigned, cannot modify the assigned business", sg.ID)
 	}
 
-	// 管理类型未确认的安全组，不可修改管理业务
-	if sg.MgmtType == "" && mgmtBizID != 0 {
+	// 非业务管理的安全组，不可修改管理业务
+	if sg.MgmtType != enumor.MgmtTypeBiz && mgmtType != enumor.MgmtTypeBiz && mgmtBizID != 0 {
 		logs.Errorf("security group: %s mgmt_type is unconfirmed, cannot modify the assigned business, rid: %s",
 			sg.ID, kt.Rid)
 		return fmt.Errorf("security group: %s mgmt_type is unconfirmed, cannot modify the assigned business",
