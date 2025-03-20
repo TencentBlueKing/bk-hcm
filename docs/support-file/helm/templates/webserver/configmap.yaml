@@ -58,3 +58,5 @@ data:
     notice:
       {{- toYaml .Values.webserver.notice | nindent 6 }}
     templatePath: {{ .Values.webserver.templatePath }}
+    tenant:
+      {{- toYaml .Values.tenant | nindent 6 }}

@@ -17,38 +17,14 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package constant constant 多租户相关的常量
 package constant
 
-// Note:
-// This scope is used to define all the constant keys which is used inside and outside
-// the HCM system.
 const (
-	// RidKey is request id header key.
-	RidKey = "X-Bkapi-Request-Id"
-
-	// UserKey is operator name header key.
-	UserKey = "X-Bkapi-User-Name"
-
-	// AppCodeKey is blueking application code header key.
-	AppCodeKey = "X-Bkapi-App-Code"
-
-	// LanguageKey the language key word.
-	LanguageKey = "HTTP_BLUEKING_LANGUAGE"
-
-	// BKGWJWTTokenKey is blueking api gateway jwt header key.
-	BKGWJWTTokenKey = "X-Bkapi-JWT"
-
-	// TenantIDKey is tenant id header key.
-	TenantIDKey = "X-Bk-Tenant-Id"
-
-	// RequestSourceKey is blueking hcm request source header key.
-	RequestSourceKey = "X-Bkhcm-Request-Source"
-
-	// BKGWAuthKey is blueking api gateway authorization header key.
-	BKGWAuthKey = "X-Bkapi-Authorization"
-)
-
-const (
-	// BKHTTPCookieLanguageKey ...
-	BKHTTPCookieLanguageKey = "blueking_language"
+	// DefaultTenantID 默认的租户id，使用场景：兼容不开启多租户的场景，上下游调用默认传递default租户
+	DefaultTenantID = "default"
+	// TenantIDField 租户id字段
+	TenantIDField = "tenant_id"
+	// TenantIDTableField 租户id对应的table里的字段
+	TenantIDTableField = "TenantID"
 )
