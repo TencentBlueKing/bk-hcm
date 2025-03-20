@@ -324,6 +324,21 @@ func (svc *lbSvc) convTCloudAddTargetReq(kt *kit.Kit, targets []*dataproto.Targe
 		return nil, err
 	}
 
+	tgReq := &core.ListReq{
+		Filter: tools.EqualExpression("id", targetGroupID),
+		Fields: []string{"region"},
+		Page:   core.NewDefaultBasePage(),
+	}
+	tgResult, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroup(kt, tgReq)
+	if err != nil {
+		logs.Errorf("fail to get target group, err: %v, target group id: %s, rid: %s", err, targetGroupID, kt.Rid)
+		return nil, err
+	}
+	if len(tgResult.Details) != 1 {
+		logs.Errorf("can not find target group, target group id: %s, rid: %s", targetGroupID, kt.Rid)
+		return nil, fmt.Errorf("can not find target group, target group id: %s", targetGroupID)
+	}
+
 	rsReq := &hcproto.TCloudBatchOperateTargetReq{TargetGroupID: targetGroupID, LbID: lbID}
 	for _, item := range targets {
 		item.TargetGroupID = targetGroupID
@@ -333,6 +348,7 @@ func (svc *lbSvc) convTCloudAddTargetReq(kt *kit.Kit, targets []*dataproto.Targe
 		item.PublicIPAddress = instMap[item.CloudInstID].PublicIPv4Addresses
 		item.CloudVpcIDs = instMap[item.CloudInstID].CloudVpcIDs
 		item.Zone = instMap[item.CloudInstID].Zone
+		item.TargetGroupRegion = tgResult.Details[0].Region
 		rsReq.RsList = append(rsReq.RsList, item)
 	}
 	return rsReq, nil

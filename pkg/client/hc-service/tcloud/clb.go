@@ -181,9 +181,9 @@ func (c *ClbClient) BatchRegisterTargetToListenerRule(kt *kit.Kit, lbID string,
 }
 
 // BatchDeleteLoadBalancer 批量删除云负载均衡
-func (c *ClbClient) BatchDeleteLoadBalancer(kt *kit.Kit, req *hcproto.TCloudBatchDeleteLoadbalancerReq) error {
+func (c *ClbClient) BatchDeleteLoadBalancer(kt *kit.Kit, req *hcproto.BatchDeleteLoadBalancerReq) error {
 
-	return common.RequestNoResp[hcproto.TCloudBatchDeleteLoadbalancerReq](
+	return common.RequestNoResp[hcproto.BatchDeleteLoadBalancerReq](
 		c.client, http.MethodDelete, kt, req, "/load_balancers/batch")
 }
 

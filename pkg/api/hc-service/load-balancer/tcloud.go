@@ -459,15 +459,15 @@ func (r RegisterTarget) Validate() error {
 	return validator.Validate.Struct(r)
 }
 
-// TCloudBatchDeleteLoadbalancerReq ...
-type TCloudBatchDeleteLoadbalancerReq struct {
+// BatchDeleteLoadBalancerReq ...
+type BatchDeleteLoadBalancerReq struct {
 	AccountID string   `json:"account_id" validate:"required"`
 	Region    string   `json:"region" validate:"required"`
 	IDs       []string `json:"ids" validate:"required,min=1"`
 }
 
 // Validate ...
-func (r *TCloudBatchDeleteLoadbalancerReq) Validate() error {
+func (r *BatchDeleteLoadBalancerReq) Validate() error {
 	if len(r.IDs) > constant.BatchListenerMaxLimit {
 		return errors.New("batch delete limit is 20")
 	}
