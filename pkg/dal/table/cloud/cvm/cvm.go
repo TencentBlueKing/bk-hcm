@@ -99,6 +99,7 @@ type Table struct {
 	CloudCreatedTime     string            `db:"cloud_created_time" json:"cloud_created_time"`
 	CloudLaunchedTime    string            `db:"cloud_launched_time" json:"cloud_launched_time"`
 	CloudExpiredTime     string            `db:"cloud_expired_time" json:"cloud_expired_time"`
+	TenantID             string            `db:"tenant_id" json:"tenant_id"`
 	Creator              string            `db:"creator" validate:"lte=64" json:"creator"`
 	Reviser              string            `db:"reviser" validate:"lte=64" json:"reviser"`
 	CreatedAt            types.Time        `db:"created_at" validate:"excluded_unless" json:"created_at"`
