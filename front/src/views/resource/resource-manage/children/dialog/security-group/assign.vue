@@ -4,6 +4,7 @@ import { Message } from 'bkui-vue';
 import { ModelPropertyColumn } from '@/model/typings';
 import { Info } from 'bkui-vue/lib/icon';
 import { useSecurityGroupStore, type ISecurityGroupItem } from '@/store/security-group';
+import UsageBizValue from '@/views/resource/resource-manage/children/components/security/usage-biz-value.vue';
 
 const props = defineProps<{ selections: ISecurityGroupItem[] }>();
 
@@ -55,6 +56,8 @@ const baseColumns: ModelPropertyColumn[] = [
     id: 'usage_biz_ids',
     name: '使用业务',
     type: 'business',
+    showOverflowTooltip: false,
+    render: ({ cell }: any) => h(UsageBizValue, { value: cell }),
   },
 ];
 
@@ -218,6 +221,7 @@ const handleRemove = (id: ISecurityGroupItem['id']) => {
         :sort="column.sort"
         :align="column.align"
         :width="column.width"
+        :show-overflow-tooltip="column.showOverflowTooltip"
         :render="column.render"
       >
         <template #default="{ row }">

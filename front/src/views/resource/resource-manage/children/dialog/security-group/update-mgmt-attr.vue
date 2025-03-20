@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, h, reactive } from 'vue';
+import { ref, computed, h, reactive } from 'vue';
 import { Message } from 'bkui-vue';
 import { ModelPropertyColumn } from '@/model/typings';
 import { useSecurityGroupStore, type ISecurityGroupItem } from '@/store/security-group';
 import HcmFormUser from '@/components/form/user.vue';
 import HcmFormBusiness from '@/components/form/business.vue';
-import { useAccountBusiness } from './use-account-business';
+import { useAccountBusiness } from '@/views/resource/resource-manage/hooks/use-account-business';
+import UsageBizValue from '@/views/resource/resource-manage/children/components/security/usage-biz-value.vue';
 
 const props = defineProps<{ selections: ISecurityGroupItem[] }>();
 
@@ -30,7 +31,7 @@ const updateDefaultValue = () => ({
   mgmt_biz_id: undefined as number,
 });
 
-const list = computed(() => props.selections.slice());
+const list = ref(props.selections.slice());
 
 const accountId = computed(() => list.value?.[0].account_id);
 
@@ -74,6 +75,8 @@ const columns: ModelPropertyColumn[] = [
     id: 'usage_biz_ids',
     name: '使用业务',
     type: 'business',
+    showOverflowTooltip: false,
+    render: ({ cell }: any) => h(UsageBizValue, { value: cell }),
   },
   {
     id: 'manager',
@@ -187,6 +190,7 @@ const handleRemove = (id: ISecurityGroupItem['id']) => {
         :sort="column.sort"
         :align="column.align"
         :width="column.width"
+        :show-overflow-tooltip="column.showOverflowTooltip"
         :render="column.render"
       >
         <template #default="{ row }">

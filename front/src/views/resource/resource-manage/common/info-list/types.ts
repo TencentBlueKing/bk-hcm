@@ -13,6 +13,7 @@ type BaseField = {
   prop?: string;
   tipsContent?: string;
   txtBtn?: (cell: string) => void;
+  showOverflowTips?: boolean;
 };
 type FieldWithRenderString = BaseField & {
   render: (value: BaseField['value']) => string | number;
