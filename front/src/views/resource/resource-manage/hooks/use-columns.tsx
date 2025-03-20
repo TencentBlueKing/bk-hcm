@@ -1375,7 +1375,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
           text: CLB_BINDING_STATUS[bindingStatus],
         })),
       },
-      render: ({ cell }: { cell: string }) => {
+      render: ({ cell, data }: { cell: string; data: any }) => {
         let icon = StatusSuccess;
         switch (cell) {
           case 'binding':
@@ -1384,6 +1384,18 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
           case 'success':
             icon = StatusSuccess;
             break;
+        }
+        // 七层监听器，不在此处展示状态
+        if (APPLICATION_LAYER_LIST.includes(data.protocol)) {
+          return (
+            <>
+              <i
+                class='hcm-icon bkhcm-icon-38moxingshibai-01 text-danger font-normal cursor mr8'
+                v-bk-tooltips={{ content: 'HTTP/HTTPS监听器的同步状态，请到URL列表查看' }}
+              />
+              <span>--</span>
+            </>
+          );
         }
         return cell ? (
           <div class='status-column-cell'>
@@ -1593,23 +1605,15 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
           text: CLB_BINDING_STATUS[bindingStatus],
         })),
       },
-      render: ({ cell }: { cell: string }) => {
-        let icon = StatusSuccess;
-        switch (cell) {
-          case 'binding':
-            icon = StatusLoading;
-            break;
-          case 'success':
-            icon = StatusSuccess;
-            break;
-        }
-        return cell ? (
-          <div class='status-column-cell'>
-            <img class={`status-icon${cell === 'binding' ? ' spin-icon' : ''}`} src={icon} alt='' />
-            <span>{CLB_BINDING_STATUS[cell]}</span>
-          </div>
-        ) : (
-          '--'
+      render: () => {
+        return (
+          <>
+            <i
+              class='hcm-icon bkhcm-icon-38moxingshibai-01 text-danger font-normal cursor mr8'
+              v-bk-tooltips={{ content: 'HTTP/HTTPS监听器的同步状态，请到URL列表查看' }}
+            />
+            <span>--</span>
+          </>
         );
       },
     },

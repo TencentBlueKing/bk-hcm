@@ -1,3 +1,7 @@
+import { VendorEnum } from '@/common/constant';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
+import http from '@/http';
+import { IListResData } from '@/typings';
 import { defineStore } from 'pinia';
 import { Ref, ref } from 'vue';
 
@@ -53,7 +57,14 @@ export interface ITargetGroupDetail {
   target_list: any[];
 }
 
+interface IRulesBindingStatus {
+  rule_id: string;
+  binding_status: string;
+}
+
 export const useLoadBalancerStore = defineStore('load-balancer', () => {
+  const { getBusinessApiPath } = useWhereAmI();
+
   // state - 目标组id
   const targetGroupId = ref('');
   const setTargetGroupId = (v: string) => {
@@ -95,6 +106,24 @@ export const useLoadBalancerStore = defineStore('load-balancer', () => {
     tgSearchTarget.value = v;
   };
 
+  // 查询规则绑定目标组状态接口
+  const queryRulesBindingStatusListLoading = ref(false);
+  const queryRulesBindingStatusList = async (vendor: VendorEnum, lblId: string, payload: { rule_ids: string[] }) => {
+    queryRulesBindingStatusListLoading.value = true;
+    try {
+      const res: IListResData<IRulesBindingStatus[]> = await http.post(
+        `/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/listeners/${lblId}/rules/binding_status/list`,
+        payload,
+      );
+      return res.data?.details || [];
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    } finally {
+      queryRulesBindingStatusListLoading.value = false;
+    }
+  };
+
   return {
     targetGroupId,
     setTargetGroupId,
@@ -110,5 +139,7 @@ export const useLoadBalancerStore = defineStore('load-balancer', () => {
     setTgSearchTarget,
     listenerDetailWithTargetGroup,
     setListenerDetailWithTargetGroup,
+    queryRulesBindingStatusListLoading,
+    queryRulesBindingStatusList,
   };
 });
