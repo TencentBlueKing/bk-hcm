@@ -59,30 +59,29 @@ const goAsyncTaskDetail = async (
   flowId: string,
   bkBizId: number,
 ) => {
-  try {
-    // 1. 点击后, 先查询到 audit_id
-    const { data } = await api(
-      {
-        page: { limit: 1, start: 0, count: false },
-        filter: {
-          op: 'and',
-          rules: [{ field: 'detail.data.res_flow.flow_id', op: 'json_eq', value: flowId }],
-        },
-      },
-      'audits',
-      { globalError: false }, // 业务方处理错误
-    );
-    const { id, res_name: name, res_id, bk_biz_id } = data.details[0];
-    // 2. 新开页面查看异步任务详情
-    window.open(
-      `/#/business/record/detail?record_id=${id}&name=${name}&res_id=${res_id}&bizs=${bk_biz_id}&flow=${flowId}`,
-      '_blank',
-    );
-  } catch (error) {
-    console.error(error);
-    // 如果查询失败, 则新开页面查看操作记录列表
+  if (!flowId) {
+    // 如果没有提供异步任务id，则新开页面查看操作记录列表
     window.open(`/#/business/record?bizs=${bkBizId}`, '_blank');
+    return;
   }
+  // 1. 点击后, 先查询到 audit_id
+  const { data } = await api(
+    {
+      page: { limit: 1, start: 0, count: false },
+      filter: {
+        op: 'and',
+        rules: [{ field: 'detail.data.res_flow.flow_id', op: 'json_eq', value: flowId }],
+      },
+    },
+    'audits',
+    { globalError: false }, // 业务方处理错误
+  );
+  const { id, res_name: name, res_id, bk_biz_id } = data.details?.[0];
+  // 2. 新开页面查看异步任务详情
+  window.open(
+    `/#/business/record/detail?record_id=${id}&name=${name}&res_id=${res_id}&bizs=${bk_biz_id}&flow=${flowId}`,
+    '_blank',
+  );
 };
 
 export { asyncGetListenerCount, getLocalFilterConditions, goAsyncTaskDetail };

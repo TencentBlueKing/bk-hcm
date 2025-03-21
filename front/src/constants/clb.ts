@@ -270,7 +270,7 @@ export const BANDWIDTH_PACKAGE_CHARGE_TYPE_MAP: Record<string, string> = {
 // 负载均衡运营商和带宽包网络类型映射
 export const LOADBALANCER_BANDWIDTH_PACKAGE_NETWORK_TYPES_MAP: Record<string, string[]> = {
   BGP: ['BGP'],
-  CMCC: ['SINGLEISP_CMCC'],
-  CTCC: ['SINGLEISP_CTCC'],
-  CUCC: ['SINGLEISP_CUCC'],
+  CMCC: ['SINGLEISP', 'SINGLEISP_CMCC'],
+  CTCC: ['SINGLEISP', 'SINGLEISP_CTCC'],
+  CUCC: ['SINGLEISP', 'SINGLEISP_CUCC'],
 };

@@ -201,68 +201,68 @@ export default defineComponent({
       });
     };
 
-    // submit - [新增/编辑目标组] 或 [批量添加rs] 或 [批量修改端口] 或 [批量修改权重]
     const handleAddOrUpdateTargetGroupSubmit = async () => {
       await formRef.value.validate();
-      let promise;
-      let message;
-      let isAsyncTask = false;
-      switch (loadBalancerStore.currentScene) {
-        case 'add':
-          promise = businessStore.createTargetGroups(resolveFormDataForAdd());
-          message = '新建成功';
-          break;
-        case 'edit':
-          promise = businessStore.editTargetGroups(resolveFormDataForEdit());
-          message = '编辑成功';
-          break;
-        case 'AddRs':
-          promise = businessStore.batchAddTargets(resolveFormDataForAddRs());
-          message = 'RS添加异步任务已提交';
-          isAsyncTask = true;
-          break;
-        case 'port':
-          promise = businessStore.batchUpdateRsPort(formData.id, resolveFormDataForBatchUpdate('port'));
-          message = '批量修改端口异步任务已提交';
-          isAsyncTask = true;
-          break;
-        case 'weight':
-          promise = businessStore.batchUpdateRsWeight(formData.id, resolveFormDataForBatchUpdate('weight'));
-          message = '批量修改权重异步任务已提交';
-          isAsyncTask = true;
-          break;
-        case 'BatchDeleteRs':
-          promise = businessStore.batchDeleteTargets(resolveFormDataForBatchDeleteRs());
-          message = '批量移除RS异步任务已提交';
-          isAsyncTask = true;
-          break;
-      }
+
+      // submit - [新增/编辑目标组] 或 [批量添加rs] 或 [批量修改端口] 或 [批量修改权重]
+      const operateMap: Record<string, { promise: any; message: string; asyncTaskMessage?: string }> = {
+        add: {
+          promise: () => businessStore.createTargetGroups(resolveFormDataForAdd()),
+          message: '新建成功',
+        },
+        edit: {
+          promise: () => businessStore.editTargetGroups(resolveFormDataForEdit()),
+          message: '编辑成功',
+        },
+        AddRs: {
+          promise: () => businessStore.batchAddTargets(resolveFormDataForAddRs()),
+          message: 'RS添加成功',
+          asyncTaskMessage: 'RS添加异步任务已提交',
+        },
+        port: {
+          promise: () => businessStore.batchUpdateRsPort(formData.id, resolveFormDataForBatchUpdate('port')),
+          message: '批量修改端口成功',
+          asyncTaskMessage: '批量修改端口异步任务已提交',
+        },
+        weight: {
+          promise: () => businessStore.batchUpdateRsWeight(formData.id, resolveFormDataForBatchUpdate('weight')),
+          message: '批量修改权重成功',
+          asyncTaskMessage: '批量修改权重异步任务已提交',
+        },
+        BatchDeleteRs: {
+          promise: () => businessStore.batchDeleteTargets(resolveFormDataForBatchDeleteRs()),
+          message: '批量移除RS成功',
+          asyncTaskMessage: '批量移除RS异步任务已提交',
+        },
+      };
+      const { promise, message, asyncTaskMessage } = operateMap[loadBalancerStore.currentScene];
+
       try {
         isSubmitLoading.value = true;
-        const { data } = await promise;
-        // 异步任务，需要引导用户查看任务
-        Message({
-          theme: 'success',
-          message: isAsyncTask ? (
-            <>
-              <span>{message}</span>
-              <Button
-                class='ml4'
-                text
-                theme='primary'
-                onClick={() => goAsyncTaskDetail(businessStore.list, data?.flow_id, formData.bk_biz_id)}>
-                查看当前任务
-              </Button>
-            </>
-          ) : (
-            message
-          ),
-        });
+        const { data } = await promise();
         // 异步任务非结束状态, 记录异步任务flow_id以及当前操作目标组id
         if (data?.flow_id) {
           Object.assign(lastAsyncTaskInfo, { tgId: formData.id, flowId: data.flow_id, state: 'pending' });
           // 重置状态
           handleEditTargetGroup({ ...formData });
+          // 异步任务，需要引导用户查看任务
+          Message({
+            theme: 'success',
+            message: (
+              <>
+                <span>{asyncTaskMessage}</span>
+                <Button
+                  class='ml4'
+                  text
+                  theme='primary'
+                  onClick={() => goAsyncTaskDetail(businessStore.list, data?.flow_id, formData.bk_biz_id)}>
+                  查看当前任务
+                </Button>
+              </>
+            ),
+          });
+        } else {
+          Message({ theme: 'success', message });
         }
         // 初始化场景值
         loadBalancerStore.setUpdateCount(0);
