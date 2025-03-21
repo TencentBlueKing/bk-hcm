@@ -8,6 +8,7 @@ import { formatBillCost } from '@/utils';
 export default defineComponent({
   props: {
     isAdjust: Boolean,
+    onlyRMB: Boolean,
     showType: {
       type: String as PropType<'vertical' | 'horizontal'>,
       default: 'horizontal',
@@ -48,14 +49,17 @@ export default defineComponent({
           [cssModule['amount-wrapper']]: true,
           [cssModule.vertical]: props.showType === 'vertical',
         }}>
-        <span class={cssModule.item}>
-          {t('人民币+美金（合人民币）')}：
-          <Loading loading={isLoading.value} opacity={1} style={{ minWidth: '80px' }} size='small'>
-            <span class={cssModule.money}>
-              {`￥${formatBillCost(String(Number(getMoney('CNY', 'RMBCost')) + Number(getMoney('USD', 'RMBCost'))))}`}
-            </span>
-          </Loading>
-        </span>
+        {!props.onlyRMB ? (
+          <span class={cssModule.item}>
+            {t('人民币+美金（合人民币）')}：
+            <Loading loading={isLoading.value} opacity={1} style={{ minWidth: '80px' }} size='small'>
+              <span class={cssModule.money}>
+                {`￥${formatBillCost(String(Number(getMoney('CNY', 'RMBCost')) + Number(getMoney('USD', 'RMBCost'))))}`}
+              </span>
+            </Loading>
+          </span>
+        ) : null}
+
         <span class={cssModule.item}>
           {t('共计')}
           {props.isAdjust ? t('增加') : t('人民币')}：
@@ -69,19 +73,22 @@ export default defineComponent({
             </span>
           </Loading>
         </span>
-        <span class={cssModule.item}>
-          {t('共计')}
-          {props.isAdjust ? t('减少') : t('美金')}：
-          <Loading loading={isLoading.value} opacity={1} style={{ minWidth: '80px' }} size='small'>
-            <span class={cssModule.money}>
-              {props.isAdjust
-                ? `￥ ${formatBillCost(amountInfo.value?.cost_map?.decrease.RMB?.Cost)}  |  $ ${formatBillCost(
-                    amountInfo.value?.cost_map?.decrease.USD?.Cost,
-                  )} `
-                : `＄${formatBillCost(getMoney('USD'))}`}
-            </span>
-          </Loading>
-        </span>
+
+        {!props.onlyRMB ? (
+          <span class={cssModule.item}>
+            {t('共计')}
+            {props.isAdjust ? t('减少') : t('美金')}：
+            <Loading loading={isLoading.value} opacity={1} style={{ minWidth: '80px' }} size='small'>
+              <span class={cssModule.money}>
+                {props.isAdjust
+                  ? `￥ ${formatBillCost(amountInfo.value?.cost_map?.decrease.RMB?.Cost)}  |  $ ${formatBillCost(
+                      amountInfo.value?.cost_map?.decrease.USD?.Cost,
+                    )} `
+                  : `＄${formatBillCost(getMoney('USD'))}`}
+              </span>
+            </Loading>
+          </span>
+        ) : null}
       </div>
     );
   },

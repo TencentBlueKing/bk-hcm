@@ -1978,7 +1978,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '云厂商',
       field: 'vendor',
       isDefaultShow: true,
-      width: 80,
+      width: 90,
       render: ({ cell }: { cell: VendorEnum }) => VendorMap[cell],
     },
     {
@@ -1998,10 +1998,10 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '币种',
       field: 'currency',
       isDefaultShow: true,
-      width: 80,
+      width: 90,
       render: ({ cell }: any) => {
-        const value = CURRENCY_MAP[cell] ?? '--';
-        return <span class={['currency', cell.toLowerCase()]}>{value}</span>;
+        const value = CURRENCY_MAP[cell] ?? '人民币';
+        return <span class={['currency', cell?.toLowerCase()]}>{value}</span>;
       },
     },
     {
@@ -2073,7 +2073,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '云厂商',
       field: 'vendor',
       isDefaultShow: true,
-      width: 80,
+      width: 90,
       render: ({ cell }: { cell: VendorEnum }) => VendorMap[cell],
     },
     {
@@ -2092,8 +2092,11 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '币种',
       field: 'currency',
       isDefaultShow: true,
-      width: 80,
-      render: ({ cell }: any) => CURRENCY_MAP[cell] ?? '--',
+      width: 90,
+      render: ({ cell }: any) => {
+        const value = CURRENCY_MAP[cell] ?? '人民币';
+        return <span class={['currency', cell?.toLowerCase()]}>{value}</span>;
+      },
     },
     {
       label: '业务名称',
