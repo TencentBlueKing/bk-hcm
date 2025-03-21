@@ -62,13 +62,14 @@ export default (props: PropsType, url: Ref<string>, extraConfig?: ExtraConfigTyp
       const { details = [] } = listResult.data;
       const { count = 0 } = countResult.data;
 
-      const displayDatalist = details.map((item: any) => ({
-        ...item,
-        ...item.spec,
-        ...item.attachment,
-        ...item.revision,
-        ...item.extension,
-      }));
+      const displayDatalist =
+        details?.map((item: any) => ({
+          ...item,
+          ...item.spec,
+          ...item.attachment,
+          ...item.revision,
+          ...item.extension,
+        })) ?? [];
 
       // 基础list请求
       datas.value = displayDatalist;
@@ -110,14 +111,22 @@ export default (props: PropsType, url: Ref<string>, extraConfig?: ExtraConfigTyp
   };
 
   // 过滤发生变化的时候，获取数据
-  watch(() => props.filter, triggerApi, {
-    deep: true,
-  });
+  watch(
+    () => props.filter,
+    () => {
+      pagination.value.current = 1; // 页码重置
+      triggerApi();
+    },
+    {
+      deep: true,
+    },
+  );
 
   // 切换tab重新获取数据
   watch(
     () => url,
     () => {
+      pagination.value.current = 1; // 页码重置
       triggerApi();
     },
     { deep: true },
