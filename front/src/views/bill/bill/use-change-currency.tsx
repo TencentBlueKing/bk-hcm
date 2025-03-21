@@ -10,14 +10,16 @@ const FIELD_MAP = {
   adjustment_cost: ['adjustment_cost', 'adjustment_rmb_cost'],
 };
 
-export default () => {
+export default (options: any = {}) => {
   const changeCurrencyChecked = ref(false);
+  const { onlyRMB = false } = options;
 
   const customRender = (args: any, field: string) => {
     const { data } = args;
     const [money, converted] = FIELD_MAP[field];
-    const { currency } = data;
-    const normalData = formatBillSymbol(data[money], currency);
+    const { currency = CURRENCY_ALIAS_MAP.CNY } = data;
+    const normalMoney = onlyRMB ? data[converted] : data[money];
+    const normalData = formatBillSymbol(normalMoney, currency);
     if (!changeCurrencyChecked.value || currency !== CURRENCY_ALIAS_MAP.USD) {
       return normalData;
     }

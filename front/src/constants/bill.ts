@@ -54,6 +54,7 @@ export const CURRENCY_MAP = {
 export const CURRENCY_SYMBOL_MAP = {
   [CURRENCY_ALIAS_MAP.USD]: '$',
   [CURRENCY_ALIAS_MAP.CNY]: '¥',
+  [CURRENCY_ALIAS_MAP.RMB]: '¥',
 };
 
 // 一级账号账单汇总状态

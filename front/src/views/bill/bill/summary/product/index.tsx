@@ -1,6 +1,5 @@
 import { Ref, defineComponent, inject, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { useI18n } from 'vue-i18n';
 
 import Amount from '../../components/amount';
 import Search from '../../components/search';
@@ -15,14 +14,12 @@ import pluginHandler from '@pluginHandler/bill-manage';
 export default defineComponent({
   name: 'OperationProductTabPanel',
   setup() {
-    const { t } = useI18n();
     const route = useRoute();
     const bill_year = inject<Ref<number>>('bill_year');
     const bill_month = inject<Ref<number>>('bill_month');
 
     const searchRef = ref();
     const amountRef = ref();
-    const isChecked = ref(false);
 
     const { useProductHandler } = pluginHandler;
     const {
@@ -36,7 +33,7 @@ export default defineComponent({
       renderOperation,
     } = useProductHandler();
 
-    const { handleChangeCurrencyChecked, customRender } = useChangeCurrency();
+    const { customRender } = useChangeCurrency({ onlyRMB: true });
     const { columns } = useColumns(columnName, false, '', { customRender });
     const { CommonTable, getListData, clearFilter, filter } = useTable({
       searchOptions: { disabled: true },
@@ -63,9 +60,6 @@ export default defineComponent({
       clearFilter();
       getListData(rules);
     };
-    const handleChange = (val: boolean) => {
-      handleChangeCurrencyChecked(val);
-    };
 
     watch([bill_year, bill_month], () => {
       searchRef.value.handleSearch();
@@ -85,17 +79,11 @@ export default defineComponent({
         <div class='p24' style={{ height: 'calc(100% - 162px)' }}>
           <CommonTable>
             {{
-              operation: () => (
-                <div>
-                  {renderOperation(bill_year.value, bill_month.value, searchRef)}
-                  <bk-checkbox class='change-currency' v-model={isChecked} onChange={handleChange}>
-                    {t('美元转人民币')}
-                  </bk-checkbox>
-                </div>
-              ),
+              operation: () => renderOperation(bill_year.value, bill_month.value, searchRef),
               operationBarEnd: () => (
                 <Amount
                   ref={amountRef}
+                  onlyRMB
                   api={reqBillsMainAccountSummarySum}
                   payload={() => ({ bill_year: bill_year.value, bill_month: bill_month.value, filter })}
                 />
