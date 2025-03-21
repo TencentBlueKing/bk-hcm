@@ -90,24 +90,7 @@ const activeType = ref('group');
 const fetchUrl = ref<string>('security_groups/list');
 
 const emit = defineEmits(['auth', 'handleSecrityType', 'edit', 'editTemplate']);
-const { columns, generateColumnsSettings } = useColumns('group');
-
-const state = reactive<any>({
-  datas: [],
-  pagination: {
-    current: 1,
-    limit: 10,
-    count: 0,
-  },
-  isLoading: false,
-  handlePageChange: () => {},
-  handlePageSizeChange: () => {},
-  columns,
-  params: {
-    fetchUrl: 'security_groups',
-    columns: 'group',
-  },
-});
+const { generateColumnsSettings } = useColumns('group');
 
 const cloneSecurityData = reactive<ICloneSecurityProps>({
   isShow: false,
@@ -118,21 +101,22 @@ const templateData = ref([]);
 
 const { searchData, searchValue, filter } = useFilter(props);
 
-const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, getList } = useQueryCommonList(
-  {
-    ...props,
-    filter: filter.value,
-  },
-  fetchUrl,
-  {
-    asyncRequestApiMethod: (datalist: any[], datalistRef: Ref<any[]>) => {
-      // 安全组需要异步加载一些关联资源数
-      if (activeType.value !== 'group' || !datalist.length) return [];
-
-      fetchSecurityGroupExtraFields(datalist, datalistRef);
+const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort, getList } =
+  useQueryCommonList(
+    {
+      ...props,
+      filter: filter.value,
     },
-  },
-);
+    fetchUrl,
+    {
+      asyncRequestApiMethod: (datalist: any[], datalistRef: Ref<any[]>) => {
+        // 安全组需要异步加载一些关联资源数
+        if (activeType.value !== 'group' || !datalist.length) return [];
+
+        fetchSecurityGroupExtraFields(datalist, datalistRef);
+      },
+    },
+  );
 
 // 异步加载安全组字段：关联资源、规则数、负责人信息
 const fetchSecurityGroupExtraFields = async (
@@ -223,13 +207,6 @@ const selectSearchData = computed(() => {
   return [...baseSearchData, ...map[activeType.value].searchData];
 });
 
-// eslint-disable-next-line max-len
-state.datas = datas;
-state.isLoading = isLoading;
-state.pagination = pagination;
-state.handlePageChange = handlePageChange;
-state.handlePageSizeChange = handlePageSizeChange;
-
 watch(
   () => datas.value,
   async (data) => {
@@ -267,16 +244,10 @@ watch(
 const handleSwtichType = async (type: string) => {
   if (type === 'gcp') {
     fetchUrl.value = 'vendors/gcp/firewalls/rules/list';
-    state.params.fetchUrl = 'vendors/gcp/firewalls/rules';
-    state.params.columns = 'gcp';
   } else if (type === 'group') {
     fetchUrl.value = 'security_groups/list';
-    state.params.fetchUrl = 'security_groups';
-    state.params.columns = 'group';
   } else if (type === 'template') {
     fetchUrl.value = 'argument_templates/list';
-    state.params.fetchUrl = 'argument_templates';
-    state.params.columns = 'template';
   }
   emit('handleSecrityType', type);
   router.replace({ query: Object.assign({}, route.query, { type: 'security', scene: type }) });
@@ -972,9 +943,6 @@ watch(
   () => activeType.value,
   (v) => {
     setTimeout(() => {
-      state.isLoading = true;
-      state.pagination.current = 1;
-      state.pagination.limit = 10;
       handleSwtichType(v);
       resetSelections();
     });
@@ -1085,7 +1053,7 @@ const securityGroupTableRef = useTemplateRef<typeof Table>('security-group-table
 const handleClearSecurityGroupSelections = () => {
   nextTick(() => {
     resetSelections();
-    securityGroupTableRef.value.clearSelection();
+    securityGroupTableRef.value?.clearSelection();
   });
 };
 const securityGroupAssignDialogState = reactive({
@@ -1127,7 +1095,7 @@ watch(
 <template>
   <div class="security-manager-page">
     <div class="flex-row align-items-center toolbar">
-      <bk-radio-group v-model="activeType" :disabled="state.isLoading">
+      <bk-radio-group v-model="activeType" :disabled="isLoading">
         <bk-radio-button v-for="item in types" :key="item.name" :label="item.name">
           {{ item.label }}
         </bk-radio-button>
@@ -1181,23 +1149,23 @@ watch(
       />
     </div>
 
-    <bk-loading :key="activeType" :loading="state.isLoading" opacity="1">
+    <bk-loading :key="activeType" :loading="isLoading" opacity="1">
       <bk-table
         v-if="activeType === 'group'"
         ref="security-group-table"
         :settings="groupSettings"
         row-hover="auto"
         remote-pagination
-        :pagination="state.pagination"
+        :pagination="pagination"
         :columns="groupColumns"
-        :data="state.datas"
+        :data="datas"
         show-overflow-tooltip
         :is-row-select-enable="isRowSelectEnable"
         @selection-change="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable)"
         @select-all="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true)"
-        @page-limit-change="state.handlePageSizeChange"
-        @page-value-change="state.handlePageChange"
-        @column-sort="state.handleSort"
+        @page-limit-change="handlePageSizeChange"
+        @page-value-change="handlePageChange"
+        @column-sort="handleSort"
       />
 
       <bk-table
@@ -1205,16 +1173,16 @@ watch(
         :settings="gcpSettings"
         row-hover="auto"
         remote-pagination
-        :pagination="state.pagination"
+        :pagination="pagination"
         :columns="gcpColumns"
-        :data="state.datas"
+        :data="datas"
         show-overflow-tooltip
         :is-row-select-enable="isRowSelectEnable"
         @selection-change="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable)"
         @select-all="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true)"
-        @page-limit-change="state.handlePageSizeChange"
-        @page-value-change="state.handlePageChange"
-        @column-sort="state.handleSort"
+        @page-limit-change="handlePageSizeChange"
+        @page-value-change="handlePageChange"
+        @column-sort="handleSort"
       />
 
       <bk-table
@@ -1222,16 +1190,16 @@ watch(
         :settings="templateSettings"
         row-hover="auto"
         remote-pagination
-        :pagination="state.pagination"
+        :pagination="pagination"
         :columns="templateColumns"
         :data="templateData"
         show-overflow-tooltip
         :is-row-select-enable="isRowSelectEnable"
         @selection-change="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable)"
         @select-all="(selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true)"
-        @page-limit-change="state.handlePageSizeChange"
-        @page-value-change="state.handlePageChange"
-        @column-sort="state.handleSort"
+        @page-limit-change="handlePageSizeChange"
+        @page-value-change="handlePageChange"
+        @column-sort="handleSort"
       />
     </bk-loading>
 
