@@ -11,7 +11,7 @@ import { BILL_VENDORS_MAP } from '@/views/bill/account/account-manage/constants'
 import { SITE_TYPE_MAP } from '@/common/constant';
 import { VendorAccountNameMap } from './constants';
 import { useVerify } from '@/hooks';
-import { IApplicationDetail } from '..';
+import { IApplicationDetail } from '../index';
 
 const { FormItem } = Form;
 const { Option } = Select;

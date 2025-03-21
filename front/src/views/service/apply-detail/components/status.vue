@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { APPLICATION_STATUS_MAP } from '../../apply-list/constants';
-import { ApplicationStatus, IApplicationDetail } from '..';
+import { ApplicationStatus, IApplicationDetail } from '../index';
 
 import StatusUnknown from '@/assets/image/Status-unknown.png';
 import share from 'bkui-vue/lib/icon/share';

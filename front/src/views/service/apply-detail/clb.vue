@@ -5,7 +5,7 @@ import { APPLICATION_TYPE_MAP } from '../apply-list/constants';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { LB_ISP, NET_CHARGE_MAP, VendorMap } from '@/common/constant';
 import { LB_NETWORK_TYPE_MAP } from '@/constants';
-import { IApplicationDetail } from '.';
+import { IApplicationDetail } from './index';
 
 import panel from '@/components/panel';
 import detailHeader from '@/views/resource/resource-manage/common/header/detail-header';
