@@ -15,6 +15,7 @@ export default (formModel: ApplyClbModel, formRef: any) => {
           break;
         case 'string':
           formModel[key] = '';
+          break;
       }
     });
   };

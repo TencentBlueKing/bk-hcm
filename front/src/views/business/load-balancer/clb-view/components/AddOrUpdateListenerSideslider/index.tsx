@@ -10,11 +10,12 @@ import { useLoadBalancerStore, useAccountStore, useBusinessStore } from '@/store
 // import hooks
 import { useI18n } from 'vue-i18n';
 import useAddOrUpdateListener from './useAddOrUpdateListener';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 // import utils
 import bus from '@/common/bus';
 import { goAsyncTaskDetail } from '@/utils';
 // import constants
-import { APPLICATION_LAYER_LIST } from '@/constants';
+import { APPLICATION_LAYER_LIST, TRANSPORT_LAYER_LIST } from '@/constants';
 import { IOriginPage } from '@/typings';
 import './index.scss';
 
@@ -35,7 +36,11 @@ export default defineComponent({
     const protocolButtonList = ['TCP', 'UDP', 'HTTP', 'HTTPS'];
     // use hooks
     const { t } = useI18n();
+    const { getBizsId } = useWhereAmI();
 
+    const currentBusinessId = computed(() => {
+      return loadBalancerStore.currentSelectedTreeNode?.bk_biz_id ?? getBizsId();
+    });
     const computedProtocol = computed(() => listenerFormData.protocol);
     const targetGroupSelectorRef = ref();
     const svrCertSelectorRef = ref();
@@ -107,8 +112,11 @@ export default defineComponent({
     // 当侧边栏显示或协议变更时, 刷新目标组select-option-list
     watch([isSliderShow, () => listenerFormData.protocol], ([isSliderShow]) => {
       if (!isSliderShow || isEdit.value) return;
+      // 重置目标组
+      listenerFormData.target_group_id = '';
       nextTick(() => {
         targetGroupSelectorRef.value.handleRefresh();
+        formRef.value?.clearValidate();
       });
     });
 
@@ -136,7 +144,9 @@ export default defineComponent({
             <Button
               text
               theme='primary'
-              onClick={() => goAsyncTaskDetail(businessStore.list, lockedLbInfo.value.flow_id)}>
+              onClick={() =>
+                goAsyncTaskDetail(businessStore.list, lockedLbInfo.value.flow_id, currentBusinessId.value)
+              }>
               查看当前任务
             </Button>
             。
@@ -232,6 +242,7 @@ export default defineComponent({
               </FormItem>
             </>
           )}
+          {/* 新增监听器 */}
           {!isEdit.value && (
             <>
               <FormItem label={t('均衡方式')} required property='scheduler'>
@@ -269,6 +280,7 @@ export default defineComponent({
                     </div>
                   )
               }
+              {/* 四层、七层都支持绑定目标组：四层绑定在监听器上，七层绑定在url上 */}
               <FormItem label={t('目标组')} required property='target_group_id'>
                 <TargetGroupSelector
                   ref={targetGroupSelectorRef}
@@ -294,7 +306,8 @@ export default defineComponent({
               </FormItem>
             </>
           )}
-          {isEdit.value && (
+          {/* 编辑监听器，四层监听器显示目标组信息、七层不显示 */}
+          {isEdit.value && TRANSPORT_LAYER_LIST.includes(listenerFormData.protocol) && (
             <div class='binded-target-group-show-container'>
               <span class='label'>{t('已绑定的目标组')}</span>:
               {listenerFormData.target_group_id ? (
@@ -302,7 +315,7 @@ export default defineComponent({
                   class='ml10 link-text-btn'
                   onClick={() => {
                     window.open(
-                      `/#/business/loadbalancer/group-view/${listenerFormData.target_group_id}?bizs=${accountStore.bizs}&type=detail`,
+                      `/#/business/loadbalancer/group-view/${listenerFormData.target_group_id}?bizs=${accountStore.bizs}&type=detail&vendor=${listenerFormData.vendor}`,
                       '_blank',
                       'noopener,noreferrer',
                     );

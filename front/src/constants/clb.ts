@@ -62,19 +62,27 @@ export const ZONE_TYPE = [
 export const INTERNET_CHARGE_TYPE = [
   {
     label: '包月',
-    value: undefined,
+    value: 'BANDWIDTH_PREPAID',
+    // 云平台当前API接口暂不支持包月参数
+    isDisabled: () => true,
+    tipsContent: '云平台当前API接口暂不支持包月参数',
   },
   {
     label: '按流量',
     value: 'TRAFFIC_POSTPAID_BY_HOUR',
+    isDisabled: (vipIsp: string) => vipIsp !== 'BGP',
+    tipsContent: '仅支持BGP线路',
   },
   {
     label: '按带宽',
     value: 'BANDWIDTH_POSTPAID_BY_HOUR',
+    isDisabled: (vipIsp: string) => vipIsp !== 'BGP',
+    tipsContent: '仅支持BGP线路',
   },
   {
     label: '共享带宽包',
     value: 'BANDWIDTH_PACKAGE',
+    isDisabled: () => false,
   },
 ];
 
@@ -240,7 +248,7 @@ export enum BANDWIDTH_PACKAGE_STATUS {
 }
 
 // 带宽包类型映射
-export const BANDWIDTH_PACKAGE_NETWORK_TYPE_MAP = {
+export const BANDWIDTH_PACKAGE_NETWORK_TYPE_MAP: Record<string, string> = {
   BGP: '普通BGP共享带宽包',
   HIGH_QUALITY_BGP: '精品BGP共享带宽包',
   SINGLEISP_CMCC: '中国移动共享带宽包',
@@ -251,10 +259,18 @@ export const BANDWIDTH_PACKAGE_NETWORK_TYPE_MAP = {
 };
 
 // 带宽包计费类型映射
-export const BANDWIDTH_PACKAGE_CHARGE_TYPE_MAP = {
+export const BANDWIDTH_PACKAGE_CHARGE_TYPE_MAP: Record<string, string> = {
   TOP5_POSTPAID_BY_MONTH: '按月后付费TOP5计费',
   PERCENT95_POSTPAID_BY_MONTH: '按月后付费月95计费',
   ENHANCED95_POSTPAID_BY_MONTH: '按月后付费增强型95计费',
   FIXED_PREPAID_BY_MONTH: '包月预付费计费',
   PEAK_BANDWIDTH_POSTPAID_BY_DAY: '后付费日结按带宽计费',
+};
+
+// 负载均衡运营商和带宽包网络类型映射
+export const LOADBALANCER_BANDWIDTH_PACKAGE_NETWORK_TYPES_MAP: Record<string, string[]> = {
+  BGP: ['BGP'],
+  CMCC: ['SINGLEISP', 'SINGLEISP_CMCC'],
+  CTCC: ['SINGLEISP', 'SINGLEISP_CTCC'],
+  CUCC: ['SINGLEISP', 'SINGLEISP_CUCC'],
 };

@@ -8,6 +8,7 @@ import { ApplyClbModel, SpecAvailability } from '@/api/load_balancers/apply-clb/
 import { reqResourceListOfCurrentRegion } from '@/api/load_balancers/apply-clb';
 import { ClbQuota, LbPrice } from '@/typings';
 import { cloneDeep, debounce, uniqBy } from 'lodash';
+import { VendorEnum } from '@/common/constant';
 
 // 当云地域变更时, 获取用户在当前地域支持可用区列表和资源列表
 export default (formModel: ApplyClbModel) => {
@@ -21,7 +22,7 @@ export default (formModel: ApplyClbModel) => {
   const quotas = ref<ClbQuota[]>([]); // 配额
   const isInquiryPricesLoading = ref(false); // 是否正在询价
   const isInquiryPrices = computed(() => {
-    // 内网下, account_id, region, zones, cloud_vpc_id, cloud_subnet_id, require_count, name 不为空时才询价一次
+    // 内网下, account_id, region, cloud_vpc_id, cloud_subnet_id, require_count, name 不为空时才询价一次
     if (formModel.load_balancer_type === 'INTERNAL') {
       return Boolean(
         formModel.account_id &&
@@ -33,7 +34,7 @@ export default (formModel: ApplyClbModel) => {
           /^[a-zA-Z0-9]([-a-zA-Z0-9]{0,58})[a-zA-Z0-9]$/.test(formModel.name),
       );
     }
-    // 公网下, 如果账号类型为传统类型, 则 account_id, region, address_ip_version, zones, cloud_vpc_id, vip_isp, sla_type, require_count, name 不为空时才询价一次
+    // 公网下, 如果账号类型为传统类型, 则 account_id, region, address_ip_version, cloud_vpc_id, vip_isp, sla_type, require_count, name 不为空时才询价一次
     if (formModel.account_type === 'LEGACY') {
       return Boolean(
         formModel.account_id &&
@@ -47,7 +48,7 @@ export default (formModel: ApplyClbModel) => {
           /^[a-zA-Z0-9]([-a-zA-Z0-9]{0,58})[a-zA-Z0-9]$/.test(formModel.name),
       );
     }
-    // 公网下, 如果账号类型为标准类型, 则 account_id, region, address_ip_version, zones, cloud_vpc_id, vip_isp, sla_type, internet_charge_type, internet_max_bandwidth_out, require_count, name 不为空时才询价一次
+    // 公网下, 如果账号类型为标准类型, 则 account_id, region, address_ip_version, cloud_vpc_id, vip_isp, sla_type, internet_charge_type, internet_max_bandwidth_out, require_count, name 不为空时才询价一次
     return Boolean(
       formModel.account_id &&
         formModel.region &&
@@ -75,19 +76,32 @@ export default (formModel: ApplyClbModel) => {
    * 获取当前地域「可用区列表和资源列表的映射关系」
    * @param region 地域
    */
-  const getResourceListOfCurrentRegion = async (params: any) => {
+  const getResourceListOfCurrentRegion = async (vendor: VendorEnum, params: any) => {
     isResourceListLoading.value = true;
     try {
-      const { data } = await reqResourceListOfCurrentRegion(params);
+      const { data } = await reqResourceListOfCurrentRegion(vendor, params);
       const { ZoneResourceSet } = data;
 
-      // 重置资源映射
-      currentResourceListMap.value = {};
+      // 构建主备可用区映射
+      const zoneMapping: Record<string, string[]> = {};
+      ZoneResourceSet.forEach(({ MasterZone, SlaveZone }) => {
+        if (!zoneMapping[MasterZone]) {
+          zoneMapping[MasterZone] = [];
+        }
+        if (SlaveZone) {
+          zoneMapping[MasterZone].push(SlaveZone);
+        }
+      });
 
       // 构建资源列表映射
       ZoneResourceSet.forEach(({ MasterZone, SlaveZone, ResourceSet }) => {
         const key = `${MasterZone}|${SlaveZone || ''}`.toLowerCase();
-        const resource = currentResourceListMap.value[key] || { ispList: [] };
+        const resource = currentResourceListMap.value[key] || {
+          ispList: [],
+          masterZone: MasterZone,
+          slaveZone: SlaveZone || null,
+          slaveZoneOptions: zoneMapping[MasterZone] || [], // 添加备可用区选项
+        };
 
         ResourceSet?.forEach(({ Isp, TypeSet, AvailabilitySet }) => {
           const ispEntries = AvailabilitySet
@@ -99,7 +113,9 @@ export default (formModel: ApplyClbModel) => {
           // 存储性能容量型资源
           resource[Isp] = resource[Isp] || [];
           TypeSet?.forEach(({ SpecAvailabilitySet }) => {
-            resource[Isp].push(...SpecAvailabilitySet);
+            // 过滤掉 clb.c1.small 规格
+            const filteredSpecs = SpecAvailabilitySet.filter((spec) => spec.SpecType !== 'clb.c1.small');
+            resource[Isp].push(...filteredSpecs);
           });
         });
 
@@ -115,7 +131,6 @@ export default (formModel: ApplyClbModel) => {
 
       // 构建 noZone 对象
       const noZone = constructNoZone(currentResourceListMap.value);
-
       currentResourceListMap.value.noZone = noZone;
     } finally {
       isResourceListLoading.value = false;
@@ -152,7 +167,7 @@ export default (formModel: ApplyClbModel) => {
 
       Object.keys(target).forEach((subKey) => {
         noZone[subKey] = noZone[subKey] || [];
-        noZone[subKey].push(...target[subKey]);
+        noZone[subKey].push(...(target[subKey] || []));
       });
     });
 
@@ -201,7 +216,7 @@ export default (formModel: ApplyClbModel) => {
         bk_biz_id: isBusinessPage ? formModel.bk_biz_id : undefined,
         zones,
         backup_zones: formModel.backup_zones ? [formModel.backup_zones] : undefined,
-        bandwidthpkg_sub_type: formModel.vip_isp === 'BGP' ? 'BGP' : 'SINGLE_ISP',
+        bandwidthpkg_sub_type: formModel.vip_isp === 'BGP' ? 'BGP' : 'SINGLEISP',
         bandwidth_package_id: undefined,
       });
       prices.value = data;
@@ -221,38 +236,44 @@ export default (formModel: ApplyClbModel) => {
 
   watch(
     [() => formModel.region, () => formModel.zones, () => formModel.address_ip_version],
-    ([region, zones, address_ip_version]) => {
+    ([newRegion, zones, address_ip_version], [oldRegion]) => {
+      // 重置资源映射
+      currentResourceListMap.value = {};
       // 内网下不需要选择运营商类型
-      if (!region || formModel.load_balancer_type === 'INTERNAL') return;
+      if (!newRegion || formModel.load_balancer_type === 'INTERNAL') return;
 
       let master_zone;
       if (zones) master_zone = Array.isArray(zones) && zones.length > 0 ? zones : [zones];
+      // TODO：之前遗留的设计问题，这里需要手动再清一下 zones 的值
+      if (newRegion !== oldRegion) {
+        master_zone = undefined;
+      }
       const params = {
         account_id: formModel.account_id,
-        region,
+        region: newRegion,
         master_zone,
         ip_version: [ipVersionMap[address_ip_version]],
       };
 
       // 获取当前地域「可用区列表和资源列表的映射关系」
-      getResourceListOfCurrentRegion(params);
+      getResourceListOfCurrentRegion(formModel.vendor, params);
     },
     { deep: true },
   );
 
   watch(
-    currentResourceListMap,
-    (val) => {
-      const { zones, backup_zones, address_ip_version, region } = formModel;
+    [currentResourceListMap, () => formModel.backup_zones],
+    ([map, backup_zones]) => {
+      const { zones, address_ip_version, region } = formModel;
       if (!zones && !backup_zones) {
         // 只选择地域
-        ispList.value = val.noZone?.ispList?.filter(({ Isp }: { Isp: string }) => Isp !== 'INTERNAL') || [];
+        ispList.value = map.noZone?.ispList?.filter(({ Isp }: { Isp: string }) => Isp !== 'INTERNAL') || [];
       } else {
         // 拼接key, 用于定位对应的 isp 列表
         const zonesRule = address_ip_version !== 'IPV4' ? region : zones;
         const key = `${zonesRule || ''}|${backup_zones || ''}`.toLowerCase();
         // 内网下的 isp 选项不显示
-        ispList.value = val[key]?.ispList?.filter(({ Isp }: { Isp: string }) => Isp !== 'INTERNAL') || [];
+        ispList.value = map[key]?.ispList?.filter(({ Isp }: { Isp: string }) => Isp !== 'INTERNAL') || [];
       }
     },
     {
@@ -262,8 +283,16 @@ export default (formModel: ApplyClbModel) => {
 
   watch(
     ispList,
-    () => {
-      formModel.vip_isp = ispList.value.length ? 'BGP' : '';
+    (val) => {
+      // 如果有可用的BGP, 则默认选择BGP；没有的话，选择第一个可用的
+      const availableBGP = val.some(
+        ({ Isp, TypeSet }) => Isp === 'BGP' && TypeSet?.some(({ Availability }: any) => Availability === 'Available'),
+      );
+      const firstAvailableISP = val.find(({ TypeSet }) => {
+        return TypeSet?.some(({ Availability }: any) => Availability === 'Available');
+      })?.Isp;
+
+      formModel.vip_isp = val.length && availableBGP ? 'BGP' : firstAvailableISP ?? '';
       formModel.slaType = '0';
       formModel.sla_type = 'shared';
     },
@@ -287,6 +316,12 @@ export default (formModel: ApplyClbModel) => {
         const key = `${zonesRule || ''}|${backup_zones || ''}`.toLowerCase();
         // 公有云TypeSet数组暂时取第一个元素, 忽略 Type 的作用, 直接取 SpecAvailabilitySet 作为性能容量型的机型选择
         specAvailabilitySet.value = currentResourceListMap.value[key][vip_isp];
+      }
+      // clb运营商选三网（电信、移动、联通）时，只能选共享带宽包
+      if (vip_isp === 'BGP') {
+        formModel.internet_charge_type = 'TRAFFIC_POSTPAID_BY_HOUR';
+      } else {
+        formModel.internet_charge_type = 'BANDWIDTH_PACKAGE';
       }
     },
   );
@@ -333,6 +368,8 @@ export default (formModel: ApplyClbModel) => {
     ispList,
     isResourceListLoading,
     quotas,
+    isInquiryPrices,
     isInquiryPricesLoading,
+    currentResourceListMap,
   };
 };

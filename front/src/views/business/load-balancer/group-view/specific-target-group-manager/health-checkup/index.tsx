@@ -1,4 +1,4 @@
-import { computed, defineComponent, reactive, ref, watch } from 'vue';
+import { computed, defineComponent, reactive, ref, useTemplateRef, watch } from 'vue';
 import { Container, Button, Switcher, Form, Tag, Input, Select } from 'bkui-vue';
 import { BkRadio, BkRadioGroup } from 'bkui-vue/lib/radio';
 import './index.scss';
@@ -75,6 +75,7 @@ export default defineComponent({
         source_ip_type: 1, // 0（使用LB的VIP作为源IP），1（使用100.64网段IP作为源IP）
       };
     };
+    const formRef = useTemplateRef<typeof Form>('form');
     const formData = reactive(getDefaultFormData());
     function resetFormData() {
       const defaultData = getDefaultFormData();
@@ -85,6 +86,7 @@ export default defineComponent({
     const formItemOptions = computed(() => [
       {
         label: '是否启用',
+        property: 'health_switch',
         content: () => <Switcher v-model={formData.health_switch} theme='primary' />,
         isRender: true,
       },
@@ -138,6 +140,7 @@ export default defineComponent({
       {
         label: '检查端口',
         property: 'check_port',
+        required: true,
         content: () => <Input v-model={formData.check_port} />,
         isRender: ['TCP', 'UDP'].includes(props.detail.protocol) && !['PING'].includes(formData.check_type),
       },
@@ -160,7 +163,7 @@ export default defineComponent({
       [
         {
           label: 'HTTP请求方式',
-          property: 'http_check_domain',
+          property: 'http_check_method',
           span: 12,
           content: () => (
             <Select v-model={formData.http_check_method} clearable={false}>
@@ -230,7 +233,7 @@ export default defineComponent({
       },
       {
         label: '输入格式',
-        property: 'time_out',
+        property: 'context_type',
         span: 12,
         content: () => (
           <Select v-model={formData.context_type} clearable={false}>
@@ -333,6 +336,7 @@ export default defineComponent({
     );
 
     const handleSubmit = async () => {
+      await formRef.value.validate();
       isSubmitLoading.value = true;
       try {
         await businessStore.updateHealthCheck({
@@ -409,7 +413,7 @@ export default defineComponent({
             if (!isShow) resetFormData();
           }}
           width='640'>
-          <Form formType='vertical'>
+          <Form ref='form' formType='vertical' model={formData}>
             <Container margin={0}>
               {formData.health_switch ? (
                 formItemOptions.value.map((item) => (

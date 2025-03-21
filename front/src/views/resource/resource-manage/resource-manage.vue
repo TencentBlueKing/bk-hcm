@@ -495,8 +495,8 @@ onMounted(() => {
             :name="item.name"
             :label="item.type"
             v-if="
-              item.name !== 'certs' ||
-              (item.name === 'certs' &&
+              !['clb', 'certs'].includes(item.name) ||
+              (['clb', 'certs'].includes(item.name) &&
                 ((!resourceAccountStore.currentVendor && !resourceAccountStore.currentAccountVendor) ||
                   [resourceAccountStore.currentVendor, resourceAccountStore.currentAccountVendor].includes(
                     VendorEnum.TCLOUD,
