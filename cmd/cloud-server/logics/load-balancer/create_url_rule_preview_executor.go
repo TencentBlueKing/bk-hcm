@@ -199,8 +199,9 @@ func (c *CreateUrlRulePreviewExecutor) validateListener(kt *kit.Kit, curDetail *
 	}
 	if listener == nil {
 		curDetail.Status.SetNotExecutable()
-		curDetail.ValidateResult = append(curDetail.ValidateResult, fmt.Sprintf("lb(%s) listenerPort(%d) does not exist",
-			curDetail.CloudClbID, curDetail.ListenerPort[0]))
+		curDetail.ValidateResult = append(curDetail.ValidateResult,
+			fmt.Sprintf("lb(%s) listenerPort(%d) does not exist",
+				curDetail.CloudClbID, curDetail.ListenerPort[0]))
 		return nil
 	}
 
@@ -251,7 +252,8 @@ func (c *CreateUrlRulePreviewExecutor) validateDefaultDomain(kt *kit.Kit) error 
 			logs.Errorf("decode classify key failed, err: %v, rid: %s", err, kt.Rid)
 			return err
 		}
-		listener, err := getListener(kt, c.dataServiceCli, c.accountID, cloudClbID, protocol, int(listenerPort), c.bkBizID, c.vendor)
+		listener, err := getListener(kt, c.dataServiceCli, c.accountID,
+			cloudClbID, protocol, listenerPort, c.bkBizID, c.vendor)
 		if err != nil {
 			logs.Errorf("get listener failed, err: %v, rid: %s", err, kt.Rid)
 			return err
