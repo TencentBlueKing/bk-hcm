@@ -286,7 +286,7 @@ func (cli *client) createNetworkInterface(kt *kit.Kit, accountID, resGroupName s
 	for _, item := range adds {
 		bizID := int64(constant.UnassignedBiz)
 		if item.InstanceID != nil {
-			if one, exist := cvmMap[*item.InstanceID]; exist {
+			if one, exist := cvmMap[converter.PtrToVal(item.InstanceID)]; exist {
 				bizID = one.BkBizID
 			}
 		}

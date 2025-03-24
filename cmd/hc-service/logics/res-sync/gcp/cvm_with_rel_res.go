@@ -211,12 +211,11 @@ func (cli *client) CvmWithRelRes(kt *kit.Kit, params *SyncBaseParams, opt *SyncC
 	}
 
 	// step11: sync cvm_eip_rel
-	// TODO 和 cmd/hc-service/logics/res-sync/gcp/network_interface.go:415 有重复实现的逻辑，需要梳理整个流程之后再决定启用哪部分代码
-	//syncRelOpt.ResType = enumor.NetworkInterfaceCloudResType
-	//if err = mgr.SyncRel(kt, syncRelOpt); err != nil {
-	//	logs.Errorf("[%s] sync cvm_network_interface_rel failed, err: %v, rid: %s", enumor.Gcp, err, kt.Rid)
-	//	return nil, err
-	//}
+	syncRelOpt.ResType = enumor.NetworkInterfaceCloudResType
+	if err = mgr.SyncRel(kt, syncRelOpt); err != nil {
+		logs.Errorf("[%s] sync cvm_network_interface_rel failed, err: %v, rid: %s", enumor.Gcp, err, kt.Rid)
+		return nil, err
+	}
 
 	return new(SyncResult), nil
 }
