@@ -1,18 +1,26 @@
 <script setup lang="ts">
-import { ref, useAttrs, watch } from 'vue';
+import { computed, ref, useAttrs, watch } from 'vue';
 import { SecurityGroupRelatedResourceName } from '@/store/security-group';
+import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
 import conditionFactory from './condition-factory';
 import { ISearchSelectValue } from '@/typings';
 
 const props = defineProps<{ resourceName: SecurityGroupRelatedResourceName; operation: string }>();
 const emit = defineEmits(['search']);
 const attrs: any = useAttrs();
+const { whereAmI } = useWhereAmI();
 
 const searchValue = ref<ISearchSelectValue>([]);
 
 const { getConditionField } = conditionFactory();
-const fields = getConditionField(props.resourceName, props.operation);
-const searchData = fields.map(({ id, name }) => ({ id, name }));
+const fields = computed(() => {
+  const fields = getConditionField(props.resourceName, props.operation);
+  if (whereAmI.value === Senarios.business) {
+    return fields.filter((field) => field.id !== 'bk_biz_id');
+  }
+  return fields;
+});
+const searchData = computed(() => fields.value.map(({ id, name, children }) => ({ id, name, children })));
 
 const clear = () => {
   searchValue.value = [];

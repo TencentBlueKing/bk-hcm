@@ -2,7 +2,7 @@ import type { ParsedQs } from 'qs';
 import merge from 'lodash/merge';
 import { ModelPropertyGeneric, ModelPropertySearch, ModelPropertyType } from '@/model/typings';
 import { findProperty } from '@/model/utils';
-import { ISearchSelectValue, QueryFilterType, QueryRuleOPEnum, RulesItem } from '@/typings';
+import { ISearchSelectValue, QueryFilterType, QueryFilterTypeLegacy, QueryRuleOPEnum, RulesItem } from '@/typings';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
 
@@ -32,8 +32,7 @@ export const getDefaultRule: GetDefaultRule = (property, custom) => {
     ca: { op: searchOp || EQ, value: '' },
     region: { op: searchOp || IN, value: [] },
     business: { op: searchOp || IN, value: [] },
-    'req-type': { op: searchOp || IN, value: [] },
-    'req-stage': { op: searchOp || IN, value: [] },
+    'cloud-area': { op: searchOp || IN, value: [] },
   };
 
   return {
@@ -81,11 +80,35 @@ export const convertValue = (
   return value;
 };
 
-export const transformSimpleCondition = (condition: Record<string, any>, properties: ModelPropertyGeneric[]) => {
-  const queryFilter: QueryFilterType = { op: 'and', rules: [] };
+const isValueEmpty = (value: any): boolean =>
+  [null, undefined, ''].includes(value) || (Array.isArray(value) && !value.length);
+
+const createRuleItem = (
+  field: string,
+  value: any,
+  property: ModelPropertyGeneric,
+  op: QueryRuleOPEnum,
+  legacy?: boolean,
+): RulesItem => {
+  return {
+    [!legacy ? 'op' : 'operator']: op,
+    field,
+    value: convertValue(value, property, op) as RulesItem['value'],
+  };
+};
+
+export const transformSimpleCondition = (
+  condition: Record<string, any>,
+  properties: ModelPropertyGeneric[],
+  legacy?: boolean,
+) => {
+  const queryFilter: QueryFilterType | QueryFilterTypeLegacy = !legacy
+    ? { op: 'and', rules: [] }
+    : { condition: 'AND', rules: [] };
 
   for (const [id, value] of Object.entries(condition || {})) {
     const property = findProperty(id, properties);
+
     if (!property || isValueEmpty(value)) {
       continue;
     }
@@ -95,47 +118,23 @@ export const transformSimpleCondition = (condition: Record<string, any>, propert
       continue;
     }
 
-    const rule = createQueryRule(id, value, property);
-    if (rule) {
-      queryFilter.rules.push(rule);
+    if (property.type === 'datetime' && Array.isArray(value)) {
+      queryFilter.rules.push({
+        op: QueryRuleOPEnum.AND,
+        rules: [
+          createRuleItem(id, value[0], property, QueryRuleOPEnum.GTE),
+          createRuleItem(id, value[1], property, QueryRuleOPEnum.LTE),
+        ],
+      });
+      continue;
     }
+
+    const { op } = getDefaultRule(property);
+    queryFilter.rules.push(createRuleItem(id, value, property, op, legacy));
   }
 
   return queryFilter;
 };
-
-const isValueEmpty = (value: any): boolean =>
-  [null, undefined, ''].includes(value) || (Array.isArray(value) && !value.length);
-
-const createQueryRule = (id: string, value: any, property: ModelPropertyGeneric): RulesItem => {
-  if (property.type === 'datetime' && Array.isArray(value)) {
-    return {
-      op: QueryRuleOPEnum.AND,
-      rules: [
-        createRuleItem(id, value[0], property, QueryRuleOPEnum.GTE),
-        createRuleItem(id, value[1], property, QueryRuleOPEnum.LTE),
-      ],
-    };
-  }
-
-  const { op } = getDefaultRule(property);
-  if (Array.isArray(value)) {
-    return value.length === 1
-      ? createRuleItem(id, value[0], property, op)
-      : {
-          op: QueryRuleOPEnum.OR,
-          rules: value.map((val) => createRuleItem(id, val, property, op)),
-        };
-  }
-
-  return createRuleItem(id, value, property, op);
-};
-
-const createRuleItem = (field: string, value: any, property: ModelPropertyGeneric, op: QueryRuleOPEnum): RulesItem => ({
-  op,
-  field,
-  value: convertValue(value, property, op) as RulesItem['value'],
-});
 
 export const transformFlatCondition = (condition: Record<string, any>, properties: ModelPropertyGeneric[]) => {
   const params: Record<string, any> = {};

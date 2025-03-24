@@ -46,8 +46,20 @@ const relCvmFields = [
   'name',
   'status',
   'cloud_vpc_ids',
+  'bk_biz_id',
 ];
-const relClbFields = ['name', 'domain', 'vip', 'lb_type', 'ip_version', 'region', 'zones', 'status', 'cloud_vpc_id'];
+const relClbFields = [
+  'name',
+  'domain',
+  'lb_vip',
+  'lb_type',
+  'ip_version',
+  'region',
+  'zones',
+  'status',
+  'cloud_vpc_id',
+  'bk_biz_id',
+];
 const bindCvmFields = [
   'private_ipv4_addresses',
   'public_ipv4_addresses',

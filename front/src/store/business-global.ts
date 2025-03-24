@@ -72,6 +72,16 @@ export const useBusinessGlobalStore = defineStore('businessGlobal', () => {
     return names;
   };
 
+  const getBusinessIds = (name: IBusinessItem['name'] | IBusinessItem['name'][]) => {
+    const names = Array.isArray(name) ? name : [name];
+    const ids = [];
+    for (const value of names) {
+      const id = businessFullList.value.find((item) => item.name === value)?.id;
+      ids.push(id);
+    }
+    return ids;
+  };
+
   const getCacheSelected = (key: string) => {
     if (localStorage.getItem(key)) {
       const cacheValue = JSON.parse(localStorage.getItem(key));
@@ -91,6 +101,7 @@ export const useBusinessGlobalStore = defineStore('businessGlobal', () => {
     getFirstBizId,
     getFirstAuthorizedBizId,
     getBusinessNames,
+    getBusinessIds,
     getCacheSelected,
   };
 });

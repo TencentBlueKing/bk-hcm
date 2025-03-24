@@ -1,19 +1,52 @@
 import { ModelProperty } from '@/model/typings';
 import { CLB_STATUS_MAP, IP_VERSION_MAP, LB_NETWORK_TYPE_MAP } from '@/constants';
+import { QueryRuleOPEnum } from '@/typings';
 
 export default [
   {
     id: 'name',
     name: '负载均衡名称',
     type: 'string',
+    meta: {
+      search: {
+        filterRules(value: string | string[]) {
+          if (Array.isArray(value) && value.length > 1) {
+            return {
+              op: QueryRuleOPEnum.OR,
+              rules: value.map((val) => ({ field: 'name', op: QueryRuleOPEnum.CS, value: val })),
+            };
+          }
+          if (Array.isArray(value) && value.length === 1) {
+            return { field: 'name', op: QueryRuleOPEnum.CS, value: value[0] };
+          }
+          return { field: 'name', op: QueryRuleOPEnum.CS, value };
+        },
+      },
+    },
   },
   {
     id: 'domain',
     name: '负载均衡域名',
     type: 'string',
+    meta: {
+      search: {
+        filterRules(value) {
+          if (Array.isArray(value) && value.length > 1) {
+            return {
+              op: QueryRuleOPEnum.OR,
+              rules: value.map((val) => ({ field: 'zones', op: QueryRuleOPEnum.JSON_CONTAINS, value: val })),
+            };
+          }
+          if (Array.isArray(value) && value.length === 1) {
+            return { field: 'zones', op: QueryRuleOPEnum.JSON_CONTAINS, value: value[0] };
+          }
+          return { field: 'zones', op: QueryRuleOPEnum.JSON_CONTAINS, value };
+        },
+      },
+    },
   },
   {
-    id: 'vip',
+    id: 'lb_vip',
     name: '负载均衡VIP',
     type: 'string', // getInstVip(data)
   },
@@ -59,6 +92,22 @@ export default [
     id: 'zones',
     name: '可用区域',
     type: 'array',
+    meta: {
+      search: {
+        filterRules(value) {
+          if (Array.isArray(value) && value.length > 1) {
+            return {
+              op: QueryRuleOPEnum.OR,
+              rules: value.map((val) => ({ field: 'zones', op: QueryRuleOPEnum.JSON_CONTAINS, value: val })),
+            };
+          }
+          if (Array.isArray(value) && value.length === 1) {
+            return { field: 'zones', op: QueryRuleOPEnum.JSON_CONTAINS, value: value[0] };
+          }
+          return { field: 'zones', op: QueryRuleOPEnum.JSON_CONTAINS, value };
+        },
+      },
+    },
   },
   {
     id: 'status',
@@ -75,5 +124,15 @@ export default [
     id: 'cloud_vpc_id',
     name: '所属vpc',
     type: 'string',
+    meta: {
+      search: {
+        op: QueryRuleOPEnum.IN,
+      },
+    },
+  },
+  {
+    id: 'bk_biz_id',
+    name: '所属业务',
+    type: 'business',
   },
 ] as ModelProperty[];

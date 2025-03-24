@@ -35,7 +35,7 @@ const props = defineProps<{
 
 const { t } = useI18n();
 const { getBizsId, isBusinessPage, whereAmI } = useWhereAmI();
-const { getBusinessNames } = useBusinessGlobalStore();
+const { getBusinessNames, getBusinessIds } = useBusinessGlobalStore();
 const securityGroupStore = useSecurityGroupStore();
 const regionStore = useRegionsStore();
 
@@ -137,6 +137,7 @@ const handleSearch = (searchValue: ISearchSelectValue) => {
 
   condition.value = getSimpleConditionBySearchSelect(searchValue, [
     { field: 'region', formatter: (val: string) => regionStore.getRegionNameEN(val) },
+    { field: 'bk_biz_id', formatter: (name: string) => getBusinessIds(name) },
   ]);
 
   if (pagination.current === 1) {
