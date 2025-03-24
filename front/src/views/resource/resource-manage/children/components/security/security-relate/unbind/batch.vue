@@ -7,6 +7,7 @@ import {
   type SecurityGroupRelatedResourceName,
   useSecurityGroupStore,
 } from '@/store/security-group';
+import { useBusinessGlobalStore } from '@/store/business-global';
 import columnFactory from '../data-list/column-factory';
 import { RELATED_RES_KEY_MAP } from '@/constants/security-group';
 import { ISearchSelectValue } from '@/typings';
@@ -27,6 +28,7 @@ const model = defineModel<boolean>();
 
 const { t } = useI18n();
 const securityGroupStore = useSecurityGroupStore();
+const { getBusinessIds } = useBusinessGlobalStore();
 
 const types = [
   { label: t('可解绑'), value: 'target' },
@@ -61,7 +63,9 @@ watch(
 );
 
 const handleSearch = (searchValue: ISearchSelectValue) => {
-  filterFn.value = getLocalFilterFnBySearchSelect(searchValue);
+  filterFn.value = getLocalFilterFnBySearchSelect(searchValue, [
+    { field: 'bk_biz_id', formatter: (name: string) => getBusinessIds(name) },
+  ]);
 };
 
 const handleConfirm = async () => {

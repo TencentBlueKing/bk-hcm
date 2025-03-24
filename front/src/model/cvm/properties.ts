@@ -49,7 +49,18 @@ export default [
     type: 'string',
     meta: {
       search: {
-        op: QueryRuleOPEnum.CS,
+        filterRules(value: string | string[]) {
+          if (Array.isArray(value) && value.length > 1) {
+            return {
+              op: QueryRuleOPEnum.OR,
+              rules: value.map((val) => ({ field: 'name', op: QueryRuleOPEnum.CS, value: val })),
+            };
+          }
+          if (Array.isArray(value) && value.length === 1) {
+            return { field: 'name', op: QueryRuleOPEnum.CS, value: value[0] };
+          }
+          return { field: 'name', op: QueryRuleOPEnum.CS, value };
+        },
       },
     },
   },
