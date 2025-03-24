@@ -60,19 +60,21 @@ export default defineComponent({
           </span>
         ) : null}
 
-        <span class={cssModule.item}>
-          {t('共计')}
-          {props.isAdjust ? t('增加') : t('人民币')}：
-          <Loading loading={isLoading.value} opacity={1} style={{ minWidth: '80px' }} size='small'>
-            <span class={cssModule.money}>
-              {props.isAdjust
-                ? `￥ ${formatBillCost(amountInfo.value?.cost_map?.increase.RMB?.Cost)}  |  $ ${formatBillCost(
-                    amountInfo.value?.cost_map?.increase.USD?.Cost,
-                  )} `
-                : `￥${formatBillCost(getMoney())}`}
-            </span>
-          </Loading>
-        </span>
+        {!props.onlyRMB ? (
+          <span class={cssModule.item}>
+            {t('共计')}
+            {props.isAdjust ? t('增加') : t('人民币')}：
+            <Loading loading={isLoading.value} opacity={1} style={{ minWidth: '80px' }} size='small'>
+              <span class={cssModule.money}>
+                {props.isAdjust
+                  ? `￥ ${formatBillCost(amountInfo.value?.cost_map?.increase.RMB?.Cost)}  |  $ ${formatBillCost(
+                      amountInfo.value?.cost_map?.increase.USD?.Cost,
+                    )} `
+                  : `￥${formatBillCost(getMoney())}`}
+              </span>
+            </Loading>
+          </span>
+        ) : null}
 
         {!props.onlyRMB ? (
           <span class={cssModule.item}>
@@ -89,6 +91,18 @@ export default defineComponent({
             </Loading>
           </span>
         ) : null}
+
+        {props.onlyRMB && (
+          <span class={cssModule.item}>
+            {t('共计')}
+            {t('人民币')}：
+            <Loading loading={isLoading.value} opacity={1} style={{ minWidth: '80px' }} size='small'>
+              <span class={cssModule.money}>
+                {`￥${formatBillCost(String(Number(getMoney('CNY', 'RMBCost')) + Number(getMoney('USD', 'RMBCost'))))}`}
+              </span>
+            </Loading>
+          </span>
+        )}
       </div>
     );
   },

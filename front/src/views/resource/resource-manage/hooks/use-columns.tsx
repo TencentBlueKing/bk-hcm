@@ -2127,6 +2127,48 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
     },
   ];
 
+  const billsBizSummaryColumns = [
+    {
+      label: '业务ID',
+      field: 'bk_biz_id',
+      isDefaultShow: true,
+      width: 110,
+    },
+    {
+      label: '业务名称',
+      field: 'bk_biz_id',
+      isDefaultShow: true,
+      width: 150,
+      render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
+    },
+    {
+      label: '币种',
+      field: 'currency',
+      isDefaultShow: true,
+      width: 90,
+      render: ({ cell }: any) => {
+        const value = CURRENCY_MAP[cell] ?? '人民币';
+        return <span class={['currency', cell?.toLowerCase()]}>{value}</span>;
+      },
+    },
+    {
+      label: '已确认账单',
+      field: 'current_month_cost_synced',
+      isDefaultShow: true,
+      align: 'right',
+      width: 200,
+      render: (args: any) => customRender(args, 'current_month_cost_synced'),
+    },
+    {
+      label: '当前账单',
+      field: 'current_month_cost',
+      isDefaultShow: true,
+      align: 'right',
+      width: 200,
+      render: (args: any) => customRender(args, 'current_month_cost'),
+    },
+  ];
+
   const billDetailAwsColumns = [
     {
       label: '核算日期',
@@ -2587,6 +2629,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
     myApply: myApplyColumns,
     billsRootAccountSummary: billsRootAccountSummaryColumns,
     billsMainAccountSummary: billsMainAccountSummaryColumns,
+    billsBizSummary: billsBizSummaryColumns,
     billDetailAws: billDetailAwsColumns,
     billDetailAzure: billDetailAzureColumns,
     billDetailGcp: billDetailGcpColumns,
