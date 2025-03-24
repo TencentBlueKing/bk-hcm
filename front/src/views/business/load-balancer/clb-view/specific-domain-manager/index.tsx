@@ -40,6 +40,7 @@ export default defineComponent({
     const { data: listenerDetail } = await businessStore.detail('listeners', to.query.listener_id as string);
     // 负载均衡详情
     const { data: lbDetail } = await businessStore.detail('load_balancers', listenerDetail.lb_id);
+    // 当前节点为：监听器
     loadBalancerStore.setCurrentSelectedTreeNode({ ...listenerDetail, lb: lbDetail });
     next();
   },
@@ -96,7 +97,7 @@ export default defineComponent({
                   <Link
                     class='target-group-name-btn'
                     theme='primary'
-                    href={`/#/business/loadbalancer/group-view/${data.target_group_id}?bizs=${accountStore.bizs}&type=detail`}
+                    href={`/#/business/loadbalancer/group-view/${data.target_group_id}?bizs=${accountStore.bizs}&type=detail&vendor=${loadBalancerStore.currentSelectedTreeNode.vendor}`}
                     onClick={() => loadBalancerStore.setTgSearchTarget(cell)}>
                     {cell || '--'}
                   </Link>
@@ -177,7 +178,10 @@ export default defineComponent({
     const deleteRulesBatch = async (ids: string[]) => {
       isSubmitLoading.value = true;
       try {
-        await businessStore.deleteRules(props.listener_id, { lbl_id: props.listener_id, rule_ids: ids });
+        await businessStore.deleteRules(loadBalancerStore.currentSelectedTreeNode.vendor, props.listener_id, {
+          lbl_id: props.listener_id,
+          rule_ids: ids,
+        });
         isBatchDeleteDialogShow.value = false;
         Message({ message: '删除成功', theme: 'success' });
         await getListData();
@@ -193,7 +197,7 @@ export default defineComponent({
         return row.bk_biz_id === -1;
       }
     };
-    const { CommonTable, getListData } = useTable({
+    const { CommonTable, getListData, clearFilter } = useTable({
       searchOptions: {
         searchData: [
           { name: 'URL路径', id: 'url' },
@@ -227,30 +231,61 @@ export default defineComponent({
         },
       },
       requestOption: {
-        type: `vendors/tcloud/listeners/${props.listener_id}/rules`,
+        type: `vendors/${loadBalancerStore.currentSelectedTreeNode.vendor}/listeners/${props.listener_id}/rules`,
         sortOption: { sort: 'created_at', order: 'DESC' },
         filterOption: {
           rules: [{ field: 'domain', op: QueryRuleOPEnum.EQ, value: props.id }],
         },
         async resolveDataListCb(dataList: any) {
-          if (dataList.length === 0) return;
-          const tgIds = dataList.map(({ target_group_id }: { target_group_id: string }) => target_group_id);
-          const resList = await businessStore.getTargetGroupList({
-            page: { count: false, start: 0, limit: 500 },
-            filter: {
-              op: QueryRuleOPEnum.AND,
-              rules: [{ field: 'id', op: QueryRuleOPEnum.IN, value: tgIds.map((id: string) => id) }],
-            },
-            fields: ['id', 'name'],
+          // 如果数据列表为空，直接返回
+          if (!dataList?.length) return [];
+
+          // 提取目标组ID列表和规则ID列表
+          const tgIds = new Set<string>();
+          const ruleIds = new Set<string>();
+          dataList.forEach(({ target_group_id, id }: { target_group_id: string; id: string }) => {
+            tgIds.add(target_group_id);
+            ruleIds.add(id);
           });
-          const listenerCountMap = {};
-          resList.data.details.forEach(({ id, name }: { id: string; name: string }) => {
-            listenerCountMap[id] = name;
-          });
-          return dataList.map((data: any) => {
-            const { target_group_id } = data;
-            return { ...data, target_group_name: listenerCountMap[target_group_id] };
-          });
+
+          // 并发查询目标组名称和同步状态
+          const [targetGroupList, bindingStatusList] = await Promise.all([
+            // 查询目标组名称
+            businessStore.getTargetGroupList({
+              page: { count: false, start: 0, limit: 500 },
+              filter: {
+                op: QueryRuleOPEnum.AND,
+                rules: [{ field: 'id', op: QueryRuleOPEnum.IN, value: Array.from(tgIds) }],
+              },
+              fields: ['id', 'name'],
+            }),
+            // 查询同步状态
+            loadBalancerStore.queryRulesBindingStatusList(
+              loadBalancerStore.currentSelectedTreeNode.vendor,
+              loadBalancerStore.currentSelectedTreeNode.id,
+              { rule_ids: Array.from(ruleIds) },
+            ),
+          ]);
+
+          // 构建目标组ID到名称的映射
+          const targetGroupMap = new Map<string, string>(
+            targetGroupList.data.details.map(({ id, name }: { id: string; name: string }) => [id, name]),
+          );
+
+          // 构建规则ID到同步状态的映射
+          const bindingStatusMap = new Map<string, string>(
+            bindingStatusList.map(({ rule_id, binding_status }: { rule_id: string; binding_status: string }) => [
+              rule_id,
+              binding_status,
+            ]),
+          );
+
+          // 返回增强后的数据列表
+          return dataList.map((data: any) => ({
+            ...data,
+            target_group_name: targetGroupMap.get(data.target_group_id) || '--',
+            binding_status: bindingStatusMap.get(data.id) || '--',
+          }));
         },
       },
     });
@@ -268,6 +303,7 @@ export default defineComponent({
       ([id, domain]) => {
         // 清空选中项, 避免切换域名后, 选中项不变
         resetSelections();
+        clearFilter();
         id &&
           getListData(
             [
@@ -277,7 +313,7 @@ export default defineComponent({
                 value: domain,
               },
             ],
-            `vendors/tcloud/listeners/${id}/rules`,
+            `vendors/${loadBalancerStore.currentSelectedTreeNode.vendor}/listeners/${id}/rules`,
           );
       },
     );
@@ -285,21 +321,12 @@ export default defineComponent({
     const handleSubmit = async () => {
       await formInstance.value.validate();
       isSubmitLoading.value = true;
+      const lbl_id = props.listener_id;
+      const { rule_id, url, scheduler, target_group_id } = formData;
+      const { vendor } = loadBalancerStore.currentSelectedTreeNode;
       const promise = isEdit.value
-        ? businessStore.updateUrl({
-            lbl_id: props.listener_id,
-            rule_id: formData.rule_id,
-            url: formData.url,
-            scheduler: formData.scheduler,
-            target_group_id: formData.target_group_id,
-          })
-        : businessStore.createRules({
-            lbl_id: props.listener_id,
-            url: formData.url,
-            scheduler: formData.scheduler,
-            domains: [props.id],
-            target_group_id: formData.target_group_id,
-          });
+        ? businessStore.updateUrl({ lbl_id, rule_id, url, scheduler, target_group_id, vendor })
+        : businessStore.createRules({ lbl_id, url, scheduler, domains: [props.id], target_group_id, vendor });
       try {
         await promise;
         Message({

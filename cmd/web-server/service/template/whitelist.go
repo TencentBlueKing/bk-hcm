@@ -26,9 +26,9 @@ var templateNameWhiteList = map[string]struct{}{}
 func init() {
 	registerTemplateFilenameToWhiteList("1_hcm_clb_tcp_udp_listener_template.xlsx")
 	registerTemplateFilenameToWhiteList("2_hcm_clb_http_https_listener_template.xlsx")
-	registerTemplateFilenameToWhiteList("3_hcm_clb_bind_rs_url_ruler_template.xlsx")
+	registerTemplateFilenameToWhiteList("3_hcm_clb_url_rule_template.xlsx")
 	registerTemplateFilenameToWhiteList("4_hcm_clb_bind_rs_tcp_udp_template.xlsx")
-	registerTemplateFilenameToWhiteList("5_hcm_clb_url_rule_http_https_template.xlsx")
+	registerTemplateFilenameToWhiteList("5_hcm_clb_bind_rs_http_https_template.xlsx")
 }
 
 func registerTemplateFilenameToWhiteList(filename string) {

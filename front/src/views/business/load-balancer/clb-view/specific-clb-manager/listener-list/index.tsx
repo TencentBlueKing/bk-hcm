@@ -50,7 +50,7 @@ export default defineComponent({
 
     // listener - table
     const { columns, settings } = useColumns('listener');
-    const { CommonTable, getListData } = useTable({
+    const { CommonTable, getListData, clearFilter } = useTable({
       searchOptions: {
         searchData: [
           { name: '监听器名称', id: 'name' },
@@ -153,6 +153,7 @@ export default defineComponent({
       (id) => {
         // 清空选中项
         resetSelections();
+        clearFilter();
         id && getListData([], `load_balancers/${id}/listeners`);
       },
     );

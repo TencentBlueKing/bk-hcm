@@ -623,7 +623,7 @@ func (a *Aws) GetRootAccountBillTotal(kt *kit.Kit, where string, billInfo *billc
 func (a *Aws) GetRootAccountAwsAthenaQuery(kt *kit.Kit, query string, billInfo *billcore.AwsRootBillConfig) (
 	[]map[string]string, error) {
 
-	logs.V(4).Infof("aws root account athena query sql: [%s], rid: %s", query, kt.Rid)
+	logs.V(5).Infof("aws root account athena query sql: [%s], rid: %s", query, kt.Rid)
 	client, err := a.clientSet.athenaClient(billInfo.Extension.Region)
 	if err != nil {
 		return nil, err
@@ -814,6 +814,45 @@ func (a *Aws) AwsListRootOutsideMonthBill(kt *kit.Kit, opt *typesBill.AwsMainOut
 
 	if len(opt.UsageAccountIDs) > 0 {
 		condition += fmt.Sprintf(" AND line_item_usage_account_id IN ('%s') ", strings.Join(opt.UsageAccountIDs, "','"))
+	}
+	sql := fmt.Sprintf(QueryBillSQL, QueryRootBillSelectField, billInfo.CloudDatabaseName, billInfo.CloudTableName,
+		condition)
+	sql += QueryRootBillGroupBySQL
+	sql += QueryRootBillOrderBySQL
+	if opt.Page != nil {
+		sql += fmt.Sprintf(" OFFSET %d LIMIT %d", opt.Page.Offset, opt.Page.Limit)
+	}
+	list, err := a.GetRootAccountAwsAthenaQuery(kt, sql, billInfo)
+	if err != nil {
+		return nil, err
+	}
+	return list, nil
+}
+
+// AwsRootBillListByQueryFields get bill list by query fields for root account
+func (a *Aws) AwsRootBillListByQueryFields(kt *kit.Kit, opt *typesBill.AwsRootDeductBillListOpt,
+	billInfo *billcore.RootAccountBillConfig[billcore.AwsBillConfigExtension]) ([]map[string]string, error) {
+
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	// 拼接查询条件
+	var condition = fmt.Sprintf("WHERE year = '%d' AND month = '%d'", opt.Year, opt.Month)
+	if opt.PayerAccountID != "" {
+		condition += fmt.Sprintf("AND bill_payer_account_id = '%s' ", opt.PayerAccountID)
+	}
+	if opt.BeginDate != "" && opt.EndDate != "" {
+		condition += fmt.Sprintf(`AND (date(line_item_usage_start_date) >= date '%s' 
+      	AND date(line_item_usage_start_date) <= date '%s')`, opt.BeginDate, opt.EndDate)
+	}
+	if len(opt.FieldsMap) > 0 {
+		for key, values := range opt.FieldsMap {
+			if len(values) == 0 {
+				continue
+			}
+			condition += fmt.Sprintf(" AND %s IN('%s') ", key, strings.Join(values, "','"))
+		}
 	}
 	sql := fmt.Sprintf(QueryBillSQL, QueryRootBillSelectField, billInfo.CloudDatabaseName, billInfo.CloudTableName,
 		condition)

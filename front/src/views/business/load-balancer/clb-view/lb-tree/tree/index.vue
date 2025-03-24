@@ -165,6 +165,7 @@ const getDomainList = async (listener: Listener) => {
     item.id = domain;
     item.listener_id = id;
     item.isDefault = default_domain === domain;
+    item.vendor = vendor;
     return item;
   });
 
@@ -257,9 +258,9 @@ const handleDeleteListener = (node: any) => {
 };
 // more-action - 删除域名
 const handleDeleteDomain = (node: any) => {
-  const { listener_id, domain } = node;
+  const { listener_id, domain, vendor } = node;
   Confirm('请确定删除域名', `将删除域名【${domain}】`, async () => {
-    await businessStore.batchDeleteDomains({ lbl_id: listener_id, domains: [domain] });
+    await businessStore.batchDeleteDomains({ lbl_id: listener_id, vendor, domains: [domain] });
     Message({ theme: 'success', message: '删除成功' });
     // 本期暂时先重新拉取lb列表
     reset();

@@ -18,7 +18,12 @@ const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 const { Column } = Table;
 
 // apply-clb, 底栏
-export default (formModel: ApplyClbModel, formRef: any, isInquiryPricesLoading: Ref<boolean>) => {
+export default (
+  formModel: ApplyClbModel,
+  formRef: any,
+  isInquiryPrices: Ref<boolean>,
+  isInquiryPricesLoading: Ref<boolean>,
+) => {
   // use hooks
   const router = useRouter();
   const route = useRoute();
@@ -153,7 +158,7 @@ export default (formModel: ApplyClbModel, formRef: any, isInquiryPricesLoading: 
               theme='primary'
               onClick={handleApplyClb}
               loading={applyLoading.value}
-              disabled={isInquiryPricesLoading.value}>
+              disabled={!isInquiryPrices.value || isInquiryPricesLoading.value}>
               {t('立即购买')}
             </Button>
             <Button loading={applyLoading.value} onClick={goBack}>

@@ -36,4 +36,36 @@
   .green {
     color: #00A62B;
   }
+  .currency {
+    border-radius: 11px;
+    line-height: 22px;
+    padding: 0 8px;
+    font-size: 12px;
+    display: inline-block;
+    color: white;
+    background-color: #5575A1;
+  }
+  .usd {
+    background-color: #8EA082;
+  }
+  .cny {
+    background-color: #5575A1;
+  }
+  .change-currency {
+    margin-left: 24px;
+    vertical-align: middle;
+  }
+  .current-currency {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    justify-content: end;
+    .dollar {
+      color: #C4C6CC;
+    }
+    .arrow-right {
+      color: #F59500;
+      font-size: 14px;
+    }
+  }
 }

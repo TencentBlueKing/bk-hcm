@@ -23,20 +23,16 @@ import (
 	"encoding/json"
 	"fmt"
 
-	actbill "hcm/cmd/task-server/logics/action/bill/common"
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	"hcm/pkg/api/core"
 	protocore "hcm/pkg/api/core/account-set"
 	"hcm/pkg/api/data-service/bill"
-	hcbill "hcm/pkg/api/hc-service/bill"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
-	"hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	cvt "hcm/pkg/tools/converter"
-	"hcm/pkg/tools/times"
 
 	"github.com/shopspring/decimal"
 )
@@ -56,55 +52,46 @@ func (a AwsSupportMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index
 		return nil, false, err
 	}
 
-	// 获取指定月份最后一天
-	lastDay, err := times.GetLastDayOfMonth(opt.BillYear, opt.BillMonth)
-	if err != nil {
-		logs.Errorf("fail get last day of month for aws month task, year: %d, month: %d, err: %v, rid: %s",
-			opt.BillYear, opt.BillMonth, err, kt.Rid)
-		return nil, false, err
-	}
-	hcCli := actbill.GetHCServiceByAwsSite(rootAccount.Site)
-	rootBillReq := &hcbill.AwsRootBillListReq{
-		RootAccountID:      opt.RootAccountID,
-		MainAccountCloudID: rootAccount.CloudID,
-		BeginDate:          fmt.Sprintf("%d-%02d-%02d", opt.BillYear, opt.BillMonth, 1),
-		EndDate:            fmt.Sprintf("%d-%02d-%02d", opt.BillYear, opt.BillMonth, lastDay),
-		Page:               &hcbill.AwsBillListPage{Offset: index, Limit: a.GetBatchSize(kt)},
-	}
-	billResp, err := hcCli.Aws.Bill.GetRootAccountBillList(kt, rootBillReq)
+	mainAccounts, err := actcli.GetDataService().Global.MainAccount.List(kt, &core.ListReq{
+		Filter: tools.EqualExpression("cloud_id", rootAccount.CloudID),
+		Page:   core.NewDefaultBasePage(),
+		Fields: []string{"id"},
+	})
 	if err != nil {
 		return nil, false, err
 	}
-	if len(billResp.Details) == 0 {
-		return nil, true, nil
+	if len(mainAccounts.Details) != 1 {
+		return nil, false, fmt.Errorf("root account(%s) as main not found for pull support", rootAccount.CloudID)
 	}
-	for _, record := range billResp.Details {
-		cost, err := getDecimal(record, "line_item_net_unblended_cost")
-		if err != nil {
-			return nil, false, err
-		}
-		amount, err := getDecimal(record, "line_item_usage_amount")
-		if err != nil {
-			return nil, false, err
-		}
+	rootAsMainID := mainAccounts.Details[0].ID
 
-		extensionBytes, err := json.Marshal(record)
-		if err != nil {
-			return nil, false, fmt.Errorf("marshal aws bill item %v failed, err: %w", record, err)
-		}
-		itemList = append(itemList, bill.RawBillItem{
-			Region:        record["product_region"],
-			HcProductCode: record["line_item_product_code"],
-			HcProductName: record["product_product_name"],
-			BillCurrency:  enumor.CurrencyCode(record["line_item_currency_code"]),
-			BillCost:      cvt.PtrToVal(cost),
-			ResAmount:     cvt.PtrToVal(amount),
-			ResAmountUnit: record["pricing_unit"],
-			Extension:     types.JsonField(extensionBytes),
-		})
+	req := &bill.BillItemSumReq{
+		ItemCommonOpt: &bill.ItemCommonOpt{
+			Vendor: opt.Vendor,
+			Year:   opt.BillYear,
+			Month:  opt.BillMonth,
+		},
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("root_account_id", opt.RootAccountID),
+			tools.RuleEqual("main_account_id", rootAsMainID),
+			// filter out bills produced by previous support month task
+			tools.RuleNotIn("hc_product_name", []string{constant.BillCommonExpenseReverseName}),
+		),
 	}
-	supportDone := uint64(len(billResp.Details)) < a.GetBatchSize(kt)
-	return itemList, supportDone, nil
+	billSum, err := actcli.GetDataService().Global.Bill.SumBillItemCost(kt, req)
+	if err != nil {
+		return nil, false, err
+	}
+	logs.V(5).Infof("support bills: %+v, req: %+v, rid: %s", billSum, req, kt.Rid)
+
+	itemList = append(itemList, bill.RawBillItem{
+		HcProductCode: constant.BillCommonExpenseName,
+		HcProductName: constant.BillCommonExpenseName,
+		BillCurrency:  billSum.Currency,
+		BillCost:      billSum.Cost,
+		Extension:     "{}",
+	})
+	return itemList, true, nil
 }
 
 // Split aws support fee to main account
@@ -114,7 +101,7 @@ func (a AwsSupportMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption,
 	if len(rawItemList) == 0 {
 		return nil, nil
 	}
-	a.initExtension(opt)
+	a.initExtension(kt, opt)
 
 	// 查询根账号信息
 	rootAccount, err := actcli.GetDataService().Aws.RootAccount.Get(kt, opt.RootAccountID)

@@ -12,7 +12,7 @@ image:
   registry: hub.bktencent.com
   pullPolicy: IfNotPresent
   pullSecrets: []
-  tag: 1.8.0-alpha.4
+  tag: 1.8.0-alpha.5
 
 serviceAccount:
   create: true
@@ -555,6 +555,12 @@ accountserver:
     awsCommonExpense:
       excludeAccountCloudIds:
       #  - 123456789
+    # 根账号需要抵扣的项目列表
+    awsDeductAccountItems:
+      deductItemTypes:
+        00000001: # 根账号ID
+          line_item_line_item_type: # 项目涵盖的费用类型
+            - Tax
     gcpCredits:
     #- rootAccountCloudID: gcp_support_account
     #  returnConfigs:

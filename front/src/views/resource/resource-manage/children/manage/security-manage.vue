@@ -1255,10 +1255,6 @@ watch(
   width: 60px;
 }
 
-.mt20 {
-  margin-top: 20px;
-}
-
 .search-filter {
   width: 500px;
 }
@@ -1280,6 +1276,7 @@ watch(
 
   :deep(.bk-nested-loading) {
     margin-top: 16px;
+
     height: calc(100% - 100px);
 
     .bk-table {
@@ -1294,3 +1291,4 @@ watch(
   }
 }
 </style>
+

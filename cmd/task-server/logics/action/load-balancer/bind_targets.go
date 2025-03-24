@@ -68,11 +68,23 @@ func (act ListenerRuleAddTargetAction) Run(kt run.ExecuteKit, params any) (any, 
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
 	}
 
-	err := actcli.GetHCService().TCloud.Clb.BatchRegisterTargetToListenerRule(
-		kt.Kit(), opt.LoadBalancerID, opt.BatchRegisterTCloudTargetReq)
+	info, err := actcli.GetDataService().Global.Cloud.GetResBasicInfo(kt.Kit(), enumor.LoadBalancerCloudResType,
+		opt.LoadBalancerID, "vendor")
 	if err != nil {
-		logs.Errorf("fail to register target to listener rule, err: %v, rid: %s", err, kt.Kit().Rid)
+		logs.Errorf("fail to get load balancer info, err: %v, res id: %s, rid: %s", err, opt.LoadBalancerID,
+			kt.Kit().Rid)
 		return nil, err
+	}
+
+	switch info.Vendor {
+	case enumor.TCloud:
+		if err = actcli.GetHCService().TCloud.Clb.BatchRegisterTargetToListenerRule(kt.Kit(), opt.LoadBalancerID,
+			opt.BatchRegisterTCloudTargetReq); err != nil {
+			logs.Errorf("fail to register target to listener rule, err: %v, rid: %s", err, kt.Kit().Rid)
+			return nil, err
+		}
+	default:
+		return nil, errf.New(errf.InvalidParameter, "vendor is not supported")
 	}
 
 	return nil, err

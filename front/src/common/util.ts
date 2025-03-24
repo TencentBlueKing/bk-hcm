@@ -85,8 +85,8 @@ export function timeFromNow(val: string, unit: QUnitType | OpUnitType = 'minute'
  * @returns 'row-class': ({ created_at }: { created_at: string }) => string
  */
 export function getTableNewRowClass() {
-  return ({ created_at }: { created_at: string }) => {
-    if (timeFromNow(created_at) <= 5) {
+  return ({ created_at, updated_at }: { created_at?: string; updated_at?: string }) => {
+    if ((created_at && timeFromNow(created_at) <= 5) || (updated_at && timeFromNow(updated_at) <= 5)) {
       return 'table-new-row';
     }
   };

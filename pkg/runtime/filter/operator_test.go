@@ -304,3 +304,26 @@ func TestJSONInSQLExpr(t *testing.T) {
 		}
 	}
 }
+
+func Test_jsonFiledSqlFormat(t *testing.T) {
+	type args struct {
+		field string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{name: "multi", args: args{field: "extension.vpc.id"},
+			want: `JSON_UNQUOTE(JSON_EXTRACT(extension,'$."vpc"."id"'))`},
+		{name: "non-json", args: args{field: "extension"}, want: `extension`},
+		{name: "single", args: args{field: "extension.id"}, want: `JSON_UNQUOTE(JSON_EXTRACT(extension,'$."id"'))`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := jsonFieldSqlFormat(tt.args.field); got != tt.want {
+				t.Errorf("jsonFieldSqlFormat() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

@@ -926,6 +926,11 @@ type BillCommonExpense struct {
 	ExcludeAccountCloudIDs []string `yaml:"excludeAccountCloudIDs" validate:"dive,required"`
 }
 
+// BillDeductItemsExpense ...
+type BillDeductItemsExpense struct {
+	DeductItemTypes map[string]map[string][]string `yaml:"deductItemTypes" validate:"dive,required"`
+}
+
 // CreditReturn ...
 type CreditReturn struct {
 	CreditID string `yaml:"creditId" validate:"required"`
@@ -970,11 +975,12 @@ func (opt *GcpCreditConfig) Validate() error {
 
 // BillAllocationOption ...
 type BillAllocationOption struct {
-	AwsSavingsPlans     []AwsSavingsPlansOption `yaml:"awsSavingsPlans"`
-	AwsCommonExpense    BillCommonExpense       `yaml:"awsCommonExpense"`
-	GcpCredits          []GcpCreditConfig       `yaml:"gcpCredits"`
-	GcpCommonExpense    BillCommonExpense       `yaml:"gcpCommonExpense"`
-	HuaweiCommonExpense BillCommonExpense       `yaml:"huaweiCommonExpense"`
+	AwsSavingsPlans       []AwsSavingsPlansOption `yaml:"awsSavingsPlans"`
+	AwsCommonExpense      BillCommonExpense       `yaml:"awsCommonExpense"`
+	AwsDeductAccountItems BillDeductItemsExpense  `yaml:"awsDeductAccountItems"`
+	GcpCredits            []GcpCreditConfig       `yaml:"gcpCredits"`
+	GcpCommonExpense      BillCommonExpense       `yaml:"gcpCommonExpense"`
+	HuaweiCommonExpense   BillCommonExpense       `yaml:"huaweiCommonExpense"`
 }
 
 func (opt *BillAllocationOption) validate() error {

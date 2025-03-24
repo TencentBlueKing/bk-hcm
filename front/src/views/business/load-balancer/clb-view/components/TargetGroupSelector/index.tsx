@@ -1,4 +1,4 @@
-import { PropType, defineComponent, ref, watch } from 'vue';
+import { PropType, defineComponent, ref, watch, watchEffect } from 'vue';
 import { Divider, Select } from 'bkui-vue';
 import { Plus, RightTurnLine, Spinner } from 'bkui-vue/lib/icon';
 import { useAccountStore } from '@/store';
@@ -56,6 +56,9 @@ export default defineComponent({
 
     // select-handler - 选择目标组后更新 props.modelValue
     watch(targetGroupId, (val) => emit('update:modelValue', val));
+    watchEffect(() => {
+      targetGroupId.value = props.modelValue;
+    });
 
     // 对外暴露刷新列表的方法
     expose({ handleRefresh });

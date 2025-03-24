@@ -146,20 +146,22 @@ func bizService(h *rest.Handler, svc *lbSvc) {
 
 func bizURLRuleService(h *rest.Handler, svc *lbSvc) {
 	// 规则
-	h.Add("GetBizTCloudUrlRule", http.MethodGet,
-		"/vendors/tcloud/listeners/{lbl_id}/rules/{rule_id}", svc.GetBizTCloudUrlRule)
+	h.Add("GetBizUrlRule", http.MethodGet,
+		"/vendors/{vendor}/listeners/{lbl_id}/rules/{rule_id}", svc.GetBizUrlRule)
 	h.Add("ListBizUrlRulesByListener", http.MethodPost,
-		"/vendors/tcloud/listeners/{lbl_id}/rules/list", svc.ListBizUrlRulesByListener)
-	h.Add("ListBizTCloudRuleByTG", http.MethodPost,
-		"/vendors/tcloud/target_groups/{target_group_id}/rules/list", svc.ListBizTCloudRuleByTG)
-	h.Add("CreateBizTCloudUrlRule", http.MethodPost,
-		"/vendors/tcloud/listeners/{lbl_id}/rules/create", svc.CreateBizTCloudUrlRule)
-	h.Add("UpdateBizTCloudUrlRule", http.MethodPatch,
-		"/vendors/tcloud/listeners/{lbl_id}/rules/{rule_id}", svc.UpdateBizTCloudUrlRule)
-	h.Add("BatchDeleteBizTCloudUrlRule", http.MethodDelete,
-		"/vendors/tcloud/listeners/{lbl_id}/rules/batch", svc.BatchDeleteBizTCloudUrlRule)
-	h.Add("BatchDeleteBizTCloudUrlRuleByDomain", http.MethodDelete,
-		"/vendors/tcloud/listeners/{lbl_id}/rules/by/domains/batch", svc.BatchDeleteBizTCloudUrlRuleByDomain)
+		"/vendors/{vendor}/listeners/{lbl_id}/rules/list", svc.ListBizUrlRulesByListener)
+	h.Add("ListBizRuleByTG", http.MethodPost,
+		"/vendors/{vendor}/target_groups/{target_group_id}/rules/list", svc.ListBizRuleByTG)
+	h.Add("CreateBizUrlRule", http.MethodPost,
+		"/vendors/{vendor}/listeners/{lbl_id}/rules/create", svc.CreateBizUrlRule)
+	h.Add("UpdateBizUrlRule", http.MethodPatch,
+		"/vendors/{vendor}/listeners/{lbl_id}/rules/{rule_id}", svc.UpdateBizUrlRule)
+	h.Add("BatchDeleteBizUrlRule", http.MethodDelete,
+		"/vendors/{vendor}/listeners/{lbl_id}/rules/batch", svc.BatchDeleteBizUrlRule)
+	h.Add("BatchDeleteBizUrlRuleByDomain", http.MethodDelete,
+		"/vendors/{vendor}/listeners/{lbl_id}/rules/by/domains/batch", svc.BatchDeleteBizUrlRuleByDomain)
+	h.Add("ListRuleBindingStatus", http.MethodPost,
+		"/vendors/{vendor}/listeners/{lbl_id}/rules/binding_status/list", svc.ListRuleBindingStatus)
 }
 
 func bizSopService(h *rest.Handler, svc *lbSvc) {

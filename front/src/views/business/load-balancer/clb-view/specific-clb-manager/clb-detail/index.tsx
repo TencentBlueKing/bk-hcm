@@ -241,7 +241,7 @@ export default defineComponent({
     // 删除Snat IP
     const handleDeleteSnatIp = (data: { ip: string; subnet_id: string }) => {
       Confirm('请确定删除SNAT IP', `将删除SNAT IP【${data.ip}】`, async () => {
-        await businessStore.deleteSnatIps(props.id, { delete_ips: [data.ip] });
+        await businessStore.deleteSnatIps(props.id, props.detail.vendor, { delete_ips: [data.ip] });
         Message({ theme: 'success', message: '删除成功' });
         await handleReloadLbDetail();
       });
@@ -293,7 +293,7 @@ export default defineComponent({
       isSnatproChange.value = true;
       isSnatproOpen.value = snat_pro;
       try {
-        await businessStore.updateLbDetail({ id: props.id, snat_pro });
+        await businessStore.updateLbDetail(props.detail.vendor, { id: props.id, snat_pro });
         Message({ theme: 'success', message: '修改成功' });
         await props.getDetails(props.id);
       } catch (error) {
