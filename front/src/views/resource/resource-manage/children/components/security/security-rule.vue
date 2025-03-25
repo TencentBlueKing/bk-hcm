@@ -643,7 +643,7 @@ const types = [
             disabled: isResourcePage || hasEditScopeInBusiness,
           }"
           theme="primary"
-          :class="{ 'hcm-no-permision-btn': !authVerifyData.value?.permissionAction?.[actionName] }"
+          :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.[actionName] }"
           @click="handleSecurityRuleDialog({})"
         >
           {{ t('新增规则') }}
