@@ -5,7 +5,7 @@ import { Button, Loading, Popover, Table } from 'bkui-vue';
 // import types
 import { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
 import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
-import { LbPrice } from '@/typings';
+import { IQueryResData, LbPrice } from '@/typings';
 // import utils
 import { useI18n } from 'vue-i18n';
 import bus from '@/common/bus';
@@ -120,8 +120,9 @@ export default (
       const url = isBusinessPage
         ? `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${formModel.vendor}/applications/types/create_load_balancer`
         : `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/load_balancers/create`;
-      await http.post(url, handleParams());
-      applyClbSuccessHandler(isBusinessPage, goBack, formModel);
+      const res: IQueryResData<{ id: string }> = await http.post(url, handleParams());
+      const { id } = res.data || {};
+      applyClbSuccessHandler(isBusinessPage, goBack, { ...formModel, id });
     } finally {
       applyLoading.value = false;
     }
