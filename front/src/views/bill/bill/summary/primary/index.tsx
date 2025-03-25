@@ -132,12 +132,12 @@ export default defineComponent({
         <CommonTable>
           {{
             operation: () => (
-              <div>
+              <>
                 {renderOperation(bill_year.value, bill_month.value, filter)}
                 <bk-checkbox class='change-currency' v-model={isChecked} onChange={handleChange}>
                   {t('美元转人民币')}
                 </bk-checkbox>
-              </div>
+              </>
             ),
             operationBarEnd: () => (
               <Button theme='primary' text onClick={goOperationRecord}>
