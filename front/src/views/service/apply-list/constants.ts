@@ -129,7 +129,7 @@ export const APPLY_TYPES = [
   },
   {
     label: '负载均衡',
-    name: 'loadBalancer',
+    name: 'load_balancer',
     rules: [
       {
         field: 'type',

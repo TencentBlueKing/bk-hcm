@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { Dropdown, Button } from 'bkui-vue';
-import PermissionDialog from '@/components/permission-dialog';
 
 import { useI18n } from 'vue-i18n';
 import { useVerify } from '@/hooks';
+import { useGlobalPermissionDialog } from '@/store/useGlobalPermissionDialog';
 import { Action } from '../types';
 
 const { DropdownMenu, DropdownItem } = Dropdown;
@@ -15,14 +15,9 @@ const emit = defineEmits<(e: 'click', action: Action) => void>();
 const { t } = useI18n();
 
 // 权限校验
-const {
-  showPermissionDialog,
-  handlePermissionConfirm,
-  handlePermissionDialog,
-  handleAuth,
-  permissionParams,
-  authVerifyData,
-} = useVerify();
+const { handleAuth, authVerifyData } = useVerify();
+const globalPermissionDialogStore = useGlobalPermissionDialog();
+const updateActionName = 'biz_clb_resource_operate';
 
 const isShow = ref(false);
 const actionList = ref([
@@ -31,8 +26,9 @@ const actionList = ref([
 ]);
 
 const handleShowDropdownMenu = () => {
-  if (!authVerifyData.value?.permissionAction?.load_balancer_update) {
-    handleAuth('clb_resource_operate');
+  if (!authVerifyData.value?.permissionAction?.[updateActionName]) {
+    handleAuth(updateActionName);
+    globalPermissionDialogStore.setShow(true);
   } else {
     isShow.value = true;
   }
@@ -53,7 +49,7 @@ const handleClick = (action: Action) => {
     @hide="isShow = false"
   >
     <Button
-      :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.load_balancer_update }"
+      :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.[updateActionName] }"
       @click="handleShowDropdownMenu"
     >
       {{ t('批量导入') }}
@@ -66,13 +62,6 @@ const handleClick = (action: Action) => {
       </DropdownMenu>
     </template>
   </Dropdown>
-
-  <PermissionDialog
-    v-model:is-show="showPermissionDialog"
-    :params="permissionParams"
-    @cancel="handlePermissionDialog"
-    @confirm="handlePermissionConfirm"
-  />
 </template>
 
 <style scoped></style>

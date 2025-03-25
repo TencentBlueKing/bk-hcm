@@ -1,4 +1,4 @@
-import { defineComponent } from 'vue';
+import { ComputedRef, defineComponent, inject } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 // import components
 import { Button, Message } from 'bkui-vue';
@@ -38,6 +38,8 @@ export default defineComponent({
     const { selections, handleSelectionChange, resetSelections } = useSelection();
     const { authVerifyData, handleAuth } = useVerify();
     const globalPermissionDialogStore = useGlobalPermissionDialog();
+    const createActionName: ComputedRef<'clb_resource_create' | 'biz_clb_resource_create'> = inject('createActionName');
+    const deleteActionName: ComputedRef<'clb_resource_delete' | 'biz_clb_resource_delete'> = inject('deleteActionName');
 
     const isRowSelectEnable = ({ row, isCheckAll }: DoublePlainObject) => {
       if (isCheckAll) return true;
@@ -117,11 +119,11 @@ export default defineComponent({
                 <Button
                   text
                   theme='primary'
-                  class={`${
-                    !authVerifyData?.value?.permissionAction?.load_balancer_delete ? 'hcm-no-permision-text-btn' : ''
-                  }`}
+                  class={{
+                    'hcm-no-permision-text-btn': !authVerifyData?.value?.permissionAction?.[deleteActionName.value],
+                  }}
                   disabled={
-                    authVerifyData?.value?.permissionAction?.load_balancer_delete &&
+                    authVerifyData?.value?.permissionAction?.[deleteActionName.value] &&
                     (data.listenerNum > 0 || data.delete_protect)
                   }
                   v-bk-tooltips={
@@ -130,8 +132,8 @@ export default defineComponent({
                       : { content: t('该负载均衡已开启删除保护, 不可删除'), disabled: !data.delete_protect }
                   }
                   onClick={() => {
-                    if (!authVerifyData?.value?.permissionAction?.load_balancer_delete) {
-                      handleAuth('clb_resource_delete');
+                    if (!authVerifyData?.value?.permissionAction?.[deleteActionName.value]) {
+                      handleAuth(deleteActionName.value);
                       globalPermissionDialogStore.setShow(true);
                     } else handleDelete(data);
                   }}>
@@ -204,18 +206,31 @@ export default defineComponent({
               <>
                 <Button
                   class={`mw64 ${
-                    !authVerifyData?.value?.permissionAction?.load_balancer_create ? 'hcm-no-permision-btn' : ''
+                    !authVerifyData?.value?.permissionAction?.[createActionName.value] ? 'hcm-no-permision-btn' : ''
                   }`}
                   theme='primary'
                   onClick={() => {
-                    if (!authVerifyData?.value?.permissionAction?.load_balancer_create) {
-                      handleAuth('clb_resource_create');
+                    if (!authVerifyData?.value?.permissionAction?.[createActionName.value]) {
+                      handleAuth(createActionName.value);
                       globalPermissionDialogStore.setShow(true);
                     } else handleApply();
                   }}>
                   购买
                 </Button>
-                <Button class='mw88' onClick={handleClickBatchDelete} disabled={selections.value.length === 0}>
+                <Button
+                  class={[
+                    'mw88',
+                    { 'hcm-no-permision-btn': !authVerifyData?.value?.permissionAction?.[deleteActionName.value] },
+                  ]}
+                  onClick={() => {
+                    if (!authVerifyData?.value?.permissionAction?.[deleteActionName.value]) {
+                      handleAuth(deleteActionName.value);
+                      globalPermissionDialogStore.setShow(true);
+                      return;
+                    }
+                    handleClickBatchDelete();
+                  }}
+                  disabled={selections.value.length === 0}>
                   批量删除
                 </Button>
                 {/* 批量导入 */}
