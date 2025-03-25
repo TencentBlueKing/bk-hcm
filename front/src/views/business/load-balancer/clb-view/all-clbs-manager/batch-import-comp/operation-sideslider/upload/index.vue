@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, useTemplateRef } from 'vue';
 import { Button, Upload } from 'bkui-vue';
 import Step from '../components/step.vue';
 
@@ -22,6 +22,8 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const { getBusinessApiPath } = useWhereAmI();
+let files: UploadFiles = [];
+const uploadRef = useTemplateRef<typeof Upload>('upload');
 
 const url = computed(() => {
   const { vendor, operation_type } = props.formModel;
@@ -50,6 +52,9 @@ const handleError = () => {
 const handleDelete = () => {
   emit('fileDelete');
 };
+const handleDone = (fileList: UploadFiles) => {
+  files = [...fileList];
+};
 
 // 下载模板文件
 const handleDownloadTemplateFile = async () => {
@@ -62,6 +67,15 @@ const handleDownloadTemplateFile = async () => {
   };
   http.download({ url: `/api/v1/web/templates/${filenameMap[props.formModel.operation_type]}`, method: 'get' });
 };
+
+const clearFiles = () => {
+  files.forEach((file) => {
+    uploadRef.value.handleRemove(file);
+  });
+  files = [];
+};
+
+defineExpose({ clearFiles });
 </script>
 
 <template>
@@ -80,6 +94,7 @@ const handleDownloadTemplateFile = async () => {
       @success="handleSuccess"
       @error="handleError"
       @delete="handleDelete"
+      @done="handleDone"
     />
     <section class="tips">
       {{ t('仅支持.xlsx格式的文件，不能超过5千行，下载') }}

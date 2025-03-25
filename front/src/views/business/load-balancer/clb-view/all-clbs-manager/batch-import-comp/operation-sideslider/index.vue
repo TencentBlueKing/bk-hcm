@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, provide, ref, useTemplateRef } from 'vue';
+import { computed, provide, ref, useTemplateRef, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { Form, Message } from 'bkui-vue';
 
@@ -19,17 +19,17 @@ import { ResourceTypeEnum } from '@/common/resource-constant';
 
 defineOptions({ name: 'LbBatchImportOperationSideslider' });
 const props = defineProps<{ activeAction: Action }>();
+const model = defineModel<boolean>();
 
 const router = useRouter();
 const { t } = useI18n();
 const { whereAmI, getBizsId, getBusinessApiPath } = useWhereAmI();
+const uploadRef = useTemplateRef<typeof IUpload>('upload');
 
 // 抽屉
-const isShow = ref(false);
 const title = computed(() => {
   return props.activeAction === Action.CREATE_LISTENER_OR_URL_RULE ? t(`批量创建监听器及规则`) : t('批量绑定RS');
 });
-const show = () => (isShow.value = true);
 
 // base-info - 表单
 const lastFormModel = localStorageActions.get('bk-hcm-lb-batch-import-form-model', (value) => JSON.parse(value));
@@ -117,12 +117,17 @@ const handleSubmit = async () => {
   }
 };
 
-defineExpose({ show });
+watch(model, (val) => {
+  if (!val) {
+    uploadRef.value?.clearFiles();
+    clearPreviewData();
+  }
+});
 </script>
 
 <template>
   <CommonSideslider
-    v-model:is-show="isShow"
+    v-model:is-show="model"
     :title="title"
     width="1280"
     :confirm-text="t('确认并提交')"
