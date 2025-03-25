@@ -184,7 +184,7 @@ export default defineComponent({
         });
         isBatchDeleteDialogShow.value = false;
         Message({ message: '删除成功', theme: 'success' });
-        await getListData();
+        await reloadTableData();
       } finally {
         isSubmitLoading.value = false;
       }
@@ -289,32 +289,28 @@ export default defineComponent({
         },
       },
     });
+    const reloadTableData = () => {
+      getListData(
+        [{ field: 'domain', op: QueryRuleOPEnum.EQ, value: props.id }],
+        `vendors/${loadBalancerStore.currentSelectedTreeNode.vendor}/listeners/${props.listener_id}/rules`,
+      );
+    };
 
     const { isSubmitLoading, isBatchDeleteDialogShow, tableProps, handleBatchDeleteListener } = useBatchDeleteListener(
       tableColumns,
       selections,
       resetSelections,
-      getListData,
+      reloadTableData,
       true,
     );
 
     watch(
       () => [props.listener_id, props.id],
-      ([id, domain]) => {
+      () => {
         // 清空选中项, 避免切换域名后, 选中项不变
         resetSelections();
         clearFilter();
-        id &&
-          getListData(
-            [
-              {
-                field: 'domain',
-                op: QueryRuleOPEnum.EQ,
-                value: domain,
-              },
-            ],
-            `vendors/${loadBalancerStore.currentSelectedTreeNode.vendor}/listeners/${id}/rules`,
-          );
+        reloadTableData();
       },
     );
 
@@ -334,8 +330,7 @@ export default defineComponent({
           theme: 'success',
         });
         isDomainSidesliderShow.value = false;
-        await getListData();
-        bus.$emit('resetLbTree');
+        await reloadTableData();
       } finally {
         isSubmitLoading.value = false;
       }
