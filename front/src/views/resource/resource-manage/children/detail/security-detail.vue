@@ -62,6 +62,9 @@ watch(
   },
 );
 
+const isAssigned = computed(() => {
+  return whereAmI.value === Senarios.resource && detail.value.bk_biz_id !== -1;
+});
 const hasEditScopeInBusiness = computed(
   () =>
     whereAmI.value === Senarios.business &&
@@ -144,6 +147,7 @@ const getTemplateData = async (detail: { account_id: string }) => {
   templateData.portGroupList = res[3]?.data?.details;
 };
 
+provide('isAssigned', isAssigned);
 provide('hasEditScopeInBusiness', hasEditScopeInBusiness);
 </script>
 

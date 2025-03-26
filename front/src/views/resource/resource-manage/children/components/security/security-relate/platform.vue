@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, useTemplateRef, watch } from 'vue';
+import { computed, inject, Ref, ref, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   type ISecurityGroupDetail,
@@ -45,7 +45,6 @@ const { getBusinessNames, getBusinessIds } = useBusinessGlobalStore();
 const securityGroupStore = useSecurityGroupStore();
 const regionStore = useRegionsStore();
 
-const isResourcePage = computed(() => whereAmI.value === Senarios.resource);
 const isBusinessPage = computed(() => whereAmI.value === Senarios.business);
 
 // 预鉴权
@@ -105,14 +104,14 @@ const getList = async (sort = 'created_at', order = 'DESC') => {
 };
 
 const selected = ref<SecurityGroupRelResourceByBizItem[]>([]);
-const isAssigned = computed(() => isResourcePage.value && props.detail?.bk_biz_id !== -1); // 安全组是否已分配
+const isAssigned = inject<Ref<boolean>>('isAssigned');
 const isClb = computed(() => {
   // 暂不支持负载均衡相关的操作
   return tabActive.value === SecurityGroupRelatedResourceName.CLB;
 });
 const bindDisabledTooltipsOption = computed(() => {
   if (isAssigned.value) {
-    return { content: t('安全组已分配，请到业务下操作'), disabled: props.detail?.bk_biz_id === -1 };
+    return { content: t('安全组已分配，请到业务下操作'), disabled: !isAssigned.value };
   }
   if (isClb.value) {
     return {
@@ -124,7 +123,7 @@ const bindDisabledTooltipsOption = computed(() => {
 });
 const unbindDisabledTooltipsOption = computed(() => {
   if (isAssigned.value) {
-    return { content: t('安全组已分配，请到业务下操作'), disabled: props.detail?.bk_biz_id === -1 };
+    return { content: t('安全组已分配，请到业务下操作'), disabled: !isAssigned.value };
   }
   if (isClb.value) {
     return {
