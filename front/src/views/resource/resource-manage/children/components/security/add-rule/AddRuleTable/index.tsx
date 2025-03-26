@@ -83,28 +83,26 @@ export default defineComponent({
     );
 
     return () => (
-      <>
-        <Ediatable thead-list={computedTitles.value}>
-          {{
-            data: tableData.value
-              .map((item) => handler.value.preHandle(item))
-              .map((item, idx) => (
-                <handler.value.row
-                  value={item}
-                  key={item.key}
-                  vendor={props.vendor}
-                  {...props}
-                  ref={instances[idx]}
-                  onAdd={handleAdd}
-                  onCopy={() => handleCopy(idx)}
-                  onRemove={() => handleRemove(idx)}
-                  onChange={(val) => (tableData.value[idx] = val)}
-                  removeable={tableData.value.length < 2}
-                />
-              )),
-          }}
-        </Ediatable>
-      </>
+      <Ediatable thead-list={computedTitles.value}>
+        {{
+          data: tableData.value
+            .map((item) => handler.value.preHandle(item))
+            .map((item, idx) => (
+              <handler.value.row
+                value={item}
+                key={item.key}
+                vendor={props.vendor}
+                {...props}
+                ref={instances[idx]}
+                onAdd={handleAdd}
+                onCopy={() => handleCopy(idx)}
+                onRemove={() => handleRemove(idx)}
+                onChange={(val) => (tableData.value[idx] = val)}
+                removeable={tableData.value.length < 2}
+              />
+            )),
+        }}
+      </Ediatable>
     );
   },
 });
