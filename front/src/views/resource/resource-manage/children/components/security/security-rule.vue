@@ -27,6 +27,7 @@ import { tcloudSourceAddressTypes, TcloudSourceTypeArr } from './add-rule/vendor
 import { huaweiSourceAddressTypes } from './add-rule/vendors/huawei';
 import RuleSort from './security-rule-sort.vue';
 import { showSort } from './show-sort.plugin';
+import { cloneDeep } from 'lodash-es';
 
 const props = defineProps({
   filter: {
@@ -67,6 +68,7 @@ const azureDefaultColumns = ref([]);
 const authVerifyData: any = inject('authVerifyData');
 const isResourcePage: any = inject('isResourcePage');
 const show = ref<Boolean>(false);
+const filter = ref(cloneDeep(props.filter));
 
 const actionName = computed(() => {
   // 资源下没有业务ID
@@ -91,7 +93,7 @@ watch(
   (v) => {
     state.isLoading = true;
     // eslint-disable-next-line vue/no-mutating-props
-    props.filter.rules[0].value = v;
+    filter.value.rules[0].value = v;
     if (route.query.vendor === 'azure') {
       getDefaultList(v);
     }
@@ -105,7 +107,7 @@ const getDefaultList = async (type: string) => {
 
 // 获取列表数据
 const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, getList } = useQueryCommonList(
-  props,
+  { filter: filter.value },
   fetchUrl,
   route.query.vendor === 'tcloud' ? { sort: 'cloud_policy_index', order: 'ASC' } : '',
 );
@@ -643,7 +645,7 @@ const types = [
             disabled: isResourcePage || hasEditScopeInBusiness,
           }"
           theme="primary"
-          :class="{ 'hcm-no-permision-btn': !authVerifyData.value?.permissionAction?.[actionName] }"
+          :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.[actionName] }"
           @click="handleSecurityRuleDialog({})"
         >
           {{ t('新增规则') }}
@@ -771,7 +773,7 @@ const types = [
       <template #default>
         <rule-sort
           :id="props.id"
-          :filter="props.filter"
+          :filter="filter"
           :type="activeType"
           v-model:show="show"
           @sort-done="handelSortDone"
