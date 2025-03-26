@@ -116,6 +116,7 @@ func (dao Dao) ListJoinCVM(kt *kit.Kit, sgIDs []string, opt *types.ListOption) (
 		Rules: []filter.RuleFactory{
 			opt.Filter,
 			tools.RuleIn("security_group_id", sgIDs),
+			tools.RuleEqual("res_type", enumor.CvmCloudResType),
 		},
 	}
 
@@ -178,6 +179,7 @@ func (dao Dao) ListJoinLoadBalancer(kt *kit.Kit, sgIDs []string, opt *types.List
 		Rules: []filter.RuleFactory{
 			opt.Filter,
 			tools.RuleIn("security_group_id", sgIDs),
+			tools.RuleEqual("res_type", enumor.LoadBalancerCloudResType),
 		},
 	}
 
