@@ -32,6 +32,7 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/slice"
 )
 
@@ -204,21 +205,20 @@ func getTargetGroupID(kt *kit.Kit, cli *dataservice.Client, ruleCloudID string) 
 func getCvm(kt *kit.Kit, cli *dataservice.Client, ip string,
 	vendor enumor.Vendor, bkBizID int64, accountID string, cloudVPCs []string) (*corecvm.BaseCvm, error) {
 
-	expr, err := tools.And(
-		tools.ExpressionOr(
-			tools.RuleJSONContains("private_ipv4_addresses", ip),
-			tools.RuleJSONContains("private_ipv6_addresses", ip),
-			tools.RuleJSONContains("public_ipv4_addresses", ip),
-			tools.RuleJSONContains("public_ipv6_addresses", ip),
-		),
-		tools.RuleEqual("vendor", vendor),
-		tools.RuleEqual("bk_biz_id", bkBizID),
-		tools.RuleEqual("account_id", accountID),
-		tools.RuleJsonOverlaps("cloud_vpc_ids", cloudVPCs),
-	)
-	if err != nil {
-		logs.Errorf("failed to create expression, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
+	expr := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			tools.ExpressionOr(
+				tools.RuleJSONContains("private_ipv4_addresses", ip),
+				tools.RuleJSONContains("private_ipv6_addresses", ip),
+				tools.RuleJSONContains("public_ipv4_addresses", ip),
+				tools.RuleJSONContains("public_ipv6_addresses", ip),
+			),
+			tools.RuleEqual("vendor", vendor),
+			tools.RuleEqual("bk_biz_id", bkBizID),
+			tools.RuleEqual("account_id", accountID),
+			tools.RuleJsonOverlaps("cloud_vpc_ids", cloudVPCs),
+		},
 	}
 	listReq := &core.ListReq{
 		Filter: expr,
@@ -242,20 +242,19 @@ func getCvm(kt *kit.Kit, cli *dataservice.Client, ip string,
 func getCvmWithoutVpc(kt *kit.Kit, cli *dataservice.Client, ip string, vendor enumor.Vendor, bkBizID int64,
 	accountID string) ([]corecvm.BaseCvm, error) {
 
-	expr, err := tools.And(
-		tools.ExpressionOr(
-			tools.RuleJSONContains("private_ipv4_addresses", ip),
-			tools.RuleJSONContains("private_ipv6_addresses", ip),
-			tools.RuleJSONContains("public_ipv4_addresses", ip),
-			tools.RuleJSONContains("public_ipv6_addresses", ip),
-		),
-		tools.RuleEqual("vendor", vendor),
-		tools.RuleEqual("bk_biz_id", bkBizID),
-		tools.RuleEqual("account_id", accountID),
-	)
-	if err != nil {
-		logs.Errorf("failed to create expression, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
+	expr := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			tools.ExpressionOr(
+				tools.RuleJSONContains("private_ipv4_addresses", ip),
+				tools.RuleJSONContains("private_ipv6_addresses", ip),
+				tools.RuleJSONContains("public_ipv4_addresses", ip),
+				tools.RuleJSONContains("public_ipv6_addresses", ip),
+			),
+			tools.RuleEqual("vendor", vendor),
+			tools.RuleEqual("bk_biz_id", bkBizID),
+			tools.RuleEqual("account_id", accountID),
+		},
 	}
 	listReq := &core.ListReq{
 		Filter: expr,
