@@ -40,15 +40,18 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
-const { getBizsId, isBusinessPage, whereAmI } = useWhereAmI();
+const { getBizsId, whereAmI } = useWhereAmI();
 const { getBusinessNames, getBusinessIds } = useBusinessGlobalStore();
 const securityGroupStore = useSecurityGroupStore();
 const regionStore = useRegionsStore();
 
+const isResourcePage = computed(() => whereAmI.value === Senarios.resource);
+const isBusinessPage = computed(() => whereAmI.value === Senarios.business);
+
 // 预鉴权
 const { handleAuth, authVerifyData } = useVerify();
 const authAction = computed(() => {
-  return whereAmI.value === Senarios.business ? 'biz_iaas_resource_operate' : 'iaas_resource_operate';
+  return isBusinessPage.value ? 'biz_iaas_resource_operate' : 'iaas_resource_operate';
 });
 
 const tabActive = ref<SecurityGroupRelatedResourceName>(SecurityGroupRelatedResourceName.CVM);
@@ -80,7 +83,7 @@ const getList = async (sort = 'created_at', order = 'DESC') => {
     const { id } = props.detail;
     const api =
       tabActive.value === 'CVM' ? securityGroupStore.queryRelCvmByBiz : securityGroupStore.queryRelLoadBalancerByBiz;
-    const bizIds = isBusinessPage
+    const bizIds = isBusinessPage.value
       ? [getBizsId()]
       : props.relatedBiz[RELATED_RES_KEY_MAP[tabActive.value]].map(({ bk_biz_id }) => bk_biz_id);
 
@@ -95,37 +98,38 @@ const getList = async (sort = 'created_at', order = 'DESC') => {
 
     list.value = res.flatMap((item) => item.list);
     // 设置页码总条数
-    pagination.count = isBusinessPage ? res[0].count : res.reduce((acc, cur) => acc + cur.count, 0);
+    pagination.count = isBusinessPage.value ? res[0].count : res.reduce((acc, cur) => acc + cur.count, 0);
   } finally {
     loading.value = false;
   }
 };
 
 const selected = ref<SecurityGroupRelResourceByBizItem[]>([]);
-const isOperateDisabled = computed(() => {
+const isAssigned = computed(() => isResourcePage.value && props.detail?.bk_biz_id !== -1); // 安全组是否已分配
+const isClb = computed(() => {
   // 暂不支持负载均衡相关的操作
   return tabActive.value === SecurityGroupRelatedResourceName.CLB;
 });
 const bindDisabledTooltipsOption = computed(() => {
-  if (props.detail?.bk_biz_id !== -1) {
+  if (isAssigned.value) {
     return { content: t('安全组已分配，请到业务下操作'), disabled: props.detail?.bk_biz_id === -1 };
   }
-  if (isOperateDisabled.value) {
+  if (isClb.value) {
     return {
       content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RELATED_RES_OPERATE_TYPE.BIND],
-      disabled: !isOperateDisabled.value,
+      disabled: !isClb.value,
     };
   }
   return { disabled: true };
 });
 const unbindDisabledTooltipsOption = computed(() => {
-  if (props.detail?.bk_biz_id !== -1) {
+  if (isAssigned.value) {
     return { content: t('安全组已分配，请到业务下操作'), disabled: props.detail?.bk_biz_id === -1 };
   }
-  if (isOperateDisabled.value) {
+  if (isClb.value) {
     return {
       content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RELATED_RES_OPERATE_TYPE.UNBIND],
-      disabled: !isOperateDisabled.value,
+      disabled: !isClb.value,
     };
   }
   return { disabled: true };
@@ -209,7 +213,7 @@ watch(
         <bk-button
           theme="primary"
           :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.[authAction] }"
-          :disabled="props.detail?.bk_biz_id !== -1 || isOperateDisabled"
+          :disabled="isAssigned || isClb"
           v-bk-tooltips="bindDisabledTooltipsOption"
           @click="handleShowOperateDialog('bind')"
         >
@@ -218,7 +222,7 @@ watch(
         </bk-button>
         <bk-button
           :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.[authAction] }"
-          :disabled="!selected.length || props.detail?.bk_biz_id !== -1 || isOperateDisabled"
+          :disabled="!selected.length || isAssigned || isClb"
           v-bk-tooltips="unbindDisabledTooltipsOption"
           @click="handleShowOperateDialog('batch-unbind')"
         >
@@ -259,7 +263,7 @@ watch(
             :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.[authAction] }"
             theme="primary"
             text
-            :disabled="props.detail?.bk_biz_id !== -1 || isOperateDisabled"
+            :disabled="isAssigned || isClb"
             v-bk-tooltips="unbindDisabledTooltipsOption"
             @click="handleShowOperateDialog('single-unbind', row)"
           >
