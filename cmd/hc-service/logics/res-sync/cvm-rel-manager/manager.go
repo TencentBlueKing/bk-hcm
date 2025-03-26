@@ -86,6 +86,8 @@ func (mgr *CvmRelManger) SyncRel(kt *kit.Kit, opt *SyncRelOption) error {
 		err = mgr.syncCvmSGRel(kt, cvmMap, opt)
 	case enumor.EipCloudResType:
 		err = mgr.syncCvmEipRel(kt, cvmMap, opt)
+	case enumor.NetworkInterfaceCloudResType:
+		err = mgr.syncCvmNetworkInterfaceRel(kt, cvmMap, opt)
 	}
 	if err != nil {
 		logs.Errorf("sync cvm_%s_rel failed, err: %v, rid: %s", opt.ResType, err, kt.Rid)

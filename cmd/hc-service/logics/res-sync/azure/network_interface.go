@@ -284,10 +284,10 @@ func (cli *client) createNetworkInterface(kt *kit.Kit, accountID, resGroupName s
 
 	nis := make([]dataproto.NetworkInterfaceReq[dataproto.AzureNICreateExt], 0, len(adds))
 	for _, item := range adds {
-		var bizID int64
+		bizID := int64(constant.UnassignedBiz)
 		if item.InstanceID != nil {
-			if _, exist := cvmMap[*item.InstanceID]; exist {
-				bizID = bizID
+			if one, exist := cvmMap[converter.PtrToVal(item.InstanceID)]; exist {
+				bizID = one.BkBizID
 			}
 		}
 
