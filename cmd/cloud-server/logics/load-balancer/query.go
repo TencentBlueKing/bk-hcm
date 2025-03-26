@@ -238,6 +238,37 @@ func getCvm(kt *kit.Kit, cli *dataservice.Client, ip string,
 	return nil, nil
 }
 
+// getCvmWithoutVpc 不指定VPC查询主机
+func getCvmWithoutVpc(kt *kit.Kit, cli *dataservice.Client, ip string, vendor enumor.Vendor, bkBizID int64,
+	accountID string) ([]corecvm.BaseCvm, error) {
+
+	expr, err := tools.And(
+		tools.ExpressionOr(
+			tools.RuleJSONContains("private_ipv4_addresses", ip),
+			tools.RuleJSONContains("private_ipv6_addresses", ip),
+			tools.RuleJSONContains("public_ipv4_addresses", ip),
+			tools.RuleJSONContains("public_ipv6_addresses", ip),
+		),
+		tools.RuleEqual("vendor", vendor),
+		tools.RuleEqual("bk_biz_id", bkBizID),
+		tools.RuleEqual("account_id", accountID),
+	)
+	if err != nil {
+		logs.Errorf("failed to create expression, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+	listReq := &core.ListReq{
+		Filter: expr,
+		Page:   core.NewDefaultBasePage(),
+	}
+	cvms, err := cli.Global.Cvm.ListCvm(kt, listReq)
+	if err != nil {
+		logs.Errorf("list cvm failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+	return cvms.Details, nil
+}
+
 func getTCloudLoadBalancer(kt *kit.Kit, cli *dataservice.Client, lbID string) (
 	*corelb.LoadBalancer[corelb.TCloudClbExtension], error) {
 

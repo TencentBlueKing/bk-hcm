@@ -25,6 +25,7 @@ import (
 	"strconv"
 	"strings"
 
+	cloudCvm "hcm/pkg/api/core/cloud/cvm"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
@@ -246,10 +247,8 @@ func (l *Layer7ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit,
 		return "", err
 	}
 	if cvm == nil {
-		curDetail.Status.SetNotExecutable()
-		curDetail.ValidateResult = append(curDetail.ValidateResult,
-			fmt.Sprintf("rs(%s) not exist", curDetail.RsIp))
-		return "", nil
+		// 找不到对应的CVM, 根据IP查询CVM完善报错
+		return "", l.fillRSValidateCvmNotFoundError(kt, curDetail, lb.CloudVpcID)
 	}
 	if !(isSnap || isSnapPro) && cvm.Region != lb.Region {
 		// 非跨域情况下才校验region
@@ -261,6 +260,31 @@ func (l *Layer7ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit,
 	}
 
 	return cvm.CloudID, nil
+}
+
+func (l *Layer7ListenerBindRSPreviewExecutor) fillRSValidateCvmNotFoundError(
+	kt *kit.Kit, curDetail *Layer7ListenerBindRSDetail, lbCloudVpcID string) error {
+
+	// 找不到对应的CVM, 根据IP查询CVM完善报错
+	cvmList, err := getCvmWithoutVpc(kt, l.dataServiceCli, curDetail.RsIp, l.vendor, l.bkBizID, l.accountID)
+	if err != nil {
+		logs.Errorf("get cvm failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+	if len(cvmList) == 0 {
+		curDetail.Status.SetNotExecutable()
+		curDetail.ValidateResult = append(curDetail.ValidateResult, fmt.Sprintf("rs ip(%s) not found",
+			curDetail.RsIp))
+		return nil
+	}
+
+	cvmCloudIDs := slice.Map(cvmList, func(cvm cloudCvm.BaseCvm) string {
+		return cvm.CloudID
+	})
+	curDetail.Status.SetNotExecutable()
+	curDetail.ValidateResult = append(curDetail.ValidateResult,
+		fmt.Sprintf("VPC of %s is different from loadbalancer's VPC (%s).", strings.Join(cvmCloudIDs, ","), lbCloudVpcID))
+	return nil
 }
 
 func (l *Layer7ListenerBindRSPreviewExecutor) validateListener(kt *kit.Kit,
