@@ -116,10 +116,11 @@ export default defineComponent({
           if (dataList.length === 0) return;
           const ids = dataList.filter((item) => item.binding_status === 'binding').map((item) => item.id);
           if (ids.length) {
+            clearTimeout(timer);
             timer = setTimeout(() => {
               counter = counter + 1;
               if (counter < 10) {
-                getListData();
+                getListData([], `load_balancers/${props.id}/listeners`);
               } else {
                 counter = 0;
                 clearTimeout(timer);
@@ -143,6 +144,9 @@ export default defineComponent({
         data.forEach((item: any, index: number) => Object.assign(listenersWithTargetGroup[index], item));
       }
     };
+    const reloadTableData = () => {
+      getListData([], `load_balancers/${props.id}/listeners`);
+    };
 
     onUnmounted(() => {
       timer && clearTimeout(timer);
@@ -150,11 +154,11 @@ export default defineComponent({
 
     watch(
       () => props.id,
-      (id) => {
+      () => {
         // 清空选中项
         resetSelections();
         clearFilter();
-        id && getListData([], `load_balancers/${id}/listeners`);
+        reloadTableData();
       },
     );
 
@@ -163,7 +167,7 @@ export default defineComponent({
       Confirm('请确定删除监听器', `将删除监听器【${data.name}】`, () => {
         businessStore.deleteBatch('listeners', { ids: [data.id] }).then(() => {
           Message({ theme: 'success', message: '删除成功' });
-          getListData();
+          reloadTableData();
         });
       });
     };
@@ -195,7 +199,7 @@ export default defineComponent({
       handleBatchDeleteListener,
       handleBatchDeleteSubmit,
       computedListenersList,
-    } = useBatchDeleteListener(columns, selections, resetSelections, getListData);
+    } = useBatchDeleteListener(columns, selections, resetSelections, reloadTableData);
     return () => (
       <div class='listener-list-page'>
         {/* 监听器list */}
@@ -219,7 +223,7 @@ export default defineComponent({
         </CommonTable>
 
         {/* 新增/编辑监听器 */}
-        <AddOrUpdateListenerSideslider originPage='lb' getListData={getListData} />
+        <AddOrUpdateListenerSideslider originPage='lb' getListData={reloadTableData} />
 
         {/* 批量删除监听器 */}
         <BatchOperationDialog
