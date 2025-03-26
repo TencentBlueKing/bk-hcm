@@ -163,6 +163,7 @@ const handleShowOperateDialog = (
 const handleOperateSuccess = () => {
   // 重新拉取安全组所关联的资源信息
   props.getRelatedInfo();
+  handleClear();
 };
 
 const searchRef = useTemplateRef('relate-resource-search');
