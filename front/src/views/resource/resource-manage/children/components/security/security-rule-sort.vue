@@ -93,21 +93,25 @@ const handleConfirm = async () => {
     cleaned.cloud_policy_index = index;
     return cleaned;
   });
-  states.isLoading = true;
-  await resourceStore.updateRulesSort(
-    {
-      [activeType.value === 'ingress' ? 'ingress_rule_set' : 'egress_rule_set']: data,
-    },
-    String(route.query.vendor),
-    props.id,
-  );
-  states.isLoading = false;
-  Message({
-    message: t('排序成功'),
-    theme: 'success',
-  });
-  emit('update:show', false);
-  emit('sortDone');
+  try {
+    states.isLoading = true;
+    await resourceStore.updateRulesSort(
+      {
+        [activeType.value === 'ingress' ? 'ingress_rule_set' : 'egress_rule_set']: data,
+      },
+      String(route.query.vendor),
+      props.id,
+    );
+
+    Message({
+      message: t('排序成功'),
+      theme: 'success',
+    });
+    emit('update:show', false);
+    emit('sortDone');
+  } finally {
+    states.isLoading = false;
+  }
 };
 
 watch(
@@ -131,7 +135,7 @@ watch(
               v-for="item in types"
               :key="item.name"
               :label="item.name"
-              :disabled="item.name !== activeType"
+              :disabled="item.name !== activeType || states.isLoading"
             >
               {{ item.label }}
             </bk-radio-button>
@@ -286,5 +290,8 @@ watch(
 .cancel {
   width: 88px;
   margin-right: 8px;
+}
+.bk-radio-button.is-checked.is-disabled {
+  z-index: 1;
 }
 </style>
