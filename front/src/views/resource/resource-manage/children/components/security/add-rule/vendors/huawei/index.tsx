@@ -35,52 +35,52 @@ export const HuaweiRecord = (): Ext<HuaweiSecurityGroupRule> => ({
 
 export const huaweiTitles: (type: SecurityRuleType) => IHead[] = (type) => [
   {
-    width: 450,
     minWidth: 120,
+    maxWidth: 120,
     title: '优先级',
     memo: '优先级可选范围为1-100，默认值为1，即最高优先级。优先级数字越小，规则优先级级别越高。',
   },
   {
-    width: 450,
-    minWidth: 120,
+    minWidth: 150,
+    maxWidth: 150,
     title: type === 'ingress' ? '源地址类型' : '目标地址类型',
   },
   {
-    width: 450,
-    minWidth: 120,
+    minWidth: 150,
+    maxWidth: 150,
     title: type === 'ingress' ? '源地址' : '目标地址',
   },
   {
-    width: 450,
     minWidth: 120,
+    maxWidth: 120,
     title: '类型',
   },
   {
-    width: 450,
-    minWidth: 120,
+    minWidth: 150,
+    maxWidth: 150,
     title: '协议',
   },
   {
-    width: 450,
-    minWidth: 120,
+    minWidth: 80,
+    maxWidth: 80,
     title: '端口',
     memo: '请输入1-65535之间数字或者ALL',
   },
   {
-    width: 450,
-    minWidth: 120,
+    minWidth: 80,
+    maxWidth: 80,
     title: '策略',
   },
   {
-    width: 450,
-    minWidth: 120,
+    minWidth: 150,
+    maxWidth: 150,
     title: '备注',
     memo: '请输入英文描述, 最大不超过256个字符',
     required: false,
   },
   {
-    width: 450,
     minWidth: 120,
+    maxWidth: 120,
     title: '操作',
     required: false,
   },
@@ -190,7 +190,7 @@ export const HuaweiRenderRow = defineComponent({
     return () => (
       <>
         <tr>
-        <td>
+          <td>
             <InputColumn
               ref={priorityRef}
               v-model={formModel.priority}

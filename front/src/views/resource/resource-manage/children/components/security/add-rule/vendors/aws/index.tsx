@@ -34,31 +34,37 @@ export const AwsRecord = (): Ext<AwsSecurityGroupRule> => ({
 
 export const awsTitles: (type: SecurityRuleType) => IHead[] = (type) => [
   {
-    width: 120,
+    minWidth: 120,
+    maxWidth: 120,
     title: type === 'ingress' ? '源地址类型' : '目标地址类型',
   },
   {
-    width: 120,
+    minWidth: 150,
+    maxWidth: 150,
     title: type === 'ingress' ? '源地址' : '目标地址',
     memo: '必须指定 CIDR 数据块 或者 安全组 ID',
   },
   {
-    width: 120,
+    minWidth: 120,
+    maxWidth: 120,
     title: '协议',
   },
   {
-    width: 120,
+    minWidth: 80,
+    maxWidth: 80,
     title: '端口',
     memo: '对于 TCP、UDP 协议，允许的端口范围。您可以指定单个端口号（例如 22）或端口号范围（例如7000-8000）',
   },
   {
-    width: 120,
+    minWidth: 150,
+    maxWidth: 150,
     title: '备注',
     memo: '请输入英文描述, 最大不超过256个字符',
     required: false,
   },
   {
-    width: 120,
+    minWidth: 120,
+    maxWidth: 120,
     title: '操作',
     required: false,
   },

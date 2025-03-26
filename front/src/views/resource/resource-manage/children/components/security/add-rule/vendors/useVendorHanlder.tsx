@@ -10,9 +10,10 @@ import { awsHandler, awsPreHandler } from './aws/DataHandler';
 import { azureHandler, azurePreHandler } from './azure/DataHandler';
 
 export interface IHead {
+  maxWidth?: number;
   minWidth?: number;
   title: string;
-  width: number;
+  width?: number;
   renderAppend?: () => VNode;
   required?: boolean;
   memo?: string;
