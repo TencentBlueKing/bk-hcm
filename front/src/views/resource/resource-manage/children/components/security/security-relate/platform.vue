@@ -15,7 +15,13 @@ import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import usePage from '@/hooks/use-page';
 import { useVerify } from '@/hooks';
 import { getSimpleConditionBySearchSelect, transformSimpleCondition } from '@/utils/search';
-import { RELATED_RES_KEY_MAP, RELATED_RES_NAME_MAP, RELATED_RES_PROPERTIES_MAP } from '@/constants/security-group';
+import {
+  RELATED_RES_KEY_MAP,
+  RELATED_RES_NAME_MAP,
+  RELATED_RES_OPERATE_DISABLED_TIPS_MAP,
+  RELATED_RES_OPERATE_TYPE,
+  RELATED_RES_PROPERTIES_MAP,
+} from '@/constants/security-group';
 import { ISearchSelectValue } from '@/typings';
 
 import { Plus } from 'bkui-vue/lib/icon';
@@ -96,8 +102,33 @@ const getList = async (sort = 'created_at', order = 'DESC') => {
 };
 
 const selected = ref<SecurityGroupRelResourceByBizItem[]>([]);
-const operateVisible = computed(() => {
-  return tabActive.value === SecurityGroupRelatedResourceName.CVM;
+const isOperateDisabled = computed(() => {
+  // 暂不支持负载均衡相关的操作
+  return tabActive.value === SecurityGroupRelatedResourceName.CLB;
+});
+const bindDisabledTooltipsOption = computed(() => {
+  if (props.detail?.bk_biz_id !== -1) {
+    return { content: t('安全组已分配，请到业务下操作'), disabled: props.detail?.bk_biz_id === -1 };
+  }
+  if (isOperateDisabled.value) {
+    return {
+      content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RELATED_RES_OPERATE_TYPE.BIND],
+      disabled: !isOperateDisabled.value,
+    };
+  }
+  return { disabled: true };
+});
+const unbindDisabledTooltipsOption = computed(() => {
+  if (props.detail?.bk_biz_id !== -1) {
+    return { content: t('安全组已分配，请到业务下操作'), disabled: props.detail?.bk_biz_id === -1 };
+  }
+  if (isOperateDisabled.value) {
+    return {
+      content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RELATED_RES_OPERATE_TYPE.UNBIND],
+      disabled: !isOperateDisabled.value,
+    };
+  }
+  return { disabled: true };
 });
 
 const bindVisible = ref(false);
@@ -174,12 +205,12 @@ watch(
       <tab v-model="tabActive" :detail="detail" :related-resources-count-list="relatedResourcesCountList" />
 
       <!-- TODO：目前只支持CVM -->
-      <div class="operate-btn-wrap" v-if="operateVisible">
+      <div class="operate-btn-wrap">
         <bk-button
           theme="primary"
           :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.[authAction] }"
-          :disabled="props.detail?.bk_biz_id !== -1"
-          v-bk-tooltips="{ content: t('安全组已分配，请到业务下操作'), disabled: props.detail?.bk_biz_id === -1 }"
+          :disabled="props.detail?.bk_biz_id !== -1 || isOperateDisabled"
+          v-bk-tooltips="bindDisabledTooltipsOption"
           @click="handleShowOperateDialog('bind')"
         >
           <plus width="26" height="26" />
@@ -187,8 +218,8 @@ watch(
         </bk-button>
         <bk-button
           :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.[authAction] }"
-          :disabled="!selected.length || props.detail?.bk_biz_id !== -1"
-          v-bk-tooltips="{ content: t('安全组已分配，请到业务下操作'), disabled: props.detail?.bk_biz_id === -1 }"
+          :disabled="!selected.length || props.detail?.bk_biz_id !== -1 || isOperateDisabled"
+          v-bk-tooltips="unbindDisabledTooltipsOption"
           @click="handleShowOperateDialog('batch-unbind')"
         >
           {{ t('批量解绑') }}
@@ -223,13 +254,13 @@ watch(
         :is-row-select-enable="() => true"
         @select="(selections) => (selected = selections)"
       >
-        <template v-if="operateVisible" #operate="{ row }">
+        <template #operate="{ row }">
           <bk-button
             :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.[authAction] }"
             theme="primary"
             text
-            :disabled="props.detail?.bk_biz_id !== -1"
-            v-bk-tooltips="{ content: t('安全组已分配，请到业务下操作'), disabled: props.detail?.bk_biz_id === -1 }"
+            :disabled="props.detail?.bk_biz_id !== -1 || isOperateDisabled"
+            v-bk-tooltips="unbindDisabledTooltipsOption"
             @click="handleShowOperateDialog('single-unbind', row)"
           >
             {{ t('解绑') }}
@@ -252,7 +283,7 @@ watch(
       />
     </template>
 
-    <template v-if="singleUnbindVisible && operateVisible">
+    <template v-if="singleUnbindVisible">
       <single-unbind
         v-model="singleUnbindVisible"
         :row="singleUnbindOperateRow"
