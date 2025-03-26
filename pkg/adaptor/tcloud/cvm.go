@@ -577,7 +577,7 @@ type startCvmPollingHandler struct {
 
 // Done ...
 func (h *startCvmPollingHandler) Done(cvms []*cvm.Instance) (bool, *poller.BaseDoneResult) {
-	return done(cvms, "RUNNING")
+	return done(cvms, "SUCCESS")
 }
 
 // Poll ...
@@ -591,7 +591,7 @@ type stopCvmPollingHandler struct {
 
 // Done ...
 func (h *stopCvmPollingHandler) Done(cvms []*cvm.Instance) (bool, *poller.BaseDoneResult) {
-	return done(cvms, "STOPPED")
+	return done(cvms, "SUCCESS")
 }
 
 // Poll ...
@@ -605,7 +605,7 @@ type resetpwdCvmPollingHandler struct {
 
 // Done ...
 func (h *resetpwdCvmPollingHandler) Done(cvms []*cvm.Instance) (bool, *poller.BaseDoneResult) {
-	return done(cvms, "RUNNING")
+	return done(cvms, "SUCCESS")
 }
 
 // Poll ...
@@ -619,7 +619,7 @@ type rebootCvmPollingHandler struct {
 
 // Done ...
 func (h *rebootCvmPollingHandler) Done(cvms []*cvm.Instance) (bool, *poller.BaseDoneResult) {
-	return done(cvms, "RUNNING")
+	return done(cvms, "SUCCESS")
 }
 
 // Poll ...
@@ -633,7 +633,7 @@ func done(cvms []*cvm.Instance, succeed string) (bool, *poller.BaseDoneResult) {
 	flag := true
 	for _, instance := range cvms {
 		// not done
-		if cvt.PtrToVal(instance.InstanceState) != succeed {
+		if cvt.PtrToVal(instance.LatestOperationState) != succeed {
 			flag = false
 			continue
 		}
