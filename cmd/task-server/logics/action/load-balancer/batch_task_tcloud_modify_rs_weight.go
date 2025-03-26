@@ -106,7 +106,7 @@ func (act BatchTaskModifyRsWeightAction) Run(kt run.ExecuteKit, params any) (res
 		}
 		if optErr != nil {
 			// abort
-			return nil, err
+			return nil, optErr
 		}
 		results = append(results, ret)
 	}
