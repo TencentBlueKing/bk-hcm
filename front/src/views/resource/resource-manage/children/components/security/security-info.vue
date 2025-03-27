@@ -120,7 +120,7 @@ const mgmtAttrFields: FieldList = [
       const { bk_biz_id } = props.detail;
       const unassigned = bk_biz_id === -1;
       return h('div', { style: { display: 'flex', alignItems: 'center', width: '100%' } }, [
-        h(UsageBizValue, { value: val, style: { width: 'calc(100% - 24px)', flex: 0 } }),
+        h(UsageBizValue, { value: val, style: { width: 'calc(100% - 24px)', flex: 0, whiteSpace: 'nowrap' } }),
         unassigned &&
           h('i', {
             class: 'icon hcm-icon bkhcm-icon-bianji edit-icon',
