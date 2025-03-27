@@ -12,7 +12,12 @@ import {
 } from '@/store/security-group';
 import { useBusinessGlobalStore } from '@/store/business-global';
 import { transformSimpleCondition } from '@/utils/search';
-import { RELATED_RES_NAME_MAP, RELATED_RES_PROPERTIES_MAP } from '@/constants/security-group';
+import {
+  RELATED_RES_NAME_MAP,
+  RELATED_RES_OPERATE_DISABLED_TIPS_MAP,
+  RELATED_RES_OPERATE_TYPE,
+  RELATED_RES_PROPERTIES_MAP,
+} from '@/constants/security-group';
 
 import dataList from './index.vue';
 import bind from '../bind/index.vue';
@@ -46,6 +51,10 @@ const businessName = computed(() => {
   return getBusinessNames(props.bkBizId)?.[0];
 });
 const isCurrentBusiness = computed(() => getBizsId() === props.bkBizId);
+const isOperateDisabled = computed(() => {
+  // 暂不支持负载均衡相关的操作
+  return props.tabActive === SecurityGroupRelatedResourceName.CLB;
+});
 
 const relResList = ref<SecurityGroupRelResourceByBizItem[]>([]);
 const { pagination, getPageParams } = usePage();
@@ -83,9 +92,6 @@ const getList = async (
 };
 
 const selected = ref<SecurityGroupRelResourceByBizItem[]>([]);
-const operateVisible = computed(() => {
-  return isCurrentBusiness.value && props.tabActive === SecurityGroupRelatedResourceName.CVM;
-});
 const bindVisible = ref(false);
 const batchUnbindVisible = ref(false);
 const singleUnbindVisible = ref(false);
@@ -145,22 +151,29 @@ defineExpose({ isExpand, reload });
       <template v-if="isCurrentBusiness">
         <bk-tag class="tag" theme="success" type="filled">{{ t('当前业务') }}</bk-tag>
         <bk-button
-          v-if="operateVisible"
           theme="primary"
           text
           :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.[authAction] }"
+          :disabled="isOperateDisabled"
+          v-bk-tooltips="{
+            content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RELATED_RES_OPERATE_TYPE.BIND],
+            disabled: !isOperateDisabled,
+          }"
           @click="handleShowOperateDialog('bind')"
         >
           <i class="hcm-icon bkhcm-icon-plus-circle-shape mr2"></i>
           {{ t('新增绑定') }}
         </bk-button>
         <bk-button
-          v-if="operateVisible"
           theme="primary"
-          class="unbind-btn"
           text
+          class="unbind-btn"
           :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.[authAction] }"
-          :disabled="!selected.length"
+          :disabled="!selected.length || isOperateDisabled"
+          v-bk-tooltips="{
+            content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RELATED_RES_OPERATE_TYPE.UNBIND],
+            disabled: !isOperateDisabled,
+          }"
           @click="handleShowOperateDialog('batch-unbind')"
         >
           {{ t('批量解绑') }}
@@ -187,11 +200,16 @@ defineExpose({ isExpand, reload });
       :is-row-select-enable="() => true"
       @select="(selections) => (selected = selections)"
     >
-      <template v-if="operateVisible" #operate="{ row }">
+      <template v-if="isCurrentBusiness" #operate="{ row }">
         <bk-button
           theme="primary"
           text
           :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.[authAction] }"
+          :disabled="isOperateDisabled"
+          v-bk-tooltips="{
+            content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RELATED_RES_OPERATE_TYPE.UNBIND],
+            disabled: !isOperateDisabled,
+          }"
           @click="handleShowOperateDialog('single-unbind', row)"
         >
           {{ t('解绑') }}
@@ -213,7 +231,7 @@ defineExpose({ isExpand, reload });
       />
     </template>
 
-    <template v-if="singleUnbindVisible && operateVisible">
+    <template v-if="singleUnbindVisible">
       <single-unbind
         v-model="singleUnbindVisible"
         :row="singleUnbindOperateRow"

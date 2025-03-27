@@ -17,6 +17,7 @@ import { SecurityGroupMgmtAttrSingleType, SecurityGroupManageType } from '@/stor
 import { useVerify } from '@/hooks/useVerify';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import UsageBizValue from '@/views/resource/resource-manage/children/components/security/usage-biz-value.vue';
+import { VendorEnum } from '@/common/constant';
 
 const props = defineProps({
   id: {
@@ -40,6 +41,7 @@ const { t } = useI18n();
 
 const isResourcePage = inject<ComputedRef<boolean>>('isResourcePage');
 const hasEditScopeInBusiness = inject<ComputedRef<boolean>>('hasEditScopeInBusiness');
+const isAssigned = inject<ComputedRef<boolean>>('isAssigned');
 
 const resourceStore = useResourceStore();
 const { getRegionName } = useRegionsStore();
@@ -51,7 +53,6 @@ const { handleAuth, authVerifyData } = useVerify();
 const authAction = computed(() =>
   whereAmI.value === Senarios.business ? 'biz_iaas_resource_operate' : 'iaas_resource_operate',
 );
-const settingInfo = computed(() => getSettingInfo());
 
 const mgmtAttrFields: FieldList = [
   {
@@ -195,108 +196,47 @@ const businessMgmtAttrFields: FieldList = [
   },
 ];
 
-const getSettingInfo = () => {
-  const settingInfo: FieldList = [
-    {
-      name: 'ID',
-      prop: 'id',
-    },
-    {
-      name: t('账号 ID'),
-      prop: 'account_id',
-    },
+const settingInfo = computed(() => {
+  const fields: FieldList = [
+    { name: 'ID', prop: 'id' },
+    { name: t('账号 ID'), prop: 'account_id' },
     {
       name: t('资源名称'),
       prop: 'name',
       edit: !isResourcePage.value
         ? hasEditScopeInBusiness.value && !['azure', 'aws'].includes(props.vendor)
-        : !['azure', 'aws'].includes(props.vendor),
+        : !['azure', 'aws'].includes(props.vendor) && !isAssigned.value,
     },
-    {
-      name: t('云资源ID'),
-      prop: 'cloud_id',
-    },
-    {
-      name: t('云厂商'),
-      prop: 'vendorName',
-    },
-    {
-      name: t('地域'),
-      prop: 'region',
-      render: () => getRegionName(props.vendor, props.detail?.region),
-    },
-    {
-      name: t('创建时间'),
-      prop: 'created_at',
-      render: (val: string) => timeFormatter(val),
-    },
-    {
-      name: t('修改时间'),
-      prop: 'updated_at',
-      render: (val: string) => timeFormatter(val),
-    },
-    {
-      name: t('标签'),
-      prop: 'tags',
-      render: (val: any) => formatTags(val),
-    },
+    { name: t('云资源ID'), prop: 'cloud_id' },
+    { name: t('云厂商'), prop: 'vendorName' },
+    { name: t('地域'), prop: 'region', render: () => getRegionName(props.vendor, props.detail?.region) },
+    { name: t('创建时间'), prop: 'created_at', render: (val: string) => timeFormatter(val) },
+    { name: t('修改时间'), prop: 'updated_at', render: (val: string) => timeFormatter(val) },
+    { name: t('标签'), prop: 'tags', render: (val: any) => formatTags(val) },
     {
       name: t('备注'),
       prop: 'memo',
-      edit: !isResourcePage.value ? hasEditScopeInBusiness.value && props.vendor !== 'aws' : props.vendor !== 'aws',
+      edit: !isResourcePage.value
+        ? hasEditScopeInBusiness.value && props.vendor !== 'aws'
+        : props.vendor !== 'aws' && !isAssigned.value,
     },
   ];
-
-  if (props.vendor === 'tcloud' || props.vendor === 'aws' || props.vendor === 'huawei') {
-    settingInfo.splice(8, 0, {
-      name: t('关联CVM实例数'),
-      prop: 'cvm_count',
-      render(val: number) {
-        return val;
-      },
-    });
-    if (props.vendor === 'aws') {
-      settingInfo.splice(
-        9,
-        0,
-        {
-          name: t('所属VPC'),
-          prop: 'vpc_id',
-          render(val: string) {
-            return val;
-          },
-        },
-        {
-          name: t('所属云VPC'),
-          prop: 'cloud_vpc_id',
-          render(val: string) {
-            return val;
-          },
-        },
-      );
+  if ([VendorEnum.TCLOUD, VendorEnum.AWS, VendorEnum.HUAWEI].includes(props.vendor)) {
+    fields.splice(8, 0, { name: t('关联CVM实例数'), prop: 'cvm_count' });
+    if (VendorEnum.AWS === props.vendor) {
+      fields.splice(9, 0, { name: t('所属VPC'), prop: 'vpc_id' }, { name: t('所属云VPC'), prop: 'cloud_vpc_id' });
     }
-  } else if (props.vendor === 'azure') {
-    settingInfo.splice(
+  } else if (VendorEnum.AZURE === props.vendor) {
+    fields.splice(
       7,
       0,
-      {
-        name: t('关联网络接口数'),
-        prop: 'network_interface_count',
-        render(val: number) {
-          return val;
-        },
-      },
-      {
-        name: t('关联子网数'),
-        prop: 'subnet_count',
-        render(val: number) {
-          return val;
-        },
-      },
+      { name: t('关联网络接口数'), prop: 'network_interface_count' },
+      { name: t('关联子网数'), prop: 'subnet_count' },
     );
   }
-  return settingInfo;
-};
+
+  return fields;
+});
 
 const mgmtAttrDialogState = reactive({
   isShow: false,

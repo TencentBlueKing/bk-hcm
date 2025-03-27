@@ -14,6 +14,7 @@ import hintIcon from '@/assets/image/hint.svg';
 defineOptions({ name: 'security-group-delete-dialog' });
 const props = defineProps<{ detail: ISecurityGroupOperateItem; loading: boolean }>();
 const model = defineModel<boolean>();
+const emit = defineEmits(['success']);
 
 const { t } = useI18n();
 const resourceStore = useResourceStore();
@@ -46,6 +47,8 @@ const handleDelete = async () => {
   try {
     await resourceStore.deleteBatch('security_groups', { ids: [props.detail.id] });
     Message({ theme: 'success', message: t('删除成功') });
+    handleClosed();
+    emit('success');
   } finally {
     isConfirmLoading.value = false;
   }
