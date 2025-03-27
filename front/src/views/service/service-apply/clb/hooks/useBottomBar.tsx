@@ -5,13 +5,15 @@ import { Button, Loading, Popover, Table } from 'bkui-vue';
 // import types
 import { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
 import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
-import { LbPrice } from '@/typings';
+import { IQueryResData, LbPrice } from '@/typings';
 // import utils
 import { useI18n } from 'vue-i18n';
 import bus from '@/common/bus';
 import http from '@/http';
 import { GLOBAL_BIZS_KEY } from '@/common/constant';
 import { applyClbSuccessHandler } from '../apply-clb.plugin';
+import { useVerify } from '@/hooks';
+import { useGlobalPermissionDialog } from '@/store/useGlobalPermissionDialog';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -29,6 +31,17 @@ export default (
   const route = useRoute();
   const { whereAmI, isBusinessPage } = useWhereAmI();
   const { t } = useI18n();
+
+  // 权限校验
+  const { handleAuth, authVerifyData } = useVerify();
+  const globalPermissionDialogStore = useGlobalPermissionDialog();
+  const createActionName = computed(() => {
+    if (whereAmI.value === Senarios.business) {
+      return 'biz_clb_resource_create';
+    }
+    return 'clb_resource_create';
+  });
+
   // use stores
   // define data
   const applyLoading = ref(false);
@@ -95,6 +108,11 @@ export default (
 
   // define handler function
   const handleApplyClb = async () => {
+    if (!authVerifyData.value?.permissionAction?.[createActionName.value]) {
+      handleAuth(createActionName.value);
+      globalPermissionDialogStore.setShow(true);
+      return;
+    }
     try {
       await formRef.value.validate();
       // 整理参数
@@ -102,8 +120,9 @@ export default (
       const url = isBusinessPage
         ? `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${formModel.vendor}/applications/types/create_load_balancer`
         : `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/load_balancers/create`;
-      await http.post(url, handleParams());
-      applyClbSuccessHandler(isBusinessPage, goBack, formModel);
+      const res: IQueryResData<{ id: string }> = await http.post(url, handleParams());
+      const { id } = res.data || {};
+      applyClbSuccessHandler(isBusinessPage, goBack, { ...formModel, id });
     } finally {
       applyLoading.value = false;
     }
@@ -125,14 +144,6 @@ export default (
     setup() {
       return () => (
         <div class='apply-clb-bottom-bar'>
-          {/* 本期先不显示ip费用 */}
-          {/* <div class='info-wrap'>
-            <span class='label'>{t('IP资源费用')}</span>:
-            <span class='value'>
-              <span class='number'>0.01</span>
-              <span class='unit'>{t('元/小时')}</span>
-            </span>
-          </div> */}
           <div class='info-wrap'>
             <Popover theme='light' width={362} placement='top' offset={12}>
               {{
@@ -155,6 +166,7 @@ export default (
           </div>
           <div class='operation-btn-wrap'>
             <Button
+              class={{ 'hcm-no-permision-btn': !authVerifyData.value?.permissionAction?.[createActionName.value] }}
               theme='primary'
               onClick={handleApplyClb}
               loading={applyLoading.value}

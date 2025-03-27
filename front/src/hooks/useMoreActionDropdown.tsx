@@ -43,9 +43,10 @@ export default (typeMenuMap: any) => {
             if (node.type === 'listener' && TRANSPORT_LAYER_LIST.includes(node.protocol) && index === 0) return null;
             const disabled = typeof item.isDisabled === 'function' ? item.isDisabled(node) : false;
             const tooltips = typeof item.tooltips === 'function' ? item.tooltips(node) : { disabled: true };
+            const hasPermission = typeof item.preAuth === 'function' ? item.preAuth() : true;
             return (
               <div
-                class={`dropdown-item ${disabled ? 'disabled' : null}`}
+                class={['dropdown-item', { disabled, 'hcm-no-permision-text-btn': !hasPermission }]}
                 onClick={() => {
                   !disabled && item.handler(node);
                   handlePopHide();

@@ -117,6 +117,11 @@ func (cvm Cvm[T]) GetCloudID() string {
 	return cvm.BaseCvm.CloudID
 }
 
+// GetCloudID ...
+func (b BaseCvm) GetCloudID() string {
+	return b.CloudID
+}
+
 // Extension cvm extension.
 type Extension interface {
 	TCloudCvmExtension | AwsCvmExtension | HuaWeiCvmExtension | AzureCvmExtension | GcpCvmExtension

@@ -727,7 +727,7 @@ const operateDisabledTooltipsOption = computed(() => {
       v-model:isShow="isShowSecurityRule"
       :loading="securityRuleLoading"
       :id="props.id"
-      dialog-width="1680"
+      dialog-width="90vw"
       :active-type="activeType"
       :title="
         t(activeType === 'egress' ? `${dataId ? '编辑' : '添加'}出站规则` : `${dataId ? '编辑' : '添加'}入站规则`)

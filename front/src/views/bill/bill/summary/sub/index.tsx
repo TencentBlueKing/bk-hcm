@@ -85,7 +85,7 @@ export default defineComponent({
           <CommonTable>
             {{
               operation: () => (
-                <div>
+                <>
                   <BillsExportButton
                     cb={() =>
                       exportBillsMainAccountSummary({
@@ -101,7 +101,7 @@ export default defineComponent({
                   <bk-checkbox class='change-currency' v-model={isChecked} onChange={handleChange}>
                     {t('美元转人民币')}
                   </bk-checkbox>
-                </div>
+                </>
               ),
               operationBarEnd: () => (
                 <Amount
