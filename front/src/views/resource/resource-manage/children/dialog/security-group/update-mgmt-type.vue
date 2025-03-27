@@ -21,8 +21,8 @@ const model = defineModel<boolean>();
 const formData = reactive({
   mgmt_type: SecurityGroupManageType.PLATFORM,
   mgmt_biz_id: undefined,
-  manager: undefined,
-  bak_manager: undefined,
+  manager: props.detail.manager,
+  bak_manager: props.detail.bak_manager,
 });
 const alertTitle = computed(() =>
   formData.mgmt_type === SecurityGroupManageType.PLATFORM

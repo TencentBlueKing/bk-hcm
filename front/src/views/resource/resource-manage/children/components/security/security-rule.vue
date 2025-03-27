@@ -28,9 +28,6 @@ import RuleSort from './security-rule-sort.vue';
 import { showSort } from './show-sort.plugin';
 
 const props = defineProps({
-  filter: {
-    type: Object as PropType<any>,
-  },
   id: {
     type: String as PropType<any>,
   },
@@ -67,6 +64,7 @@ const azureDefaultColumns = ref([]);
 const authVerifyData: any = inject('authVerifyData');
 const isResourcePage: any = inject('isResourcePage');
 const show = ref<Boolean>(false);
+const filter = ref({ op: 'and', rules: [{ field: 'type', op: 'eq', value: 'ingress' }] });
 
 const actionName = computed(() => {
   // 资源下没有业务ID
@@ -77,7 +75,7 @@ watch(
   () => activeType.value,
   (v) => {
     // eslint-disable-next-line vue/no-mutating-props
-    props.filter.rules[0].value = v;
+    filter.value.rules[0].value = v;
     if (route.query.vendor === 'azure') {
       getDefaultList(v);
     }
@@ -91,7 +89,7 @@ const getDefaultList = async (type: string) => {
 
 // 获取列表数据
 const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, getList } = useQueryCommonList(
-  props,
+  { filter: filter.value },
   fetchUrl,
   route.query.vendor === 'tcloud' ? { sort: 'cloud_policy_index', order: 'ASC' } : '',
 );
@@ -756,7 +754,7 @@ const operateDisabledTooltipsOption = computed(() => {
       <template #default>
         <rule-sort
           :id="props.id"
-          :filter="props.filter"
+          :filter="filter"
           :type="activeType"
           v-model:show="show"
           @sort-done="handelSortDone"
