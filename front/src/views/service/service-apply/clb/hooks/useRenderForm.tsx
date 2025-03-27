@@ -265,6 +265,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
                 accountId={formModel.account_id}
                 zone={formModel.zones}
                 clearable={false}
+                resourceType={ResourceTypeEnum.CLB}
                 handleChange={handleSubnetDataChange}
               />
               <Button
