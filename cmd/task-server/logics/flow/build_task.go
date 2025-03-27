@@ -20,11 +20,16 @@
 package actionflow
 
 import (
+	"time"
+
 	"hcm/pkg/async/action"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	tableasync "hcm/pkg/dal/table/async"
 )
+
+// OperateWatchTimeout 单次重试超时
+const OperateWatchTimeout = 5 * time.Minute
 
 // FlowLoadBalancerOperateWatchTpl define flow load balancer operate watch template.
 var FlowLoadBalancerOperateWatchTpl = action.FlowTemplate{
@@ -37,7 +42,7 @@ var FlowLoadBalancerOperateWatchTpl = action.FlowTemplate{
 			Retry: &tableasync.Retry{
 				Enable: true,
 				Policy: &tableasync.RetryPolicy{
-					Count:        constant.FlowRetryMaxLimit,
+					Count:        uint(constant.FlowRetryTimeout / OperateWatchTimeout),
 					SleepRangeMS: [2]uint{100, 200},
 				},
 			},
