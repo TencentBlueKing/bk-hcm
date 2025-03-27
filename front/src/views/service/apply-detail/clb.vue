@@ -33,11 +33,17 @@ const clbDetail = computed(() => {
   try {
     const detail = JSON.parse(props.applicationDetail?.content);
     const { zones, backup_zones } = detail;
-    Object.assign(detail, {
-      zone: backup_zones.length > 0 ? `主备可用区 主(${zones[0]})备(${backup_zones[0]})` : zones.join(','),
-    });
+    if (backup_zones) {
+      Object.assign(detail, {
+        zone: backup_zones.length > 0 ? `主备可用区 主(${zones[0]})备(${backup_zones[0]})` : zones.join(','),
+      });
+    } else {
+      Object.assign(detail, { zone: zones.join(',') });
+    }
+
     return detail;
   } catch (error) {
+    console.error(error);
     return {};
   }
 });
