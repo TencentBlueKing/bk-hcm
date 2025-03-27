@@ -1,4 +1,4 @@
-import { computed, defineComponent, ref, watch } from 'vue';
+import { computed, defineComponent, ref, watch, nextTick, Reactive } from 'vue';
 // import components
 import { Button, Form, Input, Select, Slider } from 'bkui-vue';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
@@ -39,7 +39,7 @@ const { Option } = Select;
 const { FormItem } = Form;
 
 // apply-clb, 渲染表单
-export default (formModel: ApplyClbModel) => {
+export default (formModel: Reactive<ApplyClbModel>) => {
   // use hooks
   const { t } = useI18n();
   const { isBusinessPage } = useWhereAmI();
@@ -74,10 +74,6 @@ export default (formModel: ApplyClbModel) => {
   const handleSubnetDataChange = (data: ISubnetItem) => {
     subnetData.value = data;
   };
-
-  // use custom hooks
-  const { ispList, isResourceListLoading, quotas, isInquiryPrices, isInquiryPricesLoading, currentResourceListMap } =
-    useFilterResource(formModel);
 
   // 当前地域下负载均衡的配额
   const currentLbQuota = computed(() => {
@@ -616,6 +612,33 @@ export default (formModel: ApplyClbModel) => {
     },
   });
 
+  // 重置参数
+  const resetParams = (
+    keys: string[] = ['zones', 'backup_zones', 'cloud_vpc_id', 'cloud_subnet_id', 'vip_isp', 'cloud_eip_id'],
+  ) => {
+    keys.forEach((key) => {
+      switch (typeof formModel[key]) {
+        case 'number':
+          formModel[key] = 0;
+          break;
+        case 'string':
+          formModel[key] = '';
+          break;
+        case 'object':
+          if (Array.isArray(formModel[key])) {
+            formModel[key] = [];
+          }
+          break;
+      }
+    });
+  };
+  // 清除校验结果
+  const handleClearValidate = () => {
+    nextTick(() => {
+      formRef.value.clearValidate();
+    });
+  };
+
   watch(
     () => formModel.account_id,
     (val) => {
@@ -625,6 +648,59 @@ export default (formModel: ApplyClbModel) => {
       });
     },
   );
+
+  watch([() => formModel.account_id, () => formModel.region], () => {
+    // 当 account_id 或 region 改变时, 恢复默认状态
+    resetParams();
+    Object.assign(formModel, {
+      load_balancer_type: 'OPEN',
+      address_ip_version: 'IPV4',
+      zoneType: '0',
+      sla_type: 'shared',
+      internet_charge_type: 'TRAFFIC_POSTPAID_BY_HOUR',
+    });
+    handleClearValidate();
+  });
+
+  watch(
+    () => formModel.load_balancer_type,
+    (val) => {
+      // 重置通用参数
+      resetParams();
+      if (val === 'INTERNAL') {
+        resetParams(['address_ip_version', 'sla_type', 'internet_charge_type', 'internet_max_bandwidth_out']);
+      } else {
+        // 如果是公网, 则重置初始状态
+        Object.assign(formModel, {
+          address_ip_version: 'IPV4',
+          zoneType: '0',
+          sla_type: 'shared',
+          internet_charge_type: 'TRAFFIC_POSTPAID_BY_HOUR',
+        });
+      }
+      handleClearValidate();
+    },
+  );
+
+  watch(
+    () => formModel.address_ip_version,
+    () => {
+      resetParams(['zones', 'backup_zones', 'vip_isp']);
+      handleClearValidate();
+    },
+  );
+
+  watch(
+    () => formModel.zoneType,
+    () => {
+      resetParams(['zones', 'backup_zones']);
+      handleClearValidate();
+    },
+  );
+
+  // 这个需要放到watch之后，避免数据清空之前就触发了effect
+  const { ispList, isResourceListLoading, quotas, isInquiryPrices, isInquiryPricesLoading, currentResourceListMap } =
+    useFilterResource(formModel);
 
   return {
     vpcData,
