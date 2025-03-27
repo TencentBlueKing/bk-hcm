@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, useTemplateRef, watch } from 'vue';
+import { computed, inject, Ref, ref, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   type ISecurityGroupDetail,
@@ -15,7 +15,13 @@ import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import usePage from '@/hooks/use-page';
 import { useVerify } from '@/hooks';
 import { getSimpleConditionBySearchSelect, transformSimpleCondition } from '@/utils/search';
-import { RELATED_RES_KEY_MAP, RELATED_RES_NAME_MAP, RELATED_RES_PROPERTIES_MAP } from '@/constants/security-group';
+import {
+  RELATED_RES_KEY_MAP,
+  RELATED_RES_NAME_MAP,
+  RELATED_RES_OPERATE_DISABLED_TIPS_MAP,
+  RELATED_RES_OPERATE_TYPE,
+  RELATED_RES_PROPERTIES_MAP,
+} from '@/constants/security-group';
 import { ISearchSelectValue } from '@/typings';
 
 import { Plus } from 'bkui-vue/lib/icon';
@@ -34,15 +40,17 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
-const { getBizsId, isBusinessPage, whereAmI } = useWhereAmI();
+const { getBizsId, whereAmI } = useWhereAmI();
 const { getBusinessNames, getBusinessIds } = useBusinessGlobalStore();
 const securityGroupStore = useSecurityGroupStore();
 const regionStore = useRegionsStore();
 
+const isBusinessPage = computed(() => whereAmI.value === Senarios.business);
+
 // 预鉴权
 const { handleAuth, authVerifyData } = useVerify();
 const authAction = computed(() => {
-  return whereAmI.value === Senarios.business ? 'biz_iaas_resource_operate' : 'iaas_resource_operate';
+  return isBusinessPage.value ? 'biz_iaas_resource_operate' : 'iaas_resource_operate';
 });
 
 const tabActive = ref<SecurityGroupRelatedResourceName>(SecurityGroupRelatedResourceName.CVM);
@@ -74,7 +82,7 @@ const getList = async (sort = 'created_at', order = 'DESC') => {
     const { id } = props.detail;
     const api =
       tabActive.value === 'CVM' ? securityGroupStore.queryRelCvmByBiz : securityGroupStore.queryRelLoadBalancerByBiz;
-    const bizIds = isBusinessPage
+    const bizIds = isBusinessPage.value
       ? [getBizsId()]
       : props.relatedBiz[RELATED_RES_KEY_MAP[tabActive.value]].map(({ bk_biz_id }) => bk_biz_id);
 
@@ -89,15 +97,41 @@ const getList = async (sort = 'created_at', order = 'DESC') => {
 
     list.value = res.flatMap((item) => item.list);
     // 设置页码总条数
-    pagination.count = isBusinessPage ? res[0].count : res.reduce((acc, cur) => acc + cur.count, 0);
+    pagination.count = isBusinessPage.value ? res[0].count : res.reduce((acc, cur) => acc + cur.count, 0);
   } finally {
     loading.value = false;
   }
 };
 
 const selected = ref<SecurityGroupRelResourceByBizItem[]>([]);
-const operateVisible = computed(() => {
-  return tabActive.value === SecurityGroupRelatedResourceName.CVM;
+const isAssigned = inject<Ref<boolean>>('isAssigned');
+const isClb = computed(() => {
+  // 暂不支持负载均衡相关的操作
+  return tabActive.value === SecurityGroupRelatedResourceName.CLB;
+});
+const bindDisabledTooltipsOption = computed(() => {
+  if (isAssigned.value) {
+    return { content: t('安全组已分配，请到业务下操作'), disabled: !isAssigned.value };
+  }
+  if (isClb.value) {
+    return {
+      content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RELATED_RES_OPERATE_TYPE.BIND],
+      disabled: !isClb.value,
+    };
+  }
+  return { disabled: true };
+});
+const unbindDisabledTooltipsOption = computed(() => {
+  if (isAssigned.value) {
+    return { content: t('安全组已分配，请到业务下操作'), disabled: !isAssigned.value };
+  }
+  if (isClb.value) {
+    return {
+      content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RELATED_RES_OPERATE_TYPE.UNBIND],
+      disabled: !isClb.value,
+    };
+  }
+  return { disabled: true };
 });
 
 const bindVisible = ref(false);
@@ -128,6 +162,7 @@ const handleShowOperateDialog = (
 const handleOperateSuccess = () => {
   // 重新拉取安全组所关联的资源信息
   props.getRelatedInfo();
+  handleClear();
 };
 
 const searchRef = useTemplateRef('relate-resource-search');
@@ -174,12 +209,12 @@ watch(
       <tab v-model="tabActive" :detail="detail" :related-resources-count-list="relatedResourcesCountList" />
 
       <!-- TODO：目前只支持CVM -->
-      <div class="operate-btn-wrap" v-if="operateVisible">
+      <div class="operate-btn-wrap">
         <bk-button
           theme="primary"
           :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.[authAction] }"
-          :disabled="props.detail?.bk_biz_id !== -1"
-          v-bk-tooltips="{ content: t('安全组已分配，请到业务下操作'), disabled: props.detail?.bk_biz_id === -1 }"
+          :disabled="isAssigned || isClb"
+          v-bk-tooltips="bindDisabledTooltipsOption"
           @click="handleShowOperateDialog('bind')"
         >
           <plus width="26" height="26" />
@@ -187,8 +222,8 @@ watch(
         </bk-button>
         <bk-button
           :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.[authAction] }"
-          :disabled="!selected.length || props.detail?.bk_biz_id !== -1"
-          v-bk-tooltips="{ content: t('安全组已分配，请到业务下操作'), disabled: props.detail?.bk_biz_id === -1 }"
+          :disabled="!selected.length || isAssigned || isClb"
+          v-bk-tooltips="unbindDisabledTooltipsOption"
           @click="handleShowOperateDialog('batch-unbind')"
         >
           {{ t('批量解绑') }}
@@ -223,13 +258,13 @@ watch(
         :is-row-select-enable="() => true"
         @select="(selections) => (selected = selections)"
       >
-        <template v-if="operateVisible" #operate="{ row }">
+        <template #operate="{ row }">
           <bk-button
             :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.[authAction] }"
             theme="primary"
             text
-            :disabled="props.detail?.bk_biz_id !== -1"
-            v-bk-tooltips="{ content: t('安全组已分配，请到业务下操作'), disabled: props.detail?.bk_biz_id === -1 }"
+            :disabled="isAssigned || isClb"
+            v-bk-tooltips="unbindDisabledTooltipsOption"
             @click="handleShowOperateDialog('single-unbind', row)"
           >
             {{ t('解绑') }}
@@ -252,7 +287,7 @@ watch(
       />
     </template>
 
-    <template v-if="singleUnbindVisible && operateVisible">
+    <template v-if="singleUnbindVisible">
       <single-unbind
         v-model="singleUnbindVisible"
         :row="singleUnbindOperateRow"

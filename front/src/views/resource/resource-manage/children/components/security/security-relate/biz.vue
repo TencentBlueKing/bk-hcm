@@ -30,6 +30,7 @@ const tabActive = ref<SecurityGroupRelatedResourceName>(SecurityGroupRelatedReso
 
 const handleOperateSuccess = () => {
   props.getRelatedInfo();
+  searchRef.value?.clear();
 };
 
 const searchRef = useTemplateRef('relate-resource-search');

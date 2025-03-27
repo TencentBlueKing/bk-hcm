@@ -968,6 +968,7 @@ const handleFillCurrentSecurityGroup = async (rowData: ISecurityGroupOperateItem
   currentSecurityGroup.value = { ...rowData, resources, rule_count };
 };
 const handleChangeEffectConfirm = () => {
+  isChangeEffectConfirmDialogShow.value = false;
   const routeInfo: any = {
     query: { activeTab: 'rule', id: currentSecurityGroup.value.id, vendor: currentSecurityGroup.value.vendor },
   };
@@ -1216,6 +1217,7 @@ watch(
       v-model="isSecurityGroupSingleDeleteDialogShow"
       :loading="securityGroupStore.isQueryRuleCountAndRelatedResourcesLoading"
       :detail="currentSecurityGroup"
+      @success="handleSecurityGroupOperationSuccess"
     />
 
     <!-- 克隆安全组弹窗 -->
@@ -1291,4 +1293,3 @@ watch(
   }
 }
 </style>
-

@@ -1,6 +1,6 @@
 <!-- eslint-disable no-nested-ternary -->
 <script lang="ts" setup>
-import { ref, watch, h, reactive, PropType, inject, computed, withDirectives, ComputedRef } from 'vue';
+import { ref, watch, h, PropType, inject, computed, withDirectives, ComputedRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { bkTooltips, Button, Message } from 'bkui-vue';
@@ -12,7 +12,6 @@ import { VendorEnum } from '@/common/constant';
 
 import UseSecurityRule from '@/views/resource/resource-manage/hooks/use-security-rule';
 import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
-import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import bus from '@/common/bus';
 import { timeFormatter } from '@/common/util';
 import {
@@ -55,6 +54,7 @@ const resourceStore = useResourceStore();
 const route = useRoute();
 
 const hasEditScopeInBusiness = inject<ComputedRef<boolean>>('hasEditScopeInBusiness');
+const isAssigned = inject<ComputedRef<boolean>>('isAssigned');
 
 const activeType = ref('ingress');
 const deleteDialogShow = ref(false);
@@ -73,23 +73,9 @@ const actionName = computed(() => {
   return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
 });
 
-const state = reactive<any>({
-  datas: [],
-  pagination: {
-    current: 1,
-    limit: 10,
-    count: 0,
-  },
-  isLoading: true,
-  handlePageChange: () => {},
-  handlePageSizeChange: () => {},
-  columns: useColumns('group').columns,
-});
-
 watch(
   () => activeType.value,
   (v) => {
-    state.isLoading = true;
     // eslint-disable-next-line vue/no-mutating-props
     props.filter.rules[0].value = v;
     if (route.query.vendor === 'azure') {
@@ -109,12 +95,6 @@ const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, ge
   fetchUrl,
   route.query.vendor === 'tcloud' ? { sort: 'cloud_policy_index', order: 'ASC' } : '',
 );
-
-state.datas = datas;
-state.isLoading = isLoading;
-state.pagination = pagination;
-state.handlePageChange = handlePageChange;
-state.handlePageSizeChange = handlePageSizeChange;
 
 // 切换tab
 const handleSwtichType = async () => {
@@ -165,7 +145,7 @@ const showAuthDialog = (authActionName: string) => {
 };
 
 const handelSortDone = () => {
-  state.handlePageChange(1);
+  handlePageChange(1);
 };
 // 初始化
 handleSwtichType();
@@ -624,12 +604,22 @@ const types = [
   { name: 'ingress', label: t('入站规则') },
   { name: 'egress', label: t('出站规则') },
 ];
+
+const operateDisabledTooltipsOption = computed(() => {
+  if (isAssigned.value) {
+    return { content: t('安全组已分配，请到业务下操作'), disabled: !isAssigned.value };
+  }
+  if (!isResourcePage && !hasEditScopeInBusiness) {
+    return { content: t('该安全组不在当前业务管理，不允许编辑'), disabled: isResourcePage || hasEditScopeInBusiness };
+  }
+  return { disabled: true };
+});
 </script>
 
 <template>
   <div>
     <section class="rule-main">
-      <bk-radio-group v-model="activeType" :disabled="state.isLoading">
+      <bk-radio-group v-model="activeType" :disabled="isLoading">
         <bk-radio-button v-for="item in types" :key="item.name" :label="item.name">
           {{ item.label }}
         </bk-radio-button>
@@ -637,13 +627,10 @@ const types = [
 
       <div @click="showAuthDialog(actionName)">
         <bk-button
-          :disabled="!isResourcePage && !hasEditScopeInBusiness"
-          v-bk-tooltips="{
-            content: t('该安全组不在当前业务管理，不允许编辑'),
-            disabled: isResourcePage || hasEditScopeInBusiness,
-          }"
+          :disabled="isAssigned || (!isResourcePage && !hasEditScopeInBusiness)"
+          v-bk-tooltips="operateDisabledTooltipsOption"
           theme="primary"
-          :class="{ 'hcm-no-permision-btn': !authVerifyData.value?.permissionAction?.[actionName] }"
+          :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.[actionName] }"
           @click="handleSecurityRuleDialog({})"
         >
           {{ t('新增规则') }}
@@ -652,11 +639,8 @@ const types = [
 
       <bk-button
         icon="plus"
-        :disabled="!isResourcePage && !hasEditScopeInBusiness"
-        v-bk-tooltips="{
-          content: t('该安全组不在当前业务管理，不允许编辑'),
-          disabled: isResourcePage || hasEditScopeInBusiness,
-        }"
+        :disabled="isAssigned || (!isResourcePage && !hasEditScopeInBusiness)"
+        v-bk-tooltips="operateDisabledTooltipsOption"
         v-if="showSort(route?.query?.vendor)"
         @click="handleSecurityRuleSort"
       >
@@ -672,6 +656,7 @@ const types = [
         :columns="azureDefaultColumns"
         :data="azureDefaultList"
         show-overflow-tooltip
+        v-bkloading="{ loading: isLoading }"
       >
         <template #empty>
           <div class="security-empty-container">
@@ -690,18 +675,18 @@ const types = [
       Azure{{ activeType === 'ingress' ? t('入站') : t('出站') }}规则
     </h4>
 
-    <bk-loading :loading="state.isLoading">
+    <bk-loading :loading="isLoading">
       <bk-table
         v-if="activeType === 'ingress'"
         class="mt20"
         row-hover="auto"
         remote-pagination
         :columns="inColumns"
-        :data="state.datas"
-        :pagination="state.pagination"
+        :data="datas"
+        :pagination="pagination"
         show-overflow-tooltip
-        @page-limit-change="state.handlePageSizeChange"
-        @page-value-change="state.handlePageChange"
+        @page-limit-change="handlePageSizeChange"
+        @page-value-change="handlePageChange"
       >
         <template #empty>
           <div class="security-empty-container">
@@ -721,11 +706,11 @@ const types = [
         row-hover="auto"
         remote-pagination
         :columns="outColumns"
-        :data="state.datas"
-        :pagination="state.pagination"
+        :data="datas"
+        :pagination="pagination"
         show-overflow-tooltip
-        @page-limit-change="state.handlePageSizeChange"
-        @page-value-change="state.handlePageChange"
+        @page-limit-change="handlePageSizeChange"
+        @page-value-change="handlePageChange"
       >
         <template #empty>
           <div class="security-empty-container">
