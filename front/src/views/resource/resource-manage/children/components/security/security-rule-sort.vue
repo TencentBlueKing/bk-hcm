@@ -128,19 +128,19 @@ watch(
 <template>
   <div>
     <div class="security-rule-sort">
+      <section class="rule-main">
+        <bk-radio-group v-model="activeType" :disabled="states.isLoading">
+          <bk-radio-button
+            v-for="item in types"
+            :key="item.name"
+            :label="item.name"
+            :disabled="item.name !== activeType || states.isLoading"
+          >
+            {{ item.label }}
+          </bk-radio-button>
+        </bk-radio-group>
+      </section>
       <bk-loading :loading="states.isLoading">
-        <section class="rule-main">
-          <bk-radio-group v-model="activeType" :disabled="states.isLoading">
-            <bk-radio-button
-              v-for="item in types"
-              :key="item.name"
-              :label="item.name"
-              :disabled="item.name !== activeType || states.isLoading"
-            >
-              {{ item.label }}
-            </bk-radio-button>
-          </bk-radio-group>
-        </section>
         <div class="drag-table">
           <div class="drag-header">
             <template v-for="column in columns" :key="column">

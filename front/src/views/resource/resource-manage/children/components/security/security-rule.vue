@@ -27,12 +27,8 @@ import { tcloudSourceAddressTypes, TcloudSourceTypeArr } from './add-rule/vendor
 import { huaweiSourceAddressTypes } from './add-rule/vendors/huawei';
 import RuleSort from './security-rule-sort.vue';
 import { showSort } from './show-sort.plugin';
-import { cloneDeep } from 'lodash-es';
 
 const props = defineProps({
-  filter: {
-    type: Object as PropType<any>,
-  },
   id: {
     type: String as PropType<any>,
   },
@@ -68,7 +64,7 @@ const azureDefaultColumns = ref([]);
 const authVerifyData: any = inject('authVerifyData');
 const isResourcePage: any = inject('isResourcePage');
 const show = ref<Boolean>(false);
-const filter = ref(cloneDeep(props.filter));
+const filter = ref({ op: 'and', rules: [{ field: 'type', op: 'eq', value: 'ingress' }] });
 
 const actionName = computed(() => {
   // 资源下没有业务ID

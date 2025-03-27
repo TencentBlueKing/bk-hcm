@@ -18,7 +18,6 @@ import { SecurityGroupManageType } from '@/store/security-group';
 const { t } = useI18n();
 
 const route = useRoute();
-const filter = ref({ op: 'and', rules: [{ field: 'type', op: 'eq', value: 'ingress' }] });
 const activeTab = ref(route.query?.activeTab);
 const securityId = ref(route.query?.id);
 const vendor = ref(route.query?.vendor);
@@ -163,7 +162,6 @@ provide('hasEditScopeInBusiness', hasEditScopeInBusiness);
         />
         <security-rule
           v-else-if="type === 'rule'"
-          :filter="filter"
           :id="securityId"
           :vendor="vendor"
           :related-security-groups="relatedSecurityGroups"
