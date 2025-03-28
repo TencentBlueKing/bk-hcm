@@ -6,11 +6,12 @@ import { useBusinessStore } from '@/store';
 // import types
 import { QueryRuleOPEnum, RulesItem } from '@/typings';
 import { getDifferenceSet } from '@/common/util';
+import usePagination from '@/hooks/usePagination';
 
 export default (
   rsSelections: Ref<any[]>,
   getTableRsList: () => any[],
-  callback: () => { vpc_ids: string[]; account_id: string },
+  callback: () => { vpc_ids: string[]; account_id: string; isCorsVersion2: boolean },
 ) => {
   // use stores
   const businessStore = useBusinessStore();
@@ -72,6 +73,10 @@ export default (
     count: 0,
     limitList: [10, 20, 50, 100],
   });
+  const { handlePageLimitChange, handlePageValueChange } = usePagination(() => {
+    const { account_id, vpc_ids, isCorsVersion2 } = callback();
+    getRSTableList(account_id, vpc_ids, isCorsVersion2);
+  }, pagination);
 
   const selectedCount = ref(0);
   const { selections, handleSelectionChange, resetSelections } = useSelection();
@@ -246,7 +251,8 @@ export default (
       }
       // 页码重置
       pagination.start = 0;
-      getRSTableList(callback().account_id, callback().vpc_ids);
+      const { account_id, vpc_ids, isCorsVersion2 } = callback();
+      getRSTableList(account_id, vpc_ids, isCorsVersion2);
     },
     {
       immediate: true,
@@ -266,5 +272,7 @@ export default (
     handleSelectAll,
     handleClear,
     getRSTableList,
+    handlePageLimitChange,
+    handlePageValueChange,
   };
 };
