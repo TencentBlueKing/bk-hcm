@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { RouteLocationRaw } from 'vue-router';
 import { ModelProperty } from '@/model/typings';
 import { APPLICATION_TYPE_MAP } from '../apply-list/constants';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
@@ -77,12 +78,17 @@ const paramInfoFields: ModelProperty[] = [
   { id: 'require_count', name: '需求数量', type: 'number' },
   { id: 'name', name: '实例名称', type: 'string' },
 ];
+
+const navigateTo: RouteLocationRaw = {
+  path: '/service/my-apply',
+  query: { type: 'load_balancer' },
+};
 </script>
 
 <template>
   <bk-loading v-if="loading" loading style="width: 100%; height: 100%"><div></div></bk-loading>
   <div v-else>
-    <detail-header><span>负载均衡申请单详情</span></detail-header>
+    <detail-header :to="navigateTo"><span>负载均衡申请单详情</span></detail-header>
     <div class="container">
       <status :application-detail="applicationDetail" />
       <panel title="基本信息">
