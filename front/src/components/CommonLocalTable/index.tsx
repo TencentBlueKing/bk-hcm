@@ -110,7 +110,7 @@ export default defineComponent({
         {/* 表格 */}
         <Loading class='loading-container' loading={props.loading}>
           <Table
-            ref='tableRef'
+            ref={tableRef}
             class='table-container'
             row-key={props.tableOptions.rowKey}
             data={renderTableData.value}

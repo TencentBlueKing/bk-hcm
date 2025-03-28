@@ -1,4 +1,4 @@
-import { defineComponent, onMounted, onUnmounted, reactive, ref, watch, nextTick, useTemplateRef } from 'vue';
+import { defineComponent, onMounted, onUnmounted, reactive, ref, watch, nextTick, useTemplateRef, Ref } from 'vue';
 // import components
 import { Button, Form, Input, Link, Message, Select } from 'bkui-vue';
 import { Done, Error, Plus } from 'bkui-vue/lib/icon';
@@ -27,6 +27,7 @@ import { getTableNewRowClass } from '@/common/util';
 import bus from '@/common/bus';
 import { QueryRuleOPEnum } from '@/typings';
 import { SCHEDULER_MAP } from '@/constants';
+import useTimeoutPoll from '@/hooks/use-timeout-poll';
 
 const { FormItem } = Form;
 const { Option } = Select;
@@ -196,6 +197,10 @@ export default defineComponent({
         return row.bk_biz_id === -1;
       }
     };
+    const bindingStatusTask = useTimeoutPoll(() => {
+      const ruleIds = new Set<string>(dataList.value.map(({ id }) => id));
+      getBindingStatus(ruleIds, dataList);
+    }, 5000);
     const { CommonTable, getListData, clearFilter, dataList } = useTable({
       searchOptions: {
         searchData: [
@@ -235,59 +240,66 @@ export default defineComponent({
         filterOption: {
           rules: [{ field: 'domain', op: QueryRuleOPEnum.EQ, value: props.id }],
         },
-        async resolveDataListCb(dataList: any) {
-          // 如果数据列表为空，直接返回
-          if (!dataList?.length) return [];
+        asyncRequestApiMethod(dataList: any[], datalistRef: Ref<any[]>) {
+          if (!dataList?.length) return;
 
           // 提取目标组ID列表和规则ID列表
           const tgIds = new Set<string>();
           const ruleIds = new Set<string>();
-          dataList.forEach(({ target_group_id, id }: { target_group_id: string; id: string }) => {
+          dataList.forEach(({ target_group_id, id }) => {
             tgIds.add(target_group_id);
             ruleIds.add(id);
           });
 
-          // 并发查询目标组名称和同步状态
-          const [targetGroupList, bindingStatusList] = await Promise.all([
-            // 查询目标组名称
-            businessStore.getTargetGroupList({
+          businessStore
+            .getTargetGroupList({
               page: { count: false, start: 0, limit: 500 },
               filter: {
                 op: QueryRuleOPEnum.AND,
                 rules: [{ field: 'id', op: QueryRuleOPEnum.IN, value: Array.from(tgIds) }],
               },
               fields: ['id', 'name'],
-            }),
-            // 查询同步状态
-            loadBalancerStore.queryRulesBindingStatusList(
-              loadBalancerStore.currentSelectedTreeNode.vendor,
-              loadBalancerStore.currentSelectedTreeNode.id,
-              { rule_ids: Array.from(ruleIds) },
-            ),
-          ]);
+            })
+            .then((res: any) => {
+              // 构建目标组ID到名称的映射
+              const targetGroupMap = new Map<string, string>(
+                res.data.details.map(({ id, name }: { id: string; name: string }) => [id, name]),
+              );
+              datalistRef.value.forEach((url: any) => {
+                url.target_group_name = targetGroupMap.get(url.target_group_id) || '--';
+              });
+            });
 
-          // 构建目标组ID到名称的映射
-          const targetGroupMap = new Map<string, string>(
-            targetGroupList.data.details.map(({ id, name }: { id: string; name: string }) => [id, name]),
-          );
-
-          // 构建规则ID到同步状态的映射
-          const bindingStatusMap = new Map<string, string>(
-            bindingStatusList.map(({ rule_id, binding_status }: { rule_id: string; binding_status: string }) => [
-              rule_id,
-              binding_status,
-            ]),
-          );
-
-          // 返回增强后的数据列表
-          return dataList.map((data: any) => ({
-            ...data,
-            target_group_name: targetGroupMap.get(data.target_group_id) || '--',
-            binding_status: bindingStatusMap.get(data.id) || '--',
-          }));
+          // 轮询同步状态
+          getBindingStatus(ruleIds, datalistRef);
         },
       },
     });
+    // 查询URL的同步状态
+    const getBindingStatus = async (ruleIds: Set<string>, datalistRef: Ref<any[]>) => {
+      return loadBalancerStore
+        .queryRulesBindingStatusList(
+          loadBalancerStore.currentSelectedTreeNode.vendor,
+          loadBalancerStore.currentSelectedTreeNode.id,
+          { rule_ids: Array.from(ruleIds) },
+        )
+        .then((bindingStatusList: any[]) => {
+          // 构建规则ID到同步状态的映射
+          const bindingStatusMap = new Map<string, string>(
+            bindingStatusList.map(({ rule_id, binding_status }: any) => [rule_id, binding_status]),
+          );
+          datalistRef.value.forEach((url: any) => {
+            url.binding_status = bindingStatusMap.get(url.id) || '--';
+          });
+
+          // 暂停轮询
+          if (bindingStatusList.every(({ binding_status }: any) => binding_status !== 'binding')) {
+            bindingStatusTask.pause();
+          } else {
+            bindingStatusTask.resume();
+          }
+        });
+    };
     const reloadTableData = () => {
       getListData(
         [{ field: 'domain', op: QueryRuleOPEnum.EQ, value: props.id }],
