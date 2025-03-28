@@ -1,4 +1,4 @@
-import { defineComponent, onMounted, onUnmounted, reactive, ref, watch, nextTick } from 'vue';
+import { defineComponent, onMounted, onUnmounted, reactive, ref, watch, nextTick, useTemplateRef } from 'vue';
 // import components
 import { Button, Form, Input, Link, Message, Select } from 'bkui-vue';
 import { Done, Error, Plus } from 'bkui-vue/lib/icon';
@@ -165,7 +165,6 @@ export default defineComponent({
               onClick={() => {
                 Confirm('请确定删除URL', `将删除URL【${data.url}】`, async () => {
                   await deleteRulesBatch([data.id]);
-                  bus.$emit('resetLbTree');
                 });
               }}>
               {t('删除')}
@@ -197,7 +196,7 @@ export default defineComponent({
         return row.bk_biz_id === -1;
       }
     };
-    const { CommonTable, getListData, clearFilter } = useTable({
+    const { CommonTable, getListData, clearFilter, dataList } = useTable({
       searchOptions: {
         searchData: [
           { name: 'URL路径', id: 'url' },
@@ -295,11 +294,21 @@ export default defineComponent({
         `vendors/${loadBalancerStore.currentSelectedTreeNode.vendor}/listeners/${props.listener_id}/rules`,
       );
     };
+    const tableRef = useTemplateRef<typeof CommonTable>('table-comp');
+    const clearSelection = () => {
+      resetSelections();
+      tableRef.value?.clearSelection();
+    };
+    watch(
+      () => dataList.value,
+      () => {
+        clearSelection();
+      },
+    );
 
     const { isSubmitLoading, isBatchDeleteDialogShow, tableProps, handleBatchDeleteListener } = useBatchDeleteListener(
       tableColumns,
       selections,
-      resetSelections,
       reloadTableData,
       true,
     );
@@ -307,8 +316,6 @@ export default defineComponent({
     watch(
       () => [props.listener_id, props.id],
       () => {
-        // 清空选中项, 避免切换域名后, 选中项不变
-        resetSelections();
         clearFilter();
         reloadTableData();
       },
@@ -368,7 +375,7 @@ export default defineComponent({
 
     return () => (
       <div class={'url-list-container has-breadcrumb'}>
-        <CommonTable>
+        <CommonTable ref='table-comp'>
           {{
             operation: () => (
               <>

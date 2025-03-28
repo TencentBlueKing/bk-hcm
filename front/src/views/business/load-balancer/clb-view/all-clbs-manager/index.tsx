@@ -1,4 +1,4 @@
-import { ComputedRef, defineComponent, inject } from 'vue';
+import { ComputedRef, defineComponent, inject, useTemplateRef, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 // import components
 import { Button, Message } from 'bkui-vue';
@@ -54,21 +54,13 @@ export default defineComponent({
     const resourceStore = useResourceStore();
     const handleDelete = (data: any) => {
       Confirm('请确定删除负载均衡', `将删除负载均衡【${data.name}】`, async () => {
-        await resourceStore
-          .deleteBatch('load_balancers', {
-            ids: [data.id],
-          })
-          .then(() => {
-            Message({
-              message: '删除成功',
-              theme: 'success',
-            });
-            getListData();
-          });
+        await resourceStore.deleteBatch('load_balancers', { ids: [data.id] });
+        Message({ message: '删除成功', theme: 'success' });
+        getListData();
       });
     };
     const { columns, settings } = useColumns('lb');
-    const { CommonTable, getListData } = useTable({
+    const { CommonTable, getListData, dataList } = useTable({
       searchOptions: {
         searchData: [
           { id: 'name', name: '负载均衡名称' },
@@ -193,14 +185,25 @@ export default defineComponent({
         },
       ],
       selections,
-      resetSelections,
       getListData,
+    );
+
+    const tableRef = useTemplateRef<typeof CommonTable>('table-comp');
+    const clearSelection = () => {
+      resetSelections();
+      tableRef.value?.clearSelection();
+    };
+    watch(
+      () => dataList.value,
+      () => {
+        clearSelection();
+      },
     );
 
     return () => (
       <div class='common-card-wrap'>
         {/* 负载均衡list */}
-        <CommonTable>
+        <CommonTable ref='table-comp'>
           {{
             operation: () => (
               <>

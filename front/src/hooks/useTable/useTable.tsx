@@ -194,8 +194,11 @@ export const useTable = (props: IProp) => {
       };
 
       const tableRef = ref();
+      const clearSelection = () => {
+        tableRef.value?.clearSelection();
+      };
 
-      expose({ tableRef });
+      expose({ tableRef, clearSelection });
 
       return () => (
         <div

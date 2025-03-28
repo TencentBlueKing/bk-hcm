@@ -59,14 +59,13 @@ export default defineComponent({
     // 删除目标组
     const handleDeleteTargetGroup = (node: any) => {
       const { id, name } = node;
-      Confirm('请确定删除目标组', `将删除目标组【${name}】`, () => {
-        businessStore.deleteTargetGroups({ bk_biz_id: accountStore.bizs, ids: [id] }).then(() => {
-          Message({ message: '删除成功', theme: 'success' });
-          // 重新拉取目标组list
-          handleRefresh();
-          // 跳转至全部目标组下
-          handleTypeChange();
-        });
+      Confirm('请确定删除目标组', `将删除目标组【${name}】`, async () => {
+        await businessStore.deleteTargetGroups({ bk_biz_id: accountStore.bizs, ids: [id] });
+        Message({ message: '删除成功', theme: 'success' });
+        // 重新拉取目标组list
+        handleRefresh();
+        // 跳转至全部目标组下
+        handleTypeChange();
       });
     };
 
@@ -79,7 +78,7 @@ export default defineComponent({
 
     // 滚动触底加载下一页的目标组数据
     const scrollEndHandler = throttle((endIndex: number) => {
-      if (endIndex === dataList.value.length) {
+      if (endIndex >= dataList.value.length) {
         // 如果 endIndex 等于总数，说明已经到底了，需要拉取更多数据
         handleScrollEnd();
       }
