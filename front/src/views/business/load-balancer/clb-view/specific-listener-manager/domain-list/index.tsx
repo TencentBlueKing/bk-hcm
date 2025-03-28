@@ -36,6 +36,11 @@ export default defineComponent({
     const defaultDomain = ref('');
     const isCheckDomainLoading = ref(false);
     const { selections, handleSelectionChange, resetSelections } = useSelection();
+    const isRowSelectEnable = ({ row, isCheckAll }: any) => {
+      if (isCheckAll) return true;
+      return isCurRowSelectEnable(row);
+    };
+    const isCurRowSelectEnable = (row: any) => row.domain !== defaultDomain.value;
     const settingDomain = ref('');
 
     const isLoading = ref(false);
@@ -249,8 +254,9 @@ export default defineComponent({
                   return 'binding-row';
                 }
               },
-              onSelectionChange: (selections: any) => handleSelectionChange(selections, () => true),
-              onSelectAll: (selections: any) => handleSelectionChange(selections, () => true, true),
+              isRowSelectEnable,
+              onSelectionChange: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable),
+              onSelectAll: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true),
             },
           }}
           tableData={domainList.value}
