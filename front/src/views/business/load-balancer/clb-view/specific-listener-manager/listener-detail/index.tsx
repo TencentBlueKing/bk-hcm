@@ -61,7 +61,7 @@ export default defineComponent({
           },
           {
             label: t('均衡方式'),
-            value: SCHEDULER_MAP[listenerDetail.scheduler],
+            value: SCHEDULER_MAP[listenerDetail.scheduler] || '--',
           },
           {
             label: t('目标组'),
