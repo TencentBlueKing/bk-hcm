@@ -533,7 +533,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
           required: true,
           property: 'name',
           description: '单个实例：以填写的名称命名。\n多个实例：以填写的名称为前缀，由系统自动补充随机的后缀。',
-          content: () => <Input class='w500' v-model={formModel.name} placeholder='请输入实例名称'></Input>,
+          content: () => <Input class='w500' v-model_trim={formModel.name} placeholder='请输入实例名称'></Input>,
         },
         {
           label: '申请单备注',
