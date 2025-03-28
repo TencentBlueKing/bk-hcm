@@ -30,6 +30,7 @@ import (
 	"hcm/pkg/async/action/run"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
@@ -65,7 +66,7 @@ type LoadBalancerOperateWatchOption struct {
 
 // Validate LoadBalancerOperateWatchOption.
 func (opt LoadBalancerOperateWatchOption) Validate() error {
-	return opt.Validate()
+	return validator.Validate.Struct(opt)
 }
 
 // ParameterNew return request params.
@@ -139,7 +140,7 @@ func (act LoadBalancerOperateWatchAction) processResFlow(kt run.ExecuteKit, opt 
 		if flowInfo.State == enumor.FlowSuccess {
 			resStatus = enumor.SuccessResFlowStatus
 		}
-		if flowInfo.State == enumor.FlowCancel {
+		if flowInfo.State == enumor.FlowCancel || flowInfo.State == enumor.FlowFailed {
 			resStatus = enumor.CancelResFlowStatus
 		}
 
