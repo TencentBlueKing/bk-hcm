@@ -66,6 +66,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
         formModel.cloud_subnet_id = undefined;
       }
     } else {
+      vpcId.value = '';
       vpcData.value = null;
     }
 
@@ -252,7 +253,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
           label: '子网',
           required: true,
           property: 'cloud_subnet_id',
-          hidden: !isIntranet.value,
+          hidden: !isIntranet.value && formModel.address_ip_version !== 'IPv6FullChain',
           content: () => (
             <div class='component-with-preview'>
               <SubnetSelector
