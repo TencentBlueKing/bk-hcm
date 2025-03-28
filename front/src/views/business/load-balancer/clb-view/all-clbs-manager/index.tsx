@@ -34,7 +34,7 @@ export default defineComponent({
     const route = useRoute();
     const { t } = useI18n();
     const businessStore = useBusinessStore();
-    const { whereAmI } = useWhereAmI();
+    const { whereAmI, getBizsId } = useWhereAmI();
     const { selections, handleSelectionChange, resetSelections } = useSelection();
     const { authVerifyData, handleAuth } = useVerify();
     const globalPermissionDialogStore = useGlobalPermissionDialog();
@@ -235,7 +235,7 @@ export default defineComponent({
                 </Button>
                 {/* 批量导入 */}
                 <BatchImportComp />
-                <AllLoadBalancer disabled={selections.value.length > 0} />
+                <AllLoadBalancer disabled={selections.value.length > 0} bizId={getBizsId()} />
               </>
             ),
           }}
