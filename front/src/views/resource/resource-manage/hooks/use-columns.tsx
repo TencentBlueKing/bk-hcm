@@ -1390,7 +1390,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
           return (
             <>
               <i
-                class='hcm-icon bkhcm-icon-38moxingshibai-01 text-danger font-normal cursor mr8'
+                class='hcm-icon bkhcm-icon-38moxingshibai-01 text-gray font-normal cursor mr8'
                 v-bk-tooltips={{ content: 'HTTP/HTTPS监听器的同步状态，请到URL列表查看' }}
               />
               <span>--</span>
@@ -1609,7 +1609,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
         return (
           <>
             <i
-              class='hcm-icon bkhcm-icon-38moxingshibai-01 text-danger font-normal cursor mr8'
+              class='hcm-icon bkhcm-icon-38moxingshibai-01 text-gray font-normal cursor mr8'
               v-bk-tooltips={{ content: 'HTTP/HTTPS监听器的同步状态，请到URL列表查看' }}
             />
             <span>--</span>
