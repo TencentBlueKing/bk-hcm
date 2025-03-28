@@ -47,7 +47,8 @@ const businessStore = useBusinessStore();
 const { getBusinessApiPath } = useWhereAmI();
 const globalPermissionDialogStore = useGlobalPermissionDialog();
 const { authVerifyData, handleAuth } = useVerify();
-const createActionName: ComputedRef<'biz_clb_resource_create' | 'clb_resource_create'> = inject('createActionName');
+const createClbActionName: ComputedRef<'biz_clb_resource_create' | 'clb_resource_create'> =
+  inject('createClbActionName');
 
 const treeData = ref([]);
 const pagination = reactive({ start: 0, count: 0, loading: false });
@@ -233,14 +234,14 @@ const typeMenuMap = {
     {
       label: '购买负载均衡',
       handler: () => {
-        if (!authVerifyData?.value?.permissionAction?.[createActionName.value]) {
-          handleAuth(createActionName.value);
+        if (!authVerifyData?.value?.permissionAction?.[createClbActionName.value]) {
+          handleAuth(createClbActionName.value);
           globalPermissionDialogStore.setShow(true);
           return;
         }
         router.push({ path: '/business/service/service-apply/clb' });
       },
-      preAuth: () => authVerifyData?.value?.permissionAction?.[createActionName.value],
+      preAuth: () => authVerifyData?.value?.permissionAction?.[createClbActionName.value],
     },
   ],
   lb: [{ label: '新增监听器', handler: () => bus.$emit('showAddListenerSideslider') }],
