@@ -39,6 +39,7 @@ export default defineComponent({
       vendor: null,
       account_type: 'STANDARD',
       slaType: '0',
+      egress: undefined,
     });
 
     // use custom hooks

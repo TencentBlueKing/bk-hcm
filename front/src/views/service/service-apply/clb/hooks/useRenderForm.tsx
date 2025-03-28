@@ -12,19 +12,13 @@ import ConditionOptions from '../../components/common/condition-options/index.vu
 import CommonCard from '@/components/CommonCard';
 import VpcReviewPopover from '../../components/common/VpcReviewPopover';
 import SelectedItemPreviewComp from '@/components/SelectedItemPreviewComp';
-import BandwidthPackageSelector from '../../components/common/BandwidthPackageSelector';
+import BandwidthPackageSelector, { IBandwidthPackage } from '../../components/common/BandwidthPackageSelector';
 // import types
 import { type ISubnetItem } from '../../cvm/children/SubnetPreviewDialog';
 import type { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
 // import constants
 import { CLB_SPECS, LB_ISP, ResourceTypeEnum } from '@/common/constant';
-import {
-  LOAD_BALANCER_TYPE,
-  ADDRESS_IP_VERSION,
-  ZONE_TYPE,
-  INTERNET_CHARGE_TYPE,
-  LOADBALANCER_BANDWIDTH_PACKAGE_NETWORK_TYPES_MAP,
-} from '@/constants/clb';
+import { LOAD_BALANCER_TYPE, ADDRESS_IP_VERSION, ZONE_TYPE, INTERNET_CHARGE_TYPE } from '@/constants/clb';
 // import utils
 import bus from '@/common/bus';
 import { useI18n } from 'vue-i18n';
@@ -451,7 +445,8 @@ export default (formModel: Reactive<ApplyClbModel>) => {
               accountId={formModel.account_id}
               region={formModel.region}
               zones={formModel.zones as string}
-              networkTypes={LOADBALANCER_BANDWIDTH_PACKAGE_NETWORK_TYPES_MAP[formModel.vip_isp]}
+              vipIsp={formModel.vip_isp}
+              onChange={(bandwidthPackage: IBandwidthPackage) => (formModel.egress = bandwidthPackage.egress)}
             />
           ),
         },
