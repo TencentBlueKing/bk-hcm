@@ -8,7 +8,7 @@ import usePage from '@/hooks/use-page';
 import useTimeoutPoll from '@/hooks/use-timeout-poll';
 import { useUserStore, useTaskStore, ITaskStatusItem, ITaskCountItem, ITaskItem } from '@/store';
 import routerAction from '@/router/utils/action';
-import { TaskStatus, type ISearchConditon } from '@/views/task/typings';
+import { TaskStatus, type ISearchCondition } from '@/views/task/typings';
 import accountProperties from '@/model/account/properties';
 import taskProperties from '@/model/task/properties';
 import { transformSimpleCondition, getDateRange } from '@/utils/search';
@@ -98,7 +98,7 @@ const taskStatusPoll = useTimeoutPoll(() => {
   fetchCountAndStatus(ids);
 }, 5000);
 
-const handleSearch = (vals: ISearchConditon) => {
+const handleSearch = (vals: ISearchCondition) => {
   searchQs.set(vals);
 };
 

@@ -1,3 +1,5 @@
+import type { VNode } from 'vue';
+import type { Column as TableColumn } from 'bkui-vue/lib/table/props';
 import { QueryRuleOPEnum } from '@/typings';
 import type { ResourceTypeEnum } from '@/common/resource-constant';
 
@@ -36,6 +38,17 @@ export type ModelProperty = {
 
 export type PropertyColumnConfig = {
   sort?: boolean;
+  align?: 'left' | 'center' | 'right';
+  render?: (args: {
+    cell?: any;
+    data?: any;
+    row?: any;
+    column: TableColumn;
+    index: number;
+    rows?: any[];
+  }) => VNode | boolean | number | string;
+  width?: number | string;
+  minWidth?: number | string;
   defaultHidden?: boolean;
 };
 

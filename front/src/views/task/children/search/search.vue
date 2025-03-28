@@ -5,21 +5,21 @@ import { useWhereAmI } from '@/hooks/useWhereAmI';
 import GridContainer from '@/components/layout/grid-container/grid-container.vue';
 import GridItemFormElement from '@/components/layout/grid-container/grid-item-form-element.vue';
 import GridItem from '@/components/layout/grid-container/grid-item.vue';
-import type { ISearchProps, ISearchConditon } from '@/views/task/typings';
+import type { ISearchProps, ISearchCondition } from '@/views/task/typings';
 import conditionFactory from './condition-factory';
 
 const props = withDefaults(defineProps<ISearchProps>(), {});
 
 const emit = defineEmits<{
-  (e: 'search', condition: ISearchConditon): void;
+  (e: 'search', condition: ISearchCondition): void;
   (e: 'reset'): void;
 }>();
 
 const { getBizsId } = useWhereAmI();
 const { getConditionField } = conditionFactory();
 
-const formValues = ref<ISearchConditon>({});
-let conditionInitValues: ISearchConditon;
+const formValues = ref<ISearchCondition>({});
+let conditionInitValues: ISearchCondition;
 
 const fields = getConditionField(props.resource);
 
@@ -83,9 +83,11 @@ watch(
 
   .row-action {
     padding: 4px 0;
+
     :deep(.item-content) {
       gap: 10px;
     }
+
     .bk-button {
       min-width: 86px;
     }

@@ -1,5 +1,5 @@
 import { ModelProperty } from '@/model/typings';
-import { TASK_TYPE_NAME, TASKT_SOURCE_NAME, TASKT_STATUS_NAME } from '@/views/task/constants';
+import { TASK_TYPE_NAME, TASK_SOURCE_NAME, TASK_STATUS_NAME } from '@/views/task/constants';
 import { QueryRuleOPEnum } from '@/typings';
 
 export default [
@@ -26,7 +26,7 @@ export default [
     name: '任务来源',
     type: 'enum',
     index: 1,
-    option: TASKT_SOURCE_NAME,
+    option: TASK_SOURCE_NAME,
   },
   {
     id: 'creator',
@@ -39,7 +39,7 @@ export default [
     name: '任务状态',
     type: 'enum',
     index: 1,
-    option: TASKT_STATUS_NAME,
+    option: TASK_STATUS_NAME,
     meta: {
       display: {
         appearance: 'status',
