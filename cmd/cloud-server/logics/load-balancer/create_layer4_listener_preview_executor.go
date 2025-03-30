@@ -117,6 +117,9 @@ func (c *CreateLayer4ListenerPreviewExecutor) convertDataToPreview(rawData [][]s
 }
 
 func (c *CreateLayer4ListenerPreviewExecutor) validate(kt *kit.Kit) error {
+	if len(c.details) == 0 {
+		return fmt.Errorf("there are no details to be executed")
+	}
 	//key: clbID+protocol+port value record index
 	recordMap := make(map[string]int)
 	clbIDMap := make(map[string]struct{})
