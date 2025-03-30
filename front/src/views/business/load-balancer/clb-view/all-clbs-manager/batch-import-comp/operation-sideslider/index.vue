@@ -82,6 +82,10 @@ const submitTooltips = computed(() => {
   if (!previewData.value) {
     return { disabled: !!previewData.value, content: t('请上传文件') };
   }
+  // 文件解析失败
+  if (!previewData.value?.details) {
+    return { disabled: !!previewData.value?.details, content: t('预览失败，请检查文件内容格式') };
+  }
   // 预览成功，但存在不可执行的数据
   if (previewRef.value?.info.notExecutableCount !== 0) {
     return {
