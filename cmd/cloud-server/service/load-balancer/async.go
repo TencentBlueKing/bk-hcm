@@ -175,7 +175,7 @@ func (svc *lbSvc) cloneFlow(cts *rest.Contexts, operateAuth handler.ValidWithAut
 	}
 
 	// 锁定资源跟Flow的状态
-	err = svc.lockResFlowStatus(cts.Kit, lbInfo.ID, enumor.LoadBalancerCloudResType, req.FlowID, rel.TaskType)
+	err = svc.lockResFlowStatus(cts.Kit, lbInfo.ID, enumor.LoadBalancerCloudResType, flowRet.ID, rel.TaskType)
 	if err != nil {
 		return nil, err
 	}
