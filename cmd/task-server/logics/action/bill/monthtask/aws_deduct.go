@@ -56,7 +56,7 @@ func (a AwsDeductMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index 
 	}
 
 	// 检查当前root账号是否有抵扣项配置
-	if len(a.deductItemTypes) == 0 || a.deductItemTypes[rootInfo.CloudID] == nil {
+	if len(a.deductItemTypes) == 0 {
 		logs.Infof("skip aws deduct month task, root account: %s, rootAccountCloudID: %s, deductItemTypes: %+v, "+
 			"reason: not need deduct, opt: %+v, rid: %s", opt.RootAccountID, rootInfo.CloudID, a.deductItemTypes,
 			cvt.PtrToVal(opt), kt.Rid)
@@ -68,7 +68,7 @@ func (a AwsDeductMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index 
 
 	// 解析当前root账号需要查询的字段及值
 	fieldsMap := make(map[string][]string)
-	for fieldKey, fieldValues := range a.deductItemTypes[rootInfo.CloudID] {
+	for fieldKey, fieldValues := range a.deductItemTypes {
 		fieldsMap[fieldKey] = fieldValues
 	}
 

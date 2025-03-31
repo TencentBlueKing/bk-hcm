@@ -48,16 +48,15 @@ func NewAwsMonthDescriber(rootAccountCloudID string) MonthTaskDescriber {
 	}
 
 	// 过滤符合条件的账号抵扣配置
-	deductItemTypes := cc.AccountServer().BillAllocation.AwsDeductAccountItems.DeductItemTypes
-	filterDeductItemTypes := make(map[string]map[string][]string)
-	for rootAccountKey, rootAccountItem := range deductItemTypes {
+	describer.RootAccountDeductItemTypes = cc.AccountServer().BillAllocation.AwsDeductAccountItems.DeductItemTypes
+	filterDeductItemTypes := make(map[string][]string)
+	for rootAccountKey, rootAccountItem := range describer.RootAccountDeductItemTypes {
 		if rootAccountKey != rootAccountCloudID {
 			continue
 		}
-		filterDeductItemTypes[rootAccountKey] = rootAccountItem
+		filterDeductItemTypes = rootAccountItem
 	}
-	describer.RootAccountDeductItemTypes = filterDeductItemTypes
-	awsDeductItemTypes, err := json.Marshal(describer.RootAccountDeductItemTypes)
+	awsDeductItemTypes, err := json.Marshal(filterDeductItemTypes)
 	if err != nil {
 		logs.Warnf("fail to json marshal awsDeductAccountItems config, err: %v", err)
 	}

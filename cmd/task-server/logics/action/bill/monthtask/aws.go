@@ -58,7 +58,7 @@ type awsMonthTaskBaseRunner struct {
 	spArnPrefix            string
 	spMainAccountCloudID   string
 	excludeAccountCloudIds []string
-	deductItemTypes        map[string]map[string][]string // 需要抵扣的账单明细项目类型列表，比如税费Tax
+	deductItemTypes        map[string][]string // 需要抵扣的账单明细项目类型列表，比如税费Tax
 }
 
 func (a *awsMonthTaskBaseRunner) initExtension(kt *kit.Kit, opt *MonthTaskActionOption) {

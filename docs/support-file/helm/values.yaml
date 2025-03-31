@@ -556,7 +556,7 @@ accountserver:
     # 根账号需要抵扣的项目列表
     awsDeductAccountItems:
       deductItemTypes:
-        #"63100000000101": # 根账号对应的云账号ID
+        #"123456789": # 根账号对应的云账号ID
         #  line_item_line_item_type: # 项目涵盖的费用类型
         #    - Tax
     gcpCredits:
