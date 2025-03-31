@@ -166,17 +166,18 @@ func (svc *lbSvc) cloneFlow(cts *rest.Contexts, operateAuth handler.ValidWithAut
 			},
 		}},
 	}
+	// 尝试锁定资源跟Flow的状态
+	err = svc.lockResFlowStatus(cts.Kit, lbInfo.ID, enumor.LoadBalancerCloudResType, flowRet.ID, rel.TaskType)
+	if err != nil {
+		logs.Errorf("lock res flow status failed, err: %v, flowID: %s, rid: %s", err, req.FlowID, cts.Kit.Rid)
+		return nil, err
+	}
 
+	// 锁定成功，创建从flow
 	_, err = svc.client.TaskServer().CreateTemplateFlow(cts.Kit, flowWatchReq)
 	if err != nil {
 		logs.Errorf("call task server to create res flow status watch task failed, err: %v, flowID: %s, rid: %s",
 			err, req.FlowID, cts.Kit.Rid)
-		return nil, err
-	}
-
-	// 锁定资源跟Flow的状态
-	err = svc.lockResFlowStatus(cts.Kit, lbInfo.ID, enumor.LoadBalancerCloudResType, flowRet.ID, rel.TaskType)
-	if err != nil {
 		return nil, err
 	}
 
