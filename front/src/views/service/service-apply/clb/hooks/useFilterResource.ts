@@ -80,7 +80,7 @@ export default (formModel: ApplyClbModel) => {
     isResourceListLoading.value = true;
     try {
       const { data } = await reqResourceListOfCurrentRegion(vendor, params);
-      const { ZoneResourceSet } = data;
+      const { ZoneResourceSet = [] } = data;
 
       // 构建主备可用区映射
       const zoneMapping: Record<string, string[]> = {};
