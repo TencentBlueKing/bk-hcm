@@ -30,10 +30,12 @@ const message = computed(() => props.applicationDetail?.delivery_detail ?? '');
     <!-- name -->
     <span class="status-name">{{ APPLICATION_STATUS_MAP[status] }}</span>
     <!-- message -->
-    <bk-overflow-title v-if="status !== ApplicationStatus.pending" type="tips" class="message">
-      {{ message }}
-    </bk-overflow-title>
-    <copy-to-clipboard :content="message" class="ml8" />
+    <template v-if="status === ApplicationStatus.deliver_error">
+      <bk-overflow-title type="tips" class="message">
+        {{ message }}
+      </bk-overflow-title>
+      <copy-to-clipboard :content="message" class="ml8" />
+    </template>
     <bk-link class="link" theme="primary" :href="applicationDetail.ticket_url" target="_blank">
       <div class="flex-row align-items-center">
         ITSM单据

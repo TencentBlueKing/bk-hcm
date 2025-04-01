@@ -52,7 +52,7 @@ export function deepMerge(...objectArray: any) {
 }
 
 /**
- * 时间格式化
+ * 时间格式化，自动转换成本地时区
  * @param val 待格式化时间
  * @param format 格式
  * @returns 格式化后的时间
@@ -62,7 +62,7 @@ export function timeFormatter(val: any, format = 'YYYY-MM-DD HH:mm:ss', defaultV
 }
 
 /**
- * 格式化 UTC时间
+ * 格式化为UTC时间，忽略本地时区
  * @param val 待格式化时间
  * @param format 格式
  * @returns 格式化后的时间

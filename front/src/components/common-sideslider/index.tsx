@@ -36,7 +36,7 @@ export default defineComponent({
       default: 'show',
     },
     submitTooltips: {
-      type: Object as PropType<{ content: string; disabled: boolean }>,
+      type: Object as PropType<{ content?: string; disabled: boolean }>,
       default: () => ({ content: '', disabled: true }),
     },
   },

@@ -22,7 +22,7 @@ import StatusFailure from '@/assets/image/failed-account.png';
 import { HOST_RUNNING_STATUS, HOST_SHUTDOWN_STATUS } from '../common/table/HostOperations';
 import './use-columns.scss';
 import { defaults } from 'lodash';
-import { timeFormatter, timeUTCFormatter, formatTags } from '@/common/util';
+import { timeFormatter, formatTags } from '@/common/util';
 import {
   APPLICATION_LAYER_LIST,
   CLB_STATUS_MAP,
@@ -1950,14 +1950,14 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '创建时间',
       field: 'created_at',
       render({ cell }: any) {
-        return timeUTCFormatter(cell);
+        return timeFormatter(cell);
       },
     },
     {
       label: '更新时间',
       field: 'updated_at',
       render({ cell }: any) {
-        return timeUTCFormatter(cell);
+        return timeFormatter(cell);
       },
     },
     {
