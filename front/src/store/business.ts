@@ -501,7 +501,10 @@ export const useBusinessStore = defineStore({
      * @param data 负载均衡参数
      */
     lbPricesInquiry(data: any): Promise<LbPriceInquiryResp> {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/load_balancers/prices/inquiry`, data);
+      return http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}load_balancers/prices/inquiry`,
+        data,
+      );
     },
     /**
      * 查询负载均衡状态锁定详情
