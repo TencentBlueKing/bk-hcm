@@ -48,16 +48,41 @@ func (svc *lbSvc) InquiryPriceLoadBalancer(cts *rest.Contexts) (any, error) {
 		return nil, err
 	}
 
-	info, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
+	return svc.inquiryPriceLoadBalancer(cts.Kit, req)
+}
+
+// InquiryPriceBizLoadBalancer inquiry price biz load balancer.
+func (svc *lbSvc) InquiryPriceBizLoadBalancer(cts *rest.Contexts) (any, error) {
+	req := new(cloudserver.ResourceCreateReq)
+	if err := cts.DecodeInto(req); err != nil {
+		logs.Errorf("inquiry price load balancer request decode failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
+
+	authRes := meta.ResourceAttribute{Basic: &meta.Basic{
+		Type: meta.LoadBalancer, Action: meta.Apply, ResourceID: req.AccountID}, BizID: bizID}
+	if err := svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+		logs.Errorf("inquiry price load balancer auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	return svc.inquiryPriceLoadBalancer(cts.Kit, req)
+}
+
+func (svc *lbSvc) inquiryPriceLoadBalancer(kt *kit.Kit, req *cloudserver.ResourceCreateReq) (any, error) {
+	info, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(kt,
 		enumor.AccountCloudResType, req.AccountID)
 	if err != nil {
-		logs.Errorf("get account basic info failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("get account basic info failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
 
 	switch info.Vendor {
 	case enumor.TCloud:
-		return svc.inquiryPriceTCloudLoadBalancer(cts.Kit, req.Data)
+		return svc.inquiryPriceTCloudLoadBalancer(kt, req.Data)
 	default:
 		return nil, fmt.Errorf("vendor: %s not support", info.Vendor)
 	}
