@@ -1,4 +1,4 @@
-import { defineComponent, ref, watch } from 'vue';
+import { computed, defineComponent, ref, watch } from 'vue';
 import './index.scss';
 import DetailHeader from '../../common/header/detail-header';
 import { useRoute } from 'vue-router';
@@ -6,7 +6,7 @@ import { Success } from 'bkui-vue/lib/icon';
 import { Button, Select, Tab, TimeLine } from 'bkui-vue';
 import { useTable } from '@/hooks/useTable/useTable';
 import { useBusinessStore } from '@/store';
-import { useFlowNode } from './useFlowNode';
+import { useFlowNode, NodeState, type Flow } from './useFlowNode';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 const { Option } = Select;
 const { TabPanel } = Tab;
@@ -17,15 +17,15 @@ export default defineComponent({
     const { isResourcePage } = useWhereAmI();
     const businessStore = useBusinessStore();
     const tasks = ref([]);
-    const flow = ref({});
-    const isEnd = ref(false);
+    const flow = ref<Flow>({});
+    const isEndDisabled = computed(() => flow.value.state !== NodeState.running);
     const { nodes, flowInfo } = useFlowNode({
       flow,
       tasks,
     });
     const activeTab = ref('result');
     const actionId = ref('1');
-    const isRetryLoading = ref(false);
+    const isEndLoading = ref(false);
     const { CommonTable } = useTable({
       searchOptions: {
         searchData: [
@@ -114,21 +114,8 @@ export default defineComponent({
       },
     );
 
-    const handleRetryTask = async () => {
-      isRetryLoading.value = true;
-      try {
-        await businessStore.excuteTask({
-          lb_id: route.query.res_id as string,
-          flow_id: flow.value.id,
-        });
-        getFlow(route.query.record_id as string, route.query.flow as string);
-      } finally {
-        isRetryLoading.value = false;
-      }
-    };
-
     const handleEndTask = async () => {
-      isRetryLoading.value = true;
+      isEndLoading.value = true;
       try {
         await businessStore.endTask({
           lb_id: route.query.res_id as string,
@@ -136,7 +123,7 @@ export default defineComponent({
         });
         getFlow(route.query.record_id as string, route.query.flow as string);
       } finally {
-        isRetryLoading.value = false;
+        isEndLoading.value = false;
       }
     };
 
@@ -163,15 +150,11 @@ export default defineComponent({
             个批次，可在每个批次查看具体状态
           </span>
           <Button
-            loading={isRetryLoading.value}
+            disabled={isEndDisabled.value}
+            loading={isEndLoading.value}
             class={'info-card-btn'}
-            onClick={() => {
-              isEnd.value = !isEnd.value;
-              if (!isEnd.value) handleRetryTask();
-              else handleEndTask();
-            }}
-            theme={isEnd.value ? 'primary' : null}>
-            {isEnd.value ? '重新执行' : '终止任务'}
+            onClick={handleEndTask}>
+            终止任务
           </Button>
         </div>
         <div
