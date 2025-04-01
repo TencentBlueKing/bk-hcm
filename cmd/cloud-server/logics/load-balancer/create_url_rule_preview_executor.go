@@ -124,6 +124,9 @@ func (c *CreateUrlRulePreviewExecutor) convertDataToPreview(rawData [][]string) 
 }
 
 func (c *CreateUrlRulePreviewExecutor) validate(kt *kit.Kit) error {
+	if len(c.details) == 0 {
+		return fmt.Errorf("there are no details to be executed")
+	}
 	recordMap := make(map[string]int)
 	clbIDMap := make(map[string]struct{})
 	for cur, detail := range c.details {

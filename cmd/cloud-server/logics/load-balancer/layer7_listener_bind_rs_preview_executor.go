@@ -111,6 +111,9 @@ func (l *Layer7ListenerBindRSPreviewExecutor) convertDataToPreview(rawData [][]s
 }
 
 func (l *Layer7ListenerBindRSPreviewExecutor) validate(kt *kit.Kit) error {
+	if len(l.details) == 0 {
+		return fmt.Errorf("there are no details to be executed")
+	}
 	recordMap := make(map[string]int)
 	clbIDMap := make(map[string]struct{})
 	for cur, detail := range l.details {
