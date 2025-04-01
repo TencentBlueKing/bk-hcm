@@ -1,4 +1,4 @@
-import { defineComponent, PropType, reactive, ref, watch } from 'vue';
+import { defineComponent, onBeforeUnmount, PropType, reactive, ref, watch } from 'vue';
 import { Divider, Select } from 'bkui-vue';
 import { Plus, RightTurnLine, Spinner } from 'bkui-vue/lib/icon';
 import http from '@/http';
@@ -6,6 +6,7 @@ import {
   BANDWIDTH_PACKAGE_CHARGE_TYPE_MAP,
   BANDWIDTH_PACKAGE_NETWORK_TYPE_MAP,
   BANDWIDTH_PACKAGE_STATUS,
+  LOADBALANCER_BANDWIDTH_PACKAGE_NETWORK_TYPES_MAP,
 } from '@/constants';
 import { IQueryResData } from '@/typings';
 import { ResourceTypeEnum } from '@/common/resource-constant';
@@ -13,7 +14,7 @@ import { useWhereAmI } from '@/hooks/useWhereAmI';
 
 const { Option } = Select;
 
-interface IBandwidthPackage {
+export interface IBandwidthPackage {
   id: string;
   name: string;
   network_type: string;
@@ -37,15 +38,17 @@ interface IBandwidthPackage {
 export default defineComponent({
   name: 'BandwidthPackageSelector',
   props: {
+    modelValue: String,
     accountId: String,
     region: String,
     // 带宽包的运营商（network_type字段）要和clb的运营商一致，其中如果是SINGLEISP，代表 电信/联通/移动都可以（先确定clb的运营商、过滤带宽包）
-    networkTypes: Object as PropType<string[]>,
+    vipIsp: String,
     // 带宽包是同region下的zone可用，上海的南昌一区特殊处理，通过带宽包的egress字段，只能选择值前缀为edge的带宽包；反过来说，上海的可用区也不能选择这个特殊的带宽包。
     zones: String,
     resourceType: Object as PropType<ResourceTypeEnum>,
   },
-  setup(props) {
+  emits: ['update:modelValue', 'change'],
+  setup(props, { emit }) {
     const getDefaultPage = () => ({ offset: 0, limit: 50 });
     const { getBusinessApiPath } = useWhereAmI();
 
@@ -54,10 +57,12 @@ export default defineComponent({
     const page = reactive(getDefaultPage());
     const isDataLoad = ref(false);
     const isDataRefresh = ref(false);
+    let networkTypes: string[];
 
     const getBandwidthPackageList = async () => {
-      const { accountId, region, networkTypes } = props;
+      const { accountId, region, vipIsp } = props;
       if (!accountId || !region) return;
+      vipIsp && (networkTypes = LOADBALANCER_BANDWIDTH_PACKAGE_NETWORK_TYPES_MAP[vipIsp]);
 
       isDataLoad.value = true;
       try {
@@ -112,19 +117,41 @@ export default defineComponent({
     };
 
     watch(
-      [() => props.accountId, () => props.region, () => props.networkTypes],
+      [() => props.accountId, () => props.region, () => props.vipIsp],
       () => {
+        emit('update:modelValue', undefined);
         getBandwidthPackageList();
       },
       { immediate: true },
     );
 
+    watch(
+      () => props.modelValue,
+      (val) => {
+        // 如果运营商类型是BGP，暂不传递带宽包的egress字段
+        if (props.vipIsp === 'BGP') {
+          emit('change', {});
+        } else {
+          const bandwidthPackage = bandwidthPackageList.value.find((item) => item.id === val) || {};
+          emit('change', bandwidthPackage);
+        }
+      },
+    );
+
+    onBeforeUnmount(() => {
+      // 组件卸载之前，将组件相关状态清空
+      emit('update:modelValue', undefined);
+      emit('change', {});
+    });
+
     return () => (
       <Select
+        modelValue={props.modelValue}
         class='bandwidth-package-selector w500'
         onScroll-end={handleScrollEnd}
         loading={isDataLoad.value}
-        scrollLoading={isDataLoad.value}>
+        scrollLoading={isDataLoad.value}
+        onUpdate:modelValue={(val) => emit('update:modelValue', val)}>
         {{
           default: () =>
             bandwidthPackageList.value.map(({ id, name, charge_type, network_type, status, egress }) => (

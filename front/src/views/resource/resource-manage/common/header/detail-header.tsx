@@ -1,8 +1,8 @@
-import { defineComponent } from 'vue';
+import { defineComponent, PropType } from 'vue';
 
 import { ArrowsLeft } from 'bkui-vue/lib/icon';
 
-import { useRoute, useRouter } from 'vue-router';
+import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
 
 import './detail-header.scss';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
@@ -10,7 +10,7 @@ import { useCalcTopWithNotice } from '@/views/home/hooks/useCalcTopWithNotice';
 
 export default defineComponent({
   components: { ArrowsLeft },
-  props: { backRouteName: String },
+  props: { backRouteName: String, to: Object as PropType<RouteLocationRaw> },
   setup(props) {
     const router = useRouter();
     const route = useRoute();
@@ -19,8 +19,13 @@ export default defineComponent({
     const [calcTop] = useCalcTopWithNotice(52);
 
     const goBack = () => {
-      if (props.backRouteName) {
-        router.replace({ name: props.backRouteName, query: { ...route.query } });
+      const { backRouteName, to } = props;
+      if (backRouteName) {
+        router.replace({ name: backRouteName, query: { ...route.query } });
+        return;
+      }
+      if (to) {
+        router.replace(to);
         return;
       }
       if (window.history.state.back) {

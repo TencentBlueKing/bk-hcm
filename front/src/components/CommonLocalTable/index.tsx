@@ -45,13 +45,18 @@ export default defineComponent({
     // 表格数据
     tableData: Array<any>,
   },
-  setup(props, { slots }) {
+  setup(props, { slots, expose }) {
     // 搜索相关
     const searchValue = ref();
     // 表格相关
+    const tableRef = ref();
     const tableData = ref(props.tableData);
     const pagination = reactive({ limit: 10, count: props.tableData.length });
     const hasTopBar = computed(() => props.hasOperation && props.hasSearch);
+
+    const clearSelection = () => {
+      tableRef.value?.clearSelection();
+    };
 
     // 监听 searchValue 的变化，根据过滤条件过滤得到 实际用于渲染的数据
     const renderTableData = computed(() => {
@@ -83,6 +88,8 @@ export default defineComponent({
       { deep: true },
     );
 
+    expose({ clearSelection });
+
     return () => (
       <div class={['local-table-container', hasTopBar.value && 'has-top-bar']}>
         {/* top-bar */}
@@ -103,6 +110,7 @@ export default defineComponent({
         {/* 表格 */}
         <Loading class='loading-container' loading={props.loading}>
           <Table
+            ref={tableRef}
             class='table-container'
             row-key={props.tableOptions.rowKey}
             data={renderTableData.value}

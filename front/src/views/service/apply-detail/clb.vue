@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { RouteLocationRaw } from 'vue-router';
 import { ModelProperty } from '@/model/typings';
 import { APPLICATION_TYPE_MAP } from '../apply-list/constants';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
@@ -33,11 +34,17 @@ const clbDetail = computed(() => {
   try {
     const detail = JSON.parse(props.applicationDetail?.content);
     const { zones, backup_zones } = detail;
-    Object.assign(detail, {
-      zone: backup_zones.length > 0 ? `主备可用区 主(${zones[0]})备(${backup_zones[0]})` : zones.join(','),
-    });
+    if (backup_zones) {
+      Object.assign(detail, {
+        zone: backup_zones.length > 0 ? `主备可用区 主(${zones[0]})备(${backup_zones[0]})` : zones.join(','),
+      });
+    } else {
+      Object.assign(detail, { zone: zones.join(',') });
+    }
+
     return detail;
   } catch (error) {
+    console.error(error);
     return {};
   }
 });
@@ -71,12 +78,17 @@ const paramInfoFields: ModelProperty[] = [
   { id: 'require_count', name: '需求数量', type: 'number' },
   { id: 'name', name: '实例名称', type: 'string' },
 ];
+
+const navigateTo: RouteLocationRaw = {
+  path: '/service/my-apply',
+  query: { type: 'load_balancer' },
+};
 </script>
 
 <template>
   <bk-loading v-if="loading" loading style="width: 100%; height: 100%"><div></div></bk-loading>
   <div v-else>
-    <detail-header><span>负载均衡申请单详情</span></detail-header>
+    <detail-header :to="navigateTo"><span>负载均衡申请单详情</span></detail-header>
     <div class="container">
       <status :application-detail="applicationDetail" />
       <panel title="基本信息">

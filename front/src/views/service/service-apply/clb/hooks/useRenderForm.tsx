@@ -1,4 +1,4 @@
-import { computed, defineComponent, ref, watch } from 'vue';
+import { computed, defineComponent, ref, watch, nextTick, Reactive } from 'vue';
 // import components
 import { Button, Form, Input, Select, Slider } from 'bkui-vue';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
@@ -12,19 +12,13 @@ import ConditionOptions from '../../components/common/condition-options/index.vu
 import CommonCard from '@/components/CommonCard';
 import VpcReviewPopover from '../../components/common/VpcReviewPopover';
 import SelectedItemPreviewComp from '@/components/SelectedItemPreviewComp';
-import BandwidthPackageSelector from '../../components/common/BandwidthPackageSelector';
+import BandwidthPackageSelector, { IBandwidthPackage } from '../../components/common/BandwidthPackageSelector';
 // import types
 import { type ISubnetItem } from '../../cvm/children/SubnetPreviewDialog';
 import type { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
 // import constants
 import { CLB_SPECS, LB_ISP, ResourceTypeEnum } from '@/common/constant';
-import {
-  LOAD_BALANCER_TYPE,
-  ADDRESS_IP_VERSION,
-  ZONE_TYPE,
-  INTERNET_CHARGE_TYPE,
-  LOADBALANCER_BANDWIDTH_PACKAGE_NETWORK_TYPES_MAP,
-} from '@/constants/clb';
+import { LOAD_BALANCER_TYPE, ADDRESS_IP_VERSION, ZONE_TYPE, INTERNET_CHARGE_TYPE } from '@/constants/clb';
 // import utils
 import bus from '@/common/bus';
 import { useI18n } from 'vue-i18n';
@@ -39,7 +33,7 @@ const { Option } = Select;
 const { FormItem } = Form;
 
 // apply-clb, 渲染表单
-export default (formModel: ApplyClbModel) => {
+export default (formModel: Reactive<ApplyClbModel>) => {
   // use hooks
   const { t } = useI18n();
   const { isBusinessPage } = useWhereAmI();
@@ -66,6 +60,7 @@ export default (formModel: ApplyClbModel) => {
         formModel.cloud_subnet_id = undefined;
       }
     } else {
+      vpcId.value = '';
       vpcData.value = null;
     }
 
@@ -74,10 +69,6 @@ export default (formModel: ApplyClbModel) => {
   const handleSubnetDataChange = (data: ISubnetItem) => {
     subnetData.value = data;
   };
-
-  // use custom hooks
-  const { ispList, isResourceListLoading, quotas, isInquiryPrices, isInquiryPricesLoading, currentResourceListMap } =
-    useFilterResource(formModel);
 
   // 当前地域下负载均衡的配额
   const currentLbQuota = computed(() => {
@@ -256,7 +247,7 @@ export default (formModel: ApplyClbModel) => {
           label: '子网',
           required: true,
           property: 'cloud_subnet_id',
-          hidden: !isIntranet.value,
+          hidden: !isIntranet.value && formModel.address_ip_version !== 'IPv6FullChain',
           content: () => (
             <div class='component-with-preview'>
               <SubnetSelector
@@ -269,6 +260,7 @@ export default (formModel: ApplyClbModel) => {
                 accountId={formModel.account_id}
                 zone={formModel.zones}
                 clearable={false}
+                resourceType={ResourceTypeEnum.CLB}
                 handleChange={handleSubnetDataChange}
               />
               <Button
@@ -453,7 +445,8 @@ export default (formModel: ApplyClbModel) => {
               accountId={formModel.account_id}
               region={formModel.region}
               zones={formModel.zones as string}
-              networkTypes={LOADBALANCER_BANDWIDTH_PACKAGE_NETWORK_TYPES_MAP[formModel.vip_isp]}
+              vipIsp={formModel.vip_isp}
+              onChange={(bandwidthPackage: IBandwidthPackage) => (formModel.egress = bandwidthPackage.egress)}
             />
           ),
         },
@@ -536,7 +529,7 @@ export default (formModel: ApplyClbModel) => {
           required: true,
           property: 'name',
           description: '单个实例：以填写的名称命名。\n多个实例：以填写的名称为前缀，由系统自动补充随机的后缀。',
-          content: () => <Input class='w500' v-model={formModel.name} placeholder='请输入实例名称'></Input>,
+          content: () => <Input class='w500' v-model_trim={formModel.name} placeholder='请输入实例名称'></Input>,
         },
         {
           label: '申请单备注',
@@ -616,6 +609,33 @@ export default (formModel: ApplyClbModel) => {
     },
   });
 
+  // 重置参数
+  const resetParams = (
+    keys: string[] = ['zones', 'backup_zones', 'cloud_vpc_id', 'cloud_subnet_id', 'vip_isp', 'cloud_eip_id'],
+  ) => {
+    keys.forEach((key) => {
+      switch (typeof formModel[key]) {
+        case 'number':
+          formModel[key] = 0;
+          break;
+        case 'string':
+          formModel[key] = '';
+          break;
+        case 'object':
+          if (Array.isArray(formModel[key])) {
+            formModel[key] = [];
+          }
+          break;
+      }
+    });
+  };
+  // 清除校验结果
+  const handleClearValidate = () => {
+    nextTick(() => {
+      formRef.value.clearValidate();
+    });
+  };
+
   watch(
     () => formModel.account_id,
     (val) => {
@@ -625,6 +645,59 @@ export default (formModel: ApplyClbModel) => {
       });
     },
   );
+
+  watch([() => formModel.account_id, () => formModel.region], () => {
+    // 当 account_id 或 region 改变时, 恢复默认状态
+    resetParams();
+    Object.assign(formModel, {
+      load_balancer_type: 'OPEN',
+      address_ip_version: 'IPV4',
+      zoneType: '0',
+      sla_type: 'shared',
+      internet_charge_type: 'TRAFFIC_POSTPAID_BY_HOUR',
+    });
+    handleClearValidate();
+  });
+
+  watch(
+    () => formModel.load_balancer_type,
+    (val) => {
+      // 重置通用参数
+      resetParams();
+      if (val === 'INTERNAL') {
+        resetParams(['address_ip_version', 'sla_type', 'internet_charge_type', 'internet_max_bandwidth_out']);
+      } else {
+        // 如果是公网, 则重置初始状态
+        Object.assign(formModel, {
+          address_ip_version: 'IPV4',
+          zoneType: '0',
+          sla_type: 'shared',
+          internet_charge_type: 'TRAFFIC_POSTPAID_BY_HOUR',
+        });
+      }
+      handleClearValidate();
+    },
+  );
+
+  watch(
+    () => formModel.address_ip_version,
+    () => {
+      resetParams(['zones', 'backup_zones', 'vip_isp']);
+      handleClearValidate();
+    },
+  );
+
+  watch(
+    () => formModel.zoneType,
+    () => {
+      resetParams(['zones', 'backup_zones']);
+      handleClearValidate();
+    },
+  );
+
+  // 这个需要放到watch之后，避免数据清空之前就触发了effect
+  const { ispList, isResourceListLoading, quotas, isInquiryPrices, isInquiryPricesLoading, currentResourceListMap } =
+    useFilterResource(formModel);
 
   return {
     vpcData,

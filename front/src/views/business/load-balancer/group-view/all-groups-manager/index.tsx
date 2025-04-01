@@ -29,7 +29,8 @@ export default defineComponent({
     const { t } = useI18n();
     const { authVerifyData, handleAuth } = useVerify();
     const globalPermissionDialogStore = useGlobalPermissionDialog();
-    const createActionName: ComputedRef<'clb_resource_create' | 'biz_clb_resource_create'> = inject('createActionName');
+    const createClbActionName: ComputedRef<'clb_resource_create' | 'biz_clb_resource_create'> =
+      inject('createClbActionName');
     // use stores
     const loadBalancerStore = useLoadBalancerStore();
     const businessStore = useBusinessStore();
@@ -126,14 +127,14 @@ export default defineComponent({
                 <Button
                   theme='primary'
                   onClick={() => {
-                    if (!authVerifyData?.value?.permissionAction?.[createActionName.value]) {
-                      handleAuth(createActionName.value);
+                    if (!authVerifyData?.value?.permissionAction?.[createClbActionName.value]) {
+                      handleAuth(createClbActionName.value);
                       globalPermissionDialogStore.setShow(true);
                     } else bus.$emit('addTargetGroup');
                   }}
                   class={[
                     'mr8',
-                    { 'hcm-no-permision-btn': !authVerifyData?.value?.permissionAction?.[createActionName.value] },
+                    { 'hcm-no-permision-btn': !authVerifyData?.value?.permissionAction?.[createClbActionName.value] },
                   ]}>
                   <Plus class='f20' />
                   {t('新建')}

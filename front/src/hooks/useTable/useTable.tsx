@@ -3,7 +3,7 @@ import { QueryRuleOPEnum, RulesItem } from '@/typings/common';
 import { Loading, SearchSelect, Table } from 'bkui-vue';
 import type { Column } from 'bkui-vue/lib/table/props';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
-import { computed, defineComponent, reactive, ref, watch } from 'vue';
+import { computed, defineComponent, reactive, Ref, ref, watch } from 'vue';
 import cssModule from './index.module.scss';
 import Empty from '@/components/empty';
 import { useResourceStore, useBusinessStore } from '@/store';
@@ -69,6 +69,7 @@ export interface IProp {
     resolveDataListCb?: (...args: any) => Promise<any>;
     // 钩子 - 可以根据当前请求结果异步更新 pagination.count
     resolvePaginationCountCb?: (...args: any) => Promise<any>;
+    asyncRequestApiMethod?: (datalist: any[], datalistRef: Ref<any[]>) => void;
     // 列表数据的路径，如 data.details
     dataPath?: string;
     // 是否为全量数据
@@ -154,6 +155,10 @@ export const useTable = (props: IProp) => {
         });
       }
 
+      if (typeof props.requestOption.asyncRequestApiMethod === 'function') {
+        props.requestOption.asyncRequestApiMethod(dataList.value, dataList);
+      }
+
       // 处理 pagination.count
       if (typeof props.requestOption.resolvePaginationCountCb === 'function') {
         props.requestOption.resolvePaginationCountCb(countRes?.data).then((newCount: number) => {
@@ -194,8 +199,11 @@ export const useTable = (props: IProp) => {
       };
 
       const tableRef = ref();
+      const clearSelection = () => {
+        tableRef.value?.clearSelection();
+      };
 
-      expose({ tableRef });
+      expose({ tableRef, clearSelection });
 
       return () => (
         <div

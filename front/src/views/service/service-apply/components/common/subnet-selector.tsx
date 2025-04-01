@@ -8,6 +8,7 @@ import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { ISubnetItem } from '../../cvm/children/SubnetPreviewDialog';
 import RightTurnLine from 'bkui-vue/lib/icon/right-turn-line';
 import { FilterType } from '@/typings';
+import { ResourceTypeEnum } from '@/common/resource-constant';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -28,6 +29,7 @@ export default defineComponent({
       type: Boolean,
       default: true,
     },
+    resourceType: String as PropType<ResourceTypeEnum>,
   },
   emits: ['update:modelValue'],
   setup(props, { emit, attrs, expose }) {
@@ -86,7 +88,8 @@ export default defineComponent({
         if (Array.isArray(zone)) {
           zone.length > 0 && filter.rules.push({ field: 'zone', op: QueryRuleOPEnum.IN, value: zone });
         } else {
-          filter.rules.push({ field: 'zone', op: QueryRuleOPEnum.EQ, value: zone });
+          // CLB可能zone字段为空，但CVM一定不为空
+          zone && filter.rules.push({ field: 'zone', op: QueryRuleOPEnum.EQ, value: zone });
         }
       }
 
@@ -126,10 +129,13 @@ export default defineComponent({
         () => props.zone,
         () => props.resourceGroup,
       ],
-      async ([bizId, region, vendor, vpcId, accountId, zone]) => {
-        // 资源下无需bizId
-        if (region && vendor && vpcId && accountId && zone) {
-          await getSubnetsData(bizId, region, vendor, vpcId, accountId, zone);
+      ([bizId, region, vendor, vpcId, accountId, zone]) => {
+        if (props.resourceType === ResourceTypeEnum.CLB && region && vendor && vpcId && accountId) {
+          getSubnetsData(bizId, region, vendor, vpcId, accountId, zone);
+        } else {
+          if (region && vendor && vpcId && accountId && zone) {
+            getSubnetsData(bizId, region, vendor, vpcId, accountId, zone);
+          }
         }
       },
       {

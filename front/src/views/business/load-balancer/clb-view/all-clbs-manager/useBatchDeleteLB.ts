@@ -5,12 +5,7 @@ import { useResourceStore } from '@/store';
 import { Message } from 'bkui-vue';
 import bus from '@/common/bus';
 
-export default (
-  columns: Array<Column>,
-  selections: Ref<any[]>,
-  resetSelections: (...args: any) => any,
-  getListData: (...args: any) => any,
-) => {
+export default (columns: Array<Column>, selections: Ref<any[]>, getListData: (...args: any) => any) => {
   const resourceStore = useResourceStore();
   const isBatchDeleteDialogShow = ref(false);
   const isSubmitLoading = ref(false);
@@ -64,7 +59,6 @@ export default (
       });
       Message({ theme: 'success', message: '批量删除成功' });
       isBatchDeleteDialogShow.value = false;
-      resetSelections();
       getListData();
       // 重新拉取lb-tree数据
       bus.$emit('resetLbTree');

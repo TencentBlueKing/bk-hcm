@@ -312,7 +312,7 @@ export default defineComponent({
     return () => (
       <CommonSideslider
         title={isEdit.value ? '编辑目标组' : '新建目标组'}
-        width={960}
+        width={'60vw'}
         v-model:isShow={isShow.value}
         isSubmitLoading={isSubmitLoading.value}
         isSubmitDisabled={isSubmitDisabled.value}

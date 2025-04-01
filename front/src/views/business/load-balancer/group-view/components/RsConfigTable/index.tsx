@@ -135,6 +135,8 @@ export default defineComponent({
         },
         field: 'port',
         isDefaultShow: true,
+        minWidth: 120,
+        fixed: 'right',
         render: ({ cell, data, index }: { cell: number; data: any; index: number }) => {
           const port = loadBalancerStore.listenerDetailWithTargetGroup?.end_port
             ? `${cell}-${
@@ -182,6 +184,8 @@ export default defineComponent({
         },
         field: 'weight',
         isDefaultShow: true,
+        minWidth: 120,
+        fixed: 'right',
         render: ({ cell, data, index }: { cell: number; data: any; index: number }) => {
           if (props.onlyShow) return cell;
           return (
@@ -207,6 +211,7 @@ export default defineComponent({
       rsTableColumns.push({
         label: '',
         width: 80,
+        fixed: 'right',
         render: ({ data }: any) => (
           <Button text onClick={() => handleDeleteRs(data)}>
             <i class='hcm-icon bkhcm-icon-minus-circle-shape'></i>

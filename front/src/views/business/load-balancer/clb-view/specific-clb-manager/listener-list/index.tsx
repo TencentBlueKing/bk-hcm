@@ -1,4 +1,4 @@
-import { defineComponent, watch, onUnmounted } from 'vue';
+import { defineComponent, watch, onUnmounted, useTemplateRef } from 'vue';
 // import components
 import { Button, Message } from 'bkui-vue';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
@@ -50,7 +50,7 @@ export default defineComponent({
 
     // listener - table
     const { columns, settings } = useColumns('listener');
-    const { CommonTable, getListData, clearFilter } = useTable({
+    const { CommonTable, getListData, clearFilter, dataList } = useTable({
       searchOptions: {
         searchData: [
           { name: '监听器名称', id: 'name' },
@@ -93,7 +93,15 @@ export default defineComponent({
                 <Button text theme='primary' onClick={() => bus.$emit('showEditListenerSideslider', data.id)}>
                   {t('编辑')}
                 </Button>
-                <Button text theme='primary' onClick={() => handleDeleteListener(data)}>
+                <Button
+                  text
+                  theme='primary'
+                  disabled={data.rs_weight_non_zero_num !== 0}
+                  v-bk-tooltips={{
+                    content: t('监听器RS的权重不为0，不可删除'),
+                    disabled: data.rs_weight_non_zero_num === 0,
+                  }}
+                  onClick={() => handleDeleteListener(data)}>
                   {t('删除')}
                 </Button>
               </div>
@@ -155,8 +163,6 @@ export default defineComponent({
     watch(
       () => props.id,
       () => {
-        // 清空选中项
-        resetSelections();
         clearFilter();
         reloadTableData();
       },
@@ -164,11 +170,10 @@ export default defineComponent({
 
     // 删除监听器
     const handleDeleteListener = (data: any) => {
-      Confirm('请确定删除监听器', `将删除监听器【${data.name}】`, () => {
-        businessStore.deleteBatch('listeners', { ids: [data.id] }).then(() => {
-          Message({ theme: 'success', message: '删除成功' });
-          reloadTableData();
-        });
+      Confirm('请确定删除监听器', `将删除监听器【${data.name}】`, async () => {
+        await businessStore.deleteBatch('listeners', { ids: [data.id] });
+        Message({ theme: 'success', message: '删除成功' });
+        reloadTableData();
       });
     };
     // 拉取负载均衡
@@ -199,11 +204,24 @@ export default defineComponent({
       handleBatchDeleteListener,
       handleBatchDeleteSubmit,
       computedListenersList,
-    } = useBatchDeleteListener(columns, selections, resetSelections, reloadTableData);
+    } = useBatchDeleteListener(columns, selections, reloadTableData);
+
+    const tableRef = useTemplateRef<typeof CommonTable>('table-comp');
+    const clearSelection = () => {
+      resetSelections();
+      tableRef.value?.clearSelection();
+    };
+    watch(
+      () => dataList.value,
+      () => {
+        clearSelection();
+      },
+    );
+
     return () => (
       <div class='listener-list-page'>
         {/* 监听器list */}
-        <CommonTable>
+        <CommonTable ref='table-comp'>
           {{
             operation: () => (
               <>
