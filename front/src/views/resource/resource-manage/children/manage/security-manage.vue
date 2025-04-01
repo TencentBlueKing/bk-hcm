@@ -52,7 +52,7 @@ import { ISecurityGroupOperateItem, useSecurityGroupStore, SecurityGroupManageTy
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import { useBusinessGlobalStore } from '@/store/business-global';
 import UsageBizValue from '@/views/resource/resource-manage/children/components/security/usage-biz-value.vue';
-import { showClone } from './plugin/show-clone.plugin';
+import { showClone } from '../plugin/security-group/show-clone.plugin';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
