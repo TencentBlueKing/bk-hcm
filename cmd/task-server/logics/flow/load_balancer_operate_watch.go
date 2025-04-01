@@ -28,9 +28,9 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/async/action"
 	"hcm/pkg/async/action/run"
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/criteria/validator"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
@@ -66,7 +66,7 @@ type LoadBalancerOperateWatchOption struct {
 
 // Validate LoadBalancerOperateWatchOption.
 func (opt LoadBalancerOperateWatchOption) Validate() error {
-	return opt.Validate()
+	return validator.Validate.Struct(opt)
 }
 
 // ParameterNew return request params.
@@ -86,7 +86,7 @@ func (act LoadBalancerOperateWatchAction) Run(kt run.ExecuteKit, params interfac
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")
 	}
 
-	end := time.Now().Add(5 * time.Minute)
+	end := time.Now().Add(OperateWatchTimeout)
 	for {
 		if time.Now().After(end) {
 			return nil, fmt.Errorf("wait timeout, async task flow: %s is running", opt.FlowID)
@@ -126,28 +126,7 @@ func (act LoadBalancerOperateWatchAction) processResFlow(kt run.ExecuteKit, opt 
 	flowInfo tableasync.AsyncFlowTable) (bool, error) {
 
 	switch flowInfo.State {
-	case enumor.FlowSuccess, enumor.FlowCancel:
-		var resStatus enumor.ResFlowStatus
-		if flowInfo.State == enumor.FlowSuccess {
-			resStatus = enumor.SuccessResFlowStatus
-		}
-		if flowInfo.State == enumor.FlowCancel {
-			resStatus = enumor.CancelResFlowStatus
-		}
-
-		if err := act.updateTargetGroupListenerRuleRelBindStatus(kt.Kit(), opt, flowInfo.State); err != nil {
-			return false, err
-		}
-
-		// 解锁资源
-		unlockReq := &dataproto.ResFlowLockReq{
-			ResID:   opt.ResID,
-			ResType: opt.ResType,
-			FlowID:  opt.FlowID,
-			Status:  resStatus,
-		}
-		return true, actcli.GetDataService().Global.LoadBalancer.ResFlowUnLock(kt.Kit(), unlockReq)
-	case enumor.FlowFailed:
+	case enumor.FlowSuccess, enumor.FlowCancel, enumor.FlowFailed:
 		// 当Flow失败时，检查资源锁定是否超时
 		resFlowLockList, err := act.queryResFlowLock(kt, opt)
 		if err != nil {
@@ -157,27 +136,21 @@ func (act LoadBalancerOperateWatchAction) processResFlow(kt run.ExecuteKit, opt 
 			return true, nil
 		}
 
-		// 更新目标组与监听器的绑定状态
-		if err = act.updateTargetGroupListenerRuleRelBindStatus(kt.Kit(), opt, flowInfo.State); err != nil {
+		var resStatus enumor.ResFlowStatus
+		if flowInfo.State == enumor.FlowSuccess {
+			resStatus = enumor.SuccessResFlowStatus
+		}
+		if flowInfo.State == enumor.FlowCancel || flowInfo.State == enumor.FlowFailed {
+			resStatus = enumor.CancelResFlowStatus
+		}
+
+		if err := act.updateTargetGroupListenerRuleRelBindStatus(kt.Kit(), opt, flowInfo.State); err != nil {
 			return false, err
 		}
 
-		createTime, err := time.Parse(constant.TimeStdFormat, string(resFlowLockList[0].CreatedAt))
-		if err != nil {
-			return false, err
-		}
-
-		nowTime := time.Now()
-		if nowTime.Sub(createTime).Hours() > constant.ResFlowLockExpireDays*24 {
-			timeoutReq := &dataproto.ResFlowLockReq{
-				ResID:   opt.ResID,
-				ResType: opt.ResType,
-				FlowID:  opt.FlowID,
-				Status:  enumor.TimeoutResFlowStatus,
-			}
-			return true, actcli.GetDataService().Global.LoadBalancer.ResFlowUnLock(kt.Kit(), timeoutReq)
-		}
-		return false, nil
+		// 解锁资源
+		err = act.processUnlockResFlow(kt, opt, resStatus)
+		return true, err
 	case enumor.FlowInit:
 		// 需要检查资源是否已锁定
 		resFlowLockList, err := act.queryResFlowLock(kt, opt)
@@ -198,6 +171,17 @@ func (act LoadBalancerOperateWatchAction) processResFlow(kt run.ExecuteKit, opt 
 	default:
 		return false, nil
 	}
+}
+func (act LoadBalancerOperateWatchAction) processUnlockResFlow(kt run.ExecuteKit, opt *LoadBalancerOperateWatchOption,
+	status enumor.ResFlowStatus) error {
+
+	unlockReq := &dataproto.ResFlowLockReq{
+		ResID:   opt.ResID,
+		ResType: opt.ResType,
+		FlowID:  opt.FlowID,
+		Status:  status,
+	}
+	return actcli.GetDataService().Global.LoadBalancer.ResFlowUnLock(kt.Kit(), unlockReq)
 }
 
 func (act LoadBalancerOperateWatchAction) queryResFlowLock(kt run.ExecuteKit, opt *LoadBalancerOperateWatchOption) (
