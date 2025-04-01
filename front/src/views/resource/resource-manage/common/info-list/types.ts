@@ -5,6 +5,7 @@ type StringCell = string | ((cell: string) => string); // 字符串或者返回�
 type BaseField = {
   name: string;
   value?: any;
+  trim?: boolean;
   cls?: StringCell;
   link?: StringCell;
   copy?: boolean;

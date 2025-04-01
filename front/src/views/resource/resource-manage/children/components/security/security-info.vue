@@ -206,6 +206,7 @@ const settingInfo = computed(() => {
       edit: !isResourcePage.value
         ? hasEditScopeInBusiness.value && !['azure', 'aws'].includes(props.vendor)
         : !['azure', 'aws'].includes(props.vendor) && !isAssigned.value,
+      trim: true,
     },
     { name: t('云资源ID'), prop: 'cloud_id' },
     { name: t('云厂商'), prop: 'vendorName' },

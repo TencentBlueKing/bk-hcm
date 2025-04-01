@@ -88,6 +88,7 @@ export default defineComponent({
         needValidate={false}
         fromKey={field.prop}
         hideEdit={true}
+        trim={field.trim}
         onChange={this.handleBlur}></RenderDetailEdit>
     );
 
