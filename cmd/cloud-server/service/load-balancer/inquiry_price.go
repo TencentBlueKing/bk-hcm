@@ -66,7 +66,7 @@ func (svc *lbSvc) InquiryPriceBizLoadBalancer(cts *rest.Contexts) (any, error) {
 	authRes := meta.ResourceAttribute{Basic: &meta.Basic{
 		Type: meta.LoadBalancer, Action: meta.Apply, ResourceID: req.AccountID}, BizID: bizID}
 	if err := svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
-		logs.Errorf("inquiry price load balancer auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("inquiry price biz load balancer auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 	return svc.inquiryPriceLoadBalancer(cts.Kit, req)
