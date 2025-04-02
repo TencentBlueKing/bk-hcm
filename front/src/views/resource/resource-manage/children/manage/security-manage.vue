@@ -497,6 +497,12 @@ const groupColumns = [
             disabled: isResourcePage || !isPlatformManage,
           };
         }
+        if (!isResourcePage && !isAssigned) {
+          return {
+            content: t('该安全组当前处于未分配状态，不允许在业务下进行管理配置安全组规则等操作'),
+            disabled: isResourcePage || isAssigned,
+          };
+        }
         if (!isResourcePage && !isCurrentBizManage) {
           return { content: t('该安全组不在当前业务管理，不允许操作'), disabled: isResourcePage || isCurrentBizManage };
         }
