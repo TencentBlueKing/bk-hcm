@@ -45,7 +45,7 @@ export default defineComponent({
     },
     trim: {
       type: Boolean,
-      default: false,
+      default: true,
     },
   },
   emits: ['update:modelValue', 'change', 'input', 'blur'],
