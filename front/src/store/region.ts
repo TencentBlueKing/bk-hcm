@@ -55,10 +55,10 @@ export const useRegionStore = defineStore('region', () => {
           [ResourceTypeEnum.DISK]: 'ecs',
           [ResourceTypeEnum.SUBNET]: 'vpc',
         };
-        filter.rules = [
-          { field: 'type', op: QueryRuleOPEnum.EQ, value: 'public' },
-          { field: 'service', op: QueryRuleOPEnum.EQ, value: services[resourceType] },
-        ];
+        filter.rules = [{ field: 'type', op: QueryRuleOPEnum.EQ, value: 'public' }];
+        // TODO：临时解决CLB资源-华为云拉取region的问题
+        services[resourceType] &&
+          filter.rules.push({ field: 'service', op: QueryRuleOPEnum.EQ, value: services[resourceType] });
         dataNameKey = isChinese ? 'locales_zh_cn' : 'region_id';
         break;
       }

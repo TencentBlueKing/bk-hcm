@@ -26,6 +26,7 @@ import { tcloudSourceAddressTypes, TcloudSourceTypeArr } from './add-rule/vendor
 import { huaweiSourceAddressTypes } from './add-rule/vendors/huawei';
 import RuleSort from './security-rule-sort.vue';
 import { showSort } from './show-sort.plugin';
+import { IOverflowTooltipOption } from 'bkui-vue/lib/table/props';
 
 const props = defineProps({
   id: {
@@ -51,7 +52,8 @@ const resourceStore = useResourceStore();
 const route = useRoute();
 
 const hasEditScopeInBusiness = inject<ComputedRef<boolean>>('hasEditScopeInBusiness');
-const isAssigned = inject<ComputedRef<boolean>>('isAssigned');
+const hasEditScopeInResource = inject<ComputedRef<boolean>>('hasEditScopeInResource');
+const operateTooltipsOption = inject<ComputedRef<IOverflowTooltipOption>>('operateTooltipsOption');
 
 const activeType = ref('ingress');
 const deleteDialogShow = ref(false);
@@ -323,7 +325,10 @@ const inColumns: any = computed(() =>
                 text: true,
                 theme: 'primary',
                 class: { 'hcm-no-permision-text-btn': !authVerifyData.value?.permissionAction?.[actionName.value] },
-                disabled: route.query.vendor === 'huawei' || (!isResourcePage.value && !hasEditScopeInBusiness.value),
+                disabled:
+                  route.query.vendor === 'huawei' ||
+                  (isResourcePage.value && !hasEditScopeInResource.value) ||
+                  (!isResourcePage.value && !hasEditScopeInBusiness.value),
                 onClick() {
                   handleSecurityRuleDialog(data);
                 },
@@ -333,30 +338,34 @@ const inColumns: any = computed(() =>
             [
               [
                 bkTooltips,
-                {
-                  content: '该功能当前未支持',
-                  disabled: route.query.vendor !== 'huawei',
-                },
+                route.query.vendor === 'huawei'
+                  ? { content: '该功能当前未支持', disabled: route.query.vendor !== 'huawei' }
+                  : operateTooltipsOption.value,
               ],
             ],
           ),
-          h(
-            Button,
-            {
-              text: true,
-              theme: 'primary',
-              class: { 'hcm-no-permision-text-btn': !authVerifyData.value?.permissionAction?.[actionName.value] },
-              disabled: !isResourcePage.value && !hasEditScopeInBusiness.value,
-              onClick() {
-                if (!authVerifyData.value?.permissionAction[actionName.value]) {
-                  showAuthDialog(actionName.value);
-                  return;
-                }
-                deleteDialogShow.value = true;
-                deleteId.value = data.id;
+          withDirectives(
+            h(
+              Button,
+              {
+                text: true,
+                theme: 'primary',
+                class: { 'hcm-no-permision-text-btn': !authVerifyData.value?.permissionAction?.[actionName.value] },
+                disabled:
+                  (isResourcePage.value && !hasEditScopeInResource.value) ||
+                  (!isResourcePage.value && !hasEditScopeInBusiness.value),
+                onClick() {
+                  if (!authVerifyData.value?.permissionAction[actionName.value]) {
+                    showAuthDialog(actionName.value);
+                    return;
+                  }
+                  deleteDialogShow.value = true;
+                  deleteId.value = data.id;
+                },
               },
-            },
-            [t('删除')],
+              [t('删除')],
+            ),
+            [[bkTooltips, operateTooltipsOption.value]],
           ),
         ]);
       },
@@ -549,7 +558,10 @@ const outColumns: any = computed(() =>
                 text: true,
                 theme: 'primary',
                 class: { 'hcm-no-permision-text-btn': !authVerifyData.value?.permissionAction?.[actionName.value] },
-                disabled: route.query.vendor === 'huawei' || (!isResourcePage.value && !hasEditScopeInBusiness.value),
+                disabled:
+                  route.query.vendor === 'huawei' ||
+                  (isResourcePage.value && !hasEditScopeInResource.value) ||
+                  (!isResourcePage.value && !hasEditScopeInBusiness.value),
                 onClick() {
                   handleSecurityRuleDialog(data);
                 },
@@ -559,30 +571,34 @@ const outColumns: any = computed(() =>
             [
               [
                 bkTooltips,
-                {
-                  content: '该功能当前未支持',
-                  disabled: route.query.vendor !== 'huawei',
-                },
+                route.query.vendor === 'huawei'
+                  ? { content: '该功能当前未支持', disabled: route.query.vendor !== 'huawei' }
+                  : operateTooltipsOption.value,
               ],
             ],
           ),
-          h(
-            Button,
-            {
-              text: true,
-              theme: 'primary',
-              class: { 'hcm-no-permision-text-btn': !authVerifyData.value?.permissionAction?.[actionName.value] },
-              disabled: !isResourcePage.value && !hasEditScopeInBusiness.value,
-              onClick() {
-                if (!authVerifyData.value?.permissionAction[actionName.value]) {
-                  showAuthDialog(actionName.value);
-                  return;
-                }
-                deleteDialogShow.value = true;
-                deleteId.value = data.id;
+          withDirectives(
+            h(
+              Button,
+              {
+                text: true,
+                theme: 'primary',
+                class: { 'hcm-no-permision-text-btn': !authVerifyData.value?.permissionAction?.[actionName.value] },
+                disabled:
+                  (isResourcePage.value && !hasEditScopeInResource.value) ||
+                  (!isResourcePage.value && !hasEditScopeInBusiness.value),
+                onClick() {
+                  if (!authVerifyData.value?.permissionAction[actionName.value]) {
+                    showAuthDialog(actionName.value);
+                    return;
+                  }
+                  deleteDialogShow.value = true;
+                  deleteId.value = data.id;
+                },
               },
-            },
-            [t('删除')],
+              [t('删除')],
+            ),
+            [[bkTooltips, operateTooltipsOption.value]],
           ),
         ]);
       },
@@ -602,16 +618,6 @@ const types = [
   { name: 'ingress', label: t('入站规则') },
   { name: 'egress', label: t('出站规则') },
 ];
-
-const operateDisabledTooltipsOption = computed(() => {
-  if (isAssigned.value) {
-    return { content: t('安全组已分配，请到业务下操作'), disabled: !isAssigned.value };
-  }
-  if (!isResourcePage && !hasEditScopeInBusiness) {
-    return { content: t('该安全组不在当前业务管理，不允许编辑'), disabled: isResourcePage || hasEditScopeInBusiness };
-  }
-  return { disabled: true };
-});
 </script>
 
 <template>
@@ -625,8 +631,8 @@ const operateDisabledTooltipsOption = computed(() => {
 
       <div @click="showAuthDialog(actionName)">
         <bk-button
-          :disabled="isAssigned || (!isResourcePage && !hasEditScopeInBusiness)"
-          v-bk-tooltips="operateDisabledTooltipsOption"
+          :disabled="(isResourcePage && !hasEditScopeInResource) || (!isResourcePage && !hasEditScopeInBusiness)"
+          v-bk-tooltips="operateTooltipsOption"
           theme="primary"
           :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.[actionName] }"
           @click="handleSecurityRuleDialog({})"
@@ -637,8 +643,8 @@ const operateDisabledTooltipsOption = computed(() => {
 
       <bk-button
         icon="plus"
-        :disabled="isAssigned || (!isResourcePage && !hasEditScopeInBusiness)"
-        v-bk-tooltips="operateDisabledTooltipsOption"
+        :disabled="(isResourcePage && !hasEditScopeInResource) || (!isResourcePage && !hasEditScopeInBusiness)"
+        v-bk-tooltips="operateTooltipsOption"
         v-if="showSort(route?.query?.vendor)"
         @click="handleSecurityRuleSort"
       >

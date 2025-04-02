@@ -110,8 +110,8 @@ const isClb = computed(() => {
   return tabActive.value === SecurityGroupRelatedResourceName.CLB;
 });
 const bindDisabledTooltipsOption = computed(() => {
-  if (isAssigned.value) {
-    return { content: t('安全组已分配，请到业务下操作'), disabled: !isAssigned.value };
+  if (!isBusinessPage.value && isAssigned.value) {
+    return { content: t('安全组已分配，请到业务下操作'), disabled: isBusinessPage.value || !isAssigned.value };
   }
   if (isClb.value) {
     return {
@@ -122,8 +122,8 @@ const bindDisabledTooltipsOption = computed(() => {
   return { disabled: true };
 });
 const unbindDisabledTooltipsOption = computed(() => {
-  if (isAssigned.value) {
-    return { content: t('安全组已分配，请到业务下操作'), disabled: !isAssigned.value };
+  if (!isBusinessPage.value && isAssigned.value) {
+    return { content: t('安全组已分配，请到业务下操作'), disabled: isBusinessPage.value || !isAssigned.value };
   }
   if (isClb.value) {
     return {
@@ -213,7 +213,7 @@ watch(
         <bk-button
           theme="primary"
           :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.[authAction] }"
-          :disabled="isAssigned || isClb"
+          :disabled="(!isBusinessPage && isAssigned) || isClb"
           v-bk-tooltips="bindDisabledTooltipsOption"
           @click="handleShowOperateDialog('bind')"
         >
@@ -222,7 +222,7 @@ watch(
         </bk-button>
         <bk-button
           :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.[authAction] }"
-          :disabled="!selected.length || isAssigned || isClb"
+          :disabled="!selected.length || (!isBusinessPage && isAssigned) || isClb"
           v-bk-tooltips="unbindDisabledTooltipsOption"
           @click="handleShowOperateDialog('batch-unbind')"
         >
@@ -263,7 +263,7 @@ watch(
             :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.[authAction] }"
             theme="primary"
             text
-            :disabled="isAssigned || isClb"
+            :disabled="(!isBusinessPage && isAssigned) || isClb"
             v-bk-tooltips="unbindDisabledTooltipsOption"
             @click="handleShowOperateDialog('single-unbind', row)"
           >

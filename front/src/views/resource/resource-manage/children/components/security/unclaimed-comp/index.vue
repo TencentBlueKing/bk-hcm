@@ -28,7 +28,7 @@ watchEffect(async () => {
 });
 
 const tipsDesc = t(
-  '该安全组在多个业务中使用，当前处于未分配状态，不能在业务下进行管理配置安全组规则。如需管理规则，建议和各负责人拉群沟通后，确认所属业务后，再由账号负责人分配到业务中进行管理。',
+  '该安全组当前处于未分配状态，不允许在业务下进行管理配置安全组规则等操作。如需管理规则，建议和相关负责人沟通后，确认管理业务后，再联系账号负责人分配到业务中进行管理。',
 );
 const mgmtBusinessName = computed(() => getBusinessNames(props.data?.mgmt_biz_id)?.[0] ?? '--');
 const usageBusinessName = computed(() =>
