@@ -61,15 +61,43 @@ watch(
   },
 );
 
-const isAssigned = computed(() => {
-  return whereAmI.value === Senarios.resource && detail.value.bk_biz_id !== -1;
-});
+const isAssigned = computed(() => detail.value.bk_biz_id !== -1);
+// 资源下已分配，不可以update安全组
+const hasEditScopeInResource = computed(() => whereAmI.value === Senarios.resource && !isAssigned.value);
+// 业务下未分配、非业务管理、管理业务!==当前业务，不可以update安全组
 const hasEditScopeInBusiness = computed(
   () =>
     whereAmI.value === Senarios.business &&
+    isAssigned.value &&
     detail.value?.mgmt_type === SecurityGroupManageType.BIZ &&
     detail.value?.mgmt_biz_id === getBizsId(),
 );
+const operateTooltipsOption = computed(() => {
+  const isResourcePage = whereAmI.value === Senarios.resource;
+  const isBusinessPage = whereAmI.value === Senarios.business;
+  const isPlatformManage = detail.value?.mgmt_type === SecurityGroupManageType.PLATFORM;
+  const isCurrentBizManage = detail.value?.mgmt_biz_id === getBizsId();
+
+  if (isResourcePage && isAssigned.value) {
+    return { content: t('安全组已分配，请到业务下操作'), disabled: !(isResourcePage && isAssigned.value) };
+  }
+  if (isBusinessPage && isPlatformManage) {
+    return {
+      content: t('该安全组的管理类型为平台管理，不允许在业务下操作'),
+      disabled: !(isBusinessPage && isPlatformManage),
+    };
+  }
+  if (isBusinessPage && !isAssigned.value) {
+    return {
+      content: t('该安全组当前处于未分配状态，不允许在业务下进行管理配置安全组规则等操作'),
+      disabled: !(isBusinessPage && !isAssigned.value),
+    };
+  }
+  if (isBusinessPage && !isCurrentBizManage) {
+    return { content: t('该安全组不在当前业务管理，不允许操作'), disabled: !(isBusinessPage && !isCurrentBizManage) };
+  }
+  return { disabled: true };
+});
 
 const getRelatedSecurityGroups = async (detail: { account_id: string; region: string }) => {
   const url = 'security_groups/list';
@@ -147,7 +175,9 @@ const getTemplateData = async (detail: { account_id: string }) => {
 };
 
 provide('isAssigned', isAssigned);
+provide('hasEditScopeInResource', hasEditScopeInResource);
 provide('hasEditScopeInBusiness', hasEditScopeInBusiness);
+provide('operateTooltipsOption', operateTooltipsOption);
 </script>
 
 <template>

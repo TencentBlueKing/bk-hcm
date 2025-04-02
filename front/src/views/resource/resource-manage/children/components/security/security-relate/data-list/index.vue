@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, useSlots, watch, watchEffect } from 'vue';
+import { computed, ref, useSlots, watch, watchEffect } from 'vue';
 import usePage from '@/hooks/use-page';
 import useTableSettings from '@/hooks/use-table-settings';
 import useTableSelection from '@/hooks/use-table-selection';
@@ -7,6 +7,7 @@ import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
 import { SecurityGroupRelResourceByBizItem, SecurityGroupRelatedResourceName } from '@/store/security-group';
 import columnFactory from './column-factory';
 import { PaginationType } from '@/typings';
+import { ResourceTypeEnum } from '@/common/resource-constant';
 
 const { getColumns } = columnFactory();
 
@@ -64,6 +65,9 @@ const handleDelete = (cloud_id: string) => {
   }
 };
 
+const resourceType = computed(() => {
+  return ResourceTypeEnum[props.resourceName];
+});
 watchEffect(() => {
   // 根据操作类型动态生成列
   if (props.resourceName && props.operation) {
@@ -122,6 +126,7 @@ defineExpose({ handleClear, handleDelete });
           :value="row[column.id]"
           :display="column?.meta?.display"
           :vendor="row.vendor"
+          :resource-type="resourceType"
         />
       </template>
     </bk-table-column>

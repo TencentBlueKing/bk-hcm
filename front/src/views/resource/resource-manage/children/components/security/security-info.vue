@@ -18,6 +18,7 @@ import { useVerify } from '@/hooks/useVerify';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import UsageBizValue from '@/views/resource/resource-manage/children/components/security/usage-biz-value.vue';
 import { VendorEnum } from '@/common/constant';
+import { IOverflowTooltipOption } from 'bkui-vue/lib/table/props';
 
 const props = defineProps({
   id: {
@@ -41,7 +42,8 @@ const { t } = useI18n();
 
 const isResourcePage = inject<ComputedRef<boolean>>('isResourcePage');
 const hasEditScopeInBusiness = inject<ComputedRef<boolean>>('hasEditScopeInBusiness');
-const isAssigned = inject<ComputedRef<boolean>>('isAssigned');
+const hasEditScopeInResource = inject<ComputedRef<boolean>>('hasEditScopeInResource');
+const operateTooltipsOption = inject<ComputedRef<IOverflowTooltipOption>>('operateTooltipsOption');
 
 const resourceStore = useResourceStore();
 const { getRegionName } = useRegionsStore();
@@ -98,7 +100,7 @@ const mgmtAttrFields: FieldList = [
     copy: false,
   },
   {
-    name: t('是否分配'),
+    name: t('分配状态'),
     prop: 'bk_biz_id',
     render: (val: number) => {
       const { mgmt_type } = props.detail;
@@ -194,6 +196,23 @@ const businessMgmtAttrFields: FieldList = [
     render: (val: number) => h(BusinessValue, { value: val }),
     copy: false,
   },
+  {
+    name: t('分配状态'),
+    prop: 'bk_biz_id',
+    render: (val: number) => {
+      const { mgmt_type } = props.detail;
+      if (mgmt_type === SecurityGroupManageType.PLATFORM) {
+        return h(Tag, { theme: 'danger' }, '不允许分配');
+      }
+      if (val === -1) {
+        return h(Tag, '未分配');
+      }
+      return withDirectives(h(Tag, { theme: 'success' }, '已分配'), [
+        [bkTooltips, { content: getNameFromBusinessMap(val), disabled: mgmt_type === undefined, theme: 'light' }],
+      ]);
+    },
+    copy: false,
+  },
 ];
 
 const settingInfo = computed(() => {
@@ -205,7 +224,7 @@ const settingInfo = computed(() => {
       prop: 'name',
       edit: !isResourcePage.value
         ? hasEditScopeInBusiness.value && !['azure', 'aws'].includes(props.vendor)
-        : !['azure', 'aws'].includes(props.vendor) && !isAssigned.value,
+        : hasEditScopeInResource.value && !['azure', 'aws'].includes(props.vendor),
       trim: true,
     },
     { name: t('云资源ID'), prop: 'cloud_id' },
@@ -219,7 +238,7 @@ const settingInfo = computed(() => {
       prop: 'memo',
       edit: !isResourcePage.value
         ? hasEditScopeInBusiness.value && props.vendor !== 'aws'
-        : props.vendor !== 'aws' && !isAssigned.value,
+        : hasEditScopeInResource.value && props.vendor !== 'aws',
     },
   ];
   if ([VendorEnum.TCLOUD, VendorEnum.AWS, VendorEnum.HUAWEI].includes(props.vendor)) {
@@ -310,7 +329,7 @@ const handleChange = async (val: any) => {
           style="font-weight: 400; margin-left: 12px"
           :disabled="!hasEditScopeInBusiness"
           :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.[authAction] }"
-          v-bk-tooltips="{ content: t('该安全组不在当前业务管理，不允许编辑'), disabled: hasEditScopeInBusiness }"
+          v-bk-tooltips="operateTooltipsOption"
           @click="handleUpdateMgmtAttrSingle('usage_biz_ids')"
         >
           <i class="icon hcm-icon bkhcm-icon-bianji edit-icon" />

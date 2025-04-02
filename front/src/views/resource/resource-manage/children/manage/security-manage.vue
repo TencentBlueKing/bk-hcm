@@ -463,16 +463,18 @@ const groupColumns = [
       // 资源下：状态=未分配，才可以操作
       // 业务下：管理业务=当前业务 && 状态=已分配，才可以配置规则、删除
       const isAssigned = data.bk_biz_id !== -1;
+      const isPlatformManage = data.mgmt_type === SecurityGroupManageType.PLATFORM;
       const isCurrentBizManage = data.mgmt_biz_id === getBizsId();
+      const { isResourcePage, authVerifyData } = props;
 
       const authMap: Record<string, string> = {
-        rule: props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate',
-        clone: props.isResourcePage ? 'iaas_resource_create' : 'biz_iaas_resource_create',
-        delete: props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete',
+        rule: isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate',
+        clone: isResourcePage ? 'iaas_resource_create' : 'biz_iaas_resource_create',
+        delete: isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete',
       };
 
       const handleAuthClick = (type: string) => {
-        const permission = props.authVerifyData?.permissionAction[authMap[type]];
+        const permission = authVerifyData?.permissionAction[authMap[type]];
         if (permission) {
           if (type === 'clone') {
             securityHandleShowClone(data);
@@ -484,44 +486,70 @@ const groupColumns = [
         }
       };
 
+      const isCloneShow = showClone(data.vendor);
+      const getCommonTooltipsOption = () => {
+        if (isResourcePage && isAssigned) {
+          return { content: t('安全组已分配，请到业务下操作'), disabled: !isAssigned };
+        }
+        if (!isResourcePage && isPlatformManage) {
+          return {
+            content: t('该安全组的管理类型为平台管理，不允许在业务下操作'),
+            disabled: isResourcePage || !isPlatformManage,
+          };
+        }
+        if (!isResourcePage && !isCurrentBizManage) {
+          return { content: t('该安全组不在当前业务管理，不允许操作'), disabled: isResourcePage || isCurrentBizManage };
+        }
+        return { disabled: true };
+      };
       const operationList = [
         {
           type: 'rule',
           name: t('配置规则'),
           resourcePageDisabled: isAssigned,
           businessPageDisabled: !(isCurrentBizManage && isAssigned),
+          getTooltipsOption: getCommonTooltipsOption,
         },
         {
           type: 'clone',
           name: t('克隆'),
-          resourcePageDisabled: isAssigned,
-          hidden: props.isResourcePage || !showClone(data.vendor),
+          hidden: isResourcePage,
+          businessPageDisabled: !isCloneShow,
+          getTooltipsOption() {
+            if (!isCloneShow) return { content: t('该云厂商暂未支持克隆功能'), disabled: isCloneShow };
+            return { disabled: true };
+          },
         },
         {
           type: 'delete',
           name: t('删除'),
           resourcePageDisabled: isAssigned,
           businessPageDisabled: !(isCurrentBizManage && isAssigned),
+          getTooltipsOption: getCommonTooltipsOption,
         },
       ];
 
       return h(
         'div',
         { class: 'operation-cell' },
-        operationList.map(({ type, name, resourcePageDisabled, businessPageDisabled, hidden }) => {
+        operationList.map(({ type, name, resourcePageDisabled, businessPageDisabled, hidden, getTooltipsOption }) => {
           if (hidden) return null;
-          const disabled = props.isResourcePage ? resourcePageDisabled : businessPageDisabled;
+          const disabled = isResourcePage ? resourcePageDisabled : businessPageDisabled;
+          const tooltipsOption = getTooltipsOption?.() || { disabled: true };
 
-          return h(
-            Button,
-            {
-              class: { 'hcm-no-permision-text-btn': !props.authVerifyData?.permissionAction[authMap[type]] },
-              text: true,
-              theme: 'primary',
-              disabled,
-              onClick: () => handleAuthClick(type),
-            },
-            name,
+          return withDirectives(
+            h(
+              Button,
+              {
+                class: { 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction[authMap[type]] },
+                text: true,
+                theme: 'primary',
+                disabled,
+                onClick: () => handleAuthClick(type),
+              },
+              name,
+            ),
+            [[bkTooltips, tooltipsOption]],
           );
         }),
       );
