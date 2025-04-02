@@ -42,7 +42,7 @@ func (svc *lbSvc) InquiryPriceLoadBalancer(cts *rest.Contexts) (any, error) {
 	}
 
 	authRes := meta.ResourceAttribute{Basic: &meta.Basic{
-		Type: meta.LoadBalancer, Action: meta.Apply, ResourceID: req.AccountID}}
+		Type: meta.LoadBalancer, Action: meta.Create, ResourceID: req.AccountID}}
 	if err := svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
 		logs.Errorf("inquiry price load balancer auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
