@@ -76,7 +76,7 @@ func (kt *Kit) NewSubKit() *Kit {
 func (kt *Kit) NewSubKitWithSuffix(suffix string) *Kit {
 
 	newSubKit := converter.ValToPtr(*kt)
-	subRid := kt.Rid + "_" + suffix
+	subRid := kt.Rid + "/" + suffix
 	newSubKit.Rid = subRid
 	newSubKit.Ctx = context.WithValue(kt.Ctx, constant.RidKey, subRid)
 	return newSubKit

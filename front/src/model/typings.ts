@@ -4,19 +4,19 @@ import { RulesItem, QueryRuleOPEnum } from '@/typings';
 import type { ResourceTypeEnum } from '@/common/resource-constant';
 
 export type ModelPropertyType =
-    | 'string'
-    | 'datetime'
-    | 'enum'
-    | 'number'
-    | 'account'
-    | 'user'
-    | 'array'
-    | 'bool'
-    | 'cert'
-    | 'ca'
-    | 'region'
-    | 'business'
-    | 'cloud-area';
+  | 'string'
+  | 'datetime'
+  | 'enum'
+  | 'number'
+  | 'account'
+  | 'user'
+  | 'array'
+  | 'bool'
+  | 'cert'
+  | 'ca'
+  | 'region'
+  | 'business'
+  | 'cloud-area';
 
 export type ModelPropertyMeta = {
   display?: PropertyDisplayConfig;
@@ -83,8 +83,8 @@ export type ModelPropertyDisplay = ModelProperty & PropertyDisplayConfig;
 export type ModelPropertySearch = ModelProperty & PropertySearchConfig;
 
 export type ModelPropertyGeneric =
-    | ModelProperty
-    | ModelPropertyColumn
-    | ModelPropertyForm
-    | ModelPropertyDisplay
-    | ModelPropertySearch;
+  | ModelProperty
+  | ModelPropertyColumn
+  | ModelPropertyForm
+  | ModelPropertyDisplay
+  | ModelPropertySearch;

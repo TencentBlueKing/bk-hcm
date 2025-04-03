@@ -28,6 +28,13 @@ const getInstVip = (inst: any) => {
   return '--';
 };
 
+const getPrivateIPs = (data: any) => {
+  return [...(data.private_ipv4_addresses || []), ...(data.private_ipv6_addresses || [])].join(',') || '--';
+};
+const getPublicIPs = (data: any) => {
+  return [...(data.public_ipv4_addresses || []), ...(data.public_ipv6_addresses || [])].join(',') || '--';
+};
+
 /**
  * 按内置分隔符切割IP文本
  * @param raw 原始文本
@@ -210,6 +217,8 @@ const isPortValid = (text: string) => {
 };
 export {
   getInstVip,
+  getPrivateIPs,
+  getPublicIPs,
   splitIP,
   parseIP,
   encodeValueByBtoa,

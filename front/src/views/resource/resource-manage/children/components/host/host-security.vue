@@ -10,6 +10,7 @@ import { useResourceStore, useAccountStore } from '@/store';
 import { QueryRuleOPEnum } from '@/typings';
 import SecurityGroupSelector from '@/views/service/service-apply/components/common/security-group-selector';
 import { VendorEnum } from '@/common/constant';
+import dialogFooter from '@/components/common-dialog/dialog-footer.vue';
 
 const props = defineProps({
   data: {
@@ -25,7 +26,7 @@ const activeType = ref('ingress');
 const tableData = ref([]);
 const isShow = ref(false);
 const securityId = ref(0);
-const fetchUrl = ref<string>(`cvms/${props.data.id}/security_groups/${securityId.value}/rules/list`);
+const fetchUrl = ref<string>(`vendors/${props.data.vendor}/security_groups/${securityId.value}/rules/list`);
 const fetchFilter = reactive({
   op: QueryRuleOPEnum.AND,
   rules: [{ field: 'type', op: 'eq', value: activeType.value }],
@@ -274,7 +275,7 @@ if (isResourcePage.value) {
 const showRuleDialog = async () => {
   isShow.value = true;
   // 获取列表数据
-  fetchUrl.value = `cvms/${props.data.id}/security_groups/${securityId.value}/rules/list`;
+  fetchUrl.value = `vendors/${props.data.vendor}/security_groups/${securityId.value}/rules/list`;
   fetchFilter.rules = [{ field: 'type', op: 'eq', value: activeType.value }];
   if (props.data.vendor === 'huawei') {
     const huaweiColummns = [
@@ -310,16 +311,14 @@ const handleSecurityDialog = () => {
 
 // 安全组绑定主机
 const handleSecurityConfirm = async (security_group_id: string) => {
-  try {
-    // 暂时只支持一个一个绑定 后期会修改成绑定多个
-    let type = 'cvms';
-    let params: any = { security_group_id, cvm_id: props.data.id };
-    if (props.data.vendor === 'azure') {
-      type = 'network_interfaces';
-      params = { security_group_id: securityId.value, network_interface_id: curreClickId.value };
-    }
-    await resourceStore.bindSecurityInfo(type, params);
-  } catch (error) {}
+  // 暂时只支持一个一个绑定 后期会修改成绑定多个
+  let type = 'cvms';
+  let params: any = { security_group_id, cvm_id: props.data.id };
+  if (props.data.vendor === 'azure') {
+    type = 'network_interfaces';
+    params = { security_group_id: securityId.value, network_interface_id: curreClickId.value };
+  }
+  await resourceStore.bindSecurityInfo(type, params);
 };
 
 // 解绑弹窗
@@ -368,13 +367,10 @@ const handleSelectSecurity = async (security_group_ids: string[]) => {
       cvm_id: props.data.id,
     });
   } else {
-    handleSecurityConfirm(security_group_ids[0]);
+    await handleSecurityConfirm(security_group_ids[0]);
   }
 
-  Message({
-    message: t('绑定成功'),
-    theme: 'success',
-  });
+  Message({ message: t('绑定成功'), theme: 'success' });
   getSecurityGroupsList();
 };
 getSecurityGroupsList();
@@ -446,14 +442,7 @@ getSecurityGroupsList();
       </bk-loading>
     </bk-dialog>
 
-    <bk-dialog
-      :is-show="unBindShow"
-      :title="'确定解绑'"
-      :theme="'primary'"
-      :is-loading="unBindLoading"
-      @closed="handleClose"
-      @confirm="handleConfirmUnBind"
-    >
+    <bk-dialog :is-show="unBindShow" :title="'确定解绑'" :theme="'primary'" @closed="handleClose">
       <!-- <div>{{ t('确定解绑') }}</div> -->
       <span v-if="tableData.length === 1">
         <span class="error-text">解绑被限制,</span>
@@ -467,6 +456,15 @@ getSecurityGroupsList();
         </span>
         <span class="error-text">请确保主机上绑定的其他安全组是有效的，避免出现主机安全风险</span>
       </span>
+
+      <template #footer>
+        <dialog-footer
+          :disabled="tableData.length === 1"
+          :loading="unBindLoading"
+          @confirm="handleConfirmUnBind"
+          @closed="handleClose"
+        />
+      </template>
     </bk-dialog>
   </div>
 </template>

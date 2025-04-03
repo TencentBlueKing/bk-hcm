@@ -184,7 +184,16 @@ func (cli *CvmClient) BatchCreateCvm(kt *kit.Kit, request *protocvm.AwsBatchCrea
 }
 
 // BatchAssociateSecurityGroup ....
-func (cli *CvmClient) BatchAssociateSecurityGroup(kt *kit.Kit, request *protocvm.AwsCvmBatchAssociateSecurityGroupReq) error {
+func (cli *CvmClient) BatchAssociateSecurityGroup(kt *kit.Kit,
+	request *protocvm.AwsCvmBatchAssociateSecurityGroupReq) error {
 	return common.RequestNoResp[protocvm.AwsCvmBatchAssociateSecurityGroupReq](
 		cli.client, http.MethodPost, kt, request, "/cvms/security_groups/batch/associate")
+}
+
+// ListCvmNetworkInterface ....
+func (cli *CvmClient) ListCvmNetworkInterface(kt *kit.Kit, request *protocvm.ListCvmNetworkInterfaceReq) (
+	*map[string]*protocvm.ListCvmNetworkInterfaceRespItem, error) {
+
+	return common.Request[protocvm.ListCvmNetworkInterfaceReq, map[string]*protocvm.ListCvmNetworkInterfaceRespItem](
+		cli.client, rest.POST, kt, request, "/cvms/network_interfaces/list")
 }

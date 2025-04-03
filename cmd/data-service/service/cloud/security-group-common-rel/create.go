@@ -24,13 +24,17 @@ import (
 
 	"hcm/pkg/api/core"
 	protocloud "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	tablecloud "hcm/pkg/dal/table/cloud"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -50,7 +54,7 @@ func (svc *sgComRelSvc) BatchCreateSgCommonRels(cts *rest.Contexts) (interface{}
 		models := make([]tablecloud.SecurityGroupCommonRelTable, 0, len(req.Rels))
 		for _, one := range req.Rels {
 			models = append(models, tablecloud.SecurityGroupCommonRelTable{
-				Vendor:          one.Vendor,
+				ResVendor:       one.ResVendor,
 				ResID:           one.ResID,
 				ResType:         one.ResType,
 				SecurityGroupID: one.SecurityGroupID,
@@ -59,6 +63,11 @@ func (svc *sgComRelSvc) BatchCreateSgCommonRels(cts *rest.Contexts) (interface{}
 			})
 		}
 
+		// check relation resource is existed
+		if err := svc.checkRelationResourceExist(cts.Kit, req.Rels); err != nil {
+			logs.Errorf("check relation resource exist failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, nil
+		}
 		if err := svc.dao.SGCommonRel().BatchCreateWithTx(cts.Kit, txn, models); err != nil {
 			return nil, fmt.Errorf("batch create sg common rels failed, err: %v", err)
 		}
@@ -117,7 +126,7 @@ func (svc *sgComRelSvc) BatchUpsertSgCommonRels(cts *rest.Contexts) (interface{}
 		models := make([]tablecloud.SecurityGroupCommonRelTable, 0, len(req.Rels))
 		for _, one := range req.Rels {
 			models = append(models, tablecloud.SecurityGroupCommonRelTable{
-				Vendor:          one.Vendor,
+				ResVendor:       one.ResVendor,
 				ResID:           one.ResID,
 				ResType:         one.ResType,
 				SecurityGroupID: one.SecurityGroupID,
@@ -125,6 +134,12 @@ func (svc *sgComRelSvc) BatchUpsertSgCommonRels(cts *rest.Contexts) (interface{}
 				Creator:         cts.Kit.User,
 			})
 		}
+		// check relation resource is existed
+		if err := svc.checkRelationResourceExist(cts.Kit, req.Rels); err != nil {
+			logs.Errorf("check relation resource exist failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, nil
+		}
+
 		if err := svc.dao.SGCommonRel().BatchCreateWithTx(cts.Kit, txn, models); err != nil {
 			return nil, fmt.Errorf("batch create sg common rels failed, err: %v", err)
 		}
@@ -136,4 +151,52 @@ func (svc *sgComRelSvc) BatchUpsertSgCommonRels(cts *rest.Contexts) (interface{}
 	}
 
 	return nil, nil
+}
+
+func (svc *sgComRelSvc) checkRelationResourceExist(kt *kit.Kit, rels []protocloud.SGCommonRelCreate) error {
+	// check relation resource is existed
+	// 校验关联资源是否存在
+	sgIDs := make([]string, 0)
+	resTypeToResIDsMap := make(map[enumor.CloudResourceType][]string)
+	for _, rel := range rels {
+		sgIDs = append(sgIDs, rel.SecurityGroupID)
+		resTypeToResIDsMap[rel.ResType] = append(resTypeToResIDsMap[rel.ResType], rel.ResID)
+	}
+
+	sgMap := make(map[string]tablecloud.SecurityGroupTable)
+	for _, ids := range slice.Split(sgIDs, int(core.DefaultMaxPageLimit)) {
+		listOpt := &types.ListOption{
+			Filter: tools.ContainersExpression("id", ids),
+			Page:   core.NewDefaultBasePage(),
+		}
+		resp, err := svc.dao.SecurityGroup().List(kt, listOpt)
+		if err != nil {
+			logs.Errorf("list security group failed, err: %v, ids: %v, rid: %s", err, ids, kt.Rid)
+			return err
+		}
+		for _, detail := range resp.Details {
+			sgMap[detail.ID] = detail
+		}
+	}
+
+	if len(sgMap) != len(converter.StringSliceToMap(sgIDs)) {
+		logs.Errorf("get security group count not right, ids: %v, count: %d, rid: %s", sgIDs, len(sgMap), kt.Rid)
+		return fmt.Errorf("get security group count not right")
+	}
+
+	for resType, resIDs := range resTypeToResIDsMap {
+		dbResp, err := svc.dao.Cloud().ListResourceIDs(kt, resType, tools.ContainersExpression("id", resIDs))
+		if err != nil {
+			logs.Errorf("list resource ids failed, err: %v, resType: %s, resIDs: %v, rid: %s",
+				err, resType, resIDs, kt.Rid)
+			return err
+		}
+		if len(dbResp) != len(converter.StringSliceToMap(resIDs)) {
+			logs.Errorf("get resource count not right, err: %v, resType: %s, resIDs: %v, rid: %s",
+				err, resType, resIDs, kt.Rid)
+			return fmt.Errorf("get resource count not right")
+		}
+	}
+
+	return nil
 }

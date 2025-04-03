@@ -23,10 +23,12 @@ import (
 	"net/http"
 
 	"hcm/cmd/cloud-server/logics/audit"
+	securitygroup "hcm/cmd/cloud-server/logics/security-group"
 	"hcm/cmd/cloud-server/service/capability"
 	"hcm/pkg/client"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/rest"
+	"hcm/pkg/thirdparty/esb"
 )
 
 // InitSecurityGroupService initial the security group service
@@ -35,6 +37,8 @@ func InitSecurityGroupService(c *capability.Capability) {
 		client:     c.ApiClient,
 		authorizer: c.Authorizer,
 		audit:      c.Audit,
+		sgLogic:    c.Logics.SecurityGroup,
+		esb:        c.EsbClient,
 	}
 
 	h := rest.NewHandler()
@@ -43,6 +47,10 @@ func InitSecurityGroupService(c *capability.Capability) {
 	h.Add("CreateSecurityGroup", http.MethodPost, "/security_groups/create", svc.CreateSecurityGroup)
 	h.Add("GetSecurityGroup", http.MethodGet, "/security_groups/{id}", svc.GetSecurityGroup)
 	h.Add("BatchUpdateSecurityGroup", http.MethodPatch, "/security_groups/{id}", svc.UpdateSecurityGroup)
+	h.Add("UpdateSecurityGroupMgmtAttr", http.MethodPatch, "/security_groups/{id}/mgmt_attrs",
+		svc.UpdateSGMgmtAttr)
+	h.Add("BatchUpdateSGMgmtAttr", http.MethodPatch, "/security_groups/mgmt_attrs/batch",
+		svc.BatchUpdateSGMgmtAttr)
 	h.Add("BatchDeleteSecurityGroup", http.MethodDelete, "/security_groups/batch", svc.BatchDeleteSecurityGroup)
 	h.Add("ListSecurityGroup", http.MethodPost, "/security_groups/list", svc.ListSecurityGroup)
 	h.Add("ListSecurityGroupsByCvmID", http.MethodGet, "/security_groups/cvms/{cvm_id}", svc.ListSecurityGroupsByCvmID)
@@ -55,6 +63,8 @@ func InitSecurityGroupService(c *capability.Capability) {
 		svc.AssociateNetworkInterface)
 	h.Add("DisAssociateNetworkInterface", http.MethodPost, "/security_groups/disassociate/network_interfaces",
 		svc.DisAssociateNetworkInterface)
+	h.Add("AssignBizPreview", http.MethodPost, "/security_groups/assign/bizs/preview", svc.AssignBizPreview)
+	h.Add("BatchAssignBiz", http.MethodPost, "/security_groups/assign/bizs/batch", svc.BatchAssignBiz)
 
 	h.Add("CreateSecurityGroupRule", http.MethodPost,
 		"/vendors/{vendor}/security_groups/{security_group_id}/rules/create", svc.CreateSecurityGroupRule)
@@ -68,10 +78,30 @@ func InitSecurityGroupService(c *capability.Capability) {
 		"/vendors/{vendor}/security_groups/{security_group_id}/rules/{id}", svc.DeleteSecurityGroupRule)
 	h.Add("GetAzureDefaultSGRule", http.MethodGet, "/vendors/azure/default/security_groups/rules/{type}",
 		svc.GetAzureDefaultSGRule)
+
 	h.Add("ListResourceIdBySecurityGroup", http.MethodPost,
 		"/security_group/{id}/common/list", svc.ListResourceIdBySecurityGroup)
 	h.Add("ListCvmIdBySecurityGroup", http.MethodPost,
 		"/security_group/{id}/cvm/list", svc.ListCvmIdBySecurityGroup)
+	h.Add("QueryRelatedResourceCount", http.MethodPost,
+		"/security_groups/related_resources/query_count", svc.QueryRelatedResourceCount)
+	h.Add("ListSecurityGroupRelBusiness", http.MethodPost,
+		"/security_groups/{security_group_id}/related_resources/bizs/list", svc.ListSecurityGroupRelBusiness)
+	h.Add("ListSGRelCVMByBizID", http.MethodPost,
+		"/security_groups/{sg_id}/related_resources/biz_resources/{res_biz_id}/cvms/list", svc.ListSGRelCVMByBizID)
+	h.Add("ListSGRelLBByBizID", http.MethodPost,
+		"/security_groups/{sg_id}/related_resources/biz_resources/{res_biz_id}/load_balancers/list",
+		svc.ListSGRelLBByBizID)
+	h.Add("CountSecurityGroupRules", http.MethodPost, "/security_groups/rules/count",
+		svc.CountSecurityGroupRules)
+
+	h.Add("BatchAssociateCvm", http.MethodPost,
+		"/security_groups/associate/cvms/batch", svc.BatchAssociateCvm)
+	h.Add("BatchDisassociateCvm", http.MethodPost,
+		"/security_groups/disassociate/cvms/batch", svc.BatchDisassociateCvm)
+
+	h.Add("BatchListResSecurityGroups", http.MethodPost, "/security_groups/res/{res_type}/batch",
+		svc.BatchListResSecurityGroups)
 
 	bizService(h, svc)
 	initSecurityGroupServiceHooks(svc, h)
@@ -86,6 +116,8 @@ func bizService(h *rest.Handler, svc *securityGroupSvc) {
 	h.Add("GetBizSecurityGroup", http.MethodGet, "/bizs/{bk_biz_id}/security_groups/{id}", svc.GetBizSecurityGroup)
 	h.Add("UpdateBizSecurityGroup", http.MethodPatch, "/bizs/{bk_biz_id}/security_groups/{id}",
 		svc.UpdateBizSecurityGroup)
+	h.Add("UpdateSecurityGroupMgmtAttr", http.MethodPatch, "/bizs/{bk_biz_id}/security_groups/{id}/mgmt_attrs",
+		svc.UpdateBizSGMgmtAttr)
 	h.Add("BatchDeleteBizSecurityGroup", http.MethodDelete, "/bizs/{bk_biz_id}/security_groups/batch",
 		svc.BatchDeleteBizSecurityGroup)
 	h.Add("ListBizSecurityGroup", http.MethodPost, "/bizs/{bk_biz_id}/security_groups/list", svc.ListBizSecurityGroup)
@@ -116,7 +148,8 @@ func bizService(h *rest.Handler, svc *securityGroupSvc) {
 	h.Add("UpdateBizSGRule", http.MethodPut,
 		"/bizs/{bk_biz_id}/vendors/{vendor}/security_groups/{security_group_id}/rules/{id}", svc.UpdateBizSGRule)
 	h.Add("BatchUpdateBizSGRule", http.MethodPut,
-		"/bizs/{bk_biz_id}/vendors/{vendor}/security_groups/{security_group_id}/rules/batch/update", svc.BatchUpdateBizSGRule)
+		"/bizs/{bk_biz_id}/vendors/{vendor}/security_groups/{security_group_id}/rules/batch/update",
+		svc.BatchUpdateBizSGRule)
 	h.Add("DeleteBizSGRule", http.MethodDelete,
 		"/bizs/{bk_biz_id}/vendors/{vendor}/security_groups/{security_group_id}/rules/{id}", svc.DeleteBizSGRule)
 
@@ -124,10 +157,38 @@ func bizService(h *rest.Handler, svc *securityGroupSvc) {
 		"/bizs/{bk_biz_id}/security_group/{id}/common/list", svc.ListBizResourceIDBySecurityGroup)
 	h.Add("ListBizCvmIdBySecurityGroup", http.MethodPost,
 		"/bizs/{bk_biz_id}/security_group/{id}/cvm/list", svc.ListBizCvmIdBySecurityGroup)
+	h.Add("QueryBizRelatedResourceCount", http.MethodPost,
+		"/bizs/{bk_biz_id}/security_groups/related_resources/query_count", svc.QueryBizRelatedResourceCount)
+	h.Add("ListBizSecurityGroupRelBusiness", http.MethodPost,
+		"/bizs/{bk_biz_id}/security_groups/{security_group_id}/related_resources/bizs/list",
+		svc.ListBizSecurityGroupRelBusiness)
+	h.Add("ListBizSGRelCVMByBizID", http.MethodPost,
+		"/bizs/{bk_biz_id}/security_groups/{sg_id}/related_resources/biz_resources/{res_biz_id}/cvms/list",
+		svc.ListBizSGRelCVMByBizID)
+	h.Add("ListBizSGRelLBByBizID", http.MethodPost,
+		"/bizs/{bk_biz_id}/security_groups/{sg_id}/related_resources/biz_resources/{res_biz_id}/load_balancers/list",
+		svc.ListBizSGRelLBByBizID)
+	h.Add("CountBizSecurityGroupRules", http.MethodPost, "/bizs/{bk_biz_id}/security_groups/rules/count",
+		svc.CountBizSecurityGroupRules)
+	h.Add("BizListSGMaintainerInfos", http.MethodPost,
+		"/bizs/{bk_biz_id}/security_groups/maintainers_info/list", svc.BizListSGMaintainerInfos)
+
+	h.Add("CloneBizSecurityGroup", http.MethodPost,
+		"/bizs/{bk_biz_id}/security_groups/{id}/clone", svc.CloneBizSecurityGroup)
+
+	h.Add("BatchAssociateBizCvm", http.MethodPost,
+		"/bizs/{bk_biz_id}/security_groups/associate/cvms/batch", svc.BatchAssociateBizCvm)
+	h.Add("BatchDisassociateBizCvm", http.MethodPost,
+		"/bizs/{bk_biz_id}/security_groups/disassociate/cvms/batch", svc.BatchDisassociateBizCvm)
+
+	h.Add("BizBatchListResSecurityGroups", http.MethodPost, "/bizs/{bk_biz_id}/security_groups/res/{res_type}/batch",
+		svc.BizBatchListResSecurityGroups)
 }
 
 type securityGroupSvc struct {
 	client     *client.ClientSet
 	authorizer auth.Authorizer
 	audit      audit.Interface
+	esb        esb.Client
+	sgLogic    securitygroup.Interface
 }

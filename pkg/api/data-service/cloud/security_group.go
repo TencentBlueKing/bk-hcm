@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
@@ -40,16 +41,21 @@ type SecurityGroupBatchCreateReq[Extension cloud.SecurityGroupExtension] struct 
 
 // SecurityGroupBatchCreate define security group batch create.
 type SecurityGroupBatchCreate[Extension cloud.SecurityGroupExtension] struct {
-	CloudID          string      `json:"cloud_id" validate:"required"`
-	Region           string      `json:"region" validate:"required"`
-	Name             string      `json:"name" validate:"required"`
-	Memo             *string     `json:"memo" validate:"omitempty"`
-	AccountID        string      `json:"account_id" validate:"required"`
-	BkBizID          int64       `json:"bk_biz_id" validate:"required"`
-	Extension        *Extension  `json:"extension" validate:"required"`
-	CloudCreatedTime string      `json:"cloud_created_time" validate:"required"`
-	CloudUpdateTime  string      `json:"cloud_update_time" validate:"required"`
-	Tags             core.TagMap `json:"tags" validate:"required"`
+	CloudID          string          `json:"cloud_id" validate:"required"`
+	Region           string          `json:"region" validate:"required"`
+	Name             string          `json:"name" validate:"required"`
+	Memo             *string         `json:"memo" validate:"omitempty"`
+	AccountID        string          `json:"account_id" validate:"required"`
+	BkBizID          int64           `json:"bk_biz_id" validate:"required"`
+	MgmtType         enumor.MgmtType `json:"mgmt_type" validate:"lte=64"`
+	MgmtBizID        int64           `json:"mgmt_biz_id" `
+	Manager          string          `json:"manager" validate:"lte=64"`
+	BakManager       string          `json:"bak_manager" validate:"lte=64"`
+	Extension        *Extension      `json:"extension" validate:"required"`
+	UsageBizIds      []int64         `json:"usage_biz_ids" validate:"omitempty"`
+	CloudCreatedTime string          `json:"cloud_created_time" validate:"required"`
+	CloudUpdateTime  string          `json:"cloud_update_time" validate:"required"`
+	Tags             core.TagMap     `json:"tags" validate:"required"`
 }
 
 // Validate security group create request.
@@ -70,14 +76,18 @@ type SecurityGroupBatchUpdateReq[Extension cloud.SecurityGroupExtension] struct 
 
 // SecurityGroupBatchUpdate define security group batch update.
 type SecurityGroupBatchUpdate[Extension cloud.SecurityGroupExtension] struct {
-	ID               string      `json:"id" validate:"required"`
-	Name             string      `json:"name" validate:"omitempty"`
-	BkBizID          int64       `json:"bk_biz_id" validate:"omitempty"`
-	Memo             *string     `json:"memo" validate:"omitempty"`
-	Extension        *Extension  `json:"extension" validate:"omitempty"`
-	CloudCreatedTime string      `json:"cloud_created_time" validate:"omitempty"`
-	CloudUpdateTime  string      `json:"cloud_update_time" validate:"omitempty"`
-	Tags             core.TagMap `json:"tags" validate:"omitempty"`
+	ID               string          `json:"id" validate:"required"`
+	Name             string          `json:"name" validate:"omitempty"`
+	BkBizID          int64           `json:"bk_biz_id" validate:"omitempty"`
+	MgmtType         enumor.MgmtType `json:"mgmt_type" validate:"lte=64"`
+	MgmtBizID        int64           `json:"mgmt_biz_id" validate:"omitempty"`
+	Manager          string          `json:"manager" validate:"lte=64"`
+	BakManager       string          `json:"bak_manager" validate:"lte=64"`
+	Memo             *string         `json:"memo" validate:"omitempty"`
+	Extension        *Extension      `json:"extension" validate:"omitempty"`
+	CloudCreatedTime string          `json:"cloud_created_time" validate:"omitempty"`
+	CloudUpdateTime  string          `json:"cloud_update_time" validate:"omitempty"`
+	Tags             core.TagMap     `json:"tags" validate:"omitempty"`
 }
 
 // Validate security group update request.
@@ -118,6 +128,46 @@ func (req *SecurityGroupCommonInfoBatchUpdateReq) Validate() error {
 	}
 
 	return nil
+}
+
+// BatchUpdateSecurityGroupMgmtAttrReq security group update management attribute request.
+type BatchUpdateSecurityGroupMgmtAttrReq struct {
+	SecurityGroups []BatchUpdateSGMgmtAttrItem `json:"security_groups" validate:"required,min=1"`
+}
+
+// Validate security group batch update management attribute request.
+func (req BatchUpdateSecurityGroupMgmtAttrReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	if len(req.SecurityGroups) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("security group count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
+	for _, item := range req.SecurityGroups {
+		if err := item.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// BatchUpdateSGMgmtAttrItem security group update management attribute item.
+type BatchUpdateSGMgmtAttrItem struct {
+	ID         string          `json:"id" validate:"required"`
+	MgmtType   enumor.MgmtType `json:"mgmt_type"`
+	MgmtBizID  int64           `json:"mgmt_biz_id"`
+	Manager    string          `json:"manager"`
+	BakManager string          `json:"bak_manager"`
+	Vendor     enumor.Vendor   `json:"vendor"`
+	CloudID    string          `json:"cloud_id"`
+}
+
+// Validate security group update management attribute item.
+func (i BatchUpdateSGMgmtAttrItem) Validate() error {
+	return validator.Validate.Struct(i)
 }
 
 // -------------------------- List --------------------------
@@ -177,3 +227,16 @@ type SecurityGroupGetResp[T cloud.SecurityGroupExtension] struct {
 	rest.BaseResp `json:",inline"`
 	Data          *cloud.SecurityGroup[T] `json:"data"`
 }
+
+// CountSecurityGroupRuleReq ...
+type CountSecurityGroupRuleReq struct {
+	SecurityGroupIDs []string `json:"security_group_ids" validate:"required,min=1"`
+}
+
+// Validate list security group rule count req.
+func (req *CountSecurityGroupRuleReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// CountSecurityGroupRuleResp define list security group rule count resp.
+type CountSecurityGroupRuleResp = map[string]int64

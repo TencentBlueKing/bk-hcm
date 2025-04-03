@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
@@ -307,4 +308,37 @@ func (h *createVpcPollingHandler) Poll(client *HuaWei, kt *kit.Kit, cloudIDs []*
 	}
 
 	return vpcs, nil
+}
+
+// ListPorts list ports.
+// reference: https://support.huaweicloud.com/api-vpc/vpc_port01_0003.html
+// https://support.huaweicloud.com/vpc_faq/faq_security_0007.html
+func (h *HuaWei) ListPorts(kt *kit.Kit, opt *types.HuaweiListPortOption) ([]v2.Port, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "list port option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	client, err := h.clientSet.vpcClientV2(opt.Region)
+	if err != nil {
+		return nil, fmt.Errorf("new vpc client v2 failed, err: %v", err)
+	}
+
+	req := new(v2.ListPortsRequest)
+	req.SecurityGroups = converter.ValToPtr(opt.SecurityGroupIDs)
+	if opt.Marker != "" {
+		req.Marker = converter.ValToPtr(opt.Marker)
+	}
+
+	resp, err := client.ListPorts(req)
+	if err != nil {
+		logs.Errorf("list huawei ports failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+		return nil, err
+	}
+
+	return converter.PtrToVal(resp.Ports), nil
 }

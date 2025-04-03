@@ -21,6 +21,7 @@ package securitygroup
 
 import (
 	proto "hcm/pkg/api/cloud-server"
+	dataproto "hcm/pkg/api/data-service/cloud"
 	hcproto "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -116,6 +117,116 @@ func (svc *securityGroupSvc) updateSecurityGroup(cts *rest.Contexts, validHandle
 	}
 	if err != nil {
 		logs.Errorf("update security group failed, err: %v, id: %s, rid: %s", err, id, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+// UpdateSGMgmtAttr update security group management attribute.
+func (svc *securityGroupSvc) UpdateSGMgmtAttr(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.SecurityGroupUpdateMgmtAttrReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	return svc.updateSGMgmtAttr(cts, req, handler.ResOperateAuth)
+}
+
+// UpdateBizSGMgmtAttr update biz security group management attribute.
+func (svc *securityGroupSvc) UpdateBizSGMgmtAttr(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.SecurityGroupUpdateMgmtAttrReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	if req.MgmtBizID != 0 {
+		return nil, errf.Newf(errf.InvalidParameter, "mgmt_biz_id not support update")
+	}
+
+	return svc.updateSGMgmtAttr(cts, req, handler.BizOperateAuth)
+}
+
+func (svc *securityGroupSvc) updateSGMgmtAttr(cts *rest.Contexts, req *proto.SecurityGroupUpdateMgmtAttrReq,
+	validHandler handler.ValidWithAuthHandler) (interface{}, error) {
+
+	id := cts.PathParameter("id").String()
+	if len(id) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "id is required")
+	}
+
+	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
+		enumor.SecurityGroupCloudResType, id)
+	if err != nil {
+		logs.Errorf("get resource sg basic info failed, id: %s, err: %v, rid: %s", id, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
+		Action: meta.Update, BasicInfo: baseInfo})
+	if err != nil {
+		return nil, err
+	}
+
+	if err := svc.sgLogic.UpdateSGMgmtAttr(cts.Kit, req, id); err != nil {
+		logs.Errorf("update security group management attribute failed, err: %v, id: %s, rid: %s", err, id,
+			cts.Kit.Rid)
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+// BatchUpdateSGMgmtAttr batch update security group management attribute.
+func (svc *securityGroupSvc) BatchUpdateSGMgmtAttr(cts *rest.Contexts) (interface{}, error) {
+	return svc.batchUpdateSGMgmtAttr(cts, handler.ResOperateAuth)
+}
+
+func (svc *securityGroupSvc) batchUpdateSGMgmtAttr(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+	interface{}, error) {
+
+	req := new(proto.BatchUpdateSecurityGroupMgmtAttrReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	sgIDs := make([]string, len(req.SecurityGroups))
+	for i, sg := range req.SecurityGroups {
+		sgIDs[i] = sg.ID
+	}
+
+	basicInfoReq := dataproto.ListResourceBasicInfoReq{
+		ResourceType: enumor.SecurityGroupCloudResType,
+		IDs:          sgIDs,
+	}
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, basicInfoReq)
+	if err != nil {
+		return nil, err
+	}
+
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
+		Action: meta.Update, BasicInfos: basicInfoMap})
+	if err != nil {
+		return nil, err
+	}
+
+	if err := svc.sgLogic.BatchUpdateSGMgmtAttr(cts.Kit, req.SecurityGroups); err != nil {
+		logs.Errorf("batch update security group management attribute failed, err: %v, rid: %s", err,
+			cts.Kit.Rid)
 		return nil, err
 	}
 
