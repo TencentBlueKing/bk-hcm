@@ -22,7 +22,7 @@ import StatusFailure from '@/assets/image/failed-account.png';
 import { HOST_RUNNING_STATUS, HOST_SHUTDOWN_STATUS } from '../common/table/HostOperations';
 import './use-columns.scss';
 import { defaults } from 'lodash';
-import { timeFormatter, timeUTCFormatter, formatTags } from '@/common/util';
+import { timeFormatter, formatTags } from '@/common/util';
 import {
   APPLICATION_LAYER_LIST,
   CLB_STATUS_MAP,
@@ -1370,7 +1370,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
           return (
             <>
               <i
-                class='hcm-icon bkhcm-icon-38moxingshibai-01 text-danger font-normal cursor mr8'
+                class='hcm-icon bkhcm-icon-38moxingshibai-01 text-gray font-normal cursor mr8'
                 v-bk-tooltips={{ content: 'HTTP/HTTPS监听器的同步状态，请到URL列表查看' }}
               />
               <span>--</span>
@@ -1513,6 +1513,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '内网IP',
       field: 'private_ip_address',
       isDefaultShow: true,
+      minWidth: 120,
       render: ({ data }: any) => {
         return [
           ...(data.private_ipv4_addresses || []),
@@ -1525,6 +1526,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
     {
       label: '公网IP',
       field: 'public_ip_address',
+      minWidth: 120,
       render: ({ data }: any) => {
         return (
           [
@@ -1540,6 +1542,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '名称',
       field: 'name',
       isDefaultShow: true,
+      minWidth: 120,
       render: ({ data }: any) => {
         return data.name || data.inst_name;
       },
@@ -1563,6 +1566,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '所属VPC',
       field: 'cloud_vpc_ids',
       isDefaultShow: true,
+      minWidth: 150,
       render: ({ cell }: { cell: string[] }) => cell?.join(','),
     },
   ];
@@ -1589,7 +1593,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
         return (
           <>
             <i
-              class='hcm-icon bkhcm-icon-38moxingshibai-01 text-danger font-normal cursor mr8'
+              class='hcm-icon bkhcm-icon-38moxingshibai-01 text-gray font-normal cursor mr8'
               v-bk-tooltips={{ content: 'HTTP/HTTPS监听器的同步状态，请到URL列表查看' }}
             />
             <span>--</span>
@@ -1926,14 +1930,14 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '创建时间',
       field: 'created_at',
       render({ cell }: any) {
-        return timeUTCFormatter(cell);
+        return timeFormatter(cell);
       },
     },
     {
       label: '更新时间',
       field: 'updated_at',
       render({ cell }: any) {
-        return timeUTCFormatter(cell);
+        return timeFormatter(cell);
       },
     },
     {

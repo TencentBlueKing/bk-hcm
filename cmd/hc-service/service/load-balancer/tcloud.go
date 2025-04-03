@@ -141,6 +141,7 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 		SlaType:            req.SlaType,
 		Number:             req.RequireCount,
 		ClientToken:        cvt.StrNilPtr(cts.Kit.Rid),
+		Egress:             req.Egress,
 
 		BandwidthpkgSubType: req.BandwidthpkgSubType,
 		Tags:                req.Tags,

@@ -7,7 +7,6 @@ import { cloneDeep } from 'lodash';
 export default (
   columns: Array<Column>,
   selections: Ref<any[]>,
-  resetSelections: (...args: any) => any,
   getListData: (...args: any) => any,
   isDomain = false,
 ) => {
@@ -128,7 +127,6 @@ export default (
       });
       Message({ theme: 'success', message: '批量删除成功' });
       isBatchDeleteDialogShow.value = false;
-      resetSelections();
       getListData();
     } finally {
       isSubmitLoading.value = false;

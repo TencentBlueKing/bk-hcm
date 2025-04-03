@@ -2,6 +2,8 @@
 import { computed, inject, Ref, watch } from 'vue';
 import { Alert, Form } from 'bkui-vue';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
+import { VendorEnum } from '@/common/constant';
+import { IAccountItem } from '@/typings/account';
 import Step from '../components/step.vue';
 import AccountSelector from '@/components/account-selector/index-new.vue';
 import RegionSelector from '@/views/service/service-apply/components/common/region-selector';
@@ -48,6 +50,21 @@ watch(
   },
   { immediate: true },
 );
+
+const handleAccountChange = (
+  account: IAccountItem,
+  oldAccount: IAccountItem,
+  vendorAccountMap: Map<VendorEnum, IAccountItem[]>,
+) => {
+  const accountList = vendorAccountMap.get(account?.vendor);
+  // 本地缓存中的账号可能在当前业务下不存在，当不存在时重置账号数据避免无法重新选择
+  if (accountList?.some((item) => item.id === account.id)) {
+    formModel.vendor = account.vendor;
+  } else {
+    formModel.account_id = '';
+    formModel.vendor = undefined;
+  }
+};
 </script>
 
 <template>
@@ -58,7 +75,7 @@ watch(
         :biz-id="bkBizId"
         :filter="accountFilter"
         :disabled="globalDisabled"
-        @change="(v) => (formModel.vendor = v.vendor)"
+        @change="handleAccountChange"
       />
     </FormItem>
 

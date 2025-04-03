@@ -202,7 +202,7 @@ func (svc *lbSvc) initFlowTargetPort(kt *kit.Kit, req *cslb.TCloudBatchModifyTar
 			Retry: &tableasync.Retry{
 				Enable: true,
 				Policy: &tableasync.RetryPolicy{
-					Count:        constant.FlowRetryMaxLimit,
+					Count:        3,
 					SleepRangeMS: [2]uint{100, 200},
 				},
 			},

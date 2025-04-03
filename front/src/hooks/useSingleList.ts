@@ -43,7 +43,7 @@ export function useSingleList(options?: {
   // 设置 pagination 默认值
   defaults(options.pagination, { start: 0, limit: 50, count: 0 });
 
-  const getDefaultPagination = () => options.pagination;
+  const getDefaultPagination = () => ({ ...options.pagination });
 
   const dataList = ref([]);
   const pagination = reactive(getDefaultPagination());

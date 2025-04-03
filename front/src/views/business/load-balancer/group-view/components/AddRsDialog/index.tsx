@@ -23,6 +23,7 @@ export default defineComponent({
     let vpc_ids = [] as string[];
     let tgPort = 0;
     let tableRsList = [] as any[];
+    let isCorsVersion2 = false;
 
     const handleShow = ({
       accountId,
@@ -43,9 +44,10 @@ export default defineComponent({
       vpc_ids = vpcIds;
       tgPort = port;
       tableRsList = rsList;
+      isCorsVersion2 = isCorsV2;
 
       // 根据account_id, vpc_ids查询cvm列表
-      getRSTableList(accountId, vpc_ids, isCorsV2);
+      getRSTableList(accountId, vpcIds, isCorsV2);
     };
 
     // confirm-handler
@@ -91,12 +93,15 @@ export default defineComponent({
       handleSelectAll,
       handleClear,
       getRSTableList,
+      handlePageLimitChange,
+      handlePageValueChange,
     } = useAddRsTable(
       rsSelections,
       () => tableRsList,
       () => ({
         vpc_ids,
         account_id,
+        isCorsVersion2,
       }),
     );
 
@@ -122,9 +127,9 @@ export default defineComponent({
               remotePagination
               onSelect={handleSelect}
               onSelectAll={handleSelectAll}
-              isRowSelectEnable={({ row }: any) =>
-                !tableRsList.some((rs) => rs.id === row.id || rs.inst_id === row.id)
-              }>
+              isRowSelectEnable={({ row }: any) => !tableRsList.some((rs) => rs.id === row.id || rs.inst_id === row.id)}
+              onPageLimitChange={handlePageLimitChange}
+              onPageValueChange={handlePageValueChange}>
               {{
                 prepend: () =>
                   rsTableList.value.length && selectedCount.value ? (

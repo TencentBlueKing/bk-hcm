@@ -63,6 +63,7 @@ export default (getListData: () => void, originPage: IOriginPage, isHttpsAndSniO
       domain: '',
       url: '',
       scheduler: '',
+      target_group_id: '',
     });
   };
 

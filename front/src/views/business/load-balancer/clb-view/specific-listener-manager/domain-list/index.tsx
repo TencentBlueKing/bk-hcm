@@ -1,4 +1,4 @@
-import { defineComponent, ref, watch } from 'vue';
+import { defineComponent, ref, useTemplateRef, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 // import components
 import { Button, Message, Tag } from 'bkui-vue';
@@ -36,6 +36,11 @@ export default defineComponent({
     const defaultDomain = ref('');
     const isCheckDomainLoading = ref(false);
     const { selections, handleSelectionChange, resetSelections } = useSelection();
+    const isRowSelectEnable = ({ row, isCheckAll }: any) => {
+      if (isCheckAll) return true;
+      return isCurRowSelectEnable(row);
+    };
+    const isCurRowSelectEnable = (row: any) => row.domain !== defaultDomain.value;
     const settingDomain = ref('');
 
     const isLoading = ref(false);
@@ -149,7 +154,6 @@ export default defineComponent({
                       domains: [data.domain],
                     });
                     Message({ message: '删除成功', theme: 'success' });
-                    bus.$emit('resetLbTree');
                     getDomainList(listenerId);
                   });
                 }}>
@@ -183,8 +187,6 @@ export default defineComponent({
     watch(
       [() => props.id, () => props.type],
       ([id, type]) => {
-        // 清空选中项
-        resetSelections();
         // 当id或type变更时, 重新请求数据
         const { protocol } = props;
         if (id && type === 'list') {
@@ -225,9 +227,22 @@ export default defineComponent({
       }
     };
 
+    const tableRef = useTemplateRef<typeof CommonLocalTable>('table-comp');
+    const clearSelection = () => {
+      resetSelections();
+      tableRef.value?.clearSelection();
+    };
+    watch(
+      () => domainList.value,
+      () => {
+        clearSelection();
+      },
+    );
+
     return () => (
       <div class='domain-list-page'>
         <CommonLocalTable
+          ref='table-comp'
           loading={isLoading.value}
           tableOptions={{
             rowKey: 'domain',
@@ -239,8 +254,9 @@ export default defineComponent({
                   return 'binding-row';
                 }
               },
-              onSelectionChange: (selections: any) => handleSelectionChange(selections, () => true),
-              onSelectAll: (selections: any) => handleSelectionChange(selections, () => true, true),
+              isRowSelectEnable,
+              onSelectionChange: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable),
+              onSelectAll: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true),
             },
           }}
           tableData={domainList.value}

@@ -57,6 +57,7 @@ type TCloudLoadBalancerCreateReq struct {
 	InternetMaxBandwidthOut *int64   `json:"internet_max_bandwidth_out" validate:"omitempty"`
 	BandwidthPackageID      *string  `json:"bandwidth_package_id" validate:"omitempty"`
 	BandwidthpkgSubType     *string  `json:"bandwidthpkg_sub_type" validate:"omitempty"`
+	Egress                  *string  `json:"egress" validate:"omitempty"`
 
 	SlaType      *string `json:"sla_type" validate:"omitempty"`
 	AutoRenew    *bool   `json:"auto_renew" validate:"omitempty"`

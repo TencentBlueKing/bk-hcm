@@ -8,6 +8,7 @@ import { useI18n } from 'vue-i18n';
 import { CLB_QUOTA_NAME } from '@/typings';
 import './index.scss';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { ResourceTypeEnum } from '@/common/resource-constant';
 
 const { FormItem } = Form;
 
@@ -116,6 +117,7 @@ export default defineComponent({
                     region={props.vpcDetail?.region}
                     accountId={props.vpcDetail?.account_id}
                     zone={props.lbInfo?.zones?.[0]}
+                    resourceType={ResourceTypeEnum.CLB}
                   />
                 </FormItem>
                 <FormItem label='分配IP' required property='type'>

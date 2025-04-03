@@ -108,38 +108,10 @@ func (svc *lbSvc) terminateFlow(cts *rest.Contexts,
 }
 
 // RetryTask 重试子任务 要求有资源操作权限, 且对应的rel为 executing
-func (svc *lbSvc) retryTask(cts *rest.Contexts,
-	operateAuth handler.ValidWithAuthHandler) (any, error) {
+func (svc *lbSvc) retryTask(cts *rest.Contexts, operateAuth handler.ValidWithAuthHandler) (any, error) {
 
-	// check lb operate perm
-	lbInfo, err := svc.getAndCheckLBPerm(cts, operateAuth)
-	if err != nil {
-		return nil, err
-	}
-
-	req := new(cslb.AsyncTaskRetryReq)
-	if err = cts.DecodeInto(req); err != nil {
-		return nil, err
-	}
-	if err = req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-	// 对应的rel表 是否已经取消或失败
-	rel, err := svc.getLoadBalancerFlowRel(cts.Kit, lbInfo.ID, req.FlowID)
-	if err != nil {
-		return nil, err
-	}
-	if rel.Status != enumor.ExecutingResFlowStatus {
-		return nil, errf.Newf(errf.InvalidParameter, "given flow status incorrect: %s", rel.Status)
-	}
-	err = svc.client.TaskServer().RetryTask(cts.Kit, req.FlowID, req.TaskID)
-	if err != nil {
-		logs.Errorf("fail to call task server to retry flow(%s),task(%s), err: %s, rid: %s",
-			req.FlowID, req.TaskID, err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return nil, nil
+	// 屏蔽取消操作，后续将移除对应支持
+	return nil, errors.New("not supported")
 }
 
 // CloneFlow 重新发起
@@ -194,17 +166,18 @@ func (svc *lbSvc) cloneFlow(cts *rest.Contexts, operateAuth handler.ValidWithAut
 			},
 		}},
 	}
+	// 尝试锁定资源跟Flow的状态
+	err = svc.lockResFlowStatus(cts.Kit, lbInfo.ID, enumor.LoadBalancerCloudResType, flowRet.ID, rel.TaskType)
+	if err != nil {
+		logs.Errorf("lock res flow status failed, err: %v, flowID: %s, rid: %s", err, req.FlowID, cts.Kit.Rid)
+		return nil, err
+	}
 
+	// 锁定成功，创建从flow
 	_, err = svc.client.TaskServer().CreateTemplateFlow(cts.Kit, flowWatchReq)
 	if err != nil {
 		logs.Errorf("call task server to create res flow status watch task failed, err: %v, flowID: %s, rid: %s",
 			err, req.FlowID, cts.Kit.Rid)
-		return nil, err
-	}
-
-	// 锁定资源跟Flow的状态
-	err = svc.lockResFlowStatus(cts.Kit, lbInfo.ID, enumor.LoadBalancerCloudResType, req.FlowID, rel.TaskType)
-	if err != nil {
 		return nil, err
 	}
 

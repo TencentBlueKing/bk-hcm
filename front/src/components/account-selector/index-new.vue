@@ -47,7 +47,10 @@ const props = withDefaults(defineProps<IAccountSelectorProps>(), {
   filter: filterPlugin.accountFilter.bind(filterPlugin),
 });
 
-const emit = defineEmits<(e: 'change', val: IAccountItem, oldVal: IAccountItem) => void>();
+const emit =
+  defineEmits<
+    (e: 'change', val: IAccountItem, oldVal: IAccountItem, vendorAccountMap: Map<VendorEnum, IAccountOption[]>) => void
+  >();
 
 const model = defineModel<string>();
 
@@ -135,7 +138,7 @@ watch(
 watch([model, list], ([newVal, newList], [oldVal]) => {
   const account = newList.find((item) => item.id === newVal);
   const oldAccount = list.value.find((item) => item.id === oldVal);
-  emit('change', account, oldAccount);
+  emit('change', account, oldAccount, vendorAccountMap.value);
 });
 
 watchEffect(() => {

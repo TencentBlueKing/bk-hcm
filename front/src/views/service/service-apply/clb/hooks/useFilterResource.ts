@@ -7,7 +7,7 @@ import bus from '@/common/bus';
 import { ApplyClbModel, SpecAvailability } from '@/api/load_balancers/apply-clb/types';
 import { reqResourceListOfCurrentRegion } from '@/api/load_balancers/apply-clb';
 import { ClbQuota, LbPrice } from '@/typings';
-import { cloneDeep, debounce, uniqBy } from 'lodash';
+import { cloneDeep, debounce, isEqual, uniqBy } from 'lodash';
 import { VendorEnum } from '@/common/constant';
 
 // 当云地域变更时, 获取用户在当前地域支持可用区列表和资源列表
@@ -80,7 +80,7 @@ export default (formModel: ApplyClbModel) => {
     isResourceListLoading.value = true;
     try {
       const { data } = await reqResourceListOfCurrentRegion(vendor, params);
-      const { ZoneResourceSet } = data;
+      const { ZoneResourceSet = [] } = data;
 
       // 构建主备可用区映射
       const zoneMapping: Record<string, string[]> = {};
@@ -236,29 +236,33 @@ export default (formModel: ApplyClbModel) => {
 
   watch(
     [() => formModel.region, () => formModel.zones, () => formModel.address_ip_version],
-    ([newRegion, zones, address_ip_version], [oldRegion]) => {
-      // 重置资源映射
-      currentResourceListMap.value = {};
+    ([newRegion, newZones, newAddressIpVersion], [oldRegion, oldZones, oldAddressIpVersion]) => {
+      if (
+        isEqual(newRegion, oldRegion) &&
+        isEqual(newZones, oldZones) &&
+        isEqual(newAddressIpVersion, oldAddressIpVersion)
+      ) {
+        return;
+      }
+
       // 内网下不需要选择运营商类型
       if (!newRegion || formModel.load_balancer_type === 'INTERNAL') return;
 
+      // 重置资源映射
+      currentResourceListMap.value = {};
+
       let master_zone;
-      if (zones) master_zone = Array.isArray(zones) && zones.length > 0 ? zones : [zones];
-      // TODO：之前遗留的设计问题，这里需要手动再清一下 zones 的值
-      if (newRegion !== oldRegion) {
-        master_zone = undefined;
-      }
+      if (newZones) master_zone = Array.isArray(newZones) ? newZones : [newZones];
       const params = {
         account_id: formModel.account_id,
         region: newRegion,
         master_zone,
-        ip_version: [ipVersionMap[address_ip_version]],
+        ip_version: [ipVersionMap[newAddressIpVersion]],
       };
 
       // 获取当前地域「可用区列表和资源列表的映射关系」
       getResourceListOfCurrentRegion(formModel.vendor, params);
     },
-    { deep: true },
   );
 
   watch(

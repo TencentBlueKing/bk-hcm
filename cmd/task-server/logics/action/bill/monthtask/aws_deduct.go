@@ -48,10 +48,18 @@ func (a AwsDeductMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index 
 	itemList []bill.RawBillItem, isFinished bool, err error) {
 
 	a.initExtension(kt, opt)
+
+	rootInfo, err := actcli.GetDataService().Global.RootAccount.GetBasicInfo(kt, opt.RootAccountID)
+	if err != nil {
+		logs.Errorf("fail to get deduct root account(%s), err: %v, rid: %s", opt.RootAccountID, err, kt.Rid)
+		return nil, false, fmt.Errorf("fail to get deduct root account, err: %w", err)
+	}
+
 	// 检查当前root账号是否有抵扣项配置
-	if len(a.deductItemTypes) == 0 || a.deductItemTypes[opt.RootAccountID] == nil {
-		logs.Infof("skip aws deduct month task, root account: %s, deductItemTypes: %+v, reason: not need deduct, "+
-			"opt: %+v, rid: %s", opt.RootAccountID, a.deductItemTypes, cvt.PtrToVal(opt), kt.Rid)
+	if len(a.deductItemTypes) == 0 {
+		logs.Infof("skip aws deduct month task, root account: %s, rootAccountCloudID: %s, deductItemTypes: %+v, "+
+			"reason: not need deduct, opt: %+v, rid: %s", opt.RootAccountID, rootInfo.CloudID, a.deductItemTypes,
+			cvt.PtrToVal(opt), kt.Rid)
 		return nil, true, nil
 	}
 
@@ -60,7 +68,7 @@ func (a AwsDeductMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index 
 
 	// 解析当前root账号需要查询的字段及值
 	fieldsMap := make(map[string][]string)
-	for fieldKey, fieldValues := range a.deductItemTypes[opt.RootAccountID] {
+	for fieldKey, fieldValues := range a.deductItemTypes {
 		fieldsMap[fieldKey] = fieldValues
 	}
 
@@ -70,12 +78,6 @@ func (a AwsDeductMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index 
 		logs.Errorf("fail get last day of month for aws month task, year: %d, month: %d, err: %v, rid: %s",
 			opt.BillYear, opt.BillMonth, err, kt.Rid)
 		return nil, false, err
-	}
-
-	rootInfo, err := actcli.GetDataService().Global.RootAccount.GetBasicInfo(kt, opt.RootAccountID)
-	if err != nil {
-		logs.Errorf("fail to get deduct root account(%s), err: %v, rid: %s", opt.RootAccountID, err, kt.Rid)
-		return nil, false, fmt.Errorf("fail to get deduct root account, err: %w", err)
 	}
 
 	hcCli := actbill.GetHCServiceByAwsSite(rootInfo.Site)

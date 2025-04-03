@@ -73,6 +73,8 @@ func bizService(h *rest.Handler, svc *lbSvc) {
 	// h.Add("BizBatchCreateLB", http.MethodPost, "/load_balancers/create", svc.BizBatchCreateLB)
 	h.Add("UpdateBizTCloudLoadBalancer", http.MethodPatch,
 		"/vendors/tcloud/load_balancers/{id}", svc.UpdateBizTCloudLoadBalancer)
+	h.Add("InquiryPriceBizLoadBalancer", http.MethodPost, "/load_balancers/prices/inquiry",
+		svc.InquiryPriceBizLoadBalancer)
 	h.Add("ListBizLoadBalancer", http.MethodPost, "/load_balancers/list", svc.ListBizLoadBalancer)
 	h.Add("ListLoadBalancerWithDeleteProtection", http.MethodPost,
 		"/load_balancers/with/delete_protection/list", svc.ListBizLoadBalancerWithDeleteProtect)
