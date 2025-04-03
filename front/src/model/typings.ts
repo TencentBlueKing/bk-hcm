@@ -1,28 +1,28 @@
 import type { VNode } from 'vue';
 import type { Column as TableColumn } from 'bkui-vue/lib/table/props';
-import { QueryRuleOPEnum } from '@/typings';
+import { RulesItem, QueryRuleOPEnum } from '@/typings';
 import type { ResourceTypeEnum } from '@/common/resource-constant';
 
 export type ModelPropertyType =
-  | 'string'
-  | 'datetime'
-  | 'enum'
-  | 'number'
-  | 'account'
-  | 'user'
-  | 'array'
-  | 'bool'
-  | 'cert'
-  | 'ca'
-  | 'region';
+    | 'string'
+    | 'datetime'
+    | 'enum'
+    | 'number'
+    | 'account'
+    | 'user'
+    | 'array'
+    | 'bool'
+    | 'cert'
+    | 'ca'
+    | 'region'
+    | 'business'
+    | 'cloud-area';
 
 export type ModelPropertyMeta = {
-  display: {
-    appearance: string;
-  };
-  search: {
-    op: QueryRuleOPEnum;
-  };
+  display?: PropertyDisplayConfig;
+  search?: PropertySearchConfig;
+  column?: PropertyColumnConfig;
+  form?: PropertyFormConfig;
 };
 
 // 模型的基础字段，与业务场景无关
@@ -33,6 +33,7 @@ export type ModelProperty = {
   resource?: ResourceTypeEnum;
   option?: Record<string, any>;
   meta?: ModelPropertyMeta;
+  unit?: string;
   index?: number;
 };
 
@@ -50,14 +51,40 @@ export type PropertyColumnConfig = {
   width?: number | string;
   minWidth?: number | string;
   defaultHidden?: boolean;
+  showOverflowTooltip?: boolean;
 };
 
 export type PropertyFormConfig = {
-  rules: object;
+  rules?: object;
+};
+
+export type PropertySearchConfig = {
+  op?: QueryRuleOPEnum;
+  filterRules?: (value: any) => RulesItem;
+  format?: (value: any) => any;
+  converter?: (value: any) => Record<string, any>;
+};
+
+export type PropertyDisplayConfig = {
+  appearance?: string;
+  format?: (value: any) => any;
 };
 
 // 与列展示场景相关，联合列的配置属性
 export type ModelPropertyColumn = ModelProperty & PropertyColumnConfig;
 
-// 与列表单场景相关，联合表单的配置属性
+// 与表单场景相关，联合表单的配置属性
 export type ModelPropertyForm = ModelProperty & PropertyFormConfig;
+
+// 与展示场景相关，联合展示的配置属性
+export type ModelPropertyDisplay = ModelProperty & PropertyDisplayConfig;
+
+// 与搜索场景相关，联合搜索的配置属性
+export type ModelPropertySearch = ModelProperty & PropertySearchConfig;
+
+export type ModelPropertyGeneric =
+    | ModelProperty
+    | ModelPropertyColumn
+    | ModelPropertyForm
+    | ModelPropertyDisplay
+    | ModelPropertySearch;
