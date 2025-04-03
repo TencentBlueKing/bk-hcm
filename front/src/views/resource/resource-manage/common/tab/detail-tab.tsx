@@ -23,7 +23,6 @@ export default defineComponent({
   },
 
   render() {
-    console.log(this);
     return (
       <>
         <bk-tab

@@ -141,10 +141,13 @@ func (svc *securityGroupSvc) getSecurityGroup(cts *rest.Contexts, validHandler h
 
 func (svc *securityGroupSvc) queryAssociateCvmCount(kt *kit.Kit, id string) (uint64, error) {
 	cvmRelOpt := &core.ListReq{
-		Filter: tools.EqualExpression("security_group_id", id),
-		Page:   core.NewCountPage(),
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("security_group_id", id),
+			tools.RuleEqual("res_type", enumor.CvmCloudResType),
+		),
+		Page: core.NewCountPage(),
 	}
-	cvmRelResult, err := svc.client.DataService().Global.SGCvmRel.ListSgCvmRels(kt.Ctx, kt.Header(), cvmRelOpt)
+	cvmRelResult, err := svc.client.DataService().Global.SGCommonRel.ListSgCommonRels(kt, cvmRelOpt)
 	if err != nil {
 		return 0, err
 	}
@@ -231,11 +234,13 @@ func (svc *securityGroupSvc) listSecurityGroup(cts *rest.Contexts, authHandler h
 }
 
 // ListSecurityGroupsByCvmID list security groups by cvm_id.
+// Deprecated: use ListSecurityGroupsByResID instead.
 func (svc *securityGroupSvc) ListSecurityGroupsByCvmID(cts *rest.Contexts) (interface{}, error) {
 	return svc.listSGByCvmID(cts, handler.ResOperateAuth)
 }
 
 // ListBizSecurityGroupsByCvmID list biz security groups by cvm_id.
+// Deprecated: use ListBizSecurityGroupsByResID instead.
 func (svc *securityGroupSvc) ListBizSecurityGroupsByCvmID(cts *rest.Contexts) (interface{}, error) {
 	return svc.listSGByCvmID(cts, handler.BizOperateAuth)
 }

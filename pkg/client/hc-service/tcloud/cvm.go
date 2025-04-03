@@ -242,3 +242,11 @@ func (cli *CvmClient) BatchAssociateSecurityGroup(kt *kit.Kit,
 	return common.RequestNoResp[protocvm.TCloudCvmBatchAssociateSecurityGroupReq](
 		cli.client, http.MethodPost, kt, req, "/cvms/security_groups/batch/associate")
 }
+
+// ListCvmNetworkInterface ....
+func (cli *CvmClient) ListCvmNetworkInterface(kt *kit.Kit, request *protocvm.ListCvmNetworkInterfaceReq) (
+	*map[string]*protocvm.ListCvmNetworkInterfaceRespItem, error) {
+
+	return common.Request[protocvm.ListCvmNetworkInterfaceReq, map[string]*protocvm.ListCvmNetworkInterfaceRespItem](
+		cli.client, rest.POST, kt, request, "/cvms/network_interfaces/list")
+}

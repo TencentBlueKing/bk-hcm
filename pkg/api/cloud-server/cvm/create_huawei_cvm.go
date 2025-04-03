@@ -46,6 +46,7 @@ var (
 type HuaWeiCvmCreateReq struct {
 	BkBizID               int64              `json:"bk_biz_id" validate:"omitempty"`
 	AccountID             string             `json:"account_id" validate:"required"`
+	BkCloudID             *int64             `json:"bk_cloud_id" validate:"required"`
 	Region                string             `json:"region" validate:"required"`
 	Zone                  string             `json:"zone" validate:"required"`
 	Name                  string             `json:"name" validate:"required,min=1,max=60"`
@@ -81,13 +82,17 @@ type HuaWeiCvmCreateReq struct {
 }
 
 // Validate ...
-func (req *HuaWeiCvmCreateReq) Validate(bizRequired bool) error {
+func (req *HuaWeiCvmCreateReq) Validate(isFromBiz bool) error {
 	if err := validator.Validate.Struct(req); err != nil {
 		return err
 	}
 
-	if bizRequired && req.BkBizID == 0 {
+	if isFromBiz && req.BkBizID == 0 {
 		return errors.New("bk_biz_id is required")
+	}
+
+	if isFromBiz && req.BkCloudID == nil {
+		return errors.New("bk_cloud_id is required")
 	}
 
 	if req.PublicIPAssigned {

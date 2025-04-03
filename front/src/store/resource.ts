@@ -1,9 +1,8 @@
 import http from '@/http';
 import { defineStore } from 'pinia';
-
-import { useAccountStore } from '@/store';
-import { VendorEnum } from '@/common/constant';
 import rollRequest from '@blueking/roll-request';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { VendorEnum } from '@/common/constant';
 import { FilterType } from '@/typings';
 // import { json2Query } from '@/common/util';
 
@@ -28,9 +27,9 @@ export interface BatchBindSecurityInfoParams {
 
 // 获取
 const getBusinessApiPath = (type?: string) => {
-  const store = useAccountStore();
+  const { getBizsId } = useWhereAmI();
   if (location.href.includes('business') && type !== 'images') {
-    return `bizs/${store.bizs}/`;
+    return `bizs/${getBizsId()}/`;
   }
   return '';
 };

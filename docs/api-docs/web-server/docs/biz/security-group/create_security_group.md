@@ -10,27 +10,30 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/security_groups/create
 
 ### 输入参数
 
-| 参数名称            | 参数类型   | 必选   | 描述                               |
-|-----------------|--------|------|----------------------------------|
-| bk_biz_id       | int64  | 是    | 业务ID                             |
-| vendor          | string | 是    | 供应商（枚举值：tcloud、aws、azure、huawei） |
-| account_id      | string | 是    | 账号ID                             |
-| region          | string | 是    | 地域                               |
-| name            | string | 是    | 安全组名称                            |
-| memo            | string | 否    | 备注                               |
-| extension       | object | 否    | 混合云资源差异字段（aws、azure必填）           |
+| 参数名称          | 参数类型      | 必选 | 描述                               |
+|---------------|-----------|----|----------------------------------|
+| bk_biz_id     | int64     | 是  | 业务ID                             |
+| vendor        | string    | 是  | 供应商（枚举值：tcloud、aws、azure、huawei） |
+| account_id    | string    | 是  | 账号ID                             |
+| region        | string    | 是  | 地域                               |
+| name          | string    | 是  | 安全组名称                            |
+| manager       | string    | 是  | 负责人                              |
+| bak_manager   | string    | 是  | 备份负责人                            |
+| usage_biz_ids | int array | 否  | 不传默认为当前业务，不能传入-1, 传入的业务可以不包含当前业务 |
+| memo          | string    | 否  | 备注                               |
+| extension     | object    | 否  | 混合云资源差异字段（aws、azure必填）           |
 
 #### extension[aws]
 
-| 参数名称 | 参数类型 | 必选 | 描述 |
-|--------------|--------|-----|--|
-| cloud_vpc_id | string | 是 | 云VpcID |
+| 参数名称         | 参数类型   | 必选 | 描述     |
+|--------------|--------|----|--------|
+| cloud_vpc_id | string | 是  | 云VpcID |
 
 #### extension[azure]
 
-| 参数名称 | 参数类型 | 必选 | 描述 |
-|--|--------|-----|----------------------------------|
-| resource_group_name | string | 是 | 资源组名称 |
+| 参数名称                | 参数类型   | 必选 | 描述    |
+|---------------------|--------|----|-------|
+| resource_group_name | string | 是  | 资源组名称 |
 
 ### 调用示例
 
@@ -42,6 +45,12 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/security_groups/create
   "account_id": "00000003",
   "region": "ap-guangzhou",
   "name": "sg-create-test",
+  "manager": "u1",
+  "bak_manager": "u2",
+  "usage_biz_ids": [
+    123,
+    234
+  ],
   "memo": "sg test"
 }
 ```
@@ -55,6 +64,12 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/security_groups/create
   "region": "us-west-2",
   "name": "sg-create-test",
   "memo": "sg test",
+  "manager": "u1",
+  "bak_manager": "u2",
+  "usage_biz_ids": [
+    123,
+    234
+  ],
   "extension": {
     "cloud_vpc_id": "vpc-xxxxx"
   }
@@ -69,6 +84,12 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/security_groups/create
   "account_id": "0000001z",
   "region": "ap-southeast-1",
   "name": "sg-create-test",
+  "manager": "u1",
+  "bak_manager": "u2",
+  "usage_biz_ids": [
+    123,
+    234
+  ],
   "memo": "sg test"
 }
 ```
@@ -82,6 +103,12 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/security_groups/create
   "region": "westus",
   "name": "sg-create-test",
   "memo": "sg test",
+  "manager": "u1",
+  "bak_manager": "u2",
+  "usage_biz_ids": [
+    123,
+    234
+  ],
   "extension": {
     "resource_group_name": "bk"
   }
@@ -110,6 +137,6 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/security_groups/create
 
 #### data
 
-| 参数名称 | 参数类型     | 描述    |
-|-----|----------|-------|
-| id  | string   | 安全组ID |
+| 参数名称 | 参数类型   | 描述    |
+|------|--------|-------|
+| id   | string | 安全组ID |

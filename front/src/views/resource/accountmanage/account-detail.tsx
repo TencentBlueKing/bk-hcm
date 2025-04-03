@@ -96,7 +96,7 @@ export default defineComponent({
     const isOrganizationDetail = ref<Boolean>(true); // 组织架构详情展示
     const getDetail = async () => {
       const { id, accountId } = route.query;
-      const res = await accountStore.getAccountDetail(id || accountId);
+      const res = await accountStore.getAccountDetail((id || accountId) as string);
       projectModel.id = res?.data.id;
       projectModel.vendor = res?.data.vendor;
       projectModel.name = res?.data.name;

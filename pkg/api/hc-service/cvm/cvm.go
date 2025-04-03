@@ -52,3 +52,20 @@ type OperateSyncReq struct {
 	CloudIDs  []string `json:"cloud_ids" validate:"omitempty"`
 	SelfLinks []string `json:"self_links" validate:"omitempty"`
 }
+
+// ListCvmNetworkInterfaceReq defines list cvm mac address request.
+type ListCvmNetworkInterfaceReq struct {
+	AccountID string   `json:"account_id" validate:"required"`
+	Region    string   `json:"region" validate:"required"`
+	CvmIDs    []string `json:"cvm_ids" validate:"required,min=1,max=50"`
+}
+
+// Validate validate list cvm mac address request.
+func (r *ListCvmNetworkInterfaceReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// ListCvmNetworkInterfaceRespItem defines list cvm mac address response item.
+type ListCvmNetworkInterfaceRespItem struct {
+	MacAddressToPrivateIpAddresses map[string][]string `json:"mac_address_to_private_ip"`
+}

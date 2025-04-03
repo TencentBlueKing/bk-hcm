@@ -43,6 +43,10 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    trim: {
+      type: Boolean,
+      default: true,
+    },
   },
   emits: ['update:modelValue', 'change', 'input', 'blur'],
   setup(props, ctx) {
@@ -68,9 +72,10 @@ export default defineComponent({
     );
 
     const handleChange = (val: any) => {
-      ctx.emit('change', val, props.fromKey);
-      ctx.emit('input', val);
-      ctx.emit('update:modelValue', val);
+      const value = props.trim ? val.trim() : val;
+      ctx.emit('change', value, props.fromKey);
+      ctx.emit('input', value);
+      ctx.emit('update:modelValue', value);
     };
 
     const handleOrganChange = (val: any) => {
