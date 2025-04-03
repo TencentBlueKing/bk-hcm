@@ -242,18 +242,6 @@ watch(
   },
 );
 
-const handleSwtichType = async (type: string) => {
-  if (type === 'gcp') {
-    fetchUrl.value = 'vendors/gcp/firewalls/rules/list';
-  } else if (type === 'group') {
-    fetchUrl.value = 'security_groups/list';
-  } else if (type === 'template') {
-    fetchUrl.value = 'argument_templates/list';
-  }
-  emit('handleSecrityType', type);
-  router.replace({ query: Object.assign({}, route.query, { type: 'security', scene: type }) });
-};
-
 // 抛出请求数据的方法，新增成功使用
 const fetchComponentsData = () => {
   getList();
@@ -977,8 +965,16 @@ watch(types, () => {
 watch(
   () => activeType.value,
   (v) => {
+    if (v === 'gcp') {
+      fetchUrl.value = 'vendors/gcp/firewalls/rules/list';
+    } else if (v === 'group') {
+      fetchUrl.value = 'security_groups/list';
+    } else if (v === 'template') {
+      fetchUrl.value = 'argument_templates/list';
+    }
+    emit('handleSecrityType', v);
     setTimeout(() => {
-      handleSwtichType(v);
+      router.replace({ query: Object.assign({}, route.query, { type: 'security', scene: v }) });
       resetSelections();
     });
   },

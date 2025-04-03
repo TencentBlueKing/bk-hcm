@@ -16,6 +16,7 @@ export default defineComponent({
     watch(
       () => activeTab.value,
       (val) => {
+        if (!resourceAccountStore.resourceAccount?.id) return;
         router.push({
           path: val,
           query: route.query,
