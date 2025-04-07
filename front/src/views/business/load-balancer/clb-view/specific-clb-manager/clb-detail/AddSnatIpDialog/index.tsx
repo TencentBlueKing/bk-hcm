@@ -28,7 +28,7 @@ export default defineComponent({
       bk_biz_id: getBizsId(),
       cloud_subnet_id: '',
       type: '0', // 0 自动生成 1 手动录入
-      ip_count: 0,
+      ip_count: 1,
       ip_list: [''],
     });
     const formData = reactive(getDefaultFormData());
@@ -128,13 +128,7 @@ export default defineComponent({
                 </FormItem>
                 {formData.type === '0' ? (
                   <FormItem label='IP数量' required property='ip_count'>
-                    <Input
-                      type='number'
-                      v-model={formData.ip_count}
-                      placeholder='0'
-                      min={0}
-                      max={snatIpQuotaLimit.value}
-                    />
+                    <Input type='number' v-model={formData.ip_count} min={1} max={snatIpQuotaLimit.value} />
                   </FormItem>
                 ) : (
                   <FormItem label='IP' required property='ip_list'>
@@ -162,7 +156,7 @@ export default defineComponent({
                         <Button text onClick={handleAddIp} disabled={!canAdd.value}>
                           <i class='hcm-icon bkhcm-icon-plus-circle-shape'></i>
                         </Button>
-                        <Button text onClick={() => handleRemoveIp(ip)}>
+                        <Button text disabled={formData.ip_list.length === 1} onClick={() => handleRemoveIp(ip)}>
                           <i class='hcm-icon bkhcm-icon-minus-circle-shape'></i>
                         </Button>
                       </div>
