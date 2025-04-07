@@ -650,7 +650,6 @@ export default (formModel: Reactive<ApplyClbModel>) => {
     // 当 account_id 或 region 改变时, 恢复默认状态
     resetParams();
     Object.assign(formModel, {
-      load_balancer_type: 'OPEN',
       address_ip_version: 'IPV4',
       zoneType: '0',
       sla_type: 'shared',
