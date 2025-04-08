@@ -10,6 +10,7 @@ const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 export interface ICloneSecurityParams {
   id: string;
+  name: string;
   manager: string;
   bak_manager: string;
 }
@@ -72,8 +73,9 @@ export const useBusinessStore = defineStore({
      * @return {*}
      */
     cloneSecurity(data: ICloneSecurityParams) {
-      const { id, manager, bak_manager } = data;
+      const { id, name, manager, bak_manager } = data;
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}security_groups/${id}/clone`, {
+        name,
         manager,
         bak_manager,
       });

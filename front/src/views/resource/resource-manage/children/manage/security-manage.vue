@@ -1252,11 +1252,14 @@ watch(
     />
 
     <!-- 克隆安全组弹窗 -->
-    <CloneSecurity
-      v-model:isShow="cloneSecurityData.isShow"
-      :data="cloneSecurityData.data"
-      @success="handleSecurityGroupOperationSuccess"
-    />
+    <template v-if="cloneSecurityData.isShow">
+      <CloneSecurity
+        v-model:isShow="cloneSecurityData.isShow"
+        :data="cloneSecurityData.data"
+        @success="handleSecurityGroupOperationSuccess"
+      />
+    </template>
+
     <!-- 批量分配 -->
     <template v-if="!securityGroupAssignDialogState.isHidden">
       <security-group-assign-dialog

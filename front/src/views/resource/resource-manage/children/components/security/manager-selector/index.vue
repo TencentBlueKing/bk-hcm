@@ -24,7 +24,7 @@ const validate = () => {
 const reset = () => {
   formData.value.manager = '';
   formData.value.bak_manager = '';
-  nextTick(() => formRef.value.clearValidate());
+  nextTick(() => formRef.value?.clearValidate());
 };
 
 watch(
