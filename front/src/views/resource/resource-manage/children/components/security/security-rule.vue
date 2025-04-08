@@ -25,8 +25,9 @@ import { awsSourceAddressTypes, AwsSourceTypeArr } from './add-rule/vendors/aws'
 import { tcloudSourceAddressTypes, TcloudSourceTypeArr } from './add-rule/vendors/tcloud';
 import { huaweiSourceAddressTypes } from './add-rule/vendors/huawei';
 import RuleSort from './security-rule-sort.vue';
-import { showSort } from './show-sort.plugin';
 import { IOverflowTooltipOption } from 'bkui-vue/lib/table/props';
+import { showSort } from '../../plugin/security-group/show-sort.plugin';
+import { checkVendorInResource } from '../../plugin/security-group/check-vendor-in-resource.plugin';
 
 const props = defineProps({
   id: {
@@ -369,7 +370,7 @@ const inColumns: any = computed(() =>
           ),
         ]);
       },
-      isShow: true,
+      isShow: !checkVendorInResource(route?.query?.vendor),
       showOverflowTooltip: false,
     },
   ].filter(({ isShow }) => !!isShow),
@@ -602,7 +603,7 @@ const outColumns: any = computed(() =>
           ),
         ]);
       },
-      isShow: true,
+      isShow: !checkVendorInResource(route?.query?.vendor),
       showOverflowTooltip: false,
     },
   ].filter(({ isShow }) => !!isShow),
@@ -631,6 +632,7 @@ const types = [
 
       <div @click="showAuthDialog(actionName)">
         <bk-button
+          v-if="!checkVendorInResource(route?.query?.vendor)"
           :disabled="(isResourcePage && !hasEditScopeInResource) || (!isResourcePage && !hasEditScopeInBusiness)"
           v-bk-tooltips="operateTooltipsOption"
           theme="primary"
@@ -642,10 +644,10 @@ const types = [
       </div>
 
       <bk-button
+        v-if="showSort(route?.query?.vendor)"
         icon="plus"
         :disabled="(isResourcePage && !hasEditScopeInResource) || (!isResourcePage && !hasEditScopeInBusiness)"
         v-bk-tooltips="operateTooltipsOption"
-        v-if="showSort(route?.query?.vendor)"
         @click="handleSecurityRuleSort"
       >
         {{ t('规则排序') }}

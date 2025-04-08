@@ -53,6 +53,7 @@ import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import { useBusinessGlobalStore } from '@/store/business-global';
 import UsageBizValue from '@/views/resource/resource-manage/children/components/security/usage-biz-value.vue';
 import { showClone } from '../plugin/security-group/show-clone.plugin';
+import { checkVendorInResource } from '../plugin/security-group/check-vendor-in-resource.plugin';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -474,6 +475,7 @@ const groupColumns = [
         }
       };
 
+      const isCheckVendorInResource = checkVendorInResource(data.vendor);
       const isCloneShow = showClone(data.vendor);
       const getCommonTooltipsOption = () => {
         if (isResourcePage && isAssigned) {
@@ -500,7 +502,7 @@ const groupColumns = [
         {
           type: 'rule',
           name: t('配置规则'),
-          resourcePageDisabled: isAssigned,
+          resourcePageDisabled: isAssigned || isCheckVendorInResource,
           businessPageDisabled: !(isCurrentBizManage && isAssigned),
           getTooltipsOption: getCommonTooltipsOption,
         },
@@ -517,7 +519,7 @@ const groupColumns = [
         {
           type: 'delete',
           name: t('删除'),
-          resourcePageDisabled: isAssigned,
+          resourcePageDisabled: isAssigned || isCheckVendorInResource,
           businessPageDisabled: !(isCurrentBizManage && isAssigned),
           getTooltipsOption: getCommonTooltipsOption,
         },
