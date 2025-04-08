@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/api/core/cloud"
 	dataproto "hcm/pkg/api/data-service"
 	datacloud "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
@@ -151,22 +152,23 @@ func (mgr *CvmRelManger) upsertSgRelForCvm(kt *kit.Kit, cvmID string, startIdx i
 func (mgr *CvmRelManger) listCvmSGRelsFromDB(kt *kit.Kit, cvmIDs []string) (
 	map[string][]cloud.SGCommonRelWithBaseSecurityGroup, error) {
 
-	listReq := &datacloud.SGCommonRelWithSecurityGroupListReq{
-		ResIDs:  cvmIDs,
-		ResType: enumor.CvmCloudResType,
-	}
 	result := make(map[string][]cloud.SGCommonRelWithBaseSecurityGroup)
-	respResult, err := mgr.dataCli.Global.SGCommonRel.ListWithSecurityGroup(kt, listReq)
-	if err != nil {
-		logs.Errorf("list securityGroup cvm rel failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
-	}
-
-	for _, rel := range *respResult {
-		if _, exist := result[rel.ResID]; !exist {
-			result[rel.ResID] = make([]cloud.SGCommonRelWithBaseSecurityGroup, 0)
+	for _, ids := range slice.Split(cvmIDs, constant.BatchOperationMaxLimit) {
+		listReq := &datacloud.SGCommonRelWithSecurityGroupListReq{
+			ResIDs:  ids,
+			ResType: enumor.CvmCloudResType,
 		}
-		result[rel.ResID] = append(result[rel.ResID], rel)
+		respResult, err := mgr.dataCli.Global.SGCommonRel.ListWithSecurityGroup(kt, listReq)
+		if err != nil {
+			logs.Errorf("list securityGroup cvm rel failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+		for _, rel := range *respResult {
+			if _, exist := result[rel.ResID]; !exist {
+				result[rel.ResID] = make([]cloud.SGCommonRelWithBaseSecurityGroup, 0)
+			}
+			result[rel.ResID] = append(result[rel.ResID], rel)
+		}
 	}
 
 	return result, nil
