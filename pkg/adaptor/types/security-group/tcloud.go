@@ -139,6 +139,7 @@ type TCloudSecurityGroupAssociationStatistic struct {
 
 // TCloudSecurityGroupCloneOption ...
 type TCloudSecurityGroupCloneOption struct {
+	GroupName       string            `json:"group_name" validate:"required,lte=60"`
 	Region          string            `json:"region" validate:"required"`
 	RemoteRegion    string            `json:"remote_region" validate:"omitempty"`
 	SecurityGroupID string            `json:"security_group_id" validate:"required"`

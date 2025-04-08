@@ -350,9 +350,10 @@ type SGInfo struct {
 
 // SecurityGroupCloneReq security group clone req.
 type SecurityGroupCloneReq struct {
-	Manager      string `json:"manager" validate:"required"`
-	BakManager   string `json:"bak_manager" validate:"required"`
-	TargetRegion string `json:"target_region" validate:"omitempty"`
+	Name         *string `json:"name" validate:"omitempty,min=1"`
+	Manager      string  `json:"manager" validate:"required"`
+	BakManager   string  `json:"bak_manager" validate:"required"`
+	TargetRegion string  `json:"target_region" validate:"omitempty"`
 }
 
 // Validate ...

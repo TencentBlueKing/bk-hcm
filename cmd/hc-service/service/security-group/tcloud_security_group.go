@@ -853,6 +853,7 @@ func (g *securityGroup) TCloudCloneSecurityGroup(cts *rest.Contexts) (any, error
 		SecurityGroupID: sg.CloudID,
 		Tags:            req.Tags,
 		RemoteRegion:    sg.Region,
+		GroupName:       req.GroupName,
 	}
 	newSecurityGroup, err := client.CloneSecurityGroup(cts.Kit, opt)
 	if err != nil {

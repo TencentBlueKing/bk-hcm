@@ -238,6 +238,7 @@ type TCloudSecurityGroupCloneReq struct {
 	ManagementBizID int64             `json:"mgmt_biz_id" validate:"required"`
 	Tags            []apicore.TagPair `json:"tags" validate:"omitempty"`
 	TargetRegion    string            `json:"target_region" validate:"omitempty"`
+	GroupName       string            `json:"group_name" validate:"required"`
 }
 
 // Validate tcloud security group clone request.
