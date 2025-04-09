@@ -1,6 +1,6 @@
 import type { VNode } from 'vue';
 import type { Column as TableColumn } from 'bkui-vue/lib/table/props';
-import { RulesItem, QueryRuleOPEnum } from '@/typings';
+import { RulesItem, QueryRuleOPEnum, QueryRuleOPEnumLegacy } from '@/typings';
 import type { ResourceTypeEnum } from '@/common/resource-constant';
 
 export type ModelPropertyType =
@@ -59,7 +59,7 @@ export type PropertyFormConfig = {
 };
 
 export type PropertySearchConfig = {
-  op?: QueryRuleOPEnum;
+  op?: QueryRuleOPEnum | QueryRuleOPEnumLegacy;
   filterRules?: (value: any) => RulesItem;
   format?: (value: any) => any;
   converter?: (value: any) => Record<string, any>;
