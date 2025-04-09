@@ -4,7 +4,7 @@ import { createPinia } from 'pinia';
 import bus from './common/bus';
 import http from './http';
 import router from './router';
-import App from './app';
+import App from './app.vue';
 import i18n from './language/i18n';
 import directive from '@/directive/index';
 import components from '@/components/index';

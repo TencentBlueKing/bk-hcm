@@ -19,6 +19,9 @@ import FormNumber from './form/number.vue';
 import FormCert from './form/cert.vue';
 import FormCa from './form/ca.vue';
 
+// 权限组件
+import Auth from './auth/auth.vue';
+
 const components = [
   PermissionDialog,
   SearchAccount,
@@ -33,6 +36,7 @@ const components = [
   FormNumber,
   FormCert,
   FormCa,
+  Auth,
 ];
 export default {
   install(app: App) {
