@@ -26,28 +26,28 @@ import FormUser from './form/user.vue';
 import Auth from './auth/auth.vue';
 
 const components = [
-    PermissionDialog,
-    SearchAccount,
-    SearchEnum,
-    SearchDatetime,
-    SearchUser,
-    SearchBusiness,
-    DisplayValue,
-    FormBool,
-    FormEnum,
-    FormString,
-    FormArray,
-    FormNumber,
-    FormCert,
-    FormCa,
-    FormBusiness,
-    FormUser,
-    Auth,
+  PermissionDialog,
+  SearchAccount,
+  SearchEnum,
+  SearchDatetime,
+  SearchUser,
+  SearchBusiness,
+  DisplayValue,
+  FormBool,
+  FormEnum,
+  FormString,
+  FormArray,
+  FormNumber,
+  FormCert,
+  FormCa,
+  FormBusiness,
+  FormUser,
+  Auth,
 ];
 export default {
-    install(app: App) {
-        components.forEach((component) => {
-            app.component(component.name, component);
-        });
-    },
+  install(app: App) {
+    components.forEach((component) => {
+      app.component(component.name, component);
+    });
+  },
 };
