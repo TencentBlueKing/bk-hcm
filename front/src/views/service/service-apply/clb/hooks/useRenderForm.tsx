@@ -66,6 +66,10 @@ export default (formModel: Reactive<ApplyClbModel>) => {
 
     if (!vpc) return;
   };
+  // 选了IPv6后，ipv6_cidr为空的子网不允许选择
+  const subnetOptionDisabledFn = (subnet: ISubnetItem) => {
+    return formModel.address_ip_version === 'IPv6FullChain' && (!subnet.ipv6_cidr || subnet.ipv6_cidr.length === 0);
+  };
   const handleSubnetDataChange = (data: ISubnetItem) => {
     subnetData.value = data;
   };
@@ -261,6 +265,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
                 zone={formModel.zones}
                 clearable={false}
                 resourceType={ResourceTypeEnum.CLB}
+                optionDisabled={subnetOptionDisabledFn}
                 handleChange={handleSubnetDataChange}
               />
               <Button
@@ -650,7 +655,6 @@ export default (formModel: Reactive<ApplyClbModel>) => {
     // 当 account_id 或 region 改变时, 恢复默认状态
     resetParams();
     Object.assign(formModel, {
-      load_balancer_type: 'OPEN',
       address_ip_version: 'IPV4',
       zoneType: '0',
       sla_type: 'shared',
@@ -691,6 +695,15 @@ export default (formModel: Reactive<ApplyClbModel>) => {
     () => formModel.zoneType,
     () => {
       resetParams(['zones', 'backup_zones']);
+      handleClearValidate();
+    },
+  );
+
+  // 内网下，zone变更时，需要清空子网
+  watch(
+    () => formModel.zones,
+    () => {
+      resetParams(['cloud_subnet_id']);
       handleClearValidate();
     },
   );

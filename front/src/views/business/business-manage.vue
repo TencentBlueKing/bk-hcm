@@ -25,6 +25,7 @@ import { useRoute, useRouter } from 'vue-router';
 
 import { useAccountStore } from '@/store/account';
 import { InfoBox } from 'bkui-vue';
+import { AUTH_BIZ_CREATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
 
 const isShowSideSlider = ref(false);
 const isShowGcpAdd = ref(false);
@@ -252,29 +253,18 @@ const handleEditTemplate = (payload: any) => {
         v-model:isFormDataChanged="isFormDataChanged"
       >
         <span>
-          <bk-button
-            theme="primary"
-            class="mw64 mr10"
-            :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.biz_iaas_resource_create }"
-            @click="
-              () => {
-                if (authVerifyData?.permissionAction?.biz_iaas_resource_create) {
-                  handleAdd();
-                } else {
-                  handleAuth('biz_iaas_resource_create');
-                }
-              }
-            "
-          >
-            {{
-              renderComponent === DriveManage ||
-              renderComponent === HostManage ||
-              renderComponent === SubnetManage ||
-              renderComponent === VpcManage
-                ? '申请'
-                : computedSecurityText
-            }}
-          </bk-button>
+          <hcm-auth :sign="{ type: AUTH_BIZ_CREATE_IAAS_RESOURCE, relation: [accountStore.bizs] }" v-slot="{ noPerm }">
+            <bk-button theme="primary" class="mw64 mr10" :disabled="noPerm" @click="handleAdd">
+              {{
+                renderComponent === DriveManage ||
+                renderComponent === HostManage ||
+                renderComponent === SubnetManage ||
+                renderComponent === VpcManage
+                  ? '申请'
+                  : computedSecurityText
+              }}
+            </bk-button>
+          </hcm-auth>
         </span>
 
         <template #recycleHistory>

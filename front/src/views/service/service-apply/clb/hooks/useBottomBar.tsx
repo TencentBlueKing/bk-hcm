@@ -96,8 +96,11 @@ export default (
       // 只有公网下ipv4可以配置
       // eslint-disable-next-line no-nested-ternary
       backup_zones: hasBackupZonesConfig.value ? (formModel.backup_zones ? [formModel.backup_zones] : []) : undefined,
-      // 只有内网下可以配置
-      cloud_subnet_id: !isOpen.value ? formModel.cloud_subnet_id : undefined,
+      // 内网/公网IPv6需要选择子网
+      cloud_subnet_id:
+        !isOpen.value || (isOpen.value && formModel.address_ip_version === 'IPv6FullChain')
+          ? formModel.cloud_subnet_id
+          : undefined,
       cloud_eip_id: !isOpen.value ? formModel.cloud_eip_id ?? undefined : undefined,
       // 后端无用字段
       account_type: undefined as undefined,

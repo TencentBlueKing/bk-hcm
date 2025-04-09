@@ -29,6 +29,7 @@ import { useAccountStore } from '@/store';
 import { useVerify } from '@/hooks';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { InfoBox } from 'bkui-vue';
+import { AUTH_CREATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
 
 // use hooks
 const { t } = useI18n();
@@ -518,26 +519,16 @@ onMounted(() => {
               @edit="handleEdit"
               v-model:isFormDataChanged="isFormDataChanged"
             >
-              <span v-if="['host', 'vpc', 'drive', 'security', 'subnet', 'ip', 'clb'].includes(activeTab)">
-                <bk-button
-                  theme="primary"
-                  :class="{
-                    'hcm-no-permision-btn': !authVerifyData?.permissionAction?.iaas_resource_create,
-                    'new-button': !['security'].includes(activeTab),
-                  }"
-                  @click="
-                    () => {
-                      if (!authVerifyData?.permissionAction?.iaas_resource_create) {
-                        handleAuth('iaas_resource_create');
-                      } else {
-                        handleAdd();
-                      }
-                    }
-                  "
+              <template v-if="['host', 'vpc', 'drive', 'security', 'subnet', 'ip', 'clb'].includes(activeTab)">
+                <hcm-auth
+                  :sign="{ type: AUTH_CREATE_IAAS_RESOURCE, relation: [resourceAccountStore.resourceAccount?.id] }"
+                  v-slot="{ noPerm }"
                 >
-                  {{ ['host', 'clb'].includes(activeTab) ? '购买' : computedSecurityText }}
-                </bk-button>
-              </span>
+                  <bk-button theme="primary" class="mw64" :disabled="noPerm" @click="handleAdd">
+                    {{ ['host', 'clb'].includes(activeTab) ? '购买' : computedSecurityText }}
+                  </bk-button>
+                </hcm-auth>
+              </template>
             </component>
           </bk-tab-panel>
         </template>
@@ -606,11 +597,13 @@ onMounted(() => {
   display: flex;
   align-items: center;
 }
+
 .resource-header {
   background: #fff;
   box-shadow: 1px 2px 3px 0 rgb(0 0 0 / 5%);
   padding: 20px;
 }
+
 .resource-main {
   // margin-top: 20px;
   box-shadow: 1px 2px 3px 0 rgb(0 0 0 / 5%);
@@ -631,6 +624,7 @@ onMounted(() => {
 
     & > .bk-tab-panel > .bk-nested-loading {
       height: 100%;
+
       .bk-table {
         margin-top: 16px;
         max-height: calc(100% - 52px);
@@ -638,23 +632,29 @@ onMounted(() => {
     }
   }
 }
+
 .search-filter {
   width: 500px;
 }
+
 .new-button {
   width: 64px;
 }
+
 .w80 {
   width: 80px;
 }
+
 .navigation-resource {
   min-height: 88px;
   margin: -24px -24px 24px -24px;
 }
+
 .card-layout {
   background: #fff;
   border-bottom: 1px solid #dcdee5;
 }
+
 .resource-title {
   font-family: MicrosoftYaHei;
   font-size: 16px;
@@ -678,9 +678,11 @@ onMounted(() => {
     }
   }
 }
+
 .bk-tab-content {
   padding: 0 !important;
 }
+
 .error-message-alert {
   margin: -8px 0 16px 0;
 }
@@ -693,12 +695,15 @@ onMounted(() => {
     word-break: break-all;
   }
 }
+
 .mw64 {
   min-width: 64px;
 }
+
 .mw88 {
   min-width: 88px;
 }
+
 .table-new-row td {
   background-color: #f2fff4 !important;
 }

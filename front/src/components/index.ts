@@ -22,28 +22,32 @@ import FormCa from './form/ca.vue';
 import FormBusiness from './form/business.vue';
 import FormUser from './form/user.vue';
 
+// 权限组件
+import Auth from './auth/auth.vue';
+
 const components = [
-  PermissionDialog,
-  SearchAccount,
-  SearchEnum,
-  SearchDatetime,
-  SearchUser,
-  SearchBusiness,
-  DisplayValue,
-  FormBool,
-  FormEnum,
-  FormString,
-  FormArray,
-  FormNumber,
-  FormCert,
-  FormCa,
-  FormBusiness,
-  FormUser,
+    PermissionDialog,
+    SearchAccount,
+    SearchEnum,
+    SearchDatetime,
+    SearchUser,
+    SearchBusiness,
+    DisplayValue,
+    FormBool,
+    FormEnum,
+    FormString,
+    FormArray,
+    FormNumber,
+    FormCert,
+    FormCa,
+    FormBusiness,
+    FormUser,
+    Auth,
 ];
 export default {
-  install(app: App) {
-    components.forEach((component) => {
-      app.component(component.name, component);
-    });
-  },
+    install(app: App) {
+        components.forEach((component) => {
+            app.component(component.name, component);
+        });
+    },
 };

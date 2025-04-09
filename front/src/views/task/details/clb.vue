@@ -3,7 +3,7 @@ import { computed, onMounted, reactive, ref, watch, watchEffect } from 'vue';
 import { useRoute } from 'vue-router';
 import { ITaskCountItem, ITaskDetailItem, ITaskItem, ITaskStatusItem, useTaskStore } from '@/store';
 import { ResourceTypeEnum } from '@/common/resource-constant';
-import useBreakcrumb from '@/hooks/use-breakcrumb';
+import useBreadcrumb from '@/hooks/use-breadcrumb';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import useSearchQs from '@/hooks/use-search-qs';
 import usePage from '@/hooks/use-page';
@@ -23,7 +23,7 @@ const taskStore = useTaskStore();
 const { getBizsId } = useWhereAmI();
 const route = useRoute();
 
-const { setTitle } = useBreakcrumb();
+const { setTitle } = useBreadcrumb();
 
 const searchQs = useSearchQs({ key: 'filter', properties: taskDetailsViewProperties });
 
