@@ -23,7 +23,7 @@ export const provideBreadcrumb = () => {
   provide(breadcrumbSymbol, data);
 };
 
-export default function useBreakcrumb() {
+export default function useBreadcrumb() {
   const breadcrumb = inject<IBreadcrumb>(breadcrumbSymbol);
 
   const setTitle = (newTitle: string) => {
