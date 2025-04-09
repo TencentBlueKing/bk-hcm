@@ -66,6 +66,10 @@ export default (formModel: Reactive<ApplyClbModel>) => {
 
     if (!vpc) return;
   };
+  // 选了IPv6后，ipv6_cidr为空的子网不允许选择
+  const subnetOptionDisabledFn = (subnet: ISubnetItem) => {
+    return formModel.address_ip_version === 'IPv6FullChain' && (!subnet.ipv6_cidr || subnet.ipv6_cidr.length === 0);
+  };
   const handleSubnetDataChange = (data: ISubnetItem) => {
     subnetData.value = data;
   };
@@ -261,6 +265,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
                 zone={formModel.zones}
                 clearable={false}
                 resourceType={ResourceTypeEnum.CLB}
+                optionDisabled={subnetOptionDisabledFn}
                 handleChange={handleSubnetDataChange}
               />
               <Button

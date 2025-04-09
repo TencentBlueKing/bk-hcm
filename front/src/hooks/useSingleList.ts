@@ -49,6 +49,7 @@ export function useSingleList(options?: {
   const pagination = reactive(getDefaultPagination());
   const isDataLoad = ref(false);
   const isDataRefresh = ref(false);
+  const isScrollLoading = ref(false);
 
   const loadDataList = (customRules: RulesItem[] = []) => {
     /**
@@ -99,13 +100,15 @@ export function useSingleList(options?: {
       });
   };
 
-  const handleScrollEnd = () => {
+  const handleScrollEnd = async () => {
     // 判断是否有下一页数据
-    if (dataList.value.length >= pagination.count) return;
+    if (dataList.value.length >= pagination.count || isScrollLoading.value) return;
     // 累加 start
     pagination.start += pagination.limit;
     // 获取数据
-    loadDataList();
+    isScrollLoading.value = true;
+    await loadDataList();
+    isScrollLoading.value = false;
   };
 
   const handleReset = () => {
@@ -148,6 +151,10 @@ export function useSingleList(options?: {
      * loading - 数据刷新
      */
     isDataRefresh,
+    /**
+     * loading - 滚动加载
+     */
+    isScrollLoading,
     /**
      * 加载数据
      * @param customRules 自定义查询规则

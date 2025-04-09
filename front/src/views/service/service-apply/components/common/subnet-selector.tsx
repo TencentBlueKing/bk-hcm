@@ -1,18 +1,12 @@
-import http from '@/http';
 import { computed, defineComponent, PropType, ref, watch } from 'vue';
-import { Button, Select } from 'bkui-vue';
-
-import { QueryRuleOPEnum } from '@/typings/common';
-import { VendorEnum } from '@/common/constant';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
-import { ISubnetItem } from '../../cvm/children/SubnetPreviewDialog';
-import RightTurnLine from 'bkui-vue/lib/icon/right-turn-line';
-import { FilterType } from '@/typings';
+import { useSingleList } from '@/hooks/useSingleList';
+import { QueryRuleOPEnum, RulesItem } from '@/typings/common';
 import { ResourceTypeEnum } from '@/common/resource-constant';
+import { VendorEnum } from '@/common/constant';
+import { ISubnetItem } from '../../cvm/children/SubnetPreviewDialog';
 
-const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
-
-const { Option } = Select;
+import RightTurnLine from 'bkui-vue/lib/icon/right-turn-line';
 
 export default defineComponent({
   props: {
@@ -25,19 +19,16 @@ export default defineComponent({
     zone: [String, Array<String>] as PropType<string | string[]>,
     resourceGroup: String as PropType<string>,
     handleChange: Function as PropType<(data: ISubnetItem) => void>,
-    clearable: {
-      type: Boolean,
-      default: true,
-    },
+    clearable: { type: Boolean, default: true },
     resourceType: String as PropType<ResourceTypeEnum>,
+    optionDisabled: {
+      type: Function as PropType<(subnetItem: ISubnetItem) => boolean>,
+      default: () => false,
+    },
   },
   emits: ['update:modelValue'],
   setup(props, { emit, attrs, expose }) {
-    const list = ref([]);
-    const loading = ref(false);
-    const { isResourcePage, isServicePage } = useWhereAmI();
-
-    expose({ subnetList: list });
+    const { getBusinessApiPath, isServicePage } = useWhereAmI();
 
     const selected = computed({
       get() {
@@ -48,6 +39,18 @@ export default defineComponent({
       },
     });
 
+    const url = `/api/v1/web/${getBusinessApiPath()}subnets/with/ip_count/list`;
+    const rules = ref<RulesItem[]>([]);
+    const { dataList, handleScrollEnd, isDataLoad, handleReset, handleRefresh, isScrollLoading } = useSingleList({
+      url,
+      rules: () => rules.value,
+    });
+
+    const handleChange = (cloud_id: string) => {
+      const data = dataList.value.find((item) => item.cloud_id === cloud_id);
+      typeof props.handleChange === 'function' && props.handleChange(data);
+    };
+
     const getSubnetsData = async (
       bizId: string | number,
       region: string,
@@ -57,39 +60,22 @@ export default defineComponent({
       zone: string | string[],
     ) => {
       if ((!bizId && isServicePage) || !vpcId) {
-        list.value = [];
+        handleReset();
         return;
       }
 
-      loading.value = true;
-
-      const filter: FilterType = {
-        op: 'and',
-        rules: [
-          {
-            field: 'vpc_id',
-            op: QueryRuleOPEnum.EQ,
-            value: vpcId,
-          },
-          {
-            field: 'account_id',
-            op: QueryRuleOPEnum.EQ,
-            value: accountId,
-          },
-          {
-            field: 'region',
-            op: QueryRuleOPEnum.EQ,
-            value: region,
-          },
-        ],
-      };
+      const filter: RulesItem[] = [
+        { field: 'vpc_id', op: QueryRuleOPEnum.EQ, value: vpcId },
+        { field: 'account_id', op: QueryRuleOPEnum.EQ, value: accountId },
+        { field: 'region', op: QueryRuleOPEnum.EQ, value: region },
+      ];
 
       if ([VendorEnum.TCLOUD, VendorEnum.AWS].includes(vendor as VendorEnum)) {
         if (Array.isArray(zone)) {
-          zone.length > 0 && filter.rules.push({ field: 'zone', op: QueryRuleOPEnum.IN, value: zone });
+          zone.length > 0 && filter.push({ field: 'zone', op: QueryRuleOPEnum.IN, value: zone });
         } else {
           // CLB可能zone字段为空，但CVM一定不为空
-          zone && filter.rules.push({ field: 'zone', op: QueryRuleOPEnum.EQ, value: zone });
+          zone && filter.push({ field: 'zone', op: QueryRuleOPEnum.EQ, value: zone });
         }
       }
 
@@ -101,22 +87,10 @@ export default defineComponent({
       //   });
       // }
 
-      const result = await http.post(
-        isResourcePage
-          ? `${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/subnets/with/ip_count/list`
-          : `${BK_HCM_AJAX_URL_PREFIX}/api/v1/web/bizs/${bizId}/subnets/with/ip_count/list`,
-        {
-          // const result = await http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/subnets/list`, {
-          filter,
-          page: {
-            count: false,
-            start: 0,
-            limit: 50,
-          },
-        },
-      );
-      list.value = result?.data?.details ?? [];
-      loading.value = false;
+      // 更新搜索条件
+      rules.value = filter;
+
+      handleRefresh();
     };
 
     watch(
@@ -138,75 +112,66 @@ export default defineComponent({
           }
         }
       },
-      {
-        immediate: true,
-      },
+      { immediate: true },
     );
 
-    return () => (
-      <div>
-        <Select
-          filterable={true}
-          modelValue={selected.value}
-          onUpdate:modelValue={(val) => (selected.value = val)}
-          loading={loading.value}
-          clearable={props.clearable}
-          {...{ attrs }}
-          onChange={(cloud_id: string) => {
-            const data = list.value.find((item) => item.cloud_id === cloud_id);
-            typeof props.handleChange === 'function' && props.handleChange(data);
-          }}>
-          {list.value.map(({ cloud_id, name, ipv4_cidr, available_ip_count }) => (
-            <Option
-              key={cloud_id}
-              value={cloud_id}
-              label={`${name} ${ipv4_cidr} ${
-                props.vendor !== VendorEnum.GCP ? `剩余IP ${available_ip_count}` : ''
-              }`}></Option>
-          ))}
-        </Select>
-        {props.vpcId && !list.value.length ? (
+    const optionRender = () => {
+      return dataList.value.map((subnet) => {
+        const { cloud_id, name, ipv4_cidr, available_ip_count } = subnet;
+        const label =
+          props.vendor !== VendorEnum.GCP
+            ? `${cloud_id} ${name} ${ipv4_cidr} 剩余IP ${available_ip_count}`
+            : `${cloud_id} ${name} ${ipv4_cidr}`;
+
+        return <bk-option key={cloud_id} value={cloud_id} label={label} disabled={props.optionDisabled(subnet)} />;
+      });
+    };
+
+    const userGuideRender = () => {
+      if (props.vpcId && !dataList.value.length && !isDataLoad.value) {
+        return (
           <div class={'subnet-selector-tips'}>
-            {/* {whereAmI.value === Senarios.resource ? ( */}
-            <>
-              <span class={'subnet-create-tips'}>{'所选的VPC，在当前区无可用的子网，可切换VPC或'}</span>
-              <Button
-                text
-                theme='primary'
-                class={'mr6'}
-                onClick={() => {
-                  const url = '/#/resource/resource?type=subnet';
-                  window.open(url, '_blank');
-                }}>
-                新建子网
-              </Button>
-            </>
-            {/* ) : (
-              <>
-                <span class={'subnet-create-tips mr6'}>
-                  该VPC下在本可用区存在子网，但未分配给本业务。
-                  <Button
-                    text
-                    theme='primary'
-                    onClick={() => {
-                      const url = '/#/business/subnet';
-                      window.open(url, '_blank');
-                    }}>
-                    新建子网
-                  </Button>
-                  ,或者在资源接入-子网中分配给本业务
-                </span>
-              </>
-            )} */}
-            <Button
+            <span class={'subnet-create-tips'}>{'所选的VPC，在当前区无可用的子网，可切换VPC或'}</span>
+            <bk-button
+              class='mr8'
+              text
+              theme='primary'
+              onClick={() => {
+                const url = '/#/resource/resource?type=subnet';
+                window.open(url, '_blank');
+              }}>
+              新建子网
+            </bk-button>
+            <bk-button
               text
               onClick={() => {
                 getSubnetsData(props.bizId, props.region, props.vendor, props.vpcId, props.accountId, props.zone);
               }}>
               <RightTurnLine fill='#3A84FF' />
-            </Button>
+            </bk-button>
           </div>
-        ) : null}
+        );
+      }
+      return null;
+    };
+
+    expose({ subnetList: dataList });
+
+    return () => (
+      <div>
+        <bk-select
+          {...{ attrs }}
+          v-model={selected.value}
+          loading={isDataLoad.value}
+          scrollLoading={isScrollLoading.value}
+          filterable
+          clearable={props.clearable}
+          onChange={handleChange}
+          onScroll-end={handleScrollEnd}>
+          {optionRender()}
+        </bk-select>
+        {/* 用户指引 */}
+        {userGuideRender()}
       </div>
     );
   },
