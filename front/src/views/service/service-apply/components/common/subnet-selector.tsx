@@ -41,9 +41,10 @@ export default defineComponent({
 
     const url = `/api/v1/web/${getBusinessApiPath()}subnets/with/ip_count/list`;
     const rules = ref<RulesItem[]>([]);
-    const { dataList, handleScrollEnd, isDataLoad, handleReset, handleRefresh, isScrollLoading } = useSingleList({
+    const { dataList, isDataLoad, handleReset, handleRefresh } = useSingleList<ISubnetItem>({
       url,
       rules: () => rules.value,
+      rollRequestConfig: { enabled: true, limit: 50 },
     });
 
     const handleChange = (cloud_id: string) => {
@@ -163,11 +164,9 @@ export default defineComponent({
           {...{ attrs }}
           v-model={selected.value}
           loading={isDataLoad.value}
-          scrollLoading={isScrollLoading.value}
           filterable
           clearable={props.clearable}
-          onChange={handleChange}
-          onScroll-end={handleScrollEnd}>
+          onChange={handleChange}>
           {optionRender()}
         </bk-select>
         {/* 用户指引 */}
