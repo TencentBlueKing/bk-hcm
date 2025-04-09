@@ -35,6 +35,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -118,6 +119,11 @@ func (svc *securityGroupSvc) tcloudCloneSecurityGroup(kt *kit.Kit, bizID int64, 
 		BakManager:      req.BakManager,
 		ManagementBizID: bizID,
 		TargetRegion:    req.TargetRegion,
+	}
+	if req.Name == nil {
+		cloneReq.GroupName = fmt.Sprintf("%s-copy", sg.Name)
+	} else {
+		cloneReq.GroupName = converter.PtrToVal(req.Name)
 	}
 	result, err := svc.client.HCService().TCloud.SecurityGroup.CloneSecurityGroup(kt, cloneReq)
 	if err != nil {

@@ -382,6 +382,7 @@ func (t *TCloudImpl) CloneSecurityGroup(kt *kit.Kit, opt *securitygroup.TCloudSe
 
 	req := vpc.NewCloneSecurityGroupRequest()
 	req.SecurityGroupId = cvt.ValToPtr(opt.SecurityGroupID)
+	req.GroupName = cvt.ValToPtr(opt.GroupName)
 	for _, tag := range opt.Tags {
 		req.Tags = append(req.Tags, &vpc.Tag{
 			Key:   cvt.ValToPtr(tag.Key),
