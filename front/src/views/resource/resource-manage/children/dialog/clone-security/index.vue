@@ -1,9 +1,10 @@
+<!-- eslint-disable no-nested-ternary -->
 <script setup lang="ts">
-import { Dialog, Message } from 'bkui-vue';
-import { ref, computed, h, reactive, watch } from 'vue';
-import './index.scss';
-import { useResourceStore, useAccountStore, useBusinessStore } from '@/store';
+import { Dialog, Form, Message } from 'bkui-vue';
+import { ref, computed, h, reactive, watch, useTemplateRef } from 'vue';
+import { useResourceStore, useBusinessStore } from '@/store';
 
+import UsageBizValue from '../../components/security/usage-biz-value.vue';
 import SecurityGroupManagerSelector from '@/views/resource/resource-manage/children/components/security/manager-selector/index.vue';
 import { useI18n } from 'vue-i18n';
 import {
@@ -23,7 +24,6 @@ import {
 import { huaweiSourceAddressTypes } from '@/views/resource/resource-manage/children/components/security/add-rule/vendors/huawei';
 import { SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum, FilterType } from '@/typings';
 import { VendorEnum } from '@/common/constant';
-import { useBusinessMapStore } from '@/store/useBusinessMap';
 
 export interface IData {
   [key: string]: any;
@@ -40,8 +40,6 @@ const props = withDefaults(defineProps<ICloneSecurityProps>(), {
 
 const emit = defineEmits(['update:isShow', 'success']);
 const { t } = useI18n();
-const store = useAccountStore();
-const { getNameFromBusinessMap } = useBusinessMapStore();
 // tab 信息
 const types = [
   { name: 'ingress', label: t('入站规则') },
@@ -54,9 +52,13 @@ const states = reactive<any>({
 });
 const filter = ref(props.filter);
 const personSelectorRef = ref(null);
+const formModel = reactive({ name: `${props.data.name}-copy` });
+const formRef = useTemplateRef<typeof Form>('formRef');
+const rules = {
+  name: [{ validator: (val: string) => val.length <= 60, message: t('名称超过60个字符的长度限制，请调整后重试') }],
+};
 
 const vendor = computed(() => props?.data?.vendor);
-const business = computed(() => getNameFromBusinessMap(store.bizs));
 
 const inColumns: any = computed(() =>
   [
@@ -412,24 +414,18 @@ const handleConfirm = async () => {
   const { formData: personSelectorParams, validate } = personSelectorRef.value;
   const { bak_manager, manager } = personSelectorParams;
   await validate();
+  await formRef.value.validate();
   isLoading.value = true;
   try {
     await useBusiness.cloneSecurity({
       id,
+      name: formModel.name,
       bak_manager,
       manager,
     });
-    Message({
-      theme: 'success',
-      message: t('克隆成功！'),
-    });
+    Message({ theme: 'success', message: t('克隆成功！') });
     handleClose();
     emit('success');
-  } catch (error) {
-    Message({
-      theme: 'error',
-      message: t('克隆失败！'),
-    });
   } finally {
     isLoading.value = false;
   }
@@ -466,19 +462,22 @@ watch(
     :is-loading="isLoading"
   >
     <div class="security-info">
-      <div>
-        {{ t('安全组名称：') }}
-        <span>{{ props.data.name }}</span>
+      <div class="info-wrap">
+        <span class="label">{{ t('管理业务：') }}</span>
+        <display-value :property="{ type: 'business' }" :value="props.data.mgmt_biz_id" />
       </div>
       <div>
-        {{ t('管理业务：') }}
-        <span>{{ business }}</span>
-      </div>
-      <div>
-        {{ t('使用业务：') }}
-        <span>{{ business }}</span>
+        <div class="info-wrap usage-bizs">
+          <span class="label">{{ t('使用业务：') }}</span>
+          <usage-biz-value :value="props.data.usage_biz_ids" />
+        </div>
       </div>
     </div>
+    <bk-form ref="formRef" :model="formModel" :rules="rules" form-type="vertical">
+      <bk-form-item :label="t('安全组名称')" property="name" label-width="100">
+        <bk-input v-model.trim="formModel.name" />
+      </bk-form-item>
+    </bk-form>
     <SecurityGroupManagerSelector
       ref="personSelectorRef"
       :manager="props?.data?.manager"
@@ -516,3 +515,41 @@ watch(
     </div>
   </Dialog>
 </template>
+
+<style scoped lang="scss">
+.security-info {
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 100px;
+  font-size: 14px;
+  color: #4d4f56;
+
+  .info-wrap {
+    display: flex;
+    align-items: center;
+
+    .label {
+      width: 80px;
+    }
+
+    &.usage-bizs {
+      width: 320px;
+
+      :deep(.flex-tag) {
+        width: calc(100% - 80px);
+      }
+    }
+  }
+}
+
+.security-rule {
+  .title {
+    margin-bottom: 16px;
+    font-weight: 700;
+    font-size: 14px;
+    color: #4d4f56;
+    line-height: 22px;
+  }
+}
+</style>
