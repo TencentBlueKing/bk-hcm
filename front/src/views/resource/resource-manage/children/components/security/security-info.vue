@@ -253,6 +253,43 @@ const settingInfo = computed(() => {
       { name: t('关联子网数'), prop: 'subnet_count' },
     );
   }
+  // 业务下需要支持展示以及变更安全组的负责人
+  if (!isResourcePage.value) {
+    fields.push(
+      {
+        name: t('主负责人'),
+        prop: 'manager',
+        render: (val: string) => {
+          return h('div', [
+            h(UserValue, { value: val }),
+            hasEditScopeInBusiness.value &&
+              h('i', {
+                class: 'icon hcm-icon bkhcm-icon-bianji edit-icon',
+                onclick: () => handleUpdateMgmtAttrSingle('manager'),
+              }),
+          ]);
+        },
+        copy: true,
+        copyContent: (val: string) => val,
+      },
+      {
+        name: t('备份负责人'),
+        prop: 'bak_manager',
+        render: (val: string) => {
+          return h('div', [
+            h(UserValue, { value: val }),
+            hasEditScopeInBusiness.value &&
+              h('i', {
+                class: 'icon hcm-icon bkhcm-icon-bianji edit-icon',
+                onclick: () => handleUpdateMgmtAttrSingle('bak_manager'),
+              }),
+          ]);
+        },
+        copy: true,
+        copyContent: (val: string) => val,
+      },
+    );
+  }
 
   return fields;
 });
