@@ -68,6 +68,7 @@ export default defineComponent({
           { id: 'name', name: '负载均衡名称' },
           { id: 'domain', name: '负载均衡域名' },
           { id: 'lb_vip', name: '负载均衡VIP' },
+          { id: 'cloud_id', name: '负载均衡ID' },
           {
             id: 'lb_type',
             name: '网络类型',
