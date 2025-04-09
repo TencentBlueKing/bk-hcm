@@ -699,6 +699,15 @@ export default (formModel: Reactive<ApplyClbModel>) => {
     },
   );
 
+  // 内网下，zone变更时，需要清空子网
+  watch(
+    () => formModel.zones,
+    () => {
+      resetParams(['cloud_subnet_id']);
+      handleClearValidate();
+    },
+  );
+
   // 这个需要放到watch之后，避免数据清空之前就触发了effect
   const { ispList, isResourceListLoading, quotas, isInquiryPrices, isInquiryPricesLoading, currentResourceListMap } =
     useFilterResource(formModel);
