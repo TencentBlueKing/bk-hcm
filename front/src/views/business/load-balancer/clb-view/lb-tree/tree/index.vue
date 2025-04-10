@@ -213,6 +213,7 @@ const pushState = (node: any) => {
       protocol: node.type === 'listener' ? node.protocol : undefined,
       // 如果节点类型为domain, 则设置listener_id
       listener_id: node.type === 'domain' ? node.listener_id : undefined,
+      vendor: node.vendor,
     },
   });
 };
