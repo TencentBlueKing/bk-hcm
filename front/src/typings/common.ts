@@ -97,6 +97,7 @@ export type QueryParamsType = {
 interface IBaseResData {
   code: number;
   message: string;
+  result: boolean;
 }
 
 // list 接口响应

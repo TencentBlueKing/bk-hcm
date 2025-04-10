@@ -1,1 +1,3 @@
-export const breadcrumbSymbol = Symbol('breadcrumb');
+export const breadcrumbSymbol = Symbol.for('breadcrumb');
+
+export const permissionDialogSymbol = Symbol.for('permissionDialog');

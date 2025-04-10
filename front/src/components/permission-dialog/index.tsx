@@ -48,20 +48,28 @@ export default defineComponent({
 
     const columns = [
       {
-        label: '需要申请的权限',
-        field: 'name',
+        label: t('系统'),
+        width: 150,
+        render() {
+          return h('span', {}, '海垒(HCM)');
+        },
       },
       {
-        label: '关联的资源实例',
-        field: 'memo',
+        label: t('需要申请的权限'),
+        field: 'name',
+        width: 200,
+      },
+      {
+        label: t('关联的资源实例'),
+        width: 342,
         render({ data }: any) {
           return h('span', {}, [
-            `${data?.related_resource_types[0]?.type_name || '--'}${
+            `【${data?.related_resource_types[0]?.type_name}】${
               whereAmI.value === Senarios.resource
                 ? resourceAccountStore.resourceAccount?.name
-                  ? `: ${resourceAccountStore.resourceAccount?.name}`
+                  ? `${resourceAccountStore.resourceAccount?.name}`
                   : ''
-                : ` ${businessMapStore.getNameFromBusinessMap(accountStore.bizs)}`
+                : `${businessMapStore.getNameFromBusinessMap(accountStore.bizs)}`
             }`,
           ]);
         },

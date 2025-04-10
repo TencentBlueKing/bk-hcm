@@ -10,6 +10,7 @@ export interface ISubnetItem {
   region: string; // 可用区
   vpc_id: string; // 所属VPC
   ipv4_cidr: Array<string>; // IPv4 CIDR
+  ipv6_cidr?: Array<string>; // IPv6 CIDR
   used_ip_count: number; // IP数---已使用
   total_ip_count: number; // IP数---总共
   available_ip_count: number; // IP数---剩余

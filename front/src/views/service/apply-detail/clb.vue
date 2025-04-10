@@ -39,7 +39,7 @@ const clbDetail = computed(() => {
         zone: backup_zones.length > 0 ? `主备可用区 主(${zones[0]})备(${backup_zones[0]})` : zones.join(','),
       });
     } else {
-      Object.assign(detail, { zone: zones.join(',') });
+      Object.assign(detail, { zone: zones?.join(',') });
     }
 
     return detail;
