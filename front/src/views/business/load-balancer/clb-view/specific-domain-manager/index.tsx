@@ -1,4 +1,15 @@
-import { defineComponent, onMounted, onUnmounted, reactive, ref, watch, nextTick, useTemplateRef, Ref } from 'vue';
+import {
+  defineComponent,
+  onMounted,
+  onUnmounted,
+  reactive,
+  ref,
+  watch,
+  nextTick,
+  useTemplateRef,
+  Ref,
+  PropType,
+} from 'vue';
 // import components
 import { Button, Form, Input, Link, Message, Select } from 'bkui-vue';
 import { Done, Error, Plus } from 'bkui-vue/lib/icon';
@@ -13,7 +24,7 @@ import { useTable } from '@/hooks/useTable/useTable';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import { useI18n } from 'vue-i18n';
 // import constants
-import { CLB_BINDING_STATUS } from '@/common/constant';
+import { CLB_BINDING_STATUS, VendorEnum } from '@/common/constant';
 // import static resources
 import StatusSuccess from '@/assets/image/success-account.png';
 import StatusLoading from '@/assets/image/status_loading.png';
@@ -46,7 +57,7 @@ export default defineComponent({
     next();
   },
   // eslint-disable-next-line vue/prop-name-casing
-  props: { id: String, listener_id: String },
+  props: { id: String, listener_id: String, vendor: String as PropType<VendorEnum> },
   setup(props) {
     // use hooks
     const { t } = useI18n();
@@ -98,7 +109,7 @@ export default defineComponent({
                   <Link
                     class='target-group-name-btn'
                     theme='primary'
-                    href={`/#/business/loadbalancer/group-view/${data.target_group_id}?bizs=${accountStore.bizs}&type=detail&vendor=${loadBalancerStore.currentSelectedTreeNode.vendor}`}
+                    href={`/#/business/loadbalancer/group-view/${data.target_group_id}?bizs=${accountStore.bizs}&type=detail&vendor=${props.vendor}`}
                     onClick={() => loadBalancerStore.setTgSearchTarget(cell)}>
                     {cell || '--'}
                   </Link>
@@ -178,7 +189,7 @@ export default defineComponent({
     const deleteRulesBatch = async (ids: string[]) => {
       isSubmitLoading.value = true;
       try {
-        await businessStore.deleteRules(loadBalancerStore.currentSelectedTreeNode.vendor, props.listener_id, {
+        await businessStore.deleteRules(props.vendor, props.listener_id, {
           lbl_id: props.listener_id,
           rule_ids: ids,
         });
@@ -235,7 +246,7 @@ export default defineComponent({
         },
       },
       requestOption: {
-        type: `vendors/${loadBalancerStore.currentSelectedTreeNode.vendor}/listeners/${props.listener_id}/rules`,
+        type: `vendors/${props.vendor}/listeners/${props.listener_id}/rules`,
         sortOption: { sort: 'created_at', order: 'DESC' },
         filterOption: {
           rules: [{ field: 'domain', op: QueryRuleOPEnum.EQ, value: props.id }],
@@ -278,11 +289,7 @@ export default defineComponent({
     // 查询URL的同步状态
     const getBindingStatus = async (ruleIds: Set<string>, datalistRef: Ref<any[]>) => {
       return loadBalancerStore
-        .queryRulesBindingStatusList(
-          loadBalancerStore.currentSelectedTreeNode.vendor,
-          loadBalancerStore.currentSelectedTreeNode.id,
-          { rule_ids: Array.from(ruleIds) },
-        )
+        .queryRulesBindingStatusList(props.vendor, props.listener_id, { rule_ids: Array.from(ruleIds) })
         .then((bindingStatusList: any[]) => {
           // 构建规则ID到同步状态的映射
           const bindingStatusMap = new Map<string, string>(
@@ -303,7 +310,7 @@ export default defineComponent({
     const reloadTableData = () => {
       getListData(
         [{ field: 'domain', op: QueryRuleOPEnum.EQ, value: props.id }],
-        `vendors/${loadBalancerStore.currentSelectedTreeNode.vendor}/listeners/${props.listener_id}/rules`,
+        `vendors/${props.vendor}/listeners/${props.listener_id}/rules`,
       );
     };
     const tableRef = useTemplateRef<typeof CommonTable>('table-comp');
@@ -338,7 +345,7 @@ export default defineComponent({
       isSubmitLoading.value = true;
       const lbl_id = props.listener_id;
       const { rule_id, url, scheduler, target_group_id } = formData;
-      const { vendor } = loadBalancerStore.currentSelectedTreeNode;
+      const { vendor } = props;
       const promise = isEdit.value
         ? businessStore.updateUrl({ lbl_id, rule_id, url, scheduler, target_group_id, vendor })
         : businessStore.createRules({ lbl_id, url, scheduler, domains: [props.id], target_group_id, vendor });
@@ -376,6 +383,17 @@ export default defineComponent({
         targetGroupSelectorRef.value.handleRefresh();
       });
     });
+
+    watch(
+      () => props.listener_id,
+      async (id) => {
+        // 监听器详情
+        const { data: listenerDetail } = await businessStore.detail('listeners', id as string);
+        // 负载均衡详情
+        const { data: lbDetail } = await businessStore.detail('load_balancers', listenerDetail.lb_id);
+        loadBalancerStore.setCurrentSelectedTreeNode({ ...listenerDetail, lb: lbDetail });
+      },
+    );
 
     onMounted(() => {
       bus.$on('showAddUrlSideslider', handleAddUrlSidesliderShow);
@@ -454,8 +472,8 @@ export default defineComponent({
                   ref={targetGroupSelectorRef}
                   v-model={formData.target_group_id}
                   accountId={loadBalancerStore.currentSelectedTreeNode.account_id}
-                  cloudVpcId={loadBalancerStore.currentSelectedTreeNode.lb.cloud_vpc_id}
-                  region={loadBalancerStore.currentSelectedTreeNode.lb.region}
+                  cloudVpcId={loadBalancerStore.currentSelectedTreeNode.lb?.cloud_vpc_id}
+                  region={loadBalancerStore.currentSelectedTreeNode.lb?.region}
                   protocol={loadBalancerStore.currentSelectedTreeNode.protocol}
                 />
               </FormItem>
