@@ -128,7 +128,8 @@ export default (getListData: (...args: any) => any, originPage: IOriginPage) => 
         // 新增监听器
         const params = {
           ...listenerFormData,
-          // 只有https协议才需要传证书
+          // 只有https协议才需要传SNI、证书
+          sni_switch: listenerFormData.protocol === 'HTTPS' ? listenerFormData.sni_switch : undefined,
           certificate: listenerFormData.protocol === 'HTTPS' ? listenerFormData.certificate : undefined,
         };
         await businessStore.createListener(params);
