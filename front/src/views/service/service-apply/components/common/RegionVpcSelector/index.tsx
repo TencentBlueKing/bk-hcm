@@ -1,4 +1,4 @@
-import { PropType, defineComponent, ref, watch } from 'vue';
+import { PropType, computed, defineComponent, watch } from 'vue';
 import { Select } from 'bkui-vue';
 import { QueryRuleOPEnum } from '@/typings';
 import { useSingleList } from '@/hooks/useSingleList';
@@ -6,6 +6,29 @@ import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { VendorEnum } from '@/common/constant';
 
 const { Option } = Select;
+
+interface IVpcItem {
+  id: string;
+  vendor: string;
+  account_id: string;
+  cloud_id: string;
+  name: string;
+  region: string;
+  category: string;
+  memo: string;
+  bk_biz_id: number;
+  bk_cloud_id: number;
+  creator: string;
+  reviser: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface IVpcWithSubnetCountItem extends IVpcItem {
+  extension?: any; // 具体见 docs\api-docs\web-server\docs\resource\list_vpc_with_subnet_count.md
+  subnet_count: number;
+  current_zone_subnet_count: number;
+}
 
 export default defineComponent({
   name: 'RegionVpcSelector',
@@ -18,11 +41,20 @@ export default defineComponent({
   },
   emits: ['update:modelValue', 'change'],
   setup(props, { emit, expose }) {
-    const cloudVpcId = ref('');
+    const selected = computed({
+      get() {
+        return props.modelValue;
+      },
+      set(val) {
+        const vpcDetail = dataList.value.find((vpc) => vpc.cloud_id === val);
+        emit('change', vpcDetail);
+        emit('update:modelValue', val);
+      },
+    });
 
     const { getBusinessApiPath } = useWhereAmI();
     const businessApiPath = getBusinessApiPath();
-    const { dataList, isDataLoad, handleScrollEnd, handleRefresh } = useSingleList({
+    const { dataList, isDataLoad, handleRefresh } = useSingleList<IVpcWithSubnetCountItem>({
       url: () =>
         props.vendor
           ? `/api/v1/web/${businessApiPath}vendors/${props.vendor}/vpcs/with/subnet_count/list`
@@ -31,18 +63,12 @@ export default defineComponent({
         { op: QueryRuleOPEnum.EQ, field: 'account_id', value: props.accountId },
         { op: QueryRuleOPEnum.EQ, field: 'region', value: props.region },
       ],
+      rollRequestConfig: { enabled: true, limit: 50 },
     });
 
     // clear-handler - 清空数据
     const handleClear = () => {
-      cloudVpcId.value = '';
-      emit('update:modelValue', '');
-    };
-
-    // change-handler - cloudVpcId 变更时, 通过 cloud_id 找到对应的 vpc, 传递给父组件
-    const handleChange = () => {
-      const vpcDetail = dataList.value.find((vpc) => vpc.cloud_id === cloudVpcId.value);
-      emit('change', vpcDetail);
+      selected.value = '';
     };
 
     // region 变更时, 刷新 vpc 列表
@@ -54,25 +80,10 @@ export default defineComponent({
       },
     );
 
-    // 监听 vpc 列表, 如果父组件传递了 props, 则选中, 防止编辑操作回显数据时丢失
-    watch(
-      dataList,
-      () => {
-        cloudVpcId.value = props.modelValue ? props.modelValue : '';
-        handleChange();
-      },
-      { deep: true },
-    );
-
-    watch(cloudVpcId, (val) => {
-      handleChange();
-      emit('update:modelValue', val);
-    });
-
     watch(
       () => props.modelValue,
       (val) => {
-        cloudVpcId.value = val;
+        selected.value = val;
       },
     );
 
@@ -81,13 +92,7 @@ export default defineComponent({
 
     return () => (
       <div class='region-vpc-selector'>
-        <Select
-          v-model={cloudVpcId.value}
-          onClear={handleClear}
-          onScroll-end={handleScrollEnd}
-          loading={isDataLoad.value}
-          scrollLoading={isDataLoad.value}
-          disabled={props.isDisabled}>
+        <Select v-model={selected.value} onClear={handleClear} loading={isDataLoad.value} disabled={props.isDisabled}>
           {dataList.value.map(({ id, name, cloud_id, extension }) => {
             if (props.vendor) {
               const cidrs = extension?.cidr?.map((obj: any) => obj.cidr).join(',') || '';
