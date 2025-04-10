@@ -118,11 +118,13 @@ export default defineComponent({
 
     const optionRender = () => {
       return dataList.value.map((subnet) => {
-        const { cloud_id, name, ipv4_cidr, available_ip_count } = subnet;
+        const { cloud_id, name, ipv4_cidr, ipv6_cidr, available_ip_count } = subnet;
+        const ipv4CidrStr = ipv4_cidr ? ` ${ipv4_cidr.join(',')}` : '';
+        const ipv6CidrStr = ipv6_cidr ? ` ${ipv6_cidr.join(',')}` : '';
         const label =
           props.vendor !== VendorEnum.GCP
-            ? `${cloud_id} ${name} ${ipv4_cidr} 剩余IP ${available_ip_count}`
-            : `${cloud_id} ${name} ${ipv4_cidr}`;
+            ? `${cloud_id} ${name}${ipv4CidrStr}${ipv6CidrStr} 剩余IP:${available_ip_count}`
+            : `${cloud_id} ${name}${ipv4CidrStr}${ipv6CidrStr}`;
 
         return <bk-option key={cloud_id} value={cloud_id} label={label} disabled={props.optionDisabled(subnet)} />;
       });
