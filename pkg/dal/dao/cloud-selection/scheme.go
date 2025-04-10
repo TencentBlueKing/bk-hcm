@@ -71,7 +71,7 @@ func (dao SchemeDao) UpdateByID(kt *kit.Kit, id string, model *tableselection.Sc
 	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, model.TableName(), setExpr)
 
 	toUpdate["id"] = id
-	_, err = dao.Orm.Do().Update(kt.Ctx, sql, toUpdate)
+	_, err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Update(kt.Ctx, sql, toUpdate)
 	if err != nil {
 		logs.ErrorJson("update scheme failed, err: %v, id: %s, rid: %v", err, id, kt.Rid)
 		return err
@@ -95,7 +95,7 @@ func (dao SchemeDao) Create(kt *kit.Kit, model *tableselection.SchemeTable) (str
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, model.TableName(),
 		tableselection.SchemeTableColumns.ColumnExpr(), tableselection.SchemeTableColumns.ColonNameExpr())
 
-	err = dao.Orm.Do().Insert(kt.Ctx, sql, model)
+	err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Insert(kt.Ctx, sql, model)
 	if err != nil {
 		if em := errf.GetMySQLDuplicated(err); em != nil {
 			return "", errf.New(errf.RecordDuplicated, em.Message)
@@ -128,7 +128,7 @@ func (dao SchemeDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListResult
 		// this is dao count request, then do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.CloudSelectionSchemeTable, whereExpr)
 
-		count, err := dao.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count scheme failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -146,7 +146,8 @@ func (dao SchemeDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListResult
 		table.CloudSelectionSchemeTable, whereExpr, pageExpr)
 
 	details := make([]tableselection.SchemeTable, 0)
-	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql, whereValue)
+	if err != nil {
 		logs.Errorf("select scheme failed, err: %v, sql: %s, rid: %s", err, sql, kt.Rid)
 		return nil, err
 	}
@@ -166,7 +167,8 @@ func (dao SchemeDao) Delete(kt *kit.Kit, filterExpr *filter.Expression) error {
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.CloudSelectionSchemeTable, whereExpr)
-	if _, err = dao.Orm.Do().Delete(kt.Ctx, sql, whereValue); err != nil {
+	_, err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Delete(kt.Ctx, sql, whereValue)
+	if err != nil {
 		logs.ErrorJson("delete scheme failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
 		return err
 	}

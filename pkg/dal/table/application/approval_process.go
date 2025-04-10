@@ -52,6 +52,8 @@ type ApprovalProcessTable struct {
 	ApplicationType string `db:"application_type" json:"application_type" validate:"max=64"`
 	// ServiceID ITSM流程的服务ID
 	ServiceID int64 `db:"service_id" json:"service_id" validate:"min=1"`
+	// TenantID 租户ID
+	TenantID string `db:"tenant_id" json:"tenant_id"`
 	// Creator 创建者
 	Creator string `db:"creator" json:"creator" validate:"max=64"`
 	// Reviser 更新者

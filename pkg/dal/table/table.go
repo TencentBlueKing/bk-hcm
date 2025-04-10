@@ -245,7 +245,7 @@ var TableMap = map[Name]TableConfig{
 	SGSecurityGroupRuleTable:     {},
 	TCloudSecurityGroupRuleTable: {},
 	AwsSecurityGroupRuleTable:    {},
-	HuaWeiSecurityGroupRuleTable: {EnableTenant: true},
+	HuaWeiSecurityGroupRuleTable: {},
 	AzureSecurityGroupRuleTable:  {},
 	SGNetworkInterfaceRelTable:   {},
 	GcpFirewallRuleTable:         {EnableTenant: true},
@@ -284,8 +284,8 @@ var TableMap = map[Name]TableConfig{
 	// TODO: 临时方案
 	RecycleRecordTableTaskID: {},
 
-	AsyncFlowTable:     {},
-	AsyncFlowTaskTable: {},
+	AsyncFlowTable:     {EnableTenant: true},
+	AsyncFlowTaskTable: {EnableTenant: true},
 
 	ArgumentTemplateTable: {EnableTenant: true},
 
