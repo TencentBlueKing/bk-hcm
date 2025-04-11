@@ -345,7 +345,6 @@ func genResourceAccessActions() []client.ResourceAction {
 		Version:              1,
 	}}...)
 	actions = append(actions, genCosResAccessActions()...)
-
 	return actions
 }
 
