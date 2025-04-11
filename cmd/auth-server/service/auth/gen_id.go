@@ -775,3 +775,22 @@ func genTaskManagementResource(a *meta.ResourceAttribute) (client.ActionID, []cl
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }
+
+func genCosBucket(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	res := client.Resource{
+		System: sys.SystemIDHCM,
+		Type:   sys.Account,
+		ID:     a.ResourceID,
+	}
+
+	switch a.Basic.Action {
+	case meta.Create:
+		return sys.CosBucketCreate, []client.Resource{res}, nil
+	case meta.Find:
+		return sys.CosBucketFind, []client.Resource{res}, nil
+	case meta.Delete:
+		return sys.CosBucketDelete, []client.Resource{res}, nil
+	default:
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+}
