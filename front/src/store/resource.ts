@@ -96,8 +96,12 @@ export const useResourceStore = defineStore({
     delete(type: string, id: string | number) {
       return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/${id}`);
     },
-    deleteBatch(type: string, data: any) {
-      return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/batch`, { data });
+    deleteBatch(type: string, data: any, config?: any) {
+      return http.delete(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/batch`,
+        { data },
+        config,
+      );
     },
     recyclBatch(type: string, data: any) {
       return http.delete(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/recycled/${type}/batch`, { data });

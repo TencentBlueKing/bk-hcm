@@ -988,10 +988,17 @@ watch(
 // 配置规则&删除安全组
 const currentSecurityGroup = ref<ISecurityGroupOperateItem>(null);
 const isChangeEffectConfirmDialogShow = ref(false);
-const isSecurityGroupSingleDeleteDialogShow = ref(false);
+const securityGroupDeleteDialogState = reactive({
+  isShow: false,
+  isHidden: true,
+});
 const handleFillCurrentSecurityGroup = async (rowData: ISecurityGroupOperateItem, type: string) => {
-  if (type === 'rule') isChangeEffectConfirmDialogShow.value = true;
-  else isSecurityGroupSingleDeleteDialogShow.value = true;
+  if (type === 'rule') {
+    isChangeEffectConfirmDialogShow.value = true;
+  } else {
+    securityGroupDeleteDialogState.isShow = true;
+    securityGroupDeleteDialogState.isHidden = false;
+  }
 
   const { ruleCountMap, relatedResourcesList } = await securityGroupStore.queryRuleCountAndRelatedResources([
     rowData.id,
@@ -1246,12 +1253,15 @@ watch(
     />
 
     <!-- 删除安全组 -->
-    <security-group-single-delete-dialog
-      v-model="isSecurityGroupSingleDeleteDialogShow"
-      :loading="securityGroupStore.isQueryRuleCountAndRelatedResourcesLoading"
-      :detail="currentSecurityGroup"
-      @success="handleSecurityGroupOperationSuccess"
-    />
+    <template v-if="!securityGroupDeleteDialogState.isHidden">
+      <security-group-single-delete-dialog
+        v-model="securityGroupDeleteDialogState.isShow"
+        :loading="securityGroupStore.isQueryRuleCountAndRelatedResourcesLoading"
+        :detail="currentSecurityGroup"
+        @hidden="securityGroupDeleteDialogState.isHidden = true"
+        @success="handleSecurityGroupOperationSuccess"
+      />
+    </template>
 
     <!-- 克隆安全组弹窗 -->
     <template v-if="cloneSecurityData.isShow">
