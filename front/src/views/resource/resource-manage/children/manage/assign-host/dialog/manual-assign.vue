@@ -92,7 +92,12 @@ const { formModel, resetForm } = useFormModel<{ bk_cloud_id: number; bk_biz_id: 
   bk_biz_id: undefined,
 });
 const isFormModelHasEmpty = computed(() => formModel.bk_biz_id === undefined || formModel.bk_cloud_id === undefined);
-const hasFooter = computed(() => !(props.isLoading || props.cvm?.match_type === 'auto'));
+const hasFooter = computed(() => !props.isLoading);
+const dialogWidth = computed(() => {
+  if (props.isLoading) return '400';
+  if (props.cvm?.match_type === 'auto') return '40%';
+  return '480';
+});
 const cloudAreaOption = computed(() =>
   // 暂不支持0管控区
   Object.fromEntries(Array.from(cloudAreaMap.value.entries()).filter(([key]) => key !== 0)),
@@ -138,7 +143,7 @@ onBeforeMount(() => {
     :is-show="model"
     :title="isLoading ? '' : t('分配主机')"
     :dialog-type="hasFooter ? 'operation' : 'show'"
-    :width="isLoading ? 400 : 480"
+    :width="dialogWidth"
     @closed="handleClosed"
   >
     <template v-if="isLoading">
