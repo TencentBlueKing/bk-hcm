@@ -34,9 +34,9 @@ import (
 
 func (svc *cosSvc) initTCloudCosService(cap *capability.Capability) {
 	h := rest.NewHandler()
-	h.Add("CreateTCloudCosBucket", http.MethodPost, "/vendors/tcloud/cos/bucket/create", svc.CreateTCloudCosBucket)
-	h.Add("DeleteTCloudCosBucket", http.MethodDelete, "/vendors/tcloud/cos/bucket/delete", svc.DeleteTCloudCosBucket)
-	h.Add("ListTCloudCosBucket", http.MethodPost, "/vendors/tcloud/cos/bucket/list", svc.ListTCloudCosBucket)
+	h.Add("CreateTCloudCosBucket", http.MethodPost, "/vendors/tcloud/cos/buckets/create", svc.CreateTCloudCosBucket)
+	h.Add("DeleteTCloudCosBucket", http.MethodDelete, "/vendors/tcloud/cos/buckets/delete", svc.DeleteTCloudCosBucket)
+	h.Add("ListTCloudCosBucket", http.MethodPost, "/vendors/tcloud/cos/buckets/list", svc.ListTCloudCosBucket)
 	h.Load(cap.WebService)
 }
 

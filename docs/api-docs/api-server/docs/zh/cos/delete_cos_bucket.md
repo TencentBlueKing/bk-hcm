@@ -6,7 +6,7 @@
 
 ### URL
 
-Delete /api/v1/cloud/cos/bucket/delete
+Delete /api/v1/cloud/cos/buckets/delete
 
 ### 输入参数
 

@@ -6,7 +6,7 @@
 
 ### URL
 
-POST /api/v1/cloud/cos/bucket/create
+POST /api/v1/cloud/cos/buckets/create
 
 ### 输入参数
 

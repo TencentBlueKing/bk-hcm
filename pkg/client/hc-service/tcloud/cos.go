@@ -44,13 +44,13 @@ type CosClient struct {
 // CreateCosBucket ....
 func (c *CosClient) CreateCosBucket(kt *kit.Kit, req *protocos.TCloudCreateBucketReq) error {
 	return common.RequestNoResp[protocos.TCloudCreateBucketReq](c.client, http.MethodPost, kt, req,
-		"/cos/bucket/create")
+		"/cos/buckets/create")
 }
 
 // DeleteCosBucket ....
 func (c *CosClient) DeleteCosBucket(kt *kit.Kit, req *protocos.TCloudDeleteBucketReq) error {
 	return common.RequestNoResp[protocos.TCloudDeleteBucketReq](c.client, http.MethodDelete, kt, req,
-		"/cos/bucket/delete")
+		"/cos/buckets/delete")
 }
 
 // ListCosBucket ...
@@ -58,5 +58,5 @@ func (c *CosClient) ListCosBucket(kt *kit.Kit, req *protocos.TCloudBucketListReq
 	*typescos.TCloudBucketListResult, error) {
 
 	return common.Request[protocos.TCloudBucketListReq, typescos.TCloudBucketListResult](
-		c.client, http.MethodPost, kt, req, "/cos/bucket/list")
+		c.client, http.MethodPost, kt, req, "/cos/buckets/list")
 }

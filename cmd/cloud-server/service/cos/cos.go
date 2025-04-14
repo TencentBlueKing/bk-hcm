@@ -40,9 +40,9 @@ func InitService(c *capability.Capability) {
 
 	h := rest.NewHandler()
 
-	h.Add("CreateCosBucket", http.MethodPost, "/cos/bucket/create", svc.CreateCosBucket)
-	h.Add("DeleteCosBucket", http.MethodDelete, "/cos/bucket/delete", svc.DeleteCosBucket)
-	h.Add("ListCosBucket", http.MethodPost, "/cos/bucket/list", svc.ListCosBucket)
+	h.Add("CreateCosBucket", http.MethodPost, "/cos/buckets/create", svc.CreateCosBucket)
+	h.Add("DeleteCosBucket", http.MethodDelete, "/cos/buckets/delete", svc.DeleteCosBucket)
+	h.Add("ListCosBucket", http.MethodPost, "/cos/buckets/list", svc.ListCosBucket)
 
 	h.Load(c.WebService)
 }
