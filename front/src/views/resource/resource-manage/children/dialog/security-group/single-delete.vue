@@ -1,15 +1,13 @@
 <script setup lang="ts">
 import { computed, h, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useResourceStore } from '@/store';
 import { type ISecurityGroupOperateItem } from '@/store/security-group';
-
-import { Message } from 'bkui-vue';
 import { TagThemeEnum } from 'bkui-vue/lib/shared';
 import GridContainer from '@/components/layout/grid-container/grid-container.vue';
 import GridItem from '@/components/layout/grid-container/grid-item.vue';
 import RelResourcesDisplay from '../../components/security/rel-resources-display.vue';
 import hintIcon from '@/assets/image/hint.svg';
+import DeleteButton from './single-delete-button.plugin.vue';
 
 defineOptions({ name: 'security-group-delete-dialog' });
 const props = defineProps<{ detail: ISecurityGroupOperateItem; loading: boolean }>();
@@ -17,7 +15,6 @@ const model = defineModel<boolean>();
 const emit = defineEmits(['success']);
 
 const { t } = useI18n();
-const resourceStore = useResourceStore();
 
 const boundResources = computed(() => props.detail?.resources?.filter(({ count }) => count > 0) ?? []);
 
@@ -42,16 +39,9 @@ const fields = [
 ];
 
 const isConfirmLoading = ref(false);
-const handleDelete = async () => {
-  isConfirmLoading.value = true;
-  try {
-    await resourceStore.deleteBatch('security_groups', { ids: [props.detail.id] });
-    Message({ theme: 'success', message: t('删除成功') });
-    handleClosed();
-    emit('success');
-  } finally {
-    isConfirmLoading.value = false;
-  }
+const handleDeleteSuccess = async () => {
+  handleClosed();
+  emit('success');
 };
 const handleClosed = () => {
   model.value = false;
@@ -89,14 +79,12 @@ const handleClosed = () => {
 
     <template #footer>
       <div class="footer">
-        <bk-button
-          theme="primary"
-          @click="handleDelete"
-          :loading="isConfirmLoading"
+        <delete-button
+          :id="detail?.id"
           :disabled="boundResources.length > 0"
-        >
-          {{ t('删除') }}
-        </bk-button>
+          v-model:loading="isConfirmLoading"
+          @success="handleDeleteSuccess"
+        />
         <bk-button :disabled="isConfirmLoading" @click="handleClosed">{{ t('取消') }}</bk-button>
       </div>
     </template>
