@@ -121,7 +121,7 @@ export default defineComponent({
     watch(
       () => props.boundSecruity,
       (val) => {
-        val.forEach((item) => getSecurityInfo(item));
+        val?.forEach((item) => getSecurityInfo(item));
         // 将已经绑定的安全组置灰并勾选
         securityList.value.forEach((item) => {
           if (boundId.value.includes(item.id)) item.isChecked = true;

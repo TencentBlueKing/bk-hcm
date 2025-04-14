@@ -148,10 +148,6 @@ export const useResourceStore = defineStore({
         `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/disks/cvms/${id}`,
       );
     },
-    // 获取根据主机安全组列表
-    getSecurityGroupsListByCvmId(id: string) {
-      return http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}security_groups/cvms/${id}`);
-    },
     // 操作主机相关
     cvmOperate(type: string, data: { ids: string[] }) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}cvms/batch/${type}`, data);

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, PropType, reactive, h, watch, computed, inject } from 'vue';
+import { ref, PropType, reactive, h, watch, computed, inject, onMounted } from 'vue';
 import { Button, Message } from 'bkui-vue';
 import { useI18n } from 'vue-i18n';
 import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
@@ -11,6 +11,7 @@ import { QueryRuleOPEnum } from '@/typings';
 import SecurityGroupSelector from '@/views/service/service-apply/components/common/security-group-selector';
 import { VendorEnum } from '@/common/constant';
 import dialogFooter from '@/components/common-dialog/dialog-footer.vue';
+import { useSecurityGroupRelatedResourceStore } from '@/store/security-group/related-resource';
 
 const props = defineProps({
   data: {
@@ -67,6 +68,7 @@ const state = reactive<any>({
 const { t } = useI18n();
 const resourceStore = useResourceStore();
 const accountStore = useAccountStore();
+const securityGroupRelatedResourceStore = useSecurityGroupRelatedResourceStore();
 const authVerifyData: any = inject('authVerifyData');
 
 const actionName = computed(() => {
@@ -218,13 +220,13 @@ const types = [
 const getSecurityGroupsList = async () => {
   isListLoading.value = true;
   try {
-    let res: any = {};
     if (props.data.vendor === 'azure') {
-      res = await resourceStore.getNetworkList(props.data.vendor, props.data.id);
+      const res = await resourceStore.getNetworkList(props.data.vendor, props.data.id);
+      tableData.value = res.data;
     } else {
-      res = await resourceStore.getSecurityGroupsListByCvmId(props.data.id);
+      const list = await securityGroupRelatedResourceStore.querySecurityGroupListWithResInfo('cvm', props.data.id);
+      tableData.value = list;
     }
-    tableData.value = res.data;
   } finally {
     isListLoading.value = false;
   }
@@ -373,7 +375,10 @@ const handleSelectSecurity = async (security_group_ids: string[]) => {
   Message({ message: t('绑定成功'), theme: 'success' });
   getSecurityGroupsList();
 };
-getSecurityGroupsList();
+
+onMounted(() => {
+  getSecurityGroupsList();
+});
 </script>
 
 <template>
