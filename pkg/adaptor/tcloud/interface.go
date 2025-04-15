@@ -29,6 +29,7 @@ import (
 	typesBill "hcm/pkg/adaptor/types/bill"
 	"hcm/pkg/adaptor/types/cert"
 	"hcm/pkg/adaptor/types/core"
+	typescos "hcm/pkg/adaptor/types/cos"
 	"hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/adaptor/types/disk"
 	"hcm/pkg/adaptor/types/eip"
@@ -197,4 +198,8 @@ type TCloud interface {
 	ResetCvmInstance(kt *kit.Kit, opt *cvm.ResetInstanceOption) (*poller.BaseDoneResult, error)
 
 	BatchCvmAssociateSecurityGroups(kt *kit.Kit, opt *cvm.TCloudAssociateSecurityGroupsOption) error
+
+	CreateBucket(kt *kit.Kit, opt *typescos.TCloudBucketCreateOption) error
+	DeleteBucket(kt *kit.Kit, opt *typescos.TCloudBucketDeleteOption) error
+	ListBuckets(kt *kit.Kit, opt *typescos.TCloudBucketListOption) (*typescos.TCloudBucketListResult, error)
 }
