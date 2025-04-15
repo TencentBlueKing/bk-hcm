@@ -1,11 +1,13 @@
 import { defineComponent, PropType, ref, watch } from 'vue';
 import './index.scss';
-import { SelectColumn, InputColumn, OperationColumn } from '@blueking/ediatable';
+import { SelectColumn, InputColumn } from '@blueking/ediatable';
 import { SecurityVendorType, useProtocols } from '../useProtocolList';
 import useFormModel from '@/hooks/useFormModel';
 import SourceAddress, { TcloudSourceAddressType } from './SourceAddress';
 import { Ext, IHead, SecurityRuleType } from '../useVendorHanlder';
 import { cleanObject, isPortAvailable, random } from '../util';
+import OperationColumn from '@/components/ediatable/operation-column.vue';
+
 export interface TcloudSecurityGroupRule {
   protocol: string; // 协议, 取值: TCP, UDP, ICMP, ICMPv6, ALL
   port: string; // 端口(all, 离散port, range)
@@ -326,7 +328,10 @@ export const TcloudRenderRow = defineComponent({
                 onAdd={handleAdd}
                 onRemove={handleRemove}
                 onCopy={handleCopy}
-                removeable={props.removeable}
+                removable={props.removeable}
+                copyText='克隆入站规则'
+                addText='添加入站规则'
+                removeText='删除入站规则'
               />
             </td>
           )}
