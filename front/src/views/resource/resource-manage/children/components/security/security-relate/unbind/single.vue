@@ -10,6 +10,7 @@ import {
 import { getPrivateIPs } from '@/utils';
 import { RELATED_RES_KEY_MAP, RELATED_RES_NAME_MAP } from '@/constants/security-group';
 
+import { Message } from 'bkui-vue';
 import { ThemeEnum } from 'bkui-vue/lib/shared';
 import hintIcon from '@/assets/image/hint.svg';
 import dialogFooter from '@/components/common-dialog/dialog-footer.vue';
@@ -42,6 +43,7 @@ const handleConfirm = async () => {
     security_group_id: props.detail.id,
     cvm_ids: [props.row.id],
   });
+  Message({ theme: 'success', message: t('解绑成功') });
   handleClosed();
   emit('success');
 };
