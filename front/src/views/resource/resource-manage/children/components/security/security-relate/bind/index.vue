@@ -69,9 +69,6 @@ watchEffect(() => {
 
 const searchRef = useTemplateRef('bind-related-resource-search');
 const handleSearch = (searchValue: ISearchSelectValue) => {
-  // 搜索条件变更后，重置勾选
-  handleClear();
-
   if (!searchValue.length) {
     condition.value = { account_id: props.detail.account_id, region: props.detail.region, vendor: props.detail.vendor };
   }
@@ -221,7 +218,7 @@ defineExpose({ handleClosed });
   }
 
   .preview-wrap {
-    margin-top: 16px;
+    margin: 16px 0;
     padding: 0 24px;
     height: calc(100% - 56px);
     overflow: auto;

@@ -1,4 +1,4 @@
-import { ref, toRaw } from 'vue';
+import { computed, ref, toRaw } from 'vue';
 
 type SelectionType = {
   checked: boolean;
@@ -13,6 +13,8 @@ type UseTableSelectionParams = {
 
 export default function useTableSelection({ rowKey = 'id', isRowSelectable }: UseTableSelectionParams) {
   const selections = ref([]);
+  // 用于设置表格刷新后的默认勾选项
+  const checked = computed(() => selections.value.map((item) => item[rowKey]));
 
   const handleSelectChange = (selection: SelectionType, isAll = false) => {
     // 全选
@@ -31,7 +33,9 @@ export default function useTableSelection({ rowKey = 'id', isRowSelectable }: Us
     // 取消选择某一个
     if (!isAll && !selection.checked) {
       const index = selections.value.findIndex((item) => item[rowKey] === selection.row[rowKey]);
-      selections.value.splice(index, 1);
+      if (index !== -1) {
+        selections.value.splice(index, 1);
+      }
     }
   };
 
@@ -45,6 +49,7 @@ export default function useTableSelection({ rowKey = 'id', isRowSelectable }: Us
 
   return {
     selections,
+    checked,
     resetSelections,
     handleSelectAll,
     handleSelectChange,

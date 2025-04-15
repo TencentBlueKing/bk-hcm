@@ -32,6 +32,11 @@ export default [
     id: 'cloud_vpc_ids',
     name: '所属vpc',
     type: 'array',
+    meta: {
+      search: {
+        op: QueryRuleOPEnum.JSON_OVERLAPS,
+      },
+    },
   },
   {
     id: 'region',
