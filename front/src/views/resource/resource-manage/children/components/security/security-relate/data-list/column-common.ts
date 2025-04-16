@@ -27,7 +27,7 @@ const columnConfig: Record<string, PropertyColumnConfig> = {
       ]);
     },
   },
-  vip: {
+  lb_vip: {
     render: ({ data }: any) => getInstVip(data),
   },
   security_group_names: {

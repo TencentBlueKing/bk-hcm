@@ -49,6 +49,21 @@ export default [
     id: 'lb_vip',
     name: '负载均衡VIP',
     type: 'string', // getInstVip(data)
+    meta: {
+      search: {
+        filterRules(value) {
+          return {
+            op: QueryRuleOPEnum.OR,
+            rules: [
+              { field: 'private_ipv4_addresses', op: QueryRuleOPEnum.JSON_OVERLAPS, value },
+              { field: 'private_ipv6_addresses', op: QueryRuleOPEnum.JSON_OVERLAPS, value },
+              { field: 'public_ipv4_addresses', op: QueryRuleOPEnum.JSON_OVERLAPS, value },
+              { field: 'public_ipv6_addresses', op: QueryRuleOPEnum.JSON_OVERLAPS, value },
+            ],
+          };
+        },
+      },
+    },
   },
   {
     id: 'lb_type',
