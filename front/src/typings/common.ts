@@ -57,7 +57,7 @@ export type QueryFilterTypeLegacy = {
 
 export type RulesItem = {
   field?: string;
-  op?: QueryRuleOPEnum;
+  op?: QueryRuleOPEnum | QueryRuleOPEnumLegacy;
   value?: string | number | string[] | number[];
   rules?: RulesItem[];
 };
