@@ -262,7 +262,7 @@ const isCurRowSelectEnable = (row: any) => {
 const { selections, handleSelectionChange, resetSelections } = useSelection();
 
 const groupColumns = [
-  { type: 'selection', width: 30, minWidth: 30, onlyShowOnList: true },
+  { type: 'selection', width: 30, minWidth: 30, onlyShowOnList: true, notDisplayedInBusiness: true },
   {
     label: '安全组 ID',
     field: 'cloud_id',
@@ -559,7 +559,7 @@ const groupColumns = [
 const groupSettings = generateColumnsSettings(groupColumns);
 
 const gcpColumns = [
-  { type: 'selection', width: 30, minWidth: 30, onlyShowOnList: true },
+  { type: 'selection', width: 30, minWidth: 30, onlyShowOnList: true, notDisplayedInBusiness: true },
   {
     label: '防火墙 ID	',
     field: 'cloud_id',
@@ -788,7 +788,7 @@ const gcpColumns = [
 const gcpSettings = generateColumnsSettings(gcpColumns);
 
 const templateColumns = [
-  { type: 'selection', width: 30, minWidth: 30, onlyShowOnList: true },
+  { type: 'selection', width: 30, minWidth: 30, onlyShowOnList: true, notDisplayedInBusiness: true },
   {
     label: '模板ID',
     field: 'cloud_id',
