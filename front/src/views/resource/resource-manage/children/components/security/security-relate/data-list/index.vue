@@ -36,7 +36,7 @@ const { whereAmI } = useWhereAmI();
 const columns = ref(getColumns(props.resourceName, props.operation));
 const { settings } = useTableSettings(columns.value);
 const { handlePageChange, handlePageSizeChange, handleSort } = usePage(props.enableQuery, props.pagination);
-const { selections, handleSelectAll, handleSelectChange, resetSelections } = useTableSelection({
+const { selections, checked, handleSelectAll, handleSelectChange, resetSelections } = useTableSelection({
   rowKey: 'cloud_id',
   isRowSelectable: props.isRowSelectEnable,
 });
@@ -47,22 +47,15 @@ const handleClear = () => {
   tableRef.value.clearSelection();
 };
 const handleDelete = (cloud_id: string) => {
-  // getSelection()获取到的勾选项，不计顺序；selections中是计入勾选顺序的。
-  // 通过方法删除勾选项，需要判断删除的是不是最后一项，如果是的话，需要清空一下表格勾选项，保证视觉效果正确。
+  // 移除内存中的勾选项
+  const idx = selections.value.findIndex((item) => item.cloud_id === cloud_id);
+  selections.value.splice(idx, 1);
+
+  // 更新组件的勾选态
   const tableSelection = tableRef.value.getSelection();
-  const row = tableSelection.find((item: SecurityGroupRelResourceByBizItem) => {
-    if (item.cloud_id === cloud_id) {
-      const idx = selections.value.findIndex((item) => item.cloud_id === cloud_id);
-      selections.value.splice(idx, 1);
-      return true;
-    }
-    return false;
-  });
-  if (tableSelection.length > 1) {
-    tableRef.value.toggleRowSelection(row, false);
-  } else {
-    handleClear();
-  }
+  const row = tableSelection.find((item: SecurityGroupRelResourceByBizItem) => item.cloud_id === cloud_id);
+  // TODO：这里手动控制组件行为有点问题，没办法保证 toggleRowSelection 执行后三种状态的视觉效果
+  tableRef.value.toggleRowSelection(row, false);
 };
 
 const resourceType = computed(() => {
@@ -82,8 +75,9 @@ watchEffect(() => {
 
 watch(
   selections,
-  (selections) => {
-    emit('select', selections);
+  (val) => {
+    if (val.length === 0) tableRef.value.clearSelection(); // 保证通过ref删除时，全不选的视觉效果正常
+    emit('select', val);
   },
   { deep: true },
 );
@@ -107,7 +101,9 @@ defineExpose({ handleClear, handleDelete });
     @column-sort="handleSort"
     @select-all="handleSelectAll"
     @selection-change="handleSelectChange"
-    row-key="id"
+    row-key="cloud_id"
+    selection-key="cloud_id"
+    :checked="checked"
   >
     <!-- 复选框列 -->
     <bk-table-column v-if="hasSelections" width="30" min-width="30" type="selection"></bk-table-column>
