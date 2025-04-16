@@ -358,7 +358,6 @@ const groupColumns = [
   {
     label: t('关联的资源类型'),
     field: 'rel_res',
-    filter: true,
     width: 200,
     isDefaultShow: true,
     render: ({ cell }: { cell: { res_name: string; count: number }[] }) => {
