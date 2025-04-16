@@ -31,7 +31,11 @@ const updateDefaultValue = () => ({
   mgmt_biz_id: undefined as number,
 });
 
+const keyword = ref('');
 const list = ref(props.selections.slice());
+const displayList = computed(() =>
+  list.value.filter((item) => item.name.includes(keyword.value) || item.cloud_id.includes(keyword.value)),
+);
 
 const accountId = computed(() => list.value?.[0].account_id);
 
@@ -64,6 +68,7 @@ const columns: ModelPropertyColumn[] = [
     id: 'res_res_types',
     name: '关联的资源类型',
     type: 'array',
+    width: 120,
   },
   {
     id: 'rel_res_count',
@@ -153,12 +158,8 @@ const handleDialogConfirm = async () => {
   emit('success');
 };
 
-const handleSearch = (keyword: string) => {
-  if (!keyword) {
-    list.value = props.selections.slice();
-    return;
-  }
-  list.value = list.value.filter((item) => item.name.includes(keyword) || item.cloud_id.includes(keyword));
+const handleSearch = (v: string) => {
+  keyword.value = v.trim();
 };
 
 const handleRemove = (id: ISecurityGroupItem['id']) => {
@@ -175,7 +176,7 @@ const handleRemove = (id: ISecurityGroupItem['id']) => {
       <bk-input type="search" placeholder="请输入 安全组ID/安全组名称 搜索" @enter="handleSearch" />
     </div>
     <bk-table
-      :data="list"
+      :data="displayList"
       :max-height="500"
       :min-height="190"
       row-hover="auto"
