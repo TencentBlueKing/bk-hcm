@@ -98,7 +98,7 @@ export default defineComponent({
                 onCopy={() => handleCopy(idx)}
                 onRemove={() => handleRemove(idx)}
                 onChange={(val) => (tableData.value[idx] = val)}
-                removeable={tableData.value.length < 2}
+                removeable={tableData.value.length > 1}
               />
             )),
         }}

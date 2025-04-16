@@ -128,6 +128,9 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .bkhcm-icon-jump-fill:before {
 	content: "\e123";
 }
+.bkhcm-icon-copy:before {
+	content: "\e179";
+}
 .bkhcm-icon-exchange-line:before {
 	content: "\e151";
 }
