@@ -22,7 +22,7 @@ package securitygroup
 import (
 	"fmt"
 
-	security_group "hcm/cmd/cloud-server/logics/security-group"
+	sglogic "hcm/cmd/cloud-server/logics/security-group"
 	proto "hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
@@ -35,108 +35,10 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/classifier"
 	"hcm/pkg/tools/converter"
-	"hcm/pkg/tools/hooks/handler"
 	"hcm/pkg/tools/slice"
 )
-
-// AssignSecurityGroupToBiz assign security group to biz.
-// Deprecated: use BatchAssignSecurityGroupToBiz instead.
-func (svc *securityGroupSvc) AssignSecurityGroupToBiz(cts *rest.Contexts) (interface{}, error) {
-	req := new(proto.AssignSecurityGroupToBizReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	// authorize
-	basicInfoReq := dataproto.ListResourceBasicInfoReq{
-		ResourceType: enumor.SecurityGroupCloudResType,
-		IDs:          req.SecurityGroupIDs,
-	}
-	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, basicInfoReq)
-	if err != nil {
-		return nil, err
-	}
-
-	authRes := make([]meta.ResourceAttribute, 0, len(basicInfoMap))
-	for _, info := range basicInfoMap {
-		authRes = append(authRes, meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.SecurityGroup,
-			Action: meta.Assign, ResourceID: info.AccountID}, BizID: info.BkBizID})
-	}
-	err = svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes...)
-	if err != nil {
-		return nil, err
-	}
-
-	if err = svc.checkSGUnAssign(cts.Kit, req); err != nil {
-		logs.Errorf("check security group unAssign failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	// create assign audit.
-	err = svc.audit.ResBizAssignAudit(cts.Kit, enumor.SecurityGroupAuditResType, req.SecurityGroupIDs, req.BkBizID)
-	if err != nil {
-		logs.Errorf("create assign audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	update := &dataproto.SecurityGroupCommonInfoBatchUpdateReq{
-		IDs:     req.SecurityGroupIDs,
-		BkBizID: req.BkBizID,
-	}
-	if err := svc.client.DataService().Global.SecurityGroup.BatchUpdateSecurityGroupCommonInfo(cts.Kit.Ctx,
-		cts.Kit.Header(), update); err != nil {
-
-		logs.Errorf("BatchUpdateSecurityGroupCommonInfo failed, err: %v, req: %v, rid: %s", err, update,
-			cts.Kit.Rid)
-		return nil, err
-	}
-
-	return nil, nil
-}
-
-func (svc *securityGroupSvc) checkSGUnAssign(kt *kit.Kit, req *proto.AssignSecurityGroupToBizReq) error {
-	listReq := &dataproto.SecurityGroupListReq{
-		Field: []string{"id"},
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{
-					Field: "id",
-					Op:    filter.In.Factory(),
-					Value: req.SecurityGroupIDs,
-				},
-				&filter.AtomRule{
-					Field: "bk_biz_id",
-					Op:    filter.NotEqual.Factory(),
-					Value: constant.UnassignedBiz,
-				},
-			},
-		},
-		Page: core.NewDefaultBasePage(),
-	}
-	result, err := svc.client.DataService().Global.SecurityGroup.ListSecurityGroup(kt.Ctx, kt.Header(), listReq)
-	if err != nil {
-		logs.Errorf("ListSecurityGroup failed, err: %v, rid: %s", err, kt.Rid)
-		return err
-	}
-
-	if len(result.Details) != 0 {
-		ids := make([]string, len(result.Details))
-		for index, one := range result.Details {
-			ids[index] = one.ID
-		}
-		return fmt.Errorf("security group%v already assigned", ids)
-	}
-
-	return nil
-}
 
 // BatchAssignBiz batch assign biz.
 func (svc *securityGroupSvc) BatchAssignBiz(cts *rest.Contexts) (interface{}, error) {
@@ -148,12 +50,17 @@ func (svc *securityGroupSvc) BatchAssignBiz(cts *rest.Contexts) (interface{}, er
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	if err := svc.authorizeAssignSecurityGroupPermission(cts, req.IDs); err != nil {
-		logs.Errorf("authorizeAssignSecurityGroupPermission failed, err: %v, rid: %s", err, cts.Kit.Rid)
+	securityGroups, err := svc.listSecurityGroupsByID(cts.Kit, req.IDs)
+	if err != nil {
+		logs.Errorf("listSecurityGroups failed, err: %v, ids: %v, rid: %s", err, req.IDs, cts.Kit.Rid)
+		return nil, err
+	}
+	if err := svc.checkAssignPermission(cts, securityGroups); err != nil {
+		logs.Errorf("checkAssignPermission failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	previewResult, err := svc.checkSecurityGroupAssignable(cts.Kit, req.IDs)
+	previewResult, err := svc.checkSecurityGroupAssignable(cts.Kit, securityGroups)
 	if err != nil {
 		logs.Errorf("checkSecurityGroupAssignable failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
@@ -185,7 +92,8 @@ func (svc *securityGroupSvc) batchAssignBiz(kt *kit.Kit, items []*proto.AssignBi
 			IDs:     ids,
 			BkBizID: bizID,
 		}
-		err := svc.client.DataService().Global.SecurityGroup.BatchUpdateSecurityGroupCommonInfo(kt.Ctx, kt.Header(), update)
+		err := svc.client.DataService().Global.SecurityGroup.BatchUpdateSecurityGroupCommonInfo(kt.Ctx, kt.Header(),
+			update)
 		if err != nil {
 			logs.Errorf("BatchUpdateSecurityGroupCommonInfo failed, err: %v, req: %v, rid: %s", err, update,
 				kt.Rid)
@@ -197,6 +105,7 @@ func (svc *securityGroupSvc) batchAssignBiz(kt *kit.Kit, items []*proto.AssignBi
 
 // AssignBizPreview batch assign biz preview.
 func (svc *securityGroupSvc) AssignBizPreview(cts *rest.Contexts) (interface{}, error) {
+
 	req := new(proto.BatchAssignBizReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -205,66 +114,65 @@ func (svc *securityGroupSvc) AssignBizPreview(cts *rest.Contexts) (interface{}, 
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	if err := svc.authorizeAssignSecurityGroupPermission(cts, req.IDs); err != nil {
-		logs.Errorf("authorizeAssignSecurityGroupPermission failed, err: %v, rid: %s", err, cts.Kit.Rid)
+	securityGroups, err := svc.listSecurityGroupsByID(cts.Kit, req.IDs)
+	if err != nil {
+		logs.Errorf("listSecurityGroups failed, err: %v, ids: %v, rid: %s", err, req.IDs, cts.Kit.Rid)
+		return nil, err
+	}
+	if err := svc.checkAssignPermission(cts, securityGroups); err != nil {
+		logs.Errorf("check assign permission failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
-	return svc.checkSecurityGroupAssignable(cts.Kit, req.IDs)
+	return svc.checkSecurityGroupAssignable(cts.Kit, securityGroups)
 }
 
-func (svc *securityGroupSvc) authorizeAssignSecurityGroupPermission(cts *rest.Contexts, sgIDs []string) error {
-	basicInfoReq := dataproto.ListResourceBasicInfoReq{
-		ResourceType: enumor.SecurityGroupCloudResType,
-		IDs:          sgIDs,
-	}
-	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, basicInfoReq)
-	if err != nil {
-		return err
+func (svc *securityGroupSvc) checkAssignPermission(cts *rest.Contexts, sgInfos []cloud.BaseSecurityGroup) error {
+
+	attrList := make([]meta.ResourceAttribute, 0, len(sgInfos))
+	for i := range sgInfos {
+		sg := sgInfos[i]
+		attr := meta.ResourceAttribute{
+			Basic: &meta.Basic{
+				Type:   meta.SecurityGroup,
+				Action: meta.Assign, ResourceID: sg.AccountID,
+			},
+			BizID: sg.MgmtBizID,
+		}
+		attrList = append(attrList, attr)
 	}
 
-	err = handler.ResOperateAuth(cts,
-		&handler.ValidWithAuthOption{
-			Authorizer: svc.authorizer,
-			ResType:    meta.SecurityGroup,
-			Action:     meta.Assign,
-			BasicInfos: basicInfoMap},
-	)
+	decisions, _, err := svc.authorizer.Authorize(cts.Kit, attrList...)
 	if err != nil {
 		return err
 	}
+	for i := range decisions {
+		sg := sgInfos[i]
+		if !decisions[i].Authorized {
+			return errf.Newf(errf.PermissionDenied, "permission denied: %s(%s)", sg.CloudID, sg.ID)
+		}
+	}
+
 	return nil
 }
 
-func (svc *securityGroupSvc) checkSecurityGroupAssignable(kt *kit.Kit, ids []string) (
+func (svc *securityGroupSvc) checkSecurityGroupAssignable(kt *kit.Kit, sgInfos []cloud.BaseSecurityGroup) (
 	[]*proto.AssignBizPreviewResp, error) {
 
-	securityGroups, err := svc.listSecurityGroupsByID(kt, ids)
-	if err != nil {
-		logs.Errorf("listSecurityGroups failed, err: %v, ids: %v, rid: %s", err, ids, kt.Rid)
-		return nil, err
-	}
-
-	resultMap := make(map[string]*proto.AssignBizPreviewResp, len(ids))
-	resultList := make([]*proto.AssignBizPreviewResp, 0, len(ids))
-	for _, id := range ids {
+	resultList := make([]*proto.AssignBizPreviewResp, 0, len(sgInfos))
+	for _, sg := range sgInfos {
 		item := &proto.AssignBizPreviewResp{
-			ID:            id,
+			ID:            sg.ID,
 			Assignable:    true,
-			AssignedBizID: constant.UnassignedBiz,
+			AssignedBizID: sg.MgmtBizID,
 		}
-		resultMap[id] = item
-		resultList = append(resultList, item)
-	}
-
-	for _, securityGroup := range securityGroups {
-		resultMap[securityGroup.ID].AssignedBizID = securityGroup.MgmtBizID
-		if err = svc.validateSecurityGroupRuleRel(kt, securityGroup, resultMap[securityGroup.ID]); err != nil {
+		if err := svc.validateSecurityGroupRuleRel(kt, sg, item); err != nil {
 			logs.Errorf("validateSecurityGroupRuleRel failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
 		}
-		validateSecurityGroupManagerAndBakManager(securityGroup, resultMap[securityGroup.ID])
-		validateSecurityGroupManagementTypeAndBizID(securityGroup, resultMap[securityGroup.ID])
+		validateSecurityGroupManagerAndBakManager(sg, item)
+		validateSecurityGroupManagementTypeAndBizID(sg, item)
+		resultList = append(resultList, item)
 	}
 
 	return resultList, nil
@@ -360,7 +268,7 @@ func validateSecurityGroupManagerAndBakManager(securityGroup cloud.BaseSecurityG
 func (svc *securityGroupSvc) validateSecurityGroupRuleRel(kt *kit.Kit, sg cloud.BaseSecurityGroup,
 	preview *proto.AssignBizPreviewResp) error {
 
-	cloudSGToSgRulesMap, err := security_group.ListSecurityGroupRulesByCloudTargetSGID(kt,
+	cloudSGToSgRulesMap, err := sglogic.ListSecurityGroupRulesByCloudTargetSGID(kt,
 		svc.client.DataService(), sg.Vendor, sg.ID)
 	if err != nil {
 		logs.Errorf("listSecurityGroupRulesByCloudTargetSGID failed, err: %v, rid: %s", err, kt.Rid)

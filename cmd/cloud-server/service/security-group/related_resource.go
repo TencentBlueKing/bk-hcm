@@ -84,50 +84,6 @@ func (svc *securityGroupSvc) listResourceIdBySecurityGroup(cts *rest.Contexts,
 	return svc.client.DataService().Global.SGCommonRel.ListSgCommonRels(cts.Kit, req)
 }
 
-// ListCvmIdBySecurityGroup list cvm id by security group
-// Deprecated: table[security_group_cvm_rel] is deprecated. Use ListResourceIdBySecurityGroup instead.
-func (svc *securityGroupSvc) ListCvmIdBySecurityGroup(cts *rest.Contexts) (interface{}, error) {
-	return svc.listCvmIDBySecurityGroup(cts, handler.ResOperateAuth)
-}
-
-// ListBizCvmIdBySecurityGroup list biz cvm id by security group
-// Deprecated: table[security_group_cvm_rel] is deprecated. Use ListBizResourceIDBySecurityGroup instead.
-func (svc *securityGroupSvc) ListBizCvmIdBySecurityGroup(cts *rest.Contexts) (interface{}, error) {
-	return svc.listCvmIDBySecurityGroup(cts, handler.BizOperateAuth)
-}
-
-// Deprecated: table[security_group_cvm_rel] is deprecated.
-func (svc *securityGroupSvc) listCvmIDBySecurityGroup(cts *rest.Contexts,
-	validHandler handler.ValidWithAuthHandler) (interface{}, error) {
-	id := cts.PathParameter("id").String()
-	if len(id) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "id is required")
-	}
-
-	req := new(core.ListReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
-	}
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
-		enumor.SecurityGroupCloudResType, id)
-	if err != nil {
-		logs.Errorf("get security group vendor failed, id: %s, err: %v, rid: %s", id, err, cts.Kit.Rid)
-		return nil, err
-	}
-
-	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
-		Action: meta.Find, BasicInfo: baseInfo})
-	if err != nil {
-		return nil, err
-	}
-
-	return svc.client.DataService().Global.SGCvmRel.ListSgCvmRels(cts.Kit.Ctx, cts.Kit.Header(), req)
-}
-
 // QueryBizRelatedResourceCount query biz related resource count
 func (svc *securityGroupSvc) QueryBizRelatedResourceCount(cts *rest.Contexts) (interface{}, error) {
 	return svc.queryRelatedResourceCount(cts, handler.ListBizAuthRes)

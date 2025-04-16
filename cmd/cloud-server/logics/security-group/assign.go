@@ -35,24 +35,24 @@ import (
 // ListSecurityGroupRulesByCloudTargetSGID list security group rules by cloud target security group id.
 // return map[cloudSecurityGroupID][]securityGroupRuleID
 func ListSecurityGroupRulesByCloudTargetSGID(kt *kit.Kit, cli *dataservice.Client,
-	vendor enumor.Vendor, cloudID string) (map[string][]string, error) {
+	vendor enumor.Vendor, sgID string) (map[string][]string, error) {
 
 	var cloudSGToSgRulesMap map[string][]string
 	var err error
 	switch vendor {
 	case enumor.TCloud:
-		cloudSGToSgRulesMap, err = listTCloudSecurityGroupRulesByCloudTargetSGID(kt, cli, cloudID)
+		cloudSGToSgRulesMap, err = listTCloudSecurityGroupRulesByCloudTargetSGID(kt, cli, sgID)
 	case enumor.Aws:
-		cloudSGToSgRulesMap, err = listAwsSecurityGroupRulesByCloudTargetSGID(kt, cli, cloudID)
+		cloudSGToSgRulesMap, err = listAwsSecurityGroupRulesByCloudTargetSGID(kt, cli, sgID)
 	case enumor.Azure:
-		cloudSGToSgRulesMap, err = listAzureSecurityGroupRulesByCloudTargetSGID(kt, cli, cloudID)
+		cloudSGToSgRulesMap, err = listAzureSecurityGroupRulesByCloudTargetSGID(kt, cli, sgID)
 	case enumor.HuaWei:
-		cloudSGToSgRulesMap, err = listHuaweiSecurityGroupRulesByCloudTargetSGID(kt, cli, cloudID)
+		cloudSGToSgRulesMap, err = listHuaweiSecurityGroupRulesByCloudTargetSGID(kt, cli, sgID)
 	default:
 		return nil, fmt.Errorf("unsupported vendor %s for validateSecurityGroupRuleRel", vendor)
 	}
 	if err != nil {
-		logs.Errorf("list SecurityGroupRules failed, err: %v, sgID: %s, rid: %s", err, cloudID, kt.Rid)
+		logs.Errorf("list SecurityGroupRules failed, err: %v, sgID: %s, rid: %s", err, sgID, kt.Rid)
 		return nil, err
 	}
 

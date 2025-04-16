@@ -20,8 +20,6 @@
 package securitygroup
 
 import (
-	"errors"
-
 	proto "hcm/pkg/api/cloud-server"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
@@ -34,7 +32,6 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
-	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
 )
 
@@ -231,130 +228,6 @@ func (svc *securityGroupSvc) listSecurityGroup(cts *rest.Contexts, authHandler h
 		Count:   result.Count,
 		Details: result.Details,
 	}, nil
-}
-
-// ListSecurityGroupsByCvmID list security groups by cvm_id.
-// Deprecated: use ListSecurityGroupsByResID instead.
-func (svc *securityGroupSvc) ListSecurityGroupsByCvmID(cts *rest.Contexts) (interface{}, error) {
-	return svc.listSGByCvmID(cts, handler.ResOperateAuth)
-}
-
-// ListBizSecurityGroupsByCvmID list biz security groups by cvm_id.
-// Deprecated: use ListBizSecurityGroupsByResID instead.
-func (svc *securityGroupSvc) ListBizSecurityGroupsByCvmID(cts *rest.Contexts) (interface{}, error) {
-	return svc.listSGByCvmID(cts, handler.BizOperateAuth)
-}
-
-func (svc *securityGroupSvc) listSGByCvmID(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
-	interface{}, error) {
-
-	cvmID := cts.PathParameter("cvm_id").String()
-	if len(cvmID) == 0 {
-		return nil, errf.New(errf.InvalidParameter, "cvm_id is required")
-	}
-
-	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
-		enumor.CvmCloudResType, cvmID)
-	if err != nil {
-		logs.Errorf("get resource vendor failed, err: %s, cvmID: %s, rid: %s", err, cvmID, cts.Kit.Rid)
-		return nil, err
-	}
-
-	// validate biz and authorize
-	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
-		Action: meta.Find, BasicInfo: baseInfo})
-	if err != nil {
-		return nil, err
-	}
-
-	// azure的安全组绑定在网络接口和子网上面，查询规则与其他云不同
-	if baseInfo.Vendor == enumor.Azure {
-		return svc.listSGByCvmIDForAzure(cts.Kit, cvmID)
-	}
-
-	if baseInfo.Vendor == enumor.Gcp {
-		return nil, errors.New("gcp not support security group")
-	}
-
-	listReq := &dataproto.SGCvmRelWithSecurityGroupListReq{
-		CvmIDs: []string{cvmID},
-	}
-	result, err := svc.client.DataService().Global.SGCvmRel.ListWithSecurityGroup(cts.Kit.Ctx,
-		cts.Kit.Header(), listReq)
-	if err != nil {
-		logs.Errorf("list security group by cvm_id failed, err: %v, req: %v, rid: %s", err, cts.Kit.Rid, cts.Kit.Rid)
-		return nil, err
-	}
-
-	return result, nil
-}
-
-func (svc *securityGroupSvc) listSGByCvmIDForAzure(kt *kit.Kit, cvmID string) (interface{}, error) {
-
-	cvm, err := svc.client.DataService().Azure.Cvm.GetCvm(kt.Ctx, kt.Header(), cvmID)
-	if err != nil {
-		logs.Errorf("get cvm failed, err: %v, cvmID: %s, rid: %s", err, cvmID, kt.Rid)
-		return nil, err
-	}
-
-	listSubnetReq := &core.ListReq{
-		Filter: tools.ContainersExpression("id", cvm.SubnetIDs),
-		Page:   core.NewDefaultBasePage(),
-	}
-	subnetResult, err := svc.client.DataService().Azure.Subnet.ListSubnetExt(kt.Ctx, kt.Header(), listSubnetReq)
-	if err != nil {
-		logs.Errorf("list subnet failed, err: %v, subnetIDs: %v, rid: %s", err, cvm.SubnetIDs, kt.Rid)
-		return nil, err
-	}
-
-	listNIReq := &core.ListReq{
-		Filter: tools.ContainersExpression("cloud_id", cvm.Extension.CloudNetworkInterfaceIDs),
-		Page:   core.NewDefaultBasePage(),
-	}
-	niResult, err := svc.client.DataService().Azure.NetworkInterface.ListNetworkInterfaceExt(kt.Ctx, kt.Header(),
-		listNIReq)
-	if err != nil {
-		logs.Errorf("list network interface failed, err: %v, niIDs: %v, rid: %s", err,
-			cvm.Extension.CloudNetworkInterfaceIDs, kt.Rid)
-		return nil, err
-	}
-
-	sgIDs := make([]string, 0)
-	for _, one := range subnetResult.Details {
-		if len(one.Extension.SecurityGroupID) != 0 {
-			sgIDs = append(sgIDs, one.Extension.SecurityGroupID)
-		}
-	}
-
-	for _, one := range niResult.Details {
-		if len(converter.PtrToVal(one.Extension.SecurityGroupID)) != 0 {
-			sgIDs = append(sgIDs, *one.Extension.SecurityGroupID)
-		}
-	}
-
-	if len(sgIDs) == 0 {
-		return make([]corecloud.SGCvmRelWithBaseSecurityGroup, 0), nil
-	}
-
-	listSGReq := &dataproto.SecurityGroupListReq{
-		Filter: tools.ContainersExpression("id", sgIDs),
-		Page:   core.NewDefaultBasePage(),
-	}
-	sgResult, err := svc.client.DataService().Global.SecurityGroup.ListSecurityGroup(kt.Ctx, kt.Header(), listSGReq)
-	if err != nil {
-		logs.Errorf("list security group failed, err: %v, sgIDs: %v, rid: %s", err, sgIDs, kt.Rid)
-		return nil, err
-	}
-
-	sgs := make([]corecloud.SGCvmRelWithBaseSecurityGroup, 0, len(sgResult.Details))
-	for _, one := range sgResult.Details {
-		sgs = append(sgs, corecloud.SGCvmRelWithBaseSecurityGroup{
-			BaseSecurityGroup: one,
-			CvmID:             cvmID,
-		})
-	}
-
-	return sgs, nil
 }
 
 // ListSecurityGroupsByResID list security groups by res_id.
