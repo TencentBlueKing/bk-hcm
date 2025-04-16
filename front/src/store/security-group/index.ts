@@ -1,5 +1,6 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
+import rollRequest from '@blueking/roll-request';
 import http from '@/http';
 import { VendorEnum } from '@/common/constant';
 import { IListResData, IQueryResData, QueryBuilderType } from '@/typings';
@@ -42,6 +43,11 @@ export interface ISecurityGroupItem {
   cloud_update_time: string;
   account_managers?: string[];
   usage_biz_infos?: ISecurityGroupUsageBizMaintainerItem['usage_biz_infos'];
+}
+
+export interface ISecurityGroupRuleItem {
+  id: string;
+  type: string;
 }
 
 export interface ISecurityGroupDetail extends ISecurityGroupItem {
@@ -156,6 +162,56 @@ export interface ISecurityGroupUsageBizMaintainerItem {
 
 export const useSecurityGroupStore = defineStore('security-group', () => {
   const { getBusinessApiPath } = useWhereAmI();
+
+  const isFullListLoading = ref(false);
+  const isFullRuleLoading = ref(false);
+
+  const getFullList = async (params: QueryBuilderType) => {
+    isFullListLoading.value = true;
+    try {
+      const list = await rollRequest({
+        httpClient: http,
+        pageEnableCountKey: 'count',
+      }).rollReqUseCount<ISecurityGroupItem>(`/api/v1/cloud/${getBusinessApiPath()}security_groups/list`, params, {
+        limit: 500,
+        countGetter: (res) => res.data.count,
+        listGetter: (res) => res.data.details,
+      });
+
+      return list;
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    } finally {
+      isFullListLoading.value = false;
+    }
+  };
+
+  const getFullRuleList = async (params: QueryBuilderType & { vendor: string; id: string }) => {
+    const { vendor, id, ...data } = params;
+    isFullRuleLoading.value = true;
+    try {
+      const list = await rollRequest({
+        httpClient: http,
+        pageEnableCountKey: 'count',
+      }).rollReqUseCount<ISecurityGroupRuleItem>(
+        `/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/security_groups/${id}/rules/list`,
+        data,
+        {
+          limit: 500,
+          countGetter: (res) => res.data.count,
+          listGetter: (res) => res.data.details,
+        },
+      );
+
+      return list;
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    } finally {
+      isFullRuleLoading.value = false;
+    }
+  };
 
   // 预览安全组分配到业务的结果，是否可分配
   const isAssignPreviewLoading = ref(false);
@@ -403,6 +459,10 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
   };
 
   return {
+    isFullListLoading,
+    getFullList,
+    isFullRuleLoading,
+    getFullRuleList,
     isAssignPreviewLoading,
     getAssignPreview,
     isBatchAssignToBizLoading,
