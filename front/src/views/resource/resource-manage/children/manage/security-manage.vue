@@ -101,7 +101,9 @@ const cloneSecurityData = reactive<ICloneSecurityProps>({
 
 const templateData = ref([]);
 
-const { searchData, searchValue, filter } = useFilter(props);
+const { searchData, searchValue, filter } = useFilter(props, {
+  mgmt_type: (value) => (value === 'unknown' ? '' : value),
+});
 
 const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort, getList } =
   useQueryCommonList(
@@ -184,7 +186,11 @@ const selectSearchData = computed(() => {
         {
           name: t('管理类型'),
           id: 'mgmt_type',
-          children: Object.entries(MGMT_TYPE_MAP).map(([id, name]) => ({ id, name })),
+          children: [
+            { id: SecurityGroupManageType.BIZ, name: t('业务管理') },
+            { id: SecurityGroupManageType.PLATFORM, name: t('平台管理') },
+            { id: 'unknown', name: t('未确认') },
+          ],
           multiple: true,
         },
         {

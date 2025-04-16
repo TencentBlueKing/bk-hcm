@@ -35,7 +35,7 @@ export enum ResourceManageSenario {
   image = 'image',
 }
 
-const useFilter = (props: PropsType) => {
+const useFilter = (props: PropsType, convertValueCallbacks?: Record<string, (value: any) => any>) => {
   const searchData = ref([]);
   const searchValue = ref([]);
   const filter = ref<any>(cloneDeep(props.filter));
@@ -54,23 +54,13 @@ const useFilter = (props: PropsType) => {
           params = params.concat(
             queryValue.map((queryValueItem) => ({
               id: queryName,
-              values: [
-                {
-                  id: queryValueItem,
-                  name: queryValueItem,
-                },
-              ],
+              values: [{ id: queryValueItem, name: queryValueItem }],
             })),
           );
         } else {
           params.push({
             id: queryName,
-            values: [
-              {
-                id: queryValue,
-                name: queryValue,
-              },
-            ],
+            values: [{ id: queryValue, name: queryValue }],
           });
         }
       }
@@ -123,6 +113,8 @@ const useFilter = (props: PropsType) => {
       // 工具函数 - 获取条件值
       const getConditionValue = (field: string, values: any[]): string | number => {
         const tmpValue = values.length > 1 ? values : values[0];
+        const convertValueCallback = convertValueCallbacks?.[field];
+        if (convertValueCallback) return convertValueCallback(tmpValue);
         if (field === 'bk_cloud_id') return Number(values);
         if (field === 'region') return regionStore.getRegionNameEN(tmpValue);
         return tmpValue;
