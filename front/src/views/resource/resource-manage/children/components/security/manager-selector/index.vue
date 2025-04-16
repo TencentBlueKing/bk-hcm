@@ -1,6 +1,5 @@
 <script lang="ts" setup>
 import { ref, nextTick, watch } from 'vue';
-import UserSelector from '@/components/user-selector/index.vue';
 
 export interface IChargeSelectorProps {
   manager?: string;
@@ -42,10 +41,10 @@ defineExpose({ validate, formData, reset });
 <template>
   <bk-form class="manager-selector" label-width="150" form-type="vertical" :model="formData" ref="formRef">
     <bk-form-item label="主负责人" property="manager" required>
-      <user-selector :multiple="false" v-model="formData.manager"></user-selector>
+      <hcm-form-user :multiple="false" v-model="formData.manager"></hcm-form-user>
     </bk-form-item>
     <bk-form-item label="备份负责人" property="bak_manager" required>
-      <user-selector :multiple="false" v-model="formData.bak_manager"></user-selector>
+      <hcm-form-user :multiple="false" v-model="formData.bak_manager"></hcm-form-user>
     </bk-form-item>
   </bk-form>
 </template>
