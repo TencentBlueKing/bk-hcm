@@ -52,9 +52,21 @@ export default defineComponent({
           <FormItem label='所属VPC：'>
             <span class={'subnet-dialog-highlight-font'}>{props.data.vpc_id}</span>
           </FormItem>
+          {/* TODO：替换为flex-tag */}
           <FormItem label='IPv4 CIDR：'>
             <span class={'subnet-dialog-highlight-font'}>
               {props.data?.ipv4_cidr?.map((str) => (
+                <>
+                  <span>{str}</span>
+                  <br />
+                </>
+              ))}
+            </span>
+          </FormItem>
+          {/* TODO：替换为flex-tag */}
+          <FormItem label='IPv6 CIDR：'>
+            <span class={'subnet-dialog-highlight-font'}>
+              {props.data?.ipv6_cidr?.map((str) => (
                 <>
                   <span>{str}</span>
                   <br />

@@ -105,6 +105,12 @@ func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 				CloudLaunchedTime:    one.CloudLaunchedTime,
 				CloudExpiredTime:     one.CloudExpiredTime,
 				Reviser:              cts.Kit.User,
+				VpcIDs:               one.VpcIDs,
+				SubnetIDs:            one.SubnetIDs,
+				// 升降配可能会修改机型
+				MachineType: one.MachineType,
+				// 重装可能修改操作系统名称
+				OsName: one.OsName,
 			}
 
 			if one.BkCloudID != nil {

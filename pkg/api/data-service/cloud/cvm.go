@@ -105,6 +105,8 @@ type CvmBatchUpdate[Extension corecvm.Extension] struct {
 	CloudLaunchedTime    string     `json:"cloud_launched_time"`
 	CloudExpiredTime     string     `json:"cloud_expired_time"`
 	Extension            *Extension `json:"extension,omitempty"`
+	OsName               string     `json:"os_name"`
+	MachineType          string     `json:"machine_type"`
 }
 
 // Validate cvm update request.

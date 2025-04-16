@@ -36,6 +36,7 @@ import (
 	"hcm/cmd/hc-service/service/bill"
 	"hcm/cmd/hc-service/service/capability"
 	"hcm/cmd/hc-service/service/cert"
+	"hcm/cmd/hc-service/service/cos"
 	"hcm/cmd/hc-service/service/cvm"
 	"hcm/cmd/hc-service/service/disk"
 	"hcm/cmd/hc-service/service/eip"
@@ -183,6 +184,7 @@ func (s *Service) apiSet() *restful.Container {
 	mainaccount.InitService(c)
 	image.InitImageService(c)
 	tag.InitTagService(c)
+	cos.InitCosService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

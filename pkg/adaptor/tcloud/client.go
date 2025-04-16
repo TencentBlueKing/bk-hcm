@@ -20,10 +20,13 @@
 package tcloud
 
 import (
+	"fmt"
+	"net/http"
 	"time"
 
 	"hcm/pkg/adaptor/metric"
 	"hcm/pkg/adaptor/types"
+	typescos "hcm/pkg/adaptor/types/cos"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/tools/rand"
 
@@ -37,6 +40,7 @@ import (
 	ssl "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/ssl/v20191205"
 	tag "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/tag/v20180813"
 	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
+	"github.com/tencentyun/cos-go-sdk-v5"
 )
 
 const (
@@ -55,6 +59,7 @@ type ClientSet interface {
 	ClbClient(region string) (*clb.Client, error)
 	CertClient() (*ssl.Client, error)
 	TagClient() (*tag.Client, error)
+	CosClient(opt *typescos.ClientOpt) (*cos.Client, error)
 }
 
 // clientSet to get tcloud sdk client set
@@ -166,6 +171,34 @@ func (c *clientSet) TagClient() (*tag.Client, error) {
 		return nil, err
 	}
 	client.WithHttpTransport(metric.GetTCloudRecordRoundTripper(nil))
+
+	return client, nil
+}
+
+var cosUrlMap = map[typescos.UrlType]string{
+	typescos.NormalUrl:            "https://service.cos.myqcloud.com",
+	typescos.UrlWithNameAndRegion: "https://%s.cos.%s.myqcloud.com",
+}
+
+// CosClient tcloud cos client
+func (c *clientSet) CosClient(opt *typescos.ClientOpt) (*cos.Client, error) {
+	if opt == nil {
+		return nil, fmt.Errorf("cos client opt is nil")
+	}
+
+	cosUrl, err := opt.GetUrl(cosUrlMap)
+	if err != nil {
+		return nil, err
+	}
+	client := cos.NewClient(
+		cosUrl,
+		&http.Client{
+			Transport: &cos.AuthorizationTransport{
+				SecretID:  c.credential.SecretId,
+				SecretKey: c.credential.SecretKey,
+			},
+		},
+	)
 
 	return client, nil
 }

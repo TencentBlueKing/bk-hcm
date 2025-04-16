@@ -74,7 +74,13 @@ export default defineComponent({
                   router.push({
                     name: LBRouteName.domain,
                     params: { id: cell },
-                    query: { ...route.query, listener_id: route.params.id, type: undefined, protocol: undefined },
+                    query: {
+                      ...route.query,
+                      listener_id: route.params.id,
+                      vendor: loadBalancerStore.currentSelectedTreeNode.vendor,
+                      type: undefined,
+                      protocol: undefined,
+                    },
                   });
                   loadBalancerStore.setLbTreeSearchTarget({
                     ...data,
