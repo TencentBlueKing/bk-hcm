@@ -22,14 +22,23 @@ package user
 
 import (
 	"hcm/cmd/web-server/service/capability"
+	"hcm/pkg/cc"
 	"hcm/pkg/client"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/rest"
+	"hcm/pkg/thirdparty/api-gateway/login"
 )
 
 // InitUserService initial the userSvc service
 func InitUserService(c *capability.Capability) {
+	bkLoginCookieName := cc.WebServer().Web.BkLoginCookieName
+	if bkLoginCookieName == "" {
+		bkLoginCookieName = constant.BKToken
+	}
 	svr := &userSvc{
-		client: c.ApiClient,
+		client:            c.ApiClient,
+		loginCli:          c.LoginCli,
+		bkLoginCookieName: bkLoginCookieName,
 	}
 
 	h := rest.NewHandler()
@@ -39,10 +48,17 @@ func InitUserService(c *capability.Capability) {
 }
 
 type userSvc struct {
-	client *client.ClientSet
+	client            *client.ClientSet
+	loginCli          login.Client
+	bkLoginCookieName string
 }
 
 // GetUser get user info
 func (u *userSvc) GetUser(cts *rest.Contexts) (interface{}, error) {
-	return map[string]string{"username": cts.Kit.User}, nil
+	cookie, err := cts.Request.Request.Cookie(u.bkLoginCookieName)
+	if err != nil {
+		return nil, err
+	}
+	cts.Kit.SetBackendTenantID()
+	return u.loginCli.GetUserByToken(cts.Kit, cookie.Value)
 }

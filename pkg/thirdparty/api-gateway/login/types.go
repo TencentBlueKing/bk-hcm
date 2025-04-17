@@ -17,27 +17,34 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package capability ...
-package capability
+package login
 
-import (
-	"hcm/pkg/client"
-	"hcm/pkg/iam/auth"
-	"hcm/pkg/thirdparty/api-gateway/cmdb"
-	"hcm/pkg/thirdparty/api-gateway/itsm"
-	"hcm/pkg/thirdparty/api-gateway/login"
-	"hcm/pkg/thirdparty/api-gateway/notice"
+// BkLoginResponse is bk login api gateway response
+type BkLoginResponse[T any] struct {
+	Result  bool          `json:"result"`
+	Code    int           `json:"code"`
+	Message string        `json:"message"`
+	Error   *BkLoginError `json:"error"`
+	Data    T             `json:"data"`
+}
 
-	"github.com/emicklei/go-restful/v3"
-)
+// BkLoginError is bk login api gateway error
+type BkLoginError struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
 
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	Authorizer auth.Authorizer
-	ItsmCli    itsm.Client
-	NoticeCli  notice.Client
-	LoginCli   login.Client
-	CmdbCli    cmdb.Client
+// VerifyTokenRes is the result of the verify token api
+type VerifyTokenRes struct {
+	Username string `json:"bk_username"`
+	TenantID string `json:"tenant_id"`
+}
+
+// UserInfo is the user info
+type UserInfo struct {
+	Username    string `json:"bk_username"`
+	TenantID    string `json:"tenant_id"`
+	DisplayName string `json:"display_name"`
+	Language    string `json:"language"`
+	TimeZone    string `json:"time_zone"`
 }

@@ -47,6 +47,8 @@ data:
       bkCmdbCreateBizUrl: {{ .Values.bkCmdbCreateBizUrl }}
       # 蓝鲸配置平台创建业务文档跳转链接
       bkCmdbCreateBizDocsUrl: {{ .Values.bkCmdbCreateBizDocsUrl }}
+      # 蓝鲸用户管理前端服务网关地址
+      bkUserManageUrl: {{ .Values.bkUserManageUrl }}
       # 启用云选型
       enableCloudSelection: {{ .Values.enableCloudSelection }}
       # 启用账单账号
@@ -62,3 +64,5 @@ data:
       {{- toYaml .Values.tenant | nindent 6 }}
     cmdb:
       {{- toYaml .Values.cmdb | nindent 6 }}
+    login:
+      {{- toYaml .Values.login | nindent 6 }}
