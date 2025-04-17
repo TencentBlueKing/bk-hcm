@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { FilterType } from '@/typings/resource';
+import type { DoublePlainObject, FilterType } from '@/typings/resource';
 
 import { PropType, defineExpose, h, computed, ref, onMounted } from 'vue';
 import { Button, Message } from 'bkui-vue';
@@ -70,16 +70,10 @@ const hostSearchData = computed(() => {
       id: 'cloud_id',
     },
     ...searchData.value,
-    ...[
-      {
-        name: '管控区域',
-        id: 'bk_cloud_id',
-      },
-      {
-        name: '云地域',
-        id: 'region',
-      },
-    ],
+    {
+      name: '管控区域',
+      id: 'bk_cloud_id',
+    },
   ];
 });
 const handleBindRegion = (data: any) => {

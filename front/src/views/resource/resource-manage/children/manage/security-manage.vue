@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type {
+  DoublePlainObject,
   // PlainObject,
   FilterType,
 } from '@/typings/resource';
@@ -98,14 +99,6 @@ const selectSearchData = computed(() => {
       id: 'cloud_id',
     },
     ...searchData.value,
-    ...(activeType.value === 'template'
-      ? []
-      : [
-          {
-            name: '云地域',
-            id: 'region',
-          },
-        ]),
   ];
 });
 

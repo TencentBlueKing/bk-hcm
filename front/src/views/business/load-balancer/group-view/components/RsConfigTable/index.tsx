@@ -248,7 +248,6 @@ export default defineComponent({
         { id: 'private_ip_address', name: '内网IP' },
         { id: 'public_ip_address', name: '公网IP' },
         { id: 'inst_name', name: '名称' },
-        { id: 'region', name: '地域' },
         {
           id: 'inst_type',
           name: '资源类型',
