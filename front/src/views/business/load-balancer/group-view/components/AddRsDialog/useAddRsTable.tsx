@@ -132,7 +132,7 @@ export default (
         ],
       };
       // 如果没有开启跨域2.0, 则需要使用vpc过滤rs列表
-      if (!isCorsV2) {
+      if (!isCorsV2 && vpcIds.length) {
         queryFilter.rules.push({
           field: 'vpc_ids',
           op: QueryRuleOPEnum.JSON_OVERLAPS,
