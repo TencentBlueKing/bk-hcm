@@ -259,6 +259,7 @@ const renderColumns = [
         :conditions="[]"
         :data="hostSearchData"
         v-model="searchValue"
+        value-behavior="need-key"
       />
     </section>
 

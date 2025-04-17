@@ -17,8 +17,22 @@ export default (formData: any, updateCount: Ref<number>, isEdit: Ref<boolean>, l
   const accountStore = useAccountStore();
   const loadBalancerStore = useLoadBalancerStore();
 
-  const curVendor = ref(VendorEnum.TCLOUD);
-  const curVpcId = ref('');
+  const curVendor = computed({
+    get() {
+      return formData.vendor;
+    },
+    set(val) {
+      formData.vendor = val;
+    },
+  });
+  const curVpcId = computed({
+    get() {
+      return formData.vpc_id;
+    },
+    set(val) {
+      formData.vpc_id = val;
+    },
+  });
   const deletedRsList = ref([]);
 
   const selectedBizId = computed({
