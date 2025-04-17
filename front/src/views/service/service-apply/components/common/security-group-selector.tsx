@@ -141,7 +141,7 @@ export default defineComponent({
       }));
     });
 
-    const boundId = computed(() => props.boundSecruity.map((item: any) => item.id));
+    const boundId = computed(() => props.boundSecruity?.map((item: any) => item.id) ?? []);
 
     const securityRulesColumns = useColumns('securityCommon', false, props.vendor).columns.filter(
       ({ field }: { field: string }) => !['updated_at'].includes(field),
