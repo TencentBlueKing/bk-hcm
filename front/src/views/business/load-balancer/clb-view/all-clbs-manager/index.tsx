@@ -92,7 +92,6 @@ export default defineComponent({
             name: t('云厂商'),
             children: [{ id: VendorEnum.TCLOUD, name: VendorMap[VendorEnum.TCLOUD] }],
           },
-          { id: 'region', name: '地域' },
           { id: 'zones', name: '可用区域' },
           {
             id: 'status',
