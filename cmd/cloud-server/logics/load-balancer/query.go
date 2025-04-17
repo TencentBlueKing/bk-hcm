@@ -283,12 +283,12 @@ func getTCloudLoadBalancer(kt *kit.Kit, cli *dataservice.Client, lbID string) (
 // validateCvmExist 导入新RS前, 校验云主机是否存在
 // 开启了跨域2.0的主机, 不进行vpc校验, 由云上进行报错
 func validateCvmExist(kt *kit.Kit, dataServiceCli *dataservice.Client, rsIP string, vendor enumor.Vendor,
-	bkBizID int64, accountID string, tCloudLB *corelb.LoadBalancer[corelb.TCloudClbExtension]) (
+	bkBizID int64, accountID string, tcloudLB *corelb.LoadBalancer[corelb.TCloudClbExtension]) (
 	*corecvm.BaseCvm, error) {
 
 	var cvm *corecvm.BaseCvm
 	var err error
-	if converter.PtrToVal(tCloudLB.Extension.SnatPro) {
+	if converter.PtrToVal(tcloudLB.Extension.SnatPro) {
 		cvmList, err := getCvmWithoutVpc(kt, dataServiceCli, rsIP, vendor, bkBizID, accountID)
 		if err != nil {
 			logs.Errorf("get cvm without vpc failed, ip: %s, err: %v, rid: %s", rsIP, err, kt.Rid)
@@ -301,9 +301,9 @@ func validateCvmExist(kt *kit.Kit, dataServiceCli *dataservice.Client, rsIP stri
 		return cvm, nil
 	}
 
-	cloudVpcIDs := []string{tCloudLB.CloudVpcID}
-	if converter.PtrToVal(tCloudLB.Extension.Snat) {
-		cloudVpcIDs = append(cloudVpcIDs, converter.PtrToVal(tCloudLB.Extension.TargetCloudVpcID))
+	cloudVpcIDs := []string{tcloudLB.CloudVpcID}
+	if converter.PtrToVal(tcloudLB.Extension.Snat) {
+		cloudVpcIDs = append(cloudVpcIDs, converter.PtrToVal(tcloudLB.Extension.TargetCloudVpcID))
 	}
 
 	cvm, err = getCvm(kt, dataServiceCli, rsIP, vendor, bkBizID, accountID, cloudVpcIDs)
