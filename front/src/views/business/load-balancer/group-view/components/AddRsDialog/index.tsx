@@ -116,7 +116,7 @@ export default defineComponent({
     return () => (
       <CommonDialog v-model:isShow={isShow.value} title='添加 RS' width={640} onHandleConfirm={handleAddRs}>
         <div class='add-rs-dialog-content'>
-          <SearchSelect class='mb16' v-model={searchVal.value} data={searchData} />
+          <SearchSelect class='mb16' v-model={searchVal.value} data={searchData} valueBehavior='need-key' />
           <Loading loading={isTableLoading.value} class='loading-table-container'>
             <Table
               class='table-container'

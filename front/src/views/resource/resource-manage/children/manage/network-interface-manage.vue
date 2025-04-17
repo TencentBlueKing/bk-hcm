@@ -52,7 +52,14 @@ const selectSearchData = computed(() => {
 <template>
   <bk-loading :loading="isLoading">
     <section class="flex-row align-items-center justify-content-end">
-      <bk-search-select class="w500 ml10" clearable :conditions="[]" :data="selectSearchData" v-model="searchValue" />
+      <bk-search-select
+        class="w500 ml10"
+        clearable
+        :conditions="[]"
+        :data="selectSearchData"
+        v-model="searchValue"
+        value-behavior="need-key"
+      />
     </section>
     <bk-table
       :settings="settings"

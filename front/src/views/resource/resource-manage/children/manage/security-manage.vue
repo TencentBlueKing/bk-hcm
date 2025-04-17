@@ -916,6 +916,7 @@ const securityHandleShowDelete = (data: any) => {
           :conditions="[]"
           :data="selectSearchData"
           v-model="searchValue"
+          value-behavior="need-key"
         />
       </section>
     </section>

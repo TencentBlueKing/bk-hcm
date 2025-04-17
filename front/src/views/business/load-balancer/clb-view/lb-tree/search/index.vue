@@ -96,6 +96,7 @@ const handleChange = () => {
       v-model="searchValue"
       :data="searchData"
       unique-select
+      value-behavior="need-key"
       @select-key="handleSelectKey"
       @update:model-value="handleChange"
     />

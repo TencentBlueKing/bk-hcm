@@ -103,7 +103,7 @@ getCloudAreas();
       ></HostOperations>
 
       <div class="flex-row align-items-center justify-content-arround search-selector-container">
-        <resource-search-select v-model="searchValue" :resource-type="ResourceTypeEnum.CVM" />
+        <resource-search-select v-model="searchValue" :resource-type="ResourceTypeEnum.CVM" value-behavior="need-key" />
         <slot name="recycleHistory"></slot>
       </div>
     </section>

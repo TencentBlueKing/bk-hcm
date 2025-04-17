@@ -51,7 +51,12 @@
               {{ t('立即恢复') }}
             </bk-button>
           </span>
-          <SearchSelect class="w500 common-search-selector" v-model="searchVal" :data="searchData" />
+          <SearchSelect
+            class="w500 common-search-selector"
+            v-model="searchVal"
+            :data="searchData"
+            value-behavior="need-key"
+          />
         </section>
         <bk-loading :loading="isLoading" opacity="1">
           <bk-table

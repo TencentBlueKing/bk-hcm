@@ -237,6 +237,7 @@ defineExpose({ fetchComponentsData });
         :conditions="[]"
         :data="selectSearchData"
         v-model="searchValue"
+        value-behavior="need-key"
       />
     </section>
 
