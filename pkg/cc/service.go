@@ -73,6 +73,7 @@ type Setting interface {
 	trySetFlagBindIP(ip net.IP) error
 	trySetDefault()
 	Validate() error
+	TenantEnable() bool
 }
 
 // ApiServerSetting defines api server used setting options.
@@ -109,6 +110,11 @@ func (s ApiServerSetting) Validate() error {
 	}
 
 	return nil
+}
+
+// TenantEnable get tenant is enabled.
+func (s *ApiServerSetting) TenantEnable() bool {
+	return s.Tenant.Enabled
 }
 
 // TaskManagement ...
@@ -190,6 +196,11 @@ func (s CloudServerSetting) Validate() error {
 	return nil
 }
 
+// TenantEnable get tenant is enabled.
+func (s *CloudServerSetting) TenantEnable() bool {
+	return s.Tenant.Enabled
+}
+
 // DataServiceSetting defines data service used setting options.
 type DataServiceSetting struct {
 	Network     Network      `yaml:"network"`
@@ -242,6 +253,11 @@ func (s DataServiceSetting) Validate() error {
 	return nil
 }
 
+// TenantEnable get tenant is enabled.
+func (s *DataServiceSetting) TenantEnable() bool {
+	return s.Tenant.Enabled
+}
+
 // HCServiceSetting defines hc service used setting options.
 type HCServiceSetting struct {
 	Network    Network      `yaml:"network"`
@@ -280,6 +296,11 @@ func (s HCServiceSetting) Validate() error {
 		return fmt.Errorf("syncConfig validate error: %w", err)
 	}
 	return nil
+}
+
+// TenantEnable get tenant is enabled.
+func (s *HCServiceSetting) TenantEnable() bool {
+	return s.Tenant.Enabled
 }
 
 // AuthServerSetting defines auth server used setting options.
@@ -326,6 +347,11 @@ func (s AuthServerSetting) Validate() error {
 	}
 
 	return nil
+}
+
+// TenantEnable get tenant is enabled.
+func (s *AuthServerSetting) TenantEnable() bool {
+	return s.Tenant.Enabled
 }
 
 // WebServerSetting defines api server used setting options.
@@ -390,6 +416,11 @@ func (s WebServerSetting) Validate() error {
 	return nil
 }
 
+// TenantEnable get tenant is enabled.
+func (s *WebServerSetting) TenantEnable() bool {
+	return s.Tenant.Enabled
+}
+
 // LabelSwitch switch for labels
 type LabelSwitch struct {
 	AwsCN bool `json:"awsCN" yaml:"awsCN"`
@@ -440,6 +471,11 @@ func (s TaskServerSetting) Validate() error {
 	return nil
 }
 
+// TenantEnable get tenant is enabled.
+func (s *TaskServerSetting) TenantEnable() bool {
+	return s.Tenant.Enabled
+}
+
 // AccountServerSetting defines task server used setting options.
 type AccountServerSetting struct {
 	Network        Network              `yaml:"network"`
@@ -484,6 +520,11 @@ func (s AccountServerSetting) Validate() error {
 	}
 
 	return nil
+}
+
+// TenantEnable get tenant is enabled.
+func (s *AccountServerSetting) TenantEnable() bool {
+	return s.Tenant.Enabled
 }
 
 // ChangeLogPath ...

@@ -23,6 +23,8 @@ package constant
 const (
 	// DefaultTenantID 默认的租户id，使用场景：兼容不开启多租户的场景，上下游调用默认传递default租户
 	DefaultTenantID = "default"
+	// SystemTenantID 运营租户id
+	SystemTenantID = "system"
 	// TenantIDField 租户id字段
 	TenantIDField = "tenant_id"
 	// TenantIDTableField 租户id对应的table里的字段

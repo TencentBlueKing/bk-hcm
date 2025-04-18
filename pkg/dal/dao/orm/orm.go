@@ -389,7 +389,7 @@ func (t tableShardingOrm) AutoTxn(kt *kit.Kit, run TxnFunc) (interface{}, error)
 func (t tableShardingOrm) TableSharding(opts ...TableShardingOpt) Interface {
 	return &tableShardingOrm{
 		orm:               t,
-		tableShardingOpts: append(t.tableShardingOpts, opts...),
+		tableShardingOpts: opts,
 	}
 }
 
@@ -547,7 +547,7 @@ func (t modifySQLOrm) TableSharding(opts ...TableShardingOpt) Interface {
 func (t modifySQLOrm) ModifySQLOpts(opts ...ModifySQLOpt) Interface {
 	return &modifySQLOrm{
 		orm:           t,
-		modifySQLOpts: append(t.modifySQLOpts, opts...),
+		modifySQLOpts: opts,
 	}
 }
 
@@ -885,8 +885,8 @@ func appendConditionToExpr(expr string, conditions []string) string {
 		}
 
 		// 在合适的位置插入 WHERE 子句
-		appendCond := " WHERE " + strings.Join(conditions, " AND ")
-		expr = expr[:insertPos] + appendCond + expr[insertPos:]
+		appendCond := "WHERE " + strings.Join(conditions, " AND ")
+		expr = strings.TrimSpace(fmt.Sprintf("%s %s %s", expr[:insertPos], appendCond, expr[insertPos:]))
 		return expr
 	}
 
