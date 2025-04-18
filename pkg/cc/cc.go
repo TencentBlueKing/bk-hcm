@@ -61,6 +61,78 @@ func (r *runtime) Ready() bool {
 	return true
 }
 
+// TenantEnable return tenant enable.
+func TenantEnable() bool {
+	rt.lock.Lock()
+	defer rt.lock.Unlock()
+
+	if !rt.Ready() {
+		logs.ErrorDepthf(1, "tenant enable setting is not ready, return empty tenant setting")
+		return false
+	}
+
+	switch ServiceName() {
+	case APIServerName:
+		s, ok := rt.settings.(*ApiServerSetting)
+		if !ok {
+			logs.ErrorDepthf(1, "current %s service can not get api server tenant setting", ServiceName())
+			return false
+		}
+		return s.Tenant.Enabled
+	case CloudServerName:
+		s, ok := rt.settings.(*CloudServerSetting)
+		if !ok {
+			logs.ErrorDepthf(1, "current %s service can not get cloud server tenant setting", ServiceName())
+			return false
+		}
+		return s.Tenant.Enabled
+	case DataServiceName:
+		s, ok := rt.settings.(*DataServiceSetting)
+		if !ok {
+			logs.ErrorDepthf(1, "current %s service can not get data service tenant setting", ServiceName())
+			return false
+		}
+		return s.Tenant.Enabled
+	case HCServiceName:
+		s, ok := rt.settings.(*HCServiceSetting)
+		if !ok {
+			logs.ErrorDepthf(1, "current %s service can not get hc service tenant  setting", ServiceName())
+			return false
+		}
+		return s.Tenant.Enabled
+	case AuthServerName:
+		s, ok := rt.settings.(*AuthServerSetting)
+		if !ok {
+			logs.ErrorDepthf(1, "current %s service can not get auth server tenant setting", ServiceName())
+			return false
+		}
+		return s.Tenant.Enabled
+	case WebServerName:
+		s, ok := rt.settings.(*WebServerSetting)
+		if !ok {
+			logs.ErrorDepthf(1, "current %s service can not get web server tenant setting", ServiceName())
+			return false
+		}
+		return s.Tenant.Enabled
+	case TaskServerName:
+		s, ok := rt.settings.(*TaskServerSetting)
+		if !ok {
+			logs.ErrorDepthf(1, "current %s service can not get task server tenant setting", ServiceName())
+			return false
+		}
+		return s.Tenant.Enabled
+	case AccountServerName:
+		s, ok := rt.settings.(*AccountServerSetting)
+		if !ok {
+			logs.ErrorDepthf(1, "current %s service can not get account server tenant setting", ServiceName())
+			return false
+		}
+		return s.Tenant.Enabled
+	default:
+		return false
+	}
+}
+
 // ApiServer return api server Setting.
 func ApiServer() ApiServerSetting {
 	rt.lock.Lock()

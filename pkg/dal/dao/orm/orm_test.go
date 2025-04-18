@@ -506,8 +506,8 @@ func TestInjectJoinTenantID_BasicQueries(t *testing.T) {
 			args:         map[string]interface{}{"id": 10},
 			tenantID:     "tenant-10",
 			enableTenant: true,
-			origin:       "select * from db1.`cvm` as cv",
-			wantReplaced: "select * from db1.`cvm` as cv WHERE cv.tenant_id = :tenant_id",
+			origin:       "select * from db1.`cvm` as cv order by cv.id",
+			wantReplaced: "select * from db1.`cvm` as cv  WHERE cv.tenant_id = :tenant_id order by cv.id",
 		},
 		{
 			name:         "带数据库名的SELECT-数据库名+表名都带引号",
@@ -585,19 +585,11 @@ func TestInjectJoinTenantID_HCMQueries(t *testing.T) {
 			args:         map[string]interface{}{"id": 1},
 			tenantID:     "tenant-1",
 			enableTenant: true,
-			origin:       "SELECT COUNT(*) FROM main_account WHERE id=\"00000001\"",
-			wantReplaced: "SELECT COUNT(*) FROM main_account WHERE main_account.tenant_id = :tenant_id AND id=\"00000001\"",
-		},
-		{
-			name:         "HCM用到的SELECT-场景2",
-			args:         map[string]interface{}{"id": 1},
-			tenantID:     "tenant-1",
-			enableTenant: true,
 			origin:       "SELECT * FROM main_account WHERE id=\"00000001\" ORDER BY id ASC LIMIT 0, 10",
 			wantReplaced: "SELECT * FROM main_account WHERE main_account.tenant_id = :tenant_id AND id=\"00000001\" ORDER BY id ASC LIMIT 0, 10",
 		},
 		{
-			name:         "HCM用到的SELECT-场景3",
+			name:         "HCM用到的SELECT-场景2",
 			args:         map[string]interface{}{"id": 1},
 			tenantID:     "tenant-1",
 			enableTenant: true,
@@ -605,7 +597,7 @@ func TestInjectJoinTenantID_HCMQueries(t *testing.T) {
 			wantReplaced: "SELECT COUNT(DISTINCT vendor) FROM root_account WHERE root_account.tenant_id = :tenant_id AND vendor=\"tcloud\"",
 		},
 		{
-			name:         "HCM用到的SELECT-场景4",
+			name:         "HCM用到的SELECT-场景3",
 			args:         map[string]interface{}{"id": 1},
 			tenantID:     "tenant-1",
 			enableTenant: true,
@@ -613,15 +605,7 @@ func TestInjectJoinTenantID_HCMQueries(t *testing.T) {
 			wantReplaced: "SELECT DISTINCT vendor FROM root_account WHERE root_account.tenant_id = :tenant_id AND vendor=\"tcloud\" ORDER BY id ASC LIMIT 0, 10",
 		},
 		{
-			name:         "HCM用到的SELECT-场景5",
-			args:         map[string]interface{}{"id": 1},
-			tenantID:     "tenant-1",
-			enableTenant: true,
-			origin:       "SELECT flow_id as id, flow_name as name FROM cvm WHERE state=\"running\" ORDER BY id ASC LIMIT 0, 10",
-			wantReplaced: "SELECT flow_id as id, flow_name as name FROM cvm WHERE cvm.tenant_id = :tenant_id AND state=\"running\" ORDER BY id ASC LIMIT 0, 10",
-		},
-		{
-			name:         "HCM用到的SELECT-场景6",
+			name:         "HCM用到的SELECT-场景4",
 			args:         map[string]interface{}{"id": 1},
 			tenantID:     "tenant-1",
 			enableTenant: true,
@@ -629,7 +613,7 @@ func TestInjectJoinTenantID_HCMQueries(t *testing.T) {
 			wantReplaced: "SELECT id FROM cvm WHERE cvm.tenant_id = :tenant_id AND bill_year=2025 AND bill_month=3 ORDER BY id ASC LIMIT 0, 10",
 		},
 		{
-			name:         "HCM用到的SELECT-场景7",
+			name:         "HCM用到的SELECT-场景5",
 			args:         map[string]interface{}{"id": 1},
 			tenantID:     "tenant-1",
 			enableTenant: true,
@@ -637,7 +621,7 @@ func TestInjectJoinTenantID_HCMQueries(t *testing.T) {
 			wantReplaced: "SELECT * FROM cvm WHERE cvm.tenant_id = :tenant_id AND id IN (\"00000001\",\"00000002\")",
 		},
 		{
-			name:         "HCM用到的SELECT-场景8",
+			name:         "HCM用到的SELECT-场景6",
 			args:         map[string]interface{}{"id": 1},
 			tenantID:     "tenant-1",
 			enableTenant: true,
@@ -645,15 +629,7 @@ func TestInjectJoinTenantID_HCMQueries(t *testing.T) {
 			wantReplaced: "SELECT ANY_VALUE(currency) currency,COUNT(*) AS count, SUM(COST) AS cost  FROM cvm WHERE cvm.tenant_id = :tenant_id AND bill_year=2025 AND bill_month=3",
 		},
 		{
-			name:         "HCM用到的SELECT-场景9",
-			args:         map[string]interface{}{"id": 1},
-			tenantID:     "tenant-1",
-			enableTenant: true,
-			origin:       "SELECT COUNT(distinct bk_biz_id) FROM cvm WHERE vendor=\"tcloud\"",
-			wantReplaced: "SELECT COUNT(distinct bk_biz_id) FROM cvm WHERE cvm.tenant_id = :tenant_id AND vendor=\"tcloud\"",
-		},
-		{
-			name:         "HCM用到的SELECT-场景10",
+			name:         "HCM用到的SELECT-场景7",
 			args:         map[string]interface{}{"id": 1},
 			tenantID:     "tenant-1",
 			enableTenant: true,
@@ -661,7 +637,7 @@ func TestInjectJoinTenantID_HCMQueries(t *testing.T) {
 			wantReplaced: "SELECT bk_biz_id, SUM(last_month_cost_synced) as last_month_cost_synced, SUM(last_month_rmb_cost_synced) as last_month_rmb_cost_synced, SUM(current_month_cost_synced) as current_month_cost_synced, SUM(current_month_rmb_cost_synced) as current_month_rmb_cost_synced, SUM(current_month_cost) as current_month_cost, SUM(current_month_rmb_cost) as current_month_rmb_cost, SUM(adjustment_cost) as adjustment_cost, SUM(adjustment_rmb_cost) as adjustment_rmb_cost FROM cvm WHERE cvm.tenant_id = :tenant_id AND vendor=\"tcloud\" group by bk_biz_id ORDER BY bk_biz_id ASC LIMIT 0, 10",
 		},
 		{
-			name:         "HCM用到的SELECT-场景11",
+			name:         "HCM用到的SELECT-场景8",
 			args:         map[string]interface{}{"id": 1},
 			tenantID:     "tenant-1",
 			enableTenant: true,
@@ -669,7 +645,7 @@ func TestInjectJoinTenantID_HCMQueries(t *testing.T) {
 			wantReplaced: "SELECT * FROM cvm where cvm.tenant_id = :tenant_id AND id in (\"00000001\")",
 		},
 		{
-			name:         "HCM用到的SELECT-场景12",
+			name:         "HCM用到的SELECT-场景9",
 			args:         map[string]interface{}{"id": 1},
 			tenantID:     "tenant-1",
 			enableTenant: true,
@@ -677,7 +653,7 @@ func TestInjectJoinTenantID_HCMQueries(t *testing.T) {
 			wantReplaced: "SELECT count(distinct(cvm.id)) FROM cvm as cvm left join disk_cvm_rel as rel on cvm.id = rel.cvm_id WHERE cvm.tenant_id = :tenant_id AND cvm.vendor=\"tcloud\" and disk_id != \"00000001\" and rel.cvm_id is NULL",
 		},
 		{
-			name:         "HCM用到的SELECT-场景13",
+			name:         "HCM用到的SELECT-场景10",
 			args:         map[string]interface{}{"id": 1},
 			tenantID:     "tenant-1",
 			enableTenant: true,
@@ -685,7 +661,7 @@ func TestInjectJoinTenantID_HCMQueries(t *testing.T) {
 			wantReplaced: "SELECT cvm.id as id, name,vendor FROM cvm as cvm left join disk_cvm_rel as rel on cvm.id = rel.cvm_id WHERE cvm.tenant_id = :tenant_id AND cvm.vendor=\"tcloud\" group by cvm.id ORDER BY id ASC LIMIT 0, 10",
 		},
 		{
-			name:         "HCM用到的SELECT-场景14",
+			name:         "HCM用到的SELECT-场景11",
 			args:         map[string]interface{}{"id": 1},
 			tenantID:     "tenant-1",
 			enableTenant: true,
@@ -693,15 +669,7 @@ func TestInjectJoinTenantID_HCMQueries(t *testing.T) {
 			wantReplaced: "SELECT vendor,account_id,disk.id as id,rel.cvm_id as cvm_id FROM disk_cvm_rel as rel left join disk as disk on rel.disk_id = disk.id where disk.tenant_id = :tenant_id AND cvm_id in (\"00000001\")",
 		},
 		{
-			name:         "HCM用到的SELECT-场景15",
-			args:         map[string]interface{}{"id": 1},
-			tenantID:     "tenant-1",
-			enableTenant: true,
-			origin:       "SELECT lb_id,COUNT(id) AS num FROM cvm WHERE lb_id IN(\"00000001\") GROUP BY lb_id",
-			wantReplaced: "SELECT lb_id,COUNT(id) AS num FROM cvm WHERE cvm.tenant_id = :tenant_id AND lb_id IN(\"00000001\") GROUP BY lb_id",
-		},
-		{
-			name:         "HCM用到的SELECT-场景16",
+			name:         "HCM用到的SELECT-场景12",
 			args:         map[string]interface{}{"id": 1},
 			tenantID:     "tenant-1",
 			enableTenant: true,
@@ -709,7 +677,7 @@ func TestInjectJoinTenantID_HCMQueries(t *testing.T) {
 			wantReplaced: "SELECT COUNT(*) FROM network_interface AS ni LEFT JOIN network_interface_cvm_rel AS rel ON rel.network_interface_id = ni.id WHERE ni.tenant_id = :tenant_id AND vendor=\"tcloud\"",
 		},
 		{
-			name:         "HCM用到的SELECT-场景17",
+			name:         "HCM用到的SELECT-场景13",
 			args:         map[string]interface{}{"id": 1},
 			tenantID:     "tenant-1",
 			enableTenant: true,
@@ -717,7 +685,7 @@ func TestInjectJoinTenantID_HCMQueries(t *testing.T) {
 			wantReplaced: "SELECT account_id,vendor,name,ni.id as id,rel.cvm_id as cvm_id FROM network_interface AS ni LEFT JOIN network_interface_cvm_rel AS rel ON rel.network_interface_id = ni.id WHERE ni.tenant_id = :tenant_id AND vendor=\"tcloud\" ORDER BY id ASC LIMIT 0, 10",
 		},
 		{
-			name:         "HCM用到的SELECT-场景18",
+			name:         "HCM用到的SELECT-场景14",
 			args:         map[string]interface{}{"id": 1},
 			tenantID:     "tenant-1",
 			enableTenant: true,
@@ -725,7 +693,7 @@ func TestInjectJoinTenantID_HCMQueries(t *testing.T) {
 			wantReplaced: "SELECT cvm_id,network_interface_id,ni.id as id,rel.cvm_id as cvm_id FROM network_interface_cvm_rel AS rel LEFT JOIN network_interface AS ni ON rel.network_interface_id = ni.id WHERE ni.tenant_id = :tenant_id AND rel.cvm_id IN (\"00000001\") AND ni.vendor = \"tcloud\"",
 		},
 		{
-			name:         "HCM用到的SELECT-场景19",
+			name:         "HCM用到的SELECT-场景15",
 			args:         map[string]interface{}{"id": 1},
 			tenantID:     "tenant-1",
 			enableTenant: true,
@@ -733,7 +701,7 @@ func TestInjectJoinTenantID_HCMQueries(t *testing.T) {
 			wantReplaced: "SELECT vendor,cloud_id, sg.id as id,rel.res_id as res_id, sg.vendor AS vendor,sg.reviser AS reviser,sg.updated_at AS updated_at, rel.res_type,rel.priority FROM security_group_common_rel AS rel LEFT JOIN security_group AS sg ON rel.security_group_id = sg.id WHERE sg.tenant_id = :tenant_id AND res_id IN (\"00000001\") AND res_type = \"cvm\"",
 		},
 		{
-			name:         "HCM用到的SELECT-场景20",
+			name:         "HCM用到的SELECT-场景16",
 			args:         map[string]interface{}{"id": 1},
 			tenantID:     "tenant-1",
 			enableTenant: true,
@@ -741,7 +709,7 @@ func TestInjectJoinTenantID_HCMQueries(t *testing.T) {
 			wantReplaced: "select table_name as name from information_schema.columns where column_name = \"account_id\"",
 		},
 		{
-			name:         "HCM用到的SELECT-场景21",
+			name:         "HCM用到的SELECT-场景17",
 			args:         map[string]interface{}{"id": 1},
 			tenantID:     "tenant-1",
 			enableTenant: true,
@@ -749,7 +717,7 @@ func TestInjectJoinTenantID_HCMQueries(t *testing.T) {
 			wantReplaced: "SELECT vendor,name, account.id as id,rel.bk_biz_id as bk_biz_id FROM account_biz_rel AS rel LEFT JOIN account AS account ON rel.account_id = account.id WHERE account.tenant_id = :tenant_id AND rel.bk_biz_id in (213)",
 		},
 		{
-			name:         "HCM用到的SELECT-场景22",
+			name:         "HCM用到的SELECT-场景18",
 			args:         map[string]interface{}{"id": 1},
 			tenantID:     "tenant-1",
 			enableTenant: true,

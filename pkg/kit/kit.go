@@ -26,6 +26,7 @@ import (
 	"net/http"
 	"time"
 
+	"hcm/pkg/cc"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/tools/converter"
@@ -150,7 +151,10 @@ func (kt *Kit) Validate() error {
 		return errors.New("app code is required")
 	}
 
-	// TODO add tenant id validation
+	// 多租户开关打开时再校验租户ID
+	if cc.TenantEnable() && len(kt.TenantID) == 0 {
+		return errors.New("tenant id is required")
+	}
 
 	return nil
 }

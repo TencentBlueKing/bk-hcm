@@ -87,10 +87,11 @@ func (p *defaultParser) Parse(ctx context.Context, header http.Header) (*kit.Kit
 	}
 
 	kt := &kit.Kit{
-		Ctx:     ctx,
-		User:    header.Get(constant.UserKey),
-		Rid:     header.Get(constant.RidKey),
-		AppCode: header.Get(constant.AppCodeKey),
+		Ctx:      ctx,
+		User:     header.Get(constant.UserKey),
+		Rid:      header.Get(constant.RidKey),
+		AppCode:  header.Get(constant.AppCodeKey),
+		TenantID: header.Get(constant.TenantIDKey),
 	}
 
 	if err := kt.Validate(); err != nil {
@@ -127,13 +128,14 @@ func (p *jwtParser) Parse(ctx context.Context, header http.Header) (*kit.Kit, er
 	}
 
 	kt := &kit.Kit{
-		Ctx:     ctx,
-		User:    token.User.UserName,
-		AppCode: token.App.AppCode,
-		Rid:     header.Get(constant.RidKey),
+		Ctx:      ctx,
+		User:     token.User.UserName,
+		AppCode:  token.App.AppCode,
+		Rid:      header.Get(constant.RidKey),
+		TenantID: header.Get(constant.TenantIDKey),
 	}
 
-	if err := kt.Validate(); err != nil {
+	if err = kt.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
