@@ -14,8 +14,8 @@ export const useAccountBusiness = (accountId: string) => {
     isAccountDetailLoading.value = true;
 
     // 账号业务列表等于-1时，管理业务使用全部业务，否则限定为账号业务列表
-    const accountDetailRes = await accountStore.getAccountDetail(accountId);
-    const accountBizIds = accountDetailRes?.data?.bk_biz_ids;
+    const accountUsageBizRes = await accountStore.getAccountUsageBiz(accountId);
+    const accountBizIds = accountUsageBizRes?.data;
     if (accountBizIds?.[0] !== -1) {
       accountBizList.value = businessGlobalStore.businessFullList.filter((item) => accountBizIds.includes(item.id));
     } else {
