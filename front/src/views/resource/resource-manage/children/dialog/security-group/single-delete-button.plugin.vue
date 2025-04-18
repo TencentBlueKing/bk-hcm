@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { useAttrs } from 'vue';
 import { useResourceStore } from '@/store';
 import DeleteButton from './single-delete-button.vue';
 
-const attrs = useAttrs();
+const props = withDefaults(defineProps<{ id: string; disabled: boolean }>(), {
+  disabled: true,
+});
+
 const emit = defineEmits<(e: 'success') => void>();
 
 const resourceStore = useResourceStore();
@@ -12,7 +14,7 @@ const loading = defineModel('loading', { default: false });
 const handleDelete = async () => {
   loading.value = true;
   try {
-    await resourceStore.deleteBatch('security_groups', { ids: [attrs.id] });
+    await resourceStore.deleteBatch('security_groups', { ids: [props.id] });
     emit('success');
   } finally {
     loading.value = false;
@@ -20,6 +22,5 @@ const handleDelete = async () => {
 };
 </script>
 <template>
-  <!-- 将透传attrs -->
-  <delete-button @del="handleDelete" :loading="loading"></delete-button>
+  <delete-button :disabled="disabled" :loading="loading" @del="handleDelete"></delete-button>
 </template>
