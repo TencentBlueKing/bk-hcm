@@ -74,14 +74,6 @@ func (svc *cvmSvc) batchAssociateSecurityGroups(cts *rest.Contexts, validHandler
 	}
 	curCvm := cvms.Details[0]
 
-	// delete security group and cvm relationship
-	err = svc.deleteSecurityGroupAndCvmRelationship(cts.Kit, cvmID, sgIDs)
-	if err != nil {
-		logs.Errorf("delete security group and cvm relationship failed, err: %v, cvm_id: %s, sg_ids: %v, rid: %s",
-			err, cvmID, sgIDs, cts.Kit.Rid)
-		return nil, err
-	}
-
 	switch curCvm.Vendor {
 	case enumor.TCloud:
 		req := &protocvm.TCloudCvmBatchAssociateSecurityGroupReq{
