@@ -144,7 +144,7 @@ const renderForm = computed(() => {
 });
 
 // 组件map
-const componentMap = {
+const componentMap: Record<string, any> = {
   host: HostManage,
   vpc: VpcManage,
   subnet: SubnetManage,
@@ -159,14 +159,20 @@ const componentMap = {
 };
 
 // 标签相关数据
-const tabs = RESOURCE_TYPES.map((type) => {
-  return {
-    name: type.type,
-    type: t(type.name),
-    component: componentMap[type.type],
-  };
+const commonTabTypes = ['host', 'vpc', 'subnet', 'security', 'drive', 'ip', 'routing', 'image', 'network-interface'];
+const specialTabTypes = ['clb', 'certs'];
+const tabs = computed(() => {
+  let types = commonTabTypes;
+  // 未选云厂商或腾讯云，展示clb和证书管理tab
+  const vendor = resourceAccountStore.vendorInResourcePage;
+  if (!vendor || vendor === VendorEnum.TCLOUD) {
+    types = types.concat(specialTabTypes);
+  }
+  return RESOURCE_TYPES.filter(({ type }) => types.includes(type)).map(({ type, name }) => {
+    return { name: type, type: t(name), component: componentMap[type] };
+  });
 });
-const activeTab = ref((route.query.type as string) || tabs[0].type);
+const activeTab = ref((route.query.type as string) || tabs.value[0].type);
 
 const filterData = (key: string, val: string | number) => {
   if (!filter.value.rules.length) {
@@ -490,20 +496,8 @@ onMounted(() => {
             </bk-select>
           </div>
         </template>
-        <!-- Only Tencent Cloud offers certificate hosting -->
         <template v-for="item in tabs" :key="item.name">
-          <bk-tab-panel
-            :name="item.name"
-            :label="item.type"
-            v-if="
-              !['clb', 'certs'].includes(item.name) ||
-              (['clb', 'certs'].includes(item.name) &&
-                ((!resourceAccountStore.currentVendor && !resourceAccountStore.currentAccountVendor) ||
-                  [resourceAccountStore.currentVendor, resourceAccountStore.currentAccountVendor].includes(
-                    VendorEnum.TCLOUD,
-                  )))
-            "
-          >
+          <bk-tab-panel :name="item.name" :label="item.type">
             <component
               v-if="item.name === activeTab"
               :is="item.component"
