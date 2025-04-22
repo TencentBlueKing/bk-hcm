@@ -9,6 +9,7 @@ import SearchUser from './search/user.vue';
 
 // 展示值组件
 import DisplayValue from './display-value/index.vue';
+import UserValue from './display-value/user-value.vue';
 
 // 表单元素组件
 import FormBool from './form/bool.vue';
@@ -29,6 +30,7 @@ const components = [
   SearchDatetime,
   SearchUser,
   DisplayValue,
+  UserValue,
   FormBool,
   FormEnum,
   FormString,

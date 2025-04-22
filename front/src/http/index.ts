@@ -8,8 +8,8 @@ import Cookies from 'js-cookie';
 import { Message } from 'bkui-vue';
 import { defaults } from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
-import { showLoginModal } from '@blueking/login-modal';
 import bus from '@/common/bus';
+import { showLoginModal } from '@/utils/login-helper';
 import CachedPromise from './cached-promise';
 import RequestQueue from './request-queue';
 
@@ -191,14 +191,11 @@ async function getPromise(method: HttpMethodType, url: string, data: object | nu
  * @param {Function} promise 拒绝函数
  */
 function handleResponse(params: { config: any; response: any; resolve: any; reject: any }) {
-  // 关闭节流阀
-  isLoginValid = false;
   params.resolve(params.response, params.config);
 
   http.queue.delete(params.config.requestId);
 }
-// token失效时多个接口的错误信息通过isActive节流阀只显示一个
-let isLoginValid = false;
+
 /**
  * 处理 http 请求失败结果
  *
@@ -208,10 +205,6 @@ let isLoginValid = false;
  * @return {Promise} promise 对象
  */
 function handleReject(error: any, config: any) {
-  // 判断节流阀是否开启，开启则不执行后面的接口错误提示框
-  if (isLoginValid) {
-    return;
-  }
   if (axios.isCancel(error)) {
     return Promise.reject(error);
   }
@@ -270,9 +263,7 @@ function handleCustomErrorCode(error: any) {
     error.code === 2000000 &&
     ["bk_ticket cookie don't exists", "bk_token cookie don't exists"].includes(error.message)
   ) {
-    // 打开节流阀
-    isLoginValid = true;
-    InvalidLogin();
+    showLoginModal();
   }
 
   if (error.code !== 0 && error.code !== 2000009) Message({ theme: 'error', message: error.message });
@@ -336,26 +327,6 @@ export function injectCSRFTokenToHeaders() {
     console.warn('Can not find csrftoken in document.cookie');
   }
   return CSRFToken;
-}
-/**
- * // bk_ticket失效后的登录弹框
- *
- */
-export function InvalidLogin() {
-  const successUrl = `${window.location.origin}/static/login_success.html`;
-  const loginBaseUrl = window.PROJECT_CONFIG.BK_LOGIN_URL || '';
-  if (!loginBaseUrl) {
-    console.error('Login URL not configured!');
-    return;
-  }
-  const loginUrl = `${loginBaseUrl}/plain/?c_url=${encodeURIComponent(successUrl)}`;
-  showLoginModal({
-    loginUrl,
-    onFail: () => {
-      const loginPageUrl = `${loginBaseUrl}/?c_url=${encodeURIComponent(window.location.href)}`;
-      location.href = loginPageUrl;
-    },
-  });
 }
 
 export * from './jsonp';
