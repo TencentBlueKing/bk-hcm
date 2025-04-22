@@ -110,26 +110,16 @@ export default (props: PropsType, url: Ref<string>, extraConfig?: ExtraConfigTyp
     triggerApi();
   };
 
-  // 过滤发生变化的时候，获取数据
   watch(
-    () => props.filter,
+    [() => props.filter, () => url],
     () => {
       pagination.value.current = 1; // 页码重置
       triggerApi();
     },
     {
       deep: true,
+      flush: 'post', // DOM更新后执行
     },
-  );
-
-  // 切换tab重新获取数据
-  watch(
-    () => url,
-    () => {
-      pagination.value.current = 1; // 页码重置
-      triggerApi();
-    },
-    { deep: true },
   );
 
   const getList = () => {

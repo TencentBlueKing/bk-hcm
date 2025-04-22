@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { VendorEnum } from '@/common/constant';
 
 export type IAccount = {
@@ -35,25 +35,39 @@ export type IAccount = {
 
 export const useResourceAccountStore = defineStore('useResourceAccountStore', () => {
   const resourceAccount = ref<IAccount>(null);
+  const currentAccountSimpleInfo = ref<Partial<IAccount>>(null); // 存储当前账号的简单信息（list接口返回值）
   const currentVendor = ref<VendorEnum>(null); // 当前选中的云厂商
-  const currentAccountVendor = ref<VendorEnum>(null); // 当前选中账号的 vendor
+  const selectedAccountId = computed(() => currentAccountSimpleInfo.value?.id || resourceAccount.value?.id || '');
+  const vendorInResourcePage = computed(() => {
+    return currentVendor.value || currentAccountSimpleInfo.value?.vendor || resourceAccount.value?.vendor;
+  });
 
   const setResourceAccount = (val: IAccount) => {
     resourceAccount.value = val;
   };
+  const setCurrentAccountSimpleInfo = (val: Partial<IAccount>) => {
+    currentAccountSimpleInfo.value = val;
+  };
   const setCurrentVendor = (val: VendorEnum) => {
     currentVendor.value = val;
   };
-  const setCurrentAccountVendor = (val: VendorEnum) => {
-    currentAccountVendor.value = val;
+
+  // 当页面离开resource-page时，需要清空数据
+  const clear = () => {
+    setResourceAccount(null);
+    setCurrentVendor(null);
+    setCurrentAccountSimpleInfo(null);
   };
 
   return {
     resourceAccount,
     setResourceAccount,
+    currentAccountSimpleInfo,
+    setCurrentAccountSimpleInfo,
     currentVendor,
     setCurrentVendor,
-    currentAccountVendor,
-    setCurrentAccountVendor,
+    selectedAccountId,
+    vendorInResourcePage,
+    clear,
   };
 });

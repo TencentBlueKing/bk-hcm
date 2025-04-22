@@ -29,7 +29,7 @@ import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 import { useRegionsStore } from '@/store/useRegionsStore';
-import { VendorEnum, VendorMap } from '@/common/constant';
+import { GLOBAL_BIZS_KEY, VendorEnum, VendorMap } from '@/common/constant';
 import { cloneDeep } from 'lodash-es';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
@@ -83,13 +83,18 @@ const route = useRoute();
 const { whereAmI, getBizsId } = useWhereAmI();
 
 const resourceAccountStore = useResourceAccountStore();
-const { currentVendor, currentAccountVendor } = storeToRefs(resourceAccountStore);
+const { selectedAccountId, vendorInResourcePage } = storeToRefs(resourceAccountStore);
 const resourceStore = useResourceStore();
 const accountStore = useAccountStore();
 const businessGlobalStore = useBusinessGlobalStore();
 
-const activeType = ref('group');
-const fetchUrl = ref<string>('security_groups/list');
+const activeType = ref<string>();
+const URL_MAP: Record<string, string> = {
+  gcp: 'vendors/gcp/firewalls/rules/list',
+  group: 'security_groups/list',
+  template: 'argument_templates/list',
+};
+const fetchUrl = ref<string>(URL_MAP.group);
 
 const emit = defineEmits(['auth', 'handleSecrityType', 'edit', 'editTemplate']);
 const { generateColumnsSettings } = useColumns('group');
@@ -936,19 +941,13 @@ const templateColumns = [
 
 const templateSettings = generateColumnsSettings(templateColumns);
 
-const isAllVendor = computed(() => {
-  return !currentVendor.value && !currentAccountVendor.value;
-});
-const isGcpVendor = computed(() => {
-  return [currentVendor.value, currentAccountVendor.value].includes(VendorEnum.GCP);
-});
-const isTcloudVendor = computed(() => {
-  return [currentVendor.value, currentAccountVendor.value].includes(VendorEnum.TCLOUD);
-});
+const securityType = { name: 'group', label: t('安全组') };
+const gcpType = { name: 'gcp', label: t('GCP防火墙规则') };
+const templateType = { name: 'template', label: '参数模板' };
+const isAllVendor = computed(() => !vendorInResourcePage.value);
+const isGcpVendor = computed(() => VendorEnum.GCP === vendorInResourcePage.value);
+const isTcloudVendor = computed(() => VendorEnum.TCLOUD === vendorInResourcePage.value);
 const types = computed(() => {
-  const securityType = { name: 'group', label: t('安全组') };
-  const gcpType = { name: 'gcp', label: t('GCP防火墙规则') };
-  const templateType = { name: 'template', label: '参数模板' };
   if (whereAmI.value === Senarios.business || isAllVendor.value) {
     return [securityType, gcpType, templateType];
   }
@@ -960,30 +959,45 @@ const types = computed(() => {
   }
   return [securityType];
 });
-watch(types, () => {
-  if (isGcpVendor.value) {
-    activeType.value = 'gcp';
-  } else {
+watch(
+  types,
+  () => {
+    // GCP特殊处理
+    if (isGcpVendor.value) {
+      activeType.value = 'gcp';
+      return;
+    }
+    // 提取场景参数
+    const scene = route.query.scene as string;
+    // 腾讯云或未选择账号的情况下，检查返回场景（其他云只有安全组一种场景）
+    if (scene && (isTcloudVendor.value || isAllVendor.value)) {
+      activeType.value = isTcloudVendor.value && scene === 'gcp' ? 'group' : scene;
+      return;
+    }
+    // 默认情况
     activeType.value = 'group';
-  }
-});
-
+  },
+  { immediate: true },
+);
 // 状态保持
 watch(
   () => activeType.value,
   (v) => {
-    if (v === 'gcp') {
-      fetchUrl.value = 'vendors/gcp/firewalls/rules/list';
-    } else if (v === 'group') {
-      fetchUrl.value = 'security_groups/list';
-    } else if (v === 'template') {
-      fetchUrl.value = 'argument_templates/list';
-    }
+    fetchUrl.value = URL_MAP[v] || '';
+
+    searchValue.value = [];
+    resetSelections();
     emit('handleSecrityType', v);
-    setTimeout(() => {
-      router.replace({ query: Object.assign({}, route.query, { type: 'security', scene: v }) });
-      resetSelections();
-    });
+
+    // 准备路由参数。这里使用明确的路由参数进行跳转，避免连续两次路由跳转时的参数错误
+    const isResourcePage = whereAmI.value === Senarios.resource;
+    const isBusinessPage = whereAmI.value === Senarios.business;
+    const path = isResourcePage ? '/resource/resource' : '/business/security';
+    const bizId = isBusinessPage ? getBizsId() : undefined;
+    const accountId = isResourcePage && selectedAccountId.value ? selectedAccountId.value : undefined;
+
+    // 更新路由
+    router.replace({ path, query: { [GLOBAL_BIZS_KEY]: bizId, type: 'security', scene: v, accountId } });
   },
   {
     immediate: true,

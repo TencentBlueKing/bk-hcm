@@ -8,7 +8,6 @@ import cloneDeep from 'lodash/cloneDeep';
 import { useAccountStore } from '@/store';
 import { QueryRuleOPEnum, RulesItem } from '@/typings';
 import { useRoute } from 'vue-router';
-import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { useRegionsStore } from '@/store/useRegionsStore';
 
@@ -42,7 +41,6 @@ const useFilter = (props: PropsType, convertValueCallbacks?: Record<string, (val
   const isAccurate = ref(false);
   const accountStore = useAccountStore();
   const route = useRoute();
-  const { whereAmI } = useWhereAmI();
   const resourceAccountStore = useResourceAccountStore();
   const regionStore = useRegionsStore();
 
@@ -176,17 +174,25 @@ const useFilter = (props: PropsType, convertValueCallbacks?: Record<string, (val
         queryRules.push(createVendorCondition(regionStore.vendor));
       }
 
-      // 处理场景规则
-      if (props.whereAmI !== ResourceManageSenario.image) {
-        filter.value.rules = props.filter.rules;
-      } else {
-        filter.value.rules = [];
-        if (whereAmI.value === Senarios.resource && resourceAccountStore.resourceAccount?.vendor) {
-          filter.value.rules = [createVendorCondition(resourceAccountStore.resourceAccount.vendor)];
+      // 为resource页面下的list页面设置vendor过滤条件（vendor有值的情况：选择了具体的账号或云厂商）
+      // 解决的问题：资源下进入下钻页面后，back回来会丢失vendor条件，请求的数据与页面的vendor不一致（比如腾讯云安全组列表页->腾讯云安全组详情页->腾讯云安全组列表页）
+      const selectedVendor = resourceAccountStore.vendorInResourcePage;
+      // 处理不同场景的过滤规则
+      if (selectedVendor) {
+        const isGcpSecurity = selectedVendor === VendorEnum.GCP && props.whereAmI === ResourceManageSenario.security;
+        if (!isGcpSecurity) {
+          const vendorCondition = createVendorCondition(selectedVendor);
+          filter.value.rules =
+            props.whereAmI === ResourceManageSenario.image
+              ? [vendorCondition] // 镜像场景直接设置
+              : [...props.filter.rules.filter(({ field }) => field !== 'vendor'), vendorCondition]; // 其他场景合并
+        } else {
+          // GCP防火墙list页面特殊处理：不添加vendor条件
+          filter.value.rules = props.filter.rules.filter(({ field }) => field !== 'vendor');
         }
-      }
-      if (resourceAccountStore.currentVendor === VendorEnum.GCP && props.whereAmI === ResourceManageSenario.security) {
-        filter.value.rules = filter.value.rules.filter((e: RulesItem) => e.field !== 'vendor');
+      } else {
+        // 无vendor信息时,除镜像场景，其他均使用原规则
+        filter.value.rules = props.whereAmI === ResourceManageSenario.image ? [] : props.filter.rules;
       }
 
       filter.value.rules = filter.value.rules.concat(queryRules);
