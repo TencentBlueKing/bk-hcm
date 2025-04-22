@@ -14,7 +14,7 @@ const list = computed(() => {
 
   const names = [];
   for (const value of props.value) {
-    const name = businessGlobalStore.businessFullList.find((item) => item.id === value)?.name;
+    const name = businessGlobalStore.businessFullList.find((item) => item.id === value)?.name ?? '--';
     names.push({ name });
   }
   return names;

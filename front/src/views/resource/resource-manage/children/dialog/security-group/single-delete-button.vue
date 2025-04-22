@@ -2,11 +2,19 @@
 import { useI18n } from 'vue-i18n';
 const { t } = useI18n();
 
-defineEmits<(e: 'del') => void>();
+withDefaults(defineProps<{ disabled: boolean; loading: boolean }>(), {
+  disabled: true,
+  loading: false,
+});
+
+const emit = defineEmits<(e: 'del') => void>();
+
+const handleClick = () => {
+  emit('del');
+};
 </script>
 <template>
-  <!-- 将透传attrs -->
-  <bk-button theme="danger" @click="$emit('del')">
+  <bk-button theme="danger" :disabled="disabled" :loading="loading" @click="handleClick">
     {{ t('删除') }}
   </bk-button>
 </template>

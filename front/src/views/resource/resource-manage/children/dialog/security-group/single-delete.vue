@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, h, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { Message } from 'bkui-vue';
 import { type ISecurityGroupOperateItem } from '@/store/security-group';
 import { TagThemeEnum } from 'bkui-vue/lib/shared';
 import GridContainer from '@/components/layout/grid-container/grid-container.vue';
@@ -40,6 +41,7 @@ const fields = [
 
 const isConfirmLoading = ref(false);
 const handleDeleteSuccess = async () => {
+  Message({ theme: 'success', message: t('删除成功') });
   handleClosed();
   emit('success');
 };
