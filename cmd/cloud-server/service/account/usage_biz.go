@@ -69,7 +69,7 @@ func (a *accountSvc) BizGetAccountUsageBizs(cts *rest.Contexts) (any, error) {
 	if !slice.IsItemInSlice(account.BkBizIDs, bkBizID) &&
 		!slice.IsItemInSlice(account.BkBizIDs, constant.AttachedAllBiz) {
 		// 当前业务不在账号的使用业务内，且账号的使用业务非全业务
-		return nil, fmt.Errorf("no permission for access account %s", accountID)
+		return nil, fmt.Errorf("biz %d is not in account %s usage biz list", bkBizID, accountID)
 	}
 	return account.BkBizIDs, nil
 }
