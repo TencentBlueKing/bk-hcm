@@ -54,6 +54,7 @@ import (
 	"hcm/pkg/rest/client"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
+	pkgbkuser "hcm/pkg/thirdparty/api-gateway/bkuser"
 	pkgcmdb "hcm/pkg/thirdparty/api-gateway/cmdb"
 	pkgitsm "hcm/pkg/thirdparty/api-gateway/itsm"
 	"hcm/pkg/thirdparty/api-gateway/login"
@@ -80,6 +81,7 @@ type Service struct {
 	// noticeCli notification center client
 	noticeCli pkgnotice.Client
 	cmdbCli   pkgcmdb.Client
+	bkUserCli pkgbkuser.Client
 	// loginCli login client.
 	loginCli login.Client
 }
@@ -132,20 +134,26 @@ func NewService(dis serviced.Discover) (*Service, error) {
 		return nil, err
 	}
 
-	noticeCli, err := newNotificationClient()
+	bkUserCfg := cc.WebServer().BkUser
+	bkUserCli, err := pkgbkuser.NewClient(&bkUserCfg, metrics.Register())
+	if err != nil {
+		return nil, err
+	}
+
+	noticeCli, err := newNotificationClient(bkUserCli)
 	if err != nil {
 		logs.Errorf("failed to create notice client, err: %v", err)
 		return nil, err
 	}
 
 	loginCfg := cc.WebServer().Login
-	loginCli, err := login.NewClient(&loginCfg, metrics.Register())
+	loginCli, err := login.NewClient(&loginCfg, bkUserCli, metrics.Register())
 	if err != nil {
 		return nil, err
 	}
 
 	cmdbCfg := cc.WebServer().Cmdb
-	cmdbCli, err := pkgcmdb.NewClient(&cmdbCfg, metrics.Register())
+	cmdbCli, err := pkgcmdb.NewClient(&cmdbCfg, bkUserCli, metrics.Register())
 	if err != nil {
 		return nil, err
 	}
@@ -157,17 +165,18 @@ func NewService(dis serviced.Discover) (*Service, error) {
 		authorizer: authorizer,
 		itsmCli:    itsmCli,
 		noticeCli:  noticeCli,
-		loginCli:   loginCli,
 		cmdbCli:    cmdbCli,
+		bkUserCli:  bkUserCli,
+		loginCli:   loginCli,
 	}, nil
 }
 
-func newNotificationClient() (pkgnotice.Client, error) {
+func newNotificationClient(bkUserCli pkgbkuser.Client) (pkgnotice.Client, error) {
 	noticeCfg := cc.WebServer().Notice
 	if !noticeCfg.Enable {
 		return nil, nil
 	}
-	noticeCli, err := pkgnotice.NewClient(&noticeCfg.ApiGateway, metrics.Register())
+	noticeCli, err := pkgnotice.NewClient(&noticeCfg.ApiGateway, bkUserCli, metrics.Register())
 	if err != nil {
 		logs.Errorf("failed to create notice client, err: %v", err)
 		return nil, err
