@@ -58,16 +58,10 @@ const hostSearchData = computed(() => {
       id: 'cloud_id',
     },
     ...searchData.value,
-    ...[
-      {
-        name: '管控区域',
-        id: 'bk_cloud_id',
-      },
-      {
-        name: '云地域',
-        id: 'region',
-      },
-    ],
+    {
+      name: '管控区域',
+      id: 'bk_cloud_id',
+    },
   ];
 });
 
@@ -97,6 +91,7 @@ const renderColumns = [...columns];
         :conditions="[]"
         :data="hostSearchData"
         v-model="searchValue"
+        value-behavior="need-key"
       />
     </section>
 

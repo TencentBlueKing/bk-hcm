@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { FilterType } from '@/typings/resource';
+import type { DoublePlainObject, FilterType } from '@/typings/resource';
 import { PropType, defineExpose, computed } from 'vue';
 // import { Message, InfoBox } from 'bkui-vue';
 // import { useResourceStore } from '@/store/resource';
@@ -55,16 +55,10 @@ const hostSearchData = computed(() => {
       id: 'cloud_id',
     },
     ...searchData.value,
-    ...[
-      {
-        name: '所属VPC ID',
-        id: 'cloud_vpc_id',
-      },
-      {
-        name: '云地域',
-        id: 'region',
-      },
-    ],
+    {
+      name: '所属VPC ID',
+      id: 'cloud_vpc_id',
+    },
   ];
 });
 
@@ -247,6 +241,7 @@ defineExpose({ fetchComponentsData });
         :conditions="[]"
         :data="hostSearchData"
         v-model="searchValue"
+        value-behavior="need-key"
       />
     </section>
 

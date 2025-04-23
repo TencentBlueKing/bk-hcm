@@ -182,7 +182,6 @@ const selectSearchData = computed(() => {
     group: {
       idName: t('安全组ID'),
       searchData: [
-        { name: t('云地域'), id: 'region' },
         {
           name: t('使用业务'),
           id: 'usage_biz_id',
@@ -207,7 +206,7 @@ const selectSearchData = computed(() => {
     },
     gcp: {
       idName: t('防火墙ID'),
-      searchData: [{ name: t('云地域'), id: 'region' }],
+      searchData: [],
     },
     template: {
       idName: t('模板ID'),
@@ -1206,6 +1205,7 @@ watch(
         :conditions="[]"
         :data="selectSearchData"
         v-model="searchValue"
+        value-behavior="need-key"
       />
     </div>
 
@@ -1285,7 +1285,7 @@ watch(
     <!-- 克隆安全组弹窗 -->
     <template v-if="cloneSecurityData.isShow">
       <CloneSecurity
-        v-model:isShow="cloneSecurityData.isShow"
+        v-model:is-show="cloneSecurityData.isShow"
         :data="cloneSecurityData.data"
         @success="handleSecurityGroupOperationSuccess"
       />

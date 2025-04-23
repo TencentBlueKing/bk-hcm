@@ -21,7 +21,6 @@ const searchData: Array<ISearchItem> = [
     name: t('云厂商'),
     children: [{ id: VendorEnum.TCLOUD, name: VendorMap[VendorEnum.TCLOUD] }],
   },
-  { id: 'region', name: t('地域') },
   { id: 'name', name: t('负载均衡名称') },
   { id: 'lb_vip', name: t('负载均衡VIP') },
   { id: 'domain', name: t('负载均衡域名') },
@@ -96,6 +95,7 @@ const handleChange = () => {
       v-model="searchValue"
       :data="searchData"
       unique-select
+      value-behavior="need-key"
       @select-key="handleSelectKey"
       @update:model-value="handleChange"
     />

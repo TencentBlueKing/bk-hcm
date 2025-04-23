@@ -224,9 +224,12 @@ export default defineComponent({
 
     // click-handler - 添加rs
     const handleAddRs = () => {
+      // eslint-disable-next-line no-nested-ternary
+      const vpcIds = Array.isArray(vpc_id.value) ? vpc_id.value : vpc_id.value ? [vpc_id.value] : [];
+
       bus.$emit('showAddRsDialog', {
         accountId: props.accountId,
-        vpcIds: [vpc_id.value],
+        vpcIds,
         port: props.port,
         rsList: props.rsList,
         isCorsV2: props.lbDetail?.extension?.snat_pro,
@@ -240,6 +243,7 @@ export default defineComponent({
       },
       {
         immediate: true,
+        deep: true,
       },
     );
 
@@ -248,7 +252,6 @@ export default defineComponent({
         { id: 'private_ip_address', name: '内网IP' },
         { id: 'public_ip_address', name: '公网IP' },
         { id: 'inst_name', name: '名称' },
-        { id: 'region', name: '地域' },
         {
           id: 'inst_type',
           name: '资源类型',
