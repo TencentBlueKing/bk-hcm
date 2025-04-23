@@ -143,7 +143,7 @@ func (svc *cvmSvc) syncAwsCvmWithRelRes(kt *kit.Kit, awsCli *aws.Aws, accountID,
 	// 主机关联资源同步
 	_, err := syncClient.CvmWithRelRes(kt, params, &syncaws.SyncCvmWithRelResOption{})
 	if err != nil {
-		logs.Errorf("sync huawei cvm with res failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("sync aws cvm with res failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 	return nil
