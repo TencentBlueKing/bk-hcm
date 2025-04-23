@@ -11,7 +11,6 @@ import { Success, InfoLine, TextFile } from 'bkui-vue/lib/icon';
 import http from '@/http';
 import successIcon from '@/assets/image/corret-fill.png';
 import failedIcon from '@/assets/image/delete-fill.png';
-import MemberSelect from '@/components/MemberSelect';
 import { useAccountStore, useUserStore } from '@/store';
 import { ValidateStatus, useSecretExtension } from './useSecretExtension';
 
@@ -169,7 +168,8 @@ export default defineComponent({
                       class={`account-vendor-option ${
                         vendor === formModel.vendor ? 'account-vendor-option-active' : ''
                       }`}
-                      onClick={() => (formModel.vendor = vendor)}>
+                      onClick={() => (formModel.vendor = vendor)}
+                    >
                       <img src={icon} alt={name} class={'account-vendor-option-icon'} />
                       <p class={'account-vendor-option-text'}>{name}</p>
                       {formModel.vendor === vendor ? <Success fill='#3A84FF' class={'active-icon'} /> : null}
@@ -182,7 +182,8 @@ export default defineComponent({
                   <Radio
                     label={'china'}
                     v-model={formModel.site}
-                    disabled={[VendorEnum.HUAWEI, VendorEnum.AWS].includes(formModel.vendor)}>
+                    disabled={[VendorEnum.HUAWEI, VendorEnum.AWS].includes(formModel.vendor)}
+                  >
                     中国站
                   </Radio>
                 ) : null}
@@ -233,7 +234,8 @@ export default defineComponent({
                       class={'api-form-btn'}
                       onClick={() => {
                         isAuthDialogShow.value = true;
-                      }}>
+                      }}
+                    >
                       <TextFile fill='#3A84FF' />
                       查看账号权限
                     </Button>
@@ -253,7 +255,8 @@ export default defineComponent({
                 class={'account-validate-btn'}
                 onClick={() => handleValidate((payload: Record<string, string>) => props.changeExtension(payload))}
                 disabled={isValidateDiasbled.value}
-                loading={isValidateLoading.value}>
+                loading={isValidateLoading.value}
+              >
                 账号校验
               </Button>
               {curExtension.value.validatedStatus === ValidateStatus.YES ? (
@@ -292,7 +295,8 @@ export default defineComponent({
                     },
                   },
                 ],
-              }}>
+              }}
+            >
               {/* eslint-disable-next-line @typescript-eslint/no-unused-vars */}
               {Object.entries(curExtension.value.output2).map(([, { label, value, placeholder }]) => (
                 <FormItem label={label}>
@@ -306,19 +310,12 @@ export default defineComponent({
                 property='name'
                 description={
                   '必须以小写字母开头，后面可跟小写字母、数字、连字符 - 或 下划线 _ ，但不能以连字符 - 或下划线 _ 结尾。\n名称长度不少于 3 个字符，且不多于 64 个字符。'
-                }>
+                }
+              >
                 <Input v-model={formModel.name} />
               </FormItem>
               <FormItem label='责任人' class={'api-secret-selector'} required property='managers'>
-                <MemberSelect
-                  v-model={formModel.managers}
-                  defaultUserlist={[
-                    {
-                      username: userStore.username,
-                      display_name: userStore.username,
-                    },
-                  ]}
-                />
+                <hcm-form-user v-model={formModel.managers} />
               </FormItem>
               <FormItem label='使用业务' property='bk_biz_ids' required>
                 <Select filterable placeholder='请选择使用业务' v-model={formModel.bk_biz_ids}>
@@ -342,7 +339,8 @@ export default defineComponent({
           dialogType='show'
           theme='primary'
           title='账号权限详情'
-          width={900}>
+          width={900}
+        >
           <Alert theme='info' class={'mb16'}>
             该账号在云上拥有的权限组列表如下，如需调整权限请到
             <Button
@@ -351,7 +349,8 @@ export default defineComponent({
               onClick={() => {
                 isAuthDialogShow.value = false;
                 window.open('https://console.cloud.tencent.com/cam/overview', '_blank', 'noopener,noreferrer');
-              }}>
+              }}
+            >
               云控制台
             </Button>
             调整

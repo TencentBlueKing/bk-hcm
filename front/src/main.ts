@@ -38,6 +38,7 @@ userInfo()
       tenantId: data.tenant_id,
       apiBaseUrl: window.PROJECT_CONFIG.USER_MANAGE_URL,
     });
+    http.setHeader('X-Bk-Tenant-Id', data.tenant_id);
   })
   .finally(() => {
     app.use(router);

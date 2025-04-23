@@ -19,6 +19,7 @@ import FormArray from './form/array.vue';
 import FormNumber from './form/number.vue';
 import FormCert from './form/cert.vue';
 import FormCa from './form/ca.vue';
+import FormUser from './form/user.vue';
 
 // 权限组件
 import Auth from './auth/auth.vue';
@@ -38,6 +39,7 @@ const components = [
   FormNumber,
   FormCert,
   FormCa,
+  FormUser,
   Auth,
 ];
 export default {

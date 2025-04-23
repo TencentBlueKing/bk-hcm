@@ -25,6 +25,9 @@ export interface ISearchResponse {
 export const useUserStore = defineStore('user', () => {
   const username = ref('');
   const displayName = ref('');
+
+  const tenantId = ref('');
+
   const searchLoading = ref(false);
 
   const userList = ref<IUserItem[]>([]);
@@ -32,9 +35,11 @@ export const useUserStore = defineStore('user', () => {
   // 获取当前用户信息
   const userInfo = async () => {
     const res = await http.get('/api/v1/web/users');
-    username.value = res.data.bk_username;
-    displayName.value = res.data.display_name;
-    return res.data || {};
+    const data = res?.data ?? {};
+    username.value = data.bk_username;
+    displayName.value = data.display_name;
+    tenantId.value = data.tenant_id;
+    return data;
   };
 
   const searchUseBK = (value: string) => {
@@ -100,6 +105,7 @@ export const useUserStore = defineStore('user', () => {
   return {
     username,
     displayName,
+    tenantId,
     searchLoading,
     getUserByName,
     userList,

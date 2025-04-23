@@ -93,6 +93,12 @@ const http: HttpApi = {
       Message({ theme: 'error', message: (error as Error).message });
     }
   },
+  setHeader: (key: string, value: string) => {
+    axiosInstance.defaults.headers[key] = value;
+  },
+  deleteHeader: (key: string) => {
+    delete axiosInstance.defaults.headers[key];
+  },
 };
 
 const methodsWithoutData: HttpMethodType[] = ['get', 'head', 'options'];
@@ -218,13 +224,13 @@ function handleReject(error: any, config: any) {
     );
   }
   http.queue.delete(config.requestId);
-  if (config.globalError && error.response) {
+
+  // 非2xx请求错误
+  if (error.response) {
     const { status, data } = error.response;
     const nextError = { message: error.message, response: error.response };
     if (status === 401) {
-      setTimeout(() => {
-        window.location.href = `${window.PROJECT_CONFIG.BK_LOGIN_URL}/?c_url=${window.location.href}`;
-      }, 0);
+      showLoginModal();
     } else if (status === 403) {
       bus.$emit('show-forbidden', error.response.data);
     } else if (status === 404) {
@@ -236,12 +242,23 @@ function handleReject(error: any, config: any) {
     } else if (data?.message && error.code !== 0 && error.code !== 2000009) {
       nextError.message = data.message;
       Message({ theme: 'error', message: nextError.message });
+    } else {
+      Message({ theme: 'error', message: error.message });
     }
 
-    // messageError(nextError.message)
     return Promise.reject(nextError);
   }
-  handleCustomErrorCode(error);
+
+  // 有请求无响应
+  if (error.request) {
+    Message({ theme: 'error', message: 'Network Error' });
+    return Promise.reject(error);
+  }
+
+  // 业务错误
+  if (config.globalError) {
+    handleCustomErrorCode(error);
+  }
 
   return Promise.reject(error);
 }
