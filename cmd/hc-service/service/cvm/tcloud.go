@@ -25,6 +25,7 @@ import (
 
 	synctcloud "hcm/cmd/hc-service/logics/res-sync/tcloud"
 	"hcm/cmd/hc-service/service/capability"
+	"hcm/pkg/adaptor/tcloud"
 	adcore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/cvm"
 	typecvm "hcm/pkg/adaptor/types/cvm"
@@ -91,6 +92,14 @@ func (svc *cvmSvc) BatchAssociateTCloudSecurityGroup(cts *rest.Contexts) (interf
 	}
 	cvmCloudID := cvmList[0].CloudID
 
+	defer func() {
+		err = svc.syncTCloudCvmWithRelRes(cts.Kit, tcloud, req.AccountID, req.Region, []string{cvmCloudID})
+		if err != nil {
+			logs.Errorf("sync tcloud cvm with rel res failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return
+		}
+	}()
+
 	sgMap, err := svc.listSecurityGroupMap(cts.Kit, req.SecurityGroupIDs...)
 	if err != nil {
 		logs.Errorf("list security groups failed, err: %v, sgIDs: %v, rid: %s",
@@ -126,6 +135,24 @@ func (svc *cvmSvc) BatchAssociateTCloudSecurityGroup(cts *rest.Contexts) (interf
 			err, req.CvmID, req.SecurityGroupIDs, cts.Kit.Rid)
 	}
 	return nil, nil
+}
+
+func (svc *cvmSvc) syncTCloudCvmWithRelRes(kt *kit.Kit, tcloud tcloud.TCloud, accountID, region string,
+	cloudIDs []string) error {
+
+	syncClient := synctcloud.NewClient(svc.dataCli, tcloud)
+	params := &synctcloud.SyncBaseParams{
+		AccountID: accountID,
+		Region:    region,
+		CloudIDs:  cloudIDs,
+	}
+
+	_, err := syncClient.CvmWithRelRes(kt, params, &synctcloud.SyncCvmWithRelResOption{})
+	if err != nil {
+		logs.Errorf("sync tcloud cvm with res failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+	return nil
 }
 
 // InquiryPriceTCloudCvm inquiry price tcloud cvm.
@@ -230,20 +257,11 @@ func (svc *cvmSvc) BatchCreateTCloudCvm(cts *rest.Contexts) (interface{}, error)
 		return respData, nil
 	}
 
-	syncClient := synctcloud.NewClient(svc.dataCli, tcloud)
-
-	params := &synctcloud.SyncBaseParams{
-		AccountID: req.AccountID,
-		Region:    req.Region,
-		CloudIDs:  result.SuccessCloudIDs,
-	}
-
-	_, err = syncClient.CvmWithRelRes(cts.Kit, params, &synctcloud.SyncCvmWithRelResOption{})
+	err = svc.syncTCloudCvmWithRelRes(cts.Kit, tcloud, req.AccountID, req.Region, result.SuccessCloudIDs)
 	if err != nil {
-		logs.Errorf("sync tcloud cvm with res failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("sync tcloud cvm with rel res failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-
 	return respData, nil
 }
 

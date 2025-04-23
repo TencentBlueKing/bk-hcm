@@ -90,6 +90,14 @@ func (svc *cvmSvc) BatchAssociateAwsSecurityGroup(cts *rest.Contexts) (interface
 	}
 	cvmCloudID := cvmList[0].CloudID
 
+	defer func() {
+		err := svc.syncAwsCvmWithRelRes(cts.Kit, awsCli, req.AccountID, req.Region, []string{cvmCloudID})
+		if err != nil {
+			logs.Errorf("sync aws cvm with rel res failed, err: %v, cvmCloudID: %s, rid: %s", err, cvmCloudID, cts.Kit.Rid)
+			return
+		}
+	}()
+
 	sgMap, err := svc.listSecurityGroupMap(cts.Kit, req.SecurityGroupIDs...)
 	if err != nil {
 		logs.Errorf("list security groups failed, err: %v, sgIDs: %v, rid: %s", err, req.SecurityGroupIDs, cts.Kit.Rid)
@@ -121,6 +129,24 @@ func (svc *cvmSvc) BatchAssociateAwsSecurityGroup(cts *rest.Contexts) (interface
 		return nil, err
 	}
 	return nil, nil
+}
+
+func (svc *cvmSvc) syncAwsCvmWithRelRes(kt *kit.Kit, awsCli *aws.Aws, accountID, region string,
+	cloudIDs []string) error {
+
+	syncClient := syncaws.NewClient(svc.dataCli, awsCli)
+	params := &syncaws.SyncBaseParams{
+		AccountID: accountID,
+		Region:    region,
+		CloudIDs:  cloudIDs,
+	}
+	// 主机关联资源同步
+	_, err := syncClient.CvmWithRelRes(kt, params, &syncaws.SyncCvmWithRelResOption{})
+	if err != nil {
+		logs.Errorf("sync aws cvm with res failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+	return nil
 }
 
 func (svc *cvmSvc) createSGCommonRelsForAws(kt *kit.Kit, client *aws.Aws, region string, cvm corecvm.BaseCvm) error {
@@ -230,17 +256,9 @@ func (svc *cvmSvc) BatchCreateAwsCvm(cts *rest.Contexts) (interface{}, error) {
 		return respData, nil
 	}
 
-	syncClient := syncaws.NewClient(svc.dataCli, awsCli)
-
-	params := &syncaws.SyncBaseParams{
-		AccountID: req.AccountID,
-		Region:    req.Region,
-		CloudIDs:  result.SuccessCloudIDs,
-	}
-
-	_, err = syncClient.CvmWithRelRes(cts.Kit, params, &syncaws.SyncCvmWithRelResOption{})
+	err = svc.syncAwsCvmWithRelRes(cts.Kit, awsCli, req.AccountID, req.Region, result.SuccessCloudIDs)
 	if err != nil {
-		logs.Errorf("sync aws cvm with res failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("sync aws cvm with rel res failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
