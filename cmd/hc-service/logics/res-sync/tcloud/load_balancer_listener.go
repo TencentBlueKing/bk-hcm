@@ -409,6 +409,7 @@ func convL4Listener(lbl typeslb.TCloudListener, accountID string, region string,
 		SessionExpire: cvt.PtrToVal(lbl.SessionExpireTime),
 		SniSwitch:     enumor.SniType(cvt.PtrToVal(lbl.SniSwitch)),
 		Certificate:   convCert(lbl.Certificate),
+		EndPort:       lbl.EndPort,
 	}
 	// for unnamed listener, use its id as default name
 	if len(db.Name) == 0 {
