@@ -2,7 +2,7 @@
 import type { FilterType } from '@/typings/resource';
 
 import { PropType, h, computed, withDirectives } from 'vue';
-import { bkTooltips, Button, InfoBox } from 'bkui-vue';
+import { bkTooltips, Button, InfoBox, Message } from 'bkui-vue';
 import { useResourceStore } from '@/store/resource';
 import useDelete from '../../hooks/use-delete';
 import useQueryList from '../../hooks/use-query-list';
@@ -157,14 +157,10 @@ const renderColumns = [
                       footerAlign: 'center',
                       contentAlign: 'center',
                       extCls: 'delete-resource-infobox',
-                      onConfirm() {
-                        resourceStore
-                          .deleteBatch('eips', {
-                            ids: [data.id],
-                          })
-                          .then(() => {
-                            triggerApi();
-                          });
+                      async onConfirm() {
+                        await resourceStore.deleteBatch('eips', { ids: [data.id] });
+                        Message({ theme: 'success', message: '删除成功' });
+                        triggerApi();
                       },
                     });
                   },
