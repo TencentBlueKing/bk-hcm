@@ -89,6 +89,8 @@ apiserver:
   port: 80
 
 authserver:
+  ## 鉴权是否禁用的开关
+  disableAuth: false
   ## 镜像
   ##
   image:
