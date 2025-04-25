@@ -1,7 +1,8 @@
 /*
  * TencentBlueKing is pleased to support the open source community by making
- * 成本服务中心 (Cost Optimization Service Center) available.
- * Copyright (C) 2022 THL A29 Limited, a Tencent company. All rights reserved.
+ * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
+ * Copyright (C) 2022 THL A29 Limited,
+ * a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://opensource.org/licenses/MIT
@@ -43,6 +44,16 @@ type BaseResponse struct {
 	Result  bool   `json:"result"`
 	Code    int    `json:"code"`
 	Message string `json:"message"`
+	Rid     string `json:"request_id"`
+}
+
+// IsFailed check if the response is failed
+func (resp *BaseResponse) IsFailed() bool {
+	if !resp.Result || resp.Code != 0 {
+		return true
+	}
+
+	return false
 }
 
 // GetServers get third-party service server host.
