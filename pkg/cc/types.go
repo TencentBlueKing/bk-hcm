@@ -32,6 +32,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/ssl"
+	"hcm/pkg/traces"
 	"hcm/pkg/version"
 
 	etcd3 "go.etcd.io/etcd/client/v3"
@@ -372,6 +373,41 @@ func (log LogOption) Logs() logs.LogConfig {
 	}
 
 	return l
+}
+
+// Trace defines trace's related configuration.
+type Trace struct {
+	// Enabled indicates whether tracing is enabled.
+	Enabled bool `yaml:"enabled"`
+	// Endpoint defines the endpoint of trace.
+	Endpoint string `yaml:"endpoint"`
+	// Token defines the token of trace.
+	Token string `yaml:"token"`
+}
+
+// validate validates the trace option.
+func (t *Trace) validate() error {
+	if t.Enabled {
+		if t.Endpoint == "" {
+			return errors.New("trace.endpoint is required")
+		}
+
+		if t.Token == "" {
+			return errors.New("trace.token is required")
+		}
+	}
+
+	return nil
+}
+
+// ToTraceOption converts the trace option to logs.TraceOption.
+func (t Trace) ToTraceOption() traces.TraceOption {
+	return traces.TraceOption{
+		Enabled:     t.Enabled,
+		ServiceName: string(ServiceName()),
+		Endpoint:    t.Endpoint,
+		Token:       t.Token,
+	}
 }
 
 // Network defines all the network related options

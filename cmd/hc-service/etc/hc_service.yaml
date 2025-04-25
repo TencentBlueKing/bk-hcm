@@ -74,3 +74,12 @@ sync:
       listConcurrent: 1
   # if no any rule matched, use this default config
   defaultConcurrent: 1
+
+# defines trace's related configuration
+trace:
+  # trace enable
+  enable: false
+  # trace endpoint in bk-monitor
+  endpoint:
+  # token of APM in bk-monitor
+  token:

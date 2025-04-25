@@ -80,6 +80,7 @@ type ApiServerSetting struct {
 	Network Network   `yaml:"network"`
 	Service Service   `yaml:"service"`
 	Log     LogOption `yaml:"log"`
+	Trace   Trace     `yaml:"trace"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -107,6 +108,9 @@ func (s ApiServerSetting) Validate() error {
 		return err
 	}
 
+	if err := s.Trace.validate(); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -115,6 +119,7 @@ type CloudServerSetting struct {
 	Network        Network        `yaml:"network"`
 	Service        Service        `yaml:"service"`
 	Log            LogOption      `yaml:"log"`
+	Trace          Trace          `yaml:"trace"`
 	Crypto         Crypto         `yaml:"crypto"`
 	Esb            Esb            `yaml:"esb"`
 	BkHcmUrl       string         `yaml:"bkHcmUrl"`
@@ -178,6 +183,10 @@ func (s CloudServerSetting) Validate() error {
 		return err
 	}
 
+	if err := s.Trace.validate(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -186,6 +195,7 @@ type DataServiceSetting struct {
 	Network     Network     `yaml:"network"`
 	Service     Service     `yaml:"service"`
 	Log         LogOption   `yaml:"log"`
+	Trace       Trace       `yaml:"trace"`
 	Database    DataBase    `yaml:"database"`
 	Objectstore ObjectStore `yaml:"objectstore"`
 	Crypto      Crypto      `yaml:"crypto"`
@@ -229,6 +239,10 @@ func (s DataServiceSetting) Validate() error {
 		return err
 	}
 
+	if err := s.Trace.validate(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -237,6 +251,7 @@ type HCServiceSetting struct {
 	Network    Network    `yaml:"network"`
 	Service    Service    `yaml:"service"`
 	Log        LogOption  `yaml:"log"`
+	Trace      Trace      `yaml:"trace"`
 	SyncConfig SyncConfig `yaml:"sync"`
 }
 
@@ -268,6 +283,9 @@ func (s HCServiceSetting) Validate() error {
 	if err := s.SyncConfig.Validate(); err != nil {
 		return fmt.Errorf("syncConfig validate error: %w", err)
 	}
+	if err := s.Trace.validate(); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -276,6 +294,7 @@ type AuthServerSetting struct {
 	Network Network   `yaml:"network"`
 	Service Service   `yaml:"service"`
 	Log     LogOption `yaml:"log"`
+	Trace   Trace     `yaml:"trace"`
 	Esb     Esb       `yaml:"esb"`
 
 	IAM IAM `yaml:"iam"`
@@ -313,6 +332,10 @@ func (s AuthServerSetting) Validate() error {
 		return err
 	}
 
+	if err := s.Trace.validate(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -321,6 +344,7 @@ type WebServerSetting struct {
 	Network       Network       `yaml:"network"`
 	Service       Service       `yaml:"service"`
 	Log           LogOption     `yaml:"log"`
+	Trace         Trace         `yaml:"trace"`
 	Web           Web           `yaml:"web"`
 	Esb           Esb           `yaml:"esb"`
 	Itsm          ApiGateway    `yaml:"itsm"`
@@ -374,6 +398,10 @@ func (s WebServerSetting) Validate() error {
 		return err
 	}
 
+	if err := s.Trace.validate(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -388,6 +416,7 @@ type TaskServerSetting struct {
 	Service  Service   `yaml:"service"`
 	Database DataBase  `yaml:"database"`
 	Log      LogOption `yaml:"log"`
+	Trace    Trace     `yaml:"trace"`
 	Async    Async     `yaml:"async"`
 
 	UseLabel LabelSwitch `yaml:"useLabel"`
@@ -423,6 +452,10 @@ func (s TaskServerSetting) Validate() error {
 		return err
 	}
 
+	if err := s.Trace.validate(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -432,6 +465,7 @@ type AccountServerSetting struct {
 	Service        Service              `yaml:"service"`
 	Controller     BillControllerOption `yaml:"controller"`
 	Log            LogOption            `yaml:"log"`
+	Trace          Trace                `yaml:"trace"`
 	BillAllocation BillAllocationOption `yaml:"billAllocation"`
 	Esb            Esb                  `yaml:"esb"`
 	TmpFileDir     string               `yaml:"tmpFileDir"`
@@ -465,6 +499,10 @@ func (s AccountServerSetting) Validate() error {
 	}
 
 	if err := s.BillAllocation.validate(); err != nil {
+		return err
+	}
+
+	if err := s.Trace.validate(); err != nil {
 		return err
 	}
 

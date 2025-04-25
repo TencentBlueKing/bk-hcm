@@ -19,6 +19,8 @@ data:
         {{- include "common.tplvalues.render" (dict "value" (include "bk-hcm.etcdConfig" .) "context" $) | nindent 8 }}
     log:
       {{- toYaml .Values.dataservice.log | nindent 6 }}
+    trace:
+      {{- toYaml .Values.trace | nindent 6 }}
     database:
       {{- include "common.tplvalues.render" (dict "value" (include "bk-hcm.databaseConfig" .) "context" $) | nindent 6 }}
     esb:
