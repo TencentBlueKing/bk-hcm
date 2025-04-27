@@ -76,15 +76,6 @@ func (svc cloudSvc) listResUsageBizRel(kt *kit.Kit, resType enumor.CloudResource
 
 	usageBizIDs := make(map[string][]int64, 0)
 	for _, batch := range slice.Split(resIDs, int(core.DefaultMaxPageLimit)) {
-		listReq := &core.ListReq{
-			Filter: tools.ExpressionAnd(
-				tools.RuleEqual("res_type", resType),
-				tools.RuleIn("res_id", batch),
-			),
-			Page:   core.NewDefaultBasePage(),
-			Fields: []string{"res_id", "usage_biz_id"},
-		}
-		listReq.Page.Sort = "res_id"
 
 		listOpt := &types.ListOption{
 			Filter: tools.ExpressionAnd(
@@ -96,15 +87,24 @@ func (svc cloudSvc) listResUsageBizRel(kt *kit.Kit, resType enumor.CloudResource
 		}
 		listOpt.Page.Sort = "res_id"
 
-		rst, err := svc.dao.ResUsageBizRel().List(kt, listOpt)
-		if err != nil {
-			logs.Errorf("failed to list res usage biz rel, err: %v, res_type: %s, res_ids: %v, rid: %s",
-				err, resType, resIDs, kt.Rid)
-			return nil, err
-		}
+		// 单个资源会对应多条关联关系
+		for {
+			rst, err := svc.dao.ResUsageBizRel().List(kt, listOpt)
+			if err != nil {
+				logs.Errorf("failed to list res usage biz rel, err: %v, res_type: %s, res_ids: %v, rid: %s",
+					err, resType, resIDs, kt.Rid)
+				return nil, err
+			}
 
-		for _, item := range rst.Details {
-			usageBizIDs[item.ResID] = append(usageBizIDs[item.ResID], item.UsageBizID)
+			for _, item := range rst.Details {
+				usageBizIDs[item.ResID] = append(usageBizIDs[item.ResID], item.UsageBizID)
+			}
+
+			if len(rst.Details) < int(listOpt.Page.Limit) {
+				break
+			}
+
+			listOpt.Page.Start += uint32(listOpt.Page.Limit)
 		}
 	}
 
