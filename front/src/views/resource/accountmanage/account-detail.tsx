@@ -30,7 +30,6 @@ export default defineComponent({
     const accountStore = useAccountStore();
     const route = useRoute();
     const formDiaRef = ref(null);
-    const requestQueue = ref(['detail', 'bizsList']);
     const isDetail = ref(route.query.isDetail);
 
     const initProjectModel: ProjectModel = {
@@ -44,7 +43,7 @@ export default defineComponent({
       secretId: '', // 密钥id
       secretKey: '', // 密钥key
       managers: [], // 责任人
-      bizIds: [], // 使用业务
+      bk_biz_ids: [], // 使用业务
       memo: '', // 备注
       price: 0,
       extension: {}, // 特殊信息
@@ -94,27 +93,18 @@ export default defineComponent({
     });
 
     const isOrganizationDetail = ref<Boolean>(true); // 组织架构详情展示
+    const isLoading = ref(false);
     const getDetail = async () => {
-      const { id, accountId } = route.query;
-      const res = await accountStore.getAccountDetail((id || accountId) as string);
-      projectModel.id = res?.data.id;
-      projectModel.vendor = res?.data.vendor;
-      projectModel.name = res?.data.name;
-      projectModel.type = res?.data.type;
-      projectModel.managers = res?.data.managers;
-      projectModel.price = res?.data.price;
-      projectModel.price_unit = res?.data.price_unit;
-      projectModel.site = res?.data.site;
-      projectModel.memo = res?.data.memo;
-      projectModel.creator = res?.data.creator;
-      projectModel.reviser = res?.data.reviser;
-      projectModel.created_at = res?.data.created_at;
-      projectModel.updated_at = res?.data.updated_at;
-      projectModel.extension = res?.data.extension;
-      projectModel.bizIds = res?.data?.bk_biz_ids;
-      requestQueue.value.shift();
-      getBusinessList();
-      renderBaseInfoForm(projectModel);
+      isLoading.value = true;
+      try {
+        const { id, accountId } = route.query;
+        const res = await accountStore.getAccountDetail((id || accountId) as string);
+        await getBusinessList();
+        Object.assign(projectModel, res?.data);
+        renderBaseInfoForm(projectModel);
+      } finally {
+        isLoading.value = false;
+      }
     };
 
     onMounted(() => {
@@ -131,15 +121,10 @@ export default defineComponent({
       },
     );
 
-    const isLoading = computed(() => {
-      return requestQueue.value.length > 0;
-    });
-
     // 获取业务列表
     const getBusinessList = async () => {
       const res = await accountStore.getBizList();
       businessList.list = res.data;
-      requestQueue.value.shift();
     };
 
     // 动态表单
@@ -372,7 +357,7 @@ export default defineComponent({
     // 更新信息方法
     const updateFormData = async (key: any) => {
       let params: any = {};
-      if (key === 'bizIds') {
+      if (key === 'bk_biz_ids') {
         // 若选择全部业务，则参数是-1
         // params.bk_biz_ids = projectModel[key].length === businessList.list.length
         //   ? [-1] : projectModel[key];
@@ -492,7 +477,7 @@ export default defineComponent({
       Object.assign(accountFormModel, {
         managers: projectModel.managers,
         memo: projectModel.memo,
-        bk_biz_ids: projectModel.bizIds,
+        bk_biz_ids: projectModel.bk_biz_ids,
       });
     };
 
@@ -511,13 +496,6 @@ export default defineComponent({
       isShowModifyAccountDialog.value = false;
       getDetail();
     };
-
-    // const handleBizChange = async () => {
-    //   handleEditStatus(true, 'bizIds');     // 未通过检验前状态为编辑态
-    //   await formRef.value?.validate();
-    //   handleEditStatus(false, 'bizIds');   // 通过检验则把状态改为不可编辑态
-    //   updateFormData('bizIds');    // 更新数据
-    // };
 
     const formBaseInfo = reactive([
       {
@@ -647,15 +625,13 @@ export default defineComponent({
           {
             label: t('使用业务'),
             required: false,
-            property: 'bizIds',
+            property: 'bk_biz_ids',
             isEdit: false,
             component() {
-              // eslint-disable-next-line max-len
-              // onBlur={handleblur}
-              // onChange={handleBizChange}
+              if (projectModel.bk_biz_ids?.[0] === -1) return '全部业务';
               return (
                 <RenderDetailEdit
-                  v-model={projectModel.bizIds}
+                  v-model={projectModel.bk_biz_ids}
                   fromKey={this.property}
                   hideEdit={true}
                   selectData={businessList.list}
@@ -663,7 +639,6 @@ export default defineComponent({
                   isEdit={this.isEdit}
                 />
               );
-              // <span>{SiteType[projectModel.bizIds]}</span>
             },
           },
         ],
