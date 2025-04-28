@@ -175,6 +175,7 @@ export default defineComponent({
       {
         label: '操作人',
         field: 'operator',
+        renderValue: (cell: string) => <hcm-user-value value={cell} />,
       },
       {
         label: '操作时间',
@@ -220,7 +221,8 @@ export default defineComponent({
           v-model:isShow={isRecordDetailShow.value}
           title='操作详情'
           width={670}
-          class='record-detail-sideslider'>
+          class='record-detail-sideslider'
+        >
           <div class='detail-info-container'>
             {detailInfoItemOptions.value.map(({ label, field, renderValue }) => (
               <div key={label} class='info-item'>

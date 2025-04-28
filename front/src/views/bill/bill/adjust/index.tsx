@@ -1,4 +1,4 @@
-import { defineComponent, ref, inject, watch, Ref, onMounted } from 'vue';
+import { defineComponent, ref, inject, watch, Ref, onMounted, computed } from 'vue';
 
 import { Button, Message } from 'bkui-vue';
 import { Plus } from 'bkui-vue/lib/icon';
@@ -20,7 +20,6 @@ import { timeFormatter } from '@/common/util';
 import { BILL_ADJUSTMENT_STATE__MAP, BILL_ADJUSTMENT_TYPE__MAP, CURRENCY_MAP } from '@/constants';
 import { DoublePlainObject, QueryRuleOPEnum, RulesItem } from '@/typings';
 import useBillStore from '@/store/useBillStore';
-import { computed } from '@vue/reactivity';
 import { formatBillCost } from '@/utils';
 import { useRoute } from 'vue-router';
 import pluginHandler from '@pluginHandler/bill-manage';
@@ -92,6 +91,7 @@ export default defineComponent({
       {
         label: t('操作人'),
         field: 'operator',
+        render: ({ cell }: any) => <hcm-user-value value={cell} />,
       },
       {
         label: t('金额'),
@@ -128,7 +128,8 @@ export default defineComponent({
                 editData.value = data;
               }}
               disabled={data.state !== 'unconfirmed'}
-              v-bk-tooltips={{ content: t('当前调账单已确认，无法编辑'), disabled: data.state === 'unconfirmed' }}>
+              v-bk-tooltips={{ content: t('当前调账单已确认，无法编辑'), disabled: data.state === 'unconfirmed' }}
+            >
               {t('编辑')}
             </Button>
             <Button
@@ -136,7 +137,8 @@ export default defineComponent({
               theme='primary'
               onClick={() => handleDelete(data.id)}
               disabled={data.state !== 'unconfirmed'}
-              v-bk-tooltips={{ content: t('当前调账单已确认，无法删除'), disabled: data.state === 'unconfirmed' }}>
+              v-bk-tooltips={{ content: t('当前调账单已确认，无法删除'), disabled: data.state === 'unconfirmed' }}
+            >
               {t('删除')}
             </Button>
           </>
@@ -224,7 +226,8 @@ export default defineComponent({
                     onClick={() => {
                       createAdjustSideSliderRef.value.triggerShow(true);
                       isEdit.value = false;
-                    }}>
+                    }}
+                  >
                     <Plus style={{ fontSize: '22px' }} />
                     {t('新增调账')}
                   </Button>

@@ -4,7 +4,6 @@ import { useRouter } from 'vue-router';
 import { ProjectModel, FormItems } from '@/typings';
 import { CLOUD_TYPE, ACCOUNT_TYPE, BUSINESS_TYPE, SITE_TYPE, DESC_ACCOUNT } from '@/constants';
 import { useI18n } from 'vue-i18n';
-import MemberSelect from '@/components/MemberSelect';
 import { useAccountStore } from '@/store';
 import './account-add.scss';
 const { FormItem } = Form;
@@ -164,7 +163,7 @@ export default defineComponent({
           path: '/resource/account', // 返回列表
         });
       } catch (error: any) {
-        console.log(error);
+        console.error(error);
       } finally {
         submitLoading.value = false;
       }
@@ -557,7 +556,6 @@ export default defineComponent({
           break;
       }
       const interceLength = endIndex - startIndex - 1; // 需要删除的长度
-      console.log('insertFormData', insertFormData);
       formList.splice(startIndex + 1, interceLength, ...insertFormData);
     };
 
@@ -685,7 +683,7 @@ export default defineComponent({
         property: 'managers',
         content: () => (
           <section>
-            <MemberSelect class='w450' v-model={projectModel.managers} />
+            <hcm-form-user class='w450' v-model={projectModel.managers} />
           </section>
         ),
       },
@@ -701,7 +699,8 @@ export default defineComponent({
             multipleMode='tag'
             placeholder={t('请选择使用业务')}
             class='w450'
-            v-model={projectModel.bizIds}>
+            v-model={projectModel.bizIds}
+          >
             {businessList.list.map((item) => (
               <Option key={item.id} value={item.id} label={item.name}>
                 {item.name}
@@ -749,12 +748,14 @@ export default defineComponent({
                   'no-border-top': !item.formName,
                   'no-border-bottom': item.noBorBottom || (item.property === 'vendor' && isChangeVendor.value),
                   'no-border': item.type === 'button',
-                }}>
+                }}
+              >
                 <FormItem
                   class='account-form-item'
                   label={item.label}
                   required={item.required}
-                  property={item.property}>
+                  property={item.property}
+                >
                   {item.component ? item.component() : item.content()}
                 </FormItem>
               </div>

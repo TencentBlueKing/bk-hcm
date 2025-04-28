@@ -190,7 +190,8 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
             disabled: !cell || cell === -1,
             theme: 'light',
           }}
-          theme={data.bk_biz_id === -1 ? false : 'success'}>
+          theme={data.bk_biz_id === -1 ? false : 'success'}
+        >
           {data.bk_biz_id === -1 ? '未分配' : '已分配'}
         </bk-tag>
       ),
@@ -309,7 +310,8 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
             disabled: !cell || cell === -1,
             theme: 'light',
           }}
-          theme={data.bk_biz_id === -1 ? false : 'success'}>
+          theme={data.bk_biz_id === -1 ? false : 'success'}
+        >
           {data.bk_biz_id === -1 ? '未分配' : '已分配'}
         </bk-tag>
       ),
@@ -493,7 +495,8 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
             disabled: !cell || cell === -1,
             theme: 'light',
           }}
-          theme={data.bk_biz_id === -1 ? false : 'success'}>
+          theme={data.bk_biz_id === -1 ? false : 'success'}
+        >
           {data.bk_biz_id === -1 ? '未分配' : '已分配'}
         </bk-tag>
       ),
@@ -841,7 +844,8 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
             disabled: !cell || cell === -1,
             theme: 'light',
           }}
-          theme={data.bk_biz_id === -1 ? false : 'success'}>
+          theme={data.bk_biz_id === -1 ? false : 'success'}
+        >
           {data.bk_biz_id === -1 ? '未分配' : '已分配'}
         </bk-tag>
       ),
@@ -1038,7 +1042,8 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
             disabled: !cell || cell === -1,
             theme: 'light',
           }}
-          theme={data.bk_biz_id === -1 ? false : 'success'}>
+          theme={data.bk_biz_id === -1 ? false : 'success'}
+        >
           {data.bk_biz_id === -1 ? '未分配' : '已分配'}
         </bk-tag>
       ),
@@ -1114,6 +1119,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '操作人',
       field: 'operator',
       isDefaultShow: true,
+      render: ({ cell }: { cell: string }) => <hcm-user-value value={cell} />,
     },
   ];
 
@@ -1138,7 +1144,8 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
             () => {
               loadBalancerStore.setLbTreeSearchTarget({ ...data, searchK: 'lb_name', searchV: data.name, type: 'lb' });
             },
-          )}>
+          )}
+        >
           {data.name || '--'}
         </Button>
       ),
@@ -1193,7 +1200,8 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
             content: businessMapStore.businessMap.get(cell),
             disabled: !cell || cell === -1,
           }}
-          theme={cell === -1 ? false : 'success'}>
+          theme={cell === -1 ? false : 'success'}
+        >
           {cell === -1 ? '未分配' : '已分配'}
         </bk-tag>
       ),
@@ -1315,7 +1323,8 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
                 type: 'listener',
               });
             },
-          )}>
+          )}
+        >
           {data.name || '--'}
         </Button>
       ),
@@ -1431,7 +1440,8 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
             () => {
               loadBalancerStore.setTgSearchTarget(name);
             },
-          )}>
+          )}
+        >
           {name}
         </Button>
       ),
@@ -1641,7 +1651,8 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
               type: 'detail',
               protocol,
             },
-          })}>
+          })}
+        >
           {lbl_name}
         </Button>
       ),
@@ -1817,7 +1828,8 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
             content: businessMapStore.businessMap.get(cell),
             disabled: !cell || cell === -1,
           }}
-          theme={data.bk_biz_id === -1 ? false : 'success'}>
+          theme={data.bk_biz_id === -1 ? false : 'success'}
+        >
           {data.bk_biz_id === -1 ? '未分配' : '已分配'}
         </bk-tag>
       ),
@@ -1841,7 +1853,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
     {
       label: '主负责人',
       field: 'managers',
-      render: ({ cell }: any) => cell.join(','),
+      render: ({ cell }: { cell: string }) => <hcm-user-value value={cell} />,
     },
     // {
     //   label: '组织架构',
@@ -1879,7 +1891,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
     {
       label: '主负责人',
       field: 'managers',
-      render: ({ cell }: any) => cell.join(','),
+      render: ({ cell }: { cell: string }) => <hcm-user-value value={cell} />,
     },
     {
       label: '业务名称',
@@ -1945,6 +1957,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
     {
       label: '申请人',
       field: 'applicant',
+      render: ({ cell }: { cell: string }) => <hcm-user-value value={cell} />,
     },
     {
       label: '创建时间',
@@ -2592,6 +2605,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
     {
       label: '操作人',
       field: 'operator',
+      render: ({ cell }: { cell: string }) => <hcm-user-value value={cell} />,
     },
     {
       label: '人民币（元）',

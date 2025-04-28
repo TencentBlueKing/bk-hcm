@@ -8,7 +8,6 @@ import Loading from '@/components/loading';
 import RenderDetailEdit from '@/components/RenderDetailEdit';
 import DetailHeader from '../resource-manage/common/header/detail-header';
 import './account-detail.scss';
-import MemberSelect from '@/components/MemberSelect';
 import http from '@/http';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import {
@@ -60,13 +59,6 @@ export default defineComponent({
       bk_biz_ids: [],
     });
     const accountForm = ref(null);
-
-    const computedManagers = computed(() =>
-      accountFormModel.managers.map((name) => ({
-        username: name,
-        display_name: name,
-      })),
-    );
 
     const resourceAccountStore = useResourceAccountStore();
 
@@ -564,7 +556,7 @@ export default defineComponent({
             label: t('创建人'),
             required: false,
             property: 'creator',
-            component: () => <span>{projectModel.creator}</span>,
+            component: () => <hcm-user-value value={projectModel.creator} />,
           },
           {
             label: t('创建时间'),
@@ -576,7 +568,7 @@ export default defineComponent({
             label: t('修改人'),
             required: false,
             property: 'reviser',
-            component: () => <span>{projectModel.reviser}</span>,
+            component: () => <hcm-user-value value={projectModel.reviser} />,
           },
           {
             label: t('修改时间'),
@@ -706,7 +698,8 @@ export default defineComponent({
                       <bk-pop-confirm
                         content={t('同步该账号下的资源，点击确定后，立即触发同步任务')}
                         trigger='click'
-                        onConfirm={handleSync}>
+                        onConfirm={handleSync}
+                      >
                         <bk-button loading={isSyncLoading.value}>{t('同步')}</bk-button>
                       </bk-pop-confirm>
                     ) : undefined,
@@ -723,7 +716,8 @@ export default defineComponent({
                 {index > 0 ? (
                   <span
                     class={'account-detail-edit-icon-font'}
-                    onClick={index === 2 ? handleModifyScret : handleModifyAccount}>
+                    onClick={index === 2 ? handleModifyScret : handleModifyAccount}
+                  >
                     {/* <i class={'icon hcm-icon bkhcm-icon-invisible1 pl15 account-edit-icon'}/> */}
                     <i class={'hcm-icon bkhcm-icon-bianji account-edit-icon mr6'} />
                     编辑
@@ -739,7 +733,8 @@ export default defineComponent({
                       class='formItem-cls info-value'
                       label={`${formItem.label} ：`}
                       required={formItem.required}
-                      property={formItem.property}>
+                      property={formItem.property}
+                    >
                       {formItem.component()}
                     </FormItem>
                   ))}
@@ -755,7 +750,8 @@ export default defineComponent({
             onClosed={onClosed}
             onConfirm={onConfirm}
             isLoading={isSecretDialogLoading.value}
-            theme='primary'>
+            theme='primary'
+          >
             {{
               default: () => (
                 <>
@@ -792,14 +788,16 @@ export default defineComponent({
                     class={'validate-btn'}
                     loading={isValidateLoading.value}
                     onClick={() => handleValidate()}
-                    disabled={isValidateDiasbled.value}>
+                    disabled={isValidateDiasbled.value}
+                  >
                     账号校验
                   </Button>
                   <Button
                     theme='primary'
                     disabled={isValidateDiasbled.value || curExtension.value.validatedStatus !== ValidateStatus.YES}
                     loading={buttonLoading.value}
-                    onClick={onConfirm}>
+                    onClick={onConfirm}
+                  >
                     {t('确认')}
                   </Button>
                   <Button class='ml10' onClick={onClosed}>
@@ -817,10 +815,11 @@ export default defineComponent({
             isLoading={isAccountDialogLoading.value}
             onConfirm={handleModifyAccountSubmit}
             onClosed={() => (isShowModifyAccountDialog.value = false)}
-            theme='primary'>
+            theme='primary'
+          >
             <Form v-model={accountFormModel} formType='vertical' model={accountFormModel} ref={accountForm}>
               <FormItem label='责任人' class={'api-secret-selector'} required property='managers'>
-                <MemberSelect v-model={accountFormModel.managers} defaultUserlist={computedManagers.value} />
+                <hcm-form-user v-model={accountFormModel.managers} />
               </FormItem>
               <FormItem label='业务' class={'api-secret-selector'} required property='bk_biz_ids'>
                 <Select filterable placeholder='请选择使用业务' v-model={accountFormModel.bk_biz_ids}>

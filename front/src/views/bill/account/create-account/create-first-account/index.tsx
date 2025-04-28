@@ -6,7 +6,6 @@ import { Button, Form, Input, Message, Select } from 'bkui-vue';
 import { BILL_VENDORS_INFO } from '../constants';
 import { InfoLine, Success } from 'bkui-vue/lib/icon';
 import { VendorEnum, AccountVerifyEnum } from '@/common/constant';
-import MemberSelect from '@/components/MemberSelect';
 import { useUserStore } from '@/store';
 import { useRouter } from 'vue-router';
 import useBillStore from '@/store/useBillStore';
@@ -90,7 +89,8 @@ export default defineComponent({
                       class={`account-vendor-option ${
                         vendor === formModel.vendor ? 'account-vendor-option-active' : ''
                       }`}
-                      onClick={() => (formModel.vendor = vendor)}>
+                      onClick={() => (formModel.vendor = vendor)}
+                    >
                       <img src={icon} alt={name} class={'account-vendor-option-icon'} />
                       <p class={'account-vendor-option-text'}>{name}</p>
                       {formModel.vendor === vendor ? <Success fill='#3A84FF' class={'active-icon'} /> : null}
@@ -125,7 +125,8 @@ export default defineComponent({
                     },
                   },
                 ],
-              }}>
+              }}
+            >
               <FormItem label='帐号名称' required property='name'>
                 <Input v-model={formModel.name} placeholder='请输入账号名称'></Input>
               </FormItem>
@@ -134,26 +135,10 @@ export default defineComponent({
               </FormItem>
               <div class={'account-manager-wrapper'}>
                 <FormItem label='主负责人' required property='managers' class={'account-manager'}>
-                  <MemberSelect
-                    v-model={formModel.managers}
-                    defaultUserlist={[
-                      {
-                        username: userStore.username,
-                        display_name: userStore.username,
-                      },
-                    ]}
-                  />
+                  <hcm-form-user v-model={formModel.managers} />
                 </FormItem>
                 <FormItem label='备份负责人' required property='bak_managers' class={'ml24 account-manager'}>
-                  <MemberSelect
-                    v-model={formModel.bak_managers}
-                    defaultUserlist={[
-                      {
-                        username: userStore.username,
-                        display_name: userStore.username,
-                      },
-                    ]}
-                  />
+                  <hcm-form-user v-model={formModel.bak_managers} />
                 </FormItem>
               </div>
               <FormItem label='备注' property='memo'>
@@ -171,7 +156,8 @@ export default defineComponent({
               <p class={'header-text'}>同一个主账号下,只允许接入一次。如后续对API密钥更新,必须是隶属于同一主账号。</p>
             </div>
           )}
-          class={'info-card'}>
+          class={'info-card'}
+        >
           <>
             <div class={'account-form-card-content'}>
               <Form formType='vertical' class={'account-form-card-content-grid'}>
@@ -222,7 +208,8 @@ export default defineComponent({
                   class={'account-validate-btn'}
                   onClick={() => handleValidate()}
                   disabled={isValidateDiasbled.value}
-                  loading={isValidateLoading.value}>
+                  loading={isValidateLoading.value}
+                >
                   账号校验
                 </Button>
                 {curExtension.value.validatedStatus === ValidateStatus.YES ? (
@@ -252,14 +239,16 @@ export default defineComponent({
           }}
           onClick={() => {
             handleSubmit();
-          }}>
+          }}
+        >
           提交
         </Button>
         <Button
           class='mw88'
           onClick={() => {
             router.back();
-          }}>
+          }}
+        >
           取消
         </Button>
       </div>

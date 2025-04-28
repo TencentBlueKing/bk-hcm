@@ -24,6 +24,10 @@ const props = withDefaults(defineProps<IUserSelectorProps>(), {
   fastSelect: true,
 });
 
+const emit = defineEmits<{
+  change: [val: string | string[]];
+}>();
+
 const model = defineModel<string | string[]>();
 
 const userStore = useUserStore();
@@ -31,6 +35,10 @@ const userStore = useUserStore();
 const tenantId = computed(() => userStore.tenantId);
 const currentUserId = computed(() => props.fastSelect && userStore.username);
 const apiBaseUrl = window.PROJECT_CONFIG.USER_MANAGE_URL;
+
+const handleChange = (val: string | string[]) => {
+  emit('change', val);
+};
 </script>
 
 <template>
@@ -42,6 +50,7 @@ const apiBaseUrl = window.PROJECT_CONFIG.USER_MANAGE_URL;
     :tenant-id="tenantId"
     :current-user-id="currentUserId"
     :api-base-url="apiBaseUrl"
+    @change="handleChange"
   />
 </template>
 
