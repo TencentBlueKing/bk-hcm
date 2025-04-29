@@ -22,7 +22,7 @@ import {
   TcloudSourceTypeArr,
 } from '@/views/resource/resource-manage/children/components/security/add-rule/vendors/tcloud';
 import { huaweiSourceAddressTypes } from '@/views/resource/resource-manage/children/components/security/add-rule/vendors/huawei';
-import { SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum, FilterType } from '@/typings';
+import { SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum, QueryRuleOPEnum } from '@/typings';
 import { VendorEnum } from '@/common/constant';
 
 export interface IData {
@@ -31,12 +31,9 @@ export interface IData {
 export interface ICloneSecurityProps {
   isShow: boolean;
   data: IData;
-  filter?: FilterType;
 }
 
-const props = withDefaults(defineProps<ICloneSecurityProps>(), {
-  filter: { op: 'and', rules: [{ field: 'type', op: 'eq', value: 'ingress' }] },
-});
+const props = defineProps<ICloneSecurityProps>();
 
 const emit = defineEmits(['update:isShow', 'success']);
 const { t } = useI18n();
@@ -47,10 +44,10 @@ const types = [
 ];
 
 const states = reactive<any>({
-  datas: [],
+  dataList: [],
   isLoading: true,
 });
-const filter = ref(props.filter);
+const filter = ref({ op: QueryRuleOPEnum.AND, rules: [{ field: 'type', op: QueryRuleOPEnum.EQ, value: 'ingress' }] });
 const personSelectorRef = ref(null);
 const formModel = reactive({ name: `${props.data.name}-copy` });
 const formRef = useTemplateRef<typeof Form>('formRef');
@@ -74,7 +71,7 @@ const inColumns: any = computed(() =>
     },
     {
       label: t('源地址类型'),
-      render({ data }: any) {
+      render({ row }: any) {
         const nowVendor = (vendor.value as VendorEnum) || VendorEnum.TCLOUD;
         const sourceMap: any = {
           [VendorEnum.AWS]: {
@@ -98,49 +95,49 @@ const inColumns: any = computed(() =>
         const { arr } = sourceMap[nowVendor];
         const map = new Map(types.map((item: { value: string; label: string }) => [item.value, item.label]));
         let k = '';
-        arr.forEach((type: string) => data[type] && (k = type));
+        arr.forEach((type: string) => row[type] && (k = type));
         return map.get(k) || '--';
       },
       isShow: true,
     },
     {
       label: t('源地址'),
-      render({ data }: any) {
+      render({ row }: any) {
         return h('span', {}, [
-          data.cloud_address_group_id ||
-            data.cloud_address_id ||
-            data.cloud_service_group_id ||
-            data.cloud_target_security_group_id ||
-            data.ipv4_cidr ||
-            data.ipv6_cidr ||
-            data.cloud_remote_group_id ||
-            data.remote_ip_prefix ||
-            (data.source_address_prefix === '*' ? t('ALL') : data.source_address_prefix) ||
-            data.source_address_prefixes ||
-            data.cloud_source_security_group_ids ||
-            data.destination_address_prefix ||
-            data.destination_address_prefixes ||
-            data.cloud_destination_security_group_ids ||
-            (data?.ethertype === 'IPv6' ? '::/0' : '0.0.0.0/0'),
+          row.cloud_address_group_id ||
+            row.cloud_address_id ||
+            row.cloud_service_group_id ||
+            row.cloud_target_security_group_id ||
+            row.ipv4_cidr ||
+            row.ipv6_cidr ||
+            row.cloud_remote_group_id ||
+            row.remote_ip_prefix ||
+            (row.source_address_prefix === '*' ? t('ALL') : row.source_address_prefix) ||
+            row.source_address_prefixes ||
+            row.cloud_source_security_group_ids ||
+            row.destination_address_prefix ||
+            row.destination_address_prefixes ||
+            row.cloud_destination_security_group_ids ||
+            (row?.ethertype === 'IPv6' ? '::/0' : '0.0.0.0/0'),
         ]);
       },
       isShow: true,
     },
     {
       label: t('源端口'),
-      render({ data }: any) {
-        return (data.source_port_range === '*' ? 'ALL' : data.source_port_range) || '--';
+      render({ row }: any) {
+        return (row.source_port_range === '*' ? 'ALL' : row.source_port_range) || '--';
       },
       isShow: vendor.value === 'azure',
     },
     {
       label: t('目标地址类型'),
-      render({ data }: any) {
+      render({ row }: any) {
         const map = new Map(
           azureTargetAddressTypes.map((item: { value: string; label: string }) => [item.value, item.label]),
         );
         let k = '';
-        AzureTargetTypeArr.forEach((type: string) => data[type] && (k = type));
+        AzureTargetTypeArr.forEach((type: string) => row[type] && (k = type));
         return map.get(k) || '--';
       },
       isShow: vendor.value === 'azure',
@@ -153,58 +150,58 @@ const inColumns: any = computed(() =>
 
     {
       label: t('目标地址'),
-      render({ data }: any) {
+      render({ row }: any) {
         return (
-          (data.destination_address_prefix === '*' ? t('ALL') : data.destination_address_prefix) ||
-          data.destination_address_prefixes ||
-          data.cloud_destination_security_group_ids
+          (row.destination_address_prefix === '*' ? t('ALL') : row.destination_address_prefix) ||
+          row.destination_address_prefixes ||
+          row.cloud_destination_security_group_ids
         );
       },
       isShow: vendor.value === 'azure',
     },
     {
       label: vendor.value === 'azure' ? t('目标端口协议类型') : t('协议'),
-      render({ data }: any) {
+      render({ row }: any) {
         return h('span', {}, [
-          data.cloud_service_id ||
-            (vendor.value === 'aws' && data.protocol === '-1'
+          row.cloud_service_id ||
+            (vendor.value === 'aws' && row.protocol === '-1'
               ? t('ALL')
-              : vendor.value === 'huawei' && !data.protocol
+              : vendor.value === 'huawei' && !row.protocol
               ? t('ALL')
-              : vendor.value === 'azure' && data.protocol === '*'
+              : vendor.value === 'azure' && row.protocol === '*'
               ? t('ALL')
-              : `${data.protocol}`),
+              : `${row.protocol}`),
         ]);
       },
       isShow: true,
     },
     {
       label: vendor.value === 'azure' ? t('目标协议端口') : t('端口'),
-      render({ data }: any) {
+      render({ row }: any) {
         return h('span', {}, [
-          data.cloud_service_id ||
-            (vendor.value === 'aws' && data.to_port === -1
+          row.cloud_service_id ||
+            (vendor.value === 'aws' && row.to_port === -1
               ? t('ALL')
-              : vendor.value === 'huawei' && !data.port
+              : vendor.value === 'huawei' && !row.port
               ? t('ALL')
-              : vendor.value === 'azure' && data.destination_port_range === '*'
+              : vendor.value === 'azure' && row.destination_port_range === '*'
               ? t('ALL')
-              : `${data.port || data.to_port || data.destination_port_range || data.destination_port_ranges || '--'}`),
+              : `${row.port || row.to_port || row.destination_port_range || row.destination_port_ranges || '--'}`),
         ]);
       },
       isShow: true,
     },
     {
       label: t('策略'),
-      render({ data }: any) {
+      render({ row }: any) {
         return h('span', {}, [
           vendor.value === 'huawei'
-            ? HuaweiSecurityRuleEnum[data.action]
+            ? HuaweiSecurityRuleEnum[row.action]
             : vendor.value === 'azure'
-            ? AzureSecurityRuleEnum[data.access]
+            ? AzureSecurityRuleEnum[row.access]
             : vendor.value === 'aws'
             ? t('允许')
-            : SecurityRuleEnum[data.action] || '--',
+            : SecurityRuleEnum[row.action] || '--',
         ]);
       },
       isShow: vendor.value !== 'aws',
@@ -212,7 +209,7 @@ const inColumns: any = computed(() =>
     {
       label: t('备注'),
       field: 'memo',
-      render: ({ data }) => data.memo || '--',
+      render: ({ row }: any) => row.memo || '--',
       isShow: true,
     },
   ].filter(({ isShow }) => !!isShow),
@@ -233,49 +230,49 @@ const outColumns: any = computed(() =>
     },
     {
       label: t('源地址类型'),
-      render({ data }: any) {
+      render({ row }: any) {
         const map = new Map(
           azureSourceAddressTypes.map((item: { value: string; label: string }) => [item.value, item.label]),
         );
         let k = '';
-        AzureSourceTypeArr.forEach((type: string) => data[type] && (k = type));
+        AzureSourceTypeArr.forEach((type: string) => row[type] && (k = type));
         return map.get(k) || '--';
       },
       isShow: vendor.value === 'azure',
     },
     {
       label: t('源地址'),
-      render({ data }: any) {
+      render({ row }: any) {
         return h('span', {}, [
-          data.cloud_address_group_id ||
-            data.cloud_address_id ||
-            data.cloud_service_group_id ||
-            data.cloud_target_security_group_id ||
-            data.ipv4_cidr ||
-            data.ipv6_cidr ||
-            data.cloud_remote_group_id ||
-            data.remote_ip_prefix ||
-            (data.source_address_prefix === '*' ? t('ALL') : data.source_address_prefix) ||
-            data.source_address_prefixes ||
-            data.cloud_source_security_group_ids ||
-            data.destination_address_prefix ||
-            data.destination_address_prefixes ||
-            data.cloud_destination_security_group_ids ||
-            (data?.ethertype === 'IPv6' ? '::/0' : '0.0.0.0/0'),
+          row.cloud_address_group_id ||
+            row.cloud_address_id ||
+            row.cloud_service_group_id ||
+            row.cloud_target_security_group_id ||
+            row.ipv4_cidr ||
+            row.ipv6_cidr ||
+            row.cloud_remote_group_id ||
+            row.remote_ip_prefix ||
+            (row.source_address_prefix === '*' ? t('ALL') : row.source_address_prefix) ||
+            row.source_address_prefixes ||
+            row.cloud_source_security_group_ids ||
+            row.destination_address_prefix ||
+            row.destination_address_prefixes ||
+            row.cloud_destination_security_group_ids ||
+            (row?.ethertype === 'IPv6' ? '::/0' : '0.0.0.0/0'),
         ]);
       },
       isShow: vendor.value === 'azure',
     },
     {
       label: t('源端口'),
-      render({ data }: any) {
-        return (data.source_port_range === '*' ? 'ALL' : data.source_port_range) || '--';
+      render({ row }: any) {
+        return (row.source_port_range === '*' ? 'ALL' : row.source_port_range) || '--';
       },
       isShow: vendor.value === 'azure',
     },
     {
       label: t('目标地址类型'),
-      render({ data }: any) {
+      render({ row }: any) {
         const nowVendor = vendor.value as VendorEnum;
         const targetMap: any = {
           [VendorEnum.AWS]: {
@@ -299,28 +296,28 @@ const outColumns: any = computed(() =>
         const { arr } = targetMap[nowVendor];
         const map = new Map(types.map((item: { value: string; label: string }) => [item.value, item.label]));
         let k = '';
-        arr.forEach((type: string) => data[type] && (k = type));
+        arr.forEach((type: string) => row[type] && (k = type));
         return map.get(k) || '--';
       },
       isShow: true,
     },
     {
       label: t('目标地址'),
-      render({ data }: any) {
+      render({ row }: any) {
         return h('span', {}, [
-          data.cloud_address_group_id ||
-            data.cloud_address_id ||
-            data.cloud_service_group_id ||
-            data.cloud_target_security_group_id ||
-            data.ipv4_cidr ||
-            data.ipv6_cidr ||
-            data.cloud_remote_group_id ||
-            data.remote_ip_prefix ||
-            data.cloud_source_security_group_ids ||
-            (data.destination_address_prefix === '*' ? t('ALL') : data.destination_address_prefix) ||
-            data.destination_address_prefixes ||
-            data.cloud_destination_security_group_ids ||
-            (data?.ethertype === 'IPv6' ? '::/0' : '0.0.0.0/0'),
+          row.cloud_address_group_id ||
+            row.cloud_address_id ||
+            row.cloud_service_group_id ||
+            row.cloud_target_security_group_id ||
+            row.ipv4_cidr ||
+            row.ipv6_cidr ||
+            row.cloud_remote_group_id ||
+            row.remote_ip_prefix ||
+            row.cloud_source_security_group_ids ||
+            (row.destination_address_prefix === '*' ? t('ALL') : row.destination_address_prefix) ||
+            row.destination_address_prefixes ||
+            row.cloud_destination_security_group_ids ||
+            (row?.ethertype === 'IPv6' ? '::/0' : '0.0.0.0/0'),
         ]);
       },
       isShow: true,
@@ -332,47 +329,47 @@ const outColumns: any = computed(() =>
     },
     {
       label: vendor.value === 'azure' ? t('目标端口协议类型') : t('协议'),
-      render({ data }: any) {
+      render({ row }: any) {
         return h('span', {}, [
-          data.cloud_service_id ||
-            (vendor.value === 'aws' && data.protocol === '-1'
+          row.cloud_service_id ||
+            (vendor.value === 'aws' && row.protocol === '-1'
               ? t('ALL')
-              : vendor.value === 'huawei' && !data.protocol
+              : vendor.value === 'huawei' && !row.protocol
               ? t('ALL')
-              : vendor.value === 'azure' && data.protocol === '*'
+              : vendor.value === 'azure' && row.protocol === '*'
               ? t('ALL')
-              : `${data.protocol}`),
+              : `${row.protocol}`),
         ]);
       },
       isShow: true,
     },
     {
       label: vendor.value === 'azure' ? t('目标协议端口') : t('端口'),
-      render({ data }: any) {
+      render({ row }: any) {
         return h('span', {}, [
-          data.cloud_service_id ||
-            (vendor.value === 'aws' && data.to_port === -1
+          row.cloud_service_id ||
+            (vendor.value === 'aws' && row.to_port === -1
               ? t('ALL')
-              : vendor.value === 'huawei' && !data.port
+              : vendor.value === 'huawei' && !row.port
               ? t('ALL')
-              : vendor.value === 'azure' && data.destination_port_range === '*'
+              : vendor.value === 'azure' && row.destination_port_range === '*'
               ? t('ALL')
-              : `${data.port || data.to_port || data.destination_port_range || '--'}`),
+              : `${row.port || row.to_port || row.destination_port_range || '--'}`),
         ]);
       },
       isShow: true,
     },
     {
       label: t('策略'),
-      render({ data }: any) {
+      render({ row }: any) {
         return h('span', {}, [
           vendor.value === 'huawei'
-            ? HuaweiSecurityRuleEnum[data.action]
+            ? HuaweiSecurityRuleEnum[row.action]
             : vendor.value === 'azure'
-            ? AzureSecurityRuleEnum[data.access]
+            ? AzureSecurityRuleEnum[row.access]
             : vendor.value === 'aws'
             ? t('允许')
-            : SecurityRuleEnum[data.action] || '--',
+            : SecurityRuleEnum[row.action] || '--',
         ]);
       },
       isShow: vendor.value !== 'aws',
@@ -380,27 +377,27 @@ const outColumns: any = computed(() =>
     {
       label: t('备注'),
       field: 'memo',
-      render: ({ data }) => data.memo || '--',
+      render: ({ row }: any) => row.memo || '--',
       isShow: true,
     },
   ].filter(({ isShow }) => !!isShow),
 );
 
 const activeType = ref('ingress');
-const isLoading = ref(false);
 const useBusiness = useBusinessStore();
 const resourceStore = useResourceStore();
 const getList = async () => {
+  states.isLoading = true;
   try {
     const list = await resourceStore.getAllSort({
       id: props?.data?.id,
       vendor: vendor.value,
       filter: filter.value,
     });
-    states.datas = list;
+    states.dataList = list;
     return list;
   } catch {
-    states.datas = [];
+    states.dataList = [];
   } finally {
     states.isLoading = false;
   }
@@ -409,13 +406,14 @@ const handleClose = () => {
   emit('update:isShow', false);
   personSelectorRef?.value?.reset?.();
 };
+const isConfirmLoading = ref(false);
 const handleConfirm = async () => {
   const { id } = props.data;
   const { formData: personSelectorParams, validate } = personSelectorRef.value;
   const { bak_manager, manager } = personSelectorParams;
   await validate();
   await formRef.value.validate();
-  isLoading.value = true;
+  isConfirmLoading.value = true;
   try {
     await useBusiness.cloneSecurity({
       id,
@@ -427,7 +425,7 @@ const handleConfirm = async () => {
     handleClose();
     emit('success');
   } finally {
-    isLoading.value = false;
+    isConfirmLoading.value = false;
   }
 };
 
@@ -459,7 +457,7 @@ watch(
     theme="primary"
     @closed="handleClose"
     @confirm="handleConfirm"
-    :is-loading="isLoading"
+    :is-loading="isConfirmLoading"
   >
     <div class="security-info">
       <div class="info-wrap">
@@ -495,11 +493,11 @@ watch(
       <bk-table
         class="mt20"
         row-hover="auto"
-        remote-pagination
         :columns="activeType === 'ingress' ? inColumns : outColumns"
-        :data="states.datas"
+        :data="states.dataList"
         show-overflow-tooltip
         max-height="300"
+        v-bkloading="{ loading: states.isLoading }"
       >
         <template #empty>
           <div class="security-empty-container">
