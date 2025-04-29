@@ -98,7 +98,7 @@ func (req *AwsSecurityGroupCreateReq) Validate() error {
 type AzureSecurityGroupCreateReq struct {
 	Region            string  `json:"region" validate:"required"`
 	Name              string  `json:"name" validate:"required"`
-	Memo              *string `json:"memo" validate:"omitempty"`
+	Memo              *string `json:"memo" validate:"omitempty,lte=255"`
 	AccountID         string  `json:"account_id" validate:"required"`
 	BkBizID           int64   `json:"bk_biz_id" validate:"required"`
 	ResourceGroupName string  `json:"resource_group_name" validate:"required"`
