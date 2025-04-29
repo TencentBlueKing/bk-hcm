@@ -31,7 +31,7 @@ export const useUserStore = defineStore('user', () => {
   // 获取当前用户信息
   const userInfo = async () => {
     const res = await http.get('/api/v1/web/users');
-    username.value = res.data.username;
+    username.value = res?.data?.username;
   };
 
   const searchUseBK = (value: string) => {

@@ -1,5 +1,6 @@
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
+import { gotoLoginPage } from '@/utils/login-helper';
 
 import bus from './common/bus';
 import http from './http';
@@ -31,10 +32,11 @@ app.use(i18n).use(directive).use(components).use(pinia).use(bkui);
 const { userInfo } = useUserStore();
 
 userInfo()
-  .finally(() => {
+  .then(() => {
     app.use(router);
     app.mount('#app');
   })
   .catch((err) => {
     console.error(err);
+    gotoLoginPage();
   });
