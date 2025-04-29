@@ -12,6 +12,7 @@ import { useRouter } from 'vue-router';
 import { useAccountStore } from '@/store';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import { GLOBAL_BIZS_KEY } from '@/common/constant';
+import useSearchUser from '@/hooks/use-search-user';
 
 export default defineComponent({
   setup() {
@@ -19,6 +20,7 @@ export default defineComponent({
     const accountStore = useAccountStore();
     const { isResourcePage } = useWhereAmI();
     const router = useRouter();
+    const { search: searchUser } = useSearchUser();
 
     // 资源类型 tab 选项
     const resourceTypes = [
@@ -77,6 +79,7 @@ export default defineComponent({
         {
           name: '操作人',
           id: 'operator',
+          async: true,
         },
       ] as ISearchItem[];
       // 资源下, 不展示所属业务选项
@@ -92,6 +95,22 @@ export default defineComponent({
         searchData: () => searchData.value,
         extra: {
           placeholder: '请输入',
+          getMenuList: async (item: ISearchItem, keyword: string): Promise<ISearchItem[]> => {
+            const { id, async, children = [] } = item;
+
+            if (!async) {
+              return children;
+            }
+
+            if (keyword?.length < 2) {
+              return [];
+            }
+
+            if (id === 'operator') {
+              const result = await searchUser(keyword);
+              return result;
+            }
+          },
         },
       },
       tableOptions: {

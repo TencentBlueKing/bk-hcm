@@ -54,7 +54,7 @@ export const searchData = [
       return { name: APPLICATION_STATUS_MAP[key], id: key };
     }),
   },
-  { name: '申请人', id: 'applicant' },
+  { name: '申请人', id: 'applicant', async: true },
 ];
 
 export const APPLY_TYPES = [
