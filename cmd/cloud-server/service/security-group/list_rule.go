@@ -21,6 +21,7 @@ package securitygroup
 
 import (
 	proto "hcm/pkg/api/cloud-server"
+	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -41,8 +42,7 @@ func (svc *securityGroupSvc) ListBizSGRule(cts *rest.Contexts) (interface{}, err
 	return svc.listSGRule(cts, handler.BizOperateAuth)
 }
 
-func (svc *securityGroupSvc) listSGRule(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},
-	error) {
+func (svc *securityGroupSvc) listSGRule(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (any, error) {
 
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
 	if len(vendor) == 0 {
@@ -76,8 +76,17 @@ func (svc *securityGroupSvc) listSGRule(cts *rest.Contexts, validHandler handler
 		return nil, err
 	}
 
+	return svc.listRuleByVendor(cts, vendor, req, sgID)
+}
+
+func (svc *securityGroupSvc) listRuleByVendor(cts *rest.Contexts, vendor enumor.Vendor,
+	req *proto.SecurityGroupRuleListReq, sgID string) (any, error) {
+
 	switch vendor {
 	case enumor.TCloud:
+		// 强制按照云上策略索引排序
+		req.Page.Sort = "cloud_policy_index"
+		req.Page.Order = core.Ascending
 		listReq := &dataproto.TCloudSGRuleListReq{
 			Filter: req.Filter,
 			Page:   req.Page,
@@ -86,6 +95,10 @@ func (svc *securityGroupSvc) listSGRule(cts *rest.Contexts, validHandler handler
 			cts.Kit.Header(), listReq, sgID)
 
 	case enumor.Aws:
+		if req.Page.Sort == "" {
+			req.Page.Sort = "id"
+			req.Page.Order = core.Ascending
+		}
 		listReq := &dataproto.AwsSGRuleListReq{
 			Filter: req.Filter,
 			Page:   req.Page,
@@ -94,6 +107,9 @@ func (svc *securityGroupSvc) listSGRule(cts *rest.Contexts, validHandler handler
 			listReq, sgID)
 
 	case enumor.HuaWei:
+		// 强制按照云上策略索引排序
+		req.Page.Sort = "priority"
+		req.Page.Order = core.Ascending
 		listReq := &dataproto.HuaWeiSGRuleListReq{
 			Filter: req.Filter,
 			Page:   req.Page,
@@ -102,6 +118,9 @@ func (svc *securityGroupSvc) listSGRule(cts *rest.Contexts, validHandler handler
 			listReq, sgID)
 
 	case enumor.Azure:
+		// 强制按照云上策略索引排序
+		req.Page.Sort = "priority"
+		req.Page.Order = core.Ascending
 		listReq := &dataproto.AzureSGRuleListReq{
 			Filter: req.Filter,
 			Page:   req.Page,
