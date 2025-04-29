@@ -63,6 +63,7 @@ export type PropertySearchConfig = {
   filterRules?: (value: any) => RulesItem;
   format?: (value: any) => any;
   converter?: (value: any) => Record<string, any>;
+  enableEmpty?: boolean;
 };
 
 export type PropertyDisplayConfig = {

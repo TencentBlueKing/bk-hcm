@@ -109,7 +109,7 @@ export const transformSimpleCondition = (
   for (const [id, value] of Object.entries(condition || {})) {
     const property = findProperty(id, properties);
 
-    if (!property || isValueEmpty(value)) {
+    if (!property || (!property.meta?.search?.enableEmpty && isValueEmpty(value))) {
       continue;
     }
 
