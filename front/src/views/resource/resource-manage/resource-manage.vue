@@ -124,6 +124,10 @@ const templateDialogPayload = ref({});
 
 provide('securityType', securityType);
 
+const handleTabChange = (path: string) => {
+  router.push({ path, query: { ...route.query } });
+};
+
 // 用于判断 sideslider 中的表单数据是否改变
 const isFormDataChanged = ref(false);
 
@@ -358,19 +362,6 @@ watch(
   },
 );
 
-watch(
-  () => activeResourceTab.value,
-  (val) => {
-    router.push({
-      path: val,
-      query: route.query,
-    });
-  },
-  {
-    immediate: true,
-  },
-);
-
 // const handleTemplateEdit = (payload: any) => {
 //   isTemplateDialogShow.value = true;
 //   isTemplateDialogEdit.value = true;
@@ -466,7 +457,12 @@ onMounted(() => {
             </div>
           </template>
         </p>
-        <BkTab class="resource-tab-wrap ml15" type="unborder-card" v-model:active="activeResourceTab">
+        <BkTab
+          class="resource-tab-wrap ml15"
+          type="unborder-card"
+          v-model:active="activeResourceTab"
+          @change="handleTabChange"
+        >
           <BkTabPanel v-for="item of RESOURCE_TABS" :label="item.label" :key="item.key" :name="item.key" />
         </BkTab>
       </div>
