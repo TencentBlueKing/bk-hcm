@@ -255,6 +255,9 @@ type Host struct {
 	BkBakOperator   string  `json:"bk_bak_operator"`
 	BkHostName      string  `json:"bk_host_name"`
 	BkComment       *string `json:"bk_comment,omitempty"`
+	BkOSName        string  `json:"bk_os_name,omitempty"`
+	BkMac           string  `json:"bk_mac,omitempty"`
+	CreateTime      string  `json:"create_time,omitempty"`
 }
 
 // HostFields cmdb common fields
@@ -583,3 +586,31 @@ type BizBase struct {
 
 	OwnerID string `json:"bk_supplier_account" bson:"bk_supplier_account"`
 }
+
+// ListHostWithoutBizParams is esb list cmdb host without biz parameter.
+type ListHostWithoutBizParams struct {
+	Fields             []string     `json:"fields"`
+	Page               *BasePage    `json:"page" validate:"required"`
+	HostPropertyFilter *QueryFilter `json:"host_property_filter,omitempty"`
+}
+
+// Validate validate ListHostReq
+func (req *ListHostWithoutBizParams) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
+// ListHostWithoutBizResult is cmdb list cmdb host without biz result.
+type ListHostWithoutBizResult struct {
+	Count int64  `json:"count"`
+	Info  []Host `json:"info"`
+}
+
+// BkAddressing cc主机寻址方式.
+type BkAddressing string
+
+const (
+	// StaticAddressing 静态寻址
+	StaticAddressing BkAddressing = "static"
+	// DynamicAddressing 动态寻址
+	DynamicAddressing BkAddressing = "dynamic"
+)

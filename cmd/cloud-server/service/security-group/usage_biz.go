@@ -33,7 +33,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/thirdparty/esb/cmdb"
+	"hcm/pkg/thirdparty/api-gateway/cmdb"
 	"hcm/pkg/tools/hooks/handler"
 	"hcm/pkg/tools/slice"
 )
@@ -174,7 +174,7 @@ func (svc *securityGroupSvc) searchBusinessByBizIDs(kt *kit.Kit, bizIDs []int64)
 			},
 		}
 
-		business, err := svc.esb.Cmdb().SearchBusiness(kt, param)
+		business, err := svc.cmdbClient.SearchBusiness(kt, param)
 		if err != nil {
 			logs.Errorf("search business failed, err: %v, req: %v, rid: %s", err, param, kt.Rid)
 			return nil, err

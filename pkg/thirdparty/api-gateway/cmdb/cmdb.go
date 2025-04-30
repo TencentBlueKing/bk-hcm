@@ -42,6 +42,7 @@ type Client interface {
 	GetBizBriefCacheTopo(kt *kit.Kit, params *GetBizBriefCacheTopoParams) (*GetBizBriefCacheTopoResult, error)
 	DeleteCloudHostFromBiz(kt *kit.Kit, params *DeleteCloudHostFromBizParams) error
 	AddCloudHostToBiz(kt *kit.Kit, params *AddCloudHostToBizParams) (*BatchCreateResult, error)
+	ListHostWithoutBiz(kt *kit.Kit, req *ListHostWithoutBizParams) (*ListHostWithoutBizResult, error)
 }
 
 // NewClient initialize a new cmdbApiGateWay client
@@ -189,4 +190,13 @@ func (c *cmdbApiGateWay) SearchCloudArea(kt *kit.Kit, params *SearchCloudAreaPar
 		"/findmany/cloudarea")
 }
 
-// 其他请求使用esb 接口
+// ListHostWithoutBiz list cmdb host without biz.
+func (c *cmdbApiGateWay) ListHostWithoutBiz(kt *kit.Kit, req *ListHostWithoutBizParams) (
+	*ListHostWithoutBizResult, error) {
+
+	if err := req.Validate(); err != nil {
+		return nil, err
+	}
+	return apigateway.ApiGatewayCall[ListHostWithoutBizParams, ListHostWithoutBizResult](c.client, c.config,
+		rest.POST, kt, req, "/hosts/list_hosts_without_app")
+}
