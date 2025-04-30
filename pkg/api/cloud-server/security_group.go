@@ -27,6 +27,7 @@ import (
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
+	hcservice "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
@@ -376,4 +377,16 @@ type ListSGMaintainerInfoResult struct {
 	ID            string     `json:"id"`
 	Managers      []string   `json:"managers"`
 	UsageBizInfos []cmdb.Biz `json:"usage_biz_infos"`
+}
+
+// SecurityGroupStatisticItem ...
+type SecurityGroupStatisticItem struct {
+	ID        string                                     `json:"id"`
+	Resources []hcservice.SecurityGroupStatisticResource `json:"resources"`
+	Error     *string                                    `json:"error,omitempty"`
+}
+
+// ListSecurityGroupStatisticResp ...
+type ListSecurityGroupStatisticResp struct {
+	Details []*SecurityGroupStatisticItem `json:"details"`
 }
