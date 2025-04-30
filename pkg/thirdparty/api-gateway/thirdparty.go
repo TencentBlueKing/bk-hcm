@@ -63,12 +63,21 @@ func (d *Discovery) GetServers() ([]string, error) {
 
 // ApiGatewayResp ...
 type ApiGatewayResp[T any] struct {
-	Result         bool   `json:"result"`
-	Code           int    `json:"code"`
-	BKErrorCode    int    `json:"bk_error_code"`
-	Message        string `json:"message"`
-	BKErrorMessage string `json:"bk_error_msg"`
-	Data           T      `json:"data"`
+	Result         bool     `json:"result"`
+	Code           int      `json:"code"`
+	BKErrorCode    int      `json:"bk_error_code"`
+	Message        string   `json:"message"`
+	BKErrorMessage string   `json:"bk_error_msg"`
+	Data           T        `json:"data"`
+	Error          ApiError `json:"error"`
+}
+
+// ApiError api错误响应的完整结构
+type ApiError struct {
+	Code    string                 `json:"code"`
+	Message string                 `json:"message"`
+	ErrData map[string]interface{} `json:"data"`
+	Details []interface{}          `json:"details"`
 }
 
 // ApiGatewayCall general call helper function for api gateway
@@ -83,6 +92,49 @@ func ApiGatewayCall[IT any, OT any](cli rest.ClientInterface, cfg *cc.ApiGateway
 		WithHeaders(header).
 		Body(req).
 		Do().Into(resp)
+
+	if err != nil {
+		logs.Errorf("fail to call api gateway api, err: %v, url: %s, rid: %s", err, url, kt.Rid)
+		return nil, err
+	}
+
+	if !resp.Result || resp.Code != 0 {
+		err := fmt.Errorf("failed to call api gateway, code: %d, msg: %s, bk_error_code: %d, bk_error_msg: %s",
+			resp.Code, resp.Message, resp.BKErrorCode, resp.BKErrorMessage)
+		logs.Errorf("api gateway returns error, url: %s, err: %v, rid: %s", url, err, kt.Rid)
+		return nil, err
+	}
+	return resp.Data, nil
+}
+
+// ApiGatewayCallWithRichError call helper function for api gateway that logs richer error details
+func ApiGatewayCallWithRichError[IT any, OT any](cli rest.ClientInterface, cfg *cc.ApiGateway,
+	method rest.VerbType, kt *kit.Kit, req *IT, url string, urlParams ...any) (*OT, error) {
+
+	header := getCommonHeader(kt, cfg)
+	resp := new(ApiGatewayResp[*OT])
+
+	// Into函数本身会将基本网络错误打印出日志
+	r := cli.Verb(method).
+		SubResourcef(url, urlParams...).
+		WithContext(kt.Ctx).
+		WithHeaders(header).
+		Body(req).
+		Do()
+
+	// 基本网络错误
+	if r.Err != nil {
+		return nil, r.Err
+	}
+
+	err := r.Into(resp)
+
+	if r.StatusCode >= 500 { // api执行错误
+		err := fmt.Errorf("failed to call api, code: %d, msg: %s, data: %v, details: %v",
+			resp.Error.Code, resp.Error.Message, resp.Error.ErrData, resp.Error.Details)
+		logs.Errorf("api returns error, url: %s, err: %v, rid: %s", url, err, kt.Rid)
+		return nil, err
+	}
 
 	if err != nil {
 		logs.Errorf("fail to call api gateway api, err: %v, url: %s, rid: %s", err, url, kt.Rid)

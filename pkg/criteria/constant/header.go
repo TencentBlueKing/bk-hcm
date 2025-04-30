@@ -39,7 +39,7 @@ const (
 	BKGWJWTTokenKey = "X-Bkapi-JWT"
 
 	// TenantIDKey is tenant id header key. TODO confirm it.
-	TenantIDKey = "HTTP_BLUEKING_SUPPLIER_ID"
+	TenantIDKey = "X-Bk-Tenant-Id"
 
 	// RequestSourceKey is blueking hcm request source header key.
 	RequestSourceKey = "X-Bkhcm-Request-Source"

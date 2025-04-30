@@ -22,21 +22,21 @@ package cmsi
 
 import (
 	"fmt"
-	"strings"
-
+	
 	"hcm/pkg/kit"
+	"hcm/pkg/rest"
 	apigateway "hcm/pkg/thirdparty/api-gateway"
 )
 
-// CmsiMail ...
-type CmsiMail struct {
-	Receiver         string               `json:"receiver,omitempty"`
-	ReceiverUserName string               `json:"receiver__username,omitempty"`
+// CmsiMailParams ...
+type CmsiMailParams struct {
+	Receiver         []string             `json:"receiver,omitempty"`
+	ReceiverUserName []string             `json:"receiver__username,omitempty"`
 	Sender           string               `json:"sender,omitempty"`
 	Title            string               `json:"title"`
 	Content          string               `json:"content"`
-	Cc               string               `json:"cc,omitempty"`
-	CcUserName       string               `json:"cc__username,omitempty"`
+	Cc               []string             `json:"cc,omitempty"`
+	CcUserName       []string             `json:"cc__username,omitempty"`
 	BodyFormat       string               `json:"body_format,omitempty"`
 	IsContentBase64  bool                 `json:"is_content_base64,omitempty"`
 	Attachments      []CmsiMailAttachment `json:"attachments,omitempty"`
@@ -52,30 +52,22 @@ type CmsiMailAttachment struct {
 }
 
 // SendMail ...
-func (c *cmsi) SendMail(kt *kit.Kit, req *CmsiMail) error {
+func (c *cmsi) SendMail(kt *kit.Kit, param *CmsiMailParams) error {
 	// 可以自定义发送人，未自定义则使用配置默认
-	if req.Sender == "" {
-		req.Sender = c.sender
+	if param.Sender == "" {
+		param.Sender = c.sender
 	}
 
 	// 邮件默认抄送给平台管理员
-	if req.Cc == "" && req.CcUserName == "" {
-		req.Cc = strings.Join(c.cc, ",")
+	if len(param.Cc) == 0 && len(param.CcUserName) == 0 {
+		param.Cc = append(param.Cc, c.cc...)
 	}
 
-	resp := new(apigateway.BaseResponse)
-	err := c.client.Post().
-		SubResourcef("/send_mail").
-		WithContext(kt.Ctx).
-		WithHeaders(c.header(kt)).
-		Body(req).
-		Do().Into(resp)
+	_, err := apigateway.ApiGatewayCallWithRichError[CmsiMailParams, CmsiMailResult](
+		c.client, c.config, rest.POST, kt, param, "/send_mail")
+
 	if err != nil {
-		return err
-	}
-
-	if !resp.Result || resp.Code != 0 {
-		return fmt.Errorf("send mail failed, code: %d, msg: %s", resp.Code, resp.Message)
+		return fmt.Errorf("send mail failed: %s", err)
 	}
 	return nil
 }

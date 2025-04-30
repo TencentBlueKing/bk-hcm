@@ -35,7 +35,7 @@ import (
 
 // Client cmsi client
 type Client interface {
-	SendMail(kt *kit.Kit, m *CmsiMail) (err error)
+	SendMail(kt *kit.Kit, m *CmsiMailParams) error
 }
 
 // NewClient return a new cmsi client
@@ -60,7 +60,7 @@ func NewClient(cfg *cc.CMSI, reg prometheus.Registerer) (Client, error) {
 		},
 		MetricOpts: client.MetricOption{Register: reg},
 	}
-	restCli := rest.NewClient(c, "/v2/cmsi")
+	restCli := rest.NewClient(c, "/v1")
 	return &cmsi{
 		client: restCli,
 		config: &cfg.ApiGateway,
@@ -77,6 +77,19 @@ type cmsi struct {
 	sender string
 	// cc 抄送人
 	cc []string
+}
+
+// CmsiMailResult cmsi服务成功响应的完整结构
+type CmsiMailResult struct {
+	Summary Summary                `json:"summary"`
+	Message string                 `json:"message"`
+	Details map[string]interface{} `json:"details"`
+}
+
+type Summary struct {
+	Total     int `json:"total"`     // 邮件总数
+	Succeeded int `json:"succeeded"` // 成功发送邮件数量
+	Failed    int `json:"failed"`    // 失败发送邮件数量
 }
 
 func (i *cmsi) header(kt *kit.Kit) http.Header {
