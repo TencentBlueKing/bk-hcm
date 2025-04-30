@@ -29,6 +29,7 @@
         v-model="detailSliderOption.isShow"
         :properties="operationRecordViewProperties"
         :info="detailInfo"
+        @closed="detailSliderOption.isHidden = true"
       />
     </template>
   </div>

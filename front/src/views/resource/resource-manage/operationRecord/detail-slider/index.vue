@@ -1,5 +1,5 @@
 <template>
-  <bk-sideslider v-model:isShow="model" title="操作详情" :width="640">
+  <bk-sideslider v-model:isShow="model" title="操作详情" :width="640" @closed="handleClosed">
     <grid-container
       class="info-display-container"
       :column="2"
@@ -27,6 +27,7 @@ import GridItem from '@/components/layout/grid-container/grid-item.vue';
 
 const props = defineProps<{ properties: ModelProperty[]; info: IAuditItem }>();
 const model = defineModel<boolean>();
+const emit = defineEmits(['closed']);
 
 const infoFieldIds = [
   'res_type',
@@ -49,6 +50,11 @@ const detailJsonStr = computed(() => {
   }
   return '';
 });
+
+const handleClosed = () => {
+  model.value = false;
+  emit('closed');
+};
 </script>
 
 <style scoped lang="scss">
