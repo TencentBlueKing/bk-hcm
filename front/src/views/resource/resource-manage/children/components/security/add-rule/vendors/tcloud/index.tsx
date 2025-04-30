@@ -283,6 +283,7 @@ export const TcloudRenderRow = defineComponent({
                   v-model={formModel.port}
                   ref={portRef}
                   disabled={['ALL', 'icmp', 'gre', 'icmpv6'].includes(formModel.protocol)}
+                  clearable={!['ALL', 'icmp', 'gre', 'icmpv6'].includes(formModel.protocol)}
                   rules={[
                     {
                       validator: (value: string) => Boolean(value),
