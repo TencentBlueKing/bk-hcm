@@ -130,10 +130,11 @@ export type SecurityGroupRelResourceByBizItem = (
 
 export interface ISecurityGroupRelResCountItem {
   id: string;
-  resources: Array<{
+  resources?: Array<{
     res_name: SecurityGroupRelatedResourceName;
     count: number;
   }>;
+  error?: string;
 }
 
 export type SecurityGroupRuleCountAndRelatedResourcesResult = {
