@@ -79,9 +79,11 @@ type AwsRootBillItemsListReq struct {
 	Year  uint `json:"year" validate:"required"`
 	Month uint `json:"month" validate:"required,min=1,max=12"`
 	// 起始日期，格式为yyyy-mm-dd，这个字段对应aws账单的line_item_usage_start_date字段，允许跨月查询
-	BeginDate string `json:"begin_date" validate:"required"`
-	// 截止日期，格式为yyyy-mm-dd，同上
-	EndDate string           `json:"end_date" validate:"required"`
+	// 有部分账单明细的起始日期在账单月份外，按日期查询就会丢失该账单明细，所以可以不传起始日期、截止日期
+	//	// BeginDate、EndDate任意为空时，按日期查询不会生效
+	BeginDate string `json:"begin_date" validate:"omitempty"`
+	// 截止日期，格式为yyyy-mm-dd，规则同上
+	EndDate string           `json:"end_date" validate:"omitempty"`
 	Page    *AwsBillListPage `json:"page" validate:"omitempty"`
 }
 
