@@ -41,6 +41,8 @@ import { useRoute } from 'vue-router';
 import routerAction from '@/router/utils/action';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import { IAuditItem, useAuditStore } from '@/store/audit';
+import { useBusinessGlobalStore } from '@/store/business-global';
+import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import useSearchQs from '@/hooks/use-search-qs';
 import usePage from '@/hooks/use-page';
@@ -53,10 +55,10 @@ import { ISearchSelectValue } from '@/typings';
 import panel from '@/components/panel';
 import dataList from './data-list/index.vue';
 import detailSlider from './detail-slider/index.vue';
-import { useBusinessGlobalStore } from '@/store/business-global';
 
 const auditStore = useAuditStore();
 const { businessFullList } = useBusinessGlobalStore();
+const resourceAccountStore = useResourceAccountStore();
 const route = useRoute();
 const { isBusinessPage, isResourcePage } = useWhereAmI();
 
@@ -144,7 +146,9 @@ const handleViewDetail = (row: IAuditItem) => {
 watch(
   () => route.query,
   async (query) => {
-    condition.value = searchQs.get(query);
+    condition.value = searchQs.get(query, {
+      vendor: resourceAccountStore.vendorInResourcePage,
+    });
 
     pagination.current = Number(query.page) || 1;
     pagination.limit = Number(query.limit) || pagination.limit;
