@@ -37,6 +37,7 @@ const props = defineProps<{
   relatedResourcesCountList: ISecurityGroupRelResCountItem[];
   relatedBiz: ISecurityGroupRelBusiness;
   getRelatedInfo: () => Promise<void>;
+  relBizLoading: boolean;
 }>();
 
 const { t } = useI18n();
@@ -239,39 +240,44 @@ watch(
       />
     </div>
 
-    <div v-if="isBusinessPage" class="overview">
-      {{ t(`当前业务（${getBusinessNames(getBizsId())}）下共有`) }}
-      <span class="number">{{ currentBizRelatedResources?.res_count }}</span>
-      {{ t(`台${RELATED_RES_NAME_MAP[tabActive]}，还有`) }}
-      <span class="number">{{ otherBusinessCount }}</span>
-      {{ t(`个业务也在使用`) }}
-    </div>
+    <bk-loading v-if="relBizLoading" loading>
+      <div style="width: 100%; height: 360px" />
+    </bk-loading>
+    <template v-else>
+      <div v-if="isBusinessPage" class="overview">
+        {{ t(`当前业务（${getBusinessNames(getBizsId())}）下共有`) }}
+        <span class="number">{{ currentBizRelatedResources?.res_count }}</span>
+        {{ t(`台${RELATED_RES_NAME_MAP[tabActive]}，还有`) }}
+        <span class="number">{{ otherBusinessCount }}</span>
+        {{ t(`个业务也在使用`) }}
+      </div>
 
-    <div class="rel-res-display-wrap">
-      <data-list
-        v-bkloading="{ loading }"
-        ref="data-list"
-        :resource-name="tabActive"
-        operation="base"
-        :list="list"
-        :pagination="pagination"
-        :is-row-select-enable="() => true"
-        @select="(selections) => (selected = selections)"
-      >
-        <template #operate="{ row }">
-          <bk-button
-            :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.[authAction] }"
-            theme="primary"
-            text
-            :disabled="(!isBusinessPage && isAssigned) || isClb"
-            v-bk-tooltips="unbindDisabledTooltipsOption"
-            @click="handleShowOperateDialog('single-unbind', row)"
-          >
-            {{ t('解绑') }}
-          </bk-button>
-        </template>
-      </data-list>
-    </div>
+      <div class="rel-res-display-wrap">
+        <data-list
+          v-bkloading="{ loading }"
+          ref="data-list"
+          :resource-name="tabActive"
+          operation="base"
+          :list="list"
+          :pagination="pagination"
+          :is-row-select-enable="() => true"
+          @select="(selections) => (selected = selections)"
+        >
+          <template #operate="{ row }">
+            <bk-button
+              :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.[authAction] }"
+              theme="primary"
+              text
+              :disabled="(!isBusinessPage && isAssigned) || isClb"
+              v-bk-tooltips="unbindDisabledTooltipsOption"
+              @click="handleShowOperateDialog('single-unbind', row)"
+            >
+              {{ t('解绑') }}
+            </bk-button>
+          </template>
+        </data-list>
+      </div>
+    </template>
 
     <template v-if="bindVisible">
       <bind v-model="bindVisible" :tab-active="tabActive" :detail="detail" @success="handleOperateSuccess" />

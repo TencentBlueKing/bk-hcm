@@ -21,6 +21,7 @@ const props = defineProps<{
   relatedResourcesCountList: ISecurityGroupRelResCountItem[];
   relatedBiz: ISecurityGroupRelBusiness;
   getRelatedInfo: () => Promise<void>;
+  relBizLoading: boolean;
 }>();
 
 const regionStore = useRegionsStore();
@@ -68,7 +69,10 @@ watch(tabActive, () => {
       />
     </div>
 
-    <div class="rel-res-display-wrap">
+    <bk-loading v-if="relBizLoading" loading>
+      <div style="width: 100%; height: 360px" />
+    </bk-loading>
+    <div v-else class="rel-res-display-wrap">
       <collapse-data-list
         v-for="{ bk_biz_id: bkBizId, res_count: resCount } in relatedBiz?.[RELATED_RES_KEY_MAP[tabActive]]"
         ref="collapse-data-list"

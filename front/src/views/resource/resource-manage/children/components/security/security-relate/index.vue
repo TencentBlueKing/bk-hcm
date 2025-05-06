@@ -57,6 +57,7 @@ onBeforeMount(async () => {
       :related-resources-count-list="relatedResourcesCountList"
       :related-biz="relatedBiz"
       :get-related-info="getRelatedInfo"
+      :rel-biz-loading="securityGroupStore.isQueryRelBusinessLoading"
     />
   </div>
 </template>
