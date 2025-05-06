@@ -128,7 +128,7 @@ export default defineComponent({
                 </FormItem>
                 {formData.type === '0' ? (
                   <FormItem label='IP数量' required property='ip_count'>
-                    <Input type='number' v-model={formData.ip_count} min={1} max={snatIpQuotaLimit.value} />
+                    <Input type='number' v-model_number={formData.ip_count} min={1} max={snatIpQuotaLimit.value} />
                   </FormItem>
                 ) : (
                   <FormItem label='IP' required property='ip_list'>

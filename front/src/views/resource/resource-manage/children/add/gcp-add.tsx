@@ -137,7 +137,7 @@ export default defineComponent({
               min={0}
               max={65535}
               placeholder={t('请输入优先级')}
-              v-model={state.projectModel.priority}
+              v-model_number={state.projectModel.priority}
             />
           ),
         },
