@@ -46,6 +46,7 @@ func InitService(cap *capability.Capability) {
 	h.Add("SyncDisk", "POST", "/disks/sync", v.SyncDisk)
 	h.Add("SyncCvmWithRelRes", "POST", "/cvms/with/relation_resources/sync", v.SyncCvmWithRelRes)
 	h.Add("SyncSecurityGroup", "POST", "/security_groups/sync", v.SyncSecurityGroup)
+	h.Add("SyncSecurityGroupUsageBiz", "POST", "/security_groups/usage_biz_rels/sync", v.SyncSecurityGroupUsageBiz)
 	h.Add("SyncNetworkInterface", "POST", "/network_interfaces/sync", v.SyncNetworkInterface)
 	h.Add("SyncRoute", "POST", "/route_tables/sync", v.SyncRouteTable)
 	h.Add("SyncResourceGroup", "POST", "/resource_groups/sync", v.SyncResourceGroup)

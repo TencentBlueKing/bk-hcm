@@ -71,7 +71,6 @@ func newVpcTester(accountID, vpcName string) *vpcTester {
 		AccountID: accountID,
 		Region:    constant.SuiteRegion,
 		IPv4Cidr:  "172.31.0.0/16",
-		BkCloudID: 9911,
 		Memo:      converter.ValToPtr("memo(create vpc)"),
 	}
 	vpcCreateReq.Subnet.Name = "subnet_of_vpc1"
@@ -303,7 +302,6 @@ func newVpcCreateReq(vpcName, accountID, cidr, memo string) csvpc.TCloudVpcCreat
 		AccountID: accountID,
 		Region:    constant.SuiteRegion,
 		IPv4Cidr:  cidr,
-		BkCloudID: 9911,
 		Memo:      &memo,
 	}
 	vpcCreateReq.Subnet.Name = "subnet_of_" + vpcName

@@ -259,7 +259,6 @@ func (cli *client) createVpc(kt *kit.Kit, accountID string, addVpc []types.HuaWe
 			CloudID:   one.CloudID,
 			Name:      converter.ValToPtr(one.Name),
 			BkBizID:   constant.UnassignedBiz,
-			BkCloudID: constant.UnbindBkCloudID,
 			Region:    one.Region,
 			Category:  enumor.BizVpcCategory,
 			Memo:      one.Memo,

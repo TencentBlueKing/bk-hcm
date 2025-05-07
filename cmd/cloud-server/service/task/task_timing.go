@@ -25,6 +25,7 @@ import (
 	"hcm/pkg/api/core"
 	coretask "hcm/pkg/api/core/task"
 	datatask "hcm/pkg/api/data-service/task"
+	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
@@ -36,6 +37,10 @@ import (
 
 // TimingHandleTaskMgmtState 定时更新任务管理数据状态
 func TimingHandleTaskMgmtState(c *client.ClientSet, sd serviced.State, interval time.Duration) {
+	if cc.CloudServer().TaskManagement.Disable {
+		logs.Warnf("task management state background update has been disabled")
+		return
+	}
 	for {
 		time.Sleep(interval)
 

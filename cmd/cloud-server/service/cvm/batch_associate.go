@@ -74,14 +74,6 @@ func (svc *cvmSvc) batchAssociateSecurityGroups(cts *rest.Contexts, validHandler
 	}
 	curCvm := cvms.Details[0]
 
-	// delete security group and cvm relationship
-	err = svc.deleteSecurityGroupAndCvmRelationship(cts.Kit, cvmID, sgIDs)
-	if err != nil {
-		logs.Errorf("delete security group and cvm relationship failed, err: %v, cvm_id: %s, sg_ids: %v, rid: %s",
-			err, cvmID, sgIDs, cts.Kit.Rid)
-		return nil, err
-	}
-
 	switch curCvm.Vendor {
 	case enumor.TCloud:
 		req := &protocvm.TCloudCvmBatchAssociateSecurityGroupReq{
@@ -115,9 +107,13 @@ func (svc *cvmSvc) batchAssociateSecurityGroups(cts *rest.Contexts, validHandler
 
 func (svc *cvmSvc) deleteSecurityGroupAndCvmRelationship(kt *kit.Kit, cvmID string, sgIDs []string) error {
 	batchDeleteReq := &proto.BatchDeleteReq{
-		Filter: tools.ExpressionAnd(tools.RuleEqual("cvm_id", cvmID), tools.RuleIn("security_group_id", sgIDs)),
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("res_id", cvmID),
+			tools.RuleEqual("res_type", enumor.CvmCloudResType),
+			tools.RuleIn("security_group_id", sgIDs),
+		),
 	}
-	err := svc.client.DataService().Global.SGCvmRel.BatchDeleteSgCvmRels(kt.Ctx, kt.Header(), batchDeleteReq)
+	err := svc.client.DataService().Global.SGCommonRel.BatchDeleteSgCommonRels(kt, batchDeleteReq)
 	if err != nil {
 		logs.Errorf("delete security group and cvm relationship failed, err: %v, req: %+v, rid: %s",
 			err, batchDeleteReq, kt.Rid)

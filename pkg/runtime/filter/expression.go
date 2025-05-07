@@ -567,7 +567,7 @@ func (ar AtomRule) RuleField() string {
 func (ar AtomRule) SQLExprAndValue(opt *SQLWhereOption) (string, map[string]interface{}, error) {
 	expr, value, err := ar.Op.Operator().SQLExprAndValue(ar.Field, ar.Value)
 	if err != nil {
-		return "", nil, err
+		return "", nil, fmt.Errorf("gene expr value failed, op: %s, err: %w", ar.Op, err)
 	}
 
 	return expr, value, nil

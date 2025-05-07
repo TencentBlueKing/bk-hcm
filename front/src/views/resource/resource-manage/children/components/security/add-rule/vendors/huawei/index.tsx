@@ -1,12 +1,13 @@
 import { defineComponent, PropType, ref, watch } from 'vue';
 import './index.scss';
-import { SelectColumn, InputColumn, OperationColumn } from '@blueking/ediatable';
+import { SelectColumn, InputColumn } from '@blueking/ediatable';
 import { SecurityVendorType, useProtocols } from '../useProtocolList';
 import useFormModel from '@/hooks/useFormModel';
 import SourceAddress from '../tcloud/SourceAddress';
 import { cleanObject, isPortAvailable, random } from '../util';
 import { HUAWEI_TYPE_LIST } from '@/constants/resource';
 import { Ext, IHead, SecurityRuleType } from '../useVendorHanlder';
+import OperationColumn from '@/components/ediatable/operation-column.vue';
 
 export interface HuaweiSecurityGroupRule {
   protocol: string; // 协议类型, 取值范围: icmp、tcp、udp、icmpv6或IP协议号约束
@@ -302,7 +303,10 @@ export const HuaweiRenderRow = defineComponent({
                 onAdd={handleAdd}
                 onRemove={handleRemove}
                 onCopy={handleCopy}
-                removeable={props.removeable}
+                removable={props.removeable}
+                copyText='克隆入站规则'
+                addText='添加入站规则'
+                removeText='删除入站规则'
               />
             </td>
           )}

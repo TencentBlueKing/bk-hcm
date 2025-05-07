@@ -20,7 +20,6 @@
 package cloud
 
 import (
-	"errors"
 	"fmt"
 
 	"hcm/pkg/api/core"
@@ -43,6 +42,7 @@ type CvmBatchCreate[Extension corecvm.Extension] struct {
 	CloudID              string     `json:"cloud_id" validate:"required"`
 	Name                 string     `json:"name"`
 	BkBizID              int64      `json:"bk_biz_id" validate:"required"`
+	BkHostID             int64      `json:"bk_host_id" validate:"required"`
 	BkCloudID            int64      `json:"bk_cloud_id" validate:"required"`
 	AccountID            string     `json:"account_id" validate:"required"`
 	Region               string     `json:"region" validate:"required"`
@@ -88,7 +88,8 @@ type CvmBatchUpdate[Extension corecvm.Extension] struct {
 	ID                   string     `json:"id" validate:"required"`
 	Name                 string     `json:"name"`
 	BkBizID              int64      `json:"bk_biz_id" validate:"required"`
-	BkCloudID            int64      `json:"bk_cloud_id" validate:"required"`
+	BkHostID             int64      `json:"bk_host_id" validate:"required"`
+	BkCloudID            *int64     `json:"bk_cloud_id"`
 	CloudVpcIDs          []string   `json:"cloud_vpc_ids"`
 	VpcIDs               []string   `json:"vpc_ids"`
 	CloudSubnetIDs       []string   `json:"cloud_subnet_ids"`
@@ -119,8 +120,7 @@ func (req *CvmBatchUpdateReq[T]) Validate() error {
 
 // CvmCommonInfoBatchUpdateReq define cvm common info batch update req.
 type CvmCommonInfoBatchUpdateReq struct {
-	IDs     []string `json:"ids" validate:"required"`
-	BkBizID int64    `json:"bk_biz_id" validate:"required"`
+	Cvms []CvmCommonInfoBatchUpdateData `json:"cvms" validate:"required"`
 }
 
 // Validate cvm common info batch update req.
@@ -129,15 +129,18 @@ func (req *CvmCommonInfoBatchUpdateReq) Validate() error {
 		return err
 	}
 
-	if len(req.IDs) == 0 {
-		return errors.New("ids required")
-	}
-
-	if len(req.IDs) > constant.BatchOperationMaxLimit {
+	if len(req.Cvms) > constant.BatchOperationMaxLimit {
 		return fmt.Errorf("ids count should <= %d", constant.BatchOperationMaxLimit)
 	}
 
 	return nil
+}
+
+// CvmCommonInfoBatchUpdateData define cvm common info batch update data.
+type CvmCommonInfoBatchUpdateData struct {
+	ID        string `json:"id" validate:"required"`
+	BkBizID   int64  `json:"bk_biz_id"`
+	BkCloudID *int64 `json:"bk_cloud_id"`
 }
 
 // -------------------------- List --------------------------

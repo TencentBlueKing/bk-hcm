@@ -625,8 +625,6 @@ export default defineComponent({
       router.push(routeInfo);
     };
 
-    getList();
-
     // 权限hook
     const {
       showPermissionDialog,

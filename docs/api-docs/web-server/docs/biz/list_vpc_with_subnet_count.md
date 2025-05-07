@@ -108,7 +108,6 @@ POST /api/v1/web/bizs/{bk_biz_id}/vendors/{vendor}/vpcs/with/subnet_count/list
 | category    | string | VPC类别                                |
 | memo        | string | 备注                                   |
 | bk_biz_id   | int64  | 业务ID，-1表示没有分配到业务                     |
-| bk_cloud_id | int64  | 云区域ID，-1表示没有绑定云区域                    |
 | creator     | string | 创建者                                  |
 | reviser     | string | 更新者                                  |
 | created_at  | string | 创建时间，标准格式：2006-01-02T15:04:05Z       |
@@ -194,7 +193,6 @@ POST /api/v1/web/bizs/{bk_biz_id}/vendors/{vendor}/vpcs/with/subnet_count/list
         "category": "biz",
         "memo": "default vpc",
         "bk_biz_id": 100,
-        "bk_cloud_id": -1,
         "creator": "tom",
         "reviser": "tom",
         "created_at": "2019-07-29 11:57:20",
@@ -259,7 +257,6 @@ POST /api/v1/web/bizs/{bk_biz_id}/vendors/{vendor}/vpcs/with/subnet_count/list
 | category                  | string | VPC类别                                |
 | memo                      | string | 备注                                   |
 | bk_biz_id                 | int64  | 业务ID，-1表示没有分配到业务                     |
-| bk_cloud_id               | int64  | 云区域ID，-1表示没有绑定云区域                    |
 | extension                 | object | 云厂商私有结构                              |
 | creator                   | string | 创建者                                  |
 | reviser                   | string | 更新者                                  |

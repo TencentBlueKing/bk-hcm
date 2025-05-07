@@ -38,6 +38,7 @@ import (
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
 	cvm "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm/v20170312"
 	ssl "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/ssl/v20191205"
+	tag "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/tag/v20180813"
 	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 	"github.com/tencentyun/cos-go-sdk-v5"
 )
@@ -57,6 +58,7 @@ type ClientSet interface {
 	BillClient() (*billing.Client, error)
 	ClbClient(region string) (*clb.Client, error)
 	CertClient() (*ssl.Client, error)
+	TagClient() (*tag.Client, error)
 	CosClient(opt *typescos.ClientOpt) (*cos.Client, error)
 }
 
@@ -154,6 +156,17 @@ func (c *clientSet) ClbClient(region string) (*clb.Client, error) {
 // CertClient tcloud cert client
 func (c *clientSet) CertClient() (*ssl.Client, error) {
 	client, err := ssl.NewClient(c.credential, "", c.profile)
+	if err != nil {
+		return nil, err
+	}
+	client.WithHttpTransport(metric.GetTCloudRecordRoundTripper(nil))
+
+	return client, nil
+}
+
+// TagClient tcloud tag client
+func (c *clientSet) TagClient() (*tag.Client, error) {
+	client, err := tag.NewClient(c.credential, "", c.profile)
 	if err != nil {
 		return nil, err
 	}

@@ -3,13 +3,14 @@ import './index.scss';
 import successAccount from '@/assets/image/success-account.png';
 import failedAccount from '@/assets/image/failed-account.png';
 import { VendorEnum } from '@/common/constant';
-import { useResourceAccountStore } from '@/store/useResourceAccountStore';
+import { IAccount, useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { useRoute } from 'vue-router';
 import { useResourceStore } from '@/store';
 import { storeToRefs } from 'pinia';
 
 export default defineComponent({
   props: {
+    accountId: String,
     accounts: {
       required: true,
       type: Array as PropType<
@@ -66,16 +67,15 @@ export default defineComponent({
     // 点击云厂商
     const handleClickVendor = (vendor: VendorEnum) => {
       resourceAccountStore.setCurrentVendor(vendor);
-      resourceAccountStore.setCurrentAccountVendor(null);
       props.handleExpand(vendor);
       props.handleSelect('');
     };
 
     // 点击账号
-    const handleClickAccount = (id: string, vendor: VendorEnum) => {
-      props.handleSelect(id);
+    const handleClickAccount = (account: IAccount) => {
+      resourceAccountStore.setCurrentAccountSimpleInfo(account);
       resourceAccountStore.setCurrentVendor(null);
-      resourceAccountStore.setCurrentAccountVendor(vendor);
+      props.handleSelect(account.id);
     };
 
     watch(
@@ -101,6 +101,11 @@ export default defineComponent({
       loadingRef.value.forEach((vnode) => {
         observer.observe(vnode.$el);
       });
+
+      // 如果挂载时url携带accountId，则展开指定vendor项
+      if (resourceAccountStore.vendorInResourcePage) {
+        props.handleExpand(resourceAccountStore.vendorInResourcePage);
+      }
     });
 
     return () => (
@@ -123,17 +128,17 @@ export default defineComponent({
                   <div class='vendor-account-count'>{count}</div>
                 </div>
                 <div class={`account-list-wrap${isExpand ? ' expand' : ''}`}>
-                  {accounts.map(({ sync_status, name, id, vendor }) => (
+                  {accounts.map((account) => (
                     <div
-                      class={`account-item${route.query.accountId === id ? ' active' : ''}`}
-                      key={id}
-                      onClick={() => handleClickAccount(id, vendor)}>
+                      class={['account-item', { active: account.id === props.accountId }]}
+                      key={account.id}
+                      onClick={() => handleClickAccount(account)}>
                       <img
-                        src={sync_status === 'sync_success' ? successAccount : failedAccount}
+                        src={account.sync_status === 'sync_success' ? successAccount : failedAccount}
                         alt=''
                         class='sync-status-icon'
                       />
-                      {props.searchVal ? getHighLightNameText(name, 'account-text') : name}
+                      {props.searchVal ? getHighLightNameText(account.name, 'account-text') : account.name}
                     </div>
                   ))}
                   {hasNext && (

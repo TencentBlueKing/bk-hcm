@@ -48,3 +48,5 @@ data:
       {{- toYaml .Values.cmsi | nindent 6 }}
     cloudSelection:
       {{- toYaml .Values.cloudserver.cloudSelection | nindent 6 }}
+    taskManagement:
+      {{- toYaml .Values.cloudserver.taskManagement | nindent 6 }}

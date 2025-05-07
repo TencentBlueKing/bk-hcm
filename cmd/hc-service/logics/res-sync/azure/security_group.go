@@ -133,8 +133,9 @@ func (cli *client) createSG(kt *kit.Kit, accountID string, resGroupName string,
 			BkBizID: constant.UnassignedBiz,
 			Region:  converter.PtrToVal(one.Location),
 			Name:    converter.PtrToVal(one.Name),
+			Memo:    nil,
 			// 无该字段
-			Memo:      nil,
+			MgmtBizID: constant.UnassignedBiz,
 			AccountID: accountID,
 			Extension: &cloudcore.AzureSecurityGroupExtension{
 				ResourceGroupName: resGroupName,
@@ -148,7 +149,8 @@ func (cli *client) createSG(kt *kit.Kit, accountID string, resGroupName string,
 
 	results, err := cli.dbCli.Azure.SecurityGroup.BatchCreateSecurityGroup(kt.Ctx, kt.Header(), createReq)
 	if err != nil {
-		logs.Errorf("[%s] request dataservice to BatchCreateSecurityGroup failed, err: %v, rid: %s", enumor.Azure, err, kt.Rid)
+		logs.Errorf("[%s] request dataservice to BatchCreateSecurityGroup failed, err: %v, rid: %s",
+			enumor.Azure, err, kt.Rid)
 		return nil, err
 	}
 
@@ -370,7 +372,8 @@ func (cli *client) RemoveSecurityGroupDeleteFromCloud(kt *kit.Kit, accountID str
 	return nil
 }
 
-func isSGChange(cloud securitygroup.AzureSecurityGroup, db cloudcore.SecurityGroup[cloudcore.AzureSecurityGroupExtension]) bool {
+func isSGChange(cloud securitygroup.AzureSecurityGroup,
+	db cloudcore.SecurityGroup[cloudcore.AzureSecurityGroupExtension]) bool {
 
 	if converter.PtrToVal(cloud.Name) != db.BaseSecurityGroup.Name {
 		return true
