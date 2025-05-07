@@ -408,10 +408,12 @@ func (cli *client) RemoveRouteTableDeleteFromCloud(kt *kit.Kit, accountID string
 					enumor.HuaWei, delCloudIDs, err, kt.Rid)
 				return err
 			}
-			if err = cli.deleteRouteTable(kt, accountID, region, delCloudIDs); err != nil {
-				logs.Errorf("delete huawei routeTable failed, err: %v, account: %s, region: %s, delCloudIDs: %v, rid: %s",
-					err, accountID, region, delCloudIDs, kt.Rid)
-				return err
+			if len(delCloudIDs) > 0 {
+				if err = cli.deleteRouteTable(kt, accountID, region, delCloudIDs); err != nil {
+					logs.Errorf("delete huawei routeTable failed, err: %v, account: %s, region: %s, delCloudIDs: %v, rid: %s",
+						err, accountID, region, delCloudIDs, kt.Rid)
+					return err
+				}
 			}
 		}
 

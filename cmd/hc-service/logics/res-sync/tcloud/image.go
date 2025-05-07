@@ -337,8 +337,10 @@ func (cli *client) RemoveImageDeleteFromCloud(kt *kit.Kit, accountID string, reg
 			}
 
 			cloudIDs := converter.MapKeyToStringSlice(cloudIDMap)
-			if err := cli.deleteImage(kt, accountID, region, cloudIDs); err != nil {
-				return err
+			if len(cloudIDs) > 0 {
+				if err := cli.deleteImage(kt, accountID, region, cloudIDs); err != nil {
+					return err
+				}
 			}
 		}
 
