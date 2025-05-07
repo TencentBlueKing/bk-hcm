@@ -52,6 +52,7 @@ import { ISecurityGroupOperateItem, useSecurityGroupStore, SecurityGroupManageTy
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import { useBusinessGlobalStore } from '@/store/business-global';
 import UsageBizValue from '@/views/resource/resource-manage/children/components/security/usage-biz-value.vue';
+import RefreshCell from '../components/security/refresh-cell/index.vue';
 import { showClone } from '../plugin/security-group/show-clone.plugin';
 import { checkVendorInResource } from '../plugin/security-group/check-vendor-in-resource.plugin';
 
@@ -137,10 +138,6 @@ const fetchSecurityGroupExtraFields = async (
     .filter((sg) => sg.mgmt_type === 'biz' && sg.bk_biz_id === -1 && sg.usage_biz_ids?.[0] !== -1)
     .map((sg) => sg.id);
 
-  // 创建映射表提升查找效率, 都采用局部数据变更, 不整个替换表格数据, 避免表格整个刷新
-  const createIdMap = <T extends { id: string }>(items: T[]): Map<string, T> =>
-    new Map(items.map((item) => [item.id, item]));
-
   // 并行发起所有请求
   const ruleCountPromise = securityGroupStore.batchQueryRuleCount(sgIds).then((ruleRes) => {
     datalistRef.value.forEach((sg) => {
@@ -148,21 +145,12 @@ const fetchSecurityGroupExtraFields = async (
     });
   });
 
-  const relatedResourcesPromise = securityGroupStore.queryRelatedResourcesCount(sgIds).then((relatedResourcesList) => {
-    const resMap = createIdMap(relatedResourcesList);
-    datalistRef.value.forEach((sg) => {
-      const entry = resMap.get(sg.id);
-      if (entry) {
-        sg.rel_res_count = entry.resources.reduce((acc, cur) => acc + cur.count, 0);
-        sg.rel_res = entry.resources.filter(({ count }) => count > 0);
-      }
-    });
-  });
+  const relatedResourcesPromise = fetchSecurityGroupRelatedResourcesCount(sgIds, datalistRef);
 
   const maintainerPromise =
     whereAmI.value === Senarios.business && unclaimedSgIds.length
       ? securityGroupStore.queryUsageBizMaintainers(unclaimedSgIds).then((maintainers) => {
-          const maintainerMap = createIdMap(maintainers);
+          const maintainerMap = new Map(maintainers.map((item) => [item.id, item]));
           datalistRef.value.forEach((sg) => {
             const entry = maintainerMap.get(sg.id);
             if (entry) {
@@ -175,6 +163,22 @@ const fetchSecurityGroupExtraFields = async (
 
   // 等待所有请求完成（但每个请求完成时会立即更新对应字段）
   Promise.allSettled([ruleCountPromise, relatedResourcesPromise, maintainerPromise]);
+};
+const fetchSecurityGroupRelatedResourcesCount = async (
+  ids: string[],
+  datalistRef: Ref<ISecurityGroupOperateItem[]>,
+) => {
+  return securityGroupStore.queryRelatedResourcesCount(ids).then((relatedResourcesList) => {
+    const resMap = new Map(relatedResourcesList.map((item) => [item.id, item]));
+    datalistRef.value.forEach((sg) => {
+      const entry = resMap.get(sg.id);
+      if (entry) {
+        sg.rel_res_count = entry.resources?.reduce((acc, cur) => acc + cur.count, 0);
+        sg.rel_res = entry.resources?.filter(({ count }) => count > 0);
+        sg.error = entry.error;
+      }
+    });
+  });
 };
 
 const selectSearchData = computed(() => {
@@ -271,6 +275,10 @@ const isCurRowSelectEnable = (row: any) => {
 };
 const { selections, handleSelectionChange, resetSelections } = useSelection();
 
+const refreshRowKeySet = ref(new Set<string>());
+const getRefreshLoading = (id: string) => {
+  return refreshRowKeySet.value.size === 0 || refreshRowKeySet.value.has(id);
+};
 const groupColumns = [
   { type: 'selection', width: 30, minWidth: 30, onlyShowOnList: true, notDisplayedInBusiness: true },
   {
@@ -350,13 +358,28 @@ const groupColumns = [
     field: 'rel_res_count',
     width: 110,
     isDefaultShow: true,
-    render: ({ cell }: any) => {
-      return h(Fragment, null, [
-        withDirectives(h(Loading, { loading: true, theme: 'primary', mode: 'spin', size: 'mini' }), [
-          [vShow, securityGroupStore.isQueryRelatedResourcesCountLoading],
-        ]),
-        withDirectives(h('div', null, cell), [[vShow, !securityGroupStore.isQueryRelatedResourcesCountLoading]]),
-      ]);
+    render: ({ cell, row }: any) => {
+      const { error, id } = row || {};
+
+      const loading = getRefreshLoading(id) && securityGroupStore.isQueryRelatedResourcesCountLoading;
+
+      return h(
+        RefreshCell,
+        {
+          error,
+          loading,
+          showError: !!error,
+          onClick: async () => {
+            // 记录当前刷新的安全组id
+            refreshRowKeySet.value.add(id);
+            // 刷新关联资源数、关联的资源类型
+            await fetchSecurityGroupRelatedResourcesCount([id], datas);
+            // 清除当前刷新的安全组id
+            refreshRowKeySet.value.delete(id);
+          },
+        },
+        cell,
+      );
     },
   },
   {
@@ -364,20 +387,19 @@ const groupColumns = [
     field: 'rel_res',
     width: 200,
     isDefaultShow: true,
-    render: ({ cell }: { cell: { res_name: string; count: number }[] }) => {
+    render: ({ cell, row }: { cell: { res_name: string; count: number }[]; row: any }) => {
+      const { id } = row || {};
+
       const displayValue =
         cell?.length > 0
           ? cell.map(({ res_name, count }) =>
               withDirectives(h(Tag, { class: 'mr4' }, res_name), [[bkTooltips, { content: String(count) }]]),
             )
           : '--';
+      const loading = getRefreshLoading(id) && securityGroupStore.isQueryRelatedResourcesCountLoading;
       return h(Fragment, null, [
-        withDirectives(h(Loading, { loading: true, theme: 'primary', mode: 'spin', size: 'mini' }), [
-          [vShow, securityGroupStore.isQueryRelatedResourcesCountLoading],
-        ]),
-        withDirectives(h('div', null, displayValue), [
-          [vShow, !securityGroupStore.isQueryRelatedResourcesCountLoading],
-        ]),
+        withDirectives(h(Loading, { loading: true, theme: 'primary', mode: 'spin', size: 'mini' }), [[vShow, loading]]),
+        withDirectives(h('div', null, displayValue), [[vShow, !loading]]),
       ]);
     },
   },
@@ -986,6 +1008,8 @@ watch(
 
     searchValue.value = [];
     resetSelections();
+    // 清空刷新行key，避免切换tab时只有一行有loading效果
+    refreshRowKeySet.value.clear();
     emit('handleSecrityType', v);
 
     // 准备路由参数。这里使用明确的路由参数进行跳转，避免连续两次路由跳转时的参数错误
@@ -1148,6 +1172,15 @@ watch(
   () => {
     handleClearSecurityGroupSelections();
   },
+);
+
+watch(
+  searchValue,
+  () => {
+    // 清空刷新行key，避免切换tab时只有一行有loading效果
+    refreshRowKeySet.value.clear();
+  },
+  { deep: true },
 );
 </script>
 
