@@ -275,7 +275,10 @@ const isCurRowSelectEnable = (row: any) => {
 };
 const { selections, handleSelectionChange, resetSelections } = useSelection();
 
-const refreshRowKey = ref<string>('all');
+const refreshRowKeySet = ref(new Set<string>());
+const getRefreshLoading = (id: string) => {
+  return refreshRowKeySet.value.size === 0 || refreshRowKeySet.value.has(id);
+};
 const groupColumns = [
   { type: 'selection', width: 30, minWidth: 30, onlyShowOnList: true, notDisplayedInBusiness: true },
   {
@@ -358,25 +361,25 @@ const groupColumns = [
     render: ({ cell, row }: any) => {
       const { error, id } = row || {};
 
-      const loading =
-        ['all', id].includes(refreshRowKey.value) && securityGroupStore.isQueryRelatedResourcesCountLoading;
-      if (error) {
-        return h(RefreshCell, {
+      const loading = getRefreshLoading(id) && securityGroupStore.isQueryRelatedResourcesCountLoading;
+
+      return h(
+        RefreshCell,
+        {
           error,
           loading,
-          onClick: () => {
+          showError: !!error,
+          onClick: async () => {
             // 记录当前刷新的安全组id
-            refreshRowKey.value = id;
+            refreshRowKeySet.value.add(id);
             // 刷新关联资源数、关联的资源类型
-            fetchSecurityGroupRelatedResourcesCount([id], datas);
+            await fetchSecurityGroupRelatedResourcesCount([id], datas);
+            // 清除当前刷新的安全组id
+            refreshRowKeySet.value.delete(id);
           },
-        });
-      }
-
-      return h(Fragment, null, [
-        withDirectives(h(Loading, { loading: true, theme: 'primary', mode: 'spin', size: 'mini' }), [[vShow, loading]]),
-        withDirectives(h('div', null, cell), [[vShow, !loading]]),
-      ]);
+        },
+        cell,
+      );
     },
   },
   {
@@ -393,8 +396,7 @@ const groupColumns = [
               withDirectives(h(Tag, { class: 'mr4' }, res_name), [[bkTooltips, { content: String(count) }]]),
             )
           : '--';
-      const loading =
-        ['all', id].includes(refreshRowKey.value) && securityGroupStore.isQueryRelatedResourcesCountLoading;
+      const loading = getRefreshLoading(id) && securityGroupStore.isQueryRelatedResourcesCountLoading;
       return h(Fragment, null, [
         withDirectives(h(Loading, { loading: true, theme: 'primary', mode: 'spin', size: 'mini' }), [[vShow, loading]]),
         withDirectives(h('div', null, displayValue), [[vShow, !loading]]),
@@ -1006,8 +1008,8 @@ watch(
 
     searchValue.value = [];
     resetSelections();
-    // 重置刷新行id，避免切换tab时只有一行有loading效果
-    refreshRowKey.value = 'all';
+    // 清空刷新行key，避免切换tab时只有一行有loading效果
+    refreshRowKeySet.value.clear();
     emit('handleSecrityType', v);
 
     // 准备路由参数。这里使用明确的路由参数进行跳转，避免连续两次路由跳转时的参数错误
@@ -1175,8 +1177,8 @@ watch(
 watch(
   searchValue,
   () => {
-    // 重置刷新行id，避免切换tab时只有一行有loading效果
-    refreshRowKey.value = 'all';
+    // 清空刷新行key，避免切换tab时只有一行有loading效果
+    refreshRowKeySet.value.clear();
   },
   { deep: true },
 );

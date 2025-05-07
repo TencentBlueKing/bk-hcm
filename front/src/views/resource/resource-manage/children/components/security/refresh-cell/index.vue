@@ -1,22 +1,27 @@
 <template>
-  <div class="refresh-cell">
-    <bk-loading v-if="loading" theme="primary" loading mode="spin" size="mini"></bk-loading>
-    <template v-else>
-      <i class="hcm-icon bkhcm-icon-alert error-icon" v-bk-tooltips="{ content: error, disabled: !error }"></i>
-      <bk-button class="text" theme="primary" text @click="emit('click')">{{ text }}</bk-button>
+  <!-- loading -->
+  <bk-loading v-if="loading" theme="primary" loading mode="spin" size="mini"></bk-loading>
+  <div v-else class="refresh-cell">
+    <!-- error -->
+    <template v-if="showError">
+      <i class="hcm-icon bkhcm-icon-alert error-icon" v-bk-tooltips="{ content: error, disabled: !showError }"></i>
+      <bk-button class="text" theme="primary" text @click="emit('click')">{{ refreshText }}</bk-button>
     </template>
+    <!-- 正常展示 -->
+    <slot v-else></slot>
   </div>
 </template>
 
 <script setup lang="ts">
 interface IProps {
   loading?: boolean;
+  showError?: boolean;
   error?: string;
-  text?: string;
+  refreshText?: string;
 }
 
 withDefaults(defineProps<IProps>(), {
-  text: '刷新',
+  refreshText: '刷新',
 });
 const emit = defineEmits(['click']);
 </script>
