@@ -177,9 +177,10 @@ const { datas, isLoading } = useQueryList(filter.value, 'vpcs'); // 只查aws的
         <bk-input
           type="textarea"
           class="item-warp-component"
-          v-model="formData.memo"
+          v-model.trim="formData.memo"
           :resize="false"
           :placeholder="t('请输入备注')"
+          :maxlength="255"
         />
       </bk-form-item>
 
