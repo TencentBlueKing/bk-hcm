@@ -5,11 +5,14 @@ import { useWhereAmI } from '@/hooks/useWhereAmI';
 import usePage from '@/hooks/use-page';
 import {
   type ISecurityGroupDetail,
-  type SecurityGroupRelatedResourceName,
   type SecurityGroupRelResourceByBizItem,
   useSecurityGroupStore,
 } from '@/store/security-group';
-import { RELATED_RES_KEY_MAP, RELATED_RES_PROPERTIES_MAP } from '@/constants/security-group';
+import {
+  RELATED_RES_KEY_MAP,
+  RELATED_RES_PROPERTIES_MAP,
+  SecurityGroupRelatedResourceName,
+} from '@/constants/security-group';
 import { ISearchSelectValue } from '@/typings';
 import { enableCount, transformSimpleCondition } from '@/utils/search';
 import { getPrivateIPs } from '@/utils';
@@ -138,9 +141,9 @@ defineExpose({ handleClosed });
             @search="handleSearch"
           />
           <data-list
-            v-bkloading="{ loading }"
             ref="data-list"
             :list="list"
+            :loading="loading"
             :resource-name="tabActive"
             operation="bind"
             :pagination="pagination"

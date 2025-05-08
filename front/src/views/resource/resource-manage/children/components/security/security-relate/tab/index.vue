@@ -1,12 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-  ISecurityGroupDetail,
-  ISecurityGroupRelResCountItem,
-  SecurityGroupRelatedResourceName,
-} from '@/store/security-group';
+import { ISecurityGroupDetail, ISecurityGroupRelResCountItem } from '@/store/security-group';
 import { VendorEnum } from '@/common/constant';
+import { SecurityGroupRelatedResourceName } from '@/constants/security-group';
 
 const props = defineProps<{
   detail: ISecurityGroupDetail;
