@@ -6,6 +6,7 @@ import { VendorEnum, VendorMap } from '@/common/constant';
 
 const conditionFieldIds = new Map<string, string[]>();
 
+// 默认配置
 const cvmConditionConfig: Record<string, Partial<ISearchItem>> = {};
 const clbConditionConfig: Record<string, Partial<ISearchItem>> = {
   lb_type: {
@@ -48,6 +49,7 @@ const clbBaseFields = [
   'zones',
   'status',
   'cloud_vpc_id',
+  'bk_biz_id',
 ];
 
 conditionFieldIds.set('CVM-base', cvmBaseFields);

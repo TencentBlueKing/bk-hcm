@@ -277,9 +277,7 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
   };
 
   // 查询安全组关联的cvm列表，仅展示cvm摘要信息
-  const isQueryRelCvmByBizLoading = ref(false);
   const queryRelCvmByBiz = async (sg_id: string, res_biz_id: number, payload: QueryBuilderType) => {
-    isQueryRelCvmByBizLoading.value = true;
     const api = `/api/v1/cloud/${getBusinessApiPath()}security_groups/${sg_id}/related_resources/biz_resources/${res_biz_id}/cvms/list`;
     try {
       const [listRes, countRes] = await Promise.all<
@@ -290,15 +288,11 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
     } catch (error) {
       console.error(error);
       return Promise.reject(error);
-    } finally {
-      isQueryRelCvmByBizLoading.value = false;
     }
   };
 
   // 查询安全组关联的负载均衡列表，仅展示负载均衡摘要信息。
-  const isQueryRelLoadBalancerByBizLoading = ref(false);
   const queryRelLoadBalancerByBiz = async (sg_id: string, res_biz_id: number, payload: QueryBuilderType) => {
-    isQueryRelLoadBalancerByBizLoading.value = true;
     const api = `/api/v1/cloud/${getBusinessApiPath()}security_groups/${sg_id}/related_resources/biz_resources/${res_biz_id}/load_balancers/list`;
     try {
       const [listRes, countRes] = await Promise.all<
@@ -312,8 +306,39 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
     } catch (error) {
       console.error(error);
       return Promise.reject(error);
-    } finally {
-      isQueryRelLoadBalancerByBizLoading.value = false;
+    }
+  };
+
+  // 查询安全组关联的cvm列表，仅展示cvm摘要信息。- 资源下
+  const queryRelCvmBySgId = async (sgId: string, payload: QueryBuilderType) => {
+    const api = `/api/v1/cloud/security_groups/${sgId}/related_resources/cvms/list`;
+    try {
+      const [listRes, countRes] = await Promise.all<
+        [Promise<IListResData<ISecurityGroupRelCvmByBizItem[]>>, Promise<IListResData<ISecurityGroupRelCvmByBizItem[]>>]
+      >([http.post(api, enableCount(payload, false)), http.post(api, enableCount(payload, true))]);
+      const [{ details: list = [] }, { count = 0 }] = [listRes?.data ?? {}, countRes?.data ?? {}];
+      return { list, count };
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    }
+  };
+
+  // 查询安全组关联的负载均衡列表，仅展示负载均衡摘要信息。- 资源下
+  const queryRelLoadBalancerBySgId = async (sgId: string, payload: QueryBuilderType) => {
+    const api = `/api/v1/cloud/security_groups/${sgId}/related_resources/load_balancers/list`;
+    try {
+      const [listRes, countRes] = await Promise.all<
+        [
+          Promise<IListResData<ISecurityGroupRelLoadBalancerByBizItem[]>>,
+          Promise<IListResData<ISecurityGroupRelLoadBalancerByBizItem[]>>,
+        ]
+      >([http.post(api, enableCount(payload, false)), http.post(api, enableCount(payload, true))]);
+      const [{ details: list = [] }, { count = 0 }] = [listRes?.data ?? {}, countRes?.data ?? {}];
+      return { list, count };
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
     }
   };
 
@@ -472,10 +497,10 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
     batchUpdateMgmtAttr,
     isQueryRelBusinessLoading,
     queryRelBusiness,
-    isQueryRelCvmByBizLoading,
     queryRelCvmByBiz,
-    isQueryRelLoadBalancerByBizLoading,
     queryRelLoadBalancerByBiz,
+    queryRelCvmBySgId,
+    queryRelLoadBalancerBySgId,
     isQueryRelatedResourcesCountLoading,
     queryRelatedResourcesCount,
     isUpdateMgmtAttrLoading,

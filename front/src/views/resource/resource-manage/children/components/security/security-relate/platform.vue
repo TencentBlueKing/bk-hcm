@@ -42,7 +42,7 @@ const props = defineProps<{
 
 const { t } = useI18n();
 const { getBizsId, whereAmI } = useWhereAmI();
-const { getBusinessNames, getBusinessIds } = useBusinessGlobalStore();
+const { getBusinessNames } = useBusinessGlobalStore();
 const securityGroupStore = useSecurityGroupStore();
 const regionStore = useRegionsStore();
 
@@ -78,27 +78,45 @@ const condition = ref<Record<string, any>>({});
 // 账号下的平台管理：拉取所有业务所关联的实例列表
 const loading = ref(false);
 const getList = async (sort = 'created_at', order = 'DESC') => {
-  loading.value = true;
-  try {
-    const { id } = props.detail;
+  const reqInBusiness = async (sgId: string) => {
     const api =
       tabActive.value === 'CVM' ? securityGroupStore.queryRelCvmByBiz : securityGroupStore.queryRelLoadBalancerByBiz;
-    const bizIds = isBusinessPage.value
-      ? [getBizsId()]
-      : props.relatedBiz[RELATED_RES_KEY_MAP[tabActive.value]].map(({ bk_biz_id }) => bk_biz_id);
+    const bizIds = [getBizsId()];
 
-    const res = await Promise.all(
+    return Promise.all(
       bizIds.map((bk_biz_id) =>
-        api(id, bk_biz_id, {
+        api(sgId, bk_biz_id, {
           filter: transformSimpleCondition(condition.value, RELATED_RES_PROPERTIES_MAP[tabActive.value]),
           page: getPageParams(pagination, { sort, order }),
         }),
       ),
     );
+  };
+  const reqInResource = async (sgId: string) => {
+    const api =
+      tabActive.value === 'CVM' ? securityGroupStore.queryRelCvmBySgId : securityGroupStore.queryRelLoadBalancerBySgId;
 
-    list.value = res.flatMap((item) => item.list);
-    // 设置页码总条数
-    pagination.count = isBusinessPage.value ? res[0].count : res.reduce((acc, cur) => acc + cur.count, 0);
+    return api(sgId, {
+      filter: transformSimpleCondition(condition.value, RELATED_RES_PROPERTIES_MAP[tabActive.value]),
+      page: getPageParams(pagination, { sort, order }),
+    });
+  };
+
+  loading.value = true;
+  try {
+    const { id } = props.detail;
+
+    if (isBusinessPage.value) {
+      const res = await reqInBusiness(id);
+      list.value = res.flatMap((item) => item.list);
+      // 设置页码总条数
+      pagination.count = res[0].count;
+    } else {
+      const res = await reqInResource(id);
+      list.value = res.list;
+      // 设置页码总条数
+      pagination.count = res.count;
+    }
   } finally {
     loading.value = false;
   }
@@ -173,7 +191,6 @@ const handleSearch = (searchValue: ISearchSelectValue) => {
 
   condition.value = getSimpleConditionBySearchSelect(searchValue, [
     { field: 'region', formatter: (val: string) => regionStore.getRegionNameEN(val) },
-    { field: 'bk_biz_id', formatter: (name: string) => getBusinessIds(name) },
   ]);
 
   if (pagination.current === 1) {
