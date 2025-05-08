@@ -32,7 +32,8 @@ alter table vpc
 
 alter table cvm
     add column bk_host_id bigint DEFAULT -1 COMMENT '主机ID';
-
+alter table cvm
+    ADD INDEX idx_bk_host_id (`bk_host_id`, `id`);
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
 SELECT 'v1.8.0' as `hcm_ver`, '0032' as `sql_ver`;
 
