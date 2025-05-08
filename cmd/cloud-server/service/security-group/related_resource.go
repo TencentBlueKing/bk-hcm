@@ -38,6 +38,7 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/classifier"
+	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
 	"hcm/pkg/tools/slice"
 )
@@ -167,13 +168,13 @@ func (svc *securityGroupSvc) listSecurityGroupByIDsAndFilter(kt *kit.Kit, ids []
 }
 
 func (svc *securityGroupSvc) queryRelatedResourceCountFromCloud(kt *kit.Kit,
-	securityGroups []cloud.BaseSecurityGroup) (*hcservice.ListSecurityGroupStatisticResp, error) {
+	securityGroups []cloud.BaseSecurityGroup) (*cloudserver.ListSecurityGroupStatisticResp, error) {
 
 	sgByVendor := classifier.ClassifySlice(securityGroups, func(sg cloud.BaseSecurityGroup) string {
 		// key: vendor+accountID+region
 		return fmt.Sprintf("%s,%s,%s", sg.Vendor, sg.AccountID, sg.Region)
 	})
-	resultMap := make(map[string]*hcservice.SecurityGroupStatisticItem)
+	resultMap := make(map[string]*cloudserver.SecurityGroupStatisticItem)
 	for key, groups := range sgByVendor {
 		arr := strings.Split(key, ",")
 		vendor := enumor.Vendor(arr[0])
@@ -198,13 +199,22 @@ func (svc *securityGroupSvc) queryRelatedResourceCountFromCloud(kt *kit.Kit,
 		if err != nil {
 			logs.Errorf("list security group statistic failed, err: %v, req: %v, rid: %s",
 				err, req, kt.Rid)
-			return nil, err
+			for _, id := range ids {
+				resultMap[id] = &cloudserver.SecurityGroupStatisticItem{
+					ID:    id,
+					Error: cvt.ValToPtr(err.Error()),
+				}
+			}
+			continue
 		}
 		for _, detail := range resp.Details {
-			resultMap[detail.ID] = detail
+			resultMap[detail.ID] = &cloudserver.SecurityGroupStatisticItem{
+				ID:        detail.ID,
+				Resources: detail.Resources,
+			}
 		}
 	}
-	result := &hcservice.ListSecurityGroupStatisticResp{}
+	result := &cloudserver.ListSecurityGroupStatisticResp{}
 	for _, group := range securityGroups {
 		statistic, ok := resultMap[group.ID]
 		if !ok {

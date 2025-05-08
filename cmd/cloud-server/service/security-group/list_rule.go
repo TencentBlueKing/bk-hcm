@@ -85,8 +85,10 @@ func (svc *securityGroupSvc) listRuleByVendor(cts *rest.Contexts, vendor enumor.
 	switch vendor {
 	case enumor.TCloud:
 		// 强制按照云上策略索引排序
-		req.Page.Sort = "cloud_policy_index"
-		req.Page.Order = core.Ascending
+		if !req.Page.Count {
+			req.Page.Sort = "cloud_policy_index"
+			req.Page.Order = core.Ascending
+		}
 		listReq := &dataproto.TCloudSGRuleListReq{
 			Filter: req.Filter,
 			Page:   req.Page,
@@ -95,7 +97,7 @@ func (svc *securityGroupSvc) listRuleByVendor(cts *rest.Contexts, vendor enumor.
 			cts.Kit.Header(), listReq, sgID)
 
 	case enumor.Aws:
-		if req.Page.Sort == "" {
+		if !req.Page.Count && req.Page.Sort == "" {
 			req.Page.Sort = "id"
 			req.Page.Order = core.Ascending
 		}
@@ -108,8 +110,10 @@ func (svc *securityGroupSvc) listRuleByVendor(cts *rest.Contexts, vendor enumor.
 
 	case enumor.HuaWei:
 		// 强制按照云上策略索引排序
-		req.Page.Sort = "priority"
-		req.Page.Order = core.Ascending
+		if !req.Page.Count {
+			req.Page.Sort = "priority"
+			req.Page.Order = core.Ascending
+		}
 		listReq := &dataproto.HuaWeiSGRuleListReq{
 			Filter: req.Filter,
 			Page:   req.Page,
@@ -119,8 +123,10 @@ func (svc *securityGroupSvc) listRuleByVendor(cts *rest.Contexts, vendor enumor.
 
 	case enumor.Azure:
 		// 强制按照云上策略索引排序
-		req.Page.Sort = "priority"
-		req.Page.Order = core.Ascending
+		if !req.Page.Count {
+			req.Page.Sort = "priority"
+			req.Page.Order = core.Ascending
+		}
 		listReq := &dataproto.AzureSGRuleListReq{
 			Filter: req.Filter,
 			Page:   req.Page,
