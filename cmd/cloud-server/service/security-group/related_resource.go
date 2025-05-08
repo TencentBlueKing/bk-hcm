@@ -392,3 +392,85 @@ func (svc *securityGroupSvc) listSGRelLBByBizID(cts *rest.Contexts, validHandler
 
 	return svc.sgLogic.ListSGRelLoadBalancer(cts.Kit, sgID, resBizID, req)
 }
+
+// ListSGRelCVM ...
+func (svc *securityGroupSvc) ListSGRelCVM(cts *rest.Contexts) (interface{}, error) {
+	return svc.listSGRelCVM(cts, handler.ResOperateAuth)
+}
+
+func (svc *securityGroupSvc) listSGRelCVM(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+	interface{}, error) {
+
+	sgID := cts.PathParameter("sg_id").String()
+	if len(sgID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "sg_id is required")
+	}
+
+	req := new(core.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
+		enumor.SecurityGroupCloudResType, sgID)
+	if err != nil {
+		logs.Errorf("get security group vendor failed, id: %s, err: %v, rid: %s", sgID, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
+		Action: meta.Find, BasicInfo: basicInfo})
+	if err != nil {
+		return nil, err
+	}
+
+	listReq := &dataproto.SGCommonRelListReq{
+		SGIDs:   []string{sgID},
+		ListReq: *req,
+	}
+	return svc.client.DataService().Global.SGCommonRel.ListWithCVMSummary(cts.Kit, listReq)
+}
+
+// ListSGRelLB ...
+func (svc *securityGroupSvc) ListSGRelLB(cts *rest.Contexts) (interface{}, error) {
+	return svc.listSGRelLB(cts, handler.ResOperateAuth)
+}
+
+func (svc *securityGroupSvc) listSGRelLB(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+	interface{}, error) {
+
+	sgID := cts.PathParameter("sg_id").String()
+	if len(sgID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "sg_id is required")
+	}
+
+	req := new(core.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
+		enumor.SecurityGroupCloudResType, sgID)
+	if err != nil {
+		logs.Errorf("get security group vendor failed, id: %s, err: %v, rid: %s", sgID, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroup,
+		Action: meta.Find, BasicInfo: basicInfo})
+	if err != nil {
+		return nil, err
+	}
+
+	listReq := &dataproto.SGCommonRelListReq{
+		SGIDs:   []string{sgID},
+		ListReq: *req,
+	}
+	return svc.client.DataService().Global.SGCommonRel.ListWithLBSummary(cts.Kit, listReq)
+}
