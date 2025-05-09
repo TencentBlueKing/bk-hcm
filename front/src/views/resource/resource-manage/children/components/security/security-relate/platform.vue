@@ -6,7 +6,6 @@ import {
   type ISecurityGroupRelBusiness,
   type ISecurityGroupRelResCountItem,
   type SecurityGroupRelResourceByBizItem,
-  SecurityGroupRelatedResourceName,
   useSecurityGroupStore,
 } from '@/store/security-group';
 import { useBusinessGlobalStore } from '@/store/business-global';
@@ -19,8 +18,9 @@ import {
   RELATED_RES_KEY_MAP,
   RELATED_RES_NAME_MAP,
   RELATED_RES_OPERATE_DISABLED_TIPS_MAP,
-  RELATED_RES_OPERATE_TYPE,
+  RelatedResourceOperateType,
   RELATED_RES_PROPERTIES_MAP,
+  SecurityGroupRelatedResourceName,
 } from '@/constants/security-group';
 import { ISearchSelectValue } from '@/typings';
 
@@ -54,7 +54,7 @@ const authAction = computed(() => {
   return isBusinessPage.value ? 'biz_iaas_resource_operate' : 'iaas_resource_operate';
 });
 
-const tabActive = ref<SecurityGroupRelatedResourceName>(SecurityGroupRelatedResourceName.CVM);
+const tabActive = ref(SecurityGroupRelatedResourceName.CVM);
 // 当前业务所关联资源
 const currentBizRelatedResources = computed(
   () =>
@@ -79,24 +79,15 @@ const condition = ref<Record<string, any>>({});
 const loading = ref(false);
 const getList = async (sort = 'created_at', order = 'DESC') => {
   const reqInBusiness = async (sgId: string) => {
-    const api =
-      tabActive.value === 'CVM' ? securityGroupStore.queryRelCvmByBiz : securityGroupStore.queryRelLoadBalancerByBiz;
-    const bizIds = [getBizsId()];
+    const bizId = getBizsId();
 
-    return Promise.all(
-      bizIds.map((bk_biz_id) =>
-        api(sgId, bk_biz_id, {
-          filter: transformSimpleCondition(condition.value, RELATED_RES_PROPERTIES_MAP[tabActive.value]),
-          page: getPageParams(pagination, { sort, order }),
-        }),
-      ),
-    );
+    return securityGroupStore.queryRelatedResourcesByBiz(sgId, bizId, tabActive.value, {
+      filter: transformSimpleCondition(condition.value, RELATED_RES_PROPERTIES_MAP[tabActive.value]),
+      page: getPageParams(pagination, { sort, order }),
+    });
   };
   const reqInResource = async (sgId: string) => {
-    const api =
-      tabActive.value === 'CVM' ? securityGroupStore.queryRelCvmBySgId : securityGroupStore.queryRelLoadBalancerBySgId;
-
-    return api(sgId, {
+    return securityGroupStore.queryRelatedResourcesBySgId(sgId, tabActive.value, {
       filter: transformSimpleCondition(condition.value, RELATED_RES_PROPERTIES_MAP[tabActive.value]),
       page: getPageParams(pagination, { sort, order }),
     });
@@ -105,18 +96,10 @@ const getList = async (sort = 'created_at', order = 'DESC') => {
   loading.value = true;
   try {
     const { id } = props.detail;
-
-    if (isBusinessPage.value) {
-      const res = await reqInBusiness(id);
-      list.value = res.flatMap((item) => item.list);
-      // 设置页码总条数
-      pagination.count = res[0].count;
-    } else {
-      const res = await reqInResource(id);
-      list.value = res.list;
-      // 设置页码总条数
-      pagination.count = res.count;
-    }
+    const res = await (isBusinessPage.value ? reqInBusiness(id) : reqInResource(id));
+    list.value = res.list;
+    // 设置页码总条数
+    pagination.count = res.count;
   } finally {
     loading.value = false;
   }
@@ -134,7 +117,7 @@ const bindDisabledTooltipsOption = computed(() => {
   }
   if (isClb.value) {
     return {
-      content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RELATED_RES_OPERATE_TYPE.BIND],
+      content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RelatedResourceOperateType.BIND],
       disabled: !isClb.value,
     };
   }
@@ -146,7 +129,7 @@ const unbindDisabledTooltipsOption = computed(() => {
   }
   if (isClb.value) {
     return {
-      content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RELATED_RES_OPERATE_TYPE.UNBIND],
+      content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RelatedResourceOperateType.UNBIND],
       disabled: !isClb.value,
     };
   }
@@ -271,11 +254,11 @@ watch(
 
       <div class="rel-res-display-wrap">
         <data-list
-          v-bkloading="{ loading }"
           ref="data-list"
           :resource-name="tabActive"
           operation="base"
           :list="list"
+          :loading="loading"
           :pagination="pagination"
           :is-row-select-enable="() => true"
           @select="(selections) => (selected = selections)"

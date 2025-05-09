@@ -7,7 +7,6 @@ import { useVerify } from '@/hooks';
 import {
   type ISecurityGroupDetail,
   type SecurityGroupRelResourceByBizItem,
-  SecurityGroupRelatedResourceName,
   useSecurityGroupStore,
 } from '@/store/security-group';
 import { useBusinessGlobalStore } from '@/store/business-global';
@@ -15,8 +14,9 @@ import { transformSimpleCondition } from '@/utils/search';
 import {
   RELATED_RES_NAME_MAP,
   RELATED_RES_OPERATE_DISABLED_TIPS_MAP,
-  RELATED_RES_OPERATE_TYPE,
+  RelatedResourceOperateType,
   RELATED_RES_PROPERTIES_MAP,
+  SecurityGroupRelatedResourceName,
 } from '@/constants/security-group';
 
 import dataList from './index.vue';
@@ -75,10 +75,7 @@ const getList = async (
 ) => {
   loading.value = true;
   try {
-    const api =
-      tabActive === 'CVM' ? securityGroupStore.queryRelCvmByBiz : securityGroupStore.queryRelLoadBalancerByBiz;
-
-    const res = await api(props.detail.id, props.bkBizId, {
+    const res = await securityGroupStore.queryRelatedResourcesByBiz(props.detail.id, props.bkBizId, tabActive, {
       filter: transformSimpleCondition(condition, RELATED_RES_PROPERTIES_MAP[props.tabActive]),
       page: getPageParams(pagination, { sort, order }),
     });
@@ -156,7 +153,7 @@ defineExpose({ isExpand, reload });
           :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.[authAction] }"
           :disabled="isOperateDisabled"
           v-bk-tooltips="{
-            content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RELATED_RES_OPERATE_TYPE.BIND],
+            content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RelatedResourceOperateType.BIND],
             disabled: !isOperateDisabled,
           }"
           @click="handleShowOperateDialog('bind')"
@@ -171,7 +168,7 @@ defineExpose({ isExpand, reload });
           :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.[authAction] }"
           :disabled="!selected.length || isOperateDisabled"
           v-bk-tooltips="{
-            content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RELATED_RES_OPERATE_TYPE.UNBIND],
+            content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RelatedResourceOperateType.UNBIND],
             disabled: !isOperateDisabled,
           }"
           @click="handleShowOperateDialog('batch-unbind')"
@@ -190,7 +187,7 @@ defineExpose({ isExpand, reload });
     <data-list
       ref="data-list"
       v-show="isExpand"
-      v-bkloading="{ loading }"
+      :loading="loading"
       :resource-name="tabActive"
       operation="base"
       :list="relResList"
@@ -207,7 +204,7 @@ defineExpose({ isExpand, reload });
           :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.[authAction] }"
           :disabled="isOperateDisabled"
           v-bk-tooltips="{
-            content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RELATED_RES_OPERATE_TYPE.UNBIND],
+            content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RelatedResourceOperateType.UNBIND],
             disabled: !isOperateDisabled,
           }"
           @click="handleShowOperateDialog('single-unbind', row)"

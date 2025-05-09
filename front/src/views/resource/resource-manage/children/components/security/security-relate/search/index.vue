@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, useAttrs, watch } from 'vue';
-import { SecurityGroupRelatedResourceName } from '@/store/security-group';
 import { useBusinessGlobalStore } from '@/store/business-global';
 import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
 import conditionFactory from './condition-factory';
 import { ISearchSelectValue } from '@/typings';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
+import { SecurityGroupRelatedResourceName } from '@/constants/security-group';
 
 const props = defineProps<{ resourceName: SecurityGroupRelatedResourceName; operation: string }>();
 const emit = defineEmits(['search']);

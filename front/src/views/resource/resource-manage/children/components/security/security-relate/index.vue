@@ -5,9 +5,9 @@ import {
   type ISecurityGroupRelResCountItem,
   type ISecurityGroupDetail,
   type ISecurityGroupRelBusiness,
-  SecurityGroupManageType,
 } from '@/store/security-group';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { SecurityGroupManageType } from '@/constants/security-group';
 
 import platform from './platform.vue';
 import biz from './biz.vue';

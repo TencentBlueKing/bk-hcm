@@ -3,12 +3,15 @@ import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   ISecurityGroupDetail,
-  SecurityGroupRelatedResourceName,
   useSecurityGroupStore,
   type SecurityGroupRelResourceByBizItem,
 } from '@/store/security-group';
 import { getPrivateIPs } from '@/utils';
-import { RELATED_RES_KEY_MAP, RELATED_RES_NAME_MAP } from '@/constants/security-group';
+import {
+  RELATED_RES_KEY_MAP,
+  RELATED_RES_NAME_MAP,
+  SecurityGroupRelatedResourceName,
+} from '@/constants/security-group';
 
 import { Message } from 'bkui-vue';
 import { ThemeEnum } from 'bkui-vue/lib/shared';

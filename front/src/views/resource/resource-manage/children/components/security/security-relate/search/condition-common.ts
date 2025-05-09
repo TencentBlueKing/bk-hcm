@@ -1,5 +1,4 @@
-import { SecurityGroupRelatedResourceName } from '@/store/security-group';
-import { RELATED_RES_PROPERTIES_MAP } from '@/constants/security-group';
+import { RELATED_RES_PROPERTIES_MAP, SecurityGroupRelatedResourceName } from '@/constants/security-group';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import { CLB_STATUS_MAP, LB_NETWORK_TYPE_MAP } from '@/constants';
 import { VendorEnum, VendorMap } from '@/common/constant';

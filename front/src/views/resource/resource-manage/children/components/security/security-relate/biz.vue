@@ -5,11 +5,10 @@ import {
   type ISecurityGroupDetail,
   type ISecurityGroupRelBusiness,
   type ISecurityGroupRelResCountItem,
-  SecurityGroupRelatedResourceName,
 } from '@/store/security-group';
 import { useBusinessGlobalStore } from '@/store/business-global';
 import { getSimpleConditionBySearchSelect } from '@/utils/search';
-import { RELATED_RES_KEY_MAP } from '@/constants/security-group';
+import { RELATED_RES_KEY_MAP, SecurityGroupRelatedResourceName } from '@/constants/security-group';
 import { ISearchSelectValue } from '@/typings';
 
 import tab from './tab/index.vue';
@@ -27,7 +26,7 @@ const props = defineProps<{
 const regionStore = useRegionsStore();
 const { getBusinessIds } = useBusinessGlobalStore();
 
-const tabActive = ref<SecurityGroupRelatedResourceName>(SecurityGroupRelatedResourceName.CVM);
+const tabActive = ref(SecurityGroupRelatedResourceName.CVM);
 
 const handleOperateSuccess = () => {
   props.getRelatedInfo();
