@@ -25,7 +25,6 @@ import (
 	proto "hcm/pkg/api/cloud-server"
 	cscvm "hcm/pkg/api/cloud-server/cvm"
 	"hcm/pkg/api/core"
-	"hcm/pkg/api/core/cloud"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
@@ -37,7 +36,6 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
-	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
 	"hcm/pkg/tools/slice"
 )
@@ -243,131 +241,4 @@ func (svc *cvmSvc) queryCvmRelatedRes(cts *rest.Contexts, validHandler handler.V
 		}
 	})
 	return relatedInfos, nil
-}
-
-// BatchListCvmSecurityGroups ...
-func (svc *cvmSvc) BatchListCvmSecurityGroups(cts *rest.Contexts) (interface{}, error) {
-	return svc.listCvmSecurityGroups(cts, handler.ResOperateAuth)
-}
-
-// BizBatchListCvmSecurityGroups ...
-func (svc *cvmSvc) BizBatchListCvmSecurityGroups(cts *rest.Contexts) (interface{}, error) {
-	return svc.listCvmSecurityGroups(cts, handler.BizOperateAuth)
-}
-
-func (svc *cvmSvc) listCvmSecurityGroups(cts *rest.Contexts, authHandler handler.ValidWithAuthHandler) (interface{}, error) {
-
-	req := new(cscvm.BatchGetCvmSecurityGroupsReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
-	}
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	basicInfoReq := dataproto.ListResourceBasicInfoReq{
-		ResourceType: enumor.CvmCloudResType,
-		IDs:          req.CvmIDs,
-	}
-	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, basicInfoReq)
-	if err != nil {
-		return nil, err
-	}
-	err = authHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer,
-		ResType: meta.Cvm, Action: meta.Find, BasicInfos: basicInfoMap})
-	if err != nil {
-		return nil, err
-	}
-
-	rels, err := svc.listCvmSecurityGroupRels(cts.Kit, req.CvmIDs)
-	if err != nil {
-		logs.Errorf("list cvm security group rels failed, err: %v, cvm_ids: %v, rid: %s", err, req.CvmIDs, cts.Kit.Rid)
-		return nil, err
-	}
-
-	sgIDsMap := make(map[string]struct{})
-	for _, rel := range rels {
-		sgIDsMap[rel.SecurityGroupID] = struct{}{}
-	}
-	securityGroupsMap, err := svc.getSecurityGroupsMap(cts.Kit, converter.MapKeyToSlice(sgIDsMap))
-	if err != nil {
-		return nil, err
-	}
-
-	itemMap := convertToBatchListCvmSecurityGroupsRespItem(securityGroupsMap)
-	cvmToSgMap := make(map[string][]cscvm.BatchListCvmSecurityGroupsRespItem, len(req.CvmIDs))
-	for _, rel := range rels {
-		cvmToSgMap[rel.CvmID] = append(cvmToSgMap[rel.CvmID], itemMap[rel.SecurityGroupID])
-	}
-
-	result := make([]cscvm.BatchListCvmSecurityGroupsResp, len(req.CvmIDs))
-	for i, cvmID := range req.CvmIDs {
-		result[i] = cscvm.BatchListCvmSecurityGroupsResp{
-			CvmID:          cvmID,
-			SecurityGroups: cvmToSgMap[cvmID],
-		}
-	}
-
-	return result, nil
-}
-
-func convertToBatchListCvmSecurityGroupsRespItem(
-	m map[string]cloud.BaseSecurityGroup) map[string]cscvm.BatchListCvmSecurityGroupsRespItem {
-
-	result := make(map[string]cscvm.BatchListCvmSecurityGroupsRespItem, len(m))
-	for id, sg := range m {
-		result[id] = cscvm.BatchListCvmSecurityGroupsRespItem{
-			ID:      sg.ID,
-			Name:    sg.Name,
-			CloudId: sg.CloudID,
-		}
-	}
-	return result
-}
-
-func (svc *cvmSvc) getSecurityGroupsMap(kt *kit.Kit, sgIDs []string) (map[string]cloud.BaseSecurityGroup, error) {
-
-	result := make(map[string]cloud.BaseSecurityGroup, len(sgIDs))
-	for _, ids := range slice.Split(sgIDs, int(core.DefaultMaxPageLimit)) {
-		req := &dataproto.SecurityGroupListReq{
-			Filter: tools.ContainersExpression("id", ids),
-			Page:   core.NewDefaultBasePage(),
-		}
-		securityGroups, err := svc.client.DataService().Global.SecurityGroup.ListSecurityGroup(kt.Ctx, kt.Header(), req)
-		if err != nil {
-			logs.Errorf("list security groups failed, err: %v, ids: %v, rid: %s", err, ids, kt.Rid)
-			return nil, err
-		}
-
-		for _, detail := range securityGroups.Details {
-			result[detail.ID] = detail
-		}
-	}
-	return result, nil
-}
-
-func (svc *cvmSvc) listCvmSecurityGroupRels(kt *kit.Kit, cvmIDs []string) ([]cloud.SecurityGroupCvmRel, error) {
-
-	result := make([]cloud.SecurityGroupCvmRel, 0)
-
-	req := &core.ListReq{
-		Filter: tools.ContainersExpression("cvm_id", cvmIDs),
-		Page:   core.NewDefaultBasePage(),
-	}
-
-	for {
-		sgCvmRels, err := svc.client.DataService().Global.SGCvmRel.ListSgCvmRels(kt.Ctx, kt.Header(), req)
-		if err != nil {
-			return nil, err
-		}
-		if len(sgCvmRels.Details) == 0 {
-			break
-		}
-		for _, detail := range sgCvmRels.Details {
-			result = append(result, detail)
-		}
-		req.Page.Start += uint32(core.DefaultMaxPageLimit)
-	}
-
-	return result, nil
 }

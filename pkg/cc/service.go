@@ -111,6 +111,12 @@ func (s ApiServerSetting) Validate() error {
 	return nil
 }
 
+// TaskManagement ...
+type TaskManagement struct {
+	// 关闭任务管理轮询
+	Disable bool `yaml:"disable"`
+}
+
 // CloudServerSetting defines cloud server used setting options.
 type CloudServerSetting struct {
 	Network        Network        `yaml:"network"`
@@ -125,6 +131,7 @@ type CloudServerSetting struct {
 	Itsm           ApiGateway     `yaml:"itsm"`
 	CloudSelection CloudSelection `yaml:"cloudSelection"`
 	Cmsi           CMSI           `yaml:"cmsi"`
+	TaskManagement TaskManagement `yaml:"taskManagement"`
 	Tenant         TenantConfig   `yaml:"tenant"`
 }
 

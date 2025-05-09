@@ -203,6 +203,13 @@ const (
 	// ApplicationManage application manage action id to register iam.
 	ApplicationManage client.ActionID = "application_manage"
 
+	// CosBucketCreate cos bucket create action id to register iam.
+	CosBucketCreate client.ActionID = "cos_bucket_create"
+	// CosBucketFind cos bucket find action id to register iam.
+	CosBucketFind client.ActionID = "cos_bucket_find"
+	// CosBucketDelete cos bucket delete action id to register iam.
+	CosBucketDelete client.ActionID = "cos_bucket_delete"
+
 	// Skip is an action that no need to auth
 	Skip client.ActionID = "skip"
 )
@@ -267,4 +274,8 @@ var ActionIDNameMap = map[client.ActionID]string{
 	MainAccountFind:   "账号-二级账号查看",
 	MainAccountCreate: "账号-二级账号创建",
 	MainAccountEdit:   "账号-二级账号编辑",
+
+	CosBucketCreate: "COS桶创建",
+	CosBucketFind:   "COS桶查询",
+	CosBucketDelete: "COS桶删除",
 }

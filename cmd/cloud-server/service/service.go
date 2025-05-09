@@ -43,6 +43,7 @@ import (
 	"hcm/cmd/cloud-server/service/capability"
 	"hcm/cmd/cloud-server/service/cert"
 	cloudselection "hcm/cmd/cloud-server/service/cloud-selection"
+	"hcm/cmd/cloud-server/service/cos"
 	"hcm/cmd/cloud-server/service/cvm"
 	"hcm/cmd/cloud-server/service/disk"
 	"hcm/cmd/cloud-server/service/eip"
@@ -167,8 +168,7 @@ func getCloudClientSvr(sd serviced.ServiceDiscover) (*client.ClientSet, esb.Clie
 
 	// 创建ESB Client
 	esbConfig := cc.CloudServer().Esb
-	esbClient, err := esb.NewClient(&esbConfig, metrics.Register())
-	if err != nil {
+	if err = esb.InitEsbClient(&esbConfig, metrics.Register()); err != nil {
 		return nil, nil, nil, err
 	}
 
@@ -198,13 +198,13 @@ func getCloudClientSvr(sd serviced.ServiceDiscover) (*client.ClientSet, esb.Clie
 		authorizer: authorizer,
 		audit:      logicaudit.NewAudit(apiClientSet.DataService()),
 		cipher:     cipher,
-		esbClient:  esbClient,
+		esbClient:  esb.EsbClient(),
 		itsmCli:    itsmCli,
 		bkBaseCli:  bkbaseCli,
 		cmsiCli:    cmsiCli,
 	}
 
-	return apiClientSet, esbClient, svr, nil
+	return apiClientSet, esb.EsbClient(), svr, nil
 }
 
 // newCipherFromConfig 根据配置文件里的加密配置，选择配置的算法并生成对应的加解密器
@@ -324,6 +324,8 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 	bandwidthpackage.InitService(c)
 
 	task.InitService(c)
+
+	cos.InitService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

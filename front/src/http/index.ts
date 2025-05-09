@@ -8,6 +8,7 @@ import cookie from 'cookie';
 import { Message } from 'bkui-vue';
 import { defaults } from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
+// @ts-expect-error
 import { showLoginModal } from '@blueking/login-modal';
 import bus from '@/common/bus';
 import CachedPromise from './cached-promise';

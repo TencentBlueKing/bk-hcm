@@ -5,6 +5,7 @@ type StringCell = string | ((cell: string) => string); // 字符串或者返回�
 type BaseField = {
   name: string;
   value?: any;
+  trim?: boolean;
   cls?: StringCell;
   link?: StringCell;
   copy?: boolean;
@@ -13,6 +14,7 @@ type BaseField = {
   prop?: string;
   tipsContent?: string;
   txtBtn?: (cell: string) => void;
+  showOverflowTips?: boolean;
 };
 type FieldWithRenderString = BaseField & {
   render: (value: BaseField['value']) => string | number;

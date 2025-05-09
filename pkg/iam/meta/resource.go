@@ -110,4 +110,7 @@ const (
 
 	// TaskManagement defines task management's hcm auth resource type
 	TaskManagement ResourceType = "task_management"
+
+	// CosBucket cos桶
+	CosBucket ResourceType = "cos_bucket"
 )

@@ -32,8 +32,9 @@ export default () => {
     if (id === 'business') {
       bizs = accountStore.bizs;
     }
-    // 点击跳转header-tab时清除一下pinia
-    resourceAccountStore.setResourceAccount({});
+    if (id !== 'resource') {
+      resourceAccountStore.clear();
+    }
     router.push({ path, query: { [GLOBAL_BIZS_KEY]: bizs } });
   };
 

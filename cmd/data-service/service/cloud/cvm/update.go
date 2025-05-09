@@ -91,7 +91,7 @@ func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 			update := &tablecvm.Table{
 				Name:                 one.Name,
 				BkBizID:              one.BkBizID,
-				BkCloudID:            one.BkCloudID,
+				BkHostID:             one.BkHostID,
 				CloudVpcIDs:          one.CloudVpcIDs,
 				CloudSubnetIDs:       one.CloudSubnetIDs,
 				CloudImageID:         one.CloudImageID,
@@ -105,6 +105,16 @@ func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 				CloudLaunchedTime:    one.CloudLaunchedTime,
 				CloudExpiredTime:     one.CloudExpiredTime,
 				Reviser:              cts.Kit.User,
+				VpcIDs:               one.VpcIDs,
+				SubnetIDs:            one.SubnetIDs,
+				// 升降配可能会修改机型
+				MachineType: one.MachineType,
+				// 重装可能修改操作系统名称
+				OsName: one.OsName,
+			}
+
+			if one.BkCloudID != nil {
+				update.BkCloudID = one.BkCloudID
 			}
 
 			existCvm, exist := existCvmMap[one.ID]
@@ -125,7 +135,7 @@ func batchUpdateCvm[T corecvm.Extension](cts *rest.Contexts, svc *cvmSvc, vendor
 				return nil, fmt.Errorf("update cvm failed, err: %v", err)
 			}
 
-			if update.BkCloudID == 0 {
+			if update.BkCloudID == nil {
 				update.BkCloudID = existCvm.BkCloudID
 			}
 
@@ -198,27 +208,39 @@ func (svc *cvmSvc) BatchUpdateCvmCommonInfo(cts *rest.Contexts) (interface{}, er
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	updateFilter := tools.ContainersExpression("id", req.IDs)
-	updateFiled := &tablecvm.Table{
-		BkBizID: req.BkBizID,
-	}
-	if err := svc.dao.Cvm().Update(cts.Kit, updateFilter, updateFiled); err != nil {
+	ids := make([]string, 0, len(req.Cvms))
+	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		for _, one := range req.Cvms {
+			update := &tablecvm.Table{
+				BkBizID: one.BkBizID,
+			}
+			if one.BkCloudID != nil {
+				update.BkCloudID = one.BkCloudID
+			}
+			if err := svc.dao.Cvm().UpdateByIDWithTx(cts.Kit, txn, one.ID, update); err != nil {
+				logs.Errorf("update cvm by id failed, err: %v, id: %s, update field: %v, rid: %s", err, one.ID, update,
+					cts.Kit.Rid)
+				return nil, fmt.Errorf("update cvm failed, err: %v", err)
+			}
+			ids = append(ids, one.ID)
+		}
+		return nil, nil
+	})
+
+	if err != nil {
+		logs.Errorf("update cvm common info failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	// upsert cmdb cloud hosts
 	opt := &types.ListOption{
-		Filter: updateFilter,
+		Filter: tools.ContainersExpression("id", ids),
 		Page:   core.NewDefaultBasePage(),
 	}
 	listResp, err := svc.dao.Cvm().List(cts.Kit, opt)
 	if err != nil {
 		logs.Errorf("list cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, fmt.Errorf("list cvm failed, err: %v", err)
-	}
-
-	for idx := range listResp.Details {
-		listResp.Details[idx].BkBizID = req.BkBizID
 	}
 
 	err = upsertBaseCmdbHosts(svc, cts.Kit, converter.SliceToPtr(listResp.Details))

@@ -181,7 +181,8 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string, zone 
 			CloudID:        fmt.Sprintf("%d", one.Id),
 			Name:           one.Name,
 			BkBizID:        constant.UnassignedBiz,
-			BkCloudID:      vpcMap[inVpcSelfLinks[0]].BkCloudID,
+			BkHostID:       constant.UnBindBkHostID,
+			BkCloudID:      constant.UnassignedBkCloudID,
 			AccountID:      accountID,
 			Region:         region,
 			Zone:           zone,
@@ -338,7 +339,6 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string, zone 
 		cvm := dataproto.CvmBatchUpdate[corecvm.GcpCvmExtension]{
 			ID:                   id,
 			Name:                 one.Name,
-			BkCloudID:            vpcMap[inVpcSelfLinks[0]].BkCloudID,
 			CloudVpcIDs:          []string{vpcMap[inVpcSelfLinks[0]].VpcCloudID},
 			VpcIDs:               []string{vpcMap[inVpcSelfLinks[0]].VpcID},
 			CloudSubnetIDs:       cloudSubIDs,
@@ -497,7 +497,6 @@ func (cli *client) getVpcMap(kt *kit.Kit, accountID string, selfLink []string) (
 			vpcMap[vpc.Extension.SelfLink] = &common.VpcDB{
 				VpcCloudID: vpc.CloudID,
 				VpcID:      vpc.ID,
-				BkCloudID:  vpc.BkCloudID,
 			}
 		}
 	}

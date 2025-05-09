@@ -8,8 +8,10 @@ import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import bus from '@/common/bus';
 import { useResourceStore, useAccountStore } from '@/store';
 import { QueryRuleOPEnum } from '@/typings';
-import SecurityGroupSelector from '@/views/service/service-apply/components/common/security-group-selector';
+import SecurityGroupSelectorDialog from '@/components/security-group-selector-dialog/index.vue';
 import { VendorEnum } from '@/common/constant';
+import dialogFooter from '@/components/common-dialog/dialog-footer.vue';
+import { AUTH_BIZ_UPDATE_IAAS_RESOURCE, AUTH_UPDATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
 
 const props = defineProps({
   data: {
@@ -20,12 +22,11 @@ const props = defineProps({
   },
 });
 
-const secuRef = ref(null);
 const activeType = ref('ingress');
 const tableData = ref([]);
 const isShow = ref(false);
 const securityId = ref(0);
-const fetchUrl = ref<string>(`cvms/${props.data.id}/security_groups/${securityId.value}/rules/list`);
+const fetchUrl = ref<string>(`vendors/${props.data.vendor}/security_groups/${securityId.value}/rules/list`);
 const fetchFilter = reactive({
   op: QueryRuleOPEnum.AND,
   rules: [{ field: 'type', op: 'eq', value: activeType.value }],
@@ -40,13 +41,13 @@ const securityFetchFilter = ref<any>({
   },
 });
 const isListLoading = ref(false);
-const showSecurityDialog = ref(false);
 const unBindShow = ref(false);
 const unBindLoading = ref(false);
 const ids = ref([]);
 const curreClickId = ref(); // 当前点击的id
 const curreSelectId = ref(); // 当前选择的安全组id
 const tableItem = ref();
+const isBindLoading = ref(false);
 
 const state = reactive<any>({
   datas: [],
@@ -73,10 +74,22 @@ const actionName = computed(() => {
   return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
 });
 
+const authSign = computed(() => {
+  return isResourcePage.value
+    ? { type: AUTH_UPDATE_IAAS_RESOURCE, relation: [props.data.account_id] }
+    : { type: AUTH_BIZ_UPDATE_IAAS_RESOURCE, relation: [props.data.bk_biz_id] };
+});
+
 // 是否显示表格上方的绑定按钮
 const isBindBtnShow = computed(() => {
   return props.data.vendor === 'tcloud' || props.data.vendor === 'aws' || props.data.vendor === 'huawei';
 });
+// 是否显示表格上方的排序按钮
+const isSortBtnShow = computed(() => {
+  return props.data.vendor === 'tcloud';
+});
+
+const selectorDialogState = reactive({ isShow: false, isHidden: true, sortOnly: false });
 
 // 绑定是否多选
 const multiple = computed(() => {
@@ -160,7 +173,7 @@ const columns: any = [
                 } else {
                   securityId.value = data.id;
                 }
-                handleSecurityDialog();
+                handleSecurityBind();
               },
             },
             ['绑定'],
@@ -274,7 +287,7 @@ if (isResourcePage.value) {
 const showRuleDialog = async () => {
   isShow.value = true;
   // 获取列表数据
-  fetchUrl.value = `cvms/${props.data.id}/security_groups/${securityId.value}/rules/list`;
+  fetchUrl.value = `vendors/${props.data.vendor}/security_groups/${securityId.value}/rules/list`;
   fetchFilter.rules = [{ field: 'type', op: 'eq', value: activeType.value }];
   if (props.data.vendor === 'huawei') {
     const huaweiColummns = [
@@ -303,23 +316,28 @@ const showRuleDialog = async () => {
   }
 };
 
-const handleSecurityDialog = () => {
-  showSecurityDialog.value = true;
-  secuRef.value?.show();
+const handleSecurityBind = () => {
+  selectorDialogState.isHidden = false;
+  selectorDialogState.isShow = true;
+  selectorDialogState.sortOnly = false;
+};
+
+const handleSecuritySort = () => {
+  selectorDialogState.isHidden = false;
+  selectorDialogState.isShow = true;
+  selectorDialogState.sortOnly = true;
 };
 
 // 安全组绑定主机
 const handleSecurityConfirm = async (security_group_id: string) => {
-  try {
-    // 暂时只支持一个一个绑定 后期会修改成绑定多个
-    let type = 'cvms';
-    let params: any = { security_group_id, cvm_id: props.data.id };
-    if (props.data.vendor === 'azure') {
-      type = 'network_interfaces';
-      params = { security_group_id: securityId.value, network_interface_id: curreClickId.value };
-    }
-    await resourceStore.bindSecurityInfo(type, params);
-  } catch (error) {}
+  // 暂时只支持一个一个绑定 后期会修改成绑定多个
+  let type = 'cvms';
+  let params: any = { security_group_id, cvm_id: props.data.id };
+  if (props.data.vendor === 'azure') {
+    type = 'network_interfaces';
+    params = { security_group_id: securityId.value, network_interface_id: curreClickId.value };
+  }
+  await resourceStore.bindSecurityInfo(type, params);
 };
 
 // 解绑弹窗
@@ -358,64 +376,74 @@ const handleConfirmUnBind = async () => {
 // 关闭弹窗
 const handleClose = () => {
   unBindShow.value = false;
-  showSecurityDialog.value = false;
 };
 
 const handleSelectSecurity = async (security_group_ids: string[]) => {
-  if (multiple.value) {
-    await resourceStore.batchBindSecurityInfo({
-      security_group_ids,
-      cvm_id: props.data.id,
-    });
-  } else {
-    handleSecurityConfirm(security_group_ids[0]);
+  try {
+    isBindLoading.value = true;
+    if (multiple.value) {
+      await resourceStore.batchBindSecurityInfo({
+        security_group_ids,
+        cvm_id: props.data.id,
+      });
+    } else {
+      await handleSecurityConfirm(security_group_ids[0]);
+    }
+
+    selectorDialogState.isShow = false;
+  } finally {
+    isBindLoading.value = false;
   }
 
-  Message({
-    message: t('绑定成功'),
-    theme: 'success',
-  });
+  Message({ message: t('绑定成功'), theme: 'success' });
   getSecurityGroupsList();
 };
 getSecurityGroupsList();
 </script>
 
 <template>
-  <div class="host-security-container" :class="isBindBtnShow ? 'show-bind-btn' : ''">
-    <span v-if="isBindBtnShow" @click="showAuthDialog(actionName)">
-      <SecurityGroupSelector
-        type="bind"
-        class="component-with-detail"
-        :biz-id="accountStore.bizs"
-        :account-id="props.data.account_id"
-        :region="props.data.region"
-        :multiple="multiple"
-        :vendor="props.data.vendor"
-        :bound-secruity="tableData"
-        @selectedChange="(ids) => handleSelectSecurity(ids)"
-        ref="secuRef"
-      >
-        <template #default>
-          <bk-button
-            class="mw88"
-            theme="primary"
-            :disabled="isBindBusiness || !authVerifyData?.permissionAction[actionName]"
-            @click="handleSecurityDialog"
-          >
-            {{ t('绑定') }}
-          </bk-button>
-        </template>
-      </SecurityGroupSelector>
-    </span>
-    <bk-loading :loading="isListLoading">
-      <bk-table
-        class="security-list-table"
-        row-hover="auto"
-        :columns="columns"
-        :data="tableData"
-        show-overflow-tooltip
-      />
-    </bk-loading>
+  <div class="host-security-container">
+    <div class="toolbar" v-if="isBindBtnShow || isSortBtnShow">
+      <template v-if="!selectorDialogState.isHidden">
+        <security-group-selector-dialog
+          v-model="selectorDialogState.isShow"
+          :loading="isBindLoading"
+          :title="selectorDialogState.sortOnly ? t('安全组排序') : t('选择安全组')"
+          :checked="tableData.map((item) => item.id)"
+          :biz-id="accountStore.bizs"
+          :account-id="props.data.account_id"
+          :region="props.data.region"
+          :multiple="multiple"
+          :vendor="props.data.vendor"
+          :sort-only="selectorDialogState.sortOnly"
+          @hidden="selectorDialogState.isHidden = true"
+          @confirm="handleSelectSecurity"
+        />
+      </template>
+      <hcm-auth :sign="authSign" v-slot="{ noPerm }">
+        <bk-button class="button" theme="primary" :disabled="isBindBusiness || noPerm" @click="handleSecurityBind">
+          {{ t('绑定') }}
+        </bk-button>
+      </hcm-auth>
+      <hcm-auth :sign="authSign" v-slot="{ noPerm }" v-if="isSortBtnShow">
+        <bk-button
+          class="button"
+          :theme="isBindBtnShow ? '' : 'primary'"
+          :disabled="isBindBusiness || noPerm"
+          @click="handleSecuritySort"
+        >
+          {{ t('排序') }}
+        </bk-button>
+      </hcm-auth>
+    </div>
+    <bk-table
+      class="security-list-table"
+      v-bkloading="{ loading: isListLoading }"
+      row-hover="auto"
+      :columns="columns"
+      :data="tableData"
+      show-overflow-tooltip
+    />
     <bk-dialog
       v-model:isShow="isShow"
       :title="activeType === 'ingress' ? '入站规则' : '出站规则'"
@@ -446,14 +474,7 @@ getSecurityGroupsList();
       </bk-loading>
     </bk-dialog>
 
-    <bk-dialog
-      :is-show="unBindShow"
-      :title="'确定解绑'"
-      :theme="'primary'"
-      :is-loading="unBindLoading"
-      @closed="handleClose"
-      @confirm="handleConfirmUnBind"
-    >
+    <bk-dialog :is-show="unBindShow" :title="'确定解绑'" :theme="'primary'" @closed="handleClose">
       <!-- <div>{{ t('确定解绑') }}</div> -->
       <span v-if="tableData.length === 1">
         <span class="error-text">解绑被限制,</span>
@@ -467,6 +488,15 @@ getSecurityGroupsList();
         </span>
         <span class="error-text">请确保主机上绑定的其他安全组是有效的，避免出现主机安全风险</span>
       </span>
+
+      <template #footer>
+        <dialog-footer
+          :disabled="tableData.length === 1"
+          :loading="unBindLoading"
+          @confirm="handleConfirmUnBind"
+          @closed="handleClose"
+        />
+      </template>
     </bk-dialog>
   </div>
 </template>
@@ -476,9 +506,19 @@ getSecurityGroupsList();
   .security-list-table {
     max-height: 100% !important;
   }
-  &.show-bind-btn .security-list-table {
-    margin-top: 16px;
-    max-height: calc(100% - 48px) !important;
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .button {
+      min-width: 88px;
+    }
+
+    ~ .security-list-table {
+      margin-top: 16px;
+      max-height: calc(100% - 48px) !important;
+    }
   }
 }
 .security-head {

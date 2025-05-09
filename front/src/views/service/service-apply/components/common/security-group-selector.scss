@@ -39,6 +39,10 @@
   display: flex;
   height: 100%;
 
+  .has-other-business {
+    margin-bottom: 12px;
+  }
+
   .security-list {
     padding: 12px 16px 4px;
     flex-shrink: 0;
@@ -101,6 +105,10 @@
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+
+    .security-search-name {
+      margin-right: 5px;
+    }
   }
 }
 

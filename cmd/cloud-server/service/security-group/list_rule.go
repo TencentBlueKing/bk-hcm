@@ -21,10 +21,12 @@ package securitygroup
 
 import (
 	proto "hcm/pkg/api/cloud-server"
+	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/hooks/handler"
@@ -40,8 +42,7 @@ func (svc *securityGroupSvc) ListBizSGRule(cts *rest.Contexts) (interface{}, err
 	return svc.listSGRule(cts, handler.BizOperateAuth)
 }
 
-func (svc *securityGroupSvc) listSGRule(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (interface{},
-	error) {
+func (svc *securityGroupSvc) listSGRule(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (any, error) {
 
 	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
 	if len(vendor) == 0 {
@@ -75,8 +76,19 @@ func (svc *securityGroupSvc) listSGRule(cts *rest.Contexts, validHandler handler
 		return nil, err
 	}
 
+	return svc.listRuleByVendor(cts, vendor, req, sgID)
+}
+
+func (svc *securityGroupSvc) listRuleByVendor(cts *rest.Contexts, vendor enumor.Vendor,
+	req *proto.SecurityGroupRuleListReq, sgID string) (any, error) {
+
 	switch vendor {
 	case enumor.TCloud:
+		// 强制按照云上策略索引排序
+		if !req.Page.Count {
+			req.Page.Sort = "cloud_policy_index"
+			req.Page.Order = core.Ascending
+		}
 		listReq := &dataproto.TCloudSGRuleListReq{
 			Filter: req.Filter,
 			Page:   req.Page,
@@ -85,6 +97,10 @@ func (svc *securityGroupSvc) listSGRule(cts *rest.Contexts, validHandler handler
 			cts.Kit.Header(), listReq, sgID)
 
 	case enumor.Aws:
+		if !req.Page.Count && req.Page.Sort == "" {
+			req.Page.Sort = "id"
+			req.Page.Order = core.Ascending
+		}
 		listReq := &dataproto.AwsSGRuleListReq{
 			Filter: req.Filter,
 			Page:   req.Page,
@@ -93,6 +109,11 @@ func (svc *securityGroupSvc) listSGRule(cts *rest.Contexts, validHandler handler
 			listReq, sgID)
 
 	case enumor.HuaWei:
+		// 强制按照云上策略索引排序
+		if !req.Page.Count {
+			req.Page.Sort = "priority"
+			req.Page.Order = core.Ascending
+		}
 		listReq := &dataproto.HuaWeiSGRuleListReq{
 			Filter: req.Filter,
 			Page:   req.Page,
@@ -101,6 +122,11 @@ func (svc *securityGroupSvc) listSGRule(cts *rest.Contexts, validHandler handler
 			listReq, sgID)
 
 	case enumor.Azure:
+		// 强制按照云上策略索引排序
+		if !req.Page.Count {
+			req.Page.Sort = "priority"
+			req.Page.Order = core.Ascending
+		}
 		listReq := &dataproto.AzureSGRuleListReq{
 			Filter: req.Filter,
 			Page:   req.Page,
@@ -226,4 +252,63 @@ var azureDefaultSGRuleMap = map[enumor.SecurityGroupRuleType][]AzureDefaultSGRul
 			Type:                     enumor.Ingress,
 		},
 	},
+}
+
+// CountSecurityGroupRules list security group rules count.
+func (svc *securityGroupSvc) CountSecurityGroupRules(cts *rest.Contexts) (interface{}, error) {
+	return svc.listSGRulesCount(cts, handler.ResOperateAuth)
+}
+
+// CountBizSecurityGroupRules list biz security group rules count.
+func (svc *securityGroupSvc) CountBizSecurityGroupRules(cts *rest.Contexts) (interface{}, error) {
+	return svc.listSGRulesCount(cts, handler.BizOperateAuth)
+}
+
+func (svc *securityGroupSvc) listSGRulesCount(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+	interface{}, error) {
+
+	req := new(proto.ListSecurityGroupRuleCountReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	listBasicInfoReq := dataproto.ListResourceBasicInfoReq{
+		ResourceType: enumor.SecurityGroupCloudResType,
+		IDs:          req.SecurityGroupIDs,
+	}
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, listBasicInfoReq)
+	if err != nil {
+		return nil, err
+	}
+
+	// validate biz and authorize
+	err = validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.SecurityGroupRule,
+		Action: meta.Find, BasicInfos: basicInfoMap})
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]int64)
+	vendorToSGIDMap := make(map[enumor.Vendor][]string)
+	for _, info := range basicInfoMap {
+		result[info.ID] = 0
+		vendorToSGIDMap[info.Vendor] = append(vendorToSGIDMap[info.Vendor], info.ID)
+	}
+
+	for vendor, ids := range vendorToSGIDMap {
+		resp, err := svc.client.DataService().Global.SecurityGroup.CountSecurityGroupRules(cts.Kit, vendor, ids)
+		if err != nil {
+			logs.Errorf("list security group rules count from data service failed, err: %v, vendor: %s, ids: %v, rid: %s",
+				err, vendor, ids, cts.Kit.Rid)
+			return nil, err
+		}
+
+		for sgID, count := range resp {
+			result[sgID] = count
+		}
+	}
+	return result, nil
 }

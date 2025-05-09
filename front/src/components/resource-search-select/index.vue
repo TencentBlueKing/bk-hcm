@@ -11,11 +11,13 @@ export interface IResourceSelectProps {
   modelValue: ISearchValue;
   resourceType: ResourceTypeEnum;
   clearable?: boolean;
+  valueBehavior?: 'all' | 'need-key';
 }
 
 const props = withDefaults(defineProps<IResourceSelectProps>(), {
   clearable: true,
   searchOptions: () => [],
+  valueBehavior: 'all',
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -42,6 +44,7 @@ const selectValue = computed({
     :data="searchOptions"
     :get-menu-list="getOptionMenu"
     :unique-select="true"
+    :value-behavior="valueBehavior"
   />
 </template>
 

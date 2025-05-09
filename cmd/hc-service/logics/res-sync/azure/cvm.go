@@ -218,7 +218,8 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, resGroupName string,
 			CloudID:   converter.PtrToVal(one.ID),
 			Name:      converter.PtrToVal(one.Name),
 			BkBizID:   constant.UnassignedBiz,
-			BkCloudID: vpcMap[converter.PtrToVal(one.ID)].BkCloudID,
+			BkHostID:  constant.UnBindBkHostID,
+			BkCloudID: constant.UnassignedBkCloudID,
 			AccountID: accountID,
 			Region:    converter.PtrToVal(one.Location),
 			// 云上不支持该字段，azure可用区非地域概念
@@ -347,7 +348,6 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, resGroupName string,
 		cvm := dataproto.CvmBatchUpdate[corecvm.AzureCvmExtension]{
 			ID:             id,
 			Name:           converter.PtrToVal(one.Name),
-			BkCloudID:      vpcMap[converter.PtrToVal(one.ID)].BkCloudID,
 			CloudVpcIDs:    []string{vpcMap[converter.PtrToVal(one.ID)].VpcCloudID},
 			VpcIDs:         []string{vpcMap[converter.PtrToVal(one.ID)].VpcID},
 			CloudSubnetIDs: cloudMap[converter.PtrToVal(one.ID)].CloudSubnetIDs,
@@ -453,7 +453,6 @@ func (cli *client) getVpcMap(kt *kit.Kit, accountID string, cloudVpcIDsMap map[s
 				vpcMap[cvmID] = &common.VpcDB{
 					VpcCloudID: vpc.CloudID,
 					VpcID:      vpc.ID,
-					BkCloudID:  vpc.BkCloudID,
 				}
 			}
 		}
@@ -484,7 +483,8 @@ func (cli *client) getNIAssResMapFromNI(kt *kit.Kit, niIDs []string, resGroupNam
 			cloudMap[cvmID] = new(CloudData)
 			if niData.CloudSubnetID != nil {
 				cloudMap[cvmID].CloudSubnetIDs = make([]string, 0)
-				cloudMap[cvmID].CloudSubnetIDs = append(cloudMap[cvmID].CloudSubnetIDs, converter.PtrToVal(niData.CloudSubnetID))
+				cloudMap[cvmID].CloudSubnetIDs = append(cloudMap[cvmID].CloudSubnetIDs,
+					converter.PtrToVal(niData.CloudSubnetID))
 				cloudSubnetIDsMap[cvmID] = converter.PtrToVal(niData.CloudSubnetID)
 			}
 			if niData.CloudVpcID != nil {

@@ -289,6 +289,7 @@ const handleEditTemplate = (payload: any) => {
           @success="handleSuccess"
           :detail="formDetail"
           :is-edit="isEdit"
+          :show="isShowSideSlider"
           v-model:isFormDataChanged="isFormDataChanged"
         ></component>
       </template>

@@ -44,6 +44,10 @@ var SecurityGroupColumnDescriptor = utils.ColumnDescriptors{
 	{Column: "cloud_created_time", NamedC: "cloud_created_time", Type: enumor.String},
 	{Column: "cloud_update_time", NamedC: "cloud_update_time", Type: enumor.String},
 	{Column: "account_id", NamedC: "account_id", Type: enumor.String},
+	{Column: "mgmt_type", NamedC: "mgmt_type", Type: enumor.String},
+	{Column: "mgmt_biz_id", NamedC: "mgmt_biz_id", Type: enumor.Numeric},
+	{Column: "manager", NamedC: "manager", Type: enumor.String},
+	{Column: "bak_manager", NamedC: "bak_manager", Type: enumor.String},
 	{Column: "extension", NamedC: "extension", Type: enumor.Json},
 	{Column: "tags", NamedC: "tags", Type: enumor.Json},
 	{Column: "creator", NamedC: "creator", Type: enumor.String},
@@ -62,6 +66,10 @@ type SecurityGroupTable struct {
 	Name             string          `db:"name" json:"name" validate:"lte=255"`
 	Memo             *string         `db:"memo" json:"memo" validate:"omitempty,lte=255"`
 	AccountID        string          `db:"account_id" json:"account_id" validate:"lte=64"`
+	MgmtType         enumor.MgmtType `db:"mgmt_type" json:"mgmt_type" validate:"lte=64"`
+	MgmtBizID        int64           `db:"mgmt_biz_id" json:"mgmt_biz_id" `
+	Manager          string          `db:"manager" json:"manager" validate:"lte=64"`
+	BakManager       string          `db:"bak_manager" json:"bak_manager" validate:"lte=64"`
 	CloudCreatedTime string          `db:"cloud_created_time" json:"cloud_created_time"`
 	CloudUpdateTime  string          `db:"cloud_update_time" json:"cloud_update_time"`
 	Extension        types.JsonField `db:"extension" json:"extension"`
@@ -72,17 +80,18 @@ type SecurityGroupTable struct {
 	UpdatedAt        types.Time      `db:"updated_at" json:"updated_at" validate:"excluded_unless"`
 }
 
+// GetID return security group table's id.
+func (t SecurityGroupTable) GetID() string {
+	return t.ID
+}
+
 // TableName return security group table name.
 func (t SecurityGroupTable) TableName() table.Name {
 	return table.SecurityGroupTable
 }
 
-// InsertValidate security group table when insert.
+// InsertValidate security group table when inserted.
 func (t SecurityGroupTable) InsertValidate() error {
-	// length validate.
-	if err := validator.Validate.Struct(t); err != nil {
-		return err
-	}
 
 	if len(t.ID) == 0 {
 		return errors.New("id is required")
@@ -119,20 +128,22 @@ func (t SecurityGroupTable) InsertValidate() error {
 	if len(t.Reviser) == 0 {
 		return errors.New("reviser is required")
 	}
-
-	return nil
-}
-
-// UpdateValidate security group table when update.
-func (t SecurityGroupTable) UpdateValidate() error {
 	// length validate.
 	if err := validator.Validate.Struct(t); err != nil {
 		return err
 	}
+	return nil
+}
+
+// UpdateValidate security group table when updated.
+func (t SecurityGroupTable) UpdateValidate() error {
 
 	if len(t.Creator) != 0 {
 		return errors.New("creator can not update")
 	}
-
+	// length validate.
+	if err := validator.Validate.Struct(t); err != nil {
+		return err
+	}
 	return nil
 }

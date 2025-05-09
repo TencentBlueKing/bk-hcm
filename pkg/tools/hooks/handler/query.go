@@ -20,6 +20,7 @@
 package handler
 
 import (
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
@@ -51,12 +52,21 @@ func ListBizAuthRes(cts *rest.Contexts, opt *ListAuthResOption) (*filter.Express
 		return nil, false, nil
 	}
 
-	bizFilter, err := tools.And(filter.AtomRule{Field: "bk_biz_id", Op: filter.Equal.Factory(), Value: bizID},
-		opt.Filter)
+	bizRules := make([]*filter.AtomRule, 0)
+	bizRules = append(bizRules, tools.RuleEqual("bk_biz_id", bizID))
+	if opt.ResType == meta.SecurityGroup {
+		// 安全组允许使用业务访问，TODO 后续需要以更通用的方式扩展到其他资源
+		bizRules = append(bizRules, tools.RuleEqual("usage_biz_id", bizID))
+		// -1 表示使用业务为全部业务
+		bizRules = append(bizRules, tools.RuleEqual("usage_biz_id", constant.UnassignedBiz))
+	}
+	bizFilter := tools.ExpressionOr(bizRules...)
+
+	finalFilter, err := tools.And(bizFilter, opt.Filter)
 	if err != nil {
 		return nil, false, err
 	}
-	return bizFilter, false, err
+	return finalFilter, false, err
 }
 
 // ListResourceAuthRes 资源下 查询校验

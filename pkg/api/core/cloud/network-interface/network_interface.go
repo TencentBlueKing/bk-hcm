@@ -421,7 +421,7 @@ type ApplicationGatewayIPConfigurationPropertiesFormat struct {
 	ProvisioningState *ProvisioningState `json:"provisioning_state,omitempty" azure:"ro"`
 }
 
-// Delegation - Details the service to which the subnet is delegated.
+// Delegation - UsageBizInfos the service to which the subnet is delegated.
 type Delegation struct {
 	// CloudID Cloud ID.
 	CloudID *string `json:"cloud_id,omitempty"`

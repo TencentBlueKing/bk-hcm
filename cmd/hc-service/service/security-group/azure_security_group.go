@@ -20,6 +20,11 @@
 package securitygroup
 
 import (
+	"fmt"
+	"strings"
+
+	adazure "hcm/pkg/adaptor/azure"
+	typescore "hcm/pkg/adaptor/types/core"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
@@ -28,9 +33,12 @@ import (
 	proto "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2"
 )
 
 // CreateAzureSecurityGroup create azure security group.
@@ -76,7 +84,12 @@ func (g *securityGroup) CreateAzureSecurityGroup(cts *rest.Contexts) (interface{
 					FlushConnection:   sg.FlushConnection,
 					ResourceGUID:      sg.ResourceGUID,
 				},
-			},
+				// Tags:        core.NewTagMap(req.Tags...),
+				MgmtType:    req.MgmtType,
+				MgmtBizID:   req.MgmtBizID,
+				Manager:     req.Manager,
+				BakManager:  req.BakManager,
+				UsageBizIds: req.UsageBizIds},
 		},
 	}
 	result, err := g.dataCli.Azure.SecurityGroup.BatchCreateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), createReq)
@@ -395,4 +408,119 @@ func (g *securityGroup) AzureSecurityGroupDisassociateNI(cts *rest.Contexts) (in
 	}
 
 	return nil, nil
+}
+
+// AzureListSecurityGroupStatistic ...
+func (g *securityGroup) AzureListSecurityGroupStatistic(cts *rest.Contexts) (any, error) {
+	req := new(proto.ListSecurityGroupStatisticReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	sgMap, err := g.getAzureSecurityGroupMap(cts.Kit, req.SecurityGroupIDs)
+	if err != nil {
+		logs.Errorf("get security group map failed, sgID: %v, err: %v, rid: %s", req.SecurityGroupIDs, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	cloudIDToSgIDMap := make(map[string]string)
+	resGroupToCloudIDsMap := make(map[string][]string)
+	sgIDToResourceCountMap := make(map[string]map[string]int64)
+	for _, sgID := range req.SecurityGroupIDs {
+		sg, ok := sgMap[sgID]
+		if !ok {
+			return nil, fmt.Errorf("azure security group: %s not found", sgID)
+		}
+		cloudIDToSgIDMap[sg.CloudID] = sgID
+		ResGroupName := sg.Extension.ResourceGroupName
+		resGroupToCloudIDsMap[ResGroupName] = append(resGroupToCloudIDsMap[ResGroupName], sg.CloudID)
+		sgIDToResourceCountMap[sgID] = make(map[string]int64)
+	}
+
+	client, err := g.ad.Azure(cts.Kit, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	for resourceGroupName, cloudIDs := range resGroupToCloudIDsMap {
+		resp, err := g.listAzureSecurityGroupFromCloud(cts.Kit, client, resourceGroupName, cloudIDs)
+		if err != nil {
+			logs.Errorf("request adaptor to list azure security group failed, err: %v, resourceGroupName: %s,"+
+				" cloudIDs: %v, rid: %s", err, resourceGroupName, cloudIDs, cts.Kit.Rid)
+			return nil, err
+		}
+
+		if err = g.countAzureSecurityGroupStatistic(resp, sgIDToResourceCountMap, cloudIDToSgIDMap); err != nil {
+			logs.Errorf("count azure security group statistic failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+	}
+
+	return resCountMapToSGStatisticResp(sgIDToResourceCountMap), nil
+}
+
+func (g *securityGroup) countAzureSecurityGroupStatistic(details []*armnetwork.SecurityGroup,
+	sgIDToResourceCountMap map[string]map[string]int64, cloudIDToSgIDMap map[string]string) error {
+
+	for _, one := range details {
+		cloudID := strings.ToLower(converter.PtrToVal(one.ID))
+		sgID, ok := cloudIDToSgIDMap[cloudID]
+		if !ok {
+			logs.Warnf("azure security group: %s not found in cloudIDToSgIDMap", cloudID)
+			continue
+		}
+		for _, networkInterface := range one.Properties.NetworkInterfaces {
+			if networkInterface == nil {
+				continue
+			}
+			resType := converter.PtrToVal(networkInterface.Type)
+			if resType == "" {
+				resType = "network_interface"
+			}
+			sgIDToResourceCountMap[sgID][resType]++
+		}
+	}
+	return nil
+}
+
+func (g *securityGroup) listAzureSecurityGroupFromCloud(kt *kit.Kit, client *adazure.Azure, resourceGroupName string,
+	cloudIDs []string) ([]*armnetwork.SecurityGroup, error) {
+
+	opt := &typescore.AzureListByIDOption{
+		ResourceGroupName: resourceGroupName,
+		CloudIDs:          cloudIDs,
+	}
+	resp, err := client.ListRawSecurityGroupByID(kt, opt)
+	if err != nil {
+		logs.Errorf("request adaptor to list azure security group by id failed, err: %v, opt: %v, rid: %s",
+			err, opt, kt.Rid)
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (g *securityGroup) getAzureSecurityGroupMap(kt *kit.Kit, sgIDs []string) (
+	map[string]corecloud.SecurityGroup[corecloud.AzureSecurityGroupExtension], error) {
+
+	sgReq := &core.ListReq{
+		Filter: tools.ContainersExpression("id", sgIDs),
+		Page:   core.NewDefaultBasePage(),
+	}
+	sgResult, err := g.dataCli.Azure.SecurityGroup.ListSecurityGroupExt(kt.Ctx, kt.Header(), sgReq)
+	if err != nil {
+		logs.Errorf("request dataservice list tcloud security group failed, err: %v, ids: %v, rid: %s",
+			err, sgIDs, kt.Rid)
+		return nil, err
+	}
+
+	sgMap := make(map[string]corecloud.SecurityGroup[corecloud.AzureSecurityGroupExtension], len(sgResult.Details))
+	for _, sg := range sgResult.Details {
+		sgMap[sg.ID] = sg
+	}
+
+	return sgMap, nil
 }

@@ -195,7 +195,6 @@ func (cli *client) createVpc(kt *kit.Kit, accountID string, addVpcs []types.AwsV
 			AccountID: accountID,
 			CloudID:   item.CloudID,
 			BkBizID:   constant.UnassignedBiz,
-			BkCloudID: constant.UnbindBkCloudID,
 			Name:      converter.ValToPtr(item.Name),
 			Region:    item.Region,
 			Category:  enumor.BizVpcCategory,

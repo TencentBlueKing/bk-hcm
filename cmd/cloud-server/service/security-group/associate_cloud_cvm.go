@@ -20,14 +20,13 @@
 package securitygroup
 
 import (
-	"strings"
-
 	protoaudit "hcm/pkg/api/data-service/audit"
 	hcproto "hcm/pkg/api/hc-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/hooks/handler"
@@ -35,15 +34,15 @@ import (
 
 // BatchAssociateCvm 关联安全组，安全组本地id，cvm 云id
 func (svc *securityGroupSvc) BatchAssociateCvm(cts *rest.Contexts) (any, error) {
-	return svc.associateCloudCvm(cts, handler.ResOperateAuth)
+	return svc.batchAssociateCvms(cts, handler.ResOperateAuth)
 }
 
 // BatchAssociateBizCvm 业务下关联安全组，安全组本地id，cvm 云id
 func (svc *securityGroupSvc) BatchAssociateBizCvm(cts *rest.Contexts) (any, error) {
-	return svc.associateCloudCvm(cts, handler.BizOperateAuth)
+	return svc.batchAssociateCvms(cts, handler.BizOperateAuth)
 }
 
-func (svc *securityGroupSvc) associateCloudCvm(cts *rest.Contexts,
+func (svc *securityGroupSvc) batchAssociateCvms(cts *rest.Contexts,
 	validHandler handler.ValidWithAuthHandler) (any, error) {
 
 	req, sgInfo, err := svc.decodeAssociateReq(cts, validHandler, meta.Associate)
@@ -51,32 +50,44 @@ func (svc *securityGroupSvc) associateCloudCvm(cts *rest.Contexts,
 		return nil, err
 	}
 
-	// create operation audit.
-	audit := protoaudit.CloudResourceOperationInfo{
-		ResType:           enumor.SecurityGroupAuditResType,
-		ResID:             req.SecurityGroupID,
-		Action:            protoaudit.Associate,
-		AssociatedResType: enumor.CvmAuditResType,
-		AssociatedResID:   strings.Join(req.CvmIDs, ","),
-	}
-	if err := svc.audit.ResOperationAudit(cts.Kit, audit); err != nil {
-		logs.Errorf("create operation audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
+	if err = svc.createBatchAssociateCvmAudit(cts.Kit, req.SecurityGroupID, req.CvmIDs); err != nil {
+		logs.Errorf("create associate cvm audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	switch sgInfo.Vendor {
 	case enumor.TCloud:
-		return svc.associateTCloudCloudCvm(cts, req)
+		return svc.batchAssociateTCloudCvms(cts, req)
 	default:
-		return nil, errf.Newf(errf.Unknown, "vendor: %s not support", sgInfo.Vendor)
+		return nil, errf.Newf(errf.Unknown, "vendor: %s not support for batch associate cvm", sgInfo.Vendor)
 	}
 
 }
 
-func (svc *securityGroupSvc) associateTCloudCloudCvm(cts *rest.Contexts,
+func (svc *securityGroupSvc) createBatchAssociateCvmAudit(kt *kit.Kit, sgID string, cvmIDs []string) error {
+	// create operation audit.
+	audits := make([]protoaudit.CloudResourceOperationInfo, 0, len(cvmIDs))
+	for _, cvmID := range cvmIDs {
+		audits = append(audits, protoaudit.CloudResourceOperationInfo{
+			ResType:           enumor.SecurityGroupAuditResType,
+			ResID:             sgID,
+			Action:            protoaudit.Associate,
+			AssociatedResType: enumor.CvmAuditResType,
+			AssociatedResID:   cvmID,
+		})
+	}
+
+	if err := svc.audit.BatchResOperationAudit(kt, audits); err != nil {
+		logs.Errorf("create operation audit failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+	return nil
+}
+
+func (svc *securityGroupSvc) batchAssociateTCloudCvms(cts *rest.Contexts,
 	req *hcproto.SecurityGroupBatchAssociateCvmReq) (any, error) {
 
-	err := svc.client.HCService().TCloud.SecurityGroup.BatchAssociateCloudCvm(cts.Kit, req.SecurityGroupID,
+	err := svc.client.HCService().TCloud.SecurityGroup.BatchAssociateCvm(cts.Kit, req.SecurityGroupID,
 		req.CvmIDs)
 	if err != nil {
 		logs.Errorf("fail to call hc service associate cloud cvm, err: %v, sg_id: %s, cloud_cvm_ids: %v, rid:%s",
@@ -88,15 +99,15 @@ func (svc *securityGroupSvc) associateTCloudCloudCvm(cts *rest.Contexts,
 
 // BatchDisassociateCvm disassociate cvm.
 func (svc *securityGroupSvc) BatchDisassociateCvm(cts *rest.Contexts) (any, error) {
-	return svc.disassociateCloudCvm(cts, handler.ResOperateAuth)
+	return svc.batchDisassociateCvm(cts, handler.ResOperateAuth)
 }
 
 // BatchDisassociateBizCvm disassociate biz cvm.
 func (svc *securityGroupSvc) BatchDisassociateBizCvm(cts *rest.Contexts) (any, error) {
-	return svc.disassociateCloudCvm(cts, handler.BizOperateAuth)
+	return svc.batchDisassociateCvm(cts, handler.BizOperateAuth)
 }
 
-func (svc *securityGroupSvc) disassociateCloudCvm(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
+func (svc *securityGroupSvc) batchDisassociateCvm(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
 	any, error) {
 
 	req, sgInfo, err := svc.decodeAssociateReq(cts, validHandler, meta.Disassociate)
@@ -108,11 +119,11 @@ func (svc *securityGroupSvc) disassociateCloudCvm(cts *rest.Contexts, validHandl
 
 	case enumor.TCloud:
 		// create operation audit.
-		if err = svc.createTCloudDisassociateCloudCvmAudit(cts, req); err != nil {
+		if err = svc.createTCloudDisassociateCvmAudit(cts, req); err != nil {
 			return nil, err
 		}
 
-		err := svc.client.HCService().TCloud.SecurityGroup.BatchDisassociateCloudCvm(cts.Kit,
+		err := svc.client.HCService().TCloud.SecurityGroup.BatchDisassociateCvm(cts.Kit,
 			req.SecurityGroupID, req.CvmIDs)
 		if err != nil {
 			logs.Errorf("fail to call hc service dissociate cloud cvm, err: %v, sg_id: %s, cloud_cvm_ids: %v, rid:%s",
@@ -126,17 +137,21 @@ func (svc *securityGroupSvc) disassociateCloudCvm(cts *rest.Contexts, validHandl
 
 }
 
-func (svc *securityGroupSvc) createTCloudDisassociateCloudCvmAudit(cts *rest.Contexts,
+func (svc *securityGroupSvc) createTCloudDisassociateCvmAudit(cts *rest.Contexts,
 	req *hcproto.SecurityGroupBatchAssociateCvmReq) error {
 
-	audit := protoaudit.CloudResourceOperationInfo{
-		ResType:           enumor.SecurityGroupRuleAuditResType,
-		ResID:             req.SecurityGroupID,
-		Action:            protoaudit.Disassociate,
-		AssociatedResType: enumor.CvmAuditResType,
-		AssociatedResID:   strings.Join(req.CvmIDs, ","),
+	audits := make([]protoaudit.CloudResourceOperationInfo, 0, len(req.CvmIDs))
+	for _, cvmID := range req.CvmIDs {
+		audits = append(audits, protoaudit.CloudResourceOperationInfo{
+			ResType:           enumor.SecurityGroupRuleAuditResType,
+			ResID:             req.SecurityGroupID,
+			Action:            protoaudit.Disassociate,
+			AssociatedResType: enumor.CvmAuditResType,
+			AssociatedResID:   cvmID,
+		})
 	}
-	if err := svc.audit.ResOperationAudit(cts.Kit, audit); err != nil {
+
+	if err := svc.audit.BatchResOperationAudit(cts.Kit, audits); err != nil {
 		logs.Errorf("create operation audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return err
 	}

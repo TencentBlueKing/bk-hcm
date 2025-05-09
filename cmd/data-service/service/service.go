@@ -63,6 +63,7 @@ import (
 	networkinterface "hcm/cmd/data-service/service/cloud/network-interface"
 	networkcvmrel "hcm/cmd/data-service/service/cloud/network-interface-cvm-rel"
 	"hcm/cmd/data-service/service/cloud/region"
+	resusagebizrel "hcm/cmd/data-service/service/cloud/res-usage-biz-rel"
 	resourcegroup "hcm/cmd/data-service/service/cloud/resource-group"
 	routetable "hcm/cmd/data-service/service/cloud/route-table"
 	securitygroup "hcm/cmd/data-service/service/cloud/security-group"
@@ -274,6 +275,8 @@ func (s *Service) apiSet() *restful.Container {
 	globalconfig.InitService(capability)
 
 	task.InitService(capability)
+
+	resusagebizrel.InitService(capability)
 
 	return restful.NewContainer().Add(capability.WebService)
 }

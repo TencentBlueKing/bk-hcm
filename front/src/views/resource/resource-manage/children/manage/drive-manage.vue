@@ -42,12 +42,6 @@ const selectSearchData = computed(() => {
       id: 'cloud_id',
     },
     ...searchData.value,
-    ...[
-      {
-        name: '云地域',
-        id: 'region',
-      },
-    ],
   ];
 });
 
@@ -252,7 +246,14 @@ const isCurRowSelectEnable = (row: any) => {
         {{ t('批量回收') }}
       </bk-button>
       <div class="flex-row align-items-center justify-content-arround mlauto">
-        <bk-search-select class="w500" clearable :conditions="[]" :data="selectSearchData" v-model="searchValue" />
+        <bk-search-select
+          class="w500"
+          clearable
+          :conditions="[]"
+          :data="selectSearchData"
+          v-model="searchValue"
+          value-behavior="need-key"
+        />
         <slot name="recycleHistory"></slot>
       </div>
     </section>
