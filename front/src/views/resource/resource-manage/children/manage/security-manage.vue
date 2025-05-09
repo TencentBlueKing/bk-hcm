@@ -55,6 +55,15 @@ import UsageBizValue from '@/views/resource/resource-manage/children/components/
 import RefreshCell from '../components/security/refresh-cell/index.vue';
 import { showClone } from '../plugin/security-group/show-clone.plugin';
 import { checkVendorInResource } from '../plugin/security-group/check-vendor-in-resource.plugin';
+import {
+  AUTH_BIZ_CREATE_IAAS_RESOURCE,
+  AUTH_BIZ_DELETE_IAAS_RESOURCE,
+  AUTH_BIZ_UPDATE_IAAS_RESOURCE,
+  AUTH_CREATE_IAAS_RESOURCE,
+  AUTH_DELETE_IAAS_RESOURCE,
+  AUTH_UPDATE_IAAS_RESOURCE,
+} from '@/constants/auth-symbols';
+import HcmAuth from '@/components/auth/auth.vue';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -65,12 +74,10 @@ const props = defineProps({
   isResourcePage: {
     type: Boolean,
   },
-  authVerifyData: {
-    type: Object as PropType<any>,
-  },
   whereAmI: {
     type: String,
   },
+  bkBizId: Number,
 });
 
 // use hooks
@@ -89,6 +96,17 @@ const resourceStore = useResourceStore();
 const accountStore = useAccountStore();
 const businessGlobalStore = useBusinessGlobalStore();
 
+const authTypeMap = computed(() => {
+  if (props.isResourcePage) {
+    return { create: AUTH_CREATE_IAAS_RESOURCE, update: AUTH_UPDATE_IAAS_RESOURCE, delete: AUTH_DELETE_IAAS_RESOURCE };
+  }
+  return {
+    create: AUTH_BIZ_CREATE_IAAS_RESOURCE,
+    update: AUTH_BIZ_UPDATE_IAAS_RESOURCE,
+    delete: AUTH_BIZ_DELETE_IAAS_RESOURCE,
+  };
+});
+
 const activeType = ref<string>();
 const URL_MAP: Record<string, string> = {
   gcp: 'vendors/gcp/firewalls/rules/list',
@@ -97,7 +115,7 @@ const URL_MAP: Record<string, string> = {
 };
 const fetchUrl = ref<string>(URL_MAP.group);
 
-const emit = defineEmits(['auth', 'handleSecrityType', 'edit', 'editTemplate']);
+const emit = defineEmits(['handleSecrityType', 'edit', 'editTemplate']);
 const { generateColumnsSettings } = useColumns('group');
 
 const cloneSecurityData = reactive<ICloneSecurityProps>({
@@ -485,24 +503,13 @@ const groupColumns = [
       const isAssigned = data.bk_biz_id !== -1;
       const isPlatformManage = data.mgmt_type === SecurityGroupManageType.PLATFORM;
       const isCurrentBizManage = data.mgmt_biz_id === getBizsId();
-      const { isResourcePage, authVerifyData } = props;
+      const { isResourcePage } = props;
 
-      const authMap: Record<string, string> = {
-        rule: isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate',
-        clone: isResourcePage ? 'iaas_resource_create' : 'biz_iaas_resource_create',
-        delete: isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete',
-      };
-
-      const handleAuthClick = (type: string) => {
-        const permission = authVerifyData?.permissionAction[authMap[type]];
-        if (permission) {
-          if (type === 'clone') {
-            securityHandleShowClone(data);
-          } else {
-            handleFillCurrentSecurityGroup(data, type);
-          }
+      const handleClick = (type: string) => {
+        if (type === 'clone') {
+          securityHandleShowClone(data);
         } else {
-          emit('auth', authMap[type]);
+          handleFillCurrentSecurityGroup(data, type);
         }
       };
 
@@ -532,6 +539,7 @@ const groupColumns = [
       const operationList = [
         {
           type: 'rule',
+          authType: authTypeMap.value.update,
           name: t('配置规则'),
           resourcePageDisabled: isAssigned || isCheckVendorInResource,
           businessPageDisabled: !(isCurrentBizManage && isAssigned),
@@ -539,6 +547,7 @@ const groupColumns = [
         },
         {
           type: 'clone',
+          authType: authTypeMap.value.create,
           name: t('克隆'),
           hidden: isResourcePage,
           businessPageDisabled: !isCloneShow,
@@ -549,6 +558,7 @@ const groupColumns = [
         },
         {
           type: 'delete',
+          authType: authTypeMap.value.delete,
           name: t('删除'),
           resourcePageDisabled: isAssigned || isCheckVendorInResource,
           businessPageDisabled: !(isCurrentBizManage && isAssigned),
@@ -559,26 +569,29 @@ const groupColumns = [
       return h(
         'div',
         { class: 'operation-cell' },
-        operationList.map(({ type, name, resourcePageDisabled, businessPageDisabled, hidden, getTooltipsOption }) => {
-          if (hidden) return null;
-          const disabled = isResourcePage ? resourcePageDisabled : businessPageDisabled;
-          const tooltipsOption = getTooltipsOption?.() || { disabled: true };
+        operationList.map(
+          ({ type, authType, name, resourcePageDisabled, businessPageDisabled, hidden, getTooltipsOption }) => {
+            if (hidden) return null;
+            const disabled = isResourcePage ? resourcePageDisabled : businessPageDisabled;
+            const tooltipsOption = getTooltipsOption?.() || { disabled: true };
 
-          return withDirectives(
-            h(
-              Button,
+            return h(
+              HcmAuth,
+              { sign: { type: authType, relation: [props.bkBizId] } },
               {
-                class: { 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction[authMap[type]] },
-                text: true,
-                theme: 'primary',
-                disabled,
-                onClick: () => handleAuthClick(type),
+                default: ({ noPerm }: { noPerm: boolean }) =>
+                  withDirectives(
+                    h(
+                      Button,
+                      { text: true, theme: 'primary', disabled: noPerm || disabled, onClick: () => handleClick(type) },
+                      name,
+                    ),
+                    [[bkTooltips, tooltipsOption]],
+                  ),
               },
-              name,
-            ),
-            [[bkTooltips, tooltipsOption]],
-          );
-        }),
+            );
+          },
+        ),
       );
     },
   },
@@ -754,59 +767,45 @@ const gcpColumns = [
     field: 'operator',
     isDefaultShow: true,
     render({ data }: any) {
-      return h('span', {}, [
+      return h('span', [
         h(
-          'span',
+          HcmAuth,
+          { sign: { type: authTypeMap.value.update, relation: [props.bkBizId] } },
           {
-            onClick() {
-              emit('auth', props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate');
-            },
-          },
-          [
-            h(
-              Button,
-              {
-                text: true,
-                theme: 'primary',
-                disabled:
-                  !props.authVerifyData?.permissionAction[
-                    props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate'
-                  ] ||
-                  (data.bk_biz_id !== -1 && props.isResourcePage),
-                onClick() {
-                  emit('edit', cloneDeep(data));
+            default: ({ noPerm }: { noPerm: boolean }) =>
+              h(
+                Button,
+                {
+                  text: true,
+                  theme: 'primary',
+                  disabled: noPerm || (data.bk_biz_id !== -1 && props.isResourcePage),
+                  onClick() {
+                    emit('edit', cloneDeep(data));
+                  },
                 },
-              },
-              [t('编辑')],
-            ),
-          ],
+                [t('编辑')],
+              ),
+          },
         ),
         h(
-          'span',
+          HcmAuth,
+          { sign: { type: authTypeMap.value.update, relation: [props.bkBizId] } },
           {
-            onClick() {
-              emit('auth', props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate');
-            },
-          },
-          [
-            h(
-              Button,
-              {
-                class: 'ml10',
-                text: true,
-                disabled:
-                  !props.authVerifyData?.permissionAction[
-                    props.isResourcePage ? 'iaas_resource_delete' : 'biz_iaas_resource_delete'
-                  ] ||
-                  (data.bk_biz_id !== -1 && props.isResourcePage),
-                theme: 'primary',
-                onClick() {
-                  securityHandleShowDelete(data);
+            default: ({ noPerm }: { noPerm: boolean }) =>
+              h(
+                Button,
+                {
+                  class: 'ml8',
+                  text: true,
+                  disabled: noPerm || (data.bk_biz_id !== -1 && props.isResourcePage),
+                  theme: 'primary',
+                  onClick() {
+                    securityHandleShowDelete(data);
+                  },
                 },
-              },
-              [t('删除')],
-            ),
-          ],
+                [t('删除')],
+              ),
+          },
         ),
       ]);
     },

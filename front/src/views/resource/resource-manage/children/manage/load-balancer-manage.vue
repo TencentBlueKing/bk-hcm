@@ -152,7 +152,8 @@ const renderColumns = [
   ...columns,
   {
     label: '操作',
-    width: 120,
+    width: 150,
+    fixed: 'right',
     render: ({ data }: any) =>
       h('div', { class: 'operation-column' }, [
         withDirectives(
@@ -257,7 +258,6 @@ const {
     },
   ],
   selections,
-  resetSelections,
   triggerApi,
 );
 

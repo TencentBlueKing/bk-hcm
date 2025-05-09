@@ -12,7 +12,8 @@ import useColumns from '../../hooks/use-columns';
 import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 import { VendorEnum } from '@/common/constant';
 import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
-import { useVerify } from '@/hooks';
+import { AUTH_BIZ_DELETE_IAAS_RESOURCE, AUTH_DELETE_IAAS_RESOURCE } from '@/constants/auth-symbols';
+import HcmAuth from '@/components/auth/auth.vue';
 
 const props = defineProps({
   filter: {
@@ -21,12 +22,10 @@ const props = defineProps({
   isResourcePage: {
     type: Boolean,
   },
-  authVerifyData: {
-    type: Object as PropType<any>,
-  },
   whereAmI: {
     type: String,
   },
+  bkBizId: Number,
 });
 
 const { t } = useI18n();
@@ -46,8 +45,6 @@ const selectSearchData = computed(() => {
 });
 
 const { searchData, searchValue, filter } = useFilter(props);
-
-const emit = defineEmits(['auth']);
 
 const isDisabledRecycle = (vendor: VendorEnum, status: string) => {
   let res = true;
@@ -76,25 +73,18 @@ const isDisabledRecycle = (vendor: VendorEnum, status: string) => {
   return res;
 };
 
+const deleteAuthType = computed(() =>
+  props.isResourcePage ? AUTH_DELETE_IAAS_RESOURCE : AUTH_BIZ_DELETE_IAAS_RESOURCE,
+);
 const unableRecycled = (data: { instance_id: string; vendor: VendorEnum; status: string; bk_biz_id: number }) => {
-  return (
-    !props.authVerifyData?.permissionAction[
-      props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate'
-    ] ||
+  return Boolean(
     data.instance_id ||
-    (props.isResourcePage && data.bk_biz_id !== -1) ||
-    isDisabledRecycle(data?.vendor, data?.status)
+      (props.isResourcePage && data.bk_biz_id !== -1) ||
+      isDisabledRecycle(data?.vendor, data?.status),
   );
 };
 
 const generateTooltipsOptions = (data: any) => {
-  const action_name = props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
-
-  if (!props.authVerifyData?.permissionAction[action_name])
-    return {
-      content: '当前用户无权限操作该按钮',
-      disabled: props.authVerifyData?.permissionAction[action_name],
-    };
   if (props.isResourcePage && data?.bk_biz_id !== -1)
     return {
       content: '该硬盘已分配到业务，仅可在业务下操作',
@@ -121,21 +111,17 @@ const renderColumns = [
     label: '操作',
     render({ data }: any) {
       return h(
-        h(
-          'span',
-          {
-            onClick() {
-              emit('auth', props.isResourcePage ? 'iaas_resource_operate' : 'biz_iaas_resource_operate');
-            },
-          },
-          [
+        HcmAuth,
+        { sign: { type: deleteAuthType.value, relation: [props.bkBizId] } },
+        {
+          default: ({ noPerm }: { noPerm: boolean }) =>
             withDirectives(
               h(
                 Button,
                 {
                   text: true,
                   theme: 'primary',
-                  disabled: unableRecycled(data),
+                  disabled: noPerm || unableRecycled(data),
                   onClick() {
                     InfoBox({
                       title: '请确认是否回收',
@@ -146,18 +132,10 @@ const renderColumns = [
                       footerAlign: 'center',
                       contentAlign: 'center',
                       extCls: 'recycle-resource-infobox',
-                      onConfirm() {
-                        resourceStore
-                          .recycled('disks', {
-                            infos: [{ id: data.id }],
-                          })
-                          .then(() => {
-                            Message({
-                              theme: 'success',
-                              message: '回收成功',
-                            });
-                            triggerApi();
-                          });
+                      async onConfirm() {
+                        await resourceStore.recycled('disks', { infos: [{ id: data.id }] });
+                        Message({ theme: 'success', message: '回收成功' });
+                        triggerApi();
                       },
                     });
                   },
@@ -166,8 +144,7 @@ const renderColumns = [
               ),
               [[bkTooltips, generateTooltipsOptions(data)]],
             ),
-          ],
-        ),
+        },
       );
     },
   },
@@ -179,8 +156,6 @@ const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, ha
   { filter: filter.value },
   'disks',
 );
-
-const { handleAuth } = useVerify();
 
 const { handleShowDelete, DeleteDialog } = useDelete(
   simpleColumns,
@@ -225,26 +200,22 @@ const isCurRowSelectEnable = (row: any) => {
           }
         "
       />
-      <bk-button
-        class="mw88"
-        :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.biz_iaas_resource_delete }"
-        :disabled="authVerifyData?.permissionAction?.biz_iaas_resource_delete && selections.length <= 0"
-        @click="
-          () => {
-            if (authVerifyData?.permissionAction?.biz_iaas_resource_delete) {
-              handleShowDelete(
-                selections
-                  .filter((selection) => !isDisabledRecycle(selection?.vendor, selection?.status))
-                  .map((selection) => selection.id),
-              );
-            } else {
-              handleAuth('biz_iaas_resource_delete');
-            }
-          }
-        "
-      >
-        {{ t('批量回收') }}
-      </bk-button>
+      <hcm-auth :sign="{ type: deleteAuthType, relation: [props.bkBizId] }" v-slot="{ noPerm }">
+        <bk-button
+          class="mw88"
+          :disabled="selections.length <= 0 || noPerm"
+          @click="
+            handleShowDelete(
+              selections
+                .filter((selection) => !isDisabledRecycle(selection?.vendor, selection?.status))
+                .map((selection) => selection.id),
+            )
+          "
+        >
+          {{ t('批量回收') }}
+        </bk-button>
+      </hcm-auth>
+
       <div class="flex-row align-items-center justify-content-arround mlauto">
         <bk-search-select
           class="w500"

@@ -26,7 +26,6 @@ import { useI18n } from 'vue-i18n';
 import useSteps from './hooks/use-steps';
 import type { FilterType } from '@/typings/resource';
 import { useAccountStore } from '@/store';
-import { useVerify } from '@/hooks';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { InfoBox } from 'bkui-vue';
 import { AUTH_CREATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
@@ -90,16 +89,6 @@ const headerExtensionMap = computed(() => {
   }
   return map;
 });
-
-// 权限hook
-const {
-  showPermissionDialog,
-  handlePermissionConfirm,
-  handlePermissionDialog,
-  handleAuth,
-  permissionParams,
-  authVerifyData,
-} = useVerify();
 
 const resourceAccountStore = useResourceAccountStore();
 
@@ -500,10 +489,6 @@ onMounted(() => {
               :filter="filter"
               :where-am-i="activeTab"
               :is-resource-page="isResourcePage"
-              :auth-verify-data="authVerifyData"
-              @auth="(val: string) => {
-                handleAuth(val)
-              }"
               @handleSecrityType="handleSecrityType"
               ref="componentRef"
               @edit="handleEdit"
@@ -552,13 +537,6 @@ onMounted(() => {
         :title="t('快速分配')"
         :data="[]"
       />
-
-      <permission-dialog
-        v-model:is-show="showPermissionDialog"
-        :params="permissionParams"
-        @cancel="handlePermissionDialog"
-        @confirm="handlePermissionConfirm"
-      ></permission-dialog>
 
       <TemplateDialog
         :is-show="isTemplateDialogShow"

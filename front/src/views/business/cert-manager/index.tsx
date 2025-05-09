@@ -6,7 +6,7 @@ import { VendorEnum } from '@/common/constant';
 import { DoublePlainObject, FilterType, QueryRuleOPEnum } from '@/typings';
 import { useTable } from '@/hooks/useTable/useTable';
 import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
-import { useAccountStore, useResourceStore } from '@/store';
+import { useResourceStore } from '@/store';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
@@ -15,8 +15,12 @@ import AccountSelector from '@/components/account-selector/index-new.vue';
 import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
 import Confirm from '@/components/confirm';
 import { getTableNewRowClass } from '@/common/util';
-import PermissionDialog from '@/components/permission-dialog';
-import { useVerify } from '@/hooks';
+import {
+  AUTH_BIZ_CREATE_CERT,
+  AUTH_BIZ_DELETE_CERT,
+  AUTH_CREATE_CERT,
+  AUTH_DELETE_CERT,
+} from '@/constants/auth-symbols';
 const { FormItem } = Form;
 export default defineComponent({
   name: 'CertManager',
@@ -24,10 +28,17 @@ export default defineComponent({
     filter: Object as PropType<FilterType>,
   },
   setup(props) {
-    const { isResourcePage, isBusinessPage, whereAmI } = useWhereAmI();
-    const accountStore = useAccountStore();
+    const { isResourcePage, isBusinessPage, whereAmI, getBizsId } = useWhereAmI();
     const resourceStore = useResourceStore();
     const resourceAccountStore = useResourceAccountStore();
+
+    const currentBusinessId = computed(() => (whereAmI.value === Senarios.business ? getBizsId() : 0));
+    const authTypeMap = computed(() => {
+      if (whereAmI.value === Senarios.business) {
+        return { create: AUTH_BIZ_CREATE_CERT, delete: AUTH_BIZ_DELETE_CERT };
+      }
+      return { create: AUTH_CREATE_CERT, delete: AUTH_DELETE_CERT };
+    });
 
     const { selections, handleSelectionChange, resetSelections } = useSelection();
 
@@ -59,31 +70,23 @@ export default defineComponent({
           label: '操作',
           width: 120,
           render: ({ data }: { data: any }) => (
-            <Button
-              text
-              class={`${!hasDeleteCertPermission.value ? 'hcm-no-permision-text-btn' : ''}`}
-              theme='primary'
-              onClick={() => {
-                if (!hasDeleteCertPermission.value) {
-                  handleAuth(`${isBusinessPage ? 'biz_' : ''}cert_resource_delete`);
-                } else {
-                  handleDeleteCert(data);
-                }
-              }}
-              disabled={hasDeleteCertPermission.value && isResourcePage && data.bk_biz_id !== -1}
-              v-bk-tooltips={
-                hasDeleteCertPermission.value && isResourcePage && data.bk_biz_id !== -1
-                  ? {
+            <hcm-auth sign={{ type: authTypeMap.value.delete, relation: [currentBusinessId.value] }}>
+              {{
+                default: ({ noPerm }: { noPerm: boolean }) => (
+                  <Button
+                    text
+                    theme='primary'
+                    onClick={() => handleDeleteCert(data)}
+                    disabled={noPerm || (isResourcePage && data.bk_biz_id !== -1)}
+                    v-bk-tooltips={{
                       content: '该证书已分配业务, 仅可在业务下操作',
-                      disabled: !(hasDeleteCertPermission.value && isResourcePage && data.bk_biz_id !== -1),
-                    }
-                  : {
-                      content: '无权限进行此操作',
-                      disabled: hasDeleteCertPermission.value,
-                    }
-              }>
-              删除
-            </Button>
+                      disabled: isResourcePage && data.bk_biz_id !== -1,
+                    }}>
+                    删除
+                  </Button>
+                ),
+              }}
+            </hcm-auth>
           ),
         },
       ];
@@ -173,7 +176,9 @@ export default defineComponent({
         label: '云账号',
         property: 'account_id',
         required: true,
-        content: () => <AccountSelector v-model={formModel.account_id} bizId={accountStore.bizs}></AccountSelector>,
+        content: () => (
+          <AccountSelector v-model={formModel.account_id} bizId={currentBusinessId.value}></AccountSelector>
+        ),
       },
       {
         label: '证书名称',
@@ -322,29 +327,6 @@ export default defineComponent({
       });
     };
 
-    // 权限 hooks
-    const {
-      showPermissionDialog,
-      handlePermissionConfirm,
-      handlePermissionDialog,
-      handleAuth,
-      permissionParams,
-      authVerifyData,
-    } = useVerify();
-
-    const hasCreateCertPermission = computed(() => {
-      if (whereAmI.value === Senarios.business) {
-        return authVerifyData.value?.permissionAction?.biz_cert_resource_create;
-      }
-      return authVerifyData.value?.permissionAction?.cert_resource_create;
-    });
-    const hasDeleteCertPermission = computed(() => {
-      if (whereAmI.value === Senarios.business) {
-        return authVerifyData.value?.permissionAction?.biz_cert_resource_delete;
-      }
-      return authVerifyData.value?.permissionAction?.cert_resource_delete;
-    });
-
     watch(
       rules,
       (val) => {
@@ -360,18 +342,20 @@ export default defineComponent({
             {{
               operation: () => (
                 <>
-                  <Button
-                    class={`mw88 ${hasCreateCertPermission.value ? '' : 'hcm-no-permision-btn'}`}
-                    theme={hasCreateCertPermission.value ? 'primary' : null}
-                    onClick={() => {
-                      if (!hasCreateCertPermission.value) {
-                        handleAuth(`${isBusinessPage ? 'biz_' : ''}cert_resource_create`);
-                      } else {
-                        showCreateCertSideslider();
-                      }
-                    }}>
-                    上传证书
-                  </Button>
+                  <hcm-auth sign={{ type: authTypeMap.value.create, relation: [currentBusinessId.value] }}>
+                    {{
+                      default: ({ noPerm }: { noPerm: boolean }) => (
+                        <Button
+                          class='mw88'
+                          disabled={noPerm}
+                          theme='primary'
+                          onClick={() => showCreateCertSideslider()}>
+                          上传证书
+                        </Button>
+                      ),
+                    }}
+                  </hcm-auth>
+
                   <BatchDistribution
                     selections={selections.value}
                     type={DResourceType.certs}
@@ -403,13 +387,6 @@ export default defineComponent({
             })}
           </Form>
         </CommonSideslider>
-        {/* 申请权限 */}
-        <PermissionDialog
-          v-model:isShow={showPermissionDialog.value}
-          params={permissionParams.value}
-          onCancel={handlePermissionDialog}
-          onConfirm={handlePermissionConfirm}
-        />
       </div>
     );
   },
