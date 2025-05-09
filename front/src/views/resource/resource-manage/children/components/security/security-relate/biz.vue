@@ -68,10 +68,7 @@ watch(tabActive, () => {
       />
     </div>
 
-    <bk-loading v-if="relBizLoading" loading>
-      <div style="width: 100%; height: 360px" />
-    </bk-loading>
-    <div v-else class="rel-res-display-wrap">
+    <div v-bkloading="{ loading: relBizLoading }" class="rel-res-display-wrap">
       <collapse-data-list
         v-for="{ bk_biz_id: bkBizId, res_count: resCount } in relatedBiz?.[RELATED_RES_KEY_MAP[tabActive]]"
         ref="collapse-data-list"
@@ -99,6 +96,7 @@ watch(tabActive, () => {
 }
 
 .rel-res-display-wrap {
+  min-height: 300px;
   margin-top: 12px;
   display: flex;
   flex-direction: column;
