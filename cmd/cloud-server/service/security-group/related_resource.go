@@ -71,7 +71,7 @@ func (svc *securityGroupSvc) listResourceIdBySecurityGroup(cts *rest.Contexts,
 	baseInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.SecurityGroupCloudResType, id)
 	if err != nil {
-		logs.Errorf("get security group vendor failed, id: %s, err: %v, rid: %s", id, err, cts.Kit.Rid)
+		logs.Errorf("get security group basic info failed, id: %s, err: %v, rid: %s", id, err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -263,7 +263,7 @@ func (svc *securityGroupSvc) listSecurityGroupRelBusiness(cts *rest.Contexts, bi
 	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.SecurityGroupCloudResType, sgID)
 	if err != nil {
-		logs.Errorf("get security group vendor failed, id: %s, err: %v, rid: %s", sgID, err, cts.Kit.Rid)
+		logs.Errorf("get security group basic info failed, id: %s, err: %v, rid: %s", sgID, err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -310,7 +310,7 @@ func (svc *securityGroupSvc) listSGRelCVMByBizID(cts *rest.Contexts, validHandle
 	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.SecurityGroupCloudResType, sgID)
 	if err != nil {
-		logs.Errorf("get security group vendor failed, id: %s, err: %v, rid: %s", sgID, err, cts.Kit.Rid)
+		logs.Errorf("get security group basic info failed, id: %s, err: %v, rid: %s", sgID, err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -366,7 +366,7 @@ func (svc *securityGroupSvc) listSGRelLBByBizID(cts *rest.Contexts, validHandler
 	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.SecurityGroupCloudResType, sgID)
 	if err != nil {
-		logs.Errorf("get security group vendor failed, id: %s, err: %v, rid: %s", sgID, err, cts.Kit.Rid)
+		logs.Errorf("get security group basic info failed, id: %s, err: %v, rid: %s", sgID, err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -417,7 +417,7 @@ func (svc *securityGroupSvc) listSGRelCVM(cts *rest.Contexts, validHandler handl
 	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.SecurityGroupCloudResType, sgID)
 	if err != nil {
-		logs.Errorf("get security group vendor failed, id: %s, err: %v, rid: %s", sgID, err, cts.Kit.Rid)
+		logs.Errorf("get security group basic info failed, id: %s, err: %v, rid: %s", sgID, err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -458,7 +458,7 @@ func (svc *securityGroupSvc) listSGRelLB(cts *rest.Contexts, validHandler handle
 	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit,
 		enumor.SecurityGroupCloudResType, sgID)
 	if err != nil {
-		logs.Errorf("get security group vendor failed, id: %s, err: %v, rid: %s", sgID, err, cts.Kit.Rid)
+		logs.Errorf("get security group basic info failed, id: %s, err: %v, rid: %s", sgID, err, cts.Kit.Rid)
 		return nil, err
 	}
 
