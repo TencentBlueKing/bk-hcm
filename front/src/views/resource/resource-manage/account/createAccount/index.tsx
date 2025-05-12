@@ -13,10 +13,6 @@ export default defineComponent({
       type: Boolean,
       required: true,
     },
-    onSubmit: {
-      type: Function as PropType<() => void>,
-      required: true,
-    },
     onCancel: {
       type: Function as PropType<() => void>,
       required: true,

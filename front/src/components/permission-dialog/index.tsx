@@ -64,7 +64,7 @@ export default defineComponent({
         width: 342,
         render({ data }: any) {
           return h('span', {}, [
-            `【${data?.related_resource_types[0]?.type_name}】${
+            `【${data?.related_resource_types[0]?.type_name || '--'}】${
               whereAmI.value === Senarios.resource
                 ? resourceAccountStore.resourceAccount?.name
                   ? `${resourceAccountStore.resourceAccount?.name}`

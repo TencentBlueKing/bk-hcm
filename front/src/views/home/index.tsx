@@ -6,7 +6,7 @@ import ReleaseNote from './release-note/index.vue';
 import Breadcrumb from './breadcrumb';
 import BusinessSelector from './business-selector';
 import NoPermission from '@/views/resource/NoPermission';
-import AccountList from '../resource/resource-manage/account/accountList';
+import AccountVendorGroup from '@/views/resource/resource-manage/account/vendor-group/index.vue';
 import GlobalPermissionDialog from '@/components/global-permission-dialog';
 
 import cookie from 'cookie';
@@ -98,7 +98,7 @@ export default defineComponent({
       return (
         <div class={'resource-manage-container'}>
           <div class='fixed-account-list-container'>
-            <AccountList />
+            <AccountVendorGroup />
           </div>
           <RouterView class={'router-view-content'} />
         </div>
