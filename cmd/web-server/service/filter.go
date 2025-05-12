@@ -38,11 +38,6 @@ import (
 	"github.com/emicklei/go-restful/v3"
 )
 
-// ConvMap conv 1302403 to hcm error
-var ConvMap map[int32]int32 = map[int32]int32{
-	1302403: errf.UserNoAppAccess,
-}
-
 type loginVerifyRespData struct {
 	UserName string `json:"username"`
 }
@@ -121,16 +116,9 @@ func NewUserAuthenticateFilter(esbClient esb.Client, bkLoginUrl, bkLoginCookieNa
 		} else {
 			ret, err := checkLogin(req)
 			if err != nil {
-				errfError := errf.Error(err)
-				code := errfError.Code
-				if value, exsit := ConvMap[code]; exsit {
-					code = value
-				} else {
-					code = errf.Unknown
-				}
 				resp.WriteAsJson(rest.BaseResp{
-					Code:    code,
-					Message: errfError.Message,
+					Code:    errf.UserNoAppAccess,
+					Message: errf.Error(err).Message,
 				})
 				return
 			}
