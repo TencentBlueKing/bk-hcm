@@ -98,6 +98,7 @@ export default (props: PropsType, url: Ref<string>, extraConfig?: ExtraConfigTyp
 
   // 条数变化发生的事件
   const handlePageSizeChange = (limit: number) => {
+    pagination.value.current = 1;
     pagination.value.limit = limit;
     triggerApi();
   };
