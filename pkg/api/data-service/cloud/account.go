@@ -35,7 +35,7 @@ import (
 // AccountExtensionCreateReq account extension create req.
 type AccountExtensionCreateReq interface {
 	TCloudAccountExtensionCreateReq | AwsAccountExtensionCreateReq | HuaWeiAccountExtensionCreateReq |
-		GcpAccountExtensionCreateReq | AzureAccountExtensionCreateReq
+		GcpAccountExtensionCreateReq | AzureAccountExtensionCreateReq | OtherAccountExtensionCreateReq
 }
 
 // TCloudAccountExtensionCreateReq ...
@@ -136,6 +136,7 @@ type AccountExtensionUpdateReq interface {
 		GcpAccountExtensionUpdateReq | AzureAccountExtensionUpdateReq
 }
 
+// TCloudAccountExtensionUpdateReq ...
 type TCloudAccountExtensionUpdateReq struct {
 	CloudMainAccountID string  `json:"cloud_main_account_id,omitempty" validate:"omitempty"`
 	CloudSubAccountID  string  `json:"cloud_sub_account_id,omitempty" validate:"omitempty"`
@@ -151,6 +152,7 @@ func (req *TCloudAccountExtensionUpdateReq) EncryptSecretKey(cipher cryptography
 	}
 }
 
+// AwsAccountExtensionUpdateReq ...
 type AwsAccountExtensionUpdateReq struct {
 	CloudAccountID   string  `json:"cloud_account_id,omitempty" validate:"omitempty"`
 	CloudIamUsername string  `json:"cloud_iam_username,omitempty" validate:"omitempty"`
@@ -166,6 +168,7 @@ func (req *AwsAccountExtensionUpdateReq) EncryptSecretKey(cipher cryptography.Cr
 	}
 }
 
+// HuaWeiAccountExtensionUpdateReq ...
 type HuaWeiAccountExtensionUpdateReq struct {
 	CloudSubAccountID   string  `json:"cloud_sub_account_id,omitempty" validate:"omitempty"`
 	CloudSubAccountName string  `json:"cloud_sub_account_name,omitempty" validate:"omitempty"`
@@ -183,6 +186,7 @@ func (req *HuaWeiAccountExtensionUpdateReq) EncryptSecretKey(cipher cryptography
 	}
 }
 
+// GcpAccountExtensionUpdateReq ...
 type GcpAccountExtensionUpdateReq struct {
 	Email                   string  `json:"email" validate:"omitempty"`
 	CloudProjectID          string  `json:"cloud_project_id,omitempty" validate:"omitempty"`
@@ -201,6 +205,7 @@ func (req *GcpAccountExtensionUpdateReq) EncryptSecretKey(cipher cryptography.Cr
 	}
 }
 
+// AzureAccountExtensionUpdateReq ...
 type AzureAccountExtensionUpdateReq struct {
 	DisplayNameName       string  `json:"display_name_name" validate:"omitempty"`
 	CloudTenantID         string  `json:"cloud_tenant_id,omitempty" validate:"omitempty"`
@@ -238,16 +243,19 @@ func (u *AccountUpdateReq[T]) Validate() error {
 
 // -------------------------- Get --------------------------
 
+// AccountExtensionGetResp ...
 type AccountExtensionGetResp interface {
 	cloud.TCloudAccountExtension | cloud.AwsAccountExtension | cloud.HuaWeiAccountExtension |
-		cloud.GcpAccountExtension | cloud.AzureAccountExtension
+		cloud.GcpAccountExtension | cloud.AzureAccountExtension | cloud.OtherAccountExtension
 }
 
+// AccountGetResult ...
 type AccountGetResult[T AccountExtensionGetResp] struct {
 	cloud.BaseAccount `json:",inline"`
 	Extension         *T `json:"extension"`
 }
 
+// AccountGetResp ...
 type AccountGetResp[T AccountExtensionGetResp] struct {
 	rest.BaseResp `json:",inline"`
 	Data          *AccountGetResult[T] `json:"data"`
@@ -337,4 +345,8 @@ type SecretDecryptor[T AccountExtensionGetResp] interface {
 	// DecryptSecretKey 解密约束，需要支持将加密的密钥还原成明文
 	DecryptSecretKey(cryptography.Crypto) error
 	*T
+}
+
+// OtherAccountExtensionCreateReq ...
+type OtherAccountExtensionCreateReq struct {
 }

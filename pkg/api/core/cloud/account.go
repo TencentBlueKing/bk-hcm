@@ -157,3 +157,7 @@ func (e *AzureAccountExtension) DecryptSecretKey(cipher cryptography.Crypto) err
 
 	return nil
 }
+
+// OtherAccountExtension define other account extension.
+type OtherAccountExtension struct {
+}
