@@ -76,6 +76,7 @@ import (
 	globalconfig "hcm/cmd/data-service/service/global-config"
 	recyclerecord "hcm/cmd/data-service/service/recycle-record"
 	"hcm/cmd/data-service/service/task"
+	"hcm/cmd/data-service/service/tenant"
 	"hcm/cmd/data-service/service/user"
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/errf"
@@ -273,6 +274,7 @@ func (s *Service) apiSet() *restful.Container {
 	globalconfig.InitService(capability)
 
 	task.InitService(capability)
+	tenant.InitService(capability)
 
 	resusagebizrel.InitService(capability)
 

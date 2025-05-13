@@ -64,6 +64,7 @@ type Client struct {
 
 	TaskDetail     *TaskDetailClient
 	TaskManagement *TaskManagementClient
+	Tenant         *TenantClient
 
 	GlobalConfig *GlobalConfigsClient
 
@@ -114,6 +115,7 @@ func NewClient(client rest.ClientInterface) *Client {
 
 		TaskDetail:     NewTaskDetailClient(client),
 		TaskManagement: NewTaskManagementClient(client),
+		Tenant:         NewTenantClient(client),
 		GlobalConfig:   NewGlobalConfigClient(client),
 		ResUsageBizRel: NewResUsageBizRelRelClient(client),
 	}
