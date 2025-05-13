@@ -38,6 +38,18 @@ type AccountExtensionCreateReq interface {
 		GcpAccountExtensionCreateReq | AzureAccountExtensionCreateReq | OtherAccountExtensionCreateReq
 }
 
+// OtherAccountExtensionCreateReq ...
+type OtherAccountExtensionCreateReq struct {
+	// placeholder
+	CloudID     string `json:"cloud_id" validate:"required"`
+	CloudSecKey string `json:"cloud_sec_key" validate:"omitempty"`
+}
+
+// EncryptSecretKey ...
+func (req *OtherAccountExtensionCreateReq) EncryptSecretKey(_ cryptography.Crypto) {
+	// do nothing
+}
+
 // TCloudAccountExtensionCreateReq ...
 type TCloudAccountExtensionCreateReq struct {
 	CloudMainAccountID string `json:"cloud_main_account_id" validate:"required"`
@@ -345,8 +357,4 @@ type SecretDecryptor[T AccountExtensionGetResp] interface {
 	// DecryptSecretKey 解密约束，需要支持将加密的密钥还原成明文
 	DecryptSecretKey(cryptography.Crypto) error
 	*T
-}
-
-// OtherAccountExtensionCreateReq ...
-type OtherAccountExtensionCreateReq struct {
 }

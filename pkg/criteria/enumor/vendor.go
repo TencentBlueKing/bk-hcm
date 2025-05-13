@@ -49,7 +49,8 @@ const (
 	Zenlayer Vendor = "zenlayer"
 	// Kaopu is kaopu cloud.
 	Kaopu Vendor = "kaopu"
-	// Other 其他云厂商
+
+	// Other special vendor, for other cloud
 	Other Vendor = "other"
 )
 
@@ -109,8 +110,10 @@ var (
 			SecretKeyField:     "cloud_secret_key",
 		},
 		Other: {
-			NameEn: "Other",
-			NameZh: "其他云厂商",
+			NameEn:             "Other",
+			NameZh:             "其他云厂商",
+			MainAccountIDField: "cloud_id",
+			SecretKeyField:     "cloud_sec_key",
 		},
 	}
 )
