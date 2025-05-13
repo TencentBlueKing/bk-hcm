@@ -40,7 +40,7 @@ create table if not exists `tenant` (
     KEY `idx_status` (`status`)
 ) ENGINE=InnoDB
   DEFAULT CHARSET=utf8mb4
-  COLLATE=utf8mb4_0900_ai_ci COMMENT='租户表';
+  COLLATE=utf8mb4_bin COMMENT='租户表';
 
 insert into id_generator(`resource`, `max_id`)
 values ('tenant', '0');

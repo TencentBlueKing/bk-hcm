@@ -120,19 +120,15 @@ func (d *TenantDao) UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expressi
 	}
 
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, tenant.TableName(), setExpr, whereExpr)
-
 	effected, err := d.orm.Txn(tx).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
-
 	if err != nil {
 		logs.ErrorJson("update tenant failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
 		return err
 	}
-
 	if effected == 0 {
 		logs.ErrorJson("update tenant, but data not found, filter: %v, rid: %s", expr, kt.Rid)
 		return errf.New(errf.RecordNotFound, orm.ErrRecordNotFound.Error())
 	}
-
 	return nil
 }
 
@@ -150,7 +146,7 @@ func (d *TenantDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filte
 	}
 
 	whereOpt := tools.DefaultSqlWhereOption
-	if len(whereOpts) != 0 && whereOpts[0] != nil {
+	if len(whereOpts) == 1 && whereOpts[0] != nil {
 		err := whereOpts[0].Validate()
 		if err != nil {
 			return nil, err
