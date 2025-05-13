@@ -20,73 +20,39 @@
 package other
 
 import (
-	"context"
-	"net/http"
-
 	"hcm/pkg/api/core"
-	protocore "hcm/pkg/api/core/cloud"
+	"hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/criteria/errf"
+	"hcm/pkg/client/common"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
-// AccountClient is data service account api client.
+// AccountClient defines the client for RootAccount
 type AccountClient struct {
 	client rest.ClientInterface
 }
 
-// NewAccountClient create a new account api client.
+// NewAccountClient ...
 func NewAccountClient(client rest.ClientInterface) *AccountClient {
 	return &AccountClient{
 		client: client,
 	}
 }
 
-// Create account.
-func (a *AccountClient) Create(ctx context.Context, h http.Header,
+// Create ...
+func (a *AccountClient) Create(kt *kit.Kit,
 	request *protocloud.AccountCreateReq[protocloud.OtherAccountExtensionCreateReq]) (
-	*core.CreateResult, error,
-) {
-	resp := new(core.CreateResp)
+	*core.CreateResult, error) {
 
-	err := a.client.Post().
-		WithContext(ctx).
-		Body(request).
-		SubResourcef("/accounts/create").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
+	return common.Request[protocloud.AccountCreateReq[protocloud.OtherAccountExtensionCreateReq], core.CreateResult](
+		a.client, rest.POST, kt, request, "/accounts/create")
 }
 
 // Get other account detail.
-func (a *AccountClient) Get(ctx context.Context, h http.Header, accountID string) (
-	*protocloud.AccountGetResult[protocore.OtherAccountExtension], error,
-) {
+func (a *AccountClient) Get(kt *kit.Kit, accountID string) (
+	*protocloud.AccountGetResult[cloud.OtherAccountExtension], error) {
 
-	resp := new(protocloud.AccountGetResp[protocore.OtherAccountExtension])
-
-	err := a.client.Get().
-		WithContext(ctx).
-		SubResourcef("/accounts/%s", accountID).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
-	return resp.Data, nil
+	return common.Request[common.Empty, protocloud.AccountGetResult[cloud.OtherAccountExtension]](
+		a.client, rest.GET, kt, nil, "/accounts/%s", accountID)
 }

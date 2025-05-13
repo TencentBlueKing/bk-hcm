@@ -1,7 +1,7 @@
 /*
  * TencentBlueKing is pleased to support the open source community by making
  * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
- * Copyright (C) 2022 THL A29 Limited,
+ * Copyright (C) 2025 THL A29 Limited,
  * a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,28 +17,14 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package other
+package apisysteminit
 
-import (
-	"hcm/pkg/rest"
-)
-
-// Client is a `other vendor` api client
-type Client struct {
-	*restClient
-	Account *AccountClient
-	Cvm     *CvmClient
+// OtherAccountInitReq ...
+type OtherAccountInitReq struct {
 }
 
-type restClient struct {
-	client rest.ClientInterface
-}
-
-// NewClient create a new `other vendor` api client.
-func NewClient(client rest.ClientInterface) *Client {
-	return &Client{
-		restClient: &restClient{client: client},
-		Cvm:        NewCloudCvmClient(client),
-		Account:    NewAccountClient(client),
-	}
+// OtherAccountInitResp ...
+type OtherAccountInitResp struct {
+	CreatedAccountID string `json:"created_account_id,omitempty"`
+	ExistsAccountID  string `json:"exists_account_id,omitempty"`
 }
