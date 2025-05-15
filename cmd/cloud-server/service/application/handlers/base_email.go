@@ -24,6 +24,6 @@ import (
 )
 
 // SendMail send mail
-func (a *BaseApplicationHandler) SendMail(m *cmsi.CmsiMail) error {
+func (a *BaseApplicationHandler) SendMail(m *cmsi.CmsiMailParams) error {
 	return a.CmsiClient.SendMail(a.Cts.Kit, m)
 }
