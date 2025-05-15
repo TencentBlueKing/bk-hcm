@@ -48,10 +48,10 @@ export const AUTH_MANAGE_RECYCLE_BIN = Symbol.for('auth_manage_recycle_bin');
 /**
  * 证书
  */
-export const AUTH_CREATE_CRET = Symbol.for('auth_create_cret');
-export const AUTH_BIZ_CREATE_CRET = Symbol.for('auth_biz_create_cret');
-export const AUTH_DELETE_CRET = Symbol.for('auth_delete_cret');
-export const AUTH_BIZ_DELETE_CRET = Symbol.for('auth_biz_delete_cret');
+export const AUTH_CREATE_CERT = Symbol.for('auth_create_cert');
+export const AUTH_BIZ_CREATE_CERT = Symbol.for('auth_biz_create_cert');
+export const AUTH_DELETE_CERT = Symbol.for('auth_delete_cert');
+export const AUTH_BIZ_DELETE_CERT = Symbol.for('auth_biz_delete_cert');
 
 /**
  * 账号管理

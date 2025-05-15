@@ -3,6 +3,7 @@ import { useI18n } from 'vue-i18n';
 import StepDialog from '@/components/step-dialog/step-dialog';
 import useColumns from '../../../hooks/use-columns';
 import { useResourceStore } from '@/store/resource';
+import { Message } from 'bkui-vue';
 
 export default defineComponent({
   components: {
@@ -51,6 +52,7 @@ export default defineComponent({
           cvm_id: props.data.instance_id,
         })
         .then(() => {
+          Message({ theme: 'success', message: '云硬盘卸载成功' });
           emit('success');
           handleClose();
         })

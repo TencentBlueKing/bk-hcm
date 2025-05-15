@@ -9,7 +9,7 @@ import usePermissionDialog from '@/hooks/use-permission-dialog';
 
 export interface IAuthProps {
   sign: IAuthSign | IAuthSign[];
-  tag: string;
+  tag?: string;
 }
 
 defineOptions({ name: 'hcm-auth' });

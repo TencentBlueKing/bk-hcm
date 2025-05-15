@@ -54,7 +54,7 @@ defineExpose([validate]);
       <bk-radio model-value="常规BGP IP" label="常规BGP IP" />
     </bk-form-item>
     <bk-form-item label="数量" property="eip_count" required>
-      <bk-input v-model="formData.eip_count" placeholder="请输入数量" />
+      <bk-input v-model.number="formData.eip_count" type="number" placeholder="请输入数量" />
     </bk-form-item>
   </bk-form>
 </template>

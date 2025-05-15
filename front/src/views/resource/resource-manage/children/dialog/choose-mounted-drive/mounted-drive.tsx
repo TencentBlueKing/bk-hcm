@@ -83,28 +83,32 @@ export default defineComponent({
 
     const resourceStore = useResourceStore();
 
-    const selection = ref<any>({});
+    const selectedId = ref<string>();
 
     const isConfirmLoading = ref(false);
 
     const renderColumns = [
       {
-        label: '硬盘ID',
-        field: 'id',
-        render({ data }: any) {
-          return h(Radio, {
-            'model-value': selection.value.id,
-            label: data.cloud_id,
-            key: data.id,
-            onChange() {
-              console.log('啦啦啦', data);
-              selection.value = data;
-            },
-          });
+        label: '',
+        field: 'radio',
+        width: 40,
+        minWidth: 40,
+        render: ({ data }: any) => {
+          const { id } = data;
+          return h(
+            'div',
+            { class: 'flex-row align-items-center' },
+            h(Radio, { label: id, key: id, modelValue: selectedId.value }, ' '),
+          );
         },
       },
+      { label: '硬盘ID', field: 'id' },
       ...columns.filter((column: any) => ['资源 ID', '云硬盘名称', '类型', '容量(GB)', '状态'].includes(column.label)),
     ];
+
+    const handleRowClick = (_event: PointerEvent, row: any) => {
+      selectedId.value = row.id;
+    };
 
     // 方法
     const handleClose = () => {
@@ -114,32 +118,23 @@ export default defineComponent({
     const handleConfirm = () => {
       isConfirmLoading.value = true;
       const postData: any = {
-        disk_id: selection.value.id,
+        disk_id: selectedId.value,
         cvm_id: props.detail.id,
       };
-      if (!selection.value.id) {
-        Message({
-          theme: 'error',
-          message: '请先选择云硬盘',
-        });
+      if (!selectedId.value) {
+        Message({ theme: 'error', message: '请先选择云硬盘' });
         return;
       }
       if (props.detail.vendor === 'aws') {
         if (!deviceName.value) {
-          Message({
-            theme: 'error',
-            message: '请先输入设备名称',
-          });
+          Message({ theme: 'error', message: '请先输入设备名称' });
           return;
         }
         postData.device_name = deviceName.value;
       }
       if (props.detail.vendor === 'azure') {
         if (!cachingType.value) {
-          Message({
-            theme: 'error',
-            message: '请先选择缓存类型',
-          });
+          Message({ theme: 'error', message: '请先选择缓存类型' });
           return;
         }
         postData.caching_type = cachingType.value;
@@ -147,14 +142,12 @@ export default defineComponent({
       resourceStore
         .attachDisk(postData)
         .then(() => {
+          Message({ theme: 'success', message: '云硬盘挂载成功' });
           emit('success');
           handleClose();
         })
         .catch((err: any) => {
-          Message({
-            theme: 'error',
-            message: err.message || err,
-          });
+          Message({ theme: 'error', message: err.message || err });
         })
         .finally(() => {
           isConfirmLoading.value = false;
@@ -170,9 +163,11 @@ export default defineComponent({
       isLoading,
       renderColumns,
       isConfirmLoading,
+      selectedId,
       handlePageChange,
       handlePageSizeChange,
       handleSort,
+      handleRowClick,
       t,
       handleClose,
       handleConfirm,
@@ -227,6 +222,7 @@ export default defineComponent({
               onPageLimitChange={this.handlePageSizeChange}
               onPageValueChange={this.handlePageChange}
               onColumnSort={this.handleSort}
+              onRowClick={this.handleRowClick}
             />
           </Loading>
         ),
@@ -234,14 +230,13 @@ export default defineComponent({
     ];
 
     return (
-      <>
-        <step-dialog
-          title={this.t('挂载云硬盘')}
-          isShow={this.isShow}
-          steps={steps}
-          onConfirm={this.handleConfirm}
-          onCancel={this.handleClose}></step-dialog>
-      </>
+      <step-dialog
+        title={this.t('挂载云硬盘')}
+        isShow={this.isShow}
+        steps={steps}
+        confirmDisabled={!this.selectedId}
+        onConfirm={this.handleConfirm}
+        onCancel={this.handleClose}></step-dialog>
     );
   },
 });

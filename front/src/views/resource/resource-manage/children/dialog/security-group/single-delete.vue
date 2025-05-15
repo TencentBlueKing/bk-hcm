@@ -27,7 +27,7 @@ const fields = [
     name: t('绑定实例'),
     render: () => {
       const { resources = [] } = props.detail ?? {};
-      const displayResources = resources.filter(({ count }) => count > 0);
+      const displayResources = resources?.filter(({ count }) => count > 0) || [];
 
       if (!displayResources.length) return '--';
       return h(RelResourcesDisplay, { resources: displayResources, tagTheme: TagThemeEnum.DANGER });

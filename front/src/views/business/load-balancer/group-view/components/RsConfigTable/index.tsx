@@ -52,7 +52,7 @@ export default defineComponent({
           'update:rsList',
           props.rsList.map((item) => {
             if (item.id === id) {
-              item[key] = val;
+              item[key] = Number(val);
             }
             return item;
           }),
@@ -74,7 +74,7 @@ export default defineComponent({
             'update:rsList',
             props.rsList.map((item) => {
               if (item.isNew) {
-                item[key] = v;
+                item[key] = Number(v);
               }
               return item;
             }),
@@ -87,7 +87,7 @@ export default defineComponent({
           emit(
             'update:rsList',
             props.rsList.map((item) => {
-              item[key] = v;
+              item[key] = Number(v);
               return item;
             }),
           );
