@@ -66,6 +66,8 @@ func (h *HuaWei) ListCvm(kt *kit.Kit, opt *typecvm.HuaWeiListOption) ([]typecvm.
 		req.Limit = converter.ValToPtr(opt.Page.Limit)
 		req.Offset = converter.ValToPtr(opt.Page.Offset)
 	}
+	// 查询的时候不需要查出 裸金属服务器
+	req.NotTags = converter.ValToPtr("__type_baremetal")
 
 	resp, err := client.ListServersDetails(req)
 	if err != nil {
