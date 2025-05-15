@@ -151,27 +151,31 @@ watch(
             <div v-for="(data, index) in states.datas" :key="data.id" class="drag-body-tr">
               <div class="drag-body-cell">
                 <div>
-                  <i class="hcm-icon bkhcm-icon-grag-fill mr5 sort"></i>
+                  <i class="hcm-icon bkhcm-icon-grag-fill mr4 sort"></i>
                   <span class="sort sort-number">{{ index + 1 }}</span>
                 </div>
                 <div class="address">
-                  {{
-                    data.cloud_address_group_id ||
-                    data.cloud_address_id ||
-                    data.cloud_service_group_id ||
-                    data.cloud_target_security_group_id ||
-                    data.ipv4_cidr ||
-                    data.ipv6_cidr ||
-                    data.cloud_remote_group_id ||
-                    data.remote_ip_prefix ||
-                    (data.source_address_prefix === '*' ? t('ALL') : data.source_address_prefix) ||
-                    data.source_address_prefixes ||
-                    data.cloud_source_security_group_ids ||
-                    data.destination_address_prefix ||
-                    data.destination_address_prefixes ||
-                    data.cloud_destination_security_group_ids ||
-                    (data?.ethertype === 'IPv6' ? '::/0' : '0.0.0.0/0')
-                  }}
+                  <display-value
+                    :property="{ type: 'string' }"
+                    :display="{ showOverflowTooltip: true }"
+                    :value="
+                      data.cloud_address_group_id ||
+                      data.cloud_address_id ||
+                      data.cloud_service_group_id ||
+                      data.cloud_target_security_group_id ||
+                      data.ipv4_cidr ||
+                      data.ipv6_cidr ||
+                      data.cloud_remote_group_id ||
+                      data.remote_ip_prefix ||
+                      (data.source_address_prefix === '*' ? t('ALL') : data.source_address_prefix) ||
+                      data.source_address_prefixes ||
+                      data.cloud_source_security_group_ids ||
+                      data.destination_address_prefix ||
+                      data.destination_address_prefixes ||
+                      data.cloud_destination_security_group_ids ||
+                      (data?.ethertype === 'IPv6' ? '::/0' : '0.0.0.0/0')
+                    "
+                  />
                 </div>
                 <div class="agreement">
                   {{ data.cloud_service_id || `${data.protocol}` }}
@@ -247,21 +251,17 @@ watch(
 }
 .drag-header,
 .drag-body-cell {
-  display: flex;
+  display: grid;
+  grid-template-columns: 50px 2fr 1fr 1fr 1fr;
   align-items: center;
   font-size: 12px;
   color: #63656e;
   text-align: center;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   border-bottom: 1px solid #dcdee5;
+
   > div {
-    flex: 1;
-  }
-  :first-child {
-    flex: 0;
-    flex-basis: 50px;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 .sort {
@@ -269,7 +269,7 @@ watch(
   color: #c4c6cc;
 }
 .sort-number {
-  padding: 1px 8px;
+  padding: 0px 8px;
   background: white;
   color: #979ba5;
   border: 1px solid #dcdee5;
