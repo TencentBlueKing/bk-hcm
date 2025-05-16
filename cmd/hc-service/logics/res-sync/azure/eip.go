@@ -150,8 +150,10 @@ func (cli *client) RemoveEipDeleteFromCloud(kt *kit.Kit, accountID string, resGr
 			}
 
 			delCloudIDs := converter.MapKeyToStringSlice(cloudIDMap)
-			if err = cli.deleteEip(kt, accountID, resGroupName, delCloudIDs); err != nil {
-				return err
+			if len(delCloudIDs) > 0 {
+				if err = cli.deleteEip(kt, accountID, resGroupName, delCloudIDs); err != nil {
+					return err
+				}
 			}
 		}
 

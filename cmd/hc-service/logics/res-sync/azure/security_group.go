@@ -357,8 +357,10 @@ func (cli *client) RemoveSecurityGroupDeleteFromCloud(kt *kit.Kit, accountID str
 			}
 
 			cloudIDs := converter.MapKeyToStringSlice(cloudIDMap)
-			if err := cli.deleteSG(kt, accountID, resGroupName, cloudIDs); err != nil {
-				return err
+			if len(cloudIDs) > 0 {
+				if err := cli.deleteSG(kt, accountID, resGroupName, cloudIDs); err != nil {
+					return err
+				}
 			}
 		}
 
