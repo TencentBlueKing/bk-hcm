@@ -134,7 +134,7 @@ func NewUserAuthenticateFilter(esbClient esb.Client, bkLoginUrl, bkLoginCookieNa
 
 		// 这里直接修改请求的Header，后面需要用，可以直接从Header头里取
 		req.Request.Header.Set(constant.UserKey, username)
-		req.Request.Header.Set(constant.AppCodeKey, "hcm-web-server")
+		req.Request.Header.Set(constant.AppCodeKey, constant.WebSourceAppCode)
 
 		// 使用Kit便于校验通用的Header是否满足
 		kt, err := kit.FromHeader(req.Request.Context(), req.Request.Header)

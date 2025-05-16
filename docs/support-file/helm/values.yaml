@@ -888,3 +888,7 @@ objectstore:
   isDebug:
 
 tmpFileDir: /tmp
+
+# 多租户开关
+tenant:
+  enabled: false
