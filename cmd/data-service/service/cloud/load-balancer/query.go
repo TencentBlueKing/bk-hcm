@@ -709,7 +709,7 @@ func (svc *lbSvc) ListTargetGroupListenerRel(cts *rest.Contexts) (interface{}, e
 }
 
 func convTableToBaseTargetListenerRuleRel(one *tablelb.TargetGroupListenerRuleRelTable) *corelb.
-	BaseTargetListenerRuleRel {
+BaseTargetListenerRuleRel {
 
 	return &corelb.BaseTargetListenerRuleRel{
 		ID:                  one.ID,
@@ -902,9 +902,12 @@ func (svc *lbSvc) queryListenerWithTargets(kt *kit.Kit, req *protocloud.ListList
 	case enumor.TCloud:
 		lblUrlRuleList, err = svc.listTCloudLoadBalancerUrlRuleByTgIDs(kt, lblReq, cloudClbIDs,
 			cloudLblIDs, targetGroupIDs)
-		if err != nil {
-			return nil, err
-		}
+	default:
+		return nil, errf.Newf(errf.InvalidParameter, "batch query listener with targets failed, invalid vendor: %s",
+			req.Vendor)
+	}
+	if err != nil {
+		return nil, err
 	}
 	// 未查询到符合的监听器与目标组绑定关系的列表
 	if len(lblUrlRuleList) == 0 {
