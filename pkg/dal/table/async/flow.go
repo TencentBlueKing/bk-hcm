@@ -56,6 +56,7 @@ type AsyncFlowTable struct {
 	ShareData *ShareData       `db:"share_data" json:"share_data"`
 	Memo      string           `db:"memo" json:"memo"`
 	Worker    *string          `db:"worker" json:"worker"`
+	TenantID  string           `db:"tenant_id" json:"tenant_id"`
 	Creator   string           `db:"creator" json:"creator" validate:"lte=64"`
 	Reviser   string           `db:"reviser" json:"reviser" validate:"lte=64"`
 	CreatedAt types.Time       `db:"created_at" json:"created_at" validate:"excluded_unless"`
