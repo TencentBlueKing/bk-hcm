@@ -30,7 +30,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/kit"
-	"hcm/pkg/thirdparty/esb"
+	"hcm/pkg/thirdparty/api-gateway/cmdb"
 )
 
 // Interface define cvm interface.
@@ -46,22 +46,22 @@ type Interface interface {
 }
 
 type cvm struct {
-	client    *client.ClientSet
-	audit     audit.Interface
-	eip       eip.Interface
-	disk      disk.Interface
-	esbClient esb.Client
+	client     *client.ClientSet
+	audit      audit.Interface
+	eip        eip.Interface
+	disk       disk.Interface
+	cmdbClient cmdb.Client
 }
 
 // NewCvm new cvm.
 func NewCvm(client *client.ClientSet, audit audit.Interface, eip eip.Interface, disk disk.Interface,
-	esbClient esb.Client) Interface {
+	cmdbClient cmdb.Client) Interface {
 	return &cvm{
-		client:    client,
-		audit:     audit,
-		eip:       eip,
-		disk:      disk,
-		esbClient: esbClient,
+		client:     client,
+		audit:      audit,
+		eip:        eip,
+		disk:       disk,
+		cmdbClient: cmdbClient,
 	}
 }
 

@@ -38,8 +38,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
-	"hcm/pkg/thirdparty/esb"
-	"hcm/pkg/thirdparty/esb/cmdb"
+	"hcm/pkg/thirdparty/api-gateway/cmdb"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/maps"
 	"hcm/pkg/tools/slice"
@@ -275,7 +274,9 @@ func ValidateBeforeAssign(kt *kit.Kit, cli *dataservice.Client, ids []string) er
 }
 
 // AssignPreview 分配主机预览
-func AssignPreview(kt *kit.Kit, cli *client.ClientSet, ids []string) (map[string][]PreviewCvmMatchResult, error) {
+func AssignPreview(kt *kit.Kit, cmdbCli cmdb.Client, cli *client.ClientSet, ids []string) (
+	map[string][]PreviewCvmMatchResult, error) {
+
 	// 1.查询cvm信息(云实例id、云厂商、内网IP、mac地址、账号所属业务)
 	cvmInfos, err := getAssignedCvmInfo(kt, cli, ids)
 	if err != nil {
@@ -285,7 +286,7 @@ func AssignPreview(kt *kit.Kit, cli *client.ClientSet, ids []string) (map[string
 
 	// 2.获取可能匹配的cc主机
 	fields := []string{"bk_host_id", "bk_cloud_id", "bk_cloud_inst_id", "bk_cloud_vendor", "bk_host_innerip", "bk_mac"}
-	ccHosts, ccBizHostIDsMap, err := GetAssignedHostInfoFromCC(kt, cvmInfos, fields)
+	ccHosts, ccBizHostIDsMap, err := GetAssignedHostInfoFromCC(kt, cmdbCli, cvmInfos, fields)
 	if err != nil {
 		logs.Errorf("get assign host from cc failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
@@ -524,8 +525,8 @@ func getAssignedCvmMacAddrFromDB(kt *kit.Kit, cli *client.ClientSet, vendor enum
 }
 
 // GetAssignedHostInfoFromCC get assigned host from cc
-func GetAssignedHostInfoFromCC(kt *kit.Kit, cvmInfos []PreviewAssignedCvmInfo, fields []string) (map[int64]cmdb.Host,
-	map[int64][]int64, error) {
+func GetAssignedHostInfoFromCC(kt *kit.Kit, cmdbCli cmdb.Client, cvmInfos []PreviewAssignedCvmInfo, fields []string) (
+	map[int64]cmdb.Host, map[int64][]int64, error) {
 
 	innerIPv4s := make([]string, 0)
 	macAddrs := make([]string, 0)
@@ -562,13 +563,13 @@ func GetAssignedHostInfoFromCC(kt *kit.Kit, cvmInfos []PreviewAssignedCvmInfo, f
 	fields = append(fields, "bk_cloud_id")
 	listParams := &cmdb.ListHostWithoutBizParams{
 		Fields:             fields,
-		Page:               cmdb.BasePage{Sort: "bk_host_id", Start: 0, Limit: int64(core.DefaultMaxPageLimit)},
+		Page:               &cmdb.BasePage{Sort: "bk_host_id", Start: 0, Limit: int64(core.DefaultMaxPageLimit)},
 		HostPropertyFilter: &cmdb.QueryFilter{Rule: &cmdb.CombinedRule{Condition: "OR", Rules: rules}},
 	}
 	hostIDs := make([]int64, 0)
 	hostMap := make(map[int64]cmdb.Host, 0)
 	for {
-		hostRes, err := esb.EsbClient().Cmdb().ListHostWithoutBiz(kt, listParams)
+		hostRes, err := cmdbCli.ListHostWithoutBiz(kt, listParams)
 		if err != nil {
 			logs.Errorf("list host from cc failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, nil, err
@@ -589,7 +590,7 @@ func GetAssignedHostInfoFromCC(kt *kit.Kit, cvmInfos []PreviewAssignedCvmInfo, f
 	bizHostIDsMap := make(map[int64][]int64, 0)
 	for _, batch := range slice.Split(hostIDs, int(core.DefaultMaxPageLimit)) {
 		param := cmdb.HostModuleRelationParams{HostID: batch}
-		relationRes, err := esb.EsbClient().Cmdb().FindHostBizRelations(kt, &param)
+		relationRes, err := cmdbCli.FindHostBizRelations(kt, &param)
 		if err != nil {
 			logs.Errorf("find cmdb topo relation failed, err: %v, param: %+v, rid: %s", err, param, kt.Rid)
 			return nil, nil, err

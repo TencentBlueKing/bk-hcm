@@ -60,3 +60,5 @@ data:
     templatePath: {{ .Values.webserver.templatePath }}
     tenant:
       {{- toYaml .Values.tenant | nindent 6 }}
+    cmdb:
+      {{- toYaml .Values.cmdb | nindent 6 }}

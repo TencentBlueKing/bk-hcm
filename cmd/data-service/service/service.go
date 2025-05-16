@@ -88,7 +88,7 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
-	"hcm/pkg/thirdparty/esb"
+	"hcm/pkg/thirdparty/api-gateway/cmdb"
 	"hcm/pkg/tools/ssl"
 
 	"github.com/emicklei/go-restful/v3"
@@ -99,8 +99,8 @@ type Service struct {
 	serve       *http.Server
 	dao         dao.Set
 	cipher      cryptography.Crypto
-	esbClient   esb.Client
 	objectStore objectstore.Storage
+	cmdbClient  cmdb.Client
 }
 
 // NewService create a service instance.
@@ -116,9 +116,8 @@ func NewService() (*Service, error) {
 		return nil, err
 	}
 
-	// esb client
-	esbConfig := cc.DataService().Esb
-	esbClient, err := esb.NewClient(&esbConfig, metrics.Register())
+	cmdbCfg := cc.DataService().Cmdb
+	cmdbCli, err := cmdb.NewClient(&cmdbCfg, metrics.Register())
 	if err != nil {
 		return nil, err
 	}
@@ -132,10 +131,9 @@ func NewService() (*Service, error) {
 	svr := &Service{
 		dao:         dao,
 		cipher:      cipher,
-		esbClient:   esbClient,
 		objectStore: oStore,
+		cmdbClient:  cmdbCli,
 	}
-
 	return svr, nil
 }
 
@@ -212,8 +210,8 @@ func (s *Service) apiSet() *restful.Container {
 		WebService:  ws,
 		Dao:         s.dao,
 		Cipher:      s.cipher,
-		EsbClient:   s.esbClient,
 		ObjectStore: s.objectStore,
+		CmdbClient:  s.cmdbClient,
 	}
 
 	account.InitService(capability)
