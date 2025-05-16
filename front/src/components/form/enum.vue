@@ -7,19 +7,28 @@ import { DisplayType } from './typings';
 defineOptions({ name: 'hcm-form-enum' });
 
 const props = withDefaults(
-  defineProps<{ clearable: boolean; multiple: boolean; option: ModelProperty['option']; display?: DisplayType }>(),
+  defineProps<{
+    clearable: boolean;
+    multiple: boolean;
+    option: ModelProperty['option'];
+    isNumberValue?: boolean;
+    display?: DisplayType;
+  }>(),
   {
     clearable: false,
     multiple: false,
     option: () => ({}),
+    isNumberValue: false,
   },
 );
-const model = defineModel<string | string[]>();
+const model = defineModel<string | string[] | number | number[]>();
 const attrs = useAttrs();
 
 const comp = computed(() => (props.display?.on === 'cell' ? SelectColumn : 'bk-select'));
 
-const selectList = computed(() => Object.entries(props.option).map(([value, label]) => ({ value, label })));
+const selectList = computed(() =>
+  Object.entries(props.option).map(([value, label]) => ({ value: props.isNumberValue ? Number(value) : value, label })),
+);
 
 const selectColumnRef = ref();
 
