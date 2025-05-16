@@ -191,7 +191,7 @@ func (s *Service) ListenAndServeRest() error {
 		},
 		AllowedHeaders: []string{
 			"Accept", "Accept-encoding", "Authorization", "Content-Type", "Dnt",
-			"Origin", "User-Agent", "X-Csrftoken", "X-Requested-With", "X-Bkapi-Request-Id",
+			"Origin", "User-Agent", "X-Csrftoken", "X-Requested-With", "X-Bkapi-Request-Id", "X-Bk-Tenant-Id",
 		},
 		AllowedMethods: []string{"GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"},
 		CookiesAllowed: true,
