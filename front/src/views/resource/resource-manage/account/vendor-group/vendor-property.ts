@@ -4,6 +4,7 @@ import awsVendorIcon from '@/assets/image/vendor-aws.svg';
 import azureVendorIcon from '@/assets/image/vendor-azure.svg';
 import gcpVendorIcon from '@/assets/image/vendor-gcp.svg';
 import huaweiVendorIcon from '@/assets/image/vendor-huawei.svg';
+import otherVendorIcon from '@/assets/image/vendor-other.svg';
 
 export const vendorProperty = new Map<VendorEnum, { icon: any }>([
   [
@@ -34,6 +35,12 @@ export const vendorProperty = new Map<VendorEnum, { icon: any }>([
     VendorEnum.HUAWEI,
     {
       icon: huaweiVendorIcon,
+    },
+  ],
+  [
+    VendorEnum.OTHER,
+    {
+      icon: otherVendorIcon,
     },
   ],
 ]);

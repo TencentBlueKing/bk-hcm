@@ -168,7 +168,7 @@ const handleCreateCancel = () => {
               v-show="accountList.length"
             >
               <i :class="['hcm-icon', 'bkhcm-icon-right-shape', 'arrow-icon', { expanded: expandedMap.get(vendor) }]" />
-              <img :src="vendorProperty.get(vendor).icon" class="vendor-icon" />
+              <img :src="vendorProperty.get(vendor).icon" :class="['vendor-icon', vendor]" />
               <div class="vendor-name">{{ VendorMap[vendor] }}</div>
               <em class="account-count">{{ accountList.length }}</em>
             </div>
@@ -298,6 +298,7 @@ const handleCreateCancel = () => {
     }
 
     .arrow-icon {
+      font-size: 12px;
       color: #979ba5;
       transition: transform 0.3s ease;
 
@@ -312,6 +313,10 @@ const handleCreateCancel = () => {
 
     .vendor-icon {
       width: 20px;
+
+      &.other {
+        width: 18px;
+      }
     }
 
     .account-count {

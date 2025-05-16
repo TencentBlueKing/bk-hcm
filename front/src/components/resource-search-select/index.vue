@@ -8,7 +8,7 @@ import optionFactory from './option-factory';
 defineOptions({ name: 'ResourceSearchSelect' });
 
 export interface IResourceSelectProps {
-  modelValue: ISearchValue;
+  modelValue: ISearchValue[];
   resourceType: ResourceTypeEnum;
   clearable?: boolean;
   valueBehavior?: 'all' | 'need-key';
@@ -16,7 +16,6 @@ export interface IResourceSelectProps {
 
 const props = withDefaults(defineProps<IResourceSelectProps>(), {
   clearable: true,
-  searchOptions: () => [],
   valueBehavior: 'all',
 });
 

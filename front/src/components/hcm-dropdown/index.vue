@@ -5,9 +5,9 @@ export interface DropDownPopover {
   trigger: 'manual' | 'click' | 'hover';
 }
 export interface DropDownMenuProps {
-  isShow: boolean;
   disabled: boolean;
-  popoverOptions: DropDownPopover;
+  isShow?: boolean;
+  popoverOptions?: DropDownPopover;
 }
 
 defineOptions({ name: 'hcm-dropdown' });
@@ -62,7 +62,7 @@ defineExpose({ hidePopover });
 </script>
 
 <template>
-  <div @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave">
+  <div @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave" class="hcm-dropdown">
     <bk-dropdown :disabled="disabled" :is-show="show" :popover-options="popoverOptions" @hide="hidePopover">
       <bk-button :disabled="disabled" @click="showPopover">
         <slot></slot>
@@ -75,3 +75,11 @@ defineExpose({ hidePopover });
     </bk-dropdown>
   </div>
 </template>
+
+<style lang="scss" scoped>
+.hcm-dropdown {
+  :deep(.icon-angle-down) {
+    font-size: 26px;
+  }
+}
+</style>

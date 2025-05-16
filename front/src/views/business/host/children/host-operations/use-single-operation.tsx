@@ -1,6 +1,9 @@
 import { ref } from 'vue';
 import { Checkbox } from 'bkui-vue';
 import { useBusinessStore } from '@/store';
+import { CLOUD_HOST_STATUS, VendorEnum } from '@/common/constant';
+import { useVerify } from '@/hooks';
+import { useGlobalPermissionDialog } from '@/store/useGlobalPermissionDialog';
 import Confirm, { confirmInstance } from '@/components/confirm';
 import { operationMap, OperationActions } from '@/views/business/host/children/host-operations';
 
@@ -15,6 +18,8 @@ const useSingleOperation = ({
   confirmSuccess: Function;
   confirmComplete: Function;
 }) => {
+  const { authVerifyData, handleAuth } = useVerify();
+  const globalPermissionDialog = useGlobalPermissionDialog();
   const currentOperateRowIndex = ref(-1);
 
   // 回收参数「云硬盘/EIP 随主机回收」
@@ -27,12 +32,7 @@ const useSingleOperation = ({
     isRecycleEipWithCvm.value = false;
   };
 
-  const isOperateDisabled = (type: OperationActions, status: string) =>
-    operationMap[type].disabledStatus.includes(status);
-
   const handleOperate = async (type: OperationActions, data: any) => {
-    if (isOperateDisabled(type, data.status)) return;
-
     const { label } = operationMap[type];
 
     resetRecycleSingleCvmParams();
@@ -84,10 +84,59 @@ const useSingleOperation = ({
     });
   };
 
+  const handleClickMenu = (type: OperationActions, data: any) => {
+    if (getOperationConfig(type, data).disabled) {
+      return;
+    }
+
+    handleOperate(type, data);
+  };
+
+  const getOperationConfig = (type: OperationActions, data: any) => {
+    // 点击事件（值缺省时，为默认点击事件）
+    const clickHandler = () => handleClickMenu(type, data);
+
+    const statusDisabled = operationMap[type].disabledStatus.includes(data.status);
+
+    const isOtherVendor = data.vendor === VendorEnum.OTHER;
+
+    if (isOtherVendor) {
+      return {
+        disabled: true,
+        tooltips: { content: '暂不支持', disabled: false },
+        clickHandler,
+      };
+    }
+
+    if (statusDisabled) {
+      return {
+        disabled: true,
+        tooltips: { content: `当前主机处于 ${CLOUD_HOST_STATUS[data.status]} 状态`, disabled: false },
+        clickHandler,
+      };
+    }
+
+    // 预鉴权
+    const { authId, actionName } = operationMap[type];
+    const noPermission = !authVerifyData?.value?.permissionAction?.[authId];
+    if (authId && actionName && noPermission) {
+      return {
+        disabled: false,
+        noPermission: true,
+        tooltips: { disabled: true },
+        clickHandler: () => {
+          handleAuth(actionName);
+          globalPermissionDialog.setShow(true);
+        },
+      };
+    }
+
+    return { disabled: false, tooltips: { disabled: true }, clickHandler };
+  };
+
   return {
     currentOperateRowIndex,
-    isOperateDisabled,
-    handleOperate,
+    getOperationConfig,
   };
 };
 

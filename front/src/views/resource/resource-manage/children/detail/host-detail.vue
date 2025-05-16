@@ -17,7 +17,7 @@ import useDetail from '@/views/resource/resource-manage/hooks/use-detail';
 
 import { ref, inject, computed } from 'vue';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
-import { CLOUD_HOST_STATUS } from '@/common/constant';
+import { VendorEnum, CLOUD_HOST_STATUS } from '@/common/constant';
 import { HOST_RUNNING_STATUS, HOST_SHUTDOWN_STATUS } from '../../common/table/HostOperations';
 
 const router = useRouter();
@@ -28,7 +28,7 @@ const route = useRoute();
 const resourceStore = useResourceStore();
 
 const hostId = ref<any>(route.query?.id);
-const cloudType = ref<any>(route.query?.type);
+const cloudType = ref<VendorEnum>(route.query?.type as VendorEnum);
 // 搜索过滤相关数据
 const filter = ref({ op: 'and', rules: [] });
 const isDialogShow = ref(false);
@@ -57,37 +57,41 @@ const actionName = computed(() => {
 
 const { loading, detail, getDetail } = useDetail('cvms', hostId.value);
 
-const hostTabs = [
-  {
-    name: '基本信息',
-    value: 'detail',
-  },
-  {
-    name: '网络接口',
-    value: 'network',
-  },
-  {
-    name: '弹性 IP',
-    value: 'ip',
-  },
-  {
-    name: '云硬盘',
-    value: 'drive',
-  },
-  {
-    name: '安全组',
-    value: 'security',
-  },
-];
-if (cloudType.value === 'tcloud' || cloudType.value === 'aws') {
-  // 腾讯云和Aws没有网络接口
-  hostTabs.splice(1, 1);
-}
+const hostTabs = computed(() => {
+  const allTabs = [
+    {
+      name: '基本信息',
+      value: 'detail',
+    },
+    {
+      name: '网络接口',
+      value: 'network',
+    },
+    {
+      name: '弹性 IP',
+      value: 'ip',
+    },
+    {
+      name: '云硬盘',
+      value: 'drive',
+    },
+    {
+      name: '安全组',
+      value: 'security',
+    },
+  ];
 
-if (cloudType.value === 'gcp') {
-  // 腾讯云和Aws没有网络接口
-  hostTabs.splice(4, 1);
-}
+  let excludeTabs: string[] = [];
+  if (cloudType.value === VendorEnum.TCLOUD || cloudType.value === VendorEnum.AWS) {
+    excludeTabs = ['network'];
+  } else if (cloudType.value === VendorEnum.GCP) {
+    excludeTabs = ['security'];
+  } else if (cloudType.value === VendorEnum.OTHER) {
+    excludeTabs = ['network', 'ip', 'drive', 'security'];
+  }
+
+  return allTabs.filter((tab) => !excludeTabs.includes(tab.value));
+});
 
 const componentMap = {
   detail: HostInfo,
@@ -99,6 +103,10 @@ const componentMap = {
 
 const isBindBusiness = computed(() => {
   return detail.value.bk_biz_id !== -1 && isResourcePage.value;
+});
+
+const isOtherVendor = computed(() => {
+  return detail.value?.vendor === VendorEnum.OTHER;
 });
 
 const { whereAmI } = useWhereAmI();
@@ -142,7 +150,7 @@ const modifyCvmStatus = async (type: string) => {
       getDetail();
     }
   } catch (error) {
-    console.log(error);
+    console.error(error);
   } finally {
     cvmInfo.value[type].loading = false;
   }
@@ -202,7 +210,7 @@ const bktoolTipsOptions = computed(() => {
     <!-- <span class="status-stopped" v-if="(detail.bk_biz_id !== -1 && isResourcePage)">
       【已绑定】
     </span> -->
-    <template #right>
+    <template #right v-if="!isOtherVendor">
       <span>
         <bk-button
           v-bk-tooltips="bktoolTipsOptions || { disabled: true }"
@@ -381,13 +389,16 @@ const bktoolTipsOptions = computed(() => {
 .w100 {
   width: 100px;
 }
+
 .w60 {
   width: 60px;
 }
+
 .mb6-text {
   margin-bottom: 6px;
   color: #63656e;
 }
+
 .btn {
   min-width: 64px;
   margin-right: 8px;

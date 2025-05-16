@@ -2,14 +2,11 @@ import { withDirectives, Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { Button, Dropdown, Message, bkTooltips } from 'bkui-vue';
-import { CLOUD_HOST_STATUS } from '@/common/constant';
 import defaultUseColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import HostOperations, { OperationActions, operationMap } from '@/views/business/host/children/host-operations';
 import useSingleOperation from '@/views/business/host/children/host-operations/use-single-operation';
 import defaultUseTableListQuery from '@/hooks/useTableListQuery';
 import type { PropsType } from '@/hooks/useTableListQuery';
-import { useVerify } from '@/hooks';
-import { useGlobalPermissionDialog } from '@/store/useGlobalPermissionDialog';
 
 const { DropdownMenu, DropdownItem } = Dropdown;
 
@@ -28,9 +25,8 @@ type UseColumnsParams = {
 const useColumns = ({ columnType = 'cvms', isSimpleShow = false, vendor, extra }: UseColumnsParams) => {
   const { t } = useI18n();
   const router = useRouter();
-  const { authVerifyData, handleAuth } = useVerify();
-  const globalPermissionDialogStore = useGlobalPermissionDialog();
-  const { handleOperate, isOperateDisabled, currentOperateRowIndex } = useSingleOperation({
+
+  const { getOperationConfig, currentOperateRowIndex } = useSingleOperation({
     beforeConfirm() {
       extra.isLoading.value = true;
     },
@@ -54,13 +50,6 @@ const useColumns = ({ columnType = 'cvms', isSimpleShow = false, vendor, extra }
       label: value.label,
     }));
 
-  const getBkToolTipsOption = (type: OperationActions, data: { status: keyof typeof CLOUD_HOST_STATUS }) => {
-    return {
-      content: `当前主机处于 ${CLOUD_HOST_STATUS[data.status]} 状态`,
-      disabled: !isOperateDisabled(type, data.status),
-    };
-  };
-
   const { columns, generateColumnsSettings } = defaultUseColumns(columnType, isSimpleShow, vendor);
 
   return {
@@ -79,25 +68,13 @@ const useColumns = ({ columnType = 'cvms', isSimpleShow = false, vendor, extra }
                     text
                     theme={'primary'}
                     class={`mr10 ${
-                      !authVerifyData?.value?.permissionAction?.biz_iaas_resource_delete
-                        ? 'hcm-no-permision-text-btn'
-                        : ''
+                      getOperationConfig(OperationActions.RECYCLE, data).noPermission ? 'hcm-no-permision-text-btn' : ''
                     }`}
-                    onClick={() => {
-                      if (authVerifyData?.value?.permissionAction?.biz_iaas_resource_delete) {
-                        handleOperate(OperationActions.RECYCLE, data);
-                      } else {
-                        handleAuth('biz_iaas_resource_delete');
-                        globalPermissionDialogStore.setShow(true);
-                      }
-                    }}
-                    disabled={
-                      authVerifyData?.value?.permissionAction?.biz_iaas_resource_delete &&
-                      isOperateDisabled(OperationActions.RECYCLE, data)
-                    }>
+                    onClick={getOperationConfig(OperationActions.RECYCLE, data).clickHandler}
+                    disabled={getOperationConfig(OperationActions.RECYCLE, data).disabled}>
                     {operationMap[OperationActions.RECYCLE].label}
                   </Button>,
-                  [[bkTooltips, getBkToolTipsOption(OperationActions.RECYCLE, data)]],
+                  [[bkTooltips, getOperationConfig(OperationActions.RECYCLE, data).tooltips]],
                 ),
                 <Dropdown
                   trigger='click'
@@ -116,16 +93,18 @@ const useColumns = ({ columnType = 'cvms', isSimpleShow = false, vendor, extra }
                     content: () => (
                       <DropdownMenu>
                         {operationDropdownList.map(({ label, type }) => {
+                          const { disabled, tooltips, noPermission, clickHandler } = getOperationConfig(
+                            type as OperationActions,
+                            data,
+                          );
                           return withDirectives(
                             <DropdownItem
                               key={type}
-                              onClick={() => handleOperate(type as OperationActions, data)}
-                              extCls={`more-action-item${
-                                isOperateDisabled(type as OperationActions, data.status) ? ' disabled' : ''
-                              }`}>
+                              onClick={clickHandler}
+                              extCls={`more-action-item${disabled || noPermission ? ' disabled' : ''}`}>
                               {label}
                             </DropdownItem>,
-                            [[bkTooltips, getBkToolTipsOption(type as OperationActions, data)]],
+                            [[bkTooltips, tooltips]],
                           );
                         })}
                       </DropdownMenu>

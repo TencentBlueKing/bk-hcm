@@ -18,6 +18,7 @@ export enum VendorEnum {
   HUAWEI = 'huawei',
   ZENLAYER = 'zenlayer',
   KAOPU = 'kaopu',
+  OTHER = 'other',
 }
 
 export enum ResourceTypeEnum {
@@ -97,6 +98,10 @@ export const VENDORS = [
   {
     id: 'huawei',
     name: '华为云',
+  },
+  {
+    id: 'other',
+    name: '其他云厂商',
   },
 ];
 
@@ -539,6 +544,7 @@ export const VendorMap: Record<string, string> = {
   [VendorEnum.TCLOUD]: '腾讯云',
   [VendorEnum.ZENLAYER]: 'Zenlayer',
   [VendorEnum.KAOPU]: '靠谱云',
+  [VendorEnum.OTHER]: '其他云厂商',
 };
 
 export const VendorReverseMap: ConstantMapRecord = {
@@ -549,6 +555,7 @@ export const VendorReverseMap: ConstantMapRecord = {
   腾讯云: VendorEnum.TCLOUD,
   Zenlayer: VendorEnum.ZENLAYER,
   靠谱云: VendorEnum.KAOPU,
+  其他云厂商: VendorEnum.OTHER,
 };
 
 export const SYNC_STAUS_MAP = {
