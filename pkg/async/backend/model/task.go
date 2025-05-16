@@ -41,6 +41,7 @@ type Task struct {
 	State      enumor.TaskState   `json:"state"`
 	Reason     *tableasync.Reason `json:"reason"`
 	Result     types.JsonField    `json:"result"`
+	TenantID   string             `json:"tenant_id"`
 	Creator    string             `json:"creator"`
 	Reviser    string             `json:"reviser"`
 	CreatedAt  string             `json:"created_at"`

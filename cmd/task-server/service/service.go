@@ -118,20 +118,24 @@ func createAndStartAsync(sd serviced.ServiceDiscover, dao dao.Set, shutdownWaitT
 		Register: metrics.Register(),
 		ConsumerOption: &consumer.Option{
 			Scheduler: &consumer.SchedulerOption{
-				WatchIntervalSec: cfg.Scheduler.WatchIntervalSec,
-				WorkerNumber:     cfg.Scheduler.WorkerNumber,
+				WatchIntervalSec:     cfg.Scheduler.WatchIntervalSec,
+				WorkerNumber:         cfg.Scheduler.WorkerNumber,
+				ScheduledFlowFetcher: cfg.Scheduler.ScheduledFlowFetcher,
+				CanceledFlowFetcher:  cfg.Scheduler.CanceledFlowFetcher,
 			},
 			Executor: &consumer.ExecutorOption{
 				WorkerNumber:       cfg.Executor.WorkerNumber,
 				TaskExecTimeoutSec: cfg.Executor.TaskExecTimeoutSec,
 			},
 			Dispatcher: &consumer.DispatcherOption{
-				WatchIntervalSec: cfg.Dispatcher.WatchIntervalSec,
+				WatchIntervalSec:   cfg.Dispatcher.WatchIntervalSec,
+				PendingFlowFetcher: cfg.Dispatcher.PendingFlowFetcher,
 			},
 			WatchDog: &consumer.WatchDogOption{
 				WatchIntervalSec:    cfg.WatchDog.WatchIntervalSec,
 				TaskRunTimeoutSec:   cfg.WatchDog.TaskTimeoutSec,
 				ShutdownWaitTimeSec: uint(shutdownWaitTimeSec),
+				WorkerNumber:        cfg.WatchDog.WorkerNumber,
 			},
 		},
 	}
