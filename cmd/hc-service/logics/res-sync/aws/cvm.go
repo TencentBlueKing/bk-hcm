@@ -582,6 +582,7 @@ func (cli *client) listCvmFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	return result.Details, nil
 }
 
+// RemoveCvmDeleteFromCloud ...
 func (cli *client) RemoveCvmDeleteFromCloud(kt *kit.Kit, accountID string, region string) error {
 	req := &protocloud.CvmListReq{
 		Field: []string{"id", "cloud_id"},
@@ -632,8 +633,10 @@ func (cli *client) RemoveCvmDeleteFromCloud(kt *kit.Kit, accountID string, regio
 			}
 
 			cloudIDs := converter.MapKeyToStringSlice(cloudIDMap)
-			if err := cli.deleteCvm(kt, accountID, region, cloudIDs); err != nil {
-				return err
+			if len(cloudIDs) > 0 {
+				if err := cli.deleteCvm(kt, accountID, region, cloudIDs); err != nil {
+					return err
+				}
 			}
 		}
 

@@ -17,9 +17,6 @@ const props = defineProps({
   isResourcePage: {
     type: Boolean,
   },
-  authVerifyData: {
-    type: Object as PropType<any>,
-  },
   whereAmI: {
     type: String,
   },

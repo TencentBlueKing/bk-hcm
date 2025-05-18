@@ -48,7 +48,7 @@ export default defineComponent({
       type: String,
     },
     activeType: {
-      type: String as PropType<'ingress' | 'engress'>,
+      type: String as PropType<'ingress' | 'egress'>,
     },
     relatedSecurityGroups: {
       type: Array as PropType<any>,

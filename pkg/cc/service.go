@@ -73,13 +73,15 @@ type Setting interface {
 	trySetFlagBindIP(ip net.IP) error
 	trySetDefault()
 	Validate() error
+	TenantEnable() bool
 }
 
 // ApiServerSetting defines api server used setting options.
 type ApiServerSetting struct {
-	Network Network   `yaml:"network"`
-	Service Service   `yaml:"service"`
-	Log     LogOption `yaml:"log"`
+	Network Network      `yaml:"network"`
+	Service Service      `yaml:"service"`
+	Log     LogOption    `yaml:"log"`
+	Tenant  TenantConfig `yaml:"tenant"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -110,6 +112,11 @@ func (s ApiServerSetting) Validate() error {
 	return nil
 }
 
+// TenantEnable get tenant is enabled.
+func (s *ApiServerSetting) TenantEnable() bool {
+	return s.Tenant.Enabled
+}
+
 // TaskManagement ...
 type TaskManagement struct {
 	// 关闭任务管理轮询
@@ -131,6 +138,8 @@ type CloudServerSetting struct {
 	CloudSelection CloudSelection `yaml:"cloudSelection"`
 	Cmsi           CMSI           `yaml:"cmsi"`
 	TaskManagement TaskManagement `yaml:"taskManagement"`
+	Tenant         TenantConfig   `yaml:"tenant"`
+	Cmdb           ApiGateway     `yaml:"cmdb"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -165,6 +174,10 @@ func (s CloudServerSetting) Validate() error {
 		return err
 	}
 
+	if err := s.Cmdb.validate(); err != nil {
+		return err
+	}
+
 	if s.BkHcmUrl == "" {
 		return fmt.Errorf("bkHcmUrl should not be empty")
 	}
@@ -188,15 +201,21 @@ func (s CloudServerSetting) Validate() error {
 	return nil
 }
 
+// TenantEnable get tenant is enabled.
+func (s *CloudServerSetting) TenantEnable() bool {
+	return s.Tenant.Enabled
+}
+
 // DataServiceSetting defines data service used setting options.
 type DataServiceSetting struct {
-	Network     Network     `yaml:"network"`
-	Service     Service     `yaml:"service"`
-	Log         LogOption   `yaml:"log"`
-	Database    DataBase    `yaml:"database"`
-	Objectstore ObjectStore `yaml:"objectstore"`
-	Crypto      Crypto      `yaml:"crypto"`
-	Esb         Esb         `yaml:"esb"`
+	Network     Network      `yaml:"network"`
+	Service     Service      `yaml:"service"`
+	Log         LogOption    `yaml:"log"`
+	Database    DataBase     `yaml:"database"`
+	Objectstore ObjectStore  `yaml:"objectstore"`
+	Crypto      Crypto       `yaml:"crypto"`
+	Cmdb        ApiGateway  `yaml:"cmdb"`
+	Tenant      TenantConfig `yaml:"tenant"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -232,19 +251,25 @@ func (s DataServiceSetting) Validate() error {
 		return err
 	}
 
-	if err := s.Esb.validate(); err != nil {
+	if err := s.Cmdb.validate(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
+// TenantEnable get tenant is enabled.
+func (s *DataServiceSetting) TenantEnable() bool {
+	return s.Tenant.Enabled
+}
+
 // HCServiceSetting defines hc service used setting options.
 type HCServiceSetting struct {
-	Network    Network    `yaml:"network"`
-	Service    Service    `yaml:"service"`
-	Log        LogOption  `yaml:"log"`
-	SyncConfig SyncConfig `yaml:"sync"`
+	Network    Network      `yaml:"network"`
+	Service    Service      `yaml:"service"`
+	Log        LogOption    `yaml:"log"`
+	SyncConfig SyncConfig   `yaml:"sync"`
+	Tenant     TenantConfig `yaml:"tenant"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -278,12 +303,19 @@ func (s HCServiceSetting) Validate() error {
 	return nil
 }
 
+// TenantEnable get tenant is enabled.
+func (s *HCServiceSetting) TenantEnable() bool {
+	return s.Tenant.Enabled
+}
+
 // AuthServerSetting defines auth server used setting options.
 type AuthServerSetting struct {
-	Network Network   `yaml:"network"`
-	Service Service   `yaml:"service"`
-	Log     LogOption `yaml:"log"`
-	Esb     Esb       `yaml:"esb"`
+	Network Network    `yaml:"network"`
+	Service Service    `yaml:"service"`
+	Log     LogOption  `yaml:"log"`
+	Esb     Esb        `yaml:"esb"`
+	Cmdb    ApiGateway `yaml:"cmdb"`
+	Tenant  TenantConfig `yaml:"tenant"`
 
 	IAM IAM `yaml:"iam"`
 }
@@ -316,11 +348,20 @@ func (s AuthServerSetting) Validate() error {
 		return err
 	}
 
+	if err := s.Cmdb.validate(); err != nil {
+		return err
+	}
+
 	if err := s.IAM.validate(); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// TenantEnable get tenant is enabled.
+func (s *AuthServerSetting) TenantEnable() bool {
+	return s.Tenant.Enabled
 }
 
 // WebServerSetting defines api server used setting options.
@@ -334,6 +375,8 @@ type WebServerSetting struct {
 	ChangeLogPath ChangeLogPath `yaml:"changeLogPath"`
 	Notice        Notice        `yaml:"notice"`
 	TemplatePath  string        `yaml:"templatePath"`
+	Tenant        TenantConfig  `yaml:"tenant"`
+	Cmdb          ApiGateway    `yaml:"cmdb"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -373,6 +416,10 @@ func (s WebServerSetting) Validate() error {
 		return err
 	}
 
+	if err := s.Cmdb.validate(); err != nil {
+		return err
+	}
+
 	if err := s.Itsm.validate(); err != nil {
 		return err
 	}
@@ -384,6 +431,11 @@ func (s WebServerSetting) Validate() error {
 	return nil
 }
 
+// TenantEnable get tenant is enabled.
+func (s *WebServerSetting) TenantEnable() bool {
+	return s.Tenant.Enabled
+}
+
 // LabelSwitch switch for labels
 type LabelSwitch struct {
 	AwsCN bool `json:"awsCN" yaml:"awsCN"`
@@ -391,11 +443,12 @@ type LabelSwitch struct {
 
 // TaskServerSetting defines task server used setting options.
 type TaskServerSetting struct {
-	Network  Network   `yaml:"network"`
-	Service  Service   `yaml:"service"`
-	Database DataBase  `yaml:"database"`
-	Log      LogOption `yaml:"log"`
-	Async    Async     `yaml:"async"`
+	Network  Network      `yaml:"network"`
+	Service  Service      `yaml:"service"`
+	Database DataBase     `yaml:"database"`
+	Log      LogOption    `yaml:"log"`
+	Async    Async        `yaml:"async"`
+	Tenant   TenantConfig `yaml:"tenant"`
 
 	UseLabel LabelSwitch `yaml:"useLabel"`
 }
@@ -433,6 +486,11 @@ func (s TaskServerSetting) Validate() error {
 	return nil
 }
 
+// TenantEnable get tenant is enabled.
+func (s *TaskServerSetting) TenantEnable() bool {
+	return s.Tenant.Enabled
+}
+
 // AccountServerSetting defines task server used setting options.
 type AccountServerSetting struct {
 	Network        Network              `yaml:"network"`
@@ -440,8 +498,9 @@ type AccountServerSetting struct {
 	Controller     BillControllerOption `yaml:"controller"`
 	Log            LogOption            `yaml:"log"`
 	BillAllocation BillAllocationOption `yaml:"billAllocation"`
-	Esb            Esb                  `yaml:"esb"`
 	TmpFileDir     string               `yaml:"tmpFileDir"`
+	Tenant         TenantConfig         `yaml:"tenant"`
+	Cmdb           ApiGateway           `yaml:"cmdb"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -475,7 +534,16 @@ func (s AccountServerSetting) Validate() error {
 		return err
 	}
 
+	if err := s.Cmdb.validate(); err != nil {
+		return err
+	}
+
 	return nil
+}
+
+// TenantEnable get tenant is enabled.
+func (s *AccountServerSetting) TenantEnable() bool {
+	return s.Tenant.Enabled
 }
 
 // ChangeLogPath ...

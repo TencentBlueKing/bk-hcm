@@ -33,7 +33,6 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	cvt "hcm/pkg/tools/converter"
-	"hcm/pkg/tools/times"
 
 	"github.com/tidwall/gjson"
 )
@@ -72,21 +71,12 @@ func (a AwsDeductMonthTask) Pull(kt *kit.Kit, opt *MonthTaskActionOption, index 
 		fieldsMap[fieldKey] = fieldValues
 	}
 
-	// 获取指定月份最后一天
-	lastDay, err := times.GetLastDayOfMonth(opt.BillYear, opt.BillMonth)
-	if err != nil {
-		logs.Errorf("fail get last day of month for aws month task, year: %d, month: %d, err: %v, rid: %s",
-			opt.BillYear, opt.BillMonth, err, kt.Rid)
-		return nil, false, err
-	}
-
 	hcCli := actbill.GetHCServiceByAwsSite(rootInfo.Site)
+	// 有部分账单明细的起始日期、截止日期是空的，按天查询就会丢失该账单明细，不传BeginDate、EndDate的话，则不筛选起始日期截止日期
 	billReq := &hcbill.AwsRootBillItemsListReq{
 		RootAccountID: opt.RootAccountID,
 		Year:          uint(opt.BillYear),
 		Month:         uint(opt.BillMonth),
-		BeginDate:     fmt.Sprintf("%d-%02d-%02d", opt.BillYear, opt.BillMonth, 1),
-		EndDate:       fmt.Sprintf("%d-%02d-%02d", opt.BillYear, opt.BillMonth, lastDay),
 		FieldsMap:     fieldsMap,
 		Page:          &hcbill.AwsBillListPage{Offset: index, Limit: a.GetBatchSize(kt)},
 	}

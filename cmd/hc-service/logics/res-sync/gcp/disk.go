@@ -376,9 +376,12 @@ func (cli *client) RemoveDiskDeleteFromCloud(kt *kit.Kit, accountID string, zone
 			}
 
 			cloudIDs := converter.MapKeyToStringSlice(cloudIDMap)
-			if err := cli.deleteDisk(kt, accountID, zone, cloudIDs); err != nil {
-				return err
+			if len(cloudIDs) > 0 {
+				if err := cli.deleteDisk(kt, accountID, zone, cloudIDs); err != nil {
+					return err
+				}
 			}
+
 		}
 
 		if len(resultFromDB.Details) < constant.BatchOperationMaxLimit {

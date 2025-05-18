@@ -304,8 +304,10 @@ func (cli *client) RemoveRegionDeleteFromCloud(kt *kit.Kit, accountID string) er
 			}
 
 			cloudIDs := converter.MapKeyToStringSlice(cloudIDMap)
-			if err := cli.deleteRegion(kt, accountID, cloudIDs); err != nil {
-				return err
+			if len(cloudIDs) > 0 {
+				if err := cli.deleteRegion(kt, accountID, cloudIDs); err != nil {
+					return err
+				}
 			}
 		}
 

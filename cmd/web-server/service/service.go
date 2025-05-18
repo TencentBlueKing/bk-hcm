@@ -54,6 +54,7 @@ import (
 	"hcm/pkg/rest/client"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
+	pkgcmdb "hcm/pkg/thirdparty/api-gateway/cmdb"
 	pkgitsm "hcm/pkg/thirdparty/api-gateway/itsm"
 	pkgnotice "hcm/pkg/thirdparty/api-gateway/notice"
 	"hcm/pkg/thirdparty/esb"
@@ -77,6 +78,7 @@ type Service struct {
 	itsmCli pkgitsm.Client
 	// noticeCli notification center client
 	noticeCli pkgnotice.Client
+	cmdbCli   pkgcmdb.Client
 }
 
 // NewService create a service instance.
@@ -133,6 +135,12 @@ func NewService(dis serviced.Discover) (*Service, error) {
 		return nil, err
 	}
 
+	cmdbCfg := cc.WebServer().Cmdb
+	cmdbCli, err := pkgcmdb.NewClient(&cmdbCfg, metrics.Register())
+	if err != nil {
+		return nil, err
+	}
+
 	return &Service{
 		client:     apiClientSet,
 		esbClient:  esbClient,
@@ -140,6 +148,7 @@ func NewService(dis serviced.Discover) (*Service, error) {
 		authorizer: authorizer,
 		itsmCli:    itsmCli,
 		noticeCli:  noticeCli,
+		cmdbCli:    cmdbCli,
 	}, nil
 }
 
@@ -182,7 +191,7 @@ func (s *Service) ListenAndServeRest() error {
 		},
 		AllowedHeaders: []string{
 			"Accept", "Accept-encoding", "Authorization", "Content-Type", "Dnt",
-			"Origin", "User-Agent", "X-Csrftoken", "X-Requested-With", "X-Bkapi-Request-Id",
+			"Origin", "User-Agent", "X-Csrftoken", "X-Requested-With", "X-Bkapi-Request-Id", "X-Bk-Tenant-Id",
 		},
 		AllowedMethods: []string{"GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"},
 		CookiesAllowed: true,
@@ -258,10 +267,10 @@ func (s *Service) apiSet() *restful.WebService {
 	c := &capability.Capability{
 		WebService: ws,
 		ApiClient:  s.client,
-		EsbClient:  s.esbClient,
 		Authorizer: s.authorizer,
 		ItsmCli:    s.itsmCli,
 		NoticeCli:  s.noticeCli,
+		CmdbCli:    s.cmdbCli,
 	}
 
 	user.InitUserService(c)

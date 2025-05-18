@@ -1,11 +1,9 @@
-import { useUserStore } from './user';
 import { useBusinessGlobalStore } from './business-global';
 
 export const preload = async () => {
-  const { userInfo } = useUserStore();
   const { getFullBusiness, getAuthorizedBusiness } = useBusinessGlobalStore();
 
-  return Promise.all([userInfo(), getFullBusiness(), getAuthorizedBusiness()]);
+  return Promise.all([getFullBusiness(), getAuthorizedBusiness()]);
 };
 
 export * from './staff';

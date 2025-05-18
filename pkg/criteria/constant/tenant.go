@@ -17,24 +17,16 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-/*
-    SQLVER=0032,HCMVER=v1.8.0
+// Package constant constant 多租户相关的常量
+package constant
 
-    Notes:
-    1. 删除vpc表的bk_cloud_id字段
-    2. cvm表添加bk_host_id字段
-*/
-
-START TRANSACTION;
-
-alter table vpc
-    drop column bk_cloud_id;
-
-alter table cvm
-    add column bk_host_id bigint DEFAULT -1 COMMENT '主机ID';
-alter table cvm
-    ADD INDEX idx_bk_host_id (`bk_host_id`, `id`);
-CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v1.8.0' as `hcm_ver`, '0032' as `sql_ver`;
-
-COMMIT;
+const (
+	// DefaultTenantID 默认的租户id，使用场景：兼容不开启多租户的场景，上下游调用默认传递default租户
+	DefaultTenantID = "default"
+	// SystemTenantID 运营租户id
+	SystemTenantID = "system"
+	// TenantIDField 租户id字段
+	TenantIDField = "tenant_id"
+	// TenantIDTableField 租户id对应的table里的字段
+	TenantIDTableField = "TenantID"
+)

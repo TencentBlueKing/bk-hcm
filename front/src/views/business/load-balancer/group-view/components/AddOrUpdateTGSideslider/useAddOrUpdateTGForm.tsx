@@ -151,7 +151,7 @@ export default (formData: any, updateCount: Ref<number>, isEdit: Ref<boolean>, l
             </Select>
             &nbsp;&nbsp;:&nbsp;&nbsp;
             <Input
-              v-model={formData.port}
+              v-model_number={formData.port}
               disabled={isEdit.value || disabledEdit.value}
               type='number'
               class='no-number-control'

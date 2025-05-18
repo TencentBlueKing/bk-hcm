@@ -194,7 +194,7 @@ export const HuaweiRenderRow = defineComponent({
           <td>
             <InputColumn
               ref={priorityRef}
-              v-model={formModel.priority}
+              v-model_number={formModel.priority}
               type='number'
               min={1}
               max={100}

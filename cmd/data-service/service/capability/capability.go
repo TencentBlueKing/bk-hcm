@@ -24,7 +24,7 @@ import (
 	"hcm/pkg/cryptography"
 	"hcm/pkg/dal/dao"
 	"hcm/pkg/dal/objectstore"
-	"hcm/pkg/thirdparty/esb"
+	"hcm/pkg/thirdparty/api-gateway/cmdb"
 
 	"github.com/emicklei/go-restful/v3"
 )
@@ -34,6 +34,6 @@ type Capability struct {
 	WebService  *restful.WebService
 	Dao         dao.Set
 	Cipher      cryptography.Crypto
-	EsbClient   esb.Client
 	ObjectStore objectstore.Storage
+	CmdbClient  cmdb.Client
 }

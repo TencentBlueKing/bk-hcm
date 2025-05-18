@@ -710,8 +710,10 @@ func (cli *client) RemoveCvmDeleteFromCloud(kt *kit.Kit, accountID string, regio
 			}
 
 			delCloudIDs := converter.MapKeyToStringSlice(cloudIDMap)
-			if err = cli.deleteCvm(kt, accountID, region, delCloudIDs); err != nil {
-				return err
+			if len(delCloudIDs) > 0 {
+				if err = cli.deleteCvm(kt, accountID, region, delCloudIDs); err != nil {
+					return err
+				}
 			}
 		}
 

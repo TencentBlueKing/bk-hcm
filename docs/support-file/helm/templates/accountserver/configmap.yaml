@@ -38,3 +38,8 @@ data:
         keyFile:
         caFile:
         password:
+    tenant:
+      {{- toYaml .Values.tenant | nindent 6 }}
+
+    cmdb:
+      {{- toYaml .Values.cmdb | nindent 6 }}

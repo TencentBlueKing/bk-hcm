@@ -56,7 +56,7 @@ const hasEditScopeInBusiness = inject<ComputedRef<boolean>>('hasEditScopeInBusin
 const hasEditScopeInResource = inject<ComputedRef<boolean>>('hasEditScopeInResource');
 const operateTooltipsOption = inject<ComputedRef<IOverflowTooltipOption>>('operateTooltipsOption');
 
-const activeType = ref('ingress');
+const activeType = ref<'ingress' | 'egress'>('ingress');
 const deleteDialogShow = ref(false);
 const deleteId = ref(0);
 const securityRuleLoading = ref(false);

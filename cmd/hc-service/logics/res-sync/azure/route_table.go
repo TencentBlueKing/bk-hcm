@@ -405,10 +405,12 @@ func (cli *client) RemoveRouteTableDeleteFromCloud(kt *kit.Kit, accountID string
 					enumor.Azure, delCloudIDs, err, kt.Rid)
 				return err
 			}
-			if err = cli.deleteRouteTable(kt, accountID, resGroupName, delCloudIDs); err != nil {
-				logs.Errorf("delete azure routeTable failed, err: %v, account: %s, region: %s, delCloudIDs: %v, rid: %s",
-					err, accountID, resGroupName, delCloudIDs, kt.Rid)
-				return err
+			if len(delCloudIDs) > 0 {
+				if err = cli.deleteRouteTable(kt, accountID, resGroupName, delCloudIDs); err != nil {
+					logs.Errorf("delete azure routeTable failed, err: %v, account: %s, region: %s, delCloudIDs: %v, rid: %s",
+						err, accountID, resGroupName, delCloudIDs, kt.Rid)
+					return err
+				}
 			}
 		}
 

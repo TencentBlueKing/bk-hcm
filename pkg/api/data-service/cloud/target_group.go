@@ -365,6 +365,7 @@ type ListenerWithRuleCreateReq struct {
 	CloudLbID string              `json:"cloud_lb_id" validate:"required"`
 	Protocol  enumor.ProtocolType `json:"protocol" validate:"required"`
 	Port      int64               `json:"port" validate:"required"`
+	EndPort   *int64              `json:"end_port" validate:"omitempty"`
 
 	CloudRuleID        string                        `json:"cloud_rule_id" validate:"required"`
 	Scheduler          string                        `json:"scheduler" validate:"required"`

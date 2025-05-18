@@ -294,7 +294,7 @@ export default defineComponent({
                     <Input
                       type='number'
                       style={{ width: '160px' }}
-                      v-model={item.disk_size_gb}
+                      v-model_number={item.disk_size_gb}
                       min={1}
                       suffix='GB'
                       prefix='大小'></Input>
@@ -306,7 +306,7 @@ export default defineComponent({
                     <Input
                       style={{ width: '90px' }}
                       type='number'
-                      v-model={item.disk_count}
+                      v-model_number={item.disk_count}
                       min={dataDiskCountRules.value.min}></Input>
                   </FormItem>
                   <div class='btns'>
@@ -713,7 +713,7 @@ export default defineComponent({
                 content: () => (
                   <Input
                     type='number'
-                    v-model={formData.system_disk.disk_size_gb}
+                    v-model_number={formData.system_disk.disk_size_gb}
                     min={1}
                     suffix='GB'
                     prefix='大小'></Input>
@@ -746,7 +746,7 @@ export default defineComponent({
                       <Input
                         type='number'
                         style={{ width: '160px' }}
-                        v-model={item.disk_size_gb}
+                        v-model_number={item.disk_size_gb}
                         min={1}
                         suffix='GB'
                         prefix='大小'></Input>
@@ -758,7 +758,7 @@ export default defineComponent({
                       <Input
                         style={{ width: '90px' }}
                         type='number'
-                        v-model={item.disk_count}
+                        v-model_number={item.disk_count}
                         min={dataDiskCountRules.value.min}></Input>
                     </FormItem>
                     <div class='btns'>
@@ -1133,7 +1133,7 @@ export default defineComponent({
                     type='number'
                     min={0}
                     max={100}
-                    v-model={formData.required_count}></Input>
+                    v-model_number={formData.required_count}></Input>
                 </FormItem>
 
                 {/* eslint-disable max-len */}
@@ -1143,7 +1143,7 @@ export default defineComponent({
                       <Input
                         style={{ width: '160px' }}
                         type='number'
-                        v-model={formData.purchase_duration.count}></Input>
+                        v-model_number={formData.purchase_duration.count}></Input>
                       <Select style={{ width: '50px' }} v-model={formData.purchase_duration.unit} clearable={false}>
                         {purchaseDurationUnits.map(({ id, name }: IOption) => (
                           <Option key={id} value={id} label={name}></Option>

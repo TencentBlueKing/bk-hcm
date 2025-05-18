@@ -100,7 +100,7 @@ export default (
     }
   };
   const handleClear = () => {
-    tableRef.value.clearSelection();
+    tableRef.value?.clearSelection();
     resetSelections();
     selectedCount.value = 0;
   };

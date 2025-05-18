@@ -27,6 +27,7 @@ POST /api/v1/cloud/security_groups/related_resources/query_count
 
 ### 响应示例
 
+#### 查询成功
 ```json
 {
   "code": 0,
@@ -57,6 +58,21 @@ POST /api/v1/cloud/security_groups/related_resources/query_count
 }
 ```
 
+#### 部分失败
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": [
+    
+    {
+      "id": "00000002",
+      "error": "resource not found"
+    }
+  ]
+}
+```
+
 ### 响应参数说明
 
 | 参数名称    | 参数类型         | 描述   |
@@ -70,6 +86,7 @@ POST /api/v1/cloud/security_groups/related_resources/query_count
 | 参数名称      | 参数类型         | 描述         |
 |-----------|--------------|------------|
 | id        | string       | 安全组ID      |
+| error     | string       | 云上查询查询错误信息 |
 | resources | object array | 安全组关联的资源数量 |
 
 #### resource[n]

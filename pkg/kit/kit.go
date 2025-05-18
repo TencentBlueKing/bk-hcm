@@ -26,6 +26,7 @@ import (
 	"net/http"
 	"time"
 
+	"hcm/pkg/cc"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/tools/converter"
@@ -150,7 +151,10 @@ func (kt *Kit) Validate() error {
 		return errors.New("app code is required")
 	}
 
-	// TODO add tenant id validation
+	// 非Web来源的请求，多租户开关打开时再校验租户ID
+	if kt.AppCode != constant.WebSourceAppCode && cc.TenantEnable() && len(kt.TenantID) == 0 {
+		return errors.New("tenant id is required")
+	}
 
 	return nil
 }
@@ -190,4 +194,15 @@ func FromHeader(ctx context.Context, header http.Header) (*Kit, error) {
 	}
 
 	return kt, nil
+}
+
+// SetBackendTenantID 设置后端操作的租户id
+func (kt *Kit) SetBackendTenantID() {
+	// 如果开启多租户，设置租户id为system，不开启则设置为default
+	if cc.TenantEnable() {
+		kt.TenantID = constant.SystemTenantID
+		return
+	}
+
+	kt.TenantID = constant.DefaultTenantID
 }

@@ -22,13 +22,13 @@ package handlers
 import (
 	"fmt"
 
-	"hcm/pkg/thirdparty/esb/cmdb"
+	"hcm/pkg/thirdparty/api-gateway/cmdb"
 )
 
 // ListBizNames 查询业务名称列表
 func (a *BaseApplicationHandler) ListBizNames(bkBizIDs []int64) ([]string, error) {
 	// 查询CC业务
-	searchResp, err := a.EsbClient.Cmdb().SearchBusiness(a.Cts.Kit, &cmdb.SearchBizParams{
+	searchResp, err := a.CmdbClient.SearchBusiness(a.Cts.Kit, &cmdb.SearchBizParams{
 		Fields: []string{"bk_biz_id", "bk_biz_name"},
 	})
 	if err != nil {
@@ -60,7 +60,7 @@ func (a *BaseApplicationHandler) GetBizName(bkBizID int64) (string, error) {
 
 // GetCloudAreaName 查询云区域名称
 func (a *BaseApplicationHandler) GetCloudAreaName(bkCloudAreaID int64) (string, error) {
-	res, err := a.EsbClient.Cmdb().SearchCloudArea(
+	res, err := a.CmdbClient.SearchCloudArea(
 		a.Cts.Kit,
 		&cmdb.SearchCloudAreaParams{
 			Fields: []string{"bk_cloud_id", "bk_cloud_name"},

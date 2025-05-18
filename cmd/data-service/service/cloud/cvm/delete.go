@@ -24,6 +24,7 @@ import (
 
 	"hcm/pkg/api/core"
 	protocloud "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
@@ -63,12 +64,12 @@ func (svc *cvmSvc) BatchDeleteCvm(cts *rest.Contexts) (interface{}, error) {
 		return nil, nil
 	}
 
-	delIDs := make([]string, len(listResp.Details))
+	delCvmIDs := make([]string, len(listResp.Details))
 	for index, one := range listResp.Details {
-		delIDs[index] = one.ID
+		delCvmIDs[index] = one.ID
 	}
 
-	niIDs, err := svc.listCvmAssNetworkInterface(cts.Kit, delIDs)
+	niIDs, err := svc.listCvmAssNetworkInterface(cts.Kit, delCvmIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +82,18 @@ func (svc *cvmSvc) BatchDeleteCvm(cts *rest.Contexts) (interface{}, error) {
 			}
 		}
 
-		delFilter := tools.ContainersExpression("id", delIDs)
+		// 删除安全组关联关系
+		sgRelFilter := tools.ExpressionAnd(
+			tools.RuleIn("res_id", delCvmIDs),
+			tools.RuleEqual("res_type", enumor.CvmCloudResType),
+		)
+		err := svc.dao.SGCommonRel().DeleteWithTx(cts.Kit, txn, sgRelFilter)
+		if err != nil {
+			logs.Errorf("delete cvm sg rel failed , err: %v, cvm_ids: %v, rid: %s", err, delCvmIDs, cts.Kit.Rid)
+			return nil, err
+		}
+
+		delFilter := tools.ContainersExpression("id", delCvmIDs)
 		if err := svc.dao.Cvm().DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
 			return nil, err
 		}

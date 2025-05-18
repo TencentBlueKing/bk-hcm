@@ -1,6 +1,4 @@
 import { useCommonStore } from '@/store';
-import usePagePermissionStore from '@/store/usePagePermissionStore';
-// import { Verify } from '@/typings';
 import { ref } from 'vue';
 
 export type AuthVerifyDataType = {
@@ -41,7 +39,6 @@ export enum IAM_CODE {
 // 权限hook
 export function useVerify() {
   const commonStore = useCommonStore();
-  const { setHasPagePermission, setPermissionMsg, logout } = usePagePermissionStore();
 
   // 根据参数获取权限
   const getAuthVerifyData = async (authData: any[]) => {
@@ -62,19 +59,8 @@ export function useVerify() {
       },
       { resources: [] },
     );
-    let res;
-    try {
-      res = await commonStore.authVerify(params);
-    } catch (err: any) {
-      switch (err.code) {
-        case IAM_CODE.NoPermission:
-          setHasPagePermission(false);
-          setPermissionMsg(err.message);
-          break;
-        default:
-          logout();
-      }
-    }
+
+    const res = await commonStore.authVerify(params);
 
     if (res?.data?.permission) {
       // 没有权限才需要获取跳转链接参数

@@ -11,7 +11,6 @@ import RoutingManage from '@/views/resource/resource-manage/children/manage/rout
 import ImageManage from '@/views/resource/resource-manage/children/manage/image-manage.vue';
 import NetworkInterfaceManage from '@/views/resource/resource-manage/children/manage/network-interface-manage.vue';
 import recyclebinManage from '@/views/resource/recyclebin-manager/recyclebin-manager.vue';
-import { useVerify } from '@/hooks';
 import useAdd from '@/views/resource/resource-manage/hooks/use-add';
 import GcpAdd from '@/views/resource/resource-manage/children/add/gcp-add';
 // forms
@@ -201,15 +200,6 @@ const handleBeforeClose = () => {
   }
 };
 
-// 权限hook
-const {
-  showPermissionDialog,
-  handlePermissionConfirm,
-  handlePermissionDialog,
-  handleAuth,
-  permissionParams,
-  authVerifyData,
-} = useVerify();
 const computedSecurityText = computed(() => {
   if (renderComponent.value !== SecurityManage) return '新建';
   switch (securityType.value) {
@@ -243,10 +233,7 @@ const handleEditTemplate = (payload: any) => {
         :is="renderComponent"
         :filter="filter"
         :is-resource-page="isResourcePage"
-        :auth-verify-data="authVerifyData"
-        @auth="(val: string) => {
-          handleAuth(val)
-        }"
+        :bk-biz-id="accountStore.bizs"
         @handleSecrityType="handleSecrityType"
         @editTemplate="handleEditTemplate"
         @edit="handleEdit"
@@ -294,12 +281,6 @@ const handleEditTemplate = (payload: any) => {
         ></component>
       </template>
     </bk-sideslider>
-    <permission-dialog
-      v-model:is-show="showPermissionDialog"
-      :params="permissionParams"
-      @cancel="handlePermissionDialog"
-      @confirm="handlePermissionConfirm"
-    ></permission-dialog>
 
     <gcp-add
       v-model:is-show="isShowGcpAdd"

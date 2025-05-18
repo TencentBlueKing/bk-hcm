@@ -302,8 +302,10 @@ func (cli *client) RemoveRouteDeleteFromCloud(kt *kit.Kit, accountID string) err
 			}
 
 			delIDs := converter.MapKeyToStringSlice(cloudIDMap)
-			if err := cli.deleteRoute(kt, accountID, delIDs, resultFromDB.Details); err != nil {
-				return err
+			if len(delIDs) > 0 {
+				if err := cli.deleteRoute(kt, accountID, delIDs, resultFromDB.Details); err != nil {
+					return err
+				}
 			}
 		}
 

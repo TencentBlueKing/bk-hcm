@@ -60,16 +60,16 @@ export default defineComponent({
       {
         label: '类型',
         field: 'type_name',
-        render: ({ cell, data }: any) => {
+        render: ({ cell, row }: any) => {
           return (
             <div class={'flex-row'}>
               <Radio
                 v-model={checkedInstance.instanceType}
-                checked={checkedInstance.instanceType === data.instance_type}
-                label={data.instance_type}
-                // onChange={() => handleChangeCheckedInstance(data)}
+                checked={checkedInstance.instanceType === row.instance_type}
+                label={row.instance_type}
+                // onChange={() => handleChangeCheckedInstance(row)}
               >
-                {props.vendor === VendorEnum.TCLOUD ? cell : data.instance_type}
+                {props.vendor === VendorEnum.TCLOUD ? cell : row.instance_type}
               </Radio>
             </div>
           );
@@ -96,8 +96,8 @@ export default defineComponent({
       {
         label: '内网带宽',
         field: 'instance_bandwidth',
-        render: ({ data }: { data: any }) =>
-          `${props.vendor === VendorEnum.TCLOUD ? `${data.instance_bandwidth}Gbps` : data.network_performance}`,
+        render: ({ row }: { row: any }) =>
+          `${props.vendor === VendorEnum.TCLOUD ? `${row.instance_bandwidth}Gbps` : row.network_performance}`,
       },
       {
         label: '网络收发包',
@@ -108,9 +108,9 @@ export default defineComponent({
         label: '参考费用',
         field: 'price',
         fixed: 'right',
-        render: ({ data }: any) => (
+        render: ({ row }: any) => (
           <span class={'instance-price'}>{`${
-            data?.Price?.DiscountPrice || data?.Price?.DiscountPriceOneYear
+            row?.Price?.DiscountPrice || row?.Price?.DiscountPriceOneYear
           }元/月`}</span>
         ),
       },

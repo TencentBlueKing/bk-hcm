@@ -71,7 +71,7 @@ export default defineComponent({
             </Select>
           </FormItem>
           <FormItem label='大小' property='disk_size_gb' min={10} max={65536}>
-            <Input type='number' v-model={localFormData.disk_size_gb} suffix='GB'></Input>
+            <Input type='number' v-model_number={localFormData.disk_size_gb} suffix='GB'></Input>
           </FormItem>
           <FormItem label='挂载模式' property='mode'>
             <RadioGroup v-model={localFormData.mode}>
