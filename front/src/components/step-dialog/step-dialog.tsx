@@ -45,6 +45,7 @@ export default defineComponent({
       },
     },
     renderType: String as PropType<'if' | 'is'>,
+    confirmDisabled: Boolean,
   },
 
   emits: ['confirm', 'cancel', 'next'],
@@ -138,6 +139,7 @@ export default defineComponent({
                     <bk-button
                       class='mr10 dialog-button'
                       theme='primary'
+                      disabled={this.confirmDisabled}
                       loading={this.steps[this.curStep - 1].isConfirmLoading || this.loading}
                       onClick={this.handleConfirm}>
                       {this.t('确认')}
@@ -148,7 +150,7 @@ export default defineComponent({
                   <bk-button
                     class='dialog-button'
                     onClick={this.handleClose}
-                    loading={this.steps[this.curStep - 1].isConfirmLoading || this.loading}>
+                    disabled={this.steps[this.curStep - 1].isConfirmLoading || this.loading}>
                     {this.t('取消')}
                   </bk-button>
                 </>

@@ -28,9 +28,11 @@ import (
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
+	dataproto "hcm/pkg/api/data-service"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/client"
 	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -99,6 +101,88 @@ func (svc *cvmSvc) listSecurityGroupMap(kt *kit.Kit, sgIDs ...string) (map[strin
 		for _, one := range resp.Details {
 			result[one.ID] = one
 		}
+	}
+
+	return result, nil
+}
+
+func (svc *cvmSvc) getSecurityGroupMapByCloudIDs(kt *kit.Kit, vendor enumor.Vendor, cloudIDs []string) (
+	map[string]string, error) {
+
+	cloudIDs = slice.Unique(cloudIDs)
+	m := make(map[string]string)
+	for _, ids := range slice.Split(cloudIDs, int(core.DefaultMaxPageLimit)) {
+		req := &protocloud.SecurityGroupListReq{
+			Field: []string{"id", "cloud_id"},
+			Filter: tools.ExpressionAnd(
+				tools.RuleIn("cloud_id", ids),
+				tools.RuleEqual("vendor", vendor),
+			),
+			Page: core.NewDefaultBasePage(),
+		}
+		resp, err := svc.dataCli.Global.SecurityGroup.ListSecurityGroup(kt.Ctx, kt.Header(), req)
+		if err != nil {
+			logs.Errorf("request dataservice list security group failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
+			return nil, err
+		}
+		for _, one := range resp.Details {
+			m[one.CloudID] = one.ID
+		}
+	}
+	return m, nil
+}
+
+// createSGCommonRels 先删除cvmID关联的安全组关系，再创建新的安全组关系
+func (svc *cvmSvc) createSGCommonRels(kt *kit.Kit, vendor enumor.Vendor, resType enumor.CloudResourceType, cvmID string, sgIDs []string) error {
+
+	createReq := &protocloud.SGCommonRelBatchUpsertReq{
+		DeleteReq: &dataproto.BatchDeleteReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleEqual("res_id", cvmID),
+				tools.RuleEqual("res_type", resType),
+			),
+		},
+	}
+
+	for i, sgID := range sgIDs {
+		createReq.Rels = append(createReq.Rels, protocloud.SGCommonRelCreate{
+			SecurityGroupID: sgID,
+			ResVendor:       vendor,
+			ResID:           cvmID,
+			ResType:         resType,
+			Priority:        int64(i) + 1,
+		})
+	}
+	if err := svc.dataCli.Global.SGCommonRel.BatchUpsertSgCommonRels(kt, createReq); err != nil {
+		logs.Errorf("request dataservice create security group cvm rels failed, err: %v, req: %+v, rid: %s",
+			err, createReq, kt.Rid)
+		return err
+	}
+	return nil
+}
+
+func (svc *cvmSvc) getCvms(kt *kit.Kit, vendor enumor.Vendor, region string, cvmIDs []string) ([]corecvm.BaseCvm,
+	error) {
+	if len(cvmIDs) == 0 {
+		return nil, nil
+	}
+
+	result := make([]corecvm.BaseCvm, 0, len(cvmIDs))
+	for _, ids := range slice.Split(cvmIDs, int(core.DefaultMaxPageLimit)) {
+		listReq := &core.ListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleEqual("vendor", vendor),
+				tools.RuleEqual("region", region),
+				tools.RuleIn("id", ids),
+			),
+			Page: core.NewDefaultBasePage(),
+		}
+		listResp, err := svc.dataCli.Global.Cvm.ListCvm(kt, listReq)
+		if err != nil {
+			logs.Errorf("request dataservice list cvm failed, err: %v, ids: %v, rid: %s", err, cvmIDs, kt.Rid)
+			return nil, err
+		}
+		result = append(result, listResp.Details...)
 	}
 
 	return result, nil

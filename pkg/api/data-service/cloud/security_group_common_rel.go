@@ -22,6 +22,7 @@ package cloud
 import (
 	"fmt"
 
+	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
 	dataproto "hcm/pkg/api/data-service"
 	"hcm/pkg/criteria/constant"
@@ -39,7 +40,7 @@ type SGCommonRelBatchCreateReq struct {
 // SGCommonRelCreate ...
 type SGCommonRelCreate struct {
 	SecurityGroupID string                   `json:"security_group_id" validate:"required"`
-	Vendor          enumor.Vendor            `json:"vendor" validate:"required"`
+	ResVendor       enumor.Vendor            `json:"res_vendor" validate:"required"`
 	ResID           string                   `json:"res_id" validate:"required"`
 	ResType         enumor.CloudResourceType `json:"res_type" validate:"omitempty"`
 	Priority        int64                    `json:"priority" validate:"omitempty"`
@@ -81,8 +82,9 @@ type SGCommonRelListResult struct {
 
 // SGCommonRelWithSecurityGroupListReq ...
 type SGCommonRelWithSecurityGroupListReq struct {
-	ResIDs  []string                 `json:"res_ids" validate:"required,min=1"`
-	ResType enumor.CloudResourceType `json:"res_type" validate:"required"`
+	ResIDs  []string                 `json:"res_ids" validate:"omitempty"`
+	ResType enumor.CloudResourceType `json:"res_type" validate:"omitempty"`
+	SGIDs   []string                 `json:"sg_ids" validate:"omitempty"`
 }
 
 // Validate SGCommonRelWithSecurityGroupListReq.
@@ -91,12 +93,51 @@ func (req *SGCommonRelWithSecurityGroupListReq) Validate() error {
 		return err
 	}
 
+	if len(req.ResIDs) == 0 && len(req.SGIDs) == 0 {
+		return fmt.Errorf("res_ids or sg_ids is required")
+	}
+
+	if len(req.SGIDs) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("sg_ids count should <= %d", constant.BatchOperationMaxLimit)
+	}
+
 	if len(req.ResIDs) > constant.BatchOperationMaxLimit {
 		return fmt.Errorf("res_ids count should <= %d", constant.BatchOperationMaxLimit)
 	}
 
-	if len(req.ResType) == 0 {
-		return fmt.Errorf("res_type is required")
+	if len(req.ResIDs) > 0 {
+		if len(req.ResType) == 0 {
+			return fmt.Errorf("res_type is required")
+		}
+	}
+
+	return nil
+}
+
+// SGCommonRelWithCVMListResp ...
+type SGCommonRelWithCVMListResp core.ListResultT[corecloud.SGCommonRelWithCVMSummary]
+
+// SGCommonRelWithLBListResp ...
+type SGCommonRelWithLBListResp core.ListResultT[corecloud.SGCommonRelWithLBSummary]
+
+// SGCommonRelListReq ...
+type SGCommonRelListReq struct {
+	SGIDs        []string `json:"sg_ids" validate:"required,min=1"`
+	core.ListReq `json:",inline"`
+}
+
+// Validate SGCommonRelListReq.
+func (req SGCommonRelListReq) Validate() error {
+	if err := validator.Validate.Struct(req); err != nil {
+		return err
+	}
+
+	if err := req.ListReq.Validate(); err != nil {
+		return err
+	}
+
+	if len(req.SGIDs) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("sg_ids count should <= %d", constant.BatchOperationMaxLimit)
 	}
 
 	return nil

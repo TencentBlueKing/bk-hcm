@@ -50,6 +50,8 @@ func InitSecurityGroupService(cap *capability.Capability) {
 		sg.UpdateAwsSGRule)
 	h.Add("DeleteAwsSGRule", "DELETE", "/vendors/aws/security_groups/{security_group_id}/rules/{id}",
 		sg.DeleteAwsSGRule)
+	h.Add("AwsListSecurityGroupStatistic", "POST", "/vendors/aws/security_groups/statistic",
+		sg.AwsListSecurityGroupStatistic)
 
 	h.Add("HuaWeiSecurityGroupAssociateCvm", "POST", "/vendors/huawei/security_groups/associate/cvms",
 		sg.HuaWeiSecurityGroupAssociateCvm)
@@ -60,8 +62,10 @@ func InitSecurityGroupService(cap *capability.Capability) {
 	h.Add("UpdateHuaWeiSecurityGroup", "PATCH", "/vendors/huawei/security_groups/{id}", sg.UpdateHuaWeiSecurityGroup)
 	h.Add("CreateHuaWeiSGRule", "POST", "/vendors/huawei/security_groups/{security_group_id}/rules/create",
 		sg.CreateHuaWeiSGRule)
-	h.Add("DeleteAwsSGRule", "DELETE", "/vendors/huawei/security_groups/{security_group_id}/rules/{id}",
+	h.Add("DeleteHuaWeiSGRule", "DELETE", "/vendors/huawei/security_groups/{security_group_id}/rules/{id}",
 		sg.DeleteHuaWeiSGRule)
+	h.Add("HuaweiListSecurityGroupStatistic", "POST", "/vendors/huawei/security_groups/statistic",
+		sg.HuaweiListSecurityGroupStatistic)
 
 	h.Add("AzureSecurityGroupAssociateSubnet", "POST", "/vendors/azure/security_groups/associate/subnets",
 		sg.AzureSecurityGroupAssociateSubnet)
@@ -80,6 +84,8 @@ func InitSecurityGroupService(cap *capability.Capability) {
 		sg.UpdateAzureSGRule)
 	h.Add("DeleteAzureSGRule", "DELETE", "/vendors/azure/security_groups/{security_group_id}/rules/{id}",
 		sg.DeleteAzureSGRule)
+	h.Add("AzureListSecurityGroupStatistic", "POST", "/vendors/azure/security_groups/statistic",
+		sg.AzureListSecurityGroupStatistic)
 
 	// CLB负载均衡
 	h.Add("TCloudSecurityGroupAssociateLoadBalancer", "POST",
@@ -114,6 +120,8 @@ func tcloudService(h *rest.Handler, sg *securityGroup) {
 		"/vendors/tcloud/security_groups/disassociate/cvms/batch", sg.TCloudSGBatchDisassociateCvm)
 	h.Add("TCloudListSecurityGroupStatistic", "POST", "/vendors/tcloud/security_groups/statistic",
 		sg.TCloudListSecurityGroupStatistic)
+	h.Add("TCloudCloneSecurityGroup", "POST", "/vendors/tcloud/security_groups/clone",
+		sg.TCloudCloneSecurityGroup)
 }
 
 type securityGroup struct {

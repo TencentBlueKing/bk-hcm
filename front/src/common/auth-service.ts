@@ -204,25 +204,27 @@ export const AUTH_DEFINITIONS = Object.freeze<Record<symbol, IAuthDefinition>>({
     action: 'recycle',
     resourceType: 'recycle_bin',
   },
-  [authSymbol.AUTH_CREATE_CRET]: {
+  [authSymbol.AUTH_CREATE_CERT]: {
     id: 'cert_resource_create',
     action: 'create',
     resourceType: 'cert',
   },
-  [authSymbol.AUTH_BIZ_CREATE_CRET]: {
+  [authSymbol.AUTH_BIZ_CREATE_CERT]: {
     id: 'biz_cert_resource_create',
     action: 'create',
     resourceType: 'cert',
+    transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
   },
-  [authSymbol.AUTH_DELETE_CRET]: {
+  [authSymbol.AUTH_DELETE_CERT]: {
     id: 'cert_resource_delete',
     action: 'delete',
     resourceType: 'cert',
   },
-  [authSymbol.AUTH_BIZ_DELETE_CRET]: {
+  [authSymbol.AUTH_BIZ_DELETE_CERT]: {
     id: 'biz_cert_resource_delete',
     action: 'delete',
     resourceType: 'cert',
+    transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
   },
   [authSymbol.AUTH_FIND_ROOT_ACCOUNT]: {
     id: 'root_account_find',

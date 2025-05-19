@@ -211,6 +211,7 @@ func (cli *client) createSG(kt *kit.Kit, accountID string, region string,
 			Name:      converter.PtrToVal(one.GroupName),
 			Memo:      one.Description,
 			AccountID: accountID,
+			MgmtBizID: constant.UnassignedBiz,
 			Extension: &cloudcore.AwsSecurityGroupExtension{
 				VpcID:        vpcMap[converter.PtrToVal(one.VpcId)],
 				CloudVpcID:   one.VpcId,

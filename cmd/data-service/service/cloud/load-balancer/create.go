@@ -721,6 +721,16 @@ func (svc *lbSvc) insertListenerWithRule(kt *kit.Kit, vendor enumor.Vendor,
 func (svc *lbSvc) createListenerWithRule(kt *kit.Kit, txn *sqlx.Tx, item dataproto.ListenerWithRuleCreateReq) (
 	lblID string, ruleID string, err error) {
 
+	ext := corelb.TCloudListenerExtension{
+		EndPort:     item.EndPort,
+		Certificate: nil,
+	}
+	extRaw, err := json.MarshalToString(ext)
+	if err != nil {
+		logs.Errorf("json marshal json  extension failed, err: %v, ext: %+v, rid: %s", err, ext, kt.Rid)
+		return "", "", err
+	}
+
 	models := []*tablelb.LoadBalancerListenerTable{{
 		CloudID:       item.CloudID,
 		Name:          item.Name,
@@ -734,6 +744,7 @@ func (svc *lbSvc) createListenerWithRule(kt *kit.Kit, txn *sqlx.Tx, item datapro
 		DefaultDomain: item.Domain,
 		Region:        item.Region,
 		SniSwitch:     item.SniSwitch,
+		Extension:     types.JsonField(extRaw),
 		Creator:       kt.User,
 		Reviser:       kt.User,
 	}}

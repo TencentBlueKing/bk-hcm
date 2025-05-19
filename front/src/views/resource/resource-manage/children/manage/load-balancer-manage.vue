@@ -20,7 +20,14 @@
       </Button>
       <all-load-balancer :disabled="selections.length > 0" />
       <div class="flex-row align-items-center justify-content-arround search-selector-container">
-        <bk-search-select class="w500" clearable :conditions="[]" :data="clbsSearchData" v-model="searchValue" />
+        <bk-search-select
+          class="w500"
+          clearable
+          :conditions="[]"
+          :data="clbsSearchData"
+          v-model="searchValue"
+          value-behavior="need-key"
+        />
         <slot name="recycleHistory"></slot>
       </div>
     </section>
@@ -145,7 +152,8 @@ const renderColumns = [
   ...columns,
   {
     label: '操作',
-    width: 120,
+    width: 150,
+    fixed: 'right',
     render: ({ data }: any) =>
       h('div', { class: 'operation-column' }, [
         withDirectives(
@@ -250,7 +258,6 @@ const {
     },
   ],
   selections,
-  resetSelections,
   triggerApi,
 );
 

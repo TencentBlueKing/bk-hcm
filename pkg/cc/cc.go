@@ -61,6 +61,19 @@ func (r *runtime) Ready() bool {
 	return true
 }
 
+// TenantEnable return tenant enable.
+func TenantEnable() bool {
+	rt.lock.Lock()
+	defer rt.lock.Unlock()
+
+	if !rt.Ready() {
+		logs.ErrorDepthf(1, "tenant enable setting is not ready, return empty tenant setting")
+		return false
+	}
+
+	return rt.settings.TenantEnable()
+}
+
 // ApiServer return api server Setting.
 func ApiServer() ApiServerSetting {
 	rt.lock.Lock()

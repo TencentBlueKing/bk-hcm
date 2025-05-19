@@ -344,8 +344,10 @@ func (cli *client) RemoveDiskDeleteFromCloud(kt *kit.Kit, accountID string, resG
 			}
 
 			cloudIDs := converter.MapKeyToStringSlice(cloudIDMap)
-			if err := cli.deleteDisk(kt, accountID, resGroupName, cloudIDs); err != nil {
-				return err
+			if len(cloudIDs) > 0 {
+				if err := cli.deleteDisk(kt, accountID, resGroupName, cloudIDs); err != nil {
+					return err
+				}
 			}
 		}
 

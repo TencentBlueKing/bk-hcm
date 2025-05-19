@@ -135,7 +135,12 @@ export default defineComponent({
             property: 'cover_ping',
             required: true,
             content: () => (
-              <bk-input class='with-suffix' type='number' v-model={formData.cover_ping} min={1} suffix='ms'></bk-input>
+              <bk-input
+                class='with-suffix'
+                type='number'
+                v-model_number={formData.cover_ping}
+                min={1}
+                suffix='ms'></bk-input>
             ),
           },
           /* {

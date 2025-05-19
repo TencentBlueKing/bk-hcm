@@ -26,7 +26,6 @@ import { useI18n } from 'vue-i18n';
 import useSteps from './hooks/use-steps';
 import type { FilterType } from '@/typings/resource';
 import { useAccountStore } from '@/store';
-import { useVerify } from '@/hooks';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { InfoBox } from 'bkui-vue';
 import { AUTH_CREATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
@@ -91,16 +90,6 @@ const headerExtensionMap = computed(() => {
   return map;
 });
 
-// 权限hook
-const {
-  showPermissionDialog,
-  handlePermissionConfirm,
-  handlePermissionDialog,
-  handleAuth,
-  permissionParams,
-  authVerifyData,
-} = useVerify();
-
 const resourceAccountStore = useResourceAccountStore();
 
 // 搜索过滤相关数据
@@ -124,6 +113,10 @@ const templateDialogPayload = ref({});
 
 provide('securityType', securityType);
 
+const handleTabChange = (path: string) => {
+  router.push({ path, query: { ...route.query } });
+};
+
 // 用于判断 sideslider 中的表单数据是否改变
 const isFormDataChanged = ref(false);
 
@@ -144,7 +137,7 @@ const renderForm = computed(() => {
 });
 
 // 组件map
-const componentMap = {
+const componentMap: Record<string, any> = {
   host: HostManage,
   vpc: VpcManage,
   subnet: SubnetManage,
@@ -159,14 +152,20 @@ const componentMap = {
 };
 
 // 标签相关数据
-const tabs = RESOURCE_TYPES.map((type) => {
-  return {
-    name: type.type,
-    type: t(type.name),
-    component: componentMap[type.type],
-  };
+const commonTabTypes = ['host', 'vpc', 'subnet', 'security', 'drive', 'ip', 'routing', 'image', 'network-interface'];
+const specialTabTypes = ['clb', 'certs'];
+const tabs = computed(() => {
+  let types = commonTabTypes;
+  // 未选云厂商或腾讯云，展示clb和证书管理tab
+  const vendor = resourceAccountStore.vendorInResourcePage;
+  if (!vendor || vendor === VendorEnum.TCLOUD) {
+    types = types.concat(specialTabTypes);
+  }
+  return RESOURCE_TYPES.filter(({ type }) => types.includes(type)).map(({ type, name }) => {
+    return { name: type, type: t(name), component: componentMap[type] };
+  });
 });
-const activeTab = ref((route.query.type as string) || tabs[0].type);
+const activeTab = ref((route.query.type as string) || tabs.value[0].type);
 
 const filterData = (key: string, val: string | number) => {
   if (!filter.value.rules.length) {
@@ -352,19 +351,6 @@ watch(
   },
 );
 
-watch(
-  () => activeResourceTab.value,
-  (val) => {
-    router.push({
-      path: val,
-      query: route.query,
-    });
-  },
-  {
-    immediate: true,
-  },
-);
-
 // const handleTemplateEdit = (payload: any) => {
 //   isTemplateDialogShow.value = true;
 //   isTemplateDialogEdit.value = true;
@@ -460,7 +446,12 @@ onMounted(() => {
             </div>
           </template>
         </p>
-        <BkTab class="resource-tab-wrap ml15" type="unborder-card" v-model:active="activeResourceTab">
+        <BkTab
+          class="resource-tab-wrap ml15"
+          type="unborder-card"
+          v-model:active="activeResourceTab"
+          @change="handleTabChange"
+        >
           <BkTabPanel v-for="item of RESOURCE_TABS" :label="item.label" :key="item.key" :name="item.key" />
         </BkTab>
       </div>
@@ -490,30 +481,14 @@ onMounted(() => {
             </bk-select>
           </div>
         </template>
-        <!-- Only Tencent Cloud offers certificate hosting -->
         <template v-for="item in tabs" :key="item.name">
-          <bk-tab-panel
-            :name="item.name"
-            :label="item.type"
-            v-if="
-              !['clb', 'certs'].includes(item.name) ||
-              (['clb', 'certs'].includes(item.name) &&
-                ((!resourceAccountStore.currentVendor && !resourceAccountStore.currentAccountVendor) ||
-                  [resourceAccountStore.currentVendor, resourceAccountStore.currentAccountVendor].includes(
-                    VendorEnum.TCLOUD,
-                  )))
-            "
-          >
+          <bk-tab-panel :name="item.name" :label="item.type">
             <component
               v-if="item.name === activeTab"
               :is="item.component"
               :filter="filter"
               :where-am-i="activeTab"
               :is-resource-page="isResourcePage"
-              :auth-verify-data="authVerifyData"
-              @auth="(val: string) => {
-                handleAuth(val)
-              }"
               @handleSecrityType="handleSecrityType"
               ref="componentRef"
               @edit="handleEdit"
@@ -562,13 +537,6 @@ onMounted(() => {
         :title="t('快速分配')"
         :data="[]"
       />
-
-      <permission-dialog
-        v-model:is-show="showPermissionDialog"
-        :params="permissionParams"
-        @cancel="handlePermissionDialog"
-        @confirm="handlePermissionConfirm"
-      ></permission-dialog>
 
       <TemplateDialog
         :is-show="isTemplateDialogShow"

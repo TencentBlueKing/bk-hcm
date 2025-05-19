@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { reactive, watch, ref, inject, nextTick } from 'vue';
+import { reactive, watch, ref, inject, nextTick, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAccountStore, useResourceStore } from '@/store';
 import { BusinessFormFilter, QueryFilterType, QueryRuleOPEnum, IAccountItem } from '@/typings';
@@ -29,7 +29,6 @@ const { t } = useI18n();
 const accountStore = useAccountStore();
 const resourceStore = useResourceStore();
 const emit = defineEmits(['change']);
-const accountList = ref([]);
 const cloudRegionsList = ref([]);
 const accountLoading = ref(false);
 const cloudRegionsLoading = ref(false);
@@ -137,27 +136,11 @@ watch(
   },
 );
 
-watch(
-  () => state.filter.account_id,
-  (val) => {
-    const vendor =
-      accountList.value.find((e: any) => {
-        return e.id === val;
-      })?.vendor || '';
-    state.filter.vendor = vendor;
-  },
-);
-watch(
-  () => accountSelector.value?.currentDisplayList,
-  (val) => {
-    val?.[0] && getAccountList();
-  },
-);
-
-const getAccountList = () => {
+const handleChange = (account: IAccountItem) => getAccountList(account);
+const getAccountList = (account: Partial<IAccountItem>) => {
   accountLoading.value = true;
-  accountList.value = accountSelector.value?.currentDisplayList ?? [];
-  state.filter.account_id = resourceAccountStore.resourceAccount?.id ?? '';
+  state.filter.account_id = account?.id ?? '';
+  state.filter.vendor = account?.vendor ?? '';
   setOptionDisabled();
 };
 const optionDisabled = ref<() => boolean>(() => false);
@@ -201,6 +184,7 @@ const validate = () => {
 };
 const resetForm = () => {
   state.filter.account_id = '';
+  state.filter.vendor = '';
   nextTick(() => formRef.value.clearValidate());
 };
 
@@ -208,16 +192,32 @@ watch(
   () => props.show,
   (val) => {
     if (val) {
-      return getAccountList();
+      // 业务下或资源未选择指定账号情况下为空
+      return getAccountList({
+        vendor: resourceAccountStore.resourceAccount?.vendor,
+        id: resourceAccountStore.resourceAccount?.id,
+      });
     }
     return resetForm();
   },
+  {
+    immediate: true,
+  },
 );
+
+const isSecurityGroup = computed(() => securityType.value === 'group' && props.type === 'security');
 
 defineExpose([validate]);
 </script>
 <template>
-  <bk-form class="pt20 bussine-form" label-width="150" :model="state.filter" ref="formRef">
+  <bk-form
+    class="pt20 bussine-form"
+    :class="{ 'group-bussine-form': isSecurityGroup }"
+    label-width="150"
+    :form-type="isSecurityGroup ? 'vertical' : 'default'"
+    :model="state.filter"
+    ref="formRef"
+  >
     <bk-form-item :label="t('云账号')" class="item-warp" required property="account_id">
       <AccountSelector
         ref="accountSelector"
@@ -226,9 +226,16 @@ defineExpose([validate]);
         :disabled="isResourcePage"
         :option-disabled="optionDisabled"
         :placeholder="isResourcePage ? t('请在左侧选择账号') : undefined"
+        @change="handleChange"
       />
     </bk-form-item>
-    <bk-form-item :label="t('云厂商')" class="item-warp" required property="vendor">
+    <bk-form-item
+      :label="t('云厂商')"
+      class="item-warp"
+      required
+      property="vendor"
+      v-if="!props.hidden.includes('vendor')"
+    >
       <bk-select disabled class="item-warp-component" v-model="state.filter.vendor">
         <bk-option v-for="(item, index) in CLOUD_TYPE" :key="index" :value="item.id" :label="item.name" />
       </bk-select>
@@ -260,5 +267,17 @@ defineExpose([validate]);
 <style lang="scss" scoped>
 .bussine-form {
   padding-right: 20px;
+}
+
+.group-bussine-form {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding-right: 0;
+}
+
+.item-warp {
+  flex-basis: 50%;
 }
 </style>

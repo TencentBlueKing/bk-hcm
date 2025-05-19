@@ -100,7 +100,7 @@ ver: pre
 	@cp -rf ${PRO_DIR}/CHANGELOG.md ${OUTPUT_DIR}
 
 
-suite:
+suite: pre 
 	@make -C ${PRO_DIR}/test/suite
 	@cp -rf  ${PRO_DIR}/test/suite/suite-test ${OUTPUT_DIR}/
 	@rm -rf  ${PRO_DIR}/test/suite/suite-test

@@ -20,14 +20,9 @@
 package securitygroup
 
 import (
-	"net/http"
-
 	"hcm/pkg/rest"
 )
 
 func initSecurityGroupServiceHooks(svc *securityGroupSvc, h *rest.Handler) {
-	h.Add("BatchAssociateBizCvm", http.MethodPost,
-		"/bizs/{bk_biz_id}/security_groups/associate/cvms/batch", svc.BatchAssociateBizCvm)
-	h.Add("BatchDisassociateBizCvm", http.MethodPost,
-		"/bizs/{bk_biz_id}/security_groups/disassociate/cvms/batch", svc.BatchDisassociateBizCvm)
+
 }

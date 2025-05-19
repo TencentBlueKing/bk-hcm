@@ -49,6 +49,7 @@ import (
 	securitygroup "hcm/cmd/hc-service/service/security-group"
 	"hcm/cmd/hc-service/service/subnet"
 	"hcm/cmd/hc-service/service/sync"
+	"hcm/cmd/hc-service/service/tag"
 	"hcm/cmd/hc-service/service/vpc"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
@@ -182,6 +183,7 @@ func (s *Service) apiSet() *restful.Container {
 	bwpkg.InitBwPkgService(c)
 	mainaccount.InitService(c)
 	image.InitImageService(c)
+	tag.InitTagService(c)
 	cos.InitCosService(c)
 
 	return restful.NewContainer().Add(c.WebService)

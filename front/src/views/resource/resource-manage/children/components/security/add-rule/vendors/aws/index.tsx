@@ -1,5 +1,5 @@
 import { defineComponent, PropType, ref, watch } from 'vue';
-import { SelectColumn, InputColumn, OperationColumn } from '@blueking/ediatable';
+import { SelectColumn, InputColumn } from '@blueking/ediatable';
 import './index.scss';
 import SourceAddress from '../tcloud/SourceAddress';
 import useFormModel from '@/hooks/useFormModel';
@@ -7,6 +7,7 @@ import { SecurityVendorType, useProtocols } from '../useProtocolList';
 import { cleanObject, isPortAvailable, random } from '../util';
 import { Ext, IHead, SecurityRuleType } from '../useVendorHanlder';
 import { AWS_PORT_ALL, AWS_PROTOCOL } from './DataHandler';
+import OperationColumn from '@/components/ediatable/operation-column.vue';
 
 export interface AwsSecurityGroupRule {
   protocol: string; // 协议, 取值: tcp, udp, icmp, icmpv6,用数字 -1 代表所有协议
@@ -96,7 +97,7 @@ export const AwsRenderRow = defineComponent({
       ipGroupList: Array<string>;
     }>,
     relatedSecurityGroups: Array as PropType<Array<Object>>,
-    removeable: Boolean as PropType<Boolean>,
+    removeable: Boolean as PropType<boolean>,
     value: Object as PropType<Ext<AwsSecurityGroupRule>>,
     isEdit: Boolean as PropType<boolean>,
   },
@@ -240,7 +241,10 @@ export const AwsRenderRow = defineComponent({
                 onAdd={handleAdd}
                 onRemove={handleRemove}
                 onCopy={handleCopy}
-                removeable={props.removeable}
+                removable={props.removeable}
+                copyText='克隆入站规则'
+                addText='添加入站规则'
+                removeText='删除入站规则'
               />
             </td>
           )}

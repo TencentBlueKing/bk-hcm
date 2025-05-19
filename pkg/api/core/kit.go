@@ -29,6 +29,8 @@ func NewBackendKit() *kit.Kit {
 	kt := kit.New()
 	kt.User = constant.BackendOperationUserKey
 	kt.AppCode = constant.BackendOperationAppCodeKey
+	// 设置后端操作的租户id
+	kt.SetBackendTenantID()
 
 	return kt
 }

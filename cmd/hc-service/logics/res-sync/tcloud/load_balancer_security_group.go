@@ -25,10 +25,10 @@ import (
 	"hcm/cmd/hc-service/logics/res-sync/common"
 	typeslb "hcm/pkg/adaptor/types/load-balancer"
 	"hcm/pkg/api/core"
-	"hcm/pkg/api/core/cloud"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataservice "hcm/pkg/api/data-service"
 	protocloud "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
@@ -122,7 +122,7 @@ func (cli *client) upsertSgRelForLb(kt *kit.Kit, lbId string, startIdx int, stay
 		// 填充云上id
 		createDel.Rels = append(createDel.Rels, protocloud.SGCommonRelCreate{
 			SecurityGroupID: cloudSgMap[cloudID],
-			Vendor:          enumor.TCloud,
+			ResVendor:       enumor.TCloud,
 			ResID:           lbId,
 			ResType:         enumor.LoadBalancerCloudResType,
 			Priority:        int64(i + startIdx + 1),
@@ -183,20 +183,35 @@ func (cli *client) getCloudLbSgBinding(kt *kit.Kit, params *SyncBaseParams, opt 
 	if len(allSgCloudIDs) == 0 {
 		return make(map[string]string), make(map[string][]string), nil
 	}
-	// 2. 获取本地id 映射
-	sgReq := &protocloud.SecurityGroupListReq{
-		Field:  []string{"id", "cloud_id"},
-		Filter: tools.ExpressionAnd(tools.RuleIn("cloud_id", allSgCloudIDs)),
-		Page:   core.NewDefaultBasePage(),
-	}
-	sgResp, err := cli.dbCli.Global.SecurityGroup.ListSecurityGroup(kt.Ctx, kt.Header(), sgReq)
+	allSgCloudIDs = slice.Unique(allSgCloudIDs)
+	cloudSgMap, err := cli.getSGCloudIDToLocalIDMap(kt, allSgCloudIDs)
 	if err != nil {
-		logs.Errorf("fail to get sg list, err: %v, rid: %s", err, kt.Rid)
 		return nil, nil, err
 	}
-	// cloudID->localID
-	cloudSgMap := cvt.SliceToMap(sgResp.Details, func(sg cloud.BaseSecurityGroup) (string, string) {
-		return sg.CloudID, sg.ID
-	})
 	return cloudSgMap, lbSgCloudMap, nil
+}
+
+func (cli *client) getSGCloudIDToLocalIDMap(kt *kit.Kit, allSgCloudIDs []string) (map[string]string, error) {
+	// cloudID->localID
+	cloudSgMap := make(map[string]string, len(allSgCloudIDs))
+	for _, idxBatch := range slice.Split(allSgCloudIDs, constant.BatchOperationMaxLimit) {
+		sgReq := &protocloud.SecurityGroupListReq{
+			Field:  []string{"id", "cloud_id"},
+			Filter: tools.ExpressionAnd(tools.RuleIn("cloud_id", idxBatch)),
+			Page:   core.NewDefaultBasePage(),
+		}
+		sgResp, err := cli.dbCli.Global.SecurityGroup.ListSecurityGroup(kt.Ctx, kt.Header(), sgReq)
+		if err != nil {
+			logs.Errorf("fail to get sg list, err: %v, sg ids: %v rid: %s", err, idxBatch, kt.Rid)
+			return nil, err
+		}
+
+		for i := range sgResp.Details {
+			sgCloudID := sgResp.Details[i].CloudID
+			sgLocalID := sgResp.Details[i].ID
+			cloudSgMap[sgCloudID] = sgLocalID
+		}
+	}
+
+	return cloudSgMap, nil
 }

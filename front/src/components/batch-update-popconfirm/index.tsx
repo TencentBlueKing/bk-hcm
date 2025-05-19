@@ -52,7 +52,7 @@ export default defineComponent({
               <div class='title'>批量修改{props.title}</div>
               {props.valueType === 'number' ? (
                 <Input
-                  v-model={inputValue.value}
+                  v-model_number={inputValue.value}
                   type='number'
                   class='no-number-control'
                   min={props.min}

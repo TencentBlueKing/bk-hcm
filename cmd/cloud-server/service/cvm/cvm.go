@@ -31,6 +31,7 @@ import (
 	"hcm/pkg/client"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/rest"
+	"hcm/pkg/thirdparty/api-gateway/cmdb"
 )
 
 // InitCvmService initialize the cvm service.
@@ -42,6 +43,7 @@ func InitCvmService(c *capability.Capability) {
 		diskLgc:    c.Logics.Disk,
 		cvmLgc:     c.Logics.Cvm,
 		eipLgc:     c.Logics.Eip,
+		cmdbCli:    c.CmdbCli,
 	}
 
 	h := rest.NewHandler()
@@ -52,6 +54,8 @@ func InitCvmService(c *capability.Capability) {
 	h.Add("InquiryPriceCvm", http.MethodPost, "/cvms/prices/inquiry", svc.InquiryPriceCvm)
 	h.Add("BatchDeleteCvm", http.MethodDelete, "/cvms/batch", svc.BatchDeleteCvm)
 	h.Add("AssignCvmToBiz", http.MethodPost, "/cvms/assign/bizs", svc.AssignCvmToBiz)
+	h.Add("AssignCvmToBizPreview", http.MethodPost, "/cvms/assign/bizs/preview", svc.AssignCvmToBizPreview)
+	h.Add("ListAssignedCvmMatchHost", http.MethodPost, "/cvms/assign/hosts/match/list", svc.ListAssignedCvmMatchHost)
 	h.Add("BatchStartCvm", http.MethodPost, "/cvms/batch/start", svc.BatchStartCvm)
 	h.Add("BatchStopCvm", http.MethodPost, "/cvms/batch/stop", svc.BatchStopCvm)
 	h.Add("BatchRebootCvm", http.MethodPost, "/cvms/batch/reboot", svc.BatchRebootCvm)
@@ -81,11 +85,6 @@ func InitCvmService(c *capability.Capability) {
 	h.Add("BatchDeleteBizRecycledCvm", http.MethodDelete, "/bizs/{bk_biz_id}/recycled/cvms/batch",
 		svc.BatchDeleteBizRecycledCvm)
 
-	h.Add("BatchListCvmSecurityGroups", http.MethodPost, "/cvms/security_groups/batch/list",
-		svc.BatchListCvmSecurityGroups)
-	h.Add("BizBatchListCvmSecurityGroups", http.MethodPost, "/bizs/{bk_biz_id}/cvms/security_groups/batch/list",
-		svc.BizBatchListCvmSecurityGroups)
-
 	h.Add("BatchAssociateSecurityGroups", http.MethodPost,
 		"/cvms/{cvm_id}/security_groups/batch_associate", svc.BatchAssociateSecurityGroups)
 	h.Add("BizBatchAssociateSecurityGroups", http.MethodPost,
@@ -103,4 +102,5 @@ type cvmSvc struct {
 	diskLgc    disk.Interface
 	cvmLgc     cvm.Interface
 	eipLgc     eip.Interface
+	cmdbCli    cmdb.Client
 }

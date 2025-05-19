@@ -180,7 +180,7 @@ export default defineComponent({
           </FormItem>
           <FormItem label={t('监听端口')} required property='port'>
             <Input
-              v-model={listenerFormData.port}
+              v-model_number={listenerFormData.port}
               type='number'
               placeholder={t('请输入')}
               disabled={isEdit.value}
@@ -269,7 +269,7 @@ export default defineComponent({
                       </FormItem>
                       <FormItem label={t('保持时间')} class={'ml40'} required property='session_expire'>
                         <Input
-                          v-model={listenerFormData.session_expire}
+                          v-model_number={listenerFormData.session_expire}
                           disabled={!listenerFormData.session_open}
                           placeholder={t('请输入')}
                           type='number'

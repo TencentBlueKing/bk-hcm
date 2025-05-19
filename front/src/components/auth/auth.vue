@@ -9,7 +9,7 @@ import usePermissionDialog from '@/hooks/use-permission-dialog';
 
 export interface IAuthProps {
   sign: IAuthSign | IAuthSign[];
-  tag: string;
+  tag?: string;
 }
 
 defineOptions({ name: 'hcm-auth' });
@@ -139,7 +139,9 @@ const handleClick = async () => {
           resourceItem?.instances
             ?.flat()
             .filter((instance) =>
-              resources.some((resource) => resource.bk_biz_id === instance.id || resource.resource_id === instance.id),
+              resources.some((resource) =>
+                [String(resource.bk_biz_id), String(resource.resource_id)].includes(String(instance.id)),
+              ),
             ),
         ].filter(Boolean),
       })),

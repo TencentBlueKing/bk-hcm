@@ -129,7 +129,7 @@ export default defineComponent({
               min={0}
               precision={3}
               ref={costRef}
-              v-model={formModel.cost}
+              v-model_number={formModel.cost}
               rules={[
                 {
                   validator: (value: string) => Boolean(value),

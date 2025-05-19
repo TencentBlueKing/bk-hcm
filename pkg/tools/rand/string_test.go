@@ -19,7 +19,40 @@
 
 package rand
 
-import "testing"
+import (
+	"testing"
+
+	"hcm/pkg/tools/slice"
+	"hcm/pkg/tools/uuid"
+)
+
+func BenchmarkStringN(b *testing.B) {
+
+	b.Run("rand_string", func(b *testing.B) {
+		result := make([]string, b.N)
+		for i := 0; i < b.N; i++ {
+			result[i] = String(32)
+		}
+	})
+
+	b.Run("uuid", func(b *testing.B) {
+		result := make([]string, b.N)
+		for i := 0; i < b.N; i++ {
+			result[i] = uuid.UUID()
+		}
+	})
+}
+
+func TestStringN(t *testing.T) {
+	N := 10000
+	result := make([]string, N)
+	for i := 0; i < N; i++ {
+		result[i] = String(4)
+	}
+	uniqued := slice.Unique(result)
+	t.Logf("uniqued: %d, total: %d, rate:%.3f%%\n", len(uniqued), N, float64(len(uniqued))/float64(N)*100)
+
+}
 
 func BenchmarkPrefix(b *testing.B) {
 	result := make([]string, b.N)
