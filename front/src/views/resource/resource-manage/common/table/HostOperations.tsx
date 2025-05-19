@@ -1,31 +1,21 @@
-import { Button, Checkbox, Dialog, Loading, Message } from 'bkui-vue';
-import { PropType, computed, defineComponent, reactive, ref, watch } from 'vue';
+import { Button, Checkbox, Dialog, Loading, Message, bkTooltips } from 'bkui-vue';
+import { PropType, computed, defineComponent, inject, reactive, ref, watch, withDirectives } from 'vue';
 import './index.scss';
 import { usePreviousState } from '@/hooks/usePreviousState';
 import { useResourceStore } from '@/store';
+import { VendorEnum } from '@/common/constant';
 import { AngleDown } from 'bkui-vue/lib/icon';
 import { BkDropdownItem } from 'bkui-vue/lib/dropdown';
 import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
 import CommonLocalTable from '../commonLocalTable';
 import { BkButtonGroup } from 'bkui-vue/lib/button';
+import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import http from '@/http';
 import HcmDropdown from '@/components/hcm-dropdown/index.vue';
+import HcmAuth from '@/components/auth/auth.vue';
+import { AUTH_UPDATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
+
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
-
-export enum Operations {
-  None = 'none',
-  Open = 'start',
-  Close = 'stop',
-  Reboot = 'reboot',
-  Recycle = 'destroy',
-}
-
-export const OperationsMap = {
-  [Operations.Open]: '开机',
-  [Operations.Close]: '关机',
-  [Operations.Reboot]: '重启',
-  [Operations.Recycle]: '回收',
-};
 
 export const HOST_SHUTDOWN_STATUS = [
   'TERMINATED',
@@ -46,6 +36,42 @@ export const HOST_RUNNING_STATUS = [
 ];
 export const HOST_REBOOT_STATUS = ['REBOOT', 'HARD_REBOOT', 'REBOOTING'];
 
+export enum OperationActions {
+  NONE = 'none',
+  START = 'start',
+  STOP = 'stop',
+  REBOOT = 'reboot',
+  RECYCLE = 'recycle',
+}
+
+export const operationMap = {
+  [OperationActions.NONE]: {
+    label: 'unknown',
+    disabledStatus: [] as string[],
+    loading: false,
+  },
+  [OperationActions.START]: {
+    label: '开机',
+    disabledStatus: HOST_RUNNING_STATUS,
+    loading: false,
+  },
+  [OperationActions.STOP]: {
+    label: '关机',
+    disabledStatus: HOST_SHUTDOWN_STATUS,
+    loading: false,
+  },
+  [OperationActions.REBOOT]: {
+    label: '重启',
+    disabledStatus: HOST_SHUTDOWN_STATUS,
+    loading: false,
+  },
+  [OperationActions.RECYCLE]: {
+    label: '回收',
+    disabledStatus: HOST_SHUTDOWN_STATUS,
+    loading: false,
+  },
+};
+
 export default defineComponent({
   props: {
     selections: {
@@ -53,6 +79,7 @@ export default defineComponent({
         Array<{
           status: string;
           id: string;
+          vendor: string;
         }>
       >,
     },
@@ -61,7 +88,7 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const operationType = ref<Operations>(Operations.None);
+    const operationType = ref<OperationActions>(OperationActions.NONE);
     const dialogRef = ref(null);
     const dropdownOperationRef = ref(null);
     const dropdownCopyRef = ref(null);
@@ -78,14 +105,28 @@ export default defineComponent({
 
     const previousOperationType = usePreviousState(operationType);
     const resourceStore = useResourceStore();
+    const resourceAccountStore = useResourceAccountStore();
+
+    const isOtherVendor = inject<boolean>('isOtherVendor');
 
     const isDialogShow = computed(() => {
-      return operationType.value !== Operations.None;
+      return operationType.value !== OperationActions.NONE;
+    });
+
+    const vendorSet = computed(() => {
+      const vendors = props.selections.map((item) => item.vendor);
+      return new Set(vendors);
+    });
+
+    const isMixOtherVendor = computed(() => {
+      return vendorSet.value.size > 1 && vendorSet.value.has(VendorEnum.OTHER);
     });
 
     const computedTitle = computed(() => {
-      if (operationType.value === Operations.None) return `批量${OperationsMap[previousOperationType.value]}`;
-      return `批量${OperationsMap[operationType.value]}`;
+      if (operationType.value === OperationActions.NONE) {
+        return `批量${operationMap[previousOperationType.value]?.label}`;
+      }
+      return `批量${operationMap[operationType.value]?.label}`;
     });
 
     const searchData = reactive([
@@ -175,21 +216,9 @@ export default defineComponent({
           ),
         },
       ].filter(
-        ({ field }) => !['_with_disk', '_with_eip'].includes(field) || operationType.value === Operations.Recycle,
+        ({ field }) => !['_with_disk', '_with_eip'].includes(field) || operationType.value === OperationActions.RECYCLE,
       ),
     );
-
-    // const computedPreviousOperationType = computed(() => {
-    //   switch (operationType.value) {
-    //     case Operations.None:
-    //       return OperationsMap[previousOperationType.value];
-    //     case Operations.Reboot:
-    //       return OperationsMap[Operations.Close];
-    //     case Operations.Recycle:
-    //       return OperationsMap[Operations.Reboot];
-    //   }
-    //   return OperationsMap[operationType.value];
-    // });
 
     /**
      * 仅开机状态的主机能：关机、重启、回收
@@ -198,7 +227,7 @@ export default defineComponent({
     watch(
       () => operationType.value,
       async () => {
-        if (operationType.value === Operations.None) return;
+        if (operationType.value === OperationActions.NONE) return;
         const runningHosts = [];
         const unRunningHosts = [];
 
@@ -215,18 +244,18 @@ export default defineComponent({
         }
 
         switch (operationType.value) {
-          case Operations.Open: {
+          case OperationActions.START: {
             targetHost.value = shutdownHosts;
             unTargetHost.value = unShutdownHosts;
             break;
           }
-          case Operations.Close:
-          case Operations.Reboot: {
+          case OperationActions.STOP:
+          case OperationActions.REBOOT: {
             targetHost.value = runningHosts;
             unTargetHost.value = unRunningHosts;
             break;
           }
-          case Operations.Recycle: {
+          case OperationActions.RECYCLE: {
             targetHost.value = [...runningHosts, ...shutdownHosts];
             unTargetHost.value = [...unRunningHosts, ...unShutdownHosts];
             const targetIdsSet = new Set([...runningHosts, ...shutdownHosts].map(({ id }) => id));
@@ -248,23 +277,7 @@ export default defineComponent({
     );
 
     const computedContent = computed(() => {
-      const targetOperationName = OperationsMap[operationType.value];
-      // let oppositeOperationName = '';
-      // switch (operationType.value) {
-      //   case Operations.Open: {
-      //     oppositeOperationName = OperationsMap[Operations.Close];
-      //     break;
-      //   }
-      //   case Operations.Close:
-      //   case Operations.Reboot: {
-      //     oppositeOperationName = OperationsMap[Operations.Open];
-      //     break;
-      //   }
-      //   case Operations.Recycle: {
-      //     oppositeOperationName = `${OperationsMap[Operations.Open]}、${OperationsMap[Operations.Close]}`;
-      //     break;
-      //   }
-      // }
+      const targetOperationName = operationMap[operationType.value].label;
       return (
         <p class={'host-operations-selection-tip'}>
           已选择 <span class={'host-operations-selection-tip-all'}>{props.selections.length}</span> 个主机， 其中可
@@ -276,55 +289,29 @@ export default defineComponent({
           </Button>
         </p>
       );
-      // if (targetHostsNum === 0) {
-      //   return (
-      //     <p>
-      //       您已选择了 {allHostsNum} 台主机进行
-      //       {targetOperationName}操作, 其中
-      //       <span class={'host_operations_blue_txt'}> {allHostsNum} </span>
-      //       台是已{computedPreviousOperationType.value}的，不支持对其操作。
-      //       <br />
-      //       <span class={'host_operations_red_txt'}>
-      //         由于所选主机均处于{targetOperationName}
-      //         状态,无法进行操作。
-      //       </span>
-      //     </p>
-      //   );
-      // }
-      // if (targetHostsNum === allHostsNum) {
-      //   return (
-      //     <p>
-      //       您已选择了 {allHostsNum} 台主机进行
-      //       {targetOperationName}操作,本次操作将对
-      //       <span class={'host_operations_blue_txt'}> {allHostsNum} </span>
-      //       台处于{oppositeOperationName}
-      //       状态的主机进行{targetOperationName}操作。
-      //       <br />
-      //       <span class={'host_operations_red_txt'}>
-      //         请确认您所选择的目标是正确的，该操作将对主机进行
-      //         {targetOperationName}操作。
-      //       </span>
-      //     </p>
-      //   );
-      // }
-      // if (allHostsNum > targetHostsNum) {
-      //   return (
-      //     <p>
-      //       您已选择了 {allHostsNum} 台主机进行
-      //       {targetOperationName}。本次操作将对
-      //       <span class={'host_operations_blue_txt'}> {targetHostsNum} </span>
-      //       台处于{oppositeOperationName}状态的主机进行
-      //       {targetOperationName}，其余主机的状态不支持{targetOperationName}。
-      //       <br />
-      //       <span class={'host_operations_red_txt'}>
-      //         请确认您所选择的目标是正确的,该操作将对主机进行
-      //         {targetOperationName}操作
-      //       </span>
-      //     </p>
-      //   );
-      // }
-      // return '';
     });
+
+    const getOperationConfig = (type: OperationActions) => {
+      // 点击事件（值缺省时，为默认点击事件）
+      const clickHandler = () => handleClickMenu(type);
+
+      if (isMixOtherVendor.value) {
+        return {
+          disabled: true,
+          tooltips: { content: '所选择的资源包含内置账号，不允许和其他云厂商同时选择', disabled: false },
+          clickHandler,
+        };
+      }
+
+      return { disabled: false, tooltips: { disabled: true }, clickHandler };
+    };
+
+    const handleClickMenu = (type: OperationActions) => {
+      if (getOperationConfig(type).disabled) {
+        return;
+      }
+      operationType.value = type;
+    };
 
     const handleConfirm = async () => {
       try {
@@ -334,7 +321,7 @@ export default defineComponent({
           theme: 'warning',
           delay: 1000,
         });
-        if (operationType.value === Operations.Recycle) {
+        if (operationType.value === OperationActions.RECYCLE) {
           const hostIds = targetHost.value.map((v) => ({
             id: v.id,
             with_disk: withDiskSet.value.has(v.id),
@@ -357,7 +344,7 @@ export default defineComponent({
         // });
       } finally {
         isLoading.value = false;
-        operationType.value = Operations.None;
+        operationType.value = OperationActions.NONE;
       }
     };
 
@@ -390,36 +377,46 @@ export default defineComponent({
 
     return () => (
       <>
-        <HcmDropdown class={'host_operations_container'} ref={dropdownOperationRef} disabled={operationsDisabled.value}>
+        <HcmAuth sign={{ type: AUTH_UPDATE_IAAS_RESOURCE, relation: [resourceAccountStore.resourceAccount?.id] }}>
           {{
-            default: () => (
-              <>
-                批量操作
-                <AngleDown class={'f26'}></AngleDown>
-              </>
-            ),
-            menus: () => (
-              <>
-                {Object.entries(OperationsMap).map(([opType, opName]) => (
-                  <BkDropdownItem
-                    onClick={() => {
-                      operationType.value = opType as Operations;
-                      dropdownOperationRef.value?.hidePopover();
-                    }}>
-                    {`批量${opName}`}
-                  </BkDropdownItem>
-                ))}
-              </>
+            default: ({ noPerm }: { noPerm: boolean }) => (
+              <HcmDropdown ref={dropdownOperationRef} disabled={noPerm || isOtherVendor || operationsDisabled.value}>
+                {{
+                  default: () => (
+                    <>
+                      批量操作
+                      <AngleDown class='icon-angle-down'></AngleDown>
+                    </>
+                  ),
+                  menus: () => (
+                    <>
+                      {Object.entries(operationMap)
+                        .filter(([opType]) => opType !== OperationActions.NONE)
+                        .map(([opType, opData]) => {
+                          const { disabled, tooltips, clickHandler } = getOperationConfig(opType as OperationActions);
+                          return withDirectives(
+                            <BkDropdownItem
+                              onClick={clickHandler}
+                              extCls={`more-action-item${disabled ? ' disabled' : ''}`}>
+                              批量{opData.label}
+                            </BkDropdownItem>,
+                            [[bkTooltips, tooltips]],
+                          );
+                        })}
+                    </>
+                  ),
+                }}
+              </HcmDropdown>
             ),
           }}
-        </HcmDropdown>
+        </HcmAuth>
 
-        <HcmDropdown class={'host_operations_container'} ref={dropdownCopyRef} disabled={operationsDisabled.value}>
+        <HcmDropdown ref={dropdownCopyRef} disabled={operationsDisabled.value}>
           {{
             default: () => (
               <>
                 复制
-                <AngleDown class={'f26'}></AngleDown>
+                <AngleDown class='icon-angle-down'></AngleDown>
               </>
             ),
             menus: () => (
@@ -449,7 +446,7 @@ export default defineComponent({
           ref={dialogRef}
           width={1500}
           closeIcon={!isLoading.value}
-          onClosed={() => (operationType.value = Operations.None)}>
+          onClosed={() => (operationType.value = OperationActions.NONE)}>
           {{
             default: () => (
               <Loading loading={isDialogLoading.value}>
@@ -462,10 +459,10 @@ export default defineComponent({
                     searchData={searchData}>
                     <BkButtonGroup>
                       <Button onClick={() => handleSwitch(true)} selected={selected.value === 'target'}>
-                        可{OperationsMap[operationType.value]}
+                        可{operationMap[operationType.value].label}
                       </Button>
                       <Button onClick={() => handleSwitch(false)} selected={selected.value === 'untarget'}>
-                        不可{OperationsMap[operationType.value]}
+                        不可{operationMap[operationType.value].label}
                       </Button>
                     </BkButtonGroup>
                   </CommonLocalTable>
@@ -479,9 +476,12 @@ export default defineComponent({
                   theme='primary'
                   disabled={isConfirmDisabled.value}
                   loading={isLoading.value}>
-                  {OperationsMap[operationType.value]}
+                  {operationMap[operationType.value].label}
                 </Button>
-                <Button onClick={() => (operationType.value = Operations.None)} class='ml10' disabled={isLoading.value}>
+                <Button
+                  onClick={() => (operationType.value = OperationActions.NONE)}
+                  class='ml10'
+                  disabled={isLoading.value}>
                   取消
                 </Button>
               </>

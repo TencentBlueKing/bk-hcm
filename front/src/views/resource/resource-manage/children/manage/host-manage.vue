@@ -5,22 +5,23 @@ import type {
   FilterType,
 } from '@/typings/resource';
 import { Button, Dropdown, Message, Checkbox, bkTooltips } from 'bkui-vue';
-import { PropType, h, reactive, ref, withDirectives } from 'vue';
+import { PropType, h, inject, reactive, ref, withDirectives } from 'vue';
 import { useI18n } from 'vue-i18n';
 import useQueryList from '../../hooks/use-query-list';
 import useSelection from '../../hooks/use-selection';
 import useColumns from '../../hooks/use-columns';
 import useFilterHost from '@/views/resource/resource-manage/hooks/use-filter-host';
 import { useHostStore, useResourceStore } from '@/store';
-import HostOperations, { HOST_RUNNING_STATUS, HOST_SHUTDOWN_STATUS } from '../../common/table/HostOperations';
-import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import HostOperations, { operationMap, OperationActions } from '../../common/table/HostOperations';
 import Confirm, { confirmInstance } from '@/components/confirm';
-import { CLOUD_HOST_STATUS } from '@/common/constant';
+import { CLOUD_HOST_STATUS, VendorEnum } from '@/common/constant';
 import { ResourceTypeEnum } from '@/common/resource-constant';
 import ResourceSearchSelect from '@/components/resource-search-select/index.vue';
 // 主机分配
 import BatchAssign from './assign-host/dialog/batch-assign.vue';
 import SingleAssign from './assign-host/dialog/single-assign.vue';
+import HcmAuth from '@/components/auth/auth.vue';
+import { AUTH_UPDATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
 import type { ICvmItem } from '@/store';
 
 const { DropdownMenu, DropdownItem } = Dropdown;
@@ -39,8 +40,6 @@ const props = defineProps({
   },
 });
 
-const { whereAmI, isResourcePage, isBusinessPage } = useWhereAmI();
-
 const { searchValue, filter } = useFilterHost(props);
 
 const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort, triggerApi } = useQueryList(
@@ -55,41 +54,44 @@ const { selections, handleSelectionChange, resetSelections } = useSelection();
 const { columns, generateColumnsSettings } = useColumns('cvms');
 const resourceStore = useResourceStore();
 
-const operationDropdownList = [
-  { label: '开机', type: 'start' },
-  { label: '关机', type: 'stop' },
-  { label: '重启', type: 'reboot' },
-  { label: '回收', type: 'recycle', hidden: isBusinessPage },
-];
+const isOtherVendor = inject<boolean>('isOtherVendor');
+
 const currentOperateRowIndex = ref(-1);
-// 操作的相关信息
-const cvmInfo = ref<Record<string, any>>({
-  start: { op: '开机', loading: false, status: HOST_RUNNING_STATUS },
-  stop: {
-    op: '关机',
-    loading: false,
-    status: HOST_SHUTDOWN_STATUS,
-  },
-  reboot: { op: '重启', loading: false, status: HOST_SHUTDOWN_STATUS },
-  recycle: { op: '回收', loading: false, status: HOST_SHUTDOWN_STATUS },
-});
-const getBkToolTipsOption = (data: any) => {
-  if (isResourcePage) {
+
+const operationDropdownList = Object.entries(operationMap)
+  .filter(([type]) => ![OperationActions.NONE].includes(type as OperationActions))
+  .map(([type, value]) => ({
+    type,
+    label: value.label,
+  }));
+
+const isOperateDisabled = (type: OperationActions, status: string) =>
+  operationMap[type].disabledStatus.includes(status);
+
+const getOperateToolTipsOption = (data: any, type?: OperationActions) => {
+  if (data.vendor === VendorEnum.OTHER) {
     return {
-      content: '该主机仅可在业务下操作',
-      disabled: !(isResourcePage && data.bk_biz_id !== -1),
+      content: '内置云账号，不允许操作',
+      disabled: false,
     };
   }
-  if (isBusinessPage) {
+  if (data.bk_biz_id !== -1) {
+    return {
+      content: '该主机仅可在业务下操作',
+      disabled: false,
+    };
+  }
+  if (type && isOperateDisabled(type, data.status)) {
     return {
       content: `当前主机处于 ${CLOUD_HOST_STATUS[data.status]} 状态`,
-      disabled: !(isBusinessPage && cvmInfo.value.stop.status.includes(data.status)),
+      disabled: false,
     };
   }
   return {
     disabled: true,
   };
 };
+
 const tableColumns = [
   ...columns,
   {
@@ -105,80 +107,70 @@ const tableColumns = [
               text: true,
               theme: 'primary',
               class: 'mr10',
-              onClick: () => {
-                // isResourcePage && 主机分配
-                isResourcePage && showSingleAssignHost(data);
-                // isBusinessPage && 主机回收
-                isBusinessPage && handleCvmOperate('回收', 'recycle', data);
-              },
-              // TODO: 权限
-              disabled:
-                (isResourcePage && data.bk_biz_id !== -1) ||
-                (isBusinessPage && cvmInfo.value.stop.status.includes(data.status)),
+              onClick: () => showSingleAssignHost(data),
+              disabled: !getOperateToolTipsOption(data).disabled,
             },
-            isResourcePage ? '分配' : '回收',
+            '分配',
           ),
-          [[bkTooltips, getBkToolTipsOption(data)]],
+          [[bkTooltips, getOperateToolTipsOption(data)]],
         ),
-        withDirectives(
-          h(
-            Dropdown,
-            {
-              trigger: 'click',
-              popoverOptions: {
-                renderType: 'shown',
-                onAfterShow: () => (currentOperateRowIndex.value = index),
-                onAfterHidden: () => (currentOperateRowIndex.value = -1),
-              },
-              // TODO: 权限
-              disabled: isResourcePage && data.bk_biz_id !== -1,
-            },
-            {
-              default: () =>
+        h(
+          HcmAuth,
+          { sign: { type: AUTH_UPDATE_IAAS_RESOURCE, relation: [data.account_id] } },
+          {
+            default: ({ noPerm }: { noPerm: boolean }) =>
+              withDirectives(
                 h(
-                  'div',
+                  Dropdown,
                   {
-                    class: [
-                      `more-action${currentOperateRowIndex.value === index ? ' current-operate-row' : ''}`,
-                      isResourcePage && data.bk_biz_id !== -1 ? 'disabled' : '',
-                    ],
+                    trigger: 'click',
+                    popoverOptions: {
+                      renderType: 'shown',
+                      onAfterShow: () => (currentOperateRowIndex.value = index),
+                      onAfterHidden: () => (currentOperateRowIndex.value = -1),
+                    },
+                    disabled: noPerm || !getOperateToolTipsOption(data).disabled,
                   },
-                  h('i', { class: 'hcm-icon bkhcm-icon-more-fill' }),
-                ),
-              content: () =>
-                h(
-                  DropdownMenu,
-                  null,
-                  operationDropdownList
-                    .filter((action) => !action.hidden)
-                    .map(({ label, type }) => {
-                      return withDirectives(
-                        h(
-                          DropdownItem,
-                          {
-                            key: type,
-                            onClick: () => handleCvmOperate(label, type, data),
-                            extCls: `more-action-item${
-                              cvmInfo.value[type].status.includes(data.status) ? ' disabled' : ''
-                            }`,
-                          },
-                          label,
-                        ),
-                        [
-                          [
-                            bkTooltips,
+                  {
+                    default: () =>
+                      h(
+                        'div',
+                        {
+                          class: [
+                            'more-action',
                             {
-                              content: `当前主机处于 ${CLOUD_HOST_STATUS[data.status]} 状态`,
-                              disabled: !cvmInfo.value[type].status.includes(data.status),
+                              'current-operate-row': currentOperateRowIndex.value === index,
+                              disabled: noPerm || !getOperateToolTipsOption(data).disabled,
                             },
                           ],
-                        ],
-                      );
-                    }),
+                        },
+                        h('i', { class: 'hcm-icon bkhcm-icon-more-fill' }),
+                      ),
+                    content: () =>
+                      h(
+                        DropdownMenu,
+                        null,
+                        operationDropdownList.map(({ label, type }) => {
+                          const tooltipsOption = getOperateToolTipsOption(data, type as OperationActions);
+                          return withDirectives(
+                            h(
+                              DropdownItem,
+                              {
+                                key: type,
+                                onClick: () => handleCvmOperate(type as OperationActions, data),
+                                extCls: `more-action-item${!tooltipsOption.disabled ? ' disabled' : ''}`,
+                              },
+                              label,
+                            ),
+                            [[bkTooltips, tooltipsOption]],
+                          );
+                        }),
+                      ),
+                  },
                 ),
-            },
-          ),
-          [[bkTooltips, { content: '该主机仅可在业务下操作', disabled: !(isResourcePage && data.bk_biz_id !== -1) }]],
+                [[bkTooltips, getOperateToolTipsOption(data)]],
+              ),
+          },
         ),
       ]);
     },
@@ -195,10 +187,14 @@ const resetRecycleSingleCvmParams = () => {
   isRecycleDiskWithCvm.value = false;
   isRecycleEipWithCvm.value = false;
 };
+
 // 主机相关操作 - 单个操作
-const handleCvmOperate = async (label: string, type: string, data: any) => {
+const handleCvmOperate = async (type: OperationActions, data: any) => {
   // 判断当前主机是否可以执行对应操作
-  if (cvmInfo.value[type].status.includes(data.status)) return;
+  if (isOperateDisabled(type, data.status)) return;
+
+  const { label } = operationMap[type];
+
   resetRecycleSingleCvmParams();
   let infoboxContent;
   if (type === 'recycle') {
@@ -259,7 +255,6 @@ const isRowSelectEnable = ({ row, isCheckAll }: DoublePlainObject) => {
   return isCurRowSelectEnable(row);
 };
 const isCurRowSelectEnable = (row: any) => {
-  if (whereAmI.value === Senarios.business) return true;
   if (row.id) {
     return row.bk_biz_id === -1;
   }
@@ -298,12 +293,9 @@ const showSingleAssignHost = (cvm: ICvmItem) => {
 
 <template>
   <bk-loading :loading="isLoading" opacity="1">
-    <section
-      class="flex-row align-items-center"
-      :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'"
-    >
+    <section class="toolbar">
       <slot></slot>
-      <bk-button class="ml8 mr8" :disabled="!selections.length" @click="showBatchAssignHost(selections)">
+      <bk-button :disabled="!selections.length" @click="showBatchAssignHost(selections)" v-show="!isOtherVendor">
         {{ t('批量分配') }}
       </bk-button>
       <HostOperations
@@ -314,7 +306,7 @@ const showSingleAssignHost = (cvm: ICvmItem) => {
       }"
       ></HostOperations>
 
-      <div class="flex-row align-items-center justify-content-arround search-selector-container">
+      <div class="search-selector-container">
         <resource-search-select v-model="searchValue" :resource-type="ResourceTypeEnum.CVM" value-behavior="need-key" />
         <slot name="recycleHistory"></slot>
       </div>
@@ -359,9 +351,16 @@ const showSingleAssignHost = (cvm: ICvmItem) => {
 </template>
 
 <style lang="scss" scoped>
-.search-selector-container {
-  margin-left: auto;
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  .search-selector-container {
+    margin-left: auto;
+  }
 }
+
 :deep(.operation-column) {
   height: 100%;
   display: flex;
