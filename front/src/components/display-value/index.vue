@@ -10,7 +10,9 @@ import BoolValue from './bool-value.vue';
 import CertValue from './cert-value.vue';
 import CaValue from './ca-value.vue';
 import RegionValue from './region-value.vue';
+import BusinessValue from './business-value.vue';
 import UserValue from './user-value.vue';
+import CloudAreaValue from './cloud-area-value.vue';
 import { DisplayType } from './typings';
 
 defineOptions({ name: 'DisplayValue' });
@@ -38,7 +40,9 @@ const valueComps: Record<
   | typeof CertValue
   | typeof CaValue
   | typeof RegionValue
+  | typeof BusinessValue
   | typeof UserValue
+  | typeof CloudAreaValue
 > = {
   enum: EnumValue,
   datetime: DatetimeValue,
@@ -51,6 +55,8 @@ const valueComps: Record<
   cert: CertValue,
   ca: CaValue,
   region: RegionValue,
+  business: BusinessValue,
+  'cloud-area': CloudAreaValue,
 };
 
 const attrs = useAttrs();

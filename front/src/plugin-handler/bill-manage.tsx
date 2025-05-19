@@ -51,8 +51,8 @@ const useSubHandler = () => {
 const useProductHandler = () => {
   // table 相关状态
   const selectedIds = ref<number[]>([]);
-  const columnName = 'billsMainAccountSummary';
-  const getColumns = (columns: any[]) => columns.slice(4);
+  const columnName = 'billsBizSummary';
+  const getColumns = (columns: any[]) => columns;
   const apiMethod: (...args: any) => Promise<any> = reqBillsBizSummaryList;
   const extensionKey = 'bk_biz_ids';
 

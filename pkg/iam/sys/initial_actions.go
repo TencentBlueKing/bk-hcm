@@ -344,7 +344,7 @@ func genResourceAccessActions() []client.ResourceAction {
 		RelatedActions:       nil,
 		Version:              1,
 	}}...)
-
+	actions = append(actions, genCosResAccessActions()...)
 	return actions
 }
 
@@ -576,4 +576,34 @@ func genAccountManageActions() []client.ResourceAction {
 	}
 
 	return actions
+}
+
+func genCosResAccessActions() []client.ResourceAction {
+	return []client.ResourceAction{
+		{
+			ID:                   CosBucketCreate,
+			Name:                 ActionIDNameMap[CosBucketCreate],
+			NameEn:               "COS Bucket Create",
+			Type:                 Create,
+			RelatedResourceTypes: accountResource,
+			RelatedActions:       nil,
+			Version:              1,
+		}, {
+			ID:                   CosBucketFind,
+			Name:                 ActionIDNameMap[CosBucketFind],
+			NameEn:               "COS Bucket Find",
+			Type:                 View,
+			RelatedResourceTypes: accountResource,
+			RelatedActions:       nil,
+			Version:              1,
+		}, {
+			ID:                   CosBucketDelete,
+			Name:                 ActionIDNameMap[CosBucketDelete],
+			NameEn:               "COS Bucket Delete",
+			Type:                 Delete,
+			RelatedResourceTypes: accountResource,
+			RelatedActions:       nil,
+			Version:              1,
+		},
+	}
 }

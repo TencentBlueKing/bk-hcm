@@ -21,9 +21,9 @@ GET /api/v1/web/templates/{filename}
 |---------------------------------------------|---------------|
 | 1_hcm_clb_tcp_udp_listener_template.xlsx    | 创建四层监听器模板文件   |
 | 2_hcm_clb_http_https_listener_template.xlsx | 创建七层监听器模板文件   |
-| 3_hcm_clb_bind_rs_url_ruler_template.xlsx   | 创建URL规则模板文件   |
+| 3_hcm_clb_url_rule_template.xlsx            | 创建URL规则模板文件   |
 | 4_hcm_clb_bind_rs_tcp_udp_template.xlsx     | 四层监听器绑定RS模板文件 |
-| 5_hcm_clb_url_rule_http_https_template.xlsx | 七层监听器绑定RS模板文件 |
+| 5_hcm_clb_bind_rs_http_https_template.xlsx  | 七层监听器绑定RS模板文件 |
 
 ### 响应示例
 

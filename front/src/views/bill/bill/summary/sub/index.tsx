@@ -8,6 +8,7 @@ import Amount from '../../components/amount';
 import { useI18n } from 'vue-i18n';
 import { useTable } from '@/hooks/useTable/useTable';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
+import useChangeCurrency from '../../use-change-currency';
 import {
   exportBillsMainAccountSummary,
   reqBillsMainAccountSummaryList,
@@ -26,11 +27,13 @@ export default defineComponent({
 
     const searchRef = ref();
     const amountRef = ref();
+    const isChecked = ref(false);
 
     const { useSubHandler } = pluginHandler;
     const { mountedCallback } = useSubHandler();
 
-    const { columns } = useColumns('billsMainAccountSummary');
+    const { handleChangeCurrencyChecked, customRender } = useChangeCurrency();
+    const { columns } = useColumns('billsMainAccountSummary', false, '', { customRender });
     const { CommonTable, getListData, clearFilter, filter } = useTable({
       searchOptions: { disabled: true },
       tableOptions: {
@@ -53,6 +56,9 @@ export default defineComponent({
     const reloadTable = (rules: RulesItem[]) => {
       clearFilter();
       getListData(rules);
+    };
+    const handleChange = (val: boolean) => {
+      handleChangeCurrencyChecked(val);
     };
 
     watch([bill_year, bill_month], () => {
@@ -79,18 +85,23 @@ export default defineComponent({
           <CommonTable>
             {{
               operation: () => (
-                <BillsExportButton
-                  cb={() =>
-                    exportBillsMainAccountSummary({
-                      bill_year: bill_year.value,
-                      bill_month: bill_month.value,
-                      export_limit: 200000,
-                      filter,
-                    })
-                  }
-                  title={t('账单汇总-二级账号')}
-                  content={t('导出当月二级账号的账单数据')}
-                />
+                <>
+                  <BillsExportButton
+                    cb={() =>
+                      exportBillsMainAccountSummary({
+                        bill_year: bill_year.value,
+                        bill_month: bill_month.value,
+                        export_limit: 200000,
+                        filter,
+                      })
+                    }
+                    title={t('账单汇总-二级账号')}
+                    content={t('导出当月二级账号的账单数据')}
+                  />
+                  <bk-checkbox class='change-currency' v-model={isChecked} onChange={handleChange}>
+                    {t('美元转人民币')}
+                  </bk-checkbox>
+                </>
               ),
               operationBarEnd: () => (
                 <Amount

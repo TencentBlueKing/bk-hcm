@@ -37,7 +37,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
-	"hcm/pkg/thirdparty/esb/cmdb"
+	"hcm/pkg/thirdparty/api-gateway/cmdb"
 	"hcm/pkg/tools/classifier"
 	"hcm/pkg/tools/maps"
 	"hcm/pkg/tools/slice"
@@ -457,10 +457,10 @@ func (c *cvm) CheckBizHostInRecycleModule(kt *kit.Kit, bizID int64,
 		hostToCloud[hostID] = cloudID
 	}
 	//  2. 查找主机关系，获取模块信息
-	relation, err := c.esbClient.Cmdb().FindHostTopoRelation(kt,
+	relation, err := c.cmdbClient.FindHostTopoRelation(kt,
 		&cmdb.FindHostTopoRelationParams{
 			HostIDs: hostIDs, BizID: bizID,
-			Page: cmdb.BasePage{Limit: 200, Start: 0},
+			Page: &cmdb.BasePage{Limit: 200, Start: 0},
 		},
 	)
 	if err != nil {
@@ -474,7 +474,7 @@ func (c *cvm) CheckBizHostInRecycleModule(kt *kit.Kit, bizID int64,
 	// 3. 逐个查询主机模块信息
 	for _, rel := range relation.Data {
 		if _, ok := modRecyclable[rel.BkModuleID]; !ok {
-			module, err := c.esbClient.Cmdb().SearchModule(kt, &cmdb.SearchModuleParams{
+			module, err := c.cmdbClient.SearchModule(kt, &cmdb.SearchModuleParams{
 				BizID:  bizID,
 				Fields: []string{"default", "bk_module_id"},
 				Condition: map[string]interface{}{
@@ -524,10 +524,10 @@ func (c *cvm) getCmdbHostId(kt *kit.Kit, bizID int64,
 	listParams := &cmdb.ListBizHostParams{
 		BizID:              bizID,
 		Fields:             []string{"bk_host_id", "bk_cloud_inst_id"},
-		Page:               cmdb.BasePage{Limit: 500},
+		Page:               &cmdb.BasePage{Limit: 500},
 		HostPropertyFilter: &cmdb.QueryFilter{Rule: &cmdb.CombinedRule{Condition: "OR", Rules: rules}},
 	}
-	hosts, err := c.esbClient.Cmdb().ListBizHost(kt, listParams)
+	hosts, err := c.cmdbClient.ListBizHost(kt, listParams)
 	if err != nil {
 		logs.Errorf("fail to list cmdb biz host, err: %v, bizID:%v, rid: %s", err, bizID, kt.Rid)
 		return nil, err

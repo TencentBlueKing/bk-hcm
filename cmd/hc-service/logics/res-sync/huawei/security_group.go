@@ -176,6 +176,7 @@ func (cli *client) createSG(kt *kit.Kit, accountID string, region string,
 			Name:      one.Name,
 			Memo:      converter.ValToPtr(one.Description),
 			AccountID: accountID,
+			MgmtBizID: constant.UnassignedBiz,
 			Extension: &cloudcore.HuaWeiSecurityGroupExtension{
 				CloudProjectID:           one.SecurityGroup.ProjectId,
 				CloudEnterpriseProjectID: one.SecurityGroup.EnterpriseProjectId,
@@ -295,6 +296,7 @@ func (cli *client) listSGFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	return result.Details, nil
 }
 
+// RemoveSecurityGroupDeleteFromCloud ...
 func (cli *client) RemoveSecurityGroupDeleteFromCloud(kt *kit.Kit, accountID string, region string) error {
 	req := &core.ListReq{
 		Filter: &filter.Expression{
@@ -352,8 +354,10 @@ func (cli *client) RemoveSecurityGroupDeleteFromCloud(kt *kit.Kit, accountID str
 			}
 
 			cloudIDs := converter.MapKeyToStringSlice(cloudIDMap)
-			if err := cli.deleteSG(kt, accountID, region, cloudIDs); err != nil {
-				return err
+			if len(cloudIDs) > 0 {
+				if err := cli.deleteSG(kt, accountID, region, cloudIDs); err != nil {
+					return err
+				}
 			}
 		}
 

@@ -37,10 +37,24 @@ export const BILL_ADJUSTMENT_TYPE__MAP = {
 };
 
 // 币种
+export const CURRENCY_ALIAS_MAP = {
+  USD: 'USD',
+  RMB: 'RMB',
+  CNY: 'CNY',
+};
+
+// 币种
 export const CURRENCY_MAP = {
-  USD: '美元',
-  RMB: '人民币',
-  CNY: '人民币',
+  [CURRENCY_ALIAS_MAP.USD]: '美元',
+  [CURRENCY_ALIAS_MAP.RMB]: '人民币',
+  [CURRENCY_ALIAS_MAP.CNY]: '人民币',
+};
+
+// 币种符号
+export const CURRENCY_SYMBOL_MAP = {
+  [CURRENCY_ALIAS_MAP.USD]: '$',
+  [CURRENCY_ALIAS_MAP.CNY]: '¥',
+  [CURRENCY_ALIAS_MAP.RMB]: '¥',
 };
 
 // 一级账号账单汇总状态

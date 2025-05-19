@@ -104,9 +104,9 @@ func (a AwsOutsideBillMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption,
 	if len(rawItemList) == 0 {
 		return nil, nil
 	}
-	a.initExtension(opt)
+	a.initExtension(kt, opt)
 
-	cloudIdSummaryMainMap, err := a.listSummaryMains(kt, opt)
+	cloudIdSummaryMainMap, err := listSummaryMains(kt, opt)
 	if err != nil {
 		logs.Errorf("fail to list summary main for spilt outside bill month, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
@@ -151,8 +151,7 @@ func (a AwsOutsideBillMonthTask) Split(kt *kit.Kit, opt *MonthTaskActionOption,
 }
 
 // 获取summary信息
-func (a AwsOutsideBillMonthTask) listSummaryMains(kt *kit.Kit, opt *MonthTaskActionOption) (
-	map[string]*bill.BillSummaryMain, error) {
+func listSummaryMains(kt *kit.Kit, opt *MonthTaskActionOption) (map[string]*bill.BillSummaryMain, error) {
 
 	summaryListReq := &bill.BillSummaryMainListReq{
 		Filter: tools.ExpressionAnd(

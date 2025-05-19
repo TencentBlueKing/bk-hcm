@@ -13,6 +13,10 @@ import './index.scss';
 
 const { FormItem } = Form;
 
+/**
+ * * 用于新增或更新域名
+ * * 页面loadBalancerStore.currentSelectedTreeNode为监听器
+ */
 export default defineComponent({
   name: 'AddOrUpdateDomainSideslider',
   props: {
@@ -51,7 +55,6 @@ export default defineComponent({
       sideIsLoading.value = true;
       try {
         await handleSubmit(formInstance);
-        bus.$emit('resetLbTree');
       } finally {
         sideIsLoading.value = false;
       }

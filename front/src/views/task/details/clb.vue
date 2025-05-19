@@ -3,7 +3,7 @@ import { computed, onMounted, reactive, ref, watch, watchEffect } from 'vue';
 import { useRoute } from 'vue-router';
 import { ITaskCountItem, ITaskDetailItem, ITaskItem, ITaskStatusItem, useTaskStore } from '@/store';
 import { ResourceTypeEnum } from '@/common/resource-constant';
-import useBreakcrumb from '@/hooks/use-breakcrumb';
+import useBreadcrumb from '@/hooks/use-breadcrumb';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import useSearchQs from '@/hooks/use-search-qs';
 import usePage from '@/hooks/use-page';
@@ -16,14 +16,14 @@ import ActionList from './children/action-list/action-list.vue';
 import Rerun from './children/rerun/rerun.vue';
 import Cancel from './children/cancel/cancel.vue';
 
-import { TASKT_CLB_TYPE_NAME } from '../constants';
+import { TASK_CLB_TYPE_NAME } from '../constants';
 import { TaskClbType, TaskDetailStatus } from '../typings';
 
 const taskStore = useTaskStore();
 const { getBizsId } = useWhereAmI();
 const route = useRoute();
 
-const { setTitle } = useBreakcrumb();
+const { setTitle } = useBreadcrumb();
 
 const searchQs = useSearchQs({ key: 'filter', properties: taskDetailsViewProperties });
 
@@ -127,7 +127,7 @@ watch(
 watchEffect(async () => {
   const operations = taskDetails.value?.operations ?? [];
   const taskOps = Array.isArray(operations) ? operations : [operations];
-  const title = taskOps.map((op) => TASKT_CLB_TYPE_NAME[op]).join(',');
+  const title = taskOps.map((op) => TASK_CLB_TYPE_NAME[op]).join(',');
 
   setTitle(title);
 });
@@ -232,23 +232,28 @@ onMounted(() => {
   + .content-card {
     margin-top: 20px;
   }
+
   :deep(.common-card-content) {
     width: 100%;
   }
 }
+
 .toolbar {
   display: flex;
   align-items: center;
   margin: 16px 0;
 }
+
 .stats {
   display: flex;
   gap: 16px;
   margin-left: 24px;
+
   .count-item {
     display: flex;
     align-items: center;
     gap: 4px;
+
     .num {
       font-style: normal;
     }

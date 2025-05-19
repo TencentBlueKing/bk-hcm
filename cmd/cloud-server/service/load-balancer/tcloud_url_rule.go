@@ -31,18 +31,18 @@ import (
 	"hcm/pkg/tools/hooks/handler"
 )
 
-// ListTCloudRuleByTG ...
-func (svc *lbSvc) ListTCloudRuleByTG(cts *rest.Contexts) (interface{}, error) {
-	return svc.listTCloudLbUrlRuleByTG(cts, handler.ResOperateAuth)
+// ListRuleByTG ...
+func (svc *lbSvc) ListRuleByTG(cts *rest.Contexts) (interface{}, error) {
+	return svc.listLbUrlRuleByTG(cts, handler.ResOperateAuth)
 }
 
-// ListBizTCloudRuleByTG ...
-func (svc *lbSvc) ListBizTCloudRuleByTG(cts *rest.Contexts) (interface{}, error) {
-	return svc.listTCloudLbUrlRuleByTG(cts, handler.BizOperateAuth)
+// ListBizRuleByTG ...
+func (svc *lbSvc) ListBizRuleByTG(cts *rest.Contexts) (interface{}, error) {
+	return svc.listLbUrlRuleByTG(cts, handler.BizOperateAuth)
 }
 
-// listTCloudLbUrlRuleByTG 返回目标组绑定的四层监听器或者七层规则（都能绑定目标组或者rs）
-func (svc *lbSvc) listTCloudLbUrlRuleByTG(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (any, error) {
+// listLbUrlRuleByTG 返回目标组绑定的四层监听器或者七层规则（都能绑定目标组或者rs）
+func (svc *lbSvc) listLbUrlRuleByTG(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (any, error) {
 
 	tgID := cts.PathParameter("target_group_id").String()
 	if len(tgID) == 0 {
@@ -52,6 +52,10 @@ func (svc *lbSvc) listTCloudLbUrlRuleByTG(cts *rest.Contexts, validHandler handl
 	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
+	}
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if len(vendor) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "vendor is required")
 	}
 
 	if err := req.Validate(); err != nil {
@@ -71,9 +75,13 @@ func (svc *lbSvc) listTCloudLbUrlRuleByTG(cts *rest.Contexts, validHandler handl
 		return nil, err
 	}
 
-	urlRuleList, err := svc.listRuleWithCondition(cts.Kit, req, tools.RuleEqual("target_group_id", tgID))
-	if err != nil {
-		return nil, err
+	var urlRuleList *dataproto.TCloudURLRuleListResult
+	switch vendor {
+	case enumor.TCloud:
+		urlRuleList, err = svc.listRuleWithCondition(cts.Kit, req, tools.RuleEqual("target_group_id", tgID))
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	resList, err := svc.fillRuleRelatedRes(cts.Kit, urlRuleList)
@@ -201,6 +209,10 @@ func (svc *lbSvc) listVpcMap(kt *kit.Kit, vpcIDs []string) (map[string]cloud.Bas
 
 // ListBizUrlRulesByListener 指定监听器下的url规则
 func (svc *lbSvc) ListBizUrlRulesByListener(cts *rest.Contexts) (any, error) {
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if len(vendor) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "vendor is required")
+	}
 	lblID := cts.PathParameter("lbl_id").String()
 	if len(lblID) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "listener is required")
@@ -232,9 +244,19 @@ func (svc *lbSvc) ListBizUrlRulesByListener(cts *rest.Contexts) (any, error) {
 	}
 
 	// 查询规则列表
-	return svc.listRuleWithCondition(cts.Kit, req,
-		tools.RuleEqual("lbl_id", lblID),
-		tools.RuleEqual("rule_type", enumor.Layer7RuleType))
+	switch vendor {
+	case enumor.TCloud:
+		result, err := svc.listRuleWithCondition(cts.Kit, req,
+			tools.RuleEqual("lbl_id", lblID),
+			tools.RuleEqual("rule_type", enumor.Layer7RuleType))
+		if err != nil {
+			logs.Errorf("fail to list rule under listener(id=%s), err: %v, rid: %s", lblID, err, cts.Kit.Rid)
+			return nil, err
+		}
+		return result, nil
+	default:
+		return nil, fmt.Errorf("unsupport vendor for list rule: %s", vendor)
+	}
 }
 
 // ListBizListenerDomains 指定监听器下的域名列表
@@ -295,8 +317,12 @@ func (svc *lbSvc) ListBizListenerDomains(cts *rest.Contexts) (any, error) {
 	}, nil
 }
 
-// GetBizTCloudUrlRule 业务下腾讯云url规则
-func (svc *lbSvc) GetBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
+// GetBizUrlRule 业务下url规则
+func (svc *lbSvc) GetBizUrlRule(cts *rest.Contexts) (any, error) {
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if len(vendor) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "vendor is required")
+	}
 	lblID := cts.PathParameter("lbl_id").String()
 	if len(lblID) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "listener is required")
@@ -333,11 +359,16 @@ func (svc *lbSvc) GetBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
 		Page: core.NewDefaultBasePage(),
 	}
 
-	urlRuleList, err := svc.client.DataService().TCloud.LoadBalancer.ListUrlRule(cts.Kit, req)
-	if err != nil {
-		logs.Errorf("list tcloud url failed, err: %v, lblID: %s, ruleID: %s, rid: %s",
-			err, lblID, ruleID, cts.Kit.Rid)
-		return nil, err
+	var urlRuleList *dataproto.TCloudURLRuleListResult
+	switch vendor {
+	case enumor.TCloud:
+		urlRuleList, err = svc.listRuleWithCondition(cts.Kit, req)
+		if err != nil {
+			logs.Errorf("fail to list rule, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+	default:
+		return nil, fmt.Errorf("unsupport vendor for list rule: %s", vendor)
 	}
 	if len(urlRuleList.Details) == 0 {
 		return nil, errf.New(errf.RecordNotFound, "rule not found, id: "+ruleID)
@@ -346,9 +377,12 @@ func (svc *lbSvc) GetBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
 	return urlRuleList.Details[0], nil
 }
 
-// CreateBizTCloudUrlRule 业务下新建腾讯云url规则 TODO: 改成一次只创建一个规则
-func (svc *lbSvc) CreateBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
-
+// CreateBizUrlRule 业务下新建url规则 TODO: 改成一次只创建一个规则
+func (svc *lbSvc) CreateBizUrlRule(cts *rest.Contexts) (any, error) {
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if len(vendor) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "vendor is required")
+	}
 	bizID, err := cts.PathParameter("bk_biz_id").Int64()
 	if err != nil {
 		return nil, err
@@ -372,8 +406,10 @@ func (svc *lbSvc) CreateBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	lblInfo, lblBasicInfo, err := svc.getTCloudListenerByID(cts, bizID, lblID)
+	lblInfo, lblBasicInfo, err := svc.getListenerByID(cts, vendor, bizID, lblID)
 	if err != nil {
+		logs.Errorf("fail to get listener info, bizID: %d, listenerID: %s, err: %v, rid: %s",
+			bizID, lblID, err, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -404,20 +440,39 @@ func (svc *lbSvc) CreateBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
 		return nil, err
 	}
 
-	hcReq := &hcproto.TCloudRuleBatchCreateReq{Rules: []hcproto.TCloudRuleCreate{convRuleCreate(req, tg)}}
-	createResp, err := svc.client.HCService().TCloud.Clb.BatchCreateUrlRule(cts.Kit, lblID, hcReq)
+	createResp, err := svc.batchCreateUrlRule(cts.Kit, vendor, lblID, req, tg)
 	if err != nil {
-		logs.Errorf("fail to create tcloud url rule, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("fail to create url rule, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-	if len(createResp.SuccessCloudIDs) == 0 {
-		logs.Errorf("no rule have been created, lblID: %s, req: %+v, rid: %s", lblID, hcReq, cts.Kit.Rid)
-		return nil, errors.New("create failed, reason: unknown")
-	}
+
 	err = svc.applyTargetToRule(cts.Kit, tg.ID, createResp.SuccessCloudIDs[0], lblInfo)
 	if err != nil {
 		logs.Errorf("fail to create target register flow, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
+	}
+	return createResp, nil
+}
+
+func (svc *lbSvc) batchCreateUrlRule(kt *kit.Kit, vendor enumor.Vendor, lblID string, req *cslb.TCloudRuleCreate,
+	tg *corelb.BaseTargetGroup) (*hcproto.BatchCreateResult, error) {
+
+	hcReq := &hcproto.TCloudRuleBatchCreateReq{Rules: []hcproto.TCloudRuleCreate{convRuleCreate(req, tg)}}
+	var createResp *hcproto.BatchCreateResult
+	var err error
+	switch vendor {
+	case enumor.TCloud:
+		createResp, err = svc.client.HCService().TCloud.Clb.BatchCreateUrlRule(kt, lblID, hcReq)
+		if err != nil {
+			logs.Errorf("fail to create tcloud url rule, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+	default:
+		return nil, fmt.Errorf("unsupport vendor for create rule: %s", vendor)
+	}
+	if len(createResp.SuccessCloudIDs) == 0 {
+		logs.Errorf("no rule have been created, lblID: %s, req: %+v, rid: %s", lblID, hcReq, kt.Rid)
+		return nil, errors.New("create failed, reason: unknown")
 	}
 	return createResp, nil
 }
@@ -543,14 +598,14 @@ func (svc *lbSvc) createApplyTGFlow(kt *kit.Kit, tgID string, lblInfo *corelb.Ba
 	return nil
 }
 
-func (svc *lbSvc) getTCloudListenerByID(cts *rest.Contexts, bizID int64, lblID string) (*corelb.BaseListener,
-	*types.CloudResourceBasicInfo, error) {
+func (svc *lbSvc) getListenerByID(cts *rest.Contexts, vendor enumor.Vendor, bizID int64, lblID string) (
+	*corelb.BaseListener, *types.CloudResourceBasicInfo, error) {
 
 	lblResp, err := svc.client.DataService().Global.LoadBalancer.ListListener(cts.Kit,
 		&core.ListReq{
 			Filter: tools.ExpressionAnd(
 				tools.RuleEqual("id", lblID),
-				tools.RuleEqual("vendor", enumor.TCloud),
+				tools.RuleEqual("vendor", vendor),
 				tools.RuleEqual("bk_biz_id", bizID)),
 			Page: core.NewDefaultBasePage(),
 		})
@@ -565,7 +620,7 @@ func (svc *lbSvc) getTCloudListenerByID(cts *rest.Contexts, bizID int64, lblID s
 	basicInfo := &types.CloudResourceBasicInfo{
 		ResType:   enumor.ListenerCloudResType,
 		ID:        lblID,
-		Vendor:    enumor.TCloud,
+		Vendor:    vendor,
 		AccountID: lblInfo.AccountID,
 		BkBizID:   lblInfo.BkBizID,
 	}
@@ -631,9 +686,12 @@ func (svc *lbSvc) targetGroupBindCheck(kt *kit.Kit, bizID int64, tgId string) (*
 	return tg, nil
 }
 
-// UpdateBizTCloudUrlRule 更新规则
-func (svc *lbSvc) UpdateBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
-
+// UpdateBizUrlRule 更新规则
+func (svc *lbSvc) UpdateBizUrlRule(cts *rest.Contexts) (any, error) {
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if len(vendor) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "vendor is required")
+	}
 	lblID := cts.PathParameter("lbl_id").String()
 	if len(lblID) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "listener is required")
@@ -683,11 +741,20 @@ func (svc *lbSvc) UpdateBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
 		return nil, err
 	}
 
-	return nil, svc.client.HCService().TCloud.Clb.UpdateUrlRule(cts.Kit, lblID, ruleID, req)
+	switch vendor {
+	case enumor.TCloud:
+		return nil, svc.client.HCService().TCloud.Clb.UpdateUrlRule(cts.Kit, lblID, ruleID, req)
+	default:
+		return nil, fmt.Errorf("unsupport vendor for update rule: %s", vendor)
+	}
 }
 
-// BatchDeleteBizTCloudUrlRule 批量删除规则
-func (svc *lbSvc) BatchDeleteBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
+// BatchDeleteBizUrlRule 批量删除规则
+func (svc *lbSvc) BatchDeleteBizUrlRule(cts *rest.Contexts) (any, error) {
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if len(vendor) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "vendor is required")
+	}
 	lblID := cts.PathParameter("lbl_id").String()
 	if len(lblID) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "listener is required")
@@ -724,12 +791,20 @@ func (svc *lbSvc) BatchDeleteBizTCloudUrlRule(cts *rest.Contexts) (any, error) {
 		logs.Errorf("create url rule delete audit failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-	return nil, svc.client.HCService().TCloud.Clb.BatchDeleteUrlRule(cts.Kit, lblID, req)
-
+	switch vendor {
+	case enumor.TCloud:
+		return nil, svc.client.HCService().TCloud.Clb.BatchDeleteUrlRule(cts.Kit, lblID, req)
+	default:
+		return nil, fmt.Errorf("unsupport vendor for delete rule: %s", vendor)
+	}
 }
 
-// BatchDeleteBizTCloudUrlRuleByDomain 批量按域名删除规则
-func (svc *lbSvc) BatchDeleteBizTCloudUrlRuleByDomain(cts *rest.Contexts) (any, error) {
+// BatchDeleteBizUrlRuleByDomain 批量按域名删除规则
+func (svc *lbSvc) BatchDeleteBizUrlRuleByDomain(cts *rest.Contexts) (any, error) {
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if len(vendor) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "vendor is required")
+	}
 	lblID := cts.PathParameter("lbl_id").String()
 	if len(lblID) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "listener is required")
@@ -767,6 +842,79 @@ func (svc *lbSvc) BatchDeleteBizTCloudUrlRuleByDomain(cts *rest.Contexts) (any, 
 		return nil, err
 	}
 
-	return nil, svc.client.HCService().TCloud.Clb.BatchDeleteUrlRuleByDomain(cts.Kit, lblID, req)
+	switch vendor {
+	case enumor.TCloud:
+		return nil, svc.client.HCService().TCloud.Clb.BatchDeleteUrlRuleByDomain(cts.Kit, lblID, req)
+	default:
+		return nil, fmt.Errorf("unsupport vendor for delete rule: %s", vendor)
+	}
+}
 
+// ListRuleBindingStatus 获取规则绑定目标组状态
+func (svc *lbSvc) ListRuleBindingStatus(cts *rest.Contexts) (any, error) {
+	vendor := enumor.Vendor(cts.PathParameter("vendor").String())
+	if err := vendor.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	lblID := cts.PathParameter("lbl_id").String()
+	if len(lblID) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "listener is required")
+	}
+	req := new(cslb.RuleBindingStatusListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	basicInfo, err := svc.client.DataService().Global.Cloud.GetResBasicInfo(cts.Kit, enumor.ListenerCloudResType, lblID)
+	if err != nil {
+		return nil, err
+	}
+	// 业务校验、鉴权
+	err = handler.BizOperateAuth(cts, &handler.ValidWithAuthOption{
+		Authorizer: svc.authorizer,
+		ResType:    meta.Listener,
+		Action:     meta.Find,
+		BasicInfo:  basicInfo,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	ruleRelReq := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("vendor", vendor),
+			tools.RuleEqual("lbl_id", lblID),
+			tools.RuleIn("listener_rule_id", req.RuleIDs),
+		),
+		Fields: []string{"listener_rule_id", "binding_status"},
+		Page:   core.NewDefaultBasePage(),
+	}
+	ruleRelResp, err := svc.client.DataService().Global.LoadBalancer.ListTargetGroupListenerRel(cts.Kit, ruleRelReq)
+	if err != nil {
+		logs.Errorf("list target group listener rule rel failed, err: %v, lblID: %s, ruleIDs: %v, rid: %s", err,
+			lblID, req.RuleIDs, cts.Kit.Rid)
+		return nil, err
+	}
+	ruleBindingStatusMap := make(map[string]enumor.BindingStatus)
+	for _, rel := range ruleRelResp.Details {
+		ruleBindingStatusMap[rel.ListenerRuleID] = rel.BindingStatus
+	}
+
+	resp := new(cslb.RuleBindingStatusListResp)
+	for _, ruleID := range req.RuleIDs {
+		bindStatus, ok := ruleBindingStatusMap[ruleID]
+		if !ok {
+			return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("rule %s not found", ruleID))
+		}
+
+		resp.Details = append(resp.Details, cslb.RuleBindingStatus{
+			RuleID:     ruleID,
+			BindStatus: bindStatus,
+		})
+	}
+
+	return resp, nil
 }

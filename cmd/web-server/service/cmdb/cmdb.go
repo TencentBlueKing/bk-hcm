@@ -33,14 +33,13 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/thirdparty/esb"
-	"hcm/pkg/thirdparty/esb/cmdb"
+	"hcm/pkg/thirdparty/api-gateway/cmdb"
 )
 
 // InitCmdbService initial the cmdbSvc service
 func InitCmdbService(c *capability.Capability) {
 	svr := &cmdbSvc{
-		esbClient:  c.EsbClient,
+		cmdbClient: c.CmdbCli,
 		authorizer: c.Authorizer,
 		client:     c.ApiClient,
 	}
@@ -59,8 +58,8 @@ func InitCmdbService(c *capability.Capability) {
 
 type cmdbSvc struct {
 	client     *client.ClientSet
-	esbClient  esb.Client
 	authorizer auth.Authorizer
+	cmdbClient cmdb.Client
 }
 
 // ListBiz list all biz from cmdb
@@ -125,7 +124,7 @@ func (c *cmdbSvc) listBiz(kt *kit.Kit, filter *cmdb.QueryFilter) (interface{}, e
 		BizPropertyFilter: filter,
 		Fields:            []string{"bk_biz_id", "bk_biz_name"},
 	}
-	resp, err := c.esbClient.Cmdb().SearchBusiness(kt, params)
+	resp, err := c.cmdbClient.SearchBusiness(kt, params)
 	if err != nil {
 		logs.Errorf("call cmdb search business api failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, fmt.Errorf("call cmdb search business api failed, err: %v", err)
@@ -172,7 +171,7 @@ func (c *cmdbSvc) ListCloudArea(cts *rest.Contexts) (interface{}, error) {
 		params.Condition["bk_cloud_id"] = req.ID
 	}
 
-	res, err := c.esbClient.Cmdb().SearchCloudArea(cts.Kit, params)
+	res, err := c.cmdbClient.SearchCloudArea(cts.Kit, params)
 	if err != nil {
 		return nil, fmt.Errorf("call cmdb search cloud area api failed, err: %v", err)
 	}
@@ -212,7 +211,7 @@ func (c *cmdbSvc) ListAllCloudArea(cts *rest.Contexts) (interface{}, error) {
 	for {
 		params.Page.Start = start
 
-		res, err := c.esbClient.Cmdb().SearchCloudArea(cts.Kit, params)
+		res, err := c.cmdbClient.SearchCloudArea(cts.Kit, params)
 		if err != nil {
 			logs.Errorf("call cmdb search cloud area api failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, fmt.Errorf("call cmdb search cloud area api failed, err: %v", err)
@@ -246,7 +245,7 @@ func (c *cmdbSvc) GetBizBriefCacheTopo(cts *rest.Contexts) (interface{}, error) 
 	params := &cmdb.GetBizBriefCacheTopoParams{
 		BkBizID: bizID,
 	}
-	result, err := c.esbClient.Cmdb().GetBizBriefCacheTopo(cts.Kit, params)
+	result, err := c.cmdbClient.GetBizBriefCacheTopo(cts.Kit, params)
 	if err != nil {
 		logs.Errorf("call cmdb get biz brief cache topo failed, err: %v, bizID: %d, rid: %s", err, bizID, cts.Kit.Rid)
 		return nil, err

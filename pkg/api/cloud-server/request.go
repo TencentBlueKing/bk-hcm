@@ -62,6 +62,19 @@ func (l *ListReq) Validate() error {
 	return nil
 }
 
+// ResourceListReq raw list request, only account_id is decoded, others are raw json.
+type ResourceListReq struct {
+	AccountID string
+	Data      json.RawMessage
+}
+
+// UnmarshalJSON ...
+func (r *ResourceListReq) UnmarshalJSON(raw []byte) error {
+	r.AccountID = gjson.GetBytes(raw, "account_id").String()
+	r.Data = raw
+	return nil
+}
+
 // -------------------------- Delete --------------------------
 
 // BatchDeleteReq security group update request.

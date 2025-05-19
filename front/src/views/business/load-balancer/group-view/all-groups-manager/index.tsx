@@ -1,4 +1,4 @@
-import { computed, defineComponent } from 'vue';
+import { computed, ComputedRef, defineComponent, inject } from 'vue';
 // import components
 import { Button, Checkbox, Dropdown, Loading, SearchSelect, Table } from 'bkui-vue';
 import { BkRadioGroup, BkRadioButton } from 'bkui-vue/lib/radio';
@@ -29,6 +29,8 @@ export default defineComponent({
     const { t } = useI18n();
     const { authVerifyData, handleAuth } = useVerify();
     const globalPermissionDialogStore = useGlobalPermissionDialog();
+    const createClbActionName: ComputedRef<'clb_resource_create' | 'biz_clb_resource_create'> =
+      inject('createClbActionName');
     // use stores
     const loadBalancerStore = useLoadBalancerStore();
     const businessStore = useBusinessStore();
@@ -125,14 +127,15 @@ export default defineComponent({
                 <Button
                   theme='primary'
                   onClick={() => {
-                    if (!authVerifyData?.value?.permissionAction?.load_balancer_create) {
-                      handleAuth('clb_resource_create');
+                    if (!authVerifyData?.value?.permissionAction?.[createClbActionName.value]) {
+                      handleAuth(createClbActionName.value);
                       globalPermissionDialogStore.setShow(true);
                     } else bus.$emit('addTargetGroup');
                   }}
-                  class={`mr8 ${
-                    !authVerifyData?.value?.permissionAction?.load_balancer_create ? 'hcm-no-permision-btn' : ''
-                  }`}>
+                  class={[
+                    'mr8',
+                    { 'hcm-no-permision-btn': !authVerifyData?.value?.permissionAction?.[createClbActionName.value] },
+                  ]}>
                   <Plus class='f20' />
                   {t('新建')}
                 </Button>

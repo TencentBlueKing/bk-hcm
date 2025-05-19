@@ -61,7 +61,7 @@ export default defineComponent({
           },
           {
             label: t('均衡方式'),
-            value: SCHEDULER_MAP[listenerDetail.scheduler],
+            value: SCHEDULER_MAP[listenerDetail.scheduler] || '--',
           },
           {
             label: t('目标组'),
@@ -74,7 +74,7 @@ export default defineComponent({
                       class='link-text-btn'
                       onClick={() => {
                         window.open(
-                          `/#/business/loadbalancer/group-view/${listenerDetail.target_group_id}?bizs=${accountStore.bizs}&type=detail`,
+                          `/#/business/loadbalancer/group-view/${listenerDetail.target_group_id}?bizs=${accountStore.bizs}&type=detail&vendor=${listenerDetail.vendor}`,
                           '_blank',
                           'noopener,noreferrer',
                         );

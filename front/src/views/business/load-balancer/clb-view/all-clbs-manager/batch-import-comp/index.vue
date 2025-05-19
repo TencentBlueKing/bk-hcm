@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, useTemplateRef } from 'vue';
+import { ref } from 'vue';
 
 import ActionDropdown from './action-dropdown/index.vue';
 import OperationSideslider from './operation-sideslider/index.vue';
@@ -10,10 +10,10 @@ import { Action } from './types';
 const activeAction = ref<Action>();
 
 // 抽屉
-const sidesliderRef = useTemplateRef('operation-sideslider');
+const isSliderShow = ref(false);
 const showSideslider = (action: Action) => {
   activeAction.value = action;
-  sidesliderRef.value.show();
+  isSliderShow.value = true;
 };
 
 defineOptions({ name: 'LbBatchImportComp' });
@@ -24,7 +24,7 @@ defineOptions({ name: 'LbBatchImportComp' });
   <ActionDropdown @click="showSideslider" />
 
   <!-- 抽屉 -->
-  <OperationSideslider ref="operation-sideslider" :active-action="activeAction" />
+  <OperationSideslider v-model="isSliderShow" :active-action="activeAction" />
 </template>
 
 <style scoped lang="scss"></style>

@@ -11,7 +11,6 @@ import RoutingManage from '@/views/resource/resource-manage/children/manage/rout
 import ImageManage from '@/views/resource/resource-manage/children/manage/image-manage.vue';
 import NetworkInterfaceManage from '@/views/resource/resource-manage/children/manage/network-interface-manage.vue';
 import recyclebinManage from '@/views/resource/recyclebin-manager/recyclebin-manager.vue';
-import { useVerify } from '@/hooks';
 import useAdd from '@/views/resource/resource-manage/hooks/use-add';
 import GcpAdd from '@/views/resource/resource-manage/children/add/gcp-add';
 // forms
@@ -25,6 +24,7 @@ import { useRoute, useRouter } from 'vue-router';
 
 import { useAccountStore } from '@/store/account';
 import { InfoBox } from 'bkui-vue';
+import { AUTH_BIZ_CREATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
 
 const isShowSideSlider = ref(false);
 const isShowGcpAdd = ref(false);
@@ -200,15 +200,6 @@ const handleBeforeClose = () => {
   }
 };
 
-// 权限hook
-const {
-  showPermissionDialog,
-  handlePermissionConfirm,
-  handlePermissionDialog,
-  handleAuth,
-  permissionParams,
-  authVerifyData,
-} = useVerify();
 const computedSecurityText = computed(() => {
   if (renderComponent.value !== SecurityManage) return '新建';
   switch (securityType.value) {
@@ -242,39 +233,25 @@ const handleEditTemplate = (payload: any) => {
         :is="renderComponent"
         :filter="filter"
         :is-resource-page="isResourcePage"
-        :auth-verify-data="authVerifyData"
-        @auth="(val: string) => {
-          handleAuth(val)
-        }"
+        :bk-biz-id="accountStore.bizs"
         @handleSecrityType="handleSecrityType"
         @editTemplate="handleEditTemplate"
         @edit="handleEdit"
         v-model:isFormDataChanged="isFormDataChanged"
       >
         <span>
-          <bk-button
-            theme="primary"
-            class="mw64 mr10"
-            :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.biz_iaas_resource_create }"
-            @click="
-              () => {
-                if (authVerifyData?.permissionAction?.biz_iaas_resource_create) {
-                  handleAdd();
-                } else {
-                  handleAuth('biz_iaas_resource_create');
-                }
-              }
-            "
-          >
-            {{
-              renderComponent === DriveManage ||
-              renderComponent === HostManage ||
-              renderComponent === SubnetManage ||
-              renderComponent === VpcManage
-                ? '申请'
-                : computedSecurityText
-            }}
-          </bk-button>
+          <hcm-auth :sign="{ type: AUTH_BIZ_CREATE_IAAS_RESOURCE, relation: [accountStore.bizs] }" v-slot="{ noPerm }">
+            <bk-button theme="primary" class="mw64 mr10" :disabled="noPerm" @click="handleAdd">
+              {{
+                renderComponent === DriveManage ||
+                renderComponent === HostManage ||
+                renderComponent === SubnetManage ||
+                renderComponent === VpcManage
+                  ? '申请'
+                  : computedSecurityText
+              }}
+            </bk-button>
+          </hcm-auth>
         </span>
 
         <template #recycleHistory>
@@ -299,16 +276,11 @@ const handleEditTemplate = (payload: any) => {
           @success="handleSuccess"
           :detail="formDetail"
           :is-edit="isEdit"
+          :show="isShowSideSlider"
           v-model:isFormDataChanged="isFormDataChanged"
         ></component>
       </template>
     </bk-sideslider>
-    <permission-dialog
-      v-model:is-show="showPermissionDialog"
-      :params="permissionParams"
-      @cancel="handlePermissionDialog"
-      @confirm="handlePermissionConfirm"
-    ></permission-dialog>
 
     <gcp-add
       v-model:is-show="isShowGcpAdd"

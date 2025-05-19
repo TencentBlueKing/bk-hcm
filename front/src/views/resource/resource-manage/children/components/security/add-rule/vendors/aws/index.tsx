@@ -1,5 +1,5 @@
 import { defineComponent, PropType, ref, watch } from 'vue';
-import { SelectColumn, InputColumn, OperationColumn } from '@blueking/ediatable';
+import { SelectColumn, InputColumn } from '@blueking/ediatable';
 import './index.scss';
 import SourceAddress from '../tcloud/SourceAddress';
 import useFormModel from '@/hooks/useFormModel';
@@ -7,6 +7,7 @@ import { SecurityVendorType, useProtocols } from '../useProtocolList';
 import { cleanObject, isPortAvailable, random } from '../util';
 import { Ext, IHead, SecurityRuleType } from '../useVendorHanlder';
 import { AWS_PORT_ALL, AWS_PROTOCOL } from './DataHandler';
+import OperationColumn from '@/components/ediatable/operation-column.vue';
 
 export interface AwsSecurityGroupRule {
   protocol: string; // 协议, 取值: tcp, udp, icmp, icmpv6,用数字 -1 代表所有协议
@@ -34,31 +35,37 @@ export const AwsRecord = (): Ext<AwsSecurityGroupRule> => ({
 
 export const awsTitles: (type: SecurityRuleType) => IHead[] = (type) => [
   {
-    width: 120,
+    minWidth: 120,
+    maxWidth: 120,
     title: type === 'ingress' ? '源地址类型' : '目标地址类型',
   },
   {
-    width: 120,
+    minWidth: 150,
+    maxWidth: 150,
     title: type === 'ingress' ? '源地址' : '目标地址',
     memo: '必须指定 CIDR 数据块 或者 安全组 ID',
   },
   {
-    width: 120,
+    minWidth: 120,
+    maxWidth: 120,
     title: '协议',
   },
   {
-    width: 120,
+    minWidth: 80,
+    maxWidth: 80,
     title: '端口',
     memo: '对于 TCP、UDP 协议，允许的端口范围。您可以指定单个端口号（例如 22）或端口号范围（例如7000-8000）',
   },
   {
-    width: 120,
+    minWidth: 150,
+    maxWidth: 150,
     title: '备注',
     memo: '请输入英文描述, 最大不超过256个字符',
     required: false,
   },
   {
-    width: 120,
+    minWidth: 120,
+    maxWidth: 120,
     title: '操作',
     required: false,
   },
@@ -90,7 +97,7 @@ export const AwsRenderRow = defineComponent({
       ipGroupList: Array<string>;
     }>,
     relatedSecurityGroups: Array as PropType<Array<Object>>,
-    removeable: Boolean as PropType<Boolean>,
+    removeable: Boolean as PropType<boolean>,
     value: Object as PropType<Ext<AwsSecurityGroupRule>>,
     isEdit: Boolean as PropType<boolean>,
   },
@@ -234,7 +241,10 @@ export const AwsRenderRow = defineComponent({
                 onAdd={handleAdd}
                 onRemove={handleRemove}
                 onCopy={handleCopy}
-                removeable={props.removeable}
+                removable={props.removeable}
+                copyText='克隆入站规则'
+                addText='添加入站规则'
+                removeText='删除入站规则'
               />
             </td>
           )}

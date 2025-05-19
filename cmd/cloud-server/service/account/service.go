@@ -92,6 +92,11 @@ func InitAccountService(c *capability.Capability) {
 	h.Add("GetTCloudNetworkAccountType", http.MethodGet, "/vendors/tcloud/accounts/{account_id}/network_type",
 		svc.GetTCloudNetworkAccountType)
 
+	h.Add("BizGetAccountUsageBizs", http.MethodGet, "/bizs/{bk_biz_id}/accounts/usage_bizs/{account_id}",
+		svc.BizGetAccountUsageBizs)
+	h.Add("GetAccountUsageBizs", http.MethodGet, "/accounts/usage_bizs/{account_id}",
+		svc.GetAccountUsageBizs)
+
 	h.Load(c.WebService)
 }
 

@@ -22,6 +22,7 @@ package lblogic
 
 import (
 	"fmt"
+
 	"hcm/pkg/api/core"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
@@ -31,6 +32,8 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 )
 
@@ -104,8 +107,8 @@ func getListener(kt *kit.Kit, cli *dataservice.Client, accountID, lbCloudID stri
 	return nil, nil
 }
 
-func getURLRule(kt *kit.Kit, cli *dataservice.Client, vendor enumor.Vendor, lbCloudID, listenerCloudID, domain, url string) (
-	*corelb.TCloudLbUrlRule, error) {
+func getURLRule(kt *kit.Kit, cli *dataservice.Client, vendor enumor.Vendor,
+	lbCloudID, listenerCloudID, domain, url string) (*corelb.TCloudLbUrlRule, error) {
 
 	switch vendor {
 	case enumor.TCloud:
@@ -203,21 +206,20 @@ func getTargetGroupID(kt *kit.Kit, cli *dataservice.Client, ruleCloudID string) 
 func getCvm(kt *kit.Kit, cli *dataservice.Client, ip string,
 	vendor enumor.Vendor, bkBizID int64, accountID string, cloudVPCs []string) (*corecvm.BaseCvm, error) {
 
-	expr, err := tools.And(
-		tools.ExpressionOr(
-			tools.RuleJSONContains("private_ipv4_addresses", ip),
-			tools.RuleJSONContains("private_ipv6_addresses", ip),
-			tools.RuleJSONContains("public_ipv4_addresses", ip),
-			tools.RuleJSONContains("public_ipv6_addresses", ip),
-		),
-		tools.RuleEqual("vendor", vendor),
-		tools.RuleEqual("bk_biz_id", bkBizID),
-		tools.RuleEqual("account_id", accountID),
-		tools.RuleJsonOverlaps("cloud_vpc_ids", cloudVPCs),
-	)
-	if err != nil {
-		logs.Errorf("failed to create expression, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
+	expr := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			tools.ExpressionOr(
+				tools.RuleJSONContains("private_ipv4_addresses", ip),
+				tools.RuleJSONContains("private_ipv6_addresses", ip),
+				tools.RuleJSONContains("public_ipv4_addresses", ip),
+				tools.RuleJSONContains("public_ipv6_addresses", ip),
+			),
+			tools.RuleEqual("vendor", vendor),
+			tools.RuleEqual("bk_biz_id", bkBizID),
+			tools.RuleEqual("account_id", accountID),
+			tools.RuleJsonOverlaps("cloud_vpc_ids", cloudVPCs),
+		},
 	}
 	listReq := &core.ListReq{
 		Filter: expr,
@@ -237,6 +239,36 @@ func getCvm(kt *kit.Kit, cli *dataservice.Client, ip string,
 	return nil, nil
 }
 
+// getCvmWithoutVpc 不指定VPC查询主机
+func getCvmWithoutVpc(kt *kit.Kit, cli *dataservice.Client, ip string, vendor enumor.Vendor, bkBizID int64,
+	accountID string) ([]corecvm.BaseCvm, error) {
+
+	expr := &filter.Expression{
+		Op: filter.And,
+		Rules: []filter.RuleFactory{
+			tools.ExpressionOr(
+				tools.RuleJSONContains("private_ipv4_addresses", ip),
+				tools.RuleJSONContains("private_ipv6_addresses", ip),
+				tools.RuleJSONContains("public_ipv4_addresses", ip),
+				tools.RuleJSONContains("public_ipv6_addresses", ip),
+			),
+			tools.RuleEqual("vendor", vendor),
+			tools.RuleEqual("bk_biz_id", bkBizID),
+			tools.RuleEqual("account_id", accountID),
+		},
+	}
+	listReq := &core.ListReq{
+		Filter: expr,
+		Page:   core.NewDefaultBasePage(),
+	}
+	cvms, err := cli.Global.Cvm.ListCvm(kt, listReq)
+	if err != nil {
+		logs.Errorf("list cvm failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+	return cvms.Details, nil
+}
+
 func getTCloudLoadBalancer(kt *kit.Kit, cli *dataservice.Client, lbID string) (
 	*corelb.LoadBalancer[corelb.TCloudClbExtension], error) {
 
@@ -246,4 +278,41 @@ func getTCloudLoadBalancer(kt *kit.Kit, cli *dataservice.Client, lbID string) (
 		return nil, err
 	}
 	return lb, nil
+}
+
+// validateCvmExist 导入新RS前, 校验云主机是否存在
+// 开启了跨域2.0的主机, 不进行vpc校验, 由云上进行报错
+func validateCvmExist(kt *kit.Kit, dataServiceCli *dataservice.Client, rsIP string, vendor enumor.Vendor,
+	bkBizID int64, accountID string, tcloudLB *corelb.LoadBalancer[corelb.TCloudClbExtension]) (
+	*corecvm.BaseCvm, error) {
+
+	var cvm *corecvm.BaseCvm
+	var err error
+	if converter.PtrToVal(tcloudLB.Extension.SnatPro) {
+		cvmList, err := getCvmWithoutVpc(kt, dataServiceCli, rsIP, vendor, bkBizID, accountID)
+		if err != nil {
+			logs.Errorf("get cvm without vpc failed, ip: %s, err: %v, rid: %s", rsIP, err, kt.Rid)
+			return nil, err
+		}
+		if len(cvmList) == 0 {
+			return nil, fmt.Errorf("rs(%s) not found", rsIP)
+		}
+		cvm = &cvmList[0]
+		return cvm, nil
+	}
+
+	cloudVpcIDs := []string{tcloudLB.CloudVpcID}
+	if converter.PtrToVal(tcloudLB.Extension.Snat) {
+		cloudVpcIDs = append(cloudVpcIDs, converter.PtrToVal(tcloudLB.Extension.TargetCloudVpcID))
+	}
+
+	cvm, err = getCvm(kt, dataServiceCli, rsIP, vendor, bkBizID, accountID, cloudVpcIDs)
+	if err != nil {
+		logs.Errorf("call data-service to get cvm failed, ip: %s, err: %v, rid: %s", rsIP, err, kt.Rid)
+		return nil, err
+	}
+	if cvm == nil {
+		return nil, fmt.Errorf("rs(%s) not found", rsIP)
+	}
+	return cvm, nil
 }

@@ -67,6 +67,7 @@ export default defineComponent({
                 <div class='item-label'>管控区域 ID</div>
                 <div class='item-value'>{props.data.bk_cloud_id}</div>
               </div>
+              {/* TODO：替换为flex-tag */}
               <div class='detail-item'>
                 <div class='item-label'>IPv4 CIDR</div>
                 <div class='item-value'>

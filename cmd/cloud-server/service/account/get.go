@@ -21,18 +21,22 @@ package account
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"hcm/pkg/api/cloud-server/account"
+	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/slice"
 )
 
 // GetAccount get account with options
@@ -40,7 +44,7 @@ func (a *accountSvc) GetAccount(cts *rest.Contexts) (interface{}, error) {
 	accountID := cts.PathParameter("account_id").String()
 
 	// 校验用户有该账号的查看权限
-	if err := a.checkPermission(cts, meta.Find, accountID); err != nil {
+	if err := a.checkGetAccountPermission(cts, accountID); err != nil {
 		return nil, err
 	}
 
@@ -53,58 +57,142 @@ func (a *accountSvc) GetAccount(cts *rest.Contexts) (interface{}, error) {
 
 	switch baseInfo.Vendor {
 	case enumor.TCloud:
-		account, err := a.client.DataService().TCloud.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
-		// 敏感信息不显示，置空
-		if account != nil {
-			account.Extension.CloudSecretKey = ""
+		acc, err := a.client.DataService().TCloud.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
+		if err != nil {
+			logs.Errorf("get tcloud acc failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
 		}
-		accountDetailFullFill(a, cts, account)
-		return account, err
+		// 敏感信息不显示，置空
+		if acc != nil {
+			acc.Extension.CloudSecretKey = ""
+		}
+		if err = accountDetailFullFill(a, cts, acc); err != nil {
+			logs.Errorf("acc detail full fill failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+		return acc, nil
 	case enumor.Aws:
-		account, err := a.client.DataService().Aws.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
-		// 敏感信息不显示，置空
-		if account != nil {
-			account.Extension.CloudSecretKey = ""
+		acc, err := a.client.DataService().Aws.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
+		if err != nil {
+			logs.Errorf("get aws acc failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
 		}
-		accountDetailFullFill(a, cts, account)
-		return account, err
+		// 敏感信息不显示，置空
+		if acc != nil {
+			acc.Extension.CloudSecretKey = ""
+		}
+		if err = accountDetailFullFill(a, cts, acc); err != nil {
+			logs.Errorf("acc detail full fill failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+		return acc, nil
 	case enumor.HuaWei:
-		account, err := a.client.DataService().HuaWei.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
-		// 敏感信息不显示，置空
-		if account != nil {
-			account.Extension.CloudSecretKey = ""
+		acc, err := a.client.DataService().HuaWei.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
+		if err != nil {
+			logs.Errorf("get huawei acc failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
 		}
-		accountDetailFullFill(a, cts, account)
-		return account, err
+		// 敏感信息不显示，置空
+		if acc != nil {
+			acc.Extension.CloudSecretKey = ""
+		}
+		if err = accountDetailFullFill(a, cts, acc); err != nil {
+			logs.Errorf("acc detail full fill failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+		return acc, nil
 	case enumor.Gcp:
-		account, err := a.client.DataService().Gcp.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
-		// 敏感信息不显示，置空
-		if account != nil {
-			account.Extension.CloudServiceSecretKey = ""
+		acc, err := a.client.DataService().Gcp.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
+		if err != nil {
+			logs.Errorf("get gcp acc failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
 		}
-		accountDetailFullFill(a, cts, account)
-		return account, err
+		// 敏感信息不显示，置空
+		if acc != nil {
+			acc.Extension.CloudServiceSecretKey = ""
+		}
+		if err = accountDetailFullFill(a, cts, acc); err != nil {
+			logs.Errorf("acc detail full fill failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+		return acc, nil
 	case enumor.Azure:
-		account, err := a.client.DataService().Azure.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
-		// 敏感信息不显示，置空
-		if account != nil {
-			account.Extension.CloudClientSecretKey = ""
+		acc, err := a.client.DataService().Azure.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
+		if err != nil {
+			logs.Errorf("get azure acc failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
 		}
-		accountDetailFullFill(a, cts, account)
-		return account, err
+		// 敏感信息不显示，置空
+		if acc != nil {
+			acc.Extension.CloudClientSecretKey = ""
+		}
+		if err = accountDetailFullFill(a, cts, acc); err != nil {
+			logs.Errorf("acc detail full fill failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+		return acc, nil
 	default:
 		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", baseInfo.Vendor))
 	}
 }
 
+func (a *accountSvc) checkGetAccountPermission(cts *rest.Contexts, accountID string) error {
+	listReq := &core.ListReq{
+		Filter: tools.EqualExpression("id", accountID),
+		Page:   core.NewDefaultBasePage(),
+	}
+	accounts, err := a.client.DataService().Global.Account.List(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+	if err != nil {
+		logs.Errorf("list account failed, err: %v, req: %v, rid: %s", err, listReq, cts.Kit.Rid)
+		return err
+	}
+	if len(accounts.Details) == 0 {
+		return fmt.Errorf("account not found: %s", accountID)
+	}
+	if slice.IsItemInSlice(accounts.Details[0].Managers, cts.Kit.User) {
+		return nil
+	}
+
+	// 账号查看权限校验 & 业务访问权限
+	resources := []meta.ResourceAttribute{
+		{
+			Basic: &meta.Basic{
+				Type:       meta.Account,
+				Action:     meta.Find,
+				ResourceID: accountID,
+			},
+		},
+	}
+	for _, bkBizID := range accounts.Details[0].BkBizIDs {
+		resources = append(resources, meta.ResourceAttribute{
+			Basic: &meta.Basic{
+				Type:       meta.Biz,
+				Action:     meta.Access,
+				ResourceID: strconv.FormatInt(bkBizID, 10),
+			},
+		})
+	}
+	decisions, authorized, err := a.authorizer.Authorize(cts.Kit, resources...)
+	if authorized {
+		return nil
+	}
+	for i := range decisions {
+		if decisions[i].Authorized {
+			return nil
+		}
+	}
+	return fmt.Errorf("no permission for access account %s", accountID)
+}
+
 // 补充回收详情，转换回收时间
 func accountDetailFullFill[T protocloud.AccountExtensionGetResp](svc *accountSvc, cts *rest.Contexts,
-	acc *protocloud.AccountGetResult[T]) (*protocloud.AccountGetResult[T], error) {
+	acc *protocloud.AccountGetResult[T]) error {
+
 	acc.RecycleReserveTime = convertRecycleReverseTime(acc.RecycleReserveTime)
 	syncDetails, err := svc.getAccountsSyncDetail(cts, acc.ID)
 	if err != nil {
 		logs.Errorf("fail to get account sync detail, accountID: %s, rid: %s", acc.ID, cts.Kit.Rid)
-		return nil, err
+		return err
 	}
 	for _, detail := range syncDetails[acc.ID] {
 		acc.SyncStatus = detail.ResStatus
@@ -113,7 +201,7 @@ func accountDetailFullFill[T protocloud.AccountExtensionGetResp](svc *accountSvc
 			break
 		}
 	}
-	return acc, nil
+	return nil
 }
 
 func convertRecycleReverseTime(val int) int {

@@ -28,5 +28,5 @@ defineExpose({
 </script>
 
 <template>
-  <component :is="defaultComp" v-model="model" type="number" ref="inputColumnRef" v-bind="attrs" />
+  <component :is="defaultComp" v-model.number="model" type="number" ref="inputColumnRef" v-bind="attrs" />
 </template>

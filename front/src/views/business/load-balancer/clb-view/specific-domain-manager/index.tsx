@@ -1,4 +1,15 @@
-import { defineComponent, onMounted, onUnmounted, reactive, ref, watch, nextTick } from 'vue';
+import {
+  defineComponent,
+  onMounted,
+  onUnmounted,
+  reactive,
+  ref,
+  watch,
+  nextTick,
+  useTemplateRef,
+  Ref,
+  PropType,
+} from 'vue';
 // import components
 import { Button, Form, Input, Link, Message, Select } from 'bkui-vue';
 import { Done, Error, Plus } from 'bkui-vue/lib/icon';
@@ -13,7 +24,7 @@ import { useTable } from '@/hooks/useTable/useTable';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import { useI18n } from 'vue-i18n';
 // import constants
-import { CLB_BINDING_STATUS } from '@/common/constant';
+import { CLB_BINDING_STATUS, VendorEnum } from '@/common/constant';
 // import static resources
 import StatusSuccess from '@/assets/image/success-account.png';
 import StatusLoading from '@/assets/image/status_loading.png';
@@ -27,6 +38,7 @@ import { getTableNewRowClass } from '@/common/util';
 import bus from '@/common/bus';
 import { QueryRuleOPEnum } from '@/typings';
 import { SCHEDULER_MAP } from '@/constants';
+import useTimeoutPoll from '@/hooks/use-timeout-poll';
 
 const { FormItem } = Form;
 const { Option } = Select;
@@ -40,11 +52,12 @@ export default defineComponent({
     const { data: listenerDetail } = await businessStore.detail('listeners', to.query.listener_id as string);
     // 负载均衡详情
     const { data: lbDetail } = await businessStore.detail('load_balancers', listenerDetail.lb_id);
+    // 当前节点为：监听器
     loadBalancerStore.setCurrentSelectedTreeNode({ ...listenerDetail, lb: lbDetail });
     next();
   },
   // eslint-disable-next-line vue/prop-name-casing
-  props: { id: String, listener_id: String },
+  props: { id: String, listener_id: String, vendor: String as PropType<VendorEnum> },
   setup(props) {
     // use hooks
     const { t } = useI18n();
@@ -96,7 +109,7 @@ export default defineComponent({
                   <Link
                     class='target-group-name-btn'
                     theme='primary'
-                    href={`/#/business/loadbalancer/group-view/${data.target_group_id}?bizs=${accountStore.bizs}&type=detail`}
+                    href={`/#/business/loadbalancer/group-view/${data.target_group_id}?bizs=${accountStore.bizs}&type=detail&vendor=${props.vendor}`}
                     onClick={() => loadBalancerStore.setTgSearchTarget(cell)}>
                     {cell || '--'}
                   </Link>
@@ -164,7 +177,6 @@ export default defineComponent({
               onClick={() => {
                 Confirm('请确定删除URL', `将删除URL【${data.url}】`, async () => {
                   await deleteRulesBatch([data.id]);
-                  bus.$emit('resetLbTree');
                 });
               }}>
               {t('删除')}
@@ -177,10 +189,13 @@ export default defineComponent({
     const deleteRulesBatch = async (ids: string[]) => {
       isSubmitLoading.value = true;
       try {
-        await businessStore.deleteRules(props.listener_id, { lbl_id: props.listener_id, rule_ids: ids });
+        await businessStore.deleteRules(props.vendor, props.listener_id, {
+          lbl_id: props.listener_id,
+          rule_ids: ids,
+        });
         isBatchDeleteDialogShow.value = false;
         Message({ message: '删除成功', theme: 'success' });
-        await getListData();
+        await reloadTableData();
       } finally {
         isSubmitLoading.value = false;
       }
@@ -193,7 +208,11 @@ export default defineComponent({
         return row.bk_biz_id === -1;
       }
     };
-    const { CommonTable, getListData } = useTable({
+    const bindingStatusTask = useTimeoutPoll(() => {
+      const ruleIds = new Set<string>(dataList.value.map(({ id }) => id));
+      getBindingStatus(ruleIds, dataList);
+    }, 5000);
+    const { CommonTable, getListData, clearFilter, dataList } = useTable({
       searchOptions: {
         searchData: [
           { name: 'URL路径', id: 'url' },
@@ -227,79 +246,109 @@ export default defineComponent({
         },
       },
       requestOption: {
-        type: `vendors/tcloud/listeners/${props.listener_id}/rules`,
+        type: `vendors/${props.vendor}/listeners/${props.listener_id}/rules`,
         sortOption: { sort: 'created_at', order: 'DESC' },
         filterOption: {
           rules: [{ field: 'domain', op: QueryRuleOPEnum.EQ, value: props.id }],
         },
-        async resolveDataListCb(dataList: any) {
-          if (dataList.length === 0) return;
-          const tgIds = dataList.map(({ target_group_id }: { target_group_id: string }) => target_group_id);
-          const resList = await businessStore.getTargetGroupList({
-            page: { count: false, start: 0, limit: 500 },
-            filter: {
-              op: QueryRuleOPEnum.AND,
-              rules: [{ field: 'id', op: QueryRuleOPEnum.IN, value: tgIds.map((id: string) => id) }],
-            },
-            fields: ['id', 'name'],
+        asyncRequestApiMethod(dataList: any[], datalistRef: Ref<any[]>) {
+          if (!dataList?.length) return;
+
+          // 提取目标组ID列表和规则ID列表
+          const tgIds = new Set<string>();
+          const ruleIds = new Set<string>();
+          dataList.forEach(({ target_group_id, id }) => {
+            tgIds.add(target_group_id);
+            ruleIds.add(id);
           });
-          const listenerCountMap = {};
-          resList.data.details.forEach(({ id, name }: { id: string; name: string }) => {
-            listenerCountMap[id] = name;
-          });
-          return dataList.map((data: any) => {
-            const { target_group_id } = data;
-            return { ...data, target_group_name: listenerCountMap[target_group_id] };
-          });
+
+          businessStore
+            .getTargetGroupList({
+              page: { count: false, start: 0, limit: 500 },
+              filter: {
+                op: QueryRuleOPEnum.AND,
+                rules: [{ field: 'id', op: QueryRuleOPEnum.IN, value: Array.from(tgIds) }],
+              },
+              fields: ['id', 'name'],
+            })
+            .then((res: any) => {
+              // 构建目标组ID到名称的映射
+              const targetGroupMap = new Map<string, string>(
+                res.data.details.map(({ id, name }: { id: string; name: string }) => [id, name]),
+              );
+              datalistRef.value.forEach((url: any) => {
+                url.target_group_name = targetGroupMap.get(url.target_group_id) || '--';
+              });
+            });
+
+          // 轮询同步状态
+          getBindingStatus(ruleIds, datalistRef);
         },
       },
     });
+    // 查询URL的同步状态
+    const getBindingStatus = async (ruleIds: Set<string>, datalistRef: Ref<any[]>) => {
+      return loadBalancerStore
+        .queryRulesBindingStatusList(props.vendor, props.listener_id, { rule_ids: Array.from(ruleIds) })
+        .then((bindingStatusList: any[]) => {
+          // 构建规则ID到同步状态的映射
+          const bindingStatusMap = new Map<string, string>(
+            bindingStatusList.map(({ rule_id, binding_status }: any) => [rule_id, binding_status]),
+          );
+          datalistRef.value.forEach((url: any) => {
+            url.binding_status = bindingStatusMap.get(url.id) || '--';
+          });
+
+          // 暂停轮询
+          if (bindingStatusList.every(({ binding_status }: any) => binding_status !== 'binding')) {
+            bindingStatusTask.pause();
+          } else {
+            bindingStatusTask.resume();
+          }
+        });
+    };
+    const reloadTableData = () => {
+      getListData(
+        [{ field: 'domain', op: QueryRuleOPEnum.EQ, value: props.id }],
+        `vendors/${props.vendor}/listeners/${props.listener_id}/rules`,
+      );
+    };
+    const tableRef = useTemplateRef<typeof CommonTable>('table-comp');
+    const clearSelection = () => {
+      resetSelections();
+      tableRef.value?.clearSelection();
+    };
+    watch(
+      () => dataList.value,
+      () => {
+        clearSelection();
+      },
+    );
 
     const { isSubmitLoading, isBatchDeleteDialogShow, tableProps, handleBatchDeleteListener } = useBatchDeleteListener(
       tableColumns,
       selections,
-      resetSelections,
-      getListData,
+      reloadTableData,
       true,
     );
 
     watch(
       () => [props.listener_id, props.id],
-      ([id, domain]) => {
-        // 清空选中项, 避免切换域名后, 选中项不变
-        resetSelections();
-        id &&
-          getListData(
-            [
-              {
-                field: 'domain',
-                op: QueryRuleOPEnum.EQ,
-                value: domain,
-              },
-            ],
-            `vendors/tcloud/listeners/${id}/rules`,
-          );
+      () => {
+        clearFilter();
+        reloadTableData();
       },
     );
 
     const handleSubmit = async () => {
       await formInstance.value.validate();
       isSubmitLoading.value = true;
+      const lbl_id = props.listener_id;
+      const { rule_id, url, scheduler, target_group_id } = formData;
+      const { vendor } = props;
       const promise = isEdit.value
-        ? businessStore.updateUrl({
-            lbl_id: props.listener_id,
-            rule_id: formData.rule_id,
-            url: formData.url,
-            scheduler: formData.scheduler,
-            target_group_id: formData.target_group_id,
-          })
-        : businessStore.createRules({
-            lbl_id: props.listener_id,
-            url: formData.url,
-            scheduler: formData.scheduler,
-            domains: [props.id],
-            target_group_id: formData.target_group_id,
-          });
+        ? businessStore.updateUrl({ lbl_id, rule_id, url, scheduler, target_group_id, vendor })
+        : businessStore.createRules({ lbl_id, url, scheduler, domains: [props.id], target_group_id, vendor });
       try {
         await promise;
         Message({
@@ -307,8 +356,7 @@ export default defineComponent({
           theme: 'success',
         });
         isDomainSidesliderShow.value = false;
-        await getListData();
-        bus.$emit('resetLbTree');
+        await reloadTableData();
       } finally {
         isSubmitLoading.value = false;
       }
@@ -336,6 +384,17 @@ export default defineComponent({
       });
     });
 
+    watch(
+      () => props.listener_id,
+      async (id) => {
+        // 监听器详情
+        const { data: listenerDetail } = await businessStore.detail('listeners', id as string);
+        // 负载均衡详情
+        const { data: lbDetail } = await businessStore.detail('load_balancers', listenerDetail.lb_id);
+        loadBalancerStore.setCurrentSelectedTreeNode({ ...listenerDetail, lb: lbDetail });
+      },
+    );
+
     onMounted(() => {
       bus.$on('showAddUrlSideslider', handleAddUrlSidesliderShow);
     });
@@ -346,7 +405,7 @@ export default defineComponent({
 
     return () => (
       <div class={'url-list-container has-breadcrumb'}>
-        <CommonTable>
+        <CommonTable ref='table-comp'>
           {{
             operation: () => (
               <>
@@ -413,8 +472,8 @@ export default defineComponent({
                   ref={targetGroupSelectorRef}
                   v-model={formData.target_group_id}
                   accountId={loadBalancerStore.currentSelectedTreeNode.account_id}
-                  cloudVpcId={loadBalancerStore.currentSelectedTreeNode.lb.cloud_vpc_id}
-                  region={loadBalancerStore.currentSelectedTreeNode.lb.region}
+                  cloudVpcId={loadBalancerStore.currentSelectedTreeNode.lb?.cloud_vpc_id}
+                  region={loadBalancerStore.currentSelectedTreeNode.lb?.region}
                   protocol={loadBalancerStore.currentSelectedTreeNode.protocol}
                 />
               </FormItem>

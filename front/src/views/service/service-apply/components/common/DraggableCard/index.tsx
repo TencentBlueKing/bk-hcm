@@ -29,7 +29,10 @@ export default defineComponent({
           <div onClick={() => (isExpand.value = !isExpand.value)} class={'draggable-card-header-icon'}>
             {isExpand.value ? <AngleUp width={17} height={14} /> : <AngleDown width={17} height={14} />}
           </div>
-          <span class={'draggable-card-header-title'}>{props.title}</span>
+          <span>
+            <span class={'draggable-card-header-title'}>{props.title}</span>
+            {slots.tag?.()}
+          </span>
           <div class={'draggable-card-header-index'}>{props.index}</div>
           <i class={'hcm-icon bkhcm-icon-grag-fill mr16 draggable-card-header-draggable-btn'}></i>
         </div>

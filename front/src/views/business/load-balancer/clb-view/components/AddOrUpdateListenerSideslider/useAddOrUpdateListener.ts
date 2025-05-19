@@ -128,13 +128,15 @@ export default (getListData: (...args: any) => any, originPage: IOriginPage) => 
         // 新增监听器
         const params = {
           ...listenerFormData,
-          // 只有https协议才需要传证书
+          // 只有https协议才需要传SNI、证书
+          sni_switch: listenerFormData.protocol === 'HTTPS' ? listenerFormData.sni_switch : undefined,
           certificate: listenerFormData.protocol === 'HTTPS' ? listenerFormData.certificate : undefined,
         };
         await businessStore.createListener(params);
       }
       Message({ theme: 'success', message: isEdit.value ? '更新成功' : '新增成功' });
       isSliderShow.value = false;
+      // 如果是在监听器列表页面，则新增成功后刷新列表
       typeof getListData === 'function' && getListData();
       // 如果是在监听器页面更新监听器详情, 则更新成功后刷新监听器详情
       originPage === 'listener' && bus.$emit('refreshListenerDetail');

@@ -14,13 +14,13 @@ POST /api/v1/cloud/applications/types/create_main_account
 | vendor        | string       | 是  | 云厂商，aws/gcp/azure/huawei/zenlayer/kaopu |
 | site          | string       | 是  | 站点类型 international/china                |
 | email         | string       | 是  | 邮箱地址，提交前需要通过邮箱验证                        |
-| op_product_id | int          | 是  | 运营产品ID                                  |
+| op_product_id | int          | 否  | 运营产品ID                                  |
 | business_type | string       | 是  | 业务使用范围 international/china              |
-| managers      | string array | 是  | 负责人列表，英文逗号分隔                            |
-| bak_managers  | string array | 是  | 备份负责人列表，英文逗号分隔                          |
-| dept_id       | int          | 是  | 部门ID,要求是3级部门（不含公司，BG作为1级开始数）            |
-| bk_biz_id     | int          | 是  | 业务ID                                    |
-| memo          | string       | 是  | 账号用途,512个字符                             |
+| managers      | string array | 是  | 负责人列表，英文逗号分隔，最多填入5个                     |
+| bak_managers  | string array | 是  | 备份负责人列表，英文逗号分隔，最多填入5个                   |
+| dept_id       | int          | 否  | 部门ID,要求是3级部门（不含公司，BG作为1级开始数）            |
+| bk_biz_id     | int          | 否  | 业务ID                                    |
+| memo          | string       | 否  | 账号用途,512个字符                             |
 | extension     | object       | 是  | 各云厂商区别处理                                |
 
 ### extension

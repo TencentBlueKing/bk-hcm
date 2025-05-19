@@ -4,9 +4,16 @@ import { defineStore } from 'pinia';
 import { useAccountStore } from '@/store';
 import { getQueryStringParams, localStorageActions } from '@/common/util';
 import { AsyncTaskDetailResp, ClbQuotasResp, LbPriceInquiryResp } from '@/typings';
-import { GLOBAL_BIZS_KEY } from '@/common/constant';
+import { GLOBAL_BIZS_KEY, VendorEnum } from '@/common/constant';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
+
+export interface ICloneSecurityParams {
+  id: string;
+  name: string;
+  manager: string;
+  bak_manager: string;
+}
 // 获取
 const getBusinessApiPath = () => {
   const store = useAccountStore();
@@ -28,8 +35,8 @@ export const useBusinessStore = defineStore({
      * @param {string} type
      * @return {*}
      */
-    list(data: any, type: string) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${type}/list`, data);
+    list(data: any, type: string, config = {}) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${type}/list`, data, config);
     },
     getCommonList(data: any, url: string) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${url}`, data);
@@ -59,6 +66,19 @@ export const useBusinessStore = defineStore({
     addSecurity(data: any, isRes = false) {
       if (isRes) return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/security_groups/create`, data);
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}security_groups/create`, data);
+    },
+    /**
+     * @description: 克隆安全组
+     * @param {ICloneSecurityParams} data
+     * @return {*}
+     */
+    cloneSecurity(data: ICloneSecurityParams) {
+      const { id, name, manager, bak_manager } = data;
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}security_groups/${id}/clone`, {
+        name,
+        manager,
+        bak_manager,
+      });
     },
     addEip(id: number, data: any, isRes = false) {
       if (isRes) return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/eips/create`, data);
@@ -163,13 +183,11 @@ export const useBusinessStore = defineStore({
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}cvms/list`, data);
     },
     /*
-     * 业务下腾讯云监听器域名列表
-     * @param id 监听器ID
-     * @returns 域名列表
+     * 业务下监听器域名列表
      */
-    getDomainListByListenerId(id: string) {
+    getDomainListByListenerId(vendor: VendorEnum, listenerId: string) {
       return http.post(
-        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/tcloud/listeners/${id}/domains/list`,
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/listeners/${listenerId}/domains/list`,
       );
     },
     /**
@@ -181,19 +199,22 @@ export const useBusinessStore = defineStore({
     /**
      * 更新负载均衡
      */
-    updateLbDetail(data: {
-      bk_biz_id?: string;
-      id: string; // 负载均衡ID
-      name?: string; // 名字
-      internet_charge_type?: string; // 计费模式
-      internet_max_bandwidth_out?: number; // 最大出带宽
-      delete_protect?: boolean; // 删除
-      load_balancer_pass_to_target?: boolean; // Target是否放通来自CLB的流量
-      snat_pro?: boolean; // 跨域2.0开关
-      memo?: string; // 备注
-    }) {
+    updateLbDetail(
+      vendor: VendorEnum,
+      data: {
+        bk_biz_id?: string;
+        id: string; // 负载均衡ID
+        name?: string; // 名字
+        internet_charge_type?: string; // 计费模式
+        internet_max_bandwidth_out?: number; // 最大出带宽
+        delete_protect?: boolean; // 删除
+        load_balancer_pass_to_target?: boolean; // Target是否放通来自CLB的流量
+        snat_pro?: boolean; // 跨域2.0开关
+        memo?: string; // 备注
+      },
+    ) {
       return http.patch(
-        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/tcloud/load_balancers/${data.id}`,
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/load_balancers/${data.id}`,
         data,
       );
     },
@@ -220,11 +241,14 @@ export const useBusinessStore = defineStore({
     createRules(data: {
       bk_biz_id?: number; // 业务ID
       lbl_id: string; // 监听器id
-      // rules: Record<string, any>; // 待创建规则
+      url?: string;
+      scheduler?: string;
       target_group_id?: string;
+      vendor: VendorEnum; // 监听器云厂商
+      domains: string[];
     }) {
       return http.post(
-        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/tcloud/listeners/${
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/${data.vendor}/listeners/${
           data.lbl_id
         }/rules/create`,
         data,
@@ -253,6 +277,7 @@ export const useBusinessStore = defineStore({
      * 删除域名、URL
      */
     deleteRules(
+      vendor: VendorEnum, // 监听器云厂商
       listenerId: string,
       data: {
         bk_biz_id?: number; // 业务ID
@@ -263,7 +288,7 @@ export const useBusinessStore = defineStore({
       },
     ) {
       return http.delete(
-        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/tcloud/listeners/${listenerId}/rules/batch`,
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/listeners/${listenerId}/rules/batch`,
         { data },
       );
     },
@@ -272,12 +297,13 @@ export const useBusinessStore = defineStore({
      */
     batchDeleteDomains(data: {
       bk_biz_id?: number; // 业务ID
+      vendor: VendorEnum; // 监听器云厂商
       lbl_id: string; // 监听器id
       domains: string[]; // 要删除的域名
       new_default_domain?: string; // 新默认域名,删除的域名是默认域名的时候需要指定
     }) {
       return http.delete(
-        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/tcloud/listeners/${
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/${data.vendor}/listeners/${
           data.lbl_id
         }/rules/by/domains/batch`,
         { data },
@@ -288,6 +314,7 @@ export const useBusinessStore = defineStore({
      */
     updateUrl(data: {
       bk_biz_id?: number; // 业务ID
+      vendor: VendorEnum; // 监听器云厂商
       lbl_id: string; // 监听器id
       rule_id: string; // URL规则ID数组
       url: string; // 监听的url
@@ -296,9 +323,9 @@ export const useBusinessStore = defineStore({
       target_group_id?: string;
     }) {
       return http.patch(
-        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/tcloud/listeners/${data.lbl_id}/rules/${
-          data.rule_id
-        }`,
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/${data.vendor}/listeners/${
+          data.lbl_id
+        }/rules/${data.rule_id}`,
         data,
       );
     },
@@ -494,7 +521,10 @@ export const useBusinessStore = defineStore({
      * @param data 负载均衡参数
      */
     lbPricesInquiry(data: any): Promise<LbPriceInquiryResp> {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/load_balancers/prices/inquiry`, data);
+      return http.post(
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}load_balancers/prices/inquiry`,
+        data,
+      );
     },
     /**
      * 查询负载均衡状态锁定详情
@@ -514,9 +544,9 @@ export const useBusinessStore = defineStore({
      * @param lb_id 负载均衡id
      * @param data 待新增SNAT IP数组. subnet_id 为 SNAT IP 所在子网cloud_id; ip 为指定IP, 留空自动生成
      */
-    createSnatIps(lb_id: string, data: { snat_ips: { subnet_id: string; ip?: string }[] }) {
+    createSnatIps(lb_id: string, vendor: VendorEnum, data: { snat_ips: { subnet_id: string; ip?: string }[] }) {
       return http.post(
-        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/tcloud/load_balancers/${lb_id}/snat_ips/create`,
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/load_balancers/${lb_id}/snat_ips/create`,
         data,
       );
     },
@@ -525,9 +555,9 @@ export const useBusinessStore = defineStore({
      * @param lb_id 负载均衡id
      * @param data 待删除SNAT IP地址数组
      */
-    deleteSnatIps(lb_id: string, data: { delete_ips: string[] }) {
+    deleteSnatIps(lb_id: string, vendor: VendorEnum, data: { delete_ips: string[] }) {
       return http.delete(
-        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/tcloud/load_balancers/${lb_id}/snat_ips`,
+        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/load_balancers/${lb_id}/snat_ips`,
         {
           data,
         },

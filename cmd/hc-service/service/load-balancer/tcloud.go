@@ -141,6 +141,7 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 		SlaType:            req.SlaType,
 		Number:             req.RequireCount,
 		ClientToken:        cvt.StrNilPtr(cts.Kit.Rid),
+		Egress:             req.Egress,
 
 		BandwidthpkgSubType: req.BandwidthpkgSubType,
 		Tags:                req.Tags,
@@ -1000,7 +1001,7 @@ func (svc *clbSvc) updateTCloudDomainAttr(kt *kit.Kit, req *protolb.DomainAttrUp
 
 // BatchDeleteTCloudLoadBalancer ...
 func (svc *clbSvc) BatchDeleteTCloudLoadBalancer(cts *rest.Contexts) (any, error) {
-	req := new(protolb.TCloudBatchDeleteLoadbalancerReq)
+	req := new(protolb.BatchDeleteLoadBalancerReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}

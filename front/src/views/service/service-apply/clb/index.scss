@@ -24,13 +24,11 @@
     }
 
     .component-with-preview {
-      position: relative;
       display: flex;
       align-items: center;
 
       .preview-btn {
-        position: absolute;
-        left: calc(100% + 16px);
+        margin-left: 16px;
       }
     }
 

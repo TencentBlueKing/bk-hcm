@@ -108,13 +108,6 @@ func (a *ApplicationOfCreateAwsVpc) renderVpc() ([]formItem, error) {
 	// IPv4 CIDR
 	formItems = append(formItems, formItem{Label: "IPv4 CIDR", Value: req.IPv4Cidr})
 
-	// 所属的蓝鲸云区域
-	bkCloudAreaName, err := a.GetCloudAreaName(req.BkCloudID)
-	if err != nil {
-		return formItems, err
-	}
-	formItems = append(formItems, formItem{Label: "所属的蓝鲸云区域", Value: bkCloudAreaName})
-
 	// 租期
 	instanceTenancyNameMap := map[string]string{"default": "默认", "dedicated": "专用"}
 	formItems = append(formItems, formItem{

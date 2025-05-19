@@ -65,6 +65,7 @@ func init() {
 	opFactory[JSONContainsPath.Factory()] = JSONContainsPathOp(JSONContainsPath)
 	opFactory[JSONNotContainsPath.Factory()] = JSONNotContainsPathOp(JSONNotContainsPath)
 	opFactory[JSONLength.Factory()] = JSONLengthOp(JSONLength)
+	opFactory[JSONLengthGreaterThan.Factory()] = JSONLengthGreaterThanOp(JSONLengthGreaterThan)
 }
 
 const (
@@ -162,6 +163,8 @@ const (
 	JSONNotContainsPath OpType = "json_not_contains_path"
 	// JSONLength 获取 json 数组长度
 	JSONLength OpType = "json_length"
+	// JSONLengthGreaterThan 获取 json 数组长度
+	JSONLengthGreaterThan OpType = "json_length_greater_than"
 )
 
 // OpType defines the operators supported by mysql.
@@ -177,7 +180,7 @@ func (op OpType) Validate() error {
 		ContainsSensitive, ContainsInsensitive:
 
 	case JSONEqual, JSONNotEqual, JSONIn, JSONContains, JSONOverlaps,
-		JSONContainsPath, JSONNotContainsPath, JSONLength:
+		JSONContainsPath, JSONNotContainsPath, JSONLength, JSONLengthGreaterThan:
 
 	case IDGreaterThan:
 
@@ -747,7 +750,7 @@ func (op JSONEqualOp) SQLExprAndValue(field string, value interface{}) (string, 
 	}
 
 	placeholder := fieldPlaceholderName(strings.ReplaceAll(field, JSONFieldSeparator, ""))
-	return fmt.Sprintf(`%s = %s%s`, jsonFiledSqlFormat(field), SqlPlaceholder, placeholder),
+	return fmt.Sprintf(`%s = %s%s`, jsonFieldSqlFormat(field), SqlPlaceholder, placeholder),
 		map[string]interface{}{placeholder: value}, nil
 }
 
@@ -778,7 +781,7 @@ func (op JSONNotEqualOp) SQLExprAndValue(field string, value interface{}) (strin
 	}
 
 	placeholder := fieldPlaceholderName(strings.ReplaceAll(field, JSONFieldSeparator, ""))
-	return fmt.Sprintf(`%s != %s%s`, jsonFiledSqlFormat(field), SqlPlaceholder, placeholder),
+	return fmt.Sprintf(`%s != %s%s`, jsonFieldSqlFormat(field), SqlPlaceholder, placeholder),
 		map[string]interface{}{placeholder: value}, nil
 }
 
@@ -841,20 +844,21 @@ func (op JSONInOp) SQLExprAndValue(field string, value interface{}) (string, map
 	}
 
 	placeholder := fieldPlaceholderName(strings.ReplaceAll(field, JSONFieldSeparator, ""))
-	return fmt.Sprintf(`%s IN (%s%s)`, jsonFiledSqlFormat(field), SqlPlaceholder, placeholder),
+	return fmt.Sprintf(`%s IN (%s%s)`, jsonFieldSqlFormat(field), SqlPlaceholder, placeholder),
 		map[string]interface{}{placeholder: value}, nil
 }
 
-// jsonFiledSqlFormat
+// jsonFieldSqlFormat
 // 1. 会将用户传入的 json 字段名由 "extension.vpc_id" 转为 `extension->>"$.vpc_id"`。
 // 2. 如果规则中不存在'.'，则不进行转换。
-func jsonFiledSqlFormat(field string) string {
+func jsonFieldSqlFormat(field string) string {
 	if !strings.ContainsAny(field, JSONFieldSeparator) {
 		return field
 	}
 
-	index := strings.Index(field, JSONFieldSeparator)
-	return fmt.Sprintf(`%s->>'$."%s"'`, field[0:index], field[index+1:])
+	fields := strings.Split(field, JSONFieldSeparator)
+	// use  JSON_UNQUOTE and JSON_EXTRACT function to support mariadb
+	return fmt.Sprintf(`JSON_UNQUOTE(JSON_EXTRACT(%s,'$."%s"'))`, fields[0], strings.Join(fields[1:], `"."`))
 }
 
 // JSONContainsOp is json array field contain operator
@@ -884,7 +888,7 @@ func (op JSONContainsOp) SQLExprAndValue(field string, value interface{}) (strin
 	}
 
 	placeholder := fieldPlaceholderName(strings.ReplaceAll(field, JSONFieldSeparator, ""))
-	return fmt.Sprintf("JSON_CONTAINS(%s, JSON_ARRAY(%s%s))", jsonFiledSqlFormat(field), SqlPlaceholder, placeholder),
+	return fmt.Sprintf("JSON_CONTAINS(%s, JSON_ARRAY(%s%s))", jsonFieldSqlFormat(field), SqlPlaceholder, placeholder),
 		map[string]interface{}{placeholder: value}, nil
 }
 
@@ -963,7 +967,7 @@ func (op JSONOverlapsOp) SQLExprAndValue(field string, value interface{}) (strin
 		valueMap[oneFieldName] = valueOf.Index(i).Interface()
 	}
 
-	return fmt.Sprintf("JSON_OVERLAPS(%s, %s)", jsonFiledSqlFormat(field), arrayFunc), valueMap, nil
+	return fmt.Sprintf("JSON_OVERLAPS(%s, %s)", jsonFieldSqlFormat(field), arrayFunc), valueMap, nil
 }
 
 // JSONContainsPathOp is json field json contain path operator
@@ -1059,7 +1063,44 @@ func (op JSONLengthOp) SQLExprAndValue(field string, value interface{}) (string,
 	}
 
 	placeholder := fieldPlaceholderName(strings.ReplaceAll(field, JSONFieldSeparator, ""))
-	return fmt.Sprintf(`JSON_LENGTH(%s) = %s%s`, jsonFiledSqlFormat(field), SqlPlaceholder, placeholder),
+	return fmt.Sprintf(`JSON_LENGTH(%s) = %s%s`, jsonFieldSqlFormat(field), SqlPlaceholder, placeholder),
+		map[string]interface{}{
+			placeholder: value,
+		}, nil
+}
+
+// JSONLengthGreaterThanOp is json field json length greater than operator
+type JSONLengthGreaterThanOp OpType
+
+// Name is json field json contain path operator
+func (op JSONLengthGreaterThanOp) Name() OpType {
+	return JSONLengthGreaterThan
+}
+
+// ValidateValue validate json field equal's value
+func (op JSONLengthGreaterThanOp) ValidateValue(v interface{}, opt *ExprOption) error {
+
+	if !assert.IsNumeric(v) {
+		return errors.New("invalid value field, value should number")
+	}
+
+	return nil
+}
+
+// SQLExprAndValue convert this operator's field and value to a mysql's sub query expression.
+func (op JSONLengthGreaterThanOp) SQLExprAndValue(field string, value interface{}) (string, map[string]interface{},
+	error) {
+
+	if len(field) == 0 {
+		return "", nil, errors.New("field is empty")
+	}
+
+	if !assert.IsNumeric(value) {
+		return "", nil, errors.New("invalid value field, value should number")
+	}
+
+	placeholder := fieldPlaceholderName(strings.ReplaceAll(field, JSONFieldSeparator, ""))
+	return fmt.Sprintf(`JSON_LENGTH(%s) > %s%s`, jsonFieldSqlFormat(field), SqlPlaceholder, placeholder),
 		map[string]interface{}{
 			placeholder: value,
 		}, nil

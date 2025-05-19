@@ -1,4 +1,4 @@
-import { defineComponent } from 'vue';
+import { ComputedRef, defineComponent, inject, useTemplateRef, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 // import components
 import { Button, Message } from 'bkui-vue';
@@ -34,10 +34,14 @@ export default defineComponent({
     const route = useRoute();
     const { t } = useI18n();
     const businessStore = useBusinessStore();
-    const { whereAmI } = useWhereAmI();
+    const { whereAmI, getBizsId } = useWhereAmI();
     const { selections, handleSelectionChange, resetSelections } = useSelection();
     const { authVerifyData, handleAuth } = useVerify();
     const globalPermissionDialogStore = useGlobalPermissionDialog();
+    const createClbActionName: ComputedRef<'clb_resource_create' | 'biz_clb_resource_create'> =
+      inject('createClbActionName');
+    const deleteClbActionName: ComputedRef<'clb_resource_delete' | 'biz_clb_resource_delete'> =
+      inject('deleteClbActionName');
 
     const isRowSelectEnable = ({ row, isCheckAll }: DoublePlainObject) => {
       if (isCheckAll) return true;
@@ -52,26 +56,19 @@ export default defineComponent({
     const resourceStore = useResourceStore();
     const handleDelete = (data: any) => {
       Confirm('请确定删除负载均衡', `将删除负载均衡【${data.name}】`, async () => {
-        await resourceStore
-          .deleteBatch('load_balancers', {
-            ids: [data.id],
-          })
-          .then(() => {
-            Message({
-              message: '删除成功',
-              theme: 'success',
-            });
-            getListData();
-          });
+        await resourceStore.deleteBatch('load_balancers', { ids: [data.id] });
+        Message({ message: '删除成功', theme: 'success' });
+        getListData();
       });
     };
     const { columns, settings } = useColumns('lb');
-    const { CommonTable, getListData } = useTable({
+    const { CommonTable, getListData, dataList } = useTable({
       searchOptions: {
         searchData: [
           { id: 'name', name: '负载均衡名称' },
           { id: 'domain', name: '负载均衡域名' },
           { id: 'lb_vip', name: '负载均衡VIP' },
+          { id: 'cloud_id', name: '负载均衡ID' },
           {
             id: 'lb_type',
             name: '网络类型',
@@ -95,7 +92,6 @@ export default defineComponent({
             name: t('云厂商'),
             children: [{ id: VendorEnum.TCLOUD, name: VendorMap[VendorEnum.TCLOUD] }],
           },
-          { id: 'region', name: '地域' },
           { id: 'zones', name: '可用区域' },
           {
             id: 'status',
@@ -117,11 +113,11 @@ export default defineComponent({
                 <Button
                   text
                   theme='primary'
-                  class={`${
-                    !authVerifyData?.value?.permissionAction?.load_balancer_delete ? 'hcm-no-permision-text-btn' : ''
-                  }`}
+                  class={{
+                    'hcm-no-permision-text-btn': !authVerifyData?.value?.permissionAction?.[deleteClbActionName.value],
+                  }}
                   disabled={
-                    authVerifyData?.value?.permissionAction?.load_balancer_delete &&
+                    authVerifyData?.value?.permissionAction?.[deleteClbActionName.value] &&
                     (data.listenerNum > 0 || data.delete_protect)
                   }
                   v-bk-tooltips={
@@ -130,8 +126,8 @@ export default defineComponent({
                       : { content: t('该负载均衡已开启删除保护, 不可删除'), disabled: !data.delete_protect }
                   }
                   onClick={() => {
-                    if (!authVerifyData?.value?.permissionAction?.load_balancer_delete) {
-                      handleAuth('clb_resource_delete');
+                    if (!authVerifyData?.value?.permissionAction?.[deleteClbActionName.value]) {
+                      handleAuth(deleteClbActionName.value);
                       globalPermissionDialogStore.setShow(true);
                     } else handleDelete(data);
                   }}>
@@ -191,36 +187,60 @@ export default defineComponent({
         },
       ],
       selections,
-      resetSelections,
       getListData,
+    );
+
+    const tableRef = useTemplateRef<typeof CommonTable>('table-comp');
+    const clearSelection = () => {
+      resetSelections();
+      tableRef.value?.clearSelection();
+    };
+    watch(
+      () => dataList.value,
+      () => {
+        clearSelection();
+      },
     );
 
     return () => (
       <div class='common-card-wrap'>
         {/* 负载均衡list */}
-        <CommonTable>
+        <CommonTable ref='table-comp'>
           {{
             operation: () => (
               <>
                 <Button
                   class={`mw64 ${
-                    !authVerifyData?.value?.permissionAction?.load_balancer_create ? 'hcm-no-permision-btn' : ''
+                    !authVerifyData?.value?.permissionAction?.[createClbActionName.value] ? 'hcm-no-permision-btn' : ''
                   }`}
                   theme='primary'
                   onClick={() => {
-                    if (!authVerifyData?.value?.permissionAction?.load_balancer_create) {
-                      handleAuth('clb_resource_create');
+                    if (!authVerifyData?.value?.permissionAction?.[createClbActionName.value]) {
+                      handleAuth(createClbActionName.value);
                       globalPermissionDialogStore.setShow(true);
                     } else handleApply();
                   }}>
                   购买
                 </Button>
-                <Button class='mw88' onClick={handleClickBatchDelete} disabled={selections.value.length === 0}>
+                <Button
+                  class={[
+                    'mw88',
+                    { 'hcm-no-permision-btn': !authVerifyData?.value?.permissionAction?.[deleteClbActionName.value] },
+                  ]}
+                  onClick={() => {
+                    if (!authVerifyData?.value?.permissionAction?.[deleteClbActionName.value]) {
+                      handleAuth(deleteClbActionName.value);
+                      globalPermissionDialogStore.setShow(true);
+                      return;
+                    }
+                    handleClickBatchDelete();
+                  }}
+                  disabled={selections.value.length === 0}>
                   批量删除
                 </Button>
                 {/* 批量导入 */}
                 <BatchImportComp />
-                <AllLoadBalancer disabled={selections.value.length > 0} />
+                <AllLoadBalancer disabled={selections.value.length > 0} bizId={getBizsId()} />
               </>
             ),
           }}

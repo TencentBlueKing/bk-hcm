@@ -25,6 +25,8 @@ import (
 	"hcm/pkg/cc"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/logs"
+	"hcm/pkg/tools/json"
 )
 
 func init() {
@@ -45,6 +47,21 @@ func NewAwsMonthDescriber(rootAccountCloudID string) MonthTaskDescriber {
 		describer.SpArnPrefix = spOpt.SpArnPrefix
 	}
 
+	// 过滤符合条件的账号抵扣配置
+	describer.RootAccountDeductItemTypes = cc.AccountServer().BillAllocation.AwsDeductAccountItems.DeductItemTypes
+	filterDeductItemTypes := make(map[string][]string)
+	for rootAccountKey, rootAccountItem := range describer.RootAccountDeductItemTypes {
+		if rootAccountKey != rootAccountCloudID {
+			continue
+		}
+		filterDeductItemTypes = rootAccountItem
+	}
+	awsDeductItemTypes, err := json.Marshal(filterDeductItemTypes)
+	if err != nil {
+		logs.Warnf("fail to json marshal awsDeductAccountItems config, err: %v", err)
+	}
+	describer.DeductItemTypes = string(awsDeductItemTypes)
+
 	return describer
 }
 
@@ -54,23 +71,30 @@ type awsMonthDescriber struct {
 	SpArnPrefix                  string
 	SpAccountCloudID             string
 	CommonExpenseExcludeCloudIDs []string
+	RootAccountDeductItemTypes   map[string]map[string][]string // 根账号需要抵扣的项目列表
+	DeductItemTypes              string                         // 需要抵扣的账单明细项目类型列表，比如税费Tax
 }
 
 // GetMonthTaskTypes aws month tasks
+// 这里的MonthTaskType配置，有严格顺序，修改时需要注意下
 func (aws *awsMonthDescriber) GetMonthTaskTypes() []enumor.MonthTaskType {
-	if aws.SpArnPrefix == "" {
-		return []enumor.MonthTaskType{
-			enumor.AwsOutsideBillMonthTask,
-			// 没有配置sp前缀则不生成对应的sp分账任务
-			// enumor.AwsSavingsPlansMonthTask,
-			enumor.AwsSupportMonthTask,
+	monthTaskTypes := []enumor.MonthTaskType{
+		enumor.AwsOutsideBillMonthTask,
+	}
+
+	if aws.SpArnPrefix != "" {
+		monthTaskTypes = append(monthTaskTypes, enumor.AwsSavingsPlansMonthTask)
+	}
+
+	// 根账号配置了需要抵扣的项目
+	if len(aws.RootAccountDeductItemTypes) > 0 {
+		if _, ok := aws.RootAccountDeductItemTypes[aws.RootAccountCloudID]; ok {
+			monthTaskTypes = append(monthTaskTypes, enumor.DeductMonthTask)
 		}
 	}
-	return []enumor.MonthTaskType{
-		enumor.AwsOutsideBillMonthTask,
-		enumor.AwsSavingsPlansMonthTask,
-		enumor.AwsSupportMonthTask,
-	}
+
+	monthTaskTypes = append(monthTaskTypes, enumor.AwsSupportMonthTask)
+	return monthTaskTypes
 }
 
 // GetTaskExtension extension for task
@@ -80,5 +104,6 @@ func (aws *awsMonthDescriber) GetTaskExtension() (map[string]string, error) {
 		constant.AwsCommonExpenseExcludeCloudIDKey: strings.Join(aws.CommonExpenseExcludeCloudIDs, ","),
 		constant.AwsSavingsPlanARNPrefixKey:        aws.SpArnPrefix,
 		constant.AwsSavingsPlanAccountCloudIDKey:   aws.SpAccountCloudID,
+		constant.AwsAccountDeductItemTypesKey:      aws.DeductItemTypes,
 	}, nil
 }

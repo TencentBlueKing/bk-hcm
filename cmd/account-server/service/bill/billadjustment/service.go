@@ -26,7 +26,7 @@ import (
 	"hcm/pkg/client"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/rest"
-	"hcm/pkg/thirdparty/esb"
+	"hcm/pkg/thirdparty/api-gateway/cmdb"
 )
 
 // InitBillAdjustmentService 注册账单调调整服务
@@ -35,7 +35,7 @@ func InitBillAdjustmentService(c *capability.Capability) {
 		client:     c.ApiClient,
 		authorizer: c.Authorizer,
 		audit:      c.Audit,
-		esbClient:  c.EsbClient,
+		cmdbCli:    c.CmdbClient,
 	}
 
 	h := rest.NewHandler()
@@ -67,5 +67,5 @@ type billAdjustmentSvc struct {
 	client     *client.ClientSet
 	authorizer auth.Authorizer
 	audit      audit.Interface
-	esbClient  esb.Client
+	cmdbCli    cmdb.Client
 }

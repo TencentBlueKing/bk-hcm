@@ -151,7 +151,7 @@ func (svc *clbSvc) batchAddTargetsToGroup(kt *kit.Kit, req *protolb.TCloudBatchO
 		return nil, errf.Newf(errf.PartialFailed, "register tcloud target failed, failListenerIDs: %v", failIDs)
 	}
 
-	rsIDs, err := svc.batchCreateTargetDb(kt, req, lbInfo.AccountID, req.TargetGroupID)
+	rsIDs, err := svc.batchCreateTargetDb(kt, req, lbInfo.AccountID, req.TargetGroupID, lbInfo.Region)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +159,7 @@ func (svc *clbSvc) batchAddTargetsToGroup(kt *kit.Kit, req *protolb.TCloudBatchO
 }
 
 func (svc *clbSvc) batchCreateTargetDb(kt *kit.Kit, req *protolb.TCloudBatchOperateTargetReq,
-	accountID, tgID string) (*core.BatchCreateResult, error) {
+	accountID, tgID, region string) (*core.BatchCreateResult, error) {
 
 	// 检查RS是否已绑定该目标组
 	rsList := make([]*dataproto.TargetBaseReq, 0)
@@ -188,13 +188,14 @@ func (svc *clbSvc) batchCreateTargetDb(kt *kit.Kit, req *protolb.TCloudBatchOper
 	rsReq := &dataproto.TargetBatchCreateReq{}
 	for _, item := range rsList {
 		rsReq.Targets = append(rsReq.Targets, &dataproto.TargetBaseReq{
-			AccountID:     accountID,
-			IP:            item.IP,
-			TargetGroupID: tgID,
-			InstType:      item.InstType,
-			CloudInstID:   item.CloudInstID,
-			Port:          item.Port,
-			Weight:        item.Weight,
+			AccountID:         accountID,
+			IP:                item.IP,
+			TargetGroupID:     tgID,
+			InstType:          item.InstType,
+			CloudInstID:       item.CloudInstID,
+			Port:              item.Port,
+			Weight:            item.Weight,
+			TargetGroupRegion: region,
 		})
 	}
 	return svc.dataCli.Global.LoadBalancer.BatchCreateTCloudTarget(kt, rsReq)

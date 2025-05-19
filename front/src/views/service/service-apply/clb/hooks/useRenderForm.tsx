@@ -1,10 +1,10 @@
-import { computed, defineComponent, ref, watch } from 'vue';
+import { computed, defineComponent, ref, watch, nextTick, Reactive } from 'vue';
 // import components
 import { Button, Form, Input, Select, Slider } from 'bkui-vue';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import { EditLine, Plus } from 'bkui-vue/lib/icon';
 import ZoneSelector from '@/components/zone-selector/index.vue';
-import PrimaryStandZoneSelector from '../../components/common/PrimaryStandZoneSelector';
+import PrimaryStandZoneSelector from '../../components/common/PrimaryStandZoneSelector/index.vue';
 import RegionVpcSelector from '../../components/common/RegionVpcSelector';
 import SubnetSelector from '../../components/common/subnet-selector';
 import InputNumber from '@/components/input-number';
@@ -12,7 +12,7 @@ import ConditionOptions from '../../components/common/condition-options/index.vu
 import CommonCard from '@/components/CommonCard';
 import VpcReviewPopover from '../../components/common/VpcReviewPopover';
 import SelectedItemPreviewComp from '@/components/SelectedItemPreviewComp';
-import BandwidthPackageSelector from '../../components/common/BandwidthPackageSelector';
+import BandwidthPackageSelector, { IBandwidthPackage } from '../../components/common/BandwidthPackageSelector';
 // import types
 import { type ISubnetItem } from '../../cvm/children/SubnetPreviewDialog';
 import type { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
@@ -33,7 +33,7 @@ const { Option } = Select;
 const { FormItem } = Form;
 
 // apply-clb, 渲染表单
-export default (formModel: ApplyClbModel) => {
+export default (formModel: Reactive<ApplyClbModel>) => {
   // use hooks
   const { t } = useI18n();
   const { isBusinessPage } = useWhereAmI();
@@ -60,17 +60,19 @@ export default (formModel: ApplyClbModel) => {
         formModel.cloud_subnet_id = undefined;
       }
     } else {
+      vpcId.value = '';
       vpcData.value = null;
     }
 
     if (!vpc) return;
   };
+  // 选了IPv6后，ipv6_cidr为空的子网不允许选择
+  const subnetOptionDisabledFn = (subnet: ISubnetItem) => {
+    return formModel.address_ip_version === 'IPv6FullChain' && (!subnet.ipv6_cidr || subnet.ipv6_cidr.length === 0);
+  };
   const handleSubnetDataChange = (data: ISubnetItem) => {
     subnetData.value = data;
   };
-
-  // use custom hooks
-  const { ispList, isResourceListLoading, quotas, isInquiryPricesLoading } = useFilterResource(formModel);
 
   // 当前地域下负载均衡的配额
   const currentLbQuota = computed(() => {
@@ -236,6 +238,7 @@ export default (formModel: ApplyClbModel) => {
                       v-model:backupZones={formModel.backup_zones}
                       vendor={formModel.vendor}
                       region={formModel.region}
+                      currentResourceListMap={currentResourceListMap.value}
                     />
                   );
                 }
@@ -248,7 +251,7 @@ export default (formModel: ApplyClbModel) => {
           label: '子网',
           required: true,
           property: 'cloud_subnet_id',
-          hidden: !isIntranet.value,
+          hidden: !isIntranet.value && formModel.address_ip_version !== 'IPv6FullChain',
           content: () => (
             <div class='component-with-preview'>
               <SubnetSelector
@@ -261,6 +264,8 @@ export default (formModel: ApplyClbModel) => {
                 accountId={formModel.account_id}
                 zone={formModel.zones}
                 clearable={false}
+                resourceType={ResourceTypeEnum.CLB}
+                optionDisabled={subnetOptionDisabledFn}
                 handleChange={handleSubnetDataChange}
               />
               <Button
@@ -310,22 +315,27 @@ export default (formModel: ApplyClbModel) => {
             description:
               '共享型实例：按照规格提供性能保障，单实例最大支持并发连接数5万、每秒新建连接数5000、每秒查询数（QPS）5000。\n性能容量型实例：按照规格提供性能保障，单实例最大可支持并发连接数1000万、每秒新建连接数100万、每秒查询数（QPS）30万。',
             hidden: isIntranet.value,
-            content: () => (
-              <Select
-                v-model={formModel.slaType}
-                filterable={false}
-                clearable={false}
-                class='w220'
-                onChange={handleSlaTypeChange}>
-                <Option id='0' name={t('共享型')} />
-                <Option
-                  id='1'
-                  name={t('性能容量型')}
-                  disabled={!formModel.vip_isp}
-                  v-bk-tooltips={{ content: '请选择运营商类型', disabled: !!formModel.vip_isp, boundary: 'parent' }}
-                />
-              </Select>
-            ),
+            content: () => {
+              const tooltips = { content: t('请选择运营商类型'), disabled: !!formModel.vip_isp, boundary: 'parent' };
+              if (!ispList.value.length) {
+                Object.assign(tooltips, {
+                  content: t('当前地域/可用区无可用的运营商'),
+                  disabled: ispList.value.length,
+                  boundary: 'parent',
+                });
+              }
+              return (
+                <Select
+                  v-model={formModel.slaType}
+                  filterable={false}
+                  clearable={false}
+                  class='w220'
+                  onChange={handleSlaTypeChange}>
+                  <Option id='0' name={t('共享型')} />
+                  <Option id='1' name={t('性能容量型')} disabled={!formModel.vip_isp} v-bk-tooltips={tooltips} />
+                </Select>
+              );
+            },
           },
           {
             label: '实例规格',
@@ -333,17 +343,19 @@ export default (formModel: ApplyClbModel) => {
             property: 'sla_type',
             hidden: formModel.slaType !== '1',
             content: () => {
+              let eventName = '';
+              eventName = 'showLbSpecTypeSelectDialog';
               if (formModel.sla_type !== 'shared') {
                 return (
                   <SelectedItemPreviewComp
                     content={CLB_SPECS[formModel.sla_type]}
-                    onClick={() => bus.$emit('showLbSpecTypeSelectDialog')}
+                    onClick={() => bus.$emit(eventName)}
                   />
                 );
               }
               return (
                 <Button
-                  onClick={() => bus.$emit('showLbSpecTypeSelectDialog')}
+                  onClick={() => bus.$emit(eventName)}
                   disabled={!formModel.vip_isp}
                   v-bk-tooltips={{ content: '请选择运营商类型', disabled: !!formModel.vip_isp }}>
                   <Plus class='f24' />
@@ -410,15 +422,15 @@ export default (formModel: ApplyClbModel) => {
               onChange={(val) => {
                 if (val !== 'BANDWIDTH_PACKAGE') formModel.bandwidth_package_id = undefined;
               }}>
-              {INTERNET_CHARGE_TYPE.map(({ label, value }) => (
+              {INTERNET_CHARGE_TYPE.map(({ label, value, isDisabled, tipsContent }) => (
                 <BkRadioButton
                   key={value}
                   label={value}
                   class='w88'
-                  disabled={!value}
+                  disabled={isDisabled(formModel.vip_isp)}
                   v-bk-tooltips={{
-                    content: '云平台当前API接口暂不支持包月参数',
-                    disabled: value,
+                    content: tipsContent,
+                    disabled: !isDisabled(formModel.vip_isp),
                   }}>
                   {t(label)}
                 </BkRadioButton>
@@ -434,8 +446,12 @@ export default (formModel: ApplyClbModel) => {
           content: () => (
             <BandwidthPackageSelector
               v-model={formModel.bandwidth_package_id}
+              resourceType={ResourceTypeEnum.CLB}
               accountId={formModel.account_id}
               region={formModel.region}
+              zones={formModel.zones as string}
+              vipIsp={formModel.vip_isp}
+              onChange={(bandwidthPackage: IBandwidthPackage) => (formModel.egress = bandwidthPackage.egress)}
             />
           ),
         },
@@ -518,7 +534,7 @@ export default (formModel: ApplyClbModel) => {
           required: true,
           property: 'name',
           description: '单个实例：以填写的名称命名。\n多个实例：以填写的名称为前缀，由系统自动补充随机的后缀。',
-          content: () => <Input class='w500' v-model={formModel.name} placeholder='请输入实例名称'></Input>,
+          content: () => <Input class='w500' v-model_trim={formModel.name} placeholder='请输入实例名称'></Input>,
         },
         {
           label: '申请单备注',
@@ -598,15 +614,103 @@ export default (formModel: ApplyClbModel) => {
     },
   });
 
+  // 重置参数
+  const resetParams = (
+    keys: string[] = ['zones', 'backup_zones', 'cloud_vpc_id', 'cloud_subnet_id', 'vip_isp', 'cloud_eip_id'],
+  ) => {
+    keys.forEach((key) => {
+      switch (typeof formModel[key]) {
+        case 'number':
+          formModel[key] = 0;
+          break;
+        case 'string':
+          formModel[key] = '';
+          break;
+        case 'object':
+          if (Array.isArray(formModel[key])) {
+            formModel[key] = [];
+          }
+          break;
+      }
+    });
+  };
+  // 清除校验结果
+  const handleClearValidate = () => {
+    nextTick(() => {
+      formRef.value.clearValidate();
+    });
+  };
+
   watch(
     () => formModel.account_id,
     (val) => {
       // 当云账号变更时, 查询用户网络类型
-      reqAccountNetworkType(val).then(({ data: { NetworkAccountType } }) => {
+      reqAccountNetworkType(formModel.vendor, val).then(({ data: { NetworkAccountType } }) => {
         formModel.account_type = NetworkAccountType;
       });
     },
   );
+
+  watch([() => formModel.account_id, () => formModel.region], () => {
+    // 当 account_id 或 region 改变时, 恢复默认状态
+    resetParams();
+    Object.assign(formModel, {
+      address_ip_version: 'IPV4',
+      zoneType: '0',
+      sla_type: 'shared',
+      internet_charge_type: 'TRAFFIC_POSTPAID_BY_HOUR',
+    });
+    handleClearValidate();
+  });
+
+  watch(
+    () => formModel.load_balancer_type,
+    (val) => {
+      // 重置通用参数
+      resetParams();
+      if (val === 'INTERNAL') {
+        resetParams(['address_ip_version', 'sla_type', 'internet_charge_type', 'internet_max_bandwidth_out']);
+      } else {
+        // 如果是公网, 则重置初始状态
+        Object.assign(formModel, {
+          address_ip_version: 'IPV4',
+          zoneType: '0',
+          sla_type: 'shared',
+          internet_charge_type: 'TRAFFIC_POSTPAID_BY_HOUR',
+        });
+      }
+      handleClearValidate();
+    },
+  );
+
+  watch(
+    () => formModel.address_ip_version,
+    () => {
+      resetParams(['zones', 'backup_zones', 'vip_isp']);
+      handleClearValidate();
+    },
+  );
+
+  watch(
+    () => formModel.zoneType,
+    () => {
+      resetParams(['zones', 'backup_zones']);
+      handleClearValidate();
+    },
+  );
+
+  // 内网下，zone变更时，需要清空子网
+  watch(
+    () => formModel.zones,
+    () => {
+      resetParams(['cloud_subnet_id']);
+      handleClearValidate();
+    },
+  );
+
+  // 这个需要放到watch之后，避免数据清空之前就触发了effect
+  const { ispList, isResourceListLoading, quotas, isInquiryPrices, isInquiryPricesLoading, currentResourceListMap } =
+    useFilterResource(formModel);
 
   return {
     vpcData,
@@ -614,6 +718,7 @@ export default (formModel: ApplyClbModel) => {
     isSubnetPreviewDialogShow,
     ApplyClbForm,
     formRef,
+    isInquiryPrices,
     isInquiryPricesLoading,
   };
 };

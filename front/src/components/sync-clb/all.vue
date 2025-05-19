@@ -14,6 +14,7 @@ export interface syncResourceForm {
 }
 export interface AllLoadBalancerProps {
   disabled: boolean;
+  bizId?: number;
 }
 
 defineOptions({ name: 'AllLoadBalancer' });
@@ -71,7 +72,11 @@ const handleConfirm = async () => {
   >
     <Form form-type="vertical" ref="formRef" :model="formData">
       <FormItem :label="t('选择云账号')" required property="account_id">
-        <account-selector v-model="formData.account_id" @change="(resource) => (formData.vendor = resource.vendor)" />
+        <account-selector
+          v-model="formData.account_id"
+          :biz-id="bizId"
+          @change="(resource) => (formData.vendor = resource.vendor)"
+        />
       </FormItem>
       <FormItem :label="t('云地域')" required property="region">
         <region-selector v-model="formData.region" :vendor="formData.vendor" :account-id="formData.account_id" />

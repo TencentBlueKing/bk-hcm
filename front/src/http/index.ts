@@ -8,7 +8,7 @@ import cookie from 'cookie';
 import { Message } from 'bkui-vue';
 import { defaults } from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
-import { showLoginModal } from '@blueking/login-modal';
+import { showLoginModal } from '@/utils/login-helper';
 import bus from '@/common/bus';
 import CachedPromise from './cached-promise';
 import RequestQueue from './request-queue';
@@ -98,6 +98,8 @@ const http: HttpApi = {
 const methodsWithoutData: HttpMethodType[] = ['get', 'head', 'options'];
 const methodsWithData: HttpMethodType[] = ['post', 'put', 'patch', 'delete'];
 const allMethods = [...methodsWithoutData, ...methodsWithData];
+
+const TokenInvalidCode = 2000009;
 
 // 在自定义对象 http 上添加各请求方法
 allMethods.forEach((method) => {
@@ -191,14 +193,11 @@ async function getPromise(method: HttpMethodType, url: string, data: object | nu
  * @param {Function} promise 拒绝函数
  */
 function handleResponse(params: { config: any; response: any; resolve: any; reject: any }) {
-  // 关闭节流阀
-  isLoginValid = false;
   params.resolve(params.response, params.config);
 
   http.queue.delete(params.config.requestId);
 }
-// token失效时多个接口的错误信息通过isActive节流阀只显示一个
-let isLoginValid = false;
+
 /**
  * 处理 http 请求失败结果
  *
@@ -208,10 +207,10 @@ let isLoginValid = false;
  * @return {Promise} promise 对象
  */
 function handleReject(error: any, config: any) {
-  // 判断节流阀是否开启，开启则不执行后面的接口错误提示框
-  if (isLoginValid) {
-    return;
+  if (error.code === TokenInvalidCode) {
+    showLoginModal();
   }
+
   if (axios.isCancel(error)) {
     return Promise.reject(error);
   }
@@ -229,9 +228,7 @@ function handleReject(error: any, config: any) {
     const { status, data } = error.response;
     const nextError = { message: error.message, response: error.response };
     if (status === 401) {
-      setTimeout(() => {
-        window.location.href = `${window.PROJECT_CONFIG.BK_LOGIN_URL}/?c_url=${window.location.href}`;
-      }, 0);
+      showLoginModal();
     } else if (status === 403) {
       bus.$emit('show-forbidden', error.response.data);
     } else if (status === 404) {
@@ -240,7 +237,7 @@ function handleReject(error: any, config: any) {
     } else if (status === 500) {
       nextError.message = '系统出现异常';
       Message({ theme: 'error', message: nextError.message });
-    } else if (data?.message && error.code !== 0 && error.code !== 2000009) {
+    } else if (data?.message && error.code !== 0) {
       nextError.message = data.message;
       Message({ theme: 'error', message: nextError.message });
     }
@@ -265,7 +262,7 @@ function handleCustomErrorCode(error: any) {
   // zenlayer 账单导入错误码
   if ([2000015, 2000016, 2000017].includes(error.code)) return;
 
-  if (error.code !== 0 && error.code !== 2000009) Message({ theme: 'error', message: error.message });
+  if (error.code !== 0) Message({ theme: 'error', message: error.message });
 }
 
 /**
@@ -326,20 +323,6 @@ export function injectCSRFTokenToHeaders() {
     console.warn('Can not find csrftoken in document.cookie');
   }
   return CSRFToken;
-}
-/**
- * // bk_ticket失效后的登录弹框
- *
- */
-export function InvalidLogin() {
-  const successUrl = `${window.location.origin}/static/login_success.html`;
-  const loginBaseUrl = window.PROJECT_CONFIG.BK_LOGIN_URL || '';
-  if (!loginBaseUrl) {
-    console.error('Login URL not configured!');
-    return;
-  }
-  const loginUrl = `${loginBaseUrl}/plain/?c_url=${encodeURIComponent(successUrl)}`;
-  showLoginModal({ loginUrl });
 }
 
 export * from './jsonp';

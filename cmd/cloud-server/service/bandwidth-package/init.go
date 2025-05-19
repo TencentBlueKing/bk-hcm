@@ -35,11 +35,13 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/auth"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/hooks/handler"
 )
 
 // InitService initialize the load balancer service.
@@ -54,6 +56,7 @@ func InitService(c *capability.Capability) {
 
 	// clb apis in res
 	h.Add("QueryBandPackage", http.MethodPost, "/bandwidth_packages/query", svc.QueryBandPackage)
+	h.Add("QueryBizBandPackage", http.MethodPost, "/bizs/{bk_biz_id}/bandwidth_packages/query", svc.QueryBizBandPackage)
 
 	h.Load(c.WebService)
 }
@@ -64,8 +67,18 @@ type bandSvc struct {
 	audit      audit.Interface
 }
 
+// QueryBizBandPackage query biz bandwidth package from cloud
+func (svc *bandSvc) QueryBizBandPackage(cts *rest.Contexts) (any, error) {
+	return svc.queryBandPackage(cts, handler.BizOperateAuth)
+}
+
 // QueryBandPackage query bandwidth package from cloud
 func (svc *bandSvc) QueryBandPackage(cts *rest.Contexts) (any, error) {
+	return svc.queryBandPackage(cts, handler.ResOperateAuth)
+}
+
+// queryBandPackage query bandwidth package from cloud
+func (svc *bandSvc) queryBandPackage(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (any, error) {
 	req := new(cloudserver.ResourceCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -75,10 +88,10 @@ func (svc *bandSvc) QueryBandPackage(cts *rest.Contexts) (any, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, errors.New("account id is required"))
 	}
 
-	// list authorized
-	authRes := meta.ResourceAttribute{Basic: &meta.Basic{Type: meta.LoadBalancer, Action: meta.Create,
-		ResourceID: req.AccountID}}
-	if err := svc.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+	// validate authorize
+	err := validHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.LoadBalancer,
+		Action: meta.Create, BasicInfo: &types.CloudResourceBasicInfo{AccountID: req.AccountID}})
+	if err != nil {
 		logs.Errorf("list bandwidth package auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}

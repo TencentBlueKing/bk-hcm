@@ -68,3 +68,26 @@ type AwsSpUsageTotalResult struct {
 	SPNetCost     *decimal.Decimal `json:"sp_net_cost"`
 	AccountCount  uint64           `json:"account_count"`
 }
+
+// AwsRootBillItemsListReq defines aws root bill items list request.
+type AwsRootBillItemsListReq struct {
+	// 本地主账号
+	RootAccountID string `json:"root_account_id" validate:"required"`
+	// 项目涵盖的费用类型（需要查询的字段名、值）
+	FieldsMap map[string][]string `json:"fields_map" validate:"required"`
+
+	Year  uint `json:"year" validate:"required"`
+	Month uint `json:"month" validate:"required,min=1,max=12"`
+	// 起始日期，格式为yyyy-mm-dd，这个字段对应aws账单的line_item_usage_start_date字段，允许跨月查询
+	// 有部分账单明细的起始日期在账单月份外，按日期查询就会丢失该账单明细，所以可以不传起始日期、截止日期
+	//	// BeginDate、EndDate任意为空时，按日期查询不会生效
+	BeginDate string `json:"begin_date" validate:"omitempty"`
+	// 截止日期，格式为yyyy-mm-dd，规则同上
+	EndDate string           `json:"end_date" validate:"omitempty"`
+	Page    *AwsBillListPage `json:"page" validate:"omitempty"`
+}
+
+// Validate ...
+func (r *AwsRootBillItemsListReq) Validate() error {
+	return validator.Validate.Struct(r)
+}

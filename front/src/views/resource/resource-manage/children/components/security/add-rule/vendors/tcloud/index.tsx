@@ -1,11 +1,13 @@
 import { defineComponent, PropType, ref, watch } from 'vue';
 import './index.scss';
-import { SelectColumn, InputColumn, OperationColumn } from '@blueking/ediatable';
+import { SelectColumn, InputColumn } from '@blueking/ediatable';
 import { SecurityVendorType, useProtocols } from '../useProtocolList';
 import useFormModel from '@/hooks/useFormModel';
 import SourceAddress, { TcloudSourceAddressType } from './SourceAddress';
 import { Ext, IHead, SecurityRuleType } from '../useVendorHanlder';
 import { cleanObject, isPortAvailable, random } from '../util';
+import OperationColumn from '@/components/ediatable/operation-column.vue';
+
 export interface TcloudSecurityGroupRule {
   protocol: string; // 协议, 取值: TCP, UDP, ICMP, ICMPv6, ALL
   port: string; // 端口(all, 离散port, range)
@@ -39,41 +41,41 @@ export const TcloudRecord = (): Ext<TcloudSecurityGroupRule> => ({
 
 export const tcloudTitles: (type: SecurityRuleType) => IHead[] = (type) => [
   {
-    width: 450,
-    minWidth: 120,
+    minWidth: 150,
+    maxWidth: 150,
     title: type === 'ingress' ? '源地址类型' : '目标地址类型',
   },
   {
-    width: 450,
-    minWidth: 120,
+    minWidth: 150,
+    maxWidth: 150,
     title: type === 'ingress' ? '源地址' : '目标地址',
   },
   {
-    width: 450,
-    minWidth: 120,
+    minWidth: 150,
+    maxWidth: 150,
     title: '协议',
   },
   {
-    width: 450,
-    minWidth: 120,
+    minWidth: 80,
+    maxWidth: 80,
     title: '端口',
     memo: '请输入1-65535之间数字或者ALL',
   },
   {
-    width: 450,
-    minWidth: 120,
+    minWidth: 80,
+    maxWidth: 80,
     title: '策略',
   },
   {
-    width: 450,
-    minWidth: 120,
+    minWidth: 150,
+    maxWidth: 150,
     title: '备注',
     memo: '请输入英文描述, 最大不超过100个字符',
     required: false,
   },
   {
-    width: 450,
     minWidth: 120,
+    maxWidth: 120,
     title: '操作',
     required: false,
   },
@@ -281,6 +283,7 @@ export const TcloudRenderRow = defineComponent({
                   v-model={formModel.port}
                   ref={portRef}
                   disabled={['ALL', 'icmp', 'gre', 'icmpv6'].includes(formModel.protocol)}
+                  clearable={!['ALL', 'icmp', 'gre', 'icmpv6'].includes(formModel.protocol)}
                   rules={[
                     {
                       validator: (value: string) => Boolean(value),
@@ -326,7 +329,10 @@ export const TcloudRenderRow = defineComponent({
                 onAdd={handleAdd}
                 onRemove={handleRemove}
                 onCopy={handleCopy}
-                removeable={props.removeable}
+                removable={props.removeable}
+                copyText='克隆入站规则'
+                addText='添加入站规则'
+                removeText='删除入站规则'
               />
             </td>
           )}

@@ -24,6 +24,29 @@ import (
 	"hcm/pkg/criteria/enumor"
 )
 
+// SummaryCVM define summary cvm.
+type SummaryCVM struct {
+	ID      string        `json:"id"`
+	CloudID string        `json:"cloud_id"`
+	Name    string        `json:"name"`
+	Vendor  enumor.Vendor `json:"vendor"`
+	BkBizID int64         `json:"bk_biz_id"`
+	Region  string        `json:"region"`
+	Zone    string        `json:"zone"`
+
+	CloudVpcIDs    []string `json:"cloud_vpc_ids"`
+	CloudSubnetIDs []string `json:"cloud_subnet_ids"`
+
+	Status string `json:"status"`
+
+	// PrivateIPv4Addresses 内网IP
+	PrivateIPv4Addresses []string `json:"private_ipv4_addresses"`
+	PrivateIPv6Addresses []string `json:"private_ipv6_addresses"`
+	// PublicIPv6Addresses 公网IP
+	PublicIPv4Addresses []string `json:"public_ipv4_addresses"`
+	PublicIPv6Addresses []string `json:"public_ipv6_addresses"`
+}
+
 // BaseCvm define base cvm.
 type BaseCvm struct {
 	ID        string        `json:"id"`
@@ -31,6 +54,7 @@ type BaseCvm struct {
 	Name      string        `json:"name"`
 	Vendor    enumor.Vendor `json:"vendor"`
 	BkBizID   int64         `json:"bk_biz_id"`
+	BkHostID  int64         `json:"bk_host_id"`
 	BkCloudID int64         `json:"bk_cloud_id"`
 	AccountID string        `json:"account_id"`
 	Region    string        `json:"region"`
@@ -91,6 +115,11 @@ func (cvm Cvm[T]) GetID() string {
 // GetCloudID ...
 func (cvm Cvm[T]) GetCloudID() string {
 	return cvm.BaseCvm.CloudID
+}
+
+// GetCloudID ...
+func (b BaseCvm) GetCloudID() string {
+	return b.CloudID
 }
 
 // Extension cvm extension.

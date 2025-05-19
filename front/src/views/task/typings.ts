@@ -36,7 +36,7 @@ export enum TaskDetailStatus {
   CANCEL = 'cancel',
 }
 
-export interface ISearchConditon {
+export interface ISearchCondition {
   account?: string;
   type?: TaskType;
   state?: TaskStatus;
@@ -48,7 +48,7 @@ export interface ISearchConditon {
 
 export interface ISearchProps {
   resource: ResourceTypeEnum;
-  condition: ISearchConditon;
+  condition: ISearchCondition;
 }
 
 export interface IDataListProps {

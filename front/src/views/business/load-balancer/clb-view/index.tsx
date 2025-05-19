@@ -1,6 +1,5 @@
 import { computed, defineComponent } from 'vue';
 import { RouterView, useRoute } from 'vue-router';
-// import components
 import { ResizeLayout } from 'bkui-vue';
 import LBTree from './lb-tree/index.vue';
 import LbBreadcrumb from '../components/lb-breadcrumb';

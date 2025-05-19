@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, useTemplateRef } from 'vue';
 import { Button, Upload } from 'bkui-vue';
 import Step from '../components/step.vue';
 
@@ -22,6 +22,8 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const { getBusinessApiPath } = useWhereAmI();
+let files: UploadFiles = [];
+const uploadRef = useTemplateRef<typeof Upload>('upload');
 
 const url = computed(() => {
   const { vendor, operation_type } = props.formModel;
@@ -35,6 +37,10 @@ const formDataAttributes = computed(() => {
     { name: 'region_ids', value: JSON.stringify(region_ids) },
   ];
 });
+const isDisabled = computed(() => {
+  const { account_id, region_ids, operation_type } = props.formModel;
+  return !(account_id && region_ids.length && operation_type);
+});
 
 const handleSuccess = (response: LbImportPreviewResData, file: UploadFile, fileList: UploadFiles) => {
   emit('previewSuccess', response.data);
@@ -46,18 +52,30 @@ const handleError = () => {
 const handleDelete = () => {
   emit('fileDelete');
 };
+const handleDone = (fileList: UploadFiles) => {
+  files = [...fileList];
+};
 
 // 下载模板文件
 const handleDownloadTemplateFile = async () => {
   const filenameMap = {
     [Operation.create_layer4_listener]: '1_hcm_clb_tcp_udp_listener_template.xlsx',
     [Operation.create_layer7_listener]: '2_hcm_clb_http_https_listener_template.xlsx',
-    [Operation.create_layer7_rule]: '3_hcm_clb_bind_rs_url_ruler_template.xlsx',
+    [Operation.create_layer7_rule]: '3_hcm_clb_url_rule_template.xlsx',
     [Operation.binding_layer4_rs]: '4_hcm_clb_bind_rs_tcp_udp_template.xlsx',
-    [Operation.binding_layer7_rs]: '5_hcm_clb_url_rule_http_https_template.xlsx',
+    [Operation.binding_layer7_rs]: '5_hcm_clb_bind_rs_http_https_template.xlsx',
   };
   http.download({ url: `/api/v1/web/templates/${filenameMap[props.formModel.operation_type]}`, method: 'get' });
 };
+
+const clearFiles = () => {
+  files.forEach((file) => {
+    uploadRef.value.handleRemove(file);
+  });
+  files = [];
+};
+
+defineExpose({ clearFiles });
 </script>
 
 <template>
@@ -72,9 +90,11 @@ const handleDownloadTemplateFile = async () => {
       name="file"
       :url="url"
       :form-data-attributes="formDataAttributes"
+      :disabled="isDisabled"
       @success="handleSuccess"
       @error="handleError"
       @delete="handleDelete"
+      @done="handleDone"
     />
     <section class="tips">
       {{ t('仅支持.xlsx格式的文件，不能超过5千行，下载') }}

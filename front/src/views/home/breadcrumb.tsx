@@ -1,6 +1,6 @@
 import { computed, defineComponent } from 'vue';
 import { useRoute } from 'vue-router';
-import useBreakcrumb from '@/hooks/use-breakcrumb';
+import useBreadcrumb from '@/hooks/use-breadcrumb';
 import type { RouteMetaConfig } from '@/router/meta';
 import routerAction from '@/router/utils/action';
 import { HistoryStorage } from '@/router/utils/history-storage';
@@ -9,7 +9,7 @@ import './breadcrumb.scss';
 
 export default defineComponent({
   setup() {
-    const { breadcrumb } = useBreakcrumb();
+    const { breadcrumb } = useBreadcrumb();
     const route = useRoute();
 
     const currentTitle = computed(() => {

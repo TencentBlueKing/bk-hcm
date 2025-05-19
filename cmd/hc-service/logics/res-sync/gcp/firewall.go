@@ -403,8 +403,10 @@ func (cli *client) RemoveFirewallDeleteFromCloud(kt *kit.Kit, accountID string) 
 			}
 
 			cloudIDs := converter.MapKeyToStringSlice(cloudIDMap)
-			if err := cli.deleteFirewall(kt, accountID, cloudIDs); err != nil {
-				return err
+			if len(cloudIDs) > 0 {
+				if err := cli.deleteFirewall(kt, accountID, cloudIDs); err != nil {
+					return err
+				}
 			}
 		}
 

@@ -213,10 +213,16 @@ export default defineComponent({
             </bk-radio-group>
           </bk-form-item>
           <bk-form-item label={'优先级'} property={'priority'} required description={'优先级范围从 0 到 65535'}>
-            <bk-input vendor={formModel.priority} v-model={formModel.priority} min={0} max={65535} type='number' />
+            <bk-input
+              vendor={formModel.priority}
+              v-model_number={formModel.priority}
+              min={0}
+              max={65535}
+              type='number'
+            />
           </bk-form-item>
           <bk-form-item label={'IP类型'}>
-            <bk-select v-model={ip_type.value} type='number' clearable={false}>
+            <bk-select v-model={ip_type.value} clearable={false}>
               {[IpType.ipv4, IpType.ipv6].map((v) => (
                 <bk-option key={v} value={v} label={v}></bk-option>
               ))}

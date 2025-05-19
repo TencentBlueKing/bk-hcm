@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, reactive, ref, useTemplateRef } from 'vue';
+import { onMounted, onUnmounted, reactive, ref, useTemplateRef, inject, ComputedRef } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { Loading, Message, Tree } from 'bkui-vue';
+import { Loading, Tree } from 'bkui-vue';
 import ITreeNode from './node/index.vue';
 import ITreeNodeAction from './node-action/index.vue';
-import Confirm from '@/components/confirm';
 
 import allLbIcon from '@/assets/image/all-lb.svg';
 import lbIcon from '@/assets/image/loadbalancer.svg';
@@ -20,7 +19,6 @@ import { useGlobalPermissionDialog } from '@/store/useGlobalPermissionDialog';
 
 import { asyncGetListenerCount, getInstVip } from '@/utils';
 import { LB_ROUTE_NAME_MAP, LBRouteName, TRANSPORT_LAYER_LIST } from '@/constants';
-import { GLOBAL_BIZS_KEY } from '@/common/constant';
 import { QueryRuleOPEnum, RulesItem } from '@/typings';
 import type {
   Domain,
@@ -49,6 +47,8 @@ const businessStore = useBusinessStore();
 const { getBusinessApiPath } = useWhereAmI();
 const globalPermissionDialogStore = useGlobalPermissionDialog();
 const { authVerifyData, handleAuth } = useVerify();
+const createClbActionName: ComputedRef<'biz_clb_resource_create' | 'clb_resource_create'> =
+  inject('createClbActionName');
 
 const treeData = ref([]);
 const pagination = reactive({ start: 0, count: 0, loading: false });
@@ -165,6 +165,7 @@ const getDomainList = async (listener: Listener) => {
     item.id = domain;
     item.listener_id = id;
     item.isDefault = default_domain === domain;
+    item.vendor = vendor;
     return item;
   });
 
@@ -212,6 +213,7 @@ const pushState = (node: any) => {
       protocol: node.type === 'listener' ? node.protocol : undefined,
       // 如果节点类型为domain, 则设置listener_id
       listener_id: node.type === 'domain' ? node.listener_id : undefined,
+      vendor: node.vendor,
     },
   });
 };
@@ -227,81 +229,30 @@ const handleNodeClick = (node: any) => {
   }
 };
 
-// more-action - 删除负载均衡
-const handleDeleteLB = (node: any) => {
-  const { id, name } = node;
-  Confirm('请确定删除负载均衡', `将删除负载均衡【${name}】`, () => {
-    businessStore.deleteBatch('load_balancers', { ids: [id] }).then(() => {
-      Message({ theme: 'success', message: '删除成功' });
-      // 本期暂时先重新拉取lb列表
-      reset();
-      loadLoadBalancerList();
-      // 导航至全部负载均衡
-      router.push({ name: LBRouteName.allLbs, query: { [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY] } });
-    });
-  });
-};
-// more-action - 删除监听器
-const handleDeleteListener = (node: any) => {
-  const { id, name } = node;
-  Confirm('请确定删除监听器', `将删除监听器【${name}】`, () => {
-    businessStore.deleteBatch('listeners', { ids: [id] }).then(() => {
-      Message({ theme: 'success', message: '删除成功' });
-      // 本期暂时先重新拉取lb列表
-      reset();
-      loadLoadBalancerList();
-      // 导航至全部负载均衡
-      router.push({ name: LBRouteName.allLbs, query: { [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY] } });
-    });
-  });
-};
-// more-action - 删除域名
-const handleDeleteDomain = (node: any) => {
-  const { listener_id, domain } = node;
-  Confirm('请确定删除域名', `将删除域名【${domain}】`, async () => {
-    await businessStore.batchDeleteDomains({ lbl_id: listener_id, domains: [domain] });
-    Message({ theme: 'success', message: '删除成功' });
-    // 本期暂时先重新拉取lb列表
-    reset();
-    loadLoadBalancerList();
-    // 导航至全部负载均衡
-    router.push({ name: LBRouteName.allLbs, query: { [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY] } });
-  });
-};
 // more-action - type 与 dropdown menu 的映射关系
 const typeMenuMap = {
-  all: [{ label: '购买负载均衡', handler: () => router.push({ path: '/business/service/service-apply/clb' }) }],
-  lb: [
-    { label: '新增监听器', handler: () => bus.$emit('showAddListenerSideslider') },
+  all: [
     {
-      label: '删除',
-      handler: (args: any) => {
-        if (!authVerifyData?.value?.permissionAction?.load_balancer_delete) {
-          handleAuth('clb_resource_delete');
+      label: '购买负载均衡',
+      handler: () => {
+        if (!authVerifyData?.value?.permissionAction?.[createClbActionName.value]) {
+          handleAuth(createClbActionName.value);
           globalPermissionDialogStore.setShow(true);
-        } else handleDeleteLB(args);
-      },
-      isDisabled: (item: any) =>
-        authVerifyData?.value?.permissionAction?.load_balancer_delete && (item.listenerNum > 0 || item.delete_protect),
-      tooltips: (item: any) => {
-        if (item.listenerNum > 0) {
-          return { content: t('该负载均衡已绑定监听器, 不可删除'), disabled: !(item.listenerNum > 0) };
+          return;
         }
-        if (item.delete_protect) {
-          return { content: t('该负载均衡已开启删除保护, 不可删除'), disabled: !item.delete_protect };
-        }
+        router.push({ path: '/business/service/service-apply/clb' });
       },
+      preAuth: () => authVerifyData?.value?.permissionAction?.[createClbActionName.value],
     },
   ],
+  lb: [{ label: '新增监听器', handler: () => bus.$emit('showAddListenerSideslider') }],
   listener: [
     { label: '新增域名', handler: () => bus.$emit('showAddDomainSideslider') },
     { label: '编辑', handler: ({ id }: any) => bus.$emit('showEditListenerSideslider', id) },
-    { label: '删除', handler: handleDeleteListener },
   ],
   domain: [
     { label: '新增 URL 路径', handler: () => bus.$emit('showAddUrlSideslider') },
     { label: '编辑', handler: (node: any) => bus.$emit('showAddDomainSideslider', node) },
-    { label: '删除', handler: handleDeleteDomain },
   ],
 };
 const { showDropdownList, currentPopBoundaryNodeKey } = useMoreActionDropdown(typeMenuMap);

@@ -40,10 +40,12 @@
 
     :global(.bk-table) {
       max-height: 100%;
+    }
+  }
 
-      .table-new-row td {
-        background-color: #f2fff4 !important;
-      }
+  :global(.table-new-row) {
+     td {
+      background-color: #f2fff4 !important;
     }
   }
 }

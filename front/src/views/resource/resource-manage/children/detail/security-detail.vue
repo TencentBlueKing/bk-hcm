@@ -2,22 +2,22 @@
 import DetailHeader from '../../common/header/detail-header';
 import DetailTab from '../../common/tab/detail-tab';
 import SecurityInfo from '../components/security/security-info.vue';
-import SecurityRelate from '../components/security/security-relate';
+import SecurityRelate from '../components/security/security-relate/index.vue';
 import SecurityRule from '../components/security/security-rule.vue';
 import { useI18n } from 'vue-i18n';
 
-import { watch, ref, reactive } from 'vue';
+import { watch, ref, reactive, computed, provide } from 'vue';
 
 import { useRoute } from 'vue-router';
 import useDetail from '../../hooks/use-detail';
 import { QueryRuleOPEnum } from '@/typings';
 import { useResourceStore } from '@/store';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { SecurityGroupManageType } from '@/store/security-group';
 
 const { t } = useI18n();
 
 const route = useRoute();
-const filter = ref({ op: 'and', rules: [{ field: 'type', op: 'eq', value: 'ingress' }] });
 const activeTab = ref(route.query?.activeTab);
 const securityId = ref(route.query?.id);
 const vendor = ref(route.query?.vendor);
@@ -29,7 +29,7 @@ const templateData = reactive({
   portList: [],
   portGroupList: [],
 });
-const { whereAmI } = useWhereAmI();
+const { whereAmI, getBizsId } = useWhereAmI();
 const resoureStore = useResourceStore();
 
 const { loading, detail, getDetail } = useDetail('security_groups', securityId.value as string);
@@ -60,6 +60,44 @@ watch(
     getTemplateData(val);
   },
 );
+
+const isAssigned = computed(() => detail.value.bk_biz_id !== -1);
+// 资源下已分配，不可以update安全组
+const hasEditScopeInResource = computed(() => whereAmI.value === Senarios.resource && !isAssigned.value);
+// 业务下未分配、非业务管理、管理业务!==当前业务，不可以update安全组
+const hasEditScopeInBusiness = computed(
+  () =>
+    whereAmI.value === Senarios.business &&
+    isAssigned.value &&
+    detail.value?.mgmt_type === SecurityGroupManageType.BIZ &&
+    detail.value?.mgmt_biz_id === getBizsId(),
+);
+const operateTooltipsOption = computed(() => {
+  const isResourcePage = whereAmI.value === Senarios.resource;
+  const isBusinessPage = whereAmI.value === Senarios.business;
+  const isPlatformManage = detail.value?.mgmt_type === SecurityGroupManageType.PLATFORM;
+  const isCurrentBizManage = detail.value?.mgmt_biz_id === getBizsId();
+
+  if (isResourcePage && isAssigned.value) {
+    return { content: t('安全组已分配，请到业务下操作'), disabled: !(isResourcePage && isAssigned.value) };
+  }
+  if (isBusinessPage && isPlatformManage) {
+    return {
+      content: t('该安全组的管理类型为平台管理，不允许在业务下操作'),
+      disabled: !(isBusinessPage && isPlatformManage),
+    };
+  }
+  if (isBusinessPage && !isAssigned.value) {
+    return {
+      content: t('该安全组当前处于未分配状态，不允许在业务下进行管理配置安全组规则等操作'),
+      disabled: !(isBusinessPage && !isAssigned.value),
+    };
+  }
+  if (isBusinessPage && !isCurrentBizManage) {
+    return { content: t('该安全组不在当前业务管理，不允许操作'), disabled: !(isBusinessPage && !isCurrentBizManage) };
+  }
+  return { disabled: true };
+});
 
 const getRelatedSecurityGroups = async (detail: { account_id: string; region: string }) => {
   const url = 'security_groups/list';
@@ -135,6 +173,11 @@ const getTemplateData = async (detail: { account_id: string }) => {
   templateData.portList = res[2]?.data?.details;
   templateData.portGroupList = res[3]?.data?.details;
 };
+
+provide('isAssigned', isAssigned);
+provide('hasEditScopeInResource', hasEditScopeInResource);
+provide('hasEditScopeInBusiness', hasEditScopeInBusiness);
+provide('operateTooltipsOption', operateTooltipsOption);
 </script>
 
 <template>
@@ -153,13 +196,12 @@ const getTemplateData = async (detail: { account_id: string }) => {
         />
         <security-rule
           v-else-if="type === 'rule'"
-          :filter="filter"
           :id="securityId"
           :vendor="vendor"
           :related-security-groups="relatedSecurityGroups"
           :template-data="templateData"
         />
-        <security-relate v-else />
+        <security-relate v-else :detail="detail" />
       </template>
     </detail-tab>
   </div>

@@ -378,3 +378,15 @@ func (v AzureVpcListUsageOption) Validate() error {
 
 	return nil
 }
+
+// HuaweiListPortOption defines huawei list port options.
+type HuaweiListPortOption struct {
+	Region           string   `json:"region" validate:"required"`
+	SecurityGroupIDs []string `json:"security_group_ids" validate:"required"`
+	Marker           string   `json:"marker" validate:"omitempty"`
+}
+
+// Validate ...
+func (v HuaweiListPortOption) Validate() error {
+	return validator.Validate.Struct(v)
+}

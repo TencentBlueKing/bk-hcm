@@ -36,7 +36,6 @@ export default () => {
       name: t('云厂商'),
       children: [{ id: VendorEnum.TCLOUD, name: VendorMap[VendorEnum.TCLOUD] }],
     },
-    { id: 'region', name: t('地域') },
     { id: 'cloud_vpc_id', name: t('所属VPC') },
     {
       id: 'health_check.health_switch',
@@ -119,22 +118,16 @@ export default () => {
 
   // 删除单个目标组
   const handleDeleteTargetGroup = (id: string, name: string) => {
-    Confirm(t('请确定删除目标组'), `${t('将删除目标组【')}${name}${t('】')}`, () => {
-      businessStore
-        .deleteTargetGroups({
-          bk_biz_id: accountStore.bizs,
-          ids: [id],
-        })
-        .then(() => {
-          Message({
-            message: t('删除成功'),
-            theme: 'success',
-          });
-          // 刷新表格数据
-          getListData();
-          // 刷新左侧目标组列表
-          bus.$emit('refreshTargetGroupList');
-        });
+    Confirm(t('请确定删除目标组'), `${t('将删除目标组【')}${name}${t('】')}`, async () => {
+      await businessStore.deleteTargetGroups({
+        bk_biz_id: accountStore.bizs,
+        ids: [id],
+      });
+      Message({ message: t('删除成功'), theme: 'success' });
+      // 刷新表格数据
+      getListData();
+      // 刷新左侧目标组列表
+      bus.$emit('refreshTargetGroupList');
     });
   };
 

@@ -63,6 +63,7 @@ export default (getListData: () => void, originPage: IOriginPage, isHttpsAndSniO
       domain: '',
       url: '',
       scheduler: '',
+      target_group_id: '',
     });
   };
 
@@ -98,6 +99,7 @@ export default (getListData: () => void, originPage: IOriginPage, isHttpsAndSniO
             domains: [formData.domain],
             scheduler: formData.scheduler,
             certificate: isHttpsAndSniOn.value ? formData.certificate : undefined,
+            vendor: loadbalancer.currentSelectedTreeNode.vendor,
           })
         : businessStore.updateDomains(lbl_id, {
             lbl_id,

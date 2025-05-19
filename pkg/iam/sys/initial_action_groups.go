@@ -193,6 +193,15 @@ func genResourceAccessActionGroups() client.ActionGroup {
 					{ID: OperationRecordFind},
 				},
 			},
+			{
+				Name:   "COS资源",
+				NameEn: "COS Resource",
+				Actions: []client.ActionWithID{
+					{ID: CosBucketCreate},
+					{ID: CosBucketFind},
+					{ID: CosBucketDelete},
+				},
+			},
 		},
 	}
 }

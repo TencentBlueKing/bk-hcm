@@ -5,25 +5,43 @@ import { Button, Loading, Popover, Table } from 'bkui-vue';
 // import types
 import { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
 import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
-import { LbPrice } from '@/typings';
+import { IQueryResData, LbPrice } from '@/typings';
 // import utils
 import { useI18n } from 'vue-i18n';
 import bus from '@/common/bus';
 import http from '@/http';
 import { GLOBAL_BIZS_KEY } from '@/common/constant';
 import { applyClbSuccessHandler } from '../apply-clb.plugin';
+import { useVerify } from '@/hooks';
+import { useGlobalPermissionDialog } from '@/store/useGlobalPermissionDialog';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 const { Column } = Table;
 
 // apply-clb, 底栏
-export default (formModel: ApplyClbModel, formRef: any, isInquiryPricesLoading: Ref<boolean>) => {
+export default (
+  formModel: ApplyClbModel,
+  formRef: any,
+  isInquiryPrices: Ref<boolean>,
+  isInquiryPricesLoading: Ref<boolean>,
+) => {
   // use hooks
   const router = useRouter();
   const route = useRoute();
   const { whereAmI, isBusinessPage } = useWhereAmI();
   const { t } = useI18n();
+
+  // 权限校验
+  const { handleAuth, authVerifyData } = useVerify();
+  const globalPermissionDialogStore = useGlobalPermissionDialog();
+  const createClbActionName = computed(() => {
+    if (whereAmI.value === Senarios.business) {
+      return 'biz_clb_resource_create';
+    }
+    return 'clb_resource_create';
+  });
+
   // use stores
   // define data
   const applyLoading = ref(false);
@@ -78,8 +96,11 @@ export default (formModel: ApplyClbModel, formRef: any, isInquiryPricesLoading: 
       // 只有公网下ipv4可以配置
       // eslint-disable-next-line no-nested-ternary
       backup_zones: hasBackupZonesConfig.value ? (formModel.backup_zones ? [formModel.backup_zones] : []) : undefined,
-      // 只有内网下可以配置
-      cloud_subnet_id: !isOpen.value ? formModel.cloud_subnet_id : undefined,
+      // 内网/公网IPv6需要选择子网
+      cloud_subnet_id:
+        !isOpen.value || (isOpen.value && formModel.address_ip_version === 'IPv6FullChain')
+          ? formModel.cloud_subnet_id
+          : undefined,
       cloud_eip_id: !isOpen.value ? formModel.cloud_eip_id ?? undefined : undefined,
       // 后端无用字段
       account_type: undefined as undefined,
@@ -90,6 +111,11 @@ export default (formModel: ApplyClbModel, formRef: any, isInquiryPricesLoading: 
 
   // define handler function
   const handleApplyClb = async () => {
+    if (!authVerifyData.value?.permissionAction?.[createClbActionName.value]) {
+      handleAuth(createClbActionName.value);
+      globalPermissionDialogStore.setShow(true);
+      return;
+    }
     try {
       await formRef.value.validate();
       // 整理参数
@@ -97,8 +123,9 @@ export default (formModel: ApplyClbModel, formRef: any, isInquiryPricesLoading: 
       const url = isBusinessPage
         ? `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/vendors/${formModel.vendor}/applications/types/create_load_balancer`
         : `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/load_balancers/create`;
-      await http.post(url, handleParams());
-      applyClbSuccessHandler(isBusinessPage, goBack, formModel);
+      const res: IQueryResData<{ id: string }> = await http.post(url, handleParams());
+      const { id } = res.data || {};
+      applyClbSuccessHandler(isBusinessPage, goBack, { ...formModel, id });
     } finally {
       applyLoading.value = false;
     }
@@ -120,14 +147,6 @@ export default (formModel: ApplyClbModel, formRef: any, isInquiryPricesLoading: 
     setup() {
       return () => (
         <div class='apply-clb-bottom-bar'>
-          {/* 本期先不显示ip费用 */}
-          {/* <div class='info-wrap'>
-            <span class='label'>{t('IP资源费用')}</span>:
-            <span class='value'>
-              <span class='number'>0.01</span>
-              <span class='unit'>{t('元/小时')}</span>
-            </span>
-          </div> */}
           <div class='info-wrap'>
             <Popover theme='light' width={362} placement='top' offset={12}>
               {{
@@ -150,10 +169,11 @@ export default (formModel: ApplyClbModel, formRef: any, isInquiryPricesLoading: 
           </div>
           <div class='operation-btn-wrap'>
             <Button
+              class={{ 'hcm-no-permision-btn': !authVerifyData.value?.permissionAction?.[createClbActionName.value] }}
               theme='primary'
               onClick={handleApplyClb}
               loading={applyLoading.value}
-              disabled={isInquiryPricesLoading.value}>
+              disabled={!isInquiryPrices.value || isInquiryPricesLoading.value}>
               {t('立即购买')}
             </Button>
             <Button loading={applyLoading.value} onClick={goBack}>

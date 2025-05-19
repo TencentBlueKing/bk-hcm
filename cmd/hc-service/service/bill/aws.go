@@ -938,3 +938,63 @@ func (b bill) AwsGetRootAccountSpTotalUsage(cts *rest.Contexts) (any, error) {
 	}
 	return result, nil
 }
+
+// AwsListRootBillItems 查询当前账单月份指定字段的列表
+func (b bill) AwsListRootBillItems(cts *rest.Contexts) (any, error) {
+	req := new(hcbill.AwsRootBillItemsListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	if req.Page == nil {
+		req.Page = &hcbill.AwsBillListPage{Offset: 0, Limit: adcore.AwsQueryLimit}
+	}
+
+	rootAccount, err := b.cs.DataService().Global.RootAccount.GetBasicInfo(cts.Kit, req.RootAccountID)
+	if err != nil {
+		logs.Errorf("fail to find root account for deduct bill, err: %+v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	// 查询aws账单基础表
+	billInfo, err := getRootAccountBillConfigInfo[billcore.AwsBillConfigExtension](cts.Kit, req.RootAccountID,
+		b.cs.DataService())
+	if err != nil {
+		logs.Errorf("failed to get aws root account bill items config, root account: %s, err: %+v, rid: %s",
+			req.RootAccountID, err, cts.Kit.Rid)
+		return nil, err
+	}
+	if billInfo == nil {
+		logs.Errorf("bill items config for root_account_id: %s is not found, rid: %s", req.RootAccountID, cts.Kit.Rid)
+		return nil, errf.Newf(errf.RecordNotFound, "bill items config for root_account_id: %s is not found",
+			req.RootAccountID)
+	}
+
+	cli, err := b.ad.AwsRoot(cts.Kit, req.RootAccountID)
+	if err != nil {
+		logs.Errorf("aws request items adaptor client err, req: %+v, err: %+v,rid: %s", req, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	opt := &typesBill.AwsRootDeductBillListOpt{
+		PayerAccountID: rootAccount.CloudID,
+		Year:           req.Year,
+		Month:          req.Month,
+		BeginDate:      req.BeginDate,
+		EndDate:        req.EndDate,
+		FieldsMap:      req.FieldsMap,
+		Page:           &typesBill.AwsBillPage{Offset: req.Page.Offset, Limit: req.Page.Limit},
+	}
+	resp, err := cli.AwsRootBillListByQueryFields(cts.Kit, opt, billInfo)
+	if err != nil {
+		logs.Errorf("fail to list root account bill items for aws, err: %v, opt: %+v, rid: %s",
+			err, cvt.PtrToVal(opt), cts.Kit.Rid)
+		return nil, err
+	}
+
+	return &hcbill.AwsBillListResult{
+		Details: resp,
+	}, nil
+}

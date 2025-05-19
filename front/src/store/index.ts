@@ -1,5 +1,10 @@
-// @ts-check
-import { acceptHMRUpdate } from 'pinia';
+import { useBusinessGlobalStore } from './business-global';
+
+export const preload = async () => {
+  const { getFullBusiness, getAuthorizedBusiness } = useBusinessGlobalStore();
+
+  return Promise.all([getFullBusiness(), getAuthorizedBusiness()]);
+};
 
 export * from './staff';
 export * from './user';
@@ -12,9 +17,3 @@ export * from './host';
 export * from './scheme';
 export * from './loadbalancer';
 export * from './task';
-
-// @ts-ignore
-if (import.meta.hot) {
-  // @ts-ignore
-  import.meta.hot.accept(acceptHMRUpdate(useCartStore, import.meta.hot));
-}

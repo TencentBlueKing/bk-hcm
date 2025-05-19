@@ -25,6 +25,7 @@ import (
 	"hcm/pkg/api/core"
 	coretask "hcm/pkg/api/core/task"
 	datatask "hcm/pkg/api/data-service/task"
+	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
@@ -36,6 +37,10 @@ import (
 
 // TimingHandleTaskMgmtState 定时更新任务管理数据状态
 func TimingHandleTaskMgmtState(c *client.ClientSet, sd serviced.State, interval time.Duration) {
+	if cc.CloudServer().TaskManagement.Disable {
+		logs.Warnf("task management state background update has been disabled")
+		return
+	}
 	for {
 		time.Sleep(interval)
 
@@ -108,18 +113,17 @@ func refreshTaskMgmtState(kt *kit.Kit, c *client.ClientSet, data coretask.Manage
 				failed++
 			case enumor.TaskDetailCancel:
 				cancel++
-
 			}
 		}
-
 		if len(list.Details) < int(core.DefaultMaxPageLimit) {
 			break
 		}
-
 		req.Page.Start += uint32(core.DefaultMaxPageLimit)
 	}
 
-	if success+failed+cancel != sum {
+	// 任务详情里的数据结果总和不等于任务详情终态的总和，或者先创建任务管理数据，后创建任务详情数据，出现时间差，导致任务详情为空的情况，
+	// 那么此时任务管理状态需保持running
+	if success+failed+cancel != sum || sum == 0 {
 		return enumor.TaskManagementRunning, nil
 	}
 

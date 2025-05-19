@@ -3,6 +3,7 @@ import http from '@/http';
 // import { Department } from '@/typings';
 import { shallowRef } from 'vue';
 import { defineStore } from 'pinia';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 export const useAccountStore = defineStore({
@@ -12,6 +13,7 @@ export const useAccountStore = defineStore({
     list: shallowRef([]),
     bizs: 0 as number,
     accountList: shallowRef([]),
+    accountCached: new Map<string, any>(),
   }),
   actions: {
     /**
@@ -42,8 +44,25 @@ export const useAccountStore = defineStore({
      * @param {any} data
      * @return {*}
      */
-    async getAccountDetail(id: string | string[]) {
-      return await http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/${id}`);
+    async getAccountDetail(id: string, config?: { fromCache?: boolean }) {
+      const { fromCache = false } = config || {};
+      if (fromCache && this.accountCached.has(id)) {
+        return this.accountCached.get(id);
+      }
+      const res = await http.get(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/${id}`);
+      this.accountCached.set(id, res);
+      return res;
+    },
+    /**
+     * @description: 获取账号的使用业务
+     * @param {any} data
+     * @return {*}
+     */
+    async getAccountUsageBiz(id: string) {
+      const { getBusinessApiPath } = useWhereAmI();
+      const res = await http.get(`/api/v1/cloud/${getBusinessApiPath()}accounts/usage_bizs/${id}`);
+      this.accountCached.set(id, res);
+      return res;
     },
     /**
      * @description: 创建时测试云账号连接

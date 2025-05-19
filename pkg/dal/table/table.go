@@ -200,10 +200,15 @@ const (
 	AccountBillSyncRecordTable = "account_bill_sync_record"
 	// TaskDetailTable 任务详情表
 	TaskDetailTable = "task_detail"
+	// TenantTable 租户表
+	TenantTable = "tenant"
 	// TaskManagementTable 任务管理表
 	TaskManagementTable = "task_management"
 	//	GlobalConfigTable 全局配置表
 	GlobalConfigTable = "global_config"
+
+	// ResUsageBizRelTable 资源-使用业务关联表
+	ResUsageBizRelTable = "res_usage_biz_rel"
 )
 
 // Validate whether the table name is valid or not.
@@ -220,57 +225,63 @@ func (n Name) Validate() error {
 	return nil
 }
 
+// TableConfig 存储表名和表配置的信息
+type TableConfig struct {
+	EnableTenant bool // 是否需要支持多租户
+}
+
 // TableMap table map config
-var TableMap = map[Name]struct{}{
-	AuditTable:                   {},
-	AccountTable:                 {},
+// Key是表名，Value是该表的配置信息
+var TableMap = map[Name]TableConfig{
+	AuditTable:                   {EnableTenant: true},
+	AccountTable:                 {EnableTenant: true},
 	SubAccountTable:              {},
 	AccountBizRelTable:           {},
-	VpcTable:                     {},
-	SubnetTable:                  {},
+	VpcTable:                     {EnableTenant: true},
+	SubnetTable:                  {EnableTenant: true},
 	IDGenerator:                  {},
-	SecurityGroupTable:           {},
+	SecurityGroupTable:           {EnableTenant: true},
 	VpcSecurityGroupRelTable:     {},
 	SecurityGroupTagTable:        {},
 	SecurityGroupSubnetTable:     {},
 	SGSecurityGroupRuleTable:     {},
 	TCloudSecurityGroupRuleTable: {},
 	AwsSecurityGroupRuleTable:    {},
-	HuaWeiSecurityGroupRuleTable: {},
+	HuaWeiSecurityGroupRuleTable: {EnableTenant: true},
 	AzureSecurityGroupRuleTable:  {},
 	SGNetworkInterfaceRelTable:   {},
-	GcpFirewallRuleTable:         {},
-	HuaWeiRegionTable:            {},
-	AzureRGTable:                 {},
-	AzureRegionTable:             {},
-	GcpRegionTable:               {},
+	GcpFirewallRuleTable:         {EnableTenant: true},
+	HuaWeiRegionTable:            {EnableTenant: true},
+	AzureRGTable:                 {EnableTenant: true},
+	AzureRegionTable:             {EnableTenant: true},
+	GcpRegionTable:               {EnableTenant: true},
 	AwsRegionTable:               {},
-	TCloudRegionTable:            {},
-	RouteTableTable:              {},
-	TCloudRouteTable:             {},
-	AwsRouteTable:                {},
-	AzureRouteTable:              {},
-	HuaWeiRouteTable:             {},
-	GcpRouteTable:                {},
-	ZoneTable:                    {},
-	CvmTable:                     {},
-	ApplicationTable:             {},
-	ApprovalProcessTable:         {},
-	NetworkInterfaceTable:        {},
+	TCloudRegionTable:            {EnableTenant: true},
+	RouteTableTable:              {EnableTenant: true},
+	TCloudRouteTable:             {EnableTenant: true},
+	AwsRouteTable:                {EnableTenant: true},
+	AzureRouteTable:              {EnableTenant: true},
+	HuaWeiRouteTable:             {EnableTenant: true},
+	GcpRouteTable:                {EnableTenant: true},
+	ZoneTable:                    {EnableTenant: true},
+	CvmTable:                     {EnableTenant: true},
+	ApplicationTable:             {EnableTenant: true},
+	ApprovalProcessTable:         {EnableTenant: true},
+	NetworkInterfaceTable:        {EnableTenant: true},
 	NetworkInterfaceCvmRelTable:  {},
-	RecycleRecordTable:           {},
-	EipTable:                     {},
-	DiskTable:                    {},
-	ImageTable:                   {},
+	RecycleRecordTable:           {EnableTenant: true},
+	EipTable:                     {EnableTenant: true},
+	DiskTable:                    {EnableTenant: true},
+	ImageTable:                   {EnableTenant: true},
 	DiskCvmRelTableName:          {},
 	EipCvmRelTableName:           {},
 	AccountBillConfigTable:       {},
-	UserCollectionTable:          {},
+	UserCollectionTable:          {EnableTenant: true},
 	AccountSyncDetailTable:       {},
-	CloudSelectionSchemeTable:    {},
-	CloudSelectionBizTypeTable:   {},
-	CloudSelectionIdcTable:       {},
-	SslCertTable:                 {},
+	CloudSelectionSchemeTable:    {EnableTenant: true},
+	CloudSelectionBizTypeTable:   {EnableTenant: true},
+	CloudSelectionIdcTable:       {EnableTenant: true},
+	SslCertTable:                 {EnableTenant: true},
 
 	// TODO: 临时方案
 	RecycleRecordTableTaskID: {},
@@ -278,7 +289,7 @@ var TableMap = map[Name]struct{}{
 	AsyncFlowTable:     {},
 	AsyncFlowTaskTable: {},
 
-	ArgumentTemplateTable: {},
+	ArgumentTemplateTable: {EnableTenant: true},
 
 	AccountBillMonthTaskTable:       {},
 	AccountBillDailyPullTaskTable:   {},
@@ -288,10 +299,10 @@ var TableMap = map[Name]struct{}{
 	AccountBillItemTable:            {},
 	AccountBillAdjustmentItemTable:  {},
 	AccountBillSummaryRootTable:     {},
-	RootAccountBillConfigTable:      {},
-	AccountBillExchangeRateTable:    {},
-	AccountBillSyncRecordTable:      {},
-	LoadBalancerTable:               {},
+	RootAccountBillConfigTable:      {EnableTenant: true},
+	AccountBillExchangeRateTable:    {EnableTenant: true},
+	AccountBillSyncRecordTable:      {EnableTenant: true},
+	LoadBalancerTable:               {EnableTenant: true},
 	SecurityGroupCommonRelTable:     {},
 	LoadBalancerListenerTable:       {},
 	TCloudLbUrlRuleTable:            {},
@@ -301,13 +312,16 @@ var TableMap = map[Name]struct{}{
 	ResourceFlowRelTable:            {},
 	ResourceFlowLockTable:           {},
 
-	MainAccountTable: {},
-	RootAccountTable: {},
+	MainAccountTable: {EnableTenant: true},
+	RootAccountTable: {EnableTenant: true},
 
 	TaskManagementTable: {},
 	TaskDetailTable:     {},
+	TenantTable:         {},
 
 	GlobalConfigTable: {},
+
+	ResUsageBizRelTable: {},
 }
 
 // Register 注册表名

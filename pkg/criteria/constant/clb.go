@@ -19,6 +19,8 @@
 
 package constant
 
+import "time"
+
 // 负载均衡相关的常量
 const (
 	// LoadBalancerBindSecurityGroupMaxLimit 一个负载均衡实例最多可绑定安全组的最大数量限制
@@ -29,8 +31,8 @@ const (
 	ListenerMinSessionExpire = 30
 	// ResFlowLockExpireDays 锁定资源与Flow的最大超时时间，默认7天
 	ResFlowLockExpireDays = 7
-	// FlowRetryMaxLimit Flow重试的最大次数
-	FlowRetryMaxLimit = 864000
+	// FlowRetryTimeout Flow重试的最大重试超时
+	FlowRetryTimeout = 7 * 24 * time.Hour
 )
 
 // 腾讯云CLB相关常量

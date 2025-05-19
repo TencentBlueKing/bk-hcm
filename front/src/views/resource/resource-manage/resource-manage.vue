@@ -26,9 +26,9 @@ import { useI18n } from 'vue-i18n';
 import useSteps from './hooks/use-steps';
 import type { FilterType } from '@/typings/resource';
 import { useAccountStore } from '@/store';
-import { useVerify } from '@/hooks';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { InfoBox } from 'bkui-vue';
+import { AUTH_CREATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
 
 // use hooks
 const { t } = useI18n();
@@ -90,16 +90,6 @@ const headerExtensionMap = computed(() => {
   return map;
 });
 
-// 权限hook
-const {
-  showPermissionDialog,
-  handlePermissionConfirm,
-  handlePermissionDialog,
-  handleAuth,
-  permissionParams,
-  authVerifyData,
-} = useVerify();
-
 const resourceAccountStore = useResourceAccountStore();
 
 // 搜索过滤相关数据
@@ -123,6 +113,10 @@ const templateDialogPayload = ref({});
 
 provide('securityType', securityType);
 
+const handleTabChange = (path: string) => {
+  router.push({ path, query: { ...route.query } });
+};
+
 // 用于判断 sideslider 中的表单数据是否改变
 const isFormDataChanged = ref(false);
 
@@ -143,7 +137,7 @@ const renderForm = computed(() => {
 });
 
 // 组件map
-const componentMap = {
+const componentMap: Record<string, any> = {
   host: HostManage,
   vpc: VpcManage,
   subnet: SubnetManage,
@@ -158,14 +152,20 @@ const componentMap = {
 };
 
 // 标签相关数据
-const tabs = RESOURCE_TYPES.map((type) => {
-  return {
-    name: type.type,
-    type: t(type.name),
-    component: componentMap[type.type],
-  };
+const commonTabTypes = ['host', 'vpc', 'subnet', 'security', 'drive', 'ip', 'routing', 'image', 'network-interface'];
+const specialTabTypes = ['clb', 'certs'];
+const tabs = computed(() => {
+  let types = commonTabTypes;
+  // 未选云厂商或腾讯云，展示clb和证书管理tab
+  const vendor = resourceAccountStore.vendorInResourcePage;
+  if (!vendor || vendor === VendorEnum.TCLOUD) {
+    types = types.concat(specialTabTypes);
+  }
+  return RESOURCE_TYPES.filter(({ type }) => types.includes(type)).map(({ type, name }) => {
+    return { name: type, type: t(name), component: componentMap[type] };
+  });
 });
-const activeTab = ref((route.query.type as string) || tabs[0].type);
+const activeTab = ref((route.query.type as string) || tabs.value[0].type);
 
 const filterData = (key: string, val: string | number) => {
   if (!filter.value.rules.length) {
@@ -351,19 +351,6 @@ watch(
   },
 );
 
-watch(
-  () => activeResourceTab.value,
-  (val) => {
-    router.push({
-      path: val,
-      query: route.query,
-    });
-  },
-  {
-    immediate: true,
-  },
-);
-
 // const handleTemplateEdit = (payload: any) => {
 //   isTemplateDialogShow.value = true;
 //   isTemplateDialogEdit.value = true;
@@ -459,7 +446,12 @@ onMounted(() => {
             </div>
           </template>
         </p>
-        <BkTab class="resource-tab-wrap ml15" type="unborder-card" v-model:active="activeResourceTab">
+        <BkTab
+          class="resource-tab-wrap ml15"
+          type="unborder-card"
+          v-model:active="activeResourceTab"
+          @change="handleTabChange"
+        >
           <BkTabPanel v-for="item of RESOURCE_TABS" :label="item.label" :key="item.key" :name="item.key" />
         </BkTab>
       </div>
@@ -489,55 +481,29 @@ onMounted(() => {
             </bk-select>
           </div>
         </template>
-        <!-- Only Tencent Cloud offers certificate hosting -->
         <template v-for="item in tabs" :key="item.name">
-          <bk-tab-panel
-            :name="item.name"
-            :label="item.type"
-            v-if="
-              item.name !== 'certs' ||
-              (item.name === 'certs' &&
-                ((!resourceAccountStore.currentVendor && !resourceAccountStore.currentAccountVendor) ||
-                  [resourceAccountStore.currentVendor, resourceAccountStore.currentAccountVendor].includes(
-                    VendorEnum.TCLOUD,
-                  )))
-            "
-          >
+          <bk-tab-panel :name="item.name" :label="item.type">
             <component
               v-if="item.name === activeTab"
               :is="item.component"
               :filter="filter"
               :where-am-i="activeTab"
               :is-resource-page="isResourcePage"
-              :auth-verify-data="authVerifyData"
-              @auth="(val: string) => {
-                handleAuth(val)
-              }"
               @handleSecrityType="handleSecrityType"
               ref="componentRef"
               @edit="handleEdit"
               v-model:isFormDataChanged="isFormDataChanged"
             >
-              <span v-if="['host', 'vpc', 'drive', 'security', 'subnet', 'ip', 'clb'].includes(activeTab)">
-                <bk-button
-                  theme="primary"
-                  :class="{
-                    'hcm-no-permision-btn': !authVerifyData?.permissionAction?.iaas_resource_create,
-                    'new-button': !['security'].includes(activeTab),
-                  }"
-                  @click="
-                    () => {
-                      if (!authVerifyData?.permissionAction?.iaas_resource_create) {
-                        handleAuth('iaas_resource_create');
-                      } else {
-                        handleAdd();
-                      }
-                    }
-                  "
+              <template v-if="['host', 'vpc', 'drive', 'security', 'subnet', 'ip', 'clb'].includes(activeTab)">
+                <hcm-auth
+                  :sign="{ type: AUTH_CREATE_IAAS_RESOURCE, relation: [resourceAccountStore.resourceAccount?.id] }"
+                  v-slot="{ noPerm }"
                 >
-                  {{ ['host', 'clb'].includes(activeTab) ? '购买' : computedSecurityText }}
-                </bk-button>
-              </span>
+                  <bk-button theme="primary" class="mw64" :disabled="noPerm" @click="handleAdd">
+                    {{ ['host', 'clb'].includes(activeTab) ? '购买' : computedSecurityText }}
+                  </bk-button>
+                </hcm-auth>
+              </template>
             </component>
           </bk-tab-panel>
         </template>
@@ -572,13 +538,6 @@ onMounted(() => {
         :data="[]"
       />
 
-      <permission-dialog
-        v-model:is-show="showPermissionDialog"
-        :params="permissionParams"
-        @cancel="handlePermissionDialog"
-        @confirm="handlePermissionConfirm"
-      ></permission-dialog>
-
       <TemplateDialog
         :is-show="isTemplateDialogShow"
         :is-edit="isTemplateDialogEdit"
@@ -606,11 +565,13 @@ onMounted(() => {
   display: flex;
   align-items: center;
 }
+
 .resource-header {
   background: #fff;
   box-shadow: 1px 2px 3px 0 rgb(0 0 0 / 5%);
   padding: 20px;
 }
+
 .resource-main {
   // margin-top: 20px;
   box-shadow: 1px 2px 3px 0 rgb(0 0 0 / 5%);
@@ -631,6 +592,7 @@ onMounted(() => {
 
     & > .bk-tab-panel > .bk-nested-loading {
       height: 100%;
+
       .bk-table {
         margin-top: 16px;
         max-height: calc(100% - 52px);
@@ -638,23 +600,29 @@ onMounted(() => {
     }
   }
 }
+
 .search-filter {
   width: 500px;
 }
+
 .new-button {
   width: 64px;
 }
+
 .w80 {
   width: 80px;
 }
+
 .navigation-resource {
   min-height: 88px;
   margin: -24px -24px 24px -24px;
 }
+
 .card-layout {
   background: #fff;
   border-bottom: 1px solid #dcdee5;
 }
+
 .resource-title {
   font-family: MicrosoftYaHei;
   font-size: 16px;
@@ -678,9 +646,11 @@ onMounted(() => {
     }
   }
 }
+
 .bk-tab-content {
   padding: 0 !important;
 }
+
 .error-message-alert {
   margin: -8px 0 16px 0;
 }
@@ -693,12 +663,15 @@ onMounted(() => {
     word-break: break-all;
   }
 }
+
 .mw64 {
   min-width: 64px;
 }
+
 .mw88 {
   min-width: 88px;
 }
+
 .table-new-row td {
   background-color: #f2fff4 !important;
 }

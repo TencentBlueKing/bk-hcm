@@ -8,6 +8,7 @@ import { useI18n } from 'vue-i18n';
 import { CLB_QUOTA_NAME } from '@/typings';
 import './index.scss';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
+import { ResourceTypeEnum } from '@/common/resource-constant';
 
 const { FormItem } = Form;
 
@@ -27,7 +28,7 @@ export default defineComponent({
       bk_biz_id: getBizsId(),
       cloud_subnet_id: '',
       type: '0', // 0 自动生成 1 手动录入
-      ip_count: 0,
+      ip_count: 1,
       ip_list: [''],
     });
     const formData = reactive(getDefaultFormData());
@@ -64,7 +65,7 @@ export default defineComponent({
           formData.type === '0'
             ? Array.from({ length: formData.ip_count }, () => ({ subnet_id: formData.cloud_subnet_id }))
             : formData.ip_list.map((ip) => ({ subnet_id: formData.cloud_subnet_id, ip }));
-        await businessStore.createSnatIps(props.lbInfo?.id, { snat_ips });
+        await businessStore.createSnatIps(props.lbInfo?.id, props.lbInfo?.vendor, { snat_ips });
         Message({ theme: 'success', message: '新增成功' });
         await props.reloadLbDetail(props.lbInfo?.id);
       } finally {
@@ -116,6 +117,7 @@ export default defineComponent({
                     region={props.vpcDetail?.region}
                     accountId={props.vpcDetail?.account_id}
                     zone={props.lbInfo?.zones?.[0]}
+                    resourceType={ResourceTypeEnum.CLB}
                   />
                 </FormItem>
                 <FormItem label='分配IP' required property='type'>
@@ -126,13 +128,7 @@ export default defineComponent({
                 </FormItem>
                 {formData.type === '0' ? (
                   <FormItem label='IP数量' required property='ip_count'>
-                    <Input
-                      type='number'
-                      v-model={formData.ip_count}
-                      placeholder='0'
-                      min={0}
-                      max={snatIpQuotaLimit.value}
-                    />
+                    <Input type='number' v-model_number={formData.ip_count} min={1} max={snatIpQuotaLimit.value} />
                   </FormItem>
                 ) : (
                   <FormItem label='IP' required property='ip_list'>
@@ -160,7 +156,7 @@ export default defineComponent({
                         <Button text onClick={handleAddIp} disabled={!canAdd.value}>
                           <i class='hcm-icon bkhcm-icon-plus-circle-shape'></i>
                         </Button>
-                        <Button text onClick={() => handleRemoveIp(ip)}>
+                        <Button text disabled={formData.ip_list.length === 1} onClick={() => handleRemoveIp(ip)}>
                           <i class='hcm-icon bkhcm-icon-minus-circle-shape'></i>
                         </Button>
                       </div>

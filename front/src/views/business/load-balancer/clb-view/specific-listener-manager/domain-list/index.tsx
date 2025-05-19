@@ -1,4 +1,4 @@
-import { defineComponent, ref, watch } from 'vue';
+import { defineComponent, ref, useTemplateRef, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 // import components
 import { Button, Message, Tag } from 'bkui-vue';
@@ -36,6 +36,11 @@ export default defineComponent({
     const defaultDomain = ref('');
     const isCheckDomainLoading = ref(false);
     const { selections, handleSelectionChange, resetSelections } = useSelection();
+    const isRowSelectEnable = ({ row, isCheckAll }: any) => {
+      if (isCheckAll) return true;
+      return isCurRowSelectEnable(row);
+    };
+    const isCurRowSelectEnable = (row: any) => row.domain !== defaultDomain.value;
     const settingDomain = ref('');
 
     const isLoading = ref(false);
@@ -69,7 +74,13 @@ export default defineComponent({
                   router.push({
                     name: LBRouteName.domain,
                     params: { id: cell },
-                    query: { ...route.query, listener_id: route.params.id, type: undefined, protocol: undefined },
+                    query: {
+                      ...route.query,
+                      listener_id: route.params.id,
+                      vendor: loadBalancerStore.currentSelectedTreeNode.vendor,
+                      type: undefined,
+                      protocol: undefined,
+                    },
                   });
                   loadBalancerStore.setLbTreeSearchTarget({
                     ...data,
@@ -143,9 +154,12 @@ export default defineComponent({
                 onClick={() => {
                   const listenerId = loadBalancerStore.currentSelectedTreeNode.id;
                   Confirm('请确定删除域名', `将删除域名【${data.domain}】`, async () => {
-                    await businessStore.batchDeleteDomains({ lbl_id: listenerId, domains: [data.domain] });
+                    await businessStore.batchDeleteDomains({
+                      vendor: loadBalancerStore.currentSelectedTreeNode.vendor,
+                      lbl_id: listenerId,
+                      domains: [data.domain],
+                    });
                     Message({ message: '删除成功', theme: 'success' });
-                    bus.$emit('resetLbTree');
                     getDomainList(listenerId);
                   });
                 }}>
@@ -162,7 +176,7 @@ export default defineComponent({
     const getDomainList = async (id: string) => {
       isLoading.value = true;
       try {
-        const res = await businessStore.getDomainListByListenerId(id);
+        const res = await businessStore.getDomainListByListenerId(loadBalancerStore.currentSelectedTreeNode.vendor, id);
         defaultDomain.value = res.data.default_domain;
         domainList.value = res.data.domain_list;
       } finally {
@@ -179,8 +193,6 @@ export default defineComponent({
     watch(
       [() => props.id, () => props.type],
       ([id, type]) => {
-        // 清空选中项
-        resetSelections();
         // 当id或type变更时, 重新请求数据
         const { protocol } = props;
         if (id && type === 'list') {
@@ -209,6 +221,7 @@ export default defineComponent({
       isBatchDeleteLoading.value = true;
       try {
         await businessStore.batchDeleteDomains({
+          vendor: loadBalancerStore.currentSelectedTreeNode.vendor,
           lbl_id: loadBalancerStore.currentSelectedTreeNode.id,
           domains: selections.value.map(({ domain }) => domain),
         });
@@ -220,9 +233,22 @@ export default defineComponent({
       }
     };
 
+    const tableRef = useTemplateRef<typeof CommonLocalTable>('table-comp');
+    const clearSelection = () => {
+      resetSelections();
+      tableRef.value?.clearSelection();
+    };
+    watch(
+      () => domainList.value,
+      () => {
+        clearSelection();
+      },
+    );
+
     return () => (
       <div class='domain-list-page'>
         <CommonLocalTable
+          ref='table-comp'
           loading={isLoading.value}
           tableOptions={{
             rowKey: 'domain',
@@ -234,8 +260,9 @@ export default defineComponent({
                   return 'binding-row';
                 }
               },
-              onSelectionChange: (selections: any) => handleSelectionChange(selections, () => true),
-              onSelectAll: (selections: any) => handleSelectionChange(selections, () => true, true),
+              isRowSelectEnable,
+              onSelectionChange: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable),
+              onSelectAll: (selections: any) => handleSelectionChange(selections, isCurRowSelectEnable, true),
             },
           }}
           tableData={domainList.value}

@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router';
 import Amount from '../../components/amount';
 import Search from '../../components/search';
 
+import useChangeCurrency from '../../use-change-currency';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import { useTable } from '@/hooks/useTable/useTable';
 import { reqBillsMainAccountSummarySum } from '@/api/bill';
@@ -32,7 +33,8 @@ export default defineComponent({
       renderOperation,
     } = useProductHandler();
 
-    const { columns } = useColumns(columnName);
+    const { customRender } = useChangeCurrency({ onlyRMB: true });
+    const { columns } = useColumns(columnName, false, '', { customRender });
     const { CommonTable, getListData, clearFilter, filter } = useTable({
       searchOptions: { disabled: true },
       tableOptions: {
@@ -81,6 +83,7 @@ export default defineComponent({
               operationBarEnd: () => (
                 <Amount
                   ref={amountRef}
+                  onlyRMB
                   api={reqBillsMainAccountSummarySum}
                   payload={() => ({ bill_year: bill_year.value, bill_month: bill_month.value, filter })}
                 />

@@ -20,6 +20,7 @@
 package lblogic
 
 import (
+	"fmt"
 	"testing"
 
 	"hcm/pkg/criteria/enumor"
@@ -246,6 +247,57 @@ func TestCreateUrlRuleDetail_validate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.args.validate()
 			assert.Equal(t, tt.wantStatus, tt.args.Status)
+		})
+	}
+}
+
+func Test_decodeClassifyKey(t *testing.T) {
+	type args struct {
+		key string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		want1   enumor.ProtocolType
+		want2   int
+		wantErr assert.ErrorAssertionFunc
+	}{
+		// TODO: Add test cases.
+		{
+			name:    "normal case",
+			args:    args{key: "clb-xxxxx1/http/8888"},
+			want:    "clb-xxxxx1",
+			want1:   "http",
+			want2:   8888,
+			wantErr: assert.NoError,
+		},
+		{
+			name:    "bad case",
+			args:    args{key: "clb-xxxxx1/http/"},
+			want:    "",
+			want1:   "",
+			want2:   0,
+			wantErr: assert.Error,
+		},
+		{
+			name:    "bad case",
+			args:    args{key: "clb-xxxxx1/http"},
+			want:    "",
+			want1:   "",
+			want2:   0,
+			wantErr: assert.Error,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1, got2, err := decodeClassifyKey(tt.args.key)
+			if !tt.wantErr(t, err, fmt.Sprintf("decodeClassifyKey(%v)", tt.args.key)) {
+				return
+			}
+			assert.Equalf(t, tt.want, got, "decodeClassifyKey(%v)", tt.args.key)
+			assert.Equalf(t, tt.want1, got1, "decodeClassifyKey(%v)", tt.args.key)
+			assert.Equalf(t, tt.want2, got2, "decodeClassifyKey(%v)", tt.args.key)
 		})
 	}
 }

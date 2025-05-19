@@ -20,7 +20,10 @@
 package cvmrelmgr
 
 import (
+	"sort"
+
 	"hcm/pkg/api/core"
+	"hcm/pkg/api/core/cloud"
 	dataproto "hcm/pkg/api/data-service"
 	datacloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/constant"
@@ -31,6 +34,9 @@ import (
 	"hcm/pkg/tools/slice"
 )
 
+// syncCvmSGRel sync cvm securityGroup rel.
+// getCvmIDWithAssResIDMap CvmAppendAssResCloudID
+// 根据上面两个方法可以得知 获取到的sg列表是有序的，按照这个顺序作为优先级写入关联关系表即可
 func (mgr *CvmRelManger) syncCvmSGRel(kt *kit.Kit, cvmMap map[string]string, opt *SyncRelOption) error {
 
 	if err := opt.Validate(); err != nil {
@@ -43,29 +49,54 @@ func (mgr *CvmRelManger) syncCvmSGRel(kt *kit.Kit, cvmMap map[string]string, opt
 		return err
 	}
 
-	cvmIDs, cvmRelMapFromCloud, err := mgr.getCvmIDWithAssResIDMap(enumor.SecurityGroupCloudResType, cvmMap,
+	cvmIDs, cvmIDToSgIDMapFromCloud, err := mgr.getCvmIDWithAssResIDMap(enumor.SecurityGroupCloudResType, cvmMap,
 		securityGroupMap)
 	if err != nil {
 		logs.Errorf("get cvm id with ass res id map failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 
-	cvmRelMapFromDB, err := mgr.getCvmSGRelMapFromDB(kt, cvmIDs)
+	cvmIDToRelsFromDB, err := mgr.listCvmSGRelsFromDB(kt, cvmIDs)
 	if err != nil {
 		logs.Errorf("get cvm_sg_rel map from db failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 
-	addRels, delIDs := diffCvmWithAssResRel(cvmRelMapFromCloud, cvmRelMapFromDB)
-
-	if len(addRels) > 0 {
-		if err = mgr.createCvmSGRel(kt, addRels); err != nil {
-			return err
-		}
+	err = mgr.compareCvmSGRel(kt, cvmIDToSgIDMapFromCloud, cvmIDToRelsFromDB, opt.Vendor)
+	if err != nil {
+		logs.Errorf("compare cvm sg rel failed, err: %v, rid: %s", err, kt.Rid)
+		return err
 	}
+	return nil
+}
 
-	if len(delIDs) > 0 {
-		if err = mgr.deleteCvmSGRel(kt, delIDs); err != nil {
+func (mgr *CvmRelManger) compareCvmSGRel(kt *kit.Kit, cvmIDToSgIDMapFromCloud map[string][]string,
+	cvmIDToSGRelsMapFromDB map[string][]cloud.SGCommonRelWithBaseSecurityGroup, vendor enumor.Vendor) error {
+
+	for cvmID, sgIDs := range cvmIDToSgIDMapFromCloud {
+		localSGRels := cvmIDToSGRelsMapFromDB[cvmID]
+		// 按优先级从小到大排序
+		sort.Slice(localSGRels, func(i, j int) bool {
+			return localSGRels[i].Priority < localSGRels[j].Priority
+		})
+		localLen := len(localSGRels)
+		cloudLen := len(sgIDs)
+		// 找到所有相等的列表
+		var idx int
+		var sgID string
+		var stayLocalIDs []string
+		for ; idx < cloudLen; idx++ {
+			sgID = sgIDs[idx]
+			if idx >= localLen || localSGRels[idx].ID != sgID || localSGRels[idx].Priority != int64(idx+1) {
+				// 剩下的全部加入新增列表里
+				break
+			}
+			// 加入可以保留的安全组id列表中
+			stayLocalIDs = append(stayLocalIDs, sgID)
+		}
+		err := mgr.upsertSgRelForCvm(kt, cvmID, idx, stayLocalIDs, sgIDs[idx:], vendor)
+		if err != nil {
+			logs.Errorf("fail to upsert cvm(%s) security group rel, err: %v, rid: %s", cvmID, err, kt.Rid)
 			return err
 		}
 	}
@@ -73,89 +104,74 @@ func (mgr *CvmRelManger) syncCvmSGRel(kt *kit.Kit, cvmMap map[string]string, opt
 	return nil
 }
 
-func (mgr *CvmRelManger) getCvmSGRelMapFromDB(kt *kit.Kit, cvmIDs []string) (
-	map[string]map[string]cvmRelInfo, error) {
+func (mgr *CvmRelManger) upsertSgRelForCvm(kt *kit.Kit, cvmID string, startIdx int, stayLocalIDs []string,
+	sgIDs []string, vendor enumor.Vendor) error {
 
-	listReq := &core.ListReq{
-		Filter: tools.ContainersExpression("cvm_id", cvmIDs),
-		Page: &core.BasePage{
-			Start: 0,
-			Limit: core.DefaultMaxPageLimit,
-		},
+	createDel := &datacloud.SGCommonRelBatchUpsertReq{Rels: make([]datacloud.SGCommonRelCreate, 0)}
+	// 删除所有不在给定id中的安全组，防止误删
+	createDel.DeleteReq = &dataproto.BatchDeleteReq{Filter: tools.ExpressionAnd(
+		tools.RuleEqual("res_type", enumor.CvmCloudResType),
+		tools.RuleEqual("res_id", cvmID),
+	)}
+	for i, sgID := range sgIDs {
+		createDel.Rels = append(createDel.Rels, datacloud.SGCommonRelCreate{
+			SecurityGroupID: sgID,
+			ResVendor:       vendor,
+			ResID:           cvmID,
+			ResType:         enumor.CvmCloudResType,
+			Priority:        int64(i + startIdx + 1),
+		})
+
 	}
-	result := make(map[string]map[string]cvmRelInfo)
-	for {
-		respResult, err := mgr.dataCli.Global.SGCvmRel.ListSgCvmRels(kt.Ctx, kt.Header(), listReq)
+	if len(stayLocalIDs) > 0 {
+		createDel.DeleteReq.Filter.Rules = append(createDel.DeleteReq.Filter.Rules,
+			tools.RuleNotIn("security_group_id", stayLocalIDs))
+	}
+	if len(createDel.Rels) > 0 {
+		// 同时需要删除和创建
+		err := mgr.dataCli.Global.SGCommonRel.BatchUpsertSgCommonRels(kt, createDel)
+		if err != nil {
+			logs.Errorf("fail to upsert cvm(%s) security group rel, err: %v, req: %+v, rid: %s",
+				cvmID, err, createDel, kt.Rid)
+			return err
+		}
+		return nil
+	}
+
+	// 只需要尝试删除多余关联关系即可
+	err := mgr.dataCli.Global.SGCommonRel.BatchDeleteSgCommonRels(kt, createDel.DeleteReq)
+	if err != nil {
+		logs.Errorf("fail to delete cvm(%s) security group rel, err: %v, req: %+v, rid: %s",
+			cvmID, err, createDel.DeleteReq, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+func (mgr *CvmRelManger) listCvmSGRelsFromDB(kt *kit.Kit, cvmIDs []string) (
+	map[string][]cloud.SGCommonRelWithBaseSecurityGroup, error) {
+
+	result := make(map[string][]cloud.SGCommonRelWithBaseSecurityGroup)
+	for _, ids := range slice.Split(cvmIDs, constant.BatchOperationMaxLimit) {
+		listReq := &datacloud.SGCommonRelWithSecurityGroupListReq{
+			ResIDs:  ids,
+			ResType: enumor.CvmCloudResType,
+		}
+		respResult, err := mgr.dataCli.Global.SGCommonRel.ListWithSecurityGroup(kt, listReq)
 		if err != nil {
 			logs.Errorf("list securityGroup cvm rel failed, err: %v, rid: %s", err, kt.Rid)
 			return nil, err
 		}
-
-		for _, rel := range respResult.Details {
-			if _, exist := result[rel.CvmID]; !exist {
-				result[rel.CvmID] = make(map[string]cvmRelInfo)
+		for _, rel := range *respResult {
+			if _, exist := result[rel.ResID]; !exist {
+				result[rel.ResID] = make([]cloud.SGCommonRelWithBaseSecurityGroup, 0)
 			}
-
-			result[rel.CvmID][rel.SecurityGroupID] = cvmRelInfo{
-				RelID:    rel.ID,
-				AssResID: rel.SecurityGroupID,
-			}
+			result[rel.ResID] = append(result[rel.ResID], rel)
 		}
-
-		if len(respResult.Details) < int(core.DefaultMaxPageLimit) {
-			break
-		}
-		listReq.Page.Start += uint32(len(respResult.Details))
 	}
 
 	return result, nil
-}
-
-func (mgr *CvmRelManger) deleteCvmSGRel(kt *kit.Kit, ids []uint64) error {
-
-	split := slice.Split(ids, constant.BatchOperationMaxLimit)
-	for _, partIDs := range split {
-		batchDeleteReq := &dataproto.BatchDeleteReq{
-			Filter: tools.ContainersExpression("id", partIDs),
-		}
-
-		if err := mgr.dataCli.Global.SGCvmRel.BatchDeleteSgCvmRels(kt.Ctx, kt.Header(), batchDeleteReq); err != nil {
-			logs.Errorf("batch delete securityGroup_cvm_rel failed, err: %v, rid: %s", err, kt.Rid)
-			return err
-		}
-	}
-
-	logs.Infof("delete cvm securityGroup rel success, count: %d, rid: %s", len(ids), kt.Rid)
-
-	return nil
-}
-
-func (mgr *CvmRelManger) createCvmSGRel(kt *kit.Kit, addRels []cvmRelInfo) error {
-	split := slice.Split(addRels, constant.BatchOperationMaxLimit)
-
-	for _, part := range split {
-		lists := make([]datacloud.SGCvmRelCreate, 0)
-		for _, one := range part {
-			rel := datacloud.SGCvmRelCreate{
-				SecurityGroupID: one.AssResID,
-				CvmID:           one.CvmID,
-			}
-			lists = append(lists, rel)
-		}
-
-		createReq := &datacloud.SGCvmRelBatchCreateReq{
-			Rels: lists,
-		}
-
-		if err := mgr.dataCli.Global.SGCvmRel.BatchCreateSgCvmRels(kt.Ctx, kt.Header(), createReq); err != nil {
-			logs.Errorf("batch create securityGroup_cvm_rel failed, err: %v, rid: %s", err, kt.Rid)
-			return err
-		}
-	}
-
-	logs.Infof("create cvm securityGroup rel success, count: %d, rid: %s", len(addRels), kt.Rid)
-
-	return nil
 }
 
 func (mgr *CvmRelManger) getSGMap(kt *kit.Kit) (map[string]string, error) {

@@ -147,7 +147,6 @@ func convertHuaWeiVpcCreateReq(req *hcservice.VpcCreateReq[hcservice.HuaWeiVpcCr
 		AccountID: req.AccountID,
 		CloudID:   data.CloudID,
 		BkBizID:   constant.UnassignedBiz,
-		BkCloudID: req.BkCloudID,
 		Name:      &data.Name,
 		Region:    data.Region,
 		Category:  req.Category,

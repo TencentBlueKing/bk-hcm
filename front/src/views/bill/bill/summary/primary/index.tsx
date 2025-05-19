@@ -9,6 +9,7 @@ import RecalculateBillDialog from './recalculate';
 import { useI18n } from 'vue-i18n';
 import { useTable } from '@/hooks/useTable/useTable';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
+import useChangeCurrency from '../../use-change-currency';
 import { reqBillsRootAccountSummaryList, reqBillsRootAccountSummarySum } from '@/api/bill';
 import { BillsRootAccountSummaryState } from '@/typings/bill';
 import { BILLS_ROOT_ACCOUNT_SUMMARY_STATE_MAP } from '@/constants';
@@ -25,11 +26,13 @@ export default defineComponent({
     const { usePrimaryHandler } = pluginHandler;
     const { renderOperation } = usePrimaryHandler();
 
-    const { columns, settings } = useColumns('billsRootAccountSummary');
+    const { handleChangeCurrencyChecked, customRender } = useChangeCurrency();
+    const { columns, settings } = useColumns('billsRootAccountSummary', false, '', { customRender });
 
     const confirmBillDialogRef = ref();
     const recalculateBillDialogRef = ref();
     const amountRef = ref();
+    const isChecked = ref(false);
 
     const canConfirmBill = (state: BillsRootAccountSummaryState) => {
       return ![BillsRootAccountSummaryState.accounting, BillsRootAccountSummaryState.syncing].includes(state);
@@ -46,6 +49,9 @@ export default defineComponent({
     };
     const handleRecalculate = (data: any) => {
       recalculateBillDialogRef.value.triggerShow(true, data);
+    };
+    const handleChange = (val: boolean) => {
+      handleChangeCurrencyChecked(val);
     };
 
     const { CommonTable, getListData, filter } = useTable({
@@ -125,7 +131,14 @@ export default defineComponent({
       <div class='full-height p24'>
         <CommonTable>
           {{
-            operation: () => renderOperation(bill_year.value, bill_month.value, filter),
+            operation: () => (
+              <>
+                {renderOperation(bill_year.value, bill_month.value, filter)}
+                <bk-checkbox class='change-currency' v-model={isChecked} onChange={handleChange}>
+                  {t('美元转人民币')}
+                </bk-checkbox>
+              </>
+            ),
             operationBarEnd: () => (
               <Button theme='primary' text onClick={goOperationRecord}>
                 <i class='hcm-icon bkhcm-icon-lishijilu mr4'></i>
