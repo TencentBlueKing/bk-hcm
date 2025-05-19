@@ -20,13 +20,11 @@
 package other
 
 import (
-	"context"
-	"net/http"
-
 	"hcm/pkg/api/core"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	protocloud "hcm/pkg/api/data-service/cloud"
-	"hcm/pkg/criteria/errf"
+	"hcm/pkg/client/common"
+	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
 
@@ -43,97 +41,52 @@ type CvmClient struct {
 }
 
 // BatchCreateCvm batch create cvm rule.
-func (cli *CvmClient) BatchCreateCvm(ctx context.Context, h http.Header,
+func (cli *CvmClient) BatchCreateCvm(kt *kit.Kit,
 	request *protocloud.CvmBatchCreateReq[corecvm.OtherCvmExtension]) (*core.BatchCreateResult, error) {
 
-	resp := new(core.BatchCreateResp)
-
-	err := cli.client.Post().
-		WithContext(ctx).
-		Body(request).
-		SubResourcef("/cvms/batch/create").
-		WithHeaders(h).
-		Do().
-		Into(resp)
+	resp, err := common.Request[protocloud.CvmBatchCreateReq[corecvm.OtherCvmExtension], core.BatchCreateResp](
+		cli.client, rest.POST, kt, request, "/cvms/batch/create")
 	if err != nil {
 		return nil, err
 	}
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
-	}
-
 	return resp.Data, nil
 }
 
 // BatchUpdateCvm batch update cvm.
-func (cli *CvmClient) BatchUpdateCvm(ctx context.Context, h http.Header,
+func (cli *CvmClient) BatchUpdateCvm(kt *kit.Kit,
 	request *protocloud.CvmBatchUpdateReq[corecvm.OtherCvmExtension]) error {
 
-	resp := new(rest.BaseResp)
-
-	err := cli.client.Patch().
-		WithContext(ctx).
-		Body(request).
-		SubResourcef("/cvms/batch/update").
-		WithHeaders(h).
-		Do().
-		Into(resp)
+	err := common.RequestNoResp[protocloud.CvmBatchUpdateReq[corecvm.OtherCvmExtension]](
+		cli.client, rest.PATCH, kt, request, "/cvms/batch/update")
 	if err != nil {
 		return err
 	}
-
-	if resp.Code != errf.OK {
-		return errf.New(resp.Code, resp.Message)
-	}
-
 	return nil
 }
 
 // GetCvm get cvm.
-func (cli *CvmClient) GetCvm(ctx context.Context, h http.Header, id string) (
+func (cli *CvmClient) GetCvm(kt *kit.Kit, id string) (
 	*corecvm.Cvm[corecvm.OtherCvmExtension], error) {
 
 	resp := new(protocloud.CvmGetResp[corecvm.OtherCvmExtension])
 
-	err := cli.client.Get().
-		WithContext(ctx).
-		SubResourcef("/cvms/%s", id).
-		WithHeaders(h).
-		Do().
-		Into(resp)
-
+	resp, err := common.Request[interface{}, protocloud.CvmGetResp[corecvm.OtherCvmExtension]](
+		cli.client, rest.GET, kt, nil, "/cvms/%s", id)
 	if err != nil {
 		return nil, err
-	}
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
 	}
 
 	return resp.Data, nil
 }
 
 // ListCvmExt list cvm with extension.
-func (cli *CvmClient) ListCvmExt(ctx context.Context, h http.Header, request *protocloud.CvmListReq) (
+func (cli *CvmClient) ListCvmExt(kt *kit.Kit, request *protocloud.CvmListReq) (
 	*protocloud.CvmExtListResult[corecvm.OtherCvmExtension], error) {
 
-	resp := new(protocloud.CvmExtListResp[corecvm.OtherCvmExtension])
-
-	err := cli.client.Post().
-		WithContext(ctx).
-		Body(request).
-		SubResourcef("/cvms/list").
-		WithHeaders(h).
-		Do().
-		Into(resp)
-
+	resp, err := common.Request[protocloud.CvmListReq, protocloud.CvmExtListResp[corecvm.OtherCvmExtension]](cli.client,
+		rest.POST, kt, request, "/cvms/list")
 	if err != nil {
 		return nil, err
-	}
-
-	if resp.Code != errf.OK {
-		return nil, errf.New(resp.Code, resp.Message)
 	}
 
 	return resp.Data, nil
