@@ -48,7 +48,7 @@ func BuildCreateCvmTasks(totalCount int64, limit int64, assignCvmOpt *AssignCvmO
 	}
 
 	// 如果业务ID大于0，代表要分配主机到业务下
-	if assignCvmOpt != nil && assignCvmOpt.BizID > 0 {
+	if assignCvmOpt != nil {
 		tasks = append(tasks, ts.CustomFlowTask{
 			ActionID:   action.ActIDType(uuid.UUID()),
 			ActionName: enumor.ActionAssignCvm,
