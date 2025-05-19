@@ -28,6 +28,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/logs"
+	"hcm/pkg/runtime/filter"
 )
 
 // -------------------------- Create --------------------------
@@ -100,3 +101,15 @@ func (req UpdateTenantField) Validate() error {
 
 // ListTenantResult defines list result.
 type ListTenantResult = core.ListResultT[tenant.Tenant]
+
+// -------------------------- Delete --------------------------
+
+// DeleteTenantReq tenant delete request.
+type DeleteTenantReq struct {
+	Filter *filter.Expression `json:"filter" validate:"required"`
+}
+
+// Validate tenant delete request.
+func (req *DeleteTenantReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
