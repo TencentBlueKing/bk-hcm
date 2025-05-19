@@ -178,7 +178,7 @@ func (a *ApplicationOfCreateTCloudCvm) renderNetwork() ([]formItem, error) {
 	}
 
 	// 所属的蓝鲸云区域
-	bkCloudAreaName, err := a.GetCloudAreaName(vpcInfo.BkCloudID)
+	bkCloudAreaName, err := a.GetCloudAreaName(cvt.PtrToVal(req.BkCloudID))
 	if err != nil {
 		return formItems, err
 	}

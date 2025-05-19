@@ -1,6 +1,7 @@
 /* eslint-disable no-useless-escape */
 // eslint-disable
 import { computed, defineComponent, reactive, ref, watch } from 'vue';
+import { storeToRefs } from 'pinia';
 import { Form, Input, Select, Checkbox, Button, Radio, Switcher, Slider, Alert } from 'bkui-vue';
 import ConditionOptions from '../components/common/condition-options/index.vue';
 import ZoneSelector from '@/components/zone-selector/index.vue';
@@ -9,7 +10,6 @@ import Imagelector from '../components/common/image-selector';
 import VpcSelector from '../components/common/vpc-selector';
 import SubnetSelector from '../components/common/subnet-selector';
 import SecurityGroupSelector from '../components/common/security-group-selector';
-import CloudAreaName from '../components/common/cloud-area-name';
 import BandwidthPackageSelector from '../components/common/BandwidthPackageSelector';
 import { Plus as PlusIcon } from 'bkui-vue/lib/icon';
 import GcpDataDiskFormDialog from './children/gcp-data-disk-form-dialog';
@@ -25,6 +25,7 @@ import useCondtion from '../hooks/use-condtion';
 import useCvmFormData, { getDataDiskDefaults, getGcpDataDiskDefaults } from '../hooks/use-cvm-form-data';
 
 import { useAccountStore } from '@/store';
+import { useCloudAreaStore } from '@/store/useCloudAreaStore';
 import CommonCard from '@/components/CommonCard';
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import { useRouter } from 'vue-router';
@@ -34,6 +35,7 @@ import http from '@/http';
 import { debounce } from 'lodash';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { pluginHandler } from '@pluginHandler/service-apply-cvm';
+import { bizApplyCvmCloudAreaSelectedKey } from '@/constants/storage-symbols';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 const accountStore = useAccountStore();
@@ -45,6 +47,9 @@ const { Group: RadioGroup, Button: RadioButton } = Radio;
 export default defineComponent({
   props: {},
   setup() {
+    const cloudAreaStore = useCloudAreaStore();
+    const { cloudAreaMap } = storeToRefs(cloudAreaStore);
+
     const { cond, isEmptyCond } = useCondtion();
     const {
       formData,
@@ -288,7 +293,7 @@ export default defineComponent({
                     <Input
                       type='number'
                       style={{ width: '160px' }}
-                      v-model={item.disk_size_gb}
+                      v-model_number={item.disk_size_gb}
                       min={1}
                       suffix='GB'
                       prefix='大小'></Input>
@@ -300,7 +305,7 @@ export default defineComponent({
                     <Input
                       style={{ width: '90px' }}
                       type='number'
-                      v-model={item.disk_count}
+                      v-model_number={item.disk_count}
                       min={dataDiskCountRules.value.min}></Input>
                   </FormItem>
                   <div class='btns'>
@@ -526,26 +531,14 @@ export default defineComponent({
           },
           {
             label: '管控区域',
-            description:
-              '管控区是蓝鲸可以管控的Agent网络区域，以实现跨网管理。\n一个VPC，对应一个管控区。如VPC未绑定管控区，请到资源接入-VPC-绑定管控区操作。',
+            description: '管控区是蓝鲸可以管控的Agent网络区域，以实现跨网管理。\n一个VPC，对应一个管控区。',
             display: whereAmI.value === Senarios.business,
             content: () => (
-              <>
-                <CloudAreaName id={cloudId.value} />
-                <span class={'instance-name-tips'}>
-                  如VPC未绑定管控区，请到资源接入-VPC-绑定管控区操作
-                  <Button
-                    theme='primary'
-                    text
-                    disabled={!formData.cloud_vpc_id}
-                    class={'ml6'}
-                    onClick={() => {
-                      refreshVpcList.value();
-                    }}>
-                    刷新
-                  </Button>
-                </span>
-              </>
+              <hcm-form-enum
+                v-model={formData.bk_cloud_id}
+                option={cloudAreaOption.value}
+                onChange={handleCloudAreaChange}
+              />
             ),
           },
           {
@@ -716,7 +709,7 @@ export default defineComponent({
                 content: () => (
                   <Input
                     type='number'
-                    v-model={formData.system_disk.disk_size_gb}
+                    v-model_number={formData.system_disk.disk_size_gb}
                     min={1}
                     suffix='GB'
                     prefix='大小'></Input>
@@ -749,7 +742,7 @@ export default defineComponent({
                       <Input
                         type='number'
                         style={{ width: '160px' }}
-                        v-model={item.disk_size_gb}
+                        v-model_number={item.disk_size_gb}
                         min={1}
                         suffix='GB'
                         prefix='大小'></Input>
@@ -761,7 +754,7 @@ export default defineComponent({
                       <Input
                         style={{ width: '90px' }}
                         type='number'
-                        v-model={item.disk_count}
+                        v-model_number={item.disk_count}
                         min={dataDiskCountRules.value.min}></Input>
                     </FormItem>
                     <div class='btns'>
@@ -997,6 +990,32 @@ export default defineComponent({
       ],
     };
 
+    // 业务下，可以选择管控区域
+    const cloudAreaOption = computed(() =>
+      // 暂不支持0管控区
+      Object.fromEntries(Array.from(cloudAreaMap.value.entries()).filter(([key]) => key !== 0)),
+    );
+    const handleCloudAreaChange = (val: string) => {
+      if (!val) {
+        localStorage.removeItem(bizApplyCvmCloudAreaSelectedKey);
+      } else {
+        localStorage.setItem(bizApplyCvmCloudAreaSelectedKey, val);
+      }
+      formData.bk_cloud_id = Number(val);
+    };
+    watch(
+      whereAmI,
+      (val) => {
+        if (val === Senarios.business) {
+          cloudAreaStore.fetchAllCloudAreas();
+          if (localStorage.getItem(bizApplyCvmCloudAreaSelectedKey)) {
+            formData.bk_cloud_id = Number(localStorage.getItem(bizApplyCvmCloudAreaSelectedKey));
+          }
+        }
+      },
+      { immediate: true },
+    );
+
     return () => (
       <div>
         <DetailHeader>
@@ -1113,7 +1132,7 @@ export default defineComponent({
                     type='number'
                     min={0}
                     max={100}
-                    v-model={formData.required_count}></Input>
+                    v-model_number={formData.required_count}></Input>
                 </FormItem>
 
                 {/* eslint-disable max-len */}
@@ -1123,7 +1142,7 @@ export default defineComponent({
                       <Input
                         style={{ width: '160px' }}
                         type='number'
-                        v-model={formData.purchase_duration.count}></Input>
+                        v-model_number={formData.purchase_duration.count}></Input>
                       <Select style={{ width: '50px' }} v-model={formData.purchase_duration.unit} clearable={false}>
                         {purchaseDurationUnits.map(({ id, name }: IOption) => (
                           <Option key={id} value={id} label={name}></Option>

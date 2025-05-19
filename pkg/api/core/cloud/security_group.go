@@ -26,21 +26,31 @@ import (
 
 // BaseSecurityGroup define base security group.
 type BaseSecurityGroup struct {
-	ID               string        `json:"id"`
-	Vendor           enumor.Vendor `json:"vendor"`
-	CloudID          string        `json:"cloud_id"`
-	Region           string        `json:"region"`
-	Name             string        `json:"name"`
-	Memo             *string       `json:"memo"`
-	CloudCreatedTime string        `json:"cloud_created_time"`
-	CloudUpdateTime  string        `json:"cloud_update_time"`
-	Tags             core.TagMap   `json:"tags"`
-	AccountID        string        `json:"account_id"`
-	BkBizID          int64         `json:"bk_biz_id"`
-	Creator          string        `json:"creator"`
-	Reviser          string        `json:"reviser"`
-	CreatedAt        string        `json:"created_at"`
-	UpdatedAt        string        `json:"updated_at"`
+	ID               string          `json:"id"`
+	Vendor           enumor.Vendor   `json:"vendor"`
+	CloudID          string          `json:"cloud_id"`
+	Region           string          `json:"region"`
+	Name             string          `json:"name"`
+	Memo             *string         `json:"memo"`
+	CloudCreatedTime string          `json:"cloud_created_time"`
+	CloudUpdateTime  string          `json:"cloud_update_time"`
+	Tags             core.TagMap     `json:"tags"`
+	AccountID        string          `json:"account_id"`
+	BkBizID          int64           `json:"bk_biz_id"`
+	MgmtType         enumor.MgmtType `json:"mgmt_type" `
+	MgmtBizID        int64           `json:"mgmt_biz_id" `
+	Manager          string          `json:"manager" `
+	BakManager       string          `json:"bak_manager"`
+	UsageBizIDs      []int64         `json:"usage_biz_ids"`
+	Creator          string          `json:"creator"`
+	Reviser          string          `json:"reviser"`
+	CreatedAt        string          `json:"created_at"`
+	UpdatedAt        string          `json:"updated_at"`
+}
+
+// GetID return id
+func (sg BaseSecurityGroup) GetID() string {
+	return sg.ID
 }
 
 // SecurityGroup define security group

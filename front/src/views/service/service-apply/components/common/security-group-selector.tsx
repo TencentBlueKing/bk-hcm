@@ -55,13 +55,18 @@ export default defineComponent({
       isDialogShow.value = false;
       // 应用缓存, 恢复编辑前的状态
       apply && applyCache();
+      otherBusinessIdSet.value.clear();
     };
 
     const securityList = ref([]);
     const isSecurityListLoading = ref(false);
     const confirmedSecurityGroupCloudList = ref([]);
     const searchVal = ref('');
+    const otherBusinessIdSet = ref(new Set());
 
+    const isOtherBusiness = (useagBizIds: number[]) => {
+      return useagBizIds?.length > 1;
+    };
     const getSecurityList = async (accountId: string, region: string, vpcId?: string) => {
       isSecurityListLoading.value = true;
       try {
@@ -134,14 +139,17 @@ export default defineComponent({
     });
 
     const computedSecurityGroupRules = computed(() => {
-      return securityGroupRules.value.map(({ id, name, data }) => ({
+      return securityGroupRules.value.map(({ id, name, data, usage_biz_ids }) => ({
         id,
         name,
+        usage_biz_ids,
         data: data.filter(({ type }: any) => type === selectedSecurityType.value),
       }));
     });
 
-    const boundId = computed(() => props.boundSecruity.map((item: any) => item.id));
+    const boundId = computed(() => props.boundSecruity?.map((item: any) => item.id) ?? []);
+
+    const showAlertInfo = computed(() => otherBusinessIdSet.value.size > 0);
 
     const securityRulesColumns = useColumns('securityCommon', false, props.vendor).columns.filter(
       ({ field }: { field: string }) => !['updated_at'].includes(field),
@@ -151,10 +159,13 @@ export default defineComponent({
 
     const currentIndex = ref(-1);
     const handleSecurityGroupChange = (isSelected: boolean, item: any, index: number) => {
+      const { id, usage_biz_ids } = item;
       if (isSelected) {
+        if (isOtherBusiness(usage_biz_ids)) otherBusinessIdSet.value.add(id);
         currentIndex.value = index;
         getSecurityInfo(item);
       } else {
+        otherBusinessIdSet.value.delete(id);
         securityGroupRules.value = securityGroupRules.value.filter(({ id }) => id !== getId(item));
       }
     };
@@ -169,7 +180,12 @@ export default defineComponent({
           },
         );
         const arr = res.data?.details || [];
-        securityGroupRules.value.unshift({ id: getId(item), name: item.name, data: arr });
+        securityGroupRules.value.unshift({
+          id: getId(item),
+          name: item.name,
+          data: arr,
+          usage_biz_ids: item.usage_biz_ids,
+        });
       } finally {
         isRulesTableLoading.value = false;
       }
@@ -271,7 +287,12 @@ export default defineComponent({
                           }
                           label={'data.cloud_id'}
                           onChange={(isSelected: boolean) => handleSecurityGroupChange(isSelected, item, index)}>
-                          {item.name}
+                          <span class={'security-search-name'}>{item.name}</span>
+                          {isOtherBusiness(item.usage_biz_ids) ? (
+                            <bk-tag theme={'success'} radius={'11px'} type={'filled'} size={'small'}>
+                              {t('跨业务')}
+                            </bk-tag>
+                          ) : null}
                         </Checkbox>
                       </div>
                     ))
@@ -316,6 +337,13 @@ export default defineComponent({
                   </Button>
                 </div>
                 <Loading loading={isRulesTableLoading.value}>
+                  {showAlertInfo.value ? (
+                    <bk-alert
+                      class='has-other-business'
+                      theme='warning'
+                      title={t('当前将绑定的安全组中，存在跨业务使用情况。如非业务特殊需求，请勿绑定其他业务的安全组')}
+                    />
+                  ) : null}
                   {/* @ts-ignore */}
                   <VueDraggable
                     ref={el}
@@ -325,9 +353,20 @@ export default defineComponent({
                     class={'security-group-rules-list g-scroller'}>
                     {computedSecurityGroupRules.value.length ? (
                       <TransitionGroup type='transition' name='fade'>
-                        {computedSecurityGroupRules.value.map(({ name, data }, idx) => (
+                        {computedSecurityGroupRules.value.map(({ name, data, usage_biz_ids }, idx) => (
                           <DraggableCard key={idx} title={name} index={idx + 1} isAllExpand={isAllExpand.value}>
-                            <Table data={data} columns={securityRulesColumns} showOverflowTooltip stripe={true} />
+                            {{
+                              tag: isOtherBusiness(usage_biz_ids)
+                                ? () => (
+                                    <bk-tag theme={'success'} radius={'11px'} type={'filled'} size={'small'}>
+                                      {t('跨业务')}
+                                    </bk-tag>
+                                  )
+                                : undefined,
+                              default: () => (
+                                <Table data={data} columns={securityRulesColumns} showOverflowTooltip stripe={true} />
+                              ),
+                            }}
                           </DraggableCard>
                         ))}
                       </TransitionGroup>

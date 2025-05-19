@@ -30,7 +30,7 @@ export default defineComponent({
     const isShow = ref(false);
     const isSubmitLoading = ref(false);
     const isEdit = ref(false);
-    const lastAsyncTaskInfo = reactive({ tgId: '', flowId: '', state: '' });
+    const asyncTaskMap = reactive<Map<string, { flowId: string; state: string }>>(new Map());
     const isSubmitDisabled = computed(() => {
       return !['add', 'edit', 'AddRs', 'port', 'weight', 'BatchDeleteRs'].includes(loadBalancerStore.currentScene);
     });
@@ -50,9 +50,14 @@ export default defineComponent({
       rs_list: [] as any[],
     });
     const clearFormData = () => {
+      // 先删除所有现有属性，避免数据污染
+      Object.keys(formData).forEach((key) => {
+        delete formData[key];
+      });
+      // 再重新赋默认值
       Object.assign(formData, getDefaultFormData());
     };
-    const formData = reactive(getDefaultFormData());
+    const formData = reactive<Record<string, any>>(getDefaultFormData());
     const { updateCount } = useChangeScene(isShow, formData);
     const { formItemOptions, canUpdateRegionOrVpc, formRef, rules, deletedRsList, regionVpcSelectorRef } =
       useAddOrUpdateTGForm(formData, updateCount, isEdit, lbDetail);
@@ -97,11 +102,12 @@ export default defineComponent({
       isShow.value = true;
       isEdit.value = true;
       // 判断是否有异步任务在执行
-      if (lastAsyncTaskInfo.tgId === data.id) {
+      const asyncTask = asyncTaskMap.get(data.id);
+      if (asyncTask) {
         // 轮询查询异步任务状态
         loadBalancerStore.setUpdateCount(2);
         timer = setInterval(() => {
-          reqAsyncTaskStatus(lastAsyncTaskInfo.tgId, lastAsyncTaskInfo.flowId);
+          reqAsyncTaskStatus(data.id, asyncTask.flowId);
         }, 2000);
       }
       nextTick(() => {
@@ -132,7 +138,7 @@ export default defineComponent({
               inst_type: 'CVM',
               ip: private_ipv4_addresses[0],
               cloud_inst_id: cloud_id,
-              port,
+              port: +port,
               weight,
             }))
           : undefined,
@@ -163,7 +169,7 @@ export default defineComponent({
                 inst_type: lbDetail.value?.extension?.snat_pro ? 'ENI' : 'CVM',
                 ip: private_ipv4_addresses[0],
                 cloud_inst_id: lbDetail.value?.extension?.snat_pro ? undefined : cloud_id,
-                port,
+                port: +port,
                 weight,
               };
             }),
@@ -173,7 +179,7 @@ export default defineComponent({
     // 处理参数 - 批量修改端口/权重
     const resolveFormDataForBatchUpdate = (type: 'port' | 'weight') => ({
       target_ids: formData.rs_list.map(({ id }) => id),
-      [`new_${type}`]: formData.rs_list[0][type],
+      [`new_${type}`]: +formData.rs_list[0][type],
     });
     // 处理参数 - 批量移除rs
     const resolveFormDataForBatchDeleteRs = () => ({
@@ -185,18 +191,19 @@ export default defineComponent({
     const reqAsyncTaskStatus = (tgId: string, flowId: string) => {
       businessStore.getAsyncTaskDetail(flowId).then(({ data: { state } }) => {
         if (state === 'success') {
+          // 移除异步任务
+          asyncTaskMap.delete(tgId);
           // 如果异步任务状态为 success, 则重新拉取 detail 详情
-          Object.assign(lastAsyncTaskInfo, { tgId: '', flowId: '', state });
           businessStore.getTargetGroupDetail(tgId).then((tgDetailRes: any) => {
             handleEditTargetGroup({ ...tgDetailRes.data, rs_list: tgDetailRes.data.target_list });
           });
         } else if (['canceled', 'failed'].includes(state)) {
           // 如果异步任务为非 success 的结束状态, 停止轮询, 并给用户错误提示
           clearInterval(timer);
-          Object.assign(lastAsyncTaskInfo, { tgId, flowId, state });
+          asyncTaskMap.set(tgId, { flowId, state });
         } else {
           // 如果异步任务状态为非结束状态, 则记录异步任务id, 当用户下一次点击该目标组详情时, 再查询一次异步任务状态
-          Object.assign(lastAsyncTaskInfo, { tgId, flowId, state });
+          asyncTaskMap.set(tgId, { flowId, state });
         }
       });
     };
@@ -242,7 +249,7 @@ export default defineComponent({
         const { data } = await promise();
         // 异步任务非结束状态, 记录异步任务flow_id以及当前操作目标组id
         if (data?.flow_id) {
-          Object.assign(lastAsyncTaskInfo, { tgId: formData.id, flowId: data.flow_id, state: 'pending' });
+          asyncTaskMap.set(formData.id, { flowId: data.flow_id, state: 'pending' });
           // 重置状态
           handleEditTargetGroup({ ...formData });
           // 异步任务，需要引导用户查看任务
@@ -295,6 +302,15 @@ export default defineComponent({
       ];
     };
 
+    const handleClose = () => {
+      const asyncTask = asyncTaskMap.get(formData.id);
+      if (!asyncTask) return;
+
+      if (['canceled', 'failed'].includes(asyncTask.state)) {
+        asyncTaskMap.delete(formData.id);
+      }
+    };
+
     onMounted(() => {
       bus.$on('addTargetGroup', handleAddTargetGroup);
       bus.$on('editTargetGroup', handleEditTargetGroup);
@@ -317,17 +333,18 @@ export default defineComponent({
         isSubmitLoading={isSubmitLoading.value}
         isSubmitDisabled={isSubmitDisabled.value}
         onHandleSubmit={handleAddOrUpdateTargetGroupSubmit}
-        handleClose={() => {
-          if (['canceled', 'failed'].includes(lastAsyncTaskInfo.state)) {
-            Object.assign(lastAsyncTaskInfo, { tgId: '', flowId: '', state: '' });
-          }
-        }}>
+        handleClose={handleClose}>
         <bk-container margin={0}>
           <Form formType='vertical' model={formData} ref={formRef} rules={rules}>
             {/* 异步任务提示 */}
             {(function () {
-              const { state } = lastAsyncTaskInfo;
-              if (state === 'success' || !state) return;
+              const asyncTask = asyncTaskMap.get(formData.id);
+
+              if (!asyncTask) return null;
+
+              const { flowId, state } = asyncTask;
+              if (state === 'success' || !state) return null;
+
               if (['canceled', 'failed'].includes(state)) {
                 return (
                   <Alert theme='danger' class='mb24'>
@@ -335,9 +352,7 @@ export default defineComponent({
                     <Button
                       text
                       theme='primary'
-                      onClick={() =>
-                        goAsyncTaskDetail(businessStore.list, lastAsyncTaskInfo.flowId, formData.bk_biz_id)
-                      }>
+                      onClick={() => goAsyncTaskDetail(businessStore.list, flowId, formData.bk_biz_id)}>
                       查看任务
                     </Button>
                     。
@@ -350,7 +365,7 @@ export default defineComponent({
                   <Button
                     text
                     theme='primary'
-                    onClick={() => goAsyncTaskDetail(businessStore.list, lastAsyncTaskInfo.flowId, formData.bk_biz_id)}>
+                    onClick={() => goAsyncTaskDetail(businessStore.list, flowId, formData.bk_biz_id)}>
                     查看任务
                   </Button>
                   。

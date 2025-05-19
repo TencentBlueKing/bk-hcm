@@ -142,16 +142,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
 
   const vpcColumns = [
     { type: 'selection', width: 30, minWidth: 30, onlyShowOnList: true },
-    getLinkField({ type: 'vpc', label: 'VPC ID', field: 'cloud_id' }),
-    // {
-    //   label: '资源 ID',
-    //   field: 'cloud_id',
-    //   sort: true,
-    //   isDefaultShow: true,
-    //   render({ cell }: { cell: string }) {
-    //     return h('span', [cell || '--']);
-    //   },
-    // },
+    getLinkField({ type: 'vpc', label: 'VPC ID', field: 'cloud_id', width: 'auto' }),
     {
       label: 'VPC 名称',
       field: 'name',
@@ -200,17 +191,6 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       field: 'bk_biz_id2',
       notDisplayedInBusiness: true,
       render: ({ data }: any) => businessMapStore.businessMap.get(data.bk_biz_id) || '未分配',
-    },
-    {
-      label: '管控区域',
-      field: 'bk_cloud_id',
-      isDefaultShow: true,
-      render({ cell }: { cell: number }) {
-        if (cell !== -1) {
-          return `[${cell}] ${cloudAreaStore.getNameFromCloudAreaMap(cell)}`;
-        }
-        return '--';
-      },
     },
     {
       label: '创建时间',

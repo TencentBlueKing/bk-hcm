@@ -7,6 +7,13 @@ import { AsyncTaskDetailResp, ClbQuotasResp, LbPriceInquiryResp } from '@/typing
 import { GLOBAL_BIZS_KEY, VendorEnum } from '@/common/constant';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
+
+export interface ICloneSecurityParams {
+  id: string;
+  name: string;
+  manager: string;
+  bak_manager: string;
+}
 // 获取
 const getBusinessApiPath = () => {
   const store = useAccountStore();
@@ -59,6 +66,19 @@ export const useBusinessStore = defineStore({
     addSecurity(data: any, isRes = false) {
       if (isRes) return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/security_groups/create`, data);
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}security_groups/create`, data);
+    },
+    /**
+     * @description: 克隆安全组
+     * @param {ICloneSecurityParams} data
+     * @return {*}
+     */
+    cloneSecurity(data: ICloneSecurityParams) {
+      const { id, name, manager, bak_manager } = data;
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}security_groups/${id}/clone`, {
+        name,
+        manager,
+        bak_manager,
+      });
     },
     addEip(id: number, data: any, isRes = false) {
       if (isRes) return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/eips/create`, data);

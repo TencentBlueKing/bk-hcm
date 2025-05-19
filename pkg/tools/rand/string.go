@@ -20,48 +20,56 @@
 package rand
 
 import (
-	cryptoRand "crypto/rand"
-	"math/big"
+	"bytes"
 	"math/rand"
+	"sync"
 	"time"
-
-	"hcm/pkg/logs"
+	"unsafe"
 )
 
-var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+var letterBytes = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+var globalRandX = rand.New(rand.NewSource(time.Now().UnixNano()))
+
+var randMu sync.Mutex
+
+var lastStringN []byte
 
 // String randomly generate a string of specified length.
 func String(n int) string {
-	b := make([]rune, n)
-	for i := range b {
-		num, err := cryptoRand.Int(cryptoRand.Reader, big.NewInt(int64(len(letterRunes))))
-		if err != nil {
-			logs.Errorf("rand.Int failed: %v", err)
-			num = big.NewInt(0)
+	randMu.Lock()
+	defer randMu.Unlock()
+	b := make([]byte, n)
+	for {
+		for i := range b {
+			b[i] = letterBytes[globalRandX.Intn(len(letterBytes))]
 		}
-		b[i] = letterRunes[num.Int64()]
+		if bytes.Compare(b, lastStringN) != 0 {
+			lastStringN = b
+			return *(*string)(unsafe.Pointer(&b))
+		}
 	}
-
-	return string(b)
 }
 
 // RandomRange return a random value which is between the value of between[0] and between[1].
 // so, do assure that between[0] < between[1].
 func RandomRange(between [2]int) int {
-	randX := rand.New(rand.NewSource(time.Now().UnixNano()))
-	return randX.Intn(between[1]-between[0]) + between[0]
+	randMu.Lock()
+	defer randMu.Unlock()
+	return globalRandX.Intn(between[1]-between[0]) + between[0]
 }
 
 // Prefix random string with prefix, same as prefix+rand.String(n)
 func Prefix(prefix string, n int) string {
-	randX := rand.New(rand.NewSource(time.Now().UnixNano()))
+	randMu.Lock()
+	defer randMu.Unlock()
 	prefixLen := len(prefix)
-	b := make([]rune, n+prefixLen)
+	b := make([]byte, n+prefixLen)
 	for i := range prefix {
-		b[i] = rune(prefix[i])
+		b[i] = prefix[i]
 	}
 	for i := 0; i < n; i++ {
-		b[i+prefixLen] = letterRunes[randX.Intn(len(letterRunes))]
+		b[i+prefixLen] = letterBytes[globalRandX.Intn(len(letterBytes))]
 	}
 
 	return string(b)

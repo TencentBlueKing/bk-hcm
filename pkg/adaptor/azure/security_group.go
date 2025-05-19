@@ -254,6 +254,54 @@ func (az *Azure) ListSecurityGroupByID(kt *kit.Kit, opt *core.AzureListByIDOptio
 	return typesSecurityGroups, nil
 }
 
+// ListRawSecurityGroupByID list security group, return raw response.
+// reference: https://learn.microsoft.com/en-us/rest/api/virtualnetwork/network-security-groups/list-all
+func (az *Azure) ListRawSecurityGroupByID(kt *kit.Kit, opt *core.AzureListByIDOption) (
+	[]*armnetwork.SecurityGroup, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "security group list option is required")
+	}
+
+	if err := opt.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	if len(opt.CloudIDs) == 0 {
+		return nil, errf.New(errf.InvalidParameter, "cloud_ids is required")
+	}
+
+	idMap := converter.StringSliceToMap(opt.CloudIDs)
+
+	client, err := az.clientSet.securityGroupClient()
+	if err != nil {
+		return nil, fmt.Errorf("new security group client failed, err: %v", err)
+	}
+
+	securityGroups := make([]*armnetwork.SecurityGroup, 0, len(idMap))
+	pager := client.NewListPager(opt.ResourceGroupName, nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(kt.Ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to advance page: %v", err)
+		}
+
+		for _, one := range nextResult.Value {
+			id := SPtrToLowerSPtr(one.ID)
+			if _, exist := idMap[*id]; exist {
+				securityGroups = append(securityGroups, one)
+				delete(idMap, *id)
+
+				if len(idMap) == 0 {
+					return securityGroups, nil
+				}
+			}
+		}
+	}
+
+	return securityGroups, nil
+}
+
 func (az *Azure) converCloudToSecurityGroup(cloud *armnetwork.SecurityGroup) *securitygroup.AzureSecurityGroup {
 	respSecurityGroup := &securitygroup.AzureSecurityGroup{
 		ID:              SPtrToLowerSPtr(cloud.ID),

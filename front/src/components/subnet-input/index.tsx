@@ -32,7 +32,11 @@ export const SubnetInput = defineComponent({
       ip4: o4,
     });
 
-    const { formModel: ipRange, setFormValues: setIpRange, resetForm: resetIpRange } = useFormModel({
+    const {
+      formModel: ipRange,
+      setFormValues: setIpRange,
+      resetForm: resetIpRange,
+    } = useFormModel({
       r1: 0 as any,
       r2: 0 as any,
       r3: 0 as any,
@@ -79,14 +83,14 @@ export const SubnetInput = defineComponent({
     watch(
       [() => newMask.value, () => props.ips],
       ([num]) => {
-        let arr = props.ips.range[props.ips.idx].ip.split('.').map((v) => +v);
+        const arr = props.ips.range[props.ips.idx].ip.split('.').map((v) => +v);
         // 双指针，指针中间部分可自由取0、1
-        let L = +props.ips.range[props.ips.idx].mask;
-        let R = +num;
+        const L = +props.ips.range[props.ips.idx].mask;
+        const R = +num;
         if (R < L) return;
         // 4段10进制共4段：0，1，2，3 - 判断左右指针分别在第几段
-        let i = Math.floor((L - 1) / 8);
-        let j = Math.floor((R - 1) / 8);
+        const i = Math.floor((L - 1) / 8);
+        const j = Math.floor((R - 1) / 8);
         const range = [-1, -1, -1, -1] as any;
         // 双指针窗口外均不能改动
         for (let k = 0; k < range.length; k++) {
@@ -164,7 +168,7 @@ export const SubnetInput = defineComponent({
         resetForm();
         resetIpRange();
         newMask.value = props.ips.range[props.ips.idx].mask;
-      }
+      },
     });
 
     return () => (
@@ -191,7 +195,7 @@ export const SubnetInput = defineComponent({
           <InputColumn
             type='number'
             key={String(ipRange.r2)}
-            v-model={formModel.ip2}
+            v-model_number={formModel.ip2}
             class={'w100'}
             disabled={ipRange.r2 === -1}
             min={0}
@@ -219,7 +223,7 @@ export const SubnetInput = defineComponent({
           <InputColumn
             type='number'
             key={String(ipRange.r3)}
-            v-model={formModel.ip3}
+            v-model_number={formModel.ip3}
             class={'w100'}
             disabled={ipRange.r3 === -1}
             min={0}
@@ -247,7 +251,7 @@ export const SubnetInput = defineComponent({
           <InputColumn
             type='number'
             key={String(ipRange.r4)}
-            v-model={formModel.ip4}
+            v-model_number={formModel.ip4}
             class={'w100'}
             disabled={ipRange.r4 === -1}
             min={0}
@@ -273,7 +277,7 @@ export const SubnetInput = defineComponent({
         /
         <div class={'item-wrapper'}>
           <InputColumn
-            v-model={newMask.value}
+            v-model_number={newMask.value}
             type='number'
             class={'w100'}
             min={maskRange.value.min}

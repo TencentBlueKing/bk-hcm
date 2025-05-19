@@ -46,6 +46,7 @@ type DoOrm interface {
 	Count(ctx context.Context, expr string, arg map[string]interface{}) (uint64, error)
 	Delete(ctx context.Context, expr string, arg map[string]interface{}) (int64, error)
 	Update(ctx context.Context, expr string, arg map[string]interface{}) (int64, error)
+	// Exec 通过modifySQLDo的Exec方法执行sql时，不支持多租户ID的替换
 	Exec(ctx context.Context, expr string) (int64, error)
 
 	Insert(ctx context.Context, expr string, data interface{}) error
@@ -70,6 +71,8 @@ type Interface interface {
 	AutoTxn(kt *kit.Kit, run TxnFunc) (interface{}, error)
 	// TableSharding at least one TableSharding option
 	TableSharding(opts ...TableShardingOpt) Interface
+	// ModifySQLOpts modify sql options
+	ModifySQLOpts(opts ...ModifySQLOpt) Interface
 }
 
 // InitOrm return orm operations.
@@ -248,14 +251,22 @@ func (o *runtimeOrm) TableSharding(opts ...TableShardingOpt) Interface {
 
 }
 
+// ModifySQLOpts ...
+func (o *runtimeOrm) ModifySQLOpts(opts ...ModifySQLOpt) Interface {
+	return &modifySQLOrm{
+		orm:           o,
+		modifySQLOpts: opts,
+	}
+}
+
 // tableShardingOrm orm for table sharding, it replaces table name in sql query
 type tableShardingOrm struct {
-	orm               *runtimeOrm
+	orm               Interface
 	tableShardingOpts []TableShardingOpt
 }
 
 type tableShardingDo struct {
-	do                *do
+	do                DoOrm
 	tableShardingOpts []TableShardingOpt
 }
 
@@ -355,12 +366,8 @@ func (ds *tableShardingDo) Select(ctx context.Context, dest interface{}, expr st
 
 // Do ...
 func (t tableShardingOrm) Do() DoOrm {
-
 	return &tableShardingDo{
-		do: &do{
-			db: t.orm.db,
-			ro: t.orm,
-		},
+		do:                t.orm.Do(),
 		tableShardingOpts: t.tableShardingOpts,
 	}
 }
@@ -380,10 +387,18 @@ func (t tableShardingOrm) AutoTxn(kt *kit.Kit, run TxnFunc) (interface{}, error)
 
 // TableSharding ...
 func (t tableShardingOrm) TableSharding(opts ...TableShardingOpt) Interface {
+	return &tableShardingOrm{
+		orm:               t,
+		tableShardingOpts: opts,
+	}
+}
 
-	t.tableShardingOpts = append(t.tableShardingOpts, opts...)
-
-	return t
+// ModifySQLOpts ...
+func (t tableShardingOrm) ModifySQLOpts(opts ...ModifySQLOpt) Interface {
+	return &modifySQLOrm{
+		orm:           t,
+		modifySQLOpts: opts,
+	}
 }
 
 func replaceUpdateTableName(shardingOpts []TableShardingOpt, origin string) (replaced string) {
@@ -475,12 +490,21 @@ func extractTableName(name string) string {
 	}
 
 	// remove backquote
-	if replaced[0] == '`' && replaced[len(replaced)-1] == '`' {
+	if len(replaced) > 0 && replaced[0] == '`' && replaced[len(replaced)-1] == '`' {
 		replaced = replaced[1 : len(replaced)-1]
 	}
 
 	return replaced
 }
+
+const (
+	// fromJoinMatchRe FROM/JOIN 匹配组
+	fromJoinMatchRe = `(?i)(?:FROM|JOIN)\s+`
+	// tableNameMatchRe 表名匹配组
+	tableNameMatchRe = "((?:`?\\w+`?\\.)?`?\\w+`?)"
+	// aliasNameMatchRe 别名匹配组
+	aliasNameMatchRe = `(?:\s+(?:AS\s+)?("` + `[^"` + `]+"` + `|` + "`" + `[^` + "`" + `]+` + "`" + `|\w+))?`
+)
 
 // regular expression for extracting table name
 var (
@@ -488,4 +512,386 @@ var (
 	joinTableNameRe   = regexp.MustCompile("(?i)\\sjoin\\s+(`?\\w+`?\\.)?`?\\w+`?")
 	updateTableNameRe = regexp.MustCompile("(?i)update\\s+(`?\\w+`?\\.)?`?\\w+`?")
 	insertTableNameRe = regexp.MustCompile("(?i)insert\\s+into\\s+(`?\\w+`?\\.)?`?\\w+`?")
+
+	fromJoinTableNameRe = regexp.MustCompile(fromJoinMatchRe + // FROM/JOIN 匹配组
+		tableNameMatchRe + // 表名匹配组
+		aliasNameMatchRe, // 别名匹配组
+	)
 )
+
+// modifySQLOrm orm for modify sql.
+type modifySQLOrm struct {
+	orm           Interface
+	modifySQLOpts []ModifySQLOpt
+}
+
+type modifySQLDo struct {
+	do            DoOrm
+	modifySQLOpts []ModifySQLOpt
+}
+
+type modifySQLDoTxn struct {
+	doTxn         DoOrmWithTransaction
+	modifySQLOpts []ModifySQLOpt
+}
+
+// TableSharding ...
+func (t modifySQLOrm) TableSharding(opts ...TableShardingOpt) Interface {
+	return &tableShardingOrm{
+		orm:               t,
+		tableShardingOpts: opts,
+	}
+}
+
+// ModifySQLOpts ...
+func (t modifySQLOrm) ModifySQLOpts(opts ...ModifySQLOpt) Interface {
+	return &modifySQLOrm{
+		orm:           t,
+		modifySQLOpts: opts,
+	}
+}
+
+// Count ...
+func (dt *modifySQLDoTxn) Count(ctx context.Context, expr string, arg map[string]interface{}) (uint64, error) {
+	for _, opt := range dt.modifySQLOpts {
+		expr, arg = opt.InjectJoinSQL(expr, arg)
+	}
+
+	return dt.doTxn.Count(ctx, expr, arg)
+}
+
+// Select ...
+func (dt *modifySQLDoTxn) Select(ctx context.Context, dest interface{}, expr string, arg map[string]interface{}) error {
+	for _, opt := range dt.modifySQLOpts {
+		expr, arg = opt.InjectJoinSQL(expr, arg)
+	}
+
+	return dt.doTxn.Select(ctx, dest, expr, arg)
+}
+
+// Delete ...
+func (dt *modifySQLDoTxn) Delete(ctx context.Context, expr string, arg map[string]interface{}) (int64, error) {
+	for _, opt := range dt.modifySQLOpts {
+		expr, arg = opt.InjectDeleteSQL(expr, arg)
+	}
+
+	return dt.doTxn.Delete(ctx, expr, arg)
+}
+
+// Update ...
+func (dt *modifySQLDoTxn) Update(ctx context.Context, expr string, arg map[string]interface{}) (int64, error) {
+	for _, opt := range dt.modifySQLOpts {
+		expr, arg = opt.InjectUpdateSQL(expr, arg)
+	}
+
+	return dt.doTxn.Update(ctx, expr, arg)
+}
+
+// Insert ...
+func (dt *modifySQLDoTxn) Insert(ctx context.Context, expr string, data interface{}) error {
+	for _, opt := range dt.modifySQLOpts {
+		expr, data = opt.InjectInsertSQL(expr, data)
+	}
+
+	return dt.doTxn.BulkInsert(ctx, expr, data)
+}
+
+// BulkInsert ...
+func (dt *modifySQLDoTxn) BulkInsert(ctx context.Context, expr string, args interface{}) error {
+	for _, opt := range dt.modifySQLOpts {
+		expr, args = opt.InjectInsertSQL(expr, args)
+	}
+
+	return dt.doTxn.BulkInsert(ctx, expr, args)
+}
+
+// Count ...
+func (ds *modifySQLDo) Count(ctx context.Context, expr string, arg map[string]interface{}) (uint64, error) {
+	for _, opt := range ds.modifySQLOpts {
+		expr, arg = opt.InjectJoinSQL(expr, arg)
+	}
+
+	return ds.do.Count(ctx, expr, arg)
+}
+
+// Delete ...
+func (ds *modifySQLDo) Delete(ctx context.Context, expr string, arg map[string]interface{}) (int64, error) {
+	for _, opt := range ds.modifySQLOpts {
+		expr, arg = opt.InjectDeleteSQL(expr, arg)
+	}
+
+	return ds.do.Delete(ctx, expr, arg)
+}
+
+// Update ...
+func (ds *modifySQLDo) Update(ctx context.Context, expr string, arg map[string]interface{}) (int64, error) {
+	for _, opt := range ds.modifySQLOpts {
+		expr, arg = opt.InjectUpdateSQL(expr, arg)
+	}
+
+	return ds.do.Update(ctx, expr, arg)
+}
+
+// Exec 通过modifySQLDo的Exec方法执行sql时，不支持多租户ID的替换
+func (ds *modifySQLDo) Exec(ctx context.Context, expr string) (int64, error) {
+	return ds.do.Exec(ctx, expr)
+}
+
+// Insert ...
+func (ds *modifySQLDo) Insert(ctx context.Context, expr string, data interface{}) error {
+	for _, opt := range ds.modifySQLOpts {
+		expr, data = opt.InjectInsertSQL(expr, data)
+	}
+
+	return ds.do.BulkInsert(ctx, expr, data)
+}
+
+// BulkInsert ...
+func (ds *modifySQLDo) BulkInsert(ctx context.Context, expr string, args interface{}) error {
+	for _, opt := range ds.modifySQLOpts {
+		expr, args = opt.InjectInsertSQL(expr, args)
+	}
+
+	return ds.do.BulkInsert(ctx, expr, args)
+}
+
+// Select ...
+func (ds *modifySQLDo) Select(ctx context.Context, dest interface{}, expr string, arg map[string]interface{}) error {
+	for _, opt := range ds.modifySQLOpts {
+		expr, arg = opt.InjectJoinSQL(expr, arg)
+	}
+
+	return ds.do.Select(ctx, dest, expr, arg)
+}
+
+// Do ...
+func (t modifySQLOrm) Do() DoOrm {
+	return &modifySQLDo{
+		do:            t.orm.Do(),
+		modifySQLOpts: t.modifySQLOpts,
+	}
+}
+
+// Txn ...
+func (t modifySQLOrm) Txn(tx *sqlx.Tx) DoOrmWithTransaction {
+	return &modifySQLDoTxn{
+		doTxn:         t.orm.Txn(tx),
+		modifySQLOpts: t.modifySQLOpts,
+	}
+}
+
+// AutoTxn ...
+func (t modifySQLOrm) AutoTxn(kt *kit.Kit, run TxnFunc) (interface{}, error) {
+	return t.orm.AutoTxn(kt, run)
+}
+
+// assemblyInsertSQL 处理"INSERT INTO ... VALUES"格式的SQL，并把指定字段的占位符，加到SQL语句中
+func assemblyInsertSQL(expr, fieldName string) (newExpr string, isMatched bool) {
+	// 找到字段列表的开始和结束位置
+	fieldsStart := strings.Index(expr, "(")
+	if fieldsStart == -1 {
+		return expr, false
+	}
+
+	fieldsEnd := strings.Index(expr[fieldsStart:], ")") + fieldsStart
+	if fieldsEnd == -1 {
+		return expr, false
+	}
+
+	// 找到VALUES关键字
+	valuesIndex := strings.Index(strings.ToUpper(expr), "VALUES")
+	if valuesIndex == -1 {
+		return expr, false
+	}
+
+	// 检查是否已包含fieldName字段
+	fields := expr[fieldsStart+1 : fieldsEnd]
+	if strings.Contains(strings.ToLower(fields), strings.ToLower(fieldName)) {
+		return expr, false
+	}
+
+	// 添加fieldName到字段列表
+	newFields := fields
+	if len(fields) > 0 {
+		newFields += ", "
+	}
+	newFields += fieldName
+
+	// 处理VALUES部分
+	valuesContent := strings.TrimSpace(expr[valuesIndex+6:])
+	// 分割多个VALUES组
+	valuesGroups := strings.Split(valuesContent, "),(")
+
+	// 为每个VALUES组添加fieldName参数
+	for i := range valuesGroups {
+		if i == 0 {
+			valuesGroups[i] = strings.TrimPrefix(valuesGroups[i], "(")
+		}
+		if i == len(valuesGroups)-1 {
+			valuesGroups[i] = strings.TrimSuffix(valuesGroups[i], ")")
+		}
+		// 添加fieldName参数
+		valuesGroups[i] = valuesGroups[i] + fmt.Sprintf(", :%s", fieldName)
+	}
+
+	// 重新组装VALUES部分
+	newValues := "(" + strings.Join(valuesGroups, "),(") + ")"
+
+	// 构建新的SQL语句
+	newExpr = expr[:fieldsStart+1] + newFields + expr[fieldsEnd:valuesIndex+6] + newValues
+	return newExpr, true
+}
+
+// assemblyInsertSelectSQL 处理"INSERT INTO ... SELECT"格式的SQL，并把指定字段的占位符，加到SQL语句中
+func assemblyInsertSelectSQL(expr, fieldName string) (newExpr string, selectTableName string, isMatched bool) {
+	// 提取字段列表
+	leftParen := strings.Index(expr, "(")
+	if leftParen == -1 {
+		return expr, "", false
+	}
+
+	rightParen := strings.Index(expr[leftParen:], ")")
+	if rightParen == -1 {
+		return expr, "", false
+	}
+
+	rightParen += leftParen
+
+	// 检查是否已包含fieldName字段
+	fields := expr[leftParen+1 : rightParen]
+	if strings.Contains(fields, fieldName) {
+		return expr, "", false
+	}
+
+	// 添加fieldName到字段列表
+	newFields := fields
+	if len(fields) > 0 {
+		newFields += ", "
+	}
+	newFields += fieldName
+
+	// 在SELECT部分添加fieldName字段
+	selectPos := strings.Index(strings.ToUpper(expr), "SELECT")
+	fromPos := strings.Index(strings.ToUpper(expr[selectPos:]), "FROM")
+	fromPos += selectPos
+
+	selectFields := expr[selectPos+6 : fromPos]
+	newSelectFields := strings.TrimRight(selectFields, " ")
+	if len(selectFields) > 0 {
+		newSelectFields += ","
+	}
+	newSelectFields += fmt.Sprintf("%s ", fieldName)
+
+	// 构建新的SQL
+	expr = expr[:leftParen+1] + newFields + expr[rightParen:selectPos+6] +
+		newSelectFields + expr[fromPos:]
+
+	// 识别SELECT部分的表名
+	selectTableMatches := fromTableNameRe.FindAllString(expr[fromPos:], -1)
+	if len(selectTableMatches) <= 0 {
+		return expr, "", false
+	}
+
+	// 在WHERE条件中添加fieldName过滤
+	wherePos := strings.Index(strings.ToUpper(expr), "WHERE")
+	if wherePos == -1 {
+		// 如果没有WHERE条件，添加一个
+		expr += fmt.Sprintf(" WHERE %s = :%s", fieldName, fieldName)
+	} else {
+		// 在现有WHERE条件前添加
+		expr = fmt.Sprintf("%sWHERE %s = :%s AND %s", expr[:wherePos], fieldName, fieldName, expr[wherePos+6:])
+	}
+	return expr, selectTableMatches[0][5:], true
+}
+
+// TableAlias 存储表名和别名信息
+type TableAlias struct {
+	TableName string // 表名
+	Alias     string // 别名
+}
+
+// parseTableAliases 从 SQL 语句中解析表名和别名
+func parseTableAliases(sql string) []TableAlias {
+	// 正则表达式匹配 FROM 和 JOIN 后的表名和别名
+	matches := fromJoinTableNameRe.FindAllStringSubmatch(sql, -1)
+
+	var result []TableAlias
+	for _, match := range matches {
+		tableName := match[1]
+		alias := match[2]
+
+		tableName = extractTableName(tableName)
+		tmpAlias := TableAlias{
+			TableName: tableName,
+			Alias:     alias,
+		}
+		// 如果别名为空，使用表名作为别名
+		if alias == "" || isSQLKeyword(alias) {
+			tmpAlias.Alias = tableName
+			result = append(result, tmpAlias)
+			continue
+		}
+
+		// 去掉别名引号
+		if len(alias) >= 2 && alias[0] == '`' && alias[len(alias)-1] == '`' {
+			alias = alias[1 : len(alias)-1]
+		}
+
+		tmpAlias.Alias = alias
+		result = append(result, tmpAlias)
+	}
+	return result
+}
+
+// isSQLKeyword 检查字符串是否是SQL关键字
+func isSQLKeyword(s string) bool {
+	keywords := []string{"WHERE", "GROUP", "HAVING", "ORDER", "LIMIT", "JOIN", "ON", "AND", "OR"}
+	for _, kw := range keywords {
+		if strings.EqualFold(s, kw) {
+			return true
+		}
+	}
+	return false
+}
+
+func appendConditionToExpr(expr string, conditions []string) string {
+	if len(conditions) == 0 {
+		return expr
+	}
+
+	// 处理JOIN查询中的条件
+	joinStart := strings.Index(strings.ToUpper(expr), "JOIN")
+	if joinStart != -1 && len(conditions) > 1 {
+		modifiedJoinQuery := appendConditionToExpr(expr[joinStart+4:], conditions[1:])
+		expr = expr[:joinStart+4] + modifiedJoinQuery
+		conditions = conditions[:1]
+	}
+
+	// 处理主查询的条件
+	whereIndex := strings.Index(strings.ToUpper(expr), "WHERE")
+	if whereIndex == -1 {
+		// 查找其他可能的子句
+		groupIndex := strings.Index(strings.ToUpper(expr), "GROUP BY")
+		orderIndex := strings.Index(strings.ToUpper(expr), "ORDER BY")
+		limitIndex := strings.Index(strings.ToUpper(expr), "LIMIT")
+
+		insertPos := len(expr)
+		if groupIndex != -1 {
+			insertPos = groupIndex
+		} else if orderIndex != -1 {
+			insertPos = orderIndex
+		} else if limitIndex != -1 {
+			insertPos = limitIndex
+		}
+
+		// 在合适的位置插入 WHERE 子句
+		appendCond := "WHERE " + strings.Join(conditions, " AND ")
+		expr = strings.TrimSpace(fmt.Sprintf("%s %s %s", expr[:insertPos], appendCond, expr[insertPos:]))
+		return expr
+	}
+
+	// 在现有 WHERE 子句后添加条件
+	appendCond := strings.Join(conditions, " AND ") + " AND "
+	expr = expr[:whereIndex+6] + appendCond + expr[whereIndex+6:]
+	return expr
+}

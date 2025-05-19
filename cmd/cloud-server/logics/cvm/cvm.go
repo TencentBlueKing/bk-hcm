@@ -30,7 +30,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/kit"
-	"hcm/pkg/thirdparty/esb"
+	"hcm/pkg/thirdparty/api-gateway/cmdb"
 )
 
 // Interface define cvm interface.
@@ -46,21 +46,44 @@ type Interface interface {
 }
 
 type cvm struct {
-	client    *client.ClientSet
-	audit     audit.Interface
-	eip       eip.Interface
-	disk      disk.Interface
-	esbClient esb.Client
+	client     *client.ClientSet
+	audit      audit.Interface
+	eip        eip.Interface
+	disk       disk.Interface
+	cmdbClient cmdb.Client
 }
 
 // NewCvm new cvm.
 func NewCvm(client *client.ClientSet, audit audit.Interface, eip eip.Interface, disk disk.Interface,
-	esbClient esb.Client) Interface {
+	cmdbClient cmdb.Client) Interface {
 	return &cvm{
-		client:    client,
-		audit:     audit,
-		eip:       eip,
-		disk:      disk,
-		esbClient: esbClient,
+		client:     client,
+		audit:      audit,
+		eip:        eip,
+		disk:       disk,
+		cmdbClient: cmdbClient,
 	}
+}
+
+// AssignedCvmInfo assigned cvm info
+type AssignedCvmInfo struct {
+	CvmID     string `json:"cvm_id"`
+	BkBizID   int64  `json:"bk_biz_id"`
+	BkCloudID int64  `json:"bk_cloud_id"`
+}
+
+// PreviewAssignedCvmInfo preview assigned cvm info
+type PreviewAssignedCvmInfo struct {
+	CvmID         string
+	AccountBizIDs []int64
+	Vendor        enumor.Vendor
+	CloudID       string
+	InnerIPv4     string
+	MacAddr       string
+}
+
+// PreviewCvmMatchResult preview cvm match result
+type PreviewCvmMatchResult struct {
+	BkBizID   int64
+	BkCloudID int64
 }

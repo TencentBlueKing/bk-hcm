@@ -48,6 +48,9 @@ spec:
             - /data/hcm/bk-hcm-authserver
             - --bind-ip=$(POD_IP)
             - --config-file=/data/hcm/etc/config.yaml
+            {{ if .Values.authserver.disableAuth -}}
+            - --disable-auth
+            {{ end }}
           livenessProbe:
             httpGet:
               path: /healthz

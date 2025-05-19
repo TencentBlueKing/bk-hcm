@@ -16,7 +16,6 @@ POST /api/v1/cloud/vendors/gcp/applications/types/create_vpc
 | account_id   | string | 是  | 账号ID                        |
 | region       | string | 是  | 地域                          |
 | name         | string | 是  | 名称                          |
-| bk_cloud_id  | int64  | 是  | 云区域ID，-1表示没有绑定云区域           |
 | routing_mode | string | 是  | 动态路由模式（枚举值：REGIONAL、GLOBAL） |
 | subnet       | object | 是  | 子网                          |
 | memo         | string | 否  | 备注                          |
@@ -39,7 +38,6 @@ POST /api/v1/cloud/vendors/gcp/applications/types/create_vpc
   "account_id": "0000001",
   "region": "ap-hk",
   "name": "xxx",
-  "bk_cloud_id": 1000,
   "routing_mode": "REGIONAL",
   "subnet": {
     "name": "xxxxx",

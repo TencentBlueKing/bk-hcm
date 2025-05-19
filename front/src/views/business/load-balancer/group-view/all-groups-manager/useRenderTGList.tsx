@@ -36,7 +36,6 @@ export default () => {
       name: t('云厂商'),
       children: [{ id: VendorEnum.TCLOUD, name: VendorMap[VendorEnum.TCLOUD] }],
     },
-    { id: 'region', name: t('地域') },
     { id: 'cloud_vpc_id', name: t('所属VPC') },
     {
       id: 'health_check.health_switch',

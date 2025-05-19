@@ -21,7 +21,7 @@ const displayValue = computed(() => {
     }
     return `${user.username}(${user.display_name})`;
   });
-  return names?.join?.(';');
+  return names?.join?.(';') || '--';
 });
 
 const userStore = useUserStore();

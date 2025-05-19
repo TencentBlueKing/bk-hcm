@@ -118,7 +118,7 @@ defineExpose([validate]);
     <bk-form-item label="空闲超时(分钟)" property="idle_timeout_in_minutes" required min="4" max="30">
       <bk-input
         v-if="formData.ip_version === 'ipv4'"
-        v-model="formData.idle_timeout_in_minutes"
+        v-model.number="formData.idle_timeout_in_minutes"
         type="number"
         placeholder="请输入空闲超时，最小值4，最大值30"
       />

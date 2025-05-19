@@ -162,7 +162,7 @@ export default defineComponent({
                 min={dataDiskSizeRules(formData.disk_type).min}
                 max={dataDiskSizeRules(formData.disk_type).max}
                 step={10}
-                v-model={formData.disk_size}
+                v-model_number={formData.disk_size}
                 suffix='GB'></Input>
             ),
           },
@@ -170,7 +170,7 @@ export default defineComponent({
             label: '购买数量',
             required: true,
             property: 'disk_count',
-            content: () => <Input type='number' min={1} max={500} v-model={formData.disk_count}></Input>,
+            content: () => <Input type='number' min={1} max={500} v-model_number={formData.disk_count}></Input>,
           },
           {
             label: '计费模式',
@@ -192,7 +192,7 @@ export default defineComponent({
             content: [
               {
                 property: 'purchase_duration.size',
-                content: () => <Input type='number' min={1} v-model={formData.purchase_duration.count}></Input>,
+                content: () => <Input type='number' min={1} v-model_number={formData.purchase_duration.count}></Input>,
               },
               {
                 property: 'purchase_duration.unit',

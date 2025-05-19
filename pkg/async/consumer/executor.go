@@ -23,6 +23,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"runtime/debug"
 	"sync"
 
 	"hcm/pkg/api/core"
@@ -188,6 +189,15 @@ func (exec *executor) workerDo(task *Task) (err error) {
 	logs.Infof("start execute task %s, action: %s, flow: %s, rid: %s",
 		task.ID, task.ActionName, task.FlowID, task.Kit.Rid)
 	defer func() {
+		if fatalErr := recover(); fatalErr != nil {
+			logs.Errorf("[hcm server panic], taskID: %s, flowID: %s, err: %v, rid: %s, debug strace: %s",
+				task.ID, task.Flow.ID, err, task.Kit.Rid, debug.Stack())
+			if fErr, ok := fatalErr.(error); ok {
+				runErr = fErr
+			} else {
+				runErr = fmt.Errorf("panic: %v", fatalErr)
+			}
+		}
 		if runErr == nil {
 			return
 		}

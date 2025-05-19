@@ -21,17 +21,26 @@ package securitygroup
 
 import (
 	"errors"
+	"fmt"
 
+	"hcm/pkg/adaptor/huawei"
+	"hcm/pkg/adaptor/types"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
+	corecvm "hcm/pkg/api/core/cloud/cvm"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	proto "hcm/pkg/api/hc-service"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
+
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v2/model"
 )
 
 // CreateHuaWeiSecurityGroup create huawei security group.
@@ -75,6 +84,12 @@ func (g *securityGroup) CreateHuaWeiSecurityGroup(cts *rest.Contexts) (interface
 					CloudProjectID:           sg.ProjectId,
 					CloudEnterpriseProjectID: sg.EnterpriseProjectId,
 				},
+				// Tags:        core.NewTagMap(req.Tags...),
+				MgmtType:    req.MgmtType,
+				MgmtBizID:   req.MgmtBizID,
+				Manager:     req.Manager,
+				BakManager:  req.BakManager,
+				UsageBizIds: req.UsageBizIds,
 			},
 		},
 	}
@@ -119,23 +134,71 @@ func (g *securityGroup) HuaWeiSecurityGroupAssociateCvm(cts *rest.Contexts) (int
 		return nil, err
 	}
 
-	createReq := &protocloud.SGCvmRelBatchCreateReq{
-		Rels: []protocloud.SGCvmRelCreate{
-			{
-				SecurityGroupID: req.SecurityGroupID,
-				CvmID:           req.CvmID,
-			},
-		},
-	}
-	if err = g.dataCli.Global.SGCvmRel.BatchCreateSgCvmRels(cts.Kit.Ctx, cts.Kit.Header(), createReq); err != nil {
-		logs.Errorf("request dataservice create security group cvm rels failed, err: %v, req: %+v, rid: %s",
-			err, createReq, cts.Kit.Rid)
+	err = g.createSGCommonRelsForHuawei(cts.Kit, client, sg.Region, cvm)
+	if err != nil {
+		logs.Errorf("create security group common rels failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
 
 	// TODO: 同步主机数据
 
 	return nil, nil
+}
+
+func (g *securityGroup) createSGCommonRelsForHuawei(kt *kit.Kit, client *huawei.HuaWei, region string,
+	cvm *corecvm.BaseCvm) error {
+
+	huaweiCvmFromCloud, err := g.listHuaweiCvmFromCloud(kt, client, region, cvm.CloudID)
+	if err != nil {
+		logs.Errorf("request adaptor to list cvm from cloud failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	sgCloudIDs := make([]string, 0, len(huaweiCvmFromCloud[0].SecurityGroups))
+	for _, cur := range huaweiCvmFromCloud[0].SecurityGroups {
+		sgCloudIDs = append(sgCloudIDs, cur.Id)
+	}
+
+	sgCloudIDToIDMap, err := g.getSecurityGroupMapByCloudIDs(kt, enumor.HuaWei, region, sgCloudIDs)
+	if err != nil {
+		logs.Errorf("get security group map by cloud ids failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	sgIDs := make([]string, 0, len(sgCloudIDs))
+	for _, sgCloudID := range sgCloudIDs {
+		sgID, ok := sgCloudIDToIDMap[sgCloudID]
+		if !ok {
+			logs.Errorf("cloud id(%s) not found in security group map, rid: %s", sgCloudID, kt.Rid)
+			return fmt.Errorf("cloud id(%s) not found in security group map", sgCloudID)
+		}
+		sgIDs = append(sgIDs, sgID)
+	}
+
+	err = g.createSGCommonRels(kt, enumor.HuaWei, enumor.CvmCloudResType, cvm.ID, sgIDs)
+	if err != nil {
+		logs.Errorf("create security group common rels failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+	return nil
+}
+
+func (g *securityGroup) listHuaweiCvmFromCloud(kt *kit.Kit, client *huawei.HuaWei, region, cvmCloudID string) (
+	[]typecvm.HuaWeiCvm, error) {
+
+	listOpt := &typecvm.HuaWeiListOption{
+		Region:   region,
+		CloudIDs: []string{cvmCloudID},
+	}
+	cvms, err := client.ListCvm(kt, listOpt)
+	if err != nil {
+		logs.Errorf("request adaptor to list cvm failed, err: %v, opt: %v, rid: %s", err, listOpt, kt.Rid)
+		return nil, err
+	}
+	if len(cvms) == 0 {
+		return nil, fmt.Errorf("cvm(%s) not found from cloud", cvmCloudID)
+	}
+	return cvms, nil
 }
 
 // HuaWeiSecurityGroupDisassociateCvm ...
@@ -189,12 +252,9 @@ func (g *securityGroup) HuaWeiSecurityGroupDisassociateCvm(cts *rest.Contexts) (
 		return nil, err
 	}
 
-	deleteReq, err := buildSGCvmRelDeleteReq(req.SecurityGroupID, req.CvmID)
-	if err != nil {
-		logs.Errorf("build sg cvm rel delete req failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-	if err = g.dataCli.Global.SGCvmRel.BatchDeleteSgCvmRels(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
+	deleteReq := buildSGCommonRelDeleteReq(
+		enumor.HuaWei, req.CvmID, []string{req.SecurityGroupID}, enumor.CvmCloudResType)
+	if err = g.dataCli.Global.SGCommonRel.BatchDeleteSgCommonRels(cts.Kit, deleteReq); err != nil {
 		logs.Errorf("request dataservice delete security group cvm rels failed, err: %v, req: %+v, rid: %s",
 			err, deleteReq, cts.Kit.Rid)
 		return nil, err
@@ -304,4 +364,95 @@ func (g *securityGroup) UpdateHuaWeiSecurityGroup(cts *rest.Contexts) (interface
 	}
 
 	return nil, nil
+}
+
+// HuaweiListSecurityGroupStatistic result a list of *proto.HuaweiListSecurityGroupStatisticItem.
+func (g *securityGroup) HuaweiListSecurityGroupStatistic(cts *rest.Contexts) (any, error) {
+	req := new(proto.ListSecurityGroupStatisticReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	sgMap, err := g.getSecurityGroupMap(cts.Kit, req.SecurityGroupIDs)
+	if err != nil {
+		logs.Errorf("get security group map failed, sgID: %v, err: %v, rid: %s", req.SecurityGroupIDs, err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	cloudIDToSgIDMap := make(map[string]string)
+	for _, sgID := range req.SecurityGroupIDs {
+		sg, ok := sgMap[sgID]
+		if !ok {
+			return nil, fmt.Errorf("huawei security group: %s not found", sgID)
+		}
+		cloudIDToSgIDMap[sg.CloudID] = sgID
+	}
+
+	ports, err := g.listHuaweiPorts(cts.Kit, req.Region, req.AccountID, cloudIDToSgIDMap)
+	if err != nil {
+		logs.Errorf("list ports failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	sgIDToResourceCountMap, err := g.countHuaweiSecurityGroupStatistic(cts.Kit, ports, cloudIDToSgIDMap)
+	if err != nil {
+		logs.Errorf("count huawei security group statistic failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	return resCountMapToSGStatisticResp(sgIDToResourceCountMap), nil
+}
+
+func (g *securityGroup) countHuaweiSecurityGroupStatistic(kt *kit.Kit, ports []model.Port,
+	cloudIDToSgIDMap map[string]string) (map[string]map[string]int64, error) {
+
+	sgIDToResourceCountMap := make(map[string]map[string]int64)
+	for _, sgID := range cloudIDToSgIDMap {
+		sgIDToResourceCountMap[sgID] = make(map[string]int64)
+	}
+	for _, port := range ports {
+		for _, cloudID := range port.SecurityGroups {
+			sgID, ok := cloudIDToSgIDMap[cloudID]
+			if !ok {
+				logs.Warnf("cloudID: %s not found in cloudIDToSgIDMap, vendor: %s, rid: %s",
+					cloudID, enumor.HuaWei, kt.Rid)
+				continue
+			}
+			sgIDToResourceCountMap[sgID][port.DeviceOwner.Value()]++
+		}
+	}
+	return sgIDToResourceCountMap, nil
+}
+
+func (g *securityGroup) listHuaweiPorts(kt *kit.Kit, region, accountID string, cloudIDToSgIDMap map[string]string) (
+	[]model.Port, error) {
+
+	client, err := g.ad.HuaWei(kt, accountID)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := &types.HuaweiListPortOption{
+		Region:           region,
+		SecurityGroupIDs: converter.MapKeyToSlice(cloudIDToSgIDMap),
+	}
+
+	result := make([]model.Port, 0)
+	for {
+		resp, err := client.ListPorts(kt, opt)
+		if err != nil {
+			logs.Errorf("request adaptor to huawei security group statistic failed, err: %v, opt: %v, rid: %s",
+				err, opt, kt.Rid)
+			return nil, err
+		}
+		if len(resp) == 0 {
+			break
+		}
+		result = append(result, resp...)
+		opt.Marker = resp[len(resp)-1].Id
+	}
+	return result, nil
 }

@@ -1,4 +1,4 @@
-import { PropType, defineComponent, ref, watch } from 'vue';
+import { PropType, defineComponent, ref } from 'vue';
 import StepDialog from '@/components/step-dialog/step-dialog';
 import './add-rule.scss';
 import { VendorEnum } from '@/common/constant';
@@ -48,7 +48,7 @@ export default defineComponent({
       type: String,
     },
     activeType: {
-      type: String,
+      type: String as PropType<'ingress' | 'egress'>,
     },
     relatedSecurityGroups: {
       type: Array as PropType<any>,
@@ -57,7 +57,7 @@ export default defineComponent({
       type: Boolean as PropType<boolean>,
     },
     templateData: {
-      type: Object as PropType<Record<string, Array<any>>>,
+      type: Object as PropType<{ ipList: Array<string>; ipGroupList: Array<string> }>,
     },
     id: String,
   },
@@ -71,12 +71,13 @@ export default defineComponent({
       {
         component: () => (
           <AddRuleTable
-            {...props}
             ref={instance}
             vendor={props.vendor as VendorEnum}
             templateData={props.templateData}
             relatedSecurityGroups={props.relatedSecurityGroups}
             id={props.id}
+            activeType={props.activeType}
+            isEdit={props.isEdit}
           />
         ),
       },
@@ -90,8 +91,7 @@ export default defineComponent({
       isSubmitLoading.value = true;
       try {
         await instance.value.handleSubmit();
-      }
-      finally {
+      } finally {
         isSubmitLoading.value = false;
       }
       emit('submit');

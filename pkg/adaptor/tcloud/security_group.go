@@ -362,3 +362,47 @@ func (t *TCloudImpl) DescribeSecurityGroupAssociationStatistics(kt *kit.Kit, opt
 
 	return result, nil
 }
+
+// CloneSecurityGroup clone security group.
+// reference: https://cloud.tencent.com/document/api/215/51025
+func (t *TCloudImpl) CloneSecurityGroup(kt *kit.Kit, opt *securitygroup.TCloudSecurityGroupCloneOption) (
+	*vpc.SecurityGroup, error) {
+
+	if opt == nil {
+		return nil, errf.New(errf.InvalidParameter, "security group clone option is required")
+	}
+	if err := opt.Validate(); err != nil {
+		return nil, err
+	}
+
+	client, err := t.clientSet.VpcClient(opt.Region)
+	if err != nil {
+		return nil, err
+	}
+
+	req := vpc.NewCloneSecurityGroupRequest()
+	req.SecurityGroupId = cvt.ValToPtr(opt.SecurityGroupID)
+	req.GroupName = cvt.ValToPtr(opt.GroupName)
+	for _, tag := range opt.Tags {
+		req.Tags = append(req.Tags, &vpc.Tag{
+			Key:   cvt.ValToPtr(tag.Key),
+			Value: cvt.ValToPtr(tag.Value),
+		})
+	}
+
+	if opt.RemoteRegion != "" {
+		req.RemoteRegion = cvt.ValToPtr(opt.RemoteRegion)
+	}
+
+	resp, err := client.CloneSecurityGroupWithContext(kt.Ctx, req)
+	if err != nil {
+		logs.Errorf("clone tcloud security group failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
+		return nil, err
+	}
+
+	if resp == nil || resp.Response == nil || resp.Response.SecurityGroup == nil {
+		return nil, errors.New("clone tcloud security group return security group is nil")
+	}
+
+	return resp.Response.SecurityGroup, nil
+}

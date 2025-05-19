@@ -48,3 +48,10 @@ data:
       {{- toYaml .Values.cmsi | nindent 6 }}
     cloudSelection:
       {{- toYaml .Values.cloudserver.cloudSelection | nindent 6 }}
+    taskManagement:
+      {{- toYaml .Values.cloudserver.taskManagement | nindent 6 }}
+    tenant:
+      {{- toYaml .Values.tenant | nindent 6 }}
+
+    cmdb:
+      {{- toYaml .Values.cmdb | nindent 6 }}

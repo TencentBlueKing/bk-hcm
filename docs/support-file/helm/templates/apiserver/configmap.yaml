@@ -19,6 +19,8 @@ data:
         {{- include "common.tplvalues.render" (dict "value" (include "bk-hcm.etcdConfig" .) "context" $) | nindent 8 }}
     log:
       {{- toYaml .Values.apiserver.log | nindent 6 }}
+    tenant:
+      {{- toYaml .Values.tenant | nindent 6 }}
   {{- if and (not .Values.apiserver.disableJwt) .Values.apiserver.apigwPublicKey }}
   apigw_public.key: |-
       {{- .Values.apiserver.apigwPublicKey | b64dec | nindent 6 }}

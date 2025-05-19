@@ -2,7 +2,7 @@
 import { ref, watch, defineEmits, defineExpose, defineProps } from 'vue';
 
 const emit = defineEmits(['change']);
-const props = defineProps({
+defineProps({
   region: {
     type: String,
   },
@@ -10,7 +10,6 @@ const props = defineProps({
     type: String,
   },
 });
-console.log(props);
 const formData = ref<any>({
   eip_name: '', // eip名称
   eip_type: '5_bgp', // 线路类型. 5_bgp（全动态BGP） |5_sbgp（静态BGP）
@@ -113,7 +112,7 @@ defineExpose([validate]);
     >
       <bk-compose-form-item>
         <bk-input
-          v-model="formData.bandwidth_option.size"
+          v-model.number="formData.bandwidth_option.size"
           placeholder="请输入带宽大小"
           type="number"
           :min="1"
@@ -135,7 +134,7 @@ defineExpose([validate]);
       required
     >
       <bk-compose-form-item>
-        <bk-input v-model="internet_charge_prepaid.period_num" placeholder="请输入时间" type="number" />
+        <bk-input v-model.number="internet_charge_prepaid.period_num" placeholder="请输入时间" type="number" />
         <bk-select v-model="internet_charge_prepaid.period_type" :clearable="false">
           <bk-option value="month" label="月" />
           <bk-option value="year" label="年" />

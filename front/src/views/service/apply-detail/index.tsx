@@ -117,7 +117,7 @@ export default defineComponent({
         </div>
       );
       // 负载均衡详情
-      if (route.query.type.includes('load_balancer')) {
+      if (route.query.type?.includes('load_balancer')) {
         vNode = <Clb applicationDetail={currentApplyData.value} loading={isLoading.value} />;
       }
       return vNode;

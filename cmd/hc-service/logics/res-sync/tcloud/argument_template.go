@@ -474,8 +474,10 @@ func (cli *client) RemoveArgsTplAddressDeleteFromCloud(kt *kit.Kit, accountID, r
 			}
 
 			cloudIDs = converter.MapKeyToStringSlice(cloudIDMap)
-			if err = cli.deleteAddress(kt, accountID, region, cloudIDs); err != nil {
-				return err
+			if len(cloudIDs) > 0 {
+				if err = cli.deleteAddress(kt, accountID, region, cloudIDs); err != nil {
+					return err
+				}
 			}
 		}
 
@@ -730,8 +732,10 @@ func (cli *client) RemoveArgsTplAddressGroupDeleteFromCloud(kt *kit.Kit, account
 			}
 
 			cloudIDs = converter.MapKeyToStringSlice(cloudIDMap)
-			if err = cli.deleteAddressGroup(kt, accountID, region, cloudIDs); err != nil {
-				return err
+			if len(cloudIDs) > 0 {
+				if err = cli.deleteAddressGroup(kt, accountID, region, cloudIDs); err != nil {
+					return err
+				}
 			}
 		}
 
@@ -1002,8 +1006,10 @@ func (cli *client) RemoveArgsTplServiceDeleteFromCloud(kt *kit.Kit, accountID, r
 			}
 
 			cloudIDs = converter.MapKeyToStringSlice(cloudIDMap)
-			if err = cli.deleteService(kt, accountID, region, cloudIDs); err != nil {
-				return err
+			if len(cloudIDs) > 0 {
+				if err = cli.deleteService(kt, accountID, region, cloudIDs); err != nil {
+					return err
+				}
 			}
 		}
 
@@ -1259,8 +1265,10 @@ func (cli *client) RemoveArgsTplServiceGroupDeleteFromCloud(kt *kit.Kit, account
 			}
 
 			cloudIDs = converter.MapKeyToStringSlice(cloudIDMap)
-			if err = cli.deleteServiceGroup(kt, accountID, region, cloudIDs); err != nil {
-				return err
+			if len(cloudIDs) > 0 {
+				if err = cli.deleteServiceGroup(kt, accountID, region, cloudIDs); err != nil {
+					return err
+				}
 			}
 		}
 

@@ -10,10 +10,10 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/security_groups/{id}
 
 ### 输入参数
 
-| 参数名称       | 参数类型    | 必选 | 描述    |
-|------------|---------|----|-------|
-| bk_biz_id  | int64   | 是  | 业务ID  |
-| id         | string  | 是  | 安全组ID |
+| 参数名称      | 参数类型   | 必选 | 描述    |
+|-----------|--------|----|-------|
+| bk_biz_id | int64  | 是  | 业务ID  |
+| id        | string | 是  | 安全组ID |
 
 ### 调用示例
 
@@ -39,6 +39,14 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/security_groups/{id}
     "memo": "安全组测试demo",
     "account_id": "00000001",
     "bk_biz_id": -1,
+    "manager": "u1",
+    "bak_manager": "",
+    "usage_biz_ids": [
+      123,
+      234
+    ],
+    "mgmt_biz_id": 123,
+    "mgmt_type": "biz",
     "creator": "jim",
     "reviser": "jim",
     "created_at": "2022-12-26T15:49:40Z",
@@ -69,28 +77,32 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/security_groups/{id}
 
 #### data
 
-| 参数名称                    | 参数类型              | 描述                                 |
-|-------------------------|-------------------|------------------------------------|
-| id                      | string            | 安全组ID                              |
-| vendor                  | string            | 云厂商                                |
-| cloud_id                | string            | 安全组云ID                             |
-| bk_biz_id               | int64             | 业务ID                               |
-| region                  | string            | 地域                                 |
-| name                    | string            | 安全组名称                              |
-| memo                    | string            | 备注                                 |
-| account_id              | string            | 账号ID                               |
-| bk_biz_id               | int64             | 业务ID, -1代表未分配业务。                   |
-| cvm_count               | uint64            | 关联虚拟机数量。（tcloud、aws、huawei专属）      |
-| network_interface_count | uint64            | 关联网络接口数量。（azure专属）                 |
-| subnet_count            | uint64            | 关联子网数量。（azure专属）                   |
-| extension               | object[vendor]    | 混合云差异字段                            |
-| creator                 | string            | 创建者                                |
-| reviser                 | string            | 最后一次修改的修改者                         |
-| created_at              | string            | 创建时间，标准格式：2006-01-02T15:04:05Z     |
-| updated_at              | string            | 最后一次修改时间，标准格式：2006-01-02T15:04:05Z |
-| tags                    | map[string]string | 标签字典                               |
-| cloud_created_time      | string            | 安全组云上创建时间，标准格式：2006-01-02 15:04:05 |
-| cloud_update_time       | string            | 安全组云上更新时间，标准格式：2006-01-02 15:04:05 |
+| 参数名称                    | 参数类型              | 描述                                                  |
+|-------------------------|-------------------|-----------------------------------------------------|
+| id                      | string            | 安全组ID                                               |
+| vendor                  | string            | 云厂商                                                 |
+| cloud_id                | string            | 安全组云ID                                              |
+| region                  | string            | 地域                                                  |
+| name                    | string            | 安全组名称                                               |
+| memo                    | string            | 备注                                                  |
+| account_id              | string            | 账号ID                                                |
+| mgmt_type               | string            | 管理类型，枚举值：biz（业务管理）、platform（平台管理）。该字段可能为空，表示未确定管理类型 |
+| mgmt_biz_id             | int64             | 管理业务ID                                              |
+| manager                 | string            | 负责人                                                 |
+| bak_manager             | string            | 备份负责人                                               |
+| usage_biz_ids           | int64 array       | 使用业务ID列表，-1代表全部业务可使用                                |
+| bk_biz_id               | int64             | 业务ID, -1代表未分配业务。                                    |
+| cvm_count               | uint64            | 关联虚拟机数量。（tcloud、aws、huawei专属）                       |
+| network_interface_count | uint64            | 关联网络接口数量。（azure专属）                                  |
+| subnet_count            | uint64            | 关联子网数量。（azure专属）                                    |
+| extension               | object[vendor]    | 混合云差异字段                                             |
+| creator                 | string            | 创建者                                                 |
+| reviser                 | string            | 最后一次修改的修改者                                          |
+| created_at              | string            | 创建时间，标准格式：2006-01-02T15:04:05Z                      |
+| updated_at              | string            | 最后一次修改时间，标准格式：2006-01-02T15:04:05Z                  |
+| tags                    | map[string]string | 标签字典                                                |
+| cloud_created_time      | string            | 安全组云上创建时间，标准格式：2006-01-02 15:04:05                  |
+| cloud_update_time       | string            | 安全组云上更新时间，标准格式：2006-01-02 15:04:05                  |
 
 #### extension[tcloud]
 
@@ -100,10 +112,10 @@ GET /api/v1/cloud/bizs/{bk_biz_id}/security_groups/{id}
 
 #### extension[aws]
 
-| 参数名称           | 参数类型   | 描述                |
-|----------------|--------|-------------------|
-| vpc_id         | string | vpc主键ID。          |
-| cloud_vpc_id   | string | vpc云主键ID。         |
+| 参数名称           | 参数类型   | 描述                 |
+|----------------|--------|--------------------|
+| vpc_id         | string | vpc主键ID。           |
+| cloud_vpc_id   | string | vpc云主键ID。          |
 | cloud_owner_id | string | 拥有该安全组的Amazon账号ID。 |
 
 #### extension[azure]

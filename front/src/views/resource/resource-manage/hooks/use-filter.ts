@@ -6,9 +6,8 @@ import { FILTER_DATA, SEARCH_VALUE_IDS, VendorEnum } from '@/common/constant';
 import cloneDeep from 'lodash/cloneDeep';
 
 import { useAccountStore } from '@/store';
-import { QueryFilterType, QueryRuleOPEnum, RulesItem } from '@/typings';
+import { QueryRuleOPEnum, RulesItem } from '@/typings';
 import { useRoute } from 'vue-router';
-import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { useRegionsStore } from '@/store/useRegionsStore';
 
@@ -35,14 +34,13 @@ export enum ResourceManageSenario {
   image = 'image',
 }
 
-const useFilter = (props: PropsType) => {
+const useFilter = (props: PropsType, convertValueCallbacks?: Record<string, (value: any) => any>) => {
   const searchData = ref([]);
   const searchValue = ref([]);
   const filter = ref<any>(cloneDeep(props.filter));
   const isAccurate = ref(false);
   const accountStore = useAccountStore();
   const route = useRoute();
-  const { whereAmI } = useWhereAmI();
   const resourceAccountStore = useResourceAccountStore();
   const regionStore = useRegionsStore();
 
@@ -54,23 +52,13 @@ const useFilter = (props: PropsType) => {
           params = params.concat(
             queryValue.map((queryValueItem) => ({
               id: queryName,
-              values: [
-                {
-                  id: queryValueItem,
-                  name: queryValueItem,
-                },
-              ],
+              values: [{ id: queryValueItem, name: queryValueItem }],
             })),
           );
         } else {
           params.push({
             id: queryName,
-            values: [
-              {
-                id: queryValue,
-                name: queryValue,
-              },
-            ],
+            values: [{ id: queryValue, name: queryValue }],
           });
         }
       }
@@ -118,76 +106,98 @@ const useFilter = (props: PropsType) => {
 
   // 搜索数据
   watch(
-    () => searchValue.value,
+    searchValue,
     (val) => {
-      const map = new Map<string, number>();
-      const answer = [] as unknown as Array<QueryFilterType | RulesItem>;
-      if (props.whereAmI === ResourceManageSenario.image) answer.push(imageInitialCondition);
-      for (const { id, values } of val) {
-        const rule: QueryFilterType = {
-          op: QueryRuleOPEnum.OR,
-          rules: [],
-        };
-        const field = id;
+      // 工具函数 - 获取条件值
+      const getConditionValue = (field: string, values: any[]): string | number => {
+        const tmpValue = values.length > 1 ? values : values[0];
+        const convertValueCallback = convertValueCallbacks?.[field];
+        if (convertValueCallback) return convertValueCallback(tmpValue);
+        if (field === 'bk_cloud_id') return Number(values);
+        if (field === 'region') return regionStore.getRegionNameEN(tmpValue);
+        return tmpValue;
+      };
 
-        if (props.whereAmI === ResourceManageSenario.image && ['account_id', 'bk_biz_id'].includes(field)) continue;
+      // 工具函数 - 获取查询操作符
+      const getQueryOperator = (field: string, value: unknown): QueryRuleOPEnum => {
+        if (field === 'cloud_vpc_ids') return QueryRuleOPEnum.JSON_CONTAINS;
+        if (Array.isArray(value)) return QueryRuleOPEnum.IN;
+        if (typeof value === 'number' || ['vendor', 'mgmt_type'].includes(field)) return QueryRuleOPEnum.EQ;
+        return QueryRuleOPEnum.CS;
+      };
 
-        const conditionValue =
-          field === 'bk_cloud_id'
-            ? Number(values[0].id)
-            : field === 'region'
-            ? regionStore.getRegionNameEN(values[0].id)
-            : values[0].id;
-        const condition = {
+      // 工具函数 - 创建厂商条件
+      const createVendorCondition = (vendor: string): RulesItem => ({
+        field: 'vendor',
+        op: QueryRuleOPEnum.EQ,
+        value: vendor,
+      });
+
+      // 主处理逻辑
+      const fieldIndexMap = new Map<string, number>();
+      const queryRules: Array<RulesItem> = [];
+
+      // 初始化镜像场景条件
+      if (props.whereAmI === ResourceManageSenario.image) {
+        queryRules.push(imageInitialCondition);
+      }
+
+      // 处理每个搜索项
+      val.forEach(({ id: field, values }) => {
+        // 跳过禁用字段
+        if (props.whereAmI === ResourceManageSenario.image && ['account_id', 'bk_biz_id'].includes(field)) return;
+
+        // 构建条件对象
+        const conditionValue = getConditionValue(
+          field,
+          values.map((e: any) => e.id),
+        );
+        const condition: RulesItem = {
           field,
           value: conditionValue,
-          op:
-            field === 'cloud_vpc_ids'
-              ? 'json_contains'
-              : typeof conditionValue === 'number' || field === 'vendor'
-              ? QueryRuleOPEnum.EQ
-              : QueryRuleOPEnum.CS,
+          op: getQueryOperator(field, conditionValue),
         };
 
-        if (!map.has(field)) {
-          const idx = answer.length;
-          map.set(field, idx);
+        // 分组处理相同字段条件
+        if (fieldIndexMap.has(field)) {
+          const existingRule = queryRules[fieldIndexMap.get(field)];
+          existingRule.rules.push(condition);
+        } else {
+          const newRule: RulesItem = { op: QueryRuleOPEnum.OR, rules: [condition] };
+          fieldIndexMap.set(field, queryRules.length);
+          queryRules.push(newRule);
         }
-        const idx = map.get(field);
-        if (!!answer[idx]) (answer[idx] as QueryFilterType).rules.push(condition);
-        else {
-          rule.rules.push(condition);
-          answer.push(rule);
-        }
-      }
+      });
+
+      // 添加云厂商条件
       if (regionStore.vendor) {
-        answer.push({
-          field: 'vendor',
-          op: QueryRuleOPEnum.EQ,
-          value: regionStore.vendor,
-        });
+        queryRules.push(createVendorCondition(regionStore.vendor));
       }
-      if (props.whereAmI === ResourceManageSenario.image) {
-        filter.value.rules = [];
-        if (whereAmI.value === Senarios.resource && resourceAccountStore.resourceAccount?.vendor) {
-          filter.value.rules = [
-            {
-              field: 'vendor',
-              op: QueryRuleOPEnum.EQ,
-              value: resourceAccountStore.resourceAccount.vendor,
-            },
-          ];
+
+      // 为resource页面下的list页面设置vendor过滤条件（vendor有值的情况：选择了具体的账号或云厂商）
+      // 解决的问题：资源下进入下钻页面后，back回来会丢失vendor条件，请求的数据与页面的vendor不一致（比如腾讯云安全组列表页->腾讯云安全组详情页->腾讯云安全组列表页）
+      const selectedVendor = resourceAccountStore.vendorInResourcePage;
+      // 处理不同场景的过滤规则
+      if (selectedVendor) {
+        const isGcpSecurity = selectedVendor === VendorEnum.GCP && props.whereAmI === ResourceManageSenario.security;
+        if (!isGcpSecurity) {
+          const vendorCondition = createVendorCondition(selectedVendor);
+          filter.value.rules =
+            props.whereAmI === ResourceManageSenario.image
+              ? [vendorCondition] // 镜像场景直接设置
+              : [...props.filter.rules.filter(({ field }) => field !== 'vendor'), vendorCondition]; // 其他场景合并
+        } else {
+          // GCP防火墙list页面特殊处理：不添加vendor条件
+          filter.value.rules = props.filter.rules.filter(({ field }) => field !== 'vendor');
         }
-      } else filter.value.rules = props.filter.rules;
-      if (resourceAccountStore.currentVendor === VendorEnum.GCP && props.whereAmI === ResourceManageSenario.security) {
-        filter.value.rules = filter.value.rules.filter((e: any) => e.field !== 'vendor');
+      } else {
+        // 无vendor信息时,除镜像场景，其他均使用原规则
+        filter.value.rules = props.whereAmI === ResourceManageSenario.image ? [] : props.filter.rules;
       }
-      filter.value.rules = filter.value.rules.concat(answer);
+
+      filter.value.rules = filter.value.rules.concat(queryRules);
     },
-    {
-      deep: true,
-      immediate: true,
-    },
+    { deep: true, immediate: true },
   );
 
   watch(

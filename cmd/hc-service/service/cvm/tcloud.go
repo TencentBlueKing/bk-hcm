@@ -25,17 +25,24 @@ import (
 
 	synctcloud "hcm/cmd/hc-service/logics/res-sync/tcloud"
 	"hcm/cmd/hc-service/service/capability"
+	"hcm/pkg/adaptor/tcloud"
+	adcore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/adaptor/types/cvm"
 	typecvm "hcm/pkg/adaptor/types/cvm"
+	networkinterface "hcm/pkg/adaptor/types/network-interface"
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
-	protocloud "hcm/pkg/api/data-service/cloud"
 	protocvm "hcm/pkg/api/hc-service/cvm"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	cvt "hcm/pkg/tools/converter"
+
+	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
+	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )
 
 func (svc *cvmSvc) initTCloudCvmService(cap *capability.Capability) {
@@ -50,6 +57,8 @@ func (svc *cvmSvc) initTCloudCvmService(cap *capability.Capability) {
 	h.Add("BatchResetTCloudCvmPwd", http.MethodPost, "/vendors/tcloud/cvms/batch/reset/pwd", svc.BatchResetTCloudCvmPwd)
 	h.Add("BatchResetTCloudCvm", http.MethodPost, "/vendors/tcloud/cvms/reset", svc.BatchResetTCloudCvm)
 
+	h.Add("ListTCloudCvmNetworkInterface", http.MethodPost, "/vendors/tcloud/cvms/network_interfaces/list",
+		svc.ListTCloudCvmNetworkInterface)
 	h.Add("BatchAssociateTCloudSecurityGroup", http.MethodPost, "/vendors/tcloud/cvms/security_groups/batch/associate",
 		svc.BatchAssociateTCloudSecurityGroup)
 
@@ -83,9 +92,18 @@ func (svc *cvmSvc) BatchAssociateTCloudSecurityGroup(cts *rest.Contexts) (interf
 	}
 	cvmCloudID := cvmList[0].CloudID
 
+	defer func() {
+		err = svc.syncTCloudCvmWithRelRes(cts.Kit, tcloud, req.AccountID, req.Region, []string{cvmCloudID})
+		if err != nil {
+			logs.Errorf("sync tcloud cvm with rel res failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return
+		}
+	}()
+
 	sgMap, err := svc.listSecurityGroupMap(cts.Kit, req.SecurityGroupIDs...)
 	if err != nil {
-		logs.Errorf("list security groups failed, err: %v, sgIDs: %v, rid: %s", err, req.SecurityGroupIDs, cts.Kit.Rid)
+		logs.Errorf("list security groups failed, err: %v, sgIDs: %v, rid: %s",
+			err, req.SecurityGroupIDs, cts.Kit.Rid)
 		return nil, err
 	}
 	sgCloudIDs := make([]string, 0, len(req.SecurityGroupIDs))
@@ -110,19 +128,31 @@ func (svc *cvmSvc) BatchAssociateTCloudSecurityGroup(cts *rest.Contexts) (interf
 		return nil, err
 	}
 
-	createReq := &protocloud.SGCvmRelBatchCreateReq{}
-	for _, sgID := range req.SecurityGroupIDs {
-		createReq.Rels = append(createReq.Rels, protocloud.SGCvmRelCreate{
-			SecurityGroupID: sgID,
-			CvmID:           req.CvmID,
-		})
-	}
-	if err = svc.dataCli.Global.SGCvmRel.BatchCreateSgCvmRels(cts.Kit.Ctx, cts.Kit.Header(), createReq); err != nil {
-		logs.Errorf("request dataservice create security group cvm rels failed, err: %v, req: %+v, rid: %s",
-			err, createReq, cts.Kit.Rid)
-		return nil, err
+	err = svc.createSGCommonRels(cts.Kit, enumor.TCloud, enumor.CvmCloudResType, req.CvmID, req.SecurityGroupIDs)
+	if err != nil {
+		// 不抛出err, 尽最大努力交付
+		logs.Errorf("create sg common rels failed, err: %v, cvmID: %s, sgIDs: %v, rid: %s",
+			err, req.CvmID, req.SecurityGroupIDs, cts.Kit.Rid)
 	}
 	return nil, nil
+}
+
+func (svc *cvmSvc) syncTCloudCvmWithRelRes(kt *kit.Kit, tcloud tcloud.TCloud, accountID, region string,
+	cloudIDs []string) error {
+
+	syncClient := synctcloud.NewClient(svc.dataCli, tcloud)
+	params := &synctcloud.SyncBaseParams{
+		AccountID: accountID,
+		Region:    region,
+		CloudIDs:  cloudIDs,
+	}
+
+	_, err := syncClient.CvmWithRelRes(kt, params, &synctcloud.SyncCvmWithRelResOption{})
+	if err != nil {
+		logs.Errorf("sync tcloud cvm with res failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+	return nil
 }
 
 // InquiryPriceTCloudCvm inquiry price tcloud cvm.
@@ -227,20 +257,11 @@ func (svc *cvmSvc) BatchCreateTCloudCvm(cts *rest.Contexts) (interface{}, error)
 		return respData, nil
 	}
 
-	syncClient := synctcloud.NewClient(svc.dataCli, tcloud)
-
-	params := &synctcloud.SyncBaseParams{
-		AccountID: req.AccountID,
-		Region:    req.Region,
-		CloudIDs:  result.SuccessCloudIDs,
-	}
-
-	_, err = syncClient.CvmWithRelRes(cts.Kit, params, &synctcloud.SyncCvmWithRelResOption{})
+	err = svc.syncTCloudCvmWithRelRes(cts.Kit, tcloud, req.AccountID, req.Region, result.SuccessCloudIDs)
 	if err != nil {
-		logs.Errorf("sync tcloud cvm with res failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("sync tcloud cvm with rel res failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-
 	return respData, nil
 }
 
@@ -566,4 +587,87 @@ func (svc *cvmSvc) BatchResetTCloudCvm(cts *rest.Contexts) (interface{}, error) 
 	}
 
 	return nil, nil
+}
+
+// ListTCloudCvmNetworkInterface 返回一个map，key为cvmID，value为cvm的网卡信息 ListCvmNetworkInterfaceResp
+func (svc *cvmSvc) ListTCloudCvmNetworkInterface(cts *rest.Contexts) (interface{}, error) {
+	req := new(protocvm.ListCvmNetworkInterfaceReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	cvmList, err := svc.getCvms(cts.Kit, enumor.TCloud, req.Region, req.CvmIDs)
+	if err != nil {
+		logs.Errorf("get cvms failed, err: %v, cvmIDs: %v, rid: %s", err, req.CvmIDs, cts.Kit.Rid)
+		return nil, err
+	}
+	cloudIDToIDMap := make(map[string]string)
+	for _, baseCvm := range cvmList {
+		cloudIDToIDMap[baseCvm.CloudID] = baseCvm.ID
+	}
+
+	result, err := svc.listTCloudNetworkInterfaceFromCloud(cts.Kit, req.Region, req.AccountID, cloudIDToIDMap)
+	if err != nil {
+		logs.Errorf("list tcloud network interface from cloud failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	return result, nil
+}
+
+func (svc *cvmSvc) listTCloudNetworkInterfaceFromCloud(kt *kit.Kit, region, accountID string,
+	cloudIDToIDMap map[string]string) (map[string]*protocvm.ListCvmNetworkInterfaceRespItem, error) {
+
+	cli, err := svc.ad.TCloud(kt, accountID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]*protocvm.ListCvmNetworkInterfaceRespItem)
+	var offset uint64 = 0
+	for {
+		opt := &networkinterface.TCloudNetworkInterfaceListOption{
+			Region: region,
+			Page: &adcore.TCloudPage{
+				Offset: offset,
+				Limit:  adcore.TCloudQueryLimit,
+			},
+			Filters: []*vpc.Filter{
+				{
+					Name:   common.StringPtr("attachment.instance-id"),
+					Values: common.StringPtrs(cvt.MapKeyToSlice(cloudIDToIDMap)),
+				},
+			},
+		}
+
+		resp, err := cli.DescribeNetworkInterfaces(kt, opt)
+		if err != nil {
+			logs.Errorf("describe network interfaces failed, err: %v, cloudIDs: %v, rid: %s",
+				err, cvt.MapKeyToSlice(cloudIDToIDMap), kt.Rid)
+			return nil, err
+		}
+		for _, detail := range resp.Details {
+			cloudID := cvt.PtrToVal(detail.Attachment.InstanceId)
+			id := cloudIDToIDMap[cloudID]
+			if _, ok := result[id]; !ok {
+				result[id] = &protocvm.ListCvmNetworkInterfaceRespItem{
+					MacAddressToPrivateIpAddresses: make(map[string][]string),
+				}
+			}
+
+			privateIPs := make([]string, 0)
+			for _, set := range detail.PrivateIpAddressSet {
+				privateIPs = append(privateIPs, cvt.PtrToVal(set.PrivateIpAddress))
+			}
+			result[id].MacAddressToPrivateIpAddresses[cvt.PtrToVal(detail.MacAddress)] = privateIPs
+
+		}
+		if len(resp.Details) < adcore.TCloudQueryLimit {
+			break
+		}
+		offset += adcore.TCloudQueryLimit
+	}
+	return result, nil
 }

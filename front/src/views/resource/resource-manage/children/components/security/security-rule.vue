@@ -1,6 +1,6 @@
 <!-- eslint-disable no-nested-ternary -->
 <script lang="ts" setup>
-import { ref, watch, h, reactive, PropType, inject, computed, withDirectives } from 'vue';
+import { ref, watch, h, PropType, inject, computed, withDirectives, ComputedRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { bkTooltips, Button, Message } from 'bkui-vue';
@@ -12,7 +12,6 @@ import { VendorEnum } from '@/common/constant';
 
 import UseSecurityRule from '@/views/resource/resource-manage/hooks/use-security-rule';
 import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
-import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import bus from '@/common/bus';
 import { timeFormatter } from '@/common/util';
 import {
@@ -26,12 +25,11 @@ import { awsSourceAddressTypes, AwsSourceTypeArr } from './add-rule/vendors/aws'
 import { tcloudSourceAddressTypes, TcloudSourceTypeArr } from './add-rule/vendors/tcloud';
 import { huaweiSourceAddressTypes } from './add-rule/vendors/huawei';
 import RuleSort from './security-rule-sort.vue';
-import { showSort } from './show-sort.plugin';
+import { IOverflowTooltipOption } from 'bkui-vue/lib/table/props';
+import { showSort } from '../../plugin/security-group/show-sort.plugin';
+import { checkVendorInResource } from '../../plugin/security-group/check-vendor-in-resource.plugin';
 
 const props = defineProps({
-  filter: {
-    type: Object as PropType<any>,
-  },
   id: {
     type: String as PropType<any>,
   },
@@ -54,7 +52,11 @@ const { isShowSecurityRule, handleSecurityRule, SecurityRule } = UseSecurityRule
 const resourceStore = useResourceStore();
 const route = useRoute();
 
-const activeType = ref('ingress');
+const hasEditScopeInBusiness = inject<ComputedRef<boolean>>('hasEditScopeInBusiness');
+const hasEditScopeInResource = inject<ComputedRef<boolean>>('hasEditScopeInResource');
+const operateTooltipsOption = inject<ComputedRef<IOverflowTooltipOption>>('operateTooltipsOption');
+
+const activeType = ref<'ingress' | 'egress'>('ingress');
 const deleteDialogShow = ref(false);
 const deleteId = ref(0);
 const securityRuleLoading = ref(false);
@@ -65,31 +67,18 @@ const azureDefaultColumns = ref([]);
 const authVerifyData: any = inject('authVerifyData');
 const isResourcePage: any = inject('isResourcePage');
 const show = ref<Boolean>(false);
+const filter = ref({ op: 'and', rules: [{ field: 'type', op: 'eq', value: 'ingress' }] });
 
 const actionName = computed(() => {
   // 资源下没有业务ID
   return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
 });
 
-const state = reactive<any>({
-  datas: [],
-  pagination: {
-    current: 1,
-    limit: 10,
-    count: 0,
-  },
-  isLoading: true,
-  handlePageChange: () => {},
-  handlePageSizeChange: () => {},
-  columns: useColumns('group').columns,
-});
-
 watch(
   () => activeType.value,
   (v) => {
-    state.isLoading = true;
     // eslint-disable-next-line vue/no-mutating-props
-    props.filter.rules[0].value = v;
+    filter.value.rules[0].value = v;
     if (route.query.vendor === 'azure') {
       getDefaultList(v);
     }
@@ -103,16 +92,10 @@ const getDefaultList = async (type: string) => {
 
 // 获取列表数据
 const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, getList } = useQueryCommonList(
-  props,
+  { filter: filter.value },
   fetchUrl,
   route.query.vendor === 'tcloud' ? { sort: 'cloud_policy_index', order: 'ASC' } : '',
 );
-
-state.datas = datas;
-state.isLoading = isLoading;
-state.pagination = pagination;
-state.handlePageChange = handlePageChange;
-state.handlePageSizeChange = handlePageSizeChange;
 
 // 切换tab
 const handleSwtichType = async () => {
@@ -143,6 +126,10 @@ const handleRuleSubmit = () => {
 };
 
 const handleSecurityRuleDialog = (data: any) => {
+  if (!authVerifyData.value?.permissionAction[actionName.value]) {
+    showAuthDialog(actionName.value);
+    return;
+  }
   dataId.value = data?.id;
   resourceStore.setSecurityRuleDetail(data);
   handleSecurityRule();
@@ -159,7 +146,7 @@ const showAuthDialog = (authActionName: string) => {
 };
 
 const handelSortDone = () => {
-  state.handlePageChange(1);
+  handlePageChange(1);
 };
 // 初始化
 handleSwtichType();
@@ -331,68 +318,60 @@ const inColumns: any = computed(() =>
       label: t('操作'),
       field: 'operate',
       render({ data }: any) {
-        return h('span', {}, [
+        return h('span', { style: { display: 'flex', gap: '8px' } }, [
           withDirectives(
             h(
-              'span',
+              Button,
               {
+                text: true,
+                theme: 'primary',
+                class: { 'hcm-no-permision-text-btn': !authVerifyData.value?.permissionAction?.[actionName.value] },
+                disabled:
+                  route.query.vendor === 'huawei' ||
+                  (isResourcePage.value && !hasEditScopeInResource.value) ||
+                  (!isResourcePage.value && !hasEditScopeInBusiness.value),
                 onClick() {
-                  showAuthDialog(actionName.value);
+                  handleSecurityRuleDialog(data);
                 },
               },
-              [
-                h(
-                  Button,
-                  {
-                    text: true,
-                    theme: 'primary',
-                    disabled:
-                      !authVerifyData.value?.permissionAction[actionName.value] || route.query.vendor === 'huawei',
-                    onClick() {
-                      handleSecurityRuleDialog(data);
-                    },
-                  },
-                  [t('编辑')],
-                ),
-              ],
+              [t('编辑')],
             ),
             [
               [
                 bkTooltips,
-                {
-                  content: '该功能当前未支持',
-                  disabled: route.query.vendor !== 'huawei',
-                },
+                route.query.vendor === 'huawei'
+                  ? { content: '该功能当前未支持', disabled: route.query.vendor !== 'huawei' }
+                  : operateTooltipsOption.value,
               ],
             ],
           ),
-          h(
-            'span',
-            {
-              onClick() {
-                showAuthDialog(actionName.value);
-              },
-            },
-            [
-              h(
-                Button,
-                {
-                  class: 'ml10',
-                  text: true,
-                  theme: 'primary',
-                  disabled: !authVerifyData.value?.permissionAction[actionName.value],
-                  onClick() {
-                    deleteDialogShow.value = true;
-                    deleteId.value = data.id;
-                  },
+          withDirectives(
+            h(
+              Button,
+              {
+                text: true,
+                theme: 'primary',
+                class: { 'hcm-no-permision-text-btn': !authVerifyData.value?.permissionAction?.[actionName.value] },
+                disabled:
+                  (isResourcePage.value && !hasEditScopeInResource.value) ||
+                  (!isResourcePage.value && !hasEditScopeInBusiness.value),
+                onClick() {
+                  if (!authVerifyData.value?.permissionAction[actionName.value]) {
+                    showAuthDialog(actionName.value);
+                    return;
+                  }
+                  deleteDialogShow.value = true;
+                  deleteId.value = data.id;
                 },
-                [t('删除')],
-              ),
-            ],
+              },
+              [t('删除')],
+            ),
+            [[bkTooltips, operateTooltipsOption.value]],
           ),
         ]);
       },
-      isShow: true,
+      isShow: !checkVendorInResource(route?.query?.vendor),
+      showOverflowTooltip: false,
     },
   ].filter(({ isShow }) => !!isShow),
 );
@@ -572,68 +551,60 @@ const outColumns: any = computed(() =>
       label: t('操作'),
       field: 'operate',
       render({ data }: any) {
-        return h('span', {}, [
-          h(
-            'span',
-            {
-              onClick() {
-                showAuthDialog(actionName.value);
+        return h('span', { style: { display: 'flex', gap: '8px' } }, [
+          withDirectives(
+            h(
+              Button,
+              {
+                text: true,
+                theme: 'primary',
+                class: { 'hcm-no-permision-text-btn': !authVerifyData.value?.permissionAction?.[actionName.value] },
+                disabled:
+                  route.query.vendor === 'huawei' ||
+                  (isResourcePage.value && !hasEditScopeInResource.value) ||
+                  (!isResourcePage.value && !hasEditScopeInBusiness.value),
+                onClick() {
+                  handleSecurityRuleDialog(data);
+                },
               },
-            },
+              [t('编辑')],
+            ),
             [
-              withDirectives(
-                h(
-                  Button,
-                  {
-                    text: true,
-                    theme: 'primary',
-                    disabled:
-                      !authVerifyData.value?.permissionAction[actionName.value] || route.query.vendor === 'huawei',
-                    onClick() {
-                      handleSecurityRuleDialog(data);
-                    },
-                  },
-                  [t('编辑')],
-                ),
-                [
-                  [
-                    bkTooltips,
-                    {
-                      content: '该功能当前未支持',
-                      disabled: route.query.vendor !== 'huawei',
-                    },
-                  ],
-                ],
-              ),
+              [
+                bkTooltips,
+                route.query.vendor === 'huawei'
+                  ? { content: '该功能当前未支持', disabled: route.query.vendor !== 'huawei' }
+                  : operateTooltipsOption.value,
+              ],
             ],
           ),
-          h(
-            'span',
-            {
-              onClick() {
-                showAuthDialog(actionName.value);
-              },
-            },
-            [
-              h(
-                Button,
-                {
-                  class: 'ml10',
-                  text: true,
-                  theme: 'primary',
-                  disabled: !authVerifyData.value?.permissionAction[actionName.value],
-                  onClick() {
-                    deleteDialogShow.value = true;
-                    deleteId.value = data.id;
-                  },
+          withDirectives(
+            h(
+              Button,
+              {
+                text: true,
+                theme: 'primary',
+                class: { 'hcm-no-permision-text-btn': !authVerifyData.value?.permissionAction?.[actionName.value] },
+                disabled:
+                  (isResourcePage.value && !hasEditScopeInResource.value) ||
+                  (!isResourcePage.value && !hasEditScopeInBusiness.value),
+                onClick() {
+                  if (!authVerifyData.value?.permissionAction[actionName.value]) {
+                    showAuthDialog(actionName.value);
+                    return;
+                  }
+                  deleteDialogShow.value = true;
+                  deleteId.value = data.id;
                 },
-                [t('删除')],
-              ),
-            ],
+              },
+              [t('删除')],
+            ),
+            [[bkTooltips, operateTooltipsOption.value]],
           ),
         ]);
       },
-      isShow: true,
+      isShow: !checkVendorInResource(route?.query?.vendor),
+      showOverflowTooltip: false,
     },
   ].filter(({ isShow }) => !!isShow),
 );
@@ -652,65 +623,76 @@ const types = [
 
 <template>
   <div>
-    <bk-loading :loading="state.isLoading">
-      <section class="rule-main">
-        <bk-radio-group v-model="activeType" :disabled="state.isLoading">
-          <bk-radio-button v-for="item in types" :key="item.name" :label="item.name">
-            {{ item.label }}
-          </bk-radio-button>
-        </bk-radio-group>
+    <section class="rule-main">
+      <bk-radio-group v-model="activeType" :disabled="isLoading">
+        <bk-radio-button v-for="item in types" :key="item.name" :label="item.name">
+          {{ item.label }}
+        </bk-radio-button>
+      </bk-radio-group>
 
-        <div @click="showAuthDialog(actionName)">
-          <bk-button
-            :disabled="!authVerifyData?.permissionAction[actionName]"
-            theme="primary"
-            @click="handleSecurityRuleDialog({})"
-          >
-            {{ t('新增规则') }}
-          </bk-button>
-        </div>
-
-        <bk-button icon="plus" v-if="showSort(route?.query?.vendor)" @click="handleSecurityRuleSort">
-          {{ t('规则排序') }}
-        </bk-button>
-      </section>
-
-      <div v-if="route.query.vendor === 'azure'" class="mb20">
-        <h4 class="mt10">Azure默认{{ activeType === 'ingress' ? t('入站') : t('出站') }}规则</h4>
-        <bk-table
-          class="mt10"
-          row-hover="auto"
-          :columns="azureDefaultColumns"
-          :data="azureDefaultList"
-          show-overflow-tooltip
+      <div @click="showAuthDialog(actionName)">
+        <bk-button
+          v-if="!checkVendorInResource(route?.query?.vendor)"
+          :disabled="(isResourcePage && !hasEditScopeInResource) || (!isResourcePage && !hasEditScopeInBusiness)"
+          v-bk-tooltips="operateTooltipsOption"
+          theme="primary"
+          :class="{ 'hcm-no-permision-btn': !authVerifyData?.permissionAction?.[actionName] }"
+          @click="handleSecurityRuleDialog({})"
         >
-          <template #empty>
-            <div class="security-empty-container">
-              <bk-exception
-                class="exception-wrap-item exception-part"
-                type="empty"
-                scene="part"
-                description="无规则，默认拒绝所有流量"
-              />
-            </div>
-          </template>
-        </bk-table>
+          {{ t('新增规则') }}
+        </bk-button>
       </div>
 
-      <h4 v-if="route.query.vendor === 'azure'" class="mt10">
-        Azure{{ activeType === 'ingress' ? t('入站') : t('出站') }}规则
-      </h4>
+      <bk-button
+        v-if="showSort(route?.query?.vendor)"
+        icon="plus"
+        :disabled="(isResourcePage && !hasEditScopeInResource) || (!isResourcePage && !hasEditScopeInBusiness)"
+        v-bk-tooltips="operateTooltipsOption"
+        @click="handleSecurityRuleSort"
+      >
+        {{ t('规则排序') }}
+      </bk-button>
+    </section>
+
+    <div v-if="route.query.vendor === 'azure'" class="mb20">
+      <h4 class="mt10">Azure默认{{ activeType === 'ingress' ? t('入站') : t('出站') }}规则</h4>
+      <bk-table
+        class="mt10"
+        row-hover="auto"
+        :columns="azureDefaultColumns"
+        :data="azureDefaultList"
+        show-overflow-tooltip
+        v-bkloading="{ loading: isLoading }"
+      >
+        <template #empty>
+          <div class="security-empty-container">
+            <bk-exception
+              class="exception-wrap-item exception-part"
+              type="empty"
+              scene="part"
+              description="无规则，默认拒绝所有流量"
+            />
+          </div>
+        </template>
+      </bk-table>
+    </div>
+
+    <h4 v-if="route.query.vendor === 'azure'" class="mt10">
+      Azure{{ activeType === 'ingress' ? t('入站') : t('出站') }}规则
+    </h4>
+
+    <bk-loading :loading="isLoading">
       <bk-table
         v-if="activeType === 'ingress'"
         class="mt20"
         row-hover="auto"
         remote-pagination
         :columns="inColumns"
-        :data="state.datas"
-        :pagination="state.pagination"
+        :data="datas"
+        :pagination="pagination"
         show-overflow-tooltip
-        @page-limit-change="state.handlePageSizeChange"
-        @page-value-change="state.handlePageChange"
+        @page-limit-change="handlePageSizeChange"
+        @page-value-change="handlePageChange"
       >
         <template #empty>
           <div class="security-empty-container">
@@ -730,11 +712,11 @@ const types = [
         row-hover="auto"
         remote-pagination
         :columns="outColumns"
-        :data="state.datas"
-        :pagination="state.pagination"
+        :data="datas"
+        :pagination="pagination"
         show-overflow-tooltip
-        @page-limit-change="state.handlePageSizeChange"
-        @page-value-change="state.handlePageChange"
+        @page-limit-change="handlePageSizeChange"
+        @page-value-change="handlePageChange"
       >
         <template #empty>
           <div class="security-empty-container">
@@ -780,7 +762,7 @@ const types = [
       <template #default>
         <rule-sort
           :id="props.id"
-          :filter="props.filter"
+          :filter="filter"
           :type="activeType"
           v-model:show="show"
           @sort-done="handelSortDone"

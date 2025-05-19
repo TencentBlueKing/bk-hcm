@@ -9,13 +9,15 @@ import AccountManage from '@/views/resource/accountmanage/index.vue';
 
 export default defineComponent({
   setup() {
-    const activeTab = ref(RESOURCE_DETAIL_TABS[0].key);
     const router = useRouter();
     const route = useRoute();
     const resourceAccountStore = useResourceAccountStore();
+
+    const activeTab = ref(route.path || RESOURCE_DETAIL_TABS[0].key);
     watch(
       () => activeTab.value,
       (val) => {
+        if (!resourceAccountStore.resourceAccount?.id) return;
         router.push({
           path: val,
           query: route.query,

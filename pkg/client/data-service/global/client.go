@@ -67,6 +67,8 @@ type Client struct {
 	Tenant         *TenantClient
 
 	GlobalConfig *GlobalConfigsClient
+
+	ResUsageBizRel *ResUsageBizRelClient
 }
 
 type restClient struct {
@@ -115,5 +117,6 @@ func NewClient(client rest.ClientInterface) *Client {
 		TaskManagement: NewTaskManagementClient(client),
 		Tenant:         NewTenantClient(client),
 		GlobalConfig:   NewGlobalConfigClient(client),
+		ResUsageBizRel: NewResUsageBizRelRelClient(client),
 	}
 }
