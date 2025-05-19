@@ -138,7 +138,7 @@ func (svc *cvmSvc) getCvm(cts *rest.Contexts, validHandler handler.ListAuthResHa
 	case enumor.Azure:
 		return svc.client.DataService().Azure.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), id)
 	case enumor.Other:
-		return svc.client.DataService().Other.Cvm.GetCvm(cts.Kit.Ctx, cts.Kit.Header(), id)
+		return svc.client.DataService().Other.Cvm.GetCvm(cts.Kit, id)
 
 	default:
 		return nil, errf.Newf(errf.Unknown, "id: %s vendor: %s not support", id, basicInfo.Vendor)
