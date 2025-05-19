@@ -28,10 +28,16 @@ import (
 // AccountListReq ...
 type AccountListReq struct {
 	Filter *filter.Expression `json:"filter" validate:"omitempty"`
+	Page   *core.BasePage     `json:"page" validate:"omitempty"`
 }
 
 // Validate ...
 func (req *AccountListReq) Validate() error {
+	if req.Page != nil {
+		if err := req.Page.Validate(); err != nil {
+			return err
+		}
+	}
 	return validator.Validate.Struct(req)
 }
 

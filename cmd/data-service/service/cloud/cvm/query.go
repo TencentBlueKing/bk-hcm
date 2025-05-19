@@ -104,6 +104,8 @@ func (svc *cvmSvc) GetCvm(cts *rest.Contexts) (interface{}, error) {
 		return convCvmGetResult[corecvm.AzureCvmExtension](base, cvmTable.Extension)
 	case enumor.Gcp:
 		return convCvmGetResult[corecvm.GcpCvmExtension](base, cvmTable.Extension)
+	case enumor.Other:
+		return convCvmGetResult[corecvm.OtherCvmExtension](base, cvmTable.Extension)
 
 	default:
 		return nil, fmt.Errorf("unsupport %s vendor for now", vendor)

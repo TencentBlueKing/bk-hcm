@@ -131,6 +131,13 @@ func (a *accountSvc) GetAccount(cts *rest.Contexts) (interface{}, error) {
 			return nil, err
 		}
 		return acc, nil
+	case enumor.Other:
+		acc, err := a.client.DataService().Other.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
+		if err != nil {
+			logs.Errorf("get account failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
+		return acc, nil
 	default:
 		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", baseInfo.Vendor))
 	}
