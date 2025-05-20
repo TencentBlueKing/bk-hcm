@@ -17,16 +17,20 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package constant
+package other
 
-// Note:
-// This scope is used to define all the constant keys which is used inside and outside
-// the HCM system.
-const (
-	// UnassignedBiz 是未分配业务使用的标识
-	UnassignedBiz = -1
-	// AttachedAllBiz 代表账号关联所有业务
-	AttachedAllBiz = int64(-1)
-	// HostPoolBiz 代表主机池业务
-	HostPoolBiz = -1
+import (
+	"hcm/pkg/rest"
 )
+
+// Client is other vendor api client
+type Client struct {
+	Host *HostClient
+}
+
+// NewClient create a new other vendor api client.
+func NewClient(client rest.ClientInterface) *Client {
+	return &Client{
+		Host: NewHostClient(client),
+	}
+}

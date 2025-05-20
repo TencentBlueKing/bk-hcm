@@ -17,16 +17,32 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package constant
+package hooks
 
-// Note:
-// This scope is used to define all the constant keys which is used inside and outside
-// the HCM system.
-const (
-	// UnassignedBiz 是未分配业务使用的标识
-	UnassignedBiz = -1
-	// AttachedAllBiz 代表账号关联所有业务
-	AttachedAllBiz = int64(-1)
-	// HostPoolBiz 代表主机池业务
-	HostPoolBiz = -1
+import (
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/kit"
+	"hcm/pkg/runtime/filter"
+	"hcm/pkg/thirdparty/api-gateway/cmdb"
 )
+
+// AdjustOtherSyncerListCCHostParams ...
+func AdjustOtherSyncerListCCHostParams(kt *kit.Kit, params *cmdb.ListBizHostParams) (*cmdb.ListBizHostParams, error) {
+	return params, nil
+}
+
+// GetOtherSyncerListDBHostFilter ...
+func GetOtherSyncerListDBHostFilter(kt *kit.Kit, rules []*filter.AtomRule) (*filter.Expression, error) {
+	return tools.ExpressionAnd(rules...), nil
+}
+
+// AdjustWatcherVendor ...
+func AdjustWatcherVendor(kt *kit.Kit, vendors []enumor.Vendor) []enumor.Vendor {
+	return vendors
+}
+
+// MatchWatcherUpsertHost ...
+func MatchWatcherUpsertHost(kt *kit.Kit, host cmdb.Host) (bool, enumor.Vendor, error) {
+	return false, "", nil
+}
