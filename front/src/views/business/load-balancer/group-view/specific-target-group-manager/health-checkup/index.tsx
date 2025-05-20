@@ -79,7 +79,7 @@ export default defineComponent({
     const formData = reactive(getDefaultFormData());
     function resetFormData() {
       const defaultData = getDefaultFormData();
-      for (const key in formData) {
+      for (const key of Object.keys(formData)) {
         formData[key] = defaultData[key];
       }
     }
@@ -272,14 +272,16 @@ export default defineComponent({
           label: '响应超时',
           property: 'time_out',
           span: 12,
-          content: () => <Input v-model={formData.time_out} placeholder='0' type='number' suffix='秒' />,
+          content: () => <Input v-model_number={formData.time_out} placeholder='0' type='number' suffix='秒' />,
           isRender: true,
         },
         {
           label: '检查间隔',
           property: 'interval_time',
           span: 12,
-          content: () => <Input v-model={formData.interval_time} placeholder='0' type='number' min={5} suffix='秒' />,
+          content: () => (
+            <Input v-model_number={formData.interval_time} placeholder='0' type='number' min={5} suffix='秒' />
+          ),
           isRender: true,
         },
       ],
@@ -288,14 +290,18 @@ export default defineComponent({
           label: '不健康阈值',
           property: 'un_health_num',
           span: 12,
-          content: () => <Input v-model={formData.un_health_num} placeholder='0' type='number' min={2} suffix='秒' />,
+          content: () => (
+            <Input v-model_number={formData.un_health_num} placeholder='0' type='number' min={2} suffix='秒' />
+          ),
           isRender: true,
         },
         {
           label: '健康阈值',
           property: 'health_num',
           span: 12,
-          content: () => <Input v-model={formData.health_num} placeholder='0' type='number' min={2} suffix='秒' />,
+          content: () => (
+            <Input v-model_number={formData.health_num} placeholder='0' type='number' min={2} suffix='秒' />
+          ),
           isRender: true,
         },
       ],
@@ -370,7 +376,8 @@ export default defineComponent({
           class='fixed-operate-btn'
           outline
           theme='primary'
-          onClick={() => (isHealthCheckupConfigShow.value = true)}>
+          onClick={() => (isHealthCheckupConfigShow.value = true)}
+        >
           配置
         </Button>
         <div class='detail-info-container'>
@@ -412,7 +419,8 @@ export default defineComponent({
           onUpdate:isShow={(isShow) => {
             if (!isShow) resetFormData();
           }}
-          width='640'>
+          width='640'
+        >
           <Form ref='form' formType='vertical' model={formData}>
             <Container margin={0}>
               {formData.health_switch ? (

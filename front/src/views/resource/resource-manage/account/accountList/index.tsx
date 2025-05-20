@@ -8,7 +8,6 @@ import { useAllVendorsAccounts } from './useAllVendorsAccountsList';
 import { useResourceAccount } from './useResourceAccount';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { useRoute, useRouter } from 'vue-router';
-import { storeToRefs } from 'pinia';
 import { useVerify } from '@/hooks';
 import PermissionDialog from '@/components/permission-dialog';
 
@@ -20,9 +19,8 @@ export default defineComponent({
     const router = useRouter();
     const { handleExpand, checkIsExpand, getAllVendorsAccountsList, getVendorAccountList, accountsMatrix, isLoading } =
       useAllVendorsAccounts();
-    const { setAccountId } = useResourceAccount();
+    const { accountId, setAccountId } = useResourceAccount();
     const resourceAccountStore = useResourceAccountStore();
-    const { currentVendor, currentAccountVendor } = storeToRefs(resourceAccountStore);
     const {
       showPermissionDialog,
       handlePermissionConfirm,
@@ -74,7 +72,8 @@ export default defineComponent({
           placeholder='搜索云账号'
           type='search'
           clearable
-          v-model={searchVal.value}></Input>
+          v-model={searchVal.value}
+        ></Input>
         <div class={'account-list-header'}>
           <p class={'header-title'}>账号列表</p>
           <div class={'header-btn'}>
@@ -93,7 +92,8 @@ export default defineComponent({
                     },
                   });
                 }
-              }}>
+              }}
+            >
               <div class={'flex-row align-items-center'}>
                 <i class={'hcm-icon bkhcm-icon-plus-circle mr3'} />
                 接入
@@ -120,14 +120,16 @@ export default defineComponent({
         <Loading loading={isLoading.value} style={{ height: 'calc(100% - 87px)' }}>
           {searchVal.value.length ? null : (
             <div
-              class={`all-vendors specific-vendor ${
-                !(currentAccountVendor.value || currentVendor.value) ? ' actived-specfic-account' : ''
-              }`}
+              class={[
+                'all-vendors',
+                'specific-vendor',
+                { 'actived-specfic-account': !resourceAccountStore.vendorInResourcePage },
+              ]}
               onClick={() => {
                 setAccountId('');
-                resourceAccountStore.setCurrentVendor(null);
-                resourceAccountStore.setCurrentAccountVendor(null);
-              }}>
+                resourceAccountStore.clear();
+              }}
+            >
               <img src={allVendors} alt='全部账号' class={'vendor-icon'} />
               <div>全部账号</div>
             </div>
@@ -141,6 +143,7 @@ export default defineComponent({
             />
           ) : (
             <VendorAccounts
+              accountId={accountId.value}
               accounts={accountsMatrix}
               searchVal={searchVal.value}
               handleExpand={handleExpand}

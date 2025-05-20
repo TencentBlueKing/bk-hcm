@@ -35,12 +35,10 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	tablecloud "hcm/pkg/dal/table/cloud"
-	"hcm/pkg/dal/table/cloud/cvm"
 	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 
@@ -123,7 +121,6 @@ func batchCreateVpc[T protocloud.VpcCreateExtension](cts *rest.Contexts, vendor 
 				Category:  createReq.Category,
 				Memo:      createReq.Memo,
 				Extension: ext,
-				BkCloudID: createReq.BkCloudID,
 				BkBizID:   createReq.BkBizID,
 				Creator:   cts.Kit.User,
 				Reviser:   cts.Kit.User,
@@ -216,7 +213,6 @@ func batchUpdateVpc[T protocloud.VpcUpdateExtension](cts *rest.Contexts, svc *vp
 		vpc.Name = updateReq.Name
 		vpc.Category = updateReq.Category
 		vpc.Memo = updateReq.Memo
-		vpc.BkCloudID = updateReq.BkCloudID
 		vpc.BkBizID = updateReq.BkBizID
 
 		// update extension
@@ -253,21 +249,6 @@ func (svc *vpcSvc) updateVpc(kt *kit.Kit, ids []string, vpc *tablecloud.VpcTable
 	if err != nil {
 		logs.Errorf("update vpc failed, err: %v, rid: %s", err, kt.Rid)
 		return fmt.Errorf("update vpc failed, err: %v", err)
-	}
-
-	// update host cloud area in vpc
-	cvmFilter := &filter.Expression{
-		Op: filter.And,
-		Rules: []filter.RuleFactory{
-			filter.AtomRule{Field: "vpc_ids", Op: filter.JSONOverlaps.Factory(), Value: ids},
-			filter.AtomRule{Field: "bk_cloud_id", Op: filter.NotEqual.Factory(), Value: vpc.BkCloudID},
-		},
-	}
-	cvmData := &cvm.Table{BkCloudID: vpc.BkCloudID}
-	err = svc.dao.Cvm().Update(kt, cvmFilter, cvmData)
-	if err != nil {
-		logs.Errorf("update cvm cloud area failed, err: %v, vpc ids: %+v, rid: %s", err, ids, kt.Rid)
-		return fmt.Errorf("update cvm cloud area failed, err: %v", err)
 	}
 
 	return nil
@@ -312,7 +293,6 @@ func (svc *vpcSvc) BatchUpdateVpcBaseInfo(cts *rest.Contexts) (interface{}, erro
 		vpc.Name = updateReq.Data.Name
 		vpc.Category = updateReq.Data.Category
 		vpc.Memo = updateReq.Data.Memo
-		vpc.BkCloudID = updateReq.Data.BkCloudID
 		vpc.BkBizID = updateReq.Data.BkBizID
 
 		err = svc.updateVpc(cts.Kit, updateReq.IDs, vpc)
@@ -436,7 +416,6 @@ func convertBaseVpc(dbVpc *tablecloud.VpcTable) *protocore.BaseVpc {
 		Region:    dbVpc.Region,
 		Category:  dbVpc.Category,
 		Memo:      dbVpc.Memo,
-		BkCloudID: dbVpc.BkCloudID,
 		BkBizID:   dbVpc.BkBizID,
 		Revision: &core.Revision{
 			Creator:   dbVpc.Creator,

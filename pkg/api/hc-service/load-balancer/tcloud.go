@@ -433,6 +433,12 @@ type BatchRegisterTCloudTargetReq struct {
 
 // Validate ...
 func (r BatchRegisterTCloudTargetReq) Validate() error {
+	for _, target := range r.Targets {
+		err := target.Validate()
+		if err != nil {
+			return err
+		}
+	}
 	return validator.Validate.Struct(r)
 }
 

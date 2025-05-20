@@ -4,7 +4,6 @@ import { ref, watch, defineEmits, defineExpose, defineProps } from 'vue';
 import ZoneSelector from '@/components/zone-selector/index.vue';
 import ResourceGroup from '@/components/resource-group/index.vue';
 
-const emit = defineEmits(['change']);
 defineProps({
   region: {
     type: String,
@@ -13,7 +12,7 @@ defineProps({
     type: String,
   },
 });
-
+const emit = defineEmits(['change']);
 const formData = ref({
   eip_name: '',
   eip_count: 1,
@@ -118,7 +117,7 @@ defineExpose([validate]);
     <bk-form-item label="空闲超时(分钟)" property="idle_timeout_in_minutes" required min="4" max="30">
       <bk-input
         v-if="formData.ip_version === 'ipv4'"
-        v-model="formData.idle_timeout_in_minutes"
+        v-model.number="formData.idle_timeout_in_minutes"
         type="number"
         placeholder="请输入空闲超时，最小值4，最大值30"
       />

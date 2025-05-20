@@ -52,7 +52,7 @@ export default defineComponent({
           'update:rsList',
           props.rsList.map((item) => {
             if (item.id === id) {
-              item[key] = val;
+              item[key] = Number(val);
             }
             return item;
           }),
@@ -74,7 +74,7 @@ export default defineComponent({
             'update:rsList',
             props.rsList.map((item) => {
               if (item.isNew) {
-                item[key] = v;
+                item[key] = Number(v);
               }
               return item;
             }),
@@ -87,7 +87,7 @@ export default defineComponent({
           emit(
             'update:rsList',
             props.rsList.map((item) => {
-              item[key] = v;
+              item[key] = Number(v);
               return item;
             }),
           );
@@ -154,7 +154,8 @@ export default defineComponent({
               required
               rules={[
                 { validator: (v: number) => v >= 1 && v <= 65535, message: '端口范围为1-65535', trigger: 'change' },
-              ]}>
+              ]}
+            >
               <Input
                 type='number'
                 modelValue={port}
@@ -193,7 +194,8 @@ export default defineComponent({
               property={`rs_list.${index}.weight`}
               errorDisplayType='tooltips'
               required
-              rules={[{ validator: (v: number) => v >= 0 && v <= 100, message: '权重范围为0-100', trigger: 'change' }]}>
+              rules={[{ validator: (v: number) => v >= 0 && v <= 100, message: '权重范围为0-100', trigger: 'change' }]}
+            >
               <Input
                 modelValue={cell}
                 onChange={handleUpdate(data.id, 'weight')}
@@ -224,9 +226,12 @@ export default defineComponent({
 
     // click-handler - 添加rs
     const handleAddRs = () => {
+      // eslint-disable-next-line no-nested-ternary
+      const vpcIds = Array.isArray(vpc_id.value) ? vpc_id.value : vpc_id.value ? [vpc_id.value] : [];
+
       bus.$emit('showAddRsDialog', {
         accountId: props.accountId,
-        vpcIds: [vpc_id.value],
+        vpcIds,
         port: props.port,
         rsList: props.rsList,
         isCorsV2: props.lbDetail?.extension?.snat_pro,
@@ -240,6 +245,7 @@ export default defineComponent({
       },
       {
         immediate: true,
+        deep: true,
       },
     );
 
@@ -248,7 +254,6 @@ export default defineComponent({
         { id: 'private_ip_address', name: '内网IP' },
         { id: 'public_ip_address', name: '公网IP' },
         { id: 'inst_name', name: '名称' },
-        { id: 'region', name: '地域' },
         {
           id: 'inst_type',
           name: '资源类型',
@@ -312,7 +317,8 @@ export default defineComponent({
                 content: '目标组基本信息，RS变更，RS权重修改，RS端口修改不支持同时变更',
                 disabled: isInitialState.value || isAddRs.value,
               }}
-              disabled={!isInitialState.value && !isAddRs.value}>
+              disabled={!isInitialState.value && !isAddRs.value}
+            >
               <i class='hcm-icon bkhcm-icon-plus-circle-shape'></i>
               <span>添加 RS</span>
             </Button>
@@ -329,7 +335,8 @@ export default defineComponent({
             columns={rsTableColumns}
             settings={settings.value}
             showOverflowTooltip
-            maxHeight={420}>
+            maxHeight={420}
+          >
             {{
               empty: () => {
                 if (isTableLoading.value) return null;

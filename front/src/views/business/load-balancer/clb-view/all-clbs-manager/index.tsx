@@ -92,7 +92,6 @@ export default defineComponent({
             name: t('云厂商'),
             children: [{ id: VendorEnum.TCLOUD, name: VendorMap[VendorEnum.TCLOUD] }],
           },
-          { id: 'region', name: '地域' },
           { id: 'zones', name: '可用区域' },
           {
             id: 'status',
@@ -131,7 +130,8 @@ export default defineComponent({
                       handleAuth(deleteClbActionName.value);
                       globalPermissionDialogStore.setShow(true);
                     } else handleDelete(data);
-                  }}>
+                  }}
+                >
                   删除
                 </Button>
               );
@@ -220,7 +220,8 @@ export default defineComponent({
                       handleAuth(createClbActionName.value);
                       globalPermissionDialogStore.setShow(true);
                     } else handleApply();
-                  }}>
+                  }}
+                >
                   购买
                 </Button>
                 <Button
@@ -236,7 +237,8 @@ export default defineComponent({
                     }
                     handleClickBatchDelete();
                   }}
-                  disabled={selections.value.length === 0}>
+                  disabled={selections.value.length === 0}
+                >
                   批量删除
                 </Button>
                 {/* 批量导入 */}
@@ -257,7 +259,8 @@ export default defineComponent({
           isSubmitDisabled={isSubmitDisabled.value}
           tableProps={tableProps}
           list={computedListenersList.value}
-          onHandleConfirm={handleBatchDeleteSubmit}>
+          onHandleConfirm={handleBatchDeleteSubmit}
+        >
           {{
             tips: () => (
               <>

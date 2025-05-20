@@ -134,7 +134,7 @@ export default defineComponent({
       {
         label: t('优先级'),
         field: 'priority',
-        render: ({ data }: any) => <Input class='mt25' type='number' v-model={data.priority}></Input>,
+        render: ({ data }: any) => <Input class='mt25' type='number' v-model_number={data.priority}></Input>,
       },
       {
         label: t('策略'),
@@ -208,7 +208,8 @@ export default defineComponent({
                 theme='primary'
                 onClick={() => {
                   hanlerCopy(data);
-                }}>
+                }}
+              >
                 {t('复制')}
               </Button>
               <Button
@@ -217,7 +218,8 @@ export default defineComponent({
                 class='ml20'
                 onClick={() => {
                   handlerDelete(data, row);
-                }}>
+                }}
+              >
                 {t('删除')}
               </Button>
             </div>
@@ -231,7 +233,7 @@ export default defineComponent({
       {
         label: t('优先级'),
         field: 'priority',
-        render: ({ data }: any) => <Input class='mt25' type='number' v-model={data.priority}></Input>,
+        render: ({ data }: any) => <Input class='mt25' type='number' v-model_number={data.priority}></Input>,
       },
       {
         label: t('策略'),
@@ -311,7 +313,8 @@ export default defineComponent({
                 theme='primary'
                 onClick={() => {
                   hanlerCopy(data);
-                }}>
+                }}
+              >
                 {t('复制')}
               </Button>
               <Button
@@ -320,7 +323,8 @@ export default defineComponent({
                 class='ml20'
                 onClick={() => {
                   handlerDelete(data, row);
-                }}>
+                }}
+              >
                 {t('删除')}
               </Button>
             </div>
@@ -415,7 +419,6 @@ export default defineComponent({
     };
 
     const handleConfirm = () => {
-      console.log('tableData.value', tableData.value);
       tableData.value.forEach((e: any) => {
         e[e.sourceAddress] = e.ipv4_cidr || e.ipv6_cidr || e.cloud_target_security_group_id;
         if (e.sourceAddress !== 'ipv4_cidr') {
@@ -481,7 +484,8 @@ export default defineComponent({
           isShow={this.isShow}
           steps={this.steps}
           onConfirm={this.handleConfirm}
-          onCancel={this.handleClose}></step-dialog>
+          onCancel={this.handleClose}
+        ></step-dialog>
       </>
     );
   },

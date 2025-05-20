@@ -94,7 +94,8 @@ export default defineComponent({
         class='add-snat-ip-dialog'
         isShow={props.isShow}
         width={600}
-        onUpdate:isShow={(isShow) => emit('update:isShow', isShow)}>
+        onUpdate:isShow={(isShow) => emit('update:isShow', isShow)}
+      >
         {{
           default: () => (
             <>
@@ -128,7 +129,7 @@ export default defineComponent({
                 </FormItem>
                 {formData.type === '0' ? (
                   <FormItem label='IP数量' required property='ip_count'>
-                    <Input type='number' v-model={formData.ip_count} min={1} max={snatIpQuotaLimit.value} />
+                    <Input type='number' v-model_number={formData.ip_count} min={1} max={snatIpQuotaLimit.value} />
                   </FormItem>
                 ) : (
                   <FormItem label='IP' required property='ip_list'>
@@ -150,7 +151,8 @@ export default defineComponent({
                               validator: (value: string) => formData.ip_list.filter((ip) => ip === value).length <= 1,
                               message: '重复的SNAT IP',
                             },
-                          ]}>
+                          ]}
+                        >
                           <Input v-model={formData.ip_list[index]} />
                         </FormItem>
                         <Button text onClick={handleAddIp} disabled={!canAdd.value}>

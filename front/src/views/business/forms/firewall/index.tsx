@@ -7,7 +7,7 @@ import { useWhereAmI } from '@/hooks/useWhereAmI';
 import http from '@/http';
 import { useAccountStore } from '@/store';
 import { validateIpCidr } from '@/views/resource/resource-manage/children/dialog/security-rule/security-rule-validators';
-import { cloneDeep } from 'lodash-es';
+import { cloneDeep } from 'lodash';
 
 enum IpType {
   ipv4 = 'IPv4',
@@ -183,7 +183,8 @@ export default defineComponent({
             onChange={(val: any) => {
               formModel.account_id = val.account_id;
               formModel.vendor = val.vendor;
-            }}></FormSelect>
+            }}
+          ></FormSelect>
         ) : null}
         <bk-form
           class={'pr20'}
@@ -199,7 +200,8 @@ export default defineComponent({
                 },
               },
             ],
-          }}>
+          }}
+        >
           <bk-form-item label={'名称'} property={'name'} required>
             <bk-input v-model={formModel.name}></bk-input>
           </bk-form-item>
@@ -213,10 +215,16 @@ export default defineComponent({
             </bk-radio-group>
           </bk-form-item>
           <bk-form-item label={'优先级'} property={'priority'} required description={'优先级范围从 0 到 65535'}>
-            <bk-input vendor={formModel.priority} v-model={formModel.priority} min={0} max={65535} type='number' />
+            <bk-input
+              vendor={formModel.priority}
+              v-model_number={formModel.priority}
+              min={0}
+              max={65535}
+              type='number'
+            />
           </bk-form-item>
           <bk-form-item label={'IP类型'}>
-            <bk-select v-model={ip_type.value} type='number' clearable={false}>
+            <bk-select v-model={ip_type.value} clearable={false}>
               {[IpType.ipv4, IpType.ipv6].map((v) => (
                 <bk-option key={v} value={v} label={v}></bk-option>
               ))}

@@ -36,7 +36,6 @@ export default () => {
       name: t('云厂商'),
       children: [{ id: VendorEnum.TCLOUD, name: VendorMap[VendorEnum.TCLOUD] }],
     },
-    { id: 'region', name: t('地域') },
     { id: 'cloud_vpc_id', name: t('所属VPC') },
     {
       id: 'health_check.health_switch',
@@ -62,7 +61,8 @@ export default () => {
             v-bk-tooltips={{
               content: t('已绑定了监听器的目标组不可删除'),
               disabled: data.listener_num === 0,
-            }}>
+            }}
+          >
             <Button
               text
               theme={'primary'}
@@ -70,7 +70,8 @@ export default () => {
               class={'ml16'}
               onClick={() => {
                 handleDeleteTargetGroup(data.id, data.name);
-              }}>
+              }}
+            >
               {t('删除')}
             </Button>
           </span>

@@ -9,19 +9,13 @@ import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { ResourceTypeEnum } from '@/common/resource-constant';
 import ResourceSearchSelect from '@/components/resource-search-select/index.vue';
 
-const { useColumns, useTableListQuery, HostOperations } = businessHostManagePlugin;
-
 const props = defineProps({
   filter: {
     type: Object as PropType<FilterType>,
   },
-  isResourcePage: {
-    type: Boolean,
-  },
-  whereAmI: {
-    type: String,
-  },
 });
+
+const { useColumns, useTableListQuery, HostOperations } = businessHostManagePlugin;
 
 const isLoadingCloudAreas = ref(false);
 const cloudAreaPage = ref(0);
@@ -103,7 +97,7 @@ getCloudAreas();
       ></HostOperations>
 
       <div class="flex-row align-items-center justify-content-arround search-selector-container">
-        <resource-search-select v-model="searchValue" :resource-type="ResourceTypeEnum.CVM" />
+        <resource-search-select v-model="searchValue" :resource-type="ResourceTypeEnum.CVM" value-behavior="need-key" />
         <slot name="recycleHistory"></slot>
       </div>
     </section>

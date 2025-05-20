@@ -36,11 +36,13 @@ import (
 	"hcm/pkg/adaptor/types/image"
 	"hcm/pkg/adaptor/types/instance-type"
 	typelb "hcm/pkg/adaptor/types/load-balancer"
+	networkinterface "hcm/pkg/adaptor/types/network-interface"
 	"hcm/pkg/adaptor/types/region"
 	"hcm/pkg/adaptor/types/route-table"
 	"hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/adaptor/types/security-group-rule"
 	"hcm/pkg/adaptor/types/subnet"
+	typestag "hcm/pkg/adaptor/types/tag"
 	"hcm/pkg/adaptor/types/zone"
 	"hcm/pkg/api/core/cloud"
 	"hcm/pkg/kit"
@@ -198,6 +200,14 @@ type TCloud interface {
 	ResetCvmInstance(kt *kit.Kit, opt *cvm.ResetInstanceOption) (*poller.BaseDoneResult, error)
 
 	BatchCvmAssociateSecurityGroups(kt *kit.Kit, opt *cvm.TCloudAssociateSecurityGroupsOption) error
+
+	CloneSecurityGroup(kt *kit.Kit, opt *securitygroup.TCloudSecurityGroupCloneOption) (*v20170312.SecurityGroup, error)
+
+	DescribeNetworkInterfaces(kt *kit.Kit,
+		opt *networkinterface.TCloudNetworkInterfaceListOption) (
+		*networkinterface.TCloudNetworkInterfaceWithCountResp, error)
+	ListTags(kt *kit.Kit, listOpt *typestag.TCloudTagListOpt) (*typestag.TCloudTagListResult, error)
+	TagResources(kt *kit.Kit, tagOpt *typestag.TCloudTagResOpt) (*typestag.TCloudTagResourcesResp, error)
 
 	CreateBucket(kt *kit.Kit, opt *typescos.TCloudBucketCreateOption) error
 	DeleteBucket(kt *kit.Kit, opt *typescos.TCloudBucketDeleteOption) error

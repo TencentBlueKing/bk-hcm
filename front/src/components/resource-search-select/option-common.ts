@@ -45,10 +45,6 @@ export const cvm: ISearchItem[] = [
   ...base,
   ...[
     {
-      name: '云地域',
-      id: 'region',
-    },
-    {
       name: '管控区域',
       id: 'bk_cloud_id',
     },

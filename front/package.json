@@ -49,7 +49,7 @@
   "devDependencies": {
     "@blueking/babel-preset-bk": "2.1.0",
     "@blueking/cli-service-webpack": "0.0.7",
-    "@blueking/eslint-config-bk": "3.0.0-beta.1",
+    "@blueking/eslint-config-bk": "2.1.0",
     "@types/cookie": "0.5.1",
     "@types/lodash": "4.14.182",
     "@types/node": "18.19.68",
@@ -90,8 +90,7 @@
   "lint-staged": {
     "src/**/*.{js,ts,tsx,vue}": [
       "eslint --fix -c ./.eslintrc.js --debug",
-      "prettier --config ./.prettierrc.js --write",
-      "git add"
+      "prettier --config ./.prettierrc.js --write"
     ]
   }
 }

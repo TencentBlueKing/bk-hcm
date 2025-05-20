@@ -33,6 +33,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 )
 
@@ -277,4 +278,41 @@ func getTCloudLoadBalancer(kt *kit.Kit, cli *dataservice.Client, lbID string) (
 		return nil, err
 	}
 	return lb, nil
+}
+
+// validateCvmExist 导入新RS前, 校验云主机是否存在
+// 开启了跨域2.0的主机, 不进行vpc校验, 由云上进行报错
+func validateCvmExist(kt *kit.Kit, dataServiceCli *dataservice.Client, rsIP string, vendor enumor.Vendor,
+	bkBizID int64, accountID string, tcloudLB *corelb.LoadBalancer[corelb.TCloudClbExtension]) (
+	*corecvm.BaseCvm, error) {
+
+	var cvm *corecvm.BaseCvm
+	var err error
+	if converter.PtrToVal(tcloudLB.Extension.SnatPro) {
+		cvmList, err := getCvmWithoutVpc(kt, dataServiceCli, rsIP, vendor, bkBizID, accountID)
+		if err != nil {
+			logs.Errorf("get cvm without vpc failed, ip: %s, err: %v, rid: %s", rsIP, err, kt.Rid)
+			return nil, err
+		}
+		if len(cvmList) == 0 {
+			return nil, fmt.Errorf("rs(%s) not found", rsIP)
+		}
+		cvm = &cvmList[0]
+		return cvm, nil
+	}
+
+	cloudVpcIDs := []string{tcloudLB.CloudVpcID}
+	if converter.PtrToVal(tcloudLB.Extension.Snat) {
+		cloudVpcIDs = append(cloudVpcIDs, converter.PtrToVal(tcloudLB.Extension.TargetCloudVpcID))
+	}
+
+	cvm, err = getCvm(kt, dataServiceCli, rsIP, vendor, bkBizID, accountID, cloudVpcIDs)
+	if err != nil {
+		logs.Errorf("call data-service to get cvm failed, ip: %s, err: %v, rid: %s", rsIP, err, kt.Rid)
+		return nil, err
+	}
+	if cvm == nil {
+		return nil, fmt.Errorf("rs(%s) not found", rsIP)
+	}
+	return cvm, nil
 }

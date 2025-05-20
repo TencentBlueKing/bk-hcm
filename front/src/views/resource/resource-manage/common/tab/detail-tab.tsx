@@ -23,14 +23,14 @@ export default defineComponent({
   },
 
   render() {
-    console.log(this);
     return (
       <>
         <bk-tab
           v-model:active={this.activeTab}
           type='card-grid'
           class={`detail-tab-main ${this.$attrs?.class}`}
-          onChange={this.onChange}>
+          onChange={this.onChange}
+        >
           {this.tabs.map((tab) => {
             return (
               <>

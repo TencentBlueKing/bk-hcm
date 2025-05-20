@@ -162,15 +162,16 @@ export default defineComponent({
                 min={dataDiskSizeRules(formData.disk_type).min}
                 max={dataDiskSizeRules(formData.disk_type).max}
                 step={10}
-                v-model={formData.disk_size}
-                suffix='GB'></Input>
+                v-model_number={formData.disk_size}
+                suffix='GB'
+              ></Input>
             ),
           },
           {
             label: '购买数量',
             required: true,
             property: 'disk_count',
-            content: () => <Input type='number' min={1} max={500} v-model={formData.disk_count}></Input>,
+            content: () => <Input type='number' min={1} max={500} v-model_number={formData.disk_count}></Input>,
           },
           {
             label: '计费模式',
@@ -192,7 +193,7 @@ export default defineComponent({
             content: [
               {
                 property: 'purchase_duration.size',
-                content: () => <Input type='number' min={1} v-model={formData.purchase_duration.count}></Input>,
+                content: () => <Input type='number' min={1} v-model_number={formData.purchase_duration.count}></Input>,
               },
               {
                 property: 'purchase_duration.unit',
@@ -223,7 +224,8 @@ export default defineComponent({
                 rows={2}
                 maxlength={30}
                 resize={false}
-                v-model={formData.memo}></Input>
+                v-model={formData.memo}
+              ></Input>
             ),
           },
         ],
@@ -259,7 +261,8 @@ export default defineComponent({
                         required={required}
                         property={property}
                         rules={rules}
-                        description={description}>
+                        description={description}
+                      >
                         {Array.isArray(content) ? (
                           <div class='flex-row'>
                             {content
@@ -270,7 +273,8 @@ export default defineComponent({
                                   required={sub.required}
                                   property={sub.property}
                                   description={sub?.description}
-                                  class={'mr8'}>
+                                  class={'mr8'}
+                                >
                                   {sub.content()}
                                   {sub.tips && <div class='form-item-tips'>{sub.tips()}</div>}
                                 </FormItem>
@@ -290,7 +294,8 @@ export default defineComponent({
                 loading={submitting.value}
                 disabled={submitDisabled.value}
                 class={'mr8'}
-                onClick={handleFormSubmit}>
+                onClick={handleFormSubmit}
+              >
                 {isResourcePage ? t('提交') : t('提交审批')}
               </Button>
               <Button onClick={() => router.back()}>{t('取消')}</Button>

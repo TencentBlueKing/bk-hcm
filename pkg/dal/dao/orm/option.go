@@ -20,9 +20,16 @@
 package orm
 
 import (
+	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
+
+	"hcm/pkg/cc"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/dal/table"
+	"hcm/pkg/logs"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/time/rate"
@@ -106,4 +113,361 @@ func (r *TableSuffixShardingOpt) ReplaceTableName(old string) string {
 // String ...
 func (r *TableSuffixShardingOpt) String() string {
 	return fmt.Sprintf("{tableName:%s, suffixes: %v}", r.tableName, r.suffixes)
+}
+
+// ModifySQLOpt defines modify sql options.
+type ModifySQLOpt interface {
+	// InjectInsertSQL inject insert sql.
+	InjectInsertSQL(expr string, args interface{}) (string, any)
+	// InjectUpdateSQL inject update sql.
+	InjectUpdateSQL(expr string, arg map[string]interface{}) (string, map[string]interface{})
+	// InjectDeleteSQL inject delete sql.
+	InjectDeleteSQL(expr string, arg map[string]interface{}) (string, map[string]interface{})
+	// InjectJoinSQL inject join sql.
+	InjectJoinSQL(expr string, arg map[string]interface{}) (string, map[string]interface{})
+}
+
+// InjectTenantIDOpt  inject tenant id option
+type InjectTenantIDOpt struct {
+	enabledTenant bool
+	tenantID      string
+}
+
+// NewInjectTenantIDOpt ...
+// InjectTenantIDOpt.InjectInsertSQL
+// 支持的case示例：
+//  1. 支持：普通的INSERT INTO ... VALUES形式
+//  2. 支持：INSERT INTO ... SELECT（
+//
+// SELECT的table需要支持多租户，否则不会自动添加租户ID的字段及过滤条件；不支持查询指定租户ID，插入当前租户的需求）
+//
+// InjectTenantIDOpt.InjectUpdateSQL
+// 支持的case示例：
+//  1. 支持：普通的UPDATE ... SET ... WHERE ...形式（table需要支持多租户，否则不会自动添加租户ID的过滤条件）
+//
+// InjectTenantIDOpt.InjectDeleteSQL
+// 支持的case示例：
+//  1. 支持：DELETE FROM ... WHERE ...形式（table需要支持多租户，否则不会自动添加租户ID的过滤条件）
+//
+// InjectTenantIDOpt.InjectJoinSQL
+// 支持的case示例：（table需要支持多租户，否则不会自动添加租户ID的过滤条件）
+//  1. 简单SELECT查询-表名带引号
+//     INPUT:  SELECT * FROM `cvm`
+//     OUTPUT: SELECT * FROM `cvm` WHERE cvm.tenant_id = :tenant_id
+//  2. 简单SELECT查询-DB+表名带引号
+//     INPUT:  SELECT * FROM db.`cvm`
+//     OUTPUT: SELECT * FROM db.`cvm` WHERE cvm.tenant_id = :tenant_id
+//  3. 带JOIN的SELECT查询-带AS
+//     INPUT:  SELECT * FROM network_interface AS ni JOIN network_interface_cvm_rel AS rel
+//     ON ni.id = rel.network_interface_id WHERE rel.id=1
+//     OUTPUT: SELECT * FROM network_interface AS ni JOIN network_interface_cvm_rel AS rel
+//     ON ni.id = rel.network_interface_id WHERE ni.tenant_id = :tenant_id AND rel.id=1
+//  4. 带子查询的SELECT-带WHERE
+//     INPUT： SELECT * FROM (SELECT * FROM cvm WHERE id > :id) AS sub WHERE id=1 and name="test"
+//     OUTPUT：SELECT * FROM (SELECT * FROM cvm WHERE cvm.tenant_id = :tenant_id AND id > :id) AS sub
+//     WHERE id=1 AND name="test"
+//
+// 不支持的case示例：
+//  1. 只要是支持多租户的表，就会增加租户ID的过滤条件，不支持只给指定表添加租户ID条件的需求
+func NewInjectTenantIDOpt(tenantID string) *InjectTenantIDOpt {
+	return &InjectTenantIDOpt{tenantID: tenantID, enabledTenant: cc.DataService().Tenant.Enabled}
+}
+
+// enabled check is enabled.
+func (ito *InjectTenantIDOpt) enabled() bool {
+	return ito.enabledTenant && ito.tenantID != "" && ito.tenantID != constant.DefaultTenantID
+}
+
+// InjectInsertSQL Insert使用
+// 支持的case：
+//  1. 普通的INSERT INTO ... VALUES形式
+//     INPUT： INSERT INTO db1.`cvm` (name) VALUES (:name)
+//     OUTPUT：INSERT INTO db1.`cvm` (name, tenant_id) VALUES (:name, :tenant_id)
+//  2. INSERT INTO ... SELECT（SELECT的table需要支持多租户，否则无法注入tenant_id）
+//     INPUT： INSERT INTO db1.`cvm` (id,name) SELECT id,name FROM disk WHERE id=1
+//     OUTPUT：INSERT INTO db1.`cvm` (id,name, tenant_id) SELECT id,name,tenant_id FROM disk
+//     WHERE tenant_id = :tenant_id AND id=1
+func (ito *InjectTenantIDOpt) InjectInsertSQL(expr string, args interface{}) (string, any) {
+	// 没开启多租户，直接返回
+	if !ito.enabled() {
+		return expr, args
+	}
+
+	// 如果不是INSERT语句，直接返回
+	if !insertTableNameRe.MatchString(expr) {
+		return expr, args
+	}
+
+	// 使用正则表达式匹配表名
+	tableMatch := insertTableNameRe.FindString(expr)
+	if tableMatch == "" {
+		return expr, args
+	}
+
+	// 去掉 "INSERT INTO " 前缀，"INSERT INTO " 长度为 12
+	tableMatch = tableMatch[12:]
+	// 提取表名
+	tableName := extractTableName(tableMatch)
+
+	// 该表不支持多租户
+	tableConfig, ok := table.TableMap[table.Name(tableName)]
+	logs.V(4).Infof("injectInsertTenantID:start, tableName: %s, tableConfig: %+v, ok: %v", tableName, tableConfig, ok)
+	if !ok || !tableConfig.EnableTenant {
+		return expr, args
+	}
+
+	// 处理INSERT INTO ... SELECT形式
+	if strings.Contains(strings.ToUpper(expr), "SELECT") {
+		newExpr, selectTblName, isMatched := assemblyInsertSelectSQL(expr, constant.TenantIDField)
+		if !isMatched {
+			return expr, args
+		}
+
+		// 检查SELECT表是否支持多租户
+		selectTableName := extractTableName(selectTblName)
+		selectTableConfig, ok := table.TableMap[table.Name(selectTableName)]
+		if !ok || !selectTableConfig.EnableTenant {
+			return expr, args
+		}
+		expr = newExpr
+	} else {
+		// 处理普通INSERT INTO ... VALUES形式
+		newExpr, isMatched := assemblyInsertSQL(expr, constant.TenantIDField)
+		if !isMatched {
+			return expr, args
+		}
+		expr = newExpr
+	}
+
+	// 处理参数
+	args = ito.parseArgsAndSetTenant(args)
+
+	if logs.V(4) {
+		argsJson, err := json.Marshal(args)
+		if err != nil {
+			logs.Warnf("injectInsertTenantID:end, tenantID: %s, json marshal(args) failed, err: %v, args: %v",
+				ito.tenantID, err, args)
+		}
+		logs.Infof("injectInsertTenantID:end, tenantID: %s, newExpr: %s, argsJson: %s", ito.tenantID, expr, argsJson)
+	}
+
+	return expr, args
+}
+
+// InjectUpdateSQL Update使用
+func (ito *InjectTenantIDOpt) InjectUpdateSQL(expr string, arg map[string]interface{}) (
+	string, map[string]interface{}) {
+
+	// 没开启多租户，直接返回
+	if !ito.enabled() {
+		return expr, arg
+	}
+
+	if arg == nil {
+		arg = make(map[string]interface{})
+	}
+
+	// 使用正则表达式匹配表名
+	tableMatch := updateTableNameRe.FindStringSubmatch(expr)
+	if len(tableMatch) == 0 {
+		return expr, arg
+	}
+
+	// 提取表名
+	tableName := extractTableName(tableMatch[0][6:])
+	// 该表不支持多租户
+	tableConfig, ok := table.TableMap[table.Name(tableName)]
+	logs.V(4).Infof("injectUpdateTenantID, tableName: %s, tableConfig: %+v, ok: %v", tableName, tableConfig, ok)
+	if !ok || !tableConfig.EnableTenant {
+		return expr, arg
+	}
+
+	// 构建 tenant_id 条件
+	conditions := make([]string, 0)
+	tenantCondition := fmt.Sprintf("%s = :%s", constant.TenantIDField, constant.TenantIDField)
+	if !strings.Contains(expr, tenantCondition) {
+		conditions = append(conditions, tenantCondition)
+	}
+	expr = appendConditionToExpr(expr, conditions)
+
+	// 添加 tenant_id 参数
+	arg[constant.TenantIDField] = ito.tenantID
+
+	logs.V(4).Infof("injectUpdateTenantID:end, tenantID: %s, tableName: %s, expr: %s, arg: %+v",
+		ito.tenantID, tableName, expr, arg)
+
+	return expr, arg
+}
+
+// InjectDeleteSQL Delete使用
+func (ito *InjectTenantIDOpt) InjectDeleteSQL(expr string, arg map[string]interface{}) (
+	string, map[string]interface{}) {
+
+	// 没开启多租户，直接返回
+	if !ito.enabled() {
+		return expr, arg
+	}
+
+	if arg == nil {
+		arg = make(map[string]interface{})
+	}
+
+	// 获取表名
+	fromMatches := fromTableNameRe.FindAllString(expr, -1)
+	if len(fromMatches) == 0 {
+		return expr, arg
+	}
+
+	// 提取表名
+	tableName := extractTableName(fromMatches[0][5:])
+
+	// 该表不支持多租户
+	tableConfig, ok := table.TableMap[table.Name(tableName)]
+	logs.V(4).Infof("injectDeleteTenantID:tableName: %s, tableConfig: %+v, ok: %v", tableName, tableConfig, ok)
+	if !ok || !tableConfig.EnableTenant {
+		return expr, arg
+	}
+
+	// 构建 tenant_id 条件
+	conditions := make([]string, 0)
+	tenantCondition := fmt.Sprintf("%s = :%s", constant.TenantIDField, constant.TenantIDField)
+	if !strings.Contains(expr, tenantCondition) {
+		conditions = append(conditions, tenantCondition)
+	}
+	expr = appendConditionToExpr(expr, conditions)
+
+	// 添加参数
+	arg[constant.TenantIDField] = ito.tenantID
+
+	logs.V(4).Infof("injectDeleteTenantID:end, tenantID: %s, conditions: %v, expr: %s, arg: %+v",
+		ito.tenantID, conditions, expr, arg)
+
+	return expr, arg
+}
+
+// InjectJoinSQL List、Count使用
+// 支持的case示例：
+//  1. 简单SELECT查询-表名带引号
+//     INPUT:  SELECT * FROM `cvm`
+//     OUTPUT: SELECT * FROM `cvm` WHERE cvm.tenant_id = :tenant_id
+//  2. 简单SELECT查询-DB+表名带引号
+//     INPUT:  SELECT * FROM db.`cvm`
+//     OUTPUT: SELECT * FROM db.`cvm` WHERE cvm.tenant_id = :tenant_id
+//  3. 带JOIN的SELECT查询-带AS
+//     INPUT:  SELECT * FROM network_interface AS ni JOIN network_interface_cvm_rel AS rel
+//     ON ni.id = rel.network_interface_id WHERE rel.id=1
+//     OUTPUT: SELECT * FROM network_interface AS ni JOIN network_interface_cvm_rel AS rel
+//     ON ni.id = rel.network_interface_id WHERE ni.tenant_id = :tenant_id AND rel.id=1
+//  4. 带子查询的SELECT-带WHERE
+//     INPUT： SELECT * FROM (SELECT * FROM cvm WHERE id > :id) AS sub WHERE id=1 and name="test"
+//     OUTPUT：SELECT * FROM (SELECT * FROM cvm WHERE cvm.tenant_id = :tenant_id AND id > :id) AS sub
+//     WHERE id=1 AND name="test"
+//
+// 不支持的case示例：
+//  1. 只要是支持多租户的表，就会增加租户ID的过滤条件，不支持只给指定表添加租户ID条件的需求
+func (ito *InjectTenantIDOpt) InjectJoinSQL(expr string, arg map[string]interface{}) (string, map[string]interface{}) {
+	// 没开启多租户，直接返回
+	if !ito.enabled() {
+		return expr, arg
+	}
+
+	if arg == nil {
+		arg = make(map[string]interface{})
+	}
+
+	// 提取表名及别名
+	matchTables := parseTableAliases(expr)
+	if len(matchTables) == 0 {
+		return expr, arg
+	}
+
+	// 构建 tenant_id 条件
+	conditions := make([]string, 0)
+	// 该表是否支持多租户
+	tableConfig, ok := table.TableMap[table.Name(matchTables[0].TableName)]
+	logs.V(4).Infof("injectJoinTenantID:mainTable, tableConfig: %+v, ok: %v, mainTable: %+v",
+		tableConfig, ok, matchTables[0])
+	if ok && tableConfig.EnableTenant {
+		tenantCondition := fmt.Sprintf("%s.%s = :%s", matchTables[0].Alias, constant.TenantIDField,
+			constant.TenantIDField)
+		if !strings.Contains(expr, tenantCondition) {
+			conditions = append(conditions, tenantCondition)
+		}
+	}
+
+	// 处理 JOIN 表条件
+	if len(matchTables) > 1 {
+		for i := 1; i < len(matchTables); i++ {
+			joinTable := matchTables[i]
+			// 该表不支持多租户
+			tableConfig, ok = table.TableMap[table.Name(joinTable.TableName)]
+			logs.V(4).Infof("injectJoinTenantID:joinTable, tableConfig: %+v, ok: %v, joinTable: %+v",
+				tableConfig, ok, joinTable)
+			if !ok || !tableConfig.EnableTenant {
+				continue
+			}
+			tenantJoinCondition := fmt.Sprintf("%s.%s = :%s", joinTable.Alias, constant.TenantIDField,
+				constant.TenantIDField)
+			if !strings.Contains(expr, tenantJoinCondition) {
+				conditions = append(conditions, tenantJoinCondition)
+			}
+		}
+	}
+
+	// 注入条件到 WHERE 子句
+	expr = appendConditionToExpr(expr, conditions)
+
+	// 添加参数
+	arg[constant.TenantIDField] = ito.tenantID
+
+	logs.V(4).Infof("injectJoinTenantID:end, tenantID: %s, conditions: %v, expr: %s, arg: %+v",
+		ito.tenantID, conditions, expr, arg)
+
+	return expr, arg
+}
+
+// setTenantID 通过反射设置结构体的tenantID字段
+func (ito *InjectTenantIDOpt) setTenantID(structValue reflect.Value) {
+	// 查找并设置 TenantID 字段
+	field := structValue.FieldByName(constant.TenantIDTableField)
+	if field.IsValid() && field.CanSet() {
+		field.SetString(ito.tenantID)
+	}
+}
+
+func (ito *InjectTenantIDOpt) parseArgsAndSetTenant(args interface{}) interface{} {
+	rv := reflect.ValueOf(args)
+	switch rv.Kind() {
+	case reflect.Ptr:
+		// 获取指针指向的值
+		elem := rv.Elem()
+		// 如果是结构体，设置tenantID
+		if elem.Kind() == reflect.Struct {
+			ito.setTenantID(elem)
+		}
+		return args
+	case reflect.Map:
+		if m, ok := args.(map[string]interface{}); ok {
+			m[constant.TenantIDField] = ito.tenantID
+		}
+		return args
+	case reflect.Slice:
+		for i := 0; i < rv.Len(); i++ {
+			elem := rv.Index(i)
+			// 如果元素是指针且不为nil
+			if elem.Kind() == reflect.Ptr && !elem.IsNil() {
+				// 获取指针指向的结构体
+				structValue := elem.Elem()
+				if structValue.Kind() == reflect.Struct {
+					ito.setTenantID(structValue)
+				}
+			} else if elem.Kind() == reflect.Struct {
+				// 直接处理结构体类型
+				ito.setTenantID(elem)
+			}
+		}
+		return args
+	default:
+		return args
+	}
 }

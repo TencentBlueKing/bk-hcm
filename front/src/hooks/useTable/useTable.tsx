@@ -11,12 +11,11 @@ import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useWhereAmI, Senarios } from '../useWhereAmI';
 import { getDifferenceSet } from '@/common/util';
-import { get as lodash_get } from 'lodash-es';
+import { get as lodash_get, defaults, isEqual } from 'lodash';
 import { VendorReverseMap } from '@/common/constant';
 import { LB_NETWORK_TYPE_REVERSE_MAP, LISTENER_BINDING_STATUS_REVERSE_MAP, SCHEDULER_REVERSE_MAP } from '@/constants';
 import usePagination from '../usePagination';
 import useBillStore from '@/store/useBillStore';
-import { defaults, isEqual } from 'lodash';
 import { fetchData } from '@pluginHandler/useTable';
 
 export interface IProp {

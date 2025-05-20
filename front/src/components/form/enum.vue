@@ -6,14 +6,15 @@ import { DisplayType } from './typings';
 
 defineOptions({ name: 'hcm-form-enum' });
 
+const model = defineModel<string | string[]>();
 const props = withDefaults(
-  defineProps<{ multiple: boolean; option: ModelProperty['option']; display?: DisplayType }>(),
+  defineProps<{ clearable: boolean; multiple: boolean; option: ModelProperty['option']; display?: DisplayType }>(),
   {
+    clearable: false,
     multiple: false,
     option: () => ({}),
   },
 );
-const model = defineModel<string | string[]>();
 const attrs = useAttrs();
 
 const comp = computed(() => (props.display?.on === 'cell' ? SelectColumn : 'bk-select'));
@@ -38,6 +39,7 @@ defineExpose({
     v-model="model"
     ref="selectColumnRef"
     :list="selectList"
+    :clearable="clearable"
     :multiple="multiple"
     :multiple-mode="multiple ? 'tag' : 'default'"
     v-bind="attrs"

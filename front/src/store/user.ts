@@ -29,7 +29,6 @@ export const useUserStore = defineStore('user', () => {
   const tenantId = ref('');
 
   const searchLoading = ref(false);
-
   const userList = ref<IUserItem[]>([]);
 
   // 获取当前用户信息

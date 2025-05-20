@@ -44,6 +44,10 @@ func InitService(cap *capability.Capability) {
 	h.Add("ListSgCommonRels", http.MethodPost, "/security_group_common_rels/list", svc.ListSgCommonRels)
 	h.Add("ListWithSecurityGroup", http.MethodPost, "/security_group_common_rels/with/security_group/list",
 		svc.ListWithSecurityGroup)
+	h.Add("ListSgCommonRelWithCVM", http.MethodPost, "/security_group_common_rels/with/cvm/list",
+		svc.ListWithCVMSummary)
+	h.Add("ListSgCommonRelWithLB", http.MethodPost, "/security_group_common_rels/with/load_balancer/list",
+		svc.ListWithLBSummary)
 
 	h.Load(cap.WebService)
 }

@@ -21,3 +21,5 @@ data:
       {{- toYaml .Values.hcservice.log | nindent 6 }}
     sync:
       {{- toYaml .Values.hcservice.sync | nindent 6 }}
+    tenant:
+      {{- toYaml .Values.tenant | nindent 6 }}

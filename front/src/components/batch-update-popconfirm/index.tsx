@@ -37,7 +37,8 @@ export default defineComponent({
         placement='bottom-start'
         extCls='batch-update-popconfirm'
         onConfirm={handleConfirm}
-        disabled={props.disabled}>
+        disabled={props.disabled}
+      >
         {{
           default: () => (
             <i
@@ -45,14 +46,15 @@ export default defineComponent({
               v-bk-tooltips={{
                 content: props.disabledTip,
                 disabled: !props.disabled,
-              }}></i>
+              }}
+            ></i>
           ),
           content: () => (
             <div class='batch-update-popconfirm-content'>
               <div class='title'>批量修改{props.title}</div>
               {props.valueType === 'number' ? (
                 <Input
-                  v-model={inputValue.value}
+                  v-model_number={inputValue.value}
                   type='number'
                   class='no-number-control'
                   min={props.min}

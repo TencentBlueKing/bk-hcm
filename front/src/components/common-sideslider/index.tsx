@@ -57,6 +57,11 @@ export default defineComponent({
       ctx.emit('handleShown');
     };
 
+    const handleClosed = () => {
+      triggerShow(false);
+      props.handleClose?.();
+    };
+
     return () => (
       <Sideslider
         renderDirective={props.renderType}
@@ -64,11 +69,9 @@ export default defineComponent({
         width={props.width}
         isShow={props.isShow}
         title={t(props.title)}
-        onClosed={() => {
-          triggerShow(false);
-          props.handleClose?.();
-        }}
-        onShown={handleShown}>
+        onClosed={handleClosed}
+        onShown={handleShown}
+      >
         {{
           default: () => (
             <div class={[cssModule.content, props.renderType === 'if' ? cssModule.renderIfContent : undefined]}>
@@ -83,10 +86,11 @@ export default defineComponent({
                     onClick={handleSubmit}
                     disabled={props.isSubmitDisabled}
                     loading={props.isSubmitLoading}
-                    v-bk-tooltips={props.submitTooltips}>
+                    v-bk-tooltips={props.submitTooltips}
+                  >
                     {t('提交')}
                   </Button>
-                  <Button onClick={() => triggerShow(false)}>{t('取消')}</Button>
+                  <Button onClick={handleClosed}>{t('取消')}</Button>
                 </div>
               )
             : undefined,

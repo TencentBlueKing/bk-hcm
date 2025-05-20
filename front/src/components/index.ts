@@ -6,6 +6,7 @@ import SearchAccount from './search/account.vue';
 import SearchEnum from './search/enum.vue';
 import SearchDatetime from './search/datetime.vue';
 import SearchUser from './search/user.vue';
+import SearchBusiness from './search/business.vue';
 
 // 展示值组件
 import DisplayValue from './display-value/index.vue';
@@ -19,6 +20,7 @@ import FormArray from './form/array.vue';
 import FormNumber from './form/number.vue';
 import FormCert from './form/cert.vue';
 import FormCa from './form/ca.vue';
+import FormBusiness from './form/business.vue';
 import FormUser from './form/user.vue';
 
 // 权限组件
@@ -30,6 +32,7 @@ const components = [
   SearchEnum,
   SearchDatetime,
   SearchUser,
+  SearchBusiness,
   DisplayValue,
   UserValue,
   FormBool,
@@ -39,6 +42,7 @@ const components = [
   FormNumber,
   FormCert,
   FormCa,
+  FormBusiness,
   FormUser,
   Auth,
 ];

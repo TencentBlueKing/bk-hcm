@@ -7,18 +7,20 @@ import optionFactory from './option-factory';
 
 defineOptions({ name: 'ResourceSearchSelect' });
 
+const props = withDefaults(defineProps<IResourceSelectProps>(), {
+  clearable: true,
+  searchOptions: () => [],
+  valueBehavior: 'all',
+});
+
+const emit = defineEmits(['update:modelValue']);
+
 export interface IResourceSelectProps {
   modelValue: ISearchValue;
   resourceType: ResourceTypeEnum;
   clearable?: boolean;
+  valueBehavior?: 'all' | 'need-key';
 }
-
-const props = withDefaults(defineProps<IResourceSelectProps>(), {
-  clearable: true,
-  searchOptions: () => [],
-});
-
-const emit = defineEmits(['update:modelValue']);
 
 const { getOptionData, getOptionMenu } = optionFactory();
 const searchOptions = getOptionData(props.resourceType);
@@ -42,6 +44,7 @@ const selectValue = computed({
     :data="searchOptions"
     :get-menu-list="getOptionMenu"
     :unique-select="true"
+    :value-behavior="valueBehavior"
   />
 </template>
 

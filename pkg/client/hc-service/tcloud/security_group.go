@@ -313,8 +313,8 @@ func (cli *SecurityGroupClient) DisassociateLb(ctx context.Context, h http.Heade
 	return nil
 }
 
-// BatchAssociateCloudCvm 批量绑定安全组
-func (cli *SecurityGroupClient) BatchAssociateCloudCvm(kt *kit.Kit, sgID string, cvmIDs []string) error {
+// BatchAssociateCvm 批量绑定安全组
+func (cli *SecurityGroupClient) BatchAssociateCvm(kt *kit.Kit, sgID string, cvmIDs []string) error {
 
 	req := &proto.SecurityGroupBatchAssociateCvmReq{
 		SecurityGroupID: sgID,
@@ -324,8 +324,8 @@ func (cli *SecurityGroupClient) BatchAssociateCloudCvm(kt *kit.Kit, sgID string,
 		"/security_groups/associate/cvms/batch")
 }
 
-// BatchDisassociateCloudCvm 批量解绑安全组
-func (cli *SecurityGroupClient) BatchDisassociateCloudCvm(kt *kit.Kit, sgID string, cvmIDs []string) error {
+// BatchDisassociateCvm 批量解绑安全组
+func (cli *SecurityGroupClient) BatchDisassociateCvm(kt *kit.Kit, sgID string, cvmIDs []string) error {
 
 	req := &proto.SecurityGroupBatchAssociateCvmReq{
 		SecurityGroupID: sgID,
@@ -333,4 +333,26 @@ func (cli *SecurityGroupClient) BatchDisassociateCloudCvm(kt *kit.Kit, sgID stri
 	}
 	return common.RequestNoResp[proto.SecurityGroupBatchAssociateCvmReq](cli.client, rest.POST, kt, req,
 		"/security_groups/disassociate/cvms/batch")
+}
+
+// ListSecurityGroupStatistic 查询安全组关联的云上资源数量
+func (cli *SecurityGroupClient) ListSecurityGroupStatistic(kt *kit.Kit, req *proto.ListSecurityGroupStatisticReq) (
+	*proto.ListSecurityGroupStatisticResp, error) {
+
+	return common.Request[proto.ListSecurityGroupStatisticReq, proto.ListSecurityGroupStatisticResp](
+		cli.client, rest.POST, kt, req, "/security_groups/statistic")
+}
+
+// SyncSecurityGroupUsageBizRel ...
+func (cli *SecurityGroupClient) SyncSecurityGroupUsageBizRel(kt *kit.Kit, req *sync.TCloudSyncReq) error {
+	return common.RequestNoResp[sync.TCloudSyncReq](cli.client, rest.POST, kt, req,
+		"/security_groups/usage_biz_rels/sync")
+}
+
+// CloneSecurityGroup 克隆安全组
+func (cli *SecurityGroupClient) CloneSecurityGroup(kt *kit.Kit, req *proto.TCloudSecurityGroupCloneReq) (
+	*core.CreateResult, error) {
+
+	return common.Request[proto.TCloudSecurityGroupCloneReq, core.CreateResult](cli.client, rest.POST, kt, req,
+		"/security_groups/clone")
 }

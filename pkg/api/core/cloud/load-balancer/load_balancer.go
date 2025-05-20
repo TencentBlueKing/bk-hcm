@@ -27,6 +27,35 @@ import (
 	"hcm/pkg/dal/table/types"
 )
 
+// SummaryBalancer define summary clb.
+type SummaryBalancer struct {
+	ID               string               `json:"id"`
+	CloudID          string               `json:"cloud_id"`
+	Name             string               `json:"name"`
+	Vendor           enumor.Vendor        `json:"vendor"`
+	BkBizID          int64                `json:"bk_biz_id"`
+	IPVersion        enumor.IPAddressType `json:"ip_version"`
+	LoadBalancerType string               `json:"lb_type"`
+
+	Region      string   `json:"region"`
+	Zones       []string `json:"zones"`
+	BackupZones []string `json:"backup_zones"`
+
+	VpcID      string `json:"vpc_id"`
+	CloudVpcID string `json:"cloud_vpc_id"`
+
+	Domain string  `json:"domain"`
+	Status string  `json:"status"`
+	Memo   *string `json:"memo"`
+
+	// PrivateIPv4Addresses 内网IP
+	PrivateIPv4Addresses []string `json:"private_ipv4_addresses"`
+	PrivateIPv6Addresses []string `json:"private_ipv6_addresses"`
+	// PublicIPv6Addresses 公网IP
+	PublicIPv4Addresses []string `json:"public_ipv4_addresses"`
+	PublicIPv6Addresses []string `json:"public_ipv6_addresses"`
+}
+
 // BaseLoadBalancer define base clb.
 type BaseLoadBalancer struct {
 	ID               string               `json:"id"`

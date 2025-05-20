@@ -327,22 +327,14 @@ func (c *Layer4ListenerBindRSExecutor) buildTCloudFlowTask(kt *kit.Kit, lb corel
 				target.EniIp = detail.RsIp
 			}
 
-			if detail.InstType == enumor.CvmInstType && !converter.PtrToVal(tCloudLB.Extension.SnatPro) {
-				// 跨域2.0不进行cvm校验
-
-				cloudVpcIDs := []string{lb.CloudVpcID}
-				if converter.PtrToVal(tCloudLB.Extension.Snat) {
-					cloudVpcIDs = append(cloudVpcIDs, converter.PtrToVal(tCloudLB.Extension.TargetCloudVpcID))
-				}
-
-				cvm, err := getCvm(kt, c.dataServiceCli, detail.RsIp, c.vendor, c.bkBizID, c.accountID, cloudVpcIDs)
+			if detail.InstType == enumor.CvmInstType {
+				cvm, err := validateCvmExist(kt,
+					c.dataServiceCli, detail.RsIp, c.vendor, c.bkBizID, c.accountID, tCloudLB)
 				if err != nil {
-					logs.Errorf("call data-service to get cvm failed, ip: %s, err: %v, rid: %s", detail.RsIp, err, kt.Rid)
+					logs.Errorf("validate cvm exist failed, ip: %s, err: %v, rid: %s", detail.RsIp, err, kt.Rid)
 					return nil, err
 				}
-				if cvm == nil {
-					return nil, fmt.Errorf("rs(%s) not found", detail.RsIp)
-				}
+
 				target.CloudInstID = cvm.CloudID
 				target.InstName = cvm.Name
 				target.PrivateIPAddress = cvm.PrivateIPv4Addresses

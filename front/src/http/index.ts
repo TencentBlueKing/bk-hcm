@@ -102,6 +102,8 @@ const methodsWithoutData: HttpMethodType[] = ['get', 'head', 'options'];
 const methodsWithData: HttpMethodType[] = ['post', 'put', 'patch', 'delete'];
 const allMethods = [...methodsWithoutData, ...methodsWithData];
 
+const TokenInvalidCode = 2000009;
+
 // 在自定义对象 http 上添加各请求方法
 allMethods.forEach((method) => {
   Object.defineProperty(http, method, {
@@ -218,6 +220,10 @@ function handleResponse(params: { config: any; response: any; resolve: any; reje
  * @return {Promise} promise 对象
  */
 function handleReject(error: any, config: any) {
+  if (error.code === TokenInvalidCode) {
+    showLoginModal();
+  }
+
   if (axios.isCancel(error)) {
     return Promise.reject(error);
   }
@@ -246,7 +252,7 @@ function handleReject(error: any, config: any) {
     } else if (status === 500) {
       nextError.message = '系统出现异常';
       Message({ theme: 'error', message: nextError.message });
-    } else if (data?.message && error.code !== 0 && error.code !== 2000009) {
+    } else if (data?.message && error.code !== 0) {
       nextError.message = data.message;
       Message({ theme: 'error', message: nextError.message });
     } else {
@@ -282,15 +288,7 @@ function handleCustomErrorCode(error: any) {
   // zenlayer 账单导入错误码
   if ([2000015, 2000016, 2000017].includes(error.code)) return;
 
-  // bk_ticket失效后的登录弹框
-  if (
-    error.code === 2000000 &&
-    ["bk_ticket cookie don't exists", "bk_token cookie don't exists"].includes(error.message)
-  ) {
-    showLoginModal();
-  }
-
-  if (error.code !== 0 && error.code !== 2000009) Message({ theme: 'error', message: error.message });
+  if (error.code !== 0) Message({ theme: 'error', message: error.message });
 }
 
 /**

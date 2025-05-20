@@ -88,7 +88,9 @@ export default defineComponent({
         needValidate={false}
         fromKey={field.prop}
         hideEdit={true}
-        onChange={this.handleBlur}></RenderDetailEdit>
+        trim={field.trim}
+        onChange={this.handleBlur}
+      ></RenderDetailEdit>
     );
 
     // 渲染链接
@@ -129,7 +131,7 @@ export default defineComponent({
     return (
       <ul class='info-list-main g-scroller' style={{ gridTemplateColumns: this.gridTemplateColumnsStyle }}>
         {this.fields.map((field) => {
-          const { name, value, cls, render, edit, copy, copyContent, tipsContent } = field;
+          const { name, value, cls, render, edit, copy, copyContent, tipsContent, showOverflowTips = true } = field;
 
           // copy配置的优先级：局部 > 全局
           const resultCopyable = copy ?? this.globalCopyable;
@@ -164,13 +166,18 @@ export default defineComponent({
                   {name}
                 </span>
               )}
-              <span
+              <div
                 class={['item-value', typeof cls === 'function' ? cls(value) : cls]}
-                style={{ maxWidth: valueMaxWidth }}>
-                <OverflowTitle class='full-width' type='tips' content={renderField(field)}>
-                  {renderField(field)}
-                </OverflowTitle>
-              </span>
+                style={{ [showOverflowTips ? 'maxWidth' : 'width']: valueMaxWidth }}
+              >
+                {showOverflowTips ? (
+                  <OverflowTitle class='full-width' type='tips' content={renderField(field)}>
+                    {renderField(field)}
+                  </OverflowTitle>
+                ) : (
+                  <div class='full-width'>{renderField(field)}</div>
+                )}
+              </div>
               {edit && (
                 <i
                   onClick={() => this.handleEdit(name)}

@@ -1,6 +1,7 @@
 /* eslint-disable no-useless-escape */
 // eslint-disable
 import { computed, defineComponent, reactive, ref, watch } from 'vue';
+import { storeToRefs } from 'pinia';
 import { Form, Input, Select, Checkbox, Button, Radio, Switcher, Slider, Alert } from 'bkui-vue';
 import ConditionOptions from '../components/common/condition-options/index.vue';
 import ZoneSelector from '@/components/zone-selector/index.vue';
@@ -9,7 +10,6 @@ import Imagelector from '../components/common/image-selector';
 import VpcSelector from '../components/common/vpc-selector';
 import SubnetSelector from '../components/common/subnet-selector';
 import SecurityGroupSelector from '../components/common/security-group-selector';
-import CloudAreaName from '../components/common/cloud-area-name';
 import BandwidthPackageSelector from '../components/common/BandwidthPackageSelector';
 import { Plus as PlusIcon } from 'bkui-vue/lib/icon';
 import GcpDataDiskFormDialog from './children/gcp-data-disk-form-dialog';
@@ -25,6 +25,7 @@ import useCondtion from '../hooks/use-condtion';
 import useCvmFormData, { getDataDiskDefaults, getGcpDataDiskDefaults } from '../hooks/use-cvm-form-data';
 
 import { useAccountStore } from '@/store';
+import { useCloudAreaStore } from '@/store/useCloudAreaStore';
 import CommonCard from '@/components/CommonCard';
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import { useRouter } from 'vue-router';
@@ -34,6 +35,7 @@ import http from '@/http';
 import { debounce } from 'lodash';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { pluginHandler } from '@pluginHandler/service-apply-cvm';
+import { bizApplyCvmCloudAreaSelectedKey } from '@/constants/storage-symbols';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 const accountStore = useAccountStore();
@@ -45,6 +47,9 @@ const { Group: RadioGroup, Button: RadioButton } = Radio;
 export default defineComponent({
   props: {},
   setup() {
+    const cloudAreaStore = useCloudAreaStore();
+    const { cloudAreaMap } = storeToRefs(cloudAreaStore);
+
     const { cond, isEmptyCond } = useCondtion();
     const {
       formData,
@@ -284,24 +289,28 @@ export default defineComponent({
                   <FormItem
                     property={`data_disk[${index}].disk_size_gb`}
                     rules={[dataDiskSizeRules(item)]}
-                    description={dataDiskSizeRules(item).message}>
+                    description={dataDiskSizeRules(item).message}
+                  >
                     <Input
                       type='number'
                       style={{ width: '160px' }}
-                      v-model={item.disk_size_gb}
+                      v-model_number={item.disk_size_gb}
                       min={1}
                       suffix='GB'
-                      prefix='大小'></Input>
+                      prefix='大小'
+                    ></Input>
                   </FormItem>
                   <FormItem
                     property={`data_disk[${index}].disk_count`}
                     min={dataDiskCountRules.value.min}
-                    max={dataDiskCountRules.value.max}>
+                    max={dataDiskCountRules.value.max}
+                  >
                     <Input
                       style={{ width: '90px' }}
                       type='number'
-                      v-model={item.disk_count}
-                      min={dataDiskCountRules.value.min}></Input>
+                      v-model_number={item.disk_count}
+                      min={dataDiskCountRules.value.min}
+                    ></Input>
                   </FormItem>
                   <div class='btns'>
                     <Button class={'btn'} onClick={handleCreateGcpDataDisk}>
@@ -311,7 +320,8 @@ export default defineComponent({
                         viewBox='0 0 24 24'
                         version='1.1'
                         xmlns='http://www.w3.org/2000/svg'
-                        style='fill: #c4c6cc'>
+                        style='fill: #c4c6cc'
+                      >
                         <path d='M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12c6.627 0 12-5.373 12-12s-5.373-12-12-12zM17.25 12.75h-4.5v4.5c0 0.414-0.336 0.75-0.75 0.75s-0.75-0.336-0.75-0.75v-4.5h-4.5c-0.414 0-0.75-0.336-0.75-0.75s0.336-0.75 0.75-0.75h4.5v-4.5c0-0.414 0.336-0.75 0.75-0.75s0.75 0.336 0.75 0.75v4.5h4.5c0.414 0 0.75 0.336 0.75 0.75s-0.336 0.75-0.75 0.75z'></path>
                       </svg>
                     </Button>
@@ -322,7 +332,8 @@ export default defineComponent({
                         viewBox='0 0 24 24'
                         version='1.1'
                         xmlns='http://www.w3.org/2000/svg'
-                        style='fill: #c4c6cc'>
+                        style='fill: #c4c6cc'
+                      >
                         <path d='M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12c6.627 0 12-5.373 12-12s-5.373-12-12-12zM17.25 12.75h-10.5c-0.414 0-0.75-0.336-0.75-0.75s0.336-0.75 0.75-0.75h10.5c0.414 0 0.75 0.336 0.75 0.75s-0.336 0.75-0.75 0.75z'></path>
                       </svg>
                     </Button>
@@ -482,7 +493,8 @@ export default defineComponent({
                   style={{ marginRight: '-50px' }}
                   onClick={() => {
                     isVpcPreviewDialogShow.value = true;
-                  }}>
+                  }}
+                >
                   预览
                 </Button>
               </div>
@@ -517,7 +529,8 @@ export default defineComponent({
                     class={'subnet-selector-preview-btn'}
                     onClick={() => {
                       isSubnetPreviewDialogShow.value = true;
-                    }}>
+                    }}
+                  >
                     预览
                   </Button>
                 </div>
@@ -526,26 +539,14 @@ export default defineComponent({
           },
           {
             label: '管控区域',
-            description:
-              '管控区是蓝鲸可以管控的Agent网络区域，以实现跨网管理。\n一个VPC，对应一个管控区。如VPC未绑定管控区，请到资源接入-VPC-绑定管控区操作。',
+            description: '管控区是蓝鲸可以管控的Agent网络区域，以实现跨网管理。\n一个VPC，对应一个管控区。',
             display: whereAmI.value === Senarios.business,
             content: () => (
-              <>
-                <CloudAreaName id={cloudId.value} />
-                <span class={'instance-name-tips'}>
-                  如VPC未绑定管控区，请到资源接入-VPC-绑定管控区操作
-                  <Button
-                    theme='primary'
-                    text
-                    disabled={!formData.cloud_vpc_id}
-                    class={'ml6'}
-                    onClick={() => {
-                      refreshVpcList.value();
-                    }}>
-                    刷新
-                  </Button>
-                </span>
-              </>
+              <hcm-form-enum
+                v-model={formData.bk_cloud_id}
+                option={cloudAreaOption.value}
+                onChange={handleCloudAreaChange}
+              />
             ),
           },
           {
@@ -600,7 +601,8 @@ export default defineComponent({
             content: () => (
               <RadioGroup
                 v-model={formData.internet_charge_type}
-                onChange={() => (formData.internet_max_bandwidth_out = 1)}>
+                onChange={() => (formData.internet_max_bandwidth_out = 1)}
+              >
                 {internetChargeTypes.value.map((item) => (
                   <RadioButton label={item.id}>{item.name}</RadioButton>
                 ))}
@@ -648,7 +650,8 @@ export default defineComponent({
                       }
                 }
                 labelClick
-                showInput>
+                showInput
+              >
                 {{
                   end: () => <div class='slider-unit-suffix'>Mbps</div>,
                 }}
@@ -716,10 +719,11 @@ export default defineComponent({
                 content: () => (
                   <Input
                     type='number'
-                    v-model={formData.system_disk.disk_size_gb}
+                    v-model_number={formData.system_disk.disk_size_gb}
                     min={1}
                     suffix='GB'
-                    prefix='大小'></Input>
+                    prefix='大小'
+                  ></Input>
                 ),
               },
             ],
@@ -745,24 +749,28 @@ export default defineComponent({
                     <FormItem
                       property={`data_disk[${index}].disk_size_gb`}
                       rules={[dataDiskSizeRules(item)]}
-                      description={dataDiskSizeRules(item).message}>
+                      description={dataDiskSizeRules(item).message}
+                    >
                       <Input
                         type='number'
                         style={{ width: '160px' }}
-                        v-model={item.disk_size_gb}
+                        v-model_number={item.disk_size_gb}
                         min={1}
                         suffix='GB'
-                        prefix='大小'></Input>
+                        prefix='大小'
+                      ></Input>
                     </FormItem>
                     <FormItem
                       property={`data_disk[${index}].disk_count`}
                       min={dataDiskCountRules.value.min}
-                      max={dataDiskCountRules.value.max}>
+                      max={dataDiskCountRules.value.max}
+                    >
                       <Input
                         style={{ width: '90px' }}
                         type='number'
-                        v-model={item.disk_count}
-                        min={dataDiskCountRules.value.min}></Input>
+                        v-model_number={item.disk_count}
+                        min={dataDiskCountRules.value.min}
+                      ></Input>
                     </FormItem>
                     <div class='btns'>
                       <Button class={'btn'} onClick={handleCreateDataDisk}>
@@ -772,7 +780,8 @@ export default defineComponent({
                           viewBox='0 0 24 24'
                           version='1.1'
                           xmlns='http://www.w3.org/2000/svg'
-                          style='fill: #c4c6cc'>
+                          style='fill: #c4c6cc'
+                        >
                           <path d='M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12c6.627 0 12-5.373 12-12s-5.373-12-12-12zM17.25 12.75h-4.5v4.5c0 0.414-0.336 0.75-0.75 0.75s-0.75-0.336-0.75-0.75v-4.5h-4.5c-0.414 0-0.75-0.336-0.75-0.75s0.336-0.75 0.75-0.75h4.5v-4.5c0-0.414 0.336-0.75 0.75-0.75s0.75 0.336 0.75 0.75v4.5h4.5c0.414 0 0.75 0.336 0.75 0.75s-0.336 0.75-0.75 0.75z'></path>
                         </svg>
                       </Button>
@@ -783,7 +792,8 @@ export default defineComponent({
                           viewBox='0 0 24 24'
                           version='1.1'
                           xmlns='http://www.w3.org/2000/svg'
-                          style='fill: #c4c6cc'>
+                          style='fill: #c4c6cc'
+                        >
                           <path d='M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12c6.627 0 12-5.373 12-12s-5.373-12-12-12zM17.25 12.75h-10.5c-0.414 0-0.75-0.336-0.75-0.75s0.336-0.75 0.75-0.75h10.5c0.414 0 0.75 0.336 0.75 0.75s-0.336 0.75-0.75 0.75z'></path>
                         </svg>
                       </Button>
@@ -821,7 +831,8 @@ export default defineComponent({
                     style={{ width: '420px' }}
                     type='password'
                     placeholder='确认密码'
-                    v-model={formData.confirmed_password}></Input>
+                    v-model={formData.confirmed_password}
+                  ></Input>
                 ),
               },
             ],
@@ -856,7 +867,8 @@ export default defineComponent({
                 rows={3}
                 maxlength={255}
                 resize={false}
-                v-model={formData.memo}></Input>
+                v-model={formData.memo}
+              ></Input>
             ),
           },
           {
@@ -869,7 +881,8 @@ export default defineComponent({
                 rows={3}
                 maxlength={255}
                 resize={false}
-                v-model={formData.remark}></Input>
+                v-model={formData.remark}
+              ></Input>
             ),
           },
         ],
@@ -997,6 +1010,32 @@ export default defineComponent({
       ],
     };
 
+    // 业务下，可以选择管控区域
+    const cloudAreaOption = computed(() =>
+      // 暂不支持0管控区
+      Object.fromEntries(Array.from(cloudAreaMap.value.entries()).filter(([key]) => key !== 0)),
+    );
+    const handleCloudAreaChange = (val: string) => {
+      if (!val) {
+        localStorage.removeItem(bizApplyCvmCloudAreaSelectedKey);
+      } else {
+        localStorage.setItem(bizApplyCvmCloudAreaSelectedKey, val);
+      }
+      formData.bk_cloud_id = Number(val);
+    };
+    watch(
+      whereAmI,
+      (val) => {
+        if (val === Senarios.business) {
+          cloudAreaStore.fetchAllCloudAreas();
+          if (localStorage.getItem(bizApplyCvmCloudAreaSelectedKey)) {
+            formData.bk_cloud_id = Number(localStorage.getItem(bizApplyCvmCloudAreaSelectedKey));
+          }
+        }
+      },
+      { immediate: true },
+    );
+
     return () => (
       <div>
         <DetailHeader>
@@ -1004,7 +1043,8 @@ export default defineComponent({
         </DetailHeader>
         <div
           class='create-form-container cvm-wrap'
-          style={whereAmI.value === Senarios.resource && { padding: 0, marginBottom: '80px' }}>
+          style={whereAmI.value === Senarios.resource && { padding: 0, marginBottom: '80px' }}
+        >
           <Form model={formData} rules={formRules} ref={formRef} onSubmit={handleFormSubmit} formType='vertical'>
             {
               <AccountSelectorCard
@@ -1024,7 +1064,8 @@ export default defineComponent({
                   v-model:cloudAccountId={cond.cloudAccountId}
                   v-model:vendor={cond.vendor}
                   v-model:region={cond.region}
-                  v-model:resourceGroup={cond.resourceGroup}>
+                  v-model:resourceGroup={cond.resourceGroup}
+                >
                   {{
                     default: () => (
                       <FormItem label={'可用区'} required property='zone'>
@@ -1062,7 +1103,8 @@ export default defineComponent({
                             property={property}
                             rules={rules}
                             description={description}
-                            class={label === '子网' && 'purchase-cvm-form-item-subnet-wrap'}>
+                            class={label === '子网' && 'purchase-cvm-form-item-subnet-wrap'}
+                          >
                             {Array.isArray(content) ? (
                               <div class='flex-row'>
                                 {content
@@ -1074,7 +1116,8 @@ export default defineComponent({
                                       property={sub.property}
                                       rules={sub.rules}
                                       description={sub?.description}
-                                      class='sub-form-item-wrap'>
+                                      class='sub-form-item-wrap'
+                                    >
                                       {sub.content()}
                                       {sub.tips && <div class='form-item-tips'>{sub.tips()}</div>}
                                     </FormItem>
@@ -1107,13 +1150,15 @@ export default defineComponent({
               <div class='purchase-cvm-bottom-bar-form-item-wrap'>
                 <FormItem
                   label='数量'
-                  class={'purchase-cvm-bottom-bar-form-count ' + `${limitNum.value !== -1 ? 'mb-12' : ''}`}>
+                  class={'purchase-cvm-bottom-bar-form-count ' + `${limitNum.value !== -1 ? 'mb-12' : ''}`}
+                >
                   <Input
                     style={{ width: '150px' }}
                     type='number'
                     min={0}
                     max={100}
-                    v-model={formData.required_count}></Input>
+                    v-model_number={formData.required_count}
+                  ></Input>
                 </FormItem>
 
                 {/* eslint-disable max-len */}
@@ -1123,7 +1168,8 @@ export default defineComponent({
                       <Input
                         style={{ width: '160px' }}
                         type='number'
-                        v-model={formData.purchase_duration.count}></Input>
+                        v-model_number={formData.purchase_duration.count}
+                      ></Input>
                       <Select style={{ width: '50px' }} v-model={formData.purchase_duration.unit} clearable={false}>
                         {purchaseDurationUnits.map(({ id, name }: IOption) => (
                           <Option key={id} value={id} label={name}></Option>
@@ -1169,7 +1215,8 @@ export default defineComponent({
                 loading={submitting.value || isSubmitBtnLoading.value}
                 disabled={submitDisabled.value}
                 onClick={handleFormSubmit}
-                class={'mr8'}>
+                class={'mr8'}
+              >
                 立即购买
               </Button>
               <Button onClick={() => router.back()}>{t('取消')}</Button>

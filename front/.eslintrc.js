@@ -1,5 +1,4 @@
 module.exports = {
-  root: true,
   extends: ['@blueking/eslint-config-bk/tsvue3', 'plugin:prettier/recommended'],
   rules: {
     'no-param-reassign': 0,

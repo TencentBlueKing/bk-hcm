@@ -61,6 +61,7 @@ import (
 	"hcm/pkg/dal/dao/orm"
 	recyclerecord "hcm/pkg/dal/dao/recycle-record"
 	"hcm/pkg/dal/dao/task"
+	"hcm/pkg/dal/dao/tenant"
 	daouser "hcm/pkg/dal/dao/user"
 	"hcm/pkg/kit"
 	"hcm/pkg/metrics"
@@ -141,6 +142,8 @@ type Set interface {
 	TaskDetail() task.Detail
 	TaskManagement() task.Management
 	GlobalConfig() globalconfig.Interface
+	ResUsageBizRel() cloud.ResUsageBizRel
+	Tenant() tenant.Tenant
 
 	Txn() *Txn
 }
@@ -764,10 +767,22 @@ func (s *set) TaskManagement() task.Management {
 	return task.NewManagementDao(s.orm, s.idGen, s.audit)
 }
 
+// Tenant return tenant dao.
+func (s *set) Tenant() tenant.Tenant {
+	return tenant.NewTenantDao(s.orm, s.idGen, s.audit)
+}
+
 // GlobalConfig return dao.
 func (s *set) GlobalConfig() globalconfig.Interface {
 	return &globalconfig.Dao{
 		Orm:   s.orm,
 		IDGen: s.idGen,
+	}
+}
+
+// ResUsageBizRel return resource biz relation dao.
+func (s *set) ResUsageBizRel() cloud.ResUsageBizRel {
+	return &cloud.ResUsageBizRelDao{
+		Orm: s.orm,
 	}
 }

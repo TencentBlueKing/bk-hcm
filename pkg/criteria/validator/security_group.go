@@ -21,9 +21,7 @@ package validator
 
 import (
 	"errors"
-	"fmt"
 	"regexp"
-	"strings"
 )
 
 const (
@@ -44,15 +42,6 @@ func ValidateSecurityGroupName(name string) error {
 		return errors.New("invalid name, length should <= 60")
 	}
 
-	if strings.HasPrefix(name, "sg-") {
-		return errors.New("name can not start with 'sg-'")
-	}
-
-	if !qualifiedSGNameRegexp.MatchString(name) {
-		return fmt.Errorf("invalid name: %s, only allows to include low english、numbers、hyphen (-), and must start "+
-			"and end with an low english", name)
-	}
-
 	return nil
 }
 
@@ -69,11 +58,6 @@ func ValidateSecurityGroupMemo(memo *string) error {
 
 	if len(content) > 100 {
 		return errors.New("invalid memo, length should <= 100")
-	}
-
-	if !qualifiedMemoRegexp.MatchString(content) {
-		return errors.New("invalid memo, only allows include chinese、english、numbers、underscore (_)" +
-			"、hyphen (-)、space, and must start and end with an chinese、english、numbers")
 	}
 
 	return nil

@@ -82,7 +82,7 @@ export default defineComponent({
 
     const {
       searchData,
-      searchVal,
+      searchValue,
       isTableLoading,
       tableRef,
       columns,
@@ -116,7 +116,7 @@ export default defineComponent({
     return () => (
       <CommonDialog v-model:isShow={isShow.value} title='添加 RS' width={640} onHandleConfirm={handleAddRs}>
         <div class='add-rs-dialog-content'>
-          <SearchSelect class='mb16' v-model={searchVal.value} data={searchData} />
+          <SearchSelect class='mb16' v-model={searchValue.value} data={searchData} valueBehavior='need-key' />
           <Loading loading={isTableLoading.value} class='loading-table-container'>
             <Table
               class='table-container'
@@ -129,7 +129,8 @@ export default defineComponent({
               onSelectAll={handleSelectAll}
               isRowSelectEnable={({ row }: any) => !tableRsList.some((rs) => rs.id === row.id || rs.inst_id === row.id)}
               onPageLimitChange={handlePageLimitChange}
-              onPageValueChange={handlePageValueChange}>
+              onPageValueChange={handlePageValueChange}
+            >
               {{
                 prepend: () =>
                   rsTableList.value.length && selectedCount.value ? (

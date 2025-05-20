@@ -23,6 +23,8 @@ import (
 	"errors"
 	"fmt"
 
+	synctcloud "hcm/cmd/hc-service/logics/res-sync/tcloud"
+	"hcm/pkg/adaptor/tcloud"
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	typelb "hcm/pkg/adaptor/types/load-balancer"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
@@ -39,7 +41,10 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
+
+	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )
 
 // CreateTCloudSecurityGroup create tcloud security group.
@@ -83,12 +88,18 @@ func (g *securityGroup) CreateTCloudSecurityGroup(cts *rest.Contexts) (interface
 				Extension: &corecloud.TCloudSecurityGroupExtension{
 					CloudProjectID: sg.ProjectId,
 				},
-				Tags: core.NewTagMap(req.Tags...),
+				Tags:        core.NewTagMap(req.Tags...),
+				MgmtType:    req.MgmtType,
+				MgmtBizID:   req.MgmtBizID,
+				Manager:     req.Manager,
+				BakManager:  req.BakManager,
+				UsageBizIds: req.UsageBizIds,
 			}},
 	}
 	result, err := g.dataCli.TCloud.SecurityGroup.BatchCreateSecurityGroup(cts.Kit.Ctx, cts.Kit.Header(), createReq)
 	if err != nil {
-		logs.Errorf("request dataservice to create tcloud security group failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("request dataservice to create tcloud security group failed, err: %v, req: %v, rid: %s",
+			err, req, cts.Kit.Rid)
 		return nil, err
 	}
 
@@ -127,20 +138,11 @@ func (g *securityGroup) TCloudSecurityGroupAssociateCvm(cts *rest.Contexts) (int
 		return nil, err
 	}
 
-	createReq := &protocloud.SGCvmRelBatchCreateReq{
-		Rels: []protocloud.SGCvmRelCreate{
-			{
-				SecurityGroupID: req.SecurityGroupID,
-				CvmID:           req.CvmID,
-			},
-		},
-	}
-	if err = g.dataCli.Global.SGCvmRel.BatchCreateSgCvmRels(cts.Kit.Ctx, cts.Kit.Header(), createReq); err != nil {
-		logs.Errorf("request dataservice create security group cvm rels failed, err: %v, req: %+v, rid: %s",
-			err, createReq, cts.Kit.Rid)
+	err = g.createSGCommonRelsForTCloud(cts.Kit, client, sg.Region, map[string]string{cvm.CloudID: cvm.ID})
+	if err != nil {
+		logs.Errorf("create security group cvm rels failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-
 	// TODO: 同步主机数据
 
 	return nil, nil
@@ -196,12 +198,9 @@ func (g *securityGroup) TCloudSecurityGroupDisassociateCvm(cts *rest.Contexts) (
 		return nil, err
 	}
 
-	deleteReq, err := buildSGCvmRelDeleteReq(req.SecurityGroupID, req.CvmID)
-	if err != nil {
-		logs.Errorf("build sg cvm rel delete req failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-	if err = g.dataCli.Global.SGCvmRel.BatchDeleteSgCvmRels(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
+	deleteReq := buildSGCommonRelDeleteReq(
+		enumor.TCloud, req.CvmID, []string{req.SecurityGroupID}, enumor.CvmCloudResType)
+	if err = g.dataCli.Global.SGCommonRel.BatchDeleteSgCommonRels(cts.Kit, deleteReq); err != nil {
 		logs.Errorf("request dataservice delete security group cvm rels failed, err: %v, req: %+v, rid: %s",
 			err, deleteReq, cts.Kit.Rid)
 		return nil, err
@@ -381,7 +380,7 @@ func (g *securityGroup) getUpsertSGIDsParams(kt *kit.Kit, req *hclb.TCloudSetLbS
 		tmpPriority++
 		sgComReq.Rels = append(sgComReq.Rels, protocloud.SGCommonRelCreate{
 			SecurityGroupID: newSGID,
-			Vendor:          enumor.TCloud,
+			ResVendor:       enumor.TCloud,
 			ResID:           req.LbID,
 			ResType:         enumor.LoadBalancerCloudResType,
 			Priority:        tmpPriority,
@@ -505,7 +504,7 @@ func (g *securityGroup) getLoadBalancerInfoAndSGComRels(kt *kit.Kit, lbID string
 	// 查询目前绑定的安全组
 	sgcomReq := &core.ListReq{
 		Filter: tools.ExpressionAnd(
-			tools.RuleEqual("vendor", lbInfo.Vendor),
+			tools.RuleEqual("res_vendor", lbInfo.Vendor),
 			tools.RuleEqual("res_id", lbID),
 			tools.RuleEqual("res_type", enumor.LoadBalancerCloudResType),
 		),
@@ -568,9 +567,9 @@ func (g *securityGroup) TCloudSGBatchAssociateCvm(cts *rest.Contexts) (any, erro
 	if err != nil {
 		return nil, err
 	}
-	cloudCvmIDs := make([]string, 0, len(req.CvmIDs))
+	cvmCloudIDToIDMap := make(map[string]string, len(req.CvmIDs))
 	for _, baseCvm := range cvmList {
-		cloudCvmIDs = append(cloudCvmIDs, baseCvm.CloudID)
+		cvmCloudIDToIDMap[baseCvm.CloudID] = baseCvm.ID
 	}
 
 	client, err := g.ad.TCloud(cts.Kit, sg.AccountID)
@@ -581,7 +580,7 @@ func (g *securityGroup) TCloudSGBatchAssociateCvm(cts *rest.Contexts) (any, erro
 	opt := &securitygroup.TCloudBatchAssociateCvmOption{
 		Region:               sg.Region,
 		CloudSecurityGroupID: sg.CloudID,
-		CloudCvmIDs:          cloudCvmIDs,
+		CloudCvmIDs:          converter.MapKeyToSlice(cvmCloudIDToIDMap),
 	}
 	if err = client.SecurityGroupCvmBatchAssociate(cts.Kit, opt); err != nil {
 		logs.Errorf("request adaptor to tcloud security group associate cvm failed, err: %v, opt: %v, rid: %s",
@@ -589,25 +588,83 @@ func (g *securityGroup) TCloudSGBatchAssociateCvm(cts *rest.Contexts) (any, erro
 		return nil, err
 	}
 
-	createReq := &protocloud.SGCvmRelBatchCreateReq{}
-	for _, cvmID := range req.CvmIDs {
-		createReq.Rels = append(createReq.Rels, protocloud.SGCvmRelCreate{
-			SecurityGroupID: req.SecurityGroupID,
-			CvmID:           cvmID,
-		})
-	}
-
-	if err = g.dataCli.Global.SGCvmRel.BatchCreateSgCvmRels(cts.Kit.Ctx, cts.Kit.Header(), createReq); err != nil {
-		logs.Errorf("request dataservice create security group cvm rels failed, err: %v, req: %+v, rid: %s",
-			err, createReq, cts.Kit.Rid)
+	err = g.createSGCommonRelsForTCloud(cts.Kit, client, sg.Region, cvmCloudIDToIDMap)
+	if err != nil {
+		logs.Errorf("create sg common rels failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
+
 	return nil, nil
+}
+
+func (g *securityGroup) createSGCommonRelsForTCloud(kt *kit.Kit, client tcloud.TCloud, region string,
+	cvmCloudIDToIDMap map[string]string) error {
+
+	cloudCvms, err := g.listTCloudCvmFromCloud(kt, client, region, converter.MapKeyToSlice(cvmCloudIDToIDMap))
+	if err != nil {
+		logs.Errorf("list cvm from cloud failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	sgCloudIDs := make([]string, 0)
+	for _, one := range cloudCvms {
+		sgCloudIDs = append(sgCloudIDs, converter.PtrToSlice(one.SecurityGroupIds)...)
+	}
+
+	sgCloudIDToIDMap, err := g.getSecurityGroupMapByCloudIDs(kt, enumor.TCloud, region, sgCloudIDs)
+	if err != nil {
+		logs.Errorf("get security group map by cloud ids failed, err: %v, cloudIDs: %v, rid: %s",
+			err, sgCloudIDs, kt.Rid)
+		return err
+	}
+
+	for _, one := range cloudCvms {
+		cvmID, ok := cvmCloudIDToIDMap[converter.PtrToVal(one.InstanceId)]
+		if !ok {
+			logs.Errorf("cvm cloud id to id not found, cvmID: %s, rid: %s", converter.PtrToVal(one.InstanceId), kt.Rid)
+			return fmt.Errorf("cvm cloud id to id not found, cvmID: %s", converter.PtrToVal(one.InstanceId))
+		}
+
+		sgIDs := make([]string, 0, len(one.SecurityGroupIds))
+		for _, sgCloudID := range converter.PtrToSlice(one.SecurityGroupIds) {
+			sgID, ok := sgCloudIDToIDMap[sgCloudID]
+			if !ok {
+				logs.Errorf("cloud id(%s) not found in security group map, rid: %s", sgCloudID, kt.Rid)
+				return fmt.Errorf("cloud id(%s) not found in security group map", sgCloudID)
+			}
+			sgIDs = append(sgIDs, sgID)
+		}
+
+		err = g.createSGCommonRels(kt, enumor.TCloud, enumor.CvmCloudResType, cvmID, sgIDs)
+		if err != nil {
+			// 不抛出err, 尽最大努力交付
+			logs.Errorf("create sg common rels failed, err: %v, cvmID: %s, sgIDs: %v, rid: %s",
+				err, cvmID, converter.MapValueToSlice(sgCloudIDToIDMap), kt.Rid)
+		}
+	}
+
+	return nil
+}
+
+func (g *securityGroup) listTCloudCvmFromCloud(kt *kit.Kit, client tcloud.TCloud, region string, cvmCloudIDs []string) (
+	[]typecvm.TCloudCvm, error) {
+
+	listOpt := &typecvm.TCloudListOption{
+		CloudIDs: cvmCloudIDs,
+		Region:   region,
+	}
+	cloudCvms, err := client.ListCvm(kt, listOpt)
+	if err != nil {
+		logs.Errorf("request adaptor to list cvm failed, err: %v, opt: %v, rid: %s", err, listOpt, kt.Rid)
+		return nil, nil
+	}
+
+	return cloudCvms, err
 }
 
 // TCloudListSecurityGroupStatistic ...
 func (g *securityGroup) TCloudListSecurityGroupStatistic(cts *rest.Contexts) (any, error) {
-	req := new(proto.TCloudListSecurityGroupStatisticReq)
+	req := new(proto.ListSecurityGroupStatisticReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -622,13 +679,13 @@ func (g *securityGroup) TCloudListSecurityGroupStatistic(cts *rest.Contexts) (an
 		return nil, err
 	}
 
-	cloudIDs := make([]string, 0, len(req.SecurityGroupIDs))
+	cloudIDToSgIDMap := make(map[string]string)
 	for _, sgID := range req.SecurityGroupIDs {
 		sg, ok := sgMap[sgID]
 		if !ok {
-			return nil, fmt.Errorf("security group: %s not found", sgID)
+			return nil, fmt.Errorf("tcloud security group: %s not found", sgID)
 		}
-		cloudIDs = append(cloudIDs, sg.CloudID)
+		cloudIDToSgIDMap[sg.CloudID] = sgID
 	}
 
 	client, err := g.ad.TCloud(cts.Kit, req.AccountID)
@@ -638,7 +695,7 @@ func (g *securityGroup) TCloudListSecurityGroupStatistic(cts *rest.Contexts) (an
 
 	opt := &securitygroup.TCloudListOption{
 		Region:   req.Region,
-		CloudIDs: cloudIDs,
+		CloudIDs: converter.MapKeyToSlice(cloudIDToSgIDMap),
 	}
 	resp, err := client.DescribeSecurityGroupAssociationStatistics(cts.Kit, opt)
 	if err != nil {
@@ -647,7 +704,33 @@ func (g *securityGroup) TCloudListSecurityGroupStatistic(cts *rest.Contexts) (an
 		return nil, err
 	}
 
-	return resp, nil
+	sgIDToResourceCountMap := make(map[string]map[string]int64)
+	for _, one := range resp {
+		sgID := cloudIDToSgIDMap[converter.PtrToVal(one.SecurityGroupId)]
+		sgIDToResourceCountMap[sgID] = tcloudSGAssociateStatisticToResourceCountMap(one)
+	}
+
+	return resCountMapToSGStatisticResp(sgIDToResourceCountMap), nil
+}
+
+const (
+	tcloudStatisticResTypeCVM = "CVM"
+	tcloudStatisticResTypeCDB = "CDB"
+	tcloudStatisticResTypeENI = "ENI"
+	tcloudStatisticResTypeSG  = "SG"
+	tcloudStatisticResTypeCLB = "CLB"
+)
+
+func tcloudSGAssociateStatisticToResourceCountMap(
+	statistic securitygroup.TCloudSecurityGroupAssociationStatistic) map[string]int64 {
+
+	return map[string]int64{
+		tcloudStatisticResTypeCVM: int64(converter.PtrToVal(statistic.CVM)),
+		tcloudStatisticResTypeCDB: int64(converter.PtrToVal(statistic.CDB)),
+		tcloudStatisticResTypeENI: int64(converter.PtrToVal(statistic.ENI)),
+		tcloudStatisticResTypeSG:  int64(converter.PtrToVal(statistic.SG)),
+		tcloudStatisticResTypeCLB: int64(converter.PtrToVal(statistic.CLB)),
+	}
 }
 
 // TCloudSGBatchDisassociateCvm  批量解绑安全组
@@ -696,12 +779,12 @@ func (g *securityGroup) TCloudSGBatchDisassociateCvm(cts *rest.Contexts) (any, e
 		return nil, err
 	}
 
-	deleteReq, err := buildSGCvmRelDeleteReq(req.SecurityGroupID, req.CvmIDs...)
+	deleteReq, err := buildSGCommonRelDeleteReqForMultiResource(enumor.CvmCloudResType, req.SecurityGroupID, req.CvmIDs...)
 	if err != nil {
 		logs.Errorf("build sg cvm rel delete req failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-	if err = g.dataCli.Global.SGCvmRel.BatchDeleteSgCvmRels(cts.Kit.Ctx, cts.Kit.Header(), deleteReq); err != nil {
+	if err = g.dataCli.Global.SGCommonRel.BatchDeleteSgCommonRels(cts.Kit, deleteReq); err != nil {
 		logs.Errorf("request dataservice delete security group cvm rels failed, err: %v, req: %+v, rid: %s",
 			err, deleteReq, cts.Kit.Rid)
 		return nil, err
@@ -733,4 +816,100 @@ func (g *securityGroup) getCvms(kt *kit.Kit, cvmIDs []string) ([]cvm.BaseCvm, er
 		return nil, fmt.Errorf("list cvm failed, got %d, but expect %d", len(result), len(cvmIDs))
 	}
 	return result, nil
+}
+
+// TCloudCloneSecurityGroup ...
+func (g *securityGroup) TCloudCloneSecurityGroup(cts *rest.Contexts) (any, error) {
+
+	req := new(proto.TCloudSecurityGroupCloneReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	securityGroupMap, err := g.getSecurityGroupMap(cts.Kit, []string{req.SecurityGroupID})
+	if err != nil {
+		logs.Errorf("get security group map failed, sgID: %s, err: %v, rid: %s", req.SecurityGroupID, err, cts.Kit.Rid)
+		return nil, err
+	}
+	sg, ok := securityGroupMap[req.SecurityGroupID]
+	if !ok {
+		return nil, errf.Newf(errf.RecordNotFound, "security group: %s not found", req.SecurityGroupID)
+	}
+
+	client, err := g.ad.TCloud(cts.Kit, sg.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 如果目标地域为空，则默认指定为源安全组的地域
+	if req.TargetRegion == "" {
+		req.TargetRegion = sg.Region
+	}
+	opt := &securitygroup.TCloudSecurityGroupCloneOption{
+		Region:          req.TargetRegion,
+		SecurityGroupID: sg.CloudID,
+		Tags:            req.Tags,
+		RemoteRegion:    sg.Region,
+		GroupName:       req.GroupName,
+	}
+	newSecurityGroup, err := client.CloneSecurityGroup(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("request adaptor to clone tcloud security group failed, err: %v, opt: %v, rid: %s",
+			err, opt, cts.Kit.Rid)
+		return nil, err
+	}
+	sgID, err := g.createSecurityGroupForData(cts.Kit, req, sg.AccountID, newSecurityGroup)
+	if err != nil {
+		logs.Errorf("create security group for data-service failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	syncParam := &synctcloud.SyncBaseParams{AccountID: sg.AccountID, Region: req.TargetRegion, CloudIDs: []string{sgID}}
+	_, syncErr := g.syncSGRule(cts.Kit, syncParam)
+	if syncErr != nil {
+		logs.Warnf("sync security group rule failed, err: %v, sg: %s, rid: %s", syncErr, sgID, cts.Kit.Rid)
+	}
+	return core.CreateResult{ID: sgID}, nil
+}
+
+func (g *securityGroup) createSecurityGroupForData(kt *kit.Kit, req *proto.TCloudSecurityGroupCloneReq, accountID string, sg *vpc.SecurityGroup) (string, error) {
+
+	tags := make([]core.TagPair, 0, len(sg.TagSet))
+	for _, tag := range sg.TagSet {
+		tags = append(tags, core.TagPair{
+			Key:   converter.PtrToVal(tag.Key),
+			Value: converter.PtrToVal(tag.Value),
+		})
+	}
+
+	createReq := &protocloud.SecurityGroupBatchCreateReq[corecloud.TCloudSecurityGroupExtension]{
+		SecurityGroups: []protocloud.SecurityGroupBatchCreate[corecloud.TCloudSecurityGroupExtension]{
+			{
+				CloudID:   *sg.SecurityGroupId,
+				BkBizID:   req.ManagementBizID,
+				Region:    req.TargetRegion,
+				Name:      *sg.SecurityGroupName,
+				Memo:      sg.SecurityGroupDesc,
+				AccountID: accountID,
+				Extension: &corecloud.TCloudSecurityGroupExtension{
+					CloudProjectID: sg.ProjectId,
+				},
+				Tags:        core.NewTagMap(tags...),
+				Manager:     req.Manager,
+				BakManager:  req.BakManager,
+				MgmtType:    enumor.MgmtTypeBiz,
+				MgmtBizID:   req.ManagementBizID,
+				UsageBizIds: []int64{req.ManagementBizID},
+			}},
+	}
+	result, err := g.dataCli.TCloud.SecurityGroup.BatchCreateSecurityGroup(kt.Ctx, kt.Header(), createReq)
+	if err != nil {
+		logs.Errorf("request dataservice to create tcloud security group failed, err: %v, req: %v, rid: %s",
+			err, createReq, kt.Rid)
+		return "", err
+	}
+	return result.IDs[0], nil
 }

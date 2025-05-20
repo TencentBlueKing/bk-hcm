@@ -10,7 +10,7 @@ import App from './app.vue';
 import i18n from './language/i18n';
 import directive from '@/directive/index';
 import components from '@/components/index';
-import { useUserStore } from '@/store';
+import { useUserStore, preload } from '@/store';
 import './style/index.scss';
 // 全量引入自定义图标
 import './assets/iconfont/style.css';
@@ -38,11 +38,12 @@ userInfo()
       tenantId: data.tenant_id,
       apiBaseUrl: window.PROJECT_CONFIG.USER_MANAGE_URL,
     });
-    http.setHeader('X-Bk-Tenant-Id', data.tenant_id);
   })
-  .finally(() => {
-    app.use(router);
-    app.mount('#app');
+  .then(() => {
+    preload().finally(() => {
+      app.use(router);
+      app.mount('#app');
+    });
   })
   .catch((err) => {
     console.error(err);
