@@ -526,6 +526,7 @@ type Web struct {
 	BkDomain               string `yaml:"bkDomain"`
 	BkCmdbCreateBizUrl     string `yaml:"bkCmdbCreateBizUrl"`
 	BkCmdbCreateBizDocsUrl string `yaml:"bkCmdbCreateBizDocsUrl"`
+	BkUserManageUrl        string `yaml:"bkUserManageUrl"`
 	EnableCloudSelection   bool   `yaml:"enableCloudSelection"`
 	EnableAccountBill      bool   `yaml:"enableAccountBill"`
 }
@@ -545,6 +546,10 @@ func (s Web) validate() error {
 
 	if len(s.BkDomain) == 0 {
 		return errors.New("bk_domain is not set")
+	}
+
+	if len(s.BkUserManageUrl) == 0 {
+		return errors.New("bkUserManageUrl is not set")
 	}
 
 	return nil

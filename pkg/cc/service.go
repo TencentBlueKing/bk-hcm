@@ -375,6 +375,7 @@ type WebServerSetting struct {
 	ChangeLogPath ChangeLogPath `yaml:"changeLogPath"`
 	Notice        Notice        `yaml:"notice"`
 	TemplatePath  string        `yaml:"templatePath"`
+	Login         ApiGateway    `yaml:"login"`
 	Tenant        TenantConfig  `yaml:"tenant"`
 	Cmdb          ApiGateway    `yaml:"cmdb"`
 }
@@ -425,6 +426,10 @@ func (s WebServerSetting) Validate() error {
 	}
 
 	if err := s.Notice.validate(); err != nil {
+		return err
+	}
+
+	if err := s.Login.validate(); err != nil {
 		return err
 	}
 

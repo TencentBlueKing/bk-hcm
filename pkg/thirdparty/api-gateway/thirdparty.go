@@ -142,15 +142,15 @@ func ApiGatewayCallWithRichError[IT any, OT any](cli rest.ClientInterface, cfg *
 	if r.StatusCode >= 500 { // api执行错误
 		errData, err := json.Marshal(resp.Error.ErrData)
 		if err != nil {
-			logs.Errorf("failed to marshal error data, err: %v, url: %s, rid: %s, errData: %s", err, url,
-				kt.Rid, resp.Error.ErrData)
+			logs.Errorf("failed to marshal error data, err: %v, url: %s, errData: %s, rid: %s", err, url,
+				resp.Error.ErrData, kt.Rid)
 			return nil, fmt.Errorf("failed to marshal error data: %v", err)
 		}
 
 		errDetails, err := json.Marshal(resp.Error.Details)
 		if err != nil {
-			logs.Errorf("failed to marshal error details, err: %v, url: %s, rid: %s, errDetails: %s", err, url,
-				kt.Rid, resp.Error.Details)
+			logs.Errorf("failed to marshal error details, err: %v, url: %s, errDetails: %s, rid: %s", err, url,
+				resp.Error.Details, kt.Rid)
 			return nil, fmt.Errorf("failed to marshal error details: %v", err)
 		}
 
@@ -187,6 +187,60 @@ func ApiGatewayCallWithoutReq[OT any](cli rest.ClientInterface, cfg *cc.ApiGatew
 		logs.Errorf("api gateway returns error, url: %s, err: %v, rid: %s", url, err, kt.Rid)
 		return nil, err
 	}
+	return resp.Data, nil
+}
+
+// ApiGatewayCallWithRichErrorWithoutReq 该apigw辅助调用函数的适用场景如下：
+// 成功响应时只返回 data 结构体，失败响应且状态码≥500时只返回带有更完整错误信息的 error 结构体
+func ApiGatewayCallWithRichErrorWithoutReq[OT any](cli rest.ClientInterface, cfg *cc.ApiGateway,
+	method rest.VerbType, kt *kit.Kit, params map[string]string, url string, urlParams ...any) (*OT, error) {
+
+	header := getCommonHeader(kt, cfg)
+	resp := new(ApiGatewayResp[*OT])
+	resp.Result = true
+
+	// Into函数本身会将基本网络错误打印出日志
+	r := cli.Verb(method).
+		SubResourcef(url, urlParams...).
+		WithContext(kt.Ctx).
+		WithHeaders(header).
+		WithParams(params).
+		Do()
+
+	err := r.Into(resp)
+	if err != nil {
+		logs.Errorf("fail to call api gateway api, err: %v, url: %s, rid: %s", err, url, kt.Rid)
+		return nil, err
+	}
+
+	if !resp.Result || resp.Code != 0 {
+		err := fmt.Errorf("failed to call api gateway, code: %d, msg: %s, bk_error_code: %d, bk_error_msg: %s",
+			resp.Code, resp.Message, resp.BKErrorCode, resp.BKErrorMessage)
+		logs.Errorf("api gateway returns error, url: %s, err: %v, rid: %s", url, err, kt.Rid)
+		return nil, err
+	}
+
+	if r.StatusCode >= 500 { // api执行错误
+		errData, err := json.Marshal(resp.Error.ErrData)
+		if err != nil {
+			logs.Errorf("failed to marshal error data, err: %v, url: %s, errData: %s, rid: %s", err, url,
+				resp.Error.ErrData, kt.Rid)
+			return nil, fmt.Errorf("failed to marshal error data: %v", err)
+		}
+
+		errDetails, err := json.Marshal(resp.Error.Details)
+		if err != nil {
+			logs.Errorf("failed to marshal error details, err: %v, url: %s, errDetails: %s, rid: %s", err, url,
+				resp.Error.Details, kt.Rid)
+			return nil, fmt.Errorf("failed to marshal error details: %v", err)
+		}
+
+		err = fmt.Errorf("failed to call api, code: %d, msg: %s, data: %s, details: %s",
+			resp.Error.Code, resp.Error.Message, errData, errDetails)
+		logs.Errorf("api returns error, url: %s, err: %v, rid: %s", url, err, kt.Rid)
+		return nil, err
+	}
+
 	return resp.Data, nil
 }
 

@@ -623,6 +623,8 @@ bkDomain: .bk.com
 bkCmdbCreateBizUrl: "http://cmdb.bk.com/create_biz"
 # 蓝鲸配置平台创建业务文档跳转链接
 bkCmdbCreateBizDocsUrl: "http://cmdb.bk.com/docs"
+# 蓝鲸用户管理前端服务网关地址
+bkUserManageUrl: ""
 # 是否启用云选型
 enableCloudSelection: true
 # 是否启用账单账号功能
@@ -909,6 +911,33 @@ cmdb:
   # bkTicket is the BlueKing access ticket of hcm to request cmdb api gateway.
   bkTicket:
   # bkToken is the BlueKing access token of hcm to request cmdb api gateway.
+  bkToken:
+  # defines tls related options.
+  tls:
+    # server should be accessed without verifying the TLS certificate.
+    insecureSkipVerify:
+    # server requires TLS client certificate authentication.
+    certFile:
+    # server requires TLS client certificate authentication.
+    keyFile:
+    # trusted root certificates for server.
+    caFile:
+    # the password to decrypt the certificate.
+    password:
+# defines login related settings.
+login:
+  # endpoints is a seed list of host:port addresses of login api gateway nodes.
+  endpoints:
+    - http://demo.com
+  # appCode is the BlueKing app code of hcm to request login api gateway.
+  appCode: test
+  # appSecret is the BlueKing app secret of hcm to request login api gateway.
+  appSecret:
+  # user is the BlueKing user of hcm to request login api gateway.
+  user: test
+  # bkTicket is the BlueKing access ticket of hcm to request login api gateway.
+  bkTicket:
+  # bkToken is the BlueKing access token of hcm to request login api gateway.
   bkToken:
   # defines tls related options.
   tls:
