@@ -28,15 +28,14 @@ import logo from '@/assets/image/logo.png';
 import './index.scss';
 
 import { MENU_BUSINESS_TASK_MANAGEMENT } from '@/constants/menu-symbol';
-import { jsonp } from '@/http';
+import http from '@/http';
 
 // import { CogShape } from 'bkui-vue/lib/icon';
 // import { useProjectList } from '@/hooks';
 // import AddProjectDialog from '@/components/AddProjectDialog';
 
 const { DropdownMenu, DropdownItem } = Dropdown;
-const { VERSION, BK_COMPONENT_API_URL, BK_HCM_DOMAIN, ENABLE_CLOUD_SELECTION, ENABLE_ACCOUNT_BILL } =
-  window.PROJECT_CONFIG;
+const { VERSION, USER_MANAGE_URL, BK_HCM_DOMAIN, ENABLE_CLOUD_SELECTION, ENABLE_ACCOUNT_BILL } = window.PROJECT_CONFIG;
 
 export default defineComponent({
   name: 'Home',
@@ -69,7 +68,15 @@ export default defineComponent({
     const { topMenuActiveItem, menus, curPath, handleHeaderMenuClick } = useChangeHeaderTab();
 
     const saveLanguage = async (language: string) => {
-      return jsonp(`${BK_COMPONENT_API_URL}/api/c/compapi/v2/usermanage/fe_update_user_language`, { language });
+      return http.put(
+        `${USER_MANAGE_URL}/api/v3/open-web/tenant/current-user/language/`,
+        { language },
+        {
+          globalHeaders: false,
+          globalError: false,
+          headers: { 'X-Bk-Tenant-Id': userStore.tenantId },
+        },
+      );
     };
 
     // 过渡方式，最终希望所有路由通过name跳转
