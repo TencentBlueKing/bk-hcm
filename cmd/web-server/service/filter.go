@@ -54,7 +54,7 @@ func isITSMCallbackRequest(req *restful.Request) bool {
 func newCheckLogin(loginCli login.Client, bkLoginUrl, bkLoginCookieName string) func(
 	*restful.Request) (*rest.Response, error) {
 
-	if bkLoginCookieName == "bk_ticket" {
+	if bkLoginCookieName == constant.BKTicket {
 		// 解析Login URL
 		oaLoginClient, err := newOALoginClient(bkLoginUrl)
 		if err != nil {
