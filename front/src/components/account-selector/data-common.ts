@@ -4,7 +4,6 @@ import { useAccountSelectorStore } from '@/store/account-selector';
 import type { IAccountSelectorProps } from './index-new.vue';
 import { QueryRuleOPEnum, IAccountItem } from '@/typings';
 import { vendorProperty } from './vendor.plugin';
-import { resourceCond } from './resource-cond.plugin';
 
 const useList = (props: IAccountSelectorProps) => {
   const accountSelectorStore = useAccountSelectorStore();
@@ -33,7 +32,6 @@ const useList = (props: IAccountSelectorProps) => {
               op: QueryRuleOPEnum.EQ,
               value: 'resource',
             },
-            ...resourceCond,
           ],
         },
       });
