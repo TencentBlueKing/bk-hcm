@@ -134,6 +134,18 @@ func NewService(dis serviced.Discover) (*Service, error) {
 		return nil, err
 	}
 
+	service := &Service{
+		client:     apiClientSet,
+		esbClient:  esbClient,
+		proxy:      p,
+		authorizer: authorizer,
+		itsmCli:    itsmCli,
+	}
+
+	return newOtherClient(service)
+}
+
+func newOtherClient(svc *Service) (*Service, error) {
 	bkUserCfg := cc.WebServer().BkUser
 	bkUserCli, err := pkgbkuser.NewClient(&bkUserCfg, metrics.Register())
 	if err != nil {
@@ -158,17 +170,11 @@ func NewService(dis serviced.Discover) (*Service, error) {
 		return nil, err
 	}
 
-	return &Service{
-		client:     apiClientSet,
-		esbClient:  esbClient,
-		proxy:      p,
-		authorizer: authorizer,
-		itsmCli:    itsmCli,
-		noticeCli:  noticeCli,
-		cmdbCli:    cmdbCli,
-		bkUserCli:  bkUserCli,
-		loginCli:   loginCli,
-	}, nil
+	svc.noticeCli = noticeCli
+	svc.cmdbCli = cmdbCli
+	svc.bkUserCli = bkUserCli
+	svc.loginCli = loginCli
+	return svc, nil
 }
 
 func newNotificationClient(bkUserCli pkgbkuser.Client) (pkgnotice.Client, error) {
