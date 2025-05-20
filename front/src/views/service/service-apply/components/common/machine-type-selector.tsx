@@ -296,7 +296,8 @@ export default defineComponent({
           closeIcon={false}
           quick-close={false}
           width={'60vw'}
-          height={'80vh'}>
+          height={'80vh'}
+        >
           {{
             default: () => (
               <>
@@ -307,7 +308,8 @@ export default defineComponent({
                         selected={selectedFamilyType.value === ''}
                         onClick={() => {
                           selectedFamilyType.value = '';
-                        }}>
+                        }}
+                      >
                         全部
                       </Button>
                       {instanceFamilyTypesList.value.map((name) => (
@@ -315,7 +317,8 @@ export default defineComponent({
                           selected={selectedFamilyType.value === name}
                           onClick={() => {
                             selectedFamilyType.value = name;
-                          }}>
+                          }}
+                        >
                           {name}
                         </Button>
                       ))}
@@ -367,7 +370,8 @@ export default defineComponent({
                         memory: '',
                       });
                     }
-                  }}>
+                  }}
+                >
                   {' '}
                   取消{' '}
                 </Button>

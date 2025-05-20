@@ -1,5 +1,5 @@
 import { parse, parseCIDR, IPv4, isValid } from 'ipaddr.js';
-import { random as _random } from 'lodash-es'
+import { random as _random } from 'lodash';
 
 /**
  * 检查端口号是否合法
@@ -76,10 +76,10 @@ export const random = () => `${_random(0, 999999)}_${Date.now()}_${_random(0, 99
  */
 export const cleanObject = <T extends object>(obj: T): Partial<T> => {
   return Object.keys(obj).reduce((acc, key) => {
-      const value = obj[key as keyof T];
-      if (value !== "" && value !== null && value !== undefined) {
-          acc[key as keyof T] = value;
-      }
-      return acc;
+    const value = obj[key as keyof T];
+    if (value !== '' && value !== null && value !== undefined) {
+      acc[key as keyof T] = value;
+    }
+    return acc;
   }, {} as Partial<T>);
 };

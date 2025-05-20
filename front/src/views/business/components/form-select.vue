@@ -25,10 +25,10 @@ const props = defineProps({
   show: Boolean,
 });
 
+const emit = defineEmits(['change']);
 const { t } = useI18n();
 const accountStore = useAccountStore();
 const resourceStore = useResourceStore();
-const emit = defineEmits(['change']);
 const cloudRegionsList = ref([]);
 const accountLoading = ref(false);
 const cloudRegionsLoading = ref(false);

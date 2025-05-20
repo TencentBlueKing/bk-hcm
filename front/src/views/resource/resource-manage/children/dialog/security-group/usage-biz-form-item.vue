@@ -5,12 +5,12 @@ import isEqual from 'lodash/isEqual';
 import { type IBusinessItem } from '@/store/business-global';
 import { useSecurityGroupStore, type ISecurityGroupItem } from '@/store/security-group';
 
+const model = defineModel<number[]>();
+
 const props = defineProps<{
   detail: ISecurityGroupItem;
   accountBizList: IBusinessItem[];
 }>();
-
-const model = defineModel<number[]>();
 
 const securityGroupStore = useSecurityGroupStore();
 

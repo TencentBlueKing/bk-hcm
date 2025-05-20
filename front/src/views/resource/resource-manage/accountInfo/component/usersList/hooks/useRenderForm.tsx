@@ -1,8 +1,6 @@
 import { defineComponent, onMounted, onUnmounted, reactive, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { Dialog, Form, Input, Message, Select } from 'bkui-vue';
-// import components
-import MemberSelect from '@/components/MemberSelect';
 // import stores
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 // import hooks
@@ -80,7 +78,8 @@ export default (getListData: Function) => {
           isLoading={isUserDialogLoading.value}
           onConfirm={handleModifyUserSubmit}
           onClosed={() => (isShowModifyUserDialog.value = false)}
-          theme='primary'>
+          theme='primary'
+        >
           <Form v-model={userFormModel} formType='vertical' ref={formRef}>
             <FormItem label={t('所属业务')} class={'api-secret-selector'} property='bk_biz_ids'>
               <Select v-model={userFormModel.bk_biz_ids} showSelectAll multiple multipleMode='tag' collapseTags>
@@ -92,7 +91,7 @@ export default (getListData: Function) => {
               </Select>
             </FormItem>
             <FormItem label={t('负责人')} class={'api-secret-selector'} property='managers'>
-              <MemberSelect v-model={userFormModel.managers} />
+              <hcm-form-user v-model={userFormModel.managers} />
             </FormItem>
             <FormItem label={t('备注')}>
               <Input type={'textarea'} v-model={userFormModel.memo} maxlength={256} resize={false} />

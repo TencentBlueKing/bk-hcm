@@ -5,6 +5,8 @@ import { isEmpty } from '@/common/util';
 
 defineOptions({ name: 'hcm-search-business' });
 
+const model = defineModel<number | number[]>();
+
 const props = withDefaults(
   defineProps<{
     multiple?: boolean;
@@ -22,8 +24,6 @@ const props = withDefaults(
     showAll: false,
   },
 );
-
-const model = defineModel<number | number[]>();
 
 const localModel = computed({
   get() {

@@ -203,7 +203,7 @@ export const SubnetInput = defineComponent({
             ref={o2Ref}
             rules={[
               {
-                validator: (value: string) => value == '0' || Boolean(value),
+                validator: (value: string) => String(value) === '0' || Boolean(value),
                 message: '不能为空',
               },
               {
@@ -231,7 +231,7 @@ export const SubnetInput = defineComponent({
             ref={o3Ref}
             rules={[
               {
-                validator: (value: string) => value == '0' || Boolean(value),
+                validator: (value: string) => String(value) === '0' || Boolean(value),
                 message: '不能为空',
               },
               {
@@ -259,7 +259,7 @@ export const SubnetInput = defineComponent({
             ref={o4Ref}
             rules={[
               {
-                validator: (value: string) => value == '0' || Boolean(value),
+                validator: (value: string) => String(value) === '0' || Boolean(value),
                 message: '不能为空',
               },
               {

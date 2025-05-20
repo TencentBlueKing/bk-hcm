@@ -5,7 +5,7 @@ import { Button, Dialog, Form, Input, Message } from 'bkui-vue';
 // import AppSelect from '@blueking/app-select';
 // import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useSchemeStore } from '@/store';
-import { debounce } from 'lodash-es';
+import { debounce } from 'lodash';
 import { QueryFilterType, QueryRuleOPEnum } from '@/typings';
 
 const { FormItem } = Form;
@@ -99,7 +99,8 @@ export default defineComponent({
         <Button
           theme='primary'
           onClick={() => (isDialogShow.value = true)}
-          disabled={schemeStore.recommendationSchemes[props.idx].isSaved}>
+          disabled={schemeStore.recommendationSchemes[props.idx].isSaved}
+        >
           {schemeStore.recommendationSchemes[props.idx].isSaved ? '已保存' : '保存'}
         </Button>
 
@@ -107,7 +108,8 @@ export default defineComponent({
           title='保存该方案'
           isShow={isDialogShow.value}
           onClosed={() => (isDialogShow.value = false)}
-          onConfirm={handleConfirm}>
+          onConfirm={handleConfirm}
+        >
           <Form
             formType='vertical'
             model={formData}
@@ -120,7 +122,8 @@ export default defineComponent({
                   validator: (val: string) => val.trim().length,
                 },
               ],
-            }}>
+            }}
+          >
             <FormItem label='方案名称' required property='name'>
               <Input v-model={formData.name} maxlength={28} onInput={debounce(checkNameIsDuplicate, 300)} />
               {isNameDuplicate.value ? (
@@ -128,7 +131,8 @@ export default defineComponent({
                   style={{
                     color: '#ea3636',
                     fontSize: '12px',
-                  }}>
+                  }}
+                >
                   方案名称与已存在的方案名重复
                 </span>
               ) : null}

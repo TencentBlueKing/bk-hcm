@@ -23,6 +23,10 @@ export interface IFlexTagProps {
   forceShowOne?: boolean;
 }
 
+defineOptions({
+  name: 'fex-tag',
+});
+
 const props = withDefaults(defineProps<IFlexTagProps>(), {
   list: () => [],
   isLinkStyle: false,
@@ -37,10 +41,6 @@ const props = withDefaults(defineProps<IFlexTagProps>(), {
   }),
   popoverMaxHeight: '280px',
   forceShowOne: false,
-});
-
-defineOptions({
-  name: 'fex-tag',
 });
 
 const emit = defineEmits<{

@@ -13,6 +13,7 @@ import { Tag } from 'bkui-vue';
 import DisplayValue from '@/components/display-value/index.vue';
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 
+const model = defineModel<boolean>();
 const props = withDefaults(
   defineProps<{
     action: 'backfill' | 'submit'; // backfill：批量分配，submit：单个分配
@@ -27,8 +28,6 @@ const emit = defineEmits<{
   (e: 'backfill', bkBizId: number, bkCloudId: number): void;
   (e: 'submit', cvm: { cvm_id: string; bk_biz_id: number; bk_cloud_id: number }): void;
 }>();
-const model = defineModel<boolean>();
-
 const { t } = useI18n();
 const cloudAreaStore = useCloudAreaStore();
 const businessGlobalStore = useBusinessGlobalStore();

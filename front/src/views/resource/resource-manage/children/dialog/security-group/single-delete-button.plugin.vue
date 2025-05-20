@@ -2,6 +2,8 @@
 import { useResourceStore } from '@/store';
 import DeleteButton from './single-delete-button.vue';
 
+const loading = defineModel<boolean>('loading', { default: false });
+
 const props = withDefaults(defineProps<{ id: string; disabled: boolean }>(), {
   disabled: true,
 });
@@ -9,8 +11,6 @@ const props = withDefaults(defineProps<{ id: string; disabled: boolean }>(), {
 const emit = defineEmits<(e: 'success') => void>();
 
 const resourceStore = useResourceStore();
-const loading = defineModel('loading', { default: false });
-
 const handleDelete = async () => {
   loading.value = true;
   try {

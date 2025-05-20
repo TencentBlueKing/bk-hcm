@@ -17,13 +17,12 @@ import { Button, Message, Tag } from 'bkui-vue';
 import MatchHost from './match-host.vue';
 import ManualAssign from './manual-assign.vue';
 
+const model = defineModel<boolean>();
 const props = defineProps<{
   previewList: Array<CvmsAssignPreviewItem>;
   reloadTable: () => void;
 }>();
 const emit = defineEmits<(e: 'hidden') => void>();
-const model = defineModel<boolean>();
-
 const { t } = useI18n();
 const hostStore = useHostStore();
 
