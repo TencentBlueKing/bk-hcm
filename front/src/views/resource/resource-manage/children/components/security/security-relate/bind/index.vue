@@ -20,14 +20,13 @@ import search from '../search/index.vue';
 import dataList from '../data-list/index.vue';
 import dialogFooter from '@/components/common-dialog/dialog-footer.vue';
 
+const model = defineModel<boolean>();
 const props = defineProps<{
   textButton?: boolean;
   tabActive: SecurityGroupRelatedResourceName;
   detail: ISecurityGroupDetail;
 }>();
 const emit = defineEmits(['success']);
-const model = defineModel<boolean>();
-
 const { t } = useI18n();
 const { getBusinessApiPath } = useWhereAmI();
 const securityGroupStore = useSecurityGroupStore();

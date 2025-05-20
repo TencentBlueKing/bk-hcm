@@ -8,12 +8,11 @@ import {
 } from '@/store/security-group';
 import { VendorEnum } from '@/common/constant';
 
+const model = defineModel<SecurityGroupRelatedResourceName>();
 const props = defineProps<{
   detail: ISecurityGroupDetail;
   relatedResourcesCountList: ISecurityGroupRelResCountItem[];
 }>();
-const model = defineModel<SecurityGroupRelatedResourceName>();
-
 const { t } = useI18n();
 
 const tabRelRes = ref<{ name: SecurityGroupRelatedResourceName; label: string; count: number; disabled: boolean }[]>([

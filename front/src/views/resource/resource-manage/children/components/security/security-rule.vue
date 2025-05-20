@@ -732,7 +732,7 @@ const types = [
     </bk-loading>
 
     <security-rule
-      v-model:isShow="isShowSecurityRule"
+      v-model:is-show="isShowSecurityRule"
       :loading="securityRuleLoading"
       :id="props.id"
       dialog-width="90vw"
@@ -758,7 +758,7 @@ const types = [
       <span>删除后不可恢复</span>
     </bk-dialog>
 
-    <bk-sideslider v-model:isShow="show" :title="t('规则排序')" width="640" quick-close>
+    <bk-sideslider v-model:is-show="show" :title="t('规则排序')" width="640" quick-close>
       <template #default>
         <rule-sort
           :id="props.id"

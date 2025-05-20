@@ -155,10 +155,12 @@ export default defineComponent({
               {
                 prop: 'managers',
                 name: '主负责人',
+                render: () => <hcm-user-value value={info.value.managers} />,
               },
               {
                 prop: 'bak_managers',
                 name: '备份负责人',
+                render: () => <hcm-user-value value={info.value.bak_managers} />,
               },
               {
                 prop: 'op_product_id',
@@ -285,7 +287,8 @@ export default defineComponent({
                     } finally {
                       isSubmitLoading.value = false;
                     }
-                  }}>
+                  }}
+                >
                   确定
                 </Button>
                 <Button
@@ -293,7 +296,8 @@ export default defineComponent({
                   loading={isSubmitLoading.value}
                   onClick={() => {
                     isDialogShow.value = false;
-                  }}>
+                  }}
+                >
                   取消
                 </Button>
               </div>

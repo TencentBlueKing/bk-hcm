@@ -58,7 +58,8 @@ export default defineComponent({
         width='860'
         height='560'
         onConfirm={handleConfirm}
-        onClosed={() => emit('close')}>
+        onClosed={() => emit('close')}
+      >
         <Form ref={formRef} model={localFormData} labelWidth={90}>
           <FormItem label='磁盘来源' required={false}>
             空白磁盘
@@ -92,7 +93,8 @@ export default defineComponent({
           <a
             target='_blank'
             style={{ color: '#3a84ff' }}
-            href='https://cloud.google.com/compute/docs/disks/add-persistent-disk?hl=zh-cn'>
+            href='https://cloud.google.com/compute/docs/disks/add-persistent-disk?hl=zh-cn'
+          >
             参考文档
           </a>
         </div>

@@ -81,7 +81,8 @@ export default defineComponent({
                     v-bk-tooltips={{
                       content: '该证书已分配业务, 仅可在业务下操作',
                       disabled: isResourcePage && data.bk_biz_id !== -1,
-                    }}>
+                    }}
+                  >
                     删除
                   </Button>
                 ),
@@ -349,7 +350,8 @@ export default defineComponent({
                           class='mw88'
                           disabled={noPerm}
                           theme='primary'
-                          onClick={() => showCreateCertSideslider()}>
+                          onClick={() => showCreateCertSideslider()}
+                        >
                           上传证书
                         </Button>
                       ),
@@ -375,7 +377,8 @@ export default defineComponent({
           width='640'
           onHandleSubmit={handleCreateCert}
           isSubmitLoading={isLoading.value}
-          class='cert-upload-sideslider'>
+          class='cert-upload-sideslider'
+        >
           <Form ref={formRef} formType='vertical' rules={formRules} model={formModel}>
             {formItemOptions.value.map(({ label, property, required, content, hidden }) => {
               if (hidden) return null;

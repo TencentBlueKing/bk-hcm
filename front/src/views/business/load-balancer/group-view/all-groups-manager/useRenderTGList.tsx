@@ -61,7 +61,8 @@ export default () => {
             v-bk-tooltips={{
               content: t('已绑定了监听器的目标组不可删除'),
               disabled: data.listener_num === 0,
-            }}>
+            }}
+          >
             <Button
               text
               theme={'primary'}
@@ -69,7 +70,8 @@ export default () => {
               class={'ml16'}
               onClick={() => {
                 handleDeleteTargetGroup(data.id, data.name);
-              }}>
+              }}
+            >
               {t('删除')}
             </Button>
           </span>

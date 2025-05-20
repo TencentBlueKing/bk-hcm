@@ -18,14 +18,13 @@ import { ThemeEnum } from 'bkui-vue/lib/shared';
 import search from '../search/index.vue';
 import dialogFooter from '@/components/common-dialog/dialog-footer.vue';
 
+const model = defineModel<boolean>();
 const props = defineProps<{
   selections: SecurityGroupRelResourceByBizItem[];
   tabActive: SecurityGroupRelatedResourceName;
   detail: ISecurityGroupDetail;
 }>();
 const emit = defineEmits(['success']);
-const model = defineModel<boolean>();
-
 const { t } = useI18n();
 const securityGroupStore = useSecurityGroupStore();
 const { getBusinessIds } = useBusinessGlobalStore();

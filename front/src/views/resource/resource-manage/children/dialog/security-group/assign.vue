@@ -6,6 +6,8 @@ import { Info } from 'bkui-vue/lib/icon';
 import { useSecurityGroupStore, type ISecurityGroupItem } from '@/store/security-group';
 import UsageBizValue from '@/views/resource/resource-manage/children/components/security/usage-biz-value.vue';
 
+const model = defineModel<boolean>();
+
 const props = defineProps<{ selections: ISecurityGroupItem[] }>();
 
 const emit = defineEmits<{
@@ -14,8 +16,6 @@ const emit = defineEmits<{
 }>();
 
 const securityGroupStore = useSecurityGroupStore();
-
-const model = defineModel<boolean>();
 
 const enum DataView {
   Assignable = 'assignable',

@@ -60,7 +60,8 @@ export default defineComponent({
           v-html={name?.replace(
             new RegExp(props.searchVal, 'g'),
             `<span class='search-result-highlight'>${props.searchVal}</span>`,
-          )}></div>
+          )}
+        ></div>
       );
     };
 
@@ -118,11 +119,13 @@ export default defineComponent({
                   class={`vendor-item-wrap${isExpand ? ' sticky' : ''}${
                     currentVendor.value === vendor ? ' active' : ''
                   }`}
-                  onClick={() => handleClickVendor(vendor)}>
+                  onClick={() => handleClickVendor(vendor)}
+                >
                   <i
                     class={`icon hcm-icon vendor-account-menu-dropdown-icon${
                       isExpand ? ' bkhcm-icon-down-shape' : ' bkhcm-icon-right-shape'
-                    }`}></i>
+                    }`}
+                  ></i>
                   <img class={'vendor-icon'} src={icon} alt={name} />
                   {props.searchVal ? getHighLightNameText(name, 'vendor-title') : name}
                   <div class='vendor-account-count'>{count}</div>
@@ -132,7 +135,8 @@ export default defineComponent({
                     <div
                       class={['account-item', { active: account.id === props.accountId }]}
                       key={account.id}
-                      onClick={() => handleClickAccount(account)}>
+                      onClick={() => handleClickAccount(account)}
+                    >
                       <img
                         src={account.sync_status === 'sync_success' ? successAccount : failedAccount}
                         alt=''
@@ -146,7 +150,8 @@ export default defineComponent({
                       ref={(ref: any) => loadingRef.value.push(ref)}
                       data-vendor={vendor}
                       size='small'
-                      loading>
+                      loading
+                    >
                       <div style='width: 100%; height: 36px' />
                     </bk-loading>
                   )}

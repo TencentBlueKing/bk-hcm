@@ -30,7 +30,7 @@ import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { GLOBAL_BIZS_KEY, VendorEnum, VendorMap } from '@/common/constant';
-import { cloneDeep } from 'lodash-es';
+import { cloneDeep } from 'lodash';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import useSelection from '../../hooks/use-selection';
@@ -65,8 +65,6 @@ import {
 } from '@/constants/auth-symbols';
 import HcmAuth from '@/components/auth/auth.vue';
 
-const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
-
 const props = defineProps({
   filter: {
     type: Object as PropType<FilterType>,
@@ -74,11 +72,12 @@ const props = defineProps({
   isResourcePage: {
     type: Boolean,
   },
-  whereAmI: {
-    type: String,
-  },
   bkBizId: Number,
 });
+
+const emit = defineEmits(['handleSecrityType', 'edit', 'editTemplate']);
+
+const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 // use hooks
 const { t } = useI18n();
@@ -115,7 +114,6 @@ const URL_MAP: Record<string, string> = {
 };
 const fetchUrl = ref<string>(URL_MAP.group);
 
-const emit = defineEmits(['handleSecrityType', 'edit', 'editTemplate']);
 const { generateColumnsSettings } = useColumns('group');
 
 const cloneSecurityData = reactive<ICloneSecurityProps>({
@@ -280,7 +278,6 @@ const fetchComponentsData = () => {
   getList();
 };
 
-defineExpose({ fetchComponentsData });
 const isRowSelectEnable = ({ row, isCheckAll }: DoublePlainObject) => {
   if (isCheckAll) return true;
   return isCurRowSelectEnable(row);
@@ -1181,6 +1178,8 @@ watch(
   },
   { deep: true },
 );
+
+defineExpose({ fetchComponentsData });
 </script>
 
 <template>

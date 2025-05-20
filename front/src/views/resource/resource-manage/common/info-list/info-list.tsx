@@ -89,7 +89,8 @@ export default defineComponent({
         fromKey={field.prop}
         hideEdit={true}
         trim={field.trim}
-        onChange={this.handleBlur}></RenderDetailEdit>
+        onChange={this.handleBlur}
+      ></RenderDetailEdit>
     );
 
     // 渲染链接
@@ -167,7 +168,8 @@ export default defineComponent({
               )}
               <div
                 class={['item-value', typeof cls === 'function' ? cls(value) : cls]}
-                style={{ [showOverflowTips ? 'maxWidth' : 'width']: valueMaxWidth }}>
+                style={{ [showOverflowTips ? 'maxWidth' : 'width']: valueMaxWidth }}
+              >
                 {showOverflowTips ? (
                   <OverflowTitle class='full-width' type='tips' content={renderField(field)}>
                     {renderField(field)}

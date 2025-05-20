@@ -137,16 +137,16 @@ export default defineComponent({
         title={isEdit.value ? '编辑监听器' : '新增监听器'}
         width={640}
         onHandleSubmit={handleAddOrUpdateListener}
-        isSubmitLoading={isAddOrUpdateListenerSubmit.value}>
+        isSubmitLoading={isAddOrUpdateListenerSubmit.value}
+      >
         {isLbLocked.value ? (
           <Alert theme='danger' class={'mb24'}>
             当前负载均衡正在变更中，不允许新增监听器，
             <Button
               text
               theme='primary'
-              onClick={() =>
-                goAsyncTaskDetail(businessStore.list, lockedLbInfo.value.flow_id, currentBusinessId.value)
-              }>
+              onClick={() => goAsyncTaskDetail(businessStore.list, lockedLbInfo.value.flow_id, currentBusinessId.value)}
+            >
               查看当前任务
             </Button>
             。
@@ -264,7 +264,8 @@ export default defineComponent({
                         label={t('会话保持')}
                         required
                         property='session_open'
-                        description='会话保持可使得来自同一 IP 的请求被转发到同一台后端服务器上。参考官方文档https://cloud.tencent.com/document/product/214/6154'>
+                        description='会话保持可使得来自同一 IP 的请求被转发到同一台后端服务器上。参考官方文档https://cloud.tencent.com/document/product/214/6154'
+                      >
                         <Switcher theme='primary' v-model={listenerFormData.session_open} />
                       </FormItem>
                       <FormItem label={t('保持时间')} class={'ml40'} required property='session_expire'>
@@ -319,7 +320,8 @@ export default defineComponent({
                       '_blank',
                       'noopener,noreferrer',
                     );
-                  }}>
+                  }}
+                >
                   {listenerFormData.target_group_name || '未命名'}
                 </span>
               ) : (

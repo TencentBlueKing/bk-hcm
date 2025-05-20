@@ -445,7 +445,7 @@ getSecurityGroupsList();
       show-overflow-tooltip
     />
     <bk-dialog
-      v-model:isShow="isShow"
+      v-model:is-show="isShow"
       :title="activeType === 'ingress' ? '入站规则' : '出站规则'"
       width="1200"
       :theme="'primary'"

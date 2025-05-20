@@ -6,6 +6,8 @@ import HcmFormUser from '@/components/form/user.vue';
 import HcmFormBusiness from '@/components/form/business.vue';
 import { useAccountBusiness } from '@/views/resource/resource-manage/hooks/use-account-business';
 
+const model = defineModel<boolean>();
+
 const props = defineProps<{ detail: ISecurityGroupItem }>();
 
 const emit = defineEmits<{
@@ -15,8 +17,6 @@ const emit = defineEmits<{
 const securityGroupStore = useSecurityGroupStore();
 
 const { accountBizList } = useAccountBusiness(props.detail.account_id);
-
-const model = defineModel<boolean>();
 
 const formData = reactive({
   mgmt_type: SecurityGroupManageType.PLATFORM,

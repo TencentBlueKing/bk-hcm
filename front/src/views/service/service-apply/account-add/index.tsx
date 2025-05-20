@@ -5,7 +5,6 @@ import { ProjectModel, FormItems } from '@/typings';
 import { CLOUD_TYPE, ACCOUNT_TYPE, BUSINESS_TYPE, SITE_TYPE, DESC_ACCOUNT } from '@/constants';
 import { VendorEnum } from '@/common/constant';
 import { useI18n } from 'vue-i18n';
-import MemberSelect from '@/components/MemberSelect';
 import { useAccountStore } from '@/store';
 import './index.scss';
 const { FormItem } = Form;
@@ -699,7 +698,8 @@ export default defineComponent({
                 disabled={
                   !['tcloud', 'aws'].includes(item.id) ||
                   (projectModel.type === 'security_audit' && item.id === 'tcloud')
-                }>
+                }
+              >
                 {item.name}
               </RadioButton>
             ))}
@@ -753,7 +753,7 @@ export default defineComponent({
         property: 'managers',
         content: () => (
           <section>
-            <MemberSelect class='w450' v-model={projectModel.managers} />
+            <hcm-form-user class='w450' v-model={projectModel.managers} />
           </section>
         ),
       },
@@ -769,7 +769,8 @@ export default defineComponent({
             multipleMode='tag'
             placeholder={t('请选择使用业务')}
             class='w450'
-            v-model={projectModel.bizIds}>
+            v-model={projectModel.bizIds}
+          >
             {businessList.list.map((item) => (
               <Option key={item.id} value={item.id} label={item.name}>
                 {item.name}
@@ -819,14 +820,16 @@ export default defineComponent({
                     'no-border-top': !item.formName,
                     'no-border-bottom': item.noBorBottom || (item.property === 'vendor' && isChangeVendor.value),
                     'no-border': item.type === 'button',
-                  }}>
+                  }}
+                >
                   <FormItem
                     class='account-form-item'
                     label={item.label}
                     required={item.required}
                     property={item.property}
                     description={item.description}
-                    rules={item.rules}>
+                    rules={item.rules}
+                  >
                     {item.component ? item.component() : item.content()}
                   </FormItem>
                 </div>

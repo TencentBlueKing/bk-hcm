@@ -6,6 +6,7 @@ import { timeFormatter } from '@/common/util';
 import { useHostStore, type CvmsAssignPreviewItem, type IMatchHostsItem } from '@/store';
 import { ResourceTypeEnum } from '@/common/resource-constant';
 
+const model = defineModel<boolean>();
 const props = defineProps<{
   action: 'backfill' | 'submit';
   cvm: CvmsAssignPreviewItem;
@@ -15,8 +16,6 @@ const emit = defineEmits<{
   (e: 'submit', cvm: { cvm_id: string; bk_biz_id: number; bk_cloud_id: number }): void;
   (e: 'manual-assign'): void;
 }>();
-const model = defineModel<boolean>();
-
 const { t } = useI18n();
 const hostStore = useHostStore();
 

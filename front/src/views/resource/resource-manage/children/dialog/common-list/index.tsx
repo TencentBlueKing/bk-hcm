@@ -208,7 +208,8 @@ export default defineComponent({
                 theme='primary'
                 onClick={() => {
                   hanlerCopy(data);
-                }}>
+                }}
+              >
                 {t('复制')}
               </Button>
               <Button
@@ -217,7 +218,8 @@ export default defineComponent({
                 class='ml20'
                 onClick={() => {
                   handlerDelete(data, row);
-                }}>
+                }}
+              >
                 {t('删除')}
               </Button>
             </div>
@@ -311,7 +313,8 @@ export default defineComponent({
                 theme='primary'
                 onClick={() => {
                   hanlerCopy(data);
-                }}>
+                }}
+              >
                 {t('复制')}
               </Button>
               <Button
@@ -320,7 +323,8 @@ export default defineComponent({
                 class='ml20'
                 onClick={() => {
                   handlerDelete(data, row);
-                }}>
+                }}
+              >
                 {t('删除')}
               </Button>
             </div>
@@ -480,7 +484,8 @@ export default defineComponent({
           isShow={this.isShow}
           steps={this.steps}
           onConfirm={this.handleConfirm}
-          onCancel={this.handleClose}></step-dialog>
+          onCancel={this.handleClose}
+        ></step-dialog>
       </>
     );
   },

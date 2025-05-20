@@ -236,7 +236,8 @@ export default defineComponent({
         steps={steps}
         confirmDisabled={!this.selectedId}
         onConfirm={this.handleConfirm}
-        onCancel={this.handleClose}></step-dialog>
+        onCancel={this.handleClose}
+      ></step-dialog>
     );
   },
 });

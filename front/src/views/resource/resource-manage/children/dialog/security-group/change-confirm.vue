@@ -10,10 +10,9 @@ import DisplayValue from '@/components/display-value/index.vue';
 import RelResourcesDisplay from '../../components/security/rel-resources-display.vue';
 import hintIcon from '@/assets/image/hint.svg';
 
+const model = defineModel<boolean>();
 const props = defineProps<{ detail: ISecurityGroupOperateItem; loading: boolean }>();
 const emit = defineEmits(['confirm']);
-const model = defineModel<boolean>();
-
 const { t } = useI18n();
 
 const fields = [

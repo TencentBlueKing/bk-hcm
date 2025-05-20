@@ -35,7 +35,6 @@ const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, ha
 const fetchComponentsData = () => {
   handlePageChange(1);
 };
-defineExpose({ fetchComponentsData });
 
 const isRowSelectEnable = ({ row, isCheckAll }: DoublePlainObject) => {
   if (isCheckAll) return true;
@@ -63,6 +62,8 @@ const hostSearchData = computed(() => {
 });
 
 const renderColumns = [...columns];
+
+defineExpose({ fetchComponentsData });
 </script>
 
 <template>

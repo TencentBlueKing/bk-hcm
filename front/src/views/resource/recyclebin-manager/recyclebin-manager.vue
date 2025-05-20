@@ -141,7 +141,11 @@
               prop="res_name"
             >
             </bk-table-column> -->
-            <bk-table-column label="回收人" prop="reviser"></bk-table-column>
+            <bk-table-column label="回收人" prop="reviser">
+              <template #default="{ cell }">
+                <hcm-user-value :value="cell" />
+              </template>
+            </bk-table-column>
             <bk-table-column label="进入回收站时间" prop="created_at" :sort="true">
               <template #default="{ cell }">
                 {{ timeFormatter(cell) }}

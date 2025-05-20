@@ -6,6 +6,7 @@ import { DisplayType } from './typings';
 
 defineOptions({ name: 'hcm-form-enum' });
 
+const model = defineModel<string | string[]>();
 const props = withDefaults(
   defineProps<{ clearable: boolean; multiple: boolean; option: ModelProperty['option']; display?: DisplayType }>(),
   {
@@ -14,7 +15,6 @@ const props = withDefaults(
     option: () => ({}),
   },
 );
-const model = defineModel<string | string[]>();
 const attrs = useAttrs();
 
 const comp = computed(() => (props.display?.on === 'cell' ? SelectColumn : 'bk-select'));

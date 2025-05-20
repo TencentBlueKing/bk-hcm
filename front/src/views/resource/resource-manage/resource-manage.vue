@@ -489,10 +489,10 @@ onMounted(() => {
               :filter="filter"
               :where-am-i="activeTab"
               :is-resource-page="isResourcePage"
-              @handleSecrityType="handleSecrityType"
+              @handle-secrity-type="handleSecrityType"
               ref="componentRef"
               @edit="handleEdit"
-              v-model:isFormDataChanged="isFormDataChanged"
+              v-model:is-form-data-changed="isFormDataChanged"
             >
               <template v-if="['host', 'vpc', 'drive', 'security', 'subnet', 'ip', 'clb'].includes(activeTab)">
                 <hcm-auth
@@ -510,7 +510,7 @@ onMounted(() => {
       </bk-tab>
 
       <bk-sideslider
-        v-model:isShow="isShowSideSlider"
+        v-model:is-show="isShowSideSlider"
         width="800"
         title="新增"
         quick-close
@@ -526,7 +526,7 @@ onMounted(() => {
             :detail="formDetail"
             :show="isShowSideSlider"
             @edit="handleEdit"
-            v-model:isFormDataChanged="isFormDataChanged"
+            v-model:is-form-data-changed="isFormDataChanged"
           ></component>
         </template>
       </bk-sideslider>

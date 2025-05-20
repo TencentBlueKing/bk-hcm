@@ -15,12 +15,12 @@ import { ThemeEnum } from 'bkui-vue/lib/shared';
 import hintIcon from '@/assets/image/hint.svg';
 import dialogFooter from '@/components/common-dialog/dialog-footer.vue';
 
+const model = defineModel<boolean>();
 const props = defineProps<{
   row: SecurityGroupRelResourceByBizItem;
   detail: ISecurityGroupDetail;
   tabActive: SecurityGroupRelatedResourceName;
 }>();
-const model = defineModel<boolean>();
 const emit = defineEmits(['success']);
 
 const { t } = useI18n();

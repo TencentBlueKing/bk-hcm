@@ -129,7 +129,8 @@ export default defineComponent({
               onSelectAll={handleSelectAll}
               isRowSelectEnable={({ row }: any) => !tableRsList.some((rs) => rs.id === row.id || rs.inst_id === row.id)}
               onPageLimitChange={handlePageLimitChange}
-              onPageValueChange={handlePageValueChange}>
+              onPageValueChange={handlePageValueChange}
+            >
               {{
                 prepend: () =>
                   rsTableList.value.length && selectedCount.value ? (

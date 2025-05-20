@@ -4,12 +4,12 @@
  */
 
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
-import cookie from 'cookie';
+import Cookies from 'js-cookie';
 import { Message } from 'bkui-vue';
 import { defaults } from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
-import { showLoginModal } from '@/utils/login-helper';
 import bus from '@/common/bus';
+import { showLoginModal } from '@/utils/login-helper';
 import CachedPromise from './cached-promise';
 import RequestQueue from './request-queue';
 
@@ -31,7 +31,9 @@ const axiosInstance: AxiosInstance = axios.create({
  */
 axiosInstance.interceptors.request.use(
   (config: any) => {
-    config.headers['X-Bkapi-Request-Id'] = uuidv4();
+    if (config.globalHeaders) {
+      config.headers['X-Bkapi-Request-Id'] = uuidv4();
+    }
     // 在发起请求前，注入CSRFToken，解决跨域
     injectCSRFTokenToHeaders();
     return config;
@@ -43,12 +45,7 @@ axiosInstance.interceptors.request.use(
  * response interceptor
  */
 axiosInstance.interceptors.response.use(
-  (response) => {
-    if ((response.config as CombinedRequestConfig).originalResponse) {
-      return response;
-    }
-    return response.data;
-  },
+  (response) => response,
   (error) => Promise.reject(error),
 );
 
@@ -92,6 +89,12 @@ const http: HttpApi = {
       console.error(error);
       Message({ theme: 'error', message: (error as Error).message });
     }
+  },
+  setHeader: (key: string, value: string) => {
+    axiosInstance.defaults.headers[key] = value;
+  },
+  deleteHeader: (key: string) => {
+    delete axiosInstance.defaults.headers[key];
   },
 };
 
@@ -158,12 +161,7 @@ async function getPromise(method: HttpMethodType, url: string, data: object | nu
     try {
       const response = await axiosRequest;
       Object.assign(config, response.config || {});
-      // @ts-ignore
-      if (response.code === 0) {
-        handleResponse({ config, response, resolve, reject });
-      } else {
-        reject(response);
-      }
+      handleResponse({ config, response, resolve, reject });
     } catch (error: any) {
       Object.assign(config, error.config);
       reject(error);
@@ -173,7 +171,7 @@ async function getPromise(method: HttpMethodType, url: string, data: object | nu
       return handleReject(error, config);
     })
     .finally(() => {
-      // console.log('finally', config)
+      http.queue.delete(config.requestId);
     });
 
   // 添加请求队列
@@ -193,9 +191,24 @@ async function getPromise(method: HttpMethodType, url: string, data: object | nu
  * @param {Function} promise 拒绝函数
  */
 function handleResponse(params: { config: any; response: any; resolve: any; reject: any }) {
-  params.resolve(params.response, params.config);
+  const { config, response, resolve, reject } = params;
+  const transformedResponse = response.data;
+  const { code, message, data } = transformedResponse;
 
-  http.queue.delete(params.config.requestId);
+  if (code !== 0 && config.globalError) {
+    reject({ code, message });
+    return;
+  }
+  if (config.originalResponse) {
+    resolve(response);
+    return;
+  }
+  if (config.transformData) {
+    resolve(data);
+    return;
+  }
+
+  resolve(transformedResponse);
 }
 
 /**
@@ -224,7 +237,9 @@ function handleReject(error: any, config: any) {
     );
   }
   http.queue.delete(config.requestId);
-  if (config.globalError && error.response) {
+
+  // 非2xx请求错误
+  if (error.response) {
     const { status, data } = error.response;
     const nextError = { message: error.message, response: error.response };
     if (status === 401) {
@@ -240,12 +255,23 @@ function handleReject(error: any, config: any) {
     } else if (data?.message && error.code !== 0) {
       nextError.message = data.message;
       Message({ theme: 'error', message: nextError.message });
+    } else {
+      Message({ theme: 'error', message: error.message });
     }
 
-    // messageError(nextError.message)
     return Promise.reject(nextError);
   }
-  handleCustomErrorCode(error);
+
+  // 有请求无响应
+  if (error.request) {
+    Message({ theme: 'error', message: 'Network Error' });
+    return Promise.reject(error);
+  }
+
+  // 业务错误
+  if (config.globalError) {
+    handleCustomErrorCode(error);
+  }
 
   return Promise.reject(error);
 }
@@ -287,10 +313,14 @@ function initConfig(method: string, url: string, userConfig: object) {
     clearCache: false,
     // 响应结果是否返回原始数据
     originalResponse: false,
+    // 转换返回数据，仅返回data对象
+    transformData: false,
     // 当路由变更时取消请求
     cancelWhenRouteChange: true,
     // 取消上次请求
     cancelPrevious: false,
+    // 是否使用全局headers
+    globalHeaders: true,
   };
   return Object.assign(defaultConfig, userConfig);
 }
@@ -316,7 +346,7 @@ function getCancelToken() {
  * 向 http header 注入 CSRFToken，CSRFToken key 值与后端一起协商制定
  */
 export function injectCSRFTokenToHeaders() {
-  const CSRFToken = cookie.parse(document.cookie)[`${window.PROJECT_CONFIG.BKPAAS_APP_ID}_csrftoken`];
+  const CSRFToken = Cookies.get(`${window.PROJECT_CONFIG.BKPAAS_APP_ID}_csrftoken`);
   if (CSRFToken !== undefined) {
     axiosInstance.defaults.headers.common['X-CSRFToken'] = CSRFToken;
   } else {

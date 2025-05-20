@@ -1,5 +1,6 @@
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
+import BkUserDisplayName from '@blueking/bk-user-display-name';
 import { gotoLoginPage } from '@/utils/login-helper';
 
 import bus from './common/bus';
@@ -32,6 +33,12 @@ app.use(i18n).use(directive).use(components).use(pinia).use(bkui);
 const { userInfo } = useUserStore();
 
 userInfo()
+  .then((data) => {
+    BkUserDisplayName.configure({
+      tenantId: data.tenant_id,
+      apiBaseUrl: window.PROJECT_CONFIG.USER_MANAGE_URL,
+    });
+  })
   .then(() => {
     preload().finally(() => {
       app.use(router);

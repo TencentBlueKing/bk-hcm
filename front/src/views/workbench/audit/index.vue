@@ -1,10 +1,9 @@
 <script lang="ts" setup>
 import BusinessSelector from '@/components/business-selector/index.vue';
 import AccountSelector from '@/components/account-selector/index.vue';
-import MemberSelect from '@/components/MemberSelect';
 import FilterItemAction from './children/filter-item-action.vue';
 import AuditDetail from './detail.vue';
-import ErrorPages from '@/views/error-pages/403.tsx';
+import ErrorPages from '@/views/error-pages/403';
 
 import { computed, reactive, ref, watch, h } from 'vue';
 import dayjs from 'dayjs';
@@ -182,7 +181,6 @@ const handleShowDetailSlider = (row: any) => {
 watch(
   () => filter.bk_biz_id,
   (bizId, oldBizId) => {
-    console.log(bizId);
     if (oldBizId === null && bizId !== oldBizId) {
       query();
     }
@@ -268,7 +266,7 @@ const { authVerifyData } = useVerify();
         <div class="filter-item">
           <div class="filter-item-label">操作者</div>
           <div class="filter-item-content">
-            <member-select v-model="filter.operator" :allow-create="true" />
+            <hcm-form-user v-model="filter.operator" :allow-create="true" />
           </div>
         </div>
         <div class="filter-item">
@@ -319,7 +317,7 @@ const { authVerifyData } = useVerify();
         />
       </bk-loading>
 
-      <bk-sideslider v-model:isShow="details.show" title="审计详情" width="670" quick-close>
+      <bk-sideslider v-model:is-show="details.show" title="审计详情" width="670" quick-close>
         <template #default>
           <audit-detail :id="details.id" :biz-id="details.bizId" :type="filterOptions.auditType"></audit-detail>
         </template>

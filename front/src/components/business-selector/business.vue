@@ -21,6 +21,8 @@ export interface IBusinessSelectorProps {
   optionDisabled?: (item: IBusinessItem) => boolean;
 }
 
+const model = defineModel<number | number[]>();
+
 const props = withDefaults(defineProps<IBusinessSelectorProps>(), {
   disabled: false,
   multiple: false,
@@ -32,8 +34,6 @@ const props = withDefaults(defineProps<IBusinessSelectorProps>(), {
   emptySelectAll: false,
   scope: 'full',
 });
-
-const model = defineModel<number | number[]>();
 
 const businessGlobalStore = useBusinessGlobalStore();
 

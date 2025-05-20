@@ -80,7 +80,8 @@ const useColumns = ({ columnType = 'cvms', isSimpleShow = false, vendor, extra }
                       theme='primary'
                       class='mr8'
                       disabled={noPerm || isOperateDisabled(OperationActions.RECYCLE, data)}
-                      onClick={() => handleOperate(OperationActions.RECYCLE, data)}>
+                      onClick={() => handleOperate(OperationActions.RECYCLE, data)}
+                    >
                       {operationMap[OperationActions.RECYCLE].label}
                     </bk-button>
                   ),
@@ -92,7 +93,8 @@ const useColumns = ({ columnType = 'cvms', isSimpleShow = false, vendor, extra }
                   renderType: 'shown',
                   onAfterShow: () => (currentOperateRowIndex.value = index),
                   onAfterHidden: () => (currentOperateRowIndex.value = -1),
-                }}>
+                }}
+              >
                 {{
                   default: () => (
                     <div class={[`more-action${currentOperateRowIndex.value === index ? ' current-operate-row' : ''}`]}>
@@ -108,7 +110,8 @@ const useColumns = ({ columnType = 'cvms', isSimpleShow = false, vendor, extra }
                           onClick={() => handleOperate(type as OperationActions, data)}
                           extCls={`more-action-item${
                             isOperateDisabled(type as OperationActions, data.status) ? ' disabled' : ''
-                          }`}>
+                          }`}
+                        >
                           {label}
                         </bk-dropdown-item>
                       ))}

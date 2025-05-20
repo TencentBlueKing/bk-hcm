@@ -37,7 +37,8 @@ export default defineComponent({
         placement='bottom-start'
         extCls='batch-update-popconfirm'
         onConfirm={handleConfirm}
-        disabled={props.disabled}>
+        disabled={props.disabled}
+      >
         {{
           default: () => (
             <i
@@ -45,7 +46,8 @@ export default defineComponent({
               v-bk-tooltips={{
                 content: props.disabledTip,
                 disabled: !props.disabled,
-              }}></i>
+              }}
+            ></i>
           ),
           content: () => (
             <div class='batch-update-popconfirm-content'>

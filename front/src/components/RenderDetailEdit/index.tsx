@@ -1,7 +1,6 @@
 import { Input, Select } from 'bkui-vue';
-import { defineComponent, ref, nextTick, watch, PropType, computed } from 'vue';
+import { defineComponent, ref, nextTick, watch, PropType } from 'vue';
 import { useI18n } from 'vue-i18n';
-import MemberSelect from '@/components/MemberSelect';
 import OrganizationSelect from '@/components/OrganizationSelect';
 import cssModule from './index.module.scss';
 
@@ -96,17 +95,6 @@ export default defineComponent({
       handleBlur(props.fromKey);
     };
 
-    const computedDefaultUserlist = computed(() => {
-      let res = props.modelValue;
-      if (props.fromType === 'member') {
-        res = props.modelValue.map((name: string) => ({
-          username: name,
-          display_name: name,
-        }));
-      }
-      return res;
-    });
-
     const renderComponentsContent = (type: string) => {
       switch (type) {
         case 'input':
@@ -123,10 +111,9 @@ export default defineComponent({
           );
         case 'member':
           return (
-            <MemberSelect
+            <hcm-form-user
               class={cssModule.w320}
               v-model={props.modelValue}
-              defaultUserlist={computedDefaultUserlist.value}
               onChange={handleChange}
               onBlur={() => handleBlur(props.fromKey)}
             />
@@ -155,7 +142,8 @@ export default defineComponent({
               multiple-mode='tag'
               placeholder={props.fromPlaceholder}
               onChange={handleChange}
-              onBlur={() => handleBlur(props.fromKey)}>
+              onBlur={() => handleBlur(props.fromKey)}
+            >
               {props.selectData.map((item: any) => (
                 <Option key={item.id} id={item.id} name={item.name}>
                   {item.name}
@@ -182,7 +170,7 @@ export default defineComponent({
         case 'input':
           return props.modelValue || '--';
         case 'member':
-          return props.modelValue.length ? props.modelValue.join(',') : '暂无';
+          return <hcm-user-value value={props.modelValue} />;
         case 'select':
           // eslint-disable-next-line no-case-declarations
           let selectModelValue;

@@ -79,7 +79,7 @@ export default defineComponent({
     const formData = reactive(getDefaultFormData());
     function resetFormData() {
       const defaultData = getDefaultFormData();
-      for (const key in formData) {
+      for (const key of Object.keys(formData)) {
         formData[key] = defaultData[key];
       }
     }
@@ -376,7 +376,8 @@ export default defineComponent({
           class='fixed-operate-btn'
           outline
           theme='primary'
-          onClick={() => (isHealthCheckupConfigShow.value = true)}>
+          onClick={() => (isHealthCheckupConfigShow.value = true)}
+        >
           配置
         </Button>
         <div class='detail-info-container'>
@@ -418,7 +419,8 @@ export default defineComponent({
           onUpdate:isShow={(isShow) => {
             if (!isShow) resetFormData();
           }}
-          width='640'>
+          width='640'
+        >
           <Form ref='form' formType='vertical' model={formData}>
             <Container margin={0}>
               {formData.health_switch ? (

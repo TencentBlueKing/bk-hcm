@@ -5,7 +5,7 @@ import RenderTableRow from '../RenderTableRow';
 import { AdjustmentItem } from '@/typings/bill';
 import { VendorEnum } from '@/common/constant';
 import { AdjustTypeEnum } from '../RenderTableRow/components/AdjustTypeSelector';
-import { cloneDeep } from 'lodash-es';
+import { cloneDeep } from 'lodash';
 
 export default defineComponent({
   props: {

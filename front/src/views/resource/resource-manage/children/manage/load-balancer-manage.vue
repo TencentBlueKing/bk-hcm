@@ -126,9 +126,6 @@ const props = defineProps({
   isResourcePage: {
     type: Boolean,
   },
-  whereAmI: {
-    type: String,
-  },
 });
 
 const { t } = useI18n();

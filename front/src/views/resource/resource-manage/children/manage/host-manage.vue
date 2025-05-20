@@ -23,21 +23,15 @@ import BatchAssign from './assign-host/dialog/batch-assign.vue';
 import SingleAssign from './assign-host/dialog/single-assign.vue';
 import type { ICvmItem } from '@/store';
 
-const { DropdownMenu, DropdownItem } = Dropdown;
-
-const { t } = useI18n();
-
 const props = defineProps({
   filter: {
     type: Object as PropType<FilterType>,
   },
-  isResourcePage: {
-    type: Boolean,
-  },
-  whereAmI: {
-    type: String,
-  },
 });
+
+const { DropdownMenu, DropdownItem } = Dropdown;
+
+const { t } = useI18n();
 
 const { whereAmI, isResourcePage, isBusinessPage } = useWhereAmI();
 

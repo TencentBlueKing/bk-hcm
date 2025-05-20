@@ -5,6 +5,8 @@ import { type IBusinessItem } from '@/store/business-global';
 
 defineOptions({ name: 'hcm-form-business' });
 
+const model = defineModel<number | number[]>();
+
 const props = withDefaults(
   defineProps<{
     multiple?: boolean;
@@ -20,8 +22,6 @@ const props = withDefaults(
     collapseTags: true,
   },
 );
-
-const model = defineModel<number | number[]>();
 
 const localModel = computed({
   get() {

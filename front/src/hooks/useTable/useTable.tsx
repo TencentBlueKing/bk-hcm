@@ -2,7 +2,7 @@
 import { QueryRuleOPEnum, RulesItem } from '@/typings/common';
 import { Loading, SearchSelect, Table } from 'bkui-vue';
 import type { Column } from 'bkui-vue/lib/table/props';
-import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
+import { ISearchItem, GetMenuListFunc } from 'bkui-vue/lib/search-select/utils';
 import { computed, defineComponent, reactive, Ref, ref, watch } from 'vue';
 import cssModule from './index.module.scss';
 import Empty from '@/components/empty';
@@ -11,12 +11,11 @@ import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useWhereAmI, Senarios } from '../useWhereAmI';
 import { getDifferenceSet } from '@/common/util';
-import { get as lodash_get } from 'lodash-es';
+import { get as lodash_get, defaults, isEqual } from 'lodash';
 import { VendorReverseMap } from '@/common/constant';
 import { LB_NETWORK_TYPE_REVERSE_MAP, LISTENER_BINDING_STATUS_REVERSE_MAP, SCHEDULER_REVERSE_MAP } from '@/constants';
 import usePagination from '../usePagination';
 import useBillStore from '@/store/useBillStore';
-import { defaults, isEqual } from 'lodash';
 import { fetchData } from '@pluginHandler/useTable';
 
 export interface IProp {
@@ -29,6 +28,8 @@ export interface IProp {
     // 其他 search-select 属性/自定义事件, 比如 placeholder, onSearch, searchSelectExtStyle...
     extra?: {
       searchSelectExtStyle?: Record<string, string>; // 搜索框样式
+      placeholder?: string;
+      getMenuList?: GetMenuListFunc;
     };
   };
   // table 配置项
@@ -210,7 +211,8 @@ export const useTable = (props: IProp) => {
           class={{
             [cssModule['remote-table-container']]: true,
             [cssModule['no-search']]: props.searchOptions?.disabled,
-          }}>
+          }}
+        >
           {hasTopBar.value && (
             <section class={cssModule['top-bar']}>
               {slots.operation && <div class={cssModule['operate-btn-groups']}>{slots.operation?.()}</div>}
@@ -232,7 +234,8 @@ export const useTable = (props: IProp) => {
             loading={isLoading.value}
             opacity={1}
             class={cssModule['loading-wrapper']}
-            style={{ height: getTableHeight() }}>
+            style={{ height: getTableHeight() }}
+          >
             <Table
               ref={tableRef}
               data={dataList.value}
@@ -245,7 +248,8 @@ export const useTable = (props: IProp) => {
               onPageLimitChange={handlePageLimitChange}
               onPageValueChange={handlePageValueChange}
               onColumnSort={handleSort}
-              onColumnFilter={() => {}}>
+              onColumnFilter={() => {}}
+            >
               {{
                 expandRow: (row: any) => slots.expandRow?.(row),
                 empty: () => {

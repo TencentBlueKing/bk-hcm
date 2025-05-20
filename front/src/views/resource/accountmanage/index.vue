@@ -2,6 +2,7 @@
 import { h, reactive, ref, watchEffect } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import type { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import { useAccountStore } from '@/store';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import useTableSettings from '@/hooks/use-table-settings';
@@ -12,6 +13,7 @@ import { ACCOUNT_TYPES, SITE_TYPE_MAP, SITE_TYPES, VendorMap, VENDORS } from '@/
 import type { ModelPropertyColumn } from '@/model/typings';
 import type { FilterType, IAccountItem, IListResData } from '@/typings';
 import { timeFormatter } from '@/common/util';
+import useSearchUser from '@/hooks/use-search-user';
 
 import { Button, Message } from 'bkui-vue';
 
@@ -26,15 +28,16 @@ const router = useRouter();
 const { t } = useI18n();
 const accountStore = useAccountStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
+const { search: searchUser } = useSearchUser();
 
 const searchData = [
   { name: t('名称'), id: 'name' },
   { name: t('账号类型'), id: 'type', children: ACCOUNT_TYPES },
   { name: t('云厂商'), id: 'vendor', children: VENDORS },
   { name: t('站点类型'), id: 'site', children: SITE_TYPES },
-  { name: t('负责人'), id: 'managers' },
-  { name: t('创建人'), id: 'creator' },
-  { name: t('修改人'), id: 'reviser' },
+  { name: t('负责人'), id: 'managers', async: true },
+  { name: t('创建人'), id: 'creator', async: true },
+  { name: t('修改人'), id: 'reviser', async: true },
 ];
 const searchVal = ref([]);
 
@@ -137,6 +140,23 @@ const updateBkBizIdsFilter = (datalist: IAccountItem[]) => {
   }
 };
 
+const getSearchOptionMenu = async (item: ISearchItem, keyword: string): Promise<ISearchItem[]> => {
+  const { id, async, children = [] } = item;
+
+  if (!async) {
+    return children;
+  }
+
+  if (keyword?.length < 2) {
+    return [];
+  }
+
+  if (['managers', 'creator', 'reviser'].includes(id)) {
+    const result = await searchUser(keyword);
+    return result;
+  }
+};
+
 // 跳转页面
 const handleJump = (routerName: string, id?: string, isDetail?: boolean) => {
   const routerConfig = { query: {}, name: routerName };
@@ -179,17 +199,20 @@ const handleDeleteConfirm = async () => {
 };
 
 watchEffect(() => {
-  state.filter.rules = searchVal.value.reduce((p, v) => {
-    if (v.type === 'condition') {
-      state.filter.op = v.id || 'and';
+  state.filter.rules = searchVal.value.reduce((acc, cur) => {
+    if (cur.type === 'condition') {
+      state.filter.op = cur.id || 'and';
     } else {
-      if (v.id === 'managers') {
-        p.push({ field: v.id, op: 'json_contains', value: v.values[0].id });
+      const val = cur.values[0]?.id;
+      if (cur.id === 'managers') {
+        acc.push({ field: cur.id, op: 'json_contains', value: val });
+      } else if (cur.id === 'creator' || cur.id === 'reviser') {
+        acc.push({ field: cur.id, op: 'eq', value: val });
       } else {
-        p.push({ field: v.id, op: state.isAccurate ? 'eq' : 'cs', value: v.values[0].id });
+        acc.push({ field: cur.id, op: state.isAccurate ? 'eq' : 'cs', value: val });
       }
     }
-    return p;
+    return acc;
   }, []);
 
   getAccountList();
@@ -211,7 +234,12 @@ const {
     <!-- search -->
     <div class="tools">
       <bk-checkbox v-model="state.isAccurate">{{ t('精确') }}</bk-checkbox>
-      <bk-search-select v-model="searchVal" :data="searchData" />
+      <bk-search-select
+        v-model="searchVal"
+        :data="searchData"
+        :get-menu-list="getSearchOptionMenu"
+        :unique-select="true"
+      />
     </div>
     <!-- table -->
     <div class="table-wrap">

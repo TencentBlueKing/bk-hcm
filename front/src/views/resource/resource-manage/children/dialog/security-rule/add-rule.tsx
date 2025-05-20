@@ -117,7 +117,8 @@ export default defineComponent({
           isShow={this.isShow}
           steps={this.steps}
           onConfirm={this.handleConfirm}
-          onCancel={this.handleClose}></step-dialog>
+          onCancel={this.handleClose}
+        ></step-dialog>
       </>
     );
   },

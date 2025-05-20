@@ -3,9 +3,9 @@ import { computed } from 'vue';
 import { DisplayType } from './typings';
 import { useBusinessGlobalStore } from '@/store/business-global';
 
-const businessGlobalStore = useBusinessGlobalStore();
-
 const props = defineProps<{ value: number | number[]; separator?: string; display?: DisplayType }>();
+
+const businessGlobalStore = useBusinessGlobalStore();
 
 const displayValue = computed(() => {
   const values = Array.isArray(props.value) ? props.value : [props.value];

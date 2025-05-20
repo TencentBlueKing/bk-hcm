@@ -7,7 +7,6 @@ import { VendorEnum } from '@/common/constant';
 import { MAIN_ACCOUNT_VENDORS } from '../constants';
 import { Success } from 'bkui-vue/lib/icon';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
-import MemberSelect from '@/components/MemberSelect';
 import { useUserStore } from '@/store';
 import useFormModel from '@/hooks/useFormModel';
 import useBillStore from '@/store/useBillStore';
@@ -126,7 +125,8 @@ export default defineComponent({
                                 class={`account-vendor-option ${
                                   vendor === formModel.vendor ? 'account-vendor-option-active' : ''
                                 }`}
-                                onClick={() => (formModel.vendor = vendor)}>
+                                onClick={() => (formModel.vendor = vendor)}
+                              >
                                 <img src={icon} alt={name} class={'account-vendor-option-icon'} />
                                 <p class={'account-vendor-option-text'}>{name}</p>
                                 {formModel.vendor === vendor ? <Success fill='#3A84FF' class={'active-icon'} /> : null}
@@ -143,7 +143,8 @@ export default defineComponent({
                                       </Button>
                                     </span>
                                   ),
-                                }}>
+                                }}
+                              >
                                 <img src={icon} alt={name} class={'account-vendor-option-icon'} />
                                 <p>{name}</p>
                               </div>
@@ -161,7 +162,8 @@ export default defineComponent({
                               ),
                               content: '当前微软云、谷歌云、华为云的站点类型默认限制为“国际站”，“中国站”不可选 ',
                             }}
-                            disabled={[VendorEnum.AZURE, VendorEnum.GCP, VendorEnum.HUAWEI].includes(formModel.vendor)}>
+                            disabled={[VendorEnum.AZURE, VendorEnum.GCP, VendorEnum.HUAWEI].includes(formModel.vendor)}
+                          >
                             中国站
                           </BkRadioButton>
                           <BkRadioButton label='international'>国际站</BkRadioButton>
@@ -197,7 +199,8 @@ export default defineComponent({
                           },
                         ],
                         email: emailRules,
-                      }}>
+                      }}
+                    >
                       <FormItem label='账号名称' required property='name' description={nameTips.value}>
                         <Input v-model={formModel.name} placeholder='请输入账号名称'></Input>
                       </FormItem>
@@ -242,26 +245,10 @@ export default defineComponent({
                       </FormItem>
                       <div class={'account-manager-wrapper'}>
                         <FormItem label='主负责人' required property='managers' class={'account-manager'}>
-                          <MemberSelect
-                            v-model={formModel.managers}
-                            defaultUserlist={[
-                              {
-                                username: userStore.username,
-                                display_name: userStore.username,
-                              },
-                            ]}
-                          />
+                          <hcm-form-user v-model={formModel.managers} />
                         </FormItem>
                         <FormItem label='备份负责人' required property='bak_managers' class={'ml24 account-manager'}>
-                          <MemberSelect
-                            v-model={formModel.bak_managers}
-                            defaultUserlist={[
-                              {
-                                username: userStore.username,
-                                display_name: userStore.username,
-                              },
-                            ]}
-                          />
+                          <hcm-form-user v-model={formModel.bak_managers} />
                         </FormItem>
                       </div>
                       {/* <FormItem label='所属组织架构' required property='dept_id'>
@@ -280,7 +267,8 @@ export default defineComponent({
                   class='mw88'
                   onClick={() => {
                     router.back();
-                  }}>
+                  }}
+                >
                   取消
                 </Button>
               </div>

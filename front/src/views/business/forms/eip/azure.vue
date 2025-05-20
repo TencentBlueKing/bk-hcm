@@ -4,7 +4,6 @@ import { ref, watch, defineEmits, defineExpose, defineProps } from 'vue';
 import ZoneSelector from '@/components/zone-selector/index.vue';
 import ResourceGroup from '@/components/resource-group/index.vue';
 
-const emit = defineEmits(['change']);
 defineProps({
   region: {
     type: String,
@@ -13,7 +12,7 @@ defineProps({
     type: String,
   },
 });
-
+const emit = defineEmits(['change']);
 const formData = ref({
   eip_name: '',
   eip_count: 1,

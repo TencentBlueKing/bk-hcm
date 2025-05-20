@@ -76,7 +76,8 @@ export default defineComponent({
     return (
       <section
         class={`detail-header-main ${this.whereAmI === Senarios.resource ? 'ml-24' : ''}`}
-        style={{ width: this.whereAmI === Senarios.resource ? '85%' : 'calc(100% - 240px)', top: this.calcTop }}>
+        style={{ width: this.whereAmI === Senarios.resource ? '85%' : 'calc(100% - 240px)', top: this.calcTop }}
+      >
         <div class='title-content'>
           <arrows-left class='detail-header-arrows-left' onClick={this.goBack} />
           {this.$slots.default?.()}

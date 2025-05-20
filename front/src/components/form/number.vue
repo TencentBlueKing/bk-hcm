@@ -6,11 +6,12 @@ import { InputColumn } from '@blueking/ediatable';
 
 defineOptions({ name: 'hcm-form-number' });
 
+const model = defineModel<number | string>();
+
 const props = withDefaults(defineProps<{ option: ModelProperty['option']; display?: DisplayType }>(), {
   option: () => ({}),
 });
 
-const model = defineModel<number | string>();
 const attrs = useAttrs();
 
 const defaultComp = computed(() => (props.display?.on === 'cell' ? InputColumn : 'bk-input'));
