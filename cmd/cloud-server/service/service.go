@@ -61,6 +61,7 @@ import (
 	"hcm/cmd/cloud-server/service/subnet"
 	"hcm/cmd/cloud-server/service/sync"
 	"hcm/cmd/cloud-server/service/sync/lock"
+	systeminit "hcm/cmd/cloud-server/service/system_init"
 	"hcm/cmd/cloud-server/service/task"
 	"hcm/cmd/cloud-server/service/user"
 	"hcm/cmd/cloud-server/service/vpc"
@@ -325,6 +326,8 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 	task.InitService(c)
 
 	cos.InitService(c)
+
+	systeminit.InitSystemInitService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }
