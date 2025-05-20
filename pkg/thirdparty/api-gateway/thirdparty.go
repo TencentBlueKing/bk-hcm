@@ -142,15 +142,15 @@ func ApiGatewayCallWithRichError[IT any, OT any](cli rest.ClientInterface, cfg *
 	if r.StatusCode >= 500 { // api执行错误
 		errData, err := json.Marshal(resp.Error.ErrData)
 		if err != nil {
-			logs.Errorf("failed to marshal error data, err: %v, url: %s, rid: %s, errData: %s", err, url,
-				kt.Rid, resp.Error.ErrData)
+			logs.Errorf("failed to marshal error data, err: %v, url: %s, errData: %s, rid: %s", err, url,
+				resp.Error.ErrData, kt.Rid)
 			return nil, fmt.Errorf("failed to marshal error data: %v", err)
 		}
 
 		errDetails, err := json.Marshal(resp.Error.Details)
 		if err != nil {
-			logs.Errorf("failed to marshal error details, err: %v, url: %s, rid: %s, errDetails: %s", err, url,
-				kt.Rid, resp.Error.Details)
+			logs.Errorf("failed to marshal error details, err: %v, url: %s, errDetails: %s, rid: %s", err, url,
+				resp.Error.Details, kt.Rid)
 			return nil, fmt.Errorf("failed to marshal error details: %v", err)
 		}
 
@@ -223,15 +223,15 @@ func ApiGatewayCallWithRichErrorWithoutReq[OT any](cli rest.ClientInterface, cfg
 	if r.StatusCode >= 500 { // api执行错误
 		errData, err := json.Marshal(resp.Error.ErrData)
 		if err != nil {
-			logs.Errorf("failed to marshal error data, err: %v, url: %s, rid: %s, errData: %s", err, url,
-				kt.Rid, resp.Error.ErrData)
+			logs.Errorf("failed to marshal error data, err: %v, url: %s, errData: %s, rid: %s", err, url,
+				resp.Error.ErrData, kt.Rid)
 			return nil, fmt.Errorf("failed to marshal error data: %v", err)
 		}
 
 		errDetails, err := json.Marshal(resp.Error.Details)
 		if err != nil {
-			logs.Errorf("failed to marshal error details, err: %v, url: %s, rid: %s, errDetails: %s", err, url,
-				kt.Rid, resp.Error.Details)
+			logs.Errorf("failed to marshal error details, err: %v, url: %s, errDetails: %s, rid: %s", err, url,
+				resp.Error.Details, kt.Rid)
 			return nil, fmt.Errorf("failed to marshal error details: %v", err)
 		}
 
