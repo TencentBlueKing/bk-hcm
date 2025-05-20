@@ -459,7 +459,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
         return h('span', [cell || '--']);
       },
     },
-    getLinkField({ type: 'host', label: '挂载的主机', field: 'instance_id', idFiled: 'instance_id' }),
+    getLinkField({ type: 'host', label: '挂载的主机', sort: false, field: 'instance_id', idFiled: 'instance_id' }),
     {
       label: '是否分配',
       field: 'bk_biz_id',
@@ -1124,6 +1124,12 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       ),
     }),
     {
+      label: '负载均衡ID',
+      field: 'cloud_id',
+      isDefaultShow: true,
+      width: 120,
+    },
+    {
       label: () => (
         <span v-bk-tooltips={{ content: '用户通过该域名访问负载均衡流量', placement: 'top' }}>负载均衡域名</span>
       ),
@@ -1167,6 +1173,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       field: 'bk_biz_id',
       isDefaultShow: true,
       notDisplayedInBusiness: true,
+      width: 100,
       render: ({ cell }: { cell: number }) => (
         <bk-tag
           v-bk-tooltips={{
@@ -1182,6 +1189,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '删除保护',
       field: 'delete_protect',
       isDefaultShow: true,
+      width: 100,
       render: ({ cell }: { cell: boolean }) => (cell ? <bk-tag theme='success'>开启</bk-tag> : <bk-tag>关闭</bk-tag>),
       filter: {
         list: [
@@ -1194,6 +1202,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: 'IP版本',
       field: 'ip_version',
       isDefaultShow: true,
+      width: 100,
       render: ({ cell }: { cell: string }) => IP_VERSION_MAP[cell],
       sort: true,
       filter: {
@@ -1209,11 +1218,13 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '标签',
       field: 'tags',
       isDefaultShow: true,
+      width: 150,
       render: ({ cell }: { cell: any }) => formatTags(cell),
     },
     {
       label: '云厂商',
       field: 'vendor',
+      width: 100,
       render({ cell }: { cell: string }) {
         return h('span', [CloudType[cell] || '--']);
       },
