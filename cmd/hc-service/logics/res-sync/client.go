@@ -25,6 +25,7 @@ import (
 	"hcm/cmd/hc-service/logics/res-sync/azure"
 	"hcm/cmd/hc-service/logics/res-sync/gcp"
 	"hcm/cmd/hc-service/logics/res-sync/huawei"
+	"hcm/cmd/hc-service/logics/res-sync/other"
 	"hcm/cmd/hc-service/logics/res-sync/tcloud"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/kit"
@@ -37,6 +38,7 @@ type Interface interface {
 	HuaWei(kt *kit.Kit, accountID string) (huawei.Interface, error)
 	Gcp(kt *kit.Kit, accountID string) (gcp.Interface, error)
 	Azure(kt *kit.Kit, accountID string) (azure.Interface, error)
+	Other(kt *kit.Kit, accountID string) (other.Interface, error)
 }
 
 var _ Interface = new(client)
@@ -103,4 +105,9 @@ func (cli *client) Azure(kt *kit.Kit, accountID string) (azure.Interface, error)
 	}
 
 	return azure.NewClient(cli.dataCli, cloudCli), nil
+}
+
+// Other ...
+func (cli *client) Other(kt *kit.Kit, accountID string) (other.Interface, error) {
+	return other.NewClient(cli.dataCli, accountID), nil
 }

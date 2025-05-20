@@ -260,6 +260,18 @@ type Host struct {
 	CreateTime      string  `json:"create_time,omitempty"`
 }
 
+// HostWithCloudID defines cmdb host with cloud id.
+type HostWithCloudID struct {
+	Host
+	BizID   int64  `json:"bk_biz_id"`
+	CloudID string `json:"cloud_id"`
+}
+
+// GetCloudID ...
+func (h HostWithCloudID) GetCloudID() string {
+	return h.CloudID
+}
+
 // HostFields cmdb common fields
 var HostFields = []string{
 	"bk_cloud_inst_id",
@@ -274,6 +286,8 @@ var HostFields = []string{
 	"bk_host_innerip_v6",
 	"bk_host_outerip_v6",
 	"bk_cloud_host_status",
+	"bk_host_name",
+	"bk_cloud_id",
 }
 
 // FindHostTopoRelationParams cmdb find host topo request params
@@ -614,3 +628,16 @@ const (
 	// DynamicAddressing 动态寻址
 	DynamicAddressing BkAddressing = "dynamic"
 )
+
+// ListResourcePoolHostsParams list resource pool hosts parameter
+type ListResourcePoolHostsParams struct {
+	Fields             []string     `json:"fields"`
+	Page               *BasePage    `json:"page"`
+	HostPropertyFilter *QueryFilter `json:"host_property_filter,omitempty"`
+}
+
+// ListResourcePoolHostsResult list resource pool hosts result
+type ListResourcePoolHostsResult struct {
+	Count int64  `json:"count"`
+	Info  []Host `json:"info"`
+}

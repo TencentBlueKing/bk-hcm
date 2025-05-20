@@ -101,8 +101,8 @@ func Assign(kt *kit.Kit, cli *dataservice.Client, cvms []AssignedCvmInfo) error 
 		for _, cvmInfo := range batch {
 			updateCvms = append(updateCvms, dataproto.CvmCommonInfoBatchUpdateData{
 				ID:        cvmInfo.CvmID,
-				BkBizID:   cvmInfo.BkBizID,
-				BkCloudID: &cvmInfo.BkCloudID,
+				BkBizID:   converter.ValToPtr(cvmInfo.BkBizID),
+				BkCloudID: converter.ValToPtr(cvmInfo.BkCloudID),
 			})
 		}
 		update := &dataproto.CvmCommonInfoBatchUpdateReq{Cvms: updateCvms}

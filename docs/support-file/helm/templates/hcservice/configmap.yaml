@@ -23,3 +23,6 @@ data:
       {{- toYaml .Values.hcservice.sync | nindent 6 }}
     tenant:
       {{- toYaml .Values.tenant | nindent 6 }}
+    cmdb:
+      {{- toYaml .Values.cmdb | nindent 6 }}
+    ccHostPoolBiz: {{ .Values.ccHostPoolBiz }}

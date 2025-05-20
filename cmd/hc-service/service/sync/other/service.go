@@ -17,24 +17,41 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package sync
+// Package other ...
+package other
 
 import (
+	cloudadaptor "hcm/cmd/hc-service/logics/cloud-adaptor"
+	ressync "hcm/cmd/hc-service/logics/res-sync"
 	"hcm/cmd/hc-service/service/capability"
-	"hcm/cmd/hc-service/service/sync/aws"
-	"hcm/cmd/hc-service/service/sync/azure"
-	"hcm/cmd/hc-service/service/sync/gcp"
-	"hcm/cmd/hc-service/service/sync/huawei"
-	"hcm/cmd/hc-service/service/sync/other"
-	"hcm/cmd/hc-service/service/sync/tcloud"
+	"hcm/pkg/client"
+	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/rest"
 )
 
-// InitService initial tcloud sync service
+// InitService initial other sync service
 func InitService(cap *capability.Capability) {
-	tcloud.InitService(cap)
-	aws.InitService(cap)
-	gcp.InitService(cap)
-	huawei.InitService(cap)
-	azure.InitService(cap)
-	other.InitService(cap)
+	v := &service{
+		ad:      cap.CloudAdaptor,
+		cs:      cap.ClientSet,
+		dataCli: cap.ClientSet.DataService(),
+		syncCli: cap.ResSyncCli,
+	}
+
+	h := rest.NewHandler()
+	h.Path("/vendors/other")
+
+	h.Add("SyncHostWithRelRes", "POST", "/hosts/with/relation_resources/sync", v.SyncHostWithRelRes)
+	h.Add("SyncHostWithRelResByCond", "POST", "/hosts/with/relation_resources/by_condition/sync",
+		v.SyncHostWithRelResByCond)
+	h.Add("DeleteHost", "DELETE", "/hosts/by_condition/delete", v.DeleteHostByCond)
+
+	h.Load(cap.WebService)
+}
+
+type service struct {
+	ad      *cloudadaptor.CloudAdaptorClient
+	cs      *client.ClientSet
+	dataCli *dataservice.Client
+	syncCli ressync.Interface
 }

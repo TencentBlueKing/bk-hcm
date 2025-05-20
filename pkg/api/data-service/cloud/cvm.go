@@ -138,9 +138,17 @@ func (req *CvmCommonInfoBatchUpdateReq) Validate() error {
 
 // CvmCommonInfoBatchUpdateData define cvm common info batch update data.
 type CvmCommonInfoBatchUpdateData struct {
-	ID        string `json:"id" validate:"required"`
-	BkBizID   int64  `json:"bk_biz_id"`
-	BkCloudID *int64 `json:"bk_cloud_id"`
+	ID        string  `json:"id" validate:"required"`
+	BkBizID   *int64  `json:"bk_biz_id"`
+	BkCloudID *int64  `json:"bk_cloud_id"`
+	BkHostID  *int64  `json:"bk_host_id"`
+	Name      *string `json:"name"`
+	// PrivateIPv4Addresses 内网IP
+	PrivateIPv4Addresses *[]string `json:"private_ipv4_addresses"`
+	PrivateIPv6Addresses *[]string `json:"private_ipv6_addresses"`
+	// PublicIPv6Addresses 公网IP
+	PublicIPv4Addresses *[]string `json:"public_ipv4_addresses"`
+	PublicIPv6Addresses *[]string `json:"public_ipv6_addresses"`
 }
 
 // -------------------------- List --------------------------

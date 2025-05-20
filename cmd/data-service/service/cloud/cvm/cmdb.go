@@ -21,21 +21,27 @@ package cvm
 
 import (
 	"hcm/cmd/data-service/service/cloud/logics/cmdb"
+	"hcm/pkg/api/core"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/dal/table/cloud/cvm"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
+
+	"github.com/jmoiron/sqlx"
 )
 
 // upsertCmdbHosts upsert cmdb hosts. TODO add previous hosts params to transfer across biz when supported.
 func upsertCmdbHosts[T corecvm.Extension](svc *cvmSvc, kt *kit.Kit, vendor enumor.Vendor, models []*cvm.Table) error {
 	bizHostMap := make(map[int64][]corecvm.Cvm[T])
 	for _, model := range models {
-		if model.BkBizID == constant.UnassignedBiz {
+		if model.BkBizID == constant.UnassignedBiz || model.Vendor == enumor.Other {
 			// ignore unassigned host. TODO delete unassigned host from cmdb when transfer back to resource supported.
 			continue
 		}
@@ -49,6 +55,7 @@ func upsertCmdbHosts[T corecvm.Extension](svc *cvmSvc, kt *kit.Kit, vendor enumo
 		bizHostMap[model.BkBizID] = append(bizHostMap[model.BkBizID], converter.PtrToVal(host))
 	}
 
+	needCheckHostIDs := make([]int64, 0)
 	for bizID, hosts := range bizHostMap {
 		addCmdbReq := &cmdb.AddCloudHostToBizReq[T]{Vendor: vendor, BizID: bizID, Hosts: hosts}
 		hostIDs, err := cmdb.AddCloudHostToBiz[T](svc.cmdbLogics, kt, addCmdbReq)
@@ -63,6 +70,7 @@ func upsertCmdbHosts[T corecvm.Extension](svc *cvmSvc, kt *kit.Kit, vendor enumo
 				constant.CmdbSyncFailed, len(hostIDs), len(hosts), addCmdbReq, kt.Rid)
 			return err
 		}
+		needCheckHostIDs = append(needCheckHostIDs, hostIDs...)
 		for i, host := range hosts {
 			updateFilter := tools.EqualExpression("id", host.ID)
 			updateField := &cvm.Table{BkHostID: hostIDs[i]}
@@ -74,6 +82,11 @@ func upsertCmdbHosts[T corecvm.Extension](svc *cvmSvc, kt *kit.Kit, vendor enumo
 		}
 	}
 
+	if err := deleteOtherVendorHost(svc, kt, needCheckHostIDs); err != nil {
+		logs.Errorf("delete other vendor host failed, err: %v, hostIDs: %+v, rid: %s", err, needCheckHostIDs, kt.Rid)
+		return err
+	}
+
 	return nil
 }
 
@@ -82,7 +95,7 @@ func upsertCmdbHosts[T corecvm.Extension](svc *cvmSvc, kt *kit.Kit, vendor enumo
 func upsertBaseCmdbHosts(svc *cvmSvc, kt *kit.Kit, models []*cvm.Table) error {
 	bizHostMap := make(map[int64][]corecvm.BaseCvm)
 	for _, model := range models {
-		if model.BkBizID == constant.UnassignedBiz {
+		if model.BkBizID == constant.UnassignedBiz || model.Vendor == enumor.Other {
 			// ignore unassigned host. TODO delete unassigned host from cmdb when transfer back to resource supported.
 			continue
 		}
@@ -90,6 +103,7 @@ func upsertBaseCmdbHosts(svc *cvmSvc, kt *kit.Kit, models []*cvm.Table) error {
 		bizHostMap[model.BkBizID] = append(bizHostMap[model.BkBizID], converter.PtrToVal(convTableToBaseCvm(model)))
 	}
 
+	needCheckHostIDs := make([]int64, 0)
 	for bizID, hosts := range bizHostMap {
 		addCmdbReq := &cmdb.AddBaseCloudHostToBizReq{BizID: bizID, Hosts: hosts}
 		hostIDs, err := cmdb.AddBaseCloudHostToBiz(svc.cmdbLogics, kt, addCmdbReq)
@@ -104,6 +118,7 @@ func upsertBaseCmdbHosts(svc *cvmSvc, kt *kit.Kit, models []*cvm.Table) error {
 				constant.CmdbSyncFailed, len(hostIDs), len(hosts), addCmdbReq, kt.Rid)
 			return err
 		}
+		needCheckHostIDs = append(needCheckHostIDs, hostIDs...)
 
 		for i, host := range hosts {
 			updateFilter := tools.EqualExpression("id", host.ID)
@@ -116,6 +131,54 @@ func upsertBaseCmdbHosts(svc *cvmSvc, kt *kit.Kit, models []*cvm.Table) error {
 		}
 	}
 
+	if err := deleteOtherVendorHost(svc, kt, needCheckHostIDs); err != nil {
+		logs.Errorf("delete other vendor host failed, err: %v, hostIDs: %+v, rid: %s", err, needCheckHostIDs, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+func deleteOtherVendorHost(svc *cvmSvc, kt *kit.Kit, hostIDs []int64) error {
+	if len(hostIDs) == 0 {
+		return nil
+	}
+
+	deleteIDs := make([]string, 0)
+	for _, subHostIDs := range slice.Split(hostIDs, constant.BatchOperationMaxLimit) {
+		filter := tools.ExpressionAnd(tools.RuleIn("bk_host_id", subHostIDs), tools.RuleEqual("vendor", enumor.Other))
+		opt := &types.ListOption{
+			Fields: []string{"id"},
+			Filter: filter,
+			Page:   core.NewDefaultBasePage(),
+		}
+		result, err := svc.dao.Cvm().List(kt, opt)
+		if err != nil {
+			logs.Errorf("list cvm failed, err: %v, filter: %+v, rid: %s", err, converter.PtrToVal(filter), kt.Rid)
+			return err
+		}
+		for _, detail := range result.Details {
+			deleteIDs = append(deleteIDs, detail.ID)
+		}
+	}
+
+	_, err := svc.dao.Txn().AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		for _, ids := range slice.Split(deleteIDs, constant.BatchOperationMaxLimit) {
+			filter := tools.ContainersExpression("id", ids)
+			if err := svc.dao.Cvm().DeleteWithTx(kt, txn, filter); err != nil {
+				logs.Errorf("delete cvm failed, err: %v, filter: %+v, rid: %s", err, converter.PtrToVal(filter), kt.Rid)
+				return nil, err
+			}
+		}
+
+		return nil, nil
+	})
+
+	if err != nil {
+		logs.Errorf("delete cvm failed, err: %v, delete hostIDs: %+v, rid: %s", err, deleteIDs, kt.Rid)
+		return err
+	}
+
 	return nil
 }
 
@@ -123,7 +186,7 @@ func upsertBaseCmdbHosts(svc *cvmSvc, kt *kit.Kit, models []*cvm.Table) error {
 func deleteCmdbHosts(svc *cvmSvc, kt *kit.Kit, models []cvm.Table) error {
 	delBizMap := make(map[int64]map[enumor.Vendor][]string)
 	for _, one := range models {
-		if one.BkBizID == constant.UnassignedBiz {
+		if one.BkBizID == constant.UnassignedBiz || one.Vendor == enumor.Other {
 			continue
 		}
 		vendorMap, exists := delBizMap[one.BkBizID]

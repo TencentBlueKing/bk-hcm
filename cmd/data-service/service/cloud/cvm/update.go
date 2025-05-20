@@ -58,6 +58,8 @@ func (svc *cvmSvc) BatchUpdateCvm(cts *rest.Contexts) (interface{}, error) {
 		return batchUpdateCvm[corecvm.AzureCvmExtension](cts, svc, vendor)
 	case enumor.Gcp:
 		return batchUpdateCvm[corecvm.GcpCvmExtension](cts, svc, vendor)
+	case enumor.Other:
+		return batchUpdateCvm[corecvm.OtherCvmExtension](cts, svc, vendor)
 	default:
 		return nil, fmt.Errorf("unsupport %s vendor for now", vendor)
 	}
@@ -211,11 +213,30 @@ func (svc *cvmSvc) BatchUpdateCvmCommonInfo(cts *rest.Contexts) (interface{}, er
 	ids := make([]string, 0, len(req.Cvms))
 	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		for _, one := range req.Cvms {
-			update := &tablecvm.Table{
-				BkBizID: one.BkBizID,
+			update := &tablecvm.Table{}
+			if one.BkBizID != nil {
+				update.BkBizID = converter.PtrToVal(one.BkBizID)
 			}
 			if one.BkCloudID != nil {
 				update.BkCloudID = one.BkCloudID
+			}
+			if one.BkHostID != nil {
+				update.BkHostID = converter.PtrToVal(one.BkHostID)
+			}
+			if one.Name != nil {
+				update.Name = converter.PtrToVal(one.Name)
+			}
+			if one.PrivateIPv4Addresses != nil {
+				update.PrivateIPv4Addresses = converter.PtrToVal(one.PrivateIPv4Addresses)
+			}
+			if one.PublicIPv4Addresses != nil {
+				update.PublicIPv4Addresses = converter.PtrToVal(one.PublicIPv4Addresses)
+			}
+			if one.PrivateIPv6Addresses != nil {
+				update.PrivateIPv6Addresses = converter.PtrToVal(one.PrivateIPv6Addresses)
+			}
+			if one.PublicIPv6Addresses != nil {
+				update.PublicIPv6Addresses = converter.PtrToVal(one.PublicIPv6Addresses)
 			}
 			if err := svc.dao.Cvm().UpdateByIDWithTx(cts.Kit, txn, one.ID, update); err != nil {
 				logs.Errorf("update cvm by id failed, err: %v, id: %s, update field: %v, rid: %s", err, one.ID, update,

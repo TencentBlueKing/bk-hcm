@@ -53,6 +53,7 @@ import (
 	corezone "hcm/pkg/api/core/cloud/zone"
 	corerecyclerecord "hcm/pkg/api/core/recycle-record"
 	dataeip "hcm/pkg/api/data-service/cloud/eip"
+	"hcm/pkg/thirdparty/api-gateway/cmdb"
 )
 
 // CloudResType 云资源类型
@@ -114,6 +115,7 @@ type CloudResType interface {
 		typescvm.AwsCvm |
 		typescvm.GcpCvm |
 		typescvm.AzureCvm |
+		cmdb.HostWithCloudID |
 
 		*typeseip.TCloudEip |
 		*typeseip.HuaWeiEip |
@@ -222,6 +224,7 @@ type DBResType interface {
 		corecvm.Cvm[corecvm.AwsCvmExtension] |
 		corecvm.Cvm[corecvm.GcpCvmExtension] |
 		corecvm.Cvm[corecvm.AzureCvmExtension] |
+		corecvm.Cvm[corecvm.OtherCvmExtension] |
 
 		*dataeip.EipExtResult[dataeip.TCloudEipExtensionResult] |
 		*dataeip.EipExtResult[dataeip.HuaWeiEipExtensionResult] |
