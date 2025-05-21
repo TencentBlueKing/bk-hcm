@@ -17,10 +17,9 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package tcloud
+package aws
 
 import (
-	"hcm/pkg/api/core"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
@@ -32,16 +31,12 @@ import (
 type CondSyncParams struct {
 	AccountID string   `json:"account_id" validate:"required"`
 	Regions   []string `json:"regions,omitempty" validate:"max=20"`
-	CloudIDs  []string `json:"cloud_ids,omitempty" validate:"max=20"`
-
-	TagFilters core.MultiValueTagMap `json:"tag_filters,omitempty" validate:"max=10"`
 }
 
 // CondSyncFunc sync resource by given condition
 type CondSyncFunc func(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error
 
 var condSyncFuncMap = map[enumor.CloudResourceType]CondSyncFunc{
-	enumor.LoadBalancerCloudResType:  CondSyncLoadBalancer,
 	enumor.SecurityGroupCloudResType: CondSyncSecurityGroup,
 }
 
@@ -51,42 +46,20 @@ func GetCondSyncFunc(res enumor.CloudResourceType) (syncFunc CondSyncFunc, ok bo
 	return syncFunc, ok
 }
 
-// CondSyncLoadBalancer ...
-func CondSyncLoadBalancer(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error {
-	syncReq := sync.TCloudSyncReq{
-		AccountID:  params.AccountID,
-		CloudIDs:   params.CloudIDs,
-		TagFilters: params.TagFilters,
-	}
-	for i := range params.Regions {
-		syncReq.Region = params.Regions[i]
-		err := cliSet.HCService().TCloud.Clb.SyncLoadBalancer(kt, &syncReq)
-		if err != nil {
-			logs.Errorf("[%s] conditional sync load balancer failed, err: %v, req: %+v, rid: %s",
-				enumor.TCloud, err, syncReq, kt.Rid)
-			return err
-		}
-		logs.Infof("[%s] conditional sync load balancer end, req: %+v, rid: %s", enumor.TCloud, syncReq, kt.Rid)
-	}
-	return nil
-}
-
 // CondSyncSecurityGroup ...
 func CondSyncSecurityGroup(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error {
-	syncReq := sync.TCloudSyncReq{
-		AccountID:  params.AccountID,
-		CloudIDs:   params.CloudIDs,
-		TagFilters: params.TagFilters,
+	syncReq := sync.AwsSyncReq{
+		AccountID: params.AccountID,
 	}
 	for i := range params.Regions {
 		syncReq.Region = params.Regions[i]
-		err := cliSet.HCService().TCloud.SecurityGroup.SyncSecurityGroup(kt.Ctx, kt.Header(), &syncReq)
+		err := cliSet.HCService().Aws.SecurityGroup.SyncSecurityGroup(kt.Ctx, kt.Header(), &syncReq)
 		if err != nil {
 			logs.Errorf("[%s] conditional sync security group failed, err: %v, req: %+v, rid: %s",
-				enumor.TCloud, err, syncReq, kt.Rid)
+				enumor.Aws, err, syncReq, kt.Rid)
 			return err
 		}
-		logs.Infof("[%s] conditional sync security group end, req: %+v, rid: %s", enumor.TCloud, syncReq, kt.Rid)
+		logs.Infof("[%s] conditional sync security group end, req: %+v, rid: %s", enumor.Aws, syncReq, kt.Rid)
 	}
 	return nil
 }
