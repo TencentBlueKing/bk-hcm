@@ -15,10 +15,10 @@
           }
         "
       />
-      <Button class="mw88 mr8" @click="handleClickBatchDelete" :disabled="selections.length === 0">
+      <bk-button class="mw88 mr8" @click="handleClickBatchDelete" :disabled="selections.length === 0">
         {{ t('批量删除') }}
-      </Button>
-      <all-load-balancer :disabled="selections.length > 0" />
+      </bk-button>
+      <bk-button :disabled="selections.length > 0" @click="() => handleSync()">{{ t('同步负载均衡') }}</bk-button>
       <div class="flex-row align-items-center justify-content-arround search-selector-container">
         <bk-search-select
           class="w500"
@@ -95,10 +95,27 @@
     <p class="mb6">请选择所需分配的目标业务</p>
     <business-selector v-model="selectedBizId" :authed="true" class="mb32" :auto-select="true"></business-selector>
   </bk-dialog>
+
+  <template v-if="!syncDialogState.isHidden">
+    <sync-account-resource
+      v-model="syncDialogState.isShow"
+      :resource-type="ResourceTypeEnum.CLB"
+      title="同步负载均衡"
+      desc="从云上同步负载均衡数据，包括负载均衡，监听器等"
+      resource-name="load_balancer"
+      :initial-model="syncDialogState.initialModel"
+      @hidden="
+        () => {
+          syncDialogState.isHidden = true;
+          syncDialogState.initialModel = null;
+        }
+      "
+    />
+  </template>
 </template>
 
 <script setup lang="ts">
-import { PropType, computed, h, withDirectives, ref } from 'vue';
+import { PropType, computed, h, withDirectives, ref, reactive } from 'vue';
 import { Loading, Table, Button, bkTooltips, Message } from 'bkui-vue';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import { BatchDistribution, DResourceType, DResourceTypeMap } from '../dialog/batch-distribution';
@@ -116,8 +133,8 @@ import { useI18n } from 'vue-i18n';
 import { asyncGetListenerCount } from '@/utils';
 import { getTableNewRowClass } from '@/common/util';
 import { useResourceStore, useBusinessStore } from '@/store';
-import { VendorEnum } from '@/common/constant';
-import AllLoadBalancer from '@/components/sync-clb/all.vue';
+import { ResourceTypeEnum, VendorEnum } from '@/common/constant';
+import SyncAccountResource from '@/components/sync-account-resource/index.vue';
 
 const props = defineProps({
   filter: {
@@ -195,6 +212,7 @@ const renderColumns = [
                 if (data.delete_protect) {
                   return { content: t('该负载均衡已开启删除保护, 不可删除'), disabled: !data.delete_protect };
                 }
+                return { disabled: true };
               })(),
             ],
           ],
@@ -205,7 +223,7 @@ const renderColumns = [
             text: true,
             theme: 'primary',
             disabled: data.vendor !== VendorEnum.TCLOUD,
-            onClick: () => handlePullResource(data),
+            onClick: () => handleSync(data),
           },
           '同步',
         ),
@@ -295,22 +313,15 @@ const handleSingleDistributionConfirm = async () => {
     isDialogBtnLoading.value = false;
   }
 };
-// 同步单个负载均衡
-const handlePullResource = (data: any) => {
-  const { vendor, cloud_id, region, account_id } = data;
-  Confirm(t('同步单个负载均衡'), t('从云上同步该负载均衡数据，包括负载均衡基本信息，监听器等'), () => {
-    resourceStore
-      .syncResource({
-        account_id,
-        vendor,
-        cloud_ids: [cloud_id],
-        regions: [region],
-        resource: 'load_balancer',
-      })
-      .then(() => {
-        Message({ theme: 'success', message: t('已提交同步任务，请等待同步结果') });
-      });
-  });
+
+const syncDialogState = reactive({ isShow: false, isHidden: true, initialModel: null });
+const handleSync = (row?: any) => {
+  syncDialogState.isShow = true;
+  syncDialogState.isHidden = false;
+  if (row) {
+    const { account_id: accountId, vendor, region, cloud_id: cloudId } = row;
+    syncDialogState.initialModel = { account_id: accountId, vendor, regions: region, cloud_ids: [cloudId] };
+  }
 };
 </script>
 
