@@ -179,7 +179,7 @@ func (svc *service) UpdateTenant(cts *rest.Contexts) (interface{}, error) {
 // ListTenant 查询租户列表，若系统未开启多租户，则无视入参直接返回一个默认租户
 func (svc *service) ListTenant(cts *rest.Contexts) (interface{}, error) {
 
-	if !cc.CloudServer().Tenant.Enabled {
+	if !cc.TenantEnable() {
 		// 未开启多租户的情况下，直接返回一个默认租户
 		tenants := []coretenant.Tenant{{
 			ID:       constant.DefaultTenantID,
