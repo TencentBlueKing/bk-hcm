@@ -48,7 +48,7 @@ import useSearchQs from '@/hooks/use-search-qs';
 import usePage from '@/hooks/use-page';
 import accountProperties from '@/model/account/properties';
 import operationRecordProperties from '@/model/operation-record/properties';
-import { getSimpleConditionBySearchSelect, transformSimpleCondition } from '@/utils/search';
+import { buildSearchValue, getSimpleConditionBySearchSelect, transformSimpleCondition } from '@/utils/search';
 import { GLOBAL_BIZS_KEY } from '@/common/constant';
 import { ISearchSelectValue } from '@/typings';
 
@@ -168,7 +168,8 @@ watch(
 );
 
 onMounted(() => {
-  searchValue.value = searchQs.buildSearchValue(searchData.value, route.query);
+  const condition = searchQs.get(route.query);
+  searchValue.value = buildSearchValue(searchData.value, condition);
 });
 </script>
 
