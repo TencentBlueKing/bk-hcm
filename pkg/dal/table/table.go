@@ -313,7 +313,7 @@ var TableMap = map[Name]TableConfig{
 	MainAccountTable: {EnableTenant: true},
 	RootAccountTable: {EnableTenant: true},
 
-	TaskManagementTable: {},
+	TaskManagementTable: {EnableTenant: true},
 	TaskDetailTable:     {},
 
 	GlobalConfigTable: {},
