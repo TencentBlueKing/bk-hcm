@@ -44,12 +44,12 @@ type CvmClient struct {
 func (cli *CvmClient) BatchCreateCvm(kt *kit.Kit,
 	request *protocloud.CvmBatchCreateReq[corecvm.OtherCvmExtension]) (*core.BatchCreateResult, error) {
 
-	resp, err := common.Request[protocloud.CvmBatchCreateReq[corecvm.OtherCvmExtension], core.BatchCreateResp](
+	resp, err := common.Request[protocloud.CvmBatchCreateReq[corecvm.OtherCvmExtension], core.BatchCreateResult](
 		cli.client, rest.POST, kt, request, "/cvms/batch/create")
 	if err != nil {
 		return nil, err
 	}
-	return resp.Data, nil
+	return resp, nil
 }
 
 // BatchUpdateCvm batch update cvm.
@@ -68,26 +68,24 @@ func (cli *CvmClient) BatchUpdateCvm(kt *kit.Kit,
 func (cli *CvmClient) GetCvm(kt *kit.Kit, id string) (
 	*corecvm.Cvm[corecvm.OtherCvmExtension], error) {
 
-	resp := new(protocloud.CvmGetResp[corecvm.OtherCvmExtension])
-
-	resp, err := common.Request[interface{}, protocloud.CvmGetResp[corecvm.OtherCvmExtension]](
+	resp, err := common.Request[interface{}, corecvm.Cvm[corecvm.OtherCvmExtension]](
 		cli.client, rest.GET, kt, nil, "/cvms/%s", id)
 	if err != nil {
 		return nil, err
 	}
 
-	return resp.Data, nil
+	return resp, nil
 }
 
 // ListCvmExt list cvm with extension.
 func (cli *CvmClient) ListCvmExt(kt *kit.Kit, request *protocloud.CvmListReq) (
 	*protocloud.CvmExtListResult[corecvm.OtherCvmExtension], error) {
 
-	resp, err := common.Request[protocloud.CvmListReq, protocloud.CvmExtListResp[corecvm.OtherCvmExtension]](cli.client,
+	resp, err := common.Request[protocloud.CvmListReq, protocloud.CvmExtListResult[corecvm.OtherCvmExtension]](cli.client,
 		rest.POST, kt, request, "/cvms/list")
 	if err != nil {
 		return nil, err
 	}
 
-	return resp.Data, nil
+	return resp, nil
 }
