@@ -45,6 +45,6 @@ data:
     tenant:
       {{- toYaml .Values.tenant | nindent 6 }}
     cmdb:
-      {{- toYaml .Values.cmdbApiGateway | nindent 6 }}
+      {{- toYaml .Values.cmdb | nindent 6 }}
     bkUser:
       {{- toYaml .Values.bkUser | nindent 6 }}
