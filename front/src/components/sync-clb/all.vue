@@ -75,7 +75,7 @@ const handleConfirm = async () => {
         <account-selector
           v-model="formData.account_id"
           :biz-id="bizId"
-          @change="(resource) => (formData.vendor = resource.vendor)"
+          @change="(resource) => (formData.vendor = resource?.vendor)"
         />
       </FormItem>
       <FormItem :label="t('云地域')" required property="region">
