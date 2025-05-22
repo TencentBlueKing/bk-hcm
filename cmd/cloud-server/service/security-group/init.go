@@ -102,6 +102,12 @@ func InitSecurityGroupService(c *capability.Capability) {
 
 	h.Add("BatchListResSecurityGroups", http.MethodPost, "/security_groups/res/{res_type}/batch",
 		svc.BatchListResSecurityGroups)
+	h.Add("ListSGRelCVM", http.MethodPost,
+		"/security_groups/{sg_id}/related_resources/cvms/list",
+		svc.ListSGRelCVM)
+	h.Add("ListSGRelLB", http.MethodPost,
+		"/security_groups/{sg_id}/related_resources/load_balancers/list",
+		svc.ListSGRelLB)
 
 	bizService(h, svc)
 	initSecurityGroupServiceHooks(svc, h)
