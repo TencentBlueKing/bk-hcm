@@ -90,7 +90,7 @@ export default defineComponent({
         },
         dataPath: 'data.tasks[0].params.targets',
         async resolvePaginationCountCb(countData: any) {
-          return countData.tasks?.[0].params.targets.length;
+          return countData.tasks?.[0].params?.targets?.length;
         },
       },
     });
