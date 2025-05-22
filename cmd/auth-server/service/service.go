@@ -39,6 +39,7 @@ import (
 	"hcm/pkg/metrics"
 	restcli "hcm/pkg/rest/client"
 	"hcm/pkg/serviced"
+	pkgbkuser "hcm/pkg/thirdparty/api-gateway/bkuser"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
 	"hcm/pkg/thirdparty/esb"
 	"hcm/pkg/tools/ssl"
@@ -141,8 +142,14 @@ func newClientSet(sd serviced.Discover, iamSettings cc.IAM, esbSettings cc.Esb, 
 
 	esbClient, err := esb.NewClient(&esbSettings, metrics.Register())
 
+	bkUserCfg := cc.AuthServer().BkUser
+	bkUserCli, err := pkgbkuser.NewClient(&bkUserCfg, metrics.Register())
+	if err != nil {
+		return nil, err
+	}
+
 	cmdbCfg := cc.AuthServer().Cmdb
-	cmdbCli, err := cmdb.NewClient(&cmdbCfg, metrics.Register())
+	cmdbCli, err := cmdb.NewClient(&cmdbCfg, bkUserCli, metrics.Register())
 	if err != nil {
 		return nil, err
 	}

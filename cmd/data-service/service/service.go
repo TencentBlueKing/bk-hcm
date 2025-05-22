@@ -89,6 +89,7 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
+	pkgbkuser "hcm/pkg/thirdparty/api-gateway/bkuser"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
 	"hcm/pkg/tools/ssl"
 
@@ -117,8 +118,14 @@ func NewService() (*Service, error) {
 		return nil, err
 	}
 
+	bkUserCfg := cc.DataService().BkUser
+	bkUserCli, err := pkgbkuser.NewClient(&bkUserCfg, metrics.Register())
+	if err != nil {
+		return nil, err
+	}
+
 	cmdbCfg := cc.DataService().Cmdb
-	cmdbCli, err := cmdb.NewClient(&cmdbCfg, metrics.Register())
+	cmdbCli, err := cmdb.NewClient(&cmdbCfg, bkUserCli, metrics.Register())
 	if err != nil {
 		return nil, err
 	}

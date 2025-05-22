@@ -17,27 +17,17 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package notice
+package bkuser
 
-import (
-	"hcm/pkg/kit"
-	"hcm/pkg/rest"
-	apigateway "hcm/pkg/thirdparty/api-gateway"
-)
+// ---------------------------- batch_lookup_virtual_user ----------------------------
 
-// GetCurAnn get current announcements
-func (n *notice) GetCurAnn(kt *kit.Kit, params map[string]string) (GetCurAnnResp, error) {
-
-	resp, err := apigateway.ApiGatewayCallWithoutReq[GetCurAnnResp](n.client, n.bkUserCli, n.config, rest.GET,
-		kt, params, "/announcement/get_current_announcements")
-	if err != nil {
-		return nil, err
-	}
-	return *resp, nil
+// BatchLookupVirtualUserResult bk-user batch lookup virtual user result
+type BatchLookupVirtualUserResult struct {
+	Data []VirtualUserItem `json:"data"`
 }
 
-// RegApp register application
-func (n *notice) RegApp(kt *kit.Kit) (*RegAppData, error) {
-	return apigateway.ApiGatewayCallWithoutReq[RegAppData](n.client, n.bkUserCli, n.config, rest.POST,
-		kt, nil, "/register")
+type VirtualUserItem struct {
+	BkUsername  string `json:"bk_username"`
+	LoginName   string `json:"login_name"`
+	DisplayName string `json:"display_name"`
 }

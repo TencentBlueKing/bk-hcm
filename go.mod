@@ -93,6 +93,8 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240415180920-8c6c420018be // indirect
 )
 
+require github.com/patrickmn/go-cache v2.1.0+incompatible
+
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.5.2 // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect

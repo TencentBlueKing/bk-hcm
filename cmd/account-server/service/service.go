@@ -52,6 +52,7 @@ import (
 	restcli "hcm/pkg/rest/client"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
+	pkgbkuser "hcm/pkg/thirdparty/api-gateway/bkuser"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
 	"hcm/pkg/tools/ssl"
 
@@ -96,8 +97,14 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 		return nil, err
 	}
 
+	bkUserCfg := cc.AccountServer().BkUser
+	bkUserCli, err := pkgbkuser.NewClient(&bkUserCfg, metrics.Register())
+	if err != nil {
+		return nil, err
+	}
+
 	cmdbCfg := cc.AccountServer().Cmdb
-	cmdbCli, err := cmdb.NewClient(&cmdbCfg, metrics.Register())
+	cmdbCli, err := cmdb.NewClient(&cmdbCfg, bkUserCli, metrics.Register())
 	if err != nil {
 		return nil, err
 	}

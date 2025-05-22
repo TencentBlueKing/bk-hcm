@@ -25,6 +25,8 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/rest/client"
 	apigateway "hcm/pkg/thirdparty/api-gateway"
+	"hcm/pkg/thirdparty/api-gateway/bkuser"
+	"hcm/pkg/thirdparty/api-gateway/discovery"
 	"hcm/pkg/tools/ssl"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -37,12 +39,13 @@ type Client interface {
 }
 
 type login struct {
-	config *cc.ApiGateway
-	client rest.ClientInterface
+	config    *cc.ApiGateway
+	client    rest.ClientInterface
+	bkUserCli bkuser.Client
 }
 
 // NewClient ...
-func NewClient(cfg *cc.ApiGateway, reg prometheus.Registerer) (Client, error) {
+func NewClient(cfg *cc.ApiGateway, bkUserCli bkuser.Client, reg prometheus.Registerer) (Client, error) {
 	tls := &ssl.TLSConfig{
 		InsecureSkipVerify: cfg.TLS.InsecureSkipVerify,
 		CertFile:           cfg.TLS.CertFile,
@@ -57,15 +60,16 @@ func NewClient(cfg *cc.ApiGateway, reg prometheus.Registerer) (Client, error) {
 
 	c := &client.Capability{
 		Client: cli,
-		Discover: &apigateway.Discovery{
+		Discover: &discovery.Discovery{
 			Name:    "login",
 			Servers: cfg.Endpoints,
 		},
 		MetricOpts: client.MetricOption{Register: reg},
 	}
 	return &login{
-		config: cfg,
-		client: rest.NewClient(c, "/"),
+		config:    cfg,
+		client:    rest.NewClient(c, "/"),
+		bkUserCli: bkUserCli,
 	}, nil
 }
 
@@ -73,12 +77,12 @@ func NewClient(cfg *cc.ApiGateway, reg prometheus.Registerer) (Client, error) {
 func (l *login) VerifyToken(kt *kit.Kit, token string) (*VerifyTokenRes, error) {
 	params := map[string]string{"bk_token": token}
 	return apigateway.ApiGatewayCallWithRichErrorWithoutReq[VerifyTokenRes](
-		l.client, l.config, rest.GET, kt, params, "/login/api/v3/open/bk-tokens/verify/")
+		l.client, l.bkUserCli, l.config, rest.GET, kt, params, "/login/api/v3/open/bk-tokens/verify/")
 }
 
 // GetUserByToken get user info by token
 func (l *login) GetUserByToken(kt *kit.Kit, token string) (*UserInfo, error) {
 	params := map[string]string{"bk_token": token}
 	return apigateway.ApiGatewayCallWithRichErrorWithoutReq[UserInfo](
-		l.client, l.config, rest.GET, kt, params, "/login/api/v3/open/bk-tokens/userinfo/")
+		l.client, l.bkUserCli, l.config, rest.GET, kt, params, "/login/api/v3/open/bk-tokens/userinfo/")
 }
