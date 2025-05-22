@@ -178,17 +178,21 @@ func (c *Layer4ListenerBindRSExecutor) buildFlows(kt *kit.Kit) ([]string, error)
 	return flowIDs, nil
 }
 
-func (c *Layer4ListenerBindRSExecutor) buildFlow(kt *kit.Kit, lb corelb.BaseLoadBalancer, details []*layer4ListenerBindRSTaskDetail) (string, error) {
+func (c *Layer4ListenerBindRSExecutor) buildFlow(kt *kit.Kit, lb corelb.BaseLoadBalancer,
+	details []*layer4ListenerBindRSTaskDetail) (string, error) {
 
 	// 将details根据targetGroupID进行分组，以targetGroupID的纬度创建flowTask
-	tgToDetails, tgToListenerCloudIDs, err := c.createTaskDetailsGroupByTargetGroup(kt, lb.CloudID, details)
+	tgToDetails, tgToListenerCloudIDs, err := c.createTaskDetailsGroupByTargetGroup(kt, lb.ID, lb.CloudID, details)
 	if err != nil {
 		logs.Errorf("create task details group by target group failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err
 	}
 
 	actionIDGenerator := counter.NewNumberCounterWithPrev(1, 10)
-	flowTasks := []ts.CustomFlowTask{buildSyncClbFlowTask(c.vendor, lb.CloudID, c.accountID, lb.Region, actionIDGenerator)}
+	flowTasks := []ts.CustomFlowTask{
+		// 操作前触发同步
+		buildSyncClbFlowTask(c.vendor, lb.CloudID, c.accountID, lb.Region, actionIDGenerator),
+	}
 	for targetGroupID, detailList := range tgToDetails {
 		tmpTask, err := c.buildFlowTask(kt, lb, targetGroupID, detailList, actionIDGenerator, tgToListenerCloudIDs)
 		if err != nil {
@@ -196,6 +200,7 @@ func (c *Layer4ListenerBindRSExecutor) buildFlow(kt *kit.Kit, lb corelb.BaseLoad
 		}
 		flowTasks = append(flowTasks, tmpTask...)
 	}
+	// 操作结束触发同步
 	flowTasks = append(flowTasks, buildSyncClbFlowTask(c.vendor, lb.CloudID, c.accountID, lb.Region, actionIDGenerator))
 
 	_, err = checkResFlowRel(kt, c.dataServiceCli, lb.ID, enumor.LoadBalancerCloudResType)
@@ -222,8 +227,9 @@ func (c *Layer4ListenerBindRSExecutor) buildFlow(kt *kit.Kit, lb corelb.BaseLoad
 	return flowID, nil
 }
 
-func (c *Layer4ListenerBindRSExecutor) createTaskDetailsGroupByTargetGroup(kt *kit.Kit, lbCloudID string,
-	details []*layer4ListenerBindRSTaskDetail) (map[string][]*layer4ListenerBindRSTaskDetail, map[string]string, error) {
+func (c *Layer4ListenerBindRSExecutor) createTaskDetailsGroupByTargetGroup(kt *kit.Kit, lbID string, lbCloudID string,
+	details []*layer4ListenerBindRSTaskDetail) (map[string][]*layer4ListenerBindRSTaskDetail, map[string]string,
+	error) {
 
 	tgToDetails := make(map[string][]*layer4ListenerBindRSTaskDetail)
 	tgToListenerCloudID := make(map[string]string)
@@ -238,7 +244,7 @@ func (c *Layer4ListenerBindRSExecutor) createTaskDetailsGroupByTargetGroup(kt *k
 				detail.CloudClbID, detail.ListenerPort)
 		}
 
-		targetGroupID, err := getTargetGroupID(kt, c.dataServiceCli, listener.CloudID)
+		targetGroupID, err := getTargetGroupID(kt, c.dataServiceCli, lbID, listener.CloudID)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -321,7 +327,7 @@ func (c *Layer4ListenerBindRSExecutor) buildTCloudFlowTask(kt *kit.Kit, lb corel
 			target := &hclb.RegisterTarget{
 				TargetType: detail.InstType,
 				Port:       int64(detail.RsPort[0]),
-				Weight:     int64(detail.Weight),
+				Weight:     converter.ValToPtr(int64(converter.PtrToVal(detail.Weight))),
 			}
 			if detail.InstType == enumor.EniInstType {
 				target.EniIp = detail.RsIp
@@ -375,7 +381,8 @@ func (c *Layer4ListenerBindRSExecutor) buildTCloudFlowTask(kt *kit.Kit, lb corel
 	return result, nil
 }
 
-func (c *Layer4ListenerBindRSExecutor) buildTaskManagementAndDetails(kt *kit.Kit, source enumor.TaskManagementSource) (string, error) {
+func (c *Layer4ListenerBindRSExecutor) buildTaskManagementAndDetails(kt *kit.Kit,
+	source enumor.TaskManagementSource) (string, error) {
 	taskID, err := createTaskManagement(kt, c.dataServiceCli, c.bkBizID, c.vendor, c.accountID,
 		converter.MapKeyToSlice(c.regionIDMap), source, enumor.TaskBindingLayer4RS)
 	if err != nil {
