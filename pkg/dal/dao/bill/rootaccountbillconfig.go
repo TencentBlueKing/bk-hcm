@@ -82,8 +82,8 @@ func (a RootAccountBillConfigDao) CreateWithTx(
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, models[0].TableName(),
 		tablebill.RootAccountBillConfigColumns.ColumnExpr(), tablebill.RootAccountBillConfigColumns.ColonNameExpr())
-
-	if err = a.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, models); err != nil {
+	err = a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).BulkInsert(kt.Ctx, sql, models)
+	if err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", models[0].TableName(), err, kt.Rid)
 		return nil, fmt.Errorf("insert %s failed, err: %v", models[0].TableName(), err)
 	}
@@ -117,7 +117,8 @@ func (a RootAccountBillConfigDao) Update(kt *kit.Kit, filterExpr *filter.Express
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, model.TableName(), setExpr, whereExpr)
 
 	_, err = a.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		effected, err := a.Orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
+		effected, err := a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(txn).Update(
+			kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if err != nil {
 			logs.ErrorJson("update root account bill config failed, filter: %s, err: %v, rid: %v",
 				filterExpr, err, kt.Rid)
@@ -161,7 +162,7 @@ func (a RootAccountBillConfigDao) List(kt *kit.Kit, opt *types.ListOption) (
 
 	if opt.Page.Count {
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.RootAccountBillConfigTable, whereExpr)
-		count, err := a.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count root account bill config failed, err: %v, filter: %s, rid: %s",
 				err, opt.Filter, kt.Rid)
@@ -180,7 +181,8 @@ func (a RootAccountBillConfigDao) List(kt *kit.Kit, opt *types.ListOption) (
 		table.RootAccountBillConfigTable, whereExpr, pageExpr)
 
 	details := make([]tablebill.RootAccountBillConfigTable, 0)
-	if err = a.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	err = a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql, whereValue)
+	if err != nil {
 		return nil, err
 	}
 	return &typesbill.ListRootAccountBillConfigDetails{Details: details}, nil
@@ -198,8 +200,8 @@ func (a RootAccountBillConfigDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *f
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.AccountBillConfigTable, whereExpr)
-
-	if _, err = a.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+	_, err = a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Delete(kt.Ctx, sql, whereValue)
+	if err != nil {
 		logs.ErrorJson("delete root account bill config failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
 		return err
 	}

@@ -91,7 +91,7 @@ func (v *tcloudRegionDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []r
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, models[0].TableName(),
 		region.TCloudRegionColumns.ColumnExpr(), region.TCloudRegionColumns.ColonNameExpr())
 
-	err = v.orm.Txn(tx).BulkInsert(kt.Ctx, sql, models)
+	err = v.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).BulkInsert(kt.Ctx, sql, models)
 	if err != nil {
 		return nil, fmt.Errorf("insert %s failed, err: %v", models[0].TableName(), err)
 	}
@@ -124,7 +124,8 @@ func (v *tcloudRegionDao) Update(kt *kit.Kit, filterExpr *filter.Expression, mod
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, model.TableName(), setExpr, whereExpr)
 
 	_, err = v.orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		effected, err := v.orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
+		effected, err := v.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(txn).Update(
+			kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if err != nil {
 			logs.ErrorJson("update region failed, err: %v, filter: %s, rid: %v", err, filterExpr, kt.Rid)
 			return nil, err
@@ -176,7 +177,7 @@ func (v *tcloudRegionDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...
 		// this is a count request, do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, tableName, whereExpr)
 
-		count, err := v.orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := v.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count vpcs failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -194,7 +195,8 @@ func (v *tcloudRegionDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...
 		tableName, whereExpr, pageExpr)
 
 	details := make([]region.TCloudRegionTable, 0)
-	if err = v.orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	err = v.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql, whereValue)
+	if err != nil {
 		return nil, err
 	}
 
@@ -213,7 +215,8 @@ func (v *tcloudRegionDao) BatchDeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.TCloudRegionTable, whereExpr)
-	if _, err = v.orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+	_, err = v.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Delete(kt.Ctx, sql, whereValue)
+	if err != nil {
 		logs.ErrorJson("delete region failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
 		return err
 	}

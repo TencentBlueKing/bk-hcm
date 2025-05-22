@@ -77,6 +77,8 @@ type ApplicationTable struct {
 	// Memo 备注或申请理由
 	Memo *string `db:"memo" json:"memo" validate:"omitempty,max=255"`
 
+	// TenantID 租户ID
+	TenantID string `db:"tenant_id" json:"tenant_id"`
 	// Creator 创建者
 	Creator string `db:"creator" json:"creator" validate:"max=64"`
 	// Reviser 更新者

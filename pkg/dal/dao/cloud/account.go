@@ -81,7 +81,8 @@ func (a AccountDao) DeleteValidate(kt *kit.Kit, accountID string) (map[string]ui
 		"column_name": "account_id",
 	}
 	tableNames := make([]tableNames, 0)
-	if err := a.Orm.Do().Select(kt.Ctx, &tableNames, expr, value); err != nil {
+	if err := a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(
+		kt.Ctx, &tableNames, expr, value); err != nil {
 		logs.Errorf("list table name, that contain 'account_id' field name failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
@@ -99,7 +100,7 @@ func (a AccountDao) DeleteValidate(kt *kit.Kit, accountID string) (map[string]ui
 		value = map[string]interface{}{
 			"account_id": accountID,
 		}
-		count, err := a.Orm.Do().Count(kt.Ctx, sql, value)
+		count, err := a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, value)
 		if err != nil {
 			logs.Errorf("count resource number failed, err: %v, tableName: %s, accountID: %s, rid: %s",
 				err, tableName, accountID, kt.Rid)
@@ -135,7 +136,7 @@ func (a AccountDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model *cloud.AccountT
 		cloud.AccountColumns.ColonNameExpr())
 
 	model.TenantID = kt.TenantID
-	err = a.Orm.Txn(tx).Insert(kt.Ctx, sql, model)
+	err = a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Insert(kt.Ctx, sql, model)
 	if err != nil {
 		return "", fmt.Errorf("insert %s failed, err: %v", model.TableName(), err)
 	}
@@ -191,7 +192,8 @@ func (a AccountDao) Update(kt *kit.Kit, filterExpr *filter.Expression, model *cl
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, model.TableName(), setExpr, whereExpr)
 
 	_, err = a.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		effected, err := a.Orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
+		effected, err := a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(txn).Update(
+			kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if err != nil {
 			logs.ErrorJson("update account failed, err: %v, filter: %s, rid: %v", err, filterExpr, kt.Rid)
 			return nil, err
@@ -236,7 +238,7 @@ func (a AccountDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListAccount
 		// this is a count request, then do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.AccountTable, whereExpr)
 
-		count, err := a.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count accounts failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -254,7 +256,8 @@ func (a AccountDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListAccount
 		table.AccountTable, whereExpr, pageExpr)
 
 	details := make([]*cloud.AccountTable, 0)
-	if err = a.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	if err = a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(
+		kt.Ctx, &details, sql, whereValue); err != nil {
 		return nil, err
 	}
 
@@ -273,7 +276,8 @@ func (a AccountDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Ex
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.AccountTable, whereExpr)
-	if _, err = a.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+	_, err = a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Delete(kt.Ctx, sql, whereValue)
+	if err != nil {
 		logs.ErrorJson("delete account failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
 		return err
 	}

@@ -80,7 +80,8 @@ func (h HuaWeiRegionDao) UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Exp
 
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, region.TableName(), setExpr, whereExpr)
 
-	effected, err := h.Orm.Txn(tx).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
+	effected, err := h.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Update(
+		kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 	if err != nil {
 		logs.ErrorJson("update azure security group rule failed, err: %v, filter: %s, rid: %v", err, expr, kt.Rid)
 		return err
@@ -111,7 +112,7 @@ func (h HuaWeiRegionDao) List(kt *kit.Kit, opt *types.ListOption) (*typesregion.
 
 	if opt.Page.Count {
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.HuaWeiRegionTable, whereExpr)
-		count, err := h.Orm.Do().Count(kt.Ctx, sql, argMap)
+		count, err := h.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, argMap)
 		if err != nil {
 			logs.ErrorJson("count huawei region failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -127,7 +128,8 @@ func (h HuaWeiRegionDao) List(kt *kit.Kit, opt *types.ListOption) (*typesregion.
 		table.HuaWeiRegionTable, whereExpr, pageExpr)
 
 	details := make([]*region.HuaWeiRegionTable, 0)
-	if err = h.Orm.Do().Select(kt.Ctx, &details, sql, argMap); err != nil {
+	err = h.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql, argMap)
+	if err != nil {
 		return nil, err
 	}
 
@@ -152,8 +154,8 @@ func (h HuaWeiRegionDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, regions []*regio
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.HuaWeiRegionTable,
 		region.HuaWeiRegionColumns.ColumnExpr(), region.HuaWeiRegionColumns.ColonNameExpr())
-
-	if err = h.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, regions); err != nil {
+	err = h.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).BulkInsert(kt.Ctx, sql, regions)
+	if err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", table.HuaWeiRegionTable, err, kt.Rid)
 		return nil, fmt.Errorf("insert %s failed, err: %v", table.HuaWeiRegionTable, err)
 	}
@@ -175,7 +177,8 @@ func (h HuaWeiRegionDao) DeleteWithTx(kt *kit.Kit, expr *filter.Expression) erro
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.HuaWeiRegionTable, whereExpr)
 
 	_, err = h.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		if _, err = h.Orm.Txn(txn).Delete(kt.Ctx, sql, argMap); err != nil {
+		_, err = h.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(txn).Delete(kt.Ctx, sql, argMap)
+		if err != nil {
 			logs.ErrorJson("delete huawei region failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
 			return nil, err
 		}

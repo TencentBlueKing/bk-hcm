@@ -64,6 +64,8 @@ type ImageModel struct {
 	Reviser      string          `db:"reviser" json:"reviser"`
 	CreatedAt    types.Time      `db:"created_at" json:"created_at"`
 	UpdatedAt    types.Time      `db:"updated_at" json:"updated_at"`
+	// TenantID 租户ID
+	TenantID string `db:"tenant_id" json:"tenant_id"`
 }
 
 // InsertValidate ...
