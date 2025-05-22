@@ -31,6 +31,8 @@ const list = ref<IRegionItem[]>([]);
 watchEffect(async () => {
   if (props.vendor) {
     list.value = await regionStore.getRegionList({ vendor: props.vendor, resourceType: props.resourceType });
+  } else {
+    list.value = [];
   }
 });
 </script>
@@ -44,6 +46,7 @@ watchEffect(async () => {
     :multiple-mode="multiple ? 'tag' : 'default'"
     :id-key="'id'"
     :display-key="'name'"
+    :loading="regionStore.regionListLoading"
     v-bind="attrs"
   />
 </template>

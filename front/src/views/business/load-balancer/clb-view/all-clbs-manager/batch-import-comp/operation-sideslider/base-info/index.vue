@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, Ref, watch } from 'vue';
+import { computed, inject, nextTick, Ref, watch } from 'vue';
 import { Alert, Form } from 'bkui-vue';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import { VendorEnum } from '@/common/constant';
@@ -17,6 +17,7 @@ const props = defineProps<{
   activeAction: Action;
   // 文件上传成功后，禁用基本信息的表单
   globalDisabled: boolean;
+  formRef: InstanceType<typeof Form>;
 }>();
 
 const { t } = useI18n();
@@ -64,6 +65,8 @@ const handleAccountChange = (
     formModel.account_id = '';
     formModel.vendor = undefined;
   }
+  formModel.region_ids = [];
+  nextTick(() => props.formRef.clearValidate());
 };
 </script>
 

@@ -287,11 +287,11 @@ export default defineComponent({
         {!syncDialogState.isHidden && (
           <SyncAccountResource
             v-model={syncDialogState.isShow}
-            resourceType={ResourceTypeEnum.CLB}
             title='同步负载均衡'
             desc='从云上同步该业务的所有负载均衡数据，包括负载均衡，监听器等'
-            resourceName='load_balancer'
+            resourceType={ResourceTypeEnum.CLB}
             businessId={syncDialogState.businessId}
+            resourceName='load_balancer'
             onHidden={() => {
               syncDialogState.isHidden = true;
               syncDialogState.businessId = undefined;

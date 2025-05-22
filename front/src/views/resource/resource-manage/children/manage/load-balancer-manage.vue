@@ -18,7 +18,12 @@
       <bk-button class="mw88 mr8" @click="handleClickBatchDelete" :disabled="selections.length === 0">
         {{ t('批量删除') }}
       </bk-button>
-      <bk-button :disabled="selections.length > 0" @click="() => handleSync()">{{ t('同步负载均衡') }}</bk-button>
+      <bk-button
+        :disabled="selections.length > 0"
+        @click="() => handleSync(false, resourceAccountStore.resourceAccount)"
+      >
+        {{ t('同步负载均衡') }}
+      </bk-button>
       <div class="flex-row align-items-center justify-content-arround search-selector-container">
         <bk-search-select
           class="w500"
@@ -99,9 +104,9 @@
   <template v-if="!syncDialogState.isHidden">
     <sync-account-resource
       v-model="syncDialogState.isShow"
-      :resource-type="ResourceTypeEnum.CLB"
       title="同步负载均衡"
       desc="从云上同步负载均衡数据，包括负载均衡，监听器等"
+      :resource-type="ResourceTypeEnum.CLB"
       resource-name="load_balancer"
       :initial-model="syncDialogState.initialModel"
       @hidden="
@@ -133,6 +138,7 @@ import { useI18n } from 'vue-i18n';
 import { asyncGetListenerCount } from '@/utils';
 import { getTableNewRowClass } from '@/common/util';
 import { useResourceStore, useBusinessStore } from '@/store';
+import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { ResourceTypeEnum, VendorEnum } from '@/common/constant';
 import SyncAccountResource from '@/components/sync-account-resource/index.vue';
 
@@ -154,6 +160,7 @@ const { searchData, searchValue, filter } = useFilter(props);
 
 const resourceStore = useResourceStore();
 const businessStore = useBusinessStore();
+const resourceAccountStore = useResourceAccountStore();
 
 const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort, triggerApi } = useQueryList(
   { filter: filter.value },
@@ -223,7 +230,7 @@ const renderColumns = [
             text: true,
             theme: 'primary',
             disabled: data.vendor !== VendorEnum.TCLOUD,
-            onClick: () => handleSync(data),
+            onClick: () => handleSync(true, data),
           },
           '同步',
         ),
@@ -315,12 +322,16 @@ const handleSingleDistributionConfirm = async () => {
 };
 
 const syncDialogState = reactive({ isShow: false, isHidden: true, initialModel: null });
-const handleSync = (row?: any) => {
+const handleSync = (inTable: boolean, data?: any) => {
   syncDialogState.isShow = true;
   syncDialogState.isHidden = false;
-  if (row) {
-    const { account_id: accountId, vendor, region, cloud_id: cloudId } = row;
+  if (inTable) {
+    const { account_id: accountId, vendor, region, cloud_id: cloudId } = data;
+    // TODO: azure支持负载均衡后，需要补充resource_group_names
     syncDialogState.initialModel = { account_id: accountId, vendor, regions: region, cloud_ids: [cloudId] };
+  } else {
+    const { id, vendor } = data;
+    syncDialogState.initialModel = { account_id: id, vendor };
   }
 };
 </script>

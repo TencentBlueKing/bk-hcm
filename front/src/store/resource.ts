@@ -13,9 +13,10 @@ export interface GetAllSortParams {
   filter: FilterType;
 }
 export interface SyncResourceParams {
-  regions: string[];
+  regions?: string[];
   cloud_ids?: string[];
   tag_filters?: Record<string, string[]>;
+  resource_group_names?: string[]; // azure
 }
 export interface BatchBindSecurityInfoParams {
   cvm_id: string;
@@ -291,10 +292,9 @@ export const useResourceStore = defineStore({
     },
     // 同步拉取资源
     syncResource(vendor: string, accountId: string, resourceName: string, params: SyncResourceParams) {
-      const { regions, cloud_ids: cloudIds, tag_filters: tagFilters } = params;
       return http.post(
         `/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/accounts/${accountId}/resources/${resourceName}/sync_by_cond`,
-        { regions, cloud_ids: cloudIds, tag_filters: tagFilters },
+        params,
       );
     },
   },

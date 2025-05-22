@@ -116,7 +116,11 @@ watch(
       :property="type === ResourceTypeEnum.SUBNET ? 'resource_group' : 'resourceGroup'"
       v-if="selectedVendor === VendorEnum.AZURE"
     >
-      <resource-group-selector :account-id="selectedCloudAccountId" v-model="selectedResourceGroup" />
+      <resource-group-selector
+        v-model="selectedResourceGroup"
+        :account-id="selectedCloudAccountId"
+        :vendor="selectedVendor"
+      />
     </FormItem>
     <FormItem label="云地域" required property="region">
       <region-selector

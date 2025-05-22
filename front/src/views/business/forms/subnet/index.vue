@@ -101,12 +101,6 @@ watch(
       >
         <zone-selector :vendor="formData.vendor" :region="formData.region" v-model="formData.zone"></zone-selector>
       </bk-form-item>
-      <!-- <bk-form-item
-        :label="t('资源组')"
-        class="item-warp"
-      >
-        <resource-group-selector v-model="formData.resource"></resource-group-selector>
-      </bk-form-item> -->
       <bk-form-item
         :label="t('IPv4 CIDR')"
         class="item-warp"
