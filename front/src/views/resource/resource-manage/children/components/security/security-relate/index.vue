@@ -5,9 +5,9 @@ import {
   type ISecurityGroupRelResCountItem,
   type ISecurityGroupDetail,
   type ISecurityGroupRelBusiness,
-  SecurityGroupManageType,
 } from '@/store/security-group';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { SecurityGroupManageType } from '@/constants/security-group';
 
 import platform from './platform.vue';
 import biz from './biz.vue';
@@ -37,10 +37,13 @@ const comps: Record<SecurityGroupManageType, any> = {
 const relatedResourcesCountList = ref<ISecurityGroupRelResCountItem[]>([]);
 const relatedBiz = ref<ISecurityGroupRelBusiness>(null);
 
-const getRelatedInfo = async () => {
+const getRelatedInfo = () => {
   const { id } = props.detail;
-  relatedBiz.value = await securityGroupStore.queryRelBusiness(id);
-  relatedResourcesCountList.value = await securityGroupStore.queryRelatedResourcesCount([id]);
+  if (whereAmI.value === Senarios.business) {
+    // 业务下，关联资源list请求前置接口
+    securityGroupStore.queryRelBusiness(id).then((data) => (relatedBiz.value = data));
+  }
+  securityGroupStore.queryRelatedResourcesCount([id]).then((data) => (relatedResourcesCountList.value = data));
 };
 onBeforeMount(async () => {
   if (props.detail) {

@@ -13,7 +13,7 @@ import useDetail from '../../hooks/use-detail';
 import { QueryRuleOPEnum } from '@/typings';
 import { useResourceStore } from '@/store';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
-import { SecurityGroupManageType } from '@/store/security-group';
+import { SecurityGroupManageType } from '@/constants/security-group';
 
 const { t } = useI18n();
 

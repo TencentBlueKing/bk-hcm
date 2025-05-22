@@ -1,8 +1,8 @@
 import { h } from 'vue';
 import { PropertyColumnConfig } from '@/model/typings';
 import { getInstVip, getPrivateIPs, getPublicIPs } from '@/utils';
-import { IResourceBoundSecurityGroupItem, SecurityGroupRelatedResourceName } from '@/store/security-group';
-import { RELATED_RES_PROPERTIES_MAP } from '@/constants/security-group';
+import { IResourceBoundSecurityGroupItem } from '@/store/security-group';
+import { RELATED_RES_PROPERTIES_MAP, SecurityGroupRelatedResourceName } from '@/constants/security-group';
 
 import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
 
