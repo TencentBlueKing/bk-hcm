@@ -85,8 +85,8 @@ func (n NetworkInterfaceDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []tab
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, models[0].TableName(),
 		tableni.NetworkInterfaceColumns.ColumnExpr(), tableni.NetworkInterfaceColumns.ColonNameExpr())
-
-	if err = n.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, models); err != nil {
+	err = n.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).BulkInsert(kt.Ctx, sql, models)
+	if err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", models[0].TableName(), err, kt.Rid)
 		return nil, fmt.Errorf("insert %s failed, err: %v", models[0].TableName(), err)
 	}
@@ -146,7 +146,8 @@ func (n NetworkInterfaceDao) Update(kt *kit.Kit, filterExpr *filter.Expression,
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, model.TableName(), setExpr, whereExpr)
 
 	_, err = n.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		effected, err := n.Orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
+		effected, err := n.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(txn).Update(
+			kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if err != nil {
 			logs.ErrorJson("update network interface failed, filter: %s, err: %v, rid: %v",
 				filterExpr, err, kt.Rid)
@@ -190,7 +191,7 @@ func (n NetworkInterfaceDao) List(kt *kit.Kit, opt *types.ListOption) (*typesni.
 
 	if opt.Page.Count {
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.NetworkInterfaceTable, whereExpr)
-		count, err := n.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := n.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count network interface failed, err: %v, filter: %s, rid: %s",
 				err, opt.Filter, kt.Rid)
@@ -209,7 +210,8 @@ func (n NetworkInterfaceDao) List(kt *kit.Kit, opt *types.ListOption) (*typesni.
 		table.NetworkInterfaceTable, whereExpr, pageExpr)
 
 	details := make([]tableni.NetworkInterfaceTable, 0)
-	if err = n.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	err = n.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql, whereValue)
+	if err != nil {
 		return nil, err
 	}
 	return &typesni.ListNetworkInterfaceDetails{Details: details}, nil
@@ -253,7 +255,7 @@ func (n NetworkInterfaceDao) ListAssociate(kt *kit.Kit, opt *types.ListOption, i
 			table.NetworkInterfaceCvmRelTable,
 			whereExpr,
 		)
-		count, err := n.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := n.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count network interface failed, err: %v, filter: %s, rid: %s",
 				err, opt.Filter, kt.Rid)
@@ -280,7 +282,8 @@ func (n NetworkInterfaceDao) ListAssociate(kt *kit.Kit, opt *types.ListOption, i
 	)
 
 	details := make([]*types.NetworkInterfaceWithCvmID, 0)
-	if err = n.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	err = n.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql, whereValue)
+	if err != nil {
 		return nil, err
 	}
 
@@ -299,8 +302,8 @@ func (n NetworkInterfaceDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.NetworkInterfaceTable, whereExpr)
-
-	if _, err = n.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+	_, err = n.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Delete(kt.Ctx, sql, whereValue)
+	if err != nil {
 		logs.ErrorJson("delete azure network interface failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
 		return err
 	}
@@ -309,14 +312,16 @@ func (n NetworkInterfaceDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter
 }
 
 // ListNetworkInterface list network interface
-func ListNetworkInterface(kt *kit.Kit, orm orm.Interface, ids []string) (
+func ListNetworkInterface(kt *kit.Kit, ormi orm.Interface, ids []string) (
 	map[string]tableni.NetworkInterfaceTable, error) {
 
 	sql := fmt.Sprintf(`SELECT %s FROM %s WHERE id IN (:ids)`,
 		tableni.NetworkInterfaceColumns.FieldsNamedExpr(nil), table.NetworkInterfaceTable)
 
 	list := make([]tableni.NetworkInterfaceTable, 0)
-	if err := orm.Do().Select(kt.Ctx, &list, sql, map[string]interface{}{"ids": ids}); err != nil {
+	err := ormi.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(
+		kt.Ctx, &list, sql, map[string]interface{}{"ids": ids})
+	if err != nil {
 		return nil, err
 	}
 

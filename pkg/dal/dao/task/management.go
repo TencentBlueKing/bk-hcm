@@ -88,7 +88,7 @@ func (d *ManagementDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, managements []tas
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.TaskManagementTable,
 		task.ManagementColumns.ColumnExpr(), task.ManagementColumns.ColonNameExpr())
 
-	err = d.orm.Txn(tx).BulkInsert(kt.Ctx, sql, managements)
+	err = d.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).BulkInsert(kt.Ctx, sql, managements)
 	if err != nil {
 		return nil, fmt.Errorf("insert %s failed, err: %v", table.TaskManagementTable, err)
 	}
@@ -122,7 +122,8 @@ func (d *ManagementDao) UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expr
 
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, management.TableName(), setExpr, whereExpr)
 
-	effected, err := d.orm.Txn(tx).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
+	effected, err := d.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).
+		Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 	if err != nil {
 		logs.ErrorJson("update task management failed, err: %v, filter: %s, rid: %v", err, expr, kt.Rid)
 		return err
@@ -170,7 +171,7 @@ func (d *ManagementDao) List(kt *kit.Kit, opt *types.ListOption,
 		// this is a count request, do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.TaskManagementTable, whereExpr)
 
-		count, err := d.orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := d.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count task managements failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -188,7 +189,8 @@ func (d *ManagementDao) List(kt *kit.Kit, opt *types.ListOption,
 		table.TaskManagementTable, whereExpr, pageExpr)
 
 	managements := make([]task.ManagementTable, 0)
-	if err = d.orm.Do().Select(kt.Ctx, &managements, sql, whereValue); err != nil {
+	if err = d.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).
+		Do().Select(kt.Ctx, &managements, sql, whereValue); err != nil {
 		return nil, err
 	}
 
@@ -207,7 +209,8 @@ func (d *ManagementDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filte
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.TaskManagementTable, whereExpr)
-	if _, err = d.orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+	_, err = d.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Delete(kt.Ctx, sql, whereValue)
+	if err != nil {
 		logs.ErrorJson("delete task management failed, err: %v, filter: %v, rid: %s", err, filterExpr, kt.Rid)
 		return err
 	}

@@ -73,7 +73,7 @@ func (dao IdcDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, model *t
 	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, model.TableName(), setExpr)
 
 	toUpdate["id"] = id
-	_, err = dao.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
+	_, err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Update(kt.Ctx, sql, toUpdate)
 	if err != nil {
 		logs.ErrorJson("update idc failed, err: %v, id: %s, rid: %v", err, id, kt.Rid)
 		return err
@@ -97,7 +97,7 @@ func (dao IdcDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model *tableselection.I
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, model.TableName(), tableselection.IdcTableColumns.ColumnExpr(),
 		tableselection.IdcTableColumns.ColonNameExpr())
 
-	err = dao.Orm.Txn(tx).Insert(kt.Ctx, sql, model)
+	err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Insert(kt.Ctx, sql, model)
 	if err != nil {
 		logs.Errorf("insert %s failed, err: %v, sql: %s, model: %+v, rid: %s", err, sql, model, kt.Rid)
 		return "", fmt.Errorf("insert %s failed, err: %v", model.TableName(), err)
@@ -126,7 +126,7 @@ func (dao IdcDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListResult[ta
 		// this is dao count request, then do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.CloudSelectionIdcTable, whereExpr)
 
-		count, err := dao.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count idc failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -144,7 +144,8 @@ func (dao IdcDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListResult[ta
 		table.CloudSelectionIdcTable, whereExpr, pageExpr)
 
 	details := make([]tableselection.IdcTable, 0)
-	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql, whereValue)
+	if err != nil {
 		logs.Errorf("select idc failed, err: %v, sql: %s, rid: %s", err, sql, kt.Rid)
 		return nil, err
 	}
@@ -164,7 +165,8 @@ func (dao IdcDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expr
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.CloudSelectionIdcTable, whereExpr)
-	if _, err = dao.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+	_, err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Delete(kt.Ctx, sql, whereValue)
+	if err != nil {
 		logs.ErrorJson("delete idc failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
 		return err
 	}

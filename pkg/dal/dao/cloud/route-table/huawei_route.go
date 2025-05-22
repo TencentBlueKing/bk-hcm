@@ -95,7 +95,7 @@ func (r *huaweiRouteDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []ro
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, models[0].TableName(),
 		routetable.HuaWeiRouteColumns.ColumnExpr(), routetable.HuaWeiRouteColumns.ColonNameExpr())
 
-	err = r.orm.Txn(tx).BulkInsert(kt.Ctx, sql, models)
+	err = r.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).BulkInsert(kt.Ctx, sql, models)
 	if err != nil {
 		return nil, fmt.Errorf("insert %s failed, err: %v", models[0].TableName(), err)
 	}
@@ -185,7 +185,8 @@ func (r *huaweiRouteDao) Update(kt *kit.Kit, filterExpr *filter.Expression, mode
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, model.TableName(), setExpr, whereExpr)
 
 	_, err = r.orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		effected, err := r.orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
+		effected, err := r.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(txn).Update(
+			kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if err != nil {
 			logs.ErrorJson("update huawei route failed, err: %v, filter: %s, rid: %v", err, filterExpr, kt.Rid)
 			return nil, err
@@ -235,7 +236,7 @@ func (r *huaweiRouteDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*
 		// this is a count request, do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.HuaWeiRouteTable, whereExpr)
 
-		count, err := r.orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := r.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count huawei routes failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -253,7 +254,8 @@ func (r *huaweiRouteDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*
 		table.HuaWeiRouteTable, whereExpr, pageExpr)
 
 	details := make([]routetable.HuaWeiRouteTable, 0)
-	if err = r.orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	err = r.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql, whereValue)
+	if err != nil {
 		return nil, err
 	}
 
@@ -272,7 +274,8 @@ func (r *huaweiRouteDao) BatchDeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr 
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.HuaWeiRouteTable, whereExpr)
-	if _, err = r.orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+	_, err = r.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Delete(kt.Ctx, sql, whereValue)
+	if err != nil {
 		logs.ErrorJson("delete huawei route failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
 		return err
 	}

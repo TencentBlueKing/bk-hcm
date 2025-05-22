@@ -75,8 +75,8 @@ func (d Dao) BatchCreate(kt *kit.Kit, audits []*audit.AuditTable) error {
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.AuditTable,
 		audit.AuditColumns.ColumnExpr(), audit.AuditColumns.ColonNameExpr())
-
-	if err := d.Orm.Do().BulkInsert(kt.Ctx, sql, audits); err != nil {
+	err := d.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().BulkInsert(kt.Ctx, sql, audits)
+	if err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", table.AuditTable, err, kt.Rid)
 		return fmt.Errorf("insert %s failed, err: %v", table.AuditTable, err)
 	}
@@ -94,8 +94,8 @@ func (d Dao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, audits []*audit.AuditTa
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.AuditTable,
 		audit.AuditColumns.ColumnExpr(), audit.AuditColumns.ColonNameExpr())
-
-	if err := d.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, audits); err != nil {
+	err := d.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).BulkInsert(kt.Ctx, sql, audits)
+	if err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", table.AuditTable, err, kt.Rid)
 		return fmt.Errorf("insert %s failed, err: %v", table.AuditTable, err)
 	}
@@ -123,7 +123,7 @@ func (d Dao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListAuditDetails, 
 	if opt.Page.Count {
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.AuditTable, whereExpr)
 
-		count, err := d.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := d.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count audit failed, err: %v, filter: %d, rid: %d", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -141,7 +141,8 @@ func (d Dao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListAuditDetails, 
 		table.AuditTable, whereExpr, pageExpr)
 
 	details := make([]audit.AuditTable, 0)
-	if err = d.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	err = d.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql, whereValue)
+	if err != nil {
 		return nil, err
 	}
 

@@ -74,8 +74,8 @@ func (dao *AsyncFlowDao) Create(kt *kit.Kit, tx *sqlx.Tx, model *tableasync.Asyn
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.AsyncFlowTable,
 		tableasync.AsyncFlowColumns.ColumnExpr(), tableasync.AsyncFlowColumns.ColonNameExpr())
-
-	if err = dao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, model); err != nil {
+	err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).BulkInsert(kt.Ctx, sql, model)
+	if err != nil {
 		logs.Errorf("insert %s failed, err: %v, sql: %s, rid: %s", table.AsyncFlowTable, err, sql, kt.Rid)
 		return "", fmt.Errorf("insert %s failed, err: %v", table.AsyncFlowTable, err)
 	}
@@ -108,7 +108,8 @@ func (dao *AsyncFlowDao) Update(kt *kit.Kit, expr *filter.Expression, model *tab
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, model.TableName(), setExpr, whereExpr)
 
 	_, err = dao.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		effected, err := dao.Orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
+		effected, err := dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).
+			Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if err != nil {
 			logs.ErrorJson("update async flow failed, err: %v, filter: %s, rid: %v", err, expr, kt.Rid)
 			return nil, err
@@ -148,7 +149,7 @@ func (dao *AsyncFlowDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
 	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, model.TableName(), setExpr)
 
 	toUpdate["id"] = id
-	effected, err := dao.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
+	effected, err := dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Update(kt.Ctx, sql, toUpdate)
 	if err != nil {
 		logs.Errorf("update async flow failed, err: %v, id: %s, sql: %s, rid: %v", err, id,
 			sql, kt.Rid)
@@ -187,7 +188,8 @@ func (dao *AsyncFlowDao) UpdateStateByCAS(kt *kit.Kit, tx *sqlx.Tx, info *typesa
 		"worker": info.Worker,
 		"reason": info.Reason,
 	}
-	effected, err := dao.Orm.Txn(tx).Update(kt.Ctx, sql, whereValue)
+	effected, err := dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).
+		Update(kt.Ctx, sql, whereValue)
 	if err != nil {
 		logs.Errorf("update async flow failed, err: %v, id: %s, sql: %s, rid: %v", err, info.ID, sql, kt.Rid)
 		return err
@@ -220,7 +222,7 @@ func (dao *AsyncFlowDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx,
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.AsyncFlowTable,
 		tableasync.AsyncFlowColumns.ColumnExpr(), tableasync.AsyncFlowColumns.ColonNameExpr())
 
-	err = dao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, models)
+	err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).BulkInsert(kt.Ctx, sql, models)
 	if err != nil {
 		logs.Errorf("insert %s failed, err: %v, sql: %s, rid: %s", table.AsyncFlowTable, err, sql, kt.Rid)
 		return nil, fmt.Errorf("insert %s failed, err: %v", table.AsyncFlowTable, err)
@@ -251,7 +253,8 @@ func (dao *AsyncFlowDao) ListWithTx(kt *kit.Kit, tx *sqlx.Tx,
 		// this is dao count request, then do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.AsyncFlowTable, whereExpr)
 
-		count, err := dao.Orm.Txn(tx).Count(kt.Ctx, sql, whereValue)
+		count, err := dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).
+			Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count async flow failed, err: %v, filter: %s, rid: %s", err,
 				opt.Filter, kt.Rid)
@@ -270,7 +273,8 @@ func (dao *AsyncFlowDao) ListWithTx(kt *kit.Kit, tx *sqlx.Tx,
 		table.AsyncFlowTable, whereExpr, pageExpr)
 
 	details := make([]tableasync.AsyncFlowTable, 0)
-	if err = dao.Orm.Txn(tx).Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Select(kt.Ctx, &details, sql, whereValue)
+	if err != nil {
 		logs.ErrorJson("select async flow failed, err: %v, sql: %s, filter: %v, rid: %s", err, sql,
 			opt.Filter, kt.Rid)
 		return nil, err
@@ -299,7 +303,7 @@ func (dao *AsyncFlowDao) List(kt *kit.Kit, opt *types.ListOption) (*typesasync.L
 		// this is dao count request, then do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.AsyncFlowTable, whereExpr)
 
-		count, err := dao.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count async flow failed, err: %v, filter: %s, rid: %s", err,
 				opt.Filter, kt.Rid)
@@ -318,7 +322,8 @@ func (dao *AsyncFlowDao) List(kt *kit.Kit, opt *types.ListOption) (*typesasync.L
 		table.AsyncFlowTable, whereExpr, pageExpr)
 
 	details := make([]tableasync.AsyncFlowTable, 0)
-	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql, whereValue)
+	if err != nil {
 		logs.ErrorJson("select async flow failed, err: %v, sql: %s, filter: %v, rid: %s", err, sql,
 			opt.Filter, kt.Rid)
 		return nil, err
@@ -339,7 +344,8 @@ func (dao *AsyncFlowDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filt
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.AsyncFlowTable, whereExpr)
-	if _, err = dao.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+	_, err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Delete(kt.Ctx, sql, whereValue)
+	if err != nil {
 		logs.ErrorJson("delete async flow failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
 		return err
 	}

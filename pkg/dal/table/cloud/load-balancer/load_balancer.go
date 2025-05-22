@@ -104,6 +104,8 @@ type LoadBalancerTable struct {
 	Reviser   string     `db:"reviser" validate:"lte=64" json:"reviser"`
 	CreatedAt types.Time `db:"created_at" validate:"excluded_unless" json:"created_at"`
 	UpdatedAt types.Time `db:"updated_at" validate:"excluded_unless" json:"updated_at"`
+	// TenantID 租户ID
+	TenantID string `db:"tenant_id" json:"tenant_id"`
 }
 
 // TableName return load_balancer table name.

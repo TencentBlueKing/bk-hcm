@@ -72,6 +72,8 @@ type AuditTable struct {
 	AppCode    string                   `db:"app_code" json:"app_code" validate:"lte=64"`
 	Detail     *BasicDetail             `db:"detail" json:"detail" validate:"-"`
 	CreatedAt  types.Time               `db:"created_at" json:"created_at"`
+	// TenantID 租户ID
+	TenantID string `db:"tenant_id" json:"tenant_id"`
 }
 
 // CreateValidate audit when created
