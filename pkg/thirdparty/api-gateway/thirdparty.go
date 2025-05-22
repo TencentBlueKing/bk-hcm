@@ -228,10 +228,9 @@ func getCommonHeader(kt *kit.Kit, bkUserCli bkuser.Client, cfg *cc.ApiGateway) h
 	user := kt.User
 	if len(cfg.User) > 0 {
 		// 通过用户管理获取指定用户的bk_username
-		// TODO 缓存
 		username, err := getBkUsername(kt, bkUserCli, cfg.User)
 		if err != nil {
-			logs.Warnf("fail to get bk_username by user, err: %v, user: %s, rid: %s", err, user, kt.Rid)
+			logs.Warnf("fail to get bk_username by user, err: %v, user: %s, rid: %s", err, cfg.User, kt.Rid)
 			return header
 		}
 		user = username
