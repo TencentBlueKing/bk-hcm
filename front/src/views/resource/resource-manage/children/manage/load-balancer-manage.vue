@@ -1,9 +1,6 @@
 <template>
   <Loading :loading="isLoading" :opacity="1">
-    <section
-      class="flex-row align-items-center"
-      :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'"
-    >
+    <section class="toolbar" :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'">
       <slot></slot>
       <BatchDistribution
         :selections="selections"
@@ -15,7 +12,7 @@
           }
         "
       />
-      <bk-button class="mw88 mr8" @click="handleClickBatchDelete" :disabled="selections.length === 0">
+      <bk-button class="mw88" @click="handleClickBatchDelete" :disabled="selections.length === 0">
         {{ t('批量删除') }}
       </bk-button>
       <bk-button
@@ -337,8 +334,10 @@ const handleSync = (inTable: boolean, data?: any) => {
 </script>
 
 <style lang="scss" scoped>
-.mr15 {
-  margin-right: 15px;
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .search-selector-container {

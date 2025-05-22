@@ -241,7 +241,7 @@ const handleEditTemplate = (payload: any) => {
       >
         <span>
           <hcm-auth :sign="{ type: AUTH_BIZ_CREATE_IAAS_RESOURCE, relation: [accountStore.bizs] }" v-slot="{ noPerm }">
-            <bk-button theme="primary" class="mw64 mr10" :disabled="noPerm" @click="handleAdd">
+            <bk-button theme="primary" class="mw64" :disabled="noPerm" @click="handleAdd">
               {{
                 renderComponent === DriveManage ||
                 renderComponent === HostManage ||
