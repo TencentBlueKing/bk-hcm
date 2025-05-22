@@ -17,10 +17,9 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package tcloud
+package azure
 
 import (
-	"hcm/pkg/api/core"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
@@ -30,18 +29,14 @@ import (
 
 // CondSyncParams 条件同步选项
 type CondSyncParams struct {
-	AccountID string   `json:"account_id" validate:"required"`
-	Regions   []string `json:"regions,omitempty" validate:"max=20"`
-	CloudIDs  []string `json:"cloud_ids,omitempty" validate:"max=20"`
-
-	TagFilters core.MultiValueTagMap `json:"tag_filters,omitempty" validate:"max=10"`
+	AccountID          string   `json:"account_id" validate:"required"`
+	ResourceGroupNames []string `json:"resource_group_names,omitempty" validate:"max=20"`
 }
 
 // CondSyncFunc sync resource by given condition
 type CondSyncFunc func(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error
 
 var condSyncFuncMap = map[enumor.CloudResourceType]CondSyncFunc{
-	enumor.LoadBalancerCloudResType:  CondSyncLoadBalancer,
 	enumor.SecurityGroupCloudResType: CondSyncSecurityGroup,
 }
 
@@ -51,42 +46,20 @@ func GetCondSyncFunc(res enumor.CloudResourceType) (syncFunc CondSyncFunc, ok bo
 	return syncFunc, ok
 }
 
-// CondSyncLoadBalancer ...
-func CondSyncLoadBalancer(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error {
-	syncReq := sync.TCloudSyncReq{
-		AccountID:  params.AccountID,
-		CloudIDs:   params.CloudIDs,
-		TagFilters: params.TagFilters,
-	}
-	for i := range params.Regions {
-		syncReq.Region = params.Regions[i]
-		err := cliSet.HCService().TCloud.Clb.SyncLoadBalancer(kt, &syncReq)
-		if err != nil {
-			logs.Errorf("[%s] conditional sync load balancer failed, err: %v, req: %+v, rid: %s",
-				enumor.TCloud, err, syncReq, kt.Rid)
-			return err
-		}
-		logs.Infof("[%s] conditional sync load balancer end, req: %+v, rid: %s", enumor.TCloud, syncReq, kt.Rid)
-	}
-	return nil
-}
-
 // CondSyncSecurityGroup ...
 func CondSyncSecurityGroup(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error {
-	syncReq := sync.TCloudSyncReq{
-		AccountID:  params.AccountID,
-		CloudIDs:   params.CloudIDs,
-		TagFilters: params.TagFilters,
+	syncReq := sync.AzureSyncReq{
+		AccountID: params.AccountID,
 	}
-	for i := range params.Regions {
-		syncReq.Region = params.Regions[i]
-		err := cliSet.HCService().TCloud.SecurityGroup.SyncSecurityGroup(kt.Ctx, kt.Header(), &syncReq)
+	for i := range params.ResourceGroupNames {
+		syncReq.ResourceGroupName = params.ResourceGroupNames[i]
+		err := cliSet.HCService().Azure.SecurityGroup.SyncSecurityGroup(kt.Ctx, kt.Header(), &syncReq)
 		if err != nil {
 			logs.Errorf("[%s] conditional sync security group failed, err: %v, req: %+v, rid: %s",
-				enumor.TCloud, err, syncReq, kt.Rid)
+				enumor.Azure, err, syncReq, kt.Rid)
 			return err
 		}
-		logs.Infof("[%s] conditional sync security group end, req: %+v, rid: %s", enumor.TCloud, syncReq, kt.Rid)
+		logs.Infof("[%s] conditional sync security group end, req: %+v, rid: %s", enumor.Azure, syncReq, kt.Rid)
 	}
 	return nil
 }
