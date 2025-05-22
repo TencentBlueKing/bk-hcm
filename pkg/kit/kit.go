@@ -83,6 +83,13 @@ func (kt *Kit) NewSubKitWithSuffix(suffix string) *Kit {
 	return newSubKit
 }
 
+// NewSubKitWithTenant 生成子kit, 变更租户id
+func (kt *Kit) NewSubKitWithTenant(tenantID string) *Kit {
+	newSubKit := converter.ValToPtr(*kt)
+	newSubKit.TenantID = tenantID
+	return newSubKit
+}
+
 // NewSubKitWithRid 生成子kit, 指定rid, 继承 context
 func (kt *Kit) NewSubKitWithRid(subRid string) *Kit {
 	newSubKit := converter.ValToPtr(*kt)

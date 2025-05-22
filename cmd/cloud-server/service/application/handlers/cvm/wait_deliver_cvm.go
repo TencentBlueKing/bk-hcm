@@ -24,7 +24,9 @@ import (
 	"time"
 
 	"github.com/tidwall/gjson"
+	"golang.org/x/sync/errgroup"
 
+	"hcm/cmd/cloud-server/logics/tenant"
 	actioncvm "hcm/cmd/task-server/logics/action/cvm"
 	"hcm/pkg/api/core"
 	coreasync "hcm/pkg/api/core/async"
@@ -48,10 +50,40 @@ func TimingHandleDeliverApplication(cliSet *client.ClientSet, interval time.Dura
 		time.Sleep(2 * time.Second)
 
 		kt := core.NewBackendKit()
-		if err := WaitAndHandleDeliverCvm(kt, cliSet.DataService(), cliSet.TaskServer()); err != nil {
+		if err := WaitAndHandleDeliverCvmByTenant(kt, cliSet.DataService(), cliSet.TaskServer()); err != nil {
 			logs.Errorf("WaitAndHandleDeliverCvm err: %v, rid: %s", err, kt.Rid)
 		}
 	}
+}
+
+// WaitAndHandleDeliverCvmByTenant wait deliver cvm.
+func WaitAndHandleDeliverCvmByTenant(kt *kit.Kit, dsCli *dataservice.Client, tsCli *taskserver.Client) error {
+	tenantIDs, err := tenant.ListAllTenantID(kt, dsCli)
+	if err != nil {
+		logs.Errorf("failed to list all tenant ids, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	eg, _ := errgroup.WithContext(kt.Ctx)
+	for _, id := range tenantIDs {
+		tenantID := id
+		eg.Go(func() error {
+			tenantKt := kt.NewSubKitWithTenant(tenantID)
+			subErr := WaitAndHandleDeliverCvm(tenantKt, dsCli, tsCli)
+			if subErr != nil {
+				logs.Errorf("failed to wait and handle deliver cvm, err: %v, tenant: %s, rid: %s", subErr,
+					tenantID, tenantKt.Rid)
+				return subErr
+			}
+			return nil
+		})
+	}
+
+	err = eg.Wait()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // WaitAndHandleDeliverCvm wait deliver cvm.
