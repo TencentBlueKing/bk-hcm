@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import AccountSelector from '@/components/account-selector/index-new.vue';
-import RegionSelector from '../region-selector';
-import ResourceGroupSelector from '../resource-group-selector';
+import RegionSelector from '../region-selector.vue';
+import ResourceGroupSelector from '../resource-group-selector.vue';
 import { IAccountItem } from '@/typings';
 import { ResourceTypeEnum, VendorEnum } from '@/common/constant';
 import { PropType, computed, watch } from 'vue';

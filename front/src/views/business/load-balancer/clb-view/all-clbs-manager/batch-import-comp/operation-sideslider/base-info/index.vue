@@ -6,7 +6,7 @@ import { VendorEnum } from '@/common/constant';
 import { IAccountItem } from '@/typings/account';
 import Step from '../components/step.vue';
 import AccountSelector from '@/components/account-selector/index-new.vue';
-import RegionSelector from '@/views/service/service-apply/components/common/region-selector';
+import RegionSelector from '@/views/service/service-apply/components/common/region-selector.vue';
 
 import { useI18n } from 'vue-i18n';
 import { Action, LbBatchImportBaseInfo, Operation } from '../../types';
