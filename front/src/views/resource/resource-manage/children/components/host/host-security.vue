@@ -1,17 +1,20 @@
 <script lang="ts" setup>
 import { ref, PropType, reactive, h, watch, computed, inject } from 'vue';
-import { Button, Message } from 'bkui-vue';
 import { useI18n } from 'vue-i18n';
 import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
-import bus from '@/common/bus';
 import { useResourceStore, useAccountStore } from '@/store';
 import { QueryRuleOPEnum } from '@/typings';
-import SecurityGroupSelectorDialog from '@/components/security-group-selector-dialog/index.vue';
-import { VendorEnum } from '@/common/constant';
-import dialogFooter from '@/components/common-dialog/dialog-footer.vue';
+import { GLOBAL_BIZS_KEY, VendorEnum } from '@/common/constant';
 import { AUTH_BIZ_UPDATE_IAAS_RESOURCE, AUTH_UPDATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
+import routerAction from '@/router/utils/action';
+import bus from '@/common/bus';
+
+import { Button, Message, OverflowTitle } from 'bkui-vue';
+import SecurityGroupSelectorDialog from '@/components/security-group-selector-dialog/index.vue';
+import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
+import DialogFooter from '@/components/common-dialog/dialog-footer.vue';
 
 const props = defineProps({
   data: {
@@ -132,20 +135,40 @@ watch(
 
 const columns: any = [
   {
-    label: 'ID',
+    label: '安全组ID',
+    showOverflowTooltip: false,
     render({ data }: any) {
-      return h(
-        Button,
-        {
-          text: true,
-          theme: 'primary',
-          onClick() {
-            securityId.value = data.vendor === 'azure' ? data.extension.security_group_id : data.id;
-            showRuleDialog();
-          },
-        },
-        [data.vendor === 'azure' ? data.extension.security_group_id : data.id || '--'],
-      );
+      const isAzureVendor = data.vendor === 'azure';
+      const operateId = isAzureVendor ? data.extension.security_group_id : data.id;
+      const displayId = isAzureVendor ? data.extension.cloud_security_group_id : data.cloud_id || '--';
+      const show = () => {
+        securityId.value = operateId;
+        showRuleDialog();
+      };
+      const jump = () => {
+        if (isResourcePage.value) {
+          routerAction.redirect({
+            path: '/resource/resource',
+            // accountId用于左侧账号列表定位账号
+            query: { type: 'security', accountId: data.account_id },
+          });
+        } else {
+          routerAction.redirect({
+            path: '/business/security',
+            query: { [GLOBAL_BIZS_KEY]: data.bk_biz_id, type: 'security', scene: 'group' },
+          });
+        }
+      };
+
+      return h('div', { class: 'with-operate-cell' }, [
+        h(OverflowTitle, { class: 'display-wrap text-link', onClick: show }, displayId),
+        h(CopyToClipboard, { class: 'operate-btn', content: displayId }),
+        h(
+          Button,
+          { class: 'operate-btn', text: true, theme: 'primary', onClick: jump },
+          h('i', { class: 'hcm-icon bkhcm-icon-jump-fill' }),
+        ),
+      ]);
     },
   },
   {
@@ -217,6 +240,30 @@ if (props.data.vendor === 'azure') {
   columns.unshift({
     label: t('网络接口名称'),
     field: 'name',
+    showOverflowTooltip: false,
+    render({ data }: any) {
+      const jump = () => {
+        if (isResourcePage.value) {
+          routerAction.redirect({
+            path: '/resource/resource',
+            // accountId用于左侧账号列表定位账号
+            query: { type: 'network-interface', accountId: data.account_id },
+          });
+        } else {
+          routerAction.redirect({ path: '/business/network-interface', query: { [GLOBAL_BIZS_KEY]: data.bk_biz_id } });
+        }
+      };
+
+      return h('div', { class: 'with-operate-cell' }, [
+        h(OverflowTitle, { class: 'display-wrap' }, data.name),
+        h(CopyToClipboard, { class: 'operate-btn', content: data.name }),
+        h(
+          Button,
+          { class: 'operate-btn', text: true, theme: 'primary', onClick: jump },
+          h('i', { class: 'hcm-icon bkhcm-icon-jump-fill' }),
+        ),
+      ]);
+    },
   });
 }
 
@@ -505,6 +552,27 @@ getSecurityGroupsList();
 .host-security-container {
   .security-list-table {
     max-height: 100% !important;
+
+    :deep(.with-operate-cell) {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+
+      .display-wrap {
+        max-width: calc(100% - 32px);
+      }
+
+      .operate-btn {
+        width: 12px;
+        display: none;
+      }
+
+      &:hover {
+        .operate-btn {
+          display: inline-flex;
+        }
+      }
+    }
   }
   .toolbar {
     display: flex;
