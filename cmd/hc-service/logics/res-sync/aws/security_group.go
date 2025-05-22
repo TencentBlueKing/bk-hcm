@@ -51,6 +51,7 @@ func (opt SyncSGOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
+// SecurityGroup ...
 func (cli *client) SecurityGroup(kt *kit.Kit, params *SyncBaseParams, opt *SyncSGOption) (*SyncResult, error) {
 	if err := validator.ValidateTool(params, opt); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)

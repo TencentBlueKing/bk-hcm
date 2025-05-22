@@ -70,6 +70,7 @@ func (cli *client) NetworkInterface(kt *kit.Kit, params *SyncBaseParams, opt *Sy
 		if _, err := cli.syncNetworkInterface(kt, syncOpt); err != nil {
 			logs.ErrorDepthf(1, "[%s] account: %s cvm: %s sync network interface failed, err: %v, rid: %s",
 				enumor.HuaWei, params.AccountID, param, err, kt.Rid)
+			return err
 		}
 
 		return nil
@@ -295,6 +296,7 @@ func (cli *client) completeNetworkInterfaceCreateInfo(kt *kit.Kit, nis []typesni
 		subnetCloudIDMap[*ni.CloudSubnetID] = struct{}{}
 	}
 
+	// 云id -> subnet的实例
 	subnetMap, err := cli.getSubnetMapByCloudID(kt, converter.MapKeyToStringSlice(subnetCloudIDMap))
 	if err != nil {
 		return err
