@@ -36,7 +36,6 @@ import (
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/tools/converter"
 )
 
 // CreateCvm create cvm.
@@ -108,7 +107,7 @@ func (svc *cvmSvc) buildCreateAzureCvmTasks(body json.RawMessage) ([]ts.CustomFl
 
 	opt := &actioncvm.AssignCvmOption{
 		BizID:     constant.UnassignedBiz,
-		BkCloudID: converter.ValToPtr(constant.UnassignedBkCloudID),
+		BkCloudID: req.BkCloudID,
 	}
 	tasks := actioncvm.BuildCreateCvmTasks(req.RequiredCount, 1, opt,
 		func(actionID action.ActIDType, count int64) ts.CustomFlowTask {
@@ -139,7 +138,7 @@ func (svc *cvmSvc) buildCreateHuaWeiCvmTasks(body json.RawMessage) ([]ts.CustomF
 
 	opt := &actioncvm.AssignCvmOption{
 		BizID:     constant.UnassignedBiz,
-		BkCloudID: converter.ValToPtr(constant.UnassignedBkCloudID),
+		BkCloudID: req.BkCloudID,
 	}
 	tasks := actioncvm.BuildCreateCvmTasks(req.RequiredCount, constant.BatchCreateCvmFromCloudMaxLimit, opt,
 		func(actionID action.ActIDType, count int64) ts.CustomFlowTask {
@@ -170,7 +169,7 @@ func (svc *cvmSvc) buildCreateGcpCvmTasks(body json.RawMessage) ([]ts.CustomFlow
 
 	opt := &actioncvm.AssignCvmOption{
 		BizID:     constant.UnassignedBiz,
-		BkCloudID: converter.ValToPtr(constant.UnassignedBkCloudID),
+		BkCloudID: req.BkCloudID,
 	}
 	tasks := actioncvm.BuildCreateCvmTasks(req.RequiredCount, constant.BatchCreateCvmFromCloudMaxLimit, opt,
 		func(actionID action.ActIDType, count int64) ts.CustomFlowTask {
@@ -201,7 +200,7 @@ func (svc *cvmSvc) buildCreateAwsCvmTasks(body json.RawMessage) ([]ts.CustomFlow
 
 	opt := &actioncvm.AssignCvmOption{
 		BizID:     constant.UnassignedBiz,
-		BkCloudID: converter.ValToPtr(constant.UnassignedBkCloudID),
+		BkCloudID: req.BkCloudID,
 	}
 	tasks := actioncvm.BuildCreateCvmTasks(req.RequiredCount, constant.BatchCreateCvmFromCloudMaxLimit, opt,
 		func(actionID action.ActIDType, count int64) ts.CustomFlowTask {
@@ -232,7 +231,7 @@ func (svc *cvmSvc) buildCreateTCloudCvmTasks(body json.RawMessage) ([]ts.CustomF
 
 	opt := &actioncvm.AssignCvmOption{
 		BizID:     constant.UnassignedBiz,
-		BkCloudID: converter.ValToPtr(constant.UnassignedBkCloudID),
+		BkCloudID: req.BkCloudID,
 	}
 	tasks := actioncvm.BuildCreateCvmTasks(req.RequiredCount, constant.BatchCreateCvmFromCloudMaxLimit, opt,
 		func(actionID action.ActIDType, count int64) ts.CustomFlowTask {

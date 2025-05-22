@@ -137,6 +137,10 @@ func (a *accountSvc) GetAccount(cts *rest.Contexts) (interface{}, error) {
 			logs.Errorf("get account failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
 		}
+		if err = accountDetailFullFill(a, cts, acc); err != nil {
+			logs.Errorf("acc detail full fill failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, err
+		}
 		return acc, nil
 	default:
 		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", baseInfo.Vendor))
