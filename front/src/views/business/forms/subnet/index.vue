@@ -32,7 +32,6 @@ const handleFormFilter = (data: BusinessFormFilter) => {
 
 // 提交
 const submit = async () => {
-  console.log('formData', formData);
   submitLoading.value = true;
   try {
     await businessStore.createSubnet(accountStore.bizs, formData, isResourcePage);
@@ -41,15 +40,12 @@ const submit = async () => {
       theme: 'success',
     });
     emit('success');
-  } catch (error) {
-    console.log(error);
   } finally {
     submitLoading.value = false;
   }
 };
 
 const getVpcDetail = async (vpcId: string) => {
-  console.log('vpcId', vpcId);
   if (!vpcId) return;
   const res = await resourceStore.detail('vpcs', vpcId);
   ipv4Cidr.value = res?.data?.extension?.cidr
@@ -84,7 +80,11 @@ watch(
         <bk-input class="item-warp-component" v-model="formData.name" :placeholder="t('请输入子网名称')" />
       </bk-form-item>
       <bk-form-item v-if="formData.vendor === 'azure'" :label="t('资源组')" class="item-warp">
-        <resource-group-selector v-model="formData.resource_group" :vendor="formData.vendor"></resource-group-selector>
+        <resource-group-selector
+          v-model="formData.resource_group"
+          :account-id="formData.account_id"
+          :vendor="formData.vendor"
+        ></resource-group-selector>
       </bk-form-item>
       <bk-form-item :label="t('所属的VPC')" class="item-warp">
         <vpc-selector
@@ -101,12 +101,6 @@ watch(
       >
         <zone-selector :vendor="formData.vendor" :region="formData.region" v-model="formData.zone"></zone-selector>
       </bk-form-item>
-      <!-- <bk-form-item
-        :label="t('资源组')"
-        class="item-warp"
-      >
-        <resource-group-selector v-model="formData.resource"></resource-group-selector>
-      </bk-form-item> -->
       <bk-form-item
         :label="t('IPv4 CIDR')"
         class="item-warp"

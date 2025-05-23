@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import AccountSelector from '@/components/account-selector/index-new.vue';
-import RegionSelector from '../region-selector';
-import ResourceGroupSelector from '../resource-group-selector';
+import RegionSelector from '../region-selector.vue';
+import ResourceGroupSelector from '../resource-group-selector.vue';
 import { IAccountItem } from '@/typings';
 import { ResourceTypeEnum, VendorEnum } from '@/common/constant';
 import { PropType, computed, watch } from 'vue';
@@ -116,7 +116,11 @@ watch(
       :property="type === ResourceTypeEnum.SUBNET ? 'resource_group' : 'resourceGroup'"
       v-if="selectedVendor === VendorEnum.AZURE"
     >
-      <resource-group-selector :account-id="selectedCloudAccountId" v-model="selectedResourceGroup" />
+      <resource-group-selector
+        v-model="selectedResourceGroup"
+        :account-id="selectedCloudAccountId"
+        :vendor="selectedVendor"
+      />
     </FormItem>
     <FormItem label="云地域" required property="region">
       <region-selector

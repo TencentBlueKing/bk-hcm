@@ -32,6 +32,7 @@ const title = computed(() => {
 });
 
 // base-info - 表单
+const formRef = useTemplateRef<typeof Form>('batch-import-clb-form');
 const lastFormModel = localStorageActions.get('bk-hcm-lb-batch-import-form-model', (value) => JSON.parse(value));
 const { formModel } = useFormModel<LbBatchImportBaseInfo>(
   lastFormModel || {
@@ -140,9 +141,14 @@ watch(model, (val) => {
     :submit-tooltips="submitTooltips"
     @handle-submit="handleSubmit"
   >
-    <Form :model="formModel">
+    <Form ref="batch-import-clb-form" :model="formModel">
       <!-- 1. 信息录入 -->
-      <BaseInfo ref="base-info" :active-action="activeAction" :global-disabled="isBaseInfoDisabled" />
+      <BaseInfo
+        ref="base-info"
+        :active-action="activeAction"
+        :global-disabled="isBaseInfoDisabled"
+        :form-ref="formRef"
+      />
 
       <!-- 2. 上传文件 -->
       <IUpload

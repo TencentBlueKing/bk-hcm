@@ -44,16 +44,14 @@ const { columns, settings } = useColumns('route');
 
 <template>
   <bk-loading :loading="isLoading">
-    <section class="flex-row align-items-center justify-content-end">
-      <bk-search-select
-        class="w500 ml10"
-        clearable
-        :conditions="[]"
-        :data="selectSearchData"
-        v-model="searchValue"
-        value-behavior="need-key"
-      />
-    </section>
+    <bk-search-select
+      class="search"
+      clearable
+      :conditions="[]"
+      :data="selectSearchData"
+      v-model="searchValue"
+      value-behavior="need-key"
+    />
     <bk-table
       :settings="settings"
       class="mt20"
@@ -71,13 +69,11 @@ const { columns, settings } = useColumns('route');
 </template>
 
 <style lang="scss" scoped>
-.w100 {
-  width: 100px;
-}
-.w60 {
-  width: 60px;
-}
 .mt20 {
   margin-top: 20px;
+}
+.search {
+  width: 500px;
+  margin-left: auto;
 }
 </style>

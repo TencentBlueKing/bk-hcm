@@ -118,7 +118,7 @@ export const BatchDistribution = defineComponent({
       <>
         {whereAmI.value === Senarios.resource ? (
           <Button
-            class={'mw88 ml8 mr8'}
+            class={'mw88'}
             onClick={() => {
               isShow.value = true;
             }}

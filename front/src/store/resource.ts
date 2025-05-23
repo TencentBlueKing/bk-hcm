@@ -13,12 +13,10 @@ export interface GetAllSortParams {
   filter: FilterType;
 }
 export interface SyncResourceParams {
-  vendor: string | string[];
-  account_id: string;
-  resource: 'load_balancer';
-  regions: string[];
+  regions?: string[];
   cloud_ids?: string[];
-  tag_filters?: string[];
+  tag_filters?: Record<string, string[]>;
+  resource_group_names?: string[]; // azure
 }
 export interface BatchBindSecurityInfoParams {
   cvm_id: string;
@@ -293,14 +291,11 @@ export const useResourceStore = defineStore({
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/create`, data);
     },
     // 同步拉取资源
-    syncResource(params: SyncResourceParams) {
-      const { vendor, account_id, resource, regions, cloud_ids, tag_filters } = params;
-      const url = `/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/accounts/${account_id}/resources/${resource}/sync_by_cond`;
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}${url}`, {
-        regions,
-        cloud_ids,
-        tag_filters,
-      });
+    syncResource(vendor: string, accountId: string, resourceName: string, params: SyncResourceParams) {
+      return http.post(
+        `/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/accounts/${accountId}/resources/${resourceName}/sync_by_cond`,
+        params,
+      );
     },
   },
 });

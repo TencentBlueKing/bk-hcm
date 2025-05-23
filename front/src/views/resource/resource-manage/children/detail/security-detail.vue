@@ -1,9 +1,11 @@
 <script lang="ts" setup>
+import { Message } from 'bkui-vue';
 import DetailHeader from '../../common/header/detail-header';
 import DetailTab from '../../common/tab/detail-tab';
 import SecurityInfo from '../components/security/security-info.vue';
 import SecurityRelate from '../components/security/security-relate/index.vue';
 import SecurityRule from '../components/security/security-rule.vue';
+import Confirm from '@/components/confirm';
 import { useI18n } from 'vue-i18n';
 
 import { watch, ref, reactive, computed, provide } from 'vue';
@@ -174,6 +176,19 @@ const getTemplateData = async (detail: { account_id: string }) => {
   templateData.portGroupList = res[3]?.data?.details;
 };
 
+const handleSync = async () => {
+  const { account_id, vendor, cloud_id, region, resource_group_name: resourceGroupName } = detail.value;
+  const isAzureVendor = vendor === 'azure';
+  Confirm(t('同步单个安全组'), t('从云上同步该安全组、安全组规则、关联的实例信息等'), async () => {
+    await resourceStore.syncResource(vendor, account_id, 'security_group', {
+      cloud_ids: [cloud_id],
+      regions: isAzureVendor ? undefined : [region],
+      resource_group_names: isAzureVendor ? [resourceGroupName] : undefined,
+    });
+    Message({ theme: 'success', message: t('已提交同步任务，请等待同步结果') });
+  });
+};
+
 provide('isAssigned', isAssigned);
 provide('hasEditScopeInResource', hasEditScopeInResource);
 provide('hasEditScopeInBusiness', hasEditScopeInBusiness);
@@ -181,7 +196,12 @@ provide('operateTooltipsOption', operateTooltipsOption);
 </script>
 
 <template>
-  <detail-header>{{ t('安全组') }}：ID（{{ `${securityId}` }}）</detail-header>
+  <detail-header>
+    {{ t('安全组') }}：ID（{{ `${securityId}` }}）
+    <template #right>
+      <bk-button @click="handleSync">{{ t('同步') }}</bk-button>
+    </template>
+  </detail-header>
 
   <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
     <detail-tab :tabs="tabs" :active="activeTab" :on-change="handleTabsChange">
