@@ -14,7 +14,7 @@ import { useRegionsStore } from '@/store/useRegionsStore';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import usePage from '@/hooks/use-page';
 import { useVerify } from '@/hooks';
-import { getSimpleConditionBySearchSelect, transformSimpleCondition } from '@/utils/search';
+import { transformSimpleCondition } from '@/utils/search';
 import {
   RELATED_RES_KEY_MAP,
   RELATED_RES_NAME_MAP,
@@ -167,14 +167,15 @@ const handleOperateSuccess = () => {
 };
 
 const searchRef = useTemplateRef('relate-resource-search');
-const handleSearch = (searchValue: ISearchSelectValue) => {
+const formatterOptions = [
+  { field: 'region', formatter: (val: string) => regionStore.getRegionNameEN(val) },
+  { field: 'bk_biz_id', formatter: (name: string) => getBusinessIds(name) },
+];
+const handleSearch = (_: ISearchSelectValue, flatCondition: Record<string, any>) => {
   // 搜索条件变更后，重置勾选
   handleClear();
 
-  condition.value = getSimpleConditionBySearchSelect(searchValue, [
-    { field: 'region', formatter: (val: string) => regionStore.getRegionNameEN(val) },
-    { field: 'bk_biz_id', formatter: (name: string) => getBusinessIds(name) },
-  ]);
+  condition.value = flatCondition;
 
   if (pagination.current === 1) {
     getList();
@@ -236,6 +237,8 @@ watch(
         ref="relate-resource-search"
         :resource-name="tabActive"
         operation="base"
+        flat
+        :options="formatterOptions"
         @search="handleSearch"
       />
     </div>

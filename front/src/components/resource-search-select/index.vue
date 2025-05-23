@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { SearchSelect } from 'bkui-vue';
-import type { ISearchValue } from 'bkui-vue/lib/search-select/utils';
+import type { ISearchValue, ValidateValuesFunc } from 'bkui-vue/lib/search-select/utils';
 import { ResourceTypeEnum } from '@/common/resource-constant';
 import optionFactory from './option-factory';
 
@@ -12,6 +12,7 @@ export interface IResourceSelectProps {
   resourceType: ResourceTypeEnum;
   clearable?: boolean;
   valueBehavior?: 'all' | 'need-key';
+  validateValues?: ValidateValuesFunc;
 }
 
 const props = withDefaults(defineProps<IResourceSelectProps>(), {
@@ -45,6 +46,7 @@ const selectValue = computed({
     :get-menu-list="getOptionMenu"
     :unique-select="true"
     :value-behavior="valueBehavior"
+    :validate-values="validateValues"
   />
 </template>
 

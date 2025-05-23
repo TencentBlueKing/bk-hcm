@@ -11,7 +11,7 @@ import {
 } from '@/store/security-group';
 import { RELATED_RES_KEY_MAP, RELATED_RES_PROPERTIES_MAP } from '@/constants/security-group';
 import { ISearchSelectValue } from '@/typings';
-import { enableCount, getSimpleConditionBySearchSelect, transformSimpleCondition } from '@/utils/search';
+import { enableCount, transformSimpleCondition } from '@/utils/search';
 import { getPrivateIPs } from '@/utils';
 import http from '@/http';
 
@@ -68,11 +68,11 @@ watchEffect(() => {
 });
 
 const searchRef = useTemplateRef('bind-related-resource-search');
-const handleSearch = (searchValue: ISearchSelectValue) => {
+const handleSearch = (searchValue: ISearchSelectValue, flatCondition: Record<string, any>) => {
   if (!searchValue.length) {
     condition.value = { account_id: props.detail.account_id, region: props.detail.region, vendor: props.detail.vendor };
   }
-  condition.value = { ...condition.value, ...getSimpleConditionBySearchSelect(searchValue) };
+  condition.value = { ...condition.value, ...flatCondition };
 
   if (pagination.current === 1) {
     getList();
@@ -134,6 +134,7 @@ defineExpose({ handleClosed });
             ref="bind-related-resource-search"
             :resource-name="tabActive"
             operation="bind"
+            flat
             @search="handleSearch"
           />
           <data-list

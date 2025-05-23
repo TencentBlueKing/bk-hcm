@@ -8,7 +8,6 @@ import {
   SecurityGroupRelatedResourceName,
 } from '@/store/security-group';
 import { useBusinessGlobalStore } from '@/store/business-global';
-import { getSimpleConditionBySearchSelect } from '@/utils/search';
 import { RELATED_RES_KEY_MAP } from '@/constants/security-group';
 import { ISearchSelectValue } from '@/typings';
 
@@ -37,11 +36,12 @@ const handleOperateSuccess = () => {
 const searchRef = useTemplateRef('relate-resource-search');
 const collapseDataListRef = useTemplateRef('collapse-data-list');
 const condition = ref<Record<string, any>>({});
-const handleSearch = (searchValue: ISearchSelectValue) => {
-  condition.value = getSimpleConditionBySearchSelect(searchValue, [
-    { field: 'region', formatter: (val: string) => regionStore.getRegionNameEN(val) },
-    { field: 'bk_biz_id', formatter: (name: string) => getBusinessIds(name) },
-  ]);
+const formatterOptions = [
+  { field: 'region', formatter: (val: string) => regionStore.getRegionNameEN(val) },
+  { field: 'bk_biz_id', formatter: (name: string) => getBusinessIds(name) },
+];
+const handleSearch = (_: ISearchSelectValue, flatCondition: Record<string, any>) => {
+  condition.value = flatCondition;
 
   collapseDataListRef.value?.forEach((compRef) => {
     if (compRef.isExpand) {
@@ -65,6 +65,8 @@ watch(tabActive, () => {
         ref="relate-resource-search"
         :resource-name="tabActive"
         operation="base"
+        flat
+        :options="formatterOptions"
         @search="handleSearch"
       />
     </div>

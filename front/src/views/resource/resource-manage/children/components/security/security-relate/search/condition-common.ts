@@ -34,8 +34,8 @@ const configMap = {
   [SecurityGroupRelatedResourceName.CLB]: clbConditionConfig,
 };
 
-const cvmBaseFields = ['private_ipv4_addresses', 'region', 'name', 'bk_biz_id'];
-const cvmBindFields = ['private_ipv4_addresses', 'cloud_vpc_ids', 'name'];
+const cvmBaseFields = ['private_ip', 'region', 'name', 'bk_biz_id'];
+const cvmBindFields = ['private_ip', 'cloud_vpc_ids', 'name'];
 const cvmUnbindFields = [...cvmBindFields];
 const clbBaseFields = [
   'name',
