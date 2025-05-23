@@ -448,7 +448,7 @@ type RegisterTarget struct {
 	TargetType       enumor.InstType `json:"inst_type,omitempty" validate:"required"`
 	EniIp            string          `json:"eni_ip,omitempty" validate:"omitempty"`
 	Port             int64           `json:"port" validate:"required"`
-	Weight           int64           `json:"weight" validate:"required"`
+	Weight           *int64          `json:"weight" validate:"required,min=0,max=100"`
 	Zone             string          `json:"zone,omitempty" validate:"omitempty"`
 	InstName         string          `json:"inst_name,omitempty" validate:"omitempty"`
 	PrivateIPAddress []string        `json:"private_ip_address,omitempty" validate:"omitempty"`

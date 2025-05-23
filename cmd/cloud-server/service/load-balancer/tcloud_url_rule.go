@@ -522,7 +522,7 @@ func (svc *lbSvc) applyTargetToRule(kt *kit.Kit, tgID, ruleCloudID string, lblIn
 				CloudInstID:      target.CloudInstID,
 				TargetType:       target.InstType,
 				Port:             target.Port,
-				Weight:           converter.PtrToVal(target.Weight),
+				Weight:           target.Weight,
 				Zone:             target.Zone,
 				InstName:         target.InstName,
 				PrivateIPAddress: target.PrivateIPAddress,

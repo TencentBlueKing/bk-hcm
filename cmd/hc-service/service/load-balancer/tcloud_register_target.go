@@ -79,7 +79,7 @@ func (svc *clbSvc) RegisterTargetToListenerRule(cts *rest.Contexts) (any, error)
 			ListenerId: cvt.ValToPtr(req.CloudListenerID),
 			Port:       cvt.ValToPtr(target.Port),
 			Type:       cvt.ValToPtr(string(target.TargetType)),
-			Weight:     cvt.ValToPtr(target.Weight),
+			Weight:     target.Weight,
 		}
 		switch target.TargetType {
 		case enumor.CvmInstType:
