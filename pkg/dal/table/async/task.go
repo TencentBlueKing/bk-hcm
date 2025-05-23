@@ -64,6 +64,7 @@ type AsyncFlowTaskTable struct {
 	State      enumor.TaskState  `db:"state" json:"state"`
 	Reason     *Reason           `db:"reason" json:"reason"`
 	Result     types.JsonField   `db:"result" json:"result"`
+	TenantID   string            `db:"tenant_id" json:"tenant_id"`
 	Creator    string            `db:"creator" json:"creator" validate:"lte=64"`
 	Reviser    string            `db:"reviser" json:"reviser" validate:"lte=64"`
 	CreatedAt  types.Time        `db:"created_at" json:"created_at" validate:"excluded_unless"`

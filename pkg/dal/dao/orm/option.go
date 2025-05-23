@@ -170,7 +170,7 @@ type InjectTenantIDOpt struct {
 // 不支持的case示例：
 //  1. 只要是支持多租户的表，就会增加租户ID的过滤条件，不支持只给指定表添加租户ID条件的需求
 func NewInjectTenantIDOpt(tenantID string) *InjectTenantIDOpt {
-	return &InjectTenantIDOpt{tenantID: tenantID, enabledTenant: cc.DataService().Tenant.Enabled}
+	return &InjectTenantIDOpt{tenantID: tenantID, enabledTenant: cc.TenantEnable()}
 }
 
 // enabled check is enabled.
