@@ -22,6 +22,8 @@ import ResourceSearchSelect from '@/components/resource-search-select/index.vue'
 import BatchAssign from './assign-host/dialog/batch-assign.vue';
 import SingleAssign from './assign-host/dialog/single-assign.vue';
 import type { ICvmItem } from '@/store';
+import { ValidateValuesFunc } from 'bkui-vue/lib/search-select/utils';
+import { parseIP } from '@/utils';
 
 const { DropdownMenu, DropdownItem } = Dropdown;
 
@@ -42,6 +44,15 @@ const props = defineProps({
 const { whereAmI, isResourcePage, isBusinessPage } = useWhereAmI();
 
 const { searchValue, filter } = useFilterHost(props);
+const validateValues: ValidateValuesFunc = async (item, values) => {
+  if (!item) return '请选择条件';
+  // IP值为单选，这里可以简单处理（即便是多IP搜索，粘贴上去也是一个值）
+  if (['private_ip', 'public_ip'].includes(item.id)) {
+    const { IPv4List, IPv6List } = parseIP(values[0].id);
+    return Boolean(IPv4List.length || IPv6List.length) ? true : 'IP格式有误';
+  }
+  return true;
+};
 
 const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort, triggerApi } = useQueryList(
   { filter: filter.value },
@@ -315,7 +326,11 @@ const showSingleAssignHost = (cvm: ICvmItem) => {
       ></HostOperations>
 
       <div class="flex-row align-items-center justify-content-arround search-selector-container">
-        <resource-search-select v-model="searchValue" :resource-type="ResourceTypeEnum.CVM" value-behavior="need-key" />
+        <resource-search-select
+          v-model="searchValue"
+          :resource-type="ResourceTypeEnum.CVM"
+          :validate-values="validateValues"
+        />
         <slot name="recycleHistory"></slot>
       </div>
     </section>
