@@ -44,6 +44,7 @@ import (
 
 // RootAccountControllerOption option for RootAccountController
 type RootAccountControllerOption struct {
+	TenantID           string
 	RootAccountID      string
 	RootAccountCloudID string
 	Vendor             enumor.Vendor
@@ -69,6 +70,7 @@ func NewRootAccountController(opt *RootAccountControllerOption) (*RootAccountCon
 	}
 	return &RootAccountController{
 		Client:             opt.Client,
+		TenantID:           opt.TenantID,
 		RootAccountID:      opt.RootAccountID,
 		RootAccountCloudID: opt.RootAccountCloudID,
 		Vendor:             opt.Vendor,
@@ -79,6 +81,7 @@ func NewRootAccountController(opt *RootAccountControllerOption) (*RootAccountCon
 type RootAccountController struct {
 	Client             *client.ClientSet
 	Sd                 serviced.ServiceDiscover
+	TenantID           string
 	RootAccountID      string
 	RootAccountCloudID string
 	Vendor             enumor.Vendor
@@ -95,6 +98,7 @@ func (rac *RootAccountController) Start() error {
 		return fmt.Errorf("controller already start")
 	}
 	kt := getInternalKit()
+	kt.SetTenant(rac.TenantID)
 	cancelFunc := kt.CtxBackgroundWithCancel()
 	rac.kt = kt
 	rac.cancelFunc = cancelFunc

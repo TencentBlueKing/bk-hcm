@@ -67,6 +67,11 @@ type Kit struct {
 	RequestSource enumor.RequestSourceType
 }
 
+// SetTenant set tenant id
+func (kt *Kit) SetTenant(tenantID string) {
+	kt.TenantID = tenantID
+}
+
 // NewSubKit 在当前kit后缀加上6位随机字符串
 func (kt *Kit) NewSubKit() *Kit {
 	suffix := rand.String(6)
@@ -80,6 +85,13 @@ func (kt *Kit) NewSubKitWithSuffix(suffix string) *Kit {
 	subRid := kt.Rid + "/" + suffix
 	newSubKit.Rid = subRid
 	newSubKit.Ctx = context.WithValue(kt.Ctx, constant.RidKey, subRid)
+	return newSubKit
+}
+
+// NewSubKitWithTenant 生成子kit, 变更租户id
+func (kt *Kit) NewSubKitWithTenant(tenantID string) *Kit {
+	newSubKit := converter.ValToPtr(*kt)
+	newSubKit.TenantID = tenantID
 	return newSubKit
 }
 
