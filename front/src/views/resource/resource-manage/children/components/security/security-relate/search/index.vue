@@ -4,9 +4,18 @@ import { SecurityGroupRelatedResourceName } from '@/store/security-group';
 import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
 import conditionFactory from './condition-factory';
 import { ISearchSelectValue } from '@/typings';
+import { getLocalFilterFnBySearchSelect, getSimpleConditionBySearchSelect } from '@/utils/search';
 
-const props = defineProps<{ resourceName: SecurityGroupRelatedResourceName; operation: string }>();
-const emit = defineEmits(['search']);
+const props = defineProps<{
+  resourceName: SecurityGroupRelatedResourceName;
+  operation: string;
+  flat?: boolean;
+  localSearch?: boolean;
+  options?: Array<{ field: string; formatter: Function }>;
+}>();
+const emit = defineEmits<{
+  search: [value: ISearchSelectValue, result?: any];
+}>();
 const attrs: any = useAttrs();
 const { whereAmI } = useWhereAmI();
 
@@ -27,7 +36,13 @@ const clear = () => {
 };
 
 watch(searchValue, (val) => {
-  emit('search', val);
+  if (props.flat) {
+    emit('search', val, getSimpleConditionBySearchSelect(val, props.options));
+  } else if (props.localSearch) {
+    emit('search', val, getLocalFilterFnBySearchSelect(val, props.options));
+  } else {
+    emit('search', val);
+  }
 });
 
 defineExpose({ clear });
