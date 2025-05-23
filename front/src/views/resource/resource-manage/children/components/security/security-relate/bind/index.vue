@@ -116,7 +116,7 @@ defineExpose({ handleClosed });
 </script>
 
 <template>
-  <bk-dialog class="bind-dialog" v-model:is-show="model" :width="1500" :close-icon="false" @closed="handleClosed">
+  <bk-dialog class="bind-dialog" v-model:is-show="model" width="80vw" :close-icon="false" @closed="handleClosed">
     <bk-resize-layout initial-divide="25%" placement="right" min="300" class="bind-dialog-content">
       <template #main>
         <div class="main">
