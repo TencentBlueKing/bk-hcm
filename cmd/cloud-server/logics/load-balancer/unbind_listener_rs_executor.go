@@ -261,7 +261,7 @@ func (c *BatchListenerUnbindRsExecutor) createTaskManagement(
 // createTaskDetails 创建任务详情列表
 func (c *BatchListenerUnbindRsExecutor) createTaskDetails(kt *kit.Kit, taskID string) error {
 	taskDetailsCreateReq := &task.CreateDetailReq{}
-	for _, detail := range c.params.ListenerQueryList {
+	for _, detail := range c.details {
 		taskDetailsCreateReq.Items = append(taskDetailsCreateReq.Items, task.CreateDetailField{
 			BkBizID:          c.bkBizID,
 			TaskManagementID: taskID,
@@ -277,9 +277,9 @@ func (c *BatchListenerUnbindRsExecutor) createTaskDetails(kt *kit.Kit, taskID st
 		return err
 	}
 
-	if len(result.IDs) != len(c.params.ListenerQueryList) {
-		return fmt.Errorf("create task details failed, expect created[%d] task details, but got [%d]",
-			len(c.params.ListenerQueryList), len(result.IDs))
+	if len(result.IDs) != len(c.details) {
+		return fmt.Errorf("create task details failed, operation: %s, expect created[%d] task details, but got [%d]",
+			enumor.TaskUnbindListenerRs, len(c.details), len(result.IDs))
 	}
 
 	for i := range result.IDs {

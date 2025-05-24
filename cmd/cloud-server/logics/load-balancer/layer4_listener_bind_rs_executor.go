@@ -125,7 +125,7 @@ func (c *Layer4ListenerBindRSExecutor) validate(kt *kit.Kit) error {
 
 	for _, detail := range c.details {
 		if detail.Status == NotExecutable {
-			return fmt.Errorf("record(%v) is not executable", detail)
+			return fmt.Errorf("layer4 listener bind rs failed, record is not executable: %+v", detail)
 		}
 	}
 	return nil
