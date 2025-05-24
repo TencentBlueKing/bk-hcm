@@ -527,6 +527,7 @@ type ListBatchListenerResult struct {
 	Protocol     enumor.ProtocolType         `json:"protocol"`
 	Port         int64                       `json:"port"`
 	RsList       []*LoadBalancerTargetRsList `json:"rs_list"`
+	NewRsWeight  *int64                      `json:"new_rs_weight"`
 }
 
 // LoadBalancerTargetRsList 负载均衡下的RS列表

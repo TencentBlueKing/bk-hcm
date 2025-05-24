@@ -124,7 +124,7 @@ func (c *CreateUrlRuleExecutor) validate(kt *kit.Kit) error {
 
 	for _, detail := range c.details {
 		if detail.Status == NotExecutable {
-			return fmt.Errorf("record(%v) is not executable", detail)
+			return fmt.Errorf("create url rule failed, record is not executable: %+v", detail)
 		}
 	}
 
