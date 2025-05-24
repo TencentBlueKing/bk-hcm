@@ -88,9 +88,6 @@ func (c *CreateLayer7ListenerExecutor) Execute(kt *kit.Kit, source enumor.TaskMa
 		return "", err
 	}
 	c.filter()
-	if len(c.details) == 0 {
-		return "", fmt.Errorf("there are no details to be executed")
-	}
 
 	taskID, err = c.buildTaskManagementAndDetails(kt, source)
 	if err != nil {
@@ -131,7 +128,7 @@ func (c *CreateLayer7ListenerExecutor) validate(kt *kit.Kit) error {
 
 	for _, detail := range c.details {
 		if detail.Status == NotExecutable {
-			return fmt.Errorf("record is not executable: %+v", detail)
+			return fmt.Errorf("create layer7 listener failed, record is not executable: %+v", detail)
 		}
 	}
 	return nil

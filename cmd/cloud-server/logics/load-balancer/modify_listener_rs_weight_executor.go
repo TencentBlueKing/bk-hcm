@@ -129,7 +129,7 @@ func (c *BatchListenerModifyRsWeightExecutor) getNewListenerRsList(kt *kit.Kit) 
 	newLblRsList := make([]*dataproto.ListBatchListenerResult, 0)
 	for _, item := range lblResp.Details {
 		for _, rsItem := range item.RsList {
-			if cvt.PtrToVal(rsItem.Weight) != c.params.NewRsWeight {
+			if cvt.PtrToVal(rsItem.Weight) != cvt.PtrToVal(c.params.NewRsWeight) {
 				newLblRsList = append(newLblRsList, &dataproto.ListBatchListenerResult{
 					ClbID:        item.ClbID,
 					CloudClbID:   item.CloudClbID,
@@ -142,6 +142,7 @@ func (c *BatchListenerModifyRsWeightExecutor) getNewListenerRsList(kt *kit.Kit) 
 					Protocol:     item.Protocol,
 					Port:         item.Port,
 					RsList:       item.RsList,
+					NewRsWeight:  c.params.NewRsWeight,
 				})
 			}
 		}
@@ -194,7 +195,7 @@ func (c *BatchListenerModifyRsWeightExecutor) validate(kt *kit.Kit) error {
 			return fmt.Errorf("detail[%d] validate failed, item: %+v, err: %v", cur, detail, err)
 		}
 	}
-	if c.params.NewRsWeight < 0 || c.params.NewRsWeight > 100 {
+	if cvt.PtrToVal(c.params.NewRsWeight) < 0 || cvt.PtrToVal(c.params.NewRsWeight) > 100 {
 		return fmt.Errorf("new_rs_weight must be in [0, 100]")
 	}
 	return nil
@@ -300,7 +301,7 @@ func (c *BatchListenerModifyRsWeightExecutor) createTaskManagement(
 // createTaskDetails 创建任务详情列表
 func (c *BatchListenerModifyRsWeightExecutor) createTaskDetails(kt *kit.Kit, taskID string) error {
 	taskDetailsCreateReq := &task.CreateDetailReq{}
-	for _, detail := range c.params.ListenerQueryList {
+	for _, detail := range c.details {
 		taskDetailsCreateReq.Items = append(taskDetailsCreateReq.Items, task.CreateDetailField{
 			BkBizID:          c.bkBizID,
 			TaskManagementID: taskID,
@@ -316,9 +317,9 @@ func (c *BatchListenerModifyRsWeightExecutor) createTaskDetails(kt *kit.Kit, tas
 		return err
 	}
 
-	if len(result.IDs) != len(c.params.ListenerQueryList) {
-		return fmt.Errorf("create task details failed, expect created[%d] task details, but got [%d]",
-			len(c.params.ListenerQueryList), len(result.IDs))
+	if len(result.IDs) != len(c.details) {
+		return fmt.Errorf("create task details failed, operation: %s, expect created[%d] task details, but got [%d]",
+			enumor.TaskModifyListenerRsWeight, len(c.details), len(result.IDs))
 	}
 
 	for i := range result.IDs {

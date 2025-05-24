@@ -609,7 +609,7 @@ type TCloudBatchModifyRsWeightReq struct {
 	Vendor              enumor.Vendor                    `json:"vendor" validate:"required"`
 	LoadBalancerCloudId string                           `json:"load_balancer_cloud_id" validate:"required"`
 	Details             []*cloud.ListBatchListenerResult `json:"details"`
-	NewRsWeight         int64                            `json:"new_rs_weight" validate:"required"`
+	NewRsWeight         *int64                           `json:"new_rs_weight" validate:"required,min=0,max=100"`
 }
 
 // Validate validate tcloud batch modify rs weight.
