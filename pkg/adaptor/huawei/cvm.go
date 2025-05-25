@@ -61,6 +61,9 @@ func (h *HuaWei) ListCvm(kt *kit.Kit, opt *typecvm.HuaWeiListOption) ([]typecvm.
 	}
 
 	req := new(model.ListServersDetailsRequest)
+	// 暂不支持裸金属服务器，因此此处屏蔽裸金属服务器
+	// 注意，若指定了ServerID，该筛选条件会自动失效
+	req.NotTags = converter.ValToPtr("__type_baremetal")
 
 	if len(opt.CloudIDs) != 0 {
 		req.ServerId = converter.ValToPtr(strings.Join(opt.CloudIDs, ","))
@@ -851,8 +854,9 @@ func (h *resetpwdCvmPollingHandler) Done(cvms []model.ServerDetail) (bool, *poll
 }
 
 // Poll ...
-func (h *resetpwdCvmPollingHandler) Poll(client *HuaWei, kt *kit.Kit, cloudIDs []*string) ([]model.ServerDetail,
-	error) {
+func (h *resetpwdCvmPollingHandler) Poll(client *HuaWei, kt *kit.Kit, cloudIDs []*string) (
+	[]model.ServerDetail, error) {
+
 	return poll(client, kt, h.region, cloudIDs)
 }
 

@@ -81,7 +81,7 @@ func CloudResourceSync(intervalMin time.Duration, sd serviced.ServiceDiscover, c
 			waitGroup.Wait()
 		}
 
-		logs.Infof("cloud resource all sync end, time: %s", time.Since(start))
+		logs.Infof("cloud resource all sync end, time: %s, rid: %s", time.Since(start), syncKit.Rid)
 	}
 }
 
