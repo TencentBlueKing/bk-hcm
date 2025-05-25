@@ -22,17 +22,21 @@ package huawei
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"hcm/pkg/adaptor/poller"
 	"hcm/pkg/adaptor/types"
 	"hcm/pkg/adaptor/types/core"
 	typecvm "hcm/pkg/adaptor/types/cvm"
+	corecvm "hcm/pkg/api/core/cloud/cvm"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
+	"hcm/pkg/tools/times"
 	"hcm/pkg/tools/uuid"
 
 	bssmodel "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/bssintl/v2/model"
@@ -77,10 +81,73 @@ func (h *HuaWei) ListCvm(kt *kit.Kit, opt *typecvm.HuaWeiListOption) ([]typecvm.
 
 	cvms := make([]typecvm.HuaWeiCvm, 0, len(converter.PtrToVal(resp.Servers)))
 	for _, one := range converter.PtrToVal(resp.Servers) {
-		cvms = append(cvms, typecvm.HuaWeiCvm{one})
+
+		inst := typecvm.HuaWeiCvm{ServerDetail: one}
+		privateIPv4, publicIPv4, privateIPv6, publicIPv6 := getIps(one.Addresses)
+		inst.PrivateIPv4Addresses = privateIPv4
+		inst.PublicIPv4Addresses = publicIPv4
+		inst.PrivateIPv6Addresses = privateIPv6
+		inst.PublicIPv6Addresses = publicIPv6
+
+		dataDiskIds := make([]string, 0)
+		for _, v := range one.OsExtendedVolumesvolumesAttached {
+			if converter.PtrToVal(v.BootIndex) == "0" {
+				inst.CloudOSDiskID = v.Id
+			} else {
+				dataDiskIds = append(dataDiskIds, v.Id)
+			}
+		}
+		inst.CLoudDataDiskIDs = dataDiskIds
+
+		startTime, err := times.ParseToStdTime("2006-01-02T15:04:05.000000", one.OSSRVUSGlaunchedAt)
+		if err != nil {
+			logs.Errorf("[%s] conv LastStartTimestamp to std time failed, err: %v", enumor.HuaWei, err)
+			return nil, err
+		}
+		inst.CloudLaunchedTime = startTime
+
+		if one.Flavor != nil {
+			cloudFlavor := one.Flavor
+			ramInt, err := strconv.Atoi(cloudFlavor.Ram)
+			if err != nil {
+				logs.Errorf("convert huawei cvm ram to int failed, err: %v, rid: %s", err, kt.Rid)
+				return nil, err
+			}
+			ram := strconv.Itoa(ramInt / 1024)
+			inst.Flavor = &corecvm.HuaWeiFlavor{
+				CloudID: cloudFlavor.Id,
+				Name:    cloudFlavor.Name,
+				Disk:    cloudFlavor.Disk,
+				VCpus:   cloudFlavor.Vcpus,
+				Ram:     ram,
+			}
+		}
+		cvms = append(cvms, inst)
 	}
 
 	return cvms, err
+}
+
+func getIps(serverAddress map[string][]model.ServerAddress) (privateIPv4, publicIPv4, privateIPv6, publicIPv6 []string) {
+
+	for _, addresses := range serverAddress {
+		for _, addr := range addresses {
+			if addr.Version == "4" && addr.OSEXTIPStype.Value() == "fixed" {
+				privateIPv4 = append(privateIPv4, addr.Addr)
+			}
+			if addr.Version == "4" && addr.OSEXTIPStype.Value() == "floating" {
+				publicIPv4 = append(publicIPv4, addr.Addr)
+			}
+			if addr.Version == "6" && addr.OSEXTIPStype.Value() == "fixed" {
+				privateIPv6 = append(privateIPv6, addr.Addr)
+			}
+			if addr.Version == "6" && addr.OSEXTIPStype.Value() == "floating" {
+				publicIPv6 = append(publicIPv6, addr.Addr)
+			}
+		}
+	}
+
+	return privateIPv4, publicIPv4, privateIPv6, publicIPv6
 }
 
 // DeleteCvm reference: https://support.huaweicloud.com/api-ecs/ecs_02_0103.html
@@ -784,7 +851,8 @@ func (h *resetpwdCvmPollingHandler) Done(cvms []model.ServerDetail) (bool, *poll
 }
 
 // Poll ...
-func (h *resetpwdCvmPollingHandler) Poll(client *HuaWei, kt *kit.Kit, cloudIDs []*string) ([]model.ServerDetail, error) {
+func (h *resetpwdCvmPollingHandler) Poll(client *HuaWei, kt *kit.Kit, cloudIDs []*string) ([]model.ServerDetail,
+	error) {
 	return poll(client, kt, h.region, cloudIDs)
 }
 

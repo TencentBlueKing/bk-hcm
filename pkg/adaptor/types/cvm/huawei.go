@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/adaptor/types/core"
+	"hcm/pkg/api/core/cloud/cvm"
 	"hcm/pkg/criteria/validator"
 
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ecs/v2/model"
@@ -242,8 +243,10 @@ func (typ *PeriodType) PeriodType() (model.PrePaidServerExtendParamPeriodType, e
 }
 
 const (
+	// Month ...
 	Month PeriodType = "month"
-	Year  PeriodType = "year"
+	// Year ...
+	Year PeriodType = "year"
 )
 
 // HuaWeiVolume ...
@@ -314,9 +317,29 @@ type HuaWeiNetworkInterface struct {
 // HuaWeiCvm for model ServerDetail
 type HuaWeiCvm struct {
 	model.ServerDetail
+	CloudOSDiskID        string
+	CLoudDataDiskIDs     []string
+	PrivateIPv4Addresses []string
+	PublicIPv4Addresses  []string
+	PrivateIPv6Addresses []string
+	PublicIPv6Addresses  []string
+	CloudLaunchedTime    string
+	Flavor               *cvm.HuaWeiFlavor
+}
+
+// HuaWeiCvmWrapper for model ServerDetail, with extra info for sync
+type HuaWeiCvmWrapper struct {
+	HuaWeiCvm
+	CloudSubnetIDs []string
+	SubnetIDs      []string
 }
 
 // GetCloudID ...
 func (cvm HuaWeiCvm) GetCloudID() string {
 	return cvm.Id
+}
+
+// GetCloudVpcID ...
+func (cvm HuaWeiCvm) GetCloudVpcID() string {
+	return cvm.Metadata["vpc_id"]
 }

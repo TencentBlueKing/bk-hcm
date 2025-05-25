@@ -21,7 +21,6 @@ package huawei
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	"hcm/cmd/hc-service/logics/res-sync/common"
@@ -46,9 +45,6 @@ import (
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
-	"hcm/pkg/tools/times"
-
-	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ecs/v2/model"
 )
 
 // SyncCvmOption ...
@@ -60,13 +56,13 @@ func (opt SyncCvmOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
-// Cvm ...
+// Cvm Huawei Cloud Cvm sync
 func (cli *client) Cvm(kt *kit.Kit, params *SyncBaseParams, opt *SyncCvmOption) (*SyncResult, error) {
 	if err := validator.ValidateTool(params, opt); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	cvmFromCloud, err := cli.listCvmFromCloud(kt, params)
+	cvmFromCloudOri, err := cli.listCvmFromCloud(kt, params)
 	if err != nil {
 		return nil, err
 	}
@@ -76,11 +72,16 @@ func (cli *client) Cvm(kt *kit.Kit, params *SyncBaseParams, opt *SyncCvmOption) 
 		return nil, err
 	}
 
-	if len(cvmFromCloud) == 0 && len(cvmFromDB) == 0 {
+	if len(cvmFromCloudOri) == 0 && len(cvmFromDB) == 0 {
 		return new(SyncResult), nil
 	}
+	cvmFromCloud, err := cli.wrapCvm(kt, params, cvmFromCloudOri)
+	if err != nil {
+		logs.Errorf("preprocess HuaweiCvm failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
 
-	addSlice, updateMap, delCloudIDs := common.Diff[typescvm.HuaWeiCvm, corecvm.Cvm[cvm.HuaWeiCvmExtension]](
+	addSlice, updateMap, delCloudIDs := common.Diff[typescvm.HuaWeiCvmWrapper, corecvm.Cvm[cvm.HuaWeiCvmExtension]](
 		cvmFromCloud, cvmFromDB, cli.isCvmChange)
 
 	if len(delCloudIDs) > 0 {
@@ -104,8 +105,29 @@ func (cli *client) Cvm(kt *kit.Kit, params *SyncBaseParams, opt *SyncCvmOption) 
 	return new(SyncResult), nil
 }
 
+func (cli *client) wrapCvm(kt *kit.Kit, params *SyncBaseParams, cvmList []typescvm.HuaWeiCvm) (
+	[]typescvm.HuaWeiCvmWrapper, error) {
+
+	cvmWrappers := make([]typescvm.HuaWeiCvmWrapper, 0)
+	for _, cloudCvm := range cvmList {
+		wrapped := typescvm.HuaWeiCvmWrapper{HuaWeiCvm: cloudCvm}
+		// 查询对应子网信息
+		cloudSubnetIDs, localSubnetIDs, err := cli.getSubnets(kt, params.AccountID, params.Region,
+			cloudCvm.GetCloudID(), cloudCvm.GetCloudVpcID())
+		if err != nil {
+			logs.Errorf("[%s] get subnets failed, err: %v, rid: %s", enumor.HuaWei, err, kt.Rid)
+			return nil, err
+		}
+		wrapped.CloudSubnetIDs = cloudSubnetIDs
+		wrapped.SubnetIDs = localSubnetIDs
+
+		cvmWrappers = append(cvmWrappers, wrapped)
+	}
+	return cvmWrappers, nil
+}
+
 func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
-	updateMap map[string]typescvm.HuaWeiCvm) error {
+	updateMap map[string]typescvm.HuaWeiCvmWrapper) error {
 
 	if len(updateMap) <= 0 {
 		return fmt.Errorf("cvm updateMap is <= 0, not update")
@@ -135,34 +157,6 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 			return fmt.Errorf("cvm %s can not find vpc", one.Id)
 		}
 
-		cloudSubnetIDs, subnetIDs, err := cli.getSubnets(kt, accountID, region, one.Id, one.Metadata["vpc_id"])
-		if err != nil {
-			return err
-		}
-
-		privateIPv4Addresses, privateIPv6Addresses, publicIPv4Addresses,
-			publicIPv6Addresses := cli.getIps(one.Addresses)
-
-		sgIDs := make([]string, 0)
-		for _, v := range one.SecurityGroups {
-			sgIDs = append(sgIDs, v.Id)
-		}
-
-		osDiskId := ""
-		dataDiskIds := make([]string, 0)
-		for _, v := range one.OsExtendedVolumesvolumesAttached {
-			if converter.PtrToVal(v.BootIndex) == "0" {
-				osDiskId = v.Id
-			} else {
-				dataDiskIds = append(dataDiskIds, v.Id)
-			}
-		}
-
-		startTime, err := times.ParseToStdTime("2006-01-02T15:04:05.000000", one.OSSRVUSGlaunchedAt)
-		if err != nil {
-			return fmt.Errorf("conv OSSRVUSGlaunchedAt failed, err: %v", err)
-		}
-
 		imageID := ""
 		if id, exsit := imageMap[one.Image.Id]; exsit {
 			imageID = id
@@ -173,79 +167,25 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 			Name:                 one.Name,
 			CloudVpcIDs:          []string{one.Metadata["vpc_id"]},
 			VpcIDs:               []string{vpcMap[one.Metadata["vpc_id"]].VpcID},
-			CloudSubnetIDs:       cloudSubnetIDs,
-			SubnetIDs:            subnetIDs,
+			CloudSubnetIDs:       one.CloudSubnetIDs,
+			SubnetIDs:            one.SubnetIDs,
 			CloudImageID:         one.Image.Id,
 			ImageID:              imageID,
 			Memo:                 one.Description,
 			Status:               one.Status,
-			PrivateIPv4Addresses: privateIPv4Addresses,
-			PrivateIPv6Addresses: privateIPv6Addresses,
-			PublicIPv4Addresses:  publicIPv4Addresses,
-			PublicIPv6Addresses:  publicIPv6Addresses,
-			CloudLaunchedTime:    startTime,
+			PrivateIPv4Addresses: one.PrivateIPv4Addresses,
+			PrivateIPv6Addresses: one.PrivateIPv6Addresses,
+			PublicIPv4Addresses:  one.PublicIPv4Addresses,
+			PublicIPv6Addresses:  one.PublicIPv6Addresses,
+			CloudLaunchedTime:    one.CloudLaunchedTime,
 			CloudExpiredTime:     one.AutoTerminateTime,
-			Extension: &corecvm.HuaWeiCvmExtension{
-				AliasName:             one.OSEXTSRVATTRinstanceName,
-				HypervisorHostname:    one.OSEXTSRVATTRhypervisorHostname,
-				Flavor:                nil,
-				CloudSecurityGroupIDs: sgIDs,
-				CloudTenantID:         one.TenantId,
-				DiskConfig:            one.OSDCFdiskConfig,
-				PowerState:            one.OSEXTSTSpowerState,
-				ConfigDrive:           one.ConfigDrive,
-				Metadata: &corecvm.HuaWeiMetadata{
-					ChargingMode:      one.Metadata["charging_mode"],
-					CloudOrderID:      one.Metadata["metering.order_id"],
-					CloudProductID:    one.Metadata["metering.product_id"],
-					EcmResStatus:      one.Metadata["EcmResStatus"],
-					ImageType:         one.Metadata["metering.imagetype"],
-					ResourceSpecCode:  one.Metadata["metering.resourcespeccode"],
-					ResourceType:      one.Metadata["metering.resourcetype"],
-					InstanceExtraInfo: one.Metadata["cascaded.instance_extrainfo"],
-					ImageName:         one.Metadata["image_name"],
-					AgencyName:        one.Metadata["agency_name"],
-					OSBit:             one.Metadata["os_bit"],
-					SupportAgentList:  one.Metadata["__support_agent_list"],
-				},
-				CloudOSVolumeID:          osDiskId,
-				CloudDataVolumeIDs:       dataDiskIds,
-				RootDeviceName:           one.OSEXTSRVATTRrootDeviceName,
-				CloudEnterpriseProjectID: one.EnterpriseProjectId,
-				CpuOptions:               nil,
-			},
-		}
-
-		if one.Flavor != nil {
-			// TODO: 收归到adaptor中去做统一的转换，不然每个用到的地方都需要转一次
-			ramInt, err := strconv.Atoi(one.Flavor.Ram)
-			if err != nil {
-				logs.Errorf("[%s] request huawei cvm ram strconv atoi, err: %v, rid: %s", enumor.HuaWei,
-					err, kt.Rid)
-				return err
-			}
-			ram := strconv.Itoa(ramInt / 1024)
-			cvm.Extension.Flavor = &corecvm.HuaWeiFlavor{
-				CloudID: one.Flavor.Id,
-				Name:    one.Flavor.Name,
-				Disk:    one.Flavor.Disk,
-				VCpus:   one.Flavor.Vcpus,
-				Ram:     ram,
-			}
-		}
-
-		if one.CpuOptions != nil {
-			cvm.Extension.CpuOptions = &corecvm.HuaWeiCpuOptions{
-				CpuThreads: one.CpuOptions.HwcpuThreads,
-			}
+			Extension:            convHuaweiCvmExtension(one),
 		}
 
 		lists = append(lists, cvm)
 	}
 
-	updateReq := dataproto.CvmBatchUpdateReq[corecvm.HuaWeiCvmExtension]{
-		Cvms: lists,
-	}
+	updateReq := dataproto.CvmBatchUpdateReq[corecvm.HuaWeiCvmExtension]{Cvms: lists}
 	if err := cli.dbCli.HuaWei.Cvm.BatchUpdateCvm(kt.Ctx, kt.Header(), &updateReq); err != nil {
 		logs.Errorf("[%s] request dataservice BatchUpdateCvm failed, err: %v, rid: %s", enumor.HuaWei,
 			err, kt.Rid)
@@ -258,8 +198,51 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 	return nil
 }
 
-func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
-	addSlice []typescvm.HuaWeiCvm) error {
+func convHuaweiCvmExtension(one typescvm.HuaWeiCvmWrapper) *corecvm.HuaWeiCvmExtension {
+
+	sgIDs := make([]string, 0)
+	for _, v := range one.SecurityGroups {
+		sgIDs = append(sgIDs, v.Id)
+	}
+
+	ext := &corecvm.HuaWeiCvmExtension{
+		AliasName:             one.OSEXTSRVATTRinstanceName,
+		HypervisorHostname:    one.OSEXTSRVATTRhypervisorHostname,
+		Flavor:                one.Flavor,
+		CloudSecurityGroupIDs: sgIDs,
+		CloudTenantID:         one.TenantId,
+		DiskConfig:            one.OSDCFdiskConfig,
+		PowerState:            one.OSEXTSTSpowerState,
+		ConfigDrive:           one.ConfigDrive,
+		Metadata: &corecvm.HuaWeiMetadata{
+			ChargingMode:      one.Metadata["charging_mode"],
+			CloudOrderID:      one.Metadata["metering.order_id"],
+			CloudProductID:    one.Metadata["metering.product_id"],
+			EcmResStatus:      one.Metadata["EcmResStatus"],
+			ImageType:         one.Metadata["metering.imagetype"],
+			ResourceSpecCode:  one.Metadata["metering.resourcespeccode"],
+			ResourceType:      one.Metadata["metering.resourcetype"],
+			InstanceExtraInfo: one.Metadata["cascaded.instance_extrainfo"],
+			ImageName:         one.Metadata["image_name"],
+			AgencyName:        one.Metadata["agency_name"],
+			OSBit:             one.Metadata["os_bit"],
+			SupportAgentList:  one.Metadata["__support_agent_list"],
+		},
+		CloudOSVolumeID:          one.CloudOSDiskID,
+		CloudDataVolumeIDs:       one.CLoudDataDiskIDs,
+		RootDeviceName:           one.OSEXTSRVATTRrootDeviceName,
+		CloudEnterpriseProjectID: one.EnterpriseProjectId,
+		CpuOptions:               nil,
+	}
+	if one.CpuOptions != nil {
+		ext.CpuOptions = &corecvm.HuaWeiCpuOptions{
+			CpuThreads: one.CpuOptions.HwcpuThreads,
+		}
+	}
+	return ext
+}
+
+func (cli *client) createCvm(kt *kit.Kit, accountID string, region string, addSlice []typescvm.HuaWeiCvmWrapper) error {
 
 	if len(addSlice) <= 0 {
 		return fmt.Errorf("cvm addSlice is <= 0, not create")
@@ -289,35 +272,6 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 			return fmt.Errorf("cvm %s can not find vpc", one.Id)
 		}
 
-		cloudSubnetIDs, subnetIDs, err := cli.getSubnets(kt, accountID, region, one.Id,
-			one.Metadata["vpc_id"])
-		if err != nil {
-			return err
-		}
-
-		privateIPv4Addresses, privateIPv6Addresses, publicIPv4Addresses,
-			publicIPv6Addresses := cli.getIps(one.Addresses)
-
-		sgIDs := make([]string, 0)
-		for _, v := range one.SecurityGroups {
-			sgIDs = append(sgIDs, v.Id)
-		}
-
-		osDiskId := ""
-		dataDiskIds := make([]string, 0)
-		for _, v := range one.OsExtendedVolumesvolumesAttached {
-			if converter.PtrToVal(v.BootIndex) == "0" {
-				osDiskId = v.Id
-			} else {
-				dataDiskIds = append(dataDiskIds, v.Id)
-			}
-		}
-
-		startTime, err := times.ParseToStdTime("2006-01-02T15:04:05.000000", one.OSSRVUSGlaunchedAt)
-		if err != nil {
-			return fmt.Errorf("conv OSSRVUSGlaunchedAt failed, err: %v", err)
-		}
-
 		imageID := ""
 		if id, exsit := imageMap[one.Image.Id]; exsit {
 			imageID = id
@@ -334,81 +288,28 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 			Zone:                 one.OSEXTAZavailabilityZone,
 			CloudVpcIDs:          []string{one.Metadata["vpc_id"]},
 			VpcIDs:               []string{vpcMap[one.Metadata["vpc_id"]].VpcID},
-			CloudSubnetIDs:       cloudSubnetIDs,
-			SubnetIDs:            subnetIDs,
+			CloudSubnetIDs:       one.CloudSubnetIDs,
+			SubnetIDs:            one.SubnetIDs,
 			CloudImageID:         one.Image.Id,
 			ImageID:              imageID,
 			OsName:               one.Metadata["os_type"],
 			Memo:                 one.Description,
 			Status:               one.Status,
-			PrivateIPv4Addresses: privateIPv4Addresses,
-			PrivateIPv6Addresses: privateIPv6Addresses,
-			PublicIPv4Addresses:  publicIPv4Addresses,
-			PublicIPv6Addresses:  publicIPv6Addresses,
-			MachineType:          one.Flavor.Id,
+			PrivateIPv4Addresses: one.PrivateIPv4Addresses,
+			PrivateIPv6Addresses: one.PrivateIPv6Addresses,
+			PublicIPv4Addresses:  one.PublicIPv4Addresses,
+			PublicIPv6Addresses:  one.PublicIPv6Addresses,
+			MachineType:          one.Flavor.CloudID,
 			CloudCreatedTime:     one.Created,
-			CloudLaunchedTime:    startTime,
+			CloudLaunchedTime:    one.CloudLaunchedTime,
 			CloudExpiredTime:     one.AutoTerminateTime,
-			Extension: &corecvm.HuaWeiCvmExtension{
-				AliasName:             one.OSEXTSRVATTRinstanceName,
-				HypervisorHostname:    one.OSEXTSRVATTRhypervisorHostname,
-				Flavor:                nil,
-				CloudSecurityGroupIDs: sgIDs,
-				CloudTenantID:         one.TenantId,
-				DiskConfig:            one.OSDCFdiskConfig,
-				PowerState:            one.OSEXTSTSpowerState,
-				ConfigDrive:           one.ConfigDrive,
-				Metadata: &corecvm.HuaWeiMetadata{
-					ChargingMode:      one.Metadata["charging_mode"],
-					CloudOrderID:      one.Metadata["metering.order_id"],
-					CloudProductID:    one.Metadata["metering.product_id"],
-					EcmResStatus:      one.Metadata["EcmResStatus"],
-					ImageType:         one.Metadata["metering.imagetype"],
-					ResourceSpecCode:  one.Metadata["metering.resourcespeccode"],
-					ResourceType:      one.Metadata["metering.resourcetype"],
-					InstanceExtraInfo: one.Metadata["cascaded.instance_extrainfo"],
-					ImageName:         one.Metadata["image_name"],
-					AgencyName:        one.Metadata["agency_name"],
-					OSBit:             one.Metadata["os_bit"],
-					SupportAgentList:  one.Metadata["__support_agent_list"],
-				},
-				CloudOSVolumeID:          osDiskId,
-				CloudDataVolumeIDs:       dataDiskIds,
-				RootDeviceName:           one.OSEXTSRVATTRrootDeviceName,
-				CloudEnterpriseProjectID: one.EnterpriseProjectId,
-				CpuOptions:               nil,
-			},
-		}
-
-		if one.Flavor != nil {
-			ramInt, err := strconv.Atoi(one.Flavor.Ram)
-			if err != nil {
-				logs.Errorf("[%s] request huawei cvm ram strconv atoi, err: %v, rid: %s", enumor.HuaWei,
-					err, kt.Rid)
-				return err
-			}
-			ram := strconv.Itoa(ramInt / 1024)
-			cvm.Extension.Flavor = &corecvm.HuaWeiFlavor{
-				CloudID: one.Flavor.Id,
-				Name:    one.Flavor.Name,
-				Disk:    one.Flavor.Disk,
-				VCpus:   one.Flavor.Vcpus,
-				Ram:     ram,
-			}
-		}
-
-		if one.CpuOptions != nil {
-			cvm.Extension.CpuOptions = &corecvm.HuaWeiCpuOptions{
-				CpuThreads: one.CpuOptions.HwcpuThreads,
-			}
+			Extension:            convHuaweiCvmExtension(one),
 		}
 
 		lists = append(lists, cvm)
 	}
 
-	createReq := dataproto.CvmBatchCreateReq[corecvm.HuaWeiCvmExtension]{
-		Cvms: lists,
-	}
+	createReq := dataproto.CvmBatchCreateReq[corecvm.HuaWeiCvmExtension]{Cvms: lists}
 
 	_, err = cli.dbCli.HuaWei.Cvm.BatchCreateCvm(kt.Ctx, kt.Header(), &createReq)
 	if err != nil {
@@ -421,33 +322,6 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 		accountID, len(addSlice), kt.Rid)
 
 	return nil
-}
-
-func (cli *client) getIps(serverAddress map[string][]model.ServerAddress) ([]string, []string,
-	[]string, []string) {
-
-	privateIPv4Addresses := make([]string, 0)
-	publicIPv4Addresses := make([]string, 0)
-	privateIPv6Addresses := make([]string, 0)
-	publicIPv6Addresses := make([]string, 0)
-	for _, addresses := range serverAddress {
-		for _, addresse := range addresses {
-			if addresse.Version == "4" && addresse.OSEXTIPStype.Value() == "fixed" {
-				privateIPv4Addresses = append(privateIPv4Addresses, addresse.Addr)
-			}
-			if addresse.Version == "4" && addresse.OSEXTIPStype.Value() == "floating" {
-				publicIPv4Addresses = append(publicIPv4Addresses, addresse.Addr)
-			}
-			if addresse.Version == "6" && addresse.OSEXTIPStype.Value() == "fixed" {
-				privateIPv6Addresses = append(privateIPv4Addresses, addresse.Addr)
-			}
-			if addresse.Version == "6" && addresse.OSEXTIPStype.Value() == "floating" {
-				publicIPv6Addresses = append(publicIPv4Addresses, addresse.Addr)
-			}
-		}
-	}
-
-	return privateIPv4Addresses, publicIPv4Addresses, privateIPv6Addresses, publicIPv6Addresses
 }
 
 func (cli *client) getVpcMap(kt *kit.Kit, accountID string, region string,
@@ -503,7 +377,7 @@ func (cli *client) getImageMap(kt *kit.Kit, accountID string, region string,
 }
 
 func (cli *client) getSubnets(kt *kit.Kit, accountID, region, serverID string,
-	vpcID string) ([]string, []string, error) {
+	cloudVpcID string) ([]string, []string, error) {
 
 	opt := &networkinterface.HuaWeiNIListOption{
 		Region:   region,
@@ -528,7 +402,7 @@ func (cli *client) getSubnets(kt *kit.Kit, accountID, region, serverID string,
 		Region:    region,
 		CloudIDs:  cloudSubnetIDs,
 	}
-	subnetFromDB, err := cli.listSubnetFromDB(kt, subnetParams, vpcID)
+	subnetFromDB, err := cli.listSubnetFromDB(kt, subnetParams, cloudVpcID)
 	if err != nil {
 		return make([]string, 0), make([]string, 0), err
 	}
@@ -651,7 +525,7 @@ func (cli *client) listCvmFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	return result.Details, nil
 }
 
-// RemoveCvmDeleteFromCloud ...
+// RemoveCvmDeleteFromCloud 删除从云上删除已经删除的cvm
 func (cli *client) RemoveCvmDeleteFromCloud(kt *kit.Kit, accountID string, region string) error {
 	req := &protocloud.CvmListReq{
 		Field: []string{"id", "cloud_id"},
@@ -729,7 +603,7 @@ func (cli *client) RemoveCvmDeleteFromCloud(kt *kit.Kit, accountID string, regio
 	return nil
 }
 
-func (cli *client) isCvmChange(cloud typescvm.HuaWeiCvm, db corecvm.Cvm[cvm.HuaWeiCvmExtension]) bool {
+func (cli *client) isCvmChange(cloud typescvm.HuaWeiCvmWrapper, db corecvm.Cvm[cvm.HuaWeiCvmExtension]) bool {
 	if db.CloudID != cloud.Id {
 		return true
 	}
@@ -750,84 +624,23 @@ func (cli *client) isCvmChange(cloud typescvm.HuaWeiCvm, db corecvm.Cvm[cvm.HuaW
 		return true
 	}
 
-	kt := core.NewBackendKit()
-	cloudSubnetIDs, subnetIDs, err := cli.getSubnets(kt, db.AccountID, db.Region, db.CloudID,
-		cloud.Metadata["vpc_id"])
-	if err != nil {
-		logs.Errorf("[%s] get subnets failed, err: %v", enumor.HuaWei, err)
+	if !assert.IsStringSliceEqual(db.CloudSubnetIDs, cloud.CloudSubnetIDs) {
 		return true
 	}
 
-	vpcMap, err := cli.getVpcMap(kt, db.AccountID, db.Region, []string{cloud.Metadata["vpc_id"]})
-	if err != nil {
-		logs.Errorf("[%s] get vpc map failed, err: %v", enumor.HuaWei, err)
+	if !assert.IsStringSliceEqual(db.CloudVpcIDs, []string{cloud.GetCloudVpcID()}) {
 		return true
 	}
 
-	if !assert.IsStringSliceEqual(db.CloudSubnetIDs, cloudSubnetIDs) {
+	if cli.isIPAddressChange(cloud, db) {
 		return true
 	}
 
-	if !assert.IsStringSliceEqual(db.SubnetIDs, subnetIDs) {
+	if db.CloudLaunchedTime != cloud.CloudLaunchedTime {
 		return true
 	}
 
-	if !assert.IsStringSliceEqual(db.CloudVpcIDs, []string{cloud.Metadata["vpc_id"]}) {
-		return true
-	}
-
-	if !assert.IsStringSliceEqual(db.VpcIDs, []string{vpcMap[cloud.Metadata["vpc_id"]].VpcID}) {
-		return true
-	}
-
-	privateIPv4Addresses := make([]string, 0)
-	publicIPv4Addresses := make([]string, 0)
-	privateIPv6Addresses := make([]string, 0)
-	publicIPv6Addresses := make([]string, 0)
-	for _, addresses := range cloud.Addresses {
-		for _, addresse := range addresses {
-			if addresse.Version == "4" && addresse.OSEXTIPStype.Value() == "fixed" {
-				privateIPv4Addresses = append(privateIPv4Addresses, addresse.Addr)
-			}
-			if addresse.Version == "4" && addresse.OSEXTIPStype.Value() == "floating" {
-				publicIPv4Addresses = append(publicIPv4Addresses, addresse.Addr)
-			}
-			if addresse.Version == "6" && addresse.OSEXTIPStype.Value() == "fixed" {
-				privateIPv6Addresses = append(privateIPv4Addresses, addresse.Addr)
-			}
-			if addresse.Version == "6" && addresse.OSEXTIPStype.Value() == "floating" {
-				publicIPv6Addresses = append(publicIPv4Addresses, addresse.Addr)
-			}
-		}
-	}
-
-	startTime, err := times.ParseToStdTime("2006-01-02T15:04:05.000000", cloud.OSSRVUSGlaunchedAt)
-	if err != nil {
-		logs.Errorf("[%s] conv LastStartTimestamp to std time failed, err: %v", enumor.HuaWei, err)
-		return true
-	}
-
-	if db.CloudLaunchedTime != startTime {
-		return true
-	}
-
-	if !assert.IsStringSliceEqual(privateIPv4Addresses, db.PrivateIPv4Addresses) {
-		return true
-	}
-
-	if !assert.IsStringSliceEqual(publicIPv4Addresses, db.PublicIPv4Addresses) {
-		return true
-	}
-
-	if !assert.IsStringSliceEqual(privateIPv6Addresses, db.PrivateIPv6Addresses) {
-		return true
-	}
-
-	if !assert.IsStringSliceEqual(publicIPv6Addresses, db.PublicIPv6Addresses) {
-		return true
-	}
-
-	if db.MachineType != cloud.Flavor.Id {
+	if db.MachineType != cloud.Flavor.CloudID {
 		return true
 	}
 
@@ -839,11 +652,40 @@ func (cli *client) isCvmChange(cloud typescvm.HuaWeiCvm, db corecvm.Cvm[cvm.HuaW
 		return true
 	}
 
-	if db.Extension.AliasName != cloud.OSEXTSRVATTRinstanceName {
+	if cli.isCvmExtensionChange(&cloud.HuaWeiCvm, db.Extension) {
 		return true
 	}
 
-	if db.Extension.HypervisorHostname != cloud.OSEXTSRVATTRhypervisorHostname {
+	return false
+}
+
+func (cli *client) isIPAddressChange(cloud typescvm.HuaWeiCvmWrapper, db corecvm.Cvm[corecvm.HuaWeiCvmExtension]) bool {
+
+	if !assert.IsStringSliceEqual(cloud.PrivateIPv4Addresses, db.PrivateIPv4Addresses) {
+		return true
+	}
+
+	if !assert.IsStringSliceEqual(cloud.PublicIPv4Addresses, db.PublicIPv4Addresses) {
+		return true
+	}
+
+	if !assert.IsStringSliceEqual(cloud.PrivateIPv6Addresses, db.PrivateIPv6Addresses) {
+		return true
+	}
+
+	if !assert.IsStringSliceEqual(cloud.PublicIPv6Addresses, db.PublicIPv6Addresses) {
+		return true
+	}
+	return false
+}
+
+func (cli *client) isCvmExtensionChange(cloud *typescvm.HuaWeiCvm, dbExt *corecvm.HuaWeiCvmExtension) bool {
+
+	if dbExt.AliasName != cloud.OSEXTSRVATTRinstanceName {
+		return true
+	}
+
+	if dbExt.HypervisorHostname != cloud.OSEXTSRVATTRhypervisorHostname {
 		return true
 	}
 
@@ -851,23 +693,23 @@ func (cli *client) isCvmChange(cloud typescvm.HuaWeiCvm, db corecvm.Cvm[cvm.HuaW
 	for _, v := range cloud.SecurityGroups {
 		sgIDs = append(sgIDs, v.Id)
 	}
-	if !assert.IsStringSliceEqual(db.Extension.CloudSecurityGroupIDs, sgIDs) {
+	if !assert.IsStringSliceEqual(dbExt.CloudSecurityGroupIDs, sgIDs) {
 		return true
 	}
 
-	if db.Extension.CloudTenantID != cloud.TenantId {
+	if dbExt.CloudTenantID != cloud.TenantId {
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(db.Extension.DiskConfig, cloud.OSDCFdiskConfig) {
+	if !assert.IsPtrStringEqual(dbExt.DiskConfig, cloud.OSDCFdiskConfig) {
 		return true
 	}
 
-	if db.Extension.PowerState != cloud.OSEXTSTSpowerState {
+	if dbExt.PowerState != cloud.OSEXTSTSpowerState {
 		return true
 	}
 
-	if db.Extension.ConfigDrive != cloud.ConfigDrive {
+	if dbExt.ConfigDrive != cloud.ConfigDrive {
 		return true
 	}
 
@@ -880,98 +722,105 @@ func (cli *client) isCvmChange(cloud typescvm.HuaWeiCvm, db corecvm.Cvm[cvm.HuaW
 			dataDiskIds = append(dataDiskIds, v.Id)
 		}
 	}
-	if db.Extension.CloudOSVolumeID != osDiskId {
+	if dbExt.CloudOSVolumeID != osDiskId {
 		return true
 	}
-	if !assert.IsStringSliceEqual(db.Extension.CloudDataVolumeIDs, dataDiskIds) {
-		return true
-	}
-
-	if db.Extension.RootDeviceName != cloud.OSEXTSRVATTRrootDeviceName {
+	if !assert.IsStringSliceEqual(dbExt.CloudDataVolumeIDs, dataDiskIds) {
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(db.Extension.CloudEnterpriseProjectID, cloud.EnterpriseProjectId) {
+	if dbExt.RootDeviceName != cloud.OSEXTSRVATTRrootDeviceName {
 		return true
 	}
 
-	if !assert.IsPtrInt32Equal(db.Extension.CpuOptions.CpuThreads, cloud.CpuOptions.HwcpuThreads) {
+	if !assert.IsPtrStringEqual(dbExt.CloudEnterpriseProjectID, cloud.EnterpriseProjectId) {
 		return true
 	}
 
-	if db.Extension.Flavor.CloudID != cloud.Flavor.Id {
+	if !assert.IsPtrInt32Equal(dbExt.CpuOptions.CpuThreads, cloud.CpuOptions.HwcpuThreads) {
 		return true
 	}
 
-	if db.Extension.Flavor.Name != cloud.Flavor.Name {
+	if cli.isExtFlavorChange(cloud.Flavor, dbExt.Flavor) {
 		return true
 	}
 
-	if db.Extension.Flavor.Disk != cloud.Flavor.Disk {
+	if cli.isExtMetadataChange(cloud.Metadata, dbExt) {
+		return true
+	}
+	return false
+}
+
+func (cli *client) isExtFlavorChange(cloud *corecvm.HuaWeiFlavor, db *corecvm.HuaWeiFlavor) bool {
+	if db.CloudID != cloud.CloudID {
 		return true
 	}
 
-	if db.Extension.Flavor.VCpus != cloud.Flavor.Vcpus {
+	if db.Name != cloud.Name {
 		return true
 	}
 
-	ramInt, err := strconv.Atoi(cloud.Flavor.Ram)
-	if err != nil {
-		logs.Errorf("[%s] huawei cvm ram conver int failed, err: %v", enumor.HuaWei, err)
-		return true
-	}
-	ram := strconv.Itoa(ramInt / 1024)
-	if db.Extension.Flavor.Ram != ram {
+	if db.Disk != cloud.Disk {
 		return true
 	}
 
-	if db.Extension.Metadata.ChargingMode != cloud.Metadata["charging_mode"] {
+	if db.VCpus != cloud.VCpus {
 		return true
 	}
 
-	if db.Extension.Metadata.CloudOrderID != cloud.Metadata["metering.order_id"] {
+	if db.Ram != cloud.Ram {
+		return true
+	}
+	return false
+}
+
+func (cli *client) isExtMetadataChange(metadata map[string]string, dbExt *corecvm.HuaWeiCvmExtension) bool {
+	if dbExt.Metadata.ChargingMode != metadata["charging_mode"] {
 		return true
 	}
 
-	if db.Extension.Metadata.CloudProductID != cloud.Metadata["metering.product_id"] {
+	if dbExt.Metadata.CloudOrderID != metadata["metering.order_id"] {
 		return true
 	}
 
-	if db.Extension.Metadata.EcmResStatus != cloud.Metadata["EcmResStatus"] {
+	if dbExt.Metadata.CloudProductID != metadata["metering.product_id"] {
 		return true
 	}
 
-	if db.Extension.Metadata.ImageType != cloud.Metadata["metering.imagetype"] {
+	if dbExt.Metadata.EcmResStatus != metadata["EcmResStatus"] {
 		return true
 	}
 
-	if db.Extension.Metadata.ResourceSpecCode != cloud.Metadata["metering.resourcespeccode"] {
+	if dbExt.Metadata.ImageType != metadata["metering.imagetype"] {
 		return true
 	}
 
-	if db.Extension.Metadata.ResourceType != cloud.Metadata["metering.resourcetype"] {
+	if dbExt.Metadata.ResourceSpecCode != metadata["metering.resourcespeccode"] {
 		return true
 	}
 
-	if db.Extension.Metadata.InstanceExtraInfo != cloud.Metadata["cascaded.instance_extrainfo"] {
+	if dbExt.Metadata.ResourceType != metadata["metering.resourcetype"] {
 		return true
 	}
 
-	if db.Extension.Metadata.ImageName != cloud.Metadata["image_name"] {
+	if dbExt.Metadata.InstanceExtraInfo != metadata["cascaded.instance_extrainfo"] {
 		return true
 	}
 
-	if db.Extension.Metadata.AgencyName != cloud.Metadata["agency_name"] {
+	if dbExt.Metadata.ImageName != metadata["image_name"] {
 		return true
 	}
 
-	if db.Extension.Metadata.OSBit != cloud.Metadata["os_bit"] {
+	if dbExt.Metadata.AgencyName != metadata["agency_name"] {
 		return true
 	}
 
-	if db.Extension.Metadata.SupportAgentList != cloud.Metadata["__support_agent_list"] {
+	if dbExt.Metadata.OSBit != metadata["os_bit"] {
 		return true
 	}
 
+	if dbExt.Metadata.SupportAgentList != metadata["__support_agent_list"] {
+		return true
+	}
 	return false
 }
