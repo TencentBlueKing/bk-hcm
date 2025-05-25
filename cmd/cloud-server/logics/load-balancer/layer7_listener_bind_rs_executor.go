@@ -74,8 +74,7 @@ type layer7ListenerBindRSTaskDetail struct {
 
 // Execute ...
 func (c *Layer7ListenerBindRSExecutor) Execute(kt *kit.Kit, source enumor.TaskManagementSource,
-	rawDetails json.RawMessage) (
-	string, error) {
+	rawDetails json.RawMessage) (string, error) {
 
 	err := c.unmarshalData(rawDetails)
 	if err != nil {
@@ -462,6 +461,7 @@ func (c *Layer7ListenerBindRSExecutor) createTaskDetails(kt *kit.Kit, taskID str
 
 func (c *Layer7ListenerBindRSExecutor) updateTaskManagementAndDetails(kt *kit.Kit, flowIDs []string,
 	taskID string) error {
+
 	if err := updateTaskManagement(kt, c.dataServiceCli, taskID, flowIDs); err != nil {
 		logs.Errorf("update task management failed, taskID(%s), err: %v, rid: %s", taskID, err, kt.Rid)
 		return err

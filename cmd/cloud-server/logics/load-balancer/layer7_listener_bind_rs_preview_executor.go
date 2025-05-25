@@ -290,8 +290,8 @@ func (l *Layer7ListenerBindRSPreviewExecutor) fillRSValidateCvmNotFoundError(
 	cvmCloudIDs := slice.Map(cvmList, cloudCvm.BaseCvm.GetCloudID)
 	curDetail.Status.SetNotExecutable()
 	curDetail.ValidateResult = append(curDetail.ValidateResult,
-		fmt.Sprintf("VPC of %s is different from loadbalancer's VPC (%s).", strings.Join(cvmCloudIDs, ","),
-			lbCloudVpcID))
+		fmt.Sprintf("VPC of %s is different from loadbalancer's VPC (%s).",
+			strings.Join(cvmCloudIDs, ","), lbCloudVpcID))
 	return nil
 }
 

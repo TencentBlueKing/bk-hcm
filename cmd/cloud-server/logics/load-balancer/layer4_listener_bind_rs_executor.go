@@ -383,6 +383,7 @@ func (c *Layer4ListenerBindRSExecutor) buildTCloudFlowTask(kt *kit.Kit, lb corel
 
 func (c *Layer4ListenerBindRSExecutor) buildTaskManagementAndDetails(kt *kit.Kit,
 	source enumor.TaskManagementSource) (string, error) {
+
 	taskID, err := createTaskManagement(kt, c.dataServiceCli, c.bkBizID, c.vendor, c.accountID,
 		converter.MapKeyToSlice(c.regionIDMap), source, enumor.TaskBindingLayer4RS)
 	if err != nil {
