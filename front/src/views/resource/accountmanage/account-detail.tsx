@@ -92,7 +92,6 @@ export default defineComponent({
       list: [],
     });
 
-    const isOrganizationDetail = ref<Boolean>(true); // 组织架构详情展示
     const isLoading = ref(false);
     const getDetail = async () => {
       isLoading.value = true;
@@ -101,6 +100,7 @@ export default defineComponent({
         const res = await accountStore.getAccountDetail((id || accountId) as string);
         await getBusinessList();
         Object.assign(projectModel, res?.data);
+        initProjectModel.name = res?.data?.name;
         renderBaseInfoForm(projectModel);
       } finally {
         isLoading.value = false;
@@ -376,9 +376,8 @@ export default defineComponent({
           message: t('更新成功'),
           theme: 'success',
         });
-      } finally {
-        isOrganizationDetail.value = true; // 改为详情展示态
-        getDetail(); // 请求数据
+      } catch (err) {
+        console.error(err);
       }
     };
 
@@ -460,14 +459,13 @@ export default defineComponent({
       }
       handleEditStatus(val, key); // 未通过检验前状态为编辑态
       await formRef.value?.validate();
-      if (projectModel[key].length) {
-        handleEditStatus(false, key); // 通过检验则把状态改为不可编辑态
-      }
       if (projectModel[key] !== initProjectModel[key]) {
         await updateFormData(key); // 更新数据
-        setInterval(() => {
+        setTimeout(() => {
           window.location.reload();
         }, 300);
+      } else {
+        handleEditStatus(false, key);
       }
     };
 
@@ -707,7 +705,7 @@ export default defineComponent({
                   ''
                 )}
               </div>
-              <Form model={projectModel} labelWidth={140} rules={formRules} ref={formRef}>
+              <Form model={projectModel} labelWidth={190} rules={formRules} ref={formRef}>
                 <div class={index === 2 ? 'flex-row align-items-center flex-wrap' : null}>
                   {baseItem.data.map((formItem) => (
                     <FormItem
