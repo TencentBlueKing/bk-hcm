@@ -34,7 +34,9 @@ import (
 	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/json"
+	"hcm/pkg/tools/slice"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -166,22 +168,16 @@ func (svc *service) UpdateTaskDetail(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	ids := make([]string, 0, len(req.Items))
-	for _, one := range req.Items {
-		ids = append(ids, one.ID)
-	}
-	opt := &types.ListOption{Filter: tools.ContainersExpression("id", ids), Page: core.NewDefaultBasePage()}
-	list, err := svc.dao.TaskDetail().List(cts.Kit, opt)
+	updateIDs := slice.Map(req.Items, func(i task.UpdateTaskDetailField) string { return i.ID })
+	existMap, err := svc.checkDetailExists(cts, updateIDs)
 	if err != nil {
+		logs.Errorf("fail to check detail exists, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
-	}
-	existMap := make(map[string]tabletask.DetailTable, len(list.Details))
-	for _, one := range list.Details {
-		existMap[one.ID] = one
 	}
 
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		for _, one := range req.Items {
+
 			existData, exist := existMap[one.ID]
 			if !exist {
 				continue
@@ -234,6 +230,27 @@ func (svc *service) UpdateTaskDetail(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	return nil, nil
+}
+
+func (svc *service) checkDetailExists(cts *rest.Contexts, ids []string) (map[string]tabletask.DetailTable, error) {
+
+	existMap := make(map[string]tabletask.DetailTable, len(ids))
+
+	for _, idBatch := range slice.Split(ids, int(filter.DefaultMaxInLimit)) {
+		opt := &types.ListOption{
+			Filter: tools.ContainersExpression("id", idBatch),
+			Page:   core.NewDefaultBasePage(),
+		}
+		list, err := svc.dao.TaskDetail().List(cts.Kit, opt)
+		if err != nil {
+			logs.Errorf("list task detail failed, err: %v, ids:%s, rid: %s", err, idBatch, cts.Kit.Rid)
+			return nil, err
+		}
+		for _, one := range list.Details {
+			existMap[one.ID] = one
+		}
+	}
+	return existMap, nil
 }
 
 // ListTaskDetail list task detail.
