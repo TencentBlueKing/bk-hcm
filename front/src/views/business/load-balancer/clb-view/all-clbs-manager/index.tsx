@@ -1,10 +1,11 @@
-import { ComputedRef, defineComponent, inject, useTemplateRef, watch } from 'vue';
+import { ComputedRef, defineComponent, inject, reactive, useTemplateRef, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 // import components
 import { Button, Message } from 'bkui-vue';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
 import BatchImportComp from './batch-import-comp/index.vue';
+import SyncAccountResource from '@/components/sync-account-resource/index.vue';
 // import hooks
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
@@ -23,8 +24,7 @@ import './index.scss';
 import Confirm from '@/components/confirm';
 import { useVerify } from '@/hooks';
 import { useGlobalPermissionDialog } from '@/store/useGlobalPermissionDialog';
-import { VendorEnum, VendorMap } from '@/common/constant';
-import AllLoadBalancer from '@/components/sync-clb/all.vue';
+import { ResourceTypeEnum, VendorEnum, VendorMap } from '@/common/constant';
 
 export default defineComponent({
   name: 'AllClbsManager',
@@ -202,6 +202,13 @@ export default defineComponent({
       },
     );
 
+    const syncDialogState = reactive({ isShow: false, isHidden: true, businessId: undefined });
+    const handleSync = () => {
+      syncDialogState.isShow = true;
+      syncDialogState.isHidden = false;
+      syncDialogState.businessId = getBizsId();
+    };
+
     return () => (
       <div class='common-card-wrap'>
         {/* 负载均衡list */}
@@ -240,7 +247,9 @@ export default defineComponent({
                 </Button>
                 {/* 批量导入 */}
                 <BatchImportComp />
-                <AllLoadBalancer disabled={selections.value.length > 0} bizId={getBizsId()} />
+                <bk-button disabled={selections.value.length > 0} onClick={handleSync}>
+                  同步负载均衡
+                </bk-button>
               </>
             ),
           }}
@@ -275,6 +284,20 @@ export default defineComponent({
             ),
           }}
         </BatchOperationDialog>
+        {!syncDialogState.isHidden && (
+          <SyncAccountResource
+            v-model={syncDialogState.isShow}
+            title='同步负载均衡'
+            desc='从云上同步该业务的所有负载均衡数据，包括负载均衡，监听器等'
+            resourceType={ResourceTypeEnum.CLB}
+            businessId={syncDialogState.businessId}
+            resourceName='load_balancer'
+            onHidden={() => {
+              syncDialogState.isHidden = true;
+              syncDialogState.businessId = undefined;
+            }}
+          />
+        )}
       </div>
     );
   },

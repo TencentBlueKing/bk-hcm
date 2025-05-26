@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed, inject, Ref, watch } from 'vue';
+import { computed, inject, nextTick, Ref, watch } from 'vue';
 import { Alert, Form } from 'bkui-vue';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import { VendorEnum } from '@/common/constant';
 import { IAccountItem } from '@/typings/account';
 import Step from '../components/step.vue';
 import AccountSelector from '@/components/account-selector/index-new.vue';
-import RegionSelector from '@/views/service/service-apply/components/common/region-selector';
+import RegionSelector from '@/views/service/service-apply/components/common/region-selector.vue';
 
 import { useI18n } from 'vue-i18n';
 import { Action, LbBatchImportBaseInfo, Operation } from '../../types';
@@ -17,6 +17,7 @@ const props = defineProps<{
   activeAction: Action;
   // 文件上传成功后，禁用基本信息的表单
   globalDisabled: boolean;
+  formRef: InstanceType<typeof Form>;
 }>();
 
 const { t } = useI18n();
@@ -64,6 +65,8 @@ const handleAccountChange = (
     formModel.account_id = '';
     formModel.vendor = undefined;
   }
+  formModel.region_ids = [];
+  nextTick(() => props.formRef.clearValidate());
 };
 </script>
 

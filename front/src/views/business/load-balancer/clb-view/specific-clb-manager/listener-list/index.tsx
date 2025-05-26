@@ -179,18 +179,13 @@ export default defineComponent({
     // 拉取负载均衡
     const handlePullResource = () => {
       const { account_id, vendor, cloud_id, region } = loadBalancerStore.currentSelectedTreeNode;
-      Confirm(t('同步单个负载均衡'), t('从云上同步该负载均衡数据，包括负载均衡基本信息，监听器等'), () => {
-        resourceStore
-          .syncResource({
-            account_id,
-            vendor,
-            cloud_ids: [cloud_id],
-            regions: [region],
-            resource: 'load_balancer',
-          })
-          .then(() => {
-            Message({ theme: 'success', message: t('已提交同步任务，请等待同步结果') });
-          });
+      Confirm(t('同步单个负载均衡'), t('从云上同步该负载均衡数据，包括负载均衡基本信息，监听器等'), async () => {
+        // TODO: azure后续可能要传入resource_group_name
+        await resourceStore.syncResource(vendor, account_id, 'load_balancer', {
+          cloud_ids: [cloud_id],
+          regions: [region],
+        });
+        Message({ theme: 'success', message: t('已提交同步任务，请等待同步结果') });
       });
     };
 

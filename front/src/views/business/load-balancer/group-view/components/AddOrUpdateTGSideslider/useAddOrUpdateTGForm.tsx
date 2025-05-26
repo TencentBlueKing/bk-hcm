@@ -2,7 +2,7 @@ import { ref, computed, watch, Ref } from 'vue';
 // import components
 import { Input, Select } from 'bkui-vue';
 import AccountSelector from '@/components/account-selector/index.vue';
-import RegionSelector from '@/views/service/service-apply/components/common/region-selector';
+import RegionSelector from '@/views/service/service-apply/components/common/region-selector.vue';
 import RegionVpcSelector from '@/views/service/service-apply/components/common/RegionVpcSelector';
 import RsConfigTable from '../RsConfigTable';
 // import stores
