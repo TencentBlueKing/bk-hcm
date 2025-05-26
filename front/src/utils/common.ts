@@ -1,5 +1,6 @@
 import isIP from 'validator/es/lib/isIP';
-import { AddressDescription } from '@/typings';
+import { AddressDescription, QueryFilterType, QueryRuleOPEnum } from '@/typings';
+import { isString } from 'lodash';
 /**
  * 获取实例的ip地址
  * @param inst 实例
@@ -75,6 +76,50 @@ const parseIP = (text: string) => {
     IPv6List,
   };
 };
+
+/**
+ * @param value ip字符串 | ip字符串数组
+ * @param networkType 网络类型 public | private
+ * @returns {QueryFilterType} ip查询条件
+ */
+const buildIPFilterRules = (value: string | string[], networkType: 'public' | 'private') => {
+  if (!value) return null;
+
+  const IPResult: QueryFilterType = { op: QueryRuleOPEnum.OR, rules: [] };
+  const IPv4Set = new Set<string>();
+  const IPv6Set = new Set<string>();
+
+  const processIP = (ip: string) => {
+    const { IPv4List, IPv6List } = parseIP(ip);
+    IPv4List.forEach((ip) => IPv4Set.add(ip));
+    IPv6List.forEach((ip) => IPv6Set.add(ip));
+  };
+
+  if (isString(value)) {
+    processIP(value);
+  } else if (Array.isArray(value)) {
+    value.forEach(processIP);
+  }
+
+  if (IPv4Set.size) {
+    IPResult.rules.push({
+      field: `${networkType}_ipv4_addresses`,
+      op: QueryRuleOPEnum.JSON_OVERLAPS,
+      value: Array.from(IPv4Set),
+    });
+  }
+  if (IPv6Set.size) {
+    IPResult.rules.push({
+      field: `${networkType}_ipv6_addresses`,
+      op: QueryRuleOPEnum.JSON_OVERLAPS,
+      value: Array.from(IPv6Set),
+    });
+  }
+
+  // 如果没有合法IP，构建条件没有意义，直接返回null
+  return IPv4Set.size || IPv6Set.size ? IPResult : null;
+};
+
 // 将值进行btoa编码
 const encodeValueByBtoa = (v: any) => btoa(JSON.stringify(v));
 // 获取atob解码后的值
@@ -221,6 +266,7 @@ export {
   getPublicIPs,
   splitIP,
   parseIP,
+  buildIPFilterRules,
   encodeValueByBtoa,
   decodeValueByAtob,
   analysisIP,

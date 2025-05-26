@@ -1,6 +1,7 @@
 import { CLOUD_HOST_STATUS } from '@/common/constant';
 import { ModelProperty } from '@/model/typings';
 import { QueryRuleOPEnum } from '@/typings';
+import { buildIPFilterRules } from '@/utils';
 
 export default [
   {
@@ -9,22 +10,26 @@ export default [
     type: 'string',
   },
   {
-    id: 'private_ipv4_addresses',
+    id: 'private_ip',
     name: '内网IP',
     type: 'array',
     meta: {
       search: {
-        op: QueryRuleOPEnum.JSON_OVERLAPS,
+        filterRules(value) {
+          return buildIPFilterRules(value, 'private');
+        },
       },
     },
   },
   {
-    id: 'public_ipv4_addresses',
+    id: 'public_ip',
     name: '公网IP',
     type: 'array',
     meta: {
       search: {
-        op: QueryRuleOPEnum.JSON_OVERLAPS,
+        filterRules(value) {
+          return buildIPFilterRules(value, 'public');
+        },
       },
     },
   },
