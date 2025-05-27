@@ -69,3 +69,7 @@ Returns http port for service
 {{- end -}}
 {{- print $value }}
 {{- end -}}
+
+{{- define "bk-hcm.authserver" -}}
+  {{- printf "%s-authserver" (include "bk-hcm.fullname" .) -}}
+{{- end -}}

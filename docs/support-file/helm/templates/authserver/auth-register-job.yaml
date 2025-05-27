@@ -1,0 +1,49 @@
+{{- if .Values.authregister.enabled }}
+{{- $ingressHost := "http://" }}
+{{- if .Values.ingress.shareDomainEnable }}
+{{- $ingressHost = printf "%s%s/auth" $ingressHost .Values.ingress.host }}
+{{- else }}
+{{- $ingressHost = printf "%s%s" $ingressHost .Values.ingress.authserver.host }}
+{{- end }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "bk-hcm.fullname" . }}-auth-register-{{ .Release.Revision }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
+spec:
+  ttlSecondsAfterFinished: 600
+  completions: 1
+  parallelism: 1
+  template:
+    metadata:
+      labels: {{- include "common.labels.standard" . | nindent 8 }}
+    spec:
+      containers:
+        - name: auth-register
+          image: {{ default .Values.global.imageRegistry .Values.image.registry}}/{{ .Values.authregister.image.repository }}:v{{ default .Values.image.tag .Values.authregister.image.tag }}
+          imagePullPolicy: {{ default .Values.global.imagePullPolicy .Values.image.pullPolicy | quote }}
+          command:
+            - sh
+            - "-c"
+            - |
+              /bin/bash <<'EOF'
+              res=$(curl -s -X POST \
+              -H 'Content-Type:application/json' \
+              -H 'X-Bkapi-User-Name:admin' \
+              -H 'X-Bkapi-App-Code:bk-hcm' \
+              -H 'X-Bkapi-Request-Id:9113b92efbcfcff3be6892b8287abf38' \
+              -H 'X-Bk-Tenant-Id:{{ .Values.tenant.enabled | ternary "system" "default" }}' \
+              --data '{"host": "{{ $ingressHost }}"}' \
+              "http://{{ template "bk-hcm.authserver" . }}/api/v1/auth/init/authcenter"
+              )
+              echo "$res"
+              if ! [[ $(echo "$res" | jq -r .code) = "0" ]]; then
+                echo "auth center migration failed."
+                exit 1
+              fi
+              EOF
+          resources: {{ toYaml .Values.authregister.resources | nindent 12 }}
+      restartPolicy: OnFailure
+  backoffLimit: 20
+{{- end }}
