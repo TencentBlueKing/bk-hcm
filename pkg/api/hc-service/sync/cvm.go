@@ -20,9 +20,6 @@
 package sync
 
 import (
-	"fmt"
-
-	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 )
 
@@ -69,59 +66,4 @@ type SyncAwsCvmReq struct {
 // Validate SyncAwsCvmReq
 func (req SyncAwsCvmReq) Validate() error {
 	return validator.Validate.Struct(req)
-}
-
-// OtherSyncHostReq other vendor sync host request.
-type OtherSyncHostReq struct {
-	AccountID  string `json:"account_id" validate:"required"`
-	BizID      int64  `json:"bk_biz_id" validate:"required"`
-	Concurrent uint   `json:"concurrent,omitempty"`
-}
-
-// Validate ...
-func (req *OtherSyncHostReq) Validate() error {
-	return validator.Validate.Struct(req)
-}
-
-// OtherSyncHostByCondReq other vendor sync host by cond request.
-type OtherSyncHostByCondReq struct {
-	AccountID string  `json:"account_id" validate:"required"`
-	BizID     int64   `json:"bk_biz_id" validate:"required"`
-	HostIDs   []int64 `json:"bk_host_ids" validate:"required"`
-}
-
-// Validate ...
-func (req *OtherSyncHostByCondReq) Validate() error {
-	if len(req.HostIDs) > constant.CloudResourceSyncMaxLimit {
-		return fmt.Errorf("host ids should <= %d", constant.CloudResourceSyncMaxLimit)
-	}
-
-	if req.BizID == 0 {
-		return fmt.Errorf("bk_biz_id is invalid")
-	}
-
-	if req.AccountID == "" {
-		return fmt.Errorf("account_id is invalid")
-	}
-
-	return nil
-}
-
-// OtherDelHostByCondReq other vendor delete host by condition request.
-type OtherDelHostByCondReq struct {
-	AccountID string  `json:"account_id" validate:"required"`
-	HostIDs   []int64 `json:"bk_host_ids" validate:"required"`
-}
-
-// Validate ...
-func (req *OtherDelHostByCondReq) Validate() error {
-	if len(req.HostIDs) > constant.CloudResourceSyncMaxLimit {
-		return fmt.Errorf("host ids should <= %d", constant.CloudResourceSyncMaxLimit)
-	}
-
-	if req.AccountID == "" {
-		return fmt.Errorf("account_id is invalid")
-	}
-
-	return nil
 }

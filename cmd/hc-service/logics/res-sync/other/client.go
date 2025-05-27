@@ -73,10 +73,10 @@ func (opt DelHostParams) Validate() error {
 
 // SyncHostParams ...
 type SyncHostParams struct {
-	AccountID string                 `json:"account_id" validate:"required"`
-	BizID     int64                  `json:"bk_biz_id" validate:"required"`
-	HostIDs   []int64                `json:"bk_host_ids" validate:"required"`
-	HostCache []cmdb.HostWithCloudID `json:"host_cache"`
+	AccountID string                         `json:"account_id" validate:"required"`
+	BizID     int64                          `json:"bk_biz_id" validate:"required"`
+	HostIDs   []int64                        `json:"bk_host_ids" validate:"required"`
+	HostCache map[int64]cmdb.HostWithCloudID `json:"host_cache"`
 }
 
 // Validate ...

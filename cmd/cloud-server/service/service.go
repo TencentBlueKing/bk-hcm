@@ -122,11 +122,7 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 		interval := time.Duration(cc.CloudServer().CloudResource.Sync.SyncIntervalMin) * time.Minute
 		go sync.CloudResourceSync(interval, sd, apiClientSet)
 
-		etcdOpt, err := cc.CloudServer().Service.Etcd.ToConfig()
-		if err != nil {
-			return nil, fmt.Errorf("get etcd config failed, err: %v", err)
-		}
-		etcdCli, err := etcd3.New(etcdOpt)
+		etcdCli, err := etcd3.New(etcdCfg)
 		if err != nil {
 			return nil, fmt.Errorf("new etcd client failed, err: %v", err)
 		}

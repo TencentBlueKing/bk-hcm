@@ -94,7 +94,7 @@ func (w *Watcher) watchCCEvent(sd serviced.ServiceDiscover, resType cmdb.CursorT
 		}
 
 		if err = consumeFunc(kt, result.Events); err != nil {
-			logs.Errorf("consume %s event failed, err: %+v, res: %+v, rid: %s", resType, err, result, kt.Rid)
+			logs.Errorf("consume event failed, err: %+v, type: %s, res: %+v, rid: %s", err, resType, result, kt.Rid)
 		}
 
 		if len(result.Events) != 0 {
@@ -192,7 +192,7 @@ func (w *Watcher) upsertHost(kt *kit.Kit, upsertHosts []cmdb.Host) error {
 		for vendor, hostIDs := range vendorHostIDsMap {
 			accountID, ok := vendorAccountIDMap[vendor]
 			if !ok {
-				logs.Errorf("get vendor account id failed, err: %v, vendor: %v, rid: %s", err, vendor, kt.Rid)
+				logs.Errorf("get vendor account id failed, err: %v, vendor: %s, rid: %s", err, vendor, kt.Rid)
 				continue
 			}
 			switch vendor {
@@ -207,7 +207,7 @@ func (w *Watcher) upsertHost(kt *kit.Kit, upsertHosts []cmdb.Host) error {
 				}
 			// todo add other case
 			default:
-				logs.Errorf("not support vendor: %v, hostIDs: %v, rid: %s", vendor, hostIDs, kt.Rid)
+				logs.Errorf("not support vendor: %s, hostIDs: %v, rid: %s", vendor, hostIDs, kt.Rid)
 			}
 		}
 	}
@@ -299,7 +299,7 @@ func (w *Watcher) deleteHost(kt *kit.Kit, deleteHosts []cmdb.Host) error {
 	for vendor, hostIDs := range vendorHostIDsMap {
 		accountID, ok := vendorAccountIDMap[vendor]
 		if !ok {
-			logs.Errorf("get vendor account id failed, err: %v, vendor: %v, rid: %s", err, vendor, kt.Rid)
+			logs.Errorf("get vendor account id failed, err: %v, vendor: %s, rid: %s", err, vendor, kt.Rid)
 			continue
 		}
 		switch vendor {
@@ -307,13 +307,14 @@ func (w *Watcher) deleteHost(kt *kit.Kit, deleteHosts []cmdb.Host) error {
 			for _, batch := range slice.Split(hostIDs, constant.BatchOperationMaxLimit) {
 				req := &sync.OtherDelHostByCondReq{HostIDs: batch, AccountID: accountID}
 				if err = w.CliSet.HCService().Other.Host.DeleteHostByCond(kt.Ctx, kt.Header(), req); err != nil {
-					logs.Errorf("delete host failed, err: %v, ids: %+v, rid: %s", err, batch, kt.Rid)
+					logs.Errorf("delete host failed, err: %v, account id: %s, ids: %+v, rid: %s", err, accountID, batch,
+						kt.Rid)
 					continue
 				}
 			}
 		// todo add other case
 		default:
-			logs.Errorf("not support vendor: %v, hostIDs: %v, rid: %s", vendor, hostIDs, kt.Rid)
+			logs.Errorf("not support vendor: %s, hostIDs: %v, rid: %s", vendor, hostIDs, kt.Rid)
 		}
 	}
 

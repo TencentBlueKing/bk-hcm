@@ -114,7 +114,7 @@ func (cli *client) removeBizHost(kt *kit.Kit, bizID int64, ccBizExistHostIDs map
 			continue
 		}
 		if host.Vendor != enumor.Other {
-			if bizID == constant.HostPoolBiz {
+			if bizID == constant.UnassignedBiz {
 				continue
 			}
 			// todo 如果在hcm分配到业务下的公有云机器不在cc，那么需要告警
@@ -167,10 +167,10 @@ func (cli *client) listHostFromDB(kt *kit.Kit, fields []string, filter *filter.E
 
 		hosts = append(hosts, result.Details...)
 
-		if len(result.Details) < int(core.DefaultMaxPageLimit) {
+		if len(result.Details) < int(req.Page.Limit) {
 			break
 		}
-		req.Page.Start += uint32(core.DefaultMaxPageLimit)
+		req.Page.Start += uint32(req.Page.Limit)
 	}
 
 	return hosts, nil
@@ -188,14 +188,14 @@ func (cli *client) Host(kt *kit.Kit, params *SyncHostParams) error {
 		return errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	hostCacheMap := make(map[int64]cmdb.HostWithCloudID)
-	for _, host := range params.HostCache {
-		hostCacheMap[host.BkHostID] = host
+	hostCache := params.HostCache
+	if hostCache == nil {
+		hostCache = make(map[int64]cmdb.HostWithCloudID)
 	}
 	ccHosts := make([]cmdb.HostWithCloudID, 0, len(params.HostIDs))
 	needFindHostIDs := make([]int64, 0)
 	for _, hostID := range params.HostIDs {
-		if host, exist := hostCacheMap[hostID]; exist {
+		if host, exist := hostCache[hostID]; exist {
 			ccHosts = append(ccHosts, host)
 			continue
 		}

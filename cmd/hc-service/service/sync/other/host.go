@@ -199,14 +199,16 @@ func (hd *hostHandler) listCCHost(kt *kit.Kit, limit uint) ([]cmdb.Host, error) 
 // Sync ...
 func (hd *hostHandler) Sync(kt *kit.Kit, hosts []cmdb.HostWithCloudID) error {
 	hostIDs := make([]int64, 0, len(hosts))
+	hostCache := make(map[int64]cmdb.HostWithCloudID, len(hosts))
 	for _, host := range hosts {
 		hostIDs = append(hostIDs, host.BkHostID)
+		hostCache[host.BkHostID] = host
 	}
 	params := &other.SyncHostParams{
 		AccountID: hd.request.AccountID,
 		BizID:     hd.request.BizID,
 		HostIDs:   hostIDs,
-		HostCache: hosts,
+		HostCache: hostCache,
 	}
 
 	return hd.SyncByCond(kt, params)
