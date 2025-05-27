@@ -6,6 +6,7 @@ import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
 import BatchImportComp from './batch-import-comp/index.vue';
 import SyncAccountResource from '@/components/sync-account-resource/index.vue';
+import BatchCopy from './batch-copy.vue';
 // import hooks
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
@@ -66,9 +67,9 @@ export default defineComponent({
       searchOptions: {
         searchData: [
           { id: 'name', name: '负载均衡名称' },
+          { id: 'cloud_id', name: '负载均衡ID' },
           { id: 'domain', name: '负载均衡域名' },
           { id: 'lb_vip', name: '负载均衡VIP' },
-          { id: 'cloud_id', name: '负载均衡ID' },
           {
             id: 'lb_type',
             name: '网络类型',
@@ -250,6 +251,7 @@ export default defineComponent({
                 <bk-button disabled={selections.value.length > 0} onClick={handleSync}>
                   同步负载均衡
                 </bk-button>
+                <BatchCopy selections={selections.value} />
               </>
             ),
           }}
