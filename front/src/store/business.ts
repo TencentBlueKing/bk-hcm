@@ -564,14 +564,11 @@ export const useBusinessStore = defineStore({
       );
     },
     /**
-     * 统计指定的目标组的权重情况
-     * @param target_group_ids 目标组id
+     * 查询监听器绑定的rs的权重情况
+     * @param ids 监听器
      */
-    reqStatTargetGroupRsWeight(target_group_ids: string[]) {
-      return http.post(
-        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/targets/weight_stat`,
-        { target_group_ids },
-      );
+    getListenersRsWeightStat(ids: string[]) {
+      return http.post(`/api/v1/cloud/${getBusinessApiPath()}listeners/rs_weight_stat`, { ids });
     },
     // 主机所关联资源(硬盘, eip)的个数
     getRelResByCvmIds(data: { ids: string[] }) {
