@@ -61,7 +61,7 @@ type TCloudLoadBalancerCreateReq struct {
 
 	SlaType      *string `json:"sla_type" validate:"omitempty"`
 	AutoRenew    *bool   `json:"auto_renew" validate:"omitempty"`
-	RequireCount *uint64 `json:"require_count" validate:"omitempty"`
+	RequireCount *uint64 `json:"require_count" validate:"omitempty,max=20"`
 	Memo         string  `json:"memo" validate:"omitempty"`
 
 	InternetChargeType *typelb.TCloudLoadBalancerNetworkChargeType `json:"internet_charge_type" validate:"omitempty"`
