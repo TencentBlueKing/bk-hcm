@@ -102,10 +102,27 @@ export default (
     return tableProps.data.filter(({ non_zero_weight_count }: any) => non_zero_weight_count > 0);
   });
 
-  // 如果没有可删除的负载均衡, 则禁用删除按钮
-  const isSubmitDisabled = computed(
-    () => tableProps.data.filter(({ non_zero_weight_count }: any) => non_zero_weight_count === 0).length === 0,
-  );
+  // 如果没有可删除的监听器/监听器数量大于20, 则禁用删除按钮
+  const isSubmitDisabled = computed(() => {
+    const nonZeroWeightCount = tableProps.data.reduce(
+      (prev, { non_zero_weight_count }: any) => (non_zero_weight_count === 0 ? prev + 1 : prev),
+      0,
+    );
+    return nonZeroWeightCount === 0 || nonZeroWeightCount > 20;
+  });
+  const submitDisabledTooltipsOption = computed(() => {
+    const nonZeroWeightCount = tableProps.data.reduce(
+      (prev, { non_zero_weight_count }: any) => (non_zero_weight_count === 0 ? prev + 1 : prev),
+      0,
+    );
+    if (nonZeroWeightCount === 0) {
+      return { content: '没有可删除的监听器', disabled: false };
+    }
+    if (nonZeroWeightCount > 20) {
+      return { content: '单次删除限20个', disabled: tableProps.data.length <= 20 };
+    }
+    return { disabled: true };
+  });
 
   // click-handler - 批量删除监听器
   const handleBatchDeleteListener = () => {
@@ -140,6 +157,7 @@ export default (
   return {
     isSubmitLoading,
     isSubmitDisabled,
+    submitDisabledTooltipsOption,
     isBatchDeleteDialogShow,
     radioGroupValue,
     tableProps,

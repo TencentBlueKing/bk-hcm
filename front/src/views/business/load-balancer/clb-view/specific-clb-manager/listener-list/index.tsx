@@ -175,6 +175,7 @@ export default defineComponent({
     const {
       isSubmitLoading,
       isSubmitDisabled,
+      submitDisabledTooltipsOption,
       isBatchDeleteDialogShow,
       radioGroupValue,
       tableProps,
@@ -229,6 +230,7 @@ export default defineComponent({
           confirmText='删除'
           isSubmitLoading={isSubmitLoading.value}
           isSubmitDisabled={isSubmitDisabled.value}
+          submitDisabledTooltipsOption={submitDisabledTooltipsOption.value}
           tableProps={tableProps}
           list={computedListenersList.value}
           onHandleConfirm={handleBatchDeleteSubmit}>
