@@ -170,6 +170,7 @@ func (a *accountSvc) checkGetAccountPermission(cts *rest.Contexts, accountID str
 				Action:     meta.Access,
 				ResourceID: strconv.FormatInt(bkBizID, 10),
 			},
+			BizID: bkBizID,
 		})
 	}
 	decisions, authorized, err := a.authorizer.Authorize(cts.Kit, resources...)
