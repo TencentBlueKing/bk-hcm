@@ -164,45 +164,14 @@ func (s *securityGroup) listAllSGRel(kt *kit.Kit, listFilter *filter.Expression,
 func (s *securityGroup) ListSGRelBusiness(kt *kit.Kit, currentBizID int64, sgID string) (
 	*proto.ListSGRelBusinessResp, error) {
 
-	relListFilter := tools.EqualExpression("security_group_id", sgID)
-	relListFields := []string{"res_id", "res_type"}
-
-	// list security group rel resources
-	sgRelResources, err := s.listAllSGRel(kt, relListFilter, relListFields)
-	if err != nil {
-		logs.Errorf("list security group rel resources failed, id: %s, err: %v, rid: %s", sgID, err, kt.Rid)
-		return nil, err
-	}
-
-	if sgRelResources == nil {
-		logs.Errorf("security group rel resources is empty, id: %s, rid: %s", sgID, kt.Rid)
-		return nil, errors.New("security group rel resources is empty")
-	}
-
-	cvmIDs := make([]string, 0)
-	lbIDs := make([]string, 0)
-
-	for _, relRes := range sgRelResources {
-		switch relRes.ResType {
-		case enumor.CvmCloudResType:
-			cvmIDs = append(cvmIDs, relRes.ResID)
-		case enumor.LoadBalancerCloudResType:
-			lbIDs = append(lbIDs, relRes.ResID)
-		default:
-			logs.Errorf("unsupported res type: %s, sg id: %s, res id: %s, rid: %s", relRes.ResType, sgID,
-				relRes.ID, kt.Rid)
-			return nil, fmt.Errorf("unsupported res type: %s", relRes.ResType)
-		}
-	}
-
 	// list business ids associated with CVM and load balancer resources.
-	cvmRelBizs, err := s.listRelBizsWithCVM(kt, currentBizID, cvmIDs)
+	cvmRelBizs, err := s.listRelBizs(kt, currentBizID, sgID, enumor.CvmCloudResType)
 	if err != nil {
 		logs.Errorf("list security group rel cvm bizs failed, err: %v, id: %s, rid: %s", err, sgID, kt.Rid)
 		return nil, err
 	}
 
-	lbRelBizs, err := s.listRelBizsWithLB(kt, currentBizID, lbIDs)
+	lbRelBizs, err := s.listRelBizs(kt, currentBizID, sgID, enumor.LoadBalancerCloudResType)
 	if err != nil {
 		logs.Errorf("list security group rel lb bizs failed, err: %v, id: %s, rid: %s", err, sgID, kt.Rid)
 		return nil, err
@@ -214,77 +183,39 @@ func (s *securityGroup) ListSGRelBusiness(kt *kit.Kit, currentBizID int64, sgID 
 	}, nil
 }
 
-func (s *securityGroup) listRelBizsWithCVM(kt *kit.Kit, currentBizID int64, cvmIDs []string) (
+func (s *securityGroup) listRelBizs(kt *kit.Kit, currentBizID int64, sgID string, resourceType enumor.CloudResourceType) (
 	[]proto.ListSGRelBusinessItem, error) {
 
-	relBizMap := make(map[int64]int64)
-	for _, batch := range slice.Split(cvmIDs, int(core.DefaultMaxPageLimit)) {
-		req := &core.ListReq{
-			Fields: []string{"bk_biz_id"},
-			Filter: tools.ContainersExpression("id", batch),
-			Page:   core.NewDefaultBasePage(),
-		}
-
-		res, err := s.client.DataService().Global.Cvm.ListCvm(kt, req)
-		if err != nil {
-			logs.Errorf("list security group rel cvm failed, err: %v, cvmIDs: %v, rid: %s", err, cvmIDs, kt.Rid)
-			return nil, err
-		}
-
-		for _, item := range res.Details {
-			relBizMap[item.BkBizID] += 1
-		}
+	req := &dataproto.SGCommonRelCountBizInfoReq{
+		SgID:    sgID,
+		ResType: resourceType,
 	}
-
-	return tidySGRelBusiness(currentBizID, relBizMap), nil
+	resBizInfo, err := s.client.DataService().Global.SGCommonRel.CountSGRelatedResBizInfo(kt, req)
+	if err != nil {
+		logs.Errorf("count security group related res biz info failed, err: %v, sg_id: %s, rid: %s", err, sgID, kt.Rid)
+		return nil, err
+	}
+	return tidySGRelBusiness(currentBizID, resBizInfo.Items), nil
 }
 
-func (s *securityGroup) listRelBizsWithLB(kt *kit.Kit, currentBizID int64, lbIDs []string) (
-	[]proto.ListSGRelBusinessItem, error) {
+func tidySGRelBusiness(currentBizID int64,
+	relBizList []dataproto.ListSGRelBusinessItem) []proto.ListSGRelBusinessItem {
 
-	relBizMap := make(map[int64]int64)
-	for _, batch := range slice.Split(lbIDs, int(core.DefaultMaxPageLimit)) {
-		req := &core.ListReq{
-			Fields: []string{"bk_biz_id"},
-			Filter: tools.ContainersExpression("id", batch),
-			Page:   core.NewDefaultBasePage(),
-		}
-
-		res, err := s.client.DataService().Global.LoadBalancer.ListLoadBalancer(kt, req)
-		if err != nil {
-			logs.Errorf("list security group rel load balancer failed, err: %v, lbIDs: %v, rid: %s", err, lbIDs,
-				kt.Rid)
-			return nil, err
-		}
-
-		for _, item := range res.Details {
-			relBizMap[item.BkBizID] += 1
-		}
-	}
-
-	return tidySGRelBusiness(currentBizID, relBizMap), nil
-}
-
-func tidySGRelBusiness(currentBizID int64, relBizMap map[int64]int64) []proto.ListSGRelBusinessItem {
-	var currentBizResC int64
 	// 当前业务必须在列表的第一个
-	relBizs := make([]proto.ListSGRelBusinessItem, 0, len(relBizMap)+1)
-
-	if currentBizID != constant.UnassignedBiz {
-		if resCount, ok := relBizMap[currentBizID]; ok {
-			currentBizResC = resCount
-			delete(relBizMap, currentBizID)
+	relBizs := make([]proto.ListSGRelBusinessItem, 0, len(relBizList)+1)
+	for _, item := range relBizList {
+		if currentBizID != constant.UnassignedBiz && item.BkBizID == currentBizID {
+			currentDetail := proto.ListSGRelBusinessItem{
+				BkBizID:  item.BkBizID,
+				ResCount: item.ResCount,
+			}
+			relBizs = append([]proto.ListSGRelBusinessItem{currentDetail}, relBizs...)
+			continue
 		}
 
 		relBizs = append(relBizs, proto.ListSGRelBusinessItem{
-			BkBizID:  currentBizID,
-			ResCount: currentBizResC,
-		})
-	}
-	for bizID, count := range relBizMap {
-		relBizs = append(relBizs, proto.ListSGRelBusinessItem{
-			BkBizID:  bizID,
-			ResCount: count,
+			BkBizID:  item.BkBizID,
+			ResCount: item.ResCount,
 		})
 	}
 

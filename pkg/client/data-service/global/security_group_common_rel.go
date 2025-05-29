@@ -91,3 +91,11 @@ func (cli *SGCommonRelClient) ListWithLBSummary(kt *kit.Kit, request *protocloud
 	return common.Request[protocloud.SGCommonRelListReq, protocloud.SGCommonRelWithLBListResp](
 		cli.client, rest.POST, kt, request, "/security_group_common_rels/with/load_balancer/list")
 }
+
+// CountSGRelatedResBizInfo 统计安全组关联的资源 所属业务情况, 例如 绑定的cvm有多少个在某个业务下
+func (cli *SGCommonRelClient) CountSGRelatedResBizInfo(kt *kit.Kit, request *protocloud.SGCommonRelCountBizInfoReq) (
+	*protocloud.SGCommonRelCountBizInfoResp, error) {
+
+	return common.Request[protocloud.SGCommonRelCountBizInfoReq, protocloud.SGCommonRelCountBizInfoResp](
+		cli.client, rest.POST, kt, request, "/security_group_common_rels/biz_info/count")
+}
