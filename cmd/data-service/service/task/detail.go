@@ -169,7 +169,7 @@ func (svc *service) UpdateTaskDetail(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	updateIDs := slice.Map(req.Items, func(i task.UpdateTaskDetailField) string { return i.ID })
-	existMap, err := svc.checkDetailExists(cts, updateIDs)
+	existMap, err := svc.getExistingTaskDetails(cts, updateIDs)
 	if err != nil {
 		logs.Errorf("fail to check detail exists, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
@@ -232,7 +232,7 @@ func (svc *service) UpdateTaskDetail(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
-func (svc *service) checkDetailExists(cts *rest.Contexts, ids []string) (map[string]tabletask.DetailTable, error) {
+func (svc *service) getExistingTaskDetails(cts *rest.Contexts, ids []string) (map[string]tabletask.DetailTable, error) {
 
 	existMap := make(map[string]tabletask.DetailTable, len(ids))
 
@@ -243,7 +243,7 @@ func (svc *service) checkDetailExists(cts *rest.Contexts, ids []string) (map[str
 		}
 		list, err := svc.dao.TaskDetail().List(cts.Kit, opt)
 		if err != nil {
-			logs.Errorf("list task detail failed, err: %v, ids:%s, rid: %s", err, idBatch, cts.Kit.Rid)
+			logs.Errorf("list task detail failed, err: %v, ids: %v, rid: %s", err, idBatch, cts.Kit.Rid)
 			return nil, err
 		}
 		for _, one := range list.Details {
