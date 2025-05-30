@@ -82,11 +82,14 @@ export default (formModel: Reactive<ApplyClbModel>) => {
         : CLB_QUOTA_NAME.TOTAL_INTERNAL_CLB_QUOTA;
     return quotas.value.find(({ quota_id }) => quotaName === quota_id);
   });
-  // 购买数量的最大值
-  const requireCountMax = computed(() => currentLbQuota.value?.quota_limit - currentLbQuota.value?.quota_current || 1);
+  // 配额的最大值
+  const quotaMax = computed(() => currentLbQuota.value?.quota_limit - currentLbQuota.value?.quota_current || 0);
+  // 每次可申请数的最大值
+  const onceApplyLimit = 20;
+  const requireCountLimit = computed(() => Math.min(onceApplyLimit, quotaMax.value));
   // 配额余量
   const quotaRemaining = computed(() =>
-    currentLbQuota.value?.quota_limit ? requireCountMax.value - formModel.require_count : 0,
+    currentLbQuota.value?.quota_limit ? quotaMax.value - formModel.require_count : 0,
   );
 
   const rules = {
@@ -490,12 +493,13 @@ export default (formModel: Reactive<ApplyClbModel>) => {
             property: 'require_count',
             content: () => (
               <>
-                <InputNumber v-model={formModel.require_count} min={1} max={requireCountMax.value} />
+                <InputNumber v-model={formModel.require_count} min={1} max={requireCountLimit.value} />
                 <div class='quota-info'>
                   {t('所在地域配额为')}
                   <span class='quota-number ml5'>{quotaRemaining.value}</span>
                   <span class='ml5 mr5'>/</span>
                   {currentLbQuota.value?.quota_limit || 0}
+                  {t(`，单次购买限 ${requireCountLimit.value} 个`)}
                 </div>
               </>
             ),
