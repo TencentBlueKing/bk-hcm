@@ -102,6 +102,9 @@ func (svc *lbSvc) deleteListener(cts *rest.Contexts, validHandler handler.ValidW
 					enumor.TCloud, req.IDs, err, cts.Kit.Rid)
 				return nil, err
 			}
+		default:
+			logs.Errorf("delete listener not support vendor: %s, ids: %v, rid: %s", vendor, req.IDs, cts.Kit.Rid)
+			return nil, fmt.Errorf("delete listener not support vendor: %s", vendor)
 		}
 	}
 
@@ -122,8 +125,8 @@ func (svc *lbSvc) validateListenerTargetWeight(kt *kit.Kit, ids []string) error 
 	return nil
 }
 
-func (svc *lbSvc) getListenerTargetWeightStat(kt *kit.Kit, listenerID string) (*cslb.ListenerTargetsStat, error) {
-
+// getTGIDsByListenerID 七层监听器会对应多个目标组，四层监听器只有一个目标组
+func (svc *lbSvc) getTGIDsByListenerID(kt *kit.Kit, listenerID string) ([]string, error) {
 	targetGroupIDs := make([]string, 0)
 	listTGReq := &core.ListReq{
 		Filter: tools.ExpressionAnd(
@@ -145,7 +148,17 @@ func (svc *lbSvc) getListenerTargetWeightStat(kt *kit.Kit, listenerID string) (*
 		}
 		listTGReq.Page.Start += uint32(core.DefaultMaxPageLimit)
 	}
+	return targetGroupIDs, nil
+}
 
+func (svc *lbSvc) getListenerTargetWeightStat(kt *kit.Kit, listenerID string) (*cslb.ListenerTargetsStat, error) {
+
+	targetGroupIDs, err := svc.getTGIDsByListenerID(kt, listenerID)
+	if err != nil {
+		logs.Errorf("get target group ids by listener id failed, listenerID: %s, err: %v, rid: %s",
+			listenerID, err, kt.Rid)
+		return nil, err
+	}
 	result := &cslb.ListenerTargetsStat{}
 	for _, batch := range slice.Split(targetGroupIDs, int(core.DefaultMaxPageLimit)) {
 		listReq := &core.ListReq{
@@ -154,17 +167,23 @@ func (svc *lbSvc) getListenerTargetWeightStat(kt *kit.Kit, listenerID string) (*
 			),
 			Page: core.NewDefaultBasePage(),
 		}
-		targets, err := svc.client.DataService().Global.LoadBalancer.ListTarget(kt, listReq)
-		if err != nil {
-			logs.Errorf("list target failed, req: %+v, err: %v, rid: %s", listReq, err, kt.Rid)
-			return nil, err
-		}
-		for _, detail := range targets.Details {
-			if converter.PtrToVal(detail.Weight) == 0 {
-				result.ZeroWeightCount++
+		for {
+			targets, err := svc.client.DataService().Global.LoadBalancer.ListTarget(kt, listReq)
+			if err != nil {
+				logs.Errorf("list target failed, req: %+v, err: %v, rid: %s", listReq, err, kt.Rid)
+				return nil, err
 			}
+			for _, detail := range targets.Details {
+				if converter.PtrToVal(detail.Weight) == 0 {
+					result.ZeroWeightCount++
+				}
+			}
+			result.TotalCount += len(targets.Details)
+			if len(targets.Details) < int(core.DefaultMaxPageLimit) {
+				break
+			}
+			listReq.Page.Start += uint32(core.DefaultMaxPageLimit)
 		}
-		result.TotalCount += len(targets.Details)
 	}
 
 	result.NonZeroWeightCount = result.TotalCount - result.ZeroWeightCount
@@ -182,20 +201,21 @@ func (svc *lbSvc) ListBizListenerTargetWeightStat(cts *rest.Contexts) (interface
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	err := svc.validateListenerInBiz(cts, req.IDs)
+	basicInfoReq := dataproto.ListResourceBasicInfoReq{
+		ResourceType: enumor.ListenerCloudResType,
+		IDs:          req.IDs,
+		Fields:       types.CommonBasicInfoFields,
+	}
+	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, basicInfoReq)
 	if err != nil {
-		logs.Errorf("validate listener in biz failed, ids: %v, err: %v, rid: %s", req.IDs, err, cts.Kit.Rid)
+		logs.Errorf("list listener basic info failed, req: %+v, err: %v, rid: %s", basicInfoReq, err, cts.Kit.Rid)
 		return nil, err
 	}
-
 	// validate biz and authorize
-	_, noPerm, err := handler.ListBizAuthRes(cts,
-		&handler.ListAuthResOption{Authorizer: svc.authorizer, ResType: meta.Listener, Action: meta.Find})
+	err = handler.BizOperateAuth(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.Listener,
+		Action: meta.Find, BasicInfos: basicInfoMap})
 	if err != nil {
 		return nil, err
-	}
-	if noPerm {
-		return nil, errf.New(errf.PermissionDenied, "permission denied for get listener")
 	}
 
 	result := make(map[string]*cslb.ListenerTargetsStat)
@@ -209,37 +229,4 @@ func (svc *lbSvc) ListBizListenerTargetWeightStat(cts *rest.Contexts) (interface
 	}
 
 	return result, nil
-}
-
-func (svc *lbSvc) validateListenerInBiz(cts *rest.Contexts, ids []string) error {
-	if len(ids) == 0 {
-		return nil
-	}
-
-	basicInfoReq := dataproto.ListResourceBasicInfoReq{
-		ResourceType: enumor.ListenerCloudResType,
-		IDs:          ids,
-		Fields:       types.CommonBasicInfoFields,
-	}
-	basicInfoMap, err := svc.client.DataService().Global.Cloud.ListResBasicInfo(cts.Kit, basicInfoReq)
-	if err != nil {
-		logs.Errorf("list listener basic info failed, req: %+v, err: %v, rid: %s", basicInfoReq, err, cts.Kit.Rid)
-		return err
-	}
-
-	bizID, err := cts.PathParameter("bk_biz_id").Int64()
-	if err != nil {
-		return err
-	}
-
-	for _, id := range ids {
-		basicInfo, ok := basicInfoMap[id]
-		if !ok {
-			return fmt.Errorf("listener %s not found", id)
-		}
-		if basicInfo.BkBizID != bizID {
-			return fmt.Errorf("listener %s not in biz %d", id, bizID)
-		}
-	}
-	return nil
 }
