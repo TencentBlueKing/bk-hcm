@@ -300,7 +300,7 @@ type TCloudCreateClbOption struct {
 	SubnetID                 *string                           `json:"subnet_id" validate:"omitempty"`
 	ProjectID                *int64                            `json:"project_id" validate:"omitempty"`
 	AddressIPVersion         TCloudIPVersionForCreate          `json:"address_ip_version" validate:"omitempty"`
-	Number                   *uint64                           `json:"number" validate:"omitempty,min=1"`
+	Number                   *uint64                           `json:"number" validate:"omitempty,min=1,max=20"`
 	MasterZoneID             *string                           `json:"master_zone_id" validate:"omitempty"`
 	ZoneID                   *string                           `json:"zone_id" validate:"omitempty"`
 	VipIsp                   *string                           `json:"vip_isp" validate:"omitempty"`
