@@ -6,7 +6,6 @@ import {
   type ISecurityGroupRelBusiness,
   type ISecurityGroupRelResCountItem,
   type SecurityGroupRelResourceByBizItem,
-  SecurityGroupRelatedResourceName,
   useSecurityGroupStore,
 } from '@/store/security-group';
 import { useBusinessGlobalStore } from '@/store/business-global';
@@ -19,8 +18,9 @@ import {
   RELATED_RES_KEY_MAP,
   RELATED_RES_NAME_MAP,
   RELATED_RES_OPERATE_DISABLED_TIPS_MAP,
-  RELATED_RES_OPERATE_TYPE,
+  RelatedResourceOperateType,
   RELATED_RES_PROPERTIES_MAP,
+  SecurityGroupRelatedResourceName,
 } from '@/constants/security-group';
 import { ISearchSelectValue } from '@/typings';
 
@@ -54,7 +54,7 @@ const authAction = computed(() => {
   return isBusinessPage.value ? 'biz_iaas_resource_operate' : 'iaas_resource_operate';
 });
 
-const tabActive = ref<SecurityGroupRelatedResourceName>(SecurityGroupRelatedResourceName.CVM);
+const tabActive = ref(SecurityGroupRelatedResourceName.CVM);
 // 当前业务所关联资源
 const currentBizRelatedResources = computed(
   () =>
@@ -78,27 +78,28 @@ const condition = ref<Record<string, any>>({});
 // 账号下的平台管理：拉取所有业务所关联的实例列表
 const loading = ref(false);
 const getList = async (sort = 'created_at', order = 'DESC') => {
+  const reqInBusiness = async (sgId: string) => {
+    const bizId = getBizsId();
+
+    return securityGroupStore.queryRelatedResourcesByBiz(sgId, bizId, tabActive.value, {
+      filter: transformSimpleCondition(condition.value, RELATED_RES_PROPERTIES_MAP[tabActive.value]),
+      page: getPageParams(pagination, { sort, order }),
+    });
+  };
+  const reqInResource = async (sgId: string) => {
+    return securityGroupStore.queryRelatedResourcesBySgId(sgId, tabActive.value, {
+      filter: transformSimpleCondition(condition.value, RELATED_RES_PROPERTIES_MAP[tabActive.value]),
+      page: getPageParams(pagination, { sort, order }),
+    });
+  };
+
   loading.value = true;
   try {
     const { id } = props.detail;
-    const api =
-      tabActive.value === 'CVM' ? securityGroupStore.queryRelCvmByBiz : securityGroupStore.queryRelLoadBalancerByBiz;
-    const bizIds = isBusinessPage.value
-      ? [getBizsId()]
-      : props.relatedBiz[RELATED_RES_KEY_MAP[tabActive.value]].map(({ bk_biz_id }) => bk_biz_id);
-
-    const res = await Promise.all(
-      bizIds.map((bk_biz_id) =>
-        api(id, bk_biz_id, {
-          filter: transformSimpleCondition(condition.value, RELATED_RES_PROPERTIES_MAP[tabActive.value]),
-          page: getPageParams(pagination, { sort, order }),
-        }),
-      ),
-    );
-
-    list.value = res.flatMap((item) => item.list);
+    const res = await (isBusinessPage.value ? reqInBusiness(id) : reqInResource(id));
+    list.value = res.list;
     // 设置页码总条数
-    pagination.count = isBusinessPage.value ? res[0].count : res.reduce((acc, cur) => acc + cur.count, 0);
+    pagination.count = res.count;
   } finally {
     loading.value = false;
   }
@@ -116,7 +117,7 @@ const bindDisabledTooltipsOption = computed(() => {
   }
   if (isClb.value) {
     return {
-      content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RELATED_RES_OPERATE_TYPE.BIND],
+      content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RelatedResourceOperateType.BIND],
       disabled: !isClb.value,
     };
   }
@@ -128,7 +129,7 @@ const unbindDisabledTooltipsOption = computed(() => {
   }
   if (isClb.value) {
     return {
-      content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RELATED_RES_OPERATE_TYPE.UNBIND],
+      content: RELATED_RES_OPERATE_DISABLED_TIPS_MAP[RelatedResourceOperateType.UNBIND],
       disabled: !isClb.value,
     };
   }
@@ -197,7 +198,9 @@ watch(tabActive, () => {
 watch(
   [() => pagination.current, () => pagination.limit, () => props.relatedBiz],
   () => {
-    if (props.relatedBiz) {
+    if (isBusinessPage.value) {
+      props.relatedBiz && getList();
+    } else {
       getList();
     }
   },
@@ -243,44 +246,39 @@ watch(
       />
     </div>
 
-    <bk-loading v-if="relBizLoading" loading>
-      <div style="width: 100%; height: 360px" />
-    </bk-loading>
-    <template v-else>
-      <div v-if="isBusinessPage" class="overview">
-        {{ t(`当前业务（${getBusinessNames(getBizsId())}）下共有`) }}
-        <span class="number">{{ currentBizRelatedResources?.res_count }}</span>
-        {{ t(`台${RELATED_RES_NAME_MAP[tabActive]}，还有`) }}
-        <span class="number">{{ otherBusinessCount }}</span>
-        {{ t(`个业务也在使用`) }}
-      </div>
+    <div v-if="isBusinessPage" class="overview">
+      {{ t(`当前业务（${getBusinessNames(getBizsId())}）下共有`) }}
+      <span class="number">{{ currentBizRelatedResources?.res_count }}</span>
+      {{ t(`台${RELATED_RES_NAME_MAP[tabActive]}，还有`) }}
+      <span class="number">{{ otherBusinessCount }}</span>
+      {{ t(`个业务也在使用`) }}
+    </div>
 
-      <div class="rel-res-display-wrap">
-        <data-list
-          v-bkloading="{ loading }"
-          ref="data-list"
-          :resource-name="tabActive"
-          operation="base"
-          :list="list"
-          :pagination="pagination"
-          :is-row-select-enable="() => true"
-          @select="(selections) => (selected = selections)"
-        >
-          <template #operate="{ row }">
-            <bk-button
-              :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.[authAction] }"
-              theme="primary"
-              text
-              :disabled="(!isBusinessPage && isAssigned) || isClb"
-              v-bk-tooltips="unbindDisabledTooltipsOption"
-              @click="handleShowOperateDialog('single-unbind', row)"
-            >
-              {{ t('解绑') }}
-            </bk-button>
-          </template>
-        </data-list>
-      </div>
-    </template>
+    <div class="rel-res-display-wrap">
+      <data-list
+        ref="data-list"
+        :resource-name="tabActive"
+        operation="base"
+        :list="list"
+        :loading="loading || relBizLoading"
+        :pagination="pagination"
+        :is-row-select-enable="() => true"
+        @select="(selections) => (selected = selections)"
+      >
+        <template #operate="{ row }">
+          <bk-button
+            :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.[authAction] }"
+            theme="primary"
+            text
+            :disabled="(!isBusinessPage && isAssigned) || isClb"
+            v-bk-tooltips="unbindDisabledTooltipsOption"
+            @click="handleShowOperateDialog('single-unbind', row)"
+          >
+            {{ t('解绑') }}
+          </bk-button>
+        </template>
+      </data-list>
+    </div>
 
     <template v-if="bindVisible">
       <bind v-model="bindVisible" :tab-active="tabActive" :detail="detail" @success="handleOperateSuccess" />

@@ -4,12 +4,11 @@ import { useI18n } from 'vue-i18n';
 import {
   ISecurityGroupDetail,
   type SecurityGroupRelResourceByBizItem,
-  type SecurityGroupRelatedResourceName,
   useSecurityGroupStore,
 } from '@/store/security-group';
 import { useBusinessGlobalStore } from '@/store/business-global';
 import columnFactory from '../data-list/column-factory';
-import { RELATED_RES_KEY_MAP } from '@/constants/security-group';
+import { RELATED_RES_KEY_MAP, SecurityGroupRelatedResourceName } from '@/constants/security-group';
 import { ISearchSelectValue } from '@/typings';
 
 import { Message } from 'bkui-vue';
