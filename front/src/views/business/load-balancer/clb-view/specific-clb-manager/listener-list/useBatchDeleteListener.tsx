@@ -34,14 +34,18 @@ export default (
           },
         },
         {
-          label: 'RS权重为0',
+          label: 'RS权重不为0',
           field: 'rs_weight',
           render: ({ data }: any) => {
-            const { rs_weight_zero_num, rs_weight_non_zero_num } = data;
+            const { non_zero_weight_count, total_count } = data;
             return (
               <div class='rs-weight-col'>
-                <span class={rs_weight_zero_num ? 'exception' : 'normal'}>{rs_weight_zero_num}</span>/
-                <span>{rs_weight_zero_num + rs_weight_non_zero_num}</span>
+                <span
+                  v-bk-tooltips={{ content: `${non_zero_weight_count}个RS权重不为0` }}
+                  class={non_zero_weight_count ? 'exception' : 'normal'}>
+                  {non_zero_weight_count}
+                </span>
+                /<span v-bk-tooltips={{ content: `共${total_count}个RS` }}>{total_count}</span>
               </div>
             );
           },
@@ -94,14 +98,31 @@ export default (
 
   const computedListenersList = computed(() => {
     if (radioGroupValue.value)
-      return tableProps.data.filter(({ rs_weight_non_zero_num }: any) => rs_weight_non_zero_num === 0);
-    return tableProps.data.filter(({ rs_weight_non_zero_num }: any) => rs_weight_non_zero_num > 0);
+      return tableProps.data.filter(({ non_zero_weight_count }: any) => non_zero_weight_count === 0);
+    return tableProps.data.filter(({ non_zero_weight_count }: any) => non_zero_weight_count > 0);
   });
 
-  // 如果没有可删除的负载均衡, 则禁用删除按钮
-  const isSubmitDisabled = computed(
-    () => tableProps.data.filter(({ rs_weight_non_zero_num }: any) => rs_weight_non_zero_num === 0).length === 0,
-  );
+  // 如果没有可删除的监听器/监听器数量大于20, 则禁用删除按钮
+  const isSubmitDisabled = computed(() => {
+    const nonZeroWeightCount = tableProps.data.reduce(
+      (prev, { non_zero_weight_count }: any) => (non_zero_weight_count === 0 ? prev + 1 : prev),
+      0,
+    );
+    return nonZeroWeightCount === 0 || nonZeroWeightCount > 20;
+  });
+  const submitDisabledTooltipsOption = computed(() => {
+    const nonZeroWeightCount = tableProps.data.reduce(
+      (prev, { non_zero_weight_count }: any) => (non_zero_weight_count === 0 ? prev + 1 : prev),
+      0,
+    );
+    if (nonZeroWeightCount === 0) {
+      return { content: '没有可删除的监听器', disabled: false };
+    }
+    if (nonZeroWeightCount > 20) {
+      return { content: '单次删除限20个', disabled: tableProps.data.length <= 20 };
+    }
+    return { disabled: true };
+  });
 
   // click-handler - 批量删除监听器
   const handleBatchDeleteListener = () => {
@@ -122,7 +143,7 @@ export default (
       await resourceStore.deleteBatch('listeners', {
         ids: tableProps.data
           // 只删除rs权重全部为零的监听器
-          .filter(({ rs_weight_non_zero_num }: any) => rs_weight_non_zero_num === 0)
+          .filter(({ non_zero_weight_count }: any) => non_zero_weight_count === 0)
           .map((item) => item.id),
       });
       Message({ theme: 'success', message: '批量删除成功' });
@@ -136,6 +157,7 @@ export default (
   return {
     isSubmitLoading,
     isSubmitDisabled,
+    submitDisabledTooltipsOption,
     isBatchDeleteDialogShow,
     radioGroupValue,
     tableProps,

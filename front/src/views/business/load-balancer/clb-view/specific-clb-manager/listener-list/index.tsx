@@ -60,25 +60,6 @@ export default defineComponent({
             children: TARGET_GROUP_PROTOCOLS.map((item) => ({ id: item, name: item })),
           },
           { name: '端口', id: 'port' },
-          // todo: 待后端支持
-          // {
-          //   name: '均衡方式',
-          //   id: 'scheduler',
-          //   children: Object.keys(SCHEDULER_MAP).map((scheduler) => ({
-          //     id: scheduler,
-          //     name: SCHEDULER_MAP[scheduler],
-          //   })),
-          // },
-          // { name: '域名数量', id: 'domain_num' },
-          // { name: 'URL数量', id: 'url_num' },
-          // {
-          //   name: '同步状态',
-          //   id: 'binding_status',
-          //   children: Object.keys(CLB_BINDING_STATUS).map((bindingStatus) => ({
-          //     id: bindingStatus,
-          //     name: CLB_BINDING_STATUS[bindingStatus],
-          //   })),
-          // },
         ],
       },
       tableOptions: {
@@ -96,10 +77,10 @@ export default defineComponent({
                 <Button
                   text
                   theme='primary'
-                  disabled={data.rs_weight_non_zero_num !== 0}
+                  disabled={data.non_zero_weight_count !== 0}
                   v-bk-tooltips={{
                     content: t('监听器RS的权重不为0，不可删除'),
-                    disabled: data.rs_weight_non_zero_num === 0,
+                    disabled: data.non_zero_weight_count === 0,
                   }}
                   onClick={() => handleDeleteListener(data)}>
                   {t('删除')}
@@ -143,13 +124,14 @@ export default defineComponent({
     });
     const setRsWeight = async (dataList: any[]) => {
       // 为所有监听器设置rs权重初始值
-      dataList.forEach((item: any) => Object.assign(item, { rs_weight_zero_num: 0, rs_weight_non_zero_num: 0 }));
+      dataList.forEach((item: any) =>
+        Object.assign(item, { non_zero_weight_count: 0, zero_weight_count: 0, total_count: 0 }),
+      );
       // 绑定了目标组的监听器, 需要查询目标组权重
-      const listenersWithTargetGroup = dataList.filter(({ target_group_id }) => !!target_group_id);
-      const target_group_ids = listenersWithTargetGroup.map(({ target_group_id }) => target_group_id);
-      if (target_group_ids.length) {
-        const { data } = await businessStore.reqStatTargetGroupRsWeight(target_group_ids);
-        data.forEach((item: any, index: number) => Object.assign(listenersWithTargetGroup[index], item));
+      const listenerIds = dataList.map(({ id }) => id);
+      if (listenerIds.length) {
+        const { data } = await businessStore.getListenersRsWeightStat(listenerIds);
+        dataList.forEach((item) => Object.assign(item, data[item.id]));
       }
     };
     const reloadTableData = () => {
@@ -193,6 +175,7 @@ export default defineComponent({
     const {
       isSubmitLoading,
       isSubmitDisabled,
+      submitDisabledTooltipsOption,
       isBatchDeleteDialogShow,
       radioGroupValue,
       tableProps,
@@ -247,6 +230,7 @@ export default defineComponent({
           confirmText='删除'
           isSubmitLoading={isSubmitLoading.value}
           isSubmitDisabled={isSubmitDisabled.value}
+          submitDisabledTooltipsOption={submitDisabledTooltipsOption.value}
           tableProps={tableProps}
           list={computedListenersList.value}
           onHandleConfirm={handleBatchDeleteSubmit}>
@@ -255,7 +239,7 @@ export default defineComponent({
               <>
                 已选择<span class='blue'>{tableProps.data.length}</span>个监听器，其中
                 <span class='red'>
-                  {tableProps.data.filter(({ rs_weight_non_zero_num }) => rs_weight_non_zero_num > 0).length}
+                  {tableProps.data.filter(({ non_zero_weight_count }) => non_zero_weight_count > 0).length}
                 </span>
                 个监听器RS的权重均不为0，在删除监听器前，请确认是否有流量转发，仔细核对后，再提交删除。
               </>
