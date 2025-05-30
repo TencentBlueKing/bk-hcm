@@ -5,9 +5,9 @@ export interface DropDownPopover {
   trigger: 'manual' | 'click' | 'hover';
 }
 export interface DropDownMenuProps {
-  isShow: boolean;
-  disabled: boolean;
-  popoverOptions: DropDownPopover;
+  isShow?: boolean;
+  disabled?: boolean;
+  popoverOptions?: DropDownPopover;
 }
 
 defineOptions({ name: 'hcm-dropdown' });
