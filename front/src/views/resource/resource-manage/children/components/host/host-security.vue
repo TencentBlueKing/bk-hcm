@@ -147,15 +147,15 @@ const columns: any = [
       };
       const jump = () => {
         if (isResourcePage.value) {
-          routerAction.redirect({
+          routerAction.open({
             path: '/resource/resource',
             // accountId用于左侧账号列表定位账号
             query: { type: 'security', accountId: data.account_id },
           });
         } else {
-          routerAction.redirect({
+          routerAction.open({
             path: '/business/security',
-            query: { [GLOBAL_BIZS_KEY]: data.bk_biz_id, type: 'security', scene: 'group' },
+            query: { [GLOBAL_BIZS_KEY]: accountStore.bizs, type: 'security', scene: 'group' },
           });
         }
       };
@@ -244,13 +244,13 @@ if (props.data.vendor === 'azure') {
     render({ data }: any) {
       const jump = () => {
         if (isResourcePage.value) {
-          routerAction.redirect({
+          routerAction.open({
             path: '/resource/resource',
             // accountId用于左侧账号列表定位账号
             query: { type: 'network-interface', accountId: data.account_id },
           });
         } else {
-          routerAction.redirect({ path: '/business/network-interface', query: { [GLOBAL_BIZS_KEY]: data.bk_biz_id } });
+          routerAction.open({ path: '/business/network-interface', query: { [GLOBAL_BIZS_KEY]: accountStore.bizs } });
         }
       };
 
