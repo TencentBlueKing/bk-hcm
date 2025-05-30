@@ -44,7 +44,12 @@ const rerunState = reactive({
 
 const isSopsOperation = computed(() =>
   taskDetails.value?.operations?.some?.((op) =>
-    [TaskClbType.DELETE_LISTENER, TaskClbType.MODIFY_RS_WEIGHT, TaskClbType.UNBIND_RS].includes(op),
+    [
+      TaskClbType.DELETE_LISTENER,
+      TaskClbType.MODIFY_LAYER4_RS_WEIGHT,
+      TaskClbType.MODIFY_LAYER7_RS_WEIGHT,
+      TaskClbType.UNBIND_LAYER4_RS,
+    ].includes(op),
   ),
 );
 
