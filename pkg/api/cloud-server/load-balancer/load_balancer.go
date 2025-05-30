@@ -853,3 +853,20 @@ type RuleBindingStatus struct {
 	RuleID     string               `json:"rule_id"`
 	BindStatus enumor.BindingStatus `json:"binding_status"`
 }
+
+// ListListenerTargetsStatReq ...
+type ListListenerTargetsStatReq struct {
+	IDs []string `json:"ids" validate:"required,min=1,max=100"`
+}
+
+// Validate ...
+func (r *ListListenerTargetsStatReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// ListenerTargetsStat 监听器 绑定的RS权重情况统计
+type ListenerTargetsStat struct {
+	NonZeroWeightCount int `json:"non_zero_weight_count"`
+	ZeroWeightCount    int `json:"zero_weight_count"`
+	TotalCount         int `json:"total_count"`
+}

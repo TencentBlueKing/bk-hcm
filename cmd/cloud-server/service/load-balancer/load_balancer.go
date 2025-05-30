@@ -137,6 +137,9 @@ func bizService(h *rest.Handler, svc *lbSvc) {
 	h.Add("UpdateBizDomainAttr", http.MethodPatch, "/listeners/{lbl_id}/domains", svc.UpdateBizDomainAttr)
 	h.Add("ListBizListenerWithTargets", http.MethodPost, "/listeners/with/targets/list", svc.ListBizListenerWithTargets)
 
+	h.Add("ListBizListenerTargetWeightStat", http.MethodPost, "/listeners/rs_weight_stat",
+		svc.ListBizListenerTargetWeightStat)
+
 	// excel导入
 	h.Add("ImportPreview", http.MethodPost,
 		"/vendors/{vendor}/load_balancers/operations/{operation_type}/preview", svc.ImportPreview)
