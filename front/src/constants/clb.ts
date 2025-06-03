@@ -159,54 +159,63 @@ export const CLB_SPECS_REVERSE_MAP = {
 };
 
 // 腾讯云CLB规格列表映射
-export const CLB_SPEC_TYPE_COLUMNS_MAP = {
+export const CLB_SPEC_TYPE_COLUMNS_MAP: Record<
+  string,
+  {
+    connectionsPerMinute?: number;
+    newConnectionsPerSecond?: number;
+    queriesPerSecond?: number;
+    bandwidthLimit: number;
+  }
+> = {
+  shared: { bandwidthLimit: 10240 },
   'clb.c1.small': {
-    connectionsPerMinute: '100,000',
-    newConnectionsPerSecond: '10,000',
-    queriesPerSecond: '10,000',
-    bandwidthLimit: '1Gbps',
+    connectionsPerMinute: 100000,
+    newConnectionsPerSecond: 10000,
+    queriesPerSecond: 10000,
+    bandwidthLimit: 1024,
   },
   'clb.c2.medium': {
-    connectionsPerMinute: '100,000',
-    newConnectionsPerSecond: '10,000',
-    queriesPerSecond: '10,000',
-    bandwidthLimit: '2Gbps',
+    connectionsPerMinute: 100000,
+    newConnectionsPerSecond: 10000,
+    queriesPerSecond: 10000,
+    bandwidthLimit: 2048,
   },
   'clb.c3.small': {
-    connectionsPerMinute: '200,000',
-    newConnectionsPerSecond: '20,000',
-    queriesPerSecond: '20,000',
-    bandwidthLimit: '4Gbps',
+    connectionsPerMinute: 200000,
+    newConnectionsPerSecond: 20000,
+    queriesPerSecond: 20000,
+    bandwidthLimit: 4096,
   },
   'clb.c3.medium': {
-    connectionsPerMinute: '500,000',
-    newConnectionsPerSecond: '50,000',
-    queriesPerSecond: '30,000',
-    bandwidthLimit: '6Gbps',
+    connectionsPerMinute: 500000,
+    newConnectionsPerSecond: 50000,
+    queriesPerSecond: 30000,
+    bandwidthLimit: 6144,
   },
   'clb.c4.small': {
-    connectionsPerMinute: '1,000,000',
-    newConnectionsPerSecond: '100,000',
-    queriesPerSecond: '50,000',
-    bandwidthLimit: '10Gbps',
+    connectionsPerMinute: 1000000,
+    newConnectionsPerSecond: 100000,
+    queriesPerSecond: 50000,
+    bandwidthLimit: 10240,
   },
   'clb.c4.medium': {
-    connectionsPerMinute: '2,000,000',
-    newConnectionsPerSecond: '200,000',
-    queriesPerSecond: '100,000',
-    bandwidthLimit: '20Gbps',
+    connectionsPerMinute: 2000000,
+    newConnectionsPerSecond: 200000,
+    queriesPerSecond: 100000,
+    bandwidthLimit: 20480,
   },
   'clb.c4.large': {
-    connectionsPerMinute: '5,000,000',
-    newConnectionsPerSecond: '500,000',
-    queriesPerSecond: '200,000',
-    bandwidthLimit: '40Gbps',
+    connectionsPerMinute: 5000000,
+    newConnectionsPerSecond: 500000,
+    queriesPerSecond: 200000,
+    bandwidthLimit: 40960,
   },
   'clb.c4.xlarge': {
-    connectionsPerMinute: '10,000,000',
-    newConnectionsPerSecond: '1,000,000',
-    queriesPerSecond: '300,000',
-    bandwidthLimit: '60Gbps',
+    connectionsPerMinute: 10000000,
+    newConnectionsPerSecond: 1000000,
+    queriesPerSecond: 300000,
+    bandwidthLimit: 61440,
   },
 };
 

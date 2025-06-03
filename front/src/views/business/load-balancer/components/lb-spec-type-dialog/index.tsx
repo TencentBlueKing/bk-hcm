@@ -1,27 +1,34 @@
-import { PropType, defineComponent, onMounted, onUnmounted, ref, watch } from 'vue';
-import { Radio } from 'bkui-vue';
-import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
-import CommonDialog from '@/components/common-dialog';
-import CommonLocalTable from '@/components/CommonLocalTable';
+import { computed, defineComponent, PropType, ref, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
-import bus from '@/common/bus';
-import { CLB_SPECS } from '@/common/constant';
+import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import { SpecAvailability } from '@/api/load_balancers/apply-clb/types';
-import { CLBSpecType } from '@/typings';
+import { CLB_SPECS } from '@/common/constant';
 import { CLB_SPEC_TYPE_COLUMNS_MAP } from '@/constants';
-import './index.scss';
+
+import CommonLocalTable from '@/components/CommonLocalTable';
 
 /**
  * 负载均衡规格类型选择对话框
  */
 export default defineComponent({
   name: 'LbSpecTypeSelectDialog',
-  props: { modelValue: String as PropType<CLBSpecType> },
-  emits: ['update:modelValue'],
+  props: {
+    modelValue: Boolean,
+    slaType: String,
+    specAvailabilitySet: Array as PropType<Array<SpecAvailability>>,
+  },
+  emits: ['update:modelValue', 'confirm', 'hidden'],
   setup(props, { emit }) {
     const { t } = useI18n();
 
-    const isShow = ref(false);
+    const isShow = computed({
+      get() {
+        return props.modelValue;
+      },
+      set(val) {
+        emit('update:modelValue', val);
+      },
+    });
 
     // 搜索条件
     const searchData: Array<ISearchItem> = [
@@ -33,39 +40,48 @@ export default defineComponent({
     ];
 
     // 当前选中的规格类型
-    const selectedLbSpecType = ref('');
+    const selectedLbSpecType = ref(props.slaType || '');
 
     // 表格字段
     const columns = [
       {
+        label: '',
+        width: 40,
+        minWidth: 40,
+        showOverflowTooltip: false,
+        render: ({ row }: any) => (
+          <bk-radio
+            v-model={selectedLbSpecType.value}
+            label={row.SpecType}
+            disabled={row.Availability === 'Unavailable'}>
+            　
+          </bk-radio>
+        ),
+      },
+      {
         label: t('型号'),
         field: 'SpecType',
-        render: ({ data }: any) => {
-          return (
-            <Radio
-              v-model={selectedLbSpecType.value}
-              label={data.SpecType}
-              disabled={data.Availability === 'Unavailable'}>
-              <span class='font-small'>{CLB_SPECS[data.SpecType]}</span>
-            </Radio>
-          );
-        },
+        render: ({ data }: any) => CLB_SPECS[data.SpecType],
       },
       {
         label: t('每分钟并发连接数（个）'),
         field: 'connectionsPerMinute',
+        render: ({ cell }: { cell: number }) => cell.toLocaleString('en-US'),
       },
       {
         label: t('每秒新建连接数（个）'),
         field: 'newConnectionsPerSecond',
+        render: ({ cell }: { cell: number }) => cell.toLocaleString('en-US'),
       },
       {
         label: t('每秒查询数（个）'),
         field: 'queriesPerSecond',
+        render: ({ cell }: { cell: number }) => cell.toLocaleString('en-US'),
       },
       {
         label: t('带宽上限（Mbps）'),
         field: 'bandwidthLimit',
+        render: ({ cell }: { cell: number }) => cell.toLocaleString('en-US'),
       },
       {
         label: t('可用性'),
@@ -86,46 +102,31 @@ export default defineComponent({
 
     // submit-handler - 选择机型
     const handleSelectClbSpecType = () => {
-      emit('update:modelValue', selectedLbSpecType.value ? selectedLbSpecType.value : 'shared');
+      emit('confirm', {
+        slaType: selectedLbSpecType.value ? selectedLbSpecType.value : 'shared',
+        bandwidthLimit: CLB_SPEC_TYPE_COLUMNS_MAP[selectedLbSpecType.value].bandwidthLimit,
+      });
     };
 
-    watch(
-      () => props.modelValue,
-      (val) => {
-        if (val === 'shared') {
-          selectedLbSpecType.value = '';
-        }
-      },
-    );
-
-    onMounted(() => {
-      // 显示弹框
-      bus.$on('showLbSpecTypeSelectDialog', () => (isShow.value = true));
-      bus.$on(
-        'updateSpecAvailabilitySet',
-        (data: any[]) =>
-          (tableData.value = data
-            .map((item) => {
-              const { connectionsPerMinute, newConnectionsPerSecond, queriesPerSecond, bandwidthLimit } =
-                CLB_SPEC_TYPE_COLUMNS_MAP[item.SpecType];
-              return { ...item, connectionsPerMinute, newConnectionsPerSecond, queriesPerSecond, bandwidthLimit };
-            })
-            .sort((a, b) => parseInt(a.bandwidthLimit, 10) - parseInt(b.bandwidthLimit, 10))),
-      );
-    });
-
-    onUnmounted(() => {
-      bus.$off('showLbSpecTypeSelectDialog');
-      bus.$off('updateSpecAvailabilitySet');
+    watchEffect(() => {
+      tableData.value = props.specAvailabilitySet
+        // shared不展示
+        .filter((item) => item.SpecType !== 'shared')
+        .map((item) => {
+          const { connectionsPerMinute, newConnectionsPerSecond, queriesPerSecond, bandwidthLimit } =
+            CLB_SPEC_TYPE_COLUMNS_MAP[item.SpecType];
+          return { ...item, connectionsPerMinute, newConnectionsPerSecond, queriesPerSecond, bandwidthLimit };
+        })
+        .sort((a, b) => a.bandwidthLimit - b.bandwidthLimit);
     });
 
     return () => (
-      <CommonDialog
+      <bk-dialog
         v-model:isShow={isShow.value}
-        class='lb-spec-type-select-dialog'
         title='选择实例规格'
         width='60vw'
-        onHandleConfirm={handleSelectClbSpecType}>
+        onConfirm={handleSelectClbSpecType}
+        onHidden={() => emit('hidden')}>
         <CommonLocalTable
           searchOptions={{ searchData }}
           tableOptions={{
@@ -137,7 +138,7 @@ export default defineComponent({
           }}
           tableData={tableData.value}
         />
-      </CommonDialog>
+      </bk-dialog>
     );
   },
 });
