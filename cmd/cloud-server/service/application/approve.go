@@ -67,15 +67,16 @@ func (a *applicationSvc) ApproveApplication(cts *rest.Contexts) (interface{}, er
 	return nil, err
 }
 
-func (a *applicationSvc) convertToStatus(ticketStatus string, approveResult bool) enumor.ApplicationStatus {
-	if ticketStatus == "FINISHED" {
-		if approveResult {
+func (a *applicationSvc) convertToStatus(ticketStatus string, endAt *string, approveRes bool) enumor.ApplicationStatus {
+	if ticketStatus == "finished" {
+		if approveRes {
 			return enumor.Pass
 		}
 		return enumor.Rejected
 	}
 
-	if ticketStatus == "TERMINATED" || ticketStatus == "REVOKED" {
+	// 所有非finished的end状态，均当作取消处理
+	if endAt != nil {
 		return enumor.Cancelled
 	}
 
@@ -93,24 +94,28 @@ func (a *applicationSvc) approve(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// 校验ITSM Token
-	ok, err := a.itsmCli.VerifyToken(cts.Kit, req.Token)
+	userName, workflowID, title, err := a.parseCallbackToken(req.CallbackToken)
 	if err != nil {
-		return nil, fmt.Errorf("call itsm verify token api failed, err: %v", err)
+		logs.Errorf("failed to parse itsm callback token, err: %v, ticket: %+v, rid: %s", err, req.Ticket,
+			cts.Kit.Rid)
+		return nil, fmt.Errorf("faild to parse itsm callback token, err: %v, ticket_id: %s", err, req.Ticket.ID)
 	}
-	if !ok {
-		return nil, errf.NewFromErr(
-			errf.PermissionDenied, fmt.Errorf("verify of token not paas"),
-		)
+
+	// 目前提供的回调接口不是apigw的，itsm不会提供 username 参数，暂不校验该参数
+	if workflowID != req.Ticket.WorkflowID || title != req.Ticket.Title {
+		logs.Errorf("verify of token not paas, userName: %s, workflowID: %s, title: %s, ticket: %+v, rid: %s",
+			userName, workflowID, title, req.Ticket, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.PermissionDenied, fmt.Errorf("verify of token not paas"))
 	}
 
 	// 查询单据
-	application, err := a.getApplicationBySN(cts, req.SN)
+	application, err := a.getApplicationBySN(cts, req.Ticket.ID)
 	if err != nil {
 		return nil, err
 	}
 
 	// 将ITSM单据状态转为hcm定义的单据状态
-	status := a.convertToStatus(req.CurrentStatus, *req.ApproveResult)
+	status := a.convertToStatus(req.Ticket.Status, req.Ticket.EndAt, *req.Ticket.ApproveResult)
 
 	// 计算下个状态，实际上除了通过外，其他状态都是不需要变化了，要么是终结态，要么是持续中
 	nextStatus := status

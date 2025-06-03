@@ -24,11 +24,14 @@ import (
 	"net/http"
 
 	"hcm/pkg/cc"
+	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 	"hcm/pkg/rest/client"
+	"hcm/pkg/thirdparty/api-gateway/bkuser"
 	"hcm/pkg/thirdparty/api-gateway/discovery"
+	jwttoken "hcm/pkg/thirdparty/api-gateway/itsm/jwt-token"
 	"hcm/pkg/tools/ssl"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -37,21 +40,27 @@ import (
 // Client Itsm api.
 type Client interface {
 	// CreateTicket 创建单据。
-	CreateTicket(kt *kit.Kit, params *CreateTicketParams) (string, error)
+	CreateTicket(kt *kit.Kit, params *CreateTicketParams) (*CreateTicketResult, error)
 	// GetTicketResult 获取单据结果。
-	GetTicketResult(kt *kit.Kit, sn string) (TicketResult, error)
+	GetTicketResult(kt *kit.Kit, sn string) (result *TicketResult, err error)
 	// WithdrawTicket 撤销单据。
-	WithdrawTicket(kt *kit.Kit, sn string, operator string) error
-	// VerifyToken 校验Token。
-	VerifyToken(kt *kit.Kit, token string) (bool, error)
+	WithdrawTicket(kt *kit.Kit, ticketID string, operator string) (*RevokeTicketResult, error)
 	// GetTicketsByUser 获取用户的单据。
 	GetTicketsByUser(kt *kit.Kit, req *GetTicketsByUserReq) (*GetTicketsByUserRespData, error)
 	// Approve 审批单据。
-	Approve(kt *kit.Kit, req *ApproveReq) error
+	Approve(kt *kit.Kit, ticketID string, ActivityKey string, operator string, action string) error
 }
 
 // NewClient initialize a new itsm client
-func NewClient(cfg *cc.ApiGateway, reg prometheus.Registerer) (Client, error) {
+func NewClient(cfg *cc.ITSM, dataCli *dataservice.Client, bkUserCli bkuser.Client, reg prometheus.Registerer) (
+	Client, error) {
+
+	// 初始化jwt token parser
+	err := jwttoken.Init(cfg.DisableEncodeToken, dataCli)
+	if err != nil {
+		return nil, err
+	}
+
 	tls := &ssl.TLSConfig{
 		InsecureSkipVerify: cfg.TLS.InsecureSkipVerify,
 		CertFile:           cfg.TLS.CertFile,
@@ -72,10 +81,11 @@ func NewClient(cfg *cc.ApiGateway, reg prometheus.Registerer) (Client, error) {
 		},
 		MetricOpts: client.MetricOption{Register: reg},
 	}
-	restCli := rest.NewClient(c, "/v2/itsm")
+	restCli := rest.NewClient(c, "/api/v1")
 	return &itsm{
-		client: restCli,
-		config: cfg,
+		client:    restCli,
+		config:    &cfg.ApiGateway,
+		bkUserCli: bkUserCli,
 	}, nil
 }
 
@@ -83,7 +93,8 @@ func NewClient(cfg *cc.ApiGateway, reg prometheus.Registerer) (Client, error) {
 type itsm struct {
 	config *cc.ApiGateway
 	// http client instance
-	client rest.ClientInterface
+	client    rest.ClientInterface
+	bkUserCli bkuser.Client
 }
 
 func (i *itsm) header(kt *kit.Kit) http.Header {

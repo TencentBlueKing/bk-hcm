@@ -455,6 +455,9 @@ webserver:
       # the password to decrypt the certificate.
       password:
   templatePath: /data/hcm/template
+  # define itsm specific settings.
+  itsm:
+    disableEncodeToken: true
 
 taskserver:
   ## 镜像

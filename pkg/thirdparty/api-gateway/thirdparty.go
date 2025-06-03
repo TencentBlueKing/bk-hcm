@@ -29,6 +29,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/thirdparty/api-gateway/bkuser"
+	"hcm/pkg/tools/util"
 )
 
 // BaseResponse is esb http base response.
@@ -41,7 +42,7 @@ type BaseResponse struct {
 // ApiGatewayResp ...
 type ApiGatewayResp[T any] struct {
 	Result         bool     `json:"result"`
-	Code           int      `json:"code"`
+	Code           any      `json:"code"`
 	BKErrorCode    int      `json:"bk_error_code"`
 	Message        string   `json:"message"`
 	BKErrorMessage string   `json:"bk_error_msg"`
@@ -76,7 +77,17 @@ func ApiGatewayCall[IT any, OT any](cli rest.ClientInterface, bkUserCli bkuser.C
 		return nil, err
 	}
 
-	if !resp.Result || resp.Code != 0 {
+	// 兼容code为string类型的情况（itsm_v4）
+	var codeInt int
+	if resp.Code != nil {
+		codeInt, err = util.GetIntByInterface(resp.Code)
+		if err != nil {
+			logs.Errorf("failed to convert code to int, code: %v, url: %s, rid: %s", resp.Code, url, kt.Rid)
+			return nil, err
+		}
+	}
+
+	if !resp.Result || codeInt != 0 {
 		err := fmt.Errorf("failed to call api gateway, code: %d, msg: %s, bk_error_code: %d, bk_error_msg: %s",
 			resp.Code, resp.Message, resp.BKErrorCode, resp.BKErrorMessage)
 		logs.Errorf("api gateway returns error, url: %s, err: %v, rid: %s", url, err, kt.Rid)
@@ -108,7 +119,17 @@ func ApiGatewayCallWithRichError[IT any, OT any](cli rest.ClientInterface, bkUse
 		return nil, err
 	}
 
-	if !resp.Result || resp.Code != 0 {
+	// 兼容code为string类型的情况（itsm_v4）
+	var codeInt int
+	if resp.Code != nil {
+		codeInt, err = util.GetIntByInterface(resp.Code)
+		if err != nil {
+			logs.Errorf("failed to convert code to int, code: %v, url: %s, rid: %s", resp.Code, url, kt.Rid)
+			return nil, err
+		}
+	}
+
+	if !resp.Result || codeInt != 0 {
 		err := fmt.Errorf("failed to call api gateway, code: %d, msg: %s, bk_error_code: %d, bk_error_msg: %s",
 			resp.Code, resp.Message, resp.BKErrorCode, resp.BKErrorMessage)
 		logs.Errorf("api gateway returns error, url: %s, err: %v, rid: %s", url, err, kt.Rid)
@@ -139,6 +160,44 @@ func ApiGatewayCallWithRichError[IT any, OT any](cli rest.ClientInterface, bkUse
 	return resp.Data, nil
 }
 
+// ApiGatewayCallOriginal general call helper function for api gateway
+// 该方法不会处理接口返回的code，适用于code非标准的场景，在上层自行处理
+func ApiGatewayCallOriginal[IT any, OT any](cli rest.ClientInterface, bkUserCli bkuser.Client, cfg *cc.ApiGateway,
+	method rest.VerbType, kt *kit.Kit, req *IT, url string, urlParams ...any) (int, string, *OT, error) {
+
+	header := GetCommonHeader(kt, bkUserCli, cfg)
+	resp := new(ApiGatewayResp[*OT])
+	err := cli.Verb(method).
+		SubResourcef(url, urlParams...).
+		WithContext(kt.Ctx).
+		WithHeaders(header).
+		Body(req).
+		Do().Into(resp)
+
+	if err != nil {
+		logs.Errorf("fail to call api gateway api, err: %v, url: %s, rid: %s", err, url, kt.Rid)
+		return 0, "", nil, err
+	}
+
+	// 兼容code为string类型的情况（itsm_v4）
+	var codeInt int
+	if resp.Code != nil {
+		codeInt, err = util.GetIntByInterface(resp.Code)
+		if err != nil {
+			logs.Errorf("failed to convert code to int, code: %v, url: %s, rid: %s", resp.Code, url, kt.Rid)
+			return 0, "", nil, err
+		}
+	}
+
+	if !resp.Result {
+		err := fmt.Errorf("failed to call api gateway, code: %d, msg: %s, bk_error_code: %d, bk_error_msg: %s",
+			resp.Code, resp.Message, resp.BKErrorCode, resp.BKErrorMessage)
+		logs.Errorf("api gateway returns error, url: %s, err: %v, rid: %s", url, err, kt.Rid)
+		return 0, "", nil, err
+	}
+	return codeInt, resp.Message, resp.Data, nil
+}
+
 // ApiGatewayCallWithoutReq general call helper function for api gateway
 func ApiGatewayCallWithoutReq[OT any](cli rest.ClientInterface, bkUserCli bkuser.Client, cfg *cc.ApiGateway,
 	method rest.VerbType, kt *kit.Kit, params map[string]string, url string, urlParams ...any) (*OT, error) {
@@ -157,7 +216,17 @@ func ApiGatewayCallWithoutReq[OT any](cli rest.ClientInterface, bkUserCli bkuser
 		return nil, err
 	}
 
-	if !resp.Result || resp.Code != 0 {
+	// 兼容code为string类型的情况（itsm_v4）
+	var codeInt int
+	if resp.Code != nil {
+		codeInt, err = util.GetIntByInterface(resp.Code)
+		if err != nil {
+			logs.Errorf("failed to convert code to int, code: %v, url: %s, rid: %s", resp.Code, url, kt.Rid)
+			return nil, err
+		}
+	}
+
+	if !resp.Result || codeInt != 0 {
 		err := fmt.Errorf("failed to call api gateway, code: %d, msg: %s, bk_error_code: %d, bk_error_msg: %s",
 			resp.Code, resp.Message, resp.BKErrorCode, resp.BKErrorMessage)
 		logs.Errorf("api gateway returns error, url: %s, err: %v, rid: %s", url, err, kt.Rid)
@@ -190,7 +259,17 @@ func ApiGatewayCallWithRichErrorWithoutReq[OT any](cli rest.ClientInterface, bkU
 		return nil, err
 	}
 
-	if !resp.Result || resp.Code != 0 {
+	// 兼容code为string类型的情况（itsm_v4）
+	var codeInt int
+	if resp.Code != nil {
+		codeInt, err = util.GetIntByInterface(resp.Code)
+		if err != nil {
+			logs.Errorf("failed to convert code to int, code: %v, url: %s, rid: %s", resp.Code, url, kt.Rid)
+			return nil, err
+		}
+	}
+
+	if !resp.Result || codeInt != 0 {
 		err := fmt.Errorf("failed to call api gateway, code: %d, msg: %s, bk_error_code: %d, bk_error_msg: %s",
 			resp.Code, resp.Message, resp.BKErrorCode, resp.BKErrorMessage)
 		logs.Errorf("api gateway returns error, url: %s, err: %v, rid: %s", url, err, kt.Rid)
@@ -219,6 +298,45 @@ func ApiGatewayCallWithRichErrorWithoutReq[OT any](cli rest.ClientInterface, bkU
 	}
 
 	return resp.Data, nil
+}
+
+// ApiGatewayCallOriginalWithoutReq general call helper function for api gateway
+// 该方法不会处理接口返回的code，适用于code非标准的场景，在上层自行处理
+func ApiGatewayCallOriginalWithoutReq[OT any](cli rest.ClientInterface, bkUserCli bkuser.Client, cfg *cc.ApiGateway,
+	method rest.VerbType, kt *kit.Kit, params map[string]string, url string, urlParams ...any) (
+	int, string, *OT, error) {
+
+	header := GetCommonHeader(kt, bkUserCli, cfg)
+	resp := new(ApiGatewayResp[*OT])
+	err := cli.Verb(method).
+		SubResourcef(url, urlParams...).
+		WithContext(kt.Ctx).
+		WithHeaders(header).
+		WithParams(params).
+		Do().Into(resp)
+
+	if err != nil {
+		logs.Errorf("fail to call api gateway api, err: %v, url: %s, rid: %s", err, url, kt.Rid)
+		return 0, "", nil, err
+	}
+
+	// 兼容code为string类型的情况（itsm_v4）
+	var codeInt int
+	if resp.Code != nil {
+		codeInt, err = util.GetIntByInterface(resp.Code)
+		if err != nil {
+			logs.Errorf("failed to convert code to int, code: %v, url: %s, rid: %s", resp.Code, url, kt.Rid)
+			return 0, "", nil, err
+		}
+	}
+
+	if !resp.Result {
+		err := fmt.Errorf("failed to call api gateway, code: %d, msg: %s, bk_error_code: %d, bk_error_msg: %s",
+			resp.Code, resp.Message, resp.BKErrorCode, resp.BKErrorMessage)
+		logs.Errorf("api gateway returns error, url: %s, err: %v, rid: %s", url, err, kt.Rid)
+		return 0, "", nil, err
+	}
+	return codeInt, resp.Message, resp.Data, nil
 }
 
 // GetCommonHeader get common header

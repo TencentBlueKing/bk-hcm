@@ -64,6 +64,7 @@ type ApprovalProcessResp struct {
 	ID              string                 `json:"id"`
 	ApplicationType enumor.ApplicationType `json:"application_type"`
 	ServiceID       int64                  `json:"service_id"`
+	WorkflowKey     string                 `json:"workflow_key"`
 	Managers        string                 `json:"managers"`
 	core.Revision   `json:",inline"`
 }
