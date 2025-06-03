@@ -31,6 +31,7 @@ import (
 	"hcm/cmd/cloud-server/logics"
 	logicaudit "hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/account"
+	"hcm/cmd/cloud-server/service/admin"
 	"hcm/cmd/cloud-server/service/application"
 	appcvm "hcm/cmd/cloud-server/service/application/handlers/cvm"
 	approvalprocess "hcm/cmd/cloud-server/service/approval_process"
@@ -61,7 +62,6 @@ import (
 	"hcm/cmd/cloud-server/service/subnet"
 	"hcm/cmd/cloud-server/service/sync"
 	"hcm/cmd/cloud-server/service/sync/lock"
-	systeminit "hcm/cmd/cloud-server/service/system_init"
 	"hcm/cmd/cloud-server/service/task"
 	"hcm/cmd/cloud-server/service/user"
 	"hcm/cmd/cloud-server/service/vpc"
@@ -339,7 +339,7 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 
 	cos.InitService(c)
 
-	systeminit.InitSystemInitService(c)
+	admin.InitAdminService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }
