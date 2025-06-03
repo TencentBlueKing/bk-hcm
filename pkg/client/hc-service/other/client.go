@@ -17,24 +17,20 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package sync
+package other
 
 import (
-	"hcm/cmd/hc-service/service/capability"
-	"hcm/cmd/hc-service/service/sync/aws"
-	"hcm/cmd/hc-service/service/sync/azure"
-	"hcm/cmd/hc-service/service/sync/gcp"
-	"hcm/cmd/hc-service/service/sync/huawei"
-	"hcm/cmd/hc-service/service/sync/other"
-	"hcm/cmd/hc-service/service/sync/tcloud"
+	"hcm/pkg/rest"
 )
 
-// InitService initial tcloud sync service
-func InitService(cap *capability.Capability) {
-	tcloud.InitService(cap)
-	aws.InitService(cap)
-	gcp.InitService(cap)
-	huawei.InitService(cap)
-	azure.InitService(cap)
-	other.InitService(cap)
+// Client is other vendor api client
+type Client struct {
+	Host *HostClient
+}
+
+// NewClient create a new other vendor api client.
+func NewClient(client rest.ClientInterface) *Client {
+	return &Client{
+		Host: NewHostClient(client),
+	}
 }

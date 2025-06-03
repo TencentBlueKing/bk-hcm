@@ -922,3 +922,6 @@ cmdb:
     caFile:
     # the password to decrypt the certificate.
     password:
+
+# ccHostPoolBiz cmdb host pool biz id
+ccHostPoolBiz: 1

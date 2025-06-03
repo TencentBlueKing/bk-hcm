@@ -17,24 +17,33 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package sync
+// Package hooks ...
+package hooks
 
 import (
-	"hcm/cmd/hc-service/service/capability"
-	"hcm/cmd/hc-service/service/sync/aws"
-	"hcm/cmd/hc-service/service/sync/azure"
-	"hcm/cmd/hc-service/service/sync/gcp"
-	"hcm/cmd/hc-service/service/sync/huawei"
-	"hcm/cmd/hc-service/service/sync/other"
-	"hcm/cmd/hc-service/service/sync/tcloud"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/kit"
+	"hcm/pkg/runtime/filter"
+	"hcm/pkg/thirdparty/api-gateway/cmdb"
 )
 
-// InitService initial tcloud sync service
-func InitService(cap *capability.Capability) {
-	tcloud.InitService(cap)
-	aws.InitService(cap)
-	gcp.InitService(cap)
-	huawei.InitService(cap)
-	azure.InitService(cap)
-	other.InitService(cap)
+// AdjustOtherSyncerListCCHostParams ...
+func AdjustOtherSyncerListCCHostParams(kt *kit.Kit, params *cmdb.ListBizHostParams) (*cmdb.ListBizHostParams, error) {
+	return params, nil
+}
+
+// GetOtherSyncerListDBHostFilter ...
+func GetOtherSyncerListDBHostFilter(kt *kit.Kit, rules []*filter.AtomRule) (*filter.Expression, error) {
+	return tools.ExpressionAnd(rules...), nil
+}
+
+// AdjustWatcherVendor ...
+func AdjustWatcherVendor(kt *kit.Kit, vendors []enumor.Vendor) []enumor.Vendor {
+	return vendors
+}
+
+// MatchWatcherUpsertHost ...
+func MatchWatcherUpsertHost(kt *kit.Kit, host cmdb.Host) (bool, enumor.Vendor, error) {
+	return false, "", nil
 }
