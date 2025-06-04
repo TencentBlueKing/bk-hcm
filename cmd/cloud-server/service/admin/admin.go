@@ -26,6 +26,7 @@ import (
 	logicsadmin "hcm/cmd/cloud-server/logics/admin"
 	"hcm/cmd/cloud-server/service/capability"
 	"hcm/pkg/client"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 )
 
@@ -37,12 +38,32 @@ func InitAdminService(c *capability.Capability) {
 	}
 
 	h := rest.NewHandler()
-	h.Add("OtherAccountInit", http.MethodPost, "/admin/system/other_account_init", svc.OtherAccountInit)
+
+	svc.registerAdminService(h)
 
 	h.Load(c.WebService)
+}
+
+func (s *adminService) registerAdminService(h *rest.Handler) {
+	// 这里注册的接口都无法被webserver访问，只能被系统内部调用，无需鉴权
+	h.Path("/admin/system/")
+
+	h.Add("Init", http.MethodPost, "/init", s.Init)
 }
 
 type adminService struct {
 	client      *client.ClientSet
 	adminLogics logicsadmin.Interface
+}
+
+// Init 系统初始化
+func (s *adminService) Init(cts *rest.Contexts) (any, error) {
+
+	// 1. 查找是否存在vendor为other的用户，若有则返回，没有则创建
+	resp, err := s.adminLogics.InitVendorOtherAccount(cts.Kit)
+	if err != nil {
+		logs.Errorf("init vendor other account failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	return resp, nil
 }
