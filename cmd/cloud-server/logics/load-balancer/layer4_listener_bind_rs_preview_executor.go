@@ -100,7 +100,7 @@ func (l *Layer4ListenerBindRSPreviewExecutor) convertDataToPreview(rawData [][]s
 		if err != nil {
 			return err
 		}
-		detail.Weight = weight
+		detail.Weight = converter.ValToPtr(weight)
 		if len(data) > layer4listenerBindRSExcelTableLen {
 			detail.UserRemark = data[8]
 		}
@@ -180,7 +180,7 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateWithDB(kt *kit.Kit, cloudI
 			return err
 		}
 
-		if err = l.validateTarget(kt, detail, lblCloudID, instID, detail.RsPort[0]); err != nil {
+		if err = l.validateTarget(kt, lb.ID, detail, lblCloudID, instID, detail.RsPort[0]); err != nil {
 			logs.Errorf("validate target failed, err: %v, rid: %s", err, kt.Rid)
 			return err
 		}
@@ -189,13 +189,13 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateWithDB(kt *kit.Kit, cloudI
 }
 
 // validateTarget 校验RS是否已经绑定到对应的监听器中, 如果已经绑定则校验权重是否一致. 没有绑定则直接返回.
-func (l *Layer4ListenerBindRSPreviewExecutor) validateTarget(kt *kit.Kit, detail *Layer4ListenerBindRSDetail,
-	lblCloudID, instID string, port int) error {
+func (l *Layer4ListenerBindRSPreviewExecutor) validateTarget(kt *kit.Kit, lbID string,
+	detail *Layer4ListenerBindRSDetail, lblCloudID, instID string, port int) error {
 
 	if lblCloudID == "" || instID == "" {
 		return nil
 	}
-	tgID, err := getTargetGroupID(kt, l.dataServiceCli, lblCloudID)
+	tgID, err := getTargetGroupID(kt, l.dataServiceCli, lbID, lblCloudID)
 	if err != nil {
 		return err
 	}
@@ -207,7 +207,7 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateTarget(kt *kit.Kit, detail
 		return nil
 	}
 
-	if int(converter.PtrToVal(target.Weight)) != detail.Weight {
+	if int(converter.PtrToVal(target.Weight)) != converter.PtrToVal(detail.Weight) {
 		detail.Status.SetNotExecutable()
 		detail.ValidateResult = append(detail.ValidateResult,
 			fmt.Sprintf("RS is already bound, and the weights are inconsistent."))
@@ -233,9 +233,9 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit,
 		return "", err
 	}
 	cloudVpcIDs := []string{lb.CloudVpcID}
-	isSnap := converter.PtrToVal(lb.Extension.Snat)
-	isSnapPro := converter.PtrToVal(lb.Extension.SnatPro)
-	if isSnap {
+	isCrossRegionV1 := lb.Extension.SupportCrossRegionV1()
+	isCrossRegionV2 := converter.PtrToVal(lb.Extension.SnatPro)
+	if isCrossRegionV1 {
 		cloudVpcIDs = append(cloudVpcIDs, converter.PtrToVal(lb.Extension.TargetCloudVpcID))
 	}
 
@@ -243,7 +243,7 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit,
 	if err != nil {
 		return "", err
 	}
-	if cvm == nil && isSnapPro {
+	if cvm == nil && isCrossRegionV2 {
 		// 跨域2.0 如果找不到cvm主机则不进行后续的校验，由云上接口兜底
 		return "", nil
 	}
@@ -251,7 +251,13 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit,
 		// 找不到对应的CVM, 根据IP查询CVM完善报错
 		return "", l.fillRSValidateCvmNotFoundError(kt, curDetail, lb.CloudVpcID)
 	}
-	if !(isSnap || isSnapPro) && cvm.Region != lb.Region {
+	targetRegion := lb.Region
+	if isCrossRegionV1 {
+		targetRegion = converter.PtrToVal(lb.Extension.TargetRegion)
+	}
+	// 支持跨域1.0 校验 target region
+	// 支持跨域2.0 不校验
+	if !isCrossRegionV2 && cvm.Region != targetRegion {
 		// 非跨域情况下才校验region
 		curDetail.Status.SetNotExecutable()
 		curDetail.ValidateResult = append(curDetail.ValidateResult,
@@ -281,7 +287,8 @@ func (l *Layer4ListenerBindRSPreviewExecutor) fillRSValidateCvmNotFoundError(
 	cvmCloudIDs := slice.Map(cvmList, cloudCvm.BaseCvm.GetCloudID)
 	curDetail.Status.SetNotExecutable()
 	curDetail.ValidateResult = append(curDetail.ValidateResult,
-		fmt.Sprintf("VPC of %s is different from loadbalancer's VPC (%s).", strings.Join(cvmCloudIDs, ","), lbCloudVpcID))
+		fmt.Sprintf("VPC of %s is different from loadbalancer's VPC (%s).",
+			strings.Join(cvmCloudIDs, ","), lbCloudVpcID))
 	return nil
 }
 
@@ -312,7 +319,7 @@ type Layer4ListenerBindRSDetail struct {
 	InstType       enumor.InstType `json:"inst_type"`
 	RsIp           string          `json:"rs_ip"`
 	RsPort         []int           `json:"rs_port"`
-	Weight         int             `json:"weight"`
+	Weight         *int            `json:"weight"`
 	UserRemark     string          `json:"user_remark"`
 	Status         ImportStatus    `json:"status"`
 	ValidateResult []string        `json:"validate_result"`
@@ -355,7 +362,7 @@ func (c *Layer4ListenerBindRSDetail) validate() {
 	if err != nil {
 		return
 	}
-	if len(c.RsPort) == 2 && c.Weight == 0 {
+	if len(c.RsPort) == 2 && converter.PtrToVal(c.Weight) == 0 {
 		err = errors.New("the RS weight of the port segment must be greater than 0")
 		return
 	}
