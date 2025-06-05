@@ -24,7 +24,8 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 	"hcm/pkg/rest/client"
-	apigateway "hcm/pkg/thirdparty/api-gateway"
+	"hcm/pkg/thirdparty/api-gateway/bkuser"
+	"hcm/pkg/thirdparty/api-gateway/discovery"
 	"hcm/pkg/tools/ssl"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -37,13 +38,14 @@ type Client interface {
 }
 
 type notice struct {
-	config *cc.ApiGateway
+	config    *cc.ApiGateway
+	bkUserCli bkuser.Client
 	// http client instance
 	client rest.ClientInterface
 }
 
 // NewClient ...
-func NewClient(cfg *cc.ApiGateway, reg prometheus.Registerer) (Client, error) {
+func NewClient(cfg *cc.ApiGateway, bkUserCli bkuser.Client, reg prometheus.Registerer) (Client, error) {
 	tls := &ssl.TLSConfig{
 		InsecureSkipVerify: cfg.TLS.InsecureSkipVerify,
 		CertFile:           cfg.TLS.CertFile,
@@ -58,7 +60,7 @@ func NewClient(cfg *cc.ApiGateway, reg prometheus.Registerer) (Client, error) {
 
 	c := &client.Capability{
 		Client: cli,
-		Discover: &apigateway.Discovery{
+		Discover: &discovery.Discovery{
 			Name:    "notice",
 			Servers: cfg.Endpoints,
 		},
@@ -66,7 +68,8 @@ func NewClient(cfg *cc.ApiGateway, reg prometheus.Registerer) (Client, error) {
 	}
 	restCli := rest.NewClient(c, "/apigw/v1")
 	return &notice{
-		config: cfg,
-		client: restCli,
+		config:    cfg,
+		client:    restCli,
+		bkUserCli: bkUserCli,
 	}, nil
 }

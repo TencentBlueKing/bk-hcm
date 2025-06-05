@@ -25,6 +25,8 @@ import (
 	"hcm/pkg/rest"
 	"hcm/pkg/rest/client"
 	apigateway "hcm/pkg/thirdparty/api-gateway"
+	"hcm/pkg/thirdparty/api-gateway/bkuser"
+	"hcm/pkg/thirdparty/api-gateway/discovery"
 	"hcm/pkg/tools/ssl"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -51,8 +53,8 @@ var (
 )
 
 // InitCmdbClient init esb client.
-func InitCmdbClient(cfg *cc.ApiGateway, reg prometheus.Registerer) error {
-	cli, err := NewClient(cfg, reg)
+func InitCmdbClient(cfg *cc.ApiGateway, bkUserCli bkuser.Client, reg prometheus.Registerer) error {
+	cli, err := NewClient(cfg, bkUserCli, reg)
 	if err != nil {
 		return err
 	}
@@ -67,7 +69,7 @@ func CmdbClient() Client {
 }
 
 // NewClient initialize a new cmdbApiGateWay client
-func NewClient(cfg *cc.ApiGateway, reg prometheus.Registerer) (Client, error) {
+func NewClient(cfg *cc.ApiGateway, bkUserCli bkuser.Client, reg prometheus.Registerer) (Client, error) {
 	tls := &ssl.TLSConfig{
 		InsecureSkipVerify: cfg.TLS.InsecureSkipVerify,
 		CertFile:           cfg.TLS.CertFile,
@@ -82,7 +84,7 @@ func NewClient(cfg *cc.ApiGateway, reg prometheus.Registerer) (Client, error) {
 
 	c := &client.Capability{
 		Client: cli,
-		Discover: &apigateway.Discovery{
+		Discover: &discovery.Discovery{
 			Name:    "cmdbApiGateWay",
 			Servers: cfg.Endpoints,
 		},
@@ -91,8 +93,9 @@ func NewClient(cfg *cc.ApiGateway, reg prometheus.Registerer) (Client, error) {
 	restCli := rest.NewClient(c, "/api/v3")
 
 	agw := &cmdbApiGateWay{
-		config: cfg,
-		client: restCli,
+		config:    cfg,
+		client:    restCli,
+		bkUserCli: bkUserCli,
 	}
 	return agw, nil
 }
@@ -103,7 +106,8 @@ var _ Client = (*cmdbApiGateWay)(nil)
 type cmdbApiGateWay struct {
 	config *cc.ApiGateway
 	// http client instance
-	client rest.ClientInterface
+	client    rest.ClientInterface
+	bkUserCli bkuser.Client
 }
 
 // DeleteCloudHostFromBiz ...
@@ -112,7 +116,7 @@ func (c *cmdbApiGateWay) DeleteCloudHostFromBiz(kt *kit.Kit, params *DeleteCloud
 	if err != nil {
 		return err
 	}
-	_, err = apigateway.ApiGatewayCall[DeleteCloudHostFromBizParams, interface{}](c.client, c.config,
+	_, err = apigateway.ApiGatewayCall[DeleteCloudHostFromBizParams, interface{}](c.client, c.bkUserCli, c.config,
 		rest.DELETE, kt, params, "/deletemany/cloud_hosts")
 	if err != nil {
 		return err
@@ -126,7 +130,7 @@ func (c *cmdbApiGateWay) AddCloudHostToBiz(kt *kit.Kit, params *AddCloudHostToBi
 	if err != nil {
 		return nil, err
 	}
-	return apigateway.ApiGatewayCall[AddCloudHostToBizParams, BatchCreateResult](c.client, c.config,
+	return apigateway.ApiGatewayCall[AddCloudHostToBizParams, BatchCreateResult](c.client, c.bkUserCli, c.config,
 		rest.POST, kt, params, "/createmany/cloud_hosts")
 }
 
@@ -139,8 +143,8 @@ func (c *cmdbApiGateWay) GetBizBriefCacheTopo(kt *kit.Kit, params *GetBizBriefCa
 	if err != nil {
 		return nil, err
 	}
-	return apigateway.ApiGatewayCall[GetBizBriefCacheTopoParams, GetBizBriefCacheTopoResult](c.client, c.config,
-		rest.GET, kt, params, "/cache/find/cache/topo/brief/biz/%d", params.BkBizID)
+	return apigateway.ApiGatewayCall[GetBizBriefCacheTopoParams, GetBizBriefCacheTopoResult](c.client, c.bkUserCli,
+		c.config, rest.GET, kt, params, "/cache/find/cache/topo/brief/biz/%d", params.BkBizID)
 }
 
 // ResourceWatch ...
@@ -149,8 +153,8 @@ func (c *cmdbApiGateWay) ResourceWatch(kt *kit.Kit, params *WatchEventParams) (*
 	if err != nil {
 		return nil, err
 	}
-	return apigateway.ApiGatewayCall[WatchEventParams, WatchEventResult](c.client, c.config, rest.POST, kt, params,
-		"/event/watch/resource/%s", params.Resource)
+	return apigateway.ApiGatewayCall[WatchEventParams, WatchEventResult](c.client, c.bkUserCli, c.config, rest.POST,
+		kt, params, "/event/watch/resource/%s", params.Resource)
 }
 
 // FindHostBizRelations ...
@@ -160,8 +164,8 @@ func (c *cmdbApiGateWay) FindHostBizRelations(kt *kit.Kit, params *HostModuleRel
 	if err != nil {
 		return nil, err
 	}
-	return apigateway.ApiGatewayCall[HostModuleRelationParams, []HostTopoRelation](c.client, c.config, rest.POST, kt,
-		params, "/hosts/modules/read")
+	return apigateway.ApiGatewayCall[HostModuleRelationParams, []HostTopoRelation](c.client, c.bkUserCli, c.config,
+		rest.POST, kt, params, "/hosts/modules/read")
 }
 
 // FindHostTopoRelation ...
@@ -172,8 +176,8 @@ func (c *cmdbApiGateWay) FindHostTopoRelation(kt *kit.Kit, params *FindHostTopoR
 		return nil, err
 	}
 
-	return apigateway.ApiGatewayCall[FindHostTopoRelationParams, HostTopoRelationResult](c.client, c.config, rest.POST,
-		kt, params, "/host/topo/relation/read")
+	return apigateway.ApiGatewayCall[FindHostTopoRelationParams, HostTopoRelationResult](c.client, c.bkUserCli,
+		c.config, rest.POST, kt, params, "/host/topo/relation/read")
 }
 
 // SearchModule ...
@@ -184,8 +188,8 @@ func (c *cmdbApiGateWay) SearchModule(kt *kit.Kit, params *SearchModuleParams) (
 	}
 
 	// 0 代表了bk_supplier_account
-	return apigateway.ApiGatewayCall[SearchModuleParams, ModuleInfoResult](c.client, c.config, rest.POST, kt, params,
-		"/module/search/0/%d/%d", params.BizID, params.BkSetID)
+	return apigateway.ApiGatewayCall[SearchModuleParams, ModuleInfoResult](c.client, c.bkUserCli, c.config, rest.POST,
+		kt, params, "/module/search/0/%d/%d", params.BizID, params.BkSetID)
 }
 
 // ListBizHost ...
@@ -194,22 +198,22 @@ func (c *cmdbApiGateWay) ListBizHost(kt *kit.Kit, req *ListBizHostParams) (*List
 	if err != nil {
 		return nil, err
 	}
-	return apigateway.ApiGatewayCall[ListBizHostParams, ListBizHostResult](c.client, c.config, rest.POST, kt, req,
-		"/hosts/app/%d/list_hosts", req.BizID)
+	return apigateway.ApiGatewayCall[ListBizHostParams, ListBizHostResult](c.client, c.bkUserCli, c.config, rest.POST,
+		kt, req, "/hosts/app/%d/list_hosts", req.BizID)
 }
 
 // SearchBusiness ...
 func (c *cmdbApiGateWay) SearchBusiness(kt *kit.Kit, req *SearchBizParams) (*SearchBizResult, error) {
 	// 0 代表了bk_supplier_account
-	return apigateway.ApiGatewayCall[SearchBizParams, SearchBizResult](c.client, c.config, rest.POST,
+	return apigateway.ApiGatewayCall[SearchBizParams, SearchBizResult](c.client, c.bkUserCli, c.config, rest.POST,
 		kt, req, "/biz/search/0")
 }
 
 // SearchCloudArea search cmdb cloud area
 func (c *cmdbApiGateWay) SearchCloudArea(kt *kit.Kit, params *SearchCloudAreaParams) (*SearchCloudAreaResult, error) {
 
-	return apigateway.ApiGatewayCall[SearchCloudAreaParams, SearchCloudAreaResult](c.client, c.config, rest.POST, kt,
-		params, "/findmany/cloudarea")
+	return apigateway.ApiGatewayCall[SearchCloudAreaParams, SearchCloudAreaResult](c.client, c.bkUserCli, c.config,
+		rest.POST, kt, params, "/findmany/cloudarea")
 }
 
 // ListHostWithoutBiz list cmdb host without biz.
@@ -219,14 +223,14 @@ func (c *cmdbApiGateWay) ListHostWithoutBiz(kt *kit.Kit, req *ListHostWithoutBiz
 	if err := req.Validate(); err != nil {
 		return nil, err
 	}
-	return apigateway.ApiGatewayCall[ListHostWithoutBizParams, ListHostWithoutBizResult](c.client, c.config,
-		rest.POST, kt, req, "/hosts/list_hosts_without_app")
+	return apigateway.ApiGatewayCall[ListHostWithoutBizParams, ListHostWithoutBizResult](c.client, c.bkUserCli,
+		c.config, rest.POST, kt, req, "/hosts/list_hosts_without_app")
 }
 
 // ListResourcePoolHosts list resource pool hosts.
 func (c *cmdbApiGateWay) ListResourcePoolHosts(kt *kit.Kit, params *ListResourcePoolHostsParams) (
 	*ListResourcePoolHostsResult, error) {
 
-	return apigateway.ApiGatewayCall[ListResourcePoolHostsParams, ListResourcePoolHostsResult](c.client, c.config,
-		rest.POST, kt, params, "/hosts/list_resource_pool_hosts")
+	return apigateway.ApiGatewayCall[ListResourcePoolHostsParams, ListResourcePoolHostsResult](c.client, c.bkUserCli,
+		c.config, rest.POST, kt, params, "/hosts/list_resource_pool_hosts")
 }

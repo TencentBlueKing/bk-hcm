@@ -64,7 +64,7 @@ func (c *cmsi) SendMail(kt *kit.Kit, param *CmsiMailParams) error {
 	}
 
 	_, err := apigateway.ApiGatewayCallWithRichError[CmsiMailParams, CmsiMailResult](
-		c.client, c.config, rest.POST, kt, param, "/send_mail")
+		c.client, c.bkUserCli, c.config, rest.POST, kt, param, "/send_mail")
 
 	if err != nil {
 		return fmt.Errorf("send mail failed: %s", err)

@@ -17,27 +17,33 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package notice
+package discovery
 
 import (
-	"hcm/pkg/kit"
-	"hcm/pkg/rest"
-	apigateway "hcm/pkg/thirdparty/api-gateway"
+	"fmt"
+	"sync"
 )
 
-// GetCurAnn get current announcements
-func (n *notice) GetCurAnn(kt *kit.Kit, params map[string]string) (GetCurAnnResp, error) {
-
-	resp, err := apigateway.ApiGatewayCallWithoutReq[GetCurAnnResp](n.client, n.bkUserCli, n.config, rest.GET,
-		kt, params, "/announcement/get_current_announcements")
-	if err != nil {
-		return nil, err
-	}
-	return *resp, nil
+// Discovery used to third-party service discovery.
+type Discovery struct {
+	Name    string
+	Servers []string
+	index   int
+	sync.Mutex
 }
 
-// RegApp register application
-func (n *notice) RegApp(kt *kit.Kit) (*RegAppData, error) {
-	return apigateway.ApiGatewayCallWithoutReq[RegAppData](n.client, n.bkUserCli, n.config, rest.POST,
-		kt, nil, "/register")
+// GetServers get third-party service server host.
+func (d *Discovery) GetServers() ([]string, error) {
+	d.Lock()
+	defer d.Unlock()
+	num := len(d.Servers)
+	if num == 0 {
+		return []string{}, fmt.Errorf("there is no %s server can be used", d.Name)
+	}
+	if d.index < num-1 {
+		d.index = d.index + 1
+		return append(d.Servers[d.index-1:], d.Servers[:d.index-1]...), nil
+	}
+	d.index = 0
+	return append(d.Servers[num-1:], d.Servers[:num-1]...), nil
 }

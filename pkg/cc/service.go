@@ -140,6 +140,7 @@ type CloudServerSetting struct {
 	Cmsi             CMSI             `yaml:"cmsi"`
 	TaskManagement   TaskManagement   `yaml:"taskManagement"`
 	Tenant           TenantConfig     `yaml:"tenant"`
+	BkUser           ApiGateway       `yaml:"bkUser"`
 	Cmdb             ApiGateway       `yaml:"cmdb"`
 	CCHostPoolBiz    int64            `yaml:"ccHostPoolBiz"`
 	ConcurrentConfig ConcurrentConfig `yaml:"concurrentConfig"`
@@ -231,6 +232,7 @@ type DataServiceSetting struct {
 	Objectstore ObjectStore  `yaml:"objectstore"`
 	Crypto      Crypto       `yaml:"crypto"`
 	Cmdb        ApiGateway   `yaml:"cmdb"`
+	BkUser      ApiGateway   `yaml:"bkUser"`
 	Tenant      TenantConfig `yaml:"tenant"`
 }
 
@@ -343,6 +345,7 @@ type AuthServerSetting struct {
 	Esb     Esb          `yaml:"esb"`
 	Cmdb    ApiGateway   `yaml:"cmdb"`
 	Tenant  TenantConfig `yaml:"tenant"`
+	BkUser  ApiGateway   `yaml:"bkUser"`
 
 	IAM IAM `yaml:"iam"`
 }
@@ -402,9 +405,10 @@ type WebServerSetting struct {
 	ChangeLogPath ChangeLogPath `yaml:"changeLogPath"`
 	Notice        Notice        `yaml:"notice"`
 	TemplatePath  string        `yaml:"templatePath"`
-	Login         ApiGateway    `yaml:"login"`
 	Tenant        TenantConfig  `yaml:"tenant"`
 	Cmdb          ApiGateway    `yaml:"cmdb"`
+	BkUser        ApiGateway    `yaml:"bkUser"`
+	Login         ApiGateway    `yaml:"login"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -445,6 +449,10 @@ func (s WebServerSetting) Validate() error {
 	}
 
 	if err := s.Cmdb.validate(); err != nil {
+		return err
+	}
+
+	if err := s.BkUser.validate(); err != nil {
 		return err
 	}
 
@@ -532,6 +540,7 @@ type AccountServerSetting struct {
 	BillAllocation BillAllocationOption `yaml:"billAllocation"`
 	TmpFileDir     string               `yaml:"tmpFileDir"`
 	Tenant         TenantConfig         `yaml:"tenant"`
+	BkUser         ApiGateway           `yaml:"bkUser"`
 	Cmdb           ApiGateway           `yaml:"cmdb"`
 }
 

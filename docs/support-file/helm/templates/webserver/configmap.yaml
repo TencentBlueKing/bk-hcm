@@ -62,6 +62,8 @@ data:
     templatePath: {{ .Values.webserver.templatePath }}
     tenant:
       {{- toYaml .Values.tenant | nindent 6 }}
+    bkUser:
+      {{- toYaml .Values.bkUser | nindent 6 }}
     cmdb:
       {{- toYaml .Values.cmdb | nindent 6 }}
     login:

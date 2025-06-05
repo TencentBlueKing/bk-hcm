@@ -31,7 +31,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/rest/client"
-	"hcm/pkg/thirdparty/api-gateway"
+	"hcm/pkg/thirdparty/api-gateway/discovery"
 	"hcm/pkg/tools/json"
 	"hcm/pkg/tools/ssl"
 	"hcm/pkg/tools/uuid"
@@ -59,7 +59,7 @@ func NewClient(cfg *cc.ApiGateway, reg prometheus.Registerer) (Client, error) {
 	}
 	c := &client.Capability{
 		Client: cli,
-		Discover: &apigateway.Discovery{
+		Discover: &discovery.Discovery{
 			Name:    "bkbase",
 			Servers: cfg.Endpoints,
 		},
