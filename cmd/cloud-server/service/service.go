@@ -78,6 +78,7 @@ import (
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
 	"hcm/pkg/thirdparty/api-gateway/bkbase"
+	pkgbkuser "hcm/pkg/thirdparty/api-gateway/bkuser"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
 	"hcm/pkg/thirdparty/api-gateway/cmsi"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
@@ -179,15 +180,21 @@ func getCloudClientSvr(sd serviced.ServiceDiscover) (*client.ClientSet, *Service
 		return nil, nil, err
 	}
 
+	bkUserCfg := cc.CloudServer().BkUser
+	bkUserCli, err := pkgbkuser.NewClient(&bkUserCfg, metrics.Register())
+	if err != nil {
+		return nil, nil, err
+	}
+
 	cmsiCfg := cc.CloudServer().Cmsi
-	cmsiCli, err := cmsi.NewClient(&cmsiCfg, metrics.Register())
+	cmsiCli, err := cmsi.NewClient(&cmsiCfg, bkUserCli, metrics.Register())
 	if err != nil {
 		logs.Errorf("failed to create cmsi client, err: %v", err)
 		return nil, nil, err
 	}
 
 	cmdbCfg := cc.CloudServer().Cmdb
-	cmdbCli, err := cmdb.NewClient(&cmdbCfg, metrics.Register())
+	cmdbCli, err := cmdb.NewClient(&cmdbCfg, bkUserCli, metrics.Register())
 	if err != nil {
 		return nil, nil, err
 	}

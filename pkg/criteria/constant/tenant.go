@@ -20,6 +20,8 @@
 // Package constant constant 多租户相关的常量
 package constant
 
+import "time"
+
 const (
 	// DefaultTenantID 默认的租户id，使用场景：兼容不开启多租户的场景，上下游调用默认传递default租户
 	DefaultTenantID = "default"
@@ -29,4 +31,11 @@ const (
 	TenantIDField = "tenant_id"
 	// TenantIDTableField 租户id对应的table里的字段
 	TenantIDTableField = "TenantID"
+)
+
+const (
+	// VirtualUserCacheDuration 租户下虚拟用户的本地缓存时长
+	VirtualUserCacheDuration = 6 * time.Hour
+	// VirtualUserCacheCleanupInterval 租户下虚拟用户的本地缓存清理间隔
+	VirtualUserCacheCleanupInterval = 8 * time.Hour
 )
