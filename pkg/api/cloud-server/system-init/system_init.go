@@ -19,12 +19,13 @@
 
 package apisysteminit
 
-// OtherAccountInitReq ...
-type OtherAccountInitReq struct {
-}
-
-// OtherAccountInitResp ...
-type OtherAccountInitResp struct {
+// OtherAccountInitResult ...
+type OtherAccountInitResult struct {
 	CreatedAccountID string `json:"created_account_id,omitempty"`
 	ExistsAccountID  string `json:"exists_account_id,omitempty"`
+}
+
+// SystemInitResult ...
+type SystemInitResult struct {
+	OtherAccountInitResult *OtherAccountInitResult `json:"other_account_init_result,omitempty"`
 }

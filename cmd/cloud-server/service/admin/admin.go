@@ -25,6 +25,7 @@ import (
 
 	logicsadmin "hcm/cmd/cloud-server/logics/admin"
 	"hcm/cmd/cloud-server/service/capability"
+	apisysteminit "hcm/pkg/api/cloud-server/system-init"
 	"hcm/pkg/client"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
@@ -60,10 +61,14 @@ type adminService struct {
 func (s *adminService) Init(cts *rest.Contexts) (any, error) {
 
 	// 1. 查找是否存在vendor为other的用户，若有则返回，没有则创建
-	resp, err := s.adminLogics.InitVendorOtherAccount(cts.Kit)
+	result, err := s.adminLogics.InitVendorOtherAccount(cts.Kit)
 	if err != nil {
 		logs.Errorf("init vendor other account failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
+	}
+
+	resp := apisysteminit.SystemInitResult{
+		OtherAccountInitResult: result,
 	}
 	return resp, nil
 }

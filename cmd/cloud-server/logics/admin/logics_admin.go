@@ -34,7 +34,7 @@ import (
 
 // Interface admin logic interface
 type Interface interface {
-	InitVendorOtherAccount(kt *kit.Kit) (*apisysteminit.OtherAccountInitResp, error)
+	InitVendorOtherAccount(kt *kit.Kit) (*apisysteminit.OtherAccountInitResult, error)
 }
 
 type admin struct {
@@ -50,7 +50,7 @@ func NewAdminLogic(c *client.ClientSet) Interface {
 const InternalOtherVendorAccountName = "内置账号"
 
 // InitVendorOtherAccount 查找是否存在vendor为other的账号，若有则返回，没有则创建
-func (a *admin) InitVendorOtherAccount(kt *kit.Kit) (*apisysteminit.OtherAccountInitResp, error) {
+func (a *admin) InitVendorOtherAccount(kt *kit.Kit) (*apisysteminit.OtherAccountInitResult, error) {
 
 	listReq := &core.ListReq{
 		Filter: tools.EqualExpression("vendor", enumor.Other),
@@ -63,7 +63,7 @@ func (a *admin) InitVendorOtherAccount(kt *kit.Kit) (*apisysteminit.OtherAccount
 	}
 
 	if len(accResp.Details) > 0 {
-		return &apisysteminit.OtherAccountInitResp{ExistsAccountID: accResp.Details[0].ID}, nil
+		return &apisysteminit.OtherAccountInitResult{ExistsAccountID: accResp.Details[0].ID}, nil
 	}
 
 	// 创建other vendor用户
@@ -84,5 +84,5 @@ func (a *admin) InitVendorOtherAccount(kt *kit.Kit) (*apisysteminit.OtherAccount
 		logs.Errorf("fail to create other vendor account, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
 	}
-	return &apisysteminit.OtherAccountInitResp{CreatedAccountID: createResp.ID}, nil
+	return &apisysteminit.OtherAccountInitResult{CreatedAccountID: createResp.ID}, nil
 }
