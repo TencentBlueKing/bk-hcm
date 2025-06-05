@@ -23,19 +23,19 @@ import (
 	"strconv"
 
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/iam/client"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/iam/sys"
+	"hcm/pkg/thirdparty/api-gateway/iam"
 )
 
 // genSkipResource generate iam resource for resource, using skip action.
-func genSkipResource(_ *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	return sys.Skip, make([]client.Resource, 0), nil
+func genSkipResource(_ *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
+	return sys.Skip, make([]iam.Resource, 0), nil
 }
 
 // genAccountResource generate account related iam resource.
-func genAccountResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	res := client.Resource{
+func genAccountResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
+	res := iam.Resource{
 		System: sys.SystemIDHCM,
 		Type:   sys.Account,
 	}
@@ -48,33 +48,33 @@ func genAccountResource(a *meta.ResourceAttribute) (client.ActionID, []client.Re
 	switch a.Basic.Action {
 	case meta.Find:
 		// find account is related to hcm account resource
-		return sys.AccountFind, []client.Resource{res}, nil
+		return sys.AccountFind, []iam.Resource{res}, nil
 	case meta.KeyAccess:
 		// access account secret keys is related to hcm account resource
-		return sys.AccountKeyAccess, []client.Resource{res}, nil
+		return sys.AccountKeyAccess, []iam.Resource{res}, nil
 	case meta.Import:
-		return sys.AccountImport, make([]client.Resource, 0), nil
+		return sys.AccountImport, make([]iam.Resource, 0), nil
 	case meta.Update:
 		// update account is related to hcm account resource
-		return sys.AccountEdit, []client.Resource{res}, nil
+		return sys.AccountEdit, []iam.Resource{res}, nil
 	case meta.UpdateRRT:
 		// update account RecycleReserveTime is related to hcm account resource
-		return sys.RecycleBinConfig, []client.Resource{res}, nil
+		return sys.RecycleBinConfig, []iam.Resource{res}, nil
 	case meta.Delete:
 		// update account RecycleReserveTime is related to hcm account resource
-		return sys.AccountDelete, []client.Resource{res}, nil
+		return sys.AccountDelete, []iam.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }
 
 // genIaaSResourceResource generate iaas resource related iam resource.
-func genIaaSResourceResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+func genIaaSResourceResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
 	if a.Basic.Action != meta.Assign && a.BizID > 0 {
 		return genBizIaaSResResource(a)
 	}
 
-	res := client.Resource{
+	res := iam.Resource{
 		System: sys.SystemIDHCM,
 		Type:   sys.Account,
 	}
@@ -90,23 +90,23 @@ func genIaaSResourceResource(a *meta.ResourceAttribute) (client.ActionID, []clie
 		return genCloudResResource(a)
 	case meta.Create, meta.Apply:
 		// create resource is related to hcm account resource
-		return sys.IaaSResCreate, []client.Resource{res}, nil
+		return sys.IaaSResCreate, []iam.Resource{res}, nil
 	case meta.Update:
 		// update resource is related to hcm account resource
-		return sys.IaaSResOperate, []client.Resource{res}, nil
+		return sys.IaaSResOperate, []iam.Resource{res}, nil
 	case meta.Delete, meta.Recycle:
 		// delete resource is related to hcm account resource
-		return sys.IaaSResDelete, []client.Resource{res}, nil
+		return sys.IaaSResDelete, []iam.Resource{res}, nil
 	case meta.Destroy, meta.Recover:
-		return sys.RecycleBinOperate, []client.Resource{res}, nil
+		return sys.RecycleBinOperate, []iam.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }
 
 // genBizIaaSResResource generate biz iaas resource related iam resource.
-func genBizIaaSResResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	res := client.Resource{
+func genBizIaaSResResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
+	res := iam.Resource{
 		System: sys.SystemIDCMDB,
 		Type:   sys.Biz,
 	}
@@ -118,26 +118,26 @@ func genBizIaaSResResource(a *meta.ResourceAttribute) (client.ActionID, []client
 
 	switch a.Basic.Action {
 	case meta.Find:
-		return sys.BizAccess, []client.Resource{res}, nil
+		return sys.BizAccess, []iam.Resource{res}, nil
 	case meta.Create, meta.Apply:
-		return sys.BizIaaSResCreate, []client.Resource{res}, nil
+		return sys.BizIaaSResCreate, []iam.Resource{res}, nil
 	case meta.Update:
-		return sys.BizIaaSResOperate, []client.Resource{res}, nil
+		return sys.BizIaaSResOperate, []iam.Resource{res}, nil
 	case meta.Delete, meta.Recycle:
-		return sys.BizIaaSResDelete, []client.Resource{res}, nil
+		return sys.BizIaaSResDelete, []iam.Resource{res}, nil
 	case meta.Destroy, meta.Recover:
-		return sys.BizRecycleBinOperate, []client.Resource{res}, nil
+		return sys.BizRecycleBinOperate, []iam.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }
 
-func genIaaSResourceSecurityGroupRule(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+func genIaaSResourceSecurityGroupRule(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
 	if a.Basic.Action != meta.Assign && a.BizID > 0 {
 		return genBizIaaSResSecurityGroupRule(a)
 	}
 
-	res := client.Resource{
+	res := iam.Resource{
 		System: sys.SystemIDHCM,
 		Type:   sys.Account,
 	}
@@ -153,14 +153,14 @@ func genIaaSResourceSecurityGroupRule(a *meta.ResourceAttribute) (client.ActionI
 		return genCloudResResource(a)
 	case meta.Create, meta.Update, meta.Delete:
 		// create update delete resource is related to hcm operate
-		return sys.IaaSResOperate, []client.Resource{res}, nil
+		return sys.IaaSResOperate, []iam.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }
 
-func genBizIaaSResSecurityGroupRule(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	res := client.Resource{
+func genBizIaaSResSecurityGroupRule(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
+	res := iam.Resource{
 		System: sys.SystemIDCMDB,
 		Type:   sys.Biz,
 	}
@@ -172,27 +172,27 @@ func genBizIaaSResSecurityGroupRule(a *meta.ResourceAttribute) (client.ActionID,
 
 	switch a.Basic.Action {
 	case meta.Find:
-		return sys.BizAccess, []client.Resource{res}, nil
+		return sys.BizAccess, []iam.Resource{res}, nil
 	case meta.Create, meta.Update, meta.Delete:
-		return sys.BizIaaSResOperate, []client.Resource{res}, nil
+		return sys.BizIaaSResOperate, []iam.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }
 
 // genVpcResource generate vpc related iam resource.
-func genVpcResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+func genVpcResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
 	return genIaaSResourceResource(a)
 }
 
 // genSubnetResource generate subnet related iam resource.
-func genSubnetResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+func genSubnetResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
 	return genIaaSResourceResource(a)
 }
 
 // genDiskResource generate disk related iam resource.
-func genDiskResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	res := client.Resource{
+func genDiskResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
+	res := iam.Resource{
 		System: sys.SystemIDHCM,
 		Type:   sys.Account,
 	}
@@ -202,7 +202,7 @@ func genDiskResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resou
 		res.ID = a.ResourceID
 	}
 
-	bizRes := client.Resource{
+	bizRes := iam.Resource{
 		System: sys.SystemIDCMDB,
 		Type:   sys.Biz,
 		ID:     strconv.FormatInt(a.BizID, 10),
@@ -211,17 +211,17 @@ func genDiskResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resou
 	switch a.Basic.Action {
 	case meta.Associate, meta.Disassociate:
 		if a.BizID > 0 {
-			return sys.BizIaaSResOperate, []client.Resource{bizRes}, nil
+			return sys.BizIaaSResOperate, []iam.Resource{bizRes}, nil
 		}
-		return sys.IaaSResOperate, []client.Resource{res}, nil
+		return sys.IaaSResOperate, []iam.Resource{res}, nil
 	default:
 		return genIaaSResourceResource(a)
 	}
 }
 
 // genSecurityGroupResource generate security group related iam resource.
-func genSecurityGroupResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	res := client.Resource{
+func genSecurityGroupResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
+	res := iam.Resource{
 		System: sys.SystemIDHCM,
 		Type:   sys.Account,
 	}
@@ -231,7 +231,7 @@ func genSecurityGroupResource(a *meta.ResourceAttribute) (client.ActionID, []cli
 		res.ID = a.ResourceID
 	}
 
-	bizRes := client.Resource{
+	bizRes := iam.Resource{
 		System: sys.SystemIDCMDB,
 		Type:   sys.Biz,
 		ID:     strconv.FormatInt(a.BizID, 10),
@@ -240,33 +240,33 @@ func genSecurityGroupResource(a *meta.ResourceAttribute) (client.ActionID, []cli
 	switch a.Basic.Action {
 	case meta.Associate, meta.Disassociate:
 		if a.BizID > 0 {
-			return sys.BizIaaSResOperate, []client.Resource{bizRes}, nil
+			return sys.BizIaaSResOperate, []iam.Resource{bizRes}, nil
 		}
-		return sys.IaaSResOperate, []client.Resource{res}, nil
+		return sys.IaaSResOperate, []iam.Resource{res}, nil
 	default:
 		return genIaaSResourceResource(a)
 	}
 }
 
 // genSecurityGroupRuleResource generate security group rule related iam resource.
-func genSecurityGroupRuleResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+func genSecurityGroupRuleResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
 	return genIaaSResourceSecurityGroupRule(a)
 }
 
 // genGcpFirewallRuleResource generate gcp firewall rule related iam resource.
-func genGcpFirewallRuleResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+func genGcpFirewallRuleResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
 	return genIaaSResourceResource(a)
 }
 
 // genRecycleBinResource generate recycle bin related iam resource.
-func genRecycleBinResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	res := client.Resource{
+func genRecycleBinResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
+	res := iam.Resource{
 		System: sys.SystemIDHCM,
 		Type:   sys.Account,
 		ID:     a.ResourceID,
 	}
 
-	bizRes := client.Resource{
+	bizRes := iam.Resource{
 		System: sys.SystemIDCMDB,
 		Type:   sys.Biz,
 		ID:     strconv.FormatInt(a.BizID, 10),
@@ -275,21 +275,21 @@ func genRecycleBinResource(a *meta.ResourceAttribute) (client.ActionID, []client
 	switch a.Basic.Action {
 	case meta.Find:
 		if a.BizID > 0 {
-			return sys.BizAccess, []client.Resource{bizRes}, nil
+			return sys.BizAccess, []iam.Resource{bizRes}, nil
 		}
-		return sys.RecycleBinAccess, []client.Resource{res}, nil
+		return sys.RecycleBinAccess, []iam.Resource{res}, nil
 	case meta.Recycle, meta.Recover:
 		if a.BizID > 0 {
-			return sys.BizRecycleBinOperate, []client.Resource{bizRes}, nil
+			return sys.BizRecycleBinOperate, []iam.Resource{bizRes}, nil
 		}
-		return sys.RecycleBinOperate, []client.Resource{res}, nil
+		return sys.RecycleBinOperate, []iam.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }
 
 // genAuditResource generate audit log related iam resource.
-func genAuditResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+func genAuditResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
 	if a.BizID > 0 {
 		return genBizAuditResource(a)
 	}
@@ -297,8 +297,8 @@ func genAuditResource(a *meta.ResourceAttribute) (client.ActionID, []client.Reso
 }
 
 // genBizAuditResource generate biz audit log related iam resource.
-func genBizAuditResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	res := client.Resource{
+func genBizAuditResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
+	res := iam.Resource{
 		System: sys.SystemIDCMDB,
 		Type:   sys.Biz,
 		ID:     strconv.FormatInt(a.BizID, 10),
@@ -306,15 +306,15 @@ func genBizAuditResource(a *meta.ResourceAttribute) (client.ActionID, []client.R
 
 	switch a.Basic.Action {
 	case meta.Find:
-		return sys.BizOperationRecordFind, []client.Resource{res}, nil
+		return sys.BizOperationRecordFind, []iam.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }
 
 // genResourceAuditResource generate resource audit log related iam resource.
-func genResourceAuditResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	res := client.Resource{
+func genResourceAuditResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
+	res := iam.Resource{
 		System: sys.SystemIDHCM,
 		Type:   sys.Account,
 		ID:     a.ResourceID,
@@ -322,14 +322,14 @@ func genResourceAuditResource(a *meta.ResourceAttribute) (client.ActionID, []cli
 
 	switch a.Basic.Action {
 	case meta.Find:
-		return sys.OperationRecordFind, []client.Resource{res}, nil
+		return sys.OperationRecordFind, []iam.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }
 
-func genCvmResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	res := client.Resource{
+func genCvmResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
+	res := iam.Resource{
 		System: sys.SystemIDHCM,
 		Type:   sys.Account,
 	}
@@ -339,7 +339,7 @@ func genCvmResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resour
 		res.ID = a.ResourceID
 	}
 
-	bizRes := client.Resource{
+	bizRes := iam.Resource{
 		System: sys.SystemIDCMDB,
 		Type:   sys.Biz,
 		ID:     strconv.FormatInt(a.BizID, 10),
@@ -348,16 +348,16 @@ func genCvmResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resour
 	switch a.Basic.Action {
 	case meta.Stop, meta.Reboot, meta.Start, meta.ResetPwd:
 		if a.BizID > 0 {
-			return sys.BizIaaSResOperate, []client.Resource{bizRes}, nil
+			return sys.BizIaaSResOperate, []iam.Resource{bizRes}, nil
 		}
-		return sys.IaaSResOperate, []client.Resource{res}, nil
+		return sys.IaaSResOperate, []iam.Resource{res}, nil
 	default:
 		return genIaaSResourceResource(a)
 	}
 }
 
-func genSubAccountResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	res := client.Resource{
+func genSubAccountResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
+	res := iam.Resource{
 		System: sys.SystemIDHCM,
 		Type:   sys.Account,
 		ID:     a.ResourceID,
@@ -365,27 +365,27 @@ func genSubAccountResource(a *meta.ResourceAttribute) (client.ActionID, []client
 
 	switch a.Basic.Action {
 	case meta.Find:
-		return sys.AccountFind, []client.Resource{res}, nil
+		return sys.AccountFind, []iam.Resource{res}, nil
 	case meta.Update:
-		return sys.SubAccountEdit, []client.Resource{res}, nil
+		return sys.SubAccountEdit, []iam.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }
 
 // genRouteTableResource generate route table's related iam resource.
-func genRouteTableResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+func genRouteTableResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
 	return genIaaSResourceResource(a)
 }
 
 // genRouteResource generate route's related iam resource.
-func genRouteResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+func genRouteResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
 	return genIaaSResourceResource(a)
 }
 
 // genBizResource generate biz's related iam resource.
-func genBizResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	res := client.Resource{
+func genBizResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
+	res := iam.Resource{
 		System: sys.SystemIDCMDB,
 		Type:   sys.Biz,
 	}
@@ -397,20 +397,20 @@ func genBizResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resour
 
 	switch a.Basic.Action {
 	case meta.Access:
-		return sys.BizAccess, []client.Resource{res}, nil
+		return sys.BizAccess, []iam.Resource{res}, nil
 	default:
 		return genIaaSResourceResource(a)
 	}
 }
 
 // genNetworkInterfaceResource generate network interface related iam resource.
-func genNetworkInterfaceResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+func genNetworkInterfaceResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
 	return genIaaSResourceResource(a)
 }
 
 // genEipResource ...
-func genEipResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	res := client.Resource{
+func genEipResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
+	res := iam.Resource{
 		System: sys.SystemIDHCM,
 		Type:   sys.Account,
 	}
@@ -420,7 +420,7 @@ func genEipResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resour
 		res.ID = a.ResourceID
 	}
 
-	bizRes := client.Resource{
+	bizRes := iam.Resource{
 		System: sys.SystemIDCMDB,
 		Type:   sys.Biz,
 		ID:     strconv.FormatInt(a.BizID, 10),
@@ -429,17 +429,17 @@ func genEipResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resour
 	switch a.Basic.Action {
 	case meta.Associate, meta.Disassociate:
 		if a.BizID > 0 {
-			return sys.BizIaaSResOperate, []client.Resource{bizRes}, nil
+			return sys.BizIaaSResOperate, []iam.Resource{bizRes}, nil
 		}
-		return sys.IaaSResOperate, []client.Resource{res}, nil
+		return sys.IaaSResOperate, []iam.Resource{res}, nil
 	default:
 		return genIaaSResourceResource(a)
 	}
 }
 
 // genCloudResResource generate all cloud resource related iam resource.
-func genCloudResResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	res := client.Resource{
+func genCloudResResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
+	res := iam.Resource{
 		System: sys.SystemIDHCM,
 		Type:   sys.Account,
 		ID:     a.ResourceID,
@@ -448,22 +448,22 @@ func genCloudResResource(a *meta.ResourceAttribute) (client.ActionID, []client.R
 	switch a.Basic.Action {
 	case meta.Find:
 		// find resource is related to hcm account resource
-		return sys.ResourceFind, []client.Resource{res}, nil
+		return sys.ResourceFind, []iam.Resource{res}, nil
 	case meta.Assign:
 		// assign resource to biz is related to hcm account & cmdb biz resource
-		bizRes := client.Resource{
+		bizRes := iam.Resource{
 			System: sys.SystemIDCMDB,
 			Type:   sys.Biz,
 			ID:     strconv.FormatInt(a.BizID, 10),
 		}
-		return sys.ResourceAssign, []client.Resource{res, bizRes}, nil
+		return sys.ResourceAssign, []iam.Resource{res, bizRes}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }
 
-func genCloudSelectionSchemeResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	res := client.Resource{
+func genCloudSelectionSchemeResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
+	res := iam.Resource{
 		System: sys.SystemIDHCM,
 		Type:   sys.CloudSelectionScheme,
 		ID:     a.ResourceID,
@@ -471,13 +471,13 @@ func genCloudSelectionSchemeResource(a *meta.ResourceAttribute) (client.ActionID
 
 	switch a.Basic.Action {
 	case meta.Find:
-		return sys.CloudSelectionSchemeFind, []client.Resource{res}, nil
+		return sys.CloudSelectionSchemeFind, []iam.Resource{res}, nil
 	case meta.Update:
-		return sys.CloudSelectionSchemeEdit, []client.Resource{res}, nil
+		return sys.CloudSelectionSchemeEdit, []iam.Resource{res}, nil
 	case meta.Delete:
-		return sys.CloudSelectionSchemeDelete, []client.Resource{res}, nil
+		return sys.CloudSelectionSchemeDelete, []iam.Resource{res}, nil
 	case meta.Create:
-		return sys.CloudSelectionRecommend, make([]client.Resource, 0), nil
+		return sys.CloudSelectionRecommend, make([]iam.Resource, 0), nil
 
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
@@ -485,54 +485,54 @@ func genCloudSelectionSchemeResource(a *meta.ResourceAttribute) (client.ActionID
 }
 
 // genBizCollectionResource 业务收藏
-func genBizCollectionResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	bizRes := client.Resource{
+func genBizCollectionResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
+	bizRes := iam.Resource{
 		System: sys.SystemIDCMDB,
 		Type:   sys.Biz,
 		ID:     strconv.FormatInt(a.BizID, 10),
 	}
 
-	return sys.BizAccess, []client.Resource{bizRes}, nil
+	return sys.BizAccess, []iam.Resource{bizRes}, nil
 }
 
 // genProxyResourceFind 代理资源访问权限.
-func genProxyResourceFind(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+func genProxyResourceFind(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
 	if a.BizID != 0 {
-		bizRes := client.Resource{
+		bizRes := iam.Resource{
 			System: sys.SystemIDCMDB,
 			Type:   sys.Biz,
 			ID:     strconv.FormatInt(a.BizID, 10),
 		}
 
-		return sys.BizAccess, []client.Resource{bizRes}, nil
+		return sys.BizAccess, []iam.Resource{bizRes}, nil
 	}
 
-	res := client.Resource{
+	res := iam.Resource{
 		System: sys.SystemIDHCM,
 		Type:   sys.Account,
 		ID:     a.ResourceID,
 	}
-	return sys.ResourceFind, []client.Resource{res}, nil
+	return sys.ResourceFind, []iam.Resource{res}, nil
 }
 
 // genCostManageResource generate cost manage related iam resource.
-func genCostManageResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+func genCostManageResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
 	switch a.Basic.Action {
 	case meta.Find:
-		return sys.CostManage, make([]client.Resource, 0), nil
+		return sys.CostManage, make([]iam.Resource, 0), nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }
 
 // genArgumentTemplateResource generate argument template related iam resource.
-func genArgumentTemplateResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+func genArgumentTemplateResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
 	return genIaaSResourceResource(a)
 }
 
 // genCertResource generate cert related iam resource.
-func genCertResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	res := client.Resource{
+func genCertResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
+	res := iam.Resource{
 		System: sys.SystemIDHCM,
 		Type:   sys.Account,
 	}
@@ -542,7 +542,7 @@ func genCertResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resou
 		res.ID = a.ResourceID
 	}
 
-	bizRes := client.Resource{
+	bizRes := iam.Resource{
 		System: sys.SystemIDCMDB,
 		Type:   sys.Biz,
 		ID:     strconv.FormatInt(a.BizID, 10),
@@ -553,28 +553,28 @@ func genCertResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resou
 		return genIaaSResourceResource(a)
 	case meta.Create:
 		if a.BizID > 0 {
-			return sys.BizCertResCreate, []client.Resource{bizRes}, nil
+			return sys.BizCertResCreate, []iam.Resource{bizRes}, nil
 		}
-		return sys.CertResCreate, []client.Resource{res}, nil
+		return sys.CertResCreate, []iam.Resource{res}, nil
 	case meta.Update:
 		// update resource is related to hcm account resource
 		if a.BizID > 0 {
-			return sys.BizIaaSResOperate, []client.Resource{bizRes}, nil
+			return sys.BizIaaSResOperate, []iam.Resource{bizRes}, nil
 		}
-		return sys.IaaSResOperate, []client.Resource{res}, nil
+		return sys.IaaSResOperate, []iam.Resource{res}, nil
 	case meta.Delete:
 		if a.BizID > 0 {
-			return sys.BizCertResDelete, []client.Resource{bizRes}, nil
+			return sys.BizCertResDelete, []iam.Resource{bizRes}, nil
 		}
-		return sys.CertResDelete, []client.Resource{res}, nil
+		return sys.CertResDelete, []iam.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }
 
 // genLoadBalancerResource generate load balancer related iam resource.
-func genLoadBalancerResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	res := client.Resource{
+func genLoadBalancerResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
+	res := iam.Resource{
 		System: sys.SystemIDHCM,
 		Type:   sys.Account,
 	}
@@ -590,32 +590,32 @@ func genLoadBalancerResource(a *meta.ResourceAttribute) (client.ActionID, []clie
 	switch a.Basic.Action {
 	case meta.Associate, meta.Disassociate:
 		if a.BizID > 0 {
-			bizRes := client.Resource{
+			bizRes := iam.Resource{
 				System: sys.SystemIDCMDB,
 				Type:   sys.Biz,
 				ID:     strconv.FormatInt(a.BizID, 10),
 			}
-			return sys.BizCLBResOperate, []client.Resource{bizRes}, nil
+			return sys.BizCLBResOperate, []iam.Resource{bizRes}, nil
 		}
-		return sys.IaaSResOperate, []client.Resource{res}, nil
+		return sys.IaaSResOperate, []iam.Resource{res}, nil
 	case meta.Create, meta.Apply:
-		return sys.CLBResCreate, []client.Resource{res}, nil
+		return sys.CLBResCreate, []iam.Resource{res}, nil
 	case meta.Find, meta.Assign:
 		// find & assign action use generic cloud resource auth.
 		return genCloudResResource(a)
 	case meta.Update:
 		// update resource is related to hcm account resource
-		return sys.CLBResOperate, []client.Resource{res}, nil
+		return sys.CLBResOperate, []iam.Resource{res}, nil
 	case meta.Delete:
 		// delete resource is related to hcm account resource
-		return sys.CLBResDelete, []client.Resource{res}, nil
+		return sys.CLBResDelete, []iam.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }
 
-func genBizLoadBalancerResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	res := client.Resource{
+func genBizLoadBalancerResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
+	res := iam.Resource{
 		System: sys.SystemIDCMDB,
 		Type:   sys.Biz,
 	}
@@ -627,26 +627,26 @@ func genBizLoadBalancerResource(a *meta.ResourceAttribute) (client.ActionID, []c
 
 	switch a.Basic.Action {
 	case meta.Find:
-		return sys.BizAccess, []client.Resource{res}, nil
+		return sys.BizAccess, []iam.Resource{res}, nil
 	case meta.Create, meta.Apply:
-		return sys.BizCLBResCreate, []client.Resource{res}, nil
+		return sys.BizCLBResCreate, []iam.Resource{res}, nil
 	case meta.Update:
-		return sys.BizCLBResOperate, []client.Resource{res}, nil
+		return sys.BizCLBResOperate, []iam.Resource{res}, nil
 	case meta.Delete:
-		return sys.BizCLBResDelete, []client.Resource{res}, nil
+		return sys.BizCLBResDelete, []iam.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }
 
 // genListenerResource generate clb listener related iam resource.
-func genListenerResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+func genListenerResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
 	return genIaaSResourceResource(a)
 }
 
 // genTargetGroupResource generate target group related iam resource.
-func genTargetGroupResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	res := client.Resource{
+func genTargetGroupResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
+	res := iam.Resource{
 		System: sys.SystemIDHCM,
 		Type:   sys.Account,
 	}
@@ -656,7 +656,7 @@ func genTargetGroupResource(a *meta.ResourceAttribute) (client.ActionID, []clien
 		res.ID = a.ResourceID
 	}
 
-	bizRes := client.Resource{
+	bizRes := iam.Resource{
 		System: sys.SystemIDCMDB,
 		Type:   sys.Biz,
 		ID:     strconv.FormatInt(a.BizID, 10),
@@ -665,21 +665,21 @@ func genTargetGroupResource(a *meta.ResourceAttribute) (client.ActionID, []clien
 	switch a.Basic.Action {
 	case meta.Associate, meta.Disassociate:
 		if a.BizID > 0 {
-			return sys.BizIaaSResOperate, []client.Resource{bizRes}, nil
+			return sys.BizIaaSResOperate, []iam.Resource{bizRes}, nil
 		}
-		return sys.IaaSResOperate, []client.Resource{res}, nil
+		return sys.IaaSResOperate, []iam.Resource{res}, nil
 	default:
 		return genIaaSResourceResource(a)
 	}
 }
 
 // genUrlRuleResource generate clb listener related iam resource.
-func genUrlRuleResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+func genUrlRuleResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
 	return genIaaSResourceResource(a)
 }
 
-func genMainAccountRuleResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	res := client.Resource{
+func genMainAccountRuleResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
+	res := iam.Resource{
 		System: sys.SystemIDHCM,
 		Type:   sys.MainAccount,
 	}
@@ -689,39 +689,39 @@ func genMainAccountRuleResource(a *meta.ResourceAttribute) (client.ActionID, []c
 
 	switch a.Basic.Action {
 	case meta.Find:
-		return sys.MainAccountFind, []client.Resource{res}, nil
+		return sys.MainAccountFind, []iam.Resource{res}, nil
 	case meta.Update:
-		return sys.MainAccountEdit, []client.Resource{res}, nil
+		return sys.MainAccountEdit, []iam.Resource{res}, nil
 	case meta.Create:
-		return sys.MainAccountCreate, []client.Resource{res}, nil
+		return sys.MainAccountCreate, []iam.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 
 }
 
-func genRootAccountRuleResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+func genRootAccountRuleResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
 	switch a.Basic.Action {
 	case meta.Find, meta.Create, meta.Update:
-		return sys.RootAccountManage, make([]client.Resource, 0), nil
+		return sys.RootAccountManage, make([]iam.Resource, 0), nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }
 
 // 生成账单账号权限映射
-func genAccountBillResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+func genAccountBillResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
 	switch a.Basic.Action {
 	case meta.Find, meta.Delete, meta.Import, meta.Create, meta.Update, meta.Access:
-		return sys.AccountBillManage, make([]client.Resource, 0), nil
+		return sys.AccountBillManage, make([]iam.Resource, 0), nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }
 
-func genAccountBillThirdPartyResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+func genAccountBillThirdPartyResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
 	// TODO 改为 属性鉴权
-	res := client.Resource{
+	res := iam.Resource{
 		System: sys.SystemIDHCM,
 		Type:   sys.BillCloudVendor,
 	}
@@ -731,14 +731,14 @@ func genAccountBillThirdPartyResource(a *meta.ResourceAttribute) (client.ActionI
 			return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm res type: %s", a.Basic.Type)
 		}
 		res.ID = a.ResourceID
-		return sys.AccountBillPull, []client.Resource{res}, nil
+		return sys.AccountBillPull, []iam.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }
 
-func genImageResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	res := client.Resource{
+func genImageResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
+	res := iam.Resource{
 		System: sys.SystemIDHCM,
 		Type:   sys.Account,
 	}
@@ -753,14 +753,14 @@ func genImageResource(a *meta.ResourceAttribute) (client.ActionID, []client.Reso
 		if a.BizID > 0 {
 			return genBizIaaSResResource(a)
 		}
-		return sys.AccountFind, []client.Resource{res}, nil
+		return sys.AccountFind, []iam.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action of image resource: %s", a.Basic.Action)
 	}
 }
 
-func genTaskManagementResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	res := client.Resource{
+func genTaskManagementResource(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
+	res := iam.Resource{
 		System: sys.SystemIDHCM,
 		Type:   sys.Biz,
 		ID:     strconv.FormatInt(a.BizID, 10),
@@ -768,16 +768,16 @@ func genTaskManagementResource(a *meta.ResourceAttribute) (client.ActionID, []cl
 
 	switch a.Basic.Action {
 	case meta.Find:
-		return sys.BizAccess, []client.Resource{res}, nil
+		return sys.BizAccess, []iam.Resource{res}, nil
 	case meta.Create, meta.Update, meta.Delete:
-		return sys.BizTaskManagementOperate, []client.Resource{res}, nil
+		return sys.BizTaskManagementOperate, []iam.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}
 }
 
-func genCosBucket(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
-	res := client.Resource{
+func genCosBucket(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
+	res := iam.Resource{
 		System: sys.SystemIDHCM,
 		Type:   sys.Account,
 		ID:     a.ResourceID,
@@ -785,11 +785,11 @@ func genCosBucket(a *meta.ResourceAttribute) (client.ActionID, []client.Resource
 
 	switch a.Basic.Action {
 	case meta.Create:
-		return sys.CosBucketCreate, []client.Resource{res}, nil
+		return sys.CosBucketCreate, []iam.Resource{res}, nil
 	case meta.Find:
-		return sys.CosBucketFind, []client.Resource{res}, nil
+		return sys.CosBucketFind, []iam.Resource{res}, nil
 	case meta.Delete:
-		return sys.CosBucketDelete, []client.Resource{res}, nil
+		return sys.CosBucketDelete, []iam.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}

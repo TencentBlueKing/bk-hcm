@@ -19,14 +19,16 @@
 
 package sys
 
-import "hcm/pkg/iam/client"
+import (
+	"hcm/pkg/thirdparty/api-gateway/iam"
+)
 
 var (
-	accountResource = []client.RelateResourceType{
+	accountResource = []iam.RelateResourceType{
 		{
 			SystemID: SystemIDHCM,
 			ID:       Account,
-			InstanceSelections: []client.RelatedInstanceSelection{
+			InstanceSelections: []iam.RelatedInstanceSelection{
 				{
 					SystemID: SystemIDHCM,
 					ID:       AccountSelection,
@@ -35,11 +37,11 @@ var (
 		},
 	}
 
-	bizResource = []client.RelateResourceType{
+	bizResource = []iam.RelateResourceType{
 		{
 			SystemID: SystemIDCMDB,
 			ID:       Biz,
-			InstanceSelections: []client.RelatedInstanceSelection{
+			InstanceSelections: []iam.RelatedInstanceSelection{
 				{
 					SystemID: SystemIDCMDB,
 					ID:       BizSelection,
@@ -48,11 +50,11 @@ var (
 		},
 	}
 
-	schemeResource = []client.RelateResourceType{
+	schemeResource = []iam.RelateResourceType{
 		{
 			SystemID: SystemIDHCM,
 			ID:       CloudSelectionScheme,
-			InstanceSelections: []client.RelatedInstanceSelection{
+			InstanceSelections: []iam.RelatedInstanceSelection{
 				{
 					SystemID: SystemIDHCM,
 					ID:       CloudSelectionSchemeSelection,
@@ -61,11 +63,11 @@ var (
 		},
 	}
 
-	mainaccountResource = []client.RelateResourceType{
+	mainaccountResource = []iam.RelateResourceType{
 		{
 			SystemID: SystemIDHCM,
 			ID:       MainAccount,
-			InstanceSelections: []client.RelatedInstanceSelection{
+			InstanceSelections: []iam.RelatedInstanceSelection{
 				{
 					SystemID: SystemIDHCM,
 					ID:       MainAccountSelection,
@@ -73,11 +75,11 @@ var (
 			},
 		},
 	}
-	billCloudVendorResource = []client.RelateResourceType{
+	billCloudVendorResource = []iam.RelateResourceType{
 		{
 			SystemID: SystemIDHCM,
 			ID:       BillCloudVendor,
-			InstanceSelections: []client.RelatedInstanceSelection{
+			InstanceSelections: []iam.RelatedInstanceSelection{
 				{
 					SystemID: SystemIDHCM,
 					ID:       BillCloudVendorSelection,
@@ -88,8 +90,8 @@ var (
 )
 
 // GenerateStaticActions return need to register action.
-func GenerateStaticActions() []client.ResourceAction {
-	resourceActionList := make([]client.ResourceAction, 0)
+func GenerateStaticActions() []iam.ResourceAction {
+	resourceActionList := make([]iam.ResourceAction, 0)
 
 	resourceActionList = append(resourceActionList, genResManagementActions()...)
 	resourceActionList = append(resourceActionList, genResourceAccessActions()...)
@@ -100,8 +102,8 @@ func GenerateStaticActions() []client.ResourceAction {
 	return resourceActionList
 }
 
-func genResManagementActions() []client.ResourceAction {
-	actions := []client.ResourceAction{{
+func genResManagementActions() []iam.ResourceAction {
+	actions := []iam.ResourceAction{{
 		ID:                   BizAccess,
 		Name:                 ActionIDNameMap[BizAccess],
 		NameEn:               "Access Biz",
@@ -115,7 +117,7 @@ func genResManagementActions() []client.ResourceAction {
 		NameEn:               "Create Biz IaaS Resource",
 		Type:                 Create,
 		RelatedResourceTypes: bizResource,
-		RelatedActions:       []client.ActionID{BizAccess},
+		RelatedActions:       []iam.ActionID{BizAccess},
 		Version:              1,
 	}, {
 		ID:                   BizIaaSResOperate,
@@ -123,7 +125,7 @@ func genResManagementActions() []client.ResourceAction {
 		NameEn:               "Operate Biz IaaS Resource",
 		Type:                 Edit,
 		RelatedResourceTypes: bizResource,
-		RelatedActions:       []client.ActionID{BizAccess},
+		RelatedActions:       []iam.ActionID{BizAccess},
 		Version:              1,
 	}, {
 		ID:                   BizIaaSResDelete,
@@ -131,7 +133,7 @@ func genResManagementActions() []client.ResourceAction {
 		NameEn:               "Delete Biz IaaS Resource",
 		Type:                 Delete,
 		RelatedResourceTypes: bizResource,
-		RelatedActions:       []client.ActionID{BizAccess},
+		RelatedActions:       []iam.ActionID{BizAccess},
 		Version:              1,
 	}}
 
@@ -143,13 +145,13 @@ func genResManagementActions() []client.ResourceAction {
 	// TODO 开启编排相关功能后放开注释
 	// 资源编排的Actions
 	// actions = append(actions, genArrangeResManActions()...)
-	actions = append(actions, []client.ResourceAction{{
+	actions = append(actions, []iam.ResourceAction{{
 		ID:                   BizRecycleBinOperate,
 		Name:                 ActionIDNameMap[BizRecycleBinOperate],
 		NameEn:               "Operate Biz RecycleBin",
 		Type:                 Edit,
 		RelatedResourceTypes: bizResource,
-		RelatedActions:       []client.ActionID{BizAccess},
+		RelatedActions:       []iam.ActionID{BizAccess},
 		Version:              1,
 	}, {
 		ID:                   BizRecycleBinConfig,
@@ -157,7 +159,7 @@ func genResManagementActions() []client.ResourceAction {
 		NameEn:               "Config Biz RecycleBin",
 		Type:                 Edit,
 		RelatedResourceTypes: bizResource,
-		RelatedActions:       []client.ActionID{BizAccess},
+		RelatedActions:       []iam.ActionID{BizAccess},
 		Version:              1,
 	}, {
 		ID:                   BizOperationRecordFind,
@@ -165,7 +167,7 @@ func genResManagementActions() []client.ResourceAction {
 		NameEn:               "Find Biz OperationRecord",
 		Type:                 View,
 		RelatedResourceTypes: bizResource,
-		RelatedActions:       []client.ActionID{BizAccess},
+		RelatedActions:       []iam.ActionID{BizAccess},
 		Version:              1,
 	}, {
 		ID:                   BizTaskManagementOperate,
@@ -173,22 +175,22 @@ func genResManagementActions() []client.ResourceAction {
 		NameEn:               "Operate Biz TaskManagement",
 		Type:                 Edit,
 		RelatedResourceTypes: bizResource,
-		RelatedActions:       []client.ActionID{BizAccess},
+		RelatedActions:       []iam.ActionID{BizAccess},
 		Version:              1,
 	}}...)
 
 	return actions
 }
 
-func genCLBResManActions() []client.ResourceAction {
-	return []client.ResourceAction{
+func genCLBResManActions() []iam.ResourceAction {
+	return []iam.ResourceAction{
 		{
 			ID:                   BizCLBResCreate,
 			Name:                 ActionIDNameMap[BizCLBResCreate],
 			NameEn:               "Create Biz CLB",
 			Type:                 Create,
 			RelatedResourceTypes: bizResource,
-			RelatedActions:       []client.ActionID{BizAccess},
+			RelatedActions:       []iam.ActionID{BizAccess},
 			Version:              1,
 		}, {
 			ID:                   BizCLBResOperate,
@@ -196,7 +198,7 @@ func genCLBResManActions() []client.ResourceAction {
 			NameEn:               "Operate Biz CLB",
 			Type:                 Edit,
 			RelatedResourceTypes: bizResource,
-			RelatedActions:       []client.ActionID{BizAccess},
+			RelatedActions:       []iam.ActionID{BizAccess},
 			Version:              1,
 		}, {
 			ID:                   BizCLBResDelete,
@@ -204,22 +206,22 @@ func genCLBResManActions() []client.ResourceAction {
 			NameEn:               "Delete Biz CLB",
 			Type:                 Delete,
 			RelatedResourceTypes: bizResource,
-			RelatedActions:       []client.ActionID{BizAccess},
+			RelatedActions:       []iam.ActionID{BizAccess},
 			Version:              1,
 		},
 	}
 }
 
 // genCertResManActions 业务-证书管理的Actions
-func genCertResManActions() []client.ResourceAction {
-	return []client.ResourceAction{
+func genCertResManActions() []iam.ResourceAction {
+	return []iam.ResourceAction{
 		{
 			ID:                   BizCertResCreate,
 			Name:                 ActionIDNameMap[BizCertResCreate],
 			NameEn:               "Create Biz Cert",
 			Type:                 Create,
 			RelatedResourceTypes: bizResource,
-			RelatedActions:       []client.ActionID{BizAccess},
+			RelatedActions:       []iam.ActionID{BizAccess},
 			Version:              1,
 		}, {
 			ID:                   BizCertResDelete,
@@ -227,22 +229,22 @@ func genCertResManActions() []client.ResourceAction {
 			NameEn:               "Delete Biz Cert",
 			Type:                 Delete,
 			RelatedResourceTypes: bizResource,
-			RelatedActions:       []client.ActionID{BizAccess},
+			RelatedActions:       []iam.ActionID{BizAccess},
 			Version:              1,
 		},
 	}
 }
 
 /*
-func genArrangeResManActions() []client.ResourceAction {
-	return []client.ResourceAction{
+func genArrangeResManActions() []iam.ResourceAction {
+	return []iam.ResourceAction{
 		{
 			ID:                   BizArrangeResCreate,
 			Name:                 ActionIDNameMap[BizArrangeResCreate],
 			NameEn:               "Create Biz Arrange",
 			Type:                 Create,
 			RelatedResourceTypes: bizResource,
-			RelatedActions:       []client.ActionID{BizAccess},
+			RelatedActions:       []iam.ActionID{BizAccess},
 			Version:              1,
 		}, {
 			ID:                   BizArrangeResOperate,
@@ -250,7 +252,7 @@ func genArrangeResManActions() []client.ResourceAction {
 			NameEn:               "Operate Biz Arrange",
 			Type:                 Edit,
 			RelatedResourceTypes: bizResource,
-			RelatedActions:       []client.ActionID{BizAccess},
+			RelatedActions:       []iam.ActionID{BizAccess},
 			Version:              1,
 		}, {
 			ID:                   BizArrangeResDelete,
@@ -258,15 +260,15 @@ func genArrangeResManActions() []client.ResourceAction {
 			NameEn:               "Delete Biz Arrange",
 			Type:                 Delete,
 			RelatedResourceTypes: bizResource,
-			RelatedActions:       []client.ActionID{BizAccess},
+			RelatedActions:       []iam.ActionID{BizAccess},
 			Version:              1,
 		},
 	}
 }
 */
 
-func genResourceAccessActions() []client.ResourceAction {
-	actions := []client.ResourceAction{{
+func genResourceAccessActions() []iam.ResourceAction {
+	actions := []iam.ResourceAction{{
 		ID:                   AccountFind,
 		Name:                 ActionIDNameMap[AccountFind],
 		NameEn:               "Find Account",
@@ -311,7 +313,7 @@ func genResourceAccessActions() []client.ResourceAction {
 	// TODO 开启clb和编排相关功能后放开注释
 	actions = append(actions, genCLBResAccessActions()...)
 	actions = append(actions, genCertResAccessActions()...)
-	actions = append(actions, []client.ResourceAction{{
+	actions = append(actions, []iam.ResourceAction{{
 		ID:                   RecycleBinAccess,
 		Name:                 ActionIDNameMap[RecycleBinAccess],
 		NameEn:               "Find RecycleBin",
@@ -325,7 +327,7 @@ func genResourceAccessActions() []client.ResourceAction {
 		NameEn:               "Operate RecycleBin",
 		Type:                 Edit,
 		RelatedResourceTypes: accountResource,
-		RelatedActions:       []client.ActionID{RecycleBinAccess},
+		RelatedActions:       []iam.ActionID{RecycleBinAccess},
 		Version:              1,
 	}, {
 		ID:                   RecycleBinConfig,
@@ -348,8 +350,8 @@ func genResourceAccessActions() []client.ResourceAction {
 	return actions
 }
 
-func genCloudSelectionActions() []client.ResourceAction {
-	actions := []client.ResourceAction{{
+func genCloudSelectionActions() []iam.ResourceAction {
+	actions := []iam.ResourceAction{{
 		ID:                   CloudSelectionRecommend,
 		Name:                 ActionIDNameMap[CloudSelectionRecommend],
 		NameEn:               "Selection Recommend",
@@ -371,7 +373,7 @@ func genCloudSelectionActions() []client.ResourceAction {
 		NameEn:               "Edit Scheme",
 		Type:                 Edit,
 		RelatedResourceTypes: schemeResource,
-		RelatedActions:       []client.ActionID{CloudSelectionSchemeFind},
+		RelatedActions:       []iam.ActionID{CloudSelectionSchemeFind},
 		Version:              1,
 	}, {
 		ID:                   CloudSelectionSchemeDelete,
@@ -379,22 +381,22 @@ func genCloudSelectionActions() []client.ResourceAction {
 		NameEn:               "Delete Scheme",
 		Type:                 Delete,
 		RelatedResourceTypes: schemeResource,
-		RelatedActions:       []client.ActionID{CloudSelectionSchemeFind},
+		RelatedActions:       []iam.ActionID{CloudSelectionSchemeFind},
 		Version:              1,
 	}}
 
 	return actions
 }
 
-func genIaaSResAccessActions() []client.ResourceAction {
-	return []client.ResourceAction{
+func genIaaSResAccessActions() []iam.ResourceAction {
+	return []iam.ResourceAction{
 		{
 			ID:                   ResourceFind,
 			Name:                 ActionIDNameMap[ResourceFind],
 			NameEn:               "Find Resource",
 			Type:                 View,
 			RelatedResourceTypes: accountResource,
-			RelatedActions:       []client.ActionID{RecycleBinAccess},
+			RelatedActions:       []iam.ActionID{RecycleBinAccess},
 			Version:              1,
 		}, {
 			ID:                   ResourceAssign,
@@ -410,7 +412,7 @@ func genIaaSResAccessActions() []client.ResourceAction {
 			NameEn:               "Create IaaS Resource",
 			Type:                 Create,
 			RelatedResourceTypes: accountResource,
-			RelatedActions:       []client.ActionID{ResourceFind},
+			RelatedActions:       []iam.ActionID{ResourceFind},
 			Version:              1,
 		}, {
 			ID:                   IaaSResOperate,
@@ -418,7 +420,7 @@ func genIaaSResAccessActions() []client.ResourceAction {
 			NameEn:               "Operate IaaS Resource",
 			Type:                 Edit,
 			RelatedResourceTypes: accountResource,
-			RelatedActions:       []client.ActionID{ResourceFind},
+			RelatedActions:       []iam.ActionID{ResourceFind},
 			Version:              1,
 		}, {
 			ID:                   IaaSResDelete,
@@ -426,21 +428,21 @@ func genIaaSResAccessActions() []client.ResourceAction {
 			NameEn:               "Delete IaaS Resource",
 			Type:                 Delete,
 			RelatedResourceTypes: accountResource,
-			RelatedActions:       []client.ActionID{ResourceFind},
+			RelatedActions:       []iam.ActionID{ResourceFind},
 			Version:              1,
 		},
 	}
 }
 
-func genCLBResAccessActions() []client.ResourceAction {
-	return []client.ResourceAction{
+func genCLBResAccessActions() []iam.ResourceAction {
+	return []iam.ResourceAction{
 		{
 			ID:                   CLBResCreate,
 			Name:                 ActionIDNameMap[CLBResCreate],
 			NameEn:               "Create CLB",
 			Type:                 Create,
 			RelatedResourceTypes: accountResource,
-			RelatedActions:       []client.ActionID{ResourceFind},
+			RelatedActions:       []iam.ActionID{ResourceFind},
 			Version:              1,
 		}, {
 			ID:                   CLBResOperate,
@@ -448,7 +450,7 @@ func genCLBResAccessActions() []client.ResourceAction {
 			NameEn:               "Operate CLB",
 			Type:                 Edit,
 			RelatedResourceTypes: accountResource,
-			RelatedActions:       []client.ActionID{ResourceFind},
+			RelatedActions:       []iam.ActionID{ResourceFind},
 			Version:              1,
 		}, {
 			ID:                   CLBResDelete,
@@ -456,22 +458,22 @@ func genCLBResAccessActions() []client.ResourceAction {
 			NameEn:               "Delete CLB",
 			Type:                 Delete,
 			RelatedResourceTypes: accountResource,
-			RelatedActions:       []client.ActionID{ResourceFind},
+			RelatedActions:       []iam.ActionID{ResourceFind},
 			Version:              1,
 		},
 	}
 }
 
 // genCertResAccessActions 资源-证书管理的Actions
-func genCertResAccessActions() []client.ResourceAction {
-	return []client.ResourceAction{
+func genCertResAccessActions() []iam.ResourceAction {
+	return []iam.ResourceAction{
 		{
 			ID:                   CertResCreate,
 			Name:                 ActionIDNameMap[CertResCreate],
 			NameEn:               "Create Cert",
 			Type:                 Create,
 			RelatedResourceTypes: accountResource,
-			RelatedActions:       []client.ActionID{ResourceFind},
+			RelatedActions:       []iam.ActionID{ResourceFind},
 			Version:              1,
 		}, {
 			ID:                   CertResDelete,
@@ -479,14 +481,14 @@ func genCertResAccessActions() []client.ResourceAction {
 			NameEn:               "Delete Cert",
 			Type:                 Delete,
 			RelatedResourceTypes: accountResource,
-			RelatedActions:       []client.ActionID{ResourceFind},
+			RelatedActions:       []iam.ActionID{ResourceFind},
 			Version:              1,
 		},
 	}
 }
 
-func genPlatformManageActions() []client.ResourceAction {
-	return []client.ResourceAction{{
+func genPlatformManageActions() []iam.ResourceAction {
+	return []iam.ResourceAction{{
 		ID:                   CostManage,
 		Name:                 ActionIDNameMap[CostManage],
 		NameEn:               "Cost Manage",
@@ -546,9 +548,9 @@ func genPlatformManageActions() []client.ResourceAction {
 	}
 }
 
-func genAccountManageActions() []client.ResourceAction {
+func genAccountManageActions() []iam.ResourceAction {
 	// MainAccount
-	actions := []client.ResourceAction{{
+	actions := []iam.ResourceAction{{
 		ID:                   MainAccountFind,
 		Name:                 ActionIDNameMap[MainAccountFind],
 		NameEn:               "Find MainAccount",
@@ -578,8 +580,8 @@ func genAccountManageActions() []client.ResourceAction {
 	return actions
 }
 
-func genCosResAccessActions() []client.ResourceAction {
-	return []client.ResourceAction{
+func genCosResAccessActions() []iam.ResourceAction {
+	return []iam.ResourceAction{
 		{
 			ID:                   CosBucketCreate,
 			Name:                 ActionIDNameMap[CosBucketCreate],

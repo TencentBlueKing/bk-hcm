@@ -21,13 +21,13 @@ package auth
 
 import (
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/iam/client"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/iam/sys"
+	"hcm/pkg/thirdparty/api-gateway/iam"
 )
 
 // AdaptAuthOptions convert hcm auth resource to iam action id and resources
-func AdaptAuthOptions(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+func AdaptAuthOptions(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
 	if a == nil {
 		return "", nil, errf.New(errf.InvalidParameter, "resource attribute is not set")
 	}
@@ -83,11 +83,11 @@ func AdaptAuthOptions(a *meta.ResourceAttribute) (client.ActionID, []client.Reso
 	case meta.CloudSelectionScheme:
 		return genCloudSelectionSchemeResource(a)
 	case meta.CloudSelectionIdc:
-		return sys.CloudSelectionRecommend, make([]client.Resource, 0), nil
+		return sys.CloudSelectionRecommend, make([]iam.Resource, 0), nil
 	case meta.CloudSelectionBizType:
-		return sys.CloudSelectionRecommend, make([]client.Resource, 0), nil
+		return sys.CloudSelectionRecommend, make([]iam.Resource, 0), nil
 	case meta.CloudSelectionDataSource:
-		return sys.CloudSelectionRecommend, make([]client.Resource, 0), nil
+		return sys.CloudSelectionRecommend, make([]iam.Resource, 0), nil
 	case meta.ArgumentTemplate:
 		return genArgumentTemplateResource(a)
 	case meta.Cert:
@@ -121,10 +121,10 @@ func AdaptAuthOptions(a *meta.ResourceAttribute) (client.ActionID, []client.Reso
 	}
 }
 
-func genApplicationResources(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+func genApplicationResources(a *meta.ResourceAttribute) (iam.ActionID, []iam.Resource, error) {
 	switch a.Basic.Action {
 	case meta.Find, meta.Delete, meta.Update:
-		return sys.ApplicationManage, make([]client.Resource, 0), nil
+		return sys.ApplicationManage, make([]iam.Resource, 0), nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
 	}

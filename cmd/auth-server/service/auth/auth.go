@@ -34,7 +34,6 @@ import (
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
-	"hcm/pkg/iam/client"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/iam/sdk/auth"
 	"hcm/pkg/iam/sys"
@@ -42,6 +41,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
+	"hcm/pkg/thirdparty/api-gateway/iam"
 )
 
 // Auth related operate.
@@ -151,15 +151,15 @@ func (a *Auth) authorizeBatch(kt *kit.Kit, req *authserver.AuthorizeBatchReq, ex
 	}
 
 	// do authentication
-	var authDecisions []*client.Decision
+	var authDecisions []*iam.Decision
 	if exact {
-		authDecisions, err = a.auth.AuthorizeBatch(kt.Ctx, opts)
+		authDecisions, err = a.auth.AuthorizeBatch(kt, opts)
 		if err != nil {
 			logs.Errorf("authorize batch failed, err: %v ,ops: %#v, req: %#v, rid: %s", err, opts, req, kt.Rid)
 			return nil, err
 		}
 	} else {
-		authDecisions, err = a.auth.AuthorizeAnyBatch(kt.Ctx, opts)
+		authDecisions, err = a.auth.AuthorizeAnyBatch(kt, opts)
 		if err != nil {
 			logs.Errorf("authorize any batch failed, err: %v, ops: %#v, req: %#v, rid: %s", err, opts, req, kt.Rid)
 			return nil, err
@@ -213,9 +213,9 @@ func (a *Auth) isWriteOperationDisabled(kt *kit.Kit, resources []meta.ResourceAt
 
 // parseAttributesToBatchOptions parse auth attributes to authorize batch options
 func parseAttributesToBatchOptions(kt *kit.Kit, user *meta.UserInfo, resources ...meta.ResourceAttribute) (
-	*client.AuthBatchOptions, []meta.Decision, error) {
+	*iam.AuthBatchOptions, []meta.Decision, error) {
 
-	authBatchArr := make([]client.AuthBatch, 0)
+	authBatchArr := make([]iam.AuthBatch, 0)
 	decisions := make([]meta.Decision, len(resources))
 	for index, resource := range resources {
 		decisions[index] = meta.Decision{Authorized: false}
@@ -240,8 +240,8 @@ func parseAttributesToBatchOptions(kt *kit.Kit, user *meta.UserInfo, resources .
 			continue
 		}
 
-		authBatchArr = append(authBatchArr, client.AuthBatch{
-			Action:    client.Action{ID: string(action)},
+		authBatchArr = append(authBatchArr, iam.AuthBatch{
+			Action:    iam.Action{ID: string(action)},
 			Resources: iamResources,
 		})
 	}
@@ -251,9 +251,9 @@ func parseAttributesToBatchOptions(kt *kit.Kit, user *meta.UserInfo, resources .
 		return nil, decisions, nil
 	}
 
-	ops := &client.AuthBatchOptions{
+	ops := &iam.AuthBatchOptions{
 		System: sys.SystemIDHCM,
-		Subject: client.Subject{
+		Subject: iam.Subject{
 			Type: sys.UserSubjectType,
 			ID:   user.UserName,
 		},
@@ -307,7 +307,7 @@ func (a *Auth) getPermissionToApply(kt *kit.Kit, resources []meta.ResourceAttrib
 
 			for idx, resources := range iamResourceType.Instances {
 				for idx2, resource := range resources {
-					iamResourceType.Instances[idx][idx2].Name = instIDNameMap[client.TypeID(resource.Type)][resource.ID]
+					iamResourceType.Instances[idx][idx2].Name = instIDNameMap[iam.TypeID(resource.Type)][resource.ID]
 				}
 			}
 
@@ -320,13 +320,13 @@ func (a *Auth) getPermissionToApply(kt *kit.Kit, resources []meta.ResourceAttrib
 }
 
 // parseResources parse hcm auth resource to iam permission resources in organized way
-func (a *Auth) parseResources(kt *kit.Kit, resources []meta.ResourceAttribute) (map[client.TypeID][]string,
-	map[client.ActionID]map[client.TypeID]meta.IamResourceType, error) {
+func (a *Auth) parseResources(kt *kit.Kit, resources []meta.ResourceAttribute) (map[iam.TypeID][]string,
+	map[iam.ActionID]map[iam.TypeID]meta.IamResourceType, error) {
 
 	// resTypeIDsMap maps resource type to resource ids to get resource names.
-	resTypeIDsMap := make(map[client.TypeID][]string)
+	resTypeIDsMap := make(map[iam.TypeID][]string)
 	// permissionMap maps ActionID and TypeID to ResourceInstances
-	permissionMap := make(map[client.ActionID]map[client.TypeID]meta.IamResourceType, 0)
+	permissionMap := make(map[iam.ActionID]map[iam.TypeID]meta.IamResourceType, 0)
 
 	for _, r := range resources {
 		// parse hcm auth resource to iam action id and iam resources
@@ -337,7 +337,7 @@ func (a *Auth) parseResources(kt *kit.Kit, resources []meta.ResourceAttribute) (
 		}
 
 		if _, ok := permissionMap[actionID]; !ok {
-			permissionMap[actionID] = make(map[client.TypeID]meta.IamResourceType, 0)
+			permissionMap[actionID] = make(map[iam.TypeID]meta.IamResourceType, 0)
 		}
 
 		// generate iam resource resources by its paths and itself
@@ -362,9 +362,9 @@ func (a *Auth) parseResources(kt *kit.Kit, resources []meta.ResourceAttribute) (
 			resource := make([]meta.IamResourceInstance, 0)
 			if res.Attribute != nil {
 				// parse hcm auth resource iam path attribute to iam ancestor resources
-				iamPath, ok := res.Attribute[client.IamPathKey].([]string)
+				iamPath, ok := res.Attribute[iam.IamPathKey].([]string)
 				if !ok {
-					return nil, nil, fmt.Errorf("iam path(%v) is not string array", res.Attribute[client.IamPathKey])
+					return nil, nil, fmt.Errorf("iam path(%v) is not string array", res.Attribute[iam.IamPathKey])
 				}
 
 				ancestors, err := a.parseIamPathToAncestors(iamPath)
@@ -375,7 +375,7 @@ func (a *Auth) parseResources(kt *kit.Kit, resources []meta.ResourceAttribute) (
 
 				// record ancestor resource ids to get names from them afterwards
 				for _, ancestor := range ancestors {
-					ancestorType := client.TypeID(ancestor.Type)
+					ancestorType := iam.TypeID(ancestor.Type)
 					resTypeIDsMap[ancestorType] = append(resTypeIDsMap[ancestorType], ancestor.ID)
 				}
 			}
@@ -418,7 +418,7 @@ func (a *Auth) parseIamPathToAncestors(iamPath []string) ([]meta.IamResourceInst
 			}
 			resources = append(resources, meta.IamResourceInstance{
 				Type:     typeAndID[0],
-				TypeName: sys.ResourceTypeIDMap[client.TypeID(typeAndID[0])],
+				TypeName: sys.ResourceTypeIDMap[iam.TypeID(typeAndID[0])],
 				ID:       id,
 			})
 		}
@@ -427,10 +427,10 @@ func (a *Auth) parseIamPathToAncestors(iamPath []string) ([]meta.IamResourceInst
 }
 
 // getInstIDNameMap get resource id to name map by resource ids, groups by resource type
-func (a *Auth) getInstIDNameMap(kt *kit.Kit, resTypeIDsMap map[client.TypeID][]string) (
-	map[client.TypeID]map[string]string, error) {
+func (a *Auth) getInstIDNameMap(kt *kit.Kit, resTypeIDsMap map[iam.TypeID][]string) (
+	map[iam.TypeID]map[string]string, error) {
 
-	instMap := make(map[client.TypeID]map[string]string)
+	instMap := make(map[iam.TypeID]map[string]string)
 
 	for resType, ids := range resTypeIDsMap {
 		if resType == sys.Biz {
@@ -507,7 +507,7 @@ func (a *Auth) getBizIDNameMap(kt *kit.Kit, rawIDs []string) (map[string]string,
 // ListAuthorizedInstances list authorized instances info.
 func (a *Auth) ListAuthorizedInstances(cts *rest.Contexts) (interface{}, error) {
 	if a.disableAuth {
-		return client.AuthorizeList{IsAny: true}, nil
+		return iam.AuthorizeList{IsAny: true}, nil
 	}
 
 	req := new(authserver.ListAuthorizedInstancesReq)
@@ -531,18 +531,18 @@ func (a *Auth) ListAuthorizedInstances(cts *rest.Contexts) (interface{}, error) 
 		return nil, errors.New("auth resources length is not 1, cannot list authorized instances")
 	}
 
-	ops := &client.AuthOptions{
+	ops := &iam.AuthOptions{
 		System: sys.SystemIDHCM,
-		Subject: client.Subject{
+		Subject: iam.Subject{
 			Type: sys.UserSubjectType,
 			ID:   req.User.UserName,
 		},
-		Action: client.Action{
+		Action: iam.Action{
 			ID: string(actionID),
 		},
 		Resources: resources,
 	}
-	authorizeList, err := a.auth.ListAuthorizedInstances(cts.Kit.Ctx, ops, resources[0].Type)
+	authorizeList, err := a.auth.ListAuthorizedInstances(cts.Kit, ops, resources[0].Type)
 	if err != nil {
 		logs.Errorf("list authorized instances failed, err: %v,  ops: %+v, req: %+v, rid: %s", err, ops, req,
 			cts.Kit.Rid)
@@ -560,7 +560,7 @@ func (a *Auth) RegisterResourceCreatorAction(cts *rest.Contexts) (interface{}, e
 		return nil, err
 	}
 
-	opts := &client.InstanceWithCreator{
+	opts := &iam.InstanceWithCreator{
 		System:  sys.SystemIDHCM,
 		Type:    req.Instance.Type,
 		ID:      req.Instance.ID,
@@ -569,14 +569,14 @@ func (a *Auth) RegisterResourceCreatorAction(cts *rest.Contexts) (interface{}, e
 	}
 
 	for _, ancestor := range req.Instance.Ancestors {
-		opts.Ancestors = append(opts.Ancestors, client.InstanceAncestor{
+		opts.Ancestors = append(opts.Ancestors, iam.InstanceAncestor{
 			System: sys.SystemIDHCM,
 			Type:   ancestor.Type,
 			ID:     ancestor.ID,
 		})
 	}
 
-	policies, err := a.auth.RegisterResourceCreatorAction(cts.Kit.Ctx, opts)
+	policies, err := a.auth.RegisterResourceCreatorAction(cts.Kit, opts)
 	if err != nil {
 		logs.Errorf("list authorized instances failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
 		return nil, err
@@ -592,7 +592,7 @@ func (a *Auth) GetApplyPermUrl(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	url, err := a.auth.GetApplyPermUrl(cts.Kit.Ctx, req)
+	url, err := a.auth.GetApplyPermUrl(cts.Kit, req)
 	if err != nil {
 		logs.Errorf("get iam apply permission url failed, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
 		return nil, err

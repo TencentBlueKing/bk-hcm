@@ -315,12 +315,10 @@ type AuthServerSetting struct {
 	Network Network      `yaml:"network"`
 	Service Service      `yaml:"service"`
 	Log     LogOption    `yaml:"log"`
-	Esb     Esb          `yaml:"esb"`
 	Cmdb    ApiGateway   `yaml:"cmdb"`
+	Iam     ApiGateway   `yaml:"iam"`
 	Tenant  TenantConfig `yaml:"tenant"`
 	BkUser  ApiGateway   `yaml:"bkUser"`
-
-	IAM IAM `yaml:"iam"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -347,15 +345,11 @@ func (s AuthServerSetting) Validate() error {
 		return err
 	}
 
-	if err := s.Esb.validate(); err != nil {
-		return err
-	}
-
 	if err := s.Cmdb.validate(); err != nil {
 		return err
 	}
 
-	if err := s.IAM.validate(); err != nil {
+	if err := s.Iam.validate(); err != nil {
 		return err
 	}
 
