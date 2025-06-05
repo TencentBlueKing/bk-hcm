@@ -31,6 +31,7 @@ import (
 	"hcm/cmd/cloud-server/logics"
 	logicaudit "hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/account"
+	"hcm/cmd/cloud-server/service/admin"
 	"hcm/cmd/cloud-server/service/application"
 	appcvm "hcm/cmd/cloud-server/service/application/handlers/cvm"
 	approvalprocess "hcm/cmd/cloud-server/service/approval_process"
@@ -99,6 +100,7 @@ type Service struct {
 	bkBaseCli bkbase.Client
 	cmsiCli   cmsi.Client
 	cmdbCli   cmdb.Client
+	bkUserCli pkgbkuser.Client
 }
 
 // NewService create a service instance.
@@ -208,6 +210,7 @@ func getCloudClientSvr(sd serviced.ServiceDiscover) (*client.ClientSet, *Service
 		bkBaseCli:  bkbaseCli,
 		cmsiCli:    cmsiCli,
 		cmdbCli:    cmdbCli,
+		bkUserCli:  bkUserCli,
 	}
 
 	return apiClientSet, svr, nil
@@ -288,11 +291,12 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 		Authorizer: s.authorizer,
 		Audit:      s.audit,
 		Cipher:     s.cipher,
-		Logics:     logics.NewLogics(s.client, s.cmdbCli),
+		Logics:     logics.NewLogics(s.client, s.cmdbCli, s.bkUserCli),
 		ItsmCli:    s.itsmCli,
 		BKBaseCli:  s.bkBaseCli,
 		CmsiCli:    s.cmsiCli,
 		CmdbCli:    s.cmdbCli,
+		BKUserCli:  s.bkUserCli,
 	}
 
 	account.InitAccountService(c)
@@ -332,6 +336,8 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 	task.InitService(c)
 
 	cos.InitService(c)
+
+	admin.InitAdminService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

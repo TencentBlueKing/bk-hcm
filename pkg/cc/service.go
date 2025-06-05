@@ -176,7 +176,7 @@ func (s CloudServerSetting) Validate() error {
 	}
 
 	if err := s.Cmdb.validate(); err != nil {
-		return err
+		return fmt.Errorf("cmdb: %w", err)
 	}
 
 	if s.BkHcmUrl == "" {
@@ -192,11 +192,15 @@ func (s CloudServerSetting) Validate() error {
 	}
 
 	if err := s.Itsm.validate(); err != nil {
-		return err
+		return fmt.Errorf("itsm: %w", err)
 	}
 
 	if err := s.Cmsi.validate(); err != nil {
-		return err
+		return fmt.Errorf("cmsi: %w", err)
+	}
+
+	if err := s.BkUser.validate(); err != nil {
+		return fmt.Errorf("bkuser: %w", err)
 	}
 
 	return nil
@@ -422,23 +426,23 @@ func (s WebServerSetting) Validate() error {
 	}
 
 	if err := s.Cmdb.validate(); err != nil {
-		return err
+		return fmt.Errorf("cmdb: %w", err)
 	}
 
 	if err := s.BkUser.validate(); err != nil {
-		return err
+		return fmt.Errorf("bkuser: %w", err)
 	}
 
 	if err := s.Itsm.validate(); err != nil {
-		return err
+		return fmt.Errorf("itsm: %w", err)
 	}
 
 	if err := s.Notice.validate(); err != nil {
-		return err
+		return fmt.Errorf("notice: %w", err)
 	}
 
 	if err := s.Login.validate(); err != nil {
-		return err
+		return fmt.Errorf("login: %w", err)
 	}
 
 	return nil
@@ -549,7 +553,7 @@ func (s AccountServerSetting) Validate() error {
 	}
 
 	if err := s.Cmdb.validate(); err != nil {
-		return err
+		return fmt.Errorf("cmdb: %w", err)
 	}
 
 	return nil

@@ -230,3 +230,30 @@ login:
     caFile:
     # the password to decrypt the certificate.
     password:
+# bkUser 用户管理配置
+bkUser:
+  # endpoints is a seed list of host:port addresses of cmdb api gateway nodes.
+  endpoints:
+    - http://demo.com
+  # appCode is the BlueKing app code of hcm to request cmdb api gateway.
+  appCode: bk-hcm
+  # appSecret is the BlueKing app secret of hcm to request cmdb api gateway.
+  appSecret:
+  # noAuth is the BlueKing user of hcm to request cmdb api gateway.
+  user: bk-hcm
+  # bkTicket is the BlueKing access ticket of hcm to request cmdb api gateway.
+  bkTicket:
+  # bkToken is the BlueKing access token of hcm to request cmdb api gateway.
+  bkToken:
+  # defines tls related options.
+  tls:
+    # server should be accessed without verifying the TLS certificate.
+    insecureSkipVerify:
+    # server requires TLS client certificate authentication.
+    certFile:
+    # server requires TLS client certificate authentication.
+    keyFile:
+    # trusted root certificates for server.
+    caFile:
+    # the password to decrypt the certificate.
+    password:
