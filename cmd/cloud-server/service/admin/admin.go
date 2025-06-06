@@ -23,14 +23,14 @@ package admin
 import (
 	"net/http"
 
-	"github.com/emicklei/go-restful/v3"
-
 	logicsadmin "hcm/cmd/cloud-server/logics/admin"
 	"hcm/cmd/cloud-server/service/capability"
 	apisysteminit "hcm/pkg/api/cloud-server/system-init"
 	"hcm/pkg/client"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+
+	"github.com/emicklei/go-restful/v3"
 )
 
 // InitAdminService initialize the system init service.
