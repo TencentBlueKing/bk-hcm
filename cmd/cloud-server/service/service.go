@@ -31,6 +31,7 @@ import (
 	"hcm/cmd/cloud-server/logics"
 	logicaudit "hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/account"
+	"hcm/cmd/cloud-server/service/admin"
 	"hcm/cmd/cloud-server/service/application"
 	appcvm "hcm/cmd/cloud-server/service/application/handlers/cvm"
 	approvalprocess "hcm/cmd/cloud-server/service/approval_process"
@@ -337,6 +338,8 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 	task.InitService(c)
 
 	cos.InitService(c)
+
+	admin.InitAdminService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }
