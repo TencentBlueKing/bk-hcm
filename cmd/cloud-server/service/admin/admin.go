@@ -30,6 +30,8 @@ import (
 	"hcm/pkg/client"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+
+	"github.com/emicklei/go-restful/v3"
 )
 
 // InitAdminService initialize the system init service.
@@ -39,18 +41,16 @@ func InitAdminService(c *capability.Capability) {
 		adminLogics: c.Logics.Admin,
 	}
 
-	h := rest.NewHandler()
-
-	svc.registerAdminService(h)
-
-	h.Load(c.WebService)
+	svc.registerAdminService(c.WebService)
 }
 
-func (s *adminService) registerAdminService(h *rest.Handler) {
-	// 这里注册的接口都无法被webserver访问，只能被系统内部调用，无需鉴权
-	h.Path("/admin/system/")
+func (s *adminService) registerAdminService(c *restful.WebService) {
+	adminH := rest.NewHandler()
+	adminH.Path("/admin/system/")
+	defer adminH.Load(c)
 
-	h.Add("Init", http.MethodPost, "/init", s.Init)
+	// 这里注册的接口都无法被webserver访问，只能被系统内部调用，无需鉴权
+	adminH.Add("Init", http.MethodPost, "/init", s.Init)
 }
 
 type adminService struct {
