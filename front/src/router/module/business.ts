@@ -1,9 +1,11 @@
 // import { CogShape } from 'bkui-vue/lib/icon';
 import { LBRouteName } from '@/constants';
 import type { RouteRecordRaw } from 'vue-router';
+import { operationLogBiz as operationLogBizRouteConfig } from '@/views/operation-log/route-config';
+import taskRouteConfig from '@/views/task/route-config';
 import Meta from '../meta';
 
-const businesseMenus: RouteRecordRaw[] = [
+const businessMenus: RouteRecordRaw[] = [
   {
     path: '/business',
     children: [
@@ -453,38 +455,7 @@ const businesseMenus: RouteRecordRaw[] = [
   },
   {
     path: '/business',
-    children: [
-      {
-        path: '/business/record',
-        name: 'businessRecord',
-        children: [
-          {
-            path: '',
-            name: 'operationRecords',
-            component: () => import('@/views/resource/resource-manage/operationRecord/index.vue'),
-            meta: {
-              activeKey: 'businessRecord',
-              isShowBreadcrumb: true,
-              icon: 'hcm-icon bkhcm-icon-operation-record',
-            },
-          },
-          {
-            path: 'detail',
-            name: 'operationRecordsDetail',
-            component: () => import('@/views/resource/resource-manage/operationRecord/RecordDetail/index'),
-            meta: {
-              activeKey: 'businessRecord',
-              icon: 'hcm-icon bkhcm-icon-cert',
-            },
-          },
-        ],
-        meta: {
-          title: '操作记录',
-          activeKey: 'businessRecord',
-          icon: 'hcm-icon bkhcm-icon-operation-record',
-        },
-      },
-    ],
+    children: [...operationLogBizRouteConfig, ...taskRouteConfig],
     meta: {
       groupTitle: '其他',
     },
@@ -567,4 +538,4 @@ const businesseMenus: RouteRecordRaw[] = [
   },
 ];
 
-export default businesseMenus;
+export default businessMenus;

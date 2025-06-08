@@ -5,4 +5,5 @@ export enum ResourceTypeEnum {
   SUBNET = 'subnet',
   CLB = 'clb',
   ACCOUNT = 'account',
+  SECURITY_GROUP = 'security_group',
 }

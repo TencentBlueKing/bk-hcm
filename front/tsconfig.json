@@ -4,13 +4,14 @@
     "strictPropertyInitialization": false,
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "importHelpers": true,
     "resolveJsonModule": true,
     "allowJs": true,
-//    "noImplicitAny": false,
-    "target": "esnext",/* 编译目标ES版本*/
-    "module": "esnext",/* 编译目标模块系统*/
-    "moduleResolution": "node",/* 模块解析策略 */
+    //    "noImplicitAny": false,
+    "target": "esnext" /* 编译目标ES版本*/,
+    "module": "esnext" /* 编译目标模块系统*/,
+    "moduleResolution": "node" /* 模块解析策略 */,
     "sourceMap": true,
     "pretty": true,
     "strict": true,
@@ -18,11 +19,8 @@
     "jsxFactory": "h",
     "jsxFragmentFactory": "Fragment",
     "jsxImportSource": "vue",
-    "esModuleInterop": true,/* 允许编译生成文件时，在代码中注入工具类(__importDefault、__importStar)对ESM与commonjs混用情况做兼容处理*/
-    "lib": [/* 编译过程中需要引入的库文件列表*/
-      "esnext",
-      "dom"
-    ],
+    "esModuleInterop": true /* 允许编译生成文件时，在代码中注入工具类(__importDefault、__importStar)对ESM与commonjs混用情况做兼容处理*/,
+    "lib": [/* 编译过程中需要引入的库文件列表*/ "esnext", "dom"],
     "outDir": "dist",
     "rootDir": "./",
     "baseUrl": "./",
@@ -39,17 +37,17 @@
       "@pluginHandler/*": ["./src/plugin-handler/*"]
     }
   },
- /* "typeRoots": [                            *//* 要包含的类型声明文件路径列表*//*
+  /* "typeRoots": [                            */ /* 要包含的类型声明文件路径列表*/ /*
     "./typings",
     "./node_modules/@types"
   ],*/
-//   "include": [
-//     "src/**/*.ts",
-//     "src/**/*.tsx",
-//     "src/**/*.vue",
-//     "tests/**/*.ts",
-//     "tests/**/*.tsx"
-//   ],
+  //   "include": [
+  //     "src/**/*.ts",
+  //     "src/**/*.tsx",
+  //     "src/**/*.vue",
+  //     "tests/**/*.ts",
+  //     "tests/**/*.tsx"
+  //   ],
   "exclude": [
     "node_modules",
     "plugins",

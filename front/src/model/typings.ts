@@ -35,6 +35,7 @@ export type ModelProperty = {
   meta?: ModelPropertyMeta;
   unit?: string;
   index?: number;
+  apiOnly?: boolean;
 };
 
 export type PropertyColumnConfig = {

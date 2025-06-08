@@ -1,12 +1,13 @@
+import { type ComputedRef, isRef } from 'vue';
 import { type LocationQuery } from 'vue-router';
 import qs from 'qs';
-import { ModelProperty } from '@/model/typings';
+import { ModelPropertyGeneric } from '@/model/typings';
 import { findProperty } from '@/model/utils';
 import routeQuery from '@/router/utils/query';
 import { convertValue } from '@/utils/search';
 
 type useSearchQsParamsType = {
-  properties: ModelProperty[];
+  properties: ModelPropertyGeneric[] | ComputedRef<ModelPropertyGeneric[]>;
   key?: string;
   forceUpdate?: boolean;
   resetPage?: boolean;
@@ -39,7 +40,7 @@ export default function useSearchQs({
     const condition: Record<string, any> = {};
     const filter = qs.parse(query[key] as string, { comma: true, allowEmptyArrays: true });
     for (const [id, val] of Object.entries(filter)) {
-      const property = findProperty(id, properties);
+      const property = findProperty(id, isRef(properties) ? properties.value : properties);
       condition[id] = convertValue(val, property);
     }
     return condition;

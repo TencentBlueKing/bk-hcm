@@ -43,7 +43,7 @@ export default defineComponent({
       const globalBizsQueryParams = saveGlobalBizsId(businessId.value);
       // @ts-ignore
       // 如果当前页面为详情页, 则当业务id切换时, 跳转至对应资源的列表页
-      const isBusinessDetail = route.name?.includes('BusinessDetail');
+      const isBusinessDetail = route.name?.includes?.('BusinessDetail');
       const query = { ...route.query, ...globalBizsQueryParams };
       if (isBusinessDetail) {
         router.push({ path: route.path.split('/detail')[0], query });

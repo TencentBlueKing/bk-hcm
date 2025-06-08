@@ -29,7 +29,7 @@ interface Extra {
 
 export interface RouteMetaConfig {
   available?: boolean;
-  owner?: string;
+  owner?: symbol | string;
   title?: string;
   authKey?: string;
   view?: string;
@@ -38,7 +38,7 @@ export interface RouteMetaConfig {
   auth?: Auth;
   layout?: Layout;
   notMenu?: boolean;
-  activeKey?: string;
+  activeKey?: symbol | string;
   isShowBreadcrumb?: boolean;
   icon?: string;
 }
@@ -69,7 +69,6 @@ export default class Meta {
     });
 
     this.menu.i18n = this.title;
-    this.menu.relative = data.activeKey;
 
     this.menu = Object.assign(this.menu, data.menu);
 
