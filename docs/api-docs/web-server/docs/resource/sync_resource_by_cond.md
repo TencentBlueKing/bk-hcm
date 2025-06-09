@@ -10,11 +10,11 @@ POST /api/v1/cloud/vendors/{vendor}/accounts/{account_id}/resources/{res}/sync_b
 
 ### 输入参数
 
-| 参数名称       | 参数类型   | 必选 | 描述                                      |
-|------------|--------|----|-----------------------------------------|
-| vendor     | string | 是  | 云厂商                                     |
-| account_id | string | 是  | 账号ID                                    |
-| res        | string | 是  | 资源名称 目前仅支持 load_balancer,security_group |
+| 参数名称       | 参数类型   | 必选 | 描述                                                  |
+|------------|--------|----|-----------------------------------------------------|
+| vendor     | string | 是  | 云厂商                                                 |
+| account_id | string | 是  | 账号ID                                                |
+| res        | string | 是  | 资源名称 目前仅支持 security_group, load_balancer(仅支持tcloud) |
 
 #### vendor=tcloud
 

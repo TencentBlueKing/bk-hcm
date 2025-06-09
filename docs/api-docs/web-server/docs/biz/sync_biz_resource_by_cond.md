@@ -10,12 +10,12 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/accounts/{account_id}/resou
 
 ### 输入参数
 
-| 参数名称       | 参数类型   | 必选 | 描述                                      |
-|------------|--------|----|-----------------------------------------|
-| bk_biz_id  | int    | 是  | 同步业务                                    |
-| vendor     | string | 是  | 云厂商                                     |
-| account_id | string | 是  | 账号ID                                    |
-| res        | string | 是  | 资源名称 目前仅支持 load_balancer,security_group |
+| 参数名称       | 参数类型   | 必选 | 描述                                                  |
+|------------|--------|----|-----------------------------------------------------|
+| bk_biz_id  | int    | 是  | 同步业务                                                |
+| vendor     | string | 是  | 云厂商                                                 |
+| account_id | string | 是  | 账号ID                                                |
+| res        | string | 是  | 资源名称 目前仅支持 security_group, load_balancer(仅支持tcloud) |
 
 #### vendor=tcloud
 

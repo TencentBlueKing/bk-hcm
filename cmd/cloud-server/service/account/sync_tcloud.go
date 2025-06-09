@@ -20,6 +20,7 @@
 package account
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -80,7 +81,9 @@ func (a *accountSvc) tcloudCondSyncRes(cts *rest.Contexts, accountID string, res
 
 		}()
 
-		err = syncFunc(cts.Kit, a.client, syncParams)
+		kt := cts.Kit.NewSubKit()
+		kt.Ctx = context.Background()
+		err = syncFunc(kt, a.client, syncParams)
 		if err != nil {
 			logs.Errorf("[%s] conditional sync failed on resource(%s), err: %v, account: %s, req: %+v, "+
 				"cost: %s, rid: %s", err, enumor.TCloud, resType, accountID, req, time.Since(startAt), cts.Kit.Rid)
