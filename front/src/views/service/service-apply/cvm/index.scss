@@ -59,6 +59,41 @@
       z-index: 999;
     }
   }
+
+  .pwd-tips-mark {
+    margin-left: 4px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+}
+
+.pwd-tips-content-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  .pwd-tips-content-item {
+    display: flex;
+
+    .hcm-icon {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      height: 18px;
+    }
+  }
+
+  .hcm-icon {
+    margin-right: 8px;
+    font-size: 14px;
+
+    &.success {
+      color: #2dcb56;
+    }
+    &.error {
+      color: #ea3636;
+    }
+  }
 }
 
 .purchase-cvm-header-title {
@@ -105,9 +140,9 @@
 
       .purchase-cvm-bottom-bar-form-count-tip {
         margin-top: 4px;
-        color: #979BA5;
+        color: #979ba5;
         .purchase-cvm-bottom-bar-form-count-tip-num {
-          color: #3A84FF;
+          color: #3a84ff;
           font-weight: bold;
         }
       }
@@ -148,7 +183,7 @@
 
 .instance-name-tips {
   font-size: 12px;
-  color: #979BA5;
+  color: #979ba5;
   margin-top: 4px;
 }
 
@@ -157,7 +192,7 @@
   display: flex;
   align-items: center;
   .subnet-create-tips {
-    color: #EA3636;
+    color: #ea3636;
     margin-right: 4px;
     font-size: 12px;
   }
