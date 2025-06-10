@@ -19,6 +19,8 @@ spec:
     metadata:
       labels: {{- include "common.labels.standard" . | nindent 8 }}
     spec:
+      initContainers:
+      {{- include "bk-hcm.wait-for-pod-init-container" (list . (printf "%s-authserver" (include "bk-hcm.fullname" .)) "-lapp.kubernetes.io/name={{ .Chart.Name }},component=authserver") | nindent 8 }}
       containers:
         - name: auth-register
           image: {{ default .Values.global.imageRegistry .Values.image.registry}}/{{ .Values.authregister.image.repository }}:v{{ default .Values.image.tag .Values.authregister.image.tag }}
