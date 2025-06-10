@@ -253,12 +253,12 @@ func (svc *lbSvc) listTargetsByTGID(cts *rest.Contexts, validHandler handler.Val
 
 // ListTargetsHealthByTGID 查询业务下指定目标组绑定的负载均衡下的RS端口健康信息
 func (svc *lbSvc) ListTargetsHealthByTGID(cts *rest.Contexts) (interface{}, error) {
-	return svc.listTargetsHealthByTGID(cts, handler.BizOperateAuth)
+	return svc.listTargetsHealthByTGID(cts, handler.ResOperateAuth)
 }
 
 // ListBizTargetsHealthByTGID 查询资源下指定目标组负载均衡下的RS端口健康信息
 func (svc *lbSvc) ListBizTargetsHealthByTGID(cts *rest.Contexts) (interface{}, error) {
-	return svc.listTargetsHealthByTGID(cts, handler.ResOperateAuth)
+	return svc.listTargetsHealthByTGID(cts, handler.BizOperateAuth)
 }
 
 // listTargetsHealthByTGID 目标组绑定的负载均衡下的RS端口健康信息
