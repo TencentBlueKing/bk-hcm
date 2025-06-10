@@ -17,7 +17,7 @@ import useBatchDeleteLB from './useBatchDeleteLB';
 import { useBusinessStore, useResourceStore } from '@/store';
 // import utils
 import { getTableNewRowClass } from '@/common/util';
-import { asyncGetListenerCount } from '@/utils';
+import { asyncGetListenerCount, parseIP } from '@/utils';
 // import types
 import { CLB_STATUS_MAP, LB_NETWORK_TYPE_MAP } from '@/constants';
 import { DoublePlainObject } from '@/typings';
@@ -26,6 +26,7 @@ import Confirm from '@/components/confirm';
 import { useVerify } from '@/hooks';
 import { useGlobalPermissionDialog } from '@/store/useGlobalPermissionDialog';
 import { ResourceTypeEnum, VendorEnum, VendorMap } from '@/common/constant';
+import { ValidateValuesFunc } from 'bkui-vue/lib/search-select/utils';
 
 export default defineComponent({
   name: 'AllClbsManager',
@@ -63,6 +64,14 @@ export default defineComponent({
       });
     };
     const { columns, settings } = useColumns('lb');
+    const validateValues: ValidateValuesFunc = async (item, values) => {
+      if (!item) return '请选择条件';
+      if ('lb_vip' === item.id) {
+        const { IPv4List, IPv6List } = parseIP(values[0].id);
+        return Boolean(IPv4List.length || IPv6List.length) ? true : 'IP格式有误';
+      }
+      return true;
+    };
     const { CommonTable, getListData, dataList } = useTable({
       searchOptions: {
         searchData: [
@@ -101,6 +110,9 @@ export default defineComponent({
           },
           { id: 'cloud_vpc_id', name: '所属VPC' },
         ],
+        extra: {
+          validateValues,
+        },
       },
       tableOptions: {
         columns: [

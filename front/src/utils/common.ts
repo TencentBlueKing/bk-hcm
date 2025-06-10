@@ -1,5 +1,5 @@
 import isIP from 'validator/es/lib/isIP';
-import { AddressDescription, QueryFilterType, QueryRuleOPEnum } from '@/typings';
+import { AddressDescription, QueryRuleOPEnum, RulesItem } from '@/typings';
 import { isString } from 'lodash';
 /**
  * 获取实例的ip地址
@@ -80,12 +80,10 @@ const parseIP = (text: string) => {
 /**
  * @param value ip字符串 | ip字符串数组
  * @param networkType 网络类型 public | private
- * @returns {QueryFilterType} ip查询条件
+ * @returns {RulesItem} ip查询条件
  */
 const buildIPFilterRules = (value: string | string[], networkType: 'public' | 'private') => {
-  if (!value) return null;
-
-  const IPResult: QueryFilterType = { op: QueryRuleOPEnum.OR, rules: [] };
+  const IPResult: RulesItem = { op: QueryRuleOPEnum.OR, rules: [] };
   const IPv4Set = new Set<string>();
   const IPv6Set = new Set<string>();
 
@@ -116,8 +114,20 @@ const buildIPFilterRules = (value: string | string[], networkType: 'public' | 'p
     });
   }
 
-  // 如果没有合法IP，构建条件没有意义，直接返回null
-  return IPv4Set.size || IPv6Set.size ? IPResult : null;
+  return IPResult;
+};
+
+/**
+ * 构建VIP查询条件
+ * @param value ip字符串 | ip字符串数组
+ * @returns {RulesItem} ip查询条件
+ */
+const buildVIPFilterRules = (value: string | string[]): RulesItem => {
+  // 无法辨别value是私有还是公网，因此都要作为条件来查询
+  const privateIpResult = buildIPFilterRules(value, 'private');
+  const publicIpResult = buildIPFilterRules(value, 'public');
+
+  return { op: QueryRuleOPEnum.OR, rules: [...privateIpResult.rules, ...publicIpResult.rules] };
 };
 
 // 将值进行btoa编码
@@ -267,6 +277,7 @@ export {
   splitIP,
   parseIP,
   buildIPFilterRules,
+  buildVIPFilterRules,
   encodeValueByBtoa,
   decodeValueByAtob,
   analysisIP,
