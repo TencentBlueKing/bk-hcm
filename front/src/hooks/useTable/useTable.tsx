@@ -18,6 +18,7 @@ import usePagination from '../usePagination';
 import useBillStore from '@/store/useBillStore';
 import { defaults, isEqual } from 'lodash';
 import { fetchData } from '@pluginHandler/useTable';
+import { buildVIPFilterRules } from '@/utils';
 
 export interface IProp {
   // search-select 配置项
@@ -29,6 +30,7 @@ export interface IProp {
     // 其他 search-select 属性/自定义事件, 比如 placeholder, onSearch, searchSelectExtStyle...
     extra?: {
       searchSelectExtStyle?: Record<string, string>; // 搜索框样式
+      [key: string]: any;
     };
   };
   // table 配置项
@@ -264,7 +266,7 @@ export const useTable = (props: IProp) => {
    * 处理搜索条件, 有需要映射的字段需要转换
    * @param rule 待添加的搜索条件
    */
-  const resolveRule = (rule: RulesItem) => {
+  const resolveRule = (rule: RulesItem): RulesItem => {
     const { field, op, value } = rule;
     switch (field) {
       case 'vendor':
@@ -274,15 +276,7 @@ export const useTable = (props: IProp) => {
       case 'lb_type':
         return { field, op, value: LB_NETWORK_TYPE_REVERSE_MAP[value as string] || value };
       case 'lb_vip':
-        return {
-          op: QueryRuleOPEnum.OR,
-          rules: [
-            { field: 'private_ipv4_addresses', op: QueryRuleOPEnum.JSON_OVERLAPS, value: [value] },
-            { field: 'private_ipv6_addresses', op: QueryRuleOPEnum.JSON_OVERLAPS, value: [value] },
-            { field: 'public_ipv4_addresses', op: QueryRuleOPEnum.JSON_OVERLAPS, value: [value] },
-            { field: 'public_ipv6_addresses', op: QueryRuleOPEnum.JSON_OVERLAPS, value: [value] },
-          ],
-        };
+        return buildVIPFilterRules(value as string);
       case 'scheduler':
         return { field, op, value: SCHEDULER_REVERSE_MAP[value as string] || value };
       case 'binding_status':

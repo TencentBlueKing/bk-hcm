@@ -116,8 +116,11 @@ export const transformSimpleCondition = (
 
     if (property.meta?.search?.filterRules) {
       //* 如果是search-select，可能需要配合validateValues使用，避免无效请求
-      const rules = property.meta.search.filterRules(value);
-      rules && queryFilter.rules.push(rules);
+      const filterRules = property.meta.search.filterRules(value);
+      // 判断构建的条件是否有效，filterRules的结构为 { field, op, value } | { op, rules }
+      if (filterRules && (filterRules.value || filterRules.rules.length > 0)) {
+        queryFilter.rules.push(filterRules);
+      }
       continue;
     }
 
