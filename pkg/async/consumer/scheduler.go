@@ -134,7 +134,7 @@ func (sch *scheduler) scheduledFlowWatcher() {
 	for {
 		select {
 		case <-sch.closeCh:
-			pool.closeAndWait()
+			pool.shutdownPoolGracefully()
 			sch.workerWg.Done()
 			logs.Infof("received stop signal, stop watch scheduled flow job success.")
 			return
@@ -200,7 +200,7 @@ func (sch *scheduler) canceledFlowWatcher() {
 	for {
 		select {
 		case <-sch.closeCh:
-			pool.closeAndWait()
+			pool.shutdownPoolGracefully()
 			sch.workerWg.Done()
 			logs.Infof("received stop signal, stop watch canceled flow job success.")
 			return

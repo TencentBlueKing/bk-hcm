@@ -113,7 +113,7 @@ func (wd *watchDog) watchWrapper(do func(kt *kit.Kit) error) {
 	for {
 		select {
 		case <-wd.closeCh:
-			pool.closeAndWait()
+			pool.shutdownPoolGracefully()
 			wd.wg.Done()
 			logs.Infof("received stop signal, stop watch wrapper job success.")
 			return

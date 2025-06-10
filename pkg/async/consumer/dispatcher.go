@@ -85,7 +85,7 @@ func (d *Dispatcher) WatchPendingFlow() {
 	for {
 		select {
 		case <-d.closeCh:
-			pool.closeAndWait()
+			pool.shutdownPoolGracefully()
 			d.wg.Done()
 			logs.Infof("received stop signal, stop watch pending flow job success.")
 			return

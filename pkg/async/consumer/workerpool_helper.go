@@ -54,8 +54,8 @@ func (wp *workerPool) submit(tenantID string) {
 	wp.taskChan <- tenantID
 }
 
-// closeAndWait 关闭协程池，封装内部关闭逻辑，并等待所有协程退出
-func (wp *workerPool) closeAndWait() {
+// shutdownPoolGracefully 关闭协程池，封装内部关闭逻辑，并等待所有协程退出
+func (wp *workerPool) shutdownPoolGracefully() {
 	close(wp.taskChan)
 	wp.wg.Wait()
 }
