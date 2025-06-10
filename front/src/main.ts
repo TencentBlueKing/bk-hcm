@@ -2,6 +2,8 @@ import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import { gotoLoginPage } from '@/utils/login-helper';
 
+import 'reflect-metadata';
+
 import bus from './common/bus';
 import http from './http';
 import router from './router';

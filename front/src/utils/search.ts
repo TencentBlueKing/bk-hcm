@@ -2,7 +2,14 @@ import type { ParsedQs } from 'qs';
 import merge from 'lodash/merge';
 import { ModelPropertyGeneric, ModelPropertySearch, ModelPropertyType } from '@/model/typings';
 import { findProperty } from '@/model/utils';
-import { ISearchSelectValue, QueryFilterType, QueryFilterTypeLegacy, QueryRuleOPEnum, RulesItem } from '@/typings';
+import {
+  ISearchSelectValue,
+  QueryFilterType,
+  QueryFilterTypeLegacy,
+  QueryRuleOPEnum,
+  QueryRuleOPEnumLegacy,
+  RulesItem,
+} from '@/typings';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
@@ -43,12 +50,17 @@ export const getDefaultRule: GetDefaultRule = (property, custom) => {
 };
 
 export const convertValue = (
-  value: string | number | string[] | number[] | ParsedQs | ParsedQs[],
+  value: string | ParsedQs | (string | ParsedQs)[],
   property: ModelPropertySearch,
-  operator?: QueryRuleOPEnum,
+  operator?: QueryRuleOPEnum | QueryRuleOPEnumLegacy,
 ) => {
   const { type, format, meta } = property || {};
-  const { IN, JSON_OVERLAPS } = QueryRuleOPEnum;
+  const isArrayOperator = [
+    QueryRuleOPEnum.IN,
+    QueryRuleOPEnum.JSON_OVERLAPS,
+    QueryRuleOPEnumLegacy.IN,
+    QueryRuleOPEnumLegacy.JSON_OVERLAPS,
+  ].includes(operator);
 
   const formatter = format || meta?.search?.format;
   if (formatter) {
@@ -59,7 +71,7 @@ export const convertValue = (
     if (Array.isArray(value)) {
       return value.map((val) => Number(val));
     }
-    if ([IN, JSON_OVERLAPS].includes(operator) && !Array.isArray(value)) {
+    if (isArrayOperator && !Array.isArray(value)) {
       return [Number(value)];
     }
     return Number(value);
@@ -72,10 +84,8 @@ export const convertValue = (
     }
   }
 
-  if ([IN, JSON_OVERLAPS].includes(operator)) {
-    if (!Array.isArray(value)) {
-      return [value];
-    }
+  if (isArrayOperator && !Array.isArray(value)) {
+    return [value];
   }
 
   return value;
@@ -88,7 +98,7 @@ const createRuleItem = (
   field: string,
   value: any,
   property: ModelPropertyGeneric,
-  op: QueryRuleOPEnum,
+  op: QueryRuleOPEnum | QueryRuleOPEnumLegacy,
   legacy?: boolean,
 ): RulesItem => {
   return {

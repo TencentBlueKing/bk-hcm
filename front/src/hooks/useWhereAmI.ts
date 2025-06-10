@@ -9,7 +9,6 @@ export const useWhereAmI = (): {
   isResourcePage: boolean;
   isBusinessPage: boolean;
   isServicePage: boolean;
-  isWorkbenchPage: boolean;
   isSchemePage: boolean;
   getBusinessApiPath: () => string;
   getBizsId: () => number;
@@ -20,7 +19,6 @@ export const useWhereAmI = (): {
     if (/^\/resource\/.+$/.test(route?.path)) return Senarios.resource;
     if (/^\/business\/.+$/.test(route.path)) return Senarios.business;
     if (/^\/service\/.+$/.test(route.path)) return Senarios.service;
-    if (/^\/workbench\/.+$/.test(route.path)) return Senarios.workbench;
     if (/^\/scheme\/.+$/.test(route.path)) return Senarios.scheme;
     if (/^\/bill\/.+$/.test(route.path)) return Senarios.bill;
     if (/^\/403\/.+$/.test(route.path)) return Senarios.unauthorized;
@@ -46,7 +44,6 @@ export const useWhereAmI = (): {
     isResourcePage: senario.value === Senarios.resource,
     isBusinessPage: senario.value === Senarios.business,
     isServicePage: senario.value === Senarios.service,
-    isWorkbenchPage: senario.value === Senarios.workbench,
     isSchemePage: senario.value === Senarios.scheme,
     getBusinessApiPath,
     getBizsId,
@@ -57,7 +54,6 @@ export enum Senarios {
   business = 'business',
   resource = 'resource',
   service = 'service',
-  workbench = 'workbench',
   scheme = 'scheme',
   bill = 'bill',
   unknown = 'unknown',
