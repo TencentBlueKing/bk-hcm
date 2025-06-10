@@ -10,6 +10,7 @@ spec:
   selector:
     matchLabels:
       {{- include "common.labels.matchLabels" . | nindent 6 }}
+      component: accountserver
   template:
     metadata:
       labels:
