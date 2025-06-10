@@ -446,7 +446,7 @@ type ListListenerWithTargetsReq struct {
 	Vendor            enumor.Vendor       `json:"vendor" validate:"required,min=1"`
 	AccountID         string              `json:"account_id" validate:"required,min=1"`
 	ListenerQueryList []ListenerQueryItem `json:"rule_query_list" validate:"required,min=1,max=20"`
-	NewRsWeight       int64               `json:"new_rs_weight" validate:"omitempty"`
+	NewRsWeight       *int64              `json:"new_rs_weight" validate:"omitempty"`
 }
 
 // Validate request.
@@ -527,6 +527,7 @@ type ListBatchListenerResult struct {
 	Protocol     enumor.ProtocolType         `json:"protocol"`
 	Port         int64                       `json:"port"`
 	RsList       []*LoadBalancerTargetRsList `json:"rs_list"`
+	NewRsWeight  *int64                      `json:"new_rs_weight"`
 }
 
 // LoadBalancerTargetRsList 负载均衡下的RS列表

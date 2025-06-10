@@ -26,6 +26,7 @@ import (
 	"strings"
 
 	cloudCvm "hcm/pkg/api/core/cloud/cvm"
+	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
@@ -234,7 +235,14 @@ func (l *Layer7ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit,
 		return "", nil
 	}
 
-	lb, err := getTCloudLoadBalancer(kt, l.dataServiceCli, lbID)
+	var lb *corelb.LoadBalancer[corelb.TCloudClbExtension]
+	var err error
+	switch l.vendor {
+	case enumor.TCloud:
+		lb, err = getTCloudLoadBalancer(kt, l.dataServiceCli, lbID)
+	default:
+		return "", fmt.Errorf("layer7 listener bind rs preview validate, unsupported vendor: %s", l.vendor)
+	}
 	if err != nil {
 		return "", err
 	}

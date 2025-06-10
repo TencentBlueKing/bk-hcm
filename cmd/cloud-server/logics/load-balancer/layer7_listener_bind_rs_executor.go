@@ -126,7 +126,7 @@ func (c *Layer7ListenerBindRSExecutor) validate(kt *kit.Kit) error {
 
 	for _, detail := range c.details {
 		if detail.Status == NotExecutable {
-			return fmt.Errorf("record(%v) is not executable", detail)
+			return fmt.Errorf("layer7 listener bind rs failed, record is not executable: %+v", detail)
 		}
 	}
 
@@ -279,7 +279,7 @@ func (c *Layer7ListenerBindRSExecutor) buildFlowTask(kt *kit.Kit, lb corelb.Base
 	case enumor.TCloud:
 		return c.buildTCloudFlowTask(kt, lb, targetGroupID, details, generator, tgToListenerCloudIDs, tgToCloudRuleIDs)
 	default:
-		return nil, fmt.Errorf("not support vendor: %s", c.vendor)
+		return nil, fmt.Errorf("layer7 listener bind rs validate, not support vendor: %s", c.vendor)
 	}
 }
 

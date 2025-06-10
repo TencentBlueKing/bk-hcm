@@ -21,7 +21,6 @@
 package loadbalancer
 
 import (
-	"errors"
 	"fmt"
 
 	typeslb "hcm/pkg/adaptor/types/load-balancer"
@@ -81,15 +80,7 @@ func (svc *clbSvc) RegisterTargetToListenerRule(cts *rest.Contexts) (any, error)
 			Type:       cvt.ValToPtr(string(target.TargetType)),
 			Weight:     target.Weight,
 		}
-		switch target.TargetType {
-		case enumor.CvmInstType:
-			tmpRs.InstanceId = cvt.ValToPtr(target.CloudInstID)
-		case enumor.EniInstType:
-			// 跨域rs 通过EniIp参数指定为 ip
-			tmpRs.EniIp = cvt.ValToPtr(target.EniIp)
-		default:
-			return nil, errors.New(string("invalid target type: " + target.TargetType))
-		}
+		tmpRs = setTargetInstanceIDOrEniIP(target.TargetType, target.CloudInstID, target.EniIp, tmpRs)
 		// 只有七层规则才需要传该参数
 		if req.RuleType == enumor.Layer7RuleType {
 			tmpRs.LocationId = cvt.ValToPtr(req.CloudRuleID)
