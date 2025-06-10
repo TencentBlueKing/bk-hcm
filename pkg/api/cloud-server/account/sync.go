@@ -24,15 +24,25 @@ import (
 	"hcm/pkg/criteria/validator"
 )
 
-// TCloudResCondSyncReq sync condition
-type TCloudResCondSyncReq struct {
-	Regions  []string `json:"regions,omitempty" validate:"min=1,max=5"`
+// ResCondSyncReq sync condition
+type ResCondSyncReq struct {
+	Regions  []string `json:"regions,required" validate:"min=1,max=5"`
 	CloudIDs []string `json:"cloud_ids,omitempty" validate:"max=20"`
 
 	TagFilters core.MultiValueTagMap `json:"tag_filters,omitempty" validate:"max=5"`
 }
 
 // Validate ...
-func (r *TCloudResCondSyncReq) Validate() error {
+func (r *ResCondSyncReq) Validate() error {
+	return validator.Validate.Struct(r)
+}
+
+// AzureResCondSyncReq azure resource condition sync request
+type AzureResCondSyncReq struct {
+	ResourceGroupNames []string `json:"resource_group_names,required" validate:"min=1,max=5"`
+}
+
+// Validate ...
+func (r *AzureResCondSyncReq) Validate() error {
 	return validator.Validate.Struct(r)
 }
