@@ -27,6 +27,8 @@ export interface IAccountSelectorProps {
   placeholder?: string;
   optionDisabled?: (accountItem?: IAccountItem) => boolean;
   popoverMaxHeight?: number;
+  autoSelect?: boolean;
+  autoSelectSingle?: boolean;
 }
 
 export interface IAccountOption extends IAccountItem {
@@ -45,6 +47,8 @@ const props = withDefaults(defineProps<IAccountSelectorProps>(), {
   popoverMaxHeight: 360,
   optionDisabled: () => false,
   filter: filterPlugin.accountFilter.bind(filterPlugin),
+  autoSelect: false,
+  autoSelectSingle: true,
 });
 
 const emit =
@@ -64,10 +68,21 @@ const activeVendor = ref<VendorEnum>();
 const currentDisplayList = ref<IAccountOption[]>([]);
 const searchValue = ref('');
 const vendorListRef = ref<HTMLElement>();
+const filteredList = ref<IAccountItem[]>([]);
 
 const selected = computed({
   get() {
-    return model.value || undefined;
+    const val = model.value || undefined;
+    // 默认填充
+    if (!val && !props.disabled) {
+      if (
+        (filteredList.value.length === 1 && props.autoSelectSingle) ||
+        (filteredList.value.length > 1 && props.autoSelect)
+      ) {
+        return filteredList.value[0].id;
+      }
+    }
+    return val;
   },
   set(val) {
     model.value = val;
@@ -118,12 +133,12 @@ const handleSelectVendor = (vendor?: VendorEnum) => {
 watch(
   list,
   (newList) => {
-    let filteredList = newList;
+    filteredList.value = newList;
     if (props.filter) {
-      filteredList = props.filter?.(newList, { route, whereAmI, resourceType: props.resourceType });
+      filteredList.value = props.filter?.(newList, { route, whereAmI, resourceType: props.resourceType });
     }
     vendorAccountMap.value.clear();
-    filteredList.forEach((item) => {
+    filteredList.value.forEach((item) => {
       const newItem = { ...item, visible: true };
       if (vendorAccountMap.value.has(item.vendor)) {
         vendorAccountMap.value.get(item.vendor)?.push(newItem);
@@ -135,7 +150,7 @@ watch(
   { deep: true },
 );
 
-watch([model, list], ([newVal, newList], [oldVal]) => {
+watch([selected, list], ([newVal, newList], [oldVal]) => {
   const account = newList.find((item) => item.id === newVal);
   const oldAccount = list.value.find((item) => item.id === oldVal);
   emit('change', account, oldAccount, vendorAccountMap.value);
