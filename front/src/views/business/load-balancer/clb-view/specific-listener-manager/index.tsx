@@ -1,25 +1,16 @@
-import { defineComponent, onMounted, onUnmounted, ref, watch, watchEffect } from 'vue';
+import { defineComponent, h, ref, watch } from 'vue';
 // import components
-import { Tab } from 'bkui-vue';
 import DomainList from './domain-list';
 import ListenerDetail from './listener-detail';
+import TargetGroupView from './target-group/index.vue';
 import AddOrUpdateListenerSideslider from '../components/AddOrUpdateListenerSideslider';
 // import stores
 import { useBusinessStore, useLoadBalancerStore } from '@/store';
 // import hooks
 import useActiveTab from '@/hooks/useActiveTab';
 // import constants
-import { TRANSPORT_LAYER_LIST } from '@/constants';
-// import utils
-import bus from '@/common/bus';
+import { ListenerPanelEnum, TRANSPORT_LAYER_LIST } from '@/constants';
 import './index.scss';
-
-const { TabPanel } = Tab;
-
-enum TabTypeEnum {
-  list = 'list',
-  detail = 'detail',
-}
 
 export default defineComponent({
   name: 'SpecificListenerManager',
@@ -42,28 +33,25 @@ export default defineComponent({
     const { activeTab, handleActiveTabChange } = useActiveTab(props.type);
     const tabList = ref([]);
 
-    watchEffect(() => {
-      const { protocol } = props;
-      const isTransportLayer = TRANSPORT_LAYER_LIST.includes(protocol);
-      if (isTransportLayer) {
-        // 4层监听器没有下级资源，不显示域名信息
-        tabList.value = [{ name: TabTypeEnum.detail, label: '基本信息', component: ListenerDetail }];
-      } else {
-        tabList.value = [
-          { name: TabTypeEnum.list, label: '域名', component: DomainList },
-          { name: TabTypeEnum.detail, label: '基本信息', component: ListenerDetail },
-        ];
-      }
-    });
-
-    onMounted(() => {
-      // 切换至指定tab
-      bus.$on('changeSpecificListenerActiveTab', handleActiveTabChange);
-    });
-
-    onUnmounted(() => {
-      bus.$off('changeSpecificListenerActiveTab');
-    });
+    watch(
+      () => props.protocol,
+      (val) => {
+        const isTransportLayer = TRANSPORT_LAYER_LIST.includes(val);
+        if (isTransportLayer) {
+          // 4层监听器没有下级资源，不显示域名信息
+          tabList.value = [
+            { name: ListenerPanelEnum.TARGET_GROUP, label: '目标组', component: TargetGroupView },
+            { name: ListenerPanelEnum.DETAIL, label: '基本信息', component: ListenerDetail },
+          ];
+        } else {
+          tabList.value = [
+            { name: ListenerPanelEnum.LIST, label: '域名', component: DomainList },
+            { name: ListenerPanelEnum.DETAIL, label: '基本信息', component: ListenerDetail },
+          ];
+        }
+      },
+      { immediate: true },
+    );
 
     const getListenerDetail = async (id: String) => {
       // 监听器详情
@@ -82,19 +70,19 @@ export default defineComponent({
 
     return () => (
       <>
-        <Tab
+        <bk-tab
           class='manager-tab-wrap has-breadcrumb'
           v-model:active={activeTab.value}
+          // 这里使用key解决切换监听器后，协议变更而页面不更新问题
+          key={props.protocol}
           type='card-grid'
           onChange={handleActiveTabChange}>
           {tabList.value.map((tab) => (
-            <TabPanel key={tab.name} name={tab.name} label={tab.label}>
-              <div class='common-card-wrap'>
-                <tab.component {...props} />
-              </div>
-            </TabPanel>
+            <bk-tab-panel key={tab.name} name={tab.name} label={tab.label}>
+              <div class='common-card-wrap'>{h(tab.component, props)}</div>
+            </bk-tab-panel>
           ))}
-        </Tab>
+        </bk-tab>
         {/* 编辑监听器 */}
         <AddOrUpdateListenerSideslider originPage='listener' />
       </>
