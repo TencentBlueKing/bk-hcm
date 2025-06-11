@@ -27,6 +27,8 @@ export interface IAccountSelectorProps {
   placeholder?: string;
   optionDisabled?: (accountItem?: IAccountItem) => boolean;
   popoverMaxHeight?: number;
+  autoSelect?: boolean;
+  autoSelectSingle?: boolean;
 }
 
 export interface IAccountOption extends IAccountItem {
@@ -45,6 +47,8 @@ const props = withDefaults(defineProps<IAccountSelectorProps>(), {
   popoverMaxHeight: 360,
   optionDisabled: () => false,
   filter: filterPlugin.accountFilter.bind(filterPlugin),
+  autoSelect: false,
+  autoSelectSingle: true,
 });
 
 const emit =
@@ -131,6 +135,12 @@ watch(
         vendorAccountMap.value.set(item.vendor, [newItem]);
       }
     });
+    // 默认填充
+    if (!selected.value && !props.disabled) {
+      if ((newList.length === 1 && props.autoSelectSingle) || (newList.length > 1 && props.autoSelect)) {
+        selected.value = newList[0].id;
+      }
+    }
   },
   { deep: true },
 );
