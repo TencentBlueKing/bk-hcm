@@ -82,8 +82,24 @@ const clbFieldIds = {
   ],
   [TaskClbType.DELETE_LISTENER]: [...clbSopsBaseFieldIds, 'state', 'reason'],
   [TaskClbType.UNBIND_LAYER4_RS]: [...clbSopsBaseFieldIds, 'param.rs_list', 'state', 'reason'],
-  [TaskClbType.MODIFY_LAYER4_RS_WEIGHT]: [...clbSopsBaseFieldIds, 'state', 'reason'],
-  [TaskClbType.MODIFY_LAYER7_RS_WEIGHT]: [...clbSopsBaseFieldIds, 'state', 'reason'],
+  [TaskClbType.MODIFY_LAYER4_RS_WEIGHT]: [
+    ...clbSopsBaseFieldIds,
+    'param.rs_list.0.ip',
+    'param.rs_list.0.weight',
+    'param.new_rs_weight',
+    'state',
+    'reason',
+  ],
+  [TaskClbType.MODIFY_LAYER7_RS_WEIGHT]: [
+    ...clbSopsBaseFieldIds,
+    'param.rs_list.0.domain',
+    'param.rs_list.0.url',
+    'param.rs_list.0.ip',
+    'param.rs_list.0.weight',
+    'param.new_rs_weight',
+    'state',
+    'reason',
+  ],
 };
 
 const clbBaseRerunParamFieldIds = {
