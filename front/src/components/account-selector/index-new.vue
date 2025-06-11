@@ -68,7 +68,7 @@ const activeVendor = ref<VendorEnum>();
 const currentDisplayList = ref<IAccountOption[]>([]);
 const searchValue = ref('');
 const vendorListRef = ref<HTMLElement>();
-const filterList = ref<IAccountItem[]>([]);
+const filteredList = ref<IAccountItem[]>([]);
 
 const selected = computed({
   get() {
@@ -76,10 +76,10 @@ const selected = computed({
     // 默认填充
     if (!val && !props.disabled) {
       if (
-        (filterList.value.length === 1 && props.autoSelectSingle) ||
-        (filterList.value.length > 1 && props.autoSelect)
+        (filteredList.value.length === 1 && props.autoSelectSingle) ||
+        (filteredList.value.length > 1 && props.autoSelect)
       ) {
-        return filterList.value[0].id;
+        return filteredList.value[0].id;
       }
     }
     return val;
@@ -133,12 +133,12 @@ const handleSelectVendor = (vendor?: VendorEnum) => {
 watch(
   list,
   (newList) => {
-    let filteredList = newList;
+    filteredList.value = newList;
     if (props.filter) {
-      filteredList = props.filter?.(newList, { route, whereAmI, resourceType: props.resourceType });
+      filteredList.value = props.filter?.(newList, { route, whereAmI, resourceType: props.resourceType });
     }
     vendorAccountMap.value.clear();
-    filteredList.forEach((item) => {
+    filteredList.value.forEach((item) => {
       const newItem = { ...item, visible: true };
       if (vendorAccountMap.value.has(item.vendor)) {
         vendorAccountMap.value.get(item.vendor)?.push(newItem);
@@ -146,7 +146,6 @@ watch(
         vendorAccountMap.value.set(item.vendor, [newItem]);
       }
     });
-    filterList.value = filteredList;
   },
   { deep: true },
 );
