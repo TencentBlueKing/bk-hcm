@@ -159,4 +159,9 @@ export default [
     name: '参数校验',
     type: 'array',
   },
+  {
+    id: 'param.rs_list',
+    name: 'rs信息',
+    type: 'string',
+  },
 ] as ModelProperty[];
