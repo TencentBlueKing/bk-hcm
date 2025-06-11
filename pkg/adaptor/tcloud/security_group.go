@@ -338,9 +338,9 @@ func (t *TCloudImpl) SecurityGroupCvmBatchDisassociate(kt *kit.Kit,
 	return nil
 }
 
-// DescribeSecurityGroupAssociationStatistics describe security group association statistics.
+// DescribeSGAssociationStatistics describe security group association statistics.
 // reference: https://cloud.tencent.com/document/api/215/17799
-func (t *TCloudImpl) DescribeSecurityGroupAssociationStatistics(kt *kit.Kit, opt *securitygroup.TCloudListOption) (
+func (t *TCloudImpl) DescribeSGAssociationStatistics(kt *kit.Kit, opt *securitygroup.TCloudListOption) (
 	[]securitygroup.TCloudSecurityGroupAssociationStatistic, error) {
 
 	client, err := t.clientSet.VpcClient(opt.Region)

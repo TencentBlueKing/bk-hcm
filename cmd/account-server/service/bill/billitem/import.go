@@ -228,7 +228,7 @@ func (b *billItemSvc) ensurePullTasks(kt *kit.Kit, vendor enumor.Vendor,
 	for _, summaryMain := range summaryMainResults {
 		existDays := make([]int, 0)
 		for _, pullTask := range mapPullTasks[summaryMain.MainAccountID] {
-			if err = b.updatePullTaskStateToSplitAndResetDailySummaryFlowID(kt, pullTask.ID); err != nil {
+			if err = b.updateStateToSplitAndResetFlowID(kt, pullTask.ID); err != nil {
 				logs.Errorf("update pull task(%s) state failed, err: %v, rid: %s", pullTask.ID, err, kt.Rid)
 				return err
 			}
@@ -281,7 +281,7 @@ func newPullTaskCreateReqFromSummaryMain(summaryMain *dsbill.BillSummaryMain,
 	}
 }
 
-func (b *billItemSvc) updatePullTaskStateToSplitAndResetDailySummaryFlowID(kt *kit.Kit, taskID string) error {
+func (b *billItemSvc) updateStateToSplitAndResetFlowID(kt *kit.Kit, taskID string) error {
 	emptyFlowID := ""
 	updateReq := &dsbill.BillDailyPullTaskUpdateReq{
 		ID:                 taskID,

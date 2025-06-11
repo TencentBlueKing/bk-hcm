@@ -72,6 +72,7 @@ func InitNetInterfaceService(cap *capability.Capability) {
 	h.Load(cap.WebService)
 }
 
+// NetworkInterfaceSvc ...
 type NetworkInterfaceSvc struct {
 	dao dao.Set
 }

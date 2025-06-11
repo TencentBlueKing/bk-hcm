@@ -45,6 +45,7 @@ import (
 type SyncSGRuleOption struct {
 }
 
+// SGMapData ...
 type SGMapData struct {
 	ID     string
 	Region string

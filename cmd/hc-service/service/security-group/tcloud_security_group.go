@@ -697,7 +697,7 @@ func (g *securityGroup) TCloudListSecurityGroupStatistic(cts *rest.Contexts) (an
 		Region:   req.Region,
 		CloudIDs: converter.MapKeyToSlice(cloudIDToSgIDMap),
 	}
-	resp, err := client.DescribeSecurityGroupAssociationStatistics(cts.Kit, opt)
+	resp, err := client.DescribeSGAssociationStatistics(cts.Kit, opt)
 	if err != nil {
 		logs.Errorf("request adaptor to tcloud security group statistic failed, err: %v, opt: %v, rid: %s",
 			err, opt, cts.Kit.Rid)

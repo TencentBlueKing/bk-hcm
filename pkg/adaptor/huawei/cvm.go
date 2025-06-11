@@ -664,6 +664,39 @@ func (h *HuaWei) CreateCvm(kt *kit.Kit, opt *typecvm.HuaWeiCreateOption) (*polle
 	if err != nil {
 		return nil, err
 	}
+
+	req, err := buildCreateCvmReq(opt, chargingMode, volumeType)
+	if err != nil {
+		logs.Errorf("build create cvm request failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, fmt.Errorf("build create cvm request failed, err: %v", err)
+	}
+
+	resp, err := client.CreateServers(req)
+	if err != nil {
+		logs.Errorf("create huawei cvm failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	if opt.DryRun {
+		return new(poller.BaseDoneResult), nil
+	}
+
+	handler := &createCvmPollingHandler{
+		opt.Region,
+	}
+	respPoller := poller.Poller[*HuaWei, []model.ServerDetail, poller.BaseDoneResult]{Handler: handler}
+	result, err := respPoller.PollUntilDone(h, kt, converter.SliceToPtr(converter.PtrToVal(resp.ServerIds)),
+		types.NewBatchCreateCvmPollerOption())
+	if err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
+
+func buildCreateCvmReq(opt *typecvm.HuaWeiCreateOption, chargingMode model.PrePaidServerExtendParamChargingMode,
+	volumeType model.PrePaidServerRootVolumeVolumetype) (*model.CreateServersRequest, error) {
+
 	req := &model.CreateServersRequest{
 		XClientToken: opt.ClientToken,
 		Body: &model.CreateServersRequestBody{
@@ -734,50 +767,43 @@ func (h *HuaWei) CreateCvm(kt *kit.Kit, opt *typecvm.HuaWeiCreateOption) (*polle
 		}
 	}
 
-	if len(opt.CloudSecurityGroupIDs) != 0 {
-		req.Body.Server.SecurityGroups = new([]model.PrePaidServerSecurityGroup)
-		for _, sgID := range opt.CloudSecurityGroupIDs {
-			*req.Body.Server.SecurityGroups = append(*req.Body.Server.SecurityGroups, model.PrePaidServerSecurityGroup{
-				Id: converter.ValToPtr(sgID),
-			})
-		}
-	}
-
-	if len(opt.DataVolume) != 0 {
-		req.Body.Server.DataVolumes = new([]model.PrePaidServerDataVolume)
-		for _, one := range opt.DataVolume {
-			volType, err := one.VolumeType.DataVolumeType()
-			if err != nil {
-				return nil, err
-			}
-			*req.Body.Server.DataVolumes = append(*req.Body.Server.DataVolumes, model.PrePaidServerDataVolume{
-				Volumetype: volType,
-				Size:       one.SizeGB,
-			})
-		}
-	}
-
-	resp, err := client.CreateServers(req)
-	if err != nil {
-		logs.Errorf("create huawei cvm failed, err: %v, rid: %s", err, kt.Rid)
+	createCvmReqSetSecurityGroup(req, opt.CloudSecurityGroupIDs)
+	if err := createCvmReqSetDataVolume(req, opt.DataVolume); err != nil {
 		return nil, err
 	}
+	return req, nil
+}
 
-	if opt.DryRun {
-		return new(poller.BaseDoneResult), nil
+func createCvmReqSetSecurityGroup(req *model.CreateServersRequest, securityGroupIDs []string) {
+	if len(securityGroupIDs) == 0 {
+		return
+	}
+	req.Body.Server.SecurityGroups = new([]model.PrePaidServerSecurityGroup)
+	for _, sgID := range securityGroupIDs {
+		*req.Body.Server.SecurityGroups = append(*req.Body.Server.SecurityGroups, model.PrePaidServerSecurityGroup{
+			Id: converter.ValToPtr(sgID),
+		})
 	}
 
-	handler := &createCvmPollingHandler{
-		opt.Region,
-	}
-	respPoller := poller.Poller[*HuaWei, []model.ServerDetail, poller.BaseDoneResult]{Handler: handler}
-	result, err := respPoller.PollUntilDone(h, kt, converter.SliceToPtr(converter.PtrToVal(resp.ServerIds)),
-		types.NewBatchCreateCvmPollerOption())
-	if err != nil {
-		return nil, err
+}
+
+func createCvmReqSetDataVolume(req *model.CreateServersRequest, dataVolumes []typecvm.HuaWeiVolume) error {
+	if len(dataVolumes) == 0 {
+		return nil
 	}
 
-	return result, err
+	req.Body.Server.DataVolumes = new([]model.PrePaidServerDataVolume)
+	for _, one := range dataVolumes {
+		volType, err := one.VolumeType.DataVolumeType()
+		if err != nil {
+			return err
+		}
+		*req.Body.Server.DataVolumes = append(*req.Body.Server.DataVolumes, model.PrePaidServerDataVolume{
+			Volumetype: volType,
+			Size:       one.SizeGB,
+		})
+	}
+	return nil
 }
 
 type jobPollingHandler struct {

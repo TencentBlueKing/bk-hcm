@@ -413,18 +413,9 @@ func (b bill) AwsPutReportDefinition(kt *kit.Kit, accountID string,
 		curName += fmt.Sprintf("%s", time.Now().Format("20060102150405"))
 	}
 
-	opt := &typesBill.AwsBillPutReportDefinitionReq{
-		Bucket:           billInfo.Extension.Bucket,
-		Region:           billInfo.Extension.Region,
-		CurName:          curName,
-		CurPrefix:        aws.CurPrefix,
-		Format:           aws.CurFormat,
-		TimeUnit:         aws.CurTimeUnit,
-		Compression:      aws.CurCompression,
-		SchemaElements:   []*string{cvt.ValToPtr(aws.ResourceSchemaElement)},
-		Artifacts:        []*string{cvt.ValToPtr(aws.AthenaArtifact)},
-		ReportVersioning: aws.ReportVersioning,
-	}
+	opt := newAwsBillPutReportDefinitionReq(curName)
+	opt.Bucket = billInfo.Extension.Bucket
+	opt.Region = billInfo.Extension.Region
 	err = cli.PutReportDefinition(kt, opt)
 	if err != nil {
 		billReq := &protobill.AccountBillConfigBatchUpdateReq[cloud.AwsBillConfigExtension]{
@@ -449,12 +440,8 @@ func (b bill) AwsPutReportDefinition(kt *kit.Kit, accountID string,
 	}
 
 	// 更新
-	savePath := strings.ReplaceAll(aws.AthenaSavePath, "{BucketName}", opt.Bucket)
-	savePath = strings.ReplaceAll(savePath, "{CurPrefix}", opt.CurPrefix)
-	savePath = strings.ReplaceAll(savePath, "{CurName}", opt.CurName)
-	ymlURL := strings.ReplaceAll(aws.YmlURL, "{BucketName}", opt.Bucket)
-	ymlURL = strings.ReplaceAll(ymlURL, "{CurPrefix}", opt.CurPrefix)
-	ymlURL = strings.ReplaceAll(ymlURL, "{CurName}", opt.CurName)
+	savePath := fmt.Sprintf(aws.AthenaSavePath, opt.Bucket, opt.CurPrefix, opt.CurName)
+	ymlURL := fmt.Sprintf(aws.YmlURL, opt.Bucket, opt.CurPrefix, opt.CurName)
 	billReq := &protobill.AccountBillConfigBatchUpdateReq[cloud.AwsBillConfigExtension]{
 		Bills: []protobill.AccountBillConfigUpdateReq[cloud.AwsBillConfigExtension]{
 			{
@@ -485,6 +472,19 @@ func (b bill) AwsPutReportDefinition(kt *kit.Kit, accountID string,
 	billInfo.CloudDatabaseName = billReq.Bills[0].CloudDatabaseName
 	billInfo.CloudTableName = billReq.Bills[0].CloudTableName
 	return nil
+}
+
+func newAwsBillPutReportDefinitionReq(curName string) *typesBill.AwsBillPutReportDefinitionReq {
+	return &typesBill.AwsBillPutReportDefinitionReq{
+		CurName:          curName,
+		CurPrefix:        aws.CurPrefix,
+		Format:           aws.CurFormat,
+		TimeUnit:         aws.CurTimeUnit,
+		Compression:      aws.CurCompression,
+		SchemaElements:   []*string{cvt.ValToPtr(aws.ResourceSchemaElement)},
+		Artifacts:        []*string{cvt.ValToPtr(aws.AthenaArtifact)},
+		ReportVersioning: aws.ReportVersioning,
+	}
 }
 
 // CheckCrawlerCfnYml check crawler-cfn.yml.

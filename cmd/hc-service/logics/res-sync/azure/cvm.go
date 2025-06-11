@@ -53,6 +53,7 @@ func (opt SyncCvmOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
+// Cvm ...
 func (cli *client) Cvm(kt *kit.Kit, params *SyncBaseParams, opt *SyncCvmOption) (*SyncResult, error) {
 	if err := validator.ValidateTool(params, opt); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -167,8 +168,6 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, resGroupName string,
 		return fmt.Errorf("cvm addSlice is <= 0, not create")
 	}
 
-	lists := make([]dataproto.CvmBatchCreate[corecvm.AzureCvmExtension], 0)
-
 	niMap := make(map[string]string)
 	niIDs := make([]string, 0)
 	cloudImageIDs := make([]string, 0)
@@ -200,15 +199,40 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, resGroupName string,
 		return err
 	}
 
+	lists, err := buildCvmCreateReqList(addSlice, vpcMap, subnetMap, imageMap, cloudMap, resGroupName, accountID)
+	if err != nil {
+		logs.Errorf("[%s] build cvm create request list failed, err: %v, accountID: %s, rid: %s", enumor.Azure,
+			err, accountID, kt.Rid)
+		return err
+	}
+	createReq := dataproto.CvmBatchCreateReq[corecvm.AzureCvmExtension]{
+		Cvms: lists,
+	}
+	_, err = cli.dbCli.Azure.Cvm.BatchCreateCvm(kt.Ctx, kt.Header(), &createReq)
+	if err != nil {
+		logs.Errorf("[%s] request dataservice to create azure cvm failed, err: %v, rid: %s", enumor.Azure,
+			err, kt.Rid)
+		return err
+	}
+
+	logs.Infof("[%s] sync cvm to create cvm success, accountID: %s, count: %d, rid: %s", enumor.Azure,
+		accountID, len(addSlice), kt.Rid)
+
+	return nil
+}
+
+func buildCvmCreateReqList(addSlice []typescvm.AzureCvm, vpcMap map[string]*common.VpcDB,
+	subnetMap map[string][]string, imageMap map[string]string, cloudMap map[string]*CloudData, resGroupName,
+	accountID string) ([]protocloud.CvmBatchCreate[corecvm.AzureCvmExtension], error) {
+
+	lists := make([]dataproto.CvmBatchCreate[corecvm.AzureCvmExtension], 0)
 	for _, one := range addSlice {
 		if _, exsit := vpcMap[converter.PtrToVal(one.ID)]; !exsit {
-			return fmt.Errorf("cvm: %s not found vpc", converter.PtrToVal(one.ID))
+			return nil, fmt.Errorf("cvm: %s not found vpc", converter.PtrToVal(one.ID))
 		}
-
 		if _, exsit := subnetMap[converter.PtrToVal(one.ID)]; !exsit {
-			return fmt.Errorf("cvm: %s not found subnets", converter.PtrToVal(one.ID))
+			return nil, fmt.Errorf("cvm: %s not found subnets", converter.PtrToVal(one.ID))
 		}
-
 		imageID := ""
 		if id, exsit := imageMap[converter.PtrToVal(one.CloudImageID)]; exsit {
 			imageID = id
@@ -271,24 +295,9 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, resGroupName string,
 				Zones: converter.PtrToSlice(one.Zones),
 			},
 		}
-
 		lists = append(lists, cvm)
 	}
-
-	createReq := dataproto.CvmBatchCreateReq[corecvm.AzureCvmExtension]{
-		Cvms: lists,
-	}
-	_, err = cli.dbCli.Azure.Cvm.BatchCreateCvm(kt.Ctx, kt.Header(), &createReq)
-	if err != nil {
-		logs.Errorf("[%s] request dataservice to create azure cvm failed, err: %v, rid: %s", enumor.Azure,
-			err, kt.Rid)
-		return err
-	}
-
-	logs.Infof("[%s] sync cvm to create cvm success, accountID: %s, count: %d, rid: %s", enumor.Azure,
-		accountID, len(addSlice), kt.Rid)
-
-	return nil
+	return lists, nil
 }
 
 func (cli *client) updateCvm(kt *kit.Kit, accountID string, resGroupName string,
@@ -298,7 +307,7 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, resGroupName string,
 		return fmt.Errorf("cvm updateMap is <= 0, not update")
 	}
 
-	lists := make([]dataproto.CvmBatchUpdate[corecvm.AzureCvmExtension], 0)
+	lists := make([]dataproto.CvmBatchUpdateWithExtension[corecvm.AzureCvmExtension], 0)
 
 	niMap := make(map[string]string)
 	niIDs := make([]string, 0)
@@ -345,26 +354,28 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, resGroupName string,
 			imageID = id
 		}
 
-		cvm := dataproto.CvmBatchUpdate[corecvm.AzureCvmExtension]{
-			ID:             id,
-			Name:           converter.PtrToVal(one.Name),
-			CloudVpcIDs:    []string{vpcMap[converter.PtrToVal(one.ID)].VpcCloudID},
-			VpcIDs:         []string{vpcMap[converter.PtrToVal(one.ID)].VpcID},
-			CloudSubnetIDs: cloudMap[converter.PtrToVal(one.ID)].CloudSubnetIDs,
-			SubnetIDs:      subnetMap[converter.PtrToVal(one.ID)],
-			CloudImageID:   converter.PtrToVal(one.CloudImageID),
-			ImageID:        imageID,
-			// 云上不支持该字段
-			Memo:                 nil,
-			Status:               converter.PtrToVal(one.Status),
-			PrivateIPv4Addresses: cloudMap[converter.PtrToVal(one.ID)].PrivateIPv4Addresses,
-			PrivateIPv6Addresses: cloudMap[converter.PtrToVal(one.ID)].PrivateIPv6Addresses,
-			PublicIPv4Addresses:  cloudMap[converter.PtrToVal(one.ID)].PublicIPv4Addresses,
-			PublicIPv6Addresses:  cloudMap[converter.PtrToVal(one.ID)].PublicIPv6Addresses,
-			// 云上不支持该字段
-			CloudLaunchedTime: "",
-			// 云上不支持该字段
-			CloudExpiredTime: "",
+		cvm := dataproto.CvmBatchUpdateWithExtension[corecvm.AzureCvmExtension]{
+			CvmBatchUpdate: dataproto.CvmBatchUpdate{
+				ID:             id,
+				Name:           converter.PtrToVal(one.Name),
+				CloudVpcIDs:    []string{vpcMap[converter.PtrToVal(one.ID)].VpcCloudID},
+				VpcIDs:         []string{vpcMap[converter.PtrToVal(one.ID)].VpcID},
+				CloudSubnetIDs: cloudMap[converter.PtrToVal(one.ID)].CloudSubnetIDs,
+				SubnetIDs:      subnetMap[converter.PtrToVal(one.ID)],
+				CloudImageID:   converter.PtrToVal(one.CloudImageID),
+				ImageID:        imageID,
+				// 云上不支持该字段
+				Memo:                 nil,
+				Status:               converter.PtrToVal(one.Status),
+				PrivateIPv4Addresses: cloudMap[converter.PtrToVal(one.ID)].PrivateIPv4Addresses,
+				PrivateIPv6Addresses: cloudMap[converter.PtrToVal(one.ID)].PrivateIPv6Addresses,
+				PublicIPv4Addresses:  cloudMap[converter.PtrToVal(one.ID)].PublicIPv4Addresses,
+				PublicIPv6Addresses:  cloudMap[converter.PtrToVal(one.ID)].PublicIPv6Addresses,
+				// 云上不支持该字段
+				CloudLaunchedTime: "",
+				// 云上不支持该字段
+				CloudExpiredTime: "",
+			},
 			Extension: &corecvm.AzureCvmExtension{
 				ResourceGroupName: resGroupName,
 				AdditionalCapabilities: &corecvm.AzureAdditionalCapabilities{
@@ -605,6 +616,7 @@ func (cli *client) deleteCvm(kt *kit.Kit, accountID string, resGroupName string,
 	return nil
 }
 
+// RemoveCvmDeleteFromCloud ...
 func (cli *client) RemoveCvmDeleteFromCloud(kt *kit.Kit, accountID string, resGroupName string) error {
 	req := &protocloud.CvmListReq{
 		Field: []string{"id", "cloud_id"},
@@ -678,27 +690,21 @@ func isCvmChange(cloud typescvm.AzureCvm, db corecvm.Cvm[cvm.AzureCvmExtension])
 	if db.CloudID != converter.PtrToVal(cloud.ID) {
 		return true
 	}
-
 	if db.Name != converter.PtrToVal(cloud.Name) {
 		return true
 	}
-
 	if db.CloudImageID != converter.PtrToVal(cloud.CloudImageID) {
 		return true
 	}
-
 	if db.OsName != converter.PtrToVal(cloud.ComputerName) {
 		return true
 	}
-
 	if db.Status != converter.PtrToVal(cloud.Status) {
 		return true
 	}
-
 	if db.MachineType != string(converter.PtrToVal(cloud.VMSize)) {
 		return true
 	}
-
 	if db.Extension.AdditionalCapabilities != nil {
 		if !assert.IsPtrBoolEqual(db.Extension.AdditionalCapabilities.HibernationEnabled,
 			cloud.HibernationEnabled) {
@@ -717,38 +723,30 @@ func isCvmChange(cloud typescvm.AzureCvm, db corecvm.Cvm[cvm.AzureCvmExtension])
 			return true
 		}
 	}
-
 	if !assert.IsPtrStringEqual(db.Extension.EvictionPolicy,
 		(*string)(cloud.EvictionPolicy)) {
 		return true
 	}
-
 	if !assert.IsPtrStringEqual(db.Extension.LicenseType, cloud.LicenseType) {
 		return true
 	}
-
 	if !assert.IsPtrStringEqual(db.Extension.Priority,
 		(*string)(cloud.Priority)) {
 		return true
 	}
-
 	if !assert.IsStringSliceEqual(db.Extension.Zones, converter.PtrToSlice(cloud.Zones)) {
 		return true
 	}
-
 	if db.Extension.StorageProfile.CloudOsDiskID != cloud.CloudOsDiskID {
 		return true
 	}
-
 	if !assert.IsStringSliceEqual(db.Extension.StorageProfile.CloudDataDiskIDs, cloud.CloudDataDiskIDs) {
 		return true
 	}
-
 	if !assert.IsPtrStringEqual(db.Extension.HardwareProfile.VmSize,
 		(*string)(cloud.VMSize)) {
 		return true
 	}
-
 	if db.Extension.HardwareProfile.VmSizeProperties != nil {
 		if !assert.IsPtrInt32Equal(db.Extension.HardwareProfile.VmSizeProperties.VCPUsAvailable,
 			cloud.VCPUsAvailable) {
@@ -760,6 +758,5 @@ func isCvmChange(cloud typescvm.AzureCvm, db corecvm.Cvm[cvm.AzureCvmExtension])
 			return true
 		}
 	}
-
 	return false
 }

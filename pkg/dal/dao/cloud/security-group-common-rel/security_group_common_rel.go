@@ -149,7 +149,7 @@ func (dao Dao) ListJoinCVM(kt *kit.Kit, sgIDs []string, opt *types.ListOption) (
 	}
 
 	sql := fmt.Sprintf(`SELECT %s, %s, t.vendor AS vendor,t.reviser AS reviser,t.updated_at AS updated_at 
-        FROM %s AS rel LEFT JOIN %s AS t ON rel.res_id = t.id %s %s`,
+		FROM %s AS rel LEFT JOIN %s AS t ON rel.res_id = t.id %s %s`,
 		cvmtable.TableColumns.FieldsNamedExprWithout(withoutFields),
 		tools.BaseRelJoinSqlBuild("rel", "t", "id", "security_group_id"),
 		table.SecurityGroupCommonRelTable, table.CvmTable, whereExpr, pageExpr)
@@ -212,7 +212,7 @@ func (dao Dao) ListJoinLoadBalancer(kt *kit.Kit, sgIDs []string, opt *types.List
 	}
 
 	sql := fmt.Sprintf(`SELECT %s, %s, t.vendor AS vendor,t.reviser AS reviser,t.updated_at AS updated_at 
-        FROM %s AS rel LEFT JOIN %s AS t ON rel.res_id = t.id %s %s`,
+		FROM %s AS rel LEFT JOIN %s AS t ON rel.res_id = t.id %s %s`,
 		lbtable.LoadBalancerColumns.FieldsNamedExprWithout(withoutFields),
 		tools.BaseRelJoinSqlBuild("rel", "t", "id", "security_group_id"),
 		table.SecurityGroupCommonRelTable, table.LoadBalancerTable, whereExpr, pageExpr)

@@ -29,7 +29,9 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/concurrence"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v5"
@@ -146,18 +148,15 @@ func (az *Azure) ListCvmByID(kt *kit.Kit, opt *core.AzureListByIDOption) ([]*typ
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list option is required")
 	}
-
 	if err := opt.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-
 	client, err := az.clientSet.virtualMachineClient()
 	if err != nil {
 		return nil, fmt.Errorf("new cvm client failed, err: %v", err)
 	}
 
 	idMap := converter.StringSliceToMap(opt.CloudIDs)
-
 	vms := make([]*armcompute.VirtualMachine, 0, len(idMap))
 	pager := client.NewListPager(opt.ResourceGroupName, nil)
 	for pager.More() {
@@ -183,7 +182,6 @@ func (az *Azure) ListCvmByID(kt *kit.Kit, opt *core.AzureListByIDOption) ([]*typ
 
 							cvm.Status = converter.ValToPtr(status)
 						}
-
 						return cvms, nil
 					}
 				}
@@ -193,49 +191,26 @@ func (az *Azure) ListCvmByID(kt *kit.Kit, opt *core.AzureListByIDOption) ([]*typ
 		}
 	}
 
-	cvmNames := make([]string, 0)
 	cvms := converterToAzureCvm(vms)
-	for _, cvm := range cvms {
-		cvmNames = append(cvmNames, *cvm.Name)
-	}
+	cvmNames := slice.Map(cvms, func(one *typecvm.AzureCvm) string {
+		return converter.PtrToVal(one.Name)
+	})
 
 	lock := new(sync.Mutex)
-	cvmStatusMap := make(map[string]string, 0)
-
-	pipeline := make(chan bool, 30)
-	var firstErr error
-	var wg sync.WaitGroup
-	for _, param := range cvmNames {
-		pipeline <- true
-		wg.Add(1)
-
-		go func(param string) {
-			defer func() {
-				wg.Done()
-				<-pipeline
-			}()
-
-			status, err := az.GetCvmStatus(kt, opt.ResourceGroupName, param)
-			if err != nil {
-				logs.Errorf("get cvm status failed, err: %v, rid: %s", err, kt.Rid)
-			}
-
-			if firstErr == nil && err != nil {
-				firstErr = err
-				return
-			}
-
-			lock.Lock()
-			defer lock.Unlock()
-			cvmStatusMap[param] = status
-
-		}(param)
-	}
-
-	wg.Wait()
-
-	if firstErr != nil {
-		return nil, firstErr
+	cvmStatusMap := make(map[string]string)
+	concurrencyErr := concurrence.BaseExec(30, cvmNames, func(param string) error {
+		status, err := az.GetCvmStatus(kt, opt.ResourceGroupName, param)
+		if err != nil {
+			logs.Errorf("get cvm status failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+		lock.Lock()
+		defer lock.Unlock()
+		cvmStatusMap[param] = status
+		return nil
+	})
+	if concurrencyErr != nil {
+		return nil, concurrencyErr
 	}
 
 	for _, cvm := range cvms {
@@ -246,7 +221,6 @@ func (az *Azure) ListCvmByID(kt *kit.Kit, opt *core.AzureListByIDOption) ([]*typ
 
 		cvm.Status = converter.ValToPtr(status)
 	}
-
 	return cvms, nil
 }
 
@@ -292,17 +266,13 @@ func converterToAzureCvm(vms []*armcompute.VirtualMachine) []*typecvm.AzureCvm {
 				}
 			}
 		}
-
 		if v.Properties.OSProfile != nil {
 			tmp.ComputerName = v.Properties.OSProfile.ComputerName
 		}
-
 		tmp.EvictionPolicy = v.Properties.EvictionPolicy
-
 		if v.Properties.HardwareProfile != nil {
 			tmp.VMSize = v.Properties.HardwareProfile.VMSize
 		}
-
 		tmp.LicenseType = v.Properties.LicenseType
 
 		tmp.NetworkInterfaceIDs = make([]string, 0)
@@ -322,18 +292,14 @@ func converterToAzureCvm(vms []*armcompute.VirtualMachine) []*typecvm.AzureCvm {
 			tmp.HibernationEnabled = v.Properties.AdditionalCapabilities.HibernationEnabled
 			tmp.UltraSSDEnabled = v.Properties.AdditionalCapabilities.UltraSSDEnabled
 		}
-
 		if v.Properties.BillingProfile != nil {
 			tmp.MaxPrice = v.Properties.BillingProfile.MaxPrice
 		}
-
 		if v.Properties.HardwareProfile.VMSizeProperties != nil {
 			tmp.VCPUsAvailable = v.Properties.HardwareProfile.VMSizeProperties.VCPUsAvailable
 			tmp.VCPUsPerCore = v.Properties.HardwareProfile.VMSizeProperties.VCPUsPerCore
 		}
-
 		tmp.TimeCreated = v.Properties.TimeCreated
-
 		results = append(results, tmp)
 	}
 
@@ -499,6 +465,27 @@ func (az *Azure) CreateCvm(kt *kit.Kit, opt *typecvm.AzureCreateOption) (string,
 		}
 	}
 
+	instance := buildCreateCvmInstance(opt, publicIPCfg, dataDisk)
+
+	poller, err := client.BeginCreateOrUpdate(kt.Ctx, opt.ResourceGroupName, opt.Name, instance, nil)
+	if err != nil {
+		logs.Errorf("begin create cvm failed, err: %v, rid: %s", err, kt.Rid)
+		return "", errorf(err)
+	}
+
+	resp, err := poller.PollUntilDone(kt.Ctx, nil)
+	if err != nil {
+		logs.Errorf("poll until cvm create failed, err: %v, rid: %s", err, kt.Rid)
+		return "", err
+	}
+
+	return SPtrToLowerStr(resp.ID), nil
+}
+
+func buildCreateCvmInstance(opt *typecvm.AzureCreateOption,
+	publicIPCfg *armcompute.VirtualMachinePublicIPAddressConfiguration,
+	dataDisk []*armcompute.DataDisk) armcompute.VirtualMachine {
+
 	instance := armcompute.VirtualMachine{
 		Location: to.Ptr(opt.Region),
 		Properties: &armcompute.VirtualMachineProperties{
@@ -559,19 +546,8 @@ func (az *Azure) CreateCvm(kt *kit.Kit, opt *typecvm.AzureCreateOption) (string,
 	if len(opt.Zones) != 0 {
 		instance.Zones = to.SliceOfPtrs(opt.Zones...)
 	}
-	poller, err := client.BeginCreateOrUpdate(kt.Ctx, opt.ResourceGroupName, opt.Name, instance, nil)
-	if err != nil {
-		logs.Errorf("begin create cvm failed, err: %v, rid: %s", err, kt.Rid)
-		return "", errorf(err)
-	}
 
-	resp, err := poller.PollUntilDone(kt.Ctx, nil)
-	if err != nil {
-		logs.Errorf("poll until cvm create failed, err: %v, rid: %s", err, kt.Rid)
-		return "", err
-	}
-
-	return SPtrToLowerStr(resp.ID), nil
+	return instance
 }
 
 // GetCvm 查询单个 cvm

@@ -26,6 +26,7 @@ import (
 	"hcm/pkg/iam/auth"
 )
 
+// ApplicationOfAddAccount ...
 type ApplicationOfAddAccount struct {
 	handlers.BaseApplicationHandler
 

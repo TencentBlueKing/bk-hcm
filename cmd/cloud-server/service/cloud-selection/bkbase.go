@@ -466,10 +466,10 @@ func (svc *service) listAllAvgProvincePingList(kt *kit.Kit, table string, startD
 
 	sql := fmt.Sprintf(`SELECT country, province, idc_name, avg(avg_ping) AS latency 
 		FROM %s
-        WHERE thedate >= '%s'  AND bk_biz_id = %d AND idc_name IN ('%s') 
-        GROUP BY country,province,idc_name 
-        ORDER BY country,province,idc_name 
-        LIMIT %d OFFSET %d `,
+		WHERE thedate >= '%s'  AND bk_biz_id = %d AND idc_name IN ('%s') 
+		GROUP BY country,province,idc_name 
+		ORDER BY country,province,idc_name 
+		LIMIT %d OFFSET %d `,
 		table, startDate, idcBizId, strings.Join(idcNames, "','"), page.Limit, page.Start)
 
 	return bkbase.QuerySql[coresel.ProvinceToIDCLatency](svc.bkBase, kt, sql)

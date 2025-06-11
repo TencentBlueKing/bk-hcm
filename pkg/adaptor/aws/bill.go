@@ -73,9 +73,11 @@ const (
 	DatabaseNamePrefix    = "athenacurcfn"
 	CapabilitiesIam       = "CAPABILITY_IAM"
 	BucketRegion          = endpoints.UsEast1RegionID
-	AthenaSavePath        = "s3://{BucketName}/{CurPrefix}/{CurName}/QueryLog"
-	CrawlerCfnFileKey     = "/%s/%s/crawler-cfn.yml"
-	YmlURL                = "https://{BucketName}.s3.amazonaws.com/{CurPrefix}/{CurName}/crawler-cfn.yml"
+	// AthenaSavePath s3://{BucketName}/{CurPrefix}/{CurName}/QueryLog
+	AthenaSavePath    = "s3://%s/%s/%s/QueryLog"
+	CrawlerCfnFileKey = "/%s/%s/crawler-cfn.yml"
+	// YmlURL https://{BucketName}.s3.amazonaws.com/{CurPrefix}/{CurName}/crawler-cfn.yml
+	YmlURL = "https://%s.s3.amazonaws.com/%s/%s/crawler-cfn.yml"
 )
 
 const (
@@ -809,7 +811,7 @@ func (a *Aws) AwsListRootOutsideMonthBill(kt *kit.Kit, opt *typesBill.AwsMainOut
 	condition += fmt.Sprintf(" AND year = '%d'", opt.Year)
 	condition += fmt.Sprintf(" AND month = '%d'", opt.Month)
 	condition += fmt.Sprintf(`AND (date(line_item_usage_start_date) < date '%d-%02d-01' 
-      	OR date(line_item_usage_start_date) >= date '%d-%02d-01')`,
+		OR date(line_item_usage_start_date) >= date '%d-%02d-01')`,
 		opt.Year, opt.Month, nextBillMonthYear, nextBillMonth)
 
 	if len(opt.UsageAccountIDs) > 0 {
@@ -844,7 +846,7 @@ func (a *Aws) AwsRootBillListByQueryFields(kt *kit.Kit, opt *typesBill.AwsRootDe
 	}
 	if opt.BeginDate != "" && opt.EndDate != "" {
 		condition += fmt.Sprintf(`AND (date(line_item_usage_start_date) >= date '%s' 
-      	AND date(line_item_usage_start_date) <= date '%s')`, opt.BeginDate, opt.EndDate)
+		AND date(line_item_usage_start_date) <= date '%s')`, opt.BeginDate, opt.EndDate)
 	}
 	if len(opt.FieldsMap) > 0 {
 		for key, values := range opt.FieldsMap {

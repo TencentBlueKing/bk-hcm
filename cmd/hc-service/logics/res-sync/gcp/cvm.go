@@ -58,6 +58,7 @@ func (opt SyncCvmOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
+// Cvm ...
 func (cli *client) Cvm(kt *kit.Kit, params *SyncBaseParams, opt *SyncCvmOption) (*SyncResult, error) {
 	if err := validator.ValidateTool(params, opt); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -108,14 +109,40 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string, zone 
 		return fmt.Errorf("cvm addSlice is <= 0, not create")
 	}
 
-	lists := make([]dataproto.CvmBatchCreate[corecvm.GcpCvmExtension], 0)
-
 	vpcMap, subnetMap, diskMap, vpcSelfLinks,
 		subnetSelfLinks, imageMap, err := cli.getNIAssResMapBySelfLinkFromNI(kt, accountID, region, zone, addSlice)
 	if err != nil {
 		return err
 	}
 
+	lists, err := buildCvmCreateReqList(addSlice, accountID, region, zone, vpcMap, subnetMap, diskMap, vpcSelfLinks,
+		subnetSelfLinks, imageMap)
+	if err != nil {
+		logs.Errorf("[%s] build cvm create req list failed, err: %v, rid: %s", enumor.Gcp, err, kt.Rid)
+		return err
+	}
+	createReq := dataproto.CvmBatchCreateReq[corecvm.GcpCvmExtension]{
+		Cvms: lists,
+	}
+	_, err = cli.dbCli.Gcp.Cvm.BatchCreateCvm(kt.Ctx, kt.Header(), &createReq)
+	if err != nil {
+		logs.Errorf("[%s] request dataservice to create gcp cvm failed, err: %v, rid: %s", enumor.Gcp,
+			err, kt.Rid)
+		return err
+	}
+
+	logs.Infof("[%s] sync cvm to create cvm success, accountID: %s, count: %d, rid: %s", enumor.Gcp,
+		accountID, len(addSlice), kt.Rid)
+
+	return nil
+}
+
+func buildCvmCreateReqList(addSlice []typescvm.GcpCvm, accountID, region, zone string,
+	vpcMap map[string]*common.VpcDB, subnetMap map[string]*SubnetDB, diskMap map[string]string,
+	vpcSelfLinks []string, subnetSelfLinks []string, imageMap map[string]string) (
+	[]protocloud.CvmBatchCreate[corecvm.GcpCvmExtension], error) {
+
+	lists := make([]dataproto.CvmBatchCreate[corecvm.GcpCvmExtension], 0)
 	for _, one := range addSlice {
 		inVpcSelfLinks := make([]string, 0)
 		inSubnetSelfLinks := make([]string, 0)
@@ -132,7 +159,7 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string, zone 
 		}
 
 		if _, exsit := vpcMap[inVpcSelfLinks[0]]; !exsit {
-			return fmt.Errorf("cvm %s can not find vpc", fmt.Sprint(one.Id))
+			return nil, fmt.Errorf("cvm %s can not find vpc", fmt.Sprint(one.Id))
 		}
 
 		subnetIDs := make([]string, 0)
@@ -148,7 +175,7 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string, zone 
 		for _, v := range one.Disks {
 			cloudID, exist := diskMap[v.Source]
 			if !exist {
-				return fmt.Errorf("cvm: %d not found disk: %s in db", one.Id, v.Source)
+				return nil, fmt.Errorf("cvm: %d not found disk: %s in db", one.Id, v.Source)
 			}
 
 			tmp := corecvm.GcpAttachedDisk{
@@ -163,12 +190,12 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string, zone 
 
 		startTime, err := times.ParseToStdTime(time.RFC3339Nano, one.LastStartTimestamp)
 		if err != nil {
-			return fmt.Errorf("conv start time failed, err: %v", err)
+			return nil, fmt.Errorf("conv start time failed, err: %v", err)
 		}
 
 		createTime, err := times.ParseToStdTime(time.RFC3339Nano, one.CreationTimestamp)
 		if err != nil {
-			return fmt.Errorf("conv create time failed, err: %v", err)
+			return nil, fmt.Errorf("conv create time failed, err: %v", err)
 		}
 
 		imageID := ""
@@ -176,88 +203,83 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string, zone 
 			imageID = id
 		}
 
-		priIPv4, pubIPv4, priIPv6, pubIPv6 := gcp.GetGcpIPAddresses(one.NetworkInterfaces)
-		cvm := dataproto.CvmBatchCreate[corecvm.GcpCvmExtension]{
-			CloudID:        fmt.Sprintf("%d", one.Id),
-			Name:           one.Name,
-			BkBizID:        constant.UnassignedBiz,
-			BkHostID:       constant.UnBindBkHostID,
-			BkCloudID:      constant.UnassignedBkCloudID,
-			AccountID:      accountID,
-			Region:         region,
-			Zone:           zone,
-			CloudVpcIDs:    []string{vpcMap[inVpcSelfLinks[0]].VpcCloudID},
-			VpcIDs:         []string{vpcMap[inVpcSelfLinks[0]].VpcID},
-			CloudSubnetIDs: cloudSubIDs,
-			SubnetIDs:      subnetIDs,
-			CloudImageID:   one.SourceMachineImage,
-			ImageID:        imageID,
-			// gcp镜像是与硬盘绑定的
-			OsName:               "",
-			Memo:                 converter.ValToPtr(one.Description),
-			Status:               one.Status,
-			PrivateIPv4Addresses: priIPv4,
-			PrivateIPv6Addresses: priIPv6,
-			PublicIPv4Addresses:  pubIPv4,
-			PublicIPv6Addresses:  pubIPv6,
-			MachineType:          gcp.GetMachineType(one.MachineType),
-			CloudCreatedTime:     createTime,
-			CloudLaunchedTime:    startTime,
-			CloudExpiredTime:     "",
-			Extension: &corecvm.GcpCvmExtension{
-				VpcSelfLinks:             vpcSelfLinks,
-				SubnetSelfLinks:          subnetSelfLinks,
-				DeletionProtection:       one.DeletionProtection,
-				CanIpForward:             one.CanIpForward,
-				CloudNetworkInterfaceIDs: cloudNetWorkInterfaceIDs,
-				Disks:                    disks,
-				SelfLink:                 one.SelfLink,
-				CpuPlatform:              one.CpuPlatform,
-				Labels:                   one.Labels,
-				MinCpuPlatform:           one.MinCpuPlatform,
-				StartRestricted:          one.StartRestricted,
-				ResourcePolicies:         one.ResourcePolicies,
-				ReservationAffinity:      nil,
-				Fingerprint:              one.Fingerprint,
-				AdvancedMachineFeatures:  nil,
-			},
-		}
-
-		if one.ReservationAffinity != nil {
-			cvm.Extension.ReservationAffinity = &corecvm.GcpReservationAffinity{
-				ConsumeReservationType: one.ReservationAffinity.ConsumeReservationType,
-				Key:                    one.ReservationAffinity.Key,
-				Values:                 one.ReservationAffinity.Values,
-			}
-		}
-
-		if one.AdvancedMachineFeatures != nil {
-			cvm.Extension.AdvancedMachineFeatures = &corecvm.GcpAdvancedMachineFeatures{
-				EnableNestedVirtualization: one.AdvancedMachineFeatures.EnableNestedVirtualization,
-				EnableUefiNetworking:       one.AdvancedMachineFeatures.EnableUefiNetworking,
-				ThreadsPerCore:             one.AdvancedMachineFeatures.ThreadsPerCore,
-				VisibleCoreCount:           one.AdvancedMachineFeatures.VisibleCoreCount,
-			}
-		}
-
-		lists = append(lists, cvm)
+		req := buildCvmCreateReq(one, imageID, startTime, createTime, accountID, region, zone,
+			vpcMap[inVpcSelfLinks[0]].VpcCloudID, vpcMap[inVpcSelfLinks[0]].VpcID, cloudSubIDs, subnetIDs, vpcSelfLinks,
+			subnetSelfLinks, cloudNetWorkInterfaceIDs, disks)
+		lists = append(lists, req)
 	}
 
-	createReq := dataproto.CvmBatchCreateReq[corecvm.GcpCvmExtension]{
-		Cvms: lists,
+	return lists, nil
+}
+
+func buildCvmCreateReq(one typescvm.GcpCvm, imageID, startTime, createTime, accountID, region, zone,
+	vpcCloudID, vpcID string, cloudSubIDs, subnetIDs, vpcSelfLinks, subnetSelfLinks, cloudNetWorkInterfaceIDs []string,
+	disks []corecvm.GcpAttachedDisk) protocloud.CvmBatchCreate[corecvm.GcpCvmExtension] {
+
+	priIPv4, pubIPv4, priIPv6, pubIPv6 := gcp.GetGcpIPAddresses(one.NetworkInterfaces)
+	cvm := dataproto.CvmBatchCreate[corecvm.GcpCvmExtension]{
+		CloudID:        fmt.Sprintf("%d", one.Id),
+		Name:           one.Name,
+		BkBizID:        constant.UnassignedBiz,
+		BkHostID:       constant.UnBindBkHostID,
+		BkCloudID:      constant.UnassignedBkCloudID,
+		AccountID:      accountID,
+		Region:         region,
+		Zone:           zone,
+		CloudVpcIDs:    []string{vpcCloudID},
+		VpcIDs:         []string{vpcID},
+		CloudSubnetIDs: cloudSubIDs,
+		SubnetIDs:      subnetIDs,
+		CloudImageID:   one.SourceMachineImage,
+		ImageID:        imageID,
+		// gcp镜像是与硬盘绑定的
+		OsName:               "",
+		Memo:                 converter.ValToPtr(one.Description),
+		Status:               one.Status,
+		PrivateIPv4Addresses: priIPv4,
+		PrivateIPv6Addresses: priIPv6,
+		PublicIPv4Addresses:  pubIPv4,
+		PublicIPv6Addresses:  pubIPv6,
+		MachineType:          gcp.GetMachineType(one.MachineType),
+		CloudCreatedTime:     createTime,
+		CloudLaunchedTime:    startTime,
+		CloudExpiredTime:     "",
+		Extension: &corecvm.GcpCvmExtension{
+			VpcSelfLinks:             vpcSelfLinks,
+			SubnetSelfLinks:          subnetSelfLinks,
+			DeletionProtection:       one.DeletionProtection,
+			CanIpForward:             one.CanIpForward,
+			CloudNetworkInterfaceIDs: cloudNetWorkInterfaceIDs,
+			Disks:                    disks,
+			SelfLink:                 one.SelfLink,
+			CpuPlatform:              one.CpuPlatform,
+			Labels:                   one.Labels,
+			MinCpuPlatform:           one.MinCpuPlatform,
+			StartRestricted:          one.StartRestricted,
+			ResourcePolicies:         one.ResourcePolicies,
+			ReservationAffinity:      nil,
+			Fingerprint:              one.Fingerprint,
+			AdvancedMachineFeatures:  nil,
+		},
 	}
 
-	_, err = cli.dbCli.Gcp.Cvm.BatchCreateCvm(kt.Ctx, kt.Header(), &createReq)
-	if err != nil {
-		logs.Errorf("[%s] request dataservice to create gcp cvm failed, err: %v, rid: %s", enumor.Gcp,
-			err, kt.Rid)
-		return err
+	if one.ReservationAffinity != nil {
+		cvm.Extension.ReservationAffinity = &corecvm.GcpReservationAffinity{
+			ConsumeReservationType: one.ReservationAffinity.ConsumeReservationType,
+			Key:                    one.ReservationAffinity.Key,
+			Values:                 one.ReservationAffinity.Values,
+		}
 	}
 
-	logs.Infof("[%s] sync cvm to create cvm success, accountID: %s, count: %d, rid: %s", enumor.Gcp,
-		accountID, len(addSlice), kt.Rid)
-
-	return nil
+	if one.AdvancedMachineFeatures != nil {
+		cvm.Extension.AdvancedMachineFeatures = &corecvm.GcpAdvancedMachineFeatures{
+			EnableNestedVirtualization: one.AdvancedMachineFeatures.EnableNestedVirtualization,
+			EnableUefiNetworking:       one.AdvancedMachineFeatures.EnableUefiNetworking,
+			ThreadsPerCore:             one.AdvancedMachineFeatures.ThreadsPerCore,
+			VisibleCoreCount:           one.AdvancedMachineFeatures.VisibleCoreCount,
+		}
+	}
+	return cvm
 }
 
 func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string, zone string,
@@ -267,19 +289,42 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string, zone 
 		return fmt.Errorf("cvm updateMap is <= 0, not update")
 	}
 
-	lists := make([]dataproto.CvmBatchUpdate[corecvm.GcpCvmExtension], 0)
-
 	updateSlice := make([]typescvm.GcpCvm, 0)
 	for _, one := range updateMap {
 		updateSlice = append(updateSlice, one)
 	}
-
 	vpcMap, subnetMap, diskMap, vpcSelfLinks,
 		subnetSelfLinks, imageMap, err := cli.getNIAssResMapBySelfLinkFromNI(kt, accountID, region, zone, updateSlice)
 	if err != nil {
 		return err
 	}
 
+	lists, err := buildCvmUpdateReqList(updateMap, vpcMap, subnetMap, diskMap, vpcSelfLinks,
+		subnetSelfLinks, imageMap)
+	if err != nil {
+		logs.Errorf("[%s] build cvm create req list failed, err: %v, rid: %s", enumor.Gcp, err, kt.Rid)
+		return err
+	}
+	updateReq := dataproto.CvmBatchUpdateReq[corecvm.GcpCvmExtension]{
+		Cvms: lists,
+	}
+
+	if err := cli.dbCli.Gcp.Cvm.BatchUpdateCvm(kt.Ctx, kt.Header(), &updateReq); err != nil {
+		logs.Errorf("[%s] request dataservice BatchUpdateCvm failed, err: %v, rid: %s", enumor.Gcp,
+			err, kt.Rid)
+		return err
+	}
+	logs.Infof("[%s] sync cvm to update cvm success, count: %d, ids: %v, rid: %s",
+		enumor.Gcp, len(updateMap), maps.Keys(updateMap), kt.Rid)
+
+	return nil
+}
+
+func buildCvmUpdateReqList(updateMap map[string]typescvm.GcpCvm, vpcMap map[string]*common.VpcDB,
+	subnetMap map[string]*SubnetDB, diskMap map[string]string, vpcSelfLinks []string, subnetSelfLinks []string,
+	imageMap map[string]string) ([]protocloud.CvmBatchUpdateWithExtension[corecvm.GcpCvmExtension], error) {
+
+	lists := make([]dataproto.CvmBatchUpdateWithExtension[corecvm.GcpCvmExtension], 0)
 	for id, one := range updateMap {
 		inVpcSelfLinks := make([]string, 0)
 		inSubnetSelfLinks := make([]string, 0)
@@ -296,7 +341,7 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string, zone 
 		}
 
 		if _, exsit := vpcMap[inVpcSelfLinks[0]]; !exsit {
-			return fmt.Errorf("cvm %s can not find vpc", fmt.Sprint(one.Id))
+			return nil, fmt.Errorf("cvm %s can not find vpc", fmt.Sprint(one.Id))
 		}
 
 		subnetIDs := make([]string, 0)
@@ -312,7 +357,7 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string, zone 
 		for _, v := range one.Disks {
 			cloudID, exist := diskMap[v.Source]
 			if !exist {
-				return fmt.Errorf("cvm: %d not found disk: %s in db", one.Id, v.Source)
+				return nil, fmt.Errorf("cvm: %d not found disk: %s in db", one.Id, v.Source)
 			}
 
 			tmp := corecvm.GcpAttachedDisk{
@@ -327,7 +372,7 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string, zone 
 
 		startTime, err := times.ParseToStdTime(time.RFC3339Nano, one.LastStartTimestamp)
 		if err != nil {
-			return fmt.Errorf("conv start time failed, err: %v", err)
+			return nil, fmt.Errorf("conv start time failed, err: %v", err)
 		}
 
 		imageID := ""
@@ -335,12 +380,24 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string, zone 
 			imageID = id
 		}
 
-		priIPv4, pubIPv4, priIPv6, pubIPv6 := gcp.GetGcpIPAddresses(one.NetworkInterfaces)
-		cvm := dataproto.CvmBatchUpdate[corecvm.GcpCvmExtension]{
+		req := buildCvmUpdateReq(id, one, vpcMap[inVpcSelfLinks[0]].VpcCloudID, vpcMap[inVpcSelfLinks[0]].VpcID,
+			imageID, startTime, cloudSubIDs, subnetIDs, vpcSelfLinks, subnetSelfLinks, cloudNetWorkInterfaceIDs, disks)
+		lists = append(lists, req)
+	}
+	return lists, nil
+}
+
+func buildCvmUpdateReq(id string, one typescvm.GcpCvm, vpcCloudID, vpcID, imageID, startTime string, cloudSubIDs,
+	subnetIDs, vpcSelfLinks, subnetSelfLinks, cloudNetWorkInterfaceIDs []string,
+	disks []corecvm.GcpAttachedDisk) protocloud.CvmBatchUpdateWithExtension[corecvm.GcpCvmExtension] {
+
+	priIPv4, pubIPv4, priIPv6, pubIPv6 := gcp.GetGcpIPAddresses(one.NetworkInterfaces)
+	cvm := dataproto.CvmBatchUpdateWithExtension[corecvm.GcpCvmExtension]{
+		CvmBatchUpdate: dataproto.CvmBatchUpdate{
 			ID:                   id,
 			Name:                 one.Name,
-			CloudVpcIDs:          []string{vpcMap[inVpcSelfLinks[0]].VpcCloudID},
-			VpcIDs:               []string{vpcMap[inVpcSelfLinks[0]].VpcID},
+			CloudVpcIDs:          []string{vpcCloudID},
+			VpcIDs:               []string{vpcID},
 			CloudSubnetIDs:       cloudSubIDs,
 			SubnetIDs:            subnetIDs,
 			Memo:                 converter.ValToPtr(one.Description),
@@ -353,58 +410,43 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string, zone 
 			CloudExpiredTime:     "",
 			CloudImageID:         one.SourceMachineImage,
 			ImageID:              imageID,
-			Extension: &corecvm.GcpCvmExtension{
-				VpcSelfLinks:             vpcSelfLinks,
-				SubnetSelfLinks:          subnetSelfLinks,
-				DeletionProtection:       one.DeletionProtection,
-				CanIpForward:             one.CanIpForward,
-				CloudNetworkInterfaceIDs: cloudNetWorkInterfaceIDs,
-				Disks:                    disks,
-				SelfLink:                 one.SelfLink,
-				CpuPlatform:              one.CpuPlatform,
-				Labels:                   one.Labels,
-				MinCpuPlatform:           one.MinCpuPlatform,
-				StartRestricted:          one.StartRestricted,
-				ResourcePolicies:         one.ResourcePolicies,
-				ReservationAffinity:      nil,
-				Fingerprint:              one.Fingerprint,
-				AdvancedMachineFeatures:  nil,
-			},
-		}
-
-		if one.ReservationAffinity != nil {
-			cvm.Extension.ReservationAffinity = &corecvm.GcpReservationAffinity{
-				ConsumeReservationType: one.ReservationAffinity.ConsumeReservationType,
-				Key:                    one.ReservationAffinity.Key,
-				Values:                 one.ReservationAffinity.Values,
-			}
-		}
-
-		if one.AdvancedMachineFeatures != nil {
-			cvm.Extension.AdvancedMachineFeatures = &corecvm.GcpAdvancedMachineFeatures{
-				EnableNestedVirtualization: one.AdvancedMachineFeatures.EnableNestedVirtualization,
-				EnableUefiNetworking:       one.AdvancedMachineFeatures.EnableUefiNetworking,
-				ThreadsPerCore:             one.AdvancedMachineFeatures.ThreadsPerCore,
-				VisibleCoreCount:           one.AdvancedMachineFeatures.VisibleCoreCount,
-			}
-		}
-
-		lists = append(lists, cvm)
+		},
+		Extension: &corecvm.GcpCvmExtension{
+			VpcSelfLinks:             vpcSelfLinks,
+			SubnetSelfLinks:          subnetSelfLinks,
+			DeletionProtection:       one.DeletionProtection,
+			CanIpForward:             one.CanIpForward,
+			CloudNetworkInterfaceIDs: cloudNetWorkInterfaceIDs,
+			Disks:                    disks,
+			SelfLink:                 one.SelfLink,
+			CpuPlatform:              one.CpuPlatform,
+			Labels:                   one.Labels,
+			MinCpuPlatform:           one.MinCpuPlatform,
+			StartRestricted:          one.StartRestricted,
+			ResourcePolicies:         one.ResourcePolicies,
+			ReservationAffinity:      nil,
+			Fingerprint:              one.Fingerprint,
+			AdvancedMachineFeatures:  nil,
+		},
 	}
 
-	updateReq := dataproto.CvmBatchUpdateReq[corecvm.GcpCvmExtension]{
-		Cvms: lists,
+	if one.ReservationAffinity != nil {
+		cvm.Extension.ReservationAffinity = &corecvm.GcpReservationAffinity{
+			ConsumeReservationType: one.ReservationAffinity.ConsumeReservationType,
+			Key:                    one.ReservationAffinity.Key,
+			Values:                 one.ReservationAffinity.Values,
+		}
 	}
 
-	if err := cli.dbCli.Gcp.Cvm.BatchUpdateCvm(kt.Ctx, kt.Header(), &updateReq); err != nil {
-		logs.Errorf("[%s] request dataservice BatchUpdateCvm failed, err: %v, rid: %s", enumor.Gcp,
-			err, kt.Rid)
-		return err
+	if one.AdvancedMachineFeatures != nil {
+		cvm.Extension.AdvancedMachineFeatures = &corecvm.GcpAdvancedMachineFeatures{
+			EnableNestedVirtualization: one.AdvancedMachineFeatures.EnableNestedVirtualization,
+			EnableUefiNetworking:       one.AdvancedMachineFeatures.EnableUefiNetworking,
+			ThreadsPerCore:             one.AdvancedMachineFeatures.ThreadsPerCore,
+			VisibleCoreCount:           one.AdvancedMachineFeatures.VisibleCoreCount,
+		}
 	}
-	logs.Infof("[%s] sync cvm to update cvm success, count: %d, ids: %v, rid: %s",
-		enumor.Gcp, len(updateMap), maps.Keys(updateMap), kt.Rid)
-
-	return nil
+	return cvm
 }
 
 func (cli *client) getNIAssResMapBySelfLinkFromNI(kt *kit.Kit, accountID string, region string, zone string,
@@ -655,6 +697,7 @@ func (cli *client) listCvmFromDB(kt *kit.Kit, params *SyncBaseParams, zone strin
 	return result.Details, nil
 }
 
+// RemoveCvmDeleteFromCloud ...
 func (cli *client) RemoveCvmDeleteFromCloud(kt *kit.Kit, accountID string, zone string) error {
 	req := &protocloud.CvmListReq{
 		Field: []string{"id", "cloud_id"},
@@ -866,7 +909,8 @@ func isCvmChange(cloud typescvm.GcpCvm, db corecvm.Cvm[cvm.GcpCvmExtension]) boo
 	}
 
 	if db.Extension.AdvancedMachineFeatures != nil && cloud.AdvancedMachineFeatures != nil {
-		if db.Extension.AdvancedMachineFeatures.EnableNestedVirtualization != cloud.AdvancedMachineFeatures.EnableNestedVirtualization {
+		if db.Extension.AdvancedMachineFeatures.EnableNestedVirtualization !=
+			cloud.AdvancedMachineFeatures.EnableNestedVirtualization {
 			return true
 		}
 

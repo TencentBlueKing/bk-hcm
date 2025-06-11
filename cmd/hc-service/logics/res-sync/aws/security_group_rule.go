@@ -169,7 +169,8 @@ func (cli *client) createSGRule(kt *kit.Kit, opt *syncSGRuleOption,
 	createReq := &protocloud.AwsSGRuleCreateReq{
 		Rules: list,
 	}
-	_, err = cli.dbCli.Aws.SecurityGroup.BatchCreateSecurityGroupRule(kt.Ctx, kt.Header(), createReq, opt.SGMap[opt.CloudSGID])
+	_, err = cli.dbCli.Aws.SecurityGroup.BatchCreateSecurityGroupRule(
+		kt.Ctx, kt.Header(), createReq, opt.SGMap[opt.CloudSGID])
 	if err != nil {
 		return err
 	}
@@ -241,7 +242,8 @@ func (cli *client) updateSGRule(kt *kit.Kit, opt *syncSGRuleOption,
 	updateReq := &protocloud.AwsSGRuleBatchUpdateReq{
 		Rules: list,
 	}
-	err = cli.dbCli.Aws.SecurityGroup.BatchUpdateSecurityGroupRule(kt.Ctx, kt.Header(), updateReq, opt.SGMap[opt.CloudSGID])
+	err = cli.dbCli.Aws.SecurityGroup.BatchUpdateSecurityGroupRule(
+		kt.Ctx, kt.Header(), updateReq, opt.SGMap[opt.CloudSGID])
 	if err != nil {
 		return err
 	}
@@ -331,7 +333,8 @@ func (cli *client) deleteSGRule(kt *kit.Kit, opt *syncSGRuleOption, delCloudIDs 
 	deleteReq := &protocloud.AwsSGRuleBatchDeleteReq{
 		Filter: tools.ContainersExpression("cloud_id", delCloudIDs),
 	}
-	err = cli.dbCli.Aws.SecurityGroup.BatchDeleteSecurityGroupRule(kt.Ctx, kt.Header(), deleteReq, opt.SGMap[opt.CloudSGID])
+	err = cli.dbCli.Aws.SecurityGroup.BatchDeleteSecurityGroupRule(
+		kt.Ctx, kt.Header(), deleteReq, opt.SGMap[opt.CloudSGID])
 	if err != nil {
 		logs.Errorf("[%s] dataservice delete aws security group rules failed, err: %v, rid: %s", enumor.Aws,
 			err, kt.Rid)

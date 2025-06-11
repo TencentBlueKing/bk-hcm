@@ -101,7 +101,7 @@ func (b *billItemSvc) importZenlayerBillItemsPreview(kt *kit.Kit, req *bill.Impo
 	}
 
 	// convert to BillItemCreateReq
-	createReqs, err := convertZenlayerRawBillItemToRawBillCreateReq(kt, req.BillYear, req.BillMonth,
+	createReqs, err := cvtZenlayerBillItemCreateReq(kt, req.BillYear, req.BillMonth,
 		records, cloudIDToSummaryMainMap)
 	if err != nil {
 		logs.Errorf("convert raw bill item to createReqs failed, err: %v, rid: %s", err, kt.Rid)
@@ -237,7 +237,7 @@ func (b *billItemSvc) listSummaryMainByBusinessGroups(kt *kit.Kit, vendor enumor
 	return result, nil
 }
 
-func convertZenlayerRawBillItemToRawBillCreateReq(kt *kit.Kit, billYear, billMonth int,
+func cvtZenlayerBillItemCreateReq(kt *kit.Kit, billYear, billMonth int,
 	recordList []billcore.ZenlayerRawBillItem, summaryMap map[string]*dsbill.BillSummaryMain) (
 	[]dsbill.BillItemCreateReq[json.RawMessage], error) {
 

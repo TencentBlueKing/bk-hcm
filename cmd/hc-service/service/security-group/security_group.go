@@ -72,7 +72,7 @@ func InitSecurityGroupService(cap *capability.Capability) {
 	h.Add("AzureSecurityGroupAssociateNI", "POST", "/vendors/azure/security_groups/associate/network_interfaces",
 		sg.AzureSecurityGroupAssociateNI)
 	h.Add("AzureSecurityGroupDisassociateSubnet", "POST", "/vendors/azure/security_groups/disassociate/subnets",
-		sg.AzureSecurityGroupDisassociateSubnet)
+		sg.AzureSGDisassociateSubnet)
 	h.Add("AzureSecurityGroupDisassociateNI", "POST", "/vendors/azure/security_groups/disassociate/network_interfaces",
 		sg.AzureSecurityGroupDisassociateNI)
 	h.Add("CreateAzureSecurityGroup", "POST", "/vendors/azure/security_groups/create", sg.CreateAzureSecurityGroup)
