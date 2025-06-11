@@ -68,10 +68,21 @@ const activeVendor = ref<VendorEnum>();
 const currentDisplayList = ref<IAccountOption[]>([]);
 const searchValue = ref('');
 const vendorListRef = ref<HTMLElement>();
+const filterList = ref<IAccountItem[]>([]);
 
 const selected = computed({
   get() {
-    return model.value || undefined;
+    const val = model.value || undefined;
+    // 默认填充
+    if (!val && !props.disabled) {
+      if (
+        (filterList.value.length === 1 && props.autoSelectSingle) ||
+        (filterList.value.length > 1 && props.autoSelect)
+      ) {
+        return filterList.value[0].id;
+      }
+    }
+    return val;
   },
   set(val) {
     model.value = val;
@@ -135,17 +146,12 @@ watch(
         vendorAccountMap.value.set(item.vendor, [newItem]);
       }
     });
-    // 默认填充
-    if (!selected.value && !props.disabled) {
-      if ((newList.length === 1 && props.autoSelectSingle) || (newList.length > 1 && props.autoSelect)) {
-        selected.value = newList[0].id;
-      }
-    }
+    filterList.value = filteredList;
   },
   { deep: true },
 );
 
-watch([model, list], ([newVal, newList], [oldVal]) => {
+watch([selected, list], ([newVal, newList], [oldVal]) => {
   const account = newList.find((item) => item.id === newVal);
   const oldAccount = list.value.find((item) => item.id === oldVal);
   emit('change', account, oldAccount, vendorAccountMap.value);
