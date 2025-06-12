@@ -23,7 +23,6 @@ package logicsadmin
 import (
 	"fmt"
 
-	apisysteminit "hcm/pkg/api/cloud-server/system-init"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/tenant"
 	"hcm/pkg/cc"
@@ -38,7 +37,8 @@ import (
 
 // Interface admin logic interface
 type Interface interface {
-	TenantInit(kt *kit.Kit) (*apisysteminit.TenantInitResult, error)
+	TryGetTenant(kt *kit.Kit) (*bkuser.Tenant, error)
+	UpsertLocalTenant(kt *kit.Kit, targetTenant *bkuser.Tenant) (message string, err error)
 }
 
 type admin struct {
@@ -51,18 +51,8 @@ func NewAdminLogic(c *client.ClientSet, userClient bkuser.Client) Interface {
 	return &admin{c: c, bkUser: userClient}
 }
 
-// TenantInit 查找是否存在对应租户
-func (a *admin) TenantInit(kt *kit.Kit) (*apisysteminit.TenantInitResult, error) {
-
-	if !cc.TenantEnable() {
-		return &apisysteminit.TenantInitResult{Message: "tenant is not enabled"}, nil
-	}
-
-	// 1. 查找是否是合法租户
-	targetTenant, err := a.getTenant(kt)
-	if err != nil {
-		return nil, err
-	}
+// UpsertLocalTenant 插入或更新租户信息
+func (a *admin) UpsertLocalTenant(kt *kit.Kit, targetTenant *bkuser.Tenant) (message string, err error) {
 
 	listReq := &core.ListReq{
 		Filter: tools.EqualExpression("tenant_id", kt.TenantID),
@@ -71,7 +61,7 @@ func (a *admin) TenantInit(kt *kit.Kit) (*apisysteminit.TenantInitResult, error)
 	localTenantResp, err := a.c.DataService().Global.Tenant.List(kt, listReq)
 	if err != nil {
 		logs.Errorf("fail to list local tenant, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
+		return "", err
 	}
 
 	if len(localTenantResp.Details) > 0 {
@@ -85,9 +75,10 @@ func (a *admin) TenantInit(kt *kit.Kit) (*apisysteminit.TenantInitResult, error)
 		}}}
 		err := a.c.DataService().Global.Tenant.Update(kt, updateReq)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
-		return &apisysteminit.TenantInitResult{Message: "tenant update success"}, nil
+		logs.Infof("tenant updated: %s, local id: %s, rid: %s", targetTenant.String(), localTenant.ID, kt.Rid)
+		return fmt.Sprintf("tenant update success, %s", localTenant.ID), nil
 	}
 
 	// 2.2 不存在则创建
@@ -97,14 +88,26 @@ func (a *admin) TenantInit(kt *kit.Kit) (*apisysteminit.TenantInitResult, error)
 			Status:   convertTenantStatus(targetTenant.Status),
 		}},
 	}
-	_, err = a.c.DataService().Global.Tenant.Create(kt, createReq)
+	created, err := a.c.DataService().Global.Tenant.Create(kt, createReq)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	return &apisysteminit.TenantInitResult{Message: "tenant create success"}, nil
+	if len(created.IDs) < 1 {
+		return "", fmt.Errorf("tenant created but no any id has been returned")
+	}
+	createdID := created.IDs[0]
+	logs.Infof("tenant created: %s, local id: %s, rid: %s", targetTenant.String(), createdID, kt.Rid)
+	return fmt.Sprintf("tenant create success, %s", created), nil
 }
 
-func (a *admin) getTenant(kt *kit.Kit) (*bkuser.Tenant, error) {
+// TryGetTenant 尝试获取租户
+func (a *admin) TryGetTenant(kt *kit.Kit) (*bkuser.Tenant, error) {
+
+	if !cc.TenantEnable() {
+		return nil, fmt.Errorf("tenant is not enabled")
+	}
+
+	// 1. 查找是否是合法租户
 	tenantResult, err := a.bkUser.ListTenant(kt)
 	if err != nil {
 		logs.Errorf("fail to list tenant by bk user, err: %v, rid: %s", err, kt.Rid)

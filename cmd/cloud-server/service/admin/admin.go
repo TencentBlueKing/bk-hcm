@@ -61,14 +61,21 @@ type adminService struct {
 // TenantInit 租户初始化
 func (s *adminService) TenantInit(cts *rest.Contexts) (any, error) {
 
-	result, err := s.adminLogics.TenantInit(cts.Kit)
+	// 检查租户是否合法
+	targetTenant, err := s.adminLogics.TryGetTenant(cts.Kit)
+	if err != nil {
+		return nil, err
+	}
+
+	// other init processes...
+
+	// 租户表插入/更新租户数据
+	msg, err := s.adminLogics.UpsertLocalTenant(cts.Kit, targetTenant)
 	if err != nil {
 		logs.Errorf("init tenant failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, fmt.Errorf("tenant data init error: %w", err)
 	}
 
-	resp := apisysteminit.SystemInitResult{
-		TenantInitResult: result,
-	}
+	resp := &apisysteminit.TenantInitResult{Message: msg}
 	return resp, nil
 }
