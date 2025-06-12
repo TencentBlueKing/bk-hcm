@@ -43,6 +43,18 @@ import (
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ecs/v2/model"
 )
 
+const (
+	// IPTypeFixed fixed：代表私有IP地址
+	IPTypeFixed = "fixed"
+	// IPTypeFloating floating：代表浮动IP地址。
+	IPTypeFloating = "floating"
+
+	// IPVersion4 ipv4
+	IPVersion4 = "4"
+	// IPVersion6 ipv6
+	IPVersion6 = "6"
+)
+
 // ListCvm list cvm.
 // reference: https://support.huaweicloud.com/api-ecs/zh-cn_topic_0094148850.html
 func (h *HuaWei) ListCvm(kt *kit.Kit, opt *typecvm.HuaWeiListOption) ([]typecvm.HuaWeiCvm, error) {
@@ -135,16 +147,17 @@ func getIps(serverAddress map[string][]model.ServerAddress) (privateIPv4, public
 
 	for _, addresses := range serverAddress {
 		for _, addr := range addresses {
-			if addr.Version == "4" && addr.OSEXTIPStype.Value() == "fixed" {
+
+			if addr.Version == IPVersion4 && addr.OSEXTIPStype.Value() == IPTypeFixed {
 				privateIPv4 = append(privateIPv4, addr.Addr)
 			}
-			if addr.Version == "4" && addr.OSEXTIPStype.Value() == "floating" {
+			if addr.Version == IPVersion4 && addr.OSEXTIPStype.Value() == IPTypeFloating {
 				publicIPv4 = append(publicIPv4, addr.Addr)
 			}
-			if addr.Version == "6" && addr.OSEXTIPStype.Value() == "fixed" {
+			if addr.Version == IPVersion6 && addr.OSEXTIPStype.Value() == IPTypeFixed {
 				privateIPv6 = append(privateIPv6, addr.Addr)
 			}
-			if addr.Version == "6" && addr.OSEXTIPStype.Value() == "floating" {
+			if addr.Version == IPVersion6 && addr.OSEXTIPStype.Value() == IPTypeFloating {
 				publicIPv6 = append(publicIPv6, addr.Addr)
 			}
 		}
