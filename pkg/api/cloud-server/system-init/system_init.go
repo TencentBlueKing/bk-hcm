@@ -20,11 +20,6 @@
 // Package apisysteminit ...
 package apisysteminit
 
-// SystemInitResult ...
-type SystemInitResult struct {
-	TenantInitResult *TenantInitResult `json:"tenant_result,omitempty"`
-}
-
 // TenantInitResult ...
 type TenantInitResult struct {
 	Message string `json:"message,omitempty"`

@@ -50,7 +50,7 @@ func (s *adminService) registerAdminService(c *restful.WebService) {
 	defer adminH.Load(c)
 
 	// 这里注册的接口都无法被webserver访问，只能被系统内部调用，无需鉴权
-	adminH.Add("TenantInit", http.MethodPost, "/tenant-init", s.TenantInit)
+	adminH.Add("InitTenant", http.MethodPost, "/tenant/init", s.InitTenant)
 }
 
 type adminService struct {
@@ -58,11 +58,10 @@ type adminService struct {
 	adminLogics logicsadmin.Interface
 }
 
-// TenantInit 租户初始化
-func (s *adminService) TenantInit(cts *rest.Contexts) (any, error) {
-
+// InitTenant 租户初始化
+func (s *adminService) InitTenant(cts *rest.Contexts) (any, error) {
 	// 检查租户是否合法
-	targetTenant, err := s.adminLogics.TryGetTenant(cts.Kit)
+	targetTenant, err := s.adminLogics.GetTenantFromBkUser(cts.Kit)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +71,8 @@ func (s *adminService) TenantInit(cts *rest.Contexts) (any, error) {
 	// 租户表插入/更新租户数据
 	msg, err := s.adminLogics.UpsertLocalTenant(cts.Kit, targetTenant)
 	if err != nil {
-		logs.Errorf("init tenant failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		logs.Errorf("upsert local tenant failed, err: %v, tenant: %s, rid: %s",
+			err, targetTenant.String(), cts.Kit.Rid)
 		return nil, fmt.Errorf("tenant data init error: %w", err)
 	}
 

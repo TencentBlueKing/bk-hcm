@@ -37,7 +37,7 @@ import (
 
 // Interface admin logic interface
 type Interface interface {
-	TryGetTenant(kt *kit.Kit) (*bkuser.Tenant, error)
+	GetTenantFromBkUser(kt *kit.Kit) (*bkuser.Tenant, error)
 	UpsertLocalTenant(kt *kit.Kit, targetTenant *bkuser.Tenant) (message string, err error)
 }
 
@@ -53,7 +53,6 @@ func NewAdminLogic(c *client.ClientSet, userClient bkuser.Client) Interface {
 
 // UpsertLocalTenant 插入或更新租户信息
 func (a *admin) UpsertLocalTenant(kt *kit.Kit, targetTenant *bkuser.Tenant) (message string, err error) {
-
 	listReq := &core.ListReq{
 		Filter: tools.EqualExpression("tenant_id", kt.TenantID),
 		Page:   core.NewDefaultBasePage(),
@@ -97,12 +96,11 @@ func (a *admin) UpsertLocalTenant(kt *kit.Kit, targetTenant *bkuser.Tenant) (mes
 	}
 	createdID := created.IDs[0]
 	logs.Infof("tenant created: %s, local id: %s, rid: %s", targetTenant.String(), createdID, kt.Rid)
-	return fmt.Sprintf("tenant create success, %s", created), nil
+	return fmt.Sprintf("tenant create success, %s", createdID), nil
 }
 
-// TryGetTenant 尝试获取租户
-func (a *admin) TryGetTenant(kt *kit.Kit) (*bkuser.Tenant, error) {
-
+// GetTenantFromBkUser 尝试从bk user获取租户信息
+func (a *admin) GetTenantFromBkUser(kt *kit.Kit) (*bkuser.Tenant, error) {
 	if !cc.TenantEnable() {
 		return nil, fmt.Errorf("tenant is not enabled")
 	}
