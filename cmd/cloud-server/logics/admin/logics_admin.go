@@ -123,7 +123,7 @@ func (a *admin) getTenant(kt *kit.Kit) (*bkuser.Tenant, error) {
 			kt.TenantID, tenantList, kt.Rid)
 		return nil, fmt.Errorf("invalid tenant: %s", kt.TenantID)
 	}
-	return targetTenant, err
+	return targetTenant, nil
 }
 
 func convertTenantStatus(tenantStatus bkuser.TenantStatus) enumor.TenantStatus {

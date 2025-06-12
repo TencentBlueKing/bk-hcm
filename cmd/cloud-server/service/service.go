@@ -129,7 +129,7 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 		go bill.CloudBillConfigCreate(interval, sd, apiClientSet)
 	}
 
-	recycle.RecycleTiming(apiClientSet, sd, cc.CloudServer().Recycle, svr.cmdbCli)
+	recycle.RecycleTiming(apiClientSet, sd, cc.CloudServer().Recycle, svr.cmdbCli, svr.bkUserCli)
 
 	go appcvm.TimingHandleDeliverApplication(svr.client, 2*time.Second)
 

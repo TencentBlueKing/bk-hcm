@@ -37,6 +37,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/serviced"
+	"hcm/pkg/thirdparty/api-gateway/bkuser"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
 	"hcm/pkg/tools/retry"
 	"hcm/pkg/tools/slice"
@@ -50,11 +51,13 @@ type recycle struct {
 }
 
 // RecycleTiming timing recycle all resource.
-func RecycleTiming(c *client.ClientSet, state serviced.State, conf cc.Recycle, cmdbClient cmdb.Client) {
+func RecycleTiming(c *client.ClientSet, state serviced.State, conf cc.Recycle, cmdbClient cmdb.Client,
+	bkUserCli bkuser.Client) {
+
 	r := &recycle{
 		client: c,
 		state:  state,
-		logics: logics.NewLogics(c, cmdbClient, nil),
+		logics: logics.NewLogics(c, cmdbClient, bkUserCli),
 	}
 
 	go r.recycleTiming(enumor.DiskCloudResType, r.recycleDiskWorker, conf)

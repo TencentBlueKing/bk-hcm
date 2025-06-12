@@ -258,9 +258,12 @@ func (s DataServiceSetting) Validate() error {
 	}
 
 	if err := s.Cmdb.validate(); err != nil {
-		return err
+		return fmt.Errorf("cmdb: %w", err)
 	}
 
+	if err := s.BkUser.validate(); err != nil {
+		return fmt.Errorf("bkuser: %w", err)
+	}
 	return nil
 }
 
@@ -356,7 +359,11 @@ func (s AuthServerSetting) Validate() error {
 	}
 
 	if err := s.Cmdb.validate(); err != nil {
-		return err
+		return fmt.Errorf("cmdb: %w", err)
+	}
+
+	if err := s.BkUser.validate(); err != nil {
+		return fmt.Errorf("bkuser: %w", err)
 	}
 
 	if err := s.IAM.validate(); err != nil {
@@ -556,6 +563,9 @@ func (s AccountServerSetting) Validate() error {
 		return fmt.Errorf("cmdb: %w", err)
 	}
 
+	if err := s.BkUser.validate(); err != nil {
+		return fmt.Errorf("bkuser: %w", err)
+	}
 	return nil
 }
 

@@ -230,6 +230,7 @@ login:
     caFile:
     # the password to decrypt the certificate.
     password:
+
 # bkUser 用户管理配置
 bkUser:
   # endpoints is a seed list of host:port addresses of cmdb api gateway nodes.
