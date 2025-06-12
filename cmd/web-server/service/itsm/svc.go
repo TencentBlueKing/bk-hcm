@@ -24,11 +24,12 @@ import (
 
 	"hcm/cmd/web-server/service/capability"
 	webserver "hcm/pkg/api/web-server"
+	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	itsm2 "hcm/pkg/thirdparty/api-gateway/itsm"
+	itsmCli "hcm/pkg/thirdparty/api-gateway/itsm"
 )
 
 // InitService initial the service
@@ -47,7 +48,7 @@ func InitService(c *capability.Capability) {
 
 type service struct {
 	client  *client.ClientSet
-	itsmCli itsm2.Client
+	itsmCli itsmCli.Client
 }
 
 // Deprecated: ListMyApprovalTicket 查询待我审批的单据。
@@ -74,7 +75,7 @@ func (svc *service) ListMyApprovalTicket(cts *rest.Contexts) (interface{}, error
 		Details: nil,
 	}
 	for _, workflowID := range workflowIDs {
-		getReq := &itsm2.GetTicketsByUserReq{
+		getReq := &itsmCli.GetTicketsByUserReq{
 			WorkflowID: workflowID,
 			User:       cts.Kit.User,
 			Page:       (int64(req.Page.Start) / int64(req.Page.Limit)) + 1,
@@ -104,7 +105,16 @@ func (svc *service) TicketApprove(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	err := svc.itsmCli.Approve(cts.Kit, req.Sn, req.ActivityKey, cts.Kit.User, req.Action.ToItsmAction())
+	approveReq := &itsmCli.HandleApproveReq{
+		SystemID:     cc.WebServer().Itsm.AppCode,
+		TicketID:     req.Sn,
+		TaskID:       req.TaskID,
+		OperatorType: itsmCli.OperatorUser,
+		Operator:     cts.Kit.User,
+		Action:       req.Action.ToItsmAction(),
+	}
+
+	err := svc.itsmCli.Approve(cts.Kit, approveReq)
 	if err != nil {
 		logs.Errorf("request itsm ticket approve failed, err: %v, req: %+v, user: %s, rid: %s", err, req,
 			cts.Kit.User, cts.Kit.Rid)

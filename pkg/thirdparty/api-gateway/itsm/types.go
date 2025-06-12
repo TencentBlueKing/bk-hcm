@@ -27,6 +27,14 @@ const (
 	success = 20000
 )
 
+// OperatorType 审批操作人类型
+type OperatorType string
+
+const (
+	// OperatorUser 用户操作审批
+	OperatorUser OperatorType = "user"
+)
+
 // ----------------------------- create ticket -----------------------------
 
 // CreateTicketReq create ticket request
@@ -98,11 +106,13 @@ type ApproveTasksResult struct {
 
 // HandleApproveReq define handle approve req.
 type HandleApproveReq struct {
-	TicketID string `json:"ticket_id" validate:"required"`
-	TaskID   string `json:"task_id" validate:"required"`
-	Operator string `json:"operator" validate:"required"`
-	Action   string `json:"action" validate:"required"`
-	Remark   string `json:"remark"`
+	SystemID     string       `json:"system_id" validate:"required"`
+	TicketID     string       `json:"ticket_id" validate:"required"`
+	TaskID       string       `json:"task_id" validate:"required"`
+	OperatorType OperatorType `json:"operator_type" validate:"required"`
+	Operator     string       `json:"operator" validate:"required"`
+	Action       string       `json:"action" validate:"required"`
+	Remark       string       `json:"remark"`
 }
 
 // Validate HandleApproveReq validate.

@@ -48,7 +48,7 @@ type Client interface {
 	// GetTicketsByUser 获取用户的单据。
 	GetTicketsByUser(kt *kit.Kit, req *GetTicketsByUserReq) (*GetTicketsByUserRespData, error)
 	// Approve 审批单据。
-	Approve(kt *kit.Kit, ticketID string, ActivityKey string, operator string, action string) error
+	Approve(kt *kit.Kit, req *HandleApproveReq) error
 }
 
 // NewClient initialize a new itsm client

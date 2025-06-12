@@ -20,7 +20,6 @@
 package itsm
 
 import (
-	"errors"
 	"fmt"
 
 	"hcm/pkg/kit"
@@ -53,8 +52,8 @@ func (i *itsm) getApproveTask(kt *kit.Kit, ticketID string, activityKey string) 
 	return res, nil
 }
 
-// handleApprove 执行审批操作
-func (i *itsm) handleApprove(kt *kit.Kit, req *HandleApproveReq) error {
+// Approve 执行审批操作
+func (i *itsm) Approve(kt *kit.Kit, req *HandleApproveReq) error {
 
 	code, msg, _, err := apigateway.ApiGatewayCallOriginal[HandleApproveReq, HandleApproveResult](i.client,
 		i.bkUserCli, i.config, rest.POST, kt, req, "/handle_approval_node/")
@@ -71,25 +70,4 @@ func (i *itsm) handleApprove(kt *kit.Kit, req *HandleApproveReq) error {
 	}
 
 	return nil
-}
-
-// Approve 根据ticketID获取审批节点的taskID，并执行审批操作
-func (i *itsm) Approve(kt *kit.Kit, ticketID string, ActivityKey string, operator string, action string) error {
-	approveTasks, err := i.getApproveTask(kt, ticketID, ActivityKey)
-	if err != nil {
-		return err
-	}
-
-	if len(approveTasks.Items) != 1 {
-		logs.Errorf("approve tasks len is %d, expected 1, rid: %s", len(approveTasks.Items), kt.Rid)
-		return errors.New("cannot approve, there are too many approve tasks")
-	}
-
-	req := &HandleApproveReq{
-		TicketID: ticketID,
-		TaskID:   approveTasks.Items[0].ID,
-		Operator: operator,
-		Action:   action,
-	}
-	return i.handleApprove(kt, req)
 }
