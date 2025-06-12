@@ -75,7 +75,7 @@ func (a *admin) TenantInit(kt *kit.Kit) (*apisysteminit.TenantInitResult, error)
 	}
 
 	if len(localTenantResp.Details) > 0 {
-		// 存在则更新
+		// 2.1 存在则更新
 		localTenant := localTenantResp.Details[0]
 		status := convertTenantStatus(targetTenant.Status)
 		// 	更新租户
@@ -90,7 +90,7 @@ func (a *admin) TenantInit(kt *kit.Kit) (*apisysteminit.TenantInitResult, error)
 		return &apisysteminit.TenantInitResult{Message: "tenant update success"}, nil
 	}
 
-	// 不存在则创建
+	// 2.2 不存在则创建
 	createReq := &tenant.CreateTenantReq{
 		Items: []tenant.CreateTenantField{{
 			TenantID: kt.TenantID,

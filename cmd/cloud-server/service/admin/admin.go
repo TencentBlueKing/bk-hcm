@@ -60,7 +60,7 @@ type adminService struct {
 
 // TenantInit 租户初始化
 func (s *adminService) TenantInit(cts *rest.Contexts) (any, error) {
-	// 0. 租户表初始化
+
 	result, err := s.adminLogics.TenantInit(cts.Kit)
 	if err != nil {
 		logs.Errorf("init tenant failed, err: %v, rid: %s", err, cts.Kit.Rid)
