@@ -153,6 +153,10 @@ watch(
 watch([selected, list], ([newVal, newList], [oldVal]) => {
   const account = newList.find((item) => item.id === newVal);
   const oldAccount = list.value.find((item) => item.id === oldVal);
+  // autoSelect时selected默认值不会触发其set导致model未触发update，在这里触发一次
+  if (model.value !== newVal) {
+    model.value = newVal;
+  }
   emit('change', account, oldAccount, vendorAccountMap.value);
 });
 
