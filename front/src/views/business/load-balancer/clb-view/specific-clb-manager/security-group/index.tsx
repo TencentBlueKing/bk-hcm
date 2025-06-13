@@ -229,6 +229,7 @@ export default defineComponent({
       },
       {
         deep: true,
+        immediate: true,
       },
     );
 
