@@ -56,8 +56,3 @@ func (t *TenantClient) Create(kt *kit.Kit, req *tenant.CreateTenantReq) (*core.B
 func (t *TenantClient) Update(kt *kit.Kit, req *tenant.UpdateTenantReq) error {
 	return common.RequestNoResp[tenant.UpdateTenantReq](t.client, rest.PATCH, kt, req, "/tenants/update")
 }
-
-// Delete tenant.
-func (t *TenantClient) Delete(kt *kit.Kit, req *tenant.DeleteTenantReq) error {
-	return common.RequestNoResp[tenant.DeleteTenantReq](t.client, rest.DELETE, kt, req, "/tenants/delete")
-}
