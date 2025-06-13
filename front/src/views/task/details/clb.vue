@@ -128,6 +128,7 @@ watch(
       page: getPageParams(pagination, { sort, order }),
     });
 
+    // TODO: 按任务类型展示不同字段来优化列表数据
     list.forEach((item) => {
       const arrayData: ArrayDataItem = {
         domain: [],
@@ -135,7 +136,7 @@ watch(
         ip: [],
         weight: [],
       };
-      item.param.rs_list.forEach((rs_item: any) => {
+      item.param.rs_list?.forEach((rs_item: any) => {
         arrayData.domain.push(rs_item?.domain);
         arrayData.url.push(rs_item?.url);
         arrayData.ip.push(rs_item?.ip);
@@ -146,6 +147,7 @@ watch(
       item.param.domain = arrayData.domain.join(',');
       item.param.weight = arrayData.weight.join(',');
     });
+
     taskDetailList.value = list;
     pagination.count = count;
 

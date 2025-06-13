@@ -39,7 +39,9 @@ userInfo()
     preload().finally(() => {
       app.use(router);
       app.mount('#app');
-      watchVersion();
+      if (process.env.NODE_ENV === 'production') {
+        watchVersion();
+      }
     });
   })
   .catch((err) => {
