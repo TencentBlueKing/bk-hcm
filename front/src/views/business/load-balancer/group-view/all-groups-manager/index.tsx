@@ -19,6 +19,7 @@ import bus from '@/common/bus';
 import './index.scss';
 import { useVerify } from '@/hooks';
 import { useGlobalPermissionDialog } from '@/store/useGlobalPermissionDialog';
+import { TargetGroupOperationScene } from '@/constants';
 
 const { DropdownMenu, DropdownItem } = Dropdown;
 
@@ -82,12 +83,12 @@ export default defineComponent({
 
     // click-handler - 批量删除目标组
     const handleBatchDeleteTG = () => {
-      loadBalancerStore.setCurrentScene('BatchDelete');
+      loadBalancerStore.setCurrentScene(TargetGroupOperationScene.BATCH_DELETE);
       isBatchDeleteTargetGroupShow.value = true;
     };
     // click-handler - 批量删除RS
     const handleBatchDeleteRs = () => {
-      loadBalancerStore.setCurrentScene('BatchDeleteRs');
+      loadBalancerStore.setCurrentScene(TargetGroupOperationScene.BATCH_DELETE_RS);
       // init
       initMap(
         selections.value.map(({ id }) => id),
@@ -99,7 +100,7 @@ export default defineComponent({
     };
     // click-handler - 批量添加RS
     const handleBatchAddRs = async () => {
-      loadBalancerStore.setCurrentScene('BatchAddRs');
+      loadBalancerStore.setCurrentScene(TargetGroupOperationScene.BATCH_ADD_RS);
       // 同一账号下的多个目标组支持批量添加rs
       const { account_id: accountId, lb_id } = selections.value[0];
 
