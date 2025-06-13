@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -7,13 +8,14 @@
     <title>海垒 | 腾讯蓝鲸智云</title>
     <link href="/static/favicon.ico" rel="Shortcut Icon">
 </head>
+
 <body>
     <div id="app"></div>
     <script>
         window.PROJECT_CONFIG = (function () {
-            const BK_HCM_AJAX_URL_PREFIX = "{{ .BK_HCM_AJAX_URL_PREFIX}}"
-            const BK_LOGIN_URL = "{{ .BK_LOGIN_URL}}"
-            const BK_COMPONENT_API_URL = "{{ .BK_COMPONENT_API_URL}}"
+            const BK_HCM_AJAX_URL_PREFIX = "{{ .BK_HCM_AJAX_URL_PREFIX }}"
+            const BK_LOGIN_URL = "{{ .BK_LOGIN_URL }}"
+            const BK_COMPONENT_API_URL = "{{ .BK_COMPONENT_API_URL }}"
             const BK_ITSM_URL = "{{ .BK_ITSM_URL }}"
             const VERSION = "{{ .VERSION }}"
             const BK_HCM_DOMAIN = "{{ .BK_HCM_DOMAIN }}"
@@ -41,4 +43,5 @@
         })();
     </script>
 </body>
+
 </html>
