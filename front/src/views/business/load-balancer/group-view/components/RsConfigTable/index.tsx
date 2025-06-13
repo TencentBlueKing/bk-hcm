@@ -1,6 +1,6 @@
 import { computed, defineComponent, ref, watch } from 'vue';
 // import components
-import { SearchSelect, Loading, Table, Input, Button, Form } from 'bkui-vue';
+import { SearchSelect, Table, Input, Button, Form } from 'bkui-vue';
 import Empty from '@/components/empty';
 import BatchUpdatePopConfirm from '@/components/batch-update-popconfirm';
 // import hooks
@@ -27,6 +27,7 @@ export default defineComponent({
     noDisabled: Boolean, // 禁用所有disabled
     onlyShow: Boolean, // 只用于显示(基本信息页面使用)
     lbDetail: Object,
+    loading: Boolean,
   },
   emits: ['update:rsList', 'update:deletedRsList'],
   setup(props, { emit }) {
@@ -36,7 +37,6 @@ export default defineComponent({
     const vpc_id = ref('');
 
     // rs配置表单项
-    const isTableLoading = ref(false);
     const { columns, settings } = useColumns('rsConfig');
 
     const isInitialState = computed(() => loadBalancerStore.updateCount !== 2);
@@ -326,21 +326,21 @@ export default defineComponent({
             </div>
           )}
         </div>
-        <Loading loading={isTableLoading.value}>
-          <Table
-            data={renderTableData.value}
-            columns={rsTableColumns}
-            settings={settings.value}
-            showOverflowTooltip
-            maxHeight={420}>
-            {{
-              empty: () => {
-                if (isTableLoading.value) return null;
-                return <Empty text='暂未添加实例' />;
-              },
-            }}
-          </Table>
-        </Loading>
+        <Table
+          v-bkloading={{ loading: props.loading }}
+          data={renderTableData.value}
+          columns={rsTableColumns}
+          settings={settings.value}
+          showOverflowTooltip
+          minHeight={200}
+          maxHeight={420}>
+          {{
+            empty: () => {
+              if (props.loading) return null;
+              return <Empty text='暂未添加实例' />;
+            },
+          }}
+        </Table>
       </div>
     );
   },

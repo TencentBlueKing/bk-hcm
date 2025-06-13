@@ -283,3 +283,9 @@ export const LOADBALANCER_BANDWIDTH_PACKAGE_NETWORK_TYPES_MAP: Record<string, st
   CTCC: ['SINGLEISP', 'SINGLEISP_CTCC'],
   CUCC: ['SINGLEISP', 'SINGLEISP_CUCC'],
 };
+
+export enum ListenerPanelEnum {
+  LIST = 'list',
+  DETAIL = 'detail',
+  TARGET_GROUP = 'target_group',
+}
