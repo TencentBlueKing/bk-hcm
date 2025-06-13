@@ -79,7 +79,7 @@ func CloudBillConfigCreate(intervalMin time.Duration, sd serviced.ServiceDiscove
 			logs.Errorf("failed to create all account bill config, err: %v, rid: %s", err, kt.Rid)
 		}
 
-		logs.Infof("cloud resource all sync end, time: %v, rid: %s", start, kt.Rid)
+		logs.Infof("cloud resource all sync end, cost: %s, rid: %s", time.Since(start), kt.Rid)
 	}
 }
 
