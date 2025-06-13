@@ -1,5 +1,10 @@
 # 版本历史
 
+## 9.9.9
+
+- deployment.spec.selector.matchLabels 增加对应component标签
+
+
 ## 1.1.1
 
 - 增加多租户开关
