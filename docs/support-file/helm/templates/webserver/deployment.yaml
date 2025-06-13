@@ -10,6 +10,9 @@ spec:
   selector:
     matchLabels:
       {{- include "common.labels.matchLabels" . | nindent 6 }}
+      {{- if  not .Values.compatibility.noComponentInMatchLabels}}
+      component: webserver
+      {{- end }}
   template:
     metadata:
       labels:
