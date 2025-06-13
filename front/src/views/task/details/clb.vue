@@ -19,6 +19,13 @@ import Cancel from './children/cancel/cancel.vue';
 import { TASK_CLB_TYPE_NAME } from '../constants';
 import { TaskClbType, TaskDetailStatus } from '../typings';
 
+interface ArrayDataItem {
+  domain: string[];
+  url: string[];
+  ip: string[];
+  weight: string[];
+}
+
 const taskStore = useTaskStore();
 const { getBizsId } = useWhereAmI();
 const route = useRoute();
@@ -121,6 +128,24 @@ watch(
       page: getPageParams(pagination, { sort, order }),
     });
 
+    list.forEach((item) => {
+      const arrayData: ArrayDataItem = {
+        domain: [],
+        url: [],
+        ip: [],
+        weight: [],
+      };
+      item.param.rs_list.forEach((rs_item: any) => {
+        arrayData.domain.push(rs_item?.domain);
+        arrayData.url.push(rs_item?.url);
+        arrayData.ip.push(rs_item?.ip);
+        arrayData.weight.push(rs_item?.weight);
+      });
+      item.param.ip = arrayData.ip.join(',');
+      item.param.url = arrayData.url.join(',');
+      item.param.domain = arrayData.domain.join(',');
+      item.param.weight = arrayData.weight.join(',');
+    });
     taskDetailList.value = list;
     pagination.count = count;
 

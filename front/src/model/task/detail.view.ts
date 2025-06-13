@@ -165,12 +165,12 @@ export default [
     type: 'string',
   },
   {
-    id: 'param.rs_list.0.ip',
+    id: 'param.ip',
     name: 'RSIP',
     type: 'string',
   },
   {
-    id: 'param.rs_list.0.weight',
+    id: 'param.weight',
     name: '原权重',
     type: 'string',
   },
@@ -180,12 +180,12 @@ export default [
     type: 'string',
   },
   {
-    id: 'param.rs_list.0.url',
+    id: 'param.url',
     name: 'URL',
     type: 'string',
   },
   {
-    id: 'param.rs_list.0.domain',
+    id: 'param.domain',
     name: '域名',
     type: 'string',
   },
