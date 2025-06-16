@@ -27,7 +27,6 @@ import (
 	"hcm/pkg/api/data-service/tenant"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -66,7 +65,7 @@ func (a *admin) UpsertLocalTenant(kt *kit.Kit, targetTenant *bkuser.Tenant) (mes
 	if len(localTenantResp.Details) > 0 {
 		// 2.1 存在则更新
 		localTenant := localTenantResp.Details[0]
-		status := convertTenantStatus(targetTenant.Status)
+		status := targetTenant.GetStatus()
 		// 	更新租户
 		updateReq := &tenant.UpdateTenantReq{Items: []tenant.UpdateTenantField{{
 			ID:     localTenant.ID,
@@ -84,7 +83,7 @@ func (a *admin) UpsertLocalTenant(kt *kit.Kit, targetTenant *bkuser.Tenant) (mes
 	createReq := &tenant.CreateTenantReq{
 		Items: []tenant.CreateTenantField{{
 			TenantID: kt.TenantID,
-			Status:   convertTenantStatus(targetTenant.Status),
+			Status:   targetTenant.GetStatus(),
 		}},
 	}
 	created, err := a.c.DataService().Global.Tenant.Create(kt, createReq)
@@ -125,13 +124,4 @@ func (a *admin) GetTenantFromBkUser(kt *kit.Kit) (*bkuser.Tenant, error) {
 		return nil, fmt.Errorf("invalid tenant: %s", kt.TenantID)
 	}
 	return targetTenant, nil
-}
-
-func convertTenantStatus(tenantStatus bkuser.TenantStatus) enumor.TenantStatus {
-	status := enumor.TenantDisable
-	if tenantStatus == bkuser.TenantStatusEnabled {
-		// 	启用租户
-		status = enumor.TenantEnable
-	}
-	return status
 }
