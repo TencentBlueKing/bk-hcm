@@ -5,6 +5,7 @@ import { ResourceTypeEnum } from '@/common/resource-constant';
 
 defineOptions({ name: 'hcm-form-region' });
 
+const model = defineModel<string | string[]>();
 const props = defineProps<{
   vendor: string;
   resourceType?: ResourceTypeEnum.CVM | ResourceTypeEnum.VPC | ResourceTypeEnum.DISK | ResourceTypeEnum.SUBNET;
@@ -12,7 +13,6 @@ const props = defineProps<{
   clearable?: boolean;
   disabled?: boolean;
 }>();
-const model = defineModel<string | string[]>();
 const attrs = useAttrs();
 
 const localModel = computed({

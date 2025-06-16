@@ -1,25 +1,17 @@
 module.exports = {
-  root: true,
   extends: ['@blueking/eslint-config-bk/tsvue3', 'plugin:prettier/recommended'],
-  parserOptions: {
-    project: './tsconfig.eslint.json',
-    tsconfigRootDir: __dirname,
-    sourceType: 'module',
-    experimentalDecorators: true,
-    emitDecoratorMetadata: true,
-    ecmaFeatures: {
-      legacyDecorators: true,
-    },
-  },
   rules: {
     'no-param-reassign': 0,
     'arrow-body-style': 'off',
     '@typescript-eslint/naming-convention': 0,
     '@typescript-eslint/no-misused-promises': 0,
+    '@typescript-eslint/no-require-imports': 0,
     'prefer-spread': 'off',
     'no-console': ['error', { allow: ['warn', 'error'] }],
     'no-debugger': 'error',
     'linebreak-style': 0,
     'vue/require-explicit-emits': 0,
+    'vue/multi-word-component-names': 0,
+    'vue/component-definition-name-casing': 0,
   },
 };

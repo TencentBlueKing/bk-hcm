@@ -136,7 +136,8 @@ export default defineComponent({
                   class={[
                     'mr8',
                     { 'hcm-no-permision-btn': !authVerifyData?.value?.permissionAction?.[createClbActionName.value] },
-                  ]}>
+                  ]}
+                >
                   <Plus class='f20' />
                   {t('新建')}
                 </Button>
@@ -162,7 +163,8 @@ export default defineComponent({
                             v-bk-tooltips={{
                               content: '传入的目标组不同属于一个负载均衡/账号, 不可进行批量移除RS操作',
                               disabled: isSelectionsBelongSameAccountAndLB.value,
-                            }}>
+                            }}
+                          >
                             {t('批量移除 RS')}
                           </Button>
                         </DropdownItem>
@@ -181,7 +183,8 @@ export default defineComponent({
                                     content: '传入的目标组不同属于一个VPC, 不可进行批量添加RS操作',
                                     disabled: isSelectionsBelongSameVpc.value,
                                   }
-                            }>
+                            }
+                          >
                             {t('批量添加 RS')}
                           </Button>
                         </DropdownItem>
@@ -207,7 +210,8 @@ export default defineComponent({
           confirmText='删除'
           tableProps={batchDeleteTargetGroupTableProps}
           list={computedListenersList.value}
-          onHandleConfirm={batchDeleteTargetGroup}>
+          onHandleConfirm={batchDeleteTargetGroup}
+        >
           {{
             tips: () => (
               <>
@@ -235,7 +239,8 @@ export default defineComponent({
           theme='danger'
           confirmText='移除 RS'
           custom
-          onHandleConfirm={batchDeleteRs}>
+          onHandleConfirm={batchDeleteRs}
+        >
           <div class='top-area'>
             <div class='tips'>
               已选择<span class='blue'>{selections.value.length}</span>

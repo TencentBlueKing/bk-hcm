@@ -175,7 +175,8 @@ export default defineComponent({
               required
               rules={[
                 { validator: (v: number) => v >= 1 && v <= 65535, message: '端口范围为1-65535', trigger: 'change' },
-              ]}>
+              ]}
+            >
               <Input
                 type='number'
                 modelValue={port}
@@ -234,7 +235,8 @@ export default defineComponent({
               property={`rs_list.${index}.weight`}
               errorDisplayType='tooltips'
               required
-              rules={[{ validator: (v: number) => v >= 0 && v <= 100, message: '权重范围为0-100', trigger: 'change' }]}>
+              rules={[{ validator: (v: number) => v >= 0 && v <= 100, message: '权重范围为0-100', trigger: 'change' }]}
+            >
               <Input
                 modelValue={cell}
                 onChange={(v) => handleUpdate(v, TargetGroupOperationScene.SINGLE_UPDATE_WEIGHT, data.id)}
@@ -366,7 +368,8 @@ export default defineComponent({
                 content: '目标组基本信息，RS变更，RS权重修改，RS端口修改不支持同时变更',
                 disabled: isInitialState.value || isAddRs.value,
               }}
-              disabled={!isInitialState.value && !isAddRs.value}>
+              disabled={!isInitialState.value && !isAddRs.value}
+            >
               <i class='hcm-icon bkhcm-icon-plus-circle-shape'></i>
               <span>添加 RS</span>
             </Button>
@@ -384,7 +387,8 @@ export default defineComponent({
           settings={settings.value}
           showOverflowTooltip
           minHeight={200}
-          maxHeight={420}>
+          maxHeight={420}
+        >
           {{
             empty: () => {
               if (props.loading) return null;

@@ -76,7 +76,8 @@ export default defineComponent({
           // 这里使用key解决切换监听器后，协议变更而页面不更新问题
           key={props.protocol}
           type='card-grid'
-          onChange={handleActiveTabChange}>
+          onChange={handleActiveTabChange}
+        >
           {tabList.value.map((tab) => (
             <bk-tab-panel key={tab.name} name={tab.name} label={tab.label}>
               <div class='common-card-wrap'>{h(tab.component, props)}</div>

@@ -35,12 +35,9 @@ export interface IAccountOption extends IAccountItem {
   visible: boolean;
 }
 
-const { Option } = Select;
-
 defineOptions({ name: 'AccountSelector' });
 
-const route = useRoute();
-const whereAmI = useWhereAmI();
+const model = defineModel<string>();
 
 const props = withDefaults(defineProps<IAccountSelectorProps>(), {
   disabled: false,
@@ -56,7 +53,10 @@ const emit =
     (e: 'change', val: IAccountItem, oldVal: IAccountItem, vendorAccountMap: Map<VendorEnum, IAccountOption[]>) => void
   >();
 
-const model = defineModel<string>();
+const { Option } = Select;
+
+const route = useRoute();
+const whereAmI = useWhereAmI();
 
 const toolbarHeight = 50;
 

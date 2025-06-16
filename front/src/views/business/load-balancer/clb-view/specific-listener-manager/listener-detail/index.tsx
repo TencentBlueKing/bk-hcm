@@ -160,7 +160,8 @@ export default defineComponent({
           class='fixed-edit-btn'
           outline
           theme='primary'
-          onClick={() => bus.$emit('showEditListenerSideslider', props.id)}>
+          onClick={() => bus.$emit('showEditListenerSideslider', props.id)}
+        >
           {t('编辑')}
         </Button>
         {listenerDetailInfoOption.value.map(({ title, open_state, content, hidden }) => {

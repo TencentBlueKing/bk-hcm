@@ -37,6 +37,7 @@ try {
 app.get('*', (req, res) => {
   // 检查请求路径是否是静态资源路径
   if (req.path.startsWith('/static') || req.path.startsWith('/assets')) {
+    // eslint-disable-next-line
     console.log('Static resource requested:', req.path);
     return res.status(404).send('Not Found');
   }
@@ -51,6 +52,7 @@ app.get('*', (req, res) => {
       clientIP: req.ip,
     };
 
+    // eslint-disable-next-line
     console.log(`Serving SPA for: ${routeInfo.path}`);
 
     // 返回index.html内容
@@ -63,6 +65,7 @@ app.get('*', (req, res) => {
 
 // 启动服务器
 app.listen(port, () => {
+  // eslint-disable-next-line
   console.log(`
   🚀 Server running at: http://localhost:${port}
   📂 Static resources served from: ${staticPath}

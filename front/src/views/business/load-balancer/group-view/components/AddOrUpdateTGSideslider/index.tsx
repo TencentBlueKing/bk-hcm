@@ -295,7 +295,8 @@ export default defineComponent({
                   class='ml4'
                   text
                   theme='primary'
-                  onClick={() => goAsyncTaskDetail(businessStore.list, data?.flow_id, formData.bk_biz_id)}>
+                  onClick={() => goAsyncTaskDetail(businessStore.list, data?.flow_id, formData.bk_biz_id)}
+                >
                   查看当前任务
                 </Button>
               </>
@@ -369,7 +370,8 @@ export default defineComponent({
         isSubmitLoading={isSubmitLoading.value}
         isSubmitDisabled={isSubmitDisabled.value}
         onHandleSubmit={handleAddOrUpdateTargetGroupSubmit}
-        handleClose={handleClose}>
+        handleClose={handleClose}
+      >
         <bk-container margin={0}>
           <Form formType='vertical' model={formData} ref={formRef} rules={rules}>
             {/* 异步任务提示 */}
@@ -388,7 +390,8 @@ export default defineComponent({
                     <Button
                       text
                       theme='primary'
-                      onClick={() => goAsyncTaskDetail(businessStore.list, flowId, formData.bk_biz_id)}>
+                      onClick={() => goAsyncTaskDetail(businessStore.list, flowId, formData.bk_biz_id)}
+                    >
                       查看任务
                     </Button>
                     。
@@ -401,7 +404,8 @@ export default defineComponent({
                   <Button
                     text
                     theme='primary'
-                    onClick={() => goAsyncTaskDetail(businessStore.list, flowId, formData.bk_biz_id)}>
+                    onClick={() => goAsyncTaskDetail(businessStore.list, flowId, formData.bk_biz_id)}
+                  >
                     查看任务
                   </Button>
                   。
