@@ -53,9 +53,11 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
+	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 )
 
@@ -143,6 +145,13 @@ func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
 	}
 
 	// 调用DB创建单据
+	return a.createWithDataService(cts.Kit, itsmTicketRes.ID, handler, cvt.PtrToVal(req.Remark))
+}
+
+func (a *applicationSvc) createWithDataService(kt *kit.Kit, itsmTicketID string, handler handlers.ApplicationHandler,
+	memo string) (interface{}, error) {
+
+	applicationType := handler.GetType()
 	content, err := json.MarshalToString(handler.GenerateApplicationContent())
 	if err != nil {
 		return nil, errf.NewFromErr(
@@ -160,18 +169,18 @@ func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
 	}
 
 	result, err := a.client.DataService().Global.Application.CreateApplication(
-		cts.Kit.Ctx,
-		cts.Kit.Header(),
+		kt.Ctx,
+		kt.Header(),
 		&dataproto.ApplicationCreateReq{
-			SN:             itsmTicketRes.ID,
+			SN:             itsmTicketID,
 			Source:         enumor.ApplicationSourceITSM,
 			Type:           applicationType,
 			Status:         enumor.Pending,
 			BkBizIDs:       bkBizIDs,
-			Applicant:      cts.Kit.User,
+			Applicant:      kt.User,
 			Content:        content,
 			DeliveryDetail: "{}",
-			Memo:           req.Remark,
+			Memo:           &memo,
 		},
 	)
 	if err != nil {

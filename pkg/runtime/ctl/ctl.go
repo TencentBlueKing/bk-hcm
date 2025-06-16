@@ -84,7 +84,6 @@ func WithBasics(sd serviced.Service) []cmd.Cmd {
 }
 
 func (b *Ctl) httpHandler(w http.ResponseWriter, req *http.Request) {
-
 	// get the command to run from url parameters, returns help message if not set or is 'help'.
 	urlParams := req.URL.Query()
 	cmdName := urlParams.Get("cmd")
