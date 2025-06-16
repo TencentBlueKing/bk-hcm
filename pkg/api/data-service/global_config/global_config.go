@@ -24,10 +24,9 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
+	gccore "hcm/pkg/api/core/global-config"
 	"hcm/pkg/criteria/validator"
 	tablegconf "hcm/pkg/dal/table/global-config"
-
-	gccore "hcm/pkg/api/core/global-config"
 )
 
 // ListReq ...
