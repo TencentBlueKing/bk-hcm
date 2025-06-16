@@ -101,7 +101,7 @@ func (s *subnetDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []cloud.S
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, models[0].TableName(), cloud.SubnetColumns.ColumnExpr(),
 		cloud.SubnetColumns.ColonNameExpr())
 
-	err = s.orm.Txn(tx).BulkInsert(kt.Ctx, sql, models)
+	err = s.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).BulkInsert(kt.Ctx, sql, models)
 	if err != nil {
 		return nil, fmt.Errorf("insert %s failed, err: %v", models[0].TableName(), err)
 	}
@@ -160,7 +160,8 @@ func (s *subnetDao) Update(kt *kit.Kit, filterExpr *filter.Expression, model *cl
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, model.TableName(), setExpr, whereExpr)
 
 	_, err = s.orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		effected, err := s.orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
+		effected, err := s.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(txn).Update(
+			kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if err != nil {
 			logs.ErrorJson("update subnet failed, err: %v, filter: %s, rid: %v", err, filterExpr, kt.Rid)
 			return nil, err
@@ -214,7 +215,7 @@ func (s *subnetDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filte
 		// this is a count request, do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.SubnetTable, whereExpr)
 
-		count, err := s.orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := s.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count subnets failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -232,7 +233,8 @@ func (s *subnetDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filte
 		whereExpr, pageExpr)
 
 	details := make([]cloud.SubnetTable, 0)
-	if err = s.orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	err = s.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql, whereValue)
+	if err != nil {
 		return nil, err
 	}
 
@@ -251,7 +253,8 @@ func (s *subnetDao) BatchDeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filt
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.SubnetTable, whereExpr)
-	if _, err = s.orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+	_, err = s.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Delete(kt.Ctx, sql, whereValue)
+	if err != nil {
 		logs.ErrorJson("delete subnet failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
 		return err
 	}
@@ -278,7 +281,7 @@ func (s *subnetDao) Count(kt *kit.Kit, opt *types.CountOption) ([]types.CountRes
 
 	if opt.GroupBy == "" {
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.SubnetTable, whereExpr)
-		count, err := s.orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := s.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count subnets failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -291,7 +294,7 @@ func (s *subnetDao) Count(kt *kit.Kit, opt *types.CountOption) ([]types.CountRes
 		table.SubnetTable, whereExpr, opt.GroupBy)
 
 	counts := make([]types.CountResult, 0)
-	err = s.orm.Do().Select(kt.Ctx, &counts, sql, whereValue)
+	err = s.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &counts, sql, whereValue)
 	if err != nil {
 		return nil, err
 	}
@@ -299,12 +302,13 @@ func (s *subnetDao) Count(kt *kit.Kit, opt *types.CountOption) ([]types.CountRes
 }
 
 // ListSubnet TODO: 考虑之后这种跨表查询是否可以直接引用对象的 List 函数，而不是再写一个。
-func ListSubnet(kt *kit.Kit, orm orm.Interface, ids []string) (map[string]cloud.SubnetTable, error) {
+func ListSubnet(kt *kit.Kit, ormi orm.Interface, ids []string) (map[string]cloud.SubnetTable, error) {
 	sql := fmt.Sprintf(`SELECT %s FROM %s where id in (:ids)`, cloud.SubnetColumns.FieldsNamedExpr(nil),
 		table.SubnetTable)
 
 	subnets := make([]cloud.SubnetTable, 0)
-	if err := orm.Do().Select(kt.Ctx, &subnets, sql, map[string]interface{}{"ids": ids}); err != nil {
+	if err := ormi.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(
+		kt.Ctx, &subnets, sql, map[string]interface{}{"ids": ids}); err != nil {
 		return nil, err
 	}
 

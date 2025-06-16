@@ -66,6 +66,9 @@ type ManagementTable struct {
 	Reviser    string                        `db:"reviser" validate:"max=64" json:"reviser"`
 	CreatedAt  types.Time                    `db:"created_at" validate:"isdefault" json:"created_at"`
 	UpdatedAt  types.Time                    `db:"updated_at" validate:"isdefault" json:"updated_at"`
+
+	// TenantID 租户ID
+	TenantID string `db:"tenant_id" json:"tenant_id"`
 }
 
 // TableName is the task management database table name.

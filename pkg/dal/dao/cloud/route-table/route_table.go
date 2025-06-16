@@ -95,7 +95,7 @@ func (r *routeTableDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []rou
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, models[0].TableName(),
 		routetable.RouteTableColumns.ColumnExpr(), routetable.RouteTableColumns.ColonNameExpr())
 
-	err = r.orm.Txn(tx).BulkInsert(kt.Ctx, sql, models)
+	err = r.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).BulkInsert(kt.Ctx, sql, models)
 	if err != nil {
 		return nil, fmt.Errorf("insert %s failed, err: %v", models[0].TableName(), err)
 	}
@@ -153,7 +153,8 @@ func (r *routeTableDao) Update(kt *kit.Kit, filterExpr *filter.Expression, model
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, model.TableName(), setExpr, whereExpr)
 
 	_, err = r.orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		effected, err := r.orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
+		effected, err := r.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(txn).Update(
+			kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if err != nil {
 			logs.ErrorJson("update route table failed, err: %v, filter: %s, rid: %v", err, filterExpr, kt.Rid)
 			return nil, err
@@ -205,7 +206,7 @@ func (r *routeTableDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*f
 		// this is a count request, do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.RouteTableTable, whereExpr)
 
-		count, err := r.orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := r.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count route tables failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -223,7 +224,8 @@ func (r *routeTableDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*f
 		table.RouteTableTable, whereExpr, pageExpr)
 
 	details := make([]routetable.RouteTableTable, 0)
-	if err = r.orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	err = r.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql, whereValue)
+	if err != nil {
 		return nil, err
 	}
 
@@ -242,7 +244,8 @@ func (r *routeTableDao) BatchDeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.RouteTableTable, whereExpr)
-	if _, err = r.orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+	_, err = r.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Delete(kt.Ctx, sql, whereValue)
+	if err != nil {
 		logs.ErrorJson("delete route table failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
 		return err
 	}
@@ -251,14 +254,15 @@ func (r *routeTableDao) BatchDeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *
 }
 
 // TODO: 考虑之后这种跨表查询是否可以直接引用对象的 List 函数，而不是再写一个。
-func listRouteTable(kt *kit.Kit, orm orm.Interface, tx *sqlx.Tx, ids []string) (map[string]routetable.RouteTableTable,
+func listRouteTable(kt *kit.Kit, ormi orm.Interface, tx *sqlx.Tx, ids []string) (map[string]routetable.RouteTableTable,
 	error) {
 
 	sql := fmt.Sprintf(`SELECT %s FROM %s where id in (:ids)`, routetable.RouteTableColumns.FieldsNamedExpr(nil),
 		table.RouteTableTable)
 
 	rts := make([]routetable.RouteTableTable, 0)
-	if err := orm.Txn(tx).Select(kt.Ctx, &rts, sql, map[string]interface{}{"ids": ids}); err != nil {
+	if err := ormi.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Select(kt.Ctx, &rts, sql,
+		map[string]interface{}{"ids": ids}); err != nil {
 		return nil, err
 	}
 

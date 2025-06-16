@@ -98,7 +98,7 @@ func (r *Dao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, records []rr.RecycleRe
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, records[0].TableName(),
 		rr.RecycleRecordColumns.ColumnExpr(), rr.RecycleRecordColumns.ColonNameExpr())
 
-	err = r.orm.Txn(tx).BulkInsert(kt.Ctx, sql, records)
+	err = r.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).BulkInsert(kt.Ctx, sql, records)
 	if err != nil {
 		return "", fmt.Errorf("insert %s failed, err: %v", records[0].TableName(), err)
 	}
@@ -129,7 +129,8 @@ func (r *Dao) Update(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression, re
 
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, record.TableName(), setExpr, whereExpr)
 
-	effected, err := r.orm.Txn(tx).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
+	effected, err := r.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Update(
+		kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 	if err != nil {
 		logs.ErrorJson("update recycle record failed, err: %v, filter: %s, rid: %v", err, filterExpr, kt.Rid)
 		return err
@@ -173,7 +174,7 @@ func (r *Dao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filter.SQLW
 		// this is a count request, do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.RecycleRecordTable, whereExpr)
 
-		count, err := r.orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := r.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count recycle records failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -191,7 +192,8 @@ func (r *Dao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filter.SQLW
 		table.RecycleRecordTable, whereExpr, pageExpr)
 
 	details := make([]rr.RecycleRecordTable, 0)
-	if err = r.orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	err = r.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql, whereValue)
+	if err != nil {
 		return nil, err
 	}
 
@@ -210,7 +212,8 @@ func (r *Dao) BatchDeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Exp
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.RecycleRecordTable, whereExpr)
-	if _, err = r.orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+	_, err = r.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Delete(kt.Ctx, sql, whereValue)
+	if err != nil {
 		logs.ErrorJson("delete recycle record failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
 		return err
 	}
@@ -234,7 +237,8 @@ func (r *Dao) UpdateResource(kt *kit.Kit, tx *sqlx.Tx, opt *rrtypes.ResourceUpda
 		"id": opt.IDs,
 	}
 
-	effected, err := r.orm.Txn(tx).Update(kt.Ctx, sql, tools.MapMerge(updateData, whereValue))
+	effected, err := r.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Update(
+		kt.Ctx, sql, tools.MapMerge(updateData, whereValue))
 	if err != nil {
 		logs.ErrorJson("update resource failed, err: %v, table: %s, ids: %+v, rid: %v", err, tableName, opt.IDs, kt.Rid)
 		return err
@@ -269,7 +273,8 @@ func (r *Dao) ListResourceInfo(kt *kit.Kit, resType enumor.CloudResourceType, id
 	args := map[string]interface{}{
 		"id": ids,
 	}
-	if err := r.orm.Do().Select(kt.Ctx, &info, sql, args); err != nil {
+	err = r.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &info, sql, args)
+	if err != nil {
 		logs.Errorf("list recycle resource info failed, err: %v, type: %s, ids: %v, rid: %s", err, resType, ids, kt.Rid)
 		return nil, err
 	}
