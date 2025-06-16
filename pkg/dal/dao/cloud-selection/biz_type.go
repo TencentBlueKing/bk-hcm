@@ -94,8 +94,8 @@ func (dao BizTypeDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model *tableselecti
 	}
 	model.ID = id
 
-	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, model.TableName(), tableselection.BizTypeTableColumns.ColumnExpr(),
-		tableselection.BizTypeTableColumns.ColonNameExpr())
+	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, model.TableName(),
+		tableselection.BizTypeTableColumns.ColumnExpr(), tableselection.BizTypeTableColumns.ColonNameExpr())
 
 	err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Insert(kt.Ctx, sql, model)
 	if err != nil {
