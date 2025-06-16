@@ -1,6 +1,6 @@
 import { computed, defineComponent, ref, watch } from 'vue';
 // import components
-import { SearchSelect, Loading, Table, Input, Button, Form } from 'bkui-vue';
+import { SearchSelect, Table, Input, Button, Form } from 'bkui-vue';
 import Empty from '@/components/empty';
 import BatchUpdatePopConfirm from '@/components/batch-update-popconfirm';
 // import hooks
@@ -12,6 +12,7 @@ import { useRegionsStore } from '@/store/useRegionsStore';
 import bus from '@/common/bus';
 import { getLocalFilterConditions } from '@/utils';
 import './index.scss';
+import { TargetGroupOperationScene } from '@/constants';
 
 const { FormItem } = Form;
 
@@ -27,6 +28,7 @@ export default defineComponent({
     noDisabled: Boolean, // 禁用所有disabled
     onlyShow: Boolean, // 只用于显示(基本信息页面使用)
     lbDetail: Object,
+    loading: Boolean,
   },
   emits: ['update:rsList', 'update:deletedRsList'],
   setup(props, { emit }) {
@@ -36,65 +38,74 @@ export default defineComponent({
     const vpc_id = ref('');
 
     // rs配置表单项
-    const isTableLoading = ref(false);
     const { columns, settings } = useColumns('rsConfig');
 
     const isInitialState = computed(() => loadBalancerStore.updateCount !== 2);
-    const isAdd = computed(() => loadBalancerStore.currentScene === 'add');
-    const isAddRs = computed(() => loadBalancerStore.currentScene === 'AddRs');
-    const isBatchUpdatePort = computed(() => loadBalancerStore.currentScene === 'port');
-    const isBatchUpdateWeight = computed(() => loadBalancerStore.currentScene === 'weight');
+    const isAdd = computed(() => loadBalancerStore.currentScene === TargetGroupOperationScene.ADD);
+    const isAddRs = computed(() => loadBalancerStore.currentScene === TargetGroupOperationScene.ADD_RS);
+    const isPortSingleUpdate = computed(
+      () => loadBalancerStore.currentScene === TargetGroupOperationScene.SINGLE_UPDATE_PORT,
+    );
+    const isPortBatchUpdate = computed(
+      () => loadBalancerStore.currentScene === TargetGroupOperationScene.BATCH_UPDATE_PORT,
+    );
+    const isWeightSingleUpdate = computed(
+      () => loadBalancerStore.currentScene === TargetGroupOperationScene.SINGLE_UPDATE_WEIGHT,
+    );
+    const isWeightBatchUpdate = computed(
+      () => loadBalancerStore.currentScene === TargetGroupOperationScene.BATCH_UPDATE_WEIGHT,
+    );
 
     // 修改单条row的port/weight
-    const handleUpdate = (id: string, key: string) => {
-      return (val: number) => {
-        emit(
-          'update:rsList',
-          props.rsList.map((item) => {
-            if (item.id === id) {
-              item[key] = Number(val);
-            }
-            return item;
-          }),
-        );
-      };
-    };
+    const handleUpdate = (v: number, key: TargetGroupOperationScene, id: string) => {
+      const keyPath = TargetGroupOperationScene.SINGLE_UPDATE_PORT === key ? 'port' : 'weight';
 
-    // 修改所有row的port/weight
-    const handleBatchUpdate = (v: number, key: 'port' | 'weight') => {
+      // 更新操作场景
       if (loadBalancerStore.updateCount === 1 && !loadBalancerStore.currentScene) {
         loadBalancerStore.setUpdateCount(2);
         loadBalancerStore.setCurrentScene(key);
+        // 修改单个rs，记录rs的id，此时仍然支持批量修改操作（一旦执行批量修改操作，则场景切换为批量操作场景）
+        loadBalancerStore.setTargetGroupOperateLockState({ singleUpdateRsId: id });
       }
 
-      switch (loadBalancerStore.currentScene) {
-        // 新增rs只支持批量修改新增的rs
-        case 'AddRs':
-          emit(
-            'update:rsList',
-            props.rsList.map((item) => {
-              if (item.isNew) {
-                item[key] = Number(v);
-              }
-              return item;
-            }),
-          );
-          break;
-        case 'add':
-        case 'port':
-        case 'weight':
-        case 'BatchAddRs':
-          emit(
-            'update:rsList',
-            props.rsList.map((item) => {
-              item[key] = Number(v);
-              return item;
-            }),
-          );
-          break;
-        default:
-          break;
+      const newRsList = props.rsList.map((item) => {
+        if (item.id === id) {
+          item[keyPath] = Number(v);
+        }
+        return item;
+      });
+
+      emit('update:rsList', newRsList);
+    };
+
+    // 修改所有row的port/weight
+    const handleBatchUpdate = (v: number, key: TargetGroupOperationScene) => {
+      const keyPath = TargetGroupOperationScene.BATCH_UPDATE_PORT === key ? 'port' : 'weight';
+      const singleOperateScene = [
+        TargetGroupOperationScene.SINGLE_UPDATE_PORT,
+        TargetGroupOperationScene.SINGLE_UPDATE_WEIGHT,
+      ];
+
+      // 更新操作场景
+      if (
+        (loadBalancerStore.updateCount === 1 && !loadBalancerStore.currentScene) ||
+        singleOperateScene.includes(loadBalancerStore.currentScene)
+      ) {
+        loadBalancerStore.setUpdateCount(2);
+        loadBalancerStore.setCurrentScene(key);
+        loadBalancerStore.setTargetGroupOperateLockState({ singleUpdateRsId: '' });
       }
+
+      const newRsList = props.rsList.map((item) => {
+        // 新增rs只支持批量修改新增的rs
+        const shouldUpdate = loadBalancerStore.currentScene === TargetGroupOperationScene.ADD_RS ? item.isNew : true;
+        if (shouldUpdate) {
+          item[keyPath] = Number(v);
+        }
+        return item;
+      });
+
+      emit('update:rsList', newRsList);
     };
 
     // delete-handler
@@ -102,7 +113,7 @@ export default defineComponent({
       const { id, isNew } = data;
       // 如果待移除的rs不是新增的, 而是目标组已经绑定的, 则记录操作场景, 并记录待删除的rs
       if (!isNew) {
-        loadBalancerStore.setCurrentScene('BatchDeleteRs');
+        loadBalancerStore.setCurrentScene(TargetGroupOperationScene.BATCH_DELETE_RS);
         loadBalancerStore.setUpdateCount(2);
         emit('update:deletedRsList', [...props.deletedRsList, data]);
       }
@@ -127,8 +138,18 @@ export default defineComponent({
                 title='端口'
                 min={1}
                 max={65535}
-                onUpdateValue={(v) => handleBatchUpdate(v, 'port')}
-                disabled={!props.noDisabled && !isInitialState.value && !isBatchUpdatePort.value && !isAddRs.value}
+                onUpdateValue={(v) => handleBatchUpdate(v, TargetGroupOperationScene.BATCH_UPDATE_PORT)}
+                // 可操作场景：新增目标组、编辑初始态、批量修改端口、修改单个端口、新增RS(仅新增项)
+                disabled={
+                  !(
+                    props.noDisabled ||
+                    isAdd.value ||
+                    isInitialState.value ||
+                    isPortBatchUpdate.value ||
+                    isPortSingleUpdate.value ||
+                    isAddRs.value
+                  )
+                }
               />
             </>
           );
@@ -158,8 +179,18 @@ export default defineComponent({
               <Input
                 type='number'
                 modelValue={port}
-                onChange={handleUpdate(data.id, 'port')}
-                disabled={!props.noDisabled && !(isAdd.value || (isAddRs.value && data.isNew))}
+                onChange={(v: number) => handleUpdate(v, TargetGroupOperationScene.SINGLE_UPDATE_PORT, data.id)}
+                // 可操作场景：新增目标组、编辑初始态、修改单个端口（一次只能修改一个RS）、新增RS(仅新增项)
+                disabled={
+                  !(
+                    props.noDisabled ||
+                    isAdd.value ||
+                    isInitialState.value ||
+                    (isPortSingleUpdate.value &&
+                      loadBalancerStore.targetGroupOperateLockState.singleUpdateRsId === data.id) ||
+                    (isAddRs.value && data.isNew)
+                  )
+                }
               />
             </FormItem>
           );
@@ -176,8 +207,18 @@ export default defineComponent({
                 disabledTip='目标组基本信息修改，添加，RS权重批量修改，RS端口批量修改，RS批量移除等操作暂不支持同时执行'
                 min={0}
                 max={100}
-                onUpdateValue={(v) => handleBatchUpdate(v, 'weight')}
-                disabled={!props.noDisabled && !isInitialState.value && !isBatchUpdateWeight.value && !isAddRs.value}
+                onUpdateValue={(v) => handleBatchUpdate(v, TargetGroupOperationScene.BATCH_UPDATE_WEIGHT)}
+                // 可操作场景：新增目标组、编辑初始态、批量修改权重、修改单个权重、新增RS(仅新增项)
+                disabled={
+                  !(
+                    props.noDisabled ||
+                    isAddRs.value ||
+                    isInitialState.value ||
+                    isWeightBatchUpdate.value ||
+                    isWeightSingleUpdate.value ||
+                    isAddRs.value
+                  )
+                }
               />
             </>
           );
@@ -196,8 +237,18 @@ export default defineComponent({
               rules={[{ validator: (v: number) => v >= 0 && v <= 100, message: '权重范围为0-100', trigger: 'change' }]}>
               <Input
                 modelValue={cell}
-                onChange={handleUpdate(data.id, 'weight')}
-                disabled={!props.noDisabled && !(isAdd.value || (isAddRs.value && data.isNew))}
+                onChange={(v) => handleUpdate(v, TargetGroupOperationScene.SINGLE_UPDATE_WEIGHT, data.id)}
+                // 可用：新增目标组、编辑初始态、修改单个权重（一次只能修改一个RS）、新增RS(仅新增项)
+                disabled={
+                  !(
+                    props.noDisabled ||
+                    isAdd.value ||
+                    isInitialState.value ||
+                    (isWeightSingleUpdate.value &&
+                      loadBalancerStore.targetGroupOperateLockState.singleUpdateRsId === data.id) ||
+                    (isAddRs.value && data.isNew)
+                  )
+                }
                 type='number'
                 class='no-number-control'
               />
@@ -326,21 +377,21 @@ export default defineComponent({
             </div>
           )}
         </div>
-        <Loading loading={isTableLoading.value}>
-          <Table
-            data={renderTableData.value}
-            columns={rsTableColumns}
-            settings={settings.value}
-            showOverflowTooltip
-            maxHeight={420}>
-            {{
-              empty: () => {
-                if (isTableLoading.value) return null;
-                return <Empty text='暂未添加实例' />;
-              },
-            }}
-          </Table>
-        </Loading>
+        <Table
+          v-bkloading={{ loading: props.loading }}
+          data={renderTableData.value}
+          columns={rsTableColumns}
+          settings={settings.value}
+          showOverflowTooltip
+          minHeight={200}
+          maxHeight={420}>
+          {{
+            empty: () => {
+              if (props.loading) return null;
+              return <Empty text='暂未添加实例' />;
+            },
+          }}
+        </Table>
       </div>
     );
   },

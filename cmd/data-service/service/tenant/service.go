@@ -37,7 +37,6 @@ func InitService(cap *capability.Capability) {
 
 	h.Add("CreateTenant", http.MethodPost, "/tenants/create", svc.CreateTenant)
 	h.Add("UpdateTenant", http.MethodPatch, "/tenants/update", svc.UpdateTenant)
-	h.Add("DeleteTenant", http.MethodDelete, "/tenants/delete", svc.DeleteTenant)
 	h.Add("ListTenant", http.MethodPost, "/tenants/list", svc.ListTenant)
 
 	h.Load(cap.WebService)

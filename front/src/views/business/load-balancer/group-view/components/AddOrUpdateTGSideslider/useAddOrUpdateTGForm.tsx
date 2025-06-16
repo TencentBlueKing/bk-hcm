@@ -9,6 +9,8 @@ import RsConfigTable from '../RsConfigTable';
 import { useAccountStore, useLoadBalancerStore } from '@/store';
 // import types and constants
 import { TARGET_GROUP_PROTOCOLS, VendorEnum } from '@/common/constant';
+import { ResourceTypeEnum } from '@/common/resource-constant';
+import { TargetGroupOperationScene } from '@/constants';
 
 const { Option } = Select;
 
@@ -44,12 +46,16 @@ export default (formData: any, updateCount: Ref<number>, isEdit: Ref<boolean>, l
     },
   });
 
-  const disabledEdit = computed(() => updateCount.value === 2 && loadBalancerStore.currentScene !== 'edit');
+  const disabledEdit = computed(
+    () => updateCount.value === 2 && loadBalancerStore.currentScene !== TargetGroupOperationScene.EDIT,
+  );
   // 只有新增目标组的时候可以修改账号
-  const canUpdateAccount = computed(() => loadBalancerStore.currentScene === 'add');
+  const canUpdateAccount = computed(() => loadBalancerStore.currentScene === TargetGroupOperationScene.ADD);
   // 只有新增目标组或目标组没有绑定rs时, 才可以修改地域和vpc
   const canUpdateRegionOrVpc = computed(
-    () => loadBalancerStore.currentScene === 'add' || formData.rs_list.filter((item: any) => !item.isNew).length === 0,
+    () =>
+      loadBalancerStore.currentScene === TargetGroupOperationScene.ADD ||
+      formData.rs_list.filter((item: any) => !item.isNew).length === 0,
   );
   // 表单相关
   const formRef = ref();
@@ -168,11 +174,10 @@ export default (formData: any, updateCount: Ref<number>, isEdit: Ref<boolean>, l
         span: 12,
         content: () => (
           <RegionSelector
-            isDisabled={!formData.account_id || disabledEdit.value || !canUpdateRegionOrVpc.value}
+            disabled={!formData.account_id || disabledEdit.value || !canUpdateRegionOrVpc.value}
             v-model={formData.region}
-            accountId={formData.account_id}
             vendor={curVendor.value}
-            type='cvm'
+            resourceType={ResourceTypeEnum.CVM}
           />
         ),
       },
@@ -223,7 +228,8 @@ export default (formData: any, updateCount: Ref<number>, isEdit: Ref<boolean>, l
       // region改变时, 过滤掉新增的rs, 保留原有的rs
       formData.rs_list = formData.rs_list.filter((item: any) => !item.isNew);
       // 重置cloud_vpc_id
-      ['add', 'edit'].includes(loadBalancerStore.currentScene) && (formData.cloud_vpc_id = '');
+      [TargetGroupOperationScene.ADD, TargetGroupOperationScene.EDIT].includes(loadBalancerStore.currentScene) &&
+        (formData.cloud_vpc_id = '');
     },
   );
 

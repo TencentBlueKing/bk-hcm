@@ -59,7 +59,7 @@ type RootAccountDao struct {
 }
 
 // ListVendor list vendor info
-func (ra RootAccountDao) ListVendor(kt *kit.Kit, opt *types.ListOption) (*types.ListRootAccountVendorDetails, error) {
+func (a RootAccountDao) ListVendor(kt *kit.Kit, opt *types.ListOption) (*types.ListRootAccountVendorDetails, error) {
 
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list root account vendor options is nil")
@@ -84,7 +84,7 @@ func (ra RootAccountDao) ListVendor(kt *kit.Kit, opt *types.ListOption) (*types.
 		// this is a count request, then do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(DISTINCT vendor) FROM %s %s`, table.RootAccountTable, whereExpr)
 
-		count, err := ra.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count root accounts failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -102,7 +102,8 @@ func (ra RootAccountDao) ListVendor(kt *kit.Kit, opt *types.ListOption) (*types.
 		table.RootAccountTable, whereExpr, pageExpr)
 
 	details := make([]types.AccountVendor, 0)
-	if err = ra.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	err = a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql, whereValue)
+	if err != nil {
 		return nil, err
 	}
 
@@ -126,7 +127,7 @@ func (a RootAccountDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model *tableaccou
 		model.TableName(), tableaccountset.RootAccountColumns.ColumnExpr(),
 		tableaccountset.RootAccountColumns.ColonNameExpr())
 
-	err = a.Orm.Txn(tx).Insert(kt.Ctx, sql, model)
+	err = a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Insert(kt.Ctx, sql, model)
 	if err != nil {
 		return "", fmt.Errorf("insert %s failed, err: %v", model.TableName(), err)
 	}
@@ -183,7 +184,8 @@ func (a RootAccountDao) Update(kt *kit.Kit, filterExpr *filter.Expression,
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, model.TableName(), setExpr, whereExpr)
 
 	_, err = a.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		effected, err := a.Orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
+		effected, err := a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(txn).Update(
+			kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if err != nil {
 			logs.ErrorJson("update root account failed, err: %v, filter: %s, rid: %v", err, filterExpr, kt.Rid)
 			return nil, err
@@ -204,7 +206,7 @@ func (a RootAccountDao) Update(kt *kit.Kit, filterExpr *filter.Expression,
 }
 
 // List list root accounts.
-func (ma RootAccountDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListRootAccountDetails, error) {
+func (a RootAccountDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListRootAccountDetails, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list root account options is nil")
 	}
@@ -217,7 +219,7 @@ func (ma RootAccountDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListRo
 		// this is a count request, then do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.RootAccountTable, whereExpr)
 
-		count, err := ma.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count root accounts failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -234,7 +236,8 @@ func (ma RootAccountDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListRo
 		table.RootAccountTable, whereExpr, pageExpr)
 
 	details := make([]*tableaccountset.RootAccountTable, 0)
-	if err = ma.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	err = a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql, whereValue)
+	if err != nil {
 		return nil, err
 	}
 

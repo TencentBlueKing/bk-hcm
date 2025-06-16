@@ -73,7 +73,7 @@ func (dao BizTypeDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, mode
 	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, model.TableName(), setExpr)
 
 	toUpdate["id"] = id
-	_, err = dao.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
+	_, err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Update(kt.Ctx, sql, toUpdate)
 	if err != nil {
 		logs.ErrorJson("update biz type failed, err: %v, id: %s, rid: %v", err, id, kt.Rid)
 		return err
@@ -94,10 +94,10 @@ func (dao BizTypeDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model *tableselecti
 	}
 	model.ID = id
 
-	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, model.TableName(), tableselection.BizTypeTableColumns.ColumnExpr(),
-		tableselection.BizTypeTableColumns.ColonNameExpr())
+	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, model.TableName(),
+		tableselection.BizTypeTableColumns.ColumnExpr(), tableselection.BizTypeTableColumns.ColonNameExpr())
 
-	err = dao.Orm.Txn(tx).Insert(kt.Ctx, sql, model)
+	err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Insert(kt.Ctx, sql, model)
 	if err != nil {
 		logs.Errorf("insert %s failed, err: %v, sql: %s, model: %+v, rid: %s", err, sql, model, kt.Rid)
 		return "", fmt.Errorf("insert %s failed, err: %v", model.TableName(), err)
@@ -126,7 +126,7 @@ func (dao BizTypeDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListResul
 		// this is dao count request, then do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.CloudSelectionBizTypeTable, whereExpr)
 
-		count, err := dao.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count biz type failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -144,7 +144,8 @@ func (dao BizTypeDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListResul
 		table.CloudSelectionBizTypeTable, whereExpr, pageExpr)
 
 	details := make([]tableselection.BizTypeTable, 0)
-	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql, whereValue)
+	if err != nil {
 		logs.Errorf("select biz type failed, err: %v, sql: %s, rid: %s", err, sql, kt.Rid)
 		return nil, err
 	}
@@ -164,7 +165,8 @@ func (dao BizTypeDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.CloudSelectionBizTypeTable, whereExpr)
-	if _, err = dao.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+	_, err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Delete(kt.Ctx, sql, whereValue)
+	if err != nil {
 		logs.ErrorJson("delete biz type failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
 		return err
 	}

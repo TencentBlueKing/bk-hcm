@@ -225,16 +225,30 @@ export const LISTENER_BINDING_STATUS_REVERSE_MAP: ConstantMapRecord = {
   已绑定: 'success',
 };
 
+export enum TargetGroupOperationScene {
+  ADD = 'add',
+  EDIT = 'edit',
+  BATCH_DELETE = 'batch_delete',
+  ADD_RS = 'add_rs',
+  BATCH_ADD_RS = 'batch_add_rs',
+  BATCH_DELETE_RS = 'batch_delete_rs',
+  SINGLE_UPDATE_PORT = 'single_update_port',
+  SINGLE_UPDATE_WEIGHT = 'single_update_weight',
+  BATCH_UPDATE_PORT = 'batch_update_port',
+  BATCH_UPDATE_WEIGHT = 'batch_update_weight',
+}
 // 编辑目标组操作场景映射
 export const TG_OPERATION_SCENE_MAP = {
-  add: '新增目标组',
-  edit: '编辑目标组基本信息',
-  BatchDelete: '批量删除目标组',
-  AddRs: '添加RS',
-  BatchAddRs: '批量添加RS',
-  BatchDeleteRs: '批量删除RS',
-  port: '批量修改端口',
-  weight: '批量修改权重',
+  [TargetGroupOperationScene.ADD]: '新增目标组',
+  [TargetGroupOperationScene.EDIT]: '编辑目标组基本信息',
+  [TargetGroupOperationScene.BATCH_DELETE]: '批量删除目标组',
+  [TargetGroupOperationScene.ADD_RS]: '添加RS',
+  [TargetGroupOperationScene.BATCH_ADD_RS]: '批量添加RS',
+  [TargetGroupOperationScene.BATCH_DELETE_RS]: '批量删除RS',
+  [TargetGroupOperationScene.SINGLE_UPDATE_PORT]: '修改单个端口',
+  [TargetGroupOperationScene.SINGLE_UPDATE_WEIGHT]: '修改单个端口',
+  [TargetGroupOperationScene.BATCH_UPDATE_PORT]: '批量修改端口',
+  [TargetGroupOperationScene.BATCH_UPDATE_WEIGHT]: '批量修改权重',
 };
 
 // IP版本映射 - 前端展示使用
@@ -283,3 +297,9 @@ export const LOADBALANCER_BANDWIDTH_PACKAGE_NETWORK_TYPES_MAP: Record<string, st
   CTCC: ['SINGLEISP', 'SINGLEISP_CTCC'],
   CUCC: ['SINGLEISP', 'SINGLEISP_CUCC'],
 };
+
+export enum ListenerPanelEnum {
+  LIST = 'list',
+  DETAIL = 'detail',
+  TARGET_GROUP = 'target_group',
+}

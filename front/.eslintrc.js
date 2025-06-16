@@ -5,6 +5,11 @@ module.exports = {
     project: './tsconfig.eslint.json',
     tsconfigRootDir: __dirname,
     sourceType: 'module',
+    experimentalDecorators: true,
+    emitDecoratorMetadata: true,
+    ecmaFeatures: {
+      legacyDecorators: true,
+    },
   },
   rules: {
     'no-param-reassign': 0,

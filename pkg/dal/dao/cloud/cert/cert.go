@@ -78,8 +78,8 @@ func (dao Dao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tablecert.S
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, tableName,
 		tablecert.SslCertTableColumns.ColumnExpr(), tablecert.SslCertTableColumns.ColonNameExpr())
-
-	if err = dao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, models); err != nil {
+	err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).BulkInsert(kt.Ctx, sql, models)
+	if err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", tableName, err, kt.Rid)
 		return nil, fmt.Errorf("insert %s failed, err: %v", tableName, err)
 	}
@@ -137,7 +137,8 @@ func (dao Dao) Update(kt *kit.Kit, expr *filter.Expression, model *tablecert.Ssl
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, model.TableName(), setExpr, whereExpr)
 
 	_, err = dao.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		effected, err := dao.Orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
+		effected, err := dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(txn).Update(
+			kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if err != nil {
 			logs.Errorf("update ssl cert failed, sql: %s, whereValue: %+v, err: %v, rid: %v",
 				sql, whereValue, err, kt.Rid)
@@ -173,7 +174,7 @@ func (dao Dao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, updateData 
 	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, table.SslCertTable, setExpr)
 
 	toUpdate["id"] = id
-	_, err = dao.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
+	_, err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Update(kt.Ctx, sql, toUpdate)
 	if err != nil {
 		logs.Errorf("update cert db failed, id: %s, toUpdate: %+v, err: %v, rid: %v", id, toUpdate, err, kt.Rid)
 		return err
@@ -203,7 +204,7 @@ func (dao Dao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListCertDetails,
 		// this is a count request, then do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.SslCertTable, whereExpr)
 
-		count, err := dao.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count ssl cert failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -221,7 +222,8 @@ func (dao Dao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListCertDetails,
 		table.SslCertTable, whereExpr, pageExpr)
 
 	details := make([]tablecert.SslCertTable, 0)
-	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql, whereValue)
+	if err != nil {
 		return nil, err
 	}
 
@@ -240,7 +242,8 @@ func (dao Dao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) e
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.SslCertTable, whereExpr)
-	if _, err = dao.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+	_, err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Delete(kt.Ctx, sql, whereValue)
+	if err != nil {
 		logs.Errorf("delete ssl cert failed, sql: %s, whereValue: %+v, err: %v, rid: %s",
 			sql, whereValue, err, kt.Rid)
 		return err

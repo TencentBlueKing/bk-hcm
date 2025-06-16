@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0033,HCMVER=v1.8.1
 
     Notes:
     1. 添加租户表 tenant
@@ -40,12 +40,12 @@ create table if not exists `tenant` (
     KEY `idx_status` (`status`)
 ) ENGINE=InnoDB
   DEFAULT CHARSET=utf8mb4
-  COLLATE=utf8mb4_0900_ai_ci COMMENT='租户表';
+  COLLATE=utf8mb4_bin COMMENT='租户表';
 
 insert into id_generator(`resource`, `max_id`)
 values ('tenant', '0');
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.8.1' as `hcm_ver`, '0033' as `sql_ver`;
 
 COMMIT;

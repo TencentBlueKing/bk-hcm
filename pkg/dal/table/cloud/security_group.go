@@ -78,6 +78,8 @@ type SecurityGroupTable struct {
 	Reviser          string          `db:"reviser" json:"reviser" validate:"lte=64"`
 	CreatedAt        types.Time      `db:"created_at" json:"created_at" validate:"excluded_unless"`
 	UpdatedAt        types.Time      `db:"updated_at" json:"updated_at" validate:"excluded_unless"`
+	// TenantID 租户ID
+	TenantID string `db:"tenant_id" json:"tenant_id"`
 }
 
 // GetID return security group table's id.

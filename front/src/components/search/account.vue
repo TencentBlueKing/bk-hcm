@@ -9,5 +9,5 @@ const attrs = useAttrs();
 </script>
 
 <template>
-  <account-selector v-model="model" v-bind="attrs"></account-selector>
+  <account-selector v-model="model" :auto-select-single="false" v-bind="attrs"></account-selector>
 </template>

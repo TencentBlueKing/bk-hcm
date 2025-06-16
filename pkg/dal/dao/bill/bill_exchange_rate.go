@@ -77,8 +77,8 @@ func (a AccountBillExchangeRateDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, models[0].TableName(),
 		tablebill.AccountBillExchangeRateColumns.ColumnExpr(), tablebill.AccountBillExchangeRateColumns.ColonNameExpr())
-
-	if err = a.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, models); err != nil {
+	err = a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).BulkInsert(kt.Ctx, sql, models)
+	if err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", models[0].TableName(), err, kt.Rid)
 		return nil, fmt.Errorf("insert %s failed, err: %v", models[0].TableName(), err)
 	}
@@ -107,7 +107,7 @@ func (a AccountBillExchangeRateDao) List(kt *kit.Kit, opt *types.ListOption) (
 
 	if opt.Page.Count {
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.AccountBillExchangeRateTable, whereExpr)
-		count, err := a.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count account bill exchange rate failed, err: %v, filter: %s, rid: %s",
 				err, opt.Filter, kt.Rid)
@@ -126,7 +126,8 @@ func (a AccountBillExchangeRateDao) List(kt *kit.Kit, opt *types.ListOption) (
 		table.AccountBillExchangeRateTable, whereExpr, pageExpr)
 
 	details := make([]tablebill.AccountBillExchangeRate, 0)
-	if err = a.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	err = a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql, whereValue)
+	if err != nil {
 		return nil, err
 	}
 	return &typesbill.ListAccountBillExchangeRateDetails{Details: details}, nil
@@ -149,7 +150,7 @@ func (a AccountBillExchangeRateDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, i
 	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, table.AccountBillExchangeRateTable, setExpr)
 
 	toUpdate["id"] = id
-	_, err = a.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
+	_, err = a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Update(kt.Ctx, sql, toUpdate)
 	if err != nil {
 		logs.ErrorJson("update account bill exchange rate failed, err: %v, id: %s, rid: %v", err, id, kt.Rid)
 		return err
@@ -170,8 +171,8 @@ func (a AccountBillExchangeRateDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr 
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.AccountBillExchangeRateTable, whereExpr)
-
-	if _, err = a.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+	_, err = a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Delete(kt.Ctx, sql, whereValue)
+	if err != nil {
 		logs.ErrorJson("delete account bill exchange rate failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
 		return err
 	}

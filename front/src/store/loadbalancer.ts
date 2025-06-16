@@ -1,25 +1,16 @@
 import { VendorEnum } from '@/common/constant';
+import { TargetGroupOperationScene } from '@/constants';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import http from '@/http';
 import { IListResData } from '@/typings';
 import { defineStore } from 'pinia';
-import { Ref, ref } from 'vue';
+import { reactive, Ref, ref } from 'vue';
 
 export interface ITreeNode {
   [key: string]: any;
   lb: Record<string, any>; // 当前域名节点所属的负载均衡信息，非域名节点时不生效
   listener: Record<string, any>; // 当前域名节点所属的监听器信息，非域名节点时不生效
 }
-// 目标组视角 - 操作场景
-export type TGOperationScene =
-  | 'add' // 新建目标组
-  | 'edit' // 编辑目标组基本信息
-  | 'BatchDelete' // 批量删除目标组
-  | 'AddRs' // 添加rs
-  | 'BatchAddRs' // 批量添加rs
-  | 'BatchDeleteRs' // 批量删除rs
-  | 'port' // 批量修改端口
-  | 'weight'; // 批量修改权重
 
 export interface ITargetGroupDetail {
   id: string;
@@ -89,9 +80,17 @@ export const useLoadBalancerStore = defineStore('load-balancer', () => {
   const setUpdateCount = (v: number) => {
     updateCount.value = v;
   };
-  const currentScene = ref<TGOperationScene>(); // 记录当前操作类型
-  const setCurrentScene = (v: TGOperationScene) => {
+  const currentScene = ref<TargetGroupOperationScene>(); // 记录当前操作类型
+  const setCurrentScene = (v: TargetGroupOperationScene) => {
     currentScene.value = v;
+  };
+  const defaultTargetGroupOperateLockState = { singleUpdateRsId: '' };
+  const targetGroupOperateLockState = reactive(defaultTargetGroupOperateLockState);
+  const setTargetGroupOperateLockState = (v: typeof defaultTargetGroupOperateLockState) => {
+    Object.assign(targetGroupOperateLockState, v);
+  };
+  const resetTargetGroupOperateLockState = () => {
+    Object.assign(targetGroupOperateLockState, defaultTargetGroupOperateLockState);
   };
 
   // state - lb-tree的搜索条件, 用于链接跳转
@@ -133,6 +132,9 @@ export const useLoadBalancerStore = defineStore('load-balancer', () => {
     setUpdateCount,
     currentScene,
     setCurrentScene,
+    targetGroupOperateLockState,
+    setTargetGroupOperateLockState,
+    resetTargetGroupOperateLockState,
     lbTreeSearchTarget,
     setLbTreeSearchTarget,
     tgSearchTarget,
