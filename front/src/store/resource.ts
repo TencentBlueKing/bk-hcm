@@ -129,12 +129,12 @@ export const useResourceStore = defineStore({
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/assign/bizs`, data);
     },
     // 新增
-    add(type: string, data: any) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}`, data);
+    add(type: string, data: any, config?: any) {
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}`, data, config);
     },
     // 更新
-    update(type: string, data: any, id: string | number) {
-      return http.put(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/${id}`, data);
+    update(type: string, data: any, id: string | number, config?: any) {
+      return http.put(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/${id}`, data, config);
     },
     // 获取
     countSubnetIps(id: string | number) {

@@ -1,12 +1,11 @@
-import { defineComponent, onUnmounted, ref, watch } from 'vue';
+import { computed, defineComponent, onUnmounted, ref, watch } from 'vue';
 import './index.scss';
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
-import ApplyDetail from '@/views/service/my-apply/components/apply-detail/index.vue';
 import { useAccountStore } from '@/store';
 import { useRoute } from 'vue-router';
-import { ACCOUNT_TYPES, APPLICATION_TYPE_MAP } from '../apply-list/constants';
-import AccountApplyDetail from './account-apply-detail';
+import { APPLICATION_TYPE_MAP } from '../apply-list/constants';
 import Clb from './clb.vue';
+import { applyContentRender } from './apply-content-render.plugin';
 
 export enum ApplicationStatus {
   pending = 'pending',
@@ -93,34 +92,39 @@ export default defineComponent({
       },
     );
 
+    const subTitle = computed(() => {
+      return APPLICATION_TYPE_MAP[currentApplyData.value?.type];
+    });
+
     const render = () => {
-      let vNode = (
+      // 负载均衡详情
+      if (!currentApplyData.value?.type) return null;
+      if (['create_load_balancer'].includes(currentApplyData.value.type)) {
+        return <Clb applicationDetail={currentApplyData.value} loading={isLoading.value} />;
+      }
+      return (
         <div class={'apply-detail-container'}>
           <DetailHeader>
-            <span class={'title'}>申请单详情</span>
-            <span class={'sub-title'}>&nbsp;-&nbsp;{APPLICATION_TYPE_MAP[currentApplyData.value.type]}</span>
+            {{
+              default: () => (
+                <>
+                  <span class={'title'}>申请单详情</span>
+                  <span class={'sub-title'}>
+                    &nbsp;-&nbsp;
+                    {subTitle.value}
+                  </span>
+                </>
+              ),
+            }}
           </DetailHeader>
-          {currentApplyData.value.type && (
-            <div class={'apply-content-wrapper'}>
-              {ACCOUNT_TYPES.includes(currentApplyData.value.type) ? (
-                <AccountApplyDetail detail={currentApplyData.value} />
-              ) : (
-                <ApplyDetail
-                  params={currentApplyData.value}
-                  key={curApplyKey.value}
-                  cancelLoading={isCancelBtnLoading.value}
-                  onCancel={handleCancel}
-                />
-              )}
-            </div>
-          )}
+          <div class={'apply-content-wrapper'}>
+            {applyContentRender(currentApplyData, curApplyKey, {
+              cancelLoading: isCancelBtnLoading.value,
+              onCancel: handleCancel,
+            })}
+          </div>
         </div>
       );
-      // 负载均衡详情
-      if (route.query.type?.includes('load_balancer')) {
-        vNode = <Clb applicationDetail={currentApplyData.value} loading={isLoading.value} />;
-      }
-      return vNode;
     };
 
     return render;
