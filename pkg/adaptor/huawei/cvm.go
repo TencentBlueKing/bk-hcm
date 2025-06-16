@@ -73,9 +73,6 @@ func (h *HuaWei) ListCvm(kt *kit.Kit, opt *typecvm.HuaWeiListOption) ([]typecvm.
 	}
 
 	req := new(model.ListServersDetailsRequest)
-	// 暂不支持裸金属服务器，因此此处屏蔽裸金属服务器
-	// 注意，若指定了ServerID，该筛选条件会自动失效
-	req.NotTags = converter.ValToPtr("__type_baremetal")
 
 	if len(opt.CloudIDs) != 0 {
 		req.ServerId = converter.ValToPtr(strings.Join(opt.CloudIDs, ","))
@@ -85,8 +82,8 @@ func (h *HuaWei) ListCvm(kt *kit.Kit, opt *typecvm.HuaWeiListOption) ([]typecvm.
 		req.Limit = converter.ValToPtr(opt.Page.Limit)
 		req.Offset = converter.ValToPtr(opt.Page.Offset)
 	}
-	// 查询的时候不需要查出 裸金属服务器
-	// 当指定了 ServerId 时, 其余的查询条件不会生效
+	// 暂不支持裸金属服务器，因此此处屏蔽裸金属服务器
+	// 注意，若指定了ServerID，该筛选条件会自动失效
 	req.NotTags = converter.ValToPtr("__type_baremetal")
 
 	resp, err := client.ListServersDetails(req)
@@ -122,25 +119,34 @@ func (h *HuaWei) ListCvm(kt *kit.Kit, opt *typecvm.HuaWeiListOption) ([]typecvm.
 		inst.CloudLaunchedTime = startTime
 
 		if one.Flavor != nil {
-			cloudFlavor := one.Flavor
-			ramInt, err := strconv.Atoi(cloudFlavor.Ram)
+			flavor, err := h.convFlavor(kt, one.Flavor)
 			if err != nil {
-				logs.Errorf("convert huawei cvm ram to int failed, err: %v, rid: %s", err, kt.Rid)
+				logs.Errorf("conv huawei flavor failed, err: %v, rid: %s", err, kt.Rid)
 				return nil, err
 			}
-			ram := strconv.Itoa(ramInt / 1024)
-			inst.Flavor = &corecvm.HuaWeiFlavor{
-				CloudID: cloudFlavor.Id,
-				Name:    cloudFlavor.Name,
-				Disk:    cloudFlavor.Disk,
-				VCpus:   cloudFlavor.Vcpus,
-				Ram:     ram,
-			}
+			inst.Flavor = flavor
 		}
 		cvms = append(cvms, inst)
 	}
 
 	return cvms, err
+}
+
+func (h *HuaWei) convFlavor(kt *kit.Kit, cloudFlavor *model.ServerFlavor) (*corecvm.HuaWeiFlavor, error) {
+	ramInt, err := strconv.Atoi(cloudFlavor.Ram)
+	if err != nil {
+		logs.Errorf("convert huawei cvm ram to int failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+	ram := strconv.Itoa(ramInt / 1024)
+	flavor := &corecvm.HuaWeiFlavor{
+		CloudID: cloudFlavor.Id,
+		Name:    cloudFlavor.Name,
+		Disk:    cloudFlavor.Disk,
+		VCpus:   cloudFlavor.Vcpus,
+		Ram:     ram,
+	}
+	return flavor, nil
 }
 
 func getIps(serverAddress map[string][]model.ServerAddress) (privateIPv4, publicIPv4, privateIPv6, publicIPv6 []string) {
