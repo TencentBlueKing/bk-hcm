@@ -5,13 +5,14 @@ import { ResourceTypeEnum } from '@/common/resource-constant';
 
 defineOptions({ name: 'hcm-form-region' });
 
+const model = defineModel<string | string[]>();
 const props = defineProps<{
   vendor: string;
   resourceType?: ResourceTypeEnum.CVM | ResourceTypeEnum.VPC | ResourceTypeEnum.DISK | ResourceTypeEnum.SUBNET;
   multiple?: boolean;
   clearable?: boolean;
+  disabled?: boolean;
 }>();
-const model = defineModel<string | string[]>();
 const attrs = useAttrs();
 
 const localModel = computed({
@@ -42,6 +43,7 @@ watchEffect(async () => {
     v-model="localModel"
     :list="list"
     :clearable="clearable"
+    :disabled="disabled"
     :multiple="multiple"
     :multiple-mode="multiple ? 'tag' : 'default'"
     :id-key="'id'"

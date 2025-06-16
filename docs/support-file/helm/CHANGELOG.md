@@ -1,5 +1,16 @@
 # 版本历史
 
+## 9.9.9
+
+- deployment.spec.selector.matchLabels 增加对应component标签
+
+
+## 1.1.1
+
+- 增加多租户开关
+- 增加CMDB api-gateway配置
+- 增加认证禁用开关
+
 ## 1.1.0
 
 - 增加task management 开关

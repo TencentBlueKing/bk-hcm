@@ -46,7 +46,6 @@ type Tenant interface {
 	CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, tenant []tenant.TenantTable) ([]string, error)
 	UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression, tenant *tenant.TenantTable) error
 	List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filter.SQLWhereOption) (*tenanttype.ListTenants, error)
-	DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) error
 }
 
 var _ Tenant = new(TenantDao)
@@ -193,24 +192,4 @@ func (d *TenantDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filte
 	}
 
 	return &tenanttype.ListTenants{Tenants: tenants}, nil
-}
-
-// DeleteWithTx delete tenant with transaction.
-func (d *TenantDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Expression) error {
-	if filterExpr == nil {
-		return errf.New(errf.InvalidParameter, "filter expr is required")
-	}
-
-	whereExpr, whereValue, err := filterExpr.SQLWhereExpr(tools.DefaultSqlWhereOption)
-	if err != nil {
-		return err
-	}
-
-	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.TenantTable, whereExpr)
-	if _, err = d.orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
-		logs.ErrorJson("delete tenant failed, err: %v, filter: %v, rid: %s", err, filterExpr, kt.Rid)
-		return err
-	}
-
-	return nil
 }

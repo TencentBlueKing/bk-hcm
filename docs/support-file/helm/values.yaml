@@ -12,7 +12,7 @@ image:
   registry: hub.bktencent.com
   pullPolicy: IfNotPresent
   pullSecrets: []
-  tag: 1.8.0
+  tag: 1.8.1
 
 serviceAccount:
   create: true
@@ -922,3 +922,9 @@ cmdb:
     caFile:
     # the password to decrypt the certificate.
     password:
+
+compatibility:
+  # 旧版本deployment中spec.selector.matchLabels 缺少component标签。
+  # 如果helm已经被部署，修改selector属性将导致变更失败，需要重新部署。
+  # noComponentInMatchLabels 为true时保持原状
+  noComponentInMatchLabels: false

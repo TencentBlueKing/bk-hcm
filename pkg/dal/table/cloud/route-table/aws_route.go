@@ -108,6 +108,8 @@ type AwsRouteTable struct {
 	CreatedAt types.Time `db:"created_at" validate:"isdefault" json:"created_at"`
 	// UpdatedAt 更新时间
 	UpdatedAt types.Time `db:"updated_at" validate:"isdefault" json:"updated_at"`
+	// TenantID 租户ID
+	TenantID string `db:"tenant_id" json:"tenant_id"`
 }
 
 // TableName return aws route's table name.

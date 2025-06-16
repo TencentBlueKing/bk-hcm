@@ -68,7 +68,7 @@ func (dao Dao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model *tableuser.UserCollT
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, model.TableName(), tableuser.UserCollTableColumns.ColumnExpr(),
 		tableuser.UserCollTableColumns.ColonNameExpr())
 
-	err = dao.Orm.Txn(tx).Insert(kt.Ctx, sql, model)
+	err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Insert(kt.Ctx, sql, model)
 	if err != nil {
 		logs.Errorf("insert %s failed, err: %v, sql: %s, model: %+v, rid: %s", err, sql, model, kt.Rid)
 		return "", fmt.Errorf("insert %s failed, err: %v", model.TableName(), err)
@@ -97,7 +97,7 @@ func (dao Dao) List(kt *kit.Kit, opt *types.ListOption) (*typesuser.ListUserColl
 		// this is dao count request, then do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.UserCollectionTable, whereExpr)
 
-		count, err := dao.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count user collection failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -115,7 +115,8 @@ func (dao Dao) List(kt *kit.Kit, opt *types.ListOption) (*typesuser.ListUserColl
 		table.UserCollectionTable, whereExpr, pageExpr)
 
 	details := make([]tableuser.UserCollTable, 0)
-	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql, whereValue)
+	if err != nil {
 		logs.Errorf("select user collection failed, err: %v, sql: %s, rid: %s", err, sql, kt.Rid)
 		return nil, err
 	}
@@ -135,7 +136,8 @@ func (dao Dao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.Express
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.UserCollectionTable, whereExpr)
-	if _, err = dao.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+	_, err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Delete(kt.Ctx, sql, whereValue)
+	if err != nil {
 		logs.ErrorJson("delete user collection failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
 		return err
 	}

@@ -56,7 +56,7 @@ type AzureRegionDao struct {
 }
 
 // UpdateWithTx rule.
-func (h AzureRegionDao) UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression,
+func (a AzureRegionDao) UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression,
 	region *region.AzureRegionTable) error {
 
 	if expr == nil {
@@ -80,7 +80,8 @@ func (h AzureRegionDao) UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expr
 
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, region.TableName(), setExpr, whereExpr)
 
-	effected, err := h.Orm.Txn(tx).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
+	effected, err := a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Update(
+		kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 	if err != nil {
 		logs.ErrorJson("update azure region failed, err: %v, filter: %s, rid: %v", err, expr, kt.Rid)
 		return err
@@ -111,7 +112,7 @@ func (a AzureRegionDao) List(kt *kit.Kit, opt *types.ListOption) (*typesregion.L
 
 	if opt.Page.Count {
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.AzureRegionTable, whereExpr)
-		count, err := a.Orm.Do().Count(kt.Ctx, sql, argMap)
+		count, err := a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, argMap)
 		if err != nil {
 			logs.ErrorJson("count azure resource group failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -127,7 +128,8 @@ func (a AzureRegionDao) List(kt *kit.Kit, opt *types.ListOption) (*typesregion.L
 		table.AzureRegionTable, whereExpr, pageExpr)
 
 	details := make([]*region.AzureRegionTable, 0)
-	if err = a.Orm.Do().Select(kt.Ctx, &details, sql, argMap); err != nil {
+	err = a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql, argMap)
+	if err != nil {
 		return nil, err
 	}
 
@@ -153,8 +155,8 @@ func (a AzureRegionDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*region.
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, models[0].TableName(),
 		region.AzureRegionColumns.ColumnExpr(), region.AzureRegionColumns.ColonNameExpr())
-
-	if err = a.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, models); err != nil {
+	err = a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).BulkInsert(kt.Ctx, sql, models)
+	if err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", models[0].TableName(), err, kt.Rid)
 		return nil, fmt.Errorf("insert %s failed, err: %v", models[0].TableName(), err)
 	}
@@ -181,7 +183,8 @@ func (a AzureRegionDao) DeleteWithTx(kt *kit.Kit, expr *filter.Expression) error
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.AzureRegionTable, whereExpr)
 
 	_, err = a.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		if _, err = a.Orm.Txn(txn).Delete(kt.Ctx, sql, argMap); err != nil {
+		_, err = a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(txn).Delete(kt.Ctx, sql, argMap)
+		if err != nil {
 			logs.ErrorJson("delete azure region failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
 			return nil, err
 		}

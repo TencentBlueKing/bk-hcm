@@ -86,7 +86,7 @@ func (eipDao EipDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, eips []*eip.Eip
 		d.ID = ids[idx]
 	}
 
-	err = eipDao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, eips)
+	err = eipDao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).BulkInsert(kt.Ctx, sql, eips)
 	if err != nil {
 		return nil, fmt.Errorf("insert %s failed, err: %v", table.EipTable, err)
 	}
@@ -143,7 +143,7 @@ func (eipDao EipDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.EipListRes
 	if opt.Page.Count {
 		// this is a count request, then do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.EipTable, whereExpr)
-		count, err := eipDao.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := eipDao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count eip failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -164,7 +164,8 @@ func (eipDao EipDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.EipListRes
 		pageExpr,
 	)
 	details := make([]*eip.EipModel, 0)
-	if err = eipDao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	err = eipDao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql, whereValue)
+	if err != nil {
 		return nil, err
 	}
 
@@ -188,7 +189,7 @@ func (eipDao EipDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, eipID string, up
 	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, table.EipTable, setExpr)
 
 	toUpdate["id"] = eipID
-	_, err = eipDao.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
+	_, err = eipDao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Update(kt.Ctx, sql, toUpdate)
 	if err != nil {
 		logs.ErrorJson("update eip failed, err: %v, id: %s, rid: %v", err, eipID, kt.Rid)
 		return err
@@ -221,7 +222,8 @@ func (eipDao EipDao) Update(kt *kit.Kit, filterExpr *filter.Expression, updateDa
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, table.EipTable, setExpr, whereExpr)
 
 	_, err = eipDao.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		effected, err := eipDao.Orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
+		effected, err := eipDao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(txn).Update(
+			kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if err != nil {
 			logs.ErrorJson("update eip failed, err: %v, filter: %s, rid: %v", err, filterExpr, kt.Rid)
 			return nil, err
@@ -253,7 +255,8 @@ func (eipDao EipDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.E
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.EipTable, whereExpr)
-	if _, err = eipDao.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+	_, err = eipDao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Delete(kt.Ctx, sql, whereValue)
+	if err != nil {
 		logs.ErrorJson("delete eip failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
 		return err
 	}
@@ -262,10 +265,12 @@ func (eipDao EipDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.E
 }
 
 // ListByIDs ...
-func ListByIDs(kt *kit.Kit, orm orm.Interface, ids []string) (map[string]eip.EipModel, error) {
+func ListByIDs(kt *kit.Kit, ormi orm.Interface, ids []string) (map[string]eip.EipModel, error) {
 	sql := fmt.Sprintf(`SELECT %s FROM %s where id in (:ids)`, eip.EipColumns.FieldsNamedExpr(nil), table.EipTable)
 	eips := make([]eip.EipModel, 0)
-	if err := orm.Do().Select(kt.Ctx, &eips, sql, map[string]interface{}{"ids": ids}); err != nil {
+	err := ormi.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &eips, sql,
+		map[string]interface{}{"ids": ids})
+	if err != nil {
 		return nil, err
 	}
 

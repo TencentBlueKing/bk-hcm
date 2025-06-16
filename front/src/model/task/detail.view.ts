@@ -159,4 +159,34 @@ export default [
     name: '参数校验',
     type: 'array',
   },
+  {
+    id: 'param.rs_list',
+    name: 'rs信息',
+    type: 'string',
+  },
+  {
+    id: 'param.ip',
+    name: 'RSIP',
+    type: 'string',
+  },
+  {
+    id: 'param.weight',
+    name: '原权重',
+    type: 'string',
+  },
+  {
+    id: 'param.new_rs_weight',
+    name: '新权重',
+    type: 'string',
+  },
+  {
+    id: 'param.url',
+    name: 'URL',
+    type: 'string',
+  },
+  {
+    id: 'param.domain',
+    name: '域名',
+    type: 'string',
+  },
 ] as ModelProperty[];

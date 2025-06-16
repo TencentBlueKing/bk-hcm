@@ -19,6 +19,7 @@ import bus from '@/common/bus';
 import './index.scss';
 import { useVerify } from '@/hooks';
 import { useGlobalPermissionDialog } from '@/store/useGlobalPermissionDialog';
+import { TargetGroupOperationScene } from '@/constants';
 
 const { DropdownMenu, DropdownItem } = Dropdown;
 
@@ -82,12 +83,12 @@ export default defineComponent({
 
     // click-handler - 批量删除目标组
     const handleBatchDeleteTG = () => {
-      loadBalancerStore.setCurrentScene('BatchDelete');
+      loadBalancerStore.setCurrentScene(TargetGroupOperationScene.BATCH_DELETE);
       isBatchDeleteTargetGroupShow.value = true;
     };
     // click-handler - 批量删除RS
     const handleBatchDeleteRs = () => {
-      loadBalancerStore.setCurrentScene('BatchDeleteRs');
+      loadBalancerStore.setCurrentScene(TargetGroupOperationScene.BATCH_DELETE_RS);
       // init
       initMap(
         selections.value.map(({ id }) => id),
@@ -99,7 +100,7 @@ export default defineComponent({
     };
     // click-handler - 批量添加RS
     const handleBatchAddRs = async () => {
-      loadBalancerStore.setCurrentScene('BatchAddRs');
+      loadBalancerStore.setCurrentScene(TargetGroupOperationScene.BATCH_ADD_RS);
       // 同一账号下的多个目标组支持批量添加rs
       const { account_id: accountId, lb_id } = selections.value[0];
 
@@ -135,7 +136,8 @@ export default defineComponent({
                   class={[
                     'mr8',
                     { 'hcm-no-permision-btn': !authVerifyData?.value?.permissionAction?.[createClbActionName.value] },
-                  ]}>
+                  ]}
+                >
                   <Plus class='f20' />
                   {t('新建')}
                 </Button>
@@ -161,7 +163,8 @@ export default defineComponent({
                             v-bk-tooltips={{
                               content: '传入的目标组不同属于一个负载均衡/账号, 不可进行批量移除RS操作',
                               disabled: isSelectionsBelongSameAccountAndLB.value,
-                            }}>
+                            }}
+                          >
                             {t('批量移除 RS')}
                           </Button>
                         </DropdownItem>
@@ -180,7 +183,8 @@ export default defineComponent({
                                     content: '传入的目标组不同属于一个VPC, 不可进行批量添加RS操作',
                                     disabled: isSelectionsBelongSameVpc.value,
                                   }
-                            }>
+                            }
+                          >
                             {t('批量添加 RS')}
                           </Button>
                         </DropdownItem>
@@ -206,7 +210,8 @@ export default defineComponent({
           confirmText='删除'
           tableProps={batchDeleteTargetGroupTableProps}
           list={computedListenersList.value}
-          onHandleConfirm={batchDeleteTargetGroup}>
+          onHandleConfirm={batchDeleteTargetGroup}
+        >
           {{
             tips: () => (
               <>
@@ -234,7 +239,8 @@ export default defineComponent({
           theme='danger'
           confirmText='移除 RS'
           custom
-          onHandleConfirm={batchDeleteRs}>
+          onHandleConfirm={batchDeleteRs}
+        >
           <div class='top-area'>
             <div class='tips'>
               已选择<span class='blue'>{selections.value.length}</span>

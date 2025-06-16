@@ -18,7 +18,7 @@ import { useVerify } from '@/hooks';
 import { useGlobalPermissionDialog } from '@/store/useGlobalPermissionDialog';
 
 import { asyncGetListenerCount, getInstVip } from '@/utils';
-import { LB_ROUTE_NAME_MAP, LBRouteName, TRANSPORT_LAYER_LIST } from '@/constants';
+import { LB_ROUTE_NAME_MAP, LBRouteName, ListenerPanelEnum, TRANSPORT_LAYER_LIST } from '@/constants';
 import { QueryRuleOPEnum, RulesItem } from '@/typings';
 import type {
   Domain,
@@ -193,9 +193,9 @@ const pushState = (node: any) => {
       const tabType = route.query.type;
       const lastNodeType = lastSelectedNode.value?.type;
       // 1. tabType无值或者当前点击节点的类型与上一次不一样, 则赋初始值
-      if (!tabType || lastNodeType !== nodeType) return 'list';
+      if (!tabType || lastNodeType !== nodeType) return ListenerPanelEnum.LIST;
       // 2. 如果当前节点类型为listener, 且为四层协议, 则直接显示详情
-      if (nodeType === 'listener' && TRANSPORT_LAYER_LIST.includes(protocol)) return 'detail';
+      if (nodeType === 'listener' && TRANSPORT_LAYER_LIST.includes(protocol)) return ListenerPanelEnum.TARGET_GROUP;
       // 3. 如果当前点击节点的类型与上一次一样, 则返回上一次的tab类型
       if (lastNodeType === nodeType) return tabType;
     }

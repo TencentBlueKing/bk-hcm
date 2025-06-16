@@ -72,6 +72,8 @@ type AzureRegionTable struct {
 	Reviser           string     `db:"reviser"`
 	CreatedAt         types.Time `db:"created_at"`
 	UpdatedAt         types.Time `db:"updated_at"`
+	// TenantID 租户ID
+	TenantID string `db:"tenant_id" json:"tenant_id"`
 }
 
 // TableName return azure region table name.

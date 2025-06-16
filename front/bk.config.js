@@ -1,6 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const argv = require('minimist')(process.argv.slice(2));
+const BuildHashPlugin = require('./build-hash-plugin');
 
 const appDir = fs.realpathSync(process.cwd());
 const resolveBase = (relativePath) => path.resolve(appDir, relativePath);
@@ -73,6 +74,10 @@ const getConfig = (custom = {}) => ({
           target: 'es2015',
         },
       });
+
+    if (process.env.NODE_ENV === 'production') {
+      config.plugin('buildHash').use(BuildHashPlugin);
+    }
 
     return config;
   },

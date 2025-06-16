@@ -1,6 +1,7 @@
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import { gotoLoginPage } from '@/utils/login-helper';
+import { watchVersion } from '@/utils/check-version';
 
 import 'reflect-metadata';
 
@@ -38,6 +39,9 @@ userInfo()
     preload().finally(() => {
       app.use(router);
       app.mount('#app');
+      if (process.env.NODE_ENV === 'production') {
+        watchVersion();
+      }
     });
   })
   .catch((err) => {
