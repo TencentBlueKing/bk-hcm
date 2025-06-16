@@ -24,39 +24,27 @@ import (
 	"fmt"
 
 	"hcm/pkg/api/core"
-	cgconf "hcm/pkg/api/core/global-config"
+	gccore "hcm/pkg/api/core/global-config"
 	"hcm/pkg/criteria/validator"
 	tablegconf "hcm/pkg/dal/table/global-config"
 )
 
 // ListReq ...
-type ListReq struct {
-	core.ListReq `json:",inline"`
-}
-
-// Validate ListReq
-func (req *ListReq) Validate() error {
-	if err := validator.Validate.Struct(req); err != nil {
-		return err
-	}
-
-	if err := req.ListReq.Validate(); err != nil {
-		return err
-	}
-
-	return nil
-}
+type ListReq = core.ListReq
 
 // ListResp ...
 type ListResp core.ListResultT[tablegconf.GlobalConfigTable]
 
 // BatchCreateReq ...
-type BatchCreateReq struct {
-	Configs []cgconf.GlobalConfig `json:"configs" validate:"required,min=1,max=100"`
+type BatchCreateReq = BatchCreateReqT[any]
+
+// BatchCreateReqT ...
+type BatchCreateReqT[T any] struct {
+	Configs []gccore.GlobalConfigT[T] `json:"configs" validate:"required,min=1,max=100"`
 }
 
-// Validate BatchCreateReq
-func (req *BatchCreateReq) Validate() error {
+// Validate BatchCreateReqT
+func (req *BatchCreateReqT[T]) Validate() error {
 	if err := validator.Validate.Struct(req); err != nil {
 		return err
 	}
@@ -65,12 +53,15 @@ func (req *BatchCreateReq) Validate() error {
 }
 
 // BatchUpdateReq ...
-type BatchUpdateReq struct {
-	Configs []cgconf.GlobalConfig `json:"configs" validate:"required,min=1,max=100"`
+type BatchUpdateReq = BatchUpdateReqT[any]
+
+// BatchUpdateReqT ...
+type BatchUpdateReqT[T any] struct {
+	Configs []gccore.GlobalConfigT[T] `json:"configs" validate:"required,min=1,max=100"`
 }
 
 // Validate BatchUpdateReq
-func (req *BatchUpdateReq) Validate() error {
+func (req *BatchUpdateReqT[T]) Validate() error {
 	if err := validator.Validate.Struct(req); err != nil {
 		return err
 	}
