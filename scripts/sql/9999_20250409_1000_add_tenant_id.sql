@@ -264,6 +264,21 @@ alter table `zone`
     drop index `idx_uk_cloud_id_vendor`,
     add unique index `idx_cloud_id_vendor_tenant_id`(`cloud_id`,`vendor`,`tenant_id`);
 
+# 目前该表有普通索引，可以设置租户ID的单独索引
+alter table `async_flow`
+    add column tenant_id varchar(64) default 'default' not null after `worker`,
+    add index `idx_tenant_id`(`tenant_id`);
+
+# 目前该表有普通索引，可以设置租户ID的单独索引
+alter table `async_flow_task`
+    add column tenant_id varchar(64) default 'default' not null after `result`,
+    add index `idx_tenant_id`(`tenant_id`);
+
+# 目前该表有普通索引，可以设置租户ID的单独索引
+alter table `task_management`
+    add column tenant_id varchar(64) default 'default' not null after `extension`,
+    add index `idx_tenant_id`(`tenant_id`);
+
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
 SELECT 'v9.9.9' as `hcm_ver`, '9990' as `sql_ver`;
 
