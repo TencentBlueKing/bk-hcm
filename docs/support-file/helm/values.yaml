@@ -646,7 +646,7 @@ apigwRegister:
   enabled: true
   image:
     repository: blueking/bk-hcm-apigwregister
-    tag: _dev_v1.8.0-80-g6bde1f4ad
+    tag:
   ## 需注册的网关名
   apigwName: "bk-hcm"
   ## 蓝鲸 APIGateway url模板
@@ -674,7 +674,7 @@ authRegister:
   # job的镜像参数配置
   image:
     repository: blueking/bk-hcm-authregister
-    tag: _dev_v1.8.0-80-g6bde1f4ad
+    tag:
   userName: "bk-hcm"
   rid: 9113b92efbcfcff3be6892b8287abf38
   resources:
