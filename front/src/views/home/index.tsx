@@ -9,7 +9,7 @@ import NoPermission from '@/views/resource/NoPermission';
 import AccountList from '../resource/resource-manage/account/accountList';
 import GlobalPermissionDialog from '@/components/global-permission-dialog';
 
-import cookie from 'cookie';
+import Cookies from 'js-cookie';
 import { useI18n } from 'vue-i18n';
 import { useVerify } from '@/hooks';
 import { useUserStore, useAccountStore, useCommonStore } from '@/store';
@@ -29,6 +29,7 @@ import './index.scss';
 
 import { MENU_BUSINESS_TASK_MANAGEMENT } from '@/constants/menu-symbol';
 import { jsonp } from '@/http';
+import i18n from '@/language/i18n';
 
 // import { CogShape } from 'bkui-vue/lib/icon';
 // import { useProjectList } from '@/hooks';
@@ -58,7 +59,7 @@ export default defineComponent({
     const isRouterAlive = ref<Boolean>(true);
     const curYear = ref(new Date().getFullYear());
     const isMenuOpen = ref<boolean>(true);
-    const language = ref(cookie.parse(document.cookie).blueking_language || 'zh-cn');
+    const language = ref(Cookies.get('blueking_language') || i18n.global.locale.value);
 
     const isNeedSideMenu = computed(
       () => ![Senarios.resource, Senarios.scheme, Senarios.unauthorized].includes(whereAmI.value),
@@ -153,7 +154,8 @@ export default defineComponent({
           defaultOpen={isMenuOpen.value}
           needMenu={isNeedSideMenu.value}
           onToggle={handleToggle}
-          class={['flex-1', { 'no-footer': route.path !== '/business/host' }]}>
+          class={['flex-1', { 'no-footer': route.path !== '/business/host' }]}
+        >
           {{
             'side-header': () => (
               <div class='left-header flex-row justify-content-between align-items-center'>
@@ -181,7 +183,8 @@ export default defineComponent({
                         )}
                         key={id}
                         aria-current='page'
-                        onClick={() => handleHeaderMenuClick(id, path)}>
+                        onClick={() => handleHeaderMenuClick(id, path)}
+                      >
                         {t(name)}
                       </Button>
                     ))}
@@ -203,19 +206,23 @@ export default defineComponent({
                           <DropdownItem
                             onClick={() => {
                               language.value = LANGUAGE_TYPE.zh_cn;
-                            }}>
+                            }}
+                          >
                             <span
                               class='hcm-icon bkhcm-icon-yuyanqiehuanzhongwen pr5'
-                              style={{ fontSize: '16px' }}></span>
+                              style={{ fontSize: '16px' }}
+                            ></span>
                             {'中文'}
                           </DropdownItem>
                           <DropdownItem
                             onClick={() => {
                               language.value = LANGUAGE_TYPE.en;
-                            }}>
+                            }}
+                          >
                             <span
                               class='hcm-icon bkhcm-icon-yuyanqiehuanyingwen pr5'
-                              style={{ fontSize: '16px' }}></span>
+                              style={{ fontSize: '16px' }}
+                            ></span>
                             {'English'}
                           </DropdownItem>
                         </DropdownMenu>
@@ -251,7 +258,8 @@ export default defineComponent({
                   style={{ width: `${NAV_WIDTH}px` }}
                   uniqueOpen={false}
                   openedKeys={openedKeys}
-                  activeKey={route.meta.activeKey?.toString()}>
+                  activeKey={route.meta.activeKey?.toString()}
+                >
                   {menus.value
                     .map((menuItem) => {
                       // menuItem.children 是一个数组, 且没有配置 hasPageRoute(页面级子路由)
@@ -277,7 +285,8 @@ export default defineComponent({
                                     [GLOBAL_BIZS_KEY]:
                                       whereAmI.value === Senarios.business ? accountStore.bizs : undefined,
                                   },
-                                }}>
+                                }}
+                              >
                                 <Menu.Item key={child.meta?.activeKey?.toString()}>
                                   {{
                                     icon: () => <i class={child.meta?.icon} />,
