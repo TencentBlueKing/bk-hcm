@@ -22,9 +22,9 @@ package authserver
 
 import (
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/iam/client"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
+	"hcm/pkg/thirdparty/api-gateway/iam"
 )
 
 // InitAuthCenterReq initialize auth center request.
@@ -92,7 +92,7 @@ type RegisterResourceCreatorActionReq struct {
 // RegisterResourceCreatorActionResp register resource creator action response.
 type RegisterResourceCreatorActionResp struct {
 	rest.BaseResp `json:",inline"`
-	Data          []client.CreatorActionPolicy `json:"data"`
+	Data          []iam.CreatorActionPolicy `json:"data"`
 }
 
 // GetNoAuthSkipUrlResp get iam apply permission url response.

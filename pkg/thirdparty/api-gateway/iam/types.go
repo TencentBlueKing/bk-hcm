@@ -17,15 +17,13 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package client
+package iam
 
 import (
 	"errors"
 	"fmt"
-	"sync"
 
 	"hcm/pkg/iam/sdk/operator"
-	"hcm/pkg/tools/ssl"
 )
 
 const (
@@ -48,48 +46,14 @@ const (
 	IamPathKey = "_bk_iam_path_"
 	// IamIDKey defines the iam id key
 	IamIDKey = "id"
+
+	codeNotFound = 1901404
 )
 
-// Config auth center config.
-type Config struct {
-	// blueking's auth center addresses
-	Address []string
-	// app code is used for authorize used.
-	AppCode string
-	// app secret is used for authorized
-	AppSecret string
-	// the system id that hcm used in auth center.
-	// default value: bk-hcm
-	SystemID string
-	// TLS is http TLS config
-	TLS *ssl.TLSConfig
-}
-
-// iamDiscovery used to iam discovery.
-type iamDiscovery struct {
-	servers []string
-	index   int
-	sync.Mutex
-}
-
-// GetServers get iam server host.
-func (s *iamDiscovery) GetServers() ([]string, error) {
-	s.Lock()
-	defer s.Unlock()
-
-	num := len(s.servers)
-	if num == 0 {
-		return []string{}, errors.New("there is no server can be used for iam")
-	}
-
-	if s.index < num-1 {
-		s.index = s.index + 1
-		return append(s.servers[s.index-1:], s.servers[:s.index-1]...), nil
-	}
-
-	s.index = 0
-	return append(s.servers[num-1:], s.servers[:num-1]...), nil
-}
+var (
+	// ErrNotFound is iam return not exist resource's error.
+	ErrNotFound = errors.New("iam not found")
+)
 
 // AuthError is auth error.
 type AuthError struct {
@@ -579,4 +543,9 @@ type InstanceAncestor struct {
 type CreatorActionPolicy struct {
 	Action   ActionWithID `json:"action"`
 	PolicyID int64        `json:"policy_id"`
+}
+
+// GetApplyPermUrlResult defines apply perm url result.
+type GetApplyPermUrlResult struct {
+	Url string `json:"url"`
 }

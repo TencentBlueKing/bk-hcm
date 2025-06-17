@@ -19,11 +19,13 @@
 
 package sys
 
-import "hcm/pkg/iam/client"
+import (
+	"hcm/pkg/thirdparty/api-gateway/iam"
+)
 
 // GenerateStaticActionGroups generate all the static resource action groups.
-func GenerateStaticActionGroups() []client.ActionGroup {
-	ActionGroups := make([]client.ActionGroup, 0)
+func GenerateStaticActionGroups() []iam.ActionGroup {
+	ActionGroups := make([]iam.ActionGroup, 0)
 
 	// generate business Management action groups, contains business related actions
 	ActionGroups = append(ActionGroups, genResManagementActionGroups()...)
@@ -32,19 +34,19 @@ func GenerateStaticActionGroups() []client.ActionGroup {
 }
 
 // TODO 开启clb和编排相关功能后放开注释
-func genResManagementActionGroups() []client.ActionGroup {
-	actionGroups := []client.ActionGroup{
+func genResManagementActionGroups() []iam.ActionGroup {
+	actionGroups := []iam.ActionGroup{
 		{
 			Name:   "资源管理",
 			NameEn: "Res Management",
-			Actions: []client.ActionWithID{
+			Actions: []iam.ActionWithID{
 				{ID: BizAccess},
 			},
-			SubGroups: []client.ActionGroup{
+			SubGroups: []iam.ActionGroup{
 				{
 					Name:   "IaaS资源",
 					NameEn: "Biz IaaS Resource Management",
-					Actions: []client.ActionWithID{
+					Actions: []iam.ActionWithID{
 						{ID: BizIaaSResCreate},
 						{ID: BizIaaSResOperate},
 						{ID: BizIaaSResDelete},
@@ -53,7 +55,7 @@ func genResManagementActionGroups() []client.ActionGroup {
 				{
 					Name:   "负载均衡",
 					NameEn: "Biz CLB Resource Management",
-					Actions: []client.ActionWithID{
+					Actions: []iam.ActionWithID{
 						{ID: BizCLBResCreate},
 						{ID: BizCLBResOperate},
 						{ID: BizCLBResDelete},
@@ -61,7 +63,7 @@ func genResManagementActionGroups() []client.ActionGroup {
 				}, {
 					Name:   "证书管理",
 					NameEn: "Biz Cert Resource Management",
-					Actions: []client.ActionWithID{
+					Actions: []iam.ActionWithID{
 						{ID: BizCertResCreate},
 						{ID: BizCertResDelete},
 					},
@@ -69,7 +71,7 @@ func genResManagementActionGroups() []client.ActionGroup {
 				/*{
 					Name:   "资源编排",
 					NameEn: "Biz Arrange Resource Management",
-					Actions: []client.ActionWithID{
+					Actions: []iam.ActionWithID{
 						{ID: BizArrangeResCreate},
 						{ID: BizArrangeResOperate},
 						{ID: BizArrangeResDelete},
@@ -78,7 +80,7 @@ func genResManagementActionGroups() []client.ActionGroup {
 				{
 					Name:   "回收站",
 					NameEn: "Biz Recycle Bin",
-					Actions: []client.ActionWithID{
+					Actions: []iam.ActionWithID{
 						{ID: BizRecycleBinOperate},
 						{ID: BizRecycleBinConfig},
 					},
@@ -86,14 +88,14 @@ func genResManagementActionGroups() []client.ActionGroup {
 				{
 					Name:   "操作记录",
 					NameEn: "Biz Operation Record",
-					Actions: []client.ActionWithID{
+					Actions: []iam.ActionWithID{
 						{ID: BizOperationRecordFind},
 					},
 				},
 				{
 					Name:   "任务管理",
 					NameEn: "Biz Task Management",
-					Actions: []client.ActionWithID{
+					Actions: []iam.ActionWithID{
 						{ID: BizTaskManagementOperate},
 					},
 				},
@@ -109,22 +111,22 @@ func genResManagementActionGroups() []client.ActionGroup {
 	return actionGroups
 }
 
-func genCloudSelectionActionGroups() client.ActionGroup {
-	return client.ActionGroup{
+func genCloudSelectionActionGroups() iam.ActionGroup {
+	return iam.ActionGroup{
 		Name:   "资源选型",
 		NameEn: "Resource Selection",
-		SubGroups: []client.ActionGroup{
+		SubGroups: []iam.ActionGroup{
 			{
 				Name:   "资源选型",
 				NameEn: "Resource Selection",
-				Actions: []client.ActionWithID{
+				Actions: []iam.ActionWithID{
 					{ID: CloudSelectionRecommend},
 				},
 			},
 			{
 				Name:   "部署方案",
 				NameEn: "Deployment Scheme",
-				Actions: []client.ActionWithID{
+				Actions: []iam.ActionWithID{
 					{ID: CloudSelectionSchemeFind},
 					{ID: CloudSelectionSchemeEdit},
 					{ID: CloudSelectionSchemeDelete},
@@ -134,15 +136,15 @@ func genCloudSelectionActionGroups() client.ActionGroup {
 	}
 }
 
-func genResourceAccessActionGroups() client.ActionGroup {
-	return client.ActionGroup{
+func genResourceAccessActionGroups() iam.ActionGroup {
+	return iam.ActionGroup{
 		Name:   "资源接入",
 		NameEn: "Resource Access",
-		SubGroups: []client.ActionGroup{
+		SubGroups: []iam.ActionGroup{
 			{
 				Name:   "云账号",
 				NameEn: "Cloud account",
-				Actions: []client.ActionWithID{
+				Actions: []iam.ActionWithID{
 					{ID: AccountFind},
 					{ID: AccountImport},
 					{ID: AccountEdit},
@@ -153,7 +155,7 @@ func genResourceAccessActionGroups() client.ActionGroup {
 			{
 				Name:   "IaaS资源",
 				NameEn: "IaaS Resource Management",
-				Actions: []client.ActionWithID{
+				Actions: []iam.ActionWithID{
 					{ID: ResourceFind},
 					{ID: ResourceAssign},
 					{ID: IaaSResCreate},
@@ -164,7 +166,7 @@ func genResourceAccessActionGroups() client.ActionGroup {
 			{
 				Name:   "负载均衡",
 				NameEn: "CLB Resource Management",
-				Actions: []client.ActionWithID{
+				Actions: []iam.ActionWithID{
 					{ID: CLBResCreate},
 					{ID: CLBResOperate},
 					{ID: CLBResDelete},
@@ -172,7 +174,7 @@ func genResourceAccessActionGroups() client.ActionGroup {
 			}, {
 				Name:   "证书管理",
 				NameEn: "Cert Resource Management",
-				Actions: []client.ActionWithID{
+				Actions: []iam.ActionWithID{
 					{ID: CertResCreate},
 					{ID: CertResDelete},
 				},
@@ -180,7 +182,7 @@ func genResourceAccessActionGroups() client.ActionGroup {
 			{
 				Name:   "回收站",
 				NameEn: "Recycle Bin",
-				Actions: []client.ActionWithID{
+				Actions: []iam.ActionWithID{
 					{ID: RecycleBinAccess},
 					{ID: RecycleBinOperate},
 					{ID: RecycleBinConfig},
@@ -189,14 +191,14 @@ func genResourceAccessActionGroups() client.ActionGroup {
 			{
 				Name:   "操作记录",
 				NameEn: "Operation Record",
-				Actions: []client.ActionWithID{
+				Actions: []iam.ActionWithID{
 					{ID: OperationRecordFind},
 				},
 			},
 			{
 				Name:   "COS资源",
 				NameEn: "COS Resource",
-				Actions: []client.ActionWithID{
+				Actions: []iam.ActionWithID{
 					{ID: CosBucketCreate},
 					{ID: CosBucketFind},
 					{ID: CosBucketDelete},
@@ -206,15 +208,15 @@ func genResourceAccessActionGroups() client.ActionGroup {
 	}
 }
 
-func genPlatformManageActionGroups() client.ActionGroup {
-	return client.ActionGroup{
+func genPlatformManageActionGroups() iam.ActionGroup {
+	return iam.ActionGroup{
 		Name:   "平台管理",
 		NameEn: "Platform Management",
-		SubGroups: []client.ActionGroup{
+		SubGroups: []iam.ActionGroup{
 			{
 				Name:   "平台权限",
 				NameEn: "Platform Permissions",
-				Actions: []client.ActionWithID{
+				Actions: []iam.ActionWithID{
 					{ID: CostManage},
 					{ID: AccountKeyAccess},
 				},
@@ -222,21 +224,21 @@ func genPlatformManageActionGroups() client.ActionGroup {
 			{
 				Name:   "配置管理",
 				NameEn: "Configuration Management",
-				Actions: []client.ActionWithID{
+				Actions: []iam.ActionWithID{
 					{ID: GlobalConfiguration},
 				},
 			},
 			{
 				Name:   "云账号管理",
 				NameEn: "Root Account Management",
-				Actions: []client.ActionWithID{
+				Actions: []iam.ActionWithID{
 					{ID: RootAccountManage},
 				},
 			},
 			{
 				Name:   "云账单管理",
 				NameEn: "Account Bill Management",
-				Actions: []client.ActionWithID{
+				Actions: []iam.ActionWithID{
 					{ID: AccountBillPull},
 					{ID: AccountBillManage},
 				},
@@ -244,7 +246,7 @@ func genPlatformManageActionGroups() client.ActionGroup {
 			{
 				Name:   "服务请求",
 				NameEn: "Service Request",
-				Actions: []client.ActionWithID{
+				Actions: []iam.ActionWithID{
 					{ID: ApplicationManage},
 				},
 			},
@@ -252,15 +254,15 @@ func genPlatformManageActionGroups() client.ActionGroup {
 	}
 }
 
-func genCloudAccountActionGroups() client.ActionGroup {
-	return client.ActionGroup{
+func genCloudAccountActionGroups() iam.ActionGroup {
+	return iam.ActionGroup{
 		Name:   "云账号管理",
 		NameEn: "Cloud Account Management",
-		SubGroups: []client.ActionGroup{
+		SubGroups: []iam.ActionGroup{
 			{
 				Name:   "二级账号",
 				NameEn: "Main Account",
-				Actions: []client.ActionWithID{
+				Actions: []iam.ActionWithID{
 					{ID: MainAccountFind},
 					{ID: MainAccountCreate},
 					{ID: MainAccountEdit},

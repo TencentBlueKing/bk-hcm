@@ -44,7 +44,7 @@ func Run(opt *options.Option) error {
 		return err
 	}
 
-	svc, err := service.NewService(as.sd, cc.AuthServer().IAM, cc.AuthServer().Esb, as.disableAuth, as.disableWriteOpt)
+	svc, err := service.NewService(as.sd, as.disableAuth, as.disableWriteOpt)
 	if err != nil {
 		return fmt.Errorf("initialize service failed, err: %v", err)
 	}

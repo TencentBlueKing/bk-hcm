@@ -20,16 +20,16 @@
 package auth
 
 import (
-	"context"
 	"errors"
 	"fmt"
 
-	"hcm/pkg/iam/client"
 	"hcm/pkg/iam/sdk/operator"
+	"hcm/pkg/kit"
+	"hcm/pkg/thirdparty/api-gateway/iam"
 )
 
-func (a *Authorize) countPolicy(ctx context.Context, p *operator.Policy, resourceType client.TypeID) (
-	*client.AuthorizeList, error) {
+func (a *Authorize) countPolicy(kt *kit.Kit, p *operator.Policy, resourceType iam.TypeID) (
+	*iam.AuthorizeList, error) {
 
 	if hasIamPath(p) {
 		return nil, errors.New("policy content has _bk_iam_path_, not support for now")
@@ -43,7 +43,7 @@ func (a *Authorize) countPolicy(ctx context.Context, p *operator.Policy, resourc
 			return nil, errors.New("policy with invalid content field")
 		}
 
-		list, err := a.countContent(ctx, p.Operator, content, resourceType)
+		list, err := a.countContent(kt, p.Operator, content, resourceType)
 		if err != nil {
 			return nil, err
 		}
@@ -52,7 +52,7 @@ func (a *Authorize) countPolicy(ctx context.Context, p *operator.Policy, resourc
 
 	case operator.Any:
 		//  if the operator is any,set isAny flag is true.
-		return &client.AuthorizeList{IsAny: true}, nil
+		return &iam.AuthorizeList{IsAny: true}, nil
 
 	default:
 		fv, can := p.Element.(*operator.FieldValue)
@@ -60,30 +60,30 @@ func (a *Authorize) countPolicy(ctx context.Context, p *operator.Policy, resourc
 			return nil, errors.New("policy with invalid FieldValue field")
 		}
 
-		if fv.Field.Attribute == client.IamIDKey {
+		if fv.Field.Attribute == iam.IamIDKey {
 
 			ids, err := a.countIamIDKey(p.Operator, fv)
 			if err != nil {
 				return nil, err
 			}
 
-			return &client.AuthorizeList{Ids: ids}, nil
+			return &iam.AuthorizeList{Ids: ids}, nil
 
 		} else {
 			// TODO: cause we do not support _bk_iam_path_ field for now
 			// So we only need to get resource's other attribute policy.
-			opts := &client.ListWithAttributes{
+			opts := &iam.ListWithAttributes{
 				Operator:     p.Operator,
 				AttrPolicies: []*operator.Policy{p},
 				Type:         resourceType,
 			}
 
-			ids, err := a.fetcher.ListInstancesWithAttributes(ctx, opts)
+			ids, err := a.fetcher.ListInstancesWithAttributes(kt, opts)
 			if err != nil {
 				return nil, fmt.Errorf("list instance with %s attribute failed, err: %v", p.Operator, err)
 			}
 
-			return &client.AuthorizeList{Ids: ids}, nil
+			return &iam.AuthorizeList{Ids: ids}, nil
 		}
 
 	}
@@ -147,16 +147,16 @@ func preAnalyzeContent(op operator.OpType, content *operator.Content) error {
 }
 
 // count all the resource ids according to the operator and content, eg policies.
-func (a *Authorize) countContent(ctx context.Context, op operator.OpType, content *operator.Content,
-	resourceType client.TypeID) (idList *client.AuthorizeList, err error) {
+func (a *Authorize) countContent(kt *kit.Kit, op operator.OpType, content *operator.Content,
+	resourceType iam.TypeID) (idList *iam.AuthorizeList, err error) {
 
 	err = preAnalyzeContent(op, content)
 	if err != nil {
 		return nil, err
 	}
 	allAttrPolicies := make([]*operator.Policy, 0)
-	allList := make([]client.AuthorizeList, 0)
-	idList = new(client.AuthorizeList)
+	allList := make([]iam.AuthorizeList, 0)
+	idList = new(iam.AuthorizeList)
 
 	for _, policy := range content.Content {
 		switch policy.Operator {
@@ -166,7 +166,7 @@ func (a *Authorize) countContent(ctx context.Context, op operator.OpType, conten
 				return nil, errors.New("policy with invalid content field")
 			}
 
-			list, err := a.countContent(ctx, policy.Operator, content, resourceType)
+			list, err := a.countContent(kt, policy.Operator, content, resourceType)
 			if err != nil {
 				return nil, err
 			}
@@ -182,12 +182,12 @@ func (a *Authorize) countContent(ctx context.Context, op operator.OpType, conten
 				return nil, errors.New("policy with invalid FieldValue field")
 			}
 
-			if fv.Field.Attribute == client.IamIDKey {
+			if fv.Field.Attribute == iam.IamIDKey {
 				list, err := a.countIamIDKey(policy.Operator, fv)
 				if err != nil {
 					return nil, err
 				}
-				allList = append(allList, client.AuthorizeList{Ids: list})
+				allList = append(allList, iam.AuthorizeList{Ids: list})
 
 			} else {
 				// TODO: cause we do not support _bk_iam_path_ field for now
@@ -198,24 +198,24 @@ func (a *Authorize) countContent(ctx context.Context, op operator.OpType, conten
 	}
 
 	if len(allAttrPolicies) != 0 {
-		opts := &client.ListWithAttributes{
+		opts := &iam.ListWithAttributes{
 			Operator:     op,
 			AttrPolicies: allAttrPolicies,
 			Type:         resourceType,
 		}
 
-		ids, err := a.fetcher.ListInstancesWithAttributes(ctx, opts)
+		ids, err := a.fetcher.ListInstancesWithAttributes(kt, opts)
 		if err != nil {
 			return nil, fmt.Errorf("list instance with any attribute failed, err: %v", err)
 		}
 
-		allList = append(allList, client.AuthorizeList{Ids: ids})
+		allList = append(allList, iam.AuthorizeList{Ids: ids})
 	}
 
 	return calculateSet(op, allList)
 }
 
-func calculateSetForAnd(sets []client.AuthorizeList, cnt int) (*client.AuthorizeList, error) {
+func calculateSetForAnd(sets []iam.AuthorizeList, cnt int) (*iam.AuthorizeList, error) {
 
 	if cnt == 1 {
 		return &sets[0], nil
@@ -240,7 +240,7 @@ func calculateSetForAnd(sets []client.AuthorizeList, cnt int) (*client.Authorize
 	}
 	// if all the sets's isAny is true ,set the isAny flag is true.
 	if !baseFlag {
-		return &client.AuthorizeList{IsAny: true}, nil
+		return &iam.AuthorizeList{IsAny: true}, nil
 	}
 	for _, base := range sets[idBase].Ids {
 
@@ -272,10 +272,10 @@ func calculateSetForAnd(sets []client.AuthorizeList, cnt int) (*client.Authorize
 			set = append(set, base)
 		}
 	}
-	return &client.AuthorizeList{Ids: set}, nil
+	return &iam.AuthorizeList{Ids: set}, nil
 }
 
-func calculateSetForOr(sets []client.AuthorizeList, cnt int) (*client.AuthorizeList, error) {
+func calculateSetForOr(sets []iam.AuthorizeList, cnt int) (*iam.AuthorizeList, error) {
 	if cnt == 1 {
 		return &sets[0], nil
 	}
@@ -284,7 +284,7 @@ func calculateSetForOr(sets []client.AuthorizeList, cnt int) (*client.AuthorizeL
 	for _, set := range sets {
 		// op is "OR" and the set's isAny is true,return flag true.
 		if set.IsAny {
-			return &client.AuthorizeList{IsAny: true}, nil
+			return &iam.AuthorizeList{IsAny: true}, nil
 		}
 
 		for _, ele := range set.Ids {
@@ -297,19 +297,19 @@ func calculateSetForOr(sets []client.AuthorizeList, cnt int) (*client.AuthorizeL
 		set = append(set, ele)
 	}
 
-	return &client.AuthorizeList{Ids: set}, nil
+	return &iam.AuthorizeList{Ids: set}, nil
 
 }
 
 // calculateSet: put the authorized instance ID into the Ids, op must be one of And or Or.
-func calculateSet(op operator.OpType, sets []client.AuthorizeList) (*client.AuthorizeList, error) {
+func calculateSet(op operator.OpType, sets []iam.AuthorizeList) (*iam.AuthorizeList, error) {
 	if sets == nil {
 		return nil, errors.New("sets can not be nil")
 	}
 
 	cnt := len(sets)
 	if cnt == 0 {
-		return &client.AuthorizeList{}, nil
+		return &iam.AuthorizeList{}, nil
 	}
 
 	switch op {
@@ -346,7 +346,7 @@ func hasIamPath(p *operator.Policy) bool {
 			return false
 		}
 
-		if fv.Field.Attribute == client.IamPathKey {
+		if fv.Field.Attribute == iam.IamPathKey {
 			return true
 		}
 

@@ -28,10 +28,10 @@ import (
 	"hcm/cmd/auth-server/types"
 	authserver "hcm/pkg/api/auth-server"
 	"hcm/pkg/criteria/errf"
-	iamcli "hcm/pkg/iam/client"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/rest"
 	"hcm/pkg/rest/client"
+	"hcm/pkg/thirdparty/api-gateway/iam"
 )
 
 // Client is auth-server api client.
@@ -173,7 +173,7 @@ func (c *Client) ListAuthorizedInstances(ctx context.Context, h http.Header,
 
 // RegisterResourceCreatorAction register resource creator action instances.
 func (c *Client) RegisterResourceCreatorAction(ctx context.Context, h http.Header,
-	req *authserver.RegisterResourceCreatorActionReq) ([]iamcli.CreatorActionPolicy, error) {
+	req *authserver.RegisterResourceCreatorActionReq) ([]iam.CreatorActionPolicy, error) {
 
 	resp := new(authserver.RegisterResourceCreatorActionResp)
 

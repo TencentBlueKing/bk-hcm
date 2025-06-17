@@ -19,10 +19,12 @@
 
 package sys
 
-import "hcm/pkg/iam/client"
+import (
+	"hcm/pkg/thirdparty/api-gateway/iam"
+)
 
 // ResourceTypeIDMap resource type map.
-var ResourceTypeIDMap = map[client.TypeID]string{
+var ResourceTypeIDMap = map[iam.TypeID]string{
 	Account:              "账号",
 	Biz:                  "业务",
 	CloudSelectionScheme: "方案",
@@ -31,27 +33,27 @@ var ResourceTypeIDMap = map[client.TypeID]string{
 }
 
 // GenerateStaticResourceTypes generate all the static resource types to register to IAM.
-func GenerateStaticResourceTypes() []client.ResourceType {
-	resourceTypeList := make([]client.ResourceType, 0)
+func GenerateStaticResourceTypes() []iam.ResourceType {
+	resourceTypeList := make([]iam.ResourceType, 0)
 
 	// add account resources
 	resourceTypeList = append(resourceTypeList, genAccountResources()...)
 	return resourceTypeList
 }
 
-func genAccountResources() []client.ResourceType {
-	return []client.ResourceType{
+func genAccountResources() []iam.ResourceType {
+	return []iam.ResourceType{
 		{
 			ID:            Account,
 			Name:          ResourceTypeIDMap[Account],
 			NameEn:        "Account",
 			Description:   "账号",
 			DescriptionEn: "account",
-			Parents: []client.Parent{{
+			Parents: []iam.Parent{{
 				SystemID:   SystemIDHCM,
 				ResourceID: Account,
 			}},
-			ProviderConfig: client.ResourceConfig{
+			ProviderConfig: iam.ResourceConfig{
 				Path: "/api/v1/auth/iam/find/resource",
 			},
 			Version: 1,
@@ -62,11 +64,11 @@ func genAccountResources() []client.ResourceType {
 			NameEn:        "Scheme",
 			Description:   "方案",
 			DescriptionEn: "scheme",
-			Parents: []client.Parent{{
+			Parents: []iam.Parent{{
 				SystemID:   SystemIDHCM,
 				ResourceID: CloudSelectionScheme,
 			}},
-			ProviderConfig: client.ResourceConfig{
+			ProviderConfig: iam.ResourceConfig{
 				Path: "/api/v1/auth/iam/find/resource",
 			},
 			Version: 1,
@@ -77,11 +79,11 @@ func genAccountResources() []client.ResourceType {
 			NameEn:        "MainAccount",
 			Description:   "二级账号",
 			DescriptionEn: "main account",
-			Parents: []client.Parent{{
+			Parents: []iam.Parent{{
 				SystemID:   SystemIDHCM,
 				ResourceID: MainAccount,
 			}},
-			ProviderConfig: client.ResourceConfig{
+			ProviderConfig: iam.ResourceConfig{
 				Path: "/api/v1/auth/iam/find/resource",
 			},
 			Version: 1,
@@ -92,11 +94,11 @@ func genAccountResources() []client.ResourceType {
 			NameEn:        "BillCloudVendor",
 			Description:   "账单云厂商",
 			DescriptionEn: "bill cloud vendor",
-			Parents: []client.Parent{{
+			Parents: []iam.Parent{{
 				SystemID:   SystemIDHCM,
 				ResourceID: BillCloudVendor,
 			}},
-			ProviderConfig: client.ResourceConfig{
+			ProviderConfig: iam.ResourceConfig{
 				Path: "/api/v1/auth/iam/find/resource",
 			},
 			Version: 1,
