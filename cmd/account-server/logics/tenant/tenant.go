@@ -17,30 +17,44 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package bill
+// Package tenant ...
+package tenant
 
 import (
-	"time"
-
-	"hcm/pkg/cc"
+	"hcm/pkg/api/core"
+	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 )
 
-const (
-	defaultAccountListLimit          = uint64(500)
-	defaultControllerSyncDuration    = 30 * time.Second
-	defaultControllerSummaryDuration = 30 * time.Second
-	defaultDailySummaryDuration      = 30 * time.Second
-	defaultDailySplitDuration        = 30 * time.Second
-	defaultSleepMillisecond          = 2000
-)
+// ListAllTenantID list all tenant_id from data-service
+func ListAllTenantID(kt *kit.Kit, ds *dataservice.Client) ([]string, error) {
+	tenantIDs := make([]string, 0)
 
-func getInternalKit() *kit.Kit {
-	newKit := kit.New()
-	newKit.User = string(cc.AccountServerName)
-	newKit.AppCode = string(cc.AccountServerName)
-	// 设置后端操作的租户id
-	newKit.SetBackendTenantID()
+	listReq := &core.ListReq{
+		Filter: tools.EqualExpression("status", enumor.TenantEnable),
+		Page:   core.NewDefaultBasePage(),
+	}
 
-	return newKit
+	for {
+		res, err := ds.Global.Tenant.List(kt, listReq)
+		if err != nil {
+			logs.Errorf("list tenant failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+
+		for _, item := range res.Details {
+			tenantIDs = append(tenantIDs, item.TenantID)
+		}
+
+		if len(res.Details) < int(listReq.Page.Limit) {
+			break
+		}
+
+		listReq.Page.Start += uint32(listReq.Page.Limit)
+	}
+
+	return tenantIDs, nil
 }
