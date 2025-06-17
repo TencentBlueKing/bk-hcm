@@ -27,6 +27,9 @@ import (
 	"hcm/pkg/api/core"
 	coretenant "hcm/pkg/api/core/tenant"
 	"hcm/pkg/api/data-service/tenant"
+	"hcm/pkg/cc"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
@@ -116,8 +119,20 @@ func (svc *service) UpdateTenant(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
-// ListTenant list tenant.
+// ListTenant 查询租户列表，若系统未开启多租户，则无视入参直接返回一个默认租户
 func (svc *service) ListTenant(cts *rest.Contexts) (interface{}, error) {
+
+	if !cc.TenantEnable() {
+		// 未开启多租户的情况下，直接返回一个默认租户
+		tenants := []coretenant.Tenant{{
+			ID:       constant.DefaultTenantID,
+			TenantID: constant.DefaultTenantID,
+			Status:   enumor.TenantEnable,
+		}}
+
+		return &tenant.ListTenantResult{Details: tenants}, nil
+	}
+
 	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err

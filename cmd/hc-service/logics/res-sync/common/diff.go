@@ -112,6 +112,7 @@ type CloudResType interface {
 
 		typescvm.TCloudCvm |
 		typescvm.HuaWeiCvm |
+		typescvm.HuaWeiCvmWrapper |
 		typescvm.AwsCvm |
 		typescvm.GcpCvm |
 		typescvm.AzureCvm |
