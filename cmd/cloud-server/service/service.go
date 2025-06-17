@@ -102,6 +102,7 @@ type Service struct {
 	bkBaseCli bkbase.Client
 	cmsiCli   cmsi.Client
 	cmdbCli   cmdb.Client
+	bkUserCli pkgbkuser.Client
 }
 
 // NewService create a service instance.
@@ -140,7 +141,7 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 		go bill.CloudBillConfigCreate(interval, sd, apiClientSet)
 	}
 
-	recycle.RecycleTiming(apiClientSet, sd, cc.CloudServer().Recycle, svr.cmdbCli)
+	recycle.RecycleTiming(apiClientSet, sd, cc.CloudServer().Recycle, svr.cmdbCli, svr.bkUserCli)
 
 	go appcvm.TimingHandleDeliverApplication(svr.client, 2*time.Second)
 
@@ -221,6 +222,7 @@ func getCloudClientSvr(sd serviced.ServiceDiscover) (*client.ClientSet, *Service
 		bkBaseCli:  bkbaseCli,
 		cmsiCli:    cmsiCli,
 		cmdbCli:    cmdb.CmdbClient(),
+		bkUserCli:  bkUserCli,
 	}
 
 	return apiClientSet, svr, nil
@@ -302,11 +304,12 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 		Authorizer: s.authorizer,
 		Audit:      s.audit,
 		Cipher:     s.cipher,
-		Logics:     logics.NewLogics(s.client, s.cmdbCli),
+		Logics:     logics.NewLogics(s.client, s.cmdbCli, s.bkUserCli),
 		ItsmCli:    s.itsmCli,
 		BKBaseCli:  s.bkBaseCli,
 		CmsiCli:    s.cmsiCli,
 		CmdbCli:    s.cmdbCli,
+		BKUserCli:  s.bkUserCli,
 	}
 
 	account.InitAccountService(c)

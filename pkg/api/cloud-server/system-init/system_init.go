@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package apisysteminit ...
 package apisysteminit
 
 // SystemInitResult ...
@@ -28,4 +29,9 @@ type SystemInitResult struct {
 type OtherAccountInitResult struct {
 	CreatedAccountID string `json:"created_account_id,omitempty"`
 	ExistsAccountID  string `json:"exists_account_id,omitempty"`
+}
+
+// TenantInitResult ...
+type TenantInitResult struct {
+	Message string `json:"message,omitempty"`
 }

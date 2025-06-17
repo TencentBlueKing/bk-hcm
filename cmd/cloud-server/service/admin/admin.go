@@ -21,6 +21,7 @@
 package admin
 
 import (
+	"fmt"
 	"net/http"
 
 	logicsadmin "hcm/cmd/cloud-server/logics/admin"
@@ -50,6 +51,7 @@ func (s *adminService) registerAdminService(c *restful.WebService) {
 
 	// 这里注册的接口都无法被webserver访问，只能被系统内部调用，无需鉴权
 	adminH.Add("Init", http.MethodPost, "/init", s.Init)
+	adminH.Add("InitTenant", http.MethodPost, "/tenant/init", s.InitTenant)
 }
 
 type adminService struct {
@@ -70,5 +72,27 @@ func (s *adminService) Init(cts *rest.Contexts) (any, error) {
 	resp := apisysteminit.SystemInitResult{
 		OtherAccountInitResult: result,
 	}
+	return resp, nil
+}
+
+// InitTenant 租户初始化
+func (s *adminService) InitTenant(cts *rest.Contexts) (any, error) {
+	// 检查租户是否合法
+	targetTenant, err := s.adminLogics.GetTenantFromBkUser(cts.Kit)
+	if err != nil {
+		return nil, err
+	}
+
+	// other init processes...
+
+	// 租户表插入/更新租户数据
+	msg, err := s.adminLogics.UpsertLocalTenant(cts.Kit, targetTenant)
+	if err != nil {
+		logs.Errorf("upsert local tenant failed, err: %v, tenant: %s, rid: %s",
+			err, targetTenant.String(), cts.Kit.Rid)
+		return nil, fmt.Errorf("tenant data init error: %w", err)
+	}
+
+	resp := &apisysteminit.TenantInitResult{Message: msg}
 	return resp, nil
 }
