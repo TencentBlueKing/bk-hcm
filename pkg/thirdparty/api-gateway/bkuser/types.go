@@ -19,6 +19,12 @@
 
 package bkuser
 
+import (
+	"fmt"
+
+	"hcm/pkg/criteria/enumor"
+)
+
 // ---------------------------- batch_lookup_virtual_user ----------------------------
 
 // BatchLookupVirtualUserResult bk-user batch lookup virtual user result
@@ -26,8 +32,46 @@ type BatchLookupVirtualUserResult struct {
 	Data []VirtualUserItem `json:"data"`
 }
 
+// VirtualUserItem virtual user item
 type VirtualUserItem struct {
 	BkUsername  string `json:"bk_username"`
 	LoginName   string `json:"login_name"`
 	DisplayName string `json:"display_name"`
+}
+
+// TenantStatus tenant status
+type TenantStatus string
+
+const (
+	// TenantStatusEnabled enabled
+	TenantStatusEnabled TenantStatus = "enabled"
+	// TenantStatusDisabled disabled
+	TenantStatusDisabled TenantStatus = "disabled"
+)
+
+// Tenant tenant item
+type Tenant struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
+	// BKUser tenant status definition is diff from HCM, use GetStatus to get correct HCM tenant Status
+	BKUserStatus TenantStatus `json:"status"`
+}
+
+// GetStatus get HCM tenant status
+func (t Tenant) GetStatus() enumor.TenantStatus {
+	status := enumor.TenantDisable
+	if t.BKUserStatus == TenantStatusEnabled {
+		status = enumor.TenantEnable
+	}
+	return status
+}
+
+// String ...
+func (t Tenant) String() string {
+	return fmt.Sprintf("{%s:%s:%s}", t.Id, t.Name, t.BKUserStatus)
+}
+
+// TenantListResult tenant list result
+type TenantListResult struct {
+	Data []Tenant `json:"data"`
 }

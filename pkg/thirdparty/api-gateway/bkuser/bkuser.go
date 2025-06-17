@@ -40,6 +40,7 @@ import (
 // Client is an api-gateway client to request bk-user.
 type Client interface {
 	BatchLookupVirtualUser(kt *kit.Kit, loginNames []string) (*BatchLookupVirtualUserResult, error)
+	ListTenant(kt *kit.Kit) (*TenantListResult, error)
 }
 
 // NewClient initialize a new bkUser client
@@ -86,8 +87,8 @@ type bkUser struct {
 }
 
 // BatchLookupVirtualUser ...
-func (c *bkUser) BatchLookupVirtualUser(kt *kit.Kit, lookups []string) (*BatchLookupVirtualUserResult,
-	error) {
+func (c *bkUser) BatchLookupVirtualUser(kt *kit.Kit, lookups []string) (
+	*BatchLookupVirtualUserResult, error) {
 
 	if len(lookups) <= 0 {
 		return nil, errors.New("lookups is empty")
@@ -160,4 +161,27 @@ func GetCommonHeaderWithoutUser(kt *kit.Kit, cfg *cc.ApiGateway) http.Header {
 	header.Set(constant.BKGWAuthKey, bkAuth)
 	header.Set(constant.RidKey, kt.Rid)
 	return header
+}
+
+// ListTenant 查询租户列表
+func (c *bkUser) ListTenant(kt *kit.Kit) (*TenantListResult, error) {
+	resp := new(TenantListResult)
+
+	header := GetCommonHeaderWithoutUser(kt, c.config)
+	err := c.client.Get().
+		WithContext(kt.Ctx).
+		SubResourcef("/open/tenants").
+		WithHeaders(header).
+		Do().
+		Into(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp == nil {
+		return nil, errors.New("response is nil")
+	}
+
+	return resp, nil
 }

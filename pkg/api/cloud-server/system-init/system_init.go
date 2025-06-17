@@ -1,7 +1,7 @@
 /*
  * TencentBlueKing is pleased to support the open source community by making
  * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
- * Copyright (C) 2022 THL A29 Limited,
+ * Copyright (C) 2025 THL A29 Limited,
  * a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,37 +17,10 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package capability ...
-package capability
+// Package apisysteminit ...
+package apisysteminit
 
-import (
-	"hcm/cmd/cloud-server/logics"
-	"hcm/cmd/cloud-server/logics/audit"
-	"hcm/pkg/client"
-	"hcm/pkg/cryptography"
-	"hcm/pkg/iam/auth"
-	"hcm/pkg/thirdparty/api-gateway/bkbase"
-	"hcm/pkg/thirdparty/api-gateway/bkuser"
-	"hcm/pkg/thirdparty/api-gateway/cmdb"
-	"hcm/pkg/thirdparty/api-gateway/cmsi"
-	"hcm/pkg/thirdparty/api-gateway/itsm"
-	"hcm/pkg/thirdparty/esb"
-
-	"github.com/emicklei/go-restful/v3"
-)
-
-// Capability defines the service's capability
-type Capability struct {
-	WebService *restful.WebService
-	ApiClient  *client.ClientSet
-	Authorizer auth.Authorizer
-	Audit      audit.Interface
-	Cipher     cryptography.Crypto
-	EsbClient  esb.Client
-	Logics     *logics.Logics
-	ItsmCli    itsm.Client
-	BKBaseCli  bkbase.Client
-	CmsiCli    cmsi.Client
-	CmdbCli    cmdb.Client
-	BKUserCli  bkuser.Client
+// TenantInitResult ...
+type TenantInitResult struct {
+	Message string `json:"message,omitempty"`
 }
