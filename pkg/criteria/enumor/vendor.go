@@ -54,6 +54,12 @@ const (
 	Other Vendor = "other"
 )
 
+// IsPublicCloudVendor 是否是公共云厂商
+func IsPublicCloudVendor(vendor Vendor) bool {
+	return vendor == TCloud || vendor == Aws || vendor == Gcp || vendor == Azure || vendor == HuaWei ||
+		vendor == Zenlayer || vendor == Kaopu
+}
+
 // VendorInfo 厂商信息
 type VendorInfo struct {
 	NameEn string

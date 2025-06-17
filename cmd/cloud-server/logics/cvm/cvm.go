@@ -75,7 +75,7 @@ type AssignedCvmInfo struct {
 // PreviewAssignedCvmInfo preview assigned cvm info
 type PreviewAssignedCvmInfo struct {
 	CvmID         string
-	AccountBizIDs []int64
+	AccountBizIDs map[int64]struct{}
 	Vendor        enumor.Vendor
 	CloudID       string
 	InnerIPv4     string
