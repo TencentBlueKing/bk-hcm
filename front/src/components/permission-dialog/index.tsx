@@ -64,7 +64,7 @@ export default defineComponent({
         width: 342,
         render({ data }: any) {
           return h('span', {}, [
-            `【${data?.related_resource_types[0]?.type_name}】${
+            `【${data?.related_resource_types[0]?.type_name || '--'}】${
               whereAmI.value === Senarios.resource
                 ? resourceAccountStore.resourceAccount?.name
                   ? `${resourceAccountStore.resourceAccount?.name}`
@@ -123,7 +123,8 @@ export default defineComponent({
           title={this.title}
           size={this.size}
           isShow={this.isShow}
-          onClosed={this.handleClose}>
+          onClosed={this.handleClose}
+        >
           {{
             default: () => {
               return (
@@ -148,7 +149,8 @@ export default defineComponent({
                     class='mr10 dialog-button'
                     theme='primary'
                     loading={this.loading}
-                    onClick={this.handleConfirm}>
+                    onClick={this.handleConfirm}
+                  >
                     {this.t('去申请')}
                   </bk-button>
                   <bk-button class='dialog-button' onClick={this.handleClose}>

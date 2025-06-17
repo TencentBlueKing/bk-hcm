@@ -928,3 +928,6 @@ compatibility:
   # 如果helm已经被部署，修改selector属性将导致变更失败，需要重新部署。
   # noComponentInMatchLabels 为true时保持原状
   noComponentInMatchLabels: false
+
+# ccHostPoolBiz cmdb host pool biz id
+ccHostPoolBiz: 1

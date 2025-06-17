@@ -7,8 +7,10 @@ import { IAccountItem, QueryBuilderType } from '@/typings';
 export const useAccountSelectorStore = defineStore('account-selector', () => {
   const businessAccountList = ref<IAccountItem[]>([]);
   const resourceAccountList = ref<IAccountItem[]>([]);
+  const authorizedResourceAccountList = ref<IAccountItem[]>([]);
   const businessAccountLoading = ref(false);
   const resourceAccountLoading = ref(false);
+  const authorizedResourceAccountLoading = ref(false);
 
   const getBusinessAccountList = async (params: { bizId: number; account_type: 'resource' }) => {
     const { bizId, ...query } = params;
@@ -47,12 +49,37 @@ export const useAccountSelectorStore = defineStore('account-selector', () => {
     }
   };
 
+  const getAuthorizedResourceAccountList = async (data: QueryBuilderType) => {
+    authorizedResourceAccountLoading.value = true;
+    try {
+      const list = await rollRequest({
+        httpClient: http,
+        pageEnableCountKey: 'count',
+      }).rollReqUseCount<IAccountItem>('/api/v1/cloud/accounts/list', data, {
+        limit: 500,
+        countGetter: (res) => res.data.count,
+        listGetter: (res) => res.data.details,
+      });
+
+      authorizedResourceAccountList.value = list as IAccountItem[];
+
+      return list;
+    } catch {
+      authorizedResourceAccountList.value = [];
+    } finally {
+      authorizedResourceAccountLoading.value = false;
+    }
+  };
+
   return {
     businessAccountList,
     resourceAccountList,
+    authorizedResourceAccountList,
     businessAccountLoading,
     resourceAccountLoading,
+    authorizedResourceAccountLoading,
     getBusinessAccountList,
     getResourceAccountList,
+    getAuthorizedResourceAccountList,
   };
 });

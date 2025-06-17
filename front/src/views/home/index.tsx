@@ -6,7 +6,7 @@ import ReleaseNote from './release-note/index.vue';
 import Breadcrumb from './breadcrumb';
 import BusinessSelector from './business-selector';
 import NoPermission from '@/views/resource/NoPermission';
-import AccountList from '../resource/resource-manage/account/accountList';
+import AccountVendorGroup from '@/views/resource/resource-manage/account/vendor-group/index.vue';
 import GlobalPermissionDialog from '@/components/global-permission-dialog';
 
 import cookie from 'cookie';
@@ -98,7 +98,7 @@ export default defineComponent({
       return (
         <div class={'resource-manage-container'}>
           <div class='fixed-account-list-container'>
-            <AccountList />
+            <AccountVendorGroup />
           </div>
           <RouterView class={'router-view-content'} />
         </div>
@@ -153,7 +153,8 @@ export default defineComponent({
           defaultOpen={isMenuOpen.value}
           needMenu={isNeedSideMenu.value}
           onToggle={handleToggle}
-          class={['flex-1', { 'no-footer': route.path !== '/business/host' }]}>
+          class={['flex-1', { 'no-footer': route.path !== '/business/host' }]}
+        >
           {{
             'side-header': () => (
               <div class='left-header flex-row justify-content-between align-items-center'>
@@ -181,7 +182,8 @@ export default defineComponent({
                         )}
                         key={id}
                         aria-current='page'
-                        onClick={() => handleHeaderMenuClick(id, path)}>
+                        onClick={() => handleHeaderMenuClick(id, path)}
+                      >
                         {t(name)}
                       </Button>
                     ))}
@@ -203,19 +205,23 @@ export default defineComponent({
                           <DropdownItem
                             onClick={() => {
                               language.value = LANGUAGE_TYPE.zh_cn;
-                            }}>
+                            }}
+                          >
                             <span
                               class='hcm-icon bkhcm-icon-yuyanqiehuanzhongwen pr5'
-                              style={{ fontSize: '16px' }}></span>
+                              style={{ fontSize: '16px' }}
+                            ></span>
                             {'中文'}
                           </DropdownItem>
                           <DropdownItem
                             onClick={() => {
                               language.value = LANGUAGE_TYPE.en;
-                            }}>
+                            }}
+                          >
                             <span
                               class='hcm-icon bkhcm-icon-yuyanqiehuanyingwen pr5'
-                              style={{ fontSize: '16px' }}></span>
+                              style={{ fontSize: '16px' }}
+                            ></span>
                             {'English'}
                           </DropdownItem>
                         </DropdownMenu>
@@ -251,7 +257,8 @@ export default defineComponent({
                   style={{ width: `${NAV_WIDTH}px` }}
                   uniqueOpen={false}
                   openedKeys={openedKeys}
-                  activeKey={route.meta.activeKey?.toString()}>
+                  activeKey={route.meta.activeKey?.toString()}
+                >
                   {menus.value
                     .map((menuItem) => {
                       // menuItem.children 是一个数组, 且没有配置 hasPageRoute(页面级子路由)
@@ -277,7 +284,8 @@ export default defineComponent({
                                     [GLOBAL_BIZS_KEY]:
                                       whereAmI.value === Senarios.business ? accountStore.bizs : undefined,
                                   },
-                                }}>
+                                }}
+                              >
                                 <Menu.Item key={child.meta?.activeKey?.toString()}>
                                   {{
                                     icon: () => <i class={child.meta?.icon} />,

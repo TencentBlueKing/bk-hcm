@@ -27,4 +27,6 @@ const (
 	UnassignedBiz = -1
 	// AttachedAllBiz 代表账号关联所有业务
 	AttachedAllBiz = int64(-1)
+	// HostPoolBiz 代表主机池业务，用于更清晰表明是主机池的主机，并且在实现时，能和处理业务主机一样保持相似的逻辑
+	HostPoolBiz = -1
 )

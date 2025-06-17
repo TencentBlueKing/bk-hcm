@@ -64,7 +64,7 @@ GET /api/v1/cloud/accounts/{account_id}
 | 参数名称                 | 参数类型         | 描述                                                               |
 |----------------------|--------------|------------------------------------------------------------------|
 | id                   | string       | 账号ID                                                             |
-| vendor               | string       | 供应商（枚举值：tcloud、aws、azure、gcp、huawei）                             |
+| vendor               | string       | 供应商（枚举值：tcloud、aws、azure、gcp、huawei、other）                       |
 | name                 | string       | 名称                                                               |
 | managers             | string array | 账号管理者                                                            |
 | type                 | string       | 账号类型 (枚举值：resource:资源账号、registration:登记账号、security_audit:安全审计账号) |
@@ -136,3 +136,13 @@ GET /api/v1/cloud/accounts/{account_id}
 | cloud_application_name  | string | 云应用名称    |
 | cloud_client_secret_id  | string | 云客户端加密ID |
 | cloud_client_secret_key | string | 云客户端密钥   |
+
+#####  extension[other]
+
+其他云厂商的extension目前为空
+返回值为空对象
+```json
+{
+  "extension": {}
+}
+```

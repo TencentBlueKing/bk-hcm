@@ -140,6 +140,7 @@ type CloudServerSetting struct {
 	TaskManagement TaskManagement `yaml:"taskManagement"`
 	Tenant         TenantConfig   `yaml:"tenant"`
 	Cmdb           ApiGateway     `yaml:"cmdb"`
+	CCHostPoolBiz  int64          `yaml:"ccHostPoolBiz"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -198,6 +199,10 @@ func (s CloudServerSetting) Validate() error {
 		return err
 	}
 
+	if s.CCHostPoolBiz == 0 {
+		return fmt.Errorf("ccHostPoolBiz should not be empty")
+	}
+
 	return nil
 }
 
@@ -214,7 +219,7 @@ type DataServiceSetting struct {
 	Database    DataBase     `yaml:"database"`
 	Objectstore ObjectStore  `yaml:"objectstore"`
 	Crypto      Crypto       `yaml:"crypto"`
-	Cmdb        ApiGateway  `yaml:"cmdb"`
+	Cmdb        ApiGateway   `yaml:"cmdb"`
 	Tenant      TenantConfig `yaml:"tenant"`
 }
 
@@ -265,11 +270,13 @@ func (s *DataServiceSetting) TenantEnable() bool {
 
 // HCServiceSetting defines hc service used setting options.
 type HCServiceSetting struct {
-	Network    Network      `yaml:"network"`
-	Service    Service      `yaml:"service"`
-	Log        LogOption    `yaml:"log"`
-	SyncConfig SyncConfig   `yaml:"sync"`
-	Tenant     TenantConfig `yaml:"tenant"`
+	Network       Network      `yaml:"network"`
+	Service       Service      `yaml:"service"`
+	Log           LogOption    `yaml:"log"`
+	SyncConfig    SyncConfig   `yaml:"sync"`
+	Tenant        TenantConfig `yaml:"tenant"`
+	Cmdb          ApiGateway   `yaml:"cmdb"`
+	CCHostPoolBiz int64        `yaml:"ccHostPoolBiz"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -300,6 +307,15 @@ func (s HCServiceSetting) Validate() error {
 	if err := s.SyncConfig.Validate(); err != nil {
 		return fmt.Errorf("syncConfig validate error: %w", err)
 	}
+
+	if err := s.Cmdb.validate(); err != nil {
+		return err
+	}
+
+	if s.CCHostPoolBiz == 0 {
+		return fmt.Errorf("ccHostPoolBiz should not be empty")
+	}
+
 	return nil
 }
 
@@ -310,11 +326,11 @@ func (s *HCServiceSetting) TenantEnable() bool {
 
 // AuthServerSetting defines auth server used setting options.
 type AuthServerSetting struct {
-	Network Network    `yaml:"network"`
-	Service Service    `yaml:"service"`
-	Log     LogOption  `yaml:"log"`
-	Esb     Esb        `yaml:"esb"`
-	Cmdb    ApiGateway `yaml:"cmdb"`
+	Network Network      `yaml:"network"`
+	Service Service      `yaml:"service"`
+	Log     LogOption    `yaml:"log"`
+	Esb     Esb          `yaml:"esb"`
+	Cmdb    ApiGateway   `yaml:"cmdb"`
 	Tenant  TenantConfig `yaml:"tenant"`
 
 	IAM IAM `yaml:"iam"`

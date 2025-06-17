@@ -56,10 +56,13 @@ import (
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/handler"
 	"hcm/pkg/logs"
+	"hcm/pkg/metrics"
 	"hcm/pkg/rest"
 	restcli "hcm/pkg/rest/client"
 	"hcm/pkg/runtime/shutdown"
 	"hcm/pkg/serviced"
+	"hcm/pkg/thirdparty/api-gateway/cmdb"
+	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/ssl"
 
 	"github.com/emicklei/go-restful/v3"
@@ -86,6 +89,10 @@ func NewService(dis serviced.Discover) (*Service, error) {
 	for i := range cc.HCService().SyncConfig.ConcurrentRules {
 		rule := cc.HCService().SyncConfig.ConcurrentRules[i]
 		logs.Infof("sync concurrent[%d]: %s", i, rule.String())
+	}
+
+	if err = cmdb.InitCmdbClient(cvt.ValToPtr(cc.HCService().Cmdb), metrics.Register()); err != nil {
+		return nil, err
 	}
 
 	svr := &Service{

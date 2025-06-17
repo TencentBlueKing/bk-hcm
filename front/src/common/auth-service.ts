@@ -6,7 +6,16 @@ export interface IAuthSign {
   relation?: [...(number | string)[]];
 }
 
-export type AuthActionType = 'create' | 'update' | 'find' | 'delete' | 'import' | 'access' | 'apply' | 'recycle';
+export type AuthActionType =
+  | 'create'
+  | 'update'
+  | 'find'
+  | 'delete'
+  | 'import'
+  | 'access'
+  | 'apply'
+  | 'recycle'
+  | 'assign';
 
 export type AuthResourceType =
   | 'cloud_selection_scheme'
@@ -164,11 +173,17 @@ export const AUTH_DEFINITIONS = Object.freeze<Record<symbol, IAuthDefinition>>({
     resourceType: 'cvm',
     transform: (definition, relation) => basicTransform(definition, { resource_id: relation[0] }),
   },
-  [authSymbol.AUTH_BIZ_FIND_IAAS_RESOURCE]: {
-    id: 'biz_resource_find',
-    action: 'find',
+  [authSymbol.AUTH_ASSIGN_IAAS_RESOURCE]: {
+    id: 'iaas_resource_delete',
+    action: 'delete',
     resourceType: 'cvm',
-    transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
+    transform: (definition, relation) => basicTransform(definition, { resource_id: relation[0] }),
+  },
+  [authSymbol.AUTH_BIZ_FIND_IAAS_RESOURCE]: {
+    id: 'resource_assign',
+    action: 'assign',
+    resourceType: 'cvm',
+    // transform: (definition, relation) => basicTransform(definition, { bk_biz_id: relation[0] as number }),
   },
   [authSymbol.AUTH_BIZ_CREATE_IAAS_RESOURCE]: {
     id: 'biz_iaas_resource_create',

@@ -11,8 +11,6 @@ import ResourceSearchSelect from '@/components/resource-search-select/index.vue'
 import { ValidateValuesFunc } from 'bkui-vue/lib/search-select/utils';
 import { parseIP } from '@/utils';
 
-const { useColumns, useTableListQuery, HostOperations } = businessHostManagePlugin;
-
 const props = defineProps({
   filter: {
     type: Object as PropType<FilterType>,
@@ -20,15 +18,14 @@ const props = defineProps({
   isResourcePage: {
     type: Boolean,
   },
-  whereAmI: {
-    type: String,
-  },
 });
+
+const { useColumns, useTableListQuery, HostOperations } = businessHostManagePlugin;
 
 const isLoadingCloudAreas = ref(false);
 const cloudAreaPage = ref(0);
 const cloudAreas = ref([]);
-const { whereAmI, isResourcePage } = useWhereAmI();
+const { whereAmI } = useWhereAmI();
 
 const { searchValue, filter } = useFilterHost(props);
 const validateValues: ValidateValuesFunc = async (item, values) => {
@@ -99,7 +96,7 @@ getCloudAreas();
 
 <template>
   <bk-loading :loading="isLoading" opacity="1">
-    <section class="toolbar" :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'">
+    <section class="toolbar">
       <slot></slot>
       <HostOperations
         ref="hostOperationRef"
@@ -110,7 +107,7 @@ getCloudAreas();
       }"
       ></HostOperations>
 
-      <div class="flex-row align-items-center justify-content-arround search-selector-container">
+      <div class="search-selector-container">
         <resource-search-select
           v-model="searchValue"
           :resource-type="ResourceTypeEnum.CVM"
@@ -141,33 +138,16 @@ getCloudAreas();
 </template>
 
 <style lang="scss" scoped>
-.w100 {
-  width: 100px;
-}
-.w60 {
-  width: 60px;
-}
-.mt20 {
-  margin-top: 20px;
-}
-.mb32 {
-  margin-bottom: 32px;
-}
-.distribution-cls {
-  display: flex;
-  align-items: center;
-}
-.mr10 {
-  margin-right: 10px;
-}
-.search-selector-container {
-  margin-left: auto;
-}
 .toolbar {
   display: flex;
   align-items: center;
   gap: 10px;
+
+  .search-selector-container {
+    margin-left: auto;
+  }
 }
+
 :deep(.operation-column) {
   height: 100%;
   display: flex;
@@ -201,9 +181,6 @@ getCloudAreas();
       cursor: not-allowed;
     }
   }
-}
-.selected-host-info {
-  margin-bottom: 16px;
 }
 </style>
 

@@ -13,10 +13,6 @@ export default defineComponent({
       type: Boolean,
       required: true,
     },
-    onSubmit: {
-      type: Function as PropType<() => void>,
-      required: true,
-    },
     onCancel: {
       type: Function as PropType<() => void>,
       required: true,
@@ -65,7 +61,8 @@ export default defineComponent({
           props.onCancel();
         }}
         title='云账号接入'
-        class={['create-account-dialog-container', { 'has-notice': isNoticeAlert.value }]}>
+        class={['create-account-dialog-container', { 'has-notice': isNoticeAlert.value }]}
+      >
         {{
           default: () => (
             <div class={'create-account-dialog-content'}>
@@ -132,7 +129,8 @@ export default defineComponent({
                     step.value = 1;
                     props.onCancel();
                   }}
-                  loading={isSubmitLoading.value}>
+                  loading={isSubmitLoading.value}
+                >
                   取消
                 </Button>
               ) : null}

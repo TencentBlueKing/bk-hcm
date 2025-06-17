@@ -13,7 +13,6 @@ import LoadBalancerManage from './children/manage/load-balancer-manage.vue';
 import CertManager from '@/views/business/cert-manager';
 // import AccountSelector from '@/components/account-selector/index.vue';
 import { DISTRIBUTE_STATUS_LIST } from '@/constants';
-import { useDistributionStore } from '@/store/distribution';
 import EipForm from '@/views/business/forms/eip/index.vue';
 import subnetForm from '@/views/business/forms/subnet/index.vue';
 import securityForm from '@/views/business/forms/security/index.vue';
@@ -23,7 +22,6 @@ import BkTab, { BkTabPanel } from 'bkui-vue/lib/tab';
 import { RouterView, useRouter, useRoute } from 'vue-router';
 import { RESOURCE_TYPES, RESOURCE_TABS, VendorEnum } from '@/common/constant';
 import { useI18n } from 'vue-i18n';
-import useSteps from './hooks/use-steps';
 import type { FilterType } from '@/typings/resource';
 import { useAccountStore } from '@/store';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
@@ -35,12 +33,15 @@ const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 const accountStore = useAccountStore();
-const { isShowDistribution, ResourceDistribution } = useSteps();
+
+const resourceAccountStore = useResourceAccountStore();
 
 const isResourcePage = computed(() => {
   // 资源下没有业务ID
   return !accountStore.bizs;
 });
+
+const isOtherVendor = computed(() => resourceAccountStore.vendorInResourcePage === VendorEnum.OTHER);
 
 // 账号 extension 信息
 const headerExtensionMap = computed(() => {
@@ -90,8 +91,6 @@ const headerExtensionMap = computed(() => {
   return map;
 });
 
-const resourceAccountStore = useResourceAccountStore();
-
 // 搜索过滤相关数据
 const filter = ref({ op: 'and', rules: [] });
 const accountId = ref('');
@@ -112,6 +111,7 @@ const isTemplateDialogEdit = ref(false);
 const templateDialogPayload = ref({});
 
 provide('securityType', securityType);
+provide('isOtherVendor', isOtherVendor);
 
 const handleTabChange = (path: string) => {
   router.push({ path, query: { ...route.query } });
@@ -151,6 +151,11 @@ const componentMap: Record<string, any> = {
   certs: CertManager,
 };
 
+// 获取账号详情失败时不会执行resourceAccountStore.setResourceAccount，则会导致计算无效
+const topTabs = computed(() =>
+  RESOURCE_TABS.filter(({ key }) => !(isOtherVendor.value && key === '/resource/resource/account')),
+);
+
 // 标签相关数据
 const commonTabTypes = ['host', 'vpc', 'subnet', 'security', 'drive', 'ip', 'routing', 'image', 'network-interface'];
 const specialTabTypes = ['clb', 'certs'];
@@ -160,6 +165,10 @@ const tabs = computed(() => {
   const vendor = resourceAccountStore.vendorInResourcePage;
   if (!vendor || vendor === VendorEnum.TCLOUD) {
     types = types.concat(specialTabTypes);
+  }
+  // 其他云厂商只展示主机tab
+  if (isOtherVendor.value) {
+    types = commonTabTypes.slice(0, 1);
   }
   return RESOURCE_TYPES.filter(({ type }) => types.includes(type)).map(({ type, name }) => {
     return { name: type, type: t(name), component: componentMap[type] };
@@ -251,7 +260,7 @@ const handleSecrityType = (val: 'group' | 'gcp' | 'template') => {
 watch(
   () => route.path,
   (path) => {
-    RESOURCE_TABS.forEach(({ key }) => {
+    topTabs.value.forEach(({ key }) => {
       const reg = new RegExp(key);
       if (reg.test(path)) {
         activeResourceTab.value = key;
@@ -291,7 +300,6 @@ watch(
     } else {
       filter.value.rules = filter.value.rules.filter((e: any) => e.field !== 'account_id');
     }
-    useDistributionStore().setCloudAccountId(val);
   },
   {
     immediate: true,
@@ -319,6 +327,9 @@ watch(activeTab, () => {
   });
 });
 
+// 选择账号时，会触发useResourceAccount中的getAccountDetail，成功则会设置resourceAccount
+// 在这里设置accountId会触发watch accountId改变filter.value
+// 最后触发use-query-list中的triggerApi
 watch(
   () => resourceAccountStore.resourceAccount,
   (resourceAccount: any) => {
@@ -331,6 +342,7 @@ watch(
   },
 );
 
+// 选择账号或云厂商时，会设置currentVendor
 watch(
   () => resourceAccountStore.currentVendor,
   (vendor: VendorEnum) => {
@@ -350,12 +362,6 @@ watch(
     }
   },
 );
-
-// const handleTemplateEdit = (payload: any) => {
-//   isTemplateDialogShow.value = true;
-//   isTemplateDialogEdit.value = true;
-//   templateDialogPayload.value = payload;
-// };
 
 const getResourceAccountList = async () => {
   try {
@@ -429,7 +435,7 @@ onMounted(() => {
           <span class="main-account-name">
             {{ resourceAccountStore?.resourceAccount?.name || '全部账号' }}
           </span>
-          <template v-if="resourceAccountStore?.resourceAccount?.id">
+          <template v-if="resourceAccountStore?.resourceAccount?.extension && !isOtherVendor">
             <div class="extension">
               <span>
                 {{ headerExtensionMap.firstLabel }}：
@@ -452,7 +458,7 @@ onMounted(() => {
           v-model:active="activeResourceTab"
           @change="handleTabChange"
         >
-          <BkTabPanel v-for="item of RESOURCE_TABS" :label="item.label" :key="item.key" :name="item.key" />
+          <BkTabPanel v-for="item of topTabs" :label="item.label" :key="item.key" :name="item.key" />
         </BkTab>
       </div>
     </div>
@@ -471,7 +477,7 @@ onMounted(() => {
       <bk-tab v-model:active="activeTab" type="card-grid" class="resource-main g-scroller">
         <template #setting>
           <div style="margin: 0 10px">
-            <bk-select v-model="status" :clearable="false" class="w80">
+            <bk-select v-model="status" :clearable="false" :filterable="false" class="w80">
               <bk-option
                 v-for="(item, index) in DISTRIBUTE_STATUS_LIST"
                 :key="index"
@@ -489,12 +495,14 @@ onMounted(() => {
               :filter="filter"
               :where-am-i="activeTab"
               :is-resource-page="isResourcePage"
-              @handleSecrityType="handleSecrityType"
+              @handle-secrity-type="handleSecrityType"
               ref="componentRef"
               @edit="handleEdit"
-              v-model:isFormDataChanged="isFormDataChanged"
+              v-model:is-form-data-changed="isFormDataChanged"
             >
-              <template v-if="['host', 'vpc', 'drive', 'security', 'subnet', 'ip', 'clb'].includes(activeTab)">
+              <template
+                v-if="['host', 'vpc', 'drive', 'security', 'subnet', 'ip', 'clb'].includes(activeTab) && !isOtherVendor"
+              >
                 <hcm-auth
                   :sign="{ type: AUTH_CREATE_IAAS_RESOURCE, relation: [resourceAccountStore.resourceAccount?.id] }"
                   v-slot="{ noPerm }"
@@ -510,7 +518,7 @@ onMounted(() => {
       </bk-tab>
 
       <bk-sideslider
-        v-model:isShow="isShowSideSlider"
+        v-model:is-show="isShowSideSlider"
         width="800"
         title="新增"
         quick-close
@@ -526,17 +534,10 @@ onMounted(() => {
             :detail="formDetail"
             :show="isShowSideSlider"
             @edit="handleEdit"
-            v-model:isFormDataChanged="isFormDataChanged"
+            v-model:is-form-data-changed="isFormDataChanged"
           ></component>
         </template>
       </bk-sideslider>
-
-      <resource-distribution
-        v-model:is-show="isShowDistribution"
-        :choose-resource-type="true"
-        :title="t('快速分配')"
-        :data="[]"
-      />
 
       <TemplateDialog
         :is-show="isTemplateDialogShow"

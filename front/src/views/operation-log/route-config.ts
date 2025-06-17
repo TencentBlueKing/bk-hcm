@@ -8,7 +8,7 @@ import {
   MENU_RESOURCE_OPERATION_LOG_DETAILS,
 } from '@/constants/menu-symbol';
 
-const removeQueryParams = (to: RouteLocationNormalized) => {
+const _removeQueryParams = (to: RouteLocationNormalized) => {
   if (Object.keys(to.query).length) return { path: to.path, query: {} };
 };
 
@@ -58,7 +58,7 @@ const operationLogRsc: RouteRecordRaw[] = [
         menu: {},
       }),
     },
-    beforeEnter: removeQueryParams,
+    // beforeEnter: removeQueryParams,
   },
   {
     name: MENU_RESOURCE_OPERATION_LOG_DETAILS,
