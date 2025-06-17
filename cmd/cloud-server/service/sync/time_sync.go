@@ -73,7 +73,7 @@ func CloudResourceSync(intervalMin time.Duration, sd serviced.ServiceDiscover, c
 					kt := core.NewTenantBackendKit(tenantID)
 					// for retry
 					kt.RequestSource = enumor.AsynchronousTasks
-					allAccountSync(kt, cliSet, vendor, tenantID)
+					allAccountSync(kt, cliSet, vendor)
 					waitGroup.Done()
 				}(vendorSyncer)
 			}
@@ -112,15 +112,14 @@ func listAllTenantIDs(kt *kit.Kit, cliSet *client.ClientSet) ([]string, error) {
 }
 
 // allAccountSync all account sync.
-func allAccountSync(kt *kit.Kit, cliSet *client.ClientSet, syncer account.VendorSyncer, tenantID string) {
-
+func allAccountSync(kt *kit.Kit, cliSet *client.ClientSet, syncer account.VendorSyncer) {
 	startTime := time.Now()
 	logs.Infof("%s start sync all cloud resource, tenant: %s, time: %v, rid: %s",
-		syncer.Vendor(), tenantID, startTime, kt.Rid)
+		syncer.Vendor(), kt.TenantID, startTime, kt.Rid)
 
 	defer func() {
 		logs.Infof("%s sync all cloud resource end, tenant: %s, cost: %v, rid: %s",
-			syncer.Vendor(), tenantID, time.Since(startTime), kt.Rid)
+			syncer.Vendor(), kt.TenantID, time.Since(startTime), kt.Rid)
 	}()
 
 	listReq := &protocloud.AccountListReq{
