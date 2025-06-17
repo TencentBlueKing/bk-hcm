@@ -23,6 +23,7 @@ package tenant
 import (
 	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/client/data-service"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -33,7 +34,7 @@ func ListAllTenantID(kt *kit.Kit, ds *dataservice.Client) ([]string, error) {
 	tenantIDs := make([]string, 0)
 
 	listReq := &core.ListReq{
-		Filter: tools.EqualExpression("status", "enable"),
+		Filter: tools.EqualExpression("status", enumor.TenantEnable),
 		Page:   core.NewDefaultBasePage(),
 	}
 
