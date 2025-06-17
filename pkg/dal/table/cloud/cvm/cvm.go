@@ -114,6 +114,10 @@ func (t Table) TableName() table.Name {
 	return table.CvmTable
 }
 
+var skipPartialFieldValidateVendor = map[enumor.Vendor]struct{}{
+	enumor.Other: {},
+}
+
 // InsertValidate cvm table when insert.
 func (t Table) InsertValidate() error {
 	// length validate.
@@ -137,6 +141,22 @@ func (t Table) InsertValidate() error {
 		return errors.New("cloud_id is required")
 	}
 
+	if len(t.Extension) == 0 {
+		return errors.New("extension is required")
+	}
+
+	if len(t.Creator) == 0 {
+		return errors.New("creator is required")
+	}
+
+	if len(t.Reviser) == 0 {
+		return errors.New("reviser is required")
+	}
+
+	if _, ok := skipPartialFieldValidateVendor[t.Vendor]; ok {
+		return nil
+	}
+
 	if len(t.Region) == 0 {
 		return errors.New("region is required")
 	}
@@ -155,18 +175,6 @@ func (t Table) InsertValidate() error {
 
 	if len(t.SubnetIDs) == 0 {
 		return errors.New("subnet_id is required")
-	}
-
-	if len(t.Extension) == 0 {
-		return errors.New("extension is required")
-	}
-
-	if len(t.Creator) == 0 {
-		return errors.New("creator is required")
-	}
-
-	if len(t.Reviser) == 0 {
-		return errors.New("reviser is required")
 	}
 
 	return nil

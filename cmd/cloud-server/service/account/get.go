@@ -57,83 +57,119 @@ func (a *accountSvc) GetAccount(cts *rest.Contexts) (interface{}, error) {
 
 	switch baseInfo.Vendor {
 	case enumor.TCloud:
-		acc, err := a.client.DataService().TCloud.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
-		if err != nil {
-			logs.Errorf("get tcloud acc failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return nil, err
-		}
-		// 敏感信息不显示，置空
-		if acc != nil {
-			acc.Extension.CloudSecretKey = ""
-		}
-		if err = accountDetailFullFill(a, cts, acc); err != nil {
-			logs.Errorf("acc detail full fill failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return nil, err
-		}
-		return acc, nil
+		return a.getTCloudAccount(cts, accountID)
 	case enumor.Aws:
-		acc, err := a.client.DataService().Aws.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
-		if err != nil {
-			logs.Errorf("get aws acc failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return nil, err
-		}
-		// 敏感信息不显示，置空
-		if acc != nil {
-			acc.Extension.CloudSecretKey = ""
-		}
-		if err = accountDetailFullFill(a, cts, acc); err != nil {
-			logs.Errorf("acc detail full fill failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return nil, err
-		}
-		return acc, nil
+		return a.getAwsAccount(cts, accountID)
 	case enumor.HuaWei:
-		acc, err := a.client.DataService().HuaWei.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
-		if err != nil {
-			logs.Errorf("get huawei acc failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return nil, err
-		}
-		// 敏感信息不显示，置空
-		if acc != nil {
-			acc.Extension.CloudSecretKey = ""
-		}
-		if err = accountDetailFullFill(a, cts, acc); err != nil {
-			logs.Errorf("acc detail full fill failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return nil, err
-		}
-		return acc, nil
+		return a.getHuaWeiAccount(cts, accountID)
 	case enumor.Gcp:
-		acc, err := a.client.DataService().Gcp.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
-		if err != nil {
-			logs.Errorf("get gcp acc failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return nil, err
-		}
-		// 敏感信息不显示，置空
-		if acc != nil {
-			acc.Extension.CloudServiceSecretKey = ""
-		}
-		if err = accountDetailFullFill(a, cts, acc); err != nil {
-			logs.Errorf("acc detail full fill failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return nil, err
-		}
-		return acc, nil
+		return a.getGcpAccount(cts, accountID)
 	case enumor.Azure:
-		acc, err := a.client.DataService().Azure.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
-		if err != nil {
-			logs.Errorf("get azure acc failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return nil, err
-		}
-		// 敏感信息不显示，置空
-		if acc != nil {
-			acc.Extension.CloudClientSecretKey = ""
-		}
-		if err = accountDetailFullFill(a, cts, acc); err != nil {
-			logs.Errorf("acc detail full fill failed, err: %v, rid: %s", err, cts.Kit.Rid)
-			return nil, err
-		}
-		return acc, nil
+		return a.getAzureAccount(cts, accountID)
+	case enumor.Other:
+		return a.getOtherAccount(cts, accountID)
 	default:
 		return nil, errf.NewFromErr(errf.InvalidParameter, fmt.Errorf("no support vendor: %s", baseInfo.Vendor))
 	}
+}
+
+func (a *accountSvc) getTCloudAccount(cts *rest.Contexts, accountID string) (interface{}, error) {
+	acc, err := a.client.DataService().TCloud.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
+	if err != nil {
+		logs.Errorf("get tcloud acc failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	// 敏感信息不显示，置空
+	if acc != nil {
+		acc.Extension.CloudSecretKey = ""
+	}
+	if err = accountDetailFullFill(a, cts, acc); err != nil {
+		logs.Errorf("acc detail full fill failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	return acc, nil
+}
+
+func (a *accountSvc) getAwsAccount(cts *rest.Contexts, accountID string) (interface{}, error) {
+	acc, err := a.client.DataService().Aws.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
+	if err != nil {
+		logs.Errorf("get aws acc failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	// 敏感信息不显示，置空
+	if acc != nil {
+		acc.Extension.CloudSecretKey = ""
+	}
+	if err = accountDetailFullFill(a, cts, acc); err != nil {
+		logs.Errorf("acc detail full fill failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	return acc, nil
+}
+
+func (a *accountSvc) getHuaWeiAccount(cts *rest.Contexts, accountID string) (interface{}, error) {
+	acc, err := a.client.DataService().HuaWei.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
+	if err != nil {
+		logs.Errorf("get huawei acc failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	// 敏感信息不显示，置空
+	if acc != nil {
+		acc.Extension.CloudSecretKey = ""
+	}
+	if err = accountDetailFullFill(a, cts, acc); err != nil {
+		logs.Errorf("acc detail full fill failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	return acc, nil
+}
+
+func (a *accountSvc) getGcpAccount(cts *rest.Contexts, accountID string) (interface{}, error) {
+	acc, err := a.client.DataService().Gcp.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
+	if err != nil {
+		logs.Errorf("get gcp acc failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	// 敏感信息不显示，置空
+	if acc != nil {
+		acc.Extension.CloudServiceSecretKey = ""
+	}
+	if err = accountDetailFullFill(a, cts, acc); err != nil {
+		logs.Errorf("acc detail full fill failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	return acc, nil
+}
+
+func (a *accountSvc) getAzureAccount(cts *rest.Contexts, accountID string) (interface{}, error) {
+	acc, err := a.client.DataService().Azure.Account.Get(cts.Kit.Ctx, cts.Kit.Header(), accountID)
+	if err != nil {
+		logs.Errorf("get azure acc failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	// 敏感信息不显示，置空
+	if acc != nil {
+		acc.Extension.CloudClientSecretKey = ""
+	}
+	if err = accountDetailFullFill(a, cts, acc); err != nil {
+		logs.Errorf("acc detail full fill failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	return acc, nil
+}
+
+func (a *accountSvc) getOtherAccount(cts *rest.Contexts, accountID string) (interface{}, error) {
+	acc, err := a.client.DataService().Other.Account.Get(cts.Kit, accountID)
+	if err != nil {
+		logs.Errorf("get account failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if err = accountDetailFullFill(a, cts, acc); err != nil {
+		logs.Errorf("acc detail full fill failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	return acc, nil
 }
 
 func (a *accountSvc) checkGetAccountPermission(cts *rest.Contexts, accountID string) error {

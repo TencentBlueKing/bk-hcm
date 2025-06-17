@@ -234,10 +234,10 @@ const handleEditTemplate = (payload: any) => {
         :filter="filter"
         :is-resource-page="isResourcePage"
         :bk-biz-id="accountStore.bizs"
-        @handleSecrityType="handleSecrityType"
-        @editTemplate="handleEditTemplate"
+        @handle-secrity-type="handleSecrityType"
+        @edit-template="handleEditTemplate"
         @edit="handleEdit"
-        v-model:isFormDataChanged="isFormDataChanged"
+        v-model:is-form-data-changed="isFormDataChanged"
       >
         <span>
           <hcm-auth :sign="{ type: AUTH_BIZ_CREATE_IAAS_RESOURCE, relation: [accountStore.bizs] }" v-slot="{ noPerm }">
@@ -262,7 +262,7 @@ const handleEditTemplate = (payload: any) => {
       </component>
     </bk-loading>
     <bk-sideslider
-      v-model:isShow="isShowSideSlider"
+      v-model:is-show="isShowSideSlider"
       width="800"
       title="新增"
       quick-close
@@ -277,7 +277,7 @@ const handleEditTemplate = (payload: any) => {
           :detail="formDetail"
           :is-edit="isEdit"
           :show="isShowSideSlider"
-          v-model:isFormDataChanged="isFormDataChanged"
+          v-model:is-form-data-changed="isFormDataChanged"
         ></component>
       </template>
     </bk-sideslider>
@@ -319,6 +319,7 @@ const handleEditTemplate = (payload: any) => {
 
     & > :deep(.bk-nested-loading) {
       height: 100%;
+
       .bk-table {
         margin-top: 16px;
         max-height: calc(100% - 48px);
@@ -336,6 +337,7 @@ const handleEditTemplate = (payload: any) => {
 
     :deep(.recycle-manager-page) {
       height: 100%;
+
       .bk-tab {
         height: 100%;
       }
@@ -348,6 +350,7 @@ const handleEditTemplate = (payload: any) => {
 .mw64 {
   min-width: 64px;
 }
+
 .mw88 {
   min-width: 88px;
 }

@@ -25,6 +25,7 @@ import (
 	"hcm/cmd/hc-service/service/sync/azure"
 	"hcm/cmd/hc-service/service/sync/gcp"
 	"hcm/cmd/hc-service/service/sync/huawei"
+	"hcm/cmd/hc-service/service/sync/other"
 	"hcm/cmd/hc-service/service/sync/tcloud"
 )
 
@@ -35,4 +36,5 @@ func InitService(cap *capability.Capability) {
 	gcp.InitService(cap)
 	huawei.InitService(cap)
 	azure.InitService(cap)
+	other.InitService(cap)
 }

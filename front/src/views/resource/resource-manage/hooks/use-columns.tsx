@@ -1,7 +1,7 @@
 /* eslint-disable no-nested-ternary */
 // table 字段相关信息
 import i18n from '@/language/i18n';
-import { CloudType, SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum } from '@/typings';
+import { SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum } from '@/typings';
 import { useAccountStore, useLoadBalancerStore } from '@/store';
 import { Button } from 'bkui-vue';
 import { type Settings } from 'bkui-vue/lib/table/props';
@@ -158,7 +158,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       sort: true,
       isDefaultShow: true,
       render({ cell }: { cell: string }) {
-        return h('span', [CloudType[cell] || '--']);
+        return h('span', [VendorMap[cell] || '--']);
       },
     },
     {
@@ -234,7 +234,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       sort: true,
       isDefaultShow: true,
       render({ cell }: { cell: string }) {
-        return h('span', [CloudType[cell] || '--']);
+        return h('span', [VendorMap[cell] || '--']);
       },
     },
     {
@@ -332,7 +332,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
     {
       label: t('云厂商'),
       render({ data }: any) {
-        return h('span', {}, [CloudType[data.vendor]]);
+        return h('span', {}, [VendorMap[data.vendor]]);
       },
     },
     {
@@ -406,7 +406,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       sort: true,
       isDefaultShow: true,
       render({ cell }: { cell: string }) {
-        return h('span', [CloudType[cell] || '--']);
+        return h('span', [VendorMap[cell] || '--']);
       },
     },
     {
@@ -514,7 +514,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       sort: true,
       isDefaultShow: true,
       render({ cell }: { cell: string }) {
-        return h('span', [CloudType[cell] || '--']);
+        return h('span', [VendorMap[cell] || '--']);
       },
     },
     {
@@ -569,7 +569,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       sort: true,
       isDefaultShow: true,
       render({ cell }: { cell: string }) {
-        return h('span', [CloudType[cell] || '--']);
+        return h('span', [VendorMap[cell] || '--']);
       },
     },
     {
@@ -673,7 +673,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       sort: true,
       isDefaultShow: true,
       render({ cell }: { cell: string }) {
-        return h('span', [CloudType[cell] || '--']);
+        return h('span', [VendorMap[cell] || '--']);
       },
     },
     {
@@ -769,7 +769,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       onlyShowOnList: true,
       isDefaultShow: true,
       render({ data }: any) {
-        return h('span', {}, [CloudType[data.vendor]]);
+        return h('span', {}, [VendorMap[data.vendor]]);
       },
     },
     {
@@ -966,7 +966,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       sort: true,
       isDefaultShow: true,
       render({ cell }: { cell: string }) {
-        return h('span', [CloudType[cell] || '--']);
+        return h('span', [VendorMap[cell] || '--']);
       },
     },
     {
@@ -1258,7 +1258,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       field: 'vendor',
       width: 100,
       render({ cell }: { cell: string }) {
-        return h('span', [CloudType[cell] || '--']);
+        return h('span', [VendorMap[cell] || '--']);
       },
       sort: true,
       filter: {
@@ -1501,7 +1501,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '云厂商',
       field: 'vendor',
       render({ cell }: { cell: string }) {
-        return h('span', [CloudType[cell] || '--']);
+        return h('span', [VendorMap[cell] || '--']);
       },
       sort: true,
       filter: {
@@ -1753,7 +1753,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '云厂商',
       field: 'vendor',
       render({ cell }: { cell: string }) {
-        return h('span', [CloudType[cell] || '--']);
+        return h('span', [VendorMap[cell] || '--']);
       },
     },
     {

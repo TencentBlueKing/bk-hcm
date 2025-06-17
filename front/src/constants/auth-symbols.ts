@@ -25,6 +25,7 @@ export const AUTH_FIND_IAAS_RESOURCE = Symbol.for('auth_find_iaas_resource');
 export const AUTH_CREATE_IAAS_RESOURCE = Symbol.for('auth_create_iaas_resource');
 export const AUTH_UPDATE_IAAS_RESOURCE = Symbol.for('auth_update_iaas_resource');
 export const AUTH_DELETE_IAAS_RESOURCE = Symbol.for('auth_delete_iaas_resource');
+export const AUTH_ASSIGN_IAAS_RESOURCE = Symbol.for('auth_assign_iaas_resource');
 
 /**
  * 业务下IaaS资源（主机、vpc、子网、安全组、云硬盘、网络接口、弹性IP、路由表、镜像）
