@@ -44,7 +44,7 @@ import (
 func (a *accountSvc) awsCondSyncRes(cts *rest.Contexts, accountID string, resType enumor.CloudResourceType) (
 	any, error) {
 
-	req, syncFunc, err := a.decodeAwsCondSyncRequest(cts, resType)
+	req, syncFunc, err := a.decodeAwsCondSyncRequest(cts, accountID, resType)
 	if err != nil {
 		return nil, err
 	}
@@ -60,6 +60,7 @@ func (a *accountSvc) awsCondSyncRes(cts *rest.Contexts, accountID string, resTyp
 	syncParams := &aws.CondSyncParams{
 		AccountID: accountID,
 		Regions:   req.Regions,
+		CloudIDs:  req.CloudIDs,
 	}
 	startAt := time.Now()
 	go func(leaseID etcd3.LeaseID) {
@@ -91,8 +92,8 @@ func (a *accountSvc) awsCondSyncRes(cts *rest.Contexts, accountID string, resTyp
 	return "started", nil
 }
 
-func (a *accountSvc) decodeAwsCondSyncRequest(cts *rest.Contexts, resType enumor.CloudResourceType) (
-	*cloudaccount.ResCondSyncReq, aws.CondSyncFunc, error) {
+func (a *accountSvc) decodeAwsCondSyncRequest(cts *rest.Contexts, accountID string,
+	resType enumor.CloudResourceType) (*cloudaccount.ResCondSyncReq, aws.CondSyncFunc, error) {
 
 	req := new(cloudaccount.ResCondSyncReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -108,6 +109,7 @@ func (a *accountSvc) decodeAwsCondSyncRequest(cts *rest.Contexts, resType enumor
 	}
 
 	var rules []*filter.AtomRule
+	rules = append(rules, tools.RuleEqual("account_id", accountID))
 	if len(req.Regions) > 0 {
 		rules = append(rules, tools.RuleIn("region_id", req.Regions))
 	}

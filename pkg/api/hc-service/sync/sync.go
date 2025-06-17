@@ -66,6 +66,8 @@ func (req *AwsGlobalSyncReq) Validate() error {
 type AwsSyncReq struct {
 	AccountID string `json:"account_id" validate:"required"`
 	Region    string `json:"region" validate:"required"`
+	// 传入指定资源id进行同步，仅特定资源支持
+	CloudIDs []string `json:"cloud_ids,omitempty" validate:"omitempty,max=20"`
 }
 
 // Validate aws sync request.
@@ -87,6 +89,8 @@ func (req *HuaWeiGlobalSyncReq) Validate() error {
 type HuaWeiSyncReq struct {
 	AccountID string `json:"account_id" validate:"required"`
 	Region    string `json:"region" validate:"required"`
+	// 传入指定资源id进行同步，仅特定资源支持
+	CloudIDs []string `json:"cloud_ids,omitempty" validate:"omitempty,max=20"`
 }
 
 // Validate huawei sync request.
@@ -184,6 +188,8 @@ func (req *AzureGlobalSyncReq) Validate() error {
 type AzureSyncReq struct {
 	AccountID         string `json:"account_id" validate:"required"`
 	ResourceGroupName string `json:"resource_group_name" validate:"required"`
+	// 传入指定资源id进行同步，仅特定资源支持
+	CloudIDs []string `json:"cloud_ids,omitempty" validate:"omitempty,max=20"`
 }
 
 // Validate azure sync request.

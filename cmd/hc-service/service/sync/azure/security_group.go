@@ -82,6 +82,11 @@ func (hd *sgHandler) Prepare(cts *rest.Contexts) error {
 
 // Next ...
 func (hd *sgHandler) Next(kt *kit.Kit) ([]string, error) {
+	if len(hd.request.CloudIDs) > 0 {
+		// 如果有指定的cloudIDs，则直接返回
+		logs.Infof("sync azure security group, cloudIDs: %v, rid: %s", hd.request.CloudIDs, kt.Rid)
+		return hd.request.CloudIDs, nil
+	}
 	if !hd.pager.More() {
 		return nil, nil
 	}

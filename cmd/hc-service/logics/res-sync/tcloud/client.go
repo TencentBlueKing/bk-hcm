@@ -44,8 +44,7 @@ type Interface interface {
 
 	SecurityGroup(kt *kit.Kit, params *SyncBaseParams, opt *SyncSGOption) (*SyncResult, error)
 	RemoveSecurityGroupDeleteFromCloud(kt *kit.Kit, accountID string, region string) error
-	RemoveSecurityGroupDeleteFromCloudV2(kt *kit.Kit, accountID string, region string,
-		allCloudIDMap map[string]struct{}) error
+	RemoveSecurityGroupDeleteFromCloudV2(kt *kit.Kit, param *SyncRemovedParams, allCloudIDMap map[string]struct{}) error
 	SecurityGroupUsageBiz(kt *kit.Kit, params *SyncSGUsageBizParams) error
 
 	Subnet(kt *kit.Kit, params *SyncBaseParams, opt *SyncSubnetOption) (*SyncResult, error)

@@ -32,6 +32,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 )
 
 // SyncSecurityGroup ....
@@ -67,6 +68,23 @@ func (hd *sgHandler) Prepare(cts *rest.Contexts) error {
 
 // Next ...
 func (hd *sgHandler) Next(kt *kit.Kit) ([]string, error) {
+	if len(hd.request.CloudIDs) > 0 {
+		// 指定id只处理一次
+		listOpt := &securitygroup.HuaWeiListOption{
+			Region:   hd.request.Region,
+			CloudIDs: hd.request.CloudIDs,
+			Page: &core.HuaWeiPage{
+				Limit: converter.ValToPtr(int32(constant.CloudResourceSyncMaxLimit)),
+			},
+		}
+		sgResult, _, err := hd.syncCli.CloudCli().ListSecurityGroup(kt, listOpt)
+		if err != nil {
+			logs.Errorf("request adaptor list huawei sg failed, err: %v, opt: %v, rid: %s", err, listOpt, kt.Rid)
+			return nil, err
+		}
+		return slice.Map(sgResult, func(one securitygroup.HuaWeiSG) string { return one.Id }), nil
+	}
+
 	listOpt := &securitygroup.HuaWeiListOption{
 		Region: hd.request.Region,
 		Page: &core.HuaWeiPage{
