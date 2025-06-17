@@ -28,11 +28,13 @@ import (
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/iam/sdk/operator"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/rest/client"
 	apigateway "hcm/pkg/thirdparty/api-gateway"
 	"hcm/pkg/thirdparty/api-gateway/bkuser"
 	"hcm/pkg/thirdparty/api-gateway/discovery"
+	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/ssl"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -40,32 +42,59 @@ import (
 
 // Client ...
 type Client interface {
+	// RegisterResourceCreatorAction register iam resource instance with creator, returns related actions with policy id
+	// that the creator gained.
 	RegisterResourceCreatorAction(kt *kit.Kit, opts *InstanceWithCreator) (*[]CreatorActionPolicy, error)
+	// GetApplyPermUrl get apply permission url.
 	GetApplyPermUrl(kt *kit.Kit, opts *meta.IamPermission) (string, error)
 
+	// RegisterSystem register iam system.
 	RegisterSystem(kt *kit.Kit, sys *System) error
+	// GetSystemInfo get iam system info.
 	GetSystemInfo(kt *kit.Kit, fields []SystemQueryField) (*SystemResp, error)
+	// UpdateSystemConfig update iam system config.
 	UpdateSystemConfig(kt *kit.Kit, sys System) error
+	// RegisterResourcesTypes register iam resource types.
 	RegisterResourcesTypes(kt *kit.Kit, resTypes []ResourceType) error
+	// UpdateResourcesType update iam resource type.
 	UpdateResourcesType(kt *kit.Kit, resType ResourceType) error
+	// DeleteResourcesTypes delete iam resource types.
 	DeleteResourcesTypes(kt *kit.Kit, resTypeIDs []TypeID) error
+	// RegisterActions register iam actions.
 	RegisterActions(kt *kit.Kit, actions []ResourceAction) error
+	// UpdateAction update iam action.
 	UpdateAction(kt *kit.Kit, action ResourceAction) error
+	// DeleteActions delete iam actions.
 	DeleteActions(kt *kit.Kit, actionIDs []ActionID) error
+	// RegisterActionGroups register iam action groups.
 	RegisterActionGroups(kt *kit.Kit, actionGroups []ActionGroup) error
+	// UpdateActionGroups update iam action groups.
 	UpdateActionGroups(kt *kit.Kit, actionGroups []ActionGroup) error
+	// RegisterInstanceSelections register iam instance selection.
 	RegisterInstanceSelections(kt *kit.Kit, instanceSelections []InstanceSelection) error
+	// UpdateInstanceSelection update iam instance selection.
 	UpdateInstanceSelection(kt *kit.Kit, instanceSelection InstanceSelection) error
+	// DeleteInstanceSelections delete iam instance selection.
 	DeleteInstanceSelections(kt *kit.Kit, instanceSelectionIDs []InstanceSelectionID) error
+	// RegisterResourceCreatorActions register iam resource creator actions.
 	RegisterResourceCreatorActions(kt *kit.Kit, resourceCreatorActions ResourceCreatorActions) error
+	// UpdateResourceCreatorActions update iam resource creator actions.
 	UpdateResourceCreatorActions(kt *kit.Kit, resourceCreatorActions ResourceCreatorActions) error
+	// RegisterCommonActions register iam common actions.
 	RegisterCommonActions(kt *kit.Kit, commonActions []CommonAction) error
+	// UpdateCommonActions update iam common actions.
 	UpdateCommonActions(kt *kit.Kit, commonActions []CommonAction) error
+	// DeleteActionPolicies delete iam action policies.
 	DeleteActionPolicies(kt *kit.Kit, actionID ActionID) error
+	// ListPolicies list iam policies.
 	ListPolicies(kt *kit.Kit, params *ListPoliciesParams) (*ListPoliciesData, error)
+	// GetSystemToken get iam system token.
 	GetSystemToken(kt *kit.Kit) (string, error)
+	// GetUserPolicy get iam user policy.
 	GetUserPolicy(kt *kit.Kit, opt *GetPolicyOption) (*operator.Policy, error)
+	// ListUserPolicies list iam user policies.
 	ListUserPolicies(kt *kit.Kit, opts *ListPolicyOptions) ([]ActionPolicy, error)
+	// GetUserPolicyByExtRes get iam user policy by external resource.
 	GetUserPolicyByExtRes(kt *kit.Kit, opts *GetPolicyByExtResOption) (*GetPolicyByExtResResult, error)
 }
 
@@ -120,6 +149,8 @@ func (i *iam) GetApplyPermUrl(kt *kit.Kit, opts *meta.IamPermission) (string, er
 	result, err := apigateway.ApiGatewayCall[meta.IamPermission, GetApplyPermUrlResult](i.client, i.bkUserCli, i.config,
 		rest.POST, kt, opts, "/api/v1/open/application/")
 	if err != nil {
+		logs.Errorf("get apply permission url failed, err: %v, opt: %+v, rid: %s", err, converter.PtrToVal(opts),
+			kt.Rid)
 		return "", err
 	}
 
@@ -169,7 +200,6 @@ func (i *iam) GetSystemInfo(kt *kit.Kit, fields []SystemQueryField) (*SystemResp
 		WithContext(kt.Ctx).
 		WithHeaders(header).
 		WithParam("fields", fieldsStr).
-		Body(nil).
 		Do()
 
 	if err := result.Into(resp); err != nil {
@@ -676,7 +706,7 @@ func (i *iam) ListPolicies(kt *kit.Kit, params *ListPoliciesParams) (*ListPolici
 		WithContext(kt.Ctx).
 		WithHeaders(header).
 		WithParams(parsedParams).
-		Body(nil).Do()
+		Do()
 
 	err := result.Into(resp)
 	if err != nil {
@@ -706,7 +736,7 @@ func (i *iam) GetSystemToken(kt *kit.Kit) (string, error) {
 		SubResourcef("/api/v1/model/systems/%s/token", i.systemID).
 		WithContext(kt.Ctx).
 		WithHeaders(header).
-		Body(nil).Do()
+		Do()
 	err := result.Into(resp)
 	if err != nil {
 		return "", err

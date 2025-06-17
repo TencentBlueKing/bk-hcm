@@ -142,9 +142,6 @@ func genResManagementActions() []iam.ResourceAction {
 	// 证书管理的Actions
 	actions = append(actions, genCertResManActions()...)
 
-	// TODO 开启编排相关功能后放开注释
-	// 资源编排的Actions
-	// actions = append(actions, genArrangeResManActions()...)
 	actions = append(actions, []iam.ResourceAction{{
 		ID:                   BizRecycleBinOperate,
 		Name:                 ActionIDNameMap[BizRecycleBinOperate],
@@ -234,38 +231,6 @@ func genCertResManActions() []iam.ResourceAction {
 		},
 	}
 }
-
-/*
-func genArrangeResManActions() []iam.ResourceAction {
-	return []iam.ResourceAction{
-		{
-			ID:                   BizArrangeResCreate,
-			Name:                 ActionIDNameMap[BizArrangeResCreate],
-			NameEn:               "Create Biz Arrange",
-			Type:                 Create,
-			RelatedResourceTypes: bizResource,
-			RelatedActions:       []iam.ActionID{BizAccess},
-			Version:              1,
-		}, {
-			ID:                   BizArrangeResOperate,
-			Name:                 ActionIDNameMap[BizArrangeResOperate],
-			NameEn:               "Operate Biz Arrange",
-			Type:                 Edit,
-			RelatedResourceTypes: bizResource,
-			RelatedActions:       []iam.ActionID{BizAccess},
-			Version:              1,
-		}, {
-			ID:                   BizArrangeResDelete,
-			Name:                 ActionIDNameMap[BizArrangeResDelete],
-			NameEn:               "Delete Biz Arrange",
-			Type:                 Delete,
-			RelatedResourceTypes: bizResource,
-			RelatedActions:       []iam.ActionID{BizAccess},
-			Version:              1,
-		},
-	}
-}
-*/
 
 func genResourceAccessActions() []iam.ResourceAction {
 	actions := []iam.ResourceAction{{
