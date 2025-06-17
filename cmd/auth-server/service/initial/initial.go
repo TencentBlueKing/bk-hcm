@@ -78,7 +78,7 @@ func (i *Initial) InitAuthCenter(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	if err := i.iamSys.Register(cts.Kit.Ctx, req.Host); err != nil {
+	if err := i.iamSys.Register(cts.Kit, req.Host); err != nil {
 		logs.Errorf("register to iam failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}

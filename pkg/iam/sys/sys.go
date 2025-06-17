@@ -21,21 +21,21 @@
 package sys
 
 import (
-	"context"
 	"reflect"
 
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/iam/client"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/thirdparty/api-gateway/iam"
 )
 
 // Sys iam system related operate.
 type Sys struct {
-	client *client.Client
+	client iam.Client
 }
 
 // NewSys create sys to iam sys related operate.
-func NewSys(client *client.Client) (*Sys, error) {
+func NewSys(client iam.Client) (*Sys, error) {
 	if client == nil {
 		return nil, errf.New(errf.InvalidParameter, "client is nil")
 	}
@@ -47,8 +47,8 @@ func NewSys(client *client.Client) (*Sys, error) {
 }
 
 // GetSystemToken get system token from iam, used to validate if request is from iam.
-func (s *Sys) GetSystemToken(ctx context.Context) (string, error) {
-	return s.client.GetSystemToken(ctx)
+func (s *Sys) GetSystemToken(kt *kit.Kit) (string, error) {
+	return s.client.GetSystemToken(kt)
 }
 
 /**
@@ -71,8 +71,8 @@ func (s *Sys) GetSystemToken(ctx context.Context) (string, error) {
 */
 
 // Register register auth model to iam.
-func (s *Sys) Register(ctx context.Context, host string) error {
-	system, err := s.registerSystem(ctx, host)
+func (s *Sys) Register(kt *kit.Kit, host string) error {
+	system, err := s.registerSystem(kt, host)
 	if err != nil {
 		return err
 	}
@@ -82,92 +82,92 @@ func (s *Sys) Register(ctx context.Context, host string) error {
 		system.InstanceSelections)
 	newResActions, updateResActions, removedResActionIDs := s.crossCompareResActions(system.Actions)
 
-	if err = s.removeResActions(ctx, removedResActionIDs); err != nil {
+	if err = s.removeResActions(kt, removedResActionIDs); err != nil {
 		return err
 	}
 
 	for _, resourceType := range updateResTypes {
-		if err = s.client.UpdateResourcesType(ctx, resourceType); err != nil {
+		if err = s.client.UpdateResourcesType(kt, resourceType); err != nil {
 			logs.Errorf("update resource type(%+v) failed, err: %v", resourceType, err)
 			return err
 		}
 	}
 
-	if err = s.client.RegisterResourcesTypes(ctx, newResTypes); err != nil {
+	if err = s.client.RegisterResourcesTypes(kt, newResTypes); err != nil {
 		logs.Errorf("register resource types(%+v) failed, err: %v", newResTypes, err)
 		return err
 	}
 
 	for _, instanceSelection := range updateInstSelections {
-		if err = s.client.UpdateInstanceSelection(ctx, instanceSelection); err != nil {
+		if err = s.client.UpdateInstanceSelection(kt, instanceSelection); err != nil {
 			logs.Errorf("update instance selection(%+v) failed, err: %v", instanceSelection, err)
 			return err
 		}
 	}
 
-	if err = s.client.RegisterInstanceSelections(ctx, newInstSelections); err != nil {
+	if err = s.client.RegisterInstanceSelections(kt, newInstSelections); err != nil {
 		logs.Errorf("register instance selections(%+v) failed, err: %v", newInstSelections, err)
 		return err
 	}
 
 	for _, resourceAction := range updateResActions {
-		if err = s.client.UpdateAction(ctx, resourceAction); err != nil {
+		if err = s.client.UpdateAction(kt, resourceAction); err != nil {
 			logs.Errorf("update resource action(%+v) failed, err: %v", resourceAction, err)
 			return err
 		}
 	}
 
-	if err = s.client.RegisterActions(ctx, newResActions); err != nil {
+	if err = s.client.RegisterActions(kt, newResActions); err != nil {
 		logs.Errorf("register resource actions(%+v) failed, err: %v", newResActions, err)
 		return err
 	}
 
-	if err = s.client.DeleteInstanceSelections(ctx, removedInstSelectionIDs); err != nil {
+	if err = s.client.DeleteInstanceSelections(kt, removedInstSelectionIDs); err != nil {
 		logs.Errorf("delete instance selections(%+v) failed, err: %v", removedInstSelectionIDs, err)
 		return err
 	}
 
-	if err = s.client.DeleteResourcesTypes(ctx, removedResTypeIDs); err != nil {
+	if err = s.client.DeleteResourcesTypes(kt, removedResTypeIDs); err != nil {
 		logs.Errorf("delete resource types(%+v) failed, err: %v", removedResTypeIDs, err)
 		return err
 	}
 
-	if err := s.registerActionGroups(ctx, system); err != nil {
+	if err := s.registerActionGroups(kt, system); err != nil {
 		return err
 	}
 
-	if err := s.registerResCreatorActions(ctx, system); err != nil {
+	if err := s.registerResCreatorActions(kt, system); err != nil {
 		return err
 	}
 
-	if err := s.registerCommonActions(ctx, system); err != nil {
+	if err := s.registerCommonActions(kt, system); err != nil {
 		return err
 	}
 	return nil
 }
 
 // registerSystem register or update system to iam.
-func (s *Sys) registerSystem(ctx context.Context, host string) (*client.RegisteredSystemInfo, error) {
-	resp, err := s.client.GetSystemInfo(ctx, []client.SystemQueryField{})
-	if err != nil && err != client.ErrNotFound {
+func (s *Sys) registerSystem(kt *kit.Kit, host string) (*iam.RegisteredSystemInfo, error) {
+	resp, err := s.client.GetSystemInfo(kt, []iam.SystemQueryField{})
+	if err != nil && err != iam.ErrNotFound {
 		logs.Errorf("get system info failed, err: %v", err)
 		return nil, err
 	}
 
-	sys := client.System{
+	sys := iam.System{
 		ID:          SystemIDHCM,
 		Name:        SystemNameHCM,
 		EnglishName: SystemNameHCMEn,
 		Clients:     SystemIDHCM,
-		ProviderConfig: &client.SysConfig{
+		ProviderConfig: &iam.SysConfig{
 			Host: host,
 			Auth: "basic",
 		},
 	}
 
 	// if iam hcm system has not been registered, register system
-	if err == client.ErrNotFound {
-		if err = s.client.RegisterSystem(ctx, sys); err != nil {
+	if err == iam.ErrNotFound {
+		if err = s.client.RegisterSystem(kt, &sys); err != nil {
 			logs.Errorf("register system failed, system: %v, err: %v", sys, err)
 			return nil, err
 		}
@@ -180,7 +180,7 @@ func (s *Sys) registerSystem(ctx context.Context, host string) (*client.Register
 	}
 
 	// update system config
-	if err = s.client.UpdateSystemConfig(ctx, sys); err != nil {
+	if err = s.client.UpdateSystemConfig(kt, sys); err != nil {
 		logs.Errorf("update system host config failed, host: %s, err: %v", host, err)
 		return nil, err
 	}
@@ -199,18 +199,18 @@ type iamName struct {
 }
 
 // crossCompareResTypes cross compare resource types to get need create/update/delete ones
-func (s *Sys) crossCompareResTypes(registeredResourceTypes []client.ResourceType) (
-	[]client.ResourceType, []client.ResourceType, []client.TypeID) {
+func (s *Sys) crossCompareResTypes(registeredResourceTypes []iam.ResourceType) (
+	[]iam.ResourceType, []iam.ResourceType, []iam.TypeID) {
 
-	registeredResTypeMap := make(map[client.TypeID]client.ResourceType)
+	registeredResTypeMap := make(map[iam.TypeID]iam.ResourceType)
 	for _, resourceType := range registeredResourceTypes {
 		registeredResTypeMap[resourceType.ID] = resourceType
 	}
 
 	// record the name and resource type id mapping to get the resource types whose name conflicts
-	resNameMap, resNameEnMap := make(map[string]client.TypeID), make(map[string]client.TypeID)
-	updateResPrevNameMap := make(map[client.TypeID]iamName)
-	newResTypes, updateResTypes := make([]client.ResourceType, 0), make([]client.ResourceType, 0)
+	resNameMap, resNameEnMap := make(map[string]iam.TypeID), make(map[string]iam.TypeID)
+	updateResPrevNameMap := make(map[iam.TypeID]iamName)
+	newResTypes, updateResTypes := make([]iam.ResourceType, 0), make([]iam.ResourceType, 0)
 
 	for _, resourceType := range GenerateStaticResourceTypes() {
 		resNameMap[resourceType.Name] = resourceType.ID
@@ -233,7 +233,7 @@ func (s *Sys) crossCompareResTypes(registeredResourceTypes []client.ResourceType
 	}
 
 	// if to update resource type previous name conflict with a valid one, change its name to an intermediate one first
-	conflictResTypes := make([]client.ResourceType, 0)
+	conflictResTypes := make([]iam.ResourceType, 0)
 	for _, updateResType := range updateResTypes {
 		prevName := updateResPrevNameMap[updateResType.ID]
 		isConflict := false
@@ -253,7 +253,7 @@ func (s *Sys) crossCompareResTypes(registeredResourceTypes []client.ResourceType
 	}
 
 	// remove the resource types that are not exist in new resource types
-	removedResTypeIDs := make([]client.TypeID, len(registeredResTypeMap))
+	removedResTypeIDs := make([]iam.TypeID, len(registeredResTypeMap))
 	idx := 0
 	for resTypeID, resType := range registeredResTypeMap {
 		removedResTypeIDs[idx] = resTypeID
@@ -278,7 +278,7 @@ func (s *Sys) crossCompareResTypes(registeredResourceTypes []client.ResourceType
 }
 
 // compareResType compare if registered resource type that iam returns is the same with the new resource type
-func (s *Sys) compareResType(registeredResType, resType client.ResourceType) bool {
+func (s *Sys) compareResType(registeredResType, resType iam.ResourceType) bool {
 	if registeredResType.ID != resType.ID ||
 		registeredResType.Name != resType.Name ||
 		registeredResType.NameEn != resType.NameEn ||
@@ -303,20 +303,20 @@ func (s *Sys) compareResType(registeredResType, resType client.ResourceType) boo
 }
 
 // crossCompareInstSelections cross compare instance selections to get need create/update/delete ones
-func (s *Sys) crossCompareInstSelections(registeredInstanceSelections []client.InstanceSelection) (
-	[]client.InstanceSelection, []client.InstanceSelection, []client.InstanceSelectionID) {
+func (s *Sys) crossCompareInstSelections(registeredInstanceSelections []iam.InstanceSelection) (
+	[]iam.InstanceSelection, []iam.InstanceSelection, []iam.InstanceSelectionID) {
 
-	registeredInstSelectionMap := make(map[client.InstanceSelectionID]client.InstanceSelection)
+	registeredInstSelectionMap := make(map[iam.InstanceSelectionID]iam.InstanceSelection)
 	for _, instanceSelection := range registeredInstanceSelections {
 		registeredInstSelectionMap[instanceSelection.ID] = instanceSelection
 	}
 
 	// record the name and instance selection id mapping to get the instance selections whose name conflicts
-	selectionNameMap := make(map[string]client.InstanceSelectionID)
-	selectionNameEnMap := make(map[string]client.InstanceSelectionID)
-	updateSelectionPrevNameMap := make(map[client.InstanceSelectionID]iamName)
+	selectionNameMap := make(map[string]iam.InstanceSelectionID)
+	selectionNameEnMap := make(map[string]iam.InstanceSelectionID)
+	updateSelectionPrevNameMap := make(map[iam.InstanceSelectionID]iamName)
 
-	newInstSelections, updateInstSelections := make([]client.InstanceSelection, 0), make([]client.InstanceSelection, 0)
+	newInstSelections, updateInstSelections := make([]iam.InstanceSelection, 0), make([]iam.InstanceSelection, 0)
 
 	for _, instanceSelection := range GenerateStaticInstanceSelections() {
 		selectionNameMap[instanceSelection.Name] = instanceSelection.ID
@@ -341,7 +341,7 @@ func (s *Sys) crossCompareInstSelections(registeredInstanceSelections []client.I
 	}
 
 	// if to update selection previous name conflict with a valid one, change its name to an intermediate one first
-	conflictSelections := make([]client.InstanceSelection, 0)
+	conflictSelections := make([]iam.InstanceSelection, 0)
 	for _, updateSelection := range updateInstSelections {
 		prevName := updateSelectionPrevNameMap[updateSelection.ID]
 		isConflict := false
@@ -362,7 +362,7 @@ func (s *Sys) crossCompareInstSelections(registeredInstanceSelections []client.I
 	}
 
 	// remove the resource types that are not exist in new resource types
-	removedInstSelectionIDs := make([]client.InstanceSelectionID, len(registeredInstSelectionMap))
+	removedInstSelectionIDs := make([]iam.InstanceSelectionID, len(registeredInstSelectionMap))
 	idx := 0
 	for selectionID, selection := range registeredInstSelectionMap {
 		removedInstSelectionIDs[idx] = selectionID
@@ -385,21 +385,21 @@ func (s *Sys) crossCompareInstSelections(registeredInstanceSelections []client.I
 }
 
 // crossCompareResActions cross compare resource actions to get need create/update/delete ones
-func (s *Sys) crossCompareResActions(registeredActions []client.ResourceAction) (
-	[]client.ResourceAction, []client.ResourceAction, []client.ActionID) {
+func (s *Sys) crossCompareResActions(registeredActions []iam.ResourceAction) (
+	[]iam.ResourceAction, []iam.ResourceAction, []iam.ActionID) {
 
-	registeredResActionMap := make(map[client.ActionID]client.ResourceAction)
+	registeredResActionMap := make(map[iam.ActionID]iam.ResourceAction)
 	for _, resourceAction := range registeredActions {
 		registeredResActionMap[resourceAction.ID] = resourceAction
 	}
 
 	// record the name and resource action id mapping to get the instance selections whose name conflicts
-	actionNameMap := make(map[string]client.ActionID)
-	actionNameEnMap := make(map[string]client.ActionID)
-	updateActionPrevNameMap := make(map[client.ActionID]iamName)
+	actionNameMap := make(map[string]iam.ActionID)
+	actionNameEnMap := make(map[string]iam.ActionID)
+	updateActionPrevNameMap := make(map[iam.ActionID]iamName)
 
-	newResActions := make([]client.ResourceAction, 0)
-	updateResActions := make([]client.ResourceAction, 0)
+	newResActions := make([]iam.ResourceAction, 0)
+	updateResActions := make([]iam.ResourceAction, 0)
 
 	for _, resourceAction := range GenerateStaticActions() {
 		actionNameMap[resourceAction.Name] = resourceAction.ID
@@ -426,7 +426,7 @@ func (s *Sys) crossCompareResActions(registeredActions []client.ResourceAction) 
 	}
 
 	// if to update action previous name conflict with a valid one, change its name to an intermediate one first
-	conflictActions := make([]client.ResourceAction, 0)
+	conflictActions := make([]iam.ResourceAction, 0)
 	for _, updateAction := range updateResActions {
 		prevName := updateActionPrevNameMap[updateAction.ID]
 		isConflict := false
@@ -446,7 +446,7 @@ func (s *Sys) crossCompareResActions(registeredActions []client.ResourceAction) 
 		}
 	}
 
-	removedResActionIDs := make([]client.ActionID, len(registeredResActionMap))
+	removedResActionIDs := make([]iam.ActionID, len(registeredResActionMap))
 	idx := 0
 	for resourceActionID := range registeredResActionMap {
 		removedResActionIDs[idx] = resourceActionID
@@ -457,7 +457,7 @@ func (s *Sys) crossCompareResActions(registeredActions []client.ResourceAction) 
 }
 
 // compareResAction compare if registered resource action that iam returns is the same with the new resource action
-func (s *Sys) compareResAction(registeredAction, action client.ResourceAction) bool {
+func (s *Sys) compareResAction(registeredAction, action iam.ResourceAction) bool {
 	if registeredAction.ID != action.ID ||
 		registeredAction.Name != action.Name ||
 		registeredAction.NameEn != action.NameEn ||
@@ -490,10 +490,10 @@ func (s *Sys) compareResAction(registeredAction, action client.ResourceAction) b
 }
 
 // compareRelatedResType compare if registered related resource type that iam returns is the same with the new one
-func (s *Sys) compareRelatedResType(registeredResType, resType client.RelateResourceType) bool {
+func (s *Sys) compareRelatedResType(registeredResType, resType iam.RelateResourceType) bool {
 	// iam default selection mode is "instance"
 	if resType.SelectionMode == "" {
-		resType.SelectionMode = client.ModeInstance
+		resType.SelectionMode = iam.ModeInstance
 	}
 
 	if registeredResType.ID != resType.ID || registeredResType.SelectionMode != resType.SelectionMode {
@@ -530,20 +530,20 @@ func (s *Sys) compareRelatedResType(registeredResType, resType client.RelateReso
 }
 
 // removeResActions remove resource actions and related policies
-func (s *Sys) removeResActions(ctx context.Context, actionIDs []client.ActionID) error {
+func (s *Sys) removeResActions(kt *kit.Kit, actionIDs []iam.ActionID) error {
 	if len(actionIDs) == 0 {
 		return nil
 	}
 
 	// before deleting action, the dependent action policies must be deleted
 	for _, resourceActionID := range actionIDs {
-		if err := s.client.DeleteActionPolicies(ctx, resourceActionID); err != nil {
+		if err := s.client.DeleteActionPolicies(kt, resourceActionID); err != nil {
 			logs.Errorf("delete action %s policies failed, err: %v", resourceActionID, err)
 			return err
 		}
 	}
 
-	if err := s.client.DeleteActions(ctx, actionIDs); err != nil {
+	if err := s.client.DeleteActions(kt, actionIDs); err != nil {
 		logs.Errorf("delete resource actions(%+v) failed, err: %v", actionIDs, err)
 		return err
 	}
@@ -552,7 +552,7 @@ func (s *Sys) removeResActions(ctx context.Context, actionIDs []client.ActionID)
 }
 
 // registerActionGroups register or update resource action groups
-func (s *Sys) registerActionGroups(ctx context.Context, system *client.RegisteredSystemInfo) error {
+func (s *Sys) registerActionGroups(kt *kit.Kit, system *iam.RegisteredSystemInfo) error {
 	actionGroups := GenerateStaticActionGroups()
 
 	if len(system.ActionGroups) == 0 {
@@ -560,7 +560,7 @@ func (s *Sys) registerActionGroups(ctx context.Context, system *client.Registere
 			return nil
 		}
 
-		if err := s.client.RegisterActionGroups(ctx, actionGroups); err != nil {
+		if err := s.client.RegisterActionGroups(kt, actionGroups); err != nil {
 			logs.Errorf("register action groups(%+v) failed, err: %v", actionGroups, err)
 			return err
 		}
@@ -576,7 +576,7 @@ func (s *Sys) registerActionGroups(ctx context.Context, system *client.Registere
 		actionGroups = system.ActionGroups[:1]
 	}
 
-	if err := s.client.UpdateActionGroups(ctx, actionGroups); err != nil {
+	if err := s.client.UpdateActionGroups(kt, actionGroups); err != nil {
 		logs.Errorf("update action groups(%+v) failed, err: %v", actionGroups, err)
 		return err
 	}
@@ -584,14 +584,14 @@ func (s *Sys) registerActionGroups(ctx context.Context, system *client.Registere
 }
 
 // registerResCreatorActions register or update resource creator actions
-func (s *Sys) registerResCreatorActions(ctx context.Context, system *client.RegisteredSystemInfo) error {
+func (s *Sys) registerResCreatorActions(kt *kit.Kit, system *iam.RegisteredSystemInfo) error {
 	rcActions := GenerateResourceCreatorActions()
 
 	if len(system.ResourceCreatorActions.Config) == 0 {
 		if len(rcActions.Config) == 0 {
 			return nil
 		}
-		if err := s.client.RegisterResourceCreatorActions(ctx, rcActions); err != nil {
+		if err := s.client.RegisterResourceCreatorActions(kt, rcActions); err != nil {
 			logs.Errorf("register resource creator actions(%+v) failed, err: %v", rcActions, err)
 			return err
 		}
@@ -607,7 +607,7 @@ func (s *Sys) registerResCreatorActions(ctx context.Context, system *client.Regi
 		rcActions.Config = system.ResourceCreatorActions.Config[:1]
 	}
 
-	if err := s.client.UpdateResourceCreatorActions(ctx, rcActions); err != nil {
+	if err := s.client.UpdateResourceCreatorActions(kt, rcActions); err != nil {
 		logs.Errorf("update resource creator actions(%+v) failed, err: %v", rcActions, err)
 		return err
 	}
@@ -615,14 +615,14 @@ func (s *Sys) registerResCreatorActions(ctx context.Context, system *client.Regi
 }
 
 // registerCommonActions register or update common actions
-func (s *Sys) registerCommonActions(ctx context.Context, system *client.RegisteredSystemInfo) error {
+func (s *Sys) registerCommonActions(kt *kit.Kit, system *iam.RegisteredSystemInfo) error {
 	commonActions := GenerateCommonActions()
 
 	if len(system.CommonActions) == 0 {
 		if len(commonActions) == 0 {
 			return nil
 		}
-		if err := s.client.RegisterCommonActions(ctx, commonActions); err != nil {
+		if err := s.client.RegisterCommonActions(kt, commonActions); err != nil {
 			logs.Errorf("register common actions(%+v) failed, err: %v", commonActions, err)
 			return err
 		}
@@ -638,7 +638,7 @@ func (s *Sys) registerCommonActions(ctx context.Context, system *client.Register
 		commonActions = system.CommonActions[:1]
 	}
 
-	if err := s.client.UpdateCommonActions(ctx, commonActions); err != nil {
+	if err := s.client.UpdateCommonActions(kt, commonActions); err != nil {
 		logs.Errorf("update common actions(%+v) failed, err: %v", commonActions, err)
 		return err
 	}

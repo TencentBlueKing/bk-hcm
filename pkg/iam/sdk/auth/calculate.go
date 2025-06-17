@@ -20,24 +20,24 @@
 package auth
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
 
 	"hcm/pkg/criteria/constant"
-	"hcm/pkg/iam/client"
 	"hcm/pkg/iam/sdk/operator"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/thirdparty/api-gateway/iam"
 )
 
 // calculatePolicy calculate if a user have the authority to do operations with
 // these required resources.
-func (a *Authorize) calculatePolicy(ctx context.Context, resources []client.Resource, p *operator.Policy) (
+func (a *Authorize) calculatePolicy(kt *kit.Kit, resources []iam.Resource, p *operator.Policy) (
 	bool, error) {
 
-	rid := ctx.Value(constant.RidKey)
+	rid := kt.Ctx.Value(constant.RidKey)
 	if logs.V(3) {
 		logs.Infof("calculate policy, resource: %+v, policy: %+v, rid: %v", resources, *p, rid)
 	}
@@ -55,21 +55,21 @@ func (a *Authorize) calculatePolicy(ctx context.Context, resources []client.Reso
 		return false, errors.New("auth options at least have one resource")
 	}
 
-	rscMap := make(map[string]*client.Resource)
+	rscMap := make(map[string]*iam.Resource)
 	for idx, r := range resources {
 		rscMap[string(r.Type)] = &resources[idx]
 	}
 
 	switch p.Operator {
 	case operator.And, operator.Or:
-		return a.authContent(ctx, p, rscMap)
+		return a.authContent(kt, p, rscMap)
 	default:
-		return a.authFieldValue(ctx, p, rscMap)
+		return a.authFieldValue(kt, p, rscMap)
 	}
 }
 
 // calculateAnyPolicy returns true when having policy of any resource of the action
-func (a *Authorize) calculateAnyPolicy(ctx context.Context, resources []client.Resource, p *operator.Policy) (
+func (a *Authorize) calculateAnyPolicy(kt *kit.Kit, resources []iam.Resource, p *operator.Policy) (
 	bool, error) {
 
 	if p == nil || p.Operator == "" {
@@ -80,7 +80,7 @@ func (a *Authorize) calculateAnyPolicy(ctx context.Context, resources []client.R
 }
 
 // calculateFieldValue is to calculate authorize status for attribute.
-func (a *Authorize) authFieldValue(ctx context.Context, p *operator.Policy, rscMap map[string]*client.Resource) (
+func (a *Authorize) authFieldValue(kt *kit.Kit, p *operator.Policy, rscMap map[string]*iam.Resource) (
 	bool, error) {
 
 	// must be a FieldValue type
@@ -96,14 +96,14 @@ func (a *Authorize) authFieldValue(ctx context.Context, p *operator.Policy, rscM
 
 	// check the special resource id at first
 	switch fv.Field.Attribute {
-	case client.IamIDKey:
+	case iam.IamIDKey:
 		authorized, err := p.Operator.Operator().Match(authRsc.ID, fv.Value)
 		if err != nil {
 			return false, fmt.Errorf("do %s match calculate failed, err: %v", p.Operator, err)
 		}
 		return authorized, nil
 
-	case client.IamPathKey:
+	case iam.IamPathKey:
 		authPath, err := getIamPath(authRsc.Attribute)
 		if err != nil {
 			return false, err
@@ -112,17 +112,17 @@ func (a *Authorize) authFieldValue(ctx context.Context, p *operator.Policy, rscM
 		// compatible for cases when resources to be authorized hasn't put its paths in attributes
 		if len(authPath) == 0 {
 			// compatible for cases when resources to be authorized hasn't put all of its paths in attributes
-			return a.authResourceAttribute(ctx, p.Operator, []*operator.Policy{p}, authRsc)
+			return a.authResourceAttribute(kt, p.Operator, []*operator.Policy{p}, authRsc)
 		}
 
 		return a.authWithPath(p, fv, authPath)
 
 	default:
-		return a.authResourceAttribute(ctx, p.Operator, []*operator.Policy{p}, authRsc)
+		return a.authResourceAttribute(kt, p.Operator, []*operator.Policy{p}, authRsc)
 	}
 }
 
-func (a *Authorize) authContent(ctx context.Context, p *operator.Policy, rscMap map[string]*client.Resource) (
+func (a *Authorize) authContent(kt *kit.Kit, p *operator.Policy, rscMap map[string]*iam.Resource) (
 	bool, error) {
 
 	content, canContent := p.Element.(*operator.Content)
@@ -140,7 +140,7 @@ func (a *Authorize) authContent(ctx context.Context, p *operator.Policy, rscMap 
 	var resource string
 	results := make([]bool, 0)
 	for _, policy := range content.Content {
-		retry, authorized, err := a.authPolicyContent(ctx, policy, rscMap, allAttrPolicies, resource)
+		retry, authorized, err := a.authPolicyContent(kt, policy, rscMap, allAttrPolicies, resource)
 		if err != nil {
 			return false, err
 		}
@@ -169,7 +169,7 @@ func (a *Authorize) authContent(ctx context.Context, p *operator.Policy, rscMap 
 	if len(allAttrPolicies) != 0 {
 		// we have an authorized with attribute policy.
 		// get the instance with these attribute
-		yes, err := a.authResourceAttribute(ctx, p.Operator, allAttrPolicies, rscMap[resource])
+		yes, err := a.authResourceAttribute(kt, p.Operator, allAttrPolicies, rscMap[resource])
 		if err != nil {
 			return false, err
 		}
@@ -200,20 +200,20 @@ func (a *Authorize) authContent(ctx context.Context, p *operator.Policy, rscMap 
 	}
 }
 
-func (a *Authorize) authPolicyContent(ctx context.Context, policy *operator.Policy, rscMap map[string]*client.Resource,
+func (a *Authorize) authPolicyContent(kt *kit.Kit, policy *operator.Policy, rscMap map[string]*iam.Resource,
 	allAttrPolicies []*operator.Policy, resource string) (bool, bool, error) {
 
 	var authorized bool
 	var err error
 	switch policy.Operator {
 	case operator.And:
-		authorized, err = a.authContent(ctx, policy, rscMap)
+		authorized, err = a.authContent(kt, policy, rscMap)
 		if err != nil {
 			return false, false, err
 		}
 
 	case operator.Or:
-		authorized, err = a.authContent(ctx, policy, rscMap)
+		authorized, err = a.authContent(kt, policy, rscMap)
 		if err != nil {
 			return false, false, err
 		}
@@ -226,7 +226,7 @@ func (a *Authorize) authPolicyContent(ctx context.Context, policy *operator.Poli
 
 	default:
 		var retry bool
-		retry, authorized, err = a.authElement(ctx, policy, rscMap, allAttrPolicies, resource)
+		retry, authorized, err = a.authElement(kt, policy, rscMap, allAttrPolicies, resource)
 		if err != nil {
 			return false, false, err
 		}
@@ -239,7 +239,7 @@ func (a *Authorize) authPolicyContent(ctx context.Context, policy *operator.Poli
 	return false, authorized, nil
 }
 
-func (a *Authorize) authElement(ctx context.Context, policy *operator.Policy, rscMap map[string]*client.Resource,
+func (a *Authorize) authElement(kt *kit.Kit, policy *operator.Policy, rscMap map[string]*iam.Resource,
 	allAttrPolicies []*operator.Policy, resource string) (bool, bool, error) {
 
 	// must be a FieldValue type
@@ -257,17 +257,17 @@ func (a *Authorize) authElement(ctx context.Context, policy *operator.Policy, rs
 	var err error
 	// check the special resource id at first
 	switch fv.Field.Attribute {
-	case client.IamIDKey:
+	case iam.IamIDKey:
 		authorized, err = policy.Operator.Operator().Match(authRsc.ID, fv.Value)
 		if err != nil {
 			return false, false, fmt.Errorf("do %s match calculate failed, err: %v", policy.Operator, err)
 		}
 
-		rid := ctx.Value(constant.RidKey)
+		rid := kt.Ctx.Value(constant.RidKey)
 		logs.Infof(">> calculate op %s, val: %v, rsc: '%s', auth: %v, rid: %v", policy.Operator, fv.Value,
 			fv.Field.Resource, authorized, rid)
 
-	case client.IamPathKey:
+	case iam.IamPathKey:
 		authPath, err := getIamPath(authRsc.Attribute)
 		if err != nil {
 			return false, false, err
@@ -275,7 +275,7 @@ func (a *Authorize) authElement(ctx context.Context, policy *operator.Policy, rs
 
 		// compatible for cases when resources to be authorized hasn't put its paths in attributes
 		if len(authPath) == 0 {
-			authorized, err = a.authResourceAttribute(ctx, policy.Operator, []*operator.Policy{policy}, authRsc)
+			authorized, err = a.authResourceAttribute(kt, policy.Operator, []*operator.Policy{policy}, authRsc)
 		} else {
 			authorized, err = a.calculateAuthPath(policy, fv, authPath)
 		}
@@ -336,10 +336,10 @@ func (a *Authorize) authWithPath(p *operator.Policy, fv *operator.FieldValue, au
 
 // if a user have a attribute based auth policy, then we need to use the filter constructed by the policy to filter
 // out the resources. Then check the resource id is in or not in it. if yes, user is authorized.
-func (a *Authorize) authResourceAttribute(ctx context.Context, op operator.OpType, attrPolicies []*operator.Policy,
-	rsc *client.Resource) (bool, error) {
+func (a *Authorize) authResourceAttribute(kt *kit.Kit, op operator.OpType, attrPolicies []*operator.Policy,
+	rsc *iam.Resource) (bool, error) {
 
-	listOpts := &client.ListWithAttributes{
+	listOpts := &iam.ListWithAttributes{
 		Operator:     op,
 		AttrPolicies: attrPolicies,
 		Type:         rsc.Type,
@@ -353,7 +353,7 @@ func (a *Authorize) authResourceAttribute(ctx context.Context, op operator.OpTyp
 		listOpts.IDList = []string{rsc.ID}
 	}
 
-	idList, err := a.fetcher.ListInstancesWithAttributes(ctx, listOpts)
+	idList, err := a.fetcher.ListInstancesWithAttributes(kt, listOpts)
 	if err != nil {
 		js, _ := json.Marshal(listOpts)
 		return false, fmt.Errorf("fetch instance %s with filter: %s failed, err: %s", rsc.ID, string(js), err)
@@ -399,7 +399,7 @@ func (a *Authorize) calculateAuthPath(p *operator.Policy, fv *operator.FieldValu
 }
 
 func getIamPath(attr map[string]interface{}) ([]string, error) {
-	path, exist := attr[client.IamPathKey]
+	path, exist := attr[iam.IamPathKey]
 	if exist {
 		if path == nil {
 			return nil, errors.New("have iam path key, but it's value is nil")

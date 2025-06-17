@@ -43,39 +43,21 @@ service:
       # the password to decrypt the certificate.
       password:
 
-# defines all the iam related settings.
+# defines iam api gateway related settings.
 iam:
-  # endpoints is a seed list of host:port addresses of iam nodes.
+  # endpoints is a seed list of host:port addresses of iam api gateway nodes.
   endpoints:
-    - 127.0.0.1:6666
-  # appCode is hcm app code.
-  appCode: bk-hcm
-  # appSecret is hcm app secret.
-  appSecret: xxxx
-  # defines tls related options.
-  tls:
-    # server should be accessed without verifying the TLS certificate.
-    insecureSkipVerify: 
-    # server requires TLS client certificate authentication.
-    certFile:
-    # server requires TLS client certificate authentication.
-    keyFile:
-    # trusted root certificates for server.
-    caFile:
-    # the password to decrypt the certificate.
-    password:
-
-# defines esb related settings.
-esb:
-  # endpoints is a seed list of host:port addresses of esb nodes.
-  endpoints:
-    - http://paas.bk.com
-  # appCode is the BlueKing app code of hcm to request esb.
+    - http://demo.com
+  # appCode is the BlueKing app code of hcm to request iam api gateway.
   appCode:
-  # appSecret is the BlueKing app secret of hcm to request esb.
+  # appSecret is the BlueKing app secret of hcm to request iam api gateway.
   appSecret:
-  # user is the BlueKing user of hcm to request esb.
+  # user is the BlueKing user of hcm to request iam api gateway.
   user: admin
+  # bkTicket is the BlueKing access ticket of hcm to request iam api gateway.
+  bkTicket:
+  # bkToken is the BlueKing access token of hcm to request iam api gateway.
+  bkToken:
   # defines tls related options.
   tls:
     # server should be accessed without verifying the TLS certificate.

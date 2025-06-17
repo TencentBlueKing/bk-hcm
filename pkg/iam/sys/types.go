@@ -19,7 +19,9 @@
 
 package sys
 
-import "hcm/pkg/iam/client"
+import (
+	"hcm/pkg/thirdparty/api-gateway/iam"
+)
 
 const (
 	// SystemIDHCM is hcm system id in iam.
@@ -43,179 +45,179 @@ var SystemIDNameMap = map[string]string{
 
 const (
 	// Account defines cloud account resource type to register iam.
-	Account client.TypeID = "account"
+	Account iam.TypeID = "account"
 	// Biz defines hcm biz resource type to register iam.
-	Biz client.TypeID = "biz"
+	Biz iam.TypeID = "biz"
 	// CloudSelectionScheme define cloud selection scheme resource type to register iam.
-	CloudSelectionScheme client.TypeID = "cloud_selection_scheme"
+	CloudSelectionScheme iam.TypeID = "cloud_selection_scheme"
 	// MainAccount defines main account resource type to register iam.
-	MainAccount client.TypeID = "main_account"
+	MainAccount iam.TypeID = "main_account"
 	// BillCloudVendor defines cloud vendor resource type to register iam.
-	BillCloudVendor client.TypeID = "bill_cloud_vendor"
+	BillCloudVendor iam.TypeID = "bill_cloud_vendor"
 )
 
 const (
 	// AccountSelection is account instance selection id to register iam.
-	AccountSelection client.InstanceSelectionID = "account"
+	AccountSelection iam.InstanceSelectionID = "account"
 	// BizSelection is biz instance selection id to register iam.
-	BizSelection client.InstanceSelectionID = "business"
+	BizSelection iam.InstanceSelectionID = "business"
 	// CloudSelectionSchemeSelection 云选型方案实例视图
-	CloudSelectionSchemeSelection client.InstanceSelectionID = "cloud_selection_scheme"
+	CloudSelectionSchemeSelection iam.InstanceSelectionID = "cloud_selection_scheme"
 	// MainAccountSelection is main account instance selection id to register iam.
-	MainAccountSelection client.InstanceSelectionID = "main_account"
+	MainAccountSelection iam.InstanceSelectionID = "main_account"
 	// BillCloudVendorSelection is cloud vendor instance selection id to register iam.
-	BillCloudVendorSelection client.InstanceSelectionID = "bill_cloud_vendor"
+	BillCloudVendorSelection iam.InstanceSelectionID = "bill_cloud_vendor"
 )
 
 // ActionType action type to register iam.
 const (
-	Create client.ActionType = "create"
-	Delete client.ActionType = "delete"
-	View   client.ActionType = "view"
-	Edit   client.ActionType = "edit"
-	List   client.ActionType = "list"
+	Create iam.ActionType = "create"
+	Delete iam.ActionType = "delete"
+	View   iam.ActionType = "view"
+	Edit   iam.ActionType = "edit"
+	List   iam.ActionType = "list"
 )
 
 const (
 	// UserSubjectType is user's iam authorized subject type.
-	UserSubjectType client.SubjectType = "user"
+	UserSubjectType iam.SubjectType = "user"
 )
 
 // TODO 名称中New去掉进行替换
 // ActionID action id to register iam.
 const (
 	// BizAccess biz resource access action id to register iam.
-	BizAccess client.ActionID = "biz_access"
+	BizAccess iam.ActionID = "biz_access"
 	// BizIaaSResCreate biz iaas resource create action id to register iam.
-	BizIaaSResCreate client.ActionID = "biz_iaas_resource_create"
+	BizIaaSResCreate iam.ActionID = "biz_iaas_resource_create"
 	// BizIaaSResOperate biz iaas resource operate action id to register iam.
-	BizIaaSResOperate client.ActionID = "biz_iaas_resource_operate"
+	BizIaaSResOperate iam.ActionID = "biz_iaas_resource_operate"
 	// BizIaaSResDelete biz iaas resource delete action id to register iam.
-	BizIaaSResDelete client.ActionID = "biz_iaas_resource_delete"
+	BizIaaSResDelete iam.ActionID = "biz_iaas_resource_delete"
 
 	// BizCLBResCreate biz clb resource create action id to register iam.
-	BizCLBResCreate client.ActionID = "biz_clb_resource_create"
+	BizCLBResCreate iam.ActionID = "biz_clb_resource_create"
 	// BizCLBResOperate biz clb resource operate action id to register iam.
-	BizCLBResOperate client.ActionID = "biz_clb_resource_operate"
+	BizCLBResOperate iam.ActionID = "biz_clb_resource_operate"
 	// BizCLBResDelete biz clb resource delete action id to register iam.
-	BizCLBResDelete client.ActionID = "biz_clb_resource_delete"
+	BizCLBResDelete iam.ActionID = "biz_clb_resource_delete"
 
 	// BizCertResCreate biz cert resource create action id to register iam.
-	BizCertResCreate client.ActionID = "biz_cert_resource_create"
+	BizCertResCreate iam.ActionID = "biz_cert_resource_create"
 	// BizCertResDelete biz cert resource delete action id to register iam.
-	BizCertResDelete client.ActionID = "biz_cert_resource_delete"
+	BizCertResDelete iam.ActionID = "biz_cert_resource_delete"
 
 	// BizArrangeResCreate biz arrange resource create action id to register iam.
-	// BizArrangeResCreate client.ActionID = "biz_arrange_resource_create"
+	// BizArrangeResCreate iam.ActionID = "biz_arrange_resource_create"
 	// BizArrangeResOperate biz arrange resource operate action id to register iam.
-	// BizArrangeResOperate client.ActionID = "biz_arrange_resource_operate"
+	// BizArrangeResOperate iam.ActionID = "biz_arrange_resource_operate"
 	// BizArrangeResDelete biz arrange resource delete action id to register iam.
-	// BizArrangeResDelete client.ActionID = "biz_arrange_resource_delete"
+	// BizArrangeResDelete iam.ActionID = "biz_arrange_resource_delete"
 
 	// BizRecycleBinOperate biz recycle bin operate action id to register iam.
-	BizRecycleBinOperate client.ActionID = "biz_recycle_bin_operate"
+	BizRecycleBinOperate iam.ActionID = "biz_recycle_bin_operate"
 	// BizRecycleBinConfig biz recycle bin config action id to register iam.
-	BizRecycleBinConfig client.ActionID = "biz_recycle_bin_config"
+	BizRecycleBinConfig iam.ActionID = "biz_recycle_bin_config"
 
 	// BizOperationRecordFind biz operation record find action id to register iam.
-	BizOperationRecordFind client.ActionID = "biz_operation_record_find"
+	BizOperationRecordFind iam.ActionID = "biz_operation_record_find"
 
 	// BizTaskManagementOperate biz task management operate action id to register iam.
-	BizTaskManagementOperate client.ActionID = "biz_task_management_operate"
+	BizTaskManagementOperate iam.ActionID = "biz_task_management_operate"
 
 	// AccountFind account find action id to register iam.
-	AccountFind client.ActionID = "account_find"
+	AccountFind iam.ActionID = "account_find"
 	// AccountImport account import action id to register iam.
-	AccountImport client.ActionID = "account_import"
+	AccountImport iam.ActionID = "account_import"
 	// AccountEdit account edit action id to register iam.
-	AccountEdit client.ActionID = "account_edit"
+	AccountEdit iam.ActionID = "account_edit"
 	// SubAccountEdit sub account edit action id to register iam.
-	SubAccountEdit client.ActionID = "sub_account_edit"
+	SubAccountEdit iam.ActionID = "sub_account_edit"
 	// AccountDelete account delete action id to register iam.
-	AccountDelete client.ActionID = "account_delete"
+	AccountDelete iam.ActionID = "account_delete"
 
 	// ResourceFind resource find action id to register iam.
-	ResourceFind client.ActionID = "resource_find"
+	ResourceFind iam.ActionID = "resource_find"
 	// ResourceAssign resource assign action id to register iam.
-	ResourceAssign client.ActionID = "resource_assign"
+	ResourceAssign iam.ActionID = "resource_assign"
 	// IaaSResCreate iaas resource create action id to register iam.
-	IaaSResCreate client.ActionID = "iaas_resource_create"
+	IaaSResCreate iam.ActionID = "iaas_resource_create"
 	// IaaSResOperate iaas resource operate action id to register iam.
-	IaaSResOperate client.ActionID = "iaas_resource_operate"
+	IaaSResOperate iam.ActionID = "iaas_resource_operate"
 	// IaaSResDelete iaas resource delete action id to register iam.
-	IaaSResDelete client.ActionID = "iaas_resource_delete"
+	IaaSResDelete iam.ActionID = "iaas_resource_delete"
 
 	// CLBResCreate clb resource create action id to register iam.
-	CLBResCreate client.ActionID = "clb_resource_create"
+	CLBResCreate iam.ActionID = "clb_resource_create"
 	// CLBResOperate clb resource operate action id to register iam.
-	CLBResOperate client.ActionID = "clb_resource_operate"
+	CLBResOperate iam.ActionID = "clb_resource_operate"
 	// CLBResDelete clb resource delete action id to register iam.
-	CLBResDelete client.ActionID = "clb_resource_delete"
+	CLBResDelete iam.ActionID = "clb_resource_delete"
 
 	// CertResCreate cert resource create action id to register iam.
-	CertResCreate client.ActionID = "cert_resource_create"
+	CertResCreate iam.ActionID = "cert_resource_create"
 	// CertResDelete cert resource delete action id to register iam.
-	CertResDelete client.ActionID = "cert_resource_delete"
+	CertResDelete iam.ActionID = "cert_resource_delete"
 
 	// RecycleBinAccess recycle bin find action id to register iam.
-	RecycleBinAccess client.ActionID = "recycle_bin_access"
+	RecycleBinAccess iam.ActionID = "recycle_bin_access"
 	// RecycleBinOperate recycle bin operate action id to register iam.
-	RecycleBinOperate client.ActionID = "recycle_bin_operate"
+	RecycleBinOperate iam.ActionID = "recycle_bin_operate"
 	// RecycleBinConfig recycle bin config action id to register iam.
-	RecycleBinConfig client.ActionID = "recycle_bin_config"
+	RecycleBinConfig iam.ActionID = "recycle_bin_config"
 
 	// OperationRecordFind operation record find action id to register iam.
-	OperationRecordFind client.ActionID = "operation_record_find"
+	OperationRecordFind iam.ActionID = "operation_record_find"
 
 	// CostManage bill manage action id to register iam.
-	CostManage client.ActionID = "cost_manage"
+	CostManage iam.ActionID = "cost_manage"
 	// AccountKeyAccess account secret key access action id to register iam.
-	AccountKeyAccess client.ActionID = "account_key_access"
+	AccountKeyAccess iam.ActionID = "account_key_access"
 
 	// GlobalConfiguration global configuration action id to register iam.
-	GlobalConfiguration client.ActionID = "global_configuration"
+	GlobalConfiguration iam.ActionID = "global_configuration"
 
 	// CloudSelectionRecommend 选型推荐
-	CloudSelectionRecommend client.ActionID = "cloud_selection_recommend"
+	CloudSelectionRecommend iam.ActionID = "cloud_selection_recommend"
 	// CloudSelectionSchemeFind 方案查看
-	CloudSelectionSchemeFind client.ActionID = "cloud_selection_find"
+	CloudSelectionSchemeFind iam.ActionID = "cloud_selection_find"
 	// CloudSelectionSchemeEdit 方案编辑
-	CloudSelectionSchemeEdit client.ActionID = "cloud_selection_edit"
+	CloudSelectionSchemeEdit iam.ActionID = "cloud_selection_edit"
 	// CloudSelectionSchemeDelete 方案删除
-	CloudSelectionSchemeDelete client.ActionID = "cloud_selection_delete"
+	CloudSelectionSchemeDelete iam.ActionID = "cloud_selection_delete"
 
 	// MainAccountFind main account find action id to register iam.
-	MainAccountFind client.ActionID = "main_account_find"
+	MainAccountFind iam.ActionID = "main_account_find"
 	// MainAccountEdit main account edit action id to register iam.
-	MainAccountEdit client.ActionID = "main_account_edit"
+	MainAccountEdit iam.ActionID = "main_account_edit"
 	// MainAccountCreate main account create action id to register iam.
-	MainAccountCreate client.ActionID = "main_account_create"
+	MainAccountCreate iam.ActionID = "main_account_create"
 
 	// RootAccountManage root account manage action id to register iam.
-	RootAccountManage client.ActionID = "root_account_manage"
+	RootAccountManage iam.ActionID = "root_account_manage"
 
 	// AccountBillManage account bill manage action id to register iam.
-	AccountBillManage client.ActionID = "account_bill_manage"
+	AccountBillManage iam.ActionID = "account_bill_manage"
 
 	// AccountBillPull account bill pull action id to register iam.
-	AccountBillPull client.ActionID = "account_bill_pull"
+	AccountBillPull iam.ActionID = "account_bill_pull"
 
 	// ApplicationManage application manage action id to register iam.
-	ApplicationManage client.ActionID = "application_manage"
+	ApplicationManage iam.ActionID = "application_manage"
 
 	// CosBucketCreate cos bucket create action id to register iam.
-	CosBucketCreate client.ActionID = "cos_bucket_create"
+	CosBucketCreate iam.ActionID = "cos_bucket_create"
 	// CosBucketFind cos bucket find action id to register iam.
-	CosBucketFind client.ActionID = "cos_bucket_find"
+	CosBucketFind iam.ActionID = "cos_bucket_find"
 	// CosBucketDelete cos bucket delete action id to register iam.
-	CosBucketDelete client.ActionID = "cos_bucket_delete"
+	CosBucketDelete iam.ActionID = "cos_bucket_delete"
 
 	// Skip is an action that no need to auth
-	Skip client.ActionID = "skip"
+	Skip iam.ActionID = "skip"
 )
 
 // ActionIDNameMap is action id type map.
-var ActionIDNameMap = map[client.ActionID]string{
+var ActionIDNameMap = map[iam.ActionID]string{
 	BizAccess:         "业务访问",
 	BizIaaSResCreate:  "业务-IaaS资源创建",
 	BizIaaSResOperate: "业务-IaaS资源操作",

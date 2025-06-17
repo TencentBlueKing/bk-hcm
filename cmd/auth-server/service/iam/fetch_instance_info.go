@@ -23,13 +23,13 @@ import (
 	"hcm/cmd/auth-server/types"
 	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/api/data-service"
-	"hcm/pkg/iam/client"
 	"hcm/pkg/kit"
 	"hcm/pkg/runtime/filter"
+	"hcm/pkg/thirdparty/api-gateway/iam"
 )
 
 // FetchInstanceInfo obtain resource instance details in batch.
-func (i *IAM) FetchInstanceInfo(kt *kit.Kit, resType client.TypeID, ft *types.FetchInstanceInfoFilter) (
+func (i *IAM) FetchInstanceInfo(kt *kit.Kit, resType iam.TypeID, ft *types.FetchInstanceInfoFilter) (
 	[]map[string]interface{}, error) {
 
 	// TODO: f.Attrs need to deal with, if add attribute authentication.

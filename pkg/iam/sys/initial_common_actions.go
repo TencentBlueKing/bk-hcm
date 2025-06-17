@@ -19,9 +19,11 @@
 
 package sys
 
-import "hcm/pkg/iam/client"
+import (
+	"hcm/pkg/thirdparty/api-gateway/iam"
+)
 
 // GenerateCommonActions generate all the common actions that need to be registered to IAM.
-func GenerateCommonActions() []client.CommonAction {
-	return []client.CommonAction{}
+func GenerateCommonActions() []iam.CommonAction {
+	return []iam.CommonAction{}
 }

@@ -62,7 +62,7 @@ type ApiError struct {
 func ApiGatewayCall[IT any, OT any](cli rest.ClientInterface, bkUserCli bkuser.Client, cfg *cc.ApiGateway,
 	method rest.VerbType, kt *kit.Kit, req *IT, url string, urlParams ...any) (*OT, error) {
 
-	header := getCommonHeader(kt, bkUserCli, cfg)
+	header := GetCommonHeader(kt, bkUserCli, cfg)
 	resp := new(ApiGatewayResp[*OT])
 	err := cli.Verb(method).
 		SubResourcef(url, urlParams...).
@@ -90,7 +90,7 @@ func ApiGatewayCall[IT any, OT any](cli rest.ClientInterface, bkUserCli bkuser.C
 func ApiGatewayCallWithRichError[IT any, OT any](cli rest.ClientInterface, bkUserCli bkuser.Client, cfg *cc.ApiGateway,
 	method rest.VerbType, kt *kit.Kit, req *IT, url string, urlParams ...any) (*OT, error) {
 
-	header := getCommonHeader(kt, bkUserCli, cfg)
+	header := GetCommonHeader(kt, bkUserCli, cfg)
 	resp := new(ApiGatewayResp[*OT])
 	resp.Result = true
 
@@ -143,7 +143,7 @@ func ApiGatewayCallWithRichError[IT any, OT any](cli rest.ClientInterface, bkUse
 func ApiGatewayCallWithoutReq[OT any](cli rest.ClientInterface, bkUserCli bkuser.Client, cfg *cc.ApiGateway,
 	method rest.VerbType, kt *kit.Kit, params map[string]string, url string, urlParams ...any) (*OT, error) {
 
-	header := getCommonHeader(kt, bkUserCli, cfg)
+	header := GetCommonHeader(kt, bkUserCli, cfg)
 	resp := new(ApiGatewayResp[*OT])
 	err := cli.Verb(method).
 		SubResourcef(url, urlParams...).
@@ -172,7 +172,7 @@ func ApiGatewayCallWithRichErrorWithoutReq[OT any](cli rest.ClientInterface, bkU
 	cfg *cc.ApiGateway,
 	method rest.VerbType, kt *kit.Kit, params map[string]string, url string, urlParams ...any) (*OT, error) {
 
-	header := getCommonHeader(kt, bkUserCli, cfg)
+	header := GetCommonHeader(kt, bkUserCli, cfg)
 	resp := new(ApiGatewayResp[*OT])
 	resp.Result = true
 
@@ -221,8 +221,8 @@ func ApiGatewayCallWithRichErrorWithoutReq[OT any](cli rest.ClientInterface, bkU
 	return resp.Data, nil
 }
 
-// getCommonHeader get common header
-func getCommonHeader(kt *kit.Kit, bkUserCli bkuser.Client, cfg *cc.ApiGateway) http.Header {
+// GetCommonHeader get common header
+func GetCommonHeader(kt *kit.Kit, bkUserCli bkuser.Client, cfg *cc.ApiGateway) http.Header {
 	header := kt.Header()
 	// 如果配置了指定用户，使用指定用户调用
 	user := kt.User

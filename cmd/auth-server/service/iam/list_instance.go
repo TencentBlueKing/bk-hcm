@@ -20,17 +20,15 @@
 package iam
 
 import (
-	"context"
-
 	"hcm/cmd/auth-server/types"
 	"hcm/pkg/api/core"
 	dataservice "hcm/pkg/api/data-service"
-	"hcm/pkg/iam/client"
 	"hcm/pkg/kit"
+	"hcm/pkg/thirdparty/api-gateway/iam"
 )
 
 // ListInstances query instances based on filter criteria.
-func (i *IAM) ListInstances(kt *kit.Kit, resType client.TypeID, option *types.ListInstanceFilter, page types.Page) (
+func (i *IAM) ListInstances(kt *kit.Kit, resType iam.TypeID, option *types.ListInstanceFilter, page types.Page) (
 	*types.ListInstanceResult, error) {
 	filter, err := option.GetFilter(resType)
 	if err != nil {
@@ -79,7 +77,7 @@ func (i *IAM) ListInstances(kt *kit.Kit, resType client.TypeID, option *types.Li
 }
 
 // ListInstancesWithAttributes list resource instances that user is privileged to access by policy, returns id list.
-func (i *IAM) ListInstancesWithAttributes(ctx context.Context, opts *client.ListWithAttributes) (idList []string,
+func (i *IAM) ListInstancesWithAttributes(kt *kit.Kit, opts *iam.ListWithAttributes) (idList []string,
 	err error) {
 
 	// TODO implement this when attribute auth is enabled

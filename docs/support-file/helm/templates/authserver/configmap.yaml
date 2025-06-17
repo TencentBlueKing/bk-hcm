@@ -20,28 +20,7 @@ data:
     log:
       {{- toYaml .Values.authserver.log | nindent 6 }}
     iam:
-      endpoints:
-        - {{ .Values.bkIamApiUrl }}
-      appCode: {{ .Values.appCode }}
-      appSecret: {{ .Values.appSecret }}
-      tls:
-        insecureSkipVerify:
-        certFile:
-        keyFile:
-        caFile:
-        password:
-    esb:
-      endpoints:
-        - {{ .Values.bkComponentApiUrl }}
-      appCode: {{ .Values.appCode }}
-      appSecret: {{ .Values.appSecret }}
-      user: admin
-      tls:
-        insecureSkipVerify:
-        certFile:
-        keyFile:
-        caFile:
-        password:
+      {{- toYaml .Values.iam | nindent 6 }}
     tenant:
       {{- toYaml .Values.tenant | nindent 6 }}
     cmdb:

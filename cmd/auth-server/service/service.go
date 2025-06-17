@@ -32,7 +32,6 @@ import (
 	"hcm/pkg/cc"
 	apicli "hcm/pkg/client"
 	dataservice "hcm/pkg/client/data-service"
-	"hcm/pkg/iam/client"
 	pkgauth "hcm/pkg/iam/sdk/auth"
 	"hcm/pkg/iam/sys"
 	"hcm/pkg/logs"
@@ -41,7 +40,7 @@ import (
 	"hcm/pkg/serviced"
 	pkgbkuser "hcm/pkg/thirdparty/api-gateway/bkuser"
 	"hcm/pkg/thirdparty/api-gateway/cmdb"
-	"hcm/pkg/thirdparty/esb"
+	iamapigw "hcm/pkg/thirdparty/api-gateway/iam"
 	"hcm/pkg/tools/ssl"
 )
 
@@ -65,10 +64,8 @@ type Service struct {
 }
 
 // NewService create a service instance.
-func NewService(sd serviced.Discover, iamSettings cc.IAM, esbSettings cc.Esb, disableAuth bool,
-	disableWriteOpt *options.DisableWriteOption) (*Service, error) {
-
-	cli, err := newClientSet(sd, iamSettings, esbSettings, disableAuth)
+func NewService(sd serviced.Discover, disableAuth bool, disableWriteOpt *options.DisableWriteOption) (*Service, error) {
+	cli, err := newClientSet(sd, disableAuth)
 	if err != nil {
 		return nil, fmt.Errorf("new client set failed, err: %v", err)
 	}
@@ -92,18 +89,18 @@ func NewService(sd serviced.Discover, iamSettings cc.IAM, esbSettings cc.Esb, di
 	return s, nil
 }
 
-func newClientSet(sd serviced.Discover, iamSettings cc.IAM, esbSettings cc.Esb, disableAuth bool) (*ClientSet, error) {
-
+func newClientSet(sd serviced.Discover, disableAuth bool) (*ClientSet, error) {
 	logs.Infof("start initialize the client set.")
 
-	tlsConfig := new(ssl.TLSConfig)
-	if iamSettings.TLS.Enable() {
+	tls := cc.AuthServer().Network.TLS
+	var tlsConfig *ssl.TLSConfig
+	if tls.Enable() {
 		tlsConfig = &ssl.TLSConfig{
-			InsecureSkipVerify: iamSettings.TLS.InsecureSkipVerify,
-			CertFile:           iamSettings.TLS.CertFile,
-			KeyFile:            iamSettings.TLS.KeyFile,
-			CAFile:             iamSettings.TLS.CAFile,
-			Password:           iamSettings.TLS.Password,
+			InsecureSkipVerify: tls.InsecureSkipVerify,
+			CertFile:           tls.CertFile,
+			KeyFile:            tls.KeyFile,
+			CAFile:             tls.CAFile,
+			Password:           tls.Password,
 		}
 	}
 
@@ -116,14 +113,14 @@ func newClientSet(sd serviced.Discover, iamSettings cc.IAM, esbSettings cc.Esb, 
 
 	logs.Infof("initialize system api client set success.")
 
-	cfg := &client.Config{
-		Address:   iamSettings.Endpoints,
-		AppCode:   iamSettings.AppCode,
-		AppSecret: iamSettings.AppSecret,
-		SystemID:  sys.SystemIDHCM,
-		TLS:       tlsConfig,
+	bkUserCfg := cc.AuthServer().BkUser
+	bkUserCli, err := pkgbkuser.NewClient(&bkUserCfg, metrics.Register())
+	if err != nil {
+		return nil, err
 	}
-	iamCli, err := client.NewClient(cfg, metrics.Register())
+
+	iamCfg := cc.AuthServer().Iam
+	iamCli, err := iamapigw.NewClient(sys.SystemIDHCM, &iamCfg, bkUserCli, metrics.Register())
 	if err != nil {
 		return nil, err
 	}
@@ -140,21 +137,13 @@ func newClientSet(sd serviced.Discover, iamSettings cc.IAM, esbSettings cc.Esb, 
 		return nil, fmt.Errorf("new iam logics failed, err: %v", err)
 	}
 
-	esbClient, err := esb.NewClient(&esbSettings, metrics.Register())
-
-	bkUserCfg := cc.AuthServer().BkUser
-	bkUserCli, err := pkgbkuser.NewClient(&bkUserCfg, metrics.Register())
-	if err != nil {
-		return nil, err
-	}
-
 	cmdbCfg := cc.AuthServer().Cmdb
 	cmdbCli, err := cmdb.NewClient(&cmdbCfg, bkUserCli, metrics.Register())
 	if err != nil {
 		return nil, err
 	}
 
-	authSdk, err := pkgauth.NewAuth(iamCli, iamLgc, esbClient)
+	authSdk, err := pkgauth.NewAuth(iamCli, iamLgc)
 	if err != nil {
 		return nil, fmt.Errorf("new iam auth sdk failed, err: %v", err)
 	}

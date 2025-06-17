@@ -21,63 +21,51 @@
 package auth
 
 import (
-	"context"
-
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/iam/client"
 	"hcm/pkg/iam/meta"
-	"hcm/pkg/thirdparty/esb"
+	"hcm/pkg/kit"
+	"hcm/pkg/thirdparty/api-gateway/iam"
 )
 
 // Authorizer defines all the supported functionalities to do auth operation.
 type Authorizer interface {
 	// Authorize check if a user's operate resource is already authorized or not.
-	Authorize(ctx context.Context, opts *client.AuthOptions) (*client.Decision, error)
+	Authorize(kt *kit.Kit, opts *iam.AuthOptions) (*iam.Decision, error)
 
 	// AuthorizeBatch check if a user's operate resources is authorized or not batch.
 	// Note: being authorized resources must be the same resource.
-	AuthorizeBatch(ctx context.Context, opts *client.AuthBatchOptions) ([]*client.Decision, error)
+	AuthorizeBatch(kt *kit.Kit, opts *iam.AuthBatchOptions) ([]*iam.Decision, error)
 
 	// AuthorizeAnyBatch check if a user have any authority of the operate actions batch.
-	AuthorizeAnyBatch(ctx context.Context, opts *client.AuthBatchOptions) ([]*client.Decision, error)
+	AuthorizeAnyBatch(kt *kit.Kit, opts *iam.AuthBatchOptions) ([]*iam.Decision, error)
 
 	// ListAuthorizedInstances list a user's all the authorized resource instance list with an action.
 	// Note: opts.Resources are not required.
 	// the returned list may be huge, we do not do result paging
-	ListAuthorizedInstances(ctx context.Context, opts *client.AuthOptions, resourceType client.TypeID) (
-		*client.AuthorizeList, error)
+	ListAuthorizedInstances(kt *kit.Kit, opts *iam.AuthOptions, resourceType iam.TypeID) (
+		*iam.AuthorizeList, error)
 
 	// RegisterResourceCreatorAction registers iam resource so that creator will be authorized on related actions
-	RegisterResourceCreatorAction(ctx context.Context, opts *client.InstanceWithCreator) (
-		[]client.CreatorActionPolicy, error)
+	RegisterResourceCreatorAction(kt *kit.Kit, opts *iam.InstanceWithCreator) ([]iam.CreatorActionPolicy, error)
 
-	GetApplyPermUrl(ctx context.Context, opts *meta.IamPermission) (string, error)
+	GetApplyPermUrl(kt *kit.Kit, opts *meta.IamPermission) (string, error)
 }
 
 // ResourceFetcher defines all the supported operations for iam to fetch resources from hcm
 type ResourceFetcher interface {
 	// ListInstancesWithAttributes get "same" resource instances with attributes
 	// returned with the resource's instance id list matched with options.
-	ListInstancesWithAttributes(ctx context.Context, opts *client.ListWithAttributes) (idList []string, err error)
+	ListInstancesWithAttributes(kt *kit.Kit, opts *iam.ListWithAttributes) (idList []string, err error)
 }
 
 // NewAuth initialize an authorizer
-func NewAuth(c *client.Client, fetcher ResourceFetcher, esbClient esb.Client) (Authorizer, error) {
-	if c == nil {
-		return nil, errf.New(errf.InvalidParameter, "client is nil")
-	}
-
-	if fetcher == nil {
-		return nil, errf.New(errf.InvalidParameter, "fetcher is nil")
-	}
-
-	if esbClient == nil {
-		return nil, errf.New(errf.InvalidParameter, "esb client is nil")
+func NewAuth(iamCli iam.Client, fetcher ResourceFetcher) (Authorizer, error) {
+	if iamCli == nil {
+		return nil, errf.New(errf.InvalidParameter, "iam client is nil")
 	}
 
 	return &Authorize{
-		client:    c,
-		fetcher:   fetcher,
-		esbClient: esbClient,
+		client:  iamCli,
+		fetcher: fetcher,
 	}, nil
 }
