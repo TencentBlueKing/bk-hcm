@@ -1,8 +1,9 @@
-import { createI18n, Locale } from 'vue-i18n';
-import Cookies from 'js-cookie';
+import { createI18n } from 'vue-i18n';
 
+import Cookies from 'js-cookie';
 import langMap from './lang';
 
+export type Locale = 'zh-cn' | 'en' | string;
 interface ILANG_PKG {
   [propName: string]: string;
 }
