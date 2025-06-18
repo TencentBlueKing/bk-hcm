@@ -91,9 +91,9 @@ func (d *Dispatcher) WatchPendingFlow() {
 		}
 
 		// 获取租户id并分发到协程池的chan
-		err := pool.feedTenantID()
+		err := pool.executeWithTenant()
 		if err != nil {
-			logs.Errorf("WatchPendingFlow failed to feedTenantID, err: %v", err)
+			logs.Errorf("WatchPendingFlow failed to executeWithTenant, err: %v", err)
 			time.Sleep(d.watchIntervalSec)
 			continue
 		}

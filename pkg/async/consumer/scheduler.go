@@ -140,9 +140,9 @@ func (sch *scheduler) scheduledFlowWatcher() {
 		}
 
 		// 获取租户id并分发到协程池的chan
-		err := pool.feedTenantID()
+		err := pool.executeWithTenant()
 		if err != nil {
-			logs.Errorf("scheduledFlowWatcher failed to feedTenantID, err: %v", err)
+			logs.Errorf("scheduledFlowWatcher failed to executeWithTenant, err: %v", err)
 			sch.sp.ExceptionSleep()
 			continue
 		}
@@ -205,9 +205,9 @@ func (sch *scheduler) canceledFlowWatcher() {
 		}
 
 		// 获取租户id并分发到协程池的chan
-		err := pool.feedTenantID()
+		err := pool.executeWithTenant()
 		if err != nil {
-			logs.Errorf("canceledFlowWatcher failed to feedTenantID, err: %v", err)
+			logs.Errorf("canceledFlowWatcher failed to executeWithTenant, err: %v", err)
 			sch.sp.NormalSleep()
 			continue
 		}

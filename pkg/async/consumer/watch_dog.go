@@ -119,9 +119,9 @@ func (wd *watchDog) watchWrapper(do func(kt *kit.Kit) error) {
 		}
 
 		// 获取租户id并分发到协程池的chan
-		err := pool.feedTenantID()
+		err := pool.executeWithTenant()
 		if err != nil {
-			logs.Errorf("watchWrapper failed to feedTenantID, err: %v", err)
+			logs.Errorf("watchWrapper failed to executeWithTenant, err: %v", err)
 			time.Sleep(wd.watchIntervalSec)
 			continue
 		}

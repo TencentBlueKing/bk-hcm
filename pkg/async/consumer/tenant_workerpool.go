@@ -20,6 +20,10 @@
 package consumer
 
 import (
+	"fmt"
+	actcli "hcm/cmd/task-server/logics/action/cli"
+	"hcm/pkg/api/core"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/logs"
 	"sync"
 )
@@ -60,9 +64,38 @@ func (wp *tenantWorkerPool) submit(tenantID string) {
 	wp.taskChan <- tenantID
 }
 
-// feedTenantID 从租户表拿到所有状态为enable的租户id并分发到chan，由工作协程池中的协程消费处理
-func (wp *tenantWorkerPool) feedTenantID() error {
-	tenantIDs, err := listTenantIDs()
+// listTenantIDs 获取所有租户ID
+func (wp *tenantWorkerPool) listTenantIDs() ([]string, error) {
+	kt := NewKit()
+	tenantIDs := make([]string, 0)
+	page := core.NewDefaultBasePage()
+	for {
+		result, err := actcli.GetDataService().Global.Tenant.List(kt, &core.ListReq{
+			Page:   page,
+			Fields: []string{"tenant_id"},
+			Filter: tools.EqualExpression("status", "enable"),
+		})
+		if err != nil {
+			logs.Errorf("list tenant failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, fmt.Errorf("list tenant failed, err: %v, rid: %s", err, kt.Rid)
+		}
+
+		for _, t := range result.Details {
+			tenantIDs = append(tenantIDs, t.TenantID)
+		}
+
+		// 如果当前页数据不足一页，说明后面没有更多数据了
+		if uint(len(result.Details)) < page.Limit {
+			break
+		}
+		page.Start += uint32(page.Limit)
+	}
+	return tenantIDs, nil
+}
+
+// executeWithTenant 从租户表拿到所有状态为enable的租户id并分发到chan，由工作协程池中的协程消费处理
+func (wp *tenantWorkerPool) executeWithTenant() error {
+	tenantIDs, err := wp.listTenantIDs()
 	if err != nil {
 		logs.Errorf("tenantWorkerPool failed to list tenants, err: %v", err)
 		return err
