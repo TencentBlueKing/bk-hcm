@@ -180,8 +180,10 @@ func (a Async) Validate() error {
 
 // Parser 公共组件，负责获取分配给当前节点的任务流，并解析成任务树后，派发当前要执行的任务给executor执行
 type Parser struct {
-	WatchIntervalSec uint `yaml:"watchIntervalSec"`
-	WorkerNumber     uint `yaml:"workerNumber"`
+	WatchIntervalSec                uint `yaml:"watchIntervalSec"`
+	WorkerNumber                    uint `yaml:"workerNumber"`
+	ScheduledFlowFetcherConcurrency uint `yaml:"scheduledFlowFetcherConcurrency"`
+	CanceledFlowFetcherConcurrency  uint `yaml:"canceledFlowFetcherConcurrency"`
 }
 
 // Executor 公共组件，负责执行异步任务
@@ -192,13 +194,15 @@ type Executor struct {
 
 // Dispatcher 主节点组件，负责派发任务
 type Dispatcher struct {
-	WatchIntervalSec uint `yaml:"watchIntervalSec"`
+	WatchIntervalSec              uint `yaml:"watchIntervalSec"`
+	PendingFlowFetcherConcurrency uint `yaml:"pendingFlowFetcherConcurrency"`
 }
 
 // WatchDog 主节点组件，负责异常任务修正（超时任务，任务处理节点已经挂掉的任务等）
 type WatchDog struct {
 	WatchIntervalSec uint `yaml:"watchIntervalSec"`
 	TaskTimeoutSec   uint `yaml:"taskTimeoutSec"`
+	WorkerNumber     uint `yaml:"workerNumber"`
 }
 
 // DataBase defines database related runtime

@@ -54,6 +54,8 @@ type BizTypeTable struct {
 	CoverPing float64 `db:"cover_ping" json:"cover_ping"`
 	// DeploymentArchitecture 部署方式
 	DeploymentArchitecture types.StringArray `db:"deployment_architecture" json:"deployment_architecture"`
+	// TenantID 租户ID
+	TenantID string `db:"tenant_id" json:"tenant_id"`
 	// Creator 创建者
 	Creator string `db:"creator" validate:"max=64" json:"creator"`
 	// Reviser 更新者

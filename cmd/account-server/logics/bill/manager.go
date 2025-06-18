@@ -24,11 +24,15 @@ import (
 	"fmt"
 	"time"
 
+	"hcm/cmd/account-server/logics/tenant"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/serviced"
+
+	"golang.org/x/sync/errgroup"
 )
 
 // BillManager bill manager
@@ -68,18 +72,47 @@ func (bm *BillManager) loopOnce() {
 		bm.stopControllers()
 		return
 	}
-	if err := bm.syncMainControllers(); err != nil {
+	if err := bm.syncBillControllers(bm.syncTenantMainControllers); err != nil {
 		logs.Errorf("sync main controllers failed, err: %s", err.Error())
 	}
-	if err := bm.syncRootControllers(); err != nil {
+	if err := bm.syncBillControllers(bm.syncTenantRootControllers); err != nil {
 		logs.Errorf("sync root controllers failed, err: %s", err.Error())
 	}
 }
 
-func (bm *BillManager) syncRootControllers() error {
+func (bm *BillManager) syncBillControllers(tenantControllerFunc func(*kit.Kit) error) error {
 	kt := getInternalKit()
-	logs.Infof("[bm] start sync root controllers, rid: %s", kt.Rid)
-	rootAccounts, err := bm.AccountList.ListAllRootAccount(kt)
+	logs.Infof("[bm] start sync main controllers, rid: %s", kt.Rid)
+
+	tenantIDs, err := tenant.ListAllTenantID(kt, bm.Client.DataService())
+	if err != nil {
+		logs.Errorf("failed to list all tenant ids, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	eg, _ := errgroup.WithContext(kt.Ctx)
+	for _, id := range tenantIDs {
+		tenantID := id
+		eg.Go(func() error {
+			tenantKt := kt.NewSubKitWithTenant(tenantID)
+			subErr := tenantControllerFunc(tenantKt)
+			if subErr != nil {
+				logs.Errorf("failed to sync tenant %s controllers, err: %v, rid: %s", tenantID, subErr,
+					tenantKt.Rid)
+				return subErr
+			}
+			return nil
+		})
+	}
+
+	if err := eg.Wait(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (bm *BillManager) syncTenantRootControllers(tenantKt *kit.Kit) error {
+	rootAccounts, err := bm.AccountList.ListAllRootAccount(tenantKt)
 	if err != nil {
 		return err
 	}
@@ -89,6 +122,7 @@ func (bm *BillManager) syncRootControllers() error {
 		_, ok := bm.CurrentRootControllers[rootAccount.Key()]
 		if !ok {
 			opt := RootAccountControllerOption{
+				TenantID:           tenantKt.TenantID,
 				RootAccountID:      rootAccount.ID,
 				RootAccountCloudID: rootAccount.CloudID,
 				Vendor:             rootAccount.Vendor,
@@ -96,34 +130,34 @@ func (bm *BillManager) syncRootControllers() error {
 			}
 			ctrl, err := NewRootAccountController(&opt)
 			if err != nil {
-				logs.Errorf("create root for %s %s controller failed, err: %v, rid: %s",
-					opt.Vendor, opt.RootAccountID, err, kt.Rid)
+				logs.Errorf("create root for %s root account %s controller failed, err: %v, rid: %s",
+					opt.Vendor, opt.RootAccountID, err, tenantKt.Rid)
 				return fmt.Errorf("create root for %v controller failed, err: %s", opt, err)
 			}
 			if err := ctrl.Start(); err != nil {
 				ctrl.Stop()
-				logs.Errorf("fail to start controller, err: %s, rid: %s", err.Error(), kt.Rid)
-				return fmt.Errorf("start controller failed, err: %s, rid: %s", err.Error(), kt.Rid)
+				logs.Errorf("fail to start root account controller, err: %s, rid: %s", err.Error(), tenantKt.Rid)
+				return fmt.Errorf("start root account controller failed, err: %s, rid: %s", err.Error(),
+					tenantKt.Rid)
 			}
 			bm.CurrentRootControllers[rootAccount.Key()] = ctrl
-			logs.Infof("start root account controller for [%s]%s, rid: %s", opt.Vendor, opt.RootAccountID, kt.Rid)
+			logs.Infof("start root account controller for [%s]%s, rid: %s", opt.Vendor, opt.RootAccountID,
+				tenantKt.Rid)
 		}
 	}
 	for key, controller := range bm.CurrentRootControllers {
 		if _, ok := existedAccountKeyMap[key]; !ok {
 			controller.Stop()
-			logs.Infof("stop root account controller for %v, rid: %s", controller, kt.Rid)
+			logs.Infof("stop root account controller for %v, rid: %s", controller, tenantKt.Rid)
 			delete(bm.CurrentRootControllers, key)
 		}
 	}
 	return nil
 }
 
-func (bm *BillManager) syncMainControllers() error {
+func (bm *BillManager) syncTenantMainControllers(tenantKt *kit.Kit) error {
 	// TODO: 所有主账号 改为 所有未核算完成的主账号
-	kt := getInternalKit()
-	logs.Infof("[bm] start sync main controllers, rid: %s", kt.Rid)
-	mainAccounts, err := bm.AccountList.ListAllMainAccount(kt)
+	mainAccounts, err := bm.AccountList.ListAllMainAccount(tenantKt)
 	if err != nil {
 		return err
 	}
@@ -141,14 +175,15 @@ func (bm *BillManager) syncMainControllers() error {
 			continue
 		}
 		// 获取root account 信息
-		rootAccount, err := bm.Client.DataService().Global.RootAccount.GetBasicInfo(kt,
+		rootAccount, err := bm.Client.DataService().Global.RootAccount.GetBasicInfo(tenantKt,
 			mainAccount.BaseMainAccount.ParentAccountID)
 		if err != nil {
-			logs.Errorf("get root account for main account controller failed, err: %v, rid: %s", err, kt.Rid)
+			logs.Errorf("get root account for main account controller failed, err: %v, rid: %s", err, tenantKt.Rid)
 			return fmt.Errorf("get root account for main account controller failed, err: %w", err)
 		}
 
 		opt := MainAccountControllerOption{
+			TenantID:      tenantKt.TenantID,
 			RootAccountID: mainAccount.BaseMainAccount.ParentAccountID,
 			MainAccountID: mainAccount.BaseMainAccount.ID,
 			BkBizID:       mainAccount.BkBizID,
@@ -168,12 +203,12 @@ func (bm *BillManager) syncMainControllers() error {
 			ctrl.Stop()
 			logs.Errorf("fail to start main account controller of %s, vendor: %s, root account: %s, biz: %d,"+
 				" product: %d, rid: %s",
-				opt.MainAccountID, opt.Vendor, opt.RootAccountID, opt.BkBizID, opt.ProductID, kt.Rid)
+				opt.MainAccountID, opt.Vendor, opt.RootAccountID, opt.BkBizID, opt.ProductID, tenantKt.Rid)
 			return fmt.Errorf("start main account controller failed, err: %w", err)
 		}
 		bm.CurrentMainControllers[mainAccount.Key()] = ctrl
 		logs.Infof("start main account controller for %s, vednor: %s, root_account: %s, biz: %d, product: %d, rid: %s",
-			opt.MainAccountID, opt.Vendor, opt.RootAccountID, opt.BkBizID, opt.ProductID, kt.Rid)
+			opt.MainAccountID, opt.Vendor, opt.RootAccountID, opt.BkBizID, opt.ProductID, tenantKt.Rid)
 	}
 	for key, controller := range bm.CurrentMainControllers {
 		if _, ok := existedAccountKeyMap[key]; !ok {
@@ -181,7 +216,7 @@ func (bm *BillManager) syncMainControllers() error {
 			logs.Infof("stop main account controller for  %s, vednor: %s, root_account: %s, biz: %d, "+
 				"product: %d, rid: %s",
 				controller.MainAccountID, controller.Vendor, controller.RootAccountID, controller.BkBizID,
-				controller.ProductID, kt.Rid)
+				controller.ProductID, tenantKt.Rid)
 			delete(bm.CurrentMainControllers, key)
 		}
 	}

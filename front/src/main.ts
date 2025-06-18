@@ -2,6 +2,9 @@ import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import BkUserDisplayName from '@blueking/bk-user-display-name';
 import { gotoLoginPage } from '@/utils/login-helper';
+import { watchVersion } from '@/utils/check-version';
+
+import 'reflect-metadata';
 
 import bus from './common/bus';
 import http from './http';
@@ -43,6 +46,9 @@ userInfo()
     preload().finally(() => {
       app.use(router);
       app.mount('#app');
+      if (process.env.NODE_ENV === 'production') {
+        watchVersion();
+      }
     });
   })
   .catch((err) => {

@@ -7,6 +7,7 @@ import SearchEnum from './search/enum.vue';
 import SearchDatetime from './search/datetime.vue';
 import SearchUser from './search/user.vue';
 import SearchBusiness from './search/business.vue';
+import SearchString from './search/string.vue';
 
 // 展示值组件
 import DisplayValue from './display-value/index.vue';
@@ -33,6 +34,7 @@ const components = [
   SearchDatetime,
   SearchUser,
   SearchBusiness,
+  SearchString,
   DisplayValue,
   UserValue,
   FormBool,

@@ -87,7 +87,7 @@ func (pImageDao ImageDao) BatchCreateWithTx(
 		d.ID = ids[idx]
 	}
 
-	err = pImageDao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, images)
+	err = pImageDao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).BulkInsert(kt.Ctx, sql, images)
 	if err != nil {
 		return nil, fmt.Errorf("insert %s failed, err: %v", table.ImageTable, err)
 	}
@@ -122,7 +122,7 @@ func (pImageDao ImageDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.Image
 	if opt.Page.Count {
 		// this is a count request, then do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.ImageTable, whereExpr)
-		count, err := pImageDao.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := pImageDao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count image failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -143,7 +143,9 @@ func (pImageDao ImageDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.Image
 		pageExpr,
 	)
 	details := make([]*image.ImageModel, 0)
-	if err = pImageDao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	err = pImageDao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(
+		kt.Ctx, &details, sql, whereValue)
+	if err != nil {
 		logs.Errorf("select image failed, err: %v, sql: %s, values: %v, rid: %s", err, sql, whereValue, kt.Rid)
 		return nil, err
 	}
@@ -172,7 +174,7 @@ func (pImageDao ImageDao) UpdateByIDWithTx(
 	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, table.ImageTable, setExpr)
 
 	toUpdate["id"] = imageID
-	_, err = pImageDao.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
+	_, err = pImageDao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Update(kt.Ctx, sql, toUpdate)
 	if err != nil {
 		logs.ErrorJson("update image failed, err: %v, id: %s, rid: %v", err, imageID, kt.Rid)
 		return err
@@ -193,7 +195,8 @@ func (pImageDao ImageDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *fil
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.ImageTable, whereExpr)
-	if _, err = pImageDao.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+	_, err = pImageDao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Delete(kt.Ctx, sql, whereValue)
+	if err != nil {
 		logs.ErrorJson("delete image failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
 		return err
 	}

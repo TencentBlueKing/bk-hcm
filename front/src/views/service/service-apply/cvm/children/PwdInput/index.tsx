@@ -1,4 +1,4 @@
-import { computed, defineComponent, PropType, ref } from 'vue';
+import { computed, defineComponent, PropType, ref, watchEffect } from 'vue';
 import cssModule from './index.module.scss';
 
 import { Button, Input } from 'bkui-vue';
@@ -13,7 +13,7 @@ export default defineComponent({
     modelValue: { type: String },
     generateFn: { type: Function as PropType<(...args: any) => string> },
   },
-  emits: ['update:modelValue'],
+  emits: ['update:modelValue', 'change'],
   setup(props, { emit }) {
     const { t } = useI18n();
     const { validate } = useFormItem();
@@ -89,13 +89,18 @@ export default defineComponent({
       return suffix;
     });
 
+    watchEffect(() => {
+      emit('change', pwd.value);
+    });
+
     return () => (
       <Input
         // 设置key，规避组件内部状态（如pwdVisible）对于交互的影响
         key={inputType.value}
         class={[cssModule.wrapper, { [cssModule['render-custom-suffix']]: isGenerate.value }]}
         v-model={pwd.value}
-        type={inputType.value}>
+        type={inputType.value}
+      >
         {{
           suffix: () => renderSuffix.value,
         }}

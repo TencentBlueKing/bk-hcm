@@ -73,6 +73,7 @@ func (cli *client) NetworkInterface(kt *kit.Kit, params *SyncBaseParams, opt *Sy
 		if _, err := cli.syncNetworkInterface(kt, syncOpt); err != nil {
 			logs.ErrorDepthf(1, "[%s] account: %s cvm: %s sync network interface failed, err: %v, rid: %s", enumor.Gcp,
 				params.AccountID, param, err, kt.Rid)
+			return err
 		}
 
 		return nil

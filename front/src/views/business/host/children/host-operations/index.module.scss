@@ -3,6 +3,7 @@
     display: flex;
     align-items: center;
     margin-bottom: 16px;
+
     .common-search-selector {
       margin-bottom: 0;
     }
@@ -22,26 +23,6 @@
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.host_operations_w100 {
-  width: 100px;
-}
-
-.host_operations_blue_txt {
-  color: rgb(0, 136, 255)
-}
-
-.host_operations_red_txt {
-  color: red;
-}
-
-.host_operations_container {
-  margin-right: 10px;
-
-  .f26 {
-    font-size: 26px;
-  }
 }
 
 .host-operations-selection-tip {

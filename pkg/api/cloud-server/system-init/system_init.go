@@ -20,6 +20,17 @@
 // Package apisysteminit ...
 package apisysteminit
 
+// SystemInitResult ...
+type SystemInitResult struct {
+	OtherAccountInitResult *OtherAccountInitResult `json:"other_account_result,omitempty"`
+}
+
+// OtherAccountInitResult ...
+type OtherAccountInitResult struct {
+	CreatedAccountID string `json:"created_account_id,omitempty"`
+	ExistsAccountID  string `json:"exists_account_id,omitempty"`
+}
+
 // TenantInitResult ...
 type TenantInitResult struct {
 	Message string `json:"message,omitempty"`

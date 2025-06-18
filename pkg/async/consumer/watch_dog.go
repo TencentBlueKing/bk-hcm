@@ -65,6 +65,7 @@ type watchDog struct {
 	closeCh chan struct{}
 
 	runningFlowMap map[string]time.Time
+	workerNumber   uint
 }
 
 // NewWatchDog 创建一个watchdog
@@ -79,6 +80,7 @@ func NewWatchDog(bd backend.Backend, ld leader.Leader, opt *WatchDogOption) Watc
 		wg:                  sync.WaitGroup{},
 		closeCh:             make(chan struct{}),
 		runningFlowMap:      make(map[string]time.Time),
+		workerNumber:        opt.WorkerNumber,
 	}
 }
 
@@ -94,22 +96,37 @@ func (wd *watchDog) Start() {
 
 // 定期处理异常任务流或任务
 func (wd *watchDog) watchWrapper(do func(kt *kit.Kit) error) {
+	// 初始化协程池
+	pool := newTenantWorkerPool(wd.workerNumber,
+		func(tenantID string) {
+			kt := NewKit()
+			kt.TenantID = tenantID
+			if err := do(kt); err != nil {
+				logs.Errorf("%s: watch dog do watch func failed for tenant %s, err: %v, rid: %s",
+					constant.AsyncTaskWarnSign, tenantID, err, kt.Rid)
+			}
+		})
+
+	// 主任务分发循环
 	for {
 		select {
 		case <-wd.closeCh:
-			break
+			pool.shutdownPoolGracefully()
+			wd.wg.Done()
+			logs.Infof("received stop signal, stop watch wrapper job success.")
+			return
 		default:
 		}
 
-		kt := NewKit()
-		if err := do(kt); err != nil {
-			logs.Errorf("%s: watch dog do watch func failed, err: %v, rid: %s", constant.AsyncTaskWarnSign,
-				err, kt.Rid)
+		err := pool.executeWithTenant()
+		if err != nil {
+			logs.Errorf("watchWrapper failed to executeWithTenant, err: %v", err)
+			time.Sleep(wd.watchIntervalSec)
+			continue
 		}
+
 		time.Sleep(wd.watchIntervalSec)
 	}
-
-	wd.wg.Done()
 }
 
 // Close 等待当前执行体执行完成后再关闭

@@ -35,6 +35,7 @@ export type ModelProperty = {
   meta?: ModelPropertyMeta;
   unit?: string;
   index?: number;
+  apiOnly?: boolean;
 };
 
 export type PropertyColumnConfig = {
@@ -63,6 +64,7 @@ export type PropertySearchConfig = {
   filterRules?: (value: any) => RulesItem;
   format?: (value: any) => any;
   converter?: (value: any) => Record<string, any>;
+  enableEmpty?: boolean;
 };
 
 export type PropertyDisplayConfig = {

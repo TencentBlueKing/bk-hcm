@@ -284,6 +284,12 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 .bkhcm-icon-delete:before {
 	content: "\e173";
 }
+.bkhcm-icon-circle-correct-filled:before {
+	content: "\e17c";
+}
+.bkhcm-icon-circle-wrong-filled:before {
+	content: "\e17b";
+}
 .bkhcm-icon-release-note:before {
 	content: "\e16d";
 }
@@ -358,4 +364,7 @@ url("fonts/iconcool.eot?#iefix") format("embedded-opentype");
 }
 .bkhcm-icon-host-multi:before {
 	content: "\e172";
+}
+.bkhcm-icon-other:before {
+	content: "\e17a";
 }

@@ -5,11 +5,9 @@ import {
   type ISecurityGroupDetail,
   type ISecurityGroupRelBusiness,
   type ISecurityGroupRelResCountItem,
-  SecurityGroupRelatedResourceName,
 } from '@/store/security-group';
 import { useBusinessGlobalStore } from '@/store/business-global';
-import { getSimpleConditionBySearchSelect } from '@/utils/search';
-import { RELATED_RES_KEY_MAP } from '@/constants/security-group';
+import { RELATED_RES_KEY_MAP, SecurityGroupRelatedResourceName } from '@/constants/security-group';
 import { ISearchSelectValue } from '@/typings';
 
 import tab from './tab/index.vue';
@@ -27,7 +25,7 @@ const props = defineProps<{
 const regionStore = useRegionsStore();
 const { getBusinessIds } = useBusinessGlobalStore();
 
-const tabActive = ref<SecurityGroupRelatedResourceName>(SecurityGroupRelatedResourceName.CVM);
+const tabActive = ref(SecurityGroupRelatedResourceName.CVM);
 
 const handleOperateSuccess = () => {
   props.getRelatedInfo();
@@ -37,11 +35,12 @@ const handleOperateSuccess = () => {
 const searchRef = useTemplateRef('relate-resource-search');
 const collapseDataListRef = useTemplateRef('collapse-data-list');
 const condition = ref<Record<string, any>>({});
-const handleSearch = (searchValue: ISearchSelectValue) => {
-  condition.value = getSimpleConditionBySearchSelect(searchValue, [
-    { field: 'region', formatter: (val: string) => regionStore.getRegionNameEN(val) },
-    { field: 'bk_biz_id', formatter: (name: string) => getBusinessIds(name) },
-  ]);
+const formatterOptions = [
+  { field: 'region', formatter: (val: string) => regionStore.getRegionNameEN(val) },
+  { field: 'bk_biz_id', formatter: (name: string) => getBusinessIds(name) },
+];
+const handleSearch = (_: ISearchSelectValue, flatCondition: Record<string, any>) => {
+  condition.value = flatCondition;
 
   collapseDataListRef.value?.forEach((compRef) => {
     if (compRef.isExpand) {
@@ -65,14 +64,13 @@ watch(tabActive, () => {
         ref="relate-resource-search"
         :resource-name="tabActive"
         operation="base"
+        flat
+        :options="formatterOptions"
         @search="handleSearch"
       />
     </div>
 
-    <bk-loading v-if="relBizLoading" loading>
-      <div style="width: 100%; height: 360px" />
-    </bk-loading>
-    <div v-else class="rel-res-display-wrap">
+    <div v-bkloading="{ loading: relBizLoading }" class="rel-res-display-wrap">
       <collapse-data-list
         v-for="{ bk_biz_id: bkBizId, res_count: resCount } in relatedBiz?.[RELATED_RES_KEY_MAP[tabActive]]"
         ref="collapse-data-list"
@@ -100,6 +98,7 @@ watch(tabActive, () => {
 }
 
 .rel-res-display-wrap {
+  min-height: 300px;
   margin-top: 12px;
   display: flex;
   flex-direction: column;

@@ -41,7 +41,8 @@ type Flow struct {
 	CreatedAt string             `json:"created_at"`
 	UpdatedAt string             `json:"updated_at"`
 
-	Tasks []Task `json:"tasks"`
+	Tasks    []Task `json:"tasks"`
+	TenantID string `json:"tenant_id"`
 }
 
 // CreateValidate Flow.

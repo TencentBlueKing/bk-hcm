@@ -118,11 +118,12 @@ export const BatchDistribution = defineComponent({
       <>
         {whereAmI.value === Senarios.resource ? (
           <Button
-            class={'mw88 ml8 mr8'}
+            class={'mw88'}
             onClick={() => {
               isShow.value = true;
             }}
-            disabled={!props.selections.length}>
+            disabled={!props.selections.length}
+          >
             批量分配
           </Button>
         ) : null}
@@ -134,7 +135,8 @@ export const BatchDistribution = defineComponent({
           quickClose
           onClosed={() => (isShow.value = false)}
           onConfirm={handleConfirm}
-          isLoading={isLoading.value}>
+          isLoading={isLoading.value}
+        >
           <p class='selected-host-count-tip'>
             已选择
             <span class='selected-host-count'>{props.selections.length}</span>个{DResourceTypeMap[props.type].name}
@@ -145,7 +147,8 @@ export const BatchDistribution = defineComponent({
             v-model={selectedBizId.value}
             authed={true}
             class='mb32'
-            auto-select={true}></BusinessSelector>
+            auto-select={true}
+          ></BusinessSelector>
         </Dialog>
       </>
     );

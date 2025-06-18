@@ -91,11 +91,11 @@ export default defineComponent({
       isSubmitLoading.value = true;
       try {
         await instance.value.handleSubmit();
+        emit('submit');
+        emit('update:isShow', false);
       } finally {
         isSubmitLoading.value = false;
       }
-      emit('submit');
-      emit('update:isShow', false);
     };
 
     return {

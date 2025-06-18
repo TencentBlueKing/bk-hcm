@@ -2,7 +2,6 @@ import { defineComponent, reactive } from 'vue';
 // import components
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import SubnetPreviewDialog from '../cvm/children/SubnetPreviewDialog';
-import LbSpecTypeSelectDialog from '@/views/business/load-balancer/components/LbSpecTypeDialog';
 // import custom hooks
 import useBindEip from './hooks/useBindEip';
 import useRenderForm from './hooks/useRenderForm';
@@ -67,8 +66,6 @@ export default defineComponent({
           handleClose={() => (isSubnetPreviewDialogShow.value = false)}
         />
         <BindEipDialog />
-        {/* 负载均衡规格类型选择弹框 */}
-        <LbSpecTypeSelectDialog v-model={formModel.sla_type} />
       </div>
     );
   },

@@ -68,10 +68,7 @@ defineExpose({ fetchComponentsData });
 
 <template>
   <bk-loading :loading="isLoading" opacity="1">
-    <section
-      class="flex-row align-items-center"
-      :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'"
-    >
+    <section class="toolbar" :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'">
       <slot></slot>
       <BatchDistribution
         :selections="selections"
@@ -114,6 +111,11 @@ defineExpose({ fetchComponentsData });
 <style lang="scss" scoped>
 .w100 {
   width: 100px;
+}
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 .search-selector-container {
   margin-left: auto;

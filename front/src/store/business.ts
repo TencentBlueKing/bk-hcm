@@ -346,26 +346,16 @@ export const useBusinessStore = defineStore({
       );
     },
     /**
-     * 业务下批量修改RS端口
+     * 业务下批量修改RS port/weight
      * @param target_group_id 目标组id
-     * @param data { target_ids, new_port }
+     * @param type port | weight
      */
-    batchUpdateRsPort(target_group_id: string, data: any) {
-      return http.patch(
-        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/${target_group_id}/targets/port`,
-        data,
-      );
-    },
-    /**
-     * 业务下批量修改RS权重
-     * @param target_group_id 目标组id
-     * @param data { target_ids, new_weight }
-     */
-    batchUpdateRsWeight(target_group_id: string, data: any) {
-      return http.patch(
-        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/${target_group_id}/targets/weight`,
-        data,
-      );
+    batchUpdateRs(
+      target_group_id: string,
+      type: string,
+      data: { target_ids: string[]; new_port?: number; new_weight?: number },
+    ) {
+      return http.patch(`/api/v1/cloud/${getBusinessApiPath()}target_groups/${target_group_id}/targets/${type}`, data);
     },
     /**
      * 查询操作记录异步记录指定批次的子任务列表
@@ -564,14 +554,11 @@ export const useBusinessStore = defineStore({
       );
     },
     /**
-     * 统计指定的目标组的权重情况
-     * @param target_group_ids 目标组id
+     * 查询监听器绑定的rs的权重情况
+     * @param ids 监听器
      */
-    reqStatTargetGroupRsWeight(target_group_ids: string[]) {
-      return http.post(
-        `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}target_groups/targets/weight_stat`,
-        { target_group_ids },
-      );
+    getListenersRsWeightStat(ids: string[]) {
+      return http.post(`/api/v1/cloud/${getBusinessApiPath()}listeners/rs_weight_stat`, { ids });
     },
     // 主机所关联资源(硬盘, eip)的个数
     getRelResByCvmIds(data: { ids: string[] }) {

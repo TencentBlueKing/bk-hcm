@@ -22,13 +22,14 @@ package tenant
 
 import (
 	"fmt"
-	"hcm/pkg/runtime/filter"
-	"hcm/pkg/tools/slice"
 	"reflect"
 
 	"hcm/pkg/api/core"
 	coretenant "hcm/pkg/api/core/tenant"
 	"hcm/pkg/api/data-service/tenant"
+	"hcm/pkg/cc"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
 	"hcm/pkg/dal/dao/tools"
@@ -83,60 +84,6 @@ func (svc *service) CreateTenant(cts *rest.Contexts) (interface{}, error) {
 	return &core.BatchCreateResult{IDs: ids}, nil
 }
 
-// DeleteTenant delete tenant.
-func (svc *service) DeleteTenant(cts *rest.Contexts) (interface{}, error) {
-	req := new(tenant.DeleteTenantReq)
-	if err := cts.DecodeInto(req); err != nil {
-		return nil, err
-	}
-
-	if err := req.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		// 循环分页查询出所有待删除记录的id然后再循环分页删除
-		delIDs := make([]string, 0)
-		page := core.NewDefaultBasePage()
-		for {
-			opt := &types.ListOption{
-				Fields: []string{"id"},
-				Filter: req.Filter,
-				Page:   page,
-			}
-			listResp, err := svc.dao.Tenant().List(cts.Kit, opt)
-			if err != nil {
-				logs.Errorf("list tenant failed, err: %v, rid: %s", err, cts.Kit.Rid)
-				return nil, fmt.Errorf("list tenant failed, err: %v", err)
-			}
-
-			for _, one := range listResp.Tenants {
-				delIDs = append(delIDs, one.ID)
-			}
-
-			// 如果当前页数据不足一页，说明后面没有更多数据了
-			if uint(len(listResp.Tenants)) < page.Limit {
-				break
-			}
-			page.Start += uint32(page.Limit)
-		}
-
-		for _, chunk := range slice.Split(delIDs, int(filter.DefaultMaxInLimit)) {
-			delFilter := tools.ContainersExpression("id", chunk)
-			if err := svc.dao.Tenant().DeleteWithTx(cts.Kit, txn, delFilter); err != nil {
-				logs.Errorf("delete tenant chunk failed, err: %s, chunk: %v, rid: %s", err, chunk, cts.Kit.Rid)
-				return nil, err
-			}
-		}
-		return nil, nil
-	})
-	if err != nil {
-		logs.Errorf("delete tenant failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, err
-	}
-	return nil, nil
-}
-
 // UpdateTenant update tenant.
 func (svc *service) UpdateTenant(cts *rest.Contexts) (interface{}, error) {
 	req := new(tenant.UpdateTenantReq)
@@ -172,8 +119,20 @@ func (svc *service) UpdateTenant(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
-// ListTenant list tenant.
+// ListTenant 查询租户列表，若系统未开启多租户，则无视入参直接返回一个默认租户
 func (svc *service) ListTenant(cts *rest.Contexts) (interface{}, error) {
+
+	if !cc.TenantEnable() {
+		// 未开启多租户的情况下，直接返回一个默认租户
+		tenants := []coretenant.Tenant{{
+			ID:       constant.DefaultTenantID,
+			TenantID: constant.DefaultTenantID,
+			Status:   enumor.TenantEnable,
+		}}
+
+		return &tenant.ListTenantResult{Details: tenants}, nil
+	}
+
 	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err

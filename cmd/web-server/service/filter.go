@@ -51,6 +51,11 @@ func isITSMCallbackRequest(req *restful.Request) bool {
 	return false
 }
 
+// 系统管理操作仅能从后台发起
+func isSystemAdminRequest(req *restful.Request) bool {
+	return strings.Contains(req.Request.RequestURI, "/api/v1/cloud/admin/system")
+}
+
 func newCheckLogin(loginCli login.Client, bkLoginUrl, bkLoginCookieName string) func(
 	*restful.Request) (*rest.Response, error) {
 
@@ -112,6 +117,11 @@ func NewUserAuthenticateFilter(loginCli login.Client, bkLoginUrl, bkLoginCookieN
 	return func(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
 		var err error
 		username := ""
+		// 系统管理操作仅能从后台发起，外部请求直接拒绝
+		if isSystemAdminRequest(req) {
+			resp.WriteErrorString(http.StatusForbidden, "system admin request can not be called outside hcm system")
+			return
+		}
 		// 对于itsm 的回调请求，不能用户认证，而是处理请求时进行单独的Token认证，这里直接通过
 		if isITSMCallbackRequest(req) {
 			username = "itsm_callback"

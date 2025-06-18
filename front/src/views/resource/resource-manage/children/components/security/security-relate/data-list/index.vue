@@ -4,16 +4,18 @@ import usePage from '@/hooks/use-page';
 import useTableSettings from '@/hooks/use-table-settings';
 import useTableSelection from '@/hooks/use-table-selection';
 import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
-import { SecurityGroupRelResourceByBizItem, SecurityGroupRelatedResourceName } from '@/store/security-group';
+import { SecurityGroupRelResourceByBizItem } from '@/store/security-group';
 import columnFactory from './column-factory';
 import { PaginationType } from '@/typings';
 import { ResourceTypeEnum } from '@/common/resource-constant';
+import { SecurityGroupRelatedResourceName } from '@/constants/security-group';
 
 const props = withDefaults(
   defineProps<{
     resourceName: SecurityGroupRelatedResourceName;
     operation: string;
     list: SecurityGroupRelResourceByBizItem[];
+    loading?: boolean;
     pagination: PaginationType;
     enableQuery?: boolean;
     hasSelections?: boolean;
@@ -25,6 +27,7 @@ const props = withDefaults(
     enableQuery: false,
     hasSelections: true,
     hasSettings: true,
+    loading: false,
   },
 );
 
@@ -89,6 +92,7 @@ defineExpose({ handleClear, handleDelete });
 
 <template>
   <bk-table
+    v-bkloading="{ loading }"
     ref="tableRef"
     row-hover="auto"
     :data="list"
@@ -106,6 +110,7 @@ defineExpose({ handleClear, handleDelete });
     row-key="cloud_id"
     selection-key="cloud_id"
     :checked="checked"
+    :empty-text="!loading && !list.length ? '暂无数据' : ''"
   >
     <!-- 复选框列 -->
     <bk-table-column v-if="hasSelections" width="30" min-width="30" type="selection"></bk-table-column>

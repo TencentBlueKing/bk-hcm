@@ -448,6 +448,7 @@ func (svc *lbSvc) listListenerWithTarget(cts *rest.Contexts, authHandler handler
 		}
 		return resList, nil
 	default:
-		return nil, errf.Newf(errf.InvalidParameter, "req: %+v, vendor: %s not support", req, accountInfo.Vendor)
+		return nil, errf.Newf(errf.InvalidParameter, "list listener with targets failed, vendor: %s not support, "+
+			"listTargetReq: %+v", accountInfo.Vendor, req)
 	}
 }

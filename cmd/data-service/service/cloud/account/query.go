@@ -126,6 +126,9 @@ func (svc *service) GetAccount(cts *rest.Contexts) (interface{}, error) {
 		account, err = convertToAccountResult[protocore.GcpAccountExtension](baseAccount, dbAccount.Extension, svc)
 	case enumor.Azure:
 		account, err = convertToAccountResult[protocore.AzureAccountExtension](baseAccount, dbAccount.Extension, svc)
+	case enumor.Other:
+		account, err = convertToAccountResult[protocore.OtherAccountExtension](baseAccount, dbAccount.Extension, svc)
+
 	}
 
 	if err != nil {

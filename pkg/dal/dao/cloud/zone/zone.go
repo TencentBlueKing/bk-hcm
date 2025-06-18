@@ -75,8 +75,8 @@ func (z ZoneDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, zones []*zone.ZoneTable)
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.ZoneTable,
 		zone.ZoneColumns.ColumnExpr(), zone.ZoneColumns.ColonNameExpr())
-
-	if err = z.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, zones); err != nil {
+	err = z.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).BulkInsert(kt.Ctx, sql, zones)
+	if err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", table.ZoneTable, err, kt.Rid)
 		return nil, fmt.Errorf("insert %s failed, err: %v", table.ZoneTable, err)
 	}
@@ -103,7 +103,7 @@ func (z ZoneDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, zone *zon
 	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, zone.TableName(), setExpr)
 
 	toUpdate["id"] = id
-	_, err = z.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
+	_, err = z.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Update(kt.Ctx, sql, toUpdate)
 	if err != nil {
 		logs.ErrorJson("update zone failed, err: %v, id: %s, rid: %v", err, id, kt.Rid)
 		return err
@@ -132,7 +132,7 @@ func (z ZoneDao) List(kt *kit.Kit, opt *types.ListOption) (*typeszone.ListZoneDe
 		// this is a count request, then do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.ZoneTable, whereExpr)
 
-		count, err := z.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := z.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count zone failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -150,7 +150,8 @@ func (z ZoneDao) List(kt *kit.Kit, opt *types.ListOption) (*typeszone.ListZoneDe
 		table.ZoneTable, whereExpr, pageExpr)
 
 	details := make([]zone.ZoneTable, 0)
-	if err = z.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	err = z.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql, whereValue)
+	if err != nil {
 		return nil, err
 	}
 
@@ -171,7 +172,8 @@ func (z ZoneDao) Delete(kt *kit.Kit, expr *filter.Expression) error {
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.ZoneTable, whereExpr)
 
 	_, err = z.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		if _, err = z.Orm.Txn(txn).Delete(kt.Ctx, sql, argMap); err != nil {
+		_, err = z.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(txn).Delete(kt.Ctx, sql, argMap)
+		if err != nil {
 			logs.ErrorJson("delete zone failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
 			return nil, err
 		}

@@ -6,10 +6,11 @@ import ReleaseNote from './release-note/index.vue';
 import Breadcrumb from './breadcrumb';
 import BusinessSelector from './business-selector';
 import NoPermission from '@/views/resource/NoPermission';
-import AccountList from '../resource/resource-manage/account/accountList';
+import AccountVendorGroup from '@/views/resource/resource-manage/account/vendor-group/index.vue';
 import GlobalPermissionDialog from '@/components/global-permission-dialog';
 
-import cookie from 'cookie';
+import Cookies from 'js-cookie';
+import i18n from '@/language/i18n';
 import { useI18n } from 'vue-i18n';
 import { useVerify } from '@/hooks';
 import { useUserStore, useAccountStore, useCommonStore } from '@/store';
@@ -57,7 +58,7 @@ export default defineComponent({
     const isRouterAlive = ref<Boolean>(true);
     const curYear = ref(new Date().getFullYear());
     const isMenuOpen = ref<boolean>(true);
-    const language = ref(cookie.parse(document.cookie).blueking_language || 'zh-cn');
+    const language = ref(Cookies.get('blueking_language') || i18n.global.locale.value);
 
     const isNeedSideMenu = computed(
       () => ![Senarios.resource, Senarios.scheme, Senarios.unauthorized].includes(whereAmI.value),
@@ -105,7 +106,7 @@ export default defineComponent({
       return (
         <div class={'resource-manage-container'}>
           <div class='fixed-account-list-container'>
-            <AccountList />
+            <AccountVendorGroup />
           </div>
           <RouterView class={'router-view-content'} />
         </div>
@@ -264,7 +265,7 @@ export default defineComponent({
                   style={{ width: `${NAV_WIDTH}px` }}
                   uniqueOpen={false}
                   openedKeys={openedKeys}
-                  activeKey={route.meta.activeKey as string}
+                  activeKey={route.meta.activeKey?.toString()}
                 >
                   {menus.value
                     .map((menuItem) => {
@@ -293,7 +294,7 @@ export default defineComponent({
                                   },
                                 }}
                               >
-                                <Menu.Item key={child.meta?.activeKey as string}>
+                                <Menu.Item key={child.meta?.activeKey?.toString()}>
                                   {{
                                     icon: () => <i class={child.meta?.icon} />,
                                     default: () => (
@@ -331,7 +332,7 @@ export default defineComponent({
                       // 正常显示菜单
                       return (
                         <RouterLink to={getRouteLinkParams(menuItem)}>
-                          <Menu.Item key={menuItem.meta.activeKey as string}>
+                          <Menu.Item key={menuItem.meta?.activeKey?.toString()}>
                             {{
                               icon: () => <i class={menuItem.meta.icon} />,
                               default: () => menuItem.meta?.title,

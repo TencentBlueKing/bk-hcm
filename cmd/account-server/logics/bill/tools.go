@@ -39,5 +39,8 @@ func getInternalKit() *kit.Kit {
 	newKit := kit.New()
 	newKit.User = string(cc.AccountServerName)
 	newKit.AppCode = string(cc.AccountServerName)
+	// 设置后端操作的租户id
+	newKit.SetBackendTenantID()
+
 	return newKit
 }

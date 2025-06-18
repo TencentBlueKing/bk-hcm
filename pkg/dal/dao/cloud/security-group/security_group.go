@@ -79,8 +79,8 @@ func (s SecurityGroupDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, sgs []*clo
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.SecurityGroupTable,
 		cloud.SecurityGroupColumns.ColumnExpr(), cloud.SecurityGroupColumns.ColonNameExpr())
-
-	if err = s.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, sgs); err != nil {
+	err = s.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).BulkInsert(kt.Ctx, sql, sgs)
+	if err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", table.SecurityGroupTable, err, kt.Rid)
 		return nil, fmt.Errorf("insert %s failed, err: %v", table.SecurityGroupTable, err)
 	}
@@ -138,7 +138,8 @@ func (s SecurityGroupDao) Update(kt *kit.Kit, expr *filter.Expression, sg *cloud
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, sg.TableName(), setExpr, whereExpr)
 
 	_, err = s.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		effected, err := s.Orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
+		effected, err := s.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(txn).Update(
+			kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if err != nil {
 			logs.ErrorJson("update security group failed, err: %v, filter: %s, rid: %v", err, expr, kt.Rid)
 			return nil, err
@@ -177,7 +178,7 @@ func (s SecurityGroupDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string, 
 	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, sg.TableName(), setExpr)
 
 	toUpdate["id"] = id
-	_, err = s.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
+	_, err = s.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Update(kt.Ctx, sql, toUpdate)
 	if err != nil {
 		logs.ErrorJson("update security group failed, err: %v, id: %s, rid: %v", err, id, kt.Rid)
 		return err
@@ -223,7 +224,7 @@ func (s SecurityGroupDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListS
 	if opt.Page.Count {
 		// this is a count request, then do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.SecurityGroupTable, whereExpr)
-		count, err := s.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := s.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count security group failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -241,7 +242,8 @@ func (s SecurityGroupDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListS
 		table.SecurityGroupTable, whereExpr, pageExpr)
 
 	details := make([]cloud.SecurityGroupTable, 0)
-	if err = s.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	err = s.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql, whereValue)
+	if err != nil {
 		logs.ErrorJson("select security group failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 		return nil, err
 	}
@@ -269,7 +271,7 @@ func (s SecurityGroupDao) listWithUsageBiz(kt *kit.Kit, opt *types.ListOption, w
 			`SELECT COUNT(*) FROM (SELECT sg.id FROM %s AS sg LEFT JOIN %s AS rel ON sg.id = rel.res_id %s GROUP BY sg.id) sgid`,
 			table.SecurityGroupTable, table.ResUsageBizRelTable, whereExpr)
 
-		count, err := s.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := s.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count security group with usage biz failed, err: %v, filter: %s, rid: %s",
 				err, opt.Filter, kt.Rid)
@@ -289,7 +291,8 @@ func (s SecurityGroupDao) listWithUsageBiz(kt *kit.Kit, opt *types.ListOption, w
 		whereExpr, pageExpr)
 
 	details := make([]cloud.SecurityGroupTable, 0)
-	if err = s.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	err = s.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql, whereValue)
+	if err != nil {
 		logs.ErrorJson("select security group with usage biz failed, err: %v, filter: %s, rid: %s",
 			err, opt.Filter, kt.Rid)
 		return nil, err
@@ -310,7 +313,8 @@ func (s SecurityGroupDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Ex
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.SecurityGroupTable, whereExpr)
-	if _, err = s.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+	_, err = s.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Delete(kt.Ctx, sql, whereValue)
+	if err != nil {
 		logs.ErrorJson("delete security group failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
 		return err
 	}
@@ -319,13 +323,14 @@ func (s SecurityGroupDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Ex
 }
 
 // ListSecurityGroup TODO: 考虑之后这种跨表查询是否可以直接引用对象的 List 函数，而不是再写一个。
-func ListSecurityGroup(kt *kit.Kit, orm orm.Interface, ids []string) (map[string]cloud.SecurityGroupTable, error) {
+func ListSecurityGroup(kt *kit.Kit, ormi orm.Interface, ids []string) (map[string]cloud.SecurityGroupTable, error) {
 
 	sql := fmt.Sprintf(`SELECT %s FROM %s where id in (:ids)`, cloud.SecurityGroupColumns.FieldsNamedExpr(nil),
 		table.SecurityGroupTable)
 
 	sgs := make([]cloud.SecurityGroupTable, 0)
-	if err := orm.Do().Select(kt.Ctx, &sgs, sql, map[string]interface{}{"ids": ids}); err != nil {
+	if err := ormi.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &sgs, sql,
+		map[string]interface{}{"ids": ids}); err != nil {
 		return nil, err
 	}
 

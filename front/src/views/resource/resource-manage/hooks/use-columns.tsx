@@ -1,7 +1,7 @@
 /* eslint-disable no-nested-ternary */
 // table 字段相关信息
 import i18n from '@/language/i18n';
-import { CloudType, SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum } from '@/typings';
+import { SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum } from '@/typings';
 import { useAccountStore, useLoadBalancerStore } from '@/store';
 import { Button } from 'bkui-vue';
 import { type Settings } from 'bkui-vue/lib/table/props';
@@ -158,7 +158,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       sort: true,
       isDefaultShow: true,
       render({ cell }: { cell: string }) {
-        return h('span', [CloudType[cell] || '--']);
+        return h('span', [VendorMap[cell] || '--']);
       },
     },
     {
@@ -234,7 +234,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       sort: true,
       isDefaultShow: true,
       render({ cell }: { cell: string }) {
-        return h('span', [CloudType[cell] || '--']);
+        return h('span', [VendorMap[cell] || '--']);
       },
     },
     {
@@ -332,7 +332,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
     {
       label: t('云厂商'),
       render({ data }: any) {
-        return h('span', {}, [CloudType[data.vendor]]);
+        return h('span', {}, [VendorMap[data.vendor]]);
       },
     },
     {
@@ -406,7 +406,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       sort: true,
       isDefaultShow: true,
       render({ cell }: { cell: string }) {
-        return h('span', [CloudType[cell] || '--']);
+        return h('span', [VendorMap[cell] || '--']);
       },
     },
     {
@@ -461,7 +461,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
         return h('span', [cell || '--']);
       },
     },
-    getLinkField({ type: 'host', label: '挂载的主机', field: 'instance_id', idFiled: 'instance_id' }),
+    getLinkField({ type: 'host', label: '挂载的主机', sort: false, field: 'instance_id', idFiled: 'instance_id' }),
     {
       label: '是否分配',
       field: 'bk_biz_id',
@@ -514,7 +514,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       sort: true,
       isDefaultShow: true,
       render({ cell }: { cell: string }) {
-        return h('span', [CloudType[cell] || '--']);
+        return h('span', [VendorMap[cell] || '--']);
       },
     },
     {
@@ -569,7 +569,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       sort: true,
       isDefaultShow: true,
       render({ cell }: { cell: string }) {
-        return h('span', [CloudType[cell] || '--']);
+        return h('span', [VendorMap[cell] || '--']);
       },
     },
     {
@@ -673,7 +673,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       sort: true,
       isDefaultShow: true,
       render({ cell }: { cell: string }) {
-        return h('span', [CloudType[cell] || '--']);
+        return h('span', [VendorMap[cell] || '--']);
       },
     },
     {
@@ -769,7 +769,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       onlyShowOnList: true,
       isDefaultShow: true,
       render({ data }: any) {
-        return h('span', {}, [CloudType[data.vendor]]);
+        return h('span', {}, [VendorMap[data.vendor]]);
       },
     },
     {
@@ -966,7 +966,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       sort: true,
       isDefaultShow: true,
       render({ cell }: { cell: string }) {
-        return h('span', [CloudType[cell] || '--']);
+        return h('span', [VendorMap[cell] || '--']);
       },
     },
     {
@@ -1129,7 +1129,23 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
           {data.name || '--'}
         </Button>
       ),
+      renderSuffix: (data) => {
+        return <CopyToClipboard content={data.name} class='copy-icon ml4' />;
+      },
+      contentClass: 'use-columns-copy-cell',
     }),
+    {
+      label: '负载均衡ID',
+      field: 'cloud_id',
+      isDefaultShow: true,
+      width: 120,
+      render: ({ cell }: any) => (
+        <div class='use-columns-copy-cell'>
+          <span>{cell}</span>
+          <CopyToClipboard content={cell} class='copy-icon ml4' />
+        </div>
+      ),
+    },
     {
       label: () => (
         <span v-bk-tooltips={{ content: '用户通过该域名访问负载均衡流量', placement: 'top' }}>负载均衡域名</span>
@@ -1137,7 +1153,15 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       field: 'domain',
       width: 150,
       isDefaultShow: true,
-      render: ({ cell }: { cell: string }) => cell || '--',
+      render: ({ cell }: { cell: string }) => {
+        if (!cell) return '--';
+        return (
+          <div class='use-columns-copy-cell'>
+            <span>{cell}</span>
+            <CopyToClipboard content={cell} class='copy-icon ml4' />
+          </div>
+        );
+      },
     },
     {
       label: '负载均衡VIP',
@@ -1145,7 +1169,14 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       width: 150,
       isDefaultShow: true,
       render: ({ data }: any) => {
-        return getInstVip(data);
+        const displayValue = getInstVip(data);
+        if (displayValue === '--') return displayValue;
+        return (
+          <div class='use-columns-copy-cell'>
+            <span>{displayValue}</span>
+            <CopyToClipboard content={displayValue} class='copy-icon ml4' />
+          </div>
+        );
       },
     },
     {
@@ -1174,6 +1205,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       field: 'bk_biz_id',
       isDefaultShow: true,
       notDisplayedInBusiness: true,
+      width: 100,
       render: ({ cell }: { cell: number }) => (
         <bk-tag
           v-bk-tooltips={{
@@ -1190,6 +1222,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '删除保护',
       field: 'delete_protect',
       isDefaultShow: true,
+      width: 100,
       render: ({ cell }: { cell: boolean }) => (cell ? <bk-tag theme='success'>开启</bk-tag> : <bk-tag>关闭</bk-tag>),
       filter: {
         list: [
@@ -1202,6 +1235,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: 'IP版本',
       field: 'ip_version',
       isDefaultShow: true,
+      width: 100,
       render: ({ cell }: { cell: string }) => IP_VERSION_MAP[cell],
       sort: true,
       filter: {
@@ -1217,13 +1251,15 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '标签',
       field: 'tags',
       isDefaultShow: true,
+      width: 150,
       render: ({ cell }: { cell: any }) => formatTags(cell),
     },
     {
       label: '云厂商',
       field: 'vendor',
+      width: 100,
       render({ cell }: { cell: string }) {
-        return h('span', [CloudType[cell] || '--']);
+        return h('span', [VendorMap[cell] || '--']);
       },
       sort: true,
       filter: {
@@ -1466,7 +1502,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '云厂商',
       field: 'vendor',
       render({ cell }: { cell: string }) {
-        return h('span', [CloudType[cell] || '--']);
+        return h('span', [VendorMap[cell] || '--']);
       },
       sort: true,
       filter: {
@@ -1718,7 +1754,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '云厂商',
       field: 'vendor',
       render({ cell }: { cell: string }) {
-        return h('span', [CloudType[cell] || '--']);
+        return h('span', [VendorMap[cell] || '--']);
       },
     },
     {

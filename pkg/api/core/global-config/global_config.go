@@ -22,16 +22,22 @@ package core
 
 import "encoding/json"
 
-// GlobalConfig ...
-type GlobalConfig struct {
+// GlobalConfigT ...
+type GlobalConfigT[T any] struct {
 	// ID global config id
 	ID string `json:"id"`
 	// ConfigKey global config key, key+type is unique
 	ConfigKey string `json:"config_key"`
 	// ConfigValue global config value, json format
-	ConfigValue json.RawMessage `json:"config_value"`
+	ConfigValue T `json:"config_value"`
 	// ConfigType global config type
 	ConfigType string `json:"config_type"`
 	// Memo global config memo
 	Memo *string `json:"memo"`
 }
+
+// GlobalConfig ...
+type GlobalConfig = GlobalConfigT[any]
+
+// GlobalConfigRaw ...
+type GlobalConfigRaw = GlobalConfigT[json.RawMessage]

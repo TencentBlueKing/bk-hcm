@@ -29,6 +29,7 @@ import (
 	"hcm/cmd/cloud-server/service/sync/gcp"
 	"hcm/cmd/cloud-server/service/sync/huawei"
 	"hcm/cmd/cloud-server/service/sync/lock"
+	"hcm/cmd/cloud-server/service/sync/other"
 	"hcm/cmd/cloud-server/service/sync/tcloud"
 	"hcm/pkg/api/core"
 	protocloud "hcm/pkg/api/data-service/cloud/zone"
@@ -159,6 +160,10 @@ func newTCloudSyncer() tcloudSyncer {
 	return tcloudSyncer{generalSyncer{vendor: enumor.TCloud}}
 }
 
+func newOtherSyncer() otherSyncer {
+	return otherSyncer{generalSyncer{vendor: enumor.Other}}
+}
+
 // GetAvailableVendorSyncers ...
 func GetAvailableVendorSyncers() []VendorSyncer {
 	return availableVendorSyncer
@@ -170,6 +175,7 @@ var availableVendorSyncer = []VendorSyncer{
 	newHuaweiSyncer(),
 	newGcpSyncer(),
 	newAzureSyncer(),
+	newOtherSyncer(),
 }
 
 // vendorSyncerMap
@@ -179,6 +185,7 @@ var vendorSyncerMap = map[enumor.Vendor]VendorSyncer{
 	enumor.HuaWei: newHuaweiSyncer(),
 	enumor.Gcp:    newGcpSyncer(),
 	enumor.Azure:  newAzureSyncer(),
+	enumor.Other:  newOtherSyncer(),
 }
 
 // CountZone ...
@@ -362,4 +369,25 @@ func (t azureSyncer) SyncAllResource(kt *kit.Kit, cli *client.ClientSet, account
 		SyncPublicResource: syncPubRes,
 	}
 	return azure.SyncAllResource(kt, cli, opt)
+}
+
+// otherSyncer ...
+type otherSyncer struct {
+	generalSyncer
+}
+
+// CountRegion ...
+func (t otherSyncer) CountRegion(kt *kit.Kit, dataCli *dataservice.Client) (uint64, error) {
+	// 其他云厂商暂没有地域, 按有资源处理
+	return 1, nil
+}
+
+// SyncAllResource ...
+func (t otherSyncer) SyncAllResource(kt *kit.Kit, cli *client.ClientSet, account string, syncPubRes bool) (
+	reType enumor.CloudResourceType, err error) {
+
+	opt := &other.SyncAllResourceOption{
+		AccountID: account,
+	}
+	return other.SyncAllResource(kt, cli, opt)
 }

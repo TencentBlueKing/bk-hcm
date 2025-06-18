@@ -2,6 +2,7 @@ import { Ref, watch } from 'vue';
 // import stores
 import { useLoadBalancerStore } from '@/store';
 import { storeToRefs } from 'pinia';
+import { TargetGroupOperationScene } from '@/constants';
 
 export default (isShow: Ref<boolean>, formData: any) => {
   // use stores
@@ -30,7 +31,7 @@ export default (isShow: Ref<boolean>, formData: any) => {
       // 0->1, 回显目标组基本信息, 1->2, 更新目标组基本信息
       updateCount.value += 1;
       // 变更操作场景为 edit
-      updateCount.value === 2 && loadBalancerStore.setCurrentScene('edit');
+      updateCount.value === 2 && loadBalancerStore.setCurrentScene(TargetGroupOperationScene.EDIT);
     },
     {
       deep: true,

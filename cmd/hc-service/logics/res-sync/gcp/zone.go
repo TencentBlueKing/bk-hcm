@@ -178,8 +178,8 @@ func (cli *client) deleteZone(kt *kit.Kit, opt *SyncZoneOption, delCloudIDs []st
 	delCloudMap := converter.StringSliceToMap(delCloudIDs)
 	for _, one := range delZoneFromCloud {
 		if _, exsit := delCloudMap[fmt.Sprint(one.Id)]; exsit {
-			logs.Errorf("[%s] validate zone not exist failed, before delete, opt: %v, failed_count: %d, rid: %s",
-				enumor.Gcp, opt, len(delZoneFromCloud), kt.Rid)
+			logs.Errorf("[%s] validate zone not exist failed, before delete, opt: %v, exist zone id: %s, "+
+				"del cloud ids: %v, rid: %s", enumor.Gcp, opt, fmt.Sprint(one.Id), delCloudIDs, kt.Rid)
 			return errors.New("validate zone not exist failed, before delete")
 		}
 	}

@@ -92,6 +92,10 @@ async:
     watchIntervalSec: 1
     # workerNumber 负责解析当前节点的子节点，并派发子节点任务到executor执行的协程数量，非零正整数值
     workerNumber: 5
+    # scheduledFlowFetcherConcurrency 负责查询处于Scheduled状态任务的协程数量
+    scheduledFlowFetcherConcurrency: 1
+    # canceledFlowFetcherConcurrency 负责查询处于Canceled状态任务的协程数量
+    canceledFlowFetcherConcurrency: 1
   # executor 公共组件，负责执行异步任务
   executor:
     # workerNumber 负责处理异步任务的协程数量，非零正整数值
@@ -102,12 +106,16 @@ async:
   dispatcher:
     # watchIntervalSec 查看是否有Pending状态任务的周期，单位秒，正整数
     watchIntervalSec: 1
+    # pendingFlowFetcherConcurrency 负责查询处于Pending状态任务的协程数量
+    pendingFlowFetcherConcurrency: 1
   # watchDog 主节点组件，负责异常任务修正（超时任务，任务处理节点已经挂掉的任务等）
   watchDog:
     # watchIntervalSec 查看是否有异常任务的周期，单位秒，正整数
     watchIntervalSec: 1
     # taskTimeoutSec 判断任务执行超时时间，非零正整数值
     taskTimeoutSec: 300
+    # workerNumber 负责处理异常任务的协程数量
+    workerNumber: 1
 
 # defines log's related configuration
 log:

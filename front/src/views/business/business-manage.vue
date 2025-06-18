@@ -241,7 +241,7 @@ const handleEditTemplate = (payload: any) => {
       >
         <span>
           <hcm-auth :sign="{ type: AUTH_BIZ_CREATE_IAAS_RESOURCE, relation: [accountStore.bizs] }" v-slot="{ noPerm }">
-            <bk-button theme="primary" class="mw64 mr10" :disabled="noPerm" @click="handleAdd">
+            <bk-button theme="primary" class="mw64" :disabled="noPerm" @click="handleAdd">
               {{
                 renderComponent === DriveManage ||
                 renderComponent === HostManage ||
@@ -319,6 +319,7 @@ const handleEditTemplate = (payload: any) => {
 
     & > :deep(.bk-nested-loading) {
       height: 100%;
+
       .bk-table {
         margin-top: 16px;
         max-height: calc(100% - 48px);
@@ -336,6 +337,7 @@ const handleEditTemplate = (payload: any) => {
 
     :deep(.recycle-manager-page) {
       height: 100%;
+
       .bk-tab {
         height: 100%;
       }
@@ -348,6 +350,7 @@ const handleEditTemplate = (payload: any) => {
 .mw64 {
   min-width: 64px;
 }
+
 .mw88 {
   min-width: 88px;
 }

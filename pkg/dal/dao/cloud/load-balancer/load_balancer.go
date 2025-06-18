@@ -80,8 +80,8 @@ func (dao LoadBalancerDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx,
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, tableName,
 		tablelb.LoadBalancerColumns.ColumnExpr(), tablelb.LoadBalancerColumns.ColonNameExpr())
-
-	if err = dao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, models); err != nil {
+	err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).BulkInsert(kt.Ctx, sql, models)
+	if err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", tableName, err, kt.Rid)
 		return nil, fmt.Errorf("insert %s failed, err: %v", tableName, err)
 	}
@@ -139,7 +139,8 @@ func (dao LoadBalancerDao) Update(kt *kit.Kit, expr *filter.Expression, model *t
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, model.TableName(), setExpr, whereExpr)
 
 	_, err = dao.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		effect, err := dao.Orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
+		effect, err := dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(txn).Update(
+			kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if err != nil {
 			logs.Errorf("update load balancer failed, err: %v, filter: %s, rid: %v", err, expr, kt.Rid)
 			return nil, err
@@ -179,7 +180,7 @@ func (dao LoadBalancerDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
 	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, model.TableName(), setExpr)
 
 	toUpdate["id"] = id
-	_, err = dao.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
+	_, err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Update(kt.Ctx, sql, toUpdate)
 	if err != nil {
 		logs.Errorf("update load balancer failed, id: %s, err: %v, rid: %v", id, err, kt.Rid)
 		return err
@@ -211,7 +212,7 @@ func (dao LoadBalancerDao) List(kt *kit.Kit, opt *types.ListOption) (*typeslb.Li
 		// this is a count request, then do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.LoadBalancerTable, whereExpr)
 
-		count, err := dao.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.Errorf("count load balancer failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -229,7 +230,8 @@ func (dao LoadBalancerDao) List(kt *kit.Kit, opt *types.ListOption) (*typeslb.Li
 		table.LoadBalancerTable, whereExpr, pageExpr)
 
 	details := make([]tablelb.LoadBalancerTable, 0)
-	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql, whereValue)
+	if err != nil {
 		return nil, err
 	}
 
@@ -248,7 +250,8 @@ func (dao LoadBalancerDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.E
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.LoadBalancerTable, whereExpr)
-	if _, err = dao.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+	_, err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Delete(kt.Ctx, sql, whereValue)
+	if err != nil {
 		logs.Errorf("delete load balancer failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
 		return err
 	}
@@ -257,12 +260,13 @@ func (dao LoadBalancerDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.E
 }
 
 // ListLbByIDs list load balancer for other dao
-func ListLbByIDs(kt *kit.Kit, orm orm.Interface, ids []string) (map[string]tablelb.LoadBalancerTable, error) {
+func ListLbByIDs(kt *kit.Kit, ormi orm.Interface, ids []string) (map[string]tablelb.LoadBalancerTable, error) {
 	sql := fmt.Sprintf(`SELECT %s FROM %s WHERE id IN (:ids)`, tablelb.LoadBalancerColumns.FieldsNamedExpr(nil),
 		table.LoadBalancerTable)
 
 	lbs := make([]tablelb.LoadBalancerTable, 0)
-	if err := orm.Do().Select(kt.Ctx, &lbs, sql, map[string]interface{}{"ids": ids}); err != nil {
+	if err := ormi.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(
+		kt.Ctx, &lbs, sql, map[string]interface{}{"ids": ids}); err != nil {
 		return nil, err
 	}
 

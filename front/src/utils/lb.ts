@@ -1,6 +1,9 @@
 /**
  * 统一管理负载均衡需求下的 utils 函数
  */
+import { GLOBAL_BIZS_KEY } from '@/common/constant';
+import { MENU_BUSINESS_OPERATION_LOG, MENU_BUSINESS_OPERATION_LOG_DETAILS } from '@/constants/menu-symbol';
+import routerAction from '@/router/utils/action';
 
 /**
  * 异步加载负载均衡的监听器数量
@@ -61,7 +64,7 @@ const goAsyncTaskDetail = async (
 ) => {
   if (!flowId) {
     // 如果没有提供异步任务id，则新开页面查看操作记录列表
-    window.open(`/#/business/record?bizs=${bkBizId}`, '_blank');
+    routerAction.open({ name: MENU_BUSINESS_OPERATION_LOG, query: { [GLOBAL_BIZS_KEY]: bkBizId } });
     return;
   }
   // 1. 点击后, 先查询到 audit_id
@@ -76,12 +79,18 @@ const goAsyncTaskDetail = async (
     'audits',
     { globalError: false }, // 业务方处理错误
   );
-  const { id, res_name: name, res_id, bk_biz_id } = data.details?.[0];
+  const { id, res_name: name, res_id: resId, bk_biz_id: businessId } = data.details?.[0];
   // 2. 新开页面查看异步任务详情
-  window.open(
-    `/#/business/record/detail?record_id=${id}&name=${name}&res_id=${res_id}&bizs=${bk_biz_id}&flow=${flowId}`,
-    '_blank',
-  );
+  routerAction.open({
+    name: MENU_BUSINESS_OPERATION_LOG_DETAILS,
+    query: {
+      record_id: id,
+      name,
+      res_id: resId,
+      bizs: businessId,
+      flow: flowId,
+    },
+  });
 };
 
 export { asyncGetListenerCount, getLocalFilterConditions, goAsyncTaskDetail };

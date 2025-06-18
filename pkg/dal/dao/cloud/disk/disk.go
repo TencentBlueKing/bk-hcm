@@ -81,7 +81,7 @@ func (diskDao DiskDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, disks []*disk
 		d.ID = ids[idx]
 	}
 
-	err = diskDao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, disks)
+	err = diskDao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).BulkInsert(kt.Ctx, sql, disks)
 	if err != nil {
 		return nil, fmt.Errorf("insert %s failed, err: %v", table.DiskTable, err)
 	}
@@ -136,7 +136,8 @@ func (diskDao DiskDao) Update(kt *kit.Kit, filterExpr *filter.Expression, update
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, table.DiskTable, setExpr, whereExpr)
 
 	_, err = diskDao.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		effected, err := diskDao.Orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
+		effected, err := diskDao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(txn).Update(
+			kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if err != nil {
 			logs.ErrorJson("update disk failed, err: %v, filter: %s, rid: %v", err, filterExpr, kt.Rid)
 			return nil, err
@@ -168,7 +169,7 @@ func (diskDao DiskDao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, diskID string,
 	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, table.DiskTable, setExpr)
 
 	toUpdate["id"] = diskID
-	_, err = diskDao.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
+	_, err = diskDao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Update(kt.Ctx, sql, toUpdate)
 	if err != nil {
 		logs.ErrorJson("update disk failed, err: %v, id: %s, rid: %v", err, diskID, kt.Rid)
 		return err
@@ -201,7 +202,8 @@ func (diskDao DiskDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.DiskList
 	if opt.Page.Count {
 		// this is a count request, then do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.DiskTable, whereExpr)
-		count, err := diskDao.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := diskDao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql,
+			whereValue)
 		if err != nil {
 			logs.ErrorJson("count disk failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -217,7 +219,9 @@ func (diskDao DiskDao) List(kt *kit.Kit, opt *types.ListOption) (*cloud.DiskList
 		whereExpr, pageExpr)
 
 	details := make([]*disk.DiskModel, 0)
-	if err = diskDao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	err = diskDao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql,
+		whereValue)
+	if err != nil {
 		return nil, err
 	}
 
@@ -238,7 +242,8 @@ func (diskDao DiskDao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.DiskTable, whereExpr)
-	if _, err = diskDao.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+	_, err = diskDao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Delete(kt.Ctx, sql, whereValue)
+	if err != nil {
 		logs.ErrorJson("delete disk failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
 		return err
 	}
@@ -263,7 +268,7 @@ func (diskDao DiskDao) Count(kt *kit.Kit, opt *types.CountOption) (*cloud.DiskCo
 	}
 
 	sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.DiskTable, whereExpr)
-	count, err := diskDao.Orm.Do().Count(kt.Ctx, sql, whereValue)
+	count, err := diskDao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 	if err != nil {
 		return nil, err
 	}
@@ -271,10 +276,11 @@ func (diskDao DiskDao) Count(kt *kit.Kit, opt *types.CountOption) (*cloud.DiskCo
 }
 
 // ListByIDs ...
-func ListByIDs(kt *kit.Kit, orm orm.Interface, ids []string) (map[string]disk.DiskModel, error) {
+func ListByIDs(kt *kit.Kit, ormi orm.Interface, ids []string) (map[string]disk.DiskModel, error) {
 	sql := fmt.Sprintf(`SELECT %s FROM %s where id in (:ids)`, disk.DiskColumns.FieldsNamedExpr(nil), table.DiskTable)
 	disks := make([]disk.DiskModel, 0)
-	if err := orm.Do().Select(kt.Ctx, &disks, sql, map[string]interface{}{"ids": ids}); err != nil {
+	if err := ormi.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &disks, sql,
+		map[string]interface{}{"ids": ids}); err != nil {
 		return nil, err
 	}
 

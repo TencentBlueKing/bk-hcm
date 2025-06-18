@@ -93,6 +93,8 @@ type RecycleRecordTable struct {
 	UpdatedAt types.Time `db:"updated_at" validate:"isdefault" json:"updated_at"`
 	// RecycledAt 回收时间
 	RecycledAt time.Time `db:"recycled_at" json:"recycled_at"`
+	// TenantID 租户ID
+	TenantID string `db:"tenant_id" json:"tenant_id"`
 }
 
 // InsertValidate validate recycle record on insertion.

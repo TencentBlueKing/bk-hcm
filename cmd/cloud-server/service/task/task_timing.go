@@ -22,6 +22,7 @@ package task
 import (
 	"time"
 
+	"hcm/cmd/cloud-server/logics/tenant"
 	"hcm/pkg/api/core"
 	coretask "hcm/pkg/api/core/task"
 	datatask "hcm/pkg/api/data-service/task"
@@ -33,6 +34,8 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/serviced"
 	"hcm/pkg/tools/slice"
+
+	"golang.org/x/sync/errgroup"
 )
 
 // TimingHandleTaskMgmtState 定时更新任务管理数据状态
@@ -54,18 +57,39 @@ func TimingHandleTaskMgmtState(c *client.ClientSet, sd serviced.State, interval 
 			Fields: []string{"id", "state", "flow_ids"},
 			Page:   core.NewDefaultBasePage(),
 		}
-		list, err := c.DataService().Global.TaskManagement.List(kt, listReq)
+
+		tenantIDs, err := tenant.ListAllTenantID(kt, c.DataService())
 		if err != nil {
-			logs.Errorf("list task management failed, err: %v, req: %+v, rid: %s", err, listReq, kt.Rid)
+			logs.Errorf("failed to list all tenant ids, err: %v, rid: %s", err, kt.Rid)
 			continue
 		}
 
-		for _, management := range list.Details {
-			if _, err = refreshTaskMgmtState(kt, c, management); err != nil {
-				logs.Errorf("refresh task management state failed, err: %v, data: %+v, rid: %s", err, management,
-					kt.Rid)
-				continue
-			}
+		eg, _ := errgroup.WithContext(kt.Ctx)
+		for _, id := range tenantIDs {
+			tenantID := id
+			eg.Go(func() error {
+				tenantKt := kt.NewSubKitWithTenant(tenantID)
+				list, subErr := c.DataService().Global.TaskManagement.List(tenantKt, listReq)
+				if subErr != nil {
+					logs.Errorf("list task management failed, err: %v, tenant: %s, req: %+v, rid: %s", subErr,
+						tenantID, listReq, tenantKt.Rid)
+					return subErr
+				}
+
+				for _, management := range list.Details {
+					if _, subErr = refreshTaskMgmtState(tenantKt, c, management); subErr != nil {
+						logs.Errorf("refresh task management state failed, err: %v, tenant: %s, data: %+v, rid: %s",
+							subErr, tenantID, management, tenantKt.Rid)
+						return subErr
+					}
+				}
+				return nil
+			})
+		}
+
+		if err := eg.Wait(); err != nil {
+			logs.Errorf("handle task management state failed, err: %v, rid: %s", err, kt.Rid)
+			continue
 		}
 	}
 }

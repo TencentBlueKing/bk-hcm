@@ -80,7 +80,8 @@ func (a AzureRGDao) UpdateWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expressi
 
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, rg.TableName(), setExpr, whereExpr)
 
-	effected, err := a.Orm.Txn(tx).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
+	effected, err := a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Update(
+		kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 	if err != nil {
 		logs.ErrorJson("update azure security group rule failed, err: %v, filter: %s, rid: %v", err, expr, kt.Rid)
 		return err
@@ -111,7 +112,7 @@ func (a AzureRGDao) List(kt *kit.Kit, opt *types.ListOption) (*typesregion.ListA
 
 	if opt.Page.Count {
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.AzureRGTable, whereExpr)
-		count, err := a.Orm.Do().Count(kt.Ctx, sql, argMap)
+		count, err := a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, argMap)
 		if err != nil {
 			logs.ErrorJson("count azure resource group failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -127,7 +128,8 @@ func (a AzureRGDao) List(kt *kit.Kit, opt *types.ListOption) (*typesregion.ListA
 		table.AzureRGTable, whereExpr, pageExpr)
 
 	details := make([]*resourcegroup.AzureRGTable, 0)
-	if err = a.Orm.Do().Select(kt.Ctx, &details, sql, argMap); err != nil {
+	err = a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql, argMap)
+	if err != nil {
 		return nil, err
 	}
 
@@ -153,8 +155,8 @@ func (a AzureRGDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, regions []*resourcegr
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, table.AzureRGTable,
 		resourcegroup.AzureRGColumns.ColumnExpr(), resourcegroup.AzureRGColumns.ColonNameExpr())
-
-	if err = a.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, regions); err != nil {
+	err = a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).BulkInsert(kt.Ctx, sql, regions)
+	if err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", table.AzureRGTable, err, kt.Rid)
 		return nil, fmt.Errorf("insert %s failed, err: %v", table.AzureRGTable, err)
 	}
@@ -176,7 +178,8 @@ func (a AzureRGDao) DeleteWithTx(kt *kit.Kit, expr *filter.Expression) error {
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.AzureRGTable, whereExpr)
 
 	_, err = a.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		if _, err = a.Orm.Txn(txn).Delete(kt.Ctx, sql, argMap); err != nil {
+		_, err = a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(txn).Delete(kt.Ctx, sql, argMap)
+		if err != nil {
 			logs.ErrorJson("delete azure resource grouop failed, err: %v, filter: %s, rid: %s", err, expr, kt.Rid)
 			return nil, err
 		}
