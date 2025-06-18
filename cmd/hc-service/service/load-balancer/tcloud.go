@@ -141,7 +141,7 @@ func (svc *clbSvc) BatchCreateTCloudClb(cts *rest.Contexts) (interface{}, error)
 		Egress:                   req.Egress,
 		BandwidthpkgSubType:      req.BandwidthpkgSubType,
 		Tags:                     req.Tags,
-		LoadBalancerPassToTarget: cvt.ValToPtr(req.LoadBalancerPassToTarget),
+		LoadBalancerPassToTarget: req.LoadBalancerPassToTarget,
 	}
 
 	if cvt.PtrToVal(req.CloudEipID) != "" {
