@@ -87,7 +87,7 @@ func (wp *tenantWorkerPool) listTenantIDs() ([]string, error) {
 		})
 		if err != nil {
 			logs.Errorf("list tenant failed, err: %v, rid: %s", err, kt.Rid)
-			return nil, fmt.Errorf("list tenant failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, fmt.Errorf("list tenant failed, err: %v", err)
 		}
 
 		for _, t := range result.Details {
