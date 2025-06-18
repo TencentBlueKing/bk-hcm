@@ -20,7 +20,7 @@ const getConfig = (custom = {}) => ({
   bundleAnalysis: false,
   replaceStatic: false,
   target: 'web',
-  lazyCompilation: true,
+  lazyCompilation: false,
   lazyCompilationHost: 'localhost',
   envPrefix: 'BK_',
   copy: {
