@@ -26,6 +26,7 @@ export default defineComponent({
       zoneType: '0',
       zones: '',
       backup_zones: '',
+      load_balancer_pass_to_target: undefined,
       vip_isp: '',
       sla_type: 'shared',
       internet_charge_type: 'TRAFFIC_POSTPAID_BY_HOUR',

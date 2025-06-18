@@ -308,6 +308,19 @@ export default (formModel: Reactive<ApplyClbModel>) => {
           ),
         },
         {
+          label: '安全组放通模式',
+          required: true,
+          property: 'load_balancer_pass_to_target',
+          description:
+            '安全组放通模式，是指用户的流程从CLB转发给后端RS时候，校验CLB和RS上绑定的安全组模式\n一、1次校验-仅校验CLB上的安全组，忽略后端RS的安全组，仅关注CLB上的安全组配置即可\n二、2次校验-同时校验CLB和RS上的安全组，需同时关注CLB和RS这2处绑定的安全组',
+          content: () => (
+            <bk-select v-model={formModel.load_balancer_pass_to_target} allowEmptyValues={[false]}>
+              <bk-option key={true} id={true} name='1次校验-仅校验CLB上的安全组' />
+              <bk-option key={false} id={false} name='2次校验-同时校验CLB和RS上的安全组' />
+            </bk-select>
+          ),
+        },
+        {
           label: '运营商类型',
           required: true,
           property: 'vip_isp',
@@ -636,7 +649,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
   // 清除校验结果
   const handleClearValidate = () => {
     nextTick(() => {
-      formRef.value.clearValidate();
+      formRef.value?.clearValidate();
     });
   };
 
