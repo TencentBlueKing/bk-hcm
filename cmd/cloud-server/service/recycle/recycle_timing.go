@@ -20,10 +20,12 @@
 package recycle
 
 import (
+	"sync/atomic"
 	"time"
 
 	"hcm/cmd/cloud-server/logics"
 	"hcm/cmd/cloud-server/logics/recycle"
+	"hcm/cmd/cloud-server/logics/tenant"
 	"hcm/pkg/api/core"
 	recyclerecord "hcm/pkg/api/core/recycle-record"
 	dataproto "hcm/pkg/api/data-service/cloud"
@@ -42,6 +44,8 @@ import (
 	"hcm/pkg/tools/retry"
 	"hcm/pkg/tools/slice"
 	"hcm/pkg/tools/times"
+
+	"golang.org/x/sync/errgroup"
 )
 
 type recycle struct {
@@ -89,61 +93,109 @@ func (r *recycle) recycleTiming(resType enumor.CloudResourceType, worker recycle
 			time.Sleep(time.Minute)
 			continue
 		}
-		listReq := &core.ListReq{
-			Filter: expr,
-			Page:   core.NewDefaultBasePage(),
-			Fields: []string{"id", "res_id", "bk_biz_id"},
-		}
-		recordRes, err := r.client.DataService().Global.RecycleRecord.ListRecycleRecord(kt, listReq)
+
+		tenantIDs, err := tenant.ListAllTenantID(kt, r.client.DataService())
 		if err != nil {
-			logs.Errorf("list %s resource recycle record failed, err: %v, rid: %s", resType, err, kt.Rid)
+			logs.Errorf("failed to list tenant ids, err: %v, rid: %s", err, kt.Rid)
+			time.Sleep(time.Minute)
+			continue
+		}
+
+		recordNum := int64(0)
+		eg, _ := errgroup.WithContext(kt.Ctx)
+		for _, id := range tenantIDs {
+			tenantID := id
+			eg.Go(func() error {
+				tenantKt := kt.NewSubKitWithTenant(tenantID)
+				records, basicInfoMap, subErr := r.listRecycleRecord(tenantKt, expr, resType)
+				if subErr != nil {
+					logs.Errorf("failed to list recycle record info, err: %v, rid: %s", err, tenantKt.Rid)
+					return subErr
+				}
+
+				atomic.AddInt64(&recordNum, int64(len(records)))
+				// no resource needs recycling
+				if len(records) == 0 {
+					return nil
+				}
+
+				// recycle resources one by one
+				for _, record := range records {
+					if !r.state.IsMaster() {
+						logs.Infof("recycle %s res(id: %s), but is not master, skip, rid: %s", resType, record.ResID,
+							tenantKt.Rid)
+						break
+					}
+					r.execWorker(tenantKt, worker, record, basicInfoMap)
+				}
+
+				logs.Infof("finished recycle %s, count: %d, tenant: %s, rid: %s", resType, len(records),
+					tenantID, tenantKt.Rid)
+				return nil
+			})
+		}
+
+		if err := eg.Wait(); err != nil {
+			logs.Errorf("failed to recycle %s, err: %v, rid: %s", resType, err, kt.Rid)
 			time.Sleep(time.Minute)
 			continue
 		}
 
 		// sleep for a while if no resource needs recycling
-		if len(recordRes.Details) == 0 {
+		if recordNum == 0 {
+			logs.Infof("no need to recycle %s, rid: %s", resType, kt.Rid)
 			time.Sleep(time.Minute * 10)
 			continue
 		}
 
-		// get need recycled resource basic info
-		ids := make([]string, 0, len(recordRes.Details))
-		for _, record := range recordRes.Details {
-			ids = append(ids, record.ResID)
-		}
-
-		infoReq := dataproto.ListResourceBasicInfoReq{
-			ResourceType: resType,
-			IDs:          ids,
-			Fields:       append(types.CommonBasicInfoFields, "region", "recycle_status"),
-		}
-		basicInfoMap, err := r.client.DataService().Global.Cloud.ListResBasicInfo(kt, infoReq)
-		if err != nil {
-			if ef := errf.Error(err); ef.Code == errf.RecordNotFound {
-				recordIDs := slice.Map(recordRes.Details, func(r recyclerecord.RecycleRecord) string { return r.ID })
-				logs.Errorf("recycle %s res(ids: %+v) all don't exist, mark all as fail, reason: %v, rid: %s",
-					resType, ids, err, kt.Rid)
-				logicsrecycle.MarkRecordFailed(kt, r.client.DataService(), err, recordIDs)
-				continue
-			}
-			logs.Errorf("get recycle %s resource detail failed, err: %v, ids: %+v, rid: %s", resType, err, ids, kt.Rid)
-			time.Sleep(time.Minute)
-			continue
-		}
-
-		// recycle resources one by one
-		for _, record := range recordRes.Details {
-			if !r.state.IsMaster() {
-				logs.Infof("recycle %s res(id: %s), but is not master, skip, rid: %s", resType, record.ResID, kt.Rid)
-				time.Sleep(time.Minute)
-				break
-			}
-			r.execWorker(kt, worker, record, basicInfoMap)
-		}
-
-		logs.Infof("finished recycle %s, count: %d, rid: %s", resType, len(recordRes.Details), kt.Rid)
+		logs.Infof("finished recycle %s, count: %d, all tenant, rid: %s", resType, recordNum, kt.Rid)
 	}
+}
+
+func (r *recycle) listRecycleRecord(kt *kit.Kit, expr *filter.Expression, resType enumor.CloudResourceType) (
+	[]recyclerecord.RecycleRecord, map[string]types.CloudResourceBasicInfo, error) {
+
+	listReq := &core.ListReq{
+		Filter: expr,
+		Page:   core.NewDefaultBasePage(),
+		Fields: []string{"id", "res_id", "bk_biz_id"},
+	}
+	recordRes, err := r.client.DataService().Global.RecycleRecord.ListRecycleRecord(kt, listReq)
+	if err != nil {
+		logs.Errorf("list %s resource recycle record failed, err: %v, rid: %s", resType, err, kt.Rid)
+		return nil, nil, err
+	}
+
+	// no resource needs recycling
+	if len(recordRes.Details) == 0 {
+		return recordRes.Details, nil, nil
+	}
+
+	// get need recycled resource basic info
+	ids := make([]string, 0, len(recordRes.Details))
+	for _, record := range recordRes.Details {
+		ids = append(ids, record.ResID)
+	}
+
+	infoReq := dataproto.ListResourceBasicInfoReq{
+		ResourceType: resType,
+		IDs:          ids,
+		Fields:       append(types.CommonBasicInfoFields, "region", "recycle_status"),
+	}
+	basicInfoMap, err := r.client.DataService().Global.Cloud.ListResBasicInfo(kt, infoReq)
+	if err != nil {
+		if ef := errf.Error(err); ef.Code == errf.RecordNotFound {
+			recordIDs := slice.Map(recordRes.Details, func(r recyclerecord.RecycleRecord) string { return r.ID })
+			logs.Errorf("recycle %s res(ids: %+v) all don't exist, mark all as fail, reason: %v, rid: %s",
+				resType, ids, err, kt.Rid)
+			logicsrecycle.MarkRecordFailed(kt, r.client.DataService(), err, recordIDs)
+			return nil, nil, err
+		}
+		logs.Errorf("get recycle %s resource detail failed, err: %v, ids: %+v, rid: %s", resType, err, ids, kt.Rid)
+		return nil, nil, err
+	}
+
+	return recordRes.Details, basicInfoMap, nil
 }
 
 const maxRetryCount = 3

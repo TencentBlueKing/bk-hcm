@@ -19,6 +19,13 @@ import Cancel from './children/cancel/cancel.vue';
 import { TASK_CLB_TYPE_NAME } from '../constants';
 import { TaskClbType, TaskDetailStatus } from '../typings';
 
+interface ArrayDataItem {
+  domain: string[];
+  url: string[];
+  ip: string[];
+  weight: string[];
+}
+
 const taskStore = useTaskStore();
 const { getBizsId } = useWhereAmI();
 const route = useRoute();
@@ -44,7 +51,12 @@ const rerunState = reactive({
 
 const isSopsOperation = computed(() =>
   taskDetails.value?.operations?.some?.((op) =>
-    [TaskClbType.DELETE_LISTENER, TaskClbType.MODIFY_RS_WEIGHT, TaskClbType.UNBIND_RS].includes(op),
+    [
+      TaskClbType.DELETE_LISTENER,
+      TaskClbType.MODIFY_LAYER4_RS_WEIGHT,
+      TaskClbType.MODIFY_LAYER7_RS_WEIGHT,
+      TaskClbType.UNBIND_LAYER4_RS,
+    ].includes(op),
   ),
 );
 
@@ -114,6 +126,26 @@ watch(
       bk_biz_id: bizId.value,
       filter: transformSimpleCondition(condition.value, taskDetailsViewProperties),
       page: getPageParams(pagination, { sort, order }),
+    });
+
+    // TODO: 按任务类型展示不同字段来优化列表数据
+    list.forEach((item) => {
+      const arrayData: ArrayDataItem = {
+        domain: [],
+        url: [],
+        ip: [],
+        weight: [],
+      };
+      item.param.rs_list?.forEach((rs_item: any) => {
+        arrayData.domain.push(rs_item?.domain);
+        arrayData.url.push(rs_item?.url);
+        arrayData.ip.push(rs_item?.ip);
+        arrayData.weight.push(rs_item?.weight);
+      });
+      item.param.ip = arrayData.ip.join(',');
+      item.param.url = arrayData.url.join(',');
+      item.param.domain = arrayData.domain.join(',');
+      item.param.weight = arrayData.weight.join(',');
     });
 
     taskDetailList.value = list;

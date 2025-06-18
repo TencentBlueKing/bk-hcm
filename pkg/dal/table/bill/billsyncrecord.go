@@ -79,6 +79,8 @@ type AccountBillSyncRecord struct {
 	// Operator 操作人
 	Operator string `db:"operator" validate:"max=64" json:"operator"`
 
+	// TenantID 租户ID
+	TenantID string `db:"tenant_id" json:"tenant_id"`
 	// Creator 创建者
 	Creator string `db:"creator" json:"creator"`
 	// Reviser 更新者

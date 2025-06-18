@@ -44,6 +44,7 @@ import (
 
 // MainAccountControllerOption option for MainAccountController
 type MainAccountControllerOption struct {
+	TenantID            string
 	RootAccountID       string
 	MainAccountID       string
 	RootAccountCloudID  string
@@ -92,6 +93,7 @@ func NewMainAccountController(opt *MainAccountControllerOption) (*MainAccountCon
 	}
 	return &MainAccountController{
 		Client:              opt.Client,
+		TenantID:            opt.TenantID,
 		RootAccountID:       opt.RootAccountID,
 		MainAccountID:       opt.MainAccountID,
 		RootAccountCloudID:  opt.RootAccountCloudID,
@@ -109,6 +111,7 @@ func NewMainAccountController(opt *MainAccountControllerOption) (*MainAccountCon
 // MainAccountController main account controller
 type MainAccountController struct {
 	Client          *client.ClientSet
+	TenantID        string
 	RootAccountID   string
 	MainAccountID   string
 	ProductID       int64
@@ -134,6 +137,7 @@ func (mac *MainAccountController) Start() error {
 		return fmt.Errorf("controller already start")
 	}
 	kt := getInternalKit()
+	kt.SetTenant(mac.TenantID)
 	cancelFunc := kt.CtxBackgroundWithCancel()
 	mac.kt = kt
 	mac.cancelFunc = cancelFunc

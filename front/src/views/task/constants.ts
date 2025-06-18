@@ -7,8 +7,9 @@ export const TASK_CLB_TYPE_NAME = {
   [TaskClbType.DELETE_LISTENER]: '删除监听器-TCP/UDP/HTTP/HTTPS',
   [TaskClbType.BINDING_L4_RS]: '绑定RS-TCP/UDP',
   [TaskClbType.BINDING_L7_RS]: '绑定RS-HTTP/HTTPS',
-  [TaskClbType.UNBIND_RS]: '解绑RS',
-  [TaskClbType.MODIFY_RS_WEIGHT]: '权重调整',
+  [TaskClbType.UNBIND_LAYER4_RS]: '解绑RS-TCP/UDP',
+  [TaskClbType.MODIFY_LAYER4_RS_WEIGHT]: '权重调整-TCP/UDP',
+  [TaskClbType.MODIFY_LAYER7_RS_WEIGHT]: '权重调整-HTTP/HTTPS',
 };
 
 export const TASK_TYPE_NAME = {

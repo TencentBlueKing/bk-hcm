@@ -4,36 +4,20 @@ import AwsInfo from './components/aws-info.vue';
 import GcpInfo from './components/gcp-info.vue';
 import AzureInfo from './components/azure-info.vue';
 import HuaweiInfo from './components/huawei-info.vue';
-// import HuaweiNetwork from './components/huawei-network.vue';
-// import AzureNetwork from './components/azure-network.vue';
-// import GcpNetwork from './components/gcp-network.vue';
+import OtherInfo from './components/other-info.vue';
+import { VendorEnum } from '@/common/constant';
 
-import { PropType } from 'vue';
+const props = defineProps<{ data: any; type: VendorEnum }>();
 
-// import {
-//   useRoute,
-// } from 'vue-router';
-
-// const route = useRoute();
-
-const props = defineProps({
-  data: {
-    type: Object as PropType<any>,
-  },
-  type: {
-    type: String,
-  },
-});
-
-const componentMap = {
+const componentMap: { [key in VendorEnum]?: any } = {
   tcloud: TcloudInfo,
   huawei: HuaweiInfo,
   azure: AzureInfo,
   gcp: GcpInfo,
   aws: AwsInfo,
+  other: OtherInfo,
 };
 
-// const renderComponent = componentMap[route.params.type as string];
 const renderComponent = componentMap[props.type];
 </script>
 

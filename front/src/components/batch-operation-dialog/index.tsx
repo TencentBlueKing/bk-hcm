@@ -37,6 +37,10 @@ export default defineComponent({
       type: Array,
       default: [],
     },
+    submitDisabledTooltipsOption: {
+      type: Object as PropType<{ content?: string; disabled: boolean }>,
+      default: () => ({ disabled: true }),
+    },
   },
   emits: ['update:isShow', 'handleConfirm'],
   setup(props, { emit, slots }) {
@@ -57,7 +61,8 @@ export default defineComponent({
           <CommonLocalTable
             searchOptions={{ searchData: props.tableProps.searchData }}
             tableOptions={{ rowKey: 'id', columns: props.tableProps.columns }}
-            tableData={props.list}>
+            tableData={props.list}
+          >
             {{
               operation: () => slots.tab?.(),
             }}
@@ -77,7 +82,8 @@ export default defineComponent({
         theme={props.theme}
         quickClose={false}
         onClosed={() => triggerShow(false)}
-        confirmText={t(props.confirmText)}>
+        confirmText={t(props.confirmText)}
+      >
         {{
           default: props.custom ? renderCustomDefaultSlot : renderDefaultSlot,
           footer: () => (
@@ -86,7 +92,9 @@ export default defineComponent({
                 theme={props.theme}
                 onClick={handleConfirm}
                 loading={props.isSubmitLoading}
-                disabled={props.isSubmitDisabled}>
+                disabled={props.isSubmitDisabled}
+                v-bk-tooltips={props.submitDisabledTooltipsOption}
+              >
                 {props.confirmText}
               </Button>
               <Button class='dialog-cancel' onClick={() => triggerShow(false)}>

@@ -126,8 +126,8 @@ func (cli *client) createZone(kt *kit.Kit, opt *SyncZoneOption,
 		return err
 	}
 
-	logs.Infof("[%s] sync zone to create zone success, accountID: %s, count: %d, rid: %s", enumor.TCloud,
-		opt.AccountID, len(addSlice), kt.Rid)
+	logs.Infof("[%s] sync zone to create zone success, accountID: %s, region: %s, count: %d, rid: %s", enumor.TCloud,
+		opt.AccountID, opt.Region, len(addSlice), kt.Rid)
 
 	return nil
 }
@@ -158,8 +158,8 @@ func (cli *client) updateZone(kt *kit.Kit, opt *SyncZoneOption,
 		return err
 	}
 
-	logs.Infof("[%s] sync zone to update zone success, accountID: %s, count: %d, rid: %s", enumor.TCloud,
-		opt.AccountID, len(updateMap), kt.Rid)
+	logs.Infof("[%s] sync zone to update zone success, accountID: %s, region: %s, count: %d, rid: %s", enumor.TCloud,
+		opt.AccountID, opt.Region, len(updateMap), kt.Rid)
 
 	return nil
 }
@@ -177,8 +177,8 @@ func (cli *client) deleteZone(kt *kit.Kit, opt *SyncZoneOption, delCloudIDs []st
 	delCloudMap := converter.StringSliceToMap(delCloudIDs)
 	for _, one := range delZoneFromCloud {
 		if _, exsit := delCloudMap[converter.PtrToVal(one.ZoneId)]; exsit {
-			logs.Errorf("[%s] validate zone not exist failed, before delete, opt: %v, failed_count: %d, rid: %s",
-				enumor.TCloud, opt, len(delZoneFromCloud), kt.Rid)
+			logs.Errorf("[%s] validate zone not exist failed, before delete, opt: %v, exist zone id: %s, "+
+				"del cloud ids: %v, rid: %s", enumor.TCloud, opt, converter.PtrToVal(one.ZoneId), delCloudIDs, kt.Rid)
 			return errors.New("validate zone not exist failed, before delete")
 		}
 	}
@@ -197,8 +197,8 @@ func (cli *client) deleteZone(kt *kit.Kit, opt *SyncZoneOption, delCloudIDs []st
 		}
 	}
 
-	logs.Infof("[%s] sync zone to delete zone success, accountID: %s, count: %d, rid: %s", enumor.TCloud,
-		opt.AccountID, len(delCloudIDs), kt.Rid)
+	logs.Infof("[%s] sync zone to delete zone success, accountID: %s, region: %s, count: %d, rid: %s", enumor.TCloud,
+		opt.AccountID, opt.Region, len(delCloudIDs), kt.Rid)
 
 	return nil
 }

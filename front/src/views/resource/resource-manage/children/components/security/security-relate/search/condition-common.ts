@@ -1,11 +1,11 @@
-import { SecurityGroupRelatedResourceName } from '@/store/security-group';
-import { RELATED_RES_PROPERTIES_MAP } from '@/constants/security-group';
+import { RELATED_RES_PROPERTIES_MAP, SecurityGroupRelatedResourceName } from '@/constants/security-group';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import { CLB_STATUS_MAP, LB_NETWORK_TYPE_MAP } from '@/constants';
 import { VendorEnum, VendorMap } from '@/common/constant';
 
 const conditionFieldIds = new Map<string, string[]>();
 
+// 默认配置
 const cvmConditionConfig: Record<string, Partial<ISearchItem>> = {};
 const clbConditionConfig: Record<string, Partial<ISearchItem>> = {
   lb_type: {
@@ -34,8 +34,8 @@ const configMap = {
   [SecurityGroupRelatedResourceName.CLB]: clbConditionConfig,
 };
 
-const cvmBaseFields = ['private_ipv4_addresses', 'region', 'name', 'bk_biz_id'];
-const cvmBindFields = ['private_ipv4_addresses', 'cloud_vpc_ids', 'name'];
+const cvmBaseFields = ['private_ip', 'name', 'bk_biz_id'];
+const cvmBindFields = ['private_ip', 'cloud_vpc_ids', 'name'];
 const cvmUnbindFields = [...cvmBindFields];
 const clbBaseFields = [
   'name',
@@ -44,10 +44,10 @@ const clbBaseFields = [
   'lb_type',
   'ip_version',
   'vendor',
-  'region',
   'zones',
   'status',
   'cloud_vpc_id',
+  'bk_biz_id',
 ];
 
 conditionFieldIds.set('CVM-base', cvmBaseFields);

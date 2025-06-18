@@ -61,7 +61,7 @@ type TCloudLoadBalancerCreateReq struct {
 
 	SlaType      *string `json:"sla_type" validate:"omitempty"`
 	AutoRenew    *bool   `json:"auto_renew" validate:"omitempty"`
-	RequireCount *uint64 `json:"require_count" validate:"omitempty"`
+	RequireCount *uint64 `json:"require_count" validate:"omitempty,max=20"`
 	Memo         string  `json:"memo" validate:"omitempty"`
 
 	InternetChargeType *typelb.TCloudLoadBalancerNetworkChargeType `json:"internet_charge_type" validate:"omitempty"`
@@ -448,7 +448,7 @@ type RegisterTarget struct {
 	TargetType       enumor.InstType `json:"inst_type,omitempty" validate:"required"`
 	EniIp            string          `json:"eni_ip,omitempty" validate:"omitempty"`
 	Port             int64           `json:"port" validate:"required"`
-	Weight           int64           `json:"weight" validate:"required"`
+	Weight           *int64          `json:"weight" validate:"required,min=0,max=100"`
 	Zone             string          `json:"zone,omitempty" validate:"omitempty"`
 	InstName         string          `json:"inst_name,omitempty" validate:"omitempty"`
 	PrivateIPAddress []string        `json:"private_ip_address,omitempty" validate:"omitempty"`
@@ -609,7 +609,7 @@ type TCloudBatchModifyRsWeightReq struct {
 	Vendor              enumor.Vendor                    `json:"vendor" validate:"required"`
 	LoadBalancerCloudId string                           `json:"load_balancer_cloud_id" validate:"required"`
 	Details             []*cloud.ListBatchListenerResult `json:"details"`
-	NewRsWeight         int64                            `json:"new_rs_weight" validate:"required"`
+	NewRsWeight         *int64                           `json:"new_rs_weight" validate:"required,min=0,max=100"`
 }
 
 // Validate validate tcloud batch modify rs weight.

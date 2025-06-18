@@ -92,7 +92,7 @@ func (v *vpcDao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []cloud.VpcT
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, models[0].TableName(), cloud.VpcColumns.ColumnExpr(),
 		cloud.VpcColumns.ColonNameExpr())
 
-	err = v.orm.Txn(tx).BulkInsert(kt.Ctx, sql, models)
+	err = v.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).BulkInsert(kt.Ctx, sql, models)
 	if err != nil {
 		return nil, fmt.Errorf("insert %s failed, err: %v", models[0].TableName(), err)
 	}
@@ -150,7 +150,8 @@ func (v *vpcDao) Update(kt *kit.Kit, filterExpr *filter.Expression, model *cloud
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, model.TableName(), setExpr, whereExpr)
 
 	_, err = v.orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		effected, err := v.orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
+		effected, err := v.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(txn).Update(
+			kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if err != nil {
 			logs.ErrorJson("update vpc failed, err: %v, filter: %s, rid: %v", err, filterExpr, kt.Rid)
 			return nil, err
@@ -203,7 +204,7 @@ func (v *vpcDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filter.S
 		// this is a count request, do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.VpcTable, whereExpr)
 
-		count, err := v.orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := v.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count vpcs failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -221,7 +222,8 @@ func (v *vpcDao) List(kt *kit.Kit, opt *types.ListOption, whereOpts ...*filter.S
 		whereExpr, pageExpr)
 
 	details := make([]cloud.VpcTable, 0)
-	if err = v.orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	err = v.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql, whereValue)
+	if err != nil {
 		return nil, err
 	}
 
@@ -240,7 +242,8 @@ func (v *vpcDao) BatchDeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.VpcTable, whereExpr)
-	if _, err = v.orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+	_, err = v.orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Delete(kt.Ctx, sql, whereValue)
+	if err != nil {
 		logs.ErrorJson("delete vpc failed, err: %v, filter: %s, rid: %s", err, filterExpr, kt.Rid)
 		return err
 	}
@@ -249,11 +252,12 @@ func (v *vpcDao) BatchDeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, filterExpr *filter.
 }
 
 // ListVpc TODO: 考虑之后这种跨表查询是否可以直接引用对象的 List 函数，而不是再写一个。
-func ListVpc(kt *kit.Kit, orm orm.Interface, ids []string) (map[string]cloud.VpcTable, error) {
+func ListVpc(kt *kit.Kit, ormi orm.Interface, ids []string) (map[string]cloud.VpcTable, error) {
 	sql := fmt.Sprintf(`SELECT %s FROM %s where id in (:ids)`, cloud.VpcColumns.FieldsNamedExpr(nil), table.VpcTable)
 
 	vpcs := make([]cloud.VpcTable, 0)
-	if err := orm.Do().Select(kt.Ctx, &vpcs, sql, map[string]interface{}{"ids": ids}); err != nil {
+	if err := ormi.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(
+		kt.Ctx, &vpcs, sql, map[string]interface{}{"ids": ids}); err != nil {
 		return nil, err
 	}
 

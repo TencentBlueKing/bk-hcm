@@ -43,7 +43,7 @@ export default defineComponent({
       const globalBizsQueryParams = saveGlobalBizsId(businessId.value);
       // @ts-ignore
       // 如果当前页面为详情页, 则当业务id切换时, 跳转至对应资源的列表页
-      const isBusinessDetail = route.name?.includes('BusinessDetail');
+      const isBusinessDetail = route.name?.includes?.('BusinessDetail');
       const query = { ...route.query, ...globalBizsQueryParams };
       if (isBusinessDetail) {
         router.push({ path: route.path.split('/detail')[0], query });
@@ -118,7 +118,8 @@ export default defineComponent({
             id: businessId.value,
           }}
           onChange={handleChange}
-          minWidth={360}>
+          minWidth={360}
+        >
           {{
             default: ({ data }: { data: { id: number; name: string } }) => (
               <div class='bk-hcm-app-selector-item'>
@@ -155,7 +156,8 @@ export default defineComponent({
                 class={'app-action-content'}
                 onClick={() => {
                   isDialogShow.value = true;
-                }}>
+                }}
+              >
                 <i class={'hcm-icon bkhcm-icon-plus-circle app-action-content-icon'} />
                 <span class={'app-action-content-text'}>新建业务</span>
               </div>
@@ -166,11 +168,13 @@ export default defineComponent({
           isShow={isDialogShow.value}
           dialogType='show'
           onConfirm={() => (isDialogShow.value = false)}
-          onClosed={() => (isDialogShow.value = false)}>
+          onClosed={() => (isDialogShow.value = false)}
+        >
           <Exception
             type='building'
             class={'hcm-create-business-dialog-exception-building-picture'}
-            title={'新建业务参考以下指引'}>
+            title={'新建业务参考以下指引'}
+          >
             <div class={'hcm-create-business-dialog-exception-building-tips'}>
               {/* <p class={'hcm-create-business-dialog-exception-building-tips-text1'}>
                可以按照以下方式进行查看
@@ -183,7 +187,8 @@ export default defineComponent({
                   onClick={() => {
                     const { BK_CMDB_CREATE_BIZ_URL } = window.PROJECT_CONFIG;
                     window.open(BK_CMDB_CREATE_BIZ_URL, '_blank');
-                  }}>
+                  }}
+                >
                   新建业务
                 </Button>
               </p>

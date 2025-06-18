@@ -65,6 +65,8 @@ type AccountBillExchangeRate struct {
 	// ExchangeRate 汇率
 	ExchangeRate *types.Decimal `db:"exchange_rate" json:"exchange_rate"`
 
+	// TenantID 租户ID
+	TenantID string `db:"tenant_id" json:"tenant_id"`
 	// Creator 创建人
 	Creator string `db:"creator" json:"creator"`
 	// Reviser 修改人

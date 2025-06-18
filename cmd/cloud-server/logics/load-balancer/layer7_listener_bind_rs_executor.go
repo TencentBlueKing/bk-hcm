@@ -73,8 +73,8 @@ type layer7ListenerBindRSTaskDetail struct {
 }
 
 // Execute ...
-func (c *Layer7ListenerBindRSExecutor) Execute(kt *kit.Kit, source enumor.TaskManagementSource, rawDetails json.RawMessage) (
-	string, error) {
+func (c *Layer7ListenerBindRSExecutor) Execute(kt *kit.Kit, source enumor.TaskManagementSource,
+	rawDetails json.RawMessage) (string, error) {
 
 	err := c.unmarshalData(rawDetails)
 	if err != nil {
@@ -126,7 +126,7 @@ func (c *Layer7ListenerBindRSExecutor) validate(kt *kit.Kit) error {
 
 	for _, detail := range c.details {
 		if detail.Status == NotExecutable {
-			return fmt.Errorf("record(%v) is not executable", detail)
+			return fmt.Errorf("layer7 listener bind rs failed, record is not executable: %+v", detail)
 		}
 	}
 
@@ -179,17 +179,22 @@ func (c *Layer7ListenerBindRSExecutor) buildFlows(kt *kit.Kit) ([]string, error)
 	return flowIDs, nil
 }
 
-func (c *Layer7ListenerBindRSExecutor) buildFlow(kt *kit.Kit, lb corelb.BaseLoadBalancer, details []*layer7ListenerBindRSTaskDetail) (string, error) {
+func (c *Layer7ListenerBindRSExecutor) buildFlow(kt *kit.Kit, lb corelb.BaseLoadBalancer,
+	details []*layer7ListenerBindRSTaskDetail) (string, error) {
 
 	// 将details根据targetGroupID进行分组，以targetGroupID的纬度创建flowTask
-	tgToDetails, tgToListenerCloudIDs, tgToCloudRuleIDs, err := c.taskDetailsGroupByTargetGroup(kt, lb.CloudID, details)
+	tgToDetails, tgToListenerCloudIDs, tgToCloudRuleIDs, err := c.taskDetailsGroupByTargetGroup(
+		kt, lb.ID, lb.CloudID, details)
 	if err != nil {
 		logs.Errorf("create task details group by target group failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err
 	}
 
 	actionIDGenerator := counter.NewNumberCounterWithPrev(1, 10)
-	flowTasks := []ts.CustomFlowTask{buildSyncClbFlowTask(c.vendor, lb.CloudID, c.accountID, lb.Region, actionIDGenerator)}
+	flowTasks := []ts.CustomFlowTask{
+		// 操作前触发同步
+		buildSyncClbFlowTask(c.vendor, lb.CloudID, c.accountID, lb.Region, actionIDGenerator),
+	}
 	for targetGroupID, detailList := range tgToDetails {
 		tmpTask, err := c.buildFlowTask(kt, lb, targetGroupID, detailList, actionIDGenerator,
 			tgToListenerCloudIDs, tgToCloudRuleIDs)
@@ -199,6 +204,7 @@ func (c *Layer7ListenerBindRSExecutor) buildFlow(kt *kit.Kit, lb corelb.BaseLoad
 		}
 		flowTasks = append(flowTasks, tmpTask...)
 	}
+	// 操作结束触发同步
 	flowTasks = append(flowTasks, buildSyncClbFlowTask(c.vendor, lb.CloudID, c.accountID, lb.Region, actionIDGenerator))
 
 	_, err = checkResFlowRel(kt, c.dataServiceCli, lb.ID, enumor.LoadBalancerCloudResType)
@@ -226,9 +232,9 @@ func (c *Layer7ListenerBindRSExecutor) buildFlow(kt *kit.Kit, lb corelb.BaseLoad
 	return flowID, nil
 }
 
-func (c *Layer7ListenerBindRSExecutor) taskDetailsGroupByTargetGroup(kt *kit.Kit, lbCloudID string,
-	details []*layer7ListenerBindRSTaskDetail) (
-	map[string][]*layer7ListenerBindRSTaskDetail, map[string]string, map[string]string, error) {
+func (c *Layer7ListenerBindRSExecutor) taskDetailsGroupByTargetGroup(kt *kit.Kit, lbID string, lbCloudID string,
+	details []*layer7ListenerBindRSTaskDetail) (map[string][]*layer7ListenerBindRSTaskDetail, map[string]string,
+	map[string]string, error) {
 
 	tgToDetails := make(map[string][]*layer7ListenerBindRSTaskDetail)
 	tgToListenerCloudID := make(map[string]string)
@@ -252,7 +258,7 @@ func (c *Layer7ListenerBindRSExecutor) taskDetailsGroupByTargetGroup(kt *kit.Kit
 			return nil, nil, nil, err
 		}
 
-		targetGroupID, err := getTargetGroupID(kt, c.dataServiceCli, rule.CloudID)
+		targetGroupID, err := getTargetGroupID(kt, c.dataServiceCli, lbID, rule.CloudID)
 		if err != nil {
 			logs.Errorf("get target group id failed, rule(%s),err: %v, rid: %s", rule.CloudID, err, kt.Rid)
 			return nil, nil, nil, err
@@ -273,7 +279,7 @@ func (c *Layer7ListenerBindRSExecutor) buildFlowTask(kt *kit.Kit, lb corelb.Base
 	case enumor.TCloud:
 		return c.buildTCloudFlowTask(kt, lb, targetGroupID, details, generator, tgToListenerCloudIDs, tgToCloudRuleIDs)
 	default:
-		return nil, fmt.Errorf("not support vendor: %s", c.vendor)
+		return nil, fmt.Errorf("layer7 listener bind rs validate, not support vendor: %s", c.vendor)
 	}
 }
 
@@ -296,7 +302,7 @@ func (c *Layer7ListenerBindRSExecutor) buildTCloudFlowTask(kt *kit.Kit, lb corel
 			target := &hclb.RegisterTarget{
 				TargetType: detail.InstType,
 				Port:       int64(detail.RsPort[0]),
-				Weight:     int64(detail.Weight),
+				Weight:     converter.ValToPtr(int64(converter.PtrToVal(detail.Weight))),
 			}
 			if detail.InstType == enumor.EniInstType {
 				target.EniIp = detail.RsIp
@@ -453,7 +459,9 @@ func (c *Layer7ListenerBindRSExecutor) createTaskDetails(kt *kit.Kit, taskID str
 	return nil
 }
 
-func (c *Layer7ListenerBindRSExecutor) updateTaskManagementAndDetails(kt *kit.Kit, flowIDs []string, taskID string) error {
+func (c *Layer7ListenerBindRSExecutor) updateTaskManagementAndDetails(kt *kit.Kit, flowIDs []string,
+	taskID string) error {
+
 	if err := updateTaskManagement(kt, c.dataServiceCli, taskID, flowIDs); err != nil {
 		logs.Errorf("update task management failed, taskID(%s), err: %v, rid: %s", taskID, err, kt.Rid)
 		return err

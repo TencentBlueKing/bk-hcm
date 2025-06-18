@@ -2,7 +2,7 @@
 // eslint-disable
 import { computed, defineComponent, reactive, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
-import { Form, Input, Select, Checkbox, Button, Radio, Switcher, Slider, Alert } from 'bkui-vue';
+import { Form, Input, Select, Checkbox, Button, Radio, Switcher, Slider, Alert, Popover } from 'bkui-vue';
 import ConditionOptions from '../components/common/condition-options/index.vue';
 import ZoneSelector from '@/components/zone-selector/index.vue';
 import MachineTypeSelector from '../components/common/machine-type-selector';
@@ -36,6 +36,7 @@ import { debounce } from 'lodash';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { pluginHandler } from '@pluginHandler/service-apply-cvm';
 import { bizApplyCvmCloudAreaSelectedKey } from '@/constants/storage-symbols';
+import cloudAreaFilter from './cloud-area-filter.plugin';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 const accountStore = useAccountStore();
@@ -539,12 +540,15 @@ export default defineComponent({
           },
           {
             label: '管控区域',
+            required: true,
+            property: 'bk_cloud_id',
             description: '管控区是蓝鲸可以管控的Agent网络区域，以实现跨网管理。\n一个VPC，对应一个管控区。',
-            display: whereAmI.value === Senarios.business,
             content: () => (
               <hcm-form-enum
+                allowEmptyValues={[0]}
                 v-model={formData.bk_cloud_id}
                 option={cloudAreaOption.value}
+                isNumberValue={true}
                 onChange={handleCloudAreaChange}
               />
             ),
@@ -822,7 +826,15 @@ export default defineComponent({
               },
               {
                 property: 'password',
-                content: () => <PwdInput v-model={formData.password} />,
+                content: () => (
+                  <PwdInput
+                    v-model={formData.password}
+                    onChange={() => {
+                      formData.confirmed_password = '';
+                      formRef.value?.clearValidate('confirmed_password');
+                    }}
+                  />
+                ),
               },
               {
                 property: 'confirmed_password',
@@ -899,47 +911,61 @@ export default defineComponent({
       ],
       password: [
         {
-          validator: (value: string) => value.length >= 8 && value.length <= 20,
-          message: '密码长度需要在8-20个字符之间',
-          trigger: 'blur',
-        },
-        {
           validator: (value: string) => {
             const pattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#+_\-\[\]{}])[A-Za-z\d@#+_\-\[\]{}]{8,20}$/;
             return pattern.test(value);
           },
-          message: '密码不符合复杂度要求',
-          trigger: 'blur',
-        },
-        {
-          validator: (value: string) => {
-            if (formData.confirmed_password.length) {
-              return value === formData.confirmed_password;
-            }
-            return true;
+          message: () => {
+            const isLengthValid = /^.{8,20}$/.test(formData.password);
+            const isComplexityValid =
+              /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#+_\-\[\]{}])[A-Za-z\d@#+_\-\[\]{}]+$/.test(formData.password);
+            return (
+              <div>
+                密码不符合复杂度要求，请参考密码输入规范
+                <Popover placement='right' theme='light' allowHtml width='280'>
+                  {{
+                    default: () => <i class='hcm-icon bkhcm-icon-alert pwd-tips-mark'></i>,
+                    content: () => (
+                      <div class='pwd-tips-content-wrap'>
+                        <div class='pwd-tips-content-item'>
+                          <i
+                            class={[
+                              'hcm-icon',
+                              {
+                                'bkhcm-icon-circle-correct-filled success': isLengthValid,
+                                'bkhcm-icon-circle-wrong-filled error': !isLengthValid,
+                              },
+                            ]}
+                          ></i>
+                          <span class='pwd-tips-content-text'>密码长度不少于8位且不多于20位；</span>
+                        </div>
+                        <div class='pwd-tips-content-item'>
+                          <i
+                            class={[
+                              'hcm-icon',
+                              {
+                                'bkhcm-icon-circle-correct-filled success': isComplexityValid,
+                                'bkhcm-icon-circle-wrong-filled error': !isComplexityValid,
+                              },
+                            ]}
+                          ></i>
+                          <span class='pwd-tips-content-text'>
+                            {`至少包含一个小写字母、一个大写字母、一个数字和一个特殊符号（仅限@、# 、+、_、-、[、]、{、}）`}
+                          </span>
+                        </div>
+                      </div>
+                    ),
+                  }}
+                </Popover>
+              </div>
+            );
           },
-          message: '两次输入的密码不一致',
           trigger: 'blur',
         },
       ],
       confirmed_password: [
         {
-          validator: (value: string) => value.length >= 8 && value.length <= 20,
-          message: '密码长度需要在8-20个字符之间',
-          trigger: 'blur',
-        },
-        {
-          validator: (value: string) => {
-            const pattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#+_\-\[\]{}])[A-Za-z\d@#+_\-\[\]{}]{8,20}$/;
-            return pattern.test(value);
-          },
-          message: '密码不符合复杂度要求',
-          trigger: 'blur',
-        },
-        {
-          validator: (value: string) => {
-            return formData.password.length && value === formData.password;
-          },
+          validator: (value: string) => formData.password.length && value === formData.password,
           message: '两次输入的密码不一致',
           trigger: 'blur',
         },
@@ -1011,17 +1037,14 @@ export default defineComponent({
     };
 
     // 业务下，可以选择管控区域
-    const cloudAreaOption = computed(() =>
-      // 暂不支持0管控区
-      Object.fromEntries(Array.from(cloudAreaMap.value.entries()).filter(([key]) => key !== 0)),
-    );
-    const handleCloudAreaChange = (val: string) => {
-      if (!val) {
+    const cloudAreaOption = computed(() => Object.fromEntries(cloudAreaFilter(cloudAreaMap.value)));
+    const handleCloudAreaChange = (val: number) => {
+      if (val === undefined || String(val) === '') {
         localStorage.removeItem(bizApplyCvmCloudAreaSelectedKey);
       } else {
-        localStorage.setItem(bizApplyCvmCloudAreaSelectedKey, val);
+        localStorage.setItem(bizApplyCvmCloudAreaSelectedKey, String(val));
       }
-      formData.bk_cloud_id = Number(val);
+      formData.bk_cloud_id = val;
     };
     watch(
       whereAmI,

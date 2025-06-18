@@ -222,6 +222,7 @@ function handleResponse(params: { config: any; response: any; resolve: any; reje
 function handleReject(error: any, config: any) {
   if (error.code === TokenInvalidCode) {
     showLoginModal();
+    return Promise.reject(error);
   }
 
   if (axios.isCancel(error)) {

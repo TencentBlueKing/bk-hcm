@@ -57,3 +57,5 @@ data:
 
     cmdb:
       {{- toYaml .Values.cmdb | nindent 6 }}
+    ccHostPoolBiz: {{ .Values.ccHostPoolBiz }}
+

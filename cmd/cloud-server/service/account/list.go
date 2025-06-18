@@ -144,6 +144,12 @@ func (a *accountSvc) listAccount(cts *rest.Contexts, typ meta.ResourceType) (*da
 			logs.Errorf("list account by filter failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
 		}
+		if req.Page != nil && req.Page.Count {
+			return &dataproto.AccountListResult{
+				Details: nil,
+				Count:   uint64(len(accounts)),
+			}, nil
+		}
 		err = a.fillAccountSyncDetail(cts, accounts)
 		if err != nil {
 			logs.Errorf("fill account sync detail failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -151,7 +157,6 @@ func (a *accountSvc) listAccount(cts *rest.Contexts, typ meta.ResourceType) (*da
 		}
 		return &dataproto.AccountListResult{
 			Details: accounts,
-			Count:   uint64(len(accounts)),
 		}, nil
 	}
 
@@ -173,6 +178,13 @@ func (a *accountSvc) listAccount(cts *rest.Contexts, typ meta.ResourceType) (*da
 	if err != nil {
 		logs.Errorf("list account by ids and filter failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
+	}
+
+	if req.Page != nil && req.Page.Count {
+		return &dataproto.AccountListResult{
+			Details: nil,
+			Count:   uint64(len(accounts)),
+		}, nil
 	}
 
 	err = a.fillAccountSyncDetail(cts, accounts)

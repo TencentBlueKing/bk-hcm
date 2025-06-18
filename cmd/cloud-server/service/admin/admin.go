@@ -50,12 +50,29 @@ func (s *adminService) registerAdminService(c *restful.WebService) {
 	defer adminH.Load(c)
 
 	// 这里注册的接口都无法被webserver访问，只能被系统内部调用，无需鉴权
+	adminH.Add("Init", http.MethodPost, "/init", s.Init)
 	adminH.Add("InitTenant", http.MethodPost, "/tenant/init", s.InitTenant)
 }
 
 type adminService struct {
 	client      *client.ClientSet
 	adminLogics logicsadmin.Interface
+}
+
+// Init 系统初始化
+func (s *adminService) Init(cts *rest.Contexts) (any, error) {
+
+	// 1. 查找是否存在vendor为other的用户，若有则返回，没有则创建
+	result, err := s.adminLogics.InitVendorOtherAccount(cts.Kit)
+	if err != nil {
+		logs.Errorf("init vendor other account failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+
+	resp := apisysteminit.SystemInitResult{
+		OtherAccountInitResult: result,
+	}
+	return resp, nil
 }
 
 // InitTenant 租户初始化

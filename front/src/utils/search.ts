@@ -2,9 +2,17 @@ import type { ParsedQs } from 'qs';
 import merge from 'lodash/merge';
 import { ModelPropertyGeneric, ModelPropertySearch, ModelPropertyType } from '@/model/typings';
 import { findProperty } from '@/model/utils';
-import { ISearchSelectValue, QueryFilterType, QueryFilterTypeLegacy, QueryRuleOPEnum, RulesItem } from '@/typings';
+import {
+  ISearchSelectValue,
+  QueryFilterType,
+  QueryFilterTypeLegacy,
+  QueryRuleOPEnum,
+  QueryRuleOPEnumLegacy,
+  RulesItem,
+} from '@/typings';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
+import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 
 dayjs.extend(isoWeek);
 
@@ -42,12 +50,17 @@ export const getDefaultRule: GetDefaultRule = (property, custom) => {
 };
 
 export const convertValue = (
-  value: string | number | string[] | number[] | ParsedQs | ParsedQs[],
+  value: string | ParsedQs | (string | ParsedQs)[],
   property: ModelPropertySearch,
-  operator?: QueryRuleOPEnum,
+  operator?: QueryRuleOPEnum | QueryRuleOPEnumLegacy,
 ) => {
   const { type, format, meta } = property || {};
-  const { IN, JSON_OVERLAPS } = QueryRuleOPEnum;
+  const isArrayOperator = [
+    QueryRuleOPEnum.IN,
+    QueryRuleOPEnum.JSON_OVERLAPS,
+    QueryRuleOPEnumLegacy.IN,
+    QueryRuleOPEnumLegacy.JSON_OVERLAPS,
+  ].includes(operator);
 
   const formatter = format || meta?.search?.format;
   if (formatter) {
@@ -58,7 +71,7 @@ export const convertValue = (
     if (Array.isArray(value)) {
       return value.map((val) => Number(val));
     }
-    if ([IN, JSON_OVERLAPS].includes(operator) && !Array.isArray(value)) {
+    if (isArrayOperator && !Array.isArray(value)) {
       return [Number(value)];
     }
     return Number(value);
@@ -71,10 +84,8 @@ export const convertValue = (
     }
   }
 
-  if ([IN, JSON_OVERLAPS].includes(operator)) {
-    if (!Array.isArray(value)) {
-      return [value];
-    }
+  if (isArrayOperator && !Array.isArray(value)) {
+    return [value];
   }
 
   return value;
@@ -87,7 +98,7 @@ const createRuleItem = (
   field: string,
   value: any,
   property: ModelPropertyGeneric,
-  op: QueryRuleOPEnum,
+  op: QueryRuleOPEnum | QueryRuleOPEnumLegacy,
   legacy?: boolean,
 ): RulesItem => {
   return {
@@ -109,12 +120,17 @@ export const transformSimpleCondition = (
   for (const [id, value] of Object.entries(condition || {})) {
     const property = findProperty(id, properties);
 
-    if (!property || isValueEmpty(value)) {
+    if (!property || (!property.meta?.search?.enableEmpty && isValueEmpty(value))) {
       continue;
     }
 
     if (property.meta?.search?.filterRules) {
-      queryFilter.rules.push(property.meta.search.filterRules(value));
+      //* 如果是search-select，可能需要配合validateValues使用，避免无效请求
+      const filterRules = property.meta.search.filterRules(value);
+      // 判断构建的条件是否有效，filterRules的结构为 { field, op, value } | { op, rules }
+      if (filterRules && (filterRules.value || filterRules.rules.length > 0)) {
+        queryFilter.rules.push(filterRules);
+      }
       continue;
     }
 
@@ -283,4 +299,57 @@ export const convertDateRangeToObject = (dateRange: Date[]) => {
     start: { year: start.getFullYear(), month: start.getMonth() + 1, day: start.getDate() },
     end: { year: end.getFullYear(), month: end.getMonth() + 1, day: end.getDate() },
   };
+};
+
+const findSearchData = (id: ISearchItem['id'], searchData: ISearchItem[], key?: keyof ISearchItem) => {
+  // 先按默认的规则找
+  let found = searchData.find((data) => data.id === id);
+
+  // 找不到同时指定了key则再根据key再找一次
+  if (!found && key) {
+    found = searchData.find((data) => data[key] === id);
+  }
+
+  return found;
+};
+
+export const buildSearchValue = (searchDataConfig: ISearchItem[], condition: Record<string, any>) => {
+  // 获取值的显示名称，优先从children中查找，找不到则返回原值
+  const getDisplayName = (value: any, children: ISearchItem['children']) => {
+    return children?.find((item) => item.id === value)?.name || value;
+  };
+
+  const searchValue: ISearchSelectValue = [];
+
+  for (const [id, val] of Object.entries(condition)) {
+    const searchData = findSearchData(id, searchDataConfig);
+    if (!searchData) continue;
+
+    const { name, multiple, children } = searchData;
+
+    if (Array.isArray(val)) {
+      if (multiple) {
+        // 处理多选数组情况
+        searchValue.push({
+          id,
+          name,
+          values: val.map((item) => ({ id: item, name: getDisplayName(item, children) })),
+        });
+      } else {
+        // 处理单选数组情况(展开为多个搜索项)
+        searchValue.push(
+          ...val.map((item: any) => ({
+            id,
+            name,
+            values: [{ id: item, name: getDisplayName(item, children) }],
+          })),
+        );
+      }
+    } else {
+      // 处理单值情况
+      searchValue.push({ id, name, values: [{ id: val, name: getDisplayName(val, children) }] });
+    }
+  }
+
+  return searchValue;
 };

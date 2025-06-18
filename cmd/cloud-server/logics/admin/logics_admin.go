@@ -17,16 +17,19 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package logicsadmin ...
 package logicsadmin
 
 import (
 	"fmt"
 
+	apisysteminit "hcm/pkg/api/cloud-server/system-init"
 	"hcm/pkg/api/core"
+	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/api/data-service/tenant"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -36,6 +39,7 @@ import (
 
 // Interface admin logic interface
 type Interface interface {
+	InitVendorOtherAccount(kt *kit.Kit) (*apisysteminit.OtherAccountInitResult, error)
 	GetTenantFromBkUser(kt *kit.Kit) (*bkuser.Tenant, error)
 	UpsertLocalTenant(kt *kit.Kit, targetTenant *bkuser.Tenant) (message string, err error)
 }
@@ -48,6 +52,47 @@ type admin struct {
 // NewAdminLogic new admin logic
 func NewAdminLogic(c *client.ClientSet, userClient bkuser.Client) Interface {
 	return &admin{c: c, bkUser: userClient}
+}
+
+// InternalOtherVendorAccountName 内置账号名称
+const InternalOtherVendorAccountName = "内置账号"
+
+// InitVendorOtherAccount 查找是否存在vendor为other的账号，若有则返回，没有则创建
+func (a *admin) InitVendorOtherAccount(kt *kit.Kit) (*apisysteminit.OtherAccountInitResult, error) {
+
+	listReq := &core.ListReq{
+		Filter: tools.EqualExpression("vendor", enumor.Other),
+		Page:   core.NewDefaultBasePage(),
+	}
+	accResp, err := a.c.DataService().Global.Account.List(kt.Ctx, kt.Header(), listReq)
+	if err != nil {
+		logs.Errorf("fail to list other vendor account, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+
+	if len(accResp.Details) > 0 {
+		return &apisysteminit.OtherAccountInitResult{ExistsAccountID: accResp.Details[0].ID}, nil
+	}
+
+	// 创建other vendor用户
+	createReq := &protocloud.AccountCreateReq[protocloud.OtherAccountExtensionCreateReq]{
+		Name:     InternalOtherVendorAccountName,
+		Managers: []string{"admin"},
+		Type:     enumor.ResourceAccount,
+		Site:     enumor.InternationalSite,
+		Memo:     cvt.ValToPtr(InternalOtherVendorAccountName),
+		Extension: &protocloud.OtherAccountExtensionCreateReq{
+			CloudID:     string(enumor.Other),
+			CloudSecKey: "",
+		},
+		BkBizIDs: []int64{constant.AttachedAllBiz},
+	}
+	createResp, err := a.c.DataService().Other.Account.Create(kt, createReq)
+	if err != nil {
+		logs.Errorf("fail to create other vendor account, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
+	}
+	return &apisysteminit.OtherAccountInitResult{CreatedAccountID: createResp.ID}, nil
 }
 
 // UpsertLocalTenant 插入或更新租户信息

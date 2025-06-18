@@ -74,7 +74,7 @@ func (a MainAccountDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model *tableaccou
 		model.TableName(), tableaccountset.MainAccountColumns.ColumnExpr(),
 		tableaccountset.MainAccountColumns.ColonNameExpr())
 
-	err = a.Orm.Txn(tx).Insert(kt.Ctx, sql, model)
+	err = a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Insert(kt.Ctx, sql, model)
 	if err != nil {
 		return "", fmt.Errorf("insert %s failed, err: %v", model.TableName(), err)
 	}
@@ -131,7 +131,8 @@ func (a MainAccountDao) Update(kt *kit.Kit, filterExpr *filter.Expression,
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, model.TableName(), setExpr, whereExpr)
 
 	_, err = a.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		effected, err := a.Orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
+		effected, err := a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(txn).Update(
+			kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if err != nil {
 			logs.ErrorJson("update account failed, err: %v, filter: %s, rid: %v", err, filterExpr, kt.Rid)
 			return nil, err
@@ -152,7 +153,7 @@ func (a MainAccountDao) Update(kt *kit.Kit, filterExpr *filter.Expression,
 }
 
 // List list main accounts.
-func (ma MainAccountDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListMainAccountDetails, error) {
+func (a MainAccountDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListMainAccountDetails, error) {
 	if opt == nil {
 		return nil, errf.New(errf.InvalidParameter, "list account options is nil")
 	}
@@ -165,7 +166,7 @@ func (ma MainAccountDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListMa
 		// this is a count request, then do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.MainAccountTable, whereExpr)
 
-		count, err := ma.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count accounts failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -182,7 +183,8 @@ func (ma MainAccountDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListMa
 		table.MainAccountTable, whereExpr, pageExpr)
 
 	details := make([]*tableaccountset.MainAccountTable, 0)
-	if err = ma.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	err = a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql, whereValue)
+	if err != nil {
 		return nil, err
 	}
 

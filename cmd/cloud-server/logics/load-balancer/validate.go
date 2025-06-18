@@ -24,6 +24,7 @@ import (
 	"fmt"
 
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/tools/converter"
 )
 
 func validateSession(session int) error {
@@ -59,7 +60,11 @@ func validateInstType(instType enumor.InstType) error {
 	return nil
 }
 
-func validateWeight(weight int) error {
+func validateWeight(weightPtr *int) error {
+	if weightPtr == nil {
+		return errors.New("invalid weight: nil")
+	}
+	weight := converter.PtrToVal(weightPtr)
 	if weight < 0 || weight > 100 {
 		return fmt.Errorf("invalid weight: %d ", weight)
 	}

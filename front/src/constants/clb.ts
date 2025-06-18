@@ -159,54 +159,63 @@ export const CLB_SPECS_REVERSE_MAP = {
 };
 
 // 腾讯云CLB规格列表映射
-export const CLB_SPEC_TYPE_COLUMNS_MAP = {
+export const CLB_SPEC_TYPE_COLUMNS_MAP: Record<
+  string,
+  {
+    connectionsPerMinute?: number;
+    newConnectionsPerSecond?: number;
+    queriesPerSecond?: number;
+    bandwidthLimit: number;
+  }
+> = {
+  shared: { bandwidthLimit: 10240 },
   'clb.c1.small': {
-    connectionsPerMinute: '100,000',
-    newConnectionsPerSecond: '10,000',
-    queriesPerSecond: '10,000',
-    bandwidthLimit: '1Gbps',
+    connectionsPerMinute: 100000,
+    newConnectionsPerSecond: 10000,
+    queriesPerSecond: 10000,
+    bandwidthLimit: 1024,
   },
   'clb.c2.medium': {
-    connectionsPerMinute: '100,000',
-    newConnectionsPerSecond: '10,000',
-    queriesPerSecond: '10,000',
-    bandwidthLimit: '2Gbps',
+    connectionsPerMinute: 100000,
+    newConnectionsPerSecond: 10000,
+    queriesPerSecond: 10000,
+    bandwidthLimit: 2048,
   },
   'clb.c3.small': {
-    connectionsPerMinute: '200,000',
-    newConnectionsPerSecond: '20,000',
-    queriesPerSecond: '20,000',
-    bandwidthLimit: '4Gbps',
+    connectionsPerMinute: 200000,
+    newConnectionsPerSecond: 20000,
+    queriesPerSecond: 20000,
+    bandwidthLimit: 4096,
   },
   'clb.c3.medium': {
-    connectionsPerMinute: '500,000',
-    newConnectionsPerSecond: '50,000',
-    queriesPerSecond: '30,000',
-    bandwidthLimit: '6Gbps',
+    connectionsPerMinute: 500000,
+    newConnectionsPerSecond: 50000,
+    queriesPerSecond: 30000,
+    bandwidthLimit: 6144,
   },
   'clb.c4.small': {
-    connectionsPerMinute: '1,000,000',
-    newConnectionsPerSecond: '100,000',
-    queriesPerSecond: '50,000',
-    bandwidthLimit: '10Gbps',
+    connectionsPerMinute: 1000000,
+    newConnectionsPerSecond: 100000,
+    queriesPerSecond: 50000,
+    bandwidthLimit: 10240,
   },
   'clb.c4.medium': {
-    connectionsPerMinute: '2,000,000',
-    newConnectionsPerSecond: '200,000',
-    queriesPerSecond: '100,000',
-    bandwidthLimit: '20Gbps',
+    connectionsPerMinute: 2000000,
+    newConnectionsPerSecond: 200000,
+    queriesPerSecond: 100000,
+    bandwidthLimit: 20480,
   },
   'clb.c4.large': {
-    connectionsPerMinute: '5,000,000',
-    newConnectionsPerSecond: '500,000',
-    queriesPerSecond: '200,000',
-    bandwidthLimit: '40Gbps',
+    connectionsPerMinute: 5000000,
+    newConnectionsPerSecond: 500000,
+    queriesPerSecond: 200000,
+    bandwidthLimit: 40960,
   },
   'clb.c4.xlarge': {
-    connectionsPerMinute: '10,000,000',
-    newConnectionsPerSecond: '1,000,000',
-    queriesPerSecond: '300,000',
-    bandwidthLimit: '60Gbps',
+    connectionsPerMinute: 10000000,
+    newConnectionsPerSecond: 1000000,
+    queriesPerSecond: 300000,
+    bandwidthLimit: 61440,
   },
 };
 
@@ -216,16 +225,30 @@ export const LISTENER_BINDING_STATUS_REVERSE_MAP: ConstantMapRecord = {
   已绑定: 'success',
 };
 
+export enum TargetGroupOperationScene {
+  ADD = 'add',
+  EDIT = 'edit',
+  BATCH_DELETE = 'batch_delete',
+  ADD_RS = 'add_rs',
+  BATCH_ADD_RS = 'batch_add_rs',
+  BATCH_DELETE_RS = 'batch_delete_rs',
+  SINGLE_UPDATE_PORT = 'single_update_port',
+  SINGLE_UPDATE_WEIGHT = 'single_update_weight',
+  BATCH_UPDATE_PORT = 'batch_update_port',
+  BATCH_UPDATE_WEIGHT = 'batch_update_weight',
+}
 // 编辑目标组操作场景映射
 export const TG_OPERATION_SCENE_MAP = {
-  add: '新增目标组',
-  edit: '编辑目标组基本信息',
-  BatchDelete: '批量删除目标组',
-  AddRs: '添加RS',
-  BatchAddRs: '批量添加RS',
-  BatchDeleteRs: '批量删除RS',
-  port: '批量修改端口',
-  weight: '批量修改权重',
+  [TargetGroupOperationScene.ADD]: '新增目标组',
+  [TargetGroupOperationScene.EDIT]: '编辑目标组基本信息',
+  [TargetGroupOperationScene.BATCH_DELETE]: '批量删除目标组',
+  [TargetGroupOperationScene.ADD_RS]: '添加RS',
+  [TargetGroupOperationScene.BATCH_ADD_RS]: '批量添加RS',
+  [TargetGroupOperationScene.BATCH_DELETE_RS]: '批量删除RS',
+  [TargetGroupOperationScene.SINGLE_UPDATE_PORT]: '修改单个端口',
+  [TargetGroupOperationScene.SINGLE_UPDATE_WEIGHT]: '修改单个端口',
+  [TargetGroupOperationScene.BATCH_UPDATE_PORT]: '批量修改端口',
+  [TargetGroupOperationScene.BATCH_UPDATE_WEIGHT]: '批量修改权重',
 };
 
 // IP版本映射 - 前端展示使用
@@ -274,3 +297,9 @@ export const LOADBALANCER_BANDWIDTH_PACKAGE_NETWORK_TYPES_MAP: Record<string, st
   CTCC: ['SINGLEISP', 'SINGLEISP_CTCC'],
   CUCC: ['SINGLEISP', 'SINGLEISP_CUCC'],
 };
+
+export enum ListenerPanelEnum {
+  LIST = 'list',
+  DETAIL = 'detail',
+  TARGET_GROUP = 'target_group',
+}

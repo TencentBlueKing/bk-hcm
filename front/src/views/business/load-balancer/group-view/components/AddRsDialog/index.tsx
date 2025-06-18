@@ -10,6 +10,7 @@ import useAddRsTable from './useAddRsTable';
 // import utils
 import bus from '@/common/bus';
 import './index.scss';
+import { TargetGroupOperationScene } from '@/constants';
 
 export default defineComponent({
   name: 'AddRsDialog',
@@ -63,16 +64,16 @@ export default defineComponent({
       // 更新目标组 - 场景标识
       if (!loadBalancerStore.currentScene) {
         loadBalancerStore.setUpdateCount(2);
-        loadBalancerStore.setCurrentScene('AddRs');
+        loadBalancerStore.setCurrentScene(TargetGroupOperationScene.ADD_RS);
       }
 
       switch (loadBalancerStore.currentScene) {
-        case 'add':
-        case 'edit':
-        case 'AddRs':
+        case TargetGroupOperationScene.ADD:
+        case TargetGroupOperationScene.EDIT:
+        case TargetGroupOperationScene.ADD_RS:
           bus.$emit('updateSelectedRsList', selectedRsList);
           break;
-        case 'BatchAddRs':
+        case TargetGroupOperationScene.BATCH_ADD_RS:
           // 显示批量添加rs的sideslider
           bus.$emit('showBatchAddRsSideslider', { accountId: account_id, vpcId: vpc_ids, selectedRsList });
         default:

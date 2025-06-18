@@ -65,6 +65,7 @@ import (
 	"hcm/cmd/cloud-server/service/task"
 	"hcm/cmd/cloud-server/service/user"
 	"hcm/cmd/cloud-server/service/vpc"
+	"hcm/cmd/cloud-server/service/watch/bkcc"
 	"hcm/cmd/cloud-server/service/zone"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
@@ -86,6 +87,7 @@ import (
 	"hcm/pkg/tools/ssl"
 
 	"github.com/emicklei/go-restful/v3"
+	etcd3 "go.etcd.io/etcd/client/v3"
 )
 
 // Service do all the cloud server's work
@@ -122,6 +124,16 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 	if cc.CloudServer().CloudResource.Sync.Enable {
 		interval := time.Duration(cc.CloudServer().CloudResource.Sync.SyncIntervalMin) * time.Minute
 		go sync.CloudResourceSync(interval, sd, apiClientSet)
+
+		etcdCli, err := etcd3.New(etcdCfg)
+		if err != nil {
+			return nil, fmt.Errorf("new etcd client failed, err: %v", err)
+		}
+		watcher, err := bkcc.NewWatcher(apiClientSet, etcdCli)
+		if err != nil {
+			return nil, fmt.Errorf("new cc syncer failed, err: %v", err)
+		}
+		watcher.Watch(sd)
 	}
 
 	if cc.CloudServer().BillConfig.Enable {
@@ -196,7 +208,7 @@ func getCloudClientSvr(sd serviced.ServiceDiscover) (*client.ClientSet, *Service
 	}
 
 	cmdbCfg := cc.CloudServer().Cmdb
-	cmdbCli, err := cmdb.NewClient(&cmdbCfg, bkUserCli, metrics.Register())
+	err = cmdb.InitCmdbClient(&cmdbCfg, bkUserCli, metrics.Register())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -209,8 +221,8 @@ func getCloudClientSvr(sd serviced.ServiceDiscover) (*client.ClientSet, *Service
 		itsmCli:    itsmCli,
 		bkBaseCli:  bkbaseCli,
 		cmsiCli:    cmsiCli,
-		cmdbCli:    cmdbCli,
 		bkUserCli:  bkUserCli,
+		cmdbCli:    cmdb.CmdbClient(),
 	}
 
 	return apiClientSet, svr, nil

@@ -45,6 +45,27 @@ type Client interface {
 	DeleteCloudHostFromBiz(kt *kit.Kit, params *DeleteCloudHostFromBizParams) error
 	AddCloudHostToBiz(kt *kit.Kit, params *AddCloudHostToBizParams) (*BatchCreateResult, error)
 	ListHostWithoutBiz(kt *kit.Kit, req *ListHostWithoutBizParams) (*ListHostWithoutBizResult, error)
+	ListResourcePoolHosts(kt *kit.Kit, params *ListResourcePoolHostsParams) (*ListResourcePoolHostsResult, error)
+}
+
+var (
+	cmdbClient Client
+)
+
+// InitCmdbClient init esb client.
+func InitCmdbClient(cfg *cc.ApiGateway, bkUserCli bkuser.Client, reg prometheus.Registerer) error {
+	cli, err := NewClient(cfg, bkUserCli, reg)
+	if err != nil {
+		return err
+	}
+
+	cmdbClient = cli
+	return nil
+}
+
+// CmdbClient get cmdb client.
+func CmdbClient() Client {
+	return cmdbClient
 }
 
 // NewClient initialize a new cmdbApiGateWay client
@@ -204,4 +225,12 @@ func (c *cmdbApiGateWay) ListHostWithoutBiz(kt *kit.Kit, req *ListHostWithoutBiz
 	}
 	return apigateway.ApiGatewayCall[ListHostWithoutBizParams, ListHostWithoutBizResult](c.client, c.bkUserCli,
 		c.config, rest.POST, kt, req, "/hosts/list_hosts_without_app")
+}
+
+// ListResourcePoolHosts list resource pool hosts.
+func (c *cmdbApiGateWay) ListResourcePoolHosts(kt *kit.Kit, params *ListResourcePoolHostsParams) (
+	*ListResourcePoolHostsResult, error) {
+
+	return apigateway.ApiGatewayCall[ListResourcePoolHostsParams, ListResourcePoolHostsResult](c.client, c.bkUserCli,
+		c.config, rest.POST, kt, params, "/hosts/list_resource_pool_hosts")
 }

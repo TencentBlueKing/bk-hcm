@@ -1,0 +1,77 @@
+export const OPERATION_LOG_RESOURCE_TYPE = {
+  ACCOUNT: 'account',
+  CVM: 'cvm',
+  CLB: 'clb',
+  SECURITY_GROUP: 'security_group',
+  VPC: 'vpc',
+  GCP_FIREWALL_RULE: 'gcp_firewall_rule',
+  EIP: 'eip',
+  DISK: 'disk',
+  ROUTE_TABLE: 'route_table',
+  IMAGE: 'image',
+  NETWORK_INTERFACE: 'network_interface',
+  SUBNET: 'subnet',
+} as const;
+
+export const OPERATION_LOG_ACTION = {
+  CREATE: 'create',
+  MOUNT: 'associate',
+  UPDATE: 'update',
+  DELETE: 'delete',
+  UNMOUNT: 'disassociate',
+  APPLY: 'apply',
+  ASSIGN: 'assign',
+  REBOOT: 'reboot',
+  START: 'start',
+  STOP: 'stop',
+  RESET_PWD: 'reset_pwd',
+  RECYCLE: 'recycle',
+  BIND: 'bind',
+  RECOVER: 'recover',
+  DELIVER: 'deliver',
+  EDIT: 'edit',
+} as const;
+
+export const OPERATION_LOG_SOURCE = {
+  API_CALL: 'api_call',
+  BACKGROUND_SYNC: 'background_sync',
+  ASYNCHRONOUS_TASKS: 'asynchronous_tasks',
+} as const;
+
+export const OPERATION_LOG_RESOURCE_TYPE_NAME = {
+  [OPERATION_LOG_RESOURCE_TYPE.ACCOUNT]: '云账号',
+  [OPERATION_LOG_RESOURCE_TYPE.CVM]: '主机',
+  [OPERATION_LOG_RESOURCE_TYPE.VPC]: 'VPC',
+  [OPERATION_LOG_RESOURCE_TYPE.GCP_FIREWALL_RULE]: 'GCP防火墙',
+  [OPERATION_LOG_RESOURCE_TYPE.EIP]: '弹性IP',
+  [OPERATION_LOG_RESOURCE_TYPE.DISK]: '硬盘',
+  [OPERATION_LOG_RESOURCE_TYPE.ROUTE_TABLE]: '路由表',
+  [OPERATION_LOG_RESOURCE_TYPE.IMAGE]: '镜像',
+  [OPERATION_LOG_RESOURCE_TYPE.NETWORK_INTERFACE]: '网络接口',
+  [OPERATION_LOG_RESOURCE_TYPE.SUBNET]: '子网',
+};
+
+export const OPERATION_LOG_ACTION_NAME = {
+  [OPERATION_LOG_ACTION.CREATE]: '创建',
+  [OPERATION_LOG_ACTION.MOUNT]: '挂载',
+  [OPERATION_LOG_ACTION.UPDATE]: '更新',
+  [OPERATION_LOG_ACTION.DELETE]: '删除',
+  [OPERATION_LOG_ACTION.UNMOUNT]: '卸载',
+  [OPERATION_LOG_ACTION.APPLY]: '申请',
+  [OPERATION_LOG_ACTION.ASSIGN]: '分配',
+  [OPERATION_LOG_ACTION.REBOOT]: '重启',
+  [OPERATION_LOG_ACTION.START]: '开机',
+  [OPERATION_LOG_ACTION.STOP]: '关机',
+  [OPERATION_LOG_ACTION.RESET_PWD]: '重置密码',
+  [OPERATION_LOG_ACTION.RECYCLE]: '回收',
+  [OPERATION_LOG_ACTION.BIND]: '绑定',
+  [OPERATION_LOG_ACTION.RECOVER]: '恢复',
+  [OPERATION_LOG_ACTION.DELIVER]: '交付',
+  [OPERATION_LOG_ACTION.EDIT]: '编辑',
+};
+
+export const OPERATION_LOG_SOURCE_NAME = {
+  [OPERATION_LOG_SOURCE.API_CALL]: 'API调用',
+  [OPERATION_LOG_SOURCE.BACKGROUND_SYNC]: '后台同步',
+  [OPERATION_LOG_SOURCE.ASYNCHRONOUS_TASKS]: '异步任务',
+};

@@ -1,4 +1,4 @@
-import { computed, defineComponent, ref, watch, watchEffect } from 'vue';
+import { computed, defineComponent, nextTick, ref, watch, watchEffect } from 'vue';
 import './index.scss';
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import CommonCard from '@/components/CommonCard';
@@ -18,14 +18,14 @@ import EmailInput from './create-section-email';
 const { FormItem } = Form;
 export default defineComponent({
   setup() {
-    const { suffixText, emailRules, isMailValid } = PluginHandlerMailbox;
-    const userStore = useUserStore();
-    const formModelRef = ref();
-    const formInstance = ref();
-    const isLoading = ref(false);
-    const billStore = useBillStore();
     const router = useRouter();
     const route = useRoute();
+    const userStore = useUserStore();
+    const billStore = useBillStore();
+
+    const { suffixText, emailRules, isMailValid } = PluginHandlerMailbox;
+
+    const formInstance = ref();
     const { formModel } = useFormModel({
       name: '', // 名字
       vendor: VendorEnum.AZURE, // 云厂商
@@ -50,12 +50,40 @@ export default defineComponent({
       }
       return tip;
     });
+    const rules = computed(() => {
+      return {
+        name: [
+          {
+            trigger: 'change',
+            message: nameTips.value,
+            validator: (val: string) => {
+              const vendorList = [VendorEnum.AWS, VendorEnum.AZURE, VendorEnum.HUAWEI];
+              const regex = vendorList.includes(formModel.vendor as VendorEnum)
+                ? /^[a-zA-Z][a-zA-Z0-9_]{5,29}$/
+                : /^[a-zA-Z][a-zA-Z0-9-]{5,29}$/;
+              const isValid = regex.test(val);
+
+              emailInputRef.value?.changeNameValid(isValid);
+              return isValid;
+            },
+          },
+        ],
+        email: emailRules,
+      };
+    });
 
     watchEffect(() => {
       const currentUser = userStore.username;
       formModel.managers = [currentUser];
       formModel.bak_managers = [currentUser];
     });
+
+    const handleVendorChange = (vendor: VendorEnum) => {
+      formModel.vendor = vendor;
+      nextTick(() => formInstance.value?.clearValidate());
+    };
+
+    const isLoading = ref(false);
     const handleSubmit = async () => {
       try {
         isLoading.value = true;
@@ -79,8 +107,6 @@ export default defineComponent({
             id: data.id,
           },
         });
-      } catch (err) {
-        // console.log(err);
       } finally {
         isLoading.value = false;
       }
@@ -114,9 +140,9 @@ export default defineComponent({
                   title='申请帐号需要进行邮箱配置，请确认邮箱配置完成再提交申请，否则将导致帐号申请失败！'
                   class={'ml24 mr-24'}
                 />
-                <CommonCard title={() => '基础信息'} class={'info-card'}>
-                  <div class={'account-form-card-content'}>
-                    <Form formType='vertical' model={formModel} ref={formInstance} auto-check={true}>
+                <Form formType='vertical' model={formModel} ref={formInstance} auto-check={true} rules={rules.value}>
+                  <CommonCard title={() => '基础信息'} class={'info-card'}>
+                    <div class={'account-form-card-content'}>
                       <FormItem label='云厂商' required property='vendor'>
                         <div class={'account-vendor-selector'}>
                           {MAIN_ACCOUNT_VENDORS.map(({ vendor, name, icon }) =>
@@ -125,7 +151,7 @@ export default defineComponent({
                                 class={`account-vendor-option ${
                                   vendor === formModel.vendor ? 'account-vendor-option-active' : ''
                                 }`}
-                                onClick={() => (formModel.vendor = vendor)}
+                                onClick={() => handleVendorChange(vendor)}
                               >
                                 <img src={icon} alt={name} class={'account-vendor-option-icon'} />
                                 <p class={'account-vendor-option-text'}>{name}</p>
@@ -172,35 +198,10 @@ export default defineComponent({
                       {/* <FormItem label='站点地址' required property=''>
                         <Input />
                       </FormItem> */}
-                    </Form>
-                  </div>
-                </CommonCard>
-                <CommonCard title={() => '账号信息'} class={'info-card'}>
-                  <div class={'account-form-card-content'}>
-                    <Form
-                      formType='vertical'
-                      model={formModel}
-                      ref={formModelRef}
-                      rules={{
-                        name: [
-                          {
-                            trigger: 'change',
-                            message: nameTips.value,
-                            validator: (val: string) => {
-                              const vendorList = [VendorEnum.AWS, VendorEnum.AZURE, VendorEnum.HUAWEI];
-                              const regex = vendorList.includes(formModel.vendor as VendorEnum)
-                                ? /^[a-zA-Z][a-zA-Z0-9_]{5,29}$/
-                                : /^[a-zA-Z][a-zA-Z0-9-]{5,29}$/;
-                              const isValid = regex.test(val);
-
-                              emailInputRef.value.changeNameValid(isValid);
-                              return isValid;
-                            },
-                          },
-                        ],
-                        email: emailRules,
-                      }}
-                    >
+                    </div>
+                  </CommonCard>
+                  <CommonCard title={() => '账号信息'} class={'info-card'}>
+                    <div class={'account-form-card-content'}>
                       <FormItem label='账号名称' required property='name' description={nameTips.value}>
                         <Input v-model={formModel.name} placeholder='请输入账号名称'></Input>
                       </FormItem>
@@ -213,32 +214,6 @@ export default defineComponent({
                           onChangeEmail={changeEmail}
                         />
                       </FormItem>
-                      {/* <FormItem label='成本评估' required property=''>
-                        <div class={'evaluation-wrapper'}>
-                          <Input type='number' min={1} class={'mr8'} />
-                          <Select filterable={false}>
-                            <Option id={'人民币'} name={'人民币'} key={'人民币'}></Option>
-                            <Option id={'美元'} name={'美元'} key={'美元'}></Option>
-                          </Select>
-                          <p class={'evaluation-suffix'}> / 月</p>
-                        </div>
-                        <Alert theme='danger' class={'mt4'}>
-                          {{
-                            title: () => (
-                              // 缺图标
-                              <p>
-                                当前金额超过 1,000 美元，需要上传凭证作为审批依据
-                                <Button theme='primary' text class={'ml8'}>
-                                  上传
-                                </Button>
-                              </p>
-                            ),
-                          }}
-                        </Alert>
-                      </FormItem> */}
-                      {/* <FormItem label='业务' required property=''>
-                        <BusinessSelector authed autoSelect v-model={formModel.bk_biz_id} />
-                      </FormItem> */}
 
                       <FormItem label='业务' required property=''>
                         <BusinessSelector v-model={formModel.op_product_id} />
@@ -257,20 +232,15 @@ export default defineComponent({
                       <FormItem label='账号用途' property='memo' required>
                         <Input type='textarea' rows={5} maxlength={200} v-model={formModel.memo} />
                       </FormItem>
-                    </Form>
-                  </div>
-                </CommonCard>
-                <Button theme='primary' class={'mr8 ml24 mw88'} onClick={handleSubmit} loading={isLoading.value}>
-                  提交
-                </Button>
-                <Button
-                  class='mw88'
-                  onClick={() => {
-                    router.back();
-                  }}
-                >
-                  取消
-                </Button>
+                    </div>
+                  </CommonCard>
+                  <Button theme='primary' class={'mr8 ml24 mw88'} onClick={handleSubmit} loading={isLoading.value}>
+                    提交
+                  </Button>
+                  <Button class='mw88' disabled={isLoading.value} onClick={() => router.back()}>
+                    取消
+                  </Button>
+                </Form>
               </div>
             ),
             aside: () => (

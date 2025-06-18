@@ -11,7 +11,7 @@
     </div>
     <div class="item">
       <label class="label">{{ t('申请人') }}：</label>
-      <div class="content">{{ data.creator }}</div>
+      <div class="content"><hcm-user-value :value="data.creator" /></div>
     </div>
     <div class="item">
       <label class="label">{{ $t('备注') }}：</label>
