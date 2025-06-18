@@ -56,17 +56,3 @@ func listTenantIDs() ([]string, error) {
 	}
 	return tenantIDs, nil
 }
-
-// distributeTenantTasks 获取租户列表并将任务分发到协程池
-func distributeTenantTasks(pool *workerPool) error {
-	tenantIDs, err := listTenantIDs()
-	if err != nil {
-		logs.Errorf("distributeTenantTasks failed to list tenants, err: %v", err)
-		return err
-	}
-
-	for _, tenantID := range tenantIDs {
-		pool.submit(tenantID)
-	}
-	return nil
-}

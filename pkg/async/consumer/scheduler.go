@@ -112,23 +112,21 @@ func (sch *scheduler) Start() {
 // flowWatcher 定期查询调度到该节点的flow
 func (sch *scheduler) scheduledFlowWatcher() {
 	// 初始化协程池
-	pool := newWorkerPool(sch.scheduledFlowFetcherConcurrency)
-
-	// 启动工作协程
-	pool.run(func(tenantID string) {
-		kt := NewKit()
-		kt.TenantID = tenantID
-		working, err := sch.runScheduledFlow(kt)
-		if err != nil {
-			logs.Errorf("%s: scheduler watch scheduled flow failed for tenant %s, err: %v, rid: %s",
-				constant.AsyncTaskWarnSign, tenantID, err, kt.Rid)
-			sch.sp.ExceptionSleep()
-			return
-		}
-		if working {
-			sch.sp.ShortSleep()
-		}
-	})
+	pool := newTenantWorkerPool(sch.scheduledFlowFetcherConcurrency,
+		func(tenantID string) {
+			kt := NewKit()
+			kt.TenantID = tenantID
+			working, err := sch.runScheduledFlow(kt)
+			if err != nil {
+				logs.Errorf("%s: scheduler watch scheduled flow failed for tenant %s, err: %v, rid: %s",
+					constant.AsyncTaskWarnSign, tenantID, err, kt.Rid)
+				sch.sp.ExceptionSleep()
+				return
+			}
+			if working {
+				sch.sp.ShortSleep()
+			}
+		})
 
 	// 主任务分发循环
 	for {
@@ -141,10 +139,10 @@ func (sch *scheduler) scheduledFlowWatcher() {
 		default:
 		}
 
-		// 获取租户列表并将任务分发到协程池
-		err := distributeTenantTasks(pool)
+		// 获取租户id并分发到协程池的chan
+		err := pool.feedTenantID()
 		if err != nil {
-			logs.Errorf("scheduledFlowWatcher failed to distributeTenantTasks, err: %v", err)
+			logs.Errorf("scheduledFlowWatcher failed to feedTenantID, err: %v", err)
 			sch.sp.ExceptionSleep()
 			continue
 		}
@@ -180,22 +178,21 @@ func (sch *scheduler) queryCurrNodeFlow(kt *kit.Kit, state enumor.FlowState, lim
 // canceledFlowWatcher 查询当前节点上被取消的flow并执行task取消操作
 func (sch *scheduler) canceledFlowWatcher() {
 	// 初始化协程池
-	pool := newWorkerPool(sch.canceledFlowFetcherConcurrency)
-
-	pool.run(func(tenantID string) {
-		kt := NewKit()
-		kt.TenantID = tenantID
-		working, err := sch.handleCanceledFlow(kt)
-		if err != nil {
-			logs.Errorf("%s: scheduler watch canceled failed for tenant %s, err: %v, rid: %s",
-				constant.AsyncTaskWarnSign, tenantID, err, kt.Rid)
-			sch.sp.ExceptionSleep()
-			return
-		}
-		if working {
-			sch.sp.ShortSleep()
-		}
-	})
+	pool := newTenantWorkerPool(sch.canceledFlowFetcherConcurrency,
+		func(tenantID string) {
+			kt := NewKit()
+			kt.TenantID = tenantID
+			working, err := sch.handleCanceledFlow(kt)
+			if err != nil {
+				logs.Errorf("%s: scheduler watch canceled failed for tenant %s, err: %v, rid: %s",
+					constant.AsyncTaskWarnSign, tenantID, err, kt.Rid)
+				sch.sp.ExceptionSleep()
+				return
+			}
+			if working {
+				sch.sp.ShortSleep()
+			}
+		})
 
 	for {
 		select {
@@ -207,10 +204,10 @@ func (sch *scheduler) canceledFlowWatcher() {
 		default:
 		}
 
-		// 获取租户列表并将任务分发到协程池
-		err := distributeTenantTasks(pool)
+		// 获取租户id并分发到协程池的chan
+		err := pool.feedTenantID()
 		if err != nil {
-			logs.Errorf("canceledFlowWatcher failed to distributeTenantTasks, err: %v", err)
+			logs.Errorf("canceledFlowWatcher failed to feedTenantID, err: %v", err)
 			sch.sp.NormalSleep()
 			continue
 		}

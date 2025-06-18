@@ -69,17 +69,15 @@ func (d *Dispatcher) Start() {
 // WatchPendingFlow 监听处于Pending状态的流，并派发到指定节点。
 func (d *Dispatcher) WatchPendingFlow() {
 	// 初始化协程池
-	pool := newWorkerPool(d.pendingFlowFetcherConcurrency)
-
-	// 启动工作协程
-	pool.run(func(tenantID string) {
-		kt := NewKit()
-		kt.TenantID = tenantID
-		if err := d.Do(kt); err != nil {
-			logs.Errorf("%s: dispatcher do failed for tenant %s, err: %v, rid: %s",
-				constant.AsyncTaskWarnSign, tenantID, err, kt.Rid)
-		}
-	})
+	pool := newTenantWorkerPool(d.pendingFlowFetcherConcurrency,
+		func(tenantID string) {
+			kt := NewKit()
+			kt.TenantID = tenantID
+			if err := d.Do(kt); err != nil {
+				logs.Errorf("%s: dispatcher do failed for tenant %s, err: %v, rid: %s",
+					constant.AsyncTaskWarnSign, tenantID, err, kt.Rid)
+			}
+		})
 
 	// 主任务分发循环
 	for {
@@ -92,10 +90,10 @@ func (d *Dispatcher) WatchPendingFlow() {
 		default:
 		}
 
-		// 获取租户列表并将任务分发到协程池
-		err := distributeTenantTasks(pool)
+		// 获取租户id并分发到协程池的chan
+		err := pool.feedTenantID()
 		if err != nil {
-			logs.Errorf("WatchPendingFlow failed to distributeTenantTasks, err: %v", err)
+			logs.Errorf("WatchPendingFlow failed to feedTenantID, err: %v", err)
 			time.Sleep(d.watchIntervalSec)
 			continue
 		}
