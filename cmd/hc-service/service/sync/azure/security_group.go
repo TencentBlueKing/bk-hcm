@@ -131,7 +131,8 @@ func (hd *sgHandler) Sync(kt *kit.Kit, cloudIDs []string) error {
 
 // RemoveDeleteFromCloud ...
 func (hd *sgHandler) RemoveDeleteFromCloud(kt *kit.Kit) error {
-	if err := hd.syncCli.RemoveSecurityGroupDeleteFromCloud(kt, hd.request.AccountID, hd.request.ResourceGroupName); err != nil {
+	err := hd.syncCli.RemoveSecurityGroupDeleteFromCloud(kt, hd.request.AccountID, hd.request.ResourceGroupName)
+	if err != nil {
 		logs.Errorf("remove sg delete from cloud failed, err: %v, accountID: %s, resGroupName: %s, rid: %s", err,
 			hd.request.AccountID, hd.request.ResourceGroupName, kt.Rid)
 		return err
