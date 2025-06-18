@@ -71,20 +71,25 @@ type scheduler struct {
 
 	sp      SleepPolicy
 	closeCh chan struct{}
+
+	scheduledFlowFetcherConcurrency uint
+	canceledFlowFetcherConcurrency  uint
 }
 
 // NewScheduler 实例化任务流调度器
 func NewScheduler(bd backend.Backend, exec Executor, ld leader.Leader, opt *SchedulerOption) Scheduler {
 
 	return &scheduler{
-		closeCh:      make(chan struct{}),
-		workerWg:     sync.WaitGroup{},
-		workerQueue:  make(chan *Task, 10),
-		workerNumber: opt.WorkerNumber,
-		sp:           SleepPolicy{baseInterval: time.Duration(opt.WatchIntervalSec) * time.Second},
-		backend:      bd,
-		executor:     exec,
-		leader:       ld,
+		closeCh:                         make(chan struct{}),
+		workerWg:                        sync.WaitGroup{},
+		workerQueue:                     make(chan *Task, 10),
+		workerNumber:                    opt.WorkerNumber,
+		sp:                              SleepPolicy{baseInterval: time.Duration(opt.WatchIntervalSec) * time.Second},
+		backend:                         bd,
+		executor:                        exec,
+		leader:                          ld,
+		scheduledFlowFetcherConcurrency: opt.ScheduledFlowFetcherConcurrency,
+		canceledFlowFetcherConcurrency:  opt.CanceledFlowFetcherConcurrency,
 	}
 }
 
@@ -106,37 +111,43 @@ func (sch *scheduler) Start() {
 
 // flowWatcher 定期查询调度到该节点的flow
 func (sch *scheduler) scheduledFlowWatcher() {
-	sch.workerWg.Add(1)
+	// 初始化协程池
+	pool := newTenantWorkerPool(sch.scheduledFlowFetcherConcurrency,
+		func(tenantID string) {
+			kt := NewKit()
+			kt.TenantID = tenantID
+			working, err := sch.runScheduledFlow(kt)
+			if err != nil {
+				logs.Errorf("%s: scheduler watch scheduled flow failed for tenant %s, err: %v, rid: %s",
+					constant.AsyncTaskWarnSign, tenantID, err, kt.Rid)
+				sch.sp.ExceptionSleep()
+				return
+			}
+			if working {
+				sch.sp.ShortSleep()
+			}
+		})
 
-stopLoop:
+	// 主任务分发循环
 	for {
 		select {
 		case <-sch.closeCh:
+			pool.shutdownPoolGracefully()
+			sch.workerWg.Done()
 			logs.Infof("received stop signal, stop watch scheduled flow job success.")
-			break stopLoop
-
+			return
 		default:
 		}
 
-		kt := NewKit()
-		working, err := sch.runScheduledFlow(kt)
+		err := pool.executeWithTenant()
 		if err != nil {
-			logs.Errorf("%s: scheduler watch scheduled flow  failed, err: %v, rid: %s",
-				constant.AsyncTaskWarnSign, err, kt.Rid)
+			logs.Errorf("scheduledFlowWatcher failed to executeWithTenant, err: %v", err)
 			sch.sp.ExceptionSleep()
-			continue
-		}
-
-		if working {
-			// there are flows waiting to be executed, do a short sleep.
-			sch.sp.ShortSleep()
 			continue
 		}
 
 		sch.sp.NormalSleep()
 	}
-
-	sch.workerWg.Done()
 }
 
 // queryCurrNodeFlow 查询主节点分配给当前节点处于 Scheduled 状态的任务流。
@@ -165,35 +176,42 @@ func (sch *scheduler) queryCurrNodeFlow(kt *kit.Kit, state enumor.FlowState, lim
 
 // canceledFlowWatcher 查询当前节点上被取消的flow并执行task取消操作
 func (sch *scheduler) canceledFlowWatcher() {
-	sch.workerWg.Add(1)
+	// 初始化协程池
+	pool := newTenantWorkerPool(sch.canceledFlowFetcherConcurrency,
+		func(tenantID string) {
+			kt := NewKit()
+			kt.TenantID = tenantID
+			working, err := sch.handleCanceledFlow(kt)
+			if err != nil {
+				logs.Errorf("%s: scheduler watch canceled failed for tenant %s, err: %v, rid: %s",
+					constant.AsyncTaskWarnSign, tenantID, err, kt.Rid)
+				sch.sp.ExceptionSleep()
+				return
+			}
+			if working {
+				sch.sp.ShortSleep()
+			}
+		})
 
-stopLoop:
 	for {
 		select {
 		case <-sch.closeCh:
+			pool.shutdownPoolGracefully()
+			sch.workerWg.Done()
 			logs.Infof("received stop signal, stop watch canceled flow job success.")
-			break stopLoop
+			return
 		default:
 		}
 
-		kt := NewKit()
-		working, err := sch.handleCanceledFlow(kt)
+		err := pool.executeWithTenant()
 		if err != nil {
-			logs.Errorf("%s: scheduler watch canceled failed, err: %v, rid: %s",
-				constant.AsyncTaskWarnSign, err, kt.Rid)
-			sch.sp.ExceptionSleep()
-			continue
-		}
-
-		if working {
-			sch.sp.ShortSleep()
+			logs.Errorf("canceledFlowWatcher failed to executeWithTenant, err: %v", err)
+			sch.sp.NormalSleep()
 			continue
 		}
 
 		sch.sp.NormalSleep()
 	}
-
-	sch.workerWg.Done()
 }
 
 func (sch *scheduler) handleCanceledFlow(kt *kit.Kit) (working bool, err error) {

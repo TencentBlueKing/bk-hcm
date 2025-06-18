@@ -38,11 +38,12 @@ import (
 // NewDispatcher new dispatcher.
 func NewDispatcher(bd backend.Backend, ld leader.Leader, opt *DispatcherOption) *Dispatcher {
 	return &Dispatcher{
-		watchIntervalSec: time.Duration(opt.WatchIntervalSec) * time.Second,
-		bd:               bd,
-		ld:               ld,
-		closeCh:          make(chan struct{}),
-		wg:               new(sync.WaitGroup),
+		watchIntervalSec:              time.Duration(opt.WatchIntervalSec) * time.Second,
+		bd:                            bd,
+		ld:                            ld,
+		closeCh:                       make(chan struct{}),
+		wg:                            new(sync.WaitGroup),
+		pendingFlowFetcherConcurrency: opt.PendingFlowFetcherConcurrency,
 	}
 }
 
@@ -55,6 +56,8 @@ type Dispatcher struct {
 
 	wg      *sync.WaitGroup
 	closeCh chan struct{}
+
+	pendingFlowFetcherConcurrency uint
 }
 
 // Start dispatcher.
@@ -65,22 +68,37 @@ func (d *Dispatcher) Start() {
 
 // WatchPendingFlow 监听处于Pending状态的流，并派发到指定节点。
 func (d *Dispatcher) WatchPendingFlow() {
+	// 初始化协程池
+	pool := newTenantWorkerPool(d.pendingFlowFetcherConcurrency,
+		func(tenantID string) {
+			kt := NewKit()
+			kt.TenantID = tenantID
+			if err := d.Do(kt); err != nil {
+				logs.Errorf("%s: dispatcher do failed for tenant %s, err: %v, rid: %s",
+					constant.AsyncTaskWarnSign, tenantID, err, kt.Rid)
+			}
+		})
+
+	// 主任务分发循环
 	for {
 		select {
 		case <-d.closeCh:
-			break
+			pool.shutdownPoolGracefully()
+			d.wg.Done()
+			logs.Infof("received stop signal, stop watch pending flow job success.")
+			return
 		default:
 		}
 
-		kt := NewKit()
-		if err := d.Do(kt); err != nil {
-			logs.Errorf("%s: dispatcher do failed, err: %v, rid: %s", constant.AsyncTaskWarnSign, err, kt.Rid)
+		err := pool.executeWithTenant()
+		if err != nil {
+			logs.Errorf("WatchPendingFlow failed to executeWithTenant, err: %v", err)
+			time.Sleep(d.watchIntervalSec)
+			continue
 		}
 
 		time.Sleep(d.watchIntervalSec)
 	}
-
-	d.wg.Done()
 }
 
 // Do 监听处于Pending状态的流，并派发到指定节点。

@@ -40,8 +40,10 @@ func (opt Option) Validate() error {
 
 // SchedulerOption 公共组件，负责获取分配给当前节点的任务流，并解析成任务树后，派发当前要执行的任务给executor执行
 type SchedulerOption struct {
-	WatchIntervalSec uint `json:"watch_interval_sec" validate:"required"`
-	WorkerNumber     uint `json:"worker_number" validate:"required"`
+	WatchIntervalSec                uint `json:"watch_interval_sec" validate:"required"`
+	WorkerNumber                    uint `json:"worker_number" validate:"required"`
+	ScheduledFlowFetcherConcurrency uint `json:"scheduled_flow_fetcher_concurrency" validate:"required"`
+	CanceledFlowFetcherConcurrency  uint `json:"canceled_flow_fetcher_concurrency" validate:"required"`
 }
 
 // Validate SchedulerOption.
@@ -62,7 +64,8 @@ func (opt ExecutorOption) Validate() error {
 
 // DispatcherOption 主节点组件，负责派发任务
 type DispatcherOption struct {
-	WatchIntervalSec uint `json:"watch_interval_sec" validate:"required"`
+	WatchIntervalSec              uint `json:"watch_interval_sec" validate:"required"`
+	PendingFlowFetcherConcurrency uint `json:"pending_flow_fetcher_concurrency" validate:"required"`
 }
 
 // Validate DispatcherOption
@@ -75,6 +78,7 @@ type WatchDogOption struct {
 	WatchIntervalSec    uint `json:"watch_interval_sec" validate:"required"`
 	TaskRunTimeoutSec   uint `json:"task_run_timeout_sec" validate:"required"`
 	ShutdownWaitTimeSec uint `json:"shutdown_wait_time_sec" validate:"required"`
+	WorkerNumber        uint `json:"worker_number" validate:"required"`
 }
 
 // Validate WatchDogOption
