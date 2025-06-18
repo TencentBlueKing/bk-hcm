@@ -73,12 +73,14 @@ export default defineComponent({
         sla_type,
         internet_charge_type,
         internet_max_bandwidth_out,
+        load_balancer_pass_to_target,
       } = props.formModel;
 
       // 基本验证
       const hasRequiredFields =
         account_id &&
         region &&
+        load_balancer_pass_to_target !== undefined &&
         require_count !== 0 &&
         name &&
         /^[a-zA-Z0-9]([-a-zA-Z0-9]{0,58})[a-zA-Z0-9]$/.test(name);
