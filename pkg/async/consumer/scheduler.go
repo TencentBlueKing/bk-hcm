@@ -139,7 +139,6 @@ func (sch *scheduler) scheduledFlowWatcher() {
 		default:
 		}
 
-		// 获取租户id并分发到协程池的chan
 		err := pool.executeWithTenant()
 		if err != nil {
 			logs.Errorf("scheduledFlowWatcher failed to executeWithTenant, err: %v", err)
@@ -204,7 +203,6 @@ func (sch *scheduler) canceledFlowWatcher() {
 		default:
 		}
 
-		// 获取租户id并分发到协程池的chan
 		err := pool.executeWithTenant()
 		if err != nil {
 			logs.Errorf("canceledFlowWatcher failed to executeWithTenant, err: %v", err)

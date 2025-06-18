@@ -21,11 +21,12 @@ package consumer
 
 import (
 	"fmt"
+	"sync"
+
 	actcli "hcm/cmd/task-server/logics/action/cli"
 	"hcm/pkg/api/core"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/logs"
-	"sync"
 )
 
 // tenantWorkerPool 租户协程池，用于并发处理租户ID的任务。每个协程从chan中获取租户ID并执行指定的消费租户ID的工作函数
@@ -59,9 +60,18 @@ func (wp *tenantWorkerPool) worker() {
 	wp.wg.Done()
 }
 
-// submit 将租户ID提交到任务通道中，由工作协程池中的协程处理
-func (wp *tenantWorkerPool) submit(tenantID string) {
-	wp.taskChan <- tenantID
+// executeWithTenant 从租户表拿到所有状态为enable的租户id并分发到chan，由工作协程池中的协程消费处理
+func (wp *tenantWorkerPool) executeWithTenant() error {
+	tenantIDs, err := wp.listTenantIDs()
+	if err != nil {
+		logs.Errorf("tenantWorkerPool failed to list tenants, err: %v", err)
+		return err
+	}
+
+	for _, tenantID := range tenantIDs {
+		wp.submit(tenantID)
+	}
+	return nil
 }
 
 // listTenantIDs 获取所有租户ID
@@ -93,18 +103,9 @@ func (wp *tenantWorkerPool) listTenantIDs() ([]string, error) {
 	return tenantIDs, nil
 }
 
-// executeWithTenant 从租户表拿到所有状态为enable的租户id并分发到chan，由工作协程池中的协程消费处理
-func (wp *tenantWorkerPool) executeWithTenant() error {
-	tenantIDs, err := wp.listTenantIDs()
-	if err != nil {
-		logs.Errorf("tenantWorkerPool failed to list tenants, err: %v", err)
-		return err
-	}
-
-	for _, tenantID := range tenantIDs {
-		wp.submit(tenantID)
-	}
-	return nil
+// submit 将租户ID提交到任务通道中，由工作协程池中的协程处理
+func (wp *tenantWorkerPool) submit(tenantID string) {
+	wp.taskChan <- tenantID
 }
 
 // shutdownPoolGracefully 关闭协程池，封装内部关闭逻辑，并等待所有协程退出

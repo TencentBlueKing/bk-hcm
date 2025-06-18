@@ -118,7 +118,6 @@ func (wd *watchDog) watchWrapper(do func(kt *kit.Kit) error) {
 		default:
 		}
 
-		// 获取租户id并分发到协程池的chan
 		err := pool.executeWithTenant()
 		if err != nil {
 			logs.Errorf("watchWrapper failed to executeWithTenant, err: %v", err)
