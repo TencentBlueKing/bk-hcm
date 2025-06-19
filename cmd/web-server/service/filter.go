@@ -41,6 +41,7 @@ import (
 
 type loginVerifyRespData struct {
 	UserName string `json:"username"`
+	TenantID string `json:"tenant_id"`
 }
 
 func isITSMCallbackRequest(req *restful.Request) bool {
@@ -104,6 +105,7 @@ func newCheckLogin(loginCli login.Client, bkLoginUrl, bkLoginCookieName string) 
 		return &rest.Response{
 			Data: loginVerifyRespData{
 				UserName: resp.Username,
+				TenantID: resp.TenantID,
 			},
 		}, nil
 	}
@@ -138,6 +140,7 @@ func NewUserAuthenticateFilter(loginCli login.Client, bkLoginUrl, bkLoginCookieN
 				dataContent, ok := ret.Data.(loginVerifyRespData)
 				if ok {
 					username = dataContent.UserName
+					req.Request.Header.Set(constant.TenantIDKey, dataContent.TenantID)
 				} else {
 					logs.Errorf("change ret data to loginVerifyRespData failed")
 				}
