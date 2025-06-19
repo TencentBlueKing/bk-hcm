@@ -42,12 +42,12 @@ import (
 	templateSvc "hcm/cmd/web-server/service/template"
 	"hcm/cmd/web-server/service/user"
 	"hcm/cmd/web-server/service/version"
+	"hcm/pkg/api/core"
 	"hcm/pkg/cc"
 	apiclient "hcm/pkg/client"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/handler"
 	"hcm/pkg/iam/auth"
-	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/metrics"
 	"hcm/pkg/rest"
@@ -187,7 +187,10 @@ func newNotificationClient(bkUserCli pkgbkuser.Client) (pkgnotice.Client, error)
 		logs.Errorf("failed to create notice client, err: %v", err)
 		return nil, err
 	}
-	_, err = noticeCli.RegApp(kit.New())
+
+	// 用系统租户注册一次 // TODO 需要通知中心再梳理一下是否如此
+	kt := core.NewBackendKit()
+	_, err = noticeCli.RegApp(kt)
 	if err != nil {
 		// 无api gateway权限可能会导致注册失败，阻塞服务启动
 		logs.Errorf("register notice app failed, err: %v", err)
