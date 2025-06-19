@@ -8,9 +8,9 @@
   ],
   "scripts": {
     "dev": "bk-cli-service-webpack dev",
-    "dev:bcc": "cross-env version=bcc bk-cli-service-webpack dev",
+    "dev:bcc": "cross-env TARGET_MODE=bcc bk-cli-service-webpack dev",
     "build": "bk-cli-service-webpack build",
-    "build:bcc": "cross-env version=bcc bk-cli-service-webpack build",
+    "build:bcc": "cross-env TARGET_MODE=bcc bk-cli-service-webpack build",
     "serve": "node ./paas-server/index.js",
     "lint": "eslint --ext .js,.jsx,.ts,.tsx ./src --cache",
     "lint:style": "stylelint --fix ./**/*.{scss,css,vue} --custom-syntax",
