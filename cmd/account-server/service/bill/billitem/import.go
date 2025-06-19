@@ -87,6 +87,8 @@ func (b *billItemSvc) ImportBillItems(cts *rest.Contexts) (any, error) {
 		return nil, err
 	}
 
+	// 导入前根据把当前二级账号下的账单数据清理掉
+	// 覆盖式导入更新
 	if err = b.deleteBillItemsByMainAccountIDs(cts, vendor, req.BillYear, req.BillMonth, mainAccountIDs); err != nil {
 		logs.Errorf("delete bill items failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err

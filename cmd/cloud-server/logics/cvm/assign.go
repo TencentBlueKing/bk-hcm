@@ -44,7 +44,7 @@ import (
 	"hcm/pkg/tools/slice"
 )
 
-// Assign 分配主机及关联资源到业务下
+// Assign 将指定的主机及其关联资源（如EIP、磁盘、网络接口）分配到目标业务下。
 func Assign(kt *kit.Kit, cli *dataservice.Client, cvms []AssignedCvmInfo) error {
 	if len(cvms) == 0 {
 		return fmt.Errorf("cvms is required")
@@ -56,12 +56,12 @@ func Assign(kt *kit.Kit, cli *dataservice.Client, cvms []AssignedCvmInfo) error 
 		ids = append(ids, cvmInfo.CvmID)
 		bizIDCvmIDsMap[cvmInfo.BkBizID] = append(bizIDCvmIDsMap[cvmInfo.BkBizID], cvmInfo.CvmID)
 	}
-	// 校验主机信息
+	// 校验待分配的主机信息，例如是否已经被分配等
 	if err := ValidateBeforeAssign(kt, cli, ids); err != nil {
 		return err
 	}
 
-	// 获取主机关联资源
+	// 获取主机关联的EIP、磁盘、网络接口等资源的ID映射关系
 	cvmIDEipIDsMap, cvmIDDiskIDsMap, cvmIDNiIDsMap, err := GetCvmRelResIDs(kt, cli, ids)
 	if err != nil {
 		return err
@@ -77,25 +77,25 @@ func Assign(kt *kit.Kit, cli *dataservice.Client, cvms []AssignedCvmInfo) error 
 			niIDs = append(niIDs, cvmIDNiIDsMap[cvmID]...)
 		}
 
-		// 校验主机关联资源信息
+		// 校验主机关联的资源（EIP, 磁盘, 网络接口）是否可以被分配到目标业务
 		if err := ValidateCvmRelResBeforeAssign(kt, cli, bizID, eipIDs, diskIDs, niIDs); err != nil {
 			return err
 		}
 
-		// create assign audit
+		// 创建主机分配的审计记录
 		audit := logicaudit.NewAudit(cli)
 		if err := audit.ResBizAssignAudit(kt, enumor.CvmAuditResType, cvmIDs, bizID); err != nil {
 			logs.Errorf("create assign cvm audit failed, err: %v, rid: %s", err, kt.Rid)
 			return err
 		}
 
-		// 分配主机关联资源
+		// 将主机关联的EIP、磁盘、网络接口等资源分配到目标业务
 		if err := AssignCvmRelRes(kt, cli, eipIDs, diskIDs, niIDs, bizID); err != nil {
 			return err
 		}
 	}
 
-	// 分配主机
+	// 批量更新主机信息，将其分配到目标业务
 	for _, batch := range slice.Split(cvms, constant.BatchOperationMaxLimit) {
 		updateCvms := make([]dataproto.CvmCommonInfoBatchUpdateData, 0, len(batch))
 		for _, cvmInfo := range batch {
@@ -115,7 +115,8 @@ func Assign(kt *kit.Kit, cli *dataservice.Client, cvms []AssignedCvmInfo) error 
 	return nil
 }
 
-// AssignCvmRelRes 分配主机关联资源
+// AssignCvmRelRes 将主机关联的EIP、磁盘和网络接口分配到指定的业务ID。
+// 它会分别调用eip, disk, 和 network-interface的分配逻辑。
 func AssignCvmRelRes(kt *kit.Kit, cli *dataservice.Client, eipIDs []string,
 	diskIDs []string, niIDs []string, bizID int64) error {
 
@@ -140,7 +141,9 @@ func AssignCvmRelRes(kt *kit.Kit, cli *dataservice.Client, eipIDs []string,
 	return nil
 }
 
-// GetCvmRelResIDs 获取主机关联资源ID列表
+// GetCvmRelResIDs 根据给定的主机ID列表，获取这些主机所关联的EIP、磁盘和网络接口的ID。
+// 返回三个map，分别存储CVM ID到其关联的EIP ID列表、磁盘ID列表和网络接口ID列表的映射。
+// 查询时会进行分页处理以避免一次查询过多数据。
 func GetCvmRelResIDs(kt *kit.Kit, cli *dataservice.Client, ids []string) (cvmIDEipIDsMap map[string][]string,
 	cvmIDDiskIDsMap map[string][]string, cvmIDNiIDsMap map[string][]string, err error) {
 
@@ -213,7 +216,8 @@ func GetCvmRelResIDs(kt *kit.Kit, cli *dataservice.Client, ids []string) (cvmIDE
 	return
 }
 
-// ValidateCvmRelResBeforeAssign 校验主机关联资源在分配前
+// ValidateCvmRelResBeforeAssign 在分配主机关联资源（EIP、磁盘、网络接口）到目标业务前进行校验。
+// 会分别调用eip, disk, 和 network-interface的分配前校验逻辑。
 func ValidateCvmRelResBeforeAssign(kt *kit.Kit, cli *dataservice.Client, targetBizId int64, eipIDs []string,
 	diskIDs []string, niIDs []string) error {
 
@@ -238,7 +242,8 @@ func ValidateCvmRelResBeforeAssign(kt *kit.Kit, cli *dataservice.Client, targetB
 	return nil
 }
 
-// ValidateBeforeAssign 分配主机前校验主机信息
+// ValidateBeforeAssign 在分配主机到业务前，校验主机本身的状态。
+// 主要检查主机是否已经分配给其他业务，如果已分配，则返回错误。
 func ValidateBeforeAssign(kt *kit.Kit, cli *dataservice.Client, ids []string) error {
 	listReq := &core.ListReq{
 		Fields: []string{"id", "bk_biz_id"},
@@ -273,18 +278,23 @@ func ValidateBeforeAssign(kt *kit.Kit, cli *dataservice.Client, ids []string) er
 	return nil
 }
 
-// AssignPreview 分配主机预览
+// AssignPreview 预览主机分配操作，返回可能匹配的CMDB主机信息。
+// 步骤如下：
+// 1. 查询待分配CVM的详细信息（云实例ID、云厂商、内网IP、MAC地址、账号所属业务等）。
+// 2. 根据CVM信息（内网IP、MAC地址、云实例ID）从CMDB查询可能匹配的主机。
+// 3. 根据预设的匹配规则（例如：相同云厂商、相同云实例ID，或相同内网IP和MAC地址等），将CVM与CMDB主机进行匹配。
+// 返回一个map，键为CVM ID，值为匹配到的CMDB主机结果列表。
 func AssignPreview(kt *kit.Kit, cmdbCli cmdb.Client, cli *client.ClientSet, ids []string) (
 	map[string][]PreviewCvmMatchResult, error) {
 
-	// 1.查询cvm信息(云实例id、云厂商、内网IP、mac地址、账号所属业务)
+	// 1. 查询待分配CVM的详细信息，包括云实例ID、云厂商、内网IP、MAC地址以及账号所属的业务ID列表。
 	cvmInfos, err := getAssignedCvmInfo(kt, cli, ids)
 	if err != nil {
 		logs.Errorf("get assigned cvm info failed, err: %v, ids: %v, rid: %s", err, ids, kt.Rid)
 		return nil, err
 	}
 
-	// 2.获取可能匹配的cc主机
+	// 2. 从CMDB中获取可能与待分配CVM匹配的主机信息。查询条件基于CVM的内网IP、MAC地址和云实例ID。
 	fields := []string{"bk_host_id", "bk_cloud_id", "bk_cloud_inst_id", "bk_cloud_vendor", "bk_host_innerip", "bk_mac"}
 	ccHosts, ccBizHostIDsMap, err := GetAssignedHostInfoFromCC(kt, cmdbCli, cvmInfos, fields)
 	if err != nil {
@@ -292,12 +302,14 @@ func AssignPreview(kt *kit.Kit, cmdbCli cmdb.Client, cli *client.ClientSet, ids 
 		return nil, err
 	}
 
-	// 3.根据匹配规则，返回匹配cc主机结果
+	// 3. 根据预设的匹配规则，将查询到的CVM信息与CMDB主机信息进行匹配，并返回匹配结果。
 	return matchAssignedCvm(cvmInfos, ccHosts, ccBizHostIDsMap)
 }
 
+// getAssignedCvmInfo 获取用于分配预览的CVM详细信息。
+// 包括：查询CVM基本信息、查询CVM所属账号对应的业务ID、查询CVM的MAC地址。
 func getAssignedCvmInfo(kt *kit.Kit, cli *client.ClientSet, ids []string) ([]PreviewAssignedCvmInfo, error) {
-	// 1.查询cvm信息
+	// 1. 查询CVM基本信息，并按厂商分组存储，同时收集所有相关的账号ID。
 	accountIDs := make([]string, 0)
 	cvmMap := make(map[string]corecvm.BaseCvm)
 	vendorCvmMap := make(map[enumor.Vendor]map[string]corecvm.BaseCvm)
@@ -321,7 +333,7 @@ func getAssignedCvmInfo(kt *kit.Kit, cli *client.ClientSet, ids []string) ([]Pre
 		}
 	}
 
-	// 2.查询cvm所属账号对应的业务id
+	// 2. 根据收集到的账号ID，查询这些账号所属的业务ID。
 	accountIDs = slice.Unique(accountIDs)
 	accountBizIDMap := make(map[string][]int64)
 	for _, batch := range slice.Split(accountIDs, int(core.DefaultMaxPageLimit)) {
@@ -342,14 +354,14 @@ func getAssignedCvmInfo(kt *kit.Kit, cli *client.ClientSet, ids []string) ([]Pre
 		}
 	}
 
-	// 3.查询cvm对应的mac地址
+	// 3. 根据CVM信息（特别是按厂商分组的CVM列表），查询其对应的MAC地址。
 	cvmIPMacAddrMap, err := getAssignedCvmMacAddr(kt, cli, vendorCvmMap)
 	if err != nil {
 		logs.Errorf("get assigned cvm mac addr failed, err: %v, ids: %v, rid: %s", err, ids, kt.Rid)
 		return nil, err
 	}
 
-	// 4.组合结果数据
+	// 4. 组合查询到的CVM基本信息、账号业务信息和MAC地址信息，构建用于预览的CVM信息列表。
 	infos := make([]PreviewAssignedCvmInfo, 0, len(ids))
 	for _, id := range ids {
 		cvmInfo, ok := cvmMap[id]
@@ -376,6 +388,8 @@ func getAssignedCvmInfo(kt *kit.Kit, cli *client.ClientSet, ids []string) ([]Pre
 	return infos, nil
 }
 
+// getAssignedCvmMacAddr 获取指定CVM列表的MAC地址。
+// 它会根据CVM的云厂商，分别从云上或DB中获取MAC地址。
 func getAssignedCvmMacAddr(kt *kit.Kit, cli *client.ClientSet,
 	vendorCvmMap map[enumor.Vendor]map[string]corecvm.BaseCvm) (map[string]map[string]string, error) {
 
@@ -414,6 +428,8 @@ func getAssignedCvmMacAddr(kt *kit.Kit, cli *client.ClientSet,
 	return cvmIPv4MacAddrMap, nil
 }
 
+// getAssignedCvmMacAddrFromCloud 从云API获取指定CVM列表的MAC地址。
+// 主要用于AWS和GCP，因为它们的MAC地址信息通常需要通过API查询网络接口来获得。
 func getAssignedCvmMacAddrFromCloud(kt *kit.Kit, cli *client.ClientSet, vendor enumor.Vendor,
 	cvmMap map[string]corecvm.BaseCvm) (map[string]map[string]string, error) {
 
@@ -473,6 +489,8 @@ func getAssignedCvmMacAddrFromCloud(kt *kit.Kit, cli *client.ClientSet, vendor e
 	return cvmIPv4MacAddrMap, nil
 }
 
+// getAssignedCvmMacAddrFromDB 从本地数据库获取指定CVM列表的MAC地址。
+// 主要用于腾讯云、Azure和华为云，因为它们的MAC地址信息通常在同步CVM时已经存入DB。
 func getAssignedCvmMacAddrFromDB(kt *kit.Kit, cli *client.ClientSet, vendor enumor.Vendor, ids []string) (
 	map[string]map[string]string, error) {
 
