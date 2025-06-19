@@ -1,15 +1,11 @@
 import { defineComponent, reactive } from 'vue';
-// import components
 import DetailHeader from '@/views/resource/resource-manage/common/header/detail-header';
 import SubnetPreviewDialog from '../cvm/children/SubnetPreviewDialog';
-// import custom hooks
+import BottomBar from './children/bottom-bar';
 import useBindEip from './hooks/useBindEip';
 import useRenderForm from './hooks/useRenderForm';
-import useBottomBar from './hooks/useBottomBar';
 import { useWhereAmI, Senarios } from '@/hooks/useWhereAmI';
-// import types
 import { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
-// import utils
 import { useI18n } from 'vue-i18n';
 import './index.scss';
 
@@ -42,10 +38,8 @@ export default defineComponent({
     });
 
     // use custom hooks
-    const { subnetData, isSubnetPreviewDialogShow, ApplyClbForm, formRef, isInquiryPrices, isInquiryPricesLoading } =
-      useRenderForm(formModel);
+    const { subnetData, isSubnetPreviewDialogShow, ApplyClbForm, formRef } = useRenderForm(formModel);
     const { BindEipDialog } = useBindEip(formModel);
-    const { ApplyClbBottomBar } = useBottomBar(formModel, formRef, isInquiryPrices, isInquiryPricesLoading);
 
     return () => (
       <div class='apply-clb-page'>
@@ -58,7 +52,7 @@ export default defineComponent({
         <ApplyClbForm />
 
         {/* bottom */}
-        <ApplyClbBottomBar />
+        <BottomBar formModel={formModel} formRef={formRef.value} />
 
         <SubnetPreviewDialog
           isShow={isSubnetPreviewDialogShow.value}

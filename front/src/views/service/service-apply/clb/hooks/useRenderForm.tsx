@@ -333,61 +333,6 @@ export default (formModel: Reactive<ApplyClbModel>) => {
             );
           },
         },
-        [
-          {
-            label: '负载均衡规格类型',
-            required: true,
-            property: 'slaType',
-            description:
-              '共享型实例：按照规格提供性能保障，单实例最大支持并发连接数5万、每秒新建连接数5000、每秒查询数（QPS）5000。\n性能容量型实例：按照规格提供性能保障，单实例最大可支持并发连接数1000万、每秒新建连接数100万、每秒查询数（QPS）30万。',
-            hidden: isIntranet.value,
-            content: () => {
-              const tooltips = { content: t('请选择运营商类型'), disabled: !!formModel.vip_isp, boundary: 'parent' };
-              if (!ispList.value.length) {
-                Object.assign(tooltips, {
-                  content: t('当前地域/可用区无可用的运营商'),
-                  disabled: ispList.value.length,
-                  boundary: 'parent',
-                });
-              }
-              return (
-                <Select
-                  v-model={formModel.slaType}
-                  filterable={false}
-                  clearable={false}
-                  class='w220'
-                  onChange={handleSlaTypeChange}>
-                  <Option id='0' name={t('共享型')} />
-                  <Option id='1' name={t('性能容量型')} disabled={!formModel.vip_isp} v-bk-tooltips={tooltips} />
-                </Select>
-              );
-            },
-          },
-          {
-            label: '实例规格',
-            required: true,
-            property: 'sla_type',
-            hidden: formModel.slaType !== '1',
-            content: () => {
-              const handleClick = () => {
-                lbSpecTypeDialogState.isHidden = false;
-                lbSpecTypeDialogState.isShow = true;
-              };
-              if (formModel.sla_type !== 'shared') {
-                return <SelectedItemPreviewComp content={CLB_SPECS[formModel.sla_type]} onClick={handleClick} />;
-              }
-              return (
-                <Button
-                  v-bk-tooltips={{ content: '请选择运营商类型', disabled: !!formModel.vip_isp }}
-                  disabled={!formModel.vip_isp}
-                  onClick={handleClick}>
-                  <Plus class='f24' />
-                  {t('选择实例规格')}
-                </Button>
-              );
-            },
-          },
-        ],
         {
           label: '弹性公网 IP',
           // 弹性IP，仅内网可绑定。公网类型无法指定IP。绑定弹性IP后，内网CLB当做公网CLB使用
@@ -416,6 +361,49 @@ export default (formModel: Reactive<ApplyClbModel>) => {
             );
           },
         },
+        [
+          {
+            label: '负载均衡规格类型',
+            required: true,
+            property: 'slaType',
+            description:
+              '共享型实例：按照规格提供性能保障，单实例最大支持并发连接数5万、每秒新建连接数5000、每秒查询数（QPS）5000。\n性能容量型实例：按照规格提供性能保障，单实例最大可支持并发连接数1000万、每秒新建连接数100万、每秒查询数（QPS）30万。',
+            content: () => {
+              return (
+                <Select
+                  v-model={formModel.slaType}
+                  filterable={false}
+                  clearable={false}
+                  class='w220'
+                  onChange={handleSlaTypeChange}>
+                  <Option id='0' name={t('共享型')} />
+                  <Option id='1' name={t('性能容量型')} />
+                </Select>
+              );
+            },
+          },
+          {
+            label: '实例规格',
+            required: true,
+            property: 'sla_type',
+            hidden: formModel.slaType !== '1',
+            content: () => {
+              const handleClick = () => {
+                lbSpecTypeDialogState.isHidden = false;
+                lbSpecTypeDialogState.isShow = true;
+              };
+              if (formModel.sla_type !== 'shared') {
+                return <SelectedItemPreviewComp content={CLB_SPECS[formModel.sla_type]} onClick={handleClick} />;
+              }
+              return (
+                <Button onClick={handleClick}>
+                  <Plus class='f24' />
+                  {t('选择实例规格')}
+                </Button>
+              );
+            },
+          },
+        ],
       ],
     },
     {
@@ -482,7 +470,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
           label: '带宽上限（Mbps）',
           required: true,
           property: 'internet_max_bandwidth_out',
-          hidden: (!isIntranet.value && formModel.account_type === 'LEGACY') || isIntranet.value,
+          hidden: !isIntranet.value && formModel.account_type === 'LEGACY',
           content: () => (
             <div class='slider-wrap'>
               <Slider
@@ -710,15 +698,8 @@ export default (formModel: Reactive<ApplyClbModel>) => {
   );
 
   // 这个需要放到watch之后，避免数据清空之前就触发了effect
-  const {
-    ispList,
-    isResourceListLoading,
-    quotas,
-    isInquiryPrices,
-    isInquiryPricesLoading,
-    currentResourceListMap,
-    specAvailabilitySet,
-  } = useFilterResource(formModel);
+  const { ispList, isResourceListLoading, quotas, currentResourceListMap, specAvailabilitySet } =
+    useFilterResource(formModel);
 
   return {
     vpcData,
@@ -726,7 +707,5 @@ export default (formModel: Reactive<ApplyClbModel>) => {
     isSubnetPreviewDialogShow,
     ApplyClbForm,
     formRef,
-    isInquiryPrices,
-    isInquiryPricesLoading,
   };
 };
