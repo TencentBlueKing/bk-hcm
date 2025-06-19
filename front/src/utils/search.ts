@@ -24,7 +24,7 @@ type RuleItemOpVal = Omit<RulesItem, 'field'>;
 type GetDefaultRule = (property: ModelPropertySearch, custom?: RuleItemOpVal) => RuleItemOpVal;
 
 export const getDefaultRule: GetDefaultRule = (property, custom) => {
-  const { EQ, AND, IN } = QueryRuleOPEnum;
+  const { EQ, AND, IN, JSON_EQ } = QueryRuleOPEnum;
   const searchOp = property.op || property?.meta?.search?.op;
 
   const defaultMap: Record<ModelPropertyType, RuleItemOpVal> = {
@@ -40,6 +40,7 @@ export const getDefaultRule: GetDefaultRule = (property, custom) => {
     ca: { op: searchOp || EQ, value: '' },
     region: { op: searchOp || IN, value: [] },
     business: { op: searchOp || IN, value: [] },
+    json: { op: searchOp || JSON_EQ, value: '' },
     'cloud-area': { op: searchOp || IN, value: [] },
   };
 

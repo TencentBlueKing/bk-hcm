@@ -13,6 +13,7 @@ import RegionValue from './region-value.vue';
 import BusinessValue from './business-value.vue';
 import UserValue from './user-value.vue';
 import CloudAreaValue from './cloud-area-value.vue';
+import JsonValue from './json-value.vue';
 import { DisplayType } from './typings';
 
 defineOptions({ name: 'DisplayValue' });
@@ -43,6 +44,7 @@ const valueComps: Record<
   | typeof BusinessValue
   | typeof UserValue
   | typeof CloudAreaValue
+  | typeof JsonValue
 > = {
   enum: EnumValue,
   datetime: DatetimeValue,
@@ -56,6 +58,7 @@ const valueComps: Record<
   ca: CaValue,
   region: RegionValue,
   business: BusinessValue,
+  json: JsonValue,
   'cloud-area': CloudAreaValue,
 };
 

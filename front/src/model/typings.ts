@@ -16,6 +16,7 @@ export type ModelPropertyType =
   | 'ca'
   | 'region'
   | 'business'
+  | 'json'
   | 'cloud-area';
 
 export type ModelPropertyMeta = {
