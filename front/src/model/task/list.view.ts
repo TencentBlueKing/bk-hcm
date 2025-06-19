@@ -4,8 +4,8 @@ import { VendorEnum, VendorMap } from '@/common/constant';
 import { type TaskType, TaskStatus, TaskSource } from '@/views/task/typings';
 import { TASK_TYPE_NAME, TASK_SOURCE_NAME, TASK_STATUS_NAME } from '@/views/task/constants';
 
-@Model('task/properties')
-export class Properties {
+@Model('task/list.view')
+export class ListView {
   @Column('account', { name: '云账号', sort: true })
   account_ids: string;
 
@@ -34,4 +34,13 @@ export class Properties {
     },
   })
   state: TaskStatus;
+
+  @Column('number', { name: '总数' })
+  count_total: number;
+
+  @Column('number', { name: '成功数' })
+  count_success: number;
+
+  @Column('number', { name: '失败数' })
+  count_failed: number;
 }
