@@ -108,8 +108,31 @@ func (c *BatchListenerUnbindRsExecutor) Execute(kt *kit.Kit, source enumor.TaskM
 		return enumor.NoMatchTaskManageResult, nil
 	}
 
+	// 把RS列表拆分成单个任务(每个RS对应一个TaskDetail)
+	details := make([]*dataproto.ListBatchListenerResult, 0)
+	for _, detail := range lblResp.Details {
+		for _, rsItem := range detail.RsList {
+			detailItem := &dataproto.ListBatchListenerResult{
+				ClbID:        detail.ClbID,
+				CloudClbID:   detail.CloudClbID,
+				ClbVipDomain: detail.ClbVipDomain,
+				BkBizID:      detail.BkBizID,
+				Region:       detail.Region,
+				Vendor:       detail.Vendor,
+				LblID:        detail.LblID,
+				CloudLblID:   detail.CloudLblID,
+				Protocol:     detail.Protocol,
+				Port:         detail.Port,
+				RsList:       make([]*dataproto.LoadBalancerTargetRsList, 0),
+				NewRsWeight:  detail.NewRsWeight,
+			}
+			detailItem.RsList = append(detailItem.RsList, rsItem)
+			details = append(details, detailItem)
+		}
+	}
+
 	// 把符合条件的监听器列表赋值给details
-	c.details = lblResp.Details
+	c.details = details
 
 	taskID, err := c.Run(kt, source)
 	if err != nil {
