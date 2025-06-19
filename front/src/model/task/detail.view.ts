@@ -162,7 +162,7 @@ export default [
   {
     id: 'param.rs_list',
     name: 'rs信息',
-    type: 'string',
+    type: 'json',
   },
   {
     id: 'param.ip',
