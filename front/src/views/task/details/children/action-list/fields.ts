@@ -28,10 +28,10 @@ const clbBaseFieldIds = [
 const clbSopsBaseFieldIds = [
   'created_at',
   'updated_at',
-  'param.clb_vip_domains',
-  'param.cloud_lb_ids',
+  'param.clb_vip_domain',
+  'param.cloud_lb_id',
   'param.protocol',
-  'param.ports',
+  'param.port',
 ];
 
 const clbFieldIds = {

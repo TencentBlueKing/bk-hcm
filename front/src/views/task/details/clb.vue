@@ -132,24 +132,25 @@ watch(
       page: getPageParams(pagination, { sort, order }),
     });
 
-    // TODO: 按任务类型展示不同字段来优化列表数据
+    const hasRsListTaskClbTypes = [
+      TaskClbType.UNBIND_LAYER4_RS,
+      TaskClbType.MODIFY_LAYER4_RS_WEIGHT,
+      TaskClbType.MODIFY_LAYER7_RS_WEIGHT,
+    ];
     list.forEach((item) => {
-      const arrayData: ArrayDataItem = {
-        domain: [],
-        url: [],
-        ip: [],
-        weight: [],
-      };
-      item.param.rs_list?.forEach((rs_item: any) => {
-        arrayData.domain.push(rs_item?.domain);
-        arrayData.url.push(rs_item?.url);
-        arrayData.ip.push(rs_item?.ip);
-        arrayData.weight.push(rs_item?.weight);
-      });
-      item.param.ip = arrayData.ip.join(',');
-      item.param.url = arrayData.url.join(',');
-      item.param.domain = arrayData.domain.join(',');
-      item.param.weight = arrayData.weight.join(',');
+      if (hasRsListTaskClbTypes.includes(item.operation as TaskClbType)) {
+        const arrayData: ArrayDataItem = { domain: [], url: [], ip: [], weight: [] };
+        item.param.rs_list?.forEach((rs_item: any) => {
+          arrayData.domain.push(rs_item?.domain);
+          arrayData.url.push(rs_item?.url);
+          arrayData.ip.push(rs_item?.ip);
+          arrayData.weight.push(rs_item?.weight);
+        });
+        item.param.ip = arrayData.ip.join(',');
+        item.param.url = arrayData.url.join(',');
+        item.param.domain = arrayData.domain.join(',');
+        item.param.weight = arrayData.weight.join(',');
+      }
     });
 
     taskDetailList.value = list;
