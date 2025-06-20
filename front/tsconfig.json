@@ -1,65 +1,30 @@
 {
   "compilerOptions": {
-    "strictNullChecks": false,
-    "strictPropertyInitialization": false,
-    "allowSyntheticDefaultImports": true,
-    "experimentalDecorators": true,
-    "importHelpers": true,
-    "resolveJsonModule": true,
-    "allowJs": true,
-//    "noImplicitAny": false,
-    "target": "esnext",/* 编译目标ES版本*/
-    "module": "esnext",/* 编译目标模块系统*/
-    "moduleResolution": "node",/* 模块解析策略 */
-    "sourceMap": true,
-    "pretty": true,
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "node",
     "strict": true,
+    "isolatedModules": false,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "esModuleInterop": true,
+    "noImplicitThis": true,
+    "noImplicitAny": true,
+    "strictNullChecks": false,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
     "jsx": "preserve",
     "jsxFactory": "h",
     "jsxFragmentFactory": "Fragment",
     "jsxImportSource": "vue",
-    "esModuleInterop": true,/* 允许编译生成文件时，在代码中注入工具类(__importDefault、__importStar)对ESM与commonjs混用情况做兼容处理*/
-    "lib": [/* 编译过程中需要引入的库文件列表*/
-      "esnext",
-      "dom"
-    ],
     "outDir": "dist",
-    "rootDir": "./",
-    "baseUrl": "./",
+    "types": ["node", "vue"],
     "paths": {
       "@/*": ["./src/*"],
-      "@static/*": ["./static/*"],
-      "@/components/*": ["./src/components/*"],
-      "@/pages/*": ["./src/pages/*"],
-      "@charts/*": ["./src/plugins/charts/*"],
-      "@datasource/*": ["./src/plugins/datasource/*"],
-      "@dashboard/*": ["./src/plugins/dashboard/*"],
-      "@modules/*": ["./src/store/modules/*"],
-      "@api/*": ["./src/api/modules/*"],
-      "@pluginHandler/*": ["./src/plugin-handler/*"]
-    }
+      "@blueking/*": ["./node_modules/@blueking/*"],
+      "types/*": ["./src/types/*"]
+    },
+    "lib": ["esnext", "dom", "dom.iterable", "scripthost"]
   },
- /* "typeRoots": [                            *//* 要包含的类型声明文件路径列表*//*
-    "./typings",
-    "./node_modules/@types"
-  ],*/
-//   "include": [
-//     "src/**/*.ts",
-//     "src/**/*.tsx",
-//     "src/**/*.vue",
-//     "tests/**/*.ts",
-//     "tests/**/*.tsx"
-//   ],
-  "exclude": [
-    "node_modules",
-    "plugins",
-    "env.ts",
-    "babel.config.js",
-    "bk.config.js",
-    "webpack.config.js",
-    "src/components/vue-grid-layout",
-    "src/components/monaco",
-    "src/utils/login.js",
-    "test"
-  ]
+  "include": ["./**/*", ".eslintrc.js"]
 }

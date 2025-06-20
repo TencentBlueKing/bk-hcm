@@ -6,17 +6,11 @@ import { VendorEnum } from '@/common/constant';
 import { IListResData, IQueryResData, QueryBuilderType } from '@/typings';
 import { enableCount } from '@/utils/search';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
-
-export enum SecurityGroupManageType {
-  BIZ = 'biz',
-  PLATFORM = 'platform',
-  UNKNOWN = '',
-}
-
-export enum SecurityGroupRelatedResourceName {
-  CVM = 'CVM',
-  CLB = 'CLB',
-}
+import {
+  RELATED_RES_KEY_MAP,
+  SecurityGroupManageType,
+  SecurityGroupRelatedResourceName,
+} from '@/constants/security-group';
 
 export type SecurityGroupMgmtAttrSingleType = 'manager' | 'bak_manager' | 'mgmt_biz_id' | 'usage_biz_ids';
 
@@ -121,10 +115,8 @@ export interface ISecurityGroupRelLoadBalancerByBizItem extends SecurityGroupRel
   domain?: string;
   memo?: string;
 }
-export type SecurityGroupRelResourceByBizItem = (
-  | ISecurityGroupRelCvmByBizItem
-  | ISecurityGroupRelLoadBalancerByBizItem
-) & {
+export type SecurityGroupRelatedResourceItem = ISecurityGroupRelCvmByBizItem | ISecurityGroupRelLoadBalancerByBizItem;
+export type SecurityGroupRelResourceByBizItem = SecurityGroupRelatedResourceItem & {
   security_groups?: IResourceBoundSecurityGroupItem['security_groups'];
 };
 
@@ -277,34 +269,19 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
   };
 
   // 查询安全组关联的cvm列表，仅展示cvm摘要信息
-  const isQueryRelCvmByBizLoading = ref(false);
-  const queryRelCvmByBiz = async (sg_id: string, res_biz_id: number, payload: QueryBuilderType) => {
-    isQueryRelCvmByBizLoading.value = true;
-    const api = `/api/v1/cloud/${getBusinessApiPath()}security_groups/${sg_id}/related_resources/biz_resources/${res_biz_id}/cvms/list`;
-    try {
-      const [listRes, countRes] = await Promise.all<
-        [Promise<IListResData<ISecurityGroupRelCvmByBizItem[]>>, Promise<IListResData<ISecurityGroupRelCvmByBizItem[]>>]
-      >([http.post(api, enableCount(payload, false)), http.post(api, enableCount(payload, true))]);
-      const [{ details: list = [] }, { count = 0 }] = [listRes?.data ?? {}, countRes?.data ?? {}];
-      return { list, count };
-    } catch (error) {
-      console.error(error);
-      return Promise.reject(error);
-    } finally {
-      isQueryRelCvmByBizLoading.value = false;
-    }
-  };
-
-  // 查询安全组关联的负载均衡列表，仅展示负载均衡摘要信息。
-  const isQueryRelLoadBalancerByBizLoading = ref(false);
-  const queryRelLoadBalancerByBiz = async (sg_id: string, res_biz_id: number, payload: QueryBuilderType) => {
-    isQueryRelLoadBalancerByBizLoading.value = true;
-    const api = `/api/v1/cloud/${getBusinessApiPath()}security_groups/${sg_id}/related_resources/biz_resources/${res_biz_id}/load_balancers/list`;
+  const queryRelatedResourcesByBiz = async (
+    sgId: string,
+    resBizId: number,
+    relResName: SecurityGroupRelatedResourceName,
+    payload: QueryBuilderType,
+  ) => {
+    const resType = RELATED_RES_KEY_MAP[relResName];
+    const api = `/api/v1/cloud/${getBusinessApiPath()}security_groups/${sgId}/related_resources/biz_resources/${resBizId}/${resType}s/list`;
     try {
       const [listRes, countRes] = await Promise.all<
         [
-          Promise<IListResData<ISecurityGroupRelLoadBalancerByBizItem[]>>,
-          Promise<IListResData<ISecurityGroupRelLoadBalancerByBizItem[]>>,
+          Promise<IListResData<SecurityGroupRelatedResourceItem[]>>,
+          Promise<IListResData<SecurityGroupRelatedResourceItem[]>>,
         ]
       >([http.post(api, enableCount(payload, false)), http.post(api, enableCount(payload, true))]);
       const [{ details: list = [] }, { count = 0 }] = [listRes?.data ?? {}, countRes?.data ?? {}];
@@ -312,8 +289,29 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
     } catch (error) {
       console.error(error);
       return Promise.reject(error);
-    } finally {
-      isQueryRelLoadBalancerByBizLoading.value = false;
+    }
+  };
+
+  // 查询安全组关联的cvm列表，仅展示cvm摘要信息。- 资源下
+  const queryRelatedResourcesBySgId = async (
+    sgId: string,
+    relResName: SecurityGroupRelatedResourceName,
+    payload: QueryBuilderType,
+  ) => {
+    const resType = RELATED_RES_KEY_MAP[relResName];
+    const api = `/api/v1/cloud/security_groups/${sgId}/related_resources/${resType}s/list`;
+    try {
+      const [listRes, countRes] = await Promise.all<
+        [
+          Promise<IListResData<SecurityGroupRelatedResourceItem[]>>,
+          Promise<IListResData<SecurityGroupRelatedResourceItem[]>>,
+        ]
+      >([http.post(api, enableCount(payload, false)), http.post(api, enableCount(payload, true))]);
+      const [{ details: list = [] }, { count = 0 }] = [listRes?.data ?? {}, countRes?.data ?? {}];
+      return { list, count };
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
     }
   };
 
@@ -472,10 +470,8 @@ export const useSecurityGroupStore = defineStore('security-group', () => {
     batchUpdateMgmtAttr,
     isQueryRelBusinessLoading,
     queryRelBusiness,
-    isQueryRelCvmByBizLoading,
-    queryRelCvmByBiz,
-    isQueryRelLoadBalancerByBizLoading,
-    queryRelLoadBalancerByBiz,
+    queryRelatedResourcesByBiz,
+    queryRelatedResourcesBySgId,
     isQueryRelatedResourcesCountLoading,
     queryRelatedResourcesCount,
     isUpdateMgmtAttrLoading,

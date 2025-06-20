@@ -32,21 +32,34 @@ export default defineComponent({
     const accountStore = useAccountStore();
 
     const targetGroupId = ref(props.modelValue);
-    const { dataList, isDataLoad, isDataRefresh, handleScrollEnd, handleRefresh } = useSingleList({
-      url: `/api/v1/cloud/${getBusinessApiPath()}target_groups/list`,
-      rules: () => {
-        const baseRules = [
-          { field: 'account_id', op: QueryRuleOPEnum.EQ, value: props.accountId },
-          { field: 'protocol', op: QueryRuleOPEnum.EQ, value: props.protocol },
-        ];
-        if (props.isCorsV2) return baseRules;
-        return [
-          ...baseRules,
-          { field: 'region', op: QueryRuleOPEnum.EQ, value: props.region },
-          { field: 'cloud_vpc_id', op: QueryRuleOPEnum.EQ, value: props.cloudVpcId },
-        ];
-      },
-    });
+    const { dataList, isDataLoad, isDataRefresh, handleScrollEnd, handleRefresh, isScrollLoading, loadDataList } =
+      useSingleList({
+        url: `/api/v1/cloud/${getBusinessApiPath()}target_groups/list`,
+        rules: () => {
+          const baseRules = [
+            { field: 'account_id', op: QueryRuleOPEnum.EQ, value: props.accountId },
+            { field: 'protocol', op: QueryRuleOPEnum.EQ, value: props.protocol },
+          ];
+          if (props.isCorsV2) return baseRules;
+          return [
+            ...baseRules,
+            { field: 'region', op: QueryRuleOPEnum.EQ, value: props.region },
+            { field: 'cloud_vpc_id', op: QueryRuleOPEnum.EQ, value: props.cloudVpcId },
+          ];
+        },
+      });
+
+    const remoteSearchMethod = async (name: string) => {
+      const trimName = name.trim();
+      if (!trimName) return;
+
+      try {
+        dataList.value = await loadDataList([{ field: 'name', op: QueryRuleOPEnum.CS, value: trimName }], true);
+      } catch (error) {
+        console.error(error);
+        return Promise.reject(error);
+      }
+    };
 
     // click-handler - 新增目标组
     const handleAddTargetGroup = () => {
@@ -69,10 +82,11 @@ export default defineComponent({
         v-model={targetGroupId.value}
         onScroll-end={handleScrollEnd}
         loading={isDataLoad.value}
-        scrollLoading={isDataLoad.value}>
+        scrollLoading={isScrollLoading.value}
+        remoteMethod={remoteSearchMethod}>
         {{
           default: () =>
-            dataList.value.map(({ id, name, listener_num }) => (
+            dataList.value.map(({ id, name, listener_num }: any) => (
               <Option key={id} id={id} name={name} disabled={listener_num > 0} />
             )),
           extension: () => (

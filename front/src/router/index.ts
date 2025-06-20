@@ -8,7 +8,6 @@ import {
 import { MENU_BUSINESS } from '@/constants/menu-symbol';
 import { businessViews } from '@/views';
 import common from './module/common';
-import workbench from './module/workbench';
 import resource from './module/resource';
 import resourceInside from './module/resource-inside';
 import service from './module/service';
@@ -25,12 +24,10 @@ const { t } = i18n.global;
 
 const routes: RouteRecordRaw[] = [
   ...common,
-  ...workbench,
   ...resource,
   ...resourceInside,
   ...service,
   ...serviceInside,
-  // ...business,
   ...scheme,
   ...bill,
   {

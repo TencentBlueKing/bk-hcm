@@ -51,7 +51,7 @@ export function useSingleList<T>(options?: {
   const isDataRefresh = ref(false);
   const isScrollLoading = ref(false);
 
-  const loadDataList = async (customRules: RulesItem[] = []) => {
+  const loadDataList = async (customRules: RulesItem[] = [], replace = false) => {
     try {
       const url = typeof options.url === 'function' ? options.url() : options.url;
       const filter = {
@@ -104,8 +104,13 @@ export function useSingleList<T>(options?: {
       isDataLoad.value = true;
       const [detailRes, countRes] = await apiMethod();
       const increment = get(detailRes.data, options.path.data) || [];
-      // 加载数据
-      dataList.value = [...dataList.value, ...increment];
+
+      if (replace) {
+        dataList.value = increment;
+      } else {
+        dataList.value = [...dataList.value, ...increment];
+      }
+
       // 更新分页参数
       pagination.count = get(countRes.data, options.path.count, 0);
       // 将加载数据后的 dataList 作为 then 函数的返回值, 用以支持对新的 dataList 做额外的处理

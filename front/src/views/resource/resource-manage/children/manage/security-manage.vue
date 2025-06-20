@@ -46,9 +46,10 @@ import SecurityGroupSingleDeleteDialog from '../dialog/security-group/single-del
 import CloneSecurity, { IData, ICloneSecurityProps } from '../dialog/clone-security/index.vue';
 import SecurityGroupAssignDialog from '../dialog/security-group/assign.vue';
 import SecurityGroupUpdateMgmtAttrDialog from '../dialog/security-group/update-mgmt-attr.vue';
+import SyncAccountResource from '@/components/sync-account-resource/index.vue';
 import UnclaimedComp from '../components/security/unclaimed-comp/index.vue';
-import { MGMT_TYPE_MAP } from '@/constants/security-group';
-import { ISecurityGroupOperateItem, useSecurityGroupStore, SecurityGroupManageType } from '@/store/security-group';
+import { MGMT_TYPE_MAP, SecurityGroupManageType } from '@/constants/security-group';
+import { ISecurityGroupOperateItem, useSecurityGroupStore } from '@/store/security-group';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import { useBusinessGlobalStore } from '@/store/business-global';
 import UsageBizValue from '@/views/resource/resource-manage/children/components/security/usage-biz-value.vue';
@@ -1165,6 +1166,16 @@ const handleSecurityGroupOperationSuccess = () => {
   });
 };
 
+const syncDialogState = reactive({ isShow: false, isHidden: true, initialModel: null });
+const handleSync = () => {
+  syncDialogState.isShow = true;
+  syncDialogState.isHidden = false;
+  if (resourceAccountStore.resourceAccount) {
+    const { id, vendor } = resourceAccountStore.resourceAccount;
+    syncDialogState.initialModel = { account_id: id, vendor };
+  }
+};
+
 // 当table数据整个替换时, 需要清空勾选项, 确保勾选态及selections数据正确
 watch(
   () => datas.value,
@@ -1185,7 +1196,7 @@ watch(
 
 <template>
   <div class="security-manager-page">
-    <div class="flex-row align-items-center toolbar">
+    <div class="toolbar">
       <bk-radio-group v-model="activeType" :disabled="isLoading">
         <bk-radio-button v-for="item in types" :key="item.name" :label="item.name">
           {{ item.label }}
@@ -1231,6 +1242,7 @@ watch(
           批量添加资产归属
         </bk-button>
       </template>
+      <bk-button :disabled="selections.length > 0" @click="handleSync">{{ t('同步安全组') }}</bk-button>
       <bk-search-select
         class="search-filter search-selector-container"
         clearable
@@ -1342,6 +1354,23 @@ watch(
         @success="handleSecurityGroupOperationSuccess"
       />
     </template>
+
+    <template v-if="!syncDialogState.isHidden">
+      <sync-account-resource
+        v-model="syncDialogState.isShow"
+        title="同步安全组"
+        :desc="`从云上同步安全组、安全组规则、关联的实例信息等`"
+        :business-id="props.bkBizId"
+        resource-name="security_group"
+        :initial-model="syncDialogState.initialModel"
+        @hidden="
+          () => {
+            syncDialogState.isHidden = true;
+            syncDialogState.initialModel = null;
+          }
+        "
+      />
+    </template>
   </div>
 </template>
 
@@ -1362,11 +1391,9 @@ watch(
   margin-left: auto;
 }
 
-.ml10 {
-  margin-left: 10px;
-}
-
 .toolbar {
+  display: flex;
+  align-items: center;
   gap: 10px;
 }
 

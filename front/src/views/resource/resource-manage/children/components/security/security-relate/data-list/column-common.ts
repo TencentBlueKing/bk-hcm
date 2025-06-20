@@ -1,15 +1,15 @@
 import { h } from 'vue';
 import { PropertyColumnConfig } from '@/model/typings';
 import { getInstVip, getPrivateIPs, getPublicIPs } from '@/utils';
-import { IResourceBoundSecurityGroupItem, SecurityGroupRelatedResourceName } from '@/store/security-group';
-import { RELATED_RES_PROPERTIES_MAP } from '@/constants/security-group';
+import { IResourceBoundSecurityGroupItem } from '@/store/security-group';
+import { RELATED_RES_PROPERTIES_MAP, SecurityGroupRelatedResourceName } from '@/constants/security-group';
 
 import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
 
 const columnIds = new Map<string, string[]>();
 
 const columnConfig: Record<string, PropertyColumnConfig> = {
-  private_ipv4_addresses: {
+  private_ip: {
     render: ({ data }: any) => {
       const content = getPrivateIPs(data);
       return h('div', { class: 'flex-row align-items-center' }, [
@@ -18,7 +18,7 @@ const columnConfig: Record<string, PropertyColumnConfig> = {
       ]);
     },
   },
-  public_ipv4_addresses: {
+  public_ip: {
     render: ({ data }: any) => {
       const content = getPublicIPs(data);
       return h('div', { class: 'flex-row align-items-center' }, [
@@ -38,16 +38,7 @@ const columnConfig: Record<string, PropertyColumnConfig> = {
   },
 };
 
-const relCvmFields = [
-  'private_ipv4_addresses',
-  'public_ipv4_addresses',
-  'region',
-  'zone',
-  'name',
-  'status',
-  'cloud_vpc_ids',
-  'bk_biz_id',
-];
+const relCvmFields = ['private_ip', 'public_ip', 'region', 'zone', 'name', 'status', 'cloud_vpc_ids', 'bk_biz_id'];
 const relClbFields = [
   'name',
   'domain',
@@ -60,17 +51,10 @@ const relClbFields = [
   'cloud_vpc_id',
   'bk_biz_id',
 ];
-const bindCvmFields = [
-  'private_ipv4_addresses',
-  'public_ipv4_addresses',
-  'name',
-  'cloud_vpc_ids',
-  'status',
-  'security_group_names',
-];
+const bindCvmFields = ['private_ip', 'public_ip', 'name', 'cloud_vpc_ids', 'status', 'security_group_names'];
 const unbindCvmFields = [
-  'private_ipv4_addresses',
-  'public_ipv4_addresses',
+  'private_ip',
+  'public_ip',
   'name',
   'cloud_vpc_ids',
   'status',

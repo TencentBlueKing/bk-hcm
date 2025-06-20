@@ -8,8 +8,8 @@ import { useResourceStore } from '@/store';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { ResourceTypeEnum } from '@/common/resource-constant';
 import ResourceSearchSelect from '@/components/resource-search-select/index.vue';
-
-const { useColumns, useTableListQuery, HostOperations } = businessHostManagePlugin;
+import { ValidateValuesFunc } from 'bkui-vue/lib/search-select/utils';
+import { parseIP } from '@/utils';
 
 const props = defineProps({
   filter: {
@@ -18,17 +18,25 @@ const props = defineProps({
   isResourcePage: {
     type: Boolean,
   },
-  whereAmI: {
-    type: String,
-  },
 });
+
+const { useColumns, useTableListQuery, HostOperations } = businessHostManagePlugin;
 
 const isLoadingCloudAreas = ref(false);
 const cloudAreaPage = ref(0);
 const cloudAreas = ref([]);
-const { whereAmI, isResourcePage } = useWhereAmI();
+const { whereAmI } = useWhereAmI();
 
 const { searchValue, filter } = useFilterHost(props);
+const validateValues: ValidateValuesFunc = async (item, values) => {
+  if (!item) return '请选择条件';
+  // IP值为单选，这里可以简单处理（即便是多IP搜索，粘贴上去也是一个值）
+  if (['private_ip', 'public_ip'].includes(item.id)) {
+    const { IPv4List, IPv6List } = parseIP(values[0].id);
+    return Boolean(IPv4List.length || IPv6List.length) ? true : 'IP格式有误';
+  }
+  return true;
+};
 
 const { selections, handleSelectionChange, resetSelections } = useTableSelection();
 
@@ -88,10 +96,7 @@ getCloudAreas();
 
 <template>
   <bk-loading :loading="isLoading" opacity="1">
-    <section
-      class="flex-row align-items-center"
-      :class="isResourcePage ? 'justify-content-end' : 'justify-content-between'"
-    >
+    <section class="toolbar">
       <slot></slot>
       <HostOperations
         ref="hostOperationRef"
@@ -102,8 +107,12 @@ getCloudAreas();
       }"
       ></HostOperations>
 
-      <div class="flex-row align-items-center justify-content-arround search-selector-container">
-        <resource-search-select v-model="searchValue" :resource-type="ResourceTypeEnum.CVM" value-behavior="need-key" />
+      <div class="search-selector-container">
+        <resource-search-select
+          v-model="searchValue"
+          :resource-type="ResourceTypeEnum.CVM"
+          :validate-values="validateValues"
+        />
         <slot name="recycleHistory"></slot>
       </div>
     </section>
@@ -129,28 +138,16 @@ getCloudAreas();
 </template>
 
 <style lang="scss" scoped>
-.w100 {
-  width: 100px;
-}
-.w60 {
-  width: 60px;
-}
-.mt20 {
-  margin-top: 20px;
-}
-.mb32 {
-  margin-bottom: 32px;
-}
-.distribution-cls {
+.toolbar {
   display: flex;
   align-items: center;
+  gap: 10px;
+
+  .search-selector-container {
+    margin-left: auto;
+  }
 }
-.mr10 {
-  margin-right: 10px;
-}
-.search-selector-container {
-  margin-left: auto;
-}
+
 :deep(.operation-column) {
   height: 100%;
   display: flex;
@@ -184,9 +181,6 @@ getCloudAreas();
       cursor: not-allowed;
     }
   }
-}
-.selected-host-info {
-  margin-bottom: 16px;
 }
 </style>
 

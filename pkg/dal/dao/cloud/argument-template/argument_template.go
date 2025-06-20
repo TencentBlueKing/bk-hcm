@@ -80,8 +80,8 @@ func (dao Dao) BatchCreateWithTx(kt *kit.Kit, tx *sqlx.Tx, models []*tableargstp
 
 	sql := fmt.Sprintf(`INSERT INTO %s (%s)	VALUES(%s)`, tableName,
 		tableargstpl.ArgumentTplTableColumns.ColumnExpr(), tableargstpl.ArgumentTplTableColumns.ColonNameExpr())
-
-	if err = dao.Orm.Txn(tx).BulkInsert(kt.Ctx, sql, models); err != nil {
+	err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).BulkInsert(kt.Ctx, sql, models)
+	if err != nil {
 		logs.Errorf("insert %s failed, err: %v, rid: %s", tableName, err, kt.Rid)
 		return nil, fmt.Errorf("insert %s failed, err: %v", tableName, err)
 	}
@@ -139,7 +139,8 @@ func (dao Dao) Update(kt *kit.Kit, expr *filter.Expression, model *tableargstpl.
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, model.TableName(), setExpr, whereExpr)
 
 	_, err = dao.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		effected, uErr := dao.Orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
+		effected, uErr := dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(txn).Update(
+			kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if uErr != nil {
 			logs.Errorf("update argument template failed, sql: %s, whereValue: %+v, err: %v, rid: %v",
 				sql, whereValue, uErr, kt.Rid)
@@ -176,7 +177,7 @@ func (dao Dao) UpdateByIDWithTx(kt *kit.Kit, tx *sqlx.Tx, id string,
 	sql := fmt.Sprintf(`UPDATE %s %s where id = :id`, table.ArgumentTemplateTable, setExpr)
 
 	toUpdate["id"] = id
-	_, err = dao.Orm.Txn(tx).Update(kt.Ctx, sql, toUpdate)
+	_, err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Update(kt.Ctx, sql, toUpdate)
 	if err != nil {
 		logs.Errorf("update argument template db failed, id: %s, toUpdate: %+v, err: %v, rid: %v",
 			id, toUpdate, err, kt.Rid)
@@ -207,7 +208,7 @@ func (dao Dao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListArgumentTemp
 		// this is a count request, then do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.ArgumentTemplateTable, whereExpr)
 
-		count, err := dao.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count argument template failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -224,7 +225,8 @@ func (dao Dao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListArgumentTemp
 		table.ArgumentTemplateTable, whereExpr, pageExpr)
 
 	details := make([]tableargstpl.ArgumentTemplateTable, 0)
-	if err = dao.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql, whereValue)
+	if err != nil {
 		return nil, err
 	}
 
@@ -243,7 +245,8 @@ func (dao Dao) DeleteWithTx(kt *kit.Kit, tx *sqlx.Tx, expr *filter.Expression) e
 	}
 
 	sql := fmt.Sprintf(`DELETE FROM %s %s`, table.ArgumentTemplateTable, whereExpr)
-	if _, err = dao.Orm.Txn(tx).Delete(kt.Ctx, sql, whereValue); err != nil {
+	_, err = dao.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Delete(kt.Ctx, sql, whereValue)
+	if err != nil {
 		logs.Errorf("delete argument template failed, sql: %s, whereValue: %+v, err: %v, rid: %s",
 			sql, whereValue, err, kt.Rid)
 		return err

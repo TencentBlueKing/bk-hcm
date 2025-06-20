@@ -398,7 +398,7 @@ export default defineComponent({
       (account) => {
         if (whereAmI.value !== Senarios.resource) return;
         const idx = state.filter.rules.findIndex(({ field }) => field === 'account_id');
-        if (!account.id) {
+        if (!account?.id) {
           if (idx > -1) state.filter.rules.splice(idx);
           return;
         }

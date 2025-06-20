@@ -34,3 +34,12 @@ func NewBackendKit() *kit.Kit {
 
 	return kt
 }
+
+// NewTenantBackendKit 生成指定租户的后端操作Kit.
+func NewTenantBackendKit(tenantID string) *kit.Kit {
+	kt := NewBackendKit()
+	// 设置后端操作的租户id
+	kt.TenantID = tenantID
+
+	return kt
+}

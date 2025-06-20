@@ -4,14 +4,12 @@ import { useI18n } from 'vue-i18n';
 import {
   ISecurityGroupDetail,
   type SecurityGroupRelResourceByBizItem,
-  type SecurityGroupRelatedResourceName,
   useSecurityGroupStore,
 } from '@/store/security-group';
 import { useBusinessGlobalStore } from '@/store/business-global';
 import columnFactory from '../data-list/column-factory';
-import { RELATED_RES_KEY_MAP } from '@/constants/security-group';
+import { RELATED_RES_KEY_MAP, SecurityGroupRelatedResourceName } from '@/constants/security-group';
 import { ISearchSelectValue } from '@/typings';
-import { getLocalFilterFnBySearchSelect } from '@/utils/search';
 
 import { Message } from 'bkui-vue';
 import { ThemeEnum } from 'bkui-vue/lib/shared';
@@ -62,10 +60,9 @@ watch(
   { immediate: true },
 );
 
-const handleSearch = (searchValue: ISearchSelectValue) => {
-  filterFn.value = getLocalFilterFnBySearchSelect(searchValue, [
-    { field: 'bk_biz_id', formatter: (name: string) => getBusinessIds(name) },
-  ]);
+const formatterOptions = [{ field: 'bk_biz_id', formatter: (name: string) => getBusinessIds(name) }];
+const handleSearch = (_: ISearchSelectValue, fn: (item: any) => boolean) => {
+  filterFn.value = fn;
 };
 
 const handleConfirm = async () => {
@@ -103,8 +100,14 @@ const handleClosed = () => {
         <i class="hcm-icon bkhcm-icon-info-line"></i>
         <span>{{ t('仅绑定1个安全组的资源不允许进行批量解绑') }}</span>
       </span>
-      <!-- TODO：本地搜索 -->
-      <search class="search" :resource-name="tabActive" operation="unbind" @search="handleSearch" />
+      <search
+        class="search"
+        :resource-name="tabActive"
+        operation="unbind"
+        local-search
+        :options="formatterOptions"
+        @search="handleSearch"
+      />
     </div>
 
     <bk-table

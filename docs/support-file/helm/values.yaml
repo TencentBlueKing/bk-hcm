@@ -12,7 +12,7 @@ image:
   registry: hub.bktencent.com
   pullPolicy: IfNotPresent
   pullSecrets: []
-  tag: 1.8.0
+  tag: 1.8.1
 
 serviceAccount:
   create: true
@@ -496,10 +496,14 @@ taskserver:
   async:
     # scheduler 公共组件，负责获取分配给当前节点的任务流，并解析成任务树后，派发当前要执行的任务给executor执行
     scheduler:
-      # watchIntervalSec 查看是否有分配给当前节点处于Scheduled状态任务的周期
+      # watchIntervalSec 查看是否有分配给当前节点处于Scheduled状态任务的周期间隔
       watchIntervalSec: 1
       # workerNumber 负责解析当前节点的子节点，并派发子节点任务到executor执行的协程数量
       workerNumber: 5
+      # scheduledFlowFetcherConcurrency 负责查询处于Scheduled状态任务的协程数量
+      scheduledFlowFetcherConcurrency: 1
+      # canceledFlowFetcherConcurrency 负责查询处于Canceled状态任务的协程数量
+      canceledFlowFetcherConcurrency: 1
     # executor 公共组件，负责执行异步任务
     executor:
       # workerNumber 负责处理异步任务的协程数量
@@ -510,12 +514,16 @@ taskserver:
     dispatcher:
       # watchIntervalSec 查看是否有Pending状态任务的周期
       watchIntervalSec: 1
+      # pendingFlowFetcherConcurrency 负责查询处于Pending状态任务的协程数量
+      pendingFlowFetcherConcurrency: 1
     # watchDog 主节点组件，负责异常任务修正（超时任务，任务处理节点已经挂掉的任务等）
     watchDog:
       # watchIntervalSec 查看是否有异常任务的周期
       watchIntervalSec: 1
       # taskTimeoutSec 判断任务执行超时时间
       taskTimeoutSec: 300
+      # workerNumber 负责处理异常任务的协程数量
+      workerNumber: 1
   # whether to use label to filter service.
   useLabel:
     # use label when pull aws china site bills
@@ -922,3 +930,12 @@ cmdb:
     caFile:
     # the password to decrypt the certificate.
     password:
+
+compatibility:
+  # 旧版本deployment中spec.selector.matchLabels 缺少component标签。
+  # 如果helm已经被部署，修改selector属性将导致变更失败，需要重新部署。
+  # noComponentInMatchLabels 为true时保持原状
+  noComponentInMatchLabels: false
+
+# ccHostPoolBiz cmdb host pool biz id
+ccHostPoolBiz: 1

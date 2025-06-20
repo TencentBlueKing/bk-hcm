@@ -63,6 +63,7 @@ func NewMainSummaryDailyController(opt *MainAccountControllerOption) (*MainSumma
 	}
 	return &MainSummaryDailyController{
 		Client:          opt.Client,
+		TenantID:        opt.TenantID,
 		RootAccountID:   opt.RootAccountID,
 		MainAccountID:   opt.MainAccountID,
 		ProductID:       opt.ProductID,
@@ -78,6 +79,7 @@ func NewMainSummaryDailyController(opt *MainAccountControllerOption) (*MainSumma
 // MainSummaryDailyController main account daily summary controller
 type MainSummaryDailyController struct {
 	Client          *client.ClientSet
+	TenantID        string
 	RootAccountID   string
 	MainAccountID   string
 	Version         int
@@ -99,6 +101,7 @@ func (msdc *MainSummaryDailyController) Start() error {
 		return fmt.Errorf("controller already start")
 	}
 	kt := getInternalKit()
+	kt.SetTenant(msdc.TenantID)
 	cancelFunc := kt.CtxBackgroundWithCancel()
 	msdc.kt = kt
 	msdc.cancelFunc = cancelFunc

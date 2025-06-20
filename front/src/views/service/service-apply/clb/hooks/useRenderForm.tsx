@@ -1,4 +1,4 @@
-import { computed, defineComponent, ref, watch, nextTick, Reactive } from 'vue';
+import { computed, defineComponent, ref, watch, nextTick, Reactive, reactive } from 'vue';
 // import components
 import { Button, Form, Input, Select, Slider } from 'bkui-vue';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
@@ -12,6 +12,7 @@ import ConditionOptions from '../../components/common/condition-options/index.vu
 import CommonCard from '@/components/CommonCard';
 import VpcReviewPopover from '../../components/common/VpcReviewPopover';
 import SelectedItemPreviewComp from '@/components/SelectedItemPreviewComp';
+import LbSpecTypeDialog from '@/views/business/load-balancer/components/lb-spec-type-dialog';
 import BandwidthPackageSelector, { IBandwidthPackage } from '../../components/common/BandwidthPackageSelector';
 // import types
 import { type ISubnetItem } from '../../cvm/children/SubnetPreviewDialog';
@@ -74,6 +75,28 @@ export default (formModel: Reactive<ApplyClbModel>) => {
     subnetData.value = data;
   };
 
+  const lbSpecTypeDialogState = reactive({ isHidden: true, isShow: false });
+  const selectedSlaTypeBandWidthLimit = ref<number>();
+  const handleLBSpecTypeChange = ({ slaType, bandwidthLimit }: { slaType: string; bandwidthLimit: number }) => {
+    formModel.sla_type = slaType;
+    selectedSlaTypeBandWidthLimit.value = bandwidthLimit;
+  };
+
+  const getInternetMaxBandwidthOutContent = (min: number, max: number) => {
+    return {
+      [min]: { label: min },
+      [max / 4]: { label: max / 4 },
+      [max / 2]: { label: max / 2 },
+      [max]: { label: max },
+    };
+  };
+  const internetMaxBandwidthOutConfig = computed(() => {
+    const max = selectedSlaTypeBandWidthLimit.value ? selectedSlaTypeBandWidthLimit.value : 10240;
+    const content = getInternetMaxBandwidthOutContent(1, max);
+
+    return { min: 1, max, content };
+  });
+
   // 当前地域下负载均衡的配额
   const currentLbQuota = computed(() => {
     const quotaName =
@@ -82,11 +105,14 @@ export default (formModel: Reactive<ApplyClbModel>) => {
         : CLB_QUOTA_NAME.TOTAL_INTERNAL_CLB_QUOTA;
     return quotas.value.find(({ quota_id }) => quotaName === quota_id);
   });
-  // 购买数量的最大值
-  const requireCountMax = computed(() => currentLbQuota.value?.quota_limit - currentLbQuota.value?.quota_current || 1);
+  // 配额的最大值
+  const quotaMax = computed(() => currentLbQuota.value?.quota_limit - currentLbQuota.value?.quota_current || 0);
+  // 每次可申请数的最大值
+  const onceApplyLimit = 20;
+  const requireCountLimit = computed(() => Math.min(onceApplyLimit, quotaMax.value));
   // 配额余量
   const quotaRemaining = computed(() =>
-    currentLbQuota.value?.quota_limit ? requireCountMax.value - formModel.require_count : 0,
+    currentLbQuota.value?.quota_limit ? quotaMax.value - formModel.require_count : 0,
   );
 
   const rules = {
@@ -343,21 +369,18 @@ export default (formModel: Reactive<ApplyClbModel>) => {
             property: 'sla_type',
             hidden: formModel.slaType !== '1',
             content: () => {
-              let eventName = '';
-              eventName = 'showLbSpecTypeSelectDialog';
+              const handleClick = () => {
+                lbSpecTypeDialogState.isHidden = false;
+                lbSpecTypeDialogState.isShow = true;
+              };
               if (formModel.sla_type !== 'shared') {
-                return (
-                  <SelectedItemPreviewComp
-                    content={CLB_SPECS[formModel.sla_type]}
-                    onClick={() => bus.$emit(eventName)}
-                  />
-                );
+                return <SelectedItemPreviewComp content={CLB_SPECS[formModel.sla_type]} onClick={handleClick} />;
               }
               return (
                 <Button
-                  onClick={() => bus.$emit(eventName)}
+                  v-bk-tooltips={{ content: '请选择运营商类型', disabled: !!formModel.vip_isp }}
                   disabled={!formModel.vip_isp}
-                  v-bk-tooltips={{ content: '请选择运营商类型', disabled: !!formModel.vip_isp }}>
+                  onClick={handleClick}>
                   <Plus class='f24' />
                   {t('选择实例规格')}
                 </Button>
@@ -464,16 +487,9 @@ export default (formModel: Reactive<ApplyClbModel>) => {
             <div class='slider-wrap'>
               <Slider
                 v-model={formModel.internet_max_bandwidth_out}
-                minValue={1}
-                maxValue={5120}
-                customContent={{
-                  1: { label: '1' },
-                  256: { label: '256' },
-                  512: { label: '512' },
-                  1024: { label: '1024' },
-                  2048: { label: '2048' },
-                  5120: { label: '5120' },
-                }}
+                minValue={internetMaxBandwidthOutConfig.value.min}
+                maxValue={internetMaxBandwidthOutConfig.value.max}
+                customContent={internetMaxBandwidthOutConfig.value.content}
                 showInput
                 labelClick>
                 {{
@@ -490,44 +506,17 @@ export default (formModel: Reactive<ApplyClbModel>) => {
             property: 'require_count',
             content: () => (
               <>
-                <InputNumber v-model={formModel.require_count} min={1} max={requireCountMax.value} />
+                <InputNumber v-model={formModel.require_count} min={1} max={requireCountLimit.value} />
                 <div class='quota-info'>
                   {t('所在地域配额为')}
                   <span class='quota-number ml5'>{quotaRemaining.value}</span>
                   <span class='ml5 mr5'>/</span>
                   {currentLbQuota.value?.quota_limit || 0}
+                  {t(`，单次购买限 ${requireCountLimit.value} 个`)}
                 </div>
               </>
             ),
           },
-          // {
-          //   label: '购买时长',
-          //   required: true,
-          //   property: 'duration',
-          //   content: () => (
-          //     <div class='flex-row'>
-          //       <Input
-          //         v-model={formModel.duration}
-          //         class='input-select-wrap'
-          //         type='number'
-          //         placeholder='0'
-          //         min={1}
-          //         max={unit.value === 'month' ? 11 : 5}>
-          //         {{
-          //           suffix: () => (
-          //             <Select v-model={unit.value} clearable={false} class='input-suffix-select'>
-          //               <Option label='月' value='month' />
-          //               <Option label='年' value='year' />
-          //             </Select>
-          //           ),
-          //         }}
-          //       </Input>
-          //       <Checkbox class='ml24' v-model={formModel.auto_renew}>
-          //         自动续费
-          //       </Checkbox>
-          //     </div>
-          //   ),
-          // },
         ],
         {
           label: '实例名称',
@@ -557,59 +546,71 @@ export default (formModel: Reactive<ApplyClbModel>) => {
   const ApplyClbForm = defineComponent({
     setup() {
       return () => (
-        <Form class='apply-clb-form-container' formType='vertical' model={formModel} ref={formRef} rules={rules}>
-          <ConditionOptions
-            type={ResourceTypeEnum.CLB}
-            bizs={formModel.bk_biz_id}
-            v-model:cloudAccountId={formModel.account_id}
-            v-model:vendor={formModel.vendor}
-            v-model:region={formModel.region}
-          />
-          {formItemOptions.value.map(({ id, title, children }) => (
-            <CommonCard key={id} title={() => t(title)} class='form-card-container'>
-              {children.map((item) => {
-                let contentVNode = null;
-                if (Array.isArray(item)) {
-                  contentVNode = (
-                    <div class='flex-row'>
-                      {item.map(({ label, required, property, content, description, hidden }) => {
-                        if (hidden) return null;
-                        return (
-                          <FormItem
-                            key={property}
-                            label={t(label)}
-                            required={required}
-                            property={property}
-                            description={description}>
-                            {content()}
-                          </FormItem>
-                        );
-                      })}
-                    </div>
-                  );
-                } else if (item.simpleShow) {
-                  contentVNode = item.content();
-                } else {
-                  if (item.hidden) {
-                    contentVNode = null;
-                  } else {
+        <>
+          <Form class='apply-clb-form-container' formType='vertical' model={formModel} ref={formRef} rules={rules}>
+            <ConditionOptions
+              type={ResourceTypeEnum.CLB}
+              bizs={formModel.bk_biz_id}
+              v-model:cloudAccountId={formModel.account_id}
+              v-model:vendor={formModel.vendor}
+              v-model:region={formModel.region}
+            />
+            {formItemOptions.value.map(({ id, title, children }) => (
+              <CommonCard key={id} title={() => t(title)} class='form-card-container'>
+                {children.map((item) => {
+                  let contentVNode = null;
+                  if (Array.isArray(item)) {
                     contentVNode = (
-                      <FormItem
-                        key={item.property}
-                        label={item.label}
-                        required={item.required}
-                        property={item.property}
-                        description={item.description}>
-                        {item.content()}
-                      </FormItem>
+                      <div class='flex-row'>
+                        {item.map(({ label, required, property, content, description, hidden }) => {
+                          if (hidden) return null;
+                          return (
+                            <FormItem
+                              key={property}
+                              label={t(label)}
+                              required={required}
+                              property={property}
+                              description={description}>
+                              {content()}
+                            </FormItem>
+                          );
+                        })}
+                      </div>
                     );
+                  } else if (item.simpleShow) {
+                    contentVNode = item.content();
+                  } else {
+                    if (item.hidden) {
+                      contentVNode = null;
+                    } else {
+                      contentVNode = (
+                        <FormItem
+                          key={item.property}
+                          label={item.label}
+                          required={item.required}
+                          property={item.property}
+                          description={item.description}>
+                          {item.content()}
+                        </FormItem>
+                      );
+                    }
                   }
-                }
-                return contentVNode;
-              })}
-            </CommonCard>
-          ))}
-        </Form>
+                  return contentVNode;
+                })}
+              </CommonCard>
+            ))}
+          </Form>
+          {/* 负载均衡规格类型选择弹框 */}
+          {!lbSpecTypeDialogState.isHidden && (
+            <LbSpecTypeDialog
+              v-model={lbSpecTypeDialogState.isShow}
+              slaType={formModel.sla_type}
+              specAvailabilitySet={specAvailabilitySet.value}
+              onConfirm={handleLBSpecTypeChange}
+              onHidden={() => (lbSpecTypeDialogState.isHidden = true)}
+            />
+          )}
+        </>
       );
     },
   });
@@ -709,8 +710,15 @@ export default (formModel: Reactive<ApplyClbModel>) => {
   );
 
   // 这个需要放到watch之后，避免数据清空之前就触发了effect
-  const { ispList, isResourceListLoading, quotas, isInquiryPrices, isInquiryPricesLoading, currentResourceListMap } =
-    useFilterResource(formModel);
+  const {
+    ispList,
+    isResourceListLoading,
+    quotas,
+    isInquiryPrices,
+    isInquiryPricesLoading,
+    currentResourceListMap,
+    specAvailabilitySet,
+  } = useFilterResource(formModel);
 
   return {
     vpcData,

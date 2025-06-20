@@ -2,26 +2,18 @@
 import { computed, Fragment, h, ref, useTemplateRef, watch, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { groupBy } from 'lodash';
-
-import { Button, Message, Tag } from 'bkui-vue';
-import StatusAbnormal from '@/assets/image/Status-abnormal.png';
-import StatusNormal from '@/assets/image/Status-normal.png';
-import StatusUnknown from '@/assets/image/Status-unknown.png';
-
-import {
-  HOST_RUNNING_STATUS,
-  HOST_SHUTDOWN_STATUS,
-} from '@/views/resource/resource-manage/common/table/HostOperations';
-import { CLOUD_HOST_STATUS } from '@/common/constant';
 import {
   type CvmsAssignPreviewItem,
   type CvmBatchAssignOpItem,
   type ICvmsAssignBizsPreviewItem,
   useHostStore,
 } from '@/store';
+import { CLOUD_HOST_STATUS } from '@/common/constant';
 import { ResourceTypeEnum } from '@/common/resource-constant';
 import { timeFormatter } from '@/common/util';
+import { ModelPropertyColumn } from '@/model/typings';
 
+import { Button, Message, Tag } from 'bkui-vue';
 import MatchHost from './match-host.vue';
 import ManualAssign from './manual-assign.vue';
 
@@ -117,7 +109,7 @@ watch(
 );
 
 // 表格配置
-const columns = [
+const columns: ModelPropertyColumn[] = [
   { id: 'private_ip_address', name: t('内网IP'), type: 'string', width: 150 },
   { id: 'public_ip_address', name: t('公网IP'), type: 'string', width: 150 },
   { id: 'bk_cloud_id', name: t('管控区域'), type: 'cloud-area', width: 150 },
@@ -173,23 +165,12 @@ const columns = [
   {
     id: 'status',
     name: t('主机状态'),
-    type: 'string',
-    width: 120,
-    render: ({ cell }: any) => {
-      // eslint-disable-next-line no-nested-ternary
-      const src = HOST_SHUTDOWN_STATUS.includes(cell)
-        ? cell.toLowerCase() === 'stopped'
-          ? StatusUnknown
-          : StatusAbnormal
-        : HOST_RUNNING_STATUS.includes(cell)
-        ? StatusNormal
-        : StatusUnknown;
-
-      return h('div', { class: 'flex-row align-items-center' }, [
-        h('img', { class: 'mr6', src, width: 14, height: 14 }),
-        h('span', null, CLOUD_HOST_STATUS[cell] || cell || t('未获取')),
-      ]);
+    type: 'enum',
+    option: CLOUD_HOST_STATUS,
+    meta: {
+      display: { appearance: 'cvm-status' },
     },
+    width: 120,
   },
   { id: 'machine_type', name: t('实例规格'), type: 'string', width: 120 },
   { id: 'os_name', name: t('操作系统'), type: 'string', width: 200 },
@@ -287,6 +268,7 @@ const handleClosed = () => {
             <!-- collapse-content -->
             <template #content>
               <bk-table
+                max-height="30vw"
                 :data="item.tableData"
                 :thead="{ color: '#F0F1F5' }"
                 row-key="id"
@@ -308,6 +290,7 @@ const handleClosed = () => {
                       :value="row[column.id]"
                       :vendor="row?.vendor"
                       :resource-type="ResourceTypeEnum.CVM"
+                      :display="column.meta?.display"
                     />
                   </template>
                 </bk-table-column>
@@ -416,7 +399,6 @@ const handleClosed = () => {
 
   :deep(.bk-collapse-content) {
     padding: 0;
-    max-height: 300px;
   }
 
   .collapse-header {

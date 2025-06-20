@@ -32,6 +32,7 @@ import (
 	"hcm/pkg/client"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
@@ -41,7 +42,9 @@ import (
 
 // CloudResourceSync 定时同步云资源
 func CloudResourceSync(intervalMin time.Duration, sd serviced.ServiceDiscover, cliSet *client.ClientSet) {
-	logs.Infof("cloud resource sync enable, syncIntervalMin: %v", intervalMin)
+
+	syncKit := core.NewBackendKit()
+	logs.Infof("cloud resource sync enabled, syncIntervalMin: %s, rid: %s", intervalMin, syncKit.Rid)
 
 	for {
 		time.Sleep(intervalMin)
@@ -51,36 +54,72 @@ func CloudResourceSync(intervalMin time.Duration, sd serviced.ServiceDiscover, c
 		}
 
 		start := time.Now()
-		logs.Infof("cloud resource all sync start, time: %v", start)
+		logs.Infof("cloud resource all sync start, time: %v, rid: %s", start, syncKit.Rid)
 
-		waitGroup := new(sync.WaitGroup)
-		syncers := account.GetAvailableVendorSyncers()
+		tenantIDs, err := listAllTenantIDs(syncKit, cliSet)
+		if err != nil {
+			logs.Errorf("list tenant failed, err: %v, rid: %s", err, syncKit.Rid)
+			continue
+		}
+		logs.Infof("cloud resource sync tenant total count: %d, rid: %s", len(tenantIDs), syncKit.Rid)
 
-		waitGroup.Add(len(syncers))
-		for _, vendorSyncer := range syncers {
-			go func(vendor account.VendorSyncer) {
-				kt := core.NewBackendKit()
-				// for retry
-				kt.RequestSource = enumor.AsynchronousTasks
-				allAccountSync(kt, cliSet, vendor)
-				waitGroup.Done()
-			}(vendorSyncer)
+		for _, tenantID := range tenantIDs {
+			waitGroup := new(sync.WaitGroup)
+			syncers := account.GetAvailableVendorSyncers()
+
+			waitGroup.Add(len(syncers))
+			for _, vendorSyncer := range syncers {
+				go func(vendor account.VendorSyncer) {
+					kt := core.NewTenantBackendKit(tenantID)
+					// for retry
+					kt.RequestSource = enumor.AsynchronousTasks
+					allAccountSync(kt, cliSet, vendor)
+					waitGroup.Done()
+				}(vendorSyncer)
+			}
+
+			waitGroup.Wait()
 		}
 
-		waitGroup.Wait()
-
-		logs.Infof("cloud resource all sync end, time: %v", start)
+		logs.Infof("cloud resource all sync end, time: %s, rid: %s", time.Since(start), syncKit.Rid)
 	}
+}
+
+func listAllTenantIDs(kt *kit.Kit, cliSet *client.ClientSet) ([]string, error) {
+
+	tenantIDs := make([]string, 0)
+
+	tenantListReq := &core.ListReq{
+		Filter: tools.EqualExpression("status", enumor.TenantEnable),
+		Page:   core.NewDefaultBasePage(),
+	}
+	for {
+		tenantResp, err := cliSet.DataService().Global.Tenant.List(kt, tenantListReq)
+		if err != nil {
+			logs.Errorf("list tenant failed, err: %v, req: %v, rid: %s", err, tenantListReq, kt.Rid)
+			return nil, err
+		}
+
+		for _, tenant := range tenantResp.Details {
+			tenantIDs = append(tenantIDs, tenant.TenantID)
+		}
+		if len(tenantResp.Details) < int(tenantListReq.Page.Limit) {
+			break
+		}
+		tenantListReq.Page.Start += uint32(tenantListReq.Page.Limit)
+	}
+	return tenantIDs, nil
 }
 
 // allAccountSync all account sync.
 func allAccountSync(kt *kit.Kit, cliSet *client.ClientSet, syncer account.VendorSyncer) {
-
 	startTime := time.Now()
-	logs.Infof("%s start sync all cloud resource, time: %v, rid: %s", syncer.Vendor(), startTime, kt.Rid)
+	logs.Infof("%s start sync all cloud resource, tenant: %s, time: %v, rid: %s",
+		syncer.Vendor(), kt.TenantID, startTime, kt.Rid)
 
 	defer func() {
-		logs.Infof("%s sync all cloud resource end, cost: %v, rid: %s", syncer.Vendor(), time.Since(startTime), kt.Rid)
+		logs.Infof("%s sync all cloud resource end, tenant: %s, cost: %v, rid: %s",
+			syncer.Vendor(), kt.TenantID, time.Since(startTime), kt.Rid)
 	}()
 
 	listReq := &protocloud.AccountListReq{

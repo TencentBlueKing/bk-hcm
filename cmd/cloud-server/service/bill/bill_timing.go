@@ -21,9 +21,9 @@ package bill
 
 import (
 	"fmt"
-	"sync"
 	"time"
 
+	"hcm/cmd/cloud-server/logics/tenant"
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
@@ -35,6 +35,8 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/serviced"
 	"hcm/pkg/tools/retry"
+
+	"golang.org/x/sync/errgroup"
 )
 
 // CloudBillConfigCreate 定时生成云账单配置
@@ -49,24 +51,35 @@ func CloudBillConfigCreate(intervalMin time.Duration, sd serviced.ServiceDiscove
 		}
 
 		kt := core.NewBackendKit()
-
 		start := time.Now()
 		logs.Infof("account cloud bill config pipeline start, time: %v, rid: %s", start, kt.Rid)
 
-		waitGroup := new(sync.WaitGroup)
-
-		vendors := []enumor.Vendor{enumor.Aws}
-		waitGroup.Add(len(vendors))
-		for _, vendor := range vendors {
-			go func(vendor enumor.Vendor) {
-				allAccountBillConfig(kt, cliSet, vendor)
-				waitGroup.Done()
-			}(vendor)
+		tenantIDs, err := tenant.ListAllTenantID(kt, cliSet.DataService())
+		if err != nil {
+			logs.Errorf("failed to list all tenant ids, err: %v, rid: %s", err, kt.Rid)
+			continue
 		}
 
-		waitGroup.Wait()
+		vendors := []enumor.Vendor{enumor.Aws}
+		eg, _ := errgroup.WithContext(kt.Ctx)
+		for _, id := range tenantIDs {
+			for _, v := range vendors {
+				tenantID := id
+				vendor := v
 
-		logs.Infof("cloud resource all sync end, time: %v, rid: %s", start, kt.Rid)
+				eg.Go(func() error {
+					tenantKt := kt.NewSubKitWithTenant(tenantID)
+					allAccountBillConfig(tenantKt, cliSet, vendor)
+					return nil
+				})
+			}
+		}
+
+		if err := eg.Wait(); err != nil {
+			logs.Errorf("failed to create all account bill config, err: %v, rid: %s", err, kt.Rid)
+		}
+
+		logs.Infof("account cloud bill config pipeline end, cost: %s, rid: %s", time.Since(start), kt.Rid)
 	}
 }
 

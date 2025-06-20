@@ -10,6 +10,7 @@ import usePermissionDialog from '@/hooks/use-permission-dialog';
 export interface IAuthProps {
   sign: IAuthSign | IAuthSign[];
   tag?: string;
+  ignore?: boolean;
 }
 
 defineOptions({ name: 'hcm-auth' });
@@ -87,9 +88,15 @@ const combineRequest = CombineRequest.setup(Symbol.for('hcm-auth'), async (signC
 });
 
 watch(
-  () => props.sign,
-  async (sign, oldSign) => {
+  [() => props.sign, () => props.ignore],
+  async ([sign, ignore], [oldSign]) => {
     if (!isEqual(sign, oldSign)) {
+      if (ignore) {
+        isAuthorized.value = true;
+        noPerm.value = false;
+        verified.value = true;
+        return;
+      }
       // 按[sign, 组件id]格式添加，sign可能是单元素也可能是数组
       combineRequest.add([sign, id]);
 
@@ -167,7 +174,7 @@ const handleClick = async () => {
 
 <style lang="scss" scoped>
 .hcm-auth {
-  display: inline-block;
+  display: inline-flex;
   pointer-events: none;
 
   &.verified {

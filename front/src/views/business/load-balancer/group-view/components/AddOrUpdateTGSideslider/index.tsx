@@ -10,7 +10,7 @@ import useChangeScene from './useChangeScene';
 // import utils
 import bus from '@/common/bus';
 import { goAsyncTaskDetail } from '@/utils';
-import { TG_OPERATION_SCENE_MAP } from '@/constants';
+import { TargetGroupOperationScene, TG_OPERATION_SCENE_MAP } from '@/constants';
 
 const { FormItem } = Form;
 
@@ -32,7 +32,17 @@ export default defineComponent({
     const isEdit = ref(false);
     const asyncTaskMap = reactive<Map<string, { flowId: string; state: string }>>(new Map());
     const isSubmitDisabled = computed(() => {
-      return !['add', 'edit', 'AddRs', 'port', 'weight', 'BatchDeleteRs'].includes(loadBalancerStore.currentScene);
+      const operateScene = [
+        TargetGroupOperationScene.ADD,
+        TargetGroupOperationScene.EDIT,
+        TargetGroupOperationScene.ADD_RS,
+        TargetGroupOperationScene.BATCH_DELETE_RS,
+        TargetGroupOperationScene.SINGLE_UPDATE_PORT,
+        TargetGroupOperationScene.SINGLE_UPDATE_WEIGHT,
+        TargetGroupOperationScene.BATCH_UPDATE_PORT,
+        TargetGroupOperationScene.BATCH_UPDATE_WEIGHT,
+      ];
+      return !operateScene.includes(loadBalancerStore.currentScene);
     });
     let timer: any;
     const lbDetail = ref(null);
@@ -65,7 +75,7 @@ export default defineComponent({
     // click-handler - 新建目标组
     const handleAddTargetGroup = () => {
       clearFormData();
-      loadBalancerStore.setCurrentScene('add');
+      loadBalancerStore.setCurrentScene(TargetGroupOperationScene.ADD);
       isShow.value = true;
       isEdit.value = false;
       nextTick(async () => {
@@ -133,7 +143,7 @@ export default defineComponent({
       cloud_vpc_id: formData.cloud_vpc_id,
       rs_list:
         formData.rs_list.length > 0
-          ? formData.rs_list.map(({ cloud_id, port, weight, private_ipv4_addresses }) => ({
+          ? formData.rs_list.map(({ cloud_id, port, weight, private_ipv4_addresses }: any) => ({
               // 当资源类型是CVM时, 默认传第1个内网ip以及CVM资源ID. 如果CVM有多个IP, 其他IP忽略(本期只支持CVM)
               inst_type: 'CVM',
               ip: private_ipv4_addresses[0],
@@ -162,8 +172,8 @@ export default defineComponent({
           target_group_id: formData.id,
           targets: formData.rs_list
             // 只提交新增的rs
-            .filter(({ isNew }) => isNew)
-            .map(({ cloud_id, port, weight, private_ipv4_addresses }) => {
+            .filter(({ isNew }: any) => isNew)
+            .map(({ cloud_id, port, weight, private_ipv4_addresses }: any) => {
               return {
                 // 当资源类型是CVM时, 默认传第1个内网ip以及CVM资源ID. 如果CVM有多个IP, 其他IP忽略(本期只支持CVM)
                 inst_type: lbDetail.value?.extension?.snat_pro ? 'ENI' : 'CVM',
@@ -176,11 +186,21 @@ export default defineComponent({
         },
       ],
     });
+    const resolveFormDataForSingleUpdateRs = () => {
+      const type = TargetGroupOperationScene.SINGLE_UPDATE_PORT === loadBalancerStore.currentScene ? 'port' : 'weight';
+      const target = formData.rs_list.find(
+        (item: any) => item.id === loadBalancerStore.targetGroupOperateLockState.singleUpdateRsId,
+      );
+      return { target_ids: [target.id], [`new_${type}`]: +target[type] };
+    };
     // 处理参数 - 批量修改端口/权重
-    const resolveFormDataForBatchUpdate = (type: 'port' | 'weight') => ({
-      target_ids: formData.rs_list.map(({ id }) => id),
-      [`new_${type}`]: +formData.rs_list[0][type],
-    });
+    const resolveFormDataForBatchUpdateRs = () => {
+      const type = TargetGroupOperationScene.BATCH_UPDATE_PORT === loadBalancerStore.currentScene ? 'port' : 'weight';
+      return {
+        target_ids: formData.rs_list.map(({ id }: any) => id),
+        [`new_${type}`]: +formData.rs_list[0][type],
+      };
+    };
     // 处理参数 - 批量移除rs
     const resolveFormDataForBatchDeleteRs = () => ({
       account_id: formData.account_id,
@@ -212,31 +232,44 @@ export default defineComponent({
       await formRef.value.validate();
 
       // submit - [新增/编辑目标组] 或 [批量添加rs] 或 [批量修改端口] 或 [批量修改权重]
-      const operateMap: Record<string, { promise: any; message: string; asyncTaskMessage?: string }> = {
-        add: {
+      const operateMap: Record<
+        TargetGroupOperationScene,
+        { promise: any; message: string; asyncTaskMessage?: string }
+      > = {
+        [TargetGroupOperationScene.ADD]: {
           promise: () => businessStore.createTargetGroups(resolveFormDataForAdd()),
           message: '新建成功',
         },
-        edit: {
+        [TargetGroupOperationScene.EDIT]: {
           promise: () => businessStore.editTargetGroups(resolveFormDataForEdit()),
           message: '编辑成功',
         },
-        AddRs: {
+        [TargetGroupOperationScene.ADD_RS]: {
           promise: () => businessStore.batchAddTargets(resolveFormDataForAddRs()),
           message: 'RS添加成功',
           asyncTaskMessage: 'RS添加异步任务已提交',
         },
-        port: {
-          promise: () => businessStore.batchUpdateRsPort(formData.id, resolveFormDataForBatchUpdate('port')),
+        [TargetGroupOperationScene.SINGLE_UPDATE_PORT]: {
+          promise: () => businessStore.batchUpdateRs(formData.id, 'port', resolveFormDataForSingleUpdateRs()),
+          message: '修改单个端口成功',
+          asyncTaskMessage: '修改单个端口异步任务已提交',
+        },
+        [TargetGroupOperationScene.SINGLE_UPDATE_WEIGHT]: {
+          promise: () => businessStore.batchUpdateRs(formData.id, 'weight', resolveFormDataForSingleUpdateRs()),
+          message: '修改单个权重成功',
+          asyncTaskMessage: '修改单个权重异步任务已提交',
+        },
+        [TargetGroupOperationScene.BATCH_UPDATE_PORT]: {
+          promise: () => businessStore.batchUpdateRs(formData.id, 'port', resolveFormDataForBatchUpdateRs()),
           message: '批量修改端口成功',
           asyncTaskMessage: '批量修改端口异步任务已提交',
         },
-        weight: {
-          promise: () => businessStore.batchUpdateRsWeight(formData.id, resolveFormDataForBatchUpdate('weight')),
+        [TargetGroupOperationScene.BATCH_UPDATE_WEIGHT]: {
+          promise: () => businessStore.batchUpdateRs(formData.id, 'weight', resolveFormDataForBatchUpdateRs()),
           message: '批量修改权重成功',
           asyncTaskMessage: '批量修改权重异步任务已提交',
         },
-        BatchDeleteRs: {
+        [TargetGroupOperationScene.BATCH_DELETE_RS]: {
           promise: () => businessStore.batchDeleteTargets(resolveFormDataForBatchDeleteRs()),
           message: '批量移除RS成功',
           asyncTaskMessage: '批量移除RS异步任务已提交',
@@ -262,7 +295,8 @@ export default defineComponent({
                   class='ml4'
                   text
                   theme='primary'
-                  onClick={() => goAsyncTaskDetail(businessStore.list, data?.flow_id, formData.bk_biz_id)}>
+                  onClick={() => goAsyncTaskDetail(businessStore.list, data?.flow_id, formData.bk_biz_id)}
+                >
                   查看当前任务
                 </Button>
               </>
@@ -309,6 +343,9 @@ export default defineComponent({
       if (['canceled', 'failed'].includes(asyncTask.state)) {
         asyncTaskMap.delete(formData.id);
       }
+
+      // 清空lock-state
+      loadBalancerStore.resetTargetGroupOperateLockState();
     };
 
     onMounted(() => {
@@ -333,7 +370,8 @@ export default defineComponent({
         isSubmitLoading={isSubmitLoading.value}
         isSubmitDisabled={isSubmitDisabled.value}
         onHandleSubmit={handleAddOrUpdateTargetGroupSubmit}
-        handleClose={handleClose}>
+        handleClose={handleClose}
+      >
         <bk-container margin={0}>
           <Form formType='vertical' model={formData} ref={formRef} rules={rules}>
             {/* 异步任务提示 */}
@@ -352,7 +390,8 @@ export default defineComponent({
                     <Button
                       text
                       theme='primary'
-                      onClick={() => goAsyncTaskDetail(businessStore.list, flowId, formData.bk_biz_id)}>
+                      onClick={() => goAsyncTaskDetail(businessStore.list, flowId, formData.bk_biz_id)}
+                    >
                       查看任务
                     </Button>
                     。
@@ -365,7 +404,8 @@ export default defineComponent({
                   <Button
                     text
                     theme='primary'
-                    onClick={() => goAsyncTaskDetail(businessStore.list, flowId, formData.bk_biz_id)}>
+                    onClick={() => goAsyncTaskDetail(businessStore.list, flowId, formData.bk_biz_id)}
+                  >
                     查看任务
                   </Button>
                   。

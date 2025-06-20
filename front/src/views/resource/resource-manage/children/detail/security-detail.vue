@@ -1,27 +1,29 @@
 <script lang="ts" setup>
+import { Message } from 'bkui-vue';
 import DetailHeader from '../../common/header/detail-header';
 import DetailTab from '../../common/tab/detail-tab';
 import SecurityInfo from '../components/security/security-info.vue';
 import SecurityRelate from '../components/security/security-relate/index.vue';
 import SecurityRule from '../components/security/security-rule.vue';
-import { useI18n } from 'vue-i18n';
+import Confirm from '@/components/confirm';
 
 import { watch, ref, reactive, computed, provide } from 'vue';
-
+import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
-import useDetail from '../../hooks/use-detail';
-import { QueryRuleOPEnum } from '@/typings';
 import { useResourceStore } from '@/store';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
-import { SecurityGroupManageType } from '@/store/security-group';
-
-const { t } = useI18n();
+import useDetail from '../../hooks/use-detail';
+import { QueryRuleOPEnum } from '@/typings';
+import { SecurityGroupManageType } from '@/constants/security-group';
+import routerAction from '@/router/utils/action';
 
 const route = useRoute();
-const activeTab = ref(route.query?.activeTab);
+const resourceStore = useResourceStore();
+const { t } = useI18n();
+const { whereAmI, getBizsId } = useWhereAmI();
+
 const securityId = ref(route.query?.id);
 const vendor = ref(route.query?.vendor);
-const resourceStore = useResourceStore();
 const relatedSecurityGroups = ref([]);
 const templateData = reactive({
   ipList: [],
@@ -29,28 +31,18 @@ const templateData = reactive({
   portList: [],
   portGroupList: [],
 });
-const { whereAmI, getBizsId } = useWhereAmI();
-const resoureStore = useResourceStore();
-
 const { loading, detail, getDetail } = useDetail('security_groups', securityId.value as string);
 
 const tabs = [
-  {
-    name: t('基本信息'),
-    value: 'detail',
-  },
-  {
-    name: t('安全组规则'),
-    value: 'rule',
-  },
-  {
-    name: t('关联实例'),
-    value: 'relate',
-  },
+  { name: t('基本信息'), value: 'detail' },
+  { name: t('安全组规则'), value: 'rule' },
+  { name: t('关联实例'), value: 'relate' },
 ];
+const activeTab = ref(route.query?.active || tabs[0].value);
 
 const handleTabsChange = (val: string) => {
   if (val === 'rule') getRelatedSecurityGroups(detail.value);
+  routerAction.redirect({ query: { ...route.query, active: val } }, { replace: true });
 };
 
 watch(
@@ -137,7 +129,7 @@ const getTemplateData = async (detail: { account_id: string }) => {
     'service',
     'service_group',
   ].map((type) =>
-    resoureStore.getCommonList(
+    resourceStore.getCommonList(
       {
         filter: {
           op: 'and',
@@ -174,6 +166,19 @@ const getTemplateData = async (detail: { account_id: string }) => {
   templateData.portGroupList = res[3]?.data?.details;
 };
 
+const handleSync = async () => {
+  const { account_id, vendor, cloud_id, region, resource_group_name: resourceGroupName } = detail.value;
+  const isAzureVendor = vendor === 'azure';
+  Confirm(t('同步单个安全组'), t('从云上同步该安全组、安全组规则、关联的实例信息等'), async () => {
+    await resourceStore.syncResource(vendor, account_id, 'security_group', {
+      cloud_ids: [cloud_id],
+      regions: isAzureVendor ? undefined : [region],
+      resource_group_names: isAzureVendor ? [resourceGroupName] : undefined,
+    });
+    Message({ theme: 'success', message: t('已提交同步任务，请等待同步结果') });
+  });
+};
+
 provide('isAssigned', isAssigned);
 provide('hasEditScopeInResource', hasEditScopeInResource);
 provide('hasEditScopeInBusiness', hasEditScopeInBusiness);
@@ -181,7 +186,12 @@ provide('operateTooltipsOption', operateTooltipsOption);
 </script>
 
 <template>
-  <detail-header>{{ t('安全组') }}：ID（{{ `${securityId}` }}）</detail-header>
+  <detail-header>
+    {{ t('安全组') }}：ID（{{ `${securityId}` }}）
+    <template #right>
+      <bk-button @click="handleSync">{{ t('同步') }}</bk-button>
+    </template>
+  </detail-header>
 
   <div class="i-detail-tap-wrap" :style="whereAmI === Senarios.resource && 'padding: 0;'">
     <detail-tab :tabs="tabs" :active="activeTab" :on-change="handleTabsChange">

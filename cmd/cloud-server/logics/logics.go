@@ -21,6 +21,7 @@
 package logics
 
 import (
+	logicsadmin "hcm/cmd/cloud-server/logics/admin"
 	"hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/logics/cvm"
 	"hcm/cmd/cloud-server/logics/disk"
@@ -37,6 +38,7 @@ type Logics struct {
 	Cvm           cvm.Interface
 	Eip           eip.Interface
 	SecurityGroup securitygroup.Interface
+	Admin         logicsadmin.Interface
 }
 
 // NewLogics create a new cloud server logics.
@@ -50,5 +52,6 @@ func NewLogics(c *client.ClientSet, cmdbClient cmdb.Client) *Logics {
 		Cvm:           cvm.NewCvm(c, auditLogics, eipLogics, diskLogics, cmdbClient),
 		Eip:           eip.NewEip(c, auditLogics),
 		SecurityGroup: securitygroup.NewSecurityGroup(c, auditLogics),
+		Admin:         logicsadmin.NewAdminLogic(c),
 	}
 }

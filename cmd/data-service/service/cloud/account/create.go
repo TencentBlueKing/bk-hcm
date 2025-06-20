@@ -54,6 +54,8 @@ func (svc *service) CreateAccount(cts *rest.Contexts) (interface{}, error) {
 		return createAccount[protocloud.GcpAccountExtensionCreateReq](vendor, svc, cts)
 	case enumor.Azure:
 		return createAccount[protocloud.AzureAccountExtensionCreateReq](vendor, svc, cts)
+	case enumor.Other:
+		return createAccount[protocloud.OtherAccountExtensionCreateReq](vendor, svc, cts)
 	default:
 		return nil, fmt.Errorf("unsupport %s vendor for now", vendor)
 	}

@@ -1,4 +1,3 @@
 module.exports = {
-  defaultSeverity: 'error',
-  extends: ['@blueking/stylelint-config-bk'],
-}
+  extends: ['stylelint-config-standard-scss', 'stylelint-config-standard-vue/scss', 'stylelint-config-html/vue'],
+};

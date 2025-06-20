@@ -41,7 +41,8 @@ type CondSyncParams struct {
 type CondSyncFunc func(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error
 
 var condSyncFuncMap = map[enumor.CloudResourceType]CondSyncFunc{
-	enumor.LoadBalancerCloudResType: CondSyncLoadBalancer,
+	enumor.LoadBalancerCloudResType:  CondSyncLoadBalancer,
+	enumor.SecurityGroupCloudResType: CondSyncSecurityGroup,
 }
 
 // GetCondSyncFunc ...
@@ -66,6 +67,26 @@ func CondSyncLoadBalancer(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyn
 			return err
 		}
 		logs.Infof("[%s] conditional sync load balancer end, req: %+v, rid: %s", enumor.TCloud, syncReq, kt.Rid)
+	}
+	return nil
+}
+
+// CondSyncSecurityGroup ...
+func CondSyncSecurityGroup(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error {
+	syncReq := sync.TCloudSyncReq{
+		AccountID:  params.AccountID,
+		CloudIDs:   params.CloudIDs,
+		TagFilters: params.TagFilters,
+	}
+	for i := range params.Regions {
+		syncReq.Region = params.Regions[i]
+		err := cliSet.HCService().TCloud.SecurityGroup.SyncSecurityGroup(kt.Ctx, kt.Header(), &syncReq)
+		if err != nil {
+			logs.Errorf("[%s] conditional sync security group failed, err: %v, req: %+v, rid: %s",
+				enumor.TCloud, err, syncReq, kt.Rid)
+			return err
+		}
+		logs.Infof("[%s] conditional sync security group end, req: %+v, rid: %s", enumor.TCloud, syncReq, kt.Rid)
 	}
 	return nil
 }

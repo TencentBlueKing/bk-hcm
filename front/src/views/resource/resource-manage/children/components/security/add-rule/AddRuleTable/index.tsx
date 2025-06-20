@@ -33,20 +33,28 @@ export default defineComponent({
     const handleSubmit = async () => {
       const items = await Promise.all(instances.map((ins) => ins.value.getValue()));
       items.map((item) => handler.value.handleData(item));
+
+      const requestConfig = { globalError: false };
+
       const promise = props.isEdit
         ? resourceStore.update(
             `vendors/${props.vendor}/security_groups/${props.id}/rules`,
             cleanObject(items[0]),
             items[0].id,
+            requestConfig,
           )
-        : resourceStore.add(`vendors/${props.vendor}/security_groups/${props.id}/rules/create`, {
-            [`${props.activeType}_rule_set`]: items,
-          });
-      await promise;
-      Message({
-        message: '添加成功',
-        theme: 'success',
-      });
+        : resourceStore.add(
+            `vendors/${props.vendor}/security_groups/${props.id}/rules/create`,
+            { [`${props.activeType}_rule_set`]: items },
+            requestConfig,
+          );
+      const res = await promise;
+      if (res.code === 0) {
+        Message({ message: '提交成功', theme: 'success' });
+      } else {
+        // 业务报错外抛至add-rule组件中处理
+        return Promise.reject(res);
+      }
     };
 
     const handleAdd = () => {

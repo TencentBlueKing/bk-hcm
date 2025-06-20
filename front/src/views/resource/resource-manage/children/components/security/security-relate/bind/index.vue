@@ -5,13 +5,16 @@ import { useWhereAmI } from '@/hooks/useWhereAmI';
 import usePage from '@/hooks/use-page';
 import {
   type ISecurityGroupDetail,
-  type SecurityGroupRelatedResourceName,
   type SecurityGroupRelResourceByBizItem,
   useSecurityGroupStore,
 } from '@/store/security-group';
-import { RELATED_RES_KEY_MAP, RELATED_RES_PROPERTIES_MAP } from '@/constants/security-group';
+import {
+  RELATED_RES_KEY_MAP,
+  RELATED_RES_PROPERTIES_MAP,
+  SecurityGroupRelatedResourceName,
+} from '@/constants/security-group';
 import { ISearchSelectValue } from '@/typings';
-import { enableCount, getSimpleConditionBySearchSelect, transformSimpleCondition } from '@/utils/search';
+import { enableCount, transformSimpleCondition } from '@/utils/search';
 import { getPrivateIPs } from '@/utils';
 import http from '@/http';
 
@@ -68,11 +71,11 @@ watchEffect(() => {
 });
 
 const searchRef = useTemplateRef('bind-related-resource-search');
-const handleSearch = (searchValue: ISearchSelectValue) => {
+const handleSearch = (searchValue: ISearchSelectValue, flatCondition: Record<string, any>) => {
   if (!searchValue.length) {
     condition.value = { account_id: props.detail.account_id, region: props.detail.region, vendor: props.detail.vendor };
   }
-  condition.value = { ...condition.value, ...getSimpleConditionBySearchSelect(searchValue) };
+  condition.value = { ...condition.value, ...flatCondition };
 
   if (pagination.current === 1) {
     getList();
@@ -116,7 +119,7 @@ defineExpose({ handleClosed });
 </script>
 
 <template>
-  <bk-dialog class="bind-dialog" v-model:is-show="model" :width="1500" :close-icon="false" @closed="handleClosed">
+  <bk-dialog class="bind-dialog" v-model:is-show="model" width="80vw" :close-icon="false" @closed="handleClosed">
     <bk-resize-layout initial-divide="25%" placement="right" min="300" class="bind-dialog-content">
       <template #main>
         <div class="main">
@@ -134,12 +137,13 @@ defineExpose({ handleClosed });
             ref="bind-related-resource-search"
             :resource-name="tabActive"
             operation="bind"
+            flat
             @search="handleSearch"
           />
           <data-list
-            v-bkloading="{ loading }"
             ref="data-list"
             :list="list"
+            :loading="loading"
             :resource-name="tabActive"
             operation="bind"
             :pagination="pagination"

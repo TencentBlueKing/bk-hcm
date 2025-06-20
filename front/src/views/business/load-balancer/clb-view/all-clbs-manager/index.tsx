@@ -1,10 +1,12 @@
-import { ComputedRef, defineComponent, inject, useTemplateRef, watch } from 'vue';
+import { ComputedRef, defineComponent, inject, reactive, useTemplateRef, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 // import components
 import { Button, Message } from 'bkui-vue';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
 import BatchImportComp from './batch-import-comp/index.vue';
+import SyncAccountResource from '@/components/sync-account-resource/index.vue';
+import BatchCopy from './batch-copy.vue';
 // import hooks
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
@@ -15,7 +17,7 @@ import useBatchDeleteLB from './useBatchDeleteLB';
 import { useBusinessStore, useResourceStore } from '@/store';
 // import utils
 import { getTableNewRowClass } from '@/common/util';
-import { asyncGetListenerCount } from '@/utils';
+import { asyncGetListenerCount, parseIP } from '@/utils';
 // import types
 import { CLB_STATUS_MAP, LB_NETWORK_TYPE_MAP } from '@/constants';
 import { DoublePlainObject } from '@/typings';
@@ -23,8 +25,8 @@ import './index.scss';
 import Confirm from '@/components/confirm';
 import { useVerify } from '@/hooks';
 import { useGlobalPermissionDialog } from '@/store/useGlobalPermissionDialog';
-import { VendorEnum, VendorMap } from '@/common/constant';
-import AllLoadBalancer from '@/components/sync-clb/all.vue';
+import { ResourceTypeEnum, VendorEnum, VendorMap } from '@/common/constant';
+import { ValidateValuesFunc } from 'bkui-vue/lib/search-select/utils';
 
 export default defineComponent({
   name: 'AllClbsManager',
@@ -62,13 +64,21 @@ export default defineComponent({
       });
     };
     const { columns, settings } = useColumns('lb');
+    const validateValues: ValidateValuesFunc = async (item, values) => {
+      if (!item) return '请选择条件';
+      if ('lb_vip' === item.id) {
+        const { IPv4List, IPv6List } = parseIP(values[0].id);
+        return Boolean(IPv4List.length || IPv6List.length) ? true : 'IP格式有误';
+      }
+      return true;
+    };
     const { CommonTable, getListData, dataList } = useTable({
       searchOptions: {
         searchData: [
           { id: 'name', name: '负载均衡名称' },
+          { id: 'cloud_id', name: '负载均衡ID' },
           { id: 'domain', name: '负载均衡域名' },
           { id: 'lb_vip', name: '负载均衡VIP' },
-          { id: 'cloud_id', name: '负载均衡ID' },
           {
             id: 'lb_type',
             name: '网络类型',
@@ -100,6 +110,9 @@ export default defineComponent({
           },
           { id: 'cloud_vpc_id', name: '所属VPC' },
         ],
+        extra: {
+          validateValues,
+        },
       },
       tableOptions: {
         columns: [
@@ -202,6 +215,13 @@ export default defineComponent({
       },
     );
 
+    const syncDialogState = reactive({ isShow: false, isHidden: true, businessId: undefined });
+    const handleSync = () => {
+      syncDialogState.isShow = true;
+      syncDialogState.isHidden = false;
+      syncDialogState.businessId = getBizsId();
+    };
+
     return () => (
       <div class='common-card-wrap'>
         {/* 负载均衡list */}
@@ -240,7 +260,10 @@ export default defineComponent({
                 </Button>
                 {/* 批量导入 */}
                 <BatchImportComp />
-                <AllLoadBalancer disabled={selections.value.length > 0} bizId={getBizsId()} />
+                <bk-button disabled={selections.value.length > 0} onClick={handleSync}>
+                  同步负载均衡
+                </bk-button>
+                <BatchCopy selections={selections.value} />
               </>
             ),
           }}
@@ -275,6 +298,20 @@ export default defineComponent({
             ),
           }}
         </BatchOperationDialog>
+        {!syncDialogState.isHidden && (
+          <SyncAccountResource
+            v-model={syncDialogState.isShow}
+            title='同步负载均衡'
+            desc='从云上同步该业务的所有负载均衡数据，包括负载均衡，监听器等'
+            resourceType={ResourceTypeEnum.CLB}
+            businessId={syncDialogState.businessId}
+            resourceName='load_balancer'
+            onHidden={() => {
+              syncDialogState.isHidden = true;
+              syncDialogState.businessId = undefined;
+            }}
+          />
+        )}
       </div>
     );
   },

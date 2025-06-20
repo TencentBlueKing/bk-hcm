@@ -1,8 +1,9 @@
 import { createI18n } from 'vue-i18n';
-import cookie from 'cookie';
 
+import Cookies from 'js-cookie';
 import langMap from './lang';
 
+export type Locale = 'zh-cn' | 'en' | string;
 interface ILANG_PKG {
   [propName: string]: string;
 }
@@ -15,8 +16,7 @@ Object.keys(langMap).forEach((key) => {
 });
 
 // const language = (navigator.language || 'en').toLocaleLowerCase();
-const localLanguage = cookie.parse(document.cookie).blueking_language || 'zh-cn';
-console.log('localLanguage', localLanguage);
+const localLanguage = (Cookies.get('blueking_language') || 'zh-cn') as Locale;
 
 const i18n = createI18n({
   silentTranslationWarn: true,

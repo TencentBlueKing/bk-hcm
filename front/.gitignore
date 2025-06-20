@@ -73,8 +73,13 @@ test/unit/coverage
 *.njsproj
 *.sln
 index-dev.html
-env.dev.js
+.bk.local.env
+env.*.config.js
+.bk.*.custom.env
 
 .husky/commit-msg
 .husky/commit-msg-bkcodeai
 .husky/pre-commit-bkcodeai
+
+# cert
+*.pem

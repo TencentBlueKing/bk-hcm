@@ -64,6 +64,7 @@ func NewMainDailySplitController(opt *MainAccountControllerOption) (*MainDailySp
 	}
 	return &MainDailySplitController{
 		Client:        opt.Client,
+		TenantID:      opt.TenantID,
 		RootAccountID: opt.RootAccountID,
 		MainAccountID: opt.MainAccountID,
 		ProductID:     opt.ProductID,
@@ -78,6 +79,7 @@ func NewMainDailySplitController(opt *MainAccountControllerOption) (*MainDailySp
 // MainDailySplitController main account daily summary controller
 type MainDailySplitController struct {
 	Client        *client.ClientSet
+	TenantID      string
 	RootAccountID string
 	MainAccountID string
 	ProductID     int64
@@ -98,6 +100,7 @@ func (msdc *MainDailySplitController) Start() error {
 		return fmt.Errorf("controller already start")
 	}
 	kt := getInternalKit()
+	kt.SetTenant(msdc.TenantID)
 	cancelFunc := kt.CtxBackgroundWithCancel()
 	msdc.kt = kt
 	msdc.cancelFunc = cancelFunc

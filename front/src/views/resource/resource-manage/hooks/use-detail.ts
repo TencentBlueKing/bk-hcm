@@ -1,7 +1,6 @@
 import { onBeforeMount, ref } from 'vue';
-
+import { VendorMap } from '@/common/constant';
 import { useResourceStore } from '@/store/resource';
-import { CloudType } from '@/typings';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 
 export default (type: string, id: string, cb?: Function, vendor?: string) => {
@@ -19,7 +18,7 @@ export default (type: string, id: string, cb?: Function, vendor?: string) => {
         detail.value = {
           ...data,
           ...data.extension,
-          vendorName: CloudType[data.vendor],
+          vendorName: VendorMap[data.vendor],
           bk_biz_id_label: data.bk_biz_id === -1 ? '未分配' : data.bk_biz_id,
           bk_biz_id_name: '',
         };

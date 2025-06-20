@@ -47,7 +47,7 @@ var (
 type TCloudCvmCreateReq struct {
 	BkBizID                 int64    `json:"bk_biz_id" validate:"omitempty"`
 	AccountID               string   `json:"account_id" validate:"required"`
-	BkCloudID               *int64   `json:"bk_cloud_id"`
+	BkCloudID               *int64   `json:"bk_cloud_id" validate:"required"`
 	Region                  string   `json:"region" validate:"required"`
 	Zone                    string   `json:"zone" validate:"required"`
 	Name                    string   `json:"name" validate:"required,min=1,max=60"`

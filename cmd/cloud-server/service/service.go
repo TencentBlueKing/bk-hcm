@@ -31,6 +31,7 @@ import (
 	"hcm/cmd/cloud-server/logics"
 	logicaudit "hcm/cmd/cloud-server/logics/audit"
 	"hcm/cmd/cloud-server/service/account"
+	"hcm/cmd/cloud-server/service/admin"
 	"hcm/cmd/cloud-server/service/application"
 	appcvm "hcm/cmd/cloud-server/service/application/handlers/cvm"
 	approvalprocess "hcm/cmd/cloud-server/service/approval_process"
@@ -64,6 +65,7 @@ import (
 	"hcm/cmd/cloud-server/service/task"
 	"hcm/cmd/cloud-server/service/user"
 	"hcm/cmd/cloud-server/service/vpc"
+	"hcm/cmd/cloud-server/service/watch/bkcc"
 	"hcm/cmd/cloud-server/service/zone"
 	"hcm/pkg/cc"
 	"hcm/pkg/client"
@@ -84,6 +86,7 @@ import (
 	"hcm/pkg/tools/ssl"
 
 	"github.com/emicklei/go-restful/v3"
+	etcd3 "go.etcd.io/etcd/client/v3"
 )
 
 // Service do all the cloud server's work
@@ -119,6 +122,16 @@ func NewService(sd serviced.ServiceDiscover) (*Service, error) {
 	if cc.CloudServer().CloudResource.Sync.Enable {
 		interval := time.Duration(cc.CloudServer().CloudResource.Sync.SyncIntervalMin) * time.Minute
 		go sync.CloudResourceSync(interval, sd, apiClientSet)
+
+		etcdCli, err := etcd3.New(etcdCfg)
+		if err != nil {
+			return nil, fmt.Errorf("new etcd client failed, err: %v", err)
+		}
+		watcher, err := bkcc.NewWatcher(apiClientSet, etcdCli)
+		if err != nil {
+			return nil, fmt.Errorf("new cc syncer failed, err: %v", err)
+		}
+		watcher.Watch(sd)
 	}
 
 	if cc.CloudServer().BillConfig.Enable {
@@ -187,7 +200,7 @@ func getCloudClientSvr(sd serviced.ServiceDiscover) (*client.ClientSet, *Service
 	}
 
 	cmdbCfg := cc.CloudServer().Cmdb
-	cmdbCli, err := cmdb.NewClient(&cmdbCfg, metrics.Register())
+	err = cmdb.InitCmdbClient(&cmdbCfg, metrics.Register())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -200,7 +213,7 @@ func getCloudClientSvr(sd serviced.ServiceDiscover) (*client.ClientSet, *Service
 		itsmCli:    itsmCli,
 		bkBaseCli:  bkbaseCli,
 		cmsiCli:    cmsiCli,
-		cmdbCli:    cmdbCli,
+		cmdbCli:    cmdb.CmdbClient(),
 	}
 
 	return apiClientSet, svr, nil
@@ -325,6 +338,8 @@ func (s *Service) apiSet(bkHcmUrl string) *restful.Container {
 	task.InitService(c)
 
 	cos.InitService(c)
+
+	admin.InitAdminService(c)
 
 	return restful.NewContainer().Add(c.WebService)
 }

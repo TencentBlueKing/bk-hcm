@@ -72,7 +72,7 @@ func (a *ApplicationDao) CreateWithTx(kt *kit.Kit, tx *sqlx.Tx, model *applicati
 		application.ApplicationColumns.ColonNameExpr(),
 	)
 
-	err = a.Orm.Txn(tx).Insert(kt.Ctx, sql, model)
+	err = a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(tx).Insert(kt.Ctx, sql, model)
 	if err != nil {
 		return "", fmt.Errorf("insert %s failed, err: %v", model.TableName(), err)
 	}
@@ -103,7 +103,8 @@ func (a *ApplicationDao) Update(kt *kit.Kit, filterExpr *filter.Expression, mode
 	sql := fmt.Sprintf(`UPDATE %s %s %s`, model.TableName(), setExpr, whereExpr)
 
 	_, err = a.Orm.AutoTxn(kt, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
-		effected, err := a.Orm.Txn(txn).Update(kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
+		effected, err := a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Txn(txn).Update(
+			kt.Ctx, sql, tools.MapMerge(toUpdate, whereValue))
 		if err != nil {
 			logs.ErrorJson("update application failed, err: %v, filter: %s, rid: %v", err, filterExpr, kt.Rid)
 			return nil, err
@@ -143,7 +144,7 @@ func (a *ApplicationDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListAp
 		// this is a count request, then do count operation only.
 		sql := fmt.Sprintf(`SELECT COUNT(*) FROM %s %s`, table.ApplicationTable, whereExpr)
 
-		count, err := a.Orm.Do().Count(kt.Ctx, sql, whereValue)
+		count, err := a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Count(kt.Ctx, sql, whereValue)
 		if err != nil {
 			logs.ErrorJson("count applications failed, err: %v, filter: %s, rid: %s", err, opt.Filter, kt.Rid)
 			return nil, err
@@ -161,7 +162,8 @@ func (a *ApplicationDao) List(kt *kit.Kit, opt *types.ListOption) (*types.ListAp
 		table.ApplicationTable, whereExpr, pageExpr)
 
 	details := make([]*application.ApplicationTable, 0)
-	if err = a.Orm.Do().Select(kt.Ctx, &details, sql, whereValue); err != nil {
+	err = a.Orm.ModifySQLOpts(orm.NewInjectTenantIDOpt(kt.TenantID)).Do().Select(kt.Ctx, &details, sql, whereValue)
+	if err != nil {
 		return nil, err
 	}
 
