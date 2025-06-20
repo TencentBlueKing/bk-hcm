@@ -99,6 +99,7 @@ func updateAccount[T protocloud.AccountExtensionUpdateReq, PT protocloud.SecretE
 		PriceUnit:          req.PriceUnit,
 		Memo:               req.Memo,
 		RecycleReserveTime: req.RecycleReserveTime,
+		BizID:              req.BizID,
 		Reviser:            cts.Kit.User,
 	}
 

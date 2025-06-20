@@ -22,6 +22,7 @@ package account
 import (
 	"errors"
 	"fmt"
+	"hcm/pkg/tools/slice"
 	"regexp"
 
 	"hcm/pkg/criteria/constant"
@@ -47,7 +48,14 @@ func validateAccountName(name string) error {
 	return nil
 }
 
-func validateBkBizIDs(bkBizIDs []int64) error {
+func validateBizID(bizID int64) error {
+	if bizID == constant.AttachedAllBiz {
+		return fmt.Errorf("invalid biz id: %d", bizID)
+	}
+	return nil
+}
+
+func validateUsageBizIDs(bkBizIDs []int64) error {
 	for _, bizID := range bkBizIDs {
 		// 非全业务时，校验是否非法业务ID
 		if bizID != constant.AttachedAllBiz && bizID <= 0 {
@@ -59,6 +67,14 @@ func validateBkBizIDs(bkBizIDs []int64) error {
 		}
 	}
 	return nil
+}
+
+// ValidateBizIDInUsageBizIDs validates that BizID is in UsageBizIDs.
+func validateBizIDInUsageBizIDs(bizID int64, usageBizIDs []int64) error {
+	if slice.IsItemInSlice(usageBizIDs, bizID) || (len(usageBizIDs) == 1 && usageBizIDs[0] == constant.AttachedAllBiz) {
+		return nil
+	}
+	return fmt.Errorf("BizID %d is not in UsageBizIDs", bizID)
 }
 
 func validateResAccountBkBizIDs(bkBizIDs []int64) error {

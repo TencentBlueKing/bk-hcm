@@ -147,7 +147,7 @@ func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
 	var bkBizIDs = make([]int64, 0)
 	if applicationType == enumor.CreateCvm || applicationType == enumor.CreateDisk ||
 		applicationType == enumor.CreateVpc || applicationType == enumor.CreateLoadBalancer {
-		bkBizIDs = handler.GetBkBizIDs()
+		bkBizIDs = handler.GetUsageBizIDs()
 	}
 
 	result, err := a.client.DataService().Global.Application.CreateApplication(
@@ -158,7 +158,7 @@ func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
 			Source:         enumor.ApplicationSourceITSM,
 			Type:           applicationType,
 			Status:         enumor.Pending,
-			BkBizIDs:       bkBizIDs,
+			UsageBizIDs:    bkBizIDs,
 			Applicant:      cts.Kit.User,
 			Content:        content,
 			DeliveryDetail: "{}",

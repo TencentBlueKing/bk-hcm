@@ -35,7 +35,7 @@ import (
 // AccountExtensionCreateReq account extension create req.
 type AccountExtensionCreateReq interface {
 	TCloudAccountExtensionCreateReq | AwsAccountExtensionCreateReq | HuaWeiAccountExtensionCreateReq |
-		GcpAccountExtensionCreateReq | AzureAccountExtensionCreateReq | OtherAccountExtensionCreateReq
+	GcpAccountExtensionCreateReq | AzureAccountExtensionCreateReq | OtherAccountExtensionCreateReq
 }
 
 // OtherAccountExtensionCreateReq ...
@@ -125,13 +125,14 @@ func (req *AzureAccountExtensionCreateReq) EncryptSecretKey(cipher cryptography.
 
 // AccountCreateReq ...
 type AccountCreateReq[T AccountExtensionCreateReq] struct {
-	Name      string                 `json:"name" validate:"required"`
-	Managers  []string               `json:"managers" validate:"required"`
-	Type      enumor.AccountType     `json:"type" validate:"required"`
-	Site      enumor.AccountSiteType `json:"site" validate:"required"`
-	Memo      *string                `json:"memo" validate:"required"`
-	Extension *T                     `json:"extension" validate:"required"`
-	BkBizIDs  []int64                `json:"bk_biz_ids" validate:"required"`
+	Name        string                 `json:"name" validate:"required"`
+	Managers    []string               `json:"managers" validate:"required"`
+	Type        enumor.AccountType     `json:"type" validate:"required"`
+	Site        enumor.AccountSiteType `json:"site" validate:"required"`
+	Memo        *string                `json:"memo" validate:"required"`
+	Extension   *T                     `json:"extension" validate:"required"`
+	BizID       int64                  `json:"bk_biz_id" validate:"required"`
+	UsageBizIDs []int64                `json:"usage_biz_ids" validate:"required"`
 }
 
 // Validate ...
@@ -145,7 +146,7 @@ func (c *AccountCreateReq[T]) Validate() error {
 // Note: 对于允许为空字符串的字段，则其类型需要定义为指针，正常情况下，Json合并时空值会被忽略
 type AccountExtensionUpdateReq interface {
 	TCloudAccountExtensionUpdateReq | AwsAccountExtensionUpdateReq | HuaWeiAccountExtensionUpdateReq |
-		GcpAccountExtensionUpdateReq | AzureAccountExtensionUpdateReq
+	GcpAccountExtensionUpdateReq | AzureAccountExtensionUpdateReq
 }
 
 // TCloudAccountExtensionUpdateReq ...
@@ -245,6 +246,7 @@ type AccountUpdateReq[T AccountExtensionUpdateReq] struct {
 	PriceUnit          string   `json:"price_unit" validate:"omitempty"`
 	Memo               *string  `json:"memo" validate:"omitempty"`
 	RecycleReserveTime int      `json:"recycle_reserve_time" validate:"omitempty"`
+	BizID              int64    `json:"bk_biz_id" validate:"omitempty"`
 	Extension          *T       `json:"extension" validate:"omitempty"`
 }
 
@@ -258,7 +260,7 @@ func (u *AccountUpdateReq[T]) Validate() error {
 // AccountExtensionGetResp ...
 type AccountExtensionGetResp interface {
 	cloud.TCloudAccountExtension | cloud.AwsAccountExtension | cloud.HuaWeiAccountExtension |
-		cloud.GcpAccountExtension | cloud.AzureAccountExtension | cloud.OtherAccountExtension
+	cloud.GcpAccountExtension | cloud.AzureAccountExtension | cloud.OtherAccountExtension
 }
 
 // AccountGetResult ...

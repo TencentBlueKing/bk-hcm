@@ -71,13 +71,13 @@ func (a *accountSvc) UpdateAccount(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// 更新账号与业务关系
-	if len(req.BkBizIDs) > 0 {
+	if len(req.UsageBizIDs) > 0 {
 		_, err = a.client.DataService().Global.Account.UpdateBizRel(
 			cts.Kit.Ctx,
 			cts.Kit.Header(),
 			accountID,
 			&dataproto.AccountBizRelUpdateReq{
-				BkBizIDs: req.BkBizIDs,
+				BkBizIDs: req.UsageBizIDs,
 			},
 		)
 		if err != nil {
@@ -137,6 +137,7 @@ func (a *accountSvc) updateForTCloud(
 			Managers:           req.Managers,
 			RecycleReserveTime: req.RecycleReserveTime,
 			Memo:               req.Memo,
+			BizID:              req.BizID,
 			Extension:          shouldUpdatedExtension,
 		},
 	)
@@ -184,6 +185,7 @@ func (a *accountSvc) updateForAws(
 			Managers:           req.Managers,
 			Memo:               req.Memo,
 			RecycleReserveTime: req.RecycleReserveTime,
+			BizID:              req.BizID,
 			Extension:          shouldUpdatedExtension,
 		},
 	)
@@ -233,6 +235,7 @@ func (a *accountSvc) updateForHuaWei(
 			Managers:           req.Managers,
 			Memo:               req.Memo,
 			RecycleReserveTime: req.RecycleReserveTime,
+			BizID:              req.BizID,
 			Extension:          shouldUpdatedExtension,
 		},
 	)
@@ -282,6 +285,7 @@ func (a *accountSvc) updateForGcp(
 			Managers:           req.Managers,
 			Memo:               req.Memo,
 			RecycleReserveTime: req.RecycleReserveTime,
+			BizID:              req.BizID,
 			Extension:          shouldUpdatedExtension,
 		},
 	)
@@ -331,6 +335,7 @@ func (a *accountSvc) updateForAzure(
 			Managers:           req.Managers,
 			Memo:               req.Memo,
 			RecycleReserveTime: req.RecycleReserveTime,
+			BizID:              req.BizID,
 			Extension:          shouldUpdatedExtension,
 		},
 	)

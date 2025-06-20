@@ -94,13 +94,20 @@ func (a *ApplicationOfAddAccount) RenderItsmForm() (string, error) {
 	// 负责人
 	formItems = append(formItems, formItem{Label: "责任人", Value: strings.Join(req.Managers, ",")})
 
-	// 查询业务名称
-	if req.BkBizIDs[0] == constant.AttachedAllBiz {
+	// 管理业务
+	bizName, err := a.GetBizName(req.BizID)
+	if err != nil {
+		return "", fmt.Errorf("get biz name failed, bk_biz_id: %v, err: %w", req.BizID, err)
+	}
+	formItems = append(formItems, formItem{Label: "管理业务", Value: bizName})
+
+	// 查询使用业务名称
+	if req.UsageBizIDs[0] == constant.AttachedAllBiz {
 		formItems = append(formItems, formItem{Label: "使用业务", Value: "全部"})
 	} else {
-		bizNames, err := a.ListBizNames(req.BkBizIDs)
+		bizNames, err := a.ListBizNames(req.UsageBizIDs)
 		if err != nil {
-			return "", fmt.Errorf("list biz name failed, bk_biz_ids: %v, err: %w", req.BkBizIDs, err)
+			return "", fmt.Errorf("list biz name failed, bk_biz_ids: %v, err: %w", req.UsageBizIDs, err)
 		}
 		formItems = append(formItems, formItem{Label: "使用业务", Value: strings.Join(bizNames, ",")})
 	}
