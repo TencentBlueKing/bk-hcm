@@ -24,11 +24,13 @@ import (
 	dataservice "hcm/pkg/client/data-service"
 	hcservice "hcm/pkg/client/hc-service"
 	"hcm/pkg/dal/dao"
+	"hcm/pkg/thirdparty/api-gateway/cmdb"
 )
 
 var (
-	cliSet *client.ClientSet
-	daoSet dao.Set
+	cliSet  *client.ClientSet
+	daoSet  dao.Set
+	cmdbCli cmdb.Client
 )
 
 // SetClientSet set client set.
@@ -59,4 +61,14 @@ func SetDaoSet(cli dao.Set) {
 // GetDaoSet get dao set.
 func GetDaoSet() dao.Set {
 	return daoSet
+}
+
+// SetCMDBClient set cmdb client.
+func SetCMDBClient(cli cmdb.Client) {
+	cmdbCli = cli
+}
+
+// GetCMDBCli get cmdb client.
+func GetCMDBCli() cmdb.Client {
+	return cmdbCli
 }
