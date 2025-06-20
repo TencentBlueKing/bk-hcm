@@ -34,8 +34,9 @@ const props = withDefaults(
 const valueComps: Record<
   ModelPropertyType,
   | typeof EnumValue
-  | typeof StringValue
   | typeof DatetimeValue
+  | typeof NumberValue
+  | typeof StringValue
   | typeof ArrayValue
   | typeof BoolValue
   | typeof CertValue
@@ -51,7 +52,6 @@ const valueComps: Record<
   number: NumberValue,
   string: StringValue,
   account: StringValue,
-  user: UserValue,
   array: ArrayValue,
   bool: BoolValue,
   cert: CertValue,
@@ -59,6 +59,7 @@ const valueComps: Record<
   region: RegionValue,
   business: BusinessValue,
   json: JsonValue,
+  user: UserValue,
   'cloud-area': CloudAreaValue,
 };
 
@@ -74,5 +75,5 @@ const attrs = useAttrs();
     :display="props.display"
     v-bind="attrs"
   />
-  <span v-else>unknow type</span>
+  <span v-else>unknown type</span>
 </template>
