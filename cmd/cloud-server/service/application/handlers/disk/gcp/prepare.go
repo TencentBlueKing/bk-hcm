@@ -52,7 +52,7 @@ func (a *ApplicationOfCreateGcpDisk) GetItsmApprover(managers []string) []itsm.V
 	return a.GetItsmPlatformAndAccountApprover(managers, a.req.AccountID)
 }
 
-// GetBkBizIDs 获取当前的业务IDs
-func (a *ApplicationOfCreateGcpDisk) GetBkBizIDs() []int64 {
+// GetUsageBizIDs 获取当前的业务IDs
+func (a *ApplicationOfCreateGcpDisk) GetUsageBizIDs() []int64 {
 	return []int64{a.req.BkBizID}
 }

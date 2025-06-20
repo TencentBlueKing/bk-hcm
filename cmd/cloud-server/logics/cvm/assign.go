@@ -338,7 +338,7 @@ func getAssignedCvmInfo(kt *kit.Kit, cli *client.ClientSet, ids []string) ([]Pre
 			return nil, fmt.Errorf("not found account by ids(%v)", batch)
 		}
 		for _, detail := range resp.Details {
-			accountBizIDMap[detail.ID] = detail.BkBizIDs
+			accountBizIDMap[detail.ID] = detail.UsageBizIDs
 		}
 	}
 

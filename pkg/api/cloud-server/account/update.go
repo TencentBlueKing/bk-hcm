@@ -179,10 +179,11 @@ type AccountUpdateReq struct {
 	Managers           []string `json:"managers" validate:"omitempty,max=5"`
 	Memo               *string  `json:"memo" validate:"omitempty"`
 	RecycleReserveTime int      `json:"recycle_reserve_time" validate:"omitempty"`
+	BizID              int64    `json:"bk_biz_id" validate:"omitempty"`
 	// Note: 第一期只支持关联一个业务，且不能关联全部业务
 	// BkBizIDs  []int64          `json:"bk_biz_ids" validate:"omitempty"`
-	BkBizIDs  []int64         `json:"bk_biz_ids" validate:"omitempty,len=1,dive,min=1"`
-	Extension json.RawMessage `json:"extension" validate:"omitempty"`
+	UsageBizIDs []int64         `json:"usage_biz_ids" validate:"omitempty,len=1,dive,min=1"`
+	Extension   json.RawMessage `json:"extension" validate:"omitempty"`
 }
 
 // Validate ...
@@ -196,8 +197,8 @@ func (req *AccountUpdateReq) Validate() error {
 		return err
 	}
 
-	// 业务合法性校验
-	if err := validateBkBizIDs(req.BkBizIDs); err != nil {
+	// 使用业务合法性校验
+	if err := validateUsageBizIDs(req.UsageBizIDs); err != nil {
 		return err
 	}
 

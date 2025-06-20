@@ -17,27 +17,24 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package types
+/*
+    SQLVER=9999,HCMVER=v9.9.9
 
-import (
-	"hcm/pkg/dal/table/cloud"
-	tableaccount "hcm/pkg/dal/table/cloud/sub-account"
-)
+    Notes:
+    1. 修改`account`表，增加`bk_biz_id`字段
+*/
 
-// ListAccountDetails list account details.
-type ListAccountDetails struct {
-	Count   uint64                `json:"count,omitempty"`
-	Details []*cloud.AccountTable `json:"details,omitempty"`
-}
+START TRANSACTION;
 
-// ListSubAccountDetails list sub account details.
-type ListSubAccountDetails struct {
-	Count   uint64               `json:"count,omitempty"`
-	Details []tableaccount.Table `json:"details,omitempty"`
-}
+--  增加`bk_biz_id`字段
+ALTER TABLE account
+    ADD COLUMN bk_biz_id bigint NOT NULL DEFAULT 0 COMMENT '管理业务ID';
 
-// Account ...
-type Account struct {
-	cloud.AccountTable `json:",inline"`
-	UsageBizIDs        []int64 `db:"usage_biz_ids" json:"usage_biz_ids"`
-}
+UPDATE account a
+    JOIN account_biz_rel b ON a.id = b.account_id
+    SET a.bk_biz_id = b.bk_biz_id;
+
+CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
+SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+
+COMMIT

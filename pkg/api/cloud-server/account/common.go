@@ -47,7 +47,14 @@ func validateAccountName(name string) error {
 	return nil
 }
 
-func validateBkBizIDs(bkBizIDs []int64) error {
+func validateBizID(bizID int64) error {
+	if bizID == constant.AttachedAllBiz {
+		return fmt.Errorf("invalid biz id: %d", bizID)
+	}
+	return nil
+}
+
+func validateUsageBizIDs(bkBizIDs []int64) error {
 	for _, bizID := range bkBizIDs {
 		// 非全业务时，校验是否非法业务ID
 		if bizID != constant.AttachedAllBiz && bizID <= 0 {

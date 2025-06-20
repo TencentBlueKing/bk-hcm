@@ -73,6 +73,11 @@ func createAccount[T protocloud.AccountExtensionCreateReq, PT protocloud.SecretE
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	// 校验使用业务是否包含管理业务，要求必须包含
+	if err := protocloud.ValidateBizIDInUsageBizIDs(req.BizID, req.UsageBizIDs); err != nil {
+		return nil, err
+	}
+
 	// 将参数里的SecretKey加密
 	if req.Extension != nil {
 		p := PT(req.Extension)
@@ -93,6 +98,7 @@ func createAccount[T protocloud.AccountExtensionCreateReq, PT protocloud.SecretE
 			Type:               string(req.Type),
 			Site:               string(req.Site),
 			Memo:               req.Memo,
+			BizID:              req.BizID,
 			Extension:          tabletype.JsonField(extensionJson),
 			RecycleReserveTime: constant.UnsetRecycleTime,
 			Creator:            cts.Kit.User,
@@ -104,8 +110,8 @@ func createAccount[T protocloud.AccountExtensionCreateReq, PT protocloud.SecretE
 			return nil, fmt.Errorf("create account failed, err: %v", err)
 		}
 
-		rels := make([]*tablecloud.AccountBizRelTable, len(req.BkBizIDs))
-		for index, bizID := range req.BkBizIDs {
+		rels := make([]*tablecloud.AccountBizRelTable, len(req.UsageBizIDs))
+		for index, bizID := range req.UsageBizIDs {
 			rels[index] = &tablecloud.AccountBizRelTable{
 				BkBizID:   bizID,
 				AccountID: accountID,
