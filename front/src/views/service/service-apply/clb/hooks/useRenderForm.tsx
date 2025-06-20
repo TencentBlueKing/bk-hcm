@@ -466,7 +466,7 @@ export default (formModel: Reactive<ApplyClbModel>) => {
           label: '共享带宽包',
           required: true,
           property: 'bandwidth_package_id',
-          hidden: formModel.internet_charge_type !== 'BANDWIDTH_PACKAGE',
+          hidden: formModel.internet_charge_type !== 'BANDWIDTH_PACKAGE' || isIntranet.value,
           content: () => (
             <BandwidthPackageSelector
               v-model={formModel.bandwidth_package_id}

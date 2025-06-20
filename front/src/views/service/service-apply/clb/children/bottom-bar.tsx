@@ -242,7 +242,7 @@ export default defineComponent({
                   theme='primary'
                   onClick={handleApplyClb}
                   loading={applyLoading.value}
-                  disabled={!isInquiryPrices.value || isInquiryPricesLoading.value || noPerm}>
+                  disabled={isInquiryPricesLoading.value || noPerm}>
                   {t('立即购买')}
                 </bk-button>
               ),

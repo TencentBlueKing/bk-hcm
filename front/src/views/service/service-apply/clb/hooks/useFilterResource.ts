@@ -282,9 +282,13 @@ export default (formModel: ApplyClbModel) => {
     buildSpecAvailabilitySet(vipIsp, loadBalancerType);
 
     // 设置计费类型：clb运营商选三网（电信、移动、联通）时，只能选共享带宽包
-    formModel.internet_charge_type = BGP_VIP_ISP_TYPES.includes(vipIsp)
-      ? 'TRAFFIC_POSTPAID_BY_HOUR'
-      : 'BANDWIDTH_PACKAGE';
+    if (loadBalancerType === 'OPEN') {
+      formModel.internet_charge_type = BGP_VIP_ISP_TYPES.includes(vipIsp)
+        ? 'TRAFFIC_POSTPAID_BY_HOUR'
+        : 'BANDWIDTH_PACKAGE';
+    } else {
+      formModel.internet_charge_type = undefined;
+    }
   });
   const buildSpecAvailabilitySet = (isp: string, loadBalancerType: ApplyClbModel['load_balancer_type']) => {
     specAvailabilitySet.value = [];
