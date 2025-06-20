@@ -709,7 +709,7 @@ func (svc *lbSvc) ListTargetGroupListenerRel(cts *rest.Contexts) (interface{}, e
 }
 
 func convTableToBaseTargetListenerRuleRel(one *tablelb.TargetGroupListenerRuleRelTable) *corelb.
-BaseTargetListenerRuleRel {
+	BaseTargetListenerRuleRel {
 
 	return &corelb.BaseTargetListenerRuleRel{
 		ID:                  one.ID,
@@ -906,7 +906,7 @@ func (svc *lbSvc) queryListenerWithTargets(kt *kit.Kit, req *protocloud.ListList
 	lblUrlRuleList := make([]protocloud.LoadBalancerUrlRuleResult, 0)
 	switch req.Vendor {
 	case enumor.TCloud:
-		lblUrlRuleList, err = svc.listTCloudLoadBalancerUrlRuleByTgIDs(kt, lblReq, cloudClbIDs,
+		lblUrlRuleList, err = svc.listTCloudLBUrlRuleByTgIDs(kt, lblReq, cloudClbIDs,
 			cloudLblIDs, targetGroupIDs)
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "batch query listener with targets failed, invalid vendor: %s",
@@ -1290,7 +1290,7 @@ func (svc *lbSvc) listTargetByCond(kt *kit.Kit, req *protocloud.ListListenerWith
 	return targetList, nil
 }
 
-func (svc *lbSvc) listTCloudLoadBalancerUrlRuleByTgIDs(kt *kit.Kit,
+func (svc *lbSvc) listTCloudLBUrlRuleByTgIDs(kt *kit.Kit,
 	lblReq protocloud.ListenerQueryItem, cloudClbIDs, cloudLblIDs, targetGroupIDs []string) (
 	[]protocloud.LoadBalancerUrlRuleResult, error) {
 

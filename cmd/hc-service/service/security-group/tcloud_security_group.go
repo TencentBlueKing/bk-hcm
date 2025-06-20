@@ -312,8 +312,8 @@ func (g *securityGroup) UpdateTCloudSecurityGroup(cts *rest.Contexts) (interface
 	return nil, nil
 }
 
-// TCloudSecurityGroupAssociateLoadBalancer ...
-func (g *securityGroup) TCloudSecurityGroupAssociateLoadBalancer(cts *rest.Contexts) (interface{}, error) {
+// TCloudSGAssociateLoadBalancer ...
+func (g *securityGroup) TCloudSGAssociateLoadBalancer(cts *rest.Contexts) (interface{}, error) {
 	req := new(hclb.TCloudSetLbSecurityGroupReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -408,8 +408,8 @@ func (g *securityGroup) getUpsertSGIDsParams(kt *kit.Kit, req *hclb.TCloudSetLbS
 	return sgCloudIDs, sgComReq, nil
 }
 
-// TCloudSecurityGroupDisassociateLoadBalancer ...
-func (g *securityGroup) TCloudSecurityGroupDisassociateLoadBalancer(cts *rest.Contexts) (interface{}, error) {
+// TCloudSGDisassociateLoadBalancer ...
+func (g *securityGroup) TCloudSGDisassociateLoadBalancer(cts *rest.Contexts) (interface{}, error) {
 	req := new(hclb.TCloudDisAssociateLbSecurityGroupReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)

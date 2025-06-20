@@ -436,7 +436,7 @@ func (svc *NetworkInterfaceSvc) ListNetworkInterfaceAssociate(cts *rest.Contexts
 
 	details := make([]coreni.NetworkInterfaceAssociate, 0, len(daoResp.Details))
 	for _, item := range daoResp.Details {
-		details = append(details, convertBaseNetworkInterfaceAssociate(item))
+		details = append(details, convertBaseNIAssociate(item))
 	}
 
 	return &datacloudniproto.NetworkInterfaceAssociateListResult{Details: details}, nil
@@ -471,17 +471,17 @@ func (svc *NetworkInterfaceSvc) ListNetworkInterfaceExt(cts *rest.Contexts) (int
 
 	switch vendor {
 	case enumor.Azure:
-		return convertNetworkInterfaceExtListResult[coreni.AzureNIExtension](listResp.Details)
+		return convertNIExtListResult[coreni.AzureNIExtension](listResp.Details)
 	case enumor.HuaWei:
-		return convertNetworkInterfaceExtListResult[coreni.HuaWeiNIExtension](listResp.Details)
+		return convertNIExtListResult[coreni.HuaWeiNIExtension](listResp.Details)
 	case enumor.Gcp:
-		return convertNetworkInterfaceExtListResult[coreni.GcpNIExtension](listResp.Details)
+		return convertNIExtListResult[coreni.GcpNIExtension](listResp.Details)
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
 	}
 }
 
-func convertNetworkInterfaceExtListResult[T coreni.NetworkInterfaceExtension](
+func convertNIExtListResult[T coreni.NetworkInterfaceExtension](
 	tables []tableni.NetworkInterfaceTable) (*datacloudniproto.NetworkInterfaceExtListResult[T], error) {
 
 	details := make([]coreni.NetworkInterface[T], 0, len(tables))
@@ -584,7 +584,7 @@ func convertBaseNetworkInterface(dbDetail *tableni.NetworkInterfaceTable) *coren
 	}
 }
 
-func convertBaseNetworkInterfaceAssociate(dbDetail *types.NetworkInterfaceWithCvmID) coreni.NetworkInterfaceAssociate {
+func convertBaseNIAssociate(dbDetail *types.NetworkInterfaceWithCvmID) coreni.NetworkInterfaceAssociate {
 	if dbDetail == nil {
 		return coreni.NetworkInterfaceAssociate{}
 	}

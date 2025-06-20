@@ -88,10 +88,10 @@ func InitSecurityGroupService(cap *capability.Capability) {
 		sg.AzureListSecurityGroupStatistic)
 
 	// CLB负载均衡
-	h.Add("TCloudSecurityGroupAssociateLoadBalancer", "POST",
-		"/vendors/tcloud/security_groups/associate/load_balancers", sg.TCloudSecurityGroupAssociateLoadBalancer)
-	h.Add("TCloudSecurityGroupDisassociateLoadBalancer", "POST",
-		"/vendors/tcloud/security_groups/disassociate/load_balancers", sg.TCloudSecurityGroupDisassociateLoadBalancer)
+	h.Add("TCloudSGAssociateLoadBalancer", "POST",
+		"/vendors/tcloud/security_groups/associate/load_balancers", sg.TCloudSGAssociateLoadBalancer)
+	h.Add("TCloudSGDisassociateLoadBalancer", "POST",
+		"/vendors/tcloud/security_groups/disassociate/load_balancers", sg.TCloudSGDisassociateLoadBalancer)
 
 	initSecurityGroupServiceHooks(sg, h)
 
