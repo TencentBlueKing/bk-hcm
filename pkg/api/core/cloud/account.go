@@ -36,7 +36,8 @@ type BaseAccount struct {
 	Price              string                 `json:"price"`
 	PriceUnit          string                 `json:"price_unit"`
 	Memo               *string                `json:"memo"`
-	BkBizIDs           []int64                `json:"bk_biz_ids"`
+	BizID              int64                  `json:"bk_biz_id"`
+	UsageBizIDs        []int64                `json:"usage_biz_ids"`
 	SyncStatus         string                 `json:"sync_status"`
 	SyncFailedReason   string                 `json:"sync_failed_reason"`
 	RecycleReserveTime int                    `json:"recycle_reserve_time"`

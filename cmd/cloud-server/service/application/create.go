@@ -47,6 +47,7 @@ import (
 	csdisk "hcm/pkg/api/cloud-server/disk"
 	csvpc "hcm/pkg/api/cloud-server/vpc"
 	dataproto "hcm/pkg/api/data-service"
+	protocloud "hcm/pkg/api/data-service/cloud"
 	hclb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -147,7 +148,7 @@ func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
 	var bkBizIDs = make([]int64, 0)
 	if applicationType == enumor.CreateCvm || applicationType == enumor.CreateDisk ||
 		applicationType == enumor.CreateVpc || applicationType == enumor.CreateLoadBalancer {
-		bkBizIDs = handler.GetBkBizIDs()
+		bkBizIDs = handler.GetUsageBizIDs()
 	}
 
 	result, err := a.client.DataService().Global.Application.CreateApplication(
@@ -158,7 +159,7 @@ func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
 			Source:         enumor.ApplicationSourceITSM,
 			Type:           applicationType,
 			Status:         enumor.Pending,
-			BkBizIDs:       bkBizIDs,
+			UsageBizIDs:    bkBizIDs,
 			Applicant:      cts.Kit.User,
 			Content:        content,
 			DeliveryDetail: "{}",
@@ -189,6 +190,10 @@ func (a *applicationSvc) CreateForAddAccount(cts *rest.Contexts) (interface{}, e
 
 	req, err := parseReqFromRequestBody[proto.AccountAddReq](cts)
 	if err != nil {
+		return nil, err
+	}
+	// 校验使用业务是否包含管理业务，要求必须包含
+	if err := protocloud.ValidateBizIDInUsageBizIDs(req.BizID, req.UsageBizIDs); err != nil {
 		return nil, err
 	}
 	handler := accounthandler.NewApplicationOfAddAccount(a.getHandlerOption(cts), a.authorizer, req)

@@ -195,8 +195,9 @@ type AccountCommonInfoCreateReq struct {
 	Site     enumor.AccountSiteType `json:"site" validate:"required"`
 	Memo     *string                `json:"memo" validate:"omitempty"`
 	// Note: 第一期只支持关联一个业务，且不能关联全部业务
-	// BkBizIDs      []int64                `json:"bk_biz_ids" validate:"required"`
-	BkBizIDs []int64 `json:"bk_biz_ids" validate:"omitempty"`
+	// UsageBizIDs      []int64                `json:"bk_biz_ids" validate:"required"`
+	BizID       int64   `json:"bk_biz_id" validate:"required"`
+	UsageBizIDs []int64 `json:"usage_biz_ids" validate:"required,min=1"`
 }
 
 // Validate ...
@@ -226,13 +227,18 @@ func (req *AccountCommonInfoCreateReq) Validate() error {
 
 	// 资源账号下业务不能为空校验
 	if req.Type == enumor.ResourceAccount {
-		if err := validateResAccountBkBizIDs(req.BkBizIDs); err != nil {
+		if err := validateResAccountBkBizIDs(req.UsageBizIDs); err != nil {
 			return err
 		}
 	}
 
-	// 业务合法性校验
-	if err := validateBkBizIDs(req.BkBizIDs); err != nil {
+	// 管理业务合法性校验
+	if err := validateBizID(req.BizID); err != nil {
+		return err
+	}
+
+	// 使用业务合法性校验
+	if err := validateUsageBizIDs(req.UsageBizIDs); err != nil {
 		return err
 	}
 

@@ -24,6 +24,7 @@ import (
 
 	proto "hcm/pkg/api/cloud-server/account"
 	dataproto "hcm/pkg/api/data-service/cloud"
+	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/iam/meta"
@@ -40,6 +41,10 @@ func (a *accountSvc) UpdateAccount(cts *rest.Contexts) (interface{}, error) {
 	}
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+	// 校验使用业务是否包含管理业务，要求必须包含
+	if err := protocloud.ValidateBizIDInUsageBizIDs(req.BizID, req.UsageBizIDs); err != nil {
+		return nil, err
 	}
 	accountID := cts.PathParameter("account_id").String()
 
@@ -71,13 +76,13 @@ func (a *accountSvc) UpdateAccount(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// 更新账号与业务关系
-	if len(req.BkBizIDs) > 0 {
+	if len(req.UsageBizIDs) > 0 {
 		_, err = a.client.DataService().Global.Account.UpdateBizRel(
 			cts.Kit.Ctx,
 			cts.Kit.Header(),
 			accountID,
 			&dataproto.AccountBizRelUpdateReq{
-				BkBizIDs: req.BkBizIDs,
+				BkBizIDs: req.UsageBizIDs,
 			},
 		)
 		if err != nil {
@@ -137,6 +142,7 @@ func (a *accountSvc) updateForTCloud(
 			Managers:           req.Managers,
 			RecycleReserveTime: req.RecycleReserveTime,
 			Memo:               req.Memo,
+			BizID:              req.BizID,
 			Extension:          shouldUpdatedExtension,
 		},
 	)
@@ -184,6 +190,7 @@ func (a *accountSvc) updateForAws(
 			Managers:           req.Managers,
 			Memo:               req.Memo,
 			RecycleReserveTime: req.RecycleReserveTime,
+			BizID:              req.BizID,
 			Extension:          shouldUpdatedExtension,
 		},
 	)
@@ -233,6 +240,7 @@ func (a *accountSvc) updateForHuaWei(
 			Managers:           req.Managers,
 			Memo:               req.Memo,
 			RecycleReserveTime: req.RecycleReserveTime,
+			BizID:              req.BizID,
 			Extension:          shouldUpdatedExtension,
 		},
 	)
@@ -282,6 +290,7 @@ func (a *accountSvc) updateForGcp(
 			Managers:           req.Managers,
 			Memo:               req.Memo,
 			RecycleReserveTime: req.RecycleReserveTime,
+			BizID:              req.BizID,
 			Extension:          shouldUpdatedExtension,
 		},
 	)
@@ -331,6 +340,7 @@ func (a *accountSvc) updateForAzure(
 			Managers:           req.Managers,
 			Memo:               req.Memo,
 			RecycleReserveTime: req.RecycleReserveTime,
+			BizID:              req.BizID,
 			Extension:          shouldUpdatedExtension,
 		},
 	)

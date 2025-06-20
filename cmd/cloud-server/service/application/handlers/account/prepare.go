@@ -64,7 +64,7 @@ func (a *ApplicationOfAddAccount) GetItsmApprover(managers []string) []itsm.Vari
 	}
 }
 
-// GetBkBizIDs 获取当前的业务IDs
-func (a *ApplicationOfAddAccount) GetBkBizIDs() []int64 {
-	return a.req.BkBizIDs
+// GetUsageBizIDs 获取当前的业务IDs
+func (a *ApplicationOfAddAccount) GetUsageBizIDs() []int64 {
+	return a.req.UsageBizIDs
 }
