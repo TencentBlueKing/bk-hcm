@@ -10,6 +10,7 @@ import type { ApplyClbModel } from '@/api/load_balancers/apply-clb/types';
 import { debounce } from 'lodash';
 import http from '@/http';
 import { applyClbSuccessHandler } from '../apply-clb.plugin';
+import { BGP_VIP_ISP_TYPES } from '@/constants';
 
 import { Form } from 'bkui-vue';
 
@@ -109,7 +110,7 @@ export default defineComponent({
         // eslint-disable-next-line prefer-const
         let zones = formModel.zones ? [formModel.zones] : [];
         const backup_zones = formModel.backup_zones ? [formModel.backup_zones] : undefined;
-        const bandwidthpkg_sub_type = formModel.vip_isp === 'BGP' ? 'BGP' : 'SINGLEISP';
+        const bandwidthpkg_sub_type = BGP_VIP_ISP_TYPES.includes(formModel.vip_isp) ? 'BGP' : 'SINGLEISP';
 
         const { data } = await businessStore.lbPricesInquiry({
           ...formModel,
@@ -150,8 +151,8 @@ export default defineComponent({
     // 提交
     const handleParams = () => {
       const { formModel } = props;
-      // eslint-disable-next-line no-nested-ternary, prefer-const
-      let zones = hasZonesConfig.value ? (formModel.zones ? [formModel.zones] : []) : undefined;
+      const zones = hasZonesConfig.value ? (formModel.zones ? [formModel.zones] : []) : undefined;
+      const vipIsp = isOpen.value ? formModel.vip_isp : undefined;
 
       return {
         ...formModel,
@@ -159,7 +160,7 @@ export default defineComponent({
         sla_type: formModel.sla_type === 'shared' ? '' : formModel.sla_type,
         // 只有公网下可以配置
         address_ip_version: isOpen.value ? formModel.address_ip_version : undefined,
-        vip_isp: isOpen.value ? formModel.vip_isp : undefined,
+        vip_isp: vipIsp,
         // 只有公网下的标准账号可以配置（内网支持配置带宽上限）
         internet_charge_type: hasInternetChargeTypeConfig.value ? formModel.internet_charge_type : undefined,
         internet_max_bandwidth_out:

@@ -194,7 +194,10 @@ export default defineComponent({
       {
         name: '运营商',
         render: () => {
-          return LB_ISP[props.detail?.extension?.vip_isp] || '--';
+          const displayValue = props.detail?.extension?.vip_isp
+            ? LB_ISP[props.detail.extension.vip_isp] ?? props.detail.extension.vip_isp
+            : '--';
+          return displayValue;
         },
       },
     ];

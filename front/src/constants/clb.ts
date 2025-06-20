@@ -18,6 +18,8 @@ export const LB_ROUTE_NAME_MAP: ConstantMapRecord = {
   domain: 'specific-domain-manager',
 };
 
+export const BGP_VIP_ISP_TYPES: string[] = ['BGP'];
+
 // 网络类型
 export const LOAD_BALANCER_TYPE = [
   {
@@ -70,13 +72,13 @@ export const INTERNET_CHARGE_TYPE = [
   {
     label: '按流量',
     value: 'TRAFFIC_POSTPAID_BY_HOUR',
-    isDisabled: (vipIsp: string) => vipIsp !== 'BGP',
+    isDisabled: (vipIsp: string) => !BGP_VIP_ISP_TYPES.includes(vipIsp),
     tipsContent: '仅支持BGP线路',
   },
   {
     label: '按带宽',
     value: 'BANDWIDTH_POSTPAID_BY_HOUR',
-    isDisabled: (vipIsp: string) => vipIsp !== 'BGP',
+    isDisabled: (vipIsp: string) => !BGP_VIP_ISP_TYPES.includes(vipIsp),
     tipsContent: '仅支持BGP线路',
   },
   {

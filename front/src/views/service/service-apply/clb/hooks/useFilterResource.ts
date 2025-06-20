@@ -5,6 +5,7 @@ import { VendorEnum } from '@/common/constant';
 import { reqResourceListOfCurrentRegion } from '@/api/load_balancers/apply-clb';
 import type { ApplyClbModel, SpecAvailability } from '@/api/load_balancers/apply-clb/types';
 import type { ClbQuota } from '@/typings';
+import { BGP_VIP_ISP_TYPES } from '@/constants';
 
 // 类型别名，提高代码可读性
 type ResourceMap = Record<string, ResourceMapItem>;
@@ -281,7 +282,9 @@ export default (formModel: ApplyClbModel) => {
     buildSpecAvailabilitySet(vipIsp, loadBalancerType);
 
     // 设置计费类型：clb运营商选三网（电信、移动、联通）时，只能选共享带宽包
-    formModel.internet_charge_type = vipIsp === 'BGP' ? 'TRAFFIC_POSTPAID_BY_HOUR' : 'BANDWIDTH_PACKAGE';
+    formModel.internet_charge_type = BGP_VIP_ISP_TYPES.includes(vipIsp)
+      ? 'TRAFFIC_POSTPAID_BY_HOUR'
+      : 'BANDWIDTH_PACKAGE';
   });
   const buildSpecAvailabilitySet = (isp: string, loadBalancerType: ApplyClbModel['load_balancer_type']) => {
     specAvailabilitySet.value = [];
