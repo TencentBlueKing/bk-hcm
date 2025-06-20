@@ -153,6 +153,7 @@ func (cli *client) route(kt *kit.Kit, opt *syncRouteOption) (*SyncResult, error)
 	return new(SyncResult), nil
 }
 
+// createRoute creates routes in db
 func (cli *client) createRoute(kt *kit.Kit, accountID string, region string, routeTableID string,
 	addSlice []typesroutetable.TCloudRoute) error {
 
@@ -195,6 +196,7 @@ func (cli *client) createRoute(kt *kit.Kit, accountID string, region string, rou
 	return nil
 }
 
+// updateRoute updates routes in db
 func (cli *client) updateRoute(kt *kit.Kit, accountID, region, routeTableID string,
 	updateMap map[string]typesroutetable.TCloudRoute) error {
 
@@ -238,6 +240,7 @@ func (cli *client) updateRoute(kt *kit.Kit, accountID, region, routeTableID stri
 	return nil
 }
 
+// deleteRoute deletes routes in db
 func (cli *client) deleteRoute(kt *kit.Kit, accountID, region, cloudRTID, rtID string,
 	delCloudIDs []string) error {
 
@@ -284,6 +287,7 @@ func (cli *client) deleteRoute(kt *kit.Kit, accountID, region, cloudRTID, rtID s
 	return nil
 }
 
+// listRouteTableFromCloud lists route tables from cloud
 func (cli *client) listRouteFromCloud(kt *kit.Kit, opt *syncRouteOption) ([]typesroutetable.TCloudRoute, error) {
 
 	if err := opt.Validate(); err != nil {
@@ -317,6 +321,7 @@ func (cli *client) listRouteFromCloud(kt *kit.Kit, opt *syncRouteOption) ([]type
 	return results, nil
 }
 
+// listRouteTableFromDB lists route tables from db
 func (cli *client) listRouteFromDB(kt *kit.Kit, opt *syncRouteOption, routeTableID string) (
 	[]routetable.TCloudRoute, error) {
 
@@ -343,6 +348,7 @@ func (cli *client) listRouteFromDB(kt *kit.Kit, opt *syncRouteOption, routeTable
 	return routes, nil
 }
 
+// isRouteChange checks if the route has changed
 func isRouteChange(cloud typesroutetable.TCloudRoute,
 	db routetable.TCloudRoute) bool {
 

@@ -162,11 +162,13 @@ func (cli *client) RemoveVpcDeleteFromCloud(kt *kit.Kit, accountID string) error
 	return nil
 }
 
+// deleteVpc delete vpc from db, and validate if the vpc exist in cloud
 func (cli *client) deleteVpc(kt *kit.Kit, accountID string, delCloudIDs []string) error {
 	if len(delCloudIDs) == 0 {
 		return fmt.Errorf("delete vpc, cloudIDs is required")
 	}
 
+	// 检查云上是否存在vpc
 	checkParams := &SyncBaseParams{
 		AccountID: accountID,
 		CloudIDs:  delCloudIDs,
@@ -177,6 +179,7 @@ func (cli *client) deleteVpc(kt *kit.Kit, accountID string, delCloudIDs []string
 	}
 
 	if len(delVpcFromCloud) > 0 {
+		// 如果云上还有vpc，说明数据不一致，不能删除
 		logs.Errorf("[%s] validate vpc not exist failed, before delete, opt: %v, failed_count: %d, rid: %s",
 			enumor.Gcp, checkParams, len(delVpcFromCloud), kt.Rid)
 		return fmt.Errorf("validate vpc not exist failed, before delete")
@@ -196,6 +199,7 @@ func (cli *client) deleteVpc(kt *kit.Kit, accountID string, delCloudIDs []string
 	return nil
 }
 
+// updateVpc update vpc in db
 func (cli *client) updateVpc(kt *kit.Kit, accountID string, updateMap map[string]types.GcpVpc) error {
 	if len(updateMap) == 0 {
 		return fmt.Errorf("update vpc, vpcs is required")
@@ -237,6 +241,7 @@ func (cli *client) updateVpc(kt *kit.Kit, accountID string, updateMap map[string
 	return nil
 }
 
+// createVpc create vpc in db
 func (cli *client) createVpc(kt *kit.Kit, accountID string, addVpc []types.GcpVpc) error {
 	if len(addVpc) == 0 {
 		return fmt.Errorf("create vpc, vpcs is required")
@@ -279,6 +284,7 @@ func (cli *client) createVpc(kt *kit.Kit, accountID string, addVpc []types.GcpVp
 	return nil
 }
 
+// listVpcFromCloud lists vpc from cloud
 func (cli *client) listVpcFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]types.GcpVpc, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -300,6 +306,7 @@ func (cli *client) listVpcFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]type
 	return result.Details, nil
 }
 
+// listVpcFromCloudBySelfLink lists vpc from cloud by self link
 func (cli *client) listVpcFromCloudBySelfLink(kt *kit.Kit, params *ListBySelfLinkOption) ([]types.GcpVpc, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -321,6 +328,7 @@ func (cli *client) listVpcFromCloudBySelfLink(kt *kit.Kit, params *ListBySelfLin
 	return result.Details, nil
 }
 
+// listVpcFromDB lists vpc from db
 func (cli *client) listVpcFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	[]cloudcore.Vpc[cloudcore.GcpVpcExtension], error) {
 
@@ -356,6 +364,7 @@ func (cli *client) listVpcFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	return result.Details, nil
 }
 
+// listVpcFromDBBySelfLink lists vpc from db by self link
 func (cli *client) listVpcFromDBBySelfLink(kt *kit.Kit, opt *ListBySelfLinkOption) (
 	[]cloudcore.Vpc[cloudcore.GcpVpcExtension], error) {
 
@@ -391,6 +400,7 @@ func (cli *client) listVpcFromDBBySelfLink(kt *kit.Kit, opt *ListBySelfLinkOptio
 	return result.Details, nil
 }
 
+// isGcpVpcChange checks if the GCP VPC has changed
 func isGcpVpcChange(item types.GcpVpc, info cloudcore.Vpc[cloudcore.GcpVpcExtension]) bool {
 	if info.Name != item.Name {
 		return true
