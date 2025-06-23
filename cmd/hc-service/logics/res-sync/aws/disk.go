@@ -102,6 +102,7 @@ func (cli *client) Disk(kt *kit.Kit, params *SyncBaseParams, opt *SyncDiskOption
 	return new(SyncResult), nil
 }
 
+// updateDisk update disk in db.
 func (cli *client) updateDisk(kt *kit.Kit, accountID string, updateMap map[string]adaptordisk.AwsDisk) error {
 
 	if len(updateMap) <= 0 {
@@ -167,6 +168,7 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, updateMap map[strin
 	return nil
 }
 
+// createDisk create disk in db.
 func (cli *client) createDisk(kt *kit.Kit, accountID string, region string, addSlice []adaptordisk.AwsDisk) error {
 
 	if len(addSlice) <= 0 {
@@ -236,6 +238,7 @@ func (cli *client) createDisk(kt *kit.Kit, accountID string, region string, addS
 	return nil
 }
 
+// deleteDisk delete disk in db.
 func (cli *client) deleteDisk(kt *kit.Kit, accountID string, region string, delCloudIDs []string) error {
 	if len(delCloudIDs) <= 0 {
 		return fmt.Errorf("delCloudIDs is <= 0, not delete")
@@ -272,6 +275,7 @@ func (cli *client) deleteDisk(kt *kit.Kit, accountID string, region string, delC
 	return nil
 }
 
+// listDiskFromCloud list disk from cloud.
 func (cli *client) listDiskFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]adaptordisk.AwsDisk, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -296,6 +300,7 @@ func (cli *client) listDiskFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]ada
 	return result, nil
 }
 
+// listDiskFromDB list disk from db.
 func (cli *client) listDiskFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	[]*coredisk.Disk[coredisk.AwsExtension], error) {
 
@@ -398,6 +403,7 @@ func (cli *client) RemoveDiskDeleteFromCloud(kt *kit.Kit, accountID string, regi
 	return nil
 }
 
+// listRemoveDiskID ...
 func (cli *client) listRemoveDiskID(kt *kit.Kit, params *SyncBaseParams) ([]string, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -435,6 +441,7 @@ func (cli *client) listRemoveDiskID(kt *kit.Kit, params *SyncBaseParams) ([]stri
 	return delCloudIDs, nil
 }
 
+// isDiskChange check disk is change.
 func isDiskChange(cloud adaptordisk.AwsDisk, db *coredisk.Disk[coredisk.AwsExtension]) bool {
 
 	if converter.PtrToVal(cloud.State) != db.Status {
