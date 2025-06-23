@@ -178,7 +178,7 @@ func (g *securityGroup) AzureSecurityGroupAssociateNI(cts *rest.Contexts) (inter
 		ResourceGroupName:       sg.Extension.ResourceGroupName,
 		CloudNetworkInterfaceID: ni.CloudID,
 	}
-	if err = client.SGNetworkInterfaceAssociate(cts.Kit, opt); err != nil {
+	if err = client.SecurityGroupNetworkInterfaceAssociate(cts.Kit, opt); err != nil {
 		logs.Errorf("request adaptor to azure security group associate network interface failed,"+
 			" err: %v, opt: %v, rid: %s", err, opt, cts.Kit.Rid)
 		return nil, err
@@ -236,7 +236,7 @@ func (g *securityGroup) AzureSecurityGroupDisassociateNI(cts *rest.Contexts) (in
 		ResourceGroupName:       sg.Extension.ResourceGroupName,
 		CloudNetworkInterfaceID: ni.CloudID,
 	}
-	if err = client.SGNetworkInterfaceDisassociate(cts.Kit, opt); err != nil {
+	if err = client.SecurityGroupNetworkInterfaceDisassociate(cts.Kit, opt); err != nil {
 		logs.Errorf("request adaptor to azure security group disassociate network interface failed,"+
 			" err: %v, opt: %v, rid: %s", err, opt, cts.Kit.Rid)
 		return nil, err

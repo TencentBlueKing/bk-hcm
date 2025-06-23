@@ -21,6 +21,7 @@
 package loadbalancer
 
 import (
+	"errors"
 	"fmt"
 
 	"hcm/pkg/api/core"
@@ -32,9 +33,11 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/dal/dao/types"
 	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
+	tabletype "hcm/pkg/dal/table/types"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/tools/json"
 	"hcm/pkg/tools/slice"
 
 	"github.com/jmoiron/sqlx"
