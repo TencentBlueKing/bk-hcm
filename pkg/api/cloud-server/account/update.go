@@ -178,10 +178,10 @@ type AccountUpdateReq struct {
 	Managers           []string `json:"managers" validate:"omitempty,max=5"`
 	Memo               *string  `json:"memo" validate:"omitempty"`
 	RecycleReserveTime int      `json:"recycle_reserve_time" validate:"omitempty"`
-	BizID              int64    `json:"bk_biz_id" validate:"omitempty"`
+	BizID              int64    `json:"bk_biz_id" validate:"required"`
 	// Note: 第一期只支持关联一个业务，且不能关联全部业务
 	// BkBizIDs  []int64          `json:"bk_biz_ids" validate:"omitempty"`
-	UsageBizIDs []int64         `json:"usage_biz_ids" validate:"omitempty,len=1,dive,min=1"`
+	UsageBizIDs []int64         `json:"usage_biz_ids" validate:"required,len=1,dive,min=1"`
 	Extension   json.RawMessage `json:"extension" validate:"omitempty"`
 }
 
