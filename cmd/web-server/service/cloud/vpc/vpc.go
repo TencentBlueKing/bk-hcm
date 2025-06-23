@@ -80,6 +80,7 @@ func (svc *service) ListVpcWithSubnetCountInBiz(cts *rest.Contexts) (interface{}
 	}
 }
 
+// getVpcSubnetCountInRes 查询vpc列表和该vpc下的子网数量，以及当前可用区下的子网数量，用于申请主机。
 func (svc *service) getVpcSubnetCountInRes(kt *kit.Kit, vpcID, zone string) (uint64, uint64, error) {
 	req := &core.ListReq{
 		Filter: &filter.Expression{
@@ -169,6 +170,7 @@ func (svc *service) ListVpcWithSubnetCountInRes(cts *rest.Contexts) (interface{}
 	}
 }
 
+// getVpcSubnetCount 获取vpc下的子网数量，以及当前可用区下的子网数量
 func (svc *service) getVpcSubnetCount(kt *kit.Kit, vpcID, zone string, bizID int64) (uint64, uint64, error) {
 	req := &core.ListReq{
 		Filter: &filter.Expression{

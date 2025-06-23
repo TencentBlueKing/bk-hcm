@@ -79,6 +79,7 @@ func (svc *cvmSvc) CreateAzureCvm(cts *rest.Contexts) (interface{}, error) {
 
 	syncClient := syncazure.NewClient(svc.dataCli, azureCli)
 
+	// Sync the created Azure CVM with related resources
 	params := &syncazure.SyncBaseParams{
 		AccountID:         req.AccountID,
 		ResourceGroupName: req.ResourceGroupName,
@@ -94,6 +95,7 @@ func (svc *cvmSvc) CreateAzureCvm(cts *rest.Contexts) (interface{}, error) {
 	return &protocvm.AzureCreateResp{CloudID: cloudID}, nil
 }
 
+// createAzureCvm creates an Azure CVM instance.
 func (svc *cvmSvc) createAzureCvm(kt *kit.Kit, azureCli *azure.Azure, req *protocvm.AzureCreateReq) (
 	string, error) {
 
@@ -198,6 +200,7 @@ func (svc *cvmSvc) StartAzureCvm(cts *rest.Contexts) (interface{}, error) {
 
 	syncClient := syncazure.NewClient(svc.dataCli, client)
 
+	// Sync the started Azure CVM with related resources
 	params := &syncazure.SyncBaseParams{
 		AccountID:         cvmFromDB.AccountID,
 		ResourceGroupName: cvmFromDB.Extension.ResourceGroupName,
@@ -257,6 +260,7 @@ func (svc *cvmSvc) StopAzureCvm(cts *rest.Contexts) (interface{}, error) {
 
 	syncClient := syncazure.NewClient(svc.dataCli, client)
 
+	// Sync the stopped Azure CVM with related resources
 	params := &syncazure.SyncBaseParams{
 		AccountID:         cvmFromDB.AccountID,
 		ResourceGroupName: cvmFromDB.Extension.ResourceGroupName,
@@ -305,7 +309,7 @@ func (svc *cvmSvc) RebootAzureCvm(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	syncClient := syncazure.NewClient(svc.dataCli, client)
-
+	// Sync the rebooted Azure CVM with related resources
 	params := &syncazure.SyncBaseParams{
 		AccountID:         cvmFromDB.AccountID,
 		ResourceGroupName: cvmFromDB.Extension.ResourceGroupName,
