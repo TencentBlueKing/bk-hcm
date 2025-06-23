@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"strings"
 
+	loadbalancer "hcm/pkg/adaptor/types/load-balancer"
 	cvt "hcm/pkg/tools/converter"
 )
 
@@ -143,6 +144,9 @@ func (a *ApplicationOfCreateTCloudLB) renderBaseInfo() ([]formItem, error) {
 	isp := "BGP"
 	if req.VipIsp != nil {
 		isp = *req.VipIsp
+	}
+	if req.LoadBalancerType == loadbalancer.InternalLoadBalancerType {
+		isp = "内网流量"
 	}
 	formItems = append(formItems, formItem{Label: "运营商", Value: isp})
 
