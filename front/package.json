@@ -89,8 +89,8 @@
   ],
   "lint-staged": {
     "src/**/*.{js,ts,tsx,vue}": [
-      "eslint --fix -c ./.eslintrc.js --debug",
-      "prettier --config ./.prettierrc.js --write"
+      "prettier --config ./.prettierrc.js --write",
+      "eslint --fix -c ./.eslintrc.js --debug"
     ]
   }
 }

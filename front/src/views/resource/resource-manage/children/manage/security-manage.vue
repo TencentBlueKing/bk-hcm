@@ -66,8 +66,6 @@ import {
 } from '@/constants/auth-symbols';
 import HcmAuth from '@/components/auth/auth.vue';
 
-const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
-
 const props = defineProps({
   filter: {
     type: Object as PropType<FilterType>,
@@ -75,11 +73,10 @@ const props = defineProps({
   isResourcePage: {
     type: Boolean,
   },
-  whereAmI: {
-    type: String,
-  },
   bkBizId: Number,
 });
+
+const emit = defineEmits(['handleSecrityType', 'edit', 'editTemplate']);
 
 // use hooks
 const { t } = useI18n();
@@ -116,7 +113,6 @@ const URL_MAP: Record<string, string> = {
 };
 const fetchUrl = ref<string>(URL_MAP.group);
 
-const emit = defineEmits(['handleSecrityType', 'edit', 'editTemplate']);
 const { generateColumnsSettings } = useColumns('group');
 
 const cloneSecurityData = reactive<ICloneSecurityProps>({
@@ -127,7 +123,7 @@ const cloneSecurityData = reactive<ICloneSecurityProps>({
 const templateData = ref([]);
 
 const { searchData, searchValue, filter } = useFilter(props, {
-  mgmt_type: (value) => (value === 'unknown' ? '' : value),
+  convertValueCallbacks: { mgmt_type: (value) => (value === 'unknown' ? '' : value) },
 });
 
 const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort, getList } =
@@ -249,7 +245,7 @@ watch(
       templateData.value = data;
       const ids = data.map(({ id }) => id);
       if (!ids.length) return;
-      const url = `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud${
+      const url = `/api/v1/cloud${
         whereAmI.value === Senarios.business ? `/bizs/${accountStore.bizs}` : ''
       }/argument_templates/instance/rule/list`;
       const res = await http.post(url, {
@@ -281,7 +277,6 @@ const fetchComponentsData = () => {
   getList();
 };
 
-defineExpose({ fetchComponentsData });
 const isRowSelectEnable = ({ row, isCheckAll }: DoublePlainObject) => {
   if (isCheckAll) return true;
   return isCurRowSelectEnable(row);
@@ -1192,6 +1187,8 @@ watch(
   },
   { deep: true },
 );
+
+defineExpose({ fetchComponentsData });
 </script>
 
 <template>
@@ -1402,7 +1399,6 @@ watch(
 
   :deep(.bk-nested-loading) {
     margin-top: 16px;
-
     height: calc(100% - 100px);
 
     .bk-table {
