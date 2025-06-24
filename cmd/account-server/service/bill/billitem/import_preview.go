@@ -297,7 +297,7 @@ func cvtZenlayerBillItemCreateReq(kt *kit.Kit, billYear, billMonth int,
 	return result, nil
 }
 
-// 校验账单日期和指定的年月是否一致
+// validateBillYearAndMonth 校验账单日期和指定的年月是否一致
 func validateBillYearAndMonth(curDate string, billYear, billMonth int) error {
 	curYear, err := strconv.Atoi(curDate[:4])
 	if err != nil {

@@ -262,7 +262,7 @@ func (svc *lbSvc) initFlowDeleteRule(kt *kit.Kit, lbID string, ruleIDs cslb.Tclo
 	result, err := svc.client.TaskServer().CreateCustomFlow(kt, addReq)
 	if err != nil {
 		logs.Errorf("call taskserver to batch delete load balancer rule custom flow failed, err: %v, req: %+v, rid: %s",
-			converter.PtrToVal(addReq), err, kt.Rid)
+			err, converter.PtrToVal(addReq), kt.Rid)
 		return "", err
 	}
 	flowID := result.ID
