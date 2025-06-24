@@ -65,6 +65,7 @@ import {
   AUTH_UPDATE_IAAS_RESOURCE,
 } from '@/constants/auth-symbols';
 import HcmAuth from '@/components/auth/auth.vue';
+import { buildMultipleValueRulesItem } from '@/utils';
 
 const props = defineProps({
   filter: {
@@ -124,6 +125,11 @@ const templateData = ref([]);
 
 const { searchData, searchValue, filter } = useFilter(props, {
   convertValueCallbacks: { mgmt_type: (value) => (value === 'unknown' ? '' : value) },
+  conditionFormatterMapper: {
+    cloud_id: (value: string) => {
+      return buildMultipleValueRulesItem('cloud_id', value);
+    },
+  },
 });
 
 const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort, getList } =
