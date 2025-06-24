@@ -181,7 +181,7 @@ type AccountUpdateReq struct {
 	BizID              int64    `json:"bk_biz_id" validate:"required"`
 	// Note: 第一期只支持关联一个业务，且不能关联全部业务
 	// BkBizIDs  []int64          `json:"bk_biz_ids" validate:"omitempty"`
-	UsageBizIDs []int64         `json:"usage_biz_ids" validate:"required,len=1,dive,min=1"`
+	UsageBizIDs []int64         `json:"usage_biz_ids" validate:"required,dive,min=-1"`
 	Extension   json.RawMessage `json:"extension" validate:"omitempty"`
 }
 
