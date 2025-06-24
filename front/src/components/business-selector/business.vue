@@ -21,6 +21,8 @@ export interface IBusinessSelectorProps {
   optionDisabled?: (item: IBusinessItem) => boolean;
 }
 
+const model = defineModel<number | number[]>();
+
 const props = withDefaults(defineProps<IBusinessSelectorProps>(), {
   disabled: false,
   multiple: false,
@@ -33,7 +35,7 @@ const props = withDefaults(defineProps<IBusinessSelectorProps>(), {
   scope: 'full',
 });
 
-const model = defineModel<number | number[]>();
+const emit = defineEmits(['change']);
 
 const businessGlobalStore = useBusinessGlobalStore();
 
@@ -70,6 +72,10 @@ const localModel = computed({
     model.value = val;
   },
 });
+
+const handleChange = (val: number | number[]) => {
+  emit('change', val);
+};
 </script>
 
 <template>
@@ -85,6 +91,7 @@ const localModel = computed({
     :all-option-id="allOptionId"
     :show-select-all="showSelectAll"
     :multiple-mode="multipleMode ? multipleMode : multiple ? 'tag' : 'default'"
+    @change="handleChange"
   >
     <!-- fix “全部”回显 -->
     <template #tag v-if="showAll && (localModel as number[])?.[0] === allOptionId">
@@ -103,5 +110,15 @@ const localModel = computed({
 <style lang="scss" scoped>
 .all-option-name {
   font-size: 12px;
+}
+
+.tag-no-close-biz-selector {
+  :deep(.bk-select-trigger) {
+    .bk-tag-closable {
+      .bk-tag-close {
+        display: none !important;
+      }
+    }
+  }
 }
 </style>
