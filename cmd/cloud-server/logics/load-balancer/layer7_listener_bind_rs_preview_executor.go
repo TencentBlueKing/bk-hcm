@@ -27,10 +27,12 @@ import (
 
 	cloudCvm "hcm/pkg/api/core/cloud/cvm"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
+	"hcm/pkg/cc"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/concurrence"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 )
@@ -150,48 +152,55 @@ func (l *Layer7ListenerBindRSPreviewExecutor) validateWithDB(kt *kit.Kit, cloudI
 		return err
 	}
 
-	for _, detail := range l.details {
-		lb, ok := lbMap[detail.CloudClbID]
-		if !ok {
-			return fmt.Errorf("clb(%s) not exist", detail.CloudClbID)
-		}
-		if _, ok = l.regionIDMap[lb.Region]; !ok {
-			return fmt.Errorf("clb region not match, clb.region: %s, input: %v", lb.Region, l.regionIDMap)
-		}
+	concurrentErr := concurrence.BaseExec(cc.CloudServer().CLBImportConfig.ConcurrentCount, l.details,
+		func(detail *Layer7ListenerBindRSDetail) error {
 
-		ipSet := append(lb.PrivateIPv4Addresses, lb.PrivateIPv6Addresses...)
-		ipSet = append(ipSet, lb.PublicIPv4Addresses...)
-		ipSet = append(ipSet, lb.PublicIPv6Addresses...)
-		if detail.ClbVipDomain != lb.Domain && !slice.IsItemInSlice(ipSet, detail.ClbVipDomain) {
-			detail.Status.SetNotExecutable()
-			detail.ValidateResult = append(detail.ValidateResult,
-				fmt.Sprintf("clb vip(%s) not match", detail.ClbVipDomain))
-			continue
-		}
-		detail.RegionID = lb.Region
+			lb, ok := lbMap[detail.CloudClbID]
+			if !ok {
+				return fmt.Errorf("clb(%s) not exist", detail.CloudClbID)
+			}
+			if _, ok = l.regionIDMap[lb.Region]; !ok {
+				return fmt.Errorf("clb region not match, clb.region: %s, input: %v", lb.Region, l.regionIDMap)
+			}
 
-		lblCloudID, err := l.validateListener(kt, detail)
-		if err != nil {
-			logs.Errorf("validate listener failed, err: %v, rid: %s", err, kt.Rid)
-			return err
-		}
+			ipSet := append(lb.PrivateIPv4Addresses, lb.PrivateIPv6Addresses...)
+			ipSet = append(ipSet, lb.PublicIPv4Addresses...)
+			ipSet = append(ipSet, lb.PublicIPv6Addresses...)
+			if detail.ClbVipDomain != lb.Domain && !slice.IsItemInSlice(ipSet, detail.ClbVipDomain) {
+				detail.Status.SetNotExecutable()
+				detail.ValidateResult = append(detail.ValidateResult,
+					fmt.Sprintf("clb vip(%s) not match", detail.ClbVipDomain))
+				return nil
+			}
+			detail.RegionID = lb.Region
 
-		ruleCloudID, err := l.validateURLRule(kt, lb.CloudID, lblCloudID, detail)
-		if err != nil {
-			logs.Errorf("validate url rule failed, err: %v, rid: %s", err, kt.Rid)
-			return err
-		}
+			lblCloudID, err := l.validateListener(kt, detail)
+			if err != nil {
+				logs.Errorf("validate listener failed, err: %v, rid: %s", err, kt.Rid)
+				return err
+			}
 
-		instID, err := l.validateRS(kt, detail, lb.ID)
-		if err != nil {
-			logs.Errorf("validate rs failed, err: %v, rid: %s", err, kt.Rid)
-			return err
-		}
+			ruleCloudID, err := l.validateURLRule(kt, lb.CloudID, lblCloudID, detail)
+			if err != nil {
+				logs.Errorf("validate url rule failed, err: %v, rid: %s", err, kt.Rid)
+				return err
+			}
 
-		if err = l.validateTarget(kt, lb.ID, detail, ruleCloudID, instID, detail.RsPort[0]); err != nil {
-			logs.Errorf("validate target failed, err: %v, rid: %s", err, kt.Rid)
-			return err
-		}
+			instID, err := l.validateRS(kt, detail, lb.ID)
+			if err != nil {
+				logs.Errorf("validate rs failed, err: %v, rid: %s", err, kt.Rid)
+				return err
+			}
+
+			if err = l.validateTarget(kt, lb.ID, detail, ruleCloudID, instID, detail.RsPort[0]); err != nil {
+				logs.Errorf("validate target failed, err: %v, rid: %s", err, kt.Rid)
+				return err
+			}
+			return nil
+		})
+	if concurrentErr != nil {
+		logs.Errorf("validate concurrent failed, err: %v, rid: %s", concurrentErr, kt.Rid)
+		return err
 	}
 	return nil
 }
