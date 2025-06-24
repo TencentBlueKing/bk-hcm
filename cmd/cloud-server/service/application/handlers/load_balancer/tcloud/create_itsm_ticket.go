@@ -150,6 +150,11 @@ func (a *ApplicationOfCreateTCloudLB) renderBaseInfo() ([]formItem, error) {
 	}
 	formItems = append(formItems, formItem{Label: "运营商", Value: isp})
 
+	if req.InternetMaxBandwidthOut != nil {
+		formItems = append(formItems,
+			formItem{Label: "带宽", Value: fmt.Sprintf("%dMbps", cvt.PtrToVal(req.InternetMaxBandwidthOut))})
+	}
+
 	return formItems, nil
 }
 
