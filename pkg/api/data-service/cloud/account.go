@@ -35,7 +35,7 @@ import (
 // AccountExtensionCreateReq account extension create req.
 type AccountExtensionCreateReq interface {
 	TCloudAccountExtensionCreateReq | AwsAccountExtensionCreateReq | HuaWeiAccountExtensionCreateReq |
-	GcpAccountExtensionCreateReq | AzureAccountExtensionCreateReq | OtherAccountExtensionCreateReq
+		GcpAccountExtensionCreateReq | AzureAccountExtensionCreateReq | OtherAccountExtensionCreateReq
 }
 
 // OtherAccountExtensionCreateReq ...
@@ -131,7 +131,7 @@ type AccountCreateReq[T AccountExtensionCreateReq] struct {
 	Site        enumor.AccountSiteType `json:"site" validate:"required"`
 	Memo        *string                `json:"memo" validate:"required"`
 	Extension   *T                     `json:"extension" validate:"required"`
-	BizID       int64                  `json:"bk_biz_id" validate:"required"`
+	BizID       int64                  `json:"bk_biz_id" validate:"omitempty"`
 	UsageBizIDs []int64                `json:"usage_biz_ids" validate:"required"`
 }
 
@@ -146,7 +146,7 @@ func (c *AccountCreateReq[T]) Validate() error {
 // Note: 对于允许为空字符串的字段，则其类型需要定义为指针，正常情况下，Json合并时空值会被忽略
 type AccountExtensionUpdateReq interface {
 	TCloudAccountExtensionUpdateReq | AwsAccountExtensionUpdateReq | HuaWeiAccountExtensionUpdateReq |
-	GcpAccountExtensionUpdateReq | AzureAccountExtensionUpdateReq
+		GcpAccountExtensionUpdateReq | AzureAccountExtensionUpdateReq
 }
 
 // TCloudAccountExtensionUpdateReq ...
@@ -260,7 +260,7 @@ func (u *AccountUpdateReq[T]) Validate() error {
 // AccountExtensionGetResp ...
 type AccountExtensionGetResp interface {
 	cloud.TCloudAccountExtension | cloud.AwsAccountExtension | cloud.HuaWeiAccountExtension |
-	cloud.GcpAccountExtension | cloud.AzureAccountExtension | cloud.OtherAccountExtension
+		cloud.GcpAccountExtension | cloud.AzureAccountExtension | cloud.OtherAccountExtension
 }
 
 // AccountGetResult ...

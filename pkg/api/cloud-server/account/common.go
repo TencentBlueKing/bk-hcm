@@ -49,8 +49,11 @@ func validateAccountName(name string) error {
 }
 
 func validateBizID(bizID int64) error {
+	if bizID == 0 {
+		return fmt.Errorf("bk_biz_id can not be empty")
+	}
 	if bizID == constant.AttachedAllBiz {
-		return fmt.Errorf("invalid biz id: %d", bizID)
+		return fmt.Errorf("bk_biz_id can not set all biz")
 	}
 	return nil
 }
@@ -74,7 +77,7 @@ func validateBizIDInUsageBizIDs(bizID int64, usageBizIDs []int64) error {
 	if slice.IsItemInSlice(usageBizIDs, bizID) || (len(usageBizIDs) == 1 && usageBizIDs[0] == constant.AttachedAllBiz) {
 		return nil
 	}
-	return fmt.Errorf("BizID %d is not in UsageBizIDs", bizID)
+	return fmt.Errorf("bk_biz_id %d is not in usage_biz_ids", bizID)
 }
 
 func validateResAccountBkBizIDs(bkBizIDs []int64) error {

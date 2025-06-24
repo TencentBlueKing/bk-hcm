@@ -196,8 +196,8 @@ type AccountCommonInfoCreateReq struct {
 	Memo     *string                `json:"memo" validate:"omitempty"`
 	// Note: 第一期只支持关联一个业务，且不能关联全部业务
 	// UsageBizIDs      []int64                `json:"bk_biz_ids" validate:"required"`
-	BizID       int64   `json:"bk_biz_id" validate:"required"`
-	UsageBizIDs []int64 `json:"usage_biz_ids" validate:"required,dive,min=-1"`
+	BizID       int64   `json:"bk_biz_id" validate:"omitempty"`
+	UsageBizIDs []int64 `json:"usage_biz_ids" validate:"omitempty"`
 }
 
 // Validate ...
@@ -225,32 +225,39 @@ func (req *AccountCommonInfoCreateReq) Validate() error {
 		return err
 	}
 
-	// 资源账号下业务不能为空校验
-	if req.Type == enumor.ResourceAccount {
-		if err := validateResAccountBkBizIDs(req.UsageBizIDs); err != nil {
-			return err
-		}
-	}
-
-	// 管理业务合法性校验
-	if err := validateBizID(req.BizID); err != nil {
-		return err
-	}
-
 	// 使用业务合法性校验
 	if err := validateUsageBizIDs(req.UsageBizIDs); err != nil {
 		return err
 	}
 
-	// 校验使用业务是否包含管理业务，要求必须包含
-	if err := validateBizIDInUsageBizIDs(req.BizID, req.UsageBizIDs); err != nil {
-		return err
+	// 资源账号需要进一步对管理业务和使用业务进行校验
+	if req.Type == enumor.ResourceAccount {
+		if err := req.validateResAccountBizIDs(); err != nil {
+			return err
+		}
 	}
 
 	if req.Memo != nil {
 		if utf8.RuneCountInString(cvt.PtrToVal(req.Memo)) > 255 {
 			return errors.New("invalid account memo, length should less than 255")
 		}
+	}
+	return nil
+}
+
+func (req *AccountCommonInfoCreateReq) validateResAccountBizIDs() error {
+	// 管理业务合法性校验
+	if err := validateBizID(req.BizID); err != nil {
+		return err
+	}
+
+	if len(req.UsageBizIDs) == 0 {
+		return errors.New("usage_biz_ids is required for resource account")
+	}
+
+	// 校验使用业务是否包含管理业务，要求必须包含
+	if err := validateBizIDInUsageBizIDs(req.BizID, req.UsageBizIDs); err != nil {
+		return err
 	}
 	return nil
 }
