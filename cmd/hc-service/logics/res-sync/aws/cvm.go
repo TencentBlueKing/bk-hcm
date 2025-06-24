@@ -289,98 +289,8 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 			return fmt.Errorf("cvm %s can not find subnet", converter.PtrToVal(one.InstanceId))
 		}
 
-		privateIPv4Addresses := make([]string, 0)
-		if one.PrivateIpAddress != nil {
-			privateIPv4Addresses = append(privateIPv4Addresses, converter.PtrToVal(one.PrivateIpAddress))
-		}
-		publicIPv4Addresses := make([]string, 0)
-		if one.PublicIpAddress != nil {
-			publicIPv4Addresses = append(publicIPv4Addresses, converter.PtrToVal(one.PublicIpAddress))
-		}
-		publicIPv6Addresses := make([]string, 0)
-		if one.Ipv6Address != nil {
-			publicIPv6Addresses = append(publicIPv6Addresses, converter.PtrToVal(one.Ipv6Address))
-		}
-
-		sgIDs := make([]string, 0)
-		if len(one.SecurityGroups) > 0 {
-			for _, sg := range one.SecurityGroups {
-				if sg.GroupId != nil {
-					sgIDs = append(sgIDs, converter.PtrToVal(sg.GroupId))
-				}
-			}
-		}
-
-		awsBlockDeviceMapping := make([]corecvm.AwsBlockDeviceMapping, 0)
-		if len(one.BlockDeviceMappings) > 0 {
-			for _, v := range one.BlockDeviceMappings {
-				if v != nil {
-					tmp := corecvm.AwsBlockDeviceMapping{
-						Status:        v.Ebs.Status,
-						CloudVolumeID: v.Ebs.VolumeId,
-					}
-					awsBlockDeviceMapping = append(awsBlockDeviceMapping, tmp)
-				}
-			}
-		}
-
-		imageID := ""
-		if id, exsit := imageMap[converter.PtrToVal(one.ImageId)]; exsit {
-			imageID = id
-		}
-
-		cvm := dataproto.CvmBatchUpdateWithExtension[corecvm.AwsCvmExtension]{
-			CvmBatchUpdate: dataproto.CvmBatchUpdate{
-				ID:             id,
-				Name:           converter.PtrToVal(aws.GetCvmNameFromTags(one.Tags)),
-				CloudVpcIDs:    []string{converter.PtrToVal(one.VpcId)},
-				VpcIDs:         []string{vpcMap[converter.PtrToVal(one.VpcId)].VpcID},
-				CloudSubnetIDs: []string{converter.PtrToVal(one.SubnetId)},
-				SubnetIDs:      []string{subnetMap[converter.PtrToVal(one.SubnetId)]},
-				CloudImageID:   converter.PtrToVal(one.ImageId),
-				ImageID:        imageID,
-				// 云上不支持该字段
-				Memo:                 nil,
-				Status:               converter.PtrToVal(one.State.Name),
-				PrivateIPv4Addresses: privateIPv4Addresses,
-				// 云上不支持该字段
-				PrivateIPv6Addresses: nil,
-				PublicIPv4Addresses:  publicIPv4Addresses,
-				PublicIPv6Addresses:  publicIPv6Addresses,
-				CloudLaunchedTime:    times.ConvStdTimeFormat(converter.PtrToVal(one.LaunchTime)),
-				// 云上不支持该字段
-				CloudExpiredTime: "",
-			},
-			Extension: &corecvm.AwsCvmExtension{
-				CpuOptions: &corecvm.AwsCpuOptions{
-					CoreCount:      one.CpuOptions.CoreCount,
-					ThreadsPerCore: one.CpuOptions.ThreadsPerCore,
-				},
-				Platform:              one.Platform,
-				DnsName:               one.PublicDnsName,
-				EbsOptimized:          one.EbsOptimized,
-				CloudSecurityGroupIDs: sgIDs,
-				PrivateDnsName:        one.PrivateDnsName,
-				PrivateDnsNameOptions: nil,
-				CloudRamDiskID:        one.RamdiskId,
-				RootDeviceName:        one.RootDeviceName,
-				RootDeviceType:        one.RootDeviceType,
-				SourceDestCheck:       one.SourceDestCheck,
-				SriovNetSupport:       one.SriovNetSupport,
-				VirtualizationType:    one.VirtualizationType,
-				BlockDeviceMapping:    awsBlockDeviceMapping,
-			},
-		}
-
-		if one.PrivateDnsNameOptions != nil {
-			cvm.Extension.PrivateDnsNameOptions = &corecvm.AwsPrivateDnsNameOptions{
-				EnableResourceNameDnsAAAARecord: one.PrivateDnsNameOptions.EnableResourceNameDnsAAAARecord,
-				EnableResourceNameDnsARecord:    one.PrivateDnsNameOptions.EnableResourceNameDnsARecord,
-				HostnameType:                    one.PrivateDnsNameOptions.HostnameType,
-			}
-		}
-
-		lists = append(lists, cvm)
+		req := buildCvmUpdateReqWithAwsExtension(id, one, vpcMap, subnetMap, imageMap)
+		lists = append(lists, req)
 	}
 
 	updateReq := dataproto.CvmBatchUpdateReq[corecvm.AwsCvmExtension]{
@@ -396,6 +306,101 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 	logs.Infof("[%s] sync cvm to update cvm success, count: %d, rid: %s", enumor.Aws, len(updateMap), kt.Rid)
 
 	return nil
+}
+
+func buildCvmUpdateReqWithAwsExtension(id string, one typescvm.AwsCvm, vpcMap map[string]*common.VpcDB,
+	subnetMap map[string]string,
+	imageMap map[string]string) protocloud.CvmBatchUpdateWithExtension[corecvm.AwsCvmExtension] {
+
+	sgIDs := make([]string, 0)
+	if len(one.SecurityGroups) > 0 {
+		for _, sg := range one.SecurityGroups {
+			if sg.GroupId != nil {
+				sgIDs = append(sgIDs, converter.PtrToVal(sg.GroupId))
+			}
+		}
+	}
+	awsBlockDeviceMapping := make([]corecvm.AwsBlockDeviceMapping, 0)
+	if len(one.BlockDeviceMappings) > 0 {
+		for _, v := range one.BlockDeviceMappings {
+			if v != nil {
+				tmp := corecvm.AwsBlockDeviceMapping{
+					Status:        v.Ebs.Status,
+					CloudVolumeID: v.Ebs.VolumeId,
+				}
+				awsBlockDeviceMapping = append(awsBlockDeviceMapping, tmp)
+			}
+		}
+	}
+	imageID := ""
+	if id, exsit := imageMap[converter.PtrToVal(one.ImageId)]; exsit {
+		imageID = id
+	}
+	privateIPv4Addresses, publicIPv4Addresses, publicIPv6Addresses := parseIPInfo(one)
+
+	req := dataproto.CvmBatchUpdateWithExtension[corecvm.AwsCvmExtension]{
+		CvmBatchUpdate: dataproto.CvmBatchUpdate{
+			ID:             id,
+			Name:           converter.PtrToVal(aws.GetCvmNameFromTags(one.Tags)),
+			CloudVpcIDs:    []string{converter.PtrToVal(one.VpcId)},
+			VpcIDs:         []string{vpcMap[converter.PtrToVal(one.VpcId)].VpcID},
+			CloudSubnetIDs: []string{converter.PtrToVal(one.SubnetId)},
+			SubnetIDs:      []string{subnetMap[converter.PtrToVal(one.SubnetId)]},
+			CloudImageID:   converter.PtrToVal(one.ImageId),
+			ImageID:        imageID,
+			// 云上不支持该字段
+			Memo:                 nil,
+			Status:               converter.PtrToVal(one.State.Name),
+			PrivateIPv4Addresses: privateIPv4Addresses,
+			// 云上不支持该字段
+			PrivateIPv6Addresses: nil,
+			PublicIPv4Addresses:  publicIPv4Addresses,
+			PublicIPv6Addresses:  publicIPv6Addresses,
+			CloudLaunchedTime:    times.ConvStdTimeFormat(converter.PtrToVal(one.LaunchTime)),
+			// 云上不支持该字段
+			CloudExpiredTime: "",
+		},
+		Extension: &corecvm.AwsCvmExtension{
+			CpuOptions: &corecvm.AwsCpuOptions{
+				CoreCount:      one.CpuOptions.CoreCount,
+				ThreadsPerCore: one.CpuOptions.ThreadsPerCore,
+			},
+			Platform:              one.Platform,
+			DnsName:               one.PublicDnsName,
+			EbsOptimized:          one.EbsOptimized,
+			CloudSecurityGroupIDs: sgIDs,
+			PrivateDnsName:        one.PrivateDnsName,
+			PrivateDnsNameOptions: nil,
+			CloudRamDiskID:        one.RamdiskId,
+			RootDeviceName:        one.RootDeviceName,
+			RootDeviceType:        one.RootDeviceType,
+			SourceDestCheck:       one.SourceDestCheck,
+			SriovNetSupport:       one.SriovNetSupport,
+			VirtualizationType:    one.VirtualizationType,
+			BlockDeviceMapping:    awsBlockDeviceMapping,
+		},
+	}
+	if one.PrivateDnsNameOptions != nil {
+		req.Extension.PrivateDnsNameOptions = &corecvm.AwsPrivateDnsNameOptions{
+			EnableResourceNameDnsAAAARecord: one.PrivateDnsNameOptions.EnableResourceNameDnsAAAARecord,
+			EnableResourceNameDnsARecord:    one.PrivateDnsNameOptions.EnableResourceNameDnsARecord,
+			HostnameType:                    one.PrivateDnsNameOptions.HostnameType,
+		}
+	}
+	return req
+}
+
+func parseIPInfo(one typescvm.AwsCvm) (privateIPv4Addresses, publicIPv4Addresses, publicIPv6Addresses []string) {
+	if one.PrivateIpAddress != nil {
+		privateIPv4Addresses = append(privateIPv4Addresses, converter.PtrToVal(one.PrivateIpAddress))
+	}
+	if one.PublicIpAddress != nil {
+		publicIPv4Addresses = append(publicIPv4Addresses, converter.PtrToVal(one.PublicIpAddress))
+	}
+	if one.Ipv6Address != nil {
+		publicIPv6Addresses = append(publicIPv6Addresses, converter.PtrToVal(one.Ipv6Address))
+	}
+	return
 }
 
 func (cli *client) getCvmRelResMaps(kt *kit.Kit, accountID string, region string,
