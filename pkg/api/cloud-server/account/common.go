@@ -72,24 +72,12 @@ func validateUsageBizIDs(bkBizIDs []int64) error {
 	return nil
 }
 
-// ValidateBizIDInUsageBizIDs validates that BizID is in UsageBizIDs.
+// validateBizIDInUsageBizIDs checks if bizID is in usageBizIDs or if usageBizIDs contains AttachedAllBiz.
 func validateBizIDInUsageBizIDs(bizID int64, usageBizIDs []int64) error {
 	if slice.IsItemInSlice(usageBizIDs, bizID) || (len(usageBizIDs) == 1 && usageBizIDs[0] == constant.AttachedAllBiz) {
 		return nil
 	}
 	return fmt.Errorf("bk_biz_id %d is not in usage_biz_ids", bizID)
-}
-
-func validateResAccountBkBizIDs(bkBizIDs []int64) error {
-	if len(bkBizIDs) <= 0 {
-		return fmt.Errorf("invalid res account have no bizIDs")
-	}
-
-	if len(bkBizIDs) == 1 && bkBizIDs[0] == -1 {
-		return fmt.Errorf("invalid res account not assigned bizIDs")
-	}
-
-	return nil
 }
 
 // gcpAccountCloudServiceSecretKey 由于gcp密钥非普通字符串，而是一个map 字符串，用户容易出错，所以定义结构进行校验，避免透传给gcp api
