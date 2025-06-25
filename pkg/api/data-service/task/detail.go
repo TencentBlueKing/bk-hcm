@@ -92,6 +92,20 @@ func (req UpdateTaskDetailField) Validate() error {
 	return validator.Validate.Struct(req)
 }
 
+// BatchUpdateTaskDetailReq ...
+type BatchUpdateTaskDetailReq struct {
+	IDs           []string               `json:"ids" validate:"required,min=1,max=500"`
+	Reason        string                 `json:"reason"`
+	State         enumor.TaskDetailState `json:"state"`
+	FlowID        string                 `json:"flow_id"`
+	TaskActionIDs []string               `json:"task_action_ids,omitempty"`
+}
+
+// Validate ...
+func (req BatchUpdateTaskDetailReq) Validate() error {
+	return validator.Validate.Struct(req)
+}
+
 // -------------------------- List --------------------------
 
 // ListDetailResult defines list result.

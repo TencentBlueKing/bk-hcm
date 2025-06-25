@@ -61,3 +61,11 @@ func (t *TaskDetailClient) Update(kt *kit.Kit, req *task.UpdateDetailReq) error 
 func (t *TaskDetailClient) Delete(kt *kit.Kit, req *task.DeleteDetailReq) error {
 	return common.RequestNoResp[task.DeleteDetailReq](t.client, rest.DELETE, kt, req, "/task_details/delete")
 }
+
+// BatchUpdate 批量更新指定字段为相同的值
+func (t *TaskDetailClient) BatchUpdate(kt *kit.Kit,
+	req *task.BatchUpdateTaskDetailReq) error {
+
+	return common.RequestNoResp[task.BatchUpdateTaskDetailReq](t.client, rest.PATCH, kt, req,
+		"/task_details/update/state_reason")
+}

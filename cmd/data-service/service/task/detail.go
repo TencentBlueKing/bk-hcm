@@ -309,3 +309,36 @@ func (svc *service) ListTaskDetail(cts *rest.Contexts) (interface{}, error) {
 
 	return &task.ListDetailResult{Details: details}, nil
 }
+
+// BatchUpdateTaskDetail ...
+func (svc *service) BatchUpdateTaskDetail(cts *rest.Contexts) (interface{}, error) {
+	req := new(task.BatchUpdateTaskDetailReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	_, err := svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
+		detail := &tabletask.DetailTable{
+			State:         req.State,
+			Reason:        req.Reason,
+			TaskActionIDs: req.TaskActionIDs,
+			FlowID:        req.FlowID,
+		}
+		flt := tools.ContainersExpression("id", req.IDs)
+		if err := svc.dao.TaskDetail().UpdateWithTx(cts.Kit, txn, flt, detail); err != nil {
+			logs.Errorf("update task detail failed, err: %v, rid: %s", err, cts.Kit.Rid)
+			return nil, fmt.Errorf("update task detail failed, err: %v", err)
+		}
+
+		return nil, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
