@@ -197,7 +197,7 @@ type AccountCommonInfoCreateReq struct {
 	// Note: 第一期只支持关联一个业务，且不能关联全部业务
 	// UsageBizIDs      []int64                `json:"bk_biz_ids" validate:"required"`
 	BizID       int64   `json:"bk_biz_id" validate:"omitempty"`
-	UsageBizIDs []int64 `json:"usage_biz_ids" validate:"omitempty"`
+	UsageBizIDs []int64 `json:"usage_biz_ids" validate:"required"`
 }
 
 // Validate ...
