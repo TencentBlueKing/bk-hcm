@@ -191,7 +191,7 @@ func (c *Layer4ListenerBindRSExecutor) buildFlow(kt *kit.Kit, lb corelb.BaseLoad
 	details []*layer4ListenerBindRSTaskDetail) (string, error) {
 
 	// 将details根据targetGroupID进行分组，以targetGroupID的纬度创建flowTask
-	tgToDetails, tgToListenerCloudIDs, err := c.createTaskDetailsGroupByTargetGroup(kt, lb.ID, lb.CloudID, details)
+	tgToDetails, tgToListenerCloudIDs, err := c.createTaskDetailsGroupByTargetGroup(details)
 	if err != nil {
 		logs.Errorf("create task details group by target group failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err
@@ -236,29 +236,23 @@ func (c *Layer4ListenerBindRSExecutor) buildFlow(kt *kit.Kit, lb corelb.BaseLoad
 	return flowID, nil
 }
 
-func (c *Layer4ListenerBindRSExecutor) createTaskDetailsGroupByTargetGroup(kt *kit.Kit, lbID string, lbCloudID string,
-	details []*layer4ListenerBindRSTaskDetail) (map[string][]*layer4ListenerBindRSTaskDetail, map[string]string,
-	error) {
+func (c *Layer4ListenerBindRSExecutor) createTaskDetailsGroupByTargetGroup(details []*layer4ListenerBindRSTaskDetail,
+) (map[string][]*layer4ListenerBindRSTaskDetail, map[string]string, error) {
 
 	tgToDetails := make(map[string][]*layer4ListenerBindRSTaskDetail)
 	tgToListenerCloudID := make(map[string]string)
 	for _, detail := range details {
-		listener, err := getListener(kt, c.dataServiceCli, c.accountID, lbCloudID, detail.Protocol,
-			detail.ListenerPort[0], c.bkBizID, c.vendor)
-		if err != nil {
-			return nil, nil, err
-		}
-		if listener == nil {
+		if len(detail.listenerCloudID) == 0 {
 			return nil, nil, fmt.Errorf("loadbalancer(%s) listener(%v) not found",
-				detail.CloudClbID, detail.ListenerPort)
+				detail.CloudClbID, detail.listenerCloudID)
 		}
 
-		targetGroupID, err := getTargetGroupID(kt, c.dataServiceCli, lbID, listener.CloudID)
-		if err != nil {
-			return nil, nil, err
+		if len(detail.targetGroupID) == 0 {
+			return nil, nil, fmt.Errorf("loadbalancer(%s) targetGroup(%v) not found",
+				detail.CloudClbID, detail.targetGroupID)
 		}
-		tgToListenerCloudID[targetGroupID] = listener.CloudID
-		tgToDetails[targetGroupID] = append(tgToDetails[targetGroupID], detail)
+		tgToListenerCloudID[detail.targetGroupID] = detail.listenerCloudID
+		tgToDetails[detail.targetGroupID] = append(tgToDetails[detail.targetGroupID], detail)
 	}
 	return tgToDetails, tgToListenerCloudID, nil
 }

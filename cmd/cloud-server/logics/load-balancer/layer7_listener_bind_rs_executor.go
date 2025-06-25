@@ -192,8 +192,7 @@ func (c *Layer7ListenerBindRSExecutor) buildFlow(kt *kit.Kit, lb corelb.BaseLoad
 	details []*layer7ListenerBindRSTaskDetail) (string, error) {
 
 	// 将details根据targetGroupID进行分组，以targetGroupID的纬度创建flowTask
-	tgToDetails, tgToListenerCloudIDs, tgToCloudRuleIDs, err := c.taskDetailsGroupByTargetGroup(
-		kt, lb.ID, lb.CloudID, details)
+	tgToDetails, tgToListenerCloudIDs, tgToCloudRuleIDs, err := c.taskDetailsGroupByTargetGroup(details)
 	if err != nil {
 		logs.Errorf("create task details group by target group failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err
@@ -242,40 +241,16 @@ func (c *Layer7ListenerBindRSExecutor) buildFlow(kt *kit.Kit, lb corelb.BaseLoad
 }
 
 // taskDetailsGroupByTargetGroup 将taskDetails根据targetGroup进行分组
-func (c *Layer7ListenerBindRSExecutor) taskDetailsGroupByTargetGroup(kt *kit.Kit, lbID string, lbCloudID string,
-	details []*layer7ListenerBindRSTaskDetail) (map[string][]*layer7ListenerBindRSTaskDetail, map[string]string,
-	map[string]string, error) {
+func (c *Layer7ListenerBindRSExecutor) taskDetailsGroupByTargetGroup(details []*layer7ListenerBindRSTaskDetail) (
+	map[string][]*layer7ListenerBindRSTaskDetail, map[string]string, map[string]string, error) {
 
 	tgToDetails := make(map[string][]*layer7ListenerBindRSTaskDetail)
 	tgToListenerCloudID := make(map[string]string)
 	tgToCloudRuleIDs := make(map[string]string)
 	for _, detail := range details {
-		listener, err := getListener(kt, c.dataServiceCli, c.accountID, lbCloudID, detail.Protocol,
-			detail.ListenerPort[0], c.bkBizID, c.vendor)
-		if err != nil {
-			logs.Errorf("get listener failed, err: %v, rid: %s", err, kt.Rid)
-			return nil, nil, nil, err
-		}
-		if listener == nil {
-			return nil, nil, nil, fmt.Errorf("loadbalancer(%s) listener(%v) not found",
-				detail.CloudClbID, detail.ListenerPort)
-		}
-
-		rule, err := getURLRule(kt, c.dataServiceCli, c.vendor,
-			lbCloudID, listener.CloudID, detail.Domain, detail.URLPath)
-		if err != nil {
-			logs.Errorf("get url rule failed, err: %v, rid: %s", err, kt.Rid)
-			return nil, nil, nil, err
-		}
-
-		targetGroupID, err := getTargetGroupID(kt, c.dataServiceCli, lbID, rule.CloudID)
-		if err != nil {
-			logs.Errorf("get target group id failed, rule(%s),err: %v, rid: %s", rule.CloudID, err, kt.Rid)
-			return nil, nil, nil, err
-		}
-		tgToListenerCloudID[targetGroupID] = listener.CloudID
-		tgToCloudRuleIDs[targetGroupID] = rule.CloudID
-		tgToDetails[targetGroupID] = append(tgToDetails[targetGroupID], detail)
+		tgToListenerCloudID[detail.targetGroupID] = detail.listenerCloudID
+		tgToCloudRuleIDs[detail.targetGroupID] = detail.urlRuleCloudID
+		tgToDetails[detail.targetGroupID] = append(tgToDetails[detail.targetGroupID], detail)
 	}
 	return tgToDetails, tgToListenerCloudID, tgToCloudRuleIDs, nil
 }

@@ -230,17 +230,11 @@ func (c *CreateUrlRuleExecutor) mapByListener(kt *kit.Kit, lbCloudID string, det
 
 	listenerToDetails := make(map[string][]*createUrlRuleTaskDetail)
 	for _, detail := range details {
-		listener, err := getListener(kt, c.dataServiceCli, c.accountID, lbCloudID, detail.Protocol,
-			detail.ListenerPort[0], c.bkBizID, c.vendor)
-		if err != nil {
-			logs.Errorf("get listener failed, lb(%s), port(%v),err: %v, rid: %s",
-				lbCloudID, detail.ListenerPort, err, kt.Rid)
-			return nil, err
-		}
-		if listener == nil {
+		if len(detail.listenerID) == 0 {
+			logs.Errorf("clb(%s) listener(%d) not found, rid: %s", lbCloudID, detail.ListenerPort[0], kt.Rid)
 			return nil, fmt.Errorf("clb(%s) listener(%d) not found", lbCloudID, detail.ListenerPort[0])
 		}
-		listenerToDetails[listener.ID] = append(listenerToDetails[listener.ID], detail)
+		listenerToDetails[detail.listenerID] = append(listenerToDetails[detail.listenerID], detail)
 	}
 	return listenerToDetails, nil
 }

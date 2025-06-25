@@ -216,6 +216,7 @@ func (l *Layer7ListenerBindRSPreviewExecutor) validateTarget(kt *kit.Kit, lbID s
 	if err != nil {
 		return err
 	}
+	detail.targetGroupID = tgID
 	target, err := getTarget(kt, l.dataServiceCli, tgID, instID, port)
 	if err != nil {
 		return err
@@ -335,6 +336,7 @@ func (l *Layer7ListenerBindRSPreviewExecutor) validateListener(kt *kit.Kit,
 		return "", nil
 	}
 
+	curDetail.listenerCloudID = listener.CloudID
 	return listener.CloudID, nil
 }
 
@@ -351,6 +353,7 @@ func (l *Layer7ListenerBindRSPreviewExecutor) validateURLRule(kt *kit.Kit, lbClo
 		detail.ValidateResult = append(detail.ValidateResult, "url rule not found")
 		return "", nil
 	}
+	detail.urlRuleCloudID = rule.CloudID
 	return rule.CloudID, nil
 }
 
@@ -372,6 +375,16 @@ type Layer7ListenerBindRSDetail struct {
 	ValidateResult []string        `json:"validate_result"`
 
 	RegionID string `json:"region_id"`
+
+	// listenerCloudID 在 validateListener 阶段填充, 后续submit阶段会重复使用到,
+	// 如果为空, 那就意味着当前detail的条件无法匹配到对应的listener, 可以认为listener not found
+	listenerCloudID string
+	// urlRuleCloudID 在 validateURLRule 阶段填充, 后续submit阶段会重复使用到,
+	// 如果为空, 那就意味着当前detail的条件无法匹配到对应的targetGroup, 可以认为targetGroup not found
+	urlRuleCloudID string
+	// targetGroupID 在 validateTarget 阶段填充, 后续submit阶段会重复使用到,
+	// 如果为空, 那就意味着当前detail的条件无法匹配到对应的targetGroup, 可以认为targetGroup not found
+	targetGroupID string
 }
 
 func (c *Layer7ListenerBindRSDetail) validate() {
