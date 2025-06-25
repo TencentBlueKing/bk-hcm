@@ -182,7 +182,7 @@ func (c *CreateUrlRuleExecutor) buildFlows(kt *kit.Kit) ([]string, error) {
 	return flowIDs, nil
 }
 
-func (c *CreateUrlRuleExecutor) buildFlow(kt *kit.Kit, lb corelb.BaseLoadBalancer,
+func (c *CreateUrlRuleExecutor) buildFlow(kt *kit.Kit, lb corelb.LoadBalancerRaw,
 	details []*createUrlRuleTaskDetail) (string, error) {
 
 	listenerToDetails, err := c.mapByListener(kt, lb.CloudID, details)

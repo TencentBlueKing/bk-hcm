@@ -179,7 +179,7 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateWithDB(kt *kit.Kit, cloudI
 				return err
 			}
 
-			instID, err := l.validateRS(kt, detail, lb.ID)
+			instID, err := l.validateRS(kt, detail, lb)
 			if err != nil {
 				logs.Errorf("validate rs failed, err: %v, rid: %s", err, kt.Rid)
 				return err
@@ -231,34 +231,23 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateTarget(kt *kit.Kit, lbID s
 	return nil
 }
 
-func (l *Layer4ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit,
-	curDetail *Layer4ListenerBindRSDetail, lbID string) (string, error) {
+func (l *Layer4ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit, curDetail *Layer4ListenerBindRSDetail,
+	lb corelb.LoadBalancerRaw) (string, error) {
 
 	if curDetail.InstType == enumor.EniInstType {
 		// ENI 不做校验
 		return "", nil
 	}
 
-	var lb *corelb.LoadBalancer[corelb.TCloudClbExtension]
-	var err error
-	switch l.vendor {
-	case enumor.TCloud:
-		lb, err = getTCloudLoadBalancer(kt, l.dataServiceCli, lbID)
-	default:
-		return "", fmt.Errorf("layer4 listener bind rs preview validate, unsupported vendor: %s", l.vendor)
-	}
+	isCrossRegionV1, isCrossRegionV2, targetCloudVpcID, lbTargetRegion, err := parseSnapInfoTCloudLBExtension(kt,
+		lb.Extension)
 	if err != nil {
+		logs.Errorf("parse snap info for tcloud lb extension failed, err: %v, rid: %s", err, kt.Rid)
 		return "", err
 	}
 	cloudVpcIDs := []string{lb.CloudVpcID}
-	isCrossRegionV2 := converter.PtrToVal(lb.Extension.SnatPro)
-	if isCrossRegionV2 {
-		// 跨域2.0 本地无法校验，因此此处不进行校验，由云上接口判断
-		return "", nil
-	}
-	isCrossRegionV1 := lb.Extension.SupportCrossRegionV1()
 	if isCrossRegionV1 {
-		cloudVpcIDs = append(cloudVpcIDs, converter.PtrToVal(lb.Extension.TargetCloudVpcID))
+		cloudVpcIDs = append(cloudVpcIDs, targetCloudVpcID)
 	}
 
 	cvm, err := getCvm(kt, l.dataServiceCli, curDetail.RsIp, l.vendor, l.bkBizID, l.accountID, cloudVpcIDs)
@@ -266,19 +255,26 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit,
 		return "", err
 	}
 	if cvm == nil {
+		if isCrossRegionV2 {
+			// 跨域2.0 如果找不到cvm主机则不进行后续的校验，由云上接口兜底
+			return "", nil
+		}
 		// 找不到对应的CVM, 根据IP查询CVM完善报错
 		return "", l.fillRSValidateCvmNotFoundError(kt, curDetail, lb.CloudVpcID)
 	}
 	targetRegion := lb.Region
 	if isCrossRegionV1 {
-		// 跨域1.0 校验 target region
-		targetRegion = converter.PtrToVal(lb.Extension.TargetRegion)
+		// 跨域1.0 校验 extension中的 target region
+		targetRegion = lbTargetRegion
 	}
-	if cvm.Region != targetRegion {
+	// 支持跨域1.0 校验 target region
+	// 支持跨域2.0 不校验
+	if !isCrossRegionV2 && cvm.Region != targetRegion {
+		// 非跨域情况下才校验region
 		curDetail.Status.SetNotExecutable()
 		curDetail.ValidateResult = append(curDetail.ValidateResult,
-			fmt.Sprintf("rs(%s) region not match, rs.region: %s, targetRegion: %v",
-				curDetail.RsIp, cvm.Region, targetRegion))
+			fmt.Sprintf("rs(%s) region not match, rs.region: %s, lb.region: %v",
+				curDetail.RsIp, cvm.Region, lb.Region))
 		return cvm.CloudID, nil
 	}
 

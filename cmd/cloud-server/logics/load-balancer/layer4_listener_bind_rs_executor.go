@@ -187,7 +187,7 @@ func (c *Layer4ListenerBindRSExecutor) buildFlows(kt *kit.Kit) ([]string, error)
 }
 
 // buildFlow 构建异步任务flow
-func (c *Layer4ListenerBindRSExecutor) buildFlow(kt *kit.Kit, lb corelb.BaseLoadBalancer,
+func (c *Layer4ListenerBindRSExecutor) buildFlow(kt *kit.Kit, lb corelb.LoadBalancerRaw,
 	details []*layer4ListenerBindRSTaskDetail) (string, error) {
 
 	// 将details根据targetGroupID进行分组，以targetGroupID的纬度创建flowTask
@@ -300,7 +300,7 @@ func (c *Layer4ListenerBindRSExecutor) createFlowTask(kt *kit.Kit, lbID string, 
 	return flowID, nil
 }
 
-func (c *Layer4ListenerBindRSExecutor) buildFlowTask(kt *kit.Kit, lb corelb.BaseLoadBalancer,
+func (c *Layer4ListenerBindRSExecutor) buildFlowTask(kt *kit.Kit, lb corelb.LoadBalancerRaw,
 	targetGroupID string, details []*layer4ListenerBindRSTaskDetail, generator func() (cur string, prev string),
 	tgToListenerCloudIDs map[string]string) ([]ts.CustomFlowTask, error) {
 
@@ -312,14 +312,10 @@ func (c *Layer4ListenerBindRSExecutor) buildFlowTask(kt *kit.Kit, lb corelb.Base
 	}
 }
 
-func (c *Layer4ListenerBindRSExecutor) buildTCloudFlowTask(kt *kit.Kit, lb corelb.BaseLoadBalancer,
+func (c *Layer4ListenerBindRSExecutor) buildTCloudFlowTask(kt *kit.Kit, lb corelb.LoadBalancerRaw,
 	targetGroupID string, details []*layer4ListenerBindRSTaskDetail,
 	generator func() (cur string, prev string), tgToListenerCloudIDs map[string]string) ([]ts.CustomFlowTask, error) {
 
-	tCloudLB, err := getTCloudLoadBalancer(kt, c.dataServiceCli, lb.ID)
-	if err != nil {
-		return nil, err
-	}
 	result := make([]ts.CustomFlowTask, 0)
 	for _, taskDetails := range slice.Split(details, constant.BatchTaskMaxLimit) {
 		cur, prev := generator()
@@ -339,7 +335,7 @@ func (c *Layer4ListenerBindRSExecutor) buildTCloudFlowTask(kt *kit.Kit, lb corel
 
 				if detail.InstType == enumor.CvmInstType {
 					cvm, err := validateCvmExist(kt,
-						c.dataServiceCli, detail.RsIp, c.vendor, c.bkBizID, c.accountID, tCloudLB)
+						c.dataServiceCli, detail.RsIp, c.vendor, c.bkBizID, c.accountID, lb)
 					if err != nil {
 						logs.Errorf("validate cvm exist failed, ip: %s, err: %v, rid: %s", detail.RsIp, err, kt.Rid)
 						return nil, err
