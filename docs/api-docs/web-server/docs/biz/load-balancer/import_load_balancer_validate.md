@@ -51,6 +51,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/vendors/{vendor}/load_balancers/operations/{
       "cloud_clb_id": "lb-xxxxxxx1",
       "protocol": "https",
       "listener_port": [8888],
+      "name": "listener-name",
       "domain": "www.tencent.com",
       "url_path": "/",
       "target_type": "ENI",

@@ -273,8 +273,14 @@ func (c *CreateLayer4ListenerExecutor) buildTCloudFlowTask(lbID, lbCloudID, regi
 		managementDetailIDs := make([]string, 0, len(taskDetails))
 		listeners := make([]*hclb.TCloudListenerCreateReq, 0, len(taskDetails))
 		for _, detail := range taskDetails {
+			// 监听器名称
+			listenerName := fmt.Sprintf("%s-%d", detail.Protocol, detail.ListenerPorts[0])
+			if len(detail.Name) > 0 {
+				listenerName = detail.Name
+			}
+
 			req := &hclb.TCloudListenerCreateReq{
-				Name:          fmt.Sprintf("%s-%d", detail.Protocol, detail.ListenerPorts[0]),
+				Name:          listenerName,
 				BkBizID:       c.bkBizID,
 				LbID:          lbID,
 				Protocol:      detail.Protocol,

@@ -338,6 +338,7 @@ type CreateLayer7ListenerDetail struct {
 	ClbVipDomain string `json:"clb_vip_domain"`
 	CloudClbID   string `json:"cloud_clb_id"`
 
+	Name          string              `json:"name"`
 	Protocol      enumor.ProtocolType `json:"protocol"`
 	ListenerPorts []int               `json:"listener_port"`
 	SSLMode       string              `json:"ssl_mode"`
@@ -352,6 +353,12 @@ type CreateLayer7ListenerDetail struct {
 }
 
 func (c *CreateLayer7ListenerDetail) validate() {
+	// 验证监听器名称，校验规则同"CLB名称"
+	if len(c.Name) > 60 {
+		c.Status.SetNotExecutable()
+		c.ValidateResult = append(c.ValidateResult, "The length of the listener name should not exceed 60")
+	}
+
 	err := validatePort(c.ListenerPorts)
 	if err != nil {
 		c.Status.SetNotExecutable()
