@@ -1176,6 +1176,13 @@ const handleSync = () => {
     syncDialogState.initialModel = { account_id: id, vendor };
   }
 };
+const handleSyncError = (error: any) => {
+  let { message } = error || {};
+  if (error.code === 2000024) {
+    message = '同步任务在进行中';
+  }
+  Message({ theme: 'error', message });
+};
 
 // 当table数据整个替换时, 需要清空勾选项, 确保勾选态及selections数据正确
 watch(
@@ -1366,6 +1373,7 @@ defineExpose({ fetchComponentsData });
         :business-id="props.bkBizId"
         resource-name="security_group"
         :initial-model="syncDialogState.initialModel"
+        :error-handler="handleSyncError"
         @hidden="
           () => {
             syncDialogState.isHidden = true;
