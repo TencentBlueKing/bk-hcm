@@ -298,6 +298,7 @@ export const CLOUD_HOST_STATUS: ConstantMapRecord = {
   ...GCP_CLOUD_HOST_STATUS,
   ...AZURE_CLOUD_HOST_STATUS,
   ...HUAWEI_CLOUD_HOST_STATUS,
+  '': '未获取',
 };
 
 export const CLOUD_AREA_REGION_GCP: ConstantMapRecord = {

@@ -12,6 +12,7 @@ import { SITE_TYPE_MAP } from '@/common/constant';
 import { VendorAccountNameMap } from './constants';
 import { useVerify } from '@/hooks';
 import { IApplicationDetail } from '../index';
+import { useBusinessMapStore } from '@/store/useBusinessMap';
 
 const { FormItem } = Form;
 const { Option } = Select;
@@ -52,6 +53,7 @@ export default defineComponent({
     },
   },
   setup(props) {
+    const { getNameFromBusinessMap } = useBusinessMapStore();
     const info = computed(() => JSON.parse(props.detail.content));
     const resultInfo = computed(() => JSON.parse(props.detail.delivery_detail));
     const statusMap = useStatus(props.detail.delivery_detail);
@@ -163,6 +165,7 @@ export default defineComponent({
               {
                 prop: 'op_product_id',
                 name: '业务',
+                render: (val: number) => `${getNameFromBusinessMap(val)} (${val})`,
               },
               {
                 prop: 'site',
@@ -285,7 +288,8 @@ export default defineComponent({
                     } finally {
                       isSubmitLoading.value = false;
                     }
-                  }}>
+                  }}
+                >
                   确定
                 </Button>
                 <Button
@@ -293,7 +297,8 @@ export default defineComponent({
                   loading={isSubmitLoading.value}
                   onClick={() => {
                     isDialogShow.value = false;
-                  }}>
+                  }}
+                >
                   取消
                 </Button>
               </div>
