@@ -342,12 +342,12 @@ func (c *CreateLayer7ListenerPreviewExecutor) getTCloudListenersByPort(kt *kit.K
 	return nil, nil
 }
 
-// CreateLayer7ListenerDetail 创建七层监听器预览记录
+// CreateLayer7ListenerDetail 创建七层监听器预览记录.
+// convertDataToPreview 会依赖这个字段的声明顺序, 所以修改时需要与excel表格的字段顺序保持一致
 type CreateLayer7ListenerDetail struct {
 	ClbVipDomain string `json:"clb_vip_domain"`
 	CloudClbID   string `json:"cloud_clb_id"`
 
-	Name          string              `json:"name"`
 	Protocol      enumor.ProtocolType `json:"protocol"`
 	ListenerPorts []int               `json:"listener_port"`
 	SSLMode       string              `json:"ssl_mode"`
@@ -359,6 +359,7 @@ type CreateLayer7ListenerDetail struct {
 	ValidateResult []string     `json:"validate_result"`
 
 	RegionID string `json:"region_id"`
+	Name     string `json:"name"`
 }
 
 func (c *CreateLayer7ListenerDetail) validate() {
