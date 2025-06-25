@@ -6,6 +6,7 @@ import {
   BANDWIDTH_PACKAGE_CHARGE_TYPE_MAP,
   BANDWIDTH_PACKAGE_NETWORK_TYPE_MAP,
   BANDWIDTH_PACKAGE_STATUS,
+  BGP_VIP_ISP_TYPES,
   LOADBALANCER_BANDWIDTH_PACKAGE_NETWORK_TYPES_MAP,
 } from '@/constants';
 import { IQueryResData } from '@/typings';
@@ -129,7 +130,7 @@ export default defineComponent({
       () => props.modelValue,
       (val) => {
         // 如果运营商类型是BGP，暂不传递带宽包的egress字段
-        if (props.vipIsp === 'BGP') {
+        if (BGP_VIP_ISP_TYPES.includes(props.vipIsp)) {
           emit('change', {});
         } else {
           const bandwidthPackage = bandwidthPackageList.value.find((item) => item.id === val) || {};
