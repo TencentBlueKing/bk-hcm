@@ -26,6 +26,7 @@ import (
 	"hcm/cmd/hc-service/logics/res-sync/azure"
 	"hcm/cmd/hc-service/service/sync/handler"
 	adazure "hcm/pkg/adaptor/azure"
+	typescore "hcm/pkg/adaptor/types/core"
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/api/hc-service/sync"
 	"hcm/pkg/criteria/constant"
@@ -83,9 +84,19 @@ func (hd *sgHandler) Prepare(cts *rest.Contexts) error {
 // Next ...
 func (hd *sgHandler) Next(kt *kit.Kit) ([]string, error) {
 	if len(hd.request.CloudIDs) > 0 {
-		// 如果有指定的cloudIDs，则直接返回
-		logs.Infof("sync azure security group, cloudIDs: %v, rid: %s", hd.request.CloudIDs, kt.Rid)
-		return hd.request.CloudIDs, nil
+		opt := &typescore.AzureListByIDOption{
+			ResourceGroupName: hd.request.ResourceGroupName,
+			CloudIDs:          hd.request.CloudIDs,
+		}
+		result, err := hd.syncCli.CloudCli().ListSecurityGroupByID(kt, opt)
+		if err != nil {
+			logs.Errorf("[%s] list sg from cloud failed, err: %v, account: %s, opt: %v, rid: %s", enumor.Azure,
+				err, hd.request.AccountID, opt, kt.Rid)
+			return nil, err
+		}
+		return slice.Map(result, func(item *securitygroup.AzureSecurityGroup) string {
+			return converter.PtrToVal(item.ID)
+		}), nil
 	}
 	if !hd.pager.More() {
 		return nil, nil
