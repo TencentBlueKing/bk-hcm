@@ -17,7 +17,7 @@ import useBatchDeleteLB from './useBatchDeleteLB';
 import { useBusinessStore, useResourceStore } from '@/store';
 // import utils
 import { getTableNewRowClass } from '@/common/util';
-import { asyncGetListenerCount, parseIP } from '@/utils';
+import { asyncGetListenerCount, buildMultipleValueRulesItem, parseIP } from '@/utils';
 // import types
 import { CLB_STATUS_MAP, LB_NETWORK_TYPE_MAP } from '@/constants';
 import { DoublePlainObject } from '@/typings';
@@ -112,6 +112,11 @@ export default defineComponent({
         ],
         extra: {
           validateValues,
+        },
+        conditionFormatterMapper: {
+          cloud_id: (value: string) => {
+            return buildMultipleValueRulesItem('cloud_id', value);
+          },
         },
       },
       tableOptions: {
