@@ -30,6 +30,7 @@ import (
 // CondSyncParams 条件同步选项
 type CondSyncParams struct {
 	AccountID          string   `json:"account_id" validate:"required"`
+	CloudIDs           []string `json:"cloud_ids,omitempty" validate:"omitempty,max=20"`
 	ResourceGroupNames []string `json:"resource_group_names,omitempty" validate:"max=20"`
 }
 
@@ -50,6 +51,7 @@ func GetCondSyncFunc(res enumor.CloudResourceType) (syncFunc CondSyncFunc, ok bo
 func CondSyncSecurityGroup(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error {
 	syncReq := sync.AzureSyncReq{
 		AccountID: params.AccountID,
+		CloudIDs:  params.CloudIDs,
 	}
 	for i := range params.ResourceGroupNames {
 		syncReq.ResourceGroupName = params.ResourceGroupNames[i]

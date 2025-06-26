@@ -61,6 +61,7 @@ func (a *accountSvc) huaweiCondSyncRes(cts *rest.Contexts, accountID string, res
 	syncParams := &huawei.CondSyncParams{
 		AccountID: accountID,
 		Regions:   req.Regions,
+		CloudIDs:  req.CloudIDs,
 	}
 	startAt := time.Now()
 	go func(leaseID etcd3.LeaseID) {

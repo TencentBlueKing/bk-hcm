@@ -166,6 +166,13 @@ func (t *TCloudImpl) ListSecurityGroupNew(kt *kit.Kit, opt *securitygroup.TCloud
 		req.Limit = common.StringPtr(strconv.FormatInt(int64(opt.Page.Limit), 10))
 	}
 
+	for k, v := range opt.TagFilters {
+		req.Filters = append(req.Filters, &vpc.Filter{
+			Name:   getTagFilterKey(k),
+			Values: cvt.SliceToPtr(v),
+		})
+	}
+
 	resp, err := client.DescribeSecurityGroupsWithContext(kt.Ctx, req)
 	if err != nil {
 		logs.Errorf("list tcloud security group failed, err: %v, rid: %s", err, kt.Rid)

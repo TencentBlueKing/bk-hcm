@@ -73,7 +73,8 @@ func (cli *client) SecurityGroup(kt *kit.Kit, params *SyncBaseParams, opt *SyncS
 		return new(SyncResult), nil
 	}
 
-	addSlice, updateMap, delCloudIDs := common.Diff[securitygroup.TCloudSG, cloudcore.SecurityGroup[cloudcore.TCloudSecurityGroupExtension]](
+	addSlice, updateMap, delCloudIDs := common.Diff[
+		securitygroup.TCloudSG, cloudcore.SecurityGroup[cloudcore.TCloudSecurityGroupExtension]](
 		sgFromCloud, sgFromDB, isSGChange)
 
 	if len(delCloudIDs) > 0 {
@@ -346,17 +347,21 @@ func (cli *client) listSGFromDB(kt *kit.Kit, params *SyncBaseParams) (
 }
 
 // RemoveSecurityGroupDeleteFromCloudV2 根据给定的云id删除数据库中多余的数据
-func (cli *client) RemoveSecurityGroupDeleteFromCloudV2(kt *kit.Kit, accountID string, region string,
+func (cli *client) RemoveSecurityGroupDeleteFromCloudV2(kt *kit.Kit, params *SyncRemovedParams,
 	allCloudIDMap map[string]struct{}) error {
 
-	req := &core.ListReq{
-		Filter: tools.ExpressionAnd(
-			tools.RuleEqual("account_id", accountID),
-			tools.RuleEqual("region", region),
-		),
-		Page: &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
+	rules := []*filter.AtomRule{
+		tools.RuleEqual("account_id", params.AccountID),
+		tools.RuleEqual("region", params.Region),
 	}
-
+	if len(params.CloudIDs) > 0 {
+		// 支持指定cloud id删除
+		rules = append(rules, tools.RuleIn("cloud_id", params.CloudIDs))
+	}
+	req := &core.ListReq{
+		Filter: tools.ExpressionAnd(rules...),
+		Page:   &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit},
+	}
 	var delCloudIDs []string
 
 	for {
@@ -380,11 +385,11 @@ func (cli *client) RemoveSecurityGroupDeleteFromCloudV2(kt *kit.Kit, accountID s
 		req.Page.Start += uint32(core.DefaultMaxPageLimit)
 	}
 	logs.Infof("[%s] will remove %d deleted security group from cloud, account: %s, region: %s, rid: %s",
-		enumor.TCloud, len(delCloudIDs), accountID, region, kt.Rid)
+		enumor.TCloud, len(delCloudIDs), params.AccountID, params.Region, kt.Rid)
 	for _, idBatch := range slice.Split(delCloudIDs, constant.BatchOperationMaxLimit) {
-		if err := cli.deleteSG(kt, accountID, region, idBatch); err != nil {
+		if err := cli.deleteSG(kt, params.AccountID, params.Region, idBatch); err != nil {
 			logs.Errorf("delete removed security group failed, err: %v, account: %s, region: %s, cloudId: %v, rid: %s",
-				err, accountID, region, idBatch, kt.Rid)
+				err, params.AccountID, params.Region, idBatch, kt.Rid)
 			return err
 		}
 	}

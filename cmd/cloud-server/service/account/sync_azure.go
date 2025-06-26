@@ -60,6 +60,7 @@ func (a *accountSvc) azureCondSyncRes(cts *rest.Contexts, accountID string, resT
 	syncParams := &azure.CondSyncParams{
 		AccountID:          accountID,
 		ResourceGroupNames: req.ResourceGroupNames,
+		CloudIDs:           req.CloudIDs,
 	}
 	startAt := time.Now()
 	go func(leaseID etcd3.LeaseID) {
