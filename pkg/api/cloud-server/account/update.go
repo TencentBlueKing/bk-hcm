@@ -178,7 +178,7 @@ type AccountUpdateReq struct {
 	Managers           []string `json:"managers" validate:"omitempty,max=5"`
 	Memo               *string  `json:"memo" validate:"omitempty"`
 	RecycleReserveTime int      `json:"recycle_reserve_time" validate:"omitempty"`
-	BizID              int64    `json:"bk_biz_id" validate:"required"`
+	BizID              int64    `json:"bk_biz_id" validate:"omitempty"`
 	// Note: 第一期只支持关联一个业务，且不能关联全部业务
 	// BkBizIDs  []int64          `json:"bk_biz_ids" validate:"omitempty"`
 	UsageBizIDs []int64         `json:"usage_biz_ids" validate:"required,dive,min=-1"`
@@ -186,7 +186,7 @@ type AccountUpdateReq struct {
 }
 
 // Validate ...
-func (req *AccountUpdateReq) Validate() error {
+func (req *AccountUpdateReq) Validate(accountType enumor.AccountType) error {
 	if err := validator.Validate.Struct(req); err != nil {
 		return err
 	}
@@ -196,20 +196,18 @@ func (req *AccountUpdateReq) Validate() error {
 		return err
 	}
 
-	// 管理业务合法性校验
-	if err := validateBizID(req.BizID); err != nil {
-		return err
-	}
-
 	// 使用业务合法性校验
 	if err := validateUsageBizIDs(req.UsageBizIDs); err != nil {
 		return err
 	}
 
-	// 校验使用业务是否包含管理业务，要求必须包含
-	if err := validateBizIDInUsageBizIDs(req.BizID, req.UsageBizIDs); err != nil {
-		return err
+	// 资源账号需要进一步对管理业务和使用业务进行校验
+	if accountType == enumor.ResourceAccount {
+		if err := validateResAccountBizIDs(req.BizID, req.UsageBizIDs); err != nil {
+			return err
+		}
 	}
+
 	return nil
 }
 

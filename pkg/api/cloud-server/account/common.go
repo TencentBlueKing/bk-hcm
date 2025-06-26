@@ -80,6 +80,19 @@ func validateBizIDInUsageBizIDs(bizID int64, usageBizIDs []int64) error {
 	return fmt.Errorf("bk_biz_id %d is not in usage_biz_ids", bizID)
 }
 
+// validateResAccountBizIDs 校验资源账号管理业务和使用业务的合法性
+func validateResAccountBizIDs(bizID int64, usageBizIDs []int64) error {
+	// 管理业务合法性校验
+	if err := validateBizID(bizID); err != nil {
+		return err
+	}
+	// 校验使用业务是否包含管理业务，要求必须包含
+	if err := validateBizIDInUsageBizIDs(bizID, usageBizIDs); err != nil {
+		return err
+	}
+	return nil
+}
+
 // gcpAccountCloudServiceSecretKey 由于gcp密钥非普通字符串，而是一个map 字符串，用户容易出错，所以定义结构进行校验，避免透传给gcp api
 type gcpAccountCloudServiceSecretKey struct {
 	Type                    string `json:"type" validate:"required"`

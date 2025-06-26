@@ -22,6 +22,7 @@ package account
 import (
 	"fmt"
 
+	logicsaccount "hcm/cmd/cloud-server/logics/account"
 	proto "hcm/pkg/api/cloud-server/account"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
@@ -38,10 +39,17 @@ func (a *accountSvc) UpdateAccount(cts *rest.Contexts) (interface{}, error) {
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
-	if err := req.Validate(); err != nil {
+
+	// 根据accountID拿到账户类型然后才进行请求参数校验，因为资源账号需要额外的校验
+	accountID := cts.PathParameter("account_id").String()
+	accountType, err := logicsaccount.GetAccountType(cts.Kit, a.client.DataService(), accountID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(accountType); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-	accountID := cts.PathParameter("account_id").String()
 
 	action := meta.Update
 	if req.RecycleReserveTime != 0 {
