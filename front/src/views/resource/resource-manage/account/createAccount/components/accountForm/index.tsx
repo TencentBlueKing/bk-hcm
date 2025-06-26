@@ -156,8 +156,11 @@ export default defineComponent({
     });
 
     const handleChangeManage = (val: number) => {
-      if (!val) return;
-      if (!formModel.usage_biz_ids.includes(val)) {
+      const usageVal = formModel.usage_biz_ids;
+      // 管理业务取消选值或者选了值但是使用业务为全部时候，不操作
+      if (!val || usageVal?.[0] === -1) return;
+      // 管理业务选择了当前使用业务未包含的值时，使用业务自动添加该值
+      if (!usageVal.includes(val)) {
         formModel.usage_biz_ids.push(val);
       }
     };

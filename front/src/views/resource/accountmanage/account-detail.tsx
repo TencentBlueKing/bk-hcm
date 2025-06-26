@@ -16,6 +16,7 @@ import {
   useSecretExtension,
 } from '../resource-manage/account/createAccount/components/accountForm/useSecretExtension';
 import { VendorEnum } from '@/common/constant';
+import { ACCOUNT_TYPE_ENUM } from '@/constants/account';
 import { timeFormatter } from '@/common/util';
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 const { FormItem } = Form;
@@ -488,7 +489,7 @@ export default defineComponent({
       await http.patch(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/accounts/${resourceAccountStore.resourceAccount?.id}`, {
         managers: accountFormModel.managers,
         memo: accountFormModel.memo,
-        bk_biz_id: accountFormModel.bk_biz_id,
+        bk_biz_id: accountFormModel.bk_biz_id || undefined,
         usage_biz_ids: Array.isArray(accountFormModel.usage_biz_ids)
           ? accountFormModel.usage_biz_ids
           : [accountFormModel.usage_biz_ids],
@@ -647,6 +648,7 @@ export default defineComponent({
             required: false,
             property: 'bk_biz_id',
             isEdit: false,
+            needHidden: true,
             component() {
               return (
                 <RenderDetailEdit
@@ -681,8 +683,11 @@ export default defineComponent({
     };
 
     const handleChangeManage = (val: number) => {
-      if (!val) return;
-      if (!accountFormModel.usage_biz_ids.includes(val)) {
+      const usageVal = accountFormModel.usage_biz_ids;
+      // 管理业务取消选值或者选了值但是使用业务为全部时候，不操作
+      if (!val || usageVal?.[0] === -1) return;
+      // 管理业务选择了当前使用业务未包含的值时，使用业务自动添加该值
+      if (!usageVal.includes(val)) {
         accountFormModel.usage_biz_ids.push(val);
       }
     };
@@ -697,6 +702,11 @@ export default defineComponent({
       if (firstVal !== -1 && !val.includes(accountFormModel.bk_biz_id)) {
         accountFormModel.usage_biz_ids.push(accountFormModel.bk_biz_id);
       }
+    };
+
+    const showManageBiz = (needHidden: boolean) => {
+      if (!needHidden) return true;
+      return needHidden && projectModel.type === ACCOUNT_TYPE_ENUM.RESOURCE;
     };
 
     return () =>
@@ -749,16 +759,19 @@ export default defineComponent({
               </div>
               <Form model={projectModel} labelWidth={190} rules={formRules} ref={formRef}>
                 <div class={index === 2 ? 'flex-row align-items-center flex-wrap' : null}>
-                  {baseItem.data.map((formItem) => (
-                    <FormItem
-                      class='formItem-cls info-value'
-                      label={`${formItem.label} ：`}
-                      required={formItem.required}
-                      property={formItem.property}
-                    >
-                      {formItem.component()}
-                    </FormItem>
-                  ))}
+                  {baseItem.data.map(
+                    (formItem) =>
+                      showManageBiz(formItem?.needHidden) && (
+                        <FormItem
+                          class='formItem-cls info-value'
+                          label={`${formItem.label} ：`}
+                          required={formItem.required}
+                          property={formItem.property}
+                        >
+                          {formItem.component()}
+                        </FormItem>
+                      ),
+                  )}
                 </div>
               </Form>
             </div>
@@ -842,24 +855,26 @@ export default defineComponent({
               <FormItem label='责任人' class={'api-secret-selector'} required property='managers'>
                 <MemberSelect v-model={accountFormModel.managers} defaultUserlist={computedManagers.value} />
               </FormItem>
-              <FormItem label='管理业务' class={'api-secret-selector'} required property='bk_biz_id'>
-                <hcm-form-business
-                  data={businessList.list}
-                  clearable={true}
-                  placeholder={'请选择管理业务'}
-                  v-model={accountFormModel.bk_biz_id}
-                  onChange={handleChangeManage}
-                />
-              </FormItem>
+              {showManageBiz(true) && (
+                <FormItem label='管理业务' class={'api-secret-selector'} required property='bk_biz_id'>
+                  <hcm-form-business
+                    data={businessList.list}
+                    clearable={true}
+                    placeholder={'请选择管理业务'}
+                    v-model={accountFormModel.bk_biz_id}
+                    onChange={handleChangeManage}
+                  />
+                </FormItem>
+              )}
               <FormItem label='使用业务' class={'api-secret-selector'} required property='usage_biz_ids'>
                 <hcm-form-business
                   class={'tag-no-close-biz-selector'}
-                  multiple
+                  multiple={projectModel.type === ACCOUNT_TYPE_ENUM.RESOURCE}
                   data={businessList.list}
                   v-model={accountFormModel.usage_biz_ids}
                   show-all={true}
                   all-option-id={-1}
-                  disabled={!accountFormModel.bk_biz_id}
+                  disabled={showManageBiz(true) && !accountFormModel.bk_biz_id}
                   onChange={handleChangeUse}
                 />
               </FormItem>
