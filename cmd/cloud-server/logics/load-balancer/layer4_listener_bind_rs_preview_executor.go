@@ -173,44 +173,71 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateWithDB(kt *kit.Kit, cloudI
 			}
 			detail.RegionID = lb.Region
 
-			lblCloudID, err := l.validateListener(kt, detail)
+			err := l.validateListener(kt, detail)
 			if err != nil {
 				logs.Errorf("validate listener failed, err: %v, rid: %s", err, kt.Rid)
 				return err
 			}
 
-			instID, err := l.validateRS(kt, detail, lb)
+			err = l.validateRS(kt, detail, lb)
 			if err != nil {
 				logs.Errorf("validate rs failed, err: %v, rid: %s", err, kt.Rid)
 				return err
 			}
 
-			if err = l.validateTarget(kt, lb.ID, detail, lblCloudID, instID, detail.RsPort[0]); err != nil {
-				logs.Errorf("validate target failed, err: %v, rid: %s", err, kt.Rid)
-				return err
-			}
 			return nil
 		})
 	if concurrentErr != nil {
 		logs.Errorf("validate with db failed, err: %v, rid: %s", concurrentErr, kt.Rid)
 		return err
 	}
+
+	if err = l.validateDetailsTarget(kt); err != nil {
+		logs.Errorf("validate details target failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+func (l *Layer4ListenerBindRSPreviewExecutor) validateDetailsTarget(kt *kit.Kit) error {
+
+	ruleCloudIDs := slice.Map(l.details, func(detail *Layer4ListenerBindRSDetail) string {
+		return detail.listenerCloudID
+	})
+	ruleCloudIDsToTGIDMap, err := getTargetGroupByRuleCloudIDs(kt, l.dataServiceCli, ruleCloudIDs)
+	if err != nil {
+		logs.Errorf("get target group by rule cloud ids failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+	concurrentErr := concurrence.BaseExec(cc.CloudServer().CLBImportConfig.ConcurrentCount, l.details,
+		func(detail *Layer4ListenerBindRSDetail) error {
+			if err = l.validateTarget(kt, detail, ruleCloudIDsToTGIDMap); err != nil {
+				logs.Errorf("validate target failed, err: %v, rid: %s", err, kt.Rid)
+				return err
+			}
+			return nil
+		})
+	if concurrentErr != nil {
+		logs.Errorf("validate details target failed, err: %v, rid: %s", concurrentErr, kt.Rid)
+		return err
+	}
 	return nil
 }
 
 // validateTarget 校验RS是否已经绑定到对应的监听器中, 如果已经绑定则校验权重是否一致. 没有绑定则直接返回.
-func (l *Layer4ListenerBindRSPreviewExecutor) validateTarget(kt *kit.Kit, lbID string,
-	detail *Layer4ListenerBindRSDetail, lblCloudID, instID string, port int) error {
+func (l *Layer4ListenerBindRSPreviewExecutor) validateTarget(kt *kit.Kit,
+	detail *Layer4ListenerBindRSDetail, ruleCloudIDsToTGIDMap map[string]string) error {
 
-	if lblCloudID == "" || instID == "" {
+	if detail.listenerCloudID == "" || detail.instID == "" {
 		return nil
 	}
-	tgID, err := getTargetGroupID(kt, l.dataServiceCli, lbID, lblCloudID)
-	if err != nil {
-		return err
+	tgID, ok := ruleCloudIDsToTGIDMap[detail.listenerCloudID]
+	if !ok {
+		return fmt.Errorf("target group not found for listener cloud id: %s", detail.listenerCloudID)
 	}
 	detail.targetGroupID = tgID
-	target, err := getTarget(kt, l.dataServiceCli, tgID, instID, port)
+	target, err := getTarget(kt, l.dataServiceCli, tgID, detail.instID, detail.RsPort[0])
 	if err != nil {
 		return err
 	}
@@ -232,18 +259,18 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateTarget(kt *kit.Kit, lbID s
 }
 
 func (l *Layer4ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit, curDetail *Layer4ListenerBindRSDetail,
-	lb corelb.LoadBalancerRaw) (string, error) {
+	lb corelb.LoadBalancerRaw) error {
 
 	if curDetail.InstType == enumor.EniInstType {
 		// ENI 不做校验
-		return "", nil
+		return nil
 	}
 
 	isCrossRegionV1, isCrossRegionV2, targetCloudVpcID, lbTargetRegion, err := parseSnapInfoTCloudLBExtension(kt,
 		lb.Extension)
 	if err != nil {
 		logs.Errorf("parse snap info for tcloud lb extension failed, err: %v, rid: %s", err, kt.Rid)
-		return "", err
+		return err
 	}
 	cloudVpcIDs := []string{lb.CloudVpcID}
 	if isCrossRegionV1 {
@@ -252,16 +279,18 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit, curDetail 
 
 	cvm, err := getCvm(kt, l.dataServiceCli, curDetail.RsIp, l.vendor, l.bkBizID, l.accountID, cloudVpcIDs)
 	if err != nil {
-		return "", err
+		return err
 	}
 	if cvm == nil {
 		if isCrossRegionV2 {
 			// 跨域2.0 如果找不到cvm主机则不进行后续的校验，由云上接口兜底
-			return "", nil
+			return nil
 		}
 		// 找不到对应的CVM, 根据IP查询CVM完善报错
-		return "", l.fillRSValidateCvmNotFoundError(kt, curDetail, lb.CloudVpcID)
+		return l.fillRSValidateCvmNotFoundError(kt, curDetail, lb.CloudVpcID)
 	}
+	curDetail.instID = cvm.CloudID
+
 	targetRegion := lb.Region
 	if isCrossRegionV1 {
 		// 跨域1.0 校验 extension中的 target region
@@ -275,10 +304,10 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit, curDetail 
 		curDetail.ValidateResult = append(curDetail.ValidateResult,
 			fmt.Sprintf("rs(%s) region not match, rs.region: %s, lb.region: %v",
 				curDetail.RsIp, cvm.Region, lb.Region))
-		return cvm.CloudID, nil
+		return nil
 	}
 
-	return cvm.CloudID, nil
+	return nil
 }
 
 func (l *Layer4ListenerBindRSPreviewExecutor) fillRSValidateCvmNotFoundError(
@@ -306,20 +335,20 @@ func (l *Layer4ListenerBindRSPreviewExecutor) fillRSValidateCvmNotFoundError(
 }
 
 func (l *Layer4ListenerBindRSPreviewExecutor) validateListener(kt *kit.Kit,
-	curDetail *Layer4ListenerBindRSDetail) (string, error) {
+	curDetail *Layer4ListenerBindRSDetail) error {
 
 	listener, err := getListener(kt, l.dataServiceCli, l.accountID,
 		curDetail.CloudClbID, curDetail.Protocol, curDetail.ListenerPort[0], l.bkBizID, l.vendor)
 	if err != nil {
-		return "", err
+		return err
 	}
 	if listener == nil {
 		curDetail.Status.SetNotExecutable()
 		curDetail.ValidateResult = append(curDetail.ValidateResult, "listener not found")
-		return "", nil
+		return nil
 	}
 	curDetail.listenerCloudID = listener.CloudID
-	return listener.CloudID, nil
+	return nil
 }
 
 // Layer4ListenerBindRSDetail ...
@@ -346,6 +375,10 @@ type Layer4ListenerBindRSDetail struct {
 	// listenerCloudID 在 validateListener 阶段填充, 后续submit阶段会重复使用到,
 	// 如果为空, 那就意味着当前detail的条件无法匹配到对应的listener, 可以认为listener not found
 	listenerCloudID string
+
+	// instID 在 validateRS 阶段填充, 在validateTarget会使用,
+	// 会有instID为空的情况, 例如RSType为ENI, 负载均衡开启了跨域2.0
+	instID string
 }
 
 func (c *Layer4ListenerBindRSDetail) validate() {

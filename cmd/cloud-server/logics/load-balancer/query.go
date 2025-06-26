@@ -205,6 +205,30 @@ func getTargetGroupID(kt *kit.Kit, cli *dataservice.Client, lbID string, ruleClo
 	return rel.Details[0].TargetGroupID, nil
 }
 
+func getTargetGroupByRuleCloudIDs(kt *kit.Kit, cli *dataservice.Client, ruleCloudIDs []string) (
+	map[string]string, error) {
+
+	result := make(map[string]string, len(ruleCloudIDs))
+	for _, batch := range slice.Split(ruleCloudIDs, int(core.DefaultMaxPageLimit)) {
+		listReq := &core.ListReq{
+			Fields: []string{"target_group_id", "cloud_listener_rule_id"},
+			Page:   core.NewDefaultBasePage(),
+			Filter: tools.ExpressionAnd(
+				tools.RuleIn("cloud_listener_rule_id", batch),
+			),
+		}
+		rel, err := cli.Global.LoadBalancer.ListTargetGroupListenerRel(kt, listReq)
+		if err != nil {
+			logs.Errorf("list target group listener rel failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+		for _, detail := range rel.Details {
+			result[detail.CloudListenerRuleID] = detail.TargetGroupID
+		}
+	}
+	return result, nil
+}
+
 func getCvm(kt *kit.Kit, cli *dataservice.Client, ip string,
 	vendor enumor.Vendor, bkBizID int64, accountID string, cloudVPCs []string) (*corecvm.BaseCvm, error) {
 
