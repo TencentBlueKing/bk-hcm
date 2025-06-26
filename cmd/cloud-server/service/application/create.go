@@ -140,7 +140,7 @@ func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
 		bkBizIDs = handler.GetUsageBizIDs()
 	}
 
-	result, err := a.creat:eApplication(cts, sn, applicationType, bkBizIDs, content, req)
+	result, err := a.createApplication(cts, sn, applicationType, bkBizIDs, content, req)
 	if err != nil {
 		return nil, err
 	}
