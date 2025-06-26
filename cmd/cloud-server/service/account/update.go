@@ -51,6 +51,11 @@ func (a *accountSvc) UpdateAccount(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	// 非资源账号的管理业务设置为使用业务，维持现状（PrepareReq之前的CheckReq会校验使用业务数组长度必须为1）
+	if accountType != enumor.ResourceAccount {
+		req.BizID = req.UsageBizIDs[0]
+	}
+
 	action := meta.Update
 	if req.RecycleReserveTime != 0 {
 		action = meta.UpdateRRT

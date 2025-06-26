@@ -21,6 +21,7 @@ package account
 
 import (
 	"fmt"
+	"hcm/pkg/criteria/enumor"
 
 	"hcm/pkg/thirdparty/api-gateway/itsm"
 
@@ -33,6 +34,10 @@ func (a *ApplicationOfAddAccount) PrepareReq() error {
 	secretKeyField := a.req.Vendor.GetSecretField()
 	a.req.Extension[secretKeyField] = a.Cipher.EncryptToBase64(conv.ToString(a.req.Extension[secretKeyField]))
 
+	// 非资源账号的管理业务设置为使用业务，维持现状（PrepareReq之前的CheckReq会校验使用业务数组长度必须为1）
+	if a.req.Type != enumor.ResourceAccount {
+		a.req.BizID = a.req.UsageBizIDs[0]
+	}
 	return nil
 }
 

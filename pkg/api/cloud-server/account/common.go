@@ -93,6 +93,17 @@ func validateResAccountBizIDs(bizID int64, usageBizIDs []int64) error {
 	return nil
 }
 
+// validateNonResAccountBizIDs 非资源账号的管理业务必须为空，使用业务数组长度只能为1，维持现状
+func validateNonResAccountBizIDs(bizID int64, usageBizIDs []int64) error {
+	if bizID != 0 {
+		return fmt.Errorf("bk_biz_id must be empty for non-resource account")
+	}
+	if len(usageBizIDs) != 1 {
+		return fmt.Errorf("usage_biz_ids must have exactly one item for non-resource account")
+	}
+	return nil
+}
+
 // gcpAccountCloudServiceSecretKey 由于gcp密钥非普通字符串，而是一个map 字符串，用户容易出错，所以定义结构进行校验，避免透传给gcp api
 type gcpAccountCloudServiceSecretKey struct {
 	Type                    string `json:"type" validate:"required"`

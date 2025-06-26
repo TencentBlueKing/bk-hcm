@@ -201,9 +201,13 @@ func (req *AccountUpdateReq) Validate(accountType enumor.AccountType) error {
 		return err
 	}
 
-	// 资源账号需要进一步对管理业务和使用业务进行校验
+	// 资源账号需要进一步对管理业务和使用业务进行校验，非资源账号维持现状
 	if accountType == enumor.ResourceAccount {
 		if err := validateResAccountBizIDs(req.BizID, req.UsageBizIDs); err != nil {
+			return err
+		}
+	} else {
+		if err := validateNonResAccountBizIDs(req.BizID, req.UsageBizIDs); err != nil {
 			return err
 		}
 	}
