@@ -21,6 +21,7 @@ package application
 
 import (
 	"fmt"
+	"hcm/pkg/api/core"
 
 	"hcm/cmd/cloud-server/service/application/handlers"
 	accounthandler "hcm/cmd/cloud-server/service/application/handlers/account"
@@ -118,18 +119,7 @@ func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
 	approvers := handler.GetItsmApprover(managers)
 
 	// 调用ITSM创建单据
-	sn, err := a.itsmCli.CreateTicket(
-		cts.Kit,
-		&itsm.CreateTicketParams{
-			ServiceID:      serviceID,
-			Creator:        cts.Kit.User,
-			CallbackURL:    callbackUrl,
-			Title:          itsmTitle,
-			ContentDisplay: itsmForm,
-			// ITSM流程里使用变量引用的方式设置各个节点审批人
-			VariableApprovers: approvers,
-		},
-	)
+	sn, err := a.itsmCreateTicket(cts, serviceID, callbackUrl, itsmTitle, itsmForm, approvers)
 	if err != nil {
 		return nil, fmt.Errorf("call itsm create ticket api failed, err: %w", err)
 	}
@@ -150,7 +140,18 @@ func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
 		bkBizIDs = handler.GetUsageBizIDs()
 	}
 
-	result, err := a.client.DataService().Global.Application.CreateApplication(
+	result, err := a.creat:eApplication(cts, sn, applicationType, bkBizIDs, content, req)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+// createApplicationRequest ...
+func (a *applicationSvc) createApplication(cts *rest.Contexts, sn string, applicationType enumor.ApplicationType,
+	bkBizIDs []int64, content string, req *proto.CreateCommonReq) (*core.CreateResult, error) {
+
+	return a.client.DataService().Global.Application.CreateApplication(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
 		&dataproto.ApplicationCreateReq{
@@ -165,11 +166,28 @@ func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
 			Memo:           req.Remark,
 		},
 	)
-	if err != nil {
-		return nil, err
-	}
+}
 
-	return result, nil
+// itsmCreateTicket 调用ITSM创建单据
+func (a *applicationSvc) itsmCreateTicket(cts *rest.Contexts, serviceID int64, callbackUrl string,
+	itsmTitle string, itsmForm string, approvers []itsm.VariableApprover) (string, error) {
+
+	sn, err := a.itsmCli.CreateTicket(
+		cts.Kit,
+		&itsm.CreateTicketParams{
+			ServiceID:      serviceID,
+			Creator:        cts.Kit.User,
+			CallbackURL:    callbackUrl,
+			Title:          itsmTitle,
+			ContentDisplay: itsmForm,
+			// ITSM流程里使用变量引用的方式设置各个节点审批人
+			VariableApprovers: approvers,
+		},
+	)
+	if err != nil {
+		return "", fmt.Errorf("call itsm create ticket api failed, err: %w", err)
+	}
+	return sn, nil
 }
 
 func parseReqFromRequestBody[T any](cts *rest.Contexts) (*T, error) {

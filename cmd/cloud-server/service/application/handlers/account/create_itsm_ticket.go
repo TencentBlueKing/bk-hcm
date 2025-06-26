@@ -49,6 +49,49 @@ func (a *ApplicationOfAddAccount) RenderItsmForm() (string, error) {
 		{Label: "站点类型", Value: enumor.AccountSiteTypeNameMap[req.Site]},
 	}
 
+	// 云厂商特有信息
+	formItems = append(formItems, a.getVendorSpecificFormItems()...)
+
+	// 负责人
+	formItems = append(formItems, formItem{Label: "责任人", Value: strings.Join(req.Managers, ",")})
+
+	// 管理业务
+	bizName, err := a.GetBizName(req.BizID)
+	if err != nil {
+		return "", fmt.Errorf("get biz name failed, bk_biz_id: %v, err: %w", req.BizID, err)
+	}
+	formItems = append(formItems, formItem{Label: "管理业务", Value: bizName})
+
+	// 查询使用业务名称
+	if len(req.UsageBizIDs) == 0 {
+		return "", fmt.Errorf("usage_biz_ids is empty")
+	} else if req.UsageBizIDs[0] == constant.AttachedAllBiz {
+		formItems = append(formItems, formItem{Label: "使用业务", Value: "全部"})
+	} else {
+		bizNames, err := a.ListBizNames(req.UsageBizIDs)
+		if err != nil {
+			return "", fmt.Errorf("list biz name failed, bk_biz_ids: %v, err: %w", req.UsageBizIDs, err)
+		}
+		formItems = append(formItems, formItem{Label: "使用业务", Value: strings.Join(bizNames, ",")})
+	}
+
+	// 备注
+	if req.Memo != nil && *req.Memo != "" {
+		formItems = append(formItems, formItem{Label: "备注", Value: *req.Memo})
+	}
+
+	// 转换为ITSM表单内容数据
+	content := make([]string, 0, len(formItems))
+	for _, i := range formItems {
+		content = append(content, fmt.Sprintf("%s: %s", i.Label, i.Value))
+	}
+	return strings.Join(content, "\n"), nil
+}
+
+func (a *ApplicationOfAddAccount) getVendorSpecificFormItems() []formItem {
+	req := a.req
+	formItems := make([]formItem, 0) // 预分配足够容量
+
 	// 云特性信息
 	switch req.Vendor {
 	case enumor.TCloud:
@@ -90,37 +133,5 @@ func (a *ApplicationOfAddAccount) RenderItsmForm() (string, error) {
 			{Label: "客户端密钥ID", Value: req.Extension["cloud_client_secret_id"]},
 		}...)
 	}
-
-	// 负责人
-	formItems = append(formItems, formItem{Label: "责任人", Value: strings.Join(req.Managers, ",")})
-
-	// 管理业务
-	bizName, err := a.GetBizName(req.BizID)
-	if err != nil {
-		return "", fmt.Errorf("get biz name failed, bk_biz_id: %v, err: %w", req.BizID, err)
-	}
-	formItems = append(formItems, formItem{Label: "管理业务", Value: bizName})
-
-	// 查询使用业务名称
-	if req.UsageBizIDs[0] == constant.AttachedAllBiz {
-		formItems = append(formItems, formItem{Label: "使用业务", Value: "全部"})
-	} else {
-		bizNames, err := a.ListBizNames(req.UsageBizIDs)
-		if err != nil {
-			return "", fmt.Errorf("list biz name failed, bk_biz_ids: %v, err: %w", req.UsageBizIDs, err)
-		}
-		formItems = append(formItems, formItem{Label: "使用业务", Value: strings.Join(bizNames, ",")})
-	}
-
-	// 备注
-	if req.Memo != nil && *req.Memo != "" {
-		formItems = append(formItems, formItem{Label: "备注", Value: *req.Memo})
-	}
-
-	// 转换为ITSM表单内容数据
-	content := make([]string, 0, len(formItems))
-	for _, i := range formItems {
-		content = append(content, fmt.Sprintf("%s: %s", i.Label, i.Value))
-	}
-	return strings.Join(content, "\n"), nil
+	return formItems
 }
