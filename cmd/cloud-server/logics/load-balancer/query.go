@@ -296,7 +296,7 @@ func getCvmWithoutVpc(kt *kit.Kit, cli *dataservice.Client, ip string, vendor en
 }
 
 // validateCvmExist 导入新RS前, 校验云主机是否存在
-// 开启了跨域2.0的主机, 不进行vpc校验, 由云上进行报错
+// 开启了跨域2.0的负载均衡, 不进行vpc校验, 由云上进行报错
 func validateCvmExist(kt *kit.Kit, dataServiceCli *dataservice.Client, rsIP string, vendor enumor.Vendor,
 	bkBizID int64, accountID string, lb corelb.LoadBalancerRaw) (*corecvm.BaseCvm, error) {
 

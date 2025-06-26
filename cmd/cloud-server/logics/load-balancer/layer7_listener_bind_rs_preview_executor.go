@@ -232,7 +232,7 @@ func (l *Layer7ListenerBindRSPreviewExecutor) validateDetailsTarget(kt *kit.Kit)
 func (l *Layer7ListenerBindRSPreviewExecutor) validateTarget(kt *kit.Kit,
 	detail *Layer7ListenerBindRSDetail, ruleCloudIDsToTGIDMap map[string]string) error {
 
-	if detail.urlRuleCloudID == "" || detail.instID == "" {
+	if detail.urlRuleCloudID == "" || detail.cvm == nil {
 		return nil
 	}
 	tgID, ok := ruleCloudIDsToTGIDMap[detail.urlRuleCloudID]
@@ -243,7 +243,7 @@ func (l *Layer7ListenerBindRSPreviewExecutor) validateTarget(kt *kit.Kit,
 		return nil
 	}
 	detail.targetGroupID = tgID
-	target, err := getTarget(kt, l.dataServiceCli, tgID, detail.instID, detail.RsPort[0])
+	target, err := getTarget(kt, l.dataServiceCli, tgID, detail.cvm.CloudID, detail.RsPort[0])
 	if err != nil {
 		return err
 	}
@@ -271,31 +271,31 @@ func (l *Layer7ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit, curDetail 
 		return nil
 	}
 
-	isCrossRegionV1, isCrossRegionV2, targetCloudVpcID, lbTargetRegion, err := parseSnapInfoTCloudLBExtension(kt,
+	isCrossRegionV1, isCrossRegionV2, _, lbTargetRegion, err := parseSnapInfoTCloudLBExtension(kt,
 		lb.Extension)
 	if err != nil {
 		logs.Errorf("parse snap info for tcloud lb extension failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
 
-	cloudVpcIDs := []string{lb.CloudVpcID}
-	if isCrossRegionV1 {
-		cloudVpcIDs = append(cloudVpcIDs, targetCloudVpcID)
-	}
-
-	cvm, err := getCvm(kt, l.dataServiceCli, curDetail.RsIp, l.vendor, l.bkBizID, l.accountID, cloudVpcIDs)
-	if err != nil {
-		return err
-	}
+	cvm, err := validateCvmExist(kt, l.dataServiceCli, curDetail.RsIp, l.vendor, l.bkBizID, l.accountID, lb)
 	if cvm == nil {
 		if isCrossRegionV2 {
-			// 跨域2.0 如果找不到cvm主机则不进行后续的校验，由云上接口兜底
+			curDetail.Status.SetNotExecutable()
+			curDetail.ValidateResult = append(curDetail.ValidateResult, fmt.Sprintf("rs ip(%s) not found",
+				curDetail.RsIp))
 			return nil
 		}
 		// 找不到对应的CVM, 根据IP查询CVM完善报错
 		return l.fillRSValidateCvmNotFoundError(kt, curDetail, lb.CloudVpcID)
 	}
-	curDetail.instID = cvm.CloudID
+	if err != nil {
+		curDetail.Status.SetNotExecutable()
+		curDetail.ValidateResult = append(curDetail.ValidateResult, fmt.Sprintf("validate cvm failed, err: %v", err))
+		return nil
+	}
+	curDetail.cvm = newCvmInfo(cvm)
+
 	targetRegion := lb.Region
 	if isCrossRegionV1 {
 		// 跨域1.0 校验 extension中的 target region
@@ -408,9 +408,27 @@ type Layer7ListenerBindRSDetail struct {
 	// targetGroupID 在 validateTarget 阶段填充, 后续submit阶段会重复使用到,
 	// 如果为空, 那就意味着当前detail的条件无法匹配到对应的targetGroup, 可以认为targetGroup not found
 	targetGroupID string
-	// instID 在 validateRS 阶段填充, 在validateTarget会使用,
-	// 会有instID为空的情况, 例如RSType为ENI, 负载均衡开启了跨域2.0
-	instID string
+	// cvm 在 validateRS 阶段填充, 在validateTarget和submit阶段会使用,
+	// 会有cvm为空的情况, 例如RSType为ENI, 除此之外的情况都应该有cvm, 否则代表了rs not found
+	cvm *cvmInfo
+}
+
+type cvmInfo struct {
+	CloudID              string
+	Name                 string
+	PrivateIPv4Addresses []string
+	PublicIPv4Addresses  []string
+	Zone                 string
+}
+
+func newCvmInfo(one *cloudCvm.BaseCvm) *cvmInfo {
+	return &cvmInfo{
+		CloudID:              one.CloudID,
+		Name:                 one.Name,
+		PrivateIPv4Addresses: one.PrivateIPv4Addresses,
+		PublicIPv4Addresses:  one.PublicIPv4Addresses,
+		Zone:                 one.Zone,
+	}
 }
 
 func (c *Layer7ListenerBindRSDetail) validate() {
