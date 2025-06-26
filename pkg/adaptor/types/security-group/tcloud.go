@@ -66,6 +66,8 @@ type TCloudListOption struct {
 	Region   string           `json:"region" validate:"required"`
 	CloudIDs []string         `json:"cloud_ids" validate:"omitempty"`
 	Page     *core.TCloudPage `json:"page" validate:"omitempty"`
+
+	TagFilters apicore.MultiValueTagMap `json:"tag_filters"`
 }
 
 // Validate tcloud security group list option.

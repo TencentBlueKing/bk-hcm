@@ -58,6 +58,7 @@ func (hd *sgHandler) Next(kt *kit.Kit) ([]securitygroup.TCloudSG, error) {
 			Page: &typecore.TCloudPage{
 				Limit: typecore.TCloudQueryLimit,
 			},
+			TagFilters: hd.request.TagFilters,
 		}
 		sgResult, err := hd.syncCli.CloudCli().ListSecurityGroupNew(kt, listOpt)
 		if err != nil {
@@ -74,6 +75,7 @@ func (hd *sgHandler) Next(kt *kit.Kit) ([]securitygroup.TCloudSG, error) {
 			Offset: hd.offset,
 			Limit:  typecore.TCloudQueryLimit,
 		},
+		TagFilters: hd.request.TagFilters,
 	}
 
 	sgResult, err := hd.syncCli.CloudCli().ListSecurityGroupNew(kt, listOpt)
