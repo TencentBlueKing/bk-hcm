@@ -126,7 +126,7 @@ func (hd *sgHandler) RemoveDeletedFromCloud(kt *kit.Kit, allCloudIDMap map[strin
 		CloudIDs:   hd.request.CloudIDs,
 		TagFilters: hd.request.TagFilters,
 	}
-	err := hd.syncCli.RemoveSecurityGroupDeleteFromCloudV2(kt, params, allCloudIDMap)
+	err := hd.syncCli.RemoveSGDeleteFromCloudV2(kt, params, allCloudIDMap)
 	if err != nil {
 		logs.Errorf("remove sg delete from cloud failed, err: %v, accountID: %s, region: %s, rid: %s", err,
 			hd.request.AccountID, hd.request.Region, kt.Rid)

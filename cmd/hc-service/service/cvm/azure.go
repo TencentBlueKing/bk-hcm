@@ -39,6 +39,7 @@ import (
 	"hcm/pkg/runtime/filter"
 )
 
+// initAzureCvmService 初始化 Azure CVM 服务，注册相关的 HTTP 处理函数。
 func (svc *cvmSvc) initAzureCvmService(cap *capability.Capability) {
 	h := rest.NewHandler()
 
@@ -51,7 +52,11 @@ func (svc *cvmSvc) initAzureCvmService(cap *capability.Capability) {
 	h.Load(cap.WebService)
 }
 
-// CreateAzureCvm ...
+// CreateAzureCvm 创建 Azure CVM 实例。
+// 该函数首先解码并验证请求参数，然后调用 Azure 适配器创建 CVM，
+// 创建成功后，会同步 CVM 及其关联资源到数据服务层。
+// cts: REST 请求上下文。
+// 返回: 创建的 CVM 的云上 ID 及可能发生的错误。
 func (svc *cvmSvc) CreateAzureCvm(cts *rest.Contexts) (interface{}, error) {
 	req := new(protocvm.AzureCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
@@ -159,7 +164,11 @@ func (svc *cvmSvc) createAzureCvm(kt *kit.Kit, azureCli *azure.Azure, req *proto
 	return cloudID, nil
 }
 
-// StartAzureCvm ...
+// StartAzureCvm 启动指定的 Azure CVM 实例。
+// 该函数首先根据 CVM ID 从数据服务层获取 CVM 信息，然后调用 Azure 适配器启动 CVM，
+// 启动成功后，会同步 CVM 信息到数据服务层。
+// cts: REST 请求上下文。
+// 返回: nil 及可能发生的错误。
 func (svc *cvmSvc) StartAzureCvm(cts *rest.Contexts) (interface{}, error) {
 	id := cts.PathParameter("id").String()
 	if len(id) == 0 {
@@ -204,7 +213,11 @@ func (svc *cvmSvc) StartAzureCvm(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
-// StopAzureCvm ...
+// StopAzureCvm 停止指定的 Azure CVM 实例。
+// 该函数首先根据 CVM ID 从数据服务层获取 CVM 信息，然后调用 Azure 适配器停止 CVM，
+// 停止成功后，会同步 CVM 信息到数据服务层。
+// cts: REST 请求上下文。
+// 返回: nil 及可能发生的错误。
 func (svc *cvmSvc) StopAzureCvm(cts *rest.Contexts) (interface{}, error) {
 	id := cts.PathParameter("id").String()
 	if len(id) == 0 {
@@ -259,7 +272,11 @@ func (svc *cvmSvc) StopAzureCvm(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
-// RebootAzureCvm ...
+// RebootAzureCvm 重启指定的 Azure CVM 实例。
+// 该函数首先根据 CVM ID 从数据服务层获取 CVM 信息，然后调用 Azure 适配器重启 CVM，
+// 重启成功后，会同步 CVM 信息到数据服务层。
+// cts: REST 请求上下文。
+// 返回: nil 及可能发生的错误。
 func (svc *cvmSvc) RebootAzureCvm(cts *rest.Contexts) (interface{}, error) {
 	id := cts.PathParameter("id").String()
 	if len(id) == 0 {
@@ -304,7 +321,11 @@ func (svc *cvmSvc) RebootAzureCvm(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
-// DeleteAzureCvm ...
+// DeleteAzureCvm 删除指定的 Azure CVM 实例。
+// 该函数首先根据 CVM ID 从数据服务层获取 CVM 信息，然后调用 Azure 适配器删除 CVM，
+// 删除成功后，会从数据服务层删除该 CVM 的记录。
+// cts: REST 请求上下文。
+// 返回: nil 及可能发生的错误。
 func (svc *cvmSvc) DeleteAzureCvm(cts *rest.Contexts) (interface{}, error) {
 	id := cts.PathParameter("id").String()
 	if len(id) == 0 {

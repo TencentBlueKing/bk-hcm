@@ -73,7 +73,10 @@ type createLayer7ListenerTaskDetail struct {
 	*CreateLayer7ListenerDetail
 }
 
-// Execute 导入执行器的唯一入口
+// Execute is the main entry point.
+// It orchestrates the entire process of creating layer-7 listeners based on the provided raw details.
+// The process includes: unmarshalling data, validation, filtering, building task management entries,
+// creating asynchronous task flows, and updating task management details.
 func (c *CreateLayer7ListenerExecutor) Execute(kt *kit.Kit, source enumor.TaskManagementSource,
 	rawDetails json.RawMessage) (taskID string, err error) {
 
@@ -181,6 +184,7 @@ func (c *CreateLayer7ListenerExecutor) buildFlows(kt *kit.Kit) ([]string, error)
 	return flowIDs, nil
 }
 
+// buildTaskManagementAndDetails 构建任务管理和详情
 func (c *CreateLayer7ListenerExecutor) buildTaskManagementAndDetails(kt *kit.Kit, source enumor.TaskManagementSource) (
 	string, error) {
 
@@ -276,6 +280,7 @@ func (c *CreateLayer7ListenerExecutor) updateTaskManagementAndDetails(kt *kit.Ki
 	return nil
 }
 
+// updateTaskDetails 更新task_detail的flow_id和task_action_id
 func (c *CreateLayer7ListenerExecutor) updateTaskDetails(kt *kit.Kit) error {
 	if len(c.taskDetails) == 0 {
 		return nil

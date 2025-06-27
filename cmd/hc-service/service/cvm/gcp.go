@@ -113,18 +113,15 @@ func (svc *cvmSvc) BatchCreateGcpCvm(cts *rest.Contexts) (interface{}, error) {
 		FailedCloudIDs:  result.FailedCloudIDs,
 		FailedMessage:   result.FailedMessage,
 	}
-
 	if len(result.SuccessCloudIDs) == 0 {
 		return respData, nil
 	}
 
 	syncClient := syncgcp.NewClient(svc.dataCli, gcpCli)
-
 	params := &syncgcp.SyncBaseParams{
 		AccountID: req.AccountID,
 		CloudIDs:  result.SuccessCloudIDs,
 	}
-
 	_, err = syncClient.CvmWithRelRes(cts.Kit, params, &syncgcp.SyncCvmWithRelResOption{Region: req.Region,
 		Zone: req.Zone})
 	if err != nil {

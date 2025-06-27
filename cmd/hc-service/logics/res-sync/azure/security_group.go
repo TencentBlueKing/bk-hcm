@@ -68,7 +68,8 @@ func (cli *client) SecurityGroup(kt *kit.Kit, params *SyncBaseParams, opt *SyncS
 		return new(SyncResult), nil
 	}
 
-	addSlice, updateMap, delCloudIDs := common.Diff[securitygroup.AzureSecurityGroup, cloudcore.SecurityGroup[cloudcore.AzureSecurityGroupExtension]](
+	addSlice, updateMap, delCloudIDs := common.Diff[
+		securitygroup.AzureSecurityGroup, cloudcore.SecurityGroup[cloudcore.AzureSecurityGroupExtension]](
 		sgFromCloud, sgFromDB, isSGChange)
 
 	if len(delCloudIDs) > 0 {

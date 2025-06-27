@@ -43,6 +43,7 @@ type Extension interface {
 	TCloudExtension | AwsExtension | GcpExtension | HuaWeiExtension | AzureExtension
 }
 
+// Image ...
 type Image[Ext Extension] struct {
 	BaseImage `json:",inline"`
 	Extension *Ext `json:"extension"`

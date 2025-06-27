@@ -206,6 +206,7 @@ func (c *BatchListenerUnbindRsExecutor) buildFlows(kt *kit.Kit) ([]string, error
 	return flowIDs, nil
 }
 
+// buildTaskManagementAndDetails 构建任务管理和详情
 func (c *BatchListenerUnbindRsExecutor) buildTaskManagementAndDetails(
 	kt *kit.Kit, source enumor.TaskManagementSource) (string, error) {
 
@@ -449,6 +450,7 @@ func (c *BatchListenerUnbindRsExecutor) updateTaskManagementAndDetails(kt *kit.K
 	return nil
 }
 
+// updateTaskManagement 更新task_management的flow_id
 func (c *BatchListenerUnbindRsExecutor) updateTaskManagement(kt *kit.Kit, taskID string, flowIDs []string) error {
 	updateItem := task.UpdateTaskManagementField{
 		ID:      taskID,
@@ -467,6 +469,7 @@ func (c *BatchListenerUnbindRsExecutor) updateTaskManagement(kt *kit.Kit, taskID
 	return nil
 }
 
+// updateTaskDetails 更新task_detail的flow_id和task_action_id
 func (c *BatchListenerUnbindRsExecutor) updateTaskDetails(kt *kit.Kit) error {
 	updateItems := make([]task.UpdateTaskDetailField, 0, len(c.taskDetails))
 	for _, detail := range c.taskDetails {

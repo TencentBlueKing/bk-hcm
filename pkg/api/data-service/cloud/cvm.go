@@ -80,33 +80,38 @@ func (req *CvmBatchCreateReq[T]) Validate() error {
 
 // CvmBatchUpdateReq cvm batch update req.
 type CvmBatchUpdateReq[Extension corecvm.Extension] struct {
-	Cvms []CvmBatchUpdate[Extension] `json:"cvms" validate:"required"`
+	Cvms []CvmBatchUpdateWithExtension[Extension] `json:"cvms" validate:"required"`
 }
 
 // CvmBatchUpdate cvm batch update.
-type CvmBatchUpdate[Extension corecvm.Extension] struct {
-	ID                   string     `json:"id" validate:"required"`
-	Name                 string     `json:"name"`
-	BkBizID              int64      `json:"bk_biz_id" validate:"required"`
-	BkHostID             int64      `json:"bk_host_id" validate:"required"`
-	BkCloudID            *int64     `json:"bk_cloud_id"`
-	CloudVpcIDs          []string   `json:"cloud_vpc_ids"`
-	VpcIDs               []string   `json:"vpc_ids"`
-	CloudSubnetIDs       []string   `json:"cloud_subnet_ids"`
-	SubnetIDs            []string   `json:"subnet_ids"`
-	CloudImageID         string     `json:"cloud_image_id"`
-	ImageID              string     `json:"image_id"`
-	Memo                 *string    `json:"memo"`
-	Status               string     `json:"status" validate:"required"`
-	PrivateIPv4Addresses []string   `json:"private_ipv4_addresses"`
-	PrivateIPv6Addresses []string   `json:"private_ipv6_addresses"`
-	PublicIPv4Addresses  []string   `json:"public_ipv4_addresses"`
-	PublicIPv6Addresses  []string   `json:"public_ipv6_addresses"`
-	CloudLaunchedTime    string     `json:"cloud_launched_time"`
-	CloudExpiredTime     string     `json:"cloud_expired_time"`
-	Extension            *Extension `json:"extension,omitempty"`
-	OsName               string     `json:"os_name"`
-	MachineType          string     `json:"machine_type"`
+type CvmBatchUpdate struct {
+	ID                   string   `json:"id" validate:"required"`
+	Name                 string   `json:"name"`
+	BkBizID              int64    `json:"bk_biz_id" validate:"required"`
+	BkHostID             int64    `json:"bk_host_id" validate:"required"`
+	BkCloudID            *int64   `json:"bk_cloud_id"`
+	CloudVpcIDs          []string `json:"cloud_vpc_ids"`
+	VpcIDs               []string `json:"vpc_ids"`
+	CloudSubnetIDs       []string `json:"cloud_subnet_ids"`
+	SubnetIDs            []string `json:"subnet_ids"`
+	CloudImageID         string   `json:"cloud_image_id"`
+	ImageID              string   `json:"image_id"`
+	Memo                 *string  `json:"memo"`
+	Status               string   `json:"status" validate:"required"`
+	PrivateIPv4Addresses []string `json:"private_ipv4_addresses"`
+	PrivateIPv6Addresses []string `json:"private_ipv6_addresses"`
+	PublicIPv4Addresses  []string `json:"public_ipv4_addresses"`
+	PublicIPv6Addresses  []string `json:"public_ipv6_addresses"`
+	CloudLaunchedTime    string   `json:"cloud_launched_time"`
+	CloudExpiredTime     string   `json:"cloud_expired_time"`
+	OsName               string   `json:"os_name"`
+	MachineType          string   `json:"machine_type"`
+}
+
+// CvmBatchUpdateWithExtension cvm batch update with extension.
+type CvmBatchUpdateWithExtension[Extension corecvm.Extension] struct {
+	CvmBatchUpdate `json:",inline"`
+	Extension      *Extension `json:"extension,omitempty"`
 }
 
 // Validate cvm update request.

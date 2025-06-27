@@ -72,7 +72,10 @@ type createUrlRuleTaskDetail struct {
 	*CreateUrlRuleDetail
 }
 
-// Execute ...
+// Execute  is the main entry point.
+// It orchestrates the entire process of creating layer-7 listeners based on the provided raw details.
+// The process includes: unmarshalling data, validation, filtering, building task management entries,
+// creating asynchronous task flows, and updating task management details.
 func (c *CreateUrlRuleExecutor) Execute(kt *kit.Kit, source enumor.TaskManagementSource, rawDetails json.RawMessage) (string, error) {
 	err := c.unmarshalData(rawDetails)
 	if err != nil {
@@ -346,6 +349,7 @@ func (c *CreateUrlRuleExecutor) buildTCloudFlowTask(lbID, lblID string, details 
 	return result, nil
 }
 
+// buildTaskManagementAndDetails 构建任务管理和详情
 func (c *CreateUrlRuleExecutor) buildTaskManagementAndDetails(kt *kit.Kit, source enumor.TaskManagementSource) (
 	string, error) {
 
@@ -418,6 +422,7 @@ func (c *CreateUrlRuleExecutor) updateTaskManagementAndDetails(kt *kit.Kit, flow
 	return nil
 }
 
+// updateTaskDetails 更新task_detail的flow_id和task_action_id
 func (c *CreateUrlRuleExecutor) updateTaskDetails(kt *kit.Kit) error {
 	if len(c.taskDetails) == 0 {
 		return nil

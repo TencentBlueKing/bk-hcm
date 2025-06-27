@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package slice ...
 package slice
 
 // Remove 移除首次匹配到的 item 元素

@@ -52,7 +52,7 @@ func (svc *cvmSvc) BizBatchAssociateSecurityGroups(cts *rest.Contexts) (interfac
 func (svc *cvmSvc) batchAssociateSecurityGroups(cts *rest.Contexts, validHandler handler.ValidWithAuthHandler) (
 	interface{}, error) {
 
-	cvmID, sgIDs, err := svc.decodeAndValidateBatchAssociateSecurityGroupsReq(cts, meta.Associate, validHandler)
+	cvmID, sgIDs, err := svc.decodeAndValidateAssociateSGsReq(cts, meta.Associate, validHandler)
 	if err != nil {
 		logs.Errorf("decode and validate batch associate security groups req failed, err: %v, rid: %s",
 			err, cts.Kit.Rid)
@@ -105,7 +105,7 @@ func (svc *cvmSvc) batchAssociateSecurityGroups(cts *rest.Contexts, validHandler
 	return nil, nil
 }
 
-func (svc *cvmSvc) deleteSecurityGroupAndCvmRelationship(kt *kit.Kit, cvmID string, sgIDs []string) error {
+func (svc *cvmSvc) deleteSGAndCvmRelationship(kt *kit.Kit, cvmID string, sgIDs []string) error {
 	batchDeleteReq := &proto.BatchDeleteReq{
 		Filter: tools.ExpressionAnd(
 			tools.RuleEqual("res_id", cvmID),
@@ -122,7 +122,7 @@ func (svc *cvmSvc) deleteSecurityGroupAndCvmRelationship(kt *kit.Kit, cvmID stri
 	return nil
 }
 
-func (svc *cvmSvc) decodeAndValidateBatchAssociateSecurityGroupsReq(cts *rest.Contexts, action meta.Action,
+func (svc *cvmSvc) decodeAndValidateAssociateSGsReq(cts *rest.Contexts, action meta.Action,
 	validHandler handler.ValidWithAuthHandler) (cvmID string, sgIDs []string, err error) {
 
 	cvmID = cts.PathParameter("cvm_id").String()

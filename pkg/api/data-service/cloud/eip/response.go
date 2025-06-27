@@ -45,7 +45,11 @@ func (eip *EipExtResult[T]) GetCloudID() string {
 
 // EipExtensionResult ...
 type EipExtensionResult interface {
-	TCloudEipExtensionResult | AwsEipExtensionResult | GcpEipExtensionResult | AzureEipExtensionResult | HuaWeiEipExtensionResult
+	TCloudEipExtensionResult |
+		AwsEipExtensionResult |
+		GcpEipExtensionResult |
+		AzureEipExtensionResult |
+		HuaWeiEipExtensionResult
 }
 
 // EipListResp ...

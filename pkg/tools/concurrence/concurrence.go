@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package concurrence ...
 package concurrence
 
 import (
@@ -25,9 +26,9 @@ import (
 
 // BaseExec 基础并发执行基础架子。
 // Params:
-// 	1. concurrenceLimit: 并发执行最大写协程数量
+//  1. concurrenceLimit: 并发执行最大写协程数量
 //  2. params: 并发执行变量参数
-//	3. execFunc: 并发执行函数
+//  3. execFunc: 并发执行函数
 func BaseExec[T any](concurrenceLimit int, params []T, execFunc func(param T) error) error {
 
 	pipeline := make(chan bool, concurrenceLimit)

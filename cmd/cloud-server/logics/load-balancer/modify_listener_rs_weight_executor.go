@@ -246,6 +246,7 @@ func (c *BatchListenerModifyRsWeightExecutor) buildFlows(kt *kit.Kit) ([]string,
 	return flowIDs, nil
 }
 
+// buildTaskManagementAndDetails 构建任务管理和详情
 func (c *BatchListenerModifyRsWeightExecutor) buildTaskManagementAndDetails(
 	kt *kit.Kit, source enumor.TaskManagementSource) (string, error) {
 
@@ -508,6 +509,7 @@ func (c *BatchListenerModifyRsWeightExecutor) updateTaskManagement(kt *kit.Kit, 
 	return nil
 }
 
+// updateTaskDetails 更新task_detail的flow_id和task_action_id
 func (c *BatchListenerModifyRsWeightExecutor) updateTaskDetails(kt *kit.Kit) error {
 	updateItems := make([]task.UpdateTaskDetailField, 0, len(c.taskDetails))
 	for _, detail := range c.taskDetails {

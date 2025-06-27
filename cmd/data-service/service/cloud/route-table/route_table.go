@@ -41,6 +41,7 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 
@@ -371,19 +372,10 @@ func (svc *routeTableSvc) BatchDeleteRouteTable(cts *rest.Contexts) (interface{}
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	opt := &types.ListOption{
-		Filter: req.Filter,
-		Page: &core.BasePage{
-			Start: 0,
-			Limit: core.DefaultMaxPageLimit,
-		},
-	}
-	listResp, err := svc.dao.RouteTable().List(cts.Kit, opt)
+	listResp, err := svc.listRouteTablesForDelete(cts.Kit, req.Filter)
 	if err != nil {
-		logs.Errorf("list route table failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("list route table failed, err: %v", err)
+		return nil, err
 	}
-
 	if len(listResp.Details) == 0 {
 		return nil, nil
 	}
@@ -396,21 +388,11 @@ func (svc *routeTableSvc) BatchDeleteRouteTable(cts *rest.Contexts) (interface{}
 	}
 
 	// check if all route tables are not bound with subnet
-	bindOpt := &types.ListOption{
-		Filter: tools.ContainersExpression("route_table_id", delRouteTableIDs),
-		Page:   &core.BasePage{Count: true},
-	}
-	listRes, err := svc.dao.Subnet().List(cts.Kit, bindOpt)
+	err = svc.checkRouteTableBinding(cts.Kit, delRouteTableIDs)
 	if err != nil {
-		logs.Errorf("count subnet failed, err: %v, rid: %s", err, cts.Kit.Rid)
-		return nil, fmt.Errorf("count subnet failed, err: %v", err)
+		return nil, err
 	}
-
-	if listRes.Count > 0 {
-		logs.Errorf("some route table is bound with subnet, ids: %+v, rid: %s", delRouteTableIDs, cts.Kit.Rid)
-		return nil, fmt.Errorf("delete route table failed, some route table is bound with subnet")
-	}
-
+	// delete route table routes firstly, then delete route table itself.
 	_, err = svc.dao.Txn().AutoTxn(cts.Kit, func(txn *sqlx.Tx, opt *orm.TxnOption) (interface{}, error) {
 		for vendor, ids := range delRouteTableIDMap {
 
@@ -443,7 +425,6 @@ func (svc *routeTableSvc) BatchDeleteRouteTable(cts *rest.Contexts) (interface{}
 		if err := svc.dao.RouteTable().BatchDeleteWithTx(cts.Kit, txn, delRouteTableFilter); err != nil {
 			return nil, err
 		}
-
 		return nil, nil
 	})
 	if err != nil {
@@ -452,6 +433,40 @@ func (svc *routeTableSvc) BatchDeleteRouteTable(cts *rest.Contexts) (interface{}
 	}
 
 	return nil, nil
+}
+
+func (svc *routeTableSvc) listRouteTablesForDelete(kt *kit.Kit, fil *filter.Expression) (
+	*types.RouteTableListResult, error) {
+
+	opt := &types.ListOption{
+		Filter: fil,
+		Page:   core.NewDefaultBasePage(),
+	}
+	listResp, err := svc.dao.RouteTable().List(kt, opt)
+	if err != nil {
+		logs.Errorf("list route table failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, fmt.Errorf("list route table failed, err: %v", err)
+	}
+	return listResp, nil
+}
+
+func (svc *routeTableSvc) checkRouteTableBinding(kt *kit.Kit, routeTableIDs []string) error {
+	opt := &types.ListOption{
+		Filter: tools.ContainersExpression("route_table_id", routeTableIDs),
+		Page:   &core.BasePage{Count: true},
+	}
+	listRes, err := svc.dao.Subnet().List(kt, opt)
+	if err != nil {
+		logs.Errorf("count subnet failed, err: %v, rid: %s", err, kt.Rid)
+		return fmt.Errorf("count subnet failed, err: %v", err)
+	}
+
+	if listRes.Count > 0 {
+		logs.Errorf("some route table is bound with subnet, ids: %+v, rid: %s", routeTableIDs, kt.Rid)
+		return fmt.Errorf("delete route table failed, some route table is bound with subnet")
+	}
+
+	return nil
 }
 
 // CountRouteTableSubnets count route tables' subnets.

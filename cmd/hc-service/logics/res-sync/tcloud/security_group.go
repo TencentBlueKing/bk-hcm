@@ -346,8 +346,8 @@ func (cli *client) listSGFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	return result.Details, nil
 }
 
-// RemoveSecurityGroupDeleteFromCloudV2 根据给定的云id删除数据库中多余的数据
-func (cli *client) RemoveSecurityGroupDeleteFromCloudV2(kt *kit.Kit, params *SyncRemovedParams,
+// RemoveSGDeleteFromCloudV2 根据给定的云id删除数据库中多余的数据
+func (cli *client) RemoveSGDeleteFromCloudV2(kt *kit.Kit, params *SyncRemovedParams,
 	allCloudIDMap map[string]struct{}) error {
 
 	rules := []*filter.AtomRule{

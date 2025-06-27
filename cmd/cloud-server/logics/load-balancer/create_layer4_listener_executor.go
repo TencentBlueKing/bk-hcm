@@ -53,7 +53,8 @@ func newCreateLayer4ListenerExecutor(cli *dataservice.Client, taskCli *taskserve
 	}
 }
 
-// CreateLayer4ListenerExecutor excel导入——创建四层监听器执行器
+// CreateLayer4ListenerExecutor implements the excel import executor for creating layer-4 listeners.
+// It handles the process of validating input, building and executing tasks to create listeners.
 type CreateLayer4ListenerExecutor struct {
 	*basePreviewExecutor
 
@@ -61,11 +62,13 @@ type CreateLayer4ListenerExecutor struct {
 	details     []*CreateLayer4ListenerDetail
 	taskDetails []*createLayer4ListenerTaskDetail
 
-	// detail.Status == Existing 的集合, 用于创建一条任务管理详情
+	// existingDetails stores details of listeners that already exist, used for creating task management entries.
 	existingDetails []*CreateLayer4ListenerDetail
 }
 
-// 用于记录 detail - 异步任务flow&task - 任务管理 之间的关系
+// createLayer4ListenerTaskDetail links a CreateLayer4ListenerDetail with its corresponding
+// async task flow and action IDs. This helps in tracking the relationship between the input detail,
+// the asynchronous task, and the overall task management.
 type createLayer4ListenerTaskDetail struct {
 	taskDetailID string
 	flowID       string
@@ -73,7 +76,10 @@ type createLayer4ListenerTaskDetail struct {
 	*CreateLayer4ListenerDetail
 }
 
-// Execute ...
+// Execute is the main entry point for the CreateLayer4ListenerExecutor.
+// It orchestrates the entire process of creating layer-4 listeners based on the provided raw details.
+// The process includes: unmarshalling data, validation, filtering, building task management entries,
+// creating asynchronous task flows, and updating task management details.
 func (c *CreateLayer4ListenerExecutor) Execute(kt *kit.Kit, source enumor.TaskManagementSource,
 	rawDetails json.RawMessage) (taskID string, err error) {
 
@@ -105,6 +111,7 @@ func (c *CreateLayer4ListenerExecutor) Execute(kt *kit.Kit, source enumor.TaskMa
 	return taskID, nil
 }
 
+// unmarshalData parses the raw JSON input into a slice of CreateLayer4ListenerDetail structs.
 func (c *CreateLayer4ListenerExecutor) unmarshalData(rawDetail json.RawMessage) error {
 	err := json.Unmarshal(rawDetail, &c.details)
 	if err != nil {
@@ -113,6 +120,9 @@ func (c *CreateLayer4ListenerExecutor) unmarshalData(rawDetail json.RawMessage) 
 	return nil
 }
 
+// validate checks the input details for correctness and executability.
+// It uses CreateLayer4ListenerPreviewExecutor for the actual validation logic.
+// If any detail is found to be not executable, an error is returned.
 func (c *CreateLayer4ListenerExecutor) validate(kt *kit.Kit) error {
 	executor := &CreateLayer4ListenerPreviewExecutor{
 		basePreviewExecutor: c.basePreviewExecutor,
@@ -131,6 +141,10 @@ func (c *CreateLayer4ListenerExecutor) validate(kt *kit.Kit) error {
 
 	return nil
 }
+
+// filter removes non-executable details from the list and collects existing details.
+// Only details with status Executable are kept for processing.
+// Details with status Existing are moved to the existingDetails slice.
 func (c *CreateLayer4ListenerExecutor) filter() {
 	c.details = slice.Filter[*CreateLayer4ListenerDetail](c.details, func(detail *CreateLayer4ListenerDetail) bool {
 		switch detail.Status {
@@ -144,8 +158,11 @@ func (c *CreateLayer4ListenerExecutor) filter() {
 	})
 }
 
+// buildFlows creates asynchronous task flows for creating listeners.
+// It groups listener creation details by their cloud load balancer ID and builds a separate flow for each.
+// If building a flow for a specific CLB fails, the corresponding task details are marked as failed.
 func (c *CreateLayer4ListenerExecutor) buildFlows(kt *kit.Kit) ([]string, error) {
-	// group by clb
+	// Group listener creation details by their cloud load balancer ID.
 	clbToDetails := make(map[string][]*createLayer4ListenerTaskDetail)
 	for _, detail := range c.taskDetails {
 		clbToDetails[detail.CloudClbID] = append(clbToDetails[detail.CloudClbID], detail)
@@ -179,6 +196,9 @@ func (c *CreateLayer4ListenerExecutor) buildFlows(kt *kit.Kit) ([]string, error)
 	return flowIDs, nil
 }
 
+// buildFlow constructs a single asynchronous task flow for a specific load balancer.
+// It involves building the individual tasks within the flow, creating the flow itself,
+// and locking the load balancer resource to prevent concurrent modifications.
 func (c *CreateLayer4ListenerExecutor) buildFlow(kt *kit.Kit, lbID, lbCloudID, region string,
 	details []*createLayer4ListenerTaskDetail) (string, error) {
 
@@ -210,6 +230,9 @@ func (c *CreateLayer4ListenerExecutor) buildFlow(kt *kit.Kit, lbID, lbCloudID, r
 	return flowID, nil
 }
 
+// createFlowTask creates the main custom flow for listener creation and a secondary watch flow.
+// The main flow contains the actual listener creation tasks.
+// The watch flow monitors the status of the main flow and updates the resource status accordingly.
 func (c *CreateLayer4ListenerExecutor) createFlowTask(kt *kit.Kit, lbID string,
 	flowTasks []ts.CustomFlowTask) (string, error) {
 
@@ -325,6 +348,8 @@ func (c *CreateLayer4ListenerExecutor) buildTCloudFlowTask(lbID, lbCloudID, regi
 	return result
 }
 
+// createTaskDetails creates entries in the task_detail table for each listener to be created.
+// These details are linked to the main task management entry (taskID).
 func (c *CreateLayer4ListenerExecutor) createTaskDetails(kt *kit.Kit, taskID string) error {
 
 	if len(c.details) == 0 {
@@ -360,6 +385,8 @@ func (c *CreateLayer4ListenerExecutor) createTaskDetails(kt *kit.Kit, taskID str
 	return nil
 }
 
+// createExistingTaskDetails creates entries in the task_detail table for listeners that already exist.
+// These are marked as successful and linked to the main task management entry.
 func (c *CreateLayer4ListenerExecutor) createExistingTaskDetails(kt *kit.Kit, taskID string) error {
 	if len(c.existingDetails) == 0 {
 		return nil
@@ -382,6 +409,8 @@ func (c *CreateLayer4ListenerExecutor) createExistingTaskDetails(kt *kit.Kit, ta
 	return nil
 }
 
+// buildTaskManagementAndDetails creates the main task management entry and its associated detail entries.
+// This includes details for new listeners to be created and for listeners that already exist.
 func (c *CreateLayer4ListenerExecutor) buildTaskManagementAndDetails(kt *kit.Kit, source enumor.TaskManagementSource) (
 	string, error) {
 
@@ -407,6 +436,8 @@ func (c *CreateLayer4ListenerExecutor) buildTaskManagementAndDetails(kt *kit.Kit
 	return taskID, nil
 }
 
+// updateTaskManagementAndDetails updates the main task management entry with the generated flow IDs
+// and updates the individual task detail entries with their respective flow and action IDs.
 func (c *CreateLayer4ListenerExecutor) updateTaskManagementAndDetails(kt *kit.Kit,
 	flowIDs []string, taskID string) error {
 
@@ -421,6 +452,7 @@ func (c *CreateLayer4ListenerExecutor) updateTaskManagementAndDetails(kt *kit.Ki
 	return nil
 }
 
+// updateTaskDetails 更新task_detail的flow_id和task_action_id
 func (c *CreateLayer4ListenerExecutor) updateTaskDetails(kt *kit.Kit) error {
 	if len(c.taskDetails) == 0 {
 		return nil
@@ -444,6 +476,8 @@ func (c *CreateLayer4ListenerExecutor) updateTaskDetails(kt *kit.Kit) error {
 	return nil
 }
 
+// updateTaskDetailsState updates the state of a list of task_detail entries.
+// This is typically used to mark tasks as failed if an error occurs during flow creation.
 func (c *CreateLayer4ListenerExecutor) updateTaskDetailsState(kt *kit.Kit, state enumor.TaskDetailState,
 	taskDetails []*createLayer4ListenerTaskDetail) error {
 

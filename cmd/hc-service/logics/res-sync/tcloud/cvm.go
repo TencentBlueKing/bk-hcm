@@ -102,8 +102,6 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 		return fmt.Errorf("cvm updateMap is <= 0, not update")
 	}
 
-	lists := make([]dataproto.CvmBatchUpdate[corecvm.TCloudCvmExtension], 0, len(updateMap))
-
 	cloudVpcIDs := make([]string, 0)
 	cloudSubnetIDs := make([]string, 0)
 	cloudImageIDs := make([]string, 0)
@@ -128,52 +126,12 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 		return err
 	}
 
-	for id, one := range updateMap {
-		if _, exsit := vpcMap[converter.PtrToVal(one.VirtualPrivateCloud.VpcId)]; !exsit {
-			return fmt.Errorf("cvm %s can not find vpc", converter.PtrToVal(one.InstanceId))
-		}
-
-		if _, exsit := subnetMap[converter.PtrToVal(one.VirtualPrivateCloud.SubnetId)]; !exsit {
-			return fmt.Errorf("cvm %s can not find subnet", converter.PtrToVal(one.InstanceId))
-		}
-
-		imageID := ""
-		if id, exsit := imageMap[converter.PtrToVal(one.ImageId)]; exsit {
-			imageID = id
-		}
-
-		extension := BuildCVMExtension(one)
-		updateOne := dataproto.CvmBatchUpdate[corecvm.TCloudCvmExtension]{
-			ID:             id,
-			Name:           converter.PtrToVal(one.InstanceName),
-			CloudVpcIDs:    []string{converter.PtrToVal(one.VirtualPrivateCloud.VpcId)},
-			VpcIDs:         []string{vpcMap[converter.PtrToVal(one.VirtualPrivateCloud.VpcId)].VpcID},
-			CloudSubnetIDs: []string{converter.PtrToVal(one.VirtualPrivateCloud.SubnetId)},
-			SubnetIDs:      []string{subnetMap[converter.PtrToVal(one.VirtualPrivateCloud.SubnetId)]},
-			CloudImageID:   converter.PtrToVal(one.ImageId),
-			ImageID:        imageID,
-			// 备注字段云上没有，仅限hcm内部使用
-			Memo:                 nil,
-			Status:               converter.PtrToVal(one.InstanceState),
-			PrivateIPv4Addresses: converter.PtrToSlice(one.PrivateIpAddresses),
-			PublicIPv4Addresses:  converter.PtrToSlice(one.PublicIpAddresses),
-			// 云上该字段没有
-			CloudLaunchedTime: "",
-			CloudExpiredTime:  converter.PtrToVal(one.ExpiredTime),
-			Extension:         extension,
-		}
-
-		if len(one.IPv6Addresses) != 0 {
-			one.PublicIpAddresses, one.PrivateIpAddresses, err = cli.cloudCli.DetermineIPv6Type(kt,
-				region, one.IPv6Addresses)
-			if err != nil {
-				return err
-			}
-		}
-
-		lists = append(lists, updateOne)
+	lists, err := cli.buildCvmUpdateReqList(kt, region, updateMap, vpcMap, subnetMap, imageMap)
+	if err != nil {
+		logs.Errorf("[%s] build cvm update request list failed, err: %v, accountID: %s, region: %s, rid: %s",
+			enumor.TCloud, err, accountID, region, kt.Rid)
+		return err
 	}
-
 	updateReq := dataproto.CvmBatchUpdateReq[corecvm.TCloudCvmExtension]{
 		Cvms: lists,
 	}
@@ -187,6 +145,63 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 		accountID, len(updateMap), kt.Rid)
 
 	return nil
+}
+
+func (cli *client) buildCvmUpdateReqList(kt *kit.Kit, region string, updateMap map[string]typescvm.TCloudCvm,
+	vpcMap map[string]*common.VpcDB, subnetMap map[string]string, imageMap map[string]string) (
+	[]protocloud.CvmBatchUpdateWithExtension[corecvm.TCloudCvmExtension], error) {
+
+	lists := make([]dataproto.CvmBatchUpdateWithExtension[corecvm.TCloudCvmExtension], 0, len(updateMap))
+
+	for id, one := range updateMap {
+		if _, exsit := vpcMap[converter.PtrToVal(one.VirtualPrivateCloud.VpcId)]; !exsit {
+			return nil, fmt.Errorf("cvm %s can not find vpc", converter.PtrToVal(one.InstanceId))
+		}
+
+		if _, exsit := subnetMap[converter.PtrToVal(one.VirtualPrivateCloud.SubnetId)]; !exsit {
+			return nil, fmt.Errorf("cvm %s can not find subnet", converter.PtrToVal(one.InstanceId))
+		}
+
+		imageID := ""
+		if id, exsit := imageMap[converter.PtrToVal(one.ImageId)]; exsit {
+			imageID = id
+		}
+
+		extension := BuildCVMExtension(one)
+		updateOne := dataproto.CvmBatchUpdateWithExtension[corecvm.TCloudCvmExtension]{
+			CvmBatchUpdate: dataproto.CvmBatchUpdate{
+				ID:             id,
+				Name:           converter.PtrToVal(one.InstanceName),
+				CloudVpcIDs:    []string{converter.PtrToVal(one.VirtualPrivateCloud.VpcId)},
+				VpcIDs:         []string{vpcMap[converter.PtrToVal(one.VirtualPrivateCloud.VpcId)].VpcID},
+				CloudSubnetIDs: []string{converter.PtrToVal(one.VirtualPrivateCloud.SubnetId)},
+				SubnetIDs:      []string{subnetMap[converter.PtrToVal(one.VirtualPrivateCloud.SubnetId)]},
+				CloudImageID:   converter.PtrToVal(one.ImageId),
+				ImageID:        imageID,
+				// 备注字段云上没有，仅限hcm内部使用
+				Memo:                 nil,
+				Status:               converter.PtrToVal(one.InstanceState),
+				PrivateIPv4Addresses: converter.PtrToSlice(one.PrivateIpAddresses),
+				PublicIPv4Addresses:  converter.PtrToSlice(one.PublicIpAddresses),
+				// 云上该字段没有
+				CloudLaunchedTime: "",
+				CloudExpiredTime:  converter.PtrToVal(one.ExpiredTime),
+			},
+			Extension: extension,
+		}
+
+		if len(one.IPv6Addresses) != 0 {
+			var err error
+			one.PublicIpAddresses, one.PrivateIpAddresses, err = cli.cloudCli.DetermineIPv6Type(kt,
+				region, one.IPv6Addresses)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		lists = append(lists, updateOne)
+	}
+	return lists, nil
 }
 
 func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
@@ -235,37 +250,6 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 		if id, exsit := imageMap[converter.PtrToVal(one.ImageId)]; exsit {
 			imageID = id
 		}
-
-		extension := BuildCVMExtension(one)
-		addOne := dataproto.CvmBatchCreate[corecvm.TCloudCvmExtension]{
-			CloudID:        converter.PtrToVal(one.InstanceId),
-			Name:           converter.PtrToVal(one.InstanceName),
-			BkBizID:        constant.UnassignedBiz,
-			BkHostID:       constant.UnBindBkHostID,
-			BkCloudID:      constant.UnassignedBkCloudID,
-			AccountID:      accountID,
-			Region:         region,
-			Zone:           converter.PtrToVal(one.Placement.Zone),
-			CloudVpcIDs:    []string{converter.PtrToVal(one.VirtualPrivateCloud.VpcId)},
-			VpcIDs:         []string{vpcMap[converter.PtrToVal(one.VirtualPrivateCloud.VpcId)].VpcID},
-			CloudSubnetIDs: []string{converter.PtrToVal(one.VirtualPrivateCloud.SubnetId)},
-			SubnetIDs:      []string{subnetMap[converter.PtrToVal(one.VirtualPrivateCloud.SubnetId)]},
-			CloudImageID:   converter.PtrToVal(one.ImageId),
-			ImageID:        imageID,
-			OsName:         converter.PtrToVal(one.OsName),
-			// 备注字段云上没有，仅限hcm内部使用
-			Memo:                 nil,
-			Status:               converter.PtrToVal(one.InstanceState),
-			PrivateIPv4Addresses: converter.PtrToSlice(one.PrivateIpAddresses),
-			PublicIPv4Addresses:  converter.PtrToSlice(one.PublicIpAddresses),
-			MachineType:          *one.InstanceType,
-			CloudCreatedTime:     *one.CreatedTime,
-			// 该字段云上没有
-			CloudLaunchedTime: "",
-			CloudExpiredTime:  converter.PtrToVal(one.ExpiredTime),
-			Extension:         extension,
-		}
-
 		if len(one.IPv6Addresses) != 0 {
 			one.PublicIpAddresses, one.PrivateIpAddresses, err = cli.cloudCli.DetermineIPv6Type(kt,
 				region, one.IPv6Addresses)
@@ -273,8 +257,8 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 				return err
 			}
 		}
-
-		lists = append(lists, addOne)
+		extension := BuildCVMExtension(one)
+		lists = append(lists, buildCvmCreateReq(one, extension, accountID, region, imageID, vpcMap, subnetMap))
 	}
 
 	createReq := dataproto.CvmBatchCreateReq[corecvm.TCloudCvmExtension]{
@@ -292,6 +276,41 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 		accountID, len(addSlice), kt.Rid)
 
 	return nil
+}
+
+func buildCvmCreateReq(one typescvm.TCloudCvm, extension *corecvm.TCloudCvmExtension, accountID string, region string,
+	imageID string, vpcMap map[string]*common.VpcDB,
+	subnetMap map[string]string) protocloud.CvmBatchCreate[corecvm.TCloudCvmExtension] {
+
+	addOne := dataproto.CvmBatchCreate[corecvm.TCloudCvmExtension]{
+		CloudID:        converter.PtrToVal(one.InstanceId),
+		Name:           converter.PtrToVal(one.InstanceName),
+		BkBizID:        constant.UnassignedBiz,
+		BkHostID:       constant.UnBindBkHostID,
+		BkCloudID:      constant.UnassignedBkCloudID,
+		AccountID:      accountID,
+		Region:         region,
+		Zone:           converter.PtrToVal(one.Placement.Zone),
+		CloudVpcIDs:    []string{converter.PtrToVal(one.VirtualPrivateCloud.VpcId)},
+		VpcIDs:         []string{vpcMap[converter.PtrToVal(one.VirtualPrivateCloud.VpcId)].VpcID},
+		CloudSubnetIDs: []string{converter.PtrToVal(one.VirtualPrivateCloud.SubnetId)},
+		SubnetIDs:      []string{subnetMap[converter.PtrToVal(one.VirtualPrivateCloud.SubnetId)]},
+		CloudImageID:   converter.PtrToVal(one.ImageId),
+		ImageID:        imageID,
+		OsName:         converter.PtrToVal(one.OsName),
+		// 备注字段云上没有，仅限hcm内部使用
+		Memo:                 nil,
+		Status:               converter.PtrToVal(one.InstanceState),
+		PrivateIPv4Addresses: converter.PtrToSlice(one.PrivateIpAddresses),
+		PublicIPv4Addresses:  converter.PtrToSlice(one.PublicIpAddresses),
+		MachineType:          *one.InstanceType,
+		CloudCreatedTime:     *one.CreatedTime,
+		// 该字段云上没有
+		CloudLaunchedTime: "",
+		CloudExpiredTime:  converter.PtrToVal(one.ExpiredTime),
+		Extension:         extension,
+	}
+	return addOne
 }
 
 func (cli *client) getVpcMap(kt *kit.Kit, accountID string, region string,
