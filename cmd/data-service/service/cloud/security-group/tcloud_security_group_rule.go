@@ -17,6 +17,8 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package securitygroup 提供腾讯云安全组规则的数据服务接口
+// 包含安全组规则的增删改查等核心功能
 package securitygroup
 
 import (
@@ -62,26 +64,35 @@ func initTCloudSGRuleService(cap *capability.Capability) {
 	h.Load(cap.WebService)
 }
 
+// tcloudSGRuleSvc 腾讯云安全组规则服务结构体
+// 封装了安全组规则相关的业务逻辑处理
 type tcloudSGRuleSvc struct {
-	dao dao.Set
+	dao dao.Set // 数据访问对象集合，用于数据库操作
 }
 
-// BatchCreateTCloudRule batch create tcloud rule.
+// BatchCreateTCloudRule 批量创建腾讯云安全组规则
+// 支持一次性创建多个安全组规则，提高操作效率
+// cts: REST上下文，包含请求参数和用户信息
+// 返回: 创建成功的规则ID列表或错误信息
 func (svc *tcloudSGRuleSvc) BatchCreateTCloudRule(cts *rest.Contexts) (interface{}, error) {
+	// 从URL路径中获取安全组ID
 	sgID := cts.PathParameter("security_group_id").String()
 	if len(sgID) == 0 {
 		return nil, errf.New(errf.InvalidParameter, "security group id is required")
 	}
 
+	// 解析请求体中的创建规则参数
 	req := new(protocloud.TCloudSGRuleCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
 
+	// 验证请求参数的有效性
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	// 将请求中的规则数据转换为数据库表结构
 	rules := make([]*tablecloud.TCloudSecurityGroupRuleTable, 0, len(req.Rules))
 	for _, rule := range req.Rules {
 		rules = append(rules, &tablecloud.TCloudSecurityGroupRuleTable{
@@ -124,6 +135,7 @@ func (svc *tcloudSGRuleSvc) BatchCreateTCloudRule(cts *rest.Contexts) (interface
 		return nil, err
 	}
 
+	// 类型断言，确保返回的ID列表是字符串类型
 	ids, ok := ruleIDs.([]string)
 	if !ok {
 		return nil, fmt.Errorf("batch create tcloud security group rule but return id type is not string, id type: %v",
@@ -133,7 +145,10 @@ func (svc *tcloudSGRuleSvc) BatchCreateTCloudRule(cts *rest.Contexts) (interface
 	return &core.BatchCreateResult{IDs: ids}, nil
 }
 
-// BatchUpdateTCloudRule update tcloud rule.
+// BatchUpdateTCloudRule 批量更新腾讯云安全组规则
+// 支持一次性更新多个安全组规则的配置信息
+// cts: REST上下文，包含请求参数和用户信息
+// 返回: 更新结果或错误信息
 func (svc *tcloudSGRuleSvc) BatchUpdateTCloudRule(cts *rest.Contexts) (interface{}, error) {
 	sgID := cts.PathParameter("security_group_id").String()
 	if len(sgID) == 0 {
@@ -207,7 +222,10 @@ func (svc *tcloudSGRuleSvc) BatchUpdateTCloudRule(cts *rest.Contexts) (interface
 	return nil, nil
 }
 
-// ListTCloudRule list tcloud rule.
+// ListTCloudRule 查询指定安全组的规则列表
+// 根据安全组ID查询其下所有的安全组规则
+// cts: REST上下文，包含请求参数和用户信息
+// 返回: 安全组规则列表或错误信息
 func (svc *tcloudSGRuleSvc) ListTCloudRule(cts *rest.Contexts) (interface{}, error) {
 	sgID := cts.PathParameter("security_group_id").String()
 	if len(sgID) == 0 {
@@ -303,15 +321,18 @@ func (svc *tcloudSGRuleSvc) DeleteTCloudRule(cts *rest.Contexts) (interface{}, e
 		return nil, fmt.Errorf("list tcloud security group rule failed, err: %v", err)
 	}
 
+	// 如果没有找到符合条件的规则，直接返回
 	if len(listResp.Details) == 0 {
 		return nil, nil
 	}
 
+	// 提取所有需要删除的规则ID
 	delIDs := make([]string, len(listResp.Details))
 	for index, one := range listResp.Details {
 		delIDs[index] = one.ID
 	}
 
+	// 构建删除过滤条件
 	delFilter := tools.ContainersExpression("id", delIDs)
 	if err := svc.dao.TCloudSGRule().Delete(cts.Kit, delFilter); err != nil {
 		logs.Errorf("delete tcloud security group rule failed, err: %v, rid: %s", err, cts.Kit.Rid)

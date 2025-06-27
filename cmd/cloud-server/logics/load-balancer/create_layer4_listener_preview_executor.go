@@ -257,6 +257,7 @@ type CreateLayer4ListenerDetail struct {
 	ClbVipDomain string `json:"clb_vip_domain"`
 	CloudClbID   string `json:"cloud_clb_id"`
 
+	Name           string              `json:"name"`
 	Protocol       enumor.ProtocolType `json:"protocol"`
 	ListenerPorts  []int               `json:"listener_port"`
 	Scheduler      enumor.Scheduler    `json:"scheduler"`
@@ -279,6 +280,12 @@ func (c *CreateLayer4ListenerDetail) validate() {
 		}
 		c.Status.SetExecutable()
 	}()
+
+	// 验证监听器名称，校验规则同"CLB名称"
+	if len(c.Name) > 60 {
+		err = fmt.Errorf("the length of the listener name should not exceed 60")
+		return
+	}
 	if c.Protocol != enumor.UdpProtocol && c.Protocol != enumor.TcpProtocol {
 		err = fmt.Errorf("unsupport listener protocol type: %s", c.Protocol)
 		return

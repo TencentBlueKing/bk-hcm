@@ -117,7 +117,7 @@
 </template>
 
 <script setup lang="ts">
-import { PropType, computed, h, withDirectives, ref, reactive } from 'vue';
+import { PropType, h, withDirectives, ref, reactive } from 'vue';
 import { Loading, Table, Button, bkTooltips, Message } from 'bkui-vue';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import { BatchDistribution, DResourceType, DResourceTypeMap } from '../dialog/batch-distribution';
@@ -132,12 +132,13 @@ import useSelection from '../../hooks/use-selection';
 import useColumns from '../../hooks/use-columns';
 import useBatchDeleteLB from '@/views/business/load-balancer/clb-view/all-clbs-manager/useBatchDeleteLB';
 import { useI18n } from 'vue-i18n';
-import { asyncGetListenerCount } from '@/utils';
+import { asyncGetListenerCount, buildVIPFilterRules } from '@/utils';
 import { getTableNewRowClass } from '@/common/util';
 import { useResourceStore, useBusinessStore } from '@/store';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
-import { ResourceTypeEnum, VendorEnum } from '@/common/constant';
+import { ResourceTypeEnum, VendorEnum, VendorMap } from '@/common/constant';
 import SyncAccountResource from '@/components/sync-account-resource/index.vue';
+import { CLB_STATUS_MAP, LB_NETWORK_TYPE_MAP } from '@/constants';
 
 const props = defineProps({
   filter: {
@@ -146,14 +147,15 @@ const props = defineProps({
   isResourcePage: {
     type: Boolean,
   },
-  whereAmI: {
-    type: String,
-  },
 });
 
 const { t } = useI18n();
 const { whereAmI } = useWhereAmI();
-const { searchData, searchValue, filter } = useFilter(props);
+const { searchValue, filter } = useFilter(props, {
+  conditionFormatterMapper: {
+    lb_vip: (value: string) => buildVIPFilterRules(value),
+  },
+});
 
 const resourceStore = useResourceStore();
 const businessStore = useBusinessStore();
@@ -235,13 +237,42 @@ const renderColumns = [
   },
 ];
 
-const clbsSearchData = computed(() => [
+const clbsSearchData = [
+  { id: 'name', name: '负载均衡名称' },
+  { id: 'cloud_id', name: '负载均衡ID' },
+  { id: 'domain', name: '负载均衡域名' },
+  { id: 'lb_vip', name: '负载均衡VIP' },
   {
-    name: t('负载均衡ID'),
-    id: 'cloud_id',
+    id: 'lb_type',
+    name: '网络类型',
+    children: Object.keys(LB_NETWORK_TYPE_MAP).map((lbType) => ({
+      id: lbType,
+      name: LB_NETWORK_TYPE_MAP[lbType as keyof typeof LB_NETWORK_TYPE_MAP],
+    })),
   },
-  ...searchData.value,
-]);
+  {
+    id: 'ip_version',
+    name: t('IP版本'),
+    children: [
+      { id: 'ipv4', name: 'IPv4' },
+      { id: 'ipv6', name: 'IPv6' },
+      { id: 'ipv6_dual_stack', name: 'IPv6DualStack' },
+      { id: 'ipv6_nat64', name: 'IPv6Nat64' },
+    ],
+  },
+  {
+    id: 'vendor',
+    name: t('云厂商'),
+    children: [{ id: VendorEnum.TCLOUD, name: VendorMap[VendorEnum.TCLOUD] }],
+  },
+  { id: 'zones', name: '可用区域' },
+  {
+    id: 'status',
+    name: '状态',
+    children: Object.keys(CLB_STATUS_MAP).map((key) => ({ id: key, name: CLB_STATUS_MAP[key] })),
+  },
+  { id: 'cloud_vpc_id', name: '所属VPC' },
+];
 
 const isRowSelectEnable = ({ row, isCheckAll }: DoublePlainObject) => {
   if (isCheckAll) return true;
@@ -343,6 +374,7 @@ const handleSync = (inTable: boolean, data?: any) => {
 .search-selector-container {
   margin-left: auto;
 }
+
 .batch-delete-lb-dialog {
   :deep(.bkhcm-icon-minus-circle-shape) {
     font-size: 14px;

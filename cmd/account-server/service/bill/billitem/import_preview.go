@@ -101,7 +101,7 @@ func (b *billItemSvc) importZenlayerBillItemsPreview(kt *kit.Kit, req *bill.Impo
 	}
 
 	// convert to BillItemCreateReq
-	createReqs, err := convertZenlayerRawBillItemToRawBillCreateReq(kt, req.BillYear, req.BillMonth,
+	createReqs, err := cvtZenlayerBillItemCreateReq(kt, req.BillYear, req.BillMonth,
 		records, cloudIDToSummaryMainMap)
 	if err != nil {
 		logs.Errorf("convert raw bill item to createReqs failed, err: %v, rid: %s", err, kt.Rid)
@@ -122,12 +122,15 @@ func (b *billItemSvc) importZenlayerBillItemsPreview(kt *kit.Kit, req *bill.Impo
 
 type convertStringToEntityFunc[T any] func([]string) (T, error)
 
+// convertBase64StrToReader 将 Base64 编码的字符串转换为 io.Reader
 func convertBase64StrToReader(str bill.Base64String) io.Reader {
 	return base64.NewDecoder(base64.StdEncoding, bytes.NewReader([]byte(str)))
 }
 
-func parseExcelToRecords[T any](kt *kit.Kit, base64 bill.Base64String, convertFunc convertStringToEntityFunc[T]) ([]T,
-	error) {
+// parseExcelToRecords 解析 Excel 文件内容为指定类型的记录
+func parseExcelToRecords[T any](kt *kit.Kit, base64 bill.Base64String, convertFunc convertStringToEntityFunc[T]) (
+	[]T, error) {
+
 	reader := convertBase64StrToReader(base64)
 	records := make([]T, 0)
 	err := excelRowsIterator(kt, reader, 0, constant.BatchOperationMaxLimit,
@@ -181,6 +184,7 @@ func (b *billItemSvc) getExchangedRate(kt *kit.Kit, billYear, billMonth int) (*d
 	return result.Details[0].ExchangeRate, nil
 }
 
+// doCalculate 根据汇率计算账单费用
 func doCalculate(records []dsbill.BillItemCreateReq[json.RawMessage],
 	rate *decimal.Decimal) map[enumor.CurrencyCode]*billcore.CostWithCurrency {
 
@@ -237,7 +241,7 @@ func (b *billItemSvc) listSummaryMainByBusinessGroups(kt *kit.Kit, vendor enumor
 	return result, nil
 }
 
-func convertZenlayerRawBillItemToRawBillCreateReq(kt *kit.Kit, billYear, billMonth int,
+func cvtZenlayerBillItemCreateReq(kt *kit.Kit, billYear, billMonth int,
 	recordList []billcore.ZenlayerRawBillItem, summaryMap map[string]*dsbill.BillSummaryMain) (
 	[]dsbill.BillItemCreateReq[json.RawMessage], error) {
 
@@ -293,6 +297,7 @@ func convertZenlayerRawBillItemToRawBillCreateReq(kt *kit.Kit, billYear, billMon
 	return result, nil
 }
 
+// validateBillYearAndMonth 校验账单日期和指定的年月是否一致
 func validateBillYearAndMonth(curDate string, billYear, billMonth int) error {
 	curYear, err := strconv.Atoi(curDate[:4])
 	if err != nil {

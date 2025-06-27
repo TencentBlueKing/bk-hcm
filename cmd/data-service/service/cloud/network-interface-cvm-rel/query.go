@@ -91,11 +91,11 @@ func (svc *relSvc) ListWithExtension(cts *rest.Contexts) (interface{}, error) {
 
 	switch vendor {
 	case enumor.Gcp:
-		return toProtoNetworkInterfaceExtWithCvmIDs[coreni.GcpNIExtension](data)
+		return toProtoNIExtWithCvmIDs[coreni.GcpNIExtension](data)
 	case enumor.Azure:
-		return toProtoNetworkInterfaceExtWithCvmIDs[coreni.AzureNIExtension](data)
+		return toProtoNIExtWithCvmIDs[coreni.AzureNIExtension](data)
 	case enumor.HuaWei:
-		return toProtoNetworkInterfaceExtWithCvmIDs[coreni.HuaWeiNIExtension](data)
+		return toProtoNIExtWithCvmIDs[coreni.HuaWeiNIExtension](data)
 	default:
 		return nil, errf.Newf(errf.InvalidParameter, "unsupported vendor: %s", vendor)
 	}

@@ -89,8 +89,8 @@ func (svc *lbSvc) ListLoadBalancerWithDeleteProtect(cts *rest.Contexts) (any, er
 	return svc.listLoadBalancerWithDeleteProtect(cts, handler.ListResourceAuthRes)
 }
 
-// ListBizLoadBalancerWithDeleteProtect list biz load balancer with delete protect
-func (svc *lbSvc) ListBizLoadBalancerWithDeleteProtect(cts *rest.Contexts) (any, error) {
+// ListBizLoadBalancerWithDelProtect list biz load balancer with delete protect
+func (svc *lbSvc) ListBizLoadBalancerWithDelProtect(cts *rest.Contexts) (any, error) {
 	return svc.listLoadBalancerWithDeleteProtect(cts, handler.ListBizAuthRes)
 }
 

@@ -32,6 +32,7 @@ export interface IProp {
       searchSelectExtStyle?: Record<string, string>; // 搜索框样式
       [key: string]: any;
     };
+    conditionFormatterMapper?: Record<string, (...args: any) => RulesItem>;
   };
   // table 配置项
   tableOptions: {
@@ -84,6 +85,8 @@ export interface IProp {
 export const useTable = (props: IProp) => {
   defaults(props, { requestOption: {} });
   defaults(props.requestOption, { dataPath: 'data.details', immediate: true });
+
+  const { conditionFormatterMapper } = props.searchOptions || {};
 
   const { whereAmI } = useWhereAmI();
 
@@ -268,6 +271,12 @@ export const useTable = (props: IProp) => {
    */
   const resolveRule = (rule: RulesItem): RulesItem => {
     const { field, op, value } = rule;
+
+    const formatter = conditionFormatterMapper?.[rule.field];
+    if (formatter) {
+      return formatter(rule.value);
+    }
+
     switch (field) {
       case 'vendor':
         return { field, op, value: VendorReverseMap[value as string] || value };

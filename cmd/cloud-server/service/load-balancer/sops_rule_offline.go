@@ -118,7 +118,7 @@ func (svc *lbSvc) parseSOpsTargetParamsForRuleOffline(kt *kit.Kit, accountID str
 	index := 1
 	for _, item := range ruleQueryList {
 		// 1.VIP,VPort,Protocol确定监听器
-		vipVportProtocolLblIDs, err := svc.parseSOpsVipAndVportAndProtocolToListenerIDs(kt, item.Region, accountID, vendor,
+		vipVportProtocolLblIDs, err := svc.parseListenerIDsFromSOpsInfo(kt, item.Region, accountID, vendor,
 			item.Vip, item.VPort, item.Protocol)
 		if err != nil {
 			logs.Errorf("parse vip and vport and protocol to listener failed, accountID: %s, item: %+v, err: %v, rid: %s",
@@ -153,7 +153,7 @@ func (svc *lbSvc) parseSOpsTargetParamsForRuleOffline(kt *kit.Kit, accountID str
 		} else if item.Protocol[0].IsLayer7Protocol() {
 			// 七层，确定UrlRule
 			// domain,url确定urlRule，lbl属于上面的监听器列表
-			urIDs, err := svc.parseSOpsProtocolAndDomainAndUrlToUrlRuleIDs(kt, true,
+			urIDs, err := svc.cvtSOpsInfoToUrlRuleIDs(kt, true,
 				lblIDs, item.Domain, item.Url)
 			if err != nil {
 				logs.Errorf("parse domain and url to url rule failed, accountID: %s, item: %+v, err: %v, rid: %s",
@@ -174,8 +174,8 @@ func (svc *lbSvc) parseSOpsTargetParamsForRuleOffline(kt *kit.Kit, accountID str
 	return listenerIDs, urlRuleIDs, nil
 }
 
-// parseSOpsVipAndVportAndProtocolToListenerIDs 根据Vip、Vport、Protocol查询到对应负载均衡下的对应监听器
-func (svc *lbSvc) parseSOpsVipAndVportAndProtocolToListenerIDs(kt *kit.Kit, region, accountID string, vendor enumor.Vendor,
+// parseListenerIDsFromSOpsInfo 根据Vip、Vport、Protocol查询到对应负载均衡下的对应监听器
+func (svc *lbSvc) parseListenerIDsFromSOpsInfo(kt *kit.Kit, region, accountID string, vendor enumor.Vendor,
 	vip []string, vport []int, protocol []enumor.ProtocolType) ([]string, error) {
 
 	if len(vip) == 0 && len(vport) == 0 && len(protocol) == 0 {
@@ -309,8 +309,8 @@ func (svc *lbSvc) parseSOpsRsIpAndRsTypeToListenerIDs(kt *kit.Kit, accountID str
 	return slice.Unique(lblIDs), nil
 }
 
-// parseSOpsProtocolAndDomainAndUrlToUrlRuleIDs 根据RuleType、Domain、URL查询UrlRule
-func (svc *lbSvc) parseSOpsProtocolAndDomainAndUrlToUrlRuleIDs(kt *kit.Kit,
+// cvtSOpsInfoToUrlRuleIDs 根据RuleType、Domain、URL查询UrlRule
+func (svc *lbSvc) cvtSOpsInfoToUrlRuleIDs(kt *kit.Kit,
 	isLayer7RuleType bool, lblIDs, domain, url []string) ([]string, error) {
 	// 筛选查询urlRule
 	urlRuleFilter := &filter.Expression{

@@ -69,8 +69,10 @@ type Layer4ListenerBindRSExecutor struct {
 
 type layer4ListenerBindRSTaskDetail struct {
 	taskDetailID string
-	flowID       string
-	actionID     string
+
+	// flowID and actionID will be nil when create flow and flow task failed
+	flowID   string
+	actionID string
 	*Layer4ListenerBindRSDetail
 }
 
@@ -137,14 +139,17 @@ func (c *Layer4ListenerBindRSExecutor) filter() {
 		case Executable:
 			return true
 		case Existing:
+			// 将已存在的记录放入到existingDetails中,
+			// createExistingTaskDetails 会为这条记录创建一条任务详情, 并置为成功状态
 			c.existingDetails = append(c.existingDetails, detail)
 		}
 		return false
 	})
 }
 
+// buildFlows 根据CLB进行分组后, 创建异步任务flow
 func (c *Layer4ListenerBindRSExecutor) buildFlows(kt *kit.Kit) ([]string, error) {
-	// group by clb
+	// group task details by CloudClbID
 	clbToDetails := make(map[string][]*layer4ListenerBindRSTaskDetail)
 	for _, detail := range c.taskDetails {
 		clbToDetails[detail.CloudClbID] = append(clbToDetails[detail.CloudClbID], detail)
@@ -165,6 +170,7 @@ func (c *Layer4ListenerBindRSExecutor) buildFlows(kt *kit.Kit) ([]string, error)
 			for _, detail := range details {
 				ids = append(ids, detail.taskDetailID)
 			}
+			// update task detail state to failed when build flow failed
 			err = updateTaskDetailState(kt, c.dataServiceCli, enumor.TaskDetailFailed, ids, err.Error())
 			if err != nil {
 				logs.Errorf("update task details status failed, err: %v, rid: %s", err, kt.Rid)
@@ -178,6 +184,7 @@ func (c *Layer4ListenerBindRSExecutor) buildFlows(kt *kit.Kit) ([]string, error)
 	return flowIDs, nil
 }
 
+// buildFlow 构建异步任务flow
 func (c *Layer4ListenerBindRSExecutor) buildFlow(kt *kit.Kit, lb corelb.BaseLoadBalancer,
 	details []*layer4ListenerBindRSTaskDetail) (string, error) {
 
@@ -381,6 +388,7 @@ func (c *Layer4ListenerBindRSExecutor) buildTCloudFlowTask(kt *kit.Kit, lb corel
 	return result, nil
 }
 
+// buildTaskManagementAndDetails 构建任务管理和详情
 func (c *Layer4ListenerBindRSExecutor) buildTaskManagementAndDetails(kt *kit.Kit,
 	source enumor.TaskManagementSource) (string, error) {
 
@@ -454,6 +462,7 @@ func (c *Layer4ListenerBindRSExecutor) updateTaskManagementAndDetails(kt *kit.Ki
 	return nil
 }
 
+// updateTaskDetails 更新task_detail的flow_id和task_action_id
 func (c *Layer4ListenerBindRSExecutor) updateTaskDetails(kt *kit.Kit) error {
 	if len(c.taskDetails) == 0 {
 		return nil

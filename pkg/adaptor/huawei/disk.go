@@ -329,6 +329,7 @@ func (h *HuaWei) DeleteDisk(kt *kit.Kit, chargeType string, opt *disk.HuaWeiDisk
 	return nil
 }
 
+// DeletePrePaidResource ...
 func (h *HuaWei) DeletePrePaidResource(kt *kit.Kit, cloudIDs []string) error {
 
 	client, err := h.clientSet.bssintlGlobalClient()

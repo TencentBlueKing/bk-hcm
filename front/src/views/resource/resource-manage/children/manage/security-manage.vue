@@ -65,8 +65,7 @@ import {
   AUTH_UPDATE_IAAS_RESOURCE,
 } from '@/constants/auth-symbols';
 import HcmAuth from '@/components/auth/auth.vue';
-
-const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
+import { buildMultipleValueRulesItem } from '@/utils';
 
 const props = defineProps({
   filter: {
@@ -75,11 +74,10 @@ const props = defineProps({
   isResourcePage: {
     type: Boolean,
   },
-  whereAmI: {
-    type: String,
-  },
   bkBizId: Number,
 });
+
+const emit = defineEmits(['handleSecrityType', 'edit', 'editTemplate']);
 
 // use hooks
 const { t } = useI18n();
@@ -116,7 +114,6 @@ const URL_MAP: Record<string, string> = {
 };
 const fetchUrl = ref<string>(URL_MAP.group);
 
-const emit = defineEmits(['handleSecrityType', 'edit', 'editTemplate']);
 const { generateColumnsSettings } = useColumns('group');
 
 const cloneSecurityData = reactive<ICloneSecurityProps>({
@@ -127,7 +124,12 @@ const cloneSecurityData = reactive<ICloneSecurityProps>({
 const templateData = ref([]);
 
 const { searchData, searchValue, filter } = useFilter(props, {
-  mgmt_type: (value) => (value === 'unknown' ? '' : value),
+  convertValueCallbacks: { mgmt_type: (value) => (value === 'unknown' ? '' : value) },
+  conditionFormatterMapper: {
+    cloud_id: (value: string) => {
+      return buildMultipleValueRulesItem('cloud_id', value);
+    },
+  },
 });
 
 const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort, getList } =
@@ -249,7 +251,7 @@ watch(
       templateData.value = data;
       const ids = data.map(({ id }) => id);
       if (!ids.length) return;
-      const url = `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud${
+      const url = `/api/v1/cloud${
         whereAmI.value === Senarios.business ? `/bizs/${accountStore.bizs}` : ''
       }/argument_templates/instance/rule/list`;
       const res = await http.post(url, {
@@ -281,7 +283,6 @@ const fetchComponentsData = () => {
   getList();
 };
 
-defineExpose({ fetchComponentsData });
 const isRowSelectEnable = ({ row, isCheckAll }: DoublePlainObject) => {
   if (isCheckAll) return true;
   return isCurRowSelectEnable(row);
@@ -1175,6 +1176,13 @@ const handleSync = () => {
     syncDialogState.initialModel = { account_id: id, vendor };
   }
 };
+const handleSyncError = (error: any) => {
+  let { message } = error || {};
+  if (error.code === 2000024) {
+    message = '同步任务在进行中';
+  }
+  Message({ theme: 'error', message });
+};
 
 // 当table数据整个替换时, 需要清空勾选项, 确保勾选态及selections数据正确
 watch(
@@ -1192,6 +1200,8 @@ watch(
   },
   { deep: true },
 );
+
+defineExpose({ fetchComponentsData });
 </script>
 
 <template>
@@ -1363,6 +1373,7 @@ watch(
         :business-id="props.bkBizId"
         resource-name="security_group"
         :initial-model="syncDialogState.initialModel"
+        :error-handler="handleSyncError"
         @hidden="
           () => {
             syncDialogState.isHidden = true;
@@ -1402,7 +1413,6 @@ watch(
 
   :deep(.bk-nested-loading) {
     margin-top: 16px;
-
     height: calc(100% - 100px);
 
     .bk-table {

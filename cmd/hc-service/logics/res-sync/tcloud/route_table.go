@@ -273,7 +273,8 @@ func (cli *client) deleteRouteTable(kt *kit.Kit, accountID string, region string
 		Filter: tools.ContainersExpression("cloud_id", delCloudIDs),
 	}
 	if err = cli.dbCli.Global.RouteTable.BatchDelete(kt.Ctx, kt.Header(), deleteReq); err != nil {
-		logs.Errorf("[%s] request dataservice to batch delete routeTable failed, err: %v, rid: %s", enumor.TCloud, err, kt.Rid)
+		logs.Errorf("[%s] request dataservice to batch delete routeTable failed, err: %v, rid: %s",
+			enumor.TCloud, err, kt.Rid)
 		return err
 	}
 

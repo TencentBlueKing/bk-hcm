@@ -254,6 +254,7 @@ func (c *BatchDeleteListenerExecutor) filter() {
 	return
 }
 
+// buildTaskManagementAndDetails 构建任务管理和详情
 func (c *BatchDeleteListenerExecutor) buildTaskManagementAndDetails(kt *kit.Kit,
 	source enumor.TaskManagementSource) (string, error) {
 
@@ -525,6 +526,7 @@ func (c *BatchDeleteListenerExecutor) updateTaskManagementAndDetails(kt *kit.Kit
 	return nil
 }
 
+// updateTaskManagement 更新task_management的flow_id
 func (c *BatchDeleteListenerExecutor) updateTaskManagement(kt *kit.Kit, taskID string, flowIDs []string) error {
 	updateItem := task.UpdateTaskManagementField{
 		ID:      taskID,
@@ -543,6 +545,7 @@ func (c *BatchDeleteListenerExecutor) updateTaskManagement(kt *kit.Kit, taskID s
 	return nil
 }
 
+// updateTaskDetails 更新task_detail的flow_id和task_action_id
 func (c *BatchDeleteListenerExecutor) updateTaskDetails(kt *kit.Kit) error {
 	updateItems := make([]task.UpdateTaskDetailField, 0, len(c.taskDetails))
 	for _, detail := range c.taskDetails {

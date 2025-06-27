@@ -143,6 +143,9 @@ func convAwsDSReq(rules []*ec2.SecurityGroupRule, accountID, sgID, region string
 	return createReq
 }
 
+// convAwsRule 将 HC 服务层的 AWS 安全组规则创建结构转换为适配器层所需的创建结构。
+// rule: HC 服务层的 AWS 安全组规则创建对象。
+// 返回: 转换后的适配器层 AWS 安全组规则创建对象。
 func convAwsRule(rule proto.AwsSGRuleCreate) securitygrouprule.AwsCreate {
 	return securitygrouprule.AwsCreate{
 		IPv4Cidr:                   rule.IPv4Cidr,
@@ -238,6 +241,11 @@ func (g *securityGroup) UpdateAwsSGRule(cts *rest.Contexts) (interface{}, error)
 	return nil, nil
 }
 
+// getAwsSGRuleByID 根据规则 ID 和安全组 ID 从数据服务层获取 AWS 安全组规则的详细信息。
+// cts: REST 请求上下文。
+// id: 安全组规则的 ID。
+// sgID: 安全组的 ID。
+// 返回: AWS 安全组规则的详细信息及可能发生的错误。
 func (g *securityGroup) getAwsSGRuleByID(cts *rest.Contexts, id string, sgID string) (*corecloud.
 	AwsSecurityGroupRule, error) {
 

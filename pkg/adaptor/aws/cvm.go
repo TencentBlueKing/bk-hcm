@@ -289,6 +289,38 @@ func (a *Aws) CreateCvm(kt *kit.Kit, opt *typecvm.AwsCreateOption) (*poller.Base
 		return nil, fmt.Errorf("gen cvm base64 user data failed, err: %v", err)
 	}
 
+	req := buildCreateCvmReq(opt, userData)
+
+	resp, err := client.RunInstancesWithContext(kt.Ctx, req)
+	if err != nil {
+		// 参数预校验报错，正常现象
+		if strings.Contains(err.Error(), ErrDryRunSuccess) {
+			return new(poller.BaseDoneResult), nil
+		}
+
+		logs.Errorf("run instances failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
+		return nil, err
+	}
+
+	cloudIDs := make([]*string, 0, len(resp.Instances))
+	for _, one := range resp.Instances {
+		cloudIDs = append(cloudIDs, one.InstanceId)
+	}
+
+	// 等待生产成功
+	handler := &createCvmPollingHandler{
+		opt.Region,
+	}
+	respPoller := poller.Poller[*Aws, []*ec2.Instance, poller.BaseDoneResult]{Handler: handler}
+	result, err := respPoller.PollUntilDone(a, kt, cloudIDs, types.NewBatchCreateCvmPollerOption())
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func buildCreateCvmReq(opt *typecvm.AwsCreateOption, userData string) *ec2.RunInstancesInput {
 	req := &ec2.RunInstancesInput{
 		DryRun:       aws.Bool(opt.DryRun),
 		ClientToken:  opt.ClientToken,
@@ -344,34 +376,7 @@ func (a *Aws) CreateCvm(kt *kit.Kit, opt *typecvm.AwsCreateOption) (*poller.Base
 			}
 		}
 	}
-
-	resp, err := client.RunInstancesWithContext(kt.Ctx, req)
-	if err != nil {
-		// 参数预校验报错，正常现象
-		if strings.Contains(err.Error(), ErrDryRunSuccess) {
-			return new(poller.BaseDoneResult), nil
-		}
-
-		logs.Errorf("run instances failed, err: %v, req: %v, rid: %s", err, req, kt.Rid)
-		return nil, err
-	}
-
-	cloudIDs := make([]*string, 0, len(resp.Instances))
-	for _, one := range resp.Instances {
-		cloudIDs = append(cloudIDs, one.InstanceId)
-	}
-
-	// 等待生产成功
-	handler := &createCvmPollingHandler{
-		opt.Region,
-	}
-	respPoller := poller.Poller[*Aws, []*ec2.Instance, poller.BaseDoneResult]{Handler: handler}
-	result, err := respPoller.PollUntilDone(a, kt, cloudIDs, types.NewBatchCreateCvmPollerOption())
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return req
 }
 
 // BatchAssociateSecurityGroup batch associate security group.

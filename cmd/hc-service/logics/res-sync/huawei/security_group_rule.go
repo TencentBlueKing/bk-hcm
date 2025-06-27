@@ -168,7 +168,8 @@ func (cli *client) createSGRule(kt *kit.Kit, opt *syncSGRuleOption,
 	createReq := &protocloud.HuaWeiSGRuleCreateReq{
 		Rules: list,
 	}
-	_, err = cli.dbCli.HuaWei.SecurityGroup.BatchCreateSecurityGroupRule(kt.Ctx, kt.Header(), createReq, opt.SGMap[opt.CloudSGID])
+	_, err = cli.dbCli.HuaWei.SecurityGroup.BatchCreateSecurityGroupRule(
+		kt.Ctx, kt.Header(), createReq, opt.SGMap[opt.CloudSGID])
 	if err != nil {
 		return err
 	}
@@ -232,7 +233,8 @@ func (cli *client) updateSGRule(kt *kit.Kit, opt *syncSGRuleOption,
 	updateReq := &protocloud.HuaWeiSGRuleBatchUpdateReq{
 		Rules: list,
 	}
-	err = cli.dbCli.HuaWei.SecurityGroup.BatchUpdateSecurityGroupRule(kt.Ctx, kt.Header(), updateReq, opt.SGMap[opt.CloudSGID])
+	err = cli.dbCli.HuaWei.SecurityGroup.BatchUpdateSecurityGroupRule(
+		kt.Ctx, kt.Header(), updateReq, opt.SGMap[opt.CloudSGID])
 	if err != nil {
 		return err
 	}
@@ -315,7 +317,8 @@ func (cli *client) deleteSGRule(kt *kit.Kit, opt *syncSGRuleOption, delCloudIDs 
 	deleteReq := &protocloud.HuaWeiSGRuleBatchDeleteReq{
 		Filter: tools.ContainersExpression("cloud_id", delCloudIDs),
 	}
-	err = cli.dbCli.HuaWei.SecurityGroup.BatchDeleteSecurityGroupRule(kt.Ctx, kt.Header(), deleteReq, opt.SGMap[opt.CloudSGID])
+	err = cli.dbCli.HuaWei.SecurityGroup.BatchDeleteSecurityGroupRule(
+		kt.Ctx, kt.Header(), deleteReq, opt.SGMap[opt.CloudSGID])
 	if err != nil {
 		logs.Errorf("[%s] dataservice delete huawei security group rules failed, err: %v, rid: %s", enumor.HuaWei,
 			err, kt.Rid)

@@ -144,7 +144,7 @@ func (act LoadBalancerOperateWatchAction) processResFlow(kt run.ExecuteKit, opt 
 			resStatus = enumor.CancelResFlowStatus
 		}
 
-		if err := act.updateTargetGroupListenerRuleRelBindStatus(kt.Kit(), opt, flowInfo.State); err != nil {
+		if err := act.updateTGListenerRuleRelBindStatus(kt.Kit(), opt, flowInfo.State); err != nil {
 			return false, err
 		}
 
@@ -226,8 +226,8 @@ func (act LoadBalancerOperateWatchAction) updateFlowStateByCAS(kt *kit.Kit, flow
 	return nil
 }
 
-// updateTargetGroupListenerRuleRelBindStatus 更新目标组与监听器的绑定状态
-func (act LoadBalancerOperateWatchAction) updateTargetGroupListenerRuleRelBindStatus(kt *kit.Kit,
+// updateTGListenerRuleRelBindStatus 更新目标组与监听器的绑定状态
+func (act LoadBalancerOperateWatchAction) updateTGListenerRuleRelBindStatus(kt *kit.Kit,
 	opt *LoadBalancerOperateWatchOption, flowState enumor.FlowState) error {
 
 	if opt == nil || opt.TaskType != enumor.ApplyTargetGroupType || opt.SubResType != enumor.TargetGroupCloudResType {

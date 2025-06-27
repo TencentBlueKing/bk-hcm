@@ -45,6 +45,7 @@ import (
 type SyncSGRuleOption struct {
 }
 
+// SGMapData ...
 type SGMapData struct {
 	ID     string
 	Region string
@@ -474,43 +475,11 @@ func isSGRuleChange(cloud securitygrouprule.AzureSGRule,
 		return true
 	}
 
-	if !assert.IsPtrStringEqual(db.DestinationAddressPrefix, cloud.DestinationAddressPrefix) {
-		return true
-	}
-
-	if !assert.IsPtrStringSliceEqual(db.DestinationAddressPrefixes, cloud.DestinationAddressPrefixes) {
-		return true
-	}
-
-	if !assert.IsPtrStringEqual(db.DestinationPortRange, cloud.DestinationPortRange) {
-		return true
-	}
-
-	if !assert.IsPtrStringSliceEqual(db.DestinationPortRanges, cloud.DestinationPortRanges) {
-		return true
-	}
-
 	if db.Protocol != string(converter.PtrToVal(cloud.Protocol)) {
 		return true
 	}
 
 	if db.ProvisioningState != string(converter.PtrToVal(cloud.ProvisioningState)) {
-		return true
-	}
-
-	if !assert.IsPtrStringEqual(db.SourceAddressPrefix, cloud.SourceAddressPrefix) {
-		return true
-	}
-
-	if !assert.IsPtrStringSliceEqual(db.SourceAddressPrefixes, cloud.SourceAddressPrefixes) {
-		return true
-	}
-
-	if !assert.IsPtrStringEqual(db.SourcePortRange, cloud.SourcePortRange) {
-		return true
-	}
-
-	if !assert.IsPtrStringSliceEqual(db.SourcePortRanges, cloud.SourcePortRanges) {
 		return true
 	}
 
@@ -544,5 +513,55 @@ func isSGRuleChange(cloud securitygrouprule.AzureSGRule,
 		return true
 	}
 
+	if isSGRuleSourceInfoChange(cloud, db) {
+		return true
+	}
+
+	if isSGRuleDestinationInfoChange(cloud, db) {
+		return true
+	}
+
+	return false
+}
+
+func isSGRuleSourceInfoChange(cloud securitygrouprule.AzureSGRule,
+	db corecloud.AzureSecurityGroupRule) bool {
+
+	if !assert.IsPtrStringEqual(db.SourceAddressPrefix, cloud.SourceAddressPrefix) {
+		return true
+	}
+
+	if !assert.IsPtrStringSliceEqual(db.SourceAddressPrefixes, cloud.SourceAddressPrefixes) {
+		return true
+	}
+
+	if !assert.IsPtrStringEqual(db.SourcePortRange, cloud.SourcePortRange) {
+		return true
+	}
+
+	if !assert.IsPtrStringSliceEqual(db.SourcePortRanges, cloud.SourcePortRanges) {
+		return true
+	}
+	return false
+}
+
+func isSGRuleDestinationInfoChange(cloud securitygrouprule.AzureSGRule,
+	db corecloud.AzureSecurityGroupRule) bool {
+
+	if !assert.IsPtrStringEqual(db.DestinationAddressPrefix, cloud.DestinationAddressPrefix) {
+		return true
+	}
+
+	if !assert.IsPtrStringSliceEqual(db.DestinationAddressPrefixes, cloud.DestinationAddressPrefixes) {
+		return true
+	}
+
+	if !assert.IsPtrStringEqual(db.DestinationPortRange, cloud.DestinationPortRange) {
+		return true
+	}
+
+	if !assert.IsPtrStringSliceEqual(db.DestinationPortRanges, cloud.DestinationPortRanges) {
+		return true
+	}
 	return false
 }

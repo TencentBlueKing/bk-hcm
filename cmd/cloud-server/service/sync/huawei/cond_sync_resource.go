@@ -31,6 +31,7 @@ import (
 type CondSyncParams struct {
 	AccountID string   `json:"account_id" validate:"required"`
 	Regions   []string `json:"regions,omitempty" validate:"max=20"`
+	CloudIDs  []string `json:"cloud_ids,omitempty" validate:"omitempty,max=20"`
 }
 
 // CondSyncFunc sync resource by given condition
@@ -50,6 +51,7 @@ func GetCondSyncFunc(res enumor.CloudResourceType) (syncFunc CondSyncFunc, ok bo
 func CondSyncSecurityGroup(kt *kit.Kit, cliSet *client.ClientSet, params *CondSyncParams) error {
 	syncReq := sync.HuaWeiSyncReq{
 		AccountID: params.AccountID,
+		CloudIDs:  params.CloudIDs,
 	}
 	for i := range params.Regions {
 		syncReq.Region = params.Regions[i]

@@ -133,7 +133,7 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 		return fmt.Errorf("cvm updateMap is <= 0, not update")
 	}
 
-	lists := make([]dataproto.CvmBatchUpdate[corecvm.HuaWeiCvmExtension], 0)
+	lists := make([]dataproto.CvmBatchUpdateWithExtension[corecvm.HuaWeiCvmExtension], 0)
 
 	cloudVpcIDs := make([]string, 0)
 	cloudImageIDs := make([]string, 0)
@@ -162,24 +162,26 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 			imageID = id
 		}
 
-		cvm := dataproto.CvmBatchUpdate[corecvm.HuaWeiCvmExtension]{
-			ID:                   id,
-			Name:                 one.Name,
-			CloudVpcIDs:          []string{one.Metadata["vpc_id"]},
-			VpcIDs:               []string{vpcMap[one.Metadata["vpc_id"]].VpcID},
-			CloudSubnetIDs:       one.CloudSubnetIDs,
-			SubnetIDs:            one.SubnetIDs,
-			CloudImageID:         one.Image.Id,
-			ImageID:              imageID,
-			Memo:                 one.Description,
-			Status:               one.Status,
-			PrivateIPv4Addresses: one.PrivateIPv4Addresses,
-			PrivateIPv6Addresses: one.PrivateIPv6Addresses,
-			PublicIPv4Addresses:  one.PublicIPv4Addresses,
-			PublicIPv6Addresses:  one.PublicIPv6Addresses,
-			CloudLaunchedTime:    one.CloudLaunchedTime,
-			CloudExpiredTime:     one.AutoTerminateTime,
-			Extension:            convHuaweiCvmExtension(one),
+		cvm := dataproto.CvmBatchUpdateWithExtension[corecvm.HuaWeiCvmExtension]{
+			CvmBatchUpdate: protocloud.CvmBatchUpdate{
+				ID:                   id,
+				Name:                 one.Name,
+				CloudVpcIDs:          []string{one.Metadata["vpc_id"]},
+				VpcIDs:               []string{vpcMap[one.Metadata["vpc_id"]].VpcID},
+				CloudSubnetIDs:       one.CloudSubnetIDs,
+				SubnetIDs:            one.SubnetIDs,
+				CloudImageID:         one.Image.Id,
+				ImageID:              imageID,
+				Memo:                 one.Description,
+				Status:               one.Status,
+				PrivateIPv4Addresses: one.PrivateIPv4Addresses,
+				PrivateIPv6Addresses: one.PrivateIPv6Addresses,
+				PublicIPv4Addresses:  one.PublicIPv4Addresses,
+				PublicIPv6Addresses:  one.PublicIPv6Addresses,
+				CloudLaunchedTime:    one.CloudLaunchedTime,
+				CloudExpiredTime:     one.AutoTerminateTime,
+			},
+			Extension: convHuaweiCvmExtension(one),
 		}
 
 		lists = append(lists, cvm)

@@ -42,28 +42,28 @@ type AzureCvmExtension struct {
 	Zones                    []string             `json:"zones,omitempty"`
 }
 
-// AzureStorageProfile
+// AzureStorageProfile ...
 // https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/list?tabs=HTTP#storageprofile
 type AzureStorageProfile struct {
 	CloudDataDiskIDs []string `json:"cloud_data_disk_ids,omitempty"`
 	CloudOsDiskID    string   `json:"cloud_os_disk_id,omitempty"`
 }
 
-// AzureKeyVaultKeyReference
+// AzureKeyVaultKeyReference ...
 // https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/list?tabs=HTTP#keyvaultkeyreference
 type AzureKeyVaultKeyReference struct {
 	KeyUrl      *string           `json:"key_url,omitempty"`
 	SourceVault *AzureSubResource `json:"source_vault,omitempty"`
 }
 
-// AzureKeyVaultSecretReference
+// AzureKeyVaultSecretReference ...
 // https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/list?tabs=HTTP#keyvaultsecretreference
 type AzureKeyVaultSecretReference struct {
 	SecretUrl   *string           `json:"secret_url,omitempty"`
 	SourceVault *AzureSubResource `json:"source_vault,omitempty"`
 }
 
-// AzureDiffDiskSettings
+// AzureDiffDiskSettings ...
 // https://learn.microsoft.com/en-us/rest/api/compute/virtual-machines/list?tabs=HTTP#diffdisksettings
 type AzureDiffDiskSettings struct {
 	Option    *string `json:"option,omitempty"`

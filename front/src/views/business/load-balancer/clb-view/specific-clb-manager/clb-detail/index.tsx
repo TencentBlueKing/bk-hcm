@@ -87,7 +87,8 @@ export default defineComponent({
               v-bk-tooltips={{
                 content: '开启删除保护后，在云控制台或调用 API 均无法删除该实例',
                 placement: 'top-end',
-              }}></i>
+              }}
+            ></i>
           </div>
         ),
         copy: false,
@@ -188,13 +189,23 @@ export default defineComponent({
       {
         name: '带宽上限',
         render: () => {
-          return props.detail?.extension?.internet_max_bandwidth_out || '--';
+          const bandwidth = props.detail?.extension?.internet_max_bandwidth_out;
+          if (bandwidth === undefined || bandwidth === null) return '--';
+
+          if (bandwidth >= 1024) {
+            const gbpsValue = (bandwidth / 1024).toFixed(2);
+            return `${gbpsValue.replace(/\.00$/, '')} Gbps`;
+          }
+          return `${bandwidth} Mbps`;
         },
       },
       {
         name: '运营商',
         render: () => {
-          return LB_ISP[props.detail?.extension?.vip_isp] || '--';
+          const displayValue = props.detail?.extension?.vip_isp
+            ? LB_ISP[props.detail.extension.vip_isp] ?? props.detail.extension.vip_isp
+            : '--';
+          return displayValue;
         },
       },
     ];

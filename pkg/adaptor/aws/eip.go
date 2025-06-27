@@ -259,12 +259,12 @@ func (h *createEipPollingHandler) Done(pollResult []*eip.AwsEip) (bool, *poller.
 }
 
 // Poll ...
-func (h *createEipPollingHandler) Poll(client *Aws, kt *kit.Kit, Ips []*string) ([]*eip.AwsEip, error) {
-	if len(Ips) != 1 {
-		return nil, fmt.Errorf("poll only support one ip param, but get %v. rid: %s", Ips, kt.Rid)
+func (h *createEipPollingHandler) Poll(client *Aws, kt *kit.Kit, ips []*string) ([]*eip.AwsEip, error) {
+	if len(ips) != 1 {
+		return nil, fmt.Errorf("poll only support one ip param, but get %v. rid: %s", ips, kt.Rid)
 	}
 
-	result, err := client.ListEip(kt, &eip.AwsEipListOption{Region: h.region, Ips: converter.PtrToSlice(Ips)})
+	result, err := client.ListEip(kt, &eip.AwsEipListOption{Region: h.region, Ips: converter.PtrToSlice(ips)})
 	if err != nil {
 		return nil, err
 	}
@@ -286,12 +286,12 @@ func (h *associateEipPollingHandler) Done(pollResult []*eip.AwsEip) (bool, *poll
 }
 
 // Poll ...
-func (h *associateEipPollingHandler) Poll(client *Aws, kt *kit.Kit, Ips []*string) ([]*eip.AwsEip, error) {
-	if len(Ips) != 1 {
-		return nil, fmt.Errorf("poll only support one ip param, but get %v. rid: %s", Ips, kt.Rid)
+func (h *associateEipPollingHandler) Poll(client *Aws, kt *kit.Kit, ips []*string) ([]*eip.AwsEip, error) {
+	if len(ips) != 1 {
+		return nil, fmt.Errorf("poll only support one ip param, but get %v. rid: %s", ips, kt.Rid)
 	}
 
-	result, err := client.ListEip(kt, &eip.AwsEipListOption{Region: h.region, Ips: converter.PtrToSlice(Ips)})
+	result, err := client.ListEip(kt, &eip.AwsEipListOption{Region: h.region, Ips: converter.PtrToSlice(ips)})
 	if err != nil {
 		return nil, err
 	}
@@ -313,12 +313,12 @@ func (h *disassociateEipPollingHandler) Done(pollResult []*eip.AwsEip) (bool, *p
 }
 
 // Poll ...
-func (h *disassociateEipPollingHandler) Poll(client *Aws, kt *kit.Kit, Ips []*string) ([]*eip.AwsEip, error) {
-	if len(Ips) != 1 {
-		return nil, fmt.Errorf("poll only support one ip param, but get %v. rid: %s", Ips, kt.Rid)
+func (h *disassociateEipPollingHandler) Poll(client *Aws, kt *kit.Kit, ips []*string) ([]*eip.AwsEip, error) {
+	if len(ips) != 1 {
+		return nil, fmt.Errorf("poll only support one ip param, but get %v. rid: %s", ips, kt.Rid)
 	}
 
-	result, err := client.ListEip(kt, &eip.AwsEipListOption{Region: h.region, Ips: converter.PtrToSlice(Ips)})
+	result, err := client.ListEip(kt, &eip.AwsEipListOption{Region: h.region, Ips: converter.PtrToSlice(ips)})
 	if err != nil {
 		return nil, err
 	}
