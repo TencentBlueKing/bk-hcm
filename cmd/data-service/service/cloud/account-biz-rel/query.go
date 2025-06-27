@@ -106,6 +106,7 @@ func (a *service) ListWithAccount(cts *rest.Contexts) (interface{}, error) {
 				Price:     one.Price,
 				PriceUnit: one.PriceUnit,
 				Memo:      one.Memo,
+				BizID:     one.BizID,
 				Revision: core.Revision{
 					Creator:   one.Creator,
 					Reviser:   one.Reviser,
