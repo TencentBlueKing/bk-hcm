@@ -59,7 +59,10 @@ func (req *EipExtCreateReq[T]) Validate() error {
 
 // EipExtensionCreateReq ...
 type EipExtensionCreateReq interface {
-	TCloudEipExtensionCreateReq | AwsEipExtensionCreateReq | AzureEipExtensionCreateReq | GcpEipExtensionCreateReq |
+	TCloudEipExtensionCreateReq |
+		AwsEipExtensionCreateReq |
+		AzureEipExtensionCreateReq |
+		GcpEipExtensionCreateReq |
 		HuaWeiEipExtensionCreateReq
 }
 
@@ -77,7 +80,10 @@ func (req *EipListReq) Validate() error {
 
 // EipExtensionUpdateReq ...
 type EipExtensionUpdateReq interface {
-	TCloudEipExtensionUpdateReq | AwsEipExtensionUpdateReq | AzureEipExtensionUpdateReq | GcpEipExtensionUpdateReq |
+	TCloudEipExtensionUpdateReq |
+		AwsEipExtensionUpdateReq |
+		AzureEipExtensionUpdateReq |
+		GcpEipExtensionUpdateReq |
 		HuaWeiEipExtensionUpdateReq
 }
 

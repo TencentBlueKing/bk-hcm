@@ -31,49 +31,45 @@ const (
 	EmailContentTemplate = `<!DOCTYPE html>
 <html>
 <head>
-	<meta charset="UTF-8">
-	<title>云账号创建成功通知</title>
-	<style>
-		body {
-			font-family: Arial, sans-serif;
-			background-color: #f5f5f5;
-			color: #333;
-		}
-
-		.container {
-			max-width: 600px;
-			margin: 0 auto;
-			background-color: #fff;
-			padding: 20px;
-			border-radius: 5px;
-			box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-		}
-
-		h1 {
-			color: #007bff;
-		}
-
-		.account-info {
-			background-color: #f8f9fa;
-			padding: 10px;
-			border-radius: 5px;
-		}
-	</style>
+    <meta charset="UTF-8">
+    <title>云账号创建成功通知</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #007bff;
+        }
+        .account-info {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
 </head>
-
 <body>
-	<div class="container">
-		<h1>二级账号创建成功通知</h1>
-		<p>您好，您已成功创建二级账号，以下是账号信息，请妥善保管：</p>
-		<div class="account-info">
-			<p>云厂商：<strong>%s</strong></p>
-			<p>账号名：<strong>%s</strong></p>
-			<p>账号ID：<strong>%s</strong></p>
-		</div>
-		<p>请使用以下地址登录云厂商：<a href="%s">%s</a></p>
-		<p>如果您有任何疑问，请联系海垒平台管理员。</p>
-		<p>该邮件由系统自动发出，请勿回复。</p>
-	</div>
+    <div class="container">
+        <h1>二级账号创建成功通知</h1>
+        <p>您好，您已成功创建二级账号，以下是账号信息，请妥善保管：</p>
+        <div class="account-info">
+            <p>云厂商：<strong>%s</strong></p>
+            <p>账号名：<strong>%s</strong></p>
+            <p>账号ID：<strong>%s</strong></p>
+        </div>
+        <p>请使用以下地址登录云厂商：<a href="%s">%s</a></p>
+        <p>如果您有任何疑问，请联系海垒平台管理员。</p>
+        <p>该邮件由系统自动发出，请勿回复。</p>
+    </div>
 </body>
 </html>`
 )

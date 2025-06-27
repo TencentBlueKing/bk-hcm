@@ -64,7 +64,7 @@ func (h *HuaWei) GetBillList(kt *kit.Kit, opt *typesBill.HuaWeiBillListOption) (
 }
 
 // GetFeeRecordList get fee record list.
-// ref: https://console-intl.huaweicloud.com/apiexplorer/#/openapi/BSSINTL/debug?api=ListCustomerselfResourceRecords
+// reference: https://console-intl.huaweicloud.com/apiexplorer/#/openapi/BSSINTL/debug?api=ListCustomerselfResourceRecords
 func (h *HuaWei) GetFeeRecordList(kt *kit.Kit, opt *typesBill.HuaWeiFeeRecordListOption) (
 	*model.ListCustomerselfResourceRecordsResponse, error) {
 
