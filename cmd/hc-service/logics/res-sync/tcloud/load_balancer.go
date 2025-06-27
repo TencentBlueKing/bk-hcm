@@ -507,6 +507,10 @@ func convCloudToDBCreate(cloud typeslb.TCloudClb, accountID string, region strin
 		Tags:             cloud.GetTagMap(),
 		// 备注字段云上没有
 		Memo: nil,
+		Isp:  cvt.PtrToVal(cloud.VipIsp),
+	}
+	if cloud.NetworkAttributes != nil {
+		lb.BandWidth = cvt.PtrToVal(cloud.NetworkAttributes.InternetMaxBandwidthOut)
 	}
 
 	// IP地址判断
@@ -600,6 +604,10 @@ func convCloudToDBUpdate(id string, cloud typeslb.TCloudClb, vpcMap map[string]*
 		CloudSubnetID:    cloudSubnetID,
 		Tags:             cloud.GetTagMap(),
 		Extension:        convertTCloudExtension(cloud, region),
+		Isp:              cvt.PtrToVal(cloud.VipIsp),
+	}
+	if cloud.NetworkAttributes != nil {
+		lb.BandWidth = cvt.PtrToVal(cloud.NetworkAttributes.InternetMaxBandwidthOut)
 	}
 	if len(cloud.LoadBalancerVips) != 0 {
 		switch typeslb.TCloudLoadBalancerType(cvt.PtrToVal(cloud.LoadBalancerType)) {

@@ -52,6 +52,8 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/{id}
     "cloud_created_time": "2024-01-02 15:04:05",
     "cloud_status_time": "2024-01-02 15:04:05",
     "cloud_expired_time": "",
+    "band_width": 0,
+    "isp": "BGP",
     "memo": null,
     "creator": "admin",
     "reviser": "admin",
@@ -89,6 +91,8 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/{id}
 | vpc_id                 | string       | vpcID                                |
 | lb_type                | string       | 负载均衡类型                               |
 | ip_version             | string       | 负载均衡网络版本                             |
+| band_width             | int          | 带宽，单位Mbps                            |
+| isp                    | string       | 运营商类型（枚举值：BGP、CMCC、CUCC、CTCC）        |
 | memo                   | string       | 备注                                   |
 | status                 | string       | 状态                                   |
 | domain                 | string       | 域名                                   |
