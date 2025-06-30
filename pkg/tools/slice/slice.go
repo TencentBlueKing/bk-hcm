@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package slice ...
 package slice
 
 import "hcm/pkg/tools/maps"
