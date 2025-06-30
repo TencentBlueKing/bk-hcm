@@ -23,6 +23,7 @@ package tcloud
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"hcm/cmd/hc-service/logics/res-sync/common"
 	typecore "hcm/pkg/adaptor/types/core"
@@ -41,6 +42,7 @@ import (
 	"hcm/pkg/tools/assert"
 	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
+	"hcm/pkg/tools/times"
 
 	tclb "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb/v20180317"
 )
@@ -111,6 +113,15 @@ func (cli *client) LoadBalancer(kt *kit.Kit, params *SyncBaseParams, opt *SyncLB
 
 	addSlice, updateMap, delCloudIDs := common.Diff[typeslb.TCloudClb, corelb.TCloudLoadBalancer](
 		lbFromCloud, lbFromDB, isLBChange)
+
+	defer func() {
+		ids := slice.Map(lbFromDB, corelb.TCloudLoadBalancer.GetID)
+		err := cli.updateLoadBalancerSyncTime(kt, ids)
+		if err != nil {
+			logs.Errorf("update load balancer sync time failed, err: %v, ids: %v, rid: %s", err, ids, kt.Rid)
+			return
+		}
+	}()
 
 	// 删除云上已经删除的负载均衡实例
 	if err = cli.deleteLoadBalancer(kt, params.AccountID, params.Region, delCloudIDs); err != nil {
@@ -479,6 +490,25 @@ func (cli *client) listLBFromDB(kt *kit.Kit, params *SyncBaseParams) ([]corelb.T
 	}
 
 	return result.Details, nil
+}
+
+func (cli *client) updateLoadBalancerSyncTime(kt *kit.Kit, ids []string) error {
+	var updateReq protocloud.TCloudClbBatchUpdateReq
+	syncTime := times.ConvStdTimeFormat(time.Now())
+
+	for _, id := range ids {
+		lb := &protocloud.LoadBalancerExtUpdateReq[corelb.TCloudClbExtension]{
+			ID:       id,
+			SyncTime: syncTime,
+		}
+		updateReq.Lbs = append(updateReq.Lbs, lb)
+	}
+	if err := cli.dbCli.TCloud.LoadBalancer.BatchUpdate(kt, &updateReq); err != nil {
+		logs.Errorf("[%s] call data service to update tcloud load balancer failed, err: %v, rid: %s",
+			enumor.TCloud, err, kt.Rid)
+		return err
+	}
+	return nil
 }
 
 func convCloudToDBCreate(cloud typeslb.TCloudClb, accountID string, region string, vpcMap map[string]*common.VpcDB,

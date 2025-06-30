@@ -85,6 +85,7 @@ type BaseLoadBalancer struct {
 	CloudCreatedTime     string   `json:"cloud_created_time"`
 	CloudStatusTime      string   `json:"cloud_status_time"`
 	CloudExpiredTime     string   `json:"cloud_expired_time"`
+	SyncTime             string   `json:"sync_time"`
 
 	Tags core.TagMap `json:"tags"`
 

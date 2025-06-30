@@ -53,6 +53,7 @@ POST /api/v1/cloud/load_balancers/{id}
     "cloud_expired_time": "",
     "band_width": 0,
     "isp": "BGP",
+    "sync_time": "2025-06-30T09:03:06Z",
     "memo": null,
     "creator": "admin",
     "reviser": "admin",
@@ -102,6 +103,7 @@ POST /api/v1/cloud/load_balancers/{id}
 | cloud_created_time     | string       | clb在云上创建时间，标准格式：2006-01-02T15:04:05Z |
 | cloud_status_time      | string       | clb状态变更时间，标准格式：2006-01-02T15:04:05Z  |
 | cloud_expired_time     | string       | clb过期时间，标准格式：2006-01-02T15:04:05Z    |
+| sync_time              | string       | 数据同步时间，标准格式：2006-01-02T15:04:05Z     |
 | extension              | object       | 拓展                                   |
 | creator                | string       | 创建者                                  |
 | reviser                | string       | 修改者                                  |
