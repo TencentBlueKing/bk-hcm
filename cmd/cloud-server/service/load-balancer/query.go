@@ -27,11 +27,13 @@ import (
 	proto "hcm/pkg/api/cloud-server"
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
+	"hcm/pkg/api/core/cloud"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	hcproto "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/dal/dao/types"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
@@ -431,4 +433,59 @@ func (svc *lbSvc) getLoadBalancerLockStatus(cts *rest.Contexts, validHandler han
 	default:
 		return nil, errf.Newf(errf.Unknown, "id: %s vendor: %s not support", id, basicInfo.Vendor)
 	}
+}
+
+// getListenerByID get listener by id.
+func (svc *lbSvc) getListenerByID(cts *rest.Contexts, vendor enumor.Vendor, bizID int64, lblID string) (
+	*corelb.BaseListener, *types.CloudResourceBasicInfo, error) {
+
+	lblResp, err := svc.client.DataService().Global.LoadBalancer.ListListener(cts.Kit,
+		&core.ListReq{
+			Filter: tools.ExpressionAnd(
+				tools.RuleEqual("id", lblID),
+				tools.RuleEqual("vendor", vendor),
+				tools.RuleEqual("bk_biz_id", bizID)),
+			Page: core.NewDefaultBasePage(),
+		})
+	if err != nil {
+		logs.Errorf("fail to list listener(%s), err: %v, rid: %s", lblID, err, cts.Kit.Rid)
+		return nil, nil, err
+	}
+	if len(lblResp.Details) == 0 {
+		return nil, nil, errf.New(errf.RecordNotFound, "listener not found, id: "+lblID)
+	}
+	lblInfo := &lblResp.Details[0]
+	basicInfo := &types.CloudResourceBasicInfo{
+		ResType:   enumor.ListenerCloudResType,
+		ID:        lblID,
+		Vendor:    vendor,
+		AccountID: lblInfo.AccountID,
+		BkBizID:   lblInfo.BkBizID,
+	}
+
+	return lblInfo, basicInfo, nil
+}
+
+// listVpcMap 根据vpcIDs查询vpc信息
+func (svc *lbSvc) listVpcMap(kt *kit.Kit, vpcIDs []string) (map[string]cloud.BaseVpc, error) {
+	if len(vpcIDs) == 0 {
+		return nil, nil
+	}
+
+	vpcReq := &core.ListReq{
+		Filter: tools.ContainersExpression("id", vpcIDs),
+		Page:   core.NewDefaultBasePage(),
+	}
+	list, err := svc.client.DataService().Global.Vpc.List(kt.Ctx, kt.Header(), vpcReq)
+	if err != nil {
+		logs.Errorf("[clb] list vpc failed, vpcIDs: %v, err: %v, rid: %s", vpcIDs, err, kt.Rid)
+		return nil, err
+	}
+
+	vpcMap := make(map[string]cloud.BaseVpc, len(list.Details))
+	for _, item := range list.Details {
+		vpcMap[item.ID] = item
+	}
+
+	return vpcMap, nil
 }

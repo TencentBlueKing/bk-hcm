@@ -24,6 +24,7 @@ import (
 	typescvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/api/core"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
+	coredisk "hcm/pkg/api/core/cloud/disk"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"

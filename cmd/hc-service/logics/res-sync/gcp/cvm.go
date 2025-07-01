@@ -766,85 +766,12 @@ func (cli *client) RemoveCvmDeleteFromCloud(kt *kit.Kit, accountID string, zone 
 
 func isCvmChange(cloud typescvm.GcpCvm, db corecvm.Cvm[cvm.GcpCvmExtension]) bool {
 
-	if db.CloudID != fmt.Sprintf("%d", cloud.Id) {
-		return true
-	}
-
-	if db.Name != cloud.Name {
-		return true
-	}
-
-	vpcSelfLinks := make([]string, 0)
-	subnetSelfLinks := make([]string, 0)
-	cloudNetWorkInterfaceIDs := make([]string, 0)
-	if len(cloud.NetworkInterfaces) > 0 {
-		for _, networkInterface := range cloud.NetworkInterfaces {
-			if networkInterface != nil {
-				cloudNetInterfaceID := fmt.Sprintf("%d", cloud.Id) + "_" + networkInterface.Name
-				cloudNetWorkInterfaceIDs = append(cloudNetWorkInterfaceIDs, cloudNetInterfaceID)
-				vpcSelfLinks = append(vpcSelfLinks, networkInterface.Network)
-				subnetSelfLinks = append(subnetSelfLinks, networkInterface.Subnetwork)
-			}
-		}
-	}
-
-	if len(db.Extension.VpcSelfLinks) == 0 || len(vpcSelfLinks) == 0 ||
-		(db.Extension.VpcSelfLinks[0] != vpcSelfLinks[0]) {
-		return true
-	}
-
-	if len(db.Extension.SubnetSelfLinks) == 0 || len(subnetSelfLinks) == 0 ||
-		!assert.IsStringSliceEqual(db.Extension.SubnetSelfLinks, subnetSelfLinks) {
-		return true
-	}
-
-	if db.CloudImageID != cloud.SourceMachineImage {
-		return true
-	}
-
-	if db.Status != cloud.Status {
-		return true
-	}
-
-	priIPv4, pubIPv4, priIPv6, pubIPv6 := gcp.GetGcpIPAddresses(cloud.NetworkInterfaces)
-
-	if !assert.IsStringSliceEqual(db.PrivateIPv4Addresses, priIPv4) {
-		return true
-	}
-
-	if !assert.IsStringSliceEqual(db.PublicIPv4Addresses, pubIPv4) {
-		return true
-	}
-
-	if !assert.IsStringSliceEqual(db.PrivateIPv6Addresses, priIPv6) {
-		return true
-	}
-
-	if !assert.IsStringSliceEqual(db.PublicIPv6Addresses, pubIPv6) {
-		return true
-	}
-
-	if db.MachineType != gcp.GetMachineType(cloud.MachineType) {
-		return true
-	}
-
-	createTime, err := times.ParseToStdTime(time.RFC3339Nano, cloud.CreationTimestamp)
-	if err != nil {
-		logs.Errorf("[%s] conv CreationTimestamp to std time failed, err: %v", enumor.Gcp, err)
-		return true
-	}
-
-	if db.CloudCreatedTime != createTime {
-		return true
-	}
-
-	startTime, err := times.ParseToStdTime(time.RFC3339Nano, cloud.LastStartTimestamp)
-	if err != nil {
-		logs.Errorf("[%s] conv LastStartTimestamp to std time failed, err: %v", enumor.Gcp, err)
-		return true
-	}
-
-	if db.CloudLaunchedTime != startTime {
+	if isCvmBaseInfoChange(cloud, db) ||
+		isCvmNetWorkInterfaceChange(cloud, db) ||
+		isCvmIPChange(cloud, db) ||
+		isCvmTimeChange(cloud, db) ||
+		isCvmDiskChange(cloud, db) ||
+		isCvmAdvanceMacheFeaturesChange(cloud, db) {
 		return true
 	}
 
@@ -857,10 +784,6 @@ func isCvmChange(cloud typescvm.GcpCvm, db corecvm.Cvm[cvm.GcpCvmExtension]) boo
 	}
 
 	if db.Extension.CanIpForward != cloud.CanIpForward {
-		return true
-	}
-
-	if !assert.IsStringSliceEqual(db.Extension.CloudNetworkInterfaceIDs, cloudNetWorkInterfaceIDs) {
 		return true
 	}
 
@@ -903,6 +826,134 @@ func isCvmChange(cloud typescvm.GcpCvm, db corecvm.Cvm[cvm.GcpCvmExtension]) boo
 		}
 	}
 
+	return false
+}
+
+func isCvmIPChange(cloud typescvm.GcpCvm, db corecvm.Cvm[cvm.GcpCvmExtension]) bool {
+	priIPv4, pubIPv4, priIPv6, pubIPv6 := gcp.GetGcpIPAddresses(cloud.NetworkInterfaces)
+
+	if !assert.IsStringSliceEqual(db.PrivateIPv4Addresses, priIPv4) {
+		return true
+	}
+
+	if !assert.IsStringSliceEqual(db.PublicIPv4Addresses, pubIPv4) {
+		return true
+	}
+
+	if !assert.IsStringSliceEqual(db.PrivateIPv6Addresses, priIPv6) {
+		return true
+	}
+
+	if !assert.IsStringSliceEqual(db.PublicIPv6Addresses, pubIPv6) {
+		return true
+	}
+
+	return false
+}
+
+func isCvmTimeChange(cloud typescvm.GcpCvm, db corecvm.Cvm[cvm.GcpCvmExtension]) bool {
+	createTime, err := times.ParseToStdTime(time.RFC3339Nano, cloud.CreationTimestamp)
+	if err != nil {
+		logs.Errorf("[%s] conv CreationTimestamp to std time failed, err: %v", enumor.Gcp, err)
+		return true
+	}
+
+	if db.CloudCreatedTime != createTime {
+		return true
+	}
+
+	startTime, err := times.ParseToStdTime(time.RFC3339Nano, cloud.LastStartTimestamp)
+	if err != nil {
+		logs.Errorf("[%s] conv LastStartTimestamp to std time failed, err: %v", enumor.Gcp, err)
+		return true
+	}
+	if db.CloudLaunchedTime != startTime {
+		return true
+	}
+
+	return false
+}
+
+func isCvmNetWorkInterfaceChange(cloud typescvm.GcpCvm, db corecvm.Cvm[cvm.GcpCvmExtension]) bool {
+
+	vpcSelfLinks := make([]string, 0)
+	subnetSelfLinks := make([]string, 0)
+	cloudNetWorkInterfaceIDs := make([]string, 0)
+	if len(cloud.NetworkInterfaces) > 0 {
+		for _, networkInterface := range cloud.NetworkInterfaces {
+			if networkInterface != nil {
+				cloudNetInterfaceID := fmt.Sprintf("%d", cloud.Id) + "_" + networkInterface.Name
+				cloudNetWorkInterfaceIDs = append(cloudNetWorkInterfaceIDs, cloudNetInterfaceID)
+				vpcSelfLinks = append(vpcSelfLinks, networkInterface.Network)
+				subnetSelfLinks = append(subnetSelfLinks, networkInterface.Subnetwork)
+			}
+		}
+	}
+
+	if len(db.Extension.VpcSelfLinks) == 0 || len(vpcSelfLinks) == 0 ||
+		(db.Extension.VpcSelfLinks[0] != vpcSelfLinks[0]) {
+		return true
+	}
+
+	if len(db.Extension.SubnetSelfLinks) == 0 || len(subnetSelfLinks) == 0 ||
+		!assert.IsStringSliceEqual(db.Extension.SubnetSelfLinks, subnetSelfLinks) {
+		return true
+	}
+
+	if !assert.IsStringSliceEqual(db.Extension.CloudNetworkInterfaceIDs, cloudNetWorkInterfaceIDs) {
+		return true
+	}
+
+	return false
+}
+
+func isCvmBaseInfoChange(cloud typescvm.GcpCvm, db corecvm.Cvm[cvm.GcpCvmExtension]) bool {
+	if db.CloudID != fmt.Sprintf("%d", cloud.Id) {
+		return true
+	}
+
+	if db.Name != cloud.Name {
+		return true
+	}
+
+	if db.CloudImageID != cloud.SourceMachineImage {
+		return true
+	}
+
+	if db.Status != cloud.Status {
+		return true
+	}
+	if db.MachineType != gcp.GetMachineType(cloud.MachineType) {
+		return true
+	}
+
+	if !assert.IsStringMapEqual(db.Extension.Labels, cloud.Labels) {
+		return true
+	}
+
+	return false
+}
+
+func isCvmDiskChange(cloud typescvm.GcpCvm, db corecvm.Cvm[cvm.GcpCvmExtension]) bool {
+	for _, dbValue := range db.Extension.Disks {
+		isEqual := false
+		for _, cloudValue := range cloud.Disks {
+			if dbValue.Boot == cloudValue.Boot && dbValue.Index == cloudValue.Index &&
+				dbValue.SelfLink == cloudValue.Source && dbValue.DeviceName == cloudValue.DeviceName {
+				isEqual = true
+				break
+			}
+		}
+		if !isEqual {
+			return true
+		}
+	}
+
+	return false
+}
+
+func isCvmAdvanceMacheFeaturesChange(cloud typescvm.GcpCvm, db corecvm.Cvm[cvm.GcpCvmExtension]) bool {
+
 	if (db.Extension.AdvancedMachineFeatures != nil && cloud.AdvancedMachineFeatures == nil) ||
 		(db.Extension.AdvancedMachineFeatures == nil && cloud.AdvancedMachineFeatures != nil) {
 		return true
@@ -926,24 +977,5 @@ func isCvmChange(cloud typescvm.GcpCvm, db corecvm.Cvm[cvm.GcpCvmExtension]) boo
 			return true
 		}
 	}
-
-	if !assert.IsStringMapEqual(db.Extension.Labels, cloud.Labels) {
-		return true
-	}
-
-	for _, dbValue := range db.Extension.Disks {
-		isEqual := false
-		for _, cloudValue := range cloud.Disks {
-			if dbValue.Boot == cloudValue.Boot && dbValue.Index == cloudValue.Index &&
-				dbValue.SelfLink == cloudValue.Source && dbValue.DeviceName == cloudValue.DeviceName {
-				isEqual = true
-				break
-			}
-		}
-		if !isEqual {
-			return true
-		}
-	}
-
 	return false
 }

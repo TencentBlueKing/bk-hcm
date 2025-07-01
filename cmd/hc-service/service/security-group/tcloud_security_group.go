@@ -23,6 +23,8 @@ import (
 	"errors"
 	"fmt"
 
+	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
+
 	synctcloud "hcm/cmd/hc-service/logics/res-sync/tcloud"
 	"hcm/pkg/adaptor/tcloud"
 	typecvm "hcm/pkg/adaptor/types/cvm"
@@ -30,8 +32,6 @@ import (
 	securitygroup "hcm/pkg/adaptor/types/security-group"
 	"hcm/pkg/api/core"
 	corecloud "hcm/pkg/api/core/cloud"
-	"hcm/pkg/api/core/cloud/cvm"
-	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	proto "hcm/pkg/api/hc-service"
 	hclb "hcm/pkg/api/hc-service/load-balancer"
@@ -42,9 +42,6 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
-	"hcm/pkg/tools/slice"
-
-	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )
 
 // CreateTCloudSecurityGroup create tcloud security group.
@@ -359,6 +356,7 @@ func (g *securityGroup) TCloudSGAssociateLoadBalancer(cts *rest.Contexts) (inter
 	return nil, nil
 }
 
+// getUpsertSGIDsParams get update or insert security group IDs and parameters for upsert operation.
 func (g *securityGroup) getUpsertSGIDsParams(kt *kit.Kit, req *hclb.TCloudSetLbSecurityGroupReq,
 	sgComList *protocloud.SGCommonRelListResult) ([]string, *protocloud.SGCommonRelBatchUpsertReq, error) {
 
@@ -483,64 +481,6 @@ func (g *securityGroup) TCloudSGDisassociateLoadBalancer(cts *rest.Contexts) (in
 	return nil, nil
 }
 
-func (g *securityGroup) getLoadBalancerInfoAndSGComRels(kt *kit.Kit, lbID string) (
-	*corelb.BaseLoadBalancer, *protocloud.SGCommonRelListResult, error) {
-
-	lbReq := &core.ListReq{
-		Filter: tools.EqualExpression("id", lbID),
-		Page:   core.NewDefaultBasePage(),
-	}
-	lbList, err := g.dataCli.Global.LoadBalancer.ListLoadBalancer(kt, lbReq)
-	if err != nil {
-		logs.Errorf("list load balancer by id failed, id: %s, err: %v, rid: %s", lbID, err, kt.Rid)
-		return nil, nil, err
-	}
-
-	if len(lbList.Details) == 0 {
-		return nil, nil, errf.Newf(errf.RecordNotFound, "not found lb id: %s", lbID)
-	}
-
-	lbInfo := lbList.Details[0]
-	// 查询目前绑定的安全组
-	sgcomReq := &core.ListReq{
-		Filter: tools.ExpressionAnd(
-			tools.RuleEqual("res_vendor", lbInfo.Vendor),
-			tools.RuleEqual("res_id", lbID),
-			tools.RuleEqual("res_type", enumor.LoadBalancerCloudResType),
-		),
-		Page: &core.BasePage{Start: 0, Limit: core.DefaultMaxPageLimit, Sort: "priority", Order: "ASC"},
-	}
-	sgComList, err := g.dataCli.Global.SGCommonRel.ListSgCommonRels(kt, sgcomReq)
-	if err != nil {
-		logs.Errorf("call dataserver to list sg common failed, lbID: %s, err: %v, rid: %s", lbID, err, kt.Rid)
-		return nil, nil, err
-	}
-
-	return &lbInfo, sgComList, nil
-}
-
-func (g *securityGroup) getSecurityGroupMap(kt *kit.Kit, sgIDs []string) (
-	map[string]corecloud.BaseSecurityGroup, error) {
-
-	sgReq := &protocloud.SecurityGroupListReq{
-		Filter: tools.ContainersExpression("id", sgIDs),
-		Page:   core.NewDefaultBasePage(),
-	}
-	sgResult, err := g.dataCli.Global.SecurityGroup.ListSecurityGroup(kt.Ctx, kt.Header(), sgReq)
-	if err != nil {
-		logs.Errorf("request dataservice list tcloud security group failed, err: %v, ids: %v, rid: %s",
-			err, sgIDs, kt.Rid)
-		return nil, err
-	}
-
-	sgMap := make(map[string]corecloud.BaseSecurityGroup, len(sgResult.Details))
-	for _, sg := range sgResult.Details {
-		sgMap[sg.ID] = sg
-	}
-
-	return sgMap, nil
-}
-
 // TCloudSGBatchAssociateCvm 批量绑定安全组
 func (g *securityGroup) TCloudSGBatchAssociateCvm(cts *rest.Contexts) (any, error) {
 
@@ -597,6 +537,7 @@ func (g *securityGroup) TCloudSGBatchAssociateCvm(cts *rest.Contexts) (any, erro
 	return nil, nil
 }
 
+// createSGCommonRelsForTCloud creates security group common relations for TCloud.
 func (g *securityGroup) createSGCommonRelsForTCloud(kt *kit.Kit, client tcloud.TCloud, region string,
 	cvmCloudIDToIDMap map[string]string) error {
 
@@ -793,31 +734,6 @@ func (g *securityGroup) TCloudSGBatchDisassociateCvm(cts *rest.Contexts) (any, e
 	return nil, nil
 }
 
-func (g *securityGroup) getCvms(kt *kit.Kit, cvmIDs []string) ([]cvm.BaseCvm, error) {
-
-	result := make([]cvm.BaseCvm, 0, len(cvmIDs))
-	for _, ids := range slice.Split(cvmIDs, int(core.DefaultMaxPageLimit)) {
-		listReq := &core.ListReq{
-			Filter: tools.ExpressionAnd(
-				tools.RuleIn("id", ids),
-			),
-			Page: core.NewDefaultBasePage(),
-		}
-		resp, err := g.dataCli.Global.Cvm.ListCvm(kt, listReq)
-		if err != nil {
-			logs.Errorf("list cvm failed, req: %+v, err: %v, rid: %s", listReq, err, kt.Rid)
-			return nil, err
-		}
-		result = append(result, resp.Details...)
-	}
-
-	if len(result) != len(cvmIDs) {
-		logs.Errorf("list cvm failed, got %d, but expect %d, rid: %s", len(result), len(cvmIDs), kt.Rid)
-		return nil, fmt.Errorf("list cvm failed, got %d, but expect %d", len(result), len(cvmIDs))
-	}
-	return result, nil
-}
-
 // TCloudCloneSecurityGroup ...
 func (g *securityGroup) TCloudCloneSecurityGroup(cts *rest.Contexts) (any, error) {
 
@@ -875,7 +791,9 @@ func (g *securityGroup) TCloudCloneSecurityGroup(cts *rest.Contexts) (any, error
 	return core.CreateResult{ID: sgID}, nil
 }
 
-func (g *securityGroup) createSecurityGroupForData(kt *kit.Kit, req *proto.TCloudSecurityGroupCloneReq, accountID string, sg *vpc.SecurityGroup) (string, error) {
+// createSecurityGroupForData creates a security group in the data service.
+func (g *securityGroup) createSecurityGroupForData(kt *kit.Kit, req *proto.TCloudSecurityGroupCloneReq,
+	accountID string, sg *vpc.SecurityGroup) (string, error) {
 
 	tags := make([]core.TagPair, 0, len(sg.TagSet))
 	for _, tag := range sg.TagSet {
