@@ -323,8 +323,11 @@ func (w *Watcher) deleteHost(kt *kit.Kit, deleteHosts []cmdb.Host) error {
 
 func (w *Watcher) getVendorAccountID(kt *kit.Kit, vendors []enumor.Vendor) (map[enumor.Vendor]string, error) {
 	req := &cloud.AccountListReq{
-		Filter: tools.ExpressionAnd(tools.RuleIn("vendor", vendors)),
-		Page:   &core.BasePage{Start: 0, Limit: constant.BatchOperationMaxLimit},
+		Filter: tools.ExpressionAnd(
+			tools.RuleIn("vendor", vendors),
+			tools.RuleEqual("type", enumor.ResourceAccount),
+		),
+		Page: &core.BasePage{Start: 0, Limit: constant.BatchOperationMaxLimit},
 	}
 
 	accounts, err := w.CliSet.DataService().Global.Account.List(kt.Ctx, kt.Header(), req)
