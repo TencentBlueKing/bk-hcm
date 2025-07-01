@@ -38,7 +38,7 @@ type BaseAccount struct {
 	Memo        *string                `json:"memo"`
 	BizID       int64                  `json:"bk_biz_id"`
 	UsageBizIDs []int64                `json:"usage_biz_ids"`
-	// 兼容用户调用api查询账户信息时使用旧的业务字段
+	// 旧的业务字段，用于兼容旧的api
 	BkBizIDs           []int64 `json:"bk_biz_ids"`
 	SyncStatus         string  `json:"sync_status"`
 	SyncFailedReason   string  `json:"sync_failed_reason"`

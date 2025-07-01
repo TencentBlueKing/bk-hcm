@@ -54,5 +54,14 @@ func (a *accountSvc) ListByBkBizID(cts *rest.Contexts) (interface{}, error) {
 		BkBizIDs:    []int64{bkBizID},
 		AccountType: accountType,
 	}
-	return a.client.DataService().Global.Account.ListAccountBizRelWithAccount(cts.Kit, listReq)
+
+	accounts, err := a.client.DataService().Global.Account.ListAccountBizRelWithAccount(cts.Kit, listReq)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, one := range accounts {
+		one.BkBizIDs = one.UsageBizIDs
+	}
+	return accounts, nil
 }

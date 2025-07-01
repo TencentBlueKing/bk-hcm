@@ -155,6 +155,11 @@ func (a *accountSvc) listAccount(cts *rest.Contexts, typ meta.ResourceType) (*da
 			logs.Errorf("fill account sync detail failed, err: %v, rid: %s", err, cts.Kit.Rid)
 			return nil, err
 		}
+
+		// 兼容用户调用api查询账户信息时使用旧的业务字段
+		for _, one := range accounts {
+			one.BkBizIDs = one.UsageBizIDs
+		}
 		return &dataproto.AccountListResult{
 			Details: accounts,
 		}, nil
