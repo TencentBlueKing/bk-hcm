@@ -115,6 +115,7 @@ func (svc *lbSvc) ListLoadBalancerRaw(cts *rest.Contexts) (any, error) {
 	return &protocloud.LbRawListResult{Details: details}, nil
 }
 
+// convTableToBaseLB convert LoadBalancerTable to BaseLoadBalancer.
 func convTableToBaseLB(one *tablelb.LoadBalancerTable) *corelb.BaseLoadBalancer {
 
 	return &corelb.BaseLoadBalancer{
@@ -236,6 +237,7 @@ func convLoadBalancerWithExt[T corelb.Extension](tableLB *tablelb.LoadBalancerTa
 	}, nil
 }
 
+// convLbListResult convert load balancer list result to extended type.
 func convLbListResult[T corelb.Extension](tables []tablelb.LoadBalancerTable) (
 	*protocloud.LbExtListResult[T], error) {
 
@@ -297,6 +299,7 @@ func (svc *lbSvc) ListTCloudUrlRule(cts *rest.Contexts) (any, error) {
 	return &protocloud.TCloudURLRuleListResult{Details: details}, nil
 }
 
+// convTableToBaseTCloudLbURLRule convert TCloudLbUrlRuleTable to TCloudLbUrlRule.
 func convTableToBaseTCloudLbURLRule(kt *kit.Kit, one *tablelb.TCloudLbUrlRuleTable) (
 	*corelb.TCloudLbUrlRule, error) {
 
