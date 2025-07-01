@@ -40,10 +40,11 @@ IFNULL(%s.creator,"") as rel_creator, %s.created_at as rel_created_at`, resTable
 // resTableAlias: 资源表别名
 // asIDFieldName: 关联表中映射成id字段的字段名
 // e.g: relTableAlias: rel. resTableAlias: sg. asIDFieldName: security_group_id.
-// 生成的SQL: sg.security_group_id as id, sg.bk_biz_id as bk_biz_id, rel.bk_biz_id as rel_bk_biz_id, sg.creator as creator, sg.created_at as created_at,
-// rel.creator as rel_creator, rel.created_at as rel_created_at
+// 生成的SQL: sg.security_group_id as id, sg.bk_biz_id as bk_biz_id, rel.bk_biz_id as rel_bk_biz_id,
+// sg.creator as creator, sg.created_at as created_at, rel.creator as rel_creator, rel.created_at as rel_created_at
 func BaseRelJoinSqlBuildWithBizID(relTableAlias, resTableAlias, asIDFieldName string) string {
-	return fmt.Sprintf(`%s.%s as id, %s.bk_biz_id as bk_biz_id, IFNULL(%s.bk_biz_id,"") as rel_bk_biz_id, %s.creator as creator, %s.created_at as created_at,
-IFNULL(%s.creator,"") as rel_creator, %s.created_at as rel_created_at`, resTableAlias, asIDFieldName, resTableAlias, relTableAlias,
-		resTableAlias, resTableAlias, relTableAlias, relTableAlias)
+	return fmt.Sprintf(`%s.%s as id, %s.bk_biz_id as bk_biz_id, IFNULL(%s.bk_biz_id,"") as rel_bk_biz_id, 
+%s.creator as creator, %s.created_at as created_at, IFNULL(%s.creator,"") as rel_creator, 
+%s.created_at as rel_created_at`, resTableAlias, asIDFieldName, resTableAlias, relTableAlias, resTableAlias,
+		resTableAlias, relTableAlias, relTableAlias)
 }

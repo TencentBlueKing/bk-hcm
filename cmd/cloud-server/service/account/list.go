@@ -127,11 +127,9 @@ func (a *accountSvc) listAccount(cts *rest.Contexts, typ meta.ResourceType) (*da
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
 	}
-
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-
 	// 校验用户是否有查看权限，有权限的ID列表
 	accountIDs, isAny, err := a.listAuthorized(cts, meta.Find, typ)
 	if err != nil {
@@ -198,11 +196,9 @@ func (a *accountSvc) listAccount(cts *rest.Contexts, typ meta.ResourceType) (*da
 		return nil, err
 	}
 
-	// 兼容用户调用api查询账户信息时使用旧的业务字段
 	for _, one := range accounts {
 		one.BkBizIDs = one.UsageBizIDs
 	}
-
 	return &dataproto.AccountListResult{
 		Details: accounts,
 		Count:   uint64(len(accounts)),
