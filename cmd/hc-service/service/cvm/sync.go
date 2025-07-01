@@ -21,6 +21,7 @@ package cvm
 
 import (
 	synctcloud "hcm/cmd/hc-service/logics/res-sync/tcloud"
+	"hcm/pkg/adaptor/tcloud"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )

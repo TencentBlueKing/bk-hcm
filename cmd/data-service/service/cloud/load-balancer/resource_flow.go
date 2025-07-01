@@ -27,6 +27,7 @@ import (
 
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/audit"
+	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -300,4 +301,94 @@ func (svc *lbSvc) BatchUpdateResFlowRel(cts *rest.Contexts) (any, error) {
 		}
 		return nil, nil
 	})
+}
+
+// ListResFlowLock list res flow lock.
+func (svc *lbSvc) ListResFlowLock(cts *rest.Contexts) (interface{}, error) {
+	req := new(core.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &typesdao.ListOption{
+		Fields: req.Fields,
+		Filter: req.Filter,
+		Page:   req.Page,
+	}
+	result, err := svc.dao.ResourceFlowLock().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list res flow lock failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list res flow lock failed, err: %v", err)
+	}
+
+	if req.Page.Count {
+		return &dataproto.ResFlowLockListResult{Count: result.Count}, nil
+	}
+
+	details := make([]corelb.BaseResFlowLock, 0, len(result.Details))
+	for _, one := range result.Details {
+		details = append(details, corelb.BaseResFlowLock{
+			ResID:   one.ResID,
+			ResType: one.ResType,
+			Owner:   one.Owner,
+			Revision: &core.Revision{
+				Creator:   one.Creator,
+				Reviser:   one.Reviser,
+				CreatedAt: one.CreatedAt.String(),
+				UpdatedAt: one.UpdatedAt.String(),
+			},
+		})
+	}
+
+	return &dataproto.ResFlowLockListResult{Details: details}, nil
+}
+
+// ListResFlowRel list res flow rel.
+func (svc *lbSvc) ListResFlowRel(cts *rest.Contexts) (interface{}, error) {
+	req := new(core.ListReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	opt := &typesdao.ListOption{
+		Fields: req.Fields,
+		Filter: req.Filter,
+		Page:   req.Page,
+	}
+	result, err := svc.dao.ResourceFlowRel().List(cts.Kit, opt)
+	if err != nil {
+		logs.Errorf("list res flow rel failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, fmt.Errorf("list res flow rel failed, err: %v", err)
+	}
+
+	if req.Page.Count {
+		return &dataproto.ResFlowRelListResult{Count: result.Count}, nil
+	}
+
+	details := make([]corelb.BaseResFlowRel, 0, len(result.Details))
+	for _, one := range result.Details {
+		details = append(details, corelb.BaseResFlowRel{
+			ID:       one.ID,
+			ResID:    one.ResID,
+			FlowID:   one.FlowID,
+			TaskType: one.TaskType,
+			Status:   one.Status,
+			Revision: &core.Revision{
+				Creator:   one.Creator,
+				Reviser:   one.Reviser,
+				CreatedAt: one.CreatedAt.String(),
+				UpdatedAt: one.UpdatedAt.String(),
+			},
+		})
+	}
+
+	return &dataproto.ResFlowRelListResult{Details: details}, nil
 }

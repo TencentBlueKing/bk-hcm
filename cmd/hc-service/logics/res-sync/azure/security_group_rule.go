@@ -365,6 +365,7 @@ func (cli *client) deleteSGRule(kt *kit.Kit, opt *syncSGRuleOption, delCloudIDs 
 		return fmt.Errorf("cloud_sgid: %s can not find hcm sgid", opt.CloudSGID)
 	}
 
+	// validate if the sgRule exist in cloud before delete
 	delSGRuleFromCloud, err := cli.listSGRuleFromCloud(kt, opt)
 	if err != nil {
 		return err

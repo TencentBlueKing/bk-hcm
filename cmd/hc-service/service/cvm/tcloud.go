@@ -119,6 +119,7 @@ func (svc *cvmSvc) BatchAssociateTCloudSecurityGroup(cts *rest.Contexts) (interf
 		return nil, err
 	}
 
+	// create common rels in db
 	err = svc.createSGCommonRels(cts.Kit, enumor.TCloud, enumor.CvmCloudResType, req.CvmID, req.SecurityGroupIDs)
 	if err != nil {
 		// 不抛出err, 尽最大努力交付
@@ -230,6 +231,7 @@ func (svc *cvmSvc) BatchCreateTCloudCvm(cts *rest.Contexts) (interface{}, error)
 		return respData, nil
 	}
 
+	// sync cvm
 	err = svc.syncTCloudCvmWithRelRes(cts.Kit, tcloud, req.AccountID, req.Region, result.SuccessCloudIDs)
 	if err != nil {
 		logs.Errorf("sync tcloud cvm with rel res failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -282,14 +284,13 @@ func (svc *cvmSvc) BatchResetTCloudCvmPwd(cts *rest.Contexts) (interface{}, erro
 		return nil, err
 	}
 
+	// sync cvm
 	syncClient := synctcloud.NewClient(svc.dataCli, client)
-
 	params := &synctcloud.SyncBaseParams{
 		AccountID: req.AccountID,
 		Region:    req.Region,
 		CloudIDs:  cloudIDs,
 	}
-
 	_, err = syncClient.Cvm(cts.Kit, params, &synctcloud.SyncCvmOption{})
 	if err != nil {
 		logs.Errorf("sync tcloud cvm failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -340,6 +341,7 @@ func (svc *cvmSvc) BatchDeleteTCloudCvm(cts *rest.Contexts) (interface{}, error)
 		return nil, err
 	}
 
+	// delete cvm in db
 	delReq := &dataproto.CvmBatchDeleteReq{
 		Filter: tools.ContainersExpression("id", req.IDs),
 	}

@@ -40,7 +40,6 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
-	"hcm/pkg/tools/slice"
 )
 
 // SyncCvmOption ...

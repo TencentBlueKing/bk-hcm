@@ -102,6 +102,7 @@ func (opt syncSGRuleOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
+// securityGroupRule 同步安全组规则
 func (cli *client) securityGroupRule(kt *kit.Kit, opt *syncSGRuleOption) (*SyncResult, error) {
 
 	if err := opt.Validate(); err != nil {
@@ -149,6 +150,7 @@ func (cli *client) securityGroupRule(kt *kit.Kit, opt *syncSGRuleOption) (*SyncR
 	return new(SyncResult), nil
 }
 
+// createSGRule create security group rule
 func (cli *client) createSGRule(kt *kit.Kit, opt *syncSGRuleOption,
 	addSlice []securitygrouprule.HuaWeiSGRule) error {
 
@@ -180,6 +182,7 @@ func (cli *client) createSGRule(kt *kit.Kit, opt *syncSGRuleOption,
 	return nil
 }
 
+// genAddRuleList generate security group rule create list
 func (cli *client) genAddRuleList(rules []securitygrouprule.HuaWeiSGRule,
 	opt *syncSGRuleOption) ([]protocloud.HuaWeiSGRuleBatchCreate, error) {
 
@@ -214,6 +217,7 @@ func (cli *client) genAddRuleList(rules []securitygrouprule.HuaWeiSGRule,
 	return list, nil
 }
 
+// updateSGRule update security group rule
 func (cli *client) updateSGRule(kt *kit.Kit, opt *syncSGRuleOption,
 	updateMap map[string]securitygrouprule.HuaWeiSGRule) error {
 
@@ -245,6 +249,7 @@ func (cli *client) updateSGRule(kt *kit.Kit, opt *syncSGRuleOption,
 	return nil
 }
 
+// genUpdateRulesList generate security group rule update list
 func (cli *client) genUpdateRulesList(updateMap map[string]securitygrouprule.HuaWeiSGRule,
 	opt *syncSGRuleOption) ([]protocloud.HuaWeiSGRuleBatchUpdate, error) {
 
@@ -280,6 +285,7 @@ func (cli *client) genUpdateRulesList(updateMap map[string]securitygrouprule.Hua
 	return list, nil
 }
 
+// deleteSGRule delete security group rule
 func (cli *client) deleteSGRule(kt *kit.Kit, opt *syncSGRuleOption, delCloudIDs []string) error {
 
 	if len(delCloudIDs) <= 0 {
@@ -331,6 +337,7 @@ func (cli *client) deleteSGRule(kt *kit.Kit, opt *syncSGRuleOption, delCloudIDs 
 	return nil
 }
 
+// listSGRuleFromCloud list security group rule from cloud
 func (cli *client) listSGRuleFromCloud(kt *kit.Kit, opt *syncSGRuleOption) ([]securitygrouprule.HuaWeiSGRule, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -351,6 +358,7 @@ func (cli *client) listSGRuleFromCloud(kt *kit.Kit, opt *syncSGRuleOption) ([]se
 	return rules, nil
 }
 
+// listSGFromDB list security group from database
 func (cli *client) listSGRuleFromDB(kt *kit.Kit, opt *syncSGRuleOption) ([]corecloud.HuaWeiSecurityGroupRule, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -386,6 +394,7 @@ func (cli *client) listSGRuleFromDB(kt *kit.Kit, opt *syncSGRuleOption) ([]corec
 	return rules, nil
 }
 
+// isSGRuleChange check if security group rule has changed
 func isSGRuleChange(cloud securitygrouprule.HuaWeiSGRule,
 	db corecloud.HuaWeiSecurityGroupRule) bool {
 

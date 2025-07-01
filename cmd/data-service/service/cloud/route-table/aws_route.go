@@ -109,6 +109,7 @@ func (svc *routeTableSvc) BatchCreateAwsRoute(cts *rest.Contexts) (interface{}, 
 	return &core.BatchCreateResult{IDs: ids}, nil
 }
 
+// addAwsRoute add aws route to the database.
 func (svc *routeTableSvc) addAwsRoute(kt *kit.Kit, tableID string, cloudTableID string,
 	createReqs []protocloud.AwsRouteCreateReq) ([]string, error) {
 
