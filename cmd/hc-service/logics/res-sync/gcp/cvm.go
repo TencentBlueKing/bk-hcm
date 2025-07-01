@@ -771,10 +771,16 @@ func isCvmChange(cloud typescvm.GcpCvm, db corecvm.Cvm[cvm.GcpCvmExtension]) boo
 		isCvmIPChange(cloud, db) ||
 		isCvmTimeChange(cloud, db) ||
 		isCvmDiskChange(cloud, db) ||
-		isCvmAdvanceMacheFeaturesChange(cloud, db) {
+		isCvmReservationAffinityChange(cloud, db) ||
+		isCvmAdvanceMacheFeaturesChange(cloud, db) ||
+		isCvmExtensionInfoChange(cloud, db) {
 		return true
 	}
 
+	return false
+}
+
+func isCvmExtensionInfoChange(cloud typescvm.GcpCvm, db corecvm.Cvm[cvm.GcpCvmExtension]) bool {
 	if db.Extension.DeletionProtection != cloud.DeletionProtection {
 		return true
 	}
@@ -806,7 +812,10 @@ func isCvmChange(cloud typescvm.GcpCvm, db corecvm.Cvm[cvm.GcpCvmExtension]) boo
 	if db.Extension.Fingerprint != cloud.Fingerprint {
 		return true
 	}
+	return false
+}
 
+func isCvmReservationAffinityChange(cloud typescvm.GcpCvm, db corecvm.Cvm[cvm.GcpCvmExtension]) bool {
 	if (db.Extension.ReservationAffinity == nil && cloud.ReservationAffinity != nil) ||
 		(db.Extension.ReservationAffinity != nil && cloud.ReservationAffinity == nil) {
 		return true

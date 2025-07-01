@@ -164,12 +164,13 @@ func (cli *client) RemoveSubnetDeleteFromCloud(kt *kit.Kit, accountID, region st
 	return nil
 }
 
-// deleteSubnet ...
+// deleteSubnet delete subnet from db
 func (cli *client) deleteSubnet(kt *kit.Kit, accountID, region string, delCloudIDs []string) error {
 	if len(delCloudIDs) == 0 {
 		return fmt.Errorf("delete subnet, cloudIDs is required")
 	}
 
+	// validate subnet not exist in cloud before delete
 	checkParams := &SyncBaseParams{
 		AccountID: accountID,
 		CloudIDs:  delCloudIDs,

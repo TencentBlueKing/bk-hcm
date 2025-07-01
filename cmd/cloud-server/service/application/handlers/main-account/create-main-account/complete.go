@@ -62,16 +62,13 @@ func (a *ApplicationOfCreateMainAccount) Complete() (enumor.ApplicationStatus, m
 		return enumor.Delivering, map[string]interface{}{"error": err.Error()}, err
 	}
 	// 校验site是否匹配
-	if enumor.MainAccountSiteType(rootAccount.Site) != a.req.Site {
+	if rootAccount.Site != a.req.Site {
 		err := fmt.Errorf("root account's site(%s) not match main account's site (%s)",
 			rootAccount.Site, a.req.Site)
 		return enumor.Delivering, map[string]interface{}{"error": err.Error()}, err
 	}
 
-	var (
-		accountID string
-	)
-
+	var accountID string
 	switch a.req.Vendor {
 	case enumor.Aws:
 		accountID, err = a.createForAws(&rootAccount.BaseRootAccount)

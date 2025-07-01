@@ -103,6 +103,7 @@ func (opt syncSGRuleOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
+// securityGroupRule 同步安全组规则
 func (cli *client) securityGroupRule(kt *kit.Kit, opt *syncSGRuleOption) (*SyncResult, error) {
 
 	if err := opt.Validate(); err != nil {
@@ -150,6 +151,7 @@ func (cli *client) securityGroupRule(kt *kit.Kit, opt *syncSGRuleOption) (*SyncR
 	return new(SyncResult), nil
 }
 
+// createSGRule 同步安全组规则到数据库
 func (cli *client) createSGRule(kt *kit.Kit, opt *syncSGRuleOption,
 	addSlice []securitygrouprule.AwsSGRule) error {
 
@@ -181,6 +183,7 @@ func (cli *client) createSGRule(kt *kit.Kit, opt *syncSGRuleOption,
 	return nil
 }
 
+// genAddRuleList generate the list of rules to be added to the database
 func (cli *client) genAddRuleList(rules []securitygrouprule.AwsSGRule,
 	opt *syncSGRuleOption) ([]protocloud.AwsSGRuleBatchCreate, error) {
 
@@ -223,6 +226,7 @@ func (cli *client) genAddRuleList(rules []securitygrouprule.AwsSGRule,
 	return list, nil
 }
 
+// updateSGRule update security group rules in the database
 func (cli *client) updateSGRule(kt *kit.Kit, opt *syncSGRuleOption,
 	updateMap map[string]securitygrouprule.AwsSGRule) error {
 
@@ -254,6 +258,7 @@ func (cli *client) updateSGRule(kt *kit.Kit, opt *syncSGRuleOption,
 	return nil
 }
 
+// genUpdateRulesList generate the list of rules to be updated in the database
 func (cli *client) genUpdateRulesList(updateMap map[string]securitygrouprule.AwsSGRule,
 	opt *syncSGRuleOption) ([]protocloud.AwsSGRuleUpdate, error) {
 
@@ -297,6 +302,7 @@ func (cli *client) genUpdateRulesList(updateMap map[string]securitygrouprule.Aws
 	return list, nil
 }
 
+// deleteSGRule delete security group rules in the database
 func (cli *client) deleteSGRule(kt *kit.Kit, opt *syncSGRuleOption, delCloudIDs []string) error {
 	if len(delCloudIDs) <= 0 {
 		return fmt.Errorf("sgRule delCloudIDs is <= 0, not delete")
@@ -347,6 +353,7 @@ func (cli *client) deleteSGRule(kt *kit.Kit, opt *syncSGRuleOption, delCloudIDs 
 	return nil
 }
 
+// listSGRuleFromCloud list security group rules from cloud
 func (cli *client) listSGRuleFromCloud(kt *kit.Kit, opt *syncSGRuleOption) ([]securitygrouprule.AwsSGRule, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -367,6 +374,7 @@ func (cli *client) listSGRuleFromCloud(kt *kit.Kit, opt *syncSGRuleOption) ([]se
 	return rules, nil
 }
 
+// listSGFromDB list security groups from database
 func (cli *client) listSGRuleFromDB(kt *kit.Kit, opt *syncSGRuleOption) ([]corecloud.AwsSecurityGroupRule, error) {
 	if err := opt.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -402,6 +410,7 @@ func (cli *client) listSGRuleFromDB(kt *kit.Kit, opt *syncSGRuleOption) ([]corec
 	return rules, nil
 }
 
+// isSGRuleChange checks if the security group rule has changed
 func isSGRuleChange(cloud securitygrouprule.AwsSGRule,
 	db corecloud.AwsSecurityGroupRule) bool {
 

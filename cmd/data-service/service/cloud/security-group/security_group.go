@@ -264,6 +264,7 @@ func (svc *securityGroupSvc) BatchDeleteSecurityGroup(cts *rest.Contexts) (inter
 	return nil, nil
 }
 
+// deleteSecurityGroupRule delete security group rules.
 func (svc *securityGroupSvc) deleteSecurityGroupRule(kt *kit.Kit, txn *sqlx.Tx,
 	details []tablecloud.SecurityGroupTable) error {
 
@@ -298,6 +299,7 @@ func (svc *securityGroupSvc) deleteSecurityGroupRule(kt *kit.Kit, txn *sqlx.Tx,
 	return nil
 }
 
+// deleteSecurityGroupCommonRels delete security group common rels.
 func (svc *securityGroupSvc) deleteSecurityGroupCommonRels(kt *kit.Kit, txn *sqlx.Tx, delIDs []string) error {
 	err := svc.dao.SGCommonRel().DeleteWithTx(kt, txn, tools.ContainersExpression("security_group_id", delIDs))
 	if err != nil {
@@ -386,6 +388,7 @@ func convertToSGResult[T corecloud.SecurityGroupExtension](base *corecloud.BaseS
 	}, nil
 }
 
+// batchUpdateSecurityGroup update security group.
 func batchUpdateSecurityGroup[T corecloud.SecurityGroupExtension](cts *rest.Contexts, svc *securityGroupSvc) (
 	interface{}, error) {
 
@@ -451,6 +454,7 @@ func batchUpdateSecurityGroup[T corecloud.SecurityGroupExtension](cts *rest.Cont
 	return nil, nil
 }
 
+// listSecurityGroupExtension list security group extension by ids.
 func listSecurityGroupExtension(cts *rest.Contexts, svc *securityGroupSvc, ids []string) (
 	map[string]tabletype.JsonField, error) {
 
@@ -475,6 +479,7 @@ func listSecurityGroupExtension(cts *rest.Contexts, svc *securityGroupSvc, ids [
 	return result, nil
 }
 
+// getSecurityGroupByID get security group by id.
 func getSecurityGroupByID(kt *kit.Kit, id string, svc *securityGroupSvc) (*tablecloud.SecurityGroupTable, error) {
 	opt := &types.ListOption{
 		Filter: tools.EqualExpression("id", id),
@@ -493,6 +498,7 @@ func getSecurityGroupByID(kt *kit.Kit, id string, svc *securityGroupSvc) (*table
 	return &result.Details[0], nil
 }
 
+// batchCreateSecurityGroup batch create security group.
 func batchCreateSecurityGroup[T corecloud.SecurityGroupExtension](vendor enumor.Vendor, svc *securityGroupSvc,
 	cts *rest.Contexts) (interface{}, error) {
 
