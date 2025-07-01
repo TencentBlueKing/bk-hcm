@@ -300,47 +300,6 @@ func (cli *client) listDiskFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]ada
 	return result, nil
 }
 
-// listDiskFromDB list disk from db.
-func (cli *client) listDiskFromDB(kt *kit.Kit, params *SyncBaseParams) (
-	[]*coredisk.Disk[coredisk.AwsExtension], error) {
-
-	if err := params.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	req := &core.ListReq{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{
-					Field: "account_id",
-					Op:    filter.Equal.Factory(),
-					Value: params.AccountID,
-				},
-				&filter.AtomRule{
-					Field: "cloud_id",
-					Op:    filter.In.Factory(),
-					Value: params.CloudIDs,
-				},
-				&filter.AtomRule{
-					Field: "region",
-					Op:    filter.Equal.Factory(),
-					Value: params.Region,
-				},
-			},
-		},
-		Page: core.NewDefaultBasePage(),
-	}
-	result, err := cli.dbCli.Aws.ListDisk(kt.Ctx, kt.Header(), req)
-	if err != nil {
-		logs.Errorf("[%s] list disk from db failed, err: %v, account: %s, req: %v, rid: %s", enumor.Aws,
-			err, params.AccountID, req, kt.Rid)
-		return nil, err
-	}
-
-	return result.Details, nil
-}
-
 // RemoveDiskDeleteFromCloud ...
 func (cli *client) RemoveDiskDeleteFromCloud(kt *kit.Kit, accountID string, region string) error {
 	req := &core.ListReq{
