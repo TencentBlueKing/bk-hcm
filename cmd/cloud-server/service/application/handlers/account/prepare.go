@@ -21,8 +21,8 @@ package account
 
 import (
 	"fmt"
-	"hcm/pkg/criteria/enumor"
 
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
 
 	"github.com/TencentBlueKing/gopkg/conv"

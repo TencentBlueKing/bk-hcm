@@ -22,9 +22,9 @@ package account
 import (
 	"errors"
 	"fmt"
-	"hcm/pkg/tools/slice"
 	"regexp"
 
+	"hcm/pkg/tools/slice"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/tools/json"
