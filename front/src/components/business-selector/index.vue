@@ -34,27 +34,29 @@ const loading = ref(null);
 
 watchEffect(async () => {
   loading.value = true;
-  let req = props.authed ? accountStore.getBizListWithAuth : accountStore.getBizList;
-  req = props.apiMethod || req;
-  if (props.isAudit) {
-    req = accountStore.getBizAuditListWithAuth;
-  }
-
-  const res = await req();
-  loading.value = false;
-  businessList.value = res?.data;
-
-  // 支持全选
-  if (props.isShowAll) {
-    businessList.value.unshift({ name: t('全部'), id: 'all' });
-  }
-
+  // 传入了accountId即认为资源的可选业务范围在账号的 使用业务 内
   if (props.accountId) {
     const accountUsageBizRes = await accountStore.getAccountUsageBiz(props.accountId);
     const accountBizIds = accountUsageBizRes?.data;
     if (accountBizIds?.[0] !== -1) {
       businessList.value = businessList.value.filter((item) => accountBizIds.includes(item.id));
     }
+  } else {
+    let req = props.authed ? accountStore.getBizListWithAuth : accountStore.getBizList;
+    req = props.apiMethod || req;
+    if (props.isAudit) {
+      req = accountStore.getBizAuditListWithAuth;
+    }
+
+    const res = await req();
+    businessList.value = res?.data;
+  }
+
+  loading.value = false;
+
+  // 支持全选
+  if (props.isShowAll) {
+    businessList.value.unshift({ name: t('全部'), id: 'all' });
   }
 
   let id = null;
