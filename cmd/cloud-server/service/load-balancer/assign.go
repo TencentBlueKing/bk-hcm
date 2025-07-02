@@ -43,7 +43,7 @@ func (svc *lbSvc) AssignLbToBiz(cts *rest.Contexts) (any, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	err := common.CheckAssignableToBiz(svc.client.DataService(), cts, enumor.LoadBalancerCloudResType, req.LbIDs,
+	err := common.ValidateTargetBizID(cts.Kit, svc.client.DataService(), enumor.LoadBalancerCloudResType, req.LbIDs,
 		req.BkBizID)
 	if err != nil {
 		return nil, err

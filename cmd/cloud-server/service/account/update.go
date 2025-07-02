@@ -42,18 +42,13 @@ func (a *accountSvc) UpdateAccount(cts *rest.Contexts) (interface{}, error) {
 
 	// 根据accountID拿到账户类型然后才进行请求参数校验，因为资源账号需要额外的校验
 	accountID := cts.PathParameter("account_id").String()
-	accountType, err := logicsaccount.GetAccountType(cts.Kit, a.client.DataService(), accountID)
+	accountInfo, err := logicsaccount.GetAccountInfo(cts.Kit, a.client.DataService(), accountID)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := req.Validate(accountType); err != nil {
+	if err := req.Validate(accountInfo); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	// 非资源账号的管理业务设置为使用业务，维持现状（PrepareReq之前的CheckReq会校验使用业务数组长度必须为1）
-	if accountType != enumor.ResourceAccount {
-		req.BizID = req.UsageBizIDs[0]
 	}
 
 	action := meta.Update

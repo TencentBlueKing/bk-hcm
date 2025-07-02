@@ -42,7 +42,7 @@ func (svc *netSvc) AssignNetworkInterfaceToBiz(cts *rest.Contexts) (interface{},
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	err := common.CheckAssignableToBiz(svc.client.DataService(), cts, enumor.NetworkInterfaceCloudResType,
+	err := common.ValidateTargetBizID(cts.Kit, svc.client.DataService(), enumor.NetworkInterfaceCloudResType,
 		req.NetworkInterfaceIDs, req.BkBizID)
 	if err != nil {
 		return nil, err

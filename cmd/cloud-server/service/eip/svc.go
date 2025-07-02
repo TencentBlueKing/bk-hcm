@@ -225,7 +225,7 @@ func (svc *eipSvc) AssignEip(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	err := common.CheckAssignableToBiz(svc.client.DataService(), cts, enumor.EipCloudResType, req.IDs,
+	err := common.ValidateTargetBizID(cts.Kit, svc.client.DataService(), enumor.EipCloudResType, req.IDs,
 		int64(req.BkBizID))
 	if err != nil {
 		return nil, err

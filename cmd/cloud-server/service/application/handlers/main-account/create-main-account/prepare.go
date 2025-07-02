@@ -49,7 +49,7 @@ func (a *ApplicationOfCreateMainAccount) GetItsmApprover(managers []string) []it
 	}
 }
 
-// GetUsageBizIDs 获取当前的业务IDs
-func (a *ApplicationOfCreateMainAccount) GetUsageBizIDs() []int64 {
+// GetBkBizIDs 获取当前的业务IDs
+func (a *ApplicationOfCreateMainAccount) GetBkBizIDs() []int64 {
 	return []int64{a.req.BkBizID}
 }

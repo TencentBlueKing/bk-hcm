@@ -315,7 +315,7 @@ func (svc *routeTableSvc) AssignRouteTableToBiz(cts *rest.Contexts) (interface{}
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	err := common.CheckAssignableToBiz(svc.client.DataService(), cts, enumor.RouteTableCloudResType, req.RouteTableIDs,
+	err := common.ValidateTargetBizID(cts.Kit, svc.client.DataService(), enumor.RouteTableCloudResType, req.RouteTableIDs,
 		req.BkBizID)
 	if err != nil {
 		return nil, err

@@ -25,6 +25,7 @@ import (
 
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/logs"
 )
 
 type formItem struct {
@@ -50,7 +51,8 @@ func (a *ApplicationOfAddAccount) RenderItsmForm() (string, error) {
 	}
 
 	// 云厂商特有信息
-	formItems = append(formItems, a.getVendorSpecificFormItems()...)
+	cloudInfoFormItems := a.getCloudInfoFormItems()
+	formItems = append(formItems, cloudInfoFormItems...)
 
 	// 负责人
 	formItems = append(formItems, formItem{Label: "责任人", Value: strings.Join(req.Managers, ",")})
@@ -63,17 +65,11 @@ func (a *ApplicationOfAddAccount) RenderItsmForm() (string, error) {
 	formItems = append(formItems, formItem{Label: "管理业务", Value: bizName})
 
 	// 查询使用业务名称
-	if len(req.UsageBizIDs) == 0 {
-		return "", fmt.Errorf("usage_biz_ids is empty")
-	} else if req.UsageBizIDs[0] == constant.AttachedAllBiz {
-		formItems = append(formItems, formItem{Label: "使用业务", Value: "全部"})
-	} else {
-		bizNames, err := a.ListBizNames(req.UsageBizIDs)
-		if err != nil {
-			return "", fmt.Errorf("list biz name failed, bk_biz_ids: %v, err: %w", req.UsageBizIDs, err)
-		}
-		formItems = append(formItems, formItem{Label: "使用业务", Value: strings.Join(bizNames, ",")})
+	bizInfoFormItems, err := a.getBizInfoFormItems(req.UsageBizIDs)
+	if err != nil {
+		return "", fmt.Errorf("get biz info failed, err: %w", err)
 	}
+	formItems = append(formItems, bizInfoFormItems...)
 
 	// 备注
 	if req.Memo != nil && *req.Memo != "" {
@@ -88,7 +84,7 @@ func (a *ApplicationOfAddAccount) RenderItsmForm() (string, error) {
 	return strings.Join(content, "\n"), nil
 }
 
-func (a *ApplicationOfAddAccount) getVendorSpecificFormItems() []formItem {
+func (a *ApplicationOfAddAccount) getCloudInfoFormItems() []formItem {
 	req := a.req
 	formItems := make([]formItem, 0) // 预分配足够容量
 
@@ -134,4 +130,27 @@ func (a *ApplicationOfAddAccount) getVendorSpecificFormItems() []formItem {
 		}...)
 	}
 	return formItems
+}
+
+// getBizInfoFormItems 将业务信息添加到表单项中
+func (a *ApplicationOfAddAccount) getBizInfoFormItems(usageBizIDs []int64) ([]formItem, error) {
+	if len(usageBizIDs) == 0 {
+		logs.Errorf("usageBizIDs is empty")
+		return nil, fmt.Errorf("usageBizIDs is empty")
+	}
+
+	formItems := make([]formItem, 0) // 预分配足够容量
+	if usageBizIDs[0] == constant.AttachedAllBiz {
+		if len(usageBizIDs) > 1 {
+			return nil, fmt.Errorf("usageBizIDs attached all biz but length is greater than 1")
+		}
+		formItems = append(formItems, formItem{Label: "使用业务", Value: "全部"})
+	} else {
+		bizNames, err := a.ListBizNames(usageBizIDs)
+		if err != nil {
+			return nil, fmt.Errorf("list biz name failed, bk_biz_ids: %v, err: %v", usageBizIDs, err)
+		}
+		formItems = append(formItems, formItem{Label: "使用业务", Value: strings.Join(bizNames, ",")})
+	}
+	return formItems, nil
 }

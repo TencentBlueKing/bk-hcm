@@ -54,7 +54,7 @@ func (a *ApplicationOfCreateTCloudVpc) GetItsmApprover(managers []string) []itsm
 	return a.GetItsmPlatformAndAccountApprover(managers, a.req.AccountID)
 }
 
-// GetUsageBizIDs 获取当前的业务IDs
-func (a *ApplicationOfCreateTCloudVpc) GetUsageBizIDs() []int64 {
+// GetBkBizIDs 获取当前的业务IDs
+func (a *ApplicationOfCreateTCloudVpc) GetBkBizIDs() []int64 {
 	return []int64{a.req.BkBizID}
 }

@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"unicode/utf8"
 
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/tools/assert"
@@ -188,16 +189,14 @@ func (req *AzureAccountExtensionCreateReq) IsFull() bool {
 
 // AccountCommonInfoCreateReq ...
 type AccountCommonInfoCreateReq struct {
-	Vendor   enumor.Vendor          `json:"vendor" validate:"required"`
-	Name     string                 `json:"name" validate:"required,min=3,max=64"`
-	Managers []string               `json:"managers" validate:"required,max=5"`
-	Type     enumor.AccountType     `json:"type" validate:"required"`
-	Site     enumor.AccountSiteType `json:"site" validate:"required"`
-	Memo     *string                `json:"memo" validate:"omitempty"`
-	// Note: 第一期只支持关联一个业务，且不能关联全部业务
-	// UsageBizIDs      []int64                `json:"bk_biz_ids" validate:"required"`
-	BizID       int64   `json:"bk_biz_id" validate:"omitempty"`
-	UsageBizIDs []int64 `json:"usage_biz_ids" validate:"required"`
+	Vendor      enumor.Vendor          `json:"vendor" validate:"required"`
+	Name        string                 `json:"name" validate:"required,min=3,max=64"`
+	Managers    []string               `json:"managers" validate:"required,max=5"`
+	Type        enumor.AccountType     `json:"type" validate:"required"`
+	Site        enumor.AccountSiteType `json:"site" validate:"required"`
+	Memo        *string                `json:"memo" validate:"omitempty"`
+	BizID       int64                  `json:"bk_biz_id" validate:"omitempty"`
+	UsageBizIDs []int64                `json:"usage_biz_ids" validate:"required"`
 }
 
 // Validate ...
@@ -231,20 +230,53 @@ func (req *AccountCommonInfoCreateReq) Validate() error {
 	}
 
 	// 资源账号需要进一步对管理业务和使用业务进行校验，非资源账号维持现状
-	if req.Type == enumor.ResourceAccount {
-		if err := validateResAccountBizIDs(req.BizID, req.UsageBizIDs); err != nil {
-			return err
-		}
-	} else {
-		if err := validateNonResAccountBizIDs(req.BizID, req.UsageBizIDs); err != nil {
-			return err
-		}
+	if err := req.validateBizIDAndUsageBizIDs(req.BizID, req.UsageBizIDs, req.Type); err != nil {
+		return err
 	}
 
 	if req.Memo != nil {
 		if utf8.RuneCountInString(cvt.PtrToVal(req.Memo)) > 255 {
 			return errors.New("invalid account memo, length should less than 255")
 		}
+	}
+	return nil
+}
+
+// validateBizIDAndUsageBizIDs 校验管理业务和使用业务的合法性
+func (req *AccountCommonInfoCreateReq) validateBizIDAndUsageBizIDs(bizID int64, usageBizIDs []int64, accountType enumor.AccountType) error {
+	// 资源账号需要进一步对管理业务和使用业务进行校验，非资源账号维持现状
+	if accountType == enumor.ResourceAccount {
+		if err := req.validateResAccountBizIDs(); err != nil {
+			return err
+		}
+	} else {
+		// 结合上usageBizIDs在请求体的required，相当于要求使用业务切片长度必须为1
+		if err := validateNonResAccountBizIDs(bizID, usageBizIDs); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// validateResAccountBizIDs 校验资源账号管理业务和使用业务的合法性
+func (req *AccountCommonInfoCreateReq) validateResAccountBizIDs() error {
+	// 管理业务合法性校验
+	if err := req.validateBizID(); err != nil {
+		return err
+	}
+	// 校验使用业务是否包含管理业务，要求必须包含
+	if err := validateBizIDInUsageBizIDs(req.BizID, req.UsageBizIDs); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (req *AccountCommonInfoCreateReq) validateBizID() error {
+	if req.BizID == 0 {
+		return fmt.Errorf("bk_biz_id can not be empty")
+	}
+	if req.BizID == constant.AttachedAllBiz {
+		return fmt.Errorf("bk_biz_id can not set all biz")
 	}
 	return nil
 }

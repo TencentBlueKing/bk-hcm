@@ -22,7 +22,6 @@ package account
 import (
 	"fmt"
 
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/thirdparty/api-gateway/itsm"
 
 	"github.com/TencentBlueKing/gopkg/conv"
@@ -33,11 +32,6 @@ func (a *ApplicationOfAddAccount) PrepareReq() error {
 	// 密钥加密
 	secretKeyField := a.req.Vendor.GetSecretField()
 	a.req.Extension[secretKeyField] = a.Cipher.EncryptToBase64(conv.ToString(a.req.Extension[secretKeyField]))
-
-	// 非资源账号的管理业务设置为使用业务，维持现状（PrepareReq之前的CheckReq会校验使用业务数组长度必须为1）
-	if a.req.Type != enumor.ResourceAccount {
-		a.req.BizID = a.req.UsageBizIDs[0]
-	}
 	return nil
 }
 
@@ -69,7 +63,7 @@ func (a *ApplicationOfAddAccount) GetItsmApprover(managers []string) []itsm.Vari
 	}
 }
 
-// GetUsageBizIDs 获取当前的业务IDs
-func (a *ApplicationOfAddAccount) GetUsageBizIDs() []int64 {
+// GetBkBizIDs 获取当前的业务IDs
+func (a *ApplicationOfAddAccount) GetBkBizIDs() []int64 {
 	return a.req.UsageBizIDs
 }

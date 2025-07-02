@@ -22,7 +22,10 @@ package account
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 
+	"hcm/pkg/api/core/cloud"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 )
@@ -175,19 +178,17 @@ func (req *AzureAccountExtensionUpdateReq) IsFull() bool {
 
 // AccountUpdateReq ...
 type AccountUpdateReq struct {
-	Name               string   `json:"name" validate:"omitempty"`
-	Managers           []string `json:"managers" validate:"omitempty,max=5"`
-	Memo               *string  `json:"memo" validate:"omitempty"`
-	RecycleReserveTime int      `json:"recycle_reserve_time" validate:"omitempty"`
-	BizID              int64    `json:"bk_biz_id" validate:"omitempty"`
-	// Note: 第一期只支持关联一个业务，且不能关联全部业务
-	// BkBizIDs  []int64          `json:"bk_biz_ids" validate:"omitempty"`
-	UsageBizIDs []int64         `json:"usage_biz_ids" validate:"required,dive,min=-1"`
-	Extension   json.RawMessage `json:"extension" validate:"omitempty"`
+	Name               string          `json:"name" validate:"omitempty"`
+	Managers           []string        `json:"managers" validate:"omitempty,max=5"`
+	Memo               *string         `json:"memo" validate:"omitempty"`
+	RecycleReserveTime int             `json:"recycle_reserve_time" validate:"omitempty"`
+	BizID              int64           `json:"bk_biz_id" validate:"omitempty"`
+	UsageBizIDs        []int64         `json:"usage_biz_ids" validate:"omitempty"`
+	Extension          json.RawMessage `json:"extension" validate:"omitempty"`
 }
 
 // Validate ...
-func (req *AccountUpdateReq) Validate(accountType enumor.AccountType) error {
+func (req *AccountUpdateReq) Validate(accountInfo *cloud.BaseAccount) error {
 	if err := validator.Validate.Struct(req); err != nil {
 		return err
 	}
@@ -202,17 +203,32 @@ func (req *AccountUpdateReq) Validate(accountType enumor.AccountType) error {
 		return err
 	}
 
-	// 资源账号需要进一步对管理业务和使用业务进行校验，非资源账号维持现状
-	if accountType == enumor.ResourceAccount {
-		if err := validateResAccountBizIDs(req.BizID, req.UsageBizIDs); err != nil {
-			return err
-		}
-	} else {
-		if err := validateNonResAccountBizIDs(req.BizID, req.UsageBizIDs); err != nil {
-			return err
-		}
+	// 根据账号类型进一步校验管理业务和使用业务的合法性
+	if err := req.validateBizIDAndUsageBizIDs(accountInfo); err != nil {
+		return err
 	}
+	return nil
+}
 
+func (req *AccountUpdateReq) validateBizIDAndUsageBizIDs(accountInfo *cloud.BaseAccount) error {
+	if accountInfo.Type == enumor.ResourceAccount {
+		// 当用户想修改管理业务且不提供使用业务时
+		if req.BizID != 0 && req.UsageBizIDs == nil {
+			if req.BizID == constant.AttachedAllBiz {
+				return fmt.Errorf("bk_biz_id can not set all biz")
+			}
+			return validateBizIDInUsageBizIDs(req.BizID, accountInfo.UsageBizIDs)
+		} else if req.BizID == 0 && req.UsageBizIDs != nil { // 当用户想修改使用业务且不提供管理业务时
+			return validateBizIDInUsageBizIDs(accountInfo.BizID, req.UsageBizIDs)
+		} else if req.BizID != 0 && req.UsageBizIDs != nil { // 当用户要同时修改管理业务和使用业务时
+			if req.BizID == constant.AttachedAllBiz {
+				return fmt.Errorf("bk_biz_id can not set all biz")
+			}
+			return validateBizIDInUsageBizIDs(req.BizID, req.UsageBizIDs)
+		} // 不修改管理业务和使用业务则无需校验
+	} else { // 非资源账号只要求不能传递管理业务字段，使用业务长度必须为1或0
+		return validateNonResAccountBizIDs(req.BizID, req.UsageBizIDs)
+	}
 	return nil
 }
 

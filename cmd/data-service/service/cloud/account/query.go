@@ -87,9 +87,9 @@ func (svc *service) GetAccount(cts *rest.Contexts) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	bizIDs := make([]int64, 0, len(relResp.Details))
+	usageBizIDs := make([]int64, 0, len(relResp.Details))
 	for _, rel := range relResp.Details {
-		bizIDs = append(bizIDs, rel.BkBizID)
+		usageBizIDs = append(usageBizIDs, rel.BkBizID)
 	}
 
 	// 组装响应数据 - 账号基本信息
@@ -104,7 +104,7 @@ func (svc *service) GetAccount(cts *rest.Contexts) (interface{}, error) {
 		PriceUnit:          dbAccount.PriceUnit,
 		Memo:               dbAccount.Memo,
 		BizID:              dbAccount.BizID,
-		UsageBizIDs:        bizIDs,
+		UsageBizIDs:        usageBizIDs,
 		RecycleReserveTime: dbAccount.RecycleReserveTime,
 		Revision: core.Revision{
 			Creator:   dbAccount.Creator,

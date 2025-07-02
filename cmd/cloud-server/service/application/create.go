@@ -21,7 +21,6 @@ package application
 
 import (
 	"fmt"
-	"hcm/pkg/api/core"
 
 	"hcm/cmd/cloud-server/service/application/handlers"
 	accounthandler "hcm/cmd/cloud-server/service/application/handlers/account"
@@ -47,6 +46,7 @@ import (
 	cscvm "hcm/pkg/api/cloud-server/cvm"
 	csdisk "hcm/pkg/api/cloud-server/disk"
 	csvpc "hcm/pkg/api/cloud-server/vpc"
+	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service"
 	hclb "hcm/pkg/api/hc-service/load-balancer"
 	"hcm/pkg/criteria/enumor"
@@ -95,35 +95,23 @@ func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
 
 	// 查询审批流程服务ID
 	applicationType := handler.GetType()
-	serviceID, managers, err := a.getApprovalProcessInfo(cts, applicationType)
-	if err != nil {
-		return nil, fmt.Errorf("get approval process service id and managers failed, err: %v", err)
-	}
-
-	// 生成ITSM的回调地址
-	callbackUrl := a.getCallbackUrl()
-
-	// 渲染ITSM单据标题
-	itsmTitle, err := handler.RenderItsmTitle()
-	if err != nil {
-		return nil, fmt.Errorf("render itsm ticket title error: %w", err)
-	}
-
-	// 渲染ITSM单据申请内容
-	itsmForm, err := handler.RenderItsmForm()
-	if err != nil {
-		return nil, fmt.Errorf("render itsm ticket form error: %w", err)
-	}
-
-	// 获取ITSM单据涉及到的各个节点审批人
-	approvers := handler.GetItsmApprover(managers)
 
 	// 调用ITSM创建单据
-	sn, err := a.itsmCreateTicket(cts, serviceID, callbackUrl, itsmTitle, itsmForm, approvers)
+	sn, err := a.itsmCreateTicket(cts, handler, applicationType)
 	if err != nil {
 		return nil, fmt.Errorf("call itsm create ticket api failed, err: %w", err)
 	}
 
+	result, err := a.createApplication(cts, req, handler, sn, applicationType)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+// createApplicationRequest ...
+func (a *applicationSvc) createApplication(cts *rest.Contexts, req *proto.CreateCommonReq,
+	handler handlers.ApplicationHandler, sn string, applicationType enumor.ApplicationType) (*core.CreateResult, error) {
 	// 调用DB创建单据
 	content, err := json.MarshalToString(handler.GenerateApplicationContent())
 	if err != nil {
@@ -136,21 +124,10 @@ func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
 	// 主机、硬盘、VPC、负载均衡需要记录业务ID
 	var bkBizIDs = make([]int64, 0)
 	if applicationType == enumor.CreateCvm || applicationType == enumor.CreateDisk ||
-		applicationType == enumor.CreateVpc || applicationType == enumor.CreateLoadBalancer {
-		bkBizIDs = handler.GetUsageBizIDs()
+		applicationType == enumor.CreateVpc || applicationType == enumor.CreateLoadBalancer ||
+		applicationType == enumor.AddAccount {
+		bkBizIDs = handler.GetBkBizIDs()
 	}
-
-	result, err := a.createApplication(cts, sn, applicationType, bkBizIDs, content, req)
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
-}
-
-// createApplicationRequest ...
-func (a *applicationSvc) createApplication(cts *rest.Contexts, sn string, applicationType enumor.ApplicationType,
-	bkBizIDs []int64, content string, req *proto.CreateCommonReq) (*core.CreateResult, error) {
-
 	return a.client.DataService().Global.Application.CreateApplication(
 		cts.Kit.Ctx,
 		cts.Kit.Header(),
@@ -159,7 +136,7 @@ func (a *applicationSvc) createApplication(cts *rest.Contexts, sn string, applic
 			Source:         enumor.ApplicationSourceITSM,
 			Type:           applicationType,
 			Status:         enumor.Pending,
-			UsageBizIDs:    bkBizIDs,
+			BkBizIDs:       bkBizIDs,
 			Applicant:      cts.Kit.User,
 			Content:        content,
 			DeliveryDetail: "{}",
@@ -169,8 +146,30 @@ func (a *applicationSvc) createApplication(cts *rest.Contexts, sn string, applic
 }
 
 // itsmCreateTicket 调用ITSM创建单据
-func (a *applicationSvc) itsmCreateTicket(cts *rest.Contexts, serviceID int64, callbackUrl string,
-	itsmTitle string, itsmForm string, approvers []itsm.VariableApprover) (string, error) {
+func (a *applicationSvc) itsmCreateTicket(cts *rest.Contexts, handler handlers.ApplicationHandler,
+	applicationType enumor.ApplicationType) (string, error) {
+	serviceID, managers, err := a.getApprovalProcessInfo(cts, applicationType)
+	if err != nil {
+		return "", fmt.Errorf("get approval process service id and managers failed, err: %v", err)
+	}
+
+	// 生成ITSM的回调地址
+	callbackUrl := a.getCallbackUrl()
+
+	// 渲染ITSM单据标题
+	itsmTitle, err := handler.RenderItsmTitle()
+	if err != nil {
+		return "", fmt.Errorf("render itsm ticket title error: %w", err)
+	}
+
+	// 渲染ITSM单据申请内容
+	itsmForm, err := handler.RenderItsmForm()
+	if err != nil {
+		return "", fmt.Errorf("render itsm ticket form error: %w", err)
+	}
+
+	// 获取ITSM单据涉及到的各个节点审批人
+	approvers := handler.GetItsmApprover(managers)
 
 	sn, err := a.itsmCli.CreateTicket(
 		cts.Kit,

@@ -21,18 +21,19 @@ package account
 
 import (
 	"hcm/pkg/api/core"
+	"hcm/pkg/api/core/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	dataservice "hcm/pkg/client/data-service"
-	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
 )
 
-// GetAccountType ...
-func GetAccountType(kt *kit.Kit, cli *dataservice.Client, accountID string) (enumor.AccountType, error) {
+// GetAccountInfo ...
+func GetAccountInfo(kt *kit.Kit, cli *dataservice.Client, accountID string) (*cloud.BaseAccount, error) {
 	if len(accountID) == 0 {
-		return "", errf.New(errf.InvalidParameter, "account id is required")
+		return nil, errf.New(errf.InvalidParameter, "account id is required")
 	}
 
 	listReq := &protocloud.AccountListReq{
@@ -41,12 +42,14 @@ func GetAccountType(kt *kit.Kit, cli *dataservice.Client, accountID string) (enu
 	}
 	result, err := cli.Global.Account.List(kt.Ctx, kt.Header(), listReq)
 	if err != nil {
-		return "", err
+		logs.Errorf("list account failed, err: %v, rid: %s", err, kt.Rid)
+		return nil, err
 	}
 
 	if len(result.Details) == 0 {
-		return "", errf.Newf(errf.RecordNotFound, "account: %s not found", accountID)
+		logs.Errorf("account: %s not found, rid: %s", accountID, kt.Rid)
+		return nil, errf.Newf(errf.RecordNotFound, "account: %s not found", accountID)
 	}
 
-	return result.Details[0].Type, nil
+	return result.Details[0], nil
 }

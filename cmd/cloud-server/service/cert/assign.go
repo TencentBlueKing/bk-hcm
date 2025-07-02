@@ -42,7 +42,7 @@ func (svc *certSvc) AssignCertToBiz(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	err := common.CheckAssignableToBiz(svc.client.DataService(), cts, enumor.CertCloudResType, req.CertIDs, req.BkBizID)
+	err := common.ValidateTargetBizID(cts.Kit, svc.client.DataService(), enumor.CertCloudResType, req.CertIDs, req.BkBizID)
 	if err != nil {
 		return nil, err
 	}

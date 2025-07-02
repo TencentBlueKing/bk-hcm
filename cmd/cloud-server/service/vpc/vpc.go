@@ -518,7 +518,7 @@ func (svc *vpcSvc) AssignVpcToBiz(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	err := common.CheckAssignableToBiz(svc.client.DataService(), cts, enumor.VpcCloudResType, req.VpcIDs, req.BkBizID)
+	err := common.ValidateTargetBizID(cts.Kit, svc.client.DataService(), enumor.VpcCloudResType, req.VpcIDs, req.BkBizID)
 	if err != nil {
 		return nil, err
 	}

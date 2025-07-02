@@ -305,7 +305,7 @@ func (svc *diskSvc) AssignDisk(cts *rest.Contexts) (interface{}, error) {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	err := common.CheckAssignableToBiz(svc.client.DataService(), cts, enumor.DiskCloudResType, req.IDs,
+	err := common.ValidateTargetBizID(cts.Kit, svc.client.DataService(), enumor.DiskCloudResType, req.IDs,
 		int64(req.BkBizID))
 	if err != nil {
 		return nil, err
