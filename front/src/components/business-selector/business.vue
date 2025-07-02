@@ -34,7 +34,7 @@ const props = withDefaults(defineProps<IBusinessSelectorProps>(), {
   allOptionId: 0,
   emptySelectAll: false,
   scope: 'full',
-  tagClearable: false,
+  tagClearable: true,
 });
 
 const emit = defineEmits(['change']);
@@ -82,7 +82,7 @@ const handleChange = (val: number | number[]) => {
 
 <template>
   <bk-select
-    :class="{ 'hide-tag-close': tagClearable }"
+    :class="{ 'hide-tag-close': !tagClearable }"
     v-model="localModel"
     :disabled="disabled"
     :multiple="multiple"

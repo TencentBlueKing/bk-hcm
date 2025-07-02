@@ -869,7 +869,7 @@ export default defineComponent({
                   v-model={accountFormModel.usage_biz_ids}
                   show-all={true}
                   all-option-id={-1}
-                  tag-clearable={true}
+                  tag-clearable={false}
                   disabled={isResourceAccount.value && !accountFormModel.bk_biz_id}
                   onChange={handleChangeUse}
                 />

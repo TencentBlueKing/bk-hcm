@@ -359,7 +359,7 @@ export default defineComponent({
               </FormItem>
               <FormItem label='使用业务' property='usage_biz_ids' required>
                 <hcm-form-business
-                  tag-clearable={true}
+                  tag-clearable={false}
                   placeholder={'请选择使用业务'}
                   multiple
                   data={businessList.value}
