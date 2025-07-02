@@ -1,4 +1,4 @@
-import { PropType, computed, defineComponent, onMounted, ref } from 'vue';
+import { PropType, computed, defineComponent, onMounted, ref, h } from 'vue';
 import './index.scss';
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 import { useStatus } from './useStatus';
@@ -12,7 +12,7 @@ import { SITE_TYPE_MAP } from '@/common/constant';
 import { VendorAccountNameMap } from './constants';
 import { useVerify } from '@/hooks';
 import { IApplicationDetail } from '../index';
-import { useBusinessMapStore } from '@/store/useBusinessMap';
+import BusinessValue from '@/components/display-value/business-value.vue';
 
 const { FormItem } = Form;
 const { Option } = Select;
@@ -53,7 +53,6 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const { getNameFromBusinessMap } = useBusinessMapStore();
     const info = computed(() => JSON.parse(props.detail.content));
     const resultInfo = computed(() => JSON.parse(props.detail.delivery_detail));
     const statusMap = useStatus(props.detail.delivery_detail);
@@ -165,7 +164,7 @@ export default defineComponent({
               {
                 prop: 'op_product_id',
                 name: '业务',
-                render: (val: number) => `${getNameFromBusinessMap(val)} (${val})`,
+                render: (val: number) => h(BusinessValue, { value: val }),
               },
               {
                 prop: 'site',

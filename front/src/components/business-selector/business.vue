@@ -19,6 +19,7 @@ export interface IBusinessSelectorProps {
   scope?: BusinessScopeType;
   data?: IBusinessItem[];
   optionDisabled?: (item: IBusinessItem) => boolean;
+  tagClearable?: boolean;
 }
 
 const model = defineModel<number | number[]>();
@@ -33,6 +34,7 @@ const props = withDefaults(defineProps<IBusinessSelectorProps>(), {
   allOptionId: 0,
   emptySelectAll: false,
   scope: 'full',
+  tagClearable: false,
 });
 
 const emit = defineEmits(['change']);
@@ -80,6 +82,7 @@ const handleChange = (val: number | number[]) => {
 
 <template>
   <bk-select
+    :class="{ 'hide-tag-close': tagClearable }"
     v-model="localModel"
     :disabled="disabled"
     :multiple="multiple"
@@ -112,7 +115,7 @@ const handleChange = (val: number | number[]) => {
   font-size: 12px;
 }
 
-.tag-no-close-biz-selector {
+.hide-tag-close {
   :deep(.bk-select-trigger) {
     .bk-tag-closable {
       .bk-tag-close {

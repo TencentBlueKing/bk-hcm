@@ -69,6 +69,8 @@ export default defineComponent({
       })),
     );
 
+    const isResourceAccount = computed(() => projectModel.type === ACCOUNT_TYPE_ENUM.RESOURCE);
+
     const resourceAccountStore = useResourceAccountStore();
 
     const initSecretModel: SecretModel = {
@@ -648,7 +650,7 @@ export default defineComponent({
             required: false,
             property: 'bk_biz_id',
             isEdit: false,
-            needHidden: true,
+            isHidden: () => !isResourceAccount.value,
             component() {
               return (
                 <RenderDetailEdit
@@ -704,11 +706,6 @@ export default defineComponent({
       }
     };
 
-    const showManageBiz = (needHidden: boolean) => {
-      if (!needHidden) return true;
-      return needHidden && projectModel.type === ACCOUNT_TYPE_ENUM.RESOURCE;
-    };
-
     return () =>
       isLoading.value ? (
         <Loading />
@@ -759,19 +756,18 @@ export default defineComponent({
               </div>
               <Form model={projectModel} labelWidth={190} rules={formRules} ref={formRef}>
                 <div class={index === 2 ? 'flex-row align-items-center flex-wrap' : null}>
-                  {baseItem.data.map(
-                    (formItem) =>
-                      showManageBiz(formItem?.needHidden) && (
-                        <FormItem
-                          class='formItem-cls info-value'
-                          label={`${formItem.label} ：`}
-                          required={formItem.required}
-                          property={formItem.property}
-                        >
-                          {formItem.component()}
-                        </FormItem>
-                      ),
-                  )}
+                  {baseItem.data
+                    .filter((item) => !item?.isHidden?.())
+                    .map((formItem) => (
+                      <FormItem
+                        class='formItem-cls info-value'
+                        label={`${formItem.label} ：`}
+                        required={formItem.required}
+                        property={formItem.property}
+                      >
+                        {formItem.component()}
+                      </FormItem>
+                    ))}
                 </div>
               </Form>
             </div>
@@ -855,7 +851,7 @@ export default defineComponent({
               <FormItem label='责任人' class={'api-secret-selector'} required property='managers'>
                 <MemberSelect v-model={accountFormModel.managers} defaultUserlist={computedManagers.value} />
               </FormItem>
-              {showManageBiz(true) && (
+              {isResourceAccount.value && (
                 <FormItem label='管理业务' class={'api-secret-selector'} required property='bk_biz_id'>
                   <hcm-form-business
                     data={businessList.list}
@@ -868,13 +864,13 @@ export default defineComponent({
               )}
               <FormItem label='使用业务' class={'api-secret-selector'} required property='usage_biz_ids'>
                 <hcm-form-business
-                  class={'tag-no-close-biz-selector'}
                   multiple={projectModel.type === ACCOUNT_TYPE_ENUM.RESOURCE}
                   data={businessList.list}
                   v-model={accountFormModel.usage_biz_ids}
                   show-all={true}
                   all-option-id={-1}
-                  disabled={showManageBiz(true) && !accountFormModel.bk_biz_id}
+                  tag-clearable={true}
+                  disabled={isResourceAccount.value && !accountFormModel.bk_biz_id}
                   onChange={handleChangeUse}
                 />
               </FormItem>
