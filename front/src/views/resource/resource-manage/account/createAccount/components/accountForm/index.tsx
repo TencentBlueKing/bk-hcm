@@ -1,4 +1,4 @@
-import { Alert, Button, Card, Dialog, Form, Input, Loading, Radio, Select, Table } from 'bkui-vue';
+import { Alert, Button, Card, Dialog, Form, Input, Loading, Radio, Table } from 'bkui-vue';
 import { PropType, defineComponent, onMounted, reactive, ref, watch, watchEffect } from 'vue';
 import './index.scss';
 import { VendorEnum } from '@/common/constant';
@@ -16,7 +16,6 @@ import { useAccountStore, useUserStore } from '@/store';
 import { ValidateStatus, useSecretExtension } from './useSecretExtension';
 
 const { FormItem } = Form;
-const { Option } = Select;
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
 export const VENDORS_INFO = [
@@ -76,7 +75,8 @@ export default defineComponent({
       type: 'resource', // 账号类型，当前产品形态固定为 resource，资源账号
       memo: '', // 备注
       extension: {}, // 不同云的secretKey\id
-      bk_biz_ids: [], // 业务ID
+      usage_biz_ids: [], // 使用业务ID
+      bk_biz_id: 0, // 管理业务ID
     });
     const infoFormInstance = ref(null);
     const businessList = ref([]);
@@ -125,7 +125,6 @@ export default defineComponent({
       (model) => {
         props.changeSubmitData({
           ...model,
-          bk_biz_ids: [model.bk_biz_ids],
         });
         props.changeValidateForm(() => infoFormInstance.value.validate());
       },
@@ -156,6 +155,29 @@ export default defineComponent({
       businessList.value = res?.data || [];
     });
 
+    const handleChangeManage = (val: number) => {
+      const usageVal = formModel.usage_biz_ids;
+      // 管理业务取消选值或者选了值但是使用业务为全部时候，不操作
+      if (!val || usageVal?.[0] === -1) return;
+      // 管理业务选择了当前使用业务未包含的值时，使用业务自动添加该值
+      if (!usageVal.includes(val)) {
+        formModel.usage_biz_ids.push(val);
+      }
+    };
+
+    const handleChangeUse = (val: number[]) => {
+      const [firstVal] = val;
+      // 取消全选 val是空数组[]
+      if (!firstVal) {
+        formModel.usage_biz_ids = [formModel.bk_biz_id];
+        return;
+      }
+      // 如果有值，且val里面不包含管理业务，则把管理业务加进去
+      if (firstVal !== -1 && !val.includes(formModel.bk_biz_id)) {
+        formModel.usage_biz_ids.push(formModel.bk_biz_id);
+      }
+    };
+
     return () => (
       <div class={'account-form'}>
         <Card class={'account-form-card'} showHeader={false}>
@@ -169,7 +191,8 @@ export default defineComponent({
                       class={`account-vendor-option ${
                         vendor === formModel.vendor ? 'account-vendor-option-active' : ''
                       }`}
-                      onClick={() => (formModel.vendor = vendor)}>
+                      onClick={() => (formModel.vendor = vendor)}
+                    >
                       <img src={icon} alt={name} class={'account-vendor-option-icon'} />
                       <p class={'account-vendor-option-text'}>{name}</p>
                       {formModel.vendor === vendor ? <Success fill='#3A84FF' class={'active-icon'} /> : null}
@@ -182,7 +205,8 @@ export default defineComponent({
                   <Radio
                     label={'china'}
                     v-model={formModel.site}
-                    disabled={[VendorEnum.HUAWEI, VendorEnum.AWS].includes(formModel.vendor)}>
+                    disabled={[VendorEnum.HUAWEI, VendorEnum.AWS].includes(formModel.vendor)}
+                  >
                     中国站
                   </Radio>
                 ) : null}
@@ -233,7 +257,8 @@ export default defineComponent({
                       class={'api-form-btn'}
                       onClick={() => {
                         isAuthDialogShow.value = true;
-                      }}>
+                      }}
+                    >
                       <TextFile fill='#3A84FF' />
                       查看账号权限
                     </Button>
@@ -253,7 +278,8 @@ export default defineComponent({
                 class={'account-validate-btn'}
                 onClick={() => handleValidate((payload: Record<string, string>) => props.changeExtension(payload))}
                 disabled={isValidateDiasbled.value}
-                loading={isValidateLoading.value}>
+                loading={isValidateLoading.value}
+              >
                 账号校验
               </Button>
               {curExtension.value.validatedStatus === ValidateStatus.YES ? (
@@ -292,7 +318,8 @@ export default defineComponent({
                     },
                   },
                 ],
-              }}>
+              }}
+            >
               {/* eslint-disable-next-line @typescript-eslint/no-unused-vars */}
               {Object.entries(curExtension.value.output2).map(([, { label, value, placeholder }]) => (
                 <FormItem label={label}>
@@ -306,7 +333,8 @@ export default defineComponent({
                 property='name'
                 description={
                   '必须以小写字母开头，后面可跟小写字母、数字、连字符 - 或 下划线 _ ，但不能以连字符 - 或下划线 _ 结尾。\n名称长度不少于 3 个字符，且不多于 64 个字符。'
-                }>
+                }
+              >
                 <Input v-model={formModel.name} />
               </FormItem>
               <FormItem label='责任人' class={'api-secret-selector'} required property='managers'>
@@ -320,14 +348,27 @@ export default defineComponent({
                   ]}
                 />
               </FormItem>
-              <FormItem label='使用业务' property='bk_biz_ids' required>
-                <Select filterable placeholder='请选择使用业务' v-model={formModel.bk_biz_ids}>
-                  {businessList.value.map(({ id, name }) => (
-                    <Option key={id} value={id} label={name}>
-                      {name}
-                    </Option>
-                  ))}
-                </Select>
+              <FormItem label='管理业务' property='bk_biz_id' required>
+                <hcm-form-business
+                  data={businessList.value}
+                  clearable={true}
+                  placeholder={'请选择管理业务'}
+                  v-model={formModel.bk_biz_id}
+                  onChange={handleChangeManage}
+                />
+              </FormItem>
+              <FormItem label='使用业务' property='usage_biz_ids' required>
+                <hcm-form-business
+                  tag-clearable={false}
+                  placeholder={'请选择使用业务'}
+                  multiple
+                  data={businessList.value}
+                  v-model={formModel.usage_biz_ids}
+                  show-all={true}
+                  all-option-id={-1}
+                  disabled={!formModel.bk_biz_id}
+                  onChange={handleChangeUse}
+                />
               </FormItem>
               <FormItem label='备注'>
                 <Input type={'textarea'} v-model={formModel.memo} maxlength={255} resize={false} />
@@ -342,7 +383,8 @@ export default defineComponent({
           dialogType='show'
           theme='primary'
           title='账号权限详情'
-          width={900}>
+          width={900}
+        >
           <Alert theme='info' class={'mb16'}>
             该账号在云上拥有的权限组列表如下，如需调整权限请到
             <Button
@@ -351,7 +393,8 @@ export default defineComponent({
               onClick={() => {
                 isAuthDialogShow.value = false;
                 window.open('https://console.cloud.tencent.com/cam/overview', '_blank', 'noopener,noreferrer');
-              }}>
+              }}
+            >
               云控制台
             </Button>
             调整
