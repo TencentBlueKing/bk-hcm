@@ -97,7 +97,7 @@ func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
 	applicationType := handler.GetType()
 
 	// 调用ITSM创建单据
-	sn, err := a.itsmCreateTicket(cts, handler, applicationType)
+	sn, err := a.createItsmTicket(cts, handler, applicationType)
 	if err != nil {
 		return nil, fmt.Errorf("call itsm create ticket api failed, err: %w", err)
 	}
@@ -145,8 +145,8 @@ func (a *applicationSvc) createApplication(cts *rest.Contexts, req *proto.Create
 	)
 }
 
-// itsmCreateTicket 调用ITSM创建单据
-func (a *applicationSvc) itsmCreateTicket(cts *rest.Contexts, handler handlers.ApplicationHandler,
+// createItsmTicket 调用ITSM创建单据
+func (a *applicationSvc) createItsmTicket(cts *rest.Contexts, handler handlers.ApplicationHandler,
 	applicationType enumor.ApplicationType) (string, error) {
 	serviceID, managers, err := a.getApprovalProcessInfo(cts, applicationType)
 	if err != nil {

@@ -86,8 +86,7 @@ func getAccountInfoForRes(kt *kit.Kit, cli *dataservice.Client, resType enumor.C
 	// 资源ID映射到账号ID
 	resMap := make(map[string]string)
 	accountIDs := make([]string, 0)
-	elems := slice.Split(resIDs, constant.BatchOperationMaxLimit)
-	for _, parts := range elems {
+	for _, parts := range slice.Split(resIDs, constant.BatchOperationMaxLimit) {
 		req := cloud.ListResourceBasicInfoReq{
 			ResourceType: resType,
 			IDs:          parts,
@@ -113,15 +112,23 @@ func getAccountUsageBizIDs(kt *kit.Kit, cli *dataservice.Client, accountIDs []st
 		Filter: tools.ContainersExpression("id", accountIDs),
 		Page:   core.NewDefaultBasePage(),
 	}
-	accountResp, err := cli.Global.Account.List(kt.Ctx, kt.Header(), accountReq)
-	if err != nil {
-		logs.Errorf("list account info failed, err: %v, rid: %s", err, kt.Rid)
-		return nil, err
+	accountMap := make(map[string][]int64, len(accountIDs))
+	for {
+		accountResp, err := cli.Global.Account.List(kt.Ctx, kt.Header(), accountReq)
+		if err != nil {
+			logs.Errorf("list account info failed, err: %v, rid: %s", err, kt.Rid)
+			return nil, err
+		}
+
+		for _, account := range accountResp.Details {
+			accountMap[account.ID] = account.UsageBizIDs
+		}
+
+		if len(accountResp.Details) < int(core.DefaultMaxPageLimit) {
+			break
+		}
+		accountReq.Page.Start += uint32(accountReq.Page.Limit)
 	}
 
-	accountMap := make(map[string][]int64, len(accountResp.Details))
-	for _, account := range accountResp.Details {
-		accountMap[account.ID] = account.UsageBizIDs
-	}
 	return accountMap, nil
 }

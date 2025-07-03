@@ -77,7 +77,7 @@ func validateBizIDInUsageBizIDs(bizID int64, usageBizIDs []int64) error {
 	return fmt.Errorf("bk_biz_id %d is not in usage_biz_ids", bizID)
 }
 
-// validateNonResAccountBizIDs 非资源账号的管理业务必须为空，使用业务数组长度只能为1，维持现状
+// validateNonResAccountBizIDs 非资源账号的管理业务必须为空，使用业务数组长度只能为1
 func validateNonResAccountBizIDs(bizID int64, usageBizIDs []int64) error {
 	if bizID != 0 {
 		return fmt.Errorf("bk_biz_id must be empty for non-resource account")

@@ -211,25 +211,28 @@ func (req *AccountUpdateReq) Validate(accountInfo *cloud.BaseAccount) error {
 }
 
 func (req *AccountUpdateReq) validateBizIDAndUsageBizIDs(accountInfo *cloud.BaseAccount) error {
-	if accountInfo.Type == enumor.ResourceAccount {
-		// 当用户想修改管理业务且不提供使用业务时
-		if req.BizID != 0 && req.UsageBizIDs == nil {
-			if req.BizID == constant.AttachedAllBiz {
-				return fmt.Errorf("bk_biz_id can not set all biz")
-			}
-			return validateBizIDInUsageBizIDs(req.BizID, accountInfo.UsageBizIDs)
-		} else if req.BizID == 0 && req.UsageBizIDs != nil { // 当用户想修改使用业务且不提供管理业务时
-			return validateBizIDInUsageBizIDs(accountInfo.BizID, req.UsageBizIDs)
-		} else if req.BizID != 0 && req.UsageBizIDs != nil { // 当用户要同时修改管理业务和使用业务时
-			if req.BizID == constant.AttachedAllBiz {
-				return fmt.Errorf("bk_biz_id can not set all biz")
-			}
-			return validateBizIDInUsageBizIDs(req.BizID, req.UsageBizIDs)
-		} // 不修改管理业务和使用业务则无需校验
-	} else { // 非资源账号只要求不能传递管理业务字段，使用业务长度必须为1或0
+	if accountInfo.Type != enumor.ResourceAccount {
 		return validateNonResAccountBizIDs(req.BizID, req.UsageBizIDs)
 	}
-	return nil
+
+	// 确定要使用的 bizID 和 usageBizIDs
+	bizID := req.BizID
+	if bizID == 0 {
+		bizID = accountInfo.BizID
+	}
+
+	usageBizIDs := req.UsageBizIDs
+	if usageBizIDs == nil {
+		usageBizIDs = accountInfo.UsageBizIDs
+	}
+
+	// 特殊校验：不能设置为 all biz
+	if bizID == constant.AttachedAllBiz {
+		return fmt.Errorf("bk_biz_id can not set all biz")
+	}
+
+	// 统一校验逻辑
+	return validateBizIDInUsageBizIDs(bizID, usageBizIDs)
 }
 
 // AccountCheckByIDReq ...

@@ -70,7 +70,7 @@ func (a *service) ListAccountBizRel(cts *rest.Contexts) (interface{}, error) {
 	return &protocloud.AccountBizRelListResult{Details: details}, nil
 }
 
-// ListWithAccount 根据使用业务找到关联的账号，且返回的账号信息中使用业务为空
+// ListWithAccount 根据使用业务查询关联的账号信息，返回的账号信息中的使用业务字段为空
 func (a *service) ListWithAccount(cts *rest.Contexts) (interface{}, error) {
 	req := new(protocloud.AccountBizRelWithAccountListReq)
 	if err := cts.DecodeInto(req); err != nil {

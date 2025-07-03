@@ -229,7 +229,7 @@ func (req *AccountCommonInfoCreateReq) Validate() error {
 		return err
 	}
 
-	// 资源账号需要进一步对管理业务和使用业务进行校验，非资源账号维持现状
+	// 资源账号需要进一步对管理业务和使用业务进行校验
 	if err := req.validateBizIDAndUsageBizIDs(req.BizID, req.UsageBizIDs, req.Type); err != nil {
 		return err
 	}
@@ -244,18 +244,15 @@ func (req *AccountCommonInfoCreateReq) Validate() error {
 
 // validateBizIDAndUsageBizIDs 校验管理业务和使用业务的合法性
 func (req *AccountCommonInfoCreateReq) validateBizIDAndUsageBizIDs(bizID int64, usageBizIDs []int64, accountType enumor.AccountType) error {
-	// 资源账号需要进一步对管理业务和使用业务进行校验，非资源账号维持现状
+	// 资源账号需要进一步对管理业务和使用业务进行校验
 	if accountType == enumor.ResourceAccount {
 		if err := req.validateResAccountBizIDs(); err != nil {
 			return err
 		}
-	} else {
-		// 结合上usageBizIDs在请求体的required，相当于要求使用业务切片长度必须为1
-		if err := validateNonResAccountBizIDs(bizID, usageBizIDs); err != nil {
-			return err
-		}
+		return nil
 	}
-	return nil
+	// 对于非资源账号：结合上usageBizIDs在请求体的required，相当于要求使用业务切片长度必须为1
+	return validateNonResAccountBizIDs(bizID, usageBizIDs)
 }
 
 // validateResAccountBizIDs 校验资源账号管理业务和使用业务的合法性
