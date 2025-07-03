@@ -61,7 +61,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
   const accountStore = useAccountStore();
   const loadBalancerStore = useLoadBalancerStore();
   const { t } = i18n.global;
-  const { getRegionName } = useRegionsStore();
+  const { getRegionName, getAllRegion } = useRegionsStore();
   const { whereAmI } = useWhereAmI();
   const businessMapStore = useBusinessMapStore();
   const cloudAreaStore = useCloudAreaStore();
@@ -1283,6 +1283,9 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '地域',
       field: 'region',
       width: 120,
+      filter: {
+        list: getAllRegion().map(([value, text]) => ({ value, text })),
+      },
       render: ({ cell, row }: { cell: string; row: { vendor: VendorEnum } }) => getRegionName(row.vendor, cell) || '--',
       sort: true,
     },

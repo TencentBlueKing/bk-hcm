@@ -117,7 +117,7 @@
 </template>
 
 <script setup lang="ts">
-import { PropType, h, withDirectives, ref, reactive } from 'vue';
+import { PropType, h, withDirectives, ref, reactive, computed } from 'vue';
 import { Loading, Table, Button, bkTooltips, Message } from 'bkui-vue';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import { BatchDistribution, DResourceType, DResourceTypeMap } from '../dialog/batch-distribution';
@@ -139,6 +139,7 @@ import { ResourceTypeEnum, VendorEnum, VendorMap } from '@/common/constant';
 import SyncAccountResource from '@/components/sync-account-resource/index.vue';
 import { CLB_STATUS_MAP, LB_NETWORK_TYPE_MAP } from '@/constants';
 import { useAccountBusiness } from '@/views/resource/resource-manage/hooks/use-account-business';
+import { useRegionsStore } from '@/store/useRegionsStore';
 
 const props = defineProps({
   filter: {
@@ -152,6 +153,7 @@ const props = defineProps({
 const { t } = useI18n();
 // eslint-disable-next-line vue/no-dupe-keys
 const { whereAmI } = useWhereAmI();
+const { getAllRegion } = useRegionsStore();
 const { searchValue, filter } = useFilter(props, {
   conditionFormatterMapper: {
     lb_vip: (value: string) => buildVIPFilterRules(value),
@@ -273,6 +275,12 @@ const clbsSearchData = [
     children: Object.keys(CLB_STATUS_MAP).map((key) => ({ id: key, name: CLB_STATUS_MAP[key] })),
   },
   { id: 'cloud_vpc_id', name: '所属VPC' },
+  {
+    name: t('地域'),
+    id: 'region',
+    children: getAllRegion().map(([id, name]) => ({ id, name })),
+    multiple: true,
+  },
 ];
 
 const isRowSelectEnable = ({ row, isCheckAll }: DoublePlainObject) => {
