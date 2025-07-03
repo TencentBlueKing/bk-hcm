@@ -38,20 +38,20 @@ import (
 	"hcm/pkg/tools/slice"
 )
 
-// CvmCCInfo ...
-type CvmCCInfo struct {
+// CvmCCInfoRelManager ...
+type CvmCCInfoRelManager struct {
 	dbCli *dataservice.Client
 }
 
-// NewCvmCCInfo ...
-func NewCvmCCInfo(dbCli *dataservice.Client) *CvmCCInfo {
-	return &CvmCCInfo{
+// NewCvmCCInfoRelManager ...
+func NewCvmCCInfoRelManager(dbCli *dataservice.Client) *CvmCCInfoRelManager {
+	return &CvmCCInfoRelManager{
 		dbCli: dbCli,
 	}
 }
 
-// SyncCvmCCInfo ...
-func (mgr *CvmCCInfo) SyncCvmCCInfo(kt *kit.Kit, cvms []cvm.BaseCvm) error {
+// SyncCvmCCInfo 从cc同步主机所属业务，并将eip、disk、NI同步转移到该业务, 其他信息保持不变
+func (mgr *CvmCCInfoRelManager) SyncCvmCCInfo(kt *kit.Kit, cvms []cvm.BaseCvm) error {
 	hostIDs := make([]int64, 0)
 	for _, cvm := range cvms {
 		hostIDs = append(hostIDs, cvm.BkHostID)
@@ -79,7 +79,8 @@ func (mgr *CvmCCInfo) SyncCvmCCInfo(kt *kit.Kit, cvms []cvm.BaseCvm) error {
 	return nil
 }
 
-func (mgr *CvmCCInfo) updateCvmAndRelResBiz(kt *kit.Kit, cvms []cvm.BaseCvm, hostBizIDMap map[int64]int64) error {
+func (mgr *CvmCCInfoRelManager) updateCvmAndRelResBiz(kt *kit.Kit, cvms []cvm.BaseCvm,
+	hostBizIDMap map[int64]int64) error {
 	updates := make([]cloud.CvmCommonInfoBatchUpdateData, 0)
 	cvmIDBizMap := make(map[string]int64)
 	for _, cvm := range cvms {
@@ -114,7 +115,7 @@ func (mgr *CvmCCInfo) updateCvmAndRelResBiz(kt *kit.Kit, cvms []cvm.BaseCvm, hos
 	return nil
 }
 
-func (mgr *CvmCCInfo) updateCvmRelResBiz(kt *kit.Kit, cvmIDBizMap map[string]int64) error {
+func (mgr *CvmCCInfoRelManager) updateCvmRelResBiz(kt *kit.Kit, cvmIDBizMap map[string]int64) error {
 	bizIDEipIDsMap, bizIDDiskIDsMap, bizIDNiIDsMap, err := mgr.getCvmRelResBiz(kt, cvmIDBizMap)
 	if err != nil {
 		logs.Errorf("build cvm rel res biz failed, err: %v, rid: %s", err, kt.Rid)
@@ -139,7 +140,8 @@ func (mgr *CvmCCInfo) updateCvmRelResBiz(kt *kit.Kit, cvmIDBizMap map[string]int
 	return nil
 }
 
-func (mgr *CvmCCInfo) getCvmRelResBiz(kt *kit.Kit, cvmIDBizMap map[string]int64) (bizIDEipIDsMap map[int64][]string,
+func (mgr *CvmCCInfoRelManager) getCvmRelResBiz(kt *kit.Kit,
+	cvmIDBizMap map[string]int64) (bizIDEipIDsMap map[int64][]string,
 	bizIDDiskIDsMap map[int64][]string, bizIDNiIDsMap map[int64][]string, err error) {
 
 	cvmIDs := maps.Keys(cvmIDBizMap)
@@ -186,7 +188,7 @@ func (mgr *CvmCCInfo) getCvmRelResBiz(kt *kit.Kit, cvmIDBizMap map[string]int64)
 		}
 		niResp, err := mgr.dbCli.Global.NetworkInterfaceCvmRel.ListNetworkCvmRels(kt, req)
 		if err != nil {
-			logs.Errorf("list disk cvm rel failed, err: %v, cvmIDs: %v, rid: %s", err, batch, kt.Rid)
+			logs.Errorf("list network interface cvm rel failed, err: %v, cvmIDs: %v, rid: %s", err, batch, kt.Rid)
 			return nil, nil, nil, err
 		}
 		for _, detail := range niResp.Details {
@@ -198,7 +200,7 @@ func (mgr *CvmCCInfo) getCvmRelResBiz(kt *kit.Kit, cvmIDBizMap map[string]int64)
 	return
 }
 
-func (mgr *CvmCCInfo) updateEipBizID(kt *kit.Kit, bizIDEipIDsMap map[int64][]string) error {
+func (mgr *CvmCCInfoRelManager) updateEipBizID(kt *kit.Kit, bizIDEipIDsMap map[int64][]string) error {
 	for bizID, eipIDs := range bizIDEipIDsMap {
 		for _, batch := range slice.Split(eipIDs, constant.BatchOperationMaxLimit) {
 			req := &eip.EipBatchUpdateReq{
@@ -216,7 +218,7 @@ func (mgr *CvmCCInfo) updateEipBizID(kt *kit.Kit, bizIDEipIDsMap map[int64][]str
 	return nil
 }
 
-func (mgr *CvmCCInfo) updateDiskBizID(kt *kit.Kit, bizIDDiskIDsMap map[int64][]string) error {
+func (mgr *CvmCCInfoRelManager) updateDiskBizID(kt *kit.Kit, bizIDDiskIDsMap map[int64][]string) error {
 	for bizID, diskIDs := range bizIDDiskIDsMap {
 		for _, batch := range slice.Split(diskIDs, constant.BatchOperationMaxLimit) {
 			req := &disk.DiskBatchUpdateReq{
@@ -234,7 +236,7 @@ func (mgr *CvmCCInfo) updateDiskBizID(kt *kit.Kit, bizIDDiskIDsMap map[int64][]s
 	return nil
 }
 
-func (mgr *CvmCCInfo) updateNiBizID(kt *kit.Kit, bizIDNiIDsMap map[int64][]string) error {
+func (mgr *CvmCCInfoRelManager) updateNiBizID(kt *kit.Kit, bizIDNiIDsMap map[int64][]string) error {
 	for bizID, niIDs := range bizIDNiIDsMap {
 		for _, batch := range slice.Split(niIDs, constant.BatchOperationMaxLimit) {
 			req := &networkinterface.NetworkInterfaceCommonInfoBatchUpdateReq{

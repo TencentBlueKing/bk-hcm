@@ -405,7 +405,7 @@ func (w *Watcher) getHostSpace(kt *kit.Kit, host cmdb.Host, dbHostBriefMsg map[i
 
 	msg, ok := dbHostBriefMsg[host.BkHostID]
 	if !ok {
-		// 如果主机不存在db, 则一定不是公有云厂商，应该按照业务为度区分
+		// 如果主机不存在db, 则一定不是公有云厂商，应该按照业务纬度区分
 		bizID, ok := hostBizIDMap[host.BkHostID]
 		if !ok {
 			logs.Errorf("get host bizID failed, hostID: %d, rid: %s", host.BkHostID, kt.Rid)
@@ -415,7 +415,7 @@ func (w *Watcher) getHostSpace(kt *kit.Kit, host cmdb.Host, dbHostBriefMsg map[i
 	}
 
 	vendor := msg.vendor
-	if enumor.IsPublicCloudVendor(vendor) {
+	if vendor.IsPublicCloud() {
 		return msg.accountID, nil
 	}
 
@@ -484,7 +484,8 @@ func (w *Watcher) deleteHost(kt *kit.Kit, deleteHosts []cmdb.Host) error {
 	for vendor, spaceHostIDsMap := range vendorSpaceHostIDsMap {
 		hostIDs, ok := spaceHostIDsMap[ignoreSpace]
 		if !ok {
-			logs.Errorf("can not get vendor host ids map, map: %v, rid: %s", spaceHostIDsMap, kt.Rid)
+			logs.Errorf("can not get vendor host ids map, map: %v, vendor: %s, rid: %s", spaceHostIDsMap, vendor,
+				kt.Rid)
 			return errors.New("can not get vendor host ids map")
 		}
 

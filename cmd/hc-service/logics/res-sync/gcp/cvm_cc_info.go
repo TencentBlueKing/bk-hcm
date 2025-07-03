@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package gcp ...
 package gcp
 
 import (
@@ -33,7 +34,7 @@ type SyncCvmCCInfoParams struct {
 
 // CvmCCInfo ...
 func (cli *client) CvmCCInfo(kt *kit.Kit, params *SyncCvmCCInfoParams) error {
-	mgr := ccinfo.NewCvmCCInfo(cli.dbCli)
+	mgr := ccinfo.NewCvmCCInfoRelManager(cli.dbCli)
 
 	if err := mgr.SyncCvmCCInfo(kt, params.Cvms); err != nil {
 		logs.Errorf("sync gcp cvm cc info failed, err: %v, cvms: %+v, rid: %s", err, params.Cvms, kt.Rid)
