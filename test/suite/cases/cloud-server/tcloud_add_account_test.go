@@ -51,7 +51,7 @@ func TestAddAccount(t *testing.T) {
 			Type:        enumor.ResourceAccount,
 			Site:        enumor.ChinaSite,
 			Memo:        cvt.ValToPtr("suite test"),
-			BizID:       constant.SuiteTestBizID,
+			BkBizID:     constant.SuiteTestBizID,
 			UsageBizIDs: []int64{constant.SuiteTestBizID},
 			Extension:   tcloudExt,
 		}

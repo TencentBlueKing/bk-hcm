@@ -145,7 +145,7 @@ func (a *accountSvc) updateForTCloud(
 			Managers:           req.Managers,
 			RecycleReserveTime: req.RecycleReserveTime,
 			Memo:               req.Memo,
-			BizID:              req.BizID,
+			BkBizID:            req.BkBizID,
 			Extension:          shouldUpdatedExtension,
 		},
 	)
@@ -193,7 +193,7 @@ func (a *accountSvc) updateForAws(
 			Managers:           req.Managers,
 			Memo:               req.Memo,
 			RecycleReserveTime: req.RecycleReserveTime,
-			BizID:              req.BizID,
+			BkBizID:            req.BkBizID,
 			Extension:          shouldUpdatedExtension,
 		},
 	)
@@ -243,7 +243,7 @@ func (a *accountSvc) updateForHuaWei(
 			Managers:           req.Managers,
 			Memo:               req.Memo,
 			RecycleReserveTime: req.RecycleReserveTime,
-			BizID:              req.BizID,
+			BkBizID:            req.BkBizID,
 			Extension:          shouldUpdatedExtension,
 		},
 	)
@@ -293,7 +293,7 @@ func (a *accountSvc) updateForGcp(
 			Managers:           req.Managers,
 			Memo:               req.Memo,
 			RecycleReserveTime: req.RecycleReserveTime,
-			BizID:              req.BizID,
+			BkBizID:            req.BkBizID,
 			Extension:          shouldUpdatedExtension,
 		},
 	)
@@ -343,7 +343,7 @@ func (a *accountSvc) updateForAzure(
 			Managers:           req.Managers,
 			Memo:               req.Memo,
 			RecycleReserveTime: req.RecycleReserveTime,
-			BizID:              req.BizID,
+			BkBizID:            req.BkBizID,
 			Extension:          shouldUpdatedExtension,
 		},
 	)

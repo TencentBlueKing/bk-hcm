@@ -58,9 +58,9 @@ func (a *ApplicationOfAddAccount) RenderItsmForm() (string, error) {
 	formItems = append(formItems, formItem{Label: "责任人", Value: strings.Join(req.Managers, ",")})
 
 	// 管理业务
-	bizName, err := a.GetBizName(req.BizID)
+	bizName, err := a.GetBizName(req.BkBizID)
 	if err != nil {
-		return "", fmt.Errorf("get biz name failed, bk_biz_id: %v, err: %w", req.BizID, err)
+		return "", fmt.Errorf("get biz name failed, bk_biz_id: %v, err: %w", req.BkBizID, err)
 	}
 	formItems = append(formItems, formItem{Label: "管理业务", Value: bizName})
 

@@ -60,6 +60,7 @@ func (a *accountSvc) ListByBkBizID(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
+	// 兼容旧接口的返回值
 	for _, one := range accounts {
 		one.BkBizIDs = one.UsageBizIDs
 	}

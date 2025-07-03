@@ -182,7 +182,7 @@ type AccountUpdateReq struct {
 	Managers           []string        `json:"managers" validate:"omitempty,max=5"`
 	Memo               *string         `json:"memo" validate:"omitempty"`
 	RecycleReserveTime int             `json:"recycle_reserve_time" validate:"omitempty"`
-	BizID              int64           `json:"bk_biz_id" validate:"omitempty"`
+	BkBizID            int64           `json:"bk_biz_id" validate:"omitempty"`
 	UsageBizIDs        []int64         `json:"usage_biz_ids" validate:"omitempty"`
 	Extension          json.RawMessage `json:"extension" validate:"omitempty"`
 }
@@ -212,13 +212,13 @@ func (req *AccountUpdateReq) Validate(accountInfo *cloud.BaseAccount) error {
 
 func (req *AccountUpdateReq) validateBizIDAndUsageBizIDs(accountInfo *cloud.BaseAccount) error {
 	if accountInfo.Type != enumor.ResourceAccount {
-		return validateNonResAccountBizIDs(req.BizID, req.UsageBizIDs)
+		return validateNonResAccountBizIDs(req.BkBizID, req.UsageBizIDs)
 	}
 
 	// 确定要使用的 bizID 和 usageBizIDs
-	bizID := req.BizID
+	bizID := req.BkBizID
 	if bizID == 0 {
-		bizID = accountInfo.BizID
+		bizID = accountInfo.BkBizID
 	}
 
 	usageBizIDs := req.UsageBizIDs

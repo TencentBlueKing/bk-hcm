@@ -91,7 +91,7 @@ func (a *ApplicationOfAddAccount) createForTCloud() (string, error) {
 			Type:        a.req.Type,
 			Site:        a.req.Site,
 			Memo:        a.req.Memo,
-			BizID:       a.req.BizID,
+			BkBizID:     a.req.BkBizID,
 			UsageBizIDs: a.req.UsageBizIDs,
 			Extension: &dataprotocloud.TCloudAccountExtensionCreateReq{
 				CloudMainAccountID: a.req.Extension["cloud_main_account_id"],
@@ -117,7 +117,7 @@ func (a *ApplicationOfAddAccount) createForAws() (string, error) {
 			Type:        a.req.Type,
 			Site:        a.req.Site,
 			Memo:        a.req.Memo,
-			BizID:       a.req.BizID,
+			BkBizID:     a.req.BkBizID,
 			UsageBizIDs: a.req.UsageBizIDs,
 			Extension: &dataprotocloud.AwsAccountExtensionCreateReq{
 				CloudAccountID:   a.req.Extension["cloud_account_id"],
@@ -143,7 +143,7 @@ func (a *ApplicationOfAddAccount) createForHuaWei() (string, error) {
 			Type:        a.req.Type,
 			Site:        a.req.Site,
 			Memo:        a.req.Memo,
-			BizID:       a.req.BizID,
+			BkBizID:     a.req.BkBizID,
 			UsageBizIDs: a.req.UsageBizIDs,
 			Extension: &dataprotocloud.HuaWeiAccountExtensionCreateReq{
 				CloudSubAccountID:   a.req.Extension["cloud_sub_account_id"],
@@ -171,7 +171,7 @@ func (a *ApplicationOfAddAccount) createForGcp() (string, error) {
 			Type:        a.req.Type,
 			Site:        a.req.Site,
 			Memo:        a.req.Memo,
-			BizID:       a.req.BizID,
+			BkBizID:     a.req.BkBizID,
 			UsageBizIDs: a.req.UsageBizIDs,
 			Extension: &dataprotocloud.GcpAccountExtensionCreateReq{
 				CloudProjectID:          a.req.Extension["cloud_project_id"],
@@ -199,7 +199,7 @@ func (a *ApplicationOfAddAccount) createForAzure() (string, error) {
 			Type:        a.req.Type,
 			Site:        a.req.Site,
 			Memo:        a.req.Memo,
-			BizID:       a.req.BizID,
+			BkBizID:     a.req.BkBizID,
 			UsageBizIDs: a.req.UsageBizIDs,
 			Extension: &dataprotocloud.AzureAccountExtensionCreateReq{
 				CloudTenantID:         a.req.Extension["cloud_tenant_id"],

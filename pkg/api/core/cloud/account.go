@@ -36,7 +36,7 @@ type BaseAccount struct {
 	Price       string                 `json:"price"`
 	PriceUnit   string                 `json:"price_unit"`
 	Memo        *string                `json:"memo"`
-	BizID       int64                  `json:"bk_biz_id"`
+	BkBizID     int64                  `json:"bk_biz_id"`
 	UsageBizIDs []int64                `json:"usage_biz_ids"`
 	// 旧的业务字段，用于兼容旧的api
 	BkBizIDs           []int64 `json:"bk_biz_ids"`

@@ -195,7 +195,7 @@ type AccountCommonInfoCreateReq struct {
 	Type        enumor.AccountType     `json:"type" validate:"required"`
 	Site        enumor.AccountSiteType `json:"site" validate:"required"`
 	Memo        *string                `json:"memo" validate:"omitempty"`
-	BizID       int64                  `json:"bk_biz_id" validate:"omitempty"`
+	BkBizID     int64                  `json:"bk_biz_id" validate:"omitempty"`
 	UsageBizIDs []int64                `json:"usage_biz_ids" validate:"required"`
 }
 
@@ -230,7 +230,7 @@ func (req *AccountCommonInfoCreateReq) Validate() error {
 	}
 
 	// 资源账号需要进一步对管理业务和使用业务进行校验
-	if err := req.validateBizIDAndUsageBizIDs(req.BizID, req.UsageBizIDs, req.Type); err != nil {
+	if err := req.validateBizIDAndUsageBizIDs(req.BkBizID, req.UsageBizIDs, req.Type); err != nil {
 		return err
 	}
 
@@ -262,17 +262,17 @@ func (req *AccountCommonInfoCreateReq) validateResAccountBizIDs() error {
 		return err
 	}
 	// 校验使用业务是否包含管理业务，要求必须包含
-	if err := validateBizIDInUsageBizIDs(req.BizID, req.UsageBizIDs); err != nil {
+	if err := validateBizIDInUsageBizIDs(req.BkBizID, req.UsageBizIDs); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (req *AccountCommonInfoCreateReq) validateBizID() error {
-	if req.BizID == 0 {
+	if req.BkBizID == 0 {
 		return fmt.Errorf("bk_biz_id can not be empty")
 	}
-	if req.BizID == constant.AttachedAllBiz {
+	if req.BkBizID == constant.AttachedAllBiz {
 		return fmt.Errorf("bk_biz_id can not set all biz")
 	}
 	return nil

@@ -108,6 +108,9 @@ func getAccountInfoForRes(kt *kit.Kit, cli *dataservice.Client, resType enumor.C
 }
 
 func getAccountUsageBizIDs(kt *kit.Kit, cli *dataservice.Client, accountIDs []string) (map[string][]int64, error) {
+	if len(accountIDs) == 0 {
+		return nil, nil
+	}
 	accountReq := &protocloud.AccountListReq{
 		Filter: tools.ContainersExpression("id", accountIDs),
 		Page:   core.NewDefaultBasePage(),
