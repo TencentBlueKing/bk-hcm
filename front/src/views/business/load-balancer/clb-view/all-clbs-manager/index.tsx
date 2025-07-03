@@ -27,6 +27,7 @@ import { useVerify } from '@/hooks';
 import { useGlobalPermissionDialog } from '@/store/useGlobalPermissionDialog';
 import { LB_ISP, ResourceTypeEnum, VendorEnum, VendorMap } from '@/common/constant';
 import { ValidateValuesFunc } from 'bkui-vue/lib/search-select/utils';
+import { useRegionsStore } from '@/store/useRegionsStore';
 
 export default defineComponent({
   name: 'AllClbsManager',
@@ -36,6 +37,7 @@ export default defineComponent({
     const route = useRoute();
     const { t } = useI18n();
     const businessStore = useBusinessStore();
+    const { getAllRegion } = useRegionsStore();
     const { whereAmI, getBizsId } = useWhereAmI();
     const { selections, handleSelectionChange, resetSelections } = useSelection();
     const { authVerifyData, handleAuth } = useVerify();
@@ -115,6 +117,12 @@ export default defineComponent({
             children: Object.keys(CLB_STATUS_MAP).map((key) => ({ id: key, name: CLB_STATUS_MAP[key] })),
           },
           { id: 'cloud_vpc_id', name: '所属VPC' },
+          {
+            name: t('地域'),
+            id: 'region',
+            children: getAllRegion().map(([id, name]) => ({ id, name })),
+            multiple: true,
+          },
         ],
         extra: {
           validateValues,
@@ -157,7 +165,8 @@ export default defineComponent({
                       handleAuth(deleteClbActionName.value);
                       globalPermissionDialogStore.setShow(true);
                     } else handleDelete(data);
-                  }}>
+                  }}
+                >
                   删除
                 </Button>
               );
@@ -253,7 +262,8 @@ export default defineComponent({
                       handleAuth(createClbActionName.value);
                       globalPermissionDialogStore.setShow(true);
                     } else handleApply();
-                  }}>
+                  }}
+                >
                   购买
                 </Button>
                 <Button
@@ -269,7 +279,8 @@ export default defineComponent({
                     }
                     handleClickBatchDelete();
                   }}
-                  disabled={selections.value.length === 0}>
+                  disabled={selections.value.length === 0}
+                >
                   批量删除
                 </Button>
                 {/* 批量导入 */}
@@ -293,7 +304,8 @@ export default defineComponent({
           isSubmitDisabled={isSubmitDisabled.value}
           tableProps={tableProps}
           list={computedListenersList.value}
-          onHandleConfirm={handleBatchDeleteSubmit}>
+          onHandleConfirm={handleBatchDeleteSubmit}
+        >
           {{
             tips: () => (
               <>

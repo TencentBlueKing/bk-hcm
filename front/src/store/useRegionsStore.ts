@@ -16,36 +16,55 @@ export const useRegionsStore = defineStore('useRegions', () => {
   const huawei = ref<Map<string, string>>(new Map());
   const vendor = ref('' as VendorEnum);
 
+  const allRegion: Map<string, string> = new Map();
+
   const ressourceStore = useResourceStore();
 
   const REQUIRED_MAX_SIZE = 500;
 
   const fetchRegions = async (
-    vendor: VendorEnum.TCLOUD | VendorEnum.HUAWEI,
-    payload: Object = {
-      filter: {
-        op: 'and',
-        rules: [],
+    vendor: VendorEnum,
+    options: { [key: string]: any } = {
+      payload: {
+        filter: {
+          op: 'and',
+          rules: [],
+        },
+        page: {
+          count: false,
+          start: 0,
+          limit: REQUIRED_MAX_SIZE,
+        },
       },
-      page: {
-        count: false,
-        start: 0,
-        limit: REQUIRED_MAX_SIZE,
-      },
+      field: ['region_id', 'region_name'],
     },
   ) => {
+    const {
+      payload = {
+        filter: {
+          op: 'and',
+          rules: [],
+        },
+        page: {
+          count: false,
+          start: 0,
+          limit: REQUIRED_MAX_SIZE,
+        },
+      },
+      field = ['region_id', 'region_name'],
+    } = options;
     const res = await ressourceStore.getCloudRegion(vendor, payload);
     const details = res?.data?.details || [];
-    if (vendor === VendorEnum.TCLOUD) {
-      details.forEach((v: { region_id: string; region_name: string }) => {
-        tcloud.value.set(v.region_id, v.region_name);
-      });
-    }
-    if (vendor === VendorEnum.HUAWEI) {
-      details.forEach((v: { region_id: string; locales_zh_cn: string }) => {
-        huawei.value.set(v.region_id, v.locales_zh_cn);
-      });
-    }
+    const [id, name] = field;
+    details.forEach((v: { [id]: string; [name]: string }) => {
+      if (vendor === VendorEnum.TCLOUD) {
+        tcloud.value.set(v[id], v[name]);
+      }
+      if (vendor === VendorEnum.HUAWEI) {
+        huawei.value.set(v[id], v[name]);
+      }
+      allRegion.set(v[id], getRegionName(vendor, v[id]));
+    });
   };
 
   const getRegionName = (vendor: VendorEnum, id: string) => {
@@ -98,11 +117,16 @@ export const useRegionsStore = defineStore('useRegions', () => {
     return getRegionName(vendor, zone.substring(0, idx)) + zone.substring(idx);
   };
 
+  const getAllRegion = () => {
+    return Array.from(allRegion);
+  };
+
   return {
     getRegionName,
     fetchRegions,
     getRegionNameEN,
     getZoneName,
     vendor,
+    getAllRegion,
   };
 });

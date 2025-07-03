@@ -31,6 +31,8 @@ import { MENU_BUSINESS_TASK_MANAGEMENT } from '@/constants/menu-symbol';
 import { jsonp } from '@/http';
 import i18n from '@/language/i18n';
 
+import { otherCloud } from './plugin/region.plugin';
+
 // import { CogShape } from 'bkui-vue/lib/icon';
 // import { useProjectList } from '@/hooks';
 // import AddProjectDialog from '@/components/AddProjectDialog';
@@ -106,12 +108,24 @@ export default defineComponent({
       );
     };
 
+    // 获取所有地域
+    const fetchAllRegions = () => {
+      const clouds: { [cloud: string]: [string, string] } = {
+        [VendorEnum.TCLOUD]: ['region_id', 'region_name'],
+        [VendorEnum.HUAWEI]: ['region_id', 'locales_zh_cn'],
+        [VendorEnum.AZURE]: ['display_name', 'region_display_name'],
+        [VendorEnum.GCP]: ['region_id', 'region_name'],
+        [VendorEnum.AWS]: ['region_id', 'region_name'],
+        ...otherCloud,
+      };
+      Object.entries(clouds).forEach(([cloud, [id, name]]) => fetchRegions(cloud, { field: [id, name] }));
+    };
+
     /**
      * 在这里获取项目公共数据并缓存
      */
     onMounted(() => {
-      fetchRegions(VendorEnum.TCLOUD);
-      fetchRegions(VendorEnum.HUAWEI);
+      fetchAllRegions();
       fetchBusinessMap();
       fetchAllCloudAreas();
     });

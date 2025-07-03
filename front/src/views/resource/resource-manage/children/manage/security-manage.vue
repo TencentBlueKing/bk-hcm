@@ -4,7 +4,7 @@ import type {
   // PlainObject,
   FilterType,
 } from '@/typings/resource';
-import { GcpTypeEnum } from '@/typings';
+import { GcpTypeEnum, QueryRuleOPEnum, RulesItem } from '@/typings';
 import { Button, InfoBox, Loading, Message, Table, Tag, bkTooltips } from 'bkui-vue';
 import { useResourceStore, useAccountStore } from '@/store';
 import {
@@ -21,15 +21,15 @@ import {
   Fragment,
   vShow,
   useTemplateRef,
+  onMounted,
 } from 'vue';
 
 import { useI18n } from 'vue-i18n';
 import { useRouter, useRoute } from 'vue-router';
 import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
-import useFilter from '@/views/resource/resource-manage/hooks/use-filter';
 import { useRegionsStore } from '@/store/useRegionsStore';
-import { GLOBAL_BIZS_KEY, VendorEnum, VendorMap } from '@/common/constant';
+import { GLOBAL_BIZS_KEY, VendorEnum, VendorMap, FILTER_DATA } from '@/common/constant';
 import { cloneDeep } from 'lodash-es';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
@@ -65,7 +65,11 @@ import {
   AUTH_UPDATE_IAAS_RESOURCE,
 } from '@/constants/auth-symbols';
 import HcmAuth from '@/components/auth/auth.vue';
-import { buildMultipleValueRulesItem } from '@/utils';
+
+import useSearchQs from '@/hooks/use-search-qs';
+import { type ISearchCondition } from './typings';
+
+import { transformSimpleCondition, buildSearchValue } from '@/utils/search';
 
 const props = defineProps({
   filter: {
@@ -82,7 +86,7 @@ const emit = defineEmits(['handleSecrityType', 'edit', 'editTemplate']);
 // use hooks
 const { t } = useI18n();
 
-const { getRegionName } = useRegionsStore();
+const { getRegionName, getAllRegion } = useRegionsStore();
 const securityGroupStore = useSecurityGroupStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
 const router = useRouter();
@@ -122,21 +126,65 @@ const cloneSecurityData = reactive<ICloneSecurityProps>({
 });
 
 const templateData = ref([]);
+const searchData = ref([]);
+const searchValue = ref([]);
 
-const { searchData, searchValue, filter } = useFilter(props, {
-  convertValueCallbacks: { mgmt_type: (value) => (value === 'unknown' ? '' : value) },
-  conditionFormatterMapper: {
-    cloud_id: (value: string) => {
-      return buildMultipleValueRulesItem('cloud_id', value);
+const filter = reactive<any>(cloneDeep(props.filter));
+
+const selectSearchData = computed(() => {
+  const map: Record<string, { idName: string; searchData: ISearchItem[] }> = {
+    group: {
+      idName: t('安全组ID'),
+      searchData: [
+        {
+          name: t('使用业务'),
+          id: 'usage_biz_id',
+          children: businessGlobalStore.businessFullList.map(({ id, name }) => ({ id, name })),
+        },
+        {
+          name: t('管理类型'),
+          id: 'mgmt_type',
+          children: [
+            { id: SecurityGroupManageType.BIZ, name: t('业务管理') },
+            { id: SecurityGroupManageType.PLATFORM, name: t('平台管理') },
+            { id: 'unknown', name: t('未确认') },
+          ],
+          multiple: true,
+        },
+        {
+          name: t('管理业务'),
+          id: 'mgmt_biz_id',
+          children: businessGlobalStore.businessFullList.map(({ id, name }) => ({ id, name })),
+        },
+        {
+          name: t('地域'),
+          id: 'region',
+          children: getAllRegion().map(([id, name]) => ({ id, name })),
+          multiple: true,
+        },
+      ],
     },
-  },
+    gcp: {
+      idName: t('防火墙ID'),
+      searchData: [],
+    },
+    template: {
+      idName: t('模板ID'),
+      searchData: [],
+    },
+  };
+  const baseSearchData = [{ name: map[activeType.value].idName, id: 'cloud_id' }, ...searchData.value];
+
+  return [...baseSearchData, ...map[activeType.value].searchData];
 });
+
+const searchQs = useSearchQs({ key: 'filter', properties: selectSearchData });
 
 const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort, getList } =
   useQueryCommonList(
     {
       ...props,
-      filter: filter.value,
+      filter,
     },
     fetchUrl,
     {
@@ -148,6 +196,13 @@ const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, ha
       },
     },
   );
+
+const getQueryOperator = (field: string, value: unknown): QueryRuleOPEnum => {
+  if (field === 'cloud_vpc_ids') return QueryRuleOPEnum.JSON_CONTAINS;
+  if (Array.isArray(value)) return QueryRuleOPEnum.IN;
+  if (typeof value === 'number' || ['vendor', 'mgmt_type'].includes(field)) return QueryRuleOPEnum.EQ;
+  return QueryRuleOPEnum.CS;
+};
 
 // 异步加载安全组字段：关联资源、规则数、负责人信息
 const fetchSecurityGroupExtraFields = async (
@@ -201,48 +256,6 @@ const fetchSecurityGroupRelatedResourcesCount = async (
     });
   });
 };
-
-const selectSearchData = computed(() => {
-  const map: Record<string, { idName: string; searchData: ISearchItem[] }> = {
-    group: {
-      idName: t('安全组ID'),
-      searchData: [
-        {
-          name: t('使用业务'),
-          id: 'usage_biz_id',
-          children: businessGlobalStore.businessFullList.map(({ id, name }) => ({ id, name })),
-        },
-        {
-          name: t('管理类型'),
-          id: 'mgmt_type',
-          children: [
-            { id: SecurityGroupManageType.BIZ, name: t('业务管理') },
-            { id: SecurityGroupManageType.PLATFORM, name: t('平台管理') },
-            { id: 'unknown', name: t('未确认') },
-          ],
-          multiple: true,
-        },
-        {
-          name: t('管理业务'),
-          id: 'mgmt_biz_id',
-          children: businessGlobalStore.businessFullList.map(({ id, name }) => ({ id, name })),
-        },
-      ],
-    },
-    gcp: {
-      idName: t('防火墙ID'),
-      searchData: [],
-    },
-    template: {
-      idName: t('模板ID'),
-      searchData: [],
-    },
-  };
-
-  const baseSearchData = [{ name: map[activeType.value].idName, id: 'cloud_id' }, ...searchData.value];
-
-  return [...baseSearchData, ...map[activeType.value].searchData];
-});
 
 watch(
   () => datas.value,
@@ -338,6 +351,9 @@ const groupColumns = [
     label: t('地域'),
     field: 'region',
     isDefaultShow: true,
+    filter: {
+      list: getAllRegion().map(([value, text]) => ({ value, text })),
+    },
     render: ({ data }: any) => {
       return getRegionName(data.vendor, data.region);
     },
@@ -1008,6 +1024,7 @@ watch(
     fetchUrl.value = URL_MAP[v] || '';
 
     searchValue.value = [];
+    filter.rules = [];
     resetSelections();
     // 清空刷新行key，避免切换tab时只有一行有loading效果
     refreshRowKeySet.value.clear();
@@ -1191,15 +1208,61 @@ watch(
     handleClearSecurityGroupSelections();
   },
 );
-
+watch(
+  () => route.query,
+  (query) => {
+    const value = searchQs.get(query);
+    const { rules = [] } = transformSimpleCondition(value, selectSearchData.value);
+    rules.forEach((rule: RulesItem) => {
+      rule.op = getQueryOperator(rule.field, rule.value);
+    });
+    filter.rules = rules;
+  },
+  {
+    deep: true,
+    immediate: true,
+  },
+);
+watch(
+  () => accountStore.accountList, // 设置云账号筛选所需数据
+  (val) => {
+    if (!val) return;
+    val.length &&
+      FILTER_DATA.forEach((e) => {
+        if (e.id === 'account_id') {
+          e.children = val;
+        }
+      });
+    searchData.value = FILTER_DATA;
+  },
+  {
+    deep: true,
+    immediate: true,
+  },
+);
 watch(
   searchValue,
-  () => {
+  (val) => {
     // 清空刷新行key，避免切换tab时只有一行有loading效果
     refreshRowKeySet.value.clear();
+    const routeVal: ISearchCondition = {};
+    val.forEach((item) => {
+      const { id, values } = item;
+      if (!Object.hasOwn(routeVal, id)) routeVal[id] = [];
+      routeVal[id].push(...values.map(({ id }: { id: string | number }) => id));
+    });
+    // 放到下次循环中，因为这次路由还未改变
+    setTimeout(() => searchQs.set(routeVal, false));
   },
   { deep: true },
 );
+onMounted(() => {
+  // 默认进来搜索是 管理类型：业务管理|未确认
+  const value = Object.keys(searchQs.get(route.query))?.length
+    ? searchQs.get(route.query)
+    : { mgmt_type: ['biz', 'unknown'] };
+  searchValue.value = buildSearchValue(selectSearchData.value, value);
+});
 
 defineExpose({ fetchComponentsData });
 </script>
