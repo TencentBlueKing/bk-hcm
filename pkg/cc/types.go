@@ -269,6 +269,7 @@ type ResourceDB struct {
 	MaxOpenConn       uint      `yaml:"maxOpenConn"`
 	MaxIdleConn       uint      `yaml:"maxIdleConn"`
 	TLS               TLSConfig `yaml:"tls"`
+	TimeZone          string    `yaml:"timeZone"`
 }
 
 // trySetDefault set the database's default value if user not configured.
@@ -295,6 +296,9 @@ func (ds *ResourceDB) trySetDefault() {
 
 	if ds.MaxIdleConn == 0 {
 		ds.MaxIdleConn = 5
+	}
+	if len(ds.TimeZone) == 0 {
+		ds.TimeZone = "UTC"
 	}
 }
 

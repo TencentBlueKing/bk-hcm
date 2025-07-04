@@ -22,6 +22,7 @@ package dao
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -187,7 +188,7 @@ func connect(opt cc.ResourceDB) (*sqlx.DB, error) {
 // uri generate the standard db connection string format uri.
 func uri(opt cc.ResourceDB) string {
 	return fmt.Sprintf(
-		"%s:%s@tcp(%s)/%s?parseTime=true&timeout=%ds&readTimeout=%ds&writeTimeout=%ds&charset=%s",
+		"%s:%s@tcp(%s)/%s?parseTime=true&timeout=%ds&readTimeout=%ds&writeTimeout=%ds&charset=%s&loc=%s",
 		opt.User,
 		opt.Password,
 		strings.Join(opt.Endpoints, ","),
@@ -196,6 +197,7 @@ func uri(opt cc.ResourceDB) string {
 		opt.ReadTimeoutSec,
 		opt.WriteTimeoutSec,
 		"utf8mb4",
+		url.PathEscape(opt.TimeZone),
 	)
 }
 
