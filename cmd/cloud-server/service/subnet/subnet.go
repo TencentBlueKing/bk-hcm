@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package subnet ...
 package subnet
 
 import (
@@ -566,6 +567,12 @@ func (svc *subnetSvc) AssignSubnetToBiz(cts *rest.Contexts) (interface{}, error)
 
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	err := common.ValidateTargetBizID(cts.Kit, svc.client.DataService(), enumor.SubnetCloudResType, req.SubnetIDs,
+		req.BkBizID)
+	if err != nil {
+		return nil, err
 	}
 
 	// authorize

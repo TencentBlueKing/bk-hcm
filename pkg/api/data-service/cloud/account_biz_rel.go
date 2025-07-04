@@ -61,14 +61,16 @@ func (req *AccountBizRelWithAccountListReq) Validate() error {
 	return nil
 }
 
+// AccountBizRelWithAccountListResp ...
 type AccountBizRelWithAccountListResp struct {
 	rest.BaseResp `json:",inline"`
 	Data          []*AccountBizRelWithAccount `json:"data"`
 }
 
+// AccountBizRelWithAccount account biz relation with account
 type AccountBizRelWithAccount struct {
 	corecloud.BaseAccount `json:",inline"`
-	BkBizID               int64  `json:"bk_biz_id"`
+	RelBkBizID            int64  `json:"rel_bk_biz_id"`
 	RelCreator            string `db:"rel_creator" json:"rel_creator"`
 	RelCreatedAt          string `db:"rel_created_at" json:"rel_created_at"`
 }

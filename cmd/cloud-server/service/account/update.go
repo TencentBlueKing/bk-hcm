@@ -26,6 +26,7 @@ import (
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
@@ -38,10 +39,24 @@ func (a *accountSvc) UpdateAccount(cts *rest.Contexts) (interface{}, error) {
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
-	if err := req.Validate(); err != nil {
+	// 根据accountID拿到账户类型然后才进行请求参数校验，因为资源账号需要额外的校验
+	accountID := cts.PathParameter("account_id").String()
+	listReq := &dataproto.AccountListReq{
+		Filter: tools.EqualExpression("id", accountID),
+	}
+	result, err := a.client.DataService().Global.Account.List(cts.Kit.Ctx, cts.Kit.Header(), listReq)
+	if err != nil {
+		logs.Errorf("list account failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, err
+	}
+	if len(result.Details) == 0 {
+		logs.Errorf("account: %s not found, rid: %s", accountID, cts.Kit.Rid)
+		return nil, errf.Newf(errf.RecordNotFound, "account: %s not found", accountID)
+	}
+
+	if err := req.Validate(result.Details[0]); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-	accountID := cts.PathParameter("account_id").String()
 
 	action := meta.Update
 	if req.RecycleReserveTime != 0 {
@@ -71,13 +86,13 @@ func (a *accountSvc) UpdateAccount(cts *rest.Contexts) (interface{}, error) {
 	}
 
 	// 更新账号与业务关系
-	if len(req.BkBizIDs) > 0 {
+	if len(req.UsageBizIDs) > 0 {
 		_, err = a.client.DataService().Global.Account.UpdateBizRel(
 			cts.Kit.Ctx,
 			cts.Kit.Header(),
 			accountID,
 			&dataproto.AccountBizRelUpdateReq{
-				BkBizIDs: req.BkBizIDs,
+				BkBizIDs: req.UsageBizIDs,
 			},
 		)
 		if err != nil {
@@ -137,6 +152,7 @@ func (a *accountSvc) updateForTCloud(
 			Managers:           req.Managers,
 			RecycleReserveTime: req.RecycleReserveTime,
 			Memo:               req.Memo,
+			BkBizID:            req.BkBizID,
 			Extension:          shouldUpdatedExtension,
 		},
 	)
@@ -184,6 +200,7 @@ func (a *accountSvc) updateForAws(
 			Managers:           req.Managers,
 			Memo:               req.Memo,
 			RecycleReserveTime: req.RecycleReserveTime,
+			BkBizID:            req.BkBizID,
 			Extension:          shouldUpdatedExtension,
 		},
 	)
@@ -233,6 +250,7 @@ func (a *accountSvc) updateForHuaWei(
 			Managers:           req.Managers,
 			Memo:               req.Memo,
 			RecycleReserveTime: req.RecycleReserveTime,
+			BkBizID:            req.BkBizID,
 			Extension:          shouldUpdatedExtension,
 		},
 	)
@@ -282,6 +300,7 @@ func (a *accountSvc) updateForGcp(
 			Managers:           req.Managers,
 			Memo:               req.Memo,
 			RecycleReserveTime: req.RecycleReserveTime,
+			BkBizID:            req.BkBizID,
 			Extension:          shouldUpdatedExtension,
 		},
 	)
@@ -331,6 +350,7 @@ func (a *accountSvc) updateForAzure(
 			Managers:           req.Managers,
 			Memo:               req.Memo,
 			RecycleReserveTime: req.RecycleReserveTime,
+			BkBizID:            req.BkBizID,
 			Extension:          shouldUpdatedExtension,
 		},
 	)

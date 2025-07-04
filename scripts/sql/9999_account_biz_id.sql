@@ -17,30 +17,24 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package types
+/*
+    SQLVER=9999,HCMVER=v9.9.9
 
-import (
-	"time"
+    Notes:
+    1. 修改`account`表，增加`bk_biz_id`字段
+*/
 
-	"hcm/pkg/dal/table/cloud"
-)
+START TRANSACTION;
 
-// ListAccountBizRelDetails list account and biz relation details.
-type ListAccountBizRelDetails struct {
-	Count   uint64                      `json:"count,omitempty"`
-	Details []*cloud.AccountBizRelTable `json:"details,omitempty"`
-}
+--  增加`bk_biz_id`字段
+ALTER TABLE account
+    ADD COLUMN bk_biz_id bigint NOT NULL DEFAULT 0 COMMENT '管理业务ID';
 
-// ListAccountBizRelJoinAccountDetails list account and biz relation details.
-type ListAccountBizRelJoinAccountDetails struct {
-	Count   uint64              `json:"count,omitempty"`
-	Details []*AccountWithBizID `json:"details,omitempty"`
-}
+UPDATE account a
+    JOIN account_biz_rel b ON a.id = b.account_id
+    SET a.bk_biz_id = b.bk_biz_id;
 
-// AccountWithBizID ...
-type AccountWithBizID struct {
-	cloud.AccountTable `db:",inline" json:",inline"`
-	RelBkBizID         int64      `db:"rel_bk_biz_id" json:"rel_bk_biz_id"`
-	RelCreator         string     `db:"rel_creator" json:"rel_creator"`
-	RelCreatedAt       *time.Time `db:"rel_created_at" json:"rel_created_at"`
-}
+CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
+SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+
+COMMIT
