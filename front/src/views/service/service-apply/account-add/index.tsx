@@ -24,7 +24,7 @@ export default defineComponent({
       name: '', // 名称
       vendor: VendorEnum.TCLOUD, // 云厂商
       managers: [], // 责任人
-      bizIds: [], // 使用业务
+      usage_biz_ids: [], // 使用业务
       memo: '', // 备注
       mainAccount: '', // 主账号
       subAccount: '', // 子账号
@@ -61,9 +61,9 @@ export default defineComponent({
       'accountId',
       'applicationId',
       'applicationName',
-      'bizIds',
+      'usage_biz_ids',
     ];
-    const requiredData: string[] = ['secretId', 'secretKey', 'bizIds'];
+    const requiredData: string[] = ['secretId', 'secretKey', 'usage_biz_ids'];
     const cloudType = reactive(CLOUD_TYPE);
     const submitLoading = ref(false);
     const isChangeVendor = ref(false);
@@ -115,7 +115,7 @@ export default defineComponent({
           managers: projectModel.managers,
           memo: projectModel.memo,
           site: projectModel.site,
-          bk_biz_ids: Array.isArray(projectModel.bizIds) ? [-1] : [projectModel.bizIds],
+          usage_biz_ids: Array.isArray(projectModel.usage_biz_ids) ? [-1] : [projectModel.usage_biz_ids],
           extension: {},
         };
         switch (projectModel.vendor) {
@@ -649,7 +649,7 @@ export default defineComponent({
           });
         } else {
           formList?.forEach((e) => {
-            if (e.label && (e.property === 'memo' || e.property === 'bizIds')) {
+            if (e.label && (e.property === 'memo' || e.property === 'usage_biz_ids')) {
               // 备注、使用业务不需必填
               e.required = false;
             }
@@ -699,7 +699,8 @@ export default defineComponent({
                 disabled={
                   !['tcloud', 'aws'].includes(item.id) ||
                   (projectModel.type === 'security_audit' && item.id === 'tcloud')
-                }>
+                }
+              >
                 {item.name}
               </RadioButton>
             ))}
@@ -761,7 +762,7 @@ export default defineComponent({
         label: t('使用业务'),
         noBorBottom: true,
         required: true,
-        property: 'bizIds',
+        property: 'usage_biz_ids',
         component: () => (
           <Select
             filterable
@@ -769,7 +770,8 @@ export default defineComponent({
             multipleMode='tag'
             placeholder={t('请选择使用业务')}
             class='w450'
-            v-model={projectModel.bizIds}>
+            v-model={projectModel.usage_biz_ids}
+          >
             {businessList.list.map((item) => (
               <Option key={item.id} value={item.id} label={item.name}>
                 {item.name}
@@ -819,14 +821,16 @@ export default defineComponent({
                     'no-border-top': !item.formName,
                     'no-border-bottom': item.noBorBottom || (item.property === 'vendor' && isChangeVendor.value),
                     'no-border': item.type === 'button',
-                  }}>
+                  }}
+                >
                   <FormItem
                     class='account-form-item'
                     label={item.label}
                     required={item.required}
                     property={item.property}
                     description={item.description}
-                    rules={item.rules}>
+                    rules={item.rules}
+                  >
                     {item.component ? item.component() : item.content()}
                   </FormItem>
                 </div>
