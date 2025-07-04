@@ -22,7 +22,6 @@ package common
 import (
 	"fmt"
 
-	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	dataservice "hcm/pkg/client/data-service"
@@ -111,12 +110,12 @@ func getAccountUsageBizIDs(kt *kit.Kit, cli *dataservice.Client, accountIDs []st
 	if len(accountIDs) == 0 {
 		return nil, nil
 	}
-	accountReq := &protocloud.AccountListReq{
-		Filter: tools.ContainersExpression("id", accountIDs),
-		Page:   core.NewDefaultBasePage(),
-	}
+
 	accountMap := make(map[string][]int64, len(accountIDs))
-	for {
+	for _, parts := range slice.Split(accountIDs, constant.BatchOperationMaxLimit) {
+		accountReq := &protocloud.AccountListReq{
+			Filter: tools.ContainersExpression("id", parts),
+		}
 		accountResp, err := cli.Global.Account.List(kt.Ctx, kt.Header(), accountReq)
 		if err != nil {
 			logs.Errorf("list account info failed, err: %v, rid: %s", err, kt.Rid)
@@ -126,11 +125,6 @@ func getAccountUsageBizIDs(kt *kit.Kit, cli *dataservice.Client, accountIDs []st
 		for _, account := range accountResp.Details {
 			accountMap[account.ID] = account.UsageBizIDs
 		}
-
-		if len(accountResp.Details) < int(core.DefaultMaxPageLimit) {
-			break
-		}
-		accountReq.Page.Start += uint32(accountReq.Page.Limit)
 	}
 
 	return accountMap, nil

@@ -75,7 +75,8 @@ PATCH /api/v1/cloud/accounts/{account_id}
     "hcm"
   ],
   "memo": "account update",
-  "bk_biz_ids": [
+  "bk_biz_id": 310,
+  "usage_biz_ids": [
     310
   ],
   "extension": {

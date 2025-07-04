@@ -6,14 +6,14 @@
 
 ### URL
 
-GET /api/v1/cloud/accounts/bizs/{bk_biz_id}
+GET /api/v1/cloud/accounts/bizs/{usage_biz_id}
 
 ### 输入参数
 
-| 参数名称                 | 参数类型    | 必选 | 描述   |
-|----------------------|---------|----|------|
-| bk_biz_id            | int64   | 是  | 业务ID |
-| account_type         | string  | 否  | 账户类型 |
+| 参数名称         | 参数类型    | 必选 | 描述     |
+|--------------|---------|----|--------|
+| usage_biz_id | int64   | 是  | 使用业务ID |
+| account_type | string  | 否  | 账户类型   |
 
 ### 调用示例
 
@@ -79,7 +79,7 @@ GET /api/v1/cloud/accounts/bizs/{bk_biz_id}
 | memo               | string       | 备注                                                               |
 | bk_biz_id          | int64        | 管理业务                                                             |
 | usage_biz_ids      | int64 array  | 使用业务                                                             |
-| bk_biz_ids         | int64 array  | 旧的业务字段，用于兼容旧的api，值与使用业务的完全相同                                     |
+| bk_biz_ids         | int64 array  | 旧的业务字段，用于兼容旧的api，值与使用业务的完全相同，不推荐使用                               |
 | creator            | string       | 创建者                                                              |
 | reviser            | string       | 更新者                                                              |
 | sync_status        | string       | 资源同步状态                                                           |

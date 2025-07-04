@@ -89,7 +89,8 @@ POST /api/v1/cloud/applications/types/add_account
   ],
   "type": "resource",
   "site": "china",
-  "bk_biz_ids": [
+  "bk_biz_id": 1010011010,
+  "usage_biz_ids": [
     1010011010
   ],
   "extension": {
@@ -113,7 +114,8 @@ POST /api/v1/cloud/applications/types/add_account
   ],
   "type": "resource",
   "site": "china",
-  "bk_biz_ids": [
+  "bk_biz_id": 1010011010,
+  "usage_biz_ids": [
     1010011010
   ],
   "extension": {
@@ -137,7 +139,8 @@ POST /api/v1/cloud/applications/types/add_account
   ],
   "type": "resource",
   "site": "china",
-  "bk_biz_ids": [
+  "bk_biz_id": 1010011010,
+  "usage_biz_ids": [
     1010011010
   ],
   "extension": {
@@ -164,7 +167,8 @@ POST /api/v1/cloud/applications/types/add_account
   ],
   "type": "resource",
   "site": "china",
-  "bk_biz_ids": [
+  "bk_biz_id": 1010011010,
+  "usage_biz_ids": [
     1010011010
   ],
   "extension": {
@@ -190,7 +194,8 @@ POST /api/v1/cloud/applications/types/add_account
   ],
   "type": "resource",
   "site": "china",
-  "bk_biz_ids": [
+  "bk_biz_id": 1010011010,
+  "usage_biz_ids": [
     1010011010
   ],
   "extension": {

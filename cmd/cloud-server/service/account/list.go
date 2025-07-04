@@ -182,7 +182,6 @@ func (a *accountSvc) listAccount(cts *rest.Contexts, typ meta.ResourceType) (*da
 		logs.Errorf("list account by ids and filter failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, err
 	}
-
 	if req.Page != nil && req.Page.Count {
 		return &dataproto.AccountListResult{
 			Details: nil,
