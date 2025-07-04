@@ -21,7 +21,8 @@ package common
 
 import (
 	"fmt"
-
+	
+	"hcm/pkg/api/core"
 	"hcm/pkg/api/data-service/cloud"
 	protocloud "hcm/pkg/api/data-service/cloud"
 	dataservice "hcm/pkg/client/data-service"
@@ -115,6 +116,7 @@ func getAccountUsageBizIDs(kt *kit.Kit, cli *dataservice.Client, accountIDs []st
 	for _, parts := range slice.Split(accountIDs, constant.BatchOperationMaxLimit) {
 		accountReq := &protocloud.AccountListReq{
 			Filter: tools.ContainersExpression("id", parts),
+			Page:   core.NewDefaultBasePage(),
 		}
 		accountResp, err := cli.Global.Account.List(kt.Ctx, kt.Header(), accountReq)
 		if err != nil {
