@@ -7,14 +7,15 @@ import { CLOUD_HOST_STATUS, INSTANCE_CHARGE_MAP, NET_CHARGE_MAP, VendorEnum } fr
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { timeFormatter } from '@/common/util';
 import { FieldList } from '@/views/resource/resource-manage/common/info-list/types';
-
-const { getRegionName } = useRegionsStore();
+import { isNil } from 'lodash';
 
 const props = defineProps({
   data: {
     type: Object as PropType<any>,
   },
 });
+
+const { getRegionName } = useRegionsStore();
 
 const cvmInfo: FieldList = [
   {
@@ -132,13 +133,13 @@ const settingInfo: FieldList = [
   {
     name: 'CPU',
     render() {
-      return `${props?.data?.cpu}核`;
+      return isNil(props?.data?.cpu) ? '--' : `${props.data.cpu} 核`;
     },
   },
   {
     name: '内存',
     render() {
-      return `${props?.data?.memory}G`;
+      return isNil(props?.data?.memory) ? '--' : `${props.data.memory} G`;
     },
   },
   {
