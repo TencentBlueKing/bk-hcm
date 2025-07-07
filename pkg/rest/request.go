@@ -308,16 +308,20 @@ func (r *Result) Into(obj interface{}) error {
 	if nil != r.Err {
 		return r.Err
 	}
-	if r.StatusCode >= 300 {
-		return fmt.Errorf("http request err, status: %d:%s, body: %s", r.StatusCode, r.Status, string(r.Body))
-	}
+
 	if 0 != len(r.Body) {
 		err := json.Unmarshal(r.Body, obj)
 		if nil != err {
+			if r.StatusCode >= 300 {
+				return fmt.Errorf("http request err: %s", string(r.Body))
+			}
+
 			logs.Errorf("invalid response body, unmarshal json failed, reply: %s, err: %s",
 				r.Body, err.Error())
 			return fmt.Errorf("http response err: %v, raw data: %s", err, r.Body)
 		}
+	} else if r.StatusCode >= 300 {
+		return fmt.Errorf("http request failed: %s", r.Status)
 	}
 	return nil
 }
