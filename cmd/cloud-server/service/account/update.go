@@ -23,6 +23,7 @@ import (
 	"fmt"
 
 	proto "hcm/pkg/api/cloud-server/account"
+	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -43,6 +44,7 @@ func (a *accountSvc) UpdateAccount(cts *rest.Contexts) (interface{}, error) {
 	accountID := cts.PathParameter("account_id").String()
 	listReq := &dataproto.AccountListReq{
 		Filter: tools.EqualExpression("id", accountID),
+		Page:   core.NewDefaultBasePage(),
 	}
 	result, err := a.client.DataService().Global.Account.List(cts.Kit.Ctx, cts.Kit.Header(), listReq)
 	if err != nil {
@@ -53,7 +55,6 @@ func (a *accountSvc) UpdateAccount(cts *rest.Contexts) (interface{}, error) {
 		logs.Errorf("account: %s not found, rid: %s", accountID, cts.Kit.Rid)
 		return nil, errf.Newf(errf.RecordNotFound, "account: %s not found", accountID)
 	}
-
 	if err := req.Validate(result.Details[0]); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
