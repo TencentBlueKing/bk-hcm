@@ -115,7 +115,7 @@ export default defineComponent({
           managers: projectModel.managers,
           memo: projectModel.memo,
           site: projectModel.site,
-          usage_biz_ids: Array.isArray(projectModel.usage_biz_ids) ? [-1] : [projectModel.usage_biz_ids],
+          usage_biz_ids: [projectModel.usage_biz_ids],
           extension: {},
         };
         switch (projectModel.vendor) {

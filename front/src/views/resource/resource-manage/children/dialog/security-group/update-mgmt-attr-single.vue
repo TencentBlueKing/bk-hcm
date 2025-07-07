@@ -12,6 +12,8 @@ import {
 import UsageBizFormItem from './usage-biz-form-item.vue';
 import { useAccountBusiness } from '@/views/resource/resource-manage/hooks/use-account-business';
 
+const model = defineModel<boolean>();
+
 const props = defineProps<{
   detail: ISecurityGroupItem;
   field: SecurityGroupMgmtAttrSingleType;
@@ -24,9 +26,7 @@ const emit = defineEmits<{
 const whereAmI = useWhereAmI();
 const securityGroupStore = useSecurityGroupStore();
 
-const { accountBizList } = useAccountBusiness(props.detail.account_id);
-
-const model = defineModel<boolean>();
+const { accountBizList } = useAccountBusiness(ref(props.detail.account_id));
 
 const formData = reactive<Record<SecurityGroupMgmtAttrSingleType, any>>({
   mgmt_biz_id: props.detail.mgmt_biz_id === -1 ? undefined : props.detail.mgmt_biz_id,
