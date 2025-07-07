@@ -66,7 +66,7 @@ func TestCreateLayer4ListenerExecutor_convertDataToPreview(t *testing.T) {
 		{
 			name: "test",
 			args: args{i: [][]string{
-				{"127.0.0.1", "lb-xxxxx1", "tcp", "8888", "WRR", "0", "disable", "用户的备注"},
+				{"127.0.0.1", "lb-xxxxx1", "tcp", "8888", "WRR", "0", "disable", "自定义监听器名称", "用户的备注"},
 			}},
 			want: CreateLayer4ListenerDetail{
 				ClbVipDomain:   "127.0.0.1",
@@ -76,6 +76,7 @@ func TestCreateLayer4ListenerExecutor_convertDataToPreview(t *testing.T) {
 				Scheduler:      "WRR",
 				Session:        0,
 				HealthCheck:    false,
+				Name:           "自定义监听器名称",
 				UserRemark:     "用户的备注",
 				Status:         "",
 				ValidateResult: []string{},
@@ -97,6 +98,25 @@ func TestCreateLayer4ListenerExecutor_convertDataToPreview(t *testing.T) {
 				UserRemark:     "",
 				Status:         "",
 				ValidateResult: []string{},
+			},
+		},
+		{
+			name: "填写了监听器名称,没有填写用户备注",
+			args: args{i: [][]string{
+				{"127.0.0.1", "lb-xxxxx1", "tcp", "[8888, 8889]", "WRR", "10", "enable", "自定义监听器名称"},
+			}},
+			want: CreateLayer4ListenerDetail{
+				ClbVipDomain:   "127.0.0.1",
+				CloudClbID:     "lb-xxxxx1",
+				Protocol:       enumor.TcpProtocol,
+				ListenerPorts:  []int{8888, 8889},
+				Scheduler:      "WRR",
+				Session:        10,
+				HealthCheck:    true,
+				UserRemark:     "",
+				Status:         "",
+				ValidateResult: []string{},
+				Name:           "自定义监听器名称",
 			},
 		},
 	}

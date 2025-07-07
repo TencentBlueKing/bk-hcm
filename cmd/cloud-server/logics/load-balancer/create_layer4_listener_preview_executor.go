@@ -108,8 +108,12 @@ func (c *CreateLayer4ListenerPreviewExecutor) convertDataToPreview(rawData [][]s
 		default:
 			return fmt.Errorf("HealthCheck: invalid input: %s", data[6])
 		}
+		// 监听器名称和用户备注是可选的
 		if len(data) > createLayer4ListenerExcelTableLen {
-			detail.UserRemark = data[7]
+			detail.Name = data[7]
+			if len(data) > createLayer4ListenerExcelTableLen+1 {
+				detail.UserRemark = data[8]
+			}
 		}
 		c.details = append(c.details, detail)
 	}

@@ -40,7 +40,7 @@ func TestCreateLayer7ListenerExecutor_convertDataToPreview(t *testing.T) {
 			name: "HTTPs test",
 			args: args{i: [][]string{
 				{"127.0.0.1", "lb-xxxxx1",
-					"https", "8888", "MUTUAL", "[9GXQ9dV2,DQq54hR3]", "Bw0pFuKG", "用户的备注"},
+					"https", "8888", "MUTUAL", "[9GXQ9dV2,DQq54hR3]", "Bw0pFuKG", "", "用户的备注"},
 			}},
 			want: CreateLayer7ListenerDetail{
 				ClbVipDomain:  "127.0.0.1",
@@ -50,6 +50,7 @@ func TestCreateLayer7ListenerExecutor_convertDataToPreview(t *testing.T) {
 				SSLMode:       "MUTUAL",
 				CertCloudIDs:  []string{"9GXQ9dV2", "DQq54hR3"},
 				CACloudID:     "Bw0pFuKG",
+				Name:          "",
 
 				UserRemark:     "用户的备注",
 				Status:         "",
@@ -69,6 +70,7 @@ func TestCreateLayer7ListenerExecutor_convertDataToPreview(t *testing.T) {
 				SSLMode:        "",
 				CertCloudIDs:   nil,
 				CACloudID:      "",
+				Name:           "",
 				UserRemark:     "",
 				Status:         "",
 				ValidateResult: []string{},

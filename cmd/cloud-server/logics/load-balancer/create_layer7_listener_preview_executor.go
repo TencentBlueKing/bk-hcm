@@ -338,12 +338,12 @@ type CreateLayer7ListenerDetail struct {
 	ClbVipDomain string `json:"clb_vip_domain"`
 	CloudClbID   string `json:"cloud_clb_id"`
 
-	Name          string              `json:"name"`
 	Protocol      enumor.ProtocolType `json:"protocol"`
 	ListenerPorts []int               `json:"listener_port"`
 	SSLMode       string              `json:"ssl_mode"`
 	CertCloudIDs  []string            `json:"cert_cloud_ids"`
 	CACloudID     string              `json:"ca_cloud_id"`
+	Name          string              `json:"name"`
 	UserRemark    string              `json:"user_remark"`
 
 	Status         ImportStatus `json:"status"`
