@@ -7,7 +7,7 @@ import Confirm from '@/components/confirm';
 import { useRouteLinkBtn, TypeEnum, IDetail } from '@/hooks/useRouteLinkBtn';
 import StatusNormal from '@/assets/image/Status-normal.png';
 import StatusUnknown from '@/assets/image/Status-unknown.png';
-import { timeFormatter, formatTags } from '@/common/util';
+import { timeFormatter, formatTags, parseTimeFromNow } from '@/common/util';
 import { CHARGE_TYPE, CLB_SPECS, LB_ISP, LB_TYPE_MAP } from '@/common/constant';
 import { useBusinessStore } from '@/store';
 import { useRegionsStore } from '@/store/useRegionsStore';
@@ -154,6 +154,11 @@ export default defineComponent({
         render(val) {
           return formatTags(val);
         },
+      },
+      {
+        name: '同步时间',
+        prop: 'sync_time',
+        render: () => `${timeFormatter(props.detail.sync_time)}(${parseTimeFromNow(props.detail.sync_time)})`,
       },
     ];
 
