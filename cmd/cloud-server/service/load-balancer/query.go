@@ -436,10 +436,10 @@ func (svc *lbSvc) getLoadBalancerLockStatus(cts *rest.Contexts, validHandler han
 }
 
 // getListenerByID get listener by id.
-func (svc *lbSvc) getListenerByID(cts *rest.Contexts, vendor enumor.Vendor, bizID int64, lblID string) (
+func (svc *lbSvc) getListenerByID(kt *kit.Kit, vendor enumor.Vendor, bizID int64, lblID string) (
 	*corelb.BaseListener, *types.CloudResourceBasicInfo, error) {
 
-	lblResp, err := svc.client.DataService().Global.LoadBalancer.ListListener(cts.Kit,
+	lblResp, err := svc.client.DataService().Global.LoadBalancer.ListListener(kt,
 		&core.ListReq{
 			Filter: tools.ExpressionAnd(
 				tools.RuleEqual("id", lblID),
@@ -448,7 +448,7 @@ func (svc *lbSvc) getListenerByID(cts *rest.Contexts, vendor enumor.Vendor, bizI
 			Page: core.NewDefaultBasePage(),
 		})
 	if err != nil {
-		logs.Errorf("fail to list listener(%s), err: %v, rid: %s", lblID, err, cts.Kit.Rid)
+		logs.Errorf("fail to list listener(%s), err: %v, rid: %s", lblID, err, kt.Rid)
 		return nil, nil, err
 	}
 	if len(lblResp.Details) == 0 {

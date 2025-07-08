@@ -25,7 +25,6 @@ import (
 	"fmt"
 
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
-	actionflow "hcm/cmd/task-server/logics/flow"
 	cloudserver "hcm/pkg/api/cloud-server"
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
@@ -58,6 +57,10 @@ func (svc *lbSvc) BatchRemoveBizTargets(cts *rest.Contexts) (any, error) {
 func (svc *lbSvc) batchRemoveBizTarget(cts *rest.Contexts, authHandler handler.ValidWithAuthHandler) (
 	any, error) {
 
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
 	req := new(cloudserver.ResourceCreateReq)
 	if err := cts.DecodeInto(req); err != nil {
 		logs.Errorf("batch remove target request decode failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -68,7 +71,7 @@ func (svc *lbSvc) batchRemoveBizTarget(cts *rest.Contexts, authHandler handler.V
 	basicInfo := &types.CloudResourceBasicInfo{
 		AccountID: req.AccountID,
 	}
-	err := authHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.TargetGroup,
+	err = authHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.TargetGroup,
 		Action: meta.Update, BasicInfo: basicInfo})
 	if err != nil {
 		logs.Errorf("batch remove target auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -84,14 +87,14 @@ func (svc *lbSvc) batchRemoveBizTarget(cts *rest.Contexts, authHandler handler.V
 
 	switch accountInfo.Vendor {
 	case enumor.TCloud:
-		return svc.buildRemoveTCloudTarget(cts.Kit, req.Data, accountInfo.AccountID)
+		return svc.buildRemoveTCloudTarget(cts.Kit, req.Data, bizID, accountInfo.AccountID)
 	default:
 		return nil, fmt.Errorf("vendor: %s not support", accountInfo.Vendor)
 	}
 }
 
-func (svc *lbSvc) buildRemoveTCloudTarget(kt *kit.Kit, body json.RawMessage, accountID string) (interface{},
-	error) {
+func (svc *lbSvc) buildRemoveTCloudTarget(kt *kit.Kit, body json.RawMessage,
+	bkBizID int64, accountID string) (interface{}, error) {
 
 	req := new(cslb.TCloudTargetBatchRemoveReq)
 	if err := json.Unmarshal(body, req); err != nil {
@@ -148,7 +151,7 @@ func (svc *lbSvc) buildRemoveTCloudTarget(kt *kit.Kit, body json.RawMessage, acc
 		return nil, errf.New(errf.InvalidParameter, "target group need belong to the same load balancer")
 	}
 
-	return svc.buildRemoveTCloudTargetTasks(kt, accountID, lbIDs[0], targetGroupIDMap)
+	return svc.buildRemoveTCloudTargetTasks(kt, accountID, lbIDs[0], bkBizID, targetGroupIDMap)
 }
 
 func (svc *lbSvc) batchDeleteTargetDb(kt *kit.Kit, accountID, tgID string, targetIDs []string) error {
@@ -179,8 +182,8 @@ func (svc *lbSvc) batchDeleteTargetDb(kt *kit.Kit, accountID, tgID string, targe
 	return svc.client.DataService().Global.LoadBalancer.BatchDeleteTarget(kt, delReq)
 }
 
-func (svc *lbSvc) buildRemoveTCloudTargetTasks(kt *kit.Kit, accountID, lbID string, tgMap map[string][]string) (
-	*core.FlowStateResult, error) {
+func (svc *lbSvc) buildRemoveTCloudTargetTasks(kt *kit.Kit, accountID, lbID string, bkBizID int64,
+	tgMap map[string][]string) (*core.FlowStateResult, error) {
 
 	// 预检测
 	_, err := svc.checkResFlowRel(kt, lbID, enumor.LoadBalancerCloudResType)
@@ -190,7 +193,7 @@ func (svc *lbSvc) buildRemoveTCloudTargetTasks(kt *kit.Kit, accountID, lbID stri
 	}
 
 	// 创建Flow跟Task的初始化数据
-	flowID, err := svc.initFlowRemoveTargetByLbID(kt, accountID, lbID, tgMap)
+	flowID, err := svc.initFlowRemoveTargetByLbID(kt, accountID, lbID, bkBizID, tgMap)
 	if err != nil {
 		logs.Errorf("init flow batch remove target failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
@@ -206,27 +209,99 @@ func (svc *lbSvc) buildRemoveTCloudTargetTasks(kt *kit.Kit, accountID, lbID stri
 	return &core.FlowStateResult{FlowID: flowID}, nil
 }
 
-func (svc *lbSvc) initFlowRemoveTargetByLbID(kt *kit.Kit, accountID string, lbID string, tgMap map[string][]string) (
-	string, error) {
+func (svc *lbSvc) initFlowRemoveTargetByLbID(kt *kit.Kit, accountID, lbID string, bkBizID int64,
+	tgMap map[string][]string) (string, error) {
+
+	taskManagementID, err := svc.createTaskManagement(kt, bkBizID, enumor.TCloud, accountID,
+		enumor.TaskManagementSourceAPI, enumor.TaskTargetGroupRemoveRS)
+	if err != nil {
+		logs.Errorf("create task management failed, err: %v, rid: %s", err, kt.Rid)
+		return "", err
+	}
+
+	var taskDetails []*taskManagementDetail
+	defer func() {
+		if err == nil {
+			return
+		}
+		// update task management state to failed
+		if err := svc.updateTaskManagementState(kt, taskManagementID, enumor.TaskManagementFailed); err != nil {
+			logs.Errorf("update task management state to failed failed, err: %v, taskManagementID: %s, rid: %s",
+				err, taskManagementID, kt.Rid)
+		}
+		// update task details state to failed
+		taskDetailIDs := slice.Map(taskDetails, func(item *taskManagementDetail) string {
+			return item.taskDetailID
+		})
+		if err := svc.updateTaskDetailState(kt, enumor.TaskDetailFailed, taskDetailIDs, err.Error()); err != nil {
+			logs.Errorf("update task details state to failed failed, err: %v, taskDetails: %+v, rid: %s")
+		}
+	}()
+
+	tasks, taskDetails, err := svc.buildRemoveRSTasks(kt, accountID, lbID, taskManagementID, bkBizID, tgMap)
+	if err != nil {
+		logs.Errorf("build remove target tasks failed, err: %v, accountID: %s, lbID: %s, bkBizID: %d, rid: %s", err,
+			accountID, lbID, bkBizID, kt.Rid)
+		return "", err
+	}
+
+	shareData := tableasync.NewShareData(map[string]string{
+		"lb_id": lbID,
+	})
+	flowID, err := svc.buildFlow(kt, enumor.FlowTargetGroupRemoveRS, shareData, tasks)
+	if err != nil {
+		return "", err
+	}
+	for _, detail := range taskDetails {
+		detail.flowID = flowID
+	}
+
+	if err = svc.updateTaskDetails(kt, taskDetails); err != nil {
+		logs.Errorf("update task details failed, err: %v, flowID: %s, rid: %s", err, flowID, kt.Rid)
+		return "", err
+	}
+	if err = svc.updateTaskManagement(kt, taskManagementID, flowID); err != nil {
+		logs.Errorf("update task management failed, err: %v, taskManagementID: %s, rid: %s",
+			err, taskManagementID, kt.Rid)
+		return "", err
+	}
+	tgIDs := make([]string, 0, len(tgMap))
+	for tgID, _ := range tgMap {
+		tgIDs = append(tgIDs, tgID)
+	}
+	if err = svc.buildSubFlow(kt, flowID, lbID, tgIDs, enumor.TargetGroupCloudResType,
+		enumor.RemoveRSTaskType); err != nil {
+		return "", err
+	}
+	return flowID, nil
+}
+
+func (svc *lbSvc) buildRemoveRSTasks(kt *kit.Kit, accountID, lbID, taskManagementID string, bkBizID int64,
+	tgMap map[string][]string) ([]ts.CustomFlowTask, []*taskManagementDetail, error) {
 
 	tasks := make([]ts.CustomFlowTask, 0)
 	getActionID := counter.NewNumStringCounter(1, 10)
-	var tgIDs []string
 	var lastActionID action.ActIDType
+	taskDetails := make([]*taskManagementDetail, 0)
 	for tgID, rsList := range tgMap {
-		tgIDs = append(tgIDs, tgID)
-		elems := slice.Split(rsList, constant.BatchRemoveRSCloudMaxLimit)
-		for _, parts := range elems {
+		for _, parts := range slice.Split(rsList, constant.BatchRemoveRSCloudMaxLimit) {
 			removeRsParams, err := svc.convTCloudOperateTargetReq(kt, parts, lbID, tgID, accountID, nil, nil)
 			if err != nil {
-				return "", err
+				return nil, nil, err
+			}
+			details, err := svc.createTargetGroupRemoveRsTaskDetails(kt, taskManagementID, bkBizID, removeRsParams)
+			if err != nil {
+				return nil, nil, err
 			}
 			actionID := action.ActIDType(getActionID())
 			tmpTask := ts.CustomFlowTask{
 				ActionID:   actionID,
 				ActionName: enumor.ActionTargetGroupRemoveRS,
 				Params: &actionlb.OperateRsOption{
-					Vendor:                      enumor.TCloud,
+					Vendor: enumor.TCloud,
+					ManagementDetailIDs: slice.Map(details, func(item *taskManagementDetail) string {
+						return item.taskDetailID
+					}),
 					TCloudBatchOperateTargetReq: *removeRsParams,
 				},
 				Retry: &tableasync.Retry{
@@ -242,46 +317,31 @@ func (svc *lbSvc) initFlowRemoveTargetByLbID(kt *kit.Kit, accountID string, lbID
 			}
 			tasks = append(tasks, tmpTask)
 			lastActionID = actionID
+			for _, detail := range details {
+				detail.actionID = string(actionID)
+			}
+			taskDetails = append(taskDetails, details...)
 		}
 	}
-	removeReq := &ts.AddCustomFlowReq{
-		Name: enumor.FlowTargetGroupRemoveRS,
-		ShareData: tableasync.NewShareData(map[string]string{
-			"lb_id": lbID,
-		}),
-		Tasks:       tasks,
-		IsInitState: true,
-	}
-	result, err := svc.client.TaskServer().CreateCustomFlow(kt, removeReq)
-	if err != nil {
-		logs.Errorf("call taskserver to batch remove rs custom flow failed, err: %v, rid: %s", err, kt.Rid)
-		return "", err
-	}
+	return tasks, taskDetails, nil
+}
 
-	flowID := result.ID
-	// 从Flow，负责监听主Flow的状态
-	flowWatchReq := &ts.AddTemplateFlowReq{
-		Name: enumor.FlowLoadBalancerOperateWatch,
-		Tasks: []ts.TemplateFlowTask{{
-			ActionID: "1",
-			Params: &actionflow.LoadBalancerOperateWatchOption{
-				FlowID:     flowID,
-				ResID:      lbID,
-				ResType:    enumor.LoadBalancerCloudResType,
-				SubResIDs:  tgIDs,
-				SubResType: enumor.TargetGroupCloudResType,
-				TaskType:   enumor.RemoveRSTaskType,
-			},
-		}},
-	}
-	_, err = svc.client.TaskServer().CreateTemplateFlow(kt, flowWatchReq)
-	if err != nil {
-		logs.Errorf("call taskserver to create res flow status watch task failed, err: %v, flowID: %s, rid: %s",
-			err, flowID, kt.Rid)
-		return "", err
-	}
+func (svc *lbSvc) createTargetGroupRemoveRsTaskDetails(kt *kit.Kit, taskManagementID string, bkBizID int64,
+	addRsParams *hcproto.TCloudBatchOperateTargetReq) ([]*taskManagementDetail, error) {
 
-	return flowID, nil
+	details := make([]*taskManagementDetail, 0)
+	for _, one := range addRsParams.RsList {
+		details = append(details, &taskManagementDetail{
+			param: one,
+		})
+	}
+	if err := svc.createTaskDetails(kt, taskManagementID, bkBizID,
+		enumor.TaskTargetGroupRemoveRS, details); err != nil {
+		logs.Errorf("create task details failed, err: %v, taskManagementID: %s, bkBizID: %d, rid: %s", err,
+			taskManagementID, bkBizID, kt.Rid)
+		return nil, err
+	}
+	return details, nil
 }
 
 // convTCloudOperateTargetReq conv tcloud operate target req.

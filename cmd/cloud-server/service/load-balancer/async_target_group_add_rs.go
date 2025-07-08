@@ -25,7 +25,6 @@ import (
 	"fmt"
 
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
-	actionflow "hcm/cmd/task-server/logics/flow"
 	cloudserver "hcm/pkg/api/cloud-server"
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	"hcm/pkg/api/core"
@@ -64,12 +63,16 @@ func (svc *lbSvc) batchAddBizTarget(cts *rest.Contexts, authHandler handler.Vali
 		logs.Errorf("batch add target request decode failed, err: %v, rid: %s", err, cts.Kit.Rid)
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
+	bizID, err := cts.PathParameter("bk_biz_id").Int64()
+	if err != nil {
+		return nil, err
+	}
 
 	// authorized instances
 	basicInfo := &types.CloudResourceBasicInfo{
 		AccountID: req.AccountID,
 	}
-	err := authHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.TargetGroup,
+	err = authHandler(cts, &handler.ValidWithAuthOption{Authorizer: svc.authorizer, ResType: meta.TargetGroup,
 		Action: meta.Update, BasicInfo: basicInfo})
 	if err != nil {
 		logs.Errorf("batch add target auth failed, err: %v, rid: %s", err, cts.Kit.Rid)
@@ -85,13 +88,15 @@ func (svc *lbSvc) batchAddBizTarget(cts *rest.Contexts, authHandler handler.Vali
 
 	switch accountInfo.Vendor {
 	case enumor.TCloud:
-		return svc.buildAddTCloudTarget(cts.Kit, req.Data, accountInfo.AccountID)
+		return svc.buildAddTCloudTarget(cts.Kit, bizID, req.Data, accountInfo.AccountID)
 	default:
 		return nil, fmt.Errorf("vendor: %s not support", accountInfo.Vendor)
 	}
 }
 
-func (svc *lbSvc) buildAddTCloudTarget(kt *kit.Kit, body json.RawMessage, accountID string) (interface{}, error) {
+func (svc *lbSvc) buildAddTCloudTarget(kt *kit.Kit, bkBizID int64, body json.RawMessage, accountID string) (
+	interface{}, error) {
+
 	req := new(cslb.TCloudTargetBatchCreateReq)
 	if err := json.Unmarshal(body, req); err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
@@ -155,7 +160,7 @@ func (svc *lbSvc) buildAddTCloudTarget(kt *kit.Kit, body json.RawMessage, accoun
 		return nil, errf.New(errf.InvalidParameter, "target group need belong to the same load balancer")
 	}
 
-	return svc.buildAddTCloudTargetTasks(kt, accountID, lbIDs[0], targetGroupRsListMap)
+	return svc.buildAddTCloudTargetTasks(kt, bkBizID, accountID, lbIDs[0], targetGroupRsListMap)
 }
 
 func (svc *lbSvc) checkTargetExists(kt *kit.Kit, req *cslb.TCloudTargetBatchCreateReq, accountID string) error {
@@ -214,7 +219,7 @@ func (svc *lbSvc) batchCreateTargetDb(kt *kit.Kit, targets []*dataproto.TargetBa
 	return svc.client.DataService().Global.LoadBalancer.BatchCreateTCloudTarget(kt, rsReq)
 }
 
-func (svc *lbSvc) buildAddTCloudTargetTasks(kt *kit.Kit, accountID, lbID string,
+func (svc *lbSvc) buildAddTCloudTargetTasks(kt *kit.Kit, bkBizID int64, accountID, lbID string,
 	tgMap map[string][]*dataproto.TargetBaseReq) (*core.FlowStateResult, error) {
 
 	// 预检测
@@ -225,7 +230,7 @@ func (svc *lbSvc) buildAddTCloudTargetTasks(kt *kit.Kit, accountID, lbID string,
 	}
 
 	// 创建Flow跟Task的初始化数据
-	flowID, err := svc.initFlowAddTargetByLbID(kt, accountID, lbID, tgMap)
+	flowID, err := svc.initFlowAddTargetByLbID(kt, accountID, lbID, bkBizID, tgMap)
 	if err != nil {
 		logs.Errorf("init flow batch add target failed, err: %v, rid: %s", err, kt.Rid)
 		return nil, err
@@ -241,29 +246,103 @@ func (svc *lbSvc) buildAddTCloudTargetTasks(kt *kit.Kit, accountID, lbID string,
 	return &core.FlowStateResult{FlowID: flowID}, nil
 }
 
-func (svc *lbSvc) initFlowAddTargetByLbID(kt *kit.Kit, accountID, lbID string,
+func (svc *lbSvc) initFlowAddTargetByLbID(kt *kit.Kit, accountID, lbID string, bkBizID int64,
 	tgMap map[string][]*dataproto.TargetBaseReq) (string, error) {
+
+	taskManagementID, err := svc.createTaskManagement(kt, bkBizID, enumor.TCloud, accountID,
+		enumor.TaskManagementSourceAPI, enumor.TaskTargetGroupAddRS)
+	if err != nil {
+		logs.Errorf("create task management failed, err: %v, rid: %s", err, kt.Rid)
+		return "", err
+	}
+
+	var taskDetails []*taskManagementDetail
+	defer func() {
+		if err == nil {
+			return
+		}
+		// update task management state to failed
+		if err := svc.updateTaskManagementState(kt, taskManagementID, enumor.TaskManagementFailed); err != nil {
+			logs.Errorf("update task management state to failed failed, err: %v, taskManagementID: %s, rid: %s",
+				err, taskManagementID, kt.Rid)
+		}
+		// update task details state to failed
+		taskDetailIDs := slice.Map(taskDetails, func(item *taskManagementDetail) string {
+			return item.taskDetailID
+		})
+		if err := svc.updateTaskDetailState(kt, enumor.TaskDetailFailed, taskDetailIDs, err.Error()); err != nil {
+			logs.Errorf("update task details state to failed failed, err: %v, taskDetails: %+v, rid: %s")
+		}
+	}()
+
+	tasks, taskDetails, err := svc.buildAddTargetTasks(kt, accountID, lbID, taskManagementID, bkBizID, tgMap)
+	if err != nil {
+		logs.Errorf("build add target tasks failed, err: %v, accountID: %s, lbID: %s, bkBizID: %d, rid: %s", err,
+			accountID, lbID, bkBizID, kt.Rid)
+		return "", err
+	}
+
+	shareData := tableasync.NewShareData(map[string]string{
+		"lb_id": lbID,
+	})
+	flowID, err := svc.buildFlow(kt, enumor.FlowTargetGroupAddRS, shareData, tasks)
+	if err != nil {
+		return "", err
+	}
+	for _, detail := range taskDetails {
+		detail.flowID = flowID
+	}
+
+	if err = svc.updateTaskDetails(kt, taskDetails); err != nil {
+		logs.Errorf("update task details failed, err: %v, flowID: %s, rid: %s", err, flowID, kt.Rid)
+		return "", err
+	}
+	if err = svc.updateTaskManagement(kt, taskManagementID, flowID); err != nil {
+		logs.Errorf("update task management failed, err: %v, taskManagementID: %s, rid: %s",
+			err, taskManagementID, kt.Rid)
+		return "", err
+	}
+	tgIDs := make([]string, 0, len(tgMap))
+	for tgID := range tgMap {
+		tgIDs = append(tgIDs, tgID)
+	}
+	if err = svc.buildSubFlow(kt, flowID, lbID, tgIDs, enumor.TargetGroupCloudResType,
+		enumor.AddRSTaskType); err != nil {
+		return "", err
+	}
+	return flowID, nil
+}
+
+func (svc *lbSvc) buildAddTargetTasks(kt *kit.Kit, accountID, lbID, taskManagementID string, bkBizID int64,
+	tgMap map[string][]*dataproto.TargetBaseReq) ([]ts.CustomFlowTask, []*taskManagementDetail, error) {
 
 	tasks := make([]ts.CustomFlowTask, 0)
 	getActionID := counter.NewNumStringCounter(1, 10)
-	var tgIDs []string
 	var lastActionID action.ActIDType
+	taskDetails := make([]*taskManagementDetail, 0)
 	for tgID, rsList := range tgMap {
-		tgIDs = append(tgIDs, tgID)
-		elems := slice.Split(rsList, constant.BatchAddRSCloudMaxLimit)
-		for _, parts := range elems {
+		for _, parts := range slice.Split(rsList, constant.BatchAddRSCloudMaxLimit) {
 			addRsParams, err := svc.convTCloudAddTargetReq(kt, parts, lbID, tgID, accountID)
 			if err != nil {
 				logs.Errorf("add target build tcloud request failed, err: %v, tgID: %s, parts: %+v, rid: %s",
 					err, tgID, parts, kt.Rid)
-				return "", err
+				return nil, nil, err
 			}
+
+			details, err := svc.createTargetGroupAddRsTaskDetails(kt, taskManagementID, bkBizID, addRsParams)
+			if err != nil {
+				return nil, nil, err
+			}
+
 			actionID := action.ActIDType(getActionID())
 			tmpTask := ts.CustomFlowTask{
 				ActionID:   actionID,
 				ActionName: enumor.ActionTargetGroupAddRS,
 				Params: &actionlb.OperateRsOption{
-					Vendor:                      enumor.TCloud,
+					Vendor: enumor.TCloud,
+					ManagementDetailIDs: slice.Map(details, func(item *taskManagementDetail) string {
+						return item.taskDetailID
+					}),
 					TCloudBatchOperateTargetReq: *addRsParams,
 				},
 				Retry: tableasync.NewRetryWithPolicy(3, 100, 200),
@@ -273,46 +352,33 @@ func (svc *lbSvc) initFlowAddTargetByLbID(kt *kit.Kit, accountID, lbID string,
 			}
 			tasks = append(tasks, tmpTask)
 			lastActionID = actionID
+
+			for _, detail := range details {
+				detail.actionID = string(actionID)
+			}
+			taskDetails = append(taskDetails, details...)
 		}
 	}
-	addReq := &ts.AddCustomFlowReq{
-		Name: enumor.FlowTargetGroupAddRS,
-		ShareData: tableasync.NewShareData(map[string]string{
-			"lb_id": lbID,
-		}),
-		Tasks:       tasks,
-		IsInitState: true,
-	}
-	result, err := svc.client.TaskServer().CreateCustomFlow(kt, addReq)
-	if err != nil {
-		logs.Errorf("call taskserver to batch add rs custom flow failed, err: %v, rid: %s", err, kt.Rid)
-		return "", err
-	}
 
-	flowID := result.ID
-	// 从Flow，负责监听主Flow的状态
-	flowWatchReq := &ts.AddTemplateFlowReq{
-		Name: enumor.FlowLoadBalancerOperateWatch,
-		Tasks: []ts.TemplateFlowTask{{
-			ActionID: "1",
-			Params: &actionflow.LoadBalancerOperateWatchOption{
-				FlowID:     flowID,
-				ResID:      lbID,
-				ResType:    enumor.LoadBalancerCloudResType,
-				SubResIDs:  tgIDs,
-				SubResType: enumor.TargetGroupCloudResType,
-				TaskType:   enumor.AddRSTaskType,
-			},
-		}},
-	}
-	_, err = svc.client.TaskServer().CreateTemplateFlow(kt, flowWatchReq)
-	if err != nil {
-		logs.Errorf("call taskserver to create res flow status watch task failed, err: %v, flowID: %s, rid: %s",
-			err, flowID, kt.Rid)
-		return "", err
-	}
+	return tasks, taskDetails, nil
+}
 
-	return flowID, nil
+func (svc *lbSvc) createTargetGroupAddRsTaskDetails(kt *kit.Kit, taskManagementID string, bkBizID int64,
+	addRsParams *hcproto.TCloudBatchOperateTargetReq) ([]*taskManagementDetail, error) {
+
+	details := make([]*taskManagementDetail, 0)
+	for _, one := range addRsParams.RsList {
+		details = append(details, &taskManagementDetail{
+			param: one,
+		})
+	}
+	if err := svc.createTaskDetails(kt, taskManagementID, bkBizID,
+		enumor.TaskTargetGroupAddRS, details); err != nil {
+		logs.Errorf("create task details failed, err: %v, taskManagementID: %s, bkBizID: %d, rid: %s", err,
+			taskManagementID, bkBizID, kt.Rid)
+		return nil, err
+	}
+	return details, nil
 }
 
 // convTCloudAddTargetReq conv tcloud add target req.
