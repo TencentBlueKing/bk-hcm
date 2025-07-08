@@ -39,7 +39,7 @@ const displayList = computed(() =>
 
 const accountId = computed(() => list.value?.[0].account_id);
 
-const { accountBizList, isAccountDetailLoading } = useAccountBusiness(ref(accountId.value));
+const { accountBizList, isAccountDetailLoading } = useAccountBusiness(accountId);
 
 const isUpdateValueValid = computed(() => {
   return list.value.every((item) => {

@@ -103,7 +103,7 @@ const getAccountList = () => {
   if (!isResourcePage || !accountId.value) return;
 
   const { accountBizList } = useAccountBusiness(accountId);
-  usageBizList.value = accountBizList;
+  usageBizList.value = accountBizList.value;
 
   // 默认填充后，清除表单校验结果
   nextTick(() => formRef.value.clearValidate());
