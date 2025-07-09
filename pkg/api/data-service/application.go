@@ -60,6 +60,7 @@ func (req *ApplicationUpdateReq) Validate() error {
 // ApplicationResp ...
 type ApplicationResp struct {
 	ID             string                   `json:"id"`
+	TenantID       string                   `json:"tenant_id"`
 	Source         enumor.ApplicationSource `json:"source"`
 	SN             string                   `json:"sn"`
 	Type           enumor.ApplicationType   `json:"type"`

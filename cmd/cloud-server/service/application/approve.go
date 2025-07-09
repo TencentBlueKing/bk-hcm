@@ -101,7 +101,7 @@ func (a *applicationSvc) approve(cts *rest.Contexts) (interface{}, error) {
 		return nil, fmt.Errorf("faild to parse itsm callback token, err: %v, ticket_id: %s", err, req.Ticket.ID)
 	}
 
-	// 目前提供的回调接口不是apigw的，itsm不会提供 username 参数，暂不校验该参数
+	// 目前提供的回调接口是应用态，itsm不会提供 username 参数，暂不校验该参数
 	if workflowID != req.Ticket.WorkflowID || title != req.Ticket.Title {
 		logs.Errorf("verify of token not paas, userName: %s, workflowID: %s, title: %s, ticket: %+v, rid: %s",
 			userName, workflowID, title, req.Ticket, cts.Kit.Rid)
@@ -329,8 +329,9 @@ func (a *applicationSvc) getHandlerByApplication(cts *rest.Contexts, application
 }
 
 func (a *applicationSvc) deliver(cts *rest.Contexts, application *dataproto.ApplicationResp) {
-	// 将执行人设置为申请人
+	// 将执行人设置为申请人，租户设置为单据对应租户
 	cts.Kit.User = application.Applicant
+	cts.Kit.SetTenant(application.TenantID)
 
 	// 除非交付成功，否则都属于交付失败状态
 	deliverStatus := enumor.DeliverError
