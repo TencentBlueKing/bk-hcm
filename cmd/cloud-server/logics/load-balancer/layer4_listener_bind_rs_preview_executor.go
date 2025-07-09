@@ -202,10 +202,11 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateWithDB(kt *kit.Kit, cloudI
 
 func (l *Layer4ListenerBindRSPreviewExecutor) validateDetailsTarget(kt *kit.Kit) error {
 
-	ruleCloudIDs := slice.Map(l.details, func(detail *Layer4ListenerBindRSDetail) string {
+	lblCloudIDs := slice.Map(l.details, func(detail *Layer4ListenerBindRSDetail) string {
 		return detail.listenerCloudID
 	})
-	ruleCloudIDsToTGIDMap, err := getTargetGroupByRuleCloudIDs(kt, l.dataServiceCli, ruleCloudIDs)
+	// 在四层监听器中, ruleCloudID等于 listenerCloudID
+	ruleCloudIDsToTGIDMap, err := getTargetGroupByRuleCloudIDs(kt, l.dataServiceCli, lblCloudIDs)
 	if err != nil {
 		logs.Errorf("get target group by rule cloud ids failed, err: %v, rid: %s", err, kt.Rid)
 		return err

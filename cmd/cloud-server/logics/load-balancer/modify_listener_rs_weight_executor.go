@@ -524,7 +524,7 @@ func (c *BatchListenerModifyRsWeightExecutor) updateTaskDetails(kt *kit.Kit) err
 	}
 	err := c.dataServiceCli.Global.TaskDetail.Update(kt, updateDetailsReq)
 	if err != nil {
-		logs.Errorf("update task details failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("update task details failed, req: %+v, err: %v, rid: %s", updateDetailsReq, err, kt.Rid)
 		return err
 	}
 

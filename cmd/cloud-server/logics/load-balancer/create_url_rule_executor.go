@@ -445,7 +445,7 @@ func (c *CreateUrlRuleExecutor) updateTaskDetails(kt *kit.Kit) error {
 			}
 			err := c.dataServiceCli.Global.TaskDetail.BatchUpdate(kt, updateDetailsReq)
 			if err != nil {
-				logs.Errorf("update task details failed, err: %v, rid: %s", err, kt.Rid)
+				logs.Errorf("update task details failed, req: %+v, err: %v, rid: %s", updateDetailsReq, err, kt.Rid)
 				return err
 			}
 		}
