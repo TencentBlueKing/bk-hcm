@@ -540,6 +540,7 @@ func convertTCloudExtension(cloud typeslb.TCloudClb, region string) *corelb.TClo
 	ext := &corelb.TCloudClbExtension{
 		Forward:                  cloud.Forward,
 		SlaType:                  cloud.SlaType,
+		VipIsp:                   cloud.VipIsp,
 		LoadBalancerPassToTarget: cloud.LoadBalancerPassToTarget,
 		IPv6Mode:                 cloud.IPv6Mode,
 		Snat:                     cloud.Snat,
@@ -550,6 +551,7 @@ func convertTCloudExtension(cloud typeslb.TCloudClb, region string) *corelb.TClo
 		BandwidthPackageId: nil,
 	}
 	if cloud.NetworkAttributes != nil {
+		ext.InternetMaxBandwidthOut = cloud.NetworkAttributes.InternetMaxBandwidthOut
 		ext.InternetChargeType = cloud.NetworkAttributes.InternetChargeType
 		ext.BandwidthpkgSubType = cloud.NetworkAttributes.BandwidthpkgSubType
 	}
