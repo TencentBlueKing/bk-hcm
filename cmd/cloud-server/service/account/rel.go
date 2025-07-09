@@ -21,6 +21,7 @@ package account
 
 import (
 	protocloud "hcm/pkg/api/data-service/cloud"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/types"
@@ -50,8 +51,13 @@ func (a *accountSvc) ListByBkBizID(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
+	bkBizIDs := []int64{bkBizID}
+	// 关联了所有使用业务的账号也应该被查出来
+	if bkBizID != constant.AttachedAllBiz {
+		bkBizIDs = append(bkBizIDs, constant.AttachedAllBiz)
+	}
 	listReq := &protocloud.AccountBizRelWithAccountListReq{
-		BkBizIDs:    []int64{bkBizID},
+		BkBizIDs:    bkBizIDs,
 		AccountType: accountType,
 	}
 

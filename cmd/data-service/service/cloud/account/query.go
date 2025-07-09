@@ -103,7 +103,7 @@ func (svc *service) GetAccount(cts *rest.Contexts) (interface{}, error) {
 		Price:              dbAccount.Price,
 		PriceUnit:          dbAccount.PriceUnit,
 		Memo:               dbAccount.Memo,
-		BkBizID:            dbAccount.BizID,
+		BkBizID:            dbAccount.BkBizID,
 		UsageBizIDs:        usageBizIDs,
 		RecycleReserveTime: dbAccount.RecycleReserveTime,
 		Revision: core.Revision{
@@ -179,7 +179,7 @@ func (svc *service) ListAccount(cts *rest.Contexts) (interface{}, error) {
 			PriceUnit:          account.PriceUnit,
 			Memo:               account.Memo,
 			RecycleReserveTime: account.RecycleReserveTime,
-			BkBizID:            account.BizID,
+			BkBizID:            account.BkBizID,
 			Revision: core.Revision{
 				Creator:   account.Creator,
 				Reviser:   account.Reviser,
@@ -381,7 +381,7 @@ func (svc *service) ListAccountWithExtension(cts *rest.Contexts) (interface{}, e
 				PriceUnit:          account.PriceUnit,
 				Memo:               account.Memo,
 				RecycleReserveTime: account.RecycleReserveTime,
-				BkBizID:            account.BizID,
+				BkBizID:            account.BkBizID,
 				Revision: core.Revision{
 					Creator:   account.Creator,
 					Reviser:   account.Reviser,
