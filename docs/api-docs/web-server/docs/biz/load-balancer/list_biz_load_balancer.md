@@ -116,6 +116,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/list
 | cloud_created_time | string | lb在云上创建时间，标准格式：2006-01-02T15:04:05Z  |
 | cloud_status_time  | string | lb状态变更时间，标准格式：2006-01-02T15:04:05Z   |
 | cloud_expired_time | string | lb过期时间，标准格式：2006-01-02T15:04:05Z     |
+| sync_time          | string | 数据同步时间，标准格式：2006-01-02T15:04:05Z     |
 | creator            | string | 创建者                                  |
 | reviser            | string | 修改者                                  |
 | created_at         | string | 创建时间，标准格式：2006-01-02T15:04:05Z       |
@@ -216,6 +217,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/list
         "cloud_created_time": "2023-02-12T14:47:39Z",
         "cloud_status_time": "2023-02-12T14:47:39Z",
         "cloud_expired_time": "2023-02-12T14:47:39Z",
+        "sync_time": "2025-06-30T09:03:06Z",
         "creator": "Jim",
         "reviser": "Jim",
         "created_at": "2023-02-12T14:47:39Z",
@@ -282,6 +284,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/list
 | cloud_created_time     | string       | 负载均衡在云上创建时间，标准格式：2006-01-02T15:04:05Z |
 | cloud_status_time      | string       | 负载均衡状态变更时间，标准格式：2006-01-02T15:04:05Z  |
 | cloud_expired_time     | string       | 负载均衡过期时间，标准格式：2006-01-02T15:04:05Z    |
+| sync_time              | string       | 数据同步时间，标准格式：2006-01-02T15:04:05Z      |
 | creator                | string       | 创建者                                   |
 | reviser                | string       | 修改者                                   |
 | created_at             | string       | 创建时间，标准格式：2006-01-02T15:04:05Z        |

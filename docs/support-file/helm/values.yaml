@@ -734,6 +734,8 @@ dbConnConfig:
   maxIdleConn: 100
   limiterQps: 500
   limiterBurst: 500
+  timeZone: UTC
+
 ## 内置Etcd
 ##
 etcd:

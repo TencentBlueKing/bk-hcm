@@ -52,6 +52,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/{id}
     "cloud_created_time": "2024-01-02 15:04:05",
     "cloud_status_time": "2024-01-02 15:04:05",
     "cloud_expired_time": "",
+    "sync_time": "2025-06-30T09:03:06Z",
     "band_width": 0,
     "isp": "BGP",
     "memo": null,
@@ -103,6 +104,7 @@ POST /api/v1/cloud/bizs/{bk_biz_id}/load_balancers/{id}
 | cloud_created_time     | string       | lb在云上创建时间，标准格式：2006-01-02T15:04:05Z  |
 | cloud_status_time      | string       | lb状态变更时间，标准格式：2006-01-02T15:04:05Z   |
 | cloud_expired_time     | string       | lb过期时间，标准格式：2006-01-02T15:04:05Z     |
+| sync_time              | string       | 数据同步时间，标准格式：2006-01-02T15:04:05Z     |
 | extension              | object       | 拓展                                   |
 | creator                | string       | 创建者                                  |
 | reviser                | string       | 修改者                                  |

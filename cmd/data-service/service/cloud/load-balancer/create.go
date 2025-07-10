@@ -136,6 +136,7 @@ func convClbReqToTable[T corelb.Extension](kt *kit.Kit, vendor enumor.Vendor, lb
 		CloudCreatedTime:     lb.CloudCreatedTime,
 		CloudStatusTime:      lb.CloudStatusTime,
 		CloudExpiredTime:     lb.CloudExpiredTime,
+		SyncTime:             lb.SyncTime,
 		Extension:            types.JsonField(extension),
 		Tags:                 types.StringMap(lb.Tags),
 		Creator:              kt.User,
