@@ -95,10 +95,13 @@ func batchUpdateLoadBalancer[T corelb.Extension](cts *rest.Contexts, svc *lbSvc)
 				PrivateIPv6Addresses: lb.PrivateIPv6Addresses,
 				PublicIPv4Addresses:  lb.PublicIPv4Addresses,
 				PublicIPv6Addresses:  lb.PublicIPv6Addresses,
+				BandWidth:            lb.BandWidth,
+				Isp:                  lb.Isp,
 
 				CloudCreatedTime: lb.CloudCreatedTime,
 				CloudStatusTime:  lb.CloudStatusTime,
 				CloudExpiredTime: lb.CloudExpiredTime,
+				SyncTime:         lb.SyncTime,
 				Tags:             tabletype.StringMap(lb.Tags),
 				Memo:             lb.Memo,
 				Reviser:          cts.Kit.User,

@@ -81,7 +81,9 @@ export const useResourceStore = defineStore({
      * @return {*}
      */
     list(data: any, type: string) {
-      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/list`, data);
+      return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(type)}${type}/list`, data, {
+        cancelPrevious: true,
+      });
     },
     detail(type: string, id: number | string, vendor?: string) {
       if (vendor) {

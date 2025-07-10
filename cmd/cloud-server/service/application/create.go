@@ -86,37 +86,30 @@ func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
 	if err := handler.CheckReq(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
-
 	// 预处理数据
 	if err := handler.PrepareReq(); err != nil {
 		return nil, err
 	}
-
 	// 查询审批流程服务ID
 	applicationType := handler.GetType()
 	serviceID, managers, err := a.getApprovalProcessInfo(cts, applicationType)
 	if err != nil {
 		return nil, fmt.Errorf("get approval process service id and managers failed, err: %v", err)
 	}
-
 	// 生成ITSM的回调地址
 	callbackUrl := a.getCallbackUrl()
-
 	// 渲染ITSM单据标题
 	itsmTitle, err := handler.RenderItsmTitle()
 	if err != nil {
 		return nil, fmt.Errorf("render itsm ticket title error: %w", err)
 	}
-
 	// 渲染ITSM单据申请内容
 	itsmForm, err := handler.RenderItsmForm()
 	if err != nil {
 		return nil, fmt.Errorf("render itsm ticket form error: %w", err)
 	}
-
 	// 获取ITSM单据涉及到的各个节点审批人
 	approvers := handler.GetItsmApprover(managers)
-
 	// 调用ITSM创建单据
 	sn, err := a.itsmCli.CreateTicket(
 		cts.Kit,
@@ -133,7 +126,6 @@ func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
 	if err != nil {
 		return nil, fmt.Errorf("call itsm create ticket api failed, err: %w", err)
 	}
-
 	// 调用DB创建单据
 	content, err := json.MarshalToString(handler.GenerateApplicationContent())
 	if err != nil {
@@ -168,7 +160,6 @@ func (a *applicationSvc) create(cts *rest.Contexts, req *proto.CreateCommonReq,
 	if err != nil {
 		return nil, err
 	}
-
 	return result, nil
 }
 

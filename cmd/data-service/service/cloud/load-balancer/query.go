@@ -144,6 +144,7 @@ func convTableToBaseLB(one *tablelb.LoadBalancerTable) *corelb.BaseLoadBalancer 
 		CloudCreatedTime:     one.CloudCreatedTime,
 		CloudStatusTime:      one.CloudStatusTime,
 		CloudExpiredTime:     one.CloudExpiredTime,
+		SyncTime:             one.SyncTime,
 		Tags:                 core.TagMap(one.Tags),
 		Memo:                 one.Memo,
 		Revision: &core.Revision{
@@ -152,6 +153,8 @@ func convTableToBaseLB(one *tablelb.LoadBalancerTable) *corelb.BaseLoadBalancer 
 			CreatedAt: one.CreatedAt.String(),
 			UpdatedAt: one.UpdatedAt.String(),
 		},
+		BandWidth: one.BandWidth,
+		Isp:       one.Isp,
 	}
 }
 
