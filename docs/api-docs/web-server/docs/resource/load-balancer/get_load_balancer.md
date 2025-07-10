@@ -51,6 +51,8 @@ POST /api/v1/cloud/load_balancers/{id}
     "cloud_created_time": "2024-01-02 15:04:05",
     "cloud_status_time": "2024-01-02 15:04:05",
     "cloud_expired_time": "",
+    "band_width": 0,
+    "isp": "BGP",
     "memo": null,
     "creator": "admin",
     "reviser": "admin",
@@ -89,6 +91,8 @@ POST /api/v1/cloud/load_balancers/{id}
 | lb_type                | string       | 负载均衡类型                               |
 | ip_version             | string       | 负载均衡网络版本                             |
 | memo                   | string       | 备注                                   |
+| band_width             | int          | 带宽，单位Mbps                            |
+| isp                    | string       | 运营商类型（枚举值：BGP、CMCC、CUCC、CTCC）        |
 | status                 | string       | 状态                                   |
 | domain                 | string       | 域名                                   |
 | private_ipv4_addresses | string array | 内网ipv4地址                             |
@@ -118,9 +122,7 @@ status 状态含义：
 | 参数名称                         | 参数类型   | 描述                                          |
 |------------------------------|--------|---------------------------------------------|
 | sla_type                     | string | 性能容量型规格。                                    |
-| vip_isp                      | string | 运营商类型。                                      |
 | load_balancer_pass_to_target | string | Target是否放通来自CLB的流量。                         |
-| internet_max_bandwidth_out   | string | 最大出带宽，单位Mbps，                               |
 | internet_charge_type         | string | 计费模式                                        |
 | bandwidthpkg_sub_type        | string | 带宽包的类型                                      |
 | bandwidth_package_id         | string | 带宽包ID                                       |

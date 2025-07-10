@@ -39,12 +39,10 @@ func (a *ApplicationOfCreateMainAccount) Complete() (enumor.ApplicationStatus, m
 		err := fmt.Errorf("complete request is nil cannot complete this application")
 		return enumor.Delivering, map[string]interface{}{"error": err.Error()}, err
 	}
-
 	// 验证complete request
 	if err := a.completeReq.Validate(); err != nil {
 		return enumor.Delivering, map[string]interface{}{"error": err.Error()}, err
 	}
-
 	// 验证complete request的vendor和create request的vendor是否匹配
 	if a.completeReq.Vendor != a.req.Vendor {
 		err := fmt.Errorf("complete request's vendor and create request's vendor not match")
@@ -98,7 +96,6 @@ func (a *ApplicationOfCreateMainAccount) Complete() (enumor.ApplicationStatus, m
 			"but get main account basic info failed, err: %v, rid: %s", accountID, err, a.Cts.Kit.Rid)
 		return enumor.DeliverError, map[string]interface{}{"error": err.Error()}, err
 	}
-
 	req := &meta.RegisterResCreatorActionInst{
 		Type: string(sys.MainAccount),
 		ID:   accountID,
@@ -110,7 +107,6 @@ func (a *ApplicationOfCreateMainAccount) Complete() (enumor.ApplicationStatus, m
 		logs.Errorf(err.Error())
 		return enumor.DeliverError, map[string]interface{}{"error": err}, err
 	}
-
 	//  异步发送邮件通知用户
 	go a.sendMail(account)
 

@@ -152,6 +152,8 @@ func convTableToBaseLB(one *tablelb.LoadBalancerTable) *corelb.BaseLoadBalancer 
 			CreatedAt: one.CreatedAt.String(),
 			UpdatedAt: one.UpdatedAt.String(),
 		},
+		BandWidth: one.BandWidth,
+		Isp:       one.Isp,
 	}
 }
 

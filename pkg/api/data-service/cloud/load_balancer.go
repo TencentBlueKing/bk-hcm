@@ -72,6 +72,8 @@ type LbBatchCreate[Extension corelb.Extension] struct {
 	CloudStatusTime      string      `json:"cloud_status_time"`
 	CloudExpiredTime     string      `json:"cloud_expired_time"`
 	Tags                 core.TagMap `json:"tags,omitempty"`
+	BandWidth            int64       `json:"bandwidth"`
+	Isp                  string      `json:"isp"`
 
 	Memo      *string    `json:"memo"`
 	Extension *Extension `json:"extension"`
@@ -111,6 +113,8 @@ type LoadBalancerExtUpdateReq[T corelb.Extension] struct {
 	CloudExpiredTime     string      `json:"cloud_expired_time"`
 	Tags                 core.TagMap `json:"tags,omitempty"`
 	Memo                 *string     `json:"memo"`
+	BandWidth            int64       `json:"bandwidth"`
+	Isp                  string      `json:"isp"`
 
 	*core.Revision `json:",inline"`
 	Extension      *T `json:"extension"`

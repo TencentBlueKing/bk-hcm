@@ -140,6 +140,8 @@ func convClbReqToTable[T corelb.Extension](kt *kit.Kit, vendor enumor.Vendor, lb
 		Tags:                 types.StringMap(lb.Tags),
 		Creator:              kt.User,
 		Reviser:              kt.User,
+		BandWidth:            lb.BandWidth,
+		Isp:                  lb.Isp,
 	}, nil
 }
 
