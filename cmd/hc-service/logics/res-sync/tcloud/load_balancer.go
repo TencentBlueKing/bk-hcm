@@ -114,19 +114,6 @@ func (cli *client) LoadBalancer(kt *kit.Kit, params *SyncBaseParams, opt *SyncLB
 	addSlice, updateMap, delCloudIDs := common.Diff[typeslb.TCloudClb, corelb.TCloudLoadBalancer](
 		lbFromCloud, lbFromDB, isLBChange)
 
-	defer func() {
-		// 后续的流程中发生错误，则不更新同步时间
-		if err != nil {
-			return
-		}
-		ids := slice.Map(lbFromDB, corelb.TCloudLoadBalancer.GetID)
-		err := cli.updateLoadBalancerSyncTime(kt, ids)
-		if err != nil {
-			logs.Errorf("update load balancer sync time failed, err: %v, ids: %v, rid: %s", err, ids, kt.Rid)
-			return
-		}
-	}()
-
 	// 删除云上已经删除的负载均衡实例
 	if err = cli.deleteLoadBalancer(kt, params.AccountID, params.Region, delCloudIDs); err != nil {
 		return nil, err
@@ -139,6 +126,11 @@ func (cli *client) LoadBalancer(kt *kit.Kit, params *SyncBaseParams, opt *SyncLB
 	}
 	// 更新变更负载均衡
 	if err = cli.updateLoadBalancer(kt, params.AccountID, params.Region, updateMap); err != nil {
+		return nil, err
+	}
+	ids := slice.Map(lbFromDB, corelb.TCloudLoadBalancer.GetID)
+	if err = cli.updateLoadBalancerSyncTime(kt, ids); err != nil {
+		logs.Errorf("update load balancer sync time failed, err: %v, ids: %v, rid: %s", err, ids, kt.Rid)
 		return nil, err
 	}
 	return new(SyncResult), nil
