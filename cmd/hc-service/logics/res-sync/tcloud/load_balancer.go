@@ -115,6 +115,10 @@ func (cli *client) LoadBalancer(kt *kit.Kit, params *SyncBaseParams, opt *SyncLB
 		lbFromCloud, lbFromDB, isLBChange)
 
 	defer func() {
+		// 后续的流程中发生错误，则不更新同步时间
+		if err != nil {
+			return
+		}
 		ids := slice.Map(lbFromDB, corelb.TCloudLoadBalancer.GetID)
 		err := cli.updateLoadBalancerSyncTime(kt, ids)
 		if err != nil {
