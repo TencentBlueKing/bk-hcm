@@ -22,6 +22,7 @@ package loadbalancer
 import (
 	rawjson "encoding/json"
 	"fmt"
+	"strings"
 
 	"hcm/pkg/adaptor/types/load-balancer"
 	"hcm/pkg/api/core"
@@ -365,7 +366,7 @@ func (svc *lbSvc) CountListenerByLbIDs(cts *rest.Contexts) (interface{}, error) 
 
 // listLoadBalancerListCheckVip 获取负载均衡列表并检查VIP、域名是否匹配
 func (svc *lbSvc) listLoadBalancerListCheckVip(kt *kit.Kit, req *protocloud.ListListenerWithTargetsReq,
-	lblReq protocloud.ListenerQueryItem) ([]string, map[string]tablelb.LoadBalancerTable, error) {
+	lblReq protocloud.ListenerQueryItem) ([]string, []string, map[string]tablelb.LoadBalancerTable, error) {
 
 	lbOpt := &types.ListOption{
 		Filter: tools.ExpressionAnd(
@@ -382,7 +383,7 @@ func (svc *lbSvc) listLoadBalancerListCheckVip(kt *kit.Kit, req *protocloud.List
 		lbList, err := svc.dao.LoadBalancer().List(kt, lbOpt)
 		if err != nil {
 			logs.Errorf("check list load balancer failed, err: %v, req: %+v, rid: %s", err, req, kt.Rid)
-			return nil, nil, fmt.Errorf("list load balancer failed, err: %v", err)
+			return nil, nil, nil, fmt.Errorf("list load balancer failed, err: %v", err)
 		}
 
 		lbAllList = append(lbAllList, lbList.Details...)
@@ -393,61 +394,171 @@ func (svc *lbSvc) listLoadBalancerListCheckVip(kt *kit.Kit, req *protocloud.List
 	}
 
 	// 检查ip地址/域名，是否在负载均衡的ip地址列表中
-	cloudClbIDs, lbMap, err := checkClbVipAndDomain(lbAllList, lblReq.CloudLbIDs, lblReq.ClbVipDomains)
+	cloudClbIDs, clbIDs, lbMap, err := checkClbVipAndDomain(lbAllList, lblReq.CloudLbIDs, lblReq.ClbVipDomains)
 	if err != nil {
 		logs.Errorf("check list load balancer and ip domain match failed, err: %v, req: %+v, rid: %s",
 			err, cvt.PtrToVal(req), kt.Rid)
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	return cloudClbIDs, lbMap, nil
+	return cloudClbIDs, clbIDs, lbMap, nil
 }
 
 func checkClbVipAndDomain(list []tablelb.LoadBalancerTable, paramClbIDs, clbVipDomains []string) (
-	[]string, map[string]tablelb.LoadBalancerTable, error) {
+	[]string, []string, map[string]tablelb.LoadBalancerTable, error) {
 
-	cloudClbIDs := make([]string, 0)
 	lbMap := cvt.SliceToMap(list, func(item tablelb.LoadBalancerTable) (string, tablelb.LoadBalancerTable) {
 		return item.CloudID, item
 	})
 
+	cloudClbIDs := make([]string, 0)
+	clbIDs := make([]string, 0)
 	for idx, cloudID := range paramClbIDs {
 		lbInfo, ok := lbMap[cloudID]
 		if !ok {
-			return nil, nil, errf.Newf(errf.InvalidParameter, "load balancer[%s] is not found", cloudID)
+			return nil, nil, nil, errf.Newf(errf.InvalidParameter, "load balancer[%s] is not found", cloudID)
 		}
 
 		// 检查对应的负载均衡VIP/域名是否匹配
 		vipDomain := clbVipDomains[idx]
 		if cidr.IsDomainName(vipDomain) && lbInfo.Domain != vipDomain {
-			return nil, nil, errf.Newf(errf.InvalidParameter, "load balancer[%s] domain is not match, "+
+			return nil, nil, nil, errf.Newf(errf.InvalidParameter, "load balancer[%s] domain is not match, "+
 				"paramDomain: %s, clbDomain: %s", cloudID, vipDomain, lbInfo.Domain)
 		}
 
 		switch lbInfo.LBType {
 		case string(loadbalancer.InternalLoadBalancerType): // 内网
 			if cidr.IsIPv4(vipDomain) && !slice.IsItemInSlice(lbInfo.PrivateIPv4Addresses, vipDomain) {
-				return nil, nil, errf.Newf(errf.InvalidParameter, "load balancer[%s] privateIPv4 is not match, "+
+				return nil, nil, nil, errf.Newf(errf.InvalidParameter, "load balancer[%s] privateIPv4 is not match, "+
 					"paramIPv4: %s, clbPrivateIPv4: %v", cloudID, vipDomain, lbInfo.PrivateIPv4Addresses)
 			}
 			if cidr.IsIPv6(vipDomain) && !slice.IsItemInSlice(lbInfo.PrivateIPv6Addresses, vipDomain) {
-				return nil, nil, errf.Newf(errf.InvalidParameter, "load balancer[%s] privateIPv6 is not match, "+
+				return nil, nil, nil, errf.Newf(errf.InvalidParameter, "load balancer[%s] privateIPv6 is not match, "+
 					"paramIPv6: %s, clbPrivateIPv6: %v", cloudID, vipDomain, lbInfo.PrivateIPv6Addresses)
 			}
 		case string(loadbalancer.OpenLoadBalancerType): // 公网
 			if cidr.IsIPv4(vipDomain) && !slice.IsItemInSlice(lbInfo.PublicIPv4Addresses, vipDomain) {
-				return nil, nil, errf.Newf(errf.InvalidParameter, "load balancer[%s] publicIPv4 is not match, "+
+				return nil, nil, nil, errf.Newf(errf.InvalidParameter, "load balancer[%s] publicIPv4 is not match, "+
 					"paramIPv4: %s, clbPublicIPv4: %v", cloudID, vipDomain, lbInfo.PublicIPv4Addresses)
 			}
 			if cidr.IsIPv6(vipDomain) && !slice.IsItemInSlice(lbInfo.PublicIPv6Addresses, vipDomain) {
-				return nil, nil, errf.Newf(errf.InvalidParameter, "load balancer[%s] publicIPv6 is not match, "+
+				return nil, nil, nil, errf.Newf(errf.InvalidParameter, "load balancer[%s] publicIPv6 is not match, "+
 					"paramIPv6: %s, clbPublicIPv6: %v", cloudID, vipDomain, lbInfo.PublicIPv6Addresses)
 			}
 		default:
-			return nil, nil, errf.Newf(errf.InvalidParameter, "unsupported hcm lb type: %s", lbInfo.LBType)
+			return nil, nil, nil, errf.Newf(errf.InvalidParameter, "unsupported hcm lb type: %s", lbInfo.LBType)
 		}
 		cloudClbIDs = append(cloudClbIDs, cloudID)
+		clbIDs = append(clbIDs, lbInfo.ID)
 	}
 
-	return slice.Unique(cloudClbIDs), lbMap, nil
+	return slice.Unique(cloudClbIDs), clbIDs, lbMap, nil
+}
+
+// ListListenerByCond list listener by cond.
+func (svc *lbSvc) ListListenerByCond(cts *rest.Contexts) (any, error) {
+	req := new(protocloud.ListListenerByCondReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	var err error
+	listenerList := &protocloud.ListListenerByCondResp{}
+	for _, item := range req.ListenerQueryList {
+		// 负载均衡类型
+		ruleType := enumor.Layer4RuleType
+		if item.Protocol.IsLayer7Protocol() {
+			ruleType = enumor.Layer7RuleType
+		}
+
+		newReq := &protocloud.ListListenerWithTargetsReq{
+			Vendor:    req.Vendor,
+			BkBizID:   req.BkBizID,
+			AccountID: req.AccountID,
+		}
+		lblQueryReq := protocloud.ListenerQueryItem{
+			Protocol:      item.Protocol,
+			Region:        item.Region,
+			CloudLbIDs:    item.CloudLbIDs,
+			ClbVipDomains: item.ClbVipDomains,
+			RuleType:      ruleType,
+			RsIPs:         item.RsIPs,
+			RsPorts:       item.RsPorts,
+		}
+
+		var lblCondList []*protocloud.ListBatchListenerResult
+		// 如果传入了RSIP、RSPort，需要查询监听器对应的目标组、目标组里的RS是否匹配
+		if len(item.RsIPs) > 0 || len(item.RsPorts) > 0 {
+			lblCondList, err = svc.queryListenerWithTargets(cts.Kit, newReq, lblQueryReq)
+		} else {
+			lblCondList, err = svc.queryListenerByCond(cts.Kit, newReq, lblQueryReq)
+		}
+		if err != nil {
+			return nil, err
+		}
+		listenerList.Details = append(listenerList.Details, lblCondList...)
+	}
+	return listenerList, nil
+}
+
+func (svc *lbSvc) queryListenerByCond(kt *kit.Kit, req *protocloud.ListListenerWithTargetsReq,
+	lblReq protocloud.ListenerQueryItem) ([]*protocloud.ListBatchListenerResult, error) {
+
+	// 查询符合条件的负载均衡列表
+	cloudClbIDs, _, lbMap, err := svc.listLoadBalancerListCheckVip(kt, req, lblReq)
+	if err != nil {
+		return nil, err
+	}
+
+	// 未查询到符合条件的负载均衡列表
+	if len(cloudClbIDs) == 0 {
+		logs.Errorf("check list load balancer by cond empty, req: %+v, rid: %s", cvt.PtrToVal(req), kt.Rid)
+		return nil, nil
+	}
+
+	// 查询符合条件的监听器列表
+	_, cloudLblIDs, lblList, err := svc.listBizListenerByLbIDs(kt, req, lblReq, cloudClbIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	// 未查询到符合的监听器列表
+	if len(cloudLblIDs) == 0 {
+		logs.Errorf("list biz listener with targets empty, req: %+v, rid: %s", cvt.PtrToVal(req), kt.Rid)
+		return nil, nil
+	}
+
+	lblResult := make([]*protocloud.ListBatchListenerResult, 0)
+	for _, item := range lblList {
+		// 检查负载均衡是否存在
+		lbInfo, ok := lbMap[item.CloudLBID]
+		if !ok {
+			continue
+		}
+
+		// 获取VIP/域名
+		vipDomain, err := svc.getClbVipDomain(lbInfo)
+		if err != nil {
+			return nil, err
+		}
+
+		lblResult = append(lblResult, &protocloud.ListBatchListenerResult{
+			ClbID:        lbInfo.ID,
+			CloudClbID:   lbInfo.CloudID,
+			ClbVipDomain: strings.Join(vipDomain, ","),
+			BkBizID:      item.BkBizID,
+			Region:       item.Region,
+			Vendor:       item.Vendor,
+			LblID:        item.ID,
+			CloudLblID:   item.CloudID,
+			Protocol:     item.Protocol,
+			Port:         item.Port,
+		})
+	}
+
+	return lblResult, nil
 }

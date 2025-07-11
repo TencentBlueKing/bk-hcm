@@ -108,8 +108,10 @@ func (svc *lbSvc) listTargetByCond(kt *kit.Kit, req *protocloud.ListListenerWith
 	for _, partCloudTargetGroupIDs := range slice.Split(cloudTargetGroupIDs, int(filter.DefaultMaxInLimit)) {
 		targetFilter := make([]*filter.AtomRule, 0)
 		targetFilter = append(targetFilter, tools.RuleEqual("account_id", req.AccountID))
-		targetFilter = append(targetFilter, tools.RuleEqual("inst_type", lblReq.InstType))
 		targetFilter = append(targetFilter, tools.RuleIn("cloud_target_group_id", partCloudTargetGroupIDs))
+		if len(lblReq.InstType) > 0 {
+			targetFilter = append(targetFilter, tools.RuleEqual("inst_type", lblReq.InstType))
+		}
 		if len(lblReq.RsIPs) > 0 {
 			targetFilter = append(targetFilter, tools.RuleIn("ip", lblReq.RsIPs))
 		}
