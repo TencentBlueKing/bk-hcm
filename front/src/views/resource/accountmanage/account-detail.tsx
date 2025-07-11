@@ -346,14 +346,14 @@ export default defineComponent({
     };
 
     const check = (val: any): boolean => {
-      return /^[a-z][a-z-z0-9_-]*$/.test(val);
+      return /^[a-zA-Z][a-zA-Z0-9-_]{1,62}[a-zA-Z0-9]$/.test(val);
     };
 
     const formRules = {
       name: [
         {
           trigger: 'blur',
-          message: '名称必须以小写字母开头，后面最多可跟 32个小写字母、数字或连字符，但不能以连字符结尾',
+          message: '名称必须以小写字母开头，后面最多可跟 63个小写字母、数字或连字符，但不能以连字符结尾',
           validator: check,
         },
       ],
@@ -754,7 +754,7 @@ export default defineComponent({
                   ''
                 )}
               </div>
-              <Form model={projectModel} labelWidth={190} rules={formRules} ref={formRef}>
+              <Form model={projectModel} labelWidth={190} rules={formRules} ref={index === 0 ? formRef : null}>
                 <div class={index === 2 ? 'flex-row align-items-center flex-wrap' : null}>
                   {baseItem.data
                     .filter((item) => !item?.isHidden?.())
