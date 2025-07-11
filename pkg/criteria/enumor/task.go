@@ -39,13 +39,24 @@ const (
 	TaskManagementCancel TaskManagementState = "cancel"
 )
 
+// Validate ...
+func (t TaskManagementState) Validate() error {
+	switch t {
+	case TaskManagementRunning, TaskManagementSuccess, TaskManagementFailed, TaskManagementDeliverPartial,
+		TaskManagementCancel:
+		return nil
+	default:
+		return fmt.Errorf("invalid task management state: %s", t)
+	}
+}
+
 // TaskManagementSource is task management source.
 type TaskManagementSource string
 
 // Validate ...
 func (t TaskManagementSource) Validate() error {
 	switch t {
-	case TaskManagementSourceSops, TaskManagementSourceExcel:
+	case TaskManagementSourceSops, TaskManagementSourceExcel, TaskManagementSourceAPI:
 		return nil
 	default:
 		return fmt.Errorf("invalid task management source: %s", t)
@@ -57,6 +68,8 @@ const (
 	TaskManagementSourceSops TaskManagementSource = "sops"
 	// TaskManagementSourceExcel is a source indicating that excel.
 	TaskManagementSourceExcel TaskManagementSource = "excel"
+	// TaskManagementSourceAPI is a source indicating that api.
+	TaskManagementSourceAPI TaskManagementSource = "api"
 )
 
 // TaskManagementResource is task management resource.
@@ -65,7 +78,19 @@ type TaskManagementResource string
 const (
 	// TaskManagementResClb is a resource indicating that clb.
 	TaskManagementResClb TaskManagementResource = "clb"
+	// TaskManagementResCVM is a resource indicating that cvm.
+	TaskManagementResCVM TaskManagementResource = "cvm"
 )
+
+// Validate ...
+func (t TaskManagementResource) Validate() error {
+	switch t {
+	case TaskManagementResClb, TaskManagementResCVM:
+		return nil
+	default:
+		return fmt.Errorf("invalid task management resource: %s", t)
+	}
+}
 
 // TaskDetailState is task detail state.
 type TaskDetailState string

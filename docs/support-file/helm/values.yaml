@@ -651,7 +651,7 @@ crypto:
 
 ## 网关自动注册配置
 apigwRegister:
-  enabled: true
+  enabled: false
   image:
     repository: blueking/bk-hcm-apigwregister
     tag:
