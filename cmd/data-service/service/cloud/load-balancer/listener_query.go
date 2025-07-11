@@ -221,7 +221,7 @@ func (svc *lbSvc) queryListenerWithTargets(kt *kit.Kit, req *protocloud.ListList
 	lblReq protocloud.ListenerQueryItem) ([]*protocloud.ListBatchListenerResult, error) {
 
 	// 查询符合条件的负载均衡列表
-	cloudClbIDs, lbMap, err := svc.listLoadBalancerListCheckVip(kt, req, lblReq)
+	cloudClbIDs, clbIDs, lbMap, err := svc.listLoadBalancerListCheckVip(kt, req, lblReq)
 	if err != nil {
 		return nil, err
 	}
@@ -243,7 +243,7 @@ func (svc *lbSvc) queryListenerWithTargets(kt *kit.Kit, req *protocloud.ListList
 	}
 
 	// 获取监听器绑定的目标组ID列表
-	cloudTargetGroupIDs, err := svc.listTargetGroupIDsByRelCond(kt, req, lblReq, cloudLblIDs)
+	cloudTargetGroupIDs, err := svc.listTargetGroupIDsByRelCond(kt, req, lblReq, cloudLblIDs, clbIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -253,7 +253,7 @@ func (svc *lbSvc) queryListenerWithTargets(kt *kit.Kit, req *protocloud.ListList
 	if err != nil {
 		return nil, err
 	}
-	// 未查询到符合的监听器列表
+	// 未查询到符合的目标组列表
 	if len(targetGroupIDs) == 0 {
 		logs.Errorf("list load balancer target with targets empty, req: %+v, rid: %s", cvt.PtrToVal(req), kt.Rid)
 		return nil, nil
@@ -438,7 +438,7 @@ func (svc *lbSvc) batchQueryListeners(kt *kit.Kit, req *protocloud.BatchDeleteLi
 		Protocol:      lblReq.Protocol,
 		Ports:         lblReq.Ports,
 	}
-	cloudClbIDs, _, err := svc.listLoadBalancerListCheckVip(kt, lbReq, listenerReq)
+	cloudClbIDs, _, _, err := svc.listLoadBalancerListCheckVip(kt, lbReq, listenerReq)
 	if err != nil {
 		return nil, err
 	}
@@ -573,7 +573,7 @@ func (svc *lbSvc) listListenerWithTarget(kt *kit.Kit, req *protocloud.ListListen
 	for _, item := range targetList {
 		// 不符合的数据需要过滤掉
 		if _, ok := targetIPPortMap[fmt.Sprintf("%s_%s_%d", item.InstType, item.IP, item.Port)]; !ok &&
-			len(lblReq.RsPorts) > 0 {
+			len(lblReq.RsIPs) > 0 && len(lblReq.RsPorts) > 0 {
 			logs.Warnf("list load balancer target rsip[%s] port[%d] is not found, rid: %s", item.IP, item.Port, kt.Rid)
 			continue
 		}
