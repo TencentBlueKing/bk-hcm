@@ -66,9 +66,16 @@ func (a *accountSvc) ListByBkBizID(cts *rest.Contexts) (interface{}, error) {
 		return nil, err
 	}
 
-	// 兼容旧接口的返回值
+	res := make([]*protocloud.AccountBizRelWithAccount, 0)
+
 	for _, one := range accounts {
+		// 排除掉other厂商的账号即内置账号
+		if one.Vendor == enumor.Other {
+			continue
+		}
+		// 兼容旧接口的返回值
 		one.BkBizIDs = one.UsageBizIDs
+		res = append(res, one)
 	}
-	return accounts, nil
+	return res, nil
 }
