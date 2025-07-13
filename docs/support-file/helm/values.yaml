@@ -649,19 +649,42 @@ crypto:
     ##
     nonce:
 
-## APIGateway Sync
-apigwSync:
+## 网关自动注册配置
+apigwRegister:
   enabled: true
   image:
-    repository: blueking/bk-hcm-apigwsync
-    tag: 1.0.2
+    repository: blueking/bk-hcm-apigwregister
+    tag:
   ## 需注册的网关名
   apigwName: "bk-hcm"
   ## 蓝鲸 APIGateway url模板
   bkApiUrlTmpl: "http://bkapi.example.com/api/{api_name}"
   ## 网关负责人，多个使用英文逗号分隔
-  bkApigwManagers: "admin"
+  maintainer: "admin"
+  stageName: "prod"
+  apiUrlPathPrefix: "apigw/"
+  extraEnv:
+  # ENV_1: "value1"
+  # ENV_2: "value2"
   ## Pod
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1024Mi
+    requests:
+      memory: 512Mi
+      cpu: 200m
+
+# 权限中心自动注册配置
+authRegister:
+  # 是否启用权限中心自动注册job
+  enabled: true
+  # job的镜像参数配置
+  image:
+    repository: blueking/bk-hcm-authregister
+    tag:
+  userName: "bk-hcm"
+  rid: 9113b92efbcfcff3be6892b8287abf38
   resources:
     limits:
       cpu: 200m
