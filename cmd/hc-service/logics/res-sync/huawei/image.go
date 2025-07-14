@@ -94,6 +94,7 @@ func (cli *client) Image(kt *kit.Kit, params *SyncBaseParams, opt *SyncImageOpti
 	return new(SyncResult), nil
 }
 
+// updateImage 更新镜像
 func (cli *client) updateImage(kt *kit.Kit, accountID string, region string,
 	updateMap map[string]typesimage.HuaWeiImage) error {
 
@@ -125,6 +126,7 @@ func (cli *client) updateImage(kt *kit.Kit, accountID string, region string,
 	return nil
 }
 
+// createImage 创建镜像
 func (cli *client) createImage(kt *kit.Kit, accountID string, region string,
 	addSlice []typesimage.HuaWeiImage) error {
 
@@ -164,6 +166,7 @@ func (cli *client) createImage(kt *kit.Kit, accountID string, region string,
 	return nil
 }
 
+// deleteImage delete image in db and validate image not exist in cloud
 func (cli *client) deleteImage(kt *kit.Kit, accountID string, region string, delCloudIDs []string,
 	platform model.ListImagesRequestPlatform) error {
 
@@ -171,6 +174,7 @@ func (cli *client) deleteImage(kt *kit.Kit, accountID string, region string, del
 		return fmt.Errorf("image delCloudIDs is <= 0, not delete")
 	}
 
+	// validate image not exist in cloud before delete
 	checkParams := &SyncBaseParams{
 		AccountID: accountID,
 		Region:    region,
@@ -201,6 +205,7 @@ func (cli *client) deleteImage(kt *kit.Kit, accountID string, region string, del
 	return nil
 }
 
+// listImageFromCloud lists images from cloud
 func (cli *client) listImageFromCloud(kt *kit.Kit, params *SyncBaseParams,
 	platform model.ListImagesRequestPlatform) ([]typesimage.HuaWeiImage, error) {
 
@@ -228,6 +233,7 @@ func (cli *client) listImageFromCloud(kt *kit.Kit, params *SyncBaseParams,
 	return results, nil
 }
 
+// listImageFromDB lists images from database
 func (cli *client) listImageFromDB(kt *kit.Kit, params *SyncBaseParams, platform model.ListImagesRequestPlatform) (
 	[]coreimage.Image[coreimage.HuaWeiExtension], error) {
 
@@ -278,6 +284,7 @@ func (cli *client) listImageFromDB(kt *kit.Kit, params *SyncBaseParams, platform
 	return results, nil
 }
 
+// RemoveImageDeleteFromCloud remove image from cloud
 func (cli *client) RemoveImageDeleteFromCloud(kt *kit.Kit, accountID, region string,
 	platform model.ListImagesRequestPlatform) error {
 
@@ -347,6 +354,7 @@ func (cli *client) RemoveImageDeleteFromCloud(kt *kit.Kit, accountID, region str
 	return nil
 }
 
+// isImageChange checks if the image has changed based on its state and os type
 func isImageChange(cloud typesimage.HuaWeiImage, db coreimage.Image[coreimage.HuaWeiExtension]) bool {
 
 	if cloud.State != db.State {
@@ -360,6 +368,7 @@ func isImageChange(cloud typesimage.HuaWeiImage, db coreimage.Image[coreimage.Hu
 	return false
 }
 
+// listImageFromDBForCvm lists images from database for CVM
 func (cli *client) listImageFromDBForCvm(kt *kit.Kit, params *SyncBaseParams) (
 	[]*coreimage.BaseImage, error) {
 

@@ -122,6 +122,7 @@ func (cli *client) SecurityGroup(kt *kit.Kit, params *SyncBaseParams, opt *SyncS
 	return new(SyncResult), nil
 }
 
+// updateSG update security group in database
 func (cli *client) updateSG(kt *kit.Kit, accountID string,
 	updateMap map[string]securitygroup.TCloudSG) error {
 
@@ -168,6 +169,7 @@ func (cli *client) updateSG(kt *kit.Kit, accountID string,
 	return nil
 }
 
+// createSG create security group in database
 func (cli *client) createSG(kt *kit.Kit, accountID string, region string,
 	addSlice []securitygroup.TCloudSG) ([]string, error) {
 
@@ -215,6 +217,7 @@ func (cli *client) createSG(kt *kit.Kit, accountID string, region string,
 	return results.IDs, nil
 }
 
+// deleteSG delete security group in database
 func (cli *client) deleteSG(kt *kit.Kit, accountID string, region string, delCloudIDs []string) error {
 	if len(delCloudIDs) <= 0 {
 		return fmt.Errorf("sg delCloudIDs is <= 0, not delete")
@@ -251,6 +254,7 @@ func (cli *client) deleteSG(kt *kit.Kit, accountID string, region string, delClo
 	return nil
 }
 
+// getWithPrefetchedCloudSG returns security groups from cloud, using prefetched data if available.
 func (cli *client) getWithPrefetchedCloudSG(kt *kit.Kit, params *SyncBaseParams, opt *SyncSGOption) (
 	[]securitygroup.TCloudSG, error) {
 
@@ -279,6 +283,7 @@ func (cli *client) getWithPrefetchedCloudSG(kt *kit.Kit, params *SyncBaseParams,
 	return cloudData, nil
 }
 
+// listSGFromCloud lists security groups from cloud based on the given parameters.
 func (cli *client) listSGFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]securitygroup.TCloudSG, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -306,6 +311,7 @@ func (cli *client) listSGFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]secur
 	return result, nil
 }
 
+// listSGFromDB lists security groups from the database based on the given parameters.
 func (cli *client) listSGFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	[]cloudcore.SecurityGroup[cloudcore.TCloudSecurityGroupExtension], error) {
 
@@ -465,6 +471,7 @@ func (cli *client) RemoveSecurityGroupDeleteFromCloud(kt *kit.Kit, accountID str
 	return nil
 }
 
+// listRemoveSGID lists security group IDs that have been removed from the cloud.
 func (cli *client) listRemoveSGID(kt *kit.Kit, params *SyncBaseParams) ([]string, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -487,6 +494,7 @@ func (cli *client) listRemoveSGID(kt *kit.Kit, params *SyncBaseParams) ([]string
 	return delCloudIDs, nil
 }
 
+// isSGChange checks if the security group from the cloud has changed compared to the database entry.
 func isSGChange(cloud securitygroup.TCloudSG, db cloudcore.SecurityGroup[cloudcore.TCloudSecurityGroupExtension]) bool {
 
 	if cvt.PtrToVal(cloud.SecurityGroupName) != db.BaseSecurityGroup.Name {

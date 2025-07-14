@@ -56,12 +56,15 @@ func (opt SyncArgsTplOption) Validate() error {
 
 // --------------- Sync Address ------------------
 
-// ArgsTplAddress ...
+// ArgsTplAddress 同步腾讯云地址模板
+// 从云端获取地址模板数据，与本地数据库进行对比，执行增删改操作
 func (cli *client) ArgsTplAddress(kt *kit.Kit, params *SyncBaseParams, opt *SyncArgsTplOption) (*SyncResult, error) {
+	// 验证输入参数
 	if err := validator.ValidateTool(params, opt); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	// 从腾讯云获取地址模板数据
 	fromCloud, err := cli.listFromCloudAddress(kt, params)
 	if err != nil {
 		return nil, err
@@ -69,6 +72,7 @@ func (cli *client) ArgsTplAddress(kt *kit.Kit, params *SyncBaseParams, opt *Sync
 	// logs.Infof("[%s] hcservice argument template address listFromCloud success, params: %+v, cloud_count: %d, rid: %s",
 	// 	enumor.TCloud, params, len(fromCloud), kt.Rid)
 
+	// 从本地数据库获取地址模板数据
 	fromDB, err := cli.listFromDB(kt, params, enumor.AddressType)
 	if err != nil {
 		return nil, err
@@ -77,28 +81,33 @@ func (cli *client) ArgsTplAddress(kt *kit.Kit, params *SyncBaseParams, opt *Sync
 	// logs.Infof("[%s] hcservice sync argument template address listFromDB success, db_count: %d, rid: %s",
 	// 	enumor.TCloud, len(fromDB), kt.Rid)
 
+	// 如果云端和数据库都没有数据，直接返回
 	if len(fromCloud) == 0 && len(fromDB) == 0 {
 		return new(SyncResult), nil
 	}
 
+	// 对比云端和数据库数据，获取需要新增、更新、删除的数据
 	addSlice, updateMap, delCloudIDs := common.Diff[typeargstpl.TCloudArgsTplAddress,
 		*coreargstpl.ArgsTpl[coreargstpl.TCloudArgsTplExtension]](fromCloud, fromDB, isChangeAddress)
 
 	logs.Infof("[%s] hcservice sync argument template diff address success, addNum: %d, updateNum: %d, delNum: %d, "+
 		"rid: %s", enumor.TCloud, len(addSlice), len(updateMap), len(delCloudIDs), kt.Rid)
 
+	// 删除云端已不存在的地址模板
 	if len(delCloudIDs) > 0 {
 		if err = cli.deleteAddress(kt, params.AccountID, params.Region, delCloudIDs); err != nil {
 			return nil, err
 		}
 	}
 
+	// 创建新增的地址模板
 	if len(addSlice) > 0 {
 		if err = cli.createAddress(kt, params.AccountID, opt, addSlice); err != nil {
 			return nil, err
 		}
 	}
 
+	// 更新已变更的地址模板
 	if len(updateMap) > 0 {
 		if err = cli.updateAddress(kt, params.AccountID, updateMap); err != nil {
 			return nil, err
@@ -108,11 +117,14 @@ func (cli *client) ArgsTplAddress(kt *kit.Kit, params *SyncBaseParams, opt *Sync
 	return new(SyncResult), nil
 }
 
+// deleteAddress 删除地址模板
+// 先验证云端确实不存在这些资源，然后从数据库中删除
 func (cli *client) deleteAddress(kt *kit.Kit, accountID, region string, delCloudIDs []string) error {
 	if len(delCloudIDs) <= 0 {
 		return fmt.Errorf("hcservice resource sync failed, delCloudIDs is <= 0, not delete")
 	}
 
+	// 再次从云端查询，确认这些资源确实已被删除
 	checkParams := &SyncBaseParams{
 		AccountID: accountID,
 		Region:    region,
@@ -123,12 +135,14 @@ func (cli *client) deleteAddress(kt *kit.Kit, accountID, region string, delCloud
 		return err
 	}
 
+	// 如果云端仍然存在这些资源，则不能删除
 	if len(delFromCloud) > 0 {
 		logs.Errorf("[%s] validate argument template address not exist failed, before delete, opt: %v, "+
 			"failed_count: %d, rid: %s", enumor.TCloud, checkParams, len(delFromCloud), kt.Rid)
 		return fmt.Errorf("validate argument template address not exist failed, before delete")
 	}
 
+	// 从数据库批量删除地址模板
 	deleteReq := &protocloud.ArgsTplBatchDeleteReq{
 		Filter: tools.ContainersExpression("cloud_id", delCloudIDs),
 	}
@@ -144,6 +158,8 @@ func (cli *client) deleteAddress(kt *kit.Kit, accountID, region string, delCloud
 	return nil
 }
 
+// updateAddress 更新地址模板
+// 将云端的地址模板数据更新到本地数据库
 func (cli *client) updateAddress(kt *kit.Kit, accountID string,
 	updateMap map[string]typeargstpl.TCloudArgsTplAddress) error {
 
@@ -151,7 +167,9 @@ func (cli *client) updateAddress(kt *kit.Kit, accountID string,
 		return fmt.Errorf("hcservice resource sync failed, updateMap is <= 0, not update")
 	}
 
+	// 遍历需要更新的地址模板
 	for id, one := range updateMap {
+		// 转换地址信息格式
 		tmpAddressSet := make([]hcargstpl.TemplateInfo, 0, len(one.AddressExtraSet))
 		for _, cloudAddress := range one.AddressExtraSet {
 			tmpAddressSet = append(tmpAddressSet, hcargstpl.TemplateInfo{
@@ -160,17 +178,20 @@ func (cli *client) updateAddress(kt *kit.Kit, accountID string,
 			})
 		}
 
+		// 序列化模板数据为JSON格式
 		templateJson, err := types.NewJsonField(tmpAddressSet)
 		if err != nil {
 			return fmt.Errorf("json marshal template failed, err: %w", err)
 		}
 
+		// 构建更新请求
 		var updateReq = protocloud.ArgsTplBatchUpdateExprReq{
 			IDs:       []string{id},
 			Name:      converter.PtrToVal(one.AddressTemplateName),
 			Templates: templateJson,
 		}
 
+		// 调用数据服务更新地址模板
 		if _, err = cli.dbCli.Global.ArgsTpl.BatchUpdateArgsTpl(kt, &updateReq); err != nil {
 			logs.Errorf("[%s] request dataservice BatchUpdateArgsTpl address failed, err: %v, rid: %s",
 				enumor.TCloud, err, kt.Rid)
@@ -184,6 +205,8 @@ func (cli *client) updateAddress(kt *kit.Kit, accountID string,
 	return nil
 }
 
+// createAddress 创建地址模板
+// 将云端新增的地址模板数据同步到本地数据库
 func (cli *client) createAddress(kt *kit.Kit, accountID string, opt *SyncArgsTplOption,
 	addSlice []typeargstpl.TCloudArgsTplAddress) error {
 
@@ -235,6 +258,8 @@ func (cli *client) createAddress(kt *kit.Kit, accountID string, opt *SyncArgsTpl
 	return nil
 }
 
+// listFromCloudAddress 从腾讯云获取地址模板列表
+// 根据云资源ID列表查询对应的地址模板信息
 func (cli *client) listFromCloudAddress(kt *kit.Kit, params *SyncBaseParams) (
 	[]typeargstpl.TCloudArgsTplAddress, error) {
 
@@ -359,6 +384,8 @@ func (cli *client) listFromCloudServiceGroup(kt *kit.Kit, params *SyncBaseParams
 	return list, nil
 }
 
+// listFromDB 从本地数据库获取参数模板列表
+// 根据账户ID、云资源ID列表和模板类型查询对应的参数模板信息
 func (cli *client) listFromDB(kt *kit.Kit, params *SyncBaseParams, templateType enumor.TemplateType) (
 	[]*coreargstpl.ArgsTpl[coreargstpl.TCloudArgsTplExtension], error) {
 
@@ -399,6 +426,8 @@ func (cli *client) listFromDB(kt *kit.Kit, params *SyncBaseParams, templateType 
 	return result.Details, nil
 }
 
+// isChangeAddress 比较云端和数据库中的地址模板是否有变化
+// 比较模板名称和地址信息，判断是否需要更新
 func isChangeAddress(cloud typeargstpl.TCloudArgsTplAddress,
 	db *coreargstpl.ArgsTpl[coreargstpl.TCloudArgsTplExtension]) bool {
 
@@ -423,7 +452,8 @@ func isChangeAddress(cloud typeargstpl.TCloudArgsTplAddress,
 	return false
 }
 
-// RemoveArgsTplAddressDeleteFromCloud ...
+// RemoveArgsTplAddressDeleteFromCloud 清理云端已删除的地址模板
+// 分批查询数据库中的地址模板，检查云端是否还存在，如不存在则删除
 func (cli *client) RemoveArgsTplAddressDeleteFromCloud(kt *kit.Kit, accountID, region string) error {
 	req := &core.ListReq{
 		Fields: []string{"id", "cloud_id"},
@@ -493,7 +523,8 @@ func (cli *client) RemoveArgsTplAddressDeleteFromCloud(kt *kit.Kit, accountID, r
 
 // --------------- Sync Address Group ------------------
 
-// ArgsTplAddressGroup ...
+// ArgsTplAddressGroup 同步腾讯云地址组模板
+// 从云端获取地址组模板数据，与本地数据库进行对比，执行增删改操作
 func (cli *client) ArgsTplAddressGroup(kt *kit.Kit, params *SyncBaseParams, opt *SyncArgsTplOption) (
 	*SyncResult, error) {
 
@@ -520,6 +551,7 @@ func (cli *client) ArgsTplAddressGroup(kt *kit.Kit, params *SyncBaseParams, opt 
 		return new(SyncResult), nil
 	}
 
+	// 对比云端和数据库数据，获取需要新增、更新、删除的数据
 	addSlice, updateMap, delCloudIDs := common.Diff[typeargstpl.TCloudArgsTplAddressGroup,
 		*coreargstpl.ArgsTpl[coreargstpl.TCloudArgsTplExtension]](fromCloud, fromDB, isChangeAddressGroup)
 
@@ -751,7 +783,8 @@ func (cli *client) RemoveArgsTplAddressGroupDeleteFromCloud(kt *kit.Kit, account
 
 // --------------- Sync Service ------------------
 
-// ArgsTplService ...
+// ArgsTplService 同步腾讯云服务模板
+// 该函数负责同步腾讯云的服务模板，包括从云端获取数据、与数据库对比、执行增删改操作
 func (cli *client) ArgsTplService(kt *kit.Kit, params *SyncBaseParams, opt *SyncArgsTplOption) (*SyncResult, error) {
 	if err := validator.ValidateTool(params, opt); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -804,6 +837,8 @@ func (cli *client) ArgsTplService(kt *kit.Kit, params *SyncBaseParams, opt *Sync
 	return new(SyncResult), nil
 }
 
+// deleteService 删除服务模板
+// 删除前会先验证云端是否还存在这些资源，确保不会误删
 func (cli *client) deleteService(kt *kit.Kit, accountID, region string, delCloudIDs []string) error {
 	if len(delCloudIDs) <= 0 {
 		return fmt.Errorf("hcservice resource sync failed, delCloudIDs is <= 0, not delete")
@@ -840,6 +875,8 @@ func (cli *client) deleteService(kt *kit.Kit, accountID, region string, delCloud
 	return nil
 }
 
+// updateService 更新服务模板
+// 将云端的服务模板数据更新到数据库中
 func (cli *client) updateService(kt *kit.Kit, accountID string,
 	updateMap map[string]typeargstpl.TCloudArgsTplService) error {
 
@@ -880,6 +917,8 @@ func (cli *client) updateService(kt *kit.Kit, accountID string,
 	return nil
 }
 
+// createService 创建服务模板
+// 将云端新增的服务模板数据保存到数据库中
 func (cli *client) createService(kt *kit.Kit, accountID string, opt *SyncArgsTplOption,
 	addSlice []typeargstpl.TCloudArgsTplService) error {
 
@@ -931,6 +970,8 @@ func (cli *client) createService(kt *kit.Kit, accountID string, opt *SyncArgsTpl
 	return nil
 }
 
+// isChangeService 比较云端和数据库中的服务模板是否有变化
+// 通过比较模板名称、服务数量和具体服务内容来判断是否需要更新
 func isChangeService(cloud typeargstpl.TCloudArgsTplService,
 	db *coreargstpl.ArgsTpl[coreargstpl.TCloudArgsTplExtension]) bool {
 
@@ -955,7 +996,8 @@ func isChangeService(cloud typeargstpl.TCloudArgsTplService,
 	return false
 }
 
-// RemoveArgsTplServiceDeleteFromCloud ...
+// RemoveArgsTplServiceDeleteFromCloud 清理云端已删除的服务模板
+// 该函数用于清理数据库中存在但云端已删除的服务模板记录
 func (cli *client) RemoveArgsTplServiceDeleteFromCloud(kt *kit.Kit, accountID, region string) error {
 	req := &core.ListReq{
 		Fields: []string{"id", "cloud_id"},
@@ -1025,7 +1067,8 @@ func (cli *client) RemoveArgsTplServiceDeleteFromCloud(kt *kit.Kit, accountID, r
 
 // --------------- Sync Service Group ------------------
 
-// ArgsTplServiceGroup ...
+// ArgsTplServiceGroup 同步腾讯云服务组模板
+// 该函数负责同步腾讯云的服务组模板，包括从云端获取数据、与数据库对比、执行增删改操作
 func (cli *client) ArgsTplServiceGroup(kt *kit.Kit, params *SyncBaseParams, opt *SyncArgsTplOption) (
 	*SyncResult, error) {
 
@@ -1080,6 +1123,8 @@ func (cli *client) ArgsTplServiceGroup(kt *kit.Kit, params *SyncBaseParams, opt 
 	return new(SyncResult), nil
 }
 
+// deleteServiceGroup 删除服务组模板
+// 删除前会先验证云端是否还存在这些资源，确保不会误删
 func (cli *client) deleteServiceGroup(kt *kit.Kit, accountID, region string, delCloudIDs []string) error {
 	if len(delCloudIDs) <= 0 {
 		return fmt.Errorf("hcservice resource sync failed, delCloudIDs is <= 0, not delete")
@@ -1116,6 +1161,8 @@ func (cli *client) deleteServiceGroup(kt *kit.Kit, accountID, region string, del
 	return nil
 }
 
+// updateServiceGroup 更新服务组模板
+// 将云端的服务组模板数据更新到数据库中
 func (cli *client) updateServiceGroup(kt *kit.Kit, accountID string,
 	updateMap map[string]typeargstpl.TCloudArgsTplServiceGroup) error {
 
@@ -1148,6 +1195,8 @@ func (cli *client) updateServiceGroup(kt *kit.Kit, accountID string,
 	return nil
 }
 
+// createServiceGroup 创建服务组模板
+// 将云端新增的服务组模板数据保存到数据库中
 func (cli *client) createServiceGroup(kt *kit.Kit, accountID string, opt *SyncArgsTplOption,
 	addSlice []typeargstpl.TCloudArgsTplServiceGroup) error {
 
@@ -1191,6 +1240,8 @@ func (cli *client) createServiceGroup(kt *kit.Kit, accountID string, opt *SyncAr
 	return nil
 }
 
+// isChangeServiceGroup 比较云端和数据库中的服务组模板是否有变化
+// 通过比较组名称、服务模板数量和具体服务模板ID来判断是否需要更新
 func isChangeServiceGroup(cloud typeargstpl.TCloudArgsTplServiceGroup,
 	db *coreargstpl.ArgsTpl[coreargstpl.TCloudArgsTplExtension]) bool {
 
@@ -1214,7 +1265,8 @@ func isChangeServiceGroup(cloud typeargstpl.TCloudArgsTplServiceGroup,
 	return false
 }
 
-// RemoveArgsTplServiceGroupDeleteFromCloud ...
+// RemoveArgsTplServiceGroupDeleteFromCloud 清理云端已删除的服务组模板
+// 该函数用于清理数据库中存在但云端已删除的服务组模板记录
 func (cli *client) RemoveArgsTplServiceGroupDeleteFromCloud(kt *kit.Kit, accountID, region string) error {
 	req := &core.ListReq{
 		Fields: []string{"id", "cloud_id"},

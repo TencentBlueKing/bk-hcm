@@ -33,7 +33,6 @@ import (
 	"hcm/pkg/api/core/cloud/cvm"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
 	dataproto "hcm/pkg/api/data-service/cloud"
-	protocloud "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
@@ -163,7 +162,7 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 		}
 
 		cvm := dataproto.CvmBatchUpdateWithExtension[corecvm.HuaWeiCvmExtension]{
-			CvmBatchUpdate: protocloud.CvmBatchUpdate{
+			CvmBatchUpdate: dataproto.CvmBatchUpdate{
 				ID:                   id,
 				Name:                 one.Name,
 				CloudVpcIDs:          []string{one.Metadata["vpc_id"]},
@@ -494,7 +493,7 @@ func (cli *client) listCvmFromDB(kt *kit.Kit, params *SyncBaseParams) (
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
-	req := &protocloud.CvmListReq{
+	req := &dataproto.CvmListReq{
 		Filter: &filter.Expression{
 			Op: filter.And,
 			Rules: []filter.RuleFactory{
@@ -529,7 +528,7 @@ func (cli *client) listCvmFromDB(kt *kit.Kit, params *SyncBaseParams) (
 
 // RemoveCvmDeleteFromCloud 删除从云上删除已经删除的cvm
 func (cli *client) RemoveCvmDeleteFromCloud(kt *kit.Kit, accountID string, region string) error {
-	req := &protocloud.CvmListReq{
+	req := &dataproto.CvmListReq{
 		Field: []string{"id", "cloud_id"},
 		Filter: &filter.Expression{
 			Op: filter.And,

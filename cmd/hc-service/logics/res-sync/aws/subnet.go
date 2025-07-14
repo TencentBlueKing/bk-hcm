@@ -96,11 +96,13 @@ func (cli *client) Subnet(kt *kit.Kit, params *SyncBaseParams, opt *SyncSubnetOp
 	return nil, nil
 }
 
+// deleteSubnet delete subnet from db, before delete, validate subnet not exist in cloud.
 func (cli *client) deleteSubnet(kt *kit.Kit, accountID string, region string, delCloudIDs []string) error {
 	if len(delCloudIDs) == 0 {
 		return fmt.Errorf("delete subnet, cloudIDs is required")
 	}
 
+	// validate subnet not exist in cloud, before delete
 	checkParams := &SyncBaseParams{
 		AccountID: accountID,
 		Region:    region,
@@ -131,6 +133,7 @@ func (cli *client) deleteSubnet(kt *kit.Kit, accountID string, region string, de
 	return nil
 }
 
+// updateSubnet update subnet in db
 func (cli *client) updateSubnet(kt *kit.Kit, accountID string, updateMap map[string]adtysubnet.AwsSubnet) error {
 	if len(updateMap) == 0 {
 		return fmt.Errorf("update subnet, subnets is required")
@@ -176,6 +179,7 @@ func (cli *client) updateSubnet(kt *kit.Kit, accountID string, updateMap map[str
 	return nil
 }
 
+// createSubnet create subnet in db
 func (cli *client) createSubnet(kt *kit.Kit, accountID, region string, addSubnets []adtysubnet.AwsSubnet) error {
 	if len(addSubnets) == 0 {
 		return fmt.Errorf("create subnet, subnets is required")
@@ -249,6 +253,7 @@ func (cli *client) createSubnet(kt *kit.Kit, accountID, region string, addSubnet
 	return nil
 }
 
+// isAwsSubnetChange check if the subnet has changed
 func isAwsSubnetChange(item adtysubnet.AwsSubnet, info cloudcore.Subnet[cloudcore.AwsSubnetExtension]) bool {
 	if info.Region != item.Region {
 		return true
@@ -360,6 +365,7 @@ func (cli *client) RemoveSubnetDeleteFromCloud(kt *kit.Kit, accountID string, re
 	return nil
 }
 
+// listRemoveSubnetID list subnet from cloud and remove not found subnet id
 func (cli *client) listRemoveSubnetID(kt *kit.Kit, params *SyncBaseParams) ([]string, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -397,6 +403,7 @@ func (cli *client) listRemoveSubnetID(kt *kit.Kit, params *SyncBaseParams) ([]st
 	return delCloudIDs, nil
 }
 
+// listSubnetFromCloud list subnet from cloud
 func (cli *client) listSubnetFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]adtysubnet.AwsSubnet, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -420,6 +427,7 @@ func (cli *client) listSubnetFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]a
 	return result.Details, nil
 }
 
+// listSubnetFromDB list subnet from db
 func (cli *client) listSubnetFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	[]cloudcore.Subnet[cloudcore.AwsSubnetExtension], error) {
 

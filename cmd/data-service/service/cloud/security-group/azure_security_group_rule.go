@@ -42,7 +42,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// initAzureSGRuleService initial the azure security group rule service
+// initAzureSGRuleService 初始化Azure安全组规则服务
 func initAzureSGRuleService(cap *capability.Capability) {
 	svc := &azureSGRuleSvc{
 		dao: cap.Dao,
@@ -50,12 +50,16 @@ func initAzureSGRuleService(cap *capability.Capability) {
 
 	h := rest.NewHandler()
 
+	// 批量创建Azure安全组规则
 	h.Add("BatchCreateAzureRule", "POST", "/vendors/azure/security_groups/{security_group_id}/rules/batch/create",
 		svc.BatchCreateAzureRule)
+	// 批量更新Azure安全组规则
 	h.Add("BatchUpdateAzureRule", "PUT", "/vendors/azure/security_groups/{security_group_id}/rules/batch",
 		svc.BatchUpdateAzureRule)
+	// 列出Azure安全组规则
 	h.Add("ListAzureRule", "POST", "/vendors/azure/security_groups/{security_group_id}/rules/list",
 		svc.ListAzureRule)
+	// 删除Azure安全组规则
 	h.Add("DeleteAzureRule", "DELETE", "/vendors/azure/security_groups/{security_group_id}/rules/batch",
 		svc.DeleteAzureRule)
 
@@ -144,7 +148,7 @@ func convStringPtrSlice(data []string) []*string {
 	return converter.SliceToPtr(data)
 }
 
-// BatchUpdateAzureRule update azure rule.
+// BatchUpdateAzureRule 批量更新Azure安全组规则
 func (svc *azureSGRuleSvc) BatchUpdateAzureRule(cts *rest.Contexts) (interface{}, error) {
 	sgID := cts.PathParameter("security_group_id").String()
 	if len(sgID) == 0 {
@@ -189,6 +193,7 @@ func (svc *azureSGRuleSvc) BatchUpdateAzureRule(cts *rest.Contexts) (interface{}
 				Reviser:                             cts.Kit.User,
 			}
 
+			// 构建更新过滤条件
 			flt := &filter.Expression{
 				Op: filter.And,
 				Rules: []filter.RuleFactory{
@@ -204,6 +209,7 @@ func (svc *azureSGRuleSvc) BatchUpdateAzureRule(cts *rest.Contexts) (interface{}
 					},
 				},
 			}
+			// 执行更新操作
 			if err := svc.dao.AzureSGRule().UpdateWithTx(cts.Kit, txn, flt, rule); err != nil {
 				logs.Errorf("update azure security group rule failed, err: %v, rid: %s", err, cts.Kit.Rid)
 				return nil, fmt.Errorf("update azure security group rule failed, err: %v", err)

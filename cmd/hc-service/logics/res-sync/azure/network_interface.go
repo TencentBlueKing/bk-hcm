@@ -168,6 +168,7 @@ func (cli *client) RemoveNetworkInterfaceDeleteFromCloud(kt *kit.Kit, accountID 
 	return nil
 }
 
+// deleteNetworkInterface deletes network interfaces from the database
 func (cli *client) deleteNetworkInterface(kt *kit.Kit, accountID string, resGroupName string, delCloudIDs []string) error {
 
 	if len(delCloudIDs) == 0 {
@@ -204,6 +205,7 @@ func (cli *client) deleteNetworkInterface(kt *kit.Kit, accountID string, resGrou
 	return nil
 }
 
+// updateNetworkInterface updates network interfaces in the database
 func (cli *client) updateNetworkInterface(kt *kit.Kit, accountID string, updateMap map[string]typesni.AzureNI) error {
 
 	if len(updateMap) == 0 {
@@ -271,6 +273,7 @@ func (cli *client) updateNetworkInterface(kt *kit.Kit, accountID string, updateM
 	return nil
 }
 
+// createNetworkInterface creates network interfaces in the database
 func (cli *client) createNetworkInterface(kt *kit.Kit, accountID, resGroupName string, adds []typesni.AzureNI) error {
 
 	if len(adds) == 0 {
@@ -350,6 +353,7 @@ func (cli *client) createNetworkInterface(kt *kit.Kit, accountID, resGroupName s
 	return nil
 }
 
+// getCvmMapFromDB retrieves a map of CVMs from the database
 func (cli *client) getCvmMapFromDB(kt *kit.Kit, accountID string, resGroupName string, adds []typesni.AzureNI) (
 	map[string]corecvm.Cvm[cvm.AzureCvmExtension], error) {
 
@@ -383,6 +387,7 @@ func (cli *client) getCvmMapFromDB(kt *kit.Kit, accountID string, resGroupName s
 	return cvmMap, nil
 }
 
+// listNetworkInterfaceFromCloud retrieves network interfaces from the cloud based on the provided parameters.
 func (cli *client) listNetworkInterfaceFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]typesni.AzureNI, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -402,6 +407,7 @@ func (cli *client) listNetworkInterfaceFromCloud(kt *kit.Kit, params *SyncBasePa
 	return result.Details, nil
 }
 
+// listNetworkInterfaceFromDB retrieves network interfaces from the database based on the provided parameters.
 func (cli *client) listNetworkInterfaceFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	[]coreni.NetworkInterface[coreni.AzureNIExtension], error) {
 
@@ -442,6 +448,7 @@ func (cli *client) listNetworkInterfaceFromDB(kt *kit.Kit, params *SyncBaseParam
 	return result.Details, nil
 }
 
+// isNIChange checks if the Azure network interface has changed compared to the database information.
 func isNIChange(item typesni.AzureNI, dbInfo coreni.NetworkInterface[coreni.AzureNIExtension]) bool {
 
 	if dbInfo.Name != converter.PtrToVal(item.Name) || dbInfo.Region != converter.PtrToVal(item.Region) ||
@@ -480,6 +487,7 @@ func isNIChange(item typesni.AzureNI, dbInfo coreni.NetworkInterface[coreni.Azur
 	return false
 }
 
+// checkAzureExt checks if the Azure network interface extension has been updated.
 func checkAzureExt(item typesni.AzureNI, dbInfo coreni.NetworkInterface[coreni.AzureNIExtension]) bool {
 	if item.Extension.ResourceGroupName != dbInfo.Extension.ResourceGroupName {
 		return true
@@ -515,6 +523,7 @@ func checkAzureExt(item typesni.AzureNI, dbInfo coreni.NetworkInterface[coreni.A
 	return false
 }
 
+// checkAzureIPConfigIsUpdate checks if the IP configurations of the Azure network interface have been updated.
 func checkAzureIPConfigIsUpdate(item typesni.AzureNI,
 	dbInfo coreni.NetworkInterface[coreni.AzureNIExtension]) bool {
 

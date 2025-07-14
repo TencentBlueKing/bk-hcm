@@ -624,6 +624,7 @@ func GetAssignedHostInfoFromCC(kt *kit.Kit, cmdbCli cmdb.Client, cvmInfos []Prev
 	return hostMap, bizHostIDsMap, nil
 }
 
+// matchAssignedCvm match assigned cvm
 func matchAssignedCvm(cvmInfos []PreviewAssignedCvmInfo, ccHosts map[int64]cmdb.Host,
 	ccBizHostIDsMap map[int64][]int64) (
 	map[string][]PreviewCvmMatchResult, error) {

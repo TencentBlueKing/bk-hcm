@@ -51,7 +51,9 @@ func (opt SyncDiskOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
-// Disk ...
+// Disk 同步华为云磁盘资源
+// 该方法负责将华为云上的磁盘资源与本地数据库中的磁盘数据进行同步
+// 包括新增、更新和删除操作
 func (cli *client) Disk(kt *kit.Kit, params *SyncBaseParams, opt *SyncDiskOption) (*SyncResult, error) {
 	if err := validator.ValidateTool(params, opt); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -102,6 +104,8 @@ func (cli *client) Disk(kt *kit.Kit, params *SyncBaseParams, opt *SyncDiskOption
 	return new(SyncResult), nil
 }
 
+// deleteDisk 删除磁盘
+// 该方法用于删除在云上已不存在但在数据库中仍有记录的磁盘
 func (cli *client) deleteDisk(kt *kit.Kit, accountID string, region string, delCloudIDs []string) error {
 	if len(delCloudIDs) <= 0 {
 		return fmt.Errorf("delCloudIDs is <= 0, not delete")
@@ -138,6 +142,8 @@ func (cli *client) deleteDisk(kt *kit.Kit, accountID string, region string, delC
 	return nil
 }
 
+// updateDisk 更新磁盘信息
+// 该方法用于更新数据库中磁盘的信息，使其与云上的最新状态保持一致
 func (cli *client) updateDisk(kt *kit.Kit, accountID string, updateMap map[string]adaptordisk.HuaWeiDisk) error {
 
 	if len(updateMap) <= 0 {
@@ -198,6 +204,8 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, updateMap map[strin
 	return nil
 }
 
+// createDisk 创建磁盘
+// 该方法用于将云上新发现的磁盘信息同步到数据库中
 func (cli *client) createDisk(kt *kit.Kit, accountID string, region string,
 	addSlice []adaptordisk.HuaWeiDisk) error {
 
@@ -261,6 +269,8 @@ func (cli *client) createDisk(kt *kit.Kit, accountID string, region string,
 	return nil
 }
 
+// listDiskFromCloud 从华为云获取磁盘列表
+// 该方法通过华为云API获取指定区域和云磁盘ID的磁盘信息
 func (cli *client) listDiskFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]adaptordisk.HuaWeiDisk, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -290,6 +300,8 @@ func (cli *client) listDiskFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]ada
 	return results, nil
 }
 
+// listDiskFromDB 从数据库获取磁盘列表
+// 该方法根据账户ID、区域和云磁盘ID列表从数据库中查询磁盘信息
 func (cli *client) listDiskFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	[]*coredisk.Disk[coredisk.HuaWeiExtension], error) {
 
@@ -330,6 +342,8 @@ func (cli *client) listDiskFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	return result.Details, nil
 }
 
+// RemoveDiskDeleteFromCloud 清理云上已删除的磁盘
+// 该方法用于检查并删除在云上已不存在但在数据库中仍有记录的磁盘
 func (cli *client) RemoveDiskDeleteFromCloud(kt *kit.Kit, accountID string, region string) error {
 	req := &core.ListReq{
 		Fields: []string{"id", "cloud_id"},
@@ -397,6 +411,9 @@ func (cli *client) RemoveDiskDeleteFromCloud(kt *kit.Kit, accountID string, regi
 	return nil
 }
 
+// isDiskChange 判断磁盘是否发生变化
+// 该函数比较云上磁盘和数据库中磁盘的各个属性，判断是否需要更新
+// 返回true表示磁盘信息有变化，需要更新；返回false表示无变化
 func isDiskChange(cloud adaptordisk.HuaWeiDisk, db *coredisk.Disk[coredisk.HuaWeiExtension]) bool {
 
 	if cloud.Status != db.Status {

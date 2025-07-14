@@ -100,6 +100,7 @@ func (cli *client) Cvm(kt *kit.Kit, params *SyncBaseParams, opt *SyncCvmOption) 
 	return new(SyncResult), nil
 }
 
+// createCvm ...
 func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 	addSlice []typescvm.AwsCvm) error {
 
@@ -135,6 +136,7 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 	return nil
 }
 
+// buildCvmBatchCreateList build cvm batch create list
 func buildCvmBatchCreateList(addSlice []typescvm.AwsCvm, accountID, region string, vpcMap map[string]*common.VpcDB,
 	subnetMap map[string]string, imageMap map[string]string) (
 	[]protocloud.CvmBatchCreate[corecvm.AwsCvmExtension], error) {
@@ -197,6 +199,7 @@ func buildCvmBatchCreateList(addSlice []typescvm.AwsCvm, accountID, region strin
 	return lists, nil
 }
 
+// buildAwsCvmCreateReq builds a cvm create request for AWS
 func buildAwsCvmCreateReq(one typescvm.AwsCvm, accountID, region, vpcID, subnetID, imageID string,
 	privateIPv4Addresses, publicIPv4Addresses, publicIPv6Addresses, sgIDs []string,
 	awsBlockDeviceMapping []corecvm.AwsBlockDeviceMapping) protocloud.CvmBatchCreate[corecvm.AwsCvmExtension] {
@@ -262,6 +265,7 @@ func buildAwsCvmCreateReq(one typescvm.AwsCvm, accountID, region, vpcID, subnetI
 	return cvm
 }
 
+// updateCvm ...
 func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 	updateMap map[string]typescvm.AwsCvm) error {
 
@@ -403,114 +407,7 @@ func parseIPInfo(one typescvm.AwsCvm) (privateIPv4Addresses, publicIPv4Addresses
 	return
 }
 
-func (cli *client) getCvmRelResMaps(kt *kit.Kit, accountID string, region string,
-	cloudDataSlice []typescvm.AwsCvm) (map[string]*common.VpcDB, map[string]string, map[string]string, error) {
-
-	cloudVpcIDs := make([]string, 0)
-	cloudSubnetIDs := make([]string, 0)
-	cloudImageIDs := make([]string, 0)
-	for _, one := range cloudDataSlice {
-		cloudVpcIDs = append(cloudVpcIDs, converter.PtrToVal(one.VpcId))
-		cloudSubnetIDs = append(cloudSubnetIDs, converter.PtrToVal(one.SubnetId))
-		cloudImageIDs = append(cloudImageIDs, converter.PtrToVal(one.ImageId))
-	}
-
-	vpcMap, err := cli.getVpcMap(kt, accountID, region, cloudVpcIDs)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	subnetMap, err := cli.getSubnetMap(kt, accountID, region, cloudSubnetIDs)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	imageMap, err := cli.getImageMap(kt, accountID, region, cloudImageIDs)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	return vpcMap, subnetMap, imageMap, nil
-}
-
-func (cli *client) getVpcMap(kt *kit.Kit, accountID string, region string,
-	cloudVpcIDs []string) (map[string]*common.VpcDB, error) {
-
-	vpcMap := make(map[string]*common.VpcDB)
-
-	elems := slice.Split(cloudVpcIDs, constant.CloudResourceSyncMaxLimit)
-	for _, parts := range elems {
-		vpcParams := &SyncBaseParams{
-			AccountID: accountID,
-			Region:    region,
-			CloudIDs:  parts,
-		}
-		vpcFromDB, err := cli.listVpcFromDB(kt, vpcParams)
-		if err != nil {
-			return vpcMap, err
-		}
-
-		for _, vpc := range vpcFromDB {
-			vpcMap[vpc.CloudID] = &common.VpcDB{
-				VpcCloudID: vpc.CloudID,
-				VpcID:      vpc.ID,
-			}
-		}
-	}
-
-	return vpcMap, nil
-}
-
-func (cli *client) getSubnetMap(kt *kit.Kit, accountID string, region string,
-	cloudSubnetsIDs []string) (map[string]string, error) {
-
-	subnetMap := make(map[string]string)
-
-	elems := slice.Split(cloudSubnetsIDs, constant.CloudResourceSyncMaxLimit)
-	for _, parts := range elems {
-		subnetParams := &SyncBaseParams{
-			AccountID: accountID,
-			Region:    region,
-			CloudIDs:  parts,
-		}
-		subnetFromDB, err := cli.listSubnetFromDB(kt, subnetParams)
-		if err != nil {
-			return subnetMap, err
-		}
-
-		for _, subnet := range subnetFromDB {
-			subnetMap[subnet.CloudID] = subnet.ID
-		}
-	}
-
-	return subnetMap, nil
-}
-
-func (cli *client) getImageMap(kt *kit.Kit, accountID string, region string,
-	cloudImageIDs []string) (map[string]string, error) {
-
-	imageMap := make(map[string]string)
-
-	elems := slice.Split(cloudImageIDs, constant.CloudResourceSyncMaxLimit)
-	for _, parts := range elems {
-		imageParams := &SyncBaseParams{
-			AccountID: accountID,
-			Region:    region,
-			CloudIDs:  parts,
-		}
-		imageFromDB, err := cli.listImageFromDBForCvm(kt, imageParams)
-		if err != nil {
-			return imageMap, err
-		}
-
-		for _, image := range imageFromDB {
-			imageMap[image.CloudID] = image.ID
-		}
-	}
-
-	return imageMap, nil
-}
-
+// deleteCvm ...
 func (cli *client) deleteCvm(kt *kit.Kit, accountID string, region string, delCloudIDs []string) error {
 	if len(delCloudIDs) <= 0 {
 		return fmt.Errorf("cvm delCloudIDs is <= 0, not delete")
@@ -547,6 +444,7 @@ func (cli *client) deleteCvm(kt *kit.Kit, accountID string, region string, delCl
 	return nil
 }
 
+// listCvmFromCloud ...
 func (cli *client) listCvmFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]typescvm.AwsCvm, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -568,46 +466,6 @@ func (cli *client) listCvmFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]type
 	}
 
 	return result, nil
-}
-
-func (cli *client) listCvmFromDB(kt *kit.Kit, params *SyncBaseParams) (
-	[]corecvm.Cvm[cvm.AwsCvmExtension], error) {
-
-	if err := params.Validate(); err != nil {
-		return nil, errf.NewFromErr(errf.InvalidParameter, err)
-	}
-
-	req := &protocloud.CvmListReq{
-		Filter: &filter.Expression{
-			Op: filter.And,
-			Rules: []filter.RuleFactory{
-				&filter.AtomRule{
-					Field: "account_id",
-					Op:    filter.Equal.Factory(),
-					Value: params.AccountID,
-				},
-				&filter.AtomRule{
-					Field: "cloud_id",
-					Op:    filter.In.Factory(),
-					Value: params.CloudIDs,
-				},
-				&filter.AtomRule{
-					Field: "region",
-					Op:    filter.Equal.Factory(),
-					Value: params.Region,
-				},
-			},
-		},
-		Page: core.NewDefaultBasePage(),
-	}
-	result, err := cli.dbCli.Aws.Cvm.ListCvmExt(kt.Ctx, kt.Header(), req)
-	if err != nil {
-		logs.Errorf("[%s] list cvm from db failed, err: %v, account: %s, req: %v, rid: %s", enumor.Aws,
-			err, params.AccountID, req, kt.Rid)
-		return nil, err
-	}
-
-	return result.Details, nil
 }
 
 // RemoveCvmDeleteFromCloud ...
@@ -678,6 +536,7 @@ func (cli *client) RemoveCvmDeleteFromCloud(kt *kit.Kit, accountID string, regio
 	return nil
 }
 
+// listRemoveCvmID ...
 func (cli *client) listRemoveCvmID(kt *kit.Kit, params *SyncBaseParams) ([]string, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)

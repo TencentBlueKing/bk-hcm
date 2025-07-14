@@ -40,7 +40,6 @@ import (
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/assert"
 	"hcm/pkg/tools/converter"
-	"hcm/pkg/tools/slice"
 )
 
 // SyncCvmOption ...
@@ -52,6 +51,7 @@ func (opt SyncCvmOption) Validate() error {
 	return validator.Validate.Struct(opt)
 }
 
+// Cvm ...
 func (cli *client) Cvm(kt *kit.Kit, params *SyncBaseParams, opt *SyncCvmOption) (*SyncResult, error) {
 	if err := validator.ValidateTool(params, opt); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -95,6 +95,7 @@ func (cli *client) Cvm(kt *kit.Kit, params *SyncBaseParams, opt *SyncCvmOption) 
 	return new(SyncResult), nil
 }
 
+// updateCvm ...
 func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 	updateMap map[string]typescvm.TCloudCvm) error {
 
@@ -147,6 +148,7 @@ func (cli *client) updateCvm(kt *kit.Kit, accountID string, region string,
 	return nil
 }
 
+// buildCvmUpdateReqList builds the request list for updating CVMs.
 func (cli *client) buildCvmUpdateReqList(kt *kit.Kit, region string, updateMap map[string]typescvm.TCloudCvm,
 	vpcMap map[string]*common.VpcDB, subnetMap map[string]string, imageMap map[string]string) (
 	[]protocloud.CvmBatchUpdateWithExtension[corecvm.TCloudCvmExtension], error) {
@@ -204,6 +206,7 @@ func (cli *client) buildCvmUpdateReqList(kt *kit.Kit, region string, updateMap m
 	return lists, nil
 }
 
+// createCvm creates CVMs in the database.
 func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 	addSlice []typescvm.TCloudCvm) error {
 
@@ -278,6 +281,7 @@ func (cli *client) createCvm(kt *kit.Kit, accountID string, region string,
 	return nil
 }
 
+// buildCvmCreateReq builds the request for creating a CVM.
 func buildCvmCreateReq(one typescvm.TCloudCvm, extension *corecvm.TCloudCvmExtension, accountID string, region string,
 	imageID string, vpcMap map[string]*common.VpcDB,
 	subnetMap map[string]string) protocloud.CvmBatchCreate[corecvm.TCloudCvmExtension] {
@@ -313,83 +317,7 @@ func buildCvmCreateReq(one typescvm.TCloudCvm, extension *corecvm.TCloudCvmExten
 	return addOne
 }
 
-func (cli *client) getVpcMap(kt *kit.Kit, accountID string, region string,
-	cloudVpcIDs []string) (map[string]*common.VpcDB, error) {
-
-	vpcMap := make(map[string]*common.VpcDB)
-
-	elems := slice.Split(cloudVpcIDs, constant.CloudResourceSyncMaxLimit)
-	for _, parts := range elems {
-		vpcParams := &SyncBaseParams{
-			AccountID: accountID,
-			Region:    region,
-			CloudIDs:  parts,
-		}
-		vpcFromDB, err := cli.listVpcFromDB(kt, vpcParams)
-		if err != nil {
-			return vpcMap, err
-		}
-
-		for _, vpc := range vpcFromDB {
-			vpcMap[vpc.CloudID] = &common.VpcDB{
-				VpcID: vpc.ID,
-			}
-		}
-	}
-
-	return vpcMap, nil
-}
-
-func (cli *client) getSubnetMap(kt *kit.Kit, accountID string, region string,
-	cloudSubnetsIDs []string) (map[string]string, error) {
-
-	subnetMap := make(map[string]string)
-
-	elems := slice.Split(cloudSubnetsIDs, constant.CloudResourceSyncMaxLimit)
-	for _, parts := range elems {
-		subnetParams := &SyncBaseParams{
-			AccountID: accountID,
-			Region:    region,
-			CloudIDs:  parts,
-		}
-		subnetFromDB, err := cli.listSubnetFromDB(kt, subnetParams)
-		if err != nil {
-			return subnetMap, err
-		}
-
-		for _, subnet := range subnetFromDB {
-			subnetMap[subnet.CloudID] = subnet.ID
-		}
-	}
-
-	return subnetMap, nil
-}
-
-func (cli *client) getImageMap(kt *kit.Kit, accountID string, region string,
-	cloudImageIDs []string) (map[string]string, error) {
-
-	imageMap := make(map[string]string)
-
-	elems := slice.Split(cloudImageIDs, constant.CloudResourceSyncMaxLimit)
-	for _, parts := range elems {
-		imageParams := &SyncBaseParams{
-			AccountID: accountID,
-			Region:    region,
-			CloudIDs:  parts,
-		}
-		imageFromDB, err := cli.listImageFromDBForCvm(kt, imageParams)
-		if err != nil {
-			return imageMap, err
-		}
-
-		for _, image := range imageFromDB {
-			imageMap[image.CloudID] = image.ID
-		}
-	}
-
-	return imageMap, nil
-}
-
+// deleteCvm deletes CVMs from the database.
 func (cli *client) deleteCvm(kt *kit.Kit, accountID string, region string, delCloudIDs []string) error {
 	if len(delCloudIDs) <= 0 {
 		return fmt.Errorf("cvm delCloudIDs is <= 0, not delete")
@@ -426,6 +354,7 @@ func (cli *client) deleteCvm(kt *kit.Kit, accountID string, region string, delCl
 	return nil
 }
 
+// listCvmFromCloud lists CVMs from the cloud.
 func (cli *client) listCvmFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]typescvm.TCloudCvm, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -449,6 +378,7 @@ func (cli *client) listCvmFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]type
 	return result, nil
 }
 
+// listCvmFromDB lists CVMs from the database.
 func (cli *client) listCvmFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	[]corecvm.Cvm[cvm.TCloudCvmExtension], error) {
 
@@ -489,6 +419,7 @@ func (cli *client) listCvmFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	return result.Details, nil
 }
 
+// RemoveCvmDeleteFromCloud ...
 func (cli *client) RemoveCvmDeleteFromCloud(kt *kit.Kit, accountID string, region string) error {
 	req := &protocloud.CvmListReq{
 		Field: []string{"id", "cloud_id"},
@@ -601,6 +532,7 @@ func BuildCVMExtension(one typescvm.TCloudCvm) *corecvm.TCloudCvmExtension {
 	return extension
 }
 
+// isCvmChange checks if the cloud CVM has changed compared to the database record.
 func isCvmChange(cloud typescvm.TCloudCvm, db corecvm.Cvm[cvm.TCloudCvmExtension]) bool {
 
 	if db.CloudID != converter.PtrToVal(cloud.InstanceId) {
@@ -744,6 +676,7 @@ func IsCvmExtensionChange(cloud *corecvm.TCloudCvmExtension, db *corecvm.TCloudC
 	return false
 }
 
+// isInternetInternetAccessibleChanged checks if the internet accessible settings have changed.
 func isInternetInternetAccessibleChanged(cloud *corecvm.TCloudInternetAccessible,
 	db *corecvm.TCloudInternetAccessible) bool {
 

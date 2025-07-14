@@ -76,7 +76,9 @@ type createUrlRuleTaskDetail struct {
 // It orchestrates the entire process of creating layer-7 listeners based on the provided raw details.
 // The process includes: unmarshalling data, validation, filtering, building task management entries,
 // creating asynchronous task flows, and updating task management details.
-func (c *CreateUrlRuleExecutor) Execute(kt *kit.Kit, source enumor.TaskManagementSource, rawDetails json.RawMessage) (string, error) {
+func (c *CreateUrlRuleExecutor) Execute(kt *kit.Kit, source enumor.TaskManagementSource, rawDetails json.RawMessage) (
+	string, error) {
+
 	err := c.unmarshalData(rawDetails)
 	if err != nil {
 		return "", err

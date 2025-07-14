@@ -79,6 +79,7 @@ func (b *billItemSvc) ImportBillItemsPreview(cts *rest.Contexts) (any, error) {
 	}
 }
 
+// importZenlayerBillItemsPreview 导入 Zenlayer 账单明细预览
 func (b *billItemSvc) importZenlayerBillItemsPreview(kt *kit.Kit, req *bill.ImportBillItemPreviewReq) (any, error) {
 
 	records, err := parseExcelToRecords(kt, req.ExcelFileBase64, convertStringToZenlayerRawBillItem)
@@ -154,6 +155,7 @@ func parseExcelToRecords[T any](kt *kit.Kit, base64 bill.Base64String, convertFu
 	return records, nil
 }
 
+// getExchangedRate 获取汇率
 func (b *billItemSvc) getExchangedRate(kt *kit.Kit, billYear, billMonth int) (*decimal.Decimal, error) {
 	// 获取汇率
 	listReq := &core.ListReq{
@@ -203,6 +205,7 @@ func doCalculate(records []dsbill.BillItemCreateReq[json.RawMessage],
 	return retMap
 }
 
+// listSummaryMainByBusinessGroups 根据业务组ID列表查询对应的账单汇总主表
 func (b *billItemSvc) listSummaryMainByBusinessGroups(kt *kit.Kit, vendor enumor.Vendor, businessGroupIDs []string,
 	billYear, billMonth int) (map[string]*dsbill.BillSummaryMain, error) {
 
@@ -241,6 +244,7 @@ func (b *billItemSvc) listSummaryMainByBusinessGroups(kt *kit.Kit, vendor enumor
 	return result, nil
 }
 
+// cvtZenlayerBillItemCreateReq 将 ZenlayerRawBillItem 转换为 BillItemCreateReq
 func cvtZenlayerBillItemCreateReq(kt *kit.Kit, billYear, billMonth int,
 	recordList []billcore.ZenlayerRawBillItem, summaryMap map[string]*dsbill.BillSummaryMain) (
 	[]dsbill.BillItemCreateReq[json.RawMessage], error) {
@@ -316,6 +320,7 @@ func validateBillYearAndMonth(curDate string, billYear, billMonth int) error {
 	return nil
 }
 
+// convertStringToZenlayerRawBillItem converts a string slice to a ZenlayerRawBillItem.
 func convertStringToZenlayerRawBillItem(row []string) (billcore.ZenlayerRawBillItem, error) {
 	item := billcore.ZenlayerRawBillItem{}
 	for i, value := range row {
