@@ -61,7 +61,7 @@ func (a *ApplicationOfAddAccount) RenderItsmForm() (string, error) {
 	if a.req.AccountCommonInfoCreateReq.Type == enumor.ResourceAccount {
 		bizName, err := a.GetBizName(req.BkBizID)
 		if err != nil {
-			return "", fmt.Errorf("get biz name failed, bk_biz_id: %v, err: %w", req.BkBizID, err)
+			return "", fmt.Errorf("get biz name failed, bk_biz_id: %v, err: %v", req.BkBizID, err)
 		}
 		formItems = append(formItems, formItem{Label: "管理业务", Value: bizName})
 	}
