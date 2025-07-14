@@ -30,9 +30,9 @@ import (
 	"hcm/pkg/tools/hooks/handler"
 )
 
-// ListByBkBizID ...
-func (a *accountSvc) ListByBkBizID(cts *rest.Contexts) (interface{}, error) {
-	bkBizID, err := cts.PathParameter("bk_biz_id").Int64()
+// ListByUsageBizID ...
+func (a *accountSvc) ListByUsageBizID(cts *rest.Contexts) (interface{}, error) {
+	usageBizID, err := cts.PathParameter("usage_biz_id").Int64()
 	if err != nil {
 		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
 	}
@@ -44,20 +44,20 @@ func (a *accountSvc) ListByBkBizID(cts *rest.Contexts) (interface{}, error) {
 		Action: meta.Access,
 		BasicInfo: &types.CloudResourceBasicInfo{
 			ResType: enumor.AccountCloudResType,
-			BkBizID: bkBizID,
+			BkBizID: usageBizID,
 		}}
 	err = handler.BizOperateAuth(cts, opt)
 	if err != nil {
 		return nil, err
 	}
 
-	bkBizIDs := []int64{bkBizID}
+	usageBizIDs := []int64{usageBizID}
 	// 关联了所有使用业务的账号也应该被查出来
-	if bkBizID != constant.AttachedAllBiz {
-		bkBizIDs = append(bkBizIDs, constant.AttachedAllBiz)
+	if usageBizID != constant.AttachedAllBiz {
+		usageBizIDs = append(usageBizIDs, constant.AttachedAllBiz)
 	}
 	listReq := &protocloud.AccountBizRelWithAccountListReq{
-		BkBizIDs:    bkBizIDs,
+		UsageBizIDs: usageBizIDs,
 		AccountType: accountType,
 	}
 
@@ -69,7 +69,7 @@ func (a *accountSvc) ListByBkBizID(cts *rest.Contexts) (interface{}, error) {
 	res := make([]*protocloud.AccountBizRelWithAccount, 0)
 
 	for _, one := range accounts {
-		// 排除掉other厂商的账号即内置账号
+		// 仅能查询业务下可用于申请资源的帐号
 		if one.Vendor == enumor.Other {
 			continue
 		}

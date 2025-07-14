@@ -93,7 +93,7 @@ func (a *accountSvc) UpdateAccount(cts *rest.Contexts) (interface{}, error) {
 			cts.Kit.Header(),
 			accountID,
 			&dataproto.AccountBizRelUpdateReq{
-				BkBizIDs: req.UsageBizIDs,
+				UsageBizIDs: req.UsageBizIDs,
 			},
 		)
 		if err != nil {
