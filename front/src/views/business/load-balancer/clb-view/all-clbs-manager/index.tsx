@@ -25,7 +25,7 @@ import './index.scss';
 import Confirm from '@/components/confirm';
 import { useVerify } from '@/hooks';
 import { useGlobalPermissionDialog } from '@/store/useGlobalPermissionDialog';
-import { ResourceTypeEnum, VendorEnum, VendorMap } from '@/common/constant';
+import { LB_ISP, ResourceTypeEnum, VendorEnum, VendorMap } from '@/common/constant';
 import { ValidateValuesFunc } from 'bkui-vue/lib/search-select/utils';
 
 export default defineComponent({
@@ -98,6 +98,12 @@ export default defineComponent({
             ],
           },
           {
+            id: 'isp',
+            name: t('运营商'),
+            children: Object.entries(LB_ISP).map(([key, value]) => ({ id: key, name: value })),
+          },
+          { id: 'bandwidth', name: t('带宽') },
+          {
             id: 'vendor',
             name: t('云厂商'),
             children: [{ id: VendorEnum.TCLOUD, name: VendorMap[VendorEnum.TCLOUD] }],
@@ -117,6 +123,9 @@ export default defineComponent({
           cloud_id: (value: string) => {
             return buildMultipleValueRulesItem('cloud_id', value);
           },
+        },
+        valueFormatterMapper: {
+          bandwidth: (value: string) => Number(value),
         },
       },
       tableOptions: {

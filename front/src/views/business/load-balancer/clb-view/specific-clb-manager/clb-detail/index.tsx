@@ -14,7 +14,7 @@ import { useRegionsStore } from '@/store/useRegionsStore';
 import { IP_VERSION_MAP } from '@/constants';
 import { QueryRuleOPEnum } from '@/typings';
 import { useI18n } from 'vue-i18n';
-import { getInstVip } from '@/utils';
+import { formatBandwidth, getInstVip } from '@/utils';
 import './index.scss';
 import { FieldList } from '@/views/resource/resource-manage/common/info-list/types';
 
@@ -87,8 +87,7 @@ export default defineComponent({
               v-bk-tooltips={{
                 content: '开启删除保护后，在云控制台或调用 API 均无法删除该实例',
                 placement: 'top-end',
-              }}
-            ></i>
+              }}></i>
           </div>
         ),
         copy: false,
@@ -193,23 +192,12 @@ export default defineComponent({
       },
       {
         name: '带宽上限',
-        render: () => {
-          const bandwidth = props.detail?.extension?.internet_max_bandwidth_out;
-          if (bandwidth === undefined || bandwidth === null) return '--';
-
-          if (bandwidth >= 1024) {
-            const gbpsValue = (bandwidth / 1024).toFixed(2);
-            return `${gbpsValue.replace(/\.00$/, '')} Gbps`;
-          }
-          return `${bandwidth} Mbps`;
-        },
+        render: () => formatBandwidth(props.detail?.bandwidth),
       },
       {
         name: '运营商',
         render: () => {
-          const displayValue = props.detail?.extension?.vip_isp
-            ? LB_ISP[props.detail.extension.vip_isp] ?? props.detail.extension.vip_isp
-            : '--';
+          const displayValue = props.detail?.isp ? LB_ISP[props.detail.isp] ?? props.detail.isp : '--';
           return displayValue;
         },
       },

@@ -8,7 +8,7 @@ import { type Settings } from 'bkui-vue/lib/table/props';
 import { h, ref } from 'vue';
 import type { Ref } from 'vue';
 import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
-import { CLB_BINDING_STATUS, CLOUD_HOST_STATUS, VendorEnum, VendorMap } from '@/common/constant';
+import { CLB_BINDING_STATUS, CLOUD_HOST_STATUS, LB_ISP, VendorEnum, VendorMap } from '@/common/constant';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
@@ -32,7 +32,7 @@ import {
   SCHEDULER_MAP,
   TRANSPORT_LAYER_LIST,
 } from '@/constants/clb';
-import { formatBillCost, getInstVip, formatBillRatio, formatBillRatioClass } from '@/utils';
+import { formatBillCost, getInstVip, formatBillRatio, formatBillRatioClass, formatBandwidth } from '@/utils';
 import { Spinner } from 'bkui-vue/lib/icon';
 import { APPLICATION_STATUS_MAP, APPLICATION_TYPE_MAP } from '@/views/service/apply-list/constants';
 import dayjs from 'dayjs';
@@ -181,8 +181,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
             disabled: !cell || cell === -1,
             theme: 'light',
           }}
-          theme={data.bk_biz_id === -1 ? false : 'success'}
-        >
+          theme={data.bk_biz_id === -1 ? false : 'success'}>
           {data.bk_biz_id === -1 ? '未分配' : '已分配'}
         </bk-tag>
       ),
@@ -290,8 +289,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
             disabled: !cell || cell === -1,
             theme: 'light',
           }}
-          theme={data.bk_biz_id === -1 ? false : 'success'}
-        >
+          theme={data.bk_biz_id === -1 ? false : 'success'}>
           {data.bk_biz_id === -1 ? '未分配' : '已分配'}
         </bk-tag>
       ),
@@ -475,8 +473,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
             disabled: !cell || cell === -1,
             theme: 'light',
           }}
-          theme={data.bk_biz_id === -1 ? false : 'success'}
-        >
+          theme={data.bk_biz_id === -1 ? false : 'success'}>
           {data.bk_biz_id === -1 ? '未分配' : '已分配'}
         </bk-tag>
       ),
@@ -824,8 +821,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
             disabled: !cell || cell === -1,
             theme: 'light',
           }}
-          theme={data.bk_biz_id === -1 ? false : 'success'}
-        >
+          theme={data.bk_biz_id === -1 ? false : 'success'}>
           {data.bk_biz_id === -1 ? '未分配' : '已分配'}
         </bk-tag>
       ),
@@ -1022,8 +1018,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
             disabled: !cell || cell === -1,
             theme: 'light',
           }}
-          theme={data.bk_biz_id === -1 ? false : 'success'}
-        >
+          theme={data.bk_biz_id === -1 ? false : 'success'}>
           {data.bk_biz_id === -1 ? '未分配' : '已分配'}
         </bk-tag>
       ),
@@ -1123,8 +1118,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
             () => {
               loadBalancerStore.setLbTreeSearchTarget({ ...data, searchK: 'lb_name', searchV: data.name, type: 'lb' });
             },
-          )}
-        >
+          )}>
           {data.name || '--'}
         </Button>
       ),
@@ -1211,8 +1205,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
             content: businessMapStore.businessMap.get(cell),
             disabled: !cell || cell === -1,
           }}
-          theme={cell === -1 ? false : 'success'}
-        >
+          theme={cell === -1 ? false : 'success'}>
           {cell === -1 ? '未分配' : '已分配'}
         </bk-tag>
       ),
@@ -1245,6 +1238,20 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
           { value: 'ipv6_nat64', text: 'IPv6Nat64' },
         ],
       },
+    },
+    {
+      label: '运营商',
+      field: 'isp',
+      isDefaultShow: true,
+      width: 100,
+      render: ({ cell }: { cell: string }) => LB_ISP[cell] ?? (cell || '--'),
+    },
+    {
+      label: '带宽',
+      field: 'bandwidth',
+      isDefaultShow: true,
+      width: 100,
+      render: ({ cell }: { cell: number }) => formatBandwidth(cell),
     },
     {
       label: '数据同步时间',
@@ -1345,8 +1352,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
                 type: 'listener',
               });
             },
-          )}
-        >
+          )}>
           {data.name || '--'}
         </Button>
       ),
@@ -1462,8 +1468,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
             () => {
               loadBalancerStore.setTgSearchTarget(name);
             },
-          )}
-        >
+          )}>
           {name}
         </Button>
       ),
@@ -1673,8 +1678,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
               type: 'detail',
               protocol,
             },
-          })}
-        >
+          })}>
           {lbl_name}
         </Button>
       ),
@@ -1850,8 +1854,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
             content: businessMapStore.businessMap.get(cell),
             disabled: !cell || cell === -1,
           }}
-          theme={data.bk_biz_id === -1 ? false : 'success'}
-        >
+          theme={data.bk_biz_id === -1 ? false : 'success'}>
           {data.bk_biz_id === -1 ? '未分配' : '已分配'}
         </bk-tag>
       ),

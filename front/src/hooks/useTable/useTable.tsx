@@ -33,6 +33,7 @@ export interface IProp {
       [key: string]: any;
     };
     conditionFormatterMapper?: Record<string, (...args: any) => RulesItem>;
+    valueFormatterMapper?: Record<string, (value: any) => any>;
   };
   // table 配置项
   tableOptions: {
@@ -86,7 +87,7 @@ export const useTable = (props: IProp) => {
   defaults(props, { requestOption: {} });
   defaults(props.requestOption, { dataPath: 'data.details', immediate: true });
 
-  const { conditionFormatterMapper } = props.searchOptions || {};
+  const { conditionFormatterMapper, valueFormatterMapper } = props.searchOptions || {};
 
   const { whereAmI } = useWhereAmI();
 
@@ -272,9 +273,15 @@ export const useTable = (props: IProp) => {
   const resolveRule = (rule: RulesItem): RulesItem => {
     const { field, op, value } = rule;
 
-    const formatter = conditionFormatterMapper?.[rule.field];
-    if (formatter) {
-      return formatter(rule.value);
+    const conditionFormatter = conditionFormatterMapper?.[rule.field];
+    if (conditionFormatter) {
+      return conditionFormatter(rule.value);
+    }
+
+    // TODO: 后续可以将switch中的逻辑替换为调用方传入 valueFormatterMapper，降低耦合
+    const valueFormatter = valueFormatterMapper?.[rule.field];
+    if (valueFormatter) {
+      return { field, op, value: valueFormatter(value) };
     }
 
     switch (field) {

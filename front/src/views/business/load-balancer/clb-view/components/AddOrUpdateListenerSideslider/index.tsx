@@ -77,7 +77,8 @@ export default defineComponent({
       ],
       domain: [
         {
-          validator: (value: string) => /^(?:(?:[a-zA-Z0-9]+-?)+(?:\.[a-zA-Z0-9-]+)+)$/.test(value),
+          validator: (value: string) =>
+            /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?$/.test(value),
           message: '域名不符合规范',
           trigger: 'change',
         },
