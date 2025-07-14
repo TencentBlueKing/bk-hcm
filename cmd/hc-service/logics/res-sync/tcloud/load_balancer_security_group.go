@@ -183,6 +183,22 @@ func (cli *client) getCloudLbSgBinding(kt *kit.Kit, params *SyncBaseParams, opt 
 	if len(allSgCloudIDs) == 0 {
 		return make(map[string]string), make(map[string][]string), nil
 	}
+
+	// 2. 主动同步一次安全组
+	for _, parts := range slice.Split(allSgCloudIDs, constant.CloudResourceSyncMaxLimit) {
+		syncParam := &SyncBaseParams{
+			AccountID: params.AccountID,
+			Region:    params.Region,
+			CloudIDs:  parts,
+		}
+		_, err = cli.SecurityGroup(kt, syncParam, new(SyncSGOption))
+		if err != nil {
+			logs.Errorf("fail to sync security group for lb sg rel, err: %v, params: %+v, rid: %s", err, params, kt.Rid)
+			return nil, nil, err
+		}
+	}
+
+	// 3. 获取本地id 映射
 	allSgCloudIDs = slice.Unique(allSgCloudIDs)
 	cloudSgMap, err := cli.getSGCloudIDToLocalIDMap(kt, allSgCloudIDs)
 	if err != nil {
