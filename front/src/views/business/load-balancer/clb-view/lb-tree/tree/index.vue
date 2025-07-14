@@ -192,12 +192,13 @@ const pushState = (node: any) => {
       // 记录当前url上的query参数(type)
       const tabType = route.query.type;
       const lastNodeType = lastSelectedNode.value?.type;
-      // 1. tabType无值或者当前点击节点的类型与上一次不一样, 则赋初始值
-      if (!tabType || lastNodeType !== nodeType) return ListenerPanelEnum.LIST;
-      // 2. 如果当前节点类型为listener, 且为四层协议, 则直接显示详情
-      if (nodeType === 'listener' && TRANSPORT_LAYER_LIST.includes(protocol)) return ListenerPanelEnum.TARGET_GROUP;
-      // 3. 如果当前点击节点的类型与上一次一样, 则返回上一次的tab类型
-      if (lastNodeType === nodeType) return tabType;
+      // 1. 如果当前点击节点的类型与上一次一样, 则返回上一次的tab类型；否则，默认为list
+      let resultType = lastNodeType === nodeType ? tabType : ListenerPanelEnum.LIST;
+      // 2. 如果当前节点类型为listener, 且为四层协议, 返回target_group
+      if (nodeType === 'listener' && TRANSPORT_LAYER_LIST.includes(protocol)) {
+        resultType = ListenerPanelEnum.TARGET_GROUP;
+      }
+      return resultType;
     }
     // 其他情况, 不需要设置tab类型
     return undefined;

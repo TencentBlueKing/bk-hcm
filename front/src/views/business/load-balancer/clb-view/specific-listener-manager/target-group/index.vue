@@ -75,9 +75,8 @@ const getRsList = async (targetGroupId: string) => {
 };
 
 watch(
-  () => props.id,
-  async () => {
-    const { id, type } = props;
+  [() => props.id, () => props.type],
+  async ([id, type]) => {
     if (id && type === ListenerPanelEnum.TARGET_GROUP) {
       await getListenerDetail(props.id);
       await getTargetGroupBindingStatus(props.id, listener.value.lb_id);
