@@ -120,7 +120,6 @@ func (cli *client) SecurityGroup(kt *kit.Kit, params *SyncBaseParams, opt *SyncS
 	return new(SyncResult), nil
 }
 
-// updateSG update security group in db
 func (cli *client) updateSG(kt *kit.Kit, accountID string, region string,
 	updateMap map[string]securitygroup.AwsSG) error {
 
@@ -178,7 +177,6 @@ func (cli *client) updateSG(kt *kit.Kit, accountID string, region string,
 	return nil
 }
 
-// createSG create security group in db
 func (cli *client) createSG(kt *kit.Kit, accountID string, region string,
 	addSlice []securitygroup.AwsSG) ([]string, error) {
 
@@ -238,7 +236,6 @@ func (cli *client) createSG(kt *kit.Kit, accountID string, region string,
 	return results.IDs, nil
 }
 
-// deleteSG delete security group in db
 func (cli *client) deleteSG(kt *kit.Kit, accountID string, region string, delCloudIDs []string) error {
 	if len(delCloudIDs) <= 0 {
 		return fmt.Errorf("sg delCloudIDs is <= 0, not delete")
@@ -275,7 +272,6 @@ func (cli *client) deleteSG(kt *kit.Kit, accountID string, region string, delClo
 	return nil
 }
 
-// listSGFromCloud list security group from cloud
 func (cli *client) listSGFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]securitygroup.AwsSG, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -299,7 +295,6 @@ func (cli *client) listSGFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]secur
 	return result, nil
 }
 
-// listSGFromDB list security group from db
 func (cli *client) listSGFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	[]cloudcore.SecurityGroup[cloudcore.AwsSecurityGroupExtension], error) {
 
@@ -340,7 +335,6 @@ func (cli *client) listSGFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	return result.Details, nil
 }
 
-// RemoveSecurityGroupDeleteFromCloud remove security group that has been deleted from cloud
 func (cli *client) RemoveSecurityGroupDeleteFromCloud(kt *kit.Kit, accountID string, region string) error {
 	req := &core.ListReq{
 		Filter: &filter.Expression{
@@ -409,7 +403,6 @@ func (cli *client) RemoveSecurityGroupDeleteFromCloud(kt *kit.Kit, accountID str
 	return nil
 }
 
-// listRemoveSGID list security group cloud IDs that have been deleted from cloud
 func (cli *client) listRemoveSGID(kt *kit.Kit, params *SyncBaseParams) ([]string, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -432,7 +425,6 @@ func (cli *client) listRemoveSGID(kt *kit.Kit, params *SyncBaseParams) ([]string
 	return delCloudIDs, nil
 }
 
-// isSGChange check if security group has changed
 func isSGChange(cloud securitygroup.AwsSG, db cloudcore.SecurityGroup[cloudcore.AwsSecurityGroupExtension]) bool {
 
 	if converter.PtrToVal(cloud.GroupName) != db.BaseSecurityGroup.Name {
@@ -454,7 +446,6 @@ func isSGChange(cloud securitygroup.AwsSG, db cloudcore.SecurityGroup[cloudcore.
 	return false
 }
 
-// queryVpcIDsAndSync ...
 func (cli *client) queryVpcIDsAndSync(kt *kit.Kit, opt *QueryVpcIDsAndSyncOption) (map[string]string, error) {
 
 	if err := opt.Validate(); err != nil {
@@ -519,7 +510,6 @@ func (cli *client) queryVpcIDsAndSync(kt *kit.Kit, opt *QueryVpcIDsAndSyncOption
 	return existVpcMap, nil
 }
 
-// convVpcCloudIDMap convert Vpc slice to map[string]string
 func convVpcCloudIDMap(result []cloudcore.Vpc[cloudcore.AwsVpcExtension]) map[string]string {
 	m := make(map[string]string, len(result))
 	for _, one := range result {

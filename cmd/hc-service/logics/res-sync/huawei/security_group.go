@@ -118,7 +118,6 @@ func (cli *client) SecurityGroup(kt *kit.Kit, params *SyncBaseParams, opt *SyncS
 	return new(SyncResult), nil
 }
 
-// updateSG update security group in db
 func (cli *client) updateSG(kt *kit.Kit, accountID string,
 	updateMap map[string]securitygroup.HuaWeiSG) error {
 
@@ -158,7 +157,6 @@ func (cli *client) updateSG(kt *kit.Kit, accountID string,
 	return nil
 }
 
-// createSG create security group in db
 func (cli *client) createSG(kt *kit.Kit, accountID string, region string,
 	addSlice []securitygroup.HuaWeiSG) ([]string, error) {
 
@@ -200,7 +198,6 @@ func (cli *client) createSG(kt *kit.Kit, accountID string, region string,
 	return results.IDs, nil
 }
 
-// deleteSG delete security group in db
 func (cli *client) deleteSG(kt *kit.Kit, accountID string, region string, delCloudIDs []string) error {
 	if len(delCloudIDs) <= 0 {
 		return fmt.Errorf("sg delCloudIDs is <= 0, not delete")
@@ -237,7 +234,6 @@ func (cli *client) deleteSG(kt *kit.Kit, accountID string, region string, delClo
 	return nil
 }
 
-// listSGFromCloud list security group from cloud
 func (cli *client) listSGFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]securitygroup.HuaWeiSG, error) {
 	if err := params.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
@@ -260,7 +256,6 @@ func (cli *client) listSGFromCloud(kt *kit.Kit, params *SyncBaseParams) ([]secur
 	return result, nil
 }
 
-// listSGFromDB list security group from db
 func (cli *client) listSGFromDB(kt *kit.Kit, params *SyncBaseParams) (
 	[]cloudcore.SecurityGroup[cloudcore.HuaWeiSecurityGroupExtension], error) {
 
@@ -376,7 +371,6 @@ func (cli *client) RemoveSecurityGroupDeleteFromCloud(kt *kit.Kit, accountID str
 	return nil
 }
 
-// isSGChange check if security group has changed
 func isSGChange(cloud securitygroup.HuaWeiSG, db cloudcore.SecurityGroup[cloudcore.HuaWeiSecurityGroupExtension]) bool {
 
 	if cloud.Name != db.BaseSecurityGroup.Name {

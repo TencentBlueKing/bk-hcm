@@ -102,7 +102,6 @@ func (cli *client) Disk(kt *kit.Kit, params *SyncBaseParams, opt *SyncDiskOption
 	return new(SyncResult), nil
 }
 
-// listDiskFromCloud list disk from cloud.
 func (cli *client) listDiskFromCloud(kt *kit.Kit, params *SyncBaseParams,
 	syncOpt *SyncDiskOption) ([]adaptordisk.GcpDisk, error) {
 
@@ -124,7 +123,6 @@ func (cli *client) listDiskFromCloud(kt *kit.Kit, params *SyncBaseParams,
 	return result, nil
 }
 
-// listDiskFromDBBySelfLink list disk from db by self link.
 func (cli *client) listDiskFromDBBySelfLink(kt *kit.Kit, params *ListDiskBySelfLinkOption) (
 	[]*coredisk.Disk[coredisk.GcpExtension], error) {
 
@@ -165,7 +163,6 @@ func (cli *client) listDiskFromDBBySelfLink(kt *kit.Kit, params *ListDiskBySelfL
 	return result.Details, nil
 }
 
-// listDiskFromDB list disk from db.
 func (cli *client) listDiskFromDB(kt *kit.Kit, params *SyncBaseParams, option *SyncDiskOption) (
 	[]*coredisk.Disk[coredisk.GcpExtension], error) {
 
@@ -206,7 +203,6 @@ func (cli *client) listDiskFromDB(kt *kit.Kit, params *SyncBaseParams, option *S
 	return result.Details, nil
 }
 
-// updateDisk update disk
 func (cli *client) updateDisk(kt *kit.Kit, accountID string, updateMap map[string]adaptordisk.GcpDisk) error {
 
 	if len(updateMap) <= 0 {
@@ -250,7 +246,6 @@ func (cli *client) updateDisk(kt *kit.Kit, accountID string, updateMap map[strin
 	return nil
 }
 
-// createDisk create disk
 func (cli *client) createDisk(kt *kit.Kit, accountID string, zone string, addSlice []adaptordisk.GcpDisk) error {
 
 	if len(addSlice) <= 0 {
@@ -296,7 +291,6 @@ func (cli *client) createDisk(kt *kit.Kit, accountID string, zone string, addSli
 	return nil
 }
 
-// deleteDisk delete disk
 func (cli *client) deleteDisk(kt *kit.Kit, accountID string, zone string, delCloudIDs []string) error {
 	if len(delCloudIDs) <= 0 {
 		return fmt.Errorf("delCloudIDs is <= 0, not delete")
@@ -400,7 +394,6 @@ func (cli *client) RemoveDiskDeleteFromCloud(kt *kit.Kit, accountID string, zone
 	return nil
 }
 
-// isDiskChange check if the disk has changed.
 func isDiskChange(cloud adaptordisk.GcpDisk, db *coredisk.Disk[coredisk.GcpExtension]) bool {
 
 	if cloud.Status != db.Status {
