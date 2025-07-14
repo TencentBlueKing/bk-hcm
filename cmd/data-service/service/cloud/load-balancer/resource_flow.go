@@ -23,8 +23,6 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/jmoiron/sqlx"
-
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/audit"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
@@ -39,6 +37,8 @@ import (
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+
+	"github.com/jmoiron/sqlx"
 )
 
 // CreateResFlowLock 创建资源跟Flow的锁定关系

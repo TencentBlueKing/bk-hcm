@@ -472,20 +472,20 @@ func (svc *lbSvc) listVpcMap(kt *kit.Kit, vpcIDs []string) (map[string]cloud.Bas
 		return nil, nil
 	}
 
-	vpcReq := &core.ListReq{
-		Filter: tools.ContainersExpression("id", vpcIDs),
-		Page:   core.NewDefaultBasePage(),
+	vpcMap := make(map[string]cloud.BaseVpc, len(vpcIDs))
+	for _, parts := range slice.Split(vpcIDs, int(core.DefaultMaxPageLimit)) {
+		vpcReq := &core.ListReq{
+			Filter: tools.ContainersExpression("id", parts),
+			Page:   core.NewDefaultBasePage(),
+		}
+		list, err := svc.client.DataService().Global.Vpc.List(kt.Ctx, kt.Header(), vpcReq)
+		if err != nil {
+			logs.Errorf("[clb] list vpc failed, vpcIDs: %v, err: %v, rid: %s", vpcIDs, err, kt.Rid)
+			return nil, err
+		}
+		for _, item := range list.Details {
+			vpcMap[item.ID] = item
+		}
 	}
-	list, err := svc.client.DataService().Global.Vpc.List(kt.Ctx, kt.Header(), vpcReq)
-	if err != nil {
-		logs.Errorf("[clb] list vpc failed, vpcIDs: %v, err: %v, rid: %s", vpcIDs, err, kt.Rid)
-		return nil, err
-	}
-
-	vpcMap := make(map[string]cloud.BaseVpc, len(list.Details))
-	for _, item := range list.Details {
-		vpcMap[item.ID] = item
-	}
-
 	return vpcMap, nil
 }

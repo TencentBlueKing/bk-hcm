@@ -23,8 +23,6 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/jmoiron/sqlx"
-
 	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
@@ -39,6 +37,8 @@ import (
 	"hcm/pkg/rest"
 	cvt "hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
+
+	"github.com/jmoiron/sqlx"
 )
 
 // BatchCreateTargetGroup 批量创建目标组

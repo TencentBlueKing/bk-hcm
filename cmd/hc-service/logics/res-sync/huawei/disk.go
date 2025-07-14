@@ -54,8 +54,6 @@ func (opt SyncDiskOption) Validate() error {
 // Disk 同步华为云磁盘资源
 // 该方法负责将华为云上的磁盘资源与本地数据库中的磁盘数据进行同步
 // 包括新增、更新和删除操作
-// 该方法负责将华为云上的磁盘资源与本地数据库中的磁盘数据进行同步
-// 包括新增、更新和删除操作
 func (cli *client) Disk(kt *kit.Kit, params *SyncBaseParams, opt *SyncDiskOption) (*SyncResult, error) {
 	if err := validator.ValidateTool(params, opt); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)

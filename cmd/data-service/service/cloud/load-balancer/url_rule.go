@@ -23,8 +23,6 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/jmoiron/sqlx"
-
 	"hcm/pkg/api/core"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
@@ -40,6 +38,8 @@ import (
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/json"
 	"hcm/pkg/tools/slice"
+
+	"github.com/jmoiron/sqlx"
 )
 
 // BatchCreateTCloudUrlRule 批量创建腾讯云url规则 纯规则条目创建，不校验监听器， 有目标组则一起创建关联关系

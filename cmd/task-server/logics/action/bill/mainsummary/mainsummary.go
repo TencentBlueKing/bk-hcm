@@ -74,12 +74,12 @@ func (act *MainAccountSummaryAction) ParameterNew() interface{} {
 }
 
 // Name return action name
-func (act *MainAccountSummaryAction) Name() enumor.ActionName {
+func (act MainAccountSummaryAction) Name() enumor.ActionName {
 	return enumor.ActionMainAccountSummary
 }
 
 // Run task
-func (act *MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (interface{}, error) {
+func (act MainAccountSummaryAction) Run(kt run.ExecuteKit, params interface{}) (interface{}, error) {
 	opt, ok := params.(*MainAccountSummaryActionOption)
 	if !ok {
 		return nil, errf.New(errf.InvalidParameter, "params type mismatch")

@@ -22,8 +22,6 @@ package securitygroup
 import (
 	"fmt"
 
-	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
-
 	synctcloud "hcm/cmd/hc-service/logics/res-sync/tcloud"
 	"hcm/pkg/adaptor/tcloud"
 	typecvm "hcm/pkg/adaptor/types/cvm"
@@ -39,6 +37,8 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/converter"
+
+	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )
 
 // CreateTCloudSecurityGroup create tcloud security group.

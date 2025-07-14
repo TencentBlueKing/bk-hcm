@@ -20,9 +20,6 @@
 package cvm
 
 import (
-	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
-	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
-
 	adcore "hcm/pkg/adaptor/types/core"
 	networkinterface "hcm/pkg/adaptor/types/network-interface"
 	protocvm "hcm/pkg/api/hc-service/cvm"
@@ -32,6 +29,9 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	cvt "hcm/pkg/tools/converter"
+
+	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
+	vpc "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc/v20170312"
 )
 
 // ListTCloudCvmNetworkInterface 返回一个map，key为cvmID，value为cvm的网卡信息 ListCvmNetworkInterfaceResp

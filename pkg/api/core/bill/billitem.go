@@ -183,7 +183,7 @@ type ZenlayerRawBillItem struct {
 	// CID
 	CID     *string `json:"cid"`
 	GroupID *string `json:"group_id"`
-	//  币种
+	// 币种
 	Currency *string `json:"currency"`
 	// 城市
 	City *string `json:"city"`

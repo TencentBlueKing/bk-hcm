@@ -22,8 +22,6 @@ package loadbalancer
 import (
 	"fmt"
 
-	"github.com/jmoiron/sqlx"
-
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/dal/dao/orm"
@@ -31,6 +29,8 @@ import (
 	tablelb "hcm/pkg/dal/table/cloud/load-balancer"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
+
+	"github.com/jmoiron/sqlx"
 )
 
 // BatchUpdateListenerRuleRelStatusByTGID 根据目标组id 批量修改目标组和规则、监听器关系的状态

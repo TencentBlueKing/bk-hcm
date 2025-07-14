@@ -20,8 +20,6 @@
 package securitygroup
 
 import (
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2"
-
 	adazure "hcm/pkg/adaptor/azure"
 	typescore "hcm/pkg/adaptor/types/core"
 	"hcm/pkg/api/core"
@@ -29,6 +27,8 @@ import (
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork/v2"
 )
 
 func (g *securityGroup) listAzureSecurityGroupFromCloud(kt *kit.Kit, client *adazure.Azure, resourceGroupName string,

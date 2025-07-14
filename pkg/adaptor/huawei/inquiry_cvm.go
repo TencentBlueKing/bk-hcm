@@ -22,14 +22,14 @@ package huawei
 import (
 	"fmt"
 
-	bssmodel "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/bssintl/v2/model"
-
 	typecvm "hcm/pkg/adaptor/types/cvm"
 	"hcm/pkg/criteria/errf"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/uuid"
+
+	bssmodel "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/bssintl/v2/model"
 )
 
 // InquiryPriceCvm 创建云主机询价

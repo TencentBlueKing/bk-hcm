@@ -75,7 +75,7 @@ func register() {
 	action.RegisterAction(actionbilldailypull.PullDailyBillAction{})
 	action.RegisterAction(actionbillsplit.DailyAccountSplitAction{})
 	action.RegisterAction(actiondailysummary.DailySummaryAction{})
-	action.RegisterAction(&actionmainsummary.MainAccountSummaryAction{})
+	action.RegisterAction(actionmainsummary.MainAccountSummaryAction{})
 	action.RegisterAction(actionrootsummary.RootAccountSummaryAction{})
 	action.RegisterAction(actionmonthtask.MonthTaskAction{})
 
