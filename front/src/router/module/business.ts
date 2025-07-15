@@ -2,6 +2,7 @@
 import { LBRouteName } from '@/constants';
 import type { RouteRecordRaw } from 'vue-router';
 import { operationLogBiz as operationLogBizRouteConfig } from '@/views/operation-log/route-config';
+import { loadBalancerBiz as loadBalancerBizRouteConfig } from '@/views/load-balancer/route-config';
 import taskRouteConfig from '@/views/task/route-config';
 import Meta from '../meta';
 
@@ -436,6 +437,7 @@ const businessMenus: RouteRecordRaw[] = [
           icon: 'hcm-icon bkhcm-icon-loadbalancer',
         },
       },
+      loadBalancerBizRouteConfig[0],
       {
         path: '/business/cert',
         name: 'businessCert',
