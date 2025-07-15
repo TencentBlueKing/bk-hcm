@@ -53,6 +53,7 @@ func InitAccountService(c *capability.Capability) {
 	h.Add("GetAccount", http.MethodGet, "/accounts/{account_id}", svc.GetAccount)
 	h.Add("GetSyncDetail", http.MethodGet, "/accounts/sync_details/{account_id}", svc.GetSyncDetail)
 	h.Add("UpdateAccount", http.MethodPatch, "/accounts/{account_id}", svc.UpdateAccount)
+	h.Add("UpdateBuiltInAccount", http.MethodPatch, "/account/builtIn", svc.UpdateBuiltInAccount)
 	h.Add("SyncCloudResource", http.MethodPost, "/accounts/{account_id}/sync", svc.SyncCloudResource)
 	h.Add("DeleteAccount", http.MethodDelete, "/accounts/{account_id}", svc.DeleteAccount)
 	h.Add("DeleteValidate", http.MethodPost, "/accounts/{account_id}/delete/validate", svc.DeleteValidate)

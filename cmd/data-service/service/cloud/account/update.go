@@ -56,6 +56,8 @@ func (svc *service) UpdateAccount(cts *rest.Contexts) (interface{}, error) {
 		return updateAccount[protocloud.GcpAccountExtensionUpdateReq](accountID, svc, cts)
 	case enumor.Azure:
 		return updateAccount[protocloud.AzureAccountExtensionUpdateReq](accountID, svc, cts)
+	case enumor.Other:
+		return updateAccount[protocloud.OtherAccountExtensionUpdateReq](accountID, svc, cts)
 	}
 
 	return nil, nil

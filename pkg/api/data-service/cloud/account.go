@@ -35,7 +35,7 @@ import (
 // AccountExtensionCreateReq account extension create req.
 type AccountExtensionCreateReq interface {
 	TCloudAccountExtensionCreateReq | AwsAccountExtensionCreateReq | HuaWeiAccountExtensionCreateReq |
-		GcpAccountExtensionCreateReq | AzureAccountExtensionCreateReq | OtherAccountExtensionCreateReq
+	GcpAccountExtensionCreateReq | AzureAccountExtensionCreateReq | OtherAccountExtensionCreateReq
 }
 
 // OtherAccountExtensionCreateReq ...
@@ -146,7 +146,7 @@ func (c *AccountCreateReq[T]) Validate() error {
 // Note: 对于允许为空字符串的字段，则其类型需要定义为指针，正常情况下，Json合并时空值会被忽略
 type AccountExtensionUpdateReq interface {
 	TCloudAccountExtensionUpdateReq | AwsAccountExtensionUpdateReq | HuaWeiAccountExtensionUpdateReq |
-		GcpAccountExtensionUpdateReq | AzureAccountExtensionUpdateReq
+	GcpAccountExtensionUpdateReq | AzureAccountExtensionUpdateReq | OtherAccountExtensionUpdateReq
 }
 
 // TCloudAccountExtensionUpdateReq ...
@@ -238,6 +238,16 @@ func (req *AzureAccountExtensionUpdateReq) EncryptSecretKey(cipher cryptography.
 	}
 }
 
+// OtherAccountExtensionUpdateReq ...
+type OtherAccountExtensionUpdateReq struct {
+	// placeholder
+	CloudID     string `json:"cloud_id" validate:"omitempty"`
+	CloudSecKey string `json:"cloud_sec_key" validate:"omitempty"`
+}
+
+// EncryptSecretKey ...
+func (req *OtherAccountExtensionUpdateReq) EncryptSecretKey(cipher cryptography.Crypto) {}
+
 // AccountUpdateReq ...
 type AccountUpdateReq[T AccountExtensionUpdateReq] struct {
 	Name               string   `json:"name" validate:"omitempty"`
@@ -260,7 +270,7 @@ func (u *AccountUpdateReq[T]) Validate() error {
 // AccountExtensionGetResp ...
 type AccountExtensionGetResp interface {
 	cloud.TCloudAccountExtension | cloud.AwsAccountExtension | cloud.HuaWeiAccountExtension |
-		cloud.GcpAccountExtension | cloud.AzureAccountExtension | cloud.OtherAccountExtension
+	cloud.GcpAccountExtension | cloud.AzureAccountExtension | cloud.OtherAccountExtension
 }
 
 // AccountGetResult ...
