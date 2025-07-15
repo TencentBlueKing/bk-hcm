@@ -157,7 +157,7 @@ func (c *CreateLayer4ListenerPreviewExecutor) validateWithDB(kt *kit.Kit, cloudI
 		return err
 	}
 
-	concurrentErr := concurrence.BaseExec(cc.CloudServer().CLBImportConfig.ConcurrentCount, c.details,
+	concurrentErr := concurrence.BaseExec(cc.CloudServer().ConcurrentConfig.CLBImportCount, c.details,
 		func(detail *CreateLayer4ListenerDetail) error {
 
 			lb, ok := lbMap[detail.CloudClbID]

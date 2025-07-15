@@ -23,6 +23,7 @@ package lblogic
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"hcm/pkg/api/core"
 	corecvm "hcm/pkg/api/core/cloud/cvm"
@@ -296,27 +297,22 @@ func getCvmWithoutVpc(kt *kit.Kit, cli *dataservice.Client, ip string, vendor en
 }
 
 // validateCvmExist 导入新RS前, 校验云主机是否存在
-// 开启了跨域2.0的负载均衡, 不进行vpc校验, 由云上进行报错
+// 跨域1.0如果没找到相同的vpc下的主机，会进行报错
 func validateCvmExist(kt *kit.Kit, dataServiceCli *dataservice.Client, rsIP string, vendor enumor.Vendor,
-	bkBizID int64, accountID string, lb corelb.LoadBalancerRaw) (*corecvm.BaseCvm, error) {
+	bkBizID int64, accountID string, lb corelb.LoadBalancerRaw, isCrossRegionV1, isCrossRegionV2 bool,
+	targetCloudVpcID string) (*corecvm.BaseCvm, error) {
 
 	var cvm *corecvm.BaseCvm
 	var err error
-	isCrossRegionV1, isCrossRegionV2, targetCloudVpcID, _, err := parseSnapInfoTCloudLBExtension(kt,
-		lb.Extension)
+	cvmList, err := getCvmWithoutVpc(kt, dataServiceCli, rsIP, vendor, bkBizID, accountID)
 	if err != nil {
-		logs.Errorf("parse snap info for tcloud lb extension failed, err: %v, rid: %s", err, kt.Rid)
+		logs.Errorf("get cvm without vpc failed, ip: %s, err: %v, rid: %s", rsIP, err, kt.Rid)
 		return nil, err
 	}
+	if len(cvmList) == 0 {
+		return nil, fmt.Errorf("rs(%s) not found", rsIP)
+	}
 	if isCrossRegionV2 {
-		cvmList, err := getCvmWithoutVpc(kt, dataServiceCli, rsIP, vendor, bkBizID, accountID)
-		if err != nil {
-			logs.Errorf("get cvm without vpc failed, ip: %s, err: %v, rid: %s", rsIP, err, kt.Rid)
-			return nil, err
-		}
-		if len(cvmList) == 0 {
-			return nil, fmt.Errorf("rs(%s) not found", rsIP)
-		}
 		cvm = &cvmList[0]
 		return cvm, nil
 	}
@@ -325,16 +321,15 @@ func validateCvmExist(kt *kit.Kit, dataServiceCli *dataservice.Client, rsIP stri
 	if isCrossRegionV1 {
 		cloudVpcIDs = append(cloudVpcIDs, targetCloudVpcID)
 	}
+	for _, one := range cvmList {
+		if len(slice.Intersection(cloudVpcIDs, one.CloudVpcIDs)) > 0 {
+			return &one, nil
+		}
+	}
 
-	cvm, err = getCvm(kt, dataServiceCli, rsIP, vendor, bkBizID, accountID, cloudVpcIDs)
-	if err != nil {
-		logs.Errorf("call data-service to get cvm failed, ip: %s, err: %v, rid: %s", rsIP, err, kt.Rid)
-		return nil, err
-	}
-	if cvm == nil {
-		return nil, fmt.Errorf("rs(%s) not found", rsIP)
-	}
-	return cvm, nil
+	cvmCloudIDs := slice.Map(cvmList, corecvm.BaseCvm.GetCloudID)
+	return nil, fmt.Errorf("VPC of %s is different from loadbalancer's VPC (%s)",
+		strings.Join(cvmCloudIDs, ","), strings.Join(cloudVpcIDs, ","))
 }
 
 func parseSnapInfoTCloudLBExtension(kt *kit.Kit, raw json.RawMessage) (

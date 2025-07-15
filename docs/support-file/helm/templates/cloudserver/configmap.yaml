@@ -55,6 +55,6 @@ data:
     cmdb:
       {{- toYaml .Values.cmdb | nindent 6 }}
     ccHostPoolBiz: {{ .Values.ccHostPoolBiz }}
-    clbImportConfig:
-      {{- toYaml .Values.cloudserver.clbImportConfig | nindent 6 }}
+    concurrentConfig:
+      {{- toYaml .Values.cloudserver.concurrentConfig | nindent 6 }}
 

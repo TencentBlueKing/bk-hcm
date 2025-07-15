@@ -20,9 +20,12 @@
 package task
 
 import (
+	"fmt"
+
 	"hcm/pkg/api/core"
 	"hcm/pkg/api/core/task"
 	coretask "hcm/pkg/api/core/task"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/runtime/filter"
@@ -94,7 +97,7 @@ func (req UpdateTaskDetailField) Validate() error {
 
 // BatchUpdateTaskDetailReq ...
 type BatchUpdateTaskDetailReq struct {
-	IDs           []string               `json:"ids" validate:"required,min=1,max=500"`
+	IDs           []string               `json:"ids" validate:"required,min=1"`
 	Reason        string                 `json:"reason"`
 	State         enumor.TaskDetailState `json:"state"`
 	FlowID        string                 `json:"flow_id"`
@@ -103,6 +106,9 @@ type BatchUpdateTaskDetailReq struct {
 
 // Validate ...
 func (req BatchUpdateTaskDetailReq) Validate() error {
+	if len(req.IDs) > constant.BatchOperationMaxLimit {
+		return fmt.Errorf("ids should <= %d", constant.BatchOperationMaxLimit)
+	}
 	return validator.Validate.Struct(req)
 }
 

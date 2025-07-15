@@ -163,7 +163,7 @@ func (c *CreateUrlRulePreviewExecutor) validateWithDB(kt *kit.Kit, cloudIDs []st
 		return err
 	}
 
-	concurrentErr := concurrence.BaseExec(cc.CloudServer().CLBImportConfig.ConcurrentCount, c.details,
+	concurrentErr := concurrence.BaseExec(cc.CloudServer().ConcurrentConfig.CLBImportCount, c.details,
 		func(detail *CreateUrlRuleDetail) error {
 
 			lb, ok := lbMap[detail.CloudClbID]

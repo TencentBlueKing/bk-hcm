@@ -1146,13 +1146,13 @@ type TenantConfig struct {
 	Enabled bool `yaml:"enabled"`
 }
 
-// CLBImportConfig CLB import config
-type CLBImportConfig struct {
-	ConcurrentCount int `yaml:"concurrentCount"`
+// ConcurrentConfig CLB import config
+type ConcurrentConfig struct {
+	CLBImportCount int `yaml:"clbImportCount"`
 }
 
-func (c *CLBImportConfig) trySetDefault() {
-	if c.ConcurrentCount == 0 {
-		c.ConcurrentCount = 10
+func (c *ConcurrentConfig) trySetDefault() {
+	if c.CLBImportCount == 0 {
+		c.CLBImportCount = 10
 	}
 }

@@ -21,7 +21,6 @@
 package concurrence
 
 import (
-	"sync"
 	gosync "sync"
 )
 
@@ -73,11 +72,11 @@ func BaseExec[T any](concurrenceLimit int, params []T, execFunc func(param T) er
 //  2. 首个遇到的错误
 func BaseExecWithResult[T any, R any](concurrenceLimit int, params []T, execFunc func(param T) (R, error)) ([]R, error) {
 	results := make([]R, len(params))
-	var lock sync.Mutex
+	var lock gosync.Mutex
 	var firstErr error
 
 	pipeline := make(chan bool, concurrenceLimit)
-	var wg sync.WaitGroup
+	var wg gosync.WaitGroup
 
 	for i, param := range params {
 		index := i // 捕获循环变量
@@ -89,6 +88,9 @@ func BaseExecWithResult[T any, R any](concurrenceLimit int, params []T, execFunc
 				wg.Done()
 				<-pipeline
 			}()
+			if firstErr != nil {
+				return // 如果已经有错误，直接返回
+			}
 
 			res, err := execFunc(p)
 			lock.Lock()

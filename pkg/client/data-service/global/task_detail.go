@@ -67,5 +67,5 @@ func (t *TaskDetailClient) BatchUpdate(kt *kit.Kit,
 	req *task.BatchUpdateTaskDetailReq) error {
 
 	return common.RequestNoResp[task.BatchUpdateTaskDetailReq](t.client, rest.PATCH, kt, req,
-		"/task_details/update/state_reason")
+		"/task_details/update/batch")
 }

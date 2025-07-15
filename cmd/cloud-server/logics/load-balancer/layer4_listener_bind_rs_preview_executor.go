@@ -25,7 +25,6 @@ import (
 	"strconv"
 	"strings"
 
-	cloudCvm "hcm/pkg/api/core/cloud/cvm"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	"hcm/pkg/cc"
 	dataservice "hcm/pkg/client/data-service"
@@ -151,7 +150,7 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateWithDB(kt *kit.Kit, cloudI
 		return err
 	}
 
-	concurrentErr := concurrence.BaseExec(cc.CloudServer().CLBImportConfig.ConcurrentCount, l.details,
+	concurrentErr := concurrence.BaseExec(cc.CloudServer().ConcurrentConfig.CLBImportCount, l.details,
 		func(detail *Layer4ListenerBindRSDetail) error {
 
 			lb, ok := lbMap[detail.CloudClbID]
@@ -211,7 +210,7 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateDetailsTarget(kt *kit.Kit)
 		logs.Errorf("get target group by rule cloud ids failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
-	concurrentErr := concurrence.BaseExec(cc.CloudServer().CLBImportConfig.ConcurrentCount, l.details,
+	concurrentErr := concurrence.BaseExec(cc.CloudServer().ConcurrentConfig.CLBImportCount, l.details,
 		func(detail *Layer4ListenerBindRSDetail) error {
 			if err = l.validateTarget(kt, detail, ruleCloudIDsToTGIDMap); err != nil {
 				logs.Errorf("validate target failed, err: %v, rid: %s", err, kt.Rid)
@@ -273,20 +272,11 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit, curDetail 
 		logs.Errorf("parse snap info for tcloud lb extension failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
-	cvm, err := validateCvmExist(kt, l.dataServiceCli, curDetail.RsIp, l.vendor, l.bkBizID, l.accountID, lb)
-	if cvm == nil {
-		if isCrossRegionV2 {
-			curDetail.Status.SetNotExecutable()
-			curDetail.ValidateResult = append(curDetail.ValidateResult, fmt.Sprintf("rs ip(%s) not found",
-				curDetail.RsIp))
-			return nil
-		}
-		// 找不到对应的CVM, 根据IP查询CVM完善报错
-		return l.fillRSValidateCvmNotFoundError(kt, curDetail, lb.CloudVpcID)
-	}
+	cvm, err := validateCvmExist(kt, l.dataServiceCli, curDetail.RsIp, l.vendor, l.bkBizID, l.accountID, lb,
+		isCrossRegionV1, isCrossRegionV2, lbTargetRegion)
 	if err != nil {
 		curDetail.Status.SetNotExecutable()
-		curDetail.ValidateResult = append(curDetail.ValidateResult, fmt.Sprintf("validate cvm failed, err: %v", err))
+		curDetail.ValidateResult = append(curDetail.ValidateResult, err.Error())
 		return nil
 	}
 	curDetail.cvm = newCvmInfo(cvm)
@@ -307,30 +297,6 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit, curDetail 
 		return nil
 	}
 
-	return nil
-}
-
-func (l *Layer4ListenerBindRSPreviewExecutor) fillRSValidateCvmNotFoundError(
-	kt *kit.Kit, curDetail *Layer4ListenerBindRSDetail, lbCloudVpcID string) error {
-
-	// 找不到对应的CVM, 根据IP查询CVM完善报错
-	cvmList, err := getCvmWithoutVpc(kt, l.dataServiceCli, curDetail.RsIp, l.vendor, l.bkBizID, l.accountID)
-	if err != nil {
-		logs.Errorf("get cvm failed, err: %v, rid: %s", err, kt.Rid)
-		return err
-	}
-	if len(cvmList) == 0 {
-		curDetail.Status.SetNotExecutable()
-		curDetail.ValidateResult = append(curDetail.ValidateResult, fmt.Sprintf("rs ip(%s) not found",
-			curDetail.RsIp))
-		return nil
-	}
-
-	cvmCloudIDs := slice.Map(cvmList, cloudCvm.BaseCvm.GetCloudID)
-	curDetail.Status.SetNotExecutable()
-	curDetail.ValidateResult = append(curDetail.ValidateResult,
-		fmt.Sprintf("VPC of %s is different from loadbalancer's VPC (%s).",
-			strings.Join(cvmCloudIDs, ","), lbCloudVpcID))
 	return nil
 }
 

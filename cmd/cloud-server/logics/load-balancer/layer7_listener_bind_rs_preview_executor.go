@@ -152,7 +152,7 @@ func (l *Layer7ListenerBindRSPreviewExecutor) validateWithDB(kt *kit.Kit, cloudI
 		return err
 	}
 
-	concurrentErr := concurrence.BaseExec(cc.CloudServer().CLBImportConfig.ConcurrentCount, l.details,
+	concurrentErr := concurrence.BaseExec(cc.CloudServer().ConcurrentConfig.CLBImportCount, l.details,
 		func(detail *Layer7ListenerBindRSDetail) error {
 
 			lb, ok := lbMap[detail.CloudClbID]
@@ -213,7 +213,7 @@ func (l *Layer7ListenerBindRSPreviewExecutor) validateDetailsTarget(kt *kit.Kit)
 		logs.Errorf("get target group by rule cloud ids failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
-	concurrentErr := concurrence.BaseExec(cc.CloudServer().CLBImportConfig.ConcurrentCount, l.details,
+	concurrentErr := concurrence.BaseExec(cc.CloudServer().ConcurrentConfig.CLBImportCount, l.details,
 		func(detail *Layer7ListenerBindRSDetail) error {
 			if err = l.validateTarget(kt, detail, ruleCloudIDsToTGIDMap); err != nil {
 				logs.Errorf("validate target failed, err: %v, rid: %s", err, kt.Rid)
@@ -278,23 +278,19 @@ func (l *Layer7ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit, curDetail 
 		return err
 	}
 
-	cvm, err := validateCvmExist(kt, l.dataServiceCli, curDetail.RsIp, l.vendor, l.bkBizID, l.accountID, lb)
-	if cvm == nil {
-		if isCrossRegionV2 {
-			curDetail.Status.SetNotExecutable()
-			curDetail.ValidateResult = append(curDetail.ValidateResult, fmt.Sprintf("rs ip(%s) not found",
-				curDetail.RsIp))
-			return nil
-		}
-		// 找不到对应的CVM, 根据IP查询CVM完善报错
-		return l.fillRSValidateCvmNotFoundError(kt, curDetail, lb.CloudVpcID)
-	}
+	cvm, err := validateCvmExist(kt, l.dataServiceCli, curDetail.RsIp, l.vendor, l.bkBizID, l.accountID, lb,
+		isCrossRegionV1, isCrossRegionV2, lbTargetRegion)
 	if err != nil {
 		curDetail.Status.SetNotExecutable()
-		curDetail.ValidateResult = append(curDetail.ValidateResult, fmt.Sprintf("validate cvm failed, err: %v", err))
+		curDetail.ValidateResult = append(curDetail.ValidateResult, err.Error())
 		return nil
 	}
 	curDetail.cvm = newCvmInfo(cvm)
+
+	// 支持跨域2.0 不校验
+	if isCrossRegionV2 {
+		return nil
+	}
 
 	targetRegion := lb.Region
 	if isCrossRegionV1 {
@@ -302,8 +298,7 @@ func (l *Layer7ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit, curDetail 
 		targetRegion = lbTargetRegion
 	}
 	// 支持跨域1.0 校验 target region
-	// 支持跨域2.0 不校验
-	if !isCrossRegionV2 && cvm.Region != targetRegion {
+	if cvm.Region != targetRegion {
 		// 非跨域情况下才校验region
 		curDetail.Status.SetNotExecutable()
 		curDetail.ValidateResult = append(curDetail.ValidateResult,
