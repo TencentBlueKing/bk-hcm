@@ -73,10 +73,12 @@ func NewImportExecutor(operationType OperationType, dataCli *dataservice.Client,
 		return newLayer4ListenerBindRSExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
 	case Layer7ListenerBindRs:
 		return newLayer7ListenerBindRSExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
-	case LayerListenerUnbindRs:
-		return newBatchListenerUnbindRsExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
-	case LayerListenerRsWeight:
-		return newBatchListenerModifyRsWeightExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
+	case Layer4ListenerUnbindRs, Layer7ListenerUnbindRs:
+		return newBatchListenerUnbindRsExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs,
+			operationType), nil
+	case Layer4ListenerRsWeight, Layer7ListenerRsWeight:
+		return newBatchListenerModifyRsWeightExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs,
+			operationType), nil
 	case ListenerDelete:
 		return newBatchDeleteListenerExecutor(dataCli, taskCli, vendor, bkBizID, accountID, regionIDs), nil
 	default:
