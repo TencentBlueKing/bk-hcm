@@ -29,6 +29,7 @@ import { useRouter, useRoute } from 'vue-router';
 import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import { useRegionsStore } from '@/store/useRegionsStore';
+import { useRegionStore } from '@/store/region';
 import { GLOBAL_BIZS_KEY, VendorEnum, VendorMap, FILTER_DATA } from '@/common/constant';
 import { cloneDeep } from 'lodash-es';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
@@ -86,7 +87,8 @@ const emit = defineEmits(['handleSecrityType', 'edit', 'editTemplate']);
 // use hooks
 const { t } = useI18n();
 
-const { getRegionName, getAllRegion } = useRegionsStore();
+const { getRegionName } = useRegionsStore();
+const { getAllVendorRegion } = useRegionStore();
 const securityGroupStore = useSecurityGroupStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
 const router = useRouter();
@@ -139,11 +141,13 @@ const selectSearchData = computed(() => {
         {
           name: t('使用业务'),
           id: 'usage_biz_id',
+          async: false,
           children: businessGlobalStore.businessFullList.map(({ id, name }) => ({ id, name })),
         },
         {
           name: t('管理类型'),
           id: 'mgmt_type',
+          async: false,
           children: [
             { id: SecurityGroupManageType.BIZ, name: t('业务管理') },
             { id: SecurityGroupManageType.PLATFORM, name: t('平台管理') },
@@ -154,13 +158,13 @@ const selectSearchData = computed(() => {
         {
           name: t('管理业务'),
           id: 'mgmt_biz_id',
+          async: false,
           children: businessGlobalStore.businessFullList.map(({ id, name }) => ({ id, name })),
         },
         {
           name: t('地域'),
           id: 'region',
-          children: getAllRegion().map(([id, name]) => ({ id, name })),
-          multiple: true,
+          async: true,
         },
       ],
     },
@@ -351,9 +355,6 @@ const groupColumns = [
     label: t('地域'),
     field: 'region',
     isDefaultShow: true,
-    filter: {
-      list: getAllRegion().map(([value, text]) => ({ value, text })),
-    },
     render: ({ data }: any) => {
       return getRegionName(data.vendor, data.region);
     },
@@ -1161,6 +1162,8 @@ const securityGroupAssignDialogState = reactive({
   isShow: false,
   isHidden: true,
 });
+
+const getMenuList = (item: any, values: any) => getAllVendorRegion(values);
 const handleSecurityGroupAssign = () => {
   securityGroupAssignDialogState.isShow = true;
   securityGroupAssignDialogState.isHidden = false;
@@ -1322,6 +1325,7 @@ defineExpose({ fetchComponentsData });
         :conditions="[]"
         :data="selectSearchData"
         v-model="searchValue"
+        :get-menu-list="getMenuList"
         value-behavior="need-key"
       />
     </div>

@@ -200,6 +200,7 @@ export const FILTER_DATA = [
     name: '云厂商',
     id: 'vendor',
     children: VENDORS,
+    async: false,
   },
   {
     name: '云账号ID',

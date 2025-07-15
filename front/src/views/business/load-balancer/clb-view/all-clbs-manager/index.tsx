@@ -27,7 +27,7 @@ import { useVerify } from '@/hooks';
 import { useGlobalPermissionDialog } from '@/store/useGlobalPermissionDialog';
 import { LB_ISP, ResourceTypeEnum, VendorEnum, VendorMap } from '@/common/constant';
 import { ValidateValuesFunc } from 'bkui-vue/lib/search-select/utils';
-import { useRegionsStore } from '@/store/useRegionsStore';
+import { useRegionStore } from '@/store/region';
 
 export default defineComponent({
   name: 'AllClbsManager',
@@ -37,7 +37,7 @@ export default defineComponent({
     const route = useRoute();
     const { t } = useI18n();
     const businessStore = useBusinessStore();
-    const { getAllRegion } = useRegionsStore();
+    const { getAllVendorRegion } = useRegionStore();
     const { whereAmI, getBizsId } = useWhereAmI();
     const { selections, handleSelectionChange, resetSelections } = useSelection();
     const { authVerifyData, handleAuth } = useVerify();
@@ -74,16 +74,18 @@ export default defineComponent({
       }
       return true;
     };
+    const getMenuList = (item: any, values: any) => getAllVendorRegion(values);
     const { CommonTable, getListData, dataList } = useTable({
       searchOptions: {
         searchData: [
-          { id: 'name', name: '负载均衡名称' },
-          { id: 'cloud_id', name: '负载均衡ID' },
-          { id: 'domain', name: '负载均衡域名' },
-          { id: 'lb_vip', name: '负载均衡VIP' },
+          { id: 'name', name: '负载均衡名称', async: false },
+          { id: 'cloud_id', name: '负载均衡ID', async: false },
+          { id: 'domain', name: '负载均衡域名', async: false },
+          { id: 'lb_vip', name: '负载均衡VIP', async: false },
           {
             id: 'lb_type',
             name: '网络类型',
+            async: false,
             children: Object.keys(LB_NETWORK_TYPE_MAP).map((lbType) => ({
               id: lbType,
               name: LB_NETWORK_TYPE_MAP[lbType as keyof typeof LB_NETWORK_TYPE_MAP],
@@ -92,6 +94,7 @@ export default defineComponent({
           {
             id: 'ip_version',
             name: t('IP版本'),
+            async: false,
             children: [
               { id: 'ipv4', name: 'IPv4' },
               { id: 'ipv6', name: 'IPv6' },
@@ -108,24 +111,26 @@ export default defineComponent({
           {
             id: 'vendor',
             name: t('云厂商'),
+            async: false,
             children: [{ id: VendorEnum.TCLOUD, name: VendorMap[VendorEnum.TCLOUD] }],
           },
           { id: 'zones', name: '可用区域' },
           {
             id: 'status',
             name: '状态',
+            async: false,
             children: Object.keys(CLB_STATUS_MAP).map((key) => ({ id: key, name: CLB_STATUS_MAP[key] })),
           },
           { id: 'cloud_vpc_id', name: '所属VPC' },
           {
             name: t('地域'),
             id: 'region',
-            children: getAllRegion().map(([id, name]) => ({ id, name })),
-            multiple: true,
+            async: true,
           },
         ],
         extra: {
           validateValues,
+          getMenuList,
         },
         conditionFormatterMapper: {
           cloud_id: (value: string) => {
