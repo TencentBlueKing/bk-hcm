@@ -6,14 +6,14 @@
 
 ### URL
 
-GET /api/v1/cloud/accounts/bizs/{usage_biz_id}
+GET /api/v1/cloud/accounts/bizs/{bk_biz_id}
 
 ### 输入参数
 
-| 参数名称         | 参数类型    | 必选 | 描述     |
-|--------------|---------|----|--------|
-| usage_biz_id | int64   | 是  | 使用业务ID |
-| account_type | string  | 否  | 账户类型   |
+| 参数名称         | 参数类型   | 必选 | 描述     |
+|--------------|--------|----|--------|
+| bk_biz_id    | int64  | 是  | 使用业务ID |
+| account_type | string | 否  | 账户类型   |
 
 ### 调用示例
 
@@ -42,15 +42,15 @@ GET /api/v1/cloud/accounts/bizs/{usage_biz_id}
     "price_unit": "",
     "memo": "account create",
     "bk_biz_id": 13,
-    "usage_biz_ids": [],
-    "bk_biz_ids": [],
+    "usage_biz_ids": [13,1111],
+    "bk_biz_ids": [13,1111],
     "sync_status": "success",
     "sync_failed_reason":"",
     "creator": "Jim",
     "reviser": "Jim",
     "created_at": "2022-12-25T23:42:15Z",
     "updated_at": "2023-02-15T08:46:59Z",
-    "rel_bk_biz_id": 1111,
+    "rel_usage_biz_id": 1111,
     "rel_creator": "Jim",
     "rel_created_at": "2022-12-25T23:42:15Z"
   }

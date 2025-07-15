@@ -198,11 +198,6 @@ func (req *AccountUpdateReq) Validate(accountInfo *cloud.BaseAccount) error {
 		return err
 	}
 
-	// 不能更新内置账号
-	if accountInfo.Vendor == enumor.Other {
-		return fmt.Errorf("built-in account is not allowed to be updated")
-	}
-
 	// 使用业务合法性校验
 	if err := validateUsageBizIDs(req.UsageBizIDs); err != nil {
 		return err

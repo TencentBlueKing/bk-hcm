@@ -79,7 +79,7 @@ func InitAccountService(c *capability.Capability) {
 		svc.GetResGcpRegionQuota)
 
 	// Rel
-	h.Add("ListByUsageBizID", http.MethodGet, "/accounts/bizs/{usage_biz_id}", svc.ListByUsageBizID)
+	h.Add("ListByUsageBizID", http.MethodGet, "/accounts/bizs/{bk_biz_id}", svc.ListByUsageBizID)
 
 	// 安全所需OpenAPI
 	h.Add("ListWithExtension", http.MethodPost, "/accounts/extensions/list", svc.ListWithExtension)
