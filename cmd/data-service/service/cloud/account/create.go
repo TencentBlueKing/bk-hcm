@@ -93,7 +93,7 @@ func createAccount[T protocloud.AccountExtensionCreateReq, PT protocloud.SecretE
 			Type:               string(req.Type),
 			Site:               string(req.Site),
 			Memo:               req.Memo,
-			BizID:              req.BkBizID,
+			BkBizID:            req.BkBizID,
 			Extension:          tabletype.JsonField(extensionJson),
 			RecycleReserveTime: constant.UnsetRecycleTime,
 			Creator:            cts.Kit.User,

@@ -97,8 +97,8 @@ type AccountTable struct {
 	Memo *string `db:"memo" json:"memo"`
 	// RecycleReserveTime 回收站保留时长，单位: 小时
 	RecycleReserveTime int `db:"recycle_reserve_time" json:"recycle_reserve_time"`
-	// BizID 管理业务
-	BizID int64 `db:"bk_biz_id" json:"bk_biz_id"`
+	// BkBizID 管理业务
+	BkBizID int64 `db:"bk_biz_id" json:"bk_biz_id"`
 }
 
 // TableName return account table name.
@@ -120,7 +120,7 @@ func (a AccountTable) InsertValidate() error {
 		return errors.New("updated_at can not set")
 	}
 
-	if a.BizID == constant.AttachedAllBiz {
+	if a.BkBizID == constant.AttachedAllBiz {
 		return errors.New("bk_biz_id can not set all biz")
 	}
 
@@ -139,7 +139,7 @@ func (a AccountTable) UpdateValidate() error {
 		return errors.New("creator can not update")
 	}
 
-	if a.BizID == constant.AttachedAllBiz {
+	if a.BkBizID == constant.AttachedAllBiz {
 		return errors.New("bk_biz_id can not set all biz")
 	}
 

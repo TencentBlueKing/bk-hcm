@@ -176,6 +176,13 @@ func (req *AzureAccountExtensionUpdateReq) IsFull() bool {
 		req.CloudApplicationName != ""
 }
 
+// OtherAccountExtensionUpdateReq ...
+type OtherAccountExtensionUpdateReq struct {
+	// placeholder
+	CloudID     string `json:"cloud_id" validate:"omitempty"`
+	CloudSecKey string `json:"cloud_sec_key" validate:"omitempty"`
+}
+
 // AccountUpdateReq ...
 type AccountUpdateReq struct {
 	Name               string          `json:"name" validate:"omitempty"`
