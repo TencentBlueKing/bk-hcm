@@ -184,6 +184,7 @@ func (cli *client) getCloudLbSgBinding(kt *kit.Kit, params *SyncBaseParams, opt 
 		return make(map[string]string), make(map[string][]string), nil
 	}
 
+	allSgCloudIDs = slice.Unique(allSgCloudIDs)
 	// 2. 主动同步一次安全组
 	for _, parts := range slice.Split(allSgCloudIDs, constant.CloudResourceSyncMaxLimit) {
 		syncParam := &SyncBaseParams{
@@ -199,7 +200,6 @@ func (cli *client) getCloudLbSgBinding(kt *kit.Kit, params *SyncBaseParams, opt 
 	}
 
 	// 3. 获取本地id 映射
-	allSgCloudIDs = slice.Unique(allSgCloudIDs)
 	cloudSgMap, err := cli.getSGCloudIDToLocalIDMap(kt, allSgCloudIDs)
 	if err != nil {
 		return nil, nil, err
