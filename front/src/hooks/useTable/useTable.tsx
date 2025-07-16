@@ -18,7 +18,7 @@ import usePagination from '../usePagination';
 import useBillStore from '@/store/useBillStore';
 import { defaults, isEqual } from 'lodash';
 import { fetchData } from '@pluginHandler/useTable';
-import { buildVIPFilterRules } from '@/utils';
+import { buildVIPFilterRules } from '@/utils/search';
 
 export interface IProp {
   // search-select 配置项

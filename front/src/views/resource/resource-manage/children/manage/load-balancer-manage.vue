@@ -131,7 +131,7 @@ import useSelection from '../../hooks/use-selection';
 import useColumns from '../../hooks/use-columns';
 import useBatchDeleteLB from '@/views/business/load-balancer/clb-view/all-clbs-manager/useBatchDeleteLB';
 import { useI18n } from 'vue-i18n';
-import { asyncGetListenerCount, buildVIPFilterRules } from '@/utils';
+import { asyncGetListenerCount } from '@/utils';
 import { getTableNewRowClass } from '@/common/util';
 import { useResourceStore, useBusinessStore } from '@/store';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
@@ -139,6 +139,7 @@ import { ResourceTypeEnum, VendorEnum, VendorMap } from '@/common/constant';
 import SyncAccountResource from '@/components/sync-account-resource/index.vue';
 import { CLB_STATUS_MAP, LB_NETWORK_TYPE_MAP } from '@/constants';
 import { useAccountBusiness } from '@/views/resource/resource-manage/hooks/use-account-business';
+import { buildVIPFilterRules } from '@/utils/search';
 
 const props = defineProps({
   filter: {
