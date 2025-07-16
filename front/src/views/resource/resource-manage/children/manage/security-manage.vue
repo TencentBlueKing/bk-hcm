@@ -1,13 +1,4 @@
 <script setup lang="ts">
-import type {
-  DoublePlainObject,
-  // PlainObject,
-  FilterType,
-} from '@/typings/resource';
-import { GcpTypeEnum, QueryRuleOPEnum, RulesItem } from '@/typings';
-import { ModelProperty } from '@/model/typings';
-import { Button, InfoBox, Loading, Message, Table, Tag, bkTooltips } from 'bkui-vue';
-import { useResourceStore, useAccountStore } from '@/store';
 import {
   ref,
   h,
@@ -24,40 +15,33 @@ import {
   useTemplateRef,
   onMounted,
 } from 'vue';
-
-import { useI18n } from 'vue-i18n';
 import { useRouter, useRoute } from 'vue-router';
-import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
-import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
+import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n';
+import { useBusinessGlobalStore } from '@/store/business-global';
+import { useResourceStore, useAccountStore } from '@/store';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useRegionStore } from '@/store/region';
-import { GLOBAL_BIZS_KEY, VendorEnum, VendorMap, FILTER_DATA } from '@/common/constant';
-import { cloneDeep } from 'lodash-es';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
-import useSelection from '../../hooks/use-selection';
-import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
-import { TemplateTypeMap } from '../dialog/template-dialog';
-import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
-import http from '@/http';
-import { timeFormatter } from '@/common/util';
-import { storeToRefs } from 'pinia';
-
-import SecurityGroupChangeConfirmDialog from '../dialog/security-group/change-confirm.vue';
-import SecurityGroupSingleDeleteDialog from '../dialog/security-group/single-delete.vue';
-import CloneSecurity, { IData, ICloneSecurityProps } from '../dialog/clone-security/index.vue';
-import SecurityGroupAssignDialog from '../dialog/security-group/assign.vue';
-import SecurityGroupUpdateMgmtAttrDialog from '../dialog/security-group/update-mgmt-attr.vue';
-import SyncAccountResource from '@/components/sync-account-resource/index.vue';
-import UnclaimedComp from '../components/security/unclaimed-comp/index.vue';
-import { MGMT_TYPE_MAP, SecurityGroupManageType } from '@/constants/security-group';
 import { ISecurityGroupOperateItem, useSecurityGroupStore } from '@/store/security-group';
-import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
-import { useBusinessGlobalStore } from '@/store/business-global';
-import UsageBizValue from '@/views/resource/resource-manage/children/components/security/usage-biz-value.vue';
-import RefreshCell from '../components/security/refresh-cell/index.vue';
-import { showClone } from '../plugin/security-group/show-clone.plugin';
-import { checkVendorInResource } from '../plugin/security-group/check-vendor-in-resource.plugin';
+import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
+import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
+import useSelection from '../../hooks/use-selection';
+import useSearchQs from '@/hooks/use-search-qs';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { cloneDeep } from 'lodash';
+import { timeFormatter } from '@/common/util';
+import {
+  buildMultipleValueRulesItem,
+  transformSimpleCondition,
+  buildSearchSelectValueBySearchQsCondition,
+} from '@/utils/search';
+import http from '@/http';
+import { BatchDistribution, DResourceType } from '@/views/resource/resource-manage/children/dialog/batch-distribution';
+import { GLOBAL_BIZS_KEY, VendorEnum, VendorMap, FILTER_DATA } from '@/common/constant';
+import { TemplateTypeMap } from '../dialog/template-dialog';
+import { ModelProperty } from '@/model/typings';
 import {
   AUTH_BIZ_CREATE_IAAS_RESOURCE,
   AUTH_BIZ_DELETE_IAAS_RESOURCE,
@@ -66,12 +50,24 @@ import {
   AUTH_DELETE_IAAS_RESOURCE,
   AUTH_UPDATE_IAAS_RESOURCE,
 } from '@/constants/auth-symbols';
+import { MGMT_TYPE_MAP, SecurityGroupManageType } from '@/constants/security-group';
+import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
+import type { DoublePlainObject, FilterType } from '@/typings/resource';
+import { GcpTypeEnum, QueryRuleOPEnum, RulesItem, ISearchCondition } from '@/typings';
+import { showClone } from '../plugin/security-group/show-clone.plugin';
+import { checkVendorInResource } from '../plugin/security-group/check-vendor-in-resource.plugin';
+
+import { Button, InfoBox, Loading, Message, Table, Tag, bkTooltips } from 'bkui-vue';
 import HcmAuth from '@/components/auth/auth.vue';
-
-import useSearchQs from '@/hooks/use-search-qs';
-import { type ISearchCondition } from './typings';
-
-import { transformSimpleCondition, buildSearchValue } from '@/utils/search';
+import SecurityGroupChangeConfirmDialog from '../dialog/security-group/change-confirm.vue';
+import SecurityGroupSingleDeleteDialog from '../dialog/security-group/single-delete.vue';
+import CloneSecurity, { IData, ICloneSecurityProps } from '../dialog/clone-security/index.vue';
+import SecurityGroupAssignDialog from '../dialog/security-group/assign.vue';
+import SecurityGroupUpdateMgmtAttrDialog from '../dialog/security-group/update-mgmt-attr.vue';
+import SyncAccountResource from '@/components/sync-account-resource/index.vue';
+import UnclaimedComp from '../components/security/unclaimed-comp/index.vue';
+import UsageBizValue from '@/views/resource/resource-manage/children/components/security/usage-biz-value.vue';
+import RefreshCell from '../components/security/refresh-cell/index.vue';
 
 const props = defineProps({
   filter: {
@@ -221,8 +217,8 @@ const selectSearchData = computed(() => {
       id: 'cloud_id',
       meta: {
         search: {
-          filterRules(value: string | string[]) {
-            return getQueryOperator(value, 'cloud_id');
+          filterRules(value: string) {
+            return buildMultipleValueRulesItem('cloud_id', value);
           },
         },
       },
@@ -1277,7 +1273,7 @@ watch(
       regionChildren.value = await getAllVendorRegion(value['region'], 'IdKey');
     }
     filter.rules = rules;
-    searchValue.value = buildSearchValue(selectSearchData.value, value);
+    searchValue.value = buildSearchSelectValueBySearchQsCondition(value, selectSearchData.value);
     if (firstTime) {
       // 资源下业务切换资源tab时候，进行强制更新type
       firstTime = false;

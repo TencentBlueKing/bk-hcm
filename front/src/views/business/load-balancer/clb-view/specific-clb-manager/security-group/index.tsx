@@ -4,12 +4,11 @@ import { Alert, Button, Dialog, Exception, Input, Message, Tag } from 'bkui-vue'
 import { BkButtonGroup } from 'bkui-vue/lib/button';
 import CommonSideslider from '@/components/common-sideslider';
 import CommonDialog from '@/components/common-dialog';
-import { useAccountStore, useBusinessStore } from '@/store';
+import { useBusinessStore } from '@/store';
 import { EditLine, Plus, Success } from 'bkui-vue/lib/icon';
 import { useTable } from '@/hooks/useTable/useTable';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
-import { useLoadBalancerStore } from '@/store/loadbalancer';
 import ExpandCard from './expand-card';
 import { QueryRuleOPEnum } from '@/typings';
 import { IDetail } from '@/hooks/useRouteLinkBtn';
@@ -18,6 +17,7 @@ import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import DraggableItem from './draggable-item';
 import { cloneDeep } from 'lodash';
 import { LOAD_BALANCER_PASS_TO_TARGET_LIST } from '@/constants';
+import { useLoadBalancerClbStore } from '@/store/load-balancer/clb';
 
 export enum SecurityRuleDirection {
   in = 'ingress',
@@ -28,15 +28,15 @@ export default defineComponent({
   props: {
     detail: Object as PropType<IDetail>,
     getDetails: Function,
-    updateLb: Function,
     id: String,
+    currentGlobalBusinessId: Number,
   },
   setup(props) {
     const isPassToTarget = ref(false);
     const securityRuleType = ref(SecurityRuleDirection.in);
     const isSideSliderShow = ref(false);
     const businessStore = useBusinessStore();
-    const accountStore = useAccountStore();
+    const loadBalancerClbStore = useLoadBalancerClbStore();
     const { selections, handleSelectionChange, resetSelections } = useSelection();
     const isAllExpand = ref(true);
     const securitySearchVal = ref('');
@@ -50,24 +50,20 @@ export default defineComponent({
     const securityGroups = ref([]);
     const isDialogShow = ref(false);
     const bindedSet = reactive(new Set());
-    const loadBalancerStore = useLoadBalancerStore();
     const el = ref();
     const hanldeSubmit = async () => {
       try {
         isSubmitLoading.value = true;
         await businessStore.bindSecurityToCLB({
-          bk_biz_id: accountStore.bizs,
-          lb_id: loadBalancerStore.currentSelectedTreeNode.id,
+          bk_biz_id: props.currentGlobalBusinessId,
+          lb_id: props.id,
           security_group_ids: securityGroups.value.map(({ id }) => id),
         });
         getBindedSecurityList();
         selectedSecuirtyGroupsSet.value = new Set();
         isSideSliderShow.value = false;
         resetSelections();
-        Message({
-          message: '绑定成功',
-          theme: 'success',
-        });
+        Message({ message: '绑定成功', theme: 'success' });
       } finally {
         isSubmitLoading.value = false;
       }
@@ -189,9 +185,9 @@ export default defineComponent({
         return;
       }
       await businessStore.unbindSecurityToCLB({
-        bk_biz_id: accountStore.bizs,
+        bk_biz_id: props.currentGlobalBusinessId,
         security_group_id,
-        lb_id: loadBalancerStore.currentSelectedTreeNode.id,
+        lb_id: props.id,
       });
       getBindedSecurityList();
       isSideSliderShow.value = false;
@@ -242,8 +238,13 @@ export default defineComponent({
       },
     );
 
+    // 重新加载负载均衡详情
+    const handleReloadLbDetail = () => {
+      props.getDetails(props.id);
+    };
+
     return () => (
-      <div>
+      <div class='clb-security-group-container'>
         <div class={'config-res-wrapper mb24'}>
           {(function () {
             const { label, description } = LOAD_BALANCER_PASS_TO_TARGET_LIST.find(
@@ -339,7 +340,7 @@ export default defineComponent({
                   cloudId={cloud_id}
                   idx={idx + 1}
                   isAllExpand={isAllExpand.value}
-                  vendor={loadBalancerStore.currentSelectedTreeNode.vendor}
+                  vendor={props.detail.vendor}
                   direction={securityRuleType.value}
                   id={id}
                 />
@@ -473,7 +474,12 @@ export default defineComponent({
                   onClick={async () => {
                     isUpdating.value = true;
                     try {
-                      await props.updateLb({ load_balancer_pass_to_target: tmpIsPassToTarget.value });
+                      await loadBalancerClbStore.updateLoadBalancer(
+                        props.detail.vendor,
+                        { id: props.id, load_balancer_pass_to_target: tmpIsPassToTarget.value },
+                        props.currentGlobalBusinessId,
+                      );
+                      handleReloadLbDetail();
                       isConfigDialogShow.value = false;
                     } finally {
                       isUpdating.value = false;
