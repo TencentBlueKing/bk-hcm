@@ -134,3 +134,7 @@ var DefaultPageSQLOption = &PageSQLOption{Sort: SortOption{Sort: "id", IfNotPres
 
 // DefaultRelJoinWithoutField 因为rel表join时，id、creator、created_at 在两张表中都有，该字段需要手动设置。
 var DefaultRelJoinWithoutField = []string{"id", "creator", "created_at"}
+
+// AccountRelJoinWithoutField 因为account_biz_rel表和account表join时，id、bk_biz_id、creator、created_at 在两张表中都有
+// 而且由于历史原因，account的bk_biz_id代表管理业务，account_biz_rel的bk_biz_id代表使用业务，二者同名含义不同，所以需要手动设置。
+var AccountRelJoinWithoutField = []string{"id", "bk_biz_id", "creator", "created_at"}

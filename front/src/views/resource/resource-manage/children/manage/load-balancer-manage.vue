@@ -95,7 +95,7 @@
   >
     <p class="mb16">当前操作负载均衡为：{{ currentOperateItem.name }}</p>
     <p class="mb6">请选择所需分配的目标业务</p>
-    <business-selector v-model="selectedBizId" :authed="true" class="mb32" :auto-select="true"></business-selector>
+    <hcm-form-business :data="accountBizList" v-model="selectedBizId" />
   </bk-dialog>
 
   <template v-if="!syncDialogState.isHidden">
@@ -122,7 +122,6 @@ import { Loading, Table, Button, bkTooltips, Message } from 'bkui-vue';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import { BatchDistribution, DResourceType, DResourceTypeMap } from '../dialog/batch-distribution';
 import BatchOperationDialog from '@/components/batch-operation-dialog';
-import BusinessSelector from '@/components/business-selector/index.vue';
 import Confirm from '@/components/confirm';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import type { DoublePlainObject, FilterType } from '@/typings/resource';
@@ -139,6 +138,7 @@ import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { ResourceTypeEnum, VendorEnum, VendorMap } from '@/common/constant';
 import SyncAccountResource from '@/components/sync-account-resource/index.vue';
 import { CLB_STATUS_MAP, LB_NETWORK_TYPE_MAP } from '@/constants';
+import { useAccountBusiness } from '@/views/resource/resource-manage/hooks/use-account-business';
 
 const props = defineProps({
   filter: {
@@ -150,6 +150,7 @@ const props = defineProps({
 });
 
 const { t } = useI18n();
+// eslint-disable-next-line vue/no-dupe-keys
 const { whereAmI } = useWhereAmI();
 const { searchValue, filter } = useFilter(props, {
   conditionFormatterMapper: {
@@ -330,6 +331,11 @@ const isDialogShow = ref(false);
 const currentOperateItem = ref(null);
 const isDialogBtnLoading = ref(false);
 const selectedBizId = ref(0);
+
+const accountId = computed(() => currentOperateItem.value?.account_id);
+
+const { accountBizList } = useAccountBusiness(accountId);
+
 const handleSingleDistribution = (lb: any) => {
   isDialogShow.value = true;
   currentOperateItem.value = lb;

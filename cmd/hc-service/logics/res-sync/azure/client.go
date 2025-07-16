@@ -32,6 +32,7 @@ type Interface interface {
 	Cvm(kt *kit.Kit, params *SyncBaseParams, opt *SyncCvmOption) (*SyncResult, error)
 	CvmWithRelRes(kt *kit.Kit, params *SyncBaseParams, opt *SyncCvmWithRelResOption) (*SyncResult, error)
 	RemoveCvmDeleteFromCloud(kt *kit.Kit, accountID string, resGroupName string) error
+	CvmCCInfo(kt *kit.Kit, params *SyncCvmCCInfoParams) error
 
 	Disk(kt *kit.Kit, params *SyncBaseParams, opt *SyncDiskOption) (*SyncResult, error)
 	RemoveDiskDeleteFromCloud(kt *kit.Kit, accountID string, resGroupName string) error

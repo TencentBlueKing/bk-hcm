@@ -335,7 +335,7 @@ func getAssignedCvmInfo(kt *kit.Kit, cli *client.ClientSet, ids []string) ([]Pre
 
 	// 2. 根据收集到的账号ID，查询这些账号所属的业务ID。
 	accountIDs = slice.Unique(accountIDs)
-	accountBizIDMap := make(map[string][]int64)
+	accountBizIDMap := make(map[string]map[int64]struct{})
 	for _, batch := range slice.Split(accountIDs, int(core.DefaultMaxPageLimit)) {
 		accountReq := &dataproto.AccountListReq{
 			Filter: tools.ContainersExpression("id", batch),
@@ -350,7 +350,10 @@ func getAssignedCvmInfo(kt *kit.Kit, cli *client.ClientSet, ids []string) ([]Pre
 			return nil, fmt.Errorf("not found account by ids(%v)", batch)
 		}
 		for _, detail := range resp.Details {
-			accountBizIDMap[detail.ID] = detail.BkBizIDs
+			accountBizIDMap[detail.ID] = make(map[int64]struct{})
+			for _, bizID := range detail.BkBizIDs {
+				accountBizIDMap[detail.ID][bizID] = struct{}{}
+			}
 		}
 	}
 
@@ -626,15 +629,15 @@ func GetAssignedHostInfoFromCC(kt *kit.Kit, cmdbCli cmdb.Client, cvmInfos []Prev
 
 // matchAssignedCvm match assigned cvm
 func matchAssignedCvm(cvmInfos []PreviewAssignedCvmInfo, ccHosts map[int64]cmdb.Host,
-	ccBizHostIDsMap map[int64][]int64) (
-	map[string][]PreviewCvmMatchResult, error) {
+	ccBizHostIDsMap map[int64][]int64) (map[string][]PreviewCvmMatchResult, error) {
 
 	result := make(map[string][]PreviewCvmMatchResult, len(cvmInfos))
 
 	for _, cvmInfo := range cvmInfos {
-		for _, bizID := range cvmInfo.AccountBizIDs {
-			hostIDs, ok := ccBizHostIDsMap[bizID]
-			if !ok || len(hostIDs) == 0 {
+		for bizID, hostIDs := range ccBizHostIDsMap {
+			_, isMatchBiz := cvmInfo.AccountBizIDs[bizID]
+			_, isAttachedAllBiz := cvmInfo.AccountBizIDs[constant.AttachedAllBiz]
+			if !isMatchBiz && !isAttachedAllBiz {
 				continue
 			}
 
