@@ -82,7 +82,9 @@ const props = defineProps({
   bkBizId: Number,
 });
 
-const emit = defineEmits(['handleSecrityType', 'edit', 'editTemplate']);
+const emit = defineEmits(['handleSecrityType', 'edit', 'editTemplate', 'route-done']);
+
+let firstTime = true;
 
 // use hooks
 const { t } = useI18n();
@@ -130,6 +132,7 @@ const cloneSecurityData = reactive<ICloneSecurityProps>({
 const templateData = ref([]);
 const searchData = ref([]);
 const searchValue = ref([]);
+const regionChildren = ref([]);
 
 const filter = reactive<any>(cloneDeep(props.filter));
 
@@ -142,6 +145,7 @@ const selectSearchData = computed(() => {
           name: t('使用业务'),
           id: 'usage_biz_id',
           async: false,
+          type: 'business',
           children: businessGlobalStore.businessFullList.map(({ id, name }) => ({ id, name })),
         },
         {
@@ -159,12 +163,14 @@ const selectSearchData = computed(() => {
           name: t('管理业务'),
           id: 'mgmt_biz_id',
           async: false,
+          type: 'business',
           children: businessGlobalStore.businessFullList.map(({ id, name }) => ({ id, name })),
         },
         {
           name: t('地域'),
           id: 'region',
           async: true,
+          children: asyncRegionChildren.value.map(({ id, name }) => ({ id, name })),
         },
       ],
     },
@@ -181,6 +187,7 @@ const selectSearchData = computed(() => {
 
   return [...baseSearchData, ...map[activeType.value].searchData];
 });
+const asyncRegionChildren = computed(() => regionChildren.value);
 
 const searchQs = useSearchQs({ key: 'filter', properties: selectSearchData });
 
@@ -1023,8 +1030,6 @@ watch(
   () => activeType.value,
   (v) => {
     fetchUrl.value = URL_MAP[v] || '';
-
-    searchValue.value = [];
     filter.rules = [];
     resetSelections();
     // 清空刷新行key，避免切换tab时只有一行有loading效果
@@ -1213,17 +1218,27 @@ watch(
 );
 watch(
   () => route.query,
-  (query) => {
+  async (query) => {
     const value = searchQs.get(query);
+    // 是否有地域，存在的话需要查询一遍接口拿name值
+    const hasRegion = Object.hasOwn(value, 'region');
     const { rules = [] } = transformSimpleCondition(value, selectSearchData.value);
     rules.forEach((rule: RulesItem) => {
       rule.op = getQueryOperator(rule.field, rule.value);
     });
+    if (hasRegion) {
+      regionChildren.value = await getAllVendorRegion(value['region'], 'dataIdKey');
+    }
     filter.rules = rules;
+    searchValue.value = buildSearchValue(selectSearchData.value, value);
+    if (firstTime) {
+      // 资源下业务切换资源tab时候，进行强制更新type
+      firstTime = false;
+      emit('route-done');
+    }
   },
   {
     deep: true,
-    immediate: true,
   },
 );
 watch(
@@ -1245,17 +1260,9 @@ watch(
 );
 watch(
   searchValue,
-  (val) => {
+  () => {
     // 清空刷新行key，避免切换tab时只有一行有loading效果
     refreshRowKeySet.value.clear();
-    const routeVal: ISearchCondition = {};
-    val.forEach((item) => {
-      const { id, values } = item;
-      if (!Object.hasOwn(routeVal, id)) routeVal[id] = [];
-      routeVal[id].push(...values.map(({ id }: { id: string | number }) => id));
-    });
-    // 放到下次循环中，因为这次路由还未改变
-    setTimeout(() => searchQs.set(routeVal, false));
   },
   { deep: true },
 );
@@ -1264,8 +1271,18 @@ onMounted(() => {
   const value = Object.keys(searchQs.get(route.query))?.length
     ? searchQs.get(route.query)
     : { mgmt_type: ['biz', 'unknown'] };
-  searchValue.value = buildSearchValue(selectSearchData.value, value);
+  searchQs.set(value);
 });
+
+const handleUpdate = (val: [{ id: any; values: any }]) => {
+  const routeVal: ISearchCondition = {};
+  val.forEach((item: { id: any; values: any }) => {
+    const { id, values } = item;
+    if (!Object.hasOwn(routeVal, id)) routeVal[id] = [];
+    routeVal[id].push(...values.map(({ id }: { id: string | number }) => id));
+  });
+  searchQs.set(routeVal);
+};
 
 defineExpose({ fetchComponentsData });
 </script>
@@ -1324,7 +1341,8 @@ defineExpose({ fetchComponentsData });
         clearable
         :conditions="[]"
         :data="selectSearchData"
-        v-model="searchValue"
+        :model-value="searchValue"
+        @update:model-value="handleUpdate"
         :get-menu-list="getMenuList"
         value-behavior="need-key"
       />

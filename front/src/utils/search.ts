@@ -13,7 +13,6 @@ import {
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
-import { isNumeric } from '@/utils';
 
 dayjs.extend(isoWeek);
 
@@ -68,8 +67,7 @@ export const convertValue = (
   if (formatter) {
     return formatter(value);
   }
-
-  if (['number', 'business'].includes(type) || isNumeric(value)) {
+  if (['number', 'business'].includes(type)) {
     if (Array.isArray(value)) {
       return value.map((val) => Number(val));
     }

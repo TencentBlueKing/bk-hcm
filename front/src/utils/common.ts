@@ -224,10 +224,6 @@ const isRange = (range: string) => {
   return (isIP(startIP, 4) && isIP(endIP, 4)) || (isIP(startIP, 6) && isIP(endIP, 6));
 };
 
-export function isNumeric(str: any) {
-  return !isNaN(str) && !isNaN(parseFloat(str));
-}
-
 /**
  * 从文本（单个端口、多个离散端口、连续端口、所有端口）中解析出协议端口和备注
  * @param text 单个端口、多个离散端口、连续端口、所有端口的协议端口文本

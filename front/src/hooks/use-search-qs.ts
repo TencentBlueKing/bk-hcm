@@ -19,13 +19,12 @@ export default function useSearchQs({
   forceUpdate = true,
   resetPage = true,
 }: useSearchQsParamsType) {
-  const set = (value: Record<string, string | number | string[] | number[]>, allReplace = true) => {
+  const set = (value: Record<string, string | number | string[] | number[]>) => {
     const queryVal = qs.stringify(value, {
       arrayFormat: 'comma',
       encode: false,
       allowEmptyArrays: true,
     });
-    if (!allReplace) return routeQuery.set(key, queryVal, forceUpdate);
     const updateQuery = { [key]: queryVal };
     if (resetPage) {
       updateQuery.page = undefined;
