@@ -278,7 +278,7 @@ func (l *Layer7ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit, curDetail 
 		return err
 	}
 
-	cvm, err := validateCvmExist(kt, l.dataServiceCli, curDetail.RsIp, l.vendor, l.bkBizID, l.accountID, lb,
+	cvm, err := validateCvmExist(kt, l.dataServiceCli, curDetail.RsIp, lb,
 		isCrossRegionV1, isCrossRegionV2, lbTargetRegion)
 	if err != nil {
 		curDetail.Status.SetNotExecutable()

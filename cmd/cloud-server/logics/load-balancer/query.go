@@ -298,13 +298,12 @@ func getCvmWithoutVpc(kt *kit.Kit, cli *dataservice.Client, ip string, vendor en
 
 // validateCvmExist 导入新RS前, 校验云主机是否存在
 // 跨域1.0如果没找到相同的vpc下的主机，会进行报错
-func validateCvmExist(kt *kit.Kit, dataServiceCli *dataservice.Client, rsIP string, vendor enumor.Vendor,
-	bkBizID int64, accountID string, lb corelb.LoadBalancerRaw, isCrossRegionV1, isCrossRegionV2 bool,
-	targetCloudVpcID string) (*corecvm.BaseCvm, error) {
+func validateCvmExist(kt *kit.Kit, dataServiceCli *dataservice.Client, rsIP string, lb corelb.LoadBalancerRaw,
+	isCrossRegionV1, isCrossRegionV2 bool, targetCloudVpcID string) (*corecvm.BaseCvm, error) {
 
 	var cvm *corecvm.BaseCvm
 	var err error
-	cvmList, err := getCvmWithoutVpc(kt, dataServiceCli, rsIP, vendor, bkBizID, accountID)
+	cvmList, err := getCvmWithoutVpc(kt, dataServiceCli, rsIP, lb.Vendor, lb.BkBizID, lb.AccountID)
 	if err != nil {
 		logs.Errorf("get cvm without vpc failed, ip: %s, err: %v, rid: %s", rsIP, err, kt.Rid)
 		return nil, err

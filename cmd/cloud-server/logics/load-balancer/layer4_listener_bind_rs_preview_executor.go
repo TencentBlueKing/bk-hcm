@@ -272,7 +272,7 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit, curDetail 
 		logs.Errorf("parse snap info for tcloud lb extension failed, err: %v, rid: %s", err, kt.Rid)
 		return err
 	}
-	cvm, err := validateCvmExist(kt, l.dataServiceCli, curDetail.RsIp, l.vendor, l.bkBizID, l.accountID, lb,
+	cvm, err := validateCvmExist(kt, l.dataServiceCli, curDetail.RsIp, lb,
 		isCrossRegionV1, isCrossRegionV2, lbTargetRegion)
 	if err != nil {
 		curDetail.Status.SetNotExecutable()
