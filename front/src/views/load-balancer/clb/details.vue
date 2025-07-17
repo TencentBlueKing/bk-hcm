@@ -97,7 +97,7 @@ onMounted(() => {
       type="card-grid"
       @change="handleTabChange"
     >
-      <bk-tab-panel v-for="tab in tabs" :key="tab.name" :label="tab.label" :name="tab.name">
+      <bk-tab-panel v-for="tab in tabs" :key="tab.name" :label="tab.label" :name="tab.name" render-directive="if">
         <component :is="tab.component" :lb-id="route.params.id" :details="details"></component>
       </bk-tab-panel>
     </bk-tab>
