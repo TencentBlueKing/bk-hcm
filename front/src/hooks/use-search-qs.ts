@@ -25,6 +25,7 @@ export default function useSearchQs({
       encode: false,
       allowEmptyArrays: true,
     });
+
     const updateQuery = { [key]: queryVal };
     if (resetPage) {
       updateQuery.page = undefined;
