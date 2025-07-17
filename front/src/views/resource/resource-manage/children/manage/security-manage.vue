@@ -5,6 +5,7 @@ import type {
   FilterType,
 } from '@/typings/resource';
 import { GcpTypeEnum, QueryRuleOPEnum, RulesItem } from '@/typings';
+import { ModelProperty } from '@/model/typings';
 import { Button, InfoBox, Loading, Message, Table, Tag, bkTooltips } from 'bkui-vue';
 import { useResourceStore, useAccountStore } from '@/store';
 import {
@@ -137,7 +138,7 @@ const regionChildren = ref([]);
 const filter = reactive<any>(cloneDeep(props.filter));
 
 const selectSearchData = computed(() => {
-  const map: Record<string, { idName: string; searchData: ISearchItem[] }> = {
+  const map: Record<string, { idName: string; searchData: ISearchItem[] & ModelProperty[] }> = {
     group: {
       idName: t('安全组ID'),
       searchData: [
@@ -147,17 +148,32 @@ const selectSearchData = computed(() => {
           async: false,
           type: 'business',
           children: businessGlobalStore.businessFullList.map(({ id, name }) => ({ id, name })),
+          meta: {
+            search: {
+              filterRules(value: unknown) {
+                return getQueryOperator(value, 'usage_biz_id');
+              },
+            },
+          },
         },
         {
           name: t('管理类型'),
           id: 'mgmt_type',
           async: false,
+          type: 'string',
           children: [
             { id: SecurityGroupManageType.BIZ, name: t('业务管理') },
             { id: SecurityGroupManageType.PLATFORM, name: t('平台管理') },
             { id: 'unknown', name: t('未确认') },
           ],
           multiple: true,
+          meta: {
+            search: {
+              filterRules(value: unknown) {
+                return getQueryOperator(value, 'mgmt_type');
+              },
+            },
+          },
         },
         {
           name: t('管理业务'),
@@ -165,12 +181,27 @@ const selectSearchData = computed(() => {
           async: false,
           type: 'business',
           children: businessGlobalStore.businessFullList.map(({ id, name }) => ({ id, name })),
+          meta: {
+            search: {
+              filterRules(value: unknown) {
+                return getQueryOperator(value, 'mgmt_biz_id');
+              },
+            },
+          },
         },
         {
           name: t('地域'),
           id: 'region',
+          type: 'string',
           async: true,
           children: asyncRegionChildren.value.map(({ id, name }) => ({ id, name })),
+          meta: {
+            search: {
+              filterRules(value: unknown) {
+                return getQueryOperator(value, 'region');
+              },
+            },
+          },
         },
       ],
     },
@@ -183,7 +214,20 @@ const selectSearchData = computed(() => {
       searchData: [],
     },
   };
-  const baseSearchData = [{ name: map[activeType.value].idName, id: 'cloud_id' }, ...searchData.value];
+  const baseSearchData = [
+    {
+      name: map[activeType.value].idName,
+      id: 'cloud_id',
+      meta: {
+        search: {
+          filterRules(value: unknown) {
+            return getQueryOperator(value, 'cloud_id');
+          },
+        },
+      },
+    },
+    ...searchData.value,
+  ];
 
   return [...baseSearchData, ...map[activeType.value].searchData];
 });
@@ -208,11 +252,13 @@ const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, ha
     },
   );
 
-const getQueryOperator = (field: string, value: unknown): QueryRuleOPEnum => {
-  if (field === 'cloud_vpc_ids') return QueryRuleOPEnum.JSON_CONTAINS;
-  if (Array.isArray(value)) return QueryRuleOPEnum.IN;
-  if (typeof value === 'number' || ['vendor', 'mgmt_type'].includes(field)) return QueryRuleOPEnum.EQ;
-  return QueryRuleOPEnum.CS;
+const getQueryOperator = (value: any, field: string) => {
+  let op = QueryRuleOPEnum.CS;
+  const result: RulesItem = { op: QueryRuleOPEnum.OR, rules: [] };
+  if (Array.isArray(value)) op = QueryRuleOPEnum.IN;
+  else if (typeof value === 'number' || ['vendor', 'mgmt_type'].includes(field)) op = QueryRuleOPEnum.EQ;
+  result.rules = [{ op, value, field }];
+  return result;
 };
 
 // 异步加载安全组字段：关联资源、规则数、负责人信息
@@ -1223,11 +1269,8 @@ watch(
     // 是否有地域，存在的话需要查询一遍接口拿name值
     const hasRegion = Object.hasOwn(value, 'region');
     const { rules = [] } = transformSimpleCondition(value, selectSearchData.value);
-    rules.forEach((rule: RulesItem) => {
-      rule.op = getQueryOperator(rule.field, rule.value);
-    });
     if (hasRegion) {
-      regionChildren.value = await getAllVendorRegion(value['region'], 'dataIdKey');
+      regionChildren.value = await getAllVendorRegion(value['region'], 'IdKey');
     }
     filter.rules = rules;
     searchValue.value = buildSearchValue(selectSearchData.value, value);
@@ -1245,12 +1288,12 @@ watch(
   () => accountStore.accountList, // 设置云账号筛选所需数据
   (val) => {
     if (!val) return;
-    val.length &&
-      FILTER_DATA.forEach((e) => {
-        if (e.id === 'account_id') {
-          e.children = val;
-        }
-      });
+    FILTER_DATA.forEach((e) => {
+      if (e.id === 'account_id') {
+        e.children = val;
+      }
+      e.meta.search.filterRules = (value: any) => getQueryOperator(value, e.id);
+    });
     searchData.value = FILTER_DATA;
   },
   {

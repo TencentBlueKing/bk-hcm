@@ -67,6 +67,7 @@ export const convertValue = (
   if (formatter) {
     return formatter(value);
   }
+
   if (['number', 'business'].includes(type)) {
     if (Array.isArray(value)) {
       return value.map((val) => Number(val));

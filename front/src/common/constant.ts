@@ -195,17 +195,32 @@ export const FILTER_DATA = [
   {
     name: '名称',
     id: 'name',
+    meta: {
+      search: {
+        filterRules: () => ({}),
+      },
+    },
   },
   {
     name: '云厂商',
     id: 'vendor',
     children: VENDORS,
     async: false,
+    meta: {
+      search: {
+        filterRules: () => ({}),
+      },
+    },
   },
   {
     name: '云账号ID',
     id: 'account_id',
     children: [],
+    meta: {
+      search: {
+        filterRules: () => ({}),
+      },
+    },
   },
   // {
   //   name: '状态',

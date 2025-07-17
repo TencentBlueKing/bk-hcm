@@ -7,7 +7,6 @@ import { ResourceTypeEnum } from '@/common/resource-constant';
 import { isChinese } from '@/language/i18n';
 import { getRegionName } from '@pluginHandler/region-selector';
 import rollRequest from '@blueking/roll-request';
-import { otherCloud, otherCloudIDName } from '@/store/plugin/region.plugin';
 
 export interface IRegionItem {
   id: string;
@@ -27,35 +26,34 @@ export const useRegionStore = defineStore('region', () => {
   const regionListLoading = ref(false);
   const cache = new Map();
   const requestQueue = new Map();
-  const regionIDName = {
+  const vendorRegionkeys = {
     [VendorEnum.TCLOUD]: {
-      dataIdKey: 'region_id',
-      dataNameKey: isChinese ? 'region_name' : 'display_name',
+      IdKey: 'region_id',
+      NameKey: isChinese ? 'region_name' : 'display_name',
     },
     [VendorEnum.AZURE]: {
-      dataIdKey: 'name',
-      dataNameKey: 'display_name',
+      IdKey: 'name',
+      NameKey: 'display_name',
     },
     [VendorEnum.HUAWEI]: {
-      dataIdKey: 'region_id',
-      dataNameKey: isChinese ? 'locales_zh_cn' : 'region_id',
+      IdKey: 'region_id',
+      NameKey: isChinese ? 'locales_zh_cn' : 'region_id',
     },
     [VendorEnum.AWS]: {
-      dataIdKey: 'region_id',
-      dataNameKey: 'region_name',
+      IdKey: 'region_id',
+      NameKey: 'region_name',
     },
     [VendorEnum.GCP]: {
-      dataIdKey: 'region_id',
-      dataNameKey: 'region_name',
+      IdKey: 'region_id',
+      NameKey: 'region_name',
     },
-    ...otherCloudIDName,
   };
 
-  const getRegionKey = (vendor: string) => regionIDName[vendor];
+  const getRegionKey = (vendor: string) => vendorRegionkeys[vendor];
 
   const getRegionList = async (params: IRegionListParams) => {
     const { vendor, resourceType, rules = [], limit = 500 } = params;
-    const { dataIdKey, dataNameKey } = getRegionKey(vendor);
+    const { IdKey, NameKey } = getRegionKey(vendor);
     const key = JSON.stringify(params);
 
     // 检查缓存
@@ -122,8 +120,8 @@ export const useRegionStore = defineStore('region', () => {
             { limit, listGetter: (res) => res.data.details, countGetter: (res) => res.data.count },
           )
         ).map((item: any) => ({
-          id: item[dataIdKey],
-          name: getRegionName(isChinese, vendor as VendorEnum, item[dataIdKey], item[dataNameKey]) || item[dataIdKey],
+          id: item[IdKey],
+          name: getRegionName(isChinese, vendor as VendorEnum, item[IdKey], item[NameKey]) || item[IdKey],
         }));
 
         // 更新缓存
@@ -142,19 +140,15 @@ export const useRegionStore = defineStore('region', () => {
     return requestPromise;
   };
 
-  const getAllVendorRegion = async (value: string | string[], key: 'dataNameKey' | 'dataIdKey' = 'dataNameKey') => {
+  const getAllVendorRegion = async (value: string | string[], key: 'NameKey' | 'IdKey' = 'NameKey') => {
     if (!value) return [];
     const op = Array.isArray(value) ? QueryRuleOPEnum.IN : QueryRuleOPEnum.CS;
-    const cloudsRules: { [cloud: string]: Array<RulesItem> } = {
+    const cloudsRules: { [K in VendorEnum]?: RulesItem[] } = {
       [VendorEnum.TCLOUD]: [{ field: getRegionKey(VendorEnum.TCLOUD)[key], op, value }],
       [VendorEnum.HUAWEI]: [{ field: getRegionKey(VendorEnum.HUAWEI)[key], op, value }],
       [VendorEnum.AZURE]: [{ field: getRegionKey(VendorEnum.AZURE)[key], op, value }],
       [VendorEnum.AWS]: [{ field: getRegionKey(VendorEnum.AWS)[key], op, value }],
       [VendorEnum.GCP]: [{ field: getRegionKey(VendorEnum.GCP)[key], op, value }],
-      ...otherCloud.reduce((acc, cur) => {
-        acc[cur] = [{ field: getRegionKey(cur)[key], op, value }];
-        return acc;
-      }, {}),
     };
 
     return (
