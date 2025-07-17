@@ -184,9 +184,21 @@ func (cli *client) getCloudLbSgBinding(kt *kit.Kit, params *SyncBaseParams, opt 
 		return make(map[string]string), make(map[string][]string), nil
 	}
 
+	// 2.获取本地id 映射
 	allSgCloudIDs = slice.Unique(allSgCloudIDs)
-	// 2. 主动同步一次安全组
-	for _, parts := range slice.Split(allSgCloudIDs, constant.CloudResourceSyncMaxLimit) {
+	cloudSgMap, err := cli.getSGCloudIDToLocalIDMap(kt, allSgCloudIDs)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// 3. 找到未同步的安全组，并主动同步一次
+	notFoundSgCloudIDs := make([]string, 0)
+	for _, id := range allSgCloudIDs {
+		if _, ok := cloudSgMap[id]; !ok {
+			notFoundSgCloudIDs = append(notFoundSgCloudIDs, id)
+		}
+	}
+	for _, parts := range slice.Split(notFoundSgCloudIDs, constant.CloudResourceSyncMaxLimit) {
 		syncParam := &SyncBaseParams{
 			AccountID: params.AccountID,
 			Region:    params.Region,
@@ -199,10 +211,13 @@ func (cli *client) getCloudLbSgBinding(kt *kit.Kit, params *SyncBaseParams, opt 
 		}
 	}
 
-	// 3. 获取本地id 映射
-	cloudSgMap, err := cli.getSGCloudIDToLocalIDMap(kt, allSgCloudIDs)
+	// 3. 再次获取本地id 映射
+	tmpSgMap, err := cli.getSGCloudIDToLocalIDMap(kt, notFoundSgCloudIDs)
 	if err != nil {
 		return nil, nil, err
+	}
+	for key, value := range tmpSgMap {
+		cloudSgMap[key] = value
 	}
 	return cloudSgMap, lbSgCloudMap, nil
 }
