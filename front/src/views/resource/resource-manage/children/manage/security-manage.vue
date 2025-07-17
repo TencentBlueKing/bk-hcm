@@ -150,7 +150,7 @@ const selectSearchData = computed(() => {
           children: businessGlobalStore.businessFullList.map(({ id, name }) => ({ id, name })),
           meta: {
             search: {
-              filterRules(value: unknown) {
+              filterRules(value: number | number[]) {
                 return getQueryOperator(value, 'usage_biz_id');
               },
             },
@@ -169,7 +169,7 @@ const selectSearchData = computed(() => {
           multiple: true,
           meta: {
             search: {
-              filterRules(value: unknown) {
+              filterRules(value: string | string[]) {
                 return getQueryOperator(value, 'mgmt_type');
               },
             },
@@ -183,7 +183,7 @@ const selectSearchData = computed(() => {
           children: businessGlobalStore.businessFullList.map(({ id, name }) => ({ id, name })),
           meta: {
             search: {
-              filterRules(value: unknown) {
+              filterRules(value: number | number[]) {
                 return getQueryOperator(value, 'mgmt_biz_id');
               },
             },
@@ -197,7 +197,7 @@ const selectSearchData = computed(() => {
           children: asyncRegionChildren.value.map(({ id, name }) => ({ id, name })),
           meta: {
             search: {
-              filterRules(value: unknown) {
+              filterRules(value: string | string[]) {
                 return getQueryOperator(value, 'region');
               },
             },
@@ -220,7 +220,7 @@ const selectSearchData = computed(() => {
       id: 'cloud_id',
       meta: {
         search: {
-          filterRules(value: unknown) {
+          filterRules(value: string | string[]) {
             return getQueryOperator(value, 'cloud_id');
           },
         },
@@ -252,11 +252,14 @@ const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, ha
     },
   );
 
-const getQueryOperator = (value: any, field: string) => {
+const getQueryOperator = (value: string | number | string[] | number[], field: string) => {
   let op = QueryRuleOPEnum.CS;
   const result: RulesItem = { op: QueryRuleOPEnum.OR, rules: [] };
-  if (Array.isArray(value)) op = QueryRuleOPEnum.IN;
-  else if (typeof value === 'number' || ['vendor', 'mgmt_type'].includes(field)) op = QueryRuleOPEnum.EQ;
+  if (Array.isArray(value)) {
+    op = QueryRuleOPEnum.IN;
+  } else if (typeof value === 'number' || ['vendor', 'mgmt_type'].includes(field)) {
+    op = QueryRuleOPEnum.EQ;
+  }
   result.rules = [{ op, value, field }];
   return result;
 };
@@ -1292,7 +1295,7 @@ watch(
       if (e.id === 'account_id') {
         e.children = val;
       }
-      e.meta.search.filterRules = (value: any) => getQueryOperator(value, e.id);
+      e.meta.search.filterRules = (value: string | string[]) => getQueryOperator(value, e.id);
     });
     searchData.value = FILTER_DATA;
   },
