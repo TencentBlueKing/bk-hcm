@@ -575,6 +575,12 @@ func (svc *subnetSvc) AssignSubnetToBiz(cts *rest.Contexts) (interface{}, error)
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
 
+	err := common.ValidateTargetBizID(cts.Kit, svc.client.DataService(), enumor.SubnetCloudResType, req.SubnetIDs,
+		req.BkBizID)
+	if err != nil {
+		return nil, err
+	}
+
 	// authorize
 	basicInfoReq := cloud.ListResourceBasicInfoReq{
 		ResourceType: enumor.SubnetCloudResType,

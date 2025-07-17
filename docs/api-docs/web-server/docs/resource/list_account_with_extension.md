@@ -159,6 +159,10 @@ POST /api/v1/cloud/accounts/extensions/list
         "price": "",
         "price_unit": "",
         "memo": "account create",
+        "bk_biz_id": 310,
+        "usage_biz_ids": [
+          310
+        ],
         "bk_biz_ids": [
           310
         ],
@@ -207,7 +211,9 @@ POST /api/v1/cloud/accounts/extensions/list
 | price                | string       | 余额                                                               |
 | price_unit           | string       | 余额单位                                                             |
 | memo                 | string       | 备注                                                               |
-| bk_biz_ids           | int64 array  | 账号关联的业务ID列表                                                      |
+| bk_biz_id            | int64        | 管理业务                                                             |
+| usage_biz_ids        | int64 array  | 使用业务                                                             |
+| bk_biz_ids           | int64 array  | 旧的业务字段，用于兼容旧的api，值与使用业务的完全相同，不推荐使用                               |
 | recycle_reserve_time | int          | 回收站资源的保留时长，单位小时                                                  |
 | creator              | string       | 创建者                                                              |
 | reviser              | string       | 更新者                                                              |

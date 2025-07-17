@@ -27,19 +27,22 @@ import (
 
 // BaseAccount 云账号
 type BaseAccount struct {
-	ID                 string                 `json:"id"`
-	Vendor             enumor.Vendor          `json:"vendor"`
-	Name               string                 `json:"name"`
-	Managers           []string               `json:"managers"`
-	Type               enumor.AccountType     `json:"type"`
-	Site               enumor.AccountSiteType `json:"site"`
-	Price              string                 `json:"price"`
-	PriceUnit          string                 `json:"price_unit"`
-	Memo               *string                `json:"memo"`
-	BkBizIDs           []int64                `json:"bk_biz_ids"`
-	SyncStatus         string                 `json:"sync_status"`
-	SyncFailedReason   string                 `json:"sync_failed_reason"`
-	RecycleReserveTime int                    `json:"recycle_reserve_time"`
+	ID          string                 `json:"id"`
+	Vendor      enumor.Vendor          `json:"vendor"`
+	Name        string                 `json:"name"`
+	Managers    []string               `json:"managers"`
+	Type        enumor.AccountType     `json:"type"`
+	Site        enumor.AccountSiteType `json:"site"`
+	Price       string                 `json:"price"`
+	PriceUnit   string                 `json:"price_unit"`
+	Memo        *string                `json:"memo"`
+	BkBizID     int64                  `json:"bk_biz_id"`
+	UsageBizIDs []int64                `json:"usage_biz_ids"`
+	// 旧的业务字段，用于兼容旧的api
+	BkBizIDs           []int64 `json:"bk_biz_ids"`
+	SyncStatus         string  `json:"sync_status"`
+	SyncFailedReason   string  `json:"sync_failed_reason"`
+	RecycleReserveTime int     `json:"recycle_reserve_time"`
 	core.Revision      `json:",inline"`
 }
 

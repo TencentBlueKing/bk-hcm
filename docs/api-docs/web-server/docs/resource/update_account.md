@@ -10,15 +10,16 @@ PATCH /api/v1/cloud/accounts/{account_id}
 
 ### 输入参数
 
-| 参数名称                 | 参数类型        | 必选 | 描述              |
-|----------------------|-------------|----|-----------------|
-| account_id           | string      | 是  | 账号ID            |
-| name                 | string      | 否  | 名称              |
-| managers             | string      | 否  | 账号管理者           |
-| memo                 | string      | 否  | 备注              |
-| recycle_reserve_time | int         | 否  | 回收站资源的保留时长，单位小时 |
-| bk_biz_ids           | int64 array | 否  | 业务ID（目前只支持单业务）|
-| extension            | object      | 否  | 混合云差异字段         |
+| 参数名称                | 参数类型        | 必选 | 描述                        |
+|---------------------|-------------|----|---------------------------|
+| account_id          | string      | 是  | 账号ID                      |
+| name                | string      | 否  | 名称                        |
+| managers            | string      | 否  | 账号管理者                     |
+| memo                | string      | 否  | 备注                        |
+| recycle_reserve_time | int         | 否  | 回收站资源的保留时长，单位小时           |
+| bk_biz_id            | int64       | 否  | 管理业务，非资源账号不允许传递该参数        |
+| usage_biz_ids       | int64 array | 否  | 使用业务，非资源账号若填写该字段则数组长度必须为1 |
+| extension           | object      | 否  | 混合云差异字段                   |
 
 #### extension[tcloud]
 
@@ -74,7 +75,8 @@ PATCH /api/v1/cloud/accounts/{account_id}
     "hcm"
   ],
   "memo": "account update",
-  "bk_biz_ids": [
+  "bk_biz_id": 310,
+  "usage_biz_ids": [
     310
   ],
   "extension": {

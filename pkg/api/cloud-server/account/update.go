@@ -22,7 +22,10 @@ package account
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 
+	"hcm/pkg/api/core/cloud"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 )
@@ -173,20 +176,26 @@ func (req *AzureAccountExtensionUpdateReq) IsFull() bool {
 		req.CloudApplicationName != ""
 }
 
+// OtherAccountExtensionUpdateReq ...
+type OtherAccountExtensionUpdateReq struct {
+	// placeholder
+	CloudID     string `json:"cloud_id" validate:"omitempty"`
+	CloudSecKey string `json:"cloud_sec_key" validate:"omitempty"`
+}
+
 // AccountUpdateReq ...
 type AccountUpdateReq struct {
-	Name               string   `json:"name" validate:"omitempty"`
-	Managers           []string `json:"managers" validate:"omitempty,max=5"`
-	Memo               *string  `json:"memo" validate:"omitempty"`
-	RecycleReserveTime int      `json:"recycle_reserve_time" validate:"omitempty"`
-	// Note: 第一期只支持关联一个业务，且不能关联全部业务
-	// BkBizIDs  []int64          `json:"bk_biz_ids" validate:"omitempty"`
-	BkBizIDs  []int64         `json:"bk_biz_ids" validate:"omitempty,len=1,dive,min=1"`
-	Extension json.RawMessage `json:"extension" validate:"omitempty"`
+	Name               string          `json:"name" validate:"omitempty"`
+	Managers           []string        `json:"managers" validate:"omitempty,max=5"`
+	Memo               *string         `json:"memo" validate:"omitempty"`
+	RecycleReserveTime int             `json:"recycle_reserve_time" validate:"omitempty"`
+	BkBizID            int64           `json:"bk_biz_id" validate:"omitempty"`
+	UsageBizIDs        []int64         `json:"usage_biz_ids" validate:"omitempty"`
+	Extension          json.RawMessage `json:"extension" validate:"omitempty"`
 }
 
 // Validate ...
-func (req *AccountUpdateReq) Validate() error {
+func (req *AccountUpdateReq) Validate(accountInfo *cloud.BaseAccount) error {
 	if err := validator.Validate.Struct(req); err != nil {
 		return err
 	}
@@ -196,12 +205,41 @@ func (req *AccountUpdateReq) Validate() error {
 		return err
 	}
 
-	// 业务合法性校验
-	if err := validateBkBizIDs(req.BkBizIDs); err != nil {
+	// 使用业务合法性校验
+	if err := validateUsageBizIDs(req.UsageBizIDs); err != nil {
 		return err
 	}
 
+	// 根据账号类型进一步校验管理业务和使用业务的合法性
+	if err := req.validateBizIDAndUsageBizIDs(accountInfo); err != nil {
+		return err
+	}
 	return nil
+}
+
+func (req *AccountUpdateReq) validateBizIDAndUsageBizIDs(accountInfo *cloud.BaseAccount) error {
+	if accountInfo.Type != enumor.ResourceAccount {
+		return validateNonResAccountBizIDs(req.BkBizID, req.UsageBizIDs)
+	}
+
+	// 确定要使用的 bizID 和 usageBizIDs
+	bizID := req.BkBizID
+	if bizID == 0 {
+		bizID = accountInfo.BkBizID
+	}
+
+	usageBizIDs := req.UsageBizIDs
+	if usageBizIDs == nil {
+		usageBizIDs = accountInfo.UsageBizIDs
+	}
+
+	// 特殊校验：不能设置为 all biz
+	if bizID == constant.AttachedAllBiz {
+		return fmt.Errorf("bk_biz_id can not set all biz")
+	}
+
+	// 统一校验逻辑
+	return validateBizIDInUsageBizIDs(bizID, usageBizIDs)
 }
 
 // AccountCheckByIDReq ...

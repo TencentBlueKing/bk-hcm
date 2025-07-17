@@ -1,9 +1,9 @@
 import { Button, Dialog, Message } from 'bkui-vue';
-import { PropType, defineComponent, ref } from 'vue';
-import BusinessSelector from '@/components/business-selector/index.vue';
+import { PropType, computed, defineComponent, ref } from 'vue';
 import './index.scss';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { useResourceStore } from '@/store';
+import { useAccountBusiness } from '@/views/resource/resource-manage/hooks/use-account-business';
 
 export enum DResourceType {
   cvms = 'cvms',
@@ -92,6 +92,16 @@ export const BatchDistribution = defineComponent({
     const isShow = ref(false);
     const isLoading = ref(false);
     const resourceStore = useResourceStore();
+
+    const hasDiffAccount = computed(() => {
+      const accountSet = new Set();
+      props.selections?.forEach((item) => accountSet.add(item.account_id));
+      return accountSet.size > 1;
+    });
+    const accountId = computed(() => props.selections[0]?.account_id);
+
+    const { accountBizList } = useAccountBusiness(accountId);
+
     const handleConfirm = async () => {
       isLoading.value = true;
       try {
@@ -122,7 +132,9 @@ export const BatchDistribution = defineComponent({
             onClick={() => {
               isShow.value = true;
             }}
-            disabled={!props.selections.length}>
+            v-bk-tooltips={{ content: '所选资源处于不同账号，不允许分配', disabled: !hasDiffAccount.value }}
+            disabled={!props.selections.length || hasDiffAccount.value}
+          >
             批量分配
           </Button>
         ) : null}
@@ -134,18 +146,15 @@ export const BatchDistribution = defineComponent({
           quickClose
           onClosed={() => (isShow.value = false)}
           onConfirm={handleConfirm}
-          isLoading={isLoading.value}>
+          isLoading={isLoading.value}
+        >
           <p class='selected-host-count-tip'>
             已选择
             <span class='selected-host-count'>{props.selections.length}</span>个{DResourceTypeMap[props.type].name}
             ，可选择所需分配的目标业务
           </p>
           <p class='mb6'>目标业务</p>
-          <BusinessSelector
-            v-model={selectedBizId.value}
-            authed={true}
-            class='mb32'
-            auto-select={true}></BusinessSelector>
+          <hcm-form-business data={accountBizList.value} v-model={selectedBizId.value} />
         </Dialog>
       </>
     );

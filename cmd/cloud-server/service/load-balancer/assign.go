@@ -22,6 +22,7 @@ package loadbalancer
 
 import (
 	lblogic "hcm/cmd/cloud-server/logics/load-balancer"
+	"hcm/cmd/cloud-server/service/common"
 	cslb "hcm/pkg/api/cloud-server/load-balancer"
 	dataproto "hcm/pkg/api/data-service/cloud"
 	"hcm/pkg/criteria/enumor"
@@ -40,6 +41,12 @@ func (svc *lbSvc) AssignLbToBiz(cts *rest.Contexts) (any, error) {
 	}
 	if err := req.Validate(); err != nil {
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	err := common.ValidateTargetBizID(cts.Kit, svc.client.DataService(), enumor.LoadBalancerCloudResType, req.LbIDs,
+		req.BkBizID)
+	if err != nil {
+		return nil, err
 	}
 
 	// 权限校验
