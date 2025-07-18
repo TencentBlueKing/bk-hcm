@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0039,HCMVER=v1.8.2
 
     Notes:
     1. 修改`load_balancer`表，增加`sync_time`字段
