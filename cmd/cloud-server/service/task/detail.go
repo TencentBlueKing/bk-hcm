@@ -33,10 +33,6 @@ import (
 
 // ListBizTaskDetail list biz task detail.
 func (svc *service) ListBizTaskDetail(cts *rest.Contexts) (interface{}, error) {
-	return svc.listTaskDetail(cts, handler.ListBizAuthRes)
-}
-
-func (svc *service) listTaskDetail(cts *rest.Contexts, authHandler handler.ListAuthResHandler) (interface{}, error) {
 	req := new(core.ListReq)
 	if err := cts.DecodeInto(req); err != nil {
 		return nil, err
@@ -45,6 +41,12 @@ func (svc *service) listTaskDetail(cts *rest.Contexts, authHandler handler.ListA
 		logs.Errorf("req is invalid, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
 		return nil, errf.NewFromErr(errf.InvalidParameter, err)
 	}
+
+	return svc.listTaskDetail(cts, handler.ListBizAuthRes, req)
+}
+
+func (svc *service) listTaskDetail(cts *rest.Contexts, authHandler handler.ListAuthResHandler, req *core.ListReq) (
+	interface{}, error) {
 
 	expr, noPermFlag, err := authHandler(cts, &handler.ListAuthResOption{
 		Authorizer: svc.authorizer,
@@ -146,4 +148,22 @@ func (svc *service) countTaskDetailState(cts *rest.Contexts, authHandler handler
 	}
 
 	return cloudtask.DetailStateCountResult{Details: details}, nil
+}
+
+// ListBizTaskDetailByCond list biz task detail by cond.
+func (svc *service) ListBizTaskDetailByCond(cts *rest.Contexts) (interface{}, error) {
+	req := new(cloudtask.DetailListByCondReq)
+	if err := cts.DecodeInto(req); err != nil {
+		return nil, err
+	}
+	if err := req.Validate(); err != nil {
+		logs.Errorf("list biz task management cond req is invalid, err: %v, req: %+v, rid: %s", err, req, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	listReq := &core.ListReq{
+		Filter: tools.ContainersExpression("task_management_id", req.TaskManagementIDs),
+		Page:   core.NewDefaultBasePage(),
+	}
+	return svc.listTaskDetail(cts, handler.ListBizAuthRes, listReq)
 }
