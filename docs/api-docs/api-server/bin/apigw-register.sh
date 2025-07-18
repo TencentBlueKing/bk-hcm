@@ -25,7 +25,7 @@ title "fetch apigateway public key"
 apigw-manager.sh fetch_apigw_public_key --gateway-name=${gateway_name} --print > "/tmp/apigateway.pub"
 
 title "releasing"
-call_definition_command_or_exit create_version_and_release_apigw "${definition_file}" --gateway-name=${gateway_name}
+call_definition_command_or_exit create_version_and_release_apigw "${definition_file}" --gateway-name=${gateway_name} --stage=${BK_HCM_STAGE_NAME}
 
 title "grant apigateway permissions"
 call_definition_command_or_exit grant_apigw_permissions "${definition_file}" --gateway-name=${gateway_name}

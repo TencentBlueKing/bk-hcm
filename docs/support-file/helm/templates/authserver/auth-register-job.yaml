@@ -8,7 +8,6 @@ metadata:
     {{- include "common.labels.standard" . | nindent 4 }}
   annotations:
     "helm.sh/hook": post-install,post-upgrade
-    "helm.sh/hook-delete-policy": before-hook-creation
 spec:
   ttlSecondsAfterFinished: 600
   completions: 1
@@ -30,11 +29,13 @@ spec:
             - "-c"
             - |
               /bin/bash <<'EOF'
+              RID=$(cat /proc/sys/kernel/random/uuid)
+              echo "Generated Request ID: $RID"
               res=$(curl -s -X POST \
               -H 'Content-Type:application/json' \
               -H 'X-Bkapi-User-Name:{{ .Values.authRegister.userName }}' \
               -H 'X-Bkapi-App-Code:{{ .Values.appCode }}' \
-              -H 'X-Bkapi-Request-Id:{{ .Values.authRegister.rid }}' \
+              -H "X-Bkapi-Request-Id:$RID" \
               -H 'X-Bk-Tenant-Id:{{ template "bk-hcm.tenantID" . }}' \
               --data '{"host": "{{ template "authserverIngressHost" . }}"}' \
               "http://{{ template "bk-hcm.authserver" . }}/api/v1/auth/init/authcenter"
