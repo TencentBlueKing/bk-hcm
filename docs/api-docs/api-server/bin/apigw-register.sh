@@ -18,14 +18,14 @@ call_command_or_warning migrate apigw
 title "syncing apigateway"
 call_definition_command_or_exit sync_apigw_config "${definition_file}" --gateway-name=${gateway_name}
 call_definition_command_or_exit sync_apigw_stage "${definition_file}" --gateway-name=${gateway_name}
-call_definition_command_or_exit sync_apigw_resources "${resources_file}" --gateway-name=${gateway_name} --delete
+call_definition_command_or_exit sync_apigw_resources "${resources_file}" --gateway-name=${gateway_name}
 call_definition_command_or_exit sync_resource_docs_by_archive "${definition_file}" --gateway-name=${gateway_name} --safe-mode
 
 title "fetch apigateway public key"
 apigw-manager.sh fetch_apigw_public_key --gateway-name=${gateway_name} --print > "/tmp/apigateway.pub"
 
 title "releasing"
-call_definition_command_or_exit create_version_and_release_apigw "${definition_file}" --gateway-name=${gateway_name}
+call_definition_command_or_exit create_version_and_release_apigw "${definition_file}" --gateway-name=${gateway_name} --stage=${BK_HCM_STAGE_NAME}
 
 title "grant apigateway permissions"
 call_definition_command_or_exit grant_apigw_permissions "${definition_file}" --gateway-name=${gateway_name}
