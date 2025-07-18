@@ -24,6 +24,7 @@ import (
 	"fmt"
 
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
+	"hcm/pkg/api/core"
 	taskCore "hcm/pkg/api/core/task"
 	"hcm/pkg/api/data-service/task"
 	"hcm/pkg/api/hc-service/sync"
@@ -35,6 +36,7 @@ import (
 	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/slice"
 )
 
 // ImportExecutor 导入执行器
@@ -164,21 +166,17 @@ func updateTaskDetailState(kt *kit.Kit, cli *dataservice.Client, state enumor.Ta
 	if len(ids) == 0 {
 		return nil
 	}
-	updateItems := make([]task.UpdateTaskDetailField, 0, len(ids))
-	for _, id := range ids {
-		updateItems = append(updateItems, task.UpdateTaskDetailField{
-			ID:     id,
+	for _, batch := range slice.Split(ids, int(core.DefaultMaxPageLimit)) {
+		updateDetailsReq := &task.BatchUpdateTaskDetailReq{
+			IDs:    batch,
 			State:  state,
 			Reason: reason,
-		})
-	}
-	updateDetailsReq := &task.UpdateDetailReq{
-		Items: updateItems,
-	}
-	err := cli.Global.TaskDetail.Update(kt, updateDetailsReq)
-	if err != nil {
-		logs.Errorf("update task detail state failed, req: %v, err: %v, rid: %s", updateDetailsReq, err, kt.Rid)
-		return err
+		}
+		err := cli.Global.TaskDetail.BatchUpdate(kt, updateDetailsReq)
+		if err != nil {
+			logs.Errorf("update task detail state failed, req: %v, err: %v, rid: %s", updateDetailsReq, err, kt.Rid)
+			return err
+		}
 	}
 	return nil
 }

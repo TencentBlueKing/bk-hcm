@@ -25,12 +25,13 @@ import (
 	"strconv"
 	"strings"
 
-	cloudCvm "hcm/pkg/api/core/cloud/cvm"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
+	"hcm/pkg/cc"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/concurrence"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/slice"
 )
@@ -149,58 +150,94 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateWithDB(kt *kit.Kit, cloudI
 		return err
 	}
 
-	for _, detail := range l.details {
-		lb, ok := lbMap[detail.CloudClbID]
-		if !ok {
-			return fmt.Errorf("clb(%s) not exist", detail.CloudClbID)
-		}
-		if _, ok = l.regionIDMap[lb.Region]; !ok {
-			return fmt.Errorf("clb region not match, clb.region: %s, input: %v", lb.Region, l.regionIDMap)
-		}
+	concurrentErr := concurrence.BaseExec(cc.CloudServer().ConcurrentConfig.CLBImportCount, l.details,
+		func(detail *Layer4ListenerBindRSDetail) error {
 
-		ipSet := append(lb.PrivateIPv4Addresses, lb.PrivateIPv6Addresses...)
-		ipSet = append(ipSet, lb.PublicIPv4Addresses...)
-		ipSet = append(ipSet, lb.PublicIPv6Addresses...)
-		if detail.ClbVipDomain != lb.Domain && !slice.IsItemInSlice(ipSet, detail.ClbVipDomain) {
-			detail.Status.SetNotExecutable()
-			detail.ValidateResult = append(detail.ValidateResult,
-				fmt.Sprintf("clb vip(%s)not match", detail.ClbVipDomain))
-			continue
-		}
-		detail.RegionID = lb.Region
+			lb, ok := lbMap[detail.CloudClbID]
+			if !ok {
+				return fmt.Errorf("clb(%s) not exist", detail.CloudClbID)
+			}
+			if _, ok = l.regionIDMap[lb.Region]; !ok {
+				return fmt.Errorf("clb region not match, clb.region: %s, input: %v", lb.Region, l.regionIDMap)
+			}
 
-		lblCloudID, err := l.validateListener(kt, detail)
-		if err != nil {
-			logs.Errorf("validate listener failed, err: %v, rid: %s", err, kt.Rid)
-			return err
-		}
+			ipSet := append(lb.PrivateIPv4Addresses, lb.PrivateIPv6Addresses...)
+			ipSet = append(ipSet, lb.PublicIPv4Addresses...)
+			ipSet = append(ipSet, lb.PublicIPv6Addresses...)
+			if detail.ClbVipDomain != lb.Domain && !slice.IsItemInSlice(ipSet, detail.ClbVipDomain) {
+				detail.Status.SetNotExecutable()
+				detail.ValidateResult = append(detail.ValidateResult,
+					fmt.Sprintf("clb vip(%s)not match", detail.ClbVipDomain))
+				return nil
+			}
+			detail.RegionID = lb.Region
 
-		instID, err := l.validateRS(kt, detail, lb.ID)
-		if err != nil {
-			logs.Errorf("validate rs failed, err: %v, rid: %s", err, kt.Rid)
-			return err
-		}
+			err := l.validateListener(kt, detail)
+			if err != nil {
+				logs.Errorf("validate listener failed, err: %v, rid: %s", err, kt.Rid)
+				return err
+			}
 
-		if err = l.validateTarget(kt, lb.ID, detail, lblCloudID, instID, detail.RsPort[0]); err != nil {
-			logs.Errorf("validate target failed, err: %v, rid: %s", err, kt.Rid)
-			return err
-		}
+			err = l.validateRS(kt, detail, lb)
+			if err != nil {
+				logs.Errorf("validate rs failed, err: %v, rid: %s", err, kt.Rid)
+				return err
+			}
+
+			return nil
+		})
+	if concurrentErr != nil {
+		logs.Errorf("validate with db failed, err: %v, rid: %s", concurrentErr, kt.Rid)
+		return err
+	}
+
+	if err = l.validateDetailsTarget(kt); err != nil {
+		logs.Errorf("validate details target failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+func (l *Layer4ListenerBindRSPreviewExecutor) validateDetailsTarget(kt *kit.Kit) error {
+
+	lblCloudIDs := slice.Map(l.details, func(detail *Layer4ListenerBindRSDetail) string {
+		return detail.listenerCloudID
+	})
+	// 在四层监听器中, ruleCloudID等于 listenerCloudID
+	ruleCloudIDsToTGIDMap, err := getTargetGroupByRuleCloudIDs(kt, l.dataServiceCli, lblCloudIDs)
+	if err != nil {
+		logs.Errorf("get target group by rule cloud ids failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+	concurrentErr := concurrence.BaseExec(cc.CloudServer().ConcurrentConfig.CLBImportCount, l.details,
+		func(detail *Layer4ListenerBindRSDetail) error {
+			if err = l.validateTarget(kt, detail, ruleCloudIDsToTGIDMap); err != nil {
+				logs.Errorf("validate target failed, err: %v, rid: %s", err, kt.Rid)
+				return err
+			}
+			return nil
+		})
+	if concurrentErr != nil {
+		logs.Errorf("validate details target failed, err: %v, rid: %s", concurrentErr, kt.Rid)
+		return err
 	}
 	return nil
 }
 
 // validateTarget 校验RS是否已经绑定到对应的监听器中, 如果已经绑定则校验权重是否一致. 没有绑定则直接返回.
-func (l *Layer4ListenerBindRSPreviewExecutor) validateTarget(kt *kit.Kit, lbID string,
-	detail *Layer4ListenerBindRSDetail, lblCloudID, instID string, port int) error {
+func (l *Layer4ListenerBindRSPreviewExecutor) validateTarget(kt *kit.Kit,
+	detail *Layer4ListenerBindRSDetail, ruleCloudIDsToTGIDMap map[string]string) error {
 
-	if lblCloudID == "" || instID == "" {
+	if detail.listenerCloudID == "" || detail.cvm == nil {
 		return nil
 	}
-	tgID, err := getTargetGroupID(kt, l.dataServiceCli, lbID, lblCloudID)
-	if err != nil {
-		return err
+	tgID, ok := ruleCloudIDsToTGIDMap[detail.listenerCloudID]
+	if !ok {
+		return fmt.Errorf("target group not found for listener cloud id: %s", detail.listenerCloudID)
 	}
-	target, err := getTarget(kt, l.dataServiceCli, tgID, instID, port)
+	detail.targetGroupID = tgID
+	target, err := getTarget(kt, l.dataServiceCli, tgID, detail.cvm.CloudID, detail.RsPort[0])
 	if err != nil {
 		return err
 	}
@@ -221,99 +258,63 @@ func (l *Layer4ListenerBindRSPreviewExecutor) validateTarget(kt *kit.Kit, lbID s
 	return nil
 }
 
-func (l *Layer4ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit,
-	curDetail *Layer4ListenerBindRSDetail, lbID string) (string, error) {
+func (l *Layer4ListenerBindRSPreviewExecutor) validateRS(kt *kit.Kit, curDetail *Layer4ListenerBindRSDetail,
+	lb corelb.LoadBalancerRaw) error {
 
 	if curDetail.InstType == enumor.EniInstType {
 		// ENI 不做校验
-		return "", nil
-	}
-
-	var lb *corelb.LoadBalancer[corelb.TCloudClbExtension]
-	var err error
-	switch l.vendor {
-	case enumor.TCloud:
-		lb, err = getTCloudLoadBalancer(kt, l.dataServiceCli, lbID)
-	default:
-		return "", fmt.Errorf("layer4 listener bind rs preview validate, unsupported vendor: %s", l.vendor)
-	}
-	if err != nil {
-		return "", err
-	}
-	cloudVpcIDs := []string{lb.CloudVpcID}
-	isCrossRegionV2 := converter.PtrToVal(lb.Extension.SnatPro)
-	if isCrossRegionV2 {
-		// 跨域2.0 本地无法校验，因此此处不进行校验，由云上接口判断
-		return "", nil
-	}
-	isCrossRegionV1 := lb.Extension.SupportCrossRegionV1()
-	if isCrossRegionV1 {
-		cloudVpcIDs = append(cloudVpcIDs, converter.PtrToVal(lb.Extension.TargetCloudVpcID))
-	}
-
-	cvm, err := getCvm(kt, l.dataServiceCli, curDetail.RsIp, l.vendor, l.bkBizID, l.accountID, cloudVpcIDs)
-	if err != nil {
-		return "", err
-	}
-	if cvm == nil {
-		// 找不到对应的CVM, 根据IP查询CVM完善报错
-		return "", l.fillRSValidateCvmNotFoundError(kt, curDetail, lb.CloudVpcID)
-	}
-	targetRegion := lb.Region
-	if isCrossRegionV1 {
-		// 跨域1.0 校验 target region
-		targetRegion = converter.PtrToVal(lb.Extension.TargetRegion)
-	}
-	if cvm.Region != targetRegion {
-		curDetail.Status.SetNotExecutable()
-		curDetail.ValidateResult = append(curDetail.ValidateResult,
-			fmt.Sprintf("rs(%s) region not match, rs.region: %s, targetRegion: %v",
-				curDetail.RsIp, cvm.Region, targetRegion))
-		return cvm.CloudID, nil
-	}
-
-	return cvm.CloudID, nil
-}
-
-func (l *Layer4ListenerBindRSPreviewExecutor) fillRSValidateCvmNotFoundError(
-	kt *kit.Kit, curDetail *Layer4ListenerBindRSDetail, lbCloudVpcID string) error {
-
-	// 找不到对应的CVM, 根据IP查询CVM完善报错
-	cvmList, err := getCvmWithoutVpc(kt, l.dataServiceCli, curDetail.RsIp, l.vendor, l.bkBizID, l.accountID)
-	if err != nil {
-		logs.Errorf("get cvm failed, err: %v, rid: %s", err, kt.Rid)
-		return err
-	}
-	if len(cvmList) == 0 {
-		curDetail.Status.SetNotExecutable()
-		curDetail.ValidateResult = append(curDetail.ValidateResult, fmt.Sprintf("rs ip(%s) not found",
-			curDetail.RsIp))
 		return nil
 	}
 
-	cvmCloudIDs := slice.Map(cvmList, cloudCvm.BaseCvm.GetCloudID)
-	curDetail.Status.SetNotExecutable()
-	curDetail.ValidateResult = append(curDetail.ValidateResult,
-		fmt.Sprintf("VPC of %s is different from loadbalancer's VPC (%s).",
-			strings.Join(cvmCloudIDs, ","), lbCloudVpcID))
+	isCrossRegionV1, isCrossRegionV2, _, lbTargetRegion, err := parseSnapInfoTCloudLBExtension(kt,
+		lb.Extension)
+	if err != nil {
+		logs.Errorf("parse snap info for tcloud lb extension failed, err: %v, rid: %s", err, kt.Rid)
+		return err
+	}
+	cvm, err := validateCvmExist(kt, l.dataServiceCli, curDetail.RsIp, lb,
+		isCrossRegionV1, isCrossRegionV2, lbTargetRegion)
+	if err != nil {
+		curDetail.Status.SetNotExecutable()
+		curDetail.ValidateResult = append(curDetail.ValidateResult, err.Error())
+		return nil
+	}
+	curDetail.cvm = newCvmInfo(cvm)
+
+	targetRegion := lb.Region
+	if isCrossRegionV1 {
+		// 跨域1.0 校验 extension中的 target region
+		targetRegion = lbTargetRegion
+	}
+	// 支持跨域1.0 校验 target region
+	// 支持跨域2.0 不校验
+	if !isCrossRegionV2 && cvm.Region != targetRegion {
+		// 非跨域情况下才校验region
+		curDetail.Status.SetNotExecutable()
+		curDetail.ValidateResult = append(curDetail.ValidateResult,
+			fmt.Sprintf("rs(%s) region not match, rs.region: %s, lb.region: %v",
+				curDetail.RsIp, cvm.Region, lb.Region))
+		return nil
+	}
+
 	return nil
 }
 
 func (l *Layer4ListenerBindRSPreviewExecutor) validateListener(kt *kit.Kit,
-	curDetail *Layer4ListenerBindRSDetail) (string, error) {
+	curDetail *Layer4ListenerBindRSDetail) error {
 
 	listener, err := getListener(kt, l.dataServiceCli, l.accountID,
 		curDetail.CloudClbID, curDetail.Protocol, curDetail.ListenerPort[0], l.bkBizID, l.vendor)
 	if err != nil {
-		return "", err
+		return err
 	}
 	if listener == nil {
 		curDetail.Status.SetNotExecutable()
 		curDetail.ValidateResult = append(curDetail.ValidateResult, "listener not found")
-		return "", nil
+		return nil
 	}
-
-	return listener.CloudID, nil
+	curDetail.listenerCloudID = listener.CloudID
+	return nil
 }
 
 // Layer4ListenerBindRSDetail ...
@@ -332,6 +333,18 @@ type Layer4ListenerBindRSDetail struct {
 	ValidateResult []string        `json:"validate_result"`
 
 	RegionID string `json:"region_id"`
+
+	// targetGroupID 在 validateTarget 阶段填充, 后续submit阶段会重复使用到,
+	// 如果为空, 那就意味着当前detail的条件无法匹配到对应的targetGroup, 可以认为targetGroup not found
+	targetGroupID string
+
+	// listenerCloudID 在 validateListener 阶段填充, 后续submit阶段会重复使用到,
+	// 如果为空, 那就意味着当前detail的条件无法匹配到对应的listener, 可以认为listener not found
+	listenerCloudID string
+
+	// cvm 在 validateRS 阶段填充, 在validateTarget和submit阶段会使用,
+	// 会有cvm为空的情况, 例如RSType为ENI, 除此之外的情况都应该有cvm, 否则代表了rs not found
+	cvm *cvmInfo
 }
 
 func (c *Layer4ListenerBindRSDetail) validate() {

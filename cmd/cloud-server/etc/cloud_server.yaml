@@ -301,3 +301,6 @@ cmdb:
 
 # ccHostPoolBiz cmdb host pool biz id
 ccHostPoolBiz: 1
+
+concurrentConfig:
+  clbImportCount: 10

@@ -22,9 +22,11 @@ package lblogic
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
 	actionflow "hcm/cmd/task-server/logics/flow"
+	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	"hcm/pkg/api/data-service/task"
 	hclb "hcm/pkg/api/hc-service/load-balancer"
@@ -37,6 +39,7 @@ import (
 	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
+	"hcm/pkg/tools/classifier"
 	"hcm/pkg/tools/converter"
 	"hcm/pkg/tools/counter"
 	"hcm/pkg/tools/slice"
@@ -285,20 +288,31 @@ func (c *CreateLayer7ListenerExecutor) updateTaskDetails(kt *kit.Kit) error {
 	if len(c.taskDetails) == 0 {
 		return nil
 	}
-	updateItems := make([]task.UpdateTaskDetailField, 0, len(c.taskDetails))
-	for _, detail := range c.taskDetails {
-		updateItems = append(updateItems, task.UpdateTaskDetailField{
-			ID:            detail.taskDetailID,
-			FlowID:        detail.flowID,
-			TaskActionIDs: []string{detail.actionID},
-		})
-	}
-	updateDetailsReq := &task.UpdateDetailReq{
-		Items: updateItems,
-	}
-	err := c.dataServiceCli.Global.TaskDetail.Update(kt, updateDetailsReq)
-	if err != nil {
-		return err
+	// group by flowID and actionID
+	classifySlice := classifier.ClassifySlice(c.taskDetails, func(detail *createLayer7ListenerTaskDetail) string {
+		return fmt.Sprintf("%s/%s", detail.flowID, detail.actionID)
+	})
+	for key, details := range classifySlice {
+		split := strings.Split(key, "/")
+		if len(split) != 2 {
+			return fmt.Errorf("invalid key: %s", key)
+		}
+		flowID, actionID := split[0], split[1]
+		for _, batch := range slice.Split(details, int(core.DefaultMaxPageLimit)) {
+			ids := slice.Map(batch, func(detail *createLayer7ListenerTaskDetail) string {
+				return detail.taskDetailID
+			})
+			updateDetailsReq := &task.BatchUpdateTaskDetailReq{
+				IDs:           ids,
+				FlowID:        flowID,
+				TaskActionIDs: []string{actionID},
+			}
+			err := c.dataServiceCli.Global.TaskDetail.BatchUpdate(kt, updateDetailsReq)
+			if err != nil {
+				logs.Errorf("update task details failed, err: %v, req: %+v, rid: %s", err, updateDetailsReq, kt.Rid)
+				return err
+			}
+		}
 	}
 	return nil
 }
@@ -453,24 +467,4 @@ func (c *CreateLayer7ListenerExecutor) createFlowTask(kt *kit.Kit, lbID string,
 	}
 
 	return flowID, nil
-}
-
-func (c *CreateLayer7ListenerExecutor) updateTaskDetailsState(kt *kit.Kit, state enumor.TaskDetailState,
-	taskDetails []*createLayer7ListenerTaskDetail) error {
-
-	updateItems := make([]task.UpdateTaskDetailField, 0, len(taskDetails))
-	for _, detail := range taskDetails {
-		updateItems = append(updateItems, task.UpdateTaskDetailField{
-			ID:    detail.taskDetailID,
-			State: state,
-		})
-	}
-	updateDetailsReq := &task.UpdateDetailReq{
-		Items: updateItems,
-	}
-	err := c.dataServiceCli.Global.TaskDetail.Update(kt, updateDetailsReq)
-	if err != nil {
-		return err
-	}
-	return nil
 }

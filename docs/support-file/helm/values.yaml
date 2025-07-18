@@ -281,6 +281,8 @@ cloudserver:
         targetPort: 80
         nodePort:
   port: 80
+  concurrentConfig:
+    clbImportCount: 10
 
 dataservice:
   ## 镜像

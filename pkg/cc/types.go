@@ -1149,3 +1149,14 @@ func (r *SyncConcurrentRule) Validate() error {
 type TenantConfig struct {
 	Enabled bool `yaml:"enabled"`
 }
+
+// ConcurrentConfig CLB import config
+type ConcurrentConfig struct {
+	CLBImportCount int `yaml:"clbImportCount"`
+}
+
+func (c *ConcurrentConfig) trySetDefault() {
+	if c.CLBImportCount == 0 {
+		c.CLBImportCount = 10
+	}
+}

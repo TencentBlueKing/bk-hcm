@@ -125,22 +125,23 @@ type TaskManagement struct {
 
 // CloudServerSetting defines cloud server used setting options.
 type CloudServerSetting struct {
-	Network        Network        `yaml:"network"`
-	Service        Service        `yaml:"service"`
-	Log            LogOption      `yaml:"log"`
-	Crypto         Crypto         `yaml:"crypto"`
-	Esb            Esb            `yaml:"esb"`
-	BkHcmUrl       string         `yaml:"bkHcmUrl"`
-	CloudResource  CloudResource  `yaml:"cloudResource"`
-	Recycle        Recycle        `yaml:"recycle"`
-	BillConfig     BillConfig     `yaml:"billConfig"`
-	Itsm           ApiGateway     `yaml:"itsm"`
-	CloudSelection CloudSelection `yaml:"cloudSelection"`
-	Cmsi           CMSI           `yaml:"cmsi"`
-	TaskManagement TaskManagement `yaml:"taskManagement"`
-	Tenant         TenantConfig   `yaml:"tenant"`
-	Cmdb           ApiGateway     `yaml:"cmdb"`
-	CCHostPoolBiz  int64          `yaml:"ccHostPoolBiz"`
+	Network          Network          `yaml:"network"`
+	Service          Service          `yaml:"service"`
+	Log              LogOption        `yaml:"log"`
+	Crypto           Crypto           `yaml:"crypto"`
+	Esb              Esb              `yaml:"esb"`
+	BkHcmUrl         string           `yaml:"bkHcmUrl"`
+	CloudResource    CloudResource    `yaml:"cloudResource"`
+	Recycle          Recycle          `yaml:"recycle"`
+	BillConfig       BillConfig       `yaml:"billConfig"`
+	Itsm             ApiGateway       `yaml:"itsm"`
+	CloudSelection   CloudSelection   `yaml:"cloudSelection"`
+	Cmsi             CMSI             `yaml:"cmsi"`
+	TaskManagement   TaskManagement   `yaml:"taskManagement"`
+	Tenant           TenantConfig     `yaml:"tenant"`
+	Cmdb             ApiGateway       `yaml:"cmdb"`
+	CCHostPoolBiz    int64            `yaml:"ccHostPoolBiz"`
+	ConcurrentConfig ConcurrentConfig `yaml:"concurrentConfig"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -153,6 +154,7 @@ func (s *CloudServerSetting) trySetDefault() {
 	s.Network.trySetDefault()
 	s.Service.trySetDefault()
 	s.Log.trySetDefault()
+	s.ConcurrentConfig.trySetDefault()
 
 	return
 }
