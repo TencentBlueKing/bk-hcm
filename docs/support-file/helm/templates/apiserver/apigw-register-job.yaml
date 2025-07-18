@@ -8,7 +8,6 @@ metadata:
     {{- include "common.labels.standard" . | nindent 4 }}
   annotations:
     "helm.sh/hook": post-install,post-upgrade
-    "helm.sh/hook-delete-policy": before-hook-creation
 spec:
   ttlSecondsAfterFinished: 600
   completions: 1
@@ -37,6 +36,16 @@ spec:
               value: {{ include "bk-hcm.tenantID" . }}
             - name: BK_HCM_STAGE_NAME
               value: {{ .Values.apigwRegister.stageName }}
+            - name: BK_HCM_STAGE_DESCRIPTION
+              value: {{ .Values.apigwRegister.stageDescription }}
+            - name: BK_HCM_STAGE_DESCRIPTION_EN
+              value: {{ .Values.apigwRegister.stageDescriptionEn }}
+            - name: BK_HCM_RELEASE_VERSION
+              value: {{ .Values.apigwRegister.releaseVersion }}
+            - name: BK_HCM_RELEASE_TITLE
+              value: {{ .Values.apigwRegister.releaseTitle }}
+            - name: BK_HCM_RELEASE_COMMENT
+              value: {{ .Values.apigwRegister.releaseComment }}
             {{- if .Values.ingress.shareDomainEnable }}
             - name: BK_HCM_HOST
               value: {{ printf "%s://%s" .Values.global.bkDomainScheme .Values.ingress.host }}
