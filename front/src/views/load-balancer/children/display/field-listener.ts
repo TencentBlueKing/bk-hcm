@@ -18,8 +18,11 @@ export class DisplayFieldListener {
   @Column('enum', { name: '均衡方式', index: 0, option: SCHEDULER_NAME })
   scheduler: string;
 
+  @Column('number', { name: 'SNI', index: 0 })
+  sni_switch: number;
+
   @Column('number', { name: 'RS数量', index: 0 })
-  total_rs_count: number;
+  rs_num: number;
 
   @Column('number', { name: '域名数量', index: 0 })
   domain_num: number;
@@ -64,4 +67,15 @@ export class DisplayFieldListener {
 
   @Column('array', { name: 'CA证书', index: 0 })
   'certificate.cert_cloud_ids': string[];
+
+  // 组合字段
+  @Column('json', { name: 'RS权重不为0数 / RS总数' })
+  rs_weight_stat: object;
+
+  // 负载均衡相关字段
+  @Column('string', { name: '负载均衡VIP' })
+  lb_vip: string;
+
+  @Column('string', { name: '负载均衡ID' })
+  lb_cloud_id: string;
 }

@@ -2,7 +2,7 @@
 import { computed, provide, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { ActiveQueryKey } from './constants';
+import { MENU_BUSINESS_LOAD_BALANCER_OVERVIEW, MENU_BUSINESS_TARGET_GROUP_OVERVIEW } from '@/constants/menu-symbol';
 import { GLOBAL_BIZS_KEY } from '@/common/constant';
 import routerAction from '@/router/utils/action';
 
@@ -15,33 +15,41 @@ const { t } = useI18n();
 const LOAD_BALANCER_VIEW_LIST = [
   {
     label: t('负载均衡视角'),
-    value: 'load-balancer-view',
+    path: '/business/load-balancer/clb',
+    name: MENU_BUSINESS_LOAD_BALANCER_OVERVIEW,
     component: LoadBalancerView,
   },
   {
     label: t('目标组视角'),
-    value: 'target-group-view',
+    path: '/business/load-balancer/target-group',
+    name: MENU_BUSINESS_TARGET_GROUP_OVERVIEW,
     component: TargetGroupView,
   },
 ];
 
-const activeView = ref(route.query?.[ActiveQueryKey.ENTRY] || LOAD_BALANCER_VIEW_LIST[0].value);
 const activeComponent = computed(
-  () => LOAD_BALANCER_VIEW_LIST.find((item) => item.value === activeView.value).component,
+  () => LOAD_BALANCER_VIEW_LIST.find((item) => route.path.includes(item.path)).component,
 );
+
 const currentGlobalBusinessId = computed(() => {
   const val = route.query?.[GLOBAL_BIZS_KEY];
   return val ? Number(val) : undefined;
 });
 
-const handleViewChange = (viewValue: (typeof LOAD_BALANCER_VIEW_LIST)[number]['value']) => {
-  activeView.value = viewValue;
+const handleViewChange = (name: (typeof LOAD_BALANCER_VIEW_LIST)[number]['name']) => {
   routerAction.redirect({
-    query: { [ActiveQueryKey.ENTRY]: viewValue, [GLOBAL_BIZS_KEY]: currentGlobalBusinessId.value },
+    name,
+    query: { [GLOBAL_BIZS_KEY]: currentGlobalBusinessId.value },
   });
 };
 
 provide('currentGlobalBusinessId', currentGlobalBusinessId);
+
+// TODO-CLB: createClbActionName、deleteClbActionName是为了兼容旧版负载均衡的逻辑
+const createClbActionName = ref('biz_clb_resource_create');
+const deleteClbActionName = ref('biz_clb_resource_delete');
+provide('createClbActionName', createClbActionName);
+provide('deleteClbActionName', deleteClbActionName);
 </script>
 
 <template>
@@ -50,11 +58,11 @@ provide('currentGlobalBusinessId', currentGlobalBusinessId);
       <span class="title">{{ t('负载均衡') }}</span>
       <ul class="view-list">
         <li
-          v-for="{ label, value } in LOAD_BALANCER_VIEW_LIST"
-          :key="value"
+          v-for="{ label, name, path } in LOAD_BALANCER_VIEW_LIST"
+          :key="name"
           class="view-item"
-          :class="{ active: activeView === value }"
-          @click="handleViewChange(value)"
+          :class="{ active: route.path.includes(path) }"
+          @click="handleViewChange(name)"
         >
           {{ label }}
         </li>

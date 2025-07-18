@@ -3,8 +3,8 @@ import { defineStore } from 'pinia';
 import { enableCount } from '@/utils/search';
 import { resolveApiPathByBusinessId } from '@/common/util';
 import type { IListResData, QueryBuilderType } from '@/typings';
-import { ListenerProtocol, SessionType, SSLMode } from '@/views/load-balancer/constants';
 import http from '@/http';
+import { ListenerProtocol, Scheduler, SessionType, SSLMode } from '@/views/load-balancer/constants';
 import { VendorEnum } from '@/common/constant';
 
 export interface IListenerModel {
@@ -14,7 +14,7 @@ export interface IListenerModel {
   name: string;
   protocol: ListenerProtocol;
   port: number;
-  scheduler: string;
+  scheduler: Scheduler;
   session_open?: boolean;
   session_type?: SessionType;
   session_expire?: number;
@@ -27,7 +27,7 @@ export interface IListenerModel {
 
 export interface IListenerItem extends IListenerModel {
   cloud_id: string;
-  vendor: string;
+  vendor: VendorEnum;
   bk_biz_id: number;
   cloud_lb_id: string;
   default_domain: string;
@@ -56,6 +56,10 @@ export interface IListenerItem extends IListenerModel {
     extended_code: string;
   };
   binding_status: string;
+  // 异步加载字段
+  rs_num: number;
+  non_zero_weight_count: number;
+  zero_weight_count: number;
 }
 
 export interface IListenersRsWeightStatItem {
@@ -77,12 +81,16 @@ export interface IListenerDetails extends IListenerItem {
   cloud_target_group_id: string;
 }
 
+export interface IListenerDomainInfoItem {
+  domain: string;
+  url_count: number;
+  // 前端交互字段
+  key?: string;
+  displayConfig?: { isNew?: boolean; originDomain?: string; isExpand?: boolean };
+}
 export interface IListenerDomainsListResponseData {
   default_domain: string;
-  domain_list: {
-    domain: string;
-    url_count: number;
-  }[];
+  domain_list: IListenerDomainInfoItem[];
 }
 
 export interface IListenerRuleItem {
@@ -99,8 +107,8 @@ export interface IListenerRuleItem {
   region: string;
   domain: string;
   url: string;
-  scheduler: string;
-  session_type: string;
+  scheduler: IListenerModel['scheduler'];
+  session_type: IListenerModel['session_type'];
   session_expire: number;
   health_check: IListenerItem['health_check'];
   certificate: IListenerModel['certificate'];
@@ -109,6 +117,39 @@ export interface IListenerRuleItem {
   reviser: string;
   created_at: string;
   updated_at: string;
+  // 异步加载字段
+  rs_num: number;
+  binding_status: string;
+  // 前端交互字段
+  displayConfig?: {
+    isNew?: boolean;
+  };
+}
+
+export interface IListenerRuleModel {
+  id?: string;
+  url: string;
+  target_group_id?: string;
+  domains?: string[]; // create
+  domain?: string; // update
+  session_expire_time?: number;
+  scheduler?: Scheduler;
+  forward_type?: string;
+  default_server?: boolean;
+  http2?: boolean;
+  target_type?: string;
+  quic?: boolean;
+  trpc_func?: string;
+  trpc_callee?: string;
+  certificate?: IListenerModel['certificate']; // https必传
+}
+
+export interface IListenerRuleCreateResponseData {
+  unknown_cloud_ids: string[];
+  success_cloud_ids: string[];
+  failed_cloud_ids: string[];
+  success_ids: string[];
+  failed_message: string;
 }
 
 export const useLoadBalancerListenerStore = defineStore('load-balancer-listener', () => {
@@ -216,9 +257,9 @@ export const useLoadBalancerListenerStore = defineStore('load-balancer-listener'
     }
   };
 
-  const domainListByListenerIdLoading = ref(false);
+  const domainListLoading = ref(false);
   const getDomainListByListenerId = async (vendor: VendorEnum, listenerId: string, businessId?: number) => {
-    domainListByListenerIdLoading.value = true;
+    domainListLoading.value = true;
     const api = resolveApiPathByBusinessId(
       '/api/v1/cloud',
       `vendors/${vendor}/listeners/${listenerId}/domains/list`,
@@ -231,14 +272,14 @@ export const useLoadBalancerListenerStore = defineStore('load-balancer-listener'
       console.error(error);
       return Promise.reject(error);
     } finally {
-      domainListByListenerIdLoading.value = false;
+      domainListLoading.value = false;
     }
   };
 
   const updateDomainLoading = ref(false);
   const updateDomain = async (
+    listenerId: string,
     payload: {
-      lbl_id: string;
       domain: string;
       new_domain?: string;
       certificate?: IListenerModel['certificate'];
@@ -247,7 +288,7 @@ export const useLoadBalancerListenerStore = defineStore('load-balancer-listener'
     businessId?: number,
   ) => {
     updateDomainLoading.value = true;
-    const api = resolveApiPathByBusinessId('/api/v1/cloud', `listeners/${payload.lbl_id}/domains`, businessId);
+    const api = resolveApiPathByBusinessId('/api/v1/cloud', `listeners/${listenerId}/domains`, businessId);
     try {
       const res = await http.patch(api, payload);
       return res;
@@ -259,14 +300,38 @@ export const useLoadBalancerListenerStore = defineStore('load-balancer-listener'
     }
   };
 
-  const ruleListByListenerIdLoading = ref(false);
+  const batchDeleteDomainLoading = ref(false);
+  const batchDeleteDomain = async (
+    vendor: VendorEnum,
+    listenerId: string,
+    payload: { domains: string[]; new_default_domain?: string },
+    businessId?: number,
+  ) => {
+    batchDeleteDomainLoading.value = true;
+    const api = resolveApiPathByBusinessId(
+      '/api/v1/cloud',
+      `vendors/${vendor}/listeners/${listenerId}/rules/by/domains/batch`,
+      businessId,
+    );
+    try {
+      const res = await http.delete(api, { data: payload });
+      return res;
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    } finally {
+      batchDeleteDomainLoading.value = false;
+    }
+  };
+
+  const ruleListLoading = ref(false);
   const getRuleListByListenerId = async (
     vendor: VendorEnum,
     listenerId: string,
     payload: QueryBuilderType,
     businessId?: number,
   ) => {
-    ruleListByListenerIdLoading.value = true;
+    ruleListLoading.value = true;
     const api = resolveApiPathByBusinessId(
       '/api/v1/cloud',
       `vendors/${vendor}/listeners/${listenerId}/rules/list`,
@@ -285,7 +350,104 @@ export const useLoadBalancerListenerStore = defineStore('load-balancer-listener'
       console.error(error);
       return Promise.reject(error);
     } finally {
-      ruleListByListenerIdLoading.value = false;
+      ruleListLoading.value = false;
+    }
+  };
+
+  const rulesBindingStatusListLoading = ref(false);
+  const getRulesBindingStatusList = async (
+    vendor: VendorEnum,
+    listenerId: string,
+    payload: { rule_ids: string[] },
+    businessId?: number,
+  ) => {
+    rulesBindingStatusListLoading.value = true;
+    const api = resolveApiPathByBusinessId(
+      '/api/v1/cloud',
+      `vendors/${vendor}/listeners/${listenerId}/rules/binding_status/list`,
+      businessId,
+    );
+    try {
+      const res: IListResData<{ rule_id: string; binding_status: string }[]> = await http.post(api, payload);
+      return res.data?.details || [];
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    } finally {
+      rulesBindingStatusListLoading.value = false;
+    }
+  };
+
+  const createRulesLoading = ref(false);
+  const createRules = async (
+    vendor: VendorEnum,
+    listenerId: string,
+    payload: IListenerRuleModel,
+    businessId?: number,
+  ) => {
+    createRulesLoading.value = true;
+    const api = resolveApiPathByBusinessId(
+      '/api/v1/cloud',
+      `vendors/${vendor}/listeners/${listenerId}/rules/create`,
+      businessId,
+    );
+    try {
+      const res = await http.post(api, payload);
+      return res.data as IListenerRuleCreateResponseData;
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    } finally {
+      createRulesLoading.value = false;
+    }
+  };
+
+  const updateRuleLoading = ref(false);
+  const updateRule = async (
+    vendor: VendorEnum,
+    listenerId: string,
+    ruleId: string,
+    payload: IListenerRuleModel,
+    businessId?: number,
+  ) => {
+    updateRuleLoading.value = true;
+    const api = resolveApiPathByBusinessId(
+      '/api/v1/cloud',
+      `vendors/${vendor}/listeners/${listenerId}/rules/${ruleId}`,
+      businessId,
+    );
+    try {
+      const res = await http.patch(api, payload);
+      return res;
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    } finally {
+      updateRuleLoading.value = false;
+    }
+  };
+
+  const batchDeleteRuleLoading = ref(false);
+  const batchDeleteRule = async (
+    vendor: VendorEnum,
+    listenerId: string,
+    payload: { rule_ids: string[] },
+    businessId?: number,
+  ) => {
+    batchDeleteRuleLoading.value = true;
+    const api = resolveApiPathByBusinessId(
+      '/api/v1/cloud',
+      `vendors/${vendor}/listeners/${listenerId}/rules/batch`,
+      businessId,
+    );
+    try {
+      const res = await http.delete(api, { data: payload });
+      return res;
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    } finally {
+      batchDeleteRuleLoading.value = false;
     }
   };
 
@@ -302,11 +464,21 @@ export const useLoadBalancerListenerStore = defineStore('load-balancer-listener'
     addListener,
     updateListenerLoading,
     updateListener,
-    domainListByListenerIdLoading,
+    domainListLoading,
     getDomainListByListenerId,
     updateDomainLoading,
     updateDomain,
-    ruleListByListenerIdLoading,
+    batchDeleteDomainLoading,
+    batchDeleteDomain,
+    ruleListLoading,
     getRuleListByListenerId,
+    rulesBindingStatusListLoading,
+    getRulesBindingStatusList,
+    createRulesLoading,
+    createRules,
+    updateRuleLoading,
+    updateRule,
+    batchDeleteRuleLoading,
+    batchDeleteRule,
   };
 });

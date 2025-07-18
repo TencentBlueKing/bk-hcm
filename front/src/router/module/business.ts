@@ -521,18 +521,7 @@ const businessMenus: RouteRecordRaw[] = [
           notMenu: true,
         },
       },
-      {
-        path: '/business/service/service-apply/clb',
-        name: 'applyClb',
-        component: () => import('@/views/service/service-apply/clb'),
-        meta: {
-          backRouter: -1,
-          activeKey: 'businessClb',
-          // breadcrumb: ['资源管理', '负载均衡'],
-          notMenu: true,
-          isFilterAccount: true,
-        },
-      },
+      loadBalancerBizRouteConfig[1],
     ],
     meta: {
       groupTitle: '回收站',

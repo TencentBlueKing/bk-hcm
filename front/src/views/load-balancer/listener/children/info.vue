@@ -1,25 +1,29 @@
 <script setup lang="ts">
-import { computed, h, inject, reactive, Ref, ref, useTemplateRef } from 'vue';
+import { computed, h, reactive } from 'vue';
+import { ILoadBalancerDetails } from '@/store/load-balancer/clb';
 import { IListenerDetails, IListenerItem, useLoadBalancerListenerStore } from '@/store/load-balancer/listener';
 import { ModelPropertyDisplay } from '@/model/typings';
 import { BindingStatus, LAYER_7_LISTENER_PROTOCOL, ListenerProtocol, SESSION_TYPE_NAME } from '../../constants';
 import { DisplayFieldType, DisplayFieldFactory } from '../../children/display/field-factory';
+import { cloneDeep } from 'lodash';
 
-import { Form, Message } from 'bkui-vue';
 import Panel from '@/components/panel';
 import GridDetails from '../../children/display/grid-details.vue';
+import EditListenerSideslider from '../add.vue';
 
-const props = defineProps<{ rowData: IListenerItem; details: IListenerDetails }>();
+const props = defineProps<{
+  listenerRowData: IListenerItem;
+  listenerDetails: IListenerDetails;
+  loadBalancerDetails: ILoadBalancerDetails;
+}>();
 const emit = defineEmits<{ 'update-success': [id: string] }>();
 
 const loadBalancerListenerStore = useLoadBalancerListenerStore();
 
-const currentGlobalBusinessId = inject<Ref<number>>('currentGlobalBusinessId');
+const isLayer7 = computed(() => LAYER_7_LISTENER_PROTOCOL.includes(props.listenerRowData.protocol));
+const isHttps = computed(() => ListenerProtocol.HTTPS === props.listenerRowData.protocol);
 
-const isLayer7 = computed(() => LAYER_7_LISTENER_PROTOCOL.includes(props.rowData.protocol));
-const isHttps = computed(() => ListenerProtocol.HTTPS === props.rowData.protocol);
-
-const columnProperties = DisplayFieldFactory.createModel(DisplayFieldType.LISTENER).getProperties();
+const displayProperties = DisplayFieldFactory.createModel(DisplayFieldType.LISTENER).getProperties();
 
 const baseInfoFieldsConfig: Record<string, Partial<ModelPropertyDisplay & { copy?: boolean }>> = {
   cloud_id: { copy: true },
@@ -36,14 +40,14 @@ const baseInfoFields = computed(() => {
     fieldIds.splice(2, 0, 'domain_num', 'url_num');
   }
   return fieldIds.map((id) => {
-    const property = columnProperties.find((item) => item.id === id) as ModelPropertyDisplay;
+    const property = displayProperties.find((item) => item.id === id) as ModelPropertyDisplay;
     return { ...property, ...baseInfoFieldsConfig[id] };
   });
 });
 
 const certInfoIds = ['certificate.ssl_mode', 'certificate.ca_cloud_id', 'certificate.cert_cloud_ids'];
 const certInfoFields = certInfoIds.map((id) => {
-  const property = columnProperties.find((item) => item.id === id) as ModelPropertyDisplay;
+  const property = displayProperties.find((item) => item.id === id) as ModelPropertyDisplay;
   return property;
 });
 
@@ -57,7 +61,7 @@ const sessionFieldsConfig: Record<string, Partial<ModelPropertyDisplay>> = {
   },
 };
 const sessionFields = sessionIds.map((id) => {
-  const property = columnProperties.find((item) => item.id === id) as ModelPropertyDisplay;
+  const property = displayProperties.find((item) => item.id === id) as ModelPropertyDisplay;
   return { ...property, ...sessionFieldsConfig[id] };
 });
 
@@ -81,41 +85,27 @@ const healthCheckFieldsConfig: Record<string, Partial<ModelPropertyDisplay>> = {
   },
 };
 const healthCheckFields = healthCheckIds.map((id) => {
-  const property = columnProperties.find((item) => item.id === id) as ModelPropertyDisplay;
+  const property = displayProperties.find((item) => item.id === id) as ModelPropertyDisplay;
   return { ...property, ...healthCheckFieldsConfig[id] };
 });
 
-const isSessionKeeping = computed(() => props.details?.session_expire !== 0);
-const isHealthCheck = computed(() => props.details?.health_check?.health_switch === 1);
+const isSessionKeeping = computed(() => props.listenerDetails?.session_expire !== 0);
+const isHealthCheck = computed(() => props.listenerDetails?.health_check?.health_switch === 1);
 
-const formRef = useTemplateRef<typeof Form>('edit-form');
-const formModel = reactive({ name: '' });
-const rules = {
-  name: [
-    {
-      validator: (value: string) => /^[\u4e00-\u9fa5A-Za-z0-9\-._:]{1,60}$/.test(value),
-      message: '不能超过60个字符，只能使用中文、英文、数字、下划线、分隔符“-”、小数点、冒号',
-      trigger: 'change',
-    },
-  ],
+const editListenerSidesliderState = reactive({ isShow: false, isHidden: true, isEdit: false, initialModel: null });
+const handleEditListener = async () => {
+  Object.assign(editListenerSidesliderState, {
+    isShow: true,
+    isHidden: false,
+    isEdit: true,
+    initialModel: cloneDeep(props.listenerDetails),
+  });
 };
-
-const isEditDialogShow = ref(false);
-const handleEdit = () => {
-  isEditDialogShow.value = true;
-  formModel.name = props.details.name;
-};
-
-const handleConfirmUpdate = async () => {
-  await formRef.value.validate();
-  const { id, account_id } = props.details;
-  await loadBalancerListenerStore.updateListener(
-    { id, account_id, name: formModel.name },
-    currentGlobalBusinessId.value,
-  );
-  Message({ theme: 'success', message: '提交成功' });
-  isEditDialogShow.value = false;
+const handleAddSidesliderConfirmSuccess = (id?: string) => {
   emit('update-success', id);
+};
+const handleAddSidesliderHidden = () => {
+  Object.assign(editListenerSidesliderState, { isShow: false, isHidden: true, isEdit: false, initialModel: null });
 };
 </script>
 
@@ -125,22 +115,22 @@ const handleConfirmUpdate = async () => {
       class="fix-button"
       theme="primary"
       outline
-      :disabled="props.rowData.binding_status === BindingStatus.BINDING"
-      @click="handleEdit"
+      :disabled="props.listenerRowData.binding_status === BindingStatus.BINDING"
+      @click="handleEditListener"
     >
       编辑
     </bk-button>
     <panel title="基本信息" no-shadow>
       <grid-details
         :fields="baseInfoFields"
-        :details="details"
+        :details="listenerDetails"
         :is-loading="loadBalancerListenerStore.listenerDetailsLoading"
       />
     </panel>
     <panel v-if="isHttps" title="证书信息" no-shadow>
       <grid-details
         :fields="certInfoFields"
-        :details="details"
+        :details="listenerDetails"
         :is-loading="loadBalancerListenerStore.listenerDetailsLoading"
       />
     </panel>
@@ -156,7 +146,7 @@ const handleConfirmUpdate = async () => {
       <grid-details
         v-if="isSessionKeeping"
         :fields="sessionFields"
-        :details="details"
+        :details="listenerDetails"
         :is-loading="loadBalancerListenerStore.listenerDetailsLoading"
       />
     </panel>
@@ -172,28 +162,21 @@ const handleConfirmUpdate = async () => {
       <grid-details
         v-if="isHealthCheck"
         :fields="healthCheckFields"
-        :details="details"
+        :details="listenerDetails"
         :is-loading="loadBalancerListenerStore.listenerDetailsLoading"
       />
     </panel>
 
-    <bk-dialog
-      :is-show="isEditDialogShow"
-      title="编辑监听器"
-      :width="640"
-      :is-loading="loadBalancerListenerStore.updateListenerLoading"
-      @confirm="handleConfirmUpdate"
-      @closed="isEditDialogShow = false"
-    >
-      <bk-form ref="edit-form" :model="formModel" form-type="vertical" :rules="rules">
-        <bk-form-item label="监听器名称" required property="name">
-          <bk-input v-model="formModel.name" />
-          <div class="form-control-tips">
-            不能超过60个字符，只能使用中文、英文、数字、下划线、分隔符“-”、小数点、冒号
-          </div>
-        </bk-form-item>
-      </bk-form>
-    </bk-dialog>
+    <template v-if="!editListenerSidesliderState.isHidden">
+      <edit-listener-sideslider
+        v-model="editListenerSidesliderState.isShow"
+        :load-balancer-details="loadBalancerDetails"
+        :is-edit="editListenerSidesliderState.isEdit"
+        :initial-model="editListenerSidesliderState.initialModel"
+        @confirm-success="handleAddSidesliderConfirmSuccess"
+        @hidden="handleAddSidesliderHidden"
+      />
+    </template>
   </div>
 </template>
 

@@ -8,7 +8,7 @@ export interface IDataListProps {
   columns: ModelPropertyColumn[];
   list: any[];
   enableQuery?: boolean;
-  pagination: PaginationType;
+  pagination?: PaginationType;
   remotePagination?: boolean;
   hasSelection?: boolean;
 }

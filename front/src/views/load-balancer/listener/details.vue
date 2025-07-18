@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, inject, onMounted, Ref, ref } from 'vue';
+import { ILoadBalancerDetails } from '@/store/load-balancer/clb';
 import { IListenerDetails, IListenerItem, useLoadBalancerListenerStore } from '@/store/load-balancer/listener';
 import { LAYER_7_LISTENER_PROTOCOL } from '../constants';
 
@@ -8,7 +9,7 @@ import Rule from './layer7/rule.vue';
 import TargetGroup from './layer4/target-group.vue';
 
 const model = defineModel<boolean>();
-const props = defineProps<{ rowData: IListenerItem }>();
+const props = defineProps<{ rowData: IListenerItem; loadBalancerDetails: ILoadBalancerDetails }>();
 const emit = defineEmits<{ 'update-success': [id: string] }>();
 
 const loadBalancerListenerStore = useLoadBalancerListenerStore();
@@ -48,9 +49,16 @@ onMounted(() => {
     </template>
     <bk-tab v-model:active="active" type="unborder-card">
       <bk-tab-panel v-for="item in panels" :key="item.name" :label="item.label" :name="item.name">
-        <component :is="item.component" :row-data="rowData" :details="details" @update-success="handleUpdateSuccess" />
+        <component
+          :is="item.component"
+          :listener-row-data="rowData"
+          :listener-details="details"
+          :load-balancer-details="loadBalancerDetails"
+          @update-success="handleUpdateSuccess"
+        />
       </bk-tab-panel>
     </bk-tab>
+    <!-- TODO: 这里要加保存按钮吗？操作的可是component里面的状态 -->
   </bk-sideslider>
 </template>
 

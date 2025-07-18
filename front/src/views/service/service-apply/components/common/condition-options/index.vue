@@ -9,12 +9,9 @@ import { useWhereAmI } from '@/hooks/useWhereAmI';
 import CommonCard from '@/components/CommonCard';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { Form } from 'bkui-vue';
-import { accountFilter } from './account-filter.plugin';
-
-const { FormItem } = Form;
 
 const props = defineProps({
-  type: String as PropType<string>,
+  type: String as PropType<ResourceTypeEnum>,
   bizs: Number as PropType<number>,
   cloudAccountId: String as PropType<string>,
   vendor: String as PropType<string>,
@@ -29,6 +26,8 @@ const emit = defineEmits([
   'update:region',
   'update:resourceGroup',
 ]);
+
+const { FormItem } = Form;
 
 const selectedCloudAccountId = computed({
   get() {
@@ -104,7 +103,7 @@ watch(
       <account-selector
         v-model="selectedCloudAccountId"
         :biz-id="isResourcePage ? undefined : props.bizs"
-        :filter="accountFilter"
+        :resource-type="type"
         :disabled="isResourcePage"
         :placeholder="isResourcePage ? '请在左侧选择账号' : undefined"
         @change="handleChangeAccount"

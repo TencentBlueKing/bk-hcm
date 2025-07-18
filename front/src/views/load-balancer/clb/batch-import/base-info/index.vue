@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { computed, inject, nextTick, Ref, watch } from 'vue';
-import { VendorEnum } from '@/common/constant';
+import { ResourceTypeEnum, VendorEnum } from '@/common/constant';
 import { IAccountItem } from '@/typings/account';
 import { useI18n } from 'vue-i18n';
-import { accountFilter } from '@/views/service/service-apply/components/common/condition-options/account-filter.plugin';
 import { LoadBalancerActionType, LoadBalancerBatchImportOperationType } from '@/views/load-balancer/constants';
 import { ILoadBalancerBatchImportModel } from '../typings';
 
@@ -76,7 +75,7 @@ const handleAccountChange = (
       <account-selector
         v-model="formModel.account_id"
         :biz-id="currentGlobalBusinessId"
-        :filter="accountFilter"
+        :resource-type="ResourceTypeEnum.CLB"
         :disabled="globalDisabled"
         @change="handleAccountChange"
       />

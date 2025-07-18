@@ -1,5 +1,4 @@
 export enum ActiveQueryKey {
-  ENTRY = 'entry_active',
   DETAILS = 'details_active',
 }
 
