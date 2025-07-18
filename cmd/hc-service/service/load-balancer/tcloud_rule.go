@@ -106,7 +106,7 @@ func (svc *clbSvc) TCloudCreateUrlRule(cts *rest.Contexts) (any, error) {
 		return nil, err
 	}
 
-	return creatResult, nil
+	return result, nil
 }
 
 func convURLRuleCreateReq(createReq *protolb.TCloudRuleCreate, lb *corelb.BaseLoadBalancer,
