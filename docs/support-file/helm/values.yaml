@@ -14,6 +14,8 @@ image:
   pullSecrets: []
   tag: 1.8.1
 
+apigwReleaseVersion: 1.0.0
+
 serviceAccount:
   create: true
   name: ""
@@ -666,7 +668,6 @@ apigwRegister:
   stageName: "prod"
   stageDescription: "正式环境"
   stageDescriptionEn: "Production Environment"
-  releaseVersion: 1.0.0
   releaseTitle: "title"
   releaseComment: "comment"
   apiUrlPathPrefix: ""
