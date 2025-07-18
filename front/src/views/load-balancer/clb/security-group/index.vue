@@ -15,6 +15,7 @@ import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
 import DraggableItem from '@/views/business/load-balancer/clb-view/specific-clb-manager/security-group/draggable-item';
 import { cloneDeep } from 'lodash';
 import BindSecurity from './bind.vue';
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{ lbId: string; details: ILoadBalancerDetails }>();
 
@@ -22,7 +23,7 @@ enum SecurityRuleDirection {
   in = 'ingress',
   out = 'egress',
 }
-
+const { t } = useI18n();
 const isPassToTarget = ref(false);
 const securityRuleType = ref(SecurityRuleDirection.in);
 const isSideSliderShow = ref(false);
@@ -56,7 +57,7 @@ const hanldeSubmit = async () => {
     isSideSliderShow.value = false;
     resetSelections();
     Message({
-      message: '绑定成功',
+      message: t('绑定成功'),
       theme: 'success',
     });
   } finally {
@@ -111,7 +112,7 @@ const handleUnbind = async (security_group_id: string) => {
   getBindedSecurityList();
   isSideSliderShow.value = false;
   Message({
-    message: '解绑成功',
+    message: t('解绑成功'),
     theme: 'success',
   });
 };
@@ -131,7 +132,7 @@ const updateLb = async (payload: Record<string, any>) => {
     ...payload,
   });
   Message({
-    message: '更新成功',
+    message: t('更新成功'),
     theme: 'success',
   });
 };
@@ -162,15 +163,15 @@ watch(
 </script>
 
 <template>
-  <div>
+  <div class="rs-check-selector-container">
     <div class="config-res-wrapper mb24">
       <div v-if="!isPassToTarget">
-        <Tag theme="warning" class="mr16">2 次检测</Tag>
-        <span>依次经过负载均衡和RS的安全组 2 次检测</span>
+        <Tag theme="warning" class="mr16">{{ t('2 次检测') }}</Tag>
+        <span>{{ t('依次经过负载均衡和RS的安全组 2 次检测') }}</span>
       </div>
       <div v-else>
-        <Tag theme="warning" class="mr16">1 次检测</Tag>
-        <span>只经过负载均衡的安全组 1 次检测，忽略后端RS的安全组检测</span>
+        <Tag theme="warning" class="mr16">{{ t('1 次检测') }}</Tag>
+        <span>{{ t('只经过负载均衡的安全组 1 次检测，忽略后端RS的安全组检测') }}</span>
       </div>
 
       <EditLine
@@ -186,13 +187,13 @@ watch(
 
     <div class="security-rule-container">
       <p>
-        <span class="security-rule-container-title">绑定安全组</span>
+        <span class="security-rule-container-title">{{ t('绑定安全组') }}</span>
         <span class="security-rule-container-desc">
-          当负载均衡不绑定安全组时，其监听端口默认对所有 IP 放通。此处绑定的安全组是直接绑定到负载均衡上面。
+          {{ t('当负载均衡不绑定安全组时，其监听端口默认对所有 IP 放通。此处绑定的安全组是直接绑定到负载均衡上面。') }}
         </span>
       </p>
       <div class="security-rule-container-operations">
-        <Button theme="primary" class="mr12" @click="isSideSliderShow = true">配置</Button>
+        <Button theme="primary" class="mr12" @click="isSideSliderShow = true">{{ t('配置') }}</Button>
         <Button v-if="isAllExpand" @click="isAllExpand = false">
           <svg
             width="14"
@@ -216,7 +217,7 @@ watch(
               d="M14.4,46.8l2.8,2.8l8.8-8.8l0,5.2h4V34H18v4h5.2L14.4,46.8z M26,38L26,38L26,38L26,38z"
             ></path>
           </svg>
-          全部收起
+          {{ t('全部收起') }}
         </Button>
         <Button v-else @click="isAllExpand = true">
           <svg
@@ -241,12 +242,12 @@ watch(
               d="M30,36.8L27.2,34l-8.8,8.8v-5.2h-4v12h12v-4h-5.2L30,36.8z M18.4,45.6L18.4,45.6L18.4,45.6	L18.4,45.6z"
             ></path>
           </svg>
-          全部展开
+          {{ t('全部展开') }}
         </Button>
         <div class="security-rule-container-searcher">
           <BkRadioGroup v-model="securityRuleType" class="mr12">
-            <BkRadioButton :label="SecurityRuleDirection.in">入站规则</BkRadioButton>
-            <BkRadioButton :label="SecurityRuleDirection.out">出站规则</BkRadioButton>
+            <BkRadioButton :label="SecurityRuleDirection.in">{{ t('入站规则') }}</BkRadioButton>
+            <BkRadioButton :label="SecurityRuleDirection.out">{{ t('出站规则') }}</BkRadioButton>
           </BkRadioGroup>
           <Input class="search-input" type="search" clearable v-model="searchVal"></Input>
         </div>
@@ -265,12 +266,12 @@ watch(
             :key="id"
           />
         </template>
-        <Exception v-else type="empty" scene="part" description="没有数据" />
+        <Exception v-else type="empty" scene="part" :description="t('没有数据')" />
       </div>
     </div>
     <CommonSideslider
       v-model:is-show="isSideSliderShow"
-      title="配置安全组"
+      :title="t('配置安全组')"
       width="640"
       :is-submit-loading="isSubmitLoading"
       @close="resetSelections"
@@ -284,7 +285,7 @@ watch(
       <Alert
         v-if="securityGroups.length > 5"
         theme="danger"
-        title=" 一个负载均衡默认只允许绑定5个安全组，如果特殊需求，请联系腾讯云助手调整"
+        :title="t(' 一个负载均衡默认只允许绑定5个安全组，如果特殊需求，请联系腾讯云助手调整')"
         class="mb12"
       />
       <div class="config-security-rule-contianer">
@@ -292,7 +293,7 @@ watch(
           <BkButtonGroup>
             <Button @click="isDialogShow = true">
               <Plus class="f22"></Plus>
-              新增绑定
+              {{ t('新增绑定') }}
             </Button>
           </BkButtonGroup>
           <Input class="search-input" type="search" clearable v-model="securitySearchVal"></Input>
@@ -325,12 +326,12 @@ watch(
           <Exception
             v-else
             :type="securitySearchVal.length ? 'search-empty' : 'empty'"
-            :description="securitySearchVal.length ? '搜索为空' : '暂无绑定'"
+            :description="securitySearchVal.length ? t(' 搜索为空') : t(' 暂无绑定')"
           />
         </VueDraggable>
       </div>
     </CommonSideslider>
-    <CommonDialog v-model:is-show="isDialogShow" title="绑定安全组" width="640" @handle-confirm="handleBind">
+    <CommonDialog v-model:is-show="isDialogShow" :title="t('绑定安全组')" width="640" @handle-confirm="handleBind">
       <BindSecurity
         :selected-secuirty-groups-set="selectedSecuirtyGroupsSet"
         :binded-security-groups="bindedSecurityGroups"
@@ -346,7 +347,7 @@ watch(
             class="mr6"
             :disabled="securityGroups.length + selections.length > 5"
             v-bk-tooltips="{
-              content: '一个负载均衡默认只允许绑定5个安全组，如果特殊需求，请联系腾讯云助手调整',
+              content: t('一个负载均衡默认只允许绑定5个安全组，如果特殊需求，请联系腾讯云助手调整'),
               disabled: !(securityGroups.length + selections.length > 5),
             }"
             @click="
@@ -354,13 +355,13 @@ watch(
               isDialogShow = false;
             "
           >
-            确定
+            {{ t('确定') }}
           </Button>
-          <Button @click="isDialogShow = false">取消</Button>
+          <Button @click="isDialogShow = false">{{ t('取消') }}</Button>
         </div>
       </template>
     </CommonDialog>
-    <Dialog title="检测配置" :is-show="isConfigDialogShow" width="720" @closed="isConfigDialogShow = false">
+    <Dialog :title="t('检测配置')" :is-show="isConfigDialogShow" width="720" @closed="isConfigDialogShow = false">
       <div class="rs-check-selector-container">
         <div
           :class="[
@@ -369,8 +370,8 @@ watch(
           ]"
           @click="if (tmpIsPassToTarget && !isUpdating) tmpIsPassToTarget = false;"
         >
-          <Tag theme="warning">2 次检测</Tag>
-          <span>依次经过负载均衡和RS的安全组 2 次检测</span>
+          <Tag theme="warning">{{ t('2 次检测') }}</Tag>
+          <span>{{ t('依次经过负载均衡和RS的安全组 2 次检测') }}</span>
           <Success v-show="!tmpIsPassToTarget" width="14" height="14" fill="#3A84FF" class="rs-check-icon" />
         </div>
         <div
@@ -380,8 +381,8 @@ watch(
           ]"
           @click="if (!(tmpIsPassToTarget || isUpdating)) tmpIsPassToTarget = true;"
         >
-          <Tag theme="warning">1 次检测</Tag>
-          <span>只经过负载均衡的安全组 1 次检测，忽略后端RS的安全组检测</span>
+          <Tag theme="warning">{{ t('1 次检测') }}</Tag>
+          <span>{{ t('只经过负载均衡的安全组 1 次检测，忽略后端RS的安全组检测') }}</span>
           <Success v-show="tmpIsPassToTarget" width="14" height="14" fill="#3A84FF" class="rs-check-icon" />
         </div>
       </div>
@@ -405,9 +406,9 @@ watch(
               }
             "
           >
-            确认
+            {{ t('确认') }}
           </Button>
-          <Button @click="isConfigDialogShow = false">取消</Button>
+          <Button @click="isConfigDialogShow = false">{{ t('取消') }}</Button>
         </div>
       </template>
     </Dialog>
