@@ -1,7 +1,7 @@
 /*
  * TencentBlueKing is pleased to support the open source community by making
  * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
- * Copyright (C) 2022 THL A29 Limited,
+ * Copyright (C) 2024 THL A29 Limited,
  * a Tencent company. All rights reserved.
  * Licensed under the MIT License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,23 +18,21 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0038,HCMVER=v1.8.2
 
     Notes:
-    1. 修改`account`表，增加`bk_biz_id`字段
+    1. 修改`load_balancer`表，增加`band_width`、`isp`字段
 */
 
 START TRANSACTION;
 
---  增加`bk_biz_id`字段
-ALTER TABLE account
-    ADD COLUMN bk_biz_id bigint NOT NULL DEFAULT 0 COMMENT '管理业务ID';
+alter table load_balancer
+    add band_width int not null default 0 after status;
 
-UPDATE account a
-    JOIN account_biz_rel b ON a.id = b.account_id
-    SET a.bk_biz_id = b.bk_biz_id;
+alter table load_balancer
+    add isp varchar(64) not null default '' after status;
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
 SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
 
-COMMIT
+COMMIT;

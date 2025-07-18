@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0037,HCMVER=v1.8.2
 
     Notes:
     1. 修改`target_group_listener_rule_rel`表，新增 cloud_listener_rule_id 索引

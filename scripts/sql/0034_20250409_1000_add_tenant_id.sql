@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0034,HCMVER=v1.8.2
 
     Notes:
     1. 在需要支持多租户的数据表中，新增租户ID
