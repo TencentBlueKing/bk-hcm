@@ -215,7 +215,7 @@ func convTableToBaseTargetListenerRuleRel(one *tablelb.TargetGroupListenerRuleRe
 func (svc *lbSvc) listTargetGroupIDsByRelCond(kt *kit.Kit, req *protocloud.ListListenerWithTargetsReq,
 	lblReq protocloud.ListenerQueryItem, cloudLblIDs, clbIDs []string) ([]string, error) {
 
-	cloudTargetGroupIDs := make([]string, 0)
+	targetGroupIDs := make([]string, 0)
 	for _, partCloudLblIDs := range slice.Split(cloudLblIDs, int(filter.DefaultMaxInLimit)) {
 		ruleRelFilter := make([]*filter.AtomRule, 0)
 		ruleRelFilter = append(ruleRelFilter, tools.RuleIn("lb_id", clbIDs))
@@ -234,8 +234,8 @@ func (svc *lbSvc) listTargetGroupIDsByRelCond(kt *kit.Kit, req *protocloud.ListL
 			return nil, fmt.Errorf("list target group listener rule rel failed, err: %v", err)
 		}
 		for _, item := range targetGroupRelList.Details {
-			cloudTargetGroupIDs = append(cloudTargetGroupIDs, item.CloudTargetGroupID)
+			targetGroupIDs = append(targetGroupIDs, item.TargetGroupID)
 		}
 	}
-	return slice.Unique(cloudTargetGroupIDs), nil
+	return slice.Unique(targetGroupIDs), nil
 }
