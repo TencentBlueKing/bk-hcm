@@ -1,5 +1,8 @@
 .rs-check-selector-container {
-  padding-bottom: 12px;
+  height: 100%;
+  padding: 16px 24px;
+  overflow-y: auto;
+  overflow-x: hidden;
 
   .rs-check-selector,
   .rs-check-selector-active {
