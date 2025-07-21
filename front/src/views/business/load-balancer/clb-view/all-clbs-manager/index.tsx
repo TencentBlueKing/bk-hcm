@@ -126,6 +126,7 @@ export default defineComponent({
             name: t('地域'),
             id: 'region',
             async: true,
+            placeholder: '请输入地域名',
           },
         ],
         extra: {

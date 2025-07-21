@@ -195,6 +195,7 @@ const selectSearchData = computed(() => {
           type: 'string',
           async: true,
           children: asyncRegionChildren.value.map(({ id, name }) => ({ id, name })),
+          placeholder: '请输入地域名',
           meta: {
             search: {
               filterRules(value: string | string[]) {
