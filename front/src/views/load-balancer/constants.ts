@@ -2,6 +2,12 @@ export enum ActiveQueryKey {
   DETAILS = 'details_active',
 }
 
+export enum ClbDetailsTabKey {
+  LISTENER = 'listener',
+  INFO = 'info',
+  SECURITY = 'security',
+}
+
 export enum LoadBalancerActionType {
   PURCHASE = 'purchase',
   BATCH_OPERATION = 'batch_operation',

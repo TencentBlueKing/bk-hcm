@@ -3,7 +3,7 @@ import { computed, inject, onMounted, Ref, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import routerAction from '@/router/utils/action';
-import { ActiveQueryKey } from '../constants';
+import { ActiveQueryKey, ClbDetailsTabKey } from '../constants';
 import { GLOBAL_BIZS_KEY } from '@/common/constant';
 import { type ILoadBalancerDetails, useLoadBalancerClbStore } from '@/store/load-balancer/clb';
 import { getInstVip } from '@/utils';
@@ -55,14 +55,14 @@ watch(
 
 const tabs = computed(() => {
   return [
-    { label: t('监听器'), name: 'listener', component: ListenerTable },
-    { label: t('基本信息'), name: 'info', component: LoadBalancerInfo },
-    { label: t('安全组'), name: 'security', component: SecurityGroup },
+    { label: t('监听器'), name: ClbDetailsTabKey.LISTENER, component: ListenerTable },
+    { label: t('基本信息'), name: ClbDetailsTabKey.INFO, component: LoadBalancerInfo },
+    { label: t('安全组'), name: ClbDetailsTabKey.SECURITY, component: SecurityGroup },
   ];
 });
-const active = ref(route.query?.[ActiveQueryKey.DETAILS] || tabs.value[0].name);
+const active = ref((route.query?.[ActiveQueryKey.DETAILS] as ClbDetailsTabKey) || tabs.value[0].name);
 
-const handleTabChange = (tabName: string) => {
+const handleTabChange = (tabName: ClbDetailsTabKey) => {
   routerAction.redirect({ query: { ...route.query, [ActiveQueryKey.DETAILS]: tabName } });
 };
 
@@ -98,7 +98,7 @@ onMounted(() => {
       @change="handleTabChange"
     >
       <bk-tab-panel v-for="tab in tabs" :key="tab.name" :label="tab.label" :name="tab.name" render-directive="if">
-        <component :is="tab.component" :lb-id="route.params.id" :details="details"></component>
+        <component :is="tab.component" :lb-id="route.params.id as string" :details="details"></component>
       </bk-tab-panel>
     </bk-tab>
   </div>

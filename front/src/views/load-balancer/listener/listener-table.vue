@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ILoadBalancerDetails } from '@/store/load-balancer/clb';
 import { IListenerItem, useLoadBalancerListenerStore } from '@/store/load-balancer/listener';
-import { ListenerActionType } from '../constants';
+import { ActiveQueryKey, ClbDetailsTabKey, ListenerActionType } from '../constants';
 import { ActionItemType } from '../typing';
 import { DisplayFieldType, DisplayFieldFactory } from '../children/display/field-factory';
 import { ModelPropertyColumn } from '@/model/typings';
@@ -17,6 +17,7 @@ import { transformSimpleCondition } from '@/utils/search';
 import { ResourceTypeEnum } from '@/common/constant';
 import routerAction from '@/router/utils/action';
 import useTimeoutPoll from '@/hooks/use-timeout-poll';
+import { getInstVip } from '@/utils';
 
 import { Button, Message } from 'bkui-vue';
 import { Plus } from 'bkui-vue/lib/icon';
@@ -29,7 +30,6 @@ import BatchDeleteDialog from './children/batch-delete-dialog.vue';
 import SyncAccountResourceDialog from '@/components/sync-account-resource/index.vue';
 import Confirm from '@/components/confirm';
 import DetailsSideslider from './details.vue';
-import { getInstVip } from '@/utils';
 
 //* 接口请求使用lbId，避免details暂无数据，导致接口报错
 const props = defineProps<{ lbId: string; details: ILoadBalancerDetails }>();
@@ -202,8 +202,10 @@ const loading = ref(false);
 watch(
   () => route.query,
   async (query) => {
-    condition.value = searchQs.get(query, {});
+    // 避免多次路由导致多次请求
+    if (query[ActiveQueryKey.DETAILS] && ClbDetailsTabKey.LISTENER !== query[ActiveQueryKey.DETAILS]) return;
 
+    condition.value = searchQs.get(query, {});
     pagination.current = Number(query.page) || 1;
     pagination.limit = Number(query.limit) || pagination.limit;
 
