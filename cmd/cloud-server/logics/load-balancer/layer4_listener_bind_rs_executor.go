@@ -26,7 +26,6 @@ import (
 
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
 	actionflow "hcm/cmd/task-server/logics/flow"
-	"hcm/pkg/api/core"
 	corelb "hcm/pkg/api/core/cloud/load-balancer"
 	"hcm/pkg/api/data-service/task"
 	hclb "hcm/pkg/api/hc-service/load-balancer"
@@ -466,7 +465,7 @@ func (c *Layer4ListenerBindRSExecutor) updateTaskDetails(kt *kit.Kit) error {
 			return fmt.Errorf("invalid key: %s", key)
 		}
 		flowID, actionID := split[0], split[1]
-		for _, batch := range slice.Split(details, int(core.DefaultMaxPageLimit)) {
+		for _, batch := range slice.Split(details, constant.BatchOperationMaxLimit) {
 			ids := slice.Map(batch, func(detail *layer4ListenerBindRSTaskDetail) string {
 				return detail.taskDetailID
 			})

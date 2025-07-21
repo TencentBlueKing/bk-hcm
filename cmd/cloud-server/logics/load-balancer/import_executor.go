@@ -24,7 +24,6 @@ import (
 	"fmt"
 
 	actionlb "hcm/cmd/task-server/logics/action/load-balancer"
-	"hcm/pkg/api/core"
 	taskCore "hcm/pkg/api/core/task"
 	"hcm/pkg/api/data-service/task"
 	"hcm/pkg/api/hc-service/sync"
@@ -32,6 +31,7 @@ import (
 	"hcm/pkg/async/action"
 	dataservice "hcm/pkg/client/data-service"
 	taskserver "hcm/pkg/client/task-server"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	tableasync "hcm/pkg/dal/table/async"
 	"hcm/pkg/kit"
@@ -166,7 +166,7 @@ func updateTaskDetailState(kt *kit.Kit, cli *dataservice.Client, state enumor.Ta
 	if len(ids) == 0 {
 		return nil
 	}
-	for _, batch := range slice.Split(ids, int(core.DefaultMaxPageLimit)) {
+	for _, batch := range slice.Split(ids, constant.BatchOperationMaxLimit) {
 		updateDetailsReq := &task.BatchUpdateTaskDetailReq{
 			IDs:    batch,
 			State:  state,
