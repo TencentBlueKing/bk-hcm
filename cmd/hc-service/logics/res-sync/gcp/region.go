@@ -41,6 +41,7 @@ import (
 	"hcm/pkg/logs"
 	"hcm/pkg/runtime/filter"
 	"hcm/pkg/tools/converter"
+	"hcm/pkg/tools/slice"
 )
 
 // SyncRegionOption ...
@@ -170,13 +171,17 @@ func (cli *client) createRegion(kt *kit.Kit, accountID string, addSlice []typesr
 		createResources = append(createResources, tmpRes)
 	}
 
-	createReq := &dataregion.GcpRegionCreateReq{
-		Regions: createResources,
-	}
-	if _, err := cli.dbCli.Gcp.Region.BatchCreate(kt.Ctx, kt.Header(), createReq); err != nil {
-		logs.Errorf("[%s] create region failed, err: %v, account: %s, rid: %s", enumor.Gcp,
-			err, accountID, kt.Rid)
-		return err
+	// 底层单次操作，最大支持100个地域
+	elems := slice.Split(createResources, constant.BatchOperationMaxLimit)
+	for _, parts := range elems {
+		createReq := &dataregion.GcpRegionCreateReq{
+			Regions: parts,
+		}
+		if _, err := cli.dbCli.Gcp.Region.BatchCreate(kt.Ctx, kt.Header(), createReq); err != nil {
+			logs.Errorf("[%s] create region failed, err: %v, account: %s, rid: %s", enumor.Gcp,
+				err, accountID, kt.Rid)
+			return err
+		}
 	}
 
 	logs.Infof("[%s] sync region to create region success, accountID: %s, count: %d, rid: %s", enumor.Gcp,
@@ -204,13 +209,17 @@ func (cli *client) updateRegion(kt *kit.Kit, accountID string,
 		updateResources = append(updateResources, tmpRes)
 	}
 
-	updateReq := &dataregion.GcpRegionBatchUpdateReq{
-		Regions: updateResources,
-	}
-	if err := cli.dbCli.Gcp.Region.BatchUpdate(kt.Ctx, kt.Header(), updateReq); err != nil {
-		logs.Errorf("[%s] update region failed, err: %v, account: %s, rid: %s", enumor.Gcp,
-			err, accountID, kt.Rid)
-		return err
+	// 底层单次操作，最大支持100个地域
+	elems := slice.Split(updateResources, constant.BatchOperationMaxLimit)
+	for _, parts := range elems {
+		updateReq := &dataregion.GcpRegionBatchUpdateReq{
+			Regions: parts,
+		}
+		if err := cli.dbCli.Gcp.Region.BatchUpdate(kt.Ctx, kt.Header(), updateReq); err != nil {
+			logs.Errorf("[%s] update region failed, err: %v, account: %s, rid: %s", enumor.Gcp,
+				err, accountID, kt.Rid)
+			return err
+		}
 	}
 
 	logs.Infof("[%s] sync region to update region success, accountID: %s, count: %d, rid: %s", enumor.Gcp,
@@ -239,16 +248,20 @@ func (cli *client) deleteRegion(kt *kit.Kit, accountID string, delCloudIDs []str
 		return fmt.Errorf("validate region not exist failed, before delete")
 	}
 
-	deleteReq := &dataservice.BatchDeleteReq{
-		Filter: tools.ContainersExpression("region_id", delCloudIDs),
-	}
-	if err := cli.dbCli.Gcp.Region.BatchDelete(kt.Ctx, kt.Header(), deleteReq); err != nil {
-		return err
-	}
-	if err != nil {
-		logs.Errorf("[%s] delete region failed, err: %v, account: %s, rid: %s", enumor.Gcp,
-			err, accountID, kt.Rid)
-		return err
+	// 底层单次操作，最大支持100个地域
+	elems := slice.Split(delCloudIDs, constant.BatchOperationMaxLimit)
+	for _, parts := range elems {
+		deleteReq := &dataservice.BatchDeleteReq{
+			Filter: tools.ContainersExpression("region_id", parts),
+		}
+		if err := cli.dbCli.Gcp.Region.BatchDelete(kt.Ctx, kt.Header(), deleteReq); err != nil {
+			return err
+		}
+		if err != nil {
+			logs.Errorf("[%s] delete region failed, err: %v, account: %s, rid: %s", enumor.Gcp,
+				err, accountID, kt.Rid)
+			return err
+		}
 	}
 
 	logs.Infof("[%s] sync region to delete region success, accountID: %s, count: %d, rid: %s", enumor.Gcp,
