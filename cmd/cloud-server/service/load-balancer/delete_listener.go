@@ -126,11 +126,12 @@ func (svc *lbSvc) validateListenerTargetWeight(kt *kit.Kit, ids []string) error 
 }
 
 // getTGIDsByListenerID 七层监听器会对应多个目标组，四层监听器只有一个目标组
-func (svc *lbSvc) getTGIDsByListenerID(kt *kit.Kit, listenerID string) ([]string, error) {
+func (svc *lbSvc) getTGIDsByListenerID(kt *kit.Kit, listenerID, loadBalancerID string) ([]string, error) {
 	targetGroupIDs := make([]string, 0)
 	listTGReq := &core.ListReq{
 		Filter: tools.ExpressionAnd(
 			tools.RuleEqual("lbl_id", listenerID),
+			tools.RuleEqual("lb_id", loadBalancerID),
 		),
 		Page: core.NewDefaultBasePage(),
 	}
@@ -153,7 +154,14 @@ func (svc *lbSvc) getTGIDsByListenerID(kt *kit.Kit, listenerID string) ([]string
 
 func (svc *lbSvc) getListenerTargetWeightStat(kt *kit.Kit, listenerID string) (*cslb.ListenerTargetsStat, error) {
 
-	targetGroupIDs, err := svc.getTGIDsByListenerID(kt, listenerID)
+	lbl, err := svc.getListenerByID(kt, listenerID)
+	if err != nil {
+		logs.Errorf("get listener failed, listenerID: %s, err: %v, rid: %s",
+			listenerID, err, kt.Rid)
+		return nil, err
+	}
+
+	targetGroupIDs, err := svc.getTGIDsByListenerID(kt, listenerID, lbl.LbID)
 	if err != nil {
 		logs.Errorf("get target group ids by listener id failed, listenerID: %s, err: %v, rid: %s",
 			listenerID, err, kt.Rid)

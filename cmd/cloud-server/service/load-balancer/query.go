@@ -435,11 +435,11 @@ func (svc *lbSvc) getLoadBalancerLockStatus(cts *rest.Contexts, validHandler han
 	}
 }
 
-// getListenerByID get listener by id.
-func (svc *lbSvc) getListenerByID(cts *rest.Contexts, vendor enumor.Vendor, bizID int64, lblID string) (
+// getListenerByIDAndBiz get listener by id.
+func (svc *lbSvc) getListenerByIDAndBiz(kt *kit.Kit, vendor enumor.Vendor, bizID int64, lblID string) (
 	*corelb.BaseListener, *types.CloudResourceBasicInfo, error) {
 
-	lblResp, err := svc.client.DataService().Global.LoadBalancer.ListListener(cts.Kit,
+	lblResp, err := svc.client.DataService().Global.LoadBalancer.ListListener(kt,
 		&core.ListReq{
 			Filter: tools.ExpressionAnd(
 				tools.RuleEqual("id", lblID),
@@ -448,7 +448,7 @@ func (svc *lbSvc) getListenerByID(cts *rest.Contexts, vendor enumor.Vendor, bizI
 			Page: core.NewDefaultBasePage(),
 		})
 	if err != nil {
-		logs.Errorf("fail to list listener(%s), err: %v, rid: %s", lblID, err, cts.Kit.Rid)
+		logs.Errorf("fail to list listener(%s), err: %v, rid: %s", lblID, err, kt.Rid)
 		return nil, nil, err
 	}
 	if len(lblResp.Details) == 0 {
@@ -464,6 +464,28 @@ func (svc *lbSvc) getListenerByID(cts *rest.Contexts, vendor enumor.Vendor, bizI
 	}
 
 	return lblInfo, basicInfo, nil
+}
+
+// getListenerByID get listener by id.
+func (svc *lbSvc) getListenerByID(kt *kit.Kit, lblID string) (*corelb.BaseListener, error) {
+
+	req := &core.ListReq{
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("id", lblID),
+		),
+		Page: core.NewDefaultBasePage(),
+	}
+	lblResp, err := svc.client.DataService().Global.LoadBalancer.ListListener(kt, req)
+	if err != nil {
+		logs.Errorf("fail to list listener(%s), err: %v, rid: %s", lblID, err, kt.Rid)
+		return nil, err
+	}
+	if len(lblResp.Details) == 0 {
+		return nil, errf.New(errf.RecordNotFound, "listener not found, id: "+lblID)
+	}
+	lblInfo := &lblResp.Details[0]
+
+	return lblInfo, nil
 }
 
 // listVpcMap 根据vpcIDs查询vpc信息
