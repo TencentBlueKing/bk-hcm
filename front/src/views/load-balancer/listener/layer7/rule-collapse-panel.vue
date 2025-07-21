@@ -15,6 +15,8 @@ import { ISearchCondition } from '@/typings';
 import { ModelPropertyDisplay } from '@/model/typings';
 import { ConditionKeyType, SearchConditionFactory } from '../../children/search/condition-factory';
 import useTimeoutPoll from '@/hooks/use-timeout-poll';
+import { MENU_BUSINESS_TARGET_GROUP_DETAILS } from '@/constants/menu-symbol';
+import { GLOBAL_BIZS_KEY } from '@/common/constant';
 import { merge } from 'lodash';
 import routerAction from '@/router/utils/action';
 
@@ -24,8 +26,6 @@ import DataList from '../../children/display/data-list.vue';
 import BindingStatus from '../children/binding-status.vue';
 import AddUrlDialog from './add-url-dialog.vue';
 import RsPreviewDialog from './rs-preview-dialog.vue';
-import { MENU_BUSINESS_TARGET_GROUP_DETAILS } from '@/constants/menu-symbol';
-import { GLOBAL_BIZS_KEY } from '@/common/constant';
 
 interface IProps {
   index: number;
@@ -97,7 +97,7 @@ const rowClassCallback = (row: IListenerRuleItem) => {
 const urlList = ref<IListenerRuleItem[]>([]);
 const condition: ISearchCondition = { domain: props.domainInfo.domain };
 
-const { pagination, getPageParams } = usePage();
+const { pagination, getPageParams } = usePage(false);
 const sort = ref('created_at');
 const order = ref('DESC');
 
@@ -141,25 +141,56 @@ const setBindingStatus = async (list: IListenerRuleItem[] = []) => {
   }
 };
 
+const loading = ref(false);
 onMounted(async () => {
   const { id, vendor } = props.listenerRowData;
-  const { list, count } = await loadBalancerListenerStore.getRuleListByListenerId(
-    vendor,
-    id,
-    {
-      filter: transformSimpleCondition(condition, conditionProperties),
-      page: getPageParams(pagination, { sort: sort.value, order: order.value }),
-    },
-    currentGlobalBusinessId.value,
-  );
+  try {
+    const { list, count } = await loadBalancerListenerStore.getRuleListByListenerId(
+      vendor,
+      id,
+      {
+        filter: transformSimpleCondition(condition, conditionProperties),
+        page: getPageParams(pagination, { sort: sort.value, order: order.value }),
+      },
+      currentGlobalBusinessId.value,
+    );
 
-  // 为了方便轮询，这里统一将binding_status设置为'binding'态
-  urlList.value = list.map((item) => ({ ...item, binding_status: 'binding' }));
-  pagination.count = count;
+    // 为了方便轮询，这里统一将binding_status设置为'binding'态
+    urlList.value = list.map((item) => ({ ...item, binding_status: 'binding' }));
+    pagination.count = count;
 
-  setRsNum(urlList.value);
-  setBindingStatus(urlList.value);
+    setRsNum(urlList.value);
+    setBindingStatus(urlList.value);
+  } finally {
+    loading.value = false;
+  }
 });
+
+const isScrollLoading = ref(false);
+const handleScrollBottom = async () => {
+  if (isScrollLoading.value) return;
+  if (pagination.count <= urlList.value.length) return;
+
+  pagination.current += 1;
+  isScrollLoading.value = true;
+  try {
+    const { id, vendor } = props.listenerRowData;
+    const { list, count } = await loadBalancerListenerStore.getRuleListByListenerId(
+      vendor,
+      id,
+      {
+        filter: transformSimpleCondition(condition, conditionProperties),
+        page: getPageParams(pagination, { sort: sort.value, order: order.value }),
+      },
+      currentGlobalBusinessId.value,
+    );
+
+    urlList.value.push(...list.map((item) => ({ ...item, binding_status: 'binding' })));
+    pagination.count = count;
+  } finally {
+    isScrollLoading.value = false;
+  }
+};
 
 const taskPoll = useTimeoutPoll(
   () => {
@@ -273,14 +304,16 @@ const handleRsPreviewDialogHidden = () => {
         </bk-pop-confirm>
       </template>
       <template #content>
-        <!-- TODO-CLB：滚动触底加载 -->
         <data-list
           class="data-list"
-          v-bkloading="{ loading: loadBalancerListenerStore.ruleListLoading }"
+          v-bkloading="{ loading }"
           :columns="displayFields"
           :list="urlList"
+          :enable-query="false"
           :max-height="360"
           :row-class="rowClassCallback"
+          :scroll-loading="isScrollLoading"
+          @scroll-bottom="handleScrollBottom"
         >
           <template #action>
             <bk-table-column label="操作" :show-overflow-tooltip="false" :width="180" fixed="right">

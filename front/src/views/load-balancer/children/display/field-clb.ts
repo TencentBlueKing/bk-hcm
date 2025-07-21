@@ -5,10 +5,10 @@ import { VendorMap } from '@/common/constant';
 
 @Model('load-balancer/clb-display')
 export class DisplayFieldClb {
-  @Column('string', { name: '负载均衡名称', index: 0, width: 150 })
+  @Column('string', { name: '负载均衡名称', index: 0, width: 150, sort: true })
   name: string;
 
-  // TODO-CLB: name、id、domain、vip均要支持复制
+  // TODO-CLB: search-select多值搜索
   @Column('string', { name: '负载均衡ID', index: 0, width: 120 })
   cloud_id: string;
 

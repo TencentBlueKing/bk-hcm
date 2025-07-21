@@ -17,6 +17,9 @@ const props = withDefaults(defineProps<IDataListProps>(), {
   enableQuery: true,
   remotePagination: true,
 });
+const emit = defineEmits<{
+  'scroll-bottom': [];
+}>();
 
 const { handlePageChange, handlePageSizeChange, handleSort } = usePage(props.enableQuery, props.pagination);
 
@@ -29,10 +32,15 @@ const getDisplayCompProps = (column: ModelPropertyColumn, row: any) => {
   }
   return {};
 };
+
+const handleScrollBottom = () => {
+  emit('scroll-bottom');
+};
 </script>
 
 <template>
   <bk-table
+    row-key="id"
     row-hover="auto"
     :data="list"
     :pagination="pagination"
@@ -42,8 +50,9 @@ const getDisplayCompProps = (column: ModelPropertyColumn, row: any) => {
     @page-limit-change="handlePageSizeChange"
     @page-value-change="handlePageChange"
     @column-sort="handleSort"
-    row-key="id"
+    @scroll-bottom="handleScrollBottom"
   >
+    >
     <bk-table-column v-if="hasSelection" :width="40" :min-width="40" type="selection" />
     <bk-table-column
       v-for="(column, index) in columns"
