@@ -140,7 +140,6 @@ import { ResourceTypeEnum, VendorEnum, VendorMap } from '@/common/constant';
 import SyncAccountResource from '@/components/sync-account-resource/index.vue';
 import { CLB_STATUS_MAP, LB_NETWORK_TYPE_MAP } from '@/constants';
 import { useAccountBusiness } from '@/views/resource/resource-manage/hooks/use-account-business';
-import { useRegionsStore } from '@/store/useRegionsStore';
 import { useRegionStore } from '@/store/region';
 
 const props = defineProps({
@@ -285,6 +284,7 @@ const clbsSearchData = [
     name: t('地域'),
     id: 'region',
     async: true,
+    placeholder: '请输入地域名',
   },
 ];
 
