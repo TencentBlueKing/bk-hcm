@@ -12,7 +12,7 @@ import {
 const props = withDefaults(
   defineProps<{
     fields: ModelPropertySearch[];
-    condition: ISearchCondition;
+    condition?: ISearchCondition;
     flat?: boolean;
     localSearch?: boolean;
     options?: Array<{ field: string; formatter: Function }>;

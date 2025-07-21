@@ -2,7 +2,7 @@
 import { computed, inject, nextTick, Ref, watch } from 'vue';
 import { Alert, Form } from 'bkui-vue';
 import { BkRadioButton, BkRadioGroup } from 'bkui-vue/lib/radio';
-import { VendorEnum } from '@/common/constant';
+import { ResourceTypeEnum, VendorEnum } from '@/common/constant';
 import { IAccountItem } from '@/typings/account';
 import Step from '../components/step.vue';
 import AccountSelector from '@/components/account-selector/index-new.vue';
@@ -10,7 +10,6 @@ import RegionSelector from '@/views/service/service-apply/components/common/regi
 
 import { useI18n } from 'vue-i18n';
 import { Action, LbBatchImportBaseInfo, Operation } from '../../types';
-import { accountFilter } from '@/views/service/service-apply/components/common/condition-options/account-filter.plugin';
 
 defineOptions({ name: 'LbBatchImportBaseInfoComp' });
 const props = defineProps<{
@@ -76,7 +75,7 @@ const handleAccountChange = (
       <AccountSelector
         v-model="formModel.account_id"
         :biz-id="bkBizId"
-        :filter="accountFilter"
+        :resource-type="ResourceTypeEnum.CLB"
         :disabled="globalDisabled"
         @change="handleAccountChange"
       />

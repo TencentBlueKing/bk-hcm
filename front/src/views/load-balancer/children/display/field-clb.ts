@@ -5,17 +5,17 @@ import { VendorMap } from '@/common/constant';
 
 @Model('load-balancer/clb-display')
 export class DisplayFieldClb {
-  @Column('string', { name: '负载均衡名称', index: 0, width: 150 })
+  @Column('string', { name: '负载均衡名称', index: 0, width: 150, sort: true })
   name: string;
 
-  // TODO-CLB: name、id、domain、vip均要支持复制
+  // TODO-CLB: search-select多值搜索
   @Column('string', { name: '负载均衡ID', index: 0, width: 120 })
   cloud_id: string;
 
   @Column('string', { name: '负载均衡域名', index: 0, width: 120 })
   domain: string;
 
-  @Column('string', { name: '负载均衡VIP', index: 0, width: 120 })
+  @Column('string', { name: '负载均衡VIP', index: 0, width: 130 })
   lb_vip: string;
 
   @Column('region', { name: '地域', index: 0, width: 120, sort: true })
@@ -66,6 +66,7 @@ export class DisplayFieldClb {
   @Column('enum', { name: '运营商', index: 0, width: 80, option: LOAD_BALANCER_ISP_NAME })
   isp: string;
 
+  // TODO-CLB：需要对带宽进行格式化处理
   @Column('number', { name: '带宽', index: 0, width: 80 })
   bandwidth: number;
 

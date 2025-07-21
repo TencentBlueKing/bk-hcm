@@ -20,22 +20,24 @@ import usePage from '@/hooks/use-page';
 import useSearchQs from '@/hooks/use-search-qs';
 import useTableSelection from '@/hooks/use-table-selection';
 import { ValidateValuesFunc } from 'bkui-vue/lib/search-select/utils';
-import { parseIP } from '@/utils';
+import { getInstVip, parseIP } from '@/utils';
 import { ISearchCondition, ISearchSelectValue } from '@/typings';
 import { transformSimpleCondition } from '@/utils/search';
 import { GLOBAL_BIZS_KEY, ResourceTypeEnum } from '@/common/constant';
 import { ModelPropertyColumn } from '@/model/typings';
 import routerAction from '@/router/utils/action';
-import { MENU_BUSINESS_LOAD_BALANCER_DETAILS } from '@/constants/menu-symbol';
+import { MENU_BUSINESS_LOAD_BALANCER_APPLY, MENU_BUSINESS_LOAD_BALANCER_DETAILS } from '@/constants/menu-symbol';
 
 import { Button, Message, Tag } from 'bkui-vue';
 import ActionItem from '../children/action-item.vue';
 import BatchCopy from '@/views/business/load-balancer/clb-view/all-clbs-manager/batch-copy.vue';
 import Search from '../children/search/search.vue';
 import DataList from '../children/display/data-list.vue';
+import BatchDeleteDialog from './children/batch-delete-dialog.vue';
 import BatchImportSideslider from './batch-import/index.vue';
 import SyncAccountResourceDialog from '@/components/sync-account-resource/index.vue';
 import Confirm from '@/components/confirm';
+import HoverCopy from '@/components/copy-to-clipboard/hover-copy.vue';
 
 defineOptions({ name: 'load-balancer-table' });
 
@@ -64,8 +66,7 @@ const actionConfig: Record<LoadBalancerActionType, ActionItemType> = {
     displayProps: { theme: 'primary' },
     handleClick: () =>
       routerAction.redirect({
-        // TODO-CLB: 后续换成name
-        path: '/business/service/service-apply/clb',
+        name: MENU_BUSINESS_LOAD_BALANCER_APPLY,
         query: { [GLOBAL_BIZS_KEY]: currentGlobalBusinessId.value },
       }),
   },
@@ -95,7 +96,8 @@ const actionConfig: Record<LoadBalancerActionType, ActionItemType> = {
     label: t('批量删除'),
     value: LoadBalancerActionType.REMOVE,
     handleClick: () => {
-      // TODO-CLB: 批量删除CLB
+      batchDeleteDialogState.isHidden = false;
+      batchDeleteDialogState.isShow = true;
     },
   },
   [LoadBalancerActionType.SYNC]: {
@@ -190,8 +192,17 @@ const displayFieldConfig: Record<string, Partial<ModelPropertyColumn>> = {
           { history: true },
         );
       };
-      return h(Button, { theme: 'primary', text: true, onClick: handleClick }, row.name);
+      return h(
+        HoverCopy,
+        { content: row.name },
+        h(Button, { theme: 'primary', text: true, onClick: handleClick }, row.name),
+      );
     },
+  },
+  cloud_id: { render: ({ cell }) => h(HoverCopy, { content: cell }) },
+  domain: { render: ({ cell }) => h(HoverCopy, { content: cell }) },
+  lb_vip: {
+    render: ({ row }) => h(HoverCopy, { content: getInstVip(row) }),
   },
   lb_type: {
     render: ({ cell }) => {
@@ -262,6 +273,8 @@ const asyncQueryListenerCount = async (list: ILoadBalancerWithDeleteProtectionIt
     const listenerCountDetail = listenerCountDetails.find((item) => item.lb_id === lb.id);
     if (listenerCountDetail) {
       lb.listener_count = listenerCountDetail.num;
+    } else {
+      lb.listener_count = 0;
     }
   });
 };
@@ -305,6 +318,9 @@ watch(
       loadBalancerList.value = list;
       pagination.count = count;
 
+      // 清空选中
+      selections.value = [];
+
       asyncQueryListenerCount(list);
     } catch (error) {
       console.error(error);
@@ -316,6 +332,11 @@ watch(
   },
   { immediate: true },
 );
+
+const batchDeleteDialogState = reactive({ isShow: false, isHidden: true });
+const handleBatchDeleteSuccess = () => {
+  routerAction.redirect({ query: { ...route.query, _t: Date.now() } });
+};
 
 // 批量导入
 const batchImportSidesliderState = reactive({ isShow: false, action: undefined });
@@ -377,6 +398,15 @@ const syncDialogState = reactive({ isShow: false, isHidden: true });
         </template>
       </data-list>
     </section>
+
+    <template v-if="!batchDeleteDialogState.isHidden">
+      <batch-delete-dialog
+        v-model="batchDeleteDialogState.isShow"
+        :selections="selections"
+        @confirm-success="handleBatchDeleteSuccess"
+        @hidden="batchDeleteDialogState.isHidden = true"
+      />
+    </template>
 
     <batch-import-sideslider
       v-model="batchImportSidesliderState.isShow"

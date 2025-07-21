@@ -72,4 +72,7 @@ export class SearchConditionClb {
 
   @Column('string', { name: '所属VPC' })
   cloud_vpc_id: string;
+
+  @Column('bool', { name: '删除保护', option: { true: '开启', false: '关闭' } })
+  delete_protect: boolean;
 }

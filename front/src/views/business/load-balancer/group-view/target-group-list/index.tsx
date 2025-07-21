@@ -7,11 +7,11 @@ import useMoreActionDropdown from '@/hooks/useMoreActionDropdown';
 import { useSingleList } from '@/hooks/useSingleList';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import bus from '@/common/bus';
-import { LBRouteName } from '@/constants';
 import { QueryRuleOPEnum } from '@/typings';
 import allIcon from '@/assets/image/all-lb.svg';
 import mubiaoIcon from '@/assets/image/mubiao.svg';
 import './index.scss';
+import { MENU_BUSINESS_TARGET_GROUP_DETAILS, MENU_BUSINESS_TARGET_GROUP_OVERVIEW } from '@/constants/menu-symbol';
 
 export default defineComponent({
   name: 'TargetGroupList',
@@ -49,7 +49,7 @@ export default defineComponent({
       loadBalancerStore.setTargetGroupId(id);
       // 导航
       router.push({
-        name: id ? LBRouteName.tg : LBRouteName.allTgs,
+        name: id ? MENU_BUSINESS_TARGET_GROUP_DETAILS : MENU_BUSINESS_TARGET_GROUP_OVERVIEW,
         query: { ...route.query, type: id ? route.query.type : undefined, vendor },
         params: { id: id || undefined },
       });

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import StatusSuccess from '@/assets/image/success-account.png';
+import StatusFailure from '@/assets/image/failed-account.png';
 import StatusLoading from '@/assets/image/status_loading.png';
 import { BINDING_STATUS_NAME, BindingStatus, LAYER_7_LISTENER_PROTOCOL, ListenerProtocol } from '../../constants';
 import { computed } from 'vue';
@@ -11,7 +12,10 @@ const { t } = useI18n();
 
 const isLayer7ListenerProtocol = computed(() => LAYER_7_LISTENER_PROTOCOL.includes(props.protocol));
 const isBinding = computed(() => props.value === BindingStatus.BINDING);
-const icon = computed(() => (isBinding.value ? StatusLoading : StatusSuccess));
+const icon = computed(() => {
+  if (isBinding.value) return StatusLoading;
+  return props.value === BindingStatus.SUCCESS ? StatusSuccess : StatusFailure;
+});
 </script>
 
 <template>

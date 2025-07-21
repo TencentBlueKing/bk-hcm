@@ -8,7 +8,14 @@ import { type Settings } from 'bkui-vue/lib/table/props';
 import { h, ref } from 'vue';
 import type { Ref } from 'vue';
 import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
-import { CLB_BINDING_STATUS, CLOUD_HOST_STATUS, LB_ISP, VendorEnum, VendorMap } from '@/common/constant';
+import {
+  CLB_BINDING_STATUS,
+  CLOUD_HOST_STATUS,
+  LB_ISP,
+  GLOBAL_BIZS_KEY,
+  VendorEnum,
+  VendorMap,
+} from '@/common/constant';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
@@ -39,6 +46,8 @@ import dayjs from 'dayjs';
 import { BILLS_ROOT_ACCOUNT_SUMMARY_STATE_MAP, BILL_TYPE__MAP_HW, CURRENCY_MAP } from '@/constants';
 import { BILL_VENDORS_MAP, BILL_SITE_TYPES_MAP } from '@/views/bill/account/account-manage/constants';
 import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
+import { MENU_BUSINESS_LOAD_BALANCER_DETAILS, MENU_BUSINESS_TARGET_GROUP_DETAILS } from '@/constants/menu-symbol';
+import QueryString from 'qs';
 
 interface LinkFieldOptions {
   type: string; // 资源类型
@@ -1461,7 +1470,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
           theme='primary'
           onClick={renderFieldPushState(
             {
-              name: LBRouteName.tg,
+              name: MENU_BUSINESS_TARGET_GROUP_DETAILS,
               params: { id },
               query: { ...route.query, type: 'detail', vendor },
             },
@@ -1666,22 +1675,28 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '绑定的监听器',
       field: 'lbl_name',
       width: 200,
-      render: ({ lbl_id, lbl_name, protocol }: any) => (
-        <Button
-          text
-          theme='primary'
-          onClick={renderFieldPushState({
-            name: LBRouteName.listener,
-            params: { id: lbl_id },
-            query: {
-              ...route.query,
-              type: 'detail',
-              protocol,
-            },
-          })}>
-          {lbl_name}
-        </Button>
-      ),
+      sort: false,
+      render: (row: any) => {
+        return (
+          <Button
+            text
+            theme='primary'
+            onClick={renderFieldPushState({
+              name: MENU_BUSINESS_LOAD_BALANCER_DETAILS,
+              params: { id: row.lb_id },
+              query: {
+                [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY],
+                filter: QueryString.stringify(
+                  { cloud_id: row.cloud_lbl_id },
+                  { arrayFormat: 'comma', encode: false, allowEmptyArrays: true },
+                ),
+                _t: Date.now(),
+              },
+            })}>
+            {row.lbl_name}
+          </Button>
+        );
+      },
     }),
     {
       label: '关联的负载均衡',

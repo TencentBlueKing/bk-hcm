@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, inject, nextTick, reactive, Ref, ref, useTemplateRef, watch, watchEffect } from 'vue';
+import { useBusinessStore } from '@/store';
 import { IListenerDetails, IListenerModel, useLoadBalancerListenerStore } from '@/store/load-balancer/listener';
 import { ILoadBalancerDetails, ILoadBalancerLockStatus, useLoadBalancerClbStore } from '@/store/load-balancer/clb';
 import { ITargetGroupDetails, useLoadBalancerTargetGroupStore } from '@/store/load-balancer/target-group';
@@ -15,11 +16,15 @@ import {
   SSL_MODE_NAME,
   SSLMode,
 } from '../constants';
+import { goAsyncTaskDetail } from '@/utils';
+import routerAction from '@/router/utils/action';
 
 import { Form, Message } from 'bkui-vue';
 import CertSelector from '@/views/business/load-balancer/clb-view/components/CertSelector';
 import TargetGroupSelector from '@/views/business/load-balancer/clb-view/components/TargetGroupSelector';
 import RsPreviewTable from './children/rs-preview-table.vue';
+import { MENU_BUSINESS_TARGET_GROUP_DETAILS } from '@/constants/menu-symbol';
+import { GLOBAL_BIZS_KEY } from '@/common/constant';
 
 interface IProps {
   loadBalancerDetails: ILoadBalancerDetails;
@@ -34,16 +39,11 @@ const emit = defineEmits<{ 'confirm-success': [id: string] }>();
 const loadBalancerListenerStore = useLoadBalancerListenerStore();
 const loadBalancerClbStore = useLoadBalancerClbStore();
 const loadBalancerTargetGroupStore = useLoadBalancerTargetGroupStore();
+const businessStore = useBusinessStore();
 
 const currentGlobalBusinessId = inject<Ref<number>>('currentGlobalBusinessId');
 
 const title = computed(() => (props.isEdit ? '编辑监听器' : '新增监听器'));
-
-const loadBalancerLockStatus = ref<ILoadBalancerLockStatus>();
-const jumpToAsyncTaskDetails = () => {
-  // TODO-CLB
-  // goAsyncTaskDetail(businessStore.list, lockedLbInfo.value.flow_id, currentBusinessId.value)
-};
 
 const formRef = useTemplateRef<typeof Form>('form');
 const rules = {
@@ -99,7 +99,7 @@ const formModel = reactive<IListenerModel>({
   name: '',
   protocol: ListenerProtocol.TCP,
   port: undefined,
-  scheduler: '',
+  scheduler: undefined,
   session_open: false,
   session_type: SessionType.NORMAL,
   session_expire: 0,
@@ -174,8 +174,13 @@ watch(
   { immediate: true },
 );
 
-// TODO-CLB
-const jumpToTargetGroupDetails = () => {};
+const jumpToTargetGroupDetails = (id: string) => {
+  routerAction.open({
+    name: MENU_BUSINESS_TARGET_GROUP_DETAILS,
+    params: { id },
+    query: { [GLOBAL_BIZS_KEY]: currentGlobalBusinessId.value, type: 'detail', vendor: props.initialModel.vendor },
+  });
+};
 
 const targetGroupDetails = ref<ITargetGroupDetails>();
 
@@ -190,6 +195,12 @@ watch(
   },
   { immediate: true },
 );
+
+const loadBalancerLockStatus = ref<ILoadBalancerLockStatus>();
+const jumpToAsyncTaskDetails = () => {
+  // TODO-CLB: utils替换为hooks
+  goAsyncTaskDetail(businessStore.list, loadBalancerLockStatus.value.flow_id, currentGlobalBusinessId.value);
+};
 
 const isConfirmLoading = computed(() =>
   props.isEdit ? loadBalancerListenerStore.updateListenerLoading : loadBalancerListenerStore.addListenerLoading,
@@ -214,7 +225,7 @@ const handleConfirm = async () => {
     name,
     protocol,
     scheduler,
-    session_type,
+    // session_type,
     session_expire,
     domain,
     url,
@@ -238,11 +249,8 @@ const handleConfirm = async () => {
     // 如果启用了SNI，需要调用规则（域名）更新接口来更新证书信息
     if (sni_switch) {
       await loadBalancerListenerStore.updateDomain(
-        {
-          lbl_id: id,
-          domain,
-          certificate: isHttps ? certificate : undefined,
-        },
+        id,
+        { domain, certificate: isHttps ? certificate : undefined },
         currentGlobalBusinessId.value,
       );
     }
@@ -253,7 +261,7 @@ const handleConfirm = async () => {
         ...formModel,
         id: undefined,
         session_open: undefined,
-        session_type: isLayer4 && Scheduler.LEAST_CONN !== scheduler ? session_type : undefined,
+        // session_type: isLayer4 && Scheduler.LEAST_CONN !== scheduler ? session_type : undefined, // 后端要求必填
         session_expire: isLayer4 && Scheduler.LEAST_CONN !== scheduler ? session_expire : undefined,
         domain: isLayer7 ? domain : undefined,
         url: isLayer7 ? url : undefined,
@@ -265,7 +273,6 @@ const handleConfirm = async () => {
     Message({ theme: 'success', message: '新增成功' });
   }
   handleCancel();
-  // TODO-CLB: 如果是在监听器列表页面，则新增成功后刷新列表；如果是在监听器页面更新监听器详情, 则更新成功后刷新监听器详情
   emit('confirm-success', props.isEdit ? id : undefined);
 };
 
@@ -335,12 +342,7 @@ const handleCancel = () => {
           required
           property="certificate.ca_cloud_id"
         >
-          <cert-selector
-            ref="svr-cert-selector"
-            v-model="formModel.certificate.ca_cloud_id"
-            type="CA"
-            :account-id="formModel.account_id"
-          />
+          <cert-selector v-model="formModel.certificate.ca_cloud_id" type="CA" :account-id="formModel.account_id" />
         </bk-form-item>
       </template>
       <template v-if="LAYER_7_LISTENER_PROTOCOL.includes(formModel.protocol) && !isEdit">
@@ -413,7 +415,7 @@ const handleCancel = () => {
             v-if="formModel.target_group_id"
             theme="primary"
             text
-            @click="jumpToTargetGroupDetails"
+            @click="jumpToTargetGroupDetails(formModel.target_group_id)"
             class="value"
           >
             {{ bindingTargetGroupName || '未命名' }}
