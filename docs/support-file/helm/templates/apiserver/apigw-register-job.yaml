@@ -41,7 +41,7 @@ spec:
             - name: BK_HCM_STAGE_DESCRIPTION_EN
               value: {{ .Values.apigwRegister.stageDescriptionEn }}
             - name: BK_HCM_RELEASE_VERSION
-              value: {{ .Values.apigwRegister.releaseVersion }}
+              value: {{ default .Values.image.tag .Values.apigwReleaseVersion }}
             - name: BK_HCM_RELEASE_TITLE
               value: {{ .Values.apigwRegister.releaseTitle }}
             - name: BK_HCM_RELEASE_COMMENT
