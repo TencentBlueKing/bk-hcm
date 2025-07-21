@@ -1,23 +1,6 @@
 import { NetworkAccountType } from '@/api/load_balancers/apply-clb/types';
 import { ConstantMapRecord } from '@/typings';
 
-// 负载均衡-路由组件名称
-export enum LBRouteName {
-  allLbs = 'all-lbs-manager',
-  lb = 'specific-lb-manager',
-  listener = 'specific-listener-manager',
-  domain = 'specific-domain-manager',
-  allTgs = 'all-tgs-manager',
-  tg = 'specific-tg-manager',
-}
-// 负载均衡-路由组件名称映射
-export const LB_ROUTE_NAME_MAP: ConstantMapRecord = {
-  all: 'all-lbs-manager',
-  lb: 'specific-lb-manager',
-  listener: 'specific-listener-manager',
-  domain: 'specific-domain-manager',
-};
-
 export const BGP_VIP_ISP_TYPES: string[] = ['BGP'];
 
 // 网络类型
@@ -106,29 +89,12 @@ export const SESSION_TYPE_MAP: ConstantMapRecord = {
   QUIC_CID: '基于源端口',
 };
 
-// 证书认证方式映射
-export const SSL_MODE_MAP: ConstantMapRecord = {
-  UNIDIRECTIONAL: '单向认证',
-  MUTUAL: '双向认证',
-};
-
-// 均衡方式映射
-export const SCHEDULER_MAP: ConstantMapRecord = {
-  WRR: '按权重轮询',
-  LEAST_CONN: '最小连接数',
-  IP_HASH: 'IP Hash',
-};
 // 均衡方式映射 - 反向映射
 export const SCHEDULER_REVERSE_MAP: ConstantMapRecord = {
   按权重轮询: 'WRR',
   最小连接数: 'LEAST_CONN',
   IP_HASH: 'IP_HASH',
 };
-
-// 传输层协议, 如 TCP, UDP
-export const TRANSPORT_LAYER_LIST = ['TCP', 'UDP'];
-// 应用层协议, 如 HTTP, HTTPS
-export const APPLICATION_LAYER_LIST = ['HTTP', 'HTTPS'];
 
 // 负载均衡网络类型映射
 export const LB_NETWORK_TYPE_MAP: ConstantMapRecord = {
@@ -299,9 +265,3 @@ export const LOADBALANCER_BANDWIDTH_PACKAGE_NETWORK_TYPES_MAP: Record<string, st
   CTCC: ['SINGLEISP', 'SINGLEISP_CTCC'],
   CUCC: ['SINGLEISP', 'SINGLEISP_CUCC'],
 };
-
-export enum ListenerPanelEnum {
-  LIST = 'list',
-  DETAIL = 'detail',
-  TARGET_GROUP = 'target_group',
-}

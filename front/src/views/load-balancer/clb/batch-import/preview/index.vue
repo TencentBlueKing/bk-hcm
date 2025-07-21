@@ -2,9 +2,14 @@
 import { computed, h, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { VendorEnum } from '@/common/constant';
-import { SCHEDULER_MAP, SSL_MODE_MAP } from '@/constants';
 import { ILoadBalancerBatchImportModel, LoadBalancerBatchImportPreviewDetails, Status } from '../typings';
-import { LoadBalancerBatchImportOperationType } from '@/views/load-balancer/constants';
+import {
+  LoadBalancerBatchImportOperationType,
+  Scheduler,
+  SCHEDULER_NAME,
+  SSL_MODE_NAME,
+  SSLMode,
+} from '@/views/load-balancer/constants';
 
 import Step from '../../children/step.vue';
 
@@ -69,7 +74,7 @@ watch(
               label: t('均衡方式'),
               field: 'scheduler',
               isDefaultShow: true,
-              render: ({ cell }: { cell: string }) => SCHEDULER_MAP[cell],
+              render: ({ cell }: { cell: Scheduler }) => SCHEDULER_NAME[cell],
             },
             {
               label: t('健康检查'),
@@ -87,7 +92,7 @@ watch(
               label: t('证书认证方式'),
               field: 'ssl_mode',
               isDefaultShow: true,
-              render: ({ cell }: { cell: string }) => SSL_MODE_MAP[cell],
+              render: ({ cell }: { cell: SSLMode }) => SSL_MODE_NAME[cell],
             },
             {
               label: () => h('div', { class: 'text-center' }, [t('服务器证书'), h('br'), t('（HTTPS专用）')]),
@@ -111,7 +116,7 @@ watch(
               label: t('均衡方式'),
               field: 'scheduler',
               isDefaultShow: true,
-              render: ({ cell }: { cell: string }) => SCHEDULER_MAP[cell],
+              render: ({ cell }: { cell: Scheduler }) => SCHEDULER_NAME[cell],
             },
             {
               label: t('健康检查'),

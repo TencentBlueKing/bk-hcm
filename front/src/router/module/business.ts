@@ -1,5 +1,4 @@
 // import { CogShape } from 'bkui-vue/lib/icon';
-import { LBRouteName } from '@/constants';
 import type { RouteRecordRaw } from 'vue-router';
 import { operationLogBiz as operationLogBizRouteConfig } from '@/views/operation-log/route-config';
 import { loadBalancerBiz as loadBalancerBizRouteConfig } from '@/views/load-balancer/route-config';
@@ -337,104 +336,6 @@ const businessMenus: RouteRecordRaw[] = [
           activeKey: 'businessSecurityGroup',
           // breadcrumb: ['资源', '参数模板', '详情'],
           notMenu: true,
-        },
-      },
-      {
-        path: '/business/loadbalancer',
-        name: 'businessClb',
-        component: () => import('@/views/business/load-balancer/index'),
-        redirect: '/business/loadbalancer/clb-view',
-        children: [
-          {
-            path: 'clb-view',
-            name: 'loadbalancer-view',
-            component: () => import('@/views/business/load-balancer/clb-view/index'),
-            children: [
-              {
-                path: '',
-                name: LBRouteName.allLbs,
-                component: () => import('@/views/business/load-balancer/clb-view/all-clbs-manager/index'),
-                props(route) {
-                  return route.query;
-                },
-                meta: {
-                  type: 'all',
-                  isFilterAccount: true,
-                },
-              },
-              {
-                path: 'lb/:id',
-                name: LBRouteName.lb,
-                component: () => import('@/views/business/load-balancer/clb-view/specific-clb-manager/index'),
-                props(route) {
-                  return { ...route.params, ...route.query };
-                },
-                meta: {
-                  type: 'lb',
-                  rootRoutePath: '/business/loadbalancer/clb-view',
-                },
-              },
-              {
-                path: 'listener/:id',
-                name: LBRouteName.listener,
-                component: () => import('@/views/business/load-balancer/clb-view/specific-listener-manager/index'),
-                props(route) {
-                  return { ...route.params, ...route.query };
-                },
-                meta: {
-                  type: 'listener',
-                  rootRoutePath: '/business/loadbalancer/clb-view',
-                },
-              },
-              {
-                path: 'domain/:id',
-                name: LBRouteName.domain,
-                component: () => import('@/views/business/load-balancer/clb-view/specific-domain-manager/index'),
-                props(route) {
-                  return { ...route.params, ...route.query };
-                },
-                meta: {
-                  type: 'domain',
-                  rootRoutePath: '/business/loadbalancer/clb-view',
-                },
-              },
-            ],
-          },
-          {
-            path: 'group-view',
-            name: 'target-group-view',
-            component: () => import('@/views/business/load-balancer/group-view/index'),
-            children: [
-              {
-                path: '',
-                name: LBRouteName.allTgs,
-                component: () => import('@/views/business/load-balancer/group-view/all-groups-manager/index'),
-                props(route) {
-                  return route.query;
-                },
-              },
-              {
-                path: ':id',
-                name: LBRouteName.tg,
-                component: () =>
-                  import('@/views/business/load-balancer/group-view/specific-target-group-manager/index'),
-                props(route) {
-                  return { ...route.params, ...route.query };
-                },
-                meta: {
-                  rootRoutePath: '/business/loadbalancer/group-view',
-                },
-              },
-            ],
-            meta: {
-              isFilterAccount: true,
-            },
-          },
-        ],
-        meta: {
-          title: '负载均衡',
-          activeKey: 'businessClb',
-          icon: 'hcm-icon bkhcm-icon-loadbalancer',
         },
       },
       loadBalancerBizRouteConfig[0],

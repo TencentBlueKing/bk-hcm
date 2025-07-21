@@ -30,7 +30,7 @@ import { MENU_BUSINESS_LOAD_BALANCER_APPLY, MENU_BUSINESS_LOAD_BALANCER_DETAILS 
 
 import { Button, Message, Tag } from 'bkui-vue';
 import ActionItem from '../children/action-item.vue';
-import BatchCopy from '@/views/business/load-balancer/clb-view/all-clbs-manager/batch-copy.vue';
+import BatchCopy from './children/batch-copy.vue';
 import Search from '../children/search/search.vue';
 import DataList from '../children/display/data-list.vue';
 import BatchDeleteDialog from './children/batch-delete-dialog.vue';
