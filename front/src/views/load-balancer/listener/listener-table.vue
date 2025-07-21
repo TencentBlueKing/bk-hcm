@@ -25,9 +25,11 @@ import Search from '../children/search/search.vue';
 import DataList from '../children/display/data-list.vue';
 import BindingStatus from './children/binding-status.vue';
 import AddListenerSideslider from './add.vue';
+import BatchDeleteDialog from './children/batch-delete-dialog.vue';
 import SyncAccountResourceDialog from '@/components/sync-account-resource/index.vue';
 import Confirm from '@/components/confirm';
 import DetailsSideslider from './details.vue';
+import { getInstVip } from '@/utils';
 
 //* 接口请求使用lbId，避免details暂无数据，导致接口报错
 const props = defineProps<{ lbId: string; details: ILoadBalancerDetails }>();
@@ -56,7 +58,8 @@ const actionConfig: Record<ListenerActionType, ActionItemType> = {
     value: ListenerActionType.REMOVE,
     disabled: () => selections.value.length === 0,
     handleClick: () => {
-      // TODO-CLB：批量删除
+      batchDeleteDialogState.isHidden = false;
+      batchDeleteDialogState.isShow = true;
     },
   },
   [ListenerActionType.SYNC]: {
@@ -93,19 +96,19 @@ const actionList = computed<ActionItemType[]>(() => {
 });
 
 // data-list
-const columnIds = [
+const displayFieldIds = [
   'name',
   'cloud_id',
   'protocol',
   'port',
   'scheduler',
-  'total_rs_count',
+  'rs_num',
   'domain_num',
   'url_num',
   'binding_status',
 ];
-const columnProperties = DisplayFieldFactory.createModel(DisplayFieldType.LISTENER).getProperties();
-const columnConfig: Record<string, Partial<ModelPropertyColumn>> = {
+const displayProperties = DisplayFieldFactory.createModel(DisplayFieldType.LISTENER).getProperties();
+const displayConfig: Record<string, Partial<ModelPropertyColumn>> = {
   name: {
     render: ({ data, row }) => {
       const handleClick = () => {
@@ -125,12 +128,12 @@ const columnConfig: Record<string, Partial<ModelPropertyColumn>> = {
     },
   },
 };
-const dataListColumns = columnIds.map((id) => {
-  const property = columnProperties.find((field) => field.id === id);
-  return { ...property, ...columnConfig[id] };
+const dataListColumns = displayFieldIds.map((id) => {
+  const property = displayProperties.find((field) => field.id === id);
+  return { ...property, ...displayConfig[id] };
 });
 
-const conditionIds = ['name', 'protocol', 'port'];
+const conditionIds = ['name', 'cloud_id', 'protocol', 'port'];
 const conditionProperties = SearchConditionFactory.createModel(ConditionKeyType.LISTENER).getProperties();
 const searchFields = conditionIds.map((id) => {
   const property = conditionProperties.find((field) => field.id === id);
@@ -171,8 +174,15 @@ const asyncSetRsWeightStat = async (list: IListenerItem[]) => {
   const ids = list.map((item) => item.id);
   const map = await loadBalancerListenerStore.getListenersRsWeightStat(ids, currentGlobalBusinessId.value);
   listenerList.value.forEach((item) => {
-    const { non_zero_weight_count, zero_weight_count, total_count: total_rs_count } = map[item.id];
-    Object.assign(item, { non_zero_weight_count, zero_weight_count, total_rs_count });
+    const { non_zero_weight_count, zero_weight_count, total_count: totalCount } = map[item.id];
+    Object.assign(item, { non_zero_weight_count, zero_weight_count, rs_num: totalCount });
+  });
+};
+
+const injectLoadBalancerFields = (list: IListenerItem[]) => {
+  if (!props.details) return;
+  list.forEach((item) => {
+    Object.assign(item, { lb_cloud_id: props.details.cloud_id, lb_vip: getInstVip(props.details) });
   });
 };
 
@@ -188,6 +198,7 @@ const handleSearch = (_vals: ISearchSelectValue, condition: ISearchCondition) =>
   searchQs.set(condition);
 };
 
+const loading = ref(false);
 watch(
   () => route.query,
   async (query) => {
@@ -199,26 +210,35 @@ watch(
     const sort = (query.sort || 'created_at') as string;
     const order = (query.order || 'DESC') as string;
 
-    const { list, count } = await loadBalancerListenerStore.getListenerList(
-      props.lbId,
-      {
-        filter: transformSimpleCondition(condition.value, conditionProperties),
-        page: getPageParams(pagination, { sort, order }),
-      },
-      currentGlobalBusinessId.value,
-    );
+    loading.value = true;
+    try {
+      const { list, count } = await loadBalancerListenerStore.getListenerList(
+        props.lbId,
+        {
+          filter: transformSimpleCondition(condition.value, conditionProperties),
+          page: getPageParams(pagination, { sort, order }),
+        },
+        currentGlobalBusinessId.value,
+      );
 
-    listenerList.value = list;
-    pagination.count = count;
+      listenerList.value = list;
+      pagination.count = count;
 
-    if (list.length > 0) {
-      asyncSetRsWeightStat(list);
-    }
+      // 重置勾选项
+      selections.value = [];
 
-    if (hasBindingStatus(list)) {
-      taskPoll.resume();
-    } else {
-      taskPoll.pause();
+      if (list.length > 0) {
+        asyncSetRsWeightStat(list);
+        injectLoadBalancerFields(list);
+      }
+
+      if (hasBindingStatus(list)) {
+        taskPoll.resume();
+      } else {
+        taskPoll.pause();
+      }
+    } finally {
+      loading.value = false;
     }
   },
   { immediate: true },
@@ -242,6 +262,11 @@ const handleAddSidesliderConfirmSuccess = (id?: string) => {
 };
 const handleAddSidesliderHidden = () => {
   Object.assign(addSidesliderState, { isShow: false, isHidden: true, isEdit: false, initialModel: null });
+};
+
+const batchDeleteDialogState = reactive({ isShow: false, isHidden: true });
+const handleBatchDeleteSuccess = () => {
+  routerAction.redirect({ query: { ...route.query, _t: Date.now() } });
 };
 
 // 同步
@@ -284,7 +309,7 @@ const handleUpdateListenerSuccess = async (id: string) => {
     </div>
     <data-list
       class="data-list"
-      v-bkloading="{ loading: loadBalancerListenerStore.listenerListLoading }"
+      v-bkloading="{ loading }"
       :columns="dataListColumns"
       :list="listenerList"
       :pagination="pagination"
@@ -330,6 +355,15 @@ const handleUpdateListenerSuccess = async (id: string) => {
       />
     </template>
 
+    <template v-if="!batchDeleteDialogState.isHidden">
+      <batch-delete-dialog
+        v-model="batchDeleteDialogState.isShow"
+        :selections="selections"
+        @confirm-success="handleBatchDeleteSuccess"
+        @hidden="batchDeleteDialogState.isHidden = true"
+      />
+    </template>
+
     <template v-if="!syncDialogState.isHidden">
       <sync-account-resource-dialog
         v-model="syncDialogState.isShow"
@@ -338,7 +372,7 @@ const handleUpdateListenerSuccess = async (id: string) => {
         :resource-type="ResourceTypeEnum.CLB"
         :business-id="currentGlobalBusinessId"
         resource-name="load_balancer"
-        :initial-model="{ account_id: details.account_id, vendor: details.vendor }"
+        :initial-model="{ account_id: details.account_id, vendor: details.vendor, cloud_ids: [details.cloud_id] }"
         @hidden="syncDialogState.isHidden = true"
       />
     </template>
@@ -347,6 +381,7 @@ const handleUpdateListenerSuccess = async (id: string) => {
       <details-sideslider
         v-model="detailsSidesliderState.isShow"
         :row-data="detailsSidesliderState.rowData"
+        :load-balancer-details="details"
         @update-success="handleUpdateListenerSuccess"
         @hidden="detailsSidesliderState.isHidden = true"
       />

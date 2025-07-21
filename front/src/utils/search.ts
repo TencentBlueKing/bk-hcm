@@ -185,7 +185,7 @@ export const getSimpleConditionBySearchSelect = (
   if (!Array.isArray(searchValue)) return null;
 
   const applyFormatters = (value: string, field: string) =>
-    options.find((opt) => opt.field === field)?.formatter(value) || value;
+    options.find((opt) => opt.field === field)?.formatter(value) ?? value;
 
   // 将搜索值转换为 rules，rule之间为AND关系，rule.values之间为OR关系
   return Object.fromEntries(
@@ -213,6 +213,7 @@ export const getLocalFilterFnBySearchSelect = (
     rules.every(
       ({ key, values }) =>
         // 将itemValues转为字符串，这样既可以比较数字，又可以比较字符串和字符串数组
+        // TODO: 这里不能简单处理，应该还是要往convertValue去靠
         item[key] && values.some((v) => String(item[key]).includes(v)),
     );
 };

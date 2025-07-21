@@ -152,7 +152,7 @@ onMounted(() => {
     max-height: calc(100% - 77px);
 
     &.has-back-all {
-      max-height: calc(100% - 113px);
+      max-height: calc(100% - 133px);
     }
 
     :deep(.bk-tab-content) {

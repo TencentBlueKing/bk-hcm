@@ -119,83 +119,82 @@ export default defineComponent({
     };
 
     return () => (
-      <div class='common-card-wrap'>
-        {/* 目标组list */}
-        <CommonTable>
-          {{
-            operation: () => (
-              <>
-                <Button
-                  theme='primary'
-                  onClick={() => {
-                    if (!authVerifyData?.value?.permissionAction?.[createClbActionName.value]) {
-                      handleAuth(createClbActionName.value);
-                      globalPermissionDialogStore.setShow(true);
-                    } else bus.$emit('addTargetGroup');
-                  }}
-                  class={[
-                    'mr8',
-                    { 'hcm-no-permision-btn': !authVerifyData?.value?.permissionAction?.[createClbActionName.value] },
-                  ]}
-                >
-                  <Plus class='f20' />
-                  {t('新建')}
-                </Button>
-                <Dropdown trigger='click' placement='bottom-start'>
-                  {{
-                    default: () => (
-                      <Button disabled={!selections.value.length}>
-                        {t('批量操作')} <AngleDown class='f20' />
-                      </Button>
-                    ),
-                    content: () => (
-                      <DropdownMenu>
-                        <DropdownItem>
-                          <Button text onClick={handleBatchDeleteTG}>
-                            {t('批量移除目标组')}
-                          </Button>
-                        </DropdownItem>
-                        <DropdownItem>
-                          <Button
-                            text
-                            onClick={handleBatchDeleteRs}
-                            disabled={!isSelectionsBelongSameAccountAndLB.value}
-                            v-bk-tooltips={{
-                              content: '传入的目标组不同属于一个负载均衡/账号, 不可进行批量移除RS操作',
-                              disabled: isSelectionsBelongSameAccountAndLB.value,
-                            }}
-                          >
-                            {t('批量移除 RS')}
-                          </Button>
-                        </DropdownItem>
-                        <DropdownItem>
-                          <Button
-                            text
-                            onClick={handleBatchAddRs}
-                            disabled={!isSelectionsBelongSameAccountAndLB.value || !isSelectionsBelongSameVpc.value}
-                            v-bk-tooltips={
-                              !isSelectionsBelongSameAccountAndLB.value
-                                ? {
-                                    content: '传入的目标组不同属于一个负载均衡/账号, 不可进行批量添加RS操作',
-                                    disabled: isSelectionsBelongSameAccountAndLB.value,
-                                  }
-                                : {
-                                    content: '传入的目标组不同属于一个VPC, 不可进行批量添加RS操作',
-                                    disabled: isSelectionsBelongSameVpc.value,
-                                  }
-                            }
-                          >
-                            {t('批量添加 RS')}
-                          </Button>
-                        </DropdownItem>
-                      </DropdownMenu>
-                    ),
-                  }}
-                </Dropdown>
-              </>
-            ),
-          }}
-        </CommonTable>
+      <div class='target-group-overview'>
+        <div class='panel'>
+          {/* 目标组list */}
+          <CommonTable>
+            {{
+              operation: () => (
+                <>
+                  <Button
+                    theme='primary'
+                    onClick={() => {
+                      if (!authVerifyData?.value?.permissionAction?.[createClbActionName.value]) {
+                        handleAuth(createClbActionName.value);
+                        globalPermissionDialogStore.setShow(true);
+                      } else bus.$emit('addTargetGroup');
+                    }}
+                    class={[
+                      'mr8',
+                      { 'hcm-no-permision-btn': !authVerifyData?.value?.permissionAction?.[createClbActionName.value] },
+                    ]}>
+                    <Plus class='f20' />
+                    {t('新建')}
+                  </Button>
+                  <Dropdown trigger='click' placement='bottom-start'>
+                    {{
+                      default: () => (
+                        <Button disabled={!selections.value.length}>
+                          {t('批量操作')} <AngleDown class='f20' />
+                        </Button>
+                      ),
+                      content: () => (
+                        <DropdownMenu>
+                          <DropdownItem>
+                            <Button text onClick={handleBatchDeleteTG}>
+                              {t('批量移除目标组')}
+                            </Button>
+                          </DropdownItem>
+                          <DropdownItem>
+                            <Button
+                              text
+                              onClick={handleBatchDeleteRs}
+                              disabled={!isSelectionsBelongSameAccountAndLB.value}
+                              v-bk-tooltips={{
+                                content: '传入的目标组不同属于一个负载均衡/账号, 不可进行批量移除RS操作',
+                                disabled: isSelectionsBelongSameAccountAndLB.value,
+                              }}>
+                              {t('批量移除 RS')}
+                            </Button>
+                          </DropdownItem>
+                          <DropdownItem>
+                            <Button
+                              text
+                              onClick={handleBatchAddRs}
+                              disabled={!isSelectionsBelongSameAccountAndLB.value || !isSelectionsBelongSameVpc.value}
+                              v-bk-tooltips={
+                                !isSelectionsBelongSameAccountAndLB.value
+                                  ? {
+                                      content: '传入的目标组不同属于一个负载均衡/账号, 不可进行批量添加RS操作',
+                                      disabled: isSelectionsBelongSameAccountAndLB.value,
+                                    }
+                                  : {
+                                      content: '传入的目标组不同属于一个VPC, 不可进行批量添加RS操作',
+                                      disabled: isSelectionsBelongSameVpc.value,
+                                    }
+                              }>
+                              {t('批量添加 RS')}
+                            </Button>
+                          </DropdownItem>
+                        </DropdownMenu>
+                      ),
+                    }}
+                  </Dropdown>
+                </>
+              ),
+            }}
+          </CommonTable>
+        </div>
         {/* 新增/编辑目标组 */}
         <AddOrUpdateTGSideslider origin='list' getListData={getListData} />
         {/* 添加RS */}
@@ -210,8 +209,7 @@ export default defineComponent({
           confirmText='删除'
           tableProps={batchDeleteTargetGroupTableProps}
           list={computedListenersList.value}
-          onHandleConfirm={batchDeleteTargetGroup}
-        >
+          onHandleConfirm={batchDeleteTargetGroup}>
           {{
             tips: () => (
               <>
@@ -239,8 +237,7 @@ export default defineComponent({
           theme='danger'
           confirmText='移除 RS'
           custom
-          onHandleConfirm={batchDeleteRs}
-        >
+          onHandleConfirm={batchDeleteRs}>
           <div class='top-area'>
             <div class='tips'>
               已选择<span class='blue'>{selections.value.length}</span>

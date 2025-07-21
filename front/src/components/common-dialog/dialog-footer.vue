@@ -18,6 +18,7 @@ withDefaults(defineProps<IProps>(), {
   confirmText: '确定',
   confirmButtonTheme: ThemeEnum.PRIMARY,
   cancelText: '取消',
+  tooltips: () => ({ disabled: true, content: '' }),
 });
 const emit = defineEmits(['confirm', 'closed']);
 

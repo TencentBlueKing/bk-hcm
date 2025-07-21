@@ -57,6 +57,12 @@ export interface ITargetGroupDetails {
   }[];
 }
 
+export interface ITargetsWeightStatItem {
+  target_group_id: string;
+  rs_weight_zero_num: number;
+  rs_weight_non_zero_num: number;
+}
+
 export const useLoadBalancerTargetGroupStore = defineStore('load-balancer-target-group', () => {
   const targetGroupDetailsLoading = ref(false);
   const getTargetGroupDetails = async (id: string, businessId?: number) => {
@@ -73,8 +79,26 @@ export const useLoadBalancerTargetGroupStore = defineStore('load-balancer-target
     }
   };
 
+  const targetGroupRsWeightStatLoading = ref(false);
+  const getTargetsWeightStat = async (targetGroupIds: string[], businessId?: number) => {
+    targetGroupRsWeightStatLoading.value = true;
+    const api = resolveApiPathByBusinessId('/api/v1/cloud', `target_groups/targets/weight_stat`, businessId);
+    try {
+      const res = await http.post(api, { target_group_ids: targetGroupIds });
+
+      return res.data as ITargetsWeightStatItem[];
+    } catch (error) {
+      console.error(error);
+      return Promise.reject(error);
+    } finally {
+      targetGroupRsWeightStatLoading.value = false;
+    }
+  };
+
   return {
     targetGroupDetailsLoading,
     getTargetGroupDetails,
+    targetGroupRsWeightStatLoading,
+    getTargetsWeightStat,
   };
 });

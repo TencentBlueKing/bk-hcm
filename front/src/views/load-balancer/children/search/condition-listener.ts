@@ -8,6 +8,9 @@ export class SearchConditionListener {
   @Column('string', { name: '监听器ID' })
   id: string;
 
+  @Column('string', { name: '监听器ID' })
+  cloud_id: string;
+
   @Column('string', {
     name: '监听器名称',
     meta: {

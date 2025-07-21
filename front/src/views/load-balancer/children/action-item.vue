@@ -32,6 +32,7 @@ const handleDropdownItemClick = (action: ActionItemType) => {
       :disabled="disabled"
       trigger="manual"
       :popover-options="{ forceClickoutside: true }"
+      @hide="isDropdownMenuShow = false"
     >
       <bk-button :disabled="disabled" @click="isDropdownMenuShow = true">
         {{ action.label }}
