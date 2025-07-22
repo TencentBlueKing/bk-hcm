@@ -1,45 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>海垒 | 腾讯蓝鲸智云</title>
-    <link rel="shortcut icon" href="<%= BK_STATIC_URL %>favicon.ico" type="image/x-icon" />
-  </head>
 
-  <body>
-    <div id="app"></div>
-    <script>
-      window.PROJECT_CONFIG = (function () {
-        const BK_HCM_AJAX_URL_PREFIX = '<%= BK_HCM_AJAX_URL_PREFIX %>';
-        const BK_LOGIN_URL = '<%= BK_LOGIN_URL %>';
-        const BK_COMPONENT_API_URL = '<%= BK_COMPONENT_API_URL %>';
-        const BK_ITSM_URL = '<%= BK_ITSM_URL %>';
-        const VERSION = '<%= VERSION %>';
-        const BK_HCM_DOMAIN = '<%= BK_HCM_DOMAIN %>';
-        const BK_HCM_LANGUAGE_URL_PREFIX = '<%= BK_HCM_LANGUAGE_URL_PREFIX %>';
-        const BK_CMDB_CREATE_BIZ_DOCS_URL = '<%= BK_CMDB_CREATE_BIZ_DOCS_URL %>';
-        const BK_CMDB_CREATE_BIZ_URL = '<%= BK_CMDB_CREATE_BIZ_URL %>';
-        const ENABLE_CLOUD_SELECTION = '<%= ENABLE_CLOUD_SELECTION %>';
-        const ENABLE_ACCOUNT_BILL = '<%= ENABLE_ACCOUNT_BILL %>';
-        const ENABLE_NOTICE = '<%= ENABLE_NOTICE %>';
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>海垒 | 腾讯蓝鲸智云</title>
+  <link rel="shortcut icon" href="<%= BK_STATIC_URL %>favicon.ico" type="image/x-icon" />
+</head>
 
-        return {
-          BK_HCM_AJAX_URL_PREFIX,
-          BK_LOGIN_URL,
-          BK_COMPONENT_API_URL,
-          BK_ITSM_URL,
-          VERSION,
-          BK_HCM_DOMAIN,
-          BK_HCM_LANGUAGE_URL_PREFIX,
-          BK_CMDB_CREATE_BIZ_DOCS_URL,
-          BK_CMDB_CREATE_BIZ_URL,
-          ENABLE_CLOUD_SELECTION,
-          ENABLE_ACCOUNT_BILL,
-          ENABLE_NOTICE,
-        };
-      })();
-    </script>
-  </body>
+<body>
+  <div id="app"></div>
+  <script>
+    window.PROJECT_CONFIG = (function () {
+      const BK_HCM_AJAX_URL_PREFIX = '<%= BK_HCM_AJAX_URL_PREFIX %>';
+      const BK_LOGIN_URL = '<%= BK_LOGIN_URL %>';
+      const BK_COMPONENT_API_URL = '<%= BK_COMPONENT_API_URL %>';
+      const BK_ITSM_URL = '<%= BK_ITSM_URL %>';
+      const VERSION = '<%= VERSION %>';
+      const BK_DOMAIN = '<%= BK_DOMAIN %>';
+      const BK_HCM_LANGUAGE_URL_PREFIX = '<%= BK_HCM_LANGUAGE_URL_PREFIX %>';
+      const BK_CMDB_CREATE_BIZ_DOCS_URL = '<%= BK_CMDB_CREATE_BIZ_DOCS_URL %>';
+      const BK_CMDB_CREATE_BIZ_URL = '<%= BK_CMDB_CREATE_BIZ_URL %>';
+      const ENABLE_CLOUD_SELECTION = '<%= ENABLE_CLOUD_SELECTION %>';
+      const ENABLE_ACCOUNT_BILL = '<%= ENABLE_ACCOUNT_BILL %>';
+      const ENABLE_NOTICE = '<%= ENABLE_NOTICE %>';
+
+      return {
+        BK_HCM_AJAX_URL_PREFIX,
+        BK_LOGIN_URL,
+        BK_COMPONENT_API_URL,
+        BK_ITSM_URL,
+        VERSION,
+        BK_DOMAIN,
+        BK_HCM_LANGUAGE_URL_PREFIX,
+        BK_CMDB_CREATE_BIZ_DOCS_URL,
+        BK_CMDB_CREATE_BIZ_URL,
+        ENABLE_CLOUD_SELECTION,
+        ENABLE_ACCOUNT_BILL,
+        ENABLE_NOTICE,
+      };
+    })();
+  </script>
+</body>
+
 </html>
