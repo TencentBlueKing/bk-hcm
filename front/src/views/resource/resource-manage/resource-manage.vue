@@ -27,6 +27,7 @@ import { useAccountStore } from '@/store';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
 import { InfoBox } from 'bkui-vue';
 import { AUTH_CREATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
+import routeQuery from '@/router/utils/query';
 
 // use hooks
 const { t } = useI18n();
@@ -255,6 +256,10 @@ const handleAdd = () => {
 
 const handleSecrityType = (val: 'group' | 'gcp' | 'template') => {
   securityType.value = val;
+};
+
+const handleRouteDone = () => {
+  routeQuery.set('type', activeTab.value);
 };
 
 watch(
@@ -496,6 +501,7 @@ onMounted(() => {
               :where-am-i="activeTab"
               :is-resource-page="isResourcePage"
               @handle-secrity-type="handleSecrityType"
+              @route-done="handleRouteDone"
               ref="componentRef"
               @edit="handleEdit"
               v-model:is-form-data-changed="isFormDataChanged"
