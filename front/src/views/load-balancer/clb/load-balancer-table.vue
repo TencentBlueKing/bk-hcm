@@ -20,13 +20,14 @@ import usePage from '@/hooks/use-page';
 import useSearchQs from '@/hooks/use-search-qs';
 import useTableSelection from '@/hooks/use-table-selection';
 import { ValidateValuesFunc } from 'bkui-vue/lib/search-select/utils';
-import { getInstVip, parseIP } from '@/utils';
+import { formatBandwidth, getInstVip, parseIP } from '@/utils';
 import { ISearchCondition, ISearchSelectValue } from '@/typings';
-import { transformSimpleCondition } from '@/utils/search';
+import { buildMultipleValueRulesItem, transformSimpleCondition } from '@/utils/search';
 import { GLOBAL_BIZS_KEY, ResourceTypeEnum } from '@/common/constant';
-import { ModelPropertyColumn } from '@/model/typings';
+import { ModelPropertyColumn, ModelPropertySearch } from '@/model/typings';
 import routerAction from '@/router/utils/action';
 import { MENU_BUSINESS_LOAD_BALANCER_APPLY, MENU_BUSINESS_LOAD_BALANCER_DETAILS } from '@/constants/menu-symbol';
+import { parseTimeFromNow } from '@/common/util';
 
 import { Button, Message, Tag } from 'bkui-vue';
 import ActionItem from '../children/action-item.vue';
@@ -218,13 +219,26 @@ const displayFieldConfig: Record<string, Partial<ModelPropertyColumn>> = {
       return h(Tag, { theme: cell ? 'success' : undefined }, cell ? '开启' : '关闭');
     },
   },
+  bandwidth: {
+    render: ({ cell }) => formatBandwidth(cell),
+  },
+  sync_time: {
+    render: ({ cell }) => parseTimeFromNow(cell),
+  },
 };
 const dataListColumns = computed(() => {
   const properties = displayFieldProperties.map((field) => ({ ...field, ...displayFieldConfig[field.id] }));
   return isBusinessPage.value ? properties.filter((field) => field.id !== 'bk_biz_id') : properties;
 });
 
-const conditionProperties = SearchConditionFactory.createModel(ConditionKeyType.CLB).getProperties();
+const conditionConfig: Record<string, Partial<ModelPropertySearch>> = {
+  cloud_id: {
+    meta: { search: { filterRules: (value) => buildMultipleValueRulesItem('cloud_id', value) } },
+  },
+};
+const conditionProperties = SearchConditionFactory.createModel(ConditionKeyType.CLB)
+  .getProperties()
+  .map((field) => ({ ...field, ...conditionConfig[field.id] }));
 const searchFields = computed(() =>
   isBusinessPage.value ? conditionProperties.filter((field) => field.id !== 'bk_biz_id') : conditionProperties,
 );

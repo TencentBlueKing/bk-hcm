@@ -1,6 +1,6 @@
 import { Column, Model } from '@/decorator';
 import { CLB_STATUS_NAME, IP_VERSION_DISPLAY_NAME, LB_TYPE_NAME } from '../../constants';
-import { VendorEnum, VendorMap } from '@/common/constant';
+import { LB_ISP, VendorEnum, VendorMap } from '@/common/constant';
 import { QueryRuleOPEnum } from '@/typings';
 import { buildVIPFilterRules, buildFilterRulesWithSearchSelect } from '@/utils/search';
 
@@ -50,6 +50,12 @@ export class SearchConditionClb {
 
   @Column('enum', { name: 'IP版本', option: IP_VERSION_DISPLAY_NAME })
   ip_version: string;
+
+  @Column('enum', { name: '运营商', option: LB_ISP })
+  isp: string;
+
+  @Column('number', { name: '带宽' })
+  bandwidth: number;
 
   // @Column('enum', { name: '云厂商',  option: VendorMap })
   @Column('enum', { name: '云厂商', option: { [VendorEnum.TCLOUD]: VendorMap[VendorEnum.TCLOUD] } })

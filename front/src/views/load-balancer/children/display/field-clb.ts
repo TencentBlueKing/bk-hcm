@@ -66,11 +66,9 @@ export class DisplayFieldClb {
   @Column('enum', { name: '运营商', index: 0, width: 80, option: LOAD_BALANCER_ISP_NAME })
   isp: string;
 
-  // TODO-CLB：需要对带宽进行格式化处理
   @Column('number', { name: '带宽', index: 0, width: 80 })
   bandwidth: number;
 
-  // TODO-CLB: 需要对时间进行格式化处理
   @Column('string', { name: '数据同步时间', index: 0, width: 120 })
   sync_time: string;
 }

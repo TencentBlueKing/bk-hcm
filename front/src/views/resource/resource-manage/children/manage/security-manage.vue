@@ -65,7 +65,7 @@ import {
   AUTH_UPDATE_IAAS_RESOURCE,
 } from '@/constants/auth-symbols';
 import HcmAuth from '@/components/auth/auth.vue';
-import { buildMultipleValueRulesItem } from '@/utils';
+import { buildMultipleValueRulesItem } from '@/utils/search';
 
 const props = defineProps({
   filter: {
