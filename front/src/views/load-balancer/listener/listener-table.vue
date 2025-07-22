@@ -249,11 +249,11 @@ watch(
 // 新增/编辑监听器
 const addSidesliderState = reactive({ isShow: false, isHidden: true, isEdit: false, initialModel: null });
 const handleEditListener = async (row: IListenerItem) => {
+  Object.assign(addSidesliderState, { isShow: true, isHidden: false, isEdit: true });
   addSidesliderState.initialModel = await loadBalancerListenerStore.getListenerDetails(
     row.id,
     currentGlobalBusinessId.value,
   );
-  Object.assign(addSidesliderState, { isShow: true, isHidden: false, isEdit: true });
 };
 const handleAddSidesliderConfirmSuccess = (id?: string) => {
   if (id) {
@@ -323,12 +323,7 @@ const handleUpdateListenerSuccess = async (id: string) => {
       <template #action>
         <bk-table-column :label="t('操作')" width="120" fixed="right">
           <template #default="{ row }">
-            <bk-button
-              theme="primary"
-              text
-              :loading="loadBalancerListenerStore.listenerDetailsLoading"
-              @click="handleEditListener(row)"
-            >
+            <bk-button theme="primary" text @click="handleEditListener(row)">
               {{ t('编辑') }}
             </bk-button>
             <bk-button
