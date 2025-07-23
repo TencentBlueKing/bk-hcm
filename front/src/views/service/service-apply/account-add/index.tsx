@@ -293,6 +293,7 @@ export default defineComponent({
               noBorBottom: true,
               required: projectModel.type !== 'registration',
               property: 'secretId',
+              hidden: projectModel.type === 'registration',
               component: () => (
                 <Input class='w450' placeholder={t('请输入SecretId/密钥ID')} v-model={projectModel.secretId} />
               ),
@@ -300,6 +301,7 @@ export default defineComponent({
             {
               label: 'SecretKey',
               required: projectModel.type !== 'registration',
+              hidden: projectModel.type === 'registration',
               property: 'secretKey',
               component: () => (
                 <Input class='w450' placeholder={t('请输入SecretKey')} v-model={projectModel.secretKey} />
@@ -400,6 +402,7 @@ export default defineComponent({
               formName: t('API 密钥'),
               noBorBottom: true,
               required: projectModel.type !== 'registration',
+              hidden: projectModel.type === 'registration',
               property: 'accountId',
               component: () => (
                 <Input class='w450' placeholder={t('请输入服务账号ID')} v-model={projectModel.accountId} />
@@ -409,6 +412,7 @@ export default defineComponent({
               label: t('服务账号名称'),
               noBorBottom: true,
               required: projectModel.type !== 'registration',
+              hidden: projectModel.type === 'registration',
               property: 'accountName',
               component: () => (
                 <Input class='w450' placeholder={t('请输入服务账号名称')} v-model={projectModel.accountName} />
@@ -418,6 +422,7 @@ export default defineComponent({
               label: '服务账号密钥ID',
               noBorBottom: true,
               required: projectModel.type !== 'registration',
+              hidden: projectModel.type === 'registration',
               property: 'secretId',
               component: () => (
                 <Input class='w450' placeholder={t('请输入服务账号密钥ID')} v-model={projectModel.secretId} />
@@ -426,6 +431,7 @@ export default defineComponent({
             {
               label: '服务账号密钥',
               required: projectModel.type !== 'registration',
+              hidden: projectModel.type === 'registration',
               property: 'secretKey',
               component: () => (
                 <Input class='w450' placeholder={t('请输入服务账号密钥')} v-model={projectModel.secretKey} />
@@ -481,6 +487,7 @@ export default defineComponent({
               formName: t('API 密钥'),
               noBorBottom: true,
               required: projectModel.type !== 'registration',
+              hidden: projectModel.type === 'registration',
               property: 'applicationId',
               component: () => (
                 <Input class='w450' placeholder={t('请输入应用程序(客户端) ID')} v-model={projectModel.applicationId} />
@@ -490,6 +497,7 @@ export default defineComponent({
               label: t('应用程序名称'),
               noBorBottom: true,
               required: projectModel.type !== 'registration',
+              hidden: projectModel.type === 'registration',
               property: 'applicationName',
               component: () => (
                 <Input class='w450' placeholder={t('请输入应用程序名称')} v-model={projectModel.applicationName} />
@@ -499,6 +507,7 @@ export default defineComponent({
               label: t('客户端密钥ID'),
               noBorBottom: true,
               required: projectModel.type !== 'registration',
+              hidden: projectModel.type === 'registration',
               property: 'secretId',
               component: () => (
                 <Input class='w450' placeholder={t('请输入客户端密钥ID')} v-model={projectModel.secretId} />
@@ -507,6 +516,7 @@ export default defineComponent({
             {
               label: t('客户端密钥'),
               required: projectModel.type !== 'registration',
+              hidden: projectModel.type === 'registration',
               property: 'secretKey',
               component: () => (
                 <Input class='w450' placeholder={t('请输入客户端密钥')} v-model={projectModel.secretKey} />
@@ -553,6 +563,7 @@ export default defineComponent({
               formName: t('API 密钥'),
               noBorBottom: true,
               required: projectModel.type !== 'registration',
+              hidden: projectModel.type === 'registration',
               property: 'secretId',
               component: () => <Input class='w450' placeholder={t('请输入SecretId')} v-model={projectModel.secretId} />,
             },
@@ -560,6 +571,7 @@ export default defineComponent({
               label: 'SecretKey',
               required: projectModel.type !== 'registration',
               property: 'secretKey',
+              hidden: projectModel.type === 'registration',
               component: () => (
                 <Input class='w450' placeholder={t('请输入SecretKey')} v-model={projectModel.secretKey} />
               ),
@@ -601,6 +613,7 @@ export default defineComponent({
               noBorBottom: true,
               required: true,
               property: 'secretId',
+              hidden: projectModel.type === 'registration',
               component: () => (
                 <Input class='w450' placeholder={t('请输入SecretId')} v-model_trim={projectModel.secretId} />
               ),
@@ -609,6 +622,7 @@ export default defineComponent({
               label: 'SecretKey',
               required: true,
               property: 'secretKey',
+              hidden: projectModel.type === 'registration',
               component: () => (
                 <Input class='w450' placeholder={t('请输入SecretKey')} v-model_trim={projectModel.secretKey} />
               ),
@@ -639,7 +653,7 @@ export default defineComponent({
           // 登记账号
           formList?.forEach((e) => {
             if (optionalRequired.includes(e.property)) {
-              e.required = false;
+              e.required = true;
             }
             if (projectModel.vendor === 'aws' && ['secretId', 'secretKey'].includes(e.property)) {
               e.hidden = true;
@@ -655,19 +669,10 @@ export default defineComponent({
           });
         } else {
           formList?.forEach((e) => {
-            if (e.label && (e.property === 'memo' || e.property === 'usage_biz_ids')) {
-              // 备注、使用业务不需必填
-              e.required = false;
-            }
             if (projectModel.vendor === 'aws' && ['secretId', 'secretKey'].includes(e.property)) {
               e.hidden = false;
             }
           });
-        }
-
-        // 安全审计账号暂只支持aws
-        if (val === 'security_audit') {
-          projectModel.vendor = VendorEnum.AWS;
         }
 
         // 触发一次云厂商变更，因展示字段需要更新
