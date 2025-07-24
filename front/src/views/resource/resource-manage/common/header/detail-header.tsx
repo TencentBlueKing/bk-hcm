@@ -1,55 +1,32 @@
-import { computed, defineComponent, PropType } from 'vue';
-
-import { ArrowsLeft } from 'bkui-vue/lib/icon';
-
+import { defineComponent, PropType } from 'vue';
 import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
-import routerAction from '@/router/utils/action';
-
-import './detail-header.scss';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { useCalcTopWithNotice } from '@/views/home/hooks/useCalcTopWithNotice';
-import { HistoryStorage } from '@/router/utils/history-storage';
-import { RouteMetaConfig } from '@/router/meta';
+import { useBack } from '@/router/hooks/use-back';
 import { GLOBAL_BIZS_KEY } from '@/common/constant';
+
+import { ArrowsLeft } from 'bkui-vue/lib/icon';
+import './detail-header.scss';
 
 export default defineComponent({
   components: { ArrowsLeft },
-  props: { to: Object as PropType<RouteLocationRaw>, useRouterAction: Boolean },
+  props: { to: Object as PropType<RouteLocationRaw>, fromConfig: Object as PropType<Partial<RouteLocationRaw>> },
   setup(props) {
     const router = useRouter();
     const route = useRoute();
     const { whereAmI } = useWhereAmI();
 
     const [calcTop] = useCalcTopWithNotice(52);
-
-    const defaultFrom = computed(() => {
-      const routeMeta = route.meta as RouteMetaConfig;
-      const menu = routeMeta.menu || {};
-      if (menu.relative) {
-        return { name: Array.isArray(menu.relative) ? menu.relative[0] : menu.relative };
-      }
-      return null;
-    });
-
-    const from = computed(() => {
-      if (Object.hasOwn(route.query, '_f')) {
-        try {
-          return HistoryStorage.pop();
-        } catch (error) {
-          return defaultFrom.value;
-        }
-      }
-      return defaultFrom.value;
-    });
+    const { handleBack } = useBack();
 
     const goBack = () => {
-      const { to } = props;
+      const { to, fromConfig } = props;
       if (to) {
         router.replace(to);
         return;
       }
-      if (props.useRouterAction) {
-        routerAction.redirect(from.value, { back: true });
+      if (fromConfig) {
+        handleBack(fromConfig);
         return;
       }
       if (window.history.state.back) {
