@@ -643,15 +643,15 @@ export default (formModel: Reactive<ApplyClbModel>) => {
     });
   };
 
-  watch(
-    () => formModel.account_id,
-    (val) => {
-      // 当云账号变更时, 查询用户网络类型
-      reqAccountNetworkType(formModel.vendor, val).then(({ data: { NetworkAccountType } }) => {
-        formModel.account_type = NetworkAccountType;
-      });
-    },
-  );
+  watch([() => formModel.account_id, () => formModel.vendor], ([accountId, vendor]) => {
+    // 当云账号变更时, 查询用户网络类型
+    if (!accountId || !vendor) {
+      return;
+    }
+    reqAccountNetworkType(vendor, accountId).then(({ data: { NetworkAccountType } }) => {
+      formModel.account_type = NetworkAccountType;
+    });
+  });
 
   watch([() => formModel.account_id, () => formModel.region], () => {
     // 当 account_id 或 region 改变时, 恢复默认状态
