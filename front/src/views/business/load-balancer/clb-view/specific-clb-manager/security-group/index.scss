@@ -12,7 +12,7 @@
     align-items: center;
     padding: 0 16px;
     cursor: pointer;
-    border: 1px solid #ffffff00;
+    border: 1px solid #fff0;
   }
 
   .rs-check-selector-active {
@@ -23,6 +23,10 @@
 
   .disabled-button {
     cursor: not-allowed;
+  }
+
+  .label-tag {
+    width: 120px;
   }
 }
 
@@ -37,14 +41,17 @@
 .security-rule-container {
   .specific-security-rule-tables {
     -ms-overflow-style: none;
+
     /* IE 和 Edge */
     scrollbar-width: none;
+
     /* Firefox */
     margin-top: 16px;
     overflow-y: auto;
 
     &::-webkit-scrollbar {
       display: none;
+
       /* Chrome、Safari 和 Opera */
     }
   }
@@ -112,7 +119,7 @@
         margin-right: 11px;
         min-width: 21.76px;
         min-height: 16px;
-        background: #ffffff;
+        background: #fff;
         border-radius: 2px;
         text-align: center;
         color: #979ba5;

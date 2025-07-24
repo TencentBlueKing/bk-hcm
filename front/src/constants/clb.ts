@@ -89,7 +89,7 @@ export const INTERNET_CHARGE_TYPE = [
 ];
 
 // 支持IPv6 NAT64的地域
-export const WHITE_LIST_REGION_IPV6_NAT64 = ['ap-beijing', 'ap-shanghai', 'ap-guangzhou'];
+export const WHITE_LIST_REGION_IPV6_NAT64 = ['ap-beijing', 'ap-shanghai'];
 // 支持主备可用区的地域
 export const WHITE_LIST_REGION_PRIMARY_STAND_ZONE = [
   'ap-guangzhou',
@@ -263,6 +263,20 @@ export const IP_VERSION_MAP: ConstantMapRecord = {
 
 // 运营商类型
 export const ISP_TYPES = ['BGP', 'CTCC', 'CUCC', 'CMCC'];
+
+// 安全组放通模式
+export const LOAD_BALANCER_PASS_TO_TARGET_LIST = [
+  {
+    label: '启用默认放通',
+    description: '启用后，CLB 和 CVM 之间默认放通，来自 CLB 的流量，仅通过 CLB 上安全组的校验',
+    value: true,
+  },
+  {
+    label: '不启用默认放通',
+    description: '不启用，来自 CLB 的流量，需同时通过 CLB 和 CVM 上安全组的校验',
+    value: false,
+  },
+];
 
 // 带宽包状态
 export enum BANDWIDTH_PACKAGE_STATUS {
