@@ -217,9 +217,12 @@ export default defineComponent({
     onMounted(() => {
       changeCloud(projectModel.vendor);
     });
-
+    const clearForm = () => {
+      Object.entries(initProjectModel).forEach(([key, value]) => (projectModel[key] = value));
+    };
     const changeCloud = (val: string) => {
       isChangeVendor.value = true;
+      clearForm();
       nextTick(() => {
         formRef.value?.clearValidate(); // 切换清除表单检验
       });
@@ -243,31 +246,21 @@ export default defineComponent({
               ),
             },
             {
-              label: t('主账号名'),
-              formName: t('账号信息'),
-              noBorBottom: true,
-              required: true,
-              property: 'mainAccount',
-              component: () => (
-                <Input class='w450' placeholder={t('请输入主账号')} v-model_trim={projectModel.mainAccount} />
-              ),
-            },
-            {
-              label: t('账号ID'),
-              noBorBottom: true,
-              required: true,
-              property: 'subAccount',
-              component: () => (
-                <Input class='w450' placeholder={t('请输入子账号ID')} v-model_trim={projectModel.subAccount} />
-              ),
-            },
-            {
-              label: t('账号名称'),
+              label: t('子账号名称'),
               noBorBottom: true,
               required: true,
               property: 'subAccountName',
               component: () => (
                 <Input class='w450' placeholder={t('请输入子账号名称')} v-model_trim={projectModel.subAccountName} />
+              ),
+            },
+            {
+              label: t('子账号ID'),
+              noBorBottom: true,
+              required: true,
+              property: 'subAccount',
+              component: () => (
+                <Input class='w450' placeholder={t('请输入子账号ID')} v-model_trim={projectModel.subAccount} />
               ),
             },
             {
@@ -774,8 +767,7 @@ export default defineComponent({
             multipleMode='tag'
             placeholder={t('请选择使用业务')}
             class='w450'
-            v-model={projectModel.usage_biz_ids}
-          >
+            v-model={projectModel.usage_biz_ids}>
             {businessList.list.map((item) => (
               <Option key={item.id} value={item.id} label={item.name}>
                 {item.name}
@@ -825,16 +817,14 @@ export default defineComponent({
                     'no-border-top': !item.formName,
                     'no-border-bottom': item.noBorBottom || (item.property === 'vendor' && isChangeVendor.value),
                     'no-border': item.type === 'button',
-                  }}
-                >
+                  }}>
                   <FormItem
                     class='account-form-item'
                     label={item.label}
                     required={item.required}
                     property={item.property}
                     description={item.description}
-                    rules={item.rules}
-                  >
+                    rules={item.rules}>
                     {item.component ? item.component() : item.content()}
                   </FormItem>
                 </div>
