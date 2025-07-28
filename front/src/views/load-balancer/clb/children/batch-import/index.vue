@@ -13,7 +13,7 @@ import { Form, Message } from 'bkui-vue';
 import BaseInfo from './base-info/index.vue';
 import Upload from './upload/index.vue';
 import Preview from './preview/index.vue';
-import DialogFooter from '@/components/common-dialog/dialog-footer.vue';
+import ModalFooter from '@/components/modal/modal-footer.vue';
 
 const model = defineModel<boolean>();
 const props = defineProps<{
@@ -150,7 +150,7 @@ watch(model, (val) => {
       />
     </bk-form>
     <template #footer>
-      <dialog-footer
+      <modal-footer
         :confirm-text="t('确认并提交')"
         :loading="loadBalancerClbStore.batchImportLoadBalancerLoading"
         :disabled="isSubmitDisabled"

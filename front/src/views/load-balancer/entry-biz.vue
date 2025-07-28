@@ -1,9 +1,18 @@
 <script setup lang="ts">
-import { computed, provide, ref } from 'vue';
+import { computed, provide } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { MENU_BUSINESS_LOAD_BALANCER_OVERVIEW, MENU_BUSINESS_TARGET_GROUP_OVERVIEW } from '@/constants/menu-symbol';
 import { GLOBAL_BIZS_KEY } from '@/common/constant';
+import {
+  AUTH_BIZ_CREATE_CLB,
+  AUTH_BIZ_DELETE_CLB,
+  AUTH_BIZ_UPDATE_CLB,
+  AUTH_CREATE_CLB,
+  AUTH_DELETE_CLB,
+  AUTH_UPDATE_CLB,
+} from '@/constants/auth-symbols';
+import { getAuthSignByBusinessId } from '@/utils';
 import routerAction from '@/router/utils/action';
 
 import LoadBalancerView from './clb/index.vue';
@@ -35,6 +44,15 @@ const currentGlobalBusinessId = computed(() => {
   const val = route.query?.[GLOBAL_BIZS_KEY];
   return val ? Number(val) : undefined;
 });
+const clbCreateAuthSign = computed(() =>
+  getAuthSignByBusinessId(currentGlobalBusinessId.value, AUTH_CREATE_CLB, AUTH_BIZ_CREATE_CLB),
+);
+const clbOperationAuthSign = computed(() =>
+  getAuthSignByBusinessId(currentGlobalBusinessId.value, AUTH_UPDATE_CLB, AUTH_BIZ_UPDATE_CLB),
+);
+const clbDeleteAuthSign = computed(() =>
+  getAuthSignByBusinessId(currentGlobalBusinessId.value, AUTH_DELETE_CLB, AUTH_BIZ_DELETE_CLB),
+);
 
 const handleViewChange = (name: (typeof LOAD_BALANCER_VIEW_LIST)[number]['name']) => {
   routerAction.redirect({
@@ -44,12 +62,9 @@ const handleViewChange = (name: (typeof LOAD_BALANCER_VIEW_LIST)[number]['name']
 };
 
 provide('currentGlobalBusinessId', currentGlobalBusinessId);
-
-// TODO-CLB: createClbActionName、deleteClbActionName是为了兼容旧版负载均衡的逻辑
-const createClbActionName = ref('biz_clb_resource_create');
-const deleteClbActionName = ref('biz_clb_resource_delete');
-provide('createClbActionName', createClbActionName);
-provide('deleteClbActionName', deleteClbActionName);
+provide('clbCreateAuthSign', clbCreateAuthSign);
+provide('clbOperationAuthSign', clbOperationAuthSign);
+provide('clbDeleteAuthSign', clbDeleteAuthSign);
 </script>
 
 <template>

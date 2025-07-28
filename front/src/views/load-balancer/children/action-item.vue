@@ -39,24 +39,31 @@ const handleDropdownItemClick = (action: ActionItemType) => {
         <angle-down class="f26" />
       </bk-button>
       <template #content>
-        <bk-dropdown-menu class="dropdown-menu">
+        <bk-dropdown-menu class="dropdown-menu" @click="isDropdownMenuShow = false">
           <template v-for="childAction in action.children" :key="childAction.value">
             <hcm-auth v-if="childAction.authSign" :sign="childAction.authSign()" v-slot="{ noPerm }">
-              <bk-dropdown-item
-                v-bind="childAction.displayProps"
-                :disabled="noPerm || childAction.disabled?.()"
-                @click="handleDropdownItemClick(childAction)"
-              >
-                {{ childAction.label }}
+              <bk-dropdown-item class="dropdown-item">
+                <bk-button
+                  class="button"
+                  text
+                  :disabled="noPerm || childAction.disabled?.()"
+                  @click="handleDropdownItemClick(childAction)"
+                  v-bind="childAction.displayProps"
+                >
+                  {{ childAction.label }}
+                </bk-button>
               </bk-dropdown-item>
             </hcm-auth>
-            <bk-dropdown-item
-              v-else
-              v-bind="childAction.displayProps"
-              :disabled="childAction.disabled?.()"
-              @click="handleDropdownItemClick(childAction)"
-            >
-              {{ childAction.label }}
+            <bk-dropdown-item v-else class="dropdown-item">
+              <bk-button
+                class="button"
+                text
+                :disabled="childAction.disabled?.()"
+                @click="handleDropdownItemClick(childAction)"
+                v-bind="childAction.displayProps"
+              >
+                {{ childAction.label }}
+              </bk-button>
             </bk-dropdown-item>
           </template>
         </bk-dropdown-menu>
@@ -71,17 +78,25 @@ const handleDropdownItemClick = (action: ActionItemType) => {
 </template>
 
 <style scoped lang="scss">
+.button {
+  min-width: 64px;
+}
+
 .dropdown-menu {
   display: flex;
   flex-direction: column;
 
-  :deep(.bk-dropdown-item) {
+  .dropdown-item {
     width: 100%;
-  }
-}
+    padding: 0;
 
-.button {
-  min-width: 64px;
+    .button {
+      padding: 0 16px;
+      display: inline-block;
+      width: 100%;
+      text-align: left;
+    }
+  }
 }
 
 .f26 {

@@ -5,6 +5,9 @@ import { useAccountStore } from '@/store';
 import { useSingleList } from '@/hooks/useSingleList';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { Protocol, QueryRuleOPEnum } from '@/typings';
+import routerAction from '@/router/utils/action';
+import { MENU_BUSINESS_TARGET_GROUP_OVERVIEW } from '@/constants/menu-symbol';
+import { GLOBAL_BIZS_KEY } from '@/common/constant';
 
 const { Option } = Select;
 
@@ -51,10 +54,10 @@ export default defineComponent({
 
     const remoteSearchMethod = async (name: string) => {
       const trimName = name.trim();
-      if (!trimName) return;
+      const rules = trimName ? [{ field: 'name', op: QueryRuleOPEnum.CS, value: trimName }] : [];
 
       try {
-        dataList.value = await loadDataList([{ field: 'name', op: QueryRuleOPEnum.CS, value: trimName }], true);
+        dataList.value = await loadDataList(rules, true);
       } catch (error) {
         console.error(error);
         return Promise.reject(error);
@@ -63,8 +66,10 @@ export default defineComponent({
 
     // click-handler - 新增目标组
     const handleAddTargetGroup = () => {
-      const url = `/#/business/loadbalancer/group-view?bizs=${accountStore.bizs}`;
-      window.open(url, '_blank');
+      routerAction.open({
+        name: MENU_BUSINESS_TARGET_GROUP_OVERVIEW,
+        query: { [GLOBAL_BIZS_KEY]: accountStore.bizs },
+      });
     };
 
     // select-handler - 选择目标组后更新 props.modelValue

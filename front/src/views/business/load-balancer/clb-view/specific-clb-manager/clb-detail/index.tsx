@@ -18,6 +18,7 @@ import { formatBandwidth, getInstVip } from '@/utils';
 import './index.scss';
 import { FieldList } from '@/views/resource/resource-manage/common/info-list/types';
 import { useLoadBalancerClbStore, ILoadBalancerDetails } from '@/store/load-balancer/clb';
+import { IAuthSign } from '@/common/auth-service';
 
 export default defineComponent({
   props: {
@@ -25,6 +26,7 @@ export default defineComponent({
     getDetails: Function,
     id: String,
     currentGlobalBusinessId: Number,
+    clbOperationAuthSign: Object as PropType<IAuthSign | IAuthSign[]>,
   },
   setup(props) {
     const { t } = useI18n();
@@ -39,11 +41,7 @@ export default defineComponent({
     const vpcDetail = ref(null);
     const targetVpcDetail = ref(null);
     const resourceFields: FieldList = [
-      {
-        name: '名称',
-        prop: 'name',
-        edit: true,
-      },
+      { name: '名称', prop: 'name', edit: true, getAuthSign: () => props.clbOperationAuthSign },
       {
         name: '所属网络',
         prop: 'cloud_vpc_id',
@@ -52,43 +50,44 @@ export default defineComponent({
         },
         copyContent: props.detail.cloud_vpc_id || '--',
       },
-      {
-        name: 'ID',
-        prop: 'cloud_id',
-      },
+      { name: 'ID', prop: 'cloud_id' },
       {
         name: '删除保护',
         render: () => (
-          <div>
-            <Switcher
-              theme='primary'
-              class={'mr5'}
-              modelValue={isProtected.value}
-              disabled={isLoading.value}
-              onChange={async (val) => {
-                isLoading.value = true;
-                isProtected.value = val;
-                try {
-                  await loadBalancerClbStore.updateLoadBalancer(
-                    props.detail.vendor,
-                    { id: props.id, delete_protect: val },
-                    props.currentGlobalBusinessId,
-                  );
-                } catch (_e) {
-                  isProtected.value = !val;
-                } finally {
-                  isLoading.value = false;
-                }
+          <div class='flex-row align-items-center'>
+            <hcm-auth class={'mr5'} sign={props.clbOperationAuthSign}>
+              {{
+                default: ({ noPerm }: { noPerm: boolean }) => (
+                  <Switcher
+                    theme='primary'
+                    modelValue={isProtected.value}
+                    disabled={noPerm || isLoading.value}
+                    onChange={async (val) => {
+                      isLoading.value = true;
+                      isProtected.value = val;
+                      try {
+                        await loadBalancerClbStore.updateLoadBalancer(
+                          props.detail.vendor,
+                          { id: props.id, delete_protect: val },
+                          props.currentGlobalBusinessId,
+                        );
+                      } catch (_e) {
+                        isProtected.value = !val;
+                      } finally {
+                        isLoading.value = false;
+                      }
+                    }}
+                  />
+                ),
               }}
-            />
+            </hcm-auth>
             <Tag theme={isProtected.value ? 'success' : ''}> {isProtected.value ? t('已开启') : t('未开启')} </Tag>
             <i
               class='hcm-icon bkhcm-icon-info-line ml10'
               v-bk-tooltips={{
                 content: '开启删除保护后，在云控制台或调用 API 均无法删除该实例',
                 placement: 'top-end',
-              }}
-            ></i>
+              }}></i>
           </div>
         ),
         copy: false,
@@ -263,9 +262,15 @@ export default defineComponent({
         label: '操作',
         render({ data }: any) {
           return (
-            <Button text theme='primary' onClick={() => handleDeleteSnatIp(data)}>
-              {t('删除')}
-            </Button>
+            <hcm-auth sign={props.clbOperationAuthSign}>
+              {{
+                default: ({ noPerm }: { noPerm: boolean }) => (
+                  <Button text theme='primary' disabled={noPerm} onClick={() => handleDeleteSnatIp(data)}>
+                    {t('删除')}
+                  </Button>
+                ),
+              }}
+            </hcm-auth>
           );
         },
       },
@@ -371,26 +376,42 @@ export default defineComponent({
                 <div class='cors-config-item'>
                   <div class='cors-config-item-title'>{t('跨地域绑定2.0')}</div>
                   <div class='cors-config-item-content'>
-                    <div>
-                      <Switcher
-                        class='mr10'
-                        modelValue={isSnatproOpen.value}
-                        theme='primary'
-                        onChange={handleChangeSnatPro}
-                        disabled={props.detail.extension?.snat_ips?.length > 0 || isSnatproChange.value}
-                        v-bk-tooltips={{
-                          content: '当前负载均衡已绑定SNAT IP，不可关闭跨域',
-                          disabled: props.detail.extension?.snat_ips?.length === 0,
+                    <div class='flex-row align-items-center'>
+                      <hcm-auth class={'mr5'} sign={props.clbOperationAuthSign}>
+                        {{
+                          default: ({ noPerm }: { noPerm: boolean }) => (
+                            <Switcher
+                              class='mr10'
+                              modelValue={isSnatproOpen.value}
+                              theme='primary'
+                              onChange={handleChangeSnatPro}
+                              disabled={noPerm || props.detail.extension?.snat_ips?.length > 0 || isSnatproChange.value}
+                              v-bk-tooltips={{
+                                content: '当前负载均衡已绑定SNAT IP，不可关闭跨域',
+                                disabled: props.detail.extension?.snat_ips?.length === 0,
+                              }}
+                            />
+                          ),
                         }}
-                      />
+                      </hcm-auth>
                       {t('跨多个地域，绑定多个非本VPC内的IP，以及云下IDC内部的IP')}
                     </div>
                     <div class='snat-ip-container'>
                       <div class='top-bar'>
-                        <Button text theme='primary' onClick={() => (isShowAddSnatIp.value = true)}>
-                          <i class='hcm-icon bkhcm-icon-plus-circle-shape mr5'></i>
-                          {t('新增 SNAT 的 IP')}
-                        </Button>
+                        <hcm-auth class={'mr5'} sign={props.clbOperationAuthSign}>
+                          {{
+                            default: ({ noPerm }: { noPerm: boolean }) => (
+                              <Button
+                                text
+                                theme='primary'
+                                disabled={noPerm}
+                                onClick={() => (isShowAddSnatIp.value = true)}>
+                                <i class='hcm-icon bkhcm-icon-plus-circle-shape mr5'></i>
+                                {t('新增 SNAT 的 IP')}
+                              </Button>
+                            ),
+                          }}
+                        </hcm-auth>
                         <span class='desc'>{t('CLB 可以绑定云上多 VPC、云下 IDC 内 的IP。RS类型请选择为ENI类型')}</span>
                       </div>
                       <Table columns={corsColumns} data={props.detail.extension?.snat_ips}></Table>

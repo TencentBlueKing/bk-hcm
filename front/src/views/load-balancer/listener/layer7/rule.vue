@@ -12,6 +12,7 @@ import { Message } from 'bkui-vue';
 import { Plus } from 'bkui-vue/lib/icon';
 import RuleCollapsePanel from './rule-collapse-panel.vue';
 import AddDomainDialog from './add-domain-dialog.vue';
+import { IAuthSign } from '@/common/auth-service';
 
 const props = defineProps<{
   listenerRowData: IListenerItem;
@@ -20,6 +21,7 @@ const props = defineProps<{
 
 const loadBalancerListenerStore = useLoadBalancerListenerStore();
 const currentGlobalBusinessId = inject<Ref<number>>('currentGlobalBusinessId');
+const clbOperationAuthSign = inject<Ref<IAuthSign | IAuthSign[]>>('clbOperationAuthSign');
 
 const domainInfo = ref<IListenerDomainsListResponseData>();
 
@@ -75,12 +77,18 @@ const setDefaultDomainHandler = async (domain: string) => {
   Message({ theme: 'success', message: '设置成功' });
   domainInfo.value.default_domain = domain;
 };
+const currentActiveDomain = ref('');
 const handleRemoveDomain = async (domain: string) => {
-  const { id, vendor } = props.listenerRowData;
-  await loadBalancerListenerStore.batchDeleteDomain(vendor, id, { domains: [domain] }, currentGlobalBusinessId.value);
-  Message({ theme: 'success', message: '删除成功' });
-  const idx = domainInfo.value.domain_list.findIndex((item) => item.domain === domain);
-  domainInfo.value.domain_list.splice(idx, 1);
+  currentActiveDomain.value = domain;
+  try {
+    const { id, vendor } = props.listenerRowData;
+    await loadBalancerListenerStore.batchDeleteDomain(vendor, id, { domains: [domain] }, currentGlobalBusinessId.value);
+    Message({ theme: 'success', message: '删除成功' });
+    const idx = domainInfo.value.domain_list.findIndex((item) => item.domain === domain);
+    domainInfo.value.domain_list.splice(idx, 1);
+  } finally {
+    currentActiveDomain.value = '';
+  }
 };
 
 // rule
@@ -96,18 +104,19 @@ const handleRuleNumChange = (domain: string, count: number) => {
 <template>
   <div class="rule-container">
     <div class="tools">
-      <bk-button theme="primary" outline class="button" @click="handleAddDomain">
-        <plus class="f26" />
-        新增域名
-      </bk-button>
+      <hcm-auth :sign="clbOperationAuthSign" v-slot="{ noPerm }">
+        <bk-button theme="primary" outline :disabled="noPerm" class="button" @click="handleAddDomain">
+          <plus class="f26" />
+          新增域名
+        </bk-button>
+      </hcm-auth>
       <span>域名数量：{{ domainInfo?.domain_list.length }}</span>
       <span>默认域名：{{ domainInfo?.default_domain }}</span>
     </div>
     <div class="panel-list">
       <rule-collapse-panel
-        v-for="(item, index) in domainInfo?.domain_list"
+        v-for="item in domainInfo?.domain_list"
         :key="item.key"
-        :index="index"
         :is-new="item.displayConfig?.isNew"
         :is-expand="item.displayConfig?.isExpand"
         :is-default="item.domain === domainInfo.default_domain"
@@ -115,6 +124,8 @@ const handleRuleNumChange = (domain: string, count: number) => {
         :listener-row-data="listenerRowData"
         :load-balancer-details="loadBalancerDetails"
         :set-default-domain-handler="setDefaultDomainHandler"
+        :active="item.domain === currentActiveDomain"
+        :clb-operation-auth-sign="clbOperationAuthSign"
         @edit-domain="handleEditDomain"
         @remove-domain="handleRemoveDomain"
         @rule-num-change="handleRuleNumChange"

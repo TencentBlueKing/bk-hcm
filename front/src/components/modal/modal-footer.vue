@@ -28,7 +28,7 @@ const { t } = useI18n();
 <template>
   <bk-button
     v-bk-tooltips="tooltips"
-    class="mr8"
+    class="button mr8"
     :theme="confirmButtonTheme"
     :disabled="disabled"
     :loading="loading"
@@ -41,4 +41,8 @@ const { t } = useI18n();
   </bk-button>
 </template>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.button {
+  min-width: 64px;
+}
+</style>

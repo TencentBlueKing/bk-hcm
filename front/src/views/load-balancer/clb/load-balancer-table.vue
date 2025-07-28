@@ -4,7 +4,6 @@ import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useRegionStore } from '@/store/region';
 import { ILoadBalancerWithDeleteProtectionItem, useLoadBalancerClbStore } from '@/store/load-balancer/clb';
-import { IAuthSign } from '@/common/auth-service';
 import { LB_TYPE_NAME, LoadBalancerActionType, LoadBalancerType } from '../constants';
 import { ActionItemType } from '../typing';
 import {
@@ -21,7 +20,7 @@ import usePage from '@/hooks/use-page';
 import useSearchQs from '@/hooks/use-search-qs';
 import useTableSelection from '@/hooks/use-table-selection';
 import { ISearchItem, ValidateValuesFunc } from 'bkui-vue/lib/search-select/utils';
-import { formatBandwidth, getInstVip, parseIP } from '@/utils';
+import { formatBandwidth, getAuthSignByBusinessId, getInstVip, parseIP } from '@/utils';
 import { ISearchCondition, ISearchSelectValue } from '@/typings';
 import { buildMultipleValueRulesItem, transformSimpleCondition } from '@/utils/search';
 import { GLOBAL_BIZS_KEY, ResourceTypeEnum } from '@/common/constant';
@@ -51,15 +50,6 @@ const loadBalancerClbStore = useLoadBalancerClbStore();
 const currentGlobalBusinessId = inject<Ref<number>>('currentGlobalBusinessId');
 const isBusinessPage = computed(() => currentGlobalBusinessId.value);
 
-const getAuthSignByBusinessId = (
-  businessId: number,
-  rscAuthSymbol: symbol,
-  bizAuthSymbol: symbol,
-): IAuthSign | IAuthSign[] => {
-  if (businessId) return { type: bizAuthSymbol, relation: [businessId] };
-  return { type: rscAuthSymbol };
-};
-
 // 操作的基础配置，这里作打平处理，支持直接通过value索引访问
 const actionConfig: Record<LoadBalancerActionType, ActionItemType> = {
   [LoadBalancerActionType.PURCHASE]: {
@@ -77,10 +67,9 @@ const actionConfig: Record<LoadBalancerActionType, ActionItemType> = {
     type: 'dropdown',
     label: t('批量操作'),
     value: LoadBalancerActionType.BATCH_OPERATION,
-    disabled: () => selections.value.length === 0,
   },
   [LoadBalancerActionType.CREATE_LISTENER_OR_RULES]: {
-    label: t('批量创建监听器及规则'),
+    label: t('批量导入-监听器及规则'),
     value: LoadBalancerActionType.CREATE_LISTENER_OR_RULES,
     handleClick: () => {
       batchImportSidesliderState.isShow = true;
@@ -88,7 +77,7 @@ const actionConfig: Record<LoadBalancerActionType, ActionItemType> = {
     },
   },
   [LoadBalancerActionType.BIND_RS]: {
-    label: t('批量调整权重'),
+    label: t('批量导入-绑定RS'),
     value: LoadBalancerActionType.BIND_RS,
     handleClick: () => {
       batchImportSidesliderState.isShow = true;
@@ -102,6 +91,7 @@ const actionConfig: Record<LoadBalancerActionType, ActionItemType> = {
       batchDeleteDialogState.isHidden = false;
       batchDeleteDialogState.isShow = true;
     },
+    disabled: () => selections.value.length === 0,
   },
   [LoadBalancerActionType.SYNC]: {
     type: 'button',
@@ -215,6 +205,9 @@ const displayFieldConfig: Record<string, Partial<ModelPropertyColumn>> = {
         LB_TYPE_NAME[cell as LoadBalancerType],
       );
     },
+    filter: {
+      list: Object.entries(LB_TYPE_NAME).map(([value, label]) => ({ value, label, text: label })),
+    },
   },
   delete_protect: {
     render: ({ cell }) => {
@@ -274,7 +267,10 @@ const { selections, handleSelectAll, handleSelectChange } = useTableSelection({
   isRowSelectable: isRowSelectEnable,
 });
 
-const getSingleDeleteDisabledTooltips = (row: any) => {
+const getSingleDeleteDisabledTooltips = (row: any, noPerm: boolean) => {
+  if (noPerm) {
+    return { disabled: true };
+  }
   if (row.listener_count > 0) {
     return { content: '该负载均衡已绑定监听器, 不可删除', disabled: !(row.listener_count > 0) };
   }
@@ -416,7 +412,7 @@ const syncDialogState = reactive({ isShow: false, isHidden: true });
                   theme="primary"
                   text
                   :disabled="noPerm || row.listener_count > 0 || row.delete_protect"
-                  v-bk-tooltips="getSingleDeleteDisabledTooltips(row)"
+                  v-bk-tooltips="getSingleDeleteDisabledTooltips(row, noPerm)"
                   @click="handleSingleDelete(row)"
                 >
                   {{ t('删除') }}

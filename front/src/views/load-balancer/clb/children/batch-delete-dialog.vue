@@ -4,16 +4,18 @@ import { ILoadBalancerWithDeleteProtectionItem, useLoadBalancerClbStore } from '
 import { ThemeEnum } from 'bkui-vue/lib/shared';
 import { DisplayFieldFactory, DisplayFieldType } from '../../children/display/field-factory';
 import { ModelPropertyColumn } from '@/model/typings';
+import { ISearchSelectValue, SortType } from '@/typings';
 import { LB_TYPE_NAME, LoadBalancerType } from '../../constants';
 import { ConditionKeyType, SearchConditionFactory } from '../../children/search/condition-factory';
 import usePage from '@/hooks/use-page';
 import { cloneDeep } from 'lodash';
 import { getInstVip } from '@/utils';
+import { getLocalFilterFnBySearchSelect } from '@/utils/search';
 
 import { Message, Tag } from 'bkui-vue';
 import Search from '../../children/search/search.vue';
 import DataList from '../../children/display/data-list.vue';
-import DialogFooter from '@/components/common-dialog/dialog-footer.vue';
+import ModalFooter from '@/components/modal/modal-footer.vue';
 
 interface IProps {
   selections: ILoadBalancerWithDeleteProtectionItem[];
@@ -63,7 +65,7 @@ const datalistColumns = displayFieldIds.map((id) => {
 });
 
 const conditionProperties = SearchConditionFactory.createModel(ConditionKeyType.CLB).getProperties();
-const conditionIds = ['name', 'cloud_id', 'domain', 'lb_vip', 'lb_type'];
+const conditionIds = ['name', 'cloud_id', 'domain', 'lb_type'];
 const searchFields = conditionIds.map((id) => conditionProperties.find((item) => item.id === id));
 
 const list = ref(cloneDeep(props.selections));
@@ -75,15 +77,58 @@ const canDeletePredicate = (item: ILoadBalancerWithDeleteProtectionItem) => {
 
 const active = ref(props.selections.every(canDeletePredicate));
 const localSearchFilter = ref<(item: ILoadBalancerWithDeleteProtectionItem) => boolean>(() => true);
-const handleSearch = (_v: any, localFilter: (item: ILoadBalancerWithDeleteProtectionItem) => boolean) => {
-  localSearchFilter.value = localFilter;
+const sort = ref<SortType>();
+const handleSearch = (searchValue: ISearchSelectValue) => {
+  localSearchFilter.value = getLocalFilterFnBySearchSelect(searchValue);
+};
+const handleSort = (sortType: SortType) => {
+  sort.value = sortType;
 };
 
 const displayList = computed(() => {
-  if (active.value) {
-    return list.value.filter(canDeletePredicate).filter(localSearchFilter.value);
+  // 第一步：根据active的值进行过滤
+  let result = active.value
+    ? list.value.filter(canDeletePredicate)
+    : list.value.filter((item) => item.listener_count !== 0 || item.delete_protect);
+
+  // 第二步：根据搜索条件过滤
+  const filterResult = result.filter(localSearchFilter.value);
+  result = result.filter(localSearchFilter.value);
+
+  // 第三步：如果有排序，则进行排序
+  if (!sort.value || sort.value.type === 'null') {
+    return filterResult;
   }
-  return list.value.filter((item) => item.listener_count !== 0 || item.delete_protect).filter(localSearchFilter.value);
+
+  const { type, column } = sort.value;
+  const { field } = column;
+
+  result = [...result].sort((a, b) => {
+    const aVal = a[field];
+    const bVal = b[field];
+
+    // 处理字符串比较
+    if (typeof aVal === 'string' && typeof bVal === 'string') {
+      return type === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+    }
+
+    // 处理布尔值比较
+    if (typeof aVal === 'boolean' && typeof bVal === 'boolean') {
+      const aNum = aVal ? 1 : 0;
+      const bNum = bVal ? 1 : 0;
+      return type === 'asc' ? aNum - bNum : bNum - aNum;
+    }
+
+    // 处理数字比较
+    if (typeof aVal === 'number' && typeof bVal === 'number') {
+      return type === 'asc' ? aVal - bVal : bVal - aVal;
+    }
+
+    // 默认比较（包括混合类型）
+    return type === 'asc' ? String(aVal).localeCompare(String(bVal)) : String(bVal).localeCompare(String(aVal));
+  });
+
+  return result;
 });
 const hasListenerLoadBalancerCount = computed(() => list.value.filter((item) => item.listener_count !== 0).length);
 const hasDeleteProtectCount = computed(() => list.value.filter((item) => item.delete_protect).length);
@@ -127,7 +172,7 @@ const handleClosed = () => {
         <bk-radio-button :label="true">可删除</bk-radio-button>
         <bk-radio-button :label="false">不可删除</bk-radio-button>
       </bk-radio-group>
-      <search class="search" :fields="searchFields" :flat="false" local-search @search="handleSearch" />
+      <search class="search" :fields="searchFields" @search="handleSearch" />
     </div>
     <data-list
       class="data-list"
@@ -137,6 +182,7 @@ const handleClosed = () => {
       :pagination="pagination"
       :remote-pagination="false"
       :max-height="500"
+      @column-sort="handleSort"
     >
       <template #action v-if="active">
         <bk-table-column label="">
@@ -149,7 +195,7 @@ const handleClosed = () => {
       </template>
     </data-list>
     <template #footer>
-      <dialog-footer
+      <modal-footer
         confirm-text="删除"
         :confirm-button-theme="ThemeEnum.DANGER"
         :loading="loadBalancerClbStore.batchDeleteLoadBalancerLoading"

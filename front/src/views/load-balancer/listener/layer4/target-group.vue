@@ -63,6 +63,7 @@ const jumpToTargetGroupDetails = () => {
       <rs-preview-table
         :loading="loadBalancerTargetGroupStore.targetGroupDetailsLoading"
         :list="targetGroupDetails?.target_list"
+        :small-pagination="false"
       />
     </panel>
   </div>

@@ -44,7 +44,13 @@ export class DisplayFieldClb {
   @Column('enum', { name: 'IP版本', index: 0, width: 80, option: IP_VERSION_DISPLAY_NAME, sort: true })
   ip_version: string;
 
-  @Column('string', { name: '标签', index: 0, width: 80, meta: { display: { format: (val) => formatTags(val) } } })
+  @Column('string', {
+    name: '标签',
+    index: 0,
+    width: 80,
+    meta: { display: { format: (val) => formatTags(val) } },
+    defaultHidden: true,
+  })
   tags: string;
 
   @Column('enum', { name: '云厂商', index: 0, width: 80, option: VendorMap, sort: true })

@@ -30,7 +30,9 @@ const appearanceComps: Partial<Record<AppearanceType, any>> = {
 
 <template>
   <template v-if="!appearance">
-    <bk-overflow-title resizeable type="tips" v-if="display?.showOverflowTooltip">{{ displayValue }}</bk-overflow-title>
+    <bk-overflow-title class="full-width" resizeable type="tips" v-if="display?.showOverflowTooltip">
+      {{ displayValue }}
+    </bk-overflow-title>
     <span v-else>{{ displayValue }}</span>
   </template>
   <component

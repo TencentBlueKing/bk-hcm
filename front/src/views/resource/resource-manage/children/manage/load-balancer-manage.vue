@@ -345,9 +345,9 @@ const handleSync = (inTable: boolean, data?: any) => {
   syncDialogState.isShow = true;
   syncDialogState.isHidden = false;
   if (inTable) {
-    const { account_id: accountId, vendor, region, cloud_id: cloudId } = data;
+    const { name, account_id: accountId, vendor, region, cloud_id: cloudId } = data;
     // TODO: azure支持负载均衡后，需要补充resource_group_names
-    syncDialogState.initialModel = { account_id: accountId, vendor, regions: region, cloud_ids: [cloudId] };
+    syncDialogState.initialModel = { name, account_id: accountId, vendor, regions: region, cloud_ids: [cloudId] };
   } else {
     const { id, vendor } = data;
     syncDialogState.initialModel = { account_id: id, vendor };

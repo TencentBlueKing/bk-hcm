@@ -156,11 +156,16 @@ const selectSearchData = computed(() => {
           name: t('管理类型'),
           id: 'mgmt_type',
           async: false,
-          type: 'string',
+          type: 'enum',
+          option: {
+            [SecurityGroupManageType.BIZ]: t('业务管理'),
+            [SecurityGroupManageType.PLATFORM]: t('平台管理'),
+            unknown: t('未确认'),
+          },
           children: [
             { id: SecurityGroupManageType.BIZ, name: t('业务管理') },
             { id: SecurityGroupManageType.PLATFORM, name: t('平台管理') },
-            { id: 'unknown', name: t('未确认') },
+            { id: '', name: t('未确认') },
           ],
           multiple: true,
           meta: {
@@ -233,21 +238,14 @@ const asyncRegionChildren = computed(() => regionChildren.value);
 const searchQs = useSearchQs({ key: 'filter', properties: selectSearchData });
 
 const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange, handleSort, getList } =
-  useQueryCommonList(
-    {
-      ...props,
-      filter,
-    },
-    fetchUrl,
-    {
-      asyncRequestApiMethod: (datalist: any[], datalistRef: Ref<any[]>) => {
-        // 安全组需要异步加载一些关联资源数
-        if (activeType.value !== 'group' || !datalist.length) return [];
+  useQueryCommonList({ filter }, fetchUrl, {
+    asyncRequestApiMethod: (datalist: any[], datalistRef: Ref<any[]>) => {
+      // 安全组需要异步加载一些关联资源数
+      if (activeType.value !== 'group' || !datalist.length) return [];
 
-        fetchSecurityGroupExtraFields(datalist, datalistRef);
-      },
+      fetchSecurityGroupExtraFields(datalist, datalistRef);
     },
-  );
+  });
 
 const getQueryOperator = (value: string | number | string[] | number[], field: string) => {
   let op = QueryRuleOPEnum.CS;
@@ -1309,6 +1307,8 @@ watch(
   },
   { deep: true },
 );
+
+// TODO: 后续请求改为 watch query 后，这里删掉，改为通过 searchQs.get 设置默认值
 onMounted(() => {
   // 默认进来搜索是 管理类型：业务管理|未确认
   const value = Object.keys(searchQs.get(route.query))?.length

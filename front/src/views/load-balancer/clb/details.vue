@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, onMounted, Ref, ref, watch } from 'vue';
+import { computed, ComputedRef, inject, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import routerAction from '@/router/utils/action';
@@ -23,7 +23,7 @@ const route = useRoute();
 const { t } = useI18n();
 const loadBalancerClbStore = useLoadBalancerClbStore();
 
-const currentGlobalBusinessId = inject<Ref<number>>('currentGlobalBusinessId');
+const currentGlobalBusinessId = inject<ComputedRef<number>>('currentGlobalBusinessId');
 watch(currentGlobalBusinessId, (val) => {
   routerAction.redirect({ name: MENU_BUSINESS_LOAD_BALANCER_OVERVIEW, query: { [GLOBAL_BIZS_KEY]: val } });
 });
@@ -102,7 +102,7 @@ onMounted(() => {
     >
       <bk-tab-panel v-for="tab in tabs" :key="tab.name" :label="tab.label" :name="tab.name">
         <component
-          v-if="details"
+          v-if="active === tab.name && details"
           :is="tab.component"
           :lb-id="route.params.id as string"
           :current-global-business-id="currentGlobalBusinessId"

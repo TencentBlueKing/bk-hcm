@@ -19,6 +19,7 @@ import { MENU_BUSINESS_TARGET_GROUP_DETAILS } from '@/constants/menu-symbol';
 import { GLOBAL_BIZS_KEY } from '@/common/constant';
 import { merge } from 'lodash';
 import routerAction from '@/router/utils/action';
+import { IAuthSign } from '@/common/auth-service';
 
 import { Button, Message } from 'bkui-vue';
 import { Plus } from 'bkui-vue/lib/icon';
@@ -28,13 +29,14 @@ import AddUrlDialog from './add-url-dialog.vue';
 import RsPreviewDialog from './rs-preview-dialog.vue';
 
 interface IProps {
-  index: number;
   isNew?: boolean;
   isDefault: boolean;
   domainInfo: IListenerDomainInfoItem;
   listenerRowData: IListenerItem;
   loadBalancerDetails: ILoadBalancerDetails;
   setDefaultDomainHandler: (domain: string) => Promise<void>;
+  active: boolean;
+  clbOperationAuthSign: IAuthSign | IAuthSign[];
 }
 
 const props = defineProps<IProps>();
@@ -279,29 +281,41 @@ const handleRsPreviewDialogHidden = () => {
   <bk-collapse class="rule-collapse-panel" :class="{ 'is-new': isNew }">
     <bk-collapse-panel v-model="isExpand" icon="right-shape" alone>
       <template #default>
-        <span>域名{{ index + 1 }}</span>
         <span class="text-light">{{ domainInfo.domain }}</span>
         <bk-tag v-if="isNew" theme="success" type="filled" size="small">new</bk-tag>
         <bk-loading v-if="setDefaultDomainLoading" size="mini" mode="spin" theme="primary" loading></bk-loading>
         <template v-else>
-          <bk-tag v-if="isDefault" theme="info">默认</bk-tag>
-          <bk-button v-else theme="primary" text @click.stop="handleSetDefaultDomain" class="set-default-btn">
-            设为默认
-          </bk-button>
+          <bk-tag v-if="isDefault" class="default-tag">默认</bk-tag>
+          <hcm-auth v-else :sign="clbOperationAuthSign" v-slot="{ noPerm }">
+            <bk-button
+              theme="primary"
+              text
+              :disabled="noPerm"
+              @click.stop="handleSetDefaultDomain"
+              class="set-default-btn"
+            >
+              设为默认
+            </bk-button>
+          </hcm-auth>
         </template>
         <span class="ml-auto text-light">URL数量：{{ domainInfo.url_count }}</span>
-        <i class="hcm-icon bkhcm-icon-bianji operation" @click.stop="handleEditDomain"></i>
-        <bk-pop-confirm content="确认删除该域名？" trigger="click" @confirm="handleRemoveDomain">
-          <bk-button
-            text
-            :loading="loadBalancerListenerStore.batchDeleteDomainLoading"
-            :disabled="isDefault"
-            v-bk-tooltips="{ content: '默认域名不可删除', disabled: !isDefault }"
-            @click.stop
-          >
-            <i class="hcm-icon bkhcm-icon-delete operation"></i>
+        <hcm-auth :sign="clbOperationAuthSign" @click.stop v-slot="{ noPerm }">
+          <bk-button text :disabled="noPerm" @click="handleEditDomain">
+            <i class="hcm-icon bkhcm-icon-bianji operation"></i>
           </bk-button>
-        </bk-pop-confirm>
+        </hcm-auth>
+        <hcm-auth :sign="clbOperationAuthSign" @click.stop v-slot="{ noPerm }">
+          <bk-pop-confirm content="确认删除该域名？" trigger="click" @confirm="handleRemoveDomain">
+            <bk-button
+              text
+              :loading="active && loadBalancerListenerStore.batchDeleteDomainLoading"
+              :disabled="noPerm || isDefault"
+              v-bk-tooltips="{ content: '默认域名不可删除', disabled: !isDefault }"
+            >
+              <i class="hcm-icon bkhcm-icon-delete operation"></i>
+            </bk-button>
+          </bk-pop-confirm>
+        </hcm-auth>
       </template>
       <template #content>
         <data-list
@@ -320,22 +334,33 @@ const handleRsPreviewDialogHidden = () => {
               <template #default="{ row }">
                 <div class="action-cell">
                   <bk-button theme="primary" text @click="handleShowRsPreview(row)">预览RS信息</bk-button>
-                  <bk-button theme="primary" text @click="handleEditUrl(row)">编辑</bk-button>
-                  <bk-pop-confirm content="确认删除该URL路径？" trigger="click" @confirm="handleRemoveUrl(row.id)">
-                    <bk-button theme="primary" text :loading="loadBalancerListenerStore.batchDeleteRuleLoading">
-                      删除
-                    </bk-button>
-                  </bk-pop-confirm>
+                  <hcm-auth :sign="clbOperationAuthSign" v-slot="{ noPerm }">
+                    <bk-button theme="primary" text :disabled="noPerm" @click="handleEditUrl(row)">编辑</bk-button>
+                  </hcm-auth>
+                  <hcm-auth :sign="clbOperationAuthSign" v-slot="{ noPerm }">
+                    <bk-pop-confirm content="确认删除该URL路径？" trigger="click" @confirm="handleRemoveUrl(row.id)">
+                      <bk-button
+                        theme="primary"
+                        text
+                        :loading="loadBalancerListenerStore.batchDeleteRuleLoading"
+                        :disabled="noPerm"
+                      >
+                        删除
+                      </bk-button>
+                    </bk-pop-confirm>
+                  </hcm-auth>
                 </div>
               </template>
             </bk-table-column>
           </template>
         </data-list>
         <div class="fixed-bottom">
-          <bk-button theme="primary" text @click="handleAddUrl">
-            <plus class="f26" />
-            新增URL路径
-          </bk-button>
+          <hcm-auth :sign="clbOperationAuthSign" v-slot="{ noPerm }">
+            <bk-button theme="primary" text :disabled="noPerm" @click="handleAddUrl">
+              <plus class="f26" />
+              新增URL路径
+            </bk-button>
+          </hcm-auth>
         </div>
       </template>
     </bk-collapse-panel>
@@ -386,11 +411,16 @@ const handleRsPreviewDialogHidden = () => {
       }
 
       .bk-collapse-icon svg {
-        font-size: 14px;
+        font-size: 12px;
       }
 
       .set-default-btn {
         opacity: 0;
+      }
+
+      .default-tag {
+        background: #dae9fd;
+        color: #4193e5;
       }
 
       &:hover {
@@ -423,7 +453,7 @@ const handleRsPreviewDialogHidden = () => {
     .action-cell {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 12px;
     }
 
     :deep(.is-new td) {

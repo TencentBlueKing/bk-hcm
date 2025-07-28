@@ -10,6 +10,10 @@
     box-shadow: 0 2px 4px 0 #1919290d;
     border-radius: 2px;
   }
+
+  .f22 {
+    font-size: 22px;
+  }
 }
 
 .batch-delete-rs-dialog {
@@ -86,5 +90,11 @@
         }
       }
     }
+  }
+}
+
+.target-group-batch-operation-menu {
+  .hcm-auth {
+    display: block;
   }
 }

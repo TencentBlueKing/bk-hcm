@@ -5,7 +5,6 @@ import { IListenerDetails, IListenerModel, useLoadBalancerListenerStore } from '
 import { ILoadBalancerDetails, ILoadBalancerLockStatus, useLoadBalancerClbStore } from '@/store/load-balancer/clb';
 import { ITargetGroupDetails, useLoadBalancerTargetGroupStore } from '@/store/load-balancer/target-group';
 import {
-  LAYER_4_LISTENER_PROTOCOL,
   LAYER_7_LISTENER_PROTOCOL,
   LISTENER_PROTOCOL_LIST,
   ListenerProtocol,
@@ -18,13 +17,14 @@ import {
 } from '../constants';
 import { goAsyncTaskDetail } from '@/utils';
 import routerAction from '@/router/utils/action';
+import { MENU_BUSINESS_TARGET_GROUP_DETAILS } from '@/constants/menu-symbol';
+import { GLOBAL_BIZS_KEY } from '@/common/constant';
+import { useSideslider } from '@/hooks/use-sideslider';
 
 import { Form, Message } from 'bkui-vue';
 import CertSelector from '@/views/business/load-balancer/clb-view/components/CertSelector';
 import TargetGroupSelector from '@/views/business/load-balancer/clb-view/components/TargetGroupSelector';
 import RsPreviewTable from './children/rs-preview-table.vue';
-import { MENU_BUSINESS_TARGET_GROUP_DETAILS } from '@/constants/menu-symbol';
-import { GLOBAL_BIZS_KEY } from '@/common/constant';
 
 interface IProps {
   loadBalancerDetails: ILoadBalancerDetails;
@@ -128,20 +128,14 @@ watchEffect(() => {
   bindingTargetGroupName.value = target_group_name;
   isSniOpen.value = !!sni_switch;
 });
-watch(
-  () => formModel.protocol,
-  (protocol) => {
-    // 七层监听器不支持会话保持
-    LAYER_7_LISTENER_PROTOCOL.includes(protocol) && (formModel.session_open = false);
-  },
-);
-watch(
-  () => formModel.scheduler,
-  (scheduler) => {
-    // 如果均衡方式为加权最小连接数, 不支持配置会话保持
-    Scheduler.LEAST_CONN === scheduler && (formModel.session_open = false);
-  },
-);
+
+const isLayer7 = computed(() => LAYER_7_LISTENER_PROTOCOL.includes(formModel.protocol));
+watch([isLayer7, () => formModel.scheduler], ([isLayer7, scheduler]) => {
+  // 不支持会话保持的case：七层监听器 | 均衡方式为加权最小连接数
+  if (isLayer7 || Scheduler.LEAST_CONN === scheduler) {
+    formModel.session_open = false;
+  }
+});
 watch(
   () => formModel.session_open,
   (sessionOpen) => {
@@ -233,8 +227,6 @@ const handleConfirm = async () => {
     certificate,
   } = formModel;
   const isHttps = ListenerProtocol.HTTPS === protocol;
-  const isLayer4 = LAYER_4_LISTENER_PROTOCOL.includes(protocol);
-  const isLayer7 = LAYER_7_LISTENER_PROTOCOL.includes(protocol);
   if (props.isEdit) {
     await loadBalancerListenerStore.updateListener(
       {
@@ -262,9 +254,9 @@ const handleConfirm = async () => {
         id: undefined,
         session_open: undefined,
         // session_type: isLayer4 && Scheduler.LEAST_CONN !== scheduler ? session_type : undefined, // 后端要求必填
-        session_expire: isLayer4 && Scheduler.LEAST_CONN !== scheduler ? session_expire : undefined,
-        domain: isLayer7 ? domain : undefined,
-        url: isLayer7 ? url : undefined,
+        session_expire: !isLayer7.value && Scheduler.LEAST_CONN !== scheduler ? session_expire : undefined,
+        domain: isLayer7.value ? domain : undefined,
+        url: isLayer7.value ? url : undefined,
         sni_switch: isHttps ? sni_switch : undefined,
         certificate: isHttps ? certificate : undefined,
       },
@@ -279,10 +271,18 @@ const handleConfirm = async () => {
 const handleCancel = () => {
   model.value = false;
 };
+
+const { beforeClose } = useSideslider(formModel);
 </script>
 
 <template>
-  <bk-sideslider v-model:is-show="model" :title="title" :width="640" class="listener-form-container">
+  <bk-sideslider
+    v-model:is-show="model"
+    :title="title"
+    :width="640"
+    class="listener-form-container"
+    :before-close="beforeClose"
+  >
     <bk-alert v-if="loadBalancerLockStatus && loadBalancerLockStatus.status !== 'success'" theme="danger" class="mb24">
       <template #title>
         当前负载均衡正在变更中，无法执行此次操作，请稍后再尝试提交。
@@ -360,10 +360,7 @@ const handleCancel = () => {
             <template v-for="scheduler in SCHEDULER_LIST" :key="scheduler">
               <!-- 七层支持IP Hash，四层不支持 -->
               <bk-option
-                v-if="
-                  LAYER_7_LISTENER_PROTOCOL.includes(formModel.protocol) ||
-                  (LAYER_4_LISTENER_PROTOCOL.includes(formModel.protocol) && Scheduler.IP_HASH !== scheduler)
-                "
+                v-if="isLayer7 || (!isLayer7 && Scheduler.IP_HASH !== scheduler)"
                 :id="scheduler"
                 :name="SCHEDULER_NAME[scheduler]"
               />
@@ -371,9 +368,7 @@ const handleCancel = () => {
           </bk-select>
         </bk-form-item>
         <!-- 四层支持会话保持，七层不支持；均衡方式为加权最小连接数时，不支持配置会话保持 -->
-        <template
-          v-if="LAYER_4_LISTENER_PROTOCOL.includes(formModel.protocol) && Scheduler.LEAST_CONN !== formModel.scheduler"
-        >
+        <template v-if="!isLayer7 && Scheduler.LEAST_CONN !== formModel.scheduler">
           <div class="flex-row">
             <bk-form-item
               label="会话保持"
@@ -409,7 +404,7 @@ const handleCancel = () => {
       </template>
       <!-- 编辑 -->
       <template v-else>
-        <div v-if="LAYER_4_LISTENER_PROTOCOL.includes(formModel.protocol)" class="mb24">
+        <div v-if="!isLayer7" class="mb24">
           <span class="label">已绑定的目标组：</span>
           <bk-button
             v-if="formModel.target_group_id"
@@ -423,7 +418,7 @@ const handleCancel = () => {
           <span v-else class="value">--</span>
         </div>
       </template>
-      <bk-form-item label="RS预览">
+      <bk-form-item v-if="!(isEdit && isLayer7)" label="RS预览">
         <rs-preview-table
           :loading="loadBalancerTargetGroupStore.targetGroupDetailsLoading"
           :list="targetGroupDetails?.target_list"

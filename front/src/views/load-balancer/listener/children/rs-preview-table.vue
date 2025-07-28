@@ -8,14 +8,17 @@ import DataList from '../../children/display/data-list.vue';
 interface IProps {
   loading?: boolean;
   list: ITargetGroupDetails['target_list'];
+  smallPagination?: boolean;
 }
 
-defineProps<IProps>();
+const props = withDefaults(defineProps<IProps>(), {
+  smallPagination: true,
+});
 
 const columnProperties = DisplayFieldFactory.createModel(DisplayFieldType.RS).getProperties();
 
 const { pagination } = usePage(false);
-Object.assign(pagination, { small: true, layout: ['total', 'limit', 'list'] });
+Object.assign(pagination, { small: props.smallPagination, layout: ['total', 'limit', 'list'] });
 </script>
 
 <template>

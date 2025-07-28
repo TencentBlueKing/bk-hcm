@@ -90,7 +90,9 @@ const loadBalancerBiz: RouteRecordRaw[] = [
       ...new Meta({
         title: '购买负载均衡',
         activeKey: MENU_BUSINESS_LOAD_BALANCER,
-        menu: {},
+        menu: {
+          relative: MENU_BUSINESS_LOAD_BALANCER_OVERVIEW,
+        },
         notMenu: true,
       }),
     },

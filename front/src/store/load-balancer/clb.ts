@@ -46,6 +46,7 @@ export interface ILoadBalancerWithDeleteProtectionItem {
   updated_at: string;
   delete_protect: boolean;
   listener_count?: number; // 异步加载
+  [key: string]: any;
 }
 
 export interface ILoadBalancerDetails {

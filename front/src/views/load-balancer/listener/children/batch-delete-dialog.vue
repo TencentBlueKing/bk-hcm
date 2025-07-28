@@ -9,7 +9,7 @@ import { cloneDeep } from 'lodash';
 
 import { Message } from 'bkui-vue';
 import DataList from '../../children/display/data-list.vue';
-import DialogFooter from '@/components/common-dialog/dialog-footer.vue';
+import ModalFooter from '@/components/modal/modal-footer.vue';
 
 interface IProps {
   selections: IListenerItem[];
@@ -131,7 +131,7 @@ const handleClosed = () => {
       </template>
     </data-list>
     <template #footer>
-      <dialog-footer
+      <modal-footer
         confirm-text="删除"
         :confirm-button-theme="ThemeEnum.DANGER"
         :loading="loadBalancerListenerStore.batchDeleteListenerLoading"

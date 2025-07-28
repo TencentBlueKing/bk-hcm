@@ -153,6 +153,7 @@ defineExpose({
   flex-direction: column;
 
   .search {
+    flex-shrink: 0;
     padding: 12px 24px;
 
     :deep(.bk-search-select) {
@@ -170,6 +171,7 @@ defineExpose({
     flex-direction: column;
 
     .load-balancer-item {
+      flex-shrink: 0;
       display: flex;
       align-items: center;
       padding: 0 16px;

@@ -1,5 +1,15 @@
 import isIP from 'validator/es/lib/isIP';
 import { AddressDescription } from '@/typings';
+import { IAuthSign } from '@/common/auth-service';
+
+const getAuthSignByBusinessId = (
+  businessId: number,
+  rscAuthSymbol: symbol,
+  bizAuthSymbol: symbol,
+): IAuthSign | IAuthSign[] => {
+  if (businessId) return { type: bizAuthSymbol, relation: [businessId] };
+  return { type: rscAuthSymbol };
+};
 
 /**
  * 获取实例的ip地址
@@ -218,6 +228,7 @@ const isPortValid = (text: string) => {
   return true;
 };
 export {
+  getAuthSignByBusinessId,
   getInstVip,
   getPrivateIPs,
   getPublicIPs,

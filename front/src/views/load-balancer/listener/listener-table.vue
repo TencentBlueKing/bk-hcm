@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, h, inject, reactive, ref, Ref, watch } from 'vue';
+import { computed, ComputedRef, h, inject, reactive, ref, useTemplateRef, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ILoadBalancerDetails } from '@/store/load-balancer/clb';
@@ -15,6 +15,7 @@ import useTableSelection from '@/hooks/use-table-selection';
 import { ISearchCondition, ISearchSelectValue } from '@/typings';
 import { transformSimpleCondition } from '@/utils/search';
 import { ResourceTypeEnum } from '@/common/constant';
+import { IAuthSign } from '@/common/auth-service';
 import routerAction from '@/router/utils/action';
 import useTimeoutPoll from '@/hooks/use-timeout-poll';
 import { getInstVip } from '@/utils';
@@ -39,7 +40,8 @@ const route = useRoute();
 const { t } = useI18n();
 const loadBalancerListenerStore = useLoadBalancerListenerStore();
 
-const currentGlobalBusinessId = inject<Ref<number>>('currentGlobalBusinessId');
+const currentGlobalBusinessId = inject<ComputedRef<number>>('currentGlobalBusinessId');
+const clbOperationAuthSign = inject<ComputedRef<IAuthSign | IAuthSign[]>>('clbOperationAuthSign');
 
 const actionConfig: Record<ListenerActionType, ActionItemType> = {
   [ListenerActionType.ADD]: {
@@ -48,6 +50,7 @@ const actionConfig: Record<ListenerActionType, ActionItemType> = {
     value: ListenerActionType.ADD,
     displayProps: { theme: 'primary' },
     prefix: () => h(Plus),
+    authSign: () => clbOperationAuthSign.value,
     handleClick: () => {
       addSidesliderState.isHidden = false;
       addSidesliderState.isShow = true;
@@ -58,6 +61,7 @@ const actionConfig: Record<ListenerActionType, ActionItemType> = {
     label: t('批量删除'),
     value: ListenerActionType.REMOVE,
     disabled: () => selections.value.length === 0,
+    authSign: () => clbOperationAuthSign.value,
     handleClick: () => {
       batchDeleteDialogState.isHidden = false;
       batchDeleteDialogState.isShow = true;
@@ -203,6 +207,11 @@ const handleSingleDelete = (row: any) => {
   });
 };
 
+const searchRef = useTemplateRef<typeof Search>('search');
+watch(
+  () => props.lbId,
+  () => searchRef.value?.clear(false),
+);
 const handleSearch = (_vals: ISearchSelectValue, condition: ISearchCondition) => {
   searchQs.set(condition);
 };
@@ -313,7 +322,10 @@ const handleUpdateListenerSuccess = async (id: string) => {
     <div class="toolbar">
       <div class="action-container">
         <template v-for="action in actionList" :key="action.value">
-          <action-item :action="action" :disabled="action.disabled?.()" />
+          <hcm-auth v-if="action.authSign" :sign="action.authSign()" v-slot="{ noPerm }">
+            <action-item :action="action" :disabled="noPerm || action.disabled?.()" />
+          </hcm-auth>
+          <action-item v-else :action="action" :disabled="action.disabled?.()" />
         </template>
       </div>
       <search
@@ -338,19 +350,26 @@ const handleUpdateListenerSuccess = async (id: string) => {
       <template #action>
         <bk-table-column :label="t('操作')" width="120" fixed="right">
           <template #default="{ row }">
-            <bk-button theme="primary" text @click="handleEditListener(row)">
-              {{ t('编辑') }}
-            </bk-button>
-            <bk-button
-              class="ml8"
-              theme="primary"
-              text
-              :disabled="row.non_zero_weight_count !== 0"
-              v-bk-tooltips="{ content: t('监听器RS的权重不为0，不可删除'), disabled: row.non_zero_weight_count === 0 }"
-              @click="handleSingleDelete(row)"
-            >
-              {{ t('删除') }}
-            </bk-button>
+            <hcm-auth :sign="clbOperationAuthSign" v-slot="{ noPerm }">
+              <bk-button theme="primary" text :disabled="noPerm" @click="handleEditListener(row)">
+                {{ t('编辑') }}
+              </bk-button>
+            </hcm-auth>
+            <hcm-auth :sign="clbOperationAuthSign" v-slot="{ noPerm }">
+              <bk-button
+                class="ml8"
+                theme="primary"
+                text
+                :disabled="noPerm || row.non_zero_weight_count !== 0"
+                v-bk-tooltips="{
+                  content: t('监听器RS的权重不为0，不可删除'),
+                  disabled: row.non_zero_weight_count === 0,
+                }"
+                @click="handleSingleDelete(row)"
+              >
+                {{ t('删除') }}
+              </bk-button>
+            </hcm-auth>
           </template>
         </bk-table-column>
       </template>
@@ -384,7 +403,13 @@ const handleUpdateListenerSuccess = async (id: string) => {
         :resource-type="ResourceTypeEnum.CLB"
         :business-id="currentGlobalBusinessId"
         resource-name="load_balancer"
-        :initial-model="{ account_id: details.account_id, vendor: details.vendor, cloud_ids: [details.cloud_id] }"
+        :initial-model="{
+          name: details.name,
+          account_id: details.account_id,
+          vendor: details.vendor,
+          regions: details.region,
+          cloud_ids: [details.cloud_id],
+        }"
         @hidden="syncDialogState.isHidden = true"
       />
     </template>

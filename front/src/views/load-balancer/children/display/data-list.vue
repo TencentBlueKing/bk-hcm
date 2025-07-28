@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PaginationType } from '@/typings';
+import { PaginationType, SortType } from '@/typings';
 import { ModelPropertyColumn } from '@/model/typings';
 import usePage from '@/hooks/use-page';
 import useTableSettings from '@/hooks/use-table-settings';
@@ -18,6 +18,7 @@ const props = withDefaults(defineProps<IDataListProps>(), {
   remotePagination: true,
 });
 const emit = defineEmits<{
+  'column-sort': [sortType: SortType];
   'scroll-bottom': [];
 }>();
 
@@ -31,6 +32,14 @@ const getDisplayCompProps = (column: ModelPropertyColumn, row: any) => {
     return { vendor: row.vendor };
   }
   return {};
+};
+
+const handleColumnSort = (sortType: SortType) => {
+  if (props.remotePagination) {
+    handleSort(sortType);
+    return;
+  }
+  emit('column-sort', sortType);
 };
 
 const handleScrollBottom = () => {
@@ -49,7 +58,7 @@ const handleScrollBottom = () => {
     show-overflow-tooltip
     @page-limit-change="handlePageSizeChange"
     @page-value-change="handlePageChange"
-    @column-sort="handleSort"
+    @column-sort="handleColumnSort"
     @scroll-bottom="handleScrollBottom"
   >
     >
@@ -63,6 +72,7 @@ const handleScrollBottom = () => {
       :width="column.width"
       :fixed="column.fixed"
       :render="column.render"
+      :filter="column.filter"
     >
       <template #default="{ row }">
         <display-value

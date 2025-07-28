@@ -9,7 +9,7 @@ const props = defineProps<{ value: number | number[]; separator?: string; displa
 
 const businessGlobalStore = useBusinessGlobalStore();
 
-const appearance = computed(() => props.display.appearance);
+const appearance = computed(() => props.display?.appearance);
 
 const appearanceComps: Partial<Record<AppearanceType, any>> = {
   'business-assign-tag': BusinessAssignTag,

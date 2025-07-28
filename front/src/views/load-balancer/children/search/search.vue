@@ -3,24 +3,14 @@ import { ModelPropertySearch } from '@/model/typings';
 import { computed, ref, useAttrs, watch } from 'vue';
 import { ISearchItem, ValidateValuesFunc } from 'bkui-vue/lib/search-select/utils';
 import { ISearchCondition, ISearchSelectValue } from '@/typings';
-import {
-  buildSearchSelectValueBySearchQsCondition,
-  getLocalFilterFnBySearchSelect,
-  getSimpleConditionBySearchSelect,
-} from '@/utils/search';
+import { buildSearchSelectValueBySearchQsCondition } from '@/utils/search';
 
-const props = withDefaults(
-  defineProps<{
-    fields: ModelPropertySearch[];
-    condition?: ISearchCondition;
-    flat?: boolean;
-    localSearch?: boolean;
-    options?: Array<{ field: string; formatter: Function }>;
-    validateValues?: ValidateValuesFunc;
-    searchDataConfig?: Record<string, Partial<ISearchItem>>;
-  }>(),
-  { flat: true },
-);
+const props = defineProps<{
+  fields: ModelPropertySearch[];
+  condition?: ISearchCondition;
+  validateValues?: ValidateValuesFunc;
+  searchDataConfig?: Record<string, Partial<ISearchItem>>;
+}>();
 const emit = defineEmits<{
   search: [value: ISearchSelectValue, result?: any];
 }>();
@@ -37,18 +27,16 @@ const searchData = computed(() =>
   })),
 );
 
-const clear = () => {
+const triggerQuery = ref(true); // 是否触发emit（查询），主要用于视觉交互层面上的searchValue，数据交互层面还是取决于watch query中的condition
+const clear = (trigger = true) => {
   searchValue.value = [];
+  triggerQuery.value = trigger;
 };
 
 watch(searchValue, (val) => {
-  if (props.flat) {
-    emit('search', val, getSimpleConditionBySearchSelect(val, props.options));
-  } else if (props.localSearch) {
-    emit('search', val, getLocalFilterFnBySearchSelect(val, props.options));
-  } else {
-    emit('search', val);
-  }
+  if (!triggerQuery.value) return;
+
+  emit('search', val);
 });
 
 defineExpose({ clear });

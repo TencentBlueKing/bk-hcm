@@ -1500,7 +1500,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
       label: '绑定的监听器',
       field: 'lbl_name',
       width: 200,
-      sort: false,
+      sort: true,
       render: (row: any) => {
         return (
           <Button

@@ -13,7 +13,7 @@ import { ListenerProtocol, SCHEDULER_LIST, SCHEDULER_NAME, SSL_MODE_NAME, SSLMod
 
 import { Form, Message, Tag } from 'bkui-vue';
 import GridDetails from '../../children/display/grid-details.vue';
-import DialogFooter from '@/components/common-dialog/dialog-footer.vue';
+import ModalFooter from '@/components/modal/modal-footer.vue';
 import TargetGroupSelector from '@/views/business/load-balancer/clb-view/components/TargetGroupSelector';
 import CertSelector from '@/views/business/load-balancer/clb-view/components/CertSelector';
 
@@ -68,8 +68,8 @@ const rules = {
   ],
   url: [
     {
-      validator: (value: string) => /^\/[\w\-/]*$/.test(value),
-      message: 'URL路径不符合规范',
+      validator: (value: string) => /^\/.{0,199}$/.test(value),
+      message: '必须以斜杠(/)开头，长度不能超过 200',
       trigger: 'change',
     },
   ],
@@ -237,7 +237,7 @@ const handleClosed = () => {
       </template>
     </bk-form>
     <template #footer>
-      <dialog-footer :loading="isConfirmLoading" @confirm="handleConfirm" @closed="handleClosed" />
+      <modal-footer :loading="isConfirmLoading" @confirm="handleConfirm" @closed="handleClosed" />
     </template>
   </bk-dialog>
 </template>

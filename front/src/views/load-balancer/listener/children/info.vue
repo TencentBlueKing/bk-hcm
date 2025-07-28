@@ -1,11 +1,15 @@
 <script setup lang="ts">
-import { computed, h, reactive } from 'vue';
+import { computed, h, inject, reactive, Ref } from 'vue';
 import { ILoadBalancerDetails } from '@/store/load-balancer/clb';
 import { IListenerDetails, IListenerItem, useLoadBalancerListenerStore } from '@/store/load-balancer/listener';
 import { ModelPropertyDisplay } from '@/model/typings';
 import { BindingStatus, LAYER_7_LISTENER_PROTOCOL, ListenerProtocol, SESSION_TYPE_NAME } from '../../constants';
 import { DisplayFieldType, DisplayFieldFactory } from '../../children/display/field-factory';
 import { cloneDeep } from 'lodash';
+import routerAction from '@/router/utils/action';
+import { MENU_BUSINESS_TARGET_GROUP_DETAILS } from '@/constants/menu-symbol';
+import { GLOBAL_BIZS_KEY } from '@/common/constant';
+import { IAuthSign } from '@/common/auth-service';
 
 import Panel from '@/components/panel';
 import GridDetails from '../../children/display/grid-details.vue';
@@ -19,6 +23,8 @@ const props = defineProps<{
 const emit = defineEmits<{ 'update-success': [id: string] }>();
 
 const loadBalancerListenerStore = useLoadBalancerListenerStore();
+
+const clbOperationAuthSign = inject<Ref<IAuthSign | IAuthSign[]>>('clbOperationAuthSign');
 
 const isLayer7 = computed(() => LAYER_7_LISTENER_PROTOCOL.includes(props.listenerRowData.protocol));
 const isHttps = computed(() => ListenerProtocol.HTTPS === props.listenerRowData.protocol);
@@ -107,19 +113,33 @@ const handleAddSidesliderConfirmSuccess = (id?: string) => {
 const handleAddSidesliderHidden = () => {
   Object.assign(editListenerSidesliderState, { isShow: false, isHidden: true, isEdit: false, initialModel: null });
 };
+
+const openTargetGroupHealthCheckPage = () => {
+  const { target_group_id, bk_biz_id, vendor } = props.listenerDetails;
+  routerAction.open({
+    name: MENU_BUSINESS_TARGET_GROUP_DETAILS,
+    params: { id: target_group_id },
+    query: {
+      [GLOBAL_BIZS_KEY]: bk_biz_id,
+      vendor,
+      type: 'health',
+    },
+  });
+};
 </script>
 
 <template>
   <div class="base-info-container">
-    <bk-button
-      class="fix-button"
-      theme="primary"
-      outline
-      :disabled="props.listenerRowData.binding_status === BindingStatus.BINDING"
-      @click="handleEditListener"
-    >
-      编辑
-    </bk-button>
+    <hcm-auth class="fix-button" :sign="clbOperationAuthSign" v-slot="{ noPerm }">
+      <bk-button
+        theme="primary"
+        outline
+        :disabled="noPerm || props.listenerRowData.binding_status === BindingStatus.BINDING"
+        @click="handleEditListener"
+      >
+        编辑
+      </bk-button>
+    </hcm-auth>
     <panel title="基本信息" no-shadow>
       <grid-details
         :fields="baseInfoFields"
@@ -134,38 +154,50 @@ const handleAddSidesliderHidden = () => {
         :is-loading="loadBalancerListenerStore.listenerDetailsLoading"
       />
     </panel>
-    <panel no-shadow>
-      <template #title>
-        <div class="panel-header">
-          <span class="panel-title">会话保持</span>
-          <bk-tag class="ml4" :theme="isSessionKeeping ? 'success' : 'default'">
-            {{ isSessionKeeping ? '已开启' : '未开启' }}
-          </bk-tag>
-        </div>
-      </template>
-      <grid-details
-        v-if="isSessionKeeping"
-        :fields="sessionFields"
-        :details="listenerDetails"
-        :is-loading="loadBalancerListenerStore.listenerDetailsLoading"
-      />
-    </panel>
-    <panel no-shadow>
-      <template #title>
-        <div class="panel-header">
-          <span class="panel-title">健康检查</span>
-          <bk-tag class="ml4" :theme="isHealthCheck ? 'success' : 'default'">
-            {{ isHealthCheck ? '已开启' : '未开启' }}
-          </bk-tag>
-        </div>
-      </template>
-      <grid-details
-        v-if="isHealthCheck"
-        :fields="healthCheckFields"
-        :details="listenerDetails"
-        :is-loading="loadBalancerListenerStore.listenerDetailsLoading"
-      />
-    </panel>
+    <!-- 七层无会话保持和健康检查 -->
+    <template v-if="!isLayer7">
+      <panel no-shadow>
+        <template #title>
+          <div class="panel-header">
+            <span class="panel-title">会话保持</span>
+            <bk-tag class="ml4" :theme="isSessionKeeping ? 'success' : 'default'">
+              {{ isSessionKeeping ? '已开启' : '未开启' }}
+            </bk-tag>
+          </div>
+        </template>
+        <grid-details
+          v-if="isSessionKeeping"
+          :fields="sessionFields"
+          :details="listenerDetails"
+          :is-loading="loadBalancerListenerStore.listenerDetailsLoading"
+        />
+      </panel>
+      <panel no-shadow>
+        <template #title>
+          <div class="panel-header">
+            <span class="panel-title">健康检查</span>
+            <bk-tag class="ml4" :theme="isHealthCheck ? 'success' : 'default'">
+              {{ isHealthCheck ? '已开启' : '未开启' }}
+            </bk-tag>
+            <bk-button
+              class="ml4"
+              theme="primary"
+              text
+              v-bk-tooltips="{ content: '跳转至目标组编辑健康检查', placement: 'top-start' }"
+              @click="openTargetGroupHealthCheckPage"
+            >
+              <i class="hcm-icon bkhcm-icon-edit"></i>
+            </bk-button>
+          </div>
+        </template>
+        <grid-details
+          v-if="isHealthCheck"
+          :fields="healthCheckFields"
+          :details="listenerDetails"
+          :is-loading="loadBalancerListenerStore.listenerDetailsLoading"
+        />
+      </panel>
+    </template>
 
     <template v-if="!editListenerSidesliderState.isHidden">
       <edit-listener-sideslider
@@ -188,7 +220,7 @@ const handleAddSidesliderHidden = () => {
 
   .fix-button {
     position: absolute;
-    right: 0;
+    right: 40px;
   }
 
   .panel-header {

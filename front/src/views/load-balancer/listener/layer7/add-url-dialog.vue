@@ -14,7 +14,7 @@ import { SCHEDULER_LIST, SCHEDULER_NAME } from '../../constants';
 
 import { Form, Message } from 'bkui-vue';
 import GridDetails from '../../children/display/grid-details.vue';
-import DialogFooter from '@/components/common-dialog/dialog-footer.vue';
+import ModalFooter from '@/components/modal/modal-footer.vue';
 import TargetGroupSelector from '@/views/business/load-balancer/clb-view/components/TargetGroupSelector';
 
 interface IProps {
@@ -53,6 +53,15 @@ const displayFields = fieldIds.map((id) => {
 });
 
 const formRef = useTemplateRef<typeof Form>('form');
+const rules = {
+  url: [
+    {
+      validator: (value: string) => /^\/.{0,199}$/.test(value),
+      message: '必须以斜杠(/)开头，长度不能超过 200',
+      trigger: 'change',
+    },
+  ],
+};
 const formModel = reactive<IListenerRuleModel>({ url: '', scheduler: undefined, target_group_id: '' });
 watchEffect(() => {
   if (props.initialModel) {
@@ -113,7 +122,7 @@ const handleClosed = () => {
       :details="{ ...listenerRowData, domain }"
       :is-loading="loadBalancerListenerStore.listenerDetailsLoading"
     />
-    <bk-form ref="form" form-type="vertical" :model="formModel">
+    <bk-form ref="form" form-type="vertical" :model="formModel" :rules="rules">
       <bk-form-item label="URL路径" required property="url">
         <bk-input v-model="formModel.url" />
       </bk-form-item>
@@ -138,7 +147,7 @@ const handleClosed = () => {
       </bk-form-item>
     </bk-form>
     <template #footer>
-      <dialog-footer :loading="isConfirmLoading" @confirm="handleConfirm" @closed="handleClosed" />
+      <modal-footer :loading="isConfirmLoading" @confirm="handleConfirm" @closed="handleClosed" />
     </template>
   </bk-dialog>
 </template>
