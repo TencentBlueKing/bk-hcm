@@ -18,22 +18,18 @@
  */
 
 /*
-    SQLVER=0036,HCMVER=v1.8.2
+    SQLVER=0038,HCMVER=v1.8.2
 
     Notes:
-    1. 修改`async_flow`表，增加`tenant_id`字段
-    2. 修改`async_flow_task`表，增加`tenant_id`字段
+    1. 修改`load_balancer`表，增加`sync_time`字段
 */
 
 START TRANSACTION;
 
-alter table async_flow
-    add tenant_id varchar(64) not null default '' after worker;
-
-alter table async_flow_task
-    add tenant_id varchar(64) not null default '' after result;
+alter table load_balancer
+    add sync_time varchar(64) not null default '' after cloud_expired_time;
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.8.2' as `hcm_ver`, '0038' as `sql_ver`;
 
 COMMIT;

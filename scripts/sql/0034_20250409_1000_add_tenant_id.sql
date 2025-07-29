@@ -280,6 +280,6 @@ alter table `task_management`
     add index `idx_tenant_id`(`tenant_id`);
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9990' as `sql_ver`;
+SELECT 'v1.8.2' as `hcm_ver`, '0034' as `sql_ver`;
 
 COMMIT;
