@@ -87,7 +87,8 @@ export default defineComponent({
               v-bk-tooltips={{
                 content: '开启删除保护后，在云控制台或调用 API 均无法删除该实例',
                 placement: 'top-end',
-              }}></i>
+              }}
+            ></i>
           </div>
         ),
         copy: false,
@@ -387,7 +388,7 @@ export default defineComponent({
                           <i class='hcm-icon bkhcm-icon-plus-circle-shape mr5'></i>
                           {t('新增 SNAT 的 IP')}
                         </Button>
-                        <span class='desc'>{t('绑定IDC内部的IP，则需要添加SNAT IP。云上IP，则无需增加。')}</span>
+                        <span class='desc'>{t('CLB 可以绑定云上多 VPC、云下 IDC 内 的IP。RS类型请选择为ENI类型')}</span>
                       </div>
                       <Table columns={corsColumns} data={props.detail?.extension?.snat_ips}></Table>
                     </div>
