@@ -21,15 +21,18 @@
     SQLVER=0037,HCMVER=v1.8.2
 
     Notes:
-    1. 修改`target_group_listener_rule_rel`表，新增 cloud_listener_rule_id 索引
+    1. 修改`load_balancer`表，增加`band_width`、`isp`字段
 */
 
 START TRANSACTION;
 
-alter table target_group_listener_rule_rel
-    add index idx_cloud_listener_rule_id (cloud_listener_rule_id);
+alter table load_balancer
+    add band_width int not null default 0 after status;
+
+alter table load_balancer
+    add isp varchar(64) not null default '' after status;
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.8.2' as `hcm_ver`, '0037' as `sql_ver`;
 
 COMMIT;

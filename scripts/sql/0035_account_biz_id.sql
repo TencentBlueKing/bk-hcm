@@ -35,6 +35,6 @@ UPDATE account a
     SET a.bk_biz_id = b.bk_biz_id;
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.8.2' as `hcm_ver`, '0035' as `sql_ver`;
 
 COMMIT
