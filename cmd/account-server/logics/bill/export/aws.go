@@ -19,10 +19,13 @@
 
 package export
 
-import "hcm/pkg/logs"
+import (
+	"hcm/pkg/logs"
+	"hcm/pkg/table"
+)
 
 // AwsBillItemHeaders is the headers of Aws bill item.
-var AwsBillItemHeaders []string
+var AwsBillItemHeaders [][]string
 
 func init() {
 	var err error
@@ -32,7 +35,7 @@ func init() {
 	}
 }
 
-var _ Table = (*AwsBillItemTable)(nil)
+var _ table.Table = (*AwsBillItemTable)(nil)
 
 // AwsBillItemTable aws账单导出表结构
 type AwsBillItemTable struct {
@@ -67,12 +70,12 @@ type AwsBillItemTable struct {
 	Rate                string `header:"汇率"`
 }
 
-// GetHeaders ...
-func (c AwsBillItemTable) GetHeaders() ([]string, error) {
-	return parseHeader(c)
+// GetHeaders 获取表头列
+func (c AwsBillItemTable) GetHeaders() ([][]string, error) {
+	return table.GetHeaders(c)
 }
 
-// GetHeaderValues 获取表头对应的数据
-func (c AwsBillItemTable) GetHeaderValues() ([]string, error) {
-	return parseHeaderFields(c)
+// GetValuesByHeader 获取表头对应的数据
+func (c AwsBillItemTable) GetValuesByHeader() ([]string, error) {
+	return table.GetValuesByHeader(c)
 }

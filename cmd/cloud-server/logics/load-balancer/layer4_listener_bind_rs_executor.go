@@ -325,7 +325,7 @@ func (c *Layer4ListenerBindRSExecutor) buildTCloudFlowTask(kt *kit.Kit, lb corel
 			target := &hclb.RegisterTarget{
 				TargetType: detail.InstType,
 				Port:       int64(detail.RsPort[0]),
-				Weight:     converter.ValToPtr(int64(converter.PtrToVal(detail.Weight))),
+				Weight:     converter.ValToPtr(converter.PtrToVal(detail.Weight)),
 			}
 			if detail.InstType == enumor.EniInstType {
 				target.EniIp = detail.RsIp

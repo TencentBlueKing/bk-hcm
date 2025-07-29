@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"testing"
 
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 
 	"github.com/stretchr/testify/assert"
@@ -41,7 +42,7 @@ func Test_parseVendor(t *testing.T) {
 		{
 			name: "tcloud",
 			args: args{
-				[]string{"云厂商", "tencent_cloud_public(腾讯云-公有云)"},
+				[]string{"云厂商", constant.CLBExcelHeaderTCloud},
 			},
 			want:    enumor.TCloud,
 			wantErr: assert.NoError,
@@ -57,7 +58,7 @@ func Test_parseVendor(t *testing.T) {
 		{
 			name: "unsupport vendor",
 			args: args{
-				[]string{"云厂商", "tencent_cloud_public(腾讯云-公有云)123"},
+				[]string{"云厂商", constant.CLBExcelHeaderTCloud + "123"},
 			},
 			want:    "",
 			wantErr: assert.Error,

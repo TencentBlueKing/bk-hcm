@@ -55,7 +55,8 @@ type CreateLayer7ListenerPreviewExecutor struct {
 }
 
 // Execute 导入执行器的唯一入口
-func (c *CreateLayer7ListenerPreviewExecutor) Execute(kt *kit.Kit, rawData [][]string, headers []string) (interface{}, error) {
+func (c *CreateLayer7ListenerPreviewExecutor) Execute(kt *kit.Kit, rawData [][]string, headers []string) (interface{},
+	error) {
 	err := c.convertDataToPreview(rawData, headers)
 	if err != nil {
 		logs.Errorf("convert create listener layer7 data failed, err: %v, rid: %s", err, kt.Rid)
@@ -72,11 +73,16 @@ func (c *CreateLayer7ListenerPreviewExecutor) Execute(kt *kit.Kit, rawData [][]s
 
 var createLayer7ListenerDetailRefType = reflect.TypeOf(CreateLayer7ListenerDetail{})
 
-// createLayer7ListenerExcelTableLen excel表格最小应填的列数, clbIP, clbCloudID, protocol, listenerPorts
-const createLayer7ListenerExcelTableLen = 4
-
-// createLayer7ListenerExcelTableHeadersLen excel表格表头长度
-const createLayer7ListenerExcelTableHeadersLen = 10
+const (
+	// createLayer7ListenerExcelTableHeadersLen excel表格表头长度
+	createLayer7ListenerExcelTableHeadersLen = 10
+	// createLayer7ListenerExcelTableLen excel表格最小应填的列数, clbIP, clbCloudID, protocol, listenerPorts
+	createLayer7ListenerExcelTableLen = 4
+	createLayer7ListenerSSLModeIdx    = 4
+	createLayer7ListenerCertIDIdx     = 5
+	createLayer7ListenerCaCloudIDIdx  = 6
+	createLayer7ListenerUserRemarkIdx = 7
+)
 
 func (c *CreateLayer7ListenerPreviewExecutor) convertDataToPreview(rawData [][]string, headers []string) error {
 	if len(headers) < createLayer7ListenerExcelTableHeadersLen {
@@ -93,33 +99,34 @@ func (c *CreateLayer7ListenerPreviewExecutor) convertDataToPreview(rawData [][]s
 		detail := &CreateLayer7ListenerDetail{
 			ValidateResult: make([]string, 0),
 		}
-		for i, value := range data {
-			field := createLayer7ListenerDetailRefType.Field(i)
-			fieldValue := reflect.ValueOf(detail).Elem().FieldByName(field.Name)
-			if fieldValue.Type().Kind() == reflect.String {
-				fieldValue.SetString(value)
-				continue
-			}
-			switch field.Name {
-			case "ListenerPorts":
-				ports, err := parsePort(value)
-				if err != nil {
-					return err
-				}
-				detail.ListenerPorts = ports
-			case "CertCloudIDs":
-				certStr := strings.TrimRight(strings.TrimLeft(value, "["), "]")
-				for _, s := range strings.Split(certStr, ",") {
-					cur := strings.TrimSpace(s)
-					if len(cur) == 0 {
-						continue
-					}
-					detail.CertCloudIDs = append(detail.CertCloudIDs, cur)
-				}
-			}
+		detail.ClbVipDomain = data[0]
+		detail.CloudClbID = data[1]
+		detail.Protocol = enumor.ProtocolType(strings.ToUpper(data[2]))
+		ports, err := parsePort(data[3])
+		if err != nil {
+			return err
+		}
+		detail.ListenerPorts = ports
+		if len(data) >= createLayer7ListenerSSLModeIdx+1 {
+			detail.SSLMode = data[createLayer7ListenerSSLModeIdx]
 		}
 
-		detail.Protocol = enumor.ProtocolType(strings.ToUpper(string(detail.Protocol)))
+		if len(data) >= createLayer7ListenerCertIDIdx+1 {
+			certStr := strings.TrimRight(strings.TrimLeft(data[createLayer7ListenerCertIDIdx], "["), "]")
+			for _, s := range strings.Split(certStr, ",") {
+				cur := strings.TrimSpace(s)
+				if len(cur) == 0 {
+					continue
+				}
+				detail.CertCloudIDs = append(detail.CertCloudIDs, cur)
+			}
+		}
+		if len(data) >= createLayer7ListenerCaCloudIDIdx+1 {
+			detail.CACloudID = data[createLayer7ListenerCaCloudIDIdx]
+		}
+		if len(data) >= createLayer7ListenerUserRemarkIdx+1 {
+			detail.UserRemark = data[createLayer7ListenerUserRemarkIdx]
+		}
 		c.details = append(c.details, detail)
 	}
 
@@ -229,7 +236,8 @@ func (c *CreateLayer7ListenerPreviewExecutor) validateTCloudListener(kt *kit.Kit
 			// sni开启时, 将不做重复检查, 直接返回不可执行
 			detail.Status.SetNotExecutable()
 			detail.ValidateResult = append(detail.ValidateResult,
-				fmt.Sprintf("clb(%s) listener(%d) already exist, and SNI is enable;", listener.CloudLbID, detail.ListenerPorts[0]))
+				fmt.Sprintf("clb(%s) listener(%d) already exist, and SNI is enable;", listener.CloudLbID,
+					detail.ListenerPorts[0]))
 			return nil
 		}
 
@@ -353,22 +361,15 @@ func (c *CreateLayer7ListenerPreviewExecutor) getTCloudListenersByPort(kt *kit.K
 // CreateLayer7ListenerDetail 创建七层监听器预览记录.
 // convertDataToPreview 会依赖这个字段的声明顺序, 所以修改时需要与excel表格的字段顺序保持一致
 type CreateLayer7ListenerDetail struct {
-	ClbVipDomain string `json:"clb_vip_domain"`
-	CloudClbID   string `json:"cloud_clb_id"`
-
-	Protocol      enumor.ProtocolType `json:"protocol"`
-	ListenerPorts []int               `json:"listener_port"`
-	SSLMode       string              `json:"ssl_mode"`
-	CertCloudIDs  []string            `json:"cert_cloud_ids"`
-	CACloudID     string              `json:"ca_cloud_id"`
+	Layer7ListenerDetail `json:",inline"`
+	ListenerPorts        []int    `json:"listener_port"`
+	CertCloudIDs         []string `json:"cert_cloud_ids"`
 	Name          string              `json:"name"`
-	UserRemark    string              `json:"user_remark"`
 
 	Status         ImportStatus `json:"status"`
 	ValidateResult []string     `json:"validate_result"`
 
 	RegionID string `json:"region_id"`
-	Name     string `json:"name"`
 }
 
 func (c *CreateLayer7ListenerDetail) validate() {
