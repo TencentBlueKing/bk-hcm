@@ -8,6 +8,8 @@ import { useI18n } from 'vue-i18n';
 import MemberSelect from '@/components/MemberSelect';
 import { useAccountStore } from '@/store';
 import './index.scss';
+import { ACCOUNT_TYPE_ENUM } from '@/constants/account';
+
 const { FormItem } = Form;
 const { Option } = Select;
 const { Group, Group: RadioGroup, Button: RadioButton } = Radio;
@@ -218,7 +220,9 @@ export default defineComponent({
       changeCloud(projectModel.vendor);
     });
     const clearForm = () => {
-      Object.entries(initProjectModel).forEach(([key, value]) => (projectModel[key] = value));
+      Object.entries(initProjectModel)
+        .filter(([key]) => !['type', 'vendor'].includes(key))
+        .forEach(([key, value]) => (projectModel[key] = value));
     };
     const changeCloud = (val: string) => {
       isChangeVendor.value = true;
@@ -668,6 +672,11 @@ export default defineComponent({
           });
         }
 
+        // 安全审计账号暂不支持腾讯云
+        if (val === ACCOUNT_TYPE_ENUM.SECURITY_AUDIT && projectModel.vendor === VendorEnum.TCLOUD) {
+          projectModel.vendor = VendorEnum.AWS;
+        }
+
         // 触发一次云厂商变更，因展示字段需要更新
         if (oldValue !== undefined && val !== oldValue) {
           changeCloud(projectModel.vendor);
@@ -697,7 +706,11 @@ export default defineComponent({
         component: () => (
           <RadioGroup v-model={projectModel.vendor}>
             {cloudType.map((item) => (
-              <RadioButton onChange={changeCloud} label={item.id}>
+              <RadioButton
+                onChange={changeCloud}
+                label={item.id}
+                disabled={projectModel.type === ACCOUNT_TYPE_ENUM.SECURITY_AUDIT && item.id === VendorEnum.TCLOUD}
+              >
                 {item.name}
               </RadioButton>
             ))}
@@ -767,7 +780,8 @@ export default defineComponent({
             multipleMode='tag'
             placeholder={t('请选择使用业务')}
             class='w450'
-            v-model={projectModel.usage_biz_ids}>
+            v-model={projectModel.usage_biz_ids}
+          >
             {businessList.list.map((item) => (
               <Option key={item.id} value={item.id} label={item.name}>
                 {item.name}
@@ -817,14 +831,16 @@ export default defineComponent({
                     'no-border-top': !item.formName,
                     'no-border-bottom': item.noBorBottom || (item.property === 'vendor' && isChangeVendor.value),
                     'no-border': item.type === 'button',
-                  }}>
+                  }}
+                >
                   <FormItem
                     class='account-form-item'
                     label={item.label}
                     required={item.required}
                     property={item.property}
                     description={item.description}
-                    rules={item.rules}>
+                    rules={item.rules}
+                  >
                     {item.component ? item.component() : item.content()}
                   </FormItem>
                 </div>
