@@ -8,6 +8,8 @@ import { useI18n } from 'vue-i18n';
 import MemberSelect from '@/components/MemberSelect';
 import { useAccountStore } from '@/store';
 import './index.scss';
+import { ACCOUNT_TYPE_ENUM } from '@/constants/account';
+
 const { FormItem } = Form;
 const { Option } = Select;
 const { Group, Group: RadioGroup, Button: RadioButton } = Radio;
@@ -219,7 +221,7 @@ export default defineComponent({
     });
     const clearForm = () => {
       Object.entries(initProjectModel)
-        .filter(([key]) => key !== 'type')
+        .filter(([key]) => !['type', 'vendor'].includes(key))
         .forEach(([key, value]) => (projectModel[key] = value));
     };
     const changeCloud = (val: string) => {
@@ -670,6 +672,11 @@ export default defineComponent({
           });
         }
 
+        // 安全审计账号暂不支持腾讯云
+        if (val === ACCOUNT_TYPE_ENUM.SECURITY_AUDIT && projectModel.vendor === VendorEnum.TCLOUD) {
+          projectModel.vendor = VendorEnum.AWS;
+        }
+
         // 触发一次云厂商变更，因展示字段需要更新
         if (oldValue !== undefined && val !== oldValue) {
           changeCloud(projectModel.vendor);
@@ -699,7 +706,11 @@ export default defineComponent({
         component: () => (
           <RadioGroup v-model={projectModel.vendor}>
             {cloudType.map((item) => (
-              <RadioButton onChange={changeCloud} label={item.id}>
+              <RadioButton
+                onChange={changeCloud}
+                label={item.id}
+                disabled={projectModel.type === ACCOUNT_TYPE_ENUM.SECURITY_AUDIT && item.id === VendorEnum.TCLOUD}
+              >
                 {item.name}
               </RadioButton>
             ))}
