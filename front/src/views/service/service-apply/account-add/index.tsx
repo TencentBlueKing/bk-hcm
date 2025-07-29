@@ -218,7 +218,9 @@ export default defineComponent({
       changeCloud(projectModel.vendor);
     });
     const clearForm = () => {
-      Object.entries(initProjectModel).forEach(([key, value]) => (projectModel[key] = value));
+      Object.entries(initProjectModel)
+        .filter(([key]) => key !== 'type')
+        .forEach(([key, value]) => (projectModel[key] = value));
     };
     const changeCloud = (val: string) => {
       isChangeVendor.value = true;
@@ -767,7 +769,8 @@ export default defineComponent({
             multipleMode='tag'
             placeholder={t('请选择使用业务')}
             class='w450'
-            v-model={projectModel.usage_biz_ids}>
+            v-model={projectModel.usage_biz_ids}
+          >
             {businessList.list.map((item) => (
               <Option key={item.id} value={item.id} label={item.name}>
                 {item.name}
@@ -817,14 +820,16 @@ export default defineComponent({
                     'no-border-top': !item.formName,
                     'no-border-bottom': item.noBorBottom || (item.property === 'vendor' && isChangeVendor.value),
                     'no-border': item.type === 'button',
-                  }}>
+                  }}
+                >
                   <FormItem
                     class='account-form-item'
                     label={item.label}
                     required={item.required}
                     property={item.property}
                     description={item.description}
-                    rules={item.rules}>
+                    rules={item.rules}
+                  >
                     {item.component ? item.component() : item.content()}
                   </FormItem>
                 </div>
