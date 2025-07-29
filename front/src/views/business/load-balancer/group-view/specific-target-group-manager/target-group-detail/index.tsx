@@ -28,6 +28,7 @@ export default defineComponent({
     getTargetGroupDetail: {
       type: Function as PropType<(...args: any) => any>,
     },
+    id: String,
   },
   setup(props) {
     // use stores
@@ -59,7 +60,8 @@ export default defineComponent({
               <Link
                 theme='primary'
                 href={`/#/resource/detail/vpc?type=tcloud&id=${props.detail.vpc_id}`}
-                target='_blank'>
+                target='_blank'
+              >
                 <div class='flex-row align-items-center'>
                   {props.detail.cloud_vpc_id}
                   <Share class='ml5' />
@@ -83,7 +85,14 @@ export default defineComponent({
       },
       {
         title: 'RS 信息',
-        content: <RsConfigTable onlyShow rsList={props.detail.target_list} />,
+        content: (
+          <RsConfigTable
+            onlyShow
+            rsList={props.detail.target_list}
+            getTargetGroupDetail={props.getTargetGroupDetail}
+            id={props.id}
+          />
+        ),
       },
     ]);
 
@@ -113,7 +122,8 @@ export default defineComponent({
           style={{ top: calcTop.value }}
           outline
           theme='primary'
-          onClick={handleEditTargetGroup}>
+          onClick={handleEditTargetGroup}
+        >
           编辑
         </Button>
         <div class='detail-info-container'>
