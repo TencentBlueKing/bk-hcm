@@ -216,7 +216,8 @@ export const useTable = (props: IProp) => {
           class={{
             [cssModule['remote-table-container']]: true,
             [cssModule['no-search']]: props.searchOptions?.disabled,
-          }}>
+          }}
+        >
           {hasTopBar.value && (
             <section class={cssModule['top-bar']}>
               {slots.operation && <div class={cssModule['operate-btn-groups']}>{slots.operation?.()}</div>}
@@ -238,7 +239,8 @@ export const useTable = (props: IProp) => {
             loading={isLoading.value}
             opacity={1}
             class={cssModule['loading-wrapper']}
-            style={{ height: getTableHeight() }}>
+            style={{ height: getTableHeight() }}
+          >
             <Table
               ref={tableRef}
               data={dataList.value}
@@ -251,7 +253,8 @@ export const useTable = (props: IProp) => {
               onPageLimitChange={handlePageLimitChange}
               onPageValueChange={handlePageValueChange}
               onColumnSort={handleSort}
-              onColumnFilter={() => {}}>
+              onColumnFilter={() => {}}
+            >
               {{
                 expandRow: (row: any) => slots.expandRow?.(row),
                 empty: () => {
@@ -298,7 +301,7 @@ export const useTable = (props: IProp) => {
       case 'binding_status':
         return { field, op, value: LISTENER_BINDING_STATUS_REVERSE_MAP[value as string] || value };
       case 'port':
-        return { field, op, value: Number(value) };
+        return { field, op, value: Number(value) || 0 };
       default:
         return { field, op, value };
     }
