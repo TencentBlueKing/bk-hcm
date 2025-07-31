@@ -18,7 +18,7 @@
  */
 
 /*
-    SQLVER=9999,HCMVER=v9.9.9
+    SQLVER=0039,HCMVER=v1.8.3
 
     Notes:
     1. 修改`account`表，修改`name`字段长度
@@ -30,6 +30,6 @@ ALTER TABLE `account`
     modify name VARCHAR(255) NOT NULL;
 
 CREATE OR REPLACE VIEW `hcm_version`(`hcm_ver`, `sql_ver`) AS
-SELECT 'v9.9.9' as `hcm_ver`, '9999' as `sql_ver`;
+SELECT 'v1.8.3' as `hcm_ver`, '0039' as `sql_ver`;
 
 COMMIT;
