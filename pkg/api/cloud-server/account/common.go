@@ -31,10 +31,10 @@ import (
 )
 
 var (
-	validAccountNameRegex   = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9-_]{1,62}[a-zA-Z0-9]$")
+	validAccountNameRegex   = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9-_]{1,253}[a-zA-Z0-9]$")
 	accountNameInvalidError = errors.New("invalid account name: name should begin with a letter(a-zA-Z), " +
 		"contains letters, numbers(0-9) or hyphen(-), underline(_),end with a letter or number, " +
-		"length should be 3 to 64 letters")
+		"length should be 3 to 255 letters")
 	secretEmptyError = errors.New("SecretID/SecretKey can not be empty")
 	allBizError      = errors.New("can't choose specific biz when choose all biz")
 )
