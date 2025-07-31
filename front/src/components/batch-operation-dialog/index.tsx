@@ -61,7 +61,8 @@ export default defineComponent({
           <CommonLocalTable
             searchOptions={{ searchData: props.tableProps.searchData }}
             tableOptions={{ rowKey: 'id', columns: props.tableProps.columns }}
-            tableData={props.list}>
+            tableData={props.list}
+          >
             {{
               operation: () => slots.tab?.(),
             }}
@@ -81,7 +82,8 @@ export default defineComponent({
         theme={props.theme}
         quickClose={false}
         onClosed={() => triggerShow(false)}
-        confirmText={t(props.confirmText)}>
+        confirmText={t(props.confirmText)}
+      >
         {{
           default: props.custom ? renderCustomDefaultSlot : renderDefaultSlot,
           footer: () => (
@@ -91,7 +93,8 @@ export default defineComponent({
                 onClick={handleConfirm}
                 loading={props.isSubmitLoading}
                 disabled={props.isSubmitDisabled}
-                v-bk-tooltips={props.submitDisabledTooltipsOption}>
+                v-bk-tooltips={props.submitDisabledTooltipsOption}
+              >
                 {props.confirmText}
               </Button>
               <Button class='dialog-cancel' onClick={() => triggerShow(false)}>

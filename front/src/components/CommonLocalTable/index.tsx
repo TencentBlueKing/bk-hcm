@@ -51,6 +51,10 @@ export default defineComponent({
     // 表格相关
     const tableRef = ref();
     const tableData = ref(props.tableData);
+    const tableSort = ref<{ key: string; type: string }>({
+      key: props.tableOptions.columns[0].field as string,
+      type: 'asc',
+    });
     const pagination = reactive({ limit: 10, count: props.tableData.length });
     const hasTopBar = computed(() => props.hasOperation && props.hasSearch);
 
@@ -71,9 +75,13 @@ export default defineComponent({
             return rule.values[0].id;
         }
       });
-      const resultData = props.tableData.filter((item) =>
-        Object.keys(filterConditions).every((key) => filterConditions[key].includes(`${item[key]}`)),
-      );
+      const { key, type } = tableSort.value;
+      const resultData = props.tableData
+        .filter((item) => Object.keys(filterConditions).every((key) => filterConditions[key].includes(`${item[key]}`)))
+        .sort((prev, next) => {
+          if (type === 'asc') return prev[key].localeCompare(next[key]);
+          return next[key].localeCompare(prev[key]);
+        });
       // 更新分页器
       pagination.count = resultData.length;
       return resultData;
@@ -87,6 +95,13 @@ export default defineComponent({
       },
       { deep: true },
     );
+
+    const handleSortBy = ({ column, type }: { column: any; type: string }) => {
+      tableSort.value = {
+        key: column.field,
+        type,
+      };
+    };
 
     expose({ clearSelection });
 
@@ -117,7 +132,9 @@ export default defineComponent({
             columns={props.tableOptions.columns}
             pagination={pagination}
             show-overflow-tooltip
-            {...(props.tableOptions.extra || {})}>
+            onColumnSort={handleSortBy}
+            {...(props.tableOptions.extra || {})}
+          >
             {{
               empty: () => {
                 if (props.loading || renderTableData.value?.length) return null;
