@@ -139,6 +139,7 @@ func (svc *applicationSvc) convertToApplicationResp(
 ) *proto.ApplicationResp {
 	return &proto.ApplicationResp{
 		ID:             application.ID,
+		TenantID:       application.TenantID,
 		Source:         enumor.ApplicationSource(application.Source),
 		SN:             application.SN,
 		Type:           enumor.ApplicationType(application.Type),

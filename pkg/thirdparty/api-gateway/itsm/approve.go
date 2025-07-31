@@ -23,34 +23,50 @@ import (
 	"fmt"
 
 	"hcm/pkg/kit"
+	"hcm/pkg/logs"
+	"hcm/pkg/rest"
 	"hcm/pkg/thirdparty/api-gateway"
 )
 
-// ApproveReq define approve req.
-type ApproveReq struct {
-	Sn       string `json:"sn"`
-	StateID  int    `json:"state_id"`
-	Approver string `json:"approver"`
-	Action   string `json:"action"`
-	Remark   string `json:"remark"`
+// getApproveTask 获取可审批节点的task id
+func (i *itsm) getApproveTask(kt *kit.Kit, ticketID string, activityKey string) (*ApproveTasksResult, error) {
+	req := &ApproveTasksReq{
+		TicketID:    ticketID,
+		ActivityKey: activityKey,
+	}
+
+	code, msg, res, err := apigateway.ApiGatewayCallOriginal[ApproveTasksReq, ApproveTasksResult](i.client,
+		i.bkUserCli, i.config, rest.POST, kt, req, "/approval_tasks/")
+
+	if err != nil {
+		return nil, err
+	}
+
+	// itsm成功时状态码为20000
+	if code != success {
+		err := fmt.Errorf("failed to call api gateway to get approve tasks, code: %d, msg: %s", code, msg)
+		logs.Errorf("%s, result: %+v, rid: %s", err, res, kt.Rid)
+		return nil, err
+	}
+
+	return res, nil
 }
 
-// Approve 快捷审批接口。
-func (i *itsm) Approve(kt *kit.Kit, req *ApproveReq) error {
+// Approve 执行审批操作
+func (i *itsm) Approve(kt *kit.Kit, req *HandleApproveReq) error {
 
-	resp := new(apigateway.BaseResponse)
-	err := i.client.Post().
-		SubResourcef("/approve/").
-		WithContext(kt.Ctx).
-		WithHeaders(i.header(kt)).
-		Body(req).
-		Do().Into(resp)
+	code, msg, _, err := apigateway.ApiGatewayCallOriginal[HandleApproveReq, HandleApproveResult](i.client,
+		i.bkUserCli, i.config, rest.POST, kt, req, "/handle_approval_node/")
+
 	if err != nil {
 		return err
 	}
 
-	if !resp.Result || resp.Code != 0 {
-		return fmt.Errorf("approve failed, code: %d, msg: %s", resp.Code, resp.Message)
+	// itsm成功时状态码为20000
+	if code != success {
+		err := fmt.Errorf("failed to call api gateway to handle approve, code: %d, msg: %s", code, msg)
+		logs.Errorf("%s, rid: %s", err, kt.Rid)
+		return err
 	}
 
 	return nil

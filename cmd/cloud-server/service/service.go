@@ -180,13 +180,6 @@ func getCloudClientSvr(sd serviced.ServiceDiscover) (*client.ClientSet, *Service
 		return nil, nil, err
 	}
 
-	itsmCfg := cc.CloudServer().Itsm
-	itsmCli, err := itsm.NewClient(&itsmCfg, metrics.Register())
-	if err != nil {
-		logs.Errorf("failed to create itsm client, err: %v", err)
-		return nil, nil, err
-	}
-
 	bkbaseCfg := cc.CloudServer().CloudSelection.BkBase
 	bkbaseCli, err := bkbase.NewClient(&bkbaseCfg.ApiGateway, metrics.Register())
 	if err != nil {
@@ -197,6 +190,13 @@ func getCloudClientSvr(sd serviced.ServiceDiscover) (*client.ClientSet, *Service
 	bkUserCfg := cc.CloudServer().BkUser
 	bkUserCli, err := pkgbkuser.NewClient(&bkUserCfg, metrics.Register())
 	if err != nil {
+		return nil, nil, err
+	}
+
+	itsmCfg := cc.CloudServer().Itsm
+	itsmCli, err := itsm.NewClient(&itsmCfg, apiClientSet.DataService(), bkUserCli, metrics.Register())
+	if err != nil {
+		logs.Errorf("failed to create itsm client, err: %v", err)
 		return nil, nil, err
 	}
 

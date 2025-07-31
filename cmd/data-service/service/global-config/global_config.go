@@ -78,7 +78,7 @@ func (svc *service) BatchCreateGlobalConfigs(cts *rest.Contexts) (interface{}, e
 		return nil, errf.NewFromErr(errf.Aborted, err)
 	}
 
-	return ids, nil
+	return core.BatchCreateResult{IDs: ids.([]string)}, nil
 }
 
 // ListGlobalConfigs ...

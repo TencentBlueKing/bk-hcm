@@ -134,7 +134,7 @@ type CloudServerSetting struct {
 	CloudResource    CloudResource    `yaml:"cloudResource"`
 	Recycle          Recycle          `yaml:"recycle"`
 	BillConfig       BillConfig       `yaml:"billConfig"`
-	Itsm             ApiGateway       `yaml:"itsm"`
+	Itsm             ITSM             `yaml:"itsm"`
 	CloudSelection   CloudSelection   `yaml:"cloudSelection"`
 	Cmsi             CMSI             `yaml:"cmsi"`
 	TaskManagement   TaskManagement   `yaml:"taskManagement"`
@@ -403,7 +403,7 @@ type WebServerSetting struct {
 	Log           LogOption     `yaml:"log"`
 	Web           Web           `yaml:"web"`
 	Esb           Esb           `yaml:"esb"`
-	Itsm          ApiGateway    `yaml:"itsm"`
+	Itsm          ITSM          `yaml:"itsm"`
 	ChangeLogPath ChangeLogPath `yaml:"changeLogPath"`
 	Notice        Notice        `yaml:"notice"`
 	TemplatePath  string        `yaml:"templatePath"`

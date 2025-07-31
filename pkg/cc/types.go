@@ -991,6 +991,16 @@ func (c *Notice) validate() error {
 	return nil
 }
 
+// ITSM ...
+type ITSM struct {
+	DisableEncodeToken bool `yaml:"disableEncodeToken"`
+	ApiGateway         `yaml:"-,inline"`
+}
+
+func (s *ITSM) validate() error {
+	return s.ApiGateway.validate()
+}
+
 // SyncConfig defines sync config.
 type SyncConfig struct {
 	DefaultConcurrent uint `yaml:"defaultConcurrent"`

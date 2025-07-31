@@ -116,12 +116,6 @@ func NewService(dis serviced.Discover) (*Service, error) {
 		return nil, err
 	}
 
-	itsmCfg := cc.WebServer().Itsm
-	itsmCli, err := pkgitsm.NewClient(&itsmCfg, metrics.Register())
-	if err != nil {
-		return nil, err
-	}
-
 	// create authorizer
 	authorizer, err := auth.NewAuthorizer(dis, network.TLS)
 	if err != nil {
@@ -139,7 +133,6 @@ func NewService(dis serviced.Discover) (*Service, error) {
 		esbClient:  esbClient,
 		proxy:      p,
 		authorizer: authorizer,
-		itsmCli:    itsmCli,
 	}
 
 	return newOtherClient(service)
@@ -148,6 +141,12 @@ func NewService(dis serviced.Discover) (*Service, error) {
 func newOtherClient(svc *Service) (*Service, error) {
 	bkUserCfg := cc.WebServer().BkUser
 	bkUserCli, err := pkgbkuser.NewClient(&bkUserCfg, metrics.Register())
+	if err != nil {
+		return nil, err
+	}
+
+	itsmCfg := cc.WebServer().Itsm
+	itsmCli, err := pkgitsm.NewClient(&itsmCfg, svc.client.DataService(), bkUserCli, metrics.Register())
 	if err != nil {
 		return nil, err
 	}
@@ -170,6 +169,7 @@ func newOtherClient(svc *Service) (*Service, error) {
 		return nil, err
 	}
 
+	svc.itsmCli = itsmCli
 	svc.noticeCli = noticeCli
 	svc.cmdbCli = cmdbCli
 	svc.bkUserCli = bkUserCli
